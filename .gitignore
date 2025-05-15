@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# SSL Certificates
+privkey.pem
+fullchain.pem
