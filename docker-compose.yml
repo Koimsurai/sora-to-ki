@@ -6,7 +6,7 @@ services:
     image: personal-website-app # 指定映像檔名稱 (與之前建置的相同)
     container_name: personal-website-container # 指定容器名稱
     ports:
-      - "13579:13579" # 映射主機與容器的連接埠
+      - "13578:13579" # 映射主機 13578 到容器 13579
     volumes:
       # 將主機的憑證檔案掛載到容器內的 /etc/certs/
       # 注意：Compose 會自動處理 Windows 路徑轉換

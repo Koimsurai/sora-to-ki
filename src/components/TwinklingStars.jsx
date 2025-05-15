@@ -1,78 +1,174 @@
 import React, { useRef, useMemo } from 'react';
-import { Points, PointMaterial } from '@react-three/drei';
+import { Points } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-function TwinklingStars({ count = 800, rotationRef }) {
+// Vertex Shader
+const vertexShader = `
+  attribute float aSize;
+  attribute float aTwinkleSpeed;
+  attribute float aTwinkleOffset;
+  attribute float aMinOpacity;
+  attribute float aMaxOpacity;
+  attribute float aIsGlare; // 0.0 for normal, 1.0 for glare
+
+  varying float vOpacity;
+  varying float vIsGlare;
+
+  uniform float uTime;
+  uniform float uPixelRatio;
+  uniform float uBaseSize;
+
+  void main() {
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+
+    // Calculate twinkle opacity
+    float timeFactor = uTime * aTwinkleSpeed + aTwinkleOffset;
+    float wave = sin(timeFactor); // -1 to 1
+    vOpacity = mix(aMinOpacity, aMaxOpacity, (wave + 1.0) / 2.0); // Map wave to minOpacity to maxOpacity
+
+    // Calculate size
+    float size = aSize * uBaseSize;
+    if (aIsGlare > 0.5) {
+      // Make glare stars bigger, especially when bright
+      size *= mix(1.5, 3.0, (wave + 1.0) / 2.0); // Glare stars are 1.5x to 3x bigger
+    }
+
+    gl_PointSize = size * (300.0 / -mvPosition.z) * uPixelRatio; // Adjust size based on distance and pixel ratio
+    gl_Position = projectionMatrix * mvPosition;
+
+    vIsGlare = aIsGlare; // Pass glare status to fragment shader
+  }
+`;
+
+// Fragment Shader
+const fragmentShader = `
+  varying float vOpacity;
+  varying float vIsGlare;
+
+  void main() {
+    // Create a circular shape
+    float distanceToCenter = length(gl_PointCoord - vec2(0.5));
+    float strength = 1.0 - smoothstep(0.45, 0.5, distanceToCenter); // Soft edge circle
+
+    vec3 color = vec3(1.0); // Base color white
+
+    if (vIsGlare > 0.5) {
+       // Make glare stars slightly bluish or yellowish when bright
+       color = mix(vec3(0.8, 0.8, 1.0), vec3(1.0, 1.0, 0.8), vOpacity); // Blend between blueish and yellowish based on opacity
+       // Add a stronger core for glare stars
+       float coreStrength = 1.0 - smoothstep(0.0, 0.15, distanceToCenter); // Smaller, sharper core
+       strength = max(strength, coreStrength * 1.5); // Combine soft edge and sharp core
+    }
+
+
+    gl_FragColor = vec4(color, strength * vOpacity); // Apply calculated opacity and strength
+  }
+`;
+
+function TwinklingStars({ count = 1500, rotationRef }) { // Increased count
   const pointsRef = useRef();
   const materialRef = useRef();
+  const geometryRef = useRef(); // Ref for the geometry
 
-  // 隨機生成星星位置
-  const particlesPosition = useMemo(() => {
+  // Generate particle attributes and geometry
+  const geometry = useMemo(() => {
+    const geom = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
-    const radius = 100; // 與 StarfieldScene 保持一致的半徑
+    const sizes = new Float32Array(count);
+    const twinkleSpeeds = new Float32Array(count);
+    const twinkleOffsets = new Float32Array(count);
+    const minOpacities = new Float32Array(count);
+    const maxOpacities = new Float32Array(count);
+    const isGlares = new Float32Array(count); // 0 or 1
+
+    const radius = 100;
+    const glareProbability = 0.05; // 5% chance to be a glare star
 
     for (let i = 0; i < count; i++) {
-      // 使用球體坐標生成均勻分佈的點
+      // Position (same spherical distribution)
       const u = Math.random();
       const v = Math.random();
-      const theta = 2 * Math.PI * u; // Azimuthal angle
-      const phi = Math.acos(2 * v - 1); // Polar angle
-      const r = radius * Math.cbrt(Math.random()); // Cube root distribution for volume
-
+      const theta = 2 * Math.PI * u;
+      const phi = Math.acos(2 * v - 1);
+      const r = radius * Math.cbrt(Math.random());
       const x = r * Math.sin(phi) * Math.cos(theta);
       const y = r * Math.sin(phi) * Math.sin(theta);
       const z = r * Math.cos(phi);
-
       positions.set([x, y, z], i * 3);
+
+      // Size (random variation)
+      sizes[i] = THREE.MathUtils.randFloat(0.5, 1.5);
+
+      // Twinkle data
+      twinkleOffsets[i] = Math.random() * 2 * Math.PI;
+      twinkleSpeeds[i] = THREE.MathUtils.randFloat(0.2, 0.7); // Slightly slower range
+      minOpacities[i] = THREE.MathUtils.randFloat(0.1, 0.4); // Lower min opacity for more twinkle
+      maxOpacities[i] = THREE.MathUtils.randFloat(0.7, 1.0); // Allow some stars to be fully opaque
+
+      // Glare status
+      isGlares[i] = Math.random() < glareProbability ? 1.0 : 0.0;
+      if (isGlares[i] > 0.5) {
+        // Ensure glare stars are generally brighter
+        minOpacities[i] = Math.max(minOpacities[i], 0.4);
+        maxOpacities[i] = 1.0;
+      }
     }
-    return positions;
+
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geom.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+    geom.setAttribute('aTwinkleSpeed', new THREE.BufferAttribute(twinkleSpeeds, 1));
+    geom.setAttribute('aTwinkleOffset', new THREE.BufferAttribute(twinkleOffsets, 1));
+    geom.setAttribute('aMinOpacity', new THREE.BufferAttribute(minOpacities, 1));
+    geom.setAttribute('aMaxOpacity', new THREE.BufferAttribute(maxOpacities, 1));
+    geom.setAttribute('aIsGlare', new THREE.BufferAttribute(isGlares, 1));
+
+    return geom;
   }, [count]);
 
-  // 隨機化每個點的閃爍偏移和速度
-  const twinkleData = useMemo(() =>
-    Array.from({ length: count }, () => ({
-      offset: Math.random() * 2 * Math.PI, // 隨機起始相位
-      speed: THREE.MathUtils.randFloat(0.3, 0.8), // 隨機閃爍速度
-      minOpacity: 0.3, // 最小透明度
-      maxOpacity: 0.8, // 最大透明度 (不要太亮)
-    })),
-  [count]);
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+    uBaseSize: { value: 15.0 } // Base size multiplier - adjust this value to change overall star size
+  }), []);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, camera }) => {
     const elapsedTime = clock.getElapsedTime();
-
     if (materialRef.current) {
-      // 整體材質透明度變化模擬閃爍 - 較簡單但效果可能不夠自然
-      // materialRef.current.opacity = 0.5 + Math.sin(elapsedTime * 0.5) * 0.2;
-
-      // 注意：PointMaterial 不直接支持單獨點的透明度控制。
-      // 要實現單獨點閃爍，需要更複雜的 ShaderMaterial。
-      // 作為折衷，我們可以讓整體透明度有一個非常明顯的波動來測試。
-      materialRef.current.opacity = 0.5 + Math.sin(elapsedTime * 1.0) * 0.5; // 更快的速度，更大的範圍 (0.0 to 1.0)
+      materialRef.current.uniforms.uTime.value = elapsedTime;
     }
 
-    // 如果傳入了 rotationRef，則同步旋轉
+    // Rotation logic remains the same
     if (pointsRef.current && rotationRef?.current) {
         pointsRef.current.rotation.copy(rotationRef.current.rotation);
     } else if (pointsRef.current) {
-        // 否則，給一個默認的慢速旋轉
         pointsRef.current.rotation.x += 0.0001;
         pointsRef.current.rotation.y += 0.0002;
     }
   });
 
+  // Cleanup geometry on unmount
+  React.useEffect(() => {
+    return () => {
+      if (geometryRef.current) {
+        geometryRef.current.dispose();
+      }
+    };
+  }, []);
+
+
   return (
-    <Points ref={pointsRef} positions={particlesPosition} stride={3} frustumCulled={false}>
-      <PointMaterial
+    <Points ref={pointsRef} geometry={geometry} frustumCulled={false}>
+      {/* Geometry is now passed directly, no need for bufferAttribute children */}
+      <shaderMaterial
         ref={materialRef}
-        transparent
-        color="#ffffff" // 星星顏色 (白色)
-        size={0.2} // 大幅增加尺寸以便觀察
-        sizeAttenuation={true}
-        depthWrite={false} // <--- 恢復為 false
-        blending={THREE.NormalBlending} // 保持 NormalBlending
-        opacity={1.0} // 設置最高基礎透明度
+        key={Date.now()} // Add key to force re-creation if needed, helps with HMR sometimes
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        uniforms={uniforms}
+        transparent={true}
+        depthWrite={false} // Important for blending
+        blending={THREE.AdditiveBlending} // Use AdditiveBlending for a brighter, more "glowy" look
       />
     </Points>
   );

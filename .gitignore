@@ -26,3 +26,6 @@ dist-ssr
 # SSL Certificates
 privkey.pem
 fullchain.pem
+
+# Other ignored files
+tasklist

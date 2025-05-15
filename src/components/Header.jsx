@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react'; // 引入 useState
 import { useLocation, useNavigate } from 'react-router-dom'; // 導入 useLocation 和 useNavigate
 import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload } from 'react-icons/fa';
 import './Header.css';
 
 // Updated Header to accept activeSection prop and handle navigation
 function Header({ activeSection }) {
+  const [showDownloadModal, setShowDownloadModal] = useState(false); // State for modal visibility
   const location = useLocation(); // 獲取當前位置
   const navigate = useNavigate(); // 獲取導航函數
   const isHomePage = location.pathname === '/'; // 判斷是否在主頁
@@ -25,6 +26,11 @@ function Header({ activeSection }) {
     }
   };
 
+  // 處理下載按鈕點擊，切換彈出視窗
+  const handleDownloadClick = () => {
+    setShowDownloadModal(!showDownloadModal);
+  };
+
   // Helper function to create nav links with icons and click handler
   const NavLink = ({ sectionId, icon: Icon, text }) => (
     <li>
@@ -42,7 +48,7 @@ function Header({ activeSection }) {
 
   return (
     <header className="app-header">
-      <div className="logo">楊泰和</div> {/* 根據履歷圖片 */}
+      <div className="logo">Koimsurai</div> {/* 根據履歷圖片 */}
       <nav>
         <ul>
           {/* 移除 href，傳遞 sectionId */}
@@ -55,11 +61,27 @@ function Header({ activeSection }) {
           <NavLink sectionId="contact" icon={FaEnvelope} text="聯絡我" />
         </ul>
       </nav>
-      {/* TODO: 下載履歷按鈕功能 */}
-      <button className="download-button" onClick={() => alert('下載功能待實現')}>
+      {/* Download Button */}
+      <button className="download-button" onClick={handleDownloadClick}>
         <FaDownload className="download-icon" /> {/* Add download icon */}
         下載履歷
       </button> {/* Figma 中是 "下载简历与作品集" */}
+
+      {/* Download Modal */}
+      {showDownloadModal && (
+        <div className="download-modal-overlay" onClick={handleDownloadClick}> {/* Overlay closes modal */}
+          <div className="download-modal-content" onClick={(e) => e.stopPropagation()}> {/* Prevent content click from closing modal */}
+            <h2>選擇要下載的履歷</h2>
+            <a href="/Resume/Software Engineer.pdf" download="楊泰和_履歷_軟體工程師.pdf" className="modal-download-link">
+              軟體工程師 (Software Engineer)
+            </a>
+            <a href="/Resume/School Clubs.pdf" download="楊泰和_履歷_社團經歷.pdf" className="modal-download-link">
+              社團經歷 (School Clubs)
+            </a>
+            <button onClick={handleDownloadClick} className="modal-close-button">關閉</button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

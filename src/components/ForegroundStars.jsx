@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ForegroundStars.css';
 
-const ForegroundStars = ({ count = 10 }) => {
+const ForegroundStars = ({ count = 50 }) => {
   const [stars, setStars] = useState([]);
   const containerRef = useRef(null);
 

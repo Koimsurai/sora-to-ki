@@ -107,7 +107,7 @@ function Hero() {
             <a href="https://www.facebook.com/profile.php?id=100003126780663" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
               <FaFacebook />
             </a>
-            <a href="https://pda.104.com.tw/profile/share/6RVlSlXFeuvwusTLTlxKwpRsoBxcCu5Z" target="_blank" rel="noopener noreferrer" aria-label="104 Job Bank">
+            <a href="https://pda.104.com.tw/profile/share/8tLJLrLCpeLVYvx6blZCgZAegH4nw6ml" target="_blank" rel="noopener noreferrer" aria-label="104 Job Bank">
               <FaBriefcase /> {/* 使用公事包圖示代表 104 */}
             </a>
           </div>
