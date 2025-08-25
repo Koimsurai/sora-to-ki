@@ -22,3 +22,15 @@
     font-size: 0.8em;
   }
 }
+
+/* 後台登入連結樣式 */
+.admin-login-link {
+  color: inherit; /* 繼承父元素的顏色 */
+  text-decoration: none; /* 移除下劃線 */
+  transition: color 0.3s ease; /* 平滑顏色過渡 */
+}
+
+.admin-login-link:hover {
+  color: var(--clr-primary); /* 滑鼠懸停時變色 */
+  text-decoration: underline; /* 滑鼠懸停時顯示下劃線 */
+}

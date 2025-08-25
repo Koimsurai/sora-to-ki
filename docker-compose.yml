@@ -24,12 +24,15 @@ services:
     working_dir: /usr/src/app
     volumes:
       - ./server:/usr/src/app
+    environment:
+      - ADMIN_USERNAME=timo9378
+      - ADMIN_PASSWORD=jces5556
     command: sh -c "npm install && npm run dev"
     ports:
       - "3001:3001"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "sh", "-c", "apk add --no-cache curl && curl -f http://localhost:3001/health || exit 1"]
+      test: ["CMD", "sh", "-c", "apk add --no-cache curl && curl -f http://localhost:3001/api/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

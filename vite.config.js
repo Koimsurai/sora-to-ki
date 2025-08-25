@@ -114,8 +114,11 @@ export default defineConfig(({ command }) => {
       port: 13579,
       // HTTPS is disabled to work behind Nginx SSL termination
       hmr: {
-        // 客戶端應連線到與伺服器相同的端口
-        clientPort: 13579
+        // Since we are behind a reverse proxy (Nginx), we need to tell the HMR client
+        // to connect to a specific path that Nginx is configured to proxy for WebSockets.
+        protocol: 'wss', // Use secure WebSocket protocol
+        path: '/ws',     // The path we defined in nginx.conf for WebSocket proxying
+        // clientPort is no longer needed as Nginx handles the public-facing port (13579)
       },
       allowedHosts: ['koimsurai.blogsyte.com'], // 允許此主機訪問
       proxy: {

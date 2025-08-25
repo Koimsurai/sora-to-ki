@@ -44,6 +44,9 @@ const LazyTransitionAnimation = lazy(() => import('./components/TransitionAnimat
 const LazyBlog = lazy(() => import('./components/Blog'));
 const LazyBlogPost = lazy(() => import('./components/BlogPost'));
 const LazyCreatePost = lazy(() => import('./components/CreatePost'));
+const LazyAdminLogin = lazy(() => import('./components/AdminLogin'));
+const LazyAdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const LazyAdvancedEditor = lazy(() => import('./components/AdvancedEditor'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -285,10 +288,15 @@ function SpaceDebris({ count = 200 }) {
 
 function App() {
   const [isLoading, setIsLoading] = useState(true); // State for loading screen
-  const [animateSaturn, setAnimateSaturn] = useState(false);
-  const [showMainHtmlContent, setShowMainHtmlContent] = useState(false);
+
+  // --- 檢查 sessionStorage 來決定是否顯示開場動畫 ---
+  const introCompleted = sessionStorage.getItem('introCompleted') === 'true';
+
+  const [animateSaturn, setAnimateSaturn] = useState(introCompleted); // 如果動畫已完成，直接啟動土星
+  const [showMainHtmlContent, setShowMainHtmlContent] = useState(introCompleted); // 如果動畫已完成，直接顯示內容
   const [saturnZIndex, setSaturnZIndex] = useState(1);
-  const [introVisible, setIntroVisible] = useState(true);
+  const [introVisible, setIntroVisible] = useState(!introCompleted); // 如果動畫已完成，則不顯示動畫
+
   const introCompleteTimeoutRef = useRef(null);
   const sharedRotationRef = useRef(); // Shared rotation ref
   const [activeSection, setActiveSection] = useState('home'); // State for active section
@@ -319,6 +327,13 @@ function App() {
     // setAnimateSaturn(true); // <-- REMOVED: Moved to handleSingularityShrunk
     setShowMainHtmlContent(true);
     setSaturnZIndex(1); // Reset Canvas z-index to background layer
+
+    // --- 在 sessionStorage 中設置標記 ---
+    try {
+      sessionStorage.setItem('introCompleted', 'true');
+    } catch (error) {
+      console.error("無法寫入 sessionStorage", error);
+    }
 
     // Schedule IntroAnimation removal after its fade-out (300ms)
     clearTimeout(introCompleteTimeoutRef.current); // Clear previous timeout if any
@@ -444,6 +459,27 @@ function App() {
                   <Route path="/blog/create" element={
                     <Suspense fallback={<LoadingFallback />}>
                       <LazyCreatePost />
+                    </Suspense>
+                  } />
+                  {/* 管理後台路由 */}
+                  <Route path="/admin/login" element={
+                    <Suspense fallback={<LoadingFallback />}>
+                      <LazyAdminLogin />
+                    </Suspense>
+                  } />
+                  <Route path="/admin" element={
+                    <Suspense fallback={<LoadingFallback />}>
+                      <LazyAdminDashboard />
+                    </Suspense>
+                  } />
+                  <Route path="/admin/create" element={
+                    <Suspense fallback={<LoadingFallback />}>
+                      <LazyAdvancedEditor />
+                    </Suspense>
+                  } />
+                  <Route path="/admin/edit/:id" element={
+                    <Suspense fallback={<LoadingFallback />}>
+                      <LazyAdvancedEditor />
                     </Suspense>
                   } />
                 </Routes>

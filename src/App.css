@@ -1,8 +1,11 @@
 /* 清空預設樣式 */
+html, body {
+  overflow-x: hidden;
+}
 
-/* 清空預設樣式 */
-
-/* 移除舊的 CSS 星空背景和流星動畫 */
+body {
+  position: relative;
+}
 
 /* 確保 App 容器有背景色，否則星星看不見 */
 .App {
@@ -27,34 +30,3 @@
   background-attachment: fixed; /* 固定背景，防止閃爍/移動 */
   min-height: 100vh; /* 確保背景至少填滿視窗高度 */
 }
-
-/* 移除獨立的塵埃帶圖層規則 */
-
-
-/* Removed animation styles for main-content-container as it's now controlled by conditional rendering */
-.main-content-container {
-  /* No specific animation styles needed here */
-}
-
-/* Removed .animate-in class rule */
-
-/* Removed .visible class rule */
-.main-content-container.visible {
-  /* No specific styles needed here anymore, */
-  /* visibility is controlled by conditional rendering in App.jsx */
-  /* or rely on parent display properties */
-}
-
-/* Background fade-in - REMOVED as background is now always visible */
-/*
-.fixed-gradient-background,
-.fixed-canvas-background {
-  opacity: 0;
-  transition: opacity 1s ease-in;
-}
-
-.fixed-gradient-background.visible,
-.fixed-canvas-background.visible {
-  opacity: 1;
-}
-*/

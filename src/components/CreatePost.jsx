@@ -54,40 +54,58 @@ function CreatePost() {
 
   return (
     <div className="create-post-container">
-      <h1 className="create-post-title">新增文章</h1>
-      <form onSubmit={handleSubmit} className="create-post-form">
-        <div className="form-group">
-          <label htmlFor="title">標題</label>
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="content">內容</label>
-          <textarea
-            id="content"
-            rows="15"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            required
-          ></textarea>
-        </div>
-        <div className="form-group">
-          <label htmlFor="tags">標籤 (以逗號分隔)</label>
-          <input
-            type="text"
-            id="tags"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            placeholder="例如：React, CSS, Bugfix"
-          />
-        </div>
-        <button type="submit" className="submit-post-button">發佈文章</button>
-      </form>
+      <div className="create-post-wrapper">
+        <h1 className="create-post-title">🚀 創建新的太空探索</h1>
+        <form onSubmit={handleSubmit} className="create-post-form">
+          <div className="form-group">
+            <label htmlFor="title">🌟 文章標題</label>
+            <input
+              type="text"
+              id="title"
+              placeholder="為您的太空冒險命名..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="content">📝 探索內容</label>
+            <textarea
+              id="content"
+              rows="15"
+              placeholder="分享您在宇宙中的發現和見解..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              required
+            ></textarea>
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="tags">🏷️ 探索標籤 (以逗號分隔)</label>
+            <input
+              type="text"
+              id="tags"
+              placeholder="例如：React, CSS, 前端開發, 太空技術"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+            />
+          </div>
+          
+          <div className="form-actions">
+            <button type="submit" className="submit-btn">
+              ✨ 發射文章
+            </button>
+            <button 
+              type="button" 
+              className="cancel-btn"
+              onClick={() => navigate('/admin')}
+            >
+              🔙 返回控制台
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

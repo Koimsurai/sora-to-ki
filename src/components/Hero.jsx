@@ -74,7 +74,7 @@ function Hero() {
       {/* 移除 Saturn3D 和 Particles 的渲染 */}
 
       {/* Keep motion.div for overall content animation, but remove whileInView for text */}
-      <div className="hero-content">
+      <div className="home-hero-content">
         {/* Apply Parallax, but remove motion from h1 */}
         <Parallax speed={10}> {/* 稍微快一點 */}
           {/* Use pre-wrap to handle newline characters */}
@@ -113,7 +113,7 @@ function Hero() {
           </div>
           <a href="#contact" className="cta-button">聯絡我</a>
         </div>
-      </div> {/* Close hero-content div */}
+      </div> {/* Close home-hero-content div */}
       {/* 移除圖片容器 */}
       {/* 新增：裝飾性元素 */}
       <div className="hero-decoration hero-decoration-1"></div>

@@ -17,15 +17,14 @@
 
 /* 移除 ::before 偽元素 */
 
-.hero-content {
-  max-width: 50%; /* 限制文字內容寬度 */
-  /* width: 50%; */ /* 移除固定寬度 */
-  z-index: 2; /* 確保在背景文字之上 */
-  /* 移除 transform 和 margin */
-  margin-left: 15%; /* 添加一些左邊距，將內容稍微推離左邊緣 */
+.home-hero-content {
+  max-width: 70%; /* 增加最大寬度以容納更長的文本 */
+  z-index: 2;
+  margin-left: 5%; /* 減少左邊距，讓內容更靠左 */
+  padding-left: 2rem;
 }
 
-.hero-content h1 {
+.home-hero-content h1 {
   /* 參考 Figma style_1VOWPE */
   font-family: 'HarmonyOS Sans SC', sans-serif; /* 優先使用指定字體 */
   font-size: 3em; /* 調整大小 */
@@ -33,9 +32,10 @@
   line-height: 1.2; /* 行高 */
   margin-bottom: 25px; /* 增加標題下方間距 */
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
+  white-space: pre-wrap; /* 確保換行符生效 */
 }
 
-.hero-content .tagline {
+.home-hero-content .tagline {
   /* 參考履歷 Software Engineer */
   font-size: 1.8em; /* 稍微增大字號 */
   font-style: italic; /* 使用斜體 */
@@ -44,9 +44,10 @@
   margin-top: 10px; /* 增加上方間距 */
   margin-bottom: 30px; /* 增加座右銘下方間距 */
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
+  white-space: pre-wrap; /* 確保換行符生效 */
 }
 
-.hero-content .description {
+.home-hero-content .description {
   /* 參考 Figma style_9RS2T9 和履歷 Profile */
   font-family: 'HarmonyOS Sans SC', sans-serif;
   font-size: 1.1em; /* 調整大小 */
@@ -315,17 +316,22 @@
     min-height: auto; /* 取消最小高度限制 */
   }
 
-  .hero-content,
+  .home-hero-content {
+    max-width: 90%;
+    margin-left: 0; /* 在小屏幕上移除左邊距 */
+    padding-left: 0; /* 在小屏幕上移除內邊距 */
+  }
+
   .hero-image-container {
-    max-width: 90%; /* 增加寬度 */
+    max-width: 90%;
     margin-bottom: 30px;
   }
 
-  .hero-content h1 {
+  .home-hero-content h1 {
     font-size: 2.5em;
   }
 
-  .hero-content .description {
+  .home-hero-content .description {
      font-size: 1em;
   }
 
