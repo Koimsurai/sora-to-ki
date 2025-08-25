@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "title": "第一篇學習筆記：React Hooks",
+    "date": "2025-08-23",
+    "author": "Koimsurai",
+    "tags": ["React", "JavaScript", "Frontend"],
+    "summary": "這是我第一篇關於 React Hooks 的學習筆記。在這篇文章中，我將會探討 useState 和 useEffect 的基本用法...",
+    "content": "<h1>React Hooks 深入探討</h1><p>在這篇文章中，我們將深入探討 React Hooks 的核心概念。</p><h2>useState</h2><p><code>useState</code> 是 React 中最基本的 Hook 之一。它允許你在函式組件中加入 state。...</p><h2>useEffect</h2><p><code>useEffect</code> Hook 可以在函式組件中執行副作用操作。例如，資料獲取、訂閱或手動操作 DOM...</p>"
+  },
+  {
+    "id": 2,
+    "title": "工單紀錄：修復導覽列樣式問題",
+    "date": "2025-08-22",
+    "author": "Koimsurai",
+    "tags": ["CSS", "Bugfix", "UI"],
+    "summary": "這是一篇關於修復導覽列在行動裝置上樣式跑版問題的工單紀錄。問題主要出在 Flexbox 的設定上...",
+    "content": "<h1>導覽列樣式問題修復</h1><p><strong>問題描述：</strong> 在螢幕寬度小於 768px 時，導覽列的項目會重疊。</p><p><strong>根本原因：</strong> CSS 中 `.nav-links` 的 `flex-wrap` 屬性被設定為 `nowrap`。</p><p><strong>解決方案：</strong> 將其改為 `wrap`，並為項目新增最小寬度，確保在空間不足時能正確換行。</p>"
+  },
+  {
+    "id": 3,
+    "title": "Docker 環境設定心得",
+    "date": "2025-08-21",
+    "author": "Koimsurai",
+    "tags": ["Docker", "DevOps", "Infrastructure"],
+    "summary": "設定 Docker 開發環境時，掛載 volume 以實現熱重載是一個非常重要的步驟。這篇文章記錄了我在設定 `docker-compose.yml` 時的一些心得...",
+    "content": "<h1>Docker 熱重載設定</h1><p>為了在開發時能夠即時看到程式碼的變更，我們需要在 `docker-compose.yml` 中設定 `volumes`。</p><pre><code>services:\n  my-app:\n    volumes:\n      - .:/app\n      - /app/node_modules</code></pre><p>第一個 volume 將本地程式碼掛載到容器中。第二個 volume 則是一個技巧，可以防止本地的 `node_modules` 覆蓋容器中已安裝的 `node_modules`。</p>"
+  }
+]

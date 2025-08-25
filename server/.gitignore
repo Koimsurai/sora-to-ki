@@ -1,0 +1,14 @@
+# Dependencies
+/node_modules
+
+# Environment variables
+.env
+
+# SQLite database
+/db.sqlite
+/db.sqlite-journal
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

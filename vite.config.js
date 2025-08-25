@@ -117,7 +117,22 @@ export default defineConfig(({ command }) => {
         // 客戶端應連線到與伺服器相同的端口
         clientPort: 13579
       },
-      allowedHosts: ['koimsurai.blogsyte.com'] // 允許此主機訪問
+      allowedHosts: ['koimsurai.blogsyte.com'], // 允許此主機訪問
+      proxy: {
+        // 將 /api 的請求代理到後端服務
+        '/api': {
+          target: 'http://backend:3001', // 後端服務在 Docker Compose 中的名稱和端口
+          changeOrigin: true, // 改變請求來源，對於虛擬主機是必要的
+          configure: (proxy, options) => {
+            proxy.on('error', (err, req, res) => {
+              console.log('[VITE-PROXY-ERROR]', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              console.log(`[VITE-PROXY-REQ] Sending request: ${req.method} ${req.url} to ${options.target}${proxyReq.path}`);
+            });
+          }
+        },
+      },
     },
     preview: { // Add explicit preview server config
       host: true, // Listen on all hosts (important for Docker)

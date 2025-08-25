@@ -1,0 +1,119 @@
+/* BlogPost Container */
+.blog-post-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 100px 20px;
+  color: #ccc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: rgba(10, 25, 47, 0.7); /* Slightly transparent background */
+  border-radius: 15px;
+  border: 1px solid rgba(0, 174, 255, 0.2);
+  backdrop-filter: blur(8px);
+  min-height: 100vh;
+}
+
+/* Post Title */
+.post-title {
+  font-size: 2.8rem;
+  color: #00d1ff;
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.3;
+  text-shadow: 0 0 8px rgba(0, 209, 255, 0.7);
+}
+
+/* Meta Info */
+.post-meta-info {
+  text-align: center;
+  color: #8899a6;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+/* Tags section in single post view */
+.post-tags {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(0, 174, 255, 0.2);
+}
+
+.post-tags .tag {
+  background-color: rgba(0, 174, 255, 0.15);
+  color: #00aeff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+}
+
+/* Main Content Area */
+.post-content {
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.post-content h1, .post-content h2, .post-content h3 {
+  color: #00aeff;
+  border-bottom: 2px solid rgba(0, 174, 255, 0.3);
+  padding-bottom: 10px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.post-content p {
+  margin-bottom: 20px;
+}
+
+.post-content a {
+  color: #00d1ff;
+  text-decoration: none;
+  border-bottom: 1px dotted #00d1ff;
+  transition: color 0.3s, background-color 0.3s;
+}
+
+.post-content a:hover {
+  color: #1a2a3a;
+  background-color: #00d1ff;
+}
+
+.post-content pre {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 174, 255, 0.2);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #f0f0f0;
+  font-family: 'Fira Code', 'Courier New', monospace;
+}
+
+.post-content code {
+  font-family: 'Fira Code', 'Courier New', monospace;
+  background-color: rgba(0, 174, 255, 0.1);
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #00d1ff;
+}
+
+.post-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Back to Blog Link */
+.back-to-blog-link {
+  display: inline-block;
+  margin-top: 50px;
+  font-size: 1rem;
+  color: #00aeff;
+  text-decoration: none;
+  transition: color 0.3s, transform 0.3s;
+}
+
+.back-to-blog-link:hover {
+  color: #fff;
+  transform: translateX(-5px);
+}

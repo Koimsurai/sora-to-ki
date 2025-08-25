@@ -1,0 +1,81 @@
+.create-post-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 100px 20px;
+  color: #ccc;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: rgba(10, 25, 47, 0.7);
+  border-radius: 15px;
+  border: 1px solid rgba(0, 174, 255, 0.2);
+  backdrop-filter: blur(8px);
+  min-height: 100vh;
+}
+
+.create-post-title {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 40px;
+  color: #00aeff;
+  text-shadow: 0 0 10px #00aeff;
+}
+
+.create-post-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #00d1ff;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 174, 255, 0.4);
+  color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  font-family: inherit;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #00d1ff;
+  box-shadow: 0 0 15px rgba(0, 174, 255, 0.5);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 200px;
+}
+
+.submit-post-button {
+  background: #00aeff;
+  color: #0a192f;
+  border: none;
+  padding: 15px 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  align-self: center;
+  margin-top: 20px;
+}
+
+.submit-post-button:hover {
+  background: #fff;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 174, 255, 0.2);
+}

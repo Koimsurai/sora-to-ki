@@ -29,3 +29,8 @@ fullchain.pem
 
 # Other ignored files
 tasklist
+
+# Backend specific ignores
+/server/.env
+/server/db.sqlite*
+/server/node_modules

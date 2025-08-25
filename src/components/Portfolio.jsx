@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom'; // 導入 Link 元件
-import photoMainImage from '../assets/Photo-main.webp'; // 導入攝影集封面圖片 (更新為 webp)
-import voltiCarTitleImage from '../assets/VoltiCar_title.png'; // 導入 VoltiCar 專案圖片
+import photoMainImage from '../assets/photo-main.webp'; // 導入攝影集封面圖片 (更新為 webp)
+import voltiCarTitleImage from '../assets/volticar_title.png'; // 導入 VoltiCar 專案圖片
 // 移除影片導入，因為它在 public 資料夾中
 import './Portfolio.css'; // 引入對應的 CSS 檔案
 

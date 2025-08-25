@@ -11,7 +11,7 @@ const AboutMe = () => {
         {/* 將文字內容包裹起來 */}
         <div className="about-me-text-content">
           <p>
-            你好！我是楊泰和，目前就讀於國立台灣科技大學資訊管理系三年級。我對科技充滿熱情，尤其在軟體開發與專案管理方面積累了豐富經驗。
+            你好！我是楊泰和，目前就讀於國立台灣科技大學資訊管理系四年級。我對科技充滿熱情，尤其在軟體開發與專案管理方面積累了豐富經驗。
           </p>
           <p>
             我具備 <strong>C++</strong>、<strong>Python</strong>、<strong>Java</strong> 的程式基礎，並擁有超過一年的 <strong>Android (Java/Kotlin)</strong> 與 <strong>Flutter</strong> App 開發實戰經驗，成功將補習班 App 上線維運。同時，我也投入於全端開發專案，運用 <strong>MongoDB</strong>、<strong>網站架設</strong>、<strong>Docker</strong> 部署及 <strong>Git</strong> 版本控制。

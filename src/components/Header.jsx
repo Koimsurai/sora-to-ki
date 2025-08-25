@@ -1,6 +1,6 @@
 import React, { useState } from 'react'; // 引入 useState
-import { useLocation, useNavigate } from 'react-router-dom'; // 導入 useLocation 和 useNavigate
-import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload } from 'react-icons/fa';
+import { Link, useLocation, useNavigate } from 'react-router-dom'; // 導入 Link, useLocation 和 useNavigate
+import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen } from 'react-icons/fa'; // 導入 FaBookOpen
 import './Header.css';
 
 // Updated Header to accept activeSection prop and handle navigation
@@ -32,19 +32,33 @@ function Header({ activeSection }) {
   };
 
   // Helper function to create nav links with icons and click handler
-  const NavLink = ({ sectionId, icon: Icon, text }) => (
-    <li>
-      {/* 使用 onClick 處理導航，href 保持 #id 以便語義化和潛在的直接訪問 */}
-      <a
-        href={`#${sectionId}`}
-        className={activeSection === sectionId && isHomePage ? 'active' : ''} // 僅在主頁時根據 activeSection 添加 active class
-        onClick={(e) => handleNavClick(e, sectionId)}
-      >
-        <Icon className="nav-icon" />
-        {text}
-      </a>
-    </li>
-  );
+  const NavLink = ({ sectionId, icon: Icon, text, to }) => {
+    const linkClass = to ? (location.pathname.startsWith(to) ? 'active' : '') : (activeSection === sectionId && isHomePage ? 'active' : '');
+
+    if (to) {
+      return (
+        <li>
+          <Link to={to} className={linkClass}>
+            <Icon className="nav-icon" />
+            {text}
+          </Link>
+        </li>
+      );
+    }
+
+    return (
+      <li>
+        <a
+          href={`#${sectionId}`}
+          className={linkClass}
+          onClick={(e) => handleNavClick(e, sectionId)}
+        >
+          <Icon className="nav-icon" />
+          {text}
+        </a>
+      </li>
+    );
+  };
 
   return (
     <header className="app-header">
@@ -58,6 +72,7 @@ function Header({ activeSection }) {
           <NavLink sectionId="work-experience" icon={FaBriefcase} text="工作經驗" />
           <NavLink sectionId="school-clubs" icon={FaUsers} text="社團經驗" />
           <NavLink sectionId="portfolio" icon={FaImages} text="作品集" />
+          <NavLink to="/blog" icon={FaBookOpen} text="學習筆記" />
           <NavLink sectionId="contact" icon={FaEnvelope} text="聯絡我" />
         </ul>
       </nav>

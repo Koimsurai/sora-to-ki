@@ -1,18 +1,36 @@
-version: '3.8' # 指定 Compose 檔案格式版本
-
 services:
-  personal-website: # 服務名稱，您可以自訂
+  frontend: # 將服務名稱改為 frontend
     build: . # 指定 Dockerfile 的位置 (目前目錄)
-    image: personal-website-app # 指定映像檔名稱 (與之前建置的相同)
-    container_name: personal-website-container # 指定容器名稱
+    image: personal-website-frontend # 指定映像檔名稱
+    container_name: personal-website-frontend # 指定容器名稱
     ports:
-      - "13578:13579" # 映射主機 13578 到容器 13579
+      - "13588:13579" # 將主機 port 改為 13588，避免衝突
     volumes:
       # 將主機的憑證檔案掛載到容器內的 /etc/certs/
       # 注意：Compose 會自動處理 Windows 路徑轉換
       - ./privkey.pem:/etc/certs/privkey.pem:ro # :ro 表示唯讀掛載 (建議)
       - ./fullchain.pem:/etc/certs/fullchain.pem:ro # :ro 表示唯讀掛載 (建議)
-      # (可選) 掛載原始碼以實現熱重載 (若 Vite 設定支援)
-      # - .:/app
-      # - /app/node_modules # 避免覆蓋容器內的 node_modules
+      # 掛載原始碼以實現熱重載
+      - .:/app
+      - /app/node_modules # 避免覆蓋容器內的 node_modules
     restart: unless-stopped # 設定容器重啟策略
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    image: node:18-alpine
+    container_name: personal-website-backend
+    working_dir: /usr/src/app
+    volumes:
+      - ./server:/usr/src/app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "apk add --no-cache curl && curl -f http://localhost:3001/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

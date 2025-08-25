@@ -41,6 +41,9 @@ const LazyContact = lazy(() => import('./components/Contact'));
 const LazyFooter = lazy(() => import('./components/Footer'));
 const LazyPhotoGallery = lazy(() => import('./components/PhotoGallery'));
 const LazyTransitionAnimation = lazy(() => import('./components/TransitionAnimation'));
+const LazyBlog = lazy(() => import('./components/Blog'));
+const LazyBlogPost = lazy(() => import('./components/BlogPost'));
+const LazyCreatePost = lazy(() => import('./components/CreatePost'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -426,6 +429,21 @@ function App() {
                   <Route path="/photos" element={
                     <Suspense fallback={<LoadingFallback />}>
                       <LazyPhotoGallery />
+                    </Suspense>
+                  } />
+                  <Route path="/blog" element={
+                    <Suspense fallback={<LoadingFallback />}>
+                      <LazyBlog />
+                    </Suspense>
+                  } />
+                  <Route path="/blog/:id" element={
+                    <Suspense fallback={<LoadingFallback />}>
+                      <LazyBlogPost />
+                    </Suspense>
+                  } />
+                  <Route path="/blog/create" element={
+                    <Suspense fallback={<LoadingFallback />}>
+                      <LazyCreatePost />
                     </Suspense>
                   } />
                 </Routes>
