@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import './MeteorShower.css';
+import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
 const MeteorShower = () => {
   const containerRef = useRef(null);
+  const { isVisible } = usePageVisibility();
 
   useEffect(() => {
     const createMeteor = () => {
@@ -36,7 +38,11 @@ const MeteorShower = () => {
     };
 
     // 定期創建流星
-    const interval = setInterval(createMeteor, 3000);
+    const interval = setInterval(() => {
+      if (isVisible) {
+        createMeteor();
+      }
+    }, 3000);
     
     // 初始創建幾顆流星
     for (let i = 0; i < 3; i++) {
@@ -44,7 +50,7 @@ const MeteorShower = () => {
     }
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isVisible]);
 
   return <div ref={containerRef} className="meteor-shower-container"></div>;
 };

@@ -1,111 +1,236 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './CreatePost.css';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import MDEditor from '@uiw/react-md-editor';
+import './AdvancedEditor.css';
 
 function CreatePost() {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
+  const [post, setPost] = useState({
+    title: '',
+    content: '',
+    excerpt: '',
+    tags: [],
+    status: 'draft'
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [tagInput, setTagInput] = useState('');
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = Boolean(id);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const user = prompt("請輸入管理員帳號：");
-    const pass = prompt("請輸入管理員密碼：");
-
-    if (!user || !pass) {
-      alert("未提供帳號或密碼，無法發佈。");
+  useEffect(() => {
+    // 檢查登入狀態
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      navigate('/admin/login');
       return;
     }
 
-    const credentials = btoa(`${user}:${pass}`);
+    // 如果是編輯模式，載入文章資料
+    if (isEdit) {
+      fetchPost();
+    }
+  }, [id, isEdit, navigate]);
 
-    const newPost = {
-      title,
-      content, // 將原始內容發送到後端，讓後端處理 HTML 轉換
-      tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag), // 過濾空標籤
-      author: 'Koimsurai', // 預設作者
-      date: new Date().toISOString().split('T')[0],
-    };
-
+  const fetchPost = async () => {
     try {
-      const response = await fetch('/api/posts', {
-        method: 'POST',
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/posts/${id}`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${credentials}`
-        },
-        body: JSON.stringify(newPost)
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
-        alert('文章已成功發佈！');
-        navigate('/blog');
+        const data = await response.json();
+        setPost({
+          title: data.title,
+          content: data.content,
+          excerpt: data.excerpt || '',
+          tags: data.tags || [],
+          status: data.status
+        });
+        setTagInput(data.tags ? data.tags.join(', ') : '');
+      } else if (response.status === 401) {
+        localStorage.removeItem('adminToken');
+        navigate('/admin/login');
       } else {
-        const errorData = await response.json();
-        alert(`發佈失敗：${errorData.message || '伺服器錯誤或憑證無效'}`);
+        setError('無法載入文章資料');
       }
     } catch (error) {
-      console.error('Error creating post:', error);
-      alert('發佈過程中發生網路錯誤。');
+      console.error('載入文章失敗:', error);
+      setError('載入文章失敗');
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    // 處理標籤
+    const tags = tagInput
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag);
+
+    // 自動生成摘要（如果沒有提供）
+    const excerpt = post.excerpt || post.content.substring(0, 150).replace(/[#*`]/g, '') + '...';
+
+    const postData = {
+      ...post,
+      tags,
+      excerpt
+    };
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      const url = isEdit ? `/api/posts/${id}` : '/api/posts';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(postData)
+      });
+
+      if (response.ok) {
+        alert(isEdit ? '文章已更新！' : '文章已創建！');
+        navigate('/admin');
+      } else if (response.status === 401) {
+        localStorage.removeItem('adminToken');
+        navigate('/admin/login');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || '儲存失敗');
+      }
+    } catch (error) {
+      console.error('儲存文章失敗:', error);
+      setError('儲存失敗，請稍後再試');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveDraft = () => {
+    setPost(prev => ({ ...prev, status: 'draft' }));
+    setTimeout(() => {
+      document.querySelector('form').dispatchEvent(
+        new Event('submit', { cancelable: true, bubbles: true })
+      );
+    }, 0);
+  };
+
+  const handlePublish = () => {
+    setPost(prev => ({ ...prev, status: 'published' }));
+    setTimeout(() => {
+      document.querySelector('form').dispatchEvent(
+        new Event('submit', { cancelable: true, bubbles: true })
+      );
+    }, 0);
+  };
+
   return (
-    <div className="create-post-container">
-      <div className="create-post-wrapper">
-        <h1 className="create-post-title">🚀 創建新的太空探索</h1>
-        <form onSubmit={handleSubmit} className="create-post-form">
+    <div className="advanced-editor">
+      <header className="editor-header">
+        <h1>{isEdit ? '編輯文章' : '創建新文章'}</h1>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => navigate('/admin')}
+          >
+            返回後台
+          </button>
+        </div>
+      </header>
+
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="editor-form">
+        <div className="editor-main-content">
           <div className="form-group">
-            <label htmlFor="title">🌟 文章標題</label>
             <input
               type="text"
               id="title"
-              placeholder="為您的太空冒險命名..."
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={post.title}
+              onChange={(e) => setPost(prev => ({ ...prev, title: e.target.value }))}
               required
+              disabled={isLoading}
+              placeholder="輸入文章標題..."
+              className="title-input"
             />
           </div>
-          
-          <div className="form-group">
-            <label htmlFor="content">📝 探索內容</label>
-            <textarea
-              id="content"
-              rows="15"
-              placeholder="分享您在宇宙中的發現和見解..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-            ></textarea>
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="tags">🏷️ 探索標籤 (以逗號分隔)</label>
-            <input
-              type="text"
-              id="tags"
-              placeholder="例如：React, CSS, 前端開發, 太空技術"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
+          <div className="markdown-editor-container">
+            <MDEditor
+              value={post.content}
+              onChange={(value) => setPost(prev => ({ ...prev, content: value || '' }))}
+              preview="edit"
+              height="100%"
+              data-color-mode="dark"
             />
           </div>
-          
-          <div className="form-actions">
-            <button type="submit" className="submit-btn">
-              ✨ 發射文章
-            </button>
-            <button 
-              type="button" 
-              className="cancel-btn"
-              onClick={() => navigate('/admin')}
+        </div>
+        <div className="editor-sidebar">
+          <div className="sidebar-section">
+            <label>文章設定</label>
+            <div className="form-group">
+              <label htmlFor="excerpt">文章摘要</label>
+              <textarea
+                id="excerpt"
+                value={post.excerpt}
+                onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
+                disabled={isLoading}
+                placeholder="輸入文章摘要（留空將自動生成）..."
+                rows="5"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="tags">標籤</label>
+              <input
+                type="text"
+                id="tags"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                disabled={isLoading}
+                placeholder="輸入標籤，用逗號分隔..."
+              />
+              <small className="form-hint">例如：JavaScript, React, 教學</small>
+            </div>
+            <div className="status-info">
+              當前狀態:
+              <span className={`status-badge ${post.status}`}>
+                {post.status === 'published' ? '已發佈' : '草稿'}
+              </span>
+            </div>
+          </div>
+          <div className="editor-actions">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={handleSaveDraft}
+              disabled={isLoading}
             >
-              🔙 返回控制台
+              {isLoading ? '儲存中...' : '儲存草稿'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handlePublish}
+              disabled={isLoading}
+            >
+              {isLoading ? '發佈中...' : '發佈文章'}
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 }

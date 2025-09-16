@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import './RandomComets.css'; // 導入新的 CSS
+import './RandomComets.css'; // 引入彗星的 CSS
+import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
 const getRandomValue = (min, max) => Math.random() * (max - min) + min;
 
@@ -30,6 +31,7 @@ const createComet = () => {
 };
 
 const RandomComets = ({ count = 1 }) => { // Reduce default comet count to 1
+  const { isVisible } = usePageVisibility();
   const [comets, setComets] = useState(() =>
     Array.from({ length: count }, createComet)
   );
@@ -73,17 +75,17 @@ const RandomComets = ({ count = 1 }) => { // Reduce default comet count to 1
               x: 0, // Initial relative transform offset
               y: 0,
             }}
-            animate={{
+            animate={isVisible ? {
               x: comet.endX, // Animate relative transform offset
               y: comet.endY,
               opacity: [0, 0.8, 0.8, 0], // Restore full opacity cycle
-            }}
+            } : {}}
             transition={{
               delay: comet.delay,
-              duration: comet.duration,
-              x: { duration: comet.duration, ease: 'linear' },
-              y: { duration: comet.duration, ease: 'linear' },
-              opacity: { duration: comet.duration, times: [0, 0.15, 0.9, 1] } // Restore times array
+              duration: isVisible ? comet.duration : 0,
+              x: { duration: isVisible ? comet.duration : 0, ease: 'linear' },
+              y: { duration: isVisible ? comet.duration : 0, ease: 'linear' },
+              opacity: { duration: isVisible ? comet.duration : 0, times: [0, 0.15, 0.9, 1] } // Restore times array
             }}
             onAnimationComplete={() => handleAnimationComplete(comet.id)} // Trigger replacement on completion
             exit={{ opacity: 0 }} // Keep exit for AnimatePresence handling if needed

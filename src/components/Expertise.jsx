@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'; // 引入 useState, useEffect, useRef
 import { motion } from 'framer-motion'; // 導入 motion
 import {
-  SiFigma, SiDart, SiMongodb, SiAdobepremierepro, SiAdobelightroom, SiKotlin, SiNotion, SiCanva // 新增 Notion, Canva
-} from 'react-icons/si'; // 設計/影音/DB/Mobile/生產力
+  SiFigma, SiDart, SiMongodb, SiAdobepremierepro, SiAdobelightroom, SiKotlin, SiNotion, SiCanva, // 新增 Notion, Canva
+  SiReact, SiJavascript, SiTypescript, SiDotnet, SiC, SiGo, SiAdobephotoshop, 
+  SiAdobeillustrator, SiHtml5, SiCss3 // 移除有問題的圖標
+} from 'react-icons/si'; // 設計/影音/DB/Mobile/生產力/前端/後端
 import {
-  FaJava, FaPython, FaLinux, FaGithub, FaDocker, FaNetworkWired, FaServer
-} from 'react-icons/fa'; // 後端/工具/網路
+  FaJava, FaPython, FaLinux, FaGithub, FaDocker, FaNetworkWired, FaServer, FaDatabase, FaCode
+} from 'react-icons/fa'; // 後端/工具/網路/資料庫/通用代碼圖標
 import './Expertise.css'; // 引入對應的 CSS 檔案
 
 // 將圖示元件化以便複用
@@ -24,13 +26,15 @@ const SkillIcon = ({ icon: Icon, name, description, showTooltip, hideTooltip, an
 
 
 function Expertise() {
-  // 更新技能分類和內容，新增 Productivity & Design
+  // 更新技能分類和內容，新增前端框架和更多技術
   const skills = {
+    '前端開發': ['React', 'JavaScript', 'TypeScript', 'HTML5', 'CSS3'],
+    '後端開發': ['ASP.NET', 'C', 'Go', 'Java', 'Python', 'SQL Server'],
     'Mobile Development': ['Dart', 'Kotlin'],
-    'Productivity & Design': ['Figma', 'Notion', 'Canva'], // 新增分類，放入 Figma, Notion, Canva
-    'Back-end': ['Java', 'Python', 'MongoDB'],
     'DevOps & Tools': ['Linux', 'Github', 'Docker'],
-    '影音剪輯': ['Premiere Pro', 'Lightroom'],
+    'Design & Multimedia': ['Photoshop', 'Illustrator', 'Figma', 'Premiere Pro', 'Lightroom'],
+    'Productivity & Design': ['Notion', 'Canva'], 
+    'Database & Data': ['MongoDB', 'JSON'],
     '網路技術': ['TCP/IP', 'HTTP/HTTPS']
   };
 
@@ -89,11 +93,24 @@ function Expertise() {
                 // 改用 div 包裹單個技能，取代 li
                 <div key={item} className="skill-item">
                   {/* 使用 SkillIcon 元件 */}
-                  {item === 'Dart' ? <SkillIcon icon={SiDart} name="Dart (Flutter)" description="Flutter App 開發語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                  {item === 'React' ? <SkillIcon icon={SiReact} name="React" description="前端框架" showTooltip={showTooltip} hideTooltip={hideTooltip} animationProps={{ rotate: [0, 360], transition: { duration: 4, repeat: Infinity, ease: "linear" } }} /> :
+                   item === 'JavaScript' ? <SkillIcon icon={SiJavascript} name="JavaScript" description="程式語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'TypeScript' ? <SkillIcon icon={SiTypescript} name="TypeScript" description="強型別 JavaScript" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'HTML5' ? <SkillIcon icon={SiHtml5} name="HTML5" description="網頁標記語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'CSS3' ? <SkillIcon icon={SiCss3} name="CSS3" description="樣式表語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'ASP.NET' ? <SkillIcon icon={SiDotnet} name="ASP.NET" description="微軟 Web 框架" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'C' ? <SkillIcon icon={SiC} name="C" description="系統程式語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'Go' ? <SkillIcon icon={SiGo} name="Go" description="Google 開發的程式語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'SQL Server' ? <SkillIcon icon={FaDatabase} name="SQL Server" description="微軟關聯式資料庫" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+
+                   item === 'Photoshop' ? <SkillIcon icon={SiAdobephotoshop} name="Photoshop" description="影像編輯軟體" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'Illustrator' ? <SkillIcon icon={SiAdobeillustrator} name="Illustrator" description="向量圖形設計軟體" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'JSON' ? <SkillIcon icon={FaCode} name="JSON" description="資料交換格式" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'Dart' ? <SkillIcon icon={SiDart} name="Dart (Flutter)" description="Flutter App 開發語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
                    item === 'Kotlin' ? <SkillIcon icon={SiKotlin} name="Kotlin" description="Android/跨平台開發語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
                    item === 'Figma' ? <SkillIcon icon={SiFigma} name="Figma" description="UI/UX 設計工具" showTooltip={showTooltip} hideTooltip={hideTooltip} animationProps={{ rotate: [0, 5, -5, 0], y: [0, -2, 2, 0] }} /> :
-                   item === 'Notion' ? <SkillIcon icon={SiNotion} name="Notion" description="筆記與協作工具" showTooltip={showTooltip} hideTooltip={hideTooltip} /> : // 新增 Notion
-                   item === 'Canva' ? <SkillIcon icon={SiCanva} name="Canva" description="線上設計平台" showTooltip={showTooltip} hideTooltip={hideTooltip} /> : // 新增 Canva
+                   item === 'Notion' ? <SkillIcon icon={SiNotion} name="Notion" description="筆記與協作工具" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
+                   item === 'Canva' ? <SkillIcon icon={SiCanva} name="Canva" description="線上設計平台" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
                    item === 'Java' ? <SkillIcon icon={FaJava} name="Java" description="後端程式語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
                    item === 'Python' ? <SkillIcon icon={FaPython} name="Python" description="多用途程式語言" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :
                    item === 'MongoDB' ? <SkillIcon icon={SiMongodb} name="MongoDB" description="NoSQL 資料庫" showTooltip={showTooltip} hideTooltip={hideTooltip} /> :

@@ -18,6 +18,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import CursorTrail from './components/CursorTrail';
 import ScrollToTop from './components/ScrollToTop'; // <--- 導入 ScrollToTop 元件
 // import TransitionAnimation from './components/TransitionAnimation'; // <-- Lazy load
+import { PageVisibilityProvider } from './contexts/PageVisibilityContext';
 import RandomShootingStars from './components/RandomShootingStars';
 import RandomComets from './components/RandomComets'; // 導入彗星元件
 import RandomUFOs from './components/RandomUFOs'; // 導入 UFO 元件
@@ -43,13 +44,19 @@ const LazyPhotoGallery = lazy(() => import('./components/PhotoGallery'));
 const LazyTransitionAnimation = lazy(() => import('./components/TransitionAnimation'));
 const LazyBlog = lazy(() => import('./components/Blog'));
 const LazyBlogPost = lazy(() => import('./components/BlogPost'));
-const LazyCreatePost = lazy(() => import('./components/CreatePost'));
 const LazyAdminLogin = lazy(() => import('./components/AdminLogin'));
-const LazyAdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const LazyAdminPanel = lazy(() => import('./components/AdminPanel'));
 const LazyAdvancedEditor = lazy(() => import('./components/AdvancedEditor'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
+
+const AdminPlaceholder = ({ title }) => (
+  <div style={{ padding: '2rem', color: 'white', background: '#1a202c', borderRadius: '8px', margin: '2rem' }}>
+    <h2 style={{ borderBottom: '1px solid #333', paddingBottom: '1rem' }}>{title}</h2>
+    <p style={{ marginTop: '1rem' }}>此頁面功能正在開發中。</p>
+  </div>
+);
 
 
 // --- Section Wrapper Component ---
@@ -300,6 +307,7 @@ function App() {
   const introCompleteTimeoutRef = useRef(null);
   const sharedRotationRef = useRef(); // Shared rotation ref
   const [activeSection, setActiveSection] = useState('home'); // State for active section
+  const [isPageVisible, setIsPageVisible] = useState(true); // Page visibility state
 
   // Callback function to update active section
   const handleSectionChange = useCallback((sectionId) => {
@@ -358,6 +366,21 @@ function App() {
     return () => clearTimeout(timer); // Cleanup timer on unmount
   }, []);
 
+  // Page Visibility API - 暫停動畫當用戶離開頁面
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+
+    // 添加事件監聽器
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // 清理函數
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Add fade-out class to loading screen before removing it
   const loadingScreenClass = `loading-screen ${!isLoading ? 'fade-out' : ''}`;
 
@@ -376,7 +399,8 @@ function App() {
     <BrowserRouter>
       <ScrollToTop /> {/* <--- 在 BrowserRouter 內部渲染 ScrollToTop */}
       <ParallaxProvider>
-        <div className="App">
+        <PageVisibilityProvider isVisible={isPageVisible}>
+          <div className="App">
 
           {/* Intro Animation Layer - Conditionally rendered */}
           {introVisible && (
@@ -456,11 +480,6 @@ function App() {
                       <LazyBlogPost />
                     </Suspense>
                   } />
-                  <Route path="/blog/create" element={
-                    <Suspense fallback={<LoadingFallback />}>
-                      <LazyCreatePost />
-                    </Suspense>
-                  } />
                   {/* 管理後台路由 */}
                   <Route path="/admin/login" element={
                     <Suspense fallback={<LoadingFallback />}>
@@ -469,7 +488,7 @@ function App() {
                   } />
                   <Route path="/admin" element={
                     <Suspense fallback={<LoadingFallback />}>
-                      <LazyAdminDashboard />
+                      <LazyAdminPanel />
                     </Suspense>
                   } />
                   <Route path="/admin/create" element={
@@ -482,6 +501,10 @@ function App() {
                       <LazyAdvancedEditor />
                     </Suspense>
                   } />
+                  {/* Placeholder routes for other admin pages */}
+                  <Route path="/admin/posts" element={<AdminPlaceholder title="文章管理" />} />
+                  <Route path="/admin/comments" element={<AdminPlaceholder title="留言審核" />} />
+                  <Route path="/admin/stats" element={<AdminPlaceholder title="數據統計" />} />
                 </Routes>
               </main>
               <Suspense fallback={<LoadingFallback />}>
@@ -498,6 +521,7 @@ function App() {
           <BackToTopButton />
 
         </div>
+        </PageVisibilityProvider>
       </ParallaxProvider>
     </BrowserRouter>
   );

@@ -1,8 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import './SpaceParticles.css';
+import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
 const SpaceParticles = () => {
   const canvasRef = useRef(null);
+  const { isVisible } = usePageVisibility();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -90,6 +92,12 @@ const SpaceParticles = () => {
 
     // 動畫循環
     const animate = () => {
+      // 檢查頁面是否可見
+      if (!isVisible) {
+        animationId = requestAnimationFrame(animate);
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach(particle => {
@@ -132,7 +140,7 @@ const SpaceParticles = () => {
       window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationId);
     };
-  }, []);
+  }, [isVisible]);
 
   return <canvas ref={canvasRef} className="space-particles-canvas" />;
 };

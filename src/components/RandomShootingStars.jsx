@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './RandomShootingStars.css'; // 導入 CSS
+import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
 const getRandomValue = (min, max) => Math.random() * (max - min) + min;
 
@@ -31,6 +32,7 @@ const createShootingStar = () => {
 };
 
 const RandomShootingStars = ({ count = 5 }) => { // Reduce default shooting star count to 5
+  const { isVisible } = usePageVisibility();
   const [stars, setStars] = useState(() =>
     Array.from({ length: count }, createShootingStar)
   );
@@ -81,17 +83,17 @@ const RandomShootingStars = ({ count = 5 }) => { // Reduce default shooting star
               x: 0, // Initial relative transform offset
               y: 0,
             }}
-            animate={{
+            animate={isVisible ? {
               x: star.endX, // Animate relative transform offset
               y: star.endY,
               opacity: [0, 1, 1, 0], // Restore full opacity cycle
-            }}
+            } : {}}
             transition={{
               delay: star.delay,
-              duration: star.duration, // Keep one duration
-              x: { duration: star.duration, ease: 'linear' }, // Keep one x transition
-              y: { duration: star.duration, ease: 'linear' },
-              opacity: { duration: star.duration, times: [0, 0.3, 0.95, 1] } // Restore times array
+              duration: isVisible ? star.duration : 0, // 頁面不可見時停止動畫
+              x: { duration: isVisible ? star.duration : 0, ease: 'linear' }, // Keep one x transition
+              y: { duration: isVisible ? star.duration : 0, ease: 'linear' },
+              opacity: { duration: isVisible ? star.duration : 0, times: [0, 0.3, 0.95, 1] } // Restore times array
             }}
             onAnimationComplete={() => handleAnimationComplete(star.id)} // Trigger replacement on completion
             exit={{ opacity: 0 }} // Keep exit for AnimatePresence handling if needed

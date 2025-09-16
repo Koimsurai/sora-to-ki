@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './RandomUFOs.css'; // 導入 UFO 的 CSS
+import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
 const getRandomValue = (min, max) => Math.random() * (max - min) + min;
 
@@ -40,6 +41,7 @@ const createUFO = () => {
 };
 
 const RandomUFOs = ({ count = 1 }) => { // UFO 數量減少為 1
+  const { isVisible } = usePageVisibility();
   const [ufos, setUfos] = useState(() =>
     Array.from({ length: count }, createUFO)
   );
@@ -84,21 +86,21 @@ const RandomUFOs = ({ count = 1 }) => { // UFO 數量減少為 1
               x: ufo.keyframesX[0], // 初始相對位置
               y: ufo.keyframesY[0]
             }}
-            animate={{
+            animate={isVisible ? {
               x: ufo.keyframesX, // 使用 keyframes 陣列進行動畫
               y: ufo.keyframesY,
               opacity: [0, 0.7, 0.7, 0.7, 0.7, 0], // 調整透明度變化以匹配 keyframes
               scale: ufo.scale, // 可以簡化 scale 動畫，或也用 keyframes
-            }}
+            } : {}}
             transition={{
               delay: ufo.delay,
-              duration: ufo.duration,
+              duration: isVisible ? ufo.duration : 0,
               ease: "easeInOut",
               // times 陣列需要與 keyframes 陣列長度匹配 (或省略讓 framer-motion 自動分配)
               // opacity: { duration: ufo.duration, times: [0, 0.1, 0.4, 0.6, 0.9, 1] },
-              opacity: { duration: ufo.duration, ease: "linear" }, // 簡化 opacity 過渡
-              x: { duration: ufo.duration, ease: "easeInOut" }, // 確保位移動畫平滑
-              y: { duration: ufo.duration, ease: "easeInOut" },
+              opacity: { duration: isVisible ? ufo.duration : 0, ease: "linear" }, // 簡化 opacity 過渡
+              x: { duration: isVisible ? ufo.duration : 0, ease: "easeInOut" }, // 確保位移動畫平滑
+              y: { duration: isVisible ? ufo.duration : 0, ease: "easeInOut" },
               // repeat: Infinity, // 可以讓它無限循環
               // repeatType: "mirror", // 來回播放
             }}

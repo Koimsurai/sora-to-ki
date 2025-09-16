@@ -3,10 +3,7 @@
   justify-content: space-between; /* 兩端對齊 */
   align-items: center; /* 垂直居中 */
   padding: 15px 30px; /* 上下 15px，左右 30px 的內距 */
-  /* background-color: var(--clr-bg-primary); */ /* 移除原本的背景色 */
-  background-color: rgba(13, 17, 23, 0.6); /* 半透明深色背景 (基於 --clr-bg-primary 的近似值) */
-  backdrop-filter: blur(10px); /* 玻璃模糊效果 */
-  -webkit-backdrop-filter: blur(10px); /* Safari 支援 */
+  background-color: transparent; /* 完全透明背景 */
   color: var(--clr-headline); /* 使用標題色 */
   position: fixed; /* 改為 fixed 以確保始終固定 */
   top: 0;
@@ -14,6 +11,7 @@
   width: 100%;
   box-sizing: border-box; /* padding 不會影響寬度 */
   z-index: 1000; /* 確保在最上層 */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9); /* 為所有文字添加陰影 */
   /* 微妙的底部光暈效果 */
   box-shadow: 0 1px 5px rgba(255, 255, 255, 0.1);
 }
@@ -21,6 +19,7 @@
 .logo {
   font-size: 1.5em; /* 稍大的字體 */
   font-weight: bold; /* 粗體 */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9); /* 為Logo添加陰影 */
 }
 
 .app-header nav ul {
@@ -41,6 +40,7 @@
   display: inline-flex; /* 讓圖標和文字在同一行並能垂直對齊 */
   align-items: center; /* 垂直居中對齊圖標和文字 */
   gap: 8px; /* 稍微增加圖標和文字之間的間距 */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9); /* 為導覽連結添加陰影 */
 }
 
 /* 導覽列圖標樣式 */
@@ -50,6 +50,7 @@
   /* line-height: 1; - 已由 align-items 處理 */
   vertical-align: middle; /* 再次確保垂直對齊 */
   margin-right: 4px; /* 輕微調整右邊距，gap 屬性已處理大部分間距 */
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9)); /* 為圖標添加陰影 */
 }
 
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'; // Added useCallback
 import './IntroAnimation.css';
+import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
 // Pre-calculated SVG spiral paths (approximations)
 // Path 1: Starts roughly top-left
@@ -10,6 +11,9 @@ const spiralPath2 = "M 180 150 C 120 200 -180 100 -120 -80 C -60 -200 150 -100 8
 
 // Removed onSingularityShrunk from props
 const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
+  // Page visibility hook
+  const { isVisible } = usePageVisibility();
+  
   // States: 'start', 'explode', 'complete'
   const [animationState, setAnimationState] = useState('start');
   // State to completely remove component after fade-out
@@ -44,6 +48,14 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
 
   const updateTrails = useCallback(() => {
     const currentTime = performance.now(); // Get current time at the start
+
+    // 檢查頁面是否可見，如果不可見則暫停動畫但繼續循環
+    if (!isVisible) {
+      if (animationState === 'start') {
+        animationFrameRef.current = requestAnimationFrame(updateTrails);
+      }
+      return;
+    }
 
     // Ensure we are in the correct state and refs/data are ready
     if (
@@ -120,7 +132,7 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
         animationFrameRef.current = null;
       }
     }
-  }, [animationState]); // Dependency: animationState
+  }, [animationState, isVisible]); // Dependency: animationState, isVisible
 
   // Effect to find paths, calculate lengths, and start/stop the animation frame loop
   useEffect(() => {
@@ -348,29 +360,7 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
                     <stop offset="100%" stopColor="rgba(180, 160, 220, 0)" />
                 </linearGradient>
 
-                 {/* Optional Blur Filter for Trails */}
-                <filter id="trailBlur" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="2" />
-                </filter>
-
-                {/* Removed ineffective mask definitions */}
-
-                {/* SVG filter for Gravitational Lensing effect */}
-                <filter id="gravitationalLens" x="-50%" y="-50%" width="200%" height="200%">
-                    {/* Generate turbulence noise for displacement map */}
-                    <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="turbulence"/>
-                    {/* Use the turbulence as a displacement map */}
-                    {/* Scale controls the intensity of the distortion */}
-                    <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="20" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-                    {/* Optional: Add a slight blur to the distorted result */}
-                    {/* <feGaussianBlur in="displaced" stdDeviation="1" result="blurredDisplacement"/> */}
-                    {/* Merge the original graphic slightly visible underneath? Or just the displacement? */}
-                    {/* Let's just show the displaced result for a strong effect */}
-                    {/* <feMerge>
-                        <feMergeNode in="blurredDisplacement"/>
-                        <feMergeNode in="SourceGraphic" result="original"/>
-                    </feMerge> */}
-                </filter>
+                {/* Removed all filter definitions */}
             </defs>
 
              {/* Render Trail Particles */}
@@ -405,27 +395,77 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
              ))}
 
 
-            {/* Star 1 */}
-            {/* Removed filter */}
-            <circle ref={star1Ref} className="star star-1" r="9">
-                {/* Animate along path1 */}
-                {animationState === 'start' && (
-                    <animateMotion dur="3.0s" fill="freeze" repeatCount="1"> {/* Increased duration */}
-                        <mpath href="#spiralPath1" />
-                    </animateMotion>
-                )}
-            </circle>
+            {/* Star 1 群組 - 藍白色恆星 */}
+            <g className="star-group star-group-1">
+                {/* 外圍發光 */}
+                <circle className="star-outer-glow" r="15" fill="#b3d9ff" opacity="0.3">
+                    {animationState === 'start' && (
+                        <animateMotion dur="3.0s" fill="freeze" repeatCount="1">
+                            <mpath href="#spiralPath1" />
+                        </animateMotion>
+                    )}
+                    <animate attributeName="r" values="15;18;15" dur="3s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.3;0.5;0.3" dur="3s" repeatCount="indefinite" />
+                </circle>
+                
+                {/* 主星體 */}
+                <circle ref={star1Ref} className="star star-1" r="9" fill="#b3d9ff" stroke="#ffffff" strokeWidth="0.5">
+                    {animationState === 'start' && (
+                        <animateMotion dur="3.0s" fill="freeze" repeatCount="1">
+                            <mpath href="#spiralPath1" />
+                        </animateMotion>
+                    )}
+                    <animate attributeName="r" values="9;11;9" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.9;1;0.9" dur="2s" repeatCount="indefinite" />
+                </circle>
+                
+                {/* 核心亮點 */}
+                <circle className="star-core" r="4" fill="#ffffff" opacity="0.8">
+                    {animationState === 'start' && (
+                        <animateMotion dur="3.0s" fill="freeze" repeatCount="1">
+                            <mpath href="#spiralPath1" />
+                        </animateMotion>
+                    )}
+                    <animate attributeName="r" values="4;5;4" dur="1.5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.8;1;0.8" dur="1.5s" repeatCount="indefinite" />
+                </circle>
+            </g>
 
-            {/* Star 2 */}
-            {/* Removed filter */}
-            <circle ref={star2Ref} className="star star-2" r="9">
-                {/* Animate along path2 */}
-                {animationState === 'start' && (
-                    <animateMotion dur="3.0s" fill="freeze" repeatCount="1"> {/* Increased duration */}
-                        <mpath href="#spiralPath2" />
-                    </animateMotion>
-                )}
-            </circle>
+            {/* Star 2 群組 - 藍白色恆星 */}
+            <g className="star-group star-group-2">
+                {/* 外圍發光 */}
+                <circle className="star-outer-glow" r="13" fill="#96c8ff" opacity="0.4">
+                    {animationState === 'start' && (
+                        <animateMotion dur="3.0s" fill="freeze" repeatCount="1">
+                            <mpath href="#spiralPath2" />
+                        </animateMotion>
+                    )}
+                    <animate attributeName="r" values="13;16;13" dur="2.5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.4;0.6;0.4" dur="2.5s" repeatCount="indefinite" />
+                </circle>
+                
+                {/* 主星體 */}
+                <circle ref={star2Ref} className="star star-2" r="8" fill="#96c8ff" stroke="#ffffff" strokeWidth="0.5">
+                    {animationState === 'start' && (
+                        <animateMotion dur="3.0s" fill="freeze" repeatCount="1">
+                            <mpath href="#spiralPath2" />
+                        </animateMotion>
+                    )}
+                    <animate attributeName="r" values="8;10;8" dur="1.8s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.9;1;0.9" dur="1.8s" repeatCount="indefinite" />
+                </circle>
+                
+                {/* 核心亮點 */}
+                <circle className="star-core" r="3" fill="#ffffff" opacity="0.9">
+                    {animationState === 'start' && (
+                        <animateMotion dur="3.0s" fill="freeze" repeatCount="1">
+                            <mpath href="#spiralPath2" />
+                        </animateMotion>
+                    )}
+                    <animate attributeName="r" values="3;4;3" dur="1.2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.9;1;0.9" dur="1.2s" repeatCount="indefinite" />
+                </circle>
+            </g>
 
             {/* Gravitational Lensing Effect Visualizer */}
         {/* This circle will appear at the center during explosion and apply the lens filter */}
@@ -436,7 +476,6 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
           fill="none" /* No fill, the effect comes from the filter on whatever is behind it (or maybe a stroke) */
           stroke="rgba(255, 255, 255, 0.5)" /* Optional faint stroke */
           strokeWidth="2"
-          filter="url(#gravitationalLens)"
           opacity="0" /* Start invisible */
         />
       </svg>

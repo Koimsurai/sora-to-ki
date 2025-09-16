@@ -4,7 +4,10 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #000; /* Start with black background */
+  background-color: #000; /* Start wi.star-trail-glow.trail-1-glow {
+  stroke-width: 7;
+  stroke: #b3d9ff;
+}lack background */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -51,25 +54,42 @@
 
 /* Remove singularity styles */
 
-/* Updated styles for the SVG stars (circles) */
+/* 星體群組樣式 */
+.star-group {
+  transform-origin: center;
+  transition: transform 0.15s ease-in, opacity 0.15s ease-in;
+}
+
+/* 主星體樣式 */
 .star {
-  /* Removed position, width, height, border-radius */
-  opacity: 1; /* SVG animateMotion handles initial appearance */
-  /* box-shadow is replaced by SVG filter */
-  /* Removed animation property */
-  /* Add transition for explosion effect - Make it faster and more drastic */
-  transition: transform 0.15s ease-in, opacity 0.15s ease-in; /* Faster transition */
+  opacity: 1;
+  transition: transform 0.15s ease-in, opacity 0.15s ease-in;
 }
 
-.star-1 {
-  fill: #f0e4ff; /* Light lavender - use fill for SVG */
-  /* Removed background-color and animation */
+/* Enhanced Star Layer Styles */
+.star-diffuse-halo {
+  mix-blend-mode: screen;
+  opacity: 0.15;
 }
 
-.star-2 {
-  fill: #d8bfff; /* Slightly deeper lavender - use fill for SVG */
-  /* Removed background-color */
-  /* Removed animation property */
+.star-outer-glow {
+  mix-blend-mode: screen;
+  opacity: 0.3;
+}
+
+.star-plasma {
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+}
+
+.star-mid-glow {
+  mix-blend-mode: plus-lighter;
+  opacity: 0.7;
+}
+
+.star-core {
+  mix-blend-mode: plus-lighter;
+  opacity: 0.95;
 }
 
 /* Removed duplicate .star-2 rule */
@@ -77,46 +97,143 @@
 /* Removed @keyframes star-trail-glow */
 
 
-/* Star explosion animation (applied when 'explode' class is added) */
-/* Target SVG circles directly with CSS transforms/opacity */
+/* 星體爆炸動畫 - 應用到整個星體群組 */
+.intro-animation-container.explode .star-group {
+  opacity: 0 !important;
+  transform: scale(25); /* 更大的爆炸效果 */
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+/* 星體爆炸動畫 - 應用到個別星體 */
 .intro-animation-container.explode .star {
-  /* Removed animation: star-explode */
-  /* Removed animation: none; and box-shadow: none; as they are no longer needed */
-  opacity: 0 !important; /* Force fade out */
-  /* Apply scaling transform directly */
-  /* Note: transform-origin is center for SVG elements by default */
-  transform: scale(15); /* Scale much larger for a more explosive disappearance */
-  /* Adjacent sibling selector removed as it was incorrect */
+  opacity: 0 !important;
+  transform: scale(25); /* 更大的爆炸效果 */
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+/* 爆炸時停止所有動畫 */
+.intro-animation-container.explode .star-group * {
+  animation-play-state: paused;
+}
+
+/* 爆炸時加強發光效果 */
+.intro-animation-container.explode .star-outer-glow {
+  opacity: 1 !important;
+  transform: scale(3);
+}
+
+/* Enhanced Star Trail Styles */
+.star-trail {
+  opacity: 1;
+  transition: opacity 0.3s ease-out;
+  /* Create a smooth gradient fade along the trail */
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  /* Apply sophisticated blending for cosmic effect */
+  mix-blend-mode: screen;
+}
+
+/* Trail glow effects */
+.star-trail-glow {
+  opacity: 0.4;
+  transition: opacity 0.3s ease-out;
+  mix-blend-mode: plus-lighter;
+  /* Create pulsing glow effect */
+  animation: trail-glow-pulse 2s ease-in-out infinite alternate;
+}
+
+/* Different trail styles for each star */
+.star-trail.trail-1 {
+  stroke-width: 4;
+  filter: url(#afterimageEffect);
+}
+
+.star-trail.trail-2 {
+  stroke-width: 3.5;
+  filter: url(#afterimageEffect);
+}
+
+.star-trail-glow.trail-1-glow {
+  stroke-width: 8;
+  stroke: #ffeb99;
+}
+
+.star-trail-glow.trail-2-glow {
+  stroke-width: 7;
+  stroke: #b3d9ff;
+}
+
+/* Trail pulsing animation */
+@keyframes trail-glow-pulse {
+  0% {
+    opacity: 0.2;
+    stroke-width: 6;
+  }
+  100% {
+    opacity: 0.5;
+    stroke-width: 10;
+  }
 }
 
 /* Hide trails immediately when exploding */
-.intro-animation-container.explode .star-trail {
+.intro-animation-container.explode .star-trail,
+.intro-animation-container.explode .star-trail-glow {
   opacity: 0;
+  transition: opacity 0.1s ease-out;
   transition: opacity 0.1s ease-out; /* Quick fade out */
 }
 
 /* Remove styles for the old .star-trail polyline */
 /* .star-trail { ... } */
 
-/* Styles for the new trail particles (SVG circles) */
-.trail-particle {
-  fill: rgba(220, 200, 255, 0.7); /* Light lavender, slightly transparent */
-  /* Apply the fade and shrink animation */
-  /* Animation duration should match PARTICLE_LIFETIME in JS (500ms) */
-  animation: trail-particle-fade 0.5s linear forwards;
-  /* Optional: Add blur */
-  /* filter: url(#trailBlur); */ /* Re-enable if desired, might impact performance */
+/* 軌跡粒子樣式 - 分別對應兩顆不同的恆星 */
+.trail-particle.trail-1 {
+  fill: rgba(179, 217, 255, 0.8); /* 藍白色軌跡對應第一顆恆星 */
+  animation: trail-particle-fade-1 0.5s ease-out forwards;
+  filter: url(#trailBlur);
 }
 
-/* Keyframes for particle fade and shrink */
-@keyframes trail-particle-fade {
+.trail-particle.trail-2 {
+  fill: rgba(150, 200, 255, 0.8); /* 藍白色軌跡對應第二顆恆星 */
+  animation: trail-particle-fade-2 0.5s ease-out forwards;
+  filter: url(#trailBlur);
+}
+
+/* 第一顆恆星的軌跡粒子動畫 */
+@keyframes trail-particle-fade-1 {
   from {
-    opacity: 0.7; /* Start slightly transparent */
-    r: 3; /* Initial radius */
+    opacity: 0.8;
+    r: 3;
+    fill: rgba(179, 217, 255, 0.8);
+  }
+  50% {
+    opacity: 0.6;
+    r: 2.5;
+    fill: rgba(150, 200, 255, 0.6);
   }
   to {
     opacity: 0;
-    r: 0; /* Shrink to nothing */
+    r: 1;
+    fill: rgba(120, 180, 255, 0);
+  }
+}
+
+/* 第二顆恆星的軌跡粒子動畫 */
+@keyframes trail-particle-fade-2 {
+  from {
+    opacity: 0.8;
+    r: 3;
+    fill: rgba(150, 200, 255, 0.8);
+  }
+  50% {
+    opacity: 0.6;
+    r: 2.5;
+    fill: rgba(100, 180, 255, 0.6);
+  }
+  to {
+    opacity: 0;
+    r: 1;
+    fill: rgba(80, 160, 200, 0);
   }
 }
 
@@ -143,36 +260,83 @@
   0% {
     r: 0;
     opacity: 0;
-    stroke-width: 5; /* Start thicker */
-    stroke: rgba(255, 255, 220, 0.9); /* Brighter, slightly yellow start */
+    stroke-width: 8;
+    stroke: rgba(255, 255, 255, 1); /* 純白開始 */
   }
-  20% { /* Expand faster */
-    r: 150; /* Expand larger */
+  10% {
+    r: 80;
     opacity: 1;
-    stroke-width: 3;
-    stroke: rgba(220, 200, 255, 0.7);
+    stroke-width: 6;
+    stroke: rgba(220, 240, 255, 0.9); /* 淺藍白閃光 */
+  }
+  30% {
+    r: 180;
+    opacity: 0.8;
+    stroke-width: 4;
+    stroke: rgba(179, 217, 255, 0.7); /* 藍白色 */
+  }
+  60% {
+    r: 280;
+    opacity: 0.4;
+    stroke-width: 2;
+    stroke: rgba(150, 200, 255, 0.5); /* 深藍白漸變 */
   }
   100% {
-    r: 250; /* Expand even further */
-    opacity: 0; /* Fade out completely */
-    stroke-width: 0.5; /* Fade out stroke */
-    stroke: rgba(180, 160, 220, 0);
+    r: 350;
+    opacity: 0;
+    stroke-width: 0.5;
+    stroke: rgba(120, 180, 255, 0);
   }
 }
 
 
 .particle {
   position: absolute;
-  width: 3px; /* Slightly larger base size */
-  height: 2px; /* Revert size */
-  background-color: #fff; /* Revert to white */
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   opacity: 0;
-  /* Revert glow */
-  box-shadow: 0 0 2px 0.5px #fff;
-  z-index: 2; /* Ensure particles are above the pseudo-element */
-  /* Variables set in JSX: --angle, --distance, --duration, --base-delay */
-  /* Removed color variation and blend mode */
+  z-index: 2;
+  /* 爆炸粒子的基礎樣式 - 將有不同的顏色變化 */
+}
+
+/* 外層粒子 - 混合顏色 */
+.particle:nth-child(3n) {
+  background-color: #b3d9ff; /* 淺藍白色 */
+  box-shadow: 0 0 4px 1px #7bb3ff;
+}
+
+.particle:nth-child(3n+1) {
+  background-color: #96c8ff; /* 中藍白色 */
+  box-shadow: 0 0 4px 1px #6ba3ff;
+}
+
+.particle:nth-child(3n+2) {
+  background-color: #fff; /* 白色 */
+  box-shadow: 0 0 3px 1px #b3d9ff;
+}
+
+/* 中層粒子 - 更亮的顏色 */
+.middle-particle:nth-child(2n) {
+  background-color: #96c8ff; /* 藍白色 */
+  box-shadow: 0 0 6px 2px #7bb3ff;
+  width: 5px;
+  height: 5px;
+}
+
+.middle-particle:nth-child(2n+1) {
+  background-color: #7bb3ff; /* 亮藍白色 */
+  box-shadow: 0 0 6px 2px #6ba3ff;
+  width: 5px;
+  height: 5px;
+}
+
+/* 內層粒子 - 最亮的核心色彩 */
+.inner-particle {
+  background-color: #ffffff;
+  box-shadow: 0 0 8px 3px #b3d9ff;
+  width: 6px;
+  height: 6px;
 }
 
 /* Remove color variations for some particles */

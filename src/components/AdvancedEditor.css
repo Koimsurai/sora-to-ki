@@ -1,166 +1,259 @@
+/* AdvancedEditor.css - Modernized to match AdminDashboard */
+
+:root {
+  --background-primary: #11151c;
+  --background-secondary: #1a202c;
+  --background-tertiary: #2d3748;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --text-primary: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --accent-primary: #38b2ac;
+  --accent-secondary: #63b3ed;
+  --danger-color: #e53e3e;
+}
+
+/* This component is part of the main admin layout, so we style it as a content block */
 .advanced-editor {
-  padding: 120px 20px 60px;
-  background-color: #0c0c1d;
-  color: #fff;
-  min-height: 100vh;
-  max-width: 900px;
-  margin: 0 auto;
+  padding: 0;
+  background-color: transparent;
+  min-height: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .editor-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .editor-header h1 {
-  font-size: 2.5rem;
-  color: #00aaff;
-  text-shadow: 0 0 10px #00aaff;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: none;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
 }
 
 .editor-form {
-  background: rgba(13, 29, 51, 0.8);
-  border: 1px solid rgba(0, 170, 255, 0.5);
-  border-radius: 15px;
-  padding: 30px;
-  backdrop-filter: blur(5px);
+  display: flex;
+  gap: 2rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .form-row {
-  margin-bottom: 20px;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.editor-main-content {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.markdown-editor-container {
+  flex: 1;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.markdown-editor-container .w-md-editor {
+  height: 100% !important;
+  min-height: 400px;
+}
+
+.markdown-editor-container .w-md-editor .w-md-editor-text-container {
+  height: calc(100% - 40px) !important;
+}
+
+.markdown-editor-container .w-md-editor .w-md-editor-text {
+  height: 100% !important;
+}
+
+
+.editor-sidebar {
+  flex: 0 0 300px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sidebar-section > label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
 .form-group label {
-  font-size: 1.1rem;
-  color: #88aaff;
-  margin-bottom: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
-.form-group input,
+.form-group input[type="text"],
 .form-group textarea {
   width: 100%;
-  padding: 12px;
-  background-color: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 170, 255, 0.4);
-  border-radius: 5px;
-  color: #fff;
+  padding: 0.75rem 1rem;
+  background-color: var(--background-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
   font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group input:focus,
+.form-group input[type="text"]:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #00aaff;
-  box-shadow: 0 0 10px rgba(0, 170, 255, 0.5);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(56, 178, 172, 0.3);
 }
 
 .form-hint {
   font-size: 0.85rem;
-  color: #6a85b6;
-  margin-top: 5px;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
 }
 
+/* MDEditor specific styling for dark mode */
 .markdown-editor-container .w-md-editor {
-  background-color: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(0, 170, 255, 0.4);
-  border-radius: 5px;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
 }
-
 .markdown-editor-container .w-md-editor-toolbar {
-  background-color: rgba(13, 29, 51, 0.9);
-  border-bottom: 1px solid rgba(0, 170, 255, 0.4);
+  background-color: #2d3748;
+  border-bottom: 1px solid var(--border-color);
+}
+.markdown-editor-container .w-md-editor-toolbar li button {
+  color: var(--text-secondary);
+}
+.markdown-editor-container .w-md-editor-toolbar li button:hover {
+  background-color: var(--accent-primary);
+  color: white;
+}
+.markdown-editor-container .wmde-markdown {
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
 }
 
-.markdown-editor-container .w-md-editor-text-input,
-.markdown-editor-container .w-md-editor-preview {
-  color: #e0e0e0;
-}
 
 .editor-actions {
+  margin-top: auto; /* Pushes actions to the bottom */
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(0, 170, 255, 0.3);
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .status-info {
-  font-size: 1rem;
-  color: #88aaff;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .status-badge {
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  margin-left: 10px;
-  font-weight: bold;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  margin-left: 8px;
+  font-weight: 600;
+  text-transform: capitalize;
+  display: inline-block;
+  border: none;
 }
 
 .status-badge.published {
-  background-color: rgba(0, 255, 127, 0.2);
-  color: #00ff7f;
-  border: 1px solid rgba(0, 255, 127, 0.4);
+  background-color: rgba(56, 178, 172, 0.1);
+  color: var(--accent-primary);
 }
 
 .status-badge.draft {
-  background-color: rgba(255, 165, 0, 0.2);
-  color: #ffa500;
-  border: 1px solid rgba(255, 165, 0, 0.4);
+  background-color: rgba(237, 137, 54, 0.1);
+  color: #ed8936;
 }
 
 .action-buttons {
-  display: flex;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .btn {
-  padding: 10px 20px;
-  border-radius: 5px;
-  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
   cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
 }
 
 .btn-primary {
-  background-color: #00aaff;
+  background-color: var(--accent-primary);
   color: #fff;
 }
-
 .btn-primary:hover:not(:disabled) {
-  background-color: #0077b3;
-  box-shadow: 0 0 15px rgba(0, 170, 255, 0.6);
+  background-color: #2c7a7b;
 }
 
 .btn-secondary {
-  background-color: transparent;
-  color: #88aaff;
-  border: 1px solid #88aaff;
+  background-color: var(--background-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
 }
-
 .btn-secondary:hover:not(:disabled) {
-  background-color: rgba(0, 170, 255, 0.2);
-  color: #fff;
+  background-color: #4a5568;
 }
 
 .btn-outline {
   background-color: transparent;
-  color: #ffa500;
-  border: 1px solid #ffa500;
+  color: var(--accent-secondary);
+  border-color: var(--accent-secondary);
 }
-
 .btn-outline:hover:not(:disabled) {
-  background-color: rgba(255, 165, 0, 0.2);
-  color: #fff;
+  background-color: rgba(99, 179, 237, 0.1);
 }
 
 .btn:disabled {
@@ -169,10 +262,197 @@
 }
 
 .error-message {
-  color: #ff4d4d;
-  background-color: rgba(255, 77, 77, 0.2);
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 20px;
+  color: var(--danger-color);
+  background-color: rgba(229, 62, 62, 0.1);
+  border: 1px solid var(--danger-color);
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
   text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.error-message::before {
+  content: '⚠️';
+  font-size: 1.2rem;
+}
+
+/* ==================== 響應式設計 ==================== */
+@media (max-width: 1200px) {
+  .editor-form {
+    flex-direction: column;
+  }
+  
+  .editor-sidebar {
+    flex: none;
+    max-height: none;
+    order: -1;
+  }
+  
+  .markdown-editor-container {
+    min-height: 300px;
+  }
+  
+  .markdown-editor-container .w-md-editor {
+    min-height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .advanced-editor {
+    padding: 1rem;
+  }
+  
+  .editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .action-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .markdown-editor-container .w-md-editor {
+    min-height: 250px;
+  }
+}
+
+/* ==================== 載入狀態 ==================== */
+.btn:disabled {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:disabled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* ==================== 改進的 Markdown 編輯器樣式 ==================== */
+.markdown-editor-container .w-md-editor.w-md-editor-focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(56, 178, 172, 0.2);
+}
+
+.markdown-editor-container .w-md-editor-toolbar {
+  backdrop-filter: blur(10px);
+}
+
+.markdown-editor-container .w-md-editor-toolbar li button.active {
+  background-color: var(--accent-primary);
+  color: white;
+}
+
+/* 自定義滾動條 */
+.markdown-editor-container .w-md-editor-text::-webkit-scrollbar,
+.markdown-editor-container .wmde-markdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.markdown-editor-container .w-md-editor-text::-webkit-scrollbar-track,
+.markdown-editor-container .wmde-markdown::-webkit-scrollbar-track {
+  background: var(--background-primary);
+}
+
+.markdown-editor-container .w-md-editor-text::-webkit-scrollbar-thumb,
+.markdown-editor-container .wmde-markdown::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.markdown-editor-container .w-md-editor-text::-webkit-scrollbar-thumb:hover,
+.markdown-editor-container .wmde-markdown::-webkit-scrollbar-thumb:hover {
+  background: var(--border-color-hover);
+}
+
+/* ==================== 表單驗證樣式 ==================== */
+.form-group input:invalid,
+.form-group textarea:invalid {
+  border-color: var(--danger-color);
+}
+
+.form-group input:valid,
+.form-group textarea:valid {
+  border-color: var(--success-color);
+}
+
+.form-group .validation-message {
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.form-group .validation-message.error {
+  color: var(--danger-color);
+}
+
+.form-group .validation-message.success {
+  color: var(--success-color);
+}
+
+/* ==================== 標籤輸入優化 ==================== */
+.form-group input[type="text"]#tags {
+  padding-right: 2.5rem;
+}
+
+.form-group .tags-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.tag-item {
+  background: var(--accent-primary);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* ==================== 側邊欄分組樣式 ==================== */
+.sidebar-section {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-section > label {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

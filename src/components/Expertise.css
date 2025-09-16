@@ -19,21 +19,23 @@
 
 .skills-container {
   display: flex; /* 使用 Flexbox 排列 */
-  justify-content: space-around; /* 平均分配空間 */
+  justify-content: center; /* 居中對齊 */
   flex-wrap: wrap; /* 允許換行 */
-  gap: 30px; /* 區塊間距 */
-  max-width: 1000px; /* 限制最大寬度 */
+  gap: 35px; /* 增加區塊間距 */
+  max-width: 1400px; /* 增加最大寬度限制 */
   margin: 0 auto; /* 水平居中 */
 }
 
 .skill-category {
   /* background-color: var(--clr-bg-primary); */ /* 移除原本背景色 */
   background-color: rgba(22, 22, 26, 0.6); /* 使用主要背景色的半透明版本 */
-  padding: 25px; /* 內距 */
-  border-radius: 8px; /* 圓角 */
+  padding: 30px; /* 增加內距 */
+  border-radius: 12px; /* 稍微增加圓角 */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 輕微陰影 */
-  min-width: 250px; /* 最小寬度 */
+  min-width: 350px; /* 增加最小寬度 */
+  max-width: 400px; /* 添加最大寬度限制 */
   text-align: left; /* 類別內文字靠左 */
+  flex: 1; /* 讓卡片能夠彈性調整 */
   /* --- 玻璃擬態效果 --- */
   backdrop-filter: blur(8px); /* 模糊程度可以稍低 */
   -webkit-backdrop-filter: blur(8px);
@@ -53,16 +55,20 @@
 .skill-items-wrapper {
   display: flex; /* 使用 Flexbox 實現橫向排列 */
   flex-wrap: wrap; /* 允許換行 */
-  gap: 20px; /* 技能項目之間的間距 */
-  margin-top: 15px; /* 與標題的間距 */
+  gap: 25px; /* 增加技能項目之間的間距 */
+  margin-top: 20px; /* 增加與標題的間距 */
+  justify-content: flex-start; /* 左對齊排列 */
+  align-items: flex-start; /* 頂部對齊 */
 }
 
 .skill-item {
   display: flex; /* 使用 Flexbox 排列圖示和箭頭 */
   flex-direction: column; /* 垂直排列 */
   align-items: center; /* 水平居中對齊 */
-  min-width: 60px; /* 給每個項目一個最小寬度，避免擠在一起 */
+  min-width: 65px; /* 稍微增加最小寬度 */
+  max-width: 80px; /* 添加最大寬度限制 */
   text-align: center; /* 確保文字（如果有的話）也居中 */
+  flex-shrink: 0; /* 防止項目縮小 */
 }
 
 /* 移除舊的 ul, li, li::before 樣式 */
@@ -113,6 +119,18 @@
 
 
 /* 響應式設計 */
+@media (max-width: 1200px) {
+  .skills-container {
+    max-width: 1200px;
+    gap: 30px;
+  }
+  
+  .skill-category {
+    min-width: 320px;
+    max-width: 380px;
+  }
+}
+
 @media (max-width: 768px) {
   .expertise-section {
     padding: 40px 20px;
@@ -125,10 +143,16 @@
   .skills-container {
     flex-direction: column; /* 垂直排列 */
     align-items: center; /* 居中對齊 */
+    gap: 25px;
   }
 
   .skill-category {
-    width: 80%; /* 調整寬度 */
+    width: 90%; /* 調整寬度 */
     min-width: unset; /* 取消最小寬度 */
+    max-width: 500px; /* 在手機上允許更寬 */
+  }
+  
+  .skill-items-wrapper {
+    gap: 20px; /* 在小屏幕上減少間距 */
   }
 }

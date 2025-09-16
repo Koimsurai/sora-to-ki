@@ -155,88 +155,92 @@ function AdvancedEditor() {
       )}
 
       <form onSubmit={handleSubmit} className="editor-form">
-        <div className="form-row">
+        <div className="editor-main-content">
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="title">文章標題 *</label>
+              <input
+                type="text"
+                id="title"
+                value={post.title}
+                onChange={(e) => setPost(prev => ({ ...prev, title: e.target.value }))}
+                required
+                disabled={isLoading}
+                placeholder="輸入文章標題..."
+              />
+            </div>
+          </div>
+
           <div className="form-group">
-            <label htmlFor="title">文章標題 *</label>
-            <input
-              type="text"
-              id="title"
-              value={post.title}
-              onChange={(e) => setPost(prev => ({ ...prev, title: e.target.value }))}
-              required
-              disabled={isLoading}
-              placeholder="輸入文章標題..."
-            />
+            <label>文章內容 *</label>
+            <div className="markdown-editor-container">
+              <MDEditor
+                value={post.content}
+                onChange={(value) => setPost(prev => ({ ...prev, content: value || '' }))}
+                preview="edit"
+                height={500}
+                data-color-mode="dark"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="excerpt">文章摘要</label>
-            <textarea
-              id="excerpt"
-              value={post.excerpt}
-              onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
-              disabled={isLoading}
-              placeholder="輸入文章摘要（留空將自動生成）..."
-              rows="3"
-            />
-          </div>
-        </div>
+        <div className="editor-sidebar">
+          <div className="sidebar-section">
+            <label>文章設定</label>
+            
+            <div className="form-group">
+              <label htmlFor="excerpt">文章摘要</label>
+              <textarea
+                id="excerpt"
+                value={post.excerpt}
+                onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
+                disabled={isLoading}
+                placeholder="輸入文章摘要（留空將自動生成）..."
+                rows="3"
+              />
+            </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="tags">標籤</label>
-            <input
-              type="text"
-              id="tags"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              disabled={isLoading}
-              placeholder="輸入標籤，用逗號分隔..."
-            />
-            <small className="form-hint">例如：JavaScript, React, 教學</small>
+            <div className="form-group">
+              <label htmlFor="tags">標籤</label>
+              <input
+                type="text"
+                id="tags"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                disabled={isLoading}
+                placeholder="輸入標籤，用逗號分隔..."
+              />
+              <small className="form-hint">例如：JavaScript, React, 教學</small>
+            </div>
           </div>
-        </div>
 
-        <div className="form-group">
-          <label>文章內容 *</label>
-          <div className="markdown-editor-container">
-            <MDEditor
-              value={post.content}
-              onChange={(value) => setPost(prev => ({ ...prev, content: value || '' }))}
-              preview="edit"
-              height={500}
-              data-color-mode="light"
-            />
-          </div>
-        </div>
-
-        <div className="editor-actions">
-          <div className="status-info">
-            當前狀態: 
-            <span className={`status-badge ${post.status}`}>
-              {post.status === 'published' ? '已發佈' : '草稿'}
-            </span>
-          </div>
-          
-          <div className="action-buttons">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={handleSaveDraft}
-              disabled={isLoading}
-            >
-              {isLoading ? '儲存中...' : '儲存草稿'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={handlePublish}
-              disabled={isLoading}
-            >
-              {isLoading ? '發佈中...' : '發佈文章'}
-            </button>
+          <div className="editor-actions">
+            <div className="status-info">
+              當前狀態: 
+              <span className={`status-badge ${post.status}`}>
+                {post.status === 'published' ? '已發佈' : '草稿'}
+              </span>
+            </div>
+            
+            <div className="action-buttons">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={handleSaveDraft}
+                disabled={isLoading}
+              >
+                {isLoading ? '儲存中...' : '儲存草稿'}
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handlePublish}
+                disabled={isLoading}
+              >
+                {isLoading ? '發佈中...' : '發佈文章'}
+              </button>
+            </div>
           </div>
         </div>
       </form>

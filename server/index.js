@@ -235,6 +235,58 @@ apiRouter.get('/admin/posts', authMiddleware, (req, res) => {
   });
 });
 
+// GET admin statistics
+apiRouter.get('/admin/stats', authMiddleware, (req, res) => {
+  // 獲取文章統計
+  const postsStatsQuery = `
+    SELECT 
+      COUNT(*) as totalPosts,
+      COUNT(CASE WHEN status = 'published' THEN 1 END) as publishedPosts,
+      COUNT(CASE WHEN status = 'draft' THEN 1 END) as draftPosts,
+      COUNT(CASE WHEN created_at >= date('now', '-30 days') THEN 1 END) as postsThisMonth
+    FROM posts
+  `;
+
+  // 獲取留言統計
+  const commentsStatsQuery = `
+    SELECT 
+      COUNT(*) as totalComments,
+      COUNT(CASE WHEN created_at >= date('now', '-7 days') THEN 1 END) as commentsThisWeek
+    FROM comments
+  `;
+
+  // 執行查詢
+  db.get(postsStatsQuery, (err, postsStats) => {
+    if (err) {
+      console.error('獲取文章統計錯誤:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    db.get(commentsStatsQuery, (err, commentsStats) => {
+      if (err) {
+        console.error('獲取留言統計錯誤:', err);
+        res.status(500).json({ error: err.message });
+        return;
+      }
+
+      // 模擬訪客數據（在實際應用中，您可能會從其他來源獲取這些數據）
+      const visitors = Math.floor(Math.random() * 1000) + 1000; // 模擬數據
+
+      res.json({
+        totalPosts: postsStats.totalPosts,
+        publishedPosts: postsStats.publishedPosts,
+        draftPosts: postsStats.draftPosts,
+        postsThisMonth: postsStats.postsThisMonth,
+        comments: commentsStats.totalComments,
+        commentsThisWeek: commentsStats.commentsThisWeek,
+        visitors: visitors, // 模擬數據
+        message: 'success'
+      });
+    });
+  });
+});
+
 // GET a single post by id
 apiRouter.get('/posts/:id', (req, res) => {
   const sql = `
@@ -390,6 +442,33 @@ apiRouter.put('/posts/:id', authMiddleware, (req, res) => {
         "message": "success",
         "changes": this.changes
       });
+    });
+  });
+});
+
+// PATCH post status
+apiRouter.patch('/posts/:id/status', authMiddleware, (req, res) => {
+  const { status } = req.body;
+  
+  if (!status || !['published', 'draft'].includes(status)) {
+    return res.status(400).json({ error: '無效的狀態值，必須是 published 或 draft' });
+  }
+
+  const sql = 'UPDATE posts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+  db.run(sql, [status, req.params.id], function(err) {
+    if (err) {
+      console.error('更新文章狀態錯誤:', err);
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      res.status(404).json({ message: '找不到文章' });
+      return;
+    }
+    res.json({ 
+      message: '狀態更新成功',
+      status: status,
+      changes: this.changes 
     });
   });
 });

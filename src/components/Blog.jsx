@@ -94,95 +94,102 @@ function Blog() {
     <div className="blog-container">
       <SpaceParticles />
       <MeteorShower />
-      
-      {/* 將 BlackHole3D 移到 SpaceHeroBanner 內部 */}
       <SpaceHeroBanner>
         <BlackHole3D className="blog-blackhole-left" isLeftSide={true} />
       </SpaceHeroBanner>
-      
       <div className="blog-content-section">
-        <div className="blog-header">
-          <h2 className="blog-section-title">最新探索</h2>
-          <p className="blog-section-subtitle">發現宇宙的無限可能</p>
-          
-          <div className="blog-controls">
+        <div className="blog-main-content">
+          <div className="blog-header">
+            <h2 className="blog-section-title">最新探索</h2>
+            <p className="blog-section-subtitle">發現宇宙的無限可能</p>
+          </div>
+
+          {filteredPosts.length === 0 ? (
+            <div className="no-posts">
+              <div className="astronaut-icon">🚀</div>
+              <h3>暫無文章</h3>
+              <p>目前沒有符合條件的文章，請稍後再來查看。</p>
+            </div>
+          ) : (
+            <div className="blog-posts-feed">
+              {filteredPosts.map((post, index) => (
+                <div
+                  key={post.id}
+                  className="blog-post-card-wrapper"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <Link to={`/blog/${post.id}`} className="blog-post-card">
+                    <div className="blog-card-content">
+                      <div className="blog-post-header">
+                        <div className="post-author-info">
+                          <div className="author-avatar">
+                            {post.author ? post.author.charAt(0).toUpperCase() : 'A'}
+                          </div>
+                          <span className="author-name">{post.author || '匿名作者'}</span>
+                        </div>
+                        <span className="post-date">{post.date}</span>
+                      </div>
+                      <div className="blog-post-body">
+                        <h3 className="blog-post-title">{post.title}</h3>
+                        <p className="blog-post-summary">{post.summary}</p>
+                      </div>
+                      <div className="blog-post-tags">
+                        {post.tags.map(tag => (
+                          <span key={tag} className="tag">{tag}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <aside className="blog-sidebar">
+          <div className="sidebar-widget">
+            <h3 className="widget-title">搜尋文章</h3>
             <div className="search-container">
               <div className="search-icon">🔍</div>
               <input
                 type="text"
-                placeholder="搜尋太空知識..."
+                placeholder="搜尋..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
               />
             </div>
-            <div className="filter-container">
-              <div className="filter-icon">🏷️</div>
-              <select
-                value={selectedTag}
-                onChange={(e) => setSelectedTag(e.target.value)}
-                className="tag-filter"
+          </div>
+          <div className="sidebar-widget">
+            <h3 className="widget-title">精選文章</h3>
+            <ul className="featured-posts-list">
+              {posts.slice(0, 5).map(post => (
+                <li key={post.id}>
+                  <Link to={`/blog/${post.id}`}>{post.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="sidebar-widget">
+            <h3 className="widget-title">標籤</h3>
+            <div className="tag-cloud">
+              <span
+                className={`tag ${selectedTag === '' ? 'active' : ''}`}
+                onClick={() => setSelectedTag('')}
               >
-                <option value="">所有類別</option>
-                {allTags.map(tag => (
-                  <option key={tag} value={tag}>{tag}</option>
-                ))}
-              </select>
+                所有類別
+              </span>
+              {allTags.map(tag => (
+                <span
+                  key={tag}
+                  className={`tag ${selectedTag === tag ? 'active' : ''}`}
+                  onClick={() => setSelectedTag(tag)}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           </div>
-        </div>
-      
-      {filteredPosts.length === 0 ? (
-        <div className="no-posts">
-          <div className="astronaut-icon">🚀</div>
-          <h3>暫無文章</h3>
-          <p>目前沒有符合條件的文章，請稍後再來查看。</p>
-          <div className="debug-info">
-            <p>調試信息：</p>
-            <p>所有文章數量: {posts.length}</p>
-            <p>篩選後文章數量: {filteredPosts.length}</p>
-            <p>搜尋條件: "{searchTerm}"</p>
-            <p>選擇的標籤: "{selectedTag}"</p>
-          </div>
-        </div>
-      ) : (
-        <div className="blog-posts-grid">
-          {filteredPosts.map((post, index) => (
-            <div 
-              key={post.id} 
-              className="blog-post-card-wrapper"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <Link to={`/blog/${post.id}`} className="blog-post-card">
-                <div className="blog-card-content">
-                  <div className="blog-card-icon">
-                    {post.tags.includes('React') ? '⚛️' : 
-                     post.tags.includes('Docker') ? '🐳' : 
-                     post.tags.includes('CSS') ? '🎨' : '🚀'}
-                  </div>
-                  <h3 className="blog-post-title">{post.title}</h3>
-                  <p className="blog-post-summary">{post.summary}</p>
-                  <div className="blog-post-meta">
-                    <span className="meta-item">
-                      <span className="meta-icon">📅</span>
-                      {post.date}
-                    </span>
-                    <span className="meta-item">
-                      <span className="meta-icon">👤</span>
-                      {post.author}
-                    </span>
-                  </div>
-                  <div className="blog-post-tags">
-                    {post.tags.map(tag => (
-                      <span key={tag} className="tag">{tag}</span>
-                    ))}
-                  </div>
-                </div>
-              </Link>
-            </div>
-          ))}
-        </div>
-      )}
+        </aside>
       </div>
     </div>
   );
