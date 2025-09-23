@@ -863,9 +863,16 @@ body {
 }
 
 .post-excerpt {
-  font-size: 0.8rem;
+  font-size: 0.875rem; /* 14px */
   color: var(--text-secondary);
   opacity: 0.8;
+  line-height: 1.4;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* 限制為兩行 */
+  -webkit-box-orient: vertical;
 }
 
 .table-header {

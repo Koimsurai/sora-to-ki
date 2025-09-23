@@ -63,7 +63,13 @@ function Portfolio() {
               {item.videoUrl ? (
                 <video src={item.videoUrl} className="portfolio-video" controls autoPlay muted loop playsInline /> // 添加 video 標籤
               ) : (
-                <img src={item.imageUrl} alt={item.title} className="portfolio-image" />
+                <img 
+                  src={item.imageUrl} 
+                  alt={item.title} 
+                  className="portfolio-image"
+                  loading="lazy"
+                  decoding="async" 
+                />
               )}
             </div>
             <div className="portfolio-content"> {/* 使用舊的 class name */}

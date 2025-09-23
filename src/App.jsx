@@ -6,18 +6,9 @@ import Saturn3D from './components/Saturn3D';
 import IntroAnimation from './components/IntroAnimation';
 import Header from './components/Header';
 import Hero from './components/Hero';
-// import AboutMe from './components/AboutMe'; // <-- Lazy load
-// import Expertise from './components/Expertise'; // <-- Lazy load
-// import WorkExperience from './components/WorkExperience'; // <-- Lazy load
-// import SchoolClubs from './components/SchoolClubs'; // <-- Lazy load
-// import Portfolio from './components/Portfolio'; // <-- Lazy load
-// import Contact from './components/Contact'; // <-- Lazy load
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-// import Footer from './components/Footer'; // <-- Lazy load
-// import PhotoGallery from './components/PhotoGallery'; // <-- Lazy load
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'; // Import useLocation
 import CursorTrail from './components/CursorTrail';
 import ScrollToTop from './components/ScrollToTop'; // <--- 導入 ScrollToTop 元件
-// import TransitionAnimation from './components/TransitionAnimation'; // <-- Lazy load
 import { PageVisibilityProvider } from './contexts/PageVisibilityContext';
 import RandomShootingStars from './components/RandomShootingStars';
 import RandomComets from './components/RandomComets'; // 導入彗星元件
@@ -25,12 +16,12 @@ import RandomUFOs from './components/RandomUFOs'; // 導入 UFO 元件
 import BackToTopButton from './components/BackToTopButton'; // 導入回到頂部按鈕
 import TwinklingStars from './components/TwinklingStars'; // <--- 導入閃爍星星元件
 import ForegroundStars from './components/ForegroundStars'; // <--- 導入前景星星元件
-import { ScrollControls, Scroll, Stars, useScroll, Points, PointMaterial } from '@react-three/drei'; // Import Points and PointMaterial
+import { Stars, Points, PointMaterial } from '@react-three/drei'; // Import Stars, Points, and PointMaterial
 import { Canvas, useFrame } from '@react-three/fiber';
-// import { Suspense, useRef, useMemo } from 'react'; // Suspense is imported above
 import { useRef, useMemo } from 'react'; // Add useMemo
 import * as THREE from 'three'; // Import THREE
 import './App.css';
+import './components/AdminFixes.css';
 
 // --- Lazy Loaded Components ---
 const LazyAboutMe = lazy(() => import('./components/AboutMe'));
@@ -64,7 +55,6 @@ const AdminPlaceholder = ({ title }) => (
 function SectionWrapper({ id, children, onInViewChange }) {
   const { ref, inView } = useInView({
     threshold: 0.5, // Trigger when 50% of the section is visible
-    // rootMargin: '-50% 0px -50% 0px', // Adjust root margin if needed, e.g., only trigger when near center
     triggerOnce: false, // Keep observing
   });
 
@@ -86,7 +76,6 @@ function SectionWrapper({ id, children, onInViewChange }) {
 function MainPage({ onSectionChange }) { // Accept callback prop
   return (
     <>
-      {/* Header is now outside MainPage */}
       <main>
         <SectionWrapper id="home" onInViewChange={onSectionChange}>
           <Hero />
@@ -116,165 +105,123 @@ function MainPage({ onSectionChange }) { // Accept callback prop
           <Suspense fallback={<LoadingFallback />}><LazyContact /></Suspense>
         </SectionWrapper>
       </main>
-      {/* Footer is now outside MainPage */}
     </>
   );
 }
 
 // --- 用於星空背景的內部元件 ---
-// 修改 StarfieldScene 以接受 mainStarsRef
 function StarfieldScene({ mainStarsRef }) {
-  // const starsRef = useRef(); // <--- 移除內部 ref
-  const galaxyRef = useRef(); // Ref for the galaxy band
-  const scrollSpeedMultiplier = useRef(1); // Ref to store scroll-based speed multiplier
-  const scrollTimeoutRef = useRef(null); // Ref to store the timeout ID
-  const baseSpeedMultiplier = 1; // 基礎速度
-  const boostedSpeedMultiplier = 3; // 滾動時加速到的倍數 (可調整)
-  const scrollResetDelay = 150; // 滾動停止後多少毫秒恢復基礎速度 (可調整)
+  const galaxyRef = useRef();
+  const scrollSpeedMultiplier = useRef(1);
+  const scrollTimeoutRef = useRef(null);
+  const baseSpeedMultiplier = 1;
+  const boostedSpeedMultiplier = 3;
+  const scrollResetDelay = 150;
 
-  // Effect to listen to scroll and temporarily boost speed
   useEffect(() => {
     const handleScroll = () => {
-      // 滾動時立即提升速度
       scrollSpeedMultiplier.current = boostedSpeedMultiplier;
-
-      // 清除之前的計時器 (如果存在)
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
-
-      // 設置新的計時器，在延遲後恢復基礎速度
       scrollTimeoutRef.current = setTimeout(() => {
         scrollSpeedMultiplier.current = baseSpeedMultiplier;
       }, scrollResetDelay);
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // 清理函數
     return () => {
       window.removeEventListener('scroll', handleScroll);
       if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current); // 組件卸載時清除計時器
+        clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, []); // 空依賴數組，僅在掛載和卸載時運行
+  }, []);
 
   useFrame((state, delta) => {
-    // 使用傳入的 mainStarsRef
+    const speedMultiplier = scrollSpeedMultiplier.current;
     if (mainStarsRef.current) {
-      // 獲取當前速度乘數
-      const speedMultiplier = scrollSpeedMultiplier.current;
-      // 應用基礎自轉，並乘以速度乘數
       mainStarsRef.current.rotation.x += delta * 0.01 * speedMultiplier;
       mainStarsRef.current.rotation.y += delta * 0.02 * speedMultiplier;
-      // 移除位置變化
     }
-    // Rotate galaxy band (link to main stars rotation or have slightly different speed)
     if (galaxyRef.current) {
-       const speedMultiplier = scrollSpeedMultiplier.current; // Or a fixed speed
-       // Example: Slightly slower rotation than main stars
        galaxyRef.current.rotation.x += delta * 0.008 * speedMultiplier;
        galaxyRef.current.rotation.y += delta * 0.015 * speedMultiplier;
     }
   });
 
   return (
-    <> {/* Use Fragment to return multiple elements */}
-    <Stars
-      ref={mainStarsRef} // <--- 使用傳入的 ref
-      radius={100}
-      depth={50}
-      count={10000}
-      factor={3.5} // Slightly smaller base size
-      saturation={0.1} // Add subtle color variation
-      fade
-      speed={0.5} // Keep original speed for general stars
-    />
-    {/* 新增：銀河帶 */}
-    <Stars
-      ref={galaxyRef} // Use a separate ref if needed for independent control, or reuse starsRef if rotation is linked
-      radius={90} // Slightly smaller radius than the main stars
-      depth={20}  // Much shallower depth to create a band
-      count={8000} // High count for density
-      factor={5}   // Larger factor for brighter/bigger stars in the band
-      saturation={0.2} // Slight saturation for a subtle color hint (optional)
-      fade
-      speed={0.3} // Slightly different speed for parallax (optional)
-      // Initial rotation to create the band angle
-      rotation={[0, Math.PI / 3, Math.PI / 5]} // Adjusted tilt for the galaxy band
-    />
-    </> // Close Fragment
+    <>
+      <Suspense fallback={null}>
+        <Stars
+          ref={mainStarsRef}
+          radius={100}
+          depth={50}
+          count={10000}
+          factor={3.5}
+          saturation={0.1}
+          fade
+          speed={0.5}
+        />
+        <Stars
+          ref={galaxyRef}
+          radius={90}
+          depth={20}
+          count={8000}
+          factor={5}
+          saturation={0.2}
+          fade
+          speed={0.3}
+          rotation={[0, Math.PI / 3, Math.PI / 5]}
+        />
+      </Suspense>
+    </>
   );
 }
 
 // --- 新增：太空碎片元件 ---
 function SpaceDebris({ count = 200 }) {
   const pointsRef = useRef();
-  // Removed galaxyRef from here
-
-  // Removed misplaced useFrame from here
-
-  // 隨機生成碎片位置
   const particlesPosition = useMemo(() => {
     const positions = new Float32Array(count * 3);
-    const distance = 100; // 碎片分佈範圍半徑
-
+    const distance = 100;
     for (let i = 0; i < count; i++) {
-      const theta = THREE.MathUtils.randFloatSpread(360); // 隨機角度
+      const theta = THREE.MathUtils.randFloatSpread(360);
       const phi = THREE.MathUtils.randFloatSpread(360);
-      const r = THREE.MathUtils.randFloat(distance * 0.5, distance); // 隨機距離
-
+      const r = THREE.MathUtils.randFloat(distance * 0.5, distance);
       const x = r * Math.sin(theta) * Math.cos(phi);
       const y = r * Math.sin(theta) * Math.sin(phi);
-      const z = r * Math.cos(theta) + THREE.MathUtils.randFloatSpread(20); // 在 Z 軸上稍微分散
-
+      const z = r * Math.cos(theta) + THREE.MathUtils.randFloatSpread(20);
       positions.set([x, y, z], i * 3);
     }
     return positions;
   }, [count]);
 
-  // 隨機速度和旋轉
   const particleData = useMemo(() =>
     Array.from({ length: count }, () => ({
       velocity: new THREE.Vector3(
-        THREE.MathUtils.randFloatSpread(0.02), // 較慢的隨機速度
+        THREE.MathUtils.randFloatSpread(0.02),
         THREE.MathUtils.randFloatSpread(0.02),
         THREE.MathUtils.randFloatSpread(0.02)
       ),
-      rotationSpeed: new THREE.Vector3(
-        THREE.MathUtils.randFloatSpread(0.01),
-        THREE.MathUtils.randFloatSpread(0.01),
-        THREE.MathUtils.randFloatSpread(0.01)
-      )
     })),
   [count]);
-
 
   useFrame((state, delta) => {
     if (pointsRef.current) {
       const positions = pointsRef.current.geometry.attributes.position.array;
-      const distance = 100; // 與上面分佈範圍一致
-
+      const distance = 100;
       for (let i = 0; i < count; i++) {
         const i3 = i * 3;
-        positions[i3] += particleData[i].velocity.x * delta * 50; // 應用速度 (乘以 delta 和一個係數調整)
+        positions[i3] += particleData[i].velocity.x * delta * 50;
         positions[i3 + 1] += particleData[i].velocity.y * delta * 50;
         positions[i3 + 2] += particleData[i].velocity.z * delta * 50;
 
-        // 邊界檢查：如果粒子移出範圍，則重置到另一側 (簡單環繞效果)
         if (Math.abs(positions[i3]) > distance) positions[i3] *= -0.99;
         if (Math.abs(positions[i3+1]) > distance) positions[i3+1] *= -0.99;
-        // Z 軸可以讓它飄遠一點再回來
         if (positions[i3 + 2] > distance * 1.5) positions[i3 + 2] = -distance * 1.5;
         if (positions[i3 + 2] < -distance * 1.5) positions[i3 + 2] = distance * 1.5;
-
       }
       pointsRef.current.geometry.attributes.position.needsUpdate = true;
-
-      // 可以選擇性地加入點的旋轉，但 Points 物件本身不直接支持單獨點旋轉
-      // pointsRef.current.rotation.x += delta * 0.001;
-      // pointsRef.current.rotation.y += delta * 0.002;
     }
   });
 
@@ -282,245 +229,156 @@ function SpaceDebris({ count = 200 }) {
     <Points ref={pointsRef} positions={particlesPosition} stride={3} frustumCulled={false}>
       <PointMaterial
         transparent
-        color="#555555" // 碎片顏色 (暗灰色)
-        size={0.08} // 碎片大小 (比星星小)
+        color="#555555"
+        size={0.08}
         sizeAttenuation={true}
-        depthWrite={false} // 避免遮擋問題
-        blending={THREE.AdditiveBlending} // 混合模式
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
       />
     </Points>
   );
 }
 
+// --- Layout Component to handle conditional rendering of Header/Footer ---
+function Layout({ activeSection, onSectionChange }) {
+  const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin');
+
+  return (
+    <div
+      className="main-content-container"
+      style={{ position: 'relative', zIndex: 10 }}
+    >
+      {!isAdminPage && <Header activeSection={activeSection} style={{ position: 'sticky', top: 0, zIndex: 20 }} />}
+      <main>
+        <Routes>
+          <Route path="/" element={<MainPage onSectionChange={onSectionChange} />} />
+          <Route path="/photos" element={<Suspense fallback={<LoadingFallback />}><LazyPhotoGallery /></Suspense>} />
+          <Route path="/blog" element={<Suspense fallback={<LoadingFallback />}><LazyBlog /></Suspense>} />
+          <Route path="/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
+          <Route path="/admin/login" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLogin /></Suspense>} />
+          <Route path="/admin" element={<Suspense fallback={<LoadingFallback />}><LazyAdminPanel /></Suspense>} />
+          <Route path="/admin/create" element={<Suspense fallback={<LoadingFallback />}><LazyAdvancedEditor /></Suspense>} />
+          <Route path="/admin/edit/:id" element={<Suspense fallback={<LoadingFallback />}><LazyAdvancedEditor /></Suspense>} />
+          <Route path="/admin/posts" element={<AdminPlaceholder title="文章管理" />} />
+          <Route path="/admin/comments" element={<AdminPlaceholder title="留言審核" />} />
+          <Route path="/admin/stats" element={<AdminPlaceholder title="數據統計" />} />
+        </Routes>
+      </main>
+      {!isAdminPage && (
+        <Suspense fallback={<LoadingFallback />}>
+          <LazyFooter style={{ zIndex: 20 }}/>
+        </Suspense>
+      )}
+    </div>
+  );
+}
 
 function App() {
-  const [isLoading, setIsLoading] = useState(true); // State for loading screen
-
-  // --- 檢查 sessionStorage 來決定是否顯示開場動畫 ---
+  const [isLoading, setIsLoading] = useState(true);
   const introCompleted = sessionStorage.getItem('introCompleted') === 'true';
-
-  const [animateSaturn, setAnimateSaturn] = useState(introCompleted); // 如果動畫已完成，直接啟動土星
-  const [showMainHtmlContent, setShowMainHtmlContent] = useState(introCompleted); // 如果動畫已完成，直接顯示內容
+  const [animateSaturn, setAnimateSaturn] = useState(introCompleted);
+  const [showMainHtmlContent, setShowMainHtmlContent] = useState(introCompleted);
   const [saturnZIndex, setSaturnZIndex] = useState(1);
-  const [introVisible, setIntroVisible] = useState(!introCompleted); // 如果動畫已完成，則不顯示動畫
-
+  const [introVisible, setIntroVisible] = useState(!introCompleted);
   const introCompleteTimeoutRef = useRef(null);
-  const sharedRotationRef = useRef(); // Shared rotation ref
-  const [activeSection, setActiveSection] = useState('home'); // State for active section
-  const [isPageVisible, setIsPageVisible] = useState(true); // Page visibility state
+  const sharedRotationRef = useRef();
+  const [activeSection, setActiveSection] = useState('home');
+  const [isPageVisible, setIsPageVisible] = useState(true);
 
-  // Callback function to update active section
   const handleSectionChange = useCallback((sectionId) => {
-    // console.log("Section in view:", sectionId); // For debugging
     setActiveSection(sectionId);
-  }, []); // Empty dependency array means this function is created once
+  }, []);
 
-
-  // Handler for when the intro explosion starts
   const handleExplosionStart = () => {
-    // console.log(`[App] handleExplosionStart called at ${performance.now().toFixed(0)}ms.`);
-    setSaturnZIndex(10000); // Bring Canvas forward during explosion
-    // Trigger Saturn animation shortly after explosion starts
+    setSaturnZIndex(10000);
     setTimeout(() => {
-        // console.log(`[App] Setting animateSaturn=true after delay at ${performance.now().toFixed(0)}ms.`);
         setAnimateSaturn(true);
-    }, 200); // Start Saturn animation 200ms after explosion state begins
+    }, 200);
   };
 
-  // REMOVED handleSingularityShrunk handler
-
-  // Handler for when the intro animation is fully complete
   const handleAnimationComplete = () => {
-    // console.log(`[App] handleAnimationComplete called at ${performance.now().toFixed(0)}ms.`); // Log removed
-    // setAnimateSaturn(true); // <-- REMOVED: Moved to handleSingularityShrunk
     setShowMainHtmlContent(true);
-    setSaturnZIndex(1); // Reset Canvas z-index to background layer
-
-    // --- 在 sessionStorage 中設置標記 ---
+    setSaturnZIndex(1);
     try {
       sessionStorage.setItem('introCompleted', 'true');
     } catch (error) {
       console.error("無法寫入 sessionStorage", error);
     }
-
-    // Schedule IntroAnimation removal after its fade-out (300ms)
-    clearTimeout(introCompleteTimeoutRef.current); // Clear previous timeout if any
+    clearTimeout(introCompleteTimeoutRef.current);
     introCompleteTimeoutRef.current = setTimeout(() => {
       setIntroVisible(false);
-    }, 300); // Match the fade-out duration
+    }, 300);
   };
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       clearTimeout(introCompleteTimeoutRef.current);
     };
   }, []);
 
-  // Effect to handle the initial loading state
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1500); // Show loading screen for 1.5 seconds (adjust as needed)
-
-    return () => clearTimeout(timer); // Cleanup timer on unmount
+    }, 1500);
+    return () => clearTimeout(timer);
   }, []);
 
-  // Page Visibility API - 暫停動畫當用戶離開頁面
   useEffect(() => {
     const handleVisibilityChange = () => {
       setIsPageVisible(!document.hidden);
     };
-
-    // 添加事件監聽器
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // 清理函數
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
-  // Add fade-out class to loading screen before removing it
-  const loadingScreenClass = `loading-screen ${!isLoading ? 'fade-out' : ''}`;
-
-  // Render Loading Screen if isLoading is true
   if (isLoading) {
     return <LoadingScreen />;
-    // Or apply the class for fade-out:
-    // return <LoadingScreen className={loadingScreenClass} />;
-    // Note: The component needs to handle the className prop if using the class approach.
-    // The current LoadingScreen.css uses a separate .fade-out class,
-    // so we'll just unmount it directly when isLoading is false.
   }
 
-  // Render the main app content when loading is complete
   return (
     <BrowserRouter>
-      <ScrollToTop /> {/* <--- 在 BrowserRouter 內部渲染 ScrollToTop */}
+      <ScrollToTop />
       <ParallaxProvider>
         <PageVisibilityProvider isVisible={isPageVisible}>
           <div className="App">
-
-          {/* Intro Animation Layer - Conditionally rendered */}
-          {introVisible && (
-            <IntroAnimation
-              onAnimationComplete={handleAnimationComplete}
-              onExplosionStart={handleExplosionStart}
-            />
-          )}
-
-          {/* Removed Dust Band Layer div - effect is now back in .App background */}
-
-          {/* Fixed Canvas Background Layer */}
-          <Canvas
-            camera={{ position: [0, 0, 5] }} // Move camera further back
-            // Canvas is a fixed background, non-interactive
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              zIndex: saturnZIndex, // Use dynamic z-index state
-              pointerEvents: 'none' // Non-interactive background
-             }}
-          >
-            {/* Restore StarfieldScene first */}
-            {/* Use React.Suspense for React components, keep original Suspense for Three.js if needed */}
-            <Suspense fallback={null}>
-              {/* 將 sharedRotationRef 傳遞給 StarfieldScene */}
-              <StarfieldScene mainStarsRef={sharedRotationRef} />
-              <SpaceDebris count={300} /> {/* 加入太空碎片 */}
-              {/* Pass animateSaturn prop to Saturn3D */}
-              <Saturn3D animate={animateSaturn} />
-              {/* 調整渲染順序：將閃爍星星移到土星之後 */}
-              <TwinklingStars rotationRef={sharedRotationRef} count={800} />
-            </Suspense>
-          </Canvas>
-
-          {/* Foreground Stars Layer (Fixed) */}
-          <ForegroundStars count={15} /> {/* z-index is 1 (defined in component CSS) */}
-
-          {/* Random Shooting Stars (Fixed Layer) */}
-          <RandomShootingStars /> {/* z-index is 4 (defined in component) */}
-
-          {/* Random Comets (Fixed Layer) */}
-          <RandomComets /> {/* z-index is 3 (defined in component) */}
-
-          {/* Random UFOs (Fixed Layer) */}
-          <RandomUFOs /> {/* z-index is 2 (defined in component) */}
-
-          {/* Removed the duplicate, unconditional main content block */}
-
-          {/* Main Scrollable HTML Content Container - Conditionally rendered based on showMainHtmlContent */}
-          {showMainHtmlContent && (
-            <div
-              className="main-content-container" // Removed animate-in class logic
-              style={{ position: 'relative', zIndex: 10 }}
+            {introVisible && (
+              <IntroAnimation
+                onAnimationComplete={handleAnimationComplete}
+                onExplosionStart={handleExplosionStart}
+              />
+            )}
+            <Canvas
+              camera={{ position: [0, 0, 5] }}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                zIndex: saturnZIndex,
+                pointerEvents: 'none'
+              }}
             >
-              {/* Pass activeSection to Header */}
-              <Header activeSection={activeSection} style={{ position: 'sticky', top: 0, zIndex: 20 }} />
-              <main>
-                <Routes>
-                  {/* Pass onSectionChange callback to MainPage */}
-                  <Route path="/" element={<MainPage onSectionChange={handleSectionChange} />} />
-                  <Route path="/photos" element={
-                    <Suspense fallback={<LoadingFallback />}>
-                      <LazyPhotoGallery />
-                    </Suspense>
-                  } />
-                  <Route path="/blog" element={
-                    <Suspense fallback={<LoadingFallback />}>
-                      <LazyBlog />
-                    </Suspense>
-                  } />
-                  <Route path="/blog/:id" element={
-                    <Suspense fallback={<LoadingFallback />}>
-                      <LazyBlogPost />
-                    </Suspense>
-                  } />
-                  {/* 管理後台路由 */}
-                  <Route path="/admin/login" element={
-                    <Suspense fallback={<LoadingFallback />}>
-                      <LazyAdminLogin />
-                    </Suspense>
-                  } />
-                  <Route path="/admin" element={
-                    <Suspense fallback={<LoadingFallback />}>
-                      <LazyAdminPanel />
-                    </Suspense>
-                  } />
-                  <Route path="/admin/create" element={
-                    <Suspense fallback={<LoadingFallback />}>
-                      <LazyAdvancedEditor />
-                    </Suspense>
-                  } />
-                  <Route path="/admin/edit/:id" element={
-                    <Suspense fallback={<LoadingFallback />}>
-                      <LazyAdvancedEditor />
-                    </Suspense>
-                  } />
-                  {/* Placeholder routes for other admin pages */}
-                  <Route path="/admin/posts" element={<AdminPlaceholder title="文章管理" />} />
-                  <Route path="/admin/comments" element={<AdminPlaceholder title="留言審核" />} />
-                  <Route path="/admin/stats" element={<AdminPlaceholder title="數據統計" />} />
-                </Routes>
-              </main>
-              <Suspense fallback={<LoadingFallback />}>
-                <LazyFooter style={{ zIndex: 20 }}/>
+              <Suspense fallback={null}>
+                <StarfieldScene mainStarsRef={sharedRotationRef} />
+                <SpaceDebris count={300} />
+                <Saturn3D animate={animateSaturn} />
+                <TwinklingStars rotationRef={sharedRotationRef} count={800} />
               </Suspense>
-            </div>
-          )}
-          {/* Closing curly brace for conditional rendering is back */}
-
-          {/* Cursor Trail (Highest Layer) */}
-          <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }}/>
-
-          {/* Back To Top Button */}
-          <BackToTopButton />
-
-        </div>
+            </Canvas>
+            <ForegroundStars count={15} />
+            <RandomShootingStars />
+            <RandomComets />
+            <RandomUFOs />
+            {showMainHtmlContent && (
+               <Layout activeSection={activeSection} onSectionChange={handleSectionChange} />
+            )}
+            <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }}/>
+            <BackToTopButton />
+          </div>
         </PageVisibilityProvider>
       </ParallaxProvider>
     </BrowserRouter>

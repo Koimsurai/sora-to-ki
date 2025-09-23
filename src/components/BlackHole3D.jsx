@@ -3,18 +3,23 @@ import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { OrbitControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
+import { usePageVisibility } from '../contexts/PageVisibilityContext';
 import './BlackHole3D.css';
 
 function BlackHoleModel({ isLeftSide = false }) {
   const gltf = useLoader(GLTFLoader, '/blackhole/scene.gltf');
   const meshRef = useRef();
+  const { isVisible } = usePageVisibility();
 
   useFrame((state) => {
-    if (meshRef.current) {
-      // 讓黑洞緩慢旋轉
-      // meshRef.current.rotation.y += isLeftSide ? 0.003 : 0.005;
-      // 添加一些微小的浮動效果
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * (isLeftSide ? 0.05 : 0.1);
+    // 只在頁面可見時更新動畫
+    if (meshRef.current && isVisible) {
+      // 簡化動畫，減少每幀計算
+      const time = state.clock.elapsedTime;
+      // 降低旋轉速度
+      meshRef.current.rotation.y += isLeftSide ? 0.001 : 0.002;
+      // 簡化浮動效果計算
+      meshRef.current.position.y = Math.sin(time * 0.3) * (isLeftSide ? 0.03 : 0.05);
     }
   });
 
@@ -50,7 +55,8 @@ function BlackHoleModel({ isLeftSide = false }) {
 
 function ParticleField({ isLeftSide = false }) {
   const pointsRef = useRef();
-  const particleCount = isLeftSide ? 1200 : 800; // 減少粒子數量
+  const { isVisible } = usePageVisibility();
+  const particleCount = isLeftSide ? 600 : 400; // 進一步減少粒子數量以提升效能
 
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
@@ -72,28 +78,31 @@ function ParticleField({ isLeftSide = false }) {
   }
 
   useFrame((state) => {
-    if (pointsRef.current) {
-      // pointsRef.current.rotation.y += isLeftSide ? 0.0005 : 0.001;
-      // 創建粒子的脈動效果
+    // 只在頁面可見時更新粒子動畫
+    if (pointsRef.current && isVisible) {
+      // 大幅簡化粒子動畫，減少每幀計算負載
       const time = state.clock.elapsedTime;
-      const geometry = pointsRef.current.geometry;
-      const positions = geometry.attributes.position.array;
-
-      for (let i = 0; i < particleCount; i++) {
-        const index = i * 3;
-        const originalRadius = Math.sqrt(
-          positions[index] ** 2 + 
-          positions[index + 1] ** 2 + 
-          positions[index + 2] ** 2
-        );
-        const pulseEffect = 1 + Math.sin(time * 2 + i * 0.1) * 0.1;
-        
-        positions[index] *= pulseEffect / originalRadius * (originalRadius * 0.1);
-        positions[index + 1] *= pulseEffect / originalRadius * (originalRadius * 0.1);
-        positions[index + 2] *= pulseEffect / originalRadius * (originalRadius * 0.1);
-      }
       
-      geometry.attributes.position.needsUpdate = true;
+      // 簡單的旋轉效果，避免複雜的粒子位置計算
+      pointsRef.current.rotation.y += isLeftSide ? 0.0005 : 0.001;
+      
+      // 每隔幾幀才更新一次脈動效果，而不是每幀都更新
+      if (Math.floor(time * 30) % 3 === 0) { // 30fps下每3幀更新一次
+        const geometry = pointsRef.current.geometry;
+        const positions = geometry.attributes.position.array;
+        const pulseEffect = 1 + Math.sin(time * 1.5) * 0.05; // 簡化脈動計算
+        
+        // 只更新一部分粒子以減少計算量
+        const updateStep = 3;
+        for (let i = 0; i < particleCount; i += updateStep) {
+          const index = i * 3;
+          positions[index] *= pulseEffect;
+          positions[index + 1] *= pulseEffect;
+          positions[index + 2] *= pulseEffect;
+        }
+        
+        geometry.attributes.position.needsUpdate = true;
+      }
     }
   });
 
@@ -127,6 +136,7 @@ function ParticleField({ isLeftSide = false }) {
 }
 
 const BlackHole3D = ({ className = '', style = {} }) => {
+  const { isVisible } = usePageVisibility();
   const [isLoaded, setIsLoaded] = useState(() => {
     try {
       return sessionStorage.getItem('blackHoleLoaded') === 'true';
@@ -157,13 +167,20 @@ const BlackHole3D = ({ className = '', style = {} }) => {
 
   return (
     <div className={`blackhole-3d-container ${className}`} style={containerStyle}>
-      <Canvas
-        camera={{ 
-          position: isLeftSide ? [0, 0, 10] : [0, 0, 5], 
-          fov: isLeftSide ? 50 : 75 
-        }}
-        gl={{ antialias: true, alpha: true }}
-        onCreated={handleCanvasCreated}
+      {/* 只在頁面可見時渲染 Canvas，完全避免背景 3D 渲染 */}
+      {isVisible ? (
+        <Canvas
+          camera={{ 
+            position: isLeftSide ? [0, 0, 10] : [0, 0, 5], 
+            fov: isLeftSide ? 50 : 75 
+          }}
+          gl={{ 
+            antialias: false, // 關閉抗鋸齒以提升效能
+            alpha: true,
+            powerPreference: "high-performance" // 優先使用高性能 GPU
+          }}
+          frameloop="demand" // 按需渲染，只有場景變化時才重新渲染
+          onCreated={handleCanvasCreated}
       >
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={1} />
@@ -183,8 +200,22 @@ const BlackHole3D = ({ className = '', style = {} }) => {
           dampingFactor={0.05}
         />
       </Canvas>
+      ) : (
+        <div className="blackhole-paused-overlay">
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            height: '100%',
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontSize: '14px'
+          }}>
+            <span>🌌 3D 渲染已暫停 (頁面不可見)</span>
+          </div>
+        </div>
+      )}
       
-      {!isLoaded && (
+      {isVisible && !isLoaded && (
         <div className="loading-overlay">
           <div className="loading-spinner"></div>
           <p>載入 3D 黑洞模型中...</p>

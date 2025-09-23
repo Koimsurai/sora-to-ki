@@ -71,13 +71,17 @@ const CursorTrail = () => {
   // 設定和清理
   useEffect(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return; // Add this check
+
     // 設定畫布大小為視窗大小
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      if (canvas) { // Add this check
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);

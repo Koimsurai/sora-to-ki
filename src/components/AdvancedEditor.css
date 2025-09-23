@@ -1,4 +1,13 @@
-/* AdvancedEditor.css - Modernized to match AdminDashboard */
+/* AdvancedEditor.css - Modern Glassmorphism Design */
+
+/* CSS 兼容性修復 */
+* {
+  /* 防止 iOS Safari 調整文字大小 */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 :root {
   --background-primary: #11151c;
@@ -10,9 +19,40 @@
   --accent-primary: #38b2ac;
   --accent-secondary: #63b3ed;
   --danger-color: #e53e3e;
+  --success-color: #48bb78;
+  
+  /* Glassmorphism Variables */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --glass-blur: blur(20px);
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-accent: linear-gradient(135deg, #38b2ac 0%, #63b3ed 100%);
 }
 
-/* This component is part of the main admin layout, so we style it as a content block */
+/* Glass Container Base Style */
+.glass-container {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gradient-accent);
+  opacity: 0.6;
+}
+
+/* Main Editor Container */
 .advanced-editor {
   padding: 0;
   background-color: transparent;
@@ -27,22 +67,45 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  padding: 1.5rem 2rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.editor-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  opacity: 0.8;
 }
 
 .editor-header h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  text-shadow: none;
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, #e2e8f0 50%, #63b3ed 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .header-actions {
   display: flex;
   gap: 1rem;
+  position: relative;
+  z-index: 2;
 }
 
 .editor-form {
@@ -55,7 +118,7 @@
 .form-row {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .form-row .form-group {
@@ -66,19 +129,55 @@
   flex: 2;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 2rem;
   min-height: 0;
 }
 
 .markdown-editor-container {
   flex: 1;
-  min-height: 400px;
+  min-height: 500px;
   overflow: hidden;
+  padding: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.markdown-editor-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-accent);
+  opacity: 0.7;
+  border-radius: 16px 16px 0 0;
 }
 
 .markdown-editor-container .w-md-editor {
   height: 100% !important;
-  min-height: 400px;
+  min-height: 450px !important;
+  background: rgba(26, 32, 44, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+/* 確保編輯器內的所有文本都是可見的 */
+.markdown-editor-container .w-md-editor * {
+  color: inherit !important;
+}
+
+.markdown-editor-container .w-md-editor textarea {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+  caret-color: var(--accent-primary) !important;
+}
+
+.markdown-editor-container .w-md-editor .w-md-editor-text textarea {
+  color: var(--text-primary) !important;
+  background: transparent !important;
 }
 
 .markdown-editor-container .w-md-editor .w-md-editor-text-container {
@@ -87,130 +186,335 @@
 
 .markdown-editor-container .w-md-editor .w-md-editor-text {
   height: 100% !important;
+  background: transparent !important;
+  color: var(--text-primary) !important;
 }
 
 
 .editor-sidebar {
-  flex: 0 0 300px;
-  background-color: var(--background-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 1.5rem;
+  flex: 0 0 320px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
   overflow-y: auto;
   max-height: calc(100vh - 200px);
 }
 
 .sidebar-section {
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
 }
 
 .sidebar-section > label {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.sidebar-section > label::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--gradient-accent);
+  opacity: 0.6;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .form-group label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .form-group input[type="text"],
 .form-group textarea {
   width: 100%;
-  padding: 0.75rem 1rem;
-  background-color: var(--background-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  background: rgba(17, 21, 28, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
   color: var(--text-primary);
   font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  -webkit-text-fill-color: var(--text-primary) !important;
 }
 
 .form-group input[type="text"]:focus,
 .form-group textarea:focus {
   outline: none;
   border-color: var(--accent-primary);
-  box-shadow: 0 0 0 2px rgba(56, 178, 172, 0.3);
+  box-shadow: 0 0 0 3px rgba(56, 178, 172, 0.2), 0 8px 25px rgba(56, 178, 172, 0.1);
+  transform: translateY(-2px);
+  background: rgba(17, 21, 28, 0.8);
+}
+
+.form-group input[type="text"]::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 .form-hint {
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin-top: 0.25rem;
+  font-style: italic;
 }
 
-/* MDEditor specific styling for dark mode */
-.markdown-editor-container .w-md-editor {
-  background-color: var(--background-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
+/* Tags Preview */
+.tags-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
+
+.tag-preview {
+  background: linear-gradient(135deg, rgba(56, 178, 172, 0.2), rgba(99, 179, 237, 0.2));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(56, 178, 172, 0.3);
+  color: var(--accent-primary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.tag-preview:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56, 178, 172, 0.3);
+}
+
+/* 強制覆蓋所有 MDEditor 相關的文字顏色 */
+.markdown-editor-container [data-color-mode="dark"] {
+  --color-fg-default: var(--text-primary) !important;
+  --color-fg-muted: var(--text-secondary) !important;
+  --color-canvas-default: transparent !important;
+  --color-canvas-subtle: rgba(17, 21, 28, 0.6) !important;
+}
+
+.markdown-editor-container .w-md-editor[data-color-mode="dark"] {
+  --color-fg-default: var(--text-primary) !important;
+  --color-fg-muted: var(--text-secondary) !important;
+  --color-canvas-default: transparent !important;
+}
+
+.markdown-editor-container .w-md-editor[data-color-mode="dark"] .w-md-editor-text,
+.markdown-editor-container .w-md-editor[data-color-mode="dark"] .w-md-editor-text textarea {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+}
+
+/* 額外的強制樣式來確保文字可見 */
+.markdown-editor-container textarea,
+.markdown-editor-container input {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+  caret-color: var(--accent-primary) !important;
+}
+
+.markdown-editor-container .w-md-editor-text-container > div,
+.markdown-editor-container .w-md-editor-text-container textarea,
+.markdown-editor-container .w-md-editor-text-input textarea {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+}
+
+/* 確保選中文本的可見性 */
+.markdown-editor-container ::selection {
+  background: rgba(56, 178, 172, 0.3) !important;
+  color: white !important;
+}
+
+/* 最強制的 CSS 覆蓋來解決文字顏色問題 */
+.markdown-editor-container .w-md-editor-text,
+.markdown-editor-container .w-md-editor-text *,
+.markdown-editor-container .w-md-editor-text textarea,
+.markdown-editor-container .w-md-editor-text-input,
+.markdown-editor-container .w-md-editor-text-input *,
+.markdown-editor-container .w-md-editor-text-input textarea,
+.markdown-editor-container .w-md-editor-text-area,
+.markdown-editor-container .w-md-editor-text-area *,
+.markdown-editor-container .w-md-editor-text-area textarea,
+.markdown-editor-container .w-md-editor-text-container,
+.markdown-editor-container .w-md-editor-text-container *,
+.markdown-editor-container .w-md-editor-text-container textarea {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+  caret-color: #38b2ac !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+}
+
+/* 針對所有可能的編輯器元素 */
+.markdown-editor-container textarea,
+.markdown-editor-container input[type="text"],
+.markdown-editor-container div[contenteditable="true"],
+.markdown-editor-container .cm-editor,
+.markdown-editor-container .cm-content,
+.markdown-editor-container .cm-line {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+  caret-color: #38b2ac !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+}
+
+/* CodeMirror 特定樣式 */
+.markdown-editor-container .CodeMirror,
+.markdown-editor-container .CodeMirror-line,
+.markdown-editor-container .CodeMirror-code {
+  color: #e2e8f0 !important;
+  background: transparent !important;
+}
+
+.markdown-editor-container .CodeMirror-cursor {
+  border-left: 2px solid #38b2ac !important;
+}
+
+/* Enhanced MDEditor styling with glassmorphism */
 .markdown-editor-container .w-md-editor-toolbar {
-  background-color: #2d3748;
-  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(135deg, rgba(45, 55, 72, 0.8), rgba(26, 32, 44, 0.8)) !important;
+  backdrop-filter: blur(15px) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  border-radius: 12px 12px 0 0 !important;
 }
+
 .markdown-editor-container .w-md-editor-toolbar li button {
-  color: var(--text-secondary);
+  color: var(--text-secondary) !important;
+  transition: all 0.3s ease !important;
+  border-radius: 6px !important;
+  margin: 0 2px !important;
 }
+
 .markdown-editor-container .w-md-editor-toolbar li button:hover {
-  background-color: var(--accent-primary);
-  color: white;
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(56, 178, 172, 0.3) !important;
 }
+
+.markdown-editor-container .w-md-editor-toolbar li button.active {
+  background: var(--gradient-accent) !important;
+  color: white !important;
+}
+
 .markdown-editor-container .wmde-markdown {
-  background-color: var(--background-secondary);
-  color: var(--text-primary);
+  background: rgba(26, 32, 44, 0.4) !important;
+  backdrop-filter: blur(10px) !important;
+  color: var(--text-primary) !important;
+  border-radius: 0 0 12px 12px !important;
+}
+
+.markdown-editor-container .w-md-editor-text-input,
+.markdown-editor-container .w-md-editor-text-area,
+.markdown-editor-container .w-md-editor-text {
+  background: rgba(17, 21, 28, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  color: var(--text-primary) !important;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', monospace !important;
+  font-size: 0.95rem !important;
+  line-height: 1.6 !important;
+}
+
+.markdown-editor-container .w-md-editor-text-input textarea,
+.markdown-editor-container .w-md-editor-text-area textarea,
+.markdown-editor-container .w-md-editor-text textarea {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  caret-color: var(--accent-primary) !important;
+}
+
+.markdown-editor-container .CodeMirror {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+.markdown-editor-container .CodeMirror-cursor {
+  border-left: 2px solid var(--accent-primary) !important;
+}
+
+.markdown-editor-container .CodeMirror-selected {
+  background: rgba(56, 178, 172, 0.3) !important;
+}
+
+.markdown-editor-container .w-md-editor-text-input::placeholder,
+.markdown-editor-container .w-md-editor-text-area::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.6 !important;
 }
 
 
 .editor-actions {
-  margin-top: auto; /* Pushes actions to the bottom */
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-color);
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.editor-actions::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 1px;
+  background: var(--gradient-accent);
+  opacity: 0.6;
 }
 
 .status-info {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-secondary);
   font-weight: 500;
+  text-align: center;
 }
 
 .status-badge {
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  margin-left: 8px;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  margin-left: 12px;
   font-weight: 600;
   text-transform: capitalize;
   display: inline-block;
-  border: none;
+  backdrop-filter: blur(10px);
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
 }
 
 .status-badge.published {
-  background-color: rgba(56, 178, 172, 0.1);
+  background: linear-gradient(135deg, rgba(56, 178, 172, 0.2), rgba(72, 187, 120, 0.2));
+  border-color: rgba(56, 178, 172, 0.3);
   color: var(--accent-primary);
 }
 
 .status-badge.draft {
-  background-color: rgba(237, 137, 54, 0.1);
+  background: linear-gradient(135deg, rgba(237, 137, 54, 0.2), rgba(245, 159, 0, 0.2));
+  border-color: rgba(237, 137, 54, 0.3);
   color: #ed8936;
 }
 
@@ -221,39 +525,66 @@
 }
 
 .btn {
-  padding: 0.6rem 1.2rem;
-  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
   border: 1px solid transparent;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.95rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary {
-  background-color: var(--accent-primary);
+  background: var(--gradient-accent);
   color: #fff;
+  box-shadow: 0 8px 25px rgba(56, 178, 172, 0.3);
 }
 .btn-primary:hover:not(:disabled) {
-  background-color: #2c7a7b;
+  box-shadow: 0 12px 30px rgba(56, 178, 172, 0.4);
 }
 
 .btn-secondary {
-  background-color: var(--background-tertiary);
+  background: var(--background-tertiary);
   color: var(--text-primary);
   border-color: var(--border-color);
 }
 .btn-secondary:hover:not(:disabled) {
-  background-color: #4a5568;
+  background: #4a5568;
+  border-color: var(--text-secondary);
 }
 
 .btn-outline {
-  background-color: transparent;
+  background: transparent;
   color: var(--accent-secondary);
   border-color: var(--accent-secondary);
 }
 .btn-outline:hover:not(:disabled) {
-  background-color: rgba(99, 179, 237, 0.1);
+  background: rgba(99, 179, 237, 0.1);
+  color: #fff;
+  border-color: #fff;
+  box-shadow: 0 8px 25px rgba(99, 179, 237, 0.3);
 }
 
 .btn:disabled {
@@ -263,21 +594,31 @@
 
 .error-message {
   color: var(--danger-color);
-  background-color: rgba(229, 62, 62, 0.1);
-  border: 1px solid var(--danger-color);
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, rgba(229, 62, 62, 0.1), rgba(255, 100, 100, 0.1));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(229, 62, 62, 0.3);
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
   text-align: center;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.75rem;
   font-weight: 500;
+  font-size: 1rem;
+  box-shadow: 0 8px 25px rgba(229, 62, 62, 0.2);
 }
 
 .error-message::before {
-  content: '⚠️';
-  font-size: 1.2rem;
+  content: '🚀';
+  font-size: 1.5rem;
+  animation: rocket-shake 0.5s infinite alternate;
+}
+
+@keyframes rocket-shake {
+  0% { transform: rotate(-5deg); }
+  100% { transform: rotate(5deg); }
 }
 
 /* ==================== 響應式設計 ==================== */
@@ -290,14 +631,22 @@
     flex: none;
     max-height: none;
     order: -1;
+    flex-direction: row;
+    gap: 2rem;
+    overflow-x: auto;
+  }
+
+  .sidebar-section, .editor-actions {
+    flex: 1;
+    min-width: 300px;
   }
   
   .markdown-editor-container {
-    min-height: 300px;
+    min-height: 400px;
   }
   
   .markdown-editor-container .w-md-editor {
-    min-height: 300px;
+    min-height: 350px !important;
   }
 }
 
@@ -310,6 +659,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+    padding: 1.5rem;
   }
   
   .header-actions {
@@ -320,18 +670,53 @@
   .form-row {
     flex-direction: column;
   }
+
+  .editor-sidebar {
+    flex-direction: column;
+  }
   
   .action-buttons {
     grid-template-columns: 1fr;
   }
   
+  .markdown-editor-container {
+    min-height: 350px;
+    padding: 1rem;
+  }
+
   .markdown-editor-container .w-md-editor {
-    min-height: 250px;
+    min-height: 300px !important;
+  }
+  
+  .sidebar-section, .editor-actions {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .markdown-editor-container {
+    min-height: 300px;
+    padding: 0.75rem;
+  }
+
+  .markdown-editor-container .w-md-editor {
+    min-height: 250px !important;
+    border-radius: 8px !important;
+  }
+  
+  .editor-header {
+    padding: 1rem;
+  }
+  
+  .sidebar-section, .editor-actions {
+    padding: 1rem;
   }
 }
 
 /* ==================== 載入狀態 ==================== */
 .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
   position: relative;
   overflow: hidden;
 }
@@ -340,27 +725,28 @@
   content: '';
   position: absolute;
   top: 0;
-  left: -100%;
+  left: -150%;
   width: 100%;
   height: 100%;
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.15),
     transparent
   );
-  animation: loading-shimmer 1.5s infinite;
+  animation: loading-shimmer 2s infinite;
 }
 
 @keyframes loading-shimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
+  0% { left: -150%; }
+  50% { left: 150%; }
+  100% { left: 150%; }
 }
 
 /* ==================== 改進的 Markdown 編輯器樣式 ==================== */
 .markdown-editor-container .w-md-editor.w-md-editor-focus {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 2px rgba(56, 178, 172, 0.2);
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 3px rgba(56, 178, 172, 0.2), 0 8px 25px rgba(56, 178, 172, 0.1) !important;
 }
 
 .markdown-editor-container .w-md-editor-toolbar {
@@ -368,41 +754,65 @@
 }
 
 .markdown-editor-container .w-md-editor-toolbar li button.active {
-  background-color: var(--accent-primary);
-  color: white;
+  background: var(--gradient-accent) !important;
+  color: white !important;
+}
+
+/* 修復 MDEditor 文字顏色問題 */
+.markdown-editor-container .w-md-editor-text,
+.markdown-editor-container .w-md-editor-text-container,
+.markdown-editor-container .w-md-editor-text-input,
+.markdown-editor-container .w-md-editor-text-area {
+  color: var(--text-primary) !important;
+}
+
+.markdown-editor-container .w-md-editor-text textarea,
+.markdown-editor-container .w-md-editor-text-input textarea,
+.markdown-editor-container .w-md-editor-text-area textarea {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  resize: none !important;
+  caret-color: var(--accent-primary) !important;
+}
+
+.markdown-editor-container .w-md-editor-text::placeholder,
+.markdown-editor-container .w-md-editor-text-input::placeholder,
+.markdown-editor-container .w-md-editor-text-area::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 0.6 !important;
 }
 
 /* 自定義滾動條 */
 .markdown-editor-container .w-md-editor-text::-webkit-scrollbar,
 .markdown-editor-container .wmde-markdown::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 
 .markdown-editor-container .w-md-editor-text::-webkit-scrollbar-track,
 .markdown-editor-container .wmde-markdown::-webkit-scrollbar-track {
-  background: var(--background-primary);
+  background: rgba(17, 21, 28, 0.6);
+  border-radius: 0 0 12px 0;
 }
 
 .markdown-editor-container .w-md-editor-text::-webkit-scrollbar-thumb,
 .markdown-editor-container .wmde-markdown::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: 4px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .markdown-editor-container .w-md-editor-text::-webkit-scrollbar-thumb:hover,
 .markdown-editor-container .wmde-markdown::-webkit-scrollbar-thumb:hover {
-  background: var(--border-color-hover);
+  background: var(--accent-primary);
 }
 
 /* ==================== 表單驗證樣式 ==================== */
 .form-group input:invalid,
 .form-group textarea:invalid {
   border-color: var(--danger-color);
-}
-
-.form-group input:valid,
-.form-group textarea:valid {
-  border-color: var(--success-color);
 }
 
 .form-group .validation-message {
@@ -419,27 +829,6 @@
 
 .form-group .validation-message.success {
   color: var(--success-color);
-}
-
-/* ==================== 標籤輸入優化 ==================== */
-.form-group input[type="text"]#tags {
-  padding-right: 2.5rem;
-}
-
-.form-group .tags-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.tag-item {
-  background: var(--accent-primary);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
 }
 
 /* ==================== 側邊欄分組樣式 ==================== */
