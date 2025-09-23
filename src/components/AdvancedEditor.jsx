@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
+import { motion, AnimatePresence } from 'framer-motion';
 import './AdvancedEditor.css';
 
 function AdvancedEditor() {
@@ -135,9 +136,25 @@ function AdvancedEditor() {
 
   return (
     <div className="advanced-editor">
-      <header className="editor-header">
-        <h1>{isEdit ? '編輯文章' : '創建新文章'}</h1>
-        <div className="header-actions">
+      <motion.header 
+        className="editor-header"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <motion.h1
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          {isEdit ? '編輯文章' : '創建新文章'}
+        </motion.h1>
+        <motion.div 
+          className="header-actions"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
           <button
             type="button"
             className="btn btn-secondary"
@@ -145,18 +162,37 @@ function AdvancedEditor() {
           >
             返回後台
           </button>
-        </div>
-      </header>
+        </motion.div>
+      </motion.header>
 
-      {error && (
-        <div className="error-message">
-          {error}
-        </div>
-      )}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            className="error-message"
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="editor-form">
+      <motion.form 
+        onSubmit={handleSubmit} 
+        className="editor-form"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+      >
         <div className="editor-main-content">
-          <div className="form-row">
+          <motion.div 
+            className="form-row"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
             <div className="form-group">
               <label htmlFor="title">文章標題 *</label>
               <input
@@ -169,11 +205,16 @@ function AdvancedEditor() {
                 placeholder="輸入文章標題..."
               />
             </div>
-          </div>
+          </motion.div>
 
-          <div className="form-group">
+          <motion.div 
+            className="form-group"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
             <label>文章內容 *</label>
-            <div className="markdown-editor-container">
+            <div id="advanced-editor-wrapper" className="markdown-editor-container glass-container">
               <MDEditor
                 value={post.content}
                 onChange={(value) => setPost(prev => ({ ...prev, content: value || '' }))}
@@ -182,14 +223,24 @@ function AdvancedEditor() {
                 data-color-mode="dark"
               />
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        <div className="editor-sidebar">
-          <div className="sidebar-section">
+        <motion.div 
+          className="editor-sidebar"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+        >
+          <div className="sidebar-section glass-container">
             <label>文章設定</label>
             
-            <div className="form-group">
+            <motion.div 
+              className="form-group"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.8 }}
+            >
               <label htmlFor="excerpt">文章摘要</label>
               <textarea
                 id="excerpt"
@@ -199,9 +250,14 @@ function AdvancedEditor() {
                 placeholder="輸入文章摘要（留空將自動生成）..."
                 rows="3"
               />
-            </div>
+            </motion.div>
 
-            <div className="form-group">
+            <motion.div 
+              className="form-group"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.9 }}
+            >
               <label htmlFor="tags">標籤</label>
               <input
                 type="text"
@@ -212,38 +268,76 @@ function AdvancedEditor() {
                 placeholder="輸入標籤，用逗號分隔..."
               />
               <small className="form-hint">例如：JavaScript, React, 教學</small>
-            </div>
+              {tagInput && (
+                <motion.div 
+                  className="tags-preview"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {tagInput.split(',').map((tag, index) => (
+                    tag.trim() && (
+                      <motion.span 
+                        key={index}
+                        className="tag-preview"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2, delay: index * 0.1 }}
+                      >
+                        {tag.trim()}
+                      </motion.span>
+                    )
+                  ))}
+                </motion.div>
+              )}
+            </motion.div>
           </div>
 
-          <div className="editor-actions">
+          <motion.div 
+            className="editor-actions glass-container"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 1.0 }}
+          >
             <div className="status-info">
               當前狀態: 
-              <span className={`status-badge ${post.status}`}>
+              <motion.span 
+                className={`status-badge ${post.status}`}
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
                 {post.status === 'published' ? '已發佈' : '草稿'}
-              </span>
+              </motion.span>
             </div>
             
             <div className="action-buttons">
-              <button
+              <motion.button
                 type="button"
                 className="btn btn-outline"
                 onClick={handleSaveDraft}
                 disabled={isLoading}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.2 }}
               >
                 {isLoading ? '儲存中...' : '儲存草稿'}
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 type="button"
                 className="btn btn-primary"
                 onClick={handlePublish}
                 disabled={isLoading}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.2 }}
               >
                 {isLoading ? '發佈中...' : '發佈文章'}
-              </button>
+              </motion.button>
             </div>
-          </div>
-        </div>
-      </form>
+          </motion.div>
+        </motion.div>
+      </motion.form>
     </div>
   );
 }
