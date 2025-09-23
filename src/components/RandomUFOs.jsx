@@ -47,18 +47,27 @@ const RandomUFOs = ({ count = 1 }) => { // UFO 數量減少為 1
   );
 
   useEffect(() => {
+    // 如果頁面不可見，不啟動 UFO 動畫
+    if (!isVisible) {
+      console.log('RandomUFOs: 已暫停 (頁面不可見)');
+      return;
+    }
+
     const interval = setInterval(() => {
-      setUfos(prevUfos => {
-        const newUfos = [...prevUfos];
-        const randomIndex = Math.floor(Math.random() * newUfos.length);
-        newUfos[randomIndex] = createUFO();
-        newUfos[randomIndex].delay = getRandomValue(10, 30); // 確保較長延遲
-        return newUfos;
-      });
+      // 只在頁面可見時更新 UFO
+      if (isVisible) {
+        setUfos(prevUfos => {
+          const newUfos = [...prevUfos];
+          const randomIndex = Math.floor(Math.random() * newUfos.length);
+          newUfos[randomIndex] = createUFO();
+          newUfos[randomIndex].delay = getRandomValue(10, 30); // 確保較長延遲
+          return newUfos;
+        });
+      }
     }, 25000); // 每 25 秒嘗試更新一個 UFO (頻率更低)
 
     return () => clearInterval(interval);
-  }, [count]);
+  }, [count, isVisible]);
 
    return (
      <div style={{

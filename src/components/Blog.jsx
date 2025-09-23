@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import MeteorShower from './MeteorShower';
-import SpaceParticles from './SpaceParticles';
+import LazyComponent from './LazyComponent';
+import { 
+  LazySpaceParticles, 
+  LazyMeteorShower, 
+  LazyBlackHole3D,
+  SpaceParticlesPlaceholder,
+  MeteorShowerPlaceholder,
+  BlackHole3DPlaceholder
+} from './LazyEffects';
 import SpaceHeroBanner from './SpaceHeroBanner';
-import BlackHole3D from './BlackHole3D';
 import ModernCard from './ModernCard';
 import SearchAndFilter from './SearchAndFilter';
 import './Blog.css';
@@ -18,6 +24,20 @@ function Blog() {
 
   useEffect(() => {
     fetchPosts();
+  }, []);
+
+  // 使用 useCallback 穩定化回呼函式
+  const handleSearchChange = useCallback((e) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  const handleTagSelect = useCallback((tag) => {
+    setSelectedTag(tag);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearchTerm('');
+    setSelectedTag('');
   }, []);
 
   const fetchPosts = async () => {
@@ -94,10 +114,33 @@ function Blog() {
 
   return (
     <div className="blog-container">
-      <SpaceParticles />
-      <MeteorShower />
+      {/* 延遲載入背景粒子效果 */}
+      <LazyComponent 
+        className="space-particles-wrapper"
+        placeholder={<SpaceParticlesPlaceholder />}
+        rootMargin="200px"
+      >
+        <LazySpaceParticles />
+      </LazyComponent>
+      
+      {/* 延遲載入流星雨效果 */}
+      <LazyComponent 
+        className="meteor-shower-wrapper"
+        placeholder={<MeteorShowerPlaceholder />}
+        rootMargin="300px"
+      >
+        <LazyMeteorShower />
+      </LazyComponent>
+      
       <SpaceHeroBanner>
-        <BlackHole3D className="blog-blackhole-left" isLeftSide={true} />
+        {/* 延遲載入 3D 黑洞 */}
+        <LazyComponent 
+          className="blackhole-wrapper"
+          placeholder={<BlackHole3DPlaceholder />}
+          rootMargin="100px"
+        >
+          <LazyBlackHole3D className="blog-blackhole-left" isLeftSide={true} />
+        </LazyComponent>
       </SpaceHeroBanner>
       <div className="blog-content-section">
         <div className="blog-main-content">
@@ -108,9 +151,9 @@ function Blog() {
 
           <SearchAndFilter
             searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
+            setSearchTerm={handleSearchChange}
             selectedTag={selectedTag}
-            setSelectedTag={setSelectedTag}
+            setSelectedTag={handleTagSelect}
             allTags={allTags}
           />
 
@@ -143,10 +186,7 @@ function Blog() {
                   <div className="empty-state-actions">
                     <button 
                       className="clear-filters-btn"
-                      onClick={() => {
-                        setSearchTerm('');
-                        setSelectedTag('');
-                      }}
+                      onClick={clearFilters}
                     >
                       <svg viewBox="0 0 24 24" fill="none">
                         <path d="M3 6h18" />
@@ -169,61 +209,79 @@ function Blog() {
             </div>
           )}
         </div>
-        <aside className="blog-sidebar">
-          <div className="sidebar-widget">
-            <h3 className="widget-title">✨ 精選文章</h3>
-            <ul className="featured-posts-list">
-              {posts.slice(0, 5).map(post => (
-                <li key={post.id}>
-                  <Link to={`/blog/${post.id}`}>{post.title}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div className="sidebar-widget">
-            <h3 className="widget-title">📊 文章統計</h3>
-            <div className="stats-container">
-              <div className="stat-item">
-                <span className="stat-number">{posts.length}</span>
-                <span className="stat-label">總文章數</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">{allTags.length}</span>
-                <span className="stat-label">標籤數量</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">{filteredPosts.length}</span>
-                <span className="stat-label">當前顯示</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="sidebar-widget">
-            <h3 className="widget-title">🚀 快速導航</h3>
-            <div className="quick-nav">
-              <Link to="/" className="nav-link">
-                <span className="nav-icon">🏠</span>
-                <span>首頁</span>
-              </Link>
-              <Link to="/portfolio" className="nav-link">
-                <span className="nav-icon">💼</span>
-                <span>作品集</span>
-              </Link>
-              <Link to="/about" className="nav-link">
-                <span className="nav-icon">👨‍💻</span>
-                <span>關於我</span>
-              </Link>
-              <Link to="/contact" className="nav-link">
-                <span className="nav-icon">📧</span>
-                <span>聯絡我</span>
-              </Link>
-            </div>
-          </div>
-        </aside>
+        <BlogSidebar 
+          posts={posts}
+          allTags={allTags}
+          filteredPostsLength={filteredPosts.length}
+        />
       </div>
     </div>
   );
 }
+
+// 使用 React.memo 優化側邊欄組件，防止不必要的重渲染
+const BlogSidebar = React.memo(({ posts, allTags, filteredPostsLength }) => {
+  const featuredPosts = React.useMemo(() => posts.slice(0, 5), [posts]);
+  
+  return (
+    <aside className="blog-sidebar">
+      <div className="sidebar-widget">
+        <h3 className="widget-title">✨ 精選文章</h3>
+        <ul className="featured-posts-list">
+          {featuredPosts.map(post => (
+            <li key={post.id}>
+              <Link to={`/blog/${post.id}`}>{post.title}</Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+      
+      <div className="sidebar-widget">
+        <h3 className="widget-title">📊 文章統計</h3>
+        <div className="stats-container">
+          <div className="stat-item">
+            <span className="stat-number">{posts.length}</span>
+            <span className="stat-label">總文章數</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-number">{allTags.length}</span>
+            <span className="stat-label">標籤數量</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-number">{filteredPostsLength}</span>
+            <span className="stat-label">當前顯示</span>
+          </div>
+        </div>
+      </div>
+
+      <QuickNavigation />
+    </aside>
+  );
+});
+
+// 完全靜態的快速導航組件
+const QuickNavigation = React.memo(() => (
+  <div className="sidebar-widget">
+    <h3 className="widget-title">🚀 快速導航</h3>
+    <div className="quick-nav">
+      <Link to="/" className="nav-link">
+        <span className="nav-icon">🏠</span>
+        <span>首頁</span>
+      </Link>
+      <Link to="/portfolio" className="nav-link">
+        <span className="nav-icon">💼</span>
+        <span>作品集</span>
+      </Link>
+      <Link to="/about" className="nav-link">
+        <span className="nav-icon">👨‍💻</span>
+        <span>關於我</span>
+      </Link>
+      <Link to="/contact" className="nav-link">
+        <span className="nav-icon">📧</span>
+        <span>聯絡我</span>
+      </Link>
+    </div>
+  </div>
+));
 
 export default Blog;

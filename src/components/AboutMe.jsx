@@ -25,7 +25,13 @@ const AboutMe = () => {
         </div>
         {/* 新增圖片容器 */}
         <div className="about-me-image-container">
-          <img src={mainImage} alt="楊泰和" className="about-me-image" />
+          <img 
+            src={mainImage} 
+            alt="楊泰和" 
+            className="about-me-image"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
       </div>
     </section>

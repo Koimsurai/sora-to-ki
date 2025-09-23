@@ -7,8 +7,14 @@ const MeteorShower = () => {
   const { isVisible } = usePageVisibility();
 
   useEffect(() => {
+    // 如果頁面不可見，完全不啟動流星雨
+    if (!isVisible) {
+      console.log('MeteorShower: 已暫停 (頁面不可見)');
+      return;
+    }
+
     const createMeteor = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current || !isVisible) return;
 
       const meteor = document.createElement('div');
       meteor.className = 'meteor';
@@ -37,19 +43,30 @@ const MeteorShower = () => {
       }, (duration + delay) * 1000);
     };
 
-    // 定期創建流星
+    // 減少流星創建頻率以提升效能
     const interval = setInterval(() => {
       if (isVisible) {
         createMeteor();
       }
-    }, 3000);
+    }, 5000); // 從 3 秒增加到 5 秒
     
-    // 初始創建幾顆流星
-    for (let i = 0; i < 3; i++) {
-      setTimeout(createMeteor, i * 1000);
+    // 減少初始流星數量
+    for (let i = 0; i < 2; i++) {
+      setTimeout(() => {
+        if (isVisible) {
+          createMeteor();
+        }
+      }, i * 2000); // 間隔增加到 2 秒
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // 清理所有現存的流星
+      if (containerRef.current) {
+        const meteors = containerRef.current.querySelectorAll('.meteor');
+        meteors.forEach(meteor => meteor.remove());
+      }
+    };
   }, [isVisible]);
 
   return <div ref={containerRef} className="meteor-shower-container"></div>;

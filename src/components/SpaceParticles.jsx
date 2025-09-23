@@ -14,16 +14,19 @@ const SpaceParticles = () => {
     let animationId;
     let particles = [];
 
-    // 設置畫布大小
+    // 設置 canvas 尺寸
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
 
+    // 初始化 canvas 尺寸
     resizeCanvas();
+
+    // 監聽視窗大小變化
     window.addEventListener('resize', resizeCanvas);
 
-    // 粒子類
+    // 粒子類別定義
     class Particle {
       constructor() {
         this.x = Math.random() * canvas.width;
@@ -51,15 +54,12 @@ const SpaceParticles = () => {
       update() {
         this.x += this.speedX;
         this.y += this.speedY;
-
-        // 閃爍效果
         this.opacity = 0.5 + Math.sin(Date.now() * this.twinkle + this.twinkleOffset) * 0.3;
-
-        // 邊界檢測
+        
+        // 邊界檢測與反彈
         if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
         if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
-
-        // 保持在畫布內
+        
         this.x = Math.max(0, Math.min(canvas.width, this.x));
         this.y = Math.max(0, Math.min(canvas.height, this.y));
       }
@@ -79,51 +79,22 @@ const SpaceParticles = () => {
       }
     }
 
-    // 初始化粒子
-    const initParticles = () => {
-      const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
-      particles = [];
-      for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle());
-      }
-    };
-
-    initParticles();
-
-    // 動畫循環
-    const animate = () => {
-      // 檢查頁面是否可見
-      if (!isVisible) {
-        animationId = requestAnimationFrame(animate);
-        return;
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      particles.forEach(particle => {
-        particle.update();
-        particle.draw();
-      });
-
-      // 連接附近的粒子
-      connectParticles();
-
-      animationId = requestAnimationFrame(animate);
-    };
-
+    // 連接粒子的函數
     const connectParticles = () => {
+      const maxDistance = 100;
+      
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < 120) {
-            const opacity = (120 - distance) / 120 * 0.2;
+          
+          if (distance < maxDistance) {
+            const opacity = (1 - distance / maxDistance) * 0.3;
             ctx.save();
             ctx.globalAlpha = opacity;
-            ctx.strokeStyle = 'rgba(0, 170, 255, ' + opacity + ')';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255, 255, 255, ' + opacity + ')';
+            ctx.lineWidth = 0.5;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
@@ -134,11 +105,37 @@ const SpaceParticles = () => {
       }
     };
 
+    // 動畫循環 - 關鍵優化點
+    const animate = () => {
+      // 🚨 頁面不可見時完全停止動畫
+      if (!isVisible) {
+        animationId = requestAnimationFrame(animate);
+        return; // 不執行任何繪圖操作，節省 CPU/GPU 資源
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach(particle => {
+        particle.update();
+        particle.draw();
+      });
+      
+      connectParticles();
+      animationId = requestAnimationFrame(animate);
+    };
+
+    // 初始化並啟動動畫
+    const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
+    particles = [];
+    for (let i = 0; i < particleCount; i++) {
+      particles.push(new Particle());
+    }
+    
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', resizeCanvas);
     };
   }, [isVisible]);
 

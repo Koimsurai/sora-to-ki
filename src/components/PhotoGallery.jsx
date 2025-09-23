@@ -69,7 +69,12 @@ function PhotoGallery() {
             {index % 2 === 0 ? (
               <>
                 <div className="photo-image-block"> {/* 使用新的 class name */}
-                  <img src={item.imageUrl} alt={item.title} />
+                  <img 
+                    src={item.imageUrl} 
+                    alt={item.title}
+                    loading="lazy"
+                    decoding="async" 
+                  />
                 </div>
                 <div className="photo-text-block"> {/* 使用新的 class name */}
                   {/* 顯示 MM/DD */}
@@ -91,7 +96,12 @@ function PhotoGallery() {
                   {/* <h3>{item.title}</h3> */}
                 </div>
                 <div className="photo-image-block"> {/* 使用新的 class name */}
-                  <img src={item.imageUrl} alt={item.title} />
+                  <img 
+                    src={item.imageUrl} 
+                    alt={item.title}
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
               </>
             )}
