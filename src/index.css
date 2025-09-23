@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* 新的 Happy Hues 調色板 */
   --clr-bg-primary: #16161a;     /* 主要背景 */
