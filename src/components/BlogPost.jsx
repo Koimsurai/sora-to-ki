@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -7,6 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { motion } from 'framer-motion';
 import Comments from './Comments';
+import Newsletter from './Newsletter';
 import MeteorShower from './MeteorShower';
 import './BlogPost.css';
 
@@ -48,16 +49,99 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
   );
 };
 
+// --- 文章目錄導航組件 ---
+const TableOfContents = React.memo(({ headings, activeHeading, readingProgress, tocRef }) => {
+  const scrollToHeading = React.useCallback((headingId) => {
+    // 嘗試多種方式找到元素
+    const element = document.getElementById(headingId) || 
+                    document.querySelector(`[id="${headingId}"]`) ||
+                    document.querySelector(`h1[id="${headingId}"], h2[id="${headingId}"], h3[id="${headingId}"], h4[id="${headingId}"]`);
+    
+    if (element) {
+      const headerOffset = 120;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  return (
+    <div className="table-of-contents">
+      <div className="toc-header">
+        <h3>文章目錄</h3>
+        <div className="reading-progress-circle">
+          <svg viewBox="0 0 36 36">
+            <path
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+              fill="none"
+              stroke="rgba(255, 255, 255, 0.1)"
+              strokeWidth="3"
+            />
+            <path
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+              fill="none"
+              stroke="#38b2ac"
+              strokeWidth="3"
+              strokeDasharray={`${readingProgress}, 100`}
+            />
+          </svg>
+          <span className="progress-text">{Math.round(readingProgress)}%</span>
+        </div>
+      </div>
+      <nav className="toc-nav" ref={tocRef}>
+        {headings.map((heading) => (
+          <button
+            key={heading.id}
+            data-heading-id={heading.id}
+            className={`toc-item level-${heading.level} ${activeHeading === heading.id ? 'active' : ''}`}
+            onClick={() => scrollToHeading(heading.id)}
+            title={heading.text}
+          >
+            <span className="toc-bullet">•</span>
+            <span className="toc-text">{heading.text}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+});
+
+// 全局計數器，用於生成唯一的標題 ID
+let globalHeadingCounter = 0;
 
 function BlogPost() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [readingProgress, setReadingProgress] = useState(0);
+  const [headings, setHeadings] = useState([]);
+  const [activeHeading, setActiveHeading] = useState('');
+  const contentRef = useRef(null);
+  const tocRef = useRef(null);
   const { id } = useParams();
+
+  // 移除這個 useLayoutEffect，改由提取標題時重置計數器
+
+  // 創建帶 ID 的標題組件
+  const createHeading = React.useCallback((level) => {
+    return ({ children, ...props }) => {
+      const HeadingTag = `h${level}`;
+      const headingId = `heading-${globalHeadingCounter++}`;
+      return React.createElement(HeadingTag, { id: headingId, ...props }, children);
+    };
+  }, []);
 
   useEffect(() => {
     setLoading(true);
+    // Fetch post data
     fetch(`/api/posts/${id}`)
       .then(res => {
         if (!res.ok) throw new Error('Post not found');
@@ -73,6 +157,11 @@ function BlogPost() {
               day: 'numeric',
             }),
           });
+          
+          // Increment view count
+          fetch(`/api/posts/${id}/view`, {
+            method: 'POST',
+          }).catch(err => console.error('Failed to increment view count:', err));
         } else {
           throw new Error('Post not found');
         }
@@ -84,16 +173,126 @@ function BlogPost() {
       });
   }, [id]);
 
+  // 從 Markdown 內容提取標題
   useEffect(() => {
+    if (!post?.content) return;
+
+    // 重置全局計數器以確保同步
+    globalHeadingCounter = 0;
+
+    // 使用正則表達式提取標題
+    const headingRegex = /^(#{1,4})\s+(.+)$/gm;
+    const matches = [];
+    let match;
+    
+    while ((match = headingRegex.exec(post.content)) !== null) {
+      const level = match[1].length;
+      const text = match[2].trim();
+      const id = `heading-${globalHeadingCounter++}`;
+      matches.push({ id, text, level });
+    }
+
+    setHeadings(matches);
+  }, [post]);
+
+  // 處理滾動進度和活動標題
+  useEffect(() => {
+    if (!post) return;
+
+    let debounceTimer = null;
+    let lastActiveHeading = activeHeading;
+
     const handleScroll = () => {
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = (window.scrollY / totalHeight) * 100;
-      setReadingProgress(Math.min(100, Math.max(0, progress)));
+      // 計算閱讀進度
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollableHeight = documentHeight - windowHeight;
+      
+      if (scrollableHeight > 0) {
+        const progress = (scrollTop / scrollableHeight) * 100;
+        setReadingProgress(Math.min(100, Math.max(0, progress)));
+      } else {
+        setReadingProgress(0);
+      }
+
+      // 防抖處理標題檢測，避免閃爍
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+
+      debounceTimer = setTimeout(() => {
+        // 檢測當前可見的標題
+        if (contentRef.current && headings.length > 0) {
+          const headingElements = contentRef.current.querySelectorAll('[id^="heading-"]');
+          let currentHeading = '';
+          let minDistance = Infinity;
+          
+          headingElements.forEach((heading) => {
+            const rect = heading.getBoundingClientRect();
+            // 標題在視窗上半部分時
+            if (rect.top <= 200 && rect.top >= -100) {
+              const distance = Math.abs(rect.top - 100);
+              if (distance < minDistance) {
+                minDistance = distance;
+                currentHeading = heading.id;
+              }
+            }
+          });
+          
+          // 如果沒有找到，選擇第一個在視窗內的
+          if (!currentHeading && headingElements.length > 0) {
+            for (let i = 0; i < headingElements.length; i++) {
+              const rect = headingElements[i].getBoundingClientRect();
+              if (rect.top > 0 && rect.top < windowHeight) {
+                currentHeading = headingElements[i].id;
+                break;
+              }
+            }
+          }
+          
+          // 只在標題真正改變時才更新
+          if (currentHeading && currentHeading !== lastActiveHeading) {
+            lastActiveHeading = currentHeading;
+            setActiveHeading(currentHeading);
+            
+            // 自動滾動目錄到當前項目（不使用smooth避免干擾）
+            if (tocRef.current) {
+              const activeItem = tocRef.current.querySelector(`[data-heading-id="${currentHeading}"]`);
+              if (activeItem) {
+                activeItem.scrollIntoView({ 
+                  behavior: 'auto', 
+                  block: 'nearest'
+                });
+              }
+            }
+          }
+        }
+      }, 200); // 增加到 200ms 防抖延遲
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    // 使用 requestAnimationFrame 優化性能
+    let ticking = false;
+    const scrollListener = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', scrollListener, { passive: true });
+    // 延遲初始調用，確保內容已渲染
+    const initTimer = setTimeout(handleScroll, 500);
+    
+    return () => {
+      window.removeEventListener('scroll', scrollListener);
+      if (debounceTimer) clearTimeout(debounceTimer);
+      clearTimeout(initTimer);
+    };
+  }, [post, headings]);
 
   if (loading) {
     return (
@@ -206,22 +405,53 @@ function BlogPost() {
         transition={{ duration: 0.8, delay: 0.4 }}
       >
         <div className="post-content-wrapper">
-          <div className="post-content">
+          <div className="post-content" ref={contentRef}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
-              components={{ code: CodeBlock }}
+              components={{ 
+                code: CodeBlock,
+                h1: createHeading(1),
+                h2: createHeading(2),
+                h3: createHeading(3),
+                h4: createHeading(4)
+              }}
             >
               {post.content}
             </ReactMarkdown>
           </div>
         </div>
+
+        {/* 文章目錄側邊欄 */}
+        {headings.length > 0 && (
+          <motion.aside
+            className="post-sidebar"
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <TableOfContents 
+              headings={headings} 
+              activeHeading={activeHeading}
+              readingProgress={readingProgress}
+              tocRef={tocRef}
+            />
+          </motion.aside>
+        )}
       </motion.main>
         
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.8 }}
+      >
+        <Newsletter />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.9 }}
       >
         <Comments postId={id} />
       </motion.div>

@@ -76,21 +76,9 @@ const MyIpLoggerPlugin = () => {
 // https://vite.dev/config/
 export default defineConfig(({ command }) => { 
   console.log(`[VITE-CONFIG-DEFINE] ${new Date().toISOString()} - defineConfig called. Command: ${command}`);
-  // 只有在 serve 或 preview 指令時才嘗試讀取憑證
-  const shouldEnableHttps = command === 'serve' || command === 'preview';
+  // HTTPS 由 Nginx 處理（SSL Termination），容器內使用 HTTP
+  // 這樣可以避免雙重加密，提高性能
   let httpsConfig = false;
-  if (shouldEnableHttps) {
-    try {
-      httpsConfig = {
-        key: fs.readFileSync('/etc/certs/privkey.pem'),
-        cert: fs.readFileSync('/etc/certs/fullchain.pem'),
-      };
-    } catch (e) {
-      console.warn('無法讀取 HTTPS 憑證，將以 HTTP 模式啟動。錯誤:', e.message);
-      // 如果在本機執行 serve/preview 且找不到 Docker 路徑的憑證，則退回 HTTP
-      // 在 Docker 環境中，這些檔案應該存在
-    }
-  }
 
   return {
     // configureServer: (server) => { ... }, // <-- 原來的 configureServer 已移至插件
@@ -110,17 +98,16 @@ export default defineConfig(({ command }) => {
       })
     ],
     server: {
-      host: true, // 監聽所有主機
+      host: '0.0.0.0', // 監聽所有網絡接口
       port: 13579,
-      // HTTPS is disabled to work behind Nginx SSL termination
+      strictPort: true,
+      https: httpsConfig, // 使用 HTTPS
       hmr: {
-        // Since we are behind a reverse proxy (Nginx), we need to tell the HMR client
-        // to connect to a specific path that Nginx is configured to proxy for WebSockets.
-        protocol: 'wss', // Use secure WebSocket protocol
-        path: '/ws',     // The path we defined in nginx.conf for WebSocket proxying
-        // clientPort is no longer needed as Nginx handles the public-facing port (13579)
+        // 只配置客戶端如何連接，不改變服務器監聽地址
+        clientPort: 443, // 客戶端通過 Nginx 的 443 端口連接
+        path: '/ws', // WebSocket 路徑（Nginx 會代理到容器的 13579）
       },
-      allowedHosts: ['koimsurai.blogsyte.com'], // 允許此主機訪問
+      allowedHosts: ['koimsurai.blogsyte.com', 'localhost'], // 允許此主機訪問
       proxy: {
         // 將 /api 的請求代理到後端服務
         '/api': {

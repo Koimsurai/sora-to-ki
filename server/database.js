@@ -25,29 +25,162 @@ function initializeDatabase() {
       )
     `);
 
-    // 更新文章表結構
-    db.run(`
-      CREATE TABLE IF NOT EXISTS posts_new (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        excerpt TEXT,
-        status TEXT DEFAULT 'published',
-        author TEXT DEFAULT 'Koimsurai',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
+    // 檢查 posts 表是否存在以及其結構
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='posts'", (err, table) => {
+      if (err) {
+        console.error('檢查 posts 表錯誤:', err);
+        return;
+      }
 
-    // 遷移舊資料
-    db.run(`
-      INSERT OR IGNORE INTO posts_new (id, title, content, author, created_at)
-      SELECT id, title, content, author, created_at FROM posts
-    `);
+      if (!table) {
+        // posts 表不存在，直接創建新表
+        console.log('創建新的 posts 表...');
+        db.run(`
+          CREATE TABLE posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            excerpt TEXT,
+            category TEXT,
+            status TEXT DEFAULT 'published',
+            author TEXT DEFAULT 'Koimsurai',
+            view_count INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )
+        `, (createErr) => {
+          if (createErr) {
+            console.error('創建 posts 表錯誤:', createErr);
+          } else {
+            console.log('posts 表創建成功');
+          }
+        });
+      } else {
+        // posts 表存在，檢查是否需要遷移
+        db.all("PRAGMA table_info(posts)", (err, columns) => {
+          if (err) {
+            console.error('檢查 posts 表結構錯誤:', err);
+            return;
+          }
 
-    // 刪除舊表，重命名新表
-    db.run(`DROP TABLE IF EXISTS posts`);
-    db.run(`ALTER TABLE posts_new RENAME TO posts`);
+          const columnNames = columns.map(col => col.name);
+          const hasCategory = columnNames.includes('category');
+          const hasViewCount = columnNames.includes('view_count');
+
+          if (!hasCategory || !hasViewCount) {
+            // 需要遷移
+            console.log('遷移 posts 表結構...');
+            
+            // 創建新表
+            db.run(`
+              CREATE TABLE IF NOT EXISTS posts_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                content TEXT NOT NULL,
+                excerpt TEXT,
+                category TEXT,
+                status TEXT DEFAULT 'published',
+                author TEXT DEFAULT 'Koimsurai',
+                view_count INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+              )
+            `, (createErr) => {
+              if (createErr) {
+                console.error('創建 posts_new 表錯誤:', createErr);
+                return;
+              }
+
+              // 動態構建 SELECT 語句
+              let selectFields = ['id', 'title', 'content'];
+              let insertFields = ['id', 'title', 'content'];
+              
+              if (columnNames.includes('excerpt')) {
+                selectFields.push('excerpt');
+                insertFields.push('excerpt');
+              } else {
+                selectFields.push("'' as excerpt");
+                insertFields.push('excerpt');
+              }
+
+              selectFields.push("'' as category");
+              insertFields.push('category');
+
+              if (columnNames.includes('status')) {
+                selectFields.push('status');
+                insertFields.push('status');
+              } else {
+                selectFields.push("'published' as status");
+                insertFields.push('status');
+              }
+
+              if (columnNames.includes('author')) {
+                selectFields.push('author');
+                insertFields.push('author');
+              } else {
+                selectFields.push("'Koimsurai' as author");
+                insertFields.push('author');
+              }
+
+              selectFields.push('0 as view_count');
+              insertFields.push('view_count');
+
+              if (columnNames.includes('created_at')) {
+                selectFields.push('created_at');
+                insertFields.push('created_at');
+              } else {
+                selectFields.push("datetime('now') as created_at");
+                insertFields.push('created_at');
+              }
+
+              if (columnNames.includes('updated_at')) {
+                selectFields.push('updated_at');
+                insertFields.push('updated_at');
+              } else if (columnNames.includes('created_at')) {
+                selectFields.push('created_at as updated_at');
+                insertFields.push('updated_at');
+              } else {
+                selectFields.push("datetime('now') as updated_at");
+                insertFields.push('updated_at');
+              }
+
+              const migrateSql = `
+                INSERT INTO posts_new (${insertFields.join(', ')})
+                SELECT ${selectFields.join(', ')}
+                FROM posts
+              `;
+
+              // 複製資料
+              db.run(migrateSql, (migrateErr) => {
+                if (migrateErr) {
+                  console.error('遷移資料錯誤:', migrateErr);
+                  return;
+                }
+
+                // 刪除舊表
+                db.run('DROP TABLE posts', (dropErr) => {
+                  if (dropErr) {
+                    console.error('刪除舊 posts 表錯誤:', dropErr);
+                    return;
+                  }
+
+                  // 重命名新表
+                  db.run('ALTER TABLE posts_new RENAME TO posts', (renameErr) => {
+                    if (renameErr) {
+                      console.error('重命名 posts_new 表錯誤:', renameErr);
+                    } else {
+                      console.log('posts 表遷移成功');
+                    }
+                  });
+                });
+              });
+            });
+          } else {
+            console.log('posts 表結構已是最新版本');
+          }
+        });
+      }
+    });
 
     // 創建標籤表
     db.run(`
@@ -69,15 +202,70 @@ function initializeDatabase() {
       )
     `);
 
-    // 創建留言表
+    // 檢查並更新 comments 表
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='comments'", (err, table) => {
+      if (err) {
+        console.error('檢查 comments 表錯誤:', err);
+        return;
+      }
+
+      if (!table) {
+        // comments 表不存在，直接創建
+        console.log('創建新的 comments 表...');
+        db.run(`
+          CREATE TABLE comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER NOT NULL,
+            author TEXT NOT NULL,
+            content TEXT NOT NULL,
+            likes INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+          )
+        `, (createErr) => {
+          if (createErr) {
+            console.error('創建 comments 表錯誤:', createErr);
+          } else {
+            console.log('comments 表創建成功');
+          }
+        });
+      } else {
+        // comments 表存在，檢查是否有 likes 欄位
+        db.all("PRAGMA table_info(comments)", (err, columns) => {
+          if (err) {
+            console.error('檢查 comments 表結構錯誤:', err);
+            return;
+          }
+
+          const columnNames = columns.map(col => col.name);
+          const hasLikes = columnNames.includes('likes');
+
+          if (!hasLikes) {
+            // 直接添加 likes 欄位
+            console.log('為 comments 表添加 likes 欄位...');
+            db.run(`ALTER TABLE comments ADD COLUMN likes INTEGER DEFAULT 0`, (alterErr) => {
+              if (alterErr) {
+                console.error('添加 likes 欄位錯誤:', alterErr);
+              } else {
+                console.log('likes 欄位添加成功');
+              }
+            });
+          } else {
+            console.log('comments 表結構已是最新版本');
+          }
+        });
+      }
+    });
+
+    // 創建電子報訂閱表
     db.run(`
-      CREATE TABLE IF NOT EXISTS comments (
+      CREATE TABLE IF NOT EXISTS newsletter_subscribers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        post_id INTEGER NOT NULL,
-        author TEXT NOT NULL,
-        content TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+        email TEXT UNIQUE NOT NULL,
+        name TEXT,
+        status TEXT DEFAULT 'active',
+        subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        unsubscribed_at DATETIME
       )
     `);
 

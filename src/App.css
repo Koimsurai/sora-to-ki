@@ -1,10 +1,13 @@
 /* 清空預設樣式 */
 html, body {
   overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 body {
   position: relative;
+  overflow-y: auto;
 }
 
 /* 確保 App 容器有背景色，否則星星看不見 */

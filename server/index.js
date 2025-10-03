@@ -82,7 +82,7 @@ apiRouter.post('/auth/login', async (req, res) => {
 
 // GET all posts (公開)
 apiRouter.get('/posts', (req, res) => {
-  const { page = 1, limit = 10, search, tag, status = 'published' } = req.query;
+  const { page = 1, limit = 10, search, tag, category, status = 'published', sortBy = 'newest' } = req.query;
   const offset = (page - 1) * limit;
 
   let sql = `
@@ -104,7 +104,28 @@ apiRouter.get('/posts', (req, res) => {
     params.push(tag);
   }
 
-  sql += ` GROUP BY p.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
+  if (category) {
+    sql += ` AND p.category = ?`;
+    params.push(category);
+  }
+
+  sql += ` GROUP BY p.id`;
+
+  // 根據排序參數排序
+  switch (sortBy) {
+    case 'oldest':
+      sql += ` ORDER BY p.created_at ASC`;
+      break;
+    case 'popular':
+      sql += ` ORDER BY p.view_count DESC, p.created_at DESC`;
+      break;
+    case 'newest':
+    default:
+      sql += ` ORDER BY p.created_at DESC`;
+      break;
+  }
+
+  sql += ` LIMIT ? OFFSET ?`;
   params.push(parseInt(limit), parseInt(offset));
 
   db.all(sql, params, (err, rows) => {
@@ -123,6 +144,7 @@ apiRouter.get('/posts', (req, res) => {
       WHERE p.status = ?
       ${search ? ` AND (p.title LIKE ? OR p.content LIKE ?)` : ''}
       ${tag ? ` AND t.name = ?` : ''}
+      ${category ? ` AND p.category = ?` : ''}
     `;
     const countParams = [status];
     if (search) {
@@ -130,6 +152,9 @@ apiRouter.get('/posts', (req, res) => {
     }
     if (tag) {
       countParams.push(tag);
+    }
+    if (category) {
+      countParams.push(category);
     }
 
     db.get(countSql, countParams, (countErr, countRow) => {
@@ -316,6 +341,69 @@ apiRouter.get('/posts/:id', (req, res) => {
   });
 });
 
+// POST increment view count
+apiRouter.post('/posts/:id/view', (req, res) => {
+  const sql = 'UPDATE posts SET view_count = view_count + 1 WHERE id = ?';
+  db.run(sql, [req.params.id], function(err) {
+    if (err) {
+      res.status(400).json({ "error": err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      res.status(404).json({ "message": "Post not found" });
+      return;
+    }
+    res.json({ 
+      "message": "success",
+      "view_count_incremented": true 
+    });
+  });
+});
+
+// GET all tags
+apiRouter.get('/tags', (req, res) => {
+  const sql = `
+    SELECT t.*, COUNT(pt.post_id) as post_count 
+    FROM tags t
+    LEFT JOIN post_tags pt ON t.id = pt.tag_id
+    GROUP BY t.id
+    ORDER BY post_count DESC, t.name ASC
+  `;
+  
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+      tags: rows
+    });
+  });
+});
+
+// GET all categories
+apiRouter.get('/categories', (req, res) => {
+  const sql = `
+    SELECT category, COUNT(*) as post_count
+    FROM posts
+    WHERE status = 'published' AND category IS NOT NULL AND category != ''
+    GROUP BY category
+    ORDER BY post_count DESC
+  `;
+  
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+      categories: rows
+    });
+  });
+});
+
 // Helper function to manage tags
 function manageTags(postId, tags, callback) {
   if (!tags || tags.length === 0) {
@@ -370,15 +458,15 @@ apiRouter.post('/posts', authMiddleware, (req, res) => {
   console.log('[POST /api/posts] Received request to create a new post.');
   console.log('[POST /api/posts] Body:', req.body);
   
-  const { title, content, excerpt, tags = [], status = 'draft' } = req.body;
+  const { title, content, excerpt, category, tags = [], status = 'draft' } = req.body;
   
   if (!title || !content) {
     res.status(400).json({ "error": "Missing required fields: title, content" });
     return;
   }
 
-  const sql = 'INSERT INTO posts (title, content, excerpt, status, author, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"), datetime("now"))';
-  const params = [title, content, excerpt, status, 'Koimsurai'];
+  const sql = 'INSERT INTO posts (title, content, excerpt, category, status, author, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))';
+  const params = [title, content, excerpt, category || null, status, 'Koimsurai'];
   
   db.run(sql, params, function(err) {
     if (err) {
@@ -400,7 +488,7 @@ apiRouter.post('/posts', authMiddleware, (req, res) => {
 
       res.status(201).json({
         "message": "success",
-        "data": { id: postId, title, content, excerpt, tags, status }
+        "data": { id: postId, title, content, excerpt, category, tags, status }
       });
     });
   });
@@ -408,17 +496,18 @@ apiRouter.post('/posts', authMiddleware, (req, res) => {
 
 // PUT (update) a post
 apiRouter.put('/posts/:id', authMiddleware, (req, res) => {
-  const { title, content, excerpt, tags = [], status } = req.body;
+  const { title, content, excerpt, category, tags = [], status } = req.body;
   const sql = `
     UPDATE posts SET 
       title = COALESCE(?, title), 
       content = COALESCE(?, content), 
       excerpt = COALESCE(?, excerpt),
+      category = COALESCE(?, category),
       status = COALESCE(?, status),
       updated_at = datetime("now")
     WHERE id = ?
   `;
-  const params = [title, content, excerpt, status, req.params.id];
+  const params = [title, content, excerpt, category, status, req.params.id];
 
   db.run(sql, params, function(err) {
     if (err) {
@@ -508,9 +597,17 @@ apiRouter.get('/posts/:id/comments', (req, res) => {
 
 // POST a new comment
 apiRouter.post('/posts/:id/comments', (req, res) => {
-  const { author, content } = req.body;
+  const { author, content, captcha } = req.body;
   if (!author || !content) {
     return res.status(400).json({ "error": "Author and content are required" });
+  }
+
+  // 簡易驗證碼檢查（如果提供）
+  if (captcha !== undefined) {
+    const expectedAnswer = req.body.captchaAnswer;
+    if (captcha != expectedAnswer) {
+      return res.status(400).json({ "error": "驗證碼錯誤" });
+    }
   }
 
   const sql = 'INSERT INTO comments (post_id, author, content) VALUES (?, ?, ?)';
@@ -524,6 +621,122 @@ apiRouter.post('/posts/:id/comments', (req, res) => {
     res.status(201).json({
       "message": "success",
       "id": this.lastID
+    });
+  });
+});
+
+// POST like a comment
+apiRouter.post('/comments/:id/like', (req, res) => {
+  const sql = 'UPDATE comments SET likes = likes + 1 WHERE id = ?';
+  db.run(sql, [req.params.id], function(err) {
+    if (err) {
+      res.status(400).json({ "error": err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      res.status(404).json({ "message": "Comment not found" });
+      return;
+    }
+    
+    // 回傳更新後的按讚數
+    db.get('SELECT likes FROM comments WHERE id = ?', [req.params.id], (err, row) => {
+      if (err) {
+        res.status(500).json({ "error": err.message });
+        return;
+      }
+      res.json({ 
+        "message": "success",
+        "likes": row.likes
+      });
+    });
+  });
+});
+
+// --- Newsletter Routes ---
+
+// POST subscribe to newsletter
+apiRouter.post('/newsletter/subscribe', (req, res) => {
+  const { email, name } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ "error": "Email is required" });
+  }
+
+  // 簡單的 email 驗證
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ "error": "Invalid email format" });
+  }
+
+  const sql = 'INSERT INTO newsletter_subscribers (email, name, status) VALUES (?, ?, ?)';
+  const params = [email, name || null, 'active'];
+
+  db.run(sql, params, function(err) {
+    if (err) {
+      if (err.message.includes('UNIQUE constraint failed')) {
+        return res.status(400).json({ "error": "This email is already subscribed" });
+      }
+      res.status(400).json({ "error": err.message });
+      return;
+    }
+    res.status(201).json({
+      "message": "Successfully subscribed to newsletter",
+      "id": this.lastID
+    });
+  });
+});
+
+// POST unsubscribe from newsletter
+apiRouter.post('/newsletter/unsubscribe', (req, res) => {
+  const { email } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ "error": "Email is required" });
+  }
+
+  const sql = 'UPDATE newsletter_subscribers SET status = ?, unsubscribed_at = datetime("now") WHERE email = ?';
+  db.run(sql, ['unsubscribed', email], function(err) {
+    if (err) {
+      res.status(400).json({ "error": err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      res.status(404).json({ "message": "Email not found in subscribers" });
+      return;
+    }
+    res.json({ "message": "Successfully unsubscribed from newsletter" });
+  });
+});
+
+// GET newsletter subscribers (admin only)
+apiRouter.get('/newsletter/subscribers', authMiddleware, (req, res) => {
+  const { page = 1, limit = 50, status = 'active' } = req.query;
+  const offset = (page - 1) * limit;
+
+  const sql = 'SELECT * FROM newsletter_subscribers WHERE status = ? ORDER BY subscribed_at DESC LIMIT ? OFFSET ?';
+  db.all(sql, [status, parseInt(limit), parseInt(offset)], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    // 計算總數
+    db.get('SELECT COUNT(*) as total FROM newsletter_subscribers WHERE status = ?', [status], (countErr, countRow) => {
+      if (countErr) {
+        res.status(500).json({ error: countErr.message });
+        return;
+      }
+
+      res.json({
+        message: "success",
+        subscribers: rows,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: countRow.total,
+          totalPages: Math.ceil(countRow.total / limit)
+        }
+      });
     });
   });
 });

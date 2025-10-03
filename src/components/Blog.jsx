@@ -12,19 +12,31 @@ import {
 import SpaceHeroBanner from './SpaceHeroBanner';
 import ModernCard from './ModernCard';
 import SearchAndFilter from './SearchAndFilter';
+import Newsletter from './Newsletter';
 import './Blog.css';
 
 function Blog() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [postsLoaded, setPostsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  // 根據 localStorage 或預設值初始化 viewMode
+  const [viewMode, setViewMode] = useState(() => {
+    const saved = window.localStorage.getItem('blogViewMode');
+    return saved || 'timeline';
+  });
   const [allTags, setAllTags] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+    fetchTags();
+    fetchCategories();
+  }, [sortBy]);
 
   // 使用 useCallback 穩定化回呼函式
   const handleSearchChange = useCallback((e) => {
@@ -43,7 +55,7 @@ function Blog() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/posts');
+      const response = await fetch(`/api/posts?sortBy=${sortBy}&limit=100`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -59,16 +71,13 @@ function Blog() {
         const parsedPosts = data.posts.map(post => ({
           ...post,
           tags: post.tags || [],
-          summary: post.content.substring(0, 150).replace(/<[^>]+>/g, '') + '...',
+          summary: post.excerpt || post.content.substring(0, 150).replace(/<[^>]+>/g, '') + '...',
           date: new Date(post.created_at).toLocaleDateString('zh-TW')
         }));
         
         console.log('Parsed posts:', parsedPosts);
         setPosts(parsedPosts);
-        
-        // 提取所有唯一標籤
-        const tags = [...new Set(parsedPosts.flatMap(post => post.tags))];
-        setAllTags(tags);
+        setPostsLoaded(true);
       } else {
         console.error('No posts found in response or posts is not an array');
         setError('無法載入文章數據');
@@ -79,16 +88,44 @@ function Blog() {
     } finally {
       setLoading(false);
     }
+    setPostsLoaded(true);
+  };
+
+  const fetchTags = async () => {
+    try {
+      const response = await fetch('/api/tags');
+      const data = await response.json();
+      if (data.tags) {
+        setAllTags(data.tags);
+      }
+    } catch (error) {
+      console.error('Error fetching tags:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories');
+      const data = await response.json();
+      if (data.categories) {
+        setAllCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
   };
 
   const filteredPosts = posts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          post.content.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTag = !selectedTag || post.tags.includes(selectedTag);
-    return matchesSearch && matchesTag;
+    const matchesTag = !selectedTag || (Array.isArray(post.tags) 
+      ? post.tags.includes(selectedTag) 
+      : post.tags && post.tags.split(',').includes(selectedTag));
+    const matchesCategory = !selectedCategory || post.category === selectedCategory;
+    return matchesSearch && matchesTag && matchesCategory;
   });
 
-  if (loading) {
+  if (loading || !postsLoaded) {
     return (
       <div className="blog-container">
         <div className="loading-container">
@@ -154,7 +191,17 @@ function Blog() {
             setSearchTerm={handleSearchChange}
             selectedTag={selectedTag}
             setSelectedTag={handleTagSelect}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            viewMode={viewMode}
+            setViewMode={mode => {
+              setViewMode(mode);
+              window.localStorage.setItem('blogViewMode', mode);
+            }}
             allTags={allTags}
+            allCategories={allCategories}
           />
 
           {filteredPosts.length === 0 ? (
@@ -202,11 +249,33 @@ function Blog() {
               </div>
             </div>
           ) : (
-            <div className="blog-posts-feed">
-              {filteredPosts.map((post, index) => (
-                <ModernCard key={post.id} post={post} index={index} />
-              ))}
-            </div>
+            <>
+              {viewMode === 'card' && (
+                <div className="blog-posts-feed">
+                  {filteredPosts.map((post, index) => (
+                    <ModernCard key={post.id} post={post} index={index} />
+                  ))}
+                </div>
+              )}
+              {viewMode === 'list' && (
+                <div className="blog-posts-list">
+                  {filteredPosts.map((post, index) => (
+                    <ListViewCard key={post.id} post={post} index={index} />
+                  ))}
+                </div>
+              )}
+              {viewMode === 'timeline' && (
+                <div className="blog-posts-timeline">
+                  {filteredPosts.length > 0 ? (
+                    <TimelineView posts={filteredPosts} key={`timeline-${filteredPosts.length}`} />
+                  ) : (
+                    <div className="timeline-empty">
+                      <p>暫無文章可顯示於時間軸</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
         <BlogSidebar 
@@ -254,6 +323,10 @@ const BlogSidebar = React.memo(({ posts, allTags, filteredPostsLength }) => {
         </div>
       </div>
 
+      <div className="sidebar-widget">
+        <Newsletter />
+      </div>
+
       <QuickNavigation />
     </aside>
   );
@@ -283,5 +356,121 @@ const QuickNavigation = React.memo(() => (
     </div>
   </div>
 ));
+
+// 列表視圖卡片組件 - 統一樣式
+const ListViewCard = React.memo(({ post, index }) => {
+  return (
+    <Link to={`/blog/${post.id}`} className="list-view-item" style={{ animationDelay: `${index * 0.05}s` }}>
+      <div className="list-view-content">
+        <div className="list-view-meta">
+          <div className="meta-left">
+            <span className="list-view-author">{post.author || '匿名作者'}</span>
+            <span className="meta-separator">•</span>
+            <span className="list-view-date">{post.date}</span>
+          </div>
+          {post.view_count > 0 && (
+            <span className="list-view-views">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              {post.view_count}
+            </span>
+          )}
+        </div>
+        <h3 className="list-view-title">{post.title}</h3>
+        <p className="list-view-summary">{post.summary}</p>
+        {post.category && (
+          <span className="list-view-category">{post.category}</span>
+        )}
+        {post.tags && post.tags.length > 0 && (
+          <div className="list-view-tags">
+            {(Array.isArray(post.tags) ? post.tags : post.tags.split(',')).slice(0, 4).map((tag, i) => (
+              <span key={i} className="list-view-tag">#{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+});
+
+// 時間軸視圖組件
+const TimelineView = React.memo(({ posts }) => {
+  // 按年月分組
+  const groupedPosts = React.useMemo(() => {
+    const groups = {};
+    posts.forEach(post => {
+      const date = new Date(post.created_at);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const key = `${year}-${month}`;
+      
+      if (!groups[key]) {
+        groups[key] = {
+          year,
+          month,
+          monthName: date.toLocaleDateString('zh-TW', { month: 'long' }),
+          posts: []
+        };
+      }
+      groups[key].posts.push(post);
+    });
+    
+    return Object.values(groups).sort((a, b) => {
+      if (b.year !== a.year) return b.year - a.year;
+      return b.month - a.month;
+    });
+  }, [posts]);
+
+  return (
+    <div className="timeline-container">
+      {groupedPosts.map((group, groupIndex) => (
+        <div key={`${group.year}-${group.month}`} className="timeline-group" style={{ animationDelay: `${groupIndex * 0.1}s` }}>
+          <div className="timeline-date-marker">
+            <div className="timeline-year">{group.year}</div>
+            <div className="timeline-month">{group.monthName}</div>
+          </div>
+          <div className="timeline-posts">
+            {group.posts.map((post, postIndex) => (
+              <Link 
+                key={post.id} 
+                to={`/blog/${post.id}`} 
+                className="timeline-item"
+                style={{ animationDelay: `${(groupIndex * 0.1) + (postIndex * 0.05)}s` }}
+              >
+                <div className="timeline-dot" />
+                <div className="timeline-content">
+                  <div className="timeline-header">
+                    <h3 className="timeline-title">{post.title}</h3>
+                    <span className="timeline-date-small">{post.date}</span>
+                  </div>
+                  <p className="timeline-summary">{post.summary}</p>
+                  {post.category && (
+                    <span className="timeline-category">{post.category}</span>
+                  )}
+                  <div className="timeline-tags">
+                    {(Array.isArray(post.tags) ? post.tags : post.tags.split(',')).slice(0, 3).map((tag, i) => (
+                      <span key={i} className="timeline-tag">#{tag}</span>
+                    ))}
+                  </div>
+                  {post.view_count > 0 && (
+                    <div className="timeline-meta">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      {post.view_count} 次瀏覽
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+});
 
 export default Blog;

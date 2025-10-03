@@ -1,0 +1,131 @@
+# 🌌 個人作品集網站 (Personal Portfolio Website)
+
+一個現代化的個人作品集網站，採用 React + Vite 建置，融合了令人驚艷的 3D 太空主題視覺效果與流暢的使用者體驗。此專案展示了前端開發、3D 圖形渲染以及全端整合的技術能力。
+
+## ✨ 主要功能
+
+### 📄 核心頁面
+*   **英雄區塊 (Hero Section):** 具有動態效果的首頁介紹
+*   **關於我 (About Me):** 個人簡介與背景
+*   **專業技能 (Expertise):** 技術專長展示
+*   **工作經歷 (Work Experience):** 相關工作經驗列表
+*   **學術/社團經歷 (School Clubs):** 在校期間的活動參與
+*   **作品集 (Portfolio):** 個人專案與作品展示
+*   **照片集 (Photo Gallery):** 精選照片集
+*   **部落格 (Blog):** 技術文章與心得分享
+*   **聯絡方式 (Contact):** 聯絡表單
+
+### 🎨 視覺特效
+*   **3D 太空場景:**
+    *   動態 3D 土星模型 (Three.js)
+    *   旋轉星空背景
+    *   閃爍星星效果
+    *   前景星星層次
+    *   太空碎片粒子系統
+*   **動態效果:**
+    *   滑鼠軌跡特效
+    *   開場動畫
+    *   頁面轉場動畫
+    *   隨機流星動畫
+    *   彗星飛行效果
+    *   UFO 飛行動畫
+*   **互動元素:**
+    *   平滑滾動
+    *   視差滾動效果
+    *   回到頂部按鈕
+    *   響應式導航列
+
+### 🔐 後台管理系統
+*   管理員登入與身份驗證 (JWT)
+*   部落格文章編輯器 (Markdown 支援)
+*   留言審核與管理
+*   數據統計面板
+
+## 🚀 技術架構
+
+### 前端技術棧
+*   **核心框架:** React 19.0.0
+*   **建置工具:** Vite 6.2.0
+*   **路由管理:** React Router DOM 7.4.1
+*   **樣式方案:** 
+    *   CSS Modules
+    *   Tailwind CSS 3.4.17
+    *   PostCSS with Autoprefixer
+*   **3D 渲染:**
+    *   Three.js 0.175.0
+    *   @react-three/fiber 9.1.1
+    *   @react-three/drei 10.0.5
+    *   @react-three/postprocessing 3.0.4
+*   **動畫效果:**
+    *   Framer Motion 12.6.2
+    *   React Scroll Parallax 3.4.5
+*   **Markdown 支援:**
+    *   React Markdown 10.1.0
+    *   @uiw/react-md-editor 4.0.8
+    *   Remark GFM 4.0.1
+    *   Rehype Highlight 7.0.2
+*   **其他工具:**
+    *   React Icons 5.5.0
+    *   FontAwesome 6.7.2
+    *   React Intersection Observer 9.16.0
+
+### 後端技術棧
+*   **運行環境:** Node.js
+*   **框架:** Express 4.18.2
+*   **資料庫:** SQLite3 5.1.6
+*   **身份驗證:** 
+    *   JSON Web Token 9.0.2
+    *   Bcrypt.js 3.0.2
+*   **中介軟體:** CORS 2.8.5
+
+### 開發工具
+*   **程式碼品質:** ESLint 9.21.0
+*   **型別檢查:** TypeScript types
+*   **容器化:** Docker & Docker Compose
+*   **版本控制:** Git
+
+## 🛠️ 本地開發設定 (使用 npm)
+
+1.  **複製儲存庫:**
+    ```bash
+    git clone https://github.com/timo9378/web.git
+    cd web-1
+    ```
+2.  **安裝依賴套件:**
+    ```bash
+    npm install
+    ```
+3.  **啟動開發伺服器:**
+    ```bash
+    npm run dev
+    ```
+    開發伺服器預設會在 `http://localhost:5173` (或其他可用埠號) 啟動。
+
+## 🐳 Docker 設定 (含 SSL)
+
+此專案包含使用 Docker Compose 在 Docker 容器中運行開發伺服器的設定，並支援使用提供的 SSL 憑證啟用 HTTPS。
+
+**先決條件：**
+
+*   已安裝 Docker 和 Docker Compose。
+*   SSL 憑證檔案 (`privkey.pem` 和 `fullchain.pem`) 已放置在專案根目錄下 (與 `Dockerfile` 同層)。**重要：** 這些檔案已包含在 `.gitignore` 中，**不應**被提交到版本控制系統。
+
+**使用 Docker Compose 運行：**
+
+1.  在您的終端機中，確認您位於專案根目錄 (`web-1`)。
+2.  建置並在背景模式 (detached mode) 啟動容器：
+    ```bash
+    docker-compose up -d --build
+    ```
+3.  開發伺服器將可透過 `https://localhost:13579` 訪問。由於使用的是本地憑證，您的瀏覽器可能會顯示安全警告，您需要手動確認才能繼續訪問。
+
+**停止容器：**
+
+```bash
+docker-compose down
+```
+
+**查看日誌：**
+
+```bash
+docker-compose logs -f

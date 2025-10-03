@@ -1,7 +1,6 @@
 services:
-  frontend: # 將服務名稱改為 frontend
-    build: . # 指定 Dockerfile 的位置 (目前目錄)
-    image: personal-website-frontend # 指定映像檔名稱
+  frontend:
+    build: .
     container_name: personal-website-frontend # 指定容器名稱
     ports:
       - "13588:13579" # 將主機 port 改為 13588，避免衝突
@@ -24,9 +23,8 @@ services:
     working_dir: /usr/src/app
     volumes:
       - ./server:/usr/src/app
-    environment:
-      - ADMIN_USERNAME=timo9378
-      - ADMIN_PASSWORD=jces5556
+    env_file:
+      - ./server/.env
     command: sh -c "npm install && npm run dev"
     ports:
       - "3001:3001"
