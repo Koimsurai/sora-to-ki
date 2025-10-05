@@ -360,6 +360,60 @@ apiRouter.post('/posts/:id/view', (req, res) => {
   });
 });
 
+// POST like a post
+apiRouter.post('/posts/:id/like', (req, res) => {
+  const sql = 'UPDATE posts SET likes = likes + 1 WHERE id = ?';
+  db.run(sql, [req.params.id], function(err) {
+    if (err) {
+      res.status(400).json({ "error": err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      res.status(404).json({ "message": "Post not found" });
+      return;
+    }
+    
+    // 回傳更新後的按讚數
+    db.get('SELECT likes FROM posts WHERE id = ?', [req.params.id], (err, row) => {
+      if (err) {
+        res.status(500).json({ "error": err.message });
+        return;
+      }
+      res.json({ 
+        "message": "success",
+        "likes": row.likes
+      });
+    });
+  });
+});
+
+// POST unlike a post
+apiRouter.post('/posts/:id/unlike', (req, res) => {
+  const sql = 'UPDATE posts SET likes = likes - 1 WHERE id = ? AND likes > 0';
+  db.run(sql, [req.params.id], function(err) {
+    if (err) {
+      res.status(400).json({ "error": err.message });
+      return;
+    }
+    if (this.changes === 0) {
+      res.status(404).json({ "message": "Post not found or cannot unlike" });
+      return;
+    }
+    
+    // 回傳更新後的按讚數
+    db.get('SELECT likes FROM posts WHERE id = ?', [req.params.id], (err, row) => {
+      if (err) {
+        res.status(500).json({ "error": err.message });
+        return;
+      }
+      res.json({ 
+        "message": "success",
+        "likes": row.likes
+      });
+    });
+  });
+});
+
 // GET all tags
 apiRouter.get('/tags', (req, res) => {
   const sql = `

@@ -40,40 +40,39 @@ const Newsletter = () => {
   };
 
   return (
-    <div className="newsletter-container">
-      <div className="newsletter-card">
-        <div className="newsletter-header">
-          <div className="newsletter-icon">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-              <polyline points="22,6 12,13 2,6" />
+    <div className="newsletter-container-v2">
+      <div className="newsletter-card-v2">
+        <div className="newsletter-header-v2">
+          <div className="newsletter-icon-v2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
             </svg>
           </div>
-          <h3 className="newsletter-title">訂閱電子報</h3>
-          <p className="newsletter-description">
-            獲取最新文章更新與技術分享，直接送到您的信箱 📬
+          <h3 className="newsletter-title-v2">訂閱電子報</h3>
+          <p className="newsletter-description-v2">
+            獲取最新文章更新與技術分享，直接送到您的信箱。
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="newsletter-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className="newsletter-form-v2">
+          <div className="form-group-v2">
             <input
               type="text"
               placeholder="您的名字（選填）"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="newsletter-input"
+              className="newsletter-input-v2"
               disabled={status === 'loading'}
             />
           </div>
           
-          <div className="form-group">
+          <div className="form-group-v2">
             <input
               type="email"
               placeholder="您的電子郵件 *"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="newsletter-input"
+              className="newsletter-input-v2"
               required
               disabled={status === 'loading'}
             />
@@ -81,48 +80,26 @@ const Newsletter = () => {
 
           <button 
             type="submit" 
-            className={`newsletter-submit ${status}`}
+            className={`newsletter-submit-v2 ${status}`}
             disabled={status === 'loading'}
           >
             {status === 'loading' ? (
-              <>
-                <span className="spinner"></span>
-                訂閱中...
-              </>
+              <span className="spinner-v2"></span>
             ) : (
-              <>
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M22 2L11 13" />
-                  <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-                </svg>
-                訂閱電子報
-              </>
+              '訂閱'
             )}
           </button>
-
-          {message && (
-            <div className={`newsletter-message ${status}`}>
-              {status === 'success' && (
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              )}
-              {status === 'error' && (
-                <svg viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
-              )}
-              <span>{message}</span>
-            </div>
-          )}
         </form>
 
-        <div className="newsletter-footer">
-          <p className="newsletter-note">
-            ✨ 我們重視您的隱私，不會分享您的資訊
+        {message && (
+          <div className={`newsletter-message-v2 ${status}`}>
+            <span>{message}</span>
+          </div>
+        )}
+
+        <div className="newsletter-footer-v2">
+          <p className="newsletter-note-v2">
+            我們重視您的隱私，不會分享您的資訊。
           </p>
         </div>
       </div>

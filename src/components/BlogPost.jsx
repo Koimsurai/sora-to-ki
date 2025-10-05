@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -52,24 +52,25 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
 // --- 文章目錄導航組件 ---
 const TableOfContents = React.memo(({ headings, activeHeading, readingProgress, tocRef }) => {
   const scrollToHeading = React.useCallback((headingId) => {
-    // 嘗試多種方式找到元素
-    const element = document.getElementById(headingId) || 
-                    document.querySelector(`[id="${headingId}"]`) ||
-                    document.querySelector(`h1[id="${headingId}"], h2[id="${headingId}"], h3[id="${headingId}"], h4[id="${headingId}"]`);
-    
-    if (element) {
+    // 使用 setTimeout 確保 DOM 完全渲染
+    setTimeout(() => {
+      // 嘗試多種方式找到元素
+      const element = document.getElementById(headingId) ||
+                      document.querySelector(`[id="${headingId}"]`) ||
+                      document.querySelector(`h1[id="${headingId}"], h2[id="${headingId}"], h3[id="${headingId}"], h4[id="${headingId}"]`);  
+      
+      if (!element) return;
+
       const headerOffset = 120;
       const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      const offsetPosition = elementPosition + window.scrollY - headerOffset;
       
       window.scrollTo({
         top: offsetPosition,
         behavior: 'smooth'
       });
-    }
-  }, []);
-
-  return (
+    }, 100);
+  }, []);  return (
     <div className="table-of-contents">
       <div className="toc-header">
         <h3>文章目錄</h3>
@@ -114,9 +115,6 @@ const TableOfContents = React.memo(({ headings, activeHeading, readingProgress, 
   );
 });
 
-// 全局計數器，用於生成唯一的標題 ID
-let globalHeadingCounter = 0;
-
 function BlogPost() {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -128,18 +126,29 @@ function BlogPost() {
   const tocRef = useRef(null);
   const { id } = useParams();
 
-  // 移除這個 useLayoutEffect，改由提取標題時重置計數器
-
-  // 創建帶 ID 的標題組件
-  const createHeading = React.useCallback((level) => {
+  // 使用 ref 追蹤渲染計數器
+  const headingCounterRef = useRef(0);
+  
+  // 在每次渲染前重置計數器
+  React.useLayoutEffect(() => {
+    headingCounterRef.current = 0;
+  });
+  
+  // 創建標題組件
+  const createHeading = useCallback((level) => {
     return ({ children, ...props }) => {
       const HeadingTag = `h${level}`;
-      const headingId = `heading-${globalHeadingCounter++}`;
+      const headingId = `heading-${headingCounterRef.current++}`;
       return React.createElement(HeadingTag, { id: headingId, ...props }, children);
     };
   }, []);
-
-  useEffect(() => {
+  
+  const headingComponents = useMemo(() => ({
+    h1: createHeading(1),
+    h2: createHeading(2),
+    h3: createHeading(3),
+    h4: createHeading(4)
+  }), [createHeading]);  useEffect(() => {
     setLoading(true);
     // Fetch post data
     fetch(`/api/posts/${id}`)
@@ -177,25 +186,21 @@ function BlogPost() {
   useEffect(() => {
     if (!post?.content) return;
 
-    // 重置全局計數器以確保同步
-    globalHeadingCounter = 0;
-
     // 使用正則表達式提取標題
     const headingRegex = /^(#{1,4})\s+(.+)$/gm;
     const matches = [];
     let match;
-    
+    let localCounter = 0;
+
     while ((match = headingRegex.exec(post.content)) !== null) {
       const level = match[1].length;
       const text = match[2].trim();
-      const id = `heading-${globalHeadingCounter++}`;
+      const id = `heading-${localCounter++}`;
       matches.push({ id, text, level });
     }
 
     setHeadings(matches);
-  }, [post]);
-
-  // 處理滾動進度和活動標題
+  }, [post?.content]);  // 處理滾動進度和活動標題
   useEffect(() => {
     if (!post) return;
 
@@ -211,7 +216,8 @@ function BlogPost() {
       
       if (scrollableHeight > 0) {
         const progress = (scrollTop / scrollableHeight) * 100;
-        setReadingProgress(Math.min(100, Math.max(0, progress)));
+        const clampedProgress = Math.min(100, Math.max(0, progress));
+        setReadingProgress(clampedProgress);
       } else {
         setReadingProgress(0);
       }
@@ -409,12 +415,9 @@ function BlogPost() {
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
-              components={{ 
+              components={{
                 code: CodeBlock,
-                h1: createHeading(1),
-                h2: createHeading(2),
-                h3: createHeading(3),
-                h4: createHeading(4)
+                ...headingComponents
               }}
             >
               {post.content}

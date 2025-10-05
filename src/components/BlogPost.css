@@ -30,7 +30,6 @@
   padding: 2rem 1rem;
   position: relative;
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 .blog-post-container.loading,
@@ -194,6 +193,7 @@
   display: flex;
   gap: 2rem;
   align-items: flex-start;
+  position: relative;
 }
 
 .post-content-wrapper {
@@ -479,10 +479,13 @@
 /* --- 文章目錄側邊欄樣式 --- */
 .post-sidebar {
   flex: 0 0 280px;
+  position: -webkit-sticky;
   position: sticky;
-  top: 120px;
-  max-height: calc(100vh - 140px);
-  align-self: flex-start; /* 確保 sticky 定位正常工作 */
+  top: 100px;
+  max-height: calc(100vh - 120px);
+  align-self: flex-start;
+  z-index: 100;
+  will-change: transform;
 }
 
 .table-of-contents {
@@ -637,6 +640,28 @@
   opacity: 0.9;
 }
 
+/* --- 留言和電子報區域 --- */
+.post-bottom-section {
+  max-width: 1400px;
+  margin: 0 auto 4rem auto;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.comments-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.newsletter-sidebar {
+  flex: 0 0 400px;
+  position: sticky;
+  top: 100px;
+  max-height: calc(100vh - 120px);
+  align-self: flex-start;
+}
+
 /* --- Modern Footer --- */
 .post-footer {
   max-width: 1400px;
@@ -737,6 +762,19 @@
   
   .table-of-contents {
     max-width: 100%;
+  }
+
+  /* 底部區域響應式 */
+  .post-bottom-section {
+    flex-direction: column;
+  }
+
+  .newsletter-sidebar {
+    position: static;
+    top: auto;
+    max-height: none;
+    width: 100%;
+    flex: none;
   }
 }
 

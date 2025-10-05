@@ -45,6 +45,7 @@ function initializeDatabase() {
             status TEXT DEFAULT 'published',
             author TEXT DEFAULT 'Koimsurai',
             view_count INTEGER DEFAULT 0,
+            likes INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
           )
@@ -82,6 +83,7 @@ function initializeDatabase() {
                 status TEXT DEFAULT 'published',
                 author TEXT DEFAULT 'Koimsurai',
                 view_count INTEGER DEFAULT 0,
+                likes INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
               )
@@ -124,6 +126,9 @@ function initializeDatabase() {
 
               selectFields.push('0 as view_count');
               insertFields.push('view_count');
+
+              selectFields.push('0 as likes');
+              insertFields.push('likes');
 
               if (columnNames.includes('created_at')) {
                 selectFields.push('created_at');

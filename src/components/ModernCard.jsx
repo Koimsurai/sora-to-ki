@@ -1,24 +1,60 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './ModernCard.css';
 
 const ModernCard = ({ post, index }) => {
-  const [liked, setLiked] = React.useState(false);
-  const [likeCount, setLikeCount] = React.useState(0);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes || 0);
 
-  // 處理互動按鈕點擊，阻止事件冒泡
-  const handleInteraction = (e, action) => {
+  useEffect(() => {
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+    if (likedPosts.includes(post.id)) {
+      setLiked(true);
+    }
+  }, [post.id]);
+
+  const handleInteraction = async (e, action) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (action === 'like') {
-      setLiked(!liked);
-      setLikeCount(prev => liked ? prev - 1 : prev + 1);
+      const newLikedState = !liked;
+      setLiked(newLikedState);
+      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
+
+      try {
+        const response = await fetch(`/api/posts/${post.id}/like`, {
+          method: 'POST',
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setLikeCount(data.likes);
+          const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+          if (newLikedState) {
+            localStorage.setItem('likedPosts', JSON.stringify([...likedPosts, post.id]));
+          } else {
+            // Unlike
+            const newLikedPosts = likedPosts.filter(id => id !== post.id);
+            localStorage.setItem('likedPosts', JSON.stringify(newLikedPosts));
+            // Also send an unlike request to the backend
+            await fetch(`/api/posts/${post.id}/unlike`, {
+              method: 'POST',
+            });
+          }
+        } else {
+          // Revert state if API call fails
+          setLiked(!newLikedState);
+          setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
+        }
+      } catch (error) {
+        console.error('Failed to like post:', error);
+        // Revert state if API call fails
+        setLiked(!newLikedState);
+        setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
+      }
     } else if (action === 'comment') {
-      // 可以在這裡添加彈出評論框的邏輯
       alert('評論功能即將推出！');
     } else if (action === 'share') {
-      // 複製文章鏈接到剪貼板
       const url = `${window.location.origin}/blog/${post.id}`;
       navigator.clipboard.writeText(url).then(() => {
         alert('文章鏈接已複製到剪貼板！');

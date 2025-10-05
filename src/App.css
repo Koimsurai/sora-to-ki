@@ -1,19 +1,13 @@
-/* 清空預設樣式 */
+/* 清空預設樣式 - overflow 由 index.css 統一處理 */
 html, body {
-  overflow-x: hidden;
   margin: 0;
   padding: 0;
-}
-
-body {
-  position: relative;
-  overflow-y: auto;
 }
 
 /* 確保 App 容器有背景色，否則星星看不見 */
 .App {
   position: relative; /* 為了讓 fixed 定位的子元素正確 */
-  overflow-x: hidden; /* 防止流星導致水平滾動條 */
+  width: 100%;
   background-color: #000010; /* 深藍黑色背景 */
   /* 將塵埃帶加回背景 */
   background-image:
