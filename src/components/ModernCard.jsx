@@ -19,41 +19,41 @@ const ModernCard = ({ post, index }) => {
 
     if (action === 'like') {
       const newLikedState = !liked;
-      setLiked(newLikedState);
-      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
-
+      
       try {
-        const response = await fetch(`/api/posts/${post.id}/like`, {
+        // 根據新狀態決定調用哪個 API
+        const endpoint = newLikedState ? 'like' : 'unlike';
+        const response = await fetch(`/api/posts/${post.id}/${endpoint}`, {
           method: 'POST',
         });
         const data = await response.json();
+        
         if (response.ok) {
+          // API 成功後才更新狀態
+          setLiked(newLikedState);
           setLikeCount(data.likes);
+          
+          // 更新 localStorage
           const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
           if (newLikedState) {
-            localStorage.setItem('likedPosts', JSON.stringify([...likedPosts, post.id]));
+            if (!likedPosts.includes(post.id)) {
+              localStorage.setItem('likedPosts', JSON.stringify([...likedPosts, post.id]));
+            }
           } else {
-            // Unlike
             const newLikedPosts = likedPosts.filter(id => id !== post.id);
             localStorage.setItem('likedPosts', JSON.stringify(newLikedPosts));
-            // Also send an unlike request to the backend
-            await fetch(`/api/posts/${post.id}/unlike`, {
-              method: 'POST',
-            });
           }
         } else {
-          // Revert state if API call fails
-          setLiked(!newLikedState);
-          setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
+          console.error('按讚操作失敗:', data);
+          alert('操作失敗,請稍後再試');
         }
       } catch (error) {
         console.error('Failed to like post:', error);
-        // Revert state if API call fails
-        setLiked(!newLikedState);
-        setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
+        alert('網絡錯誤,請檢查連接');
       }
     } else if (action === 'comment') {
-      alert('評論功能即將推出！');
+      // 導航到文章頁面的留言區
+      window.location.href = `/blog/${post.id}#comments`;
     } else if (action === 'share') {
       const url = `${window.location.origin}/blog/${post.id}`;
       navigator.clipboard.writeText(url).then(() => {

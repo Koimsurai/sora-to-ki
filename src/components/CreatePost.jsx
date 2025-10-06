@@ -8,6 +8,7 @@ function CreatePost() {
     title: '',
     content: '',
     excerpt: '',
+    category: '',
     tags: [],
     status: 'draft'
   });
@@ -47,6 +48,7 @@ function CreatePost() {
           title: data.title,
           content: data.content,
           excerpt: data.excerpt || '',
+          category: data.category || '',
           tags: data.tags || [],
           status: data.status
         });
@@ -191,6 +193,27 @@ function CreatePost() {
                 placeholder="輸入文章摘要（留空將自動生成）..."
                 rows="5"
               />
+            </div>
+            <div className="form-group">
+              <label htmlFor="category">分類</label>
+              <select
+                id="category"
+                value={post.category}
+                onChange={(e) => setPost(prev => ({ ...prev, category: e.target.value }))}
+                disabled={isLoading}
+                className="category-select"
+              >
+                <option value="">未分類</option>
+                <option value="技術文章">技術文章</option>
+                <option value="生活隨筆">生活隨筆</option>
+                <option value="小說">小說</option>
+                <option value="動畫">動畫</option>
+                <option value="音樂心得">音樂心得</option>
+                <option value="遊戲評論">遊戲評論</option>
+                <option value="專案分享">專案分享</option>
+                <option value="學習筆記">學習筆記</option>
+              </select>
+              <small className="form-hint">選擇文章分類</small>
             </div>
             <div className="form-group">
               <label htmlFor="tags">標籤</label>

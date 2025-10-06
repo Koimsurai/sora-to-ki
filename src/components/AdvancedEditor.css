@@ -247,7 +247,9 @@
 }
 
 .form-group input[type="text"],
-.form-group textarea {
+.form-group textarea,
+.form-group select,
+.form-group .category-select {
   width: 100%;
   padding: 1rem 1.25rem;
   background: rgba(17, 21, 28, 0.6);
@@ -259,15 +261,24 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   -webkit-text-fill-color: var(--text-primary) !important;
+  cursor: pointer;
 }
 
 .form-group input[type="text"]:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus,
+.form-group .category-select:focus {
   outline: none;
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(56, 178, 172, 0.2), 0 8px 25px rgba(56, 178, 172, 0.1);
   transform: translateY(-2px);
   background: rgba(17, 21, 28, 0.8);
+}
+
+.form-group select option {
+  background: #11151c;
+  color: var(--text-primary);
+  padding: 0.5rem;
 }
 
 .form-group input[type="text"]::placeholder,

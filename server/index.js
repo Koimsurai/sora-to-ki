@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const https = require('https');
 const { initializeDatabase, db } = require('./database.js');
 const { authMiddleware, basicAuth, JWT_SECRET } = require('./auth');
 
@@ -11,6 +12,8 @@ app.use(cors());
 app.use(express.json()); // Middleware to parse JSON bodies
 
 const PORT = process.env.PORT || 3001;
+const STEAM_API_KEY = process.env.STEAM_API_KEY;
+const STEAM_ID = process.env.STEAM_ID;
 
 // 初始化資料庫
 initializeDatabase();
@@ -792,6 +795,140 @@ apiRouter.get('/newsletter/subscribers', authMiddleware, (req, res) => {
         }
       });
     });
+  });
+});
+
+// --- Steam API Proxy ---
+
+// GET Steam player summary
+apiRouter.get('/steam/player', (req, res) => {
+  if (!STEAM_API_KEY || !STEAM_ID) {
+    return res.status(500).json({ 
+      error: 'Steam API 未配置',
+      message: '請在 server/.env 中設置 STEAM_API_KEY 和 STEAM_ID'
+    });
+  }
+
+  const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${STEAM_API_KEY}&steamids=${STEAM_ID}`;
+  
+  https.get(url, (apiRes) => {
+    let data = '';
+    
+    apiRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    apiRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        res.json(jsonData);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to parse Steam API response' });
+      }
+    });
+  }).on('error', (error) => {
+    console.error('Steam API Error:', error);
+    res.status(500).json({ error: 'Failed to fetch Steam data' });
+  });
+});
+
+// GET Steam recently played games
+apiRouter.get('/steam/recent-games', (req, res) => {
+  if (!STEAM_API_KEY || !STEAM_ID) {
+    return res.status(500).json({ 
+      error: 'Steam API 未配置',
+      message: '請在 server/.env 中設置 STEAM_API_KEY 和 STEAM_ID'
+    });
+  }
+
+  const url = `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_API_KEY}&steamid=${STEAM_ID}&format=json`;
+  
+  https.get(url, (apiRes) => {
+    let data = '';
+    
+    apiRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    apiRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        res.json(jsonData);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to parse Steam API response' });
+      }
+    });
+  }).on('error', (error) => {
+    console.error('Steam API Error:', error);
+    res.status(500).json({ error: 'Failed to fetch Steam data' });
+  });
+});
+
+// --- GitHub API Proxy ---
+
+// GET GitHub user info and recent commits
+apiRouter.get('/github/user/:username', (req, res) => {
+  const { username } = req.params;
+  const options = {
+    hostname: 'api.github.com',
+    path: `/users/${username}`,
+    method: 'GET',
+    headers: {
+      'User-Agent': 'Personal-Website-Backend'
+    }
+  };
+
+  https.get(options, (apiRes) => {
+    let data = '';
+    
+    apiRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    apiRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        res.json(jsonData);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to parse GitHub API response' });
+      }
+    });
+  }).on('error', (error) => {
+    console.error('GitHub API Error:', error);
+    res.status(500).json({ error: 'Failed to fetch GitHub data' });
+  });
+});
+
+// GET GitHub user events (commits, etc.)
+apiRouter.get('/github/events/:username', (req, res) => {
+  const { username } = req.params;
+  const options = {
+    hostname: 'api.github.com',
+    path: `/users/${username}/events/public`,
+    method: 'GET',
+    headers: {
+      'User-Agent': 'Personal-Website-Backend'
+    }
+  };
+
+  https.get(options, (apiRes) => {
+    let data = '';
+    
+    apiRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    apiRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        res.json(jsonData);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to parse GitHub API response' });
+      }
+    });
+  }).on('error', (error) => {
+    console.error('GitHub API Error:', error);
+    res.status(500).json({ error: 'Failed to fetch GitHub data' });
   });
 });
 

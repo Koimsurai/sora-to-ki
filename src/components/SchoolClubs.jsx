@@ -1,7 +1,7 @@
 import React, { useState } from 'react'; // 引入 useState
 import { motion, AnimatePresence } from 'framer-motion'; // 重新導入 AnimatePresence
 import './SchoolClubs.css'; // 引入新的 CSS 檔案
-// 引入圖標
+// ✅ 優化: 使用解構引入 (Vite 會自動 tree-shake)
 import { FaUniversity, FaGuitar, FaCamera } from 'react-icons/fa';
 
 // 更新社團經歷資料，加入圖標和詳細活動

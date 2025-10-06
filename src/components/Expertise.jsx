@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react'; // 引入 useState, useEffect, useRef
 import { motion } from 'framer-motion'; // 導入 motion
+// ✅ 優化: 使用解構引入 (Vite 的 tree-shaking 會自動移除未使用的 icons)
 import {
-  SiFigma, SiDart, SiMongodb, SiAdobepremierepro, SiAdobelightroom, SiKotlin, SiNotion, SiCanva, // 新增 Notion, Canva
+  SiFigma, SiDart, SiMongodb, SiAdobepremierepro, SiAdobelightroom, SiKotlin, SiNotion, SiCanva,
   SiReact, SiJavascript, SiTypescript, SiDotnet, SiC, SiGo, SiAdobephotoshop, 
-  SiAdobeillustrator, SiHtml5, SiCss3 // 移除有問題的圖標
-} from 'react-icons/si'; // 設計/影音/DB/Mobile/生產力/前端/後端
+  SiAdobeillustrator, SiHtml5, SiCss3
+} from 'react-icons/si';
 import {
   FaJava, FaPython, FaLinux, FaGithub, FaDocker, FaNetworkWired, FaServer, FaDatabase, FaCode
-} from 'react-icons/fa'; // 後端/工具/網路/資料庫/通用代碼圖標
+} from 'react-icons/fa';
 import './Expertise.css'; // 引入對應的 CSS 檔案
 
 // 將圖示元件化以便複用

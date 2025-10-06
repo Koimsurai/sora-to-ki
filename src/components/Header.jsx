@@ -1,6 +1,7 @@
 import React, { useState } from 'react'; // 引入 useState
 import { Link, useLocation, useNavigate } from 'react-router-dom'; // 導入 Link, useLocation 和 useNavigate
-import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen } from 'react-icons/fa'; // 導入 FaBookOpen
+// ✅ 優化: 使用解構引入 (Vite 會自動 tree-shake 未使用的 icons)
+import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChartLine } from 'react-icons/fa';
 import './Header.css';
 
 // Updated Header to accept activeSection prop and handle navigation
@@ -73,6 +74,7 @@ function Header({ activeSection }) {
           <NavLink sectionId="school-clubs" icon={FaUsers} text="社團經驗" />
           <NavLink sectionId="portfolio" icon={FaImages} text="作品集" />
           <NavLink to="/blog" icon={FaBookOpen} text="學習筆記" />
+          <NavLink to="/activity" icon={FaChartLine} text="我的動態" />
           <NavLink sectionId="contact" icon={FaEnvelope} text="聯絡我" />
         </ul>
       </nav>

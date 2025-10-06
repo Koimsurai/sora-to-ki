@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'; // Import useSt
 // Remove motion import as it's no longer used for text
 import { Parallax } from 'react-scroll-parallax'; // 引入 Parallax
 // Remove unused particle imports
-import { FaGithub, FaLinkedin, FaInstagram, FaFacebook, FaBriefcase } from 'react-icons/fa'; // 引入圖示
+// ✅ 優化: 使用解構引入 (Vite 會自動 tree-shake)
+import { FaGithub, FaLinkedin, FaInstagram, FaFacebook, FaBriefcase } from 'react-icons/fa';
 import './Hero.css';
 // import mainImage from '../assets/Main.webp'; // 移除圖片導入
 

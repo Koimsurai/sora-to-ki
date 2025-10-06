@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+// ✅ 優化: 使用解構引入 (Vite 的 tree-shaking 會自動移除未使用的 icons)
 import {
   FiGrid,
   FiFileText,

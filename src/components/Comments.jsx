@@ -120,7 +120,7 @@ function Comments({ postId }) {
   };
 
   return (
-    <div className="comments-section-v2">
+    <div id="comments" className="comments-section-v2">
       <h3 className="comments-title-v2">留言</h3>
       <div className="comment-list-v2">
         {comments.length > 0 ? (

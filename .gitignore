@@ -34,3 +34,4 @@ tasklist
 /server/.env
 /server/db.sqlite*
 /server/node_modules
+.env
