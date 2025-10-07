@@ -37,6 +37,20 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
         style={vscDarkPlus}
         language={lang}
         PreTag="div"
+        customStyle={{
+          margin: 0,
+          padding: '2rem',
+          background: 'transparent',
+          fontSize: '0.95rem',
+          lineHeight: '1.6'
+        }}
+        codeTagProps={{
+          style: {
+            background: 'none',
+            padding: 0,
+            fontFamily: "'Fira Code', 'JetBrains Mono', 'SF Mono', monospace"
+          }
+        }}
         {...props}
       >
         {codeText}

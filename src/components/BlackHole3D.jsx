@@ -1,226 +1,153 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { OrbitControls, Environment } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { usePageVisibility } from '../contexts/PageVisibilityContext';
 import './BlackHole3D.css';
 
-function BlackHoleModel({ isLeftSide = false }) {
-  const gltf = useLoader(GLTFLoader, '/blackhole/scene.gltf');
+// 黑洞模型組件
+function BlackHoleModel() {
+  const gltf = useLoader(GLTFLoader, '/blackhole/textures/blackhole.glb');
   const meshRef = useRef();
-  const { isVisible } = usePageVisibility();
 
-  useFrame((state) => {
-    // 只在頁面可見時更新動畫
-    if (meshRef.current && isVisible) {
-      // 簡化動畫，減少每幀計算
-      const time = state.clock.elapsedTime;
-      // 降低旋轉速度
-      meshRef.current.rotation.y += isLeftSide ? 0.001 : 0.002;
-      // 簡化浮動效果計算
-      meshRef.current.position.y = Math.sin(time * 0.3) * (isLeftSide ? 0.03 : 0.05);
+  useFrame(() => {
+    if (meshRef.current) {
+      // 簡單的旋轉動畫
+      meshRef.current.rotation.y += 0.005;
     }
   });
 
-  useEffect(() => {
+  // 確保材質正確載入
+  React.useEffect(() => {
     if (gltf.scene) {
-      // 設置材質和效果
+      console.log('=== Black Hole Model Debug ===');
+      console.log('Scene:', gltf.scene);
+      console.log('Children count:', gltf.scene.children.length);
+      
+      let meshCount = 0;
       gltf.scene.traverse((child) => {
+        console.log('Child type:', child.type, 'Name:', child.name, 'Visible:', child.visible);
+        
         if (child.isMesh) {
-          // 增強發光效果
+          meshCount++;
+          console.log(`Mesh #${meshCount}:`, child.name);
+          console.log('  - Material:', child.material);
+          console.log('  - Geometry:', child.geometry);
+          
+          // 確保材質可見
           if (child.material) {
-            child.material.emissiveIntensity = isLeftSide ? 3 : 2;
-            child.material.transparent = true;
+            // 處理材質陣列
+            const materials = Array.isArray(child.material) ? child.material : [child.material];
+            
+            materials.forEach((mat, index) => {
+              console.log(`  - Material ${index}:`, mat.type, 'Color:', mat.color);
+              mat.side = 2; // THREE.DoubleSide
+              mat.transparent = false;
+              mat.opacity = 1;
+              mat.visible = true;
+              mat.depthWrite = true;
+              mat.depthTest = true;
+              mat.needsUpdate = true;
+              
+              // 特別處理吸積盤 (ring)
+              if (child.name.includes('ring')) {
+                console.log('  🌀 Accretion disk detected! Enhancing...');
+                mat.metalness = 0.3;
+                mat.roughness = 0.7;
+                mat.emissive = new THREE.Color(0xff6600);
+                mat.emissiveIntensity = 1.5;
+                
+                if (mat.color) {
+                  mat.color.setRGB(1, 0.6, 0.3); // 橘色
+                }
+              }
+              
+              // 增強所有顏色
+              if (mat.color && !child.name.includes('ring')) {
+                mat.color.multiplyScalar(2);
+              }
+              
+              // 增強發光效果
+              if (mat.emissive && !child.name.includes('ring')) {
+                mat.emissiveIntensity = 1.5;
+              }
+              
+              // 確保紋理正確載入
+              if (mat.map) {
+                console.log('  - Has texture map');
+                mat.map.needsUpdate = true;
+                mat.map.encoding = 3001; // sRGBEncoding
+              }
+            });
           }
+          child.visible = true;
+          child.castShadow = true;
+          child.receiveShadow = true;
         }
       });
+      
+      console.log('Total meshes found:', meshCount);
+      console.log('================================');
     }
-  }, [gltf, isLeftSide]);
-
-  const scale = isLeftSide ? [1.5, 1.5, 1.5] : [0.8, 0.8, 0.8];
-  const position = isLeftSide ? [0, 0, 0] : [0, 0, 0];
-  const rotation = [Math.PI / 10, 0, 0]; // 固定傾斜角度
+  }, [gltf]);
 
   return (
     <primitive 
       ref={meshRef} 
       object={gltf.scene} 
-      scale={scale}
-      position={position}
-      rotation={rotation}
+      scale={[1.2, 1.2, 1.2]}
+      position={[0, 0, 0]}
     />
   );
 }
 
-function ParticleField({ isLeftSide = false }) {
-  const pointsRef = useRef();
-  const { isVisible } = usePageVisibility();
-  const particleCount = isLeftSide ? 600 : 400; // 進一步減少粒子數量以提升效能
-
-  const positions = new Float32Array(particleCount * 3);
-  const colors = new Float32Array(particleCount * 3);
-
-  for (let i = 0; i < particleCount; i++) {
-    // 創建球形分佈的粒子
-    const radius = Math.random() * (isLeftSide ? 15 : 10) + (isLeftSide ? 8 : 5);
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.random() * Math.PI;
-
-    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta) + (isLeftSide ? 1 : 0);
-    positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-    positions[i * 3 + 2] = radius * Math.cos(phi);
-
-    // 設置粒子顏色（橙色到紅色的漸變）
-    colors[i * 3] = 1; // R
-    colors[i * 3 + 1] = Math.random() * 0.5; // G
-    colors[i * 3 + 2] = 0; // B
-  }
-
-  useFrame((state) => {
-    // 只在頁面可見時更新粒子動畫
-    if (pointsRef.current && isVisible) {
-      // 大幅簡化粒子動畫，減少每幀計算負載
-      const time = state.clock.elapsedTime;
-      
-      // 簡單的旋轉效果，避免複雜的粒子位置計算
-      pointsRef.current.rotation.y += isLeftSide ? 0.0005 : 0.001;
-      
-      // 每隔幾幀才更新一次脈動效果，而不是每幀都更新
-      if (Math.floor(time * 30) % 3 === 0) { // 30fps下每3幀更新一次
-        const geometry = pointsRef.current.geometry;
-        const positions = geometry.attributes.position.array;
-        const pulseEffect = 1 + Math.sin(time * 1.5) * 0.05; // 簡化脈動計算
-        
-        // 只更新一部分粒子以減少計算量
-        const updateStep = 3;
-        for (let i = 0; i < particleCount; i += updateStep) {
-          const index = i * 3;
-          positions[index] *= pulseEffect;
-          positions[index + 1] *= pulseEffect;
-          positions[index + 2] *= pulseEffect;
-        }
-        
-        geometry.attributes.position.needsUpdate = true;
-      }
-    }
-  });
-
-  const rotation = [Math.PI / 10, 0, 0]; // 固定傾斜角度
-
-  return (
-    <points ref={pointsRef} rotation={rotation}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={particleCount}
-          array={positions}
-          itemSize={3}
-        />
-        <bufferAttribute
-          attach="attributes-color"
-          count={particleCount}
-          array={colors}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <pointsMaterial
-        size={isLeftSide ? 0.08 : 0.05}
-        vertexColors
-        transparent
-        opacity={isLeftSide ? 0.9 : 0.8}
-        blending={THREE.AdditiveBlending}
-      />
-    </points>
-  );
-}
-
+// 主要組件
 const BlackHole3D = ({ className = '', style = {} }) => {
-  const { isVisible } = usePageVisibility();
-  const [isLoaded, setIsLoaded] = useState(() => {
-    try {
-      return sessionStorage.getItem('blackHoleLoaded') === 'true';
-    } catch (error) {
-      return false;
-    }
-  });
-  const isLeftSide = className.includes('blog-blackhole-left');
-
   const containerStyle = {
     position: 'fixed',
     top: 0,
     left: 0,
-    width: '100%',
-    height: '100%',
+    width: '100vw',
+    height: '100vh',
     zIndex: -1,
+    overflow: 'hidden',
     ...style
-  };
-
-  const handleCanvasCreated = () => {
-    setIsLoaded(true);
-    try {
-      sessionStorage.setItem('blackHoleLoaded', 'true');
-    } catch (error) {
-      console.error("無法寫入 sessionStorage", error);
-    }
   };
 
   return (
     <div className={`blackhole-3d-container ${className}`} style={containerStyle}>
-      {/* 只在頁面可見時渲染 Canvas，完全避免背景 3D 渲染 */}
-      {isVisible ? (
-        <Canvas
-          camera={{ 
-            position: isLeftSide ? [0, 0, 10] : [0, 0, 5], 
-            fov: isLeftSide ? 50 : 75 
-          }}
-          gl={{ 
-            antialias: false, // 關閉抗鋸齒以提升效能
-            alpha: true,
-            powerPreference: "high-performance" // 優先使用高性能 GPU
-          }}
-          frameloop="demand" // 按需渲染，只有場景變化時才重新渲染
-          onCreated={handleCanvasCreated}
+      <Canvas
+        camera={{ position: [0, 0, 10], fov: 50 }}
+        gl={{ 
+          antialias: true,
+          alpha: true,
+          powerPreference: "high-performance"
+        }}
+        style={{ width: '100%', height: '100%' }}
+        onCreated={({ gl }) => {
+          gl.physicallyCorrectLights = true;
+        }}
       >
-        <ambientLight intensity={0.3} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff4500" />
+        {/* 燈光設置 - 增強照明讓吸積盤可見 */}
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[5, 5, 5]} intensity={1.5} />
+        <directionalLight position={[-5, -5, 5]} intensity={1} color="#ff8844" />
+        <pointLight position={[10, 10, 10]} intensity={1.2} />
+        <pointLight position={[-10, -10, -10]} intensity={0.8} color="#ff6600" />
         
+        {/* 黑洞模型 */}
         <React.Suspense fallback={null}>
-          <BlackHoleModel isLeftSide={isLeftSide} />
-          <ParticleField isLeftSide={isLeftSide} />
+          <BlackHoleModel />
         </React.Suspense>
         
+        {/* 控制器 */}
         <OrbitControls 
           enableZoom={false}
           enablePan={false}
-          autoRotate={isLeftSide}
-          autoRotateSpeed={isLeftSide ? 0.3 : 0.5}
-          enableDamping
-          dampingFactor={0.05}
+          autoRotate={true}
+          autoRotateSpeed={0.5}
         />
       </Canvas>
-      ) : (
-        <div className="blackhole-paused-overlay">
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            color: 'rgba(255, 255, 255, 0.5)',
-            fontSize: '14px'
-          }}>
-            <span>🌌 3D 渲染已暫停 (頁面不可見)</span>
-          </div>
-        </div>
-      )}
-      
-      {isVisible && !isLoaded && (
-        <div className="loading-overlay">
-          <div className="loading-spinner"></div>
-          <p>載入 3D 黑洞模型中...</p>
-        </div>
-      )}
     </div>
   );
 };

@@ -64,19 +64,32 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 2;
-  opacity: 0.7;
+  opacity: 0;
+  animation: slide-in-right 1s ease-out 0.3s forwards, astronaut-float-post 6s ease-in-out 1.3s infinite;
 }
 
 .astronaut-svg {
   width: 300px;
   height: 250px;
   filter: drop-shadow(0 0 20px rgba(0, 170, 255, 0.3));
-  animation: astronaut-float 6s ease-in-out infinite;
 }
 
-@keyframes astronaut-float {
-  0%, 100% { transform: translateY(-10px) rotate(-2deg); }
-  50% { transform: translateY(10px) rotate(2deg); }
+/* 進入動畫 - 從右側滑入 */
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(100px) translateY(-50%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) translateY(-50%);
+    opacity: 0.7;
+  }
+}
+
+/* 浮動動畫 - 進入後才開始 */
+@keyframes astronaut-float-post {
+  0%, 100% { transform: translateY(-60px) rotate(-2deg); }
+  50% { transform: translateY(-40px) rotate(2deg); }
 }
 
 /* 主要內容 */
@@ -86,6 +99,20 @@
   text-align: center;
   max-width: 800px;
   padding: 0 20px;
+  opacity: 0;
+  animation: fade-in-up 1s ease-out 0.5s forwards;
+}
+
+/* 淡入向上動畫 */
+@keyframes fade-in-up {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .hero-title {
@@ -102,7 +129,7 @@
   background-clip: text;
   text-shadow: 0 0 50px rgba(0, 170, 255, 0.3);
   letter-spacing: 2px;
-  animation: title-glow 4s ease-in-out infinite alternate;
+  animation: title-glow 4s ease-in-out 1.5s infinite alternate;
 }
 
 @keyframes title-glow {

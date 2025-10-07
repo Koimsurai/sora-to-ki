@@ -380,6 +380,8 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: pre-wrap;
+  display: inline; /* 防止背景重疊 */
+  line-height: 1.6;
 }
 
 /* --- Enhanced Code Block with Glassmorphism --- */
@@ -460,20 +462,29 @@
 .code-block-wrapper pre {
   margin: 0 !important;
   border-radius: 0 0 16px 16px !important;
-  padding: 2rem !important;
-  font-size: 0.95rem !important;
-  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', monospace !important;
-  line-height: 1.6 !important;
+  background: rgba(13, 17, 23, 0.95) !important;
   overflow-x: auto !important;
-  white-space: pre-wrap !important;
-  word-wrap: break-word !important;
 }
 
 .code-block-wrapper pre code {
   background: none !important;
   border: none !important;
+  padding: 0 !important;
   white-space: pre-wrap !important;
   word-break: break-all !important;
+  display: block !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+  color: inherit !important;
+}
+
+/* 確保 SyntaxHighlighter 的內部元素不會有額外背景 */
+.code-block-wrapper pre > div {
+  background: transparent !important;
+}
+
+.code-block-wrapper pre code span {
+  background: none !important;
 }
 
 /* --- 文章目錄側邊欄樣式 --- */

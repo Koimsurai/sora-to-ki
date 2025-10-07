@@ -2,9 +2,12 @@
 
 .search-filter-container {
   margin-bottom: 40px;
+  margin-top: 8px;
+  padding-top: 4px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  overflow: visible !important; /* 強制超出可見 */
 }
 
 /* Modern search input */
@@ -246,6 +249,9 @@
   gap: 20px;
   flex-wrap: wrap;
   align-items: flex-start;
+  position: relative;
+  z-index: auto;
+  overflow: visible !important;
 }
 
 .control-label {
@@ -270,6 +276,10 @@
 .sort-control {
   flex: 1;
   min-width: 200px;
+  max-width: calc(100% - 220px); /* 限制最大寬度,留空間給按鈕 */
+  margin-right: 20px; /* 右邊距 */
+  position: relative;
+  z-index: 10;
 }
 
 .modern-select {
@@ -295,6 +305,8 @@
   background-repeat: no-repeat;
   background-position: right 16px center;
   padding-right: 40px;
+  position: relative;
+  z-index: 5; /* 確保下拉選單不會被覆蓋 */
 }
 
 .modern-select:hover {
@@ -322,6 +334,8 @@
 .view-mode-control {
   flex: 1;
   min-width: 200px;
+  position: relative;
+  z-index: 1;
 }
 
 .view-mode-buttons {

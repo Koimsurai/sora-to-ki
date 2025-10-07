@@ -4,10 +4,10 @@ import LazyComponent from './LazyComponent';
 import { 
   LazySpaceParticles, 
   LazyMeteorShower, 
-  LazyBlackHole3D,
+  LazySpaceShuttle3D,
   SpaceParticlesPlaceholder,
   MeteorShowerPlaceholder,
-  BlackHole3DPlaceholder
+  SpaceShuttle3DPlaceholder
 } from './LazyEffects';
 import SpaceHeroBanner from './SpaceHeroBanner';
 import ModernCard from './ModernCard';
@@ -36,7 +36,18 @@ function Blog() {
     fetchPosts();
     fetchTags();
     fetchCategories();
+    
+    // 清理函數：組件卸載時重置狀態
+    return () => {
+      // 重置滾動位置
+      window.scrollTo(0, 0);
+    };
   }, [sortBy]);
+  
+  // 組件掛載時確保從頂部開始
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // 使用 useCallback 穩定化回呼函式
   const handleSearchChange = useCallback((e) => {
@@ -170,13 +181,13 @@ function Blog() {
       </LazyComponent>
       
       <SpaceHeroBanner>
-        {/* 延遲載入 3D 黑洞 */}
+        {/* 延遲載入 3D 太空梭 */}
         <LazyComponent 
-          className="blackhole-wrapper"
-          placeholder={<BlackHole3DPlaceholder />}
+          className="shuttle-wrapper"
+          placeholder={<SpaceShuttle3DPlaceholder />}
           rootMargin="100px"
         >
-          <LazyBlackHole3D className="blog-blackhole-left" isLeftSide={true} />
+          <LazySpaceShuttle3D />
         </LazyComponent>
       </SpaceHeroBanner>
       <div className="blog-content-section">

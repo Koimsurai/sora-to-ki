@@ -3,7 +3,7 @@ import React from 'react';
 // 使用 React.lazy 延遲載入重量級組件
 export const LazySpaceParticles = React.lazy(() => import('./SpaceParticles'));
 export const LazyMeteorShower = React.lazy(() => import('./MeteorShower'));
-export const LazyBlackHole3D = React.lazy(() => import('./BlackHole3D'));
+export const LazySpaceShuttle3D = React.lazy(() => import('./SpaceShuttle3D'));
 
 // 為不同組件提供專門的載入佔位符
 export const SpaceParticlesPlaceholder = () => (
@@ -36,23 +36,23 @@ export const MeteorShowerPlaceholder = () => (
   />
 );
 
-export const BlackHole3DPlaceholder = () => (
+export const SpaceShuttle3DPlaceholder = () => (
   <div 
     style={{
       width: '100%',
-      height: '300px',
-      background: 'radial-gradient(circle, rgba(138, 43, 226, 0.1) 0%, transparent 70%)',
+      height: '400px',
+      background: 'radial-gradient(circle, rgba(74, 144, 226, 0.1) 0%, transparent 70%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       color: 'rgba(255, 255, 255, 0.5)',
       fontSize: '14px',
-      borderRadius: '8px'
+      borderRadius: '12px'
     }}
   >
     <div style={{ textAlign: 'center' }}>
-      <div style={{ marginBottom: '8px' }}>🌌</div>
-      <div>準備載入 3D 黑洞</div>
+      <div style={{ marginBottom: '8px', fontSize: '32px' }}>🚀</div>
+      <div>準備載入太空梭</div>
     </div>
   </div>
 );

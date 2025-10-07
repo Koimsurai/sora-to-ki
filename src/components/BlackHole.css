@@ -12,6 +12,7 @@
   pointer-events: none;
   transform: translateY(-50%) rotate(-15deg); /* 固定傾斜角度 */
   transform-origin: center;
+  overflow: visible; /* 確保不被截斷 */
 }
 
 .black-hole {
@@ -30,6 +31,9 @@
   );
   animation: black-hole-pulse 8s ease-in-out infinite;
   filter: blur(0.5px);
+  transform-style: preserve-3d; /* 啟用 3D 變換空間 */
+  perspective: 1000px; /* 增加透視效果 */
+  overflow: visible; /* 確保子元素不被裁切 */
 }
 
 /* 事件視界 - 黑洞的核心 */
@@ -51,6 +55,8 @@
     0 0 50px rgba(0, 0, 0, 0.9),
     inset 0 0 30px rgba(0, 0, 0, 1);
   animation: event-horizon-rotate 20s linear infinite;
+  z-index: 10; /* 確保核心始終在吸積盤上方 */
+  transform-style: preserve-3d; /* 保持 3D 變換空間 */
 }
 
 /* 吸積盤 - 圍繞黑洞旋轉的物質環 */
@@ -84,12 +90,16 @@
     white 90%,
     transparent 100%
   );
+  z-index: 5; /* 確保光環在核心下方但在其他元素上方 */
+  transform-style: preserve-3d;
+  pointer-events: none; /* 避免遮擋互動 */
 }
 
 .accretion-disk {
   width: 100%;
   height: 100%;
   animation: disk-rotation 12s linear infinite;
+  z-index: 5;
 }
 
 .disk-2 {
@@ -107,6 +117,7 @@
     rgba(0, 255, 255, 0.6) 300deg,
     transparent 360deg
   );
+  z-index: 6;
 }
 
 .disk-3 {
@@ -122,6 +133,7 @@
     rgba(255, 255, 255, 0.2) 270deg,
     transparent 360deg
   );
+  z-index: 7;
 }
 
 /* 引力透鏡效果 */
@@ -142,6 +154,8 @@
     transparent 90%
   );
   animation: lensing-pulse 6s ease-in-out infinite;
+  z-index: 8; /* 在所有吸積盤上方但在核心下方 */
+  pointer-events: none;
 }
 
 /* 噴流效果 */
@@ -153,6 +167,7 @@
   height: 300%;
   transform: translate(-50%, -50%);
   pointer-events: none;
+  z-index: 1; /* 在核心下方 */
 }
 
 .jet {
@@ -202,11 +217,16 @@
 
 .matter-particle {
   position: absolute;
-  width: 3px;
-  height: 3px;
-  background: radial-gradient(circle, rgba(255, 165, 0, 1) 0%, transparent 70%);
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, rgba(255, 165, 0, 1) 0%, rgba(255, 120, 0, 0.8) 40%, transparent 70%);
   border-radius: 50%;
-  box-shadow: 0 0 6px rgba(255, 165, 0, 0.8);
+  box-shadow: 
+    0 0 8px rgba(255, 165, 0, 0.9),
+    0 0 4px rgba(255, 100, 0, 0.6) inset;
+  /* 確保在任何情況下都是圓形 */
+  transform: scale(1);
+  will-change: transform, opacity;
 }
 
 .particle-1 { top: 20%; left: 60%; animation: particle-orbit-1 8s linear infinite; }
