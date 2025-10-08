@@ -187,7 +187,7 @@ const TagFilter = ({ allTags, selectedTag, setSelectedTag }) => {
   const tagsToShow = expanded ? allTags : allTags?.slice(0, maxShow);
 
   return (
-    <div className="modern-tags-filter" style={{ overflowX: 'auto', whiteSpace: 'nowrap' }}>
+    <div className="modern-tags-filter">
       <button
         className={`filter-tag ${selectedTag === '' ? 'active' : ''}`}
         onClick={() => setSelectedTag('')}

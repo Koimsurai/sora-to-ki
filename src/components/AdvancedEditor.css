@@ -644,7 +644,6 @@
     order: -1;
     flex-direction: row;
     gap: 2rem;
-    overflow-x: auto;
   }
 
   .sidebar-section, .editor-actions {

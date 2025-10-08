@@ -9,6 +9,9 @@ const Activity = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [hoveredCard, setHoveredCard] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [contributionData, setContributionData] = useState([]);
+  const [serverStatus, setServerStatus] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const containerRef = useRef(null);
 
   // 配置你的 Steam ID 和 GitHub 用戶名
@@ -34,6 +37,22 @@ const Activity = () => {
 
   useEffect(() => {
     fetchActivityData();
+    checkServerStatus();
+    
+    // 每秒更新時間
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    
+    // 每30秒檢查一次伺服器狀態
+    const statusInterval = setInterval(() => {
+      checkServerStatus();
+    }, 30000);
+    
+    return () => {
+      clearInterval(timeInterval);
+      clearInterval(statusInterval);
+    };
   }, []);
 
   const fetchActivityData = async () => {
@@ -43,6 +62,47 @@ const Activity = () => {
       fetchGithubData()
     ]);
     setLoading(false);
+  };
+
+  // 檢查伺服器狀態
+  const checkServerStatus = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const startTime = Date.now();
+      const response = await fetch(`${apiUrl}/health`);
+      const responseTime = Date.now() - startTime;
+      
+      if (response.ok) {
+        setServerStatus({
+          status: 'online',
+          responseTime: responseTime,
+          lastCheck: new Date()
+        });
+      } else {
+        setServerStatus({
+          status: 'error',
+          responseTime: responseTime,
+          lastCheck: new Date()
+        });
+      }
+    } catch (error) {
+      setServerStatus({
+        status: 'offline',
+        responseTime: 0,
+        lastCheck: new Date()
+      });
+    }
+  };
+
+  // 計算網站運行時間（網站於 2025-04-01 上線）
+  const getUptime = () => {
+    const startDate = new Date('2025-04-01T00:00:00+08:00'); // 台灣時間
+    const now = new Date();
+    const diffTime = Math.abs(now - startDate);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    return { days: diffDays, hours: diffHours };
   };
 
   const fetchSteamData = async () => {
@@ -114,10 +174,50 @@ const Activity = () => {
         recentCommits: pushEvents,
         recentRepos: reposData
       });
+
+      // 生成貢獻熱度圖數據（最近 12 週）
+      generateContributionData(pushEvents);
     } catch (error) {
       console.error('獲取 GitHub 數據失敗:', error);
       setGithubData({ error: '無法連接到後端 API，請確保後端服務器正在運行' });
     }
+  };
+
+  // 生成貢獻熱度圖數據
+  const generateContributionData = (events) => {
+    const weeks = 12;
+    const daysInWeek = 7;
+    const data = [];
+    const today = new Date();
+
+    // 統計每天的 commit 數量
+    const commitsByDate = {};
+    events.forEach(event => {
+      if (event.type === 'PushEvent') {
+        const date = new Date(event.created_at).toDateString();
+        commitsByDate[date] = (commitsByDate[date] || 0) + (event.payload.commits?.length || 1);
+      }
+    });
+
+    // 生成最近 12 週的數據
+    for (let week = weeks - 1; week >= 0; week--) {
+      const weekData = [];
+      for (let day = 0; day < daysInWeek; day++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - (week * daysInWeek + day));
+        const dateStr = date.toDateString();
+        const count = commitsByDate[dateStr] || 0;
+        
+        weekData.push({
+          date: dateStr,
+          count: count,
+          level: count === 0 ? 0 : count <= 2 ? 1 : count <= 5 ? 2 : count <= 8 ? 3 : 4
+        });
+      }
+      data.push(weekData);
+    }
+
+    setContributionData(data.reverse());
   };
 
   const formatPlaytime = (minutes) => {
@@ -283,6 +383,59 @@ const Activity = () => {
       <div className="activity-content">
         {activeTab === 'overview' && (
           <div className="overview-section">
+            {/* 伺服器狀態卡片 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="server-status-card glass-card"
+            >
+              <div className="status-header">
+                <h3>🖥️ 伺服器狀態</h3>
+                <div className={`status-indicator ${serverStatus?.status || 'checking'}`}>
+                  <span className="status-dot"></span>
+                  {serverStatus?.status === 'online' && '運行中'}
+                  {serverStatus?.status === 'offline' && '離線'}
+                  {serverStatus?.status === 'error' && '錯誤'}
+                  {!serverStatus && '檢查中...'}
+                </div>
+              </div>
+              <div className="status-details">
+                <div className="status-item">
+                  <span className="status-label">網站運行時間</span>
+                  <span className="status-value">
+                    {getUptime().days} 天 {getUptime().hours} 小時
+                  </span>
+                </div>
+                {serverStatus?.responseTime && (
+                  <div className="status-item">
+                    <span className="status-label">響應時間</span>
+                    <span className="status-value">{serverStatus.responseTime}ms</span>
+                  </div>
+                )}
+                <div className="status-item">
+                  <span className="status-label">當前時間</span>
+                  <span className="status-value">
+                    {currentTime.toLocaleTimeString('zh-TW', { 
+                      hour: '2-digit', 
+                      minute: '2-digit', 
+                      second: '2-digit' 
+                    })}
+                  </span>
+                </div>
+                {serverStatus?.lastCheck && (
+                  <div className="status-item">
+                    <span className="status-label">最後檢查</span>
+                    <span className="status-value">
+                      {serverStatus.lastCheck.toLocaleTimeString('zh-TW', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
             <div className="stats-grid">
               {[
                 {
@@ -378,14 +531,25 @@ const Activity = () => {
                     {steamData.recentGames.slice(0, 3).map(game => (
                       <div key={game.appid} className="game-item">
                         <img
-                          src={`https://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_icon_url}.jpg`}
+                          src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
                           alt={game.name}
                           className="game-icon"
+                          onError={(e) => {
+                            e.target.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/capsule_184x69.jpg`;
+                          }}
                         />
                         <div className="game-info">
                           <h4>{game.name}</h4>
-                          <p>最近 {formatPlaytime(game.playtime_2weeks || 0)}</p>
-                          <p className="total-playtime">總計 {formatPlaytime(game.playtime_forever || 0)}</p>
+                          <div className="game-stats-inline">
+                            <div className="stat-item">
+                              <span className="stat-icon">🎮</span>
+                              <span>最近 {formatPlaytime(game.playtime_2weeks || 0)}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span className="stat-icon">⏱️</span>
+                              <span>總計 {formatPlaytime(game.playtime_forever || 0)}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -463,28 +627,58 @@ const Activity = () => {
                       key={game.appid}
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      whileHover={{ scale: 1.05 }}
+                      whileHover={{ scale: 1.02, y: -5 }}
                       className="game-card"
                     >
-                      <img
-                        src={`https://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_logo_url}.jpg`}
-                        alt={game.name}
-                        className="game-cover"
-                        onError={(e) => {
-                          e.target.src = `https://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_icon_url}.jpg`;
-                        }}
-                      />
+                      <div className="game-cover-wrapper">
+                        <img
+                          src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
+                          alt={game.name}
+                          className="game-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.target.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/capsule_616x353.jpg`;
+                          }}
+                        />
+                        <div className="game-overlay">
+                          <a 
+                            href={`https://store.steampowered.com/app/${game.appid}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="store-link"
+                          >
+                            在 Steam 上查看 →
+                          </a>
+                        </div>
+                      </div>
                       <div className="game-details">
                         <h3>{game.name}</h3>
                         <div className="game-stats">
                           <div className="stat">
-                            <span className="label">最近遊玩:</span>
-                            <span className="value">{formatPlaytime(game.playtime_2weeks || 0)}</span>
+                            <span className="stat-icon">🎮</span>
+                            <div className="stat-info">
+                              <span className="label">最近兩週</span>
+                              <span className="value">{formatPlaytime(game.playtime_2weeks || 0)}</span>
+                            </div>
                           </div>
                           <div className="stat">
-                            <span className="label">總遊玩時間:</span>
-                            <span className="value">{formatPlaytime(game.playtime_forever || 0)}</span>
+                            <span className="stat-icon">⏱️</span>
+                            <div className="stat-info">
+                              <span className="label">總遊玩時間</span>
+                              <span className="value">{formatPlaytime(game.playtime_forever || 0)}</span>
+                            </div>
                           </div>
+                          {game.playtime_forever > 0 && (
+                            <div className="stat">
+                              <span className="stat-icon">📊</span>
+                              <div className="stat-info">
+                                <span className="label">遊玩進度</span>
+                                <span className="value">
+                                  {((game.playtime_2weeks || 0) / game.playtime_forever * 100).toFixed(1)}% 最近活躍
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -536,6 +730,114 @@ const Activity = () => {
                 </div>
               ) : (
                 <>
+                  {/* GitHub 貢獻熱度圖 */}
+                  {contributionData.length > 0 && (
+                    <>
+                      <h3 className="section-subtitle">🔥 最近 12 週貢獻熱度</h3>
+                      <motion.div
+                        className="contribution-heatmap"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <div className="heatmap-grid">
+                          {contributionData.map((week, weekIndex) => (
+                            <div key={weekIndex} className="heatmap-week">
+                              {week.map((day, dayIndex) => (
+                                <motion.div
+                                  key={`${weekIndex}-${dayIndex}`}
+                                  className={`heatmap-day level-${day.level}`}
+                                  initial={{ opacity: 0, scale: 0 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ 
+                                    delay: (weekIndex * 7 + dayIndex) * 0.01,
+                                    duration: 0.2 
+                                  }}
+                                  whileHover={{ scale: 1.3 }}
+                                  title={`${day.date}: ${day.count} commits`}
+                                >
+                                  <div className="day-tooltip">
+                                    <div>{day.count} commits</div>
+                                    <div className="tooltip-date">{day.date}</div>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="heatmap-legend">
+                          <span>較少</span>
+                          <div className="legend-squares">
+                            {[0, 1, 2, 3, 4].map(level => (
+                              <div key={level} className={`legend-square level-${level}`} />
+                            ))}
+                          </div>
+                          <span>較多</span>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+
+                  {/* GitHub 統計卡片 */}
+                  {githubData?.user && (
+                    <div className="github-stats-cards">
+                      <motion.div 
+                        className="stat-card-small"
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="stat-icon">⭐</div>
+                        <div className="stat-value">
+                          {githubData.recentRepos?.reduce((sum, repo) => sum + repo.stargazers_count, 0) || 0}
+                        </div>
+                        <div className="stat-label">Total Stars</div>
+                      </motion.div>
+
+                      <motion.div 
+                        className="stat-card-small"
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.1 }}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="stat-icon">🍴</div>
+                        <div className="stat-value">
+                          {githubData.recentRepos?.reduce((sum, repo) => sum + repo.forks_count, 0) || 0}
+                        </div>
+                        <div className="stat-label">Total Forks</div>
+                      </motion.div>
+
+                      <motion.div 
+                        className="stat-card-small"
+                        initial={{ opacity: 0, x: 10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="stat-icon">📦</div>
+                        <div className="stat-value">{githubData.user.public_repos || 0}</div>
+                        <div className="stat-label">Repositories</div>
+                      </motion.div>
+
+                      <motion.div 
+                        className="stat-card-small"
+                        initial={{ opacity: 0, x: 20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.3 }}
+                        whileHover={{ scale: 1.05 }}
+                      >
+                        <div className="stat-icon">📝</div>
+                        <div className="stat-value">{githubData.recentCommits?.length || 0}</div>
+                        <div className="stat-label">Recent Commits</div>
+                      </motion.div>
+                    </div>
+                  )}
+
                   <h3 className="section-subtitle">📝 最近提交</h3>
                   {githubData?.recentCommits?.length > 0 ? (
                     <div className="commits-timeline">

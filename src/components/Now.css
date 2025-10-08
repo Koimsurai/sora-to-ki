@@ -1,0 +1,661 @@
+/* ==================== Now 當前狀態頁面 ==================== */
+
+.now-container {
+  min-height: 100vh;
+  padding: 80px 20px 60px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to bottom,
+    #0f0a1a 0%,
+    #1a1330 50%,
+    #0f0a1a 100%
+  );
+}
+
+/* ==================== 背景裝飾 ==================== */
+
+.now-bg-decoration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  animation: float-orb 20s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.6), transparent);
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(0, 170, 255, 0.5), transparent);
+  top: 50%;
+  right: -50px;
+  animation-delay: 7s;
+}
+
+.orb-3 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(255, 20, 147, 0.4), transparent);
+  bottom: -100px;
+  left: 50%;
+  animation-delay: 14s;
+}
+
+@keyframes float-orb {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+/* ==================== Hero 區域 ==================== */
+
+.now-hero {
+  text-align: center;
+  margin-bottom: 80px;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-emoji {
+  font-size: 5rem;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.6));
+  display: inline-block;
+}
+
+.now-title {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 800;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.title-text {
+  background: linear-gradient(135deg, #ffffff, #8a2be2, #00aaff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.5));
+}
+
+.title-emoji {
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.now-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.meta-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(138, 43, 226, 0.4);
+  transform: translateY(-2px);
+}
+
+.meta-icon {
+  font-size: 1.3rem;
+}
+
+/* ==================== 內容區域 ==================== */
+
+.now-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.now-section {
+  margin-bottom: 80px;
+}
+
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.6));
+}
+
+/* ==================== 正在學習 ==================== */
+
+.learning-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+.learning-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+}
+
+.learning-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.learning-card:hover::before {
+  opacity: 1;
+}
+
+.learning-card:hover {
+  border-color: rgba(138, 43, 226, 0.4);
+  box-shadow: 0 0 40px rgba(138, 43, 226, 0.3);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.card-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 10px currentColor);
+}
+
+.card-header h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.card-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.progress-bar {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 1s ease-out;
+  box-shadow: 0 0 15px currentColor;
+}
+
+.progress-text {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* ==================== 進行中的專案 ==================== */
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 2rem;
+}
+
+.project-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
+}
+
+.project-card:hover {
+  border-color: rgba(138, 43, 226, 0.4);
+  box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.project-icon {
+  font-size: 2.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.4));
+}
+
+.project-status {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.project-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1rem;
+}
+
+.project-description {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.project-tech {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.tech-tag {
+  padding: 0.5rem 1rem;
+  border: 1.5px solid;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+}
+
+.tech-tag:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.05);
+}
+
+/* ==================== 生活近況 ==================== */
+
+.life-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.life-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.life-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(138, 43, 226, 0.3);
+  box-shadow: 0 0 25px rgba(138, 43, 226, 0.2);
+}
+
+.life-icon {
+  font-size: 2.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.4));
+}
+
+.life-content {
+  flex: 1;
+}
+
+.life-content h4 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.life-content p {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* ==================== 當前目標 ==================== */
+
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.goal-item {
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  transition: all 0.3s ease;
+}
+
+.goal-item:hover {
+  border-color: rgba(138, 43, 226, 0.4);
+  box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
+}
+
+.goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.goal-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.goal-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.6));
+}
+
+.goal-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.goal-deadline {
+  padding: 0.5rem 1rem;
+  background: rgba(138, 43, 226, 0.2);
+  border: 1px solid rgba(138, 43, 226, 0.4);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.goal-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.goal-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8a2be2, #00aaff);
+  border-radius: 10px;
+  transition: width 1s ease-out;
+  box-shadow: 0 0 20px rgba(138, 43, 226, 0.6);
+}
+
+.goal-progress-text {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+/* ==================== 最近的想法 ==================== */
+
+.thoughts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.thought-card {
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.thought-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(138, 43, 226, 0.4);
+  box-shadow: 0 0 30px rgba(138, 43, 226, 0.3);
+}
+
+.quote-mark {
+  position: absolute;
+  top: 1rem;
+  left: 1.5rem;
+  font-size: 4rem;
+  color: rgba(138, 43, 226, 0.3);
+  font-family: Georgia, serif;
+  line-height: 1;
+}
+
+.thought-card p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  font-style: italic;
+  padding-left: 2rem;
+  padding-top: 1rem;
+}
+
+/* ==================== Footer ==================== */
+
+.now-footer {
+  text-align: center;
+  padding: 3rem 2rem;
+  margin-top: 80px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.footer-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.footer-text a {
+  color: #8a2be2;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.footer-text a:hover {
+  color: #00aaff;
+  text-decoration: underline;
+}
+
+/* ==================== 響應式設計 ==================== */
+
+@media (max-width: 768px) {
+  .now-container {
+    padding: 60px 15px 40px;
+  }
+
+  .now-hero {
+    margin-bottom: 60px;
+  }
+
+  .hero-emoji {
+    font-size: 3.5rem;
+  }
+
+  .now-title {
+    font-size: 2rem;
+  }
+
+  .title-emoji {
+    font-size: 1.2rem;
+  }
+
+  .now-meta {
+    gap: 1rem;
+  }
+
+  .meta-item {
+    font-size: 0.9rem;
+    padding: 0.6rem 1.2rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .title-icon {
+    font-size: 2rem;
+  }
+
+  .learning-grid,
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .goal-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .thoughts-container {
+    grid-template-columns: 1fr;
+  }
+
+  .gradient-orb {
+    filter: blur(60px);
+  }
+}
+
+@media (max-width: 480px) {
+  .learning-card,
+  .project-card,
+  .goal-item {
+    padding: 1.5rem;
+  }
+
+  .life-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .thought-card {
+    padding: 1.5rem;
+  }
+
+  .quote-mark {
+    font-size: 3rem;
+  }
+}
+
+/* ==================== 動畫 ==================== */
+
+@media (prefers-reduced-motion: no-preference) {
+  .learning-card,
+  .project-card,
+  .life-card,
+  .goal-item,
+  .thought-card {
+    animation: fade-in-up 0.6s ease-out;
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

@@ -864,6 +864,71 @@ apiRouter.get('/steam/recent-games', (req, res) => {
   });
 });
 
+// GET Steam owned games (所有擁有的遊戲)
+apiRouter.get('/steam/owned-games', (req, res) => {
+  if (!STEAM_API_KEY || !STEAM_ID) {
+    return res.status(500).json({ 
+      error: 'Steam API 未配置',
+      message: '請在 server/.env 中設置 STEAM_API_KEY 和 STEAM_ID'
+    });
+  }
+
+  const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${STEAM_API_KEY}&steamid=${STEAM_ID}&include_appinfo=true&include_played_free_games=true&format=json`;
+  
+  https.get(url, (apiRes) => {
+    let data = '';
+    
+    apiRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    apiRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        res.json(jsonData);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to parse Steam API response' });
+      }
+    });
+  }).on('error', (error) => {
+    console.error('Steam API Error:', error);
+    res.status(500).json({ error: 'Failed to fetch Steam data' });
+  });
+});
+
+// GET Steam game achievements (特定遊戲的成就)
+apiRouter.get('/steam/achievements/:appid', (req, res) => {
+  if (!STEAM_API_KEY || !STEAM_ID) {
+    return res.status(500).json({ 
+      error: 'Steam API 未配置',
+      message: '請在 server/.env 中設置 STEAM_API_KEY 和 STEAM_ID'
+    });
+  }
+
+  const { appid } = req.params;
+  const url = `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=${appid}&key=${STEAM_API_KEY}&steamid=${STEAM_ID}`;
+  
+  https.get(url, (apiRes) => {
+    let data = '';
+    
+    apiRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    apiRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        res.json(jsonData);
+      } catch (error) {
+        res.status(500).json({ error: 'Failed to parse Steam API response' });
+      }
+    });
+  }).on('error', (error) => {
+    console.error('Steam API Error:', error);
+    res.status(500).json({ error: 'Failed to fetch Steam achievements data' });
+  });
+});
+
 // --- GitHub API Proxy ---
 
 // GET GitHub user info and recent commits
