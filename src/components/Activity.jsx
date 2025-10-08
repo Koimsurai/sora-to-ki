@@ -7,6 +7,7 @@ const Activity = () => {
   const [githubData, setGithubData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [steamSubTab, setSteamSubTab] = useState('recent'); // 新增: Steam 子標籤 (recent/library)
   const [hoveredCard, setHoveredCard] = useState(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [contributionData, setContributionData] = useState([]);
@@ -118,6 +119,10 @@ const Activity = () => {
       const playerResponse = await fetch(`${apiUrl}/steam/player`);
       const playerData = await playerResponse.json();
 
+      // 獲取所有遊戲庫
+      const ownedGamesResponse = await fetch(`${apiUrl}/steam/owned-games`);
+      const ownedGamesData = await ownedGamesResponse.json();
+
       // 檢查是否有錯誤
       if (recentGamesData.error || playerData.error) {
         setSteamData({ 
@@ -129,6 +134,8 @@ const Activity = () => {
 
       setSteamData({
         recentGames: recentGamesData.response?.games || [],
+        ownedGames: ownedGamesData.response?.games || [],
+        gameCount: ownedGamesData.response?.game_count || 0,
         playerInfo: playerData.response?.players?.[0] || null,
         configured: true
       });
@@ -150,9 +157,18 @@ const Activity = () => {
       const userResponse = await fetch(`${apiUrl}/github/user/${GITHUB_USERNAME}`);
       const userData = await userResponse.json();
 
-      // 獲取最近的 events
+      // 獲取最近的 events (用於顯示最近提交)
       const eventsResponse = await fetch(`${apiUrl}/github/events/${GITHUB_USERNAME}`);
       const eventsData = await eventsResponse.json();
+
+      // 獲取完整的貢獻數據 (使用 GitHub 貢獻圖 API)
+      let contributionsData = null;
+      try {
+        const contributionsResponse = await fetch(`https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=last`);
+        contributionsData = await contributionsResponse.json();
+      } catch (error) {
+        console.warn('無法獲取完整貢獻數據，將使用事件數據:', error);
+      }
 
       // 檢查是否有錯誤
       if (userData.error || eventsData.error) {
@@ -172,20 +188,60 @@ const Activity = () => {
       setGithubData({
         user: userData,
         recentCommits: pushEvents,
-        recentRepos: reposData
+        recentRepos: reposData,
+        contributions: contributionsData
       });
 
-      // 生成貢獻熱度圖數據（最近 12 週）
-      generateContributionData(pushEvents);
+      // 生成貢獻熱度圖數據（使用完整數據或回退到事件數據）
+      if (contributionsData) {
+        generateContributionDataFromAPI(contributionsData);
+      } else {
+        generateContributionData(pushEvents);
+      }
     } catch (error) {
       console.error('獲取 GitHub 數據失敗:', error);
       setGithubData({ error: '無法連接到後端 API，請確保後端服務器正在運行' });
     }
   };
 
-  // 生成貢獻熱度圖數據
+  // 從 GitHub 貢獻 API 生成熱度圖數據 (完整數據)
+  const generateContributionDataFromAPI = (apiData) => {
+    if (!apiData || !apiData.contributions) {
+      console.warn('貢獻數據格式錯誤');
+      return;
+    }
+
+    const contributions = apiData.contributions;
+    const weeks = 52;
+    const daysInWeek = 7;
+    const data = [];
+    
+    // 按週分組
+    for (let i = 0; i < Math.min(weeks, Math.ceil(contributions.length / daysInWeek)); i++) {
+      const weekData = [];
+      for (let j = 0; j < daysInWeek; j++) {
+        const index = i * daysInWeek + j;
+        if (index < contributions.length) {
+          const day = contributions[index];
+          const count = day.count || 0;
+          weekData.push({
+            date: day.date,
+            count: count,
+            level: count === 0 ? 0 : count <= 3 ? 1 : count <= 6 ? 2 : count <= 9 ? 3 : 4
+          });
+        }
+      }
+      if (weekData.length > 0) {
+        data.push(weekData);
+      }
+    }
+
+    setContributionData(data);
+  };
+
+  // 生成貢獻熱度圖數據 (備用方案 - 使用事件數據)
   const generateContributionData = (events) => {
-    const weeks = 12;
+    const weeks = 52; // 改為整年 (52週)
     const daysInWeek = 7;
     const data = [];
     const today = new Date();
@@ -199,7 +255,7 @@ const Activity = () => {
       }
     });
 
-    // 生成最近 12 週的數據
+    // 生成最近 52 週的數據 (整年)
     for (let week = weeks - 1; week >= 0; week--) {
       const weekData = [];
       for (let day = 0; day < daysInWeek; day++) {
@@ -440,8 +496,8 @@ const Activity = () => {
               {[
                 {
                   icon: '🎮',
-                  value: steamData?.recentGames?.length || 0,
-                  label: '最近遊玩遊戲',
+                  value: steamData?.gameCount || 0,
+                  label: '遊戲收藏',
                   color: 'blue',
                   gradient: 'from-blue-500/20 to-cyan-500/20'
                 },
@@ -612,15 +668,42 @@ const Activity = () => {
                     <p className="player-status">
                       {steamData.playerInfo.personastate === 1 ? '🟢 在線' : '⚫ 離線'}
                     </p>
+                    {steamData?.gameCount > 0 && (
+                      <p className="game-count">🎮 擁有 {steamData.gameCount} 款遊戲</p>
+                    )}
                   </div>
                 </div>
               )}
+
+              {/* Steam 子標籤 */}
+              <div className="steam-sub-tabs">
+                <button
+                  className={`steam-sub-tab ${steamSubTab === 'recent' ? 'active' : ''}`}
+                  onClick={() => setSteamSubTab('recent')}
+                >
+                  <span className="sub-tab-icon">⏱️</span>
+                  <span>最近遊玩</span>
+                  {steamData?.recentGames?.length > 0 && (
+                    <span className="sub-tab-count">{steamData.recentGames.length}</span>
+                  )}
+                </button>
+                <button
+                  className={`steam-sub-tab ${steamSubTab === 'library' ? 'active' : ''}`}
+                  onClick={() => setSteamSubTab('library')}
+                >
+                  <span className="sub-tab-icon">📚</span>
+                  <span>遊戲庫</span>
+                  {steamData?.gameCount > 0 && (
+                    <span className="sub-tab-count">{steamData.gameCount}</span>
+                  )}
+                </button>
+              </div>
 
               {steamData?.error ? (
                 <div className="error-message">
                   <p>{steamData.error}</p>
                 </div>
-              ) : steamData?.recentGames?.length > 0 ? (
+              ) : steamSubTab === 'recent' && steamData?.recentGames?.length > 0 ? (
                 <div className="games-grid">
                   {steamData.recentGames.map(game => (
                     <motion.div
@@ -684,9 +767,76 @@ const Activity = () => {
                     </motion.div>
                   ))}
                 </div>
-              ) : (
+              ) : steamSubTab === 'recent' ? (
                 <p className="no-data">暫無最近遊玩記錄</p>
-              )}
+              ) : null}
+
+              {steamSubTab === 'library' && steamData?.ownedGames?.length > 0 ? (
+                <div className="games-grid">
+                  {steamData.ownedGames
+                    .sort((a, b) => (b.playtime_forever || 0) - (a.playtime_forever || 0))
+                    .map(game => (
+                    <motion.div
+                      key={game.appid}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      whileHover={{ scale: 1.02, y: -5 }}
+                      className="game-card"
+                    >
+                      <div className="game-cover-wrapper">
+                        <img
+                          src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`}
+                          alt={game.name}
+                          className="game-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.target.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/capsule_616x353.jpg`;
+                          }}
+                        />
+                        <div className="game-overlay">
+                          <a 
+                            href={`https://store.steampowered.com/app/${game.appid}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="store-link"
+                          >
+                            在 Steam 上查看 →
+                          </a>
+                        </div>
+                      </div>
+                      <div className="game-details">
+                        <h3>{game.name}</h3>
+                        <div className="game-stats">
+                          <div className="stat">
+                            <span className="stat-icon">⏱️</span>
+                            <div className="stat-info">
+                              <span className="label">總遊玩時間</span>
+                              <span className="value">{formatPlaytime(game.playtime_forever || 0)}</span>
+                            </div>
+                          </div>
+                          {game.rtime_last_played && game.rtime_last_played > 0 && (
+                            <div className="stat">
+                              <span className="stat-icon">🕒</span>
+                              <div className="stat-info">
+                                <span className="label">最後遊玩</span>
+                                <span className="value">
+                                  {new Date(game.rtime_last_played * 1000).toLocaleDateString('zh-TW', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : steamSubTab === 'library' ? (
+                <p className="no-data">遊戲庫為空</p>
+              ) : null}
             </motion.div>
           </div>
         )}
@@ -733,7 +883,15 @@ const Activity = () => {
                   {/* GitHub 貢獻熱度圖 */}
                   {contributionData.length > 0 && (
                     <>
-                      <h3 className="section-subtitle">🔥 最近 12 週貢獻熱度</h3>
+                      <div className="contribution-header">
+                        <h3 className="section-subtitle">🔥 過去一年貢獻熱度</h3>
+                        {githubData?.contributions?.total && (
+                          <div className="contribution-total">
+                            <span className="total-number">{githubData.contributions.total[Object.keys(githubData.contributions.total)[0]]}</span>
+                            <span className="total-label">contributions in {new Date().getFullYear()}</span>
+                          </div>
+                        )}
+                      </div>
                       <motion.div
                         className="contribution-heatmap"
                         initial={{ opacity: 0, y: 20 }}

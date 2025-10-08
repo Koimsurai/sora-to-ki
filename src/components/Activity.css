@@ -630,6 +630,91 @@
   font-weight: 500;
 }
 
+.game-count {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 0.5rem;
+}
+
+/* Steam 子標籤 */
+.steam-sub-tabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.steam-sub-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.steam-sub-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.steam-sub-tab:hover {
+  border-color: rgba(59, 130, 246, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+}
+
+.steam-sub-tab:hover::before {
+  opacity: 1;
+}
+
+.steam-sub-tab.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
+  border-color: rgba(59, 130, 246, 0.6);
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.sub-tab-icon {
+  font-size: 1.2rem;
+}
+
+.sub-tab-count {
+  padding: 0.25rem 0.75rem;
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.steam-sub-tab.active .sub-tab-count {
+  background: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
 .github-link {
   display: inline-flex;
   align-items: center;
@@ -871,8 +956,29 @@
   .repos-grid {
     grid-template-columns: 1fr;
   }
+  .steam-sub-tabs {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .steam-sub-tab {
+    width: 100%;
+    padding: 0.875rem 1rem;
+  }
   .mouse-glow {
     display: none;
+  }
+  .contribution-heatmap {
+    padding: 1.5rem 1rem;
+  }
+  .heatmap-day {
+    width: 10px;
+    height: 10px;
+  }
+  .heatmap-grid {
+    gap: 2px;
+  }
+  .heatmap-week {
+    gap: 2px;
   }
 }
 
@@ -926,19 +1032,57 @@
 
 /* ==================== GitHub 貢獻熱度圖 ==================== */
 
+.contribution-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.contribution-total {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(138, 43, 226, 0.1);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  margin-left: auto;
+}
+
+.total-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00aaff, #8a2be2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.total-label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
 .contribution-heatmap {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   padding: 2.5rem;
-  margin: 2rem 0 3rem;
+  margin: 0 0 3rem;
   backdrop-filter: blur(20px);
 }
 
 .heatmap-grid {
   display: flex;
-  gap: 4px;
+  gap: 8px; /* 減少間距以容納更多週數 */
   padding-bottom: 1rem;
+  padding-left: 4.5rem;
+  min-width: max-content; /* 確保不會壓縮 */
   scrollbar-width: thin;
   scrollbar-color: rgba(138, 43, 226, 0.5) rgba(255, 255, 255, 0.1);
 }
@@ -964,16 +1108,18 @@
 .heatmap-week {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px; /* 減少間距 */
+  flex-shrink: 0; /* 防止壓縮 */
 }
 
 .heatmap-day {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
+  width: 12px; /* 稍微縮小以容納52週 */
+  height: 12px;
+  border-radius: 2px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
+  flex-shrink: 0;
 }
 
 .heatmap-day.level-0 {
@@ -1052,6 +1198,40 @@
   margin-top: 1.5rem;
   font-size: 0.85rem;
   color: rgba(255, 255, 255, 0.6);
+}
+
+.heatmap-months {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 0.5rem;
+  padding-left: 30px; /* 對齊星期標籤 */
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.heatmap-month {
+  flex-shrink: 0;
+}
+
+.heatmap-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.heatmap-days-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  padding-top: 0.5rem;
+}
+
+.heatmap-day-label {
+  height: 12px;
+  display: flex;
+  align-items: center;
+  line-height: 12px;
 }
 
 .legend-squares {
