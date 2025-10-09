@@ -58,74 +58,86 @@
   position: relative;
   width: 150px;
   height: 150px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  /* 移除 flex 佈局,因為所有子元素都是 absolute 定位 */
 }
 
 .spinner-outer-ring,
 .spinner-middle-ring,
-.spinner-inner-ring {
+.spinner-inner-ring,
+.spinner-core {
   position: absolute;
+  top: 50%;
+  left: 50%;
   border-radius: 50%;
-  border: 3px solid transparent;
 }
 
 .spinner-outer-ring {
   width: 140px;
   height: 140px;
+  border: 3px solid transparent;
   border-top-color: #8a2be2;
   border-right-color: #8a2be2;
+  transform: translate(-50%, -50%);
   animation: spinOuter 2s linear infinite;
+  z-index: 1;
 }
 
 .spinner-middle-ring {
   width: 100px;
   height: 100px;
+  border: 3px solid transparent;
   border-top-color: #06b6d4;
   border-left-color: #06b6d4;
+  transform: translate(-50%, -50%);
   animation: spinMiddle 1.5s linear infinite reverse;
+  z-index: 2;
 }
 
 .spinner-inner-ring {
   width: 60px;
   height: 60px;
+  border: 3px solid transparent;
   border-top-color: #c77dff;
   border-right-color: #c77dff;
+  transform: translate(-50%, -50%);
   animation: spinInner 1s linear infinite;
+  z-index: 3;
 }
 
 .spinner-core {
   width: 30px;
   height: 30px;
   background: radial-gradient(circle, #ffffff 0%, #06b6d4 100%);
-  border-radius: 50%;
   box-shadow: 0 0 30px rgba(6, 182, 212, 0.8);
-  position: relative;
+  transform: translate(-50%, -50%);
+  z-index: 10;
 }
 
 .core-pulse {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border-radius: 50%;
   background: rgba(6, 182, 212, 0.5);
   animation: corePulse 1.5s ease-out infinite;
+  transform-origin: center center;
 }
 
 @keyframes spinOuter {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 @keyframes spinMiddle {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 @keyframes spinInner {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
 @keyframes corePulse {
@@ -195,21 +207,25 @@
   .spinner-outer-ring {
     width: 110px;
     height: 110px;
+    /* transform: translate(-50%, -50%) 已在動畫中設定 */
   }
 
   .spinner-middle-ring {
     width: 80px;
     height: 80px;
+    /* transform: translate(-50%, -50%) 已在動畫中設定 */
   }
 
   .spinner-inner-ring {
     width: 50px;
     height: 50px;
+    /* transform: translate(-50%, -50%) 已在動畫中設定 */
   }
 
   .spinner-core {
     width: 25px;
     height: 25px;
+    /* transform: translate(-50%, -50%) 已設定 */
   }
 
   .loading-text {

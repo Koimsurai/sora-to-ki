@@ -95,8 +95,11 @@
 
 .orbit {
   position: absolute;
+  top: 50%;  /* ✨ 統一在這裡設定 */
+  left: 50%; /* ✨ 統一在這裡設定 */
   border: 2px solid rgba(138, 43, 226, 0.3);
   border-radius: 50%;
+  /* ✨ 將動畫的 transform 交給 keyframes 處理 */
   animation: rotate 3s linear infinite;
 }
 
@@ -110,8 +113,8 @@
 .orbit-2 {
   width: 75%;
   height: 75%;
-  top: 12.5%;
-  left: 12.5%;
+  /* top: 12.5%; */  /* 移除舊的定位 */
+  /* left: 12.5%; */  /* 移除舊的定位 */
   border-top-color: #9d4edd;
   animation-duration: 3s;
   animation-direction: reverse;
@@ -120,8 +123,8 @@
 .orbit-3 {
   width: 50%;
   height: 50%;
-  top: 25%;
-  left: 25%;
+  /* top: 25%; */    /* 移除舊的定位 */
+  /* left: 25%; */    /* 移除舊的定位 */
   border-top-color: #c77dff;
   animation-duration: 4s;
 }
@@ -130,7 +133,7 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);  /* ✅ 初始置中很重要! */
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -140,17 +143,28 @@
     0 0 40px rgba(138, 43, 226, 0.3),
     inset 0 0 10px rgba(255, 255, 255, 0.2);
   animation: pulse 2s ease-in-out infinite;
+  z-index: 10;  /* ✅ 確保核心球在最上層 */
 }
 
+/* ==================== 關鍵的動畫修正 ==================== */
+
 @keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    /* ✨ 在動畫中同時包含位移與旋轉 */
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    /* ✨ 在動畫中同時包含位移與旋轉 */
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 @keyframes pulse {
+  /* 這個動畫原本就寫得很好，保留即可 */
   0%, 100% { transform: translate(-50%, -50%) scale(1); }
   50% { transform: translate(-50%, -50%) scale(1.1); }
 }
+
 
 .activity-loading p {
   color: rgba(255, 255, 255, 0.8);
@@ -1392,7 +1406,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
+  animation: pulse-dot 2s ease-in-out infinite;
 }
 
 .status-indicator.online .status-dot {
@@ -1414,7 +1428,7 @@
   background: #94a3b8;
 }
 
-@keyframes pulse {
+@keyframes pulse-dot {
   0%, 100% {
     opacity: 1;
     transform: scale(1);
