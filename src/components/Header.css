@@ -1,117 +1,165 @@
 .app-header {
-  display: flex; /* 使用 Flexbox 排列 */
-  justify-content: space-between; /* 兩端對齊 */
-  align-items: center; /* 垂直居中 */
-  padding: 15px 30px; /* 上下 15px，左右 30px 的內距 */
-  background-color: transparent; /* 完全透明背景 */
-  color: var(--clr-headline); /* 使用標題色 */
-  position: fixed; /* 改為 fixed 以確保始終固定 */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: transparent;
+  color: var(--clr-headline);
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  box-sizing: border-box; /* padding 不會影響寬度 */
-  z-index: 1000; /* 確保在最上層 */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9); /* 為所有文字添加陰影 */
-  /* 微妙的底部光暈效果 */
+  box-sizing: border-box;
+  z-index: 1000;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9);
   box-shadow: 0 1px 5px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 滾動後的背景效果 (受 Shiro 啟發) */
+.app-header.scrolled {
+  background: rgba(22, 22, 26, 0.8);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }
 
 .logo {
-  font-size: 1.5em; /* 稍大的字體 */
-  font-weight: bold; /* 粗體 */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9); /* 為Logo添加陰影 */
+  font-size: 1.5em;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--clr-button) 0%, rgba(44, 182, 125, 0.9) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(127, 90, 240, 0.3));
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 4px 8px rgba(127, 90, 240, 0.5));
+  transform: scale(1.05);
 }
 
 .app-header nav ul {
-  list-style: none; /* 移除列表樣式 */
-  display: flex; /* 水平排列 */
-  gap: 25px; /* 項目間距 */
+  list-style: none;
+  display: flex;
+  gap: 8px;
   margin: 0;
-  padding: 0;
+  padding: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  border-radius: 9999px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: visible;
 }
 
 .app-header nav ul li a {
-  color: var(--clr-headline); /* 使用標題色 */
-  text-decoration: none; /* 移除底線 */
-  font-size: 1em;
-  position: relative; /* 為了 ::after 偽元素定位 */
-  transition: color 0.3s ease; /* 平滑顏色過渡 */
-  padding-bottom: 5px; /* 為底線留出空間 */
-  display: inline-flex; /* 讓圖標和文字在同一行並能垂直對齊 */
-  align-items: center; /* 垂直居中對齊圖標和文字 */
-  gap: 8px; /* 稍微增加圖標和文字之間的間距 */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9); /* 為導覽連結添加陰影 */
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.95em;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 10px 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-shadow: none;
+  border-radius: 9999px;
+  white-space: nowrap;
 }
 
 /* 導覽列圖標樣式 */
 .nav-icon {
-  /* display: inline; - 已由 inline-flex 處理 */
-  font-size: 1.1em; /* 稍微放大圖標 */
-  /* line-height: 1; - 已由 align-items 處理 */
-  vertical-align: middle; /* 再次確保垂直對齊 */
-  margin-right: 4px; /* 輕微調整右邊距，gap 屬性已處理大部分間距 */
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9)); /* 為圖標添加陰影 */
+  font-size: 1.1em;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: none;
 }
 
 
-/* 彗星尾巴底線效果 - 初始狀態 */
-.app-header nav ul li a::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 2px;
-  background-color: var(--clr-button); /* 使用按鈕/高亮色 */
-  transform: scaleX(0); /* 初始隱藏 */
-  transform-origin: left; /* 從左側展開 */
-  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); /* 平滑過渡，帶有彈性效果 */
-}
-
-/* 滑鼠懸停效果 */
+/* Shiro 風格的懸停效果 */
 .app-header nav ul li a:hover {
-  color: var(--clr-button); /* 文字變色 */
+  color: rgba(255, 255, 255, 1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.app-header nav ul li a:hover::after {
-  transform: scaleX(1); /* 展開底線 */
-  transform-origin: left; /* 確保從左側滑入 */
+.app-header nav ul li a:hover .nav-icon {
+  transform: scale(1.15) rotate(5deg);
 }
 
-/* 當前活動連結效果 */
+/* 當前活動連結效果 (受 Shiro 啟發) */
 .app-header nav ul li a.active {
-  color: var(--clr-button); /* 文字變色 */
+  color: var(--clr-button);
+  background: rgba(127, 90, 240, 0.15);
 }
 
-.app-header nav ul li a.active::after {
-  transform: scaleX(1); /* 保持底線顯示 */
-  background-color: var(--clr-tertiary); /* 可以用不同的顏色或保持一致 */
-}
+/* 移除 ::after 偽元素 - 改用 Framer Motion 的 layoutId */
 
 .download-button {
-  background-color: var(--clr-button); /* 使用按鈕色 */
-  color: var(--clr-button-text); /* 使用按鈕文字色 */
-  border: none; /* 無邊框 */
-  padding: 8px 15px; /* 內距 */
-  border-radius: 8px; /* 圓角，參考 Figma */
-  cursor: pointer; /* 滑鼠指標設為手形 */
+  background: linear-gradient(135deg, var(--clr-button) 0%, rgba(127, 90, 240, 0.8) 100%);
+  color: var(--clr-button-text);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  cursor: pointer;
   font-size: 0.9em;
-  transition: background-color 0.3s ease, transform 0.3s ease; /* 加入 transform 過渡 */
-  display: inline-flex; /* 讓圖標和文字在同一行 */
-  align-items: center; /* 垂直居中 */
-  gap: 6px; /* 圖標和文字間距 */
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 
+    0 4px 12px rgba(127, 90, 240, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.download-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 /* 下載按鈕圖標樣式 */
 .download-icon {
-  font-size: 1em; /* 圖標大小與文字接近 */
-  vertical-align: middle; /* 確保垂直對齊 */
+  font-size: 1.1em;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-
 .download-button:hover {
-  transform: translateY(-2px); /* 懸停時上移 */
-  background-color: var(--clr-tertiary); /* 使用第三點綴綠作為懸停色 */
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 8px 20px rgba(127, 90, 240, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.download-button:hover::before {
+  opacity: 1;
+}
+
+.download-button:hover .download-icon {
+  transform: translateY(2px);
+}
+
+.download-button:active {
+  transform: translateY(-1px) scale(0.98);
 }
 
 /* Download Modal Styles */
@@ -207,3 +255,260 @@
 
 /* Remove scaleUp animation */
 /* @keyframes scaleUp { ... } */
+
+/* ============================================
+   更多選單 (下拉式) - 受 Shiro 設計啟發
+   ============================================ */
+
+.more-menu-container {
+  position: relative;
+}
+
+.more-menu-trigger {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  text-shadow: none;
+}
+
+.more-menu-trigger .nav-icon {
+  font-size: 0.9em;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.more-menu-trigger:hover {
+  color: rgba(255, 255, 255, 1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.more-menu-trigger.active {
+  color: var(--clr-button);
+  background: rgba(127, 90, 240, 0.12);
+}
+
+.more-menu-trigger.active .nav-icon {
+  transform: rotate(180deg) scale(1.1);
+}
+
+/* 下拉選單容器 (增強玻璃態效果) */
+.more-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 300px;
+  background: rgba(18, 18, 22, 0.92);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  z-index: 1001;
+  animation: dropdownSpringIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: top right;
+}
+
+/* 下拉選單箭頭 (增強效果) */
+.more-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 24px;
+  width: 12px;
+  height: 12px;
+  background: rgba(18, 18, 22, 0.92);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  transform: rotate(45deg);
+  backdrop-filter: saturate(180%) blur(25px);
+  -webkit-backdrop-filter: saturate(180%) blur(25px);
+  box-shadow: -2px -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 下拉選單項目 (增強互動效果) */
+.dropdown-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.75);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.dropdown-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, 
+    rgba(127, 90, 240, 0.15) 0%, 
+    rgba(44, 182, 125, 0.15) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 1);
+  transform: translateX(6px) scale(1.01);
+  border-color: rgba(127, 90, 240, 0.3);
+}
+
+.dropdown-item:hover::before {
+  opacity: 1;
+}
+
+.dropdown-item + .dropdown-item {
+  margin-top: 6px;
+}
+
+/* 下拉選單圖標 (增強動畫) */
+.dropdown-icon {
+  font-size: 1.3em;
+  color: var(--clr-button);
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 2px 4px rgba(127, 90, 240, 0.3));
+}
+
+.dropdown-item:hover .dropdown-icon {
+  transform: scale(1.2) rotate(5deg);
+  filter: drop-shadow(0 4px 8px rgba(127, 90, 240, 0.5));
+}
+
+/* 下拉選單內容 */
+.dropdown-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dropdown-title {
+  font-size: 1em;
+  font-weight: 500;
+  color: inherit;
+  display: block;
+}
+
+.dropdown-desc {
+  font-size: 0.85em;
+  color: var(--clr-secondary);
+  display: block;
+  transition: color 0.2s ease;
+}
+
+.dropdown-item:hover .dropdown-desc {
+  color: var(--clr-paragraph);
+}
+
+/* 下拉選單動畫 (Spring 彈性動畫) */
+@keyframes dropdownSpringIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Spotlight 滑鼠追蹤效果 (受 Shiro 啟發) */
+.app-header nav ul::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(127, 90, 240, 0.08),
+    transparent 40%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.app-header nav ul:hover::before {
+  opacity: 1;
+}
+
+/* 移除進入動畫 - 只保留 hover 互動動畫 */
+
+/* 響應式設計 */
+@media (max-width: 1024px) {
+  .more-dropdown {
+    min-width: 240px;
+    right: -20px;
+  }
+  
+  .dropdown-item {
+    padding: 10px 14px;
+  }
+  
+  .app-header nav ul {
+    gap: 4px;
+    padding: 6px;
+  }
+  
+  .app-header nav ul li a,
+  .more-menu-trigger {
+    padding: 8px 14px;
+    font-size: 0.9em;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 12px 20px;
+  }
+  
+  .more-menu-container {
+    width: 100%;
+  }
+  
+  .more-menu-trigger {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .more-dropdown {
+    left: 0;
+    right: 0;
+    min-width: auto;
+    width: calc(100% - 16px);
+    margin: 0 8px;
+  }
+  
+  .more-dropdown::before {
+    right: 50%;
+    transform: translateX(50%) rotate(45deg);
+  }
+  
+  .app-header nav ul {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}

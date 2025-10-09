@@ -1,18 +1,327 @@
+/* 現代化 Hero Section */
+.hero-section-modern {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: transparent;
+  padding: 0 2rem;
+}
+
+/* 網格背景效果 (受 shadcn/ui 啟發) */
+.grid-background {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(ellipse 80% 50% at 50% 50%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 50%, black 40%, transparent 100%);
+}
+
+/* 滑鼠跟隨光暈效果 (受 Aceternity UI 啟發) */
+.cursor-glow {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(var(--clr-button-rgb), 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  transition: opacity 0.3s;
+}
+
+/* 主容器 */
+.hero-container {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* 狀態徽章 (受 Magic UI 啟發) */
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  font-size: 0.875rem;
+  color: var(--clr-paragraph);
+  margin-bottom: 2rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+/* 主要內容區 */
+.home-hero-content-modern {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+/* 標題 (受 shadcn/ui 啟發) */
+.hero-title-modern {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(to bottom right, #ffffff, #a0a0a0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  white-space: pre-wrap;
+}
+
+/* 副標題 */
+.hero-subtitle-modern {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-style: italic;
+  color: var(--clr-button);
+  margin-bottom: 1rem;
+  font-weight: 500;
+  white-space: pre-wrap;
+}
+
+/* 描述文字 */
+.hero-description-modern {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 2.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 行動按鈕區 (受 Radix UI / shadcn 啟發) */
+.hero-actions-modern {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+/* 主要 CTA 按鈕 (受 Magic UI 啟發) */
+.cta-button-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: var(--clr-button);
+  color: #000;
+  font-weight: 600;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(var(--clr-button-rgb), 0.4);
+}
+
+.cta-button-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.cta-button-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(var(--clr-button-rgb), 0.6);
+}
+
+.cta-button-primary:hover::before {
+  left: 100%;
+}
+
+/* 次要按鈕 (受 shadcn/ui 啟發) */
+.cta-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: transparent;
+  color: var(--clr-paragraph);
+  font-weight: 500;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.3s;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.cta-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* 社交連結 (受 Aceternity UI 啟發) */
+.social-links-modern {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.social-icon-modern {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: var(--clr-paragraph);
+  font-size: 1.25rem;
+  text-decoration: none;
+  transition: all 0.3s;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.social-icon-modern:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--clr-button);
+  color: var(--clr-button);
+  box-shadow: 0 0 20px rgba(var(--clr-button-rgb), 0.3);
+}
+
+/* 特色卡片網格 (受 Magic UI / Bento Grid 啟發) */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 4rem;
+}
+
+.feature-card {
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.feature-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--clr-button), var(--clr-tertiary));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #000;
+  margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--clr-headline);
+  margin-bottom: 0.5rem;
+}
+
+.feature-card p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* 裝飾性元素 (受 Aceternity UI 啟發) */
+.hero-decoration-modern {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.2;
+  pointer-events: none;
+  animation: float 20s ease-in-out infinite;
+}
+
+.hero-decoration-1 {
+  width: 500px;
+  height: 500px;
+  background: var(--clr-button);
+  top: -10%;
+  right: -10%;
+  animation-delay: 0s;
+}
+
+.hero-decoration-2 {
+  width: 400px;
+  height: 400px;
+  background: var(--clr-tertiary);
+  bottom: -10%;
+  left: -10%;
+  animation-delay: -10s;
+}
+
+.hero-decoration-3 {
+  width: 300px;
+  height: 300px;
+  background: var(--clr-accent);
+  top: 50%;
+  left: 50%;
+  animation-delay: -5s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -30px) scale(1.1); }
+  66% { transform: translate(-30px, 30px) scale(0.9); }
+}
+
+/* ============================================
+   舊版 Hero Section 樣式
+   ============================================ */
+
 .hero-section {
   display: flex;
-  align-items: center; /* 垂直居中 */
-  justify-content: flex-start; /* 改為靠左對齊 */
-  min-height: calc(100vh - 80px); /* 恢復：至少佔滿視窗高度減去 Header 高度 (假設 Header 高 80px) */
-  padding: 40px 50px; /* 內距 */
-  /* background-color: var(--clr-bg-primary); */ /* 移除單色背景，改用漸層 */
-  color: var(--clr-headline); /* 預設文字顏色 */
+  align-items: center;
+  justify-content: flex-start;
+  min-height: calc(100vh - 80px);
+  padding: 40px 50px;
+  color: var(--clr-headline);
   box-sizing: border-box;
-  overflow: hidden; /* 隱藏可能溢出的內容 */
-  /* --- 移除 Hero 區塊自身的背景樣式 --- */
-  /* background-image: ... */
-  /* background-blend-mode: ... */
-  position: relative; /* 為了子元素定位 */
-  background-color: transparent; /* 明確設定背景為透明 */
+  overflow: hidden;
+  position: relative;
+  background-color: transparent;
 }
 
 /* 移除 ::before 偽元素 */

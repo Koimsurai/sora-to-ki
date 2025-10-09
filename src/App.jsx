@@ -41,6 +41,7 @@ const LazyAdvancedEditor = lazy(() => import('./components/AdvancedEditor'));
 const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
 const LazyNow = lazy(() => import('./components/Now'));
+const LazyBookshelf = lazy(() => import('./components/Bookshelf'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -259,6 +260,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/photos" element={<Suspense fallback={<LoadingFallback />}><LazyPhotoGallery /></Suspense>} />
           <Route path="/blog" element={<Suspense fallback={<LoadingFallback />}><LazyBlog /></Suspense>} />
           <Route path="/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
+          <Route path="/bookshelf" element={<Suspense fallback={<LoadingFallback />}><LazyBookshelf /></Suspense>} />
           <Route path="/activity" element={<Suspense fallback={<LoadingFallback />}><LazyActivity /></Suspense>} />
           <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />
           <Route path="/now" element={<Suspense fallback={<LoadingFallback />}><LazyNow /></Suspense>} />

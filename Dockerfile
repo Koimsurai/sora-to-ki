@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 安裝所有依賴，包含 devDependencies
-RUN npm install --include=dev
+RUN npm install --include=dev --legacy-peer-deps
 
 # 複製專案所有其他檔案
 # 因為有了 .dockerignore，這裡不會複製 node_modules

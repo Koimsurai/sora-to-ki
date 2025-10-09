@@ -1,12 +1,11 @@
 import React from 'react';
 import './AboutMe.css';
-import mainImage from '../assets/Main.webp'; // 導入圖片
+import mainImage from '../assets/me.jpg'; // 導入新圖片
 
 const AboutMe = () => {
   return (
     <section id="about-me" className="about-me-section">
-      <h2>關於我</h2>
-      {/* 新增外層容器以應用 Flexbox */}
+      <h2>✨ 關於我</h2>
       <div className="about-me-container">
         {/* 將文字內容包裹起來 */}
         <div className="about-me-text-content">

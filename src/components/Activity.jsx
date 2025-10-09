@@ -5,6 +5,7 @@ import './Activity.css';
 const Activity = () => {
   const [steamData, setSteamData] = useState(null);
   const [githubData, setGithubData] = useState(null);
+  const [wakatimeData, setWakatimeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [steamSubTab, setSteamSubTab] = useState('recent'); // 新增: Steam 子標籤 (recent/library)
@@ -60,7 +61,8 @@ const Activity = () => {
     setLoading(true);
     await Promise.all([
       fetchSteamData(),
-      fetchGithubData()
+      fetchGithubData(),
+      fetchWakatimeData()
     ]);
     setLoading(false);
   };
@@ -142,6 +144,41 @@ const Activity = () => {
     } catch (error) {
       console.error('獲取 Steam 數據失敗:', error);
       setSteamData({ 
+        error: '無法連接到後端 API，請確保後端服務器正在運行',
+        configured: false 
+      });
+    }
+  };
+
+  const fetchWakatimeData = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+
+      // 獲取今日統計
+      const todayResponse = await fetch(`${apiUrl}/wakatime/today`);
+      const todayData = await todayResponse.json();
+
+      // 獲取本週統計
+      const weekResponse = await fetch(`${apiUrl}/wakatime/week`);
+      const weekData = await weekResponse.json();
+
+      // 檢查是否有錯誤
+      if (todayData.error || weekData.error) {
+        setWakatimeData({ 
+          error: todayData.error || weekData.error,
+          configured: false 
+        });
+        return;
+      }
+
+      setWakatimeData({
+        today: todayData.data?.[0] || null,
+        week: weekData.data || null,
+        configured: true
+      });
+    } catch (error) {
+      console.error('獲取 WakaTime 數據失敗:', error);
+      setWakatimeData({ 
         error: '無法連接到後端 API，請確保後端服務器正在運行',
         configured: false 
       });
@@ -848,6 +885,156 @@ const Activity = () => {
               animate={{ opacity: 1, y: 0 }}
               className="section-content"
             >
+              {/* WakaTime 程式碼統計 */}
+              {wakatimeData && !wakatimeData.error && (
+                <div className="wakatime-section">
+                  <h3 className="section-subtitle">💻 程式碼統計 (WakaTime)</h3>
+                  
+                  <div className="wakatime-stats-grid">
+                    {/* 今日寫碼時間 */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      className="wakatime-card today-card"
+                      whileHover={{ scale: 1.02, y: -5 }}
+                    >
+                      <div className="wakatime-card-header">
+                        <div className="card-icon">⏱️</div>
+                        <h4>今日寫碼時間</h4>
+                      </div>
+                      <div className="wakatime-main-stat">
+                        {wakatimeData.today?.grand_total?.text || '0 hrs 0 mins'}
+                      </div>
+                      <div className="wakatime-sub-stats">
+                        <div className="sub-stat">
+                          <span className="label">開始時間</span>
+                          <span className="value">
+                            {wakatimeData.today?.range?.start 
+                              ? new Date(wakatimeData.today.range.start).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+                              : '--:--'}
+                          </span>
+                        </div>
+                        <div className="sub-stat">
+                          <span className="label">結束時間</span>
+                          <span className="value">
+                            {wakatimeData.today?.range?.end 
+                              ? new Date(wakatimeData.today.range.end).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
+                              : '--:--'}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* 本週最常用的語言 */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.1 }}
+                      className="wakatime-card languages-card"
+                      whileHover={{ scale: 1.02, y: -5 }}
+                    >
+                      <div className="wakatime-card-header">
+                        <div className="card-icon">🔤</div>
+                        <h4>本週最常用語言</h4>
+                      </div>
+                      {wakatimeData.week?.languages?.length > 0 ? (
+                        <div className="language-list">
+                          {wakatimeData.week.languages.slice(0, 5).map((lang, index) => (
+                            <div key={index} className="language-item">
+                              <div className="language-info">
+                                <span className="language-name">{lang.name}</span>
+                                <span className="language-time">{lang.text}</span>
+                              </div>
+                              <div className="language-bar-wrapper">
+                                <motion.div
+                                  className="language-bar"
+                                  initial={{ width: 0 }}
+                                  whileInView={{ width: `${lang.percent}%` }}
+                                  viewport={{ once: true }}
+                                  transition={{ duration: 0.8, delay: index * 0.1 }}
+                                  style={{
+                                    background: `linear-gradient(90deg, ${getLanguageColorGradient(lang.name)})`
+                                  }}
+                                >
+                                  <span className="language-percent">{lang.percent.toFixed(1)}%</span>
+                                </motion.div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="no-data-small">本週無編碼記錄</p>
+                      )}
+                    </motion.div>
+
+                    {/* 主力專案投入時間分佈 */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: 0.2 }}
+                      className="wakatime-card projects-card full-width"
+                      whileHover={{ scale: 1.01, y: -5 }}
+                    >
+                      <div className="wakatime-card-header">
+                        <div className="card-icon">📊</div>
+                        <h4>主力專案時間分佈 (本週)</h4>
+                      </div>
+                      {wakatimeData.week?.projects?.length > 0 ? (
+                        <div className="projects-chart">
+                          {wakatimeData.week.projects.slice(0, 8).map((project, index) => (
+                            <motion.div
+                              key={index}
+                              className="project-bar-item"
+                              initial={{ opacity: 0, x: -20 }}
+                              whileInView={{ opacity: 1, x: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: index * 0.05 }}
+                            >
+                              <div className="project-label">
+                                <span className="project-name">{project.name}</span>
+                                <span className="project-time">{project.text}</span>
+                              </div>
+                              <div className="project-bar-bg">
+                                <motion.div
+                                  className="project-bar-fill"
+                                  initial={{ width: 0 }}
+                                  whileInView={{ width: `${project.percent}%` }}
+                                  viewport={{ once: true }}
+                                  transition={{ duration: 0.8, delay: 0.2 + index * 0.05 }}
+                                >
+                                  <span className="project-percent">{project.percent.toFixed(1)}%</span>
+                                </motion.div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="no-data-small">本週無專案記錄</p>
+                      )}
+                    </motion.div>
+                  </div>
+                </div>
+              )}
+
+              {wakatimeData?.error && (
+                <div className="error-message wakatime-error">
+                  <p>{wakatimeData.error}</p>
+                  {!wakatimeData.configured && (
+                    <div className="config-hint">
+                      <p>如何配置 WakaTime API:</p>
+                      <ol>
+                        <li>在 <a href="https://wakatime.com/settings/account" target="_blank" rel="noopener noreferrer">WakaTime 設定頁面</a> 獲取 API 金鑰</li>
+                        <li>在 server/.env 文件中添加: <code>WAKATIME_API_KEY=你的API金鑰</code></li>
+                        <li>重啟後端服務器</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {githubData?.user && (
                 <div className="github-profile">
                   <img
@@ -1090,6 +1277,28 @@ const getLanguageColor = (language) => {
     CSS: '#563d7c',
   };
   return colors[language] || '#8257e6';
+};
+
+// 根據語言返回對應的漸層色
+const getLanguageColorGradient = (language) => {
+  const gradients = {
+    JavaScript: 'rgba(241, 224, 90, 0.8), rgba(241, 224, 90, 0.4)',
+    TypeScript: 'rgba(43, 116, 137, 0.8), rgba(43, 116, 137, 0.4)',
+    Python: 'rgba(53, 114, 165, 0.8), rgba(53, 114, 165, 0.4)',
+    Java: 'rgba(176, 114, 25, 0.8), rgba(176, 114, 25, 0.4)',
+    'C++': 'rgba(243, 75, 125, 0.8), rgba(243, 75, 125, 0.4)',
+    C: 'rgba(85, 85, 85, 0.8), rgba(85, 85, 85, 0.4)',
+    Go: 'rgba(0, 173, 216, 0.8), rgba(0, 173, 216, 0.4)',
+    Rust: 'rgba(222, 165, 132, 0.8), rgba(222, 165, 132, 0.4)',
+    PHP: 'rgba(79, 93, 149, 0.8), rgba(79, 93, 149, 0.4)',
+    Ruby: 'rgba(112, 21, 22, 0.8), rgba(112, 21, 22, 0.4)',
+    Swift: 'rgba(255, 172, 69, 0.8), rgba(255, 172, 69, 0.4)',
+    Kotlin: 'rgba(241, 142, 51, 0.8), rgba(241, 142, 51, 0.4)',
+    Dart: 'rgba(0, 180, 171, 0.8), rgba(0, 180, 171, 0.4)',
+    HTML: 'rgba(227, 76, 38, 0.8), rgba(227, 76, 38, 0.4)',
+    CSS: 'rgba(86, 61, 124, 0.8), rgba(86, 61, 124, 0.4)',
+  };
+  return gradients[language] || 'rgba(130, 87, 230, 0.8), rgba(130, 87, 230, 0.4)';
 };
 
 export default Activity;

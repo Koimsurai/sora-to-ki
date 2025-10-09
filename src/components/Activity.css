@@ -1610,3 +1610,339 @@
   font-size: 1rem;
 }
 
+/* ==================== WakaTime 程式碼統計樣式 ==================== */
+
+.wakatime-section {
+  margin-bottom: 4rem;
+}
+
+.wakatime-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.wakatime-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.wakatime-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(0, 170, 255, 0.3));
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.wakatime-card:hover::before {
+  opacity: 1;
+}
+
+.wakatime-card:hover {
+  border-color: rgba(138, 43, 226, 0.5);
+  box-shadow: 0 0 40px rgba(138, 43, 226, 0.3), 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.wakatime-card.full-width {
+  grid-column: 1 / -1;
+}
+
+.wakatime-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wakatime-card-header .card-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.8));
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.wakatime-card-header h4 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.wakatime-main-stat {
+  font-size: 3rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #00aaff, #8a2be2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+  margin: 2rem 0;
+  animation: statPulse 2s ease-in-out infinite;
+}
+
+@keyframes statPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.wakatime-sub-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.sub-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.sub-stat:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(138, 43, 226, 0.3);
+  transform: translateY(-2px);
+}
+
+.sub-stat .label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sub-stat .value {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Courier New', monospace;
+}
+
+.language-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.language-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.language-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.language-name {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.language-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+.language-bar-wrapper {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.language-bar {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  border-radius: 6px;
+  position: relative;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+}
+
+.language-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.language-percent {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 1;
+}
+
+.projects-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.project-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.project-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.project-name {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+}
+
+.project-time {
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.project-bar-bg {
+  width: 100%;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.project-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(138, 43, 226, 0.8), rgba(0, 170, 255, 0.8));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  position: relative;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 20px rgba(138, 43, 226, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.project-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2.5s ease-in-out infinite;
+}
+
+.project-percent {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  position: relative;
+  z-index: 1;
+}
+
+.no-data-small {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.wakatime-error {
+  margin-bottom: 3rem;
+}
+
+.wakatime-error .config-hint a {
+  color: #8a2be2;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.wakatime-error .config-hint a:hover {
+  color: #c77dff;
+  text-decoration: underline;
+}
+
+/* WakaTime 響應式設計 */
+@media (max-width: 768px) {
+  .wakatime-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wakatime-main-stat {
+    font-size: 2.5rem;
+  }
+
+  .wakatime-sub-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .wakatime-card {
+    padding: 1.5rem;
+  }
+
+  .project-name {
+    font-size: 0.9rem;
+  }
+
+  .project-time {
+    font-size: 0.8rem;
+  }
+}
+
+

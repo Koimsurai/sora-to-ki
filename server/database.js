@@ -274,6 +274,36 @@ function initializeDatabase() {
       )
     `);
 
+    // 創建書籍表
+    db.run(`
+      CREATE TABLE IF NOT EXISTS books (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        isbn TEXT,
+        title TEXT NOT NULL,
+        authors TEXT,
+        publisher TEXT,
+        published_date TEXT,
+        description TEXT,
+        cover_url TEXT,
+        page_count INTEGER,
+        language TEXT,
+        categories TEXT,
+        reading_status TEXT DEFAULT 'to-read',
+        rating INTEGER,
+        personal_notes TEXT,
+        date_added DATETIME DEFAULT CURRENT_TIMESTAMP,
+        date_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+        date_started DATETIME,
+        date_finished DATETIME
+      )
+    `, (err) => {
+      if (err) {
+        console.error('創建 books 表錯誤:', err);
+      } else {
+        console.log('books 表已就緒');
+      }
+    });
+
     // 檢查並創建/更新管理員用戶
     const targetUsername = process.env.ADMIN_USERNAME || 'timo9378';
     const targetPassword = process.env.ADMIN_PASSWORD || 'jces5556';

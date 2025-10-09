@@ -31,38 +31,31 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 滾動設置 - 使用最簡單的方式 */
-* {
-  box-sizing: border-box;
+/* 新增：移除預設邊距，設定基本高度 */
+html {
+  /* scroll-snap-type: y mandatory; */ /* 移除滾動吸附 */
+  overflow-y: scroll; /* 確保垂直滾動條存在 */
+  scroll-behavior: smooth; /* 添加平滑滾動效果 */
 }
 
-html, body {
+html, body, #root {
   margin: 0;
   padding: 0;
-  width: 100%;
-}
-
-html {
   height: 100%;
-  overflow-y: scroll; /* html 作為滾動容器 */
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  scroll-behavior: smooth;
-  color: var(--clr-paragraph);
-  background-color: transparent;
-}
-
-#root {
-  min-height: 100vh;
   width: 100%;
+  box-sizing: border-box; /* 統一 box-sizing */
+  background-color: transparent; /* 確保背景透明 */
 }
 
 /* 新增：確保所有元素繼承 box-sizing */
 *, *::before, *::after {
   box-sizing: inherit;
+}
+
+/* 基礎樣式調整 */
+body {
+  color: var(--clr-paragraph); /* 設定基礎文字顏色 */
+  background-color: transparent; /* 確保 body 背景透明 */
 }
 
 h1, h2, h3, h4, h5, h6 {

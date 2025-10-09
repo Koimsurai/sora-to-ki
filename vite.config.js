@@ -111,7 +111,7 @@ export default defineConfig(({ command }) => {
       proxy: {
         // 將 /api 的請求代理到後端服務
         '/api': {
-          target: 'http://backend:3001', // 後端服務在 Docker Compose 中的名稱和端口
+          target: 'http://localhost:3001', // 後端服務在 Docker Compose 中的名稱和端口
           changeOrigin: true, // 改變請求來源，對於虛擬主機是必要的
           configure: (proxy, options) => {
             proxy.on('error', (err, req, res) => {
@@ -131,7 +131,15 @@ export default defineConfig(({ command }) => {
     },
     assetsInclude: ['**/*.JPG'], // 告訴 Vite 將 .JPG 視為靜態資源
     optimizeDeps: {
-      include: ['tsparticles-slim', 'react-tsparticles'], // 同時包含引擎和 React 元件 (修正套件名稱)
+      include: [
+        'tsparticles-slim', 
+        'react-tsparticles',
+        'three',
+        '@react-three/fiber',
+        '@react-three/drei',
+        '@react-spring/three',
+        '@react-spring/core'
+      ], // 同時包含引擎和 React 元件以及 3D 相關庫
     },
   }
 })

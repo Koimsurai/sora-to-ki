@@ -46,6 +46,7 @@ const CursorTrail = () => {
   // 動畫循環
   const animateParticles = useCallback(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return; // 檢查 canvas 是否存在
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 

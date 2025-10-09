@@ -1,15 +1,50 @@
-import React, { useState } from 'react'; // 引入 useState
-import { Link, useLocation, useNavigate } from 'react-router-dom'; // 導入 Link, useLocation 和 useNavigate
-// ✅ 優化: 使用解構引入 (Vite 會自動 tree-shake 未使用的 icons)
-import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChartLine, FaRoad, FaClock } from 'react-icons/fa';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss, FaClock, FaRoute } from 'react-icons/fa';
+import { motion, LayoutGroup } from 'framer-motion';
 import './Header.css';
 
 // Updated Header to accept activeSection prop and handle navigation
 function Header({ activeSection }) {
-  const [showDownloadModal, setShowDownloadModal] = useState(false); // State for modal visibility
-  const location = useLocation(); // 獲取當前位置
-  const navigate = useNavigate(); // 獲取導航函數
-  const isHomePage = location.pathname === '/'; // 判斷是否在主頁
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showBlogMenu, setShowBlogMenu] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const moreMenuRef = useRef(null);
+  const blogMenuRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isHomePage = location.pathname === '/';
+
+  // 處理滾動效果 (受 Shiro 啟發)
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // 點擊外部關閉下拉選單
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setShowMoreMenu(false);
+      }
+      if (blogMenuRef.current && !blogMenuRef.current.contains(event.target)) {
+        setShowBlogMenu(false);
+      }
+    };
+
+    if (showMoreMenu || showBlogMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMoreMenu, showBlogMenu]);
 
   // 處理導航點擊
   const handleNavClick = (e, sectionId) => {
@@ -32,16 +67,39 @@ function Header({ activeSection }) {
     setShowDownloadModal(!showDownloadModal);
   };
 
-  // Helper function to create nav links with icons and click handler
+  // Helper function to create nav links with Framer Motion
   const NavLink = ({ sectionId, icon: Icon, text, to }) => {
-    const linkClass = to ? (location.pathname.startsWith(to) ? 'active' : '') : (activeSection === sectionId && isHomePage ? 'active' : '');
+    const isActive = to 
+      ? location.pathname.startsWith(to)
+      : (activeSection === sectionId && isHomePage);
 
     if (to) {
       return (
         <li>
-          <Link to={to} className={linkClass}>
+          <Link to={to} className={isActive ? 'active' : ''} style={{ position: 'relative', display: 'inline-flex' }}>
             <Icon className="nav-icon" />
             {text}
+            {isActive && (
+              <motion.span
+                layoutId="active-nav-indicator"
+                className="active-indicator"
+                initial={false}
+                transition={{
+                  type: 'spring',
+                  stiffness: 380,
+                  damping: 30
+                }}
+                style={{
+                  position: 'absolute',
+                  bottom: '4px',
+                  left: '18px',
+                  right: '18px',
+                  height: '2px',
+                  background: 'linear-gradient(90deg, transparent 0%, var(--clr-button) 50%, transparent 100%)',
+                  borderRadius: '2px'
+                }}
+              />
+            )}
           </Link>
         </li>
       );
@@ -51,21 +109,54 @@ function Header({ activeSection }) {
       <li>
         <a
           href={`#${sectionId}`}
-          className={linkClass}
+          className={isActive ? 'active' : ''}
           onClick={(e) => handleNavClick(e, sectionId)}
+          style={{ position: 'relative', display: 'inline-flex' }}
         >
           <Icon className="nav-icon" />
           {text}
+          {isActive && (
+            <motion.span
+              layoutId="active-nav-indicator"
+              className="active-indicator"
+              initial={false}
+              transition={{
+                type: 'spring',
+                stiffness: 380,
+                damping: 30
+              }}
+              style={{
+                position: 'absolute',
+                bottom: '4px',
+                left: '18px',
+                right: '18px',
+                height: '2px',
+                background: 'linear-gradient(90deg, transparent 0%, var(--clr-button) 50%, transparent 100%)',
+                borderRadius: '2px'
+              }}
+            />
+          )}
         </a>
       </li>
     );
   };
 
+  // 滑鼠追蹤效果 (Spotlight - 受 Shiro 啟發)
+  const handleMouseMove = (e) => {
+    const nav = e.currentTarget;
+    const rect = nav.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    nav.style.setProperty('--mouse-x', `${x}%`);
+    nav.style.setProperty('--mouse-y', `${y}%`);
+  };
+
   return (
-    <header className="app-header">
-      <div className="logo">Koimsurai</div> {/* 根據履歷圖片 */}
+    <header className={`app-header ${isScrolled ? 'scrolled' : ''}`}>
+      <div className="logo">Koimsurai</div>
       <nav>
-        <ul>
+        <LayoutGroup>
+          <ul onMouseMove={handleMouseMove}>
           {/* 移除 href，傳遞 sectionId */}
           <NavLink sectionId="home" icon={FaHome} text="首頁" />
           <NavLink sectionId="about-me" icon={FaUser} text="關於我" />
@@ -73,12 +164,125 @@ function Header({ activeSection }) {
           <NavLink sectionId="work-experience" icon={FaBriefcase} text="工作經驗" />
           <NavLink sectionId="school-clubs" icon={FaUsers} text="社團經驗" />
           <NavLink sectionId="portfolio" icon={FaImages} text="作品集" />
-          <NavLink to="/journey" icon={FaRoad} text="成長軌跡" />
-          <NavLink to="/now" icon={FaClock} text="現在" />
-          <NavLink to="/blog" icon={FaBookOpen} text="學習筆記" />
-          <NavLink to="/activity" icon={FaChartLine} text="我的動態" />
+          
+          {/* 雜談選單 (下拉式) */}
+          <li className="more-menu-container" ref={blogMenuRef}>
+            <button 
+              className={`more-menu-trigger ${location.pathname.startsWith('/blog') || location.pathname.startsWith('/bookshelf') || location.pathname.startsWith('/movies') || location.pathname.startsWith('/music') ? 'active' : ''}`}
+              onClick={() => setShowBlogMenu(!showBlogMenu)}
+            >
+              <FaBookOpen className="nav-icon" />
+              雜談
+              <FaChevronDown className="nav-icon" style={{ fontSize: '0.8em' }} />
+            </button>
+            
+            {showBlogMenu && (
+              <div className="more-dropdown">
+                <Link 
+                  to="/blog" 
+                  className="dropdown-item"
+                  onClick={() => setShowBlogMenu(false)}
+                >
+                  <FaBookOpen className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">筆記</span>
+                    <span className="dropdown-desc">技術學習與思考</span>
+                  </div>
+                </Link>
+                
+                <Link 
+                  to="/bookshelf" 
+                  className="dropdown-item"
+                  onClick={() => setShowBlogMenu(false)}
+                >
+                  <FaBookOpen className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">書櫃</span>
+                    <span className="dropdown-desc">閱讀的書籍紀錄</span>
+                  </div>
+                </Link>
+                
+                <Link 
+                  to="/movies" 
+                  className="dropdown-item"
+                  onClick={() => setShowBlogMenu(false)}
+                >
+                  <FaImages className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">片單</span>
+                    <span className="dropdown-desc">觀影清單與心得</span>
+                  </div>
+                </Link>
+                
+                <Link 
+                  to="/music" 
+                  className="dropdown-item"
+                  onClick={() => setShowBlogMenu(false)}
+                >
+                  <FaBookOpen className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">音樂</span>
+                    <span className="dropdown-desc">喜愛的音樂分享</span>
+                  </div>
+                </Link>
+              </div>
+            )}
+          </li>
+          
+          {/* 更多選單 (下拉式) */}
+          <li className="more-menu-container" ref={moreMenuRef}>
+            <button 
+              className={`more-menu-trigger ${showMoreMenu ? 'active' : ''}`}
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+            >
+              <FaChevronDown className="nav-icon" />
+              更多
+            </button>
+            
+            {showMoreMenu && (
+              <div className="more-dropdown">
+                <Link 
+                  to="/activity" 
+                  className="dropdown-item"
+                  onClick={() => setShowMoreMenu(false)}
+                >
+                  <FaRss className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">動態</span>
+                    <span className="dropdown-desc">查看我的最新活動</span>
+                  </div>
+                </Link>
+                
+                <Link 
+                  to="/now" 
+                  className="dropdown-item"
+                  onClick={() => setShowMoreMenu(false)}
+                >
+                  <FaClock className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">現在</span>
+                    <span className="dropdown-desc">我目前在做什麼</span>
+                  </div>
+                </Link>
+                
+                <Link 
+                  to="/journey" 
+                  className="dropdown-item"
+                  onClick={() => setShowMoreMenu(false)}
+                >
+                  <FaRoute className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">成長軌跡</span>
+                    <span className="dropdown-desc">我的學習與成長歷程</span>
+                  </div>
+                </Link>
+              </div>
+            )}
+          </li>
+          
           <NavLink sectionId="contact" icon={FaEnvelope} text="聯絡我" />
-        </ul>
+          </ul>
+        </LayoutGroup>
       </nav>
       {/* Download Button */}
       <button className="download-button" onClick={handleDownloadClick}>

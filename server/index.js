@@ -4,6 +4,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const https = require('https');
+const axios = require('axios');
 const { initializeDatabase, db } = require('./database.js');
 const { authMiddleware, basicAuth, JWT_SECRET } = require('./auth');
 
@@ -25,6 +26,40 @@ const apiRouter = express.Router();
 // Health check endpoint
 apiRouter.get('/health', (req, res) => {
   res.status(200).send('OK');
+});
+
+// 圖片代理端點 - 解決 CORS 問題
+apiRouter.get('/image-proxy', async (req, res) => {
+  const imageUrl = req.query.url;
+
+  if (!imageUrl) {
+    return res.status(400).send('Missing image URL');
+  }
+
+  try {
+    // 使用 axios 向圖片伺服器請求圖片
+    const response = await axios({
+      method: 'GET',
+      url: imageUrl,
+      responseType: 'stream',
+      timeout: 10000, // 10 秒超時
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    // 設定正確的 Content-Type 和 CORS headers
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 快取 24 小時
+
+    // 將圖片流直接傳回給前端
+    response.data.pipe(res);
+
+  } catch (error) {
+    console.error('Image proxy error:', error.message);
+    res.status(500).send('Failed to fetch image');
+  }
 });
 
 // 登入端點
@@ -926,6 +961,450 @@ apiRouter.get('/steam/achievements/:appid', (req, res) => {
   }).on('error', (error) => {
     console.error('Steam API Error:', error);
     res.status(500).json({ error: 'Failed to fetch Steam achievements data' });
+  });
+});
+
+// --- WakaTime API Routes ---
+const WAKATIME_API_KEY = process.env.WAKATIME_API_KEY;
+
+// WakaTime API 認證 header 生成函數
+const getWakaTimeAuthHeader = () => {
+  // WakaTime 使用 Base64 編碼的 API key 作為 Basic Auth
+  const base64Auth = Buffer.from(WAKATIME_API_KEY).toString('base64');
+  return `Basic ${base64Auth}`;
+};
+
+// 獲取今日統計
+apiRouter.get('/wakatime/today', async (req, res) => {
+  if (!WAKATIME_API_KEY) {
+    return res.status(500).json({ 
+      error: 'WakaTime API 未配置',
+      message: '請在 server/.env 中設置 WAKATIME_API_KEY'
+    });
+  }
+
+  try {
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    const response = await axios.get('https://wakatime.com/api/v1/users/current/summaries', {
+      params: {
+        start: dateStr,
+        end: dateStr,
+      },
+      headers: {
+        'Authorization': getWakaTimeAuthHeader()
+      },
+      timeout: 10000
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('WakaTime API Error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ 
+      error: 'Failed to fetch WakaTime today data',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// 獲取本週統計
+apiRouter.get('/wakatime/week', async (req, res) => {
+  if (!WAKATIME_API_KEY) {
+    return res.status(500).json({ 
+      error: 'WakaTime API 未配置',
+      message: '請在 server/.env 中設置 WAKATIME_API_KEY'
+    });
+  }
+
+  try {
+    const response = await axios.get('https://wakatime.com/api/v1/users/current/stats/last_7_days', {
+      headers: {
+        'Authorization': getWakaTimeAuthHeader()
+      },
+      timeout: 10000
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('WakaTime API Error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ 
+      error: 'Failed to fetch WakaTime week data',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// 獲取專案統計
+apiRouter.get('/wakatime/projects', async (req, res) => {
+  if (!WAKATIME_API_KEY) {
+    return res.status(500).json({ 
+      error: 'WakaTime API 未配置',
+      message: '請在 server/.env 中設置 WAKATIME_API_KEY'
+    });
+  }
+
+  try {
+    const response = await axios.get('https://wakatime.com/api/v1/users/current/stats/last_7_days', {
+      headers: {
+        'Authorization': getWakaTimeAuthHeader()
+      },
+      timeout: 10000
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('WakaTime API Error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ 
+      error: 'Failed to fetch WakaTime projects data',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// --- Books API Routes ---
+
+// GET all books with filtering and sorting
+apiRouter.get('/books', (req, res) => {
+  const { status, rating, year, search, sortBy = 'date_added_desc' } = req.query;
+  
+  let sql = 'SELECT * FROM books WHERE 1=1';
+  const params = [];
+
+  if (status) {
+    sql += ' AND reading_status = ?';
+    params.push(status);
+  }
+
+  if (rating) {
+    sql += ' AND rating = ?';
+    params.push(parseInt(rating));
+  }
+
+  if (year) {
+    sql += ' AND published_date LIKE ?';
+    params.push(`${year}%`);
+  }
+
+  if (search) {
+    sql += ' AND (title LIKE ? OR authors LIKE ?)';
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  // Sorting
+  switch (sortBy) {
+    case 'date_added_asc':
+      sql += ' ORDER BY date_added ASC';
+      break;
+    case 'date_added_desc':
+      sql += ' ORDER BY date_added DESC';
+      break;
+    case 'title_asc':
+      sql += ' ORDER BY title ASC';
+      break;
+    case 'title_desc':
+      sql += ' ORDER BY title DESC';
+      break;
+    case 'rating_desc':
+      sql += ' ORDER BY rating DESC, date_added DESC';
+      break;
+    case 'published_date_desc':
+      sql += ' ORDER BY published_date DESC';
+      break;
+    default:
+      sql += ' ORDER BY date_added DESC';
+  }
+
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      console.error('查詢書籍錯誤:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: 'success',
+      books: rows
+    });
+  });
+});
+
+// GET a single book by id
+apiRouter.get('/books/:id', (req, res) => {
+  const sql = 'SELECT * FROM books WHERE id = ?';
+  db.get(sql, [req.params.id], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    if (!row) {
+      res.status(404).json({ message: 'Book not found' });
+      return;
+    }
+    res.json({
+      message: 'success',
+      book: row
+    });
+  });
+});
+
+// Search books via Google Books API
+apiRouter.get('/books/search/external', async (req, res) => {
+  const { query, isbn } = req.query;
+  
+  if (!query && !isbn) {
+    return res.status(400).json({ error: '請提供書名或 ISBN' });
+  }
+
+  let searchQuery;
+  const inputQuery = isbn || query;
+  
+  // 檢測是否為 ISBN (10或13位數字,可能包含連字符)
+  const isISBN = /^[\d-]{10,17}$/.test(inputQuery.replace(/\s/g, ''));
+  
+  if (isISBN) {
+    // 移除連字符和空格
+    const cleanISBN = inputQuery.replace(/[-\s]/g, '');
+    searchQuery = `isbn:${cleanISBN}`;
+  } else {
+    searchQuery = inputQuery;
+  }
+  
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=10`;
+  
+  console.log(`[Books API] 搜尋請求: ${inputQuery}, 格式化為: ${searchQuery}`);
+  
+  https.get(url, (apiRes) => {
+    let data = '';
+    
+    apiRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    apiRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        
+        if (!jsonData.items || jsonData.items.length === 0) {
+          return res.json({
+            message: 'success',
+            books: []
+          });
+        }
+
+        // Format the response
+        const books = jsonData.items.map(item => {
+          const volumeInfo = item.volumeInfo;
+          const isbn13 = volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_13')?.identifier;
+          const isbn10 = volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_10')?.identifier;
+          
+          // 獲取高解析度封面圖片
+          // Google Books 的 thumbnail 解析度很低,我們需要替換為更高解析度
+          let coverUrl = '';
+          if (volumeInfo.imageLinks) {
+            // 優先使用這些更高解析度的圖片
+            coverUrl = volumeInfo.imageLinks.large || 
+                      volumeInfo.imageLinks.medium || 
+                      volumeInfo.imageLinks.thumbnail || 
+                      volumeInfo.imageLinks.smallThumbnail || '';
+            
+            // 手動修改 URL 以獲取更大的圖片
+            // Google Books 圖片格式: http://books.google.com/books/content?id=xxx&printsec=frontcover&img=1&zoom=1
+            // 我們可以增加尺寸參數
+            if (coverUrl) {
+              // 移除限制參數並設定更大的尺寸
+              coverUrl = coverUrl.replace('&zoom=1', '&zoom=0')
+                                .replace('&edge=curl', '')
+                                .replace('&img=1', '&img=1&w=500&h=800');
+              
+              // 如果 URL 中沒有 zoom 參數,手動添加更大的尺寸
+              if (!coverUrl.includes('zoom=')) {
+                coverUrl += '&zoom=0';
+              }
+              if (!coverUrl.includes('&w=')) {
+                coverUrl += '&w=500&h=800';
+              }
+            }
+          }
+          
+          return {
+            isbn: isbn13 || isbn10 || '',
+            title: volumeInfo.title || '',
+            authors: volumeInfo.authors ? volumeInfo.authors.join(', ') : '',
+            publisher: volumeInfo.publisher || '',
+            published_date: volumeInfo.publishedDate || '',
+            description: volumeInfo.description || '',
+            cover_url: coverUrl,
+            page_count: volumeInfo.pageCount || null,
+            language: volumeInfo.language || '',
+            categories: volumeInfo.categories ? volumeInfo.categories.join(', ') : ''
+          };
+        });
+
+        res.json({
+          message: 'success',
+          books
+        });
+      } catch (error) {
+        console.error('Google Books API 解析錯誤:', error);
+        res.status(500).json({ error: 'Failed to parse Google Books API response' });
+      }
+    });
+  }).on('error', (error) => {
+    console.error('Google Books API Error:', error);
+    res.status(500).json({ error: 'Failed to fetch book data' });
+  });
+});
+
+// POST a new book (admin only)
+apiRouter.post('/books', authMiddleware, (req, res) => {
+  const {
+    isbn, title, authors, publisher, published_date, description,
+    cover_url, page_count, language, categories,
+    reading_status = 'to-read', rating, personal_notes
+  } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ error: '書名為必填欄位' });
+  }
+
+  const sql = `
+    INSERT INTO books (
+      isbn, title, authors, publisher, published_date, description,
+      cover_url, page_count, language, categories,
+      reading_status, rating, personal_notes,
+      date_added, date_updated
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+  `;
+  
+  const params = [
+    isbn, title, authors, publisher, published_date, description,
+    cover_url, page_count, language, categories,
+    reading_status, rating, personal_notes
+  ];
+
+  db.run(sql, params, function(err) {
+    if (err) {
+      console.error('新增書籍錯誤:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    res.status(201).json({
+      message: 'success',
+      book: {
+        id: this.lastID,
+        ...req.body
+      }
+    });
+  });
+});
+
+// PUT (update) a book (admin only)
+apiRouter.put('/books/:id', authMiddleware, (req, res) => {
+  const {
+    isbn, title, authors, publisher, published_date, description,
+    cover_url, page_count, language, categories,
+    reading_status, rating, personal_notes,
+    date_started, date_finished
+  } = req.body;
+
+  const sql = `
+    UPDATE books SET
+      isbn = COALESCE(?, isbn),
+      title = COALESCE(?, title),
+      authors = COALESCE(?, authors),
+      publisher = COALESCE(?, publisher),
+      published_date = COALESCE(?, published_date),
+      description = COALESCE(?, description),
+      cover_url = COALESCE(?, cover_url),
+      page_count = COALESCE(?, page_count),
+      language = COALESCE(?, language),
+      categories = COALESCE(?, categories),
+      reading_status = COALESCE(?, reading_status),
+      rating = COALESCE(?, rating),
+      personal_notes = COALESCE(?, personal_notes),
+      date_started = COALESCE(?, date_started),
+      date_finished = COALESCE(?, date_finished),
+      date_updated = datetime('now')
+    WHERE id = ?
+  `;
+
+  const params = [
+    isbn, title, authors, publisher, published_date, description,
+    cover_url, page_count, language, categories,
+    reading_status, rating, personal_notes,
+    date_started, date_finished,
+    req.params.id
+  ];
+
+  db.run(sql, params, function(err) {
+    if (err) {
+      console.error('更新書籍錯誤:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    if (this.changes === 0) {
+      res.status(404).json({ message: 'Book not found' });
+      return;
+    }
+
+    res.json({
+      message: 'success',
+      changes: this.changes
+    });
+  });
+});
+
+// DELETE a book (admin only)
+apiRouter.delete('/books/:id', authMiddleware, (req, res) => {
+  const sql = 'DELETE FROM books WHERE id = ?';
+  db.run(sql, [req.params.id], function(err) {
+    if (err) {
+      console.error('刪除書籍錯誤:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    if (this.changes === 0) {
+      res.status(404).json({ message: 'Book not found' });
+      return;
+    }
+
+    res.json({
+      message: 'deleted',
+      changes: this.changes
+    });
+  });
+});
+
+// GET book statistics
+apiRouter.get('/books/stats/summary', (req, res) => {
+  const sql = `
+    SELECT 
+      COUNT(*) as total_books,
+      COUNT(CASE WHEN reading_status = 'read' THEN 1 END) as books_read,
+      COUNT(CASE WHEN reading_status = 'reading' THEN 1 END) as books_reading,
+      COUNT(CASE WHEN reading_status = 'to-read' THEN 1 END) as books_to_read,
+      AVG(CASE WHEN rating IS NOT NULL THEN rating END) as average_rating,
+      SUM(CASE WHEN page_count IS NOT NULL THEN page_count ELSE 0 END) as total_pages
+    FROM books
+  `;
+
+  db.get(sql, [], (err, stats) => {
+    if (err) {
+      console.error('查詢書籍統計錯誤:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    res.json({
+      message: 'success',
+      stats: {
+        ...stats,
+        average_rating: stats.average_rating ? parseFloat(stats.average_rating.toFixed(1)) : null
+      }
+    });
   });
 });
 

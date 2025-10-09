@@ -21,9 +21,10 @@ import {
   FiMenu,
   FiX,
   FiBell,
-  FiUser
+  FiUser,
+  FiBook
 } from 'react-icons/fi';
-import { FaRocket, FaSatelliteDish, FaUserFriends } from 'react-icons/fa';
+import { FaRocket, FaSatelliteDish, FaUserFriends, FaStar } from 'react-icons/fa';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
@@ -198,6 +199,7 @@ const AdminPanel = () => {
   const sidebarItems = [
     { id: 'dashboard', icon: FiBarChart2, label: '控制台', badge: null },
     { id: 'posts', icon: FiFileText, label: '文章管理', badge: stats.totalPosts },
+    { id: 'books', icon: FiBook, label: '書籍管理', badge: null },
     { id: 'users', icon: FiUsers, label: '用戶管理', badge: null },
     { id: 'settings', icon: FiSettings, label: '系統設置', badge: null }
   ];
@@ -314,6 +316,7 @@ const AdminPanel = () => {
                   setCurrentPage={setCurrentPage}
                 />
               )}
+              {activeTab === 'books' && <BooksContent />}
               {activeTab === 'users' && <UsersContent />}
               {activeTab === 'settings' && <SettingsContent />}
             </>
@@ -561,6 +564,482 @@ const UsersContent = () => (
     </div>
   </div>
 );
+
+// 書籍管理內容
+const BooksContent = () => {
+  const [books, setBooks] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [formData, setFormData] = useState({
+    isbn: '',
+    title: '',
+    authors: '',
+    publisher: '',
+    published_date: '',
+    description: '',
+    cover_url: '',
+    page_count: '',
+    language: '',
+    categories: '',
+    reading_status: 'to-read',
+    rating: null,
+    personal_notes: ''
+  });
+
+  useEffect(() => {
+    fetchBooks();
+  }, []);
+
+  const fetchBooks = async () => {
+    try {
+      const response = await fetch('/api/books');
+      const data = await response.json();
+      if (data.message === 'success') {
+        setBooks(data.books);
+      }
+    } catch (error) {
+      console.error('載入書籍失敗:', error);
+    }
+  };
+
+  const searchExternalBooks = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/books/search/external?query=${encodeURIComponent(searchQuery)}`);
+      const data = await response.json();
+      if (data.message === 'success') {
+        setSearchResults(data.books);
+      }
+    } catch (error) {
+      console.error('搜尋書籍失敗:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleAddFromSearch = (book) => {
+    setFormData({
+      ...book,
+      reading_status: 'to-read',
+      rating: null,
+      personal_notes: ''
+    });
+    setSearchResults([]);
+    setSearchQuery('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/books', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setShowAddModal(false);
+        resetForm();
+        fetchBooks();
+        alert('書籍新增成功!');
+      }
+    } catch (error) {
+      console.error('新增書籍失敗:', error);
+      alert('新增失敗,請重試');
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/books/${selectedBook.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setShowEditModal(false);
+        setSelectedBook(null);
+        resetForm();
+        fetchBooks();
+        alert('書籍更新成功!');
+      }
+    } catch (error) {
+      console.error('更新書籍失敗:', error);
+      alert('更新失敗,請重試');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('確定要刪除此書籍嗎?')) return;
+    
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/books/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        fetchBooks();
+        alert('書籍刪除成功!');
+      }
+    } catch (error) {
+      console.error('刪除書籍失敗:', error);
+      alert('刪除失敗,請重試');
+    }
+  };
+
+  const openEditModal = (book) => {
+    setSelectedBook(book);
+    setFormData({
+      isbn: book.isbn || '',
+      title: book.title || '',
+      authors: book.authors || '',
+      publisher: book.publisher || '',
+      published_date: book.published_date || '',
+      description: book.description || '',
+      cover_url: book.cover_url || '',
+      page_count: book.page_count || '',
+      language: book.language || '',
+      categories: book.categories || '',
+      reading_status: book.reading_status || 'to-read',
+      rating: book.rating || null,
+      personal_notes: book.personal_notes || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      isbn: '',
+      title: '',
+      authors: '',
+      publisher: '',
+      published_date: '',
+      description: '',
+      cover_url: '',
+      page_count: '',
+      language: '',
+      categories: '',
+      reading_status: 'to-read',
+      rating: null,
+      personal_notes: ''
+    });
+  };
+
+  const renderStars = (rating, onChange) => {
+    return (
+      <div className="star-rating">
+        {[1, 2, 3, 4, 5].map(star => (
+          <FaStar
+            key={star}
+            className={star <= (rating || 0) ? 'star-filled' : 'star-empty'}
+            onClick={() => onChange && onChange(star)}
+            style={{ cursor: onChange ? 'pointer' : 'default' }}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="books-content">
+      <div className="content-header">
+        <h2>書籍管理</h2>
+        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
+          <FiPlus size={16} />
+          新增書籍
+        </button>
+      </div>
+
+      {/* 書籍列表 */}
+      <div className="books-grid">
+        {books.map(book => (
+          <div key={book.id} className="book-admin-card">
+            <div className="book-admin-cover">
+              {book.cover_url ? (
+                <img src={book.cover_url} alt={book.title} />
+              ) : (
+                <div className="no-cover"><FiBook size={40} /></div>
+              )}
+            </div>
+            <div className="book-admin-info">
+              <h3>{book.title}</h3>
+              <p className="book-author">{book.authors}</p>
+              <div className="book-meta">
+                <span className={`status-badge status-${book.reading_status}`}>
+                  {book.reading_status === 'read' ? '已讀' : book.reading_status === 'reading' ? '閱讀中' : '想讀'}
+                </span>
+                {renderStars(book.rating)}
+              </div>
+              <div className="book-actions">
+                <button className="btn-icon" onClick={() => openEditModal(book)} title="編輯">
+                  <FiEdit size={16} />
+                </button>
+                <button className="btn-icon btn-danger" onClick={() => handleDelete(book.id)} title="刪除">
+                  <FiTrash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 新增書籍 Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content book-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>新增書籍</h3>
+              <button className="modal-close" onClick={() => setShowAddModal(false)}>
+                <FiX size={20} />
+              </button>
+            </div>
+
+            {/* 搜尋 API */}
+            <div className="api-search-section">
+              <div className="search-input-group">
+                <input
+                  type="text"
+                  placeholder="輸入 ISBN 或書名搜尋..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchExternalBooks()}
+                />
+                <button onClick={searchExternalBooks} disabled={isSearching}>
+                  {isSearching ? <FiLoader className="spinning" /> : <FiSearch />}
+                  搜尋
+                </button>
+              </div>
+
+              {searchResults.length > 0 && (
+                <div className="search-results">
+                  {searchResults.map((book, index) => (
+                    <div key={index} className="search-result-item" onClick={() => handleAddFromSearch(book)}>
+                      {book.cover_url && <img src={book.cover_url} alt={book.title} />}
+                      <div>
+                        <div className="result-title">{book.title}</div>
+                        <div className="result-author">{book.authors}</div>
+                        <div className="result-isbn">{book.isbn}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleSubmit} className="book-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>ISBN</label>
+                  <input
+                    type="text"
+                    value={formData.isbn}
+                    onChange={(e) => setFormData({...formData, isbn: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>書名 *</label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>作者</label>
+                  <input
+                    type="text"
+                    value={formData.authors}
+                    onChange={(e) => setFormData({...formData, authors: e.target.value})}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>出版社</label>
+                  <input
+                    type="text"
+                    value={formData.publisher}
+                    onChange={(e) => setFormData({...formData, publisher: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>出版日期</label>
+                  <input
+                    type="text"
+                    value={formData.published_date}
+                    onChange={(e) => setFormData({...formData, published_date: e.target.value})}
+                    placeholder="YYYY-MM-DD"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>頁數</label>
+                  <input
+                    type="number"
+                    value={formData.page_count}
+                    onChange={(e) => setFormData({...formData, page_count: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>封面 URL</label>
+                <input
+                  type="text"
+                  value={formData.cover_url}
+                  onChange={(e) => setFormData({...formData, cover_url: e.target.value})}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>簡介</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  rows="3"
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>閱讀狀態</label>
+                  <select
+                    value={formData.reading_status}
+                    onChange={(e) => setFormData({...formData, reading_status: e.target.value})}
+                  >
+                    <option value="to-read">想讀</option>
+                    <option value="reading">閱讀中</option>
+                    <option value="read">已讀</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>評分</label>
+                  {renderStars(formData.rating, (rating) => setFormData({...formData, rating}))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>個人筆記</label>
+                <textarea
+                  value={formData.personal_notes}
+                  onChange={(e) => setFormData({...formData, personal_notes: e.target.value})}
+                  rows="3"
+                  placeholder="寫下你的心得與感想..."
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+                  取消
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  新增書籍
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 編輯書籍 Modal */}
+      {showEditModal && selectedBook && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content book-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>編輯書籍</h3>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdate} className="book-form">
+              <div className="form-row">
+                <div className="form-group">
+                  <label>書名 *</label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>作者</label>
+                  <input
+                    type="text"
+                    value={formData.authors}
+                    onChange={(e) => setFormData({...formData, authors: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>閱讀狀態</label>
+                  <select
+                    value={formData.reading_status}
+                    onChange={(e) => setFormData({...formData, reading_status: e.target.value})}
+                  >
+                    <option value="to-read">想讀</option>
+                    <option value="reading">閱讀中</option>
+                    <option value="read">已讀</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>評分</label>
+                  {renderStars(formData.rating, (rating) => setFormData({...formData, rating}))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>個人筆記</label>
+                <textarea
+                  value={formData.personal_notes}
+                  onChange={(e) => setFormData({...formData, personal_notes: e.target.value})}
+                  rows="5"
+                  placeholder="寫下你的心得與感想..."
+                />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+                  取消
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  更新書籍
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // 設置內容
 const SettingsContent = () => (
