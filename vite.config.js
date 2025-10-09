@@ -81,6 +81,10 @@ export default defineConfig(({ command }) => {
   let httpsConfig = false;
 
   return {
+    // 生產環境時移除 console 和 debugger (提升效能和減少包大小)
+    esbuild: {
+      drop: command === 'build' ? ['console', 'debugger'] : [],
+    },
     // configureServer: (server) => { ... }, // <-- 原來的 configureServer 已移至插件
     plugins: [
       react(),

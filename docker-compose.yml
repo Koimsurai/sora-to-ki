@@ -1,6 +1,8 @@
 services:
   frontend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: personal-website-frontend # 指定容器名稱
     ports:
       - "13588:13579" # 將主機 port 改為 13588，避免衝突

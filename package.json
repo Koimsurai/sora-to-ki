@@ -30,6 +30,7 @@
     "prism-react-renderer": "^2.4.1",
     "prismjs": "^1.30.0",
     "react": "^19.0.0",
+    "blurhash": "^2.0.5",
     "react-blurhash": "^0.3.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
