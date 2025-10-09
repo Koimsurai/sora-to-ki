@@ -1,0 +1,104 @@
+/**
+ * Photo Manifest Loader
+ * 載入照片 manifest 資料
+ */
+
+import { PhotoManifest } from '../types/photo';
+
+export interface PhotosManifestData {
+  version: string;
+  generatedAt: string;
+  totalPhotos: number;
+  photos: PhotoManifest[];
+}
+
+/**
+ * 從 public/photos-manifest.json 載入照片資料
+ */
+export async function loadPhotosManifest(): Promise<PhotoManifest[]> {
+  try {
+    const response = await fetch('/photos-manifest.json');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data: PhotosManifestData = await response.json();
+    
+    console.log(`✅ 載入 ${data.totalPhotos} 張照片`);
+    console.log(`📅 生成時間: ${data.generatedAt}`);
+    
+    return data.photos;
+  } catch (error) {
+    console.error('❌ 載入 photos-manifest.json 失敗:', error);
+    
+    // 如果 manifest 不存在,回退到使用本地圖片
+    console.warn('⚠️  回退到本地圖片模式');
+    return loadLocalPhotos();
+  }
+}
+
+/**
+ * 回退方案: 使用 Vite 的 import.meta.glob 載入本地圖片
+ */
+function loadLocalPhotos(): PhotoManifest[] {
+  // @ts-ignore - Vite specific
+  const imageModules = import.meta.glob('../assets/Portfolio/*.{webp,jpg,jpeg,png,gif,svg}', { 
+    eager: true 
+  });
+
+  return Object.entries(imageModules).map(([path, module], index) => {
+    const fileName = path.split('/').pop()!.split('.')[0];
+    const imageUrl = (module as any).default;
+    
+    let shootTime: number | undefined;
+    let title = fileName;
+    
+    // 嘗試從檔名提取日期
+    const dateMatch = fileName.match(/^(\d{4})(\d{2})(\d{2})/);
+    if (dateMatch) {
+      const [, year, month, day] = dateMatch;
+      shootTime = new Date(`${year}-${month}-${day}`).getTime();
+      title = `照片 ${year}/${month}/${day}`;
+    }
+
+    return {
+      id: `local-photo-${index}`,
+      title,
+      description: '本地照片',
+      urls: {
+        full: imageUrl,
+        regular: imageUrl,
+        small: imageUrl,
+        thumb: imageUrl,
+      },
+      originalUrl: imageUrl,
+      thumbnailUrl: imageUrl,
+      width: 1920,
+      height: 1080,
+      aspectRatio: 16 / 9,
+      size: 0,
+      format: path.split('.').pop()?.toLowerCase() || 'jpg',
+      shootTime,
+      exif: dateMatch ? {
+        DateTimeOriginal: `${dateMatch[1]}:${dateMatch[2]}:${dateMatch[3]} 00:00:00`,
+      } : undefined,
+      tags: [],
+    };
+  });
+}
+
+/**
+ * 取得圖片格式
+ */
+export function getImageFormat(url: string): string {
+  const ext = url.split('.').pop()?.toLowerCase() || '';
+  return ext.toUpperCase();
+}
+
+/**
+ * 檢查是否為 Live Photo
+ */
+export function isLivePhoto(photo: PhotoManifest): boolean {
+  return photo.isLivePhoto === true && !!photo.livePhotoVideoUrl;
+}

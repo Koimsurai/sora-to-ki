@@ -64,7 +64,7 @@ const Journey = () => {
       description: '在猿創力程式設計學校擔任程式教師，教導3~9年級學生 Python(pygame)、MCE(Minecraft教育版)、Scratch、AI2 等課程。這段經歷讓我在溝通與表達能力上獲得顯著提升，學會如何將複雜的程式概念用淺顯易懂的方式傳授給學生。',
       icon: '🎓',
       color: '#fb923c',
-      tags: ['教學', 'Python', 'Scratch'],
+      tags: ['教學', 'Python', 'Minecraft'],
       image: '👨‍🏫'
     },
     {

@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["local", "s3"],
+          "default": "local"
+        },
+        "path": {
+          "type": "string",
+          "description": "本地資料夾路徑或 S3 bucket 名稱",
+          "default": "./photos"
+        },
+        "excludeRegex": {
+          "type": "string",
+          "description": "排除檔案的正則表達式"
+        }
+      },
+      "required": ["type", "path"]
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "directory": {
+          "type": "string",
+          "default": "./public/generated"
+        },
+        "manifestPath": {
+          "type": "string",
+          "default": "./public/photos-manifest.json"
+        }
+      }
+    },
+    "processing": {
+      "type": "object",
+      "properties": {
+        "thumbnail": {
+          "type": "object",
+          "properties": {
+            "width": {
+              "type": "number",
+              "default": 600
+            },
+            "quality": {
+              "type": "number",
+              "default": 80
+            },
+            "format": {
+              "type": "string",
+              "enum": ["webp", "jpeg"],
+              "default": "webp"
+            }
+          }
+        },
+        "highRes": {
+          "type": "object",
+          "properties": {
+            "maxWidth": {
+              "type": "number",
+              "default": 2400
+            },
+            "quality": {
+              "type": "number",
+              "default": 85
+            },
+            "format": {
+              "type": "string",
+              "enum": ["webp", "jpeg"],
+              "default": "jpeg"
+            }
+          }
+        },
+        "enableThumbHash": {
+          "type": "boolean",
+          "default": true
+        },
+        "enableLivePhoto": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    }
+  }
+}

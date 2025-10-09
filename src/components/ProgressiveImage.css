@@ -1,0 +1,60 @@
+/* ProgressiveImage - 漸進式圖片載入樣式 */
+
+.progressive-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: transparent;
+}
+
+.progressive-image-placeholder,
+.progressive-image-thumb,
+.progressive-image-full {
+  position: absolute;
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.progressive-image-placeholder {
+  z-index: 1;
+}
+
+.progressive-image-thumb {
+  z-index: 2;
+}
+
+.progressive-image-full {
+  z-index: 3;
+  transition: transform 0.1s ease-out;
+}
+
+.progressive-image-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+.progressive-image-loader .spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

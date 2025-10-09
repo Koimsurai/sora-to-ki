@@ -1,0 +1,83 @@
+/* GalleryThumbnail - 底部縮圖導覽列樣式 */
+
+.gallery-thumbnail-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 400px; /* 為右側 EXIF 面板留空間 */
+  height: 120px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 100%);
+  backdrop-filter: blur(20px);
+  padding: 12px 24px;
+  z-index: 10;
+}
+
+.gallery-thumbnail-swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.gallery-thumbnail-slide {
+  width: auto !important;
+  height: 100%;
+}
+
+.gallery-thumbnail-item {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.gallery-thumbnail-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.gallery-thumbnail-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.gallery-thumbnail-item:hover img {
+  transform: scale(1.1);
+}
+
+.gallery-thumbnail-item.active {
+  border-color: #3b82f6;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+.active-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+/* 響應式設計 */
+@media (max-width: 1024px) {
+  .gallery-thumbnail-container {
+    right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .gallery-thumbnail-container {
+    height: 100px;
+    padding: 8px 16px;
+  }
+
+  .gallery-thumbnail-item {
+    width: 75px;
+    height: 75px;
+  }
+}

@@ -35,3 +35,14 @@ tasklist
 /server/db.sqlite*
 /server/node_modules
 .env
+
+# Photo Builder Files
+photos/
+public/generated/
+public/photos-manifest.json
+
+# Build artifacts
+scripts/builder/**/*.js
+PHOTO_BUILDER_GUIDE.md
+PHOTO_GALLERY_REFACTOR.md
+IMPLEMENTATION_SUMMARY.md

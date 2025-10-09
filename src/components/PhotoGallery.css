@@ -1,186 +1,220 @@
+/* Photo Gallery Modern Styles - Masonic Layout */
+
+/* Gallery Container */
 .photo-gallery-section {
-  padding: 80px 50px; /* 上下內距 */
-  /* background-color: var(--clr-bg-primary); */ /* 移除背景色以顯示 Canvas */
-  box-sizing: border-box;
-  min-height: 100vh; /* 確保內容至少佔滿一屏 */
-  position: relative; /* 為了固定返回按鈕 */
+  min-height: 100vh;
+  position: relative;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
-/* 返回按鈕樣式 */
-.back-button {
-  position: fixed; /* 固定定位 */
-  top: 100px; /* 再次增加距離頂部的值，提供更多間距 */
-  left: 30px; /* 距離左側 */
-  z-index: 1001; /* 提高層級，使其高於 Header (z-index: 1000) */
-  padding: 8px 15px;
-  background-color: var(--clr-button); /* 使用按鈕色 */
-  color: var(--clr-button-text); /* 使用按鈕文字色 */
-  text-decoration: none;
-  border-radius: 5px;
-  font-size: 0.9em;
-  transition: background-color 0.3s ease, transform 0.3s ease; /* 加入 transform 過渡 */
+@media (prefers-color-scheme: dark) {
+  .photo-gallery-section {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+  }
 }
 
-.back-button:hover {
-  transform: translateY(-2px); /* 懸停時上移 */
-  background-color: var(--clr-tertiary); /* 使用第三點綴綠 */
-  color: var(--clr-button-text); /* 確保懸停時文字顏色仍然可見 */
-}
-
-.photo-gallery-header {
-  text-align: center;
-  margin-bottom: 60px; /* 與下方網格的間距 */
-}
-
-.photo-gallery-header h2 {
-  font-size: 2.8em; /* 標題字體大小 */
-  color: var(--clr-headline); /* 使用標題色 */
-  margin-bottom: 10px;
-}
-
-.photo-gallery-header p {
-  font-size: 1.1em;
-  color: var(--clr-paragraph); /* 使用段落色 */
-  font-style: italic;
-}
-
-/* --- Grid 佈局樣式 (從 Portfolio.css 複製並修改) --- */
-
-.photo-grid { /* 修改 class name */
-  display: grid;
-  grid-template-columns: 1fr; /* 單列佈局 */
-  gap: 0; /* 移除網格間距，由 item 內部控制 */
-  max-width: 1200px; /* 可稍微增加最大寬度 */
+/* Masonry Container */
+.masonry-container {
+  width: 100%;
+  max-width: 1600px;
   margin: 0 auto;
+  padding: 0 1rem;
 }
 
-.photo-grid-item { /* 修改 class name */
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* 創建兩欄 */
-  align-items: center; /* 垂直居中 */
-  min-height: 400px; /* 設定最小高度 */
-  box-shadow: 0 8px 25px rgba(1, 1, 1, 0.12); /* 使用描邊色的 RGBA */
-  border-radius: 8px; /* 給整個 item 加圓角 */
-  overflow: hidden; /* 確保內容不溢出圓角 */
-  margin-bottom: 40px; /* 增加項目之間的垂直間距 */
+/* Photo Masonry Item */
+.photo-masonry-item {
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
-.photo-image-block { /* 修改 class name */
-  height: 100%; /* 佔滿父元素高度 */
-  overflow: hidden; /* 隱藏溢出 */
+.photo-masonry-item:hover {
+  transform: translateY(-8px) scale(1.02);
+  z-index: 10;
 }
 
-.photo-image-block img {
-  display: block;
+/* Photo Card */
+.photo-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 6px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+}
+
+.photo-card:hover {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 12px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Photo Image */
+.photo-image {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 圖片填滿區塊 */
-  transition: transform 0.4s ease;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block;
 }
 
-.photo-image-block:hover img {
-  transform: scale(1.03); /* 滑鼠懸停時稍微放大 */
+.group:hover .photo-image {
+  transform: scale(1.08);
+  filter: brightness(1.05);
 }
 
-.photo-text-block { /* 修改 class name */
-  padding: 40px 50px; /* 文字區塊內距 */
-  text-align: center; /* 文字居中 */
+/* Photo Info Overlay */
+.photo-info-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.4) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%; /* 佔滿父元素高度 */
-  background-color: var(--clr-bg-secondary); /* 使用次要背景色 */
+  justify-content: flex-end;
+  padding: 1.5rem;
+  backdrop-filter: blur(4px);
 }
 
-/* 移除 h3 樣式，或根據需要調整 */
-/* .photo-text-block h3 { ... } */
+.group:hover .photo-info-overlay {
+  opacity: 1;
+}
 
-.photo-text-block .photo-date { /* MM/DD 樣式 */
-  font-size: 1.8em; /* 放大日期 */
-  font-weight: bold; /* 加粗 */
-  color: var(--clr-headline); /* 使用標題色 */
-  margin-bottom: 5px; /* 與年份間距 */
+/* Date Info */
+.photo-date-info {
+  color: white;
+}
+
+.photo-date {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.6);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.photo-year {
+  font-size: 1.25rem;
+  font-weight: 600;
+  opacity: 0.95;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   line-height: 1.2;
+  letter-spacing: 0.02em;
 }
 
-.photo-text-block .photo-year { /* YYYY 樣式 */
-  font-size: 1.1em; /* 年份文字大小 */
-  color: var(--clr-paragraph); /* 使用段落色 */
-  line-height: 1.2;
+/* Gallery Header Card */
+.gallery-header-card {
+  width: 100%;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 響應式設計 */
-@media (max-width: 992px) {
-  .photo-grid-item { /* 修改 class name */
-    grid-template-columns: 1fr; /* 中等螢幕變為單欄 */
-    min-height: auto; /* 取消最小高度 */
-  }
+.gallery-header-card:hover {
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15), 0 12px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
 
-  /* 在單欄佈局中，奇數項圖片在上，偶數項圖片在下 */
-  .photo-grid-item:nth-child(odd) .photo-image-block { /* 修改 class name */
-    order: 1; /* 圖片區塊在前 */
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .gallery-header-card {
+    background: #1f2937;
+    border-color: rgba(255, 255, 255, 0.1);
   }
-  .photo-grid-item:nth-child(odd) .photo-text-block { /* 修改 class name */
-    order: 2; /* 文字區塊在後 */
-  }
-  .photo-grid-item:nth-child(even) .photo-image-block { /* 修改 class name */
-    order: 2; /* 圖片區塊在後 */
-  }
-   .photo-grid-item:nth-child(even) .photo-text-block { /* 修改 class name */
-    order: 1; /* 文字區塊在前 */
-  }
-
-  .photo-image-block { /* 修改 class name */
-     max-height: 400px; /* 限制圖片高度 */
-  }
-
-  .photo-text-block { /* 修改 class name */
-    padding: 30px 40px;
+  
+  .photo-card {
+    background: #1f2937;
   }
 }
 
-@media (max-width: 768px) {
-  .photo-gallery-section {
-    padding: 60px 20px;
+/* Loading Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
   }
-
-  .photo-gallery-header h2 {
-    font-size: 2.2em;
-  }
-
-  /* 調整小螢幕下的日期和年份大小 */
-   .photo-text-block .photo-date {
-    font-size: 1.6em;
-  }
-   .photo-text-block .photo-year {
-    font-size: 1em;
+  100% {
+    background-position: 1000px 0;
   }
 }
 
-/* Instagram 連結樣式 */
+.photo-loading {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(to right, #f0f0f0 4%, #f8f8f8 25%, #f0f0f0 36%);
+  background-size: 1000px 100%;
+  border-radius: 0.5rem;
+  min-height: 200px;
+}
+
+/* Instagram Link Container */
 .instagram-link-container {
-  text-align: center; /* 文字居中 */
-  margin-top: 60px; /* 與上方內容的間距 */
-  padding-bottom: 40px; /* 底部留白 */
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+  text-align: center;
 }
 
 .instagram-link {
-  display: inline-block; /* 行內區塊元素 */
-  padding: 12px 25px; /* 內距 */
-  background-color: var(--clr-button); /* 使用按鈕色 */
-  color: var(--clr-button-text); /* 使用按鈕文字色 */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+  color: white;
+  font-weight: 500;
+  border-radius: 9999px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
   text-decoration: none;
-  border-radius: 8px; /* 圓角 */
-  font-size: 1.1em; /* 字體大小 */
-  font-weight: bold; /* 加粗 */
-  transition: background-color 0.3s ease, transform 0.3s ease; /* 過渡效果 */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* 輕微陰影 */
 }
 
 .instagram-link:hover {
-  transform: translateY(-3px); /* 懸停時上移 */
-  background-color: var(--clr-tertiary); /* 使用第三點綴綠 */
-  color: var(--clr-button-text); /* 確保懸停時文字顏色仍然可見 */
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); /* 懸停時陰影加深 */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: scale(1.05) translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .photo-gallery-section {
+    padding: 1.5rem 0.5rem;
+  }
+  
+  .masonry-container {
+    padding: 0 0.5rem;
+  }
+  
+  .photo-date {
+    font-size: 1.25rem;
+  }
+  
+  .photo-year {
+    font-size: 1rem;
+  }
+  
+  .gallery-header-card {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .photo-info-overlay {
+    padding: 1rem;
+  }
+  
+  .photo-date {
+    font-size: 1.125rem;
+  }
+  
+  .photo-year {
+    font-size: 0.875rem;
+  }
 }

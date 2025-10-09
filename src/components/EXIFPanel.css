@@ -1,0 +1,158 @@
+/* EXIFPanel - EXIF 資訊面板樣式 (Afilmory 風格 - 常駐顯示) */
+
+.exif-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  background: rgba(10, 10, 10, 0.98);
+  backdrop-filter: blur(30px);
+  border-left: 1.5px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 30;
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6);
+}
+
+/* 自定義滾動條 */
+.exif-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.exif-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.exif-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.exif-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.exif-panel-content {
+  padding: 1.5rem;
+}
+
+/* 分段 */
+.exif-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.exif-section:last-child {
+  border-bottom: none;
+}
+
+.exif-section-title {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.5);
+}
+
+/* 資訊行 */
+.exif-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.exif-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.875rem;
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.exif-value {
+  color: white;
+  font-size: 0.875rem;
+  text-align: right;
+  word-break: break-word;
+}
+
+.exif-live-photo {
+  color: #10b981;
+  font-weight: 600;
+}
+
+/* 標籤 */
+.exif-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.exif-tag {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* 滾動條樣式 */
+.exif-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.exif-panel::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.exif-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.exif-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 響應式設計 */
+@media (max-width: 1024px) {
+  .exif-panel {
+    width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .exif-panel {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .exif-panel-content {
+    padding: 1rem;
+  }
+
+  .exif-section-title {
+    font-size: 1rem;
+  }
+
+  .exif-label,
+  .exif-value {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .exif-panel {
+    width: 100%;
+    max-width: none;
+  }
+}

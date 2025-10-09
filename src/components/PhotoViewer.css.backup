@@ -1,0 +1,218 @@
+/* PhotoViewer - 全螢幕照片查看器樣式 */
+
+.photo-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 工具列 */
+.viewer-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+  z-index: 10;
+}
+
+.viewer-toolbar-left,
+.viewer-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.viewer-photo-title {
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-zoom-level {
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  min-width: 50px;
+  text-align: right;
+}
+
+.viewer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.viewer-btn svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.viewer-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.viewer-close-btn:hover {
+  background: rgba(239, 68, 68, 0.8);
+}
+
+/* 圖片容器 */
+.viewer-image-container {
+  position: absolute;
+  inset: 60px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.viewer-image {
+  max-width: 90vw;
+  max-height: calc(100vh - 120px);
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.viewer-image.loading {
+  opacity: 0;
+}
+
+.viewer-image-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 導航按鈕 */
+.viewer-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.viewer-nav-btn svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.viewer-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.viewer-nav-prev {
+  left: 2rem;
+}
+
+.viewer-nav-next {
+  right: 2rem;
+}
+
+/* Spinner 動畫 */
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .viewer-toolbar {
+    height: 50px;
+    padding: 0 1rem;
+  }
+
+  .viewer-photo-title {
+    max-width: 200px;
+    font-size: 0.9rem;
+  }
+
+  .viewer-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .viewer-nav-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .viewer-nav-prev {
+    left: 1rem;
+  }
+
+  .viewer-nav-next {
+    right: 1rem;
+  }
+
+  .viewer-image {
+    max-width: 95vw;
+    max-height: calc(100vh - 100px);
+  }
+}
+
+@media (max-width: 640px) {
+  .viewer-photo-title {
+    display: none;
+  }
+
+  .viewer-nav-btn {
+    width: 40px;
+    height: 40px;
+  }
+}

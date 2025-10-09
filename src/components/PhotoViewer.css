@@ -1,0 +1,333 @@
+/* PhotoViewer - 全螢幕照片查看器樣式 (Afilmory 風格) */
+
+.photo-viewer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 模糊背景 */
+.photo-viewer-background {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) brightness(0.4);
+  transform: scale(1.2);
+  z-index: 0;
+}
+
+/* 頂部照片資訊 */
+.photo-viewer-info {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.photo-title {
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 16px;
+  font-weight: 600;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+}
+
+/* 圖片區域右上方按鈕組 */
+.image-action-buttons {
+  position: absolute;
+  top: 24px;
+  right: 440px; /* 留給 EXIF 面板空間 + 更多邊距 */
+  display: flex;
+  gap: 10px;
+  z-index: 25;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+}
+
+.action-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  fill: none;
+}
+
+.action-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.action-btn:active {
+  transform: scale(0.95);
+}
+
+.action-btn-close:hover {
+  background: rgba(220, 38, 38, 0.9);
+  border-color: rgba(220, 38, 38, 1);
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.5);
+}
+
+.action-btn-share:hover {
+  background: rgba(37, 99, 235, 0.9);
+  border-color: rgba(37, 99, 235, 1);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.5);
+}
+
+/* 主圖輪播區域 */
+.photo-viewer-main {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 400px; /* 為右側 EXIF 面板留空間 */
+  bottom: 120px; /* 為底部縮圖留空間 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.main-swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.main-swiper .swiper-slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swiper-zoom-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 隱藏 Swiper 預設導航按鈕 */
+.main-swiper .swiper-button-prev,
+.main-swiper .swiper-button-next {
+  display: none !important;
+}
+
+/* 自定義導航按鈕 */
+.custom-swiper-button-prev,
+.custom-swiper-button-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 52px;
+  height: 52px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(20px);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.7;
+}
+
+.custom-swiper-button-prev {
+  left: 30px;
+}
+
+.custom-swiper-button-next {
+  right: 30px;
+}
+
+.custom-swiper-button-prev svg,
+.custom-swiper-button-next svg {
+  width: 24px;
+  height: 24px;
+  stroke: white;
+  fill: none;
+}
+
+.custom-swiper-button-prev:hover,
+.custom-swiper-button-next:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.4);
+  opacity: 1;
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.custom-swiper-button-prev:active,
+.custom-swiper-button-next:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.custom-swiper-button-prev.swiper-button-disabled,
+.custom-swiper-button-next.swiper-button-disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.custom-swiper-button-prev.swiper-button-disabled:hover,
+.custom-swiper-button-next.swiper-button-disabled:hover {
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+
+
+/* Spinner 動畫 */
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 1024px) {
+  .photo-viewer-main {
+    right: 0; /* 移除 EXIF 面板空間 */
+  }
+
+  .image-action-buttons {
+    right: 24px; /* 調整按鈕位置 */
+  }
+
+  .gallery-thumbnail-container {
+    right: 0;
+  }
+
+  /* 在平板上隱藏 EXIF 面板 */
+  .exif-panel {
+    display: none;
+  }
+
+  .custom-swiper-button-prev {
+    left: 20px;
+  }
+
+  .custom-swiper-button-next {
+    right: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .photo-viewer-info {
+    top: 16px;
+    left: 16px;
+  }
+
+  .photo-title {
+    font-size: 14px;
+  }
+
+  .image-action-buttons {
+    top: 16px;
+    right: 16px;
+    gap: 8px;
+  }
+
+  .action-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .action-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .photo-viewer-main {
+    bottom: 100px;
+  }
+
+  .custom-swiper-button-prev,
+  .custom-swiper-button-next {
+    width: 46px;
+    height: 46px;
+  }
+
+  .custom-swiper-button-prev {
+    left: 16px;
+  }
+
+  .custom-swiper-button-next {
+    right: 16px;
+  }
+
+  .custom-swiper-button-prev svg,
+  .custom-swiper-button-next svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 640px) {
+  .photo-title {
+    font-size: 12px;
+  }
+
+  .action-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .action-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .main-swiper .swiper-button-prev,
+  .main-swiper .swiper-button-next {
+    width: 42px;
+    height: 42px;
+  }
+
+  .main-swiper .swiper-button-prev {
+    left: 12px;
+  }
+
+  .main-swiper .swiper-button-next {
+    right: 12px;
+  }
+
+  .main-swiper .swiper-button-prev::after,
+  .main-swiper .swiper-button-next::after {
+    width: 12px;
+    height: 12px;
+    border-width: 2.5px;
+  }
+}
