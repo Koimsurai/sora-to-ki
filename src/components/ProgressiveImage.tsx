@@ -1,9 +1,4 @@
-/**
- * ProgressiveImage - 漸進式圖片載入元件
- * 支援縮放、平移和漸進式載入
- */
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import './ProgressiveImage.css';
 
@@ -14,6 +9,10 @@ interface ProgressiveImageProps {
   thumbHash?: string;
   onLoad?: () => void;
   className?: string;
+  enablePan?: boolean;
+  enableZoom?: boolean;
+  onScaleChange?: (scale: number) => void;
+  isCurrentImage?: boolean; // Only the active slide should have zoom enabled
 }
 
 const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
@@ -23,18 +22,39 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
   thumbHash,
   onLoad,
   className = '',
+  enablePan = true,
+  enableZoom = true,
+  onScaleChange,
+  isCurrentImage,
 }) => {
   const [loaded, setLoaded] = useState(false);
-  const [thumbLoaded, setThumbLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  
-  const imageRef = useRef<HTMLImageElement>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
 
-  // 載入高解析度圖片
+  // Report scale change
   useEffect(() => {
+    if (onScaleChange) {
+      onScaleChange(scale);
+    }
+  }, [scale, onScaleChange]);
+
+  // Reset state when image source changes or it's no longer the current image
+  useEffect(() => {
+    if (!isCurrentImage) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [src, isCurrentImage]);
+
+
+  // Preload high-res image
+  useEffect(() => {
+    setLoaded(false);
     const img = new Image();
     img.src = src;
     img.onload = () => {
@@ -43,95 +63,140 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
     };
   }, [src, onLoad]);
 
-  // 拖曳開始
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale > 1) {
-      setIsDragging(true);
-      setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (!enableZoom || !isCurrentImage) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const delta = e.deltaY > 0 ? -0.2 : 0.2;
+    setScale(prevScale => {
+        const newScale = Math.max(1, Math.min(prevScale + delta, 5));
+        if (newScale === 1) {
+            setPosition({ x: 0, y: 0 });
+        }
+        return newScale;
+    });
+  }, [enableZoom, isCurrentImage]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!enablePan || scale <= 1 || !isCurrentImage) return;
+    e.preventDefault();
+    setIsPanning(true);
+    setStartPos({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    });
+  }, [enablePan, scale, isCurrentImage, position]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isPanning || !containerRef.current) return;
+    
+    const newX = e.clientX - startPos.x;
+    const newY = e.clientY - startPos.y;
+    
+    // Basic boundary checks to prevent panning too far
+    const container = containerRef.current;
+    const image = imageRef.current;
+    if (container && image) {
+        const containerRect = container.getBoundingClientRect();
+        const imageWidth = image.width * scale;
+        const imageHeight = image.height * scale;
+
+        const maxPanX = (imageWidth - containerRect.width) / 2;
+        const maxPanY = (imageHeight - containerRect.height) / 2;
+
+        const clampedX = Math.max(-maxPanX, Math.min(newX, maxPanX));
+        const clampedY = Math.max(-maxPanY, Math.min(newY, maxPanY));
+        
+        setPosition({ x: clampedX, y: clampedY });
+    } else {
+        setPosition({ x: newX, y: newY });
     }
-  };
 
-  // 拖曳移動
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging) {
-      setPosition({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y,
-      });
+  }, [isPanning, startPos, scale]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container && isCurrentImage) {
+      container.addEventListener('wheel', handleWheel, { passive: false });
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+
+      return () => {
+        container.removeEventListener('wheel', handleWheel);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
     }
-  };
+  }, [handleWheel, handleMouseMove, handleMouseUp, isCurrentImage]);
 
-  // 拖曳結束
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // 雙擊重置
-  const handleDoubleClick = () => {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  };
 
   return (
     <div
-      className={`progressive-image-container ${className}`}
+      ref={containerRef}
+      className={`progressive-image-wrapper ${className}`}
       onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onDoubleClick={handleDoubleClick}
       style={{
-        cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+        cursor: isPanning ? 'grabbing' : (isCurrentImage && scale > 1 ? 'grab' : 'default'),
       }}
     >
-      {/* ThumbHash 佔位符 */}
-      {thumbHash && !thumbLoaded && (
-        <canvas
-          className="progressive-image-placeholder"
+      <motion.div
+        className="progressive-image-panner"
+        style={{
+          width: '100%',
+          height: '100%',
+          scale,
+          translateX: position.x,
+          translateY: position.y,
+        }}
+      >
+        {/* Thumbnail */}
+        {thumbSrc && (
+          <motion.img
+            src={thumbSrc}
+            alt={alt}
+            className="progressive-image-thumb"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: loaded ? 0 : 1 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              filter: 'blur(10px)',
+            }}
+          />
+        )}
+
+        {/* Full-res image */}
+        <motion.img
+          ref={imageRef}
+          src={src}
+          alt={alt}
+          className="progressive-image-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: loaded ? 1 : 0 }}
+          transition={{ duration: 0.5 }}
+          draggable={false}
           style={{
-            position: 'absolute',
-            inset: 0,
             width: '100%',
             height: '100%',
-            filter: 'blur(20px)',
-            transform: 'scale(1.1)',
+            objectFit: 'contain',
           }}
         />
-      )}
+      </motion.div>
 
-      {/* 縮圖 (低解析度) */}
-      {thumbSrc && (
-        <motion.img
-          src={thumbSrc}
-          alt={alt}
-          className="progressive-image-thumb"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: thumbLoaded && !loaded ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-          onLoad={() => setThumbLoaded(true)}
-          style={{
-            transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
-            filter: 'blur(10px)',
-          }}
-        />
-      )}
-
-      {/* 高解析度圖片 */}
-      <motion.img
-        ref={imageRef}
-        src={src}
-        alt={alt}
-        className="progressive-image-full"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: loaded ? 1 : 0 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-        }}
-        draggable={false}
-      />
-
-      {/* 載入中指示器 */}
+      {/* Loading indicator */}
       {!loaded && (
         <div className="progressive-image-loader">
           <div className="spinner" />

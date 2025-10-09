@@ -3,12 +3,12 @@
  * 支援 Swiper 輪播、模糊背景、底部縮圖導覽、右側 EXIF 面板
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKey } from 'react-use';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Keyboard, Zoom, Thumbs } from 'swiper/modules';
+import { Navigation, Keyboard, Thumbs } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import {
   selectedPhotoAtom,
@@ -22,7 +22,6 @@ import GalleryThumbnail from './GalleryThumbnail';
 import EXIFPanel from './EXIFPanel';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import 'swiper/css/zoom';
 import './PhotoViewer.css';
 
 const PhotoViewer: React.FC = () => {
@@ -35,35 +34,29 @@ const PhotoViewer: React.FC = () => {
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [mainSwiper, setMainSwiper] = useState<SwiperType | null>(null);
   const [currentPhoto, setCurrentPhoto] = useState(selectedPhoto);
-  const mainContainerRef = useRef<HTMLDivElement>(null);
+  const [imageScale, setImageScale] = useState(1);
 
   // 鍵盤快捷鍵
   useKey('Escape', closeViewer);
 
-  // 滾輪縮放處理
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (mainSwiper && mainSwiper.zoom) {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -0.2 : 0.2;
-        const currentZoom = mainSwiper.zoom.scale || 1;
-        const newZoom = Math.max(1, Math.min(5, currentZoom + delta));
-        mainSwiper.zoom.in(newZoom);
-      }
-    };
+  // Callback for ProgressiveImage to report its scale
+  const handleScaleChange = useCallback((scale: number) => {
+    setImageScale(scale);
+  }, []);
 
-    const container = mainContainerRef.current;
-    if (container && isOpen) {
-      container.addEventListener('wheel', handleWheel, { passive: false });
-      return () => container.removeEventListener('wheel', handleWheel);
+  // Lock swiper when image is zoomed
+  useEffect(() => {
+    if (mainSwiper) {
+        mainSwiper.allowTouchMove = imageScale <= 1;
     }
-  }, [isOpen, mainSwiper]);
+  }, [imageScale, mainSwiper]);
 
   // 重置狀態當檢視器關閉
   useEffect(() => {
     if (!isOpen) {
       setThumbsSwiper(null);
       setMainSwiper(null);
+      setImageScale(1); // Reset scale state
     }
   }, [isOpen]);
 
@@ -90,6 +83,7 @@ const PhotoViewer: React.FC = () => {
   // 處理 Swiper 滑動
   const handleSlideChange = (swiper: SwiperType) => {
     setCurrentIndex(swiper.activeIndex);
+    setImageScale(1); // Reset zoom on slide change
   };
 
   // 處理縮圖點擊
@@ -123,30 +117,7 @@ const PhotoViewer: React.FC = () => {
 
         {/* 右上角按鈕組 */}
         <div className="viewer-top-right-buttons" onClick={(e) => e.stopPropagation()}>
-          {/* 分享按鈕 */}
-          <button
-            className="action-btn action-btn-share"
-            onClick={(e) => {
-              e.stopPropagation();
-              // TODO: 實現分享功能
-              if (navigator.share) {
-                navigator.share({
-                  title: currentPhoto.title || '照片分享',
-                  text: `查看我的照片作品`,
-                  url: window.location.href,
-                }).catch(() => {});
-              }
-            }}
-            title="分享"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
-            </svg>
-          </button>
-
-          {/* 關閉按鈕 */}
+          {/* ... buttons ... */}
           <button
             className="action-btn action-btn-close"
             onClick={(e) => {
@@ -162,8 +133,15 @@ const PhotoViewer: React.FC = () => {
           </button>
         </div>
 
+        {/* 縮放比例顯示 */}
+        {imageScale > 1 && (
+            <div className="zoom-indicator">
+                {imageScale.toFixed(1)}x
+            </div>
+        )}
+
         {/* 主圖輪播區域 */}
-        <div className="photo-viewer-main" ref={mainContainerRef}>
+        <div className="photo-viewer-main">
           {/* 自訂導航按鈕 - 上一張 */}
           <button className="custom-swiper-button-prev" onClick={(e) => e.stopPropagation()}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -186,23 +164,23 @@ const PhotoViewer: React.FC = () => {
             keyboard={{
               enabled: true,
             }}
-            zoom={{
-              maxRatio: 5,
-              minRatio: 1,
-            }}
             thumbs={thumbsSwiper && !thumbsSwiper.destroyed ? { swiper: thumbsSwiper } : undefined}
-            modules={[Navigation, Keyboard, Zoom, Thumbs]}
+            modules={[Navigation, Keyboard, Thumbs]}
             onSlideChange={handleSlideChange}
             className="main-swiper"
           >
-            {photos.map((photo) => (
+            {photos.map((photo, index) => (
               <SwiperSlide key={photo.id}>
-                <div className="swiper-zoom-container">
+                <div className="swiper-zoom-container"> {/* This class is now just for structure/styling */}
                   <ProgressiveImage
                     src={photo.urls.regular || photo.urls.full}
                     thumbSrc={photo.urls.thumb || photo.urls.small}
                     alt={photo.title || ''}
                     thumbHash={photo.thumbHash}
+                    isCurrentImage={index === currentIndex}
+                    onScaleChange={handleScaleChange}
+                    enableZoom={true}
+                    enablePan={true}
                   />
                 </div>
               </SwiperSlide>
