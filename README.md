@@ -1,77 +1,201 @@
-# 個人作品集網站 (Personal Portfolio Website)
+# Koimsurai's Digital Universe - Personal Portfolio & Activity Dashboard
 
-這是一個使用 React 和 Vite 建置的個人作品集網站，展示了我的技能、經歷和專案。
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Three.js](https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-## ✨ 主要功能
+This repository contains the source code for my personal portfolio website, a full-stack application designed to showcase my projects, skills, and real-time activities from various platforms.
 
-*   **英雄區塊 (Hero Section):** 引人入勝的首頁介紹。
-*   **專業技能 (Expertise):** 展示我的技術專長。
-*   **工作經歷 (Work Experience):** 列出相關的工作經驗。
-*   **學術/社團經歷 (School Clubs):** 展示在校期間的活動參與。
-*   **作品集 (Portfolio):** 展示個人專案和作品。
-*   **照片集 (Photo Gallery):** 精選照片展示。
-*   **聯絡方式 (Contact):** 提供聯絡表單或資訊。
-*   **互動效果:**
-    *   滑鼠軌跡效果 (Cursor Trail)
-    *   載入動畫 (Loading Screen)
-    *   轉場動畫 (Transition Animation)
-    *   隨機彗星、流星、UFO 動畫
-    *   閃爍星空背景
-    *   3D 土星模型 (使用 Three.js)
-    *   回到頂部按鈕 (Back To Top)
+## 🚀 Live Demo
 
-## 🚀 使用技術
+**(Link to your live website here)**
 
-*   **前端框架:** React
-*   **建置工具:** Vite
-*   **樣式:** CSS (搭配 CSS Modules 或一般 CSS)
-*   **JavaScript**
-*   **3D 圖形:** Three.js (用於土星模型)
-*   **版本控制:** Git
-*   **容器化:** Docker, Docker Compose
+## ✨ Features
 
-## 🛠️ 本地開發設定 (使用 npm)
+This project is more than just a static portfolio. It integrates a dynamic backend to create a living dashboard of my digital footprint.
 
-1.  **複製儲存庫:**
+*   **Frontend & UI:**
+    *   **Interactive 3D Scenes:** Engaging visuals built with `Three.js` and `@react-three/fiber`, including a stunning Saturn animation.
+    *   **Rich Animations:** Smooth page transitions and component animations powered by `Framer Motion`.
+    *   **Modern UI:** Styled with `Tailwind CSS` for a clean and responsive design.
+    *   **Blog Platform:** A complete blog with posts fetched from the backend, rendered from Markdown with `@uiw/react-md-editor`.
+    *   **Project & Photo Galleries:** Masonry-style, progressively-loaded image galleries to showcase portfolio work and photography.
+    *   **Virtual Bookshelf:** A section to display books I've read or am currently reading.
+
+*   **Backend & Dynamic Data:**
+    *   **Activity Dashboard:** Aggregates and displays my latest activities from:
+        *   **WakaTime:** Daily coding statistics.
+        *   **GitHub:** Recent commits, repository updates, and contribution graph.
+        *   **Steam:** Recently played games and library information.
+        *   **Spotify:** Recently played tracks and top artists/genres.
+    *   **API Gateway:** The Express.js backend acts as a secure proxy to fetch data from third-party APIs, bypassing CORS issues and protecting API keys.
+    *   **Database Integration:** Uses `SQLite` for blog posts, comments, and other persistent data.
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+*   **Framework:** React 19
+*   **Build Tool:** Vite
+*   **3D Graphics:** Three.js, @react-three/fiber, @react-three/drei
+*   **Styling:** Tailwind CSS, PostCSS
+*   **Animation:** Framer Motion, React Spring
+*   **State Management:** Jotai
+*   **Routing:** React Router
+*   **Markdown:** @uiw/react-md-editor, React-Markdown
+
+### Backend
+
+*   **Runtime:** Node.js
+*   **Framework:** Express.js
+*   **Database:** SQLite3
+*   **Authentication:** JWT (JSON Web Tokens), bcryptjs
+*   **API Client:** Axios
+
+### DevOps
+
+*   **Containerization:** Docker, Docker Compose
+*   **Web Server/Proxy:** Configuration supports proxying through Nginx (implied in `vite.config.js`).
+
+## 📂 Project Structure
+
+The project is a monorepo-like structure with two main parts:
+
+```
+/
+├── server/         # The Node.js/Express.js backend
+├── src/            # The React/Vite frontend source code
+├── docker-compose.yml
+└── Dockerfile      # For the frontend service
+```
+
+## ⚙️ Getting Started (Local Development)
+
+The recommended way to run this project is using Docker, but you can also run the frontend and backend services separately.
+
+### Prerequisites
+
+*   Git
+*   Node.js (v18 or newer recommended)
+*   Docker and Docker Compose (for containerized setup)
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/timo9378/web.git
+cd web-1
+```
+
+### 2. Backend Setup
+
+The backend requires several API keys and secrets to function correctly.
+
+1.  Navigate to the server directory:
     ```bash
-    git clone https://github.com/timo9378/web.git
-    cd web-1
+    cd server
     ```
-2.  **安裝依賴套件:**
+
+2.  Create an environment file by copying the example:
+    ```bash
+    cp .env.example .env
+    ```
+
+3.  **Edit `.env`** and fill in **all** the required values. This is a crucial step.
+
+    ```env
+    # --- REQUIRED ---
+
+    # Admin account for managing blog posts etc.
+    ADMIN_USERNAME=your_admin_username
+    ADMIN_PASSWORD=your_secure_password
+
+    # A long, random string for signing JWT tokens
+    JWT_SECRET=your_jwt_secret_key_here
+
+    # WakaTime API Key (from your WakaTime settings)
+    WAKATIME_API_KEY=your_wakatime_api_key
+
+    # Steam API Key & ID
+    # Get Key: https://steamcommunity.com/dev/apikey
+    # Find ID: https://steamid.io/
+    STEAM_API_KEY=your_steam_api_key
+    STEAM_ID=your_64_bit_steam_id
+
+    # Spotify API Credentials
+    # Create an app on the Spotify Developer Dashboard to get these
+    SPOTIFY_CLIENT_ID=your_spotify_client_id
+    SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
+    SPOTIFY_REFRESH_TOKEN=your_spotify_refresh_token # (Get this after initial OAuth flow)
+
+    # --- OPTIONAL ---
+    PORT=3001
+    NODE_ENV=development
+    ```
+
+4.  Install dependencies:
     ```bash
     npm install
     ```
-3.  **啟動開發伺服器:**
+
+5.  Start the backend server:
     ```bash
     npm run dev
     ```
-    開發伺服器預設會在 `http://localhost:5173` (或其他可用埠號) 啟動。
+    The backend will be running on `http://localhost:3001`.
 
-## 🐳 Docker 設定 (含 SSL)
+### 3. Frontend Setup
 
-此專案包含使用 Docker Compose 在 Docker 容器中運行開發伺服器的設定，並支援使用提供的 SSL 憑證啟用 HTTPS。
+1.  Navigate back to the project root directory:
+    ```bash
+    cd ..
+    ```
 
-**先決條件：**
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
 
-*   已安裝 Docker 和 Docker Compose。
-*   SSL 憑證檔案 (`privkey.pem` 和 `fullchain.pem`) 已放置在專案根目錄下 (與 `Dockerfile` 同層)。**重要：** 這些檔案已包含在 `.gitignore` 中，**不應**被提交到版本控制系統。
+3.  Start the frontend development server:
+    ```bash
+    npm run dev
+    ```
+    The frontend will be available at `http://localhost:5173` (or another port if 5173 is busy). It is pre-configured to proxy API requests to the backend.
 
-**使用 Docker Compose 運行：**
+## 🐳 Docker Deployment (Recommended)
 
-1.  在您的終端機中，確認您位於專案根目錄 (`web-1`)。
-2.  建置並在背景模式 (detached mode) 啟動容器：
+The simplest way to get the entire application running.
+
+1.  **Ensure `server/.env` is created and complete** as described in the "Backend Setup" section above. The Docker setup depends on this file.
+
+2.  Build and start the services in detached mode from the project root:
     ```bash
     docker-compose up -d --build
     ```
-3.  開發伺服器將可透過 `https://localhost:13579` 訪問。由於使用的是本地憑證，您的瀏覽器可能會顯示安全警告，您需要手動確認才能繼續訪問。
 
-**停止容器：**
+3.  The application will be accessible at `http://localhost:13588`.
 
-```bash
-docker-compose down
-```
+4.  To stop the services:
+    ```bash
+    docker-compose down
+    ```
 
-**查看日誌：**
+5.  To view logs:
+    ```bash
+    docker-compose logs -f frontend
+    docker-compose logs -f backend
+    ```
 
-```bash
-docker-compose logs -f
+## 📜 Available Scripts
+
+*   `npm run dev`: Starts the Vite frontend development server.
+*   `npm run build`: Builds the frontend for production.
+*   `npm run lint`: Lints the codebase.
+*   `npm run preview`: Serves the production build locally.
+*   `npm run build:photos`: A custom script to process photos.
+
+In the `server` directory:
+*   `npm run start`: Starts the backend server.
+*   `npm run dev`: Starts the backend server with `node --watch` for auto-reloading.
