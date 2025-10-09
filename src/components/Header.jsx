@@ -27,6 +27,22 @@ function Header({ activeSection }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // 處理從其他頁面導航回來時的自動滾動
+  useEffect(() => {
+    if (isHomePage && location.hash) {
+      // 使用 setTimeout 確保 DOM 已經完全載入
+      const timeoutId = setTimeout(() => {
+        const sectionId = location.hash.replace('#', '');
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100); // 延遲 100ms 確保頁面元素已渲染
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [location.hash, isHomePage]);
+
   // 點擊外部關閉下拉選單
   useEffect(() => {
     const handleClickOutside = (event) => {
