@@ -15,6 +15,7 @@ function Header({ activeSection }) {
   const location = useLocation();
   const navigate = useNavigate();
   const isHomePage = location.pathname === '/';
+  const isPhotoPage = location.pathname === '/photos';
 
   // 處理滾動效果 (受 Shiro 啟發)
   useEffect(() => {
@@ -152,7 +153,7 @@ function Header({ activeSection }) {
   };
 
   return (
-    <header className={`app-header ${isScrolled ? 'scrolled' : ''}`}>
+    <header className={`app-header ${isScrolled ? 'scrolled' : ''} ${isPhotoPage ? 'hidden-on-photos' : ''}`}>
       <div className="logo">Koimsurai</div>
       <nav>
         <LayoutGroup>

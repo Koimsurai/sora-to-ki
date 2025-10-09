@@ -249,13 +249,25 @@ function SpaceDebris({ count = 200 }) {
 function Layout({ activeSection, onSectionChange }) {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
+  const isPhotoPage = location.pathname === '/photos';
 
   return (
     <div
       className="main-content-container"
       style={{ position: 'relative', zIndex: 10 }}
     >
-      {!isAdminPage && <Header activeSection={activeSection} style={{ position: 'sticky', top: 0, zIndex: 20 }} />}
+      {!isAdminPage && (
+        <Header 
+          activeSection={activeSection} 
+          style={{ 
+            position: 'sticky', 
+            top: 0, 
+            zIndex: 20,
+            transform: isPhotoPage ? 'translateY(-100%)' : 'translateY(0)',
+            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          }} 
+        />
+      )}
       <main>
         <Routes>
           <Route path="/" element={<MainPage onSectionChange={onSectionChange} />} />

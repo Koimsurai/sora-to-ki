@@ -205,16 +205,46 @@ function PhotoGallery() {
 
   return (
     <section id="photo-gallery" className="photo-gallery-section min-h-screen py-20 px-4 lg:px-8">
-      {/* 返回按鈕 */}
-      <Link 
-        to="/" 
-        className="back-button fixed top-24 left-8 z-50 flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 border border-gray-200 dark:border-gray-800"
+      {/* 返回按鈕 - 玻璃擬態風格 */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        <span className="font-medium">返回主頁</span>
-      </Link>
+        <Link 
+          to="/" 
+          className="back-button-glass fixed top-6 left-6 z-50 group"
+        >
+          <div className="relative">
+            {/* 玻璃擬態主體 */}
+            <div className="relative flex items-center gap-3 px-5 py-3 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-[0_8px_32px_0_rgba(99,102,241,0.15)] overflow-hidden transition-all duration-500 hover:bg-white/15 hover:border-white/30 hover:shadow-[0_12px_48px_0_rgba(99,102,241,0.25)] hover:scale-105">
+              {/* 玻璃反射效果 */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-50"></div>
+              
+              {/* 動態光暈背景 */}
+              <div className="absolute -inset-[100%] bg-gradient-conic from-blue-500 via-purple-500 to-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-700 blur-2xl animate-spin-slow"></div>
+              
+              {/* 圖標 */}
+              <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400/40 to-purple-400/40 backdrop-blur-sm group-hover:scale-110 transition-all duration-300 border border-white/20">
+                <svg className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transform group-hover:-translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </div>
+              
+              {/* 文字 */}
+              <span className="relative font-semibold text-white tracking-wide text-sm drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] group-hover:text-blue-100 transition-colors duration-300">
+                返回主頁
+              </span>
+              
+              {/* 微光效果 */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+              </div>
+            </div>
+          </div>
+        </Link>
+      </motion.div>
 
       {/* Masonry 瀑布流佈局 */}
       <div className="masonry-container max-w-7xl mx-auto">

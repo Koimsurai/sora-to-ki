@@ -13,7 +13,14 @@
   z-index: 1000;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 2px rgba(0, 0, 0, 0.9);
   box-shadow: 0 1px 5px rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 在照片頁面時隱藏整個導覽列 */
+.app-header.hidden-on-photos {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* 滾動後的背景效果 (受 Shiro 啟發) */
