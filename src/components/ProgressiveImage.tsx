@@ -52,16 +52,20 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
   }, [src, isCurrentImage]);
 
 
-  // Preload high-res image
+  // Preload high-res image only when it's the current image
   useEffect(() => {
-    setLoaded(false);
-    const img = new Image();
-    img.src = src;
-    img.onload = () => {
-      setLoaded(true);
-      onLoad?.();
-    };
-  }, [src, onLoad]);
+    // Only start loading if it's the current image and it hasn't loaded yet.
+    if (isCurrentImage && !loaded) {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        setLoaded(true);
+        onLoad?.();
+      };
+    }
+    // Do not reset 'loaded' state when isCurrentImage becomes false
+    // to keep already loaded images in high-res when swiping back.
+  }, [src, onLoad, isCurrentImage, loaded]);
 
   const handleWheel = useCallback((e: WheelEvent) => {
     if (!enableZoom || !isCurrentImage) return;
@@ -94,19 +98,26 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
     const newX = e.clientX - startPos.x;
     const newY = e.clientY - startPos.y;
     
-    // Basic boundary checks to prevent panning too far
+    // Boundary checks to prevent panning too far
     const container = containerRef.current;
     const image = imageRef.current;
     if (container && image) {
         const containerRect = container.getBoundingClientRect();
-        const imageWidth = image.width * scale;
-        const imageHeight = image.height * scale;
+        const imageWidth = image.naturalWidth * scale;
+        const imageHeight = image.naturalHeight * scale;
 
-        const maxPanX = (imageWidth - containerRect.width) / 2;
-        const maxPanY = (imageHeight - containerRect.height) / 2;
+        // Calculate how much the image exceeds the container
+        const excessWidth = Math.max(0, (imageWidth - containerRect.width) / 2);
+        const excessHeight = Math.max(0, (imageHeight - containerRect.height) / 2);
 
-        const clampedX = Math.max(-maxPanX, Math.min(newX, maxPanX));
-        const clampedY = Math.max(-maxPanY, Math.min(newY, maxPanY));
+        // Only clamp if the image is larger than the container in that dimension
+        const clampedX = excessWidth > 0 
+          ? Math.max(-excessWidth, Math.min(newX, excessWidth))
+          : 0; // Keep centered if image is smaller
+          
+        const clampedY = excessHeight > 0
+          ? Math.max(-excessHeight, Math.min(newY, excessHeight))
+          : 0; // Keep centered if image is smaller
         
         setPosition({ x: clampedX, y: clampedY });
     } else {
@@ -152,9 +163,13 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
         style={{
           width: '100%',
           height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           scale,
           translateX: position.x,
           translateY: position.y,
+          transformOrigin: 'center center',
         }}
       >
         {/* Thumbnail */}
@@ -168,10 +183,10 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
             transition={{ duration: 0.2 }}
             style={{
               position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              width: 'auto',
+              height: 'auto',
               objectFit: 'contain',
               filter: 'blur(10px)',
             }}
@@ -189,8 +204,10 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
           transition={{ duration: 0.5 }}
           draggable={false}
           style={{
-            width: '100%',
-            height: '100%',
+            maxWidth: '100%',
+            maxHeight: '100%',
+            width: 'auto',
+            height: 'auto',
             objectFit: 'contain',
           }}
         />

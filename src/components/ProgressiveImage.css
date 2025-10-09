@@ -1,6 +1,7 @@
 /* ProgressiveImage - 漸進式圖片載入樣式 */
 
-.progressive-image-container {
+/* ProgressiveImage wrapper styles */
+.progressive-image-wrapper {
   position: relative;
   width: 100%;
   height: 100%;
@@ -8,15 +9,22 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: transparent;
+}
+
+.progressive-image-panner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .progressive-image-placeholder,
 .progressive-image-thumb,
 .progressive-image-full {
-  position: absolute;
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
