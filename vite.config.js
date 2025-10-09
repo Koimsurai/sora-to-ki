@@ -111,7 +111,7 @@ export default defineConfig(({ command }) => {
       proxy: {
         // 將 /api 的請求代理到後端服務
         '/api': {
-          target: 'http://localhost:3001', // 後端服務在 Docker Compose 中的名稱和端口
+          target: 'http://backend:3001', // 後端服務在 Docker Compose 中的名稱和端口
           changeOrigin: true, // 改變請求來源，對於虛擬主機是必要的
           configure: (proxy, options) => {
             proxy.on('error', (err, req, res) => {

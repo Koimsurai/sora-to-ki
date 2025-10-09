@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { useInView } from 'react-intersection-observer'; // Import useInView
 import LoadingScreen from './components/LoadingScreen'; // Import LoadingScreen
+import BookshelfLoading from './components/BookshelfLoading'; // Import BookshelfLoading
 import Saturn3D from './components/Saturn3D';
 import IntroAnimation from './components/IntroAnimation';
 import Header from './components/Header';
@@ -42,6 +43,7 @@ const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
 const LazyNow = lazy(() => import('./components/Now'));
 const LazyBookshelf = lazy(() => import('./components/Bookshelf'));
+const LazyMusic = lazy(() => import('./components/Music'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -260,10 +262,11 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/photos" element={<Suspense fallback={<LoadingFallback />}><LazyPhotoGallery /></Suspense>} />
           <Route path="/blog" element={<Suspense fallback={<LoadingFallback />}><LazyBlog /></Suspense>} />
           <Route path="/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
-          <Route path="/bookshelf" element={<Suspense fallback={<LoadingFallback />}><LazyBookshelf /></Suspense>} />
+          <Route path="/bookshelf" element={<Suspense fallback={<BookshelfLoading />}><LazyBookshelf /></Suspense>} />
           <Route path="/activity" element={<Suspense fallback={<LoadingFallback />}><LazyActivity /></Suspense>} />
           <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />
           <Route path="/now" element={<Suspense fallback={<LoadingFallback />}><LazyNow /></Suspense>} />
+          <Route path="/music" element={<Suspense fallback={<LoadingFallback />}><LazyMusic /></Suspense>} />
           <Route path="/admin/login" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLogin /></Suspense>} />
           <Route path="/admin" element={<Suspense fallback={<LoadingFallback />}><LazyAdminPanel /></Suspense>} />
           <Route path="/admin/create" element={<Suspense fallback={<LoadingFallback />}><LazyAdvancedEditor /></Suspense>} />

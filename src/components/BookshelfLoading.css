@@ -1,0 +1,401 @@
+/* Bookshelf Loading - 主容器 */
+.bookshelf-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  opacity: 1;
+  transition: opacity 0.8s ease-out;
+}
+
+/* 背景粒子 */
+.bookshelf-loading-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.bookshelf-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #06b6d4;
+  border-radius: 50%;
+  animation: bookshelfParticleFloat 5s infinite;
+  opacity: 0.6;
+  box-shadow: 0 0 10px #06b6d4;
+}
+
+@keyframes bookshelfParticleFloat {
+  0% {
+    transform: translateY(100vh) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(100px);
+    opacity: 0;
+  }
+}
+
+/* 主要內容容器 */
+.bookshelf-loading-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  z-index: 2;
+}
+
+/* 3D 書籍圖標 */
+.bookshelf-loading-book-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bookshelf-loading-book {
+  position: relative;
+  width: 60px;
+  height: 80px;
+  transform-style: preserve-3d;
+  animation: bookshelfBookFloat 3s ease-in-out infinite;
+}
+
+.bookshelf-book-cover {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border-radius: 4px;
+  box-shadow: 
+    0 0 20px rgba(6, 182, 212, 0.5),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+  transform: translateZ(10px);
+}
+
+.bookshelf-book-page {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, #e0e0e0 0%, #f5f5f5 50%, #e0e0e0 100%);
+  border-radius: 4px;
+  animation: bookshelfPageFlip 2s ease-in-out infinite;
+}
+
+.bookshelf-book-page:nth-child(2) {
+  transform: translateZ(5px);
+  animation-delay: 0.3s;
+}
+
+.bookshelf-book-page:nth-child(3) {
+  transform: translateZ(2px);
+  animation-delay: 0.6s;
+}
+
+.bookshelf-book-page:nth-child(4) {
+  transform: translateZ(-1px);
+  animation-delay: 0.9s;
+}
+
+@keyframes bookshelfBookFloat {
+  0%, 100% {
+    transform: translateY(0) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotateY(180deg);
+  }
+}
+
+@keyframes bookshelfPageFlip {
+  0%, 100% {
+    transform: translateZ(5px) rotateY(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: translateZ(5px) rotateY(90deg);
+    opacity: 0.5;
+  }
+}
+
+/* 全息環 */
+.bookshelf-hologram-rings {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.bookshelf-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px solid;
+  border-radius: 50%;
+  animation: bookshelfRingPulse 2s ease-out infinite;
+}
+
+.bookshelf-ring-1 {
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  border-color: rgba(6, 182, 212, 0.6);
+  animation-delay: 0s;
+}
+
+.bookshelf-ring-2 {
+  width: 100px;
+  height: 100px;
+  margin: -50px 0 0 -50px;
+  border-color: rgba(168, 85, 247, 0.5);
+  animation-delay: 0.3s;
+}
+
+.bookshelf-ring-3 {
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-color: rgba(6, 182, 212, 0.4);
+  animation-delay: 0.6s;
+}
+
+@keyframes bookshelfRingPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+/* 進度條 */
+.bookshelf-loading-progress-container {
+  position: relative;
+  width: 400px;
+  max-width: 80vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.bookshelf-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 20px rgba(6, 182, 212, 0.2);
+  position: relative;
+}
+
+.bookshelf-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #06b6d4 0%, #a855f7 100%);
+  border-radius: 10px;
+  transition: width 0.3s ease-out;
+  position: relative;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+}
+
+.bookshelf-progress-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8));
+  animation: bookshelfGlowMove 1s ease-in-out infinite;
+}
+
+@keyframes bookshelfGlowMove {
+  0%, 100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-20px);
+    opacity: 1;
+  }
+}
+
+.bookshelf-progress-text {
+  font-size: 1.2em;
+  font-weight: 600;
+  color: #06b6d4;
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+  font-family: 'Courier New', monospace;
+}
+
+/* 加載文字 */
+.bookshelf-loading-text-container {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+}
+
+.bookshelf-loading-text {
+  font-size: 1.1em;
+  color: #e0e0e0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 300;
+}
+
+.bookshelf-loading-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.bookshelf-loading-dots span {
+  color: #06b6d4;
+  font-size: 1.5em;
+  animation: bookshelfDotBounce 1.4s infinite;
+}
+
+.bookshelf-loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.bookshelf-loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bookshelfDotBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 0.7;
+  }
+}
+
+/* 數據流效果 */
+.bookshelf-data-stream {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  opacity: 0.6;
+  width: 300px;
+}
+
+.bookshelf-data-line {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  color: #06b6d4;
+  animation: bookshelfDataFlow 3s ease-in-out infinite;
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+  letter-spacing: 1px;
+}
+
+.bookshelf-data-line span {
+  display: inline-block;
+}
+
+@keyframes bookshelfDataFlow {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+/* 掃描線效果 */
+.bookshelf-scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(6, 182, 212, 0.8) 50%, 
+    transparent 100%);
+  animation: bookshelfScanMove 3s linear infinite;
+  opacity: 0.6;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
+}
+
+@keyframes bookshelfScanMove {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .bookshelf-loading-book-container {
+    width: 100px;
+    height: 100px;
+  }
+
+  .bookshelf-loading-book {
+    width: 50px;
+    height: 70px;
+  }
+
+  .bookshelf-progress-bar-bg {
+    width: 90vw;
+  }
+
+  .bookshelf-loading-text {
+    font-size: 0.9em;
+  }
+
+  .bookshelf-progress-text {
+    font-size: 1em;
+  }
+
+  .bookshelf-data-stream {
+    bottom: 30px;
+    width: 90vw;
+  }
+
+  .bookshelf-data-line {
+    font-size: 0.75em;
+  }
+}

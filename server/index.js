@@ -964,6 +964,354 @@ apiRouter.get('/steam/achievements/:appid', (req, res) => {
   });
 });
 
+// --- Spotify API Routes ---
+const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
+const SPOTIFY_REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
+const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'https://koimsurai.blogsyte.com/api/spotify/callback';
+
+// Spotify 存取權杖快取
+let spotifyAccessToken = null;
+let spotifyTokenExpiry = null;
+
+// Spotify OAuth 授權端點 - 初始授權頁面
+apiRouter.get('/spotify/login', (req, res) => {
+  const scope = 'user-read-recently-played user-top-read user-read-private user-read-email';
+  const authUrl = 'https://accounts.spotify.com/authorize?' + 
+    new URLSearchParams({
+      response_type: 'code',
+      client_id: SPOTIFY_CLIENT_ID,
+      scope: scope,
+      redirect_uri: SPOTIFY_REDIRECT_URI
+    });
+  
+  res.redirect(authUrl);
+});
+
+// Spotify OAuth 回調端點 - 處理授權回調
+apiRouter.get('/spotify/callback', async (req, res) => {
+  const { code, error } = req.query;
+
+  if (error) {
+    return res.status(400).send(`授權失敗: ${error}`);
+  }
+
+  if (!code) {
+    return res.status(400).send('缺少授權碼');
+  }
+
+  try {
+    // 使用授權碼換取 access token 和 refresh token
+    const response = await axios.post('https://accounts.spotify.com/api/token',
+      new URLSearchParams({
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: SPOTIFY_REDIRECT_URI
+      }),
+      {
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    const { access_token, refresh_token, expires_in } = response.data;
+
+    // 顯示 refresh_token (只需要設定一次)
+    res.send(`
+      <html>
+        <head>
+          <title>Spotify 授權成功</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              min-height: 100vh;
+              margin: 0;
+              padding: 20px;
+            }
+            .container {
+              background: white;
+              border-radius: 12px;
+              box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+              padding: 40px;
+              max-width: 700px;
+              width: 100%;
+            }
+            h1 {
+              color: #1DB954;
+              margin-top: 0;
+              font-size: 32px;
+            }
+            .token-box {
+              background: #f5f5f5;
+              border: 2px solid #1DB954;
+              border-radius: 8px;
+              padding: 20px;
+              margin: 20px 0;
+              word-break: break-all;
+              font-family: 'Courier New', monospace;
+              font-size: 14px;
+              line-height: 1.6;
+            }
+            .label {
+              font-weight: bold;
+              color: #333;
+              margin-bottom: 10px;
+              font-size: 16px;
+            }
+            .instruction {
+              background: #fff3cd;
+              border-left: 4px solid #ffc107;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            }
+            .instruction h2 {
+              margin-top: 0;
+              color: #856404;
+              font-size: 20px;
+            }
+            .instruction ol {
+              margin: 10px 0;
+              padding-left: 20px;
+            }
+            .instruction li {
+              margin: 8px 0;
+              color: #856404;
+            }
+            .code {
+              background: #272822;
+              color: #f8f8f2;
+              padding: 15px;
+              border-radius: 6px;
+              overflow-x: auto;
+              margin: 10px 0;
+            }
+            button {
+              background: #1DB954;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 24px;
+              cursor: pointer;
+              font-size: 16px;
+              font-weight: bold;
+              margin-top: 20px;
+              transition: background 0.3s;
+            }
+            button:hover {
+              background: #1ed760;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>✅ Spotify 授權成功!</h1>
+            
+            <div class="instruction">
+              <h2>📝 設定步驟:</h2>
+              <ol>
+                <li>複製下方的 <strong>REFRESH_TOKEN</strong></li>
+                <li>打開 <code>server/.env</code> 檔案</li>
+                <li>新增或更新這一行:</li>
+              </ol>
+              <div class="code">SPOTIFY_REFRESH_TOKEN=你的_refresh_token</div>
+              <ol start="4">
+                <li>重啟後端服務器</li>
+                <li>完成! Music 頁面就能正常顯示了 🎵</li>
+              </ol>
+            </div>
+
+            <div class="token-box">
+              <div class="label">🔑 REFRESH_TOKEN (請複製此值):</div>
+              <div id="refreshToken">${refresh_token}</div>
+            </div>
+
+            <button onclick="copyToken()">📋 複製 Refresh Token</button>
+
+            <script>
+              function copyToken() {
+                const token = document.getElementById('refreshToken').innerText;
+                navigator.clipboard.writeText(token).then(() => {
+                  alert('✅ Refresh Token 已複製到剪貼簿!');
+                }).catch(err => {
+                  console.error('複製失敗:', err);
+                  alert('複製失敗,請手動選取並複製');
+                });
+              }
+            </script>
+          </div>
+        </body>
+      </html>
+    `);
+
+    console.log('\n=================================');
+    console.log('🎵 Spotify 授權成功!');
+    console.log('=================================');
+    console.log('請將以下 REFRESH_TOKEN 加入 server/.env:');
+    console.log(`SPOTIFY_REFRESH_TOKEN=${refresh_token}`);
+    console.log('=================================\n');
+
+  } catch (error) {
+    console.error('Spotify callback error:', error.response?.data || error.message);
+    res.status(500).send(`
+      <html>
+        <head><title>授權失敗</title></head>
+        <body style="font-family: Arial; padding: 40px; background: #f44336; color: white;">
+          <h1>❌ 授權失敗</h1>
+          <p>錯誤訊息: ${error.message}</p>
+          <p>請檢查 Spotify App 設定是否正確</p>
+        </body>
+      </html>
+    `);
+  }
+});
+
+// 取得 Spotify Access Token
+const getSpotifyAccessToken = async () => {
+  // 檢查是否有有效的快取 token
+  if (spotifyAccessToken && spotifyTokenExpiry && Date.now() < spotifyTokenExpiry) {
+    return spotifyAccessToken;
+  }
+
+  if (!SPOTIFY_CLIENT_ID || !SPOTIFY_CLIENT_SECRET || !SPOTIFY_REFRESH_TOKEN) {
+    throw new Error('Spotify credentials not configured');
+  }
+
+  try {
+    const response = await axios.post('https://accounts.spotify.com/api/token', 
+      `grant_type=refresh_token&refresh_token=${SPOTIFY_REFRESH_TOKEN}`,
+      {
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    spotifyAccessToken = response.data.access_token;
+    spotifyTokenExpiry = Date.now() + (response.data.expires_in * 1000) - 60000; // 提前 1 分鐘更新
+    return spotifyAccessToken;
+  } catch (error) {
+    console.error('Spotify token error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// 獲取最近播放的歌曲
+apiRouter.get('/spotify/recently-played', async (req, res) => {
+  try {
+    const token = await getSpotifyAccessToken();
+    const response = await axios.get('https://api.spotify.com/v1/me/player/recently-played', {
+      params: {
+        limit: 10
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Spotify recently played error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ 
+      error: 'Failed to fetch Spotify recently played',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// 獲取最常聽的曲風
+apiRouter.get('/spotify/top-genres', async (req, res) => {
+  try {
+    const token = await getSpotifyAccessToken();
+    
+    // 獲取最常聽的藝人
+    const artistsResponse = await axios.get('https://api.spotify.com/v1/me/top/artists', {
+      params: {
+        limit: 50,
+        time_range: 'medium_term' // 最近 6 個月
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    // 統計曲風
+    const genreCount = {};
+    artistsResponse.data.items.forEach(artist => {
+      artist.genres.forEach(genre => {
+        genreCount[genre] = (genreCount[genre] || 0) + 1;
+      });
+    });
+
+    // 排序並取前 5 名
+    const topGenres = Object.entries(genreCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([genre, count]) => ({ genre, count }));
+
+    res.json({ genres: topGenres });
+  } catch (error) {
+    console.error('Spotify top genres error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ 
+      error: 'Failed to fetch Spotify top genres',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// 獲取最常聽的歌曲
+apiRouter.get('/spotify/top-tracks', async (req, res) => {
+  try {
+    const token = await getSpotifyAccessToken();
+    const { time_range = 'medium_term', limit = 20 } = req.query;
+    
+    const response = await axios.get('https://api.spotify.com/v1/me/top/tracks', {
+      params: {
+        limit,
+        time_range // short_term, medium_term, long_term
+      },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Spotify top tracks error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ 
+      error: 'Failed to fetch Spotify top tracks',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
+// 獲取用戶資料
+apiRouter.get('/spotify/me', async (req, res) => {
+  try {
+    const token = await getSpotifyAccessToken();
+    const response = await axios.get('https://api.spotify.com/v1/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Spotify user error:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({ 
+      error: 'Failed to fetch Spotify user data',
+      details: error.response?.data || error.message
+    });
+  }
+});
+
 // --- WakaTime API Routes ---
 const WAKATIME_API_KEY = process.env.WAKATIME_API_KEY;
 
