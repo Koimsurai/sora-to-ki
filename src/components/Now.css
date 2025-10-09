@@ -86,6 +86,8 @@
   margin-bottom: 1.5rem;
   filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.6));
   display: inline-block;
+  font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
+  line-height: 1;
 }
 
 .now-title {
@@ -379,6 +381,8 @@
   border-radius: 12px;
   flex-shrink: 0;
   filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.4));
+  font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
+  line-height: 1;
 }
 
 .life-content {

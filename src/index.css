@@ -17,7 +17,7 @@
   --clr-light-gray: #f8f9fa;     /* 暫時保留，可能不再需要 */
 
 
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 

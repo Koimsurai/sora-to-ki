@@ -51,7 +51,7 @@ const Journey = () => {
       title: '攝影與美感培養',
       subtitle: '台科攝影社教學幹部',
       description: '擔任台科攝影社的教學幹部，樂於分享攝影知識並規劃教學內容。透過攝影培養美感與設計能力，並將各種照片紀錄發在 Instagram 上。攝影不僅是興趣，更成為我觀察世界、記錄生活的重要方式。',
-      icon: '�',
+      icon: '📷',
       color: '#f472b6',
       tags: ['攝影', '美感', '教學'],
       image: '🌌'
@@ -65,7 +65,7 @@ const Journey = () => {
       icon: '🎓',
       color: '#fb923c',
       tags: ['教學', 'Python', 'Scratch'],
-      image: '�‍🏫'
+      image: '👨‍🏫'
     },
     {
       id: 6,

@@ -59,7 +59,7 @@ const Now = () => {
         title: 'MSI 內部網頁後端',
         status: '進行中',
         description: '微星科技實習專案，負責後端系統開發',
-        icon: '�',
+        icon: '🏢',
         color: '#e60012',
         tech: ['C#', 'Python', 'ASP.NET']
       },
@@ -96,7 +96,7 @@ const Now = () => {
         id: 2,
         category: '攝影',
         content: '持續記錄生活點滴，將照片分享到 Instagram，培養美感與觀察力',
-        icon: '�',
+        icon: '📷',
         color: '#e91e63'
       },
       {
