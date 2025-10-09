@@ -17,7 +17,7 @@ const Now = () => {
   // 當前狀態數據 - 可以定期手動更新
   const currentStatus = {
     lastUpdated: '2025-10-08',
-    mood: '�',
+    mood: '👋',
     location: '台灣 台北 · 微星科技',
     weather: '☀️',
     
