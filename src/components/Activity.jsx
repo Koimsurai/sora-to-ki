@@ -51,9 +51,16 @@ const Activity = () => {
       checkServerStatus();
     }, 30000);
     
+    // 每10分鐘自動更新一次外部 API 資料 (Steam, GitHub, WakaTime)
+    const dataRefreshInterval = setInterval(() => {
+      console.log('🔄 自動更新外部 API 資料...');
+      fetchActivityData();
+    }, 10 * 60 * 1000); // 10 分鐘 = 600,000 毫秒
+    
     return () => {
       clearInterval(timeInterval);
       clearInterval(statusInterval);
+      clearInterval(dataRefreshInterval);
     };
   }, []);
 

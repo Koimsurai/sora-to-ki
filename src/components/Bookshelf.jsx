@@ -22,6 +22,17 @@ const Bookshelf = () => {
   useEffect(() => {
     fetchBooks();
     fetchStats();
+    
+    // 每15分鐘自動更新一次書籍資料
+    const dataRefreshInterval = setInterval(() => {
+      console.log('📚 自動更新書籍資料...');
+      fetchBooks();
+      fetchStats();
+    }, 15 * 60 * 1000); // 15 分鐘
+    
+    return () => {
+      clearInterval(dataRefreshInterval);
+    };
   }, []);
 
   useEffect(() => {

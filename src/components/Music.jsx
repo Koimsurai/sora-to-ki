@@ -32,6 +32,16 @@ const Music = () => {
 
   useEffect(() => {
     fetchMusicData();
+    
+    // 每10分鐘自動更新一次 Spotify 資料
+    const dataRefreshInterval = setInterval(() => {
+      console.log('🎵 自動更新 Spotify 資料...');
+      fetchMusicData();
+    }, 10 * 60 * 1000); // 10 分鐘
+    
+    return () => {
+      clearInterval(dataRefreshInterval);
+    };
   }, []);
 
   useEffect(() => {
