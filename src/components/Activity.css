@@ -1061,6 +1061,33 @@
   gap: 2rem;
 }
 
+.contribution-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.contribution-header .refresh-button {
+  background: rgba(138, 43, 226, 0.2);
+  border: 1px solid rgba(138, 43, 226, 0.4);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  color: #00aaff;
+}
+
+.contribution-header .refresh-button:hover {
+  background: rgba(138, 43, 226, 0.3);
+  border-color: rgba(138, 43, 226, 0.6);
+  transform: rotate(180deg) scale(1.1);
+}
+
+.contribution-header .refresh-button:active {
+  transform: rotate(360deg) scale(0.95);
+}
+
 .contribution-total {
   display: flex;
   align-items: baseline;
@@ -1140,6 +1167,14 @@
   transition: all 0.2s ease;
   position: relative;
   flex-shrink: 0;
+}
+
+/* 空白格子 (不完整的週) */
+.heatmap-day.level--1 {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  pointer-events: none;
 }
 
 .heatmap-day.level-0 {

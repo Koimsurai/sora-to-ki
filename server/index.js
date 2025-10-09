@@ -1322,7 +1322,7 @@ const getWakaTimeAuthHeader = () => {
   return `Basic ${base64Auth}`;
 };
 
-// 獲取今日統計
+// 獲取今日統計 (包含實際編碼時間)
 apiRouter.get('/wakatime/today', async (req, res) => {
   if (!WAKATIME_API_KEY) {
     return res.status(500).json({ 
@@ -1335,7 +1335,8 @@ apiRouter.get('/wakatime/today', async (req, res) => {
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
     
-    const response = await axios.get('https://wakatime.com/api/v1/users/current/summaries', {
+    // 獲取統計摘要
+    const summaryResponse = await axios.get('https://wakatime.com/api/v1/users/current/summaries', {
       params: {
         start: dateStr,
         end: dateStr,
@@ -1346,7 +1347,47 @@ apiRouter.get('/wakatime/today', async (req, res) => {
       timeout: 10000
     });
 
-    res.json(response.data);
+    // 獲取今天的 durations (實際編碼時段)
+    const durationsResponse = await axios.get('https://wakatime.com/api/v1/users/current/durations', {
+      params: {
+        date: dateStr,
+      },
+      headers: {
+        'Authorization': getWakaTimeAuthHeader()
+      },
+      timeout: 10000
+    });
+
+    // 從 durations 中提取第一個和最後一個時間
+    const durations = durationsResponse.data.data || [];
+    let actualStart = null;
+    let actualEnd = null;
+    
+    if (durations.length > 0) {
+      // 找到最早的開始時間
+      actualStart = durations.reduce((earliest, current) => {
+        const currentTime = current.time;
+        return !earliest || currentTime < earliest ? currentTime : earliest;
+      }, null);
+      
+      // 找到最晚的結束時間 (time + duration)
+      actualEnd = durations.reduce((latest, current) => {
+        const endTime = current.time + current.duration;
+        return !latest || endTime > latest ? endTime : latest;
+      }, null);
+    }
+
+    // 合併資料
+    const result = {
+      ...summaryResponse.data,
+      actualCodingTime: {
+        start: actualStart ? new Date(actualStart * 1000).toISOString() : null,
+        end: actualEnd ? new Date(actualEnd * 1000).toISOString() : null,
+        hasData: durations.length > 0
+      }
+    };
+
+    res.json(result);
   } catch (error) {
     console.error('WakaTime API Error:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({ 

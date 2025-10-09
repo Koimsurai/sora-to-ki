@@ -178,9 +178,15 @@ const Activity = () => {
         return;
       }
 
+      // 調試: 顯示完整的 WakaTime 資料結構
+      console.log('📊 WakaTime Today 原始資料:', todayData);
+      console.log('📊 WakaTime Today Data[0]:', todayData.data?.[0]);
+      console.log('📊 WakaTime 實際編碼時間:', todayData.actualCodingTime);
+      
       setWakatimeData({
         today: todayData.data?.[0] || null,
         week: weekData.data || null,
+        actualCodingTime: todayData.actualCodingTime || null,
         configured: true
       });
     } catch (error) {
@@ -208,8 +214,11 @@ const Activity = () => {
       // 獲取完整的貢獻數據 (使用 GitHub 貢獻圖 API)
       let contributionsData = null;
       try {
-        const contributionsResponse = await fetch(`https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=last`);
+        // 添加時間戳避免快取
+        const cacheBuster = new Date().getTime();
+        const contributionsResponse = await fetch(`https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=last&_=${cacheBuster}`);
         contributionsData = await contributionsResponse.json();
+        console.log('📊 GitHub 貢獻資料 (最後更新):', contributionsData?.contributions?.slice(-7)); // 顯示最近 7 天
       } catch (error) {
         console.warn('無法獲取完整貢獻數據，將使用事件數據:', error);
       }
@@ -256,12 +265,15 @@ const Activity = () => {
     }
 
     const contributions = apiData.contributions;
-    const weeks = 52;
     const daysInWeek = 7;
     const data = [];
     
-    // 按週分組
-    for (let i = 0; i < Math.min(weeks, Math.ceil(contributions.length / daysInWeek)); i++) {
+    console.log('📊 貢獻總天數:', contributions.length);
+    
+    // 按週分組 - 確保包含所有資料,即使最後一週不完整
+    const totalWeeks = Math.ceil(contributions.length / daysInWeek);
+    
+    for (let i = 0; i < totalWeeks; i++) {
       const weekData = [];
       for (let j = 0; j < daysInWeek; j++) {
         const index = i * daysInWeek + j;
@@ -273,13 +285,19 @@ const Activity = () => {
             count: count,
             level: count === 0 ? 0 : count <= 3 ? 1 : count <= 6 ? 2 : count <= 9 ? 3 : 4
           });
+        } else {
+          // 如果是不完整的週,填充空白天數
+          weekData.push({
+            date: '',
+            count: 0,
+            level: -1 // 用 -1 表示空白格子
+          });
         }
       }
-      if (weekData.length > 0) {
-        data.push(weekData);
-      }
+      data.push(weekData);
     }
 
+    console.log('📊 生成的週數:', data.length, '最後一週天數:', data[data.length - 1]?.length);
     setContributionData(data);
   };
 
@@ -917,17 +935,43 @@ const Activity = () => {
                         <div className="sub-stat">
                           <span className="label">開始時間</span>
                           <span className="value">
-                            {wakatimeData.today?.range?.start 
-                              ? new Date(wakatimeData.today.range.start).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
-                              : '--:--'}
+                            {(() => {
+                              const startTime = wakatimeData.actualCodingTime?.start;
+                              if (!startTime || !wakatimeData.actualCodingTime?.hasData) return '--:--';
+                              try {
+                                const date = new Date(startTime);
+                                return date.toLocaleTimeString('zh-TW', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit',
+                                  hour12: false,
+                                  timeZone: 'Asia/Taipei'
+                                });
+                              } catch (e) {
+                                console.error('解析開始時間失敗:', e);
+                                return '--:--';
+                              }
+                            })()}
                           </span>
                         </div>
                         <div className="sub-stat">
                           <span className="label">結束時間</span>
                           <span className="value">
-                            {wakatimeData.today?.range?.end 
-                              ? new Date(wakatimeData.today.range.end).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })
-                              : '--:--'}
+                            {(() => {
+                              const endTime = wakatimeData.actualCodingTime?.end;
+                              if (!endTime || !wakatimeData.actualCodingTime?.hasData) return '--:--';
+                              try {
+                                const date = new Date(endTime);
+                                return date.toLocaleTimeString('zh-TW', { 
+                                  hour: '2-digit', 
+                                  minute: '2-digit',
+                                  hour12: false,
+                                  timeZone: 'Asia/Taipei'
+                                });
+                              } catch (e) {
+                                console.error('解析結束時間失敗:', e);
+                                return '--:--';
+                              }
+                            })()}
                           </span>
                         </div>
                       </div>
@@ -1078,7 +1122,19 @@ const Activity = () => {
                   {contributionData.length > 0 && (
                     <>
                       <div className="contribution-header">
-                        <h3 className="section-subtitle">🔥 過去一年貢獻熱度</h3>
+                        <div className="header-left">
+                          <h3 className="section-subtitle">🔥 過去一年貢獻熱度</h3>
+                          <button 
+                            className="refresh-button"
+                            onClick={() => {
+                              console.log('🔄 手動刷新 GitHub 貢獻資料...');
+                              fetchGithubData();
+                            }}
+                            title="刷新貢獻資料"
+                          >
+                            🔄
+                          </button>
+                        </div>
                         {githubData?.contributions?.total && (
                           <div className="contribution-total">
                             <span className="total-number">{githubData.contributions.total[Object.keys(githubData.contributions.total)[0]]}</span>
