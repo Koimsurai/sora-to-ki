@@ -3,7 +3,7 @@
  * 支援 Swiper 輪播、模糊背景、底部縮圖導覽、右側 EXIF 面板
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKey } from 'react-use';
@@ -121,50 +121,50 @@ const PhotoViewer: React.FC = () => {
           </div>
         </div>
 
+        {/* 右上角按鈕組 */}
+        <div className="viewer-top-right-buttons" onClick={(e) => e.stopPropagation()}>
+          {/* 分享按鈕 */}
+          <button
+            className="action-btn action-btn-share"
+            onClick={(e) => {
+              e.stopPropagation();
+              // TODO: 實現分享功能
+              if (navigator.share) {
+                navigator.share({
+                  title: currentPhoto.title || '照片分享',
+                  text: `查看我的照片作品`,
+                  url: window.location.href,
+                }).catch(() => {});
+              }
+            }}
+            title="分享"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
+            </svg>
+          </button>
+
+          {/* 關閉按鈕 */}
+          <button
+            className="action-btn action-btn-close"
+            onClick={(e) => {
+              e.stopPropagation();
+              closeViewer();
+            }}
+            title="關閉 (ESC)"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
         {/* 主圖輪播區域 */}
         <div className="photo-viewer-main" ref={mainContainerRef}>
-          {/* 圖片區域右上方按鈕組 */}
-          <div className="image-action-buttons" onClick={(e) => e.stopPropagation()}>
-            {/* 分享按鈕 */}
-            <button
-              className="action-btn action-btn-share"
-              onClick={(e) => {
-                e.stopPropagation();
-                // TODO: 實現分享功能
-                if (navigator.share) {
-                  navigator.share({
-                    title: currentPhoto.title || '照片分享',
-                    text: `查看我的照片作品`,
-                    url: window.location.href,
-                  }).catch(() => {});
-                }
-              }}
-              title="分享"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                <polyline points="16 6 12 2 8 6" />
-                <line x1="12" y1="2" x2="12" y2="15" />
-              </svg>
-            </button>
-
-            {/* 關閉按鈕 */}
-            <button
-              className="action-btn action-btn-close"
-              onClick={(e) => {
-                e.stopPropagation();
-                closeViewer();
-              }}
-              title="關閉 (ESC)"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-
-          {/* 自定義導航按鈕 */}
+          {/* 自訂導航按鈕 - 上一張 */}
           <button className="custom-swiper-button-prev" onClick={(e) => e.stopPropagation()}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6" />

@@ -25,7 +25,6 @@ const GalleryThumbnail: React.FC<GalleryThumbnailProps> = ({
   photos,
   activeIndex,
   onThumbnailClick,
-  thumbsSwiper,
   onSwiper,
 }) => {
   return (
