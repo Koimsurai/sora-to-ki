@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss, FaClock, FaRoute } from 'react-icons/fa';
+import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss, FaClock, FaRoute, FaBook, FaMusic, FaFilm, FaCamera } from 'react-icons/fa';
 import { motion, LayoutGroup } from 'framer-motion';
 import './Header.css';
 
@@ -172,7 +172,7 @@ function Header({ activeSection }) {
               className={`more-menu-trigger ${location.pathname.startsWith('/blog') || location.pathname.startsWith('/bookshelf') || location.pathname.startsWith('/movies') || location.pathname.startsWith('/music') ? 'active' : ''}`}
               onClick={() => setShowBlogMenu(!showBlogMenu)}
             >
-              <FaBookOpen className="nav-icon" />
+              <FaRss className="nav-icon" />
               雜談
               <FaChevronDown className="nav-icon" style={{ fontSize: '0.8em' }} />
             </button>
@@ -196,7 +196,7 @@ function Header({ activeSection }) {
                   className="dropdown-item"
                   onClick={() => setShowBlogMenu(false)}
                 >
-                  <FaBookOpen className="dropdown-icon" />
+                  <FaBook className="dropdown-icon" />
                   <div className="dropdown-item-content">
                     <span className="dropdown-title">書櫃</span>
                     <span className="dropdown-desc">閱讀的書籍紀錄</span>
@@ -208,7 +208,7 @@ function Header({ activeSection }) {
                   className="dropdown-item"
                   onClick={() => setShowBlogMenu(false)}
                 >
-                  <FaImages className="dropdown-icon" />
+                  <FaFilm className="dropdown-icon" />
                   <div className="dropdown-item-content">
                     <span className="dropdown-title">片單</span>
                     <span className="dropdown-desc">觀影清單與心得</span>
@@ -220,7 +220,7 @@ function Header({ activeSection }) {
                   className="dropdown-item"
                   onClick={() => setShowBlogMenu(false)}
                 >
-                  <FaBookOpen className="dropdown-icon" />
+                  <FaMusic className="dropdown-icon" />
                   <div className="dropdown-item-content">
                     <span className="dropdown-title">音樂</span>
                     <span className="dropdown-desc">喜愛的音樂分享</span>
@@ -233,7 +233,7 @@ function Header({ activeSection }) {
           {/* 更多選單 (下拉式) */}
           <li className="more-menu-container" ref={moreMenuRef}>
             <button 
-              className={`more-menu-trigger ${showMoreMenu ? 'active' : ''}`}
+              className={`more-menu-trigger ${showMoreMenu || location.pathname.startsWith('/photos') || location.pathname.startsWith('/activity') || location.pathname.startsWith('/now') || location.pathname.startsWith('/journey') ? 'active' : ''}`}
               onClick={() => setShowMoreMenu(!showMoreMenu)}
             >
               <FaChevronDown className="nav-icon" />
@@ -242,6 +242,18 @@ function Header({ activeSection }) {
             
             {showMoreMenu && (
               <div className="more-dropdown">
+                <Link 
+                  to="/photos" 
+                  className="dropdown-item"
+                  onClick={() => setShowMoreMenu(false)}
+                >
+                  <FaCamera className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">照片</span>
+                    <span className="dropdown-desc">攝影作品集</span>
+                  </div>
+                </Link>
+                
                 <Link 
                   to="/activity" 
                   className="dropdown-item"

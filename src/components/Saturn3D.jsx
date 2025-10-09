@@ -4,6 +4,7 @@ import { OrbitControls, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 // 引入 ChromaticAberration
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
+import { usePageVisibility } from '../contexts/PageVisibilityContext'; // 導入 hook
 
 // 衛星元件
 function Satellite({ position, speed, size = 0.05 }) {
@@ -27,8 +28,8 @@ function Satellite({ position, speed, size = 0.05 }) {
   );
 }
 
-// Modify SaturnModel to accept the animate prop
-function SaturnModel({ animate }) {
+// Modify SaturnModel to accept the animate and isVisible prop
+function SaturnModel({ animate, isVisible }) {
   const groupRef = useRef(); // Restore ref
   const ringsRef = useRef(); // Ref for rings mesh
   const scrollRotationY = useRef(0); // Restore scroll rotation logic
@@ -66,7 +67,7 @@ function SaturnModel({ animate }) {
   }, []); // 空依賴數組，確保只在掛載和卸載時執行
 
   useFrame((state, delta) => {
-    if (groupRef.current) {
+    if (groupRef.current && isVisible) { // Check isVisible
       const targetRotationY = scrollRotationY.current + state.clock.elapsedTime * 0.05;
 
       currentRotationY.current = THREE.MathUtils.lerp(currentRotationY.current, targetRotationY, 0.05);
@@ -143,6 +144,7 @@ function SaturnModel({ animate }) {
 
 // Modify Saturn3D to accept and pass down the animate prop
 function Saturn3D({ animate }) {
+  const { isVisible } = usePageVisibility(); // Use the hook
 
   // Directly return 3D objects for App.jsx's Canvas to render
   return (
@@ -151,8 +153,8 @@ function Saturn3D({ animate }) {
       <ambientLight intensity={0.15} /> {/* 進一步降低環境光，最大化對比度 */}
       {/* Point light (simulating the sun), reduced intensity */}
       <pointLight position={[4.5, 3.5, 5.5]} intensity={400} castShadow /> {/* Intensity reduced from 800 to 400 */}
-      {/* Saturn model - pass the animate prop */}
-      <SaturnModel animate={animate} />
+      {/* Saturn model - pass the animate and isVisible prop */}
+      <SaturnModel animate={animate} isVisible={isVisible} />
       {/* Optional shadow plane */}
       {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3, 0]} receiveShadow>
         <planeGeometry args={[20, 20]} />
