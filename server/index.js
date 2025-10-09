@@ -1332,54 +1332,50 @@ apiRouter.get('/wakatime/today', async (req, res) => {
   }
 
   try {
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
-    
-    // 獲取統計摘要
-    const summaryResponse = await axios.get('https://wakatime.com/api/v1/users/current/summaries', {
-      params: {
-        start: dateStr,
-        end: dateStr,
-      },
-      headers: {
-        'Authorization': getWakaTimeAuthHeader()
-      },
-      timeout: 10000
-    });
+    // 優先使用前端傳來的日期，如果沒有則使用伺服器的 UTC 日期
+    const dateStr = req.query.date || new Date().toISOString().split('T')[0];
+    console.log(`🔄 [WakaTime] 開始獲取 ${dateStr} 的數據...`);
 
-    // 獲取今天的 durations (實際編碼時段)
-    const durationsResponse = await axios.get('https://wakatime.com/api/v1/users/current/durations', {
-      params: {
-        date: dateStr,
-      },
-      headers: {
-        'Authorization': getWakaTimeAuthHeader()
-      },
-      timeout: 10000
-    });
+    // 並行發起 API 請求
+    const [summaryResponse, durationsResponse] = await Promise.all([
+      axios.get('https://wakatime.com/api/v1/users/current/summaries', {
+        params: { start: dateStr, end: dateStr },
+        headers: { 'Authorization': getWakaTimeAuthHeader() },
+        timeout: 10000
+      }),
+      axios.get('https://wakatime.com/api/v1/users/current/durations', {
+        params: { date: dateStr },
+        headers: { 'Authorization': getWakaTimeAuthHeader() },
+        timeout: 10000
+      })
+    ]);
+    console.log('✅ [WakaTime] 所有 API 請求成功。');
 
     // 從 durations 中提取第一個和最後一個時間
     const durations = durationsResponse.data.data || [];
     let actualStart = null;
     let actualEnd = null;
-    
     if (durations.length > 0) {
-      // 找到最早的開始時間
       actualStart = durations.reduce((earliest, current) => {
         const currentTime = current.time;
         return !earliest || currentTime < earliest ? currentTime : earliest;
       }, null);
       
-      // 找到最晚的結束時間 (time + duration)
       actualEnd = durations.reduce((latest, current) => {
         const endTime = current.time + current.duration;
         return !latest || endTime > latest ? endTime : latest;
       }, null);
     }
 
-    // 合併資料
+    // 獲取 summaries API 的數據
+    const summaryData = summaryResponse.data.data[0] || {};
+    console.log('📊 [WakaTime] 從 summaries 獲取的 grand_total:', summaryData.grand_total?.text);
+
+    // 合併最終結果
     const result = {
-      ...summaryResponse.data,
+      data: [summaryData],
+      start: summaryResponse.data.start,
+      end: summaryResponse.data.end,
       actualCodingTime: {
         start: actualStart ? new Date(actualStart * 1000).toISOString() : null,
         end: actualEnd ? new Date(actualEnd * 1000).toISOString() : null,
@@ -1387,9 +1383,11 @@ apiRouter.get('/wakatime/today', async (req, res) => {
       }
     };
 
+    console.log('📤 [WakaTime] 準備回傳給前端的最終數據 (部分): grand_total.text = ', result.data[0]?.grand_total?.text);
     res.json(result);
+
   } catch (error) {
-    console.error('WakaTime API Error:', error.response?.data || error.message);
+    console.error('❌ [WakaTime] 處理 API 時發生錯誤:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json({ 
       error: 'Failed to fetch WakaTime today data',
       details: error.response?.data || error.message

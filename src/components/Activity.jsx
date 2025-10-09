@@ -161,8 +161,13 @@ const Activity = () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
+      // 獲取用戶本地時區的 YYYY-MM-DD 日期
+      const today = new Date();
+      const userLocalDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000));
+      const dateStr = userLocalDate.toISOString().split('T')[0];
+
       // 獲取今日統計
-      const todayResponse = await fetch(`${apiUrl}/wakatime/today`);
+      const todayResponse = await fetch(`${apiUrl}/wakatime/today?date=${dateStr}`);
       const todayData = await todayResponse.json();
 
       // 獲取本週統計
