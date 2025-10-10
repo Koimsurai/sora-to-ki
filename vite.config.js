@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'; // 引入 fs 模組來讀取憑證檔案
+import path from 'path'; // 引入 path 模組用於路徑別名
 
 console.log(`[VITE-CONFIG-LOAD] ${new Date().toISOString()} - vite.config.js file is being parsed.`);
 import { visualizer } from 'rollup-plugin-visualizer'; // 引入 visualizer
@@ -84,6 +85,12 @@ export default defineConfig(({ command }) => {
     // 生產環境時移除 console 和 debugger (提升效能和減少包大小)
     esbuild: {
       drop: command === 'build' ? ['console', 'debugger'] : [],
+    },
+    // 路徑別名配置 (支持 @/ 導入)
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
     // configureServer: (server) => { ... }, // <-- 原來的 configureServer 已移至插件
     plugins: [

@@ -1,0 +1,145 @@
+/* Monaco Editor 玻璃擬態風格 */
+
+/* 編輯器容器玻璃效果 */
+.monaco-editor-glass {
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.37),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+/* 工具欄玻璃效果 */
+.monaco-toolbar-glass {
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem 1rem 0 0;
+}
+
+/* 狀態欄玻璃效果 */
+.monaco-statusbar-glass {
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0 0 1rem 1rem;
+}
+
+/* Monaco Editor 內部樣式 */
+.monaco-editor-glass .monaco-editor {
+  background: transparent !important;
+}
+
+.monaco-editor-glass .monaco-editor .margin {
+  background: transparent !important;
+}
+
+.monaco-editor-glass .monaco-editor .monaco-scrollable-element {
+  background: transparent !important;
+}
+
+/* 編輯器文字發光效果 */
+.monaco-editor-glass .view-lines {
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* 選取區域玻璃效果 */
+.monaco-editor-glass .selected-text {
+  background: rgba(100, 149, 237, 0.2) !important;
+}
+
+/* 游標發光效果 */
+.monaco-editor-glass .cursor {
+  box-shadow: 0 0 8px rgba(100, 149, 237, 0.6);
+}
+
+/* 行號玻璃效果 */
+.monaco-editor-glass .line-numbers {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 滾動條玻璃效果 */
+.monaco-editor-glass .monaco-scrollable-element .scrollbar {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.monaco-editor-glass .monaco-scrollable-element .slider {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px;
+}
+
+.monaco-editor-glass .monaco-scrollable-element .slider:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 懸停提示玻璃效果 */
+.monaco-editor-glass .monaco-hover {
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* 建議框玻璃效果 */
+.monaco-editor-glass .suggest-widget {
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* 編輯器動畫效果 */
+.monaco-editor-glass {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.monaco-editor-glass:hover {
+  box-shadow: 
+    0 12px 40px 0 rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* 工具欄按鈕玻璃效果 */
+.monaco-toolbar-glass button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.monaco-toolbar-glass button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.monaco-toolbar-glass button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* 分隔線玻璃效果 */
+.monaco-toolbar-glass .separator {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .monaco-editor-glass {
+    border-radius: 0.75rem;
+  }
+  
+  .monaco-toolbar-glass {
+    padding: 0.5rem;
+  }
+}

@@ -298,6 +298,37 @@ apiRouter.get('/admin/posts', authMiddleware, (req, res) => {
   });
 });
 
+// GET a single post by id for admin (需要認證)
+apiRouter.get('/admin/posts/:id', authMiddleware, (req, res) => {
+  const sql = `
+    SELECT p.*, GROUP_CONCAT(t.name) as tags 
+    FROM posts p 
+    LEFT JOIN post_tags pt ON p.id = pt.post_id
+    LEFT JOIN tags t ON pt.tag_id = t.id
+    WHERE p.id = ?
+    GROUP BY p.id
+  `;
+  
+  db.get(sql, [req.params.id], (err, row) => {
+    if (err) {
+      console.error('查詢文章錯誤:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    
+    if (!row) {
+      res.status(404).json({ message: 'Post not found' });
+      return;
+    }
+    
+    res.json({
+      message: 'success',
+      ...row,
+      tags: row.tags ? row.tags.split(',') : []
+    });
+  });
+});
+
 // GET admin statistics
 apiRouter.get('/admin/stats', authMiddleware, (req, res) => {
   // 獲取文章統計
@@ -474,6 +505,25 @@ apiRouter.get('/tags', (req, res) => {
   });
 });
 
+// GET all tags for admin (需要認證)
+apiRouter.get('/admin/tags', authMiddleware, (req, res) => {
+  const sql = `
+    SELECT t.*, COUNT(pt.post_id) as post_count 
+    FROM tags t
+    LEFT JOIN post_tags pt ON t.id = pt.tag_id
+    GROUP BY t.id
+    ORDER BY t.name ASC
+  `;
+  
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
 // GET all categories
 apiRouter.get('/categories', (req, res) => {
   const sql = `
@@ -493,6 +543,25 @@ apiRouter.get('/categories', (req, res) => {
       message: "success",
       categories: rows
     });
+  });
+});
+
+// GET all categories for admin (需要認證)
+apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
+  const sql = `
+    SELECT category as name, category as id, COUNT(*) as post_count
+    FROM posts
+    WHERE category IS NOT NULL AND category != ''
+    GROUP BY category
+    ORDER BY category ASC
+  `;
+  
+  db.all(sql, [], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
   });
 });
 
@@ -1332,12 +1401,12 @@ apiRouter.get('/wakatime/today', async (req, res) => {
   }
 
   try {
-    // 優先使用前端傳來的日期，如果沒有則使用伺服器的 UTC 日期
-    const dateStr = req.query.date || new Date().toISOString().split('T')[0];
-    console.log(`🔄 [WakaTime] 開始獲取 ${dateStr} 的數據...`);
+    console.log('🔄 [WakaTime] 開始獲取今日數據...');
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
 
-    // 並行發起 API 請求
-    const [summaryResponse, durationsResponse] = await Promise.all([
+    // 並行發起所有 API 請求
+    const [summaryResponse, durationsResponse, allTimeResponse] = await Promise.all([
       axios.get('https://wakatime.com/api/v1/users/current/summaries', {
         params: { start: dateStr, end: dateStr },
         headers: { 'Authorization': getWakaTimeAuthHeader() },
@@ -1345,6 +1414,10 @@ apiRouter.get('/wakatime/today', async (req, res) => {
       }),
       axios.get('https://wakatime.com/api/v1/users/current/durations', {
         params: { date: dateStr },
+        headers: { 'Authorization': getWakaTimeAuthHeader() },
+        timeout: 10000
+      }),
+      axios.get('https://wakatime.com/api/v1/users/current/all_time_since_today', {
         headers: { 'Authorization': getWakaTimeAuthHeader() },
         timeout: 10000
       })
@@ -1367,9 +1440,26 @@ apiRouter.get('/wakatime/today', async (req, res) => {
       }, null);
     }
 
+    // 獲取更準確的總時間
+    const accurateTotal = allTimeResponse.data.data;
+    console.log('📊 [WakaTime] 從 all_time_since_today 獲取的總時間:', accurateTotal?.text);
+
     // 獲取 summaries API 的數據
     const summaryData = summaryResponse.data.data[0] || {};
-    console.log('📊 [WakaTime] 從 summaries 獲取的 grand_total:', summaryData.grand_total?.text);
+    console.log('📊 [WakaTime] 從 summaries 獲取的原始 grand_total:', summaryData.grand_total?.text);
+
+    // 覆蓋 grand_total
+    if (accurateTotal) {
+        summaryData.grand_total = {
+            ...(summaryData.grand_total || {}),
+            total_seconds: accurateTotal.total_seconds,
+            text: accurateTotal.text,
+            digital: accurateTotal.digital
+        };
+        console.log('🔧 [WakaTime] 已將 grand_total 更新為:', summaryData.grand_total.text);
+    } else {
+        console.warn('⚠️ [WakaTime] 未能從 all_time_since_today 獲取準確總時間。');
+    }
 
     // 合併最終結果
     const result = {

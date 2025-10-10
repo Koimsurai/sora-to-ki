@@ -2,21 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* 現代化暗色系主題 - 柔和色調 */
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 213 31% 91%;
+    
+    /* 柔和的藍灰色主色調 - 取代強烈的紫色 */
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+    --accent: 216 34% 17%;
+    --accent-foreground: 213 31% 91%;
+    
+    /* 柔和的警告色 */
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 217 91% 60%;
+    
+    /* 更大的圓角 - 更現代 */
+    --radius: 0.75rem;
+
+    /* 原有的 Happy Hues 調色板 */
+    --clr-bg-primary: #16161a;
+    --clr-bg-secondary: #242629;
+    --clr-headline: #fffffe;
+    --clr-paragraph: #94a1b2;
+    --clr-button: #7f5af0;
+    --clr-button-text: #fffffe;
+    --clr-stroke: #010101;
+    --clr-secondary: #72757e;
+    --clr-tertiary: #2cb67d;
+    --clr-white: #fffffe;
+    --clr-light-gray: #f8f9fa;
+  }
+
+  /* 亮色模式備選（如果需要切換） */
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262 83% 58%;
+  }
+}
+
 :root {
-  /* 新的 Happy Hues 調色板 */
-  --clr-bg-primary: #16161a;     /* 主要背景 */
-  --clr-bg-secondary: #242629;   /* 次要背景 */
-  --clr-headline: #fffffe;       /* 標題 */
-  --clr-paragraph: #94a1b2;      /* 段落/次要文字 */
-  --clr-button: #7f5af0;         /* 按鈕/高亮 */
-  --clr-button-text: #fffffe;    /* 按鈕文字 */
-  --clr-stroke: #010101;         /* 描邊/深色文字 */
-  --clr-secondary: #72757e;      /* 次要元素灰 */
-  --clr-tertiary: #2cb67d;       /* 第三點綴綠 */
-  --clr-white: #fffffe;          /* 白色 (與標題/按鈕文字同) */
-  --clr-light-gray: #f8f9fa;     /* 暫時保留，可能不再需要 */
-
-
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
   line-height: 1.5;
   font-weight: 400;

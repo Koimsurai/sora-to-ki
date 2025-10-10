@@ -37,8 +37,16 @@ const LazyTransitionAnimation = lazy(() => import('./components/TransitionAnimat
 const LazyBlog = lazy(() => import('./components/Blog'));
 const LazyBlogPost = lazy(() => import('./components/BlogPost'));
 const LazyAdminLogin = lazy(() => import('./components/AdminLogin'));
+const LazyAdminLoginNew = lazy(() => import('./components/admin/AdminLoginNew'));
 const LazyAdminPanel = lazy(() => import('./components/AdminPanel'));
+const LazyAdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+const LazyAdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 const LazyAdvancedEditor = lazy(() => import('./components/AdvancedEditor'));
+const LazyPostEditor = lazy(() => import('./components/admin/PostEditor'));
+const LazyPostsList = lazy(() => import('./components/admin/PostsList'));
+const LazyCategoriesManager = lazy(() => import('./components/admin/CategoriesManager'));
+const LazyTagsManager = lazy(() => import('./components/admin/TagsManager'));
+const LazyBooksManager = lazy(() => import('./components/admin/BooksManager'));
 const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
 const LazyNow = lazy(() => import('./components/Now'));
@@ -279,13 +287,28 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />
           <Route path="/now" element={<Suspense fallback={<LoadingFallback />}><LazyNow /></Suspense>} />
           <Route path="/music" element={<Suspense fallback={<LoadingFallback />}><LazyMusic /></Suspense>} />
-          <Route path="/admin/login" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLogin /></Suspense>} />
-          <Route path="/admin" element={<Suspense fallback={<LoadingFallback />}><LazyAdminPanel /></Suspense>} />
-          <Route path="/admin/create" element={<Suspense fallback={<LoadingFallback />}><LazyAdvancedEditor /></Suspense>} />
-          <Route path="/admin/edit/:id" element={<Suspense fallback={<LoadingFallback />}><LazyAdvancedEditor /></Suspense>} />
-          <Route path="/admin/posts" element={<AdminPlaceholder title="文章管理" />} />
-          <Route path="/admin/comments" element={<AdminPlaceholder title="留言審核" />} />
-          <Route path="/admin/stats" element={<AdminPlaceholder title="數據統計" />} />
+          
+          {/* 舊版後台路由 - 保留兼容性 */}
+          <Route path="/admin/login-old" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLogin /></Suspense>} />
+          <Route path="/admin-old" element={<Suspense fallback={<LoadingFallback />}><LazyAdminPanel /></Suspense>} />
+          
+          {/* 新版後台路由 - 使用 shadcn/ui 風格 */}
+          <Route path="/admin/login" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLoginNew /></Suspense>} />
+          <Route path="/admin/*" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <LazyAdminLayout />
+            </Suspense>
+          }>
+            <Route index element={<Suspense fallback={<LoadingFallback />}><LazyAdminDashboard /></Suspense>} />
+            <Route path="dashboard" element={<Suspense fallback={<LoadingFallback />}><LazyAdminDashboard /></Suspense>} />
+            <Route path="posts" element={<Suspense fallback={<LoadingFallback />}><LazyPostsList /></Suspense>} />
+            <Route path="posts/create" element={<Suspense fallback={<LoadingFallback />}><LazyPostEditor /></Suspense>} />
+            <Route path="posts/edit/:id" element={<Suspense fallback={<LoadingFallback />}><LazyPostEditor /></Suspense>} />
+            <Route path="categories" element={<Suspense fallback={<LoadingFallback />}><LazyCategoriesManager /></Suspense>} />
+            <Route path="tags" element={<Suspense fallback={<LoadingFallback />}><LazyTagsManager /></Suspense>} />
+            <Route path="books" element={<Suspense fallback={<LoadingFallback />}><LazyBooksManager /></Suspense>} />
+            <Route path="notes" element={<AdminPlaceholder title="日記管理" />} />
+          </Route>
         </Routes>
       </main>
       {!isAdminPage && (

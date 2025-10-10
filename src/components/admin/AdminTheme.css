@@ -1,0 +1,144 @@
+/* 後台系統現代化暗色主題樣式 */
+
+/* 確保後台頁面使用現代化暗色背景 */
+.admin-layout {
+  background: #0a0e27;
+  min-height: 100vh;
+}
+
+/* 現代化卡片樣式 - 更柔和的背景和邊框 */
+.admin-layout .bg-card {
+  background: #0f1629 !important;
+  border-color: rgba(59, 130, 246, 0.1) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 現代化表格樣式 */
+.admin-layout table {
+  background: transparent;
+}
+
+.admin-layout tbody tr {
+  border-color: rgba(59, 130, 246, 0.08);
+  transition: all 0.2s ease;
+}
+
+.admin-layout tbody tr:hover {
+  background: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* 現代化輸入框樣式 - 更柔和的配色 */
+.admin-layout input,
+.admin-layout select,
+.admin-layout textarea {
+  background: rgba(15, 22, 41, 0.5) !important;
+  border-color: rgba(59, 130, 246, 0.15) !important;
+  color: #e2e8f0 !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.2s ease;
+}
+
+.admin-layout input:hover,
+.admin-layout select:hover,
+.admin-layout textarea:hover {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.admin-layout input:focus,
+.admin-layout select:focus,
+.admin-layout textarea:focus {
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  background: rgba(15, 22, 41, 0.8) !important;
+}
+
+/* 現代化按鈕樣式 - 更柔和的配色和動畫 */
+.admin-layout button {
+  border-radius: 0.5rem !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-layout button[class*="bg-primary"] {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
+.admin-layout button[class*="bg-primary"]:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+.admin-layout button[class*="variant-outline"],
+.admin-layout button[class*="border"] {
+  border-color: rgba(59, 130, 246, 0.2) !important;
+  background: transparent !important;
+}
+
+.admin-layout button[class*="variant-outline"]:hover,
+.admin-layout button[class*="border"]:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+.admin-layout button[class*="variant-ghost"]:hover {
+  background: rgba(59, 130, 246, 0.08) !important;
+}
+
+/* 現代化下拉菜單和對話框 */
+.admin-layout [role="menu"],
+.admin-layout [role="dialog"] {
+  background: #0f1629 !important;
+  border-color: rgba(59, 130, 246, 0.15) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.1) !important;
+  border-radius: 0.75rem !important;
+}
+
+/* 現代化滾動條 */
+.admin-layout ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.admin-layout ::-webkit-scrollbar-track {
+  background: rgba(15, 22, 41, 0.3);
+  border-radius: 5px;
+}
+
+.admin-layout ::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 5px;
+  border: 2px solid rgba(15, 22, 41, 0.3);
+}
+
+.admin-layout ::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+/* 現代化分隔線 */
+.admin-layout hr,
+.admin-layout .separator {
+  border-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* 現代化 Badge 樣式 */
+.admin-layout [class*="badge"] {
+  border-radius: 0.375rem;
+  font-weight: 500;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* 成功狀態的 Badge */
+.admin-layout [class*="badge"][class*="default"] {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+/* 次要狀態的 Badge */
+.admin-layout [class*="badge"][class*="secondary"] {
+  background: rgba(148, 163, 184, 0.15);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #cbd5e1;
+}
