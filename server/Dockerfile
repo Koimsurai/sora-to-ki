@@ -1,23 +1,26 @@
-# Use the official Node.js 18 Alpine image.
+# 使用輕量的 Alpine Linux Node.js 映像 (與您之前在 compose 中使用的一致)
 FROM node:18-alpine
 
-# Set the working directory in the container
+# 安裝編譯 sqlite3 所需的系統依賴，以及 healthcheck 需要的 curl
+# RUN 指令只會在建置映像檔時執行一次，這會大幅加快後續啟動速度
+RUN apk add --no-cache python3 make g++ curl
+
+# 設定工作目錄
 WORKDIR /usr/src/app
 
-# Install build tools required for native modules like sqlite3
-RUN apk add --no-cache python3 make g++
-
-# Copy package.json and package-lock.json to the working directory
+# 複製 package.json 和 lock 檔案
+# 這是為了利用 Docker 的快取機制
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# 安裝 Node.js 依賴，並重建 sqlite3
+# 同樣，這一步也只會在建置時執行
+RUN npm install && npm rebuild sqlite3
 
-# Copy the rest of the application's source code from the host to the image's filesystem
+# 複製所有後端原始碼到工作目錄
 COPY . .
 
-# Expose the port the app runs on
+# 開放後端服務的端口
 EXPOSE 3001
 
-# Command to run the application
-CMD [ "npm", "run", "dev" ]
+# 設定容器啟動時要執行的預設指令 (通常是啟動 nodemon)
+CMD ["npm", "run", "dev"]
