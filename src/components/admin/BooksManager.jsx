@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Trash2, BookOpen, ExternalLink, Search, Loader2, Star } from 'lucide-react';
+import { Plus, Edit, Trash2, BookOpen, ExternalLink, Search, Loader2, Star, StarHalf } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BooksManager() {
@@ -144,8 +144,8 @@ export default function BooksManager() {
     try {
       const token = localStorage.getItem('adminToken');
       const url = editingBook 
-        ? `/api/admin/books/${editingBook.id}`
-        : '/api/admin/books';
+        ? `/api/books/${editingBook.id}`
+        : '/api/books';
       const method = editingBook ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -196,7 +196,7 @@ export default function BooksManager() {
 
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch(`/api/admin/books/${deleteId}`, {
+      const response = await fetch(`/api/books/${deleteId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -244,20 +244,19 @@ export default function BooksManager() {
 
   // 渲染星星評分
   const renderStars = (rating) => {
-    return (
-      <div className="flex gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            className={`h-4 w-4 ${
-              star <= (rating || 0)
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-muted-foreground'
-            }`}
-          />
-        ))}
-      </div>
-    );
+    const stars = [];
+    const numRating = parseFloat(rating) || 0;
+
+    for (let i = 1; i <= 5; i++) {
+      if (numRating >= i) {
+        stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
+      } else if (numRating >= i - 0.5) {
+        stars.push(<StarHalf key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
+      } else {
+        stars.push(<Star key={i} className="h-4 w-4 text-muted-foreground" />);
+      }
+    }
+    return <div className="flex gap-0.5">{stars}</div>;
   };
 
   if (isLoading) {
@@ -499,14 +498,15 @@ export default function BooksManager() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="rating">評分 (1-5)</Label>
+                    <Label htmlFor="rating">評分 (0-5)</Label>
                     <Input
                       id="rating"
                       type="number"
-                      min="1"
+                      min="0"
                       max="5"
+                      step="0.1"
                       value={formData.rating || ''}
-                      onChange={(e) => setFormData({ ...formData, rating: e.target.value ? parseInt(e.target.value) : null })}
+                      onChange={(e) => setFormData({ ...formData, rating: e.target.value ? parseFloat(e.target.value) : null })}
                       placeholder="5"
                     />
                   </div>

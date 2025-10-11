@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaStar, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
+import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import ZeroGravityLibrary from './ZeroGravityLibrary';
 import './Bookshelf.css';
 
@@ -119,17 +119,20 @@ const Bookshelf = () => {
   };
 
   const renderStars = (rating) => {
-    if (!rating) return <span className="no-rating">未評分</span>;
-    return (
-      <div className="stars">
-        {[1, 2, 3, 4, 5].map(star => (
-          <FaStar
-            key={star}
-            className={star <= rating ? 'star-filled' : 'star-empty'}
-          />
-        ))}
-      </div>
-    );
+    if (rating === null || rating === undefined) return <span className="no-rating">未評分</span>;
+    const stars = [];
+    const numRating = parseFloat(rating);
+
+    for (let i = 1; i <= 5; i++) {
+      if (numRating >= i) {
+        stars.push(<FaStar key={i} className="star-filled" />);
+      } else if (numRating >= i - 0.5) {
+        stars.push(<FaStarHalfAlt key={i} className="star-filled" />);
+      } else {
+        stars.push(<FaStar key={i} className="star-empty" />);
+      }
+    }
+    return <div className="stars">{stars}</div>;
   };
 
   const clearFilters = () => {

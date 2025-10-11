@@ -348,7 +348,7 @@ function initializeDatabase() {
         language TEXT,
         categories TEXT,
         reading_status TEXT DEFAULT 'to-read',
-        rating INTEGER,
+        rating REAL,
         personal_notes TEXT,
         date_added DATETIME DEFAULT CURRENT_TIMESTAMP,
         date_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -360,6 +360,21 @@ function initializeDatabase() {
         console.error('創建 books 表錯誤:', err);
       } else {
         console.log('books 表已就緒');
+        // Migration logic for rating column
+        db.all("PRAGMA table_info(books)", (err, columns) => {
+          if (err) return;
+          const ratingColumn = columns.find(c => c.name === 'rating');
+          if (ratingColumn && ratingColumn.type === 'INTEGER') {
+            console.log('正在遷移 books 表的 rating 欄位從 INTEGER 到 REAL...');
+            db.serialize(() => {
+              db.run("CREATE TABLE books_new (id INTEGER PRIMARY KEY AUTOINCREMENT, isbn TEXT, title TEXT NOT NULL, authors TEXT, publisher TEXT, published_date TEXT, description TEXT, cover_url TEXT, page_count INTEGER, language TEXT, categories TEXT, reading_status TEXT, rating REAL, personal_notes TEXT, date_added DATETIME, date_updated DATETIME, date_started DATETIME, date_finished DATETIME)");
+              db.run("INSERT INTO books_new SELECT id, isbn, title, authors, publisher, published_date, description, cover_url, page_count, language, categories, reading_status, rating, personal_notes, date_added, date_updated, date_started, date_finished FROM books");
+              db.run("DROP TABLE books");
+              db.run("ALTER TABLE books_new RENAME TO books");
+              console.log('books 表的 rating 欄位遷移成功。');
+            });
+          }
+        });
       }
     });
 
