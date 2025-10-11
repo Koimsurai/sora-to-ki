@@ -1,8 +1,15 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, 'db.sqlite');
+// Ensure the database directory exists
+const dbDir = path.join(__dirname, 'db');
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+const dbPath = path.join(dbDir, 'db.sqlite');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('資料庫連接失敗:', err.message);

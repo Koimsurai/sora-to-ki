@@ -161,3 +161,8 @@ button:focus:not(:focus-visible) {
 
 /* 移除舊的 light 模式 */
 /* @media (prefers-color-scheme: light) { ... } */
+
+/* Prevent scrollbars during intro animation */
+body.intro-animation-active {
+  overflow: hidden;
+}

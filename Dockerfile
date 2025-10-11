@@ -13,6 +13,10 @@ RUN npm install
 # Copy the rest of the application source code
 COPY . .
 
+# Set environment variable for production build
+# This tells Vite to use relative /api path instead of localhost:3001
+ENV VITE_API_URL=/api
+
 # Build the application for production
 RUN npm run build
 

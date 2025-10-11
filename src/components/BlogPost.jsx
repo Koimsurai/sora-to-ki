@@ -11,6 +11,17 @@ import Newsletter from './Newsletter';
 import MeteorShower from './MeteorShower';
 import './BlogPost.css';
 
+// --- Slugify utility ---
+const slugify = (text) => {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-') // Replace spaces with -
+    .replace(/[^\w\-\u4e00-\u9fa5]+/g, '') // Allow CJK characters
+    .replace(/--+/g, '-'); // Replace multiple - with single -
+};
+
 // --- CodeBlock Component for Syntax Highlighting ---
 const CodeBlock = ({ node, inline, className, children, ...props }) => {
   const [isCopied, setIsCopied] = useState(false);
@@ -140,20 +151,13 @@ function BlogPost() {
   const tocRef = useRef(null);
   const { id } = useParams();
 
-  // 使用 ref 追蹤渲染計數器
-  const headingCounterRef = useRef(0);
-  
-  // 在每次渲染前重置計數器
-  React.useLayoutEffect(() => {
-    headingCounterRef.current = 0;
-  });
-  
   // 創建標題組件
   const createHeading = useCallback((level) => {
     return ({ children, ...props }) => {
       const HeadingTag = `h${level}`;
-      const headingId = `heading-${headingCounterRef.current++}`;
-      return React.createElement(HeadingTag, { id: headingId, ...props }, children);
+      const text = React.Children.toArray(children).join('');
+      const id = slugify(text);
+      return React.createElement(HeadingTag, { id, ...props }, children);
     };
   }, []);
   
@@ -162,7 +166,9 @@ function BlogPost() {
     h2: createHeading(2),
     h3: createHeading(3),
     h4: createHeading(4)
-  }), [createHeading]);  useEffect(() => {
+  }), [createHeading]);
+
+  useEffect(() => {
     setLoading(true);
     // Fetch post data
     fetch(`/api/posts/${id}`)
@@ -200,21 +206,24 @@ function BlogPost() {
   useEffect(() => {
     if (!post?.content) return;
 
-    // 使用正則表達式提取標題
+    // First, remove code blocks to avoid capturing comments as headings
+    const contentWithoutCodeBlocks = post.content.replace(/```[\s\S]*?```/g, '');
+
     const headingRegex = /^(#{1,4})\s+(.+)$/gm;
     const matches = [];
     let match;
-    let localCounter = 0;
 
-    while ((match = headingRegex.exec(post.content)) !== null) {
+    while ((match = headingRegex.exec(contentWithoutCodeBlocks)) !== null) {
       const level = match[1].length;
       const text = match[2].trim();
-      const id = `heading-${localCounter++}`;
+      const id = slugify(text);
       matches.push({ id, text, level });
     }
 
     setHeadings(matches);
-  }, [post?.content]);  // 處理滾動進度和活動標題
+  }, [post?.content]);
+
+  // 處理滾動進度和活動標題
   useEffect(() => {
     if (!post) return;
 

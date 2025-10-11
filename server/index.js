@@ -1756,8 +1756,8 @@ apiRouter.get('/wakatime/today', async (req, res) => {
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
 
-    // 並行發起所有 API 請求
-    const [summaryResponse, durationsResponse, allTimeResponse] = await Promise.all([
+    // 並行發起 API 請求
+    const [summaryResponse, durationsResponse] = await Promise.all([
       axios.get('https://wakatime.com/api/v1/users/current/summaries', {
         params: { start: dateStr, end: dateStr },
         headers: { 'Authorization': getWakaTimeAuthHeader() },
@@ -1765,10 +1765,6 @@ apiRouter.get('/wakatime/today', async (req, res) => {
       }),
       axios.get('https://wakatime.com/api/v1/users/current/durations', {
         params: { date: dateStr },
-        headers: { 'Authorization': getWakaTimeAuthHeader() },
-        timeout: 10000
-      }),
-      axios.get('https://wakatime.com/api/v1/users/current/all_time_since_today', {
         headers: { 'Authorization': getWakaTimeAuthHeader() },
         timeout: 10000
       })
@@ -1791,26 +1787,9 @@ apiRouter.get('/wakatime/today', async (req, res) => {
       }, null);
     }
 
-    // 獲取更準確的總時間
-    const accurateTotal = allTimeResponse.data.data;
-    console.log('📊 [WakaTime] 從 all_time_since_today 獲取的總時間:', accurateTotal?.text);
-
     // 獲取 summaries API 的數據
     const summaryData = summaryResponse.data.data[0] || {};
-    console.log('📊 [WakaTime] 從 summaries 獲取的原始 grand_total:', summaryData.grand_total?.text);
-
-    // 覆蓋 grand_total
-    if (accurateTotal) {
-        summaryData.grand_total = {
-            ...(summaryData.grand_total || {}),
-            total_seconds: accurateTotal.total_seconds,
-            text: accurateTotal.text,
-            digital: accurateTotal.digital
-        };
-        console.log('🔧 [WakaTime] 已將 grand_total 更新為:', summaryData.grand_total.text);
-    } else {
-        console.warn('⚠️ [WakaTime] 未能從 all_time_since_today 獲取準確總時間。');
-    }
+    console.log('📊 [WakaTime] 從 summaries 獲取的總時間:', summaryData.grand_total?.text);
 
     // 合併最終結果
     const result = {

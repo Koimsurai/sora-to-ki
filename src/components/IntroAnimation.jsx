@@ -41,6 +41,15 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
   const callbackTimeoutRef = useRef(null); // For delayed onAnimationComplete
   // Removed delayedExplosionCallbackRef
 
+  // --- Body Overflow Control ---
+  useEffect(() => {
+    document.body.classList.add('intro-animation-active');
+
+    return () => {
+      document.body.classList.remove('intro-animation-active');
+    };
+  }, []);
+
   // --- Trail Update Logic using getPointAtLength ---
   const MAX_TRAIL_PARTICLES = 30; // Max number of particles per trail
   const PARTICLE_LIFETIME = 500; // Particle fades out in 500ms
