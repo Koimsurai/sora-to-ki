@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePageVisibility } from '../contexts/PageVisibilityContext'; // Import the hook
 import './Activity.css';
 
 const Activity = () => {
+  const { isVisible } = usePageVisibility(); // Use the hook
   const [steamData, setSteamData] = useState(null);
   const [githubData, setGithubData] = useState(null);
   const [wakatimeData, setWakatimeData] = useState(null);
@@ -48,13 +50,17 @@ const Activity = () => {
     
     // 每30秒檢查一次伺服器狀態
     const statusInterval = setInterval(() => {
-      checkServerStatus();
+      if (!document.hidden) { // Only check when page is visible
+        checkServerStatus();
+      }
     }, 30000);
     
     // 每10分鐘自動更新一次外部 API 資料 (Steam, GitHub, WakaTime)
     const dataRefreshInterval = setInterval(() => {
-      console.log('🔄 自動更新外部 API 資料...');
-      fetchActivityData();
+      if (!document.hidden) { // Only refresh when page is visible
+        console.log('🔄 自動更新外部 API 資料...');
+        fetchActivityData();
+      }
     }, 10 * 60 * 1000); // 10 分鐘 = 600,000 毫秒
     
     return () => {
@@ -381,7 +387,7 @@ const Activity = () => {
   }
 
   return (
-    <div className="activity-container" ref={containerRef}>
+    <div className={`activity-container ${!isVisible ? 'is-hidden' : ''}`} ref={containerRef}>
       {/* 星空背景效果 */}
       <div className="cosmic-background">
         <div className="stars-layer stars-small"></div>

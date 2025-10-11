@@ -7,15 +7,19 @@ import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postpro
 import { usePageVisibility } from '../contexts/PageVisibilityContext'; // 導入 hook
 
 // 衛星元件
-function Satellite({ position, speed, size = 0.05 }) {
+function Satellite({ position, speed, size = 0.05, isVisible }) { // Accept isVisible
   const meshRef = useRef();
+  const angleRef = useRef(Math.random() * Math.PI * 2); // Start at a random angle
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
+    if (!isVisible) return; // Pause animation when not visible
     if (meshRef.current) {
+      // Increment angle based on delta time
+      angleRef.current += speed * delta;
+      
       // 簡單的圓周運動
-      const time = state.clock.elapsedTime * speed;
-      meshRef.current.position.x = position[0] * Math.cos(time);
-      meshRef.current.position.z = position[0] * Math.sin(time); // 假設在 xz 平面環繞
+      meshRef.current.position.x = position[0] * Math.cos(angleRef.current);
+      meshRef.current.position.z = position[0] * Math.sin(angleRef.current); // 假設在 xz 平面環繞
       meshRef.current.position.y = position[1]; // 保持 y 軸位置
     }
   });
@@ -66,9 +70,14 @@ function SaturnModel({ animate, isVisible }) {
     };
   }, []); // 空依賴數組，確保只在掛載和卸載時執行
 
+  const saturnRotationRef = useRef(0); // Ref to accumulate auto-rotation
+
   useFrame((state, delta) => {
     if (groupRef.current && isVisible) { // Check isVisible
-      const targetRotationY = scrollRotationY.current + state.clock.elapsedTime * 0.05;
+      // Accumulate auto-rotation based on delta time
+      saturnRotationRef.current += 0.05 * delta;
+
+      const targetRotationY = scrollRotationY.current + saturnRotationRef.current;
 
       currentRotationY.current = THREE.MathUtils.lerp(currentRotationY.current, targetRotationY, 0.05);
 
@@ -136,8 +145,8 @@ function SaturnModel({ animate, isVisible }) {
         </mesh>
       </group>
       {/* 添加衛星 */}
-      <Satellite position={[2.5, 0.1, 0]} speed={0.3} size={0.04} />
-      <Satellite position={[3, -0.15, 0]} speed={0.2} size={0.06} />
+      <Satellite position={[2.5, 0.1, 0]} speed={0.3} size={0.04} isVisible={isVisible} />
+      <Satellite position={[3, -0.15, 0]} speed={0.2} size={0.06} isVisible={isVisible} />
     </group>
   );
 }

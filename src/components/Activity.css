@@ -1863,6 +1863,14 @@
   100% { transform: translateX(100%); }
 }
 
+/* Pause animations when page is not visible */
+.activity-container.is-hidden *,
+.activity-container.is-hidden *::before,
+.activity-container.is-hidden *::after {
+  animation-play-state: paused !important;
+}
+
+
 .language-percent {
   position: absolute;
   right: 8px;
