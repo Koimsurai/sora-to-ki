@@ -104,13 +104,10 @@ export const AdminLayout = () => {
       {/* Sidebar - Desktop */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-[#0f1629] border-r border-[rgba(59,130,246,0.1)] backdrop-blur-xl",
+          "fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-card/80 backdrop-blur-md border-r border-border/40",
           sidebarOpen ? "w-64" : "w-16",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
-        style={{
-          boxShadow: '2px 0 12px rgba(0, 0, 0, 0.3)'
-        }}
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
@@ -143,10 +140,10 @@ export const AdminLayout = () => {
                   key={item.id}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
                     !sidebarOpen && "justify-center"
                   )}
                 >
@@ -207,10 +204,7 @@ export const AdminLayout = () => {
       >
         {/* Header */}
         <header 
-          className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-[rgba(59,130,246,0.1)] bg-[#0f1629]/80 backdrop-blur-xl px-4 sm:px-6"
-          style={{
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
-          }}
+          className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-card/80 backdrop-blur-md px-4 sm:px-6"
         >
           <Button
             variant="ghost"
@@ -236,7 +230,7 @@ export const AdminLayout = () => {
         </header>
 
         {/* Content */}
-        <main className="p-4 sm:p-6">
+        <main className="min-h-screen bg-background p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

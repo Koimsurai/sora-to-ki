@@ -1,6 +1,9 @@
 volumes:
   backend-db:   # 定義 named volume 來持久化資料庫
 
+# 啟用 Docker BuildKit 的 Bake 功能以提升建置效能
+# 在您的 shell 環境中設定此變數: export COMPOSE_BAKE=true (Linux/macOS) 或 $env:COMPOSE_BAKE="true" (Windows PowerShell)
+
 services:
   frontend:
     build:
@@ -10,14 +13,6 @@ services:
     ports:
       # 【修改點】明確指定只綁定到 127.0.0.1
       - "127.0.0.1:13588:13579" 
-    volumes:
-      # 將主機的憑證檔案掛載到容器內的 /etc/certs/
-      # 注意：Compose 會自動處理 Windows 路徑轉換
-      - ./privkey.pem:/etc/certs/privkey.pem:ro # :ro 表示唯讀掛載 (建議)
-      - ./fullchain.pem:/etc/certs/fullchain.pem:ro # :ro 表示唯讀掛載 (建議)
-      # 掛載原始碼以實現熱重載
-      - .:/app
-      - /app/node_modules # 避免覆蓋容器內的 node_modules
     restart: unless-stopped # 設定容器重啟策略
     depends_on:
       backend:

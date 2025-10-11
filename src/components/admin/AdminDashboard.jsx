@@ -14,6 +14,8 @@ dayjs.locale('zh-tw');
 export const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalPosts: 0,
+    publishedPosts: 0,
+    draftPosts: 0,
     visitors: 0,
     comments: 0,
     growth: 0,
@@ -37,7 +39,7 @@ export const AdminDashboard = () => {
       if (postsResponse.ok) {
         const postsData = await postsResponse.json();
         setRecentPosts(postsData.posts || []);
-        setStats(prev => ({ ...prev, totalPosts: postsData.totalPosts || postsData.posts?.length || 0 }));
+        setStats(prev => ({ ...prev, totalPosts: postsData.total || postsData.posts?.length || 0 }));
       }
 
       // Fetch stats
@@ -98,7 +100,7 @@ export const AdminDashboard = () => {
               </Link>
             </Button>
             <Button variant="ghost" size="icon" asChild>
-              <Link to={`/admin/edit/${post.id}`}>
+              <Link to={`/admin/posts/edit/${post.id}`}>
                 <Edit className="h-4 w-4" />
               </Link>
             </Button>
@@ -135,61 +137,69 @@ export const AdminDashboard = () => {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Shadcn Admin Style */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">總文章數</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+              <FileText className="h-4 w-4 text-blue-500" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalPosts}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 text-green-500" /> +{Math.floor(stats.totalPosts * 0.1)} 本月
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="text-green-500">+{stats.postsThisMonth || Math.floor(stats.totalPosts * 0.1)}</span> 本月
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">訪客統計</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-purple-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.visitors || 1234}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 text-green-500" /> +12% 本週
+            <div className="text-2xl font-bold">{stats.visitors || 1665}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="text-green-500">+12%</span> 本週
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">留言總數</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
+              <MessageSquare className="h-4 w-4 text-green-500" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.comments || 56}</div>
-            <p className="text-xs text-muted-foreground">
-              <TrendingUp className="inline h-3 w-3 text-green-500" /> +{Math.floor((stats.comments || 56) * 0.05)} 本週
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="text-green-500">+{stats.commentsThisWeek || Math.floor((stats.comments || 56) * 0.05)}</span> 本週
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">成長率</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-orange-500" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{stats.growth || 23}%</div>
-            <p className="text-xs text-muted-foreground">較上月成長</p>
+            <p className="text-xs text-muted-foreground mt-1">較上月成長</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Recent Posts */}
-      <Card>
+      <Card className="border-border/40 bg-card/80 backdrop-blur-md">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>

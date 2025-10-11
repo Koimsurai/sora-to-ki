@@ -222,7 +222,7 @@ export default function TagsManager() {
       {/* Tags Grid */}
       <div className="flex flex-wrap gap-3">
         {tags.map((tag) => (
-          <Card key={tag.id} className="min-w-[200px]">
+          <Card key={tag.id} className="min-w-[200px] border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 flex-1">
@@ -260,7 +260,7 @@ export default function TagsManager() {
       </div>
 
       {tags.length === 0 && (
-        <Card>
+        <Card className="border-border/40 bg-card/80 backdrop-blur-md">
           <CardContent className="flex h-[200px] items-center justify-center">
             <div className="text-center text-muted-foreground">
               <Tag className="mx-auto h-12 w-12 opacity-20" />

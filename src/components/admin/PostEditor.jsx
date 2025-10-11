@@ -285,10 +285,20 @@ export default function PostEditor() {
       
       if (response.ok) {
         const data = await response.json();
-        setTags(data.map(tag => ({ label: tag.name, value: tag.id.toString() })));
+        console.log('✅ 載入標籤數據:', data);
+        const formattedTags = data.map(tag => ({ 
+          label: tag.name, 
+          value: tag.id.toString() 
+        }));
+        console.log('✅ 格式化後的標籤:', formattedTags);
+        setTags(formattedTags);
+      } else {
+        console.error('❌ 載入標籤失敗，狀態碼:', response.status);
+        toast.error('載入標籤失敗');
       }
     } catch (error) {
-      console.error('載入標籤失敗:', error);
+      console.error('❌ 載入標籤異常:', error);
+      toast.error('載入標籤失敗');
     }
   };
 
@@ -299,13 +309,18 @@ export default function PostEditor() {
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
       
+      // 轉換 tags 格式：從 [{label, value}] 轉為 ['tagName']
+      const tagsArray = Array.isArray(data.tags) 
+        ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
+        : [];
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...data, status: 'draft' }),
+        body: JSON.stringify({ ...data, tags: tagsArray, status: 'draft' }),
       });
 
       if (response.ok) {
@@ -332,13 +347,18 @@ export default function PostEditor() {
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
       
+      // 轉換 tags 格式：從 [{label, value}] 轉為 ['tagName']
+      const tagsArray = Array.isArray(data.tags) 
+        ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
+        : [];
+      
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...data, status: 'published' }),
+        body: JSON.stringify({ ...data, tags: tagsArray, status: 'published' }),
       });
 
       if (response.ok) {
@@ -369,8 +389,7 @@ export default function PostEditor() {
   return (
     <>
       {/* Header */}
-            {/* Header - 玻璃擬態 */}
-      <header className="sticky top-0 z-50 glass-effect">
+      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -473,7 +492,7 @@ export default function PostEditor() {
               {/* Right Column - Settings */}
               <div className="lg:col-span-1 space-y-6">
                 {/* Category & Tags */}
-                <Card className="glass-card">
+                <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-sm font-medium">
                       <Folder className="h-4 w-4 text-primary" />
@@ -500,7 +519,7 @@ export default function PostEditor() {
                             </FormControl>
                             <SelectContent>
                               {categories.map((cat) => (
-                                <SelectItem key={cat.id} value={cat.id.toString()}>
+                                <SelectItem key={cat.id} value={cat.name}>
                                   {cat.name}
                                 </SelectItem>
                               ))}
@@ -517,16 +536,16 @@ export default function PostEditor() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-xs text-muted-foreground">
-                            標籤
+                            標籤 ({tags.length} 個可用)
                           </FormLabel>
                           <FormControl>
                             <MultipleSelector
                               {...field}
                               options={tags}
-                              placeholder="選擇標籤..."
+                              placeholder={tags.length === 0 ? "載入中..." : "選擇標籤..."}
                               emptyIndicator={
                                 <p className="text-center text-sm text-muted-foreground">
-                                  沒有找到相關標籤
+                                  {tags.length === 0 ? "沒有可用標籤，請先在標籤管理中新增" : "沒有找到相關標籤"}
                                 </p>
                               }
                             />
@@ -539,7 +558,7 @@ export default function PostEditor() {
                 </Card>
 
                 {/* Publishing Options */}
-                <Card className="glass-card">
+                <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-sm font-medium">
                       <Clock className="h-4 w-4 text-primary" />
@@ -630,7 +649,7 @@ export default function PostEditor() {
                 </Card>
 
                 {/* Cover Image */}
-                <Card className="glass-card">
+                <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-sm font-medium">
                       <ImageIcon className="h-4 w-4 text-primary" />

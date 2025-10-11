@@ -194,7 +194,7 @@ export default function PostsList() {
       </div>
 
       {/* Posts Table */}
-      <Card>
+      <Card className="border-border/40 bg-card/80 backdrop-blur-md">
         <CardContent className="pt-6">
           {posts.length > 0 ? (
             <DataTable

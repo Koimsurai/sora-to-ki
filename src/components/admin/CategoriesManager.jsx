@@ -213,7 +213,7 @@ export default function CategoriesManager() {
       {/* Categories Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {categories.map((category) => (
-          <Card key={category.id}>
+          <Card key={category.id} className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
@@ -258,7 +258,7 @@ export default function CategoriesManager() {
       </div>
 
       {categories.length === 0 && (
-        <Card>
+        <Card className="border-border/40 bg-card/80 backdrop-blur-md">
           <CardContent className="flex h-[200px] items-center justify-center">
             <div className="text-center text-muted-foreground">
               <Folder className="mx-auto h-12 w-12 opacity-20" />

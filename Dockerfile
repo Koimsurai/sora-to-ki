@@ -1,21 +1,35 @@
-# 使用官方 Node.js LTS Debian 映像作為基礎
+# Stage 1: Build the application
 FROM node:20-bullseye AS builder
 
-# 在容器內建立並進入 /app 目錄
 WORKDIR /app
 
-# 僅複製 package.json 和 package-lock.json
-# 這樣可以利用 Docker 的快取機制,只有在依賴變更時才重新安裝
-COPY package*.json ./
+# Set the script shell to sh, in case it's set to powershell on the host
+RUN npm config set script-shell sh
 
-# 複製專案所有其他檔案
-# 因為有了 .dockerignore,這裡不會複製 node_modules
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the application source code
 COPY . .
 
-# 開放 Vite 開發伺服器預設的 port
-# 您 package.json 是 13579,這裡保持一致
+# Build the application for production
+RUN npm run build
+
+# Stage 2: Production server
+FROM node:20-bullseye
+
+WORKDIR /app
+
+# Copy built assets and package files from the builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+
+# Install production dependencies
+RUN npm install --production
+
+# Expose the port the app runs on
 EXPOSE 13579
 
-# 啟動開發伺服器時先安裝依賴
-# 這樣可以確保每次啟動時都有最新的依賴
-CMD sh -c "npm install --include=dev --legacy-peer-deps && npm run dev -- --host"
+# Start the app
+CMD ["npx", "serve", "-s", "dist", "-l", "13579"]

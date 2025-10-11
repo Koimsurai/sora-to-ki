@@ -2,13 +2,7 @@ import * as React from 'react';
 import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -26,6 +20,7 @@ export default function MultipleSelector({
 }) {
   const [open, setOpen] = React.useState(false);
   const [selected, setSelected] = React.useState(value);
+  const [search, setSearch] = React.useState('');
 
   React.useEffect(() => {
     setSelected(value);
@@ -46,57 +41,69 @@ export default function MultipleSelector({
     onChange?.(newSelected);
   };
 
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className={cn('space-y-2', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button
+            type="button"
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-start"
+            className="w-full justify-start cursor-pointer"
+            onClick={() => setOpen(!open)}
           >
             {selected.length > 0 ? `已選擇 ${selected.length} 項` : placeholder}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
-          <Command>
-            <CommandInput placeholder="搜尋..." />
-            <CommandEmpty>{emptyIndicator}</CommandEmpty>
-            <CommandGroup className="max-h-64 overflow-auto">
-              {options.map((option) => {
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 z-[100] pointer-events-auto">
+          <div className="p-2">
+            <Input
+              placeholder="搜尋..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="max-h-64 overflow-auto">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => {
                 const isSelected = selected.some((item) => item.value === option.value);
                 return (
-                  <CommandItem
+                  <div
                     key={option.value}
-                    onSelect={() => handleSelect(option)}
+                    onClick={() => handleSelect(option)}
+                    className="flex items-center gap-2 w-full p-2 cursor-pointer hover:bg-muted"
                   >
-                    <div className="flex items-center gap-2 w-full">
-                      <div
-                        className={cn(
-                          'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-                          isSelected
-                            ? 'bg-primary text-primary-foreground'
-                            : 'opacity-50 [&_svg]:invisible'
-                        )}
+                    <div
+                      className={cn(
+                        'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                        isSelected
+                          ? 'bg-primary text-primary-foreground'
+                          : 'opacity-50 [&_svg]:invisible'
+                      )}
+                    >
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          viewBox="0 0 24 24"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </div>
-                      <span>{option.label}</span>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     </div>
-                  </CommandItem>
+                    <span>{option.label}</span>
+                  </div>
                 );
-              })}
-            </CommandGroup>
-          </Command>
+              })
+            ) : (
+              emptyIndicator
+            )}
+          </div>
         </PopoverContent>
       </Popover>
 

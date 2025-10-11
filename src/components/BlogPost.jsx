@@ -386,17 +386,20 @@ function BlogPost() {
               <span className="meta-divider">|</span>
             )}
             <div className="post-tags">
-              {post.tags?.map((tag, index) => (
-                <motion.span 
-                  key={tag} 
-                  className="tag"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
-                >
-                  {tag}
-                </motion.span>
-              ))}
+              {post.tags?.map((tag, index) => {
+                const tagName = typeof tag === 'string' ? tag : (tag.name || tag.label || tag);
+                return (
+                  <motion.span 
+                    key={tagName} 
+                    className="tag"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
+                  >
+                    {tagName}
+                  </motion.span>
+                );
+              })}
             </div>
           </motion.div>
           <motion.h1 

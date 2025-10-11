@@ -396,9 +396,10 @@ const ListViewCard = React.memo(({ post, index }) => {
         )}
         {post.tags && post.tags.length > 0 && (
           <div className="list-view-tags">
-            {(Array.isArray(post.tags) ? post.tags : post.tags.split(',')).slice(0, 4).map((tag, i) => (
-              <span key={i} className="list-view-tag">#{tag}</span>
-            ))}
+            {(Array.isArray(post.tags) ? post.tags : post.tags.split(',')).slice(0, 4).map((tag, i) => {
+              const tagName = typeof tag === 'string' ? tag : (tag.name || tag.label || tag);
+              return <span key={i} className="list-view-tag">#{tagName}</span>;
+            })}
           </div>
         )}
       </div>
@@ -461,9 +462,10 @@ const TimelineView = React.memo(({ posts }) => {
                     <span className="timeline-category">{post.category}</span>
                   )}
                   <div className="timeline-tags">
-                    {(Array.isArray(post.tags) ? post.tags : post.tags.split(',')).slice(0, 3).map((tag, i) => (
-                      <span key={i} className="timeline-tag">#{tag}</span>
-                    ))}
+                    {(Array.isArray(post.tags) ? post.tags : post.tags.split(',')).slice(0, 3).map((tag, i) => {
+                      const tagName = typeof tag === 'string' ? tag : (tag.name || tag.label || tag);
+                      return <span key={i} className="timeline-tag">#{tagName}</span>;
+                    })}
                   </div>
                   {post.view_count > 0 && (
                     <div className="timeline-meta">

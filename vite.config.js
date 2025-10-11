@@ -5,7 +5,6 @@ import path from 'path'; // 引入 path 模組用於路徑別名
 
 console.log(`[VITE-CONFIG-LOAD] ${new Date().toISOString()} - vite.config.js file is being parsed.`);
 import { visualizer } from 'rollup-plugin-visualizer'; // 引入 visualizer
-import purgeCss from 'vite-plugin-purgecss'; // <--- 修改為預設導入
 
 // 自訂插件用於記錄 IP 和請求
 const MyIpLoggerPlugin = () => {
@@ -96,17 +95,8 @@ export default defineConfig(({ command }) => {
     plugins: [
       react(),
       MyIpLoggerPlugin(), // <-- 加入自訂插件
-      // 只在 build 指令時啟用 visualizer
-      ...(command === 'build' ? [visualizer({ open: true, gzipSize: true, brotliSize: true })] : []),
-      purgeCss({ // <--- PurgeCSS 插件設定
-        content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'], // 指定掃描的檔案
-        safelist: { // 保留可能被動態使用或 PurgeCSS 誤判的樣式
-          // 例如：保留所有以 'fade-' 開頭的類別 (如果有的話)
-          // greedy: [/fade-.*/]
-          // 保留特定的類別
-          // standard: ['active', 'modal-open']
-        }
-      })
+      // 只在 build 指令時啟用 visualizer (open: false 避免在 Docker 中打開瀏覽器)
+      ...(command === 'build' ? [visualizer({ open: false, gzipSize: true, brotliSize: true, filename: 'stats.html' })] : []),
     ],
     server: {
       host: '0.0.0.0', // 監聽所有網絡接口

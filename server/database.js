@@ -187,6 +187,58 @@ function initializeDatabase() {
       }
     });
 
+    // 創建分類表
+    db.run(`
+      CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        slug TEXT UNIQUE NOT NULL,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `, (err) => {
+      if (err) {
+        console.error('創建 categories 表錯誤:', err);
+      } else {
+        console.log('categories 表已就緒');
+        
+        // 檢查是否需要遷移現有的分類數據
+        db.all(`
+          SELECT DISTINCT category 
+          FROM posts 
+          WHERE category IS NOT NULL AND category != ''
+        `, [], (err, rows) => {
+          if (err) {
+            console.error('查詢現有分類失敗:', err);
+            return;
+          }
+          
+          if (rows && rows.length > 0) {
+            console.log(`發現 ${rows.length} 個現有分類，開始遷移...`);
+            
+            rows.forEach(row => {
+              const categoryName = row.category;
+              const slug = categoryName.toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\-\u4e00-\u9fa5]+/g, '');
+              
+              db.run(`
+                INSERT OR IGNORE INTO categories (name, slug, description)
+                VALUES (?, ?, ?)
+              `, [categoryName, slug, `自動遷移的分類: ${categoryName}`], (insertErr) => {
+                if (insertErr) {
+                  console.error(`遷移分類 "${categoryName}" 失敗:`, insertErr);
+                } else {
+                  console.log(`✓ 已遷移分類: ${categoryName}`);
+                }
+              });
+            });
+          }
+        });
+      }
+    });
+
     // 創建標籤表
     db.run(`
       CREATE TABLE IF NOT EXISTS tags (

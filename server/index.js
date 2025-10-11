@@ -508,10 +508,10 @@ apiRouter.get('/tags', (req, res) => {
 // GET all tags for admin (需要認證)
 apiRouter.get('/admin/tags', authMiddleware, (req, res) => {
   const sql = `
-    SELECT t.*, COUNT(pt.post_id) as post_count 
+    SELECT t.id, t.name, t.created_at, COUNT(pt.post_id) as post_count 
     FROM tags t
     LEFT JOIN post_tags pt ON t.id = pt.tag_id
-    GROUP BY t.id
+    GROUP BY t.id, t.name, t.created_at
     ORDER BY t.name ASC
   `;
   
@@ -524,14 +524,107 @@ apiRouter.get('/admin/tags', authMiddleware, (req, res) => {
   });
 });
 
-// GET all categories
+// POST create new tag
+apiRouter.post('/admin/tags', authMiddleware, (req, res) => {
+  const { name } = req.body;
+  
+  if (!name) {
+    return res.status(400).json({ error: '標籤名稱為必填' });
+  }
+
+  db.run(
+    `INSERT INTO tags (name, created_at) VALUES (?, datetime('now'))`,
+    [name],
+    function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          return res.status(409).json({ error: '標籤已存在' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.status(201).json({
+        id: this.lastID,
+        name: name,
+        post_count: 0
+      });
+    }
+  );
+});
+
+// PUT update tag
+apiRouter.put('/admin/tags/:id', authMiddleware, (req, res) => {
+  const tagId = req.params.id;
+  const { name } = req.body;
+  
+  if (!name) {
+    return res.status(400).json({ error: '標籤名稱為必填' });
+  }
+
+  db.run(
+    `UPDATE tags SET name = ? WHERE id = ?`,
+    [name, tagId],
+    function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          return res.status(409).json({ error: '標籤名稱已存在' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: '標籤不存在' });
+      }
+
+      res.json({
+        id: tagId,
+        name: name,
+        updated: this.changes
+      });
+    }
+  );
+});
+
+// DELETE tag
+apiRouter.delete('/admin/tags/:id', authMiddleware, (req, res) => {
+  const tagId = req.params.id;
+
+  // 先刪除關聯
+  db.run('DELETE FROM post_tags WHERE tag_id = ?', [tagId], (err) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+
+    // 再刪除標籤
+    db.run('DELETE FROM tags WHERE id = ?', [tagId], function(deleteErr) {
+      if (deleteErr) {
+        return res.status(500).json({ error: deleteErr.message });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: '標籤不存在' });
+      }
+
+      res.json({
+        message: '標籤已刪除'
+      });
+    });
+  });
+});
+
+// GET all categories (公開 API)
 apiRouter.get('/categories', (req, res) => {
   const sql = `
-    SELECT category, COUNT(*) as post_count
-    FROM posts
-    WHERE status = 'published' AND category IS NOT NULL AND category != ''
-    GROUP BY category
-    ORDER BY post_count DESC
+    SELECT 
+      c.id,
+      c.name,
+      c.slug,
+      c.description,
+      COUNT(p.id) as post_count
+    FROM categories c
+    LEFT JOIN posts p ON p.category = c.name AND p.status = 'published'
+    GROUP BY c.id, c.name, c.slug, c.description
+    ORDER BY post_count DESC, c.name ASC
   `;
   
   db.all(sql, [], (err, rows) => {
@@ -549,11 +642,18 @@ apiRouter.get('/categories', (req, res) => {
 // GET all categories for admin (需要認證)
 apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
   const sql = `
-    SELECT category as name, category as id, COUNT(*) as post_count
-    FROM posts
-    WHERE category IS NOT NULL AND category != ''
-    GROUP BY category
-    ORDER BY category ASC
+    SELECT 
+      c.id,
+      c.name,
+      c.slug,
+      c.description,
+      c.created_at,
+      c.updated_at,
+      COUNT(p.id) as post_count
+    FROM categories c
+    LEFT JOIN posts p ON p.category = c.name
+    GROUP BY c.id, c.name, c.slug, c.description, c.created_at, c.updated_at
+    ORDER BY c.name ASC
   `;
   
   db.all(sql, [], (err, rows) => {
@@ -562,6 +662,257 @@ apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
       return;
     }
     res.json(rows);
+  });
+});
+
+// POST create new category
+apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
+  const { name, description, slug } = req.body;
+  
+  if (!name) {
+    return res.status(400).json({ error: '分類名稱為必填' });
+  }
+
+  // 生成 slug（如果沒有提供）
+  const categorySlug = slug || name.toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-\u4e00-\u9fa5]+/g, '');
+
+  // 插入新分類
+  db.run(
+    `INSERT INTO categories (name, slug, description, created_at, updated_at) 
+     VALUES (?, ?, ?, datetime('now'), datetime('now'))`,
+    [name, categorySlug, description || ''],
+    function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          return res.status(409).json({ error: '分類名稱或 slug 已存在' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.status(201).json({
+        id: this.lastID,
+        name: name,
+        slug: categorySlug,
+        description: description || '',
+        post_count: 0
+      });
+    }
+  );
+});
+
+// PUT update category
+apiRouter.put('/admin/categories/:id', authMiddleware, (req, res) => {
+  const categoryId = req.params.id;
+  const { name, description, slug } = req.body;
+  
+  if (!name) {
+    return res.status(400).json({ error: '分類名稱為必填' });
+  }
+
+  // 先獲取舊的分類名稱
+  db.get('SELECT name FROM categories WHERE id = ?', [categoryId], (err, oldCategory) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!oldCategory) {
+      return res.status(404).json({ error: '分類不存在' });
+    }
+
+    const categorySlug = slug || name.toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-\u4e00-\u9fa5]+/g, '');
+
+    // 更新分類表
+    db.run(
+      `UPDATE categories 
+       SET name = ?, slug = ?, description = ?, updated_at = datetime('now')
+       WHERE id = ?`,
+      [name, categorySlug, description || '', categoryId],
+      function(updateErr) {
+        if (updateErr) {
+          if (updateErr.message.includes('UNIQUE constraint failed')) {
+            return res.status(409).json({ error: '分類名稱或 slug 已存在' });
+          }
+          return res.status(500).json({ error: updateErr.message });
+        }
+
+        // 如果分類名稱改變了，同步更新所有使用此分類的文章
+        if (oldCategory.name !== name) {
+          db.run(
+            'UPDATE posts SET category = ? WHERE category = ?',
+            [name, oldCategory.name],
+            (postsUpdateErr) => {
+              if (postsUpdateErr) {
+                console.error('更新文章分類失敗:', postsUpdateErr);
+              }
+            }
+          );
+        }
+
+        res.json({
+          id: categoryId,
+          name: name,
+          slug: categorySlug,
+          description: description || '',
+          updated: this.changes
+        });
+      }
+    );
+  });
+});
+
+// DELETE category
+apiRouter.delete('/admin/categories/:id', authMiddleware, (req, res) => {
+  const categoryId = req.params.id;
+
+  // 先獲取分類名稱
+  db.get('SELECT name FROM categories WHERE id = ?', [categoryId], (err, category) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (!category) {
+      return res.status(404).json({ error: '分類不存在' });
+    }
+
+    // 將使用此分類的文章的分類欄位設為 NULL
+    db.run(
+      'UPDATE posts SET category = NULL WHERE category = ?',
+      [category.name],
+      function(updateErr) {
+        if (updateErr) {
+          return res.status(500).json({ error: updateErr.message });
+        }
+
+        const affectedPosts = this.changes;
+
+        // 刪除分類
+        db.run(
+          'DELETE FROM categories WHERE id = ?',
+          [categoryId],
+          function(deleteErr) {
+            if (deleteErr) {
+              return res.status(500).json({ error: deleteErr.message });
+            }
+
+            res.json({
+              message: '分類已刪除',
+              affectedPosts: affectedPosts
+            });
+          }
+        );
+      }
+    );
+  });
+});
+
+// ===== Admin Posts CRUD =====
+
+// POST create new post (Admin)
+apiRouter.post('/admin/posts', authMiddleware, (req, res) => {
+  console.log('[POST /api/admin/posts] Received request to create a new post.');
+  console.log('[POST /api/admin/posts] Body:', req.body);
+  
+  const { title, content, excerpt, category, tags = [], status = 'draft' } = req.body;
+  
+  if (!title || !content) {
+    return res.status(400).json({ error: "缺少必填欄位: title, content" });
+  }
+
+  const sql = `
+    INSERT INTO posts (title, content, excerpt, category, status, author, created_at, updated_at) 
+    VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+  `;
+  const params = [title, content, excerpt, category || null, status, 'Koimsurai'];
+  
+  db.run(sql, params, function(err) {
+    if (err) {
+      console.error('[POST /api/admin/posts] Database error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+
+    const postId = this.lastID;
+    console.log(`[POST /api/admin/posts] Successfully inserted post with ID: ${postId}`);
+
+    // 處理標籤
+    manageTags(postId, tags, (tagErr) => {
+      if (tagErr) {
+        console.error('[POST /api/admin/posts] Tag management error:', tagErr);
+        return res.status(500).json({ error: tagErr.message });
+      }
+
+      res.status(201).json({
+        message: "success",
+        data: { id: postId, title, content, excerpt, category, tags, status }
+      });
+    });
+  });
+});
+
+// PUT update post (Admin)
+apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
+  console.log(`[PUT /api/admin/posts/${req.params.id}] Received request to update post.`);
+  console.log('[PUT /api/admin/posts/:id] Body:', req.body);
+  
+  const { title, content, excerpt, category, tags = [], status } = req.body;
+  const sql = `
+    UPDATE posts SET 
+      title = COALESCE(?, title), 
+      content = COALESCE(?, content), 
+      excerpt = COALESCE(?, excerpt),
+      category = ?,
+      status = COALESCE(?, status),
+      updated_at = datetime('now')
+    WHERE id = ?
+  `;
+  const params = [title, content, excerpt, category, status, req.params.id];
+
+  db.run(sql, params, function(err) {
+    if (err) {
+      console.error(`[PUT /api/admin/posts/${req.params.id}] Database error:`, err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: "文章不存在" });
+    }
+
+    // 處理標籤
+    manageTags(req.params.id, tags, (tagErr) => {
+      if (tagErr) {
+        console.error(`[PUT /api/admin/posts/${req.params.id}] Tag management error:`, tagErr);
+        return res.status(500).json({ error: tagErr.message });
+      }
+
+      res.json({
+        message: "success",
+        data: { id: req.params.id, title, content, excerpt, category, tags, status }
+      });
+    });
+  });
+});
+
+// DELETE post (Admin)
+apiRouter.delete('/admin/posts/:id', authMiddleware, (req, res) => {
+  console.log(`[DELETE /api/admin/posts/${req.params.id}] Received request to delete post.`);
+  
+  db.run('DELETE FROM posts WHERE id = ?', [req.params.id], function(err) {
+    if (err) {
+      console.error(`[DELETE /api/admin/posts/${req.params.id}] Database error:`, err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    
+    if (this.changes === 0) {
+      return res.status(404).json({ error: "文章不存在" });
+    }
+
+    res.json({ 
+      message: "文章已刪除",
+      deleted: this.changes 
+    });
   });
 });
 
@@ -1540,6 +1891,67 @@ apiRouter.get('/wakatime/projects', async (req, res) => {
 });
 
 // --- Books API Routes ---
+
+// GET all books for admin (需要認證)
+apiRouter.get('/admin/books', authMiddleware, (req, res) => {
+  const { status, rating, year, search, sortBy = 'date_added_desc' } = req.query;
+  
+  let sql = 'SELECT * FROM books WHERE 1=1';
+  const params = [];
+
+  if (status) {
+    sql += ' AND reading_status = ?';
+    params.push(status);
+  }
+
+  if (rating) {
+    sql += ' AND rating = ?';
+    params.push(parseInt(rating));
+  }
+
+  if (year) {
+    sql += ' AND published_date LIKE ?';
+    params.push(`${year}%`);
+  }
+
+  if (search) {
+    sql += ' AND (title LIKE ? OR authors LIKE ?)';
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  // Sorting
+  switch (sortBy) {
+    case 'date_added_asc':
+      sql += ' ORDER BY date_added ASC';
+      break;
+    case 'date_added_desc':
+      sql += ' ORDER BY date_added DESC';
+      break;
+    case 'title_asc':
+      sql += ' ORDER BY title ASC';
+      break;
+    case 'title_desc':
+      sql += ' ORDER BY title DESC';
+      break;
+    case 'rating_desc':
+      sql += ' ORDER BY rating DESC, date_added DESC';
+      break;
+    case 'published_date_desc':
+      sql += ' ORDER BY published_date DESC';
+      break;
+    default:
+      sql += ' ORDER BY date_added DESC';
+  }
+
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      console.error('查詢書籍錯誤:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json(rows);
+  });
+});
 
 // GET all books with filtering and sorting
 apiRouter.get('/books', (req, res) => {
