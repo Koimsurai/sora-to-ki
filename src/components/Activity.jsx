@@ -1008,9 +1008,8 @@ const Activity = () => {
                                   style={{
                                     background: `linear-gradient(90deg, ${getLanguageColorGradient(lang.name)})`
                                   }}
-                                >
-                                  <span className="language-percent">{lang.percent.toFixed(1)}%</span>
-                                </motion.div>
+                                />
+                                <span className="language-percent">{lang.percent.toFixed(1)}%</span>
                               </div>
                             </div>
                           ))}
@@ -1055,9 +1054,8 @@ const Activity = () => {
                                   whileInView={{ width: `${project.percent}%` }}
                                   viewport={{ once: true }}
                                   transition={{ duration: 0.8, delay: 0.2 + index * 0.05 }}
-                                >
-                                  <span className="project-percent">{project.percent.toFixed(1)}%</span>
-                                </motion.div>
+                                />
+                                <span className="project-percent">{project.percent.toFixed(1)}%</span>
                               </div>
                             </motion.div>
                           ))}

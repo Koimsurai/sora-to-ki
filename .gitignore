@@ -47,3 +47,4 @@ PHOTO_BUILDER_GUIDE.md
 PHOTO_GALLERY_REFACTOR.md
 IMPLEMENTATION_SUMMARY.md
 .env.docker
+server/db/db.sqlite
