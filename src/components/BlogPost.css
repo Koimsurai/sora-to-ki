@@ -247,9 +247,24 @@
   margin-top: 2.5em;
   margin-bottom: 1em;
   position: relative;
-  scroll-margin-top: 100px;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+.post-content h1 code,
+.post-content h2 code,
+.post-content h3 code,
+.post-content h4 code,
+.post-content h5 code,
+.post-content h6 code {
+  background: none;
+  color: inherit;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  padding: 0;
+  border: none;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .post-content h2 { 
