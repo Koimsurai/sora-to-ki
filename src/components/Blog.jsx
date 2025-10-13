@@ -31,18 +31,18 @@ function Blog() {
   });
   const [allTags, setAllTags] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Fetch posts when filters change
   useEffect(() => {
     fetchPosts();
-  }, [sortBy, selectedCategory, selectedTag, searchTerm]);
-
-  // Fetch tags and categories once on mount
-  useEffect(() => {
     fetchTags();
     fetchCategories();
-  }, []);
+    
+    // 清理函數：組件卸載時重置狀態
+    return () => {
+      // 重置滾動位置
+      window.scrollTo(0, 0);
+    };
+  }, [sortBy]);
   
   // 組件掛載時確保從頂部開始
   useEffect(() => {
@@ -58,36 +58,25 @@ function Blog() {
     setSelectedTag(tag);
   }, []);
 
-  const handleCategorySelect = useCallback((category) => {
-    setSelectedCategory(category);
-  }, []);
-
   const clearFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedTag('');
-    setSelectedCategory('');
   }, []);
 
   const fetchPosts = async () => {
     try {
-      if (isInitialLoad) {
-        setLoading(true);
-      }
-      const params = new URLSearchParams({
-        sortBy,
-        limit: 100, // You might want to add pagination later
-      });
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (selectedTag) params.append('tag', selectedTag);
-      if (searchTerm) params.append('search', searchTerm);
-
-      const response = await fetch(`/api/posts?${params.toString()}`);
+      setLoading(true);
+      const response = await fetch(`/api/posts?sortBy=${sortBy}&limit=100`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
+      
+      console.log('API response:', data);
+      console.log('Posts array:', data.posts);
+      console.log('Posts length:', data.posts ? data.posts.length : 'undefined');
       
       if (data.posts && Array.isArray(data.posts)) {
         const parsedPosts = data.posts.map(post => ({
@@ -97,6 +86,7 @@ function Blog() {
           date: new Date(post.created_at).toLocaleDateString('zh-TW')
         }));
         
+        console.log('Parsed posts:', parsedPosts);
         setPosts(parsedPosts);
         setPostsLoaded(true);
       } else {
@@ -107,10 +97,7 @@ function Blog() {
       console.error('Error fetching posts:', error);
       setError(`無法載入文章：${error.message}`);
     } finally {
-      if (isInitialLoad) {
-        setLoading(false);
-        setIsInitialLoad(false);
-      }
+      setLoading(false);
     }
     setPostsLoaded(true);
   };
@@ -132,7 +119,6 @@ function Blog() {
       const response = await fetch('/api/categories');
       const data = await response.json();
       if (data.categories) {
-        console.log('[Debug] Fetched Categories:', data.categories);
         setAllCategories(data.categories);
       }
     } catch (error) {
@@ -211,14 +197,13 @@ function Blog() {
             <p className="blog-section-subtitle">發現宇宙的無限可能</p>
           </div>
 
-          {console.log('[Debug] Rendering SearchAndFilter with categories:', allCategories)}
           <SearchAndFilter
             searchTerm={searchTerm}
             setSearchTerm={handleSearchChange}
             selectedTag={selectedTag}
             setSelectedTag={handleTagSelect}
             selectedCategory={selectedCategory}
-            setSelectedCategory={handleCategorySelect}
+            setSelectedCategory={setSelectedCategory}
             sortBy={sortBy}
             setSortBy={setSortBy}
             viewMode={viewMode}

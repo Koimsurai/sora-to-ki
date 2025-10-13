@@ -149,12 +149,12 @@ const SearchAndFilter = ({
             </button>
             {allCategories.map(cat => (
               <button
-                key={cat.name}
-                className={`filter-tag ${selectedCategory === cat.name ? 'active' : ''}`}
-                onClick={() => setSelectedCategory && setSelectedCategory(cat.name)}
+                key={cat.category}
+                className={`filter-tag ${selectedCategory === cat.category ? 'active' : ''}`}
+                onClick={() => setSelectedCategory && setSelectedCategory(cat.category)}
               >
                 <span className="tag-icon">📂</span>
-                {cat.name}
+                {cat.category}
                 <span className="tag-count">({cat.post_count})</span>
               </button>
             ))}
