@@ -6,6 +6,7 @@ import {
   FolderOpen,
   Tag,
   BookOpen,
+  Film,
   Menu,
   X,
   ChevronRight,
@@ -87,6 +88,7 @@ const sidebarItems = [
   { id: 'tags', icon: Tag, label: '標籤', path: '/admin/tags' },
   { id: 'notes', icon: BookOpen, label: '日記', path: '/admin/notes' },
   { id: 'books', icon: BookOpen, label: '書籍', path: '/admin/books' },
+  { id: 'collection', icon: Film, label: '收藏館', path: '/admin/collection' },
 ];
 
 export const AdminLayout = () => {

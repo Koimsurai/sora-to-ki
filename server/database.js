@@ -316,6 +316,26 @@ function initializeDatabase() {
             });
           } else {
             console.log('comments 表結構已是最新版本');
+                // 建立 collection_items 資料表
+                db.run(`CREATE TABLE IF NOT EXISTS collection_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    original_title TEXT,
+                    year INTEGER,
+                    poster_url TEXT,
+                    overview TEXT,
+                    external_id TEXT,
+                    collection_type TEXT NOT NULL,
+                    media_format TEXT NOT NULL,
+                    source TEXT DEFAULT 'manual',
+                    status TEXT DEFAULT 'completed',
+                    rating INTEGER,
+                    review TEXT,
+                    is_favorite BOOLEAN DEFAULT 0,
+                    watch_date DATE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );`);
           }
         });
       }

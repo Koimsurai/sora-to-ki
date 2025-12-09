@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss, FaClock, FaRoute, FaBook, FaMusic, FaFilm, FaCamera } from 'react-icons/fa';
+import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss, FaClock, FaRoute, FaBook, FaMusic, FaFilm, FaCamera, FaTv } from 'react-icons/fa';
 import { motion, LayoutGroup } from 'framer-motion';
 import './Header.css';
 
@@ -9,9 +9,11 @@ function Header({ activeSection }) {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showBlogMenu, setShowBlogMenu] = useState(false);
+  const [showCollectionMenu, setShowCollectionMenu] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const moreMenuRef = useRef(null);
   const blogMenuRef = useRef(null);
+  const collectionMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const isHomePage = location.pathname === '/';
@@ -52,16 +54,19 @@ function Header({ activeSection }) {
       if (blogMenuRef.current && !blogMenuRef.current.contains(event.target)) {
         setShowBlogMenu(false);
       }
+      if (collectionMenuRef.current && !collectionMenuRef.current.contains(event.target)) {
+        setShowCollectionMenu(false);
+      }
     };
 
-    if (showMoreMenu || showBlogMenu) {
+    if (showMoreMenu || showBlogMenu || showCollectionMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showMoreMenu, showBlogMenu]);
+  }, [showMoreMenu, showBlogMenu, showCollectionMenu]);
 
   // 處理導航點擊
   const handleNavClick = (e, sectionId) => {
@@ -240,6 +245,46 @@ function Header({ activeSection }) {
                   <div className="dropdown-item-content">
                     <span className="dropdown-title">音樂</span>
                     <span className="dropdown-desc">喜愛的音樂分享</span>
+                  </div>
+                </Link>
+              </div>
+            )}
+          </li>
+          
+          {/* 收藏館選單 (下拉式) */}
+          <li className="more-menu-container" ref={collectionMenuRef}>
+            <button 
+              className={`more-menu-trigger ${location.pathname.startsWith('/cinema') || location.pathname.startsWith('/anime') ? 'active' : ''}`}
+              onClick={() => setShowCollectionMenu(!showCollectionMenu)}
+            >
+              <FaFilm className="nav-icon" />
+              收藏館
+              <FaChevronDown className="nav-icon" style={{ fontSize: '0.8em' }} />
+            </button>
+            
+            {showCollectionMenu && (
+              <div className="more-dropdown">
+                <Link 
+                  to="/cinema" 
+                  className="dropdown-item"
+                  onClick={() => setShowCollectionMenu(false)}
+                >
+                  <FaFilm className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">電影院</span>
+                    <span className="dropdown-desc">觀影紀錄與評論</span>
+                  </div>
+                </Link>
+                
+                <Link 
+                  to="/anime" 
+                  className="dropdown-item"
+                  onClick={() => setShowCollectionMenu(false)}
+                >
+                  <FaTv className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">動漫閣</span>
+                    <span className="dropdown-desc">動畫追番紀錄</span>
                   </div>
                 </Link>
               </div>

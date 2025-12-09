@@ -22,7 +22,6 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useRef, useMemo } from 'react'; // Add useMemo
 import * as THREE from 'three'; // Import THREE
 import './App.css';
-import './components/AdminFixes.css';
 
 // --- Lazy Loaded Components ---
 const LazyAboutMe = lazy(() => import('./components/AboutMe'));
@@ -36,9 +35,7 @@ const LazyPhotoGallery = lazy(() => import('./components/PhotoGallery'));
 const LazyTransitionAnimation = lazy(() => import('./components/TransitionAnimation'));
 const LazyBlog = lazy(() => import('./components/Blog'));
 const LazyBlogPost = lazy(() => import('./components/BlogPost'));
-const LazyAdminLogin = lazy(() => import('./components/AdminLogin'));
 const LazyAdminLoginNew = lazy(() => import('./components/admin/AdminLoginNew'));
-const LazyAdminPanel = lazy(() => import('./components/AdminPanel'));
 const LazyAdminLayout = lazy(() => import('./components/admin/AdminLayout'));
 const LazyAdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 const LazyAdvancedEditor = lazy(() => import('./components/AdvancedEditor'));
@@ -47,11 +44,14 @@ const LazyPostsList = lazy(() => import('./components/admin/PostsList'));
 const LazyCategoriesManager = lazy(() => import('./components/admin/CategoriesManager'));
 const LazyTagsManager = lazy(() => import('./components/admin/TagsManager'));
 const LazyBooksManager = lazy(() => import('./components/admin/BooksManager'));
+const LazyCollectionManager = lazy(() => import('./components/admin/CollectionManager'));
 const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
 const LazyNow = lazy(() => import('./components/Now'));
 const LazyBookshelf = lazy(() => import('./components/Bookshelf'));
 const LazyMusic = lazy(() => import('./components/Music'));
+const LazyCinema = lazy(() => import('./components/Cinema'));
+const LazyAnime = lazy(() => import('./components/Anime'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -287,11 +287,8 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />
           <Route path="/now" element={<Suspense fallback={<LoadingFallback />}><LazyNow /></Suspense>} />
           <Route path="/music" element={<Suspense fallback={<LoadingFallback />}><LazyMusic /></Suspense>} />
-          
-          {/* 舊版後台路由 - 保留兼容性 */}
-          <Route path="/admin/login-old" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLogin /></Suspense>} />
-          <Route path="/admin-old" element={<Suspense fallback={<LoadingFallback />}><LazyAdminPanel /></Suspense>} />
-          
+          <Route path="/cinema" element={<Suspense fallback={<LoadingFallback />}><LazyCinema /></Suspense>} />
+          <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />
           {/* 新版後台路由 - 使用 shadcn/ui 風格 */}
           <Route path="/admin/login" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLoginNew /></Suspense>} />
           <Route path="/admin/*" element={
@@ -307,6 +304,7 @@ function Layout({ activeSection, onSectionChange }) {
             <Route path="categories" element={<Suspense fallback={<LoadingFallback />}><LazyCategoriesManager /></Suspense>} />
             <Route path="tags" element={<Suspense fallback={<LoadingFallback />}><LazyTagsManager /></Suspense>} />
             <Route path="books" element={<Suspense fallback={<LoadingFallback />}><LazyBooksManager /></Suspense>} />
+            <Route path="collection" element={<Suspense fallback={<LoadingFallback />}><LazyCollectionManager /></Suspense>} />
             <Route path="notes" element={<AdminPlaceholder title="日記管理" />} />
           </Route>
         </Routes>

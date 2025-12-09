@@ -2426,6 +2426,228 @@ apiRouter.post('/auth/reset-admin', async (req, res) => {
   }
 });
 
+// --- Collection (收藏館) API Routes ---
+
+// 1. 取得收藏項目
+apiRouter.get('/collection/:type', (req, res) => {
+  const { type } = req.params;
+  const { format, sort, favorite, limit } = req.query;
+  let sql = `SELECT * FROM collection_items WHERE collection_type = ?`;
+  let params = [type];
+  
+  if (format) {
+    sql += ' AND media_format = ?';
+    params.push(format);
+  }
+  
+  if (favorite === 'true') {
+    sql += ' AND is_favorite = 1';
+  }
+  
+  if (sort === 'rating') {
+    sql += ' ORDER BY rating DESC';
+  } else if (sort === 'watch_date') {
+    sql += ' ORDER BY watch_date DESC';
+  } else {
+    sql += ' ORDER BY created_at DESC';
+  }
+  
+  if (limit) {
+    sql += ' LIMIT ?';
+    params.push(Number(limit));
+  }
+  
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      console.error('查詢收藏項目錯誤:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ 
+      message: 'success',
+      items: rows 
+    });
+  });
+});
+
+// 2. 後台搜尋外部 API (TMDB/AniList)
+apiRouter.post('/collection/search-external', authMiddleware, async (req, res) => {
+  const { query, type } = req.body;
+  
+  if (!query || !type) {
+    return res.status(400).json({ error: '缺少必填參數: query, type' });
+  }
+  
+  try {
+    // TODO: 根據 type 串接 TMDB 或 AniList API
+    // type 可以是: 'movie', 'tv', 'anime'
+    
+    res.status(501).json({ 
+      error: 'Not implemented yet',
+      message: '此功能尚未實現，請先手動添加收藏項目'
+    });
+  } catch (error) {
+    console.error('搜尋外部 API 錯誤:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 3. 新增收藏項目
+apiRouter.post('/collection', authMiddleware, (req, res) => {
+  const item = req.body;
+  
+  // 驗證必填欄位
+  if (!item.title || !item.collection_type || !item.media_format) {
+    return res.status(400).json({ 
+      error: '缺少必填欄位: title, collection_type, media_format' 
+    });
+  }
+  
+  const fields = Object.keys(item).join(', ');
+  const placeholders = Object.keys(item).map(() => '?').join(', ');
+  const values = Object.values(item);
+  
+  db.run(
+    `INSERT INTO collection_items (${fields}) VALUES (${placeholders})`,
+    values,
+    function(err) {
+      if (err) {
+        console.error('新增收藏項目錯誤:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ 
+        message: '收藏項目已新增',
+        id: this.lastID 
+      });
+    }
+  );
+});
+
+// 4. 更新收藏項目
+apiRouter.put('/collection/:id', authMiddleware, (req, res) => {
+  const { id } = req.params;
+  const item = req.body;
+  
+  if (Object.keys(item).length === 0) {
+    return res.status(400).json({ error: '沒有要更新的欄位' });
+  }
+  
+  const updates = Object.keys(item).map(key => `${key} = ?`).join(', ');
+  const values = [...Object.values(item), id];
+  
+  db.run(
+    `UPDATE collection_items SET ${updates}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+    values,
+    function(err) {
+      if (err) {
+        console.error('更新收藏項目錯誤:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({ error: '收藏項目不存在' });
+      }
+      
+      res.json({ 
+        message: '收藏項目已更新',
+        changes: this.changes 
+      });
+    }
+  );
+});
+
+// 5. 刪除收藏項目
+apiRouter.delete('/collection/:id', authMiddleware, (req, res) => {
+  const { id } = req.params;
+  
+  db.run(
+    `DELETE FROM collection_items WHERE id = ?`,
+    [id],
+    function(err) {
+      if (err) {
+        console.error('刪除收藏項目錯誤:', err);
+        return res.status(500).json({ error: err.message });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({ error: '收藏項目不存在' });
+      }
+      
+      res.json({ 
+        message: '收藏項目已刪除',
+        changes: this.changes 
+      });
+    }
+  );
+});
+
+// 6. n8n 批次匯入
+apiRouter.post('/sync/collection', (req, res) => {
+  const apiKey = req.headers['x-api-key'];
+  
+  // 驗證 API Key
+  if (!process.env.N8N_SYNC_API_KEY) {
+    return res.status(500).json({ 
+      error: 'N8N_SYNC_API_KEY 未設定',
+      message: '請在 server/.env 中設置 N8N_SYNC_API_KEY' 
+    });
+  }
+  
+  if (apiKey !== process.env.N8N_SYNC_API_KEY) {
+    return res.status(403).json({ error: 'Invalid API Key' });
+  }
+  
+  const items = req.body.items;
+  
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'items 必須是非空陣列' });
+  }
+  
+  let inserted = 0;
+  let errors = [];
+  
+  const stmt = db.prepare(`
+    INSERT INTO collection_items (
+      title, original_title, year, poster_url, overview, 
+      external_id, collection_type, media_format, source, 
+      status, rating, review, is_favorite, watch_date
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  for (const item of items) {
+    stmt.run([
+      item.title,
+      item.original_title || null,
+      item.year || null,
+      item.poster_url || null,
+      item.overview || null,
+      item.external_id || null,
+      item.collection_type,
+      item.media_format,
+      item.source || 'n8n_import',
+      item.status || 'completed',
+      item.rating || null,
+      item.review || null,
+      item.is_favorite ? 1 : 0,
+      item.watch_date || null
+    ], err => {
+      if (err) {
+        errors.push({ title: item.title, error: err.message });
+      } else {
+        inserted++;
+      }
+    });
+  }
+  
+  stmt.finalize(() => {
+    res.json({ 
+      message: '批次匯入完成',
+      inserted,
+      total: items.length,
+      errors: errors.length > 0 ? errors : undefined
+    });
+  });
+});
+
 app.use('/api', apiRouter);
 
 // Default response for any other request
