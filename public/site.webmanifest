@@ -1,0 +1,18 @@
+{
+  "name": "Koimsurai - 楊泰和的個人網站",
+  "short_name": "Koimsurai",
+  "description": "全端工程師楊泰和的個人品牌網站，展示作品集、技術筆記、攝影作品與個人配備。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#16161a",
+  "theme_color": "#7f5af0",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -13,8 +13,9 @@ const portfolioItems = [
     category: 'App 開發 (進行中)',
     title: 'VoltiCar - 碳權電動車 App',
     description: '開發一款結合碳權概念、電動車充電資訊與遊戲化元素的 App。目標是鼓勵綠色能源行動，提供便捷充電體驗與趣味互動。目前專案正在開發中 (In Progress)，已完成後端架構設計與核心 API 開發。',
-    imageUrl: voltiCarTitleImage, // 使用導入的 VoltiCar 圖片
-    link: '#' // 暫無連結，或可放 GitHub Repo (若有)
+    imageUrl: 'https://img.youtube.com/vi/eKIJcSIVak0/maxresdefault.jpg',
+    youtubeUrl: 'https://www.youtube.com/watch?v=eKIJcSIVak0',
+    link: 'https://www.youtube.com/watch?v=eKIJcSIVak0'
   },
   {
     id: 2,
@@ -76,21 +77,15 @@ function Portfolio() {
               <span className="portfolio-category">{item.category}</span> {/* 使用舊的 class name */}
               <h3>{item.title}</h3>
               <p>{item.description}</p>
-              {/* 修正條件渲染語法，並為 id: 1 添加特殊處理 */}
-              {item.id === 1 ? (
-                <span className="portfolio-link disabled-link">開發中...</span> // 使用 span 並添加 disabled 樣式
-              ) : (
-                item.link && (
-                  item.link.startsWith('/') ? (
-                    <Link to={item.link} className="portfolio-link">
-                      {/* 根據 ID 顯示不同文字，保持攝影集連結文字 */}
-                      {item.id === 3 ? '查看詳情' : '查看詳情'}
-                    </Link>
-                  ) : (
-                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="portfolio-link">
-                      {item.id === 2 ? '查看原始碼' : '查看詳情'}
-                    </a>
-                  )
+              {item.link && (
+                item.link.startsWith('/') ? (
+                  <Link to={item.link} className="portfolio-link">
+                    {item.id === 3 ? '查看詳情' : '查看詳情'}
+                  </Link>
+                ) : (
+                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="portfolio-link">
+                    {item.youtubeUrl ? '▶ 觀看介紹影片' : (item.id === 2 ? '查看原始碼' : '查看詳情')}
+                  </a>
                 )
               )}
             </div>

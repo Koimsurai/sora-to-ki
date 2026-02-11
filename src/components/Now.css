@@ -1,665 +1,573 @@
-/* ==================== Now 當前狀態頁面 ==================== */
+/* ==================== /now 頁面 — 星雲 (Nebula) 主題 ==================== */
 
-.now-container {
-  min-height: 100vh;
-  padding: 80px 20px 60px;
+/* ── Page ── */
+.now-page {
   position: relative;
+  min-height: 100vh;
+  background: #06050e;
   overflow: hidden;
-  background: linear-gradient(to bottom,
-    #0f0a1a 0%,
-    #1a1330 50%,
-    #0f0a1a 100%
-  );
 }
 
-/* ==================== 背景裝飾 ==================== */
-
-.now-bg-decoration {
+/* ══════════════════════════════════════════
+   星雲背景
+   ══════════════════════════════════════════ */
+.now-nebula-bg {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
 }
 
-.gradient-orb {
+.nebula-layer {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.3;
-  animation: float-orb 20s ease-in-out infinite;
+  filter: blur(100px);
+  opacity: 0.35;
+  will-change: transform;
 }
 
-.orb-1 {
+.nebula-1 {
+  width: 700px;
+  height: 700px;
+  top: -10%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(127, 90, 240, 0.55) 0%, rgba(180, 60, 200, 0.3) 40%, transparent 70%);
+  animation: nebula-drift-1 28s ease-in-out infinite;
+}
+
+.nebula-2 {
+  width: 550px;
+  height: 550px;
+  bottom: -5%;
+  right: -5%;
+  background: radial-gradient(circle, rgba(220, 50, 120, 0.45) 0%, rgba(160, 30, 180, 0.25) 40%, transparent 70%);
+  animation: nebula-drift-2 34s ease-in-out infinite;
+}
+
+.nebula-3 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(138, 43, 226, 0.6), transparent);
-  top: -100px;
-  left: -100px;
-  animation-delay: 0s;
-}
-
-.orb-2 {
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(0, 170, 255, 0.5), transparent);
-  top: 50%;
-  right: -50px;
-  animation-delay: 7s;
-}
-
-.orb-3 {
-  width: 350px;
-  height: 350px;
-  background: radial-gradient(circle, rgba(255, 20, 147, 0.4), transparent);
-  bottom: -100px;
+  top: 40%;
   left: 50%;
-  animation-delay: 14s;
+  background: radial-gradient(circle, rgba(60, 100, 240, 0.3) 0%, rgba(44, 182, 125, 0.12) 50%, transparent 70%);
+  animation: nebula-drift-3 22s ease-in-out infinite;
 }
 
-@keyframes float-orb {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(30px, -30px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
-  }
+/* 微塵 */
+.nebula-dust {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 25%, rgba(255,255,255,0.12) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,0.08) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,0.1) 0%, transparent 100%),
+    radial-gradient(1px 1px at 78% 55%, rgba(255,255,255,0.06) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 20% 90%, rgba(127,90,240,0.12) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 88% 10%, rgba(220,50,120,0.08) 0%, transparent 100%);
 }
 
-/* ==================== Hero 區域 ==================== */
+@keyframes nebula-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, 30px) scale(1.08); }
+  66% { transform: translate(-20px, -15px) scale(0.95); }
+}
+@keyframes nebula-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-35px, -25px) scale(1.1); }
+  70% { transform: translate(20px, 15px) scale(0.92); }
+}
+@keyframes nebula-drift-3 {
+  0%, 100% { transform: translate(-50%, 0) scale(1); }
+  50% { transform: translate(-50%, -30px) scale(1.12); }
+}
 
-.now-hero {
-  text-align: center;
-  margin-bottom: 80px;
+/* ══════════════════════════════════════════
+   主內容區
+   ══════════════════════════════════════════ */
+.now-content {
   position: relative;
   z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 100px 32px 60px;
 }
 
-.hero-emoji {
-  font-size: 5rem;
-  margin-bottom: 1.5rem;
-  filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.6));
-  display: inline-block;
-  font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
-  line-height: 1;
+/* ── Hero ── */
+.now-hero {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.now-hero-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
 }
 
 .now-title {
-  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
   font-weight: 800;
-  margin-bottom: 2rem;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
-  gap: 1rem;
+  gap: 0.6rem;
   flex-wrap: wrap;
 }
 
-.title-text {
-  background: linear-gradient(135deg, #ffffff, #8a2be2, #00aaff);
+.now-title-gradient {
+  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.5));
 }
 
-.title-emoji {
-  font-size: 1.5rem;
-  color: rgba(255, 255, 255, 0.6);
+.now-title-sub {
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.45);
   font-weight: 400;
   font-style: italic;
 }
 
-.now-meta {
+/* Status Badges */
+.now-status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 50px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--badge-color);
+  background: color-mix(in srgb, var(--badge-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 25%, transparent);
+  letter-spacing: 0.3px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--badge-color);
+  box-shadow: 0 0 8px var(--badge-color);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* Meta Row */
+.now-meta-row {
   display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 2.5rem;
   flex-wrap: wrap;
-  margin-top: 2rem;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
-.meta-item {
+.now-meta-item {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.now-hero-desc {
+  max-width: 640px;
+  margin: 0 auto;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.6);
+}
+
+.now-hero-desc strong {
+  color: rgba(255,255,255,0.9);
+}
+
+/* ══════════════════════════════════════════
+   Section
+   ══════════════════════════════════════════ */
+.now-section {
+  margin-bottom: 64px;
+}
+
+.now-section-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 30px;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1rem;
-  backdrop-filter: blur(10px);
+  gap: 10px;
+}
+
+.section-icon {
+  font-size: 1.8rem;
+}
+
+/* ══════════════════════════════════════════
+   Learning Cards
+   ══════════════════════════════════════════ */
+.now-learning-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 16px;
+}
+
+.now-learning-card {
+  background: rgba(16, 14, 24, 0.8);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 22px;
   transition: all 0.3s ease;
 }
 
-.meta-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(138, 43, 226, 0.4);
-  transform: translateY(-2px);
+.now-learning-card:hover {
+  border-color: rgba(127,90,240,0.3);
+  box-shadow: 0 4px 24px rgba(127,90,240,0.08);
 }
 
-.meta-icon {
-  font-size: 1.3rem;
-}
-
-/* ==================== 內容區域 ==================== */
-
-.now-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 2;
-}
-
-.now-section {
-  margin-bottom: 80px;
-}
-
-.section-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 2.5rem;
+.learning-card-top {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
-.title-icon {
-  font-size: 2.5rem;
-  filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.6));
-}
-
-/* ==================== 正在學習 ==================== */
-
-.learning-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 2rem;
-}
-
-.learning-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 2rem;
-  backdrop-filter: blur(20px);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  cursor: pointer;
-  overflow: hidden;
-  position: relative;
-}
-
-.learning-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.learning-card:hover::before {
-  opacity: 1;
-}
-
-.learning-card:hover {
-  border-color: rgba(138, 43, 226, 0.4);
-  box-shadow: 0 0 40px rgba(138, 43, 226, 0.3);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  border-radius: 12px;
-}
-
-.card-icon {
+.learning-tech-icon {
   font-size: 2rem;
-  filter: drop-shadow(0 0 10px currentColor);
+  flex-shrink: 0;
 }
 
-.card-header h3 {
-  font-size: 1.4rem;
+.learning-card-top h3 {
+  font-size: 1.15rem;
   font-weight: 700;
+  color: #fff;
 }
 
-.card-description {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
+.now-learning-card p {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.55;
+  margin-bottom: 14px;
 }
 
-.progress-bar {
+/* ── Progress Bar (共用) ── */
+.now-progress {
   position: relative;
   width: 100%;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  height: 10px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
   overflow: hidden;
 }
 
-.progress-fill {
-  height: 100%;
-  border-radius: 10px;
-  transition: width 1s ease-out;
-  box-shadow: 0 0 15px currentColor;
+.now-progress.large {
+  height: 14px;
 }
 
-.progress-text {
+.now-progress-fill {
+  height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.now-progress-label {
   position: absolute;
-  right: 0.75rem;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
-/* ==================== 進行中的專案 ==================== */
-
-.projects-grid {
+/* ══════════════════════════════════════════
+   Project Cards
+   ══════════════════════════════════════════ */
+.now-projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
 }
 
-.project-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 2rem;
-  backdrop-filter: blur(20px);
+.now-project-card {
+  background: rgba(16, 14, 24, 0.8);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 22px;
   transition: all 0.3s ease;
 }
 
-.project-card:hover {
-  border-color: rgba(138, 43, 226, 0.4);
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
+.now-project-card:hover {
+  border-color: rgba(127,90,240,0.3);
+  box-shadow: 0 4px 24px rgba(127,90,240,0.08);
 }
 
-.project-header {
+.project-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 10px;
+  gap: 10px;
 }
 
-.project-icon {
-  font-size: 2.5rem;
-  padding: 1rem;
-  border-radius: 12px;
-  filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.4));
-}
-
-.project-status {
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.project-title {
-  font-size: 1.5rem;
+.project-card-header h3 {
+  font-size: 1.15rem;
   font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 1rem;
+  color: #fff;
 }
 
-.project-description {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
+.project-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pill-color);
+  background: color-mix(in srgb, var(--pill-color) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pill-color) 25%, transparent);
+  white-space: nowrap;
 }
 
-.project-tech {
+.now-project-card p {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.55;
+  margin-bottom: 14px;
+}
+
+.project-tech-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 8px;
 }
 
-.tech-tag {
-  padding: 0.5rem 1rem;
-  border: 1.5px solid;
+.project-tech-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
   border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
-.tech-tag:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: scale(1.05);
+.tech-chip-icon {
+  font-size: 0.9rem;
 }
 
-/* ==================== 生活近況 ==================== */
-
-.life-grid {
+/* ══════════════════════════════════════════
+   Life Cards
+   ══════════════════════════════════════════ */
+.now-life-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 14px;
 }
 
-.life-card {
+.now-life-card {
   display: flex;
   align-items: flex-start;
-  gap: 1.5rem;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  backdrop-filter: blur(20px);
+  gap: 16px;
+  padding: 20px;
+  background: rgba(16, 14, 24, 0.7);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
   transition: all 0.3s ease;
-  cursor: pointer;
 }
 
-.life-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(138, 43, 226, 0.3);
-  box-shadow: 0 0 25px rgba(138, 43, 226, 0.2);
+.now-life-card:hover {
+  border-color: rgba(127,90,240,0.25);
+  background: rgba(20, 18, 30, 0.8);
 }
 
-.life-icon {
-  font-size: 2.5rem;
-  padding: 1rem;
+.life-card-icon {
+  font-size: 2rem;
+  padding: 10px;
   border-radius: 12px;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.4));
-  font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
   line-height: 1;
 }
 
-.life-content {
-  flex: 1;
-}
-
-.life-content h4 {
-  font-size: 1.2rem;
+.life-card-body h4 {
+  font-size: 1.05rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 4px;
 }
 
-.life-content p {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1rem;
-  line-height: 1.7;
+.life-card-body p {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.6;
 }
 
-/* ==================== 當前目標 ==================== */
-
-.goals-list {
+/* ══════════════════════════════════════════
+   Dashboard / Progress Bars
+   ══════════════════════════════════════════ */
+.now-dashboard-grid {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 18px;
 }
 
-.goal-item {
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  backdrop-filter: blur(20px);
-  transition: all 0.3s ease;
+.now-dashboard-item {
+  background: rgba(16, 14, 24, 0.7);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: border-color 0.3s ease;
 }
 
-.goal-item:hover {
-  border-color: rgba(138, 43, 226, 0.4);
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
+.now-dashboard-item:hover {
+  border-color: rgba(127,90,240,0.2);
 }
 
-.goal-header {
+.dashboard-item-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 1rem;
+  margin-bottom: 10px;
 }
 
-.goal-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.goal-icon {
-  font-size: 2rem;
-  filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.6));
-}
-
-.goal-text {
-  font-size: 1.2rem;
+.dashboard-label {
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #ffffff;
+  color: #fff;
 }
 
-.goal-deadline {
-  padding: 0.5rem 1rem;
-  background: rgba(138, 43, 226, 0.2);
-  border: 1px solid rgba(138, 43, 226, 0.4);
-  border-radius: 20px;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+.dashboard-note {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.35);
+  font-style: italic;
 }
 
-.goal-progress-bar {
-  position: relative;
-  width: 100%;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.goal-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #8a2be2, #00aaff);
-  border-radius: 10px;
-  transition: width 1s ease-out;
-  box-shadow: 0 0 20px rgba(138, 43, 226, 0.6);
-}
-
-.goal-progress-text {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-}
-
-/* ==================== 最近的想法 ==================== */
-
-.thoughts-container {
+/* ══════════════════════════════════════════
+   Thoughts
+   ══════════════════════════════════════════ */
+.now-thoughts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
 }
 
-.thought-card {
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  backdrop-filter: blur(20px);
+.now-thought-card {
   position: relative;
+  background: rgba(16, 14, 24, 0.7);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 24px 22px 20px 42px;
   transition: all 0.3s ease;
-  cursor: pointer;
 }
 
-.thought-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(138, 43, 226, 0.4);
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.3);
+.now-thought-card:hover {
+  border-color: rgba(127,90,240,0.3);
+  box-shadow: 0 4px 20px rgba(127,90,240,0.08);
 }
 
-.quote-mark {
+.thought-quote {
   position: absolute;
-  top: 1rem;
-  left: 1.5rem;
-  font-size: 4rem;
-  color: rgba(138, 43, 226, 0.3);
+  top: 10px;
+  left: 14px;
+  font-size: 2.8rem;
+  color: rgba(127,90,240,0.25);
   font-family: Georgia, serif;
   line-height: 1;
 }
 
-.thought-card p {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1.05rem;
-  line-height: 1.8;
+.now-thought-card p {
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.65;
   font-style: italic;
-  padding-left: 2rem;
-  padding-top: 1rem;
 }
 
-/* ==================== Footer ==================== */
-
+/* ══════════════════════════════════════════
+   Footer
+   ══════════════════════════════════════════ */
 .now-footer {
   text-align: center;
-  padding: 3rem 2rem;
-  margin-top: 80px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
+  padding: 28px 20px;
+  margin-top: 40px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 14px;
 }
 
-.footer-text {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 1rem;
-  line-height: 1.8;
+.now-footer p {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.9rem;
+  line-height: 1.7;
 }
 
-.footer-text a {
-  color: #8a2be2;
+.now-footer a {
+  color: #7f5af0;
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: color 0.2s;
 }
 
-.footer-text a:hover {
-  color: #00aaff;
-  text-decoration: underline;
+.now-footer a:hover {
+  color: #dc3278;
 }
 
-/* ==================== 響應式設計 ==================== */
-
+/* ══════════════════════════════════════════
+   Responsive
+   ══════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .now-container {
-    padding: 60px 15px 40px;
-  }
-
-  .now-hero {
-    margin-bottom: 60px;
-  }
-
-  .hero-emoji {
-    font-size: 3.5rem;
+  .now-content {
+    padding: 80px 18px 40px;
   }
 
   .now-title {
-    font-size: 2rem;
-  }
-
-  .title-emoji {
-    font-size: 1.2rem;
-  }
-
-  .now-meta {
-    gap: 1rem;
-  }
-
-  .meta-item {
-    font-size: 0.9rem;
-    padding: 0.6rem 1.2rem;
-  }
-
-  .section-title {
-    font-size: 1.5rem;
-  }
-
-  .title-icon {
-    font-size: 2rem;
-  }
-
-  .learning-grid,
-  .projects-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .goal-header {
     flex-direction: column;
-    align-items: flex-start;
+    gap: 0.2rem;
   }
 
-  .thoughts-container {
+  .now-title-sub {
+    font-size: 1rem;
+  }
+
+  .now-learning-grid,
+  .now-projects-grid {
     grid-template-columns: 1fr;
   }
 
-  .gradient-orb {
-    filter: blur(60px);
+  .now-thoughts-grid {
+    grid-template-columns: 1fr;
   }
+
+  .nebula-1 { width: 400px; height: 400px; }
+  .nebula-2 { width: 320px; height: 320px; }
+  .nebula-3 { width: 250px; height: 250px; }
 }
 
 @media (max-width: 480px) {
-  .learning-card,
-  .project-card,
-  .goal-item {
-    padding: 1.5rem;
-  }
-
-  .life-card {
+  .now-life-card {
     flex-direction: column;
     align-items: center;
     text-align: center;
   }
 
-  .thought-card {
-    padding: 1.5rem;
-  }
-
-  .quote-mark {
-    font-size: 3rem;
-  }
-}
-
-/* ==================== 動畫 ==================== */
-
-@media (prefers-reduced-motion: no-preference) {
-  .learning-card,
-  .project-card,
-  .life-card,
-  .goal-item,
-  .thought-card {
-    animation: fade-in-up 0.6s ease-out;
-  }
-
-  @keyframes fade-in-up {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .status-badge {
+    font-size: 0.75rem;
+    padding: 5px 12px;
   }
 }

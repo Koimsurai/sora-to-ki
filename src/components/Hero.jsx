@@ -4,6 +4,7 @@ import { Parallax } from 'react-scroll-parallax'; // 引入 Parallax
 // Remove unused particle imports
 // ✅ 優化: 使用解構引入 (Vite 會自動 tree-shake)
 import { FaGithub, FaLinkedin, FaInstagram, FaFacebook, FaBriefcase } from 'react-icons/fa';
+import SEOHead from './SEOHead';
 import './Hero.css';
 // import mainImage from '../assets/Main.webp'; // 移除圖片導入
 
@@ -72,6 +73,11 @@ function Hero() {
       id="home"
       className="hero-section"
     >
+      <SEOHead
+        title={null}
+        description="楊泰和（Koimsurai）的個人品牌網站。全端工程師，專注於 React / Next.js 前端架構與 AI 系統開發。作品集、技術筆記、攝影作品一覽。"
+        path="/"
+      />
       {/* 移除 Saturn3D 和 Particles 的渲染 */}
 
       {/* Keep motion.div for overall content animation, but remove whileInView for text */}

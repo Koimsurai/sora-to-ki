@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss, FaClock, FaRoute, FaBook, FaMusic, FaFilm, FaCamera, FaTv } from 'react-icons/fa';
+import { FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages, FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss, FaClock, FaRoute, FaBook, FaMusic, FaFilm, FaCamera, FaTv, FaDesktop } from 'react-icons/fa';
 import { motion, LayoutGroup } from 'framer-motion';
 import './Header.css';
 
@@ -251,50 +251,12 @@ function Header({ activeSection }) {
             )}
           </li>
           
-          {/* 收藏館選單 (下拉式) */}
-          <li className="more-menu-container" ref={collectionMenuRef}>
-            <button 
-              className={`more-menu-trigger ${location.pathname.startsWith('/cinema') || location.pathname.startsWith('/anime') ? 'active' : ''}`}
-              onClick={() => setShowCollectionMenu(!showCollectionMenu)}
-            >
-              <FaFilm className="nav-icon" />
-              收藏館
-              <FaChevronDown className="nav-icon" style={{ fontSize: '0.8em' }} />
-            </button>
-            
-            {showCollectionMenu && (
-              <div className="more-dropdown">
-                <Link 
-                  to="/cinema" 
-                  className="dropdown-item"
-                  onClick={() => setShowCollectionMenu(false)}
-                >
-                  <FaFilm className="dropdown-icon" />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-title">電影院</span>
-                    <span className="dropdown-desc">觀影紀錄與評論</span>
-                  </div>
-                </Link>
-                
-                <Link 
-                  to="/anime" 
-                  className="dropdown-item"
-                  onClick={() => setShowCollectionMenu(false)}
-                >
-                  <FaTv className="dropdown-icon" />
-                  <div className="dropdown-item-content">
-                    <span className="dropdown-title">動漫閣</span>
-                    <span className="dropdown-desc">動畫追番紀錄</span>
-                  </div>
-                </Link>
-              </div>
-            )}
-          </li>
+          {/* 收藏館選單 (下拉式) - 暫時隱藏，cinema/anime 開發中 */}
           
           {/* 更多選單 (下拉式) */}
           <li className="more-menu-container" ref={moreMenuRef}>
             <button 
-              className={`more-menu-trigger ${showMoreMenu || location.pathname.startsWith('/photos') || location.pathname.startsWith('/activity') || location.pathname.startsWith('/now') || location.pathname.startsWith('/journey') ? 'active' : ''}`}
+              className={`more-menu-trigger ${showMoreMenu || location.pathname.startsWith('/photos') || location.pathname.startsWith('/activity') || location.pathname.startsWith('/now') || location.pathname.startsWith('/journey') || location.pathname.startsWith('/setup') ? 'active' : ''}`}
               onClick={() => setShowMoreMenu(!showMoreMenu)}
             >
               <FaChevronDown className="nav-icon" />
@@ -348,6 +310,18 @@ function Header({ activeSection }) {
                   <div className="dropdown-item-content">
                     <span className="dropdown-title">成長軌跡</span>
                     <span className="dropdown-desc">我的學習與成長歷程</span>
+                  </div>
+                </Link>
+                
+                <Link 
+                  to="/setup" 
+                  className="dropdown-item"
+                  onClick={() => setShowMoreMenu(false)}
+                >
+                  <FaDesktop className="dropdown-icon" />
+                  <div className="dropdown-item-content">
+                    <span className="dropdown-title">我的配備</span>
+                    <span className="dropdown-desc">個人設備清單</span>
                   </div>
                 </Link>
               </div>

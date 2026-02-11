@@ -52,6 +52,7 @@ const LazyBookshelf = lazy(() => import('./components/Bookshelf'));
 const LazyMusic = lazy(() => import('./components/Music'));
 const LazyCinema = lazy(() => import('./components/Cinema'));
 const LazyAnime = lazy(() => import('./components/Anime'));
+const LazySetup = lazy(() => import('./components/Setup'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -289,6 +290,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/music" element={<Suspense fallback={<LoadingFallback />}><LazyMusic /></Suspense>} />
           <Route path="/cinema" element={<Suspense fallback={<LoadingFallback />}><LazyCinema /></Suspense>} />
           <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />
+          <Route path="/setup" element={<Suspense fallback={<LoadingFallback />}><LazySetup /></Suspense>} />
           {/* 新版後台路由 - 使用 shadcn/ui 風格 */}
           <Route path="/admin/login" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLoginNew /></Suspense>} />
           <Route path="/admin/*" element={

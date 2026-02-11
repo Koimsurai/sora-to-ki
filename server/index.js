@@ -9,6 +9,7 @@ const { initializeDatabase, db } = require('./database.js');
 const { authMiddleware, basicAuth, JWT_SECRET } = require('./auth');
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors());
 app.use(express.json()); // Middleware to parse JSON bodies
 

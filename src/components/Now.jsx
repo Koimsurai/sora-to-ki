@@ -1,342 +1,263 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import {
+  SiRust, SiNextdotjs, SiReact, SiDocker, SiTypescript, SiPython,
+  SiThreedotjs, SiTailwindcss
+} from 'react-icons/si';
+import { FaCat, FaGamepad, FaCamera, FaServer, FaBrain } from 'react-icons/fa';
+import SEOHead from './SEOHead';
 import './Now.css';
+
+// ── 狀態燈顏色 ──
+const statusColors = {
+  green: '#2cb67d',
+  yellow: '#f5c542',
+  purple: '#7f5af0',
+  blue: '#00aaff',
+};
+
+// ── 資料 ──
+const statusBadges = [
+  { label: 'Building AI System', color: 'green', emoji: '🟢' },
+  { label: 'Debugging NAS', color: 'yellow', emoji: '🟡' },
+  { label: 'Learning Rust', color: 'purple', emoji: '🟣' },
+];
+
+const learningItems = [
+  {
+    title: 'Rust',
+    desc: '為了更底層的效能與安全性，朝開源大佬邁進',
+    icon: SiRust,
+    color: '#dea584',
+    progress: 25,
+  },
+  {
+    title: 'Next.js',
+    desc: '制定公司 AI 系統前端架構 (Monorepo / Routing)',
+    icon: SiNextdotjs,
+    color: '#ffffff',
+    progress: 70,
+  },
+  {
+    title: 'AI 工具鏈整合',
+    desc: '探索並整合 AI 工具至企業級開發流程',
+    icon: FaBrain,
+    color: '#a78bfa',
+    progress: 55,
+  },
+];
+
+const projects = [
+  {
+    title: 'AI 系統開發',
+    status: '進行中',
+    statusColor: 'green',
+    desc: '負責全公司內部的 AI 系統前端架構與規範落地',
+    techs: [
+      { name: 'Next.js', icon: SiNextdotjs },
+      { name: 'TypeScript', icon: SiTypescript },
+      { name: 'React', icon: SiReact },
+    ],
+  },
+  {
+    title: 'Koimsurai NAS',
+    status: 'Debug 中',
+    statusColor: 'yellow',
+    desc: 'Homelab OS 進入試用期，Docker 容器化 24/7 穩定運作',
+    techs: [
+      { name: 'Rust', icon: SiRust },
+      { name: 'Docker', icon: SiDocker },
+      { name: 'Next.js', icon: SiNextdotjs },
+    ],
+  },
+  {
+    title: '個人品牌網站',
+    status: '持續優化',
+    statusColor: 'purple',
+    desc: '你正在看的這個站！Three.js 太空主題 + 持續新增功能',
+    techs: [
+      { name: 'React', icon: SiReact },
+      { name: 'Three.js', icon: SiThreedotjs },
+      { name: 'Tailwind', icon: SiTailwindcss },
+    ],
+  },
+];
+
+const lifeItems = [
+  {
+    icon: '💼',
+    title: '工作重心',
+    content: 'Team 內唯一 Frontend 負責人，專注於「讓系統長期可維護」。正在練習把責任邊界劃分清楚，建立穩定的上線流程。',
+    color: '#7f5af0',
+  },
+  {
+    icon: '🐈',
+    title: 'Aki & Kuro',
+    content: 'Kuro 話癆型，喵兩聲蹭一蹭就倒地翻滾。Aki 撒嬌型，連上廁所都想衝進來。紙箱、塑膠、橡皮筋是違禁品。',
+    color: '#f59e0b',
+  },
+  {
+    icon: '🎮',
+    title: '休閒',
+    content: '打遊戲、看漫畫/動畫、寫 Code（沒錯，休閒也是寫 Code）。相機目前積灰塵狀態，等待重新發掘攝影樂趣的那天。',
+    color: '#2cb67d',
+  },
+];
+
+const progressBars = [
+  { label: 'Rust 學習進度', value: 25, color: '#dea584', note: '剛開始 ownership 地獄' },
+  { label: 'NAS 穩定度', value: 72, color: '#2cb67d', note: 'Docker 穩了，SSL 還在搞' },
+  { label: '工作與生活平衡', value: 45, color: '#f5c542', note: '努力中...' },
+  { label: '成為開源大佬', value: 10, color: '#7f5af0', note: '先把 README 寫好' },
+];
+
+const thoughts = [
+  '想專注在「做事」而非「反覆溝通」',
+  '不排斥責任，但討厭沒邏輯的變動',
+  '正在練習不把所有事情扛在自己肩上',
+  '技術是工具，解決問題才是核心價值',
+];
+
+// ── 動畫 variants ──
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.5, delay: i * 0.08, ease: 'easeOut' },
+  }),
+};
 
 const Now = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [hoveredCard, setHoveredCard] = useState(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // 當前狀態數據 - 可以定期手動更新
-  const currentStatus = {
-    lastUpdated: '2025-10-08',
-    mood: '👋',
-    location: '台灣 台北 · 微星科技',
-    weather: '☀️',
-    
-    // 正在學習的技術
-    learning: [
-      {
-        id: 1,
-        title: 'C# 後端開發',
-        progress: 70,
-        description: '微星實習主力技術，開發內部網頁後端系統',
-        icon: '💻',
-        color: '#68217a',
-        link: 'https://docs.microsoft.com/zh-tw/dotnet/csharp/'
-      },
-      {
-        id: 2,
-        title: 'Python 自動化',
-        progress: 80,
-        description: '用於後端開發與數據處理',
-        icon: '🐍',
-        color: '#3776ab',
-        link: 'https://www.python.org/'
-      },
-      {
-        id: 3,
-        title: 'n8n 工作流自動化',
-        progress: 45,
-        description: '探索企業級自動化解決方案',
-        icon: '⚡',
-        color: '#ff6d5a',
-        link: 'https://n8n.io/'
-      }
-    ],
-
-    // 正在進行的專案
-    projects: [
-      {
-        id: 1,
-        title: 'MSI 內部網頁後端',
-        status: '進行中',
-        description: '微星科技實習專案，負責後端系統開發',
-        icon: '🏢',
-        color: '#e60012',
-        tech: ['C#', 'Python', 'ASP.NET']
-      },
-      {
-        id: 2,
-        title: 'n8n 自動化探索',
-        status: '學習中',
-        description: '研究企業工作流程自動化應用',
-        icon: '🤖',
-        color: '#ff6d5a',
-        tech: ['n8n', 'API', 'Workflow']
-      },
-      {
-        id: 3,
-        title: '個人品牌網站',
-        status: '持續優化',
-        description: '添加新功能與內容更新',
-        icon: '🌐',
-        color: '#8a2be2',
-        tech: ['React', 'Three.js', 'Framer Motion']
-      }
-    ],
-
-    // 生活近況
-    life: [
-      {
-        id: 1,
-        category: '實習',
-        content: '在微星科技實習，從學校走向業界，學習企業級開發流程與團隊協作',
-        icon: '💼',
-        color: '#e60012'
-      },
-      {
-        id: 2,
-        category: '攝影',
-        content: '持續記錄生活點滴，將照片分享到 Instagram，培養美感與觀察力',
-        icon: '📷',
-        color: '#e91e63'
-      },
-      {
-        id: 3,
-        category: '閱讀',
-        content: '閱讀技術文章與專業書籍，保持學習動力',
-        icon: '📚',
-        color: '#2196f3'
-      },
-      {
-        id: 4,
-        category: '旅遊',
-        content: '喜歡旅遊探索不同城市，用相機記錄美好回憶',
-        icon: '✈️',
-        color: '#ff9800'
-      }
-    ],
-
-    // 當前目標
-    goals: [
-      {
-        id: 1,
-        goal: '精進 C# 與 Python 後端開發能力',
-        progress: 65,
-        deadline: '2025 Q2',
-        icon: '💻'
-      },
-      {
-        id: 2,
-        goal: '掌握 n8n 自動化工作流',
-        progress: 40,
-        deadline: '2025 Q3',
-        icon: '⚡'
-      },
-      {
-        id: 3,
-        goal: '成為全方位軟體開發者',
-        progress: 55,
-        deadline: '2025 年底',
-        icon: '🚀'
-      },
-      {
-        id: 4,
-        goal: '持續經營 Instagram 攝影作品',
-        progress: 70,
-        deadline: '持續進行',
-        icon: '📸'
-      }
-    ],
-
-    // 最近的想法
-    thoughts: [
-      '從學校到職場，每一步都是成長的機會',
-      '技術是工具，解決問題才是核心價值',
-      '攝影教會我觀察細節，程式教會我邏輯思考',
-      '保持上進心，在網路世界中持續探索與學習',
-      '期許自己能提供符合用戶需求的網路服務'
-    ]
-  };
-
   return (
-    <div className="now-container">
-      {/* 背景裝飾 */}
-      <div className="now-bg-decoration">
-        <div className="gradient-orb orb-1"></div>
-        <div className="gradient-orb orb-2"></div>
-        <div className="gradient-orb orb-3"></div>
+    <div className="now-page">
+      <SEOHead
+        title="現在 · Now"
+        description="楊泰和目前的工作重心、正在學習的技術、進行中的專案與生活近況。A /now page snapshot."
+        path="/now"
+      />
+
+      {/* ── 星雲背景 ── */}
+      <div className="now-nebula-bg">
+        <div className="nebula-layer nebula-1" />
+        <div className="nebula-layer nebula-2" />
+        <div className="nebula-layer nebula-3" />
+        <div className="nebula-dust" />
       </div>
 
-      {/* 標題區 */}
-      <motion.div
-        className="now-hero"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-      >
-        <motion.div
-          className="hero-emoji"
-          animate={{
-            scale: [1, 1.1, 1],
-            rotate: [0, 5, -5, 0]
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          {currentStatus.mood}
-        </motion.div>
-
-        <h1 className="now-title">
-          <span className="title-text">現在</span>
-          <span className="title-emoji">· What I'm up to</span>
-        </h1>
-
-        <div className="now-meta">
-          <motion.div
-            className="meta-item"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <span className="meta-icon">📍</span>
-            <span>{currentStatus.location}</span>
-          </motion.div>
-
-          <motion.div
-            className="meta-item"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <span className="meta-icon">🕐</span>
-            <span>{currentTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</span>
-          </motion.div>
-
-          <motion.div
-            className="meta-item"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <span className="meta-icon">{currentStatus.weather}</span>
-            <span>最後更新: {currentStatus.lastUpdated}</span>
-          </motion.div>
-        </div>
-      </motion.div>
-
+      {/* ── 主內容 ── */}
       <div className="now-content">
-        {/* 正在學習 */}
+
+        {/* Hero */}
+        <motion.header
+          className="now-hero"
+          initial="hidden"
+          animate="visible"
+          variants={fadeUp}
+        >
+          <div className="now-hero-top">
+            <h1 className="now-title">
+              <span className="now-title-gradient">現在</span>
+              <span className="now-title-sub">· What I'm up to</span>
+            </h1>
+            <div className="now-status-badges">
+              {statusBadges.map((b) => (
+                <span key={b.label} className="status-badge" style={{ '--badge-color': statusColors[b.color] }}>
+                  <span className="status-dot" />
+                  {b.label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="now-meta-row">
+            <span className="now-meta-item">📍 台灣 台北</span>
+            <span className="now-meta-item">
+              🕐 {currentTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+            <span className="now-meta-item">🔄 最後更新: 2026-02-11</span>
+          </div>
+
+          <p className="now-hero-desc">
+            目前的狀態是：<strong>全棧技能點滿，但專注於前端架構與系統整合</strong>。<br />
+            正在把生活與工作整理成「能長期穩定運作」的樣子。
+          </p>
+        </motion.header>
+
+        {/* ── 正在學 ── */}
         <section className="now-section">
-          <motion.h2
-            className="section-title"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="title-icon">📖</span>
-            正在學習
+          <motion.h2 className="now-section-title" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <span className="section-icon">📖</span> 正在學習
           </motion.h2>
-
-          <div className="learning-grid">
-            {currentStatus.learning.map((item, index) => (
-              <motion.a
-                key={item.id}
-                href={item.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="learning-card"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+          <div className="now-learning-grid">
+            {learningItems.map((item, i) => (
+              <motion.div
+                key={item.title}
+                className="now-learning-card"
+                custom={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.03, y: -5 }}
-                onHoverStart={() => setHoveredCard(`learning-${item.id}`)}
-                onHoverEnd={() => setHoveredCard(null)}
+                whileHover={{ y: -4 }}
               >
-                <div 
-                  className="card-header"
-                  style={{ backgroundColor: `${item.color}20` }}
-                >
-                  <span className="card-icon" style={{ color: item.color }}>
-                    {item.icon}
-                  </span>
-                  <h3 style={{ color: item.color }}>{item.title}</h3>
+                <div className="learning-card-top">
+                  <item.icon className="learning-tech-icon" style={{ color: item.color }} />
+                  <h3>{item.title}</h3>
                 </div>
-
-                <p className="card-description">{item.description}</p>
-
-                <div className="progress-bar">
+                <p>{item.desc}</p>
+                <div className="now-progress">
                   <motion.div
-                    className="progress-fill"
+                    className="now-progress-fill"
                     style={{ backgroundColor: item.color }}
                     initial={{ width: 0 }}
                     whileInView={{ width: `${item.progress}%` }}
                     viewport={{ once: true }}
-                    transition={{ duration: 1, delay: index * 0.1 + 0.3 }}
+                    transition={{ duration: 1, delay: i * 0.1 + 0.3 }}
                   />
-                  <span className="progress-text" style={{ color: item.color }}>
-                    {item.progress}%
-                  </span>
+                  <span className="now-progress-label" style={{ color: item.color }}>{item.progress}%</span>
                 </div>
-              </motion.a>
+              </motion.div>
             ))}
           </div>
         </section>
 
-        {/* 進行中的專案 */}
+        {/* ── 進行中的專案 ── */}
         <section className="now-section">
-          <motion.h2
-            className="section-title"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="title-icon">🚀</span>
-            進行中的專案
+          <motion.h2 className="now-section-title" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <span className="section-icon">🚀</span> 進行中的專案
           </motion.h2>
-
-          <div className="projects-grid">
-            {currentStatus.projects.map((project, index) => (
+          <div className="now-projects-grid">
+            {projects.map((p, i) => (
               <motion.div
-                key={project.id}
-                className="project-card"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                key={p.title}
+                className="now-project-card"
+                custom={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ y: -4 }}
               >
-                <div className="project-header">
-                  <span 
-                    className="project-icon"
-                    style={{ backgroundColor: `${project.color}30` }}
-                  >
-                    {project.icon}
-                  </span>
-                  <span 
-                    className="project-status"
-                    style={{ 
-                      backgroundColor: `${project.color}20`,
-                      color: project.color 
-                    }}
-                  >
-                    {project.status}
+                <div className="project-card-header">
+                  <h3>{p.title}</h3>
+                  <span className="project-status-pill" style={{ '--pill-color': statusColors[p.statusColor] }}>
+                    <span className="status-dot" />
+                    {p.status}
                   </span>
                 </div>
-
-                <h3 className="project-title">{project.title}</h3>
-                <p className="project-description">{project.description}</p>
-
-                <div className="project-tech">
-                  {project.tech.map((tech, techIndex) => (
-                    <span 
-                      key={techIndex} 
-                      className="tech-tag"
-                      style={{ borderColor: project.color }}
-                    >
-                      {tech}
+                <p>{p.desc}</p>
+                <div className="project-tech-row">
+                  {p.techs.map((t) => (
+                    <span key={t.name} className="project-tech-chip">
+                      <t.icon className="tech-chip-icon" />
+                      {t.name}
                     </span>
                   ))}
                 </div>
@@ -345,37 +266,26 @@ const Now = () => {
           </div>
         </section>
 
-        {/* 生活近況 */}
+        {/* ── 生活近況 ── */}
         <section className="now-section">
-          <motion.h2
-            className="section-title"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="title-icon">🌈</span>
-            生活近況
+          <motion.h2 className="now-section-title" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <span className="section-icon">🌈</span> 生活近況
           </motion.h2>
-
-          <div className="life-grid">
-            {currentStatus.life.map((item, index) => (
+          <div className="now-life-list">
+            {lifeItems.map((item, i) => (
               <motion.div
-                key={item.id}
-                className="life-card"
-                initial={{ opacity: 0, x: index % 2 === 0 ? -30 : 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
+                key={item.title}
+                className="now-life-card"
+                custom={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ x: 10 }}
+                whileHover={{ x: 6 }}
               >
-                <div 
-                  className="life-icon"
-                  style={{ backgroundColor: `${item.color}30` }}
-                >
-                  {item.icon}
-                </div>
-                <div className="life-content">
-                  <h4 style={{ color: item.color }}>{item.category}</h4>
+                <span className="life-card-icon" style={{ backgroundColor: `${item.color}18` }}>{item.icon}</span>
+                <div className="life-card-body">
+                  <h4 style={{ color: item.color }}>{item.title}</h4>
                   <p>{item.content}</p>
                 </div>
               </motion.div>
@@ -383,95 +293,83 @@ const Now = () => {
           </div>
         </section>
 
-        {/* 當前目標 */}
+        {/* ── 工程師進度條 ── */}
         <section className="now-section">
-          <motion.h2
-            className="section-title"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="title-icon">🎯</span>
-            當前目標
+          <motion.h2 className="now-section-title" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <span className="section-icon">📊</span> 工程師儀表板
           </motion.h2>
-
-          <div className="goals-list">
-            {currentStatus.goals.map((goal, index) => (
+          <div className="now-dashboard-grid">
+            {progressBars.map((bar, i) => (
               <motion.div
-                key={goal.id}
-                className="goal-item"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                key={bar.label}
+                className="now-dashboard-item"
+                custom={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
               >
-                <div className="goal-header">
-                  <div className="goal-info">
-                    <span className="goal-icon">{goal.icon}</span>
-                    <span className="goal-text">{goal.goal}</span>
-                  </div>
-                  <span className="goal-deadline">📅 {goal.deadline}</span>
+                <div className="dashboard-item-header">
+                  <span className="dashboard-label">{bar.label}</span>
+                  <span className="dashboard-note">{bar.note}</span>
                 </div>
-
-                <div className="goal-progress-bar">
+                <div className="now-progress large">
                   <motion.div
-                    className="goal-progress-fill"
+                    className="now-progress-fill"
+                    style={{ backgroundColor: bar.color }}
                     initial={{ width: 0 }}
-                    whileInView={{ width: `${goal.progress}%` }}
+                    whileInView={{ width: `${bar.value}%` }}
                     viewport={{ once: true }}
-                    transition={{ duration: 1, delay: index * 0.1 + 0.2 }}
+                    transition={{ duration: 1.2, delay: i * 0.1 + 0.2 }}
                   />
-                  <span className="goal-progress-text">{goal.progress}%</span>
+                  <span className="now-progress-label" style={{ color: bar.color }}>{bar.value}%</span>
                 </div>
               </motion.div>
             ))}
           </div>
         </section>
 
-        {/* 最近的想法 */}
+        {/* ── 最近的想法 ── */}
         <section className="now-section">
-          <motion.h2
-            className="section-title"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="title-icon">💭</span>
-            最近的想法
+          <motion.h2 className="now-section-title" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <span className="section-icon">💭</span> 最近的想法
           </motion.h2>
-
-          <div className="thoughts-container">
-            {currentStatus.thoughts.map((thought, index) => (
+          <div className="now-thoughts-grid">
+            {thoughts.map((t, i) => (
               <motion.div
-                key={index}
-                className="thought-card"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                key={i}
+                className="now-thought-card"
+                custom={i}
+                variants={fadeUp}
+                initial="hidden"
+                whileInView="visible"
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.15 }}
-                whileHover={{ scale: 1.05, rotate: 1 }}
+                whileHover={{ scale: 1.03 }}
               >
-                <div className="quote-mark">"</div>
-                <p>{thought}</p>
+                <span className="thought-quote">"</span>
+                <p>{t}</p>
               </motion.div>
             ))}
           </div>
         </section>
 
-        {/* nownownow 運動說明 */}
-        <motion.div
+        {/* ── Footer ── */}
+        <motion.footer
           className="now-footer"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true }}
         >
-          <p className="footer-text">
-            💡 這是一個 <a href="https://nownownow.com/" target="_blank" rel="noopener noreferrer">/now</a> 頁面
-            ，靈感來自 <a href="https://sive.rs/now" target="_blank" rel="noopener noreferrer">Derek Sivers</a>。
+          <p>
+            💡 這是一個{' '}
+            <a href="https://nownownow.com/" target="_blank" rel="noopener noreferrer">/now</a>{' '}
+            頁面，靈感來自{' '}
+            <a href="https://sive.rs/now" target="_blank" rel="noopener noreferrer">Derek Sivers</a>。
             <br />
-            用最真誠的方式分享當下的生活狀態，讓訪客了解現在的我正在做什麼。
+            用最真誠的方式分享當下的生活狀態。
           </p>
-        </motion.div>
+        </motion.footer>
       </div>
     </div>
   );

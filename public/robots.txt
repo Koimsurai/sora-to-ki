@@ -1,0 +1,12 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://koimsurai.blogsyte.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
