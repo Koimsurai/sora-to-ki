@@ -116,8 +116,8 @@ export const AdminLayout = () => {
           <div className="flex h-16 items-center border-b px-4">
             {sidebarOpen ? (
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <LayoutDashboard className="h-4 w-4" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-card/80">
+                  <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">Admin Panel</span>
@@ -125,8 +125,8 @@ export const AdminLayout = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <LayoutDashboard className="h-4 w-4" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-card/80">
+                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
               </div>
             )}
           </div>
@@ -144,8 +144,8 @@ export const AdminLayout = () => {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground",
+                      ? "bg-accent/60 text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:bg-accent/30 hover:text-accent-foreground",
                     !sidebarOpen && "justify-center"
                   )}
                 >

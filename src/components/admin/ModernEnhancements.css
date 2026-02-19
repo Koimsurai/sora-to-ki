@@ -1,164 +1,148 @@
-/* 現代化增強樣式 - 更多細節優化 */
+/* ══════════════════════════════════════════
+   Admin — Modern Glass Enhancements
+   ══════════════════════════════════════════ */
 
-/* 卡片懸停效果 */
+/* ── Card Hover ── */
 .admin-layout [class*="card"]:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15), 0 0 0 1px rgba(59, 130, 246, 0.1) !important;
+  box-shadow:
+    0 8px 28px rgba(127, 90, 240, 0.1),
+    0 0 0 1px rgba(127, 90, 240, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 統計卡片特殊效果 */
+/* Card Header */
 .admin-layout [class*="CardHeader"] {
-  border-bottom: 1px solid rgba(59, 130, 246, 0.05);
+  border-bottom: 1px solid rgba(127, 90, 240, 0.06);
   padding-bottom: 0.75rem;
 }
 
-/* 鏈接懸停效果 */
-.admin-layout a {
-  transition: color 0.2s ease;
-}
+/* ── Links ── */
+.admin-layout a { transition: color 0.2s ease; }
+.admin-layout a:hover { color: #a78bfa; }
 
-.admin-layout a:hover {
-  color: #60a5fa;
-}
+/* ── Icons ── */
+.admin-layout svg { transition: all 0.2s ease; }
+.admin-layout button:hover svg { transform: scale(1.05); }
 
-/* 圖標統一風格 */
-.admin-layout svg {
-  transition: all 0.2s ease;
-}
-
-.admin-layout button:hover svg {
-  transform: scale(1.1);
-}
-
-/* 表格行選中效果 */
+/* ── Table Rows ── */
 .admin-layout tbody tr[data-state="selected"] {
-  background: rgba(59, 130, 246, 0.12) !important;
-  border-color: rgba(59, 130, 246, 0.3) !important;
+  background: rgba(127, 90, 240, 0.1) !important;
+  border-color: rgba(127, 90, 240, 0.25) !important;
 }
 
-/* Checkbox 和 Radio 現代化 */
+/* ── Checkbox / Radio ── */
 .admin-layout input[type="checkbox"],
 .admin-layout input[type="radio"] {
-  accent-color: #3b82f6;
+  accent-color: #7f5af0;
 }
 
-/* 下拉菜單項目懸停 */
+/* ── Menu Items ── */
 .admin-layout [role="menuitem"]:hover,
 .admin-layout [role="option"]:hover {
-  background: rgba(59, 130, 246, 0.12) !important;
+  background: rgba(127, 90, 240, 0.1) !important;
 }
 
-/* 搜索框特殊樣式 */
+/* ── Search Box ── */
 .admin-layout input[type="search"] {
-  background: rgba(15, 22, 41, 0.5) !important;
-  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  background: rgba(14, 12, 28, 0.45) !important;
+  border: 1px solid rgba(127, 90, 240, 0.12) !important;
   padding-left: 2.5rem;
 }
-
 .admin-layout input[type="search"]:focus {
-  background: rgba(15, 22, 41, 0.8) !important;
-  border-color: rgba(59, 130, 246, 0.5) !important;
+  background: rgba(14, 12, 28, 0.75) !important;
+  border-color: rgba(127, 90, 240, 0.5) !important;
 }
 
-/* Breadcrumb 現代化 */
+/* ── Breadcrumb ── */
 .admin-layout [class*="breadcrumb"] {
-  color: rgba(226, 232, 240, 0.6);
+  color: rgba(226, 232, 240, 0.5);
 }
-
 .admin-layout [class*="breadcrumb"] a:hover {
-  color: #60a5fa;
+  color: #a78bfa;
 }
 
-/* 加載動畫優化 */
-.admin-layout [class*="animate-spin"] {
-  color: #3b82f6;
-}
+/* ── Spinner ── */
+.admin-layout [class*="animate-spin"] { color: #7f5af0; }
 
-/* Tab 導航現代化 */
+/* ── Tabs ── */
 .admin-layout [role="tab"][data-state="active"] {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: #3b82f6;
-  color: #60a5fa;
+  background: rgba(127, 90, 240, 0.12);
+  border-color: #7f5af0;
+  color: #a78bfa;
 }
 
-/* Toast 通知現代化 */
+/* ── Toast ── */
 .admin-layout [data-sonner-toast] {
-  background: #0f1629 !important;
-  border: 1px solid rgba(59, 130, 246, 0.2) !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4) !important;
+  background: rgba(14, 12, 28, 0.92) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(127, 90, 240, 0.12) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* 分頁按鈕優化 */
-.admin-layout [class*="pagination"] button {
-  border-radius: 0.5rem;
-}
-
+/* ── Pagination ── */
+.admin-layout [class*="pagination"] button { border-radius: 10px; }
 .admin-layout [class*="pagination"] button[data-active="true"] {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: #3b82f6;
+  background: rgba(127, 90, 240, 0.15);
+  border-color: #7f5af0;
 }
 
-/* 空狀態優化 */
+/* ── Empty State ── */
 .admin-layout [class*="empty"] svg {
-  opacity: 0.15;
-  color: #3b82f6;
+  opacity: 0.12;
+  color: #7f5af0;
 }
 
-/* 側邊欄導航項目 */
+/* ── Sidebar Nav ── */
 .admin-layout aside a {
-  border-radius: 0.5rem;
-  margin: 0.25rem 0.5rem;
+  border-radius: 10px;
+  margin: 0.2rem 0.5rem;
   transition: all 0.2s ease;
 }
-
 .admin-layout aside a:hover {
-  background: rgba(59, 130, 246, 0.1);
-  transform: translateX(4px);
+  background: rgba(127, 90, 240, 0.08);
+  transform: translateX(3px);
 }
-
-.admin-layout aside a[class*="bg-accent"] {
-  background: rgba(59, 130, 246, 0.15) !important;
-  border-left: 3px solid #3b82f6;
+.admin-layout aside a[class*="bg-accent"],
+.admin-layout aside a[class*="bg-primary"] {
+  background: rgba(127, 90, 240, 0.14) !important;
+  border-left: 3px solid #7f5af0;
   padding-left: calc(1rem - 3px);
 }
 
-/* 表單標籤優化 */
+/* ── Form Labels ── */
 .admin-layout label {
-  color: rgba(226, 232, 240, 0.9);
+  color: rgba(226, 232, 240, 0.85);
   font-weight: 500;
   font-size: 0.875rem;
   letter-spacing: 0.01em;
 }
 
-/* Select 下拉框優化 */
-.admin-layout select {
-  cursor: pointer;
-}
-
-.admin-layout select:hover {
-  border-color: rgba(59, 130, 246, 0.3) !important;
-}
-
-/* Dialog/Modal 背景遮罩 */
+/* ── Dialog Overlay ── */
 .admin-layout [class*="overlay"] {
-  background: rgba(10, 14, 39, 0.8) !important;
-  backdrop-filter: blur(4px);
+  background: rgba(6, 5, 14, 0.82) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-/* 工具提示優化 */
+/* ── Tooltip ── */
 .admin-layout [role="tooltip"] {
-  background: #0f1629 !important;
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border-radius: 0.375rem;
+  background: rgba(14, 12, 28, 0.92) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(127, 90, 240, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
 }
 
-/* 進度條優化 */
+/* ── Progress Bar ── */
 .admin-layout [role="progressbar"] {
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(127, 90, 240, 0.12);
+  border-radius: 999px;
 }
-
 .admin-layout [role="progressbar"] > div {
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  background: linear-gradient(90deg, #7f5af0, #a78bfa);
+  border-radius: 999px;
 }

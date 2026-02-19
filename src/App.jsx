@@ -64,6 +64,11 @@ const AdminPlaceholder = ({ title }) => (
   </div>
 );
 
+function LocationTracker({ onPathChange }) {
+  const location = useLocation();
+  useEffect(() => { onPathChange(location.pathname); }, [location.pathname, onPathChange]);
+  return null;
+}
 
 // --- Section Wrapper Component ---
 // This component wraps each section and uses useInView to track visibility
@@ -265,18 +270,7 @@ function Layout({ activeSection, onSectionChange }) {
       className="main-content-container"
       style={{ position: 'relative', zIndex: 10 }}
     >
-      {!isAdminPage && (
-        <Header 
-          activeSection={activeSection} 
-          style={{ 
-            position: 'sticky', 
-            top: 0, 
-            zIndex: 20,
-            transform: isPhotoPage ? 'translateY(-100%)' : 'translateY(0)',
-            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-          }} 
-        />
-      )}
+      {!isAdminPage && <Header activeSection={activeSection} />}
       <main>
         <Routes>
           <Route path="/" element={<MainPage onSectionChange={onSectionChange} />} />
@@ -331,6 +325,9 @@ function App() {
   const sharedRotationRef = useRef();
   const [activeSection, setActiveSection] = useState('home');
   const [isPageVisible, setIsPageVisible] = useState(true);
+  const [currentPath, setCurrentPath] = useState('/');
+  const isOnHomePage = currentPath === '/';
+  const handlePathChange = useCallback((p) => setCurrentPath(p), []);
 
   const handleSectionChange = useCallback((sectionId) => {
     setActiveSection(sectionId);
@@ -387,6 +384,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <LocationTracker onPathChange={handlePathChange} />
       <ParallaxProvider>
         <PageVisibilityProvider isVisible={isPageVisible}>
           <div className="App">
@@ -410,15 +408,15 @@ function App() {
             >
               <Suspense fallback={null}>
                 <StarfieldScene mainStarsRef={sharedRotationRef} />
-                <SpaceDebris count={300} />
-                <Saturn3D animate={animateSaturn} />
+                {isOnHomePage && <SpaceDebris count={300} />}
+                {isOnHomePage && <Saturn3D animate={animateSaturn} />}
                 <TwinklingStars rotationRef={sharedRotationRef} count={800} />
               </Suspense>
             </Canvas>
-            <ForegroundStars count={15} />
-            <RandomShootingStars />
-            <RandomComets />
-            <RandomUFOs />
+            {isOnHomePage && <ForegroundStars count={15} />}
+            {isOnHomePage && <RandomShootingStars />}
+            {isOnHomePage && <RandomComets />}
+            {isOnHomePage && <RandomUFOs />}
             {showMainHtmlContent && (
                <Layout activeSection={activeSection} onSectionChange={handleSectionChange} />
             )}
