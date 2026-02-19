@@ -1,7 +1,9 @@
-import React, { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import Editor from '@monaco-editor/react';
 import type { editor, IDisposable } from 'monaco-editor';
 import { MonacoToolbar } from './monaco-toolbar';
+import PhotoSelectorModal from '../admin/PhotoSelectorModal';
 import { useMonacoShortcuts } from './monaco-shortcuts';
 import { MonacoTextHelper } from './monaco-text-helper';
 import { MonacoEditorProps } from './types';
@@ -22,6 +24,9 @@ export default function MonacoEditor({
   const [isEditorReady, setIsEditorReady] = useState(false);
   const disposablesRef = useRef<IDisposable[]>([]);
 
+  // NAS Selector State
+  const [showNASSelector, setShowNASSelector] = useState(false);
+
   // 統計數據
   const [totalWords, setTotalWords] = useState(0);
   const [totalChars, setTotalChars] = useState(0);
@@ -30,6 +35,40 @@ export default function MonacoEditor({
   const [selWords, setSelWords] = useState(0);
   const [selChars, setSelChars] = useState(0);
   const [selLines, setSelLines] = useState(0);
+
+  /**
+   * 開啟 NAS 照片選擇器
+   */
+  const handleNAS = useCallback(() => {
+    setShowNASSelector(true);
+  }, []);
+
+  /**
+   * 處理 NAS 照片選擇
+   */
+  const handleNASSelect = useCallback((photo: any) => {
+    // 插入 markdown 圖片
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const position = editor.getPosition();
+    if (position) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const monacoNs = (window as any).monaco;
+      if (monacoNs) {
+        // 使用 highResUrl 或 thumbnailUrl，這裡預設 highResUrl
+        // 需注意 url 已經包含 /nas-images/ 前綴
+        const imageUrl = photo.highResUrl || photo.thumbnailUrl;
+        const textToInsert = `![${photo.title || 'image'}](${imageUrl})\n`;
+
+        editor.executeEdits('insert-nas-image', [{
+          range: new monacoNs.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+          text: textToInsert,
+        }]);
+      }
+    }
+    setShowNASSelector(false);
+  }, []);
 
   /**
    * 編輯器掛載完成時的回調
@@ -154,10 +193,14 @@ export default function MonacoEditor({
 
       disposablesRef.current.push(contentDisposable, selectionDisposable);
 
-      // 監聽 Paste 事件 (處理圖片貼上 — Base64 內嵌)
+      // 監聽 Paste 事件 — 使用 capture 以優先攔截圖片貼上
       const domNode = editor.getContainerDomNode();
       const pasteHandler = async (e: ClipboardEvent) => {
         if (!e.clipboardData) return;
+
+        // 先檢查焦點是否在 editor 範圍內
+        const activeEl = document.activeElement;
+        if (!domNode.contains(activeEl)) return;
 
         // 檢查是否有圖片檔案
         let imageFile: File | null = null;
@@ -198,12 +241,26 @@ export default function MonacoEditor({
           const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.8 });
           bitmap.close();
 
-          const reader = new FileReader();
-          const dataUrl: string = await new Promise((resolve, reject) => {
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
+          // Upload to Server
+          const formData = new FormData();
+          formData.append('file', blob, imageFile.name.replace(/\.[^/.]+$/, "") + ".webp");
+
+          const token = localStorage.getItem('adminToken');
+          const res = await fetch('/api/admin/upload', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
           });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || 'Upload failed');
+          }
+
+          const data = await res.json();
+          const imageUrl = data.url; // e.g., /uploads/2023/10/xyz.webp
 
           // 插入 markdown 圖片
           const position = editor.getPosition();
@@ -213,21 +270,22 @@ export default function MonacoEditor({
             if (monacoNs) {
               editor.executeEdits('paste-image', [{
                 range: new monacoNs.Range(position.lineNumber, position.column, position.lineNumber, position.column),
-                text: `![image](${dataUrl})\n`,
+                text: `![image](${imageUrl})\n`,
               }]);
             }
           }
         } catch (err: any) {
-          console.error('Paste image error:', err);
-          alert('圖片貼上失敗: ' + err.message);
+          console.error('Paste/Upload image error:', err);
+          alert('圖片上傳失敗: ' + err.message);
         }
       };
 
-      domNode.addEventListener('paste', pasteHandler);
+      // 使用 capture: true 讓事件在 capture 階段就被攔截，優先於 Monaco 的 handler
+      window.addEventListener('paste', pasteHandler, true);
 
       // 添加到 cleanup
       disposablesRef.current.push({
-        dispose: () => domNode.removeEventListener('paste', pasteHandler)
+        dispose: () => window.removeEventListener('paste', pasteHandler, true)
       });
     },
     []
@@ -337,10 +395,20 @@ export default function MonacoEditor({
           onItalic={handleItalic}
           onLink={handleLink}
           onImage={handleImage}
+          onNAS={handleNAS}
           onUndo={handleUndo}
           onRedo={handleRedo}
           disabled={!isEditorReady}
         />
+      )}
+
+      {ReactDOM.createPortal(
+        <PhotoSelectorModal
+          isOpen={showNASSelector}
+          onClose={() => setShowNASSelector(false)}
+          onSelect={handleNASSelect}
+        />,
+        document.body
       )}
 
       <Editor

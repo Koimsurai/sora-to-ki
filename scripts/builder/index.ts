@@ -72,11 +72,11 @@ async function processPhoto(
 
     // 3. 生成 PhotoManifest
     const photoId = path.basename(inputPath, path.extname(inputPath));
-    
+
     // 從檔名或 EXIF 提取日期
     let shootTime: number | undefined;
     let title = fileName;
-    
+
     // 嘗試從檔名提取日期 (YYYYMMDD 格式)
     const dateMatch = fileName.match(/^(\d{4})(\d{2})(\d{2})/);
     if (dateMatch) {
@@ -93,25 +93,25 @@ async function processPhoto(
       id: photoId,
       title,
       description: `${exifData.make || ''} ${exifData.model || ''}`.trim(),
-      
+
       urls: {
         full: processedImage.highResUrl,
         regular: processedImage.highResUrl,
         small: processedImage.thumbnailUrl,
         thumb: processedImage.thumbnailUrl,
       },
-      
+
       originalUrl: processedImage.highResUrl,
       thumbnailUrl: processedImage.thumbnailUrl,
-      
+
       width: processedImage.width,
       height: processedImage.height,
       aspectRatio: processedImage.width / processedImage.height,
       size: processedImage.size,
       format: processedImage.format,
-      
+
       thumbHash: processedImage.thumbHash,
-      
+
       exif: {
         make: exifData.make,
         model: exifData.model,
@@ -127,10 +127,10 @@ async function processPhoto(
         WhiteBalance: exifData.whiteBalance,
         MeteringMode: exifData.meteringMode,
       },
-      
+
       gps: exifData.gps,
       shootTime,
-      
+
       tags: [],
     };
 
@@ -157,12 +157,25 @@ export async function build() {
   };
 
   try {
-    // 1. 載入配置
+    // 1. 載入配置 & 現有 Manifest
     console.log('📝 載入配置...');
     const config = await loadConfig();
     console.log(`  來源: ${config.source.type} - ${config.source.path}`);
     console.log(`  輸出: ${config.output.directory}`);
     console.log(`  Manifest: ${config.output.manifestPath}\n`);
+
+    // 讀取現有的 manifest 以支援增量構建
+    let existingManifests: Map<string, PhotoManifest> = new Map();
+    try {
+      const existingData = await fs.readFile(config.output.manifestPath, 'utf-8');
+      const parsed = JSON.parse(existingData);
+      if (Array.isArray(parsed.photos)) {
+        parsed.photos.forEach((p: PhotoManifest) => existingManifests.set(p.id, p));
+        console.log(`  📚 讀取到 ${existingManifests.size} 筆現有資料，將進行增量構建`);
+      }
+    } catch (e) {
+      console.log('  ✨ 無現有 manifest，將進行完整構建');
+    }
 
     // 2. 掃描照片
     console.log('🔍 掃描照片...');
@@ -180,8 +193,32 @@ export async function build() {
     const manifests: PhotoManifest[] = [];
 
     for (let i = 0; i < photos.length; i++) {
+      const inputPath = photos[i];
+      const photoId = path.basename(inputPath, path.extname(inputPath));
+
+      // 檢查是否已存在且檔案完好
+      if (existingManifests.has(photoId)) {
+        const existing = existingManifests.get(photoId)!;
+        // 簡單檢查輸出檔案是否還在
+        const thumbPath = path.join(config.output.directory, path.basename(existing.thumbnailUrl));
+        const highResPath = path.join(config.output.directory, path.basename(existing.originalUrl));
+
+        try {
+          await fs.access(thumbPath);
+          await fs.access(highResPath);
+          // 檔案存在，跳過處理
+          console.log(`⏩ [${i + 1}] 跳過已存在: ${path.basename(inputPath)}`);
+          manifests.push(existing);
+          stats.skipped++;
+          continue;
+        } catch (err) {
+          // 檔案缺失，重新處理
+          console.log(`Rule [${i + 1}] 檔案缺失，重新處理: ${path.basename(inputPath)}`);
+        }
+      }
+
       const manifest = await processPhoto(
-        photos[i],
+        inputPath,
         config.output.directory,
         config,
         i + 1

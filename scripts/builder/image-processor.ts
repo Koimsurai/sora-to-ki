@@ -26,7 +26,7 @@ export interface ProcessedImage {
  */
 export async function processImage(
   inputPath: string,
-  outputDir: string,
+  outputDir: string = '/mnt/hdd16tb_01/nas-storage/gallery', // Default to NAS path
   config: BuilderConfig
 ): Promise<ProcessedImage> {
   const fileName = path.basename(inputPath, path.extname(inputPath));
@@ -34,6 +34,9 @@ export async function processImage(
 
   // 確保輸出目錄存在
   await fs.mkdir(outputDir, { recursive: true });
+
+  // URL Base for NAS
+  const urlBase = '/nas-images';
 
   // 讀取原始圖片
   let image = sharp(inputPath);
@@ -61,9 +64,9 @@ export async function processImage(
       withoutEnlargement: true,
       fit: 'inside',
     })
-    [config.processing.thumbnail.format]({
-      quality: config.processing.thumbnail.quality,
-    })
+  [config.processing.thumbnail.format]({
+    quality: config.processing.thumbnail.quality,
+  })
     .toFile(thumbnailPath);
 
   console.log(`✅ 縮圖生成: ${thumbnailFileName}`);
@@ -78,9 +81,9 @@ export async function processImage(
       withoutEnlargement: true,
       fit: 'inside',
     })
-    [config.processing.highRes.format]({
-      quality: config.processing.highRes.quality,
-    })
+  [config.processing.highRes.format]({
+    quality: config.processing.highRes.quality,
+  })
     .toFile(highResPath);
 
   console.log(`✅ 高解析度圖片生成: ${highResFileName}`);
@@ -110,9 +113,9 @@ export async function processImage(
 
   return {
     thumbnailPath,
-    thumbnailUrl: `/generated/${thumbnailFileName}`,
+    thumbnailUrl: `${urlBase}/${thumbnailFileName}`,
     highResPath,
-    highResUrl: `/generated/${highResFileName}`,
+    highResUrl: `${urlBase}/${highResFileName}`,
     thumbHash,
     width: originalWidth,
     height: originalHeight,

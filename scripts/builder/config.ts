@@ -3,6 +3,8 @@
  * 照片構建器配置
  */
 
+import * as path from 'path';
+
 export interface BuilderConfig {
   // 照片來源
   source: {
@@ -76,13 +78,18 @@ export const defaultConfig: BuilderConfig = {
  */
 export async function loadConfig(): Promise<BuilderConfig> {
   try {
-    // 嘗試載入 builder.config.ts
-    const userConfig = await import('../../builder.config.js').then(
+    const configPath = path.resolve(process.cwd(), 'builder.config.js');
+    console.log(`  Trying to load config from: ${configPath}`);
+
+    // 嘗試載入 builder.config.js
+    const userConfig = await import(configPath).then(
       (m) => m.default || m
     );
+    console.log('  ✅ Config loaded successfully');
     return { ...defaultConfig, ...userConfig };
   } catch (error) {
-    console.log('⚠️  未找到 builder.config.ts，使用預設配置');
+    console.log('⚠️  未找到 builder.config.js 或載入失敗，使用預設配置');
+    console.error('  Error details:', error);
     return defaultConfig;
   }
 }

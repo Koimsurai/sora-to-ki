@@ -20,9 +20,83 @@ const STEAM_ID = process.env.STEAM_ID;
 // 初始化資料庫
 initializeDatabase();
 
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+
+// --- Multer Storage Config ---
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // 儲存路徑: storage/uploads/YYYY/MM/
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const uploadDir = path.join(__dirname, 'storage', 'uploads', String(year), month);
+
+    // 確保目錄存在
+    fs.mkdirSync(uploadDir, { recursive: true });
+
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // 檔名: timestamp-originalname (避免衝突)
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+});
+
 // --- API Routes ---
 
 const apiRouter = express.Router();
+
+// Upload Endpoint
+apiRouter.post('/admin/upload', authMiddleware, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  // 建構回傳 URL: /uploads/YYYY/MM/filename
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const fileUrl = `/uploads/${year}/${month}/${req.file.filename}`;
+
+  res.json({
+    message: 'success',
+    url: fileUrl,
+    filename: req.file.filename
+  });
+});
+
+// Gallery API Endpoint
+apiRouter.get('/gallery/photos', async (req, res) => {
+  const manifestPath = path.join(__dirname, 'storage', 'gallery', 'manifest.json');
+
+  if (fs.existsSync(manifestPath)) {
+    try {
+      const data = fs.readFileSync(manifestPath, 'utf8');
+      const manifest = JSON.parse(data);
+      res.json(manifest); // 回傳完整結構 (包含 version, photos 等)
+    } catch (err) {
+      console.error('Error reading gallery manifest:', err);
+      res.status(500).json({ error: 'Failed to read gallery manifest' });
+    }
+  } else {
+    // 若無 manifest，回傳空結構以免前端錯誤
+    res.json({
+      version: "1.0.0",
+      generatedAt: new Date().toISOString(),
+      totalPhotos: 0,
+      photos: []
+    });
+  }
+});
 
 // Health check endpoint
 apiRouter.get('/health', (req, res) => {
@@ -86,17 +160,17 @@ apiRouter.post('/auth/login', async (req, res) => {
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
-        
+
         if (!isValidPassword) {
           return res.status(401).json({ message: '用戶名或密碼錯誤' });
         }
 
         // 生成 JWT token
         const token = jwt.sign(
-          { 
-            id: user.id, 
-            username: user.username, 
-            role: user.role 
+          {
+            id: user.id,
+            username: user.username,
+            role: user.role
           },
           JWT_SECRET,
           { expiresIn: '7d' }
@@ -309,19 +383,19 @@ apiRouter.get('/admin/posts/:id', authMiddleware, (req, res) => {
     WHERE p.id = ?
     GROUP BY p.id
   `;
-  
+
   db.get(sql, [req.params.id], (err, row) => {
     if (err) {
       console.error('查詢文章錯誤:', err);
       res.status(500).json({ error: err.message });
       return;
     }
-    
+
     if (!row) {
       res.status(404).json({ message: 'Post not found' });
       return;
     }
-    
+
     res.json({
       message: 'success',
       ...row,
@@ -393,7 +467,7 @@ apiRouter.get('/posts/:id', (req, res) => {
     GROUP BY p.id
   `;
   const params = [req.params.id];
-  
+
   db.get(sql, params, (err, row) => {
     if (err) {
       res.status(400).json({ "error": err.message });
@@ -414,7 +488,7 @@ apiRouter.get('/posts/:id', (req, res) => {
 // POST increment view count
 apiRouter.post('/posts/:id/view', (req, res) => {
   const sql = 'UPDATE posts SET view_count = view_count + 1 WHERE id = ?';
-  db.run(sql, [req.params.id], function(err) {
+  db.run(sql, [req.params.id], function (err) {
     if (err) {
       res.status(400).json({ "error": err.message });
       return;
@@ -423,9 +497,9 @@ apiRouter.post('/posts/:id/view', (req, res) => {
       res.status(404).json({ "message": "Post not found" });
       return;
     }
-    res.json({ 
+    res.json({
       "message": "success",
-      "view_count_incremented": true 
+      "view_count_incremented": true
     });
   });
 });
@@ -433,7 +507,7 @@ apiRouter.post('/posts/:id/view', (req, res) => {
 // POST like a post
 apiRouter.post('/posts/:id/like', (req, res) => {
   const sql = 'UPDATE posts SET likes = likes + 1 WHERE id = ?';
-  db.run(sql, [req.params.id], function(err) {
+  db.run(sql, [req.params.id], function (err) {
     if (err) {
       res.status(400).json({ "error": err.message });
       return;
@@ -442,14 +516,14 @@ apiRouter.post('/posts/:id/like', (req, res) => {
       res.status(404).json({ "message": "Post not found" });
       return;
     }
-    
+
     // 回傳更新後的按讚數
     db.get('SELECT likes FROM posts WHERE id = ?', [req.params.id], (err, row) => {
       if (err) {
         res.status(500).json({ "error": err.message });
         return;
       }
-      res.json({ 
+      res.json({
         "message": "success",
         "likes": row.likes
       });
@@ -460,7 +534,7 @@ apiRouter.post('/posts/:id/like', (req, res) => {
 // POST unlike a post
 apiRouter.post('/posts/:id/unlike', (req, res) => {
   const sql = 'UPDATE posts SET likes = likes - 1 WHERE id = ? AND likes > 0';
-  db.run(sql, [req.params.id], function(err) {
+  db.run(sql, [req.params.id], function (err) {
     if (err) {
       res.status(400).json({ "error": err.message });
       return;
@@ -469,14 +543,14 @@ apiRouter.post('/posts/:id/unlike', (req, res) => {
       res.status(404).json({ "message": "Post not found or cannot unlike" });
       return;
     }
-    
+
     // 回傳更新後的按讚數
     db.get('SELECT likes FROM posts WHERE id = ?', [req.params.id], (err, row) => {
       if (err) {
         res.status(500).json({ "error": err.message });
         return;
       }
-      res.json({ 
+      res.json({
         "message": "success",
         "likes": row.likes
       });
@@ -493,7 +567,7 @@ apiRouter.get('/tags', (req, res) => {
     GROUP BY t.id
     ORDER BY post_count DESC, t.name ASC
   `;
-  
+
   db.all(sql, [], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -515,7 +589,7 @@ apiRouter.get('/admin/tags', authMiddleware, (req, res) => {
     GROUP BY t.id, t.name, t.created_at
     ORDER BY t.name ASC
   `;
-  
+
   db.all(sql, [], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -528,7 +602,7 @@ apiRouter.get('/admin/tags', authMiddleware, (req, res) => {
 // POST create new tag
 apiRouter.post('/admin/tags', authMiddleware, (req, res) => {
   const { name } = req.body;
-  
+
   if (!name) {
     return res.status(400).json({ error: '標籤名稱為必填' });
   }
@@ -536,7 +610,7 @@ apiRouter.post('/admin/tags', authMiddleware, (req, res) => {
   db.run(
     `INSERT INTO tags (name, created_at) VALUES (?, datetime('now'))`,
     [name],
-    function(err) {
+    function (err) {
       if (err) {
         if (err.message.includes('UNIQUE constraint failed')) {
           return res.status(409).json({ error: '標籤已存在' });
@@ -557,7 +631,7 @@ apiRouter.post('/admin/tags', authMiddleware, (req, res) => {
 apiRouter.put('/admin/tags/:id', authMiddleware, (req, res) => {
   const tagId = req.params.id;
   const { name } = req.body;
-  
+
   if (!name) {
     return res.status(400).json({ error: '標籤名稱為必填' });
   }
@@ -565,7 +639,7 @@ apiRouter.put('/admin/tags/:id', authMiddleware, (req, res) => {
   db.run(
     `UPDATE tags SET name = ? WHERE id = ?`,
     [name, tagId],
-    function(err) {
+    function (err) {
       if (err) {
         if (err.message.includes('UNIQUE constraint failed')) {
           return res.status(409).json({ error: '標籤名稱已存在' });
@@ -597,7 +671,7 @@ apiRouter.delete('/admin/tags/:id', authMiddleware, (req, res) => {
     }
 
     // 再刪除標籤
-    db.run('DELETE FROM tags WHERE id = ?', [tagId], function(deleteErr) {
+    db.run('DELETE FROM tags WHERE id = ?', [tagId], function (deleteErr) {
       if (deleteErr) {
         return res.status(500).json({ error: deleteErr.message });
       }
@@ -627,7 +701,7 @@ apiRouter.get('/categories', (req, res) => {
     GROUP BY c.id, c.name, c.slug, c.description
     ORDER BY post_count DESC, c.name ASC
   `;
-  
+
   db.all(sql, [], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -656,7 +730,7 @@ apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
     GROUP BY c.id, c.name, c.slug, c.description, c.created_at, c.updated_at
     ORDER BY c.name ASC
   `;
-  
+
   db.all(sql, [], (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -669,7 +743,7 @@ apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
 // POST create new category
 apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
   const { name, description, slug } = req.body;
-  
+
   if (!name) {
     return res.status(400).json({ error: '分類名稱為必填' });
   }
@@ -684,7 +758,7 @@ apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
     `INSERT INTO categories (name, slug, description, created_at, updated_at) 
      VALUES (?, ?, ?, datetime('now'), datetime('now'))`,
     [name, categorySlug, description || ''],
-    function(err) {
+    function (err) {
       if (err) {
         if (err.message.includes('UNIQUE constraint failed')) {
           return res.status(409).json({ error: '分類名稱或 slug 已存在' });
@@ -707,7 +781,7 @@ apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
 apiRouter.put('/admin/categories/:id', authMiddleware, (req, res) => {
   const categoryId = req.params.id;
   const { name, description, slug } = req.body;
-  
+
   if (!name) {
     return res.status(400).json({ error: '分類名稱為必填' });
   }
@@ -717,7 +791,7 @@ apiRouter.put('/admin/categories/:id', authMiddleware, (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    
+
     if (!oldCategory) {
       return res.status(404).json({ error: '分類不存在' });
     }
@@ -732,7 +806,7 @@ apiRouter.put('/admin/categories/:id', authMiddleware, (req, res) => {
        SET name = ?, slug = ?, description = ?, updated_at = datetime('now')
        WHERE id = ?`,
       [name, categorySlug, description || '', categoryId],
-      function(updateErr) {
+      function (updateErr) {
         if (updateErr) {
           if (updateErr.message.includes('UNIQUE constraint failed')) {
             return res.status(409).json({ error: '分類名稱或 slug 已存在' });
@@ -774,7 +848,7 @@ apiRouter.delete('/admin/categories/:id', authMiddleware, (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    
+
     if (!category) {
       return res.status(404).json({ error: '分類不存在' });
     }
@@ -783,7 +857,7 @@ apiRouter.delete('/admin/categories/:id', authMiddleware, (req, res) => {
     db.run(
       'UPDATE posts SET category = NULL WHERE category = ?',
       [category.name],
-      function(updateErr) {
+      function (updateErr) {
         if (updateErr) {
           return res.status(500).json({ error: updateErr.message });
         }
@@ -794,7 +868,7 @@ apiRouter.delete('/admin/categories/:id', authMiddleware, (req, res) => {
         db.run(
           'DELETE FROM categories WHERE id = ?',
           [categoryId],
-          function(deleteErr) {
+          function (deleteErr) {
             if (deleteErr) {
               return res.status(500).json({ error: deleteErr.message });
             }
@@ -816,9 +890,9 @@ apiRouter.delete('/admin/categories/:id', authMiddleware, (req, res) => {
 apiRouter.post('/admin/posts', authMiddleware, (req, res) => {
   console.log('[POST /api/admin/posts] Received request to create a new post.');
   console.log('[POST /api/admin/posts] Body:', req.body);
-  
+
   const { title, content, excerpt, category, tags = [], status = 'draft' } = req.body;
-  
+
   if (!title || !content) {
     return res.status(400).json({ error: "缺少必填欄位: title, content" });
   }
@@ -828,8 +902,8 @@ apiRouter.post('/admin/posts', authMiddleware, (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `;
   const params = [title, content, excerpt, category || null, status, 'Koimsurai'];
-  
-  db.run(sql, params, function(err) {
+
+  db.run(sql, params, function (err) {
     if (err) {
       console.error('[POST /api/admin/posts] Database error:', err.message);
       return res.status(500).json({ error: err.message });
@@ -857,7 +931,7 @@ apiRouter.post('/admin/posts', authMiddleware, (req, res) => {
 apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
   console.log(`[PUT /api/admin/posts/${req.params.id}] Received request to update post.`);
   console.log('[PUT /api/admin/posts/:id] Body:', req.body);
-  
+
   const { title, content, excerpt, category, tags = [], status } = req.body;
   const sql = `
     UPDATE posts SET 
@@ -871,12 +945,12 @@ apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
   `;
   const params = [title, content, excerpt, category, status, req.params.id];
 
-  db.run(sql, params, function(err) {
+  db.run(sql, params, function (err) {
     if (err) {
       console.error(`[PUT /api/admin/posts/${req.params.id}] Database error:`, err.message);
       return res.status(500).json({ error: err.message });
     }
-    
+
     if (this.changes === 0) {
       return res.status(404).json({ error: "文章不存在" });
     }
@@ -899,20 +973,20 @@ apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
 // DELETE post (Admin)
 apiRouter.delete('/admin/posts/:id', authMiddleware, (req, res) => {
   console.log(`[DELETE /api/admin/posts/${req.params.id}] Received request to delete post.`);
-  
-  db.run('DELETE FROM posts WHERE id = ?', [req.params.id], function(err) {
+
+  db.run('DELETE FROM posts WHERE id = ?', [req.params.id], function (err) {
     if (err) {
       console.error(`[DELETE /api/admin/posts/${req.params.id}] Database error:`, err.message);
       return res.status(500).json({ error: err.message });
     }
-    
+
     if (this.changes === 0) {
       return res.status(404).json({ error: "文章不存在" });
     }
 
-    res.json({ 
+    res.json({
       message: "文章已刪除",
-      deleted: this.changes 
+      deleted: this.changes
     });
   });
 });
@@ -935,7 +1009,7 @@ function manageTags(postId, tags, callback) {
       if (hasError) return;
 
       // 插入或取得標籤 ID
-      db.run("INSERT OR IGNORE INTO tags (name) VALUES (?)", [tagName], function(err) {
+      db.run("INSERT OR IGNORE INTO tags (name) VALUES (?)", [tagName], function (err) {
         if (err && !hasError) {
           hasError = true;
           return callback(err);
@@ -970,9 +1044,9 @@ function manageTags(postId, tags, callback) {
 apiRouter.post('/posts', authMiddleware, (req, res) => {
   console.log('[POST /api/posts] Received request to create a new post.');
   console.log('[POST /api/posts] Body:', req.body);
-  
+
   const { title, content, excerpt, category, tags = [], status = 'draft' } = req.body;
-  
+
   if (!title || !content) {
     res.status(400).json({ "error": "Missing required fields: title, content" });
     return;
@@ -980,8 +1054,8 @@ apiRouter.post('/posts', authMiddleware, (req, res) => {
 
   const sql = 'INSERT INTO posts (title, content, excerpt, category, status, author, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))';
   const params = [title, content, excerpt, category || null, status, 'Koimsurai'];
-  
-  db.run(sql, params, function(err) {
+
+  db.run(sql, params, function (err) {
     if (err) {
       console.error('[POST /api/posts] Database error:', err.message);
       res.status(400).json({ "error": err.message });
@@ -1022,13 +1096,13 @@ apiRouter.put('/posts/:id', authMiddleware, (req, res) => {
   `;
   const params = [title, content, excerpt, category, status, req.params.id];
 
-  db.run(sql, params, function(err) {
+  db.run(sql, params, function (err) {
     if (err) {
-      res.status(400).json({"error": err.message});
+      res.status(400).json({ "error": err.message });
       return;
     }
     if (this.changes === 0) {
-      res.status(404).json({"message": "Post not found"});
+      res.status(404).json({ "message": "Post not found" });
       return;
     }
 
@@ -1051,13 +1125,13 @@ apiRouter.put('/posts/:id', authMiddleware, (req, res) => {
 // PATCH post status
 apiRouter.patch('/posts/:id/status', authMiddleware, (req, res) => {
   const { status } = req.body;
-  
+
   if (!status || !['published', 'draft'].includes(status)) {
     return res.status(400).json({ error: '無效的狀態值，必須是 published 或 draft' });
   }
 
   const sql = 'UPDATE posts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
-  db.run(sql, [status, req.params.id], function(err) {
+  db.run(sql, [status, req.params.id], function (err) {
     if (err) {
       console.error('更新文章狀態錯誤:', err);
       res.status(400).json({ error: err.message });
@@ -1067,10 +1141,10 @@ apiRouter.patch('/posts/:id/status', authMiddleware, (req, res) => {
       res.status(404).json({ message: '找不到文章' });
       return;
     }
-    res.json({ 
+    res.json({
       message: '狀態更新成功',
       status: status,
-      changes: this.changes 
+      changes: this.changes
     });
   });
 });
@@ -1078,13 +1152,13 @@ apiRouter.patch('/posts/:id/status', authMiddleware, (req, res) => {
 // DELETE a post
 apiRouter.delete('/posts/:id', authMiddleware, (req, res) => {
   const sql = 'DELETE FROM posts WHERE id = ?';
-  db.run(sql, req.params.id, function(err) {
+  db.run(sql, req.params.id, function (err) {
     if (err) {
-      res.status(400).json({"error": err.message});
+      res.status(400).json({ "error": err.message });
       return;
     }
     if (this.changes === 0) {
-      res.status(404).json({"message": "Post not found"});
+      res.status(404).json({ "message": "Post not found" });
       return;
     }
     res.json({ "message": "deleted", "changes": this.changes });
@@ -1126,7 +1200,7 @@ apiRouter.post('/posts/:id/comments', (req, res) => {
   const sql = 'INSERT INTO comments (post_id, author, content) VALUES (?, ?, ?)';
   const params = [req.params.id, author, content];
 
-  db.run(sql, params, function(err) {
+  db.run(sql, params, function (err) {
     if (err) {
       res.status(400).json({ "error": err.message });
       return;
@@ -1141,7 +1215,7 @@ apiRouter.post('/posts/:id/comments', (req, res) => {
 // POST like a comment
 apiRouter.post('/comments/:id/like', (req, res) => {
   const sql = 'UPDATE comments SET likes = likes + 1 WHERE id = ?';
-  db.run(sql, [req.params.id], function(err) {
+  db.run(sql, [req.params.id], function (err) {
     if (err) {
       res.status(400).json({ "error": err.message });
       return;
@@ -1150,14 +1224,14 @@ apiRouter.post('/comments/:id/like', (req, res) => {
       res.status(404).json({ "message": "Comment not found" });
       return;
     }
-    
+
     // 回傳更新後的按讚數
     db.get('SELECT likes FROM comments WHERE id = ?', [req.params.id], (err, row) => {
       if (err) {
         res.status(500).json({ "error": err.message });
         return;
       }
-      res.json({ 
+      res.json({
         "message": "success",
         "likes": row.likes
       });
@@ -1170,7 +1244,7 @@ apiRouter.post('/comments/:id/like', (req, res) => {
 // POST subscribe to newsletter
 apiRouter.post('/newsletter/subscribe', (req, res) => {
   const { email, name } = req.body;
-  
+
   if (!email) {
     return res.status(400).json({ "error": "Email is required" });
   }
@@ -1184,7 +1258,7 @@ apiRouter.post('/newsletter/subscribe', (req, res) => {
   const sql = 'INSERT INTO newsletter_subscribers (email, name, status) VALUES (?, ?, ?)';
   const params = [email, name || null, 'active'];
 
-  db.run(sql, params, function(err) {
+  db.run(sql, params, function (err) {
     if (err) {
       if (err.message.includes('UNIQUE constraint failed')) {
         return res.status(400).json({ "error": "This email is already subscribed" });
@@ -1202,13 +1276,13 @@ apiRouter.post('/newsletter/subscribe', (req, res) => {
 // POST unsubscribe from newsletter
 apiRouter.post('/newsletter/unsubscribe', (req, res) => {
   const { email } = req.body;
-  
+
   if (!email) {
     return res.status(400).json({ "error": "Email is required" });
   }
 
   const sql = 'UPDATE newsletter_subscribers SET status = ?, unsubscribed_at = datetime("now") WHERE email = ?';
-  db.run(sql, ['unsubscribed', email], function(err) {
+  db.run(sql, ['unsubscribed', email], function (err) {
     if (err) {
       res.status(400).json({ "error": err.message });
       return;
@@ -1259,21 +1333,21 @@ apiRouter.get('/newsletter/subscribers', authMiddleware, (req, res) => {
 // GET Steam player summary
 apiRouter.get('/steam/player', (req, res) => {
   if (!STEAM_API_KEY || !STEAM_ID) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Steam API 未配置',
       message: '請在 server/.env 中設置 STEAM_API_KEY 和 STEAM_ID'
     });
   }
 
   const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${STEAM_API_KEY}&steamids=${STEAM_ID}`;
-  
+
   https.get(url, (apiRes) => {
     let data = '';
-    
+
     apiRes.on('data', (chunk) => {
       data += chunk;
     });
-    
+
     apiRes.on('end', () => {
       try {
         const jsonData = JSON.parse(data);
@@ -1291,21 +1365,21 @@ apiRouter.get('/steam/player', (req, res) => {
 // GET Steam recently played games
 apiRouter.get('/steam/recent-games', (req, res) => {
   if (!STEAM_API_KEY || !STEAM_ID) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Steam API 未配置',
       message: '請在 server/.env 中設置 STEAM_API_KEY 和 STEAM_ID'
     });
   }
 
   const url = `https://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_API_KEY}&steamid=${STEAM_ID}&format=json`;
-  
+
   https.get(url, (apiRes) => {
     let data = '';
-    
+
     apiRes.on('data', (chunk) => {
       data += chunk;
     });
-    
+
     apiRes.on('end', () => {
       try {
         const jsonData = JSON.parse(data);
@@ -1323,21 +1397,21 @@ apiRouter.get('/steam/recent-games', (req, res) => {
 // GET Steam owned games (所有擁有的遊戲)
 apiRouter.get('/steam/owned-games', (req, res) => {
   if (!STEAM_API_KEY || !STEAM_ID) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Steam API 未配置',
       message: '請在 server/.env 中設置 STEAM_API_KEY 和 STEAM_ID'
     });
   }
 
   const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${STEAM_API_KEY}&steamid=${STEAM_ID}&include_appinfo=true&include_played_free_games=true&format=json`;
-  
+
   https.get(url, (apiRes) => {
     let data = '';
-    
+
     apiRes.on('data', (chunk) => {
       data += chunk;
     });
-    
+
     apiRes.on('end', () => {
       try {
         const jsonData = JSON.parse(data);
@@ -1355,7 +1429,7 @@ apiRouter.get('/steam/owned-games', (req, res) => {
 // GET Steam game achievements (特定遊戲的成就)
 apiRouter.get('/steam/achievements/:appid', (req, res) => {
   if (!STEAM_API_KEY || !STEAM_ID) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Steam API 未配置',
       message: '請在 server/.env 中設置 STEAM_API_KEY 和 STEAM_ID'
     });
@@ -1363,14 +1437,14 @@ apiRouter.get('/steam/achievements/:appid', (req, res) => {
 
   const { appid } = req.params;
   const url = `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=${appid}&key=${STEAM_API_KEY}&steamid=${STEAM_ID}`;
-  
+
   https.get(url, (apiRes) => {
     let data = '';
-    
+
     apiRes.on('data', (chunk) => {
       data += chunk;
     });
-    
+
     apiRes.on('end', () => {
       try {
         const jsonData = JSON.parse(data);
@@ -1398,14 +1472,14 @@ let spotifyTokenExpiry = null;
 // Spotify OAuth 授權端點 - 初始授權頁面
 apiRouter.get('/spotify/login', (req, res) => {
   const scope = 'user-read-recently-played user-top-read user-read-private user-read-email';
-  const authUrl = 'https://accounts.spotify.com/authorize?' + 
+  const authUrl = 'https://accounts.spotify.com/authorize?' +
     new URLSearchParams({
       response_type: 'code',
       client_id: SPOTIFY_CLIENT_ID,
       scope: scope,
       redirect_uri: SPOTIFY_REDIRECT_URI
     });
-  
+
   res.redirect(authUrl);
 });
 
@@ -1605,7 +1679,7 @@ const getSpotifyAccessToken = async () => {
   }
 
   try {
-    const response = await axios.post('https://accounts.spotify.com/api/token', 
+    const response = await axios.post('https://accounts.spotify.com/api/token',
       `grant_type=refresh_token&refresh_token=${SPOTIFY_REFRESH_TOKEN}`,
       {
         headers: {
@@ -1640,7 +1714,7 @@ apiRouter.get('/spotify/recently-played', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('Spotify recently played error:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
+    res.status(error.response?.status || 500).json({
       error: 'Failed to fetch Spotify recently played',
       details: error.response?.data || error.message
     });
@@ -1651,7 +1725,7 @@ apiRouter.get('/spotify/recently-played', async (req, res) => {
 apiRouter.get('/spotify/top-genres', async (req, res) => {
   try {
     const token = await getSpotifyAccessToken();
-    
+
     // 獲取最常聽的藝人
     const artistsResponse = await axios.get('https://api.spotify.com/v1/me/top/artists', {
       params: {
@@ -1680,7 +1754,7 @@ apiRouter.get('/spotify/top-genres', async (req, res) => {
     res.json({ genres: topGenres });
   } catch (error) {
     console.error('Spotify top genres error:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
+    res.status(error.response?.status || 500).json({
       error: 'Failed to fetch Spotify top genres',
       details: error.response?.data || error.message
     });
@@ -1692,7 +1766,7 @@ apiRouter.get('/spotify/top-tracks', async (req, res) => {
   try {
     const token = await getSpotifyAccessToken();
     const { time_range = 'medium_term', limit = 20 } = req.query;
-    
+
     const response = await axios.get('https://api.spotify.com/v1/me/top/tracks', {
       params: {
         limit,
@@ -1706,7 +1780,7 @@ apiRouter.get('/spotify/top-tracks', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('Spotify top tracks error:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
+    res.status(error.response?.status || 500).json({
       error: 'Failed to fetch Spotify top tracks',
       details: error.response?.data || error.message
     });
@@ -1726,7 +1800,7 @@ apiRouter.get('/spotify/me', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('Spotify user error:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
+    res.status(error.response?.status || 500).json({
       error: 'Failed to fetch Spotify user data',
       details: error.response?.data || error.message
     });
@@ -1746,7 +1820,7 @@ const getWakaTimeAuthHeader = () => {
 // 獲取今日統計 (包含實際編碼時間)
 apiRouter.get('/wakatime/today', async (req, res) => {
   if (!WAKATIME_API_KEY) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'WakaTime API 未配置',
       message: '請在 server/.env 中設置 WAKATIME_API_KEY'
     });
@@ -1781,7 +1855,7 @@ apiRouter.get('/wakatime/today', async (req, res) => {
         const currentTime = current.time;
         return !earliest || currentTime < earliest ? currentTime : earliest;
       }, null);
-      
+
       actualEnd = durations.reduce((latest, current) => {
         const endTime = current.time + current.duration;
         return !latest || endTime > latest ? endTime : latest;
@@ -1809,7 +1883,7 @@ apiRouter.get('/wakatime/today', async (req, res) => {
 
   } catch (error) {
     console.error('❌ [WakaTime] 處理 API 時發生錯誤:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
+    res.status(error.response?.status || 500).json({
       error: 'Failed to fetch WakaTime today data',
       details: error.response?.data || error.message
     });
@@ -1819,7 +1893,7 @@ apiRouter.get('/wakatime/today', async (req, res) => {
 // 獲取本週統計
 apiRouter.get('/wakatime/week', async (req, res) => {
   if (!WAKATIME_API_KEY) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'WakaTime API 未配置',
       message: '請在 server/.env 中設置 WAKATIME_API_KEY'
     });
@@ -1836,7 +1910,7 @@ apiRouter.get('/wakatime/week', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('WakaTime API Error:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
+    res.status(error.response?.status || 500).json({
       error: 'Failed to fetch WakaTime week data',
       details: error.response?.data || error.message
     });
@@ -1846,7 +1920,7 @@ apiRouter.get('/wakatime/week', async (req, res) => {
 // 獲取專案統計
 apiRouter.get('/wakatime/projects', async (req, res) => {
   if (!WAKATIME_API_KEY) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'WakaTime API 未配置',
       message: '請在 server/.env 中設置 WAKATIME_API_KEY'
     });
@@ -1863,7 +1937,7 @@ apiRouter.get('/wakatime/projects', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('WakaTime API Error:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({ 
+    res.status(error.response?.status || 500).json({
       error: 'Failed to fetch WakaTime projects data',
       details: error.response?.data || error.message
     });
@@ -1875,7 +1949,7 @@ apiRouter.get('/wakatime/projects', async (req, res) => {
 // GET all books for admin (需要認證)
 apiRouter.get('/admin/books', authMiddleware, (req, res) => {
   const { status, rating, year, search, sortBy = 'date_added_desc' } = req.query;
-  
+
   let sql = 'SELECT * FROM books WHERE 1=1';
   const params = [];
 
@@ -1936,7 +2010,7 @@ apiRouter.get('/admin/books', authMiddleware, (req, res) => {
 // GET all books with filtering and sorting
 apiRouter.get('/books', (req, res) => {
   const { status, rating, year, search, sortBy = 'date_added_desc' } = req.query;
-  
+
   let sql = 'SELECT * FROM books WHERE 1=1';
   const params = [];
 
@@ -2019,17 +2093,17 @@ apiRouter.get('/books/:id', (req, res) => {
 // Search books via Google Books API
 apiRouter.get('/books/search/external', async (req, res) => {
   const { query, isbn } = req.query;
-  
+
   if (!query && !isbn) {
     return res.status(400).json({ error: '請提供書名或 ISBN' });
   }
 
   let searchQuery;
   const inputQuery = isbn || query;
-  
+
   // 檢測是否為 ISBN (10或13位數字,可能包含連字符)
   const isISBN = /^[\d-]{10,17}$/.test(inputQuery.replace(/\s/g, ''));
-  
+
   if (isISBN) {
     // 移除連字符和空格
     const cleanISBN = inputQuery.replace(/[-\s]/g, '');
@@ -2037,22 +2111,22 @@ apiRouter.get('/books/search/external', async (req, res) => {
   } else {
     searchQuery = inputQuery;
   }
-  
+
   const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=10`;
-  
+
   console.log(`[Books API] 搜尋請求: ${inputQuery}, 格式化為: ${searchQuery}`);
-  
+
   https.get(url, (apiRes) => {
     let data = '';
-    
+
     apiRes.on('data', (chunk) => {
       data += chunk;
     });
-    
+
     apiRes.on('end', () => {
       try {
         const jsonData = JSON.parse(data);
-        
+
         if (!jsonData.items || jsonData.items.length === 0) {
           return res.json({
             message: 'success',
@@ -2065,26 +2139,26 @@ apiRouter.get('/books/search/external', async (req, res) => {
           const volumeInfo = item.volumeInfo;
           const isbn13 = volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_13')?.identifier;
           const isbn10 = volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_10')?.identifier;
-          
+
           // 獲取高解析度封面圖片
           // Google Books 的 thumbnail 解析度很低,我們需要替換為更高解析度
           let coverUrl = '';
           if (volumeInfo.imageLinks) {
             // 優先使用這些更高解析度的圖片
-            coverUrl = volumeInfo.imageLinks.large || 
-                      volumeInfo.imageLinks.medium || 
-                      volumeInfo.imageLinks.thumbnail || 
-                      volumeInfo.imageLinks.smallThumbnail || '';
-            
+            coverUrl = volumeInfo.imageLinks.large ||
+              volumeInfo.imageLinks.medium ||
+              volumeInfo.imageLinks.thumbnail ||
+              volumeInfo.imageLinks.smallThumbnail || '';
+
             // 手動修改 URL 以獲取更大的圖片
             // Google Books 圖片格式: http://books.google.com/books/content?id=xxx&printsec=frontcover&img=1&zoom=1
             // 我們可以增加尺寸參數
             if (coverUrl) {
               // 移除限制參數並設定更大的尺寸
               coverUrl = coverUrl.replace('&zoom=1', '&zoom=0')
-                                .replace('&edge=curl', '')
-                                .replace('&img=1', '&img=1&w=500&h=800');
-              
+                .replace('&edge=curl', '')
+                .replace('&img=1', '&img=1&w=500&h=800');
+
               // 如果 URL 中沒有 zoom 參數,手動添加更大的尺寸
               if (!coverUrl.includes('zoom=')) {
                 coverUrl += '&zoom=0';
@@ -2094,7 +2168,7 @@ apiRouter.get('/books/search/external', async (req, res) => {
               }
             }
           }
-          
+
           return {
             isbn: isbn13 || isbn10 || '',
             title: volumeInfo.title || '',
@@ -2144,14 +2218,14 @@ apiRouter.post('/books', authMiddleware, (req, res) => {
       date_added, date_updated
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `;
-  
+
   const params = [
     isbn, title, authors, publisher, published_date, description,
     cover_url, page_count, language, categories,
     reading_status, rating, personal_notes
   ];
 
-  db.run(sql, params, function(err) {
+  db.run(sql, params, function (err) {
     if (err) {
       console.error('新增書籍錯誤:', err);
       res.status(500).json({ error: err.message });
@@ -2206,7 +2280,7 @@ apiRouter.put('/books/:id', authMiddleware, (req, res) => {
     req.params.id
   ];
 
-  db.run(sql, params, function(err) {
+  db.run(sql, params, function (err) {
     if (err) {
       console.error('更新書籍錯誤:', err);
       res.status(500).json({ error: err.message });
@@ -2228,7 +2302,7 @@ apiRouter.put('/books/:id', authMiddleware, (req, res) => {
 // DELETE a book (admin only)
 apiRouter.delete('/books/:id', authMiddleware, (req, res) => {
   const sql = 'DELETE FROM books WHERE id = ?';
-  db.run(sql, [req.params.id], function(err) {
+  db.run(sql, [req.params.id], function (err) {
     if (err) {
       console.error('刪除書籍錯誤:', err);
       res.status(500).json({ error: err.message });
@@ -2293,11 +2367,11 @@ apiRouter.get('/github/user/:username', (req, res) => {
 
   https.get(options, (apiRes) => {
     let data = '';
-    
+
     apiRes.on('data', (chunk) => {
       data += chunk;
     });
-    
+
     apiRes.on('end', () => {
       try {
         const jsonData = JSON.parse(data);
@@ -2326,11 +2400,11 @@ apiRouter.get('/github/events/:username', (req, res) => {
 
   https.get(options, (apiRes) => {
     let data = '';
-    
+
     apiRes.on('data', (chunk) => {
       data += chunk;
     });
-    
+
     apiRes.on('end', () => {
       try {
         const jsonData = JSON.parse(data);
@@ -2349,7 +2423,7 @@ apiRouter.get('/github/events/:username', (req, res) => {
 apiRouter.post('/posts/legacy', basicAuth, (req, res) => {
   console.log('[POST /api/posts/legacy] Received request to create a new post (legacy).');
   const { title, content, tags, author, date } = req.body;
-  
+
   if (!title || !content) {
     res.status(400).json({ "error": "Missing required fields: title, content" });
     return;
@@ -2357,14 +2431,14 @@ apiRouter.post('/posts/legacy', basicAuth, (req, res) => {
 
   const sql = 'INSERT INTO posts (title, content, status, author, created_at, updated_at) VALUES (?, ?, ?, ?, datetime("now"), datetime("now"))';
   const params = [title, content, 'published', author || 'Koimsurai'];
-  
-  db.run(sql, params, function(err) {
+
+  db.run(sql, params, function (err) {
     if (err) {
       console.error('[POST /api/posts/legacy] Database error:', err.message);
       res.status(400).json({ "error": err.message });
       return;
     }
-    
+
     console.log(`[POST /api/posts/legacy] Successfully inserted post with ID: ${this.lastID}`);
     res.status(201).json({
       "message": "success",
@@ -2378,45 +2452,45 @@ apiRouter.post('/auth/reset-admin', async (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(404).json({ message: 'Not found' });
   }
-  
+
   const targetUsername = process.env.ADMIN_USERNAME || 'timo9378';
   const targetPassword = process.env.ADMIN_PASSWORD || 'jces5556';
   const saltRounds = 10;
-  
+
   try {
     const hashedPassword = await bcrypt.hash(targetPassword, saltRounds);
-    
+
     // 先嘗試更新用戶
     db.run(
       "UPDATE users SET password_hash = ? WHERE username = ?",
       [hashedPassword, targetUsername],
-      function(err) {
+      function (err) {
         if (err) {
           console.error('更新密碼失敗:', err);
           return res.status(500).json({ message: '更新密碼失敗' });
         }
-        
+
         if (this.changes === 0) {
           // 用戶不存在，創建新用戶
           db.run(
             "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
             [targetUsername, hashedPassword, 'admin'],
-            function(insertErr) {
+            function (insertErr) {
               if (insertErr) {
                 console.error('創建用戶失敗:', insertErr);
                 return res.status(500).json({ message: '創建用戶失敗' });
               }
-              
-              res.json({ 
+
+              res.json({
                 message: `管理員用戶 ${targetUsername} 已創建`,
-                username: targetUsername 
+                username: targetUsername
               });
             }
           );
         } else {
-          res.json({ 
+          res.json({
             message: `管理員 ${targetUsername} 密碼已重置`,
-            username: targetUsername 
+            username: targetUsername
           });
         }
       }
@@ -2435,16 +2509,16 @@ apiRouter.get('/collection/:type', (req, res) => {
   const { format, sort, favorite, limit } = req.query;
   let sql = `SELECT * FROM collection_items WHERE collection_type = ?`;
   let params = [type];
-  
+
   if (format) {
     sql += ' AND media_format = ?';
     params.push(format);
   }
-  
+
   if (favorite === 'true') {
     sql += ' AND is_favorite = 1';
   }
-  
+
   if (sort === 'rating') {
     sql += ' ORDER BY rating DESC';
   } else if (sort === 'watch_date') {
@@ -2452,20 +2526,20 @@ apiRouter.get('/collection/:type', (req, res) => {
   } else {
     sql += ' ORDER BY created_at DESC';
   }
-  
+
   if (limit) {
     sql += ' LIMIT ?';
     params.push(Number(limit));
   }
-  
+
   db.all(sql, params, (err, rows) => {
     if (err) {
       console.error('查詢收藏項目錯誤:', err);
       return res.status(500).json({ error: err.message });
     }
-    res.json({ 
+    res.json({
       message: 'success',
-      items: rows 
+      items: rows
     });
   });
 });
@@ -2473,16 +2547,16 @@ apiRouter.get('/collection/:type', (req, res) => {
 // 2. 後台搜尋外部 API (TMDB/AniList)
 apiRouter.post('/collection/search-external', authMiddleware, async (req, res) => {
   const { query, type } = req.body;
-  
+
   if (!query || !type) {
     return res.status(400).json({ error: '缺少必填參數: query, type' });
   }
-  
+
   try {
     // TODO: 根據 type 串接 TMDB 或 AniList API
     // type 可以是: 'movie', 'tv', 'anime'
-    
-    res.status(501).json({ 
+
+    res.status(501).json({
       error: 'Not implemented yet',
       message: '此功能尚未實現，請先手動添加收藏項目'
     });
@@ -2495,29 +2569,29 @@ apiRouter.post('/collection/search-external', authMiddleware, async (req, res) =
 // 3. 新增收藏項目
 apiRouter.post('/collection', authMiddleware, (req, res) => {
   const item = req.body;
-  
+
   // 驗證必填欄位
   if (!item.title || !item.collection_type || !item.media_format) {
-    return res.status(400).json({ 
-      error: '缺少必填欄位: title, collection_type, media_format' 
+    return res.status(400).json({
+      error: '缺少必填欄位: title, collection_type, media_format'
     });
   }
-  
+
   const fields = Object.keys(item).join(', ');
   const placeholders = Object.keys(item).map(() => '?').join(', ');
   const values = Object.values(item);
-  
+
   db.run(
     `INSERT INTO collection_items (${fields}) VALUES (${placeholders})`,
     values,
-    function(err) {
+    function (err) {
       if (err) {
         console.error('新增收藏項目錯誤:', err);
         return res.status(500).json({ error: err.message });
       }
-      res.status(201).json({ 
+      res.status(201).json({
         message: '收藏項目已新增',
-        id: this.lastID 
+        id: this.lastID
       });
     }
   );
@@ -2527,30 +2601,30 @@ apiRouter.post('/collection', authMiddleware, (req, res) => {
 apiRouter.put('/collection/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
   const item = req.body;
-  
+
   if (Object.keys(item).length === 0) {
     return res.status(400).json({ error: '沒有要更新的欄位' });
   }
-  
+
   const updates = Object.keys(item).map(key => `${key} = ?`).join(', ');
   const values = [...Object.values(item), id];
-  
+
   db.run(
     `UPDATE collection_items SET ${updates}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
     values,
-    function(err) {
+    function (err) {
       if (err) {
         console.error('更新收藏項目錯誤:', err);
         return res.status(500).json({ error: err.message });
       }
-      
+
       if (this.changes === 0) {
         return res.status(404).json({ error: '收藏項目不存在' });
       }
-      
-      res.json({ 
+
+      res.json({
         message: '收藏項目已更新',
-        changes: this.changes 
+        changes: this.changes
       });
     }
   );
@@ -2559,23 +2633,23 @@ apiRouter.put('/collection/:id', authMiddleware, (req, res) => {
 // 5. 刪除收藏項目
 apiRouter.delete('/collection/:id', authMiddleware, (req, res) => {
   const { id } = req.params;
-  
+
   db.run(
     `DELETE FROM collection_items WHERE id = ?`,
     [id],
-    function(err) {
+    function (err) {
       if (err) {
         console.error('刪除收藏項目錯誤:', err);
         return res.status(500).json({ error: err.message });
       }
-      
+
       if (this.changes === 0) {
         return res.status(404).json({ error: '收藏項目不存在' });
       }
-      
-      res.json({ 
+
+      res.json({
         message: '收藏項目已刪除',
-        changes: this.changes 
+        changes: this.changes
       });
     }
   );
@@ -2584,28 +2658,28 @@ apiRouter.delete('/collection/:id', authMiddleware, (req, res) => {
 // 6. n8n 批次匯入
 apiRouter.post('/sync/collection', (req, res) => {
   const apiKey = req.headers['x-api-key'];
-  
+
   // 驗證 API Key
   if (!process.env.N8N_SYNC_API_KEY) {
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'N8N_SYNC_API_KEY 未設定',
-      message: '請在 server/.env 中設置 N8N_SYNC_API_KEY' 
+      message: '請在 server/.env 中設置 N8N_SYNC_API_KEY'
     });
   }
-  
+
   if (apiKey !== process.env.N8N_SYNC_API_KEY) {
     return res.status(403).json({ error: 'Invalid API Key' });
   }
-  
+
   const items = req.body.items;
-  
+
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'items 必須是非空陣列' });
   }
-  
+
   let inserted = 0;
   let errors = [];
-  
+
   const stmt = db.prepare(`
     INSERT INTO collection_items (
       title, original_title, year, poster_url, overview, 
@@ -2613,7 +2687,7 @@ apiRouter.post('/sync/collection', (req, res) => {
       status, rating, review, is_favorite, watch_date
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
-  
+
   for (const item of items) {
     stmt.run([
       item.title,
@@ -2638,9 +2712,9 @@ apiRouter.post('/sync/collection', (req, res) => {
       }
     });
   }
-  
+
   stmt.finalize(() => {
-    res.json({ 
+    res.json({
       message: '批次匯入完成',
       inserted,
       total: items.length,
@@ -2649,10 +2723,13 @@ apiRouter.post('/sync/collection', (req, res) => {
   });
 });
 
+// 靜態檔案 — 提供上傳的圖片
+app.use('/uploads', express.static(path.join(__dirname, 'storage', 'uploads')));
+
 app.use('/api', apiRouter);
 
 // Default response for any other request
-app.use(function(req, res){
+app.use(function (req, res) {
   res.status(404).send('Not Found');
 });
 

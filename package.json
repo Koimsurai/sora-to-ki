@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "build:gallery": "pnpm tsx scripts/builder/index.ts",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview --port 13579",
     "build:photos": "tsx scripts/builder/index.ts",
-    "build:all": "npm run build:photos && npm run build"
+    "build:all": "pnpm run build:photos && pnpm run build"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",

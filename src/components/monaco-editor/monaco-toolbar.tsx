@@ -8,6 +8,7 @@ import {
   Image,
   CornerUpLeft,
   CornerUpRight,
+  HardDrive,
 } from 'lucide-react';
 import { MonacoToolbarProps } from './types';
 
@@ -19,6 +20,7 @@ export function MonacoToolbar({
   onItalic,
   onLink,
   onImage,
+  onNAS,
   onUndo,
   onRedo,
   disabled = false,
@@ -104,6 +106,18 @@ export function MonacoToolbar({
           className="h-8 w-8 p-0"
         >
           <Image className="h-4 w-4" />
+        </Button>
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onNAS}
+          disabled={disabled}
+          title="從 NAS 插入圖片"
+          className="h-8 w-8 p-0"
+        >
+          <HardDrive className="h-4 w-4" />
         </Button>
       </div>
     </div>

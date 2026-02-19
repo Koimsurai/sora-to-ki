@@ -17,21 +17,22 @@ export interface PhotosManifestData {
  */
 export async function loadPhotosManifest(): Promise<PhotoManifest[]> {
   try {
-    const response = await fetch('/photos-manifest.json');
-    
+    // API endpoint for NAS Gallery
+    const response = await fetch('/api/gallery/photos');
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const data: PhotosManifestData = await response.json();
-    
+
     console.log(`✅ 載入 ${data.totalPhotos} 張照片`);
     console.log(`📅 生成時間: ${data.generatedAt}`);
-    
+
     return data.photos;
   } catch (error) {
     console.error('❌ 載入 photos-manifest.json 失敗:', error);
-    
+
     // 如果 manifest 不存在,回退到使用本地圖片
     console.warn('⚠️  回退到本地圖片模式');
     return loadLocalPhotos();
@@ -43,17 +44,17 @@ export async function loadPhotosManifest(): Promise<PhotoManifest[]> {
  */
 function loadLocalPhotos(): PhotoManifest[] {
   // @ts-ignore - Vite specific
-  const imageModules = import.meta.glob('../assets/Portfolio/*.{webp,jpg,jpeg,png,gif,svg}', { 
-    eager: true 
+  const imageModules = import.meta.glob('../assets/Portfolio/*.{webp,jpg,jpeg,png,gif,svg}', {
+    eager: true
   });
 
   return Object.entries(imageModules).map(([path, module], index) => {
     const fileName = path.split('/').pop()!.split('.')[0];
     const imageUrl = (module as any).default;
-    
+
     let shootTime: number | undefined;
     let title = fileName;
-    
+
     // 嘗試從檔名提取日期
     const dateMatch = fileName.match(/^(\d{4})(\d{2})(\d{2})/);
     if (dateMatch) {

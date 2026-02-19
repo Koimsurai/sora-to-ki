@@ -16,6 +16,7 @@ export interface MonacoToolbarProps {
   onItalic: () => void;
   onLink: () => void;
   onImage: () => void;
+  onNAS: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   onSave?: () => void;

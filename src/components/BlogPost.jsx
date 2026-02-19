@@ -48,8 +48,49 @@ const getLinkMeta = (url) => {
     }
     if (host.includes('instagram.com')) return { type: 'instagram', icon: FaInstagram, color: '#E4405F', label: 'Instagram' };
     if (host.includes('threads.net')) return { type: 'threads', icon: FaExternalLinkAlt, color: '#fff', label: 'Threads' };
+
+    // Internal Blog Link Detection
+    if (host.includes('koimsurai.com') && u.pathname.startsWith('/blog/')) {
+      const id = u.pathname.split('/').pop();
+      if (id && id !== 'blog') return { type: 'internal', id };
+    }
+
     return { type: 'generic', icon: FaExternalLinkAlt, color: 'var(--post-muted)', label: host };
   } catch { return null; }
+};
+
+/* ══════════════════════════
+   InternalLinkCard — fetch and show preview
+   ══════════════════════════ */
+const InternalLinkCard = ({ id }) => {
+  const [post, setPost] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/posts/${id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && data.message === 'success') setPost(data);
+      })
+      .catch(() => { });
+  }, [id]);
+
+  if (!post) return <a href={`/blog/${id}`} target="_blank" rel="noopener noreferrer">/blog/{id}</a>;
+
+  return (
+    <Link to={`/blog/${id}`} className="link-card link-card-internal">
+      <div className="link-card-body">
+        <div className="link-card-site">
+          <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
+          <span>站內文章</span>
+        </div>
+        <div className="link-card-title">{post.title}</div>
+        <div className="link-card-meta">
+          <span>{new Date(post.created_at).getFullYear()}</span>
+          {post.category && <> · <span>{post.category}</span></>}
+        </div>
+      </div>
+    </Link>
+  );
 };
 
 /* ══════════════════════════
@@ -58,6 +99,11 @@ const getLinkMeta = (url) => {
 const LinkCard = ({ href }) => {
   const meta = getLinkMeta(href);
   if (!meta) return <a href={href} target="_blank" rel="noopener noreferrer">{href}</a>;
+
+  if (meta.type === 'internal') {
+    return <InternalLinkCard id={meta.id} />;
+  }
+
   const Icon = meta.icon;
 
   return (
@@ -147,6 +193,7 @@ const CustomParagraph = ({ children, node, ...props }) => {
    ══════════════════════════ */
 const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
   const [nearbyPosts, setNearbyPosts] = useState([]);
+  const [categoryPosts, setCategoryPosts] = useState([]);
 
   useEffect(() => {
     fetch('/api/posts?limit=100')
@@ -155,71 +202,96 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
         const posts = Array.isArray(data) ? data : (data.posts || []);
         if (!posts.length) return;
 
+        // 按時間排序（最新在前）
         const sorted = [...posts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        const currentIdx = sorted.findIndex((p) => String(p.id) === String(currentId));
-        if (currentIdx === -1) return;
 
-        const totalPosts = sorted.length;
-        let count;
-        if (currentIdx === 0) count = 5;
-        else if (currentIdx === 1) count = 7;
-        else count = 9;
-        count = Math.min(count, totalPosts);
+        // 找到當前文章的索引位置
+        const currentIndex = sorted.findIndex(p => String(p.id) === String(currentId));
+        if (currentIndex === -1) return;
 
-        let startIdx = Math.max(0, currentIdx - Math.floor(count / 2));
-        let endIdx = startIdx + count;
-        if (endIdx > totalPosts) {
-          endIdx = totalPosts;
-          startIdx = Math.max(0, endIdx - count);
+        // 計算顯示範圍
+        // 最新文章 → 往前 5 篇 (含自身 = 6)
+        // 第2新 → 含最新 + 往前取，總共 7 篇
+        // 第3新及之後 → 以當前為中心前後各取，總共 9 篇
+        let start, end;
+        if (currentIndex === 0) {
+          // 最新文章
+          start = 0;
+          end = Math.min(sorted.length, 6);
+        } else if (currentIndex === 1) {
+          // 第2新
+          start = 0;
+          end = Math.min(sorted.length, 7);
+        } else {
+          // 第3新及之後：以當前為中心，前後各4篇
+          const half = 4;
+          start = Math.max(0, currentIndex - half);
+          end = Math.min(sorted.length, currentIndex + half + 1);
+          // 如果上方不滿 4 篇，從下方補
+          if (currentIndex - start < half) {
+            end = Math.min(sorted.length, end + (half - (currentIndex - start)));
+          }
+          // 如果下方不滿 4 篇，從上方補
+          if (end - currentIndex - 1 < half) {
+            start = Math.max(0, start - (half - (end - currentIndex - 1)));
+          }
         }
 
-        const slice = sorted.slice(startIdx, endIdx).map((p) => ({
-          id: p.id,
-          title: p.title,
-          year: new Date(p.created_at).getFullYear(),
-          isCurrent: String(p.id) === String(currentId),
-        }));
-        setNearbyPosts(slice);
+        setNearbyPosts(sorted.slice(start, end));
+
+        // 篩選同分類文章
+        if (postCategory) {
+          const sameCategory = sorted
+            .filter(p => p.category === postCategory && String(p.id) !== String(currentId))
+            .slice(0, 5);
+          setCategoryPosts(sameCategory);
+        }
       })
       .catch(console.error);
-  }, [currentId]);
-
-  if (!nearbyPosts.length) return null;
-
-  // Group posts by year for -style display
-  const groupedByYear = nearbyPosts.reduce((acc, p) => {
-    const y = p.year || '未知';
-    if (!acc[y]) acc[y] = [];
-    acc[y].push(p);
-    return acc;
-  }, {});
-  const sortedYears = Object.keys(groupedByYear).sort((a, b) => b - a);
+  }, [currentId, postCategory]);
 
   return (
     <nav className="posts-nav">
-      <div className="posts-nav-list">
-        {sortedYears.map((year) => (
-          <div key={year} className="posts-nav-year-group">
-            <span className="posts-nav-year">{year}</span>
-            {groupedByYear[year].map((p) => (
-              p.isCurrent ? (
-                <span key={p.id} className="posts-nav-item current" title={p.title}>
-                  <span className="posts-nav-indicator">⊙</span>
-                  {p.title}
-                </span>
-              ) : (
-                <Link key={p.id} to={'/blog/' + p.id} className="posts-nav-item" title={p.title}>
-                  {p.title}
-                </Link>
-              )
+      {/* 附近文章列表 */}
+      {nearbyPosts.length > 0 && (
+        <div className="posts-nav-nearby">
+          {nearbyPosts.map((p) => {
+            const isCurrent = String(p.id) === String(currentId);
+            return (
+              <Link
+                key={p.id}
+                to={'/blog/' + p.id}
+                className={'posts-nav-item text-sm py-1 block transition-colors truncate' + (isCurrent ? ' text-white font-semibold posts-nav-current-item' : ' text-gray-500 hover:text-gray-300')}
+                title={p.title}
+              >
+                {p.title}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 此文章收錄於分類 */}
+      {postCategory && (
+        <div className="posts-nav-category mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <span className="text-xs text-gray-600 block mb-1">此文章收錄於專欄：</span>
+          <Link to={'/blog?category=' + encodeURIComponent(postCategory)} className="text-sm text-white hover:text-purple-400 transition-colors font-semibold">
+            {postCategory}
+          </Link>
+        </div>
+      )}
+
+      {/* 此專欄其他文章 */}
+      {categoryPosts.length > 0 && (
+        <div className="posts-nav-list mt-4">
+          <span className="text-xs text-gray-600 block mb-2">此專欄的其他文章：</span>
+          <div className="flex flex-col gap-1">
+            {categoryPosts.map((p) => (
+              <Link key={p.id} to={'/blog/' + p.id} className="posts-nav-item text-sm text-gray-500 hover:text-gray-300 transition-colors py-0.5 block truncate" title={p.title}>
+                {p.title}
+              </Link>
             ))}
           </div>
-        ))}
-      </div>
-      {postCategory && (
-        <div className="posts-nav-category" style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <span>此文章收錄於專欄：</span>
-          <Link to={'/blog?category=' + encodeURIComponent(postCategory)} className="posts-nav-category-link">{postCategory}</Link>
         </div>
       )}
     </nav>

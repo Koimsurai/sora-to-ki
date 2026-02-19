@@ -1,9 +1,10 @@
 volumes:
   backend-db-data: # Volume for the database file
-  backend-db-backup: # Volume for database backups
+  backend-db-backup:
+    # Volume for database backups
 
-# 啟用 Docker BuildKit 的 Bake 功能以提升建置效能
-# 在您的 shell 環境中設定此變數: export COMPOSE_BAKE=true (Linux/macOS) 或 $env:COMPOSE_BAKE="true" (Windows PowerShell)
+    # 啟用 Docker BuildKit 的 Bake 功能以提升建置效能
+    # 在您的 shell 環境中設定此變數: export COMPOSE_BAKE=true (Linux/macOS) 或 $env:COMPOSE_BAKE="true" (Windows PowerShell)
 
 services:
   frontend:
@@ -13,7 +14,7 @@ services:
     container_name: personal-website-frontend # 指定容器名稱
     ports:
       # 【修改點】明確指定只綁定到 127.0.0.1
-      - "127.0.0.1:13588:13579" 
+      - "127.0.0.1:13588:13579"
     restart: unless-stopped # 設定容器重啟策略
     depends_on:
       backend:
@@ -26,7 +27,10 @@ services:
     container_name: personal-website-backend
     volumes:
       - backend-db-data:/usr/src/app/db # Mount the database directory
-      - backend-db-backup:/usr/src/app/db-backup   # 使用 named volume 備份資料庫
+      - backend-db-backup:/usr/src/app/db-backup # 使用 named volume 備份資料庫
+      # HDD Mounts
+      - /mnt/hdd16tb_01/Blog/uploads:/usr/src/app/storage/uploads
+      - /mnt/hdd16tb_01/nas-storage/gallery:/usr/src/app/storage/gallery
     env_file:
       - ./server/.env
     ports:
@@ -34,7 +38,7 @@ services:
       - "127.0.0.1:3001:3001"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "sh", "-c", "apk add --no-cache curl && curl -f http://localhost:3001/api/health || exit 1"]
+      test: [ "CMD", "sh", "-c", "apk add --no-cache curl && curl -f http://localhost:3001/api/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
