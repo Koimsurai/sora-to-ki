@@ -17,33 +17,33 @@ const MyIpLoggerPlugin = () => {
         // Generate timestamp in Asia/Taipei timezone
         const now = new Date();
         const formatter = new Intl.DateTimeFormat('sv-SE', { // sv-SE gives YYYY-MM-DD HH:MM:SS like format
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
-            fractionalSecondDigits: 3,
-            hour12: false,
-            timeZone: 'Asia/Taipei'
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          fractionalSecondDigits: 3,
+          hour12: false,
+          timeZone: 'Asia/Taipei'
         });
         const timestamp = formatter.format(now).replace(' ', 'T') + ' (Asia/Taipei)';
-        
+
         // Only log IP for initial HTML page requests
         if (req.method === 'GET' && (req.url === '/' || req.url.startsWith('/?'))) {
           const clientIpFromReal = req.headers['x-real-ip'];
           const clientIpFromForwarded = req.headers['x-forwarded-for']?.split(',')[0].trim();
           const clientIp = clientIpFromReal || clientIpFromForwarded;
 
-        if (clientIp) {
-          const userAgent = req.headers['user-agent'] || 'N/A';
-          const userAgentDisplayLength = 95; // Further increased length for User-Agent
-          const userAgentShort = userAgent.length > userAgentDisplayLength ? userAgent.substring(0, userAgentDisplayLength) + '...' : userAgent;
-          // Human-readable plain text log format
-          console.log(`[WEB_ACCESS] ${timestamp} | IP: ${clientIp} | URL: ${req.url} | Agent: ${userAgentShort}`);
-        } else {
-          // Log if IP is not found
-          console.log(`[WEB_ACCESS_IP_NOT_FOUND] ${timestamp} | URL: ${req.url} | x-real-ip: [${req.headers['x-real-ip']}], x-forwarded-for: [${req.headers['x-forwarded-for']}]`);
+          if (clientIp) {
+            const userAgent = req.headers['user-agent'] || 'N/A';
+            const userAgentDisplayLength = 95; // Further increased length for User-Agent
+            const userAgentShort = userAgent.length > userAgentDisplayLength ? userAgent.substring(0, userAgentDisplayLength) + '...' : userAgent;
+            // Human-readable plain text log format
+            console.log(`[WEB_ACCESS] ${timestamp} | IP: ${clientIp} | URL: ${req.url} | Agent: ${userAgentShort}`);
+          } else {
+            // Log if IP is not found
+            console.log(`[WEB_ACCESS_IP_NOT_FOUND] ${timestamp} | URL: ${req.url} | x-real-ip: [${req.headers['x-real-ip']}], x-forwarded-for: [${req.headers['x-forwarded-for']}]`);
+          }
         }
-      }
-        
-      // API endpoint logic (kept for potential future use, does not log IP itself unless called)
+
+        // API endpoint logic (kept for potential future use, does not log IP itself unless called)
         // Note: If /api/get-ip is called, it will be logged by the above if statement if req.url matches.
         // If you want /api/get-ip to *always* log, it needs its own logging logic or be excluded from the conditional.
         // For now, it's fine as is, as the primary goal is logging initial page access.
@@ -74,7 +74,7 @@ const MyIpLoggerPlugin = () => {
 };
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => { 
+export default defineConfig(({ command }) => {
   console.log(`[VITE-CONFIG-DEFINE] ${new Date().toISOString()} - defineConfig called. Command: ${command}`);
   // HTTPS 由 Nginx 處理（SSL Termination），容器內使用 HTTP
   // 這樣可以避免雙重加密，提高性能
@@ -112,8 +112,8 @@ export default defineConfig(({ command }) => {
       proxy: {
         // 將 /api 的請求代理到後端服務
         '/api': {
-          // 直接用三元運算符判斷
-          target: command === 'build' ? 'http://backend:3001' : 'http://localhost:3001',
+          // Docker compose service name is 'backend', port is 3000
+          target: command === 'build' ? (process.env.BACKEND_URL || 'http://backend:3000') : 'http://localhost:3000',
           changeOrigin: true, // 改變請求來源，對於虛擬主機是必要的
           configure: (proxy, options) => {
             proxy.on('error', (err, req, res) => {
@@ -121,6 +121,25 @@ export default defineConfig(({ command }) => {
             });
             proxy.on('proxyReq', (proxyReq, req, res) => {
               console.log(`[VITE-PROXY-REQ] Sending request: ${req.method} ${req.url} to ${options.target}${proxyReq.path}`);
+            });
+          }
+        },
+        // LLM API proxy — 前端 AI 文章產生器直接呼叫 copilot-api
+        '/llm-api': {
+          // For Docker, localhost refers to the container. We need host machine.
+          // Try host.docker.internal (needs extra_hosts in compose) or allow ENV override.
+          // Fallback to localhost for dev mode.
+          target: process.env.LLM_API_URL || 'http://localhost:4141/v1',
+          changeOrigin: true,
+          timeout: 300000,        // 5 分鐘，多段生成需要更多時間
+          proxyTimeout: 300000,
+          rewrite: (path) => path.replace(/^\/llm-api/, ''),
+          configure: (proxy, options) => {
+            proxy.on('error', (err, req, res) => {
+              console.log('[LLM-PROXY-ERROR]', err.message);
+            });
+            proxy.on('proxyRes', (proxyRes, req, res) => {
+              console.log(`[LLM-PROXY-RES] ${req.method} ${req.url} → ${proxyRes.statusCode}`);
             });
           }
         },
@@ -134,7 +153,7 @@ export default defineConfig(({ command }) => {
     assetsInclude: ['**/*.JPG'], // 告訴 Vite 將 .JPG 視為靜態資源
     optimizeDeps: {
       include: [
-        'tsparticles-slim', 
+        'tsparticles-slim',
         'react-tsparticles',
         'three',
         '@react-three/fiber',

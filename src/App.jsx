@@ -45,6 +45,7 @@ const LazyCategoriesManager = lazy(() => import('./components/admin/CategoriesMa
 const LazyTagsManager = lazy(() => import('./components/admin/TagsManager'));
 const LazyBooksManager = lazy(() => import('./components/admin/BooksManager'));
 const LazyCollectionManager = lazy(() => import('./components/admin/CollectionManager'));
+const LazyArticleGenerator = lazy(() => import('./components/admin/ArticleGenerator'));
 const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
 const LazyNow = lazy(() => import('./components/Now'));
@@ -164,8 +165,8 @@ function StarfieldScene({ mainStarsRef }) {
       mainStarsRef.current.rotation.y += delta * 0.02 * speedMultiplier;
     }
     if (galaxyRef.current) {
-       galaxyRef.current.rotation.x += delta * 0.008 * speedMultiplier;
-       galaxyRef.current.rotation.y += delta * 0.015 * speedMultiplier;
+      galaxyRef.current.rotation.x += delta * 0.008 * speedMultiplier;
+      galaxyRef.current.rotation.y += delta * 0.015 * speedMultiplier;
     }
   });
 
@@ -224,7 +225,7 @@ function SpaceDebris({ count = 200 }) {
         THREE.MathUtils.randFloatSpread(0.02)
       ),
     })),
-  [count]);
+    [count]);
 
   useFrame((state, delta) => {
     if (pointsRef.current) {
@@ -237,7 +238,7 @@ function SpaceDebris({ count = 200 }) {
         positions[i3 + 2] += particleData[i].velocity.z * delta * 50;
 
         if (Math.abs(positions[i3]) > distance) positions[i3] *= -0.99;
-        if (Math.abs(positions[i3+1]) > distance) positions[i3+1] *= -0.99;
+        if (Math.abs(positions[i3 + 1]) > distance) positions[i3 + 1] *= -0.99;
         if (positions[i3 + 2] > distance * 1.5) positions[i3 + 2] = -distance * 1.5;
         if (positions[i3 + 2] < -distance * 1.5) positions[i3 + 2] = distance * 1.5;
       }
@@ -301,13 +302,14 @@ function Layout({ activeSection, onSectionChange }) {
             <Route path="tags" element={<Suspense fallback={<LoadingFallback />}><LazyTagsManager /></Suspense>} />
             <Route path="books" element={<Suspense fallback={<LoadingFallback />}><LazyBooksManager /></Suspense>} />
             <Route path="collection" element={<Suspense fallback={<LoadingFallback />}><LazyCollectionManager /></Suspense>} />
+            <Route path="article-generator" element={<Suspense fallback={<LoadingFallback />}><LazyArticleGenerator /></Suspense>} />
             <Route path="notes" element={<AdminPlaceholder title="日記管理" />} />
           </Route>
         </Routes>
       </main>
       {!isAdminPage && (
         <Suspense fallback={<LoadingFallback />}>
-          <LazyFooter style={{ zIndex: 20 }}/>
+          <LazyFooter style={{ zIndex: 20 }} />
         </Suspense>
       )}
     </div>
@@ -336,7 +338,7 @@ function App() {
   const handleExplosionStart = () => {
     setSaturnZIndex(10000);
     setTimeout(() => {
-        setAnimateSaturn(true);
+      setAnimateSaturn(true);
     }, 200);
   };
 
@@ -418,10 +420,10 @@ function App() {
             {isOnHomePage && <RandomComets />}
             {isOnHomePage && <RandomUFOs />}
             {showMainHtmlContent && (
-               <Layout activeSection={activeSection} onSectionChange={handleSectionChange} />
+              <Layout activeSection={activeSection} onSectionChange={handleSectionChange} />
             )}
-            <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }}/>
-            <BackToTopButton />
+            <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }} />
+            <BackToTopButton isHomePage={isOnHomePage} />
           </div>
         </PageVisibilityProvider>
       </ParallaxProvider>

@@ -7,7 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  FaRegHeart, FaHeart, FaLink, FaRegComment,
+  FaRegHeart, FaHeart, FaLink, FaRegComment, FaArrowUp,
   FaEnvelope, FaShareAlt, FaRss, FaTimes,
   FaYoutube, FaGithub, FaInstagram, FaExternalLinkAlt,
 } from 'react-icons/fa';
@@ -176,6 +176,7 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
         const slice = sorted.slice(startIdx, endIdx).map((p) => ({
           id: p.id,
           title: p.title,
+          year: new Date(p.created_at).getFullYear(),
           isCurrent: String(p.id) === String(currentId),
         }));
         setNearbyPosts(slice);
@@ -185,23 +186,42 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
 
   if (!nearbyPosts.length) return null;
 
+  // Group posts by year for -style display
+  const groupedByYear = nearbyPosts.reduce((acc, p) => {
+    const y = p.year || '未知';
+    if (!acc[y]) acc[y] = [];
+    acc[y].push(p);
+    return acc;
+  }, {});
+  const sortedYears = Object.keys(groupedByYear).sort((a, b) => b - a);
+
   return (
     <nav className="posts-nav">
-      <span className="posts-nav-current-title">{postTitle}</span>
-      {postCategory && (
-        <div className="posts-nav-category">
-          <span>此文章收錄於專欄：</span>
-          <strong>{postCategory}</strong>
-        </div>
-      )}
-      <div className="posts-nav-label">此專欄的其他文章：</div>
       <div className="posts-nav-list">
-        {nearbyPosts.filter((p) => !p.isCurrent).map((p) => (
-          <Link key={p.id} to={'/blog/' + p.id} className="posts-nav-item" title={p.title}>
-            {p.title}
-          </Link>
+        {sortedYears.map((year) => (
+          <div key={year} className="posts-nav-year-group">
+            <span className="posts-nav-year">{year}</span>
+            {groupedByYear[year].map((p) => (
+              p.isCurrent ? (
+                <span key={p.id} className="posts-nav-item current" title={p.title}>
+                  <span className="posts-nav-indicator">⊙</span>
+                  {p.title}
+                </span>
+              ) : (
+                <Link key={p.id} to={'/blog/' + p.id} className="posts-nav-item" title={p.title}>
+                  {p.title}
+                </Link>
+              )
+            ))}
+          </div>
         ))}
       </div>
+      {postCategory && (
+        <div className="posts-nav-category" style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          <span>此文章收錄於專欄：</span>
+          <Link to={'/blog?category=' + encodeURIComponent(postCategory)} className="posts-nav-category-link">{postCategory}</Link>
+        </div>
+      )}
     </nav>
   );
 });
@@ -246,9 +266,9 @@ const TableOfContents = React.memo(({ headings, activeHeading, readingProgress, 
           </button>
         ))}
       </nav>
-      <a href="#comments" className="toc-bottom-link">
-        <FaRegComment /> 回到留言
-      </a>
+      <button className="toc-bottom-link" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        <FaArrowUp /> 回到文章頂部
+      </button>
     </div>
   );
 });

@@ -7,6 +7,7 @@ import {
   Tag,
   BookOpen,
   Film,
+  Sparkles,
   Menu,
   X,
   ChevronRight,
@@ -47,6 +48,7 @@ const BREADCRUMB_LABELS = {
   editor: '編輯器',
   create: '新增',
   edit: '編輯',
+  'article-generator': 'AI 寫作',
 };
 
 const AdminBreadcrumb = () => {
@@ -89,6 +91,7 @@ const sidebarItems = [
   { id: 'notes', icon: BookOpen, label: '日記', path: '/admin/notes' },
   { id: 'books', icon: BookOpen, label: '書籍', path: '/admin/books' },
   { id: 'collection', icon: Film, label: '收藏館', path: '/admin/collection' },
+  { id: 'article-generator', icon: Sparkles, label: 'AI 寫作', path: '/admin/article-generator' },
 ];
 
 export const AdminLayout = () => {
@@ -136,7 +139,7 @@ export const AdminLayout = () => {
             {sidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.path);
-              
+
               return (
                 <Link
                   key={item.id}
@@ -205,7 +208,7 @@ export const AdminLayout = () => {
         )}
       >
         {/* Header */}
-        <header 
+        <header
           className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-card/80 backdrop-blur-md px-4 sm:px-6"
         >
           <Button
@@ -216,7 +219,7 @@ export const AdminLayout = () => {
           >
             {mobileMenuOpen ? <X /> : <Menu />}
           </Button>
-          
+
           <Button
             variant="ghost"
             size="icon"
@@ -227,7 +230,7 @@ export const AdminLayout = () => {
           </Button>
 
           <Separator orientation="vertical" className="h-6" />
-          
+
           <AdminBreadcrumb />
         </header>
 

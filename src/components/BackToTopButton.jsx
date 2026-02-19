@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRocket } from '@fortawesome/free-solid-svg-icons'; // 改用火箭圖標
+import { faRocket } from '@fortawesome/free-solid-svg-icons';
 import './BackToTopButton.css';
 
-function BackToTopButton() {
+function BackToTopButton({ isHomePage = false }) {
   const [isVisible, setIsVisible] = useState(false);
 
-  // 監聽滾動事件
   useEffect(() => {
     const toggleVisibility = () => {
-      if (window.pageYOffset > 300) { // 向下滾動超過 300px 時顯示按鈕
+      if (window.pageYOffset > 300) {
         setIsVisible(true);
       } else {
         setIsVisible(false);
@@ -17,16 +16,16 @@ function BackToTopButton() {
     };
 
     window.addEventListener('scroll', toggleVisibility);
-
-    // 清除監聽器
     return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
 
-  // 滾動到頂部
+  // 只在首頁顯示
+  if (!isHomePage) return null;
+
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth' // 平滑滾動
+      behavior: 'smooth'
     });
   };
 

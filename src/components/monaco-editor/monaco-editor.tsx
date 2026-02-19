@@ -153,6 +153,82 @@ export default function MonacoEditor({
       });
 
       disposablesRef.current.push(contentDisposable, selectionDisposable);
+
+      // 監聽 Paste 事件 (處理圖片貼上 — Base64 內嵌)
+      const domNode = editor.getContainerDomNode();
+      const pasteHandler = async (e: ClipboardEvent) => {
+        if (!e.clipboardData) return;
+
+        // 檢查是否有圖片檔案
+        let imageFile: File | null = null;
+        for (let i = 0; i < e.clipboardData.files.length; i++) {
+          if (e.clipboardData.files[i].type.startsWith('image/')) {
+            imageFile = e.clipboardData.files[i];
+            break;
+          }
+        }
+        // 也檢查 items (某些瀏覽器用 items 而非 files)
+        if (!imageFile && e.clipboardData.items) {
+          for (let i = 0; i < e.clipboardData.items.length; i++) {
+            const item = e.clipboardData.items[i];
+            if (item.type.startsWith('image/')) {
+              imageFile = item.getAsFile();
+              break;
+            }
+          }
+        }
+        if (!imageFile) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        try {
+          // 壓縮圖片到 max 1024px
+          const bitmap = await createImageBitmap(imageFile);
+          const MAX = 1024;
+          let w = bitmap.width, h = bitmap.height;
+          if (w > MAX || h > MAX) {
+            const ratio = Math.min(MAX / w, MAX / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          const canvas = new OffscreenCanvas(w, h);
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(bitmap, 0, 0, w, h);
+          const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.8 });
+          bitmap.close();
+
+          const reader = new FileReader();
+          const dataUrl: string = await new Promise((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+
+          // 插入 markdown 圖片
+          const position = editor.getPosition();
+          if (position) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const monacoNs = (window as any).monaco;
+            if (monacoNs) {
+              editor.executeEdits('paste-image', [{
+                range: new monacoNs.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+                text: `![image](${dataUrl})\n`,
+              }]);
+            }
+          }
+        } catch (err: any) {
+          console.error('Paste image error:', err);
+          alert('圖片貼上失敗: ' + err.message);
+        }
+      };
+
+      domNode.addEventListener('paste', pasteHandler);
+
+      // 添加到 cleanup
+      disposablesRef.current.push({
+        dispose: () => domNode.removeEventListener('paste', pasteHandler)
+      });
     },
     []
   );

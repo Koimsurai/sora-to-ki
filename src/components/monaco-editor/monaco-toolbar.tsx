@@ -27,6 +27,7 @@ export function MonacoToolbar({
     <div className="monaco-toolbar-glass flex items-center gap-1 p-2">
       <div className="flex items-center gap-1">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={onUndo}
@@ -38,6 +39,7 @@ export function MonacoToolbar({
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={onRedo}
@@ -53,6 +55,7 @@ export function MonacoToolbar({
 
       <div className="flex items-center gap-1">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={onBold}
@@ -64,6 +67,7 @@ export function MonacoToolbar({
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={onItalic}
@@ -79,6 +83,7 @@ export function MonacoToolbar({
 
       <div className="flex items-center gap-1">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={onLink}
@@ -90,6 +95,7 @@ export function MonacoToolbar({
         </Button>
 
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={onImage}
