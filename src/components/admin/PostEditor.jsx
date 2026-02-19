@@ -7,7 +7,6 @@ import { postSchema } from '@/schemas/post';
 import { MonacoEditor } from '@/components/monaco-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -388,65 +387,12 @@ export default function PostEditor() {
 
   return (
     <>
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                asChild
-                className="gap-2"
-              >
-                <Link to="/admin/posts">
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="hidden sm:inline">返回</span>
-                </Link>
-              </Button>
-              <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              <h1 className="text-lg sm:text-xl font-bold">
-                {id ? '編輯文章' : '新增文章'}
-              </h1>
-            </div>
-            <div className="flex items-center gap-1 sm:gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1 sm:gap-2"
-                onClick={form.handleSubmit(onSaveDraft)}
-                disabled={isSavingDraft}
-              >
-                <Save className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">
-                  {isSavingDraft ? '儲存中...' : '儲存草稿'}
-                </span>
-                <span className="sm:hidden">儲存</span>
-              </Button>
-              <Button
-                size="sm"
-                className="gap-1 sm:gap-2"
-                onClick={form.handleSubmit(onPublish)}
-                disabled={isPublishing}
-              >
-                <Send className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">
-                  {isPublishing ? '發佈中...' : '發佈文章'}
-                </span>
-                <span className="sm:hidden">發佈</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6">
+      <div className="flex flex-1 min-h-0">
         <Form {...form}>
-          <form className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - Editor */}
-              <div className="lg:col-span-2 space-y-6">
+          <form className="flex flex-1 min-h-0">
+            {/* Left Column - Editor */}
+            <main className="flex-1 overflow-y-auto p-6 min-w-0 space-y-0">
                 {/* Title */}
                 <FormField
                   control={form.control}
@@ -454,10 +400,10 @@ export default function PostEditor() {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <Input
+                        <input
                           {...field}
                           placeholder="輸入文章標題..."
-                          className="text-2xl font-bold border-0 focus-visible:ring-0 px-0"
+                          className="w-full bg-transparent text-foreground/90 text-lg font-medium mb-5 pb-3 border-b border-border/30 outline-none focus:border-border transition-colors"
                         />
                       </FormControl>
                       <FormMessage />
@@ -472,7 +418,7 @@ export default function PostEditor() {
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <div>
+                        <div className="glass rounded-xl overflow-hidden border border-border/50">
                           <MonacoEditor
                             value={field.value}
                             onChange={(v) => field.onChange(v ?? '')}
@@ -487,19 +433,18 @@ export default function PostEditor() {
                     </FormItem>
                   )}
                 />
-              </div>
+            </main>
 
-              {/* Right Column - Settings */}
-              <div className="lg:col-span-1 space-y-6">
+            {/* Right Column - Settings */}
+            <aside className="w-[280px] border-l border-border/30 glass-subtle shrink-0 hidden lg:block overflow-y-auto">
+              <div className="p-4 space-y-5">
                 {/* Category & Tags */}
-                <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                      <Folder className="h-4 w-4 text-primary" />
-                      分類與標籤
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <div>
+                  <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                    <Folder className="h-3.5 w-3.5" />
+                    分類與標籤
+                  </h3>
+                  <div className="space-y-4">
                     <FormField
                       control={form.control}
                       name="category"
@@ -513,7 +458,7 @@ export default function PostEditor() {
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="h-8 bg-accent/30">
                                 <SelectValue placeholder="選擇分類" />
                               </SelectTrigger>
                             </FormControl>
@@ -543,6 +488,7 @@ export default function PostEditor() {
                               {...field}
                               options={tags}
                               placeholder={tags.length === 0 ? "載入中..." : "選擇標籤..."}
+                              className="bg-accent/30 min-h-8"
                               emptyIndicator={
                                 <p className="text-center text-sm text-muted-foreground">
                                   {tags.length === 0 ? "沒有可用標籤，請先在標籤管理中新增" : "沒有找到相關標籤"}
@@ -554,18 +500,16 @@ export default function PostEditor() {
                         </FormItem>
                       )}
                     />
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Publishing Options */}
-                <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                      <Clock className="h-4 w-4 text-primary" />
-                      發佈設定
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <div>
+                  <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5" />
+                    發佈設定
+                  </h3>
+                  <div className="space-y-4">
                     <FormField
                       control={form.control}
                       name="status"
@@ -579,7 +523,7 @@ export default function PostEditor() {
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger>
+                              <SelectTrigger className="h-8 bg-accent/30">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -603,7 +547,7 @@ export default function PostEditor() {
                             自訂網址
                           </FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="custom-url-slug" />
+                            <Input {...field} placeholder="custom-url-slug" className="h-8 bg-accent/30" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -645,18 +589,16 @@ export default function PostEditor() {
                         </FormItem>
                       )}
                     />
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 {/* Cover Image */}
-                <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                      <ImageIcon className="h-4 w-4 text-primary" />
-                      封面圖片
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                <div>
+                  <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    封面圖片
+                  </h3>
+                  <div className="space-y-4">
                     <FormField
                       control={form.control}
                       name="cover"
@@ -669,6 +611,7 @@ export default function PostEditor() {
                             <Input
                               {...field}
                               placeholder="https://example.com/image.jpg"
+                              className="h-8 bg-accent/30"
                             />
                           </FormControl>
                           {field.value && (
@@ -697,16 +640,17 @@ export default function PostEditor() {
                             <Input
                               {...field}
                               placeholder="文章摘要..."
+                              className="h-8 bg-accent/30"
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
-            </div>
+            </aside>
           </form>
         </Form>
       </div>

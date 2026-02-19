@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Film, Tv, Plus, Edit, Trash2, Star } from 'lucide-react';
+import { Film, Tv, Plus, Pencil, Trash2, Star, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +29,7 @@ const CollectionManager = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     original_title: '',
@@ -192,26 +191,51 @@ const CollectionManager = () => {
 
   const renderStars = (rating) => {
     return (
-      <div className="flex gap-1">
+      <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
-            size={16}
-            className={star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+            size={12}
+            className={star <= rating ? 'text-foreground/50 fill-foreground/50' : 'text-muted-foreground/20'}
           />
         ))}
       </div>
     );
   };
 
+  const filteredItems = items.filter(item => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(q) ||
+      item.original_title?.toLowerCase().includes(q)
+    );
+  });
+
+  const statusLabels = {
+    'completed': '已完成',
+    'watching': '追番中',
+    'plan_to_watch': '計劃觀看',
+  };
+
+  const statusConfig = {
+    'completed': 'text-foreground/50 bg-accent/50',
+    'watching': 'text-foreground/70 bg-accent/60',
+    'plan_to_watch': 'text-muted-foreground/60 bg-accent/25',
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">收藏館管理</h1>
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-medium text-foreground/90">收藏站管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">管理電影與動漫收藏</p>
+        </div>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setFormData(prev => ({ ...prev, collection_type: collectionType })); }}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40" onClick={() => { resetForm(); setFormData(prev => ({ ...prev, collection_type: collectionType })); }}>
+              <Plus className="size-3.5" />
               新增{collectionType === 'cinema' ? '電影' : '動漫'}
             </Button>
           </DialogTrigger>
@@ -362,86 +386,96 @@ const CollectionManager = () => {
         </Dialog>
       </div>
 
-      <Tabs value={collectionType} onValueChange={setCollectionType}>
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="cinema">
-            <Film className="mr-2 h-4 w-4" />
-            電影院
-          </TabsTrigger>
-          <TabsTrigger value="anime">
-            <Tv className="mr-2 h-4 w-4" />
-            動漫閣
-          </TabsTrigger>
-        </TabsList>
+      {/* Type tabs */}
+      <div className="flex items-center gap-1">
+        {[{ key: 'cinema', label: '電影院', icon: Film }, { key: 'anime', label: '動漫閣', icon: Tv }].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setCollectionType(tab.key)}
+            className={`flex items-center gap-1.5 text-[12px] px-2.5 py-1 rounded-lg transition-colors ${
+              collectionType === tab.key
+                ? 'bg-accent/60 text-foreground/80'
+                : 'text-muted-foreground/60 hover:text-foreground/60 hover:bg-accent/25'
+            }`}
+          >
+            <tab.icon className="size-3" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value={collectionType} className="space-y-4 mt-6">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="text-muted-foreground">載入中...</div>
-            </div>
-          ) : items.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {items.map((item) => (
-                <Card key={item.id} className="overflow-hidden">
-                  {item.poster_url && (
-                    <div className="relative aspect-[2/3] overflow-hidden bg-muted">
-                      <img
-                        src={item.poster_url}
-                        alt={item.title}
-                        className="object-cover w-full h-full"
-                      />
-                      {item.is_favorite === 1 && (
-                        <div className="absolute top-2 right-2 bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                          <Star size={12} className="fill-current" />
-                          精選
-                        </div>
-                      )}
-                    </div>
+      {/* Search */}
+      <Input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="搜尋收藏..."
+        className="bg-accent/20 border-border/40 text-foreground/80 text-sm h-9 placeholder:text-muted-foreground/40"
+      />
+
+      {/* Collection list */}
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="text-muted-foreground/50 text-sm">載入中...</div>
+        </div>
+      ) : filteredItems.length > 0 ? (
+        <div className="grid md:grid-cols-2 gap-3">
+          {filteredItems.map((item) => (
+            <div key={item.id} className="glass rounded-xl px-4 py-3.5 group hover:border-border/60 transition-all">
+              <div className="flex items-start gap-3">
+                {item.poster_url ? (
+                  <div className="w-10 h-14 rounded-lg overflow-hidden shrink-0">
+                    <img src={item.poster_url} alt={item.title} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="size-10 rounded-lg bg-accent/30 flex items-center justify-center shrink-0 mt-0.5">
+                    {collectionType === 'cinema' ? <Film className="size-4 text-muted-foreground/60" /> : <Tv className="size-4 text-muted-foreground/60" />}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[13px] font-medium text-foreground/80 truncate">{item.title}</span>
+                    {item.is_favorite === 1 && <Star className="size-3 text-foreground/40 fill-foreground/40 shrink-0" />}
+                  </div>
+                  {item.original_title && (
+                    <p className="text-[11px] text-muted-foreground/40 truncate mb-1">{item.original_title}</p>
                   )}
-                  <CardContent className="p-4">
-                    <h3 className="font-bold text-lg mb-1 line-clamp-1">{item.title}</h3>
-                    {item.original_title && (
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{item.original_title}</p>
-                    )}
-                    <div className="flex items-center gap-2 mb-2">
-                      {item.year && <span className="text-xs bg-muted px-2 py-1 rounded">{item.year}</span>}
-                      <span className="text-xs bg-muted px-2 py-1 rounded">
-                        {item.status === 'watching' ? '追番中' : '已完成'}
-                      </span>
-                    </div>
-                    <div className="mb-3">
-                      {renderStars(item.rating)}
-                    </div>
-                    {item.review && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{item.review}</p>
-                    )}
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openEditDialog(item)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    {item.year && <span className="text-[10px] text-muted-foreground/40">{item.year}</span>}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusConfig[item.status] || 'bg-accent/25 text-muted-foreground/60'}`}>
+                      {statusLabels[item.status] || item.status}
+                    </span>
+                  </div>
+                  {item.rating > 0 && (
+                    <div className="mb-1">{renderStars(item.rating)}</div>
+                  )}
+                  {item.review && (
+                    <p className="text-[12px] text-muted-foreground/60 leading-relaxed line-clamp-2">{item.review}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button
+                    onClick={() => openEditDialog(item)}
+                    className="size-6 flex items-center justify-center rounded-md text-muted-foreground/30 hover:text-foreground/60 hover:bg-accent/40 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Pencil className="size-3" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="size-6 flex items-center justify-center rounded-md text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="size-3" />
+                  </button>
+                </div>
+              </div>
             </div>
-          ) : (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                {collectionType === 'cinema' ? <Film className="h-16 w-16 text-muted-foreground mb-4" /> : <Tv className="h-16 w-16 text-muted-foreground mb-4" />}
-                <h3 className="text-lg font-semibold mb-2">還沒有{collectionType === 'cinema' ? '電影' : '動漫'}收藏</h3>
-                <p className="text-muted-foreground mb-4">開始添加您的第一個{collectionType === 'cinema' ? '電影' : '動漫'}吧！</p>
-                <Button onClick={() => { resetForm(); setFormData(prev => ({ ...prev, collection_type: collectionType })); setShowAddDialog(true); }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  新增{collectionType === 'cinema' ? '電影' : '動漫'}
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+          ))}
+        </div>
+      ) : (
+        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
+          {collectionType === 'cinema' ? <Film className="size-12 opacity-20" /> : <Tv className="size-12 opacity-20" />}
+          <p className="mt-4 text-sm">還沒有{collectionType === 'cinema' ? '電影' : '動漫'}收藏</p>
+        </div>
+      )}
 
       {/* 編輯 Dialog (類似新增,省略部分代碼) */}
       {showEditDialog && selectedItem && (

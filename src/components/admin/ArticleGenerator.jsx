@@ -3,7 +3,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Select,
     SelectContent,
@@ -12,7 +11,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import {
     Sparkles,
     Copy,
@@ -25,6 +23,8 @@ import {
     Code,
     ArrowRight,
     RotateCcw,
+    RotateCw,
+    Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -475,215 +475,146 @@ export default function ArticleGenerator() {
     };
 
     return (
-        <div className="space-y-6 max-w-6xl mx-auto">
-            {/* 頁面標題 */}
+        <div className="p-6 max-w-5xl mx-auto space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-violet-500/20">
-                        <Sparkles className="h-5 w-5 text-violet-400" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">AI 文章產生器</h1>
-                        <p className="text-sm text-muted-foreground">
-                            貼上對話紀錄，一鍵生成  風格文章
-                        </p>
-                    </div>
+                <div>
+                    <h1 className="text-lg font-medium text-foreground/90">AI 寫作助手</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        使用 AI 輔助你的寫作流程
+                    </p>
                 </div>
-
                 {generatedContent && (
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleReset}
-                        className="gap-2 text-muted-foreground hover:text-foreground"
+                        className="gap-1.5 text-xs text-muted-foreground hover:text-foreground/80"
                     >
-                        <RotateCcw className="h-4 w-4" />
+                        <RotateCcw className="size-3.5" />
                         重來
                     </Button>
                 )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                {/* ── 左側：輸入區 ── */}
+            <div className="grid lg:grid-cols-3 gap-4">
+                {/* Left - Input area */}
                 <div className="lg:col-span-2 space-y-4">
-                    {/* 文章類型 */}
-                    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                                <Wand2 className="h-4 w-4 text-violet-400" />
-                                生成設定
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-xs text-muted-foreground font-medium">
-                                    文章類型
-                                </label>
-                                <Select value={articleType} onValueChange={setArticleType}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Object.entries(ARTICLE_TYPES).map(([key, type]) => (
-                                            <SelectItem key={key} value={key}>
-                                                <span className="flex items-center gap-2">
-                                                    <span>{type.emoji}</span>
-                                                    <span>{type.label}</span>
-                                                    <span className="text-xs text-muted-foreground ml-1">
-                                                        — {type.description}
-                                                    </span>
-                                                </span>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                    {/* Config row */}
+                    <div className="flex items-center gap-3">
+                        <Select value={articleType} onValueChange={setArticleType}>
+                            <SelectTrigger className="w-40 bg-accent/20 border-border/40 text-foreground/70 text-xs h-8">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover border-border/50">
+                                {Object.entries(ARTICLE_TYPES).map(([key, type]) => (
+                                    <SelectItem key={key} value={key}>
+                                        <span className="flex items-center gap-2">
+                                            <span>{type.emoji}</span>
+                                            <span>{type.label}</span>
+                                        </span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Input
+                            placeholder="導演指令（選填）— 指定主題方向、語氣、禁忌詞等"
+                            value={guide}
+                            onChange={(e) => setGuide(e.target.value)}
+                            className="bg-accent/20 border-border/40 text-foreground/70 text-xs h-8 flex-1 placeholder:text-muted-foreground/40"
+                        />
+                    </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs text-muted-foreground font-medium">
-                                    導演指令（選填）
-                                </label>
-                                <Input
-                                    placeholder="例：主軸放在踩坑過程、語氣幽默一點、不要提到 XX"
-                                    value={guide}
-                                    onChange={(e) => setGuide(e.target.value)}
-                                />
-                                <p className="text-xs text-muted-foreground/60">
-                                    可以指定主題方向、語氣、禁忌詞等，會優先於預設風格
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {/* Material input */}
+                    <div className="glass rounded-xl overflow-hidden">
+                        <textarea
+                            ref={textareaRef}
+                            value={conversationText}
+                            onChange={(e) => setConversationText(e.target.value)}
+                            placeholder="在這裡貼上你與 AI 的對話、筆記、或任何原始素材..."
+                            rows={10}
+                            className="w-full bg-transparent text-foreground/80 text-sm leading-relaxed p-4 resize-none outline-none placeholder:text-muted-foreground/40 font-mono"
+                        />
+                        <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/20">
+                            <span className="text-[11px] text-muted-foreground/40">
+                                {conversationText.length.toLocaleString()} 字
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs gap-1.5 h-7 px-3 border-border/50 text-foreground/70 hover:bg-accent/40"
+                                onClick={handleGenerate}
+                                disabled={isGenerating || !conversationText.trim()}
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <RotateCw className="size-3.5 animate-spin" />
+                                        {progressText || '生成中...'}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="size-3.5" />
+                                        生成文章
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
 
-                    {/* 對話內容 */}
-                    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="flex items-center justify-between text-sm font-medium">
-                                <span className="flex items-center gap-2">
-                                    <FileText className="h-4 w-4 text-violet-400" />
-                                    素材 / 對話紀錄
+                    {/* Generated output */}
+                    {(generatedContent || isGenerating) && (
+                        <div className="glass rounded-xl overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/20">
+                                <span className="text-[12px] text-muted-foreground/60 flex items-center gap-1.5">
+                                    <Sparkles className="size-3" />
+                                    AI 生成結果
                                 </span>
-                                <span className="text-xs font-normal text-muted-foreground/60">
-                                    {conversationText.length.toLocaleString()} 字
-                                </span>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <textarea
-                                ref={textareaRef}
-                                className="w-full min-h-[400px] resize-y rounded-lg border border-border/50 bg-background/50 p-4 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-violet-500/30 placeholder:text-muted-foreground/40 font-mono"
-                                placeholder={`在這裡貼上你與 AI 的對話、筆記、或任何原始素材...\n\n範例：\nUser: 今天在 Docker 踩了個大坑...\nAssistant: 什麼坑？\nUser: 就是 multi-stage build 的時候 cache 爆掉...\n\n（也可以直接貼純文字筆記）`}
-                                value={conversationText}
-                                onChange={(e) => setConversationText(e.target.value)}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    {/* 生成按鈕 */}
-                    <Button
-                        onClick={handleGenerate}
-                        disabled={isGenerating || !conversationText.trim()}
-                        className="w-full gap-2 h-12 text-base bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 shadow-lg shadow-violet-500/20 transition-all duration-300"
-                        size="lg"
-                    >
-                        {isGenerating ? (
-                            <>
-                                <Loader2 className="h-5 w-5 animate-spin" />
-                                <span className="truncate">{progressText || '生成中...'}</span>
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="h-5 w-5" />
-                                生成文章
-                            </>
-                        )}
-                    </Button>
-                </div>
-
-                {/* ── 右側：預覽區 ── */}
-                <div className="lg:col-span-3">
-                    <Card className="border-border/50 bg-card/50 backdrop-blur-sm min-h-[600px]">
-                        <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2 text-sm font-medium">
-                                    <Eye className="h-4 w-4 text-violet-400" />
-                                    文章預覽
-                                </CardTitle>
-
                                 {generatedContent && (
-                                    <div className="flex items-center gap-2">
-                                        {/* 預覽 / 原始碼 切換 */}
-                                        <div className="flex items-center rounded-lg border border-border/50 p-0.5">
-                                            <Button
-                                                variant={viewMode === 'preview' ? 'secondary' : 'ghost'}
-                                                size="sm"
-                                                className="h-7 px-2.5 text-xs"
+                                    <div className="flex items-center gap-1">
+                                        <div className="flex items-center rounded-lg border border-border/40 p-0.5 mr-1">
+                                            <button
                                                 onClick={() => setViewMode('preview')}
+                                                className={`text-[11px] px-2 py-0.5 rounded transition-colors ${viewMode === 'preview' ? 'bg-accent/60 text-foreground/80' : 'text-muted-foreground/50'}`}
                                             >
-                                                <Eye className="h-3 w-3 mr-1" />
                                                 預覽
-                                            </Button>
-                                            <Button
-                                                variant={viewMode === 'source' ? 'secondary' : 'ghost'}
-                                                size="sm"
-                                                className="h-7 px-2.5 text-xs"
+                                            </button>
+                                            <button
                                                 onClick={() => setViewMode('source')}
+                                                className={`text-[11px] px-2 py-0.5 rounded transition-colors ${viewMode === 'source' ? 'bg-accent/60 text-foreground/80' : 'text-muted-foreground/50'}`}
                                             >
-                                                <Code className="h-3 w-3 mr-1" />
                                                 Markdown
-                                            </Button>
+                                            </button>
                                         </div>
-
-                                        <Separator orientation="vertical" className="h-5" />
-
-                                        {/* 操作按鈕 */}
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-7 px-2.5 text-xs"
+                                        <button
                                             onClick={handleCopy}
+                                            className="size-7 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
                                         >
-                                            {copied ? (
-                                                <Check className="h-3 w-3 mr-1 text-green-400" />
-                                            ) : (
-                                                <Copy className="h-3 w-3 mr-1" />
-                                            )}
-                                            {copied ? '已複製' : '複製'}
-                                        </Button>
-
-                                        <Button
-                                            variant="default"
-                                            size="sm"
-                                            className="h-7 px-2.5 text-xs gap-1 bg-violet-600 hover:bg-violet-700"
+                                            {copied ? <Check className="size-3.5 text-green-400" /> : <Copy className="size-3.5" />}
+                                        </button>
+                                        <button
                                             onClick={handleSendToEditor}
-                                            disabled={isSaving}
+                                            className="size-7 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
                                         >
-                                            <Send className="h-3 w-3" />
-                                            匯入編輯器
-                                        </Button>
+                                            <FileText className="size-3.5" />
+                                        </button>
                                     </div>
                                 )}
                             </div>
-                        </CardHeader>
-
-                        <Separator className="opacity-50" />
-
-                        <CardContent className="pt-6">
-                            {isGenerating ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                    <div className="relative">
-                                        <div className="h-12 w-12 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
-                                        <Sparkles className="h-5 w-5 text-violet-400 absolute inset-0 m-auto" />
+                            <div className="p-4">
+                                {isGenerating ? (
+                                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                                        <div className="relative">
+                                            <div className="size-10 rounded-full border-2 border-foreground/10 border-t-foreground/40 animate-spin" />
+                                            <Sparkles className="size-4 text-foreground/40 absolute inset-0 m-auto" />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-[13px] text-foreground/70">{progressText || '生成中...'}</p>
+                                            <p className="text-[11px] text-muted-foreground/40 mt-1">
+                                                {selectedType.emoji} {selectedType.label} 模式
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="text-center">
-                                        <p className="text-sm font-medium">正在生成文章...</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            使用 {selectedType.emoji} {selectedType.label} 模式
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : generatedContent ? (
-                                viewMode === 'preview' ? (
+                                ) : viewMode === 'preview' ? (
                                     <article className="prose prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-2xl prose-h1:mb-6 prose-h2:text-lg prose-h2:mt-8 prose-h2:mb-4 prose-p:leading-relaxed prose-p:text-muted-foreground prose-a:text-violet-400 prose-code:text-pink-400 prose-pre:bg-background/80 prose-pre:border prose-pre:border-border/50 prose-blockquote:border-l-violet-500/50 prose-blockquote:text-muted-foreground/80">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
@@ -693,38 +624,86 @@ export default function ArticleGenerator() {
                                         </ReactMarkdown>
                                     </article>
                                 ) : (
-                                    <pre className="text-sm leading-relaxed font-mono whitespace-pre-wrap text-muted-foreground bg-background/50 rounded-lg border border-border/50 p-4 overflow-auto max-h-[700px]">
+                                    <pre className="text-sm leading-relaxed font-mono whitespace-pre-wrap text-muted-foreground bg-transparent overflow-auto max-h-[700px]">
                                         {generatedContent}
                                     </pre>
-                                )
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-20 gap-4 text-muted-foreground/50">
-                                    <div className="h-16 w-16 rounded-2xl border-2 border-dashed border-border/50 flex items-center justify-center">
-                                        <FileText className="h-7 w-7" />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-sm font-medium">等待生成...</p>
-                                        <p className="text-xs mt-1">
-                                            在左側貼上素材，選擇類型，然後按下生成
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs mt-2">
-                                        <span className="px-2 py-1 rounded bg-card border border-border/50">
-                                            貼上素材
-                                        </span>
-                                        <ArrowRight className="h-3 w-3" />
-                                        <span className="px-2 py-1 rounded bg-card border border-border/50">
-                                            選類型
-                                        </span>
-                                        <ArrowRight className="h-3 w-3" />
-                                        <span className="px-2 py-1 rounded bg-violet-500/20 border border-violet-500/30 text-violet-400">
-                                            生成
-                                        </span>
-                                    </div>
+                                )}
+                            </div>
+                            {generatedContent && (
+                                <div className="flex items-center justify-between px-4 py-2 border-t border-border/20">
+                                    <span className="text-[11px] text-muted-foreground/40">
+                                        約 {generatedContent.replace(/\s/g, '').length} 字
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs gap-1.5 h-7 text-muted-foreground/60 hover:text-foreground/70"
+                                        onClick={handleSendToEditor}
+                                    >
+                                        <Send className="size-3" />
+                                        匯入至文章
+                                    </Button>
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right sidebar */}
+                <div className="space-y-4">
+                    {/* Quick prompts */}
+                    <div className="glass rounded-xl">
+                        <div className="px-4 py-3 border-b border-border/20">
+                            <h2 className="text-[13px] font-medium text-foreground/80">快速指令</h2>
+                        </div>
+                        <div className="p-3 space-y-1.5">
+                            {['幫我寫一篇文章的開頭', '將文字改寫成更精簡', '生成五個標題選項', '為這篇文章寫一段摘要', '續寫接下來的段落'].map((q) => (
+                                <button
+                                    key={q}
+                                    onClick={() => setGuide(q)}
+                                    className="w-full text-left text-[12px] text-muted-foreground/60 hover:text-foreground/70 hover:bg-accent/30 px-3 py-2 rounded-lg transition-colors"
+                                >
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Type descriptions */}
+                    <div className="glass rounded-xl">
+                        <div className="px-4 py-3 border-b border-border/20">
+                            <h2 className="text-[13px] font-medium text-foreground/80">文章類型</h2>
+                        </div>
+                        <div className="divide-y divide-border/15">
+                            {Object.entries(ARTICLE_TYPES).map(([key, type]) => (
+                                <button
+                                    key={key}
+                                    className={`w-full text-left px-4 py-3 transition-colors ${articleType === key ? 'bg-accent/20' : 'hover:bg-accent/15'}`}
+                                    onClick={() => setArticleType(key)}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm">{type.emoji}</span>
+                                        <span className="text-[12px] text-foreground/70">{type.label}</span>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground/40 mt-0.5">{type.description}</p>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Debug Logs */}
+                    {logs.length > 0 && (
+                        <div className="glass rounded-xl">
+                            <div className="px-4 py-3 border-b border-border/20">
+                                <h2 className="text-[13px] font-medium text-foreground/80">生成日誌</h2>
+                            </div>
+                            <div className="p-3 max-h-48 overflow-y-auto">
+                                {logs.map((log, i) => (
+                                    <div key={i} className="text-[10px] text-muted-foreground/40 font-mono py-0.5">{log}</div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

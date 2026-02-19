@@ -4,15 +4,18 @@ import {
   LayoutDashboard,
   FileText,
   FolderOpen,
-  Tag,
+  Tags,
   BookOpen,
-  Film,
+  Library,
+  Bookmark,
   Sparkles,
   Menu,
   X,
   ChevronRight,
   LogOut,
-  User
+  User,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -87,10 +90,10 @@ const sidebarItems = [
   { id: 'dashboard', icon: LayoutDashboard, label: '儀表板', path: '/admin/dashboard' },
   { id: 'posts', icon: FileText, label: '文章', path: '/admin/posts' },
   { id: 'categories', icon: FolderOpen, label: '分類', path: '/admin/categories' },
-  { id: 'tags', icon: Tag, label: '標籤', path: '/admin/tags' },
+  { id: 'tags', icon: Tags, label: '標籤', path: '/admin/tags' },
   { id: 'notes', icon: BookOpen, label: '日記', path: '/admin/notes' },
-  { id: 'books', icon: BookOpen, label: '書籍', path: '/admin/books' },
-  { id: 'collection', icon: Film, label: '收藏館', path: '/admin/collection' },
+  { id: 'books', icon: Library, label: '書籍', path: '/admin/books' },
+  { id: 'collection', icon: Bookmark, label: '收藏站', path: '/admin/collection' },
   { id: 'article-generator', icon: Sparkles, label: 'AI 寫作', path: '/admin/article-generator' },
 ];
 
@@ -105,37 +108,47 @@ export const AdminLayout = () => {
   };
 
   return (
-    <div className="min-h-screen admin-layout">
+    <div className="min-h-screen admin-layout deep-space-bg">
+      {/* Stars overlay */}
+      <div className="stars" />
+
       {/* Sidebar - Desktop */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-card/80 backdrop-blur-md border-r border-border/40",
-          sidebarOpen ? "w-64" : "w-16",
+          "fixed left-0 top-0 z-40 h-screen transition-all duration-300 border-r border-border/40",
+          sidebarOpen ? "w-52" : "w-[60px]",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center border-b px-4">
+          <div className="flex items-center h-14 px-3 shrink-0">
             {sidebarOpen ? (
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-card/80">
-                  <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="size-7 rounded-md bg-foreground/10 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-semibold text-foreground/80">K</span>
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[13px] font-medium text-foreground/90 truncate leading-tight">Koimsurai</span>
+                    <span className="text-[11px] text-muted-foreground truncate leading-tight">管理後台</span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">Admin Panel</span>
-                  <span className="text-xs text-muted-foreground">管理後台</span>
-                </div>
+                <button onClick={() => setSidebarOpen(false)} className="shrink-0 size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/80 hover:bg-accent/50 transition-colors">
+                  <PanelLeftClose className="size-4" />
+                </button>
               </div>
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-border/50 bg-card/80">
-                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+              <div className="flex w-full justify-center">
+                <button onClick={() => setSidebarOpen(true)} className="shrink-0 size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/80 hover:bg-accent/50 transition-colors">
+                  <PanelLeftOpen className="size-4" />
+                </button>
               </div>
             )}
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
+          <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.path);
@@ -145,42 +158,40 @@ export const AdminLayout = () => {
                   key={item.id}
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
+                    "flex items-center gap-2.5 w-full rounded-lg px-2.5 py-[7px] text-[13px] transition-colors",
                     isActive
-                      ? "bg-accent/60 text-accent-foreground font-medium"
-                      : "text-muted-foreground hover:bg-accent/30 hover:text-accent-foreground",
-                    !sidebarOpen && "justify-center"
+                      ? "bg-accent/80 text-foreground"
+                      : "text-muted-foreground hover:text-foreground/80 hover:bg-accent/40",
+                    !sidebarOpen && "justify-center px-0"
                   )}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {sidebarOpen && <span>{item.label}</span>}
+                  <Icon className="size-[16px] shrink-0" />
+                  {sidebarOpen && <span className="truncate">{item.label}</span>}
                 </Link>
               );
             })}
           </nav>
 
           {/* User Menu */}
-          <div className="border-t p-2">
+          <div className="px-3 py-3 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
+                <button
                   className={cn(
-                    "w-full justify-start gap-3",
-                    !sidebarOpen && "justify-center px-0"
+                    "flex items-center gap-2.5 w-full rounded-lg transition-colors hover:bg-accent/30 p-1",
+                    !sidebarOpen && "justify-center p-0"
                   )}
                 >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt="Admin" />
-                    <AvatarFallback>AD</AvatarFallback>
+                  <Avatar className="size-7 shrink-0">
+                    <AvatarFallback className="bg-accent text-foreground/80 text-[11px] font-medium">AD</AvatarFallback>
                   </Avatar>
                   {sidebarOpen && (
-                    <div className="flex flex-col items-start text-left">
-                      <span className="text-sm font-medium">管理員</span>
-                      <span className="text-xs text-muted-foreground">admin@example.com</span>
+                    <div className="flex flex-col min-w-0 text-left">
+                      <span className="text-[13px] font-medium text-foreground/80 truncate leading-tight">管理員</span>
+                      <span className="text-[11px] text-muted-foreground truncate leading-tight">admin@koimsurai.com</span>
                     </div>
                   )}
-                </Button>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>我的帳戶</DropdownMenuLabel>
@@ -203,13 +214,13 @@ export const AdminLayout = () => {
       {/* Main Content */}
       <div
         className={cn(
-          "transition-all duration-300",
-          sidebarOpen ? "md:ml-64" : "md:ml-16"
+          "transition-all duration-300 relative z-10",
+          sidebarOpen ? "md:ml-52" : "md:ml-[60px]"
         )}
       >
         {/* Header */}
         <header
-          className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border/40 bg-card/80 backdrop-blur-md px-4 sm:px-6"
+          className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/40 glass-subtle px-4 sm:px-6"
         >
           <Button
             variant="ghost"
@@ -220,22 +231,22 @@ export const AdminLayout = () => {
             {mobileMenuOpen ? <X /> : <Menu />}
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden md:flex"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu />
-          </Button>
-
-          <Separator orientation="vertical" className="h-6" />
-
           <AdminBreadcrumb />
+          
+          {location.pathname.includes('/admin/posts/edit') || location.pathname.includes('/admin/posts/create') || location.pathname === '/admin/posts/new' ? (
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8 text-xs bg-accent/30 border-border/50 hover:bg-accent/50" onClick={() => document.getElementById('save-draft-btn')?.click()}>
+                儲存草稿
+              </Button>
+              <Button size="sm" className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => document.getElementById('publish-btn')?.click()}>
+                發佈文章
+              </Button>
+            </div>
+          ) : null}
         </header>
 
         {/* Content */}
-        <main className="min-h-screen bg-background p-4 sm:p-6">
+        <main className="min-h-screen">
           <Outlet />
         </main>
       </div>

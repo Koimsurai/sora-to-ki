@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Users, MessageSquare, TrendingUp, Plus, Eye, Edit, Trash2 } from 'lucide-react';
-import { DataTable } from './table/DataTable';
-import { DataTableColumnHeader } from './table/DataTableColumnHeader';
+import { FileText, Eye, MessageSquare, TrendingUp, Plus, Edit, Clock, ArrowUpRight } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-tw';
 
@@ -58,56 +55,11 @@ export const AdminDashboard = () => {
     }
   };
 
-  const columns = [
-    {
-      accessorKey: 'title',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="標題" />,
-      cell: ({ row }) => (
-        <div className="max-w-[500px] truncate font-medium">
-          {row.getValue('title')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'status',
-      header: '狀態',
-      cell: ({ row }) => {
-        const status = row.getValue('status');
-        return (
-          <Badge variant={status === 'published' ? 'default' : 'secondary'}>
-            {status === 'published' ? '已發布' : '草稿'}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: 'created_at',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="建立時間" />,
-      cell: ({ row }) => {
-        const date = dayjs(row.getValue('created_at'));
-        return <time dateTime={date.toISOString()}>{date.format('YYYY-MM-DD HH:mm')}</time>;
-      },
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        const post = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to={`/blog/${post.id}`} target="_blank">
-                <Eye className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="ghost" size="icon" asChild>
-              <Link to={`/admin/posts/edit/${post.id}`}>
-                <Edit className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        );
-      },
-    },
+  const statItems = [
+    { label: '文章總數', value: stats.totalPosts, icon: FileText, change: `+${stats.postsThisMonth || Math.floor(stats.totalPosts * 0.1)}` },
+    { label: '本月瀏覽', value: stats.visitors || 1665, icon: Eye, change: '+12%' },
+    { label: '留言數', value: stats.comments || 56, icon: MessageSquare, change: `+${stats.commentsThisWeek || Math.floor((stats.comments || 56) * 0.05)}` },
+    { label: '成長率', value: `+${stats.growth || 23}%`, icon: TrendingUp, change: '較上月' },
   ];
 
   if (isLoading) {
@@ -122,119 +74,140 @@ export const AdminDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">儀表板</h1>
-          <p className="text-muted-foreground">歡迎回到管理後台</p>
+          <h1 className="text-lg font-medium text-foreground/90">儀表板</h1>
+          <p className="text-sm text-muted-foreground mt-1">歡迎回來，這是你的部落格概覽。</p>
         </div>
-        <Button asChild>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40" asChild>
           <Link to="/admin/posts/create">
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="size-3.5" />
             新增文章
           </Link>
         </Button>
       </div>
 
-      {/* Stats Cards - Shadcn Admin Style */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">總文章數</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <FileText className="h-4 w-4 text-blue-500" />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {statItems.map((stat) => (
+          <div key={stat.label} className="glass rounded-xl p-4 group">
+            <div className="flex items-center justify-between mb-3">
+              <stat.icon className="size-4 text-muted-foreground" />
+              <span className="text-[11px] text-muted-foreground/60 flex items-center gap-0.5">
+                {stat.change}
+                <ArrowUpRight className="size-3" />
+              </span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalPosts}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-500">+{stats.postsThisMonth || Math.floor(stats.totalPosts * 0.1)}</span> 本月
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">訪客統計</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center">
-              <Users className="h-4 w-4 text-purple-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.visitors || 1665}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-500">+12%</span> 本週
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">留言總數</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center">
-              <MessageSquare className="h-4 w-4 text-green-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.comments || 56}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              <span className="text-green-500">+{stats.commentsThisWeek || Math.floor((stats.comments || 56) * 0.05)}</span> 本週
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">成長率</CardTitle>
-            <div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-orange-500" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+{stats.growth || 23}%</div>
-            <p className="text-xs text-muted-foreground mt-1">較上月成長</p>
-          </CardContent>
-        </Card>
+            <div className="text-2xl font-semibold text-foreground/90 tracking-tight">{stat.value}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{stat.label}</div>
+          </div>
+        ))}
       </div>
 
-      {/* Recent Posts */}
-      <Card className="border-border/40 bg-card/80 backdrop-blur-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>最新文章</CardTitle>
-              <CardDescription>最近發布的文章列表</CardDescription>
-            </div>
-            <Button variant="outline" asChild>
-              <Link to="/admin/posts">查看全部</Link>
-            </Button>
+      {/* Two Column Layout */}
+      <div className="grid lg:grid-cols-5 gap-3">
+        {/* Recent Posts */}
+        <div className="lg:col-span-3 glass rounded-xl">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+            <h2 className="text-[13px] font-medium text-foreground/80">最近文章</h2>
+            <Link to="/admin/posts" className="text-[11px] text-muted-foreground hover:text-foreground/70 transition-colors">查看全部</Link>
           </div>
-        </CardHeader>
-        <CardContent>
           {recentPosts.length > 0 ? (
-            <DataTable
-              columns={columns}
-              data={recentPosts}
-              searchKey="title"
-              searchPlaceholder="搜尋文章..."
-            />
+            <div className="divide-y divide-border/20">
+              {recentPosts.map((post) => (
+                <div key={post.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/20 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] text-foreground/80 truncate">{post.title}</div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[11px] text-muted-foreground/60">{post.category || '未分類'}</span>
+                      <span className="text-border/50">/</span>
+                      <span className="text-[11px] text-muted-foreground/60">{dayjs(post.created_at).format('YYYY-MM-DD')}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`text-[11px] px-1.5 py-0.5 rounded ${post.status === 'published' ? 'text-foreground/60 bg-accent/40' : 'text-muted-foreground bg-accent/20'}`}>
+                      {post.status === 'published' ? '已發佈' : '草稿'}
+                    </span>
+                    <Link
+                      to={`/admin/posts/edit/${post.id}`}
+                      className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
+                    >
+                      <Edit className="size-3" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className="flex h-[200px] items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <FileText className="mx-auto h-12 w-12 opacity-20" />
-                <p className="mt-4">還沒有文章</p>
-                <Button className="mt-4" asChild>
-                  <Link to="/admin/posts/create">
-                    <Plus className="mr-2 h-4 w-4" />
-                    創建第一篇文章
-                  </Link>
-                </Button>
-              </div>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50">
+              <FileText className="size-12 opacity-20" />
+              <p className="mt-4 text-sm">還沒有文章</p>
+              <Button className="mt-4" size="sm" asChild>
+                <Link to="/admin/posts/create">
+                  <Plus className="mr-2 size-3.5" />
+                  創建第一篇文章
+                </Link>
+              </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Sidebar - Activity */}
+        <div className="lg:col-span-2 space-y-3">
+          {/* Quick Stats */}
+          <div className="glass rounded-xl">
+            <div className="px-4 py-3 border-b border-border/30">
+              <h2 className="text-[13px] font-medium text-foreground/80">操作紀錄</h2>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <div className="mt-1.5 size-1.5 rounded-full bg-muted-foreground/30 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-[12px] text-foreground/70">
+                    <span className="font-medium">瀏覽統計</span>
+                    {' - '}
+                    <span className="text-muted-foreground">共 {stats.totalPosts} 篇文章</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground/50">
+                    <Clock className="size-3" />
+                    即時
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <div className="mt-1.5 size-1.5 rounded-full bg-muted-foreground/30 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-[12px] text-foreground/70">
+                    <span className="font-medium">已發佈</span>
+                    {' - '}
+                    <span className="text-muted-foreground">{stats.publishedPosts || 0} 篇</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground/50">
+                    <Clock className="size-3" />
+                    即時
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <div className="mt-1.5 size-1.5 rounded-full bg-muted-foreground/30 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-[12px] text-foreground/70">
+                    <span className="font-medium">草稿</span>
+                    {' - '}
+                    <span className="text-muted-foreground">{stats.draftPosts || 0} 篇待發佈</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground/50">
+                    <Clock className="size-3" />
+                    即時
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -23,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Trash2, Tag } from 'lucide-react';
+import { Plus, X, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function TagsManager() {
@@ -37,10 +35,17 @@ export default function TagsManager() {
     color: '#7f5af0',
   });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchTags();
   }, []);
+
+  const filteredTags = tags.filter((t) =>
+    t.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const sortedTags = [...filteredTags].sort((a, b) => (b.post_count || 0) - (a.post_count || 0));
 
   const fetchTags = async () => {
     try {
@@ -145,17 +150,19 @@ export default function TagsManager() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">標籤管理</h1>
-          <p className="text-muted-foreground">管理文章標籤</p>
+          <h1 className="text-lg font-medium text-foreground/90">標籤管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            共 {tags.length} 個標籤
+          </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40" onClick={resetForm}>
+              <Plus className="size-3.5" />
               新增標籤
             </Button>
           </DialogTrigger>
@@ -219,55 +226,103 @@ export default function TagsManager() {
         </Dialog>
       </div>
 
-      {/* Tags Grid */}
-      <div className="flex flex-wrap gap-3">
-        {tags.map((tag) => (
-          <Card key={tag.id} className="min-w-[200px] border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: tag.color || '#7f5af0' }}
-                  />
-                  <span className="font-medium">{tag.name}</span>
-                  <Badge variant="secondary" className="ml-auto">
-                    {tag.post_count || 0}
-                  </Badge>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleEdit(tag)}
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setDeleteId(tag.id)}
-                  >
-                    <Trash2 className="h-3 w-3 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Search */}
+      <Input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="搜尋標籤..."
+        className="bg-accent/20 border-border/40 text-foreground/80 text-sm h-9 placeholder:text-muted-foreground/40"
+      />
 
-      {tags.length === 0 && (
-        <Card className="border-border/40 bg-card/80 backdrop-blur-md">
-          <CardContent className="flex h-[200px] items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <Tag className="mx-auto h-12 w-12 opacity-20" />
-              <p className="mt-4">還沒有標籤</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Tags cloud */}
+      {sortedTags.length > 0 && (
+        <div className="glass rounded-xl p-5">
+          <div className="flex flex-wrap gap-2">
+            {sortedTags.map((tag) => {
+              const count = tag.post_count || 0;
+              const sizeClass = count >= 10
+                ? 'text-sm px-3 py-1.5'
+                : count >= 5
+                  ? 'text-[13px] px-2.5 py-1'
+                  : 'text-[12px] px-2 py-0.5';
+
+              return (
+                <span
+                  key={tag.id}
+                  className={`group inline-flex items-center gap-1.5 rounded-lg border border-border/40 text-foreground/60 hover:text-foreground/80 hover:border-border/60 transition-colors cursor-default ${sizeClass}`}
+                >
+                  {tag.color && (
+                    <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                  )}
+                  <span>{tag.name}</span>
+                  <span className="text-muted-foreground/40 text-[10px]">{count}</span>
+                  <button
+                    onClick={() => setDeleteId(tag.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Tags table */}
+      {sortedTags.length > 0 ? (
+        <div className="glass rounded-xl overflow-hidden">
+          <div className="px-4 py-3 border-b border-border/30">
+            <h2 className="text-[13px] font-medium text-foreground/80">全部標籤</h2>
+          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border/20 text-[11px] text-muted-foreground/60 uppercase tracking-wider">
+                <th className="text-left px-4 py-2 font-medium">名稱</th>
+                <th className="text-right px-4 py-2 font-medium">文章數</th>
+                <th className="text-right px-4 py-2 font-medium w-20">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/15">
+              {sortedTags.map((tag) => (
+                <tr key={tag.id} className="group hover:bg-accent/15 transition-colors">
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      {tag.color && (
+                        <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
+                      )}
+                      <span className="text-[13px] text-foreground/70 font-mono">{tag.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <span className="text-[12px] text-muted-foreground/60">{tag.post_count || 0}</span>
+                  </td>
+                  <td className="px-4 py-2 text-right">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleEdit(tag)}
+                        className="text-[11px] text-muted-foreground hover:text-foreground/70 transition-all px-1.5 py-0.5 rounded hover:bg-accent/40"
+                      >
+                        編輯
+                      </button>
+                      <button
+                        onClick={() => setDeleteId(tag.id)}
+                        className="text-[11px] text-muted-foreground hover:text-destructive transition-all px-1.5 py-0.5 rounded hover:bg-destructive/10"
+                      >
+                        刪除
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
+          <Tag className="size-12 opacity-20" />
+          <p className="mt-4 text-sm">還沒有標籤</p>
+        </div>
       )}
 
       {/* Delete Confirmation */}

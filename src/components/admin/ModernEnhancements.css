@@ -6,21 +6,21 @@
 .admin-layout [class*="card"]:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 8px 28px rgba(127, 90, 240, 0.1),
-    0 0 0 1px rgba(127, 90, 240, 0.08),
+    0 8px 28px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(63, 63, 70, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Card Header */
 .admin-layout [class*="CardHeader"] {
-  border-bottom: 1px solid rgba(127, 90, 240, 0.06);
+  border-bottom: 1px solid rgba(39, 39, 42, 0.6);
   padding-bottom: 0.75rem;
 }
 
 /* ── Links ── */
 .admin-layout a { transition: color 0.2s ease; }
-.admin-layout a:hover { color: #a78bfa; }
+.admin-layout a:hover { color: #e4e4e7; }
 
 /* ── Icons ── */
 .admin-layout svg { transition: all 0.2s ease; }
@@ -28,93 +28,81 @@
 
 /* ── Table Rows ── */
 .admin-layout tbody tr[data-state="selected"] {
-  background: rgba(127, 90, 240, 0.1) !important;
-  border-color: rgba(127, 90, 240, 0.25) !important;
+  background: rgba(39, 39, 42, 0.3) !important;
+  border-color: rgba(63, 63, 70, 0.6) !important;
 }
 
 /* ── Checkbox / Radio ── */
 .admin-layout input[type="checkbox"],
 .admin-layout input[type="radio"] {
-  accent-color: #7f5af0;
+  accent-color: #e4e4e7;
 }
 
 /* ── Menu Items ── */
 .admin-layout [role="menuitem"]:hover,
 .admin-layout [role="option"]:hover {
-  background: rgba(127, 90, 240, 0.1) !important;
+  background: rgba(39, 39, 42, 0.3) !important;
 }
 
 /* ── Search Box ── */
 .admin-layout input[type="search"] {
-  background: rgba(14, 12, 28, 0.45) !important;
-  border: 1px solid rgba(127, 90, 240, 0.12) !important;
+  background: rgba(24, 24, 27, 0.45) !important;
+  border: 1px solid rgba(39, 39, 42, 0.6) !important;
   padding-left: 2.5rem;
 }
 .admin-layout input[type="search"]:focus {
-  background: rgba(14, 12, 28, 0.75) !important;
-  border-color: rgba(127, 90, 240, 0.5) !important;
+  background: rgba(24, 24, 27, 0.75) !important;
+  border-color: rgba(82, 82, 91, 0.8) !important;
 }
 
 /* ── Breadcrumb ── */
 .admin-layout [class*="breadcrumb"] {
-  color: rgba(226, 232, 240, 0.5);
+  color: rgba(161, 161, 170, 0.8);
 }
 .admin-layout [class*="breadcrumb"] a:hover {
-  color: #a78bfa;
+  color: #e4e4e7;
 }
 
 /* ── Spinner ── */
-.admin-layout [class*="animate-spin"] { color: #7f5af0; }
+.admin-layout [class*="animate-spin"] { color: #e4e4e7; }
 
 /* ── Tabs ── */
 .admin-layout [role="tab"][data-state="active"] {
-  background: rgba(127, 90, 240, 0.12);
-  border-color: #7f5af0;
-  color: #a78bfa;
+  background: rgba(39, 39, 42, 0.4);
+  border-color: #e4e4e7;
+  color: #e4e4e7;
 }
 
 /* ── Toast ── */
 .admin-layout [data-sonner-toast] {
-  background: rgba(14, 12, 28, 0.92) !important;
+  background: rgba(24, 24, 27, 0.92) !important;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(127, 90, 240, 0.12) !important;
+  border: 1px solid rgba(39, 39, 42, 0.6) !important;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* ── Pagination ── */
 .admin-layout [class*="pagination"] button { border-radius: 10px; }
 .admin-layout [class*="pagination"] button[data-active="true"] {
-  background: rgba(127, 90, 240, 0.15);
-  border-color: #7f5af0;
+  background: rgba(39, 39, 42, 0.4);
+  border-color: #e4e4e7;
 }
 
 /* ── Empty State ── */
 .admin-layout [class*="empty"] svg {
   opacity: 0.12;
-  color: #7f5af0;
+  color: #e4e4e7;
 }
 
 /* ── Sidebar Nav ── */
 .admin-layout aside a {
-  border-radius: 10px;
-  margin: 0.2rem 0.5rem;
   transition: all 0.2s ease;
-}
-.admin-layout aside a:hover {
-  background: rgba(127, 90, 240, 0.08);
-  transform: translateX(3px);
-}
-.admin-layout aside a[class*="bg-accent"],
-.admin-layout aside a[class*="bg-primary"] {
-  background: rgba(127, 90, 240, 0.14) !important;
-  border-left: 3px solid #7f5af0;
-  padding-left: calc(1rem - 3px);
 }
 
 /* ── Form Labels ── */
 .admin-layout label {
-  color: rgba(226, 232, 240, 0.85);
+  color: rgba(228, 228, 231, 0.85);
   font-weight: 500;
   font-size: 0.875rem;
   letter-spacing: 0.01em;
@@ -122,27 +110,27 @@
 
 /* ── Dialog Overlay ── */
 .admin-layout [class*="overlay"] {
-  background: rgba(6, 5, 14, 0.82) !important;
+  background: rgba(9, 9, 11, 0.82) !important;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
 /* ── Tooltip ── */
 .admin-layout [role="tooltip"] {
-  background: rgba(14, 12, 28, 0.92) !important;
+  background: rgba(24, 24, 27, 0.92) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(127, 90, 240, 0.12);
+  border: 1px solid rgba(39, 39, 42, 0.6);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   border-radius: 10px;
 }
 
 /* ── Progress Bar ── */
 .admin-layout [role="progressbar"] {
-  background: rgba(127, 90, 240, 0.12);
+  background: rgba(39, 39, 42, 0.4);
   border-radius: 999px;
 }
 .admin-layout [role="progressbar"] > div {
-  background: linear-gradient(90deg, #7f5af0, #a78bfa);
+  background: #e4e4e7;
   border-radius: 999px;
 }

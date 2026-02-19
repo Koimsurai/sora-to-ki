@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -23,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Trash2, BookOpen, ExternalLink, Search, Loader2, Star, StarHalf } from 'lucide-react';
+import { Plus, Pencil, BookOpen, Search, Loader2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BooksManager() {
@@ -51,12 +49,14 @@ export default function BooksManager() {
   });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
     fetchBooks();
   }, []);
 
   const filteredBooks = books.filter(book => {
+    if (filterStatus !== 'all' && book.reading_status !== filterStatus) return false;
     const query = localSearchQuery.toLowerCase();
     return (
       book.title.toLowerCase().includes(query) ||
@@ -64,6 +64,19 @@ export default function BooksManager() {
       (book.isbn && book.isbn.toLowerCase().includes(query))
     );
   });
+
+  const statusCounts = {
+    all: books.length,
+    'to-read': books.filter(b => b.reading_status === 'to-read').length,
+    'reading': books.filter(b => b.reading_status === 'reading').length,
+    'read': books.filter(b => b.reading_status === 'read').length,
+  };
+
+  const statusConfig = {
+    'to-read': 'text-muted-foreground/60 bg-accent/25',
+    'reading': 'text-foreground/70 bg-accent/60',
+    'read': 'text-foreground/50 bg-accent/50',
+  };
 
   const fetchBooks = async () => {
     try {
@@ -242,21 +255,18 @@ export default function BooksManager() {
     'read': '已完成',
   };
 
-  // 渲染星星評分
   const renderStars = (rating) => {
-    const stars = [];
-    const numRating = parseFloat(rating) || 0;
-
-    for (let i = 1; i <= 5; i++) {
-      if (numRating >= i) {
-        stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
-      } else if (numRating >= i - 0.5) {
-        stars.push(<StarHalf key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />);
-      } else {
-        stars.push(<Star key={i} className="h-4 w-4 text-muted-foreground" />);
-      }
-    }
-    return <div className="flex gap-0.5">{stars}</div>;
+    const numRating = Math.round(parseFloat(rating) || 0);
+    return (
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Star
+            key={i}
+            className={`size-3 ${i < numRating ? 'text-foreground/50 fill-foreground/50' : 'text-muted-foreground/20'}`}
+          />
+        ))}
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -271,25 +281,17 @@ export default function BooksManager() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between gap-4">
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">書籍管理</h1>
-          <p className="text-muted-foreground">管理您的閱讀清單</p>
-        </div>
-        <div className="flex-1 max-w-sm">
-          <Input
-            placeholder="篩選書庫內的書籍..."
-            value={localSearchQuery}
-            onChange={(e) => setLocalSearchQuery(e.target.value)}
-            className="w-full"
-          />
+          <h1 className="text-lg font-medium text-foreground/90">書籍管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">閱讀紀錄與書評管理</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40" onClick={resetForm}>
+              <Plus className="size-3.5" />
               新增書籍
             </Button>
           </DialogTrigger>
@@ -540,90 +542,90 @@ export default function BooksManager() {
         </Dialog>
       </div>
 
-      {/* Books Grid - Clean Modern Style */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredBooks.map((book) => (
-          <Card 
-            key={book.id} 
-            className="overflow-hidden hover:shadow-lg transition-shadow duration-200 border-border/40 bg-card/80 backdrop-blur-md"
+      {/* Filter tabs */}
+      <div className="flex items-center gap-1">
+        {[{ key: 'all', label: '全部' }, { key: 'read', label: '已完成' }, { key: 'reading', label: '閱讀中' }, { key: 'to-read', label: '想讀' }].map(s => (
+          <button
+            key={s.key}
+            onClick={() => setFilterStatus(s.key)}
+            className={`text-[12px] px-2.5 py-1 rounded-lg transition-colors ${
+              filterStatus === s.key
+                ? 'bg-accent/60 text-foreground/80'
+                : 'text-muted-foreground/60 hover:text-foreground/60 hover:bg-accent/25'
+            }`}
           >
-            <CardContent className="p-0">
-              {book.cover_url && (
-                <div className="aspect-[3/4] overflow-hidden bg-gradient-to-br from-muted/50 to-muted">
-                  <img 
-                    src={book.cover_url} 
-                    alt={book.title}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                  />
-                </div>
-              )}
-              <div className="p-4 space-y-3">
-                <div>
-                  <h3 className="font-semibold line-clamp-2 text-base">
-                    {book.title}
-                  </h3>
-                  {book.authors && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {book.authors}
-                    </p>
-                  )}
-                  {book.publisher && (
-                    <p className="text-xs text-muted-foreground/70 mt-0.5">
-                      {book.publisher}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between gap-2">
-                  <Badge 
-                    variant="secondary" 
-                    className="text-xs"
-                  >
-                    {statusLabels[book.reading_status] || book.reading_status}
-                  </Badge>
-                  {book.rating && renderStars(book.rating)}
-                </div>
-
-                {book.personal_notes && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 italic">
-                    "{book.personal_notes}"
-                  </p>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(book)}
-                    className="flex-1"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    編輯
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDeleteId(book.id)}
-                    className="hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-3 w-3 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            {s.label}
+            <span className="ml-1 text-muted-foreground/40">{statusCounts[s.key]}</span>
+          </button>
         ))}
       </div>
 
-      {filteredBooks.length === 0 && (
-        <Card>
-          <CardContent className="flex h-[200px] items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <BookOpen className="mx-auto h-12 w-12 opacity-20" />
-              <p className="mt-4">{localSearchQuery ? '沒有找到符合條件的書籍' : '還沒有書籍'}</p>
+      {/* Search */}
+      <Input
+        value={localSearchQuery}
+        onChange={(e) => setLocalSearchQuery(e.target.value)}
+        placeholder="搜尋書名或作者..."
+        className="bg-accent/20 border-border/40 text-foreground/80 text-sm h-9 placeholder:text-muted-foreground/40"
+      />
+
+      {/* Book list */}
+      {filteredBooks.length > 0 ? (
+        <div className="grid gap-3">
+          {filteredBooks.map((book) => (
+            <div key={book.id} className="glass rounded-xl px-5 py-4 group hover:border-border/60 transition-all">
+              <div className="flex items-start gap-4">
+                {book.cover_url ? (
+                  <div className="size-12 rounded-lg overflow-hidden shrink-0">
+                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="size-12 rounded-lg bg-accent/30 flex items-center justify-center shrink-0">
+                    <BookOpen className="size-5 text-muted-foreground/60" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[14px] font-medium text-foreground/80">{book.title}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusConfig[book.reading_status] || ''}`}>
+                      {statusLabels[book.reading_status] || book.reading_status}
+                    </span>
+                  </div>
+                  {book.authors && (
+                    <div className="text-[12px] text-muted-foreground/50 mb-1.5">{book.authors}</div>
+                  )}
+                  {book.rating > 0 && (
+                    <div className="mb-1.5">{renderStars(book.rating)}</div>
+                  )}
+                  {book.personal_notes && (
+                    <p className="text-[12px] text-muted-foreground/60 leading-relaxed line-clamp-2">{book.personal_notes}</p>
+                  )}
+                  {book.publisher && (
+                    <div className="text-[11px] text-muted-foreground/40 mt-1.5">{book.publisher}</div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => handleEdit(book)}
+                    className="size-7 flex items-center justify-center rounded-md text-muted-foreground/30 hover:text-foreground/60 hover:bg-accent/40 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteId(book.id)}
+                    className="size-7 flex items-center justify-center rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <span className="text-xs">✕</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
+          <BookOpen className="size-12 opacity-20" />
+          <p className="mt-4 text-sm">{localSearchQuery || filterStatus !== 'all' ? '沒有找到符合條件的書籍' : '還沒有書籍'}</p>
+        </div>
       )}
 
       {/* Delete Confirmation */}

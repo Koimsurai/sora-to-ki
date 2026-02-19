@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Plus, 
   Eye, 
   Edit, 
   Trash2, 
   Search,
-  Filter
+  Pencil,
+  ExternalLink
 } from 'lucide-react';
-import { DataTable } from './table/DataTable';
-import { DataTableColumnHeader } from './table/DataTableColumnHeader';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-tw';
 import { toast } from 'sonner';
@@ -33,6 +31,8 @@ export default function PostsList() {
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteId, setDeleteId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetchPosts();
@@ -81,90 +81,24 @@ export default function PostsList() {
     }
   };
 
-  const columns = [
-    {
-      accessorKey: 'title',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="標題" />,
-      cell: ({ row }) => (
-        <div className="max-w-[500px] truncate font-medium">
-          {row.getValue('title')}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'category',
-      header: '分類',
-      cell: ({ row }) => {
-        const category = row.getValue('category');
-        return category ? (
-          <Badge variant="outline">{category}</Badge>
-        ) : (
-          <span className="text-muted-foreground">未分類</span>
-        );
-      },
-    },
-    {
-      accessorKey: 'status',
-      header: '狀態',
-      cell: ({ row }) => {
-        const status = row.getValue('status');
-        const variants = {
-          published: 'default',
-          draft: 'secondary',
-          archived: 'outline'
-        };
-        const labels = {
-          published: '已發佈',
-          draft: '草稿',
-          archived: '已封存'
-        };
-        return (
-          <Badge variant={variants[status] || 'secondary'}>
-            {labels[status] || status}
-          </Badge>
-        );
-      },
-    },
-    {
-      accessorKey: 'created_at',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="建立時間" />,
-      cell: ({ row }) => {
-        const date = dayjs(row.getValue('created_at'));
-        return <time dateTime={date.toISOString()}>{date.format('YYYY-MM-DD HH:mm')}</time>;
-      },
-    },
-    {
-      id: 'actions',
-      header: '操作',
-      cell: ({ row }) => {
-        const post = row.original;
-        return (
-          <div className="flex items-center gap-2">
-            {post.slug && (
-              <Button variant="ghost" size="icon" asChild title="預覽">
-                <Link to={`/blog/${post.slug}`} target="_blank">
-                  <Eye className="h-4 w-4" />
-                </Link>
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" asChild title="編輯">
-              <Link to={`/admin/posts/edit/${post.id}`}>
-                <Edit className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setDeleteId(post.id)}
-              title="刪除"
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
-        );
-      },
-    },
-  ];
+  const statusLabels = {
+    published: '已發佈',
+    draft: '草稿',
+    archived: '已封存',
+  };
+
+  const statusStyle = {
+    published: 'text-foreground/50 bg-accent/50',
+    draft: 'text-muted-foreground/70 bg-accent/25',
+    archived: 'text-muted-foreground/50 bg-accent/20',
+  };
+
+  const filtered = posts.filter((p) => {
+    if (filter === 'published' && p.status !== 'published') return false;
+    if (filter === 'draft' && p.status !== 'draft') return false;
+    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
   if (isLoading) {
     return (
@@ -178,47 +112,149 @@ export default function PostsList() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">文章管理</h1>
-          <p className="text-muted-foreground">管理您的所有文章內容</p>
+          <h1 className="text-lg font-medium text-foreground/90">文章管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            共 {posts.length} 篇文章
+          </p>
         </div>
-        <Button asChild>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40" asChild>
           <Link to="/admin/posts/create">
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="size-3.5" />
             新增文章
           </Link>
         </Button>
       </div>
 
-      {/* Posts Table */}
-      <Card className="border-border/40 bg-card/80 backdrop-blur-md">
-        <CardContent className="pt-6">
-          {posts.length > 0 ? (
-            <DataTable
-              columns={columns}
-              data={posts}
-              searchKey="title"
-              searchPlaceholder="搜尋文章標題..."
-            />
-          ) : (
-            <div className="flex h-[200px] items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <Search className="mx-auto h-12 w-12 opacity-20" />
-                <p className="mt-4">還沒有文章</p>
-                <Button className="mt-4" asChild>
-                  <Link to="/admin/posts/create">
-                    <Plus className="mr-2 h-4 w-4" />
-                    創建第一篇文章
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Filters + Search */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 shrink-0">
+          {[
+            { key: 'all', label: '全部' },
+            { key: 'published', label: '已發佈' },
+            { key: 'draft', label: '草稿' },
+          ].map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`text-[12px] px-2.5 py-1 rounded-lg transition-colors ${
+                filter === f.key
+                  ? 'bg-accent/60 text-foreground/80'
+                  : 'text-muted-foreground/60 hover:text-foreground/60 hover:bg-accent/25'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜尋文章..."
+            className="bg-accent/20 border-border/40 text-foreground/80 text-sm h-8 pl-8 placeholder:text-muted-foreground/40"
+          />
+        </div>
+      </div>
+
+      {/* Posts table */}
+      {filtered.length > 0 ? (
+        <div className="glass rounded-xl overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border/20 text-[11px] text-muted-foreground/50 uppercase tracking-wider">
+                <th className="text-left px-4 py-2.5 font-medium w-8">#</th>
+                <th className="text-left px-4 py-2.5 font-medium">標題</th>
+                <th className="text-left px-4 py-2.5 font-medium w-16">分類</th>
+                <th className="text-center px-4 py-2.5 font-medium w-16">狀態</th>
+                <th className="text-right px-4 py-2.5 font-medium w-24">日期</th>
+                <th className="text-right px-4 py-2.5 font-medium w-20">操作</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/15">
+              {filtered.map((post) => (
+                <tr key={post.id} className="group hover:bg-accent/15 transition-colors">
+                  <td className="px-4 py-2.5">
+                    <span className="text-[11px] text-muted-foreground/40 font-mono">{post.id}</span>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <div>
+                      <span className="text-[13px] text-foreground/80 group-hover:text-foreground/90 transition-colors">{post.title}</span>
+                      {post.tags && post.tags.length > 0 && (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {(Array.isArray(post.tags) ? post.tags : []).slice(0, 3).map((tag) => (
+                            <span key={typeof tag === 'string' ? tag : tag.name || tag.label} className="text-[10px] text-muted-foreground/35 font-mono">
+                              #{typeof tag === 'string' ? tag : tag.name || tag.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <span className="text-[11px] text-muted-foreground/60">{post.category || '未分類'}</span>
+                  </td>
+                  <td className="px-4 py-2.5 text-center">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusStyle[post.status] || 'text-muted-foreground bg-accent/20'}`}>
+                      {statusLabels[post.status] || post.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <span className="text-[11px] text-muted-foreground/40">{dayjs(post.created_at).format('YYYY-MM-DD')}</span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link
+                        to={`/admin/posts/edit/${post.id}`}
+                        className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
+                      >
+                        <Pencil className="size-3" />
+                      </Link>
+                      {post.slug && (
+                        <Link
+                          to={`/blog/${post.slug}`}
+                          target="_blank"
+                          className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
+                        >
+                          <ExternalLink className="size-3" />
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => setDeleteId(post.id)}
+                        className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="size-3" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
+          <Search className="size-12 opacity-20" />
+          <p className="mt-4 text-sm">還沒有文章</p>
+          <Button className="mt-4" size="sm" asChild>
+            <Link to="/admin/posts/create">
+              <Plus className="mr-2 size-3.5" />
+              創建第一篇文章
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground/40">
+        <span>
+          顯示 {filtered.length} / {posts.length} 篇文章
+        </span>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

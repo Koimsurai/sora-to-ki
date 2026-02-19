@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -23,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Edit, Trash2, Folder } from 'lucide-react';
+import { Plus, Pencil, Trash2, FolderOpen, GripVertical, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CategoriesManager() {
@@ -37,10 +35,16 @@ export default function CategoriesManager() {
     description: '',
   });
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (c.slug && c.slug.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
   const fetchCategories = async () => {
     try {
@@ -145,17 +149,19 @@ export default function CategoriesManager() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">分類管理</h1>
-          <p className="text-muted-foreground">管理文章分類</p>
+          <h1 className="text-lg font-medium text-foreground/90">分類管理</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            共 {categories.length} 個分類
+          </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40" onClick={resetForm}>
+              <Plus className="size-3.5" />
               新增分類
             </Button>
           </DialogTrigger>
@@ -210,62 +216,58 @@ export default function CategoriesManager() {
         </Dialog>
       </div>
 
-      {/* Categories Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {categories.map((category) => (
-          <Card key={category.id} className="border-border/40 bg-card/80 backdrop-blur-md hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <Folder className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">{category.name}</CardTitle>
-                </div>
-                <Badge variant="secondary">{category.post_count || 0}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {category.description && (
-                <p className="text-sm text-muted-foreground mb-4">
-                  {category.description}
-                </p>
-              )}
-              {category.slug && (
-                <p className="text-xs text-muted-foreground mb-4">
-                  /{category.slug}
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleEdit(category)}
-                >
-                  <Edit className="h-3 w-3 mr-1" />
-                  編輯
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDeleteId(category.id)}
-                >
-                  <Trash2 className="h-3 w-3 text-destructive" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Search */}
+      <Input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="搜尋分類..."
+        className="bg-accent/20 border-border/40 text-foreground/80 text-sm h-9 placeholder:text-muted-foreground/40"
+      />
 
-      {categories.length === 0 && (
-        <Card className="border-border/40 bg-card/80 backdrop-blur-md">
-          <CardContent className="flex h-[200px] items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <Folder className="mx-auto h-12 w-12 opacity-20" />
-              <p className="mt-4">還沒有分類</p>
+      {/* Category list */}
+      {filteredCategories.length > 0 ? (
+        <div className="glass rounded-xl divide-y divide-border/20 overflow-hidden">
+          {filteredCategories.map((cat) => (
+            <div key={cat.id} className="flex items-center gap-3 px-4 py-3 group hover:bg-accent/15 transition-colors">
+              <GripVertical className="size-3.5 text-muted-foreground/30 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
+              <div className="size-8 rounded-lg bg-accent/40 flex items-center justify-center shrink-0">
+                <FolderOpen className="size-3.5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-medium text-foreground/80">{cat.name}</span>
+                  {cat.slug && <span className="text-[11px] text-muted-foreground/50 font-mono">/{cat.slug}</span>}
+                </div>
+                {cat.description && (
+                  <p className="text-[12px] text-muted-foreground/60 mt-0.5 truncate">{cat.description}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 shrink-0 mr-2">
+                <FileText className="size-3" />
+                {cat.post_count || 0}
+              </div>
+              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => handleEdit(cat)}
+                  className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/70 hover:bg-accent/40 transition-colors"
+                >
+                  <Pencil className="size-3.5" />
+                </button>
+                <button
+                  onClick={() => setDeleteId(cat.id)}
+                  className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 className="size-3.5" />
+                </button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
+          <FolderOpen className="size-12 opacity-20" />
+          <p className="mt-4 text-sm">還沒有分類</p>
+        </div>
       )}
 
       {/* Delete Confirmation */}

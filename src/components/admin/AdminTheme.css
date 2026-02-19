@@ -1,61 +1,113 @@
 /* ══════════════════════════════════════════
    Admin Panel — Deep Space Glass Theme
-   Matches front-end -inspired design
+   Matches v0-blog-admin-panel design
    ══════════════════════════════════════════ */
 
 /* Override shadcn CSS variables for glass aesthetic */
 .admin-layout {
-  --background: 260 50% 3%;
-  --foreground: 226 20% 88%;
-  --card: 255 30% 7%;
-  --card-foreground: 226 20% 88%;
-  --popover: 255 30% 7%;
-  --popover-foreground: 226 20% 88%;
-  --primary: 259 75% 55%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 255 20% 12%;
-  --secondary-foreground: 226 20% 88%;
-  --muted: 255 20% 12%;
-  --muted-foreground: 220 13% 55%;
-  --accent: 259 40% 18%;
-  --accent-foreground: 260 50% 80%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 0 0% 100%;
-  --border: 259 20% 15%;
-  --input: 255 20% 12%;
-  --ring: 259 75% 55%;
+  --background: 240 10% 3.9%;
+  --foreground: 240 5.9% 90%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 240 5.9% 90%;
+  --popover: 240 5.9% 10%;
+  --popover-foreground: 240 5.9% 90%;
+  --primary: 240 5.9% 90%;
+  --primary-foreground: 240 10% 3.9%;
+  --secondary: 240 5.9% 10%;
+  --secondary-foreground: 240 5% 64.9%;
+  --muted: 240 5.9% 10%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 240 5.9% 90%;
+  --destructive: 0 72.2% 50.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 5.2% 33.9%;
+  --radius: 0.625rem;
 
-  background: #06050e;
+  background: #09090b;
   min-height: 100vh;
   position: relative;
 }
 
-/* Subtle nebula background for admin */
-.admin-layout::before {
-  content: '';
+/* Deep space background */
+.deep-space-bg {
+  position: relative;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(39, 39, 42, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 50%, rgba(39, 39, 42, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 40% at 10% 80%, rgba(39, 39, 42, 0.1) 0%, transparent 50%),
+    #09090b;
+}
+
+/* Star particles */
+.stars {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background:
-    radial-gradient(600px circle at 20% 30%, rgba(127, 90, 240, 0.04), transparent 50%),
-    radial-gradient(400px circle at 80% 70%, rgba(44, 182, 125, 0.025), transparent 50%);
+}
+.stars::before,
+.stars::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,0.15), transparent),
+    radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.1), transparent),
+    radial-gradient(1px 1px at 50px 160px, rgba(255,255,255,0.12), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.08), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.1), transparent),
+    radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.06), transparent),
+    radial-gradient(1px 1px at 200px 50px, rgba(255,255,255,0.12), transparent),
+    radial-gradient(1px 1px at 220px 180px, rgba(255,255,255,0.08), transparent),
+    radial-gradient(1px 1px at 280px 90px, rgba(255,255,255,0.1), transparent),
+    radial-gradient(1px 1px at 320px 200px, rgba(255,255,255,0.06), transparent),
+    radial-gradient(1px 1px at 360px 60px, rgba(255,255,255,0.08), transparent),
+    radial-gradient(1px 1px at 400px 150px, rgba(255,255,255,0.1), transparent);
+  background-repeat: repeat;
+  background-size: 420px 220px;
+  animation: drift 120s linear infinite;
+}
+.stars::after {
+  background-size: 580px 300px;
+  opacity: 0.5;
+  animation: drift 200s linear infinite reverse;
+}
+@keyframes drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-220px); }
+}
+
+/* Glass card */
+.glass {
+  background: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(39, 39, 42, 0.6);
+}
+.glass-subtle {
+  background: rgba(24, 24, 27, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(39, 39, 42, 0.4);
 }
 
 /* ── Glass Sidebar ── */
 .admin-layout aside {
-  background: rgba(12, 10, 24, 0.78) !important;
+  background: rgba(9, 9, 11, 0.78) !important;
   backdrop-filter: saturate(180%) blur(24px) !important;
   -webkit-backdrop-filter: saturate(180%) blur(24px) !important;
-  border-color: rgba(127, 90, 240, 0.08) !important;
+  border-color: rgba(39, 39, 42, 0.6) !important;
 }
 
 /* ── Glass Header ── */
 .admin-layout > div > header {
-  background: rgba(12, 10, 24, 0.65) !important;
+  background: rgba(9, 9, 11, 0.65) !important;
   backdrop-filter: saturate(180%) blur(20px) !important;
   -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
-  border-color: rgba(127, 90, 240, 0.08) !important;
+  border-color: rgba(39, 39, 42, 0.6) !important;
 }
 
 /* ── Main Content ── */
@@ -68,10 +120,10 @@
 /* ── Glass Cards ── */
 .admin-layout .bg-card,
 .admin-layout [class*="Card"] {
-  background: rgba(14, 12, 28, 0.55) !important;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-color: rgba(127, 90, 240, 0.1) !important;
+  background: rgba(24, 24, 27, 0.6) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-color: rgba(39, 39, 42, 0.6) !important;
   border-radius: 16px !important;
   box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.25),
@@ -85,25 +137,25 @@
 }
 
 .admin-layout thead tr {
-  border-color: rgba(127, 90, 240, 0.1);
+  border-color: rgba(39, 39, 42, 0.6);
 }
 
 .admin-layout tbody tr {
-  border-color: rgba(127, 90, 240, 0.06);
+  border-color: rgba(39, 39, 42, 0.4);
   transition: all 0.2s ease;
 }
 
 .admin-layout tbody tr:hover {
-  background: rgba(127, 90, 240, 0.04) !important;
+  background: rgba(39, 39, 42, 0.3) !important;
 }
 
 /* ── Inputs — Glass ── */
 .admin-layout input,
 .admin-layout select,
 .admin-layout textarea {
-  background: rgba(14, 12, 28, 0.45) !important;
-  border-color: rgba(127, 90, 240, 0.12) !important;
-  color: #e2e8f0 !important;
+  background: rgba(24, 24, 27, 0.45) !important;
+  border-color: rgba(39, 39, 42, 0.6) !important;
+  color: #e4e4e7 !important;
   border-radius: 10px !important;
   transition: all 0.2s ease;
 }
@@ -111,61 +163,25 @@
 .admin-layout input:hover,
 .admin-layout select:hover,
 .admin-layout textarea:hover {
-  border-color: rgba(127, 90, 240, 0.25) !important;
+  border-color: rgba(63, 63, 70, 0.8) !important;
 }
 
 .admin-layout input:focus,
 .admin-layout select:focus,
 .admin-layout textarea:focus {
-  border-color: rgba(127, 90, 240, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(127, 90, 240, 0.1) !important;
-  background: rgba(14, 12, 28, 0.75) !important;
-}
-
-/* ── Buttons ── */
-.admin-layout button {
-  border-radius: 10px !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.admin-layout button[class*="bg-primary"] {
-  background: rgba(127, 90, 240, 0.18) !important;
-  border: 1px solid rgba(127, 90, 240, 0.22) !important;
-  color: #c4b5fd !important;
-  box-shadow: none;
-}
-
-.admin-layout button[class*="bg-primary"]:hover {
-  background: rgba(127, 90, 240, 0.28) !important;
-  border-color: rgba(127, 90, 240, 0.38) !important;
-  box-shadow: none;
-  transform: none;
-}
-
-.admin-layout button[class*="variant-outline"],
-.admin-layout button[class*="border"] {
-  border-color: rgba(127, 90, 240, 0.15) !important;
-  background: transparent !important;
-}
-
-.admin-layout button[class*="variant-outline"]:hover,
-.admin-layout button[class*="border"]:hover {
-  background: rgba(127, 90, 240, 0.06) !important;
-  border-color: rgba(127, 90, 240, 0.35) !important;
-}
-
-.admin-layout button[class*="variant-ghost"]:hover {
-  background: rgba(127, 90, 240, 0.06) !important;
+  border-color: rgba(82, 82, 91, 0.8) !important;
+  box-shadow: 0 0 0 3px rgba(82, 82, 91, 0.2) !important;
+  background: rgba(24, 24, 27, 0.75) !important;
 }
 
 /* ── Dropdowns & Dialogs — Glass ── */
 .admin-layout [role="menu"],
 .admin-layout [role="dialog"],
 .admin-layout [data-radix-popper-content-wrapper] [role="listbox"] {
-  background: rgba(14, 12, 28, 0.92) !important;
+  background: rgba(24, 24, 27, 0.92) !important;
   backdrop-filter: saturate(180%) blur(28px) !important;
   -webkit-backdrop-filter: saturate(180%) blur(28px) !important;
-  border-color: rgba(127, 90, 240, 0.12) !important;
+  border-color: rgba(39, 39, 42, 0.6) !important;
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.04),
@@ -174,31 +190,31 @@
 }
 
 /* ── Scrollbar ── */
-.admin-layout ::-webkit-scrollbar { width: 6px; height: 6px; }
+.admin-layout ::-webkit-scrollbar { width: 5px; height: 5px; }
 .admin-layout ::-webkit-scrollbar-track { background: transparent; }
-.admin-layout ::-webkit-scrollbar-thumb { background: rgba(127, 90, 240, 0.2); border-radius: 3px; }
-.admin-layout ::-webkit-scrollbar-thumb:hover { background: rgba(127, 90, 240, 0.4); }
+.admin-layout ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
+.admin-layout ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
 
 /* ── Separators ── */
 .admin-layout hr,
 .admin-layout .separator,
 .admin-layout [data-orientation="horizontal"],
 .admin-layout [data-orientation="vertical"] {
-  border-color: rgba(127, 90, 240, 0.08) !important;
-  background: rgba(127, 90, 240, 0.08) !important;
+  border-color: rgba(39, 39, 42, 0.6) !important;
+  background: rgba(39, 39, 42, 0.6) !important;
 }
 
 /* ── Badges — Glass ── */
 .admin-layout [class*="badge"][class*="default"] {
-  background: rgba(44, 182, 125, 0.12);
-  border: 1px solid rgba(44, 182, 125, 0.2);
-  color: #86efac;
+  background: rgba(228, 228, 231, 0.12);
+  border: 1px solid rgba(228, 228, 231, 0.2);
+  color: #e4e4e7;
   border-radius: 8px;
 }
 
 .admin-layout [class*="badge"][class*="secondary"] {
-  background: rgba(127, 90, 240, 0.08);
-  border: 1px solid rgba(127, 90, 240, 0.15);
-  color: #c4b5fd;
+  background: rgba(39, 39, 42, 0.3);
+  border: 1px solid rgba(39, 39, 42, 0.6);
+  color: #a1a1aa;
   border-radius: 8px;
 }
