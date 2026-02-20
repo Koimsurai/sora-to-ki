@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import MultipleSelector from '@/components/ui/multiple-selector';
 import {
   FileText,
   Save,
@@ -33,9 +32,56 @@ import {
   Folder,
   ImageIcon,
   ArrowLeft,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+
+/**
+ * v0 風格標籤搜尋選擇器
+ */
+function TagSearchInput({ tags, selectedTags, onChange }) {
+  const [tagSearch, setTagSearch] = useState('');
+  const selectedValues = new Set(selectedTags.map(t => t.value));
+  const filteredTags = tags.filter(
+    t => !selectedValues.has(t.value) && t.label.toLowerCase().includes(tagSearch.toLowerCase())
+  );
+
+  const addTag = (tag) => {
+    onChange([...selectedTags, tag]);
+    setTagSearch('');
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        placeholder="搜尋標籤..."
+        value={tagSearch}
+        onChange={(e) => setTagSearch(e.target.value)}
+        className="bg-accent/30 border-border/50 text-foreground/80 text-xs h-8 placeholder:text-muted-foreground/40"
+      />
+      {tagSearch && filteredTags.length > 0 && (
+        <div className="absolute left-0 right-0 mt-1.5 max-h-28 overflow-y-auto rounded-lg border border-border/40 bg-popover/95 backdrop-blur-sm p-1 z-50">
+          {filteredTags.map((tag) => (
+            <button
+              key={tag.value}
+              type="button"
+              onClick={() => addTag(tag)}
+              className="w-full text-left text-xs px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            >
+              {tag.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {tagSearch && filteredTags.length === 0 && (
+        <div className="absolute left-0 right-0 mt-1.5 rounded-lg border border-border/40 bg-popover/95 backdrop-blur-sm p-3 z-50">
+          <p className="text-center text-xs text-muted-foreground/60">沒有找到相關標籤</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PostEditor() {
   const { id } = useParams();
@@ -378,7 +424,7 @@ export default function PostEditor() {
     return (
       <div className="flex h-[400px] items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-600 border-t-transparent"></div>
           <p className="mt-4 text-muted-foreground">載入中...</p>
         </div>
       </div>
@@ -391,6 +437,9 @@ export default function PostEditor() {
       <div className="flex flex-1 min-h-0">
         <Form {...form}>
           <form className="flex flex-1 min-h-0">
+            {/* Hidden buttons for AdminLayout header to trigger */}
+            <button id="save-draft-btn" type="button" className="hidden" onClick={form.handleSubmit(onSaveDraft)} />
+            <button id="publish-btn" type="button" className="hidden" onClick={form.handleSubmit(onPublish)} />
             {/* Left Column - Editor */}
             <main className="flex-1 overflow-y-auto p-6 min-w-0 space-y-0">
                 {/* Title */}
@@ -478,27 +527,45 @@ export default function PostEditor() {
                     <FormField
                       control={form.control}
                       name="tags"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">
-                            標籤 ({tags.length} 個可用)
-                          </FormLabel>
-                          <FormControl>
-                            <MultipleSelector
-                              {...field}
-                              options={tags}
-                              placeholder={tags.length === 0 ? "載入中..." : "選擇標籤..."}
-                              className="bg-accent/30 min-h-8"
-                              emptyIndicator={
-                                <p className="text-center text-sm text-muted-foreground">
-                                  {tags.length === 0 ? "沒有可用標籤，請先在標籤管理中新增" : "沒有找到相關標籤"}
-                                </p>
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const selectedTags = field.value || [];
+                        return (
+                          <FormItem>
+                            <FormLabel className="text-xs text-muted-foreground">
+                              標籤
+                              <span className="text-muted-foreground/50 ml-1">({tags.length} 個可用)</span>
+                            </FormLabel>
+                            <div className="text-[11px] text-muted-foreground/60 mb-1">
+                              已選擇 {selectedTags.length} 項
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                              {selectedTags.map((tag) => (
+                                <span
+                                  key={tag.value}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/60 text-foreground/70 text-[11px] border border-border/40"
+                                >
+                                  {tag.label}
+                                  <button
+                                    type="button"
+                                    onClick={() => field.onChange(selectedTags.filter(t => t.value !== tag.value))}
+                                    className="hover:text-foreground transition-colors ml-0.5"
+                                  >
+                                    <X className="size-3" />
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                            <FormControl>
+                              <TagSearchInput
+                                tags={tags}
+                                selectedTags={selectedTags}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
                   </div>
                 </div>
@@ -637,10 +704,11 @@ export default function PostEditor() {
                             摘要
                           </FormLabel>
                           <FormControl>
-                            <Input
+                            <textarea
                               {...field}
-                              placeholder="文章摘要..."
-                              className="h-8 bg-accent/30"
+                              placeholder="文章摘要（AI 自動生成或手動輸入）..."
+                              rows={4}
+                              className="w-full bg-accent/30 border border-border/40 rounded-lg px-3 py-2 text-sm text-foreground/90 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:border-border/60 transition-colors"
                             />
                           </FormControl>
                           <FormMessage />

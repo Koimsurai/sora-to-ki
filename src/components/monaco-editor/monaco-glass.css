@@ -1,33 +1,47 @@
 /* Monaco Editor 玻璃擬態風格 */
 
-/* 編輯器容器玻璃效果 */
+/* 編輯器容器 */
 .monaco-editor-glass {
-  background: rgba(15, 23, 42, 0.6) !important;
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 1rem;
+  background: rgba(24, 24, 27, 0.6) !important;
+  border: 1px solid rgba(39, 39, 42, 0.6);
+  border-radius: 0.75rem;
   box-shadow: 
-    0 8px 32px 0 rgba(0, 0, 0, 0.37),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    0 4px 24px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
 }
 
-/* 工具欄玻璃效果 */
+/* 工具欄 — 輕薄 border-bottom 風格 */
 .monaco-toolbar-glass {
-  background: rgba(15, 23, 42, 0.8) !important;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem 1rem 0 0;
+  background: transparent !important;
+  border-bottom: 1px solid rgba(39, 39, 42, 0.4);
 }
 
-/* 狀態欄玻璃效果 */
+/* 工具欄按鈕 — 確保可見 */
+.monaco-toolbar-glass button {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0.375rem !important;
+  color: #a1a1aa !important;
+  cursor: pointer;
+}
+.monaco-toolbar-glass button:hover:not(:disabled) {
+  background: rgba(39, 39, 42, 0.5) !important;
+  color: #e4e4e7 !important;
+}
+.monaco-toolbar-glass button:disabled {
+  opacity: 0.4;
+}
+
+/* 工具欄分隔線 */
+.monaco-toolbar-glass .w-px {
+  background: rgba(39, 39, 42, 0.5) !important;
+}
+
+/* 狀態欄 — 輕薄 border-top 風格 */
 .monaco-statusbar-glass {
-  background: rgba(15, 23, 42, 0.8) !important;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0 0 1rem 1rem;
+  background: transparent !important;
+  border-top: 1px solid rgba(39, 39, 42, 0.3);
 }
 
 /* Monaco Editor 內部樣式 */
@@ -43,102 +57,50 @@
   background: transparent !important;
 }
 
-/* 編輯器文字發光效果 */
-.monaco-editor-glass .view-lines {
-  text-shadow: 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-/* 選取區域玻璃效果 */
+/* 選取區域 */
 .monaco-editor-glass .selected-text {
   background: rgba(100, 149, 237, 0.2) !important;
 }
 
-/* 游標發光效果 */
-.monaco-editor-glass .cursor {
-  box-shadow: 0 0 8px rgba(100, 149, 237, 0.6);
-}
-
-/* 行號玻璃效果 */
+/* 行號 */
 .monaco-editor-glass .line-numbers {
-  color: rgba(255, 255, 255, 0.4) !important;
+  color: rgba(255, 255, 255, 0.3) !important;
 }
 
-/* 滾動條玻璃效果 */
+/* 滾動條 */
 .monaco-editor-glass .monaco-scrollable-element .scrollbar {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: transparent !important;
 }
 
 .monaco-editor-glass .monaco-scrollable-element .slider {
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
   border-radius: 8px;
 }
 
 .monaco-editor-glass .monaco-scrollable-element .slider:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.25) !important;
 }
 
-/* 懸停提示玻璃效果 */
+/* 懸停提示 */
 .monaco-editor-glass .monaco-hover {
-  background: rgba(15, 23, 42, 0.95) !important;
+  background: rgba(24, 24, 27, 0.95) !important;
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(39, 39, 42, 0.6);
   border-radius: 0.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-/* 建議框玻璃效果 */
+/* 建議框 */
 .monaco-editor-glass .suggest-widget {
-  background: rgba(15, 23, 42, 0.95) !important;
+  background: rgba(24, 24, 27, 0.95) !important;
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(39, 39, 42, 0.6);
   border-radius: 0.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-}
-
-/* 編輯器動畫效果 */
-.monaco-editor-glass {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.monaco-editor-glass:hover {
-  box-shadow: 
-    0 12px 40px 0 rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-/* 工具欄按鈕玻璃效果 */
-.monaco-toolbar-glass button {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.5rem;
-  transition: all 0.2s ease;
-}
-
-.monaco-toolbar-glass button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transform: translateY(-1px);
-}
-
-.monaco-toolbar-glass button:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-/* 分隔線玻璃效果 */
-.monaco-toolbar-glass .separator {
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 4px rgba(255, 255, 255, 0.05);
 }
 
 /* 響應式調整 */
 @media (max-width: 768px) {
-  .monaco-editor-glass {
-    border-radius: 0.75rem;
-  }
-  
   .monaco-toolbar-glass {
     padding: 0.5rem;
   }

@@ -426,14 +426,13 @@ export default function MonacoEditor({
         }
       />
 
-      {/* 狀態欄 - 玻璃擬態 */}
-      <div className="monaco-statusbar-glass px-3 py-2 text-sm flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-muted-foreground/80">
-          總字數: {totalWords} · 總字元: {totalChars} · 總行數: {totalLines}
+      {/* 狀態欄 */}
+      <div className="monaco-statusbar-glass flex items-center justify-between px-3 py-1.5 text-[11px] text-muted-foreground/70">
+        <div>
+          {totalWords} 字 · {totalChars} 字元 · {totalLines} 行
         </div>
-
-        <div className="text-muted-foreground/80">
-          選取 — 字數: {selWords} · 字元: {selChars} · 行數: {selLines}
+        <div>
+          選取: {selWords} 字 · {selChars} 字元 · {selLines} 行
         </div>
       </div>
     </div>

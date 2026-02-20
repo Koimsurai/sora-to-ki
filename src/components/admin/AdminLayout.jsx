@@ -15,7 +15,9 @@ import {
   LogOut,
   User,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Save,
+  Send,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -183,7 +185,7 @@ export const AdminLayout = () => {
                   )}
                 >
                   <Avatar className="size-7 shrink-0">
-                    <AvatarFallback className="bg-accent text-foreground/80 text-[11px] font-medium">AD</AvatarFallback>
+                    <AvatarFallback className="bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700/60">AD</AvatarFallback>
                   </Avatar>
                   {sidebarOpen && (
                     <div className="flex flex-col min-w-0 text-left">
@@ -235,10 +237,12 @@ export const AdminLayout = () => {
           
           {location.pathname.includes('/admin/posts/edit') || location.pathname.includes('/admin/posts/create') || location.pathname === '/admin/posts/new' ? (
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" size="sm" className="h-8 text-xs bg-accent/30 border-border/50 hover:bg-accent/50" onClick={() => document.getElementById('save-draft-btn')?.click()}>
+              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground/80 px-2.5" onClick={() => document.getElementById('save-draft-btn')?.click()}>
+                <Save className="size-3.5" />
                 儲存草稿
               </Button>
-              <Button size="sm" className="h-8 text-xs bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => document.getElementById('publish-btn')?.click()}>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 text-foreground/80 border-border/50 hover:bg-accent/50 px-3" onClick={() => document.getElementById('publish-btn')?.click()}>
+                <Send className="size-3.5" />
                 發佈文章
               </Button>
             </div>

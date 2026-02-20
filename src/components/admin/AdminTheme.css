@@ -26,6 +26,10 @@
   --ring: 240 5.2% 33.9%;
   --radius: 0.625rem;
 
+  /* 中和全域 button 紫色變數 */
+  --clr-button: transparent;
+  --clr-button-text: #e4e4e7;
+
   background: #09090b;
   min-height: 100vh;
   position: relative;
@@ -149,10 +153,10 @@
   background: rgba(39, 39, 42, 0.3) !important;
 }
 
-/* ── Inputs — Glass ── */
-.admin-layout input,
-.admin-layout select,
-.admin-layout textarea {
+/* ── Inputs — Glass (exclude Monaco toolbar) ── */
+.admin-layout input:not(.monaco-toolbar-glass *),
+.admin-layout select:not(.monaco-toolbar-glass *),
+.admin-layout textarea:not(.monaco-toolbar-glass *) {
   background: rgba(24, 24, 27, 0.45) !important;
   border-color: rgba(39, 39, 42, 0.6) !important;
   color: #e4e4e7 !important;
@@ -217,4 +221,75 @@
   border: 1px solid rgba(39, 39, 42, 0.6);
   color: #a1a1aa;
   border-radius: 8px;
+}
+
+/* ── Links — Override global a { color: var(--clr-button) } for admin ── */
+.admin-layout a {
+  color: #a1a1aa;
+}
+.admin-layout a:hover,
+.admin-layout a:focus {
+  color: #e4e4e7;
+  text-shadow: none;
+}
+
+/* ── Button — Remove focus ring borders ── */
+.admin-layout button:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  ring: none !important;
+}
+.admin-layout button:focus-visible:not(:hover) {
+  outline: none !important;
+}
+
+/* ── Reset global button base styles for admin ──
+/* ── Reset global button base styles for admin ──
+   用 :where() 包裹 .admin-layout 讓 specificity 降為 (0,0,1)
+   這樣 Tailwind 的 class selector (0,1,0) 仍可覆蓋 */
+:where(.admin-layout) button {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  box-shadow: none;
+}
+:where(.admin-layout) button:hover,
+:where(.admin-layout) button:focus {
+  background-color: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* ── Default Buttons — Neutral glass style ── */
+.admin-layout .bg-primary,
+.admin-layout [class*="bg-primary"] {
+  background: rgba(228, 228, 231, 0.12) !important;
+  color: #e4e4e7 !important;
+  border: 1px solid rgba(228, 228, 231, 0.2) !important;
+}
+.admin-layout .bg-primary:hover,
+.admin-layout [class*="bg-primary"]:hover {
+  background: rgba(228, 228, 231, 0.18) !important;
+}
+
+/* ── Link variant — Neutral text ── */
+.admin-layout .text-primary {
+  color: #a1a1aa !important;
+}
+.admin-layout .text-primary:hover {
+  color: #e4e4e7 !important;
+}
+
+/* ── Destructive Buttons — Red accent ── */
+.admin-layout .bg-destructive,
+.admin-layout [class*="bg-destructive"] {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+.admin-layout .bg-destructive:hover,
+.admin-layout [class*="bg-destructive"]:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
 }

@@ -104,7 +104,7 @@ export default function PostsList() {
     return (
       <div className="flex h-[400px] items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-600 border-t-transparent"></div>
           <p className="mt-4 text-muted-foreground">載入中...</p>
         </div>
       </div>
@@ -240,7 +240,7 @@ export default function PostsList() {
         <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
           <Search className="size-12 opacity-20" />
           <p className="mt-4 text-sm">還沒有文章</p>
-          <Button className="mt-4" size="sm" asChild>
+          <Button variant="outline" className="mt-4 border-border/50 text-foreground/70 hover:bg-accent/40" size="sm" asChild>
             <Link to="/admin/posts/create">
               <Plus className="mr-2 size-3.5" />
               創建第一篇文章

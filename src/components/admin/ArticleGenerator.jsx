@@ -615,7 +615,7 @@ export default function ArticleGenerator() {
                                         </div>
                                     </div>
                                 ) : viewMode === 'preview' ? (
-                                    <article className="prose prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-2xl prose-h1:mb-6 prose-h2:text-lg prose-h2:mt-8 prose-h2:mb-4 prose-p:leading-relaxed prose-p:text-muted-foreground prose-a:text-violet-400 prose-code:text-pink-400 prose-pre:bg-background/80 prose-pre:border prose-pre:border-border/50 prose-blockquote:border-l-violet-500/50 prose-blockquote:text-muted-foreground/80">
+                                    <article className="prose prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-2xl prose-h1:mb-6 prose-h2:text-lg prose-h2:mt-8 prose-h2:mb-4 prose-p:leading-relaxed prose-p:text-muted-foreground prose-a:text-foreground/80 prose-a:underline prose-code:text-foreground/70 prose-pre:bg-background/80 prose-pre:border prose-pre:border-border/50 prose-blockquote:border-l-border prose-blockquote:text-muted-foreground/80">
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
                                             rehypePlugins={[rehypeRaw]}

@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa';
 import Comments from './Comments';
 import SEOHead from './SEOHead';
+import { BlogImage } from './ImageLightbox';
 import './BlogPost.css';
 
 /* ── helpers ── */
@@ -49,10 +50,34 @@ const getLinkMeta = (url) => {
     if (host.includes('instagram.com')) return { type: 'instagram', icon: FaInstagram, color: '#E4405F', label: 'Instagram' };
     if (host.includes('threads.net')) return { type: 'threads', icon: FaExternalLinkAlt, color: '#fff', label: 'Threads' };
 
+    // Spotify
+    if (host.includes('spotify.com') || host.includes('open.spotify.com')) {
+      // Extract Spotify embed URL
+      const pathParts = u.pathname.split('/');
+      let embedUrl = null;
+      if (pathParts.includes('track') || pathParts.includes('album') || pathParts.includes('playlist') || pathParts.includes('episode')) {
+        embedUrl = `https://open.spotify.com/embed${u.pathname}`;
+      }
+      return { type: 'spotify', icon: FaExternalLinkAlt, color: '#1DB954', label: 'Spotify', embedUrl };
+    }
+
+    // Bilibili
+    if (host.includes('bilibili.com') || host.includes('b23.tv')) {
+      let bvid = '';
+      const bvMatch = u.pathname.match(/BV\w+/);
+      if (bvMatch) bvid = bvMatch[0];
+      return { type: 'bilibili', icon: FaExternalLinkAlt, color: '#00A1D6', label: 'Bilibili', bvid };
+    }
+
     // Internal Blog Link Detection
     if (host.includes('koimsurai.com') && u.pathname.startsWith('/blog/')) {
       const id = u.pathname.split('/').pop();
       if (id && id !== 'blog') return { type: 'internal', id };
+    }
+
+    // Internal Web Link Detection (non-blog pages)
+    if (host.includes('koimsurai.com')) {
+      return { type: 'internal-page', icon: FaExternalLinkAlt, color: 'var(--post-accent)', label: '站內連結', path: u.pathname };
     }
 
     return { type: 'generic', icon: FaExternalLinkAlt, color: 'var(--post-muted)', label: host };
@@ -102,6 +127,61 @@ const LinkCard = ({ href }) => {
 
   if (meta.type === 'internal') {
     return <InternalLinkCard id={meta.id} />;
+  }
+
+  // Spotify embed
+  if (meta.type === 'spotify' && meta.embedUrl) {
+    return (
+      <div className="link-card link-card-spotify">
+        <iframe
+          src={meta.embedUrl + '?theme=0'}
+          width="100%"
+          height="152"
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          className="rounded-lg"
+          style={{ border: 'none' }}
+        />
+      </div>
+    );
+  }
+
+  // Bilibili embed
+  if (meta.type === 'bilibili' && meta.bvid) {
+    return (
+      <div className="link-card link-card-bilibili">
+        <div className="link-card-embed-wrapper">
+          <iframe
+            src={`https://player.bilibili.com/player.html?bvid=${meta.bvid}&high_quality=1&danmaku=0`}
+            scrolling="no"
+            frameBorder="0"
+            allowFullScreen
+            loading="lazy"
+            className="link-card-bilibili-iframe"
+            style={{ border: 'none' }}
+          />
+        </div>
+        <a href={href} target="_blank" rel="noopener noreferrer" className="link-card-embed-link">
+          <span style={{ color: '#00A1D6' }}>▶</span> 在 Bilibili 觀看
+        </a>
+      </div>
+    );
+  }
+
+  // Internal web page link
+  if (meta.type === 'internal-page') {
+    return (
+      <Link to={meta.path} className="link-card link-card-internal">
+        <div className="link-card-body">
+          <div className="link-card-site">
+            <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
+            <span>{meta.label}</span>
+          </div>
+          <div className="link-card-url">{meta.path}</div>
+        </div>
+      </Link>
+    );
   }
 
   const Icon = meta.icon;
@@ -169,22 +249,86 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
    ══════════════════════════ */
 const CustomParagraph = ({ children, node, ...props }) => {
   const childArray = React.Children.toArray(children);
+
+  // 遞迴取得所有子文字內容
+  const getText = (node) => {
+    if (typeof node === 'string') return node;
+    if (Array.isArray(node)) return node.map(getText).join('');
+    if (node?.props?.children) return getText(node.props.children);
+    return '';
+  };
+
+  // 從 children 中找出所有 <a> 元素
+  const findLinks = (arr) => {
+    const links = [];
+    arr.forEach(child => {
+      if (child?.props?.href) links.push(child);
+    });
+    return links;
+  };
+
+  // 可嵌入的連結類型
+  const isEmbeddableLink = (href) => {
+    try {
+      const u = new URL(href);
+      const host = u.hostname.replace('www.', '');
+      return host.includes('youtube.com') || host.includes('youtu.be') ||
+             host.includes('bilibili.com') || host.includes('b23.tv') ||
+             host.includes('spotify.com') ||
+             host.includes('koimsurai.com');
+    } catch { return false; }
+  };
+
+  // 單一子元素 — 可能是純文字 URL 或 <a> 連結
   if (childArray.length === 1) {
     const child = childArray[0];
+
+    // 純文字 URL
     if (typeof child === 'string') {
       const trimmed = child.trim();
       if (/^https?:\/\/\S+$/.test(trimmed)) {
         return <LinkCard href={trimmed} />;
       }
     }
-    if (child && child.props && child.props.href) {
+
+    // ReactMarkdown <a> 元素（remarkGfm autolink 或 markdown 連結）
+    if (child?.props?.href) {
       const href = child.props.href;
-      const text = typeof child.props.children === 'string' ? child.props.children : '';
-      if (text === href || text === '') {
+      const text = getText(child.props.children).trim();
+      if (text === href || text === '' || href.includes(text) || text.includes(href)) {
         return <LinkCard href={href} />;
       }
     }
   }
+
+  // 多子元素 — 檢查是否包含可嵌入的連結（如「【標題】 url」格式）
+  if (childArray.length >= 2) {
+    const links = findLinks(childArray);
+    const embeddableLink = links.find(link => isEmbeddableLink(link.props.href));
+
+    if (embeddableLink) {
+      const href = embeddableLink.props.href;
+      // 取得非連結部分的文字
+      const textParts = childArray.filter(c => c !== embeddableLink);
+      const hasText = textParts.some(c => {
+        const t = typeof c === 'string' ? c.trim() : getText(c).trim();
+        return t.length > 0;
+      });
+
+      if (hasText) {
+        // 有文字描述 — 顯示文字 + 嵌入卡片
+        return (
+          <div className="link-card-with-text">
+            <p {...props}>{textParts}</p>
+            <LinkCard href={href} />
+          </div>
+        );
+      } else {
+        return <LinkCard href={href} />;
+      }
+    }
+  }
+
   return <p {...props}>{children}</p>;
 };
 
@@ -737,7 +881,12 @@ function BlogPost() {
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
-                components={{ code: CodeBlock, p: CustomParagraph, ...headingComponents }}
+                components={{
+                  code: CodeBlock,
+                  p: CustomParagraph,
+                  img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
+                  ...headingComponents,
+                }}
               >
                 {post.content}
               </ReactMarkdown>
