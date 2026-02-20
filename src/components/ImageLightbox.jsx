@@ -91,6 +91,35 @@ export const BlogImage = ({ src, alt, ...props }) => {
     });
   }, [src, isNAS]);
 
+  // 判斷 EXIF 是否有足夠資訊顯示（至少要有拍攝參數或相機/鏡頭資訊）
+  const hasExifContent = exifData && (
+    exifData.make || exifData.model || exifData.LensModel ||
+    exifData.FNumber || exifData.ISO != null || exifData.ExposureTime ||
+    exifData.FocalLength || exifData.FocalLengthIn35mmFormat
+  );
+  // 只有日期 → 不顯示 EXIF overlay（避免只顯示一個 📅 日期很奇怪）
+  const showExif = isNAS && showInfo && hasExifContent;
+
+  // 相機資訊：優先 make+model，fallback 到 LensModel
+  const cameraLabel = exifData && (
+    (exifData.make && exifData.model)
+      ? `${exifData.make} ${exifData.model}`
+      : exifData.model || ''
+  );
+
+  // 鏡頭資訊：去除與相機名稱重複的部分
+  const lensLabel = (() => {
+    if (!exifData?.LensModel) return '';
+    const lens = exifData.LensModel;
+    // 如果 LensModel 完全等於 cameraLabel → 重複，不顯示
+    if (lens === cameraLabel) return '';
+    // 如果 LensModel 包含相機型號名稱（如 "Pixel 8 Pro back camera"） → 不顯示
+    if (cameraLabel && lens.toLowerCase().includes(cameraLabel.toLowerCase())) return '';
+    // 如果相機名稱包含鏡頭名稱 → 重複，不顯示
+    if (cameraLabel && cameraLabel.toLowerCase().includes(lens.toLowerCase())) return '';
+    return lens;
+  })();
+
   return (
     <>
       <span
@@ -107,17 +136,15 @@ export const BlogImage = ({ src, alt, ...props }) => {
           decoding="async"
           {...props}
         />
-        {/* NAS 圖片 hover overlay — 顯示完整 EXIF */}
-        {isNAS && showInfo && exifData && (
-          <span className="blog-image-exif">
-            {(exifData.make || exifData.model || exifData.LensModel) && (
-              <span>📷 {exifData.make && exifData.model ? `${exifData.make} ${exifData.model}` : (exifData.model || exifData.LensModel?.split(' back ')[0] || '')}</span>
-            )}
-            {exifData.FNumber && <span>⊙ {exifData.FNumber}</span>}
-            {exifData.ISO != null && <span>◎ ISO {exifData.ISO}</span>}
-            {exifData.ExposureTime && <span>⏱ {exifData.ExposureTime}s</span>}
-            {(exifData.FocalLength || exifData.FocalLengthIn35mmFormat) && <span>⊕ {exifData.FocalLengthIn35mmFormat ? `${exifData.FocalLengthIn35mmFormat.replace(' mm', 'mm')} (等效)` : exifData.FocalLength}</span>}
-            {exifData.DateTimeOriginal && <span>📅 {exifData.DateTimeOriginal.split(' ')[0].replace(/:/g, '-')}</span>}
+        {/* NAS 圖片 hover overlay — 顯示完整 EXIF（從下滑入） */}
+        {isNAS && exifData && hasExifContent && (
+          <span className={`blog-image-exif${showExif ? ' blog-image-exif--visible' : ''}`}>
+            {cameraLabel && <span>📷 {cameraLabel}</span>}
+            {lensLabel && <span>🔍 {lensLabel}</span>}
+            {exifData.FNumber && <span>ƒ/{exifData.FNumber}</span>}
+            {exifData.ISO != null && <span>ISO {exifData.ISO}</span>}
+            {exifData.ExposureTime && <span>{exifData.ExposureTime}s</span>}
+            {(exifData.FocalLength || exifData.FocalLengthIn35mmFormat) && <span>{exifData.FocalLengthIn35mmFormat ? `${exifData.FocalLengthIn35mmFormat.replace(' mm', 'mm')}` : exifData.FocalLength}</span>}
           </span>
         )}
       </span>

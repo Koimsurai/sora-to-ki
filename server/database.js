@@ -189,6 +189,19 @@ function initializeDatabase() {
             });
           } else {
             console.log('posts 表結構已是最新版本');
+
+            // 檢查是否需要新增 layout_type 欄位
+            const hasLayoutType = columnNames.includes('layout_type');
+            if (!hasLayoutType) {
+              console.log('新增 layout_type 欄位...');
+              db.run("ALTER TABLE posts ADD COLUMN layout_type TEXT DEFAULT 'record'", (alterErr) => {
+                if (alterErr) {
+                  console.error('新增 layout_type 欄位錯誤:', alterErr);
+                } else {
+                  console.log('layout_type 欄位新增成功');
+                }
+              });
+            }
           }
         });
       }
@@ -209,6 +222,25 @@ function initializeDatabase() {
         console.error('創建 categories 表錯誤:', err);
       } else {
         console.log('categories 表已就緒');
+
+        // 檢查是否需要新增 short_description 欄位
+        db.all("PRAGMA table_info(categories)", (pragmaErr, columns) => {
+          if (pragmaErr) {
+            console.error('檢查 categories 表結構錯誤:', pragmaErr);
+            return;
+          }
+          const colNames = columns.map(c => c.name);
+          if (!colNames.includes('short_description')) {
+            console.log('新增 short_description 欄位到 categories 表...');
+            db.run("ALTER TABLE categories ADD COLUMN short_description TEXT DEFAULT ''", (alterErr) => {
+              if (alterErr) {
+                console.error('新增 short_description 欄位錯誤:', alterErr);
+              } else {
+                console.log('categories.short_description 欄位新增成功');
+              }
+            });
+          }
+        });
         
         // 檢查是否需要遷移現有的分類數據
         db.all(`

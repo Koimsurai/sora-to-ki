@@ -23,11 +23,13 @@ const stagger = {
 };
 
 /* ════════════════════════════════════════════════
-   NoteCard —  風格文章卡片
+   NoteCard — 支援 record / column 兩種樣板
    ════════════════════════════════════════════════ */
+
 const NoteCard = React.memo(({ post, index }) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
+  const isColumn = post.layout_type === 'column';
 
   useEffect(() => {
     const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
@@ -63,9 +65,11 @@ const NoteCard = React.memo(({ post, index }) => {
     navigator.clipboard.writeText(`${window.location.origin}/blog/${post.id}`);
   };
 
-  const excerpt = post.content
-    ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>\-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
-    : '';
+  const excerpt = post.excerpt
+    ? post.excerpt
+    : post.content
+      ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>\-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
+      : '';
   const dateObj = new Date(post.created_at);
   const dayStr = dateObj.getDate();
   const monthStr = dateObj.toLocaleDateString('zh-TW', { month: 'short' });
@@ -73,7 +77,7 @@ const NoteCard = React.memo(({ post, index }) => {
 
   return (
     <motion.article
-      className="note-card"
+      className={`note-card${isColumn ? ' note-card--column' : ''}`}
       custom={index}
       variants={fadeUp}
       initial="hidden"
@@ -81,16 +85,22 @@ const NoteCard = React.memo(({ post, index }) => {
       viewport={{ once: true, margin: '-40px' }}
       layout
     >
-      {/* 日期指示器 */}
-      <div className="note-date-indicator">
-        <span className="note-day">{dayStr}</span>
-        <span className="note-month">{monthStr}</span>
-      </div>
+      {/* 日期指示器 or 專欄小點 */}
+      {isColumn ? (
+        <div className="note-column-icon">
+          <span className="column-icon-dot" />
+        </div>
+      ) : (
+        <div className="note-date-indicator">
+          <span className="note-day">{dayStr}</span>
+          <span className="note-month">{monthStr}</span>
+        </div>
+      )}
 
       <div className="note-body">
         {/* 頂部 meta */}
         <div className="note-meta-top">
-          <span className="note-full-date">{fullDate}</span>
+          {!isColumn && <span className="note-full-date">{fullDate}</span>}
           {post.category && <span className="note-category">{post.category}</span>}
         </div>
 
@@ -436,11 +446,11 @@ function Blog() {
                 </button>
                 {allCategories.map(cat => (
                   <button
-                    key={cat.category}
-                    className={`category-item ${selectedCategory === cat.category ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(cat.category)}
+                    key={cat.name}
+                    className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(cat.name)}
                   >
-                    {cat.category}
+                    {cat.name}
                     <span className="cat-count">{cat.post_count}</span>
                   </button>
                 ))}

@@ -12,6 +12,7 @@ export const postSchema = z.object({
   })).optional(),
   cover: z.string().optional(),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
+  layout_type: z.enum(['record', 'column']).default('record'),
   allowComments: z.boolean().default(true),
   pin: z.boolean().default(false),
   pinOrder: z.number().default(0),

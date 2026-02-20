@@ -505,6 +505,72 @@
 }
 
 /* ══════════════════════════
+   Column Layout (專欄型態)
+   ══════════════════════════ */
+.note-card--column {
+  position: relative;
+}
+
+/* 微弱紫色光暈 — before 偽元素 */
+.note-card--column .note-body {
+  position: relative;
+  border-color: rgba(168, 85, 247, 0.12);
+  background: rgba(168, 85, 247, 0.03);
+}
+
+.note-card--column .note-body::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.12) 0%,
+    rgba(127, 90, 240, 0.06) 50%,
+    rgba(168, 85, 247, 0.12) 100%
+  );
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0.6;
+  transition: opacity 0.35s ease;
+}
+
+.note-card--column .note-body:hover::before {
+  opacity: 1;
+}
+
+.note-card--column .note-body:hover {
+  border-color: rgba(168, 85, 247, 0.3);
+  box-shadow:
+    0 0 24px rgba(168, 85, 247, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* 專欄小點底座（替代日期區） */
+.note-column-icon {
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding-top: 4px;
+}
+
+.column-icon-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.35);
+  animation: column-dot-pulse 3s ease-in-out infinite;
+}
+
+@keyframes column-dot-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(168, 85, 247, 0.3); opacity: 0.7; }
+  50% { box-shadow: 0 0 14px rgba(168, 85, 247, 0.5); opacity: 1; }
+}
+
+/* ══════════════════════════
    Sidebar
    ══════════════════════════ */
 .sidebar-card {
@@ -835,6 +901,17 @@
     flex-direction: row;
     gap: 6px;
     padding: 0 0 6px 0;
+  }
+
+  .note-column-icon {
+    flex-direction: row;
+    padding: 0 0 6px 0;
+    justify-content: flex-start;
+  }
+
+  .column-icon-dot {
+    width: 8px;
+    height: 8px;
   }
 
   .note-day { font-size: 1rem; }

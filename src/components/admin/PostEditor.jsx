@@ -35,6 +35,7 @@ import {
   X,
   Sparkles,
   Loader2,
+  LayoutTemplate,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -106,6 +107,7 @@ export default function PostEditor() {
       tags: [],
       cover: '',
       status: 'draft',
+      layout_type: 'record',
       allowComments: true,
       pin: false,
       pinOrder: 0,
@@ -150,10 +152,11 @@ export default function PostEditor() {
       
       if (response.ok) {
         const data = await response.json();
-        // 確保 tags 格式正確
+        // 確保 tags 格式正確，並將 API 的 excerpt 映射到表單的 summary
         const formattedData = {
           ...data,
           tags: formatTags(data.tags),
+          summary: data.excerpt || data.summary || '',
         };
         form.reset(formattedData);
       } else {
@@ -229,6 +232,7 @@ export default function PostEditor() {
       summary: summary,
       cover: n8nData.cover || '',
       status: n8nData.status || 'draft',
+      layout_type: n8nData.layout_type || 'record',
       allowComments: n8nData.allowComments !== false,
       pin: n8nData.pin || false,
       pinOrder: n8nData.pinOrder || 0,
@@ -362,13 +366,17 @@ export default function PostEditor() {
         ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
         : [];
       
+      // 將表單的 summary 對應到 API 的 excerpt 欄位
+      const { summary, ...rest } = data;
+      const payload = { ...rest, excerpt: summary, tags: tagsArray, status: 'draft' };
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...data, tags: tagsArray, status: 'draft' }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -400,13 +408,17 @@ export default function PostEditor() {
         ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
         : [];
       
+      // 將表單的 summary 對應到 API 的 excerpt 欄位
+      const { summary, ...rest } = data;
+      const payload = { ...rest, excerpt: summary, tags: tagsArray, status: 'published' };
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...data, tags: tagsArray, status: 'published' }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -703,6 +715,34 @@ export default function PostEditor() {
                           <FormControl>
                             <Input {...field} placeholder="custom-url-slug" className="h-8 bg-accent/30" />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="layout_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <LayoutTemplate className="h-3 w-3" />
+                            樣板類型
+                          </FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || 'record'}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-8 bg-accent/30">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="record">📅 紀錄（時效性）</SelectItem>
+                              <SelectItem value="column">💎 專欄（無時間性）</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}

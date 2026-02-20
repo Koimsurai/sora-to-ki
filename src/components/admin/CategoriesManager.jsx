@@ -33,6 +33,7 @@ export default function CategoriesManager() {
     name: '',
     slug: '',
     description: '',
+    short_description: '',
   });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,6 +105,7 @@ export default function CategoriesManager() {
       name: category.name,
       slug: category.slug || '',
       description: category.description || '',
+      short_description: category.short_description || '',
     });
     setDialogOpen(true);
   };
@@ -133,7 +135,7 @@ export default function CategoriesManager() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', slug: '', description: '' });
+    setFormData({ name: '', slug: '', description: '', short_description: '' });
     setEditingCategory(null);
   };
 
@@ -200,6 +202,15 @@ export default function CategoriesManager() {
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     placeholder="關於技術的學習筆記"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="short_description">簡述（前台 tooltip 顯示）</Label>
+                  <Input
+                    id="short_description"
+                    value={formData.short_description}
+                    onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
+                    placeholder="一句話描述此分類"
                   />
                 </div>
               </div>

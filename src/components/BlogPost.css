@@ -245,8 +245,8 @@
   padding-left: 0.75rem !important;
 }
 
-.posts-nav-current-item::before {
-  content: '';
+/* Animated active indicator bar (rendered by framer-motion layoutId) */
+.posts-nav-active-bar {
   position: absolute;
   left: 0;
   top: 50%;
@@ -255,6 +255,59 @@
   height: 70%;
   border-radius: 2px;
   background: var(--post-accent);
+  box-shadow: 0 0 8px rgba(127, 90, 240, 0.3);
+}
+
+/* Category tooltip */
+.posts-nav-category-name {
+  cursor: pointer;
+}
+
+.category-tooltip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  width: 240px;
+  padding: 14px;
+  background: rgba(18, 16, 30, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(127, 90, 240, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(127, 90, 240, 0.08);
+  z-index: 100;
+  animation: tooltip-in 0.2s ease;
+  pointer-events: none;
+}
+
+@keyframes tooltip-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.category-tooltip-short {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+}
+
+.category-tooltip-desc {
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 10px 0;
+  line-height: 1.5;
+}
+
+.category-tooltip-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.35);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
 }
 
 /* ── Main column ── */
@@ -648,26 +701,33 @@
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
-/* EXIF info overlay */
+/* EXIF info overlay — 從下往上滑入 */
 .blog-image-exif {
   position: absolute;
   bottom: 8px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(10px);
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 8px 18px;
-  background: rgba(0, 0, 0, 0.82);
+  gap: 12px;
+  padding: 7px 16px;
+  background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(16px);
   border-radius: 10px;
-  font-size: 0.74rem;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.82);
   white-space: nowrap;
   pointer-events: none;
   z-index: 5;
   max-width: 95%;
-  overflow-x: auto;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blog-image-exif--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .blog-image-exif span {

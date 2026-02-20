@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
 import {
   FaRegHeart, FaHeart, FaLink, FaRegComment, FaArrowUp,
   FaEnvelope, FaShareAlt, FaRss, FaTimes,
@@ -338,6 +338,21 @@ const CustomParagraph = ({ children, node, ...props }) => {
 const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
   const [nearbyPosts, setNearbyPosts] = useState([]);
   const [categoryPosts, setCategoryPosts] = useState([]);
+  const [categoryInfo, setCategoryInfo] = useState(null);
+  const [showCategoryTooltip, setShowCategoryTooltip] = useState(false);
+
+  // 取得分類詳情
+  useEffect(() => {
+    if (!postCategory) return;
+    fetch('/api/categories')
+      .then(r => r.json())
+      .then(data => {
+        const cats = data.categories || [];
+        const found = cats.find(c => c.name === postCategory);
+        if (found) setCategoryInfo(found);
+      })
+      .catch(console.error);
+  }, [postCategory]);
 
   useEffect(() => {
     fetch('/api/posts?limit=100')
@@ -397,6 +412,7 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
   return (
     <nav className="posts-nav">
       {/* 附近文章列表 */}
+      <LayoutGroup>
       {nearbyPosts.length > 0 && (
         <div className="posts-nav-nearby">
           {nearbyPosts.map((p) => {
@@ -407,21 +423,56 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
                 to={'/blog/' + p.id}
                 className={'posts-nav-item text-sm py-1 block transition-colors truncate' + (isCurrent ? ' text-white font-semibold posts-nav-current-item' : ' text-gray-500 hover:text-gray-300')}
                 title={p.title}
+                style={{ position: 'relative' }}
               >
+                {isCurrent && (
+                  <motion.span
+                    layoutId="posts-nav-active-indicator"
+                    className="posts-nav-active-bar"
+                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                  />
+                )}
                 {p.title}
               </Link>
             );
           })}
         </div>
       )}
+      </LayoutGroup>
 
       {/* 此文章收錄於分類 */}
       {postCategory && (
-        <div className="posts-nav-category mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="posts-nav-category mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
           <span className="text-xs text-gray-600 block mb-1">此文章收錄於專欄：</span>
-          <Link to={'/blog?category=' + encodeURIComponent(postCategory)} className="text-sm text-white hover:text-purple-400 transition-colors font-semibold">
-            {postCategory}
-          </Link>
+          <span
+            className="posts-nav-category-name"
+            onMouseEnter={() => setShowCategoryTooltip(true)}
+            onMouseLeave={() => setShowCategoryTooltip(false)}
+            style={{ position: 'relative', display: 'inline-block' }}
+          >
+            <Link to={'/blog?category=' + encodeURIComponent(postCategory)} className="text-sm text-white hover:text-purple-400 transition-colors font-semibold">
+              {postCategory}
+            </Link>
+            {/* Category tooltip */}
+            {showCategoryTooltip && categoryInfo && (
+              <div className="category-tooltip">
+                {categoryInfo.short_description && (
+                  <p className="category-tooltip-short">{categoryInfo.short_description}</p>
+                )}
+                {categoryInfo.description && (
+                  <p className="category-tooltip-desc">{categoryInfo.description}</p>
+                )}
+                <div className="category-tooltip-meta">
+                  {categoryInfo.post_count != null && (
+                    <span>共 {categoryInfo.post_count} 篇文章</span>
+                  )}
+                  {categoryInfo.updated_at && (
+                    <span>最近更新 {new Date(categoryInfo.updated_at).toLocaleDateString('zh-TW')}</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </span>
         </div>
       )}
 
@@ -839,40 +890,49 @@ function BlogPost() {
       </div>
 
       {/* ── Header ── */}
-      <header className="post-header">
-        <h1 className="post-title">{post.title}</h1>
+      <AnimatePresence mode="wait">
+        <motion.header
+          key={'header-' + id}
+          className="post-header"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+        >
+          <h1 className="post-title">{post.title}</h1>
 
-        <div className="post-meta-row">
-          <span className="meta-date">⏱ {post.date}</span>
-          <span className="meta-sep">·</span>
-          <span className="meta-author">✦ {post.author}</span>
-          <span className="meta-sep">·</span>
-          <span>📖 {post.view_count || 0}</span>
-          <span className="meta-sep">·</span>
-          <span>❤️ {likeCount}</span>
-          <span className="meta-sep">·</span>
-          <span>☕ 約 {readTime} 分鐘</span>
-          {post.category && (
-            <>
-              <span className="meta-sep">·</span>
-              <span className="meta-category">{post.category}</span>
-            </>
-          )}
-          <span className="meta-sep">·</span>
-          <span className="meta-lang">🌏 中文</span>
-          <span className="meta-sep">·</span>
-          <span className="meta-online">當前 {onlineCount} 人正在閱讀</span>
-        </div>
-
-        {post.tags && post.tags.length > 0 && (
-          <div className="post-tags">
-            {post.tags.map((tag) => {
-              const name = typeof tag === 'string' ? tag : (tag.name || tag);
-              return <span key={name} className="tag">#{name}</span>;
-            })}
+          <div className="post-meta-row">
+            <span className="meta-date">⏱ {post.date}</span>
+            <span className="meta-sep">·</span>
+            <span className="meta-author">✦ {post.author}</span>
+            <span className="meta-sep">·</span>
+            <span>📖 {post.view_count || 0}</span>
+            <span className="meta-sep">·</span>
+            <span>❤️ {likeCount}</span>
+            <span className="meta-sep">·</span>
+            <span>☕ 約 {readTime} 分鐘</span>
+            {post.category && (
+              <>
+                <span className="meta-sep">·</span>
+                <span className="meta-category">{post.category}</span>
+              </>
+            )}
+            <span className="meta-sep">·</span>
+            <span className="meta-lang">🌏 中文</span>
+            <span className="meta-sep">·</span>
+            <span className="meta-online">當前 {onlineCount} 人正在閱讀</span>
           </div>
-        )}
-      </header>
+
+          {post.tags && post.tags.length > 0 && (
+            <div className="post-tags">
+              {post.tags.map((tag) => {
+                const name = typeof tag === 'string' ? tag : (tag.name || tag);
+                return <span key={name} className="tag">#{name}</span>;
+              })}
+            </div>
+          )}
+        </motion.header>
+      </AnimatePresence>
 
       {/* ── Content body: left sidebar + center + right sidebar ── */}
       <div className="post-body">
@@ -881,48 +941,66 @@ function BlogPost() {
           <PostsNav currentId={id} postTitle={post.title} postCategory={post.category} />
         </aside>
 
-        <div className="post-main-column">
-          <div className="post-content-wrapper">
-            {/* AI Summary — inside card top with gradient fade */}
-            {post.excerpt && (
-              <div className="post-ai-summary-inline">
-                <div className="ai-summary-top-row">
-                  <h4>🔑 關鍵洞察</h4>
-                  <span className="ai-badge">✦ AI·GEN</span>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={'content-' + id}
+            className="post-main-column"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1], delay: 0.05 }}
+          >
+            <div className="post-content-wrapper">
+              {/* AI Summary — inside card top with gradient fade */}
+              {post.excerpt && (
+                <div className="post-ai-summary-inline">
+                  <div className="ai-summary-top-row">
+                    <h4>🔑 關鍵洞察</h4>
+                    <span className="ai-badge">✦ AI·GEN</span>
+                  </div>
+                  <p>{post.excerpt}</p>
+                  <div className="ai-summary-fade" />
                 </div>
-                <p>{post.excerpt}</p>
-                <div className="ai-summary-fade" />
-              </div>
-            )}
+              )}
 
-            <article className="post-content drop-cap-first" ref={contentRef}>
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-                components={{
-                  code: CodeBlock,
-                  p: CustomParagraph,
-                  img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
-                  ...headingComponents,
-                }}
-              >
-                {post.content}
-              </ReactMarkdown>
-            </article>
-          </div>
+              <article className="post-content drop-cap-first" ref={contentRef}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    code: CodeBlock,
+                    p: CustomParagraph,
+                    img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
+                    ...headingComponents,
+                  }}
+                >
+                  {post.content}
+                </ReactMarkdown>
+              </article>
+            </div>
 
-          {/* ── Comments ── */}
-          <div className="post-extras" id="comments">
-            <Comments postId={id} />
-          </div>
-        </div>
+            {/* ── Comments ── */}
+            <div className="post-extras" id="comments">
+              <Comments postId={id} />
+            </div>
+          </motion.div>
+        </AnimatePresence>
 
         {/* Right sidebar — TOC */}
-        {headings.length > 0 && (
-          <aside className="post-sidebar-right">
-            <TableOfContents headings={headings} activeHeading={activeHeading} readingProgress={readingProgress} tocRef={tocRef} />
-          </aside>
-        )}
+        <AnimatePresence mode="wait">
+          {headings.length > 0 && (
+            <motion.aside
+              key={'toc-' + id}
+              className="post-sidebar-right"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 16 }}
+              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
+            >
+              <TableOfContents headings={headings} activeHeading={activeHeading} readingProgress={readingProgress} tocRef={tocRef} />
+            </motion.aside>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Floating side actions (right) ── */}

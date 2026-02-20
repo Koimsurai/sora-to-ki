@@ -698,10 +698,12 @@ apiRouter.get('/categories', (req, res) => {
       c.name,
       c.slug,
       c.description,
+      c.short_description,
+      c.updated_at,
       COUNT(p.id) as post_count
     FROM categories c
     LEFT JOIN posts p ON p.category = c.name AND p.status = 'published'
-    GROUP BY c.id, c.name, c.slug, c.description
+    GROUP BY c.id, c.name, c.slug, c.description, c.short_description, c.updated_at
     ORDER BY post_count DESC, c.name ASC
   `;
 
@@ -725,12 +727,13 @@ apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
       c.name,
       c.slug,
       c.description,
+      c.short_description,
       c.created_at,
       c.updated_at,
       COUNT(p.id) as post_count
     FROM categories c
     LEFT JOIN posts p ON p.category = c.name
-    GROUP BY c.id, c.name, c.slug, c.description, c.created_at, c.updated_at
+    GROUP BY c.id, c.name, c.slug, c.description, c.short_description, c.created_at, c.updated_at
     ORDER BY c.name ASC
   `;
 
@@ -745,7 +748,7 @@ apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
 
 // POST create new category
 apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
-  const { name, description, slug } = req.body;
+  const { name, description, slug, short_description } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: '分類名稱為必填' });
@@ -758,9 +761,9 @@ apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
 
   // 插入新分類
   db.run(
-    `INSERT INTO categories (name, slug, description, created_at, updated_at) 
-     VALUES (?, ?, ?, datetime('now'), datetime('now'))`,
-    [name, categorySlug, description || ''],
+    `INSERT INTO categories (name, slug, description, short_description, created_at, updated_at) 
+     VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))`,
+    [name, categorySlug, description || '', short_description || ''],
     function (err) {
       if (err) {
         if (err.message.includes('UNIQUE constraint failed')) {
@@ -774,6 +777,7 @@ apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
         name: name,
         slug: categorySlug,
         description: description || '',
+        short_description: short_description || '',
         post_count: 0
       });
     }
@@ -783,7 +787,7 @@ apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
 // PUT update category
 apiRouter.put('/admin/categories/:id', authMiddleware, (req, res) => {
   const categoryId = req.params.id;
-  const { name, description, slug } = req.body;
+  const { name, description, slug, short_description } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: '分類名稱為必填' });
@@ -806,9 +810,9 @@ apiRouter.put('/admin/categories/:id', authMiddleware, (req, res) => {
     // 更新分類表
     db.run(
       `UPDATE categories 
-       SET name = ?, slug = ?, description = ?, updated_at = datetime('now')
+       SET name = ?, slug = ?, description = ?, short_description = ?, updated_at = datetime('now')
        WHERE id = ?`,
-      [name, categorySlug, description || '', categoryId],
+      [name, categorySlug, description || '', short_description || '', categoryId],
       function (updateErr) {
         if (updateErr) {
           if (updateErr.message.includes('UNIQUE constraint failed')) {
@@ -894,17 +898,17 @@ apiRouter.post('/admin/posts', authMiddleware, (req, res) => {
   console.log('[POST /api/admin/posts] Received request to create a new post.');
   console.log('[POST /api/admin/posts] Body:', req.body);
 
-  const { title, content, excerpt, category, tags = [], status = 'draft' } = req.body;
+  const { title, content, excerpt, category, tags = [], status = 'draft', layout_type = 'record' } = req.body;
 
   if (!title || !content) {
     return res.status(400).json({ error: "缺少必填欄位: title, content" });
   }
 
   const sql = `
-    INSERT INTO posts (title, content, excerpt, category, status, author, created_at, updated_at) 
-    VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    INSERT INTO posts (title, content, excerpt, category, status, author, layout_type, created_at, updated_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `;
-  const params = [title, content, excerpt, category || null, status, 'Koimsurai'];
+  const params = [title, content, excerpt, category || null, status, 'Koimsurai', layout_type];
 
   db.run(sql, params, function (err) {
     if (err) {
@@ -935,7 +939,7 @@ apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
   console.log(`[PUT /api/admin/posts/${req.params.id}] Received request to update post.`);
   console.log('[PUT /api/admin/posts/:id] Body:', req.body);
 
-  const { title, content, excerpt, category, tags = [], status } = req.body;
+  const { title, content, excerpt, category, tags = [], status, layout_type } = req.body;
   const sql = `
     UPDATE posts SET 
       title = COALESCE(?, title), 
@@ -943,10 +947,11 @@ apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
       excerpt = COALESCE(?, excerpt),
       category = ?,
       status = COALESCE(?, status),
+      layout_type = COALESCE(?, layout_type),
       updated_at = datetime('now')
     WHERE id = ?
   `;
-  const params = [title, content, excerpt, category, status, req.params.id];
+  const params = [title, content, excerpt, category, status, layout_type, req.params.id];
 
   db.run(sql, params, function (err) {
     if (err) {
@@ -1058,15 +1063,15 @@ apiRouter.post('/posts', authMiddleware, (req, res) => {
   console.log('[POST /api/posts] Received request to create a new post.');
   console.log('[POST /api/posts] Body:', req.body);
 
-  const { title, content, excerpt, category, tags = [], status = 'draft' } = req.body;
+  const { title, content, excerpt, category, tags = [], status = 'draft', layout_type = 'record' } = req.body;
 
   if (!title || !content) {
     res.status(400).json({ "error": "Missing required fields: title, content" });
     return;
   }
 
-  const sql = 'INSERT INTO posts (title, content, excerpt, category, status, author, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))';
-  const params = [title, content, excerpt, category || null, status, 'Koimsurai'];
+  const sql = 'INSERT INTO posts (title, content, excerpt, category, status, author, layout_type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))';
+  const params = [title, content, excerpt, category || null, status, 'Koimsurai', layout_type];
 
   db.run(sql, params, function (err) {
     if (err) {
@@ -1096,7 +1101,7 @@ apiRouter.post('/posts', authMiddleware, (req, res) => {
 
 // PUT (update) a post
 apiRouter.put('/posts/:id', authMiddleware, (req, res) => {
-  const { title, content, excerpt, category, tags = [], status } = req.body;
+  const { title, content, excerpt, category, tags = [], status, layout_type } = req.body;
   const sql = `
     UPDATE posts SET 
       title = COALESCE(?, title), 
@@ -1104,10 +1109,11 @@ apiRouter.put('/posts/:id', authMiddleware, (req, res) => {
       excerpt = COALESCE(?, excerpt),
       category = COALESCE(?, category),
       status = COALESCE(?, status),
+      layout_type = COALESCE(?, layout_type),
       updated_at = datetime("now")
     WHERE id = ?
   `;
-  const params = [title, content, excerpt, category, status, req.params.id];
+  const params = [title, content, excerpt, category, status, layout_type, req.params.id];
 
   db.run(sql, params, function (err) {
     if (err) {
