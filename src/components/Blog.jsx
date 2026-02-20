@@ -63,7 +63,9 @@ const NoteCard = React.memo(({ post, index }) => {
     navigator.clipboard.writeText(`${window.location.origin}/blog/${post.id}`);
   };
 
-  const excerpt = post.excerpt || post.content?.substring(0, 220).replace(/<[^>]+>/g, '').replace(/[#*`>\-]/g, '') + '...';
+  const excerpt = post.content
+    ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>\-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
+    : '';
   const dateObj = new Date(post.created_at);
   const dayStr = dateObj.getDate();
   const monthStr = dateObj.toLocaleDateString('zh-TW', { month: 'short' });
@@ -150,17 +152,26 @@ function Blog() {
   const [allTags, setAllTags] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
   const [tagsExpanded, setTagsExpanded] = useState(false);
+  const isInitialLoad = React.useRef(true);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (!isInitialLoad.current) {
+      // 切換排序不需要 scroll to top
+    } else {
+      window.scrollTo(0, 0);
+    }
     fetchPosts();
-    fetchTags();
-    fetchCategories();
+    if (isInitialLoad.current) {
+      fetchTags();
+      fetchCategories();
+      isInitialLoad.current = false;
+    }
   }, [sortBy]);
 
   const fetchPosts = async () => {
     try {
-      setLoading(true);
+      // 只有首次載入才顯示全頁 loading，排序切換時不顯示
+      if (!posts.length) setLoading(true);
       const res = await fetch(`/api/posts?sortBy=${sortBy}&limit=100`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -273,6 +284,9 @@ function Blog() {
         description="楊泰和的技術手記、學習筆記與生活隨筆。涵蓋前端架構、Rust、AI 系統開發等主題。"
         path="/blog"
       />
+
+      {/* ── 深空暗幕 (讓全域星空透出) ── */}
+      <div className="blog-dim-overlay" />
 
       {/* ── 星雲背景 ── */}
       <div className="blog-nebula-bg">

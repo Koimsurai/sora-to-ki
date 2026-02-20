@@ -28,6 +28,10 @@ FROM node:20-bullseye
 
 WORKDIR /app
 
+# Set timezone to Asia/Taipei
+ENV TZ=Asia/Taipei
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 # Install pnpm
 RUN npm install -g pnpm
 

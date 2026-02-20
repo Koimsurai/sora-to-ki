@@ -33,6 +33,8 @@ import {
   ImageIcon,
   ArrowLeft,
   X,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -88,6 +90,7 @@ export default function PostEditor() {
   const navigate = useNavigate();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [isLoading, setIsLoading] = useState(!!id);
@@ -420,6 +423,90 @@ export default function PostEditor() {
     }
   };
 
+  // ── AI 摘要生成（獨立功能，可用於手動寫的文章） ──
+  const handleGenerateSummary = async () => {
+    const title = form.getValues('title');
+    const content = form.getValues('content');
+
+    if (!content || content.trim().length < 50) {
+      toast.error('文章內容太短，無法生成摘要');
+      return;
+    }
+
+    setIsGeneratingSummary(true);
+    try {
+      const response = await fetch('/llm-api/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `你是一個部落格文章元資料生成器。請根據提供的文章內容，生成：
+1. summary：120-220 字的文章摘要，以第三人稱視角撰寫，聚焦文章主軸，不腦補不存在的內容。風格簡潔、資訊密度高。
+2. tags：3-8 個相關標籤，每個標籤是簡短的關鍵詞（如 React、Docker、CSS 等）。
+
+回傳嚴格的 JSON 格式：
+{
+  "summary": "摘要文字",
+  "tags": ["標籤1", "標籤2", "標籤3"]
+}
+
+只回傳 JSON，不要其他文字。`,
+            },
+            {
+              role: 'user',
+              content: `文章標題：${title || '未命名'}\n\n文章內容：\n${content.substring(0, 8000)}`,
+            },
+          ],
+          max_tokens: 512,
+          temperature: 0.3,
+        }),
+      });
+
+      if (!response.ok) throw new Error(`API 錯誤 (${response.status})`);
+
+      const data = await response.json();
+      const resultText = data.choices?.[0]?.message?.content || '';
+
+      let parsed;
+      try {
+        parsed = JSON.parse(resultText);
+      } catch {
+        const match = resultText.match(/(\{[\s\S]*\})/);
+        if (match) {
+          try { parsed = JSON.parse(match[1]); } catch { /* fallback */ }
+        }
+      }
+
+      if (parsed?.summary) {
+        form.setValue('summary', parsed.summary);
+        toast.success('摘要已生成');
+
+        // 如果 AI 也回傳了標籤，且目前標籤為空，則自動填入
+        if (parsed.tags?.length > 0) {
+          const currentTags = form.getValues('tags') || [];
+          if (currentTags.length === 0) {
+            const formattedTags = parsed.tags.map(t => ({
+              label: t,
+              value: t.toLowerCase().replace(/\s+/g, '-'),
+            }));
+            form.setValue('tags', formattedTags);
+            toast.info(`同時生成了 ${formattedTags.length} 個標籤建議`);
+          }
+        }
+      } else {
+        toast.error('AI 回傳格式異常，請重試');
+      }
+    } catch (err) {
+      console.error('AI 摘要生成失敗:', err);
+      toast.error(`摘要生成失敗：${err.message}`);
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
@@ -700,13 +787,27 @@ export default function PostEditor() {
                       name="summary"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">
-                            摘要
-                          </FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-xs text-muted-foreground">
+                              摘要
+                            </FormLabel>
+                            <button
+                              type="button"
+                              onClick={handleGenerateSummary}
+                              disabled={isGeneratingSummary}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isGeneratingSummary ? (
+                                <><Loader2 className="size-3 animate-spin" />生成中...</>
+                              ) : (
+                                <><Sparkles className="size-3" />AI 生成</>
+                              )}
+                            </button>
+                          </div>
                           <FormControl>
                             <textarea
                               {...field}
-                              placeholder="文章摘要（AI 自動生成或手動輸入）..."
+                              placeholder="文章摘要（點擊右上角 AI 生成或手動輸入）..."
                               rows={4}
                               className="w-full bg-accent/30 border border-border/40 rounded-lg px-3 py-2 text-sm text-foreground/90 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:border-border/60 transition-colors"
                             />

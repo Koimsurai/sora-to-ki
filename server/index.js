@@ -558,13 +558,16 @@ apiRouter.post('/posts/:id/unlike', (req, res) => {
   });
 });
 
-// GET all tags
+// GET all tags (只計算已發佈文章的標籤數量)
 apiRouter.get('/tags', (req, res) => {
   const sql = `
-    SELECT t.*, COUNT(pt.post_id) as post_count 
+    SELECT t.id, t.name, t.created_at,
+      COUNT(CASE WHEN p.status = 'published' THEN 1 END) as post_count 
     FROM tags t
     LEFT JOIN post_tags pt ON t.id = pt.tag_id
+    LEFT JOIN posts p ON pt.post_id = p.id
     GROUP BY t.id
+    HAVING post_count > 0
     ORDER BY post_count DESC, t.name ASC
   `;
 
@@ -974,31 +977,41 @@ apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
 apiRouter.delete('/admin/posts/:id', authMiddleware, (req, res) => {
   console.log(`[DELETE /api/admin/posts/${req.params.id}] Received request to delete post.`);
 
-  db.run('DELETE FROM posts WHERE id = ?', [req.params.id], function (err) {
-    if (err) {
-      console.error(`[DELETE /api/admin/posts/${req.params.id}] Database error:`, err.message);
-      return res.status(500).json({ error: err.message });
+  // 先清理 post_tags 關聯，再刪除文章
+  db.run('DELETE FROM post_tags WHERE post_id = ?', [req.params.id], (tagErr) => {
+    if (tagErr) {
+      console.error(`[DELETE /api/admin/posts/${req.params.id}] Failed to clean post_tags:`, tagErr.message);
+      return res.status(500).json({ error: tagErr.message });
     }
 
-    if (this.changes === 0) {
-      return res.status(404).json({ error: "文章不存在" });
-    }
+    db.run('DELETE FROM posts WHERE id = ?', [req.params.id], function (err) {
+      if (err) {
+        console.error(`[DELETE /api/admin/posts/${req.params.id}] Database error:`, err.message);
+        return res.status(500).json({ error: err.message });
+      }
 
-    res.json({
-      message: "文章已刪除",
-      deleted: this.changes
+      if (this.changes === 0) {
+        return res.status(404).json({ error: "文章不存在" });
+      }
+
+      res.json({
+        message: "文章已刪除",
+        deleted: this.changes
+      });
     });
   });
 });
 
 // Helper function to manage tags
 function manageTags(postId, tags, callback) {
-  if (!tags || tags.length === 0) {
-    return callback(null);
-  }
-
   // 先刪除舊的標籤關聯
   db.run("DELETE FROM post_tags WHERE post_id = ?", [postId], (err) => {
+    if (err) return callback(err);
+
+    // 如果沒有新標籤，直接返回（舊的已刪除）
+    if (!tags || tags.length === 0) {
+      return callback(null);
+    }
     if (err) return callback(err);
 
     // 處理每個標籤
@@ -1151,17 +1164,23 @@ apiRouter.patch('/posts/:id/status', authMiddleware, (req, res) => {
 
 // DELETE a post
 apiRouter.delete('/posts/:id', authMiddleware, (req, res) => {
-  const sql = 'DELETE FROM posts WHERE id = ?';
-  db.run(sql, req.params.id, function (err) {
-    if (err) {
-      res.status(400).json({ "error": err.message });
-      return;
+  // 先清理 post_tags 關聯
+  db.run('DELETE FROM post_tags WHERE post_id = ?', [req.params.id], (tagErr) => {
+    if (tagErr) {
+      return res.status(500).json({ error: tagErr.message });
     }
-    if (this.changes === 0) {
-      res.status(404).json({ "message": "Post not found" });
-      return;
-    }
-    res.json({ "message": "deleted", "changes": this.changes });
+    const sql = 'DELETE FROM posts WHERE id = ?';
+    db.run(sql, req.params.id, function (err) {
+      if (err) {
+        res.status(400).json({ "error": err.message });
+        return;
+      }
+      if (this.changes === 0) {
+        res.status(404).json({ "message": "Post not found" });
+        return;
+      }
+      res.json({ "message": "deleted", "changes": this.changes });
+    });
   });
 });
 

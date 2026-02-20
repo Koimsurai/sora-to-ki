@@ -646,7 +646,10 @@ function BlogPost() {
 
   /* ── Fetch post ── */
   useEffect(() => {
-    setLoading(true);
+    // 切換文章時不顯示全白 loading，保留舊內容做平滑過渡
+    if (!post) setLoading(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     fetch('/api/posts/' + id)
       .then((r) => { if (!r.ok) throw new Error('Post not found'); return r.json(); })
       .then((data) => {
@@ -655,6 +658,7 @@ function BlogPost() {
             ...data,
             date: new Date(data.created_at).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
           });
+          setLiked(false);
           fetch('/api/posts/' + id + '/view', { method: 'POST' }).catch(console.error);
         } else { throw new Error('Post not found'); }
         setLoading(false);
@@ -808,9 +812,23 @@ function BlogPost() {
   }
 
   /* ════════ Main Render ════════ */
+  const seoDescription = post.excerpt || post.content?.substring(0, 160).replace(/<[^>]+>/g, '').replace(/[#*`>\-\n]/g, '').trim();
+  const postTags = Array.isArray(post.tags) ? post.tags : (post.tags ? post.tags.split(',') : []);
+
   return (
     <div className="blog-post-container" style={{ fontFamily }}>
-      <SEOHead title={post.title} description={post.excerpt || post.content?.substring(0, 160).replace(/<[^>]+>/g, '')} path={'/blog/' + id} />
+      <SEOHead
+        title={post.title}
+        description={seoDescription}
+        path={'/blog/' + id}
+        type="article"
+        article={{
+          author: post.author || 'Koimsurai',
+          datePublished: post.created_at,
+          dateModified: post.updated_at || post.created_at,
+          tags: postTags,
+        }}
+      />
 
       {/* Dim overlay over global starfield */}
       <div className="blog-post-dim-overlay" />

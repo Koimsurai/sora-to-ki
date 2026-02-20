@@ -442,6 +442,8 @@ export default function ArticleGenerator() {
     const handleSendToEditor = async () => {
         if (!generatedContent.trim()) return;
 
+        setIsSaving(true);
+
         // 從 Markdown 中提取標題
         const titleMatch = generatedContent.match(/^#\s+(.+)$/m);
         const title = titleMatch ? titleMatch[1].trim() : '未命名文章';
@@ -451,19 +453,69 @@ export default function ArticleGenerator() {
             .replace(/^#\s+.+$/m, '')
             .trim();
 
+        // 使用 AI 生成摘要與標籤（模仿 Jarvis 的 prompt）
+        let summary = '';
+        let tags = [];
+        try {
+            toast.info('正在使用 AI 生成摘要與標籤...');
+            const metaResult = await fetchLLM([
+                {
+                    role: 'system',
+                    content: `你是一個部落格文章元資料生成器。請根據提供的文章內容，生成：
+1. summary：120-220 字的文章摘要，以第三人稱視角撰寫，聚焦文章主軸，不腦補不存在的內容。可直接用於 blog 後台摘要欄位。
+2. tags：3-8 個相關標籤，每個標籤是簡短的關鍵詞。
+
+回傳嚴格的 JSON 格式：
+{
+  "summary": "摘要文字",
+  "tags": ["標籤1", "標籤2", "標籤3"]
+}
+
+只回傳 JSON，不要其他文字。`,
+                },
+                {
+                    role: 'user',
+                    content: `文章標題：${title}\n\n文章內容：\n${content.substring(0, 8000)}`,
+                },
+            ], { maxTokens: 512, temperature: 0.3 });
+
+            let parsed;
+            try {
+                parsed = JSON.parse(metaResult);
+            } catch {
+                const match = metaResult.match(/(\{[\s\S]*\})/);
+                if (match) {
+                    try { parsed = JSON.parse(match[1]); } catch { /* fallback */ }
+                }
+            }
+
+            if (parsed) {
+                summary = parsed.summary || '';
+                tags = parsed.tags || [];
+            }
+        } catch (err) {
+            console.error('AI 摘要生成失敗，使用備用摘要:', err);
+        }
+
+        // 備用：若 AI 生成失敗，使用內容截取
+        if (!summary) {
+            summary = content.replace(/[#*>`\n]/g, ' ').trim().slice(0, 150) + '...';
+        }
+
         // 將資料編碼後跳轉到編輯器
         const articleData = {
             title,
             content,
-            tags: [],
+            tags,
             category: '',
-            summary: content.replace(/[#*>`\n]/g, ' ').trim().slice(0, 150) + '...',
+            summary,
             status: 'draft',
         };
 
         const encoded = encodeURIComponent(JSON.stringify(articleData));
         navigate(`/admin/posts/create?n8n_data=${encoded}`);
-        toast.success('已匯入文章編輯器');
+        toast.success('已匯入文章編輯器（含 AI 摘要與標籤）');
+        setIsSaving(false);
     };
 
     // ── 重來 ──
