@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import { FaGithub, FaGoogle } from 'react-icons/fa';
 import './Comments.css';
 
 function Comments({ postId }) {
@@ -13,7 +15,12 @@ function Comments({ postId }) {
   const [likedComments, setLikedComments] = useState([]);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [captchaQuestion, setCaptchaQuestion] = useState({ num1: 0, num2: 0 });
-  const [replyTo, setReplyTo] = useState(null);
+  const [replyTo, setReplyTo] = useState(null); // { id, author } or null
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [useAnonymous, setUseAnonymous] = useState(false); // 是否使用匿名模式
+  const [commentMode, setCommentMode] = useState('initial'); // 'initial' | 'login' | 'anonymous'
+
+  const { user, isLoggedIn, providers, getGoogleAuthUrl, getGitHubAuthUrl, getToken } = useAuth();
 
   useEffect(() => {
     fetchComments();
@@ -49,36 +56,61 @@ function Comments({ postId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newComment.trim() || !author.trim()) {
-      setError('暱稱和留言內容不能為空');
+    const isUsingLogin = isLoggedIn && !useAnonymous;
+
+    if (!newComment.trim()) {
+      setError('留言內容不能為空');
       return;
     }
 
-    const expectedAnswer = captchaQuestion.num1 + captchaQuestion.num2;
-    if (parseInt(captchaAnswer) !== expectedAnswer) {
-      setError('驗證碼錯誤，請重新計算');
-      generateCaptcha();
-      setCaptchaAnswer('');
-      return;
+    // 匿名模式需要暱稱和驗證碼
+    if (!isUsingLogin) {
+      if (!author.trim()) {
+        setError('暱稱不能為空');
+        return;
+      }
+      const expectedAnswer = captchaQuestion.num1 + captchaQuestion.num2;
+      if (parseInt(captchaAnswer) !== expectedAnswer) {
+        setError('驗證碼錯誤，請重新計算');
+        generateCaptcha();
+        setCaptchaAnswer('');
+        return;
+      }
     }
 
     setIsLoading(true);
     setError('');
 
-    // Save author info for next time
-    localStorage.setItem('comment_author', author);
-    localStorage.setItem('comment_email', email);
-    localStorage.setItem('comment_website', website);
+    // 匿名模式保存資料
+    if (!isUsingLogin) {
+      localStorage.setItem('comment_author', author);
+      localStorage.setItem('comment_email', email);
+      localStorage.setItem('comment_website', website);
+    }
+
+    const submitAuthor = isUsingLogin ? user.displayName : author;
+    const submitEmail = isUsingLogin ? (user.email || '') : email;
+    const expectedAnswer = captchaQuestion.num1 + captchaQuestion.num2;
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (isUsingLogin) {
+      const token = getToken();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+    }
 
     try {
       const response = await fetch('/api/posts/' + postId + '/comments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          author,
-          content: replyTo ? '@' + replyTo + ' ' + newComment : newComment,
-          captcha: parseInt(captchaAnswer),
-          captchaAnswer: expectedAnswer,
+          author: submitAuthor,
+          content: replyTo ? '@' + replyTo.author + ' ' + newComment : newComment,
+          email: submitEmail,
+          website: isUsingLogin ? '' : website,
+          avatar_url: isUsingLogin ? (user.avatar || '') : '',
+          provider: isUsingLogin ? user.provider : '',
+          parent_id: replyTo ? replyTo.id : null,
+          ...(!isUsingLogin && { captcha: parseInt(captchaAnswer), captchaAnswer: expectedAnswer }),
         }),
       });
 
@@ -87,6 +119,8 @@ function Comments({ postId }) {
         setCaptchaAnswer('');
         setReplyTo(null);
         generateCaptcha();
+        setSubmitSuccess(true);
+        setTimeout(() => setSubmitSuccess(false), 5000);
         fetchComments();
       } else {
         const errorData = await response.json();
@@ -126,7 +160,8 @@ function Comments({ postId }) {
   };
 
   const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
+    // SQLite CURRENT_TIMESTAMP 是 UTC，需要加 Z 後綴確保正確解析
+    const d = new Date(dateStr.includes('T') || dateStr.includes('Z') ? dateStr : dateStr + 'Z');
     const now = new Date();
     const diff = now - d;
     const mins = Math.floor(diff / 60000);
@@ -139,83 +174,171 @@ function Comments({ postId }) {
     return d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
+  // 判斷當前是否使用登入模式
+  const isUsingLogin = isLoggedIn && !useAnonymous;
+
   return (
     <div className="comments-">
-      {/* ── Comment Form (-style: form first) ── */}
+      {/* ── Comment Form ── */}
       <div className="comment-form-card">
-        <div className="form-avatar">
-          <div className="avatar-circle" style={{ background: author ? getAvatarColor(author) : 'rgba(127,90,240,0.3)' }}>
-            {author ? author.charAt(0).toUpperCase() : '?'}
+        {(isLoggedIn || commentMode === 'anonymous') && (
+          <div className="form-avatar">
+            <div className="avatar-circle" style={{
+              background: isUsingLogin
+                ? 'transparent'
+                : (author ? getAvatarColor(author) : 'rgba(127,90,240,0.3)'),
+              padding: 0,
+              overflow: 'hidden',
+            }}>
+              {isUsingLogin && user?.avatar ? (
+                <img src={user.avatar} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} referrerPolicy="no-referrer" />
+              ) : (
+                author ? author.charAt(0).toUpperCase() : '?'
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <form onSubmit={handleSubmit} className="comment-form">
-          <div className="form-fields">
-            <div className="field-group">
-              <input
-                type="text"
-                placeholder="暱稱 *"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                required
-                className="field-input"
-              />
-            </div>
-            <div className="field-group">
-              <input
-                type="email"
-                placeholder="郵箱（選填，用於通知）"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="field-input"
-              />
-            </div>
-            <div className="field-group">
-              <input
-                type="url"
-                placeholder="網站（選填）"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
-                className="field-input"
-              />
-            </div>
-          </div>
-
-          <div className="textarea-wrap">
-            {replyTo && (
-              <div className="reply-indicator">
-                <span>回覆 @{replyTo}</span>
-                <button type="button" onClick={() => setReplyTo(null)}>✕</button>
+          {/* ── 模式切換 ── */}
+          <div className="comment-mode-switch">
+            {isLoggedIn ? (
+              <>
+                <button type="button" className={`mode-btn ${!useAnonymous ? 'active' : ''}`} onClick={() => setUseAnonymous(false)}>
+                  {user?.avatar && <img src={user.avatar} className="mode-avatar" referrerPolicy="no-referrer" alt="" />}
+                  {user?.displayName}
+                </button>
+                <button type="button" className={`mode-btn ${useAnonymous ? 'active' : ''}`} onClick={() => setUseAnonymous(true)}>
+                  匿名留言
+                </button>
+              </>
+            ) : (
+              <div className="comment-login-area">
+                {commentMode === 'initial' && (
+                  <div className="comment-mode-buttons">
+                    <button type="button" className="mode-btn mode-btn--login" onClick={() => setCommentMode('login')}>
+                      🔑 登入留言
+                    </button>
+                    <button type="button" className="mode-btn mode-btn--anon" onClick={() => setCommentMode('anonymous')}>
+                      👤 匿名留言
+                    </button>
+                  </div>
+                )}
+                {commentMode === 'login' && (
+                  <div className="comment-login-expand">
+                    <div className="login-expand-header">
+                      <span className="login-label">選擇登入方式</span>
+                      <button type="button" className="back-btn" onClick={() => setCommentMode('initial')}>← 返回</button>
+                    </div>
+                    <div className="login-providers">
+                      {providers.github?.enabled && (
+                        <button type="button" className="provider-btn" onClick={() => {
+                          sessionStorage.setItem('oauth_return_to', window.location.pathname);
+                          window.location.href = getGitHubAuthUrl(`${window.location.origin}/auth/callback`) + '&state=github';
+                        }}>
+                          <FaGithub /> <span>GitHub</span>
+                        </button>
+                      )}
+                      {providers.google?.enabled && (
+                        <button type="button" className="provider-btn" onClick={() => {
+                          sessionStorage.setItem('oauth_return_to', window.location.pathname);
+                          window.location.href = getGoogleAuthUrl(`${window.location.origin}/auth/callback`) + '&state=google';
+                        }}>
+                          <FaGoogle /> <span>Google</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {commentMode === 'anonymous' && (
+                  <div className="comment-anon-expand">
+                    <div className="login-expand-header">
+                      <span className="login-label">匿名留言</span>
+                      <button type="button" className="back-btn" onClick={() => setCommentMode('initial')}>← 返回</button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-            <textarea
-              placeholder="留下你的想法..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              required
-              rows="4"
-              className="comment-textarea"
-            />
           </div>
 
-          <div className="form-actions">
-            <div className="captcha-area">
-              <span className="captcha-q">{captchaQuestion.num1} + {captchaQuestion.num2} = </span>
-              <input
-                type="number"
-                placeholder="?"
-                value={captchaAnswer}
-                onChange={(e) => setCaptchaAnswer(e.target.value)}
-                required
-                className="captcha-input"
-              />
+          {/* ── 匿名模式欄位（登入後切匿名 或 未登入選匿名）── */}
+          {((!isLoggedIn && commentMode === 'anonymous') || (isLoggedIn && useAnonymous)) && (
+            <div className="form-fields">
+              <div className="field-group">
+                <input
+                  type="text"
+                  placeholder="暱稱 *"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  required
+                  className="field-input"
+                />
+              </div>
+              <div className="field-group">
+                <input
+                  type="email"
+                  placeholder="郵箱（選填，用於通知）"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="field-input"
+                />
+              </div>
+              <div className="field-group">
+                <input
+                  type="url"
+                  placeholder="網站（選填）"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  className="field-input"
+                />
+              </div>
             </div>
-            <button type="submit" disabled={isLoading} className="submit-btn">
-              {isLoading ? (
-                <span className="spinner" />
-              ) : '發送'}
-            </button>
-          </div>
+          )}
+
+          {/* ── 留言區域（登入後 或 匿名模式展開時顯示）── */}
+          {(isLoggedIn || commentMode === 'anonymous') && (
+            <>
+              <div className="textarea-wrap">
+                {replyTo && (
+                  <div className="reply-indicator">
+                    <span>回覆 @{replyTo.author}</span>
+                    <button type="button" onClick={() => setReplyTo(null)}>✕</button>
+                  </div>
+                )}
+                <textarea
+                  placeholder="留下你的想法..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  required
+                  rows="4"
+                  className="comment-textarea"
+                />
+              </div>
+
+              <div className="form-actions">
+                {!isUsingLogin && (
+                  <div className="captcha-area">
+                    <span className="captcha-q">{captchaQuestion.num1} + {captchaQuestion.num2} = </span>
+                    <input
+                      type="number"
+                      placeholder="?"
+                      value={captchaAnswer}
+                      onChange={(e) => setCaptchaAnswer(e.target.value)}
+                      required
+                      className="captcha-input"
+                    />
+                  </div>
+                )}
+                {isUsingLogin && <div />}
+                <button type="submit" disabled={isLoading} className="submit-btn">
+                  {isLoading ? (
+                    <span className="spinner" />
+                  ) : '發送'}
+                </button>
+              </div>
+            </>
+          )}
 
           <AnimatePresence>
             {error && (
@@ -226,6 +349,18 @@ function Comments({ postId }) {
                 exit={{ opacity: 0 }}
               >
                 {error}
+              </motion.p>
+            )}
+            {submitSuccess && (
+              <motion.p
+                className="form-success"
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                {isUsingLogin
+                  ? '✨ 留言已發送'
+                  : '✨ 留言已送出，經管理員審核後將會顯示'}
               </motion.p>
             )}
           </AnimatePresence>
@@ -240,48 +375,109 @@ function Comments({ postId }) {
 
         <AnimatePresence>
           {comments.length > 0 ? (
-            comments.map((comment, idx) => (
-              <motion.div
-                key={comment.id}
-                className="comment-card"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-              >
-                <div className="comment-left">
-                  <div className="comment-avatar" style={{ background: getAvatarColor(comment.author) }}>
-                    {comment.author.charAt(0).toUpperCase()}
-                  </div>
-                  {idx < comments.length - 1 && <div className="comment-line" />}
-                </div>
+            comments.map((comment, idx) => {
+              const isAdmin = comment.is_admin === 1;
+              // 找出回覆此留言的所有留言（管理員 + 用戶）
+              const replies = comments.filter(c => c.parent_id === comment.id);
+              // 如果此留言本身是子留言（回覆），跳過它的獨立渲染
+              if (comment.parent_id) return null;
 
-                <div className="comment-body">
-                  <div className="comment-meta">
-                    <span className="comment-author">{comment.author}</span>
-                    <span className="comment-time">{formatDate(comment.created_at)}</span>
-                  </div>
-                  <p className="comment-text">{comment.content}</p>
-                  <div className="comment-actions">
-                    <button
-                      className={'action-btn like ' + (likedComments.includes(comment.id) ? 'liked' : '')}
-                      onClick={() => handleLike(comment.id)}
-                      disabled={likedComments.includes(comment.id)}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill={likedComments.includes(comment.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                      </svg>
-                      <span>{comment.likes || 0}</span>
-                    </button>
-                    <button className="action-btn reply" onClick={() => { setReplyTo(comment.author); document.querySelector('.comment-textarea')?.focus(); }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                      </svg>
-                      <span>回覆</span>
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))
+              return (
+                <React.Fragment key={comment.id}>
+                  <motion.div
+                    className={`comment-card ${isAdmin ? 'comment-card--admin' : ''}`}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <div className="comment-left">
+                      <div className="comment-avatar" style={{ background: isAdmin ? '#7f5af0' : (comment.avatar_url ? 'transparent' : getAvatarColor(comment.author)), overflow: 'hidden' }}>
+                        {isAdmin ? '✦' : (comment.avatar_url
+                          ? <img src={comment.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} referrerPolicy="no-referrer" />
+                          : comment.author.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      {(idx < comments.filter(c => !c.parent_id).length - 1 || replies.length > 0) && <div className="comment-line" />}
+                    </div>
+
+                    <div className="comment-body">
+                      <div className="comment-meta">
+                        <span className="comment-author">{comment.author}</span>
+                        {isAdmin && <span className="admin-badge">作者</span>}
+                        <span className="comment-time">{formatDate(comment.created_at)}</span>
+                      </div>
+                      <p className="comment-text">{comment.content}</p>
+                      <div className="comment-actions">
+                        <button
+                          className={'action-btn like ' + (likedComments.includes(comment.id) ? 'liked' : '')}
+                          onClick={() => handleLike(comment.id)}
+                          disabled={likedComments.includes(comment.id)}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill={likedComments.includes(comment.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                          </svg>
+                          <span>{comment.likes || 0}</span>
+                        </button>
+                        <button className="action-btn reply" onClick={() => { setReplyTo({ id: comment.id, author: comment.author }); document.querySelector('.comment-textarea')?.focus(); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                          </svg>
+                          <span>回覆</span>
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* All replies to this comment (admin + user) */}
+                  {replies.map((reply) => {
+                    const isReplyAdmin = reply.is_admin === 1;
+                    return (
+                      <motion.div key={reply.id} className={`comment-card comment-card--reply ${isReplyAdmin ? 'comment-card--admin' : ''}`}
+                        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+                        <div className="comment-left">
+                          <div className="comment-avatar" style={{
+                            background: isReplyAdmin ? '#7f5af0' : (reply.avatar_url ? 'transparent' : getAvatarColor(reply.author)),
+                            overflow: 'hidden',
+                          }}>
+                            {isReplyAdmin ? '✦' : (reply.avatar_url
+                              ? <img src={reply.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} referrerPolicy="no-referrer" />
+                              : reply.author.charAt(0).toUpperCase()
+                            )}
+                          </div>
+                        </div>
+                        <div className="comment-body">
+                          <div className="comment-meta">
+                            <span className="comment-author">{reply.author}</span>
+                            {isReplyAdmin && <span className="admin-badge">作者</span>}
+                            <span className="comment-reply-to">回覆 @{comment.author}</span>
+                            <span className="comment-time">{formatDate(reply.created_at)}</span>
+                          </div>
+                          <p className="comment-text">{reply.content}</p>
+                          <div className="comment-actions">
+                            <button
+                              className={'action-btn like ' + (likedComments.includes(reply.id) ? 'liked' : '')}
+                              onClick={() => handleLike(reply.id)}
+                              disabled={likedComments.includes(reply.id)}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill={likedComments.includes(reply.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                              </svg>
+                              <span>{reply.likes || 0}</span>
+                            </button>
+                            <button className="action-btn reply" onClick={() => { setReplyTo({ id: comment.id, author: reply.author }); document.querySelector('.comment-textarea')?.focus(); }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                              </svg>
+                              <span>回覆</span>
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })
           ) : (
             <motion.div
               className="no-comments"

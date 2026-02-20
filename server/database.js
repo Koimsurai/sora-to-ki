@@ -346,8 +346,28 @@ function initializeDatabase() {
                 console.log('likes 欄位添加成功');
               }
             });
-          } else {
-            console.log('comments 表結構已是最新版本');
+          }
+
+            // 遷移：新增 status, ip, parent_id, is_admin, email, website 欄位
+            const migrations = [
+              { col: 'status', sql: "ALTER TABLE comments ADD COLUMN status TEXT DEFAULT 'approved'" },
+              { col: 'ip', sql: "ALTER TABLE comments ADD COLUMN ip TEXT DEFAULT ''" },
+              { col: 'parent_id', sql: "ALTER TABLE comments ADD COLUMN parent_id INTEGER DEFAULT NULL" },
+              { col: 'is_admin', sql: "ALTER TABLE comments ADD COLUMN is_admin INTEGER DEFAULT 0" },
+              { col: 'email', sql: "ALTER TABLE comments ADD COLUMN email TEXT DEFAULT ''" },
+              { col: 'website', sql: "ALTER TABLE comments ADD COLUMN website TEXT DEFAULT ''" },
+              { col: 'avatar_url', sql: "ALTER TABLE comments ADD COLUMN avatar_url TEXT DEFAULT ''" },
+            ];
+            migrations.forEach(({ col, sql }) => {
+              if (!columnNames.includes(col)) {
+                console.log(`為 comments 表添加 ${col} 欄位...`);
+                db.run(sql, (e) => {
+                  if (e) console.error(`添加 ${col} 欄位錯誤:`, e);
+                  else console.log(`${col} 欄位添加成功`);
+                });
+              }
+            });
+
                 // 建立 collection_items 資料表
                 db.run(`CREATE TABLE IF NOT EXISTS collection_items (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -368,7 +388,6 @@ function initializeDatabase() {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );`);
-          }
         });
       }
     });
@@ -384,6 +403,49 @@ function initializeDatabase() {
         unsubscribed_at DATETIME
       )
     `);
+
+    // 創建 IP 黑名單表
+    db.run(`
+      CREATE TABLE IF NOT EXISTS ip_blacklist (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT UNIQUE NOT NULL,
+        reason TEXT DEFAULT '',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 創建關鍵字過濾表
+    db.run(`
+      CREATE TABLE IF NOT EXISTS keyword_filters (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        keyword TEXT UNIQUE NOT NULL,
+        action TEXT DEFAULT 'spam',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 創建 OAuth 使用者表
+    db.run(`
+      CREATE TABLE IF NOT EXISTS oauth_users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        provider TEXT NOT NULL,
+        provider_id TEXT NOT NULL,
+        display_name TEXT NOT NULL,
+        email TEXT DEFAULT '',
+        avatar_url TEXT DEFAULT '',
+        linked_to INTEGER DEFAULT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(provider, provider_id)
+      )
+    `);
+
+    // Migration: 新增 linked_to 欄位（如果不存在）
+    db.all("PRAGMA table_info(oauth_users)", [], (err, columns) => {
+      if (columns && !columns.find(c => c.name === 'linked_to')) {
+        db.run("ALTER TABLE oauth_users ADD COLUMN linked_to INTEGER DEFAULT NULL");
+      }
+    });
 
     // 創建書籍表
     db.run(`

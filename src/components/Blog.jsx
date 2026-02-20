@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
 import SEOHead from './SEOHead';
@@ -65,11 +65,10 @@ const NoteCard = React.memo(({ post, index }) => {
     navigator.clipboard.writeText(`${window.location.origin}/blog/${post.id}`);
   };
 
-  const excerpt = post.excerpt
-    ? post.excerpt
-    : post.content
-      ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>\-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
-      : '';
+  // 列表頁優先顯示內文截斷，而非 AI 摘要
+  const excerpt = post.content
+    ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>\-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
+    : '';
   const dateObj = new Date(post.created_at);
   const dayStr = dateObj.getDate();
   const monthStr = dateObj.toLocaleDateString('zh-TW', { month: 'short' });
@@ -99,10 +98,12 @@ const NoteCard = React.memo(({ post, index }) => {
 
       <div className="note-body">
         {/* 頂部 meta */}
-        <div className="note-meta-top">
-          {!isColumn && <span className="note-full-date">{fullDate}</span>}
-          {post.category && <span className="note-category">{post.category}</span>}
-        </div>
+        {(!isColumn || post.category) && (
+          <div className="note-meta-top">
+            {!isColumn && <span className="note-full-date">{fullDate}</span>}
+            {post.category && <span className="note-category">{post.category}</span>}
+          </div>
+        )}
 
         {/* 標題 */}
         <Link to={`/blog/${post.id}`} className="note-title-link">
@@ -163,6 +164,15 @@ function Blog() {
   const [allCategories, setAllCategories] = useState([]);
   const [tagsExpanded, setTagsExpanded] = useState(false);
   const isInitialLoad = React.useRef(true);
+  const [searchParams] = useSearchParams();
+
+  // 讀取 URL 參數自動帶入篩選
+  useEffect(() => {
+    const catParam = searchParams.get('category');
+    const tagParam = searchParams.get('tag');
+    if (catParam) setSelectedCategory(catParam);
+    if (tagParam) setSelectedTag(tagParam);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isInitialLoad.current) {
@@ -307,10 +317,10 @@ function Blog() {
       </div>
 
       {/* ── 主內容區 ── */}
-      <div className="blog-layout">
+      <div className="blog-content-wrapper">
 
-        {/* ── 主欄 ── */}
-        <main className="blog-main">
+        {/* ═══ 上方 Header 區 ═══ */}
+        <div className="blog-header-area">
           {/* Hero 標題 */}
           <motion.header className="blog-hero" initial="hidden" animate="visible" variants={fadeUp}>
             <h1 className="blog-hero-title">
@@ -339,7 +349,7 @@ function Blog() {
             )}
           </motion.div>
 
-          {/* 排序控制 */}
+          {/* 排序控制 + 統計 */}
           <motion.div className="blog-sort-row" variants={fadeUp} initial="hidden" animate="visible" custom={2}>
             <div className="sort-pills">
               {[
@@ -356,7 +366,13 @@ function Blog() {
                 </button>
               ))}
             </div>
-            <span className="post-count">{filteredPosts.length} 篇文章</span>
+            <div className="stats-inline">
+              <span>文章 <em>{posts.length}</em></span>
+              <span className="stats-sep">｜</span>
+              <span>標籤 <em>{allTags.length}</em></span>
+              <span className="stats-sep">｜</span>
+              <span>閱讀 <em>{filteredPosts.reduce((sum, p) => sum + (p.view_count || 0), 0)}</em></span>
+            </div>
           </motion.div>
 
           {/* 活動篩選 */}
@@ -383,8 +399,11 @@ function Blog() {
               <button className="clear-all-btn" onClick={clearFilters}>清除全部</button>
             </motion.div>
           )}
+        </div>
 
-          {/* 文章列表 — 時間流 */}
+        {/* ═══ 下方 Content 區（文章 + sidebar）═══ */}
+        <div className="blog-layout">
+          <main className="blog-main">
           {filteredPosts.length === 0 ? (
             <motion.div className="blog-empty" variants={fadeUp} initial="hidden" animate="visible">
               <div className="empty-icon">📝</div>
@@ -410,33 +429,14 @@ function Blog() {
               ))}
             </motion.div>
           )}
-        </main>
+          </main>
 
-        {/* ── 側邊欄 ── */}
-        <aside className="blog-sidebar">
-          {/* 文章統計 */}
-          <div className="sidebar-card">
-            <h3 className="sidebar-title">📊 統計</h3>
-            <div className="stats-grid">
-              <div className="stat-cell">
-                <span className="stat-num">{posts.length}</span>
-                <span className="stat-lbl">文章</span>
-              </div>
-              <div className="stat-cell">
-                <span className="stat-num">{allTags.length}</span>
-                <span className="stat-lbl">標籤</span>
-              </div>
-              <div className="stat-cell">
-                <span className="stat-num">{filteredPosts.length}</span>
-                <span className="stat-lbl">篩選結果</span>
-              </div>
-            </div>
-          </div>
-
+          {/* ── 側邊欄 — 融入星空風格（去卡片化） ── */}
+          <aside className="blog-sidebar">
           {/* 分類 */}
           {allCategories.length > 0 && (
-            <div className="sidebar-card">
-              <h3 className="sidebar-title">📁 分類</h3>
+            <div className="sidebar-section">
+              <h3 className="sidebar-heading">分類</h3>
               <div className="category-list">
                 <button
                   className={`category-item ${selectedCategory === '' ? 'active' : ''}`}
@@ -444,7 +444,7 @@ function Blog() {
                 >
                   全部
                 </button>
-                {allCategories.map(cat => (
+                {allCategories.filter(cat => cat.post_count > 0).map(cat => (
                   <button
                     key={cat.name}
                     className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
@@ -460,8 +460,8 @@ function Blog() {
 
           {/* 標籤雲 */}
           {allTags.length > 0 && (
-            <div className="sidebar-card">
-              <h3 className="sidebar-title">🏷️ 標籤</h3>
+            <div className="sidebar-section">
+              <h3 className="sidebar-heading">標籤</h3>
               <div className="tag-cloud">
                 <button
                   className={`cloud-tag ${selectedTag === '' ? 'active' : ''}`}
@@ -494,8 +494,8 @@ function Blog() {
 
           {/* 精選文章 */}
           {featuredPosts.length > 0 && (
-            <div className="sidebar-card">
-              <h3 className="sidebar-title">✨ 精選</h3>
+            <div className="sidebar-section">
+              <h3 className="sidebar-heading">精選</h3>
               <ul className="featured-list">
                 {featuredPosts.map(p => (
                   <li key={p.id}>
@@ -512,8 +512,8 @@ function Blog() {
           )}
 
           {/* 快速導航 */}
-          <div className="sidebar-card">
-            <h3 className="sidebar-title">🚀 導航</h3>
+          <div className="sidebar-section">
+            <h3 className="sidebar-heading">導航</h3>
             <div className="quick-nav">
               <Link to="/" className="nav-pill">🏠 首頁</Link>
               <Link to="/now" className="nav-pill">📡 現在</Link>
@@ -521,8 +521,9 @@ function Blog() {
               <Link to="/journey" className="nav-pill">🛤️ 旅程</Link>
             </div>
           </div>
-        </aside>
-      </div>
+          </aside>
+        </div>{/* blog-layout */}
+      </div>{/* blog-content-wrapper */}
     </div>
   );
 }

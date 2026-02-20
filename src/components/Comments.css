@@ -61,6 +61,173 @@
   gap: 0.75rem;
 }
 
+/* ── Mode Switch ── */
+.comment-mode-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: transparent;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: none;
+}
+
+.mode-btn:hover,
+.mode-btn:focus {
+  border-color: rgba(127,90,240,0.3);
+  color: rgba(255,255,255,0.7);
+  background: transparent;
+  box-shadow: none;
+}
+
+.mode-btn.active {
+  border-color: rgba(127,90,240,0.4);
+  color: #c4b5fd;
+  background: rgba(127,90,240,0.08);
+}
+
+.mode-avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ── Login Area (when not logged in) ── */
+.comment-login-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 0 4px;
+}
+
+/* ── 初始兩按鈕 ── */
+.comment-mode-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.mode-btn--login,
+.mode-btn--anon {
+  flex: 1;
+  max-width: 160px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: none;
+}
+
+.mode-btn--login:hover,
+.mode-btn--anon:hover {
+  border-color: rgba(127, 90, 240, 0.4);
+  color: #c4b5fd;
+  background: rgba(127, 90, 240, 0.06);
+  box-shadow: none;
+}
+
+/* ── 展開區塊共用 ── */
+.comment-login-expand,
+.comment-anon-expand {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.login-expand-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.back-btn {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.4);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  transition: color 0.2s;
+  box-shadow: none;
+}
+
+.back-btn:hover,
+.back-btn:focus {
+  color: rgba(255, 255, 255, 0.7);
+  background: none;
+  box-shadow: none;
+}
+
+.login-label {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.login-providers {
+  display: flex;
+  gap: 12px;
+}
+
+.provider-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: rgba(255,255,255,0.65);
+  cursor: pointer;
+  font-size: 0.88rem;
+  transition: all 0.25s ease;
+  box-shadow: none;
+}
+
+.provider-btn span {
+  font-size: 0.82rem;
+}
+
+.provider-btn:hover,
+.provider-btn:focus {
+  border-color: rgba(127,90,240,0.5);
+  color: #c4b5fd;
+  background: rgba(127,90,240,0.08);
+  box-shadow: none;
+}
+
+.anon-btn {
+  font-size: 0.78rem;
+  padding: 4px 12px;
+}
+
 /* ── Form Fields ── */
 .form-fields {
   display: grid;
@@ -226,12 +393,52 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── Error ── */
+/* ── Error / Success ── */
 .form-error {
   margin: 0;
   font-size: 0.8rem;
   color: #ef4444;
   padding: 0.25rem 0;
+}
+
+.form-success {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #2cb67d;
+  padding: 0.4rem 0.7rem;
+  background: rgba(44, 182, 125, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(44, 182, 125, 0.15);
+}
+
+/* ── Admin Badge ── */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(127, 90, 240, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(127, 90, 240, 0.25);
+  letter-spacing: 0.03em;
+}
+
+/* Admin comment card */
+.comment-card--admin .comment-avatar {
+  background: #7f5af0 !important;
+  font-style: normal;
+}
+
+.comment-card--reply {
+  margin-left: 2.5rem;
+}
+
+.comment-reply-to {
+  font-size: 0.72rem;
+  color: rgba(127, 90, 240, 0.6);
+  font-weight: 400;
 }
 
 /* ══════════════════════════════

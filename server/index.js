@@ -1192,9 +1192,9 @@ apiRouter.delete('/posts/:id', authMiddleware, (req, res) => {
 
 // --- Comment Routes ---
 
-// GET comments for a post
+// GET comments for a post (public - only approved)
 apiRouter.get('/posts/:id/comments', (req, res) => {
-  const sql = "SELECT * FROM comments WHERE post_id = ? ORDER BY created_at DESC";
+  const sql = "SELECT * FROM comments WHERE post_id = ? AND status = 'approved' ORDER BY created_at ASC";
   db.all(sql, [req.params.id], (err, rows) => {
     if (err) {
       res.status(400).json({ "error": err.message });
@@ -1207,32 +1207,75 @@ apiRouter.get('/posts/:id/comments', (req, res) => {
   });
 });
 
-// POST a new comment
+// POST a new comment (public - with keyword filter + IP blacklist)
 apiRouter.post('/posts/:id/comments', (req, res) => {
-  const { author, content, captcha } = req.body;
+  const { author, content, captcha, email, website, avatar_url, provider, parent_id } = req.body;
   if (!author || !content) {
     return res.status(400).json({ "error": "Author and content are required" });
   }
 
-  // 簡易驗證碼檢查（如果提供）
-  if (captcha !== undefined) {
+  // 檢查是否為登入用戶（帶有 Bearer token）
+  let isOAuthUser = false;
+  const authHeader = req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded = jwt.verify(authHeader.substring(7), JWT_SECRET);
+      if (decoded.userId && decoded.provider) {
+        isOAuthUser = true;
+      }
+    } catch (_) {}
+  }
+
+  // 簡易驗證碼檢查（僅匿名用戶）
+  if (!isOAuthUser && captcha !== undefined) {
     const expectedAnswer = req.body.captchaAnswer;
     if (captcha != expectedAnswer) {
       return res.status(400).json({ "error": "驗證碼錯誤" });
     }
   }
 
-  const sql = 'INSERT INTO comments (post_id, author, content) VALUES (?, ?, ?)';
-  const params = [req.params.id, author, content];
+  // 取得用戶 IP
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || '';
 
-  db.run(sql, params, function (err) {
-    if (err) {
-      res.status(400).json({ "error": err.message });
-      return;
+  // 檢查 IP 黑名單
+  db.get("SELECT id FROM ip_blacklist WHERE ip = ?", [ip], (err, blocked) => {
+    if (blocked) {
+      return res.status(403).json({ "error": "您的留言權限已被限制" });
     }
-    res.status(201).json({
-      "message": "success",
-      "id": this.lastID
+
+    // 檢查關鍵字過濾
+    db.all("SELECT keyword, action FROM keyword_filters", [], (err, filters) => {
+      const lowerContent = (content + ' ' + author).toLowerCase();
+      let matchedAction = null;
+      if (filters) {
+        for (const f of filters) {
+          if (lowerContent.includes(f.keyword.toLowerCase())) {
+            matchedAction = f.action;
+            break;
+          }
+        }
+      }
+
+      if (matchedAction === 'reject') {
+        return res.status(400).json({ "error": "留言內容包含不允許的詞彙" });
+      }
+
+      const status = matchedAction === 'spam' ? 'spam' : (isOAuthUser ? 'approved' : 'pending');
+
+      const sql = 'INSERT INTO comments (post_id, author, content, email, website, ip, status, is_admin, avatar_url, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)';
+      const params = [req.params.id, author, content, email || '', website || '', ip, status, avatar_url || '', parent_id || null];
+
+      db.run(sql, params, function (err) {
+        if (err) {
+          res.status(400).json({ "error": err.message });
+          return;
+        }
+        res.status(201).json({
+          "message": "success",
+          "id": this.lastID,
+          "status": status
+        });
+      });
     });
   });
 });
@@ -1250,7 +1293,6 @@ apiRouter.post('/comments/:id/like', (req, res) => {
       return;
     }
 
-    // 回傳更新後的按讚數
     db.get('SELECT likes FROM comments WHERE id = ?', [req.params.id], (err, row) => {
       if (err) {
         res.status(500).json({ "error": err.message });
@@ -1263,6 +1305,388 @@ apiRouter.post('/comments/:id/like', (req, res) => {
     });
   });
 });
+
+// ═══════════════════════════════
+// Admin Comment Management Routes
+// ═══════════════════════════════
+
+// GET all comments (admin)
+apiRouter.get('/admin/comments', authMiddleware, (req, res) => {
+  const { status, post_id, search, page = 1, limit = 50 } = req.query;
+  const offset = (page - 1) * limit;
+
+  let where = '1=1';
+  const params = [];
+
+  if (status && status !== 'all') {
+    where += ' AND c.status = ?';
+    params.push(status);
+  }
+  if (post_id) {
+    where += ' AND c.post_id = ?';
+    params.push(post_id);
+  }
+  if (search) {
+    where += ' AND (c.content LIKE ? OR c.author LIKE ? OR c.ip LIKE ?)';
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+
+  // Count query
+  db.get(`SELECT COUNT(*) as total FROM comments c WHERE ${where}`, params, (err, countRow) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const countParams = [...params];
+    params.push(parseInt(limit), parseInt(offset));
+
+    const sql = `
+      SELECT c.*, p.title as post_title
+      FROM comments c
+      LEFT JOIN posts p ON c.post_id = p.id
+      WHERE ${where}
+      ORDER BY c.created_at DESC
+      LIMIT ? OFFSET ?
+    `;
+
+    db.all(sql, params, (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // Get status counts
+      db.all(`
+        SELECT status, COUNT(*) as count FROM comments GROUP BY status
+      `, [], (err, statusCounts) => {
+        const counts = { pending: 0, approved: 0, spam: 0, trash: 0 };
+        if (statusCounts) {
+          statusCounts.forEach(s => { counts[s.status] = s.count; });
+        }
+
+        res.json({
+          comments: rows,
+          total: countRow.total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          counts
+        });
+      });
+    });
+  });
+});
+
+// PATCH comment status (approve / spam / trash / pending)
+apiRouter.patch('/admin/comments/:id/status', authMiddleware, (req, res) => {
+  const { status } = req.body;
+  const validStatuses = ['pending', 'approved', 'spam', 'trash'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+  db.run('UPDATE comments SET status = ? WHERE id = ?', [status, req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Comment not found' });
+    res.json({ message: 'success' });
+  });
+});
+
+// PATCH batch comment status
+apiRouter.patch('/admin/comments/batch/status', authMiddleware, (req, res) => {
+  const { ids, status } = req.body;
+  const validStatuses = ['pending', 'approved', 'spam', 'trash'];
+  if (!Array.isArray(ids) || !ids.length || !validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid request' });
+  }
+  const placeholders = ids.map(() => '?').join(',');
+  db.run(`UPDATE comments SET status = ? WHERE id IN (${placeholders})`, [status, ...ids], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'success', affected: this.changes });
+  });
+});
+
+// PUT edit comment content (admin)
+apiRouter.put('/admin/comments/:id', authMiddleware, (req, res) => {
+  const { content } = req.body;
+  if (!content) return res.status(400).json({ error: 'Content is required' });
+  db.run('UPDATE comments SET content = ? WHERE id = ?', [content, req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Comment not found' });
+    res.json({ message: 'success' });
+  });
+});
+
+// DELETE comment permanently
+apiRouter.delete('/admin/comments/:id', authMiddleware, (req, res) => {
+  db.run('DELETE FROM comments WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'Comment not found' });
+    res.json({ message: 'success' });
+  });
+});
+
+// POST admin reply to comment
+apiRouter.post('/admin/comments/:id/reply', authMiddleware, (req, res) => {
+  const { content } = req.body;
+  if (!content) return res.status(400).json({ error: 'Content is required' });
+
+  // 先取得原留言的 post_id
+  db.get('SELECT post_id FROM comments WHERE id = ?', [req.params.id], (err, parent) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!parent) return res.status(404).json({ error: 'Parent comment not found' });
+
+    const sql = `INSERT INTO comments (post_id, author, content, status, is_admin, parent_id, ip) VALUES (?, '站長', ?, 'approved', 1, ?, '')`;
+    db.run(sql, [parent.post_id, content, req.params.id], function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ message: 'success', id: this.lastID });
+    });
+  });
+});
+
+// ── IP Blacklist ──
+
+apiRouter.get('/admin/blacklist', authMiddleware, (req, res) => {
+  db.all('SELECT * FROM ip_blacklist ORDER BY created_at DESC', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ blacklist: rows });
+  });
+});
+
+apiRouter.post('/admin/blacklist', authMiddleware, (req, res) => {
+  const { ip, reason } = req.body;
+  if (!ip) return res.status(400).json({ error: 'IP is required' });
+  db.run('INSERT OR IGNORE INTO ip_blacklist (ip, reason) VALUES (?, ?)', [ip, reason || ''], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(201).json({ message: 'success', id: this.lastID });
+  });
+});
+
+apiRouter.delete('/admin/blacklist/:id', authMiddleware, (req, res) => {
+  db.run('DELETE FROM ip_blacklist WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'success' });
+  });
+});
+
+// ── Keyword Filters ──
+
+apiRouter.get('/admin/keyword-filters', authMiddleware, (req, res) => {
+  db.all('SELECT * FROM keyword_filters ORDER BY created_at DESC', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ filters: rows });
+  });
+});
+
+apiRouter.post('/admin/keyword-filters', authMiddleware, (req, res) => {
+  const { keyword, action } = req.body;
+  if (!keyword) return res.status(400).json({ error: 'Keyword is required' });
+  const validActions = ['spam', 'reject'];
+  db.run('INSERT OR IGNORE INTO keyword_filters (keyword, action) VALUES (?, ?)',
+    [keyword, validActions.includes(action) ? action : 'spam'], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(201).json({ message: 'success', id: this.lastID });
+  });
+});
+
+apiRouter.delete('/admin/keyword-filters/:id', authMiddleware, (req, res) => {
+  db.run('DELETE FROM keyword_filters WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'success' });
+  });
+});
+
+// ══════════════════════════════════════════
+//  OAuth 第三方登入
+// ══════════════════════════════════════════
+
+const OAUTH = {
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    userUrl: 'https://www.googleapis.com/oauth2/v2/userinfo',
+  },
+  github: {
+    clientId: process.env.GITHUB_CLIENT_ID || '',
+    clientSecret: process.env.GITHUB_CLIENT_SECRET || '',
+    tokenUrl: 'https://github.com/login/oauth/access_token',
+    userUrl: 'https://api.github.com/user',
+  },
+};
+
+// 取得 OAuth 設定（給前端用，不含 secret）
+apiRouter.get('/auth/providers', (req, res) => {
+  res.json({
+    google: { clientId: OAUTH.google.clientId, enabled: !!OAUTH.google.clientId },
+    github: { clientId: OAUTH.github.clientId, enabled: !!OAUTH.github.clientId },
+  });
+});
+
+// Google OAuth 回調
+apiRouter.post('/auth/google/callback', async (req, res) => {
+  const { code, redirectUri } = req.body;
+  if (!code) return res.status(400).json({ error: 'Missing code' });
+
+  try {
+    // 交換 token
+    const tokenRes = await axios.post(OAUTH.google.tokenUrl, {
+      code,
+      client_id: OAUTH.google.clientId,
+      client_secret: OAUTH.google.clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+    });
+    const accessToken = tokenRes.data.access_token;
+
+    // 取得使用者資訊
+    const userRes = await axios.get(OAUTH.google.userUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const { id, name, email, picture } = userRes.data;
+
+    // 寫入或更新資料庫
+    const user = await upsertOAuthUser('google', String(id), name, email || '', picture || '');
+    const token = jwt.sign({ userId: user.id, provider: 'google', displayName: user.display_name, avatar: user.avatar_url }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({ token, user: { id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: 'google' } });
+  } catch (err) {
+    console.error('[OAuth Google] Error:', err.response?.data || err.message);
+    res.status(500).json({ error: '登入失敗' });
+  }
+});
+
+// GitHub OAuth 回調
+apiRouter.post('/auth/github/callback', async (req, res) => {
+  const { code, redirectUri } = req.body;
+  if (!code) return res.status(400).json({ error: 'Missing code' });
+
+  try {
+    // 交換 token
+    const tokenRes = await axios.post(OAUTH.github.tokenUrl, {
+      code,
+      client_id: OAUTH.github.clientId,
+      client_secret: OAUTH.github.clientSecret,
+      redirect_uri: redirectUri,
+    }, { headers: { Accept: 'application/json' } });
+    const accessToken = tokenRes.data.access_token;
+
+    // 取得使用者資訊
+    const userRes = await axios.get(OAUTH.github.userUrl, {
+      headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'koimsurai-app' },
+    });
+    const { id, login, name, email, avatar_url } = userRes.data;
+
+    // 若無 email，取得主要 email
+    let userEmail = email || '';
+    if (!userEmail) {
+      try {
+        const emailRes = await axios.get('https://api.github.com/user/emails', {
+          headers: { Authorization: `Bearer ${accessToken}`, 'User-Agent': 'koimsurai-app' },
+        });
+        const primary = emailRes.data.find(e => e.primary);
+        if (primary) userEmail = primary.email;
+      } catch (_) {}
+    }
+
+    const displayName = name || login;
+    const user = await upsertOAuthUser('github', String(id), displayName, userEmail, avatar_url || '');
+    const token = jwt.sign({ userId: user.id, provider: 'github', displayName: user.display_name, avatar: user.avatar_url }, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({ token, user: { id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: 'github' } });
+  } catch (err) {
+    console.error('[OAuth GitHub] Error:', err.response?.data || err.message);
+    res.status(500).json({ error: '登入失敗' });
+  }
+});
+
+// 驗證 user token（前端用來恢復 session）
+apiRouter.get('/auth/me', (req, res) => {
+  const authHeader = req.header('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  try {
+    const decoded = jwt.verify(authHeader.substring(7), JWT_SECRET);
+    // 如果是 OAuth user token（有 userId + provider）
+    if (decoded.userId && decoded.provider) {
+      db.get('SELECT * FROM oauth_users WHERE id = ?', [decoded.userId], (err, user) => {
+        if (err || !user) return res.status(401).json({ error: 'User not found' });
+        // 如果是關聯帳號，回傳主帳號資料
+        if (user.linked_to) {
+          db.get('SELECT * FROM oauth_users WHERE id = ?', [user.linked_to], (err2, primary) => {
+            if (err2 || !primary) return res.json({ id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: user.provider });
+            res.json({ id: primary.id, displayName: primary.display_name, email: primary.email, avatar: primary.avatar_url, provider: primary.provider });
+          });
+        } else {
+          res.json({ id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: user.provider });
+        }
+      });
+    } else {
+      // 管理員 token
+      res.json({ id: 0, displayName: decoded.username, email: '', avatar: '', provider: 'admin', isAdmin: true });
+    }
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// 登出（前端清除 token 即可，這裡僅用作紀錄）
+apiRouter.post('/auth/logout', (req, res) => {
+  res.json({ message: 'ok' });
+});
+
+// Upsert OAuth user helper（支援 email-based 帳號關聯，先搶先贏）
+function upsertOAuthUser(provider, providerId, displayName, email, avatarUrl) {
+  return new Promise((resolve, reject) => {
+    // 1. 先按 (provider, provider_id) 查找
+    db.get('SELECT * FROM oauth_users WHERE provider = ? AND provider_id = ?', [provider, providerId], (err, existing) => {
+      if (err) return reject(err);
+
+      if (existing) {
+        // 已有此 provider 紀錄 → 更新
+        db.run('UPDATE oauth_users SET display_name = ?, email = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [displayName, email, avatarUrl, existing.id], (err2) => {
+            if (err2) return reject(err2);
+            // 如果有 linked_to，回傳主帳號的資料
+            if (existing.linked_to) {
+              db.get('SELECT * FROM oauth_users WHERE id = ?', [existing.linked_to], (err3, primary) => {
+                if (err3 || !primary) return resolve({ ...existing, display_name: displayName, email, avatar_url: avatarUrl });
+                resolve(primary);
+              });
+            } else {
+              resolve({ ...existing, display_name: displayName, email, avatar_url: avatarUrl });
+            }
+          });
+        return;
+      }
+
+      // 2. 沒有此 provider 紀錄 → 用 email 查找已有帳號
+      if (email) {
+        db.get('SELECT * FROM oauth_users WHERE email = ? AND email != "" AND linked_to IS NULL', [email], (err2, sameEmailUser) => {
+          if (err2) return reject(err2);
+
+          if (sameEmailUser) {
+            // 同 email 已存在 → 建立新紀錄並連結到原帳號（先搶先贏：保留原帳號的頭像和名稱）
+            db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url, linked_to) VALUES (?, ?, ?, ?, ?, ?)',
+              [provider, providerId, displayName, email, avatarUrl, sameEmailUser.id], function (err3) {
+                if (err3) return reject(err3);
+                // 回傳主帳號（原帳號）的資料
+                resolve(sameEmailUser);
+              });
+          } else {
+            // 全新用戶
+            db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url) VALUES (?, ?, ?, ?, ?)',
+              [provider, providerId, displayName, email, avatarUrl], function (err3) {
+                if (err3) return reject(err3);
+                resolve({ id: this.lastID, provider, provider_id: providerId, display_name: displayName, email, avatar_url: avatarUrl });
+              });
+          }
+        });
+      } else {
+        // 無 email → 直接新建
+        db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url) VALUES (?, ?, ?, ?, ?)',
+          [provider, providerId, displayName, email, avatarUrl], function (err2) {
+            if (err2) return reject(err2);
+            resolve({ id: this.lastID, provider, provider_id: providerId, display_name: displayName, email, avatar_url: avatarUrl });
+          });
+      }
+    });
+  });
+}
 
 // --- Newsletter Routes ---
 

@@ -18,6 +18,7 @@ import {
   PanelLeftOpen,
   Save,
   Send,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ const BREADCRUMB_LABELS = {
   posts: '文章',
   categories: '分類',
   tags: '標籤',
+  comments: '留言',
   notes: '日記',
   books: '書籍',
   editor: '編輯器',
@@ -93,6 +95,7 @@ const sidebarItems = [
   { id: 'posts', icon: FileText, label: '文章', path: '/admin/posts' },
   { id: 'categories', icon: FolderOpen, label: '分類', path: '/admin/categories' },
   { id: 'tags', icon: Tags, label: '標籤', path: '/admin/tags' },
+  { id: 'comments', icon: MessageSquare, label: '留言', path: '/admin/comments' },
   { id: 'notes', icon: BookOpen, label: '日記', path: '/admin/notes' },
   { id: 'books', icon: Library, label: '書籍', path: '/admin/books' },
   { id: 'collection', icon: Bookmark, label: '收藏站', path: '/admin/collection' },

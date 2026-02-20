@@ -11,6 +11,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'; //
 import CursorTrail from './components/CursorTrail';
 import ScrollToTop from './components/ScrollToTop'; // <--- 導入 ScrollToTop 元件
 import { PageVisibilityProvider } from './contexts/PageVisibilityContext';
+import { AuthProvider } from './contexts/AuthContext';
 import RandomShootingStars from './components/RandomShootingStars';
 import RandomComets from './components/RandomComets'; // 導入彗星元件
 import RandomUFOs from './components/RandomUFOs'; // 導入 UFO 元件
@@ -46,6 +47,7 @@ const LazyTagsManager = lazy(() => import('./components/admin/TagsManager'));
 const LazyBooksManager = lazy(() => import('./components/admin/BooksManager'));
 const LazyCollectionManager = lazy(() => import('./components/admin/CollectionManager'));
 const LazyArticleGenerator = lazy(() => import('./components/admin/ArticleGenerator'));
+const LazyCommentsManager = lazy(() => import('./components/admin/CommentsManager'));
 const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
 const LazyNow = lazy(() => import('./components/Now'));
@@ -54,6 +56,7 @@ const LazyMusic = lazy(() => import('./components/Music'));
 const LazyCinema = lazy(() => import('./components/Cinema'));
 const LazyAnime = lazy(() => import('./components/Anime'));
 const LazySetup = lazy(() => import('./components/Setup'));
+const LazyOAuthCallback = lazy(() => import('./components/OAuthCallback'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -286,6 +289,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/cinema" element={<Suspense fallback={<LoadingFallback />}><LazyCinema /></Suspense>} />
           <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />
           <Route path="/setup" element={<Suspense fallback={<LoadingFallback />}><LazySetup /></Suspense>} />
+          <Route path="/auth/callback" element={<Suspense fallback={<LoadingFallback />}><LazyOAuthCallback /></Suspense>} />
           {/* 新版後台路由 - 使用 shadcn/ui 風格 */}
           <Route path="/admin/login" element={<Suspense fallback={<LoadingFallback />}><LazyAdminLoginNew /></Suspense>} />
           <Route path="/admin/*" element={
@@ -303,6 +307,7 @@ function Layout({ activeSection, onSectionChange }) {
             <Route path="books" element={<Suspense fallback={<LoadingFallback />}><LazyBooksManager /></Suspense>} />
             <Route path="collection" element={<Suspense fallback={<LoadingFallback />}><LazyCollectionManager /></Suspense>} />
             <Route path="article-generator" element={<Suspense fallback={<LoadingFallback />}><LazyArticleGenerator /></Suspense>} />
+            <Route path="comments" element={<Suspense fallback={<LoadingFallback />}><LazyCommentsManager /></Suspense>} />
             <Route path="notes" element={<AdminPlaceholder title="日記管理" />} />
           </Route>
         </Routes>
@@ -385,6 +390,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <AuthProvider>
       <ScrollToTop />
       <LocationTracker onPathChange={handlePathChange} />
       <ParallaxProvider>
@@ -427,6 +433,7 @@ function App() {
           </div>
         </PageVisibilityProvider>
       </ParallaxProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

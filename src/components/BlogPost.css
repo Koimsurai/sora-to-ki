@@ -245,28 +245,34 @@
   padding-left: 0.75rem !important;
 }
 
-/* Animated active indicator bar (rendered by framer-motion layoutId) */
-.posts-nav-active-bar {
+.posts-nav-current-item::before {
+  content: '';
   position: absolute;
   left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 15%;
   width: 3px;
   height: 70%;
   border-radius: 2px;
   background: var(--post-accent);
   box-shadow: 0 0 8px rgba(127, 90, 240, 0.3);
+  animation: indicator-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-/* Category tooltip */
-.posts-nav-category-name {
-  cursor: pointer;
+@keyframes indicator-slide-in {
+  from {
+    opacity: 0;
+    height: 0;
+    top: 50%;
+  }
+  to {
+    opacity: 1;
+    height: 70%;
+    top: 15%;
+  }
 }
 
+/* Category tooltip (rendered via Portal to body) */
 .category-tooltip {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 8px);
   width: 240px;
   padding: 14px;
   background: rgba(18, 16, 30, 0.95);
@@ -275,9 +281,9 @@
   border: 1px solid rgba(127, 90, 240, 0.2);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(127, 90, 240, 0.08);
-  z-index: 100;
+  z-index: 9999;
   animation: tooltip-in 0.2s ease;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 @keyframes tooltip-in {

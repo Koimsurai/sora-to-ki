@@ -5,7 +5,8 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { AnimatePresence, LayoutGroup, motion } from 'framer-motion';
+import ReactDOM from 'react-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   FaRegHeart, FaHeart, FaLink, FaRegComment, FaArrowUp,
   FaEnvelope, FaShareAlt, FaRss, FaTimes,
@@ -333,6 +334,61 @@ const CustomParagraph = ({ children, node, ...props }) => {
 };
 
 /* ══════════════════════════
+   CategoryTooltipTrigger — hover 顯示分類 tooltip (Portal 到 body)
+   ══════════════════════════ */
+const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnter, onLeave }) => {
+  const triggerRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (showTooltip && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPos({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [showTooltip]);
+
+  return (
+    <span
+      ref={triggerRef}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      style={{ display: 'inline-block' }}
+    >
+      <Link to={'/blog?category=' + encodeURIComponent(postCategory)} className="text-sm text-white hover:text-purple-400 transition-colors font-semibold">
+        {postCategory}
+      </Link>
+      {showTooltip && categoryInfo && ReactDOM.createPortal(
+        <div
+          className="category-tooltip"
+          style={{ position: 'absolute', top: pos.top, left: pos.left }}
+          onMouseEnter={onEnter}
+          onMouseLeave={onLeave}
+        >
+          {categoryInfo.short_description && (
+            <p className="category-tooltip-short">{categoryInfo.short_description}</p>
+          )}
+          {categoryInfo.description && (
+            <p className="category-tooltip-desc">{categoryInfo.description}</p>
+          )}
+          <div className="category-tooltip-meta">
+            {categoryInfo.post_count != null && (
+              <span>共 {categoryInfo.post_count} 篇文章</span>
+            )}
+            {categoryInfo.updated_at && (
+              <span>最近更新 {new Date(categoryInfo.updated_at).toLocaleDateString('zh-TW')}</span>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+    </span>
+  );
+};
+
+/* ══════════════════════════
    PostsNav — Left sidebar showing OTHER article titles (-style)
    ══════════════════════════ */
 const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
@@ -412,7 +468,6 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
   return (
     <nav className="posts-nav">
       {/* 附近文章列表 */}
-      <LayoutGroup>
       {nearbyPosts.length > 0 && (
         <div className="posts-nav-nearby">
           {nearbyPosts.map((p) => {
@@ -423,56 +478,25 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
                 to={'/blog/' + p.id}
                 className={'posts-nav-item text-sm py-1 block transition-colors truncate' + (isCurrent ? ' text-white font-semibold posts-nav-current-item' : ' text-gray-500 hover:text-gray-300')}
                 title={p.title}
-                style={{ position: 'relative' }}
               >
-                {isCurrent && (
-                  <motion.span
-                    layoutId="posts-nav-active-indicator"
-                    className="posts-nav-active-bar"
-                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                  />
-                )}
                 {p.title}
               </Link>
             );
           })}
         </div>
       )}
-      </LayoutGroup>
 
       {/* 此文章收錄於分類 */}
       {postCategory && (
         <div className="posts-nav-category mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
           <span className="text-xs text-gray-600 block mb-1">此文章收錄於專欄：</span>
-          <span
-            className="posts-nav-category-name"
-            onMouseEnter={() => setShowCategoryTooltip(true)}
-            onMouseLeave={() => setShowCategoryTooltip(false)}
-            style={{ position: 'relative', display: 'inline-block' }}
-          >
-            <Link to={'/blog?category=' + encodeURIComponent(postCategory)} className="text-sm text-white hover:text-purple-400 transition-colors font-semibold">
-              {postCategory}
-            </Link>
-            {/* Category tooltip */}
-            {showCategoryTooltip && categoryInfo && (
-              <div className="category-tooltip">
-                {categoryInfo.short_description && (
-                  <p className="category-tooltip-short">{categoryInfo.short_description}</p>
-                )}
-                {categoryInfo.description && (
-                  <p className="category-tooltip-desc">{categoryInfo.description}</p>
-                )}
-                <div className="category-tooltip-meta">
-                  {categoryInfo.post_count != null && (
-                    <span>共 {categoryInfo.post_count} 篇文章</span>
-                  )}
-                  {categoryInfo.updated_at && (
-                    <span>最近更新 {new Date(categoryInfo.updated_at).toLocaleDateString('zh-TW')}</span>
-                  )}
-                </div>
-              </div>
-            )}
-          </span>
+          <CategoryTooltipTrigger
+            postCategory={postCategory}
+            categoryInfo={categoryInfo}
+            showTooltip={showCategoryTooltip}
+            onEnter={() => setShowCategoryTooltip(true)}
+            onLeave={() => setShowCategoryTooltip(false)}
+          />
         </div>
       )}
 
@@ -902,8 +926,12 @@ function BlogPost() {
           <h1 className="post-title">{post.title}</h1>
 
           <div className="post-meta-row">
-            <span className="meta-date">⏱ {post.date}</span>
-            <span className="meta-sep">·</span>
+            {post.layout_type !== 'column' && (
+              <>
+                <span className="meta-date">⏱ {post.date}</span>
+                <span className="meta-sep">·</span>
+              </>
+            )}
             <span className="meta-author">✦ {post.author}</span>
             <span className="meta-sep">·</span>
             <span>📖 {post.view_count || 0}</span>
