@@ -20,8 +20,8 @@ const createUFO = () => {
 
   for (let i = 1; i <= numKeyframes; i++) {
     // 累加隨機位移，讓它看起來更像漂浮
-    keyframesX.push(keyframesX[i-1] + getRandomValue(-maxMove, maxMove));
-    keyframesY.push(keyframesY[i-1] + getRandomValue(-maxMove / 2, maxMove / 2)); // 垂直移動幅度小一點
+    keyframesX.push(keyframesX[i - 1] + getRandomValue(-maxMove, maxMove));
+    keyframesY.push(keyframesY[i - 1] + getRandomValue(-maxMove / 2, maxMove / 2)); // 垂直移動幅度小一點
   }
   // 最後回到起點附近，形成循環感 (可選)
   // keyframesX.push(getRandomValue(-20, 20));
@@ -69,19 +69,19 @@ const RandomUFOs = ({ count = 1 }) => { // UFO 數量減少為 1
     return () => clearInterval(interval);
   }, [count, isVisible]);
 
-   return (
-     <div style={{
-       position: 'fixed',
-       top: 0,
-       left: 0,
-       width: '100%',
-       height: '100%',
-       pointerEvents: 'none',
-        zIndex: 2, // 比彗星和流星更低層 (最遠)
-        overflow: 'hidden',
-      }}>
-        <AnimatePresence>
-          {ufos.map(ufo => (
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      pointerEvents: 'none',
+      zIndex: 2, // 比彗星和流星更低層 (最遠)
+      overflow: 'hidden',
+    }}>
+      <AnimatePresence>
+        {ufos.map(ufo => (
           <motion.div
             key={ufo.id}
             className="ufo" // 使用 CSS class
@@ -113,7 +113,7 @@ const RandomUFOs = ({ count = 1 }) => { // UFO 數量減少為 1
               // repeat: Infinity, // 可以讓它無限循環
               // repeatType: "mirror", // 來回播放
             }}
-            exit={{ opacity: 0, scale: 0 }}
+            exit={{ opacity: 0, scale: 0, transition: { duration: 0.5, delay: 0 } }}
           />
         ))}
       </AnimatePresence>
