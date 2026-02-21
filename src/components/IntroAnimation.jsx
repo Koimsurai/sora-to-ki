@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './IntroAnimation.css';
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
@@ -49,6 +49,25 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
       document.body.classList.remove('intro-animation-active');
     };
   }, []);
+
+  const explosionParticles = useMemo(() => {
+    return (
+      <>
+        {/* Generate first wave */}
+        {Array.from({ length: 200 }).map((_, i) => (
+          <div key={`outer-${i}`} className="particle" style={{ '--i': i, '--angle': `${Math.random() * 360}deg`, '--distance': `${30 + Math.random() * 60}vmax`, '--duration': `${1.5 + Math.random() * 1.0}s`, '--base-delay': `${0.5 + Math.random() * 0.7}` }}></div>
+        ))}
+        {/* Generate second wave */}
+        {Array.from({ length: 80 }).map((_, i) => (
+          <div key={`middle-${i}`} className="particle middle-particle" style={{ '--i': i, '--angle': `${Math.random() * 360}deg`, '--distance': `${15 + Math.random() * 15}vmax`, '--duration': `${1.2 + Math.random() * 0.8}s`, '--base-delay': `${1.0 + Math.random() * 0.5}` }}></div>
+        ))}
+        {/* Generate third wave */}
+        {Array.from({ length: 40 }).map((_, i) => (
+          <div key={`inner-${i}`} className="particle inner-particle" style={{ '--i': i, '--angle': `${Math.random() * 360}deg`, '--distance': `${Math.random() * 15}vmax`, '--duration': `${1.0 + Math.random() * 0.6}s`, '--base-delay': `${1.4 + Math.random() * 0.4}` }}></div>
+        ))}
+      </>
+    );
+  }, []); // 空陣列代表只在初始渲染時生成一次
 
   // --- Trail Update Logic using getPointAtLength ---
   const MAX_TRAIL_PARTICLES = 30; // Max number of particles per trail
@@ -354,6 +373,7 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
         >
             <defs>
                 {/* Refs are removed from here, paths are found by ID */}
+                <filter id="trailBlur"><feGaussianBlur stdDeviation="1.5" /></filter>
                 <path id="spiralPath1" d={spiralPath1} fill="none" stroke="none" />
                 <path id="spiralPath2" d={spiralPath2} fill="none" stroke="none" />
 
@@ -489,50 +509,7 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart }) => {
         />
       </svg>
 
-      {/* Generate particles (adjust delays later in CSS) */}
-      {/* Generate first wave of particles (outer) - Reduced Count */}
-      {Array.from({ length: 200 }).map((_, i) => (
-        <div
-          key={`outer-${i}`}
-          className="particle"
-          style={{
-            '--i': i,
-            '--angle': `${Math.random() * 360}deg`,
-            '--distance': `${30 + Math.random() * 60}vmax`,
-            '--duration': `${1.5 + Math.random() * 1.0}s`,
-            // Delay will be adjusted in CSS based on explode state
-            '--base-delay': `${0.5 + Math.random() * 0.7}`, // Store base delay
-          }}
-        ></div>
-      ))}
-      {/* Generate second wave of particles (middle) - Reduced Count */}
-      {Array.from({ length: 80 }).map((_, i) => (
-        <div
-          key={`middle-${i}`}
-          className="particle middle-particle"
-          style={{
-            '--i': i,
-            '--angle': `${Math.random() * 360}deg`,
-            '--distance': `${15 + Math.random() * 15}vmax`,
-            '--duration': `${1.2 + Math.random() * 0.8}s`,
-            '--base-delay': `${1.0 + Math.random() * 0.5}`, // Store base delay
-          }}
-        ></div>
-      ))}
-      {/* Generate third wave of particles (inner) - Reduced Count */}
-      {Array.from({ length: 40 }).map((_, i) => (
-        <div
-          key={`inner-${i}`}
-          className="particle inner-particle"
-          style={{
-            '--i': i,
-            '--angle': `${Math.random() * 360}deg`,
-            '--distance': `${Math.random() * 15}vmax`,
-            '--duration': `${1.0 + Math.random() * 0.6}s`,
-            '--base-delay': `${1.4 + Math.random() * 0.4}`, // Store base delay
-          }}
-        ></div>
-      ))}
+      {explosionParticles}
     </div>
   );
 };
