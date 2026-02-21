@@ -26,7 +26,7 @@ export const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       
       // Fetch posts
       const postsResponse = await fetch('/api/admin/posts?limit=5', {

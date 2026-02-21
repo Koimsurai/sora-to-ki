@@ -40,7 +40,7 @@ export default function PostsList() {
 
   const fetchPosts = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/admin/posts', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -61,7 +61,7 @@ export default function PostsList() {
     if (!deleteId) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/posts/${deleteId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },

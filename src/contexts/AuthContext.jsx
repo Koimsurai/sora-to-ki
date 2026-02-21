@@ -77,6 +77,8 @@ export function AuthProvider({ children }) {
       getToken, loginWithOAuth, logout,
       getGoogleAuthUrl, getGitHubAuthUrl,
       isLoggedIn: !!user,
+      isAdmin: !!user && (user.role === 'ADMIN' || user.role === 'OWNER'),
+      isOwner: !!user && user.role === 'OWNER',
     }}>
       {children}
     </AuthContext.Provider>

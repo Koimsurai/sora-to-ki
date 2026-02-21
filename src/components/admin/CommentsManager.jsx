@@ -48,7 +48,7 @@ export default function CommentsManager() {
   const [newKeyword, setNewKeyword] = useState('');
   const [newKeywordAction, setNewKeywordAction] = useState('spam');
 
-  const token = localStorage.getItem('adminToken');
+  const token = localStorage.getItem('koimsurai_user_token');
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   const fetchComments = useCallback(async () => {

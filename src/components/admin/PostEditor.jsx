@@ -145,7 +145,7 @@ export default function PostEditor() {
 
   const fetchPost = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/posts/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -314,7 +314,7 @@ export default function PostEditor() {
 
   const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/admin/categories', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -330,7 +330,7 @@ export default function PostEditor() {
 
   const fetchTags = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/admin/tags', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -357,7 +357,7 @@ export default function PostEditor() {
   const onSaveDraft = async (data) => {
     setIsSavingDraft(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
       
@@ -399,7 +399,7 @@ export default function PostEditor() {
   const onPublish = async (data) => {
     setIsPublishing(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
       

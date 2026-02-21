@@ -433,6 +433,7 @@ function initializeDatabase() {
         display_name TEXT NOT NULL,
         email TEXT DEFAULT '',
         avatar_url TEXT DEFAULT '',
+        role TEXT NOT NULL DEFAULT 'USER',
         linked_to INTEGER DEFAULT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -440,10 +441,13 @@ function initializeDatabase() {
       )
     `);
 
-    // Migration: 新增 linked_to 欄位（如果不存在）
+    // Migration: 新增 role 欄位（如果不存在）
     db.all("PRAGMA table_info(oauth_users)", [], (err, columns) => {
       if (columns && !columns.find(c => c.name === 'linked_to')) {
         db.run("ALTER TABLE oauth_users ADD COLUMN linked_to INTEGER DEFAULT NULL");
+      }
+      if (columns && !columns.find(c => c.name === 'role')) {
+        db.run("ALTER TABLE oauth_users ADD COLUMN role TEXT NOT NULL DEFAULT 'USER'");
       }
     });
 

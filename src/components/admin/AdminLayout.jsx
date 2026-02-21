@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   FileText,
@@ -14,17 +14,20 @@ import {
   ChevronRight,
   LogOut,
   User,
+  Users,
   PanelLeftClose,
   PanelLeftOpen,
   Save,
   Send,
   MessageSquare,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import './AdminTheme.css'; // 導入暗色主題樣式
-import './ModernEnhancements.css'; // 導入現代化增強樣式
+import { useAuth } from '../../contexts/AuthContext';
+import './AdminTheme.css';
+import './ModernEnhancements.css';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -100,17 +103,23 @@ const sidebarItems = [
   { id: 'books', icon: Library, label: '書籍', path: '/admin/books' },
   { id: 'collection', icon: Bookmark, label: '收藏站', path: '/admin/collection' },
   { id: 'article-generator', icon: Sparkles, label: 'AI 寫作', path: '/admin/article-generator' },
+  { id: 'users', icon: Users, label: '用戶管理', path: '/admin/users', ownerOnly: true },
 ];
 
 export const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout, isOwner } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    window.location.href = '/';
+    logout();
+    navigate('/');
   };
+
+  // 過濾 sidebar：ownerOnly 僅 OWNER 可見
+  const visibleSidebarItems = sidebarItems.filter(item => !item.ownerOnly || isOwner);
 
   return (
     <div className="min-h-screen admin-layout deep-space-bg">
@@ -154,7 +163,7 @@ export const AdminLayout = () => {
 
           {/* Navigation */}
           <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
-            {sidebarItems.map((item) => {
+            {visibleSidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.path);
 
@@ -188,12 +197,15 @@ export const AdminLayout = () => {
                   )}
                 >
                   <Avatar className="size-7 shrink-0">
-                    <AvatarFallback className="bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700/60">AD</AvatarFallback>
+                    {user?.avatar && <AvatarImage src={user.avatar} alt={user?.displayName || '管理員'} />}
+                    <AvatarFallback className="bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700/60">
+                      {(user?.displayName || '管理員').slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   {sidebarOpen && (
                     <div className="flex flex-col min-w-0 text-left">
-                      <span className="text-[13px] font-medium text-foreground/80 truncate leading-tight">管理員</span>
-                      <span className="text-[11px] text-muted-foreground truncate leading-tight">admin@koimsurai.com</span>
+                      <span className="text-[13px] font-medium text-foreground/80 truncate leading-tight">{user?.displayName || '管理員'}</span>
+                      <span className="text-[11px] text-muted-foreground truncate leading-tight">{user?.email || ''}</span>
                     </div>
                   )}
                 </button>
@@ -201,6 +213,10 @@ export const AdminLayout = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>我的帳戶</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate('/')}>
+                  <Home className="mr-2 h-4 w-4" />
+                  回到前台
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <User className="mr-2 h-4 w-4" />
                   個人資料

@@ -6,7 +6,11 @@ const jwt = require('jsonwebtoken');
 const https = require('https');
 const axios = require('axios');
 const { initializeDatabase, db } = require('./database.js');
-const { authMiddleware, basicAuth, JWT_SECRET } = require('./auth');
+const { createRequireAdmin, createRequireOwner, basicAuth, JWT_SECRET } = require('./auth');
+
+// 建立需要 DB 的 middleware
+const requireAdmin = createRequireAdmin(db);
+const requireOwner = createRequireOwner(db);
 
 const app = express();
 app.set('trust proxy', 1);
@@ -56,7 +60,7 @@ const upload = multer({
 const apiRouter = express.Router();
 
 // Upload Endpoint
-apiRouter.post('/admin/upload', authMiddleware, upload.single('file'), (req, res) => {
+apiRouter.post('/admin/upload', requireAdmin, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
@@ -298,7 +302,7 @@ apiRouter.get('/posts', (req, res) => {
 });
 
 // GET all posts for admin (需要認證)
-apiRouter.get('/admin/posts', authMiddleware, (req, res) => {
+apiRouter.get('/admin/posts', requireAdmin, (req, res) => {
   const { page = 1, limit = 10, search, status } = req.query;
   const offset = (page - 1) * limit;
 
@@ -374,7 +378,7 @@ apiRouter.get('/admin/posts', authMiddleware, (req, res) => {
 });
 
 // GET a single post by id for admin (需要認證)
-apiRouter.get('/admin/posts/:id', authMiddleware, (req, res) => {
+apiRouter.get('/admin/posts/:id', requireAdmin, (req, res) => {
   const sql = `
     SELECT p.*, GROUP_CONCAT(t.name) as tags 
     FROM posts p 
@@ -405,7 +409,7 @@ apiRouter.get('/admin/posts/:id', authMiddleware, (req, res) => {
 });
 
 // GET admin statistics
-apiRouter.get('/admin/stats', authMiddleware, (req, res) => {
+apiRouter.get('/admin/stats', requireAdmin, (req, res) => {
   // 獲取文章統計
   const postsStatsQuery = `
     SELECT 
@@ -584,7 +588,7 @@ apiRouter.get('/tags', (req, res) => {
 });
 
 // GET all tags for admin (需要認證)
-apiRouter.get('/admin/tags', authMiddleware, (req, res) => {
+apiRouter.get('/admin/tags', requireAdmin, (req, res) => {
   const sql = `
     SELECT t.id, t.name, t.created_at, COUNT(pt.post_id) as post_count 
     FROM tags t
@@ -603,7 +607,7 @@ apiRouter.get('/admin/tags', authMiddleware, (req, res) => {
 });
 
 // POST create new tag
-apiRouter.post('/admin/tags', authMiddleware, (req, res) => {
+apiRouter.post('/admin/tags', requireAdmin, (req, res) => {
   const { name } = req.body;
 
   if (!name) {
@@ -631,7 +635,7 @@ apiRouter.post('/admin/tags', authMiddleware, (req, res) => {
 });
 
 // PUT update tag
-apiRouter.put('/admin/tags/:id', authMiddleware, (req, res) => {
+apiRouter.put('/admin/tags/:id', requireAdmin, (req, res) => {
   const tagId = req.params.id;
   const { name } = req.body;
 
@@ -664,7 +668,7 @@ apiRouter.put('/admin/tags/:id', authMiddleware, (req, res) => {
 });
 
 // DELETE tag
-apiRouter.delete('/admin/tags/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/admin/tags/:id', requireAdmin, (req, res) => {
   const tagId = req.params.id;
 
   // 先刪除關聯
@@ -720,7 +724,7 @@ apiRouter.get('/categories', (req, res) => {
 });
 
 // GET all categories for admin (需要認證)
-apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
+apiRouter.get('/admin/categories', requireAdmin, (req, res) => {
   const sql = `
     SELECT 
       c.id,
@@ -747,7 +751,7 @@ apiRouter.get('/admin/categories', authMiddleware, (req, res) => {
 });
 
 // POST create new category
-apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
+apiRouter.post('/admin/categories', requireAdmin, (req, res) => {
   const { name, description, slug, short_description } = req.body;
 
   if (!name) {
@@ -785,7 +789,7 @@ apiRouter.post('/admin/categories', authMiddleware, (req, res) => {
 });
 
 // PUT update category
-apiRouter.put('/admin/categories/:id', authMiddleware, (req, res) => {
+apiRouter.put('/admin/categories/:id', requireAdmin, (req, res) => {
   const categoryId = req.params.id;
   const { name, description, slug, short_description } = req.body;
 
@@ -847,7 +851,7 @@ apiRouter.put('/admin/categories/:id', authMiddleware, (req, res) => {
 });
 
 // DELETE category
-apiRouter.delete('/admin/categories/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/admin/categories/:id', requireAdmin, (req, res) => {
   const categoryId = req.params.id;
 
   // 先獲取分類名稱
@@ -894,7 +898,7 @@ apiRouter.delete('/admin/categories/:id', authMiddleware, (req, res) => {
 // ===== Admin Posts CRUD =====
 
 // POST create new post (Admin)
-apiRouter.post('/admin/posts', authMiddleware, (req, res) => {
+apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
   console.log('[POST /api/admin/posts] Received request to create a new post.');
   console.log('[POST /api/admin/posts] Body:', req.body);
 
@@ -935,7 +939,7 @@ apiRouter.post('/admin/posts', authMiddleware, (req, res) => {
 });
 
 // PUT update post (Admin)
-apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
+apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
   console.log(`[PUT /api/admin/posts/${req.params.id}] Received request to update post.`);
   console.log('[PUT /api/admin/posts/:id] Body:', req.body);
 
@@ -979,7 +983,7 @@ apiRouter.put('/admin/posts/:id', authMiddleware, (req, res) => {
 });
 
 // DELETE post (Admin)
-apiRouter.delete('/admin/posts/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/admin/posts/:id', requireAdmin, (req, res) => {
   console.log(`[DELETE /api/admin/posts/${req.params.id}] Received request to delete post.`);
 
   // 先清理 post_tags 關聯，再刪除文章
@@ -1059,7 +1063,7 @@ function manageTags(postId, tags, callback) {
 }
 
 // POST a new post
-apiRouter.post('/posts', authMiddleware, (req, res) => {
+apiRouter.post('/posts', requireAdmin, (req, res) => {
   console.log('[POST /api/posts] Received request to create a new post.');
   console.log('[POST /api/posts] Body:', req.body);
 
@@ -1100,7 +1104,7 @@ apiRouter.post('/posts', authMiddleware, (req, res) => {
 });
 
 // PUT (update) a post
-apiRouter.put('/posts/:id', authMiddleware, (req, res) => {
+apiRouter.put('/posts/:id', requireAdmin, (req, res) => {
   const { title, content, excerpt, category, tags = [], status, layout_type } = req.body;
   const sql = `
     UPDATE posts SET 
@@ -1142,7 +1146,7 @@ apiRouter.put('/posts/:id', authMiddleware, (req, res) => {
 });
 
 // PATCH post status
-apiRouter.patch('/posts/:id/status', authMiddleware, (req, res) => {
+apiRouter.patch('/posts/:id/status', requireAdmin, (req, res) => {
   const { status } = req.body;
 
   if (!status || !['published', 'draft'].includes(status)) {
@@ -1169,7 +1173,7 @@ apiRouter.patch('/posts/:id/status', authMiddleware, (req, res) => {
 });
 
 // DELETE a post
-apiRouter.delete('/posts/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/posts/:id', requireAdmin, (req, res) => {
   // 先清理 post_tags 關聯
   db.run('DELETE FROM post_tags WHERE post_id = ?', [req.params.id], (tagErr) => {
     if (tagErr) {
@@ -1311,7 +1315,7 @@ apiRouter.post('/comments/:id/like', (req, res) => {
 // ═══════════════════════════════
 
 // GET all comments (admin)
-apiRouter.get('/admin/comments', authMiddleware, (req, res) => {
+apiRouter.get('/admin/comments', requireAdmin, (req, res) => {
   const { status, post_id, search, page = 1, limit = 50 } = req.query;
   const offset = (page - 1) * limit;
 
@@ -1372,7 +1376,7 @@ apiRouter.get('/admin/comments', authMiddleware, (req, res) => {
 });
 
 // PATCH comment status (approve / spam / trash / pending)
-apiRouter.patch('/admin/comments/:id/status', authMiddleware, (req, res) => {
+apiRouter.patch('/admin/comments/:id/status', requireAdmin, (req, res) => {
   const { status } = req.body;
   const validStatuses = ['pending', 'approved', 'spam', 'trash'];
   if (!validStatuses.includes(status)) {
@@ -1386,7 +1390,7 @@ apiRouter.patch('/admin/comments/:id/status', authMiddleware, (req, res) => {
 });
 
 // PATCH batch comment status
-apiRouter.patch('/admin/comments/batch/status', authMiddleware, (req, res) => {
+apiRouter.patch('/admin/comments/batch/status', requireAdmin, (req, res) => {
   const { ids, status } = req.body;
   const validStatuses = ['pending', 'approved', 'spam', 'trash'];
   if (!Array.isArray(ids) || !ids.length || !validStatuses.includes(status)) {
@@ -1400,7 +1404,7 @@ apiRouter.patch('/admin/comments/batch/status', authMiddleware, (req, res) => {
 });
 
 // PUT edit comment content (admin)
-apiRouter.put('/admin/comments/:id', authMiddleware, (req, res) => {
+apiRouter.put('/admin/comments/:id', requireAdmin, (req, res) => {
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: 'Content is required' });
   db.run('UPDATE comments SET content = ? WHERE id = ?', [content, req.params.id], function (err) {
@@ -1411,7 +1415,7 @@ apiRouter.put('/admin/comments/:id', authMiddleware, (req, res) => {
 });
 
 // DELETE comment permanently
-apiRouter.delete('/admin/comments/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/admin/comments/:id', requireAdmin, (req, res) => {
   db.run('DELETE FROM comments WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     if (this.changes === 0) return res.status(404).json({ error: 'Comment not found' });
@@ -1420,7 +1424,7 @@ apiRouter.delete('/admin/comments/:id', authMiddleware, (req, res) => {
 });
 
 // POST admin reply to comment
-apiRouter.post('/admin/comments/:id/reply', authMiddleware, (req, res) => {
+apiRouter.post('/admin/comments/:id/reply', requireAdmin, (req, res) => {
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: 'Content is required' });
 
@@ -1439,14 +1443,14 @@ apiRouter.post('/admin/comments/:id/reply', authMiddleware, (req, res) => {
 
 // ── IP Blacklist ──
 
-apiRouter.get('/admin/blacklist', authMiddleware, (req, res) => {
+apiRouter.get('/admin/blacklist', requireAdmin, (req, res) => {
   db.all('SELECT * FROM ip_blacklist ORDER BY created_at DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ blacklist: rows });
   });
 });
 
-apiRouter.post('/admin/blacklist', authMiddleware, (req, res) => {
+apiRouter.post('/admin/blacklist', requireAdmin, (req, res) => {
   const { ip, reason } = req.body;
   if (!ip) return res.status(400).json({ error: 'IP is required' });
   db.run('INSERT OR IGNORE INTO ip_blacklist (ip, reason) VALUES (?, ?)', [ip, reason || ''], function (err) {
@@ -1455,7 +1459,7 @@ apiRouter.post('/admin/blacklist', authMiddleware, (req, res) => {
   });
 });
 
-apiRouter.delete('/admin/blacklist/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/admin/blacklist/:id', requireAdmin, (req, res) => {
   db.run('DELETE FROM ip_blacklist WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'success' });
@@ -1464,14 +1468,14 @@ apiRouter.delete('/admin/blacklist/:id', authMiddleware, (req, res) => {
 
 // ── Keyword Filters ──
 
-apiRouter.get('/admin/keyword-filters', authMiddleware, (req, res) => {
+apiRouter.get('/admin/keyword-filters', requireAdmin, (req, res) => {
   db.all('SELECT * FROM keyword_filters ORDER BY created_at DESC', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ filters: rows });
   });
 });
 
-apiRouter.post('/admin/keyword-filters', authMiddleware, (req, res) => {
+apiRouter.post('/admin/keyword-filters', requireAdmin, (req, res) => {
   const { keyword, action } = req.body;
   if (!keyword) return res.status(400).json({ error: 'Keyword is required' });
   const validActions = ['spam', 'reject'];
@@ -1482,7 +1486,7 @@ apiRouter.post('/admin/keyword-filters', authMiddleware, (req, res) => {
   });
 });
 
-apiRouter.delete('/admin/keyword-filters/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/admin/keyword-filters/:id', requireAdmin, (req, res) => {
   db.run('DELETE FROM keyword_filters WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'success' });
@@ -1540,9 +1544,9 @@ apiRouter.post('/auth/google/callback', async (req, res) => {
 
     // 寫入或更新資料庫
     const user = await upsertOAuthUser('google', String(id), name, email || '', picture || '');
-    const token = jwt.sign({ userId: user.id, provider: 'google', displayName: user.display_name, avatar: user.avatar_url }, JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ userId: user.id, provider: 'google', displayName: user.display_name, avatar: user.avatar_url, role: user.role || 'USER' }, JWT_SECRET, { expiresIn: '30d' });
 
-    res.json({ token, user: { id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: 'google' } });
+    res.json({ token, user: { id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: 'google', role: user.role || 'USER' } });
   } catch (err) {
     console.error('[OAuth Google] Error:', err.response?.data || err.message);
     res.status(500).json({ error: '登入失敗' });
@@ -1584,9 +1588,9 @@ apiRouter.post('/auth/github/callback', async (req, res) => {
 
     const displayName = name || login;
     const user = await upsertOAuthUser('github', String(id), displayName, userEmail, avatar_url || '');
-    const token = jwt.sign({ userId: user.id, provider: 'github', displayName: user.display_name, avatar: user.avatar_url }, JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ userId: user.id, provider: 'github', displayName: user.display_name, avatar: user.avatar_url, role: user.role || 'USER' }, JWT_SECRET, { expiresIn: '30d' });
 
-    res.json({ token, user: { id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: 'github' } });
+    res.json({ token, user: { id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: 'github', role: user.role || 'USER' } });
   } catch (err) {
     console.error('[OAuth GitHub] Error:', err.response?.data || err.message);
     res.status(500).json({ error: '登入失敗' });
@@ -1608,16 +1612,18 @@ apiRouter.get('/auth/me', (req, res) => {
         // 如果是關聯帳號，回傳主帳號資料
         if (user.linked_to) {
           db.get('SELECT * FROM oauth_users WHERE id = ?', [user.linked_to], (err2, primary) => {
-            if (err2 || !primary) return res.json({ id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: user.provider });
-            res.json({ id: primary.id, displayName: primary.display_name, email: primary.email, avatar: primary.avatar_url, provider: primary.provider });
+            if (err2 || !primary) return res.json({ id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: user.provider, role: user.role || 'USER' });
+            res.json({ id: primary.id, displayName: primary.display_name, email: primary.email, avatar: primary.avatar_url, provider: primary.provider, role: primary.role || 'USER' });
           });
         } else {
-          res.json({ id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: user.provider });
+          res.json({ id: user.id, displayName: user.display_name, email: user.email, avatar: user.avatar_url, provider: user.provider, role: user.role || 'USER' });
         }
       });
+    } else if (decoded.username) {
+      // 舊版管理員 token（向下相容）
+      res.json({ id: 0, displayName: decoded.username, email: '', avatar: '', provider: 'admin', role: 'OWNER', isAdmin: true });
     } else {
-      // 管理員 token
-      res.json({ id: 0, displayName: decoded.username, email: '', avatar: '', provider: 'admin', isAdmin: true });
+      res.status(401).json({ error: 'Invalid token' });
     }
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
@@ -1629,26 +1635,67 @@ apiRouter.post('/auth/logout', (req, res) => {
   res.json({ message: 'ok' });
 });
 
-// Upsert OAuth user helper（支援 email-based 帳號關聯，先搶先贏）
+// ══════════════════════════════════════════
+//  用戶管理 API（僅 OWNER）
+// ══════════════════════════════════════════
+
+// 取得所有用戶列表
+apiRouter.get('/admin/users', requireOwner, (req, res) => {
+  db.all('SELECT id, provider, provider_id, display_name, email, avatar_url, role, linked_to, created_at, updated_at FROM oauth_users ORDER BY created_at DESC', [], (err, users) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ users });
+  });
+});
+
+// 修改用戶角色
+apiRouter.put('/admin/users/:id/role', requireOwner, (req, res) => {
+  const { role } = req.body;
+  const userId = req.params.id;
+  const validRoles = ['USER', 'ADMIN', 'OWNER'];
+
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ error: '無效的角色，允許值：USER, ADMIN, OWNER' });
+  }
+
+  // 不能修改自己的角色
+  if (req.user.dbUser && req.user.dbUser.id === parseInt(userId)) {
+    return res.status(400).json({ error: '不能修改自己的角色' });
+  }
+
+  db.run('UPDATE oauth_users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [role, userId], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: '用戶不存在' });
+    res.json({ message: '角色更新成功', role });
+  });
+});
+
+// OWNER 自動識別 email
+const OWNER_EMAIL = 'timo9378@gmail.com';
+
+// Upsert OAuth user helper（支援 email-based 帳號關聯，先搶先贏 + role 管理）
 function upsertOAuthUser(provider, providerId, displayName, email, avatarUrl) {
   return new Promise((resolve, reject) => {
+    // 判斷是否為 OWNER
+    const autoRole = (email && email.toLowerCase() === OWNER_EMAIL.toLowerCase()) ? 'OWNER' : 'USER';
+
     // 1. 先按 (provider, provider_id) 查找
     db.get('SELECT * FROM oauth_users WHERE provider = ? AND provider_id = ?', [provider, providerId], (err, existing) => {
       if (err) return reject(err);
 
       if (existing) {
-        // 已有此 provider 紀錄 → 更新
-        db.run('UPDATE oauth_users SET display_name = ?, email = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-          [displayName, email, avatarUrl, existing.id], (err2) => {
+        // 已有此 provider 紀錄 → 更新（但不覆蓋 role，除非是 OWNER email）
+        const updateRole = autoRole === 'OWNER' ? 'OWNER' : existing.role;
+        db.run('UPDATE oauth_users SET display_name = ?, email = ?, avatar_url = ?, role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+          [displayName, email, avatarUrl, updateRole, existing.id], (err2) => {
             if (err2) return reject(err2);
             // 如果有 linked_to，回傳主帳號的資料
             if (existing.linked_to) {
               db.get('SELECT * FROM oauth_users WHERE id = ?', [existing.linked_to], (err3, primary) => {
-                if (err3 || !primary) return resolve({ ...existing, display_name: displayName, email, avatar_url: avatarUrl });
+                if (err3 || !primary) return resolve({ ...existing, display_name: displayName, email, avatar_url: avatarUrl, role: updateRole });
                 resolve(primary);
               });
             } else {
-              resolve({ ...existing, display_name: displayName, email, avatar_url: avatarUrl });
+              resolve({ ...existing, display_name: displayName, email, avatar_url: avatarUrl, role: updateRole });
             }
           });
         return;
@@ -1660,28 +1707,32 @@ function upsertOAuthUser(provider, providerId, displayName, email, avatarUrl) {
           if (err2) return reject(err2);
 
           if (sameEmailUser) {
-            // 同 email 已存在 → 建立新紀錄並連結到原帳號（先搶先贏：保留原帳號的頭像和名稱）
-            db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url, linked_to) VALUES (?, ?, ?, ?, ?, ?)',
-              [provider, providerId, displayName, email, avatarUrl, sameEmailUser.id], function (err3) {
+            // 同 email 已存在 → 建立新紀錄並連結到原帳號
+            // 如果是 OWNER email，確保主帳號也是 OWNER
+            if (autoRole === 'OWNER' && sameEmailUser.role !== 'OWNER') {
+              db.run('UPDATE oauth_users SET role = ? WHERE id = ?', ['OWNER', sameEmailUser.id]);
+              sameEmailUser.role = 'OWNER';
+            }
+            db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url, role, linked_to) VALUES (?, ?, ?, ?, ?, ?, ?)',
+              [provider, providerId, displayName, email, avatarUrl, autoRole, sameEmailUser.id], function (err3) {
                 if (err3) return reject(err3);
-                // 回傳主帳號（原帳號）的資料
                 resolve(sameEmailUser);
               });
           } else {
             // 全新用戶
-            db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url) VALUES (?, ?, ?, ?, ?)',
-              [provider, providerId, displayName, email, avatarUrl], function (err3) {
+            db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url, role) VALUES (?, ?, ?, ?, ?, ?)',
+              [provider, providerId, displayName, email, avatarUrl, autoRole], function (err3) {
                 if (err3) return reject(err3);
-                resolve({ id: this.lastID, provider, provider_id: providerId, display_name: displayName, email, avatar_url: avatarUrl });
+                resolve({ id: this.lastID, provider, provider_id: providerId, display_name: displayName, email, avatar_url: avatarUrl, role: autoRole });
               });
           }
         });
       } else {
         // 無 email → 直接新建
-        db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url) VALUES (?, ?, ?, ?, ?)',
-          [provider, providerId, displayName, email, avatarUrl], function (err2) {
+        db.run('INSERT INTO oauth_users (provider, provider_id, display_name, email, avatar_url, role) VALUES (?, ?, ?, ?, ?, ?)',
+          [provider, providerId, displayName, email, avatarUrl, autoRole], function (err2) {
             if (err2) return reject(err2);
-            resolve({ id: this.lastID, provider, provider_id: providerId, display_name: displayName, email, avatar_url: avatarUrl });
+            resolve({ id: this.lastID, provider, provider_id: providerId, display_name: displayName, email, avatar_url: avatarUrl, role: autoRole });
           });
       }
     });
@@ -1745,7 +1796,7 @@ apiRouter.post('/newsletter/unsubscribe', (req, res) => {
 });
 
 // GET newsletter subscribers (admin only)
-apiRouter.get('/newsletter/subscribers', authMiddleware, (req, res) => {
+apiRouter.get('/newsletter/subscribers', requireAdmin, (req, res) => {
   const { page = 1, limit = 50, status = 'active' } = req.query;
   const offset = (page - 1) * limit;
 
@@ -2396,7 +2447,7 @@ apiRouter.get('/wakatime/projects', async (req, res) => {
 // --- Books API Routes ---
 
 // GET all books for admin (需要認證)
-apiRouter.get('/admin/books', authMiddleware, (req, res) => {
+apiRouter.get('/admin/books', requireAdmin, (req, res) => {
   const { status, rating, year, search, sortBy = 'date_added_desc' } = req.query;
 
   let sql = 'SELECT * FROM books WHERE 1=1';
@@ -2648,7 +2699,7 @@ apiRouter.get('/books/search/external', async (req, res) => {
 });
 
 // POST a new book (admin only)
-apiRouter.post('/books', authMiddleware, (req, res) => {
+apiRouter.post('/books', requireAdmin, (req, res) => {
   const {
     isbn, title, authors, publisher, published_date, description,
     cover_url, page_count, language, categories,
@@ -2692,7 +2743,7 @@ apiRouter.post('/books', authMiddleware, (req, res) => {
 });
 
 // PUT (update) a book (admin only)
-apiRouter.put('/books/:id', authMiddleware, (req, res) => {
+apiRouter.put('/books/:id', requireAdmin, (req, res) => {
   const {
     isbn, title, authors, publisher, published_date, description,
     cover_url, page_count, language, categories,
@@ -2749,7 +2800,7 @@ apiRouter.put('/books/:id', authMiddleware, (req, res) => {
 });
 
 // DELETE a book (admin only)
-apiRouter.delete('/books/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/books/:id', requireAdmin, (req, res) => {
   const sql = 'DELETE FROM books WHERE id = ?';
   db.run(sql, [req.params.id], function (err) {
     if (err) {
@@ -2994,7 +3045,7 @@ apiRouter.get('/collection/:type', (req, res) => {
 });
 
 // 2. 後台搜尋外部 API (TMDB/AniList)
-apiRouter.post('/collection/search-external', authMiddleware, async (req, res) => {
+apiRouter.post('/collection/search-external', requireAdmin, async (req, res) => {
   const { query, type } = req.body;
 
   if (!query || !type) {
@@ -3016,7 +3067,7 @@ apiRouter.post('/collection/search-external', authMiddleware, async (req, res) =
 });
 
 // 3. 新增收藏項目
-apiRouter.post('/collection', authMiddleware, (req, res) => {
+apiRouter.post('/collection', requireAdmin, (req, res) => {
   const item = req.body;
 
   // 驗證必填欄位
@@ -3047,7 +3098,7 @@ apiRouter.post('/collection', authMiddleware, (req, res) => {
 });
 
 // 4. 更新收藏項目
-apiRouter.put('/collection/:id', authMiddleware, (req, res) => {
+apiRouter.put('/collection/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
   const item = req.body;
 
@@ -3080,7 +3131,7 @@ apiRouter.put('/collection/:id', authMiddleware, (req, res) => {
 });
 
 // 5. 刪除收藏項目
-apiRouter.delete('/collection/:id', authMiddleware, (req, res) => {
+apiRouter.delete('/collection/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
 
   db.run(

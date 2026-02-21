@@ -66,7 +66,7 @@ const CollectionManager = () => {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/collection', {
         method: 'POST',
         headers: {
@@ -98,7 +98,7 @@ const CollectionManager = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/collection/${selectedItem.id}`, {
         method: 'PUT',
         headers: {
@@ -131,7 +131,7 @@ const CollectionManager = () => {
     if (!window.confirm('確定要刪除這個收藏項目嗎？')) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/collection/${id}`, {
         method: 'DELETE',
         headers: {

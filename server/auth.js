@@ -2,36 +2,108 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
 
-// JWT 認證中間件
+// 基礎 JWT 認證中間件（任何有效 token 都可通過）
 const authMiddleware = (req, res, next) => {
-  console.log(`[AUTH] JWT Middleware triggered for: ${req.method} ${req.path}`);
   const authHeader = req.header('Authorization');
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('[AUTH] Failed: No valid Authorization header');
     return res.status(401).json({ message: '未提供有效的授權令牌' });
   }
 
-  const token = authHeader.substring(7); // Remove "Bearer " prefix
+  const token = authHeader.substring(7);
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
-    console.log(`[AUTH] Success: Access granted for user '${decoded.username}'`);
     next();
   } catch (error) {
-    console.error('[AUTH] Token verification failed:', error);
     res.status(401).json({ message: '無效的授權令牌' });
   }
 };
 
+// requireAdmin: 需要 ADMIN 或 OWNER 角色
+// 會從 DB 查詢最新 role（確保權限變更即時生效）
+function createRequireAdmin(db) {
+  return (req, res, next) => {
+    const authHeader = req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: '未提供有效的授權令牌' });
+    }
+
+    try {
+      const decoded = jwt.verify(authHeader.substring(7), JWT_SECRET);
+      req.user = decoded;
+
+      // OAuth user token（有 userId）
+      if (decoded.userId) {
+        db.get('SELECT * FROM oauth_users WHERE id = ?', [decoded.userId], (err, user) => {
+          if (err || !user) return res.status(401).json({ message: '使用者不存在' });
+          // 如果是關聯帳號，查主帳號
+          const targetId = user.linked_to || user.id;
+          db.get('SELECT * FROM oauth_users WHERE id = ?', [targetId], (err2, primary) => {
+            if (err2 || !primary) return res.status(401).json({ message: '使用者不存在' });
+            if (primary.role !== 'ADMIN' && primary.role !== 'OWNER') {
+              return res.status(403).json({ message: '權限不足，需要管理員權限' });
+            }
+            req.user = { ...decoded, role: primary.role, dbUser: primary };
+            next();
+          });
+        });
+      } else if (decoded.username) {
+        // 舊版管理員 token（向下相容）
+        req.user = { ...decoded, role: 'OWNER' };
+        next();
+      } else {
+        return res.status(403).json({ message: '權限不足' });
+      }
+    } catch (error) {
+      res.status(401).json({ message: '無效的授權令牌' });
+    }
+  };
+}
+
+// requireOwner: 僅 OWNER 角色
+function createRequireOwner(db) {
+  return (req, res, next) => {
+    const authHeader = req.header('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: '未提供有效的授權令牌' });
+    }
+
+    try {
+      const decoded = jwt.verify(authHeader.substring(7), JWT_SECRET);
+      req.user = decoded;
+
+      if (decoded.userId) {
+        db.get('SELECT * FROM oauth_users WHERE id = ?', [decoded.userId], (err, user) => {
+          if (err || !user) return res.status(401).json({ message: '使用者不存在' });
+          const targetId = user.linked_to || user.id;
+          db.get('SELECT * FROM oauth_users WHERE id = ?', [targetId], (err2, primary) => {
+            if (err2 || !primary) return res.status(401).json({ message: '使用者不存在' });
+            if (primary.role !== 'OWNER') {
+              return res.status(403).json({ message: '權限不足，需要擁有者權限' });
+            }
+            req.user = { ...decoded, role: primary.role, dbUser: primary };
+            next();
+          });
+        });
+      } else if (decoded.username) {
+        req.user = { ...decoded, role: 'OWNER' };
+        next();
+      } else {
+        return res.status(403).json({ message: '權限不足' });
+      }
+    } catch (error) {
+      res.status(401).json({ message: '無效的授權令牌' });
+    }
+  };
+}
+
 // 保留舊的基本認證作為備用
 const basicAuth = (req, res, next) => {
-  console.log(`[BASIC AUTH] Middleware triggered for: ${req.method} ${req.path}`);
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    console.log('[BASIC AUTH] Failed: No Authorization header');
     res.setHeader('WWW-Authenticate', 'Basic');
     return res.status(401).json({ message: 'Authorization header required' });
   }
@@ -44,13 +116,11 @@ const basicAuth = (req, res, next) => {
   const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
 
   if (user === adminUser && pass === adminPass) {
-    console.log(`[BASIC AUTH] Success: Access granted for user '${user}'`);
-    next(); // Access granted
+    next();
   } else {
-    console.log(`[BASIC AUTH] Failed: Invalid credentials for user '${user}'`);
     res.setHeader('WWW-Authenticate', 'Basic');
     return res.status(401).json({ message: 'Invalid credentials' });
   }
 };
 
-module.exports = { authMiddleware, basicAuth, JWT_SECRET };
+module.exports = { authMiddleware, createRequireAdmin, createRequireOwner, basicAuth, JWT_SECRET };

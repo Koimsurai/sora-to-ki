@@ -49,7 +49,7 @@ export default function CategoriesManager() {
 
   const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/admin/categories', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -70,7 +70,7 @@ export default function CategoriesManager() {
     e.preventDefault();
     
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const url = editingCategory 
         ? `/api/admin/categories/${editingCategory.id}`
         : '/api/admin/categories';
@@ -114,7 +114,7 @@ export default function CategoriesManager() {
     if (!deleteId) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/categories/${deleteId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },

@@ -4,7 +4,7 @@ import {
   FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages,
   FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss,
   FaClock, FaRoute, FaBook, FaMusic, FaFilm, FaCamera, FaDesktop,
-  FaGithub, FaGoogle, FaSignOutAlt,
+  FaGithub, FaGoogle, FaSignOutAlt, FaCog,
 } from 'react-icons/fa';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,7 +24,7 @@ function Header({ activeSection }) {
   const userMenuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isLoggedIn, logout, providers, getGoogleAuthUrl, getGitHubAuthUrl } = useAuth();
+  const { user, isLoggedIn, logout, providers, getGoogleAuthUrl, getGitHubAuthUrl, isAdmin } = useAuth();
   const isHomePage = location.pathname === '/';
   const isPhotoPage = location.pathname === '/photos';
 
@@ -238,6 +238,11 @@ function Header({ activeSection }) {
                     <span className="user-dropdown-provider">@{user.displayName}</span>
                   </div>
                   <div className="user-dropdown-divider" />
+                  {isAdmin && (
+                    <button className="user-dropdown-item" onClick={() => { navigate('/admin'); setShowUserMenu(false); }}>
+                      <FaCog /> 進入後台
+                    </button>
+                  )}
                   <button className="user-dropdown-item" onClick={() => { logout(); setShowUserMenu(false); }}>
                     <FaSignOutAlt /> 登出
                   </button>

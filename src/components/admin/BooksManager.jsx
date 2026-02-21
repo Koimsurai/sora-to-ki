@@ -80,7 +80,7 @@ export default function BooksManager() {
 
   const fetchBooks = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/books', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -155,7 +155,7 @@ export default function BooksManager() {
     e.preventDefault();
     
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const url = editingBook 
         ? `/api/books/${editingBook.id}`
         : '/api/books';
@@ -208,7 +208,7 @@ export default function BooksManager() {
     if (!deleteId) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/books/${deleteId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },

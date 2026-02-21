@@ -49,7 +49,7 @@ export default function TagsManager() {
 
   const fetchTags = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/admin/tags', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -70,7 +70,7 @@ export default function TagsManager() {
     e.preventDefault();
     
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const url = editingTag 
         ? `/api/admin/tags/${editingTag.id}`
         : '/api/admin/tags';
@@ -113,7 +113,7 @@ export default function TagsManager() {
     if (!deleteId) return;
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/tags/${deleteId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },

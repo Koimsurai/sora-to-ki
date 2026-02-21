@@ -245,7 +245,7 @@ export default function MonacoEditor({
           const formData = new FormData();
           formData.append('file', blob, imageFile.name.replace(/\.[^/.]+$/, "") + ".webp");
 
-          const token = localStorage.getItem('adminToken');
+          const token = localStorage.getItem('koimsurai_user_token');
           const res = await fetch('/api/admin/upload', {
             method: 'POST',
             headers: {
