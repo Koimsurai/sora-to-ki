@@ -1,76 +1,107 @@
 .portfolio-section {
-  padding: 80px 50px; /* 增加上下內距 */
-  /* background-color: var(--clr-bg-primary); */ /* 移除背景色 */
+  padding: 80px 50px;
+  /* 增加上下內距 */
+  /* background-color: var(--clr-bg-primary); */
+  /* 移除背景色 */
   box-sizing: border-box;
 }
 
 .portfolio-header {
   text-align: center;
-  margin-bottom: 60px; /* 與下方網格的間距 */
+  margin-bottom: 60px;
+  /* 與下方網格的間距 */
 }
 
 .portfolio-header h2 {
-  font-size: 2.8em; /* 標題字體大小 */
-  color: var(--clr-headline); /* 使用標題色 */
+  font-size: 2.8em;
+  /* 標題字體大小 */
+  color: var(--clr-headline);
+  /* 使用標題色 */
   margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* 新增文字陰影 */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  /* 新增文字陰影 */
 }
 
 .portfolio-header p {
   font-size: 1.1em;
-  color: var(--clr-paragraph); /* 使用段落色 */
+  color: var(--clr-paragraph);
+  /* 使用段落色 */
   font-style: italic;
 }
 
 /* --- 恢復為舊的卡片式 Grid 佈局樣式 --- */
 
 .portfolio-grid {
-  display: grid; /* 使用 Grid 佈局 */
-  /* grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); */ /* 自動調整列數，暫時註解，先用單列 */
-  grid-template-columns: 1fr; /* 預設單列 */
-  gap: 60px; /* 項目間距 */
-  max-width: 1100px; /* 限制最大寬度 */
-  margin: 0 auto; /* 水平居中 */
-  perspective: 1000px; /* 加入 perspective 以啟用 3D 效果 */
+  display: grid;
+  /* 使用 Grid 佈局 */
+  /* grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); */
+  /* 自動調整列數，暫時註解，先用單列 */
+  grid-template-columns: 1fr;
+  /* 預設單列 */
+  gap: 60px;
+  /* 項目間距 */
+  max-width: 1100px;
+  /* 限制最大寬度 */
+  margin: 0 auto;
+  /* 水平居中 */
+  perspective: 1000px;
+  /* 加入 perspective 以啟用 3D 效果 */
 }
 
 .portfolio-item {
-  display: flex; /* 使用 Flexbox 排列圖片和內容 */
-  gap: 30px; /* 圖片和內容間距 */
-  /* background-color: var(--clr-bg-secondary); */ /* 註解掉原本的背景色 */
-  background-color: rgba(22, 22, 26, 0.6); /* 降低透明度以增強模糊效果 */
-  border-radius: 10px; /* 圓角 */
-  overflow: hidden; /* 隱藏溢出內容 */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08); /* 稍微明顯的陰影 */
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* 加入過渡效果 */
+  display: flex;
+  /* 使用 Flexbox 排列圖片和內容 */
+  gap: 30px;
+  /* 圖片和內容間距 */
+  /* background-color: var(--clr-bg-secondary); */
+  /* 註解掉原本的背景色 */
+  background: rgba(22, 22, 26, 0.65);
+  border-radius: 16px;
+  /* 圓角 */
+  overflow: hidden;
+  /* 隱藏溢出內容 */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  /* 稍微明顯的陰影 */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  /* 加入過渡效果 */
   /* --- 玻璃擬態效果 --- */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); /* Safari 支援 */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* 細微亮色邊框 */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  /* Safari 支援 */
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* 讓圖片和文字左右交錯顯示 */
 .portfolio-item:nth-child(even) {
-  flex-direction: row-reverse; /* 偶數項目反轉排列 */
+  flex-direction: row-reverse;
+  /* 偶數項目反轉排列 */
 }
 
 .portfolio-item:hover {
-  transform: translateY(-5px); /* 滑鼠懸停時稍微上移 */
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12); /* 懸停時陰影加深 */
+  transform: translateY(-5px);
+  /* 滑鼠懸停時稍微上移 */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+  /* 懸停時陰影加深 */
 }
 
-.portfolio-media-container { /* 更新選擇器 */
-  flex: 1; /* 佔用可用空間 */
-  min-width: 40%; /* 最小寬度 */
-  overflow: hidden; /* 確保圖片不溢出 */
+.portfolio-media-container {
+  /* 更新選擇器 */
+  flex: 1;
+  /* 佔用可用空間 */
+  min-width: 40%;
+  /* 最小寬度 */
+  overflow: hidden;
+  /* 確保圖片不溢出 */
 }
 
 .portfolio-image {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 填滿容器 */
-  transition: transform 0.4s ease; /* 圖片縮放過渡 */
+  object-fit: cover;
+  /* 填滿容器 */
+  transition: transform 0.4s ease;
+  /* 圖片縮放過渡 */
 }
 
 /* 為影片添加樣式 */
@@ -78,69 +109,98 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 填滿容器 */
-  transition: transform 0.4s ease; /* 影片縮放過渡 */
+  object-fit: cover;
+  /* 填滿容器 */
+  transition: transform 0.4s ease;
+  /* 影片縮放過渡 */
 }
 
 .portfolio-item:hover .portfolio-image,
-.portfolio-item:hover .portfolio-video { /* 更新選擇器以包含影片 */
-  transform: scale(1.05); /* 滑鼠懸停時圖片/影片稍微放大 */
+.portfolio-item:hover .portfolio-video {
+  /* 更新選擇器以包含影片 */
+  transform: scale(1.05);
+  /* 滑鼠懸停時圖片/影片稍微放大 */
 }
 
 .portfolio-content {
-  flex: 1.2; /* 內容區域佔更多空間 */
-  padding: 30px 40px; /* 內容內距 */
+  flex: 1.2;
+  /* 內容區域佔更多空間 */
+  padding: 30px 40px;
+  /* 內容內距 */
   display: flex;
   flex-direction: column;
-  justify-content: center; /* 垂直居中內容 */
+  justify-content: center;
+  /* 垂直居中內容 */
 }
 
 .portfolio-category {
   display: inline-block;
   font-size: 0.9em;
-  color: var(--clr-secondary); /* 使用次要元素灰 */
-  background-color: var(--clr-bg-primary); /* 使用主要背景色 */
+  color: var(--clr-secondary);
+  /* 使用次要元素灰 */
+  background-color: var(--clr-bg-primary);
+  /* 使用主要背景色 */
   padding: 4px 10px;
   border-radius: 4px;
-  border: 1px solid var(--clr-bg-secondary); /* 使用次要背景色邊框 */
+  border: 1px solid var(--clr-bg-secondary);
+  /* 使用次要背景色邊框 */
   margin-bottom: 15px;
-  align-self: flex-start; /* 左對齊 */
+  align-self: flex-start;
+  /* 左對齊 */
 }
 
 .portfolio-content h3 {
   font-size: 1.8em;
-  color: var(--clr-headline); /* 使用標題色 */
+  color: var(--clr-headline);
+  /* 使用標題色 */
   margin-bottom: 10px;
 }
 
 .portfolio-content p {
   font-size: 1em;
-  color: var(--clr-paragraph); /* 使用段落色 */
+  color: var(--clr-paragraph);
+  /* 使用段落色 */
   line-height: 1.6;
   margin-bottom: 20px;
-  flex-grow: 1; /* 讓描述填滿剩餘空間 */
+  flex-grow: 1;
+  /* 讓描述填滿剩餘空間 */
 }
 
 .portfolio-link {
-  display: inline-flex; /* 改為 inline-flex 以便未來可能加入圖標 */
-  align-items: center; /* 垂直居中 (與 download-button 一致) */
-  gap: 6px; /* 圖標與文字間距 (與 download-button 一致) */
-  padding: 8px 15px; /* 調整內距 (與 download-button 一致) */
-  background-color: var(--clr-button); /* 使用按鈕色 */
-  color: var(--clr-button-text); /* 使用按鈕文字色 */
+  display: inline-flex;
+  /* 改為 inline-flex 以便未來可能加入圖標 */
+  align-items: center;
+  /* 垂直居中 (與 download-button 一致) */
+  gap: 6px;
+  /* 圖標與文字間距 (與 download-button 一致) */
+  padding: 8px 15px;
+  /* 調整內距 (與 download-button 一致) */
+  background-color: var(--clr-button);
+  /* 使用按鈕色 */
+  color: var(--clr-button-text);
+  /* 使用按鈕文字色 */
   text-decoration: none;
-  border: none; /* 移除邊框 (與 download-button 一致) */
-  border-radius: 8px; /* 調整圓角 (與 download-button 一致) */
-  font-size: 0.9em; /* 調整字體大小 (與 download-button 一致) */
-  cursor: pointer; /* 添加手形指標 (與 download-button 一致) */
-  transition: background-color 0.3s ease, transform 0.3s ease; /* 加入 transform 過渡 */
-  align-self: flex-start; /* 加回此行，使按鈕寬度自適應內容 */
+  border: none;
+  /* 移除邊框 (與 download-button 一致) */
+  border-radius: 8px;
+  /* 調整圓角 (與 download-button 一致) */
+  font-size: 0.9em;
+  /* 調整字體大小 (與 download-button 一致) */
+  cursor: pointer;
+  /* 添加手形指標 (與 download-button 一致) */
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  /* 加入 transform 過渡 */
+  align-self: flex-start;
+  /* 加回此行，使按鈕寬度自適應內容 */
 }
 
 .portfolio-link:hover {
-  transform: translateY(-2px); /* 懸停時上移 */
-  background-color: var(--clr-tertiary); /* 使用第三點綴綠 */
-  color: var(--clr-button-text); /* 確保懸停時文字顏色仍然可見 */
+  transform: translateY(-2px);
+  /* 懸停時上移 */
+  background-color: var(--clr-tertiary);
+  /* 使用第三點綴綠 */
+  color: var(--clr-button-text);
+  /* 確保懸停時文字顏色仍然可見 */
 }
 
 /* 新增 disabled-link 樣式 */
@@ -149,28 +209,37 @@
   align-items: center;
   gap: 6px;
   padding: 8px 15px;
-  background-color: var(--clr-bg-secondary); /* 使用較暗或不同的背景色表示禁用 */
-  color: var(--clr-paragraph); /* 使用較暗的文字顏色 */
+  background-color: var(--clr-bg-secondary);
+  /* 使用較暗或不同的背景色表示禁用 */
+  color: var(--clr-paragraph);
+  /* 使用較暗的文字顏色 */
   text-decoration: none;
   border: none;
   border-radius: 8px;
   font-size: 0.9em;
-  cursor: default; /* 設置默認鼠標樣式 */
-  opacity: 0.7; /* 降低透明度 */
+  cursor: default;
+  /* 設置默認鼠標樣式 */
+  opacity: 0.7;
+  /* 降低透明度 */
   align-self: flex-start;
   /* 移除 hover 效果 */
 }
 
 /* 響應式設計 */
 @media (max-width: 992px) {
+
   .portfolio-item,
   .portfolio-item:nth-child(even) {
-    flex-direction: column; /* 小螢幕時強制垂直排列 */
+    flex-direction: column;
+    /* 小螢幕時強制垂直排列 */
   }
 
-  .portfolio-media-container { /* 更新選擇器 */
-    min-width: 100%; /* 圖片/影片寬度佔滿 */
-    max-height: 300px; /* 限制圖片/影片高度 */
+  .portfolio-media-container {
+    /* 更新選擇器 */
+    min-width: 100%;
+    /* 圖片/影片寬度佔滿 */
+    max-height: 300px;
+    /* 限制圖片/影片高度 */
   }
 
   .portfolio-content {

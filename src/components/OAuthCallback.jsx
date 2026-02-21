@@ -47,7 +47,7 @@ function OAuthCallback() {
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: 'rgba(255,255,255,0.6)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#06050e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ width: '36px', height: '36px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#7f5af0', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
         <p>正在登入...</p>

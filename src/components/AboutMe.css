@@ -19,17 +19,17 @@
   max-width: 1200px;
   margin: 0 auto;
   text-align: left;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(22, 22, 26, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
   padding: 3rem;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .about-me-container:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(22, 22, 26, 0.75);
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
@@ -38,118 +38,43 @@
   font-size: clamp(2rem, 4vw, 3rem);
   margin-bottom: 3rem;
   font-weight: 700;
-  background: linear-gradient(to right, #ffffff, var(--clr-button));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--clr-headline);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
   position: relative;
   z-index: 1;
 }
 
-.about-me-content {
-  max-width: 800px;
-  margin: 0 auto;
-  font-size: 1.1rem; /* 調整字體大小 */
-  line-height: 1.7; /* 調整行高 */
-  background-color: rgba(22, 22, 26, 0.65); /* 參考 Expertise 的半透明背景，稍調整透明度 */
-  padding: 30px 40px; /* 調整內邊距 */
-  border-radius: 8px; /* 與 Expertise/WorkExperience 統一 */
-  /* box-shadow: 0 0 20px rgba(0, 242, 255, 0.2); */ /* 移除特定陰影 */
-  /* --- 玻璃擬態效果 --- */
-  backdrop-filter: blur(8px); /* 與 Expertise/WorkExperience 統一 */
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.08); /* 與 Expertise/WorkExperience 統一 */
-  position: relative;
-  z-index: 1;
-  /* text-align: left; */ /* 移除 text-align: left，由父容器控制 */
-}
 
 /* 文字內容容器樣式 - 現代化玻璃效果 */
 .about-me-text-content {
   flex: 1.5;
   position: relative;
   z-index: 1;
+  font-size: 1.1rem;
+  line-height: 1.7;
 }
 
 
-.about-me-text-content p { /* 將 p 的樣式移到 text-content 下 */
-    margin-bottom: 15px; /* 段落間距 */
+.about-me-text-content p {
+  /* 將 p 的樣式移到 text-content 下 */
+  margin-bottom: 15px;
+  /* 段落間距 */
 }
 
-.about-me-content p:last-child {
-    margin-bottom: 0; /* 最後一段移除底部間距 */
+.about-me-text-content p:last-child {
+  margin-bottom: 0;
+  /* 最後一段移除底部間距 */
 }
 
-.about-me-text-content strong { /* 將 strong 的樣式移到 text-content 下 */
-    color: var(--clr-tertiary); /* 強調文字使用第三點綴色 */
-    font-weight: 600; /* 稍粗字重 */
+.about-me-text-content strong {
+  /* 將 strong 的樣式移到 text-content 下 */
+  color: var(--clr-tertiary);
+  /* 強調文字使用第三點綴色 */
+  font-weight: 600;
+  /* 稍粗字重 */
 }
 
-/* 圖片容器樣式 - 現代化設計 */
-.about-me-image-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 320px;
-  height: 320px;
-  border-radius: 24px;
-  position: relative;
-  flex-shrink: 0;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-}
 
-.about-me-image-container::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  border-radius: 24px;
-  background: linear-gradient(135deg, var(--clr-button), var(--clr-tertiary), var(--clr-accent));
-  z-index: 1;
-  opacity: 0.6;
-  transition: all 0.4s ease;
-}
-
-.about-me-image-container::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 24px;
-  background: linear-gradient(135deg, transparent 0%, rgba(var(--clr-button-rgb), 0.1) 100%);
-  z-index: 3;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.about-me-image-container:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 60px rgba(var(--clr-button-rgb), 0.4);
-}
-
-.about-me-image-container:hover::before {
-  opacity: 1;
-  filter: blur(10px);
-}
-
-.about-me-image-container:hover::after {
-  opacity: 1;
-}
-
-.about-me-image {
-  position: relative;
-  z-index: 2;
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 22px;
-  object-fit: cover;
-  transition: transform 0.4s ease;
-}
-
-.about-me-image-container:hover .about-me-image {
-  transform: scale(1.05);
-}
 
 
 /* education-info 樣式已移除 */
@@ -157,33 +82,36 @@
 /* 響應式設計調整 */
 @media (max-width: 992px) {
   .about-me-container {
-    flex-direction: column; /* 小螢幕時改為垂直排列 */
+    flex-direction: column;
+    /* 小螢幕時改為垂直排列 */
     gap: 30px;
   }
+
   .about-me-text-content {
-    flex: none; /* 取消 flex 比例 */
-    width: 100%; /* 文字佔滿寬度 */
+    flex: none;
+    /* 取消 flex 比例 */
+    width: 100%;
+    /* 文字佔滿寬度 */
   }
-  .about-me-image-container {
-    flex: none; /* 取消 flex 比例 */
-    width: 250px; /* 調整圖片大小 */
-    height: 250px;
-    margin-top: 20px; /* 與文字間隔 */
-  }
+
+
 }
 
 @media (max-width: 768px) {
   .about-me-section {
-    padding: 40px 20px; /* 調整內距 */
+    padding: 40px 20px;
+    /* 調整內距 */
   }
+
   .about-me-section h2 {
-    font-size: 2.2em; /* 調整標題大小 */
+    font-size: 2.2em;
+    /* 調整標題大小 */
   }
+
   .about-me-text-content {
-    padding: 25px 30px; /* 調整內距 */
+    padding: 25px 30px;
+    /* 調整內距 */
   }
-  .about-me-image-container {
-    width: 200px;
-    height: 200px;
-  }
+
+
 }

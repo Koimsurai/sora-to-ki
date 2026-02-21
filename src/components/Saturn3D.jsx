@@ -16,7 +16,7 @@ function Satellite({ position, speed, size = 0.05, isVisible }) { // Accept isVi
     if (meshRef.current) {
       // Increment angle based on delta time
       angleRef.current += speed * delta;
-      
+
       // 簡單的圓周運動
       meshRef.current.position.x = position[0] * Math.cos(angleRef.current);
       meshRef.current.position.z = position[0] * Math.sin(angleRef.current); // 假設在 xz 平面環繞
@@ -32,8 +32,8 @@ function Satellite({ position, speed, size = 0.05, isVisible }) { // Accept isVi
   );
 }
 
-// Modify SaturnModel to accept the animate and isVisible prop
-function SaturnModel({ animate, isVisible }) {
+// Modify SaturnModel to accept the animate, isVisible and isMobile props
+function SaturnModel({ animate, isVisible, isMobile }) {
   const groupRef = useRef(); // Restore ref
   const ringsRef = useRef(); // Ref for rings mesh
   const scrollRotationY = useRef(0); // Restore scroll rotation logic
@@ -85,7 +85,8 @@ function SaturnModel({ animate, isVisible }) {
       groupRef.current.rotation.y = currentRotationY.current;
 
       // Animate scale
-      const targetScale = animate ? 1 : 0; // Target scale based on prop
+      const baseScale = isMobile ? 0.7 : 1; // Scale down on mobile
+      const targetScale = animate ? baseScale : 0; // Target scale based on prop
       // Interpolate current scale towards target scale
       const oldScale = currentScale.current; // Log old scale for comparison
       currentScale.current = THREE.MathUtils.lerp(currentScale.current, targetScale, 0.08); // Adjust lerp factor for speed
@@ -98,8 +99,8 @@ function SaturnModel({ animate, isVisible }) {
 
   const [planetMap, ringsMap] = useTexture([
     '/textures/saturn_texture.webp', // 星球紋理 (更新為 webp)
-      '/textures/saturn_rings_texture.webp' // 光環紋理 (更新為 webp)
-    ]);
+    '/textures/saturn_rings_texture.webp' // 光環紋理 (更新為 webp)
+  ]);
 
   const planetMaterial = new THREE.MeshStandardMaterial({
     map: planetMap, // 應用星球紋理
@@ -151,8 +152,8 @@ function SaturnModel({ animate, isVisible }) {
   );
 }
 
-// Modify Saturn3D to accept and pass down the animate prop
-function Saturn3D({ animate }) {
+// Modify Saturn3D to accept isMobile
+function Saturn3D({ animate, isMobile }) {
   const { isVisible } = usePageVisibility(); // Use the hook
 
   // Directly return 3D objects for App.jsx's Canvas to render
@@ -163,31 +164,33 @@ function Saturn3D({ animate }) {
       {/* Point light (simulating the sun), reduced intensity */}
       <pointLight position={[4.5, 3.5, 5.5]} intensity={400} castShadow /> {/* Intensity reduced from 800 to 400 */}
       {/* Saturn model - pass the animate and isVisible prop */}
-      <SaturnModel animate={animate} isVisible={isVisible} />
+      <SaturnModel animate={animate} isVisible={isVisible} isMobile={isMobile} />
       {/* Optional shadow plane */}
       {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3, 0]} receiveShadow>
         <planeGeometry args={[20, 20]} />
         <shadowMaterial opacity={0.3} />
       </mesh> */}
       {/* 移除星座群組渲染 */}
-        {/* 移除軌道控制器註解 */}
-        {/* 移除隨機流星渲染註解 */}
-        {/*
+      {/* 移除軌道控制器註解 */}
+      {/* 移除隨機流星渲染註解 */}
+      {/*
       {/* 移除 HTML 和 RandomShootingStars，它們應該在 App.jsx 中處理 */}
 
-      {/* 添加後處理效果 */}
-      <EffectComposer>
-        <Bloom
-          intensity={0.15} // 進一步降低光暈強度
-          luminanceThreshold={0.7} // 提高亮度閾值，使更亮的區域才產生光暈
-          luminanceSmoothing={0.9} // 進一步提高平滑度
-          mipmapBlur
-        />
-        {/* 添加輕微的色差效果模擬透鏡 */}
-        <ChromaticAberration
-          offset={new THREE.Vector2(0.0005, 0.0005)} // 非常小的偏移量，產生微妙效果
-        />
-      </EffectComposer>
+      {/* 添加後處理效果 - 手機版為求效能予以關閉 */}
+      {!isMobile && (
+        <EffectComposer>
+          <Bloom
+            intensity={0.15} // 進一步降低光暈強度
+            luminanceThreshold={0.7} // 提高亮度閾值，使更亮的區域才產生光暈
+            luminanceSmoothing={0.9} // 進一步提高平滑度
+            mipmapBlur
+          />
+          {/* 添加輕微的色差效果模擬透鏡 */}
+          <ChromaticAberration
+            offset={new THREE.Vector2(0.0005, 0.0005)} // 非常小的偏移量，產生微妙效果
+          />
+        </EffectComposer>
+      )}
     </>
   );
 }

@@ -14,7 +14,7 @@
 .grid-background {
   position: absolute;
   inset: 0;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   background-size: 50px 50px;
@@ -69,8 +69,17 @@
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(1.1); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
 }
 
 /* 主要內容區 */
@@ -302,9 +311,19 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -30px) scale(1.1); }
-  66% { transform: translate(-30px, 30px) scale(0.9); }
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-30px, 30px) scale(0.9);
+  }
 }
 
 /* ============================================
@@ -314,9 +333,11 @@
 .hero-section {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
+  /* 均分左右 */
   min-height: calc(100vh - 80px);
-  padding: 40px 50px;
+  padding: 40px 10%;
+  /* 修改為百分比，確保左右對稱 */
   color: var(--clr-headline);
   box-sizing: border-box;
   overflow: hidden;
@@ -327,75 +348,110 @@
 /* 移除 ::before 偽元素 */
 
 .home-hero-content {
-  max-width: 70%; /* 增加最大寬度以容納更長的文本 */
+  max-width: 50%;
   z-index: 2;
-  margin-left: 5%; /* 減少左邊距，讓內容更靠左 */
-  padding-left: 2rem;
+  margin: 0;
+  padding: 0;
 }
 
 .home-hero-content h1 {
   /* 參考 Figma style_1VOWPE */
-  font-family: 'HarmonyOS Sans SC', sans-serif; /* 優先使用指定字體 */
-  font-size: 3em; /* 調整大小 */
-  font-weight: 400; /* 正常字重 */
-  line-height: 1.2; /* 行高 */
-  margin-bottom: 25px; /* 增加標題下方間距 */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
-  white-space: pre-wrap; /* 確保換行符生效 */
+  font-family: 'HarmonyOS Sans SC', sans-serif;
+  /* 優先使用指定字體 */
+  font-size: 3em;
+  /* 調整大小 */
+  font-weight: 400;
+  /* 正常字重 */
+  line-height: 1.2;
+  /* 行高 */
+  margin-bottom: 25px;
+  /* 增加標題下方間距 */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  /* 新增文字陰影 */
+  white-space: pre-wrap;
+  /* 確保換行符生效 */
 }
 
 .home-hero-content .tagline {
   /* 參考履歷 Software Engineer */
-  font-size: 1.8em; /* 稍微增大字號 */
-  font-style: italic; /* 使用斜體 */
+  font-size: 1.8em;
+  /* 稍微增大字號 */
+  font-style: italic;
+  /* 使用斜體 */
   font-weight: bold;
-  color: var(--clr-button); /* 使用按鈕/高亮色 */
-  margin-top: 10px; /* 增加上方間距 */
-  margin-bottom: 30px; /* 增加座右銘下方間距 */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
-  white-space: pre-wrap; /* 確保換行符生效 */
+  color: var(--clr-button);
+  /* 使用按鈕/高亮色 */
+  margin-top: 10px;
+  /* 增加上方間距 */
+  margin-bottom: 30px;
+  /* 增加座右銘下方間距 */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  /* 新增文字陰影 */
+  white-space: pre-wrap;
+  /* 確保換行符生效 */
 }
 
 .home-hero-content .description {
   /* 參考 Figma style_9RS2T9 和履歷 Profile */
   font-family: 'HarmonyOS Sans SC', sans-serif;
-  font-size: 1.1em; /* 調整大小 */
-  line-height: 1.6; /* 行高 */
-  color: var(--clr-paragraph); /* 使用段落色 */
-  max-width: 65ch; /* 限制行長以提高可讀性 (約 65 個字符寬) */
-  margin-bottom: 40px; /* 增加描述下方間距 */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); /* 新增文字陰影 */
+  font-size: 1.1em;
+  /* 調整大小 */
+  line-height: 1.6;
+  /* 行高 */
+  color: var(--clr-paragraph);
+  /* 使用段落色 */
+  max-width: 65ch;
+  /* 限制行長以提高可讀性 (約 65 個字符寬) */
+  margin-bottom: 40px;
+  /* 增加描述下方間距 */
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  /* 新增文字陰影 */
 }
 
 /* Typing effect styles */
 .typing-text::after {
-  content: '|'; /* Blinking cursor */
+  content: '|';
+  /* Blinking cursor */
   display: inline-block;
   margin-left: 2px;
   animation: blink 0.7s infinite;
   opacity: 1;
-  font-weight: bold; /* Make cursor bolder */
+  font-weight: bold;
+  /* Make cursor bolder */
 }
 
 .typing-text.typing-complete::after {
-  content: ''; /* Hide cursor when complete */
+  content: '';
+  /* Hide cursor when complete */
   animation: none;
   opacity: 0;
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Fade-in animation for description and actions */
-.description, .hero-actions {
-  opacity: 0; /* Start hidden */
-  transition: opacity 0.5s ease-in 0.2s; /* Smooth fade-in transition with slight delay */
+.description,
+.hero-actions {
+  opacity: 0;
+  /* Start hidden */
+  transition: opacity 0.5s ease-in 0.2s;
+  /* Smooth fade-in transition with slight delay */
 }
 
-.description.fade-in, .hero-actions.fade-in {
-  opacity: 1; /* Fade in when class is added */
+.description.fade-in,
+.hero-actions.fade-in {
+  opacity: 1;
+  /* Fade in when class is added */
 }
 
 
@@ -403,54 +459,75 @@
 .hero-actions {
   display: flex;
   align-items: center;
-  gap: 30px; /* 連結和按鈕間距 */
-  margin-top: 20px; /* 與上方描述間距 */
+  gap: 30px;
+  /* 連結和按鈕間距 */
+  margin-top: 20px;
+  /* 與上方描述間距 */
 }
 
 .social-links {
   display: flex;
-  gap: 20px; /* 連結間距 */
+  gap: 20px;
+  /* 連結間距 */
 }
 
 .social-links a {
-  color: var(--clr-paragraph); /* 使用段落色 */
+  color: var(--clr-paragraph);
+  /* 使用段落色 */
   text-decoration: none;
-  font-size: 1.5em; /* 放大圖示 */
+  font-size: 1.5em;
+  /* 放大圖示 */
   transition: color 0.3s ease;
 }
 
 .social-links a:hover {
-  color: var(--clr-button); /* 使用按鈕/高亮色 */
-  transform: translateY(-2px); /* 懸停時上移 */
+  color: var(--clr-button);
+  /* 使用按鈕/高亮色 */
+  transform: translateY(-2px);
+  /* 懸停時上移 */
 }
 
 /* CTA 按鈕樣式 (類似 Header 中的下載按鈕) */
 .cta-button {
-  display: inline-block; /* 使 padding 生效 */
-  background-color: var(--clr-button); /* 使用按鈕色 */
-  color: var(--clr-button-text); /* 使用按鈕文字色 */
-  padding: 10px 20px; /* 調整內距 */
+  display: inline-block;
+  /* 使 padding 生效 */
+  background-color: var(--clr-button);
+  /* 使用按鈕色 */
+  color: var(--clr-button-text);
+  /* 使用按鈕文字色 */
+  padding: 10px 20px;
+  /* 調整內距 */
   border-radius: 8px;
   text-decoration: none;
-  font-weight: 500; /* 加粗一點 */
-  position: relative; /* 為了可能的偽元素效果 */
-  overflow: hidden; /* 配合可能的內部動畫 */
-  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease; /* 加入 box-shadow 過渡 */
+  font-weight: 500;
+  /* 加粗一點 */
+  position: relative;
+  /* 為了可能的偽元素效果 */
+  overflow: hidden;
+  /* 配合可能的內部動畫 */
+  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  /* 加入 box-shadow 過渡 */
 }
 
 .cta-button:hover {
-  transform: translateY(-3px); /* 懸停時上移更多 */
-  background-color: var(--clr-tertiary); /* 使用第三點綴綠 */
-  color: var(--clr-button-text); /* 明確指定懸停時的文字顏色 */
+  transform: translateY(-3px);
+  /* 懸停時上移更多 */
+  background-color: var(--clr-tertiary);
+  /* 使用第三點綴綠 */
+  color: var(--clr-button-text);
+  /* 明確指定懸停時的文字顏色 */
   /* 新增：懸停發光效果 */
   box-shadow: 0 0 15px 2px rgba(var(--clr-button-rgb), 0.7);
 }
 
 /* 新增：點擊效果 */
 .cta-button:active {
-  transform: translateY(-1px) scale(0.98); /* 點擊時稍微下壓並縮小 */
-  box-shadow: 0 0 8px 1px rgba(var(--clr-button-rgb), 0.5); /* 點擊時光暈減弱 */
-  background-color: var(--clr-button); /* 可以恢復或使用更深的顏色 */
+  transform: translateY(-1px) scale(0.98);
+  /* 點擊時稍微下壓並縮小 */
+  box-shadow: 0 0 8px 1px rgba(var(--clr-button-rgb), 0.5);
+  /* 點擊時光暈減弱 */
+  background-color: var(--clr-button);
+  /* 可以恢復或使用更深的顏色 */
 }
 
 /* 移除不再需要的動畫定義 */
@@ -458,41 +535,62 @@
 
 
 .hero-image-container {
-  /* max-width: 40%; */ /* 移除 max-width，改用固定尺寸 */
-  width: 300px; /* 設定固定寬度 */
-  height: 300px; /* 設定固定高度 */
-  border-radius: 50%; /* 使容器本身變圓 */
-  /* overflow: hidden; */ /* 移除 overflow: hidden 以顯示偽元素邊框 */
-  display: flex; /* 保持 flex 以便內部對齊 (雖然現在只有 img) */
+  /* max-width: 40%; */
+  /* 移除 max-width，改用固定尺寸 */
+  width: 300px;
+  /* 設定固定寬度 */
+  height: 300px;
+  /* 設定固定高度 */
+  border-radius: 50%;
+  /* 使容器本身變圓 */
+  /* overflow: hidden; */
+  /* 移除 overflow: hidden 以顯示偽元素邊框 */
+  display: flex;
+  /* 保持 flex 以便內部對齊 (雖然現在只有 img) */
   justify-content: center;
   align-items: center;
   z-index: 2;
-  flex-shrink: 0; /* 防止容器在 flex 佈局中縮小 */
-  position: relative; /* 為了定位偽元素 */
+  flex-shrink: 0;
+  /* 防止容器在 flex 佈局中縮小 */
+  position: relative;
+  /* 為了定位偽元素 */
   /* 移除舊的 box-shadow */
   /* box-shadow: 0 0 15px 3px rgba(var(--clr-button-rgb), 0.6); */
-  transition: transform 0.3s ease; /* 添加 transform 過渡 */
+  transition: transform 0.3s ease;
+  /* 添加 transform 過渡 */
 }
 
 /* 新增：漸層邊框偽元素 */
 .hero-image-container::before {
   content: '';
   position: absolute;
-  inset: -4px; /* 邊框寬度 */
-  border-radius: 50%; /* 保持圓形 */
-  background: linear-gradient(45deg, var(--clr-button), var(--clr-tertiary), var(--clr-accent)); /* 使用主題顏色創建漸層 */
-  /* background-size: 200% 200%; */ /* 移除 background-size */
-  z-index: 1; /* 調整 z-index，使其在容器之上但在圖片之下 */
-  transition: filter 0.5s ease, opacity 0.5s ease; /* 恢復 transition */
-  filter: blur(3px); /* 恢復並稍微增加初始模糊 */
-  opacity: 0.9; /* 稍微提高初始透明度 */
+  inset: -4px;
+  /* 邊框寬度 */
+  border-radius: 50%;
+  /* 保持圓形 */
+  background: linear-gradient(45deg, var(--clr-button), var(--clr-tertiary), var(--clr-accent));
+  /* 使用主題顏色創建漸層 */
+  /* background-size: 200% 200%; */
+  /* 移除 background-size */
+  z-index: 1;
+  /* 調整 z-index，使其在容器之上但在圖片之下 */
+  transition: filter 0.5s ease, opacity 0.5s ease;
+  /* 恢復 transition */
+  filter: blur(3px);
+  /* 恢復並稍微增加初始模糊 */
+  opacity: 0.9;
+  /* 稍微提高初始透明度 */
   /* 新增：外發光效果 (極度增強) */
-  box-shadow: 0 0 25px 8px rgba(var(--clr-button-rgb), 0.75); /* 大幅加大基礎光暈 */
+  box-shadow: 0 0 25px 8px rgba(var(--clr-button-rgb), 0.75);
+  /* 大幅加大基礎光暈 */
   /* 新增：持續脈衝光暈動畫 和 背景旋轉動畫 */
   animation:
-    pulse-glow 2.8s infinite alternate ease-in-out, /* 調整脈衝速度 */
-    rotate-gradient 12s linear infinite; /* 調整背景旋轉速度 */
-  background-size: 300% 300%; /* 增加背景尺寸以獲得更平滑的漸變 */
+    pulse-glow 2.8s infinite alternate ease-in-out,
+    /* 調整脈衝速度 */
+    rotate-gradient 12s linear infinite;
+  /* 調整背景旋轉速度 */
+  background-size: 300% 300%;
+  /* 增加背景尺寸以獲得更平滑的漸變 */
 }
 
 /* 定義脈衝光暈動畫 (色彩呼吸 + 模擬尾跡) */
@@ -503,15 +601,20 @@
     filter: blur(5px);
     opacity: 0.9;
   }
+
   50% {
     /* 模擬輕微向左上拖尾，顏色變換 */
-    box-shadow: -2px -2px 45px 18px rgba(var(--clr-tertiary-rgb), 0.85); /* 增強並變色 */
-    filter: blur(8px); /* 增加模糊 */
+    box-shadow: -2px -2px 45px 18px rgba(var(--clr-tertiary-rgb), 0.85);
+    /* 增強並變色 */
+    filter: blur(8px);
+    /* 增加模糊 */
     opacity: 1;
   }
+
   100% {
     /* 回到初始狀態附近，顏色再次變換 */
-    box-shadow: 1px 1px 20px 6px rgba(var(--clr-accent-rgb), 0.7); /* 變回收斂的強調色 */
+    box-shadow: 1px 1px 20px 6px rgba(var(--clr-accent-rgb), 0.7);
+    /* 變回收斂的強調色 */
     filter: blur(4px);
     opacity: 0.95;
   }
@@ -519,13 +622,24 @@
 
 /* 新增：定義背景旋轉動畫 */
 @keyframes rotate-gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-} /* 修正：移除多餘的括號 */
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 修正：移除多餘的括號 */
 
 
-.hero-image-container:hover { /* 懸停時容器稍微放大 */
+.hero-image-container:hover {
+  /* 懸停時容器稍微放大 */
   transform: scale(1.03);
   /* 移除舊的 box-shadow 增強效果 */
   /* box-shadow: 0 0 25px 5px rgba(var(--clr-button-rgb), 0.8); */
@@ -533,52 +647,107 @@
 
 /* 懸停時偽元素效果 - 熾熱的靜態光暈 */
 .hero-image-container:hover::before {
-  filter: blur(12px); /* 懸停時更模糊 */
-  opacity: 1; /* 懸停時完全不透明 */
+  filter: blur(12px);
+  /* 懸停時更模糊 */
+  opacity: 1;
+  /* 懸停時完全不透明 */
   /* 變為熾熱的黃白色光暈 */
-  box-shadow: 0 0 70px 25px rgba(255, 255, 220, 0.95); /* 熾熱的淺黃色 */
+  box-shadow: 0 0 70px 25px rgba(255, 255, 220, 0.95);
+  /* 熾熱的淺黃色 */
   /* 懸停時移除所有動畫，顯示最強的靜態效果 */
   animation: none;
 }
 
 
-.hero-image { /* 新增 img 的樣式 */
-  position: relative; /* 確保 z-index 生效 */
-  z-index: 2; /* 確保圖片在邊框之上 */
-  display: block; /* 移除圖片底部可能的空隙 */
+.hero-image {
+  /* 新增 img 的樣式 */
+  position: relative;
+  /* 確保 z-index 生效 */
+  z-index: 2;
+  /* 確保圖片在邊框之上 */
+  display: block;
+  /* 移除圖片底部可能的空隙 */
   width: 100%;
   height: 100%;
-  border-radius: 50%; /* 將圖片本身也裁切成圓形 */
-  object-fit: cover; /* 保持圖片比例，填滿容器 */
-  transform: scale(1.2); /* 將圖片放大 20% */
-  transform: scale(1.2); /* 將圖片放大 20% */
+  border-radius: 50%;
+  /* 將圖片本身也裁切成圓形 */
+  object-fit: cover;
+  /* 保持圖片比例，填滿容器 */
+  transform: scale(1.2);
+  /* 將圖片放大 20% */
+  transform: scale(1.2);
+  /* 將圖片放大 20% */
 }
 
 /* 可選：加入背景文字樣式 */
 .background-text {
-  position: absolute; /* 絕對定位 */
-  bottom: 15%; /* 向上移動浮水印 (原為 10%) */
-  left: 50%; /* 水平居中 */
-  transform: translateX(-50%); /* 精確水平居中 */
-  font-family: 'Inter', sans-serif; /* 使用較粗的字體 */
-  font-weight: 900; /* 最粗字重 */
-  font-size: 18vw; /* 根據視窗寬度調整大小 */
-  color: rgba(1, 1, 1, 0.08); /* 使用描邊色的 RGBA */
-  z-index: 1; /* 調整 z-index，因為背景層移到 App.jsx */
-  text-transform: uppercase; /* 大寫 */
-  white-space: nowrap; /* 防止換行 */
-  user-select: none; /* 防止選取 */
-  pointer-events: none; /* 防止干擾滑鼠事件 */
+  position: absolute;
+  /* 絕對定位 */
+  bottom: 15%;
+  /* 向上移動浮水印 (原為 10%) */
+  left: 50%;
+  /* 水平居中 */
+  transform: translateX(-50%);
+  /* 精確水平居中 */
+  font-family: 'Inter', sans-serif;
+  /* 使用較粗的字體 */
+  font-weight: 900;
+  /* 最粗字重 */
+  font-size: 18vw;
+  /* 根據視窗寬度調整大小 */
+  color: rgba(1, 1, 1, 0.08);
+  /* 使用描邊色的 RGBA */
+  z-index: 1;
+  /* 調整 z-index，因為背景層移到 App.jsx */
+  text-transform: uppercase;
+  /* 大寫 */
+  white-space: nowrap;
+  /* 防止換行 */
+  user-select: none;
+  /* 防止選取 */
+  pointer-events: none;
+  /* 防止干擾滑鼠事件 */
+}
+
+/* 新增：Hero Avatar 頭像樣式 */
+.hero-avatar-wrapper {
+  z-index: 2;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s;
+}
+
+.hero-avatar-wrapper:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 50px rgba(var(--clr-button-rgb), 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.hero-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* 新增：裝飾元素樣式 */
 .hero-decoration {
   position: absolute;
-  border-radius: 50%; /* 可以是圓形或其他形狀 */
-  z-index: 1; /* 調整 z-index */
-  opacity: 0.08; /* 稍微降低透明度 */
-  pointer-events: none; /* 防止干擾滑鼠事件 */
-  animation: pulse 10s infinite alternate ease-in-out; /* 添加脈衝動畫 */
+  border-radius: 50%;
+  /* 可以是圓形或其他形狀 */
+  z-index: 1;
+  /* 調整 z-index */
+  opacity: 0.08;
+  /* 稍微降低透明度 */
+  pointer-events: none;
+  /* 防止干擾滑鼠事件 */
+  animation: pulse 10s infinite alternate ease-in-out;
+  /* 添加脈衝動畫 */
 }
 
 /* 定義脈衝動畫 */
@@ -587,6 +756,7 @@
     transform: scale(0.95);
     opacity: 0.06;
   }
+
   100% {
     transform: scale(1.05);
     opacity: 0.1;
@@ -594,23 +764,29 @@
 }
 
 .hero-decoration-1 {
-  animation-delay: 0s; /* 錯開動畫開始時間 */
+  animation-delay: 0s;
+  /* 錯開動畫開始時間 */
   width: 400px;
   height: 400px;
-  background-color: var(--clr-button); /* 使用按鈕/高亮色 */
+  background-color: var(--clr-button);
+  /* 使用按鈕/高亮色 */
   top: 10%;
   right: 5%;
-  transform: translate(20%, -20%); /* 調整位置 */
+  transform: translate(20%, -20%);
+  /* 調整位置 */
 }
 
 .hero-decoration-2 {
-  animation-delay: -5s; /* 錯開動畫開始時間 */
+  animation-delay: -5s;
+  /* 錯開動畫開始時間 */
   width: 250px;
   height: 250px;
-  background-color: var(--clr-tertiary); /* 使用第三點綴綠 */
+  background-color: var(--clr-tertiary);
+  /* 使用第三點綴綠 */
   bottom: 15%;
   right: 25%;
-  /* transform: translate(10%, 10%); */ /* 移除靜態 transform，讓動畫控制 */
+  /* transform: translate(10%, 10%); */
+  /* 移除靜態 transform，讓動畫控制 */
 }
 
 /* 移除粒子背景樣式 */
@@ -619,16 +795,21 @@
 /* 響應式設計：小螢幕調整 */
 @media (max-width: 768px) {
   .hero-section {
-    flex-direction: column; /* 垂直排列 */
-    text-align: center; /* 文字居中 */
+    flex-direction: column;
+    /* 垂直排列 */
+    text-align: center;
+    /* 文字居中 */
     padding: 30px 20px;
-    min-height: auto; /* 取消最小高度限制 */
+    min-height: auto;
+    /* 取消最小高度限制 */
   }
 
   .home-hero-content {
     max-width: 90%;
-    margin-left: 0; /* 在小屏幕上移除左邊距 */
-    padding-left: 0; /* 在小屏幕上移除內邊距 */
+    margin-left: 0;
+    /* 在小屏幕上移除左邊距 */
+    padding-left: 0;
+    /* 在小屏幕上移除內邊距 */
   }
 
   .hero-image-container {
@@ -641,22 +822,34 @@
   }
 
   .home-hero-content .description {
-     font-size: 1em;
+    font-size: 1em;
   }
 
-  .hero-image-container { /* 更新容器在小螢幕的尺寸 */
+  .hero-avatar-wrapper {
     width: 200px;
     height: 200px;
-    /* max-width: 90%; */ /* 繼承自上方，但固定尺寸優先 */
+    margin-top: 2rem;
   }
 
-  .background-text { /* 調整小螢幕下的背景文字 */
-    font-size: 22vw; /* 可以稍微大一點 */
-    bottom: 5%; /* 調整垂直位置 */
+  .hero-image-container {
+    /* 更新容器在小螢幕的尺寸 */
+    width: 200px;
+    height: 200px;
+    /* max-width: 90%; */
+    /* 繼承自上方，但固定尺寸優先 */
+  }
+
+  .background-text {
+    /* 調整小螢幕下的背景文字 */
+    font-size: 22vw;
+    /* 可以稍微大一點 */
+    bottom: 5%;
+    /* 調整垂直位置 */
   }
 
   /* 隱藏或調整小螢幕下的裝飾元素 */
   .hero-decoration {
-    display: none; /* 預設在小螢幕隱藏 */
+    display: none;
+    /* 預設在小螢幕隱藏 */
   }
 }

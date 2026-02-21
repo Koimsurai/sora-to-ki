@@ -6,7 +6,7 @@ import { Parallax } from 'react-scroll-parallax'; // 引入 Parallax
 import { FaGithub, FaLinkedin, FaInstagram, FaFacebook, FaBriefcase } from 'react-icons/fa';
 import SEOHead from './SEOHead';
 import './Hero.css';
-// import mainImage from '../assets/Main.webp'; // 移除圖片導入
+import meImage from '../assets/me.jpg'; // 導入頭像圖片
 
 // Helper function for typing effect
 const useTypingEffect = (text, speed = 100, startDelay = 0) => {
@@ -121,10 +121,17 @@ function Hero() {
           <a href="#contact" className="cta-button">聯絡我</a>
         </div>
       </div> {/* Close home-hero-content div */}
-      {/* 移除圖片容器 */}
-      {/* 新增：裝飾性元素 */}
-      <div className="hero-decoration hero-decoration-1"></div>
-      <div className="hero-decoration hero-decoration-2"></div>
+
+      {/* 新增頭像區塊 */}
+      <div className="hero-avatar-wrapper">
+        <img
+          src={meImage}
+          alt="Koimsurai Avatar"
+          className="hero-avatar"
+          draggable="false"
+        />
+      </div>
+
       {/* Figma 中還有一個巨大的背景文字 "Sergio"，可以考慮加入 */}
       <div className="background-text">Koimsurai</div> {/* 加入背景文字 */}
     </section> // 結束 section

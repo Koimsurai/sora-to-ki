@@ -16,6 +16,7 @@ import Comments from './Comments';
 import SEOHead from './SEOHead';
 import { BlogImage } from './ImageLightbox';
 import './BlogPost.css';
+import SignatureSVG from './SignatureSVG';
 
 /* ── helpers ── */
 const slugify = (text) =>
@@ -274,9 +275,9 @@ const CustomParagraph = ({ children, node, ...props }) => {
       const u = new URL(href);
       const host = u.hostname.replace('www.', '');
       return host.includes('youtube.com') || host.includes('youtu.be') ||
-             host.includes('bilibili.com') || host.includes('b23.tv') ||
-             host.includes('spotify.com') ||
-             host.includes('koimsurai.com');
+        host.includes('bilibili.com') || host.includes('b23.tv') ||
+        host.includes('spotify.com') ||
+        host.includes('koimsurai.com');
     } catch { return false; }
   };
 
@@ -1005,6 +1006,7 @@ function BlogPost() {
                   {post.content}
                 </ReactMarkdown>
               </article>
+              <SignatureSVG className="blog-signature" />
             </div>
 
             {/* ── Comments ── */}

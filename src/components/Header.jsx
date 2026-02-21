@@ -13,12 +13,14 @@ import './Header.css';
 function Header({ activeSection }) {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showHomeMenu, setShowHomeMenu] = useState(false); // 新增這行
   const [showBlogMenu, setShowBlogMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [navHidden, setNavHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const lastScrollYRef = useRef(0);
+  const homeMenuRef = useRef(null); // 新增這行
   const moreMenuRef = useRef(null);
   const blogMenuRef = useRef(null);
   const userMenuRef = useRef(null);
@@ -59,13 +61,14 @@ function Header({ activeSection }) {
 
   useEffect(() => {
     const handler = (e) => {
+      if (homeMenuRef.current && !homeMenuRef.current.contains(e.target)) setShowHomeMenu(false);
       if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) setShowMoreMenu(false);
       if (blogMenuRef.current && !blogMenuRef.current.contains(e.target)) setShowBlogMenu(false);
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false);
     };
-    if (showMoreMenu || showBlogMenu || showUserMenu) document.addEventListener('mousedown', handler);
+    if (showHomeMenu || showMoreMenu || showBlogMenu || showUserMenu) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, [showMoreMenu, showBlogMenu, showUserMenu]);
+  }, [showHomeMenu, showMoreMenu, showBlogMenu, showUserMenu]);
 
   const handleNavClick = (e, sectionId) => {
     e.preventDefault();
@@ -129,23 +132,47 @@ function Header({ activeSection }) {
   };
 
   return (
-    <header className={'site-header ' + (isScrolled ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '') + (isPhotoPage ? 'hidden' : '')}>
+    <header className={'site-header ' + (isScrolled && !mobileOpen ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '') + (isPhotoPage ? 'hidden' : '')}>
       <Link to="/" className="site-logo" onClick={() => setMobileOpen(false)}>
         <span className="logo-icon">✦</span>
         <span className="logo-text">Koimsurai</span>
       </Link>
 
-      <button className={'mobile-toggle ' + (mobileOpen ? 'open' : '')} onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle navigation">
-        <span /><span /><span />
-      </button>
-
       <nav className={'site-nav ' + (mobileOpen ? 'mobile-open' : '')}>
         <LayoutGroup>
           <ul className="nav-list" onMouseMove={handleMouseMove}>
-            <NavLink sectionId="home" icon={FaHome} text="首頁" />
-            <NavLink sectionId="about-me" icon={FaUser} text="關於" />
-            <NavLink sectionId="expertise" icon={FaCode} text="技能" />
-            <NavLink sectionId="portfolio" icon={FaImages} text="作品" />
+            {/* 將 原本的 首頁/關於/技能/作品 改為下拉式選單 */}
+            <li className="dropdown-wrap" ref={homeMenuRef}>
+              <button
+                className={'nav-link dropdown-trigger ' + (isHomePage && !location.hash ? 'active' : '')}
+                onClick={() => setShowHomeMenu(!showHomeMenu)}
+              >
+                <FaHome className="nav-icon" />
+                <span className="nav-label-text">首頁</span>
+                <FaChevronDown className={'chevron ' + (showHomeMenu ? 'rotated' : '')} />
+              </button>
+              <AnimatePresence>
+                {showHomeMenu && (
+                  <motion.div className="dropdown-menu" initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
+                    <a href="#home" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'home'); setShowHomeMenu(false); }}>
+                      <FaHome className="dd-icon" /><div><span className="dd-title">首頁</span><span className="dd-desc">回到頂部</span></div>
+                    </a>
+                    <a href="#about-me" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'about-me'); setShowHomeMenu(false); }}>
+                      <FaUser className="dd-icon" /><div><span className="dd-title">關於</span><span className="dd-desc">了解我的背景</span></div>
+                    </a>
+                    <a href="#expertise" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'expertise'); setShowHomeMenu(false); }}>
+                      <FaCode className="dd-icon" /><div><span className="dd-title">技能</span><span className="dd-desc">我的技術堆疊</span></div>
+                    </a>
+                    <a href="#portfolio" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'portfolio'); setShowHomeMenu(false); }}>
+                      <FaImages className="dd-icon" /><div><span className="dd-title">作品</span><span className="dd-desc">過去的專案</span></div>
+                    </a>
+                    <a href="#contact" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'contact'); setShowHomeMenu(false); }}>
+                      <FaEnvelope className="dd-icon" /><div><span className="dd-title">聯絡</span><span className="dd-desc">與我聯繫</span></div>
+                    </a>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </li>
 
             <li className="dropdown-wrap" ref={blogMenuRef}>
               <button
@@ -206,8 +233,6 @@ function Header({ activeSection }) {
                 )}
               </AnimatePresence>
             </li>
-
-            <NavLink sectionId="contact" icon={FaEnvelope} text="聯絡" />
           </ul>
         </LayoutGroup>
       </nav>
@@ -219,66 +244,72 @@ function Header({ activeSection }) {
       </button>
       */}
 
-      {/* User Avatar / Login */}
-      <div className="user-area" ref={userMenuRef}>
-        <button className="user-avatar-btn" onClick={() => setShowUserMenu(!showUserMenu)}>
-          {isLoggedIn && user?.avatar ? (
-            <img src={user.avatar} alt={user.displayName} className="user-avatar-img" referrerPolicy="no-referrer" />
-          ) : (
-            <FaUser className="user-avatar-icon" />
-          )}
+      <div className="header-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* User Avatar / Login */}
+        <div className="user-area" ref={userMenuRef}>
+          <button className="user-avatar-btn" onClick={() => setShowUserMenu(!showUserMenu)}>
+            {isLoggedIn && user?.avatar ? (
+              <img src={user.avatar} alt={user.displayName} className="user-avatar-img" referrerPolicy="no-referrer" />
+            ) : (
+              <FaUser className="user-avatar-icon" />
+            )}
+          </button>
+          <AnimatePresence>
+            {showUserMenu && (
+              <motion.div className="user-dropdown" initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }} transition={{ duration: 0.2 }}>
+                {isLoggedIn ? (
+                  <>
+                    <div className="user-dropdown-header">
+                      <span className="user-dropdown-name">{user.displayName}</span>
+                      <span className="user-dropdown-provider">@{user.displayName}</span>
+                    </div>
+                    <div className="user-dropdown-divider" />
+                    {isAdmin && (
+                      <button className="user-dropdown-item" onClick={() => { navigate('/admin'); setShowUserMenu(false); }}>
+                        <FaCog /> 進入後台
+                      </button>
+                    )}
+                    <button className="user-dropdown-item" onClick={() => { logout(); setShowUserMenu(false); }}>
+                      <FaSignOutAlt /> 登出
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="user-dropdown-header">
+                      <span className="user-dropdown-name">社交帳號登入</span>
+                    </div>
+                    <div className="user-dropdown-divider" />
+                    {providers.github?.enabled && (
+                      <button className="user-dropdown-item" onClick={() => {
+                        sessionStorage.setItem('oauth_return_to', location.pathname);
+                        const redirectUri = `${window.location.origin}/auth/callback`;
+                        window.location.href = getGitHubAuthUrl(redirectUri) + '&state=github';
+                      }}>
+                        <FaGithub /> GitHub 登入
+                      </button>
+                    )}
+                    {providers.google?.enabled && (
+                      <button className="user-dropdown-item" onClick={() => {
+                        sessionStorage.setItem('oauth_return_to', location.pathname);
+                        const redirectUri = `${window.location.origin}/auth/callback`;
+                        window.location.href = getGoogleAuthUrl(redirectUri) + '&state=google';
+                      }}>
+                        <FaGoogle /> Google 登入
+                      </button>
+                    )}
+                    {!providers.github?.enabled && !providers.google?.enabled && (
+                      <div className="user-dropdown-item disabled">第三方登入尚未設定</div>
+                    )}
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <button className={'mobile-toggle ' + (mobileOpen ? 'open' : '')} onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle navigation">
+          <span /><span /><span />
         </button>
-        <AnimatePresence>
-          {showUserMenu && (
-            <motion.div className="user-dropdown" initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }} transition={{ duration: 0.2 }}>
-              {isLoggedIn ? (
-                <>
-                  <div className="user-dropdown-header">
-                    <span className="user-dropdown-name">{user.displayName}</span>
-                    <span className="user-dropdown-provider">@{user.displayName}</span>
-                  </div>
-                  <div className="user-dropdown-divider" />
-                  {isAdmin && (
-                    <button className="user-dropdown-item" onClick={() => { navigate('/admin'); setShowUserMenu(false); }}>
-                      <FaCog /> 進入後台
-                    </button>
-                  )}
-                  <button className="user-dropdown-item" onClick={() => { logout(); setShowUserMenu(false); }}>
-                    <FaSignOutAlt /> 登出
-                  </button>
-                </>
-              ) : (
-                <>
-                  <div className="user-dropdown-header">
-                    <span className="user-dropdown-name">社交帳號登入</span>
-                  </div>
-                  <div className="user-dropdown-divider" />
-                  {providers.github?.enabled && (
-                    <button className="user-dropdown-item" onClick={() => {
-                      sessionStorage.setItem('oauth_return_to', location.pathname);
-                      const redirectUri = `${window.location.origin}/auth/callback`;
-                      window.location.href = getGitHubAuthUrl(redirectUri) + '&state=github';
-                    }}>
-                      <FaGithub /> GitHub 登入
-                    </button>
-                  )}
-                  {providers.google?.enabled && (
-                    <button className="user-dropdown-item" onClick={() => {
-                      sessionStorage.setItem('oauth_return_to', location.pathname);
-                      const redirectUri = `${window.location.origin}/auth/callback`;
-                      window.location.href = getGoogleAuthUrl(redirectUri) + '&state=google';
-                    }}>
-                      <FaGoogle /> Google 登入
-                    </button>
-                  )}
-                  {!providers.github?.enabled && !providers.google?.enabled && (
-                    <div className="user-dropdown-item disabled">第三方登入尚未設定</div>
-                  )}
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       <AnimatePresence>
@@ -298,7 +329,7 @@ function Header({ activeSection }) {
           </>
         )}
       </AnimatePresence>
-    </header>
+    </header >
   );
 }
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import './AboutMe.css';
-import mainImage from '../assets/me.jpg'; // 導入新圖片
 
 const AboutMe = () => {
   return (
@@ -22,18 +21,8 @@ const AboutMe = () => {
             我曾在<strong>猿創力程式設計學校</strong>擔任程式教師，教導3~9年級學生Python(pygame)、MCE(Minecraft教育版)、Scratch、AI2等課程，這段經歷讓我在溝通與表達能力上獲得顯著提升。在<strong>高偉數學補習班</strong>擔任資訊助理及企劃人員期間，負責App開發(Kotlin)及宣傳影片剪輯、封面製作等工作，邊做邊學，建立了完整的 App 開發流程基礎與專案管理概念。
           </p>
           <p>
-            我熟悉使用 <strong>Figma</strong> 進行 UI/UX 設計，並習慣利用 <strong>Notion</strong> 進行專案管理與知識整理。樂於學習，在網路世界中保持一顆上進心，期許未來能夠接觸不同類型產品、使用者，發揮專長與經驗，幫公司解決問題，提供符合用戶需求的網路服務。
+            我熟悉使用 <strong>Figma</strong> 進行 UI/UX 設計，並習慣利用 <strong>GitHub</strong> 進行專案管理並用 <strong>Notion</strong> 進行知識整理。樂於學習，在網路世界中保持一顆上進心，期許未來能夠接觸不同類型產品、使用者，發揮專長與經驗，幫公司解決問題，提供符合用戶需求的網路服務。
           </p>
-        </div>
-        {/* 新增圖片容器 */}
-        <div className="about-me-image-container">
-          <img 
-            src={mainImage} 
-            alt="楊泰和" 
-            className="about-me-image"
-            loading="lazy"
-            decoding="async"
-          />
         </div>
       </div>
     </section>

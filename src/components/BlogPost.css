@@ -264,6 +264,7 @@
     height: 0;
     top: 50%;
   }
+
   to {
     opacity: 1;
     height: 70%;
@@ -287,8 +288,15 @@
 }
 
 @keyframes tooltip-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .category-tooltip-short {
@@ -492,6 +500,7 @@
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -865,7 +874,8 @@
 .link-card-with-text {
   margin: 0.5rem 0;
 }
-.link-card-with-text > p {
+
+.link-card-with-text>p {
   margin-bottom: 0.4rem;
   font-size: 0.95rem;
   color: var(--post-text);
@@ -993,7 +1003,8 @@
 .link-card-embed-wrapper {
   position: relative;
   width: 100%;
-  padding-top: 56.25%; /* 16:9 */
+  padding-top: 56.25%;
+  /* 16:9 */
   overflow: hidden;
 }
 
@@ -1468,4 +1479,22 @@
 .toc-bottom-link:hover {
   background: transparent !important;
   color: var(--post-accent);
+}
+
+/* ═══════════════════════
+   Custom Signature Embed
+   ═══════════════════════ */
+.blog-signature {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  opacity: 0.85;
+  width: 100%;
+  margin-left: auto;
+}
+
+.blog-signature svg {
+  width: 9rem;
+  max-width: 100%;
 }

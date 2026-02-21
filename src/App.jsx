@@ -7,7 +7,8 @@ import Saturn3D from './components/Saturn3D';
 import IntroAnimation from './components/IntroAnimation';
 import Header from './components/Header';
 import Hero from './components/Hero';
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'; // Import useLocation
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { useMediaQuery } from 'usehooks-ts'; // 導入 useMediaQuery
 import CursorTrail from './components/CursorTrail';
 import ScrollToTop from './components/ScrollToTop'; // <--- 導入 ScrollToTop 元件
 import { PageVisibilityProvider } from './contexts/PageVisibilityContext';
@@ -144,7 +145,7 @@ function MainPage({ onSectionChange }) { // Accept callback prop
 }
 
 // --- 用於星空背景的內部元件 ---
-function StarfieldScene({ mainStarsRef }) {
+function StarfieldScene({ mainStarsRef, isMobile }) {
   const galaxyRef = useRef();
   const scrollSpeedMultiplier = useRef(1);
   const scrollTimeoutRef = useRef(null);
@@ -190,7 +191,7 @@ function StarfieldScene({ mainStarsRef }) {
           ref={mainStarsRef}
           radius={100}
           depth={50}
-          count={10000}
+          count={isMobile ? 3000 : 10000}
           factor={3.5}
           saturation={0.1}
           fade
@@ -200,7 +201,7 @@ function StarfieldScene({ mainStarsRef }) {
           ref={galaxyRef}
           radius={90}
           depth={20}
-          count={8000}
+          count={isMobile ? 2000 : 8000}
           factor={5}
           saturation={0.2}
           fade
@@ -336,6 +337,7 @@ function Layout({ activeSection, onSectionChange }) {
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const isMobile = useMediaQuery('(max-width: 768px)'); // 偵測是否為手機版
   const introCompleted = sessionStorage.getItem('introCompleted') === 'true';
   const [animateSaturn, setAnimateSaturn] = useState(introCompleted);
   const [showMainHtmlContent, setShowMainHtmlContent] = useState(introCompleted);
@@ -404,48 +406,48 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-      <ScrollToTop />
-      <LocationTracker onPathChange={handlePathChange} />
-      <ParallaxProvider>
-        <PageVisibilityProvider isVisible={isPageVisible}>
-          <div className="App">
-            {introVisible && (
-              <IntroAnimation
-                onAnimationComplete={handleAnimationComplete}
-                onExplosionStart={handleExplosionStart}
-              />
-            )}
-            <Canvas
-              camera={{ position: [0, 0, 5] }}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                zIndex: saturnZIndex,
-                pointerEvents: 'none'
-              }}
-            >
-              <Suspense fallback={null}>
-                <StarfieldScene mainStarsRef={sharedRotationRef} />
-                {isOnHomePage && <SpaceDebris count={300} />}
-                {isOnHomePage && <Saturn3D animate={animateSaturn} />}
-                <TwinklingStars rotationRef={sharedRotationRef} count={800} />
-              </Suspense>
-            </Canvas>
-            {isOnHomePage && <ForegroundStars count={15} />}
-            {isOnHomePage && <RandomShootingStars />}
-            {isOnHomePage && <RandomComets />}
-            {isOnHomePage && <RandomUFOs />}
-            {showMainHtmlContent && (
-              <Layout activeSection={activeSection} onSectionChange={handleSectionChange} />
-            )}
-            <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }} />
-            <BackToTopButton isHomePage={isOnHomePage} />
-          </div>
-        </PageVisibilityProvider>
-      </ParallaxProvider>
+        <ScrollToTop />
+        <LocationTracker onPathChange={handlePathChange} />
+        <ParallaxProvider>
+          <PageVisibilityProvider isVisible={isPageVisible}>
+            <div className="App">
+              {introVisible && (
+                <IntroAnimation
+                  onAnimationComplete={handleAnimationComplete}
+                  onExplosionStart={handleExplosionStart}
+                />
+              )}
+              <Canvas
+                camera={{ position: [0, 0, 5] }}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  zIndex: saturnZIndex,
+                  pointerEvents: 'none'
+                }}
+              >
+                <Suspense fallback={null}>
+                  <StarfieldScene mainStarsRef={sharedRotationRef} isMobile={isMobile} />
+                  {isOnHomePage && <SpaceDebris count={isMobile ? 50 : 300} />}
+                  {isOnHomePage && <Saturn3D animate={animateSaturn} isMobile={isMobile} />}
+                  <TwinklingStars rotationRef={sharedRotationRef} count={isMobile ? 200 : 800} />
+                </Suspense>
+              </Canvas>
+              {isOnHomePage && <ForegroundStars count={isMobile ? 5 : 15} />}
+              {isOnHomePage && !isMobile && <RandomShootingStars />}
+              {isOnHomePage && !isMobile && <RandomComets />}
+              {isOnHomePage && <RandomUFOs />}
+              {showMainHtmlContent && (
+                <Layout activeSection={activeSection} onSectionChange={handleSectionChange} />
+              )}
+              <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }} />
+              <BackToTopButton isHomePage={isOnHomePage} />
+            </div>
+          </PageVisibilityProvider>
+        </ParallaxProvider>
       </AuthProvider>
     </BrowserRouter>
   );
