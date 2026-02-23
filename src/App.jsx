@@ -326,7 +326,7 @@ function Layout({ activeSection, onSectionChange }) {
           </Route>
         </Routes>
       </main>
-      {!isAdminPage && (
+      {!isAdminPage && !isPhotoPage && (
         <Suspense fallback={<LoadingFallback />}>
           <LazyFooter style={{ zIndex: 20 }} />
         </Suspense>

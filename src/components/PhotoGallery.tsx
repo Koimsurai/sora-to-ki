@@ -1,6 +1,5 @@
 import { useMemo, useCallback, useState, memo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { Masonry } from 'masonic';
 import { Blurhash } from 'react-blurhash';
 import { useInView } from 'react-intersection-observer';
@@ -10,11 +9,10 @@ import PhotoViewer from './PhotoViewer.tsx';
 import { loadPhotosManifest } from '../utils/manifestLoader';
 import './PhotoGallery.css';
 import type { PhotoManifest, MasonryItemType } from '../types/photo';
-import { MasonryHeaderItem } from '../types/photo';
 
 // 照片項目組件
-const PhotoItem = memo(({ data, width, onPhotoClick }: { 
-  data: PhotoManifest; 
+const PhotoItem = memo(({ data, width, onPhotoClick }: {
+  data: PhotoManifest;
   width: number;
   onPhotoClick: (photo: PhotoManifest) => void;
 }) => {
@@ -22,7 +20,7 @@ const PhotoItem = memo(({ data, width, onPhotoClick }: {
     threshold: 0.1,
     triggerOnce: true,
   });
-  
+
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -40,7 +38,7 @@ const PhotoItem = memo(({ data, width, onPhotoClick }: {
       style={{ width }}
       onClick={() => onPhotoClick(data)}
     >
-      <div 
+      <div
         className="photo-card relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 cursor-pointer"
         style={{ height: calculatedHeight }}
       >
@@ -59,12 +57,11 @@ const PhotoItem = memo(({ data, width, onPhotoClick }: {
 
         {/* 實際圖片 */}
         {inView && !imageError && (
-          <img 
-            src={data.thumbnailUrl} 
+          <img
+            src={data.thumbnailUrl}
             alt={data.title}
-            className={`photo-image absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`photo-image absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
             loading="lazy"
             decoding="async"
             onLoad={() => setImageLoaded(true)}
@@ -83,7 +80,7 @@ const PhotoItem = memo(({ data, width, onPhotoClick }: {
             </div>
           </div>
         )}
-        
+
         {/* 懸停信息層 */}
         <div className="photo-info-overlay absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
@@ -107,31 +104,7 @@ const PhotoItem = memo(({ data, width, onPhotoClick }: {
 
 PhotoItem.displayName = 'PhotoItem';
 
-// 頭部組件
-const GalleryHeader = memo(({ style, photoCount }: { style?: React.CSSProperties, photoCount: number }) => (
-  <motion.div
-    className="gallery-header-card bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 border border-gray-200 dark:border-gray-800"
-    style={style}
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.6 }}
-  >
-    <div className="text-center">
-      <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">攝影作品集錦</h2>
-      <p className="text-lg text-gray-600 dark:text-gray-400 italic mb-4">Personal Photography Collection</p>
-      <div className="flex items-center justify-center gap-4 text-sm text-gray-500 dark:text-gray-500">
-        <span className="flex items-center gap-1">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          {photoCount} 張照片
-        </span>
-      </div>
-    </div>
-  </motion.div>
-));
-
-GalleryHeader.displayName = 'GalleryHeader';
+// The tags will be calculated dynamically from the loaded photos
 
 function PhotoGallery() {
   const setPhotosAtom = useSetAtom(photosAtom);
@@ -139,6 +112,25 @@ function PhotoGallery() {
   const [photos, setPhotos] = useState<PhotoManifest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('全部');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // 靜態與動態計算標籤 (Top 4 + 其他)
+  const { topTags, otherTags } = useMemo(() => {
+    if (!photos || photos.length === 0) return { topTags: [], otherTags: [] };
+    const counts: Record<string, number> = {};
+    photos.forEach(p => {
+      p.tags?.forEach(t => {
+        counts[t] = (counts[t] || 0) + 1;
+      });
+    });
+    // 依出現次數降冪排序
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+    return {
+      topTags: sorted.slice(0, 4),
+      otherTags: sorted.slice(4)
+    };
+  }, [photos]);
 
   // 載入照片資料
   useEffect(() => {
@@ -165,19 +157,19 @@ function PhotoGallery() {
     openViewer(photo);
   }, [openViewer]);
 
-  // 準備 Masonry 數據
+  // 準備 Masonry 數據 (不包含舊版的 HeaderItem)
   const masonryItems: MasonryItemType[] = useMemo(() => {
-    return [MasonryHeaderItem.default, ...photos];
-  }, [photos]);
+    let filteredPhotos = photos;
+    if (selectedCategory !== '全部') {
+      filteredPhotos = photos.filter(photo => photo.tags?.includes(selectedCategory));
+    }
+    return filteredPhotos;
+  }, [photos, selectedCategory]);
 
   // Masonry 渲染器
   const renderMasonryItem = useCallback(({ data, width }: { data: MasonryItemType; width: number }) => {
-    if (data instanceof MasonryHeaderItem) {
-      return <GalleryHeader style={{ width }} photoCount={photos.length} />;
-    }
-    
     return <PhotoItem data={data as PhotoManifest} width={width} onPhotoClick={handlePhotoClick} />;
-  }, [handlePhotoClick, photos.length]);
+  }, [handlePhotoClick]);
 
   // 載入中狀態
   if (loading) {
@@ -204,51 +196,119 @@ function PhotoGallery() {
   }
 
   return (
-    <section id="photo-gallery" className="photo-gallery-section min-h-screen py-20 px-4 lg:px-8">
-      {/* 返回按鈕 - 玻璃擬態風格 */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-      >
-        <Link 
-          to="/" 
-          className="back-button-glass fixed top-6 left-6 z-50 group"
+    <section id="photo-gallery" className="photo-gallery-section min-h-screen pt-24 pb-20 px-4 lg:px-8">
+      {/* Hero 區塊 */}
+      <div className="afilmory-hero-container">
+        <motion.h1
+          className="afilmory-hero-title"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
         >
-          <div className="relative">
-            {/* 玻璃擬態主體 */}
-            <div className="relative flex items-center gap-3 px-5 py-3 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-[0_8px_32px_0_rgba(99,102,241,0.15)] overflow-hidden transition-all duration-500 hover:bg-white/15 hover:border-white/30 hover:shadow-[0_12px_48px_0_rgba(99,102,241,0.25)] hover:scale-105">
-              {/* 玻璃反射效果 */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-50"></div>
-              
-              {/* 動態光暈背景 */}
-              <div className="absolute -inset-[100%] bg-gradient-conic from-blue-500 via-purple-500 to-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-700 blur-2xl animate-spin-slow"></div>
-              
-              {/* 圖標 */}
-              <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400/40 to-purple-400/40 backdrop-blur-sm group-hover:scale-110 transition-all duration-300 border border-white/20">
-                <svg className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] transform group-hover:-translate-x-0.5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-              </div>
-              
-              {/* 文字 */}
-              <span className="relative font-semibold text-white tracking-wide text-sm drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] group-hover:text-blue-100 transition-colors duration-300">
-                返回主頁
-              </span>
-              
-              {/* 微光效果 */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/60 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
-              </div>
+          Afilmory
+        </motion.h1>
+
+        <motion.p
+          className="afilmory-hero-subtitle"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          Capturing beautiful moments in life, documenting daily<br />warmth and emotions through my lens.
+        </motion.p>
+
+        <motion.div
+          className="afilmory-photo-count"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          • {photos.length} photos
+        </motion.div>
+      </div>
+
+      {/* 分類標籤 */}
+      <motion.div
+        className="category-tabs-container"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+      >
+        <div className="category-tabs">
+          <button
+            className={`category-tab ${selectedCategory === '全部' ? 'active' : ''}`}
+            onClick={() => setSelectedCategory('全部')}
+          >
+            全部
+          </button>
+          {topTags.map((tab) => (
+            <button
+              key={tab}
+              className={`category-tab ${selectedCategory === tab ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(tab)}
+            >
+              {tab}
+            </button>
+          ))}
+          {otherTags.length > 0 && (
+            <div
+              className="category-dropdown-container"
+              style={{ position: 'relative' }}
+              onMouseLeave={() => setDropdownOpen(false)}
+            >
+              <button
+                className={`category-tab ${otherTags.includes(selectedCategory) ? 'active' : ''}`}
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                {otherTags.includes(selectedCategory) ? selectedCategory : '更多 ▼'}
+              </button>
+              {dropdownOpen && (
+                <div style={{ position: 'absolute', top: '100%', right: 0, paddingTop: '0.5rem', zIndex: 50 }}>
+                  <div className="category-dropdown-menu" style={{
+                    background: 'rgba(30, 30, 40, 0.95)', backdropFilter: 'blur(10px)',
+                    borderRadius: '12px', padding: '0.5rem', display: 'flex', flexDirection: 'column',
+                    gap: '0.25rem', minWidth: '120px', border: '1px solid rgba(255,255,255,0.1)'
+                  }}>
+                    {otherTags.map(tab => (
+                      <button
+                        key={tab}
+                        style={{
+                          padding: '0.5rem 1rem', background: 'transparent',
+                          color: selectedCategory === tab ? '#fff' : 'rgba(255,255,255,0.7)',
+                          textAlign: 'left', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                          backgroundColor: selectedCategory === tab ? 'rgba(127, 90, 240, 0.3)' : 'transparent',
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCategory(tab);
+                          setDropdownOpen(false);
+                        }}
+                        onMouseOver={(e) => {
+                          if (selectedCategory !== tab) {
+                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (selectedCategory !== tab) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                          }
+                        }}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        </Link>
+          )}
+        </div>
       </motion.div>
 
       {/* Masonry 瀑布流佈局 */}
       <div className="masonry-container max-w-7xl mx-auto">
         <Masonry
+          key={selectedCategory}
           items={masonryItems}
           render={renderMasonryItem}
           columnWidth={300}
@@ -258,25 +318,7 @@ function PhotoGallery() {
         />
       </div>
 
-      {/* Instagram 連結 */}
-      <motion.div 
-        className="instagram-link-container text-center mt-16 mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <a
-          href="https://www.instagram.com/koimsurai.23/?hl=zh-tw"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="instagram-link inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
-        >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-          </svg>
-          <span>想看更多請點我</span>
-        </a>
-      </motion.div>
+
 
       {/* 照片查看器 */}
       <PhotoViewer />

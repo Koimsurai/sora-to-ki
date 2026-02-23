@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -117,6 +117,13 @@ export const AdminLayout = () => {
     logout();
     navigate('/');
   };
+
+  useEffect(() => {
+    document.body.classList.add('admin-mode');
+    return () => {
+      document.body.classList.remove('admin-mode');
+    };
+  }, []);
 
   // 過濾 sidebar：ownerOnly 僅 OWNER 可見
   const visibleSidebarItems = sidebarItems.filter(item => !item.ownerOnly || isOwner);
@@ -253,7 +260,7 @@ export const AdminLayout = () => {
           </Button>
 
           <AdminBreadcrumb />
-          
+
           {location.pathname.includes('/admin/posts/edit') || location.pathname.includes('/admin/posts/create') || location.pathname === '/admin/posts/new' ? (
             <div className="ml-auto flex items-center gap-2">
               <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground/80 px-2.5" onClick={() => document.getElementById('save-draft-btn')?.click()}>

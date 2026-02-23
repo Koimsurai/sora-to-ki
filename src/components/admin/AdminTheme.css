@@ -4,7 +4,7 @@
    ══════════════════════════════════════════ */
 
 /* Override shadcn CSS variables for glass aesthetic */
-.admin-layout {
+:is(.admin-layout, .admin-mode) {
   --background: 240 10% 3.9%;
   --foreground: 240 5.9% 90%;
   --card: 240 10% 3.9%;
@@ -52,36 +52,44 @@
   pointer-events: none;
   z-index: 0;
 }
+
 .stars::before,
 .stars::after {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,0.15), transparent),
-    radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.1), transparent),
-    radial-gradient(1px 1px at 50px 160px, rgba(255,255,255,0.12), transparent),
-    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.08), transparent),
-    radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.1), transparent),
-    radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.06), transparent),
-    radial-gradient(1px 1px at 200px 50px, rgba(255,255,255,0.12), transparent),
-    radial-gradient(1px 1px at 220px 180px, rgba(255,255,255,0.08), transparent),
-    radial-gradient(1px 1px at 280px 90px, rgba(255,255,255,0.1), transparent),
-    radial-gradient(1px 1px at 320px 200px, rgba(255,255,255,0.06), transparent),
-    radial-gradient(1px 1px at 360px 60px, rgba(255,255,255,0.08), transparent),
-    radial-gradient(1px 1px at 400px 150px, rgba(255,255,255,0.1), transparent);
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.15), transparent),
+    radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(1px 1px at 50px 160px, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 255, 255, 0.08), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(1px 1px at 160px 120px, rgba(255, 255, 255, 0.06), transparent),
+    radial-gradient(1px 1px at 200px 50px, rgba(255, 255, 255, 0.12), transparent),
+    radial-gradient(1px 1px at 220px 180px, rgba(255, 255, 255, 0.08), transparent),
+    radial-gradient(1px 1px at 280px 90px, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(1px 1px at 320px 200px, rgba(255, 255, 255, 0.06), transparent),
+    radial-gradient(1px 1px at 360px 60px, rgba(255, 255, 255, 0.08), transparent),
+    radial-gradient(1px 1px at 400px 150px, rgba(255, 255, 255, 0.1), transparent);
   background-repeat: repeat;
   background-size: 420px 220px;
   animation: drift 120s linear infinite;
 }
+
 .stars::after {
   background-size: 580px 300px;
   opacity: 0.5;
   animation: drift 200s linear infinite reverse;
 }
+
 @keyframes drift {
-  from { transform: translateY(0); }
-  to { transform: translateY(-220px); }
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-220px);
+  }
 }
 
 /* Glass card */
@@ -91,6 +99,7 @@
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(39, 39, 42, 0.6);
 }
+
 .glass-subtle {
   background: rgba(24, 24, 27, 0.35);
   backdrop-filter: blur(12px);
@@ -99,7 +108,7 @@
 }
 
 /* ── Glass Sidebar ── */
-.admin-layout aside {
+:is(.admin-layout, .admin-mode) aside {
   background: rgba(9, 9, 11, 0.78) !important;
   backdrop-filter: saturate(180%) blur(24px) !important;
   -webkit-backdrop-filter: saturate(180%) blur(24px) !important;
@@ -107,7 +116,7 @@
 }
 
 /* ── Glass Header ── */
-.admin-layout > div > header {
+:is(.admin-layout, .admin-mode)>div>header {
   background: rgba(9, 9, 11, 0.65) !important;
   backdrop-filter: saturate(180%) blur(20px) !important;
   -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
@@ -115,15 +124,15 @@
 }
 
 /* ── Main Content ── */
-.admin-layout main.min-h-screen {
+:is(.admin-layout, .admin-mode) main.min-h-screen {
   background: transparent !important;
   position: relative;
   z-index: 1;
 }
 
 /* ── Glass Cards ── */
-.admin-layout .bg-card,
-.admin-layout [class*="Card"] {
+:is(.admin-layout, .admin-mode) .bg-card,
+:is(.admin-layout, .admin-mode) [class*="Card"] {
   background: rgba(24, 24, 27, 0.6) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -136,27 +145,27 @@
 }
 
 /* ── Table ── */
-.admin-layout table {
+:is(.admin-layout, .admin-mode) table {
   background: transparent;
 }
 
-.admin-layout thead tr {
+:is(.admin-layout, .admin-mode) thead tr {
   border-color: rgba(39, 39, 42, 0.6);
 }
 
-.admin-layout tbody tr {
+:is(.admin-layout, .admin-mode) tbody tr {
   border-color: rgba(39, 39, 42, 0.4);
   transition: all 0.2s ease;
 }
 
-.admin-layout tbody tr:hover {
+:is(.admin-layout, .admin-mode) tbody tr:hover {
   background: rgba(39, 39, 42, 0.3) !important;
 }
 
 /* ── Inputs — Glass (exclude Monaco toolbar) ── */
-.admin-layout input:not(.monaco-toolbar-glass *),
-.admin-layout select:not(.monaco-toolbar-glass *),
-.admin-layout textarea:not(.monaco-toolbar-glass *) {
+:is(.admin-layout, .admin-mode) input:not(.monaco-toolbar-glass *),
+:is(.admin-layout, .admin-mode) select:not(.monaco-toolbar-glass *),
+:is(.admin-layout, .admin-mode) textarea:not(.monaco-toolbar-glass *) {
   background: rgba(24, 24, 27, 0.45) !important;
   border-color: rgba(39, 39, 42, 0.6) !important;
   color: #e4e4e7 !important;
@@ -164,24 +173,24 @@
   transition: all 0.2s ease;
 }
 
-.admin-layout input:hover,
-.admin-layout select:hover,
-.admin-layout textarea:hover {
+:is(.admin-layout, .admin-mode) input:hover,
+:is(.admin-layout, .admin-mode) select:hover,
+:is(.admin-layout, .admin-mode) textarea:hover {
   border-color: rgba(63, 63, 70, 0.8) !important;
 }
 
-.admin-layout input:focus,
-.admin-layout select:focus,
-.admin-layout textarea:focus {
+:is(.admin-layout, .admin-mode) input:focus,
+:is(.admin-layout, .admin-mode) select:focus,
+:is(.admin-layout, .admin-mode) textarea:focus {
   border-color: rgba(82, 82, 91, 0.8) !important;
   box-shadow: 0 0 0 3px rgba(82, 82, 91, 0.2) !important;
   background: rgba(24, 24, 27, 0.75) !important;
 }
 
 /* ── Dropdowns & Dialogs — Glass ── */
-.admin-layout [role="menu"],
-.admin-layout [role="dialog"],
-.admin-layout [data-radix-popper-content-wrapper] [role="listbox"] {
+:is(.admin-layout, .admin-mode) [role="menu"],
+:is(.admin-layout, .admin-mode) [role="dialog"],
+:is(.admin-layout, .admin-mode) [data-radix-popper-content-wrapper] [role="listbox"] {
   background: rgba(24, 24, 27, 0.92) !important;
   backdrop-filter: saturate(180%) blur(28px) !important;
   -webkit-backdrop-filter: saturate(180%) blur(28px) !important;
@@ -194,29 +203,42 @@
 }
 
 /* ── Scrollbar ── */
-.admin-layout ::-webkit-scrollbar { width: 5px; height: 5px; }
-.admin-layout ::-webkit-scrollbar-track { background: transparent; }
-.admin-layout ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 9999px; }
-.admin-layout ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+:is(.admin-layout, .admin-mode) ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+:is(.admin-layout, .admin-mode) ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:is(.admin-layout, .admin-mode) ::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+:is(.admin-layout, .admin-mode) ::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
 
 /* ── Separators ── */
-.admin-layout hr,
-.admin-layout .separator,
-.admin-layout [data-orientation="horizontal"],
-.admin-layout [data-orientation="vertical"] {
+:is(.admin-layout, .admin-mode) hr,
+:is(.admin-layout, .admin-mode) .separator,
+:is(.admin-layout, .admin-mode) [data-orientation="horizontal"],
+:is(.admin-layout, .admin-mode) [data-orientation="vertical"] {
   border-color: rgba(39, 39, 42, 0.6) !important;
   background: rgba(39, 39, 42, 0.6) !important;
 }
 
 /* ── Badges — Glass ── */
-.admin-layout [class*="badge"][class*="default"] {
+:is(.admin-layout, .admin-mode) [class*="badge"][class*="default"] {
   background: rgba(228, 228, 231, 0.12);
   border: 1px solid rgba(228, 228, 231, 0.2);
   color: #e4e4e7;
   border-radius: 8px;
 }
 
-.admin-layout [class*="badge"][class*="secondary"] {
+:is(.admin-layout, .admin-mode) [class*="badge"][class*="secondary"] {
   background: rgba(39, 39, 42, 0.3);
   border: 1px solid rgba(39, 39, 42, 0.6);
   color: #a1a1aa;
@@ -224,30 +246,31 @@
 }
 
 /* ── Links — Override global a { color: var(--clr-button) } for admin ── */
-.admin-layout a {
+:is(.admin-layout, .admin-mode) a {
   color: #a1a1aa;
 }
-.admin-layout a:hover,
-.admin-layout a:focus {
+
+:is(.admin-layout, .admin-mode) a:hover,
+:is(.admin-layout, .admin-mode) a:focus {
   color: #e4e4e7;
   text-shadow: none;
 }
 
 /* ── Button — Remove focus ring borders ── */
-.admin-layout button:focus-visible {
+:is(.admin-layout, .admin-mode) button:focus-visible {
   outline: none !important;
   box-shadow: none !important;
-  ring: none !important;
 }
-.admin-layout button:focus-visible:not(:hover) {
+
+:is(.admin-layout, .admin-mode) button:focus-visible:not(:hover) {
   outline: none !important;
 }
 
 /* ── Reset global button base styles for admin ──
 /* ── Reset global button base styles for admin ──
-   用 :where() 包裹 .admin-layout 讓 specificity 降為 (0,0,1)
+   用 :where() 包裹 :is(.admin-layout, .admin-mode) 讓 specificity 降為 (0,0,1)
    這樣 Tailwind 的 class selector (0,1,0) 仍可覆蓋 */
-:where(.admin-layout) button {
+:where(.admin-layout, .admin-mode) button {
   padding: 0;
   border: none;
   border-radius: 0;
@@ -255,41 +278,45 @@
   font-weight: inherit;
   box-shadow: none;
 }
-:where(.admin-layout) button:hover,
-:where(.admin-layout) button:focus {
+
+:where(.admin-layout, .admin-mode) button:hover,
+:where(.admin-layout, .admin-mode) button:focus {
   background-color: transparent;
   border-color: transparent;
   box-shadow: none;
 }
 
 /* ── Default Buttons — Neutral glass style ── */
-.admin-layout .bg-primary,
-.admin-layout [class*="bg-primary"] {
+:is(.admin-layout, .admin-mode) .bg-primary,
+:is(.admin-layout, .admin-mode) [class*="bg-primary"] {
   background: rgba(228, 228, 231, 0.12) !important;
   color: #e4e4e7 !important;
   border: 1px solid rgba(228, 228, 231, 0.2) !important;
 }
-.admin-layout .bg-primary:hover,
-.admin-layout [class*="bg-primary"]:hover {
+
+:is(.admin-layout, .admin-mode) .bg-primary:hover,
+:is(.admin-layout, .admin-mode) [class*="bg-primary"]:hover {
   background: rgba(228, 228, 231, 0.18) !important;
 }
 
 /* ── Link variant — Neutral text ── */
-.admin-layout .text-primary {
+:is(.admin-layout, .admin-mode) .text-primary {
   color: #a1a1aa !important;
 }
-.admin-layout .text-primary:hover {
+
+:is(.admin-layout, .admin-mode) .text-primary:hover {
   color: #e4e4e7 !important;
 }
 
 /* ── Destructive Buttons — Red accent ── */
-.admin-layout .bg-destructive,
-.admin-layout [class*="bg-destructive"] {
+:is(.admin-layout, .admin-mode) .bg-destructive,
+:is(.admin-layout, .admin-mode) [class*="bg-destructive"] {
   background: rgba(239, 68, 68, 0.2) !important;
   color: #fca5a5 !important;
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
 }
-.admin-layout .bg-destructive:hover,
-.admin-layout [class*="bg-destructive"]:hover {
+
+:is(.admin-layout, .admin-mode) .bg-destructive:hover,
+:is(.admin-layout, .admin-mode) [class*="bg-destructive"]:hover {
   background: rgba(239, 68, 68, 0.3) !important;
 }

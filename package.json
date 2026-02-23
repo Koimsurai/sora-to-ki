@@ -9,7 +9,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview --port 13579",
-    "build:photos": "tsx scripts/builder/index.ts",
+    "build:photos": "tsx scripts/builder/index.ts && node ../ai-tagger/clip_tagger.js",
     "build:all": "pnpm run build:photos && pnpm run build"
   },
   "dependencies": {

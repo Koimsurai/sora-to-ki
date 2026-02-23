@@ -5,92 +5,10 @@
   min-height: 100vh;
   position: relative;
   padding: 2rem 1rem;
-  background: 
-    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(88, 101, 242, 0.2) 0%, transparent 50%),
-    radial-gradient(circle at 40% 90%, rgba(147, 51, 234, 0.2) 0%, transparent 50%),
-    linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  /* Transparent background to show global 3D stars, with a much darker subtle glow */
+  background: radial-gradient(circle at 50% 50%, rgba(90, 60, 180, 0.08) 0%, rgba(2, 2, 7, 0.95) 100%);
+  background-attachment: fixed;
   overflow: hidden;
-}
-
-/* Animated stars background */
-.photo-gallery-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(2px 2px at 20% 30%, white, transparent),
-    radial-gradient(2px 2px at 60% 70%, white, transparent),
-    radial-gradient(1px 1px at 50% 50%, white, transparent),
-    radial-gradient(1px 1px at 80% 10%, white, transparent),
-    radial-gradient(2px 2px at 90% 60%, white, transparent),
-    radial-gradient(1px 1px at 33% 80%, white, transparent),
-    radial-gradient(1px 1px at 15% 90%, white, transparent);
-  background-size: 200% 200%;
-  background-position: 0% 0%;
-  opacity: 0.4;
-  animation: twinkle 8s ease-in-out infinite;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* Floating light orbs */
-.photo-gallery-section::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: 
-    radial-gradient(circle at 30% 40%, rgba(139, 92, 246, 0.1) 0%, transparent 25%),
-    radial-gradient(circle at 70% 70%, rgba(59, 130, 246, 0.1) 0%, transparent 25%);
-  animation: float 20s ease-in-out infinite;
-  z-index: 0;
-  pointer-events: none;
-}
-
-@keyframes twinkle {
-  0%, 100% {
-    opacity: 0.3;
-    background-position: 0% 0%;
-  }
-  50% {
-    opacity: 0.6;
-    background-position: 100% 100%;
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  33% {
-    transform: translate(30px, -30px) rotate(120deg);
-  }
-  66% {
-    transform: translate(-20px, 20px) rotate(240deg);
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  .photo-gallery-section {
-    background: 
-      radial-gradient(circle at 20% 50%, rgba(147, 197, 253, 0.2) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(196, 181, 253, 0.2) 0%, transparent 50%),
-      linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 50%, #c7d2fe 100%);
-  }
-  
-  .photo-gallery-section::before {
-    opacity: 0.15;
-  }
-  
-  .photo-gallery-section::after {
-    opacity: 0.5;
-  }
 }
 
 /* Masonry Container */
@@ -137,9 +55,12 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1) rotate(0deg);
   }
+
   50% {
     transform: scale(1.1) rotate(180deg);
   }
@@ -150,8 +71,8 @@
   position: relative;
   overflow: hidden;
   border-radius: 0.75rem;
-  box-shadow: 
-    0 10px 20px rgba(0, 0, 0, 0.15), 
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.15),
     0 6px 6px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -160,8 +81,8 @@
 }
 
 .photo-card:hover {
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.25), 
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.25),
     0 12px 12px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(255, 255, 255, 0.2),
     0 0 30px rgba(139, 92, 246, 0.3);
@@ -186,12 +107,10 @@
 .photo-info-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.85) 0%,
-    rgba(0, 0, 0, 0.4) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.4) 50%,
+      transparent 100%);
   opacity: 0;
   transition: opacity 0.4s ease;
   display: flex;
@@ -228,59 +147,93 @@
   letter-spacing: 0.02em;
 }
 
-/* Gallery Header Card */
-.gallery-header-card {
+/* Afilmory Hero Section */
+.afilmory-hero-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-top: 6rem;
+}
+
+.afilmory-hero-title {
+  font-size: 3.5rem;
+  font-weight: 300;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  letter-spacing: 0.05em;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.6), 0 0 30px rgba(127, 90, 240, 0.4), 0 0 50px rgba(127, 90, 240, 0.2);
+}
+
+.afilmory-hero-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 600px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.afilmory-photo-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Category Tabs */
+.category-tabs-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 4rem;
   width: 100%;
-  padding: 3rem 2rem;
-  background: 
-    linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%),
-    rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-radius: 1rem;
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.15), 
-    0 8px 16px rgba(0, 0, 0, 0.1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
 }
 
-.gallery-header-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s ease;
+.category-tabs {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.gallery-header-card:hover::before {
-  left: 100%;
+.category-tab {
+  padding: 0.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-.gallery-header-card:hover {
-  box-shadow: 
-    0 30px 60px rgba(0, 0, 0, 0.2), 
-    0 12px 24px rgba(0, 0, 0, 0.12),
-    0 0 40px rgba(139, 92, 246, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
-  transform: translateY(-4px);
+.category-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Dark Mode Support */
+.category-tab.active {
+  background: rgba(127, 90, 240, 0.3);
+  color: #ffffff;
+  border-color: rgba(127, 90, 240, 0.5);
+  box-shadow: 0 0 15px rgba(127, 90, 240, 0.2);
+}
+
+/* Dark Mode Support (Adjustments if needed) */
 @media (prefers-color-scheme: dark) {
-  .gallery-header-card {
-    background: 
-      linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%),
-      rgba(31, 41, 55, 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-  
   .photo-card {
     background: rgba(31, 41, 55, 0.6);
     backdrop-filter: blur(10px);
@@ -292,6 +245,7 @@
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }
@@ -336,19 +290,19 @@
   .photo-gallery-section {
     padding: 1.5rem 0.5rem;
   }
-  
+
   .masonry-container {
     padding: 0 0.5rem;
   }
-  
+
   .photo-date {
     font-size: 1.25rem;
   }
-  
+
   .photo-year {
     font-size: 1rem;
   }
-  
+
   .gallery-header-card {
     padding: 1.5rem;
   }
@@ -358,106 +312,12 @@
   .photo-info-overlay {
     padding: 1rem;
   }
-  
+
   .photo-date {
     font-size: 1.125rem;
   }
-  
+
   .photo-year {
     font-size: 0.875rem;
-  }
-}
-
-/* Glassmorphism Back Button - 玻璃擬態風格 */
-.back-button-glass {
-  position: fixed;
-  top: 1.5rem;
-  left: 1.5rem;
-  z-index: 9999;
-  cursor: pointer;
-  user-select: none;
-  animation: fadeInLeft 0.6s ease-out;
-}
-
-/* 慢速旋轉動畫 */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 10s linear infinite;
-}
-
-/* 玻璃反射閃爍效果 */
-@keyframes glass-shimmer {
-  0%, 100% {
-    background-position: -100% 0;
-  }
-  50% {
-    background-position: 200% 0;
-  }
-}
-
-.back-button-glass:hover {
-  filter: brightness(1.1);
-}
-
-.back-button-glass:active {
-  transform: scale(0.97);
-  transition: transform 0.1s ease;
-}
-
-/* 淡入左側動畫 */
-@keyframes fadeInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* 響應式調整 */
-@media (max-width: 768px) {
-  .back-button-glass {
-    top: 1rem;
-    left: 1rem;
-  }
-  
-  .back-button-glass > div > div {
-    padding: 0.625rem 1rem;
-    gap: 0.5rem;
-  }
-  
-  .back-button-glass span {
-    font-size: 0.875rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .back-button-glass {
-    top: 0.75rem;
-    left: 0.75rem;
-  }
-  
-  /* 在小屏幕上只顯示圖標 */
-  .back-button-glass span {
-    display: none;
-  }
-  
-  .back-button-glass > div > div {
-    padding: 0.75rem;
-    gap: 0;
-  }
-  
-  .back-button-glass .w-8 {
-    margin: 0;
   }
 }

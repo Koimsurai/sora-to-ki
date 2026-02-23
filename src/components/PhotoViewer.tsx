@@ -30,7 +30,7 @@ const PhotoViewer: React.FC = () => {
   const photos = useAtomValue(photosAtom);
   const [currentIndex, setCurrentIndex] = useAtom(currentIndexAtom);
   const closeViewer = useSetAtom(closeViewerAtom);
-  
+
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [mainSwiper, setMainSwiper] = useState<SwiperType | null>(null);
   const [currentPhoto, setCurrentPhoto] = useState(selectedPhoto);
@@ -47,7 +47,7 @@ const PhotoViewer: React.FC = () => {
   // Lock swiper when image is zoomed
   useEffect(() => {
     if (mainSwiper) {
-        mainSwiper.allowTouchMove = imageScale <= 1;
+      mainSwiper.allowTouchMove = imageScale <= 1;
     }
   }, [imageScale, mainSwiper]);
 
@@ -78,8 +78,6 @@ const PhotoViewer: React.FC = () => {
     }
   }, [isOpen, mainSwiper, selectedPhoto, photos, setCurrentIndex]);
 
-  if (!isOpen || !currentPhoto) return null;
-
   // 處理 Swiper 滑動
   const handleSlideChange = (swiper: SwiperType) => {
     setCurrentIndex(swiper.activeIndex);
@@ -93,136 +91,145 @@ const PhotoViewer: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <motion.div
-        className="photo-viewer-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {/* 模糊背景 */}
-        <div
-          className="photo-viewer-background"
-          style={{
-            backgroundImage: `url(${currentPhoto.urls.thumb || currentPhoto.urls.small})`,
-          }}
-        />
-
-        {/* 頂部照片資訊 */}
-        <div className="photo-viewer-info" onClick={(e) => e.stopPropagation()}>
-          <div className="photo-title">
-            照片 {currentPhoto.exif?.DateTimeOriginal || currentPhoto.title || currentPhoto.id}
-          </div>
-        </div>
-
-        {/* 右上角按鈕組 */}
-        <div className="viewer-top-right-buttons" onClick={(e) => e.stopPropagation()}>
-          {/* 分享按鈕 */}
-          <button
-            className="action-btn action-btn-share"
-            onClick={(e) => {
-              e.stopPropagation();
-              // TODO: 實現分享功能
-              if (navigator.share) {
-                navigator.share({
-                  title: currentPhoto.title || '照片分享',
-                  text: `查看我的照片作品`,
-                  url: window.location.href,
-                }).catch(() => {});
-              }
+      {isOpen && currentPhoto && (
+        <motion.div
+          className="photo-viewer-overlay"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          {/* 模糊背景 */}
+          <div
+            className="photo-viewer-background"
+            style={{
+              backgroundImage: `url(${currentPhoto.urls.thumb || currentPhoto.urls.small})`,
             }}
-            title="分享"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-              <polyline points="16 6 12 2 8 6" />
-              <line x1="12" y1="2" x2="12" y2="15" />
-            </svg>
-          </button>
+          />
 
-          {/* 關閉按鈕 */}
-          <button
-            className="action-btn action-btn-close"
-            onClick={(e) => {
-              e.stopPropagation();
-              closeViewer();
-            }}
-            title="關閉 (ESC)"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        {/* 縮放比例顯示 */}
-        {imageScale > 1 && (
-            <div className="zoom-indicator">
-                {imageScale.toFixed(1)}x
+          {/* 頂部照片資訊 */}
+          <div className="photo-viewer-info" onClick={(e) => e.stopPropagation()}>
+            <div className="photo-title">
+              照片 {currentPhoto.exif?.DateTimeOriginal || currentPhoto.title || currentPhoto.id}
             </div>
-        )}
+          </div>
 
-        {/* 主圖輪播區域 */}
-        <div className="photo-viewer-main">
-          {/* 自訂導航按鈕 - 上一張 */}
-          <button className="custom-swiper-button-prev" onClick={(e) => e.stopPropagation()}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-          <button className="custom-swiper-button-next" onClick={(e) => e.stopPropagation()}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
+          {/* 右上角按鈕組 */}
+          <div className="viewer-top-right-buttons" onClick={(e) => e.stopPropagation()}>
+            {/* 分享按鈕 */}
+            <button
+              className="action-btn action-btn-share"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (navigator.share) {
+                  navigator.share({
+                    title: currentPhoto.title || '照片分享',
+                    text: `查看我的照片作品`,
+                    url: window.location.href,
+                  }).catch(() => { });
+                }
+              }}
+              title="分享"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                <polyline points="16 6 12 2 8 6" />
+                <line x1="12" y1="2" x2="12" y2="15" />
+              </svg>
+            </button>
 
-          <Swiper
-            onSwiper={setMainSwiper}
-            spaceBetween={10}
-            navigation={{
-              prevEl: '.custom-swiper-button-prev',
-              nextEl: '.custom-swiper-button-next',
-            }}
-            keyboard={{
-              enabled: true,
-            }}
-            thumbs={thumbsSwiper && !thumbsSwiper.destroyed ? { swiper: thumbsSwiper } : undefined}
-            modules={[Navigation, Keyboard, Thumbs]}
-            onSlideChange={handleSlideChange}
-            className="main-swiper"
-          >
-            {photos.map((photo, index) => (
-              <SwiperSlide key={photo.id}>
-                <div className="swiper-zoom-container"> {/* This class is now just for structure/styling */}
-                  <ProgressiveImage
-                    src={photo.urls.regular || photo.urls.full}
-                    thumbSrc={photo.urls.thumb || photo.urls.small}
-                    alt={photo.title || ''}
-                    thumbHash={photo.thumbHash}
-                    isCurrentImage={index === currentIndex}
-                    onScaleChange={handleScaleChange}
-                    enableZoom={true}
-                    enablePan={true}
-                  />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
+            {/* 關閉按鈕 */}
+            <button
+              className="action-btn action-btn-close"
+              onClick={(e) => {
+                e.stopPropagation();
+                closeViewer();
+              }}
+              title="關閉 (ESC)"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
 
-        {/* 底部縮圖導覽列 */}
-        <GalleryThumbnail
-          photos={photos}
-          activeIndex={currentIndex}
-          onThumbnailClick={handleThumbnailClick}
-          thumbsSwiper={thumbsSwiper}
-          onSwiper={setThumbsSwiper}
-        />
+          {/* 縮放比例顯示 */}
+          {imageScale > 1 && (
+            <div className="zoom-indicator">
+              {imageScale.toFixed(1)}x
+            </div>
+          )}
 
-        {/* 右側 EXIF 資訊面板 - 常駐顯示 */}
-        <EXIFPanel photo={currentPhoto} />
-      </motion.div>
+          {/* 主圖輪播區域 */}
+          <div className="photo-viewer-main">
+            {/* 自訂導航按鈕 - 上一張 */}
+            <button className="custom-swiper-button-prev" onClick={(e) => e.stopPropagation()}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <button className="custom-swiper-button-next" onClick={(e) => e.stopPropagation()}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+
+            <Swiper
+              onSwiper={setMainSwiper}
+              spaceBetween={10}
+              navigation={{
+                prevEl: '.custom-swiper-button-prev',
+                nextEl: '.custom-swiper-button-next',
+              }}
+              keyboard={{
+                enabled: true,
+              }}
+              thumbs={thumbsSwiper && !thumbsSwiper.destroyed ? { swiper: thumbsSwiper } : undefined}
+              modules={[Navigation, Keyboard, Thumbs]}
+              onSlideChange={handleSlideChange}
+              className="main-swiper"
+            >
+              {photos.map((photo, index) => {
+                // Only render ProgressiveImage if it's close to the current view
+                const shouldRender = Math.abs(index - currentIndex) <= 2;
+                return (
+                  <SwiperSlide key={photo.id}>
+                    <div className="swiper-zoom-container">
+                      {shouldRender ? (
+                        <ProgressiveImage
+                          src={photo.urls.regular || photo.urls.full}
+                          thumbSrc={photo.urls.thumb || photo.urls.small}
+                          alt={photo.title || ''}
+                          thumbHash={photo.thumbHash}
+                          isCurrentImage={index === currentIndex}
+                          onScaleChange={handleScaleChange}
+                          enableZoom={true}
+                          enablePan={true}
+                        />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%' }} />
+                      )}
+                    </div>
+                  </SwiperSlide>
+                );
+              })}
+            </Swiper>
+          </div>
+
+          {/* 底部縮圖導覽列 */}
+          <GalleryThumbnail
+            photos={photos}
+            activeIndex={currentIndex}
+            onThumbnailClick={handleThumbnailClick}
+            thumbsSwiper={thumbsSwiper}
+            onSwiper={setThumbsSwiper}
+          />
+
+          {/* 右側 EXIF 資訊面板 - 常駐顯示 */}
+          <EXIFPanel photo={currentPhoto} />
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 };

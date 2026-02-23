@@ -132,7 +132,7 @@ function Header({ activeSection }) {
   };
 
   return (
-    <header className={'site-header ' + (isScrolled && !mobileOpen ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '') + (isPhotoPage ? 'hidden' : '')}>
+    <header className={'site-header ' + (isScrolled && !mobileOpen ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '')}>
       <Link to="/" className="site-logo" onClick={() => setMobileOpen(false)}>
         <span className="logo-icon">✦</span>
         <span className="logo-text">Koimsurai</span>

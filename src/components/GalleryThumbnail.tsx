@@ -41,9 +41,8 @@ const GalleryThumbnail: React.FC<GalleryThumbnailProps> = ({
         {photos.map((photo, index) => (
           <SwiperSlide key={photo.id} className="gallery-thumbnail-slide">
             <div
-              className={`gallery-thumbnail-item ${
-                index === activeIndex ? 'active' : ''
-              }`}
+              className={`gallery-thumbnail-item ${index === activeIndex ? 'active' : ''
+                }`}
               onClick={() => onThumbnailClick(index)}
             >
               <img
