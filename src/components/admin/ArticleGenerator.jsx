@@ -226,10 +226,13 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
         '```\n\n' +
         'Rules:\n' +
         '- sections count 6-10, depending on material richness\n' +
-        '- brief for each section must be specific enough\n' +
+        '- brief for each section must be specific enough, mentioning UNIQUE details only covered in that section\n' +
         '- First section starts with natural opening (heading empty "")\n' +
         '- Last section can be reflection or outlook, but do NOT name it "Summary"\n' +
-        '- Do NOT merge different topics into one section\n';
+        '- Do NOT merge different topics into one section\n' +
+        '- **CRITICAL: Each section must cover a DISTINCT topic/aspect. No two sections should overlap in content or theme.**\n' +
+        '- **Each brief must clearly differentiate what THIS section covers vs others — no vague or shared descriptions**\n' +
+        '- If a detail appears in one section brief, it must NOT appear in any other section brief\n';
 
     const outlineMessages = [
         { role: 'system', content: outlineSystem },
@@ -282,6 +285,7 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
 
     const allParts = [];
     let previousTail = '';
+    const completedHeadings = [];
 
     for (let idx = 0; idx < sections.length; idx++) {
         const section = sections[idx];
@@ -303,8 +307,15 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
             `## 本次任務：展開「${heading || '開場段'}」\n\n` +
             `你正在撰寫一篇完整文章的 **${positionDesc}**。\n\n` +
             `文章完整大綱：\n${outlineSummary}\n\n` +
-            `本段的重點：${brief}\n\n` +
-            '## 展開約束\n' +
+            `本段的重點：${brief}\n\n`;
+
+        if (completedHeadings.length > 0) {
+            expandSystem += `## 已完成段落（嚴禁重複這些段落的內容）\n` +
+                `以下段落已經寫完，你**絕對不可以**重複或改寫這些段落涵蓋的主題和細節：\n` +
+                completedHeadings.map((h, i) => `${i + 1}. ${h.heading || '開場段'}：${h.brief}`).join('\n') + '\n\n';
+        }
+
+        expandSystem += '## 展開約束\n' +
             '- 回傳純 Markdown（不需要 JSON）\n';
 
         if (heading) expandSystem += `- 本段以 \`## ${heading}\` 開頭\n`;
@@ -322,7 +333,9 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
         expandSystem += '- 篇幅充實但不注水(嚴禁腦補不存在的事件或細節)，這段應寫 600-1000 字\n' +
             '- 請深度挖掘細節（感官描寫、心理活動、環境氛圍）\n' +
             '- 禁止將多個不相關的主題合併在一段，若大綱有誤請專注於本段指定的一個主題\n' +
-            '- 只使用素材中出現的事實\n';
+            '- 只使用素材中出現的事實\n' +
+            '- **嚴禁與前面段落產生內容重疊**：如果某個觀點、事件、或技術細節已在前面段落出現過，此段不得再次提及或以不同措辭重述\n' +
+            '- 每段專注挖掘大綱中指定的**獨立主題**，絕不回頭複述已寫過的內容\n';
 
         const expandMessages = [{ role: 'system', content: expandSystem }];
         if (guide?.trim()) {
@@ -331,7 +344,7 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
 
         let userParts = [];
         if (previousTail) {
-            userParts.push(`【上一段的結尾，作為銜接參考，不要重複】：\n"""\n${previousTail}\n"""`);
+            userParts.push(`【上一段的結尾（銜接參考，嚴禁重複其內容）】：\n"""\n${previousTail}\n"""`);
         }
         userParts.push(`【本段可用素材】：\n---\n${material}\n---`);
 
@@ -341,7 +354,8 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
         if (sectionText && !sectionText.startsWith('抱歉')) {
             const cleaned = cleanSectionOutput(sectionText);
             allParts.push(cleaned);
-            previousTail = cleaned.slice(-800); // Wait, constant CONTEXT_BRIDGE_CHARS is missing in this context replacement... I'll check if it was defined. The original code used CONTEXT_BRIDGE_CHARS. I should check if it's defined in scope. Assuming 800 for safety or look for const definition.
+            previousTail = cleaned.slice(-CONTEXT_BRIDGE_CHARS);
+            completedHeadings.push({ heading, brief });
         } else {
             onLog?.(`⚠️ Section ${idx + 1} failed or returned apology.`);
         }

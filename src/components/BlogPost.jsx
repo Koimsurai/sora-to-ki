@@ -5,18 +5,86 @@ import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import mermaid from 'mermaid';
 import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   FaRegHeart, FaHeart, FaLink, FaRegComment, FaArrowUp,
   FaEnvelope, FaShareAlt, FaRss, FaTimes,
   FaYoutube, FaGithub, FaInstagram, FaExternalLinkAlt,
+  FaTwitter, FaFacebook,
 } from 'react-icons/fa';
 import Comments from './Comments';
 import SEOHead from './SEOHead';
 import { BlogImage } from './ImageLightbox';
 import './BlogPost.css';
 import SignatureSVG from './SignatureSVG';
+
+/* ── Mermaid init ── */
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#7f5af0',
+    primaryTextColor: '#e0e0e0',
+    primaryBorderColor: '#7f5af0',
+    lineColor: '#7f5af0',
+    secondaryColor: '#2cb67d',
+    tertiaryColor: 'rgba(127, 90, 240, 0.08)',
+    background: 'transparent',
+    mainBkg: 'rgba(127, 90, 240, 0.10)',
+    nodeBorder: '#7f5af0',
+    clusterBkg: 'rgba(127, 90, 240, 0.06)',
+    clusterBorder: 'rgba(127, 90, 240, 0.25)',
+    titleColor: '#e0e0e0',
+    edgeLabelBackground: 'rgba(6, 5, 14, 0.85)',
+    fontSize: '14px',
+  },
+  flowchart: { curve: 'basis', useMaxWidth: true },
+  securityLevel: 'loose',
+});
+
+/* ── MermaidBlock ── */
+let mermaidIdCounter = 0;
+const MermaidBlock = ({ code }) => {
+  const containerRef = useRef(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const id = `mermaid-${Date.now()}-${mermaidIdCounter++}`;
+
+    let diagramCode = code.trim();
+    diagramCode = diagramCode.replace(/^---[\s\S]*?---\s*/, '');
+
+    const render = async () => {
+      try {
+        const { svg } = await mermaid.render(id, diagramCode);
+        if (containerRef.current) {
+          containerRef.current.innerHTML = svg;
+          setError(null);
+        }
+      } catch (e) {
+        console.warn('Mermaid render error:', e);
+        setError(e.message || 'Mermaid 渲染失敗');
+        const errNode = document.getElementById('d' + id);
+        if (errNode) errNode.remove();
+      }
+    };
+    render();
+  }, [code]);
+
+  if (error) {
+    return (
+      <div className="mermaid-error">
+        <span>⚠ Mermaid 圖表解析失敗</span>
+        <pre>{code}</pre>
+      </div>
+    );
+  }
+
+  return <div className="mermaid-block" ref={containerRef} />;
+};
 
 /* ── helpers ── */
 const slugify = (text) =>
@@ -214,6 +282,10 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
   const match = /language-(\w+)/.exec(className || '');
   const lang = match ? match[1] : 'text';
   const codeText = String(children).replace(/\n$/, '');
+
+  if (!inline && lang === 'mermaid') {
+    return <MermaidBlock code={codeText} />;
+  }
 
   const handleCopy = () => {
     navigator.clipboard.writeText(codeText).then(() => {
@@ -689,7 +761,7 @@ function BlogPost() {
   const [copied, setCopied] = useState(false);
   const [onlineCount] = useState(Math.floor(Math.random() * 3) + 1);
   const [showSubscribe, setShowSubscribe] = useState(false);
-  const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') || 'misans');
+  const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') || 'noto-serif');
   const contentRef = useRef(null);
   const tocRef = useRef(null);
   const { id } = useParams();
@@ -782,12 +854,37 @@ function BlogPost() {
     } catch (e) { console.error('Like failed:', e); }
   };
 
-  /* ── Share handler ── */
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.origin + '/blog/' + id).then(() => {
+  const [showShareMenu, setShowShareMenu] = useState(false);
+
+  /* ── Share handlers ── */
+  const shareUrl = window.location.origin + '/blog/' + id;
+  const shareTitle = post?.title || '';
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
+      setShowShareMenu(false);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  const handleShareTwitter = () => {
+    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`, '_blank', 'noopener,noreferrer,width=550,height=420');
+    setShowShareMenu(false);
+  };
+
+  const handleShareFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank', 'noopener,noreferrer,width=550,height=420');
+    setShowShareMenu(false);
+  };
+
+  const handleNativeShare = () => {
+    if (navigator.share) {
+      navigator.share({ title: shareTitle, url: shareUrl }).catch(() => {});
+    } else {
+      handleCopyLink();
+    }
+    setShowShareMenu(false);
   };
 
   /* ── Read time ── */
@@ -1039,9 +1136,33 @@ function BlogPost() {
           {liked ? <FaHeart /> : <FaRegHeart />}
           {likeCount > 0 && <span>{likeCount}</span>}
         </button>
-        <button className={'float-btn' + (copied ? ' shared' : '')} onClick={handleShare} title="分享">
-          <FaShareAlt />
-        </button>
+        <div className="float-btn-wrapper">
+          <button
+            className={'float-btn' + (copied ? ' shared' : '')}
+            onClick={() => setShowShareMenu(!showShareMenu)}
+            title="分享"
+          >
+            <FaShareAlt />
+          </button>
+          <AnimatePresence>
+            {showShareMenu && (
+              <motion.div
+                className="share-menu"
+                initial={{ opacity: 0, x: 10, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 10, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+              >
+                <button onClick={handleShareTwitter}><FaTwitter /> Twitter</button>
+                <button onClick={handleShareFacebook}><FaFacebook /> Facebook</button>
+                <button onClick={handleCopyLink}><FaLink /> {copied ? '已複製!' : '複製連結'}</button>
+                {navigator.share && (
+                  <button onClick={handleNativeShare}><FaShareAlt /> 更多...</button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <a href="#comments" className="float-btn" title="留言">
           <FaRegComment />
         </a>

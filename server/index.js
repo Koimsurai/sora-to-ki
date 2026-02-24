@@ -3228,6 +3228,66 @@ app.use('/uploads', express.static(path.join(__dirname, 'storage', 'uploads')));
 
 app.use('/api', apiRouter);
 
+// --- RSS Feed ---
+app.get('/rss', (req, res) => {
+  const siteUrl = process.env.SITE_URL || 'https://koimsurai.com';
+  const sql = `
+    SELECT p.id, p.title, p.excerpt, p.content, p.created_at, p.updated_at, p.author, p.category,
+           GROUP_CONCAT(t.name) as tags
+    FROM posts p
+    LEFT JOIN post_tags pt ON p.id = pt.post_id
+    LEFT JOIN tags t ON pt.tag_id = t.id
+    WHERE p.status = 'published'
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+    LIMIT 30
+  `;
+
+  db.all(sql, [], (err, posts) => {
+    if (err) return res.status(500).send('Internal Server Error');
+
+    const escXml = (s) => String(s || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const lastBuild = posts.length > 0
+      ? new Date(posts[0].updated_at || posts[0].created_at).toUTCString()
+      : new Date().toUTCString();
+
+    const items = posts.map(p => {
+      const desc = p.excerpt || (p.content || '').replace(/<[^>]+>/g, '').replace(/[#*`>\-\n]/g, ' ').trim().slice(0, 300);
+      const tags = p.tags ? p.tags.split(',') : [];
+      const categories = tags.map(t => `<category>${escXml(t.trim())}</category>`).join('');
+      return `    <item>
+      <title>${escXml(p.title)}</title>
+      <link>${siteUrl}/blog/${p.id}</link>
+      <guid isPermaLink="true">${siteUrl}/blog/${p.id}</guid>
+      <description>${escXml(desc)}</description>
+      <author>${escXml(p.author || 'Koimsurai')}</author>
+      <pubDate>${new Date(p.created_at).toUTCString()}</pubDate>
+      ${p.category ? `<category>${escXml(p.category)}</category>` : ''}
+      ${categories}
+    </item>`;
+    }).join('\n');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Koimsurai 手記</title>
+    <link>${siteUrl}/blog</link>
+    <description>楊泰和的個人部落格 — 技術筆記、生活隨筆、影集心得</description>
+    <language>zh-TW</language>
+    <lastBuildDate>${lastBuild}</lastBuildDate>
+    <atom:link href="${siteUrl}/rss" rel="self" type="application/rss+xml"/>
+${items}
+  </channel>
+</rss>`;
+
+    res.set('Content-Type', 'application/rss+xml; charset=utf-8');
+    res.send(xml);
+  });
+});
+
 // Default response for any other request
 app.use(function (req, res) {
   res.status(404).send('Not Found');

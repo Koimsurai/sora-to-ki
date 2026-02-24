@@ -124,6 +124,10 @@ export default defineConfig(({ command }) => {
             });
           }
         },
+        '/rss': {
+          target: command === 'build' ? (process.env.BACKEND_URL || 'http://backend:3000') : 'http://localhost:3000',
+          changeOrigin: true,
+        },
         // LLM API proxy — 前端 AI 文章產生器直接呼叫 copilot-api
         '/llm-api': {
           // For Docker, localhost refers to the container. We need host machine.

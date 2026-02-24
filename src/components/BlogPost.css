@@ -13,6 +13,30 @@
   --post-page-bg: rgb(6, 5, 14);
 }
 
+/* ── Global scrollbar for blog post ── */
+.blog-post-container ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.blog-post-container ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.blog-post-container ::-webkit-scrollbar-thumb {
+  background: rgba(127, 90, 240, 0.25);
+  border-radius: 3px;
+}
+
+.blog-post-container ::-webkit-scrollbar-thumb:hover {
+  background: rgba(127, 90, 240, 0.45);
+}
+
+.blog-post-container * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127, 90, 240, 0.25) transparent;
+}
+
 /* ── Container ── */
 .blog-post-container {
   position: relative;
@@ -825,6 +849,48 @@
 }
 
 /* ═══════════════════════
+   Mermaid Diagram
+   ═══════════════════════ */
+.mermaid-block {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: rgba(127, 90, 240, 0.04);
+  border: 1px solid rgba(127, 90, 240, 0.15);
+  border-radius: 12px;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-error {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 71, 87, 0.06);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+
+.mermaid-error span {
+  color: #ff4757;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.mermaid-error pre {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* ═══════════════════════
    Code Block
    ═══════════════════════ */
 .code-block-wrapper {
@@ -833,6 +899,32 @@
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.06);
   margin: 1.5rem 0;
+}
+
+/* Code block custom scrollbar */
+.code-block-wrapper ::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.code-block-wrapper ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 3px;
+}
+
+.code-block-wrapper ::-webkit-scrollbar-thumb {
+  background: rgba(127, 90, 240, 0.3);
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.code-block-wrapper ::-webkit-scrollbar-thumb:hover {
+  background: rgba(127, 90, 240, 0.5);
+}
+
+.code-block-wrapper * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127, 90, 240, 0.3) rgba(255, 255, 255, 0.03);
 }
 
 .code-block-header {
@@ -1087,6 +1179,49 @@
   color: var(--post-green);
   background: rgba(44, 182, 125, 0.1);
   border-color: rgba(44, 182, 125, 0.3);
+}
+
+.float-btn-wrapper {
+  position: relative;
+}
+
+.share-menu {
+  position: absolute;
+  right: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(20, 18, 34, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 140px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 110;
+}
+
+.share-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.7rem;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.share-menu button:hover {
+  background: rgba(127, 90, 240, 0.12);
+  color: var(--post-accent);
 }
 
 /* ═══════════════════════
