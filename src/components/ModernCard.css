@@ -114,6 +114,22 @@
   z-index: 1;
 }
 
+/* Clickable navigation area */
+.modern-card-link {
+  display: block;
+  cursor: pointer;
+  padding: 24px 24px 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Footer sits below the link area */
+.modern-card-footer {
+  padding: 0 24px 24px;
+  position: relative;
+  z-index: 1;
+}
+
 /* Header section */
 .modern-card-header {
   display: flex;
@@ -411,5 +427,183 @@
   
   .read-time {
     justify-content: center;
+  }
+}
+
+/* ════════════════════════════════
+   Share Toast
+   ════════════════════════════════ */
+.mc-toast {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(44, 182, 125, 0.15);
+  border: 1px solid rgba(44, 182, 125, 0.3);
+  color: #2cb67d;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.mc-toast svg {
+  width: 14px;
+  height: 14px;
+  stroke: #2cb67d;
+  fill: none;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════
+   Comment Dialog Overlay
+   ════════════════════════════════ */
+.mc-comment-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.mc-comment-dialog {
+  width: 100%;
+  max-width: 620px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgb(18, 18, 28);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+}
+
+.mc-comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(20, 20, 32, 0.95);
+  flex-shrink: 0;
+}
+
+.mc-comment-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.mc-comment-header-left svg {
+  color: rgba(127, 90, 240, 0.7);
+  flex-shrink: 0;
+}
+
+.mc-comment-header-left > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mc-comment-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.mc-comment-post-title {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 350px;
+}
+
+.mc-comment-close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: none;
+  font-size: inherit;
+}
+
+.mc-comment-close:hover,
+.mc-comment-close:focus {
+  background: rgba(255, 71, 87, 0.12);
+  border-color: rgba(255, 71, 87, 0.3);
+  color: #ff4757;
+  box-shadow: none;
+}
+
+.mc-comment-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem 1.25rem 1.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127, 90, 240, 0.2) transparent;
+}
+
+.mc-comment-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.mc-comment-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mc-comment-body::-webkit-scrollbar-thumb {
+  background: rgba(127, 90, 240, 0.2);
+  border-radius: 3px;
+}
+
+/* Override Comments component styling inside dialog */
+.mc-comment-body .comments- {
+  max-width: none;
+  padding: 0.5rem 0 1rem;
+}
+
+.mc-comment-body .comments-::before {
+  margin: 0 auto 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .mc-comment-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+  
+  .mc-comment-dialog {
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: 16px 16px 0 0;
+  }
+  
+  .mc-comment-post-title {
+    max-width: 180px;
   }
 }

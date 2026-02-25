@@ -17,10 +17,12 @@ export interface MonacoToolbarProps {
   onLink: () => void;
   onImage: () => void;
   onNAS: () => void;
+  onUpload: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
   onSave?: () => void;
   disabled?: boolean;
+  uploading?: boolean;
 }
 
 export interface MonacoShortcutsProps {

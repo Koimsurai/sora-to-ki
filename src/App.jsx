@@ -324,6 +324,8 @@ function Layout({ activeSection, onSectionChange }) {
             <Route path="users" element={<Suspense fallback={<LoadingFallback />}><LazyUsersManager /></Suspense>} />
             <Route path="notes" element={<AdminPlaceholder title="日記管理" />} />
           </Route>
+          {/* 未知路由導回首頁 */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       {!isAdminPage && !isPhotoPage && (
@@ -335,14 +337,19 @@ function Layout({ activeSection, onSectionChange }) {
   );
 }
 
+// 只有首頁 "/" 才播放 intro 動畫，其他路由一律跳過
+const INTRO_ROUTES = new Set(['/']);
+
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const isMobile = useMediaQuery('(max-width: 768px)'); // 偵測是否為手機版
   const introCompleted = sessionStorage.getItem('introCompleted') === 'true';
-  const [animateSaturn, setAnimateSaturn] = useState(introCompleted);
-  const [showMainHtmlContent, setShowMainHtmlContent] = useState(introCompleted);
+  const isIntroRoute = INTRO_ROUTES.has(window.location.pathname);
+  const shouldSkipIntro = introCompleted || !isIntroRoute;
+  const [animateSaturn, setAnimateSaturn] = useState(shouldSkipIntro);
+  const [showMainHtmlContent, setShowMainHtmlContent] = useState(shouldSkipIntro);
   const [saturnZIndex, setSaturnZIndex] = useState(1);
-  const [introVisible, setIntroVisible] = useState(!introCompleted);
+  const [introVisible, setIntroVisible] = useState(!shouldSkipIntro);
   const introCompleteTimeoutRef = useRef(null);
   const sharedRotationRef = useRef();
   const [activeSection, setActiveSection] = useState('home');

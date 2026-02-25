@@ -32,19 +32,30 @@ WORKDIR /app
 ENV TZ=Asia/Taipei
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy built assets and package files from the builder stage
+# Copy built assets, serve script, and package files from the builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/pnpm-lock.yaml ./
+COPY --from=builder /app/serve.cjs ./serve.cjs
 
-# Install production dependencies
-RUN pnpm install --prod --frozen-lockfile
+# Install only the lightweight dependencies needed for serve.cjs
+RUN npm install express@4 sharp@0.33
+
+# Generate default OG image (SVG → PNG)
+RUN node -e "\
+const sharp = require('sharp');\
+const fs = require('fs');\
+const svg = fs.readFileSync('./dist/og-default.svg');\
+sharp(svg).resize(1200, 630).png({quality: 90}).toFile('./dist/og-default.png')\
+  .then(() => console.log('OG default image generated'))\
+  .catch(e => console.warn('OG image gen failed:', e.message));\
+"
 
 # Expose the port the app runs on
 EXPOSE 13579
 
-# Start the app
-CMD ["npx", "serve", "-s", "dist", "-l", "13579"]
+# Environment variables (can be overwritten in docker-compose)
+ENV PORT=13579
+ENV BACKEND_URL=http://backend:3001
+ENV SITE_URL=https://koimsurai.com
+
+# Start the custom server
+CMD ["node", "serve.cjs"]

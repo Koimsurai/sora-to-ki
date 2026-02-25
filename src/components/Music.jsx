@@ -1,137 +1,169 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './Music.css';
 
+/* ─── 色彩提取工具：從專輯封面取主色調 ─── */
+const extractDominantColor = (imageUrl) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 50;
+      canvas.height = 50;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, 50, 50);
+      const data = ctx.getImageData(0, 0, 50, 50).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < data.length; i += 16) {
+        // 過濾太暗或太亮的像素
+        if (data[i] + data[i + 1] + data[i + 2] > 60 &&
+          data[i] + data[i + 1] + data[i + 2] < 700) {
+          r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+        }
+      }
+      if (count > 0) {
+        resolve({ r: Math.round(r / count), g: Math.round(g / count), b: Math.round(b / count) });
+      } else {
+        resolve({ r: 127, g: 90, b: 240 }); // fallback 紫色
+      }
+    };
+    img.onerror = () => resolve({ r: 127, g: 90, b: 240 });
+    // 使用代理避免 CORS
+    const apiUrl = import.meta.env.VITE_API_URL || '/api';
+    img.src = `${apiUrl}/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+  });
+};
+
 const Music = () => {
-  const [spotifyData, setSpotifyData] = useState(null);
   const [recentlyPlayed, setRecentlyPlayed] = useState(null);
   const [topGenres, setTopGenres] = useState(null);
   const [topTracks, setTopTracks] = useState(null);
+  const [nowPlaying, setNowPlaying] = useState(null);
+  const [audioFeatures, setAudioFeatures] = useState({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recent');
   const [timeRange, setTimeRange] = useState('medium_term');
-  const [hoveredCard, setHoveredCard] = useState(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [dominantColor, setDominantColor] = useState({ r: 127, g: 90, b: 240 });
   const containerRef = useRef(null);
 
-  // 追蹤鼠標位置用於光暈效果
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setMousePosition({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top
-        });
-      }
-    };
+  /* ─── API 呼叫 ─── */
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  useEffect(() => {
-    fetchMusicData();
-    
-    // 每10分鐘自動更新一次 Spotify 資料
-    const dataRefreshInterval = setInterval(() => {
-      console.log('🎵 自動更新 Spotify 資料...');
-      fetchMusicData();
-    }, 10 * 60 * 1000); // 10 分鐘
-    
-    return () => {
-      clearInterval(dataRefreshInterval);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'yearly') {
-      fetchTopTracks(timeRange);
-    }
-  }, [timeRange, activeTab]);
-
-  const fetchMusicData = async () => {
-    setLoading(true);
-    await Promise.all([
-      fetchRecentlyPlayed(),
-      fetchTopGenres(),
-      fetchTopTracks('medium_term')
-    ]);
-    setLoading(false);
-  };
-
-  const fetchRecentlyPlayed = async () => {
+  const fetchNowPlaying = useCallback(async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const response = await fetch(`${apiUrl}/spotify/now-playing`);
+      const data = await response.json();
+      setNowPlaying(data);
+
+      // 提取封面色彩
+      const coverUrl = data?.item?.album?.images?.[0]?.url;
+      if (coverUrl) {
+        const color = await extractDominantColor(coverUrl);
+        setDominantColor(color);
+      }
+    } catch (error) {
+      console.error('獲取正在播放失敗:', error);
+      setNowPlaying({ is_playing: false });
+    }
+  }, [apiUrl]);
+
+  const fetchRecentlyPlayed = useCallback(async () => {
+    try {
       const response = await fetch(`${apiUrl}/spotify/recently-played`);
       const data = await response.json();
-
       if (data.error) {
         setRecentlyPlayed({ error: data.error, configured: false });
         return;
       }
-
-      setRecentlyPlayed({
-        tracks: data.items || [],
-        configured: true
-      });
+      setRecentlyPlayed({ tracks: data.items || [], configured: true });
     } catch (error) {
-      console.error('獲取 Spotify 最近播放失敗:', error);
-      setRecentlyPlayed({
-        error: '無法連接到後端 API',
-        configured: false
-      });
+      console.error('獲取最近播放失敗:', error);
+      setRecentlyPlayed({ error: '無法連接到後端 API', configured: false });
     }
-  };
+  }, [apiUrl]);
 
-  const fetchTopGenres = async () => {
+  const fetchTopGenres = useCallback(async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/spotify/top-genres`);
       const data = await response.json();
-
-      if (data.error) {
-        setTopGenres({ error: data.error, configured: false });
-        return;
-      }
-
-      setTopGenres({
-        genres: data.genres || [],
-        configured: true
-      });
+      if (data.error) { setTopGenres({ error: data.error, configured: false }); return; }
+      setTopGenres({ genres: data.genres || [], configured: true });
     } catch (error) {
-      console.error('獲取 Spotify 曲風失敗:', error);
-      setTopGenres({
-        error: '無法連接到後端 API',
-        configured: false
-      });
+      console.error('獲取曲風失敗:', error);
+      setTopGenres({ error: '無法連接到後端 API', configured: false });
     }
-  };
+  }, [apiUrl]);
 
-  const fetchTopTracks = async (range) => {
+  const fetchTopTracks = useCallback(async (range) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(`${apiUrl}/spotify/top-tracks?time_range=${range}&limit=20`);
       const data = await response.json();
-
-      if (data.error) {
-        setTopTracks({ error: data.error, configured: false });
-        return;
-      }
-
-      setTopTracks({
-        tracks: data.items || [],
-        configured: true
-      });
+      if (data.error) { setTopTracks({ error: data.error, configured: false }); return; }
+      setTopTracks({ tracks: data.items || [], configured: true });
     } catch (error) {
-      console.error('獲取 Spotify 年度歌單失敗:', error);
-      setTopTracks({
-        error: '無法連接到後端 API',
-        configured: false
-      });
+      console.error('獲取年度歌單失敗:', error);
+      setTopTracks({ error: '無法連接到後端 API', configured: false });
     }
-  };
+  }, [apiUrl]);
 
+  const fetchAudioFeatures = useCallback(async (trackIds) => {
+    if (!trackIds || trackIds.length === 0) return;
+    try {
+      const response = await fetch(`${apiUrl}/spotify/audio-features?ids=${trackIds.join(',')}`);
+      const data = await response.json();
+      if (data.audio_features) {
+        const featuresMap = {};
+        data.audio_features.forEach(f => { if (f) featuresMap[f.id] = f; });
+        setAudioFeatures(prev => ({ ...prev, ...featuresMap }));
+      }
+    } catch (error) {
+      console.error('獲取音訊特性失敗:', error);
+    }
+  }, [apiUrl]);
+
+  /* ─── 初始載入 ─── */
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchNowPlaying(),
+        fetchRecentlyPlayed(),
+        fetchTopGenres(),
+        fetchTopTracks('medium_term')
+      ]);
+      setLoading(false);
+    };
+    init();
+    const interval = setInterval(fetchNowPlaying, 30000); // 30秒更新正在播放
+    const dataInterval = setInterval(() => {
+      fetchRecentlyPlayed();
+      fetchTopGenres();
+    }, 10 * 60 * 1000);
+    return () => { clearInterval(interval); clearInterval(dataInterval); };
+  }, [fetchNowPlaying, fetchRecentlyPlayed, fetchTopGenres, fetchTopTracks]);
+
+  /* ─── Tab 切換時載入對應資料 ─── */
+  useEffect(() => {
+    if (activeTab === 'yearly') fetchTopTracks(timeRange);
+  }, [timeRange, activeTab, fetchTopTracks]);
+
+  /* ─── 載入 Audio Features ─── */
+  useEffect(() => {
+    if (recentlyPlayed?.tracks?.length > 0 && activeTab === 'recent') {
+      const ids = recentlyPlayed.tracks.map(t => t.track.id).filter(id => !audioFeatures[id]);
+      if (ids.length > 0) fetchAudioFeatures(ids);
+    }
+  }, [recentlyPlayed, activeTab, audioFeatures, fetchAudioFeatures]);
+
+  useEffect(() => {
+    if (topTracks?.tracks?.length > 0 && activeTab === 'yearly') {
+      const ids = topTracks.tracks.map(t => t.id).filter(id => !audioFeatures[id]);
+      if (ids.length > 0) fetchAudioFeatures(ids);
+    }
+  }, [topTracks, activeTab, audioFeatures, fetchAudioFeatures]);
+
+  /* ─── 工具 ─── */
   const formatDuration = (ms) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
@@ -144,36 +176,69 @@ const Music = () => {
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
-
     if (diffMins < 60) return `${diffMins} 分鐘前`;
     if (diffHours < 24) return `${diffHours} 小時前`;
     return date.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
   };
 
-  const getGenreColor = (index) => {
-    const colors = [
-      'linear-gradient(135deg, rgba(236, 72, 153, 0.8), rgba(168, 85, 247, 0.8))',
-      'linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(6, 182, 212, 0.8))',
-      'linear-gradient(135deg, rgba(16, 185, 129, 0.8), rgba(52, 211, 153, 0.8))',
-      'linear-gradient(135deg, rgba(245, 158, 11, 0.8), rgba(251, 191, 36, 0.8))',
-      'linear-gradient(135deg, rgba(239, 68, 68, 0.8), rgba(220, 38, 38, 0.8))'
-    ];
-    return colors[index % colors.length];
+  // 計算平均音訊特性
+  const getAverageFeatures = () => {
+    const features = Object.values(audioFeatures);
+    if (features.length === 0) return null;
+    const avg = { energy: 0, acousticness: 0, valence: 0, danceability: 0, tempo: 0 };
+    features.forEach(f => {
+      avg.energy += f.energy || 0;
+      avg.acousticness += f.acousticness || 0;
+      avg.valence += f.valence || 0;
+      avg.danceability += f.danceability || 0;
+      avg.tempo += f.tempo || 0;
+    });
+    const n = features.length;
+    return {
+      energy: avg.energy / n,
+      acousticness: avg.acousticness / n,
+      valence: avg.valence / n,
+      danceability: avg.danceability / n,
+      tempo: Math.round(avg.tempo / n)
+    };
   };
 
+  /* ─── Now Playing 資訊 ─── */
+  const getNowPlayingData = () => {
+    if (nowPlaying?.is_playing && nowPlaying?.item) {
+      return { ...nowPlaying, isLive: true };
+    }
+    // Fallback: 最近播放的第一首
+    if (recentlyPlayed?.tracks?.[0]) {
+      const recent = recentlyPlayed.tracks[0];
+      return {
+        is_playing: false,
+        isLive: false,
+        item: recent.track,
+        progress_ms: 0,
+        played_at: recent.played_at
+      };
+    }
+    return null;
+  };
+
+  const glowStyle = {
+    '--glow-r': dominantColor.r,
+    '--glow-g': dominantColor.g,
+    '--glow-b': dominantColor.b,
+  };
+
+  /* ─── Loading ─── */
   if (loading) {
     return (
-      <div className="music-container">
+      <div className="music-page" style={glowStyle}>
+        <div className="music-dim-overlay" />
         <div className="music-loading">
           <div className="vinyl-loader">
-            <div className="vinyl-disc"></div>
-            <div className="vinyl-center"></div>
+            <div className="vinyl-disc" />
+            <div className="vinyl-center" />
           </div>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
             正在載入音樂資料...
           </motion.p>
         </div>
@@ -181,298 +246,429 @@ const Music = () => {
     );
   }
 
+  const npData = getNowPlayingData();
+  const avgFeatures = getAverageFeatures();
+
   return (
-    <div className="music-container" ref={containerRef}>
-      {/* 星空背景效果 */}
-      <div className="cosmic-background">
-        <div className="stars-layer stars-small"></div>
-        <div className="stars-layer stars-medium"></div>
-        <div className="stars-layer stars-large"></div>
+    <div className="music-page" ref={containerRef} style={glowStyle}>
+      <div className="music-dim-overlay" />
+
+      {/* ═══ 星雲背景 ═══ */}
+      <div className="music-nebula-bg">
+        <div className="nebula-layer music-nebula-1" />
+        <div className="nebula-layer music-nebula-2" />
+        <div className="nebula-layer music-nebula-3" />
       </div>
 
-      {/* 鼠標跟隨光暈 */}
-      <motion.div
-        className="mouse-glow"
-        animate={{
-          left: mousePosition.x,
-          top: mousePosition.y,
-        }}
-        transition={{ type: "spring", stiffness: 150, damping: 15 }}
-      />
-
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="music-header"
-      >
-        <motion.h1
-          className="music-title"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
+      <div className="music-content-wrapper">
+        {/* ═══ Header ═══ */}
+        <motion.div
+          className="music-hero"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <span className="title-gradient">音樂星域</span>
-          <motion.span
-            className="title-icon"
-            animate={{
-              rotate: [0, 360],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-          >
-            🎵
-          </motion.span>
-        </motion.h1>
+          <h1 className="music-hero-title">
+            <span className="music-title-gradient">音樂星域</span>
+            <span className="music-title-sub">Music Galaxy</span>
+          </h1>
+          <p className="music-hero-desc">我的音樂品味、收藏紀錄與聆聽分析</p>
+        </motion.div>
 
-        <motion.p
-          className="music-subtitle"
+        {/* ═══ Now Playing Hero ═══ */}
+        {npData && (
+          <motion.section
+            className="now-playing-hero"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            <div className="np-ambient-glow" />
+            <div className="np-content">
+              <div className="np-cover-area">
+                <img
+                  src={npData.item?.album?.images?.[0]?.url}
+                  alt={npData.item?.name}
+                  className="np-cover"
+                />
+                {/* Audio Visualizer */}
+                <div className={`np-visualizer ${npData.isLive ? 'active' : ''}`}>
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="eq-bar" style={{ animationDelay: `${i * 0.12}s` }} />
+                  ))}
+                </div>
+              </div>
+              <div className="np-info">
+                <div className="np-status-badge">
+                  <span className={`np-dot ${npData.isLive ? 'live' : ''}`} />
+                  {npData.isLive ? '正在播放' : '最後播放'}
+                </div>
+                <h2 className="np-title">{npData.item?.name}</h2>
+                <p className="np-artist">{npData.item?.artists?.map(a => a.name).join(', ')}</p>
+                <p className="np-album">{npData.item?.album?.name}</p>
+                {npData.isLive && npData.progress_ms > 0 && npData.item?.duration_ms && (
+                  <div className="np-progress-area">
+                    <div className="np-progress-bar">
+                      <div
+                        className="np-progress-fill"
+                        style={{ width: `${(npData.progress_ms / npData.item.duration_ms) * 100}%` }}
+                      />
+                    </div>
+                    <div className="np-time">
+                      <span>{formatDuration(npData.progress_ms)}</span>
+                      <span>{formatDuration(npData.item.duration_ms)}</span>
+                    </div>
+                  </div>
+                )}
+                {!npData.isLive && npData.played_at && (
+                  <p className="np-last-played">{formatDate(npData.played_at)}</p>
+                )}
+                <a
+                  href={npData.item?.external_urls?.spotify}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="np-spotify-link"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+                  </svg>
+                  在 Spotify 收聽
+                </a>
+              </div>
+            </div>
+          </motion.section>
+        )}
+
+        {/* ═══ Tabs ═══ */}
+        <motion.div
+          className="music-tabs"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          探索我的音樂品味與收藏 🎧
-        </motion.p>
-      </motion.div>
+          {[
+            { id: 'recent', label: '最近播放' },
+            { id: 'genres', label: '最愛曲風' },
+            { id: 'yearly', label: '年度歌單' },
+            { id: 'analytics', label: '聆聽分析' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              className={`music-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+              {activeTab === tab.id && (
+                <motion.div
+                  className="tab-active-line"
+                  layoutId="musicTab"
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                />
+              )}
+            </button>
+          ))}
+        </motion.div>
 
-      <motion.div
-        className="music-tabs"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        {[
-          { id: 'recent', icon: '⏱️', label: '最近播放' },
-          { id: 'genres', icon: '🎼', label: '最愛曲風' },
-          { id: 'yearly', icon: '🏆', label: '年度歌單' }
-        ].map((tab, index) => (
-          <motion.button
-            key={tab.id}
-            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 + index * 0.1 }}
-          >
-            <span className="tab-icon">{tab.icon}</span>
-            <span className="tab-label">{tab.label}</span>
-            {activeTab === tab.id && (
+        {/* ═══ Content ═══ */}
+        <div className="music-main-content">
+          <AnimatePresence mode="wait">
+
+            {/* ── 最近播放 ── */}
+            {activeTab === 'recent' && (
               <motion.div
-                className="tab-indicator"
-                layoutId="activeTab"
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              />
-            )}
-          </motion.button>
-        ))}
-      </motion.div>
-
-      <div className="music-content">
-        <AnimatePresence mode="wait">
-          {activeTab === 'recent' && (
-            <motion.div
-              key="recent"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="tracks-section"
-            >
-              <h2 className="section-title">🎵 最近播放的 10 首歌</h2>
-              {recentlyPlayed?.error ? (
-                <div className="error-message">
-                  <p>{recentlyPlayed.error}</p>
-                  {!recentlyPlayed.configured && (
-                    <div className="config-hint">
-                      <p>如何配置 Spotify API:</p>
-                      <ol>
-                        <li>前往 <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">Spotify Developer Dashboard</a></li>
-                        <li>創建應用並獲取 Client ID 和 Client Secret</li>
-                        <li>在 server/.env 中設置: <code>SPOTIFY_CLIENT_ID</code>, <code>SPOTIFY_CLIENT_SECRET</code>, <code>SPOTIFY_REFRESH_TOKEN</code></li>
-                        <li>重啟後端服務器</li>
-                      </ol>
+                key="recent"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.25 }}
+                className="music-section"
+              >
+                <h2 className="section-heading">最近播放</h2>
+                {recentlyPlayed?.error ? (
+                  <div className="music-error-box">
+                    <p>{recentlyPlayed.error}</p>
+                    {!recentlyPlayed.configured && (
+                      <div className="config-hint">
+                        <p>如何配置 Spotify API:</p>
+                        <ol>
+                          <li>前往 <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer">Spotify Developer Dashboard</a></li>
+                          <li>創建應用並獲取 Client ID 和 Client Secret</li>
+                          <li>在 server/.env 中設置: <code>SPOTIFY_CLIENT_ID</code>, <code>SPOTIFY_CLIENT_SECRET</code>, <code>SPOTIFY_REFRESH_TOKEN</code></li>
+                          <li>重啟後端服務器</li>
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                ) : recentlyPlayed?.tracks?.length > 0 ? (
+                  <div className="track-row-list">
+                    {/* 列表標題 */}
+                    <div className="track-row track-row-header">
+                      <span className="tr-num">#</span>
+                      <span className="tr-cover-placeholder" />
+                      <span className="tr-title-col">曲目</span>
+                      <span className="tr-features-col">音訊特性</span>
+                      <span className="tr-duration-col">時長</span>
+                      <span className="tr-time-col">播放時間</span>
                     </div>
-                  )}
-                </div>
-              ) : recentlyPlayed?.tracks?.length > 0 ? (
-                <div className="tracks-grid">
-                  {recentlyPlayed.tracks.map((item, index) => (
-                    <motion.div
-                      key={`${item.track.id}-${index}`}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      whileHover={{ scale: 1.02, y: -5 }}
-                      onHoverStart={() => setHoveredCard(`track-${index}`)}
-                      onHoverEnd={() => setHoveredCard(null)}
-                      className="track-card"
-                    >
-                      <div className="track-cover-wrapper">
-                        <img
-                          src={item.track.album.images[0]?.url}
-                          alt={item.track.name}
-                          className="track-cover"
-                        />
-                        <div className="track-overlay">
-                          <a
-                            href={item.track.external_urls.spotify}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="spotify-link"
-                          >
-                            在 Spotify 上播放 →
-                          </a>
-                        </div>
-                      </div>
-                      <div className="track-info">
-                        <h3>{item.track.name}</h3>
-                        <p className="track-artist">{item.track.artists.map(a => a.name).join(', ')}</p>
-                        <div className="track-meta">
-                          <span className="track-album">{item.track.album.name}</span>
-                          <span className="track-duration">{formatDuration(item.track.duration_ms)}</span>
-                        </div>
-                        <p className="track-time">{formatDate(item.played_at)}</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <p className="no-data">暫無最近播放記錄</p>
-              )}
-            </motion.div>
-          )}
+                    {recentlyPlayed.tracks.map((item, index) => {
+                      const feat = audioFeatures[item.track.id];
+                      return (
+                        <motion.a
+                          key={`${item.track.id}-${index}`}
+                          href={item.track.external_urls.spotify}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="track-row"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.03 }}
+                          whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                        >
+                          <span className="tr-num">{index + 1}</span>
+                          <img
+                            src={item.track.album.images[2]?.url || item.track.album.images[0]?.url}
+                            alt=""
+                            className="tr-cover"
+                          />
+                          <div className="tr-title-col">
+                            <span className="tr-name">{item.track.name}</span>
+                            <span className="tr-artist">{item.track.artists.map(a => a.name).join(', ')}</span>
+                          </div>
+                          <div className="tr-features-col">
+                            {feat ? (
+                              <>
+                                <FeatureBar label="活力" value={feat.energy} color="var(--feat-energy)" />
+                                <FeatureBar label="節奏" value={feat.danceability} color="var(--feat-dance)" />
+                                <FeatureBar label="正度" value={feat.valence} color="var(--feat-valence)" />
+                              </>
+                            ) : (
+                              <span className="tr-no-feat">—</span>
+                            )}
+                          </div>
+                          <span className="tr-duration">{formatDuration(item.track.duration_ms)}</span>
+                          <span className="tr-time">{formatDate(item.played_at)}</span>
+                        </motion.a>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="music-no-data">暫無最近播放記錄</p>
+                )}
+              </motion.div>
+            )}
 
-          {activeTab === 'genres' && (
-            <motion.div
-              key="genres"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="genres-section"
-            >
-              <h2 className="section-title">🎼 最愛的曲風 Top 5</h2>
-              {topGenres?.error ? (
-                <div className="error-message">
-                  <p>{topGenres.error}</p>
-                </div>
-              ) : topGenres?.genres?.length > 0 ? (
-                <div className="genres-grid">
-                  {topGenres.genres.map((genre, index) => (
-                    <motion.div
-                      key={genre.genre}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.1 }}
-                      whileHover={{ scale: 1.05, y: -8 }}
-                      className="genre-card"
-                      style={{
-                        background: getGenreColor(index)
-                      }}
-                    >
-                      <div className="genre-rank">#{index + 1}</div>
-                      <h3 className="genre-name">{genre.genre}</h3>
-                      <div className="genre-count">{genre.count} 位藝人</div>
-                      <div className="genre-bar-wrapper">
+            {/* ── 最愛曲風 ── */}
+            {activeTab === 'genres' && (
+              <motion.div
+                key="genres"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.25 }}
+                className="music-section"
+              >
+                <h2 className="section-heading">最愛的曲風 Top 5</h2>
+                {topGenres?.error ? (
+                  <div className="music-error-box"><p>{topGenres.error}</p></div>
+                ) : topGenres?.genres?.length > 0 ? (
+                  <div className="galaxy-bubbles">
+                    {topGenres.genres.map((genre, index) => {
+                      const maxCount = topGenres.genres[0].count;
+                      const ratio = genre.count / maxCount;
+                      const size = 120 + ratio * 80; // 120-200px
+                      return (
                         <motion.div
-                          className="genre-bar"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(genre.count / topGenres.genres[0].count) * 100}%` }}
-                          transition={{ duration: 0.8, delay: 0.2 + index * 0.1 }}
-                        />
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : (
-                <p className="no-data">暫無曲風資料</p>
-              )}
-            </motion.div>
-          )}
+                          key={genre.genre}
+                          className="galaxy-bubble"
+                          style={{
+                            width: size,
+                            height: size,
+                            animationDelay: `${index * 0.8}s`,
+                          }}
+                          initial={{ opacity: 0, scale: 0.6 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.15, type: 'spring', stiffness: 200 }}
+                          whileHover={{ scale: 1.1 }}
+                        >
+                          <div className="bubble-rank">#{index + 1}</div>
+                          <div className="bubble-name">{genre.genre}</div>
+                          <div className="bubble-count">{genre.count} 位藝人</div>
+                          <div className="bubble-glow" />
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="music-no-data">暫無曲風資料</p>
+                )}
+              </motion.div>
+            )}
 
-          {activeTab === 'yearly' && (
-            <motion.div
-              key="yearly"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="yearly-section"
-            >
-              <div className="yearly-header">
-                <h2 className="section-title">🏆 年度歌單</h2>
-                <div className="time-range-selector">
-                  <button
-                    className={`range-btn ${timeRange === 'short_term' ? 'active' : ''}`}
-                    onClick={() => setTimeRange('short_term')}
-                  >
-                    最近 4 週
-                  </button>
-                  <button
-                    className={`range-btn ${timeRange === 'medium_term' ? 'active' : ''}`}
-                    onClick={() => setTimeRange('medium_term')}
-                  >
-                    最近 6 個月
-                  </button>
-                  <button
-                    className={`range-btn ${timeRange === 'long_term' ? 'active' : ''}`}
-                    onClick={() => setTimeRange('long_term')}
-                  >
-                    全部時間
-                  </button>
-                </div>
-              </div>
-              {topTracks?.error ? (
-                <div className="error-message">
-                  <p>{topTracks.error}</p>
-                </div>
-              ) : topTracks?.tracks?.length > 0 ? (
-                <div className="yearly-tracks-list">
-                  {topTracks.tracks.map((track, index) => (
-                    <motion.div
-                      key={track.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.03 }}
-                      whileHover={{ scale: 1.02, x: 5 }}
-                      className="yearly-track-item"
-                    >
-                      <div className="track-rank">#{index + 1}</div>
-                      <img
-                        src={track.album.images[2]?.url || track.album.images[0]?.url}
-                        alt={track.name}
-                        className="track-thumbnail"
-                      />
-                      <div className="track-details">
-                        <h4>{track.name}</h4>
-                        <p>{track.artists.map(a => a.name).join(', ')}</p>
-                      </div>
-                      <div className="track-stats">
-                        <span className="track-album">{track.album.name}</span>
-                        <span className="track-duration">{formatDuration(track.duration_ms)}</span>
-                      </div>
-                      <a
-                        href={track.external_urls.spotify}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="play-btn"
+            {/* ── 年度歌單 ── */}
+            {activeTab === 'yearly' && (
+              <motion.div
+                key="yearly"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.25 }}
+                className="music-section"
+              >
+                <div className="yearly-header-row">
+                  <h2 className="section-heading">年度歌單</h2>
+                  <div className="time-range-pills">
+                    {[
+                      { value: 'short_term', label: '最近 4 週' },
+                      { value: 'medium_term', label: '最近 6 個月' },
+                      { value: 'long_term', label: '全部時間' },
+                    ].map(r => (
+                      <button
+                        key={r.value}
+                        className={`range-pill ${timeRange === r.value ? 'active' : ''}`}
+                        onClick={() => setTimeRange(r.value)}
                       >
-                        ▶
-                      </a>
-                    </motion.div>
-                  ))}
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <p className="no-data">暫無年度歌單資料</p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {topTracks?.error ? (
+                  <div className="music-error-box"><p>{topTracks.error}</p></div>
+                ) : topTracks?.tracks?.length > 0 ? (
+                  <div className="track-row-list">
+                    <div className="track-row track-row-header">
+                      <span className="tr-num">#</span>
+                      <span className="tr-cover-placeholder" />
+                      <span className="tr-title-col">曲目</span>
+                      <span className="tr-features-col">音訊特性</span>
+                      <span className="tr-duration-col">時長</span>
+                      <span className="tr-album-col">專輯</span>
+                    </div>
+                    {topTracks.tracks.map((track, index) => {
+                      const feat = audioFeatures[track.id];
+                      return (
+                        <motion.a
+                          key={track.id}
+                          href={track.external_urls.spotify}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="track-row"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.02 }}
+                          whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                        >
+                          <span className="tr-num">{index + 1}</span>
+                          <img
+                            src={track.album.images[2]?.url || track.album.images[0]?.url}
+                            alt=""
+                            className="tr-cover"
+                          />
+                          <div className="tr-title-col">
+                            <span className="tr-name">{track.name}</span>
+                            <span className="tr-artist">{track.artists.map(a => a.name).join(', ')}</span>
+                          </div>
+                          <div className="tr-features-col">
+                            {feat ? (
+                              <>
+                                <FeatureBar label="活力" value={feat.energy} color="var(--feat-energy)" />
+                                <FeatureBar label="節奏" value={feat.danceability} color="var(--feat-dance)" />
+                                <FeatureBar label="正度" value={feat.valence} color="var(--feat-valence)" />
+                              </>
+                            ) : (
+                              <span className="tr-no-feat">—</span>
+                            )}
+                          </div>
+                          <span className="tr-duration">{formatDuration(track.duration_ms)}</span>
+                          <span className="tr-album-col tr-album-text">{track.album.name}</span>
+                        </motion.a>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="music-no-data">暫無年度歌單資料</p>
+                )}
+              </motion.div>
+            )}
+
+            {/* ── 聆聽分析 ── */}
+            {activeTab === 'analytics' && (
+              <motion.div
+                key="analytics"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.25 }}
+                className="music-section"
+              >
+                <h2 className="section-heading">聆聽分析</h2>
+                {avgFeatures ? (
+                  <div className="analytics-dashboard">
+                    <AnalyticGauge label="平均活力" sublabel="Energy" value={avgFeatures.energy} />
+                    <AnalyticGauge label="平均原聲度" sublabel="Acousticness" value={avgFeatures.acousticness} />
+                    <AnalyticGauge label="平均正度" sublabel="Valence" value={avgFeatures.valence} />
+                    <AnalyticGauge label="平均律動感" sublabel="Danceability" value={avgFeatures.danceability} />
+                    <div className="analytic-card analytic-tempo">
+                      <div className="analytic-label">平均速度</div>
+                      <div className="analytic-sublabel">Tempo</div>
+                      <div className="tempo-value">
+                        <span className="tempo-number">{avgFeatures.tempo}</span>
+                        <span className="tempo-unit">BPM</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="music-no-data">載入聆聽數據中，請切換至其他分頁後再回來...</p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── 子組件：Audio Feature 進度條 ─── */
+const FeatureBar = ({ label, value, color }) => (
+  <div className="feat-bar-wrapper">
+    <span className="feat-label">{label}</span>
+    <div className="feat-bar-track">
+      <motion.div
+        className="feat-bar-fill"
+        style={{ background: color }}
+        initial={{ width: 0 }}
+        animate={{ width: `${Math.round(value * 100)}%` }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+      />
+    </div>
+    <span className="feat-value">{Math.round(value * 100)}</span>
+  </div>
+);
+
+/* ─── 子組件：分析儀表圓環 ─── */
+const AnalyticGauge = ({ label, sublabel, value }) => {
+  const percent = Math.round(value * 100);
+  const circumference = 2 * Math.PI * 42;
+  const offset = circumference - (percent / 100) * circumference;
+
+  return (
+    <div className="analytic-card">
+      <div className="analytic-label">{label}</div>
+      <div className="analytic-sublabel">{sublabel}</div>
+      <div className="gauge-ring">
+        <svg viewBox="0 0 100 100" className="gauge-svg">
+          <circle cx="50" cy="50" r="42" className="gauge-bg" />
+          <motion.circle
+            cx="50" cy="50" r="42"
+            className="gauge-fill"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.2, ease: 'easeOut' }}
+          />
+        </svg>
+        <div className="gauge-value">{percent}<span className="gauge-percent">%</span></div>
       </div>
     </div>
   );

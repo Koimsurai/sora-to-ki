@@ -1227,7 +1227,7 @@ apiRouter.post('/posts/:id/comments', (req, res) => {
       if (decoded.userId && decoded.provider) {
         isOAuthUser = true;
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // 簡易驗證碼檢查（僅匿名用戶）
@@ -1481,9 +1481,9 @@ apiRouter.post('/admin/keyword-filters', requireAdmin, (req, res) => {
   const validActions = ['spam', 'reject'];
   db.run('INSERT OR IGNORE INTO keyword_filters (keyword, action) VALUES (?, ?)',
     [keyword, validActions.includes(action) ? action : 'spam'], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'success', id: this.lastID });
-  });
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ message: 'success', id: this.lastID });
+    });
 });
 
 apiRouter.delete('/admin/keyword-filters/:id', requireAdmin, (req, res) => {
@@ -1583,7 +1583,7 @@ apiRouter.post('/auth/github/callback', async (req, res) => {
         });
         const primary = emailRes.data.find(e => e.primary);
         if (primary) userEmail = primary.email;
-      } catch (_) {}
+      } catch (_) { }
     }
 
     const displayName = name || login;
@@ -1963,7 +1963,7 @@ apiRouter.get('/steam/achievements/:appid', (req, res) => {
 const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const SPOTIFY_CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const SPOTIFY_REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN;
-const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'https://koimsurai.blogsyte.com/api/spotify/callback';
+const SPOTIFY_REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || 'https://koimsurai.com/api/spotify/callback';
 
 // Spotify 存取權杖快取
 let spotifyAccessToken = null;
@@ -1971,7 +1971,7 @@ let spotifyTokenExpiry = null;
 
 // Spotify OAuth 授權端點 - 初始授權頁面
 apiRouter.get('/spotify/login', (req, res) => {
-  const scope = 'user-read-recently-played user-top-read user-read-private user-read-email';
+  const scope = 'user-read-recently-played user-top-read user-read-private user-read-email user-read-currently-playing user-read-playback-state';
   const authUrl = 'https://accounts.spotify.com/authorize?' +
     new URLSearchParams({
       response_type: 'code',
@@ -2221,6 +2221,38 @@ apiRouter.get('/spotify/recently-played', async (req, res) => {
   }
 });
 
+// 獲取正在播放的歌曲
+apiRouter.get('/spotify/now-playing', async (req, res) => {
+  try {
+    const token = await getSpotifyAccessToken();
+    const response = await axios.get('https://api.spotify.com/v1/me/player/currently-playing', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    // 204 = 沒有正在播放
+    if (response.status === 204 || !response.data) {
+      return res.json({ is_playing: false });
+    }
+
+    const data = response.data;
+    res.json({
+      is_playing: data.is_playing,
+      item: data.item,
+      progress_ms: data.progress_ms,
+      currently_playing_type: data.currently_playing_type
+    });
+  } catch (error) {
+    console.error('Spotify now playing error:', error.response?.data || error.message);
+    // 如果是 token 錯誤或未設定，回傳非播放狀態
+    if (error.message === 'Spotify credentials not configured') {
+      return res.json({ is_playing: false, error: 'Spotify 未配置' });
+    }
+    res.json({ is_playing: false });
+  }
+});
+
 // 獲取最常聽的曲風
 apiRouter.get('/spotify/top-genres', async (req, res) => {
   try {
@@ -2283,6 +2315,37 @@ apiRouter.get('/spotify/top-tracks', async (req, res) => {
     res.status(error.response?.status || 500).json({
       error: 'Failed to fetch Spotify top tracks',
       details: error.response?.data || error.message
+    });
+  }
+});
+
+// 獲取歌曲的音訊特性 (BPM, Energy, Acousticness 等)
+apiRouter.get('/spotify/audio-features', async (req, res) => {
+  try {
+    const token = await getSpotifyAccessToken();
+    const { ids } = req.query;
+
+    if (!ids) {
+      return res.status(400).json({ error: 'Missing track IDs' });
+    }
+
+    const response = await axios.get('https://api.spotify.com/v1/audio-features', {
+      params: { ids },
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Spotify audio features error:', error.response?.data || error.message);
+    // 優雅降級：如果 API 不可用，回傳空陣列
+    if (error.response?.status === 403) {
+      return res.json({ audio_features: [] });
+    }
+    res.status(error.response?.status || 500).json({
+      error: 'Failed to fetch audio features',
+      audio_features: []
     });
   }
 });

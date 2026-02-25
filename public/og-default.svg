@@ -1,0 +1,69 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="40%" stop-color="#12122a"/>
+      <stop offset="100%" stop-color="#1a0a2e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7f5af0"/>
+      <stop offset="100%" stop-color="#2cb67d"/>
+    </linearGradient>
+    <linearGradient id="glow-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7f5af0" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#7f5af0" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="900" cy="150" r="280" fill="#7f5af0" opacity="0.04" filter="url(#softglow)"/>
+  <circle cx="200" cy="500" r="200" fill="#2cb67d" opacity="0.03" filter="url(#softglow)"/>
+  <circle cx="1100" cy="530" r="120" fill="#7f5af0" opacity="0.05"/>
+  
+  <!-- Accent bar -->
+  <rect x="0" y="0" width="5" height="630" fill="url(#accent)"/>
+  
+  <!-- Decorative dots (stars) -->
+  <circle cx="300" cy="80" r="1.5" fill="#fff" opacity="0.3"/>
+  <circle cx="500" cy="120" r="1" fill="#fff" opacity="0.2"/>
+  <circle cx="800" cy="60" r="2" fill="#7f5af0" opacity="0.4"/>
+  <circle cx="1050" cy="300" r="1.5" fill="#fff" opacity="0.15"/>
+  <circle cx="700" cy="550" r="1" fill="#fff" opacity="0.2"/>
+  <circle cx="400" cy="400" r="1.5" fill="#2cb67d" opacity="0.2"/>
+  <circle cx="950" cy="450" r="1" fill="#fff" opacity="0.25"/>
+  
+  <!-- Bottom decorative line -->
+  <line x1="80" y1="480" x2="1120" y2="480" stroke="rgba(127,90,240,0.15)" stroke-width="1"/>
+  
+  <!-- Brand Logo mark -->
+  <text x="80" y="240" font-size="80" font-weight="800" fill="url(#accent)" filter="url(#glow)" font-family="'Noto Sans SC','Noto Sans TC',system-ui,-apple-system,sans-serif" letter-spacing="-2">K</text>
+  
+  <!-- Brand Name -->
+  <text x="160" y="238" font-size="64" font-weight="700" fill="#ffffff" font-family="'Noto Sans SC','Noto Sans TC',system-ui,-apple-system,sans-serif" letter-spacing="-1">oimsurai</text>
+  
+  <!-- Subtitle -->
+  <text x="84" y="310" font-size="28" fill="rgba(255,255,255,0.7)" font-family="'Noto Sans SC','Noto Sans TC',system-ui,-apple-system,sans-serif">楊泰和 — 全端工程師 · AI 系統開發</text>
+  
+  <!-- Description -->
+  <text x="84" y="380" font-size="20" fill="rgba(255,255,255,0.4)" font-family="'Noto Sans SC','Noto Sans TC',system-ui,-apple-system,sans-serif">作品集 · 技術筆記 · 攝影作品 · 個人配備</text>
+  
+  <!-- URL -->
+  <text x="84" y="560" font-size="18" fill="rgba(127,90,240,0.5)" font-family="'Noto Sans SC','Noto Sans TC',system-ui,-apple-system,sans-serif">koimsurai.com</text>
+</svg>

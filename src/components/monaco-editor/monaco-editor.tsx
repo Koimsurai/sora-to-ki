@@ -26,6 +26,8 @@ export default function MonacoEditor({
 
   // NAS Selector State
   const [showNASSelector, setShowNASSelector] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 統計數據
   const [totalWords, setTotalWords] = useState(0);
@@ -68,6 +70,88 @@ export default function MonacoEditor({
       }
     }
     setShowNASSelector(false);
+  }, []);
+
+  /**
+   * 處理圖片檔案上傳
+   */
+  const handleUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    // Reset input so same file can be selected again
+    e.target.value = '';
+
+    const editorInstance = editorRef.current;
+    if (!editorInstance) return;
+
+    setUploading(true);
+    try {
+      let blob: Blob;
+      let filename: string;
+
+      // GIF 保持原格式，不轉 webp
+      if (file.type === 'image/gif') {
+        blob = file;
+        filename = file.name;
+      } else {
+        // 壓縮圖片到 max 1920px 並轉 webp
+        const bitmap = await createImageBitmap(file);
+        const MAX = 1920;
+        let w = bitmap.width, h = bitmap.height;
+        if (w > MAX || h > MAX) {
+          const ratio = Math.min(MAX / w, MAX / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const canvas = new OffscreenCanvas(w, h);
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(bitmap, 0, 0, w, h);
+        blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+        bitmap.close();
+        filename = file.name.replace(/\.[^/.]+$/, '') + '.webp';
+      }
+
+      const formData = new FormData();
+      formData.append('file', blob, filename);
+
+      const token = localStorage.getItem('koimsurai_user_token');
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Upload failed');
+      }
+
+      const data = await res.json();
+      const imageUrl = data.url;
+
+      // 插入 markdown
+      const position = editorInstance.getPosition();
+      if (position) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const monacoNs = (window as any).monaco;
+        if (monacoNs) {
+          const altText = file.name.replace(/\.[^/.]+$/, '');
+          editorInstance.executeEdits('upload-image', [{
+            range: new monacoNs.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+            text: `![${altText}](${imageUrl})\n`,
+          }]);
+        }
+      }
+    } catch (err: any) {
+      console.error('Upload image error:', err);
+      alert('圖片上傳失敗: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
   }, []);
 
   /**
@@ -396,11 +480,22 @@ export default function MonacoEditor({
           onLink={handleLink}
           onImage={handleImage}
           onNAS={handleNAS}
+          onUpload={handleUpload}
           onUndo={handleUndo}
           onRedo={handleRedo}
           disabled={!isEditorReady}
+          uploading={uploading}
         />
       )}
+
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelected}
+        style={{ display: 'none' }}
+      />
 
       {ReactDOM.createPortal(
         <PhotoSelectorModal

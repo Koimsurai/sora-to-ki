@@ -6,7 +6,7 @@ Disallow: /admin/*
 Disallow: /api/
 
 # Sitemap
-Sitemap: https://koimsurai.blogsyte.com/sitemap.xml
+Sitemap: https://koimsurai.com/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 1

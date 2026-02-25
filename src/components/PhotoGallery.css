@@ -73,18 +73,15 @@
   border-radius: 0.75rem;
   box-shadow:
     0 10px 20px rgba(0, 0, 0, 0.15),
-    0 6px 6px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 6px 6px rgba(0, 0, 0, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
 }
 
 .photo-card:hover {
   box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.25),
     0 12px 12px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.2),
     0 0 30px rgba(139, 92, 246, 0.3);
   transform: translateZ(0);
 }
@@ -233,13 +230,6 @@
 }
 
 /* Dark Mode Support (Adjustments if needed) */
-@media (prefers-color-scheme: dark) {
-  .photo-card {
-    background: rgba(31, 41, 55, 0.6);
-    backdrop-filter: blur(10px);
-  }
-}
-
 /* Loading Animation */
 @keyframes shimmer {
   0% {

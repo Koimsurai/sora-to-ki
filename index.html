@@ -1,48 +1,53 @@
 <!doctype html>
 <html lang="zh-TW">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5" />
 
-    <!-- Favicon & App Icons -->
-    <link rel="icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/favicon.ico" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#7f5af0" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5" />
 
-    <!-- Primary SEO Meta Tags -->
-    <title>Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發</title>
-    <meta name="title" content="Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發" />
-    <meta name="description" content="楊泰和（Koimsurai）的個人品牌網站。全端工程師，專注於 React / Next.js 前端架構與 AI 系統開發。作品集、技術筆記、攝影作品、個人配備一覽。" />
-    <meta name="keywords" content="楊泰和, Koimsurai, 全端工程師, Frontend, React, Next.js, AI, Rust, 作品集, 攝影, 個人網站" />
-    <meta name="author" content="楊泰和 (Koimsurai)" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://koimsurai.blogsyte.com/" />
+  <!-- Favicon & App Icons -->
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/favicon.ico" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#7f5af0" />
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://koimsurai.blogsyte.com/" />
-    <meta property="og:title" content="Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發" />
-    <meta property="og:description" content="全端工程師楊泰和的個人品牌網站。展示作品集、技術筆記、攝影作品與個人配備。" />
-    <meta property="og:image" content="https://koimsurai.blogsyte.com/logo.svg" />
-    <meta property="og:locale" content="zh_TW" />
-    <meta property="og:site_name" content="Koimsurai" />
+  <!-- Primary SEO Meta Tags -->
+  <title>Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發</title>
+  <meta name="title" content="Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發" />
+  <meta name="description"
+    content="楊泰和（Koimsurai）的個人品牌網站。全端工程師，專注於 React / Next.js 前端架構與 AI 系統開發。作品集、技術筆記、攝影作品、個人配備一覽。" />
+  <meta name="keywords" content="楊泰和, Koimsurai, 全端工程師, Frontend, React, Next.js, AI, Rust, 作品集, 攝影, 個人網站" />
+  <meta name="author" content="楊泰和 (Koimsurai)" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://koimsurai.com/" />
+  <link rel="alternate" type="application/rss+xml" title="Koimsurai 手記 RSS" href="https://koimsurai.com/rss" />
 
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://koimsurai.blogsyte.com/" />
-    <meta name="twitter:title" content="Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發" />
-    <meta name="twitter:description" content="全端工程師楊泰和的個人品牌網站。展示作品集、技術筆記、攝影作品與個人配備。" />
-    <meta name="twitter:image" content="https://koimsurai.blogsyte.com/logo.svg" />
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://koimsurai.com/" />
+  <meta property="og:title" content="Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發" />
+  <meta property="og:description" content="全端工程師楊泰和的個人品牌網站。展示作品集、技術筆記、攝影作品與個人配備。" />
+  <meta property="og:image" content="https://koimsurai.com/og-default.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="zh_TW" />
+  <meta property="og:site_name" content="Koimsurai" />
 
-    <!-- Structured Data (JSON-LD) -->
-    <script type="application/ld+json">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://koimsurai.com/" />
+  <meta name="twitter:title" content="Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發" />
+  <meta name="twitter:description" content="全端工程師楊泰和的個人品牌網站。展示作品集、技術筆記、攝影作品與個人配備。" />
+  <meta name="twitter:image" content="https://koimsurai.com/og-default.png" />
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Person",
       "name": "楊泰和",
       "alternateName": "Koimsurai",
-      "url": "https://koimsurai.blogsyte.com",
+      "url": "https://koimsurai.com",
       "jobTitle": "Full-Stack Engineer",
       "description": "全端工程師，專注於 React / Next.js 前端架構與 AI 系統開發。",
       "knowsAbout": ["React", "Next.js", "TypeScript", "Rust", "Python", "Node.js", "AI", "Docker"],
@@ -53,21 +58,25 @@
     }
     </script>
 
-    <!-- Performance: DNS Prefetch -->
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-    <link rel="dns-prefetch" href="https://img.youtube.com" />
+  <!-- Performance: DNS Prefetch -->
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <link rel="dns-prefetch" href="https://img.youtube.com" />
 
-    <!-- Blog Font Preconnect & Imports -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans@4.0.0/lib/Normal/MiSans-Normal.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <!-- Blog Font Preconnect & Imports -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/misans@4.0.0/lib/Normal/MiSans-Normal.min.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;700&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

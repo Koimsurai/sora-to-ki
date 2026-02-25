@@ -14,6 +14,8 @@ services:
     container_name: personal-website-frontend # 指定容器名稱
     environment:
       - TZ=Asia/Taipei
+      - BACKEND_URL=http://backend:3001
+      - SITE_URL=https://koimsurai.com
     ports:
       # 【修改點】明確指定只綁定到 127.0.0.1
       - "127.0.0.1:13588:13579"

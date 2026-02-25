@@ -1,9 +1,61 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
+import Comments from './Comments';
 import SEOHead from './SEOHead';
 import './Blog.css';
+
+/* ════════════════════════════════════════════════
+   FloatingComments — 浮動留言視窗 (Portal)
+   ════════════════════════════════════════════════ */
+const FloatingComments = ({ postId, postTitle, onClose }) => {
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleEsc);
+    // 防止背景滾動
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+      document.documentElement.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <AnimatePresence>
+      <motion.div
+        className="floating-comments-overlay"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <motion.div
+          className="floating-comments-panel"
+          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, y: 40, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 40, scale: 0.96 }}
+          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        >
+          <div className="floating-comments-header">
+            <h3>{postTitle}</h3>
+            <button className="floating-comments-close" onClick={onClose}><FaTimes /></button>
+          </div>
+          <div className="floating-comments-body">
+            <Comments postId={postId} />
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>,
+    document.body
+  );
+};
 
 /* ════════════════════════════════════════════════
    動畫 variants
@@ -26,9 +78,10 @@ const stagger = {
    NoteCard — 支援 record / column 兩種樣板
    ════════════════════════════════════════════════ */
 
-const NoteCard = React.memo(({ post, index }) => {
+const NoteCard = React.memo(({ post, index, onOpenComments }) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
+  const [shareToast, setShareToast] = useState(false);
   const isColumn = post.layout_type === 'column';
 
   useEffect(() => {
@@ -59,10 +112,33 @@ const NoteCard = React.memo(({ post, index }) => {
     }
   };
 
-  const handleShare = (e) => {
+  const handleShare = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(`${window.location.origin}/blog/${post.id}`);
+    const shareUrl = `${window.location.origin}/blog/${post.id}`;
+    const shareData = { title: post.title, url: shareUrl };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // 使用者取消分享，不做處理
+        if (err.name !== 'AbortError') {
+          navigator.clipboard.writeText(shareUrl);
+          setShareToast(true);
+          setTimeout(() => setShareToast(false), 2000);
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2000);
+    }
+  };
+
+  const handleComment = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onOpenComments?.(post.id, post.title);
   };
 
   // 列表頁優先顯示內文截斷，而非 AI 摘要
@@ -129,13 +205,13 @@ const NoteCard = React.memo(({ post, index }) => {
             {liked ? <FaHeart /> : <FaRegHeart />}
             <span>{likeCount > 0 ? likeCount : ''}</span>
           </button>
-          <Link to={`/blog/${post.id}#comments`} className="note-action-btn" onClick={(e) => e.stopPropagation()}>
+          <button className="note-action-btn" onClick={handleComment}>
             <FaRegComment />
             <span>留言</span>
-          </Link>
-          <button className="note-action-btn" onClick={handleShare}>
+          </button>
+          <button className={`note-action-btn${shareToast ? ' shared' : ''}`} onClick={handleShare}>
             <FaShareAlt />
-            <span>分享</span>
+            <span>{shareToast ? '已複製!' : '分享'}</span>
           </button>
           {post.view_count > 0 && (
             <span className="note-views">
@@ -163,8 +239,13 @@ function Blog() {
   const [allTags, setAllTags] = useState([]);
   const [allCategories, setAllCategories] = useState([]);
   const [tagsExpanded, setTagsExpanded] = useState(false);
+  const [floatingComment, setFloatingComment] = useState(null); // { postId, postTitle }
   const isInitialLoad = React.useRef(true);
   const [searchParams] = useSearchParams();
+
+  const handleOpenComments = useCallback((postId, postTitle) => {
+    setFloatingComment({ postId: String(postId), postTitle });
+  }, []);
 
   // 讀取 URL 參數自動帶入篩選
   useEffect(() => {
@@ -423,7 +504,7 @@ function Blog() {
                 <div key={`${group.year}-${group.month}`} className="timeline-group">
                   <div className="timeline-group-label">{group.label}</div>
                   {group.posts.map((post, i) => (
-                    <NoteCard key={post.id} post={post} index={i} />
+                    <NoteCard key={post.id} post={post} index={i} onOpenComments={handleOpenComments} />
                   ))}
                 </div>
               ))}
@@ -524,6 +605,17 @@ function Blog() {
           </aside>
         </div>{/* blog-layout */}
       </div>{/* blog-content-wrapper */}
+
+      {/* 浮動留言視窗 */}
+      <AnimatePresence>
+        {floatingComment && (
+          <FloatingComments
+            postId={floatingComment.postId}
+            postTitle={floatingComment.postTitle}
+            onClose={() => setFloatingComment(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

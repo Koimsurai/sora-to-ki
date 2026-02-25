@@ -6,6 +6,8 @@ import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import mermaid from 'mermaid';
+import elkLayouts from '@mermaid-js/layout-elk';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -20,59 +22,301 @@ import { BlogImage } from './ImageLightbox';
 import './BlogPost.css';
 import SignatureSVG from './SignatureSVG';
 
-/* ── Mermaid init ── */
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'dark',
-  themeVariables: {
-    primaryColor: '#7f5af0',
-    primaryTextColor: '#e0e0e0',
-    primaryBorderColor: '#7f5af0',
-    lineColor: '#7f5af0',
-    secondaryColor: '#2cb67d',
-    tertiaryColor: 'rgba(127, 90, 240, 0.08)',
-    background: 'transparent',
-    mainBkg: 'rgba(127, 90, 240, 0.10)',
-    nodeBorder: '#7f5af0',
-    clusterBkg: 'rgba(127, 90, 240, 0.06)',
-    clusterBorder: 'rgba(127, 90, 240, 0.25)',
-    titleColor: '#e0e0e0',
-    edgeLabelBackground: 'rgba(6, 5, 14, 0.85)',
-    fontSize: '14px',
-  },
-  flowchart: { curve: 'basis', useMaxWidth: true },
-  securityLevel: 'loose',
-});
+/* ── Mermaid init (with ELK layout) ── */
+mermaid.registerLayoutLoaders(elkLayouts);
 
-/* ── MermaidBlock ── */
-let mermaidIdCounter = 0;
-const MermaidBlock = ({ code }) => {
+const MERMAID_THEMES = [
+  { value: 'dark', label: 'Dark', icon: '🌙' },
+  { value: 'default', label: 'Default', icon: '☀️' },
+  { value: 'forest', label: 'Forest', icon: '🌲' },
+  { value: 'neutral', label: 'Neutral', icon: '⚪' },
+  { value: 'base', label: 'Base', icon: '🎨' },
+];
+const MERMAID_LOOKS = [
+  { value: 'neo', label: 'Neo', icon: '💎' },
+  { value: 'classic', label: 'Classic', icon: '📐' },
+  { value: 'handDrawn', label: 'Hand Drawn', icon: '✏️' },
+];
+const MERMAID_LAYOUTS = [
+  { value: 'dagre', label: 'Hierarchical', icon: '📊' },
+  { value: 'elk', label: 'Adaptive', icon: '🌐' },
+];
+const MERMAID_DIRECTIONS = [
+  { value: 'TB', label: 'Top to Bottom', icon: '↓' },
+  { value: 'BT', label: 'Bottom to Top', icon: '↑' },
+  { value: 'LR', label: 'Left to Right', icon: '→' },
+  { value: 'RL', label: 'Right to Left', icon: '←' },
+];
+
+/* ── Toolbar SVG Icons ── */
+const IconPalette = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="13.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r="1.5" fill="currentColor" stroke="none"/>
+    <circle cx="8.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.4-.15-.74-.42-1.03-.28-.28-.42-.63-.42-1.03 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6C22 6.5 17.52 2 12 2z"/>
+  </svg>
+);
+const IconLook = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+  </svg>
+);
+const IconLayout = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
+    <path d="M18 9a9 9 0 0 1-9 9"/>
+  </svg>
+);
+const IconDirection = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="7 8 12 13 17 8"/><polyline points="7 14 12 19 17 14"/>
+  </svg>
+);
+const IconExpand = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+    <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+  </svg>
+);
+
+const DARK_THEME_VARS = {
+  primaryColor: '#7f5af0',
+  primaryTextColor: '#e0e0e0',
+  primaryBorderColor: '#7f5af0',
+  lineColor: '#7f5af0',
+  secondaryColor: '#2cb67d',
+  tertiaryColor: 'transparent',
+  background: 'transparent',
+  mainBkg: 'rgba(127, 90, 240, 0.12)',
+  nodeBorder: '#7f5af0',
+  clusterBkg: 'transparent',
+  clusterBorder: 'rgba(127, 90, 240, 0.3)',
+  titleColor: '#e0e0e0',
+  edgeLabelBackground: 'rgba(30, 30, 46, 0.9)',
+  fontSize: '14px',
+};
+
+function parseMermaidFrontmatter(code) {
+  const trimmed = code.trim();
+  const fm = trimmed.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+  if (!fm) return { config: {}, body: trimmed };
+  const yamlBlock = fm[1];
+  const config = {};
+  let current = null;
+  for (const line of yamlBlock.split('\n')) {
+    const indent = line.search(/\S/);
+    const trimLine = line.trim();
+    if (!trimLine || trimLine.startsWith('#')) continue;
+    const kv = trimLine.match(/^(\w[\w-]*):\s*(.*)/);
+    if (kv) {
+      if (indent === 0 || indent === 2) {
+        if (kv[2]) { config[kv[1]] = kv[2]; current = null; }
+        else { config[kv[1]] = {}; current = kv[1]; }
+      } else if (current && typeof config[current] === 'object') {
+        config[current][kv[1]] = kv[2];
+      }
+    }
+  }
+  return { config, body: trimmed.slice(fm[0].length) };
+}
+
+/* ── MermaidDiagram (shared renderer used in inline + fullscreen) ── */
+const MermaidDiagram = ({ code, theme, look, layout, direction, onError }) => {
   const containerRef = useRef(null);
-  const [error, setError] = useState(null);
+  const idRef = useRef(0);
+
+  const parsed = useMemo(() => parseMermaidFrontmatter(code), [code]);
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const id = `mermaid-${Date.now()}-${mermaidIdCounter++}`;
+    const id = `mermaid-${Date.now()}-${idRef.current++}`;
 
-    let diagramCode = code.trim();
-    diagramCode = diagramCode.replace(/^---[\s\S]*?---\s*/, '');
+    let body = parsed.body;
+    body = body.replace(/((?:flowchart|graph)\s+)(?:TB|BT|LR|RL)/, `$1${direction}`);
+
+    let themeVars = theme === 'dark' ? { ...DARK_THEME_VARS } : {};
+    if (look === 'neo' && themeVars.clusterBkg) {
+      delete themeVars.clusterBkg;
+      delete themeVars.clusterBorder;
+    }
 
     const render = async () => {
       try {
-        const { svg } = await mermaid.render(id, diagramCode);
+        mermaid.initialize({
+          startOnLoad: false,
+          theme,
+          look,
+          layout,
+          themeVariables: themeVars,
+          flowchart: { curve: 'basis', useMaxWidth: false },
+          securityLevel: 'loose',
+        });
+        const { svg } = await mermaid.render(id, body);
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
-          setError(null);
+          onError?.(null);
         }
       } catch (e) {
         console.warn('Mermaid render error:', e);
-        setError(e.message || 'Mermaid 渲染失敗');
+        onError?.(e.message || 'Mermaid 渲染失敗');
         const errNode = document.getElementById('d' + id);
         if (errNode) errNode.remove();
       }
     };
     render();
-  }, [code]);
+  }, [code, theme, look, layout, direction, parsed.body]);
+
+  return <div className="mermaid-render" ref={containerRef} />;
+};
+
+/* ── Toolbar icon menu ── */
+const ToolbarMenu = ({ icon, label, value, options, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, [open]);
+
+  return (
+    <div className="mm-menu" ref={ref}>
+      <button
+        className={`mm-menu-trigger${open ? ' mm-menu-trigger--open' : ''}`}
+        onClick={() => setOpen(!open)}
+        data-tooltip={label}
+      >
+        {icon}
+      </button>
+      {open && (
+        <div className="mm-menu-dropdown">
+          <div className="mm-menu-label">{label}</div>
+          {options.map((o) => (
+            <button
+              key={o.value}
+              className={`mm-menu-item ${o.value === value ? 'mm-menu-item--active' : ''}`}
+              onClick={() => { onChange(o.value); setOpen(false); }}
+            >
+              {o.icon && <span className="mm-menu-item-icon">{o.icon}</span>}
+              {o.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── Fullscreen Modal ── */
+const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLook, onLayout, onDirection, onClose }) => {
+  /* Lock scroll — hide overflow without moving the page (no position:fixed jump) */
+  useEffect(() => {
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    // 補填 scrollbar 消失的寬度，避免內容位移
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+    const esc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', esc);
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+      window.removeEventListener('keydown', esc);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);  // mount/unmount only — onClose is stable via useCallback
+
+  const [err, setErr] = useState(null);
+
+  return ReactDOM.createPortal(
+    <motion.div
+      className="mm-fullscreen-overlay"
+      onClick={onClose}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <motion.div
+        className="mm-fullscreen-container"
+        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.92, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.92, y: 20 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+      >
+        {/* Fullscreen toolbar */}
+        <div className="mm-fullscreen-toolbar">
+          <div className="mm-toolbar-group">
+            <ToolbarMenu icon={IconPalette} label="Theme" value={theme} options={MERMAID_THEMES} onChange={onTheme} />
+            <ToolbarMenu icon={IconLook} label="Look" value={look} options={MERMAID_LOOKS} onChange={onLook} />
+            <ToolbarMenu icon={IconLayout} label="Layout" value={layout} options={MERMAID_LAYOUTS} onChange={onLayout} />
+            <ToolbarMenu icon={IconDirection} label="Direction" value={direction} options={MERMAID_DIRECTIONS} onChange={onDirection} />
+          </div>
+          <div className="mm-toolbar-right">
+            <span className="mm-toolbar-hint">滾輪縮放 · 拖曳平移 · 雙擊還原</span>
+            <button className="mm-close-btn" onClick={onClose} title="關閉 (Esc)">✕</button>
+          </div>
+        </div>
+        {/* Canvas */}
+        <div className="mm-fullscreen-canvas">
+          <TransformWrapper
+            initialScale={0.8}
+            minScale={0.15}
+            maxScale={6}
+            centerOnInit
+            limitToBounds={false}
+            smooth
+            wheel={{ step: 0.03, smoothStep: 0.003 }}
+            doubleClick={{ mode: 'reset' }}
+            panning={{ velocityDisabled: true }}
+          >
+            <TransformComponent
+              wrapperStyle={{ width: '100%', height: '100%' }}
+              contentStyle={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '3rem' }}
+            >
+              {err ? (
+                <div className="mermaid-error"><span>⚠ {err}</span></div>
+              ) : (
+                <MermaidDiagram code={code} theme={theme} look={look} layout={layout} direction={direction} onError={setErr} />
+              )}
+            </TransformComponent>
+          </TransformWrapper>
+        </div>
+      </motion.div>
+    </motion.div>,
+    document.body
+  );
+};
+
+/* ── MermaidBlock (main entry) ── */
+const MermaidBlock = ({ code }) => {
+  const [error, setError] = useState(null);
+  const [hovered, setHovered] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+
+  const parsed = useMemo(() => parseMermaidFrontmatter(code), [code]);
+  const initCfg = parsed.config.config || parsed.config;
+  const initLayout = (typeof initCfg === 'object' ? initCfg.layout : null) || 'dagre';
+  const initTheme = (typeof initCfg === 'object' ? initCfg.theme : null) || 'dark';
+  const dirMatch = parsed.body.match(/(?:flowchart|graph)\s+(TB|BT|LR|RL)/);
+  const initDir = dirMatch ? dirMatch[1] : 'TB';
+
+  const [theme, setTheme] = useState(initTheme);
+  const [look, setLook] = useState('classic');
+  const [layout, setLayout] = useState(initLayout);
+  const [direction, setDirection] = useState(initDir);
+
+  /* Stable callbacks — 不會因 re-render 產生新參考，避免子元件 effect 被重新觸發 */
+  const handleCloseFullscreen = useCallback(() => setFullscreen(false), []);
+  const handleSetTheme = useCallback((v) => setTheme(v), []);
+  const handleSetLook = useCallback((v) => setLook(v), []);
+  const handleSetLayout = useCallback((v) => setLayout(v), []);
+  const handleSetDirection = useCallback((v) => setDirection(v), []);
 
   if (error) {
     return (
@@ -83,7 +327,63 @@ const MermaidBlock = ({ code }) => {
     );
   }
 
-  return <div className="mermaid-block" ref={containerRef} />;
+  return (
+    <>
+      <div
+        className="mm-sandbox"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        {/* Toolbar bar */}
+        <div className={`mm-toolbar ${hovered ? 'mm-toolbar--visible' : ''}`}>
+          <div className="mm-toolbar-group">
+            <ToolbarMenu icon={IconPalette} label="Theme" value={theme} options={MERMAID_THEMES} onChange={setTheme} />
+            <ToolbarMenu icon={IconLook} label="Look" value={look} options={MERMAID_LOOKS} onChange={setLook} />
+            <ToolbarMenu icon={IconLayout} label="Layout" value={layout} options={MERMAID_LAYOUTS} onChange={setLayout} />
+            <ToolbarMenu icon={IconDirection} label="Direction" value={direction} options={MERMAID_DIRECTIONS} onChange={setDirection} />
+          </div>
+          <span className="mm-toolbar-hint">滾輪縮放 · 拖曳平移</span>
+        </div>
+
+        {/* Zoomable canvas */}
+        <TransformWrapper
+          initialScale={0.65}
+          minScale={0.15}
+          maxScale={5}
+          centerOnInit
+          limitToBounds={false}
+          smooth
+          wheel={{ step: 0.03, smoothStep: 0.003 }}
+          doubleClick={{ mode: 'reset' }}
+          panning={{ velocityDisabled: true }}
+        >
+          <TransformComponent
+            wrapperStyle={{ width: '100%', height: '100%' }}
+            contentStyle={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}
+          >
+            <MermaidDiagram code={code} theme={theme} look={look} layout={layout} direction={direction} onError={setError} />
+          </TransformComponent>
+        </TransformWrapper>
+
+        {/* Expand button */}
+        <button className="mm-expand-btn" onClick={() => setFullscreen(true)} data-tooltip="放大檢視">
+          {IconExpand}
+        </button>
+      </div>
+
+      {/* Fullscreen portal */}
+      <AnimatePresence>
+        {fullscreen && (
+          <MermaidFullscreen
+            code={code}
+            theme={theme} look={look} layout={layout} direction={direction}
+            onTheme={handleSetTheme} onLook={handleSetLook} onLayout={handleSetLayout} onDirection={handleSetDirection}
+            onClose={handleCloseFullscreen}
+          />
+        )}
+      </AnimatePresence>
+    </>
+  );
 };
 
 /* ── helpers ── */
@@ -283,7 +583,12 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
   const lang = match ? match[1] : 'text';
   const codeText = String(children).replace(/\n$/, '');
 
-  if (!inline && lang === 'mermaid') {
+  // 自動偵測 mermaid 圖表：有 language tag 或內容以 mermaid 關鍵字開頭
+  const isMermaid = lang === 'mermaid' || (
+    !inline && (lang === 'text' || !match) &&
+    /^(---|graph\s|flowchart\s|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|mindmap|timeline|quadrantChart|sankey)/m.test(codeText.trim())
+  );
+  if (!inline && isMermaid) {
     return <MermaidBlock code={codeText} />;
   }
 
@@ -994,6 +1299,7 @@ function BlogPost() {
         title={post.title}
         description={seoDescription}
         path={'/blog/' + id}
+        image={'/api/og-image/' + id}
         type="article"
         article={{
           author: post.author || 'Koimsurai',

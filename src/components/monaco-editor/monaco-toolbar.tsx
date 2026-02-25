@@ -7,6 +7,8 @@ import {
   CornerUpLeft,
   CornerUpRight,
   HardDrive,
+  Upload,
+  Loader2,
 } from 'lucide-react';
 import { MonacoToolbarProps } from './types';
 
@@ -19,9 +21,11 @@ export function MonacoToolbar({
   onLink,
   onImage,
   onNAS,
+  onUpload,
   onUndo,
   onRedo,
   disabled = false,
+  uploading = false,
 }: MonacoToolbarProps) {
   const btnClass =
     'size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/80 hover:bg-accent/50 transition-colors disabled:opacity-40 disabled:pointer-events-none';
@@ -59,6 +63,9 @@ export function MonacoToolbar({
         </button>
         <button type="button" onClick={onNAS} disabled={disabled} title="從 NAS 插入圖片" className={btnClass}>
           <HardDrive className="size-3.5" />
+        </button>
+        <button type="button" onClick={onUpload} disabled={disabled || uploading} title="上傳圖片檔案" className={btnClass}>
+          {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
         </button>
       </div>
     </div>

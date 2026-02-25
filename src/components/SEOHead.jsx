@@ -16,7 +16,7 @@ const SEOHead = ({
   title,
   description,
   path = '/',
-  image = '/logo.svg',
+  image = '/og-default.png',
   type = 'website',
   article = null,
 }) => {
@@ -62,6 +62,8 @@ const SEOHead = ({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={fullImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:site_name" content="Koimsurai" />
       <meta property="og:locale" content="zh_TW" />
 

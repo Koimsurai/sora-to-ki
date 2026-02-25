@@ -108,7 +108,7 @@ export default defineConfig(({ command }) => {
         clientPort: 443, // 客戶端通過 Nginx 的 443 端口連接
         path: '/ws', // WebSocket 路徑（Nginx 會代理到容器的 13579）
       },
-      allowedHosts: ['koimsurai.blogsyte.com', 'localhost'], // 允許此主機訪問
+      allowedHosts: ['koimsurai.com', 'localhost'], // 允許此主機訪問
       proxy: {
         // 將 /api 的請求代理到後端服務
         '/api': {

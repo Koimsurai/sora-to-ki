@@ -1,10 +1,81 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import ZeroGravityLibrary from './ZeroGravityLibrary';
 import './Bookshelf.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+/* ── Extract dominant color from an image for cover glow ── */
+const extractDominantColor = (imgSrc) =>
+  new Promise((resolve) => {
+    const fallback = { r: 127, g: 90, b: 240 };
+    if (!imgSrc) return resolve(fallback);
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 50;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, 50, 50);
+        const data = ctx.getImageData(0, 0, 50, 50).data;
+        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        for (let i = 0; i < data.length; i += 16) {
+          const r = data[i], g = data[i + 1], b = data[i + 2];
+          const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (brightness > 30 && brightness < 230) { rSum += r; gSum += g; bSum += b; count++; }
+        }
+        if (count === 0) return resolve(fallback);
+        resolve({ r: Math.round(rSum / count), g: Math.round(gSum / count), b: Math.round(bSum / count) });
+      } catch { resolve(fallback); }
+    };
+    img.onerror = () => resolve(fallback);
+    img.src = imgSrc;
+  });
+
+/* ── Book card with cover-glow ── */
+const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }) => {
+  const [glowColor, setGlowColor] = useState(null);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    if (book.cover_url) {
+      extractDominantColor(book.cover_url).then(setGlowColor);
+    }
+  }, [book.cover_url]);
+
+  const style = glowColor
+    ? { '--cover-r': glowColor.r, '--cover-g': glowColor.g, '--cover-b': glowColor.b }
+    : undefined;
+
+  return (
+    <motion.div
+      className="book-card"
+      style={style}
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay, type: 'spring', stiffness: 200 }}
+      onClick={onClick}
+    >
+      <div className="book-cover-wrapper">
+        {book.cover_url ? (
+          <img ref={imgRef} src={book.cover_url} alt={book.title} className="book-cover" loading="lazy" />
+        ) : (
+          <div className="book-cover-placeholder"><FaBook /></div>
+        )}
+        <div className="status-badge" style={{ backgroundColor: getStatusBadge(book.reading_status).color }}>
+          {getStatusBadge(book.reading_status).text}
+        </div>
+      </div>
+      <div className="book-info">
+        <h3 className="book-title">{book.title}</h3>
+        {book.authors && <p className="book-author">{book.authors}</p>}
+        {renderStars(book.rating)}
+      </div>
+    </motion.div>
+  );
+};
 
 const Bookshelf = () => {
   const [books, setBooks] = useState([]);
@@ -22,17 +93,11 @@ const Bookshelf = () => {
   useEffect(() => {
     fetchBooks();
     fetchStats();
-    
-    // 每15分鐘自動更新一次書籍資料
     const dataRefreshInterval = setInterval(() => {
-      console.log('📚 自動更新書籍資料...');
       fetchBooks();
       fetchStats();
-    }, 15 * 60 * 1000); // 15 分鐘
-    
-    return () => {
-      clearInterval(dataRefreshInterval);
-    };
+    }, 15 * 60 * 1000);
+    return () => clearInterval(dataRefreshInterval);
   }, []);
 
   useEffect(() => {
@@ -155,43 +220,51 @@ const Bookshelf = () => {
 
   return (
     <div className="bookshelf-container">
-      {/* Header Section */}
-      <motion.div
-        className="bookshelf-header"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <h1 className="bookshelf-title">
-          <FaBook className="title-icon" />
-          我的書櫃
-        </h1>
-        <p className="bookshelf-subtitle">記錄與分享閱讀旅程</p>
+      {/* ── Nebula Background ── */}
+      <div className="bookshelf-dim-overlay" />
+      <div className="bookshelf-nebula-bg">
+        <div className="nebula-layer bs-nebula-1" />
+        <div className="nebula-layer bs-nebula-2" />
+        <div className="nebula-layer bs-nebula-3" />
+      </div>
 
-        {/* Statistics */}
-        {stats && (
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-value">{stats.total_books}</div>
-              <div className="stat-label">總藏書</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{stats.books_read}</div>
-              <div className="stat-label">已閱讀</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">{stats.books_reading}</div>
-              <div className="stat-label">閱讀中</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-value">
-                {stats.average_rating ? `${stats.average_rating} ⭐` : 'N/A'}
+      {/* ── Content ── */}
+      <div className="bookshelf-content-wrapper">
+        {/* Hero Header */}
+        <motion.div
+          className="bookshelf-header"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="bookshelf-title">
+            <span className="bs-title-gradient">知識星圖</span>
+            <span className="bs-title-sub">Knowledge Constellation</span>
+          </h1>
+          <p className="bookshelf-subtitle">在浩瀚書海中，標記每一顆閱讀過的星</p>
+
+          {/* Stats Strip */}
+          {stats && (
+            <div className="stats-strip">
+              <div className="stats-strip-item">
+                <div className="stats-strip-value">{stats.total_books}</div>
+                <div className="stats-strip-label">藏書</div>
               </div>
-              <div className="stat-label">平均評分</div>
+              <div className="stats-strip-item">
+                <div className="stats-strip-value">{stats.books_read}</div>
+                <div className="stats-strip-label">已讀</div>
+              </div>
+              <div className="stats-strip-item">
+                <div className="stats-strip-value">{stats.books_reading}</div>
+                <div className="stats-strip-label">閱讀中</div>
+              </div>
+              <div className="stats-strip-item">
+                <div className="stats-strip-value">{stats.average_rating ? `${stats.average_rating}★` : '—'}</div>
+                <div className="stats-strip-label">平均評分</div>
+              </div>
             </div>
-          </div>
-        )}
-      </motion.div>
+          )}
+        </motion.div>
 
       {/* Search and Filter Bar */}
       <motion.div
@@ -282,7 +355,7 @@ const Bookshelf = () => {
         )}
       </AnimatePresence>
 
-      {/* Books Grid - Bookshelf Layout */}
+      {/* Books Grid */}
       <motion.div
         className="books-grid"
         initial={{ opacity: 0 }}
@@ -295,70 +368,19 @@ const Bookshelf = () => {
             <p>目前沒有符合條件的書籍</p>
           </div>
         ) : (
-          // 將書籍分組到不同的書架層
-          (() => {
-            const booksPerShelf = 8; // 每層書架放8本書
-            const shelves = [];
-            for (let i = 0; i < filteredBooks.length; i += booksPerShelf) {
-              shelves.push(filteredBooks.slice(i, i + booksPerShelf));
-            }
-            
-            return shelves.map((shelf, shelfIndex) => (
-              <motion.div
-                key={`shelf-${shelfIndex}`}
-                className="bookshelf-row"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: shelfIndex * 0.1 }}
-              >
-                {shelf.map((book, bookIndex) => (
-                  <motion.div
-                    key={book.id}
-                    className="book-card"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ 
-                      delay: shelfIndex * 0.1 + bookIndex * 0.05,
-                      type: "spring",
-                      stiffness: 200
-                    }}
-                    onClick={() => setSelectedBook(book)}
-                  >
-                    <div className="book-cover-wrapper">
-                      {book.cover_url ? (
-                        <img
-                          src={book.cover_url}
-                          alt={book.title}
-                          className="book-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="book-cover-placeholder">
-                          <FaBook />
-                        </div>
-                      )}
-                      <div
-                        className="status-badge"
-                        style={{ backgroundColor: getStatusBadge(book.reading_status).color }}
-                      >
-                        {getStatusBadge(book.reading_status).text}
-                      </div>
-                    </div>
-                    
-                    <div className="book-info">
-                      <h3 className="book-title">{book.title}</h3>
-                      {book.authors && (
-                        <p className="book-author">{book.authors}</p>
-                      )}
-                      {renderStars(book.rating)}
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            ));
-          })()
+          filteredBooks.map((book, i) => (
+            <BookCard
+              key={book.id}
+              book={book}
+              delay={i * 0.04}
+              onClick={() => setSelectedBook(book)}
+              getStatusBadge={getStatusBadge}
+              renderStars={renderStars}
+            />
+          ))
         )}
       </motion.div>
+      </div>{/* end bookshelf-content-wrapper */}
 
       {/* Book Detail Modal */}
       <AnimatePresence>

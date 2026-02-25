@@ -181,7 +181,7 @@ function Book3DWithTexture({ book, initialPosition, onClick, isSelected, onDragS
       {/* 光暈效果 */}
       {(hovered || isSelected || isDragging) && (
         <pointLight
-          color={isDragging ? "#fbbf24" : isSelected ? "#a855f7" : "#06b6d4"}
+          color={isDragging ? "#fbbf24" : isSelected ? "#c4b5fd" : "#7f5af0"}
           intensity={isDragging ? 3 : isSelected ? 2 : 1}
           distance={3}
         />
@@ -311,10 +311,10 @@ function Book3DNoTexture({ book, initialPosition, onClick, isSelected, onDragSta
       <mesh ref={meshRef} castShadow receiveShadow>
         <boxGeometry args={[bookWidth, bookHeight, bookDepth]} />
         <meshStandardMaterial 
-          color='#06b6d4'
+          color='#7f5af0'
           metalness={0.5}
           roughness={0.3}
-          emissive='#06b6d4'
+          emissive='#7f5af0'
           emissiveIntensity={0.4}
           toneMapped={false}
         />
@@ -323,7 +323,7 @@ function Book3DNoTexture({ book, initialPosition, onClick, isSelected, onDragSta
       {/* 光暈效果 */}
       {(hovered || isSelected || isDragging) && (
         <pointLight
-          color={isDragging ? "#fbbf24" : isSelected ? "#a855f7" : "#06b6d4"}
+          color={isDragging ? "#fbbf24" : isSelected ? "#c4b5fd" : "#7f5af0"}
           intensity={isDragging ? 3 : isSelected ? 2 : 1}
           distance={3}
         />
@@ -376,34 +376,60 @@ function Book3D({ book, initialPosition, onClick, isSelected, onDragStateChange 
   );
 }
 
-// 太空站核心 (移除環形結構和支架)
-function SpaceStation() {
+// 知識黑洞 — 事件視界 + 吸積盤
+function KnowledgeBlackHole() {
+  const diskRef = useRef();
+  const innerDiskRef = useRef();
   const coreRef = useRef();
 
-  useFrame(() => {
-    if (coreRef.current) {
-      coreRef.current.rotation.y += 0.001;
-    }
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (diskRef.current) diskRef.current.rotation.z = t * 0.12;
+    if (innerDiskRef.current) innerDiskRef.current.rotation.z = -t * 0.2;
+    if (coreRef.current) coreRef.current.rotation.y = t * 0.05;
   });
 
   return (
-    <group ref={coreRef}>
-      {/* 中央球體 (太空站核心) */}
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[1.5, 32, 32]} />
+    <group>
+      {/* 事件視界 — 極暗球體 */}
+      <mesh ref={coreRef}>
+        <sphereGeometry args={[1.2, 64, 64]} />
+        <meshStandardMaterial color="#020008" metalness={1} roughness={0} />
+      </mesh>
+
+      {/* 吸積盤 — 外環 (紫金漸變感) */}
+      <mesh ref={diskRef} rotation={[Math.PI / 2.2, 0, 0]}>
+        <torusGeometry args={[3.2, 0.55, 16, 100]} />
         <meshStandardMaterial
-          color="#1a1a2e"
-          metalness={0.9}
-          roughness={0.1}
-          emissive="#06b6d4"
-          emissiveIntensity={0.8}
+          color="#a855f7"
+          metalness={0.8}
+          roughness={0.2}
+          emissive="#7f5af0"
+          emissiveIntensity={1.2}
           toneMapped={false}
+          transparent
+          opacity={0.75}
         />
       </mesh>
 
-      {/* 核心發光點 */}
-      <pointLight position={[0, 0, 0]} color="#06b6d4" intensity={3} distance={8} />
-      <pointLight position={[0, 0, 0]} color="#a855f7" intensity={2} distance={6} />
+      {/* 吸積盤 — 內環 (金色) */}
+      <mesh ref={innerDiskRef} rotation={[Math.PI / 2.2, 0, 0]}>
+        <torusGeometry args={[2.0, 0.3, 12, 80]} />
+        <meshStandardMaterial
+          color="#fbbf24"
+          metalness={0.7}
+          roughness={0.25}
+          emissive="#f59e0b"
+          emissiveIntensity={0.8}
+          toneMapped={false}
+          transparent
+          opacity={0.6}
+        />
+      </mesh>
+
+      {/* 核心光源 */}
+      <pointLight position={[0, 0, 0]} color="#7f5af0" intensity={4} distance={12} />
+      <pointLight position={[0, 0, 0]} color="#fbbf24" intensity={2} distance={6} />
     </group>
   );
 }
@@ -471,8 +497,8 @@ function Scene({ books, onBookClick, selectedBook }) {
         speed={1}
       />
 
-      {/* 太空站結構 */}
-      <SpaceStation />
+      {/* 知識黑洞 */}
+      <KnowledgeBlackHole />
 
       {/* 書籍陣列 */}
       {books.map((book, index) => (
@@ -534,8 +560,8 @@ export default function ZeroGravityLibrary({ books = [], onClose }) {
         {/* 頂部控制欄 */}
         <div className="zero-gravity-header">
           <div className="header-title">
-            <div className="title-glow">ZERO-GRAVITY LIBRARY</div>
-            <div className="subtitle">探索漂浮在星際間的知識寶庫</div>
+            <div className="title-glow">KNOWLEDGE BLACK HOLE</div>
+            <div className="subtitle">在知識黑洞的引力場中探索無盡書海</div>
           </div>
           <button className="close-button" onClick={onClose}>
             <span>返回 2D</span>
@@ -551,7 +577,7 @@ export default function ZeroGravityLibrary({ books = [], onClose }) {
           </div>
           <div className="stat-item">
             <span className="stat-value">{Math.ceil(books.length / 12)}</span>
-            <span className="stat-label">軌道環數</span>
+            <span className="stat-label">吸積環</span>
           </div>
         </div>
 
