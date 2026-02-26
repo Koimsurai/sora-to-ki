@@ -58,6 +58,7 @@ const LazyCinema = lazy(() => import('./components/Cinema'));
 const LazyAnime = lazy(() => import('./components/Anime'));
 const LazySetup = lazy(() => import('./components/Setup'));
 const LazyOAuthCallback = lazy(() => import('./components/OAuthCallback'));
+const LazyNotFound = lazy(() => import('./components/NotFound'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -324,8 +325,8 @@ function Layout({ activeSection, onSectionChange }) {
             <Route path="users" element={<Suspense fallback={<LoadingFallback />}><LazyUsersManager /></Suspense>} />
             <Route path="notes" element={<AdminPlaceholder title="日記管理" />} />
           </Route>
-          {/* 未知路由導回首頁 */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* 未知路由顯示 404 頁面 */}
+          <Route path="*" element={<Suspense fallback={<LoadingFallback />}><LazyNotFound /></Suspense>} />
         </Routes>
       </main>
       {!isAdminPage && !isPhotoPage && (

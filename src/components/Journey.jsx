@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import SEOHead from './SEOHead';
 import './Journey.css';
 
 const Journey = () => {
@@ -117,6 +118,7 @@ const Journey = () => {
 
   return (
     <div className="journey-container" ref={containerRef}>
+      <SEOHead title="旅程 | Koimsurai" description="楊泰和的職業成長與學習旅程時間線。" />
       {/* 星空背景 */}
       <div className="journey-stars-bg">
         <div className="stars-layer stars-sm"></div>

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaPlay, FaTimes, FaFilter, FaSortAmountDown, FaChartLine } from 'react-icons/fa';
+import SEOHead from './SEOHead';
 import './Anime.css';
 
 // 模擬動漫數據
@@ -450,6 +451,7 @@ function Anime() {
 
   return (
     <div className="anime-page">
+      <SEOHead title="動漫 | Koimsurai" description="楊泰和的動漫推薦清單與觀後感。" />
       <div className="anime-hero">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}

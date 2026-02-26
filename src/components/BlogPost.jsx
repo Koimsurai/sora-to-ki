@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -212,19 +212,23 @@ const ToolbarMenu = ({ icon, label, value, options, onChange }) => {
 
 /* ── Fullscreen Modal ── */
 const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLook, onLayout, onDirection, onClose }) => {
-  /* Lock scroll — hide overflow without moving the page (no position:fixed jump) */
-  useEffect(() => {
+  /* Lock scroll SYNCHRONOUSLY before paint — useLayoutEffect runs before the browser paints */
+  useLayoutEffect(() => {
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const scrollY = window.scrollY;
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
-    // 補填 scrollbar 消失的寬度，避免內容位移
     document.body.style.paddingRight = `${scrollbarWidth}px`;
+    // 強制保持原位置（防止 overflow:hidden 改變 scroll position）
+    window.scrollTo(0, scrollY);
     const esc = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', esc);
     return () => {
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
+      // 恢復原位置
+      window.scrollTo(0, scrollY);
       window.removeEventListener('keydown', esc);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1299,7 +1303,7 @@ function BlogPost() {
         title={post.title}
         description={seoDescription}
         path={'/blog/' + id}
-        image={'/api/og-image/' + id}
+        image={'/og-image/' + id}
         type="article"
         article={{
           author: post.author || 'Koimsurai',

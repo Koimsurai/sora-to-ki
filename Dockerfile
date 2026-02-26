@@ -36,17 +36,25 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/serve.cjs ./serve.cjs
 
+# Install fonts for OG image rendering (CJK support)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    fonts-noto-cjk \
+    fontconfig \
+    && rm -rf /var/lib/apt/lists/* \
+    && fc-cache -f
+
 # Install only the lightweight dependencies needed for serve.cjs
 RUN npm install express@4 sharp@0.33
 
-# Generate default OG image (SVG → PNG)
+# Generate default OG image (SVG → PNG) — must await the async sharp call
 RUN node -e "\
-const sharp = require('sharp');\
-const fs = require('fs');\
-const svg = fs.readFileSync('./dist/og-default.svg');\
-sharp(svg).resize(1200, 630).png({quality: 90}).toFile('./dist/og-default.png')\
-  .then(() => console.log('OG default image generated'))\
-  .catch(e => console.warn('OG image gen failed:', e.message));\
+(async () => {\
+  const sharp = require('sharp');\
+  const fs = require('fs');\
+  const svg = fs.readFileSync('./dist/og-default.svg');\
+  await sharp(svg).resize(1200, 630).png({quality: 90}).toFile('./dist/og-default.png');\
+  console.log('OG default image generated');\
+})().catch(e => { console.error('OG image gen failed:', e.message); process.exit(1); });\
 "
 
 # Expose the port the app runs on

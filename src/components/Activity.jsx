@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePageVisibility } from '../contexts/PageVisibilityContext'; // Import the hook
+import SEOHead from './SEOHead';
 import './Activity.css';
 
 const Activity = () => {
@@ -18,10 +19,8 @@ const Activity = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const containerRef = useRef(null);
 
-  // 配置你的 Steam ID 和 GitHub 用戶名
-  const STEAM_API_KEY = import.meta.env.VITE_STEAM_API_KEY || '';
-  const STEAM_ID = import.meta.env.VITE_STEAM_ID || '';
-  const GITHUB_USERNAME = 'timo9378'; // 你的 GitHub 用戶名
+  // GitHub 用戶名
+  const GITHUB_USERNAME = 'timo9378';
 
   // 追蹤鼠標位置用於光暈效果
   useEffect(() => {
@@ -388,6 +387,7 @@ const Activity = () => {
 
   return (
     <div className={`activity-container ${!isVisible ? 'is-hidden' : ''}`} ref={containerRef}>
+      <SEOHead title="動態儀表板 | Koimsurai" description="楊泰和的即時活動儀表板，追蹤 GitHub、Steam、WakaTime 等狀態。" />
       {/* 星空背景效果 */}
       <div className="cosmic-background">
         <div className="stars-layer stars-small"></div>

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import ZeroGravityLibrary from './ZeroGravityLibrary';
+import SEOHead from './SEOHead';
 import './Bookshelf.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 /* ── Extract dominant color from an image for cover glow ── */
 const extractDominantColor = (imgSrc) =>
@@ -220,6 +221,7 @@ const Bookshelf = () => {
 
   return (
     <div className="bookshelf-container">
+      <SEOHead title="書架 | Koimsurai" description="楊泰和的閱讀書單與讀書筆記。" />
       {/* ── Nebula Background ── */}
       <div className="bookshelf-dim-overlay" />
       <div className="bookshelf-nebula-bg">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import SEOHead from './SEOHead';
 import './Music.css';
 
 /* ─── 色彩提取工具：從專輯封面取主色調 ─── */
@@ -251,6 +252,7 @@ const Music = () => {
 
   return (
     <div className="music-page" ref={containerRef} style={glowStyle}>
+      <SEOHead title="音樂 | Koimsurai" description="楊泰和的音樂品味與Spotify即時收聽紀錄。" />
       <div className="music-dim-overlay" />
 
       {/* ═══ 星雲背景 ═══ */}

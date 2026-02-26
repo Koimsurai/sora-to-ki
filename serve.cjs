@@ -177,7 +177,7 @@ function injectMeta(html, meta) {
 }
 
 /* ── Dynamic OG Image endpoint ── */
-app.get('/api/og-image/:id', async (req, res) => {
+app.get('/og-image/:id', async (req, res) => {
   try {
     const post = await fetchFromBackend(`/api/posts/${req.params.id}`);
     if (!post || post.message !== 'success') {
@@ -410,7 +410,7 @@ app.get('*', async (req, res) => {
             title: `${post.title} | Koimsurai`,
             description,
             url: `${SITE_URL}/blog/${postId}`,
-            image: `/api/og-image/${postId}`,
+            image: `/og-image/${postId}`,
             type: 'article',
             article: {
               author: post.author || 'Koimsurai',

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaPlay, FaTimes, FaFilter, FaSortAmountDown } from 'react-icons/fa';
+import SEOHead from './SEOHead';
 import './Cinema.css';
 
 // 模擬電影數據 - 實際使用時可以從 API 或數據庫獲取
@@ -368,6 +369,7 @@ function Cinema() {
 
   return (
     <div className="cinema-page">
+      <SEOHead title="電影 | Koimsurai" description="楊泰和的電影推薦與評論回顧。" />
       <div className="cinema-hero">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}

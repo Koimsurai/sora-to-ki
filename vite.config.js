@@ -154,6 +154,19 @@ export default defineConfig(({ command }) => {
       port: 13579, // Match the desired port
       // HTTPS is disabled
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-three': ['three', '@react-three/fiber', '@react-three/drei', '@react-three/postprocessing'],
+            'vendor-monaco': ['monaco-editor', '@monaco-editor/react'],
+            'vendor-mermaid': ['mermaid'],
+            'vendor-ui': ['framer-motion', 'recharts', 'swiper'],
+            'vendor-markdown': ['react-markdown', 'react-syntax-highlighter', 'rehype-raw', 'remark-gfm'],
+          },
+        },
+      },
+    },
     assetsInclude: ['**/*.JPG'], // 告訴 Vite 將 .JPG 視為靜態資源
     optimizeDeps: {
       include: [
