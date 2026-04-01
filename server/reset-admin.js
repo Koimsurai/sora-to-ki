@@ -6,8 +6,13 @@ const dbPath = path.join(__dirname, 'db.sqlite');
 const db = new sqlite3.Database(dbPath);
 
 async function resetAdmin() {
-  const username = 'timo9378';
-  const password = 'jces5556';
+  const username = process.env.ADMIN_USERNAME || 'admin';
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (!password) {
+    throw new Error('ADMIN_PASSWORD is required. Set it in environment before running reset-admin.js');
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
   
   console.log('檢查現有用戶...');

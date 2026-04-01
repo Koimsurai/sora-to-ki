@@ -497,9 +497,14 @@ function initializeDatabase() {
     });
 
     // 檢查並創建/更新管理員用戶
-    const targetUsername = process.env.ADMIN_USERNAME || 'timo9378';
-    const targetPassword = process.env.ADMIN_PASSWORD || 'jces5556';
+    const targetUsername = process.env.ADMIN_USERNAME || 'admin';
+    const targetPassword = process.env.ADMIN_PASSWORD;
     const saltRounds = 10;
+
+    if (!targetPassword) {
+      console.warn('[SECURITY] ADMIN_PASSWORD is not set. Skipping default admin password bootstrap.');
+      return;
+    }
     
     // 使用 async 函數包裝
     (async () => {

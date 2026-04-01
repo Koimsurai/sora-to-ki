@@ -3016,9 +3016,15 @@ apiRouter.post('/auth/reset-admin', async (req, res) => {
     return res.status(404).json({ message: 'Not found' });
   }
 
-  const targetUsername = process.env.ADMIN_USERNAME || 'timo9378';
-  const targetPassword = process.env.ADMIN_PASSWORD || 'jces5556';
+  const targetUsername = process.env.ADMIN_USERNAME || req.body?.username || 'admin';
+  const targetPassword = process.env.ADMIN_PASSWORD || req.body?.password;
   const saltRounds = 10;
+
+  if (!targetPassword) {
+    return res.status(400).json({
+      message: 'ADMIN_PASSWORD is not configured. Set ADMIN_PASSWORD in env or pass password in request body for dev reset.'
+    });
+  }
 
   try {
     const hashedPassword = await bcrypt.hash(targetPassword, saltRounds);

@@ -38,6 +38,9 @@ import imgPuddingKeycaps from '../assets/setup/HyperX-Pudding-Keycaps.png';
 import imgPixelBuds from '../assets/setup/Pixel-buds-pro2.png';
 import imgCloudII from '../assets/setup/Cloud-II-Wireless.png';
 import imgQuadcast from '../assets/setup/hyperx-quadcast.png';
+import imgShureMv7Plus from '../assets/setup/shure-mv7-plus.png';
+import imgPsa1Plus from '../assets/setup/PSA1-plus.png';
+import imgArctisNova7Gen2 from '../assets/setup/arctis-nova-7-wireless-gen-2-white.png';
 import imgT100 from '../assets/setup/t100.png';
 
 // --- 設備資料 ---
@@ -110,7 +113,10 @@ const categories = [
       // Audio & Mic
       { title: 'Pixel Buds Pro 2', subtitle: 'Wireless Earbuds', image: imgPixelBuds },
       { title: 'HyperX Cloud II', subtitle: 'Wireless Headset', image: imgCloudII },
+      { title: 'Arctis Nova 7 Wireless Gen 2', subtitle: 'White Edition Headset', image: imgArctisNova7Gen2 },
       { title: 'HyperX QuadCast', subtitle: 'USB Microphone', image: imgQuadcast },
+      { title: 'Shure MV7+', subtitle: 'USB/XLR Podcast Microphone', image: imgShureMv7Plus },
+      { title: 'RODE PSA1+', subtitle: 'Professional Studio Boom Arm', image: imgPsa1Plus },
       { title: 'Creative T100', subtitle: 'Hi-Fi 2.0 Speakers', image: imgT100 },
     ]
   }

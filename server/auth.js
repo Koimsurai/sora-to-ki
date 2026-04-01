@@ -1,6 +1,11 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomBytes(48).toString('hex');
+
+if (!process.env.JWT_SECRET) {
+  console.warn('[SECURITY] JWT_SECRET is not set. Using an ephemeral in-memory secret. Set JWT_SECRET in server/.env for stable auth tokens.');
+}
 
 // 基礎 JWT 認證中間件（任何有效 token 都可通過）
 const authMiddleware = (req, res, next) => {
@@ -112,8 +117,12 @@ const basicAuth = (req, res, next) => {
   const user = auth[0];
   const pass = auth[1];
 
-  const adminUser = process.env.ADMIN_USERNAME || 'admin';
-  const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
+  const adminUser = process.env.ADMIN_USERNAME;
+  const adminPass = process.env.ADMIN_PASSWORD;
+
+  if (!adminUser || !adminPass) {
+    return res.status(503).json({ message: 'Admin basic auth is not configured' });
+  }
 
   if (user === adminUser && pass === adminPass) {
     next();
