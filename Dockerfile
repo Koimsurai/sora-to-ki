@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM node:20-bullseye AS builder
+FROM node:20.19.5-bullseye AS builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ ENV VITE_API_URL=/api
 RUN pnpm run build
 
 # Stage 2: Production server
-FROM node:20-bullseye
+FROM node:20.19.5-bullseye
 
 WORKDIR /app
 
