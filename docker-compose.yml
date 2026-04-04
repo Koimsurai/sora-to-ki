@@ -31,11 +31,13 @@ services:
     container_name: personal-website-backend
     environment:
       - TZ=Asia/Taipei
+      - GALLERY_SOURCE_PATH=/usr/src/app/storage/Blog_Source
     volumes:
       - backend-db-data:/usr/src/app/db # Mount the database directory
       - backend-db-backup:/usr/src/app/db-backup # 使用 named volume 備份資料庫
       # HDD Mounts
       - /mnt/hdd16tb_01/Blog/uploads:/usr/src/app/storage/uploads
+      - /mnt/hdd16tb_01/nas-storage/Blog_Source:/usr/src/app/storage/Blog_Source:ro
       - /mnt/hdd16tb_01/nas-storage/gallery:/usr/src/app/storage/gallery
     env_file:
       - ./server/.env

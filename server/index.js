@@ -27,6 +27,188 @@ initializeDatabase();
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+let sharp = null;
+try {
+  sharp = require('sharp');
+} catch (_err) {
+  // Keep server bootable even if sharp is missing; sync endpoint will report dependency error.
+}
+
+const GALLERY_SOURCE_PATH = process.env.GALLERY_SOURCE_PATH || path.join(__dirname, 'storage', 'Blog_Source');
+const GALLERY_OUTPUT_DIR = path.join(__dirname, 'storage', 'gallery');
+const GALLERY_MANIFEST_PATH = path.join(GALLERY_OUTPUT_DIR, 'manifest.json');
+const SUPPORTED_GALLERY_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+let gallerySyncInProgress = false;
+
+function isSupportedGalleryImage(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  return SUPPORTED_GALLERY_EXTENSIONS.has(ext);
+}
+
+async function scanGallerySourceFiles(dir, output = []) {
+  const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      // Keep parity with existing builder's exclude rules.
+      if (/(@eaDir|\.DS_Store|thumbs|cache|gallery)/i.test(entry.name)) {
+        continue;
+      }
+      await scanGallerySourceFiles(fullPath, output);
+      continue;
+    }
+
+    if (entry.isFile() && isSupportedGalleryImage(fullPath)) {
+      output.push(fullPath);
+    }
+  }
+
+  return output;
+}
+
+async function readGalleryManifestSafe() {
+  try {
+    const raw = await fs.promises.readFile(GALLERY_MANIFEST_PATH, 'utf8');
+    const parsed = JSON.parse(raw);
+    const photos = Array.isArray(parsed.photos) ? parsed.photos : [];
+    return {
+      version: parsed.version || '1.0',
+      photos,
+    };
+  } catch (_err) {
+    return { version: '1.0', photos: [] };
+  }
+}
+
+async function processSingleGalleryImage(sourcePath, fullOutputPath, thumbOutputPath) {
+  const image = sharp(sourcePath, { failOn: 'none' }).rotate();
+  const metadata = await image.metadata();
+
+  await image
+    .clone()
+    .resize({ width: 1920, withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toFile(fullOutputPath);
+
+  await image
+    .clone()
+    .resize({ width: 400, withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toFile(thumbOutputPath);
+
+  const fullStat = await fs.promises.stat(fullOutputPath);
+  return {
+    width: metadata.width || 0,
+    height: metadata.height || 0,
+    size: fullStat.size,
+    format: (metadata.format || path.extname(sourcePath).replace('.', '') || 'jpg').toLowerCase(),
+  };
+}
+
+async function syncGalleryManifest() {
+  if (!sharp) {
+    const error = new Error('sharp module is not installed in backend runtime');
+    error.code = 'MISSING_SHARP';
+    throw error;
+  }
+
+  await fs.promises.access(GALLERY_SOURCE_PATH);
+  await fs.promises.mkdir(GALLERY_OUTPUT_DIR, { recursive: true });
+
+  const { version, photos: existingPhotos } = await readGalleryManifestSafe();
+  const existingById = new Map(existingPhotos.map((photo) => [photo.id, photo]));
+  const sourceFiles = await scanGallerySourceFiles(GALLERY_SOURCE_PATH);
+
+  let processed = 0;
+  let skipped = 0;
+  let failed = 0;
+  const nextPhotos = [];
+
+  for (const sourcePath of sourceFiles) {
+    const fileName = path.basename(sourcePath);
+    const id = path.basename(sourcePath, path.extname(sourcePath));
+    const existing = existingById.get(id);
+
+    const fullFileName = `${id}.webp`;
+    const thumbFileName = `${id}-thumb.webp`;
+    const fullOutputPath = path.join(GALLERY_OUTPUT_DIR, fullFileName);
+    const thumbOutputPath = path.join(GALLERY_OUTPUT_DIR, thumbFileName);
+
+    let needRebuild = true;
+    if (existing) {
+      try {
+        await fs.promises.access(fullOutputPath);
+        await fs.promises.access(thumbOutputPath);
+        needRebuild = false;
+      } catch (_err) {
+        needRebuild = true;
+      }
+    }
+
+    if (!needRebuild) {
+      nextPhotos.push(existing);
+      skipped += 1;
+      continue;
+    }
+
+    try {
+      const { width, height, size, format } = await processSingleGalleryImage(
+        sourcePath,
+        fullOutputPath,
+        thumbOutputPath
+      );
+      const sourceStat = await fs.promises.stat(sourcePath);
+
+      const nextPhoto = {
+        ...existing,
+        id,
+        title: fileName,
+        description: existing?.description || '',
+        urls: {
+          full: `/nas-images/${fullFileName}`,
+          regular: `/nas-images/${fullFileName}`,
+          small: `/nas-images/${thumbFileName}`,
+          thumb: `/nas-images/${thumbFileName}`,
+        },
+        originalUrl: `/nas-images/${fullFileName}`,
+        thumbnailUrl: `/nas-images/${thumbFileName}`,
+        width,
+        height,
+        aspectRatio: height ? width / height : 1,
+        size,
+        format,
+        shootTime: existing?.shootTime || sourceStat.mtimeMs,
+        tags: Array.isArray(existing?.tags) ? existing.tags : [],
+      };
+
+      nextPhotos.push(nextPhoto);
+      processed += 1;
+    } catch (err) {
+      failed += 1;
+      console.error(`[Gallery Sync] Failed processing ${fileName}:`, err.message || err);
+    }
+  }
+
+  const manifest = {
+    version,
+    generatedAt: new Date().toISOString(),
+    totalPhotos: nextPhotos.length,
+    photos: nextPhotos,
+  };
+
+  await fs.promises.writeFile(GALLERY_MANIFEST_PATH, JSON.stringify(manifest, null, 2), 'utf8');
+
+  return {
+    total: sourceFiles.length,
+    processed,
+    skipped,
+    failed,
+    totalPhotos: manifest.totalPhotos,
+    generatedAt: manifest.generatedAt,
+  };
+}
 
 // --- Multer Storage Config ---
 const storage = multer.diskStorage({
@@ -80,7 +262,7 @@ apiRouter.post('/admin/upload', requireAdmin, upload.single('file'), (req, res) 
 
 // Gallery API Endpoint
 apiRouter.get('/gallery/photos', async (req, res) => {
-  const manifestPath = path.join(__dirname, 'storage', 'gallery', 'manifest.json');
+  const manifestPath = GALLERY_MANIFEST_PATH;
 
   if (fs.existsSync(manifestPath)) {
     try {
@@ -99,6 +281,28 @@ apiRouter.get('/gallery/photos', async (req, res) => {
       totalPhotos: 0,
       photos: []
     });
+  }
+});
+
+// Gallery sync endpoint (manual trigger from admin UI)
+apiRouter.post('/admin/gallery/sync', requireAdmin, async (req, res) => {
+  if (gallerySyncInProgress) {
+    return res.status(409).json({ error: 'Gallery sync is already running' });
+  }
+
+  gallerySyncInProgress = true;
+  try {
+    const result = await syncGalleryManifest();
+    res.json({
+      message: 'Gallery sync completed',
+      ...result,
+    });
+  } catch (err) {
+    const message = err?.message || 'Gallery sync failed';
+    console.error('[Gallery Sync] Error:', message);
+    res.status(500).json({ error: message });
+  } finally {
+    gallerySyncInProgress = false;
   }
 });
 

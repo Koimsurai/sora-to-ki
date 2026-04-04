@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { postSchema } from '@/schemas/post';
 import { MonacoEditor } from '@/components/monaco-editor';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -92,9 +94,11 @@ export default function PostEditor() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [editorView, setEditorView] = useState('edit'); // edit | split | preview
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [isLoading, setIsLoading] = useState(!!id);
+  const submitLockRef = useRef(false);
 
   const form = useForm({
     resolver: zodResolver(postSchema),
@@ -355,6 +359,11 @@ export default function PostEditor() {
   };
 
   const onSaveDraft = async (data) => {
+    if (submitLockRef.current) {
+      toast.info('正在儲存中，請稍候');
+      return;
+    }
+    submitLockRef.current = true;
     setIsSavingDraft(true);
     try {
       const token = localStorage.getItem('koimsurai_user_token');
@@ -393,10 +402,16 @@ export default function PostEditor() {
       toast.error('儲存失敗');
     } finally {
       setIsSavingDraft(false);
+      submitLockRef.current = false;
     }
   };
 
   const onPublish = async (data) => {
+    if (submitLockRef.current) {
+      toast.info('正在處理中，請稍候');
+      return;
+    }
+    submitLockRef.current = true;
     setIsPublishing(true);
     try {
       const token = localStorage.getItem('koimsurai_user_token');
@@ -432,6 +447,7 @@ export default function PostEditor() {
       toast.error('發佈失敗');
     } finally {
       setIsPublishing(false);
+      submitLockRef.current = false;
     }
   };
 
@@ -537,8 +553,20 @@ export default function PostEditor() {
         <Form {...form}>
           <form className="flex flex-1 min-h-0">
             {/* Hidden buttons for AdminLayout header to trigger */}
-            <button id="save-draft-btn" type="button" className="hidden" onClick={form.handleSubmit(onSaveDraft)} />
-            <button id="publish-btn" type="button" className="hidden" onClick={form.handleSubmit(onPublish)} />
+            <button
+              id="save-draft-btn"
+              type="button"
+              className="hidden"
+              disabled={isSavingDraft || isPublishing}
+              onClick={form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))}
+            />
+            <button
+              id="publish-btn"
+              type="button"
+              className="hidden"
+              disabled={isSavingDraft || isPublishing}
+              onClick={form.handleSubmit(onPublish, () => toast.error('請先填寫標題與內容'))}
+            />
             {/* Left Column - Editor */}
             <main className="flex-1 overflow-y-auto p-6 min-w-0 space-y-0">
                 {/* Title */}
@@ -567,14 +595,50 @@ export default function PostEditor() {
                     <FormItem>
                       <FormControl>
                         <div className="glass rounded-xl overflow-hidden border border-border/50">
-                          <MonacoEditor
-                            value={field.value}
-                            onChange={(v) => field.onChange(v ?? '')}
-                            language="markdown"
-                            height="700px"
-                            theme="vs-dark"
-                            onSave={() => form.handleSubmit(onSaveDraft)()}
-                          />
+                          <div className="flex items-center gap-1 border-b border-border/40 bg-accent/20 px-2 py-1.5">
+                            <button
+                              type="button"
+                              className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'edit' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                              onClick={() => setEditorView('edit')}
+                            >
+                              編輯
+                            </button>
+                            <button
+                              type="button"
+                              className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'split' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                              onClick={() => setEditorView('split')}
+                            >
+                              分割
+                            </button>
+                            <button
+                              type="button"
+                              className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'preview' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                              onClick={() => setEditorView('preview')}
+                            >
+                              預覽
+                            </button>
+                          </div>
+
+                          {editorView !== 'preview' && (
+                            <MonacoEditor
+                              value={field.value}
+                              onChange={(v) => field.onChange(v ?? '')}
+                              language="markdown"
+                              height={editorView === 'split' ? '360px' : '700px'}
+                              theme="vs-dark"
+                              onSave={() => form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))()}
+                            />
+                          )}
+
+                          {editorView !== 'edit' && (
+                            <div className={`${editorView === 'split' ? 'max-h-[340px]' : 'max-h-[700px]'} overflow-y-auto border-t border-border/40 bg-background/70 p-4`}>
+                              <article className="prose prose-invert max-w-none prose-p:leading-7 prose-pre:rounded-lg">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {field.value || '*尚無內容*'}
+                                </ReactMarkdown>
+                              </article>
+                            </div>
+                          )}
                         </div>
                       </FormControl>
                       <FormMessage />

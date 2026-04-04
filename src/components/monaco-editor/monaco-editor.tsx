@@ -60,7 +60,11 @@ export default function MonacoEditor({
       if (monacoNs) {
         // 使用 highResUrl 或 thumbnailUrl，這裡預設 highResUrl
         // 需注意 url 已經包含 /nas-images/ 前綴
-        const imageUrl = photo.highResUrl || photo.thumbnailUrl;
+        const imageUrl =
+          photo.highResUrl ||
+          photo.originalUrl ||
+          photo?.urls?.full ||
+          photo.thumbnailUrl;
         const textToInsert = `![${photo.title || 'image'}](${imageUrl})\n`;
 
         editor.executeEdits('insert-nas-image', [{

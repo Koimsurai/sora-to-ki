@@ -419,6 +419,28 @@ const getLinkMeta = (url) => {
     if (host.includes('github.com')) {
       const parts = u.pathname.split('/').filter(Boolean);
       const repo = parts.length >= 2 ? parts[0] + '/' + parts[1] : u.pathname;
+
+      // Better descriptions for common GitHub deep links.
+      if (parts.length >= 4 && parts[2] === 'issues') {
+        return {
+          type: 'github',
+          icon: FaGithub,
+          color: '#fff',
+          label: 'GitHub Issue',
+          desc: repo + '#' + parts[3],
+        };
+      }
+
+      if (parts.length >= 4 && (parts[2] === 'pull' || parts[2] === 'pulls')) {
+        return {
+          type: 'github',
+          icon: FaGithub,
+          color: '#fff',
+          label: 'GitHub PR',
+          desc: repo + '#' + parts[3],
+        };
+      }
+
       return { type: 'github', icon: FaGithub, color: '#fff', label: 'GitHub', desc: repo };
     }
     if (host.includes('instagram.com')) return { type: 'instagram', icon: FaInstagram, color: '#E4405F', label: 'Instagram' };
@@ -633,6 +655,13 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
 const CustomParagraph = ({ children, node, ...props }) => {
   const childArray = React.Children.toArray(children);
 
+  const extractFirstUrlFromText = (text) => {
+    if (!text) return null;
+    // Capture URL while trimming common trailing wrappers like ")" or "]".
+    const match = text.match(/https?:\/\/[^\s<>)\]]+/i);
+    return match ? match[0] : null;
+  };
+
   // 遞迴取得所有子文字內容
   const getText = (node) => {
     if (typeof node === 'string') return node;
@@ -672,13 +701,24 @@ const CustomParagraph = ({ children, node, ...props }) => {
       if (/^https?:\/\/\S+$/.test(trimmed)) {
         return <LinkCard href={trimmed} />;
       }
+
+      const textUrl = extractFirstUrlFromText(trimmed);
+      if (textUrl && isEmbeddableLink(textUrl)) {
+        return (
+          <div className="link-card-with-text">
+            <p {...props}>{child}</p>
+            <LinkCard href={textUrl} />
+          </div>
+        );
+      }
     }
 
     // ReactMarkdown <a> 元素（remarkGfm autolink 或 markdown 連結）
     if (child?.props?.href) {
       const href = child.props.href;
       const text = getText(child.props.children).trim();
-      if (text === href || text === '' || href.includes(text) || text.includes(href)) {
+      // Allow cards for embeddable links even when markdown link text is custom.
+      if (isEmbeddableLink(href) || text === href || text === '' || href.includes(text) || text.includes(href)) {
         return <LinkCard href={href} />;
       }
     }

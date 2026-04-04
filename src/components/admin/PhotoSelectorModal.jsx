@@ -3,26 +3,65 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaSearch, FaImage } from 'react-icons/fa';
 import { loadPhotosManifest } from '../../utils/manifestLoader';
 import { Blurhash } from 'react-blurhash';
+import { toast } from 'sonner';
 
 const PhotoSelectorModal = ({ isOpen, onClose, onSelect }) => {
     const [photos, setPhotos] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [syncing, setSyncing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+
+    const fetchPhotos = async () => {
+        setLoading(true);
+        try {
+            const data = await loadPhotosManifest();
+            setPhotos(data);
+        } catch (err) {
+            console.error('Failed to load photos:', err);
+            toast.error('載入 NAS 照片失敗');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
-            setLoading(true);
-            loadPhotosManifest()
-                .then(data => {
-                    setPhotos(data);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error('Failed to load photos:', err);
-                    setLoading(false);
-                });
+            fetchPhotos();
         }
     }, [isOpen]);
+
+    const handleSync = async () => {
+        if (syncing) return;
+
+        const token = localStorage.getItem('koimsurai_user_token');
+        if (!token) {
+            toast.error('請先登入後台再同步');
+            return;
+        }
+
+        setSyncing(true);
+        try {
+            const response = await fetch('/api/admin/gallery/sync', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                throw new Error(data.error || '同步失敗');
+            }
+
+            toast.success(`同步完成：新增 ${data.processed ?? 0}，略過 ${data.skipped ?? 0}`);
+            await fetchPhotos();
+        } catch (err) {
+            console.error('NAS sync failed:', err);
+            toast.error(`同步失敗：${err.message || '未知錯誤'}`);
+        } finally {
+            setSyncing(false);
+        }
+    };
 
     const filteredPhotos = useMemo(() => {
         if (!searchTerm) return photos;
@@ -70,12 +109,21 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }) => {
                                 {photos.length} 張
                             </span>
                         </h3>
-                        <button
-                            onClick={onClose}
-                            className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/80 hover:bg-accent/50 transition-colors"
-                        >
-                            <FaTimes size={14} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleSync}
+                                disabled={syncing || loading}
+                                className="h-7 px-2.5 text-[11px] rounded-md border border-border/40 text-muted-foreground hover:text-foreground/90 hover:bg-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {syncing ? '同步中...' : '同步 NAS'}
+                            </button>
+                            <button
+                                onClick={onClose}
+                                className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/80 hover:bg-accent/50 transition-colors"
+                            >
+                                <FaTimes size={14} />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Search Bar */}
