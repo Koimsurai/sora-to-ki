@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages,
   FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss,
-  FaClock, FaRoute, FaBook, FaMusic, FaFilm, FaCamera, FaDesktop,
+  FaClock, FaRoute, FaBook, FaMusic, FaCamera, FaDesktop,
   FaGithub, FaGoogle, FaSignOutAlt, FaCog,
 } from 'react-icons/fa';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
@@ -176,7 +176,7 @@ function Header({ activeSection }) {
 
             <li className="dropdown-wrap" ref={blogMenuRef}>
               <button
-                className={'nav-link dropdown-trigger ' + (location.pathname.startsWith('/blog') || location.pathname.startsWith('/bookshelf') || location.pathname.startsWith('/movies') || location.pathname.startsWith('/music') ? 'active' : '')}
+                className={'nav-link dropdown-trigger ' + (location.pathname.startsWith('/blog') || location.pathname.startsWith('/bookshelf') || location.pathname.startsWith('/music') ? 'active' : '')}
                 onClick={() => setShowBlogMenu(!showBlogMenu)}
               >
                 <FaBookOpen className="nav-icon" />
@@ -191,9 +191,6 @@ function Header({ activeSection }) {
                     </Link>
                     <Link to="/bookshelf" className="dropdown-item" onClick={() => { setShowBlogMenu(false); setMobileOpen(false); }}>
                       <FaBook className="dd-icon" /><div><span className="dd-title">書櫃</span><span className="dd-desc">閱讀紀錄</span></div>
-                    </Link>
-                    <Link to="/movies" className="dropdown-item" onClick={() => { setShowBlogMenu(false); setMobileOpen(false); }}>
-                      <FaFilm className="dd-icon" /><div><span className="dd-title">片單</span><span className="dd-desc">觀影清單</span></div>
                     </Link>
                     <Link to="/music" className="dropdown-item" onClick={() => { setShowBlogMenu(false); setMobileOpen(false); }}>
                       <FaMusic className="dd-icon" /><div><span className="dd-title">音樂</span><span className="dd-desc">喜愛的音樂</span></div>

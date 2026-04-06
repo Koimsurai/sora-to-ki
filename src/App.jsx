@@ -284,10 +284,16 @@ function Layout({ activeSection, onSectionChange }) {
   return (
     <div
       className="main-content-container"
-      style={{ position: 'relative', zIndex: 10 }}
+      style={{
+        position: 'relative',
+        zIndex: 10,
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
     >
       {!isAdminPage && <Header activeSection={activeSection} />}
-      <main>
+      <main style={{ flex: '1 0 auto' }}>
         <Routes>
           <Route path="/" element={<MainPage onSectionChange={onSectionChange} />} />
           <Route path="/photos" element={<Suspense fallback={<LoadingFallback />}><LazyPhotoGallery /></Suspense>} />

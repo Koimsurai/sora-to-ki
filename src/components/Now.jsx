@@ -17,12 +17,6 @@ const statusColors = {
 };
 
 // ── 資料 ──
-const statusBadges = [
-  { label: 'Building AI System', color: 'green', emoji: '🟢' },
-  { label: 'Debugging NAS', color: 'yellow', emoji: '🟡' },
-  { label: 'Learning Rust', color: 'purple', emoji: '🟣' },
-];
-
 const learningItems = [
   {
     title: 'Rust',
@@ -166,14 +160,6 @@ const Now = () => {
               <span className="now-title-gradient">現在</span>
               <span className="now-title-sub">· What I'm up to</span>
             </h1>
-            <div className="now-status-badges">
-              {statusBadges.map((b) => (
-                <span key={b.label} className="status-badge" style={{ '--badge-color': statusColors[b.color] }}>
-                  <span className="status-dot" />
-                  {b.label}
-                </span>
-              ))}
-            </div>
           </div>
 
           <div className="now-meta-row">
