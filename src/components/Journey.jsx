@@ -15,49 +15,49 @@ const variants = ['left-text', 'center-watermark', 'right-text'];
 
 const milestones = [
   {
-    id: 1, year: '2015-2018', title: '高中時期', subtitle: '第一份工作與責任',
-    description: '高中時期在日本料理店擔任內外場工作，雖然辛苦但培養了良好的工作素養、時間管理能力與待人處事的態度。這段經歷讓我學會如何在學業與工作之間取得平衡。',
-    icon: '🍱', color: '#4ade80', tags: ['工作經驗', '成長'],
+    id: 1, year: '2004', title: '出生', subtitle: '水瓶座 A 型',
+    description: '出生於 2004 年。理性的程式邏輯與感性的美學設計——這兩種看似衝突的特質，讓我在開發前端介面與規劃系統架構時，能同時兼顧使用者的視覺體驗與程式碼的運作效率。',
+    icon: '🌟', color: '#c084fc', tags: ['全端工程師', '攝影', '設計'],
   },
   {
-    id: 2, year: '2019-2020', title: '大一大二', subtitle: '程式技能建立期',
-    description: '進入台科大資管系後，開始系統性地學習程式設計。從 Python 基礎開始，逐步學習 Golang、Java 等語言，建立紮實的程式設計基礎。這段時期大量練習，為後續的專案開發打下堅實的根基。',
-    icon: '💻', color: '#60a5fa', tags: ['Python', 'Golang', 'Java'],
+    id: 2, year: '2019-2021', title: '啟蒙與磨練', subtitle: '日本料理店內外場',
+    description: '高中時期的第一份工作是在日本料理店擔任內外場人員。日本職人對於「備料規矩」與「服務禮儀」的嚴苛要求，深深影響了我日後的工作態度。即使在忙碌的高壓環境下，仍能保持冷靜依照 SOP 處理繁雜事務，培養出優異的時間管理能力與抗壓性。',
+    icon: '🍱', color: '#4ade80', tags: ['抗壓性', '工作素養', '時間管理'],
   },
   {
-    id: 3, year: '2020-2021', title: '社團領導經驗', subtitle: '資管系學會會長',
-    description: '擔任資管系學會會長，籌辦多項大型活動，培養了領導與團隊合作能力。同時在絃韻吉他社擔任文書，負責活動策劃、攝影與公關事務。這些經歷讓我學會如何與團隊溝通協作，以及如何統籌規劃大型專案。',
-    icon: '👥', color: '#a78bfa', tags: ['領導', '團隊合作', '活動策劃'],
+    id: 3, year: '2022-2023', title: '大學前期', subtitle: '跨領域探索與領導力養成',
+    description: '進入大學後積極充實技術棧（Python, Golang, Java），並跳出舒適圈擔任系學會會長與吉他社文書。除了繁重課業，還需協調社團內的人力與資源，磨練了多工處理能力，學會帶領團隊、進行跨部門溝通，這些軟實力成為日後在職場上與不同 Team 協作的重要基石。',
+    icon: '👥', color: '#60a5fa', tags: ['Python', 'Golang', 'Java', '領導', '團隊合作'],
   },
   {
-    id: 4, year: '2021-2022', title: '攝影與美感培養', subtitle: '台科攝影社教學幹部',
-    description: '擔任台科攝影社的教學幹部，樂於分享攝影知識並規劃教學內容。透過攝影培養美感與設計能力，並將各種照片紀錄發在 Instagram 上。攝影不僅是興趣，更成為我觀察世界、記錄生活的重要方式。',
-    icon: '📷', color: '#f472b6', tags: ['攝影', '美感', '教學'],
+    id: 4, year: '2024.07', title: '程式教育經驗', subtitle: '猿創力程式設計學校',
+    description: '大三時加入猿創力程式設計學校。面對 3~9 年級的學生與家長，必須將艱澀的程式邏輯轉化為淺顯易懂的語言，極大提升了溝通表達能力。教授 Python(pygame)、MCE、Scratch、AI2 等課程。',
+    icon: '🎓', color: '#fb923c', tags: ['教學', 'Python', '溝通力'],
   },
   {
-    id: 5, year: '2024.07', title: '程式教學經驗', subtitle: '猿創力程式設計學校',
-    description: '在猿創力程式設計學校擔任程式教師，教導3~9年級學生 Python(pygame)、MCE(Minecraft教育版)、Scratch、AI2 等課程。這段經歷讓我在溝通與表達能力上獲得顯著提升，學會如何將複雜的程式概念用淺顯易懂的方式傳授給學生。',
-    icon: '🎓', color: '#fb923c', tags: ['教學', 'Python', 'Minecraft'],
+    id: 5, year: '2024.09', title: 'APP 前端開發', subtitle: '高偉數學補習班 資訊助理',
+    description: '負責 Android APP 前端開發 (Kotlin) 以及行銷影片剪輯 (Premiere)。在此期間開始接觸 GitHub 協作流程，學會版本控制基礎，並能獨立完成主管交辦的前端切版與功能實作。',
+    icon: '📱', color: '#34d399', tags: ['Kotlin', 'Android', 'Premiere', 'GitHub'],
   },
   {
-    id: 6, year: '2024.09', title: 'App 開發實戰', subtitle: '高偉數學補習班 資訊助理',
-    description: '在高偉數學補習班擔任資訊助理及企劃人員，負責 App 開發(Kotlin)、宣傳影片剪輯、封面製作等工作。邊做邊學，建立了完整的 App 開發流程基礎與專案管理概念。成功將補習班 App 上線維運，累積超過一年的 Android 開發實戰經驗。',
-    icon: '📱', color: '#34d399', tags: ['Kotlin', 'Android', 'App開發'],
+    id: 6, year: '2024', title: '大學專題', subtitle: 'EV 充電整合平台與遊戲化 ESG',
+    description: '畢業專題目標是解決電動車車主需下載多個 APP 的痛點，打造整合各大充電樁平台的聚合服務。後端導入 Redis 快取優化地圖效能；使用 FastAPI 讀取車載 CAN Log 將行車歷程轉化為減碳積分；Flutter APP 首創「橫向捲軸遊戲化」介面傳遞 ESG 永續觀念。同時具備完整 Infra 能力——Docker 容器化、Nginx 反向代理、Cloudflare 防護、hMailServer 郵件服務。還開發了 Discord Bot 實現 ChatOps，團隊成員可直接下指令自動新增 Issue、即時監控 Server 狀態與 Log。',
+    icon: '⚡', color: '#a78bfa', tags: ['Redis', 'FastAPI', 'Flutter', 'Docker', 'Nginx', 'Discord Bot'],
   },
   {
-    id: 7, year: '2024', title: 'UI/UX 與專案管理', subtitle: '設計與管理工具精進',
-    description: '熟悉使用 Figma 進行 UI/UX 設計，並習慣利用 Notion 進行專案管理與知識整理。透過實際專案經驗，學會如何設計使用者友善的介面，以及如何有效管理專案進度與團隊協作。',
-    icon: '🎨', color: '#818cf8', tags: ['Figma', 'Notion', 'UI/UX'],
+    id: 7, year: '2025', title: '微星科技 (MSI) 實習', subtitle: '軟體工程師・架構標準化',
+    description: '主導導入 Monorepo (Turborepo) 架構，解決跨專案代碼共用痛點，並建立 ESLint/Prettier/TypeScript 等嚴格規範。擔任前端技術窗口，與 AI Team 及 IT Team 密切合作，協助整合 AI 模型應用並參與 GitLab CI/CD 流程優化。近期正在導入 Tauri 將 Web 轉為桌面軟體，並嘗試 POC 推動公司 AI 專案到全世界。從「獨立開發者」晉升為具備「架構思維」的工程師。',
+    icon: '🏢', color: '#fbbf24', tags: ['Turborepo', 'Tauri', 'TypeScript', 'CI/CD', 'AI整合'],
   },
   {
-    id: 8, year: '2025', title: '微星科技實習', subtitle: '後端開發與自動化',
-    description: '大四下學期進入微星科技(MSI)擔任實習生，主要負責內部網頁後端開發，使用 C# 及 Python 進行開發。將接觸 n8n 自動化工作流以及更多的 App 開發專案。這是我從學校走向業界的重要轉折，在真實的企業環境中學習與成長。',
-    icon: '🏢', color: '#fbbf24', tags: ['C#', 'Python', 'n8n', '後端'],
+    id: 8, year: '現在', title: '個人專案與持續進化', subtitle: '在網路世界保持上進心',
+    description: '獨立使用 React 結合 Three.js 開發 3D 互動個人網站，展現不同於一般平面網頁的使用者體驗。因為對現有工具不滿意，主動自學 UI/UX 來優化專案；近期更開始研究 Rust 與 Home Lab (NAS) 領域，探索更底層的系統運作。',
+    icon: '🔭', color: '#f472b6', tags: ['React', 'Three.js', 'Rust', 'NAS', 'UI/UX'],
   },
   {
-    id: 9, year: '未來', title: '持續探索', subtitle: '成為全方位開發者',
-    description: '樂於學習，在網路世界中保持一顆上進心。期許未來能夠接觸不同類型產品、使用者，發揮專長與經驗，幫公司解決問題，提供符合用戶需求的網路服務。從前端到後端，從設計到部署，持續精進技術能力與專案經驗。',
-    icon: '🚀', color: '#ec4899', tags: ['未來', '全端開發', '成長'],
+    id: 9, year: '未來', title: '持續探索', subtitle: '打造穩定、高效且符合用戶需求的服務',
+    description: '期許未來能發揮全端開發能力與架構經驗，不只是寫出會動的程式碼，而是打造出穩定、高效且符合用戶需求的優質服務。接觸不同類型產品與使用者，從前端到後端，從設計到部署，持續精進。',
+    icon: '🚀', color: '#ec4899', tags: ['全端開發', '架構設計', '成長'],
   },
 ];
 
@@ -73,7 +73,7 @@ const Journey = () => {
 
   return (
     <div className="journey-page" ref={containerRef}>
-      <SEOHead title="旅程 | Koimsurai" description="楊泰和的職業成長與學習旅程時間線。" />
+      <SEOHead title="旅程" description="楊泰和的職業成長與學習旅程時間線。" path="/journey" />
 
       <div className="journey-dim-overlay" />
       <div className="journey-nebula-bg">

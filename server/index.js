@@ -3153,39 +3153,65 @@ apiRouter.get('/github/user/:username', (req, res) => {
   });
 });
 
-// GET GitHub user events (commits, etc.)
-apiRouter.get('/github/events/:username', (req, res) => {
+ㄧ// Helper: fetch JSON from GitHub API
+function ghFetch(path, ghToken) {
+  return new Promise((resolve) => {
+    const headers = { 'User-Agent': 'Personal-Website-Backend' };
+    if (ghToken) headers['Authorization'] = `Bearer ${ghToken}`;
+    https.get({ hostname: 'api.github.com', path, headers }, (apiRes) => {
+      let data = '';
+      apiRes.on('data', (chunk) => { data += chunk; });
+      apiRes.on('end', () => {
+        try { resolve(JSON.parse(data)); } catch { resolve(null); }
+      });
+    }).on('error', () => resolve(null));
+  });
+}
+
+// GET GitHub user events (commits, etc.) — enriched with commit messages
+apiRouter.get('/github/events/:username', async (req, res) => {
   const { username } = req.params;
   const ghToken = process.env.GITHUB_TOKEN;
-  const headers = { 'User-Agent': 'Personal-Website-Backend' };
-  if (ghToken) headers['Authorization'] = `Bearer ${ghToken}`;
 
-  const options = {
-    hostname: 'api.github.com',
-    path: ghToken ? `/users/${username}/events?per_page=30` : `/users/${username}/events/public`,
-    method: 'GET',
-    headers,
-  };
+  try {
+    const eventsPath = ghToken
+      ? `/users/${username}/events?per_page=30`
+      : `/users/${username}/events/public`;
+    const events = await ghFetch(eventsPath, ghToken);
 
-  https.get(options, (apiRes) => {
-    let data = '';
+    if (!Array.isArray(events)) {
+      return res.json(events || []);
+    }
 
-    apiRes.on('data', (chunk) => {
-      data += chunk;
-    });
+    // Enrich PushEvents that have empty commits
+    const pushEvents = events.filter(
+      e => e.type === 'PushEvent' && (!e.payload.commits || e.payload.commits.length === 0) && e.payload.before && e.payload.head
+    );
 
-    apiRes.on('end', () => {
-      try {
-        const jsonData = JSON.parse(data);
-        res.json(jsonData);
-      } catch (error) {
-        res.status(500).json({ error: 'Failed to parse GitHub API response' });
-      }
-    });
-  }).on('error', (error) => {
+    if (pushEvents.length > 0 && ghToken) {
+      const enrichPromises = pushEvents.map(async (event) => {
+        const repo = event.repo.name;
+        const compareData = await ghFetch(
+          `/repos/${repo}/compare/${event.payload.before}...${event.payload.head}`,
+          ghToken
+        );
+        if (compareData && Array.isArray(compareData.commits)) {
+          event.payload.commits = compareData.commits.map(c => ({
+            sha: c.sha,
+            message: c.commit.message,
+            author: c.commit.author,
+          }));
+          event.payload.size = compareData.commits.length;
+        }
+      });
+      await Promise.all(enrichPromises);
+    }
+
+    res.json(events);
+  } catch (error) {
     console.error('GitHub API Error:', error);
     res.status(500).json({ error: 'Failed to fetch GitHub data' });
-  });
+  }
 });
 
 // 保留舊的基本認證端點作為兼容性

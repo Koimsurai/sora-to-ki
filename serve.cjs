@@ -467,6 +467,22 @@ app.get('*', async (req, res) => {
         title: '書架 | Koimsurai',
         description: '楊泰和的閱讀書單與讀書筆記。',
       },
+      '/music': {
+        title: '音樂 | Koimsurai',
+        description: '楊泰和的音樂品味與 Spotify 即時收聽紀錄。',
+      },
+      '/cinema': {
+        title: '電影 | Koimsurai',
+        description: '楊泰和的電影推薦與評論回顧。',
+      },
+      '/anime': {
+        title: '動漫 | Koimsurai',
+        description: '楊泰和的動漫推薦清單與觀後感。',
+      },
+      '/activity': {
+        title: '動態儀表板 | Koimsurai',
+        description: '楊泰和的即時活動儀表板。',
+      },
     };
 
     const meta = pageMeta[requestPath];
