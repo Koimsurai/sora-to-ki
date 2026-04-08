@@ -1,81 +1,88 @@
-/* ==================== 活動頁面 - 星空主題設計 ==================== */
+/* ═══════════════════════════════════════════════════
+   Activity 動態儀表板 — 垂直段落式佈局
+   每個段落有自己的視覺處理，不共用統一 card 樣式
+   ═══════════════════════════════════════════════════ */
 
-.activity-container {
-  min-height: 100vh;
-  padding: 80px 20px 40px;
+/* ── Page ── */
+.activity-page {
   position: relative;
-  overflow: hidden;
-  background: linear-gradient(to bottom, #0a0a1a 0%, #1a0a2e 50%, #0f0a1a 100%);
+  min-height: 100vh;
+  background: transparent;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
-/* ==================== 星空背景效果 ==================== */
-
-.cosmic-background {
+/* ── 深空暗幕 ── */
+.activity-dim-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
+  background: rgba(6, 5, 14, 0.65);
+  pointer-events: none;
   z-index: 0;
-  pointer-events: none;
 }
 
-.stars-layer {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-repeat: repeat;
-  animation: twinkle 3s ease-in-out infinite;
-}
-
-.stars-small {
-  background-image: 
-    radial-gradient(2px 2px at 20% 30%, white, transparent),
-    radial-gradient(2px 2px at 60% 70%, white, transparent),
-    radial-gradient(1px 1px at 50% 50%, white, transparent),
-    radial-gradient(1px 1px at 80% 10%, white, transparent),
-    radial-gradient(2px 2px at 90% 60%, white, transparent);
-  background-size: 200px 200px;
-  opacity: 0.5;
-}
-
-.stars-medium {
-  background-image:
-    radial-gradient(3px 3px at 30% 40%, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(2px 2px at 70% 80%, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(3px 3px at 40% 20%, rgba(255, 255, 255, 0.8), transparent);
-  background-size: 300px 300px;
-  opacity: 0.6;
-  animation: twinkle 4s ease-in-out infinite reverse;
-}
-
-.stars-large {
-  background-image:
-    radial-gradient(4px 4px at 25% 55%, rgba(200, 200, 255, 0.9), transparent),
-    radial-gradient(3px 3px at 75% 25%, rgba(255, 200, 255, 0.9), transparent),
-    radial-gradient(4px 4px at 55% 75%, rgba(200, 255, 255, 0.9), transparent);
-  background-size: 400px 400px;
-  opacity: 0.7;
-  animation: twinkle 5s ease-in-out infinite;
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
-.mouse-glow {
+/* ── 星雲背景 ── */
+.activity-nebula-bg {
   position: fixed;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(138, 43, 226, 0.15) 0%, transparent 70%);
-  pointer-events: none;
-  transform: translate(-50%, -50%);
+  inset: 0;
   z-index: 1;
-  filter: blur(40px);
+  pointer-events: none;
+  overflow: hidden;
 }
 
+.activity-nebula-bg .nebula-layer {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.18;
+  will-change: transform;
+}
+
+.activity-nebula-1 {
+  width: 660px; height: 660px;
+  top: -8%; left: -12%;
+  background: radial-gradient(circle, rgba(127,90,240,0.5) 0%, rgba(180,60,200,0.25) 40%, transparent 70%);
+  animation: a-neb1 30s ease-in-out infinite;
+}
+.activity-nebula-2 {
+  width: 520px; height: 520px;
+  bottom: -6%; right: -8%;
+  background: radial-gradient(circle, rgba(200,50,140,0.4) 0%, rgba(140,30,170,0.2) 45%, transparent 70%);
+  animation: a-neb2 36s ease-in-out infinite;
+}
+.activity-nebula-3 {
+  width: 380px; height: 380px;
+  top: 45%; left: 55%;
+  background: radial-gradient(circle, rgba(56,178,172,0.25) 0%, rgba(44,182,125,0.1) 50%, transparent 70%);
+  animation: a-neb3 24s ease-in-out infinite;
+}
+.activity-nebula-dust {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.10) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.06) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.08) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 50%, rgba(255,255,255,0.05) 0%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 18% 85%, rgba(127,90,240,0.10) 0%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 90% 12%, rgba(200,50,140,0.07) 0%, transparent 100%);
+}
+
+@keyframes a-neb1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(50px,30px) scale(1.08); }
+  66% { transform: translate(-25px,-20px) scale(0.95); }
+}
+@keyframes a-neb2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  40% { transform: translate(-40px,-30px) scale(1.1); }
+  70% { transform: translate(25px,20px) scale(0.93); }
+}
+@keyframes a-neb3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(30px,-25px) scale(1.06); }
+}
+
+/* ── Loading ── */
 .activity-loading {
   display: flex;
   flex-direction: column;
@@ -86,1924 +93,949 @@
   position: relative;
   z-index: 2;
 }
-
-.cosmic-loader {
-  position: relative;
-  width: 120px;
-  height: 120px;
-}
-
-.orbit {
-  position: absolute;
-  top: 50%;  /* ✨ 統一在這裡設定 */
-  left: 50%; /* ✨ 統一在這裡設定 */
-  border: 2px solid rgba(138, 43, 226, 0.3);
+.activity-loader {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: #7f5af0;
   border-radius: 50%;
-  /* ✨ 將動畫的 transform 交給 keyframes 處理 */
-  animation: rotate 3s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
-
-.orbit-1 {
-  width: 100%;
-  height: 100%;
-  border-top-color: #8a2be2;
-  animation-duration: 2s;
-}
-
-.orbit-2 {
-  width: 75%;
-  height: 75%;
-  /* top: 12.5%; */  /* 移除舊的定位 */
-  /* left: 12.5%; */  /* 移除舊的定位 */
-  border-top-color: #9d4edd;
-  animation-duration: 3s;
-  animation-direction: reverse;
-}
-
-.orbit-3 {
-  width: 50%;
-  height: 50%;
-  /* top: 25%; */    /* 移除舊的定位 */
-  /* left: 25%; */    /* 移除舊的定位 */
-  border-top-color: #c77dff;
-  animation-duration: 4s;
-}
-
-.planet {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);  /* ✅ 初始置中很重要! */
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #8a2be2, #9d4edd);
-  box-shadow: 
-    0 0 20px rgba(138, 43, 226, 0.5),
-    0 0 40px rgba(138, 43, 226, 0.3),
-    inset 0 0 10px rgba(255, 255, 255, 0.2);
-  animation: pulse 2s ease-in-out infinite;
-  z-index: 10;  /* ✅ 確保核心球在最上層 */
-}
-
-/* ==================== 關鍵的動畫修正 ==================== */
-
-@keyframes rotate {
-  from {
-    /* ✨ 在動畫中同時包含位移與旋轉 */
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    /* ✨ 在動畫中同時包含位移與旋轉 */
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-@keyframes pulse {
-  /* 這個動畫原本就寫得很好，保留即可 */
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.1); }
-}
-
-
+@keyframes spin { to { transform: rotate(360deg); } }
 .activity-loading p {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1.1rem;
-  font-weight: 300;
-  letter-spacing: 1px;
-  animation: fadeInOut 2s ease-in-out infinite;
-}
-
-@keyframes fadeInOut {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
-.activity-header {
-  text-align: center;
-  margin-bottom: 60px;
-  position: relative;
-  z-index: 2;
-}
-
-.header-decoration {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.floating-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(30px);
-  opacity: 0.4;
-}
-
-.orb-1 {
-  width: 150px;
-  height: 150px;
-  background: linear-gradient(135deg, #8a2be2, #9d4edd);
-  top: -50px;
-  left: 10%;
-}
-
-.orb-2 {
-  width: 100px;
-  height: 100px;
-  background: linear-gradient(135deg, #c77dff, #e0aaff);
-  top: -30px;
-  right: 15%;
-}
-
-.activity-title {
-  font-size: clamp(2.5rem, 6vw, 4rem);
-  font-weight: 800;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  position: relative;
-}
-
-.title-gradient {
-  background: linear-gradient(135deg, #ffffff 0%, #e0aaff 50%, #c77dff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  filter: drop-shadow(0 0 30px rgba(199, 125, 255, 0.5));
-}
-
-@keyframes shimmer {
-  0% { 
-    filter: drop-shadow(0 0 30px rgba(199, 125, 255, 0.5)) brightness(1);
-  }
-  50% { 
-    filter: drop-shadow(0 0 50px rgba(199, 125, 255, 0.8)) brightness(1.2);
-  }
-  100% { 
-    filter: drop-shadow(0 0 30px rgba(199, 125, 255, 0.5)) brightness(1);
-  }
-}
-
-.title-sparkle {
-  font-size: 2rem;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
-}
-
-.activity-subtitle {
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 300;
-  letter-spacing: 2px;
-}
-
-.activity-tabs {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-bottom: 50px;
-  flex-wrap: wrap;
-  position: relative;
-  z-index: 2;
-}
-
-.tab-btn {
-  position: relative;
-  padding: 1rem 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  backdrop-filter: blur(10px);
-  overflow: hidden;
-}
-
-.tab-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.1), rgba(199, 125, 255, 0.1));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.tab-btn:hover::before {
-  opacity: 1;
-}
-
-.tab-btn.active {
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(199, 125, 255, 0.3));
-  border-color: rgba(138, 43, 226, 0.5);
-  color: #ffffff;
-  box-shadow: 
-    0 0 30px rgba(138, 43, 226, 0.4),
-    0 8px 32px rgba(138, 43, 226, 0.2);
-}
-
-.tab-icon {
-  font-size: 1.3rem;
-  filter: drop-shadow(0 0 8px currentColor);
-}
-
-.tab-label {
-  letter-spacing: 0.5px;
-}
-
-.tab-indicator {
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #8a2be2, #c77dff);
-  border-radius: 3px 3px 0 0;
-  box-shadow: 0 0 15px rgba(138, 43, 226, 0.8);
-}
-
-.activity-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 2;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-  margin-bottom: 50px;
-}
-
-.stat-card {
-  position: relative;
-  padding: 2rem;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-
-.stat-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.stat-card:hover::before {
-  opacity: 1;
-}
-
-.card-shine {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 70%
-  );
-  transform: rotate(45deg);
-  animation: shine 3s ease-in-out infinite;
-}
-
-@keyframes shine {
-  0%, 100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-  50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-}
-
-.stat-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  display: inline-block;
-  filter: drop-shadow(0 0 20px currentColor);
-}
-
-.stat-info h3 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #ffffff, #e0aaff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.5rem;
-}
-
-.stat-info p {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255,255,255,0.5);
   font-size: 0.95rem;
-  font-weight: 300;
-  letter-spacing: 0.5px;
 }
 
-.stat-gradient {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-}
-
-.stat-card:hover .stat-gradient {
-  opacity: 1;
-  height: 6px;
-}
-
-.stat-card.blue { --color: rgba(59, 130, 246, 0.8); }
-.stat-card.green { --color: rgba(16, 185, 129, 0.8); }
-.stat-card.yellow { --color: rgba(245, 158, 11, 0.8); }
-.stat-card.purple { --color: rgba(168, 85, 247, 0.8); }
-
-.stat-card:hover {
-  border-color: var(--color);
-  box-shadow: 0 0 40px var(--color), 0 20px 60px rgba(0, 0, 0, 0.4);
-  transform: translateY(-8px);
-}
-
-.activity-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
-  gap: 2rem;
-  margin-top: 3rem;
-}
-
-.activity-panel {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 2rem;
-  backdrop-filter: blur(20px);
-  transition: all 0.3s ease;
-}
-
-.activity-panel:hover {
-  border-color: rgba(138, 43, 226, 0.4);
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
-  transform: translateY(-4px);
-}
-
-.panel-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.game-list, .commit-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.game-item, .commit-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.game-item:hover, .commit-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(138, 43, 226, 0.3);
-  transform: translateX(8px);
-}
-
-.game-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 8px;
-  object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.game-info h4, .commit-info h4 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 0.25rem;
-}
-
-.game-info p, .commit-info p {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.total-playtime {
-  font-size: 0.85rem !important;
-  color: rgba(138, 43, 226, 0.8) !important;
-}
-
-.commit-icon {
-  font-size: 2rem;
-  filter: drop-shadow(0 0 10px rgba(138, 43, 226, 0.5));
-}
-
-.commit-message {
-  font-size: 0.95rem !important;
-  color: rgba(255, 255, 255, 0.7) !important;
-  margin: 0.25rem 0 !important;
-}
-
-.commit-time {
-  font-size: 0.85rem !important;
-  color: rgba(138, 43, 226, 0.7) !important;
-}
-
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-}
-
-.game-card {
+/* ── Content Wrapper ── */
+.activity-content-wrapper {
   position: relative;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-
-.game-card:hover {
-  border-color: rgba(138, 43, 226, 0.5);
-  box-shadow: 0 0 40px rgba(138, 43, 226, 0.3);
-}
-
-.game-cover {
-  width: 100%;
-  height: 180px;
-  object-fit: cover;
-  display: block;
-}
-
-.game-details {
-  padding: 1.5rem;
-}
-
-.game-details h3 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 1rem;
-}
-
-.game-stats {
+  z-index: 2;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 80px 32px 80px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 64px;
 }
 
-.game-stats .stat {
+
+/* ═══════════════════════════════════════════════════
+   1. STATUS BAR — 小型頂部狀態列，不佔視覺權重
+   ═══════════════════════════════════════════════════ */
+.status-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  padding: 10px 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 40px;
+  background: rgba(255,255,255,0.02);
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.game-stats .label {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.game-stats .value {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #8a2be2;
-}
-
-.github-profile, .player-card {
+.status-bar-left,
+.status-bar-right {
   display: flex;
   align-items: center;
-  gap: 2rem;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  margin-bottom: 3rem;
-  backdrop-filter: blur(20px);
+  gap: 0.6rem;
 }
 
-.github-avatar, .player-avatar {
-  width: 100px;
-  height: 100px;
+.status-dot-inline {
+  width: 7px; height: 7px;
   border-radius: 50%;
-  border: 3px solid rgba(138, 43, 226, 0.5);
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.4);
+  flex-shrink: 0;
+}
+.status-dot-inline.online { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.status-dot-inline.offline { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+.status-dot-inline.error { background: #fbbf24; }
+.status-dot-inline.checking { background: #94a3b8; }
+
+.status-bar-text {
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.3px;
 }
 
-.github-info h2, .player-info h2 {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
+.status-bar-meta {
+  color: rgba(255,255,255,0.35);
 }
 
-.github-bio {
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0.5rem 0 1rem;
-  font-size: 1rem;
-}
-
-.github-stats {
-  display: flex;
-  gap: 2rem;
-  margin: 1rem 0;
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.player-status {
-  font-size: 1rem;
+.status-bar-time {
+  font-family: 'Courier New', monospace;
+  color: rgba(255,255,255,0.55);
   font-weight: 500;
 }
 
-.game-count {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin-top: 0.5rem;
-}
 
-/* Steam 子標籤 */
-.steam-sub-tabs {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-}
-
-.steam-sub-tab {
-  flex: 1;
+/* ═══════════════════════════════════════════════════
+   2. HERO NUMBERS — 裸字排版，大數字 + 小標籤
+   無 card、無背景，用字體大小差異建立層次
+   ═══════════════════════════════════════════════════ */
+.hero-numbers {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 1rem;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  padding: 20px 0;
+}
+
+.hero-number-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.hero-num {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #fffffe 20%, #c4b5fd 80%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.hero-label {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+}
+
+.hero-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   3. NOW PLAYING — 全寬 cinematic 橫幅
+   ═══════════════════════════════════════════════════ */
+.now-playing-section {
   position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  min-height: 280px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.now-playing-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+.now-playing-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(6,5,14,0.92) 0%,
+    rgba(6,5,14,0.6) 40%,
+    rgba(6,5,14,0.3) 100%
+  );
+}
+
+.now-playing-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 2rem;
+  padding: 2rem 2.5rem;
+  width: 100%;
+}
+
+.now-playing-player {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.now-playing-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(127,90,240,0.3);
+}
+
+.now-playing-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+}
+
+.now-playing-status-text {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.now-playing-info {
+  flex: 1;
+}
+
+.now-playing-label {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  color: #c4b5fd;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.now-playing-title {
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: 700;
+  color: #fffffe;
+  line-height: 1.25;
+  margin-bottom: 0.4rem;
+}
+
+.now-playing-stats {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.5);
+}
+
+.now-playing-link {
+  flex-shrink: 0;
+  padding: 10px 22px;
+  background: rgba(127,90,240,0.15);
+  border: 1px solid rgba(127,90,240,0.4);
+  border-radius: 10px;
+  color: #fffffe;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
+  align-self: flex-end;
+  backdrop-filter: blur(8px);
+}
+.now-playing-link:hover {
+  background: rgba(127,90,240,0.3);
+  border-color: rgba(127,90,240,0.65);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(127,90,240,0.25);
+}
+
+
+/* ═══════════════════════════════════════════════════
+   4. CODE PULSE — 左右分割，左大字右長條圖
+   ═══════════════════════════════════════════════════ */
+.code-pulse-section {
+  display: flex;
+  gap: 3rem;
+  align-items: flex-start;
+  padding: 2.5rem 0;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+.code-pulse-left {
+  flex: 0 0 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.code-pulse-today {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, #7f5af0, #c4b5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.15;
+}
+
+.code-pulse-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.35);
+}
+
+.code-pulse-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.lang-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.lang-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lang-bar-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.lang-bar-name {
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+}
+
+.lang-bar-time {
+  color: rgba(255,255,255,0.35);
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+}
+
+.lang-bar-track {
+  height: 6px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 3px;
   overflow: hidden;
 }
 
-.steam-sub-tab::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(6, 182, 212, 0.1));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
+.lang-bar-fill {
+  height: 100%;
+  border-radius: 3px;
 }
 
-.steam-sub-tab:hover {
-  border-color: rgba(59, 130, 246, 0.5);
-  color: rgba(255, 255, 255, 0.9);
-  transform: translateY(-2px);
+
+/* ═══════════════════════════════════════════════════
+   5. HEATMAP — 獨立區塊，微妙背景
+   ═══════════════════════════════════════════════════ */
+.heatmap-section {
+  padding: 2rem 0;
 }
 
-.steam-sub-tab:hover::before {
-  opacity: 1;
-}
-
-.steam-sub-tab.active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(6, 182, 212, 0.2));
-  border-color: rgba(59, 130, 246, 0.6);
-  color: #ffffff;
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-}
-
-.sub-tab-icon {
-  font-size: 1.2rem;
-}
-
-.sub-tab-count {
-  padding: 0.25rem 0.75rem;
-  background: rgba(59, 130, 246, 0.3);
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.steam-sub-tab.active .sub-tab-count {
-  background: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-}
-
-.github-link {
-  display: inline-flex;
+.heatmap-section-header {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(199, 125, 255, 0.3));
-  border: 1px solid rgba(138, 43, 226, 0.5);
-  border-radius: 12px;
-  color: #ffffff;
-  text-decoration: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
-}
-
-.github-link:hover {
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.5), rgba(199, 125, 255, 0.5));
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.5);
-  transform: translateY(-2px);
-}
-
-.commits-timeline {
-  position: relative;
-  padding-left: 2rem;
-  margin-top: 2rem;
-}
-
-.commits-timeline::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: linear-gradient(to bottom, rgba(138, 43, 226, 0.8), rgba(199, 125, 255, 0.2));
-}
-
-.timeline-item {
-  position: relative;
-  margin-bottom: 2rem;
-  padding-left: 2rem;
-}
-
-.timeline-marker {
-  position: absolute;
-  left: -2.5rem;
-  top: 0.5rem;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #8a2be2;
-  box-shadow: 0 0 15px rgba(138, 43, 226, 0.8);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.timeline-content {
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.timeline-content:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(138, 43, 226, 0.3);
-  transform: translateX(8px);
-}
-
-.timeline-content h4 {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
-}
-
-.commit-msg {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.95rem;
-  margin: 0.5rem 0;
-}
-
-.timeline-meta {
-  display: flex;
-  gap: 1.5rem;
-  margin-top: 1rem;
-  font-size: 0.85rem;
-}
-
-.commit-count {
-  color: rgba(138, 43, 226, 0.9);
-  font-weight: 600;
-}
-
-.commit-date {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.repos-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-.repo-card {
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.3s ease;
-  display: block;
-}
-
-.repo-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(138, 43, 226, 0.4);
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
-}
-
-.repo-card h4 {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 0.75rem;
-}
-
-.repo-description {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.95rem;
-  margin-bottom: 1rem;
-  line-height: 1.5;
-}
-
-.repo-meta {
-  display: flex;
   gap: 1rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
 
-.repo-language {
+.heatmap-profile {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.heatmap-profile:hover { color: #c4b5fd; }
+
+.heatmap-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(127,90,240,0.25);
+}
+
+.heatmap-total {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
   gap: 0.4rem;
 }
 
-.language-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.section-subtitle {
+.heatmap-total-num {
   font-size: 1.3rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 3rem 0 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.error-message, .no-data {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1rem;
-}
-
-.error-message {
-  background: rgba(255, 59, 48, 0.1);
-  border: 1px solid rgba(255, 59, 48, 0.3);
-  border-radius: 12px;
-}
-
-.config-hint {
-  margin-top: 1.5rem;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.config-hint p {
-  font-weight: 600;
-  margin-bottom: 1rem;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.config-hint ol {
-  margin-left: 1.5rem;
-  line-height: 1.8;
-}
-
-.config-hint code {
-  background: rgba(138, 43, 226, 0.2);
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-  color: #c77dff;
-}
-
-@media (max-width: 768px) {
-  .activity-container {
-    padding: 60px 15px 30px;
-  }
-  .activity-title {
-    font-size: 2rem;
-  }
-  .activity-tabs {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  .tab-btn {
-    width: 100%;
-    justify-content: center;
-  }
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-  .activity-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-  .games-grid {
-    grid-template-columns: 1fr;
-  }
-  .github-profile, .player-card {
-    flex-direction: column;
-    text-align: center;
-  }
-  .repos-grid {
-    grid-template-columns: 1fr;
-  }
-  .steam-sub-tabs {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  .steam-sub-tab {
-    width: 100%;
-    padding: 0.875rem 1rem;
-  }
-  .mouse-glow {
-    display: none;
-  }
-  .contribution-heatmap {
-    padding: 1.5rem 1rem;
-  }
-  .heatmap-day {
-    width: 10px;
-    height: 10px;
-  }
-  .heatmap-grid {
-    gap: 2px;
-  }
-  .heatmap-week {
-    gap: 2px;
-  }
-}
-
-@media (max-width: 480px) {
-  .floating-orb {
-    display: none;
-  }
-  .activity-subtitle {
-    font-size: 1rem;
-  }
-  .stat-card {
-    padding: 1.5rem;
-  }
-  .activity-panel {
-    padding: 1.5rem;
-  }
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px) saturate(180%);
-  -webkit-backdrop-filter: blur(10px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.activity-content {
-  scroll-behavior: smooth;
-}
-
-.overview-section,
-.gaming-section,
-.coding-section {
-  animation: fadeIn 0.5s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.section-content {
-  position: relative;
-  z-index: 1;
-}
-
-/* ==================== GitHub 貢獻熱度圖 ==================== */
-
-.contribution-header {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 2rem;
-}
-
-.contribution-header .header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.contribution-header .refresh-button {
-  background: rgba(138, 43, 226, 0.2);
-  border: 1px solid rgba(138, 43, 226, 0.4);
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  font-size: 1.2rem;
-  transition: all 0.3s ease;
-  color: #00aaff;
-}
-
-.contribution-header .refresh-button:hover {
-  background: rgba(138, 43, 226, 0.3);
-  border-color: rgba(138, 43, 226, 0.6);
-  transform: rotate(180deg) scale(1.1);
-}
-
-.contribution-header .refresh-button:active {
-  transform: rotate(360deg) scale(0.95);
-}
-
-.contribution-total {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: rgba(138, 43, 226, 0.1);
-  border: 1px solid rgba(138, 43, 226, 0.3);
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  margin-left: auto;
-}
-
-.total-number {
-  font-size: 1.75rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #00aaff, #8a2be2);
+  background: linear-gradient(135deg, #7f5af0, #c4b5fd);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.total-label {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
+.heatmap-total-label {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
 }
 
-.contribution-heatmap {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.refresh-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: rgba(127,90,240,0.1);
+  border: 1px solid rgba(127,90,240,0.35);
+  border-radius: 50%;
+  cursor: pointer;
+  color: rgba(196,181,253,0.9);
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.4s;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+.refresh-icon-btn svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+.refresh-icon-btn:hover {
+  color: #fffffe;
+  background: rgba(127,90,240,0.18);
+  border-color: rgba(127,90,240,0.45);
+  transform: rotate(180deg);
+}
+.refresh-icon-btn.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+.heatmap-year-selector {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+.year-btn {
+  padding: 4px 14px;
   border-radius: 20px;
-  padding: 2.5rem;
-  margin: 0 0 3rem;
-  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: transparent;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.year-btn:hover {
+  border-color: rgba(127,90,240,0.3);
+  color: rgba(255,255,255,0.65);
+}
+.year-btn.active {
+  background: rgba(127,90,240,0.15);
+  border-color: rgba(127,90,240,0.4);
+  color: #c4b5fd;
+}
+
+.heatmap-grid-wrapper {
+  overflow-x: clip;
+  overflow-y: visible;
+  padding-top: 2.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127,90,240,0.25) transparent;
 }
 
 .heatmap-grid {
   display: flex;
-  gap: 8px; /* 減少間距以容納更多週數 */
-  padding-bottom: 1rem;
-  padding-left: 4.5rem;
-  min-width: max-content; /* 確保不會壓縮 */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(138, 43, 226, 0.5) rgba(255, 255, 255, 0.1);
-}
-
-.heatmap-grid::-webkit-scrollbar {
-  height: 8px;
-}
-
-.heatmap-grid::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-}
-
-.heatmap-grid::-webkit-scrollbar-thumb {
-  background: rgba(138, 43, 226, 0.5);
-  border-radius: 4px;
-}
-
-.heatmap-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(138, 43, 226, 0.7);
+  gap: 3px;
 }
 
 .heatmap-week {
   display: flex;
   flex-direction: column;
-  gap: 3px; /* 減少間距 */
-  flex-shrink: 0; /* 防止壓縮 */
-}
-
-.heatmap-day {
-  width: 12px; /* 稍微縮小以容納52週 */
-  height: 12px;
-  border-radius: 2px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
+  gap: 3px;
   flex-shrink: 0;
 }
 
-/* 空白格子 (不完整的週) */
-.heatmap-day.level--1 {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  pointer-events: none;
+.heatmap-day {
+  width: 12px; height: 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  position: relative;
 }
+.heatmap-day:hover { transform: scale(1.4); }
 
-.heatmap-day.level-0 {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.heatmap-day.level-1 {
-  background: rgba(0, 170, 255, 0.3);
-  border: 1px solid rgba(0, 170, 255, 0.5);
-  box-shadow: 0 0 8px rgba(0, 170, 255, 0.3);
-}
-
-.heatmap-day.level-2 {
-  background: rgba(0, 170, 255, 0.5);
-  border: 1px solid rgba(0, 170, 255, 0.7);
-  box-shadow: 0 0 12px rgba(0, 170, 255, 0.5);
-}
-
-.heatmap-day.level-3 {
-  background: rgba(138, 43, 226, 0.6);
-  border: 1px solid rgba(138, 43, 226, 0.8);
-  box-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
-}
-
-.heatmap-day.level-4 {
-  background: rgba(255, 20, 147, 0.7);
-  border: 1px solid rgba(255, 20, 147, 0.9);
-  box-shadow: 0 0 20px rgba(255, 20, 147, 0.7);
-}
+.heatmap-day.level--1 { background: transparent; pointer-events: none; }
+.heatmap-day.level-0 { background: rgba(255,255,255,0.04); }
+.heatmap-day.level-1 { background: rgba(127,90,240,0.2); }
+.heatmap-day.level-2 { background: rgba(127,90,240,0.4); }
+.heatmap-day.level-3 { background: rgba(127,90,240,0.6); }
+.heatmap-day.level-4 { background: rgba(200,50,140,0.65); }
 
 .day-tooltip {
   position: absolute;
   bottom: 120%;
   left: 50%;
   transform: translateX(-50%) scale(0);
-  background: rgba(0, 0, 0, 0.95);
-  color: #ffffff;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
+  background: rgba(6,5,14,0.95);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.68rem;
   white-space: nowrap;
   pointer-events: none;
   z-index: 100;
   opacity: 0;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(138, 43, 226, 0.5);
+  transition: all 0.12s;
+  border: 1px solid rgba(127,90,240,0.25);
 }
-
-.day-tooltip::after {
+.day-tooltip::before {
   content: '';
   position: absolute;
-  top: 100%;
-  left: 50%;
+  top: 100%; left: 50%;
   transform: translateX(-50%);
-  border: 5px solid transparent;
-  border-top-color: rgba(0, 0, 0, 0.95);
+  border: 4px solid transparent;
+  border-top-color: rgba(6,5,14,0.95);
 }
-
 .heatmap-day:hover .day-tooltip {
   transform: translateX(-50%) scale(1);
   opacity: 1;
 }
-
 .tooltip-date {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: 0.25rem;
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 1px;
 }
 
 .heatmap-legend {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.heatmap-months {
-  display: flex;
-  gap: 3px;
-  margin-bottom: 0.5rem;
-  padding-left: 30px; /* 對齊星期標籤 */
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.heatmap-month {
-  flex-shrink: 0;
-}
-
-.heatmap-container {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.heatmap-days-labels {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
-  padding-top: 0.5rem;
+  color: rgba(255,255,255,0.35);
 }
-
-.heatmap-day-label {
-  height: 12px;
-  display: flex;
-  align-items: center;
-  line-height: 12px;
-}
-
 .legend-squares {
   display: flex;
-  gap: 4px;
+  gap: 2px;
 }
-
 .legend-square {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 10px; height: 10px;
+  border-radius: 2px;
+}
+.legend-square.level-0 { background: rgba(255,255,255,0.04); }
+.legend-square.level-1 { background: rgba(127,90,240,0.2); }
+.legend-square.level-2 { background: rgba(127,90,240,0.4); }
+.legend-square.level-3 { background: rgba(127,90,240,0.6); }
+.legend-square.level-4 { background: rgba(200,50,140,0.65); }
+
+
+/* ═══════════════════════════════════════════════════
+   6. COMMITS — 事件分組，每個 push 展開 commit 訊息
+   ═══════════════════════════════════════════════════ */
+.commits-section {
+  padding: 0;
 }
 
-.legend-square.level-0 {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.legend-square.level-1 {
-  background: rgba(0, 170, 255, 0.3);
-}
-
-.legend-square.level-2 {
-  background: rgba(0, 170, 255, 0.5);
-}
-
-.legend-square.level-3 {
-  background: rgba(138, 43, 226, 0.6);
-}
-
-.legend-square.level-4 {
-  background: rgba(255, 20, 147, 0.7);
-}
-
-/* ==================== GitHub 統計卡片 ==================== */
-
-.github-stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1.5rem;
-  margin: 2.5rem 0;
-}
-
-.stat-card-small {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 1.5rem;
-  text-align: center;
-  backdrop-filter: blur(20px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
-}
-
-.stat-card-small:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(138, 43, 226, 0.4);
-  box-shadow: 0 0 30px rgba(138, 43, 226, 0.3);
-  transform: translateY(-5px);
-}
-
-.stat-card-small .stat-icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.75rem;
-  filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.6));
-}
-
-.stat-card-small .stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #00aaff, #8a2be2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.5rem;
-}
-
-.stat-card-small .stat-label {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 500;
-}
-
-/* ==================== 伺服器狀態卡片 ==================== */
-
-.server-status-card {
-  background: rgba(20, 20, 40, 0.6);
-  border: 1px solid rgba(138, 43, 226, 0.3);
-  border-radius: 20px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.status-header {
+.commits-list {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-direction: column;
 }
 
-.status-header h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #00aaff, #8a2be2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
+.commit-event {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
 }
+.commit-event:last-child { border-bottom: none; }
 
-.status-indicator {
+.commit-event-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
 }
 
-.status-indicator.online {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-}
-
-.status-indicator.offline {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.status-indicator.error {
-  background: rgba(251, 191, 36, 0.1);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-}
-
-.status-indicator.checking {
-  background: rgba(148, 163, 184, 0.1);
-  color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
+.commit-dot {
+  width: 6px; height: 6px;
   border-radius: 50%;
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-
-.status-indicator.online .status-dot {
-  background: #22c55e;
-  box-shadow: 0 0 10px #22c55e;
-}
-
-.status-indicator.offline .status-dot {
-  background: #ef4444;
-  box-shadow: 0 0 10px #ef4444;
-}
-
-.status-indicator.error .status-dot {
-  background: #fbbf24;
-  box-shadow: 0 0 10px #fbbf24;
-}
-
-.status-indicator.checking .status-dot {
-  background: #94a3b8;
-}
-
-@keyframes pulse-dot {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(1.2);
-  }
-}
-
-.status-details {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-}
-
-.status-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.status-label {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  font-family: 'Courier New', monospace;
-}
-
-/* ==================== 改進的遊戲卡片樣式 ==================== */
-
-.game-cover-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 460 / 215;
-  overflow: hidden;
-  border-radius: 12px 12px 0 0;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.game-cover {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.game-card:hover .game-cover {
-  transform: scale(1.05);
-}
-
-.game-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 1rem;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.game-card:hover .game-overlay {
-  opacity: 1;
-}
-
-.store-link {
-  color: white;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.5rem 1rem;
-  background: rgba(138, 43, 226, 0.8);
-  border-radius: 20px;
-  transition: all 0.3s ease;
-}
-
-.store-link:hover {
-  background: rgba(138, 43, 226, 1);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(138, 43, 226, 0.5);
-}
-
-.game-details .game-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-
-.game-details .stat {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 8px;
-  transition: background 0.3s ease;
-}
-
-.game-details .stat:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.game-details .stat-icon {
-  font-size: 1.25rem;
+  background: #7f5af0;
   flex-shrink: 0;
 }
 
-.game-details .stat-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
-}
-
-.game-details .stat .label {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.game-details .stat .value {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.9);
+.commit-repo {
+  font-size: 0.82rem;
   font-weight: 600;
+  color: rgba(255,255,255,0.8);
 }
 
-/* ==================== 改進的遊戲列表樣式 ==================== */
-
-.game-list .game-item {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.game-list .game-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(138, 43, 226, 0.3);
-  transform: translateX(5px);
-}
-
-.game-list .game-icon {
-  width: 120px;
-  height: 56px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
-}
-
-.game-list .game-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.game-list .game-info h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 0;
-}
-
-.game-stats-inline {
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.game-stats-inline .stat-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.game-stats-inline .stat-icon {
-  font-size: 1rem;
-}
-
-/* ==================== WakaTime 程式碼統計樣式 ==================== */
-
-.wakatime-section {
-  margin-bottom: 4rem;
-}
-
-.wakatime-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-}
-
-.wakatime-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 2rem;
-  backdrop-filter: blur(20px);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.wakatime-card::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.3), rgba(0, 170, 255, 0.3));
-  border-radius: 20px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-}
-
-.wakatime-card:hover::before {
-  opacity: 1;
-}
-
-.wakatime-card:hover {
-  border-color: rgba(138, 43, 226, 0.5);
-  box-shadow: 0 0 40px rgba(138, 43, 226, 0.3), 0 20px 60px rgba(0, 0, 0, 0.4);
-}
-
-.wakatime-card.full-width {
-  grid-column: 1 / -1;
-}
-
-.wakatime-card-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.wakatime-card-header .card-icon {
-  font-size: 2rem;
-  filter: drop-shadow(0 0 15px rgba(138, 43, 226, 0.8));
-  animation: iconFloat 3s ease-in-out infinite;
-}
-
-@keyframes iconFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
-}
-
-.wakatime-card-header h4 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0;
-}
-
-.wakatime-main-stat {
-  font-size: 3rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #00aaff, #8a2be2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-align: center;
-  margin: 2rem 0;
-  animation: statPulse 2s ease-in-out infinite;
-}
-
-@keyframes statPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-.wakatime-sub-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.sub-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  text-align: center;
-  transition: all 0.3s ease;
-}
-
-.sub-stat:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(138, 43, 226, 0.3);
-  transform: translateY(-2px);
-}
-
-.sub-stat .label {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.sub-stat .value {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  font-family: 'Courier New', monospace;
-}
-
-.language-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.language-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.language-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.95rem;
-}
-
-.language-name {
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.language-time {
-  color: rgba(255, 255, 255, 0.6);
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
-}
-
-.language-bar-wrapper {
-  width: 100%;
-  height: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.language-bar {
-  height: 100%;
-  border-radius: 6px;
-  position: relative;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
-  overflow: hidden; /* Move overflow here */
-}
-
-.language-bar::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  animation: shimmer 2s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-/* Pause animations when page is not visible */
-.activity-container.is-hidden *,
-.activity-container.is-hidden *::before,
-.activity-container.is-hidden *::after {
-  animation-play-state: paused !important;
-}
-
-
-.language-percent {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+.commit-when {
   font-size: 0.7rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  z-index: 1;
+  color: rgba(255,255,255,0.25);
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
-.projects-chart {
+.commit-messages {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.2rem;
+  padding-left: 18px;
 }
 
-.project-bar-item {
+.commit-msg-row {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 3px 0;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.commit-msg-row:hover {
+  background: rgba(127,90,240,0.06);
 }
 
-.project-label {
+.commit-sha {
+  font-size: 0.72rem;
+  font-family: 'Courier New', monospace;
+  color: #7f5af0;
+  flex-shrink: 0;
+  background: rgba(127,90,240,0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.commit-msg {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.commit-more {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.25);
+  padding-left: 0.25rem;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   7. PROJECTS — 水平長條圖，無 card 包裝
+   ═══════════════════════════════════════════════════ */
+.projects-section {
+  padding: 0;
+}
+
+.projects-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.project-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.project-row-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.project-row-name {
+  font-weight: 500;
+  color: rgba(255,255,255,0.7);
+}
+
+.project-row-time {
+  color: rgba(255,255,255,0.3);
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+}
+
+.project-row-track {
+  height: 5px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.project-row-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(127,90,240,0.6), rgba(200,50,140,0.5));
+  border-radius: 3px;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   SECTION LABEL — 統一的小型 label，所有段落共用
+   ═══════════════════════════════════════════════════ */
+.section-label {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 2.5px;
+  color: rgba(255,255,255,0.3);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+
+/* ═══════════════════════════════════════════════════
+   8. GAME GALLERY — 自動跑馬燈
+   ═══════════════════════════════════════════════════ */
+.game-gallery-section {
+  padding: 0;
+}
+
+.game-gallery-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.game-gallery-header .section-label {
+  margin-bottom: 0;
+}
+
+.game-gallery-count {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.25);
+}
+
+.game-marquee-wrapper {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
+}
+
+.game-marquee-track {
+  display: flex;
+  gap: 0.6rem;
+  width: max-content;
+  animation: marquee-scroll 60s linear infinite;
+}
+.game-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.game-gallery-item {
+  flex-shrink: 0;
+  width: 190px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  display: block;
+  text-decoration: none;
+}
+
+.game-gallery-item img {
+  width: 100%;
+  aspect-ratio: 460/215;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s;
+}
+.game-gallery-item:hover img {
+  transform: scale(1.06);
+}
+
+.game-gallery-info {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(6,5,14,0.9) 0%, transparent 55%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0.5rem 0.6rem;
+  opacity: 0;
+  transition: opacity 0.25s;
+  font-size: 0.75rem;
+  color: #fffffe;
+  font-weight: 500;
+}
+.game-gallery-item:hover .game-gallery-info { opacity: 1; }
+
+.game-gallery-time {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.45);
+}
+
+
+/* ═══════════════════════════════════════════════════
+   9. REPOS — 簡潔行列
+   ═══════════════════════════════════════════════════ */
+.repos-section {
+  padding: 0;
+}
+
+.repos-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.repo-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+.repo-row:last-child { border-bottom: none; }
+.repo-row:hover { opacity: 0.8; }
+
+.repo-row-left {
+  min-width: 0;
+  flex: 1;
 }
 
-.project-name {
+.repo-row-left h4 {
+  font-size: 0.92rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 0.15rem;
 }
 
-.project-time {
-  color: rgba(255, 255, 255, 0.6);
-  font-family: 'Courier New', monospace;
-  font-size: 0.9rem;
+.repo-row-left p {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.project-bar-bg {
-  width: 100%;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.repo-row-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
 }
 
-.project-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, rgba(138, 43, 226, 0.8), rgba(0, 170, 255, 0.8));
-  border-radius: 8px;
-  position: relative;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 20px rgba(138, 43, 226, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  overflow: hidden; /* Move overflow here */
+.repo-lang {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-.project-bar-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  animation: shimmer 2.5s ease-in-out infinite;
+.lang-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
 }
 
-.project-percent {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #ffffff;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  z-index: 1;
-}
 
+/* ═══════════════════════════════════════════════════
+   共用 Utility
+   ═══════════════════════════════════════════════════ */
 .no-data-small {
   text-align: center;
-  padding: 2rem;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.95rem;
-  font-style: italic;
+  padding: 2rem 1rem;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.85rem;
 }
 
-.wakatime-error {
-  margin-bottom: 3rem;
-}
 
-.wakatime-error .config-hint a {
-  color: #8a2be2;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.3s ease;
-}
-
-.wakatime-error .config-hint a:hover {
-  color: #c77dff;
-  text-decoration: underline;
-}
-
-/* WakaTime 響應式設計 */
+/* ═══════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .wakatime-stats-grid {
-    grid-template-columns: 1fr;
+  .activity-content-wrapper {
+    padding: 70px 16px 60px;
+    gap: 48px;
   }
 
-  .wakatime-main-stat {
-    font-size: 2.5rem;
+  .hero-numbers {
+    gap: 1.25rem;
   }
 
-  .wakatime-sub-stats {
-    grid-template-columns: 1fr;
+  .hero-divider {
+    height: 28px;
   }
 
-  .wakatime-card {
+  .now-playing-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
     padding: 1.5rem;
   }
 
-  .project-name {
-    font-size: 0.9rem;
+  .now-playing-link {
+    align-self: flex-start;
   }
 
-  .project-time {
-    font-size: 0.8rem;
+  .code-pulse-section {
+    flex-direction: column;
+    gap: 1.5rem;
   }
+
+  .code-pulse-left {
+    flex: none;
+  }
+
+  .game-gallery-item {
+    width: 160px;
+  }
+
+  .heatmap-year-selector {
+    flex-wrap: wrap;
+  }
+
+  .commit-msg-row {
+    flex-wrap: wrap;
+  }
+
+  .repo-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+
+  .activity-nebula-1 { width: 400px; height: 400px; }
+  .activity-nebula-2 { width: 320px; height: 320px; }
+  .activity-nebula-3 { width: 240px; height: 240px; }
 }
 
+@media (max-width: 480px) {
+  .activity-content-wrapper {
+    padding: 60px 12px 40px;
+    gap: 40px;
+  }
 
+  .status-bar {
+    font-size: 0.72rem;
+    padding: 8px 14px;
+  }
+
+  .hero-numbers {
+    gap: 1rem;
+  }
+
+  .hero-divider {
+    display: none;
+  }
+
+  .now-playing-section {
+    min-height: 200px;
+  }
+
+  .heatmap-day {
+    width: 10px; height: 10px;
+  }
+  .heatmap-week { gap: 2px; }
+  .heatmap-grid { gap: 2px; }
+
+  .game-gallery-item {
+    width: 140px;
+  }
+
+  .game-marquee-track {
+    animation-duration: 40s;
+  }
+}

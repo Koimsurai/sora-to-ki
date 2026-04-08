@@ -1,246 +1,139 @@
-/* 零重力圖書館容器 */
+/* ═══════════════════════════════════════════════════
+   Zero Gravity Library — Minimal Overlay UI
+   ═══════════════════════════════════════════════════ */
+
 .zero-gravity-container {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: #000000;
+  inset: 0;
+  background: #020008;
   z-index: 9999;
   overflow: hidden;
 }
 
-/* Canvas 樣式 */
 .zero-gravity-canvas {
   width: 100%;
   height: 100%;
   cursor: grab;
 }
-
 .zero-gravity-canvas:active {
   cursor: grabbing;
 }
 
-/* 2D UI 覆蓋層 */
-.zero-gravity-ui {
+/* ── Overlay ── */
+.zg-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   pointer-events: none;
   z-index: 10;
 }
-
-.zero-gravity-ui > * {
+.zg-overlay > * {
   pointer-events: auto;
 }
 
-/* 頂部標題欄 */
-.zero-gravity-header {
+/* ── Top bar ── */
+.zg-top-bar {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  padding: 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(
-    180deg,
-    rgba(10, 10, 15, 0.9) 0%,
-    rgba(10, 10, 15, 0.7) 50%,
-    transparent 100%
-  );
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(127, 90, 240, 0.2);
+  padding: 1.25rem 2rem;
 }
 
-.header-title {
+.zg-brand {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.2rem;
 }
 
-.title-glow {
-  font-size: 2rem;
-  font-weight: 800;
-  background: linear-gradient(
-    90deg,
-    #7f5af0 0%,
-    #a855f7 50%,
-    #7f5af0 100%
-  );
-  background-size: 200% 100%;
+.zg-brand-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 50%, #dc3278 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: titleShimmer 3s ease-in-out infinite;
-  text-shadow: 0 0 30px rgba(127, 90, 240, 0.5);
-  letter-spacing: 0.1em;
 }
 
-.subtitle {
-  font-size: 0.9rem;
-  color: rgba(127, 90, 240, 0.7);
-  letter-spacing: 0.05em;
+.zg-brand-sub {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.5px;
 }
 
-@keyframes titleShimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* 關閉按鈕 */
-.close-button {
-  position: relative;
-  padding: 0.8rem 1.5rem;
-  background: rgba(127, 90, 240, 0.1);
-  border: 1px solid rgba(127, 90, 240, 0.4);
-  border-radius: 8px;
-  color: #7f5af0;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  letter-spacing: 0.05em;
-}
-
-.close-button span {
-  position: relative;
-  z-index: 2;
-}
-
-.button-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(127, 90, 240, 0.3) 0%,
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.close-button:hover {
-  background: rgba(127, 90, 240, 0.2);
-  border-color: #7f5af0;
-  box-shadow: 0 0 20px rgba(127, 90, 240, 0.4);
-  transform: translateY(-2px);
-}
-
-.close-button:hover .button-glow {
-  opacity: 1;
-}
-
-/* 統計面板 */
-.stats-panel {
-  position: absolute;
-  top: 8rem;
-  left: 2rem;
-  display: flex;
-  gap: 1.5rem;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  background: rgba(127, 90, 240, 0.05);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(127, 90, 240, 0.2);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-}
-
-.stat-item:hover {
-  background: rgba(127, 90, 240, 0.1);
-  border-color: rgba(127, 90, 240, 0.4);
-  box-shadow: 0 0 20px rgba(127, 90, 240, 0.2);
-  transform: translateY(-2px);
-}
-
-.stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #7f5af0;
-  text-shadow: 0 0 10px rgba(127, 90, 240, 0.5);
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  color: rgba(127, 90, 240, 0.6);
-  margin-top: 0.3rem;
-  letter-spacing: 0.05em;
-}
-
-/* 操作提示 */
-.controls-hint {
-  position: absolute;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 2rem;
-  padding: 1rem 2rem;
-  background: rgba(10, 10, 15, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(127, 90, 240, 0.2);
-  border-radius: 12px;
-}
-
-.hint-item {
-  font-size: 0.9rem;
-  color: rgba(127, 90, 240, 0.7);
+.zg-close-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-/* 書名標籤 (3D hover 時顯示) */
-.book-label {
-  padding: 0.5rem 1rem;
-  background: rgba(10, 10, 15, 0.95);
-  border: 1px solid rgba(127, 90, 240, 0.5);
-  border-radius: 8px;
-  color: #7f5af0;
-  font-size: 0.9rem;
+  padding: 8px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.8rem;
   font-weight: 500;
-  white-space: nowrap;
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: 0 0 20px rgba(127, 90, 240, 0.3);
-  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+}
+.zg-close-btn:hover {
+  background: rgba(127, 90, 240, 0.12);
+  border-color: rgba(127, 90, 240, 0.35);
+  color: #c4b5fd;
 }
 
-/* 書籍詳情面板 */
-.book-details-panel {
+/* ── Hints ── */
+.zg-hints {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 8px 20px;
+  background: rgba(6, 5, 14, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.3px;
+}
+
+.zg-hint-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+/* ── Book detail panel ── */
+.zg-detail-panel {
   position: absolute;
   top: 50%;
   right: 2rem;
   transform: translateY(-50%);
-  width: 400px;
-  max-height: 80vh;
-  background: rgba(10, 10, 15, 0.95);
+  width: 340px;
+  max-height: 75vh;
+  background: rgba(6, 5, 14, 0.85);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(127, 90, 240, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem;
   overflow-y: auto;
-  box-shadow: 
-    0 0 40px rgba(127, 90, 240, 0.2),
-    inset 0 0 60px rgba(251, 191, 36, 0.05);
-  animation: slideInRight 0.4s ease-out;
+  animation: zg-slide-in 0.35s ease-out;
 }
 
-@keyframes slideInRight {
+@keyframes zg-slide-in {
   from {
     opacity: 0;
-    transform: translateY(-50%) translateX(50px);
+    transform: translateY(-50%) translateX(30px);
   }
   to {
     opacity: 1;
@@ -248,149 +141,127 @@
   }
 }
 
-.close-details {
+.zg-detail-panel::-webkit-scrollbar { width: 4px; }
+.zg-detail-panel::-webkit-scrollbar-thumb {
+  background: rgba(127, 90, 240, 0.25);
+  border-radius: 2px;
+}
+
+.zg-detail-close {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: 32px;
-  height: 32px;
-  background: rgba(127, 90, 240, 0.1);
-  border: 1px solid rgba(127, 90, 240, 0.3);
-  border-radius: 50%;
-  color: #7f5af0;
-  font-size: 1.2rem;
-  cursor: pointer;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.zg-detail-close:hover {
+  background: rgba(127, 90, 240, 0.15);
+  border-color: rgba(127, 90, 240, 0.35);
+  color: #c4b5fd;
 }
 
-.close-details:hover {
-  background: rgba(127, 90, 240, 0.2);
-  border-color: #7f5af0;
-  box-shadow: 0 0 15px rgba(127, 90, 240, 0.3);
-  transform: rotate(90deg);
-}
-
-.details-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.details-cover {
+.zg-detail-cover {
   width: 100%;
-  height: auto;
-  max-height: 400px;
+  max-height: 300px;
   object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid rgba(127, 90, 240, 0.2);
-  box-shadow: 0 0 30px rgba(127, 90, 240, 0.2);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 1rem;
 }
 
-.details-title {
-  font-size: 1.5rem;
+.zg-detail-title {
+  font-size: 1.15rem;
   font-weight: 700;
-  color: #7f5af0;
-  margin-top: 1rem;
-  text-shadow: 0 0 10px rgba(127, 90, 240, 0.3);
+  color: #fffffe;
+  line-height: 1.3;
+  margin-bottom: 0.3rem;
 }
 
-.details-author {
-  font-size: 1rem;
-  color: rgba(251, 191, 36, 0.8);
-  font-weight: 500;
-}
-
-.details-description {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.6;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.details-description::-webkit-scrollbar {
-  width: 4px;
-}
-
-.details-description::-webkit-scrollbar-track {
-  background: rgba(127, 90, 240, 0.05);
-  border-radius: 2px;
-}
-
-.details-description::-webkit-scrollbar-thumb {
-  background: rgba(127, 90, 240, 0.3);
-  border-radius: 2px;
-}
-
-.details-description::-webkit-scrollbar-thumb:hover {
-  background: rgba(127, 90, 240, 0.5);
-}
-
-.details-meta {
-  display: flex;
-  gap: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(127, 90, 240, 0.2);
-}
-
-.meta-item {
+.zg-detail-author {
   font-size: 0.85rem;
-  color: rgba(127, 90, 240, 0.6);
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
+  color: #c4b5fd;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
 }
 
-/* 響應式設計 */
+.zg-detail-desc {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.7;
+  max-height: 160px;
+  overflow-y: auto;
+  margin-bottom: 0.75rem;
+}
+
+.zg-detail-meta {
+  display: flex;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ── Book hover label (inside 3D scene) ── */
+.book-label {
+  padding: 6px 12px;
+  background: rgba(6, 5, 14, 0.9);
+  border: 1px solid rgba(127, 90, 240, 0.35);
+  border-radius: 8px;
+  color: #c4b5fd;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(8px);
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
-  .zero-gravity-header {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.5rem;
-  }
-
-  .title-glow {
-    font-size: 1.5rem;
-  }
-
-  .stats-panel {
-    top: auto;
-    bottom: 6rem;
-    left: 1rem;
-    gap: 1rem;
-  }
-
-  .stat-item {
-    padding: 0.8rem 1rem;
-  }
-
-  .stat-value {
-    font-size: 1.5rem;
-  }
-
-  .controls-hint {
-    flex-direction: column;
-    gap: 0.5rem;
+  .zg-top-bar {
     padding: 1rem;
+  }
+
+  .zg-brand-title {
+    font-size: 0.72rem;
+  }
+
+  .zg-hints {
+    gap: 0.5rem;
+    padding: 6px 14px;
+    font-size: 0.65rem;
     bottom: 1rem;
-    left: 1rem;
-    right: 1rem;
+  }
+
+  .zg-detail-panel {
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    max-height: 55vh;
+    top: auto;
+    bottom: 4rem;
     transform: none;
   }
 
-  .book-details-panel {
-    right: 1rem;
-    left: 1rem;
-    width: auto;
-    max-height: 60vh;
+  @keyframes zg-slide-in {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-}
-
-/* 加載動畫 */
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
 }

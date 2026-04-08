@@ -1,13 +1,7 @@
 import React, { useRef, useState, useMemo, Suspense, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { 
-  OrbitControls, 
-  useTexture, 
-  Html, 
-  Environment,
-  Stars,
-  PerspectiveCamera
-} from '@react-three/drei';
+import { OrbitControls, useTexture, Html, Stars } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { a, useSpring } from '@react-spring/three';
 import * as THREE from 'three';
 import './ZeroGravityLibrary.css';
@@ -376,60 +370,131 @@ function Book3D({ book, initialPosition, onClick, isSelected, onDragStateChange 
   );
 }
 
-// 知識黑洞 — 事件視界 + 吸積盤
+// ── Shaders ──
+const diskVertexShader = `
+  varying vec2 vUv;
+  varying vec3 vPos;
+  void main() {
+    vUv = uv;
+    vPos = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const diskFragmentShader = `
+  uniform float uTime;
+  varying vec2 vUv;
+  varying vec3 vPos;
+
+  float hash21(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x),
+      mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x),
+      f.y
+    );
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0, a = 0.5;
+    for (int i = 0; i < 6; i++) {
+      v += noise(p) * a;
+      p *= 2.0;
+      a *= 0.5;
+    }
+    return v;
+  }
+
+  void main() {
+    float r = length(vPos.xy);
+    float angle = atan(vPos.y, vPos.x);
+    float innerR = 1.8, outerR = 5.0;
+    float nr = clamp((r - innerR) / (outerR - innerR), 0.0, 1.0);
+
+    // Keplerian differential rotation — faster speed for visible motion
+    float omega = 0.8 / pow(max(r, 0.5), 1.5);
+
+    // Multi-layer streaming for visible spiral structure
+    float a1 = angle + uTime * omega;
+    float a2 = angle + uTime * omega * 0.7;
+    vec2 nc1 = vec2(a1 * 3.0, r * 4.0);
+    vec2 nc2 = vec2(a2 * 2.0 + 3.14, r * 2.5);
+    float n = fbm(nc1) * 0.65 + fbm(nc2) * 0.35;
+
+    // Spiral arm structure
+    float spiralAngle = angle + log(max(r, 0.1)) * 2.0 - uTime * 0.3;
+    float spiral = pow(0.5 + 0.5 * sin(spiralAngle * 3.0), 2.0);
+    n = n * (0.6 + 0.4 * spiral);
+
+    // Temperature-based color — warmer palette
+    float temp = pow(1.0 - nr, 0.7);
+    vec3 hot  = vec3(1.0, 0.95, 0.8);
+    vec3 warm = vec3(1.0, 0.5, 0.08);
+    vec3 cool = vec3(0.7, 0.15, 0.04);
+    vec3 cold = vec3(0.12, 0.02, 0.05);
+    vec3 color = mix(cold, cool, smoothstep(0.0, 0.3, temp));
+    color = mix(color, warm, smoothstep(0.3, 0.6, temp));
+    color = mix(color, hot, smoothstep(0.6, 1.0, temp));
+
+    // Smooth radial fade — wider inner fade to avoid hard inner edge
+    float radial = smoothstep(0.0, 0.2, nr) * smoothstep(1.0, 0.7, nr);
+
+    // Doppler beaming — one side brighter
+    float doppler = 1.0 + 0.4 * sin(angle - uTime * 0.2);
+    float brightness = (n * 0.55 + 0.45) * radial * doppler * 2.5;
+
+    gl_FragColor = vec4(color * brightness, brightness * 0.85);
+  }
+`;
+
+// 知識黑洞 — event horizon + accretion disk
 function KnowledgeBlackHole() {
   const diskRef = useRef();
-  const innerDiskRef = useRef();
-  const coreRef = useRef();
+  const uniformsRef = useRef({ uTime: { value: 0 } });
 
   useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    if (diskRef.current) diskRef.current.rotation.z = t * 0.12;
-    if (innerDiskRef.current) innerDiskRef.current.rotation.z = -t * 0.2;
-    if (coreRef.current) coreRef.current.rotation.y = t * 0.05;
+    uniformsRef.current.uTime.value = state.clock.elapsedTime;
   });
 
   return (
     <group>
-      {/* 事件視界 — 極暗球體 */}
-      <mesh ref={coreRef}>
-        <sphereGeometry args={[1.2, 64, 64]} />
-        <meshStandardMaterial color="#020008" metalness={1} roughness={0} />
+      {/* Event horizon — pure black sphere, meshBasicMaterial ignores all lighting and bloom */}
+      <mesh renderOrder={10}>
+        <sphereGeometry args={[1.4, 64, 64]} />
+        <meshBasicMaterial color="#000000" toneMapped={false} />
       </mesh>
 
-      {/* 吸積盤 — 外環 (紫金漸變感) */}
-      <mesh ref={diskRef} rotation={[Math.PI / 2.2, 0, 0]}>
-        <torusGeometry args={[3.2, 0.55, 16, 100]} />
-        <meshStandardMaterial
-          color="#a855f7"
-          metalness={0.8}
-          roughness={0.2}
-          emissive="#7f5af0"
-          emissiveIntensity={1.2}
-          toneMapped={false}
+      {/* Accretion disk — procedural shader, high segment count for smooth ring */}
+      <mesh ref={diskRef} rotation={[Math.PI / 2.15, 0, 0]} renderOrder={5}>
+        <ringGeometry args={[1.8, 5.0, 256, 32]} />
+        <shaderMaterial
+          vertexShader={diskVertexShader}
+          fragmentShader={diskFragmentShader}
+          uniforms={uniformsRef.current}
           transparent
-          opacity={0.75}
+          side={THREE.DoubleSide}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
         />
       </mesh>
 
-      {/* 吸積盤 — 內環 (金色) */}
-      <mesh ref={innerDiskRef} rotation={[Math.PI / 2.2, 0, 0]}>
-        <torusGeometry args={[2.0, 0.3, 12, 80]} />
-        <meshStandardMaterial
-          color="#fbbf24"
-          metalness={0.7}
-          roughness={0.25}
-          emissive="#f59e0b"
-          emissiveIntensity={0.8}
-          toneMapped={false}
-          transparent
-          opacity={0.6}
-        />
+      {/* Thin photon ring — sharp bright line at ISCO */}
+      <mesh rotation={[Math.PI / 2.15, 0, 0]} renderOrder={6}>
+        <torusGeometry args={[1.55, 0.015, 16, 256]} />
+        <meshBasicMaterial color="#ffcc66" transparent opacity={0.6} toneMapped={false} />
       </mesh>
 
-      {/* 核心光源 */}
-      <pointLight position={[0, 0, 0]} color="#7f5af0" intensity={4} distance={12} />
-      <pointLight position={[0, 0, 0]} color="#fbbf24" intensity={2} distance={6} />
+      {/* Warm accent lights for books, NOT hitting the black sphere */}
+      <pointLight color="#ff8833" intensity={1.5} distance={15} />
+      <pointLight color="#fbbf24" intensity={1} distance={8} />
     </group>
   );
 }
@@ -476,15 +541,17 @@ function Scene({ books, onBookClick, selectedBook }) {
 
   return (
     <>
-      {/* 環境光 - 提高強度 */}
-      <ambientLight intensity={0.8} />
-      
-      {/* 主光源 - 增加多個方向的光源 */}
-      <directionalLight position={[10, 10, 5]} intensity={1} />
-      <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-      
-      {/* 點光源增強中心照明 */}
-      <pointLight position={[0, 0, 0]} intensity={1.5} distance={50} decay={2} />
+      {/* 環境光 — 確保場景基礎可見度 */}
+      <ambientLight intensity={1.2} />
+
+      {/* 主光源 — 多方向確保書籍可見 */}
+      <directionalLight position={[10, 10, 5]} intensity={1.2} />
+      <directionalLight position={[-10, -5, -5]} intensity={0.6} />
+      <directionalLight position={[0, -10, 10]} intensity={0.4} />
+
+      {/* 外圍環境光 — 照亮書籍軌道區域 */}
+      <pointLight position={[0, 8, 0]} intensity={1} distance={60} decay={1} />
+      <pointLight position={[0, -8, 0]} intensity={0.6} distance={60} decay={1} />
       
       {/* 背景星空 */}
       <Stars
@@ -512,7 +579,7 @@ function Scene({ books, onBookClick, selectedBook }) {
         />
       ))}
 
-      {/* 相機控制 - 拖動書籍時自動禁用 */}
+      {/* 相機控制 */}
       <OrbitControls
         ref={controlsRef}
         enabled={!isDraggingAnyBook}
@@ -522,6 +589,17 @@ function Scene({ books, onBookClick, selectedBook }) {
         maxDistance={50}
         makeDefault
       />
+
+      {/* Post-processing: Bloom */}
+      <EffectComposer>
+        <Bloom
+          luminanceThreshold={0.8}
+          luminanceSmoothing={0.3}
+          intensity={0.8}
+          radius={0.4}
+          mipmapBlur
+        />
+      </EffectComposer>
     </>
   );
 }
@@ -530,88 +608,64 @@ function Scene({ books, onBookClick, selectedBook }) {
 export default function ZeroGravityLibrary({ books = [], onClose }) {
   const [selectedBook, setSelectedBook] = useState(null);
 
-  const handleBookClick = (book) => {
-    setSelectedBook(book);
-  };
-
-  const handleCloseDetails = () => {
-    setSelectedBook(null);
-  };
-
   return (
     <div className="zero-gravity-container">
-      {/* 3D Canvas */}
       <Canvas
-        shadows
         camera={{ position: [0, 5, 20], fov: 60 }}
         className="zero-gravity-canvas"
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
       >
         <Suspense fallback={null}>
           <Scene
             books={books}
-            onBookClick={handleBookClick}
+            onBookClick={setSelectedBook}
             selectedBook={selectedBook}
           />
         </Suspense>
       </Canvas>
 
-      {/* 2D UI 覆蓋層 */}
-      <div className="zero-gravity-ui">
-        {/* 頂部控制欄 */}
-        <div className="zero-gravity-header">
-          <div className="header-title">
-            <div className="title-glow">KNOWLEDGE BLACK HOLE</div>
-            <div className="subtitle">在知識黑洞的引力場中探索無盡書海</div>
+      {/* Overlay UI */}
+      <div className="zg-overlay">
+        {/* Top bar */}
+        <div className="zg-top-bar">
+          <div className="zg-brand">
+            <span className="zg-brand-title">Knowledge Black Hole</span>
+            <span className="zg-brand-sub">{books.length} books in orbit</span>
           </div>
-          <button className="close-button" onClick={onClose}>
-            <span>返回 2D</span>
-            <div className="button-glow"></div>
+          <button className="zg-close-btn" onClick={onClose}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            返回書架
           </button>
         </div>
 
-        {/* 書籍統計 */}
-        <div className="stats-panel">
-          <div className="stat-item">
-            <span className="stat-value">{books.length}</span>
-            <span className="stat-label">書籍總數</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{Math.ceil(books.length / 12)}</span>
-            <span className="stat-label">吸積環</span>
-          </div>
+        {/* Controls hint — bottom center */}
+        <div className="zg-hints">
+          <span>拖曳旋轉</span>
+          <span className="zg-hint-dot" />
+          <span>滾輪縮放</span>
+          <span className="zg-hint-dot" />
+          <span>點擊書籍查看</span>
         </div>
 
-        {/* 操作說明 */}
-        <div className="controls-hint">
-          <div className="hint-item">🖱️ 拖曳空白處旋轉視角</div>
-          <div className="hint-item">🔍 滾輪縮放距離</div>
-          <div className="hint-item">✋ 拖曳書籍移動位置</div>
-          <div className="hint-item">👆 點擊書籍查看詳情</div>
-        </div>
-
-        {/* 選中書籍詳情面板 */}
+        {/* Book details panel */}
         {selectedBook && (
-          <div className="book-details-panel">
-            <button className="close-details" onClick={handleCloseDetails}>✕</button>
-            <div className="details-content">
-              <img
-                src={selectedBook.coverUrl}
-                alt={selectedBook.title}
-                className="details-cover"
-              />
-              <h2 className="details-title">{selectedBook.title}</h2>
-              <p className="details-author">{selectedBook.authors?.join(', ')}</p>
-              {selectedBook.description && (
-                <p className="details-description">{selectedBook.description}</p>
-              )}
-              <div className="details-meta">
-                {selectedBook.publishedDate && (
-                  <span className="meta-item">📅 {selectedBook.publishedDate}</span>
-                )}
-                {selectedBook.pageCount && (
-                  <span className="meta-item">📄 {selectedBook.pageCount} 頁</span>
-                )}
-              </div>
+          <div className="zg-detail-panel">
+            <button className="zg-detail-close" onClick={() => setSelectedBook(null)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+            {selectedBook.coverUrl && (
+              <img src={selectedBook.coverUrl} alt={selectedBook.title} className="zg-detail-cover" />
+            )}
+            <h3 className="zg-detail-title">{selectedBook.title}</h3>
+            {selectedBook.authors?.length > 0 && (
+              <p className="zg-detail-author">{selectedBook.authors.join(', ')}</p>
+            )}
+            {selectedBook.description && (
+              <p className="zg-detail-desc">{selectedBook.description}</p>
+            )}
+            <div className="zg-detail-meta">
+              {selectedBook.publishedDate && <span>{selectedBook.publishedDate}</span>}
+              {selectedBook.pageCount && <span>{selectedBook.pageCount} 頁</span>}
             </div>
           </div>
         )}

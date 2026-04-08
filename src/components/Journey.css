@@ -1,615 +1,535 @@
-/* ==================== Journey 歷程時間軸頁面 ==================== */
+/* ═══════════════════════════════════════════════════
+   Journey 旅程 — 雜誌式長文排版 (Vertical Storytelling)
+   ═══════════════════════════════════════════════════ */
 
-.journey-container {
-  min-height: 100vh;
-  padding: 80px 20px 60px;
+/* ── Page ── */
+.journey-page {
   position: relative;
+  min-height: 100vh;
+  background: transparent;
   overflow: hidden;
-  background: linear-gradient(to bottom, 
-    #0a0a1a 0%, 
-    #1a0a2e 30%,
-    #2d1b4e 60%,
-    #1a0a2e 80%,
-    #0a0a1a 100%
-  );
 }
 
-/* ==================== 星空背景 ==================== */
-
-.journey-stars-bg {
+/* ══════════════════════════
+   深空暗幕
+   ══════════════════════════ */
+.journey-dim-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
+  inset: 0;
+  background: rgba(6, 5, 14, 0.65);
   pointer-events: none;
+  z-index: 0;
 }
 
-.stars-layer {
+/* ══════════════════════════
+   星雲背景
+   ══════════════════════════ */
+.journey-nebula-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.journey-nebula-bg .nebula-layer {
   position: absolute;
-  width: 100%;
-  height: 100%;
-  background-repeat: repeat;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.18;
+  will-change: transform;
 }
 
-.stars-sm {
-  background-image: 
-    radial-gradient(1px 1px at 20% 30%, white, transparent),
-    radial-gradient(1px 1px at 60% 70%, white, transparent),
-    radial-gradient(1px 1px at 50% 50%, white, transparent),
-    radial-gradient(1px 1px at 80% 10%, white, transparent);
-  background-size: 200px 200px;
-  opacity: 0.6;
-  animation: twinkle-sm 3s ease-in-out infinite;
+.journey-nebula-1 {
+  width: 660px;
+  height: 660px;
+  top: -8%;
+  left: -12%;
+  background: radial-gradient(circle, rgba(127, 90, 240, 0.5) 0%, rgba(180, 60, 200, 0.25) 40%, transparent 70%);
+  animation: journey-neb1 30s ease-in-out infinite;
 }
 
-.stars-md {
+.journey-nebula-2 {
+  width: 520px;
+  height: 520px;
+  bottom: -6%;
+  right: -8%;
+  background: radial-gradient(circle, rgba(200, 50, 140, 0.4) 0%, rgba(140, 30, 170, 0.2) 45%, transparent 70%);
+  animation: journey-neb2 36s ease-in-out infinite;
+}
+
+.journey-nebula-3 {
+  width: 380px;
+  height: 380px;
+  top: 45%;
+  left: 55%;
+  background: radial-gradient(circle, rgba(56, 178, 172, 0.25) 0%, rgba(44, 182, 125, 0.1) 50%, transparent 70%);
+  animation: journey-neb3 24s ease-in-out infinite;
+}
+
+.journey-nebula-dust {
+  position: absolute;
+  inset: 0;
   background-image:
-    radial-gradient(2px 2px at 30% 40%, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(2px 2px at 70% 80%, rgba(255, 255, 255, 0.8), transparent);
-  background-size: 300px 300px;
-  opacity: 0.5;
-  animation: twinkle-md 4s ease-in-out infinite reverse;
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.10) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.06) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.08) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 50%, rgba(255,255,255,0.05) 0%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 18% 85%, rgba(127,90,240,0.10) 0%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 90% 12%, rgba(200,50,140,0.07) 0%, transparent 100%);
 }
 
-.stars-lg {
-  background-image:
-    radial-gradient(3px 3px at 25% 55%, rgba(138, 43, 226, 0.6), transparent),
-    radial-gradient(3px 3px at 75% 25%, rgba(0, 170, 255, 0.6), transparent);
-  background-size: 400px 400px;
-  opacity: 0.4;
-  animation: twinkle-lg 5s ease-in-out infinite;
+@keyframes journey-neb1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(50px, 30px) scale(1.08); }
+  66% { transform: translate(-25px, -20px) scale(0.95); }
+}
+@keyframes journey-neb2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-40px, -30px) scale(1.1); }
+  70% { transform: translate(25px, 20px) scale(0.93); }
+}
+@keyframes journey-neb3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -25px) scale(1.06); }
 }
 
-@keyframes twinkle-sm {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+/* ══════════════════════════
+   Progress Track (left sidebar)
+   ══════════════════════════ */
+.progress-track {
+  position: fixed;
+  left: 40px;
+  top: 15%;
+  height: 70%;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  z-index: 10;
+  border-radius: 1px;
 }
 
-@keyframes twinkle-md {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.7; }
+.progress-dot {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7f5af0;
+  box-shadow: 0 0 12px rgba(127, 90, 240, 0.6);
 }
 
-@keyframes twinkle-lg {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 0.6; }
+.progress-year-label {
+  position: absolute;
+  left: 16px;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.25);
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
 }
 
-/* ==================== Hero 區域 ==================== */
-
-.journey-hero {
-  text-align: center;
-  margin-bottom: 100px;
+/* ══════════════════════════
+   Content Wrapper
+   ══════════════════════════ */
+.journey-content-wrapper {
   position: relative;
   z-index: 2;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 90px 40px 60px;
 }
 
-.hero-decoration {
-  position: relative;
-  width: 200px;
-  height: 200px;
-  margin: 0 auto 3rem;
-}
-
-.orbit-ring {
-  position: absolute;
-  border: 2px solid rgba(138, 43, 226, 0.3);
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.orbit-1 {
-  width: 100%;
-  height: 100%;
-  border-color: rgba(0, 170, 255, 0.4);
-  animation: orbit-rotate 10s linear infinite;
-}
-
-.orbit-2 {
-  width: 70%;
-  height: 70%;
-  border-color: rgba(138, 43, 226, 0.4);
-  animation: orbit-rotate 15s linear infinite reverse;
-}
-
-.orbit-3 {
-  width: 40%;
-  height: 40%;
-  border-color: rgba(255, 20, 147, 0.4);
-  animation: orbit-rotate 20s linear infinite;
-}
-
-@keyframes orbit-rotate {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-.center-planet {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 4rem;
-  filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.8));
-  animation: planet-pulse 3s ease-in-out infinite;
-}
-
-@keyframes planet-pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.1); }
+/* ══════════════════════════
+   Hero
+   ══════════════════════════ */
+.journey-hero {
+  text-align: center;
+  margin-bottom: 80px;
+  padding-top: 40px;
 }
 
 .journey-title {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 800;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
-.title-gradient {
-  background: linear-gradient(135deg, 
-    #ffffff 0%, 
-    #00aaff 30%, 
-    #8a2be2 60%, 
-    #ff1493 100%
-  );
+.journey-page .title-gradient {
+  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.6));
-  animation: title-shimmer 4s ease-in-out infinite;
-}
-
-@keyframes title-shimmer {
-  0%, 100% { filter: drop-shadow(0 0 30px rgba(138, 43, 226, 0.6)) brightness(1); }
-  50% { filter: drop-shadow(0 0 50px rgba(138, 43, 226, 0.9)) brightness(1.2); }
-}
-
-.title-icon {
-  font-size: 3rem;
-  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.8));
 }
 
 .journey-subtitle {
-  font-size: 1.3rem;
-  color: rgba(255, 255, 255, 0.7);
-  font-weight: 300;
-  letter-spacing: 1.5px;
-  line-height: 1.8;
-}
-
-/* ==================== 時間軸 ==================== */
-
-.timeline-wrapper {
-  position: relative;
-  max-width: 1400px;
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 400;
+  max-width: 480px;
   margin: 0 auto;
-  padding: 50px 20px;
+  line-height: 1.7;
 }
 
-.timeline-path {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 100%;
-  pointer-events: none;
-  opacity: 0.5;
-  z-index: 1;
+/* ══════════════════════════
+   Story Sections
+   ══════════════════════════ */
+.story-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.timeline-content {
-  position: relative;
-  z-index: 2;
-}
-
-/* ==================== 里程碑節點 ==================== */
-
-.milestone-wrapper {
+.story-section {
+  min-height: 65vh;
+  padding: 6rem 2rem;
   display: flex;
   align-items: center;
-  margin-bottom: 120px;
+  gap: 4rem;
   position: relative;
-}
-
-.milestone-wrapper.left {
-  flex-direction: row;
-  justify-content: flex-end;
-  padding-right: calc(50% + 80px);
-}
-
-.milestone-wrapper.right {
-  flex-direction: row-reverse;
-  justify-content: flex-end;
-  padding-left: calc(50% + 80px);
-}
-
-.milestone-indicator {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  box-shadow: 
-    0 0 30px currentColor,
-    0 0 60px rgba(138, 43, 226, 0.5),
-    inset 0 0 20px rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.milestone-indicator:hover {
-  box-shadow: 
-    0 0 50px currentColor,
-    0 0 100px rgba(138, 43, 226, 0.8);
-}
-
-.pulse-ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 3px solid;
-  opacity: 0.6;
-}
-
-.milestone-icon {
-  font-size: 2rem;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
-  z-index: 1;
-  font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
-  line-height: 1;
-}
-
-.connector-line {
-  position: absolute;
-  height: 3px;
-  width: 60px;
-  top: 50%;
-  transform-origin: center;
-  box-shadow: 0 0 10px currentColor;
-}
-
-.connector-line.to-left {
-  right: calc(50% + 30px);
-  transform: translateY(-50%);
-}
-
-.connector-line.to-right {
-  left: calc(50% + 30px);
-  transform: translateY(-50%);
-}
-
-/* ==================== 內容卡片 ==================== */
-
-.milestone-card {
-  position: relative;
-  width: 100%;
-  max-width: 500px;
-  padding: 2.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 2px solid;
-  border-radius: 24px;
-  backdrop-filter: blur(20px) saturate(180%);
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
-.milestone-card:hover {
-  transform: translateY(-8px);
+/* ── Variant: left-text ── */
+.story-section[data-variant="left-text"] {
+  flex-direction: row-reverse;
 }
 
-.card-glow {
+/* ── Variant: right-text ── */
+.story-section[data-variant="right-text"] {
+  flex-direction: row;
+}
+
+/* ── Variant: center-watermark ── */
+.story-section[data-variant="center-watermark"] {
+  flex-direction: column;
+  text-align: center;
+  justify-content: center;
+}
+
+/* ══════════════════════════
+   Watermark Year
+   ══════════════════════════ */
+.watermark-year {
+  position: absolute;
+  font-size: clamp(5rem, 10vw, 12rem);
+  font-weight: 900;
+  color: var(--milestone-color);
+  opacity: 0.025;
+  user-select: none;
+  pointer-events: none;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+
+.watermark-year.prominent {
+  opacity: 0.04;
+  font-size: clamp(6rem, 15vw, 20rem);
+}
+
+/* ══════════════════════════
+   Section Decoration (left/right variants)
+   ══════════════════════════ */
+.section-decoration {
+  flex: 0 0 35%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 200px;
+}
+
+.decoration-icon {
+  font-size: 5rem;
+  filter: drop-shadow(0 0 20px var(--milestone-color));
+  z-index: 1;
+  font-family: 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
+}
+
+/* Circles decoration (variant A) */
+.decoration-circles {
   position: absolute;
   inset: 0;
-  opacity: 0.3;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.milestone-card:hover .card-glow {
-  opacity: 0.5;
-}
-
-.card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.deco-circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--milestone-color);
+  opacity: 0.12;
+}
+
+.deco-circle-1 {
+  width: 180px;
+  height: 180px;
+}
+
+.deco-circle-2 {
+  width: 120px;
+  height: 120px;
+  opacity: 0.08;
+}
+
+/* Accent line decoration (variant C) */
+.decoration-accent-line {
+  position: absolute;
+  left: 50%;
+  top: 10%;
+  bottom: 10%;
+  width: 3px;
+  background: linear-gradient(to bottom, transparent, var(--milestone-color), transparent);
+  opacity: 0.2;
+  border-radius: 2px;
+}
+
+/* ══════════════════════════
+   Section Text
+   ══════════════════════════ */
+.section-text {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+}
+
+.story-section[data-variant="center-watermark"] .section-text {
+  max-width: 640px;
+}
+
+.section-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.story-section[data-variant="center-watermark"] .section-meta {
+  justify-content: center;
 }
 
 .year-badge {
-  padding: 0.75rem 1.5rem;
-  border-radius: 30px;
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 12px;
+  background: rgba(127, 90, 240, 0.1);
+  border: 1px solid rgba(127, 90, 240, 0.2);
+  color: #c4b5fd;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.section-icon {
+  font-size: 1.5rem;
+}
+
+.section-title {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
   font-weight: 700;
-  font-size: 1.1rem;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.year-text {
-  font-weight: 800;
-  letter-spacing: 1px;
-}
-
-.emoji-badge {
-  font-size: 2.5rem;
-  filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.6));
-  animation: emoji-float 3s ease-in-out infinite;
-}
-
-@keyframes emoji-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.milestone-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 0.75rem;
+  color: #fffffe;
+  margin-bottom: 0.5rem;
   line-height: 1.3;
 }
 
-.milestone-subtitle {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.7);
+.section-subtitle {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.45);
   font-weight: 400;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   font-style: italic;
 }
 
-.milestone-description {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.8);
+.section-description {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.65);
   line-height: 1.8;
-  margin: 1.5rem 0;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 1.25rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
-  border-left: 3px solid rgba(138, 43, 226, 0.5);
+  border-left: 3px solid var(--milestone-color);
+  overflow: hidden;
 }
 
-.milestone-tags {
+/* ══════════════════════════
+   Tags
+   ══════════════════════════ */
+.section-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin: 1.5rem 0;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.tag {
-  padding: 0.5rem 1rem;
-  border: 1.5px solid;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  cursor: pointer;
+.story-section[data-variant="center-watermark"] .section-tags {
+  justify-content: center;
 }
 
-.tag:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: scale(1.05);
+.story-tag {
+  font-size: 0.78rem;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  transition: border-color 0.2s ease, color 0.2s ease;
 }
 
+.story-tag:hover {
+  border-color: rgba(127, 90, 240, 0.3);
+  color: #c4b5fd;
+}
+
+/* ══════════════════════════
+   Expand Button
+   ══════════════════════════ */
 .expand-btn {
-  width: 100%;
-  padding: 0.75rem 1.5rem;
-  margin-top: 1rem;
-  background: rgba(138, 43, 226, 0.2);
-  border: 1px solid rgba(138, 43, 226, 0.4);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.95rem;
-  font-weight: 600;
+  padding: 6px 16px;
+  background: rgba(127, 90, 240, 0.08);
+  border: 1px solid rgba(127, 90, 240, 0.2);
+  border-radius: 8px;
+  color: #c4b5fd;
+  font-size: 0.82rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
 }
 
 .expand-btn:hover {
-  background: rgba(138, 43, 226, 0.3);
-  border-color: rgba(138, 43, 226, 0.6);
-  box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
+  background: rgba(127, 90, 240, 0.15);
+  border-color: rgba(127, 90, 240, 0.35);
 }
 
-/* ==================== 結尾區 ==================== */
-
+/* ══════════════════════════
+   Ending
+   ══════════════════════════ */
 .journey-ending {
   text-align: center;
-  padding: 80px 20px;
+  padding: 80px 20px 40px;
   position: relative;
-  z-index: 2;
-  margin-top: 100px;
-}
-
-.ending-icon {
-  font-size: 5rem;
-  color: #8a2be2;
-  margin-bottom: 2rem;
-  display: inline-block;
-  filter: drop-shadow(0 0 40px rgba(138, 43, 226, 0.8));
 }
 
 .ending-title {
-  font-size: 2.5rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
-  background: linear-gradient(135deg, #00aaff, #8a2be2, #ff1493);
+  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .ending-text {
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 2;
-  max-width: 600px;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.8;
+  max-width: 500px;
   margin: 0 auto;
 }
 
-/* ==================== 響應式設計 ==================== */
-
+/* ══════════════════════════
+   Responsive
+   ══════════════════════════ */
 @media (max-width: 1024px) {
-  .milestone-wrapper.left,
-  .milestone-wrapper.right {
-    flex-direction: column;
-    align-items: center;
-    padding: 0;
+  .progress-track {
+    display: none;
+  }
+
+  .story-section {
+    flex-direction: column !important;
     text-align: center;
+    min-height: auto;
+    padding: 4rem 1.5rem;
+    gap: 2rem;
   }
 
-  .milestone-indicator {
-    position: relative;
-    left: auto;
-    transform: none;
-    margin-bottom: 20px;
+  .section-decoration {
+    flex: none;
+    min-height: 120px;
   }
 
-  .connector-line {
-    display: none;
+  .section-text {
+    max-width: 100%;
   }
 
-  .timeline-path {
-    display: none;
+  .section-meta {
+    justify-content: center;
   }
 
-  .milestone-card {
-    max-width: 600px;
+  .section-tags {
+    justify-content: center;
   }
+
+  .decoration-icon {
+    font-size: 4rem;
+  }
+
+  .deco-circle-1 { width: 140px; height: 140px; }
+  .deco-circle-2 { width: 90px; height: 90px; }
 }
 
 @media (max-width: 768px) {
-  .journey-container {
-    padding: 60px 15px 40px;
+  .journey-content-wrapper {
+    padding: 70px 16px 40px;
   }
 
   .journey-hero {
-    margin-bottom: 60px;
+    margin-bottom: 40px;
   }
 
-  .hero-decoration {
-    width: 150px;
-    height: 150px;
-    margin-bottom: 2rem;
+  .story-section {
+    padding: 3rem 1rem;
   }
 
-  .center-planet {
+  .watermark-year {
+    font-size: clamp(4rem, 12vw, 8rem);
+  }
+
+  .watermark-year.prominent {
+    font-size: clamp(5rem, 14vw, 10rem);
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .section-decoration {
+    min-height: 80px;
+  }
+
+  .decoration-icon {
     font-size: 3rem;
   }
 
-  .journey-title {
-    font-size: 2rem;
-  }
-
-  .title-icon {
-    font-size: 2rem;
-  }
-
-  .journey-subtitle {
-    font-size: 1rem;
-  }
-
-  .milestone-wrapper {
-    margin-bottom: 60px;
-  }
-
-  .milestone-indicator {
-    width: 50px;
-    height: 50px;
-  }
-
-  .milestone-icon {
-    font-size: 1.5rem;
-  }
-
-  .milestone-card {
-    padding: 2rem;
-  }
-
-  .milestone-title {
-    font-size: 1.5rem;
-  }
-
-  .milestone-subtitle {
-    font-size: 1rem;
-  }
-
-  .year-badge {
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-  }
-
-  .emoji-badge {
-    font-size: 2rem;
-  }
-
-  .ending-icon {
-    font-size: 3.5rem;
-  }
-
-  .ending-title {
-    font-size: 2rem;
-  }
-
-  .ending-text {
-    font-size: 1rem;
-  }
+  .journey-nebula-1 { width: 400px; height: 400px; }
+  .journey-nebula-2 { width: 320px; height: 320px; }
+  .journey-nebula-3 { width: 240px; height: 240px; }
 }
 
 @media (max-width: 480px) {
-  .milestone-card {
-    padding: 1.5rem;
+  .journey-content-wrapper {
+    padding: 60px 12px 30px;
   }
 
-  .milestone-title {
-    font-size: 1.3rem;
+  .story-section {
+    padding: 2.5rem 0.75rem;
   }
 
-  .milestone-description {
-    font-size: 0.95rem;
+  .section-description {
     padding: 1rem;
+    font-size: 0.88rem;
   }
 
-  .tag {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-  }
-}
-
-/* ==================== 動畫增強 ==================== */
-
-@media (prefers-reduced-motion: no-preference) {
-  .milestone-card {
-    animation: card-fade-in 0.6s ease-out;
-  }
-
-  @keyframes card-fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  .story-tag {
+    font-size: 0.72rem;
+    padding: 2px 8px;
   }
 }

@@ -3156,13 +3156,15 @@ apiRouter.get('/github/user/:username', (req, res) => {
 // GET GitHub user events (commits, etc.)
 apiRouter.get('/github/events/:username', (req, res) => {
   const { username } = req.params;
+  const ghToken = process.env.GITHUB_TOKEN;
+  const headers = { 'User-Agent': 'Personal-Website-Backend' };
+  if (ghToken) headers['Authorization'] = `Bearer ${ghToken}`;
+
   const options = {
     hostname: 'api.github.com',
-    path: `/users/${username}/events/public`,
+    path: ghToken ? `/users/${username}/events?per_page=30` : `/users/${username}/events/public`,
     method: 'GET',
-    headers: {
-      'User-Agent': 'Personal-Website-Backend'
-    }
+    headers,
   };
 
   https.get(options, (apiRes) => {
@@ -3500,6 +3502,52 @@ apiRouter.post('/sync/collection', (req, res) => {
 app.use('/uploads', express.static(path.join(__dirname, 'storage', 'uploads')));
 
 app.use('/api', apiRouter);
+
+// --- Dynamic Sitemap ---
+app.get('/sitemap.xml', (req, res) => {
+  const siteUrl = process.env.SITE_URL || 'https://koimsurai.com';
+  const staticPages = [
+    { loc: '/', changefreq: 'weekly', priority: '1.0' },
+    { loc: '/blog', changefreq: 'weekly', priority: '0.8' },
+    { loc: '/bookshelf', changefreq: 'monthly', priority: '0.6' },
+    { loc: '/photos', changefreq: 'monthly', priority: '0.7' },
+    { loc: '/music', changefreq: 'weekly', priority: '0.6' },
+    { loc: '/now', changefreq: 'weekly', priority: '0.7' },
+    { loc: '/setup', changefreq: 'monthly', priority: '0.6' },
+    { loc: '/journey', changefreq: 'monthly', priority: '0.6' },
+    { loc: '/activity', changefreq: 'daily', priority: '0.5' },
+  ];
+
+  const sql = `SELECT id, slug, updated_at, created_at FROM posts WHERE status = 'published' ORDER BY created_at DESC`;
+  db.all(sql, [], (err, posts) => {
+    const postEntries = (posts || []).map(p => {
+      const slug = p.slug || p.id;
+      const lastmod = (p.updated_at || p.created_at || '').split('T')[0];
+      return `  <url>
+    <loc>${siteUrl}/blog/${slug}</loc>${lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : ''}
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`;
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    const staticEntries = staticPages.map(p => `  <url>
+    <loc>${siteUrl}${p.loc}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`);
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticEntries.join('\n')}
+${postEntries.join('\n')}
+</urlset>`;
+
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    res.send(xml);
+  });
+});
 
 // --- RSS Feed ---
 app.get('/rss', (req, res) => {
