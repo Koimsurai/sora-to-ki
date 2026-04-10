@@ -374,16 +374,21 @@ Crawl-delay: 1
 /* ── Static files (highest priority, excluding index.html for SPA fallback) ── */
 app.use(express.static(DIST_DIR, {
   index: false, // 不自動送 index.html，我們要自己處理 SPA routing
-  maxAge: '7d',
+  maxAge: '1y',
   immutable: true,
+  etag: false, // 檔案都有 content hash，不需要 ETag
   setHeaders(res, filePath) {
     // HTML 檔案不快取
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
     }
-    // JS/CSS 帶 hash 的可以長期快取
+    // JS/CSS 帶 hash 的長期快取
     if (/\.(js|css)$/.test(filePath) && /[\.\-][a-f0-9]{6,}\./.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    }
+    // 圖片/字體長期快取
+    if (/\.(woff2?|ttf|otf|eot|webp|png|jpg|jpeg|svg|ico)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30d
     }
   },
 }));

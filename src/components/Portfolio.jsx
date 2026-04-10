@@ -62,7 +62,7 @@ function Portfolio() {
           >
             <div className="portfolio-media-container"> {/* 更新 class name 以反映內容 */}
               {item.videoUrl ? (
-                <video src={item.videoUrl} className="portfolio-video" controls autoPlay muted loop playsInline /> // 添加 video 標籤
+                <video src={item.videoUrl} className="portfolio-video" controls muted loop playsInline preload="none" /> // lazy: 不自動下載 8.4MB 影片
               ) : (
                 <img 
                   src={item.imageUrl} 

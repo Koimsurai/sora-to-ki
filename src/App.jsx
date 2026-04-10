@@ -457,7 +457,7 @@ function App() {
               {showMainHtmlContent && (
                 <Layout activeSection={activeSection} onSectionChange={handleSectionChange} />
               )}
-              <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }} />
+              {!isMobile && <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }} />}
               <BackToTopButton isHomePage={isOnHomePage} />
             </div>
           </PageVisibilityProvider>

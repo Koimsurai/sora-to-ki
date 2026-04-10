@@ -24,6 +24,26 @@ const STEAM_ID = process.env.STEAM_ID;
 // 初始化資料庫
 initializeDatabase();
 
+// ─── In-memory cache for frequently accessed data ───
+let _keywordFiltersCache = null;
+let _keywordFiltersCacheTime = 0;
+const KEYWORD_FILTERS_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getKeywordFilters() {
+  return new Promise((resolve, reject) => {
+    if (_keywordFiltersCache && Date.now() - _keywordFiltersCacheTime < KEYWORD_FILTERS_TTL) {
+      return resolve(_keywordFiltersCache);
+    }
+    db.all("SELECT keyword, action FROM keyword_filters", [], (err, filters) => {
+      if (err) return reject(err);
+      _keywordFiltersCache = filters || [];
+      _keywordFiltersCacheTime = Date.now();
+      resolve(_keywordFiltersCache);
+    });
+  });
+}
+function invalidateKeywordFiltersCache() { _keywordFiltersCache = null; }
+
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
@@ -264,23 +284,23 @@ apiRouter.post('/admin/upload', requireAdmin, upload.single('file'), (req, res) 
 apiRouter.get('/gallery/photos', async (req, res) => {
   const manifestPath = GALLERY_MANIFEST_PATH;
 
-  if (fs.existsSync(manifestPath)) {
-    try {
-      const data = fs.readFileSync(manifestPath, 'utf8');
-      const manifest = JSON.parse(data);
-      res.json(manifest); // 回傳完整結構 (包含 version, photos 等)
-    } catch (err) {
+  try {
+    const data = await fs.promises.readFile(manifestPath, 'utf8');
+    const manifest = JSON.parse(data);
+    res.json(manifest); // 回傳完整結構 (包含 version, photos 等)
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      // 若無 manifest，回傳空結構以免前端錯誤
+      res.json({
+        version: "1.0.0",
+        generatedAt: new Date().toISOString(),
+        totalPhotos: 0,
+        photos: []
+      });
+    } else {
       console.error('Error reading gallery manifest:', err);
       res.status(500).json({ error: 'Failed to read gallery manifest' });
     }
-  } else {
-    // 若無 manifest，回傳空結構以免前端錯誤
-    res.json({
-      version: "1.0.0",
-      generatedAt: new Date().toISOString(),
-      totalPhotos: 0,
-      photos: []
-    });
   }
 });
 
@@ -1451,8 +1471,8 @@ apiRouter.post('/posts/:id/comments', (req, res) => {
       return res.status(403).json({ "error": "您的留言權限已被限制" });
     }
 
-    // 檢查關鍵字過濾
-    db.all("SELECT keyword, action FROM keyword_filters", [], (err, filters) => {
+    // 檢查關鍵字過濾（使用快取）
+    getKeywordFilters().then(filters => {
       const lowerContent = (content + ' ' + author).toLowerCase();
       let matchedAction = null;
       if (filters) {
@@ -1686,6 +1706,7 @@ apiRouter.post('/admin/keyword-filters', requireAdmin, (req, res) => {
   db.run('INSERT OR IGNORE INTO keyword_filters (keyword, action) VALUES (?, ?)',
     [keyword, validActions.includes(action) ? action : 'spam'], function (err) {
       if (err) return res.status(500).json({ error: err.message });
+      invalidateKeywordFiltersCache();
       res.status(201).json({ message: 'success', id: this.lastID });
     });
 });
@@ -1693,6 +1714,7 @@ apiRouter.post('/admin/keyword-filters', requireAdmin, (req, res) => {
 apiRouter.delete('/admin/keyword-filters/:id', requireAdmin, (req, res) => {
   db.run('DELETE FROM keyword_filters WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
+    invalidateKeywordFiltersCache();
     res.json({ message: 'success' });
   });
 });

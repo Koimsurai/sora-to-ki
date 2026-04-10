@@ -637,6 +637,23 @@ function initializeDatabase() {
       }
     });
 
+    // ─── Performance Indexes ───
+    db.run("CREATE INDEX IF NOT EXISTS idx_posts_status_created ON posts(status, created_at DESC)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_post_tags_post ON post_tags(post_id)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_post_tags_tag ON post_tags(tag_id)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_newsletter_status ON newsletter_subscribers(status)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_oauth_provider ON oauth_users(provider, provider_id)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_books_reading_status ON books(reading_status)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_collection_type ON collection_items(collection_type)");
+
+    // ─── SQLite Performance Tuning ───
+    db.run("PRAGMA journal_mode = WAL");        // Write-Ahead Logging for better concurrency
+    db.run("PRAGMA synchronous = NORMAL");       // Faster writes, safe with WAL
+    db.run("PRAGMA cache_size = -8000");         // 8MB page cache (default ~2MB)
+    db.run("PRAGMA temp_store = MEMORY");        // Temp tables in memory
+
     console.log('資料庫初始化完成');
   });
 }
