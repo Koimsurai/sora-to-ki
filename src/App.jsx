@@ -146,7 +146,7 @@ function MainPage({ onSectionChange }) { // Accept callback prop
 }
 
 // --- 用於星空背景的內部元件 ---
-function StarfieldScene({ mainStarsRef, isMobile }) {
+function StarfieldScene({ mainStarsRef, isMobile, isHomePage = true }) {
   const galaxyRef = useRef();
   const scrollSpeedMultiplier = useRef(1);
   const scrollTimeoutRef = useRef(null);
@@ -192,7 +192,7 @@ function StarfieldScene({ mainStarsRef, isMobile }) {
           ref={mainStarsRef}
           radius={100}
           depth={50}
-          count={isMobile ? 3000 : 10000}
+          count={isMobile ? 3000 : (isHomePage ? 10000 : 4000)}
           factor={3.5}
           saturation={0.1}
           fade
@@ -202,7 +202,7 @@ function StarfieldScene({ mainStarsRef, isMobile }) {
           ref={galaxyRef}
           radius={90}
           depth={20}
-          count={isMobile ? 2000 : 8000}
+          count={isMobile ? 2000 : (isHomePage ? 8000 : 3000)}
           factor={5}
           saturation={0.2}
           fade
@@ -444,10 +444,10 @@ function App() {
                 }}
               >
                 <Suspense fallback={null}>
-                  <StarfieldScene mainStarsRef={sharedRotationRef} isMobile={isMobile} />
+                  <StarfieldScene mainStarsRef={sharedRotationRef} isMobile={isMobile} isHomePage={isOnHomePage} />
                   {isOnHomePage && <SpaceDebris count={isMobile ? 50 : 300} />}
                   {isOnHomePage && <Saturn3D animate={animateSaturn} isMobile={isMobile} />}
-                  <TwinklingStars rotationRef={sharedRotationRef} count={isMobile ? 200 : 800} />
+                  <TwinklingStars rotationRef={sharedRotationRef} count={isMobile ? 200 : (isOnHomePage ? 800 : 300)} />
                 </Suspense>
               </Canvas>
               {isOnHomePage && <ForegroundStars count={isMobile ? 5 : 15} />}

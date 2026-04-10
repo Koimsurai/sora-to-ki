@@ -44,7 +44,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && fc-cache -f
 
 # Install only the lightweight dependencies needed for serve.cjs
-RUN npm install express@4 sharp@0.33
+RUN npm install express@4 sharp@0.33 compression@1
 
 # Generate default OG image (SVG → PNG) — must await the async sharp call
 RUN node -e "\

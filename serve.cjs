@@ -8,6 +8,7 @@
  * 4. SPA fallback (所有路由最終回傳 index.html)
  */
 const express = require('express');
+const compression = require('compression');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -15,6 +16,7 @@ let sharp;
 try { sharp = require('sharp'); } catch { sharp = null; }
 
 const app = express();
+app.use(compression());
 const PORT = parseInt(process.env.PORT || '13579', 10);
 const BACKEND_URL = process.env.BACKEND_URL || 'http://backend:3001';
 const SITE_URL = process.env.SITE_URL || 'https://koimsurai.com';

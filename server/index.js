@@ -3153,7 +3153,7 @@ apiRouter.get('/github/user/:username', (req, res) => {
   });
 });
 
-ㄧ// Helper: fetch JSON from GitHub API
+// Helper: fetch JSON from GitHub API
 function ghFetch(path, ghToken) {
   return new Promise((resolve) => {
     const headers = { 'User-Agent': 'Personal-Website-Backend' };

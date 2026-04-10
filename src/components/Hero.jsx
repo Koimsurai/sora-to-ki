@@ -129,6 +129,10 @@ function Hero() {
           alt="Koimsurai Avatar"
           className="hero-avatar"
           draggable="false"
+          fetchpriority="high"
+          decoding="async"
+          width="280"
+          height="280"
         />
       </div>
 
