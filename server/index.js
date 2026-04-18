@@ -2545,34 +2545,74 @@ apiRouter.get('/spotify/top-tracks', async (req, res) => {
   }
 });
 
-// 獲取歌曲的音訊特性 (BPM, Energy, Acousticness 等)
+// Spotify audio-features 快取與熔斷器
+// Spotify 在 2024 底將此 endpoint 限制為特定已批准 app，未批准 app 會持續收到 403/429
+// 策略：24h 記憶體快取 + 失敗後暫停呼叫 1h，避免無意義的 API 轟炸
+const AUDIO_FEATURES_CACHE = new Map(); // trackId -> { data, expiresAt }
+const AUDIO_FEATURES_TTL = 24 * 60 * 60 * 1000; // 24 小時
+let audioFeaturesDisabledUntil = 0; // 熔斷到期時間（毫秒）
+const AUDIO_FEATURES_COOLDOWN = 60 * 60 * 1000; // 熔斷冷卻 1 小時
+
 apiRouter.get('/spotify/audio-features', async (req, res) => {
+  const { ids } = req.query;
+  if (!ids) return res.status(400).json({ error: 'Missing track IDs' });
+
+  const idList = ids.split(',').filter(Boolean);
+  const now = Date.now();
+
+  // 先撈快取命中的部分
+  const cached = {};
+  const missing = [];
+  for (const id of idList) {
+    const entry = AUDIO_FEATURES_CACHE.get(id);
+    if (entry && entry.expiresAt > now) {
+      cached[id] = entry.data;
+    } else {
+      missing.push(id);
+    }
+  }
+
+  // 熔斷中 → 只回傳快取的，其餘給 null
+  if (audioFeaturesDisabledUntil > now) {
+    return res.json({
+      audio_features: idList.map(id => cached[id] || null),
+    });
+  }
+
+  // 全部命中快取 → 直接回傳
+  if (missing.length === 0) {
+    return res.json({ audio_features: idList.map(id => cached[id]) });
+  }
+
   try {
     const token = await getSpotifyAccessToken();
-    const { ids } = req.query;
-
-    if (!ids) {
-      return res.status(400).json({ error: 'Missing track IDs' });
-    }
-
     const response = await axios.get('https://api.spotify.com/v1/audio-features', {
-      params: { ids },
-      headers: {
-        'Authorization': `Bearer ${token}`
+      params: { ids: missing.join(',') },
+      headers: { 'Authorization': `Bearer ${token}` },
+      timeout: 10000,
+    });
+
+    // 寫入快取
+    const expiresAt = now + AUDIO_FEATURES_TTL;
+    (response.data.audio_features || []).forEach(f => {
+      if (f && f.id) {
+        AUDIO_FEATURES_CACHE.set(f.id, { data: f, expiresAt });
+        cached[f.id] = f;
       }
     });
 
-    res.json(response.data);
+    res.json({ audio_features: idList.map(id => cached[id] || null) });
   } catch (error) {
-    console.error('Spotify audio features error:', error.response?.data || error.message);
-    // 優雅降級：如果 API 不可用，回傳空陣列
-    if (error.response?.status === 403) {
-      return res.json({ audio_features: [] });
+    const status = error.response?.status;
+    // 403/429 → 觸發熔斷，暫停呼叫 Spotify 1 小時
+    if (status === 403 || status === 429) {
+      audioFeaturesDisabledUntil = now + AUDIO_FEATURES_COOLDOWN;
+      console.warn(`[Spotify] audio-features 被限制 (${status})，暫停呼叫 1 小時`);
+    } else {
+      console.error('Spotify audio features error:', error.response?.data || error.message);
     }
-    res.status(error.response?.status || 500).json({
-      error: 'Failed to fetch audio features',
-      audio_features: []
-    });
+    // 優雅降級：回傳快取 + null 補齊
+    res.json({ audio_features: idList.map(id => cached[id] || null) });
   }
 });
 

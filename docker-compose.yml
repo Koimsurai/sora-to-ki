@@ -46,8 +46,8 @@ services:
       - "127.0.0.1:3001:3001"
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "sh", "-c", "apk add --no-cache curl && curl -f http://localhost:3001/api/health || exit 1" ]
-      interval: 10s
+      test: [ "CMD", "curl", "-f", "http://localhost:3001/api/health" ]
+      interval: 30s
       timeout: 5s
       retries: 5
       start_period: 30s
