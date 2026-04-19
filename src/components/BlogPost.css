@@ -136,6 +136,24 @@
   font-weight: 500;
 }
 
+/* meta-row category with rich hover tooltip */
+.meta-category-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+.meta-category-link {
+  color: var(--post-accent);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.18s ease, text-shadow 0.18s ease;
+  cursor: pointer;
+}
+.meta-category-link:hover {
+  color: #c4b5fd;
+  text-shadow: 0 0 12px rgba(127, 90, 240, 0.35);
+}
+
 /* hover tooltip on meta items */
 .meta-tip {
   position: relative;
@@ -200,10 +218,7 @@
 .lang-caret.open { transform: rotate(180deg); }
 
 .lang-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
+  /* Portal 到 body，透過 inline style 提供 top/left */
   min-width: 160px;
   background: rgba(12, 10, 24, 0.96);
   border: 1px solid rgba(127, 90, 240, 0.25);
@@ -212,7 +227,7 @@
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(127, 90, 240, 0.1);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  z-index: 60;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
 }

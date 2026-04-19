@@ -758,7 +758,7 @@ const CustomParagraph = ({ children, node, ...props }) => {
 /* ══════════════════════════
    CategoryTooltipTrigger — hover 顯示分類 tooltip (Portal 到 body)
    ══════════════════════════ */
-const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnter, onLeave }) => {
+const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnter, onLeave, linkClassName }) => {
   const triggerRef = useRef(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
@@ -779,7 +779,10 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
       onMouseLeave={onLeave}
       style={{ display: 'inline-block' }}
     >
-      <Link to={'/blog?category=' + encodeURIComponent(postCategory)} className="text-sm text-white hover:text-purple-400 transition-colors font-semibold">
+      <Link
+        to={'/blog?category=' + encodeURIComponent(postCategory)}
+        className={linkClassName || 'text-sm text-white hover:text-purple-400 transition-colors font-semibold'}
+      >
         {postCategory}
       </Link>
       {showTooltip && categoryInfo && ReactDOM.createPortal(
@@ -1126,20 +1129,54 @@ const LANG_OPTIONS = [
 ];
 
 const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect, onUnavailable }) => {
-  const ref = useRef(null);
+  const wrapRef = useRef(null);
+  const triggerRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, minWidth: 160 });
 
+  // 外點關閉 + ESC 關閉
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onDoc = (e) => {
+      if (wrapRef.current && wrapRef.current.contains(e.target)) return;
+      const menu = document.getElementById('blog-lang-menu');
+      if (menu && menu.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open, setOpen]);
+
+  // 計算菜單位置（以觸發按鈕為錨點，portal 到 body 避開父層 stacking context）
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const compute = () => {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + window.scrollY + 6,
+        left: rect.left + window.scrollX,
+        minWidth: Math.max(160, rect.width),
+      });
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    window.addEventListener('scroll', compute, true);
+    return () => {
+      window.removeEventListener('resize', compute);
+      window.removeEventListener('scroll', compute, true);
+    };
+  }, [open]);
 
   const currentLabel = LANG_OPTIONS.find(o => o.code === current)?.label || current;
 
   return (
-    <span className="meta-lang-switcher" ref={ref}>
+    <span className="meta-lang-switcher" ref={wrapRef}>
       <button
+        ref={triggerRef}
         type="button"
         className="lang-trigger"
         onClick={() => setOpen(!open)}
@@ -1150,8 +1187,13 @@ const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect,
         <span className="lang-code">{currentLabel}</span>
         <span className={`lang-caret ${open ? 'open' : ''}`}>▾</span>
       </button>
-      {open && (
-        <div className="lang-menu" role="listbox">
+      {open && ReactDOM.createPortal(
+        <div
+          id="blog-lang-menu"
+          className="lang-menu"
+          role="listbox"
+          style={{ position: 'absolute', top: menuPos.top, left: menuPos.left, minWidth: menuPos.minWidth }}
+        >
           {LANG_OPTIONS.map(opt => {
             const isSource = opt.code === source;
             const isAvailable = available.includes(opt.code);
@@ -1174,7 +1216,8 @@ const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect,
               </button>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </span>
   );
@@ -1213,6 +1256,8 @@ function BlogPost() {
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
+  const [metaCategoryInfo, setMetaCategoryInfo] = useState(null);
+  const [showMetaCatTooltip, setShowMetaCatTooltip] = useState(false);
   const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') || 'noto-serif');
   const contentRef = useRef(null);
   const tocRef = useRef(null);
@@ -1283,6 +1328,19 @@ function BlogPost() {
     if (stored.includes(pid)) setLiked(true);
     setLikeCount(post.likes || 0);
   }, [post, id]);
+
+  /* ── Category (專欄) info for meta-row hover tooltip ── */
+  useEffect(() => {
+    if (!post?.category) { setMetaCategoryInfo(null); return; }
+    fetch('/api/categories')
+      .then(r => r.json())
+      .then(data => {
+        const cats = data.categories || [];
+        const found = cats.find(c => c.name === post.category);
+        setMetaCategoryInfo(found || null);
+      })
+      .catch(console.error);
+  }, [post?.category]);
 
   /* ── Copy protection ── */
   useEffect(() => {
@@ -1524,7 +1582,20 @@ function BlogPost() {
             {post.category && (
               <>
                 <span className="meta-sep">·</span>
-                <span className="meta-tip meta-category" data-tooltip="分類">{post.category}</span>
+                <span
+                  className="meta-category-wrap"
+                  onMouseEnter={() => setShowMetaCatTooltip(true)}
+                  onMouseLeave={() => setShowMetaCatTooltip(false)}
+                >
+                  <CategoryTooltipTrigger
+                    postCategory={post.category}
+                    categoryInfo={metaCategoryInfo}
+                    showTooltip={showMetaCatTooltip}
+                    onEnter={() => setShowMetaCatTooltip(true)}
+                    onLeave={() => setShowMetaCatTooltip(false)}
+                    linkClassName="meta-category meta-category-link"
+                  />
+                </span>
               </>
             )}
             <span className="meta-sep">·</span>

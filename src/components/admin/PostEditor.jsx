@@ -702,6 +702,13 @@ export default function PostEditor() {
                   )}
                 </div>
 
+                {/* i18n 多語系提示 */}
+                <p className="mb-3 text-[11px] text-muted-foreground/70">
+                  目前編輯：<span className="text-violet-300">{LOCALE_TABS.find(t => t.code === activeLocale)?.label}</span>
+                  <span className="mx-1.5 opacity-40">·</span>
+                  所有已填語系會一起儲存／發佈，不需分別操作
+                </p>
+
                 {/* Title (per-locale) */}
                 <FormField
                   control={form.control}
@@ -710,7 +717,9 @@ export default function PostEditor() {
                     <FormItem>
                       <FormControl>
                         <input
+                          key={`title-${activeLocale}`}
                           {...field}
+                          value={field.value || ''}
                           placeholder="輸入文章標題..."
                           className="w-full bg-transparent text-foreground/90 text-lg font-medium mb-5 pb-3 border-b border-border/30 outline-none focus:border-border transition-colors"
                         />
@@ -754,7 +763,8 @@ export default function PostEditor() {
 
                           {editorView !== 'preview' && (
                             <MonacoEditor
-                              value={field.value}
+                              key={`monaco-${activeLocale}`}
+                              value={field.value || ''}
                               onChange={(v) => field.onChange(v ?? '')}
                               language="markdown"
                               height={editorView === 'split' ? '360px' : '700px'}
@@ -1076,7 +1086,9 @@ export default function PostEditor() {
                           </div>
                           <FormControl>
                             <textarea
+                              key={`summary-${activeLocale}`}
                               {...field}
+                              value={field.value || ''}
                               placeholder="文章摘要（點擊右上角 AI 生成或手動輸入）..."
                               rows={4}
                               className="w-full bg-accent/30 border border-border/40 rounded-lg px-3 py-2 text-sm text-foreground/90 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:border-border/60 transition-colors"
