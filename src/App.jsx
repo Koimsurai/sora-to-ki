@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import RandomShootingStars from './components/RandomShootingStars';
 import RandomComets from './components/RandomComets'; // 導入彗星元件
 import RandomUFOs from './components/RandomUFOs'; // 導入 UFO 元件
+import NebulaBackground from './components/NebulaBackground'; // 首頁 + Blog 共用星雲背景
 import BackToTopButton from './components/BackToTopButton'; // 導入回到頂部按鈕
 import TwinklingStars from './components/TwinklingStars'; // <--- 導入閃爍星星元件
 import ForegroundStars from './components/ForegroundStars'; // <--- 導入前景星星元件
@@ -112,6 +113,7 @@ function SectionWrapper({ id, children, onInViewChange }) {
 function MainPage({ onSectionChange }) { // Accept callback prop
   return (
     <>
+      <NebulaBackground />
       <main>
         <SectionWrapper id="home" onInViewChange={onSectionChange}>
           <Hero />
@@ -299,6 +301,9 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/photos" element={<Suspense fallback={<LoadingFallback />}><LazyPhotoGallery /></Suspense>} />
           <Route path="/blog" element={<Suspense fallback={<LoadingFallback />}><LazyBlog /></Suspense>} />
           <Route path="/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
+          <Route path="/en/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
+          <Route path="/zh-cn/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
+          <Route path="/ja/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
           <Route path="/bookshelf" element={<Suspense fallback={<BookshelfLoading />}><LazyBookshelf /></Suspense>} />
           <Route path="/activity" element={<Suspense fallback={<LoadingFallback />}><LazyActivity /></Suspense>} />
           <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />

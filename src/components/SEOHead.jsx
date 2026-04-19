@@ -3,14 +3,24 @@ import { Helmet } from 'react-helmet-async';
 
 const BASE_URL = 'https://koimsurai.com';
 
+const LOCALE_TO_OG = {
+  'zh-TW': 'zh_TW',
+  'zh-CN': 'zh_CN',
+  'en': 'en_US',
+  'ja': 'ja_JP',
+};
+const LOCALE_TO_HREFLANG = {
+  'zh-TW': 'zh-Hant',
+  'zh-CN': 'zh-Hans',
+  'en': 'en',
+  'ja': 'ja',
+};
+
 /**
  * SEO Head 元件 — 為每個路由頁面設定獨立的 title / description / OG tags
- * @param {string} title - 頁面標題
- * @param {string} description - 頁面描述
- * @param {string} path - 路由路徑 e.g. '/blog'
- * @param {string} [image] - OG 圖片 URL
- * @param {string} [type] - og:type，預設 'website'
- * @param {object} [article] - 文章結構化資料 { author, datePublished, dateModified, tags }
+ * @param {string} [locale] - 當前頁面的 locale（zh-TW/zh-CN/en/ja），控制 <html lang> 與 og:locale
+ * @param {Array<{locale:string, path:string}>} [alternates] - 其他語言的對應 URL，用於產生 hreflang
+ * @param {string} [xDefaultPath] - x-default 的路徑（通常是原文）
  */
 const SEOHead = ({
   title,
@@ -19,6 +29,9 @@ const SEOHead = ({
   image = '/og-default.png',
   type = 'website',
   article = null,
+  locale,
+  alternates = null,
+  xDefaultPath = null,
 }) => {
   const fullTitle = title
     ? `${title} | Koimsurai`
@@ -50,11 +63,28 @@ const SEOHead = ({
     mainEntityOfPage: { '@type': 'WebPage', '@id': fullUrl },
   } : null;
 
+  const htmlLang = locale ? LOCALE_TO_HREFLANG[locale] || locale : 'zh-Hant';
+  const ogLocale = locale ? LOCALE_TO_OG[locale] || 'zh_TW' : 'zh_TW';
+
   return (
     <Helmet>
+      <html lang={htmlLang} />
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={fullUrl} />
+
+      {/* hreflang alternates */}
+      {alternates && alternates.map(a => (
+        <link
+          key={a.locale}
+          rel="alternate"
+          hrefLang={LOCALE_TO_HREFLANG[a.locale] || a.locale}
+          href={`${BASE_URL}${a.path}`}
+        />
+      ))}
+      {xDefaultPath && (
+        <link rel="alternate" hrefLang="x-default" href={`${BASE_URL}${xDefaultPath}`} />
+      )}
 
       {/* Open Graph */}
       <meta property="og:type" content={type} />
@@ -65,7 +95,7 @@ const SEOHead = ({
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
       <meta property="og:site_name" content="Koimsurai" />
-      <meta property="og:locale" content="zh_TW" />
+      <meta property="og:locale" content={ogLocale} />
 
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />

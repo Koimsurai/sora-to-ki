@@ -18,6 +18,17 @@ export const postSchema = z.object({
   pinOrder: z.number().default(0),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
+  // i18n：原文語言 + 其他語系的 title/content/summary 複本
+  source_language: z.enum(['zh-TW', 'zh-CN', 'en', 'ja']).default('zh-TW'),
+  title_en: z.string().optional(),
+  content_en: z.string().optional(),
+  summary_en: z.string().optional(),
+  title_zh_cn: z.string().optional(),
+  content_zh_cn: z.string().optional(),
+  summary_zh_cn: z.string().optional(),
+  title_ja: z.string().optional(),
+  content_ja: z.string().optional(),
+  summary_ja: z.string().optional(),
 });
 
 export type PostFormData = z.infer<typeof postSchema>;

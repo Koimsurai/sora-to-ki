@@ -202,10 +202,40 @@ function initializeDatabase() {
                 }
               });
             }
+
           }
         });
       }
     });
+
+    // i18n 欄位：無論上面 posts 表走哪條路徑，最後都獨立檢查並補齊
+    // source_language + 9 個翻譯欄位（en / zh-CN / ja × title/content/excerpt）
+    setTimeout(() => {
+      db.all("PRAGMA table_info(posts)", (err, cols) => {
+        if (err) { console.error('i18n migration: PRAGMA 失敗:', err); return; }
+        const existing = new Set(cols.map(c => c.name));
+        const i18nColumns = [
+          { name: 'source_language', type: "TEXT DEFAULT 'zh-TW'" },
+          { name: 'title_en', type: 'TEXT' },
+          { name: 'content_en', type: 'TEXT' },
+          { name: 'excerpt_en', type: 'TEXT' },
+          { name: 'title_zh_cn', type: 'TEXT' },
+          { name: 'content_zh_cn', type: 'TEXT' },
+          { name: 'excerpt_zh_cn', type: 'TEXT' },
+          { name: 'title_ja', type: 'TEXT' },
+          { name: 'content_ja', type: 'TEXT' },
+          { name: 'excerpt_ja', type: 'TEXT' },
+        ];
+        i18nColumns.forEach(col => {
+          if (!existing.has(col.name)) {
+            db.run(`ALTER TABLE posts ADD COLUMN ${col.name} ${col.type}`, (alterErr) => {
+              if (alterErr) console.error(`i18n migration: 新增 ${col.name} 錯誤:`, alterErr);
+              else console.log(`i18n migration: ${col.name} 欄位新增成功`);
+            });
+          }
+        });
+      });
+    }, 500);
 
     // 創建分類表
     db.run(`

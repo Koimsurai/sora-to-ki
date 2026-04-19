@@ -38,6 +38,8 @@ import {
   Sparkles,
   Loader2,
   LayoutTemplate,
+  Languages,
+  Wand2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -88,16 +90,34 @@ function TagSearchInput({ tags, selectedTags, onChange }) {
   );
 }
 
+// ─── i18n 編輯常數 ──────────────────────────────
+const LOCALE_TABS = [
+  { code: 'zh-TW', label: '繁體', column: null },      // source 候選
+  { code: 'en',    label: 'English', column: 'en' },
+  { code: 'zh-CN', label: '简体',    column: 'zh_cn' },
+  { code: 'ja',    label: '日本語',  column: 'ja' },
+];
+// 依 activeLocale + sourceLanguage 取得表單 field 名稱
+function fieldNameFor(base, activeLocale, sourceLanguage) {
+  // base: 'title' | 'content' | 'summary'
+  if (activeLocale === sourceLanguage) return base;
+  const tab = LOCALE_TABS.find(t => t.code === activeLocale);
+  if (!tab || !tab.column) return base; // fallback：未知 locale 用原文
+  return `${base}_${tab.column}`;
+}
+
 export default function PostEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isPublishing, setIsPublishing] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isGeneratingZhCN, setIsGeneratingZhCN] = useState(false);
   const [editorView, setEditorView] = useState('edit'); // edit | split | preview
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [isLoading, setIsLoading] = useState(!!id);
+  const [activeLocale, setActiveLocale] = useState('zh-TW');
   const submitLockRef = useRef(false);
 
   const form = useForm({
@@ -115,8 +135,24 @@ export default function PostEditor() {
       allowComments: true,
       pin: false,
       pinOrder: 0,
+      // i18n
+      source_language: 'zh-TW',
+      title_en: '', content_en: '', summary_en: '',
+      title_zh_cn: '', content_zh_cn: '', summary_zh_cn: '',
+      title_ja: '', content_ja: '', summary_ja: '',
     },
   });
+
+  const sourceLanguage = form.watch('source_language') || 'zh-TW';
+  const titleName = fieldNameFor('title', activeLocale, sourceLanguage);
+  const contentName = fieldNameFor('content', activeLocale, sourceLanguage);
+  const summaryName = fieldNameFor('summary', activeLocale, sourceLanguage);
+
+  // 若 sourceLanguage 切到目前 activeLocale 不合法時（例如原本 source=zh-TW, activeLocale=en，之後改 source=en
+  // 則 en 的編輯欄位切到 base 欄位），這裡確保 activeLocale 仍然指向有效 tab
+  useEffect(() => {
+    if (!LOCALE_TABS.find(t => t.code === activeLocale)) setActiveLocale(sourceLanguage);
+  }, [activeLocale, sourceLanguage]);
 
   // 載入文章數據（如果是編輯模式）
   useEffect(() => {
@@ -156,13 +192,18 @@ export default function PostEditor() {
       
       if (response.ok) {
         const data = await response.json();
-        // 確保 tags 格式正確，並將 API 的 excerpt 映射到表單的 summary
+        // 確保 tags 格式正確，並將 API 的 excerpt 映射到表單的 summary（各 locale 同步處理）
         const formattedData = {
           ...data,
           tags: formatTags(data.tags),
           summary: data.excerpt || data.summary || '',
+          source_language: data.source_language || 'zh-TW',
+          title_en: data.title_en || '', content_en: data.content_en || '', summary_en: data.excerpt_en || '',
+          title_zh_cn: data.title_zh_cn || '', content_zh_cn: data.content_zh_cn || '', summary_zh_cn: data.excerpt_zh_cn || '',
+          title_ja: data.title_ja || '', content_ja: data.content_ja || '', summary_ja: data.excerpt_ja || '',
         };
         form.reset(formattedData);
+        setActiveLocale(data.source_language || 'zh-TW');
       } else {
         // API 不存在時使用模擬數據進行測試
         console.warn('API 未連接，使用模擬數據');
@@ -358,6 +399,26 @@ export default function PostEditor() {
     }
   };
 
+  // 將表單 data 轉成送往 API 的 payload（包含 i18n 欄位，並把 summary* 對應到 excerpt*）
+  const buildPayload = (data, overrides = {}) => {
+    const tagsArray = Array.isArray(data.tags)
+      ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
+      : [];
+    const {
+      summary, summary_en, summary_zh_cn, summary_ja,
+      ...rest
+    } = data;
+    return {
+      ...rest,
+      excerpt: summary,
+      excerpt_en: summary_en,
+      excerpt_zh_cn: summary_zh_cn,
+      excerpt_ja: summary_ja,
+      tags: tagsArray,
+      ...overrides,
+    };
+  };
+
   const onSaveDraft = async (data) => {
     if (submitLockRef.current) {
       toast.info('正在儲存中，請稍候');
@@ -369,15 +430,7 @@ export default function PostEditor() {
       const token = localStorage.getItem('koimsurai_user_token');
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
-      
-      // 轉換 tags 格式：從 [{label, value}] 轉為 ['tagName']
-      const tagsArray = Array.isArray(data.tags) 
-        ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
-        : [];
-      
-      // 將表單的 summary 對應到 API 的 excerpt 欄位
-      const { summary, ...rest } = data;
-      const payload = { ...rest, excerpt: summary, tags: tagsArray, status: 'draft' };
+      const payload = buildPayload(data, { status: 'draft' });
 
       const response = await fetch(url, {
         method,
@@ -417,15 +470,7 @@ export default function PostEditor() {
       const token = localStorage.getItem('koimsurai_user_token');
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
-      
-      // 轉換 tags 格式：從 [{label, value}] 轉為 ['tagName']
-      const tagsArray = Array.isArray(data.tags) 
-        ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
-        : [];
-      
-      // 將表單的 summary 對應到 API 的 excerpt 欄位
-      const { summary, ...rest } = data;
-      const payload = { ...rest, excerpt: summary, tags: tagsArray, status: 'published' };
+      const payload = buildPayload(data, { status: 'published' });
 
       const response = await fetch(url, {
         method,
@@ -451,10 +496,56 @@ export default function PostEditor() {
     }
   };
 
+  // ── OpenCC：由 zh-TW 自動產生简体中文（純字詞轉換，不丟 LLM） ──
+  const handleGenerateZhCN = async () => {
+    if (!id) {
+      toast.error('請先儲存草稿，取得文章 ID 後再執行');
+      return;
+    }
+    if (sourceLanguage !== 'zh-TW') {
+      toast.error('只能從 zh-TW 原文自動產生简体中文');
+      return;
+    }
+    const existing = form.getValues('title_zh_cn') || form.getValues('content_zh_cn');
+    if (existing && !window.confirm('已有简体中文內容，要覆蓋嗎？')) return;
+
+    setIsGeneratingZhCN(true);
+    try {
+      const token = localStorage.getItem('koimsurai_user_token');
+      // 先把最新的 zh-TW 原文存一次，讓 OpenCC 以最新內容轉換
+      await fetch(`/api/admin/posts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(buildPayload(form.getValues())),
+      });
+
+      const res = await fetch(`/api/admin/posts/${id}/generate-zh-cn`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `API 錯誤 (${res.status})`);
+      }
+      const data = await res.json();
+      form.setValue('title_zh_cn', data.title_zh_cn || '');
+      form.setValue('content_zh_cn', data.content_zh_cn || '');
+      form.setValue('summary_zh_cn', data.excerpt_zh_cn || '');
+      toast.success('简体中文已生成（OpenCC 繁轉簡）');
+      setActiveLocale('zh-CN');
+    } catch (e) {
+      console.error('OpenCC 生成失敗:', e);
+      toast.error(`生成失敗：${e.message}`);
+    } finally {
+      setIsGeneratingZhCN(false);
+    }
+  };
+
   // ── AI 摘要生成（獨立功能，可用於手動寫的文章） ──
   const handleGenerateSummary = async () => {
-    const title = form.getValues('title');
-    const content = form.getValues('content');
+    // 依 activeLocale 生成對應語言的摘要，並以該 locale 的 title/content 作為輸入
+    const title = form.getValues(titleName);
+    const content = form.getValues(contentName);
 
     if (!content || content.trim().length < 50) {
       toast.error('文章內容太短，無法生成摘要');
@@ -471,8 +562,8 @@ export default function PostEditor() {
           messages: [
             {
               role: 'system',
-              content: `你是一個部落格文章元資料生成器。請根據提供的文章內容，生成：
-1. summary：120-220 字的文章摘要，以第三人稱視角撰寫，聚焦文章主軸，不腦補不存在的內容。風格簡潔、資訊密度高。
+              content: `你是一個部落格文章元資料生成器。請以 ${activeLocale} 撰寫，根據提供的文章內容產生：
+1. summary：120-220 字（或對應語言的合適長度）的文章摘要，以第三人稱視角撰寫，聚焦文章主軸，不腦補不存在的內容。風格簡潔、資訊密度高。
 2. tags：3-8 個相關標籤，每個標籤是簡短的關鍵詞（如 React、Docker、CSS 等）。
 
 回傳嚴格的 JSON 格式：
@@ -509,8 +600,8 @@ export default function PostEditor() {
       }
 
       if (parsed?.summary) {
-        form.setValue('summary', parsed.summary);
-        toast.success('摘要已生成');
+        form.setValue(summaryName, parsed.summary);
+        toast.success(`摘要已生成（${activeLocale}）`);
 
         // 如果 AI 也回傳了標籤，且目前標籤為空，則自動填入
         if (parsed.tags?.length > 0) {
@@ -569,10 +660,52 @@ export default function PostEditor() {
             />
             {/* Left Column - Editor */}
             <main className="flex-1 overflow-y-auto p-6 min-w-0 space-y-0">
-                {/* Title */}
+                {/* Locale tabs */}
+                <div className="mb-4 flex items-center gap-1 rounded-lg border border-border/40 bg-accent/10 p-1">
+                  <Languages className="mx-2 h-3.5 w-3.5 text-muted-foreground/70" />
+                  {LOCALE_TABS.map(t => {
+                    const isSource = t.code === sourceLanguage;
+                    const titleVal = form.watch(fieldNameFor('title', t.code, sourceLanguage));
+                    const hasContent = !!(titleVal && titleVal.trim());
+                    return (
+                      <button
+                        key={t.code}
+                        type="button"
+                        onClick={() => setActiveLocale(t.code)}
+                        className={`relative rounded px-2.5 py-1 text-xs transition-colors ${
+                          activeLocale === t.code
+                            ? 'bg-accent/70 text-foreground'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'
+                        }`}
+                      >
+                        {t.label}
+                        {isSource && (
+                          <span className="ml-1 rounded bg-violet-500/20 px-1 py-[1px] text-[9px] text-violet-300">原文</span>
+                        )}
+                        {!isSource && hasContent && (
+                          <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        )}
+                      </button>
+                    );
+                  })}
+                  {sourceLanguage === 'zh-TW' && (
+                    <button
+                      type="button"
+                      onClick={handleGenerateZhCN}
+                      disabled={isGeneratingZhCN}
+                      className="ml-auto inline-flex items-center gap-1 rounded-md border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[11px] text-violet-300 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                      title="OpenCC 繁→簡，純字詞轉換不丟 LLM"
+                    >
+                      {isGeneratingZhCN ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3" />}
+                      自動產生简中
+                    </button>
+                  )}
+                </div>
+
+                {/* Title (per-locale) */}
                 <FormField
                   control={form.control}
-                  name="title"
+                  name={titleName}
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
@@ -587,10 +720,10 @@ export default function PostEditor() {
                   )}
                 />
 
-                {/* Content - 玻璃擬態編輯器 */}
+                {/* Content (per-locale) - 玻璃擬態編輯器 */}
                 <FormField
                   control={form.control}
-                  name="content"
+                  name={contentName}
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
@@ -770,6 +903,39 @@ export default function PostEditor() {
 
                     <FormField
                       control={form.control}
+                      name="source_language"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Languages className="h-3 w-3" />
+                            原文語言
+                          </FormLabel>
+                          <Select
+                            onValueChange={(v) => {
+                              field.onChange(v);
+                              if (activeLocale === sourceLanguage) setActiveLocale(v);
+                            }}
+                            value={field.value || 'zh-TW'}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-8 bg-accent/30">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="zh-TW">繁體中文</SelectItem>
+                              <SelectItem value="zh-CN">简体中文</SelectItem>
+                              <SelectItem value="en">English</SelectItem>
+                              <SelectItem value="ja">日本語</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="slug"
                       render={({ field }) => (
                         <FormItem>
@@ -888,12 +1054,12 @@ export default function PostEditor() {
 
                     <FormField
                       control={form.control}
-                      name="summary"
+                      name={summaryName}
                       render={({ field }) => (
                         <FormItem>
                           <div className="flex items-center justify-between">
                             <FormLabel className="text-xs text-muted-foreground">
-                              摘要
+                              摘要 <span className="text-muted-foreground/50">({activeLocale})</span>
                             </FormLabel>
                             <button
                               type="button"

@@ -421,6 +421,64 @@ apiRouter.post('/auth/login', async (req, res) => {
   }
 });
 
+// ─── i18n helpers ──────────────────────────────────────
+// 支援的 locale 與對應的 DB 欄位後綴 / HTML hreflang / html lang
+const I18N_LOCALES = ['zh-TW', 'zh-CN', 'en', 'ja'];
+const LOCALE_COLUMN_SUFFIX = { 'zh-CN': 'zh_cn', 'en': 'en', 'ja': 'ja' };
+const LOCALE_HREFLANG = { 'zh-TW': 'zh-Hant', 'zh-CN': 'zh-Hans', 'en': 'en', 'ja': 'ja' };
+const LOCALE_URL_PREFIX = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja' };
+
+// OpenCC 繁→簡 轉換器（lazy load）
+let _openccT2S = null;
+async function getOpenCCT2S() {
+  if (_openccT2S) return _openccT2S;
+  const OpenCC = require('opencc-js');
+  _openccT2S = OpenCC.Converter({ from: 'tw', to: 'cn' });
+  return _openccT2S;
+}
+
+function parseLocale(raw) {
+  if (!raw) return null;
+  const lower = String(raw).toLowerCase();
+  if (lower === 'zh-tw' || lower === 'zh-hant') return 'zh-TW';
+  if (lower === 'zh-cn' || lower === 'zh-hans') return 'zh-CN';
+  if (lower === 'en') return 'en';
+  if (lower === 'ja') return 'ja';
+  return null;
+}
+
+// 從 row 取得指定 locale 的 title/content/excerpt，若該 locale 無內容回 null
+function getLocaleContent(row, locale) {
+  const source = row.source_language || 'zh-TW';
+  if (locale === source) {
+    return { title: row.title, content: row.content, excerpt: row.excerpt || '' };
+  }
+  const sfx = LOCALE_COLUMN_SUFFIX[locale];
+  if (!sfx) return null;
+  const t = row[`title_${sfx}`];
+  const c = row[`content_${sfx}`];
+  if (!t || !c) return null;
+  return { title: t, content: c, excerpt: row[`excerpt_${sfx}`] || '' };
+}
+
+// 列出該文實際有內容的所有 locale
+function availableLocales(row) {
+  const source = row.source_language || 'zh-TW';
+  const list = [source];
+  I18N_LOCALES.forEach(loc => {
+    if (loc === source) return;
+    const sfx = LOCALE_COLUMN_SUFFIX[loc];
+    if (sfx && row[`title_${sfx}`] && row[`content_${sfx}`]) list.push(loc);
+  });
+  return list;
+}
+
+function postUrlForLocale(siteUrl, postId, locale, sourceLang) {
+  // source locale 永遠走不帶 prefix 的規範 URL
+  if (locale === sourceLang) return `${siteUrl}/blog/${postId}`;
+  return `${siteUrl}${LOCALE_URL_PREFIX[locale]}/blog/${postId}`;
+}
+
 // GET all posts (公開)
 apiRouter.get('/posts', (req, res) => {
   const { page = 1, limit = 10, search, tag, category, status = 'published', sortBy = 'newest' } = req.query;
@@ -508,17 +566,41 @@ apiRouter.get('/posts', (req, res) => {
       const total = countRow.total;
       const totalPages = Math.ceil(total / limit);
 
+      // 若指定 lang，只列出該語言有內容的文章，並以該語言的 title/excerpt 回傳
+      const requestedLocale = parseLocale(req.query.lang);
+      const mapped = [];
+      for (const row of rows) {
+        const content = requestedLocale
+          ? getLocaleContent(row, requestedLocale)
+          : { title: row.title, content: row.content, excerpt: row.excerpt || '' };
+        if (!content) continue; // 該語言無翻譯 → 不出現在列表
+        mapped.push({
+          id: row.id,
+          title: content.title,
+          excerpt: content.excerpt,
+          category: row.category,
+          status: row.status,
+          author: row.author,
+          view_count: row.view_count,
+          likes: row.likes,
+          layout_type: row.layout_type,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          source_language: row.source_language || 'zh-TW',
+          available_locales: availableLocales(row),
+          tags: row.tags ? row.tags.split(',') : [],
+        });
+      }
+
       res.json({
         message: "success",
-        posts: rows.map(row => ({
-          ...row,
-          tags: row.tags ? row.tags.split(',') : []
-        })),
+        posts: mapped,
+        locale: requestedLocale,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total,
-          totalPages
+          total: requestedLocale ? mapped.length : total,
+          totalPages: requestedLocale ? Math.ceil(mapped.length / limit) : totalPages,
         }
       });
     });
@@ -602,10 +684,11 @@ apiRouter.get('/admin/posts', requireAdmin, (req, res) => {
 });
 
 // GET a single post by id for admin (需要認證)
+// 回傳所有 locale 欄位，供編輯器使用
 apiRouter.get('/admin/posts/:id', requireAdmin, (req, res) => {
   const sql = `
-    SELECT p.*, GROUP_CONCAT(t.name) as tags 
-    FROM posts p 
+    SELECT p.*, GROUP_CONCAT(t.name) as tags
+    FROM posts p
     LEFT JOIN post_tags pt ON p.id = pt.post_id
     LEFT JOIN tags t ON pt.tag_id = t.id
     WHERE p.id = ?
@@ -627,6 +710,8 @@ apiRouter.get('/admin/posts/:id', requireAdmin, (req, res) => {
     res.json({
       message: 'success',
       ...row,
+      source_language: row.source_language || 'zh-TW',
+      available_locales: availableLocales(row),
       tags: row.tags ? row.tags.split(',') : []
     });
   });
@@ -687,8 +772,8 @@ apiRouter.get('/admin/stats', requireAdmin, (req, res) => {
 // GET a single post by id
 apiRouter.get('/posts/:id', (req, res) => {
   const sql = `
-    SELECT p.*, GROUP_CONCAT(t.name) as tags 
-    FROM posts p 
+    SELECT p.*, GROUP_CONCAT(t.name) as tags
+    FROM posts p
     LEFT JOIN post_tags pt ON p.id = pt.post_id
     LEFT JOIN tags t ON pt.tag_id = t.id
     WHERE p.id = ?
@@ -701,15 +786,41 @@ apiRouter.get('/posts/:id', (req, res) => {
       res.status(400).json({ "error": err.message });
       return;
     }
-    if (row) {
-      res.json({
-        "message": "success",
-        ...row,
-        tags: row.tags ? row.tags.split(',') : []
-      });
-    } else {
+    if (!row) {
       res.status(404).json({ "message": "Post not found" });
+      return;
     }
+
+    const sourceLang = row.source_language || 'zh-TW';
+    const requestedLocale = parseLocale(req.query.lang) || sourceLang;
+    const content = getLocaleContent(row, requestedLocale);
+
+    if (!content) {
+      // 明確 404，不做靜默 fallback（hreflang 集合不可污染）
+      res.status(404).json({ message: 'Post not available in requested locale', locale: requestedLocale, available_locales: availableLocales(row) });
+      return;
+    }
+
+    res.json({
+      message: 'success',
+      id: row.id,
+      title: content.title,
+      content: content.content,
+      excerpt: content.excerpt,
+      category: row.category,
+      status: row.status,
+      author: row.author,
+      view_count: row.view_count,
+      likes: row.likes,
+      layout_type: row.layout_type,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      locale: requestedLocale,
+      source_language: sourceLang,
+      is_source: requestedLocale === sourceLang,
+      available_locales: availableLocales(row),
+      tags: row.tags ? row.tags.split(',') : [],
+    });
   });
 });
 
@@ -1126,17 +1237,39 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
   console.log('[POST /api/admin/posts] Received request to create a new post.');
   console.log('[POST /api/admin/posts] Body:', req.body);
 
-  const { title, content, excerpt, category, tags = [], status = 'draft', layout_type = 'record' } = req.body;
+  const {
+    title, content, excerpt, category, tags = [], status = 'draft', layout_type = 'record',
+    source_language = 'zh-TW',
+    title_en, content_en, excerpt_en,
+    title_zh_cn, content_zh_cn, excerpt_zh_cn,
+    title_ja, content_ja, excerpt_ja,
+  } = req.body;
 
   if (!title || !content) {
     return res.status(400).json({ error: "缺少必填欄位: title, content" });
   }
+  if (!I18N_LOCALES.includes(source_language)) {
+    return res.status(400).json({ error: `無效的 source_language: ${source_language}` });
+  }
 
   const sql = `
-    INSERT INTO posts (title, content, excerpt, category, status, author, layout_type, created_at, updated_at) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    INSERT INTO posts (
+      title, content, excerpt, category, status, author, layout_type,
+      source_language,
+      title_en, content_en, excerpt_en,
+      title_zh_cn, content_zh_cn, excerpt_zh_cn,
+      title_ja, content_ja, excerpt_ja,
+      created_at, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `;
-  const params = [title, content, excerpt, category || null, status, 'Koimsurai', layout_type];
+  const params = [
+    title, content, excerpt, category || null, status, 'Koimsurai', layout_type,
+    source_language,
+    title_en || null, content_en || null, excerpt_en || null,
+    title_zh_cn || null, content_zh_cn || null, excerpt_zh_cn || null,
+    title_ja || null, content_ja || null, excerpt_ja || null,
+  ];
 
   db.run(sql, params, function (err) {
     if (err) {
@@ -1156,7 +1289,7 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
 
       res.status(201).json({
         message: "success",
-        data: { id: postId, title, content, excerpt, category, tags, status }
+        data: { id: postId, title, content, excerpt, category, tags, status, source_language }
       });
     });
   });
@@ -1167,19 +1300,66 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
   console.log(`[PUT /api/admin/posts/${req.params.id}] Received request to update post.`);
   console.log('[PUT /api/admin/posts/:id] Body:', req.body);
 
-  const { title, content, excerpt, category, tags = [], status, layout_type } = req.body;
+  const {
+    title, content, excerpt, category, tags = [], status, layout_type,
+    source_language,
+    title_en, content_en, excerpt_en,
+    title_zh_cn, content_zh_cn, excerpt_zh_cn,
+    title_ja, content_ja, excerpt_ja,
+  } = req.body;
+
+  if (source_language !== undefined && !I18N_LOCALES.includes(source_language)) {
+    return res.status(400).json({ error: `無效的 source_language: ${source_language}` });
+  }
+
+  // 空字串 → NULL（視為清除翻譯），undefined → 不修改
+  const toNullable = (v) => (v === undefined ? undefined : (v === '' ? null : v));
+  const nb_title_en = toNullable(title_en);
+  const nb_content_en = toNullable(content_en);
+  const nb_excerpt_en = toNullable(excerpt_en);
+  const nb_title_zh_cn = toNullable(title_zh_cn);
+  const nb_content_zh_cn = toNullable(content_zh_cn);
+  const nb_excerpt_zh_cn = toNullable(excerpt_zh_cn);
+  const nb_title_ja = toNullable(title_ja);
+  const nb_content_ja = toNullable(content_ja);
+  const nb_excerpt_ja = toNullable(excerpt_ja);
+
   const sql = `
-    UPDATE posts SET 
-      title = COALESCE(?, title), 
-      content = COALESCE(?, content), 
+    UPDATE posts SET
+      title = COALESCE(?, title),
+      content = COALESCE(?, content),
       excerpt = COALESCE(?, excerpt),
       category = ?,
       status = COALESCE(?, status),
       layout_type = COALESCE(?, layout_type),
+      source_language = COALESCE(?, source_language),
+      title_en       = CASE WHEN ? = 1 THEN ? ELSE title_en END,
+      content_en     = CASE WHEN ? = 1 THEN ? ELSE content_en END,
+      excerpt_en     = CASE WHEN ? = 1 THEN ? ELSE excerpt_en END,
+      title_zh_cn    = CASE WHEN ? = 1 THEN ? ELSE title_zh_cn END,
+      content_zh_cn  = CASE WHEN ? = 1 THEN ? ELSE content_zh_cn END,
+      excerpt_zh_cn  = CASE WHEN ? = 1 THEN ? ELSE excerpt_zh_cn END,
+      title_ja       = CASE WHEN ? = 1 THEN ? ELSE title_ja END,
+      content_ja     = CASE WHEN ? = 1 THEN ? ELSE content_ja END,
+      excerpt_ja     = CASE WHEN ? = 1 THEN ? ELSE excerpt_ja END,
       updated_at = datetime('now')
     WHERE id = ?
   `;
-  const params = [title, content, excerpt, category, status, layout_type, req.params.id];
+  const flag = (v) => (v === undefined ? 0 : 1);
+  const params = [
+    title, content, excerpt, category, status, layout_type,
+    source_language === undefined ? null : source_language,
+    flag(nb_title_en), nb_title_en ?? null,
+    flag(nb_content_en), nb_content_en ?? null,
+    flag(nb_excerpt_en), nb_excerpt_en ?? null,
+    flag(nb_title_zh_cn), nb_title_zh_cn ?? null,
+    flag(nb_content_zh_cn), nb_content_zh_cn ?? null,
+    flag(nb_excerpt_zh_cn), nb_excerpt_zh_cn ?? null,
+    flag(nb_title_ja), nb_title_ja ?? null,
+    flag(nb_content_ja), nb_content_ja ?? null,
+    flag(nb_excerpt_ja), nb_excerpt_ja ?? null,
+    req.params.id,
+  ];
 
   db.run(sql, params, function (err) {
     if (err) {
@@ -1203,6 +1383,51 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
         data: { id: req.params.id, title, content, excerpt, category, tags, status }
       });
     });
+  });
+});
+
+// POST 以 OpenCC 自動產生简体中文翻譯（從 zh-TW 轉换）
+apiRouter.post('/admin/posts/:id/generate-zh-cn', requireAdmin, async (req, res) => {
+  const postId = req.params.id;
+  db.get('SELECT * FROM posts WHERE id = ?', [postId], async (err, row) => {
+    if (err) {
+      console.error('[generate-zh-cn] 查詢失敗:', err);
+      return res.status(500).json({ error: err.message });
+    }
+    if (!row) return res.status(404).json({ error: '文章不存在' });
+
+    const source = row.source_language || 'zh-TW';
+    if (source !== 'zh-TW') {
+      return res.status(400).json({ error: '只能從 zh-TW 原文自動轉换為 zh-CN' });
+    }
+    if (!row.title || !row.content) {
+      return res.status(400).json({ error: '原文缺少 title 或 content' });
+    }
+
+    try {
+      const t2s = await getOpenCCT2S();
+      const title_zh_cn = t2s(row.title);
+      const content_zh_cn = t2s(row.content);
+      const excerpt_zh_cn = row.excerpt ? t2s(row.excerpt) : null;
+
+      db.run(
+        `UPDATE posts SET title_zh_cn = ?, content_zh_cn = ?, excerpt_zh_cn = ?, updated_at = datetime('now') WHERE id = ?`,
+        [title_zh_cn, content_zh_cn, excerpt_zh_cn, postId],
+        function (updateErr) {
+          if (updateErr) {
+            console.error('[generate-zh-cn] 寫入失敗:', updateErr);
+            return res.status(500).json({ error: updateErr.message });
+          }
+          res.json({
+            message: 'success',
+            title_zh_cn, content_zh_cn, excerpt_zh_cn,
+          });
+        }
+      );
+    } catch (e) {
+      console.error('[generate-zh-cn] OpenCC 錯誤:', e);
+      res.status(500).json({ error: `OpenCC 轉换失敗: ${e.message}` });
+    }
   });
 });
 
@@ -3640,16 +3865,37 @@ app.get('/sitemap.xml', (req, res) => {
     { loc: '/activity', changefreq: 'daily', priority: '0.5' },
   ];
 
-  const sql = `SELECT id, slug, updated_at, created_at FROM posts WHERE status = 'published' ORDER BY created_at DESC`;
+  const sql = `SELECT * FROM posts WHERE status = 'published' ORDER BY created_at DESC`;
   db.all(sql, [], (err, posts) => {
-    const postEntries = (posts || []).map(p => {
-      const slug = p.slug || p.id;
-      const lastmod = (p.updated_at || p.created_at || '').split('T')[0];
-      return `  <url>
-    <loc>${siteUrl}/blog/${slug}</loc>${lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : ''}
+    if (err) {
+      console.error('[sitemap] 查詢失敗:', err);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    const postEntries = (posts || []).flatMap(p => {
+      // SQLite 回傳可能是 "YYYY-MM-DD HH:MM:SS" 或 ISO 格式，統一只取日期部分
+      const raw = (p.updated_at || p.created_at || '').trim();
+      const lastmod = raw.split(/[T\s]/)[0];
+      const source = p.source_language || 'zh-TW';
+      const locales = availableLocales(p); // 含 source + 已翻譯語系
+
+      // 每個 locale 自己一個 <url>，每個 <url> 都附上所有 hreflang alternate + x-default（指向 source）
+      const alternates = locales.map(loc => {
+        const href = postUrlForLocale(siteUrl, p.id, loc, source);
+        return `    <xhtml:link rel="alternate" hreflang="${LOCALE_HREFLANG[loc]}" href="${href}" />`;
+      }).join('\n');
+      const xDefault = `    <xhtml:link rel="alternate" hreflang="x-default" href="${postUrlForLocale(siteUrl, p.id, source, source)}" />`;
+
+      return locales.map(loc => {
+        const selfUrl = postUrlForLocale(siteUrl, p.id, loc, source);
+        return `  <url>
+    <loc>${selfUrl}</loc>${lastmod ? `\n    <lastmod>${lastmod}</lastmod>` : ''}
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+${alternates}
+${xDefault}
   </url>`;
+      });
     });
 
     const today = new Date().toISOString().split('T')[0];
@@ -3661,7 +3907,7 @@ app.get('/sitemap.xml', (req, res) => {
   </url>`);
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${staticEntries.join('\n')}
 ${postEntries.join('\n')}
 </urlset>`;

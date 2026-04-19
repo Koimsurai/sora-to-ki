@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -1096,6 +1096,108 @@ const FontSwitcher = ({ currentFont, onFontChange }) => {
 };
 
 /* ═══════════════════════════════════
+   Toast — 短暫提示
+   ═══════════════════════════════════ */
+const Toast = ({ message, onDone }) => {
+  useEffect(() => {
+    const t = setTimeout(onDone, 2200);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <motion.div
+      className="blog-toast"
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+    >
+      {message}
+    </motion.div>
+  );
+};
+
+/* ═══════════════════════════════════
+   LanguageSwitcher — 文章語言切換下拉
+   ═══════════════════════════════════ */
+const LANG_OPTIONS = [
+  { code: 'zh-TW', label: '繁體中文' },
+  { code: 'zh-CN', label: '简体中文' },
+  { code: 'en',    label: 'English' },
+  { code: 'ja',    label: '日本語' },
+];
+
+const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect, onUnavailable }) => {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open, setOpen]);
+
+  const currentLabel = LANG_OPTIONS.find(o => o.code === current)?.label || current;
+
+  return (
+    <span className="meta-lang-switcher" ref={ref}>
+      <button
+        type="button"
+        className="lang-trigger"
+        onClick={() => setOpen(!open)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="lang-icon">🌐</span>
+        <span className="lang-code">{currentLabel}</span>
+        <span className={`lang-caret ${open ? 'open' : ''}`}>▾</span>
+      </button>
+      {open && (
+        <div className="lang-menu" role="listbox">
+          {LANG_OPTIONS.map(opt => {
+            const isSource = opt.code === source;
+            const isAvailable = available.includes(opt.code);
+            return (
+              <button
+                key={opt.code}
+                type="button"
+                role="option"
+                aria-selected={opt.code === current}
+                className={`lang-item ${isAvailable ? '' : 'disabled'} ${opt.code === current ? 'active' : ''}`}
+                onClick={() => {
+                  setOpen(false);
+                  if (!isAvailable) { onUnavailable(opt.label); return; }
+                  if (opt.code === current) return;
+                  onSelect(opt.code);
+                }}
+              >
+                <span>{opt.label}</span>
+                {isSource && <span className="lang-badge">原文</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </span>
+  );
+};
+
+/* URL prefix mapping — 必須與後端 LOCALE_URL_PREFIX 一致 */
+const LOCALE_URL_PREFIX = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja' };
+const LOCALE_TO_DATE_LOCALE = { 'zh-TW': 'zh-TW', 'zh-CN': 'zh-CN', 'en': 'en-US', 'ja': 'ja-JP' };
+
+function parseLocaleFromPath(pathname) {
+  if (pathname.startsWith('/en/blog/')) return 'en';
+  if (pathname.startsWith('/zh-cn/blog/')) return 'zh-CN';
+  if (pathname.startsWith('/ja/blog/')) return 'ja';
+  return 'zh-TW';
+}
+
+function postPathForLocale(id, locale, sourceLang) {
+  // 原文永遠走不帶 prefix 的規範路徑（與後端 postUrlForLocale 一致）
+  if (locale === sourceLang) return `/blog/${id}`;
+  return `${LOCALE_URL_PREFIX[locale] || ''}/blog/${id}`;
+}
+
+/* ═══════════════════════════════════
    BlogPost — 文章內頁
    ═══════════════════════════════════ */
 function BlogPost() {
@@ -1108,12 +1210,16 @@ function BlogPost() {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [copied, setCopied] = useState(false);
-  const [onlineCount] = useState(Math.floor(Math.random() * 3) + 1);
   const [showSubscribe, setShowSubscribe] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState('');
   const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') || 'noto-serif');
   const contentRef = useRef(null);
   const tocRef = useRef(null);
   const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const pathLocale = useMemo(() => parseLocaleFromPath(location.pathname), [location.pathname]);
 
   /* Font family memo */
   const fontFamily = useMemo(() => {
@@ -1145,15 +1251,21 @@ function BlogPost() {
   useEffect(() => {
     // 切換文章時不顯示全白 loading，保留舊內容做平滑過渡
     if (!post) setLoading(true);
+    setError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    fetch('/api/posts/' + id)
-      .then((r) => { if (!r.ok) throw new Error('Post not found'); return r.json(); })
+    fetch(`/api/posts/${id}?lang=${encodeURIComponent(pathLocale)}`)
+      .then((r) => {
+        if (r.status === 404) throw new Error('LOCALE_NOT_AVAILABLE');
+        if (!r.ok) throw new Error('Post not found');
+        return r.json();
+      })
       .then((data) => {
         if (data.message === 'success') {
+          const dateLocale = LOCALE_TO_DATE_LOCALE[data.locale] || 'zh-TW';
           setPost({
             ...data,
-            date: new Date(data.created_at).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
+            date: new Date(data.created_at).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
           });
           setLiked(false);
           fetch('/api/posts/' + id + '/view', { method: 'POST' }).catch(console.error);
@@ -1161,7 +1273,7 @@ function BlogPost() {
         setLoading(false);
       })
       .catch((e) => { setError(e.message); setLoading(false); });
-  }, [id]);
+  }, [id, pathLocale]);
 
   /* ── Like state ── */
   useEffect(() => {
@@ -1320,14 +1432,19 @@ function BlogPost() {
 
   /* ════════ Error ════════ */
   if (error || !post) {
+    const isLocaleMissing = error === 'LOCALE_NOT_AVAILABLE';
     return (
       <div className="blog-post-container error">
         <div className="blog-post-dim-overlay" />
         <div className="error-content">
-          <div className="error-icon">🚀</div>
-          <h1>文章航線丟失</h1>
-          <p>抱歉，我們在宇宙中找不到您要找的文章。</p>
-          <Link to="/blog" className="back-to-blog-link">‹ 返回手記</Link>
+          <div className="error-icon">🌐</div>
+          <h1>{isLocaleMissing ? '此語言版本尚未提供' : '文章航線丟失'}</h1>
+          <p>{isLocaleMissing ? '您請求的語言目前還沒有翻譯版本，可以前往原文頁面閱讀。' : '抱歉，我們在宇宙中找不到您要找的文章。'}</p>
+          {isLocaleMissing ? (
+            <Link to={`/blog/${id}`} className="back-to-blog-link">前往原文 →</Link>
+          ) : (
+            <Link to="/blog" className="back-to-blog-link">‹ 返回手記</Link>
+          )}
         </div>
       </div>
     );
@@ -1336,15 +1453,27 @@ function BlogPost() {
   /* ════════ Main Render ════════ */
   const seoDescription = post.excerpt || post.content?.substring(0, 160).replace(/<[^>]+>/g, '').replace(/[#*`>\-\n]/g, '').trim();
   const postTags = Array.isArray(post.tags) ? post.tags : (post.tags ? post.tags.split(',') : []);
+  const sourceLang = post.source_language || 'zh-TW';
+  const availableLocales = post.available_locales || [sourceLang];
+  const currentLocale = post.locale || pathLocale;
+  const selfPath = postPathForLocale(id, currentLocale, sourceLang);
+  const alternates = availableLocales.map(loc => ({
+    locale: loc,
+    path: postPathForLocale(id, loc, sourceLang),
+  }));
+  const xDefaultPath = postPathForLocale(id, sourceLang, sourceLang);
 
   return (
     <div className="blog-post-container" style={{ fontFamily }}>
       <SEOHead
         title={post.title}
         description={seoDescription}
-        path={'/blog/' + id}
+        path={selfPath}
         image={'/og-image/' + id}
         type="article"
+        locale={currentLocale}
+        alternates={alternates}
+        xDefaultPath={xDefaultPath}
         article={{
           author: post.author || 'Koimsurai',
           datePublished: post.created_at,
@@ -1361,6 +1490,11 @@ function BlogPost() {
         <div className="reading-progress-fill" style={{ width: readingProgress + '%' }} />
       </div>
 
+      {/* Toast */}
+      {toastMsg && (
+        <Toast key={toastMsg} message={toastMsg} onDone={() => setToastMsg('')} />
+      )}
+
       {/* ── Header ── */}
       <AnimatePresence mode="wait">
         <motion.header
@@ -1376,27 +1510,36 @@ function BlogPost() {
           <div className="post-meta-row">
             {post.layout_type !== 'column' && (
               <>
-                <span className="meta-date">⏱ {post.date}</span>
+                <span className="meta-tip" data-tooltip="發布日期">⏱ {post.date}</span>
                 <span className="meta-sep">·</span>
               </>
             )}
-            <span className="meta-author">✦ {post.author}</span>
+            <span className="meta-tip meta-author" data-tooltip="作者">✦ {post.author}</span>
             <span className="meta-sep">·</span>
-            <span>📖 {post.view_count || 0}</span>
+            <span className="meta-tip" data-tooltip="累計閱讀次數">📖 {post.view_count || 0}</span>
             <span className="meta-sep">·</span>
-            <span>❤️ {likeCount}</span>
+            <span className="meta-tip" data-tooltip="讀者喜歡數">❤️ {likeCount}</span>
             <span className="meta-sep">·</span>
-            <span>☕ 約 {readTime} 分鐘</span>
+            <span className="meta-tip" data-tooltip="預估閱讀時間">☕ 約 {readTime} 分鐘</span>
             {post.category && (
               <>
                 <span className="meta-sep">·</span>
-                <span className="meta-category">{post.category}</span>
+                <span className="meta-tip meta-category" data-tooltip="分類">{post.category}</span>
               </>
             )}
             <span className="meta-sep">·</span>
-            <span className="meta-lang">🌏 中文</span>
-            <span className="meta-sep">·</span>
-            <span className="meta-online">當前 {onlineCount} 人正在閱讀</span>
+            <LanguageSwitcher
+              open={langMenuOpen}
+              setOpen={setLangMenuOpen}
+              current={currentLocale}
+              source={sourceLang}
+              available={availableLocales}
+              onSelect={(loc) => {
+                const target = postPathForLocale(id, loc, sourceLang);
+                navigate(target);
+              }}
+              onUnavailable={(name) => setToastMsg(`「${name}」版本尚未提供`)}
+            />
           </div>
 
           {post.tags && post.tags.length > 0 && (
