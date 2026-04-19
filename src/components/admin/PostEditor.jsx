@@ -148,6 +148,12 @@ export default function PostEditor() {
   const contentName = fieldNameFor('content', activeLocale, sourceLanguage);
   const summaryName = fieldNameFor('summary', activeLocale, sourceLanguage);
 
+  // 直接訂閱當前 locale 對應的欄位值，避免 <FormField name={dynamic}> 在切換時
+  // 共用 controller/Monaco model 造成「第二次切回顯示舊內容」的 bug。
+  const titleValue = form.watch(titleName) || '';
+  const contentValue = form.watch(contentName) || '';
+  const summaryValue = form.watch(summaryName) || '';
+
   // 若 sourceLanguage 切到目前 activeLocale 不合法時（例如原本 source=zh-TW, activeLocale=en，之後改 source=en
   // 則 en 的編輯欄位切到 base 欄位），這裡確保 activeLocale 仍然指向有效 tab
   useEffect(() => {
@@ -709,85 +715,64 @@ export default function PostEditor() {
                   所有已填語系會一起儲存／發佈，不需分別操作
                 </p>
 
-                {/* Title (per-locale) */}
-                <FormField
-                  control={form.control}
-                  name={titleName}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <input
-                          key={`title-${activeLocale}`}
-                          {...field}
-                          value={field.value || ''}
-                          placeholder="輸入文章標題..."
-                          className="w-full bg-transparent text-foreground/90 text-lg font-medium mb-5 pb-3 border-b border-border/30 outline-none focus:border-border transition-colors"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                {/* Title (per-locale) — 直接用 form.watch/setValue，避免 FormField 動態 name 的 bug */}
+                <input
+                  key={`title-${activeLocale}`}
+                  value={titleValue}
+                  onChange={(e) => form.setValue(titleName, e.target.value, { shouldDirty: true })}
+                  placeholder="輸入文章標題..."
+                  className="w-full bg-transparent text-foreground/90 text-lg font-medium mb-5 pb-3 border-b border-border/30 outline-none focus:border-border transition-colors"
                 />
 
                 {/* Content (per-locale) - 玻璃擬態編輯器 */}
-                <FormField
-                  control={form.control}
-                  name={contentName}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <div className="glass rounded-xl overflow-hidden border border-border/50">
-                          <div className="flex items-center gap-1 border-b border-border/40 bg-accent/20 px-2 py-1.5">
-                            <button
-                              type="button"
-                              className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'edit' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
-                              onClick={() => setEditorView('edit')}
-                            >
-                              編輯
-                            </button>
-                            <button
-                              type="button"
-                              className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'split' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
-                              onClick={() => setEditorView('split')}
-                            >
-                              分割
-                            </button>
-                            <button
-                              type="button"
-                              className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'preview' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
-                              onClick={() => setEditorView('preview')}
-                            >
-                              預覽
-                            </button>
-                          </div>
+                <div className="glass rounded-xl overflow-hidden border border-border/50">
+                  <div className="flex items-center gap-1 border-b border-border/40 bg-accent/20 px-2 py-1.5">
+                    <button
+                      type="button"
+                      className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'edit' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                      onClick={() => setEditorView('edit')}
+                    >
+                      編輯
+                    </button>
+                    <button
+                      type="button"
+                      className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'split' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                      onClick={() => setEditorView('split')}
+                    >
+                      分割
+                    </button>
+                    <button
+                      type="button"
+                      className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'preview' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                      onClick={() => setEditorView('preview')}
+                    >
+                      預覽
+                    </button>
+                  </div>
 
-                          {editorView !== 'preview' && (
-                            <MonacoEditor
-                              key={`monaco-${activeLocale}`}
-                              value={field.value || ''}
-                              onChange={(v) => field.onChange(v ?? '')}
-                              language="markdown"
-                              height={editorView === 'split' ? '360px' : '700px'}
-                              theme="vs-dark"
-                              onSave={() => form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))()}
-                            />
-                          )}
-
-                          {editorView !== 'edit' && (
-                            <div className={`${editorView === 'split' ? 'max-h-[340px]' : 'max-h-[700px]'} overflow-y-auto border-t border-border/40 bg-background/70 p-4`}>
-                              <article className="prose prose-invert max-w-none prose-p:leading-7 prose-pre:rounded-lg">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                  {field.value || '*尚無內容*'}
-                                </ReactMarkdown>
-                              </article>
-                            </div>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  {editorView !== 'preview' && (
+                    <MonacoEditor
+                      key={`monaco-${activeLocale}`}
+                      path={`post.${activeLocale}.md`}
+                      value={contentValue}
+                      onChange={(v) => form.setValue(contentName, v ?? '', { shouldDirty: true })}
+                      language="markdown"
+                      height={editorView === 'split' ? '360px' : '700px'}
+                      theme="vs-dark"
+                      onSave={() => form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))()}
+                    />
                   )}
-                />
+
+                  {editorView !== 'edit' && (
+                    <div className={`${editorView === 'split' ? 'max-h-[340px]' : 'max-h-[700px]'} overflow-y-auto border-t border-border/40 bg-background/70 p-4`}>
+                      <article className="prose prose-invert max-w-none prose-p:leading-7 prose-pre:rounded-lg">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {contentValue || '*尚無內容*'}
+                        </ReactMarkdown>
+                      </article>
+                    </div>
+                  )}
+                </div>
             </main>
 
             {/* Right Column - Settings */}
@@ -1062,42 +1047,33 @@ export default function PostEditor() {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name={summaryName}
-                      render={({ field }) => (
-                        <FormItem>
-                          <div className="flex items-center justify-between">
-                            <FormLabel className="text-xs text-muted-foreground">
-                              摘要 <span className="text-muted-foreground/50">({activeLocale})</span>
-                            </FormLabel>
-                            <button
-                              type="button"
-                              onClick={handleGenerateSummary}
-                              disabled={isGeneratingSummary}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isGeneratingSummary ? (
-                                <><Loader2 className="size-3 animate-spin" />生成中...</>
-                              ) : (
-                                <><Sparkles className="size-3" />AI 生成</>
-                              )}
-                            </button>
-                          </div>
-                          <FormControl>
-                            <textarea
-                              key={`summary-${activeLocale}`}
-                              {...field}
-                              value={field.value || ''}
-                              placeholder="文章摘要（點擊右上角 AI 生成或手動輸入）..."
-                              rows={4}
-                              className="w-full bg-accent/30 border border-border/40 rounded-lg px-3 py-2 text-sm text-foreground/90 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:border-border/60 transition-colors"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs text-muted-foreground">
+                          摘要 <span className="text-muted-foreground/50">({activeLocale})</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleGenerateSummary}
+                          disabled={isGeneratingSummary}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isGeneratingSummary ? (
+                            <><Loader2 className="size-3 animate-spin" />生成中...</>
+                          ) : (
+                            <><Sparkles className="size-3" />AI 生成</>
+                          )}
+                        </button>
+                      </div>
+                      <textarea
+                        key={`summary-${activeLocale}`}
+                        value={summaryValue}
+                        onChange={(e) => form.setValue(summaryName, e.target.value, { shouldDirty: true })}
+                        placeholder="文章摘要（點擊右上角 AI 生成或手動輸入）..."
+                        rows={4}
+                        className="w-full bg-accent/30 border border-border/40 rounded-lg px-3 py-2 text-sm text-foreground/90 placeholder:text-muted-foreground/50 resize-none focus:outline-none focus:border-border/60 transition-colors mt-1"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

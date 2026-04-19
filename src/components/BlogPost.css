@@ -447,6 +447,15 @@
 }
 
 /* Category tooltip (rendered via Portal to body) */
+.category-tooltip.category-tooltip-compact {
+  width: auto;
+  max-width: 280px;
+  padding: 10px 12px;
+}
+.category-tooltip.category-tooltip-compact .category-tooltip-short {
+  margin: 0;
+}
+
 .category-tooltip {
   width: 240px;
   padding: 14px;

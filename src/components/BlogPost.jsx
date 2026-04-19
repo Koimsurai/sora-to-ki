@@ -758,7 +758,7 @@ const CustomParagraph = ({ children, node, ...props }) => {
 /* ══════════════════════════
    CategoryTooltipTrigger — hover 顯示分類 tooltip (Portal 到 body)
    ══════════════════════════ */
-const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnter, onLeave, linkClassName }) => {
+const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnter, onLeave, linkClassName, compact = false }) => {
   const triggerRef = useRef(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
@@ -787,7 +787,7 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
       </Link>
       {showTooltip && categoryInfo && ReactDOM.createPortal(
         <div
-          className="category-tooltip"
+          className={compact ? 'category-tooltip category-tooltip-compact' : 'category-tooltip'}
           style={{ position: 'absolute', top: pos.top, left: pos.left }}
           onMouseEnter={onEnter}
           onMouseLeave={onLeave}
@@ -795,17 +795,19 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
           {categoryInfo.short_description && (
             <p className="category-tooltip-short">{categoryInfo.short_description}</p>
           )}
-          {categoryInfo.description && (
+          {!compact && categoryInfo.description && (
             <p className="category-tooltip-desc">{categoryInfo.description}</p>
           )}
-          <div className="category-tooltip-meta">
-            {categoryInfo.post_count != null && (
-              <span>共 {categoryInfo.post_count} 篇文章</span>
-            )}
-            {categoryInfo.updated_at && (
-              <span>最近更新 {new Date(categoryInfo.updated_at).toLocaleDateString('zh-TW')}</span>
-            )}
-          </div>
+          {!compact && (
+            <div className="category-tooltip-meta">
+              {categoryInfo.post_count != null && (
+                <span>共 {categoryInfo.post_count} 篇文章</span>
+              )}
+              {categoryInfo.updated_at && (
+                <span>最近更新 {new Date(categoryInfo.updated_at).toLocaleDateString('zh-TW')}</span>
+              )}
+            </div>
+          )}
         </div>,
         document.body
       )}
@@ -1594,6 +1596,7 @@ function BlogPost() {
                     onEnter={() => setShowMetaCatTooltip(true)}
                     onLeave={() => setShowMetaCatTooltip(false)}
                     linkClassName="meta-category meta-category-link"
+                    compact
                   />
                 </span>
               </>

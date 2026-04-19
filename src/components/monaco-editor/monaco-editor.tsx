@@ -18,6 +18,7 @@ export default function MonacoEditor({
   options = {},
   onSave,
   showToolbar = true,
+  path,
 }: MonacoEditorProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const textHelperRef = useRef<MonacoTextHelper | null>(null);
@@ -514,6 +515,7 @@ export default function MonacoEditor({
         height={height}
         language={language}
         value={value}
+        path={path}
         onChange={onChange}
         theme={theme}
         options={defaultOptions}

@@ -9,6 +9,7 @@ export interface MonacoEditorProps {
   options?: editor.IStandaloneEditorConstructionOptions;
   onSave?: () => void;
   showToolbar?: boolean;
+  path?: string;
 }
 
 export interface MonacoToolbarProps {
