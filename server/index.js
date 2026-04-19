@@ -2480,22 +2480,33 @@ apiRouter.get('/spotify/now-playing', async (req, res) => {
 });
 
 // 獲取最常聽的曲風
+// top-genres / top-tracks 快取與熔斷
+// Spotify 2024/2025 持續縮緊未批准 app 的 /me/top/* 配額，頻繁打會被 429
+const TOP_GENRES_TTL = 6 * 60 * 60 * 1000;   // 6 小時
+const TOP_TRACKS_TTL = 60 * 60 * 1000;        // 1 小時（各 time_range 各自快取）
+const SPOTIFY_TOP_COOLDOWN = 60 * 60 * 1000;  // 被限後暫停 1 小時
+let topGenresCache = null;                    // { data, expiresAt }
+const topTracksCache = new Map();             // time_range:limit -> { data, expiresAt }
+let topDisabledUntil = 0;
+
 apiRouter.get('/spotify/top-genres', async (req, res) => {
+  const now = Date.now();
+  if (topGenresCache && topGenresCache.expiresAt > now) {
+    return res.json(topGenresCache.data);
+  }
+  if (topDisabledUntil > now) {
+    if (topGenresCache) return res.json(topGenresCache.data);
+    return res.status(429).json({ error: 'Spotify rate limited, try later' });
+  }
+
   try {
     const token = await getSpotifyAccessToken();
-
-    // 獲取最常聽的藝人
     const artistsResponse = await axios.get('https://api.spotify.com/v1/me/top/artists', {
-      params: {
-        limit: 50,
-        time_range: 'medium_term' // 最近 6 個月
-      },
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      params: { limit: 50, time_range: 'medium_term' },
+      headers: { 'Authorization': `Bearer ${token}` },
+      timeout: 10000,
     });
 
-    // 統計曲風
     const genreCount = {};
     artistsResponse.data.items.forEach(artist => {
       artist.genres.forEach(genre => {
@@ -2503,16 +2514,24 @@ apiRouter.get('/spotify/top-genres', async (req, res) => {
       });
     });
 
-    // 排序並取前 5 名
     const topGenres = Object.entries(genreCount)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([genre, count]) => ({ genre, count }));
 
-    res.json({ genres: topGenres });
+    const payload = { genres: topGenres };
+    topGenresCache = { data: payload, expiresAt: now + TOP_GENRES_TTL };
+    res.json(payload);
   } catch (error) {
-    console.error('Spotify top genres error:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({
+    const status = error.response?.status;
+    if (status === 403 || status === 429) {
+      topDisabledUntil = now + SPOTIFY_TOP_COOLDOWN;
+      console.warn(`[Spotify] top-genres 被限制 (${status})，暫停呼叫 1 小時`);
+      if (topGenresCache) return res.json(topGenresCache.data);
+    } else {
+      console.error('Spotify top genres error:', error.response?.data || error.message);
+    }
+    res.status(status || 500).json({
       error: 'Failed to fetch Spotify top genres',
       details: error.response?.data || error.message
     });
@@ -2521,24 +2540,39 @@ apiRouter.get('/spotify/top-genres', async (req, res) => {
 
 // 獲取最常聽的歌曲
 apiRouter.get('/spotify/top-tracks', async (req, res) => {
+  const { time_range = 'medium_term', limit = 20 } = req.query;
+  const key = `${time_range}:${limit}`;
+  const now = Date.now();
+
+  const cached = topTracksCache.get(key);
+  if (cached && cached.expiresAt > now) {
+    return res.json(cached.data);
+  }
+  if (topDisabledUntil > now) {
+    if (cached) return res.json(cached.data);
+    return res.status(429).json({ error: 'Spotify rate limited, try later' });
+  }
+
   try {
     const token = await getSpotifyAccessToken();
-    const { time_range = 'medium_term', limit = 20 } = req.query;
-
     const response = await axios.get('https://api.spotify.com/v1/me/top/tracks', {
-      params: {
-        limit,
-        time_range // short_term, medium_term, long_term
-      },
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      params: { limit, time_range },
+      headers: { 'Authorization': `Bearer ${token}` },
+      timeout: 10000,
     });
 
+    topTracksCache.set(key, { data: response.data, expiresAt: now + TOP_TRACKS_TTL });
     res.json(response.data);
   } catch (error) {
-    console.error('Spotify top tracks error:', error.response?.data || error.message);
-    res.status(error.response?.status || 500).json({
+    const status = error.response?.status;
+    if (status === 403 || status === 429) {
+      topDisabledUntil = now + SPOTIFY_TOP_COOLDOWN;
+      console.warn(`[Spotify] top-tracks 被限制 (${status})，暫停呼叫 1 小時`);
+      if (cached) return res.json(cached.data);
+    } else {
+      console.error('Spotify top tracks error:', error.response?.data || error.message);
+    }
+    res.status(status || 500).json({
       error: 'Failed to fetch Spotify top tracks',
       details: error.response?.data || error.message
     });

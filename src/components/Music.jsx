@@ -182,25 +182,38 @@ const Music = () => {
     return date.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
   };
 
-  // 計算平均音訊特性
-  const getAverageFeatures = () => {
-    const features = Object.values(audioFeatures);
-    if (features.length === 0) return null;
-    const avg = { energy: 0, acousticness: 0, valence: 0, danceability: 0, tempo: 0 };
-    features.forEach(f => {
-      avg.energy += f.energy || 0;
-      avg.acousticness += f.acousticness || 0;
-      avg.valence += f.valence || 0;
-      avg.danceability += f.danceability || 0;
-      avg.tempo += f.tempo || 0;
+  // 以 topTracks 的 metadata 推導聆聽分析（Spotify 2024/11 已停用 audio-features）
+  const getTrackAnalytics = () => {
+    const tracks = topTracks?.tracks;
+    if (!tracks || tracks.length === 0) return null;
+    const n = tracks.length;
+
+    const totalPopularity = tracks.reduce((s, t) => s + (t.popularity || 0), 0);
+    const totalDuration = tracks.reduce((s, t) => s + (t.duration_ms || 0), 0);
+    const explicitCount = tracks.filter(t => t.explicit).length;
+
+    const years = tracks
+      .map(t => parseInt((t.album?.release_date || '').slice(0, 4), 10))
+      .filter(y => !Number.isNaN(y));
+    const avgYear = years.length ? Math.round(years.reduce((s, y) => s + y, 0) / years.length) : null;
+
+    const decadeMap = new Map();
+    years.forEach(y => {
+      const dec = `${Math.floor(y / 10) * 10}s`;
+      decadeMap.set(dec, (decadeMap.get(dec) || 0) + 1);
     });
-    const n = features.length;
+    const decades = Array.from(decadeMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([decade, count]) => ({ decade, count }));
+
     return {
-      energy: avg.energy / n,
-      acousticness: avg.acousticness / n,
-      valence: avg.valence / n,
-      danceability: avg.danceability / n,
-      tempo: Math.round(avg.tempo / n)
+      avgPopularity: Math.round(totalPopularity / n),
+      avgDurationMs: Math.round(totalDuration / n),
+      explicitRatio: explicitCount / n,
+      explicitCount,
+      totalTracks: n,
+      avgYear,
+      decades,
     };
   };
 
@@ -248,7 +261,7 @@ const Music = () => {
   }
 
   const npData = getNowPlayingData();
-  const avgFeatures = getAverageFeatures();
+  const trackAnalytics = getTrackAnalytics();
 
   return (
     <div className="music-page" ref={containerRef} style={glowStyle}>
@@ -604,23 +617,70 @@ const Music = () => {
                 className="music-section"
               >
                 <h2 className="section-heading">聆聽分析</h2>
-                {avgFeatures ? (
-                  <div className="analytics-dashboard">
-                    <AnalyticGauge label="平均活力" sublabel="Energy" value={avgFeatures.energy} />
-                    <AnalyticGauge label="平均原聲度" sublabel="Acousticness" value={avgFeatures.acousticness} />
-                    <AnalyticGauge label="平均正度" sublabel="Valence" value={avgFeatures.valence} />
-                    <AnalyticGauge label="平均律動感" sublabel="Danceability" value={avgFeatures.danceability} />
-                    <div className="analytic-card analytic-tempo">
-                      <div className="analytic-label">平均速度</div>
-                      <div className="analytic-sublabel">Tempo</div>
-                      <div className="tempo-value">
-                        <span className="tempo-number">{avgFeatures.tempo}</span>
-                        <span className="tempo-unit">BPM</span>
+                <p className="analytics-subtitle">
+                  依你最常聽的 {trackAnalytics?.totalTracks || 0} 首歌（{
+                    { short_term: '最近 4 週', medium_term: '最近 6 個月', long_term: '全部時間' }[timeRange]
+                  }）推導
+                </p>
+                {trackAnalytics ? (
+                  <>
+                    <div className="analytics-dashboard">
+                      <AnalyticGauge
+                        label="主流度"
+                        sublabel="Popularity"
+                        value={trackAnalytics.avgPopularity / 100}
+                      />
+                      <div className="analytic-card analytic-tempo">
+                        <div className="analytic-label">平均長度</div>
+                        <div className="analytic-sublabel">Avg Duration</div>
+                        <div className="tempo-value">
+                          <span className="tempo-number">{formatDuration(trackAnalytics.avgDurationMs)}</span>
+                        </div>
+                      </div>
+                      <div className="analytic-card analytic-tempo">
+                        <div className="analytic-label">時間偏好</div>
+                        <div className="analytic-sublabel">Avg Release Year</div>
+                        <div className="tempo-value">
+                          <span className="tempo-number">{trackAnalytics.avgYear ?? '—'}</span>
+                        </div>
+                      </div>
+                      <div className="analytic-card analytic-tempo">
+                        <div className="analytic-label">露骨內容</div>
+                        <div className="analytic-sublabel">Explicit</div>
+                        <div className="tempo-value">
+                          <span className="tempo-number">{Math.round(trackAnalytics.explicitRatio * 100)}</span>
+                          <span className="tempo-unit">%</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+
+                    {trackAnalytics.decades.length > 0 && (
+                      <div className="decade-chart">
+                        <h3 className="decade-chart-title">年代分佈</h3>
+                        <div className="decade-bars">
+                          {(() => {
+                            const max = Math.max(...trackAnalytics.decades.map(d => d.count));
+                            return trackAnalytics.decades.map(({ decade, count }) => (
+                              <div key={decade} className="decade-row">
+                                <span className="decade-label">{decade}</span>
+                                <div className="decade-bar-track">
+                                  <motion.div
+                                    className="decade-bar-fill"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(count / max) * 100}%` }}
+                                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                                  />
+                                </div>
+                                <span className="decade-count">{count}</span>
+                              </div>
+                            ));
+                          })()}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <p className="music-no-data">載入聆聽數據中，請切換至其他分頁後再回來...</p>
+                  <p className="music-no-data">載入中... 若持續無資料，請先切換到「年度歌單」分頁載入資料</p>
                 )}
               </motion.div>
             )}

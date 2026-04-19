@@ -856,10 +856,73 @@
 /* ══════════════════════════════════════
    Analytics Dashboard (太空船控制台)
    ══════════════════════════════════════ */
+.analytics-subtitle {
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+  margin: -0.5rem 0 1.25rem;
+}
+
 .analytics-dashboard {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
+}
+
+.decade-chart {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.decade-chart-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 1rem;
+}
+
+.decade-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.decade-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 32px;
+  align-items: center;
+  gap: 12px;
+}
+
+.decade-label {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.decade-bar-track {
+  height: 10px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.decade-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(127, 90, 240, 0.8), rgba(220, 50, 120, 0.8));
+  border-radius: 5px;
+}
+
+.decade-count {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  text-align: right;
 }
 
 .analytic-card {
