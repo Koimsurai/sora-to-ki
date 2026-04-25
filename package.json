@@ -54,6 +54,7 @@
     "masonic": "^4.1.0",
     "mermaid": "^11.12.3",
     "monaco-editor": "0.53.0",
+    "pangu": "^7.2.1",
     "prism-react-renderer": "^2.4.1",
     "prismjs": "^1.30.0",
     "react": "^19.2.1",

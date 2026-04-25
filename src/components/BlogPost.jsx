@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import rehypeRaw from 'rehype-raw';
+import pangu from 'pangu';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import mermaid from 'mermaid';
@@ -1373,6 +1374,40 @@ function BlogPost() {
     if (stored.includes(pid)) setLiked(true);
     setLikeCount(post.likes || 0);
   }, [post, id]);
+
+  /* ── 排版優化：CJK-Latin 自動加空格 + 腳註 hover 浮窗 ── */
+  useEffect(() => {
+    if (!post?.content || !contentRef.current) return;
+    const root = contentRef.current;
+
+    // 1) 中英文自動加空格（pangu），略過 code/pre 區塊以免破壞範例
+    requestAnimationFrame(() => {
+      try {
+        root.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th').forEach((el) => {
+          if (el.closest('pre') || el.closest('code')) return;
+          pangu.spacingElementByNode(el);
+        });
+      } catch { /* pangu 失敗不影響閱讀 */ }
+
+      // 2) 腳註 hover 浮窗：把腳註內容寫到 ref 連結的 data-fn-content
+      try {
+        const fnMap = new Map();
+        root.querySelectorAll('.footnotes li[id^="user-content-fn-"], .footnotes li[id^="fn-"]').forEach((li) => {
+          const id = li.id;
+          const clone = li.cloneNode(true);
+          clone.querySelectorAll('a.data-footnote-backref, a[href^="#user-content-fnref"], a[href^="#fnref"]').forEach((a) => a.remove());
+          const text = clone.textContent.trim().replace(/\s+/g, ' ').slice(0, 320);
+          fnMap.set(id, text);
+        });
+        root.querySelectorAll('sup a[data-footnote-ref], sup a.footnote-ref').forEach((a) => {
+          const href = a.getAttribute('href') || '';
+          const targetId = href.replace(/^#/, '');
+          const text = fnMap.get(targetId);
+          if (text) a.setAttribute('data-fn-content', text);
+        });
+      } catch { /* 腳註處理失敗就忽略 */ }
+    });
+  }, [post?.content]);
 
   /* ── Category (專欄) info for meta-row hover tooltip ── */
   useEffect(() => {

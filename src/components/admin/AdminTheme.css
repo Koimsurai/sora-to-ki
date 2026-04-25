@@ -320,3 +320,21 @@
 :is(.admin-layout, .admin-mode) [class*="bg-destructive"]:hover {
   background: rgba(239, 68, 68, 0.3) !important;
 }
+
+/* ── Zen 模式：寫作專注，隱藏側欄 / header / 右側 sidebar ── */
+body.zen-mode-active .admin-layout aside,
+body.zen-mode-active .admin-layout > div > header {
+  display: none !important;
+}
+body.zen-mode-active .admin-layout > div {
+  width: 100vw !important;
+  margin-left: 0 !important;
+}
+body.zen-mode-active aside.w-80 {
+  display: none !important;
+}
+body.zen-mode-active main {
+  max-width: 880px !important;
+  margin: 0 auto !important;
+  padding: 3rem 2rem !important;
+}

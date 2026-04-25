@@ -40,6 +40,8 @@ import {
   LayoutTemplate,
   Languages,
   Wand2,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -118,7 +120,10 @@ export default function PostEditor() {
   const [tags, setTags] = useState([]);
   const [isLoading, setIsLoading] = useState(!!id);
   const [activeLocale, setActiveLocale] = useState('zh-TW');
+  const [zenMode, setZenMode] = useState(false);
+  const [autosaveStatus, setAutosaveStatus] = useState(''); // '', 'saved', 'restoring'
   const submitLockRef = useRef(false);
+  const autosaveKey = `postEditor:autosave:${id || 'new'}`;
 
   const form = useForm({
     resolver: zodResolver(postSchema),
@@ -159,6 +164,69 @@ export default function PostEditor() {
   useEffect(() => {
     if (!LOCALE_TABS.find(t => t.code === activeLocale)) setActiveLocale(sourceLanguage);
   }, [activeLocale, sourceLanguage]);
+
+  // ── localStorage 自動備份草稿（debounce 1.2s）──
+  useEffect(() => {
+    const sub = form.watch((values) => {
+      if (window.__autosaveTimer) clearTimeout(window.__autosaveTimer);
+      window.__autosaveTimer = setTimeout(() => {
+        try {
+          const hasContent = (values.title || '').trim() || (values.content || '').trim();
+          if (!hasContent) return;
+          localStorage.setItem(autosaveKey, JSON.stringify({ values, savedAt: Date.now() }));
+          setAutosaveStatus('saved');
+          setTimeout(() => setAutosaveStatus(''), 1800);
+        } catch { /* quota exceeded 等 — 忽略 */ }
+      }, 1200);
+    });
+    return () => sub.unsubscribe?.();
+  }, [autosaveKey, form]);
+
+  // ── 還原草稿：新文章載入時若有備份且尚未填內容，提示還原 ──
+  useEffect(() => {
+    if (id) return; // 編輯既有文章不還原
+    try {
+      const raw = localStorage.getItem(autosaveKey);
+      if (!raw) return;
+      const { values, savedAt } = JSON.parse(raw);
+      if (!values || !savedAt) return;
+      // 24 小時內的草稿才還原
+      if (Date.now() - savedAt > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(autosaveKey);
+        return;
+      }
+      const current = form.getValues();
+      if ((current.title || current.content || '').trim()) return;
+      const ago = Math.round((Date.now() - savedAt) / 60000);
+      toast(`偵測到 ${ago} 分鐘前的未儲存草稿`, {
+        action: {
+          label: '還原',
+          onClick: () => {
+            form.reset(values);
+            setAutosaveStatus('restoring');
+            setTimeout(() => setAutosaveStatus(''), 1800);
+          },
+        },
+        duration: 8000,
+      });
+    } catch { /* 損毀的 JSON 等 — 忽略 */ }
+  }, [autosaveKey, form, id]);
+
+  // ── Zen 模式：F11 / Esc 切換 ──
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'F11') { e.preventDefault(); setZenMode(z => !z); }
+      else if (e.key === 'Escape' && zenMode) setZenMode(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [zenMode]);
+
+  // Zen 模式時隱藏 admin 側欄與 header（透過 body class）
+  useEffect(() => {
+    document.body.classList.toggle('zen-mode-active', zenMode);
+    return () => document.body.classList.remove('zen-mode-active');
+  }, [zenMode]);
 
   // 載入文章數據（如果是編輯模式）
   useEffect(() => {
@@ -449,6 +517,7 @@ export default function PostEditor() {
 
       if (response.ok) {
         toast.success('草稿已儲存');
+        try { localStorage.removeItem(autosaveKey); } catch {}
         const result = await response.json();
         if (!id && result.id) {
           navigate(`/admin/posts/edit/${result.id}`);
@@ -489,6 +558,7 @@ export default function PostEditor() {
 
       if (response.ok) {
         toast.success('文章已發佈');
+        try { localStorage.removeItem(autosaveKey); } catch {}
         navigate('/admin/posts');
       } else {
         toast.error('發佈失敗');
@@ -748,6 +818,22 @@ export default function PostEditor() {
                     >
                       預覽
                     </button>
+                    <div className="ml-auto flex items-center gap-2">
+                      {autosaveStatus === 'saved' && (
+                        <span className="text-[10px] text-emerald-400/80 animate-in fade-in">已自動備份</span>
+                      )}
+                      {autosaveStatus === 'restoring' && (
+                        <span className="text-[10px] text-violet-300 animate-in fade-in">已還原草稿</span>
+                      )}
+                      <button
+                        type="button"
+                        title={zenMode ? '退出 Zen（Esc）' : 'Zen 模式（F11）'}
+                        onClick={() => setZenMode(z => !z)}
+                        className="rounded px-1.5 py-1 text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+                      >
+                        {zenMode ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+                      </button>
+                    </div>
                   </div>
 
                   {editorView !== 'preview' && (

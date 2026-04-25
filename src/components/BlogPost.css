@@ -863,6 +863,78 @@
   /* 長文章分段延後渲染，大幅改善滾動流暢度（超出視口的大段落先不 layout） */
   content-visibility: auto;
   contain-intrinsic-size: auto 1200px;
+  /* 中英排版優化：開頭/結尾標點懸掛、字距修整 */
+  hanging-punctuation: first allow-end last;
+  text-spacing-trim: trim-start;
+}
+
+/* 腳註樣式 + hover 浮窗（remark-gfm footnotes） */
+.post-content .footnotes {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+.post-content .footnotes h2 {
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.75rem;
+}
+.post-content sup a[data-footnote-ref],
+.post-content a.footnote-ref,
+.post-content a[id^="user-content-fnref-"] {
+  position: relative;
+  display: inline-block;
+  padding: 0 4px;
+  margin: 0 1px;
+  border-radius: 4px;
+  background: rgba(127, 90, 240, 0.12);
+  color: #c4b5fd;
+  text-decoration: none;
+  font-size: 0.78em;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+.post-content sup a[data-footnote-ref]:hover,
+.post-content a.footnote-ref:hover {
+  background: rgba(127, 90, 240, 0.28);
+  color: #fff;
+}
+/* hover 浮窗 — 透過 [data-fn-content] 由 JS 注入文字 */
+.post-content sup a[data-fn-content]::after {
+  content: attr(data-fn-content);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  min-width: 220px;
+  max-width: min(420px, 80vw);
+  padding: 10px 14px;
+  background: rgba(15, 14, 26, 0.96);
+  border: 1px solid rgba(127, 90, 240, 0.35);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(127, 90, 240, 0.18);
+  z-index: 30;
+}
+.post-content sup a[data-fn-content]:hover::after,
+.post-content sup a[data-fn-content]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ═══════════════════════
