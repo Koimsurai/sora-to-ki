@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
 import Comments from './Comments';
 import SEOHead from './SEOHead';
+import NebulaBackground from './NebulaBackground';
+import { prefetchPost } from '../lib/prefetchPost';
 import './Blog.css';
 
 /* ════════════════════════════════════════════════
@@ -182,7 +184,12 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
         )}
 
         {/* 標題 */}
-        <Link to={`/blog/${post.id}`} className="note-title-link">
+        <Link
+          to={`/blog/${post.id}`}
+          className="note-title-link"
+          onMouseEnter={() => prefetchPost(post.id)}
+          onFocus={() => prefetchPost(post.id)}
+        >
           <h2 className="note-title">{post.title}</h2>
         </Link>
 
@@ -347,12 +354,7 @@ function Blog() {
   if (loading) {
     return (
       <div className="blog-page">
-        <div className="blog-nebula-bg">
-          <div className="nebula-layer blog-nebula-1" />
-          <div className="nebula-layer blog-nebula-2" />
-          <div className="nebula-layer blog-nebula-3" />
-          <div className="blog-nebula-dust" />
-        </div>
+        <NebulaBackground />
         <div className="blog-loading">
           <div className="blog-loader" />
           <p>正在載入文章...</p>
@@ -365,12 +367,7 @@ function Blog() {
   if (error) {
     return (
       <div className="blog-page">
-        <div className="blog-nebula-bg">
-          <div className="nebula-layer blog-nebula-1" />
-          <div className="nebula-layer blog-nebula-2" />
-          <div className="nebula-layer blog-nebula-3" />
-          <div className="blog-nebula-dust" />
-        </div>
+        <NebulaBackground />
         <div className="blog-loading">
           <p>❌ {error}</p>
         </div>
@@ -386,16 +383,8 @@ function Blog() {
         path="/blog"
       />
 
-      {/* ── 深空暗幕 (讓全域星空透出) ── */}
-      <div className="blog-dim-overlay" />
-
-      {/* ── 星雲背景 ── */}
-      <div className="blog-nebula-bg">
-        <div className="nebula-layer blog-nebula-1" />
-        <div className="nebula-layer blog-nebula-2" />
-        <div className="nebula-layer blog-nebula-3" />
-        <div className="blog-nebula-dust" />
-      </div>
+      {/* ── 深空暗幕 + 星雲背景（共用元件） ── */}
+      <NebulaBackground />
 
       {/* ── 主內容區 ── */}
       <div className="blog-content-wrapper">
@@ -580,7 +569,12 @@ function Blog() {
               <ul className="featured-list">
                 {featuredPosts.map(p => (
                   <li key={p.id}>
-                    <Link to={`/blog/${p.id}`} className="featured-link">
+                    <Link
+                      to={`/blog/${p.id}`}
+                      className="featured-link"
+                      onMouseEnter={() => prefetchPost(p.id)}
+                      onFocus={() => prefetchPost(p.id)}
+                    >
                       <span className="featured-text">{p.title}</span>
                       <span className="featured-date">
                         {new Date(p.created_at).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}

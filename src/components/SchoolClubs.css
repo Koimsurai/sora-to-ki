@@ -9,8 +9,11 @@
 .school-clubs-section h2 {
   font-size: 2.5em;
   margin-bottom: 40px;
-  color: var(--clr-headline); /* 使用標題色 */
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* 新增文字陰影 */
+  font-weight: 700;
+  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* 新的容器樣式，使用 Flexbox 水平排列社團 */
@@ -27,27 +30,24 @@
 
 /* 每個社團項目的樣式 */
 .club-item {
-  /* background-color: var(--clr-bg-primary); */ /* 移除原本背景色 */
-  background-color: rgba(22, 22, 26, 0.6); /* 使用主要背景色的半透明版本 */
-  padding: 20px 25px; /* 內距 */
-  border-radius: 12px; /* 增加圓角 */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* 稍微加深陰影 */
-  min-width: 220px; /* 調整最小寬度以容納更多內容 */
-  text-align: left; /* 改為靠左對齊 */
-  /* --- 玻璃擬態效果 --- */
-  backdrop-filter: blur(10px); /* 稍微增加模糊度 */
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1); /* 稍微加亮邊框 */
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; /* 加入過渡效果 */
-  cursor: pointer; /* 添加指針樣式表示可點擊 */
-  overflow: hidden; /* 隱藏超出內容，配合 layout 動畫 */
+  background: rgba(255, 255, 255, 0.03);
+  padding: 20px 25px;
+  border-radius: 16px;
+  min-width: 220px;
+  text-align: left;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  overflow: hidden;
 }
 
-/* --- 互動效果 --- */
 .club-item:hover {
-  transform: scale(1.03); /* 微幅放大 */
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* 懸停時陰影加深 */
-  border-color: rgba(255, 255, 255, 0.2); /* 懸停時邊框變亮 */
+  border-color: rgba(127, 90, 240, 0.35);
+  box-shadow: 0 0 20px rgba(127, 90, 240, 0.08), 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
 }
 
 /* --- 新增樣式 --- */
@@ -72,8 +72,8 @@
 }
 
 .club-item p {
-  font-size: 1.05em; /* 調整角色文字大小 */
-  color: var(--clr-paragraph); /* 使用段落色 */
+  font-size: 1.05em;
+  color: rgba(255, 255, 255, 0.5);
   margin: 0 0 15px 0; /* 增加下方間距 */
   padding-left: calc(1.5em + 10px); /* 與標題對齊 (圖標寬度 + gap) */
 }
@@ -90,7 +90,7 @@
   list-style: disc; /* 使用圓點列表 */
   padding-left: 20px; /* 列表內縮 */
   margin: 0;
-  color: var(--clr-paragraph); /* 列表文字顏色 */
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .club-activities li {

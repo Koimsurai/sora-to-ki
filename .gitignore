@@ -46,5 +46,6 @@ scripts/builder/**/*.js
 PHOTO_BUILDER_GUIDE.md
 PHOTO_GALLERY_REFACTOR.md
 IMPLEMENTATION_SUMMARY.md
+BLOG_ROADMAP.md
 .env.docker
 server/db/db.sqlite

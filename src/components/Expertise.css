@@ -21,13 +21,12 @@
 
 .expertise-section h2 {
   font-size: 2.5em;
-  /* 標題字體大小 */
   margin-bottom: 40px;
-  /* 與下方內容的間距 */
-  color: var(--clr-headline);
-  /* 使用標題色 */
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-  /* 新增文字陰影 */
+  font-weight: 700;
+  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .skills-container {
@@ -46,29 +45,24 @@
 }
 
 .skill-category {
-  /* background-color: var(--clr-bg-primary); */
-  /* 移除原本背景色 */
-  background: rgba(22, 22, 26, 0.65);
+  background: rgba(255, 255, 255, 0.03);
   padding: 30px;
-  /* 增加內距 */
   border-radius: 16px;
-  /* 稍微增加圓角 */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  /* 輕微陰影 */
   min-width: 350px;
-  /* 增加最小寬度 */
   max-width: 400px;
-  /* 添加最大寬度限制 */
   text-align: left;
-  /* 類別內文字靠左 */
   flex: 1;
-  /* 讓卡片能夠彈性調整 */
-  /* --- 玻璃擬態效果 --- */
   backdrop-filter: blur(12px);
-  /* 模糊程度可以稍低 */
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  /* 邊框透明度可以更低 */
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.skill-category:hover {
+  border-color: rgba(127, 90, 240, 0.35);
+  box-shadow: 0 0 20px rgba(127, 90, 240, 0.08), 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
 }
 
 .skill-category h3 {
@@ -127,23 +121,20 @@
 /* .skill-category ul li:has(.skill-icon)::before { ... } */
 
 
-/* 更新：技能圖示樣式 */
+/* 技能圖示樣式 */
 .skill-icon {
   display: block;
-  /* 改為 block 以便在 flex column 中正常顯示 */
   font-size: 1.8em;
-  /* 稍微放大圖示 */
-  color: var(--clr-headline);
-  /* 使用標題色 */
+  color: rgba(255, 255, 255, 0.85);
   margin-bottom: 5px;
   /* 與下方箭頭的間距 */
   line-height: 1;
 }
 
-/* 新增：技能文字樣式 (如果沒有圖示) */
+/* 技能文字樣式 */
 .skill-text {
   font-size: 1em;
-  color: var(--clr-paragraph);
+  color: rgba(255, 255, 255, 0.6);
   margin-bottom: 5px;
   /* 與下方箭頭的間距 */
 }

@@ -446,6 +446,63 @@
   }
 }
 
+/* ═══════════════════════
+   Prev / Next 導覽
+   ═══════════════════════ */
+.prev-next-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 3rem 0 1.5rem;
+}
+.prev-next-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.82);
+  transition: border-color 0.3s, background 0.3s, transform 0.3s, box-shadow 0.3s;
+  min-height: 72px;
+}
+.prev-next-card:hover {
+  border-color: rgba(127, 90, 240, 0.35);
+  background: rgba(127, 90, 240, 0.05);
+  box-shadow: 0 0 20px rgba(127, 90, 240, 0.08), 0 8px 24px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+}
+.prev-next-next {
+  align-items: flex-end;
+  text-align: right;
+}
+.prev-next-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.04em;
+}
+.prev-next-card:hover .prev-next-label {
+  color: #c4b5fd;
+}
+.prev-next-title {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.prev-next-placeholder {
+  display: block;
+}
+@media (max-width: 640px) {
+  .prev-next-nav { grid-template-columns: 1fr; }
+}
+
 /* Category tooltip (rendered via Portal to body) */
 .category-tooltip.category-tooltip-compact {
   width: auto;
@@ -803,7 +860,50 @@
   font-size: 1.05rem;
   line-height: 1.85;
   letter-spacing: 0.01em;
+  /* 長文章分段延後渲染，大幅改善滾動流暢度（超出視口的大段落先不 layout） */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1200px;
 }
+
+/* ═══════════════════════
+   GitHub-style Callouts (> [!NOTE] / [!TIP] / [!WARNING] / [!IMPORTANT] / [!CAUTION])
+   由 remark-github-blockquote-alert 轉出 <div class="markdown-alert markdown-alert-{type}">
+   ═══════════════════════ */
+.post-content .markdown-alert {
+  padding: 12px 16px;
+  margin: 1.5rem 0;
+  border-left: 3px solid var(--alert-accent, rgba(127, 90, 240, 0.6));
+  border-radius: 0 10px 10px 0;
+  background: var(--alert-bg, rgba(127, 90, 240, 0.06));
+  color: rgba(255, 255, 255, 0.82);
+}
+.post-content .markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  margin-bottom: 4px;
+  color: var(--alert-accent, #c4b5fd);
+  letter-spacing: 0.02em;
+}
+.post-content .markdown-alert-title svg {
+  flex-shrink: 0;
+}
+.post-content .markdown-alert p {
+  margin: 4px 0;
+  color: inherit;
+  font-size: 0.98rem;
+}
+.post-content .markdown-alert p:last-child {
+  margin-bottom: 0;
+}
+
+.post-content .markdown-alert-note     { --alert-accent: #7dd3fc; --alert-bg: rgba(125, 211, 252, 0.06); }
+.post-content .markdown-alert-tip      { --alert-accent: #86efac; --alert-bg: rgba(134, 239, 172, 0.06); }
+.post-content .markdown-alert-important{ --alert-accent: #c4b5fd; --alert-bg: rgba(196, 181, 253, 0.08); }
+.post-content .markdown-alert-warning  { --alert-accent: #fcd34d; --alert-bg: rgba(252, 211, 77, 0.07); }
+.post-content .markdown-alert-caution  { --alert-accent: #fca5a5; --alert-bg: rgba(252, 165, 165, 0.07); }
 
 .post-content h2 {
   font-size: 1.5rem;

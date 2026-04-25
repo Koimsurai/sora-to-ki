@@ -60,6 +60,7 @@ const LazyAnime = lazy(() => import('./components/Anime'));
 const LazySetup = lazy(() => import('./components/Setup'));
 const LazyOAuthCallback = lazy(() => import('./components/OAuthCallback'));
 const LazyNotFound = lazy(() => import('./components/NotFound'));
+const LazyCommandPalette = lazy(() => import('./components/CommandPalette'));
 
 // --- Loading Fallback ---
 const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
@@ -343,6 +344,11 @@ function Layout({ activeSection, onSectionChange }) {
       {!isAdminPage && !isPhotoPage && (
         <Suspense fallback={<LoadingFallback />}>
           <LazyFooter style={{ zIndex: 20 }} />
+        </Suspense>
+      )}
+      {!isAdminPage && (
+        <Suspense fallback={null}>
+          <LazyCommandPalette />
         </Suspense>
       )}
     </div>

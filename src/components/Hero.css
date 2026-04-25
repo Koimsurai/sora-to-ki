@@ -355,57 +355,32 @@
 }
 
 .home-hero-content h1 {
-  /* 參考 Figma style_1VOWPE */
   font-family: 'HarmonyOS Sans SC', sans-serif;
-  /* 優先使用指定字體 */
   font-size: 3em;
-  /* 調整大小 */
-  font-weight: 400;
-  /* 正常字重 */
+  font-weight: 700;
   line-height: 1.2;
-  /* 行高 */
   margin-bottom: 25px;
-  /* 增加標題下方間距 */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-  /* 新增文字陰影 */
+  color: rgba(255, 255, 255, 0.95);
   white-space: pre-wrap;
-  /* 確保換行符生效 */
 }
 
 .home-hero-content .tagline {
-  /* 參考履歷 Software Engineer */
-  font-size: 1.8em;
-  /* 稍微增大字號 */
+  font-size: 1.5em;
   font-style: italic;
-  /* 使用斜體 */
-  font-weight: bold;
-  color: var(--clr-button);
-  /* 使用按鈕/高亮色 */
+  font-weight: 500;
+  color: #c4b5fd;
   margin-top: 10px;
-  /* 增加上方間距 */
   margin-bottom: 30px;
-  /* 增加座右銘下方間距 */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-  /* 新增文字陰影 */
   white-space: pre-wrap;
-  /* 確保換行符生效 */
 }
 
 .home-hero-content .description {
-  /* 參考 Figma style_9RS2T9 和履歷 Profile */
   font-family: 'HarmonyOS Sans SC', sans-serif;
   font-size: 1.1em;
-  /* 調整大小 */
   line-height: 1.6;
-  /* 行高 */
-  color: var(--clr-paragraph);
-  /* 使用段落色 */
+  color: rgba(255, 255, 255, 0.6);
   max-width: 65ch;
-  /* 限制行長以提高可讀性 (約 65 個字符寬) */
   margin-bottom: 40px;
-  /* 增加描述下方間距 */
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-  /* 新增文字陰影 */
 }
 
 /* Typing effect styles */
@@ -467,67 +442,62 @@
 
 .social-links {
   display: flex;
-  gap: 20px;
-  /* 連結間距 */
+  gap: 12px;
 }
 
 .social-links a {
-  color: var(--clr-paragraph);
-  /* 使用段落色 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.6);
   text-decoration: none;
-  font-size: 1.5em;
-  /* 放大圖示 */
-  transition: color 0.3s ease;
+  font-size: 1.2em;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .social-links a:hover {
-  color: var(--clr-button);
-  /* 使用按鈕/高亮色 */
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(127, 90, 240, 0.4);
+  color: #7f5af0;
+  box-shadow: 0 0 20px rgba(127, 90, 240, 0.2);
   transform: translateY(-2px);
-  /* 懸停時上移 */
 }
 
-/* CTA 按鈕樣式 (類似 Header 中的下載按鈕) */
+/* CTA 按鈕樣式 — Blog 風格膠囊形 */
 .cta-button {
-  display: inline-block;
-  /* 使 padding 生效 */
-  background-color: var(--clr-button);
-  /* 使用按鈕色 */
-  color: var(--clr-button-text);
-  /* 使用按鈕文字色 */
-  padding: 10px 20px;
-  /* 調整內距 */
-  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 10px 24px;
+  background: linear-gradient(135deg, rgba(127, 90, 240, 0.8), rgba(127, 90, 240, 0.5));
+  color: #fffffe;
+  border: 1px solid rgba(127, 90, 240, 0.3);
+  border-radius: 9999px;
   text-decoration: none;
   font-weight: 500;
-  /* 加粗一點 */
-  position: relative;
-  /* 為了可能的偽元素效果 */
-  overflow: hidden;
-  /* 配合可能的內部動畫 */
-  transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
-  /* 加入 box-shadow 過渡 */
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(127, 90, 240, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .cta-button:hover {
-  transform: translateY(-3px);
-  /* 懸停時上移更多 */
-  background-color: var(--clr-tertiary);
-  /* 使用第三點綴綠 */
-  color: var(--clr-button-text);
-  /* 明確指定懸停時的文字顏色 */
-  /* 新增：懸停發光效果 */
-  box-shadow: 0 0 15px 2px rgba(var(--clr-button-rgb), 0.7);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(127, 90, 240, 0.35);
+  background: linear-gradient(135deg, rgba(127, 90, 240, 0.9), rgba(127, 90, 240, 0.6));
+  border-color: rgba(127, 90, 240, 0.5);
 }
 
-/* 新增：點擊效果 */
 .cta-button:active {
   transform: translateY(-1px) scale(0.98);
-  /* 點擊時稍微下壓並縮小 */
-  box-shadow: 0 0 8px 1px rgba(var(--clr-button-rgb), 0.5);
-  /* 點擊時光暈減弱 */
-  background-color: var(--clr-button);
-  /* 可以恢復或使用更深的顏色 */
 }
 
 /* 移除不再需要的動畫定義 */
@@ -695,8 +665,8 @@
   /* 最粗字重 */
   font-size: 18vw;
   /* 根據視窗寬度調整大小 */
-  color: rgba(1, 1, 1, 0.08);
-  /* 使用描邊色的 RGBA */
+  color: rgba(255, 255, 255, 0.02);
+  /* 極低透明度，幾乎不可見 */
   z-index: 1;
   /* 調整 z-index，因為背景層移到 App.jsx */
   text-transform: uppercase;
@@ -709,23 +679,23 @@
   /* 防止干擾滑鼠事件 */
 }
 
-/* 新增：Hero Avatar 頭像樣式 */
+/* Hero Avatar 頭像樣式 — 柔和光暈 */
 .hero-avatar-wrapper {
   z-index: 2;
-  width: 320px;
-  height: 320px;
+  width: 280px;
+  height: 280px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  border: 4px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 30px rgba(127, 90, 240, 0.15);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hero-avatar-wrapper:hover {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 10px 50px rgba(var(--clr-button-rgb), 0.3);
-  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 40px rgba(127, 90, 240, 0.25);
+  border-color: rgba(127, 90, 240, 0.3);
 }
 
 .hero-avatar {

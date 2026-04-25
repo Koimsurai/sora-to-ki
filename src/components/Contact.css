@@ -11,14 +11,17 @@
 }
 
 .contact-section h2 {
-  font-size: 2.5em; /* 標題字體大小 */
-  margin-bottom: 40px; /* 與下方內容的間距 */
-  color: var(--clr-headline); /* 使用標題色 */
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* 新增文字陰影 */
+  font-size: 2.5em;
+  margin-bottom: 40px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.contact-cta { /* CTA 樣式 */
-  color: var(--clr-slate); /* 使用較柔和的顏色 */
+.contact-cta {
+  color: rgba(255, 255, 255, 0.5);
   font-size: 1.1em;
   margin-bottom: 30px; /* 與下方聯絡資訊的間距 */
   max-width: 500px; /* 限制寬度 */
@@ -52,31 +55,32 @@
 }
 
 .contact-item .icon {
-  font-size: 1.5em; /* 圖標大小 */
-  margin-right: 15px; /* 圖標與文字間距 */
-  color: var(--clr-accent); /* 使用主題點綴色 */
+  font-size: 1.5em;
+  margin-right: 15px;
+  color: #7f5af0;
   width: 30px; /* 固定寬度讓文字對齊 */
   text-align: center;
 }
 
 .contact-item a,
 .contact-item span:not(.icon) {
-  font-size: 1.1em; /* 文字大小 */
-  color: var(--clr-light); /* 使用淺色文字 */
-  text-decoration: none; /* 移除連結底線 */
-  word-break: break-all; /* 長字串換行 */
+  font-size: 1.1em;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  word-break: break-all;
+  transition: color 0.2s ease;
 }
 
 .contact-item a:hover {
-  color: var(--clr-accent); /* 使用主題點綴色 */
-  text-decoration: underline; /* 滑鼠懸停時加底線 */
+  color: #c4b5fd;
+  text-decoration: underline;
 }
 
 .copyright {
-  margin-top: 50px; /* 與上方內容的間距 */
-  font-size: 0.9em; /* 稍小字體 */
-  color: var(--clr-slate); /* 使用較暗的灰色 */
-  text-align: center; /* 置中 */
+  margin-top: 50px;
+  font-size: 0.9em;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
 }
 
 /* 響應式設計 */

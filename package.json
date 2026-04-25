@@ -76,6 +76,7 @@
     "rehype-highlight": "^7.0.2",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
+    "remark-github-blockquote-alert": "^2.1.0",
     "sonner": "^1.7.1",
     "swiper": "^12.1.2",
     "tailwind-merge": "^2.5.5",

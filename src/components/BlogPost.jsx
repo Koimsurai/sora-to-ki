@@ -2,6 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMe
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { remarkAlert } from 'remark-github-blockquote-alert';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -814,6 +815,48 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
     </span>
   );
 };
+
+/* ══════════════════════════
+   PrevNextNav — 文章底部上/下一篇導覽
+   ══════════════════════════ */
+const PrevNextNav = React.memo(({ currentId }) => {
+  const [prev, setPrev] = useState(null);
+  const [next, setNext] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/posts?limit=200')
+      .then(r => r.json())
+      .then(data => {
+        const posts = Array.isArray(data) ? data : (data.posts || []);
+        const published = posts.filter(p => p.status === 'published' || !p.status);
+        const sorted = [...published].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        const idx = sorted.findIndex(p => String(p.id) === String(currentId));
+        if (idx === -1) return;
+        setPrev(idx > 0 ? sorted[idx - 1] : null);
+        setNext(idx < sorted.length - 1 ? sorted[idx + 1] : null);
+      })
+      .catch(console.error);
+  }, [currentId]);
+
+  if (!prev && !next) return null;
+
+  return (
+    <nav className="prev-next-nav" aria-label="上一篇與下一篇">
+      {prev ? (
+        <Link to={`/blog/${prev.id}`} className="prev-next-card prev-next-prev">
+          <span className="prev-next-label">← 上一篇</span>
+          <span className="prev-next-title">{prev.title}</span>
+        </Link>
+      ) : <span className="prev-next-placeholder" />}
+      {next ? (
+        <Link to={`/blog/${next.id}`} className="prev-next-card prev-next-next">
+          <span className="prev-next-label">下一篇 →</span>
+          <span className="prev-next-title">{next.title}</span>
+        </Link>
+      ) : <span className="prev-next-placeholder" />}
+    </nav>
+  );
+});
 
 /* ══════════════════════════
    PostsNav — Left sidebar showing OTHER article titles (-style)
@@ -1658,7 +1701,7 @@ function BlogPost() {
 
               <article className="post-content drop-cap-first" ref={contentRef}>
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
+                  remarkPlugins={[remarkGfm, remarkAlert]}
                   rehypePlugins={[rehypeRaw]}
                   components={{
                     code: CodeBlock,
@@ -1672,6 +1715,9 @@ function BlogPost() {
               </article>
               <SignatureSVG className="blog-signature" />
             </div>
+
+            {/* ── Prev / Next ── */}
+            <PrevNextNav currentId={id} />
 
             {/* ── Comments ── */}
             <div className="post-extras" id="comments">
