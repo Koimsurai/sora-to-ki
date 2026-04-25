@@ -234,6 +234,86 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
 });
 
 /* ════════════════════════════════════════════════
+   ActivityHeatmap — 寫作活動熱圖（過去 26 週）
+   ════════════════════════════════════════════════ */
+const ActivityHeatmap = React.memo(({ posts }) => {
+  const cells = useMemo(() => {
+    const WEEKS = 26;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // 對齊到本週日
+    const offset = today.getDay();
+    const lastDay = new Date(today);
+    lastDay.setDate(today.getDate() + (6 - offset));
+    const startDay = new Date(lastDay);
+    startDay.setDate(lastDay.getDate() - WEEKS * 7 + 1);
+
+    // 統計每日發文數
+    const counts = new Map();
+    posts.forEach(p => {
+      if (!p.created_at) return;
+      const d = new Date(p.created_at);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+
+    const grid = [];
+    const cur = new Date(startDay);
+    for (let w = 0; w < WEEKS; w++) {
+      const col = [];
+      for (let d = 0; d < 7; d++) {
+        const key = `${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
+        const count = counts.get(key) || 0;
+        const isFuture = cur > today;
+        col.push({
+          date: new Date(cur),
+          count,
+          level: isFuture ? -1 : count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : count <= 4 ? 3 : 4,
+        });
+        cur.setDate(cur.getDate() + 1);
+      }
+      grid.push(col);
+    }
+    return grid;
+  }, [posts]);
+
+  const totalPosts = posts.length;
+  const formatDate = (d) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short', day: 'numeric' });
+
+  return (
+    <div className="activity-heatmap">
+      <div className="heatmap-stats">
+        <span className="heatmap-total">{totalPosts}</span>
+        <span className="heatmap-total-label">篇文章</span>
+      </div>
+      <div className="heatmap-grid" role="img" aria-label="近 26 週寫作活動">
+        {cells.map((week, wi) => (
+          <div key={wi} className="heatmap-col">
+            {week.map((cell, di) => (
+              <span
+                key={di}
+                className={`heatmap-cell heatmap-level-${cell.level}`}
+                title={cell.level >= 0 ? `${formatDate(cell.date)} · ${cell.count} 篇` : ''}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="heatmap-legend">
+        <span>少</span>
+        <span className="heatmap-cell heatmap-level-0" />
+        <span className="heatmap-cell heatmap-level-1" />
+        <span className="heatmap-cell heatmap-level-2" />
+        <span className="heatmap-cell heatmap-level-3" />
+        <span className="heatmap-cell heatmap-level-4" />
+        <span>多</span>
+      </div>
+    </div>
+  );
+});
+ActivityHeatmap.displayName = 'ActivityHeatmap';
+
+/* ════════════════════════════════════════════════
    Blog 主頁面
    ════════════════════════════════════════════════ */
 function Blog() {
@@ -586,6 +666,12 @@ function Blog() {
               </ul>
             </div>
           )}
+
+          {/* 寫作活動熱圖 */}
+          <div className="sidebar-section">
+            <h3 className="sidebar-heading">寫作活動</h3>
+            <ActivityHeatmap posts={posts} />
+          </div>
 
           {/* 快速導航 */}
           <div className="sidebar-section">
