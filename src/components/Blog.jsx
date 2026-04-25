@@ -187,6 +187,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
         <Link
           to={`/blog/${post.id}`}
           className="note-title-link"
+          viewTransition
           onMouseEnter={() => prefetchPost(post.id)}
           onFocus={() => prefetchPost(post.id)}
         >

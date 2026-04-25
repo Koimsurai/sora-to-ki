@@ -844,13 +844,13 @@ const PrevNextNav = React.memo(({ currentId }) => {
   return (
     <nav className="prev-next-nav" aria-label="上一篇與下一篇">
       {prev ? (
-        <Link to={`/blog/${prev.id}`} className="prev-next-card prev-next-prev">
+        <Link to={`/blog/${prev.id}`} className="prev-next-card prev-next-prev" viewTransition>
           <span className="prev-next-label">← 上一篇</span>
           <span className="prev-next-title">{prev.title}</span>
         </Link>
       ) : <span className="prev-next-placeholder" />}
       {next ? (
-        <Link to={`/blog/${next.id}`} className="prev-next-card prev-next-next">
+        <Link to={`/blog/${next.id}`} className="prev-next-card prev-next-next" viewTransition>
           <span className="prev-next-label">下一篇 →</span>
           <span className="prev-next-title">{next.title}</span>
         </Link>

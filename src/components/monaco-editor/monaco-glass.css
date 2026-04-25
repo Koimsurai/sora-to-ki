@@ -105,3 +105,11 @@
     padding: 0.5rem;
   }
 }
+
+/* 拖放圖片時的視覺提示（domNode 是 monaco 內部容器，加 class 切換） */
+.monaco-drop-active {
+  outline: 2px dashed rgba(127, 90, 240, 0.6) !important;
+  outline-offset: -4px;
+  background: rgba(127, 90, 240, 0.08) !important;
+  transition: background 0.15s ease;
+}

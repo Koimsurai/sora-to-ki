@@ -376,6 +376,134 @@ export default function MonacoEditor({
       disposablesRef.current.push({
         dispose: () => window.removeEventListener('paste', pasteHandler, true)
       });
+
+      /* ── 拖放圖片上傳（與 paste 共用 upload 邏輯）── */
+      const uploadAndInsertImage = async (imageFile: File) => {
+        try {
+          let blob: Blob;
+          let filename: string;
+          if (imageFile.type === 'image/gif') {
+            blob = imageFile;
+            filename = imageFile.name;
+          } else {
+            const bitmap = await createImageBitmap(imageFile);
+            const MAX = 1920;
+            let w = bitmap.width, h = bitmap.height;
+            if (w > MAX || h > MAX) {
+              const ratio = Math.min(MAX / w, MAX / h);
+              w = Math.round(w * ratio);
+              h = Math.round(h * ratio);
+            }
+            const canvas = new OffscreenCanvas(w, h);
+            const ctx = canvas.getContext('2d')!;
+            ctx.drawImage(bitmap, 0, 0, w, h);
+            blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+            bitmap.close();
+            filename = imageFile.name.replace(/\.[^/.]+$/, '') + '.webp';
+          }
+          const formData = new FormData();
+          formData.append('file', blob, filename);
+          const token = localStorage.getItem('koimsurai_user_token');
+          const res = await fetch('/api/admin/upload', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+          });
+          if (!res.ok) throw new Error('Upload failed');
+          const data = await res.json();
+          const position = editor.getPosition();
+          if (position) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const monacoNs = (window as any).monaco;
+            if (monacoNs) {
+              const altText = imageFile.name.replace(/\.[^/.]+$/, '');
+              editor.executeEdits('drop-image', [{
+                range: new monacoNs.Range(position.lineNumber, position.column, position.lineNumber, position.column),
+                text: `![${altText}](${data.url})\n`,
+              }]);
+            }
+          }
+        } catch (err) {
+          console.error('Drop/Upload image error:', err);
+          alert('圖片上傳失敗');
+        }
+      };
+
+      const dragOverHandler = (e: DragEvent) => {
+        if (!e.dataTransfer) return;
+        const hasFile = Array.from(e.dataTransfer.items || []).some(it => it.kind === 'file');
+        if (!hasFile) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        domNode.classList.add('monaco-drop-active');
+      };
+      const dragLeaveHandler = () => domNode.classList.remove('monaco-drop-active');
+      const dropHandler = async (e: DragEvent) => {
+        domNode.classList.remove('monaco-drop-active');
+        if (!e.dataTransfer?.files?.length) return;
+        const imageFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        if (!imageFiles.length) return;
+        e.preventDefault();
+        e.stopPropagation();
+        for (const f of imageFiles) {
+          // eslint-disable-next-line no-await-in-loop
+          await uploadAndInsertImage(f);
+        }
+      };
+      domNode.addEventListener('dragover', dragOverHandler);
+      domNode.addEventListener('dragleave', dragLeaveHandler);
+      domNode.addEventListener('drop', dropHandler);
+      disposablesRef.current.push({
+        dispose: () => {
+          domNode.removeEventListener('dragover', dragOverHandler);
+          domNode.removeEventListener('dragleave', dragLeaveHandler);
+          domNode.removeEventListener('drop', dropHandler);
+        }
+      });
+
+      /* ── 斜線指令選單（markdown 模板插入）── */
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const monacoNs = (window as any).monaco;
+      if (monacoNs && monacoNs.languages) {
+        const slashSnippets = [
+          { label: '/note', detail: 'GitHub Callout: Note', body: '> [!NOTE]\n> $0' },
+          { label: '/tip', detail: 'GitHub Callout: Tip', body: '> [!TIP]\n> $0' },
+          { label: '/important', detail: 'GitHub Callout: Important', body: '> [!IMPORTANT]\n> $0' },
+          { label: '/warning', detail: 'GitHub Callout: Warning', body: '> [!WARNING]\n> $0' },
+          { label: '/caution', detail: 'GitHub Callout: Caution', body: '> [!CAUTION]\n> $0' },
+          { label: '/code', detail: '程式碼區塊', body: '```${1:ts}\n$0\n```' },
+          { label: '/mermaid', detail: 'Mermaid 圖表', body: '```mermaid\nflowchart LR\n  A[$1] --> B[$0]\n```' },
+          { label: '/table', detail: '表格', body: '| ${1:標題} | ${2:標題} |\n| --- | --- |\n| $3 | $0 |' },
+          { label: '/details', detail: '可摺疊區塊', body: '<details>\n<summary>${1:點我展開}</summary>\n\n$0\n\n</details>' },
+          { label: '/img', detail: '圖片', body: '![${1:alt}](${2:url})' },
+          { label: '/fn', detail: '腳註', body: '${1:內文}[^${2:1}]\n\n[^${2:1}]: $0' },
+        ];
+        const provider = monacoNs.languages.registerCompletionItemProvider('markdown', {
+          triggerCharacters: ['/'],
+          provideCompletionItems: (model: any, position: any) => {
+            const lineUntil = model.getValueInRange({
+              startLineNumber: position.lineNumber, startColumn: 1,
+              endLineNumber: position.lineNumber, endColumn: position.column,
+            });
+            const m = /(^|\s)(\/[a-z]*)$/.exec(lineUntil);
+            if (!m) return { suggestions: [] };
+            const slash = m[2];
+            const startCol = position.column - slash.length;
+            const range = new monacoNs.Range(position.lineNumber, startCol, position.lineNumber, position.column);
+            return {
+              suggestions: slashSnippets.map(s => ({
+                label: s.label,
+                kind: monacoNs.languages.CompletionItemKind.Snippet,
+                insertText: s.body,
+                insertTextRules: monacoNs.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                detail: s.detail,
+                range,
+              })),
+            };
+          },
+        });
+        disposablesRef.current.push(provider);
+      }
     },
     []
   );
