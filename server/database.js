@@ -234,6 +234,20 @@ function initializeDatabase() {
             });
           }
         });
+
+        // 系列文（Series）支援
+        const seriesColumns = [
+          { name: 'series_name', type: 'TEXT DEFAULT NULL' },
+          { name: 'series_order', type: 'INTEGER DEFAULT NULL' },
+        ];
+        seriesColumns.forEach(col => {
+          if (!existing.has(col.name)) {
+            db.run(`ALTER TABLE posts ADD COLUMN ${col.name} ${col.type}`, (alterErr) => {
+              if (alterErr) console.error(`series migration: 新增 ${col.name} 錯誤:`, alterErr);
+              else console.log(`series migration: ${col.name} 欄位新增成功`);
+            });
+          }
+        });
       });
     }, 500);
 
@@ -325,6 +339,18 @@ function initializeDatabase() {
         FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
         FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
         PRIMARY KEY (post_id, tag_id)
+      )
+    `);
+
+    // Emoji 反應表 — 每個 (post_id, emoji) 一列，count 累計
+    db.run(`
+      CREATE TABLE IF NOT EXISTS post_reactions (
+        post_id INTEGER NOT NULL,
+        emoji TEXT NOT NULL,
+        count INTEGER DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (post_id, emoji),
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
       )
     `);
 

@@ -46,15 +46,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install only the lightweight dependencies needed for serve.cjs
 RUN npm install express@4 sharp@0.33 compression@1
 
-# Generate default OG image (SVG → PNG) — must await the async sharp call
+# Generate default OG image (SVG → PNG) + PWA icons (192 / 512 / maskable)
 RUN node -e "\
 (async () => {\
   const sharp = require('sharp');\
   const fs = require('fs');\
-  const svg = fs.readFileSync('./dist/og-default.svg');\
-  await sharp(svg).resize(1200, 630).png({quality: 90}).toFile('./dist/og-default.png');\
-  console.log('OG default image generated');\
-})().catch(e => { console.error('OG image gen failed:', e.message); process.exit(1); });\
+  const og = fs.readFileSync('./dist/og-default.svg');\
+  await sharp(og).resize(1200, 630).png({quality: 90}).toFile('./dist/og-default.png');\
+  const icon = fs.readFileSync('./dist/pwa-icon.svg');\
+  await sharp(icon).resize(192, 192).png().toFile('./dist/pwa-192.png');\
+  await sharp(icon).resize(512, 512).png().toFile('./dist/pwa-512.png');\
+  await sharp(icon).resize(512, 512).png().toFile('./dist/pwa-maskable-512.png');\
+  console.log('OG + PWA icons generated');\
+})().catch(e => { console.error('Image gen failed:', e.message); process.exit(1); });\
 "
 
 # Expose the port the app runs on

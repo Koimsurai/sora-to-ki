@@ -145,6 +145,9 @@ export default function PostEditor() {
       title_en: '', content_en: '', summary_en: '',
       title_zh_cn: '', content_zh_cn: '', summary_zh_cn: '',
       title_ja: '', content_ja: '', summary_ja: '',
+      // 系列文
+      series_name: '',
+      series_order: '',
     },
   });
 
@@ -275,6 +278,8 @@ export default function PostEditor() {
           title_en: data.title_en || '', content_en: data.content_en || '', summary_en: data.excerpt_en || '',
           title_zh_cn: data.title_zh_cn || '', content_zh_cn: data.content_zh_cn || '', summary_zh_cn: data.excerpt_zh_cn || '',
           title_ja: data.title_ja || '', content_ja: data.content_ja || '', summary_ja: data.excerpt_ja || '',
+          series_name: data.series_name || '',
+          series_order: data.series_order ?? '',
         };
         form.reset(formattedData);
         setActiveLocale(data.source_language || 'zh-TW');
@@ -943,6 +948,51 @@ export default function PostEditor() {
                           </FormItem>
                         );
                       }}
+                    />
+                  </div>
+                </div>
+
+                {/* Series — 系列文 */}
+                <div>
+                  <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5" />
+                    系列文（選填）
+                  </h3>
+                  <div className="space-y-3">
+                    <FormField
+                      control={form.control}
+                      name="series_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">系列名稱</FormLabel>
+                          <FormControl>
+                            <input
+                              {...field}
+                              placeholder="如：Rust 學習筆記"
+                              className="h-8 w-full rounded-md bg-accent/30 px-2 text-sm outline-none focus:bg-accent/50 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="series_order"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">順序（數字越小越前面）</FormLabel>
+                          <FormControl>
+                            <input
+                              type="number"
+                              {...field}
+                              placeholder="例：1"
+                              className="h-8 w-full rounded-md bg-accent/30 px-2 text-sm outline-none focus:bg-accent/50 transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
                 </div>

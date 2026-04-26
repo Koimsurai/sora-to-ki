@@ -5,8 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import rehypeRaw from 'rehype-raw';
 import pangu from 'pangu';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter/dist/esm';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { highlightCode } from '../lib/shikiHighlight';
 import mermaid from 'mermaid';
 import elkLayouts from '@mermaid-js/layout-elk';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
@@ -607,6 +606,7 @@ const LinkCard = ({ href }) => {
    ══════════════════════════ */
 const CodeBlock = ({ node, inline, className, children, ...props }) => {
   const [isCopied, setIsCopied] = useState(false);
+  const [highlighted, setHighlighted] = useState(null);
   const match = /language-(\w+)/.exec(className || '');
   const lang = match ? match[1] : 'text';
   const codeText = String(children).replace(/\n$/, '');
@@ -616,6 +616,20 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
     !inline && (lang === 'text' || !match) &&
     /^(---|graph\s|flowchart\s|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|mindmap|timeline|quadrantChart|sankey)/m.test(codeText.trim())
   );
+
+  // Shiki lazy 反白 — 渲染後 idle 才開始，載入前先顯示 plain pre
+  useEffect(() => {
+    if (inline || isMermaid || !match) return;
+    let cancelled = false;
+    const idle = (cb) => (window.requestIdleCallback ? window.requestIdleCallback(cb, { timeout: 1500 }) : setTimeout(cb, 80));
+    idle(() => {
+      highlightCode(codeText, lang).then((html) => {
+        if (!cancelled) setHighlighted(html);
+      }).catch(() => { /* fallback 留 plain pre */ });
+    });
+    return () => { cancelled = true; };
+  }, [codeText, lang, inline, isMermaid, match]);
+
   if (!inline && isMermaid) {
     return <MermaidBlock code={codeText} />;
   }
@@ -627,28 +641,24 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
     });
   };
 
-  return !inline && match ? (
-    <div className="code-block-wrapper">
-      <div className="code-block-header">
-        <span className="language-name">{lang}</span>
-        <button onClick={handleCopy} className="copy-button">
-          {isCopied ? '已複製!' : '複製'}
-        </button>
+  if (!inline && match) {
+    return (
+      <div className="code-block-wrapper">
+        <div className="code-block-header">
+          <span className="language-name">{lang}</span>
+          <button onClick={handleCopy} className="copy-button">
+            {isCopied ? '已複製!' : '複製'}
+          </button>
+        </div>
+        {highlighted ? (
+          <div className="shiki-output" dangerouslySetInnerHTML={{ __html: highlighted }} />
+        ) : (
+          <pre className="shiki-fallback"><code>{codeText}</code></pre>
+        )}
       </div>
-      <SyntaxHighlighter
-        style={vscDarkPlus}
-        language={lang}
-        PreTag="div"
-        customStyle={{ margin: 0, padding: '2rem', background: 'transparent', fontSize: '0.95rem', lineHeight: '1.6' }}
-        codeTagProps={{ style: { background: 'none', padding: 0, fontFamily: "'Fira Code','JetBrains Mono',monospace" } }}
-        {...props}
-      >
-        {codeText}
-      </SyntaxHighlighter>
-    </div>
-  ) : (
-    <code className={className} {...props}>{children}</code>
-  );
+    );
+  }
+  return <code className={className} {...props}>{children}</code>;
 };
 
 /* ══════════════════════════
@@ -816,6 +826,118 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
     </span>
   );
 };
+
+/* ══════════════════════════
+   ReactionBar — Emoji 反應列
+   ══════════════════════════ */
+const REACTIONS = ['👍', '❤️', '🎉', '🚀', '🤔', '😂'];
+const Reactions = React.memo(({ postId }) => {
+  const [counts, setCounts] = useState({});
+  const [mine, setMine] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(`reactions:${postId}`) || '[]')); }
+    catch { return new Set(); }
+  });
+
+  useEffect(() => {
+    if (!postId) return;
+    fetch(`/api/posts/${postId}/reactions`)
+      .then(r => r.json())
+      .then(data => {
+        const map = {};
+        (data.reactions || []).forEach(r => { map[r.emoji] = r.count; });
+        setCounts(map);
+      })
+      .catch(() => {});
+  }, [postId]);
+
+  const toggle = useCallback((emoji) => {
+    const has = mine.has(emoji);
+    const delta = has ? -1 : 1;
+    // optimistic
+    setCounts(c => ({ ...c, [emoji]: Math.max(0, (c[emoji] || 0) + delta) }));
+    setMine(prev => {
+      const next = new Set(prev);
+      if (has) next.delete(emoji); else next.add(emoji);
+      try { localStorage.setItem(`reactions:${postId}`, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+    fetch(`/api/posts/${postId}/reactions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emoji, delta }),
+    }).then(r => r.json()).then(data => {
+      if (typeof data?.count === 'number') {
+        setCounts(c => ({ ...c, [emoji]: data.count }));
+      }
+    }).catch(() => { /* 失敗就保持 optimistic 結果 */ });
+  }, [mine, postId]);
+
+  return (
+    <div className="reaction-bar" role="group" aria-label="Emoji 反應">
+      {REACTIONS.map(e => {
+        const n = counts[e] || 0;
+        const active = mine.has(e);
+        return (
+          <button
+            key={e}
+            type="button"
+            className={`reaction-btn${active ? ' is-active' : ''}${n > 0 ? ' has-count' : ''}`}
+            onClick={() => toggle(e)}
+            aria-pressed={active}
+            aria-label={`${e}（${n}）`}
+          >
+            <span className="reaction-emoji">{e}</span>
+            {n > 0 && <span className="reaction-count">{n}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+});
+Reactions.displayName = 'Reactions';
+
+/* ══════════════════════════
+   SeriesNav — 系列文導覽（若文章屬於某系列）
+   ══════════════════════════ */
+const SeriesNav = React.memo(({ seriesName, currentId }) => {
+  const [posts, setPosts] = useState([]);
+  useEffect(() => {
+    if (!seriesName) return;
+    fetch(`/api/series/${encodeURIComponent(seriesName)}`)
+      .then(r => r.json())
+      .then(data => setPosts(data.posts || []))
+      .catch(() => setPosts([]));
+  }, [seriesName]);
+  if (!seriesName || posts.length === 0) return null;
+  const currentIdx = posts.findIndex(p => String(p.id) === String(currentId));
+  return (
+    <aside className="series-nav" aria-label={`系列文：${seriesName}`}>
+      <header className="series-nav-header">
+        <span className="series-nav-label">系列文</span>
+        <h4 className="series-nav-name">{seriesName}</h4>
+        <span className="series-nav-progress">
+          共 {posts.length} 篇 · 你正在讀第 {currentIdx >= 0 ? currentIdx + 1 : '?'} 篇
+        </span>
+      </header>
+      <ol className="series-nav-list">
+        {posts.map((p, i) => {
+          const isCurrent = String(p.id) === String(currentId);
+          return (
+            <li key={p.id} className={`series-nav-item${isCurrent ? ' is-current' : ''}`}>
+              <span className="series-nav-num">{p.series_order ?? i + 1}</span>
+              {isCurrent ? (
+                <span className="series-nav-title">{p.title}</span>
+              ) : (
+                <Link to={`/blog/${p.id}`} className="series-nav-title" viewTransition>{p.title}</Link>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </aside>
+  );
+});
+SeriesNav.displayName = 'SeriesNav';
 
 /* ══════════════════════════
    PrevNextNav — 文章底部上/下一篇導覽
@@ -1607,7 +1729,7 @@ function BlogPost() {
         title={post.title}
         description={seoDescription}
         path={selfPath}
-        image={'/og-image/' + id}
+        image={`/api/og/${id}.png`}
         type="article"
         locale={currentLocale}
         alternates={alternates}
@@ -1750,6 +1872,12 @@ function BlogPost() {
               </article>
               <SignatureSVG className="blog-signature" />
             </div>
+
+            {/* ── Emoji 反應 ── */}
+            <Reactions postId={id} />
+
+            {/* ── Series 系列文導覽 ── */}
+            {post.series_name && <SeriesNav seriesName={post.series_name} currentId={id} />}
 
             {/* ── Prev / Next ── */}
             <PrevNextNav currentId={id} />

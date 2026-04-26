@@ -5,6 +5,7 @@ import path from 'path'; // 引入 path 模組用於路徑別名
 
 console.log(`[VITE-CONFIG-LOAD] ${new Date().toISOString()} - vite.config.js file is being parsed.`);
 import { visualizer } from 'rollup-plugin-visualizer'; // 引入 visualizer
+import { VitePWA } from 'vite-plugin-pwa';
 
 // 自訂插件用於記錄 IP 和請求
 const MyIpLoggerPlugin = () => {
@@ -95,6 +96,56 @@ export default defineConfig(({ command }) => {
     plugins: [
       react(),
       MyIpLoggerPlugin(), // <-- 加入自訂插件
+      VitePWA({
+        registerType: 'autoUpdate',
+        injectRegister: 'auto',
+        // pwa-icon.svg / pwa-192/512.png 由 Dockerfile build 階段以 sharp 產生
+        includeAssets: ['favicon.ico', 'pwa-icon.svg', 'og-default.png'],
+        manifest: {
+          name: 'Koimsurai · 楊泰和',
+          short_name: 'Koimsurai',
+          description: '全端工程師楊泰和的個人網站，作品集、技術筆記、攝影。',
+          theme_color: '#7f5af0',
+          background_color: '#06030f',
+          display: 'standalone',
+          start_url: '/',
+          scope: '/',
+          lang: 'zh-TW',
+          icons: [
+            { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
+            { src: '/pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          ],
+        },
+        workbox: {
+          // 不快取 /api/* 與後端 API 結果，避免讀到舊資料；只快取靜態資源
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/api/, /^\/rss/, /^\/sitemap.xml/],
+          globPatterns: ['**/*.{js,css,html,woff2,ico}', 'pwa-*.png', 'pwa-icon.svg', 'favicon.ico'],
+          globIgnores: ['generated/**', 'photos/**', 'textures/**', 'videos/**', 'Resume/**', '**/*.map'],
+          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+          runtimeCaching: [
+            {
+              urlPattern: /^\/api\/posts(\?|\/|$)/,
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'api-posts',
+                networkTimeoutSeconds: 4,
+                expiration: { maxEntries: 64, maxAgeSeconds: 60 * 30 },
+              },
+            },
+            {
+              urlPattern: /\/(uploads|nas-images)\//,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'images',
+                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              },
+            },
+          ],
+        },
+        devOptions: { enabled: false },
+      }),
       // 只在 build 指令時啟用 visualizer (open: false 避免在 Docker 中打開瀏覽器)
       ...(command === 'build' ? [visualizer({ open: false, gzipSize: true, brotliSize: true, filename: 'stats.html' })] : []),
     ],
@@ -162,7 +213,8 @@ export default defineConfig(({ command }) => {
             'vendor-monaco': ['monaco-editor', '@monaco-editor/react'],
             'vendor-mermaid': ['mermaid'],
             'vendor-ui': ['framer-motion', 'recharts', 'swiper'],
-            'vendor-markdown': ['react-markdown', 'react-syntax-highlighter', 'rehype-raw', 'remark-gfm', 'remark-github-blockquote-alert'],
+            'vendor-markdown': ['react-markdown', 'rehype-raw', 'remark-gfm', 'remark-github-blockquote-alert'],
+            'vendor-shiki': ['shiki'],
             'vendor-cmdk': ['cmdk'],
           },
         },

@@ -813,6 +813,8 @@ apiRouter.get('/posts/:id', (req, res) => {
       view_count: row.view_count,
       likes: row.likes,
       layout_type: row.layout_type,
+      series_name: row.series_name || null,
+      series_order: row.series_order ?? null,
       created_at: row.created_at,
       updated_at: row.updated_at,
       locale: requestedLocale,
@@ -821,6 +823,164 @@ apiRouter.get('/posts/:id', (req, res) => {
       available_locales: availableLocales(row),
       tags: row.tags ? row.tags.split(',') : [],
     });
+  });
+});
+
+// 自動 OG 圖：依文章內容動態生成（SVG → PNG via sharp）
+const _ogCache = new Map(); // postId → { png: Buffer, etag, key }
+function _escXml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function _wrapTitle(title, maxCharsPerLine = 18, maxLines = 3) {
+  const t = String(title || '').trim();
+  const out = [];
+  let line = '';
+  for (const ch of t) {
+    if (line.length >= maxCharsPerLine) { out.push(line); line = ''; if (out.length >= maxLines) break; }
+    line += ch;
+  }
+  if (line && out.length < maxLines) out.push(line);
+  if (out.length === maxLines && t.length > out.join('').length) {
+    out[maxLines - 1] = out[maxLines - 1].slice(0, maxCharsPerLine - 1) + '…';
+  }
+  return out;
+}
+apiRouter.get('/og/:id.png', (req, res) => {
+  if (!sharp) return res.status(500).send('sharp unavailable');
+  const id = req.params.id;
+  db.get('SELECT id, title, category, created_at, updated_at FROM posts WHERE id = ?', [id], async (err, row) => {
+    if (err || !row) return res.status(404).send('not found');
+    const cacheKey = `${row.id}::${row.updated_at || row.created_at}::${row.title}`;
+    const cached = _ogCache.get(row.id);
+    if (cached && cached.key === cacheKey && req.headers['if-none-match'] === cached.etag) {
+      res.status(304).end();
+      return;
+    }
+    if (cached && cached.key === cacheKey) {
+      res.set('Content-Type', 'image/png');
+      res.set('ETag', cached.etag);
+      res.set('Cache-Control', 'public, max-age=300, s-maxage=86400');
+      return res.send(cached.png);
+    }
+
+    const lines = _wrapTitle(row.title, 16, 3);
+    const date = (row.created_at || '').slice(0, 10);
+    const cat = row.category || '手記';
+    const titleSvg = lines.map((l, i) =>
+      `<text x="80" y="${250 + i * 90}" font-family="Noto Sans CJK TC, HarmonyOS Sans SC, sans-serif" font-size="76" font-weight="700" fill="#ffffff">${_escXml(l)}</text>`
+    ).join('');
+    const svg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a1a"/>
+      <stop offset="50%" stop-color="#11102a"/>
+      <stop offset="100%" stop-color="#1a0a2e"/>
+    </linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e0c3fc"/>
+      <stop offset="50%" stop-color="#7f5af0"/>
+      <stop offset="100%" stop-color="#dc3278"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0.2" r="0.45">
+      <stop offset="0%" stop-color="#7f5af0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#7f5af0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect x="80" y="84" width="120" height="4" fill="url(#brand)" rx="2"/>
+  <text x="80" y="140" font-family="Noto Sans CJK TC, HarmonyOS Sans SC, sans-serif" font-size="28" font-weight="600" fill="#c4b5fd" letter-spacing="2">${_escXml(cat).toUpperCase()}</text>
+  ${titleSvg}
+  <text x="80" y="560" font-family="Noto Sans CJK TC, HarmonyOS Sans SC, sans-serif" font-size="26" font-weight="400" fill="rgba(255,255,255,0.55)">${_escXml(date)} · koimsurai.com</text>
+  <text x="1120" y="560" text-anchor="end" font-family="Noto Sans CJK TC, HarmonyOS Sans SC, sans-serif" font-size="32" font-weight="700" fill="url(#brand)">Koimsurai</text>
+</svg>`;
+    try {
+      const png = await sharp(Buffer.from(svg)).resize(1200, 630).png({ quality: 90 }).toBuffer();
+      const etag = `"og-${row.id}-${Buffer.from(cacheKey).toString('base64').slice(0, 12)}"`;
+      _ogCache.set(row.id, { png, etag, key: cacheKey });
+      res.set('Content-Type', 'image/png');
+      res.set('ETag', etag);
+      res.set('Cache-Control', 'public, max-age=300, s-maxage=86400');
+      res.send(png);
+    } catch (e) {
+      console.error('OG generation failed:', e.message);
+      res.status(500).send('og generation failed');
+    }
+  });
+});
+
+// Emoji 反應：取得文章的所有 reaction 統計
+apiRouter.get('/posts/:id/reactions', (req, res) => {
+  db.all(
+    'SELECT emoji, count FROM post_reactions WHERE post_id = ? AND count > 0 ORDER BY count DESC',
+    [req.params.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ reactions: rows || [] });
+    }
+  );
+});
+
+// Emoji 反應：新增或減少（delta = +1 或 -1）
+apiRouter.post('/posts/:id/reactions', (req, res) => {
+  const { emoji, delta = 1 } = req.body || {};
+  const ALLOWED = ['👍', '❤️', '🎉', '🚀', '🤔', '😂'];
+  if (!ALLOWED.includes(emoji)) {
+    return res.status(400).json({ error: 'invalid emoji' });
+  }
+  const d = delta === -1 ? -1 : 1;
+  const postId = req.params.id;
+  // upsert + clamp 到 0
+  db.run(
+    `INSERT INTO post_reactions (post_id, emoji, count, updated_at)
+     VALUES (?, ?, MAX(0, ?), datetime('now'))
+     ON CONFLICT(post_id, emoji) DO UPDATE SET
+       count = MAX(0, count + ?),
+       updated_at = datetime('now')`,
+    [postId, emoji, d, d],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      db.get(
+        'SELECT count FROM post_reactions WHERE post_id = ? AND emoji = ?',
+        [postId, emoji],
+        (err2, row) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.json({ emoji, count: row ? row.count : 0 });
+        }
+      );
+    }
+  );
+});
+
+// 系列文：列出所有系列
+apiRouter.get('/series', (req, res) => {
+  const sql = `
+    SELECT series_name AS name, COUNT(*) AS count, MIN(created_at) AS first_at, MAX(created_at) AS last_at
+    FROM posts
+    WHERE series_name IS NOT NULL AND series_name <> '' AND status = 'published'
+    GROUP BY series_name
+    ORDER BY last_at DESC
+  `;
+  db.all(sql, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ series: rows || [] });
+  });
+});
+
+// 系列文：取得某個系列的所有文章（按 series_order 排序，後備 created_at）
+apiRouter.get('/series/:name', (req, res) => {
+  const sql = `
+    SELECT id, title, excerpt, series_name, series_order, created_at
+    FROM posts
+    WHERE series_name = ? AND status = 'published'
+    ORDER BY
+      CASE WHEN series_order IS NULL THEN 1 ELSE 0 END,
+      series_order ASC,
+      created_at ASC
+  `;
+  db.all(sql, [req.params.name], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ name: req.params.name, posts: rows || [] });
   });
 });
 
@@ -1243,6 +1403,7 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
     title_en, content_en, excerpt_en,
     title_zh_cn, content_zh_cn, excerpt_zh_cn,
     title_ja, content_ja, excerpt_ja,
+    series_name, series_order,
   } = req.body;
 
   if (!title || !content) {
@@ -1259,9 +1420,10 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
       title_en, content_en, excerpt_en,
       title_zh_cn, content_zh_cn, excerpt_zh_cn,
       title_ja, content_ja, excerpt_ja,
+      series_name, series_order,
       created_at, updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `;
   const params = [
     title, content, excerpt, category || null, status, 'Koimsurai', layout_type,
@@ -1269,6 +1431,8 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
     title_en || null, content_en || null, excerpt_en || null,
     title_zh_cn || null, content_zh_cn || null, excerpt_zh_cn || null,
     title_ja || null, content_ja || null, excerpt_ja || null,
+    (series_name && String(series_name).trim()) ? String(series_name).trim() : null,
+    Number.isFinite(Number(series_order)) ? Number(series_order) : null,
   ];
 
   db.run(sql, params, function (err) {
@@ -1306,6 +1470,7 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
     title_en, content_en, excerpt_en,
     title_zh_cn, content_zh_cn, excerpt_zh_cn,
     title_ja, content_ja, excerpt_ja,
+    series_name, series_order,
   } = req.body;
 
   if (source_language !== undefined && !I18N_LOCALES.includes(source_language)) {
@@ -1323,6 +1488,13 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
   const nb_title_ja = toNullable(title_ja);
   const nb_content_ja = toNullable(content_ja);
   const nb_excerpt_ja = toNullable(excerpt_ja);
+
+  const nb_series_name = (series_name === undefined)
+    ? undefined
+    : (series_name === '' || series_name === null ? null : String(series_name).trim());
+  const nb_series_order = (series_order === undefined)
+    ? undefined
+    : (series_order === '' || series_order === null || !Number.isFinite(Number(series_order)) ? null : Number(series_order));
 
   const sql = `
     UPDATE posts SET
@@ -1342,6 +1514,8 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
       title_ja       = CASE WHEN ? = 1 THEN ? ELSE title_ja END,
       content_ja     = CASE WHEN ? = 1 THEN ? ELSE content_ja END,
       excerpt_ja     = CASE WHEN ? = 1 THEN ? ELSE excerpt_ja END,
+      series_name    = CASE WHEN ? = 1 THEN ? ELSE series_name END,
+      series_order   = CASE WHEN ? = 1 THEN ? ELSE series_order END,
       updated_at = datetime('now')
     WHERE id = ?
   `;
@@ -1358,6 +1532,8 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
     flag(nb_title_ja), nb_title_ja ?? null,
     flag(nb_content_ja), nb_content_ja ?? null,
     flag(nb_excerpt_ja), nb_excerpt_ja ?? null,
+    flag(nb_series_name), nb_series_name ?? null,
+    flag(nb_series_order), nb_series_order ?? null,
     req.params.id,
   ];
 
