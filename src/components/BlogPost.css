@@ -503,33 +503,34 @@
   .prev-next-nav { grid-template-columns: 1fr; }
 }
 
-/* ── Emoji 反應列 ── */
+/* ── Emoji 反應列：清爽、無背景、置中 ── */
 .reaction-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 2rem 0 1rem;
-  padding: 1rem 1.2rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 2.8rem auto 1.2rem;
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 .reaction-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 0.35rem;
+  padding: 0.32rem 0.7rem;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.92rem;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.15s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 .reaction-btn:hover {
-  background: rgba(127, 90, 240, 0.12);
-  border-color: rgba(127, 90, 240, 0.3);
+  background: rgba(127, 90, 240, 0.13);
+  border-color: rgba(127, 90, 240, 0.32);
+  color: #fff;
   transform: translateY(-1px);
 }
 .reaction-btn.is-active {
@@ -539,13 +540,13 @@
   box-shadow: 0 0 12px rgba(127, 90, 240, 0.25);
 }
 .reaction-btn .reaction-emoji {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   line-height: 1;
 }
 .reaction-btn .reaction-count {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.65);
   font-variant-numeric: tabular-nums;
 }
 .reaction-btn.is-active .reaction-count {
@@ -1806,20 +1807,27 @@ a.series-nav-title:hover {
   background: rgba(127, 90, 240, 0.25);
 }
 
-/* ── Shiki 反白輸出 ── */
+/* ── Shiki 反白輸出 ──
+   重點：水平 scroll 容器只放 block padding，inline padding 放在 pre 上並用 width:max-content
+   這樣即使滾到行尾也看得見右側 padding（避免 overflow + padding 的常見坑）
+*/
 .code-block-wrapper .shiki-output,
 .code-block-wrapper .shiki-fallback {
   margin: 0;
   overflow-x: auto;
+  padding: 1.5rem 0;
 }
 .code-block-wrapper .shiki-output pre.shiki,
 .code-block-wrapper .shiki-fallback {
   margin: 0 !important;
-  padding: 1.5rem 2rem !important;
+  padding: 0 2rem !important;
   background: transparent !important;
   font-size: 0.95rem;
   line-height: 1.7;
   font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace !important;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: content-box;
 }
 .code-block-wrapper .shiki-output code {
   background: none !important;

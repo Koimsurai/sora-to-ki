@@ -226,9 +226,15 @@ export default function PostEditor() {
   }, [zenMode]);
 
   // Zen 模式時隱藏 admin 側欄與 header（透過 body class）
+  // 切換完 dispatch resize 讓 Monaco 重新計算尺寸（automaticLayout 監聽 ResizeObserver）
   useEffect(() => {
     document.body.classList.toggle('zen-mode-active', zenMode);
-    return () => document.body.classList.remove('zen-mode-active');
+    // 等下一個 frame，確保 CSS 套用完才觸發 resize
+    const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
+    return () => {
+      clearTimeout(t);
+      document.body.classList.remove('zen-mode-active');
+    };
   }, [zenMode]);
 
   // 載入文章數據（如果是編輯模式）

@@ -321,20 +321,29 @@
   background: rgba(239, 68, 68, 0.3) !important;
 }
 
-/* ── Zen 模式：寫作專注，隱藏側欄 / header / 右側 sidebar ── */
-body.zen-mode-active .admin-layout aside,
+/* ── Zen 模式：寫作專注 ──
+   admin sidebar 是 fixed + 右側欄用 ml-52 偏移，所以兩者都要重置才不會留下黑洞。
+   Monaco 進入 / 離開 Zen 時會主動 dispatch resize 重算尺寸（PostEditor.jsx）。
+*/
+body.zen-mode-active .admin-layout > aside,
 body.zen-mode-active .admin-layout > div > header {
   display: none !important;
 }
 body.zen-mode-active .admin-layout > div {
-  width: 100vw !important;
   margin-left: 0 !important;
+  margin-right: 0 !important;
+  width: 100% !important;
 }
-body.zen-mode-active aside.w-80 {
+body.zen-mode-active .admin-layout > div > main {
+  min-height: 100vh !important;
+}
+/* PostEditor 右側 metadata 面板（form 內 aside.w-[280px]）— Zen 中藏起來 */
+body.zen-mode-active .admin-layout > div > main form > aside {
   display: none !important;
 }
-body.zen-mode-active main {
-  max-width: 880px !important;
+/* 編輯器主欄置中、限寬 */
+body.zen-mode-active .admin-layout > div > main form > main {
+  max-width: 920px !important;
   margin: 0 auto !important;
-  padding: 3rem 2rem !important;
+  padding: 2.5rem 2rem !important;
 }
