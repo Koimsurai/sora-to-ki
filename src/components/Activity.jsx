@@ -242,9 +242,22 @@ const Activity = () => {
           <div className="activity-nebula-dust" />
         </div>
         <div className="activity-loading">
-          <div className="activity-loader" />
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-            載入活動數據中...
+          <div className="koim-loader" aria-hidden>
+            <div className="koim-loader-orbit koim-loader-orbit-1" />
+            <div className="koim-loader-orbit koim-loader-orbit-2" />
+            <div className="koim-loader-core" />
+            <div className="koim-loader-glow" />
+          </div>
+          <motion.p
+            className="koim-loader-text"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            載入活動數據
+            <span className="koim-loader-dots">
+              <i></i><i></i><i></i>
+            </span>
           </motion.p>
         </div>
       </div>
@@ -386,9 +399,9 @@ const Activity = () => {
                     </div>
                   )}
                 </div>
-                <div className="steam-profile-cta">
-                  Steam <span aria-hidden>→</span>
-                </div>
+                <span className="koim-btn steam-profile-cta-btn">
+                  Steam<span aria-hidden>→</span>
+                </span>
               </div>
             </motion.a>
           );

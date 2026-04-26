@@ -4,6 +4,130 @@ html, body {
   padding: 0;
 }
 
+/* ═══════════════════════════════════════════════════
+   Koim 全域按鈕（精緻玻璃 + 漸層光暈，柔和 hover）
+   用法：<a class="koim-btn">…</a>
+        + 修飾：koim-btn--primary / --ghost / --sm / --lg
+   ═══════════════════════════════════════════════════ */
+.koim-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.3rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  cursor: pointer;
+  background:
+    linear-gradient(135deg, rgba(127, 90, 240, 0.16) 0%, rgba(220, 50, 120, 0.10) 100%),
+    rgba(20, 18, 38, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 4px 16px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* 漸層邊框：靜態淡，hover 才浮現 */
+.koim-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(224, 195, 252, 0.55), rgba(127, 90, 240, 0.45) 45%, rgba(220, 50, 120, 0.35));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+/* 底部光暈：hover 從下方升起 */
+.koim-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 50% 120%, rgba(127, 90, 240, 0.32), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.koim-btn > * { position: relative; z-index: 2; }
+.koim-btn:hover {
+  color: #fff;
+  transform: translateY(-1px);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 8px 24px rgba(127, 90, 240, 0.22),
+    0 0 32px rgba(220, 50, 120, 0.1);
+}
+.koim-btn:hover::before { opacity: 1; }
+.koim-btn:hover::after { opacity: 1; }
+.koim-btn:active { transform: translateY(0); transition-duration: 0.1s; }
+.koim-btn:focus-visible {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 0 0 2px rgba(127, 90, 240, 0.5),
+    0 8px 24px rgba(127, 90, 240, 0.22);
+}
+
+/* primary — 漸層滿底 */
+.koim-btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, #7f5af0 0%, #a45cf0 50%, #dc3278 100%);
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 8px 26px rgba(127, 90, 240, 0.32);
+}
+.koim-btn--primary::before { display: none; }
+.koim-btn--primary:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 12px 34px rgba(127, 90, 240, 0.42),
+    0 0 42px rgba(220, 50, 120, 0.22);
+}
+
+/* ghost — 最低調 */
+.koim-btn--ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.koim-btn--ghost:hover {
+  background: rgba(127, 90, 240, 0.08);
+  border-color: rgba(127, 90, 240, 0.3);
+  box-shadow: 0 4px 14px rgba(127, 90, 240, 0.1);
+}
+
+.koim-btn--sm { padding: 0.45rem 0.95rem; font-size: 0.8rem; border-radius: 9px; }
+.koim-btn--lg { padding: 0.95rem 1.7rem; font-size: 0.95rem; border-radius: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .koim-btn,
+  .koim-btn::before,
+  .koim-btn::after { transition: none; }
+  .koim-btn:hover { transform: none; }
+}
+
 /* 確保 App 容器有背景色，否則星星看不見 */
 .App {
   position: relative; /* 為了讓 fixed 定位的子元素正確 */
