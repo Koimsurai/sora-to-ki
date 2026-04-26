@@ -712,12 +712,46 @@
 }
 
 .heatmap-grid-wrapper {
-  overflow-x: clip;
-  overflow-y: visible;
-  padding-top: 2.5rem;
+  position: relative;
+  /* 不再 clip — 讓最左 cell 的 tooltip 能浮出；外層 .activity-page 會處理水平 overflow */
+  overflow: visible;
+  padding: 2.5rem 1.2rem 0;
+  margin: 0 -1.2rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(127,90,240,0.25) transparent;
+  transition: opacity 0.3s ease, filter 0.3s ease;
 }
+/* 刷新中：熱度圖淡出並失焦，loader 從上方淡入 */
+.heatmap-grid-wrapper.is-refreshing > .heatmap-grid {
+  opacity: 0.25;
+  filter: blur(2px) saturate(0.5);
+  pointer-events: none;
+  transition: opacity 0.35s ease, filter 0.35s ease;
+}
+.heatmap-refresh-overlay {
+  position: absolute;
+  inset: 2.5rem 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(6, 5, 14, 0.25) 0%, rgba(6, 5, 14, 0.5) 100%);
+  border-radius: 8px;
+  z-index: 5;
+  pointer-events: none;
+  animation: koimFadeIn 0.25s ease-out;
+}
+.heatmap-refresh-overlay .koim-loader {
+  width: 56px;
+  height: 56px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: koimLoaderBreath 2.4s ease-in-out infinite;
+}
+.heatmap-refresh-overlay .koim-loader-core { width: 14px; height: 14px; }
+.heatmap-refresh-overlay .koim-loader-orbit-2 { inset: 9px; }
+@keyframes koimFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .heatmap-grid {
   display: flex;

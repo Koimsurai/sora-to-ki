@@ -12,7 +12,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 28px;
-  transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  border-bottom: 0 solid transparent;
+  box-shadow: none;
+  /* 只動畫 transform / opacity；transition: all 會把 border 從 0 過渡到 initial（3px white）造成滑回頂部時白線閃過 */
+  transition:
+    transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .site-header.hidden {
@@ -22,11 +28,7 @@
 }
 
 .site-header.scrolled {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-bottom: none;
-  box-shadow: none;
+  /* default 已經是透明無邊，scrolled 不需再宣告 */
 }
 
 .site-header.nav-hidden {

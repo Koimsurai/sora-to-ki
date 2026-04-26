@@ -229,7 +229,6 @@ const Activity = () => {
     return date.toLocaleDateString('zh-TW');
   };
 
-  const featuredGame = steamData?.recentGames?.[0] || null;
   const uptime = getUptime();
 
   if (loading) {
@@ -512,11 +511,13 @@ const Activity = () => {
               <button
                 type="button"
                 className={`koim-btn koim-btn--icon koim-btn--sm${isRefreshing ? ' is-refreshing' : ''}`}
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.currentTarget.blur(); // 點完離焦，避免桌面瀏覽器把 :focus 視為持續 hover
                   setIsRefreshing(true);
                   await fetchContributions();
                   setIsRefreshing(false);
                 }}
+                disabled={isRefreshing}
                 title="刷新"
                 aria-label="刷新貢獻圖"
               >
@@ -529,12 +530,16 @@ const Activity = () => {
               </button>
             </div>
             <div className="heatmap-year-selector">
-              {['last', '2025', '2024', '2023'].map(y => (
+              {(() => {
+                const currentYear = new Date().getFullYear();
+                return ['last', String(currentYear), String(currentYear - 1), String(currentYear - 2)];
+              })().map(y => (
                 <button
                   key={y}
                   type="button"
                   className={`koim-btn koim-btn--sm${contributionYear === y ? ' is-active' : ''}`}
-                  onClick={async () => {
+                  onClick={async (e) => {
+                    e.currentTarget.blur();
                     if (contributionYear === y) return;
                     setContributionYear(y);
                     setIsRefreshing(true);
@@ -542,11 +547,21 @@ const Activity = () => {
                     setIsRefreshing(false);
                   }}
                 >
-                  {y === 'last' ? 'Last Year' : y}
+                  {y === 'last' ? '近一年' : y}
                 </button>
               ))}
             </div>
-            <div className="heatmap-grid-wrapper">
+            <div className={`heatmap-grid-wrapper${isRefreshing ? ' is-refreshing' : ''}`}>
+              {isRefreshing && (
+                <div className="heatmap-refresh-overlay" aria-hidden>
+                  <div className="koim-loader" aria-hidden>
+                    <div className="koim-loader-orbit koim-loader-orbit-1" />
+                    <div className="koim-loader-orbit koim-loader-orbit-2" />
+                    <div className="koim-loader-core" />
+                    <div className="koim-loader-glow" />
+                  </div>
+                </div>
+              )}
               <div className="heatmap-grid">
                 {contributionData.map((week, wi) => (
                   <div key={wi} className="heatmap-week">
