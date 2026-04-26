@@ -317,81 +317,129 @@ const Activity = () => {
           </div>
         </motion.div>
 
-        {/* ─── Section 3: Now Playing — full bleed ─── */}
-        {featuredGame && (
-          <motion.div
-            className="now-playing-section"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <div
-              className="now-playing-bg"
-              style={{ backgroundImage: `url(https://cdn.cloudflare.steamstatic.com/steam/apps/${featuredGame.appid}/header.jpg)` }}
-            />
-            <div className="now-playing-overlay" />
-            <div className="now-playing-content">
-              {steamData?.playerInfo && (() => {
-                const cust = steamProfile?.customization || {};
-                const hasAnimAvatar = cust.animatedAvatar && cust.animatedAvatar !== cust.avatarFrame;
-                return (
-                  <div className="now-playing-player">
-                    {cust.nameplateWebm && (
-                      <video
-                        className="now-playing-nameplate"
-                        autoPlay muted loop playsInline
-                        poster={cust.nameplateMp4}
-                      >
-                        <source src={cust.nameplateWebm} type="video/webm" />
-                        {cust.nameplateMp4 && <source src={cust.nameplateMp4} type="video/mp4" />}
-                      </video>
+        {/* ─── Section 3a: Steam Profile — Steam hover-card 風格 ─── */}
+        {steamData?.playerInfo && (() => {
+          const cust = steamProfile?.customization || {};
+          const hasAnimAvatar = cust.animatedAvatar && cust.animatedAvatar !== cust.avatarFrame;
+          const isInGame = !!steamData.playerInfo.gameid;
+          const stateText = isInGame
+            ? '遊戲中'
+            : (steamData.playerInfo.personastate === 1 ? '線上' : '離線');
+          return (
+            <motion.a
+              href={steamProfile?.profileUrl || steamData.playerInfo.profileurl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`steam-profile-card ${isInGame ? 'is-in-game' : ''} ${steamData.playerInfo.personastate === 1 ? 'is-online' : 'is-offline'}`}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              {cust.nameplateWebm && (
+                <video
+                  className="steam-profile-bg"
+                  autoPlay muted loop playsInline
+                  poster={cust.nameplateMp4}
+                >
+                  <source src={cust.nameplateWebm} type="video/webm" />
+                  {cust.nameplateMp4 && <source src={cust.nameplateMp4} type="video/mp4" />}
+                </video>
+              )}
+              <div className="steam-profile-overlay" />
+              <div className="steam-profile-content">
+                <div className="steam-profile-avatar-wrap">
+                  <img
+                    src={hasAnimAvatar ? cust.animatedAvatar : steamData.playerInfo.avatarfull}
+                    alt="Steam avatar"
+                    className="steam-profile-avatar"
+                  />
+                  {cust.avatarFrame && (
+                    <img className="steam-profile-avatar-frame" src={cust.avatarFrame} alt="" aria-hidden />
+                  )}
+                </div>
+                <div className="steam-profile-meta">
+                  <div className="steam-profile-name-row">
+                    <h3 className="steam-profile-name">{steamData.playerInfo.personaname}</h3>
+                    {steamProfile?.level != null && (
+                      <span className="steam-profile-level" title={`${steamProfile.xp} XP · 還需 ${steamProfile.xpToNext} XP 升級`}>
+                        Lv.{steamProfile.level}
+                      </span>
                     )}
-                    <div className="now-playing-avatar-wrap">
-                      <img
-                        src={hasAnimAvatar ? cust.animatedAvatar : steamData.playerInfo.avatarfull}
-                        alt="Steam"
-                        className="now-playing-avatar"
-                      />
-                      {cust.avatarFrame && (
-                        <img className="now-playing-avatar-frame" src={cust.avatarFrame} alt="" aria-hidden />
-                      )}
-                    </div>
-                    <div className="now-playing-player-meta">
-                      <div className="now-playing-name">
-                        {steamData.playerInfo.personaname}
-                        {steamProfile?.level != null && (
-                          <span className="now-playing-level" title={`${steamProfile.xp} XP · ${steamProfile.badgeCount} 徽章`}>
-                            Lv.{steamProfile.level}
-                          </span>
-                        )}
-                      </div>
-                      <div className="now-playing-status-text">
-                        {steamData.playerInfo.personastate === 1 ? '在線' : '離線'}
-                      </div>
-                    </div>
                   </div>
-                );
-              })()}
-              <div className="now-playing-info">
-                <span className="now-playing-label">NOW PLAYING</span>
-                <h2 className="now-playing-title">{featuredGame.name}</h2>
-                <div className="now-playing-stats">
-                  <span>最近 {formatPlaytime(featuredGame.playtime_2weeks || 0)}</span>
-                  <span>·</span>
-                  <span>總計 {formatPlaytime(featuredGame.playtime_forever || 0)}</span>
+                  <div className="steam-profile-status">
+                    <span className="steam-profile-dot" />
+                    {stateText}
+                    <span className="steam-profile-divider">·</span>
+                    {steamData.gameCount} 個遊戲
+                    {steamProfile?.badgeCount ? (
+                      <>
+                        <span className="steam-profile-divider">·</span>
+                        {steamProfile.badgeCount} 個徽章
+                      </>
+                    ) : null}
+                  </div>
+                  {steamProfile?.customization?.featuredBadge && (
+                    <div className="steam-profile-featured" title={steamProfile.customization.featuredBadge.xp}>
+                      <img src={steamProfile.customization.featuredBadge.icon} alt="" />
+                      <span>{steamProfile.customization.featuredBadge.name}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="steam-profile-cta">
+                  Steam <span aria-hidden>→</span>
                 </div>
               </div>
-              <a
-                href={`https://store.steampowered.com/app/${featuredGame.appid}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="now-playing-link"
-              >
-                Steam →
-              </a>
+            </motion.a>
+          );
+        })()}
+
+        {/* ─── Section 3b: 最近遊玩 — horizontal snap scroll ─── */}
+        {steamData?.recentGames?.length > 0 && (
+          <motion.section
+            className="steam-recent-section"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.05 }}
+          >
+            <header className="steam-recent-header">
+              <span className="section-label">
+                {steamData.playerInfo?.gameid ? '現正遊玩 · 最近兩週' : '最近兩週'}
+              </span>
+              <span className="steam-recent-count">{steamData.recentGames.length} 款</span>
+            </header>
+            <div className="steam-recent-scroll" role="list">
+              {steamData.recentGames.map((g, idx) => {
+                const isCurrent = String(steamData.playerInfo?.gameid || '') === String(g.appid);
+                return (
+                  <a
+                    key={g.appid}
+                    href={`https://store.steampowered.com/app/${g.appid}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`steam-recent-card${isCurrent ? ' is-current' : ''}${idx === 0 && !isCurrent ? ' is-featured' : ''}`}
+                    role="listitem"
+                  >
+                    <div
+                      className="steam-recent-cover"
+                      style={{ backgroundImage: `url(https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg)` }}
+                    />
+                    <div className="steam-recent-overlay" />
+                    {isCurrent && <span className="steam-recent-pulse">遊戲中</span>}
+                    <div className="steam-recent-info">
+                      <h4 className="steam-recent-title">{g.name}</h4>
+                      <div className="steam-recent-stats">
+                        <span>近兩週 {formatPlaytime(g.playtime_2weeks || 0)}</span>
+                        <span className="steam-recent-divider">·</span>
+                        <span>總 {formatPlaytime(g.playtime_forever || 0)}</span>
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
             </div>
-          </motion.div>
+          </motion.section>
         )}
 
         {/* ─── Section 4: Code Pulse — split layout ─── */}

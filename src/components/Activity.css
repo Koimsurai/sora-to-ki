@@ -218,180 +218,318 @@
 
 
 /* ═══════════════════════════════════════════════════
-   3. NOW PLAYING — 全寬 cinematic 橫幅
+   3a. STEAM PROFILE CARD — Steam hover-card 風格
    ═══════════════════════════════════════════════════ */
-.now-playing-section {
+.steam-profile-card {
   position: relative;
+  display: block;
   border-radius: 16px;
   overflow: hidden;
-  min-height: 280px;
-  display: flex;
-  align-items: flex-end;
+  text-decoration: none;
+  isolation: isolate;
+  min-height: 140px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(20, 18, 38, 0.55);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease;
+}
+.steam-profile-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(127,90,240,0.5);
+  box-shadow: 0 16px 50px rgba(127,90,240,0.22), 0 0 0 1px rgba(127,90,240,0.25) inset;
 }
 
-.now-playing-bg {
+.steam-profile-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+}
+.steam-profile-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* 從左下深→右上漸亮，讓 nameplate 整體變柔和但仍可見動畫 */
+  background:
+    linear-gradient(135deg, rgba(6,5,14,0.78) 0%, rgba(6,5,14,0.32) 55%, rgba(6,5,14,0.55) 100%),
+    linear-gradient(to top, rgba(6,5,14,0.5) 0%, rgba(6,5,14,0) 60%);
+}
+
+.steam-profile-content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.4rem;
+  padding: 1.6rem 1.8rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.steam-profile-avatar-wrap {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+.steam-profile-avatar {
+  position: absolute;
+  top: 12px; left: 12px;
+  width: 86px; height: 86px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.18);
+  background: rgba(0,0,0,0.4);
+}
+.steam-profile-avatar-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.steam-profile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+.steam-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+.steam-profile-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+}
+.steam-profile-level {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  background: linear-gradient(135deg, #ff8a4c 0%, #d54a26 100%);
+  color: #fff;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 1px rgba(255, 138, 76, 0.45), 0 0 14px rgba(255, 138, 76, 0.32);
+  text-shadow: none;
+}
+.steam-profile-status {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+.steam-profile-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #74c0fc;
+  box-shadow: 0 0 8px rgba(116, 192, 252, 0.7);
+}
+.steam-profile-card.is-online .steam-profile-dot { background: #57cbde; box-shadow: 0 0 8px rgba(87, 203, 222, 0.7); }
+.steam-profile-card.is-in-game .steam-profile-dot { background: #90ba3c; box-shadow: 0 0 10px rgba(144, 186, 60, 0.85); }
+.steam-profile-card.is-offline .steam-profile-dot { background: #6c757d; box-shadow: none; }
+.steam-profile-divider { color: rgba(255,255,255,0.4); margin: 0 2px; }
+
+.steam-profile-featured {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.2rem;
+  padding: 0.25rem 0.7rem 0.25rem 0.4rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.78);
+  width: fit-content;
+  backdrop-filter: blur(4px);
+}
+.steam-profile-featured img {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+}
+
+.steam-profile-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.65rem 1.2rem;
+  background: rgba(127,90,240,0.2);
+  border: 1px solid rgba(127,90,240,0.45);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.steam-profile-card:hover .steam-profile-cta {
+  background: rgba(127,90,240,0.35);
+  border-color: rgba(127,90,240,0.7);
+  transform: translateX(2px);
+}
+
+@media (max-width: 640px) {
+  .steam-profile-content {
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    padding: 1.2rem;
+  }
+  .steam-profile-cta {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    justify-content: center;
+  }
+  .steam-profile-name { font-size: 1.3rem; }
+  .steam-profile-avatar-wrap { width: 88px; height: 88px; }
+  .steam-profile-avatar { top: 10px; left: 10px; width: 68px; height: 68px; }
+}
+
+/* ═══════════════════════════════════════════════════
+   3b. STEAM RECENT GAMES — 水平 snap scroll
+   ═══════════════════════════════════════════════════ */
+.steam-recent-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.steam-recent-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 0.2rem;
+}
+.steam-recent-count {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.steam-recent-scroll {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(280px, 1fr);
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0.2rem;
+  padding: 4px 4px 12px;
+  margin: -4px -4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127,90,240,0.4) transparent;
+}
+.steam-recent-scroll::-webkit-scrollbar { height: 6px; }
+.steam-recent-scroll::-webkit-scrollbar-track { background: transparent; }
+.steam-recent-scroll::-webkit-scrollbar-thumb { background: rgba(127,90,240,0.35); border-radius: 3px; }
+.steam-recent-scroll::-webkit-scrollbar-thumb:hover { background: rgba(127,90,240,0.55); }
+
+.steam-recent-card {
+  position: relative;
+  scroll-snap-align: start;
+  display: block;
+  height: 130px;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  isolation: isolate;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease;
+}
+.steam-recent-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(127,90,240,0.45);
+  box-shadow: 0 10px 28px rgba(127,90,240,0.2);
+}
+.steam-recent-card.is-featured {
+  grid-row: span 1;
+  border-color: rgba(127,90,240,0.25);
+}
+.steam-recent-card.is-current {
+  border-color: rgba(144, 186, 60, 0.55);
+  box-shadow: 0 0 0 1px rgba(144, 186, 60, 0.3), 0 0 18px rgba(144, 186, 60, 0.18);
+}
+.steam-recent-cover {
   position: absolute;
   inset: 0;
   background-size: cover;
   background-position: center;
+  z-index: 0;
+  transition: transform 0.4s ease;
 }
-
-.now-playing-overlay {
+.steam-recent-card:hover .steam-recent-cover {
+  transform: scale(1.05);
+}
+.steam-recent-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to right,
-    rgba(6,5,14,0.92) 0%,
-    rgba(6,5,14,0.6) 40%,
-    rgba(6,5,14,0.3) 100%
-  );
-}
-
-.now-playing-content {
-  position: relative;
   z-index: 1;
-  display: flex;
-  align-items: flex-end;
-  gap: 2rem;
-  padding: 2rem 2.5rem;
-  width: 100%;
+  background: linear-gradient(to top, rgba(6,5,14,0.92) 0%, rgba(6,5,14,0.55) 45%, rgba(6,5,14,0.05) 100%);
 }
-
-.now-playing-player {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.4rem 0.9rem 0.4rem 0.4rem;
-  border-radius: 999px;
-  flex-shrink: 0;
-  isolation: isolate;
+.steam-recent-info {
+  position: absolute;
+  z-index: 2;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.85rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+.steam-recent-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.25rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
-/* Steam 個人化 nameplate（動畫底圖）— 半透明置於 player 列底層 */
-.now-playing-nameplate {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
-  opacity: 0.85;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.now-playing-avatar-wrap {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  flex-shrink: 0;
-}
-.now-playing-avatar {
-  position: absolute;
-  width: 44px; height: 44px;
-  top: 6px; left: 6px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.15);
-  object-fit: cover;
-}
-.now-playing-avatar-frame {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  /* Steam 頭像框是透明 PNG，比頭像略大才會包住頭像 */
-}
-
-.now-playing-player-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  position: relative;
-  z-index: 1;
-  /* 文字陰影確保在彩色 nameplate 上仍可讀 */
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
-}
-
-.now-playing-name {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-.now-playing-level {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 7px;
-  background: linear-gradient(135deg, #ff8a4c 0%, #d54a26 100%);
-  color: #fff;
-  border-radius: 4px;
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
-  box-shadow: 0 0 0 1px rgba(255, 138, 76, 0.4), 0 0 12px rgba(255, 138, 76, 0.3);
-  text-shadow: none;
-}
-
-.now-playing-status-text {
+.steam-recent-stats {
   font-size: 0.74rem;
-  color: rgba(255,255,255,0.78);
-}
-
-.now-playing-info {
-  flex: 1;
-}
-
-.now-playing-label {
-  font-size: 0.65rem;
-  letter-spacing: 2px;
-  color: #c4b5fd;
-  font-weight: 700;
-  display: block;
-  margin-bottom: 0.3rem;
-}
-
-.now-playing-title {
-  font-size: clamp(1.2rem, 3vw, 2rem);
-  font-weight: 700;
-  color: #fffffe;
-  line-height: 1.25;
-  margin-bottom: 0.4rem;
-}
-
-.now-playing-stats {
+  color: rgba(255,255,255,0.7);
   display: flex;
-  gap: 0.5rem;
-  font-size: 0.82rem;
-  color: rgba(255,255,255,0.5);
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
+.steam-recent-divider { color: rgba(255,255,255,0.3); }
 
-.now-playing-link {
-  flex-shrink: 0;
-  padding: 10px 22px;
-  background: rgba(127,90,240,0.15);
-  border: 1px solid rgba(127,90,240,0.4);
-  border-radius: 10px;
-  color: #fffffe;
-  text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  transition: all 0.2s;
-  align-self: flex-end;
-  backdrop-filter: blur(8px);
+.steam-recent-pulse {
+  position: absolute;
+  z-index: 3;
+  top: 0.7rem;
+  right: 0.7rem;
+  padding: 3px 9px;
+  background: linear-gradient(135deg, #90ba3c, #5e8c1a);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  box-shadow: 0 0 12px rgba(144, 186, 60, 0.55);
+  animation: steamPulse 2s ease-in-out infinite;
 }
-.now-playing-link:hover {
-  background: rgba(127,90,240,0.3);
-  border-color: rgba(127,90,240,0.65);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(127,90,240,0.25);
+@keyframes steamPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(144, 186, 60, 0.55); }
+  50% { box-shadow: 0 0 20px rgba(144, 186, 60, 0.85); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .steam-recent-pulse { animation: none; }
 }
 
 
@@ -1022,15 +1160,8 @@
     height: 28px;
   }
 
-  .now-playing-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1.5rem;
-  }
-
-  .now-playing-link {
-    align-self: flex-start;
+  .steam-recent-scroll {
+    grid-auto-columns: minmax(240px, 80%);
   }
 
   .code-pulse-section {
@@ -1084,9 +1215,8 @@
     display: none;
   }
 
-  .now-playing-section {
-    min-height: 200px;
-  }
+  .steam-profile-name { font-size: 1.2rem; }
+  .steam-recent-card { height: 110px; }
 
   .heatmap-day {
     width: 10px; height: 10px;
