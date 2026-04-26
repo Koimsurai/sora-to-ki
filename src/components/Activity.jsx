@@ -7,6 +7,7 @@ import './Activity.css';
 const Activity = () => {
   const { isVisible } = usePageVisibility();
   const [steamData, setSteamData] = useState(null);
+  const [steamProfile, setSteamProfile] = useState(null);
   const [githubData, setGithubData] = useState(null);
   const [wakatimeData, setWakatimeData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -71,10 +72,11 @@ const Activity = () => {
   const fetchSteamData = async () => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '/api';
-      const [recentRes, playerRes, ownedRes] = await Promise.all([
+      const [recentRes, playerRes, ownedRes, profileRes] = await Promise.all([
         fetch(`${apiUrl}/steam/recent-games`).then(r => r.json()),
         fetch(`${apiUrl}/steam/player`).then(r => r.json()),
         fetch(`${apiUrl}/steam/owned-games`).then(r => r.json()),
+        fetch(`${apiUrl}/steam/profile`).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       if (recentRes.error || playerRes.error) {
         setSteamData({ error: recentRes.error || playerRes.error, configured: false });
@@ -87,6 +89,7 @@ const Activity = () => {
         playerInfo: playerRes.response?.players?.[0] || null,
         configured: true,
       });
+      if (profileRes && !profileRes.error) setSteamProfile(profileRes);
     } catch (error) {
       console.error('Steam fetch error:', error);
       setSteamData({ error: '無法連接到後端 API', configured: false });
@@ -329,17 +332,47 @@ const Activity = () => {
             />
             <div className="now-playing-overlay" />
             <div className="now-playing-content">
-              {steamData?.playerInfo && (
-                <div className="now-playing-player">
-                  <img src={steamData.playerInfo.avatarfull} alt="Steam" className="now-playing-avatar" />
-                  <div>
-                    <div className="now-playing-name">{steamData.playerInfo.personaname}</div>
-                    <div className="now-playing-status-text">
-                      {steamData.playerInfo.personastate === 1 ? '在線' : '離線'}
+              {steamData?.playerInfo && (() => {
+                const cust = steamProfile?.customization || {};
+                const hasAnimAvatar = cust.animatedAvatar && cust.animatedAvatar !== cust.avatarFrame;
+                return (
+                  <div className="now-playing-player">
+                    {cust.nameplateWebm && (
+                      <video
+                        className="now-playing-nameplate"
+                        autoPlay muted loop playsInline
+                        poster={cust.nameplateMp4}
+                      >
+                        <source src={cust.nameplateWebm} type="video/webm" />
+                        {cust.nameplateMp4 && <source src={cust.nameplateMp4} type="video/mp4" />}
+                      </video>
+                    )}
+                    <div className="now-playing-avatar-wrap">
+                      <img
+                        src={hasAnimAvatar ? cust.animatedAvatar : steamData.playerInfo.avatarfull}
+                        alt="Steam"
+                        className="now-playing-avatar"
+                      />
+                      {cust.avatarFrame && (
+                        <img className="now-playing-avatar-frame" src={cust.avatarFrame} alt="" aria-hidden />
+                      )}
+                    </div>
+                    <div className="now-playing-player-meta">
+                      <div className="now-playing-name">
+                        {steamData.playerInfo.personaname}
+                        {steamProfile?.level != null && (
+                          <span className="now-playing-level" title={`${steamProfile.xp} XP · ${steamProfile.badgeCount} 徽章`}>
+                            Lv.{steamProfile.level}
+                          </span>
+                        )}
+                      </div>
+                      <div className="now-playing-status-text">
+                        {steamData.playerInfo.personastate === 1 ? '在線' : '離線'}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
               <div className="now-playing-info">
                 <span className="now-playing-label">NOW PLAYING</span>
                 <h2 className="now-playing-title">{featuredGame.name}</h2>

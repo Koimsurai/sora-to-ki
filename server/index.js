@@ -2458,6 +2458,137 @@ apiRouter.get('/newsletter/subscribers', requireAdmin, (req, res) => {
 // --- Steam API Proxy ---
 
 // GET Steam player summary
+// 整合卡：official summary + level + badges + miniprofile 個人化（背景影片 / 頭像框 / 動畫頭像）
+// 抓取的個人化資料來自非官方端點 steamcommunity.com/miniprofile，Steam 改版時可能失效
+// 快取策略：stale-while-revalidate
+//   - REFRESH_AFTER 過後在背景重抓；新版本驗證通過才覆蓋舊值
+//   - 任何失敗（rate limit / 改版 / 網路）都保留現有快取，避免畫面破掉
+let _steamProfileCache = null; // { data, fetchedAt, lastTriedAt }
+let _steamProfileInflight = null;
+const STEAM_PROFILE_REFRESH_AFTER = 30 * 60 * 1000; // 半小時嘗試重抓一次
+const STEAM_PROFILE_RETRY_BACKOFF = 5 * 60 * 1000;  // 失敗後 5 分鐘內不重試
+function _fetchHttps(url, asJson, headers = {}) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const opts = {
+      hostname: u.hostname,
+      path: u.pathname + (u.search || ''),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        ...headers,
+      },
+    };
+    https.get(opts, (apiRes) => {
+      let data = '';
+      apiRes.on('data', (c) => { data += c; });
+      apiRes.on('end', () => {
+        if (asJson) { try { resolve(JSON.parse(data)); } catch (e) { reject(e); } }
+        else resolve(data);
+      });
+    }).on('error', reject);
+  });
+}
+function _parseMiniProfile(html) {
+  if (!html) return {};
+  const out = {};
+  // 動畫底圖 nameplate（webm + mp4 fallback）
+  const nameplateBlock = html.match(/<video class=["']miniprofile_nameplate[^>]*>([\s\S]*?)<\/video>/i);
+  if (nameplateBlock) {
+    const webm = nameplateBlock[1].match(/src=["']([^"']+\.webm)["']/i);
+    const mp4 = nameplateBlock[1].match(/src=["']([^"']+\.mp4)["']/i);
+    if (webm) out.nameplateWebm = webm[1];
+    if (mp4) out.nameplateMp4 = mp4[1];
+  }
+  // 頭像框 PNG
+  const frame = html.match(/playersection_avatar_frame[^>]*>\s*<img\s+src=["']([^"']+)["']/i);
+  if (frame) out.avatarFrame = frame[1];
+  // 動畫頭像 GIF（個人化購買後才有）— 注意要排除 _frame
+  const animatedAvatar = html.match(/playersection_avatar(?!_frame)\s+[^"']*["'][^>]*>\s*<img\s+src=["']([^"']+)["']/i);
+  if (animatedAvatar) out.animatedAvatar = animatedAvatar[1];
+  // 主徽章
+  const featured = html.match(/<div class=["']miniprofile_featuredcontainer["']>\s*<img src=["']([^"']+)["'][^>]*class=["']badge_icon["']>\s*<div class=["']description["']>\s*<div class=["']name["']>([^<]+)<\/div>\s*<div class=["']xp["']>([^<]+)<\/div>/i);
+  if (featured) {
+    out.featuredBadge = { icon: featured[1], name: featured[2].trim(), xp: featured[3].trim() };
+  }
+  return out;
+}
+async function _refreshSteamProfile() {
+  // 同一時間只跑一個重抓
+  if (_steamProfileInflight) return _steamProfileInflight;
+  _steamProfileInflight = (async () => {
+    let accountId;
+    try { accountId = (BigInt(STEAM_ID) - 76561197960265728n).toString(); }
+    catch { throw new Error('invalid STEAM_ID'); }
+
+    const [player, level, badges, miniHtml] = await Promise.all([
+      _fetchHttps(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${STEAM_API_KEY}&steamids=${STEAM_ID}`, true),
+      _fetchHttps(`https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${STEAM_API_KEY}&steamid=${STEAM_ID}`, true),
+      _fetchHttps(`https://api.steampowered.com/IPlayerService/GetBadges/v1/?key=${STEAM_API_KEY}&steamid=${STEAM_ID}`, true),
+      _fetchHttps(`https://steamcommunity.com/miniprofile/${accountId}`, false).catch(() => ''),
+    ]);
+
+    // 驗證：必要欄位拿到才算成功，否則拋錯讓上層保留舊快取
+    const playerObj = player?.response?.players?.[0];
+    const lvl = level?.response?.player_level;
+    if (!playerObj || lvl == null) {
+      throw new Error('incomplete response from Steam');
+    }
+    const customization = _parseMiniProfile(miniHtml);
+    return {
+      player: playerObj,
+      level: lvl,
+      xp: badges?.response?.player_xp ?? 0,
+      xpToNext: badges?.response?.player_xp_needed_to_level_up ?? 0,
+      badgeCount: Array.isArray(badges?.response?.badges) ? badges.response.badges.length : 0,
+      customization,
+      profileUrl: `https://steamcommunity.com/profiles/${STEAM_ID}`,
+    };
+  })()
+    .then((data) => {
+      _steamProfileCache = { data, fetchedAt: Date.now(), lastTriedAt: Date.now() };
+      _steamProfileInflight = null;
+      return data;
+    })
+    .catch((e) => {
+      // 失敗只更新 lastTriedAt，保留 data；後續 backoff 內不會再試
+      if (_steamProfileCache) {
+        _steamProfileCache.lastTriedAt = Date.now();
+      }
+      _steamProfileInflight = null;
+      console.warn('[/api/steam/profile] refresh failed, keeping stale cache:', e.message);
+      throw e;
+    });
+  return _steamProfileInflight;
+}
+
+apiRouter.get('/steam/profile', async (req, res) => {
+  if (!STEAM_API_KEY || !STEAM_ID) {
+    return res.status(500).json({ error: 'Steam API 未配置' });
+  }
+  const now = Date.now();
+  const cached = _steamProfileCache;
+
+  // 已有快取：依新鮮度決定是否背景重抓
+  if (cached) {
+    const sinceFetch = now - cached.fetchedAt;
+    const sinceTry = now - (cached.lastTriedAt || cached.fetchedAt);
+    if (sinceFetch >= STEAM_PROFILE_REFRESH_AFTER && sinceTry >= STEAM_PROFILE_RETRY_BACKOFF) {
+      // 不 await — 直接回舊資料，背景重抓
+      _refreshSteamProfile().catch(() => {});
+    }
+    return res.json({ ...cached.data, _cachedAt: cached.fetchedAt });
+  }
+
+  // 第一次：必須等抓到才回
+  try {
+    const data = await _refreshSteamProfile();
+    res.json({ ...data, _cachedAt: _steamProfileCache.fetchedAt });
+  } catch (e) {
+    res.status(503).json({ error: 'steam fetch failed, no cache yet', message: e.message });
+  }
+});
+
 apiRouter.get('/steam/player', (req, res) => {
   if (!STEAM_API_KEY || !STEAM_ID) {
     return res.status(500).json({

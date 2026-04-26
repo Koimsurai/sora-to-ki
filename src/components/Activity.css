@@ -258,27 +258,90 @@
 }
 
 .now-playing-player {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.7rem;
+  padding: 0.4rem 0.9rem 0.4rem 0.4rem;
+  border-radius: 999px;
   flex-shrink: 0;
+  isolation: isolate;
+  overflow: hidden;
 }
 
+/* Steam 個人化 nameplate（動畫底圖）— 半透明置於 player 列底層 */
+.now-playing-nameplate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.85;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.now-playing-avatar-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
 .now-playing-avatar {
-  width: 48px; height: 48px;
+  position: absolute;
+  width: 44px; height: 44px;
+  top: 6px; left: 6px;
   border-radius: 50%;
-  border: 2px solid rgba(127,90,240,0.3);
+  border: 2px solid rgba(255,255,255,0.15);
+  object-fit: cover;
+}
+.now-playing-avatar-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  /* Steam 頭像框是透明 PNG，比頭像略大才會包住頭像 */
+}
+
+.now-playing-player-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  position: relative;
+  z-index: 1;
+  /* 文字陰影確保在彩色 nameplate 上仍可讀 */
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
 }
 
 .now-playing-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.9);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.now-playing-level {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  background: linear-gradient(135deg, #ff8a4c 0%, #d54a26 100%);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 1px rgba(255, 138, 76, 0.4), 0 0 12px rgba(255, 138, 76, 0.3);
+  text-shadow: none;
 }
 
 .now-playing-status-text {
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.45);
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.78);
 }
 
 .now-playing-info {
