@@ -121,6 +121,43 @@ html, body {
 .koim-btn--sm { padding: 0.45rem 0.95rem; font-size: 0.8rem; border-radius: 9px; }
 .koim-btn--lg { padding: 0.95rem 1.7rem; font-size: 0.95rem; border-radius: 14px; }
 
+/* icon — 圓形純圖示按鈕（hover 才出現紫光暈 + 漸層描邊） */
+.koim-btn--icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+}
+.koim-btn--icon.koim-btn--sm { width: 32px; height: 32px; }
+.koim-btn--icon.koim-btn--lg { width: 46px; height: 46px; }
+.koim-btn--icon svg,
+.koim-btn--icon img { width: 1em; height: 1em; }
+
+/* active — 處於選中狀態（用於 tab / 年份篩選 / 反應已點等） */
+.koim-btn.is-active {
+  color: #fff;
+  border-color: transparent;
+  background:
+    linear-gradient(135deg, rgba(127, 90, 240, 0.5) 0%, rgba(220, 50, 120, 0.35) 100%),
+    rgba(20, 18, 38, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 6px 20px rgba(127, 90, 240, 0.28);
+}
+.koim-btn.is-active::before { opacity: 1; }
+.koim-btn.is-active::after { opacity: 0.6; }
+.koim-btn:disabled,
+.koim-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* refresh icon 旋轉中（搭配 .is-refreshing modifier） */
+.koim-btn.is-refreshing svg {
+  animation: koimSpin 1s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .koim-btn,
   .koim-btn::before,

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
 import SEOHead from './SEOHead';
+import KoimLoader from './KoimLoader';
 import './Activity.css';
 
 const Activity = () => {
@@ -241,25 +242,7 @@ const Activity = () => {
           <div className="nebula-layer activity-nebula-3" />
           <div className="activity-nebula-dust" />
         </div>
-        <div className="activity-loading">
-          <div className="koim-loader" aria-hidden>
-            <div className="koim-loader-orbit koim-loader-orbit-1" />
-            <div className="koim-loader-orbit koim-loader-orbit-2" />
-            <div className="koim-loader-core" />
-            <div className="koim-loader-glow" />
-          </div>
-          <motion.p
-            className="koim-loader-text"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            載入活動數據
-            <span className="koim-loader-dots">
-              <i></i><i></i><i></i>
-            </span>
-          </motion.p>
-        </div>
+        <KoimLoader fullscreen text="載入活動數據" />
       </div>
     );
   }
@@ -527,15 +510,17 @@ const Activity = () => {
                 </div>
               )}
               <button
-                className={`refresh-icon-btn${isRefreshing ? ' spinning' : ''}`}
+                type="button"
+                className={`koim-btn koim-btn--icon koim-btn--sm${isRefreshing ? ' is-refreshing' : ''}`}
                 onClick={async () => {
                   setIsRefreshing(true);
                   await fetchContributions();
                   setIsRefreshing(false);
                 }}
                 title="刷新"
+                aria-label="刷新貢獻圖"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 2v6h-6" />
                   <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
                   <path d="M3 22v-6h6" />
@@ -547,7 +532,8 @@ const Activity = () => {
               {['last', '2025', '2024', '2023'].map(y => (
                 <button
                   key={y}
-                  className={`year-btn${contributionYear === y ? ' active' : ''}`}
+                  type="button"
+                  className={`koim-btn koim-btn--sm${contributionYear === y ? ' is-active' : ''}`}
                   onClick={async () => {
                     if (contributionYear === y) return;
                     setContributionYear(y);

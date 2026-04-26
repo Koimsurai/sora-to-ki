@@ -63,7 +63,8 @@ const LazyNotFound = lazy(() => import('./components/NotFound'));
 const LazyCommandPalette = lazy(() => import('./components/CommandPalette'));
 
 // --- Loading Fallback ---
-const LoadingFallback = () => <div style={{ height: '100px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>載入中...</div>;
+import KoimLoader from './components/KoimLoader';
+const LoadingFallback = () => <KoimLoader inline size="sm" />;
 
 const AdminPlaceholder = ({ title }) => (
   <div style={{ padding: '2rem', color: 'white', background: '#1a202c', borderRadius: '8px', margin: '2rem' }}>

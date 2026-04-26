@@ -3,6 +3,7 @@ import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
+import KoimLoader from './KoimLoader';
 import rehypeRaw from 'rehype-raw';
 import pangu from 'pangu';
 import { highlightCode } from '../lib/shikiHighlight';
@@ -1682,10 +1683,7 @@ function BlogPost() {
     return (
       <div className="blog-post-container loading">
         <div className="blog-post-dim-overlay" />
-        <div className="loading-indicator">
-          <div className="cosmic-loader"><div className="planet" /><div className="orbit" /></div>
-          <p>正在從星際載入文章...</p>
-        </div>
+        <KoimLoader fullscreen text="從星際載入文章" />
       </div>
     );
   }

@@ -6,6 +6,7 @@ import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTi
 import Comments from './Comments';
 import SEOHead from './SEOHead';
 import NebulaBackground from './NebulaBackground';
+import KoimLoader from './KoimLoader';
 import { prefetchPost } from '../lib/prefetchPost';
 import './Blog.css';
 
@@ -436,10 +437,7 @@ function Blog() {
     return (
       <div className="blog-page">
         <NebulaBackground />
-        <div className="blog-loading">
-          <div className="blog-loader" />
-          <p>正在載入文章...</p>
-        </div>
+        <KoimLoader fullscreen text="正在載入文章" />
       </div>
     );
   }
