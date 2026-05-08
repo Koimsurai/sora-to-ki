@@ -9,6 +9,8 @@ import {
   HardDrive,
   Upload,
   Loader2,
+  FileText,
+  Terminal,
 } from 'lucide-react';
 import { MonacoToolbarProps } from './types';
 
@@ -24,11 +26,16 @@ export function MonacoToolbar({
   onUpload,
   onUndo,
   onRedo,
+  onLinkPost,
+  onVimToggle,
+  vimMode = false,
   disabled = false,
   uploading = false,
 }: MonacoToolbarProps) {
   const btnClass =
     'size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/80 hover:bg-accent/50 transition-colors disabled:opacity-40 disabled:pointer-events-none';
+  const btnActiveClass =
+    'size-7 flex items-center justify-center rounded-md text-foreground bg-accent/60 hover:bg-accent/80 transition-colors';
 
   return (
     <div className="monaco-toolbar-glass flex items-center gap-0.5 px-2 py-1.5">
@@ -58,6 +65,11 @@ export function MonacoToolbar({
         <button type="button" onClick={onLink} disabled={disabled} title="切換連結 (Ctrl+K)" className={btnClass}>
           <Link className="size-3.5" />
         </button>
+        {onLinkPost && (
+          <button type="button" onClick={onLinkPost} disabled={disabled} title="插入舊文章連結 (Cmd/Ctrl+Shift+K)" className={btnClass}>
+            <FileText className="size-3.5" />
+          </button>
+        )}
         <button type="button" onClick={onImage} disabled={disabled} title="插入圖片 (Ctrl+Shift+G)" className={btnClass}>
           <Image className="size-3.5" />
         </button>
@@ -68,6 +80,21 @@ export function MonacoToolbar({
           {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
         </button>
       </div>
+
+      {onVimToggle && (
+        <>
+          <div className="h-4 mx-1.5 w-px bg-border/50" />
+          <button
+            type="button"
+            onClick={onVimToggle}
+            disabled={disabled}
+            title={vimMode ? 'Vim 模式：開（點擊關閉）' : 'Vim 模式：關（點擊開啟）'}
+            className={vimMode ? btnActiveClass : btnClass}
+          >
+            <Terminal className="size-3.5" />
+          </button>
+        </>
+      )}
     </div>
   );
 }

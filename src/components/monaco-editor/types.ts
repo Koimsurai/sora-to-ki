@@ -22,6 +22,9 @@ export interface MonacoToolbarProps {
   onUndo?: () => void;
   onRedo?: () => void;
   onSave?: () => void;
+  onLinkPost?: () => void;
+  onVimToggle?: () => void;
+  vimMode?: boolean;
   disabled?: boolean;
   uploading?: boolean;
 }

@@ -1,13 +1,17 @@
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import Editor from '@monaco-editor/react';
 import type { editor, IDisposable } from 'monaco-editor';
 import { MonacoToolbar } from './monaco-toolbar';
 import PhotoSelectorModal from '../admin/PhotoSelectorModal';
+import PostLinkModal from '../admin/PostLinkModal';
 import { useMonacoShortcuts } from './monaco-shortcuts';
 import { MonacoTextHelper } from './monaco-text-helper';
 import { MonacoEditorProps } from './types';
+import { getActiveSnippets } from './monaco-snippets';
 import './monaco-glass.css';
+
+const VIM_MODE_KEY = 'koimsurai_vim_mode';
 
 export default function MonacoEditor({
   value,
@@ -29,6 +33,17 @@ export default function MonacoEditor({
   const [showNASSelector, setShowNASSelector] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Cmd/Ctrl+Shift+K → 插入舊文章連結（C-3）
+  const [showPostLinkModal, setShowPostLinkModal] = useState(false);
+
+  // Vim 模式（C-1）— 狀態 + lifecycle 由 useEffect 接管
+  const [vimMode, setVimMode] = useState<boolean>(() => {
+    try { return localStorage.getItem(VIM_MODE_KEY) === '1'; } catch { return false; }
+  });
+  const vimStatusRef = useRef<HTMLDivElement | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const vimAdapterRef = useRef<any>(null);
 
   // 統計數據
   const [totalWords, setTotalWords] = useState(0);
@@ -461,25 +476,13 @@ export default function MonacoEditor({
         }
       });
 
-      /* ── 斜線指令選單（markdown 模板插入）── */
+      /* ── 斜線指令選單（markdown 模板插入；C-2: 內建 + 使用者自訂） ── */
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const monacoNs = (window as any).monaco;
       if (monacoNs && monacoNs.languages) {
-        const slashSnippets = [
-          { label: '/note', detail: 'GitHub Callout: Note', body: '> [!NOTE]\n> $0' },
-          { label: '/tip', detail: 'GitHub Callout: Tip', body: '> [!TIP]\n> $0' },
-          { label: '/important', detail: 'GitHub Callout: Important', body: '> [!IMPORTANT]\n> $0' },
-          { label: '/warning', detail: 'GitHub Callout: Warning', body: '> [!WARNING]\n> $0' },
-          { label: '/caution', detail: 'GitHub Callout: Caution', body: '> [!CAUTION]\n> $0' },
-          { label: '/code', detail: '程式碼區塊', body: '```${1:ts}\n$0\n```' },
-          { label: '/mermaid', detail: 'Mermaid 圖表', body: '```mermaid\nflowchart LR\n  A[$1] --> B[$0]\n```' },
-          { label: '/table', detail: '表格', body: '| ${1:標題} | ${2:標題} |\n| --- | --- |\n| $3 | $0 |' },
-          { label: '/details', detail: '可摺疊區塊', body: '<details>\n<summary>${1:點我展開}</summary>\n\n$0\n\n</details>' },
-          { label: '/img', detail: '圖片', body: '![${1:alt}](${2:url})' },
-          { label: '/fn', detail: '腳註', body: '${1:內文}[^${2:1}]\n\n[^${2:1}]: $0' },
-        ];
         const provider = monacoNs.languages.registerCompletionItemProvider('markdown', {
           triggerCharacters: ['/'],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           provideCompletionItems: (model: any, position: any) => {
             const lineUntil = model.getValueInRange({
               startLineNumber: position.lineNumber, startColumn: 1,
@@ -490,8 +493,10 @@ export default function MonacoEditor({
             const slash = m[2];
             const startCol = position.column - slash.length;
             const range = new monacoNs.Range(position.lineNumber, startCol, position.lineNumber, position.column);
+            // 動態取 snippets，使得使用者改 localStorage 後不必重啟編輯器
+            const snippets = getActiveSnippets();
             return {
-              suggestions: slashSnippets.map(s => ({
+              suggestions: snippets.map(s => ({
                 label: s.label,
                 kind: monacoNs.languages.CompletionItemKind.Snippet,
                 insertText: s.body,
@@ -563,6 +568,75 @@ export default function MonacoEditor({
     editorRef.current?.trigger('app', 'redo', null);
   }, []);
 
+  /**
+   * Vim 模式切換（C-1）
+   */
+  const handleVimToggle = useCallback(() => {
+    setVimMode((v) => {
+      const next = !v;
+      try { localStorage.setItem(VIM_MODE_KEY, next ? '1' : '0'); } catch { /* ignore quota */ }
+      return next;
+    });
+  }, []);
+
+  /**
+   * 開啟舊文章連結插入器（C-3）
+   */
+  const handleOpenPostLink = useCallback(() => {
+    setShowPostLinkModal(true);
+  }, []);
+
+  /**
+   * 從 PostLinkModal 選定後插入 markdown 連結
+   */
+  const handlePostLinkSelect = useCallback(
+    (post: { title: string; id?: number | string }) => {
+      const editor = editorRef.current;
+      setShowPostLinkModal(false);
+      if (!editor) return;
+      const url = `/blog/${post.id}`;
+      const selection = editor.getSelection();
+      const model = editor.getModel();
+      const selectedText = selection && model ? model.getValueInRange(selection) : '';
+      const text = `[${selectedText || post.title}](${url})`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const monacoNs = (window as any).monaco;
+      if (!monacoNs || !selection) return;
+      editor.executeEdits('insert-post-link', [{
+        range: new monacoNs.Range(selection.startLineNumber, selection.startColumn, selection.endLineNumber, selection.endColumn),
+        text,
+      }]);
+      editor.focus();
+    },
+    []
+  );
+
+  // Vim 模式 lifecycle：editor ready + vimMode true → 動態載入 monaco-vim 並初始化
+  // 切回 false 或 unmount 時 dispose
+  useEffect(() => {
+    if (!isEditorReady || !editorRef.current || !vimMode) {
+      if (vimAdapterRef.current) {
+        try { vimAdapterRef.current.dispose(); } catch { /* ignore */ }
+        vimAdapterRef.current = null;
+      }
+      return;
+    }
+    let cancelled = false;
+    import('monaco-vim').then(({ initVimMode }) => {
+      if (cancelled || !editorRef.current) return;
+      vimAdapterRef.current = initVimMode(editorRef.current, vimStatusRef.current);
+    }).catch((err) => {
+      console.error('monaco-vim 載入失敗:', err);
+    });
+    return () => {
+      cancelled = true;
+      if (vimAdapterRef.current) {
+        try { vimAdapterRef.current.dispose(); } catch { /* ignore */ }
+        vimAdapterRef.current = null;
+      }
+    };
+  }, [isEditorReady, vimMode]);
+
   // 註冊快捷鍵
   useMonacoShortcuts({
     editor: editorRef.current,
@@ -573,6 +647,30 @@ export default function MonacoEditor({
     onUndo: handleUndo,
     onRedo: handleRedo,
   });
+
+  // Cmd/Ctrl+Shift+K：開啟舊文章連結插入器（C-3）
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!isEditorReady || !editor) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const monacoNs = (window as any).monaco;
+    if (!monacoNs) return;
+    const action = editor.addAction({
+      id: 'koimsurai.insert-post-link',
+      label: '插入舊文章連結',
+      keybindings: [monacoNs.KeyMod.CtrlCmd | monacoNs.KeyMod.Shift | monacoNs.KeyCode.KeyK],
+      run: () => handleOpenPostLink(),
+    });
+    return () => action.dispose();
+  }, [isEditorReady, handleOpenPostLink]);
+
+  // 閱讀時間（C-4）— 中文 ~500 字/min，英文 ~250 字/min；用混合估算
+  const readingMinutes = useMemo(() => {
+    if (!totalChars && !totalWords) return 0;
+    // 假設大宗為 CJK：用字元數除以 500 較貼近實際
+    const minutes = Math.max(1, Math.round(totalChars / 500));
+    return minutes;
+  }, [totalChars, totalWords]);
 
   const defaultOptions: editor.IStandaloneEditorConstructionOptions = {
     fontSize: 14,
@@ -607,18 +705,23 @@ export default function MonacoEditor({
   return (
     <div className="monaco-editor-glass overflow-hidden">
       {showToolbar && (
-        <MonacoToolbar
-          onBold={handleBold}
-          onItalic={handleItalic}
-          onLink={handleLink}
-          onImage={handleImage}
-          onNAS={handleNAS}
-          onUpload={handleUpload}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          disabled={!isEditorReady}
-          uploading={uploading}
-        />
+        <div className="monaco-toolbar-sticky">
+          <MonacoToolbar
+            onBold={handleBold}
+            onItalic={handleItalic}
+            onLink={handleLink}
+            onImage={handleImage}
+            onNAS={handleNAS}
+            onUpload={handleUpload}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onLinkPost={handleOpenPostLink}
+            onVimToggle={handleVimToggle}
+            vimMode={vimMode}
+            disabled={!isEditorReady}
+            uploading={uploading}
+          />
+        </div>
       )}
 
       {/* Hidden file input for image upload */}
@@ -639,6 +742,15 @@ export default function MonacoEditor({
         document.body
       )}
 
+      {ReactDOM.createPortal(
+        <PostLinkModal
+          isOpen={showPostLinkModal}
+          onClose={() => setShowPostLinkModal(false)}
+          onSelect={handlePostLinkSelect}
+        />,
+        document.body
+      )}
+
       <Editor
         height={height}
         language={language}
@@ -655,10 +767,14 @@ export default function MonacoEditor({
         }
       />
 
-      {/* 狀態欄 */}
+      {/* Vim 模式狀態列：monaco-vim 會把 :command / 模式提示寫到這個 div */}
+      {vimMode && <div ref={vimStatusRef} className="monaco-vim-status" />}
+
+      {/* 狀態欄（C-4：加上閱讀時間） */}
       <div className="monaco-statusbar-glass flex items-center justify-between px-3 py-1.5 text-[11px] text-muted-foreground/70">
         <div>
           {totalWords} 字 · {totalChars} 字元 · {totalLines} 行
+          {totalChars > 0 && <> · 約 {readingMinutes} 分鐘閱讀</>}
         </div>
         <div>
           選取: {selWords} 字 · {selChars} 字元 · {selLines} 行

@@ -113,3 +113,32 @@
   background: rgba(127, 90, 240, 0.08) !important;
   transition: background 0.15s ease;
 }
+
+/* Sticky 工具欄：滾動時保持可見（C-5） */
+.monaco-toolbar-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(24, 24, 27, 0.85) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Vim 模式狀態列（C-1）— 顯示在編輯器底部，:command / current mode 提示 */
+.monaco-vim-status {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  padding: 2px 10px;
+  color: #a1a1aa;
+  background: rgba(24, 24, 27, 0.6);
+  border-top: 1px solid rgba(39, 39, 42, 0.3);
+  min-height: 18px;
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.monaco-vim-status:empty::before {
+  content: '-- 一般模式 (Esc) --';
+  color: #71717a;
+  opacity: 0.6;
+}

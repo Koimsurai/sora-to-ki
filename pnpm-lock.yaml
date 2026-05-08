@@ -151,6 +151,9 @@ importers:
       monaco-editor:
         specifier: 0.53.0
         version: 0.53.0
+      monaco-vim:
+        specifier: ^0.4.4
+        version: 0.4.4(monaco-editor@0.53.0)
       pangu:
         specifier: ^7.2.1
         version: 7.2.1
@@ -4170,6 +4173,11 @@ packages:
 
   monaco-editor@0.53.0:
     resolution: {integrity: sha512-0WNThgC6CMWNXXBxTbaYYcunj08iB5rnx4/G56UOPeL9UVIUGGHA1GR0EWIh9Ebabj7NpCRawQ5b0hfN1jQmYQ==}
+
+  monaco-vim@0.4.4:
+    resolution: {integrity: sha512-LNChAb//WEm/W+eyeHG/0+pdVEHotk2hLTN+M3sQZx5E8cAlSWSgqcxpcRuQnxDybSln7pfHF9i63HmbIQvrWw==}
+    peerDependencies:
+      monaco-editor: '*'
 
   motion-dom@12.23.23:
     resolution: {integrity: sha512-n5yolOs0TQQBRUFImrRfs/+6X4p3Q4n1dUEqt/H58Vx7OW6RF+foWEgmTVDhIWJIMXOuNNL0apKH2S16en9eiA==}
@@ -10006,6 +10014,10 @@ snapshots:
   monaco-editor@0.53.0:
     dependencies:
       '@types/trusted-types': 1.0.6
+
+  monaco-vim@0.4.4(monaco-editor@0.53.0):
+    dependencies:
+      monaco-editor: 0.53.0
 
   motion-dom@12.23.23:
     dependencies:
