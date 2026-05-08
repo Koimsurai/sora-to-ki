@@ -11,10 +11,13 @@ RUN apk add --no-cache --virtual .build-deps python3 make g++ && \
 # Set the script shell to sh
 RUN npm config set script-shell sh
 
-COPY package*.json ./
+# Install pnpm globally (matches project-wide tooling)
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml ./
 
 # Install production dependencies (compiles native modules)
-RUN npm install --production
+RUN pnpm install --prod --frozen-lockfile
 
 COPY . .
 
@@ -23,4 +26,4 @@ RUN apk del .build-deps
 
 EXPOSE 3001
 
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]

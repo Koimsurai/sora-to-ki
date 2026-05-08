@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
+import { thumbHashToDataURL, thumbHashToApproximateAspectRatio } from 'thumbhash';
 
 /**
  * 圖片 Lightbox 組件
@@ -69,17 +70,48 @@ const getNASDisplayUrl = (src) => {
   return src;
 };
 
+/**
+ * 從圖片 URL 的 #th=<base64url> fragment 解出 thumbhash，
+ * 回傳 { dataUrl, aspectRatio } 供模糊佔位使用。沒 fragment 或解析失敗回 null。
+ *
+ * 後端 (server/index.js 的 /admin/upload) 上傳時會把 thumbhash 編進 URL fragment，
+ * 瀏覽器送 HTTP 請求時不會帶 fragment，所以對 nginx 快取無影響。
+ */
+const decodeThumbHashFromSrc = (src) => {
+  if (!src) return null;
+  const m = src.match(/#th=([A-Za-z0-9_-]+)/);
+  if (!m) return null;
+  try {
+    let b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
+    b64 += '='.repeat((4 - b64.length % 4) % 4);
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return {
+      dataUrl: thumbHashToDataURL(bytes),
+      aspectRatio: thumbHashToApproximateAspectRatio(bytes),
+    };
+  } catch {
+    return null;
+  }
+};
+
 // 獨立的圖片包裝組件
 export const BlogImage = ({ src, alt, ...props }) => {
   const [showLightbox, setShowLightbox] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [exifData, setExifData] = useState(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const isNAS = isNASImage(src);
 
   // 內文顯示用高解析度
   const displaySrc = getNASDisplayUrl(src);
   // 點擊放大用原圖
   const fullSrc = isNAS ? getNASHighResUrl(src) : src;
+
+  // 從 URL #th= fragment 解 thumbhash（後端 /admin/upload 寫入），
+  // 拿來做模糊佔位 + 用近似 aspect ratio 預留版面避免 CLS。
+  const placeholder = useMemo(() => decodeThumbHashFromSrc(src), [src]);
 
   // 載入 EXIF 資訊
   useEffect(() => {
@@ -128,13 +160,21 @@ export const BlogImage = ({ src, alt, ...props }) => {
         onMouseLeave={() => setShowInfo(false)}
       >
         <img
+          {...props}
           src={displaySrc}
           alt={alt || ''}
           onClick={() => setShowLightbox(true)}
-          className="blog-image-clickable"
+          onLoad={() => setImgLoaded(true)}
+          className={`blog-image-clickable${placeholder && !imgLoaded ? ' blog-image-loading' : ''}`}
           loading="lazy"
           decoding="async"
-          {...props}
+          style={placeholder ? {
+            ...(props.style || {}),
+            backgroundImage: `url(${placeholder.dataUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            aspectRatio: placeholder.aspectRatio,
+          } : props.style}
         />
         {/* NAS 圖片 hover overlay — 顯示完整 EXIF（從下滑入） */}
         {isNAS && exifData && hasExifContent && (

@@ -20,6 +20,13 @@
     "multer": "^2.1.1",
     "opencc-js": "^1.0.5",
     "sharp": "^0.34.4",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "^6.0.1",
+    "thumbhash": "^0.1.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "sqlite3"
+    ]
   }
 }

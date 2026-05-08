@@ -54,6 +54,39 @@ try {
   // Keep server bootable even if sharp is missing; sync endpoint will report dependency error.
 }
 
+// thumbhash is ESM-only; load lazily via dynamic import to use from CommonJS.
+let _thumbhashLib = null;
+let _thumbhashLoading = null;
+function loadThumbhashLib() {
+  if (_thumbhashLib) return Promise.resolve(_thumbhashLib);
+  if (!_thumbhashLoading) {
+    _thumbhashLoading = import('thumbhash')
+      .then((mod) => { _thumbhashLib = mod; return mod; })
+      .catch((err) => { console.error('[thumbhash] load failed:', err.message); return null; });
+  }
+  return _thumbhashLoading;
+}
+
+// Resize image to ≤100px on longest side, get raw RGBA, encode with thumbhash.
+// Returns base64url string (no padding) suitable for use as URL fragment value, or null on failure.
+async function computeThumbHashBase64(filePath) {
+  if (!sharp) return null;
+  try {
+    const lib = await loadThumbhashLib();
+    if (!lib?.rgbaToThumbHash) return null;
+    const { data, info } = await sharp(filePath)
+      .resize({ width: 100, height: 100, fit: 'inside', withoutEnlargement: true })
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const hash = lib.rgbaToThumbHash(info.width, info.height, data);
+    return Buffer.from(hash).toString('base64url');
+  } catch (err) {
+    console.error('[thumbhash] compute failed for', filePath, '-', err.message);
+    return null;
+  }
+}
+
 const GALLERY_SOURCE_PATH = process.env.GALLERY_SOURCE_PATH || path.join(__dirname, 'storage', 'Blog_Source');
 const GALLERY_OUTPUT_DIR = path.join(__dirname, 'storage', 'gallery');
 const GALLERY_MANIFEST_PATH = path.join(GALLERY_OUTPUT_DIR, 'manifest.json');
@@ -262,7 +295,7 @@ const upload = multer({
 const apiRouter = express.Router();
 
 // Upload Endpoint
-apiRouter.post('/admin/upload', requireAdmin, upload.single('file'), (req, res) => {
+apiRouter.post('/admin/upload', requireAdmin, upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
@@ -271,12 +304,22 @@ apiRouter.post('/admin/upload', requireAdmin, upload.single('file'), (req, res) 
   const date = new Date();
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
-  const fileUrl = `/uploads/${year}/${month}/${req.file.filename}`;
+  let fileUrl = `/uploads/${year}/${month}/${req.file.filename}`;
+
+  // 圖片：計算 thumbhash 並附加為 URL fragment（#th=xxx）。
+  // 用 fragment 的好處是 markdown link 一份到底，瀏覽器發 HTTP 不會送 fragment 出去，
+  // 前端 JS 可以從 src 字串解析出來做模糊佔位。
+  let thumbhash = null;
+  if (req.file.mimetype && req.file.mimetype.startsWith('image/')) {
+    thumbhash = await computeThumbHashBase64(req.file.path);
+    if (thumbhash) fileUrl += `#th=${thumbhash}`;
+  }
 
   res.json({
     message: 'success',
     url: fileUrl,
-    filename: req.file.filename
+    filename: req.file.filename,
+    thumbhash
   });
 });
 
