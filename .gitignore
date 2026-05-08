@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# 全專案統一使用 pnpm（含 server/）；忽略 npm 留下的 lockfile 避免混淆 Dependabot
+/package-lock.json
+/server/package-lock.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
