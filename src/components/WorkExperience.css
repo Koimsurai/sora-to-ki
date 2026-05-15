@@ -1,163 +1,165 @@
-.work-experience-section {
-  /* height: 100vh; */
-  /* 移除固定高度 */
-  /* scroll-snap-align: start; */
-  /* 移除滾動吸附對齊點 */
-  padding: 60px 50px;
-  /* 上下 60px，左右 50px 的內距 */
-  /* background-color: var(--clr-bg-primary); */
-  /* 移除背景色 */
-  /* display: flex; */
-  /* 移除 Flexbox */
-  /* flex-direction: column; */
-  /* 移除垂直排列 */
-  /* justify-content: center; */
-  /* 移除垂直居中 */
-  box-sizing: border-box;
-  /* 確保 padding 不會增加高度 */
-}
-
-.work-experience-section h2 {
-  font-size: 2.5em;
-  text-align: center;
-  margin-bottom: 50px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.experience-list {
-  max-width: 900px;
-  /* 限制最大寬度 */
-  margin: 0 auto;
-  /* 水平居中 */
+.work-v2 .work-timeline {
+  position: relative;
   display: flex;
-  /* 使用 Flexbox */
   flex-direction: column;
-  /* 垂直排列 */
-  gap: 40px;
-  /* 項目間距 */
+  gap: 0;
 }
 
-.experience-item {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 25px 30px;
-  border-radius: 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+/* Vertical rail line that runs through all entries */
+.work-v2 .work-timeline::before {
+  content: '';
+  position: absolute;
+  left: 119px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(127, 90, 240, 0.5) 0%,
+    rgba(127, 90, 240, 0.2) 50%,
+    rgba(127, 90, 240, 0.05) 100%
+  );
 }
 
-.experience-item:hover {
-  border-color: rgba(127, 90, 240, 0.35);
-  box-shadow: 0 0 20px rgba(127, 90, 240, 0.08), 0 8px 32px rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-2px);
+.work-entry {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 32px;
+  padding-bottom: 36px;
+  position: relative;
 }
 
-.experience-header {
+.work-entry:last-child { padding-bottom: 0; }
+
+.work-rail {
+  position: relative;
+  padding-top: 18px;
+  text-align: right;
+}
+
+.work-rail-dot {
+  position: absolute;
+  top: 22px;
+  right: -22px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #7f5af0;
+  box-shadow:
+    0 0 0 4px rgba(127, 90, 240, 0.15),
+    0 0 16px rgba(127, 90, 240, 0.6);
+}
+
+.work-period {
+  font-size: 0.78rem;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.work-card {
+  padding: 24px 28px;
+}
+
+.work-card-head {
   display: flex;
-  /* 使用 Flexbox */
-  justify-content: space-between;
-  /* 兩端對齊 */
-  align-items: baseline;
-  /* 基線對齊 */
-  margin-bottom: 15px;
-  /* 與下方列表間距 */
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.work-card-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.01em;
+}
+
+.work-card-role {
+  font-size: 0.85rem;
+  color: rgba(199, 184, 255, 0.7);
+  font-weight: 500;
+}
+
+.work-tags {
+  display: flex;
   flex-wrap: wrap;
-  /* 允許換行 */
-  gap: 10px;
-  /* 標題和日期之間的間距 */
+  gap: 6px;
+  margin-bottom: 18px;
 }
 
-.experience-header h3 {
-  font-size: 1.4em;
-  /* 職位/公司標題大小 */
-  color: var(--clr-headline);
-  /* 使用標題色 */
-  margin: 0;
-  /* 移除預設邊距 */
+.work-tag {
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  background: rgba(127, 90, 240, 0.1);
+  border: 1px solid rgba(127, 90, 240, 0.22);
+  color: rgba(199, 184, 255, 0.85);
+  border-radius: 999px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
-.experience-header .role {
-  font-size: 0.9em;
-  font-weight: normal;
-  color: rgba(255, 255, 255, 0.45);
+.work-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
-.experience-header .period {
-  font-size: 0.9em;
-  color: rgba(255, 255, 255, 0.4);
-  font-style: italic;
-  /* 斜體 */
-  white-space: nowrap;
-  /* 防止日期換行 */
-}
-
-.details-list {
-  list-style: none;
-  /* 移除預設列表樣式 */
-  padding-left: 0;
-  /* 移除左側內距 */
-  margin: 0;
-}
-
-.details-list li {
-  font-size: 1em;
-  color: rgba(255, 255, 255, 0.65);
+.work-group-label {
+  display: block;
   margin-bottom: 8px;
-  /* 項目間距 */
-  line-height: 1.5;
-  /* 行高 */
-  padding-left: 20px;
-  /* 左側內距 */
-  position: relative;
-  /* 為了自訂項目符號 */
+  color: rgba(199, 184, 255, 0.55);
+  font-size: 0.68rem;
+  letter-spacing: 2px;
 }
 
-/* 針對單純的 li 套用自訂項目符號，排除 detail-group 本身 */
-.details-list>li:not(.detail-group)::before {
-  content: '•';
+.work-bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.work-bullets li {
+  position: relative;
+  padding-left: 16px;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.work-bullets li::before {
+  content: '';
   position: absolute;
   left: 0;
-  color: var(--clr-tertiary);
-  font-size: 1.2em;
-  line-height: 1;
+  top: 0.7em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(127, 90, 240, 0.65);
 }
 
-/* 針對 detail-group 內的子項目 li 套用自訂項目符號 */
-.details-list li.detail-group ul li {
-  position: relative;
-}
+.work-bullets-flat li { font-size: 0.9rem; }
 
-.details-list li.detail-group ul li::before {
-  content: '•';
-  position: absolute;
-  left: 0;
-  color: var(--clr-tertiary);
-  font-size: 1.2em;
-  line-height: 1;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .work-experience-section {
-    padding: 40px 20px;
+@media (max-width: 720px) {
+  .work-v2 .work-timeline::before { display: none; }
+  .work-entry {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-bottom: 28px;
   }
-
-  .work-experience-section h2 {
-    font-size: 2em;
+  .work-rail {
+    padding-top: 0;
+    text-align: left;
   }
-
-  .experience-header {
-    align-items: flex-start;
-    /* 頂部對齊 */
-  }
-
-  .experience-header h3 {
-    font-size: 1.2em;
+  .work-rail-dot {
+    position: static;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
   }
 }

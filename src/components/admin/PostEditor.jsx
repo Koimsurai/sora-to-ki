@@ -140,6 +140,7 @@ export default function PostEditor() {
       allowComments: true,
       pin: false,
       pinOrder: 0,
+      send_newsletter: false,
       // i18n
       source_language: 'zh-TW',
       title_en: '', content_en: '', summary_en: '',
@@ -286,6 +287,8 @@ export default function PostEditor() {
           title_ja: data.title_ja || '', content_ja: data.content_ja || '', summary_ja: data.excerpt_ja || '',
           series_name: data.series_name || '',
           series_order: data.series_order ?? '',
+          // Newsletter trigger is a transient form-only flag — never persisted on the post.
+          send_newsletter: false,
         };
         form.reset(formattedData);
         setActiveLocale(data.source_language || 'zh-TW');
@@ -305,6 +308,7 @@ export default function PostEditor() {
           allowComments: true,
           pin: false,
           pinOrder: 0,
+          send_newsletter: false,
         };
         form.reset(mockData);
         toast.info('使用模擬數據（API 未連接）');
@@ -366,6 +370,7 @@ export default function PostEditor() {
       allowComments: n8nData.allowComments !== false,
       pin: n8nData.pin || false,
       pinOrder: n8nData.pinOrder || 0,
+      send_newsletter: false,
     });
 
     toast.success('已成功匯入 N8N 資料');
@@ -1150,6 +1155,59 @@ export default function PostEditor() {
                         </FormItem>
                       )}
                     />
+
+                    {/* Newsletter trigger — auto-broadcast on publish */}
+                    <FormField
+                      control={form.control}
+                      name="send_newsletter"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between">
+                          <div className="flex flex-col gap-0.5">
+                            <FormLabel className="text-xs text-muted-foreground">
+                              發佈時推送 Newsletter
+                            </FormLabel>
+                            <span className="text-[10px] text-muted-foreground/60">
+                              文章狀態為「已發佈」時才會觸發
+                            </span>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Manual broadcast — only for already-published posts */}
+                    {id && form.watch('status') === 'published' && (
+                      <button
+                        type="button"
+                        className="w-full mt-1 px-3 py-2 text-xs rounded-md border border-violet-500/30 bg-violet-500/8 text-violet-200 hover:bg-violet-500/15 hover:border-violet-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isSavingDraft || isPublishing}
+                        onClick={async () => {
+                          if (!confirm('要立即推送這篇文章給所有訂閱者嗎？')) return;
+                          try {
+                            const token = localStorage.getItem('koimsurai_user_token');
+                            const res = await fetch(`/api/admin/posts/${id}/send-newsletter`, {
+                              method: 'POST',
+                              headers: { Authorization: `Bearer ${token}` },
+                            });
+                            const data = await res.json();
+                            if (!res.ok) {
+                              toast.error(data.error || '推送失敗');
+                              return;
+                            }
+                            toast.success(`已寄出 ${data.sent} 封，失敗 ${data.failed}`);
+                          } catch (e) {
+                            toast.error(e.message || '推送失敗');
+                          }
+                        }}
+                      >
+                        立即推送 Newsletter
+                      </button>
+                    )}
                   </div>
                 </div>
 

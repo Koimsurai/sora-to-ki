@@ -7,6 +7,52 @@ const https = require('https');
 const axios = require('axios');
 const { initializeDatabase, db } = require('./database.js');
 const { createRequireAdmin, createRequireOwner, basicAuth, JWT_SECRET } = require('./auth');
+const { isMailerConfigured, generateToken: genUnsubToken, sendNewsletter } = require('./mailer');
+
+// Fire-and-forget newsletter dispatch — used by both admin POST/PUT post
+// endpoints when `send_newsletter` flag is set. Errors are logged but never
+// block the HTTP response (the post is what the admin cares about; mail
+// delivery is a side effect).
+function dispatchNewsletterForPost(postId) {
+  if (!isMailerConfigured()) {
+    console.warn(`[newsletter] RESEND_API_KEY missing — skipping send for post ${postId}`);
+    return;
+  }
+  db.get(
+    'SELECT id, title, excerpt, status FROM posts WHERE id = ?',
+    [postId],
+    (err, post) => {
+      if (err || !post) {
+        console.error(`[newsletter] post lookup failed for ${postId}:`, err);
+        return;
+      }
+      if (post.status !== 'published') return;
+      db.all(
+        'SELECT email, name, unsubscribe_token FROM newsletter_subscribers WHERE status = ? AND unsubscribe_token IS NOT NULL',
+        ['active'],
+        async (subErr, subscribers) => {
+          if (subErr) {
+            console.error('[newsletter] subscriber lookup failed:', subErr);
+            return;
+          }
+          if (!subscribers.length) {
+            console.log(`[newsletter] post ${postId} ready but 0 active subscribers`);
+            return;
+          }
+          try {
+            const result = await sendNewsletter({ post, subscribers });
+            console.log(`[newsletter] post ${postId} → sent=${result.sent} failed=${result.failed}`);
+            if (result.errors.length) {
+              console.warn('[newsletter] errors:', result.errors);
+            }
+          } catch (e) {
+            console.error('[newsletter] dispatch error:', e);
+          }
+        }
+      );
+    }
+  );
+}
 
 // 建立需要 DB 的 middleware
 const requireAdmin = createRequireAdmin(db);
@@ -1447,6 +1493,7 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
     title_zh_cn, content_zh_cn, excerpt_zh_cn,
     title_ja, content_ja, excerpt_ja,
     series_name, series_order,
+    send_newsletter = false,
   } = req.body;
 
   if (!title || !content) {
@@ -1498,6 +1545,11 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
         message: "success",
         data: { id: postId, title, content, excerpt, category, tags, status, source_language }
       });
+
+      // Fire-and-forget after response — don't block the admin save.
+      if (send_newsletter && status === 'published') {
+        dispatchNewsletterForPost(postId);
+      }
     });
   });
 });
@@ -1514,6 +1566,7 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
     title_zh_cn, content_zh_cn, excerpt_zh_cn,
     title_ja, content_ja, excerpt_ja,
     series_name, series_order,
+    send_newsletter = false,
   } = req.body;
 
   if (source_language !== undefined && !I18N_LOCALES.includes(source_language)) {
@@ -1601,6 +1654,11 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
         message: "success",
         data: { id: req.params.id, title, content, excerpt, category, tags, status }
       });
+
+      // Auto-broadcast newsletter when admin flips draft → published with the flag.
+      if (send_newsletter && status === 'published') {
+        dispatchNewsletterForPost(req.params.id);
+      }
     });
   });
 });
@@ -2425,13 +2483,30 @@ apiRouter.post('/newsletter/subscribe', (req, res) => {
     return res.status(400).json({ "error": "Invalid email format" });
   }
 
-  const sql = 'INSERT INTO newsletter_subscribers (email, name, status) VALUES (?, ?, ?)';
-  const params = [email, name || null, 'active'];
+  const token = genUnsubToken();
+  const sql = 'INSERT INTO newsletter_subscribers (email, name, status, unsubscribe_token) VALUES (?, ?, ?, ?)';
+  const params = [email, name || null, 'active', token];
 
   db.run(sql, params, function (err) {
     if (err) {
-      if (err.message.includes('UNIQUE constraint failed')) {
-        return res.status(400).json({ "error": "This email is already subscribed" });
+      if (err.message.includes('UNIQUE constraint failed: newsletter_subscribers.email')) {
+        // 已經訂閱：如果是 unsubscribed 的，重新激活並補新 token
+        db.run(
+          `UPDATE newsletter_subscribers
+           SET status = 'active',
+               unsubscribed_at = NULL,
+               unsubscribe_token = COALESCE(unsubscribe_token, ?)
+           WHERE email = ? AND status != 'active'`,
+          [token, email],
+          function (updErr) {
+            if (updErr) return res.status(400).json({ error: updErr.message });
+            if (this.changes > 0) {
+              return res.status(200).json({ message: 'Re-subscribed to newsletter' });
+            }
+            return res.status(400).json({ error: 'This email is already subscribed' });
+          }
+        );
+        return;
       }
       res.status(400).json({ "error": err.message });
       return;
@@ -2443,26 +2518,76 @@ apiRouter.post('/newsletter/subscribe', (req, res) => {
   });
 });
 
-// POST unsubscribe from newsletter
+// POST unsubscribe from newsletter — supports email OR token (one-click)
 apiRouter.post('/newsletter/unsubscribe', (req, res) => {
-  const { email } = req.body;
+  const { email, token } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ "error": "Email is required" });
+  if (!email && !token) {
+    return res.status(400).json({ "error": "Email or token is required" });
   }
 
-  const sql = 'UPDATE newsletter_subscribers SET status = ?, unsubscribed_at = datetime("now") WHERE email = ?';
-  db.run(sql, ['unsubscribed', email], function (err) {
+  const sql = token
+    ? 'UPDATE newsletter_subscribers SET status = ?, unsubscribed_at = datetime("now") WHERE unsubscribe_token = ?'
+    : 'UPDATE newsletter_subscribers SET status = ?, unsubscribed_at = datetime("now") WHERE email = ?';
+  const param = token || email;
+
+  db.run(sql, ['unsubscribed', param], function (err) {
     if (err) {
       res.status(400).json({ "error": err.message });
       return;
     }
     if (this.changes === 0) {
-      res.status(404).json({ "message": "Email not found in subscribers" });
+      res.status(404).json({ "message": "Subscriber not found" });
       return;
     }
     res.json({ "message": "Successfully unsubscribed from newsletter" });
   });
+});
+
+// GET subscriber info by token (for /unsubscribe confirmation page)
+apiRouter.get('/newsletter/by-token/:token', (req, res) => {
+  const { token } = req.params;
+  if (!token) return res.status(400).json({ error: 'token required' });
+  db.get(
+    'SELECT email, name, status FROM newsletter_subscribers WHERE unsubscribe_token = ?',
+    [token],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: 'invalid token' });
+      res.json(row);
+    }
+  );
+});
+
+// POST /admin/posts/:id/send-newsletter — admin manual broadcast
+apiRouter.post('/admin/posts/:id/send-newsletter', requireAdmin, (req, res) => {
+  if (!isMailerConfigured()) {
+    return res.status(500).json({ error: 'RESEND_API_KEY not configured on server' });
+  }
+  const { id } = req.params;
+  db.get(
+    'SELECT id, title, excerpt, status FROM posts WHERE id = ?',
+    [id],
+    (err, post) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!post) return res.status(404).json({ error: 'post not found' });
+      if (post.status !== 'published') {
+        return res.status(400).json({ error: 'only published posts can be sent' });
+      }
+      db.all(
+        'SELECT email, name, unsubscribe_token FROM newsletter_subscribers WHERE status = ? AND unsubscribe_token IS NOT NULL',
+        ['active'],
+        async (subErr, subscribers) => {
+          if (subErr) return res.status(500).json({ error: subErr.message });
+          if (!subscribers.length) {
+            return res.json({ sent: 0, failed: 0, message: 'no active subscribers' });
+          }
+          const result = await sendNewsletter({ post, subscribers });
+          res.json({ message: 'newsletter dispatched', ...result });
+        }
+      );
+    }
+  );
 });
 
 // GET newsletter subscribers (admin only)

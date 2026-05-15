@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react'; // Import useCallback, lazy, Suspense
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { useInView } from 'react-intersection-observer'; // Import useInView
-import LoadingScreen from './components/LoadingScreen'; // Import LoadingScreen
-import BookshelfLoading from './components/BookshelfLoading'; // Import BookshelfLoading
 import Saturn3D from './components/Saturn3D';
 import IntroAnimation from './components/IntroAnimation';
 import Header from './components/Header';
@@ -49,6 +47,7 @@ const LazyBooksManager = lazy(() => import('./components/admin/BooksManager'));
 const LazyCollectionManager = lazy(() => import('./components/admin/CollectionManager'));
 const LazyArticleGenerator = lazy(() => import('./components/admin/ArticleGenerator'));
 const LazyCommentsManager = lazy(() => import('./components/admin/CommentsManager'));
+const LazySubscribersManager = lazy(() => import('./components/admin/SubscribersManager'));
 const LazyUsersManager = lazy(() => import('./components/admin/UsersManager'));
 const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
@@ -59,6 +58,7 @@ const LazyCinema = lazy(() => import('./components/Cinema'));
 const LazyAnime = lazy(() => import('./components/Anime'));
 const LazySetup = lazy(() => import('./components/Setup'));
 const LazyOAuthCallback = lazy(() => import('./components/OAuthCallback'));
+const LazyUnsubscribe = lazy(() => import('./components/Unsubscribe'));
 const LazyNotFound = lazy(() => import('./components/NotFound'));
 const LazyCommandPalette = lazy(() => import('./components/CommandPalette'));
 
@@ -306,7 +306,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/en/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
           <Route path="/zh-cn/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
           <Route path="/ja/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
-          <Route path="/bookshelf" element={<Suspense fallback={<BookshelfLoading />}><LazyBookshelf /></Suspense>} />
+          <Route path="/bookshelf" element={<Suspense fallback={<KoimLoader fullscreen text="載入書籍" />}><LazyBookshelf /></Suspense>} />
           <Route path="/activity" element={<Suspense fallback={<LoadingFallback />}><LazyActivity /></Suspense>} />
           <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />
           <Route path="/now" element={<Suspense fallback={<LoadingFallback />}><LazyNow /></Suspense>} />
@@ -315,6 +315,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />
           <Route path="/setup" element={<Suspense fallback={<LoadingFallback />}><LazySetup /></Suspense>} />
           <Route path="/auth/callback" element={<Suspense fallback={<LoadingFallback />}><LazyOAuthCallback /></Suspense>} />
+          <Route path="/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><LazyUnsubscribe /></Suspense>} />
           {/* 後台路由 - 需要 ADMIN/OWNER 權限 */}
           <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
           <Route path="/admin/*" element={
@@ -335,6 +336,7 @@ function Layout({ activeSection, onSectionChange }) {
             <Route path="collection" element={<Suspense fallback={<LoadingFallback />}><LazyCollectionManager /></Suspense>} />
             <Route path="article-generator" element={<Suspense fallback={<LoadingFallback />}><LazyArticleGenerator /></Suspense>} />
             <Route path="comments" element={<Suspense fallback={<LoadingFallback />}><LazyCommentsManager /></Suspense>} />
+            <Route path="subscribers" element={<Suspense fallback={<LoadingFallback />}><LazySubscribersManager /></Suspense>} />
             <Route path="users" element={<Suspense fallback={<LoadingFallback />}><LazyUsersManager /></Suspense>} />
             <Route path="notes" element={<AdminPlaceholder title="日記管理" />} />
           </Route>
@@ -388,17 +390,28 @@ function App() {
     }, 200);
   };
 
+  // Mount Layout while the white flash is still at peak so the heavy
+  // initial React render is hidden under the bloom — avoids a visible
+  // jank at the moment the intro fades into the home page.
+  const handlePreReveal = useCallback(() => {
+    setShowMainHtmlContent(true);
+  }, []);
+
   const handleAnimationComplete = () => {
     setShowMainHtmlContent(true);
-    setSaturnZIndex(1);
     try {
       sessionStorage.setItem('introCompleted', 'true');
     } catch (error) {
       console.error("無法寫入 sessionStorage", error);
     }
     clearTimeout(introCompleteTimeoutRef.current);
+    // Keep Saturn at z=10000 throughout the fade so the intro container
+    // (which still has a dark background while fading) can't occlude it.
+    // Both the unmount and the z-index drop happen in the same tick after
+    // the fade completes — Saturn is fully positioned and stable by then.
     introCompleteTimeoutRef.current = setTimeout(() => {
       setIntroVisible(false);
+      setSaturnZIndex(1);
     }, 300);
   };
 
@@ -426,7 +439,7 @@ function App() {
   }, []);
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return <KoimLoader fullscreen text="LOADING" />;
   }
 
   return (
@@ -441,6 +454,7 @@ function App() {
                 <IntroAnimation
                   onAnimationComplete={handleAnimationComplete}
                   onExplosionStart={handleExplosionStart}
+                  onPreReveal={handlePreReveal}
                 />
               )}
               <Canvas

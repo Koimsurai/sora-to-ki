@@ -1,59 +1,78 @@
-import React from 'react';
-import { motion } from 'framer-motion'; // 導入 motion
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'; // 引入 FontAwesomeIcon
-import { faPhone, faEnvelope, faGlobe, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons'; // 引入所需圖標
-import './Contact.css'; // 引入對應的 CSS 檔案
+import { motion } from 'framer-motion';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPhone, faEnvelope } from '@fortawesome/free-solid-svg-icons';
+import { FaGithub, FaLinkedin } from 'react-icons/fa';
+import './Contact.css';
 
-function Contact() {
-  // 根據履歷內容
-  const contactInfo = {
-    phone: '0906503623',
-    email: 'timo9378@gmail.com',
-  };
+const PRIMARY = [
+  { key: 'email', icon: faEnvelope, label: 'Email', value: 'timo9378@gmail.com', href: 'mailto:timo9378@gmail.com' },
+  { key: 'phone', icon: faPhone,    label: 'Phone', value: '0906-503-623',       href: 'tel:0906503623' },
+];
 
-  return (
-    <section // 恢復為普通 section
-      id="contact"
-      className="contact-section"
+const SOCIAL = [
+  { key: 'github',   icon: FaGithub,   href: 'https://github.com/timo9378',           label: 'GitHub' },
+  { key: 'linkedin', icon: FaLinkedin, href: 'https://www.linkedin.com/in/timo9378', label: 'LinkedIn' },
+];
+
+const Contact = () => (
+  <section id="contact" className="home-section contact-v2">
+    <div className="home-section-eyebrow">
+      <span className="section-label">Contact</span>
+      <span className="contact-availability">
+        <span className="contact-status-dot" />
+        Open for opportunities
+      </span>
+    </div>
+
+    <motion.div
+      className="contact-shell"
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
     >
-      <motion.h2 // 為標題添加動畫
-        initial={{ opacity: 0, scale: 0.8 }} // 改為縮小
-        whileInView={{ opacity: 1, scale: 1 }} // 改為放大
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        viewport={{ once: true }}
-      >
-        聯絡資訊
-      </motion.h2>
-      <p className="contact-cta">對我的專案感興趣嗎？歡迎透過以下方式聯繫。</p> {/* 加入 CTA */}
-      <div // 移除外層 motion.div，改為普通 div
-        className="contact-info-container"
-        // 移除外層動畫屬性
-      >
-        {/* 將每個聯絡項目包裝在 motion.div 中 */}
-        {[
-          { icon: faPhone, type: 'tel', value: contactInfo.phone, text: contactInfo.phone },
-          { icon: faEnvelope, type: 'mailto', value: contactInfo.email, text: contactInfo.email },
-        ].filter(item => item.value) // 過濾掉 value 為空的項目 (以防萬一)
-         .map((item, index) => (
-          <motion.div
-            key={item.type} // 使用 type 作為 key 更穩定
-            className="contact-item"
-            initial={{ opacity: 0, scale: 0.8 }} // 改為縮小
-            whileInView={{ opacity: 1, scale: 1 }} // 改為放大
-            transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }} // 錯開動畫
-            viewport={{ once: true }}
-          >
-            <FontAwesomeIcon icon={item.icon} className="icon" /> {/* 使用 FontAwesomeIcon */}
-            {item.type === 'tel' && <a href={`tel:${item.value}`}>{item.text}</a>}
-            {item.type === 'mailto' && <a href={`mailto:${item.value}`}>{item.text}</a>}
-            {item.type === 'link' && <a href={item.value} target="_blank" rel="noopener noreferrer">{item.text}</a>}
-            {item.type === 'text' && <span>{item.text}</span>}
-          </motion.div>
-        ))}
-      </div> {/* 結束普通 div */}
-      {/* <div className="copyright"> © 2025 楊泰和. All rights reserved. </div> */} {/* 移除重複的版權聲明 */}
-    </section>
-  ); // 修正：將 ) 移到註解前
-} // 修正：將 } 移到註解前
+      <div className="contact-pitch">
+        <h2 className="section-hero-title contact-title">想聊聊？<br />Let's build something.</h2>
+        <p className="contact-blurb">
+          專案合作、技術交流、實習機會，都歡迎透過下列任一方式聯繫。
+        </p>
+      </div>
+
+      <div className="contact-card glass-card">
+        <ul className="contact-methods">
+          {PRIMARY.map((m) => (
+            <li key={m.key} className="contact-method">
+              <span className="contact-method-icon">
+                <FontAwesomeIcon icon={m.icon} />
+              </span>
+              <div className="contact-method-body">
+                <span className="section-label">{m.label}</span>
+                <a href={m.href} className="contact-method-value">{m.value}</a>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div className="contact-social">
+          {SOCIAL.map((s) => {
+            const Icon = s.icon;
+            return (
+              <a
+                key={s.key}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="contact-social-link"
+                aria-label={s.label}
+              >
+                <Icon />
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    </motion.div>
+  </section>
+);
 
 export default Contact;

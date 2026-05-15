@@ -1,198 +1,178 @@
-.expertise-section {
-  /* height: 100vh; */
-  /* 移除固定高度 */
-  /* scroll-snap-align: start; */
-  /* 移除滾動吸附對齊點 */
-  padding: 60px 50px;
-  /* 上下 60px，左右 50px 的內距 */
-  /* background-color: var(--clr-bg-secondary); */
-  /* 移除背景色 */
-  text-align: center;
-  /* 內容居中 */
-  /* display: flex; */
-  /* 移除 Flexbox */
-  /* flex-direction: column; */
-  /* 移除垂直排列 */
-  /* justify-content: center; */
-  /* 移除垂直居中 */
-  box-sizing: border-box;
-  /* 確保 padding 不會增加高度 */
+.expertise-v2 .expertise-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr);
+  gap: 56px;
+  align-items: start;
 }
 
-.expertise-section h2 {
-  font-size: 2.5em;
-  margin-bottom: 40px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.skills-container {
+/* ── Left hero column ──────────────────────────── */
+.expertise-hero {
+  position: sticky;
+  top: 96px;
   display: flex;
-  /* 使用 Flexbox 排列 */
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.expertise-hero-number {
+  font-size: clamp(4rem, 9vw, 7.5rem);
+  font-weight: 800;
+  line-height: 0.95;
+  background: linear-gradient(135deg, #c7b8ff 0%, #ec7dd6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.04em;
+}
+
+.expertise-hero-unit {
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.expertise-hero-blurb {
+  margin: 1.5rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* ── Right rows column ─────────────────────────── */
+.expertise-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.expertise-row {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 22px;
+}
+
+.expertise-row:last-child {
+  border-bottom: none;
+  padding-bottom: 6px;
+}
+
+.expertise-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.expertise-row-label .section-label {
+  color: rgba(199, 184, 255, 0.6);
+}
+
+.expertise-row-name {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
+}
+
+/* ── Marquee ────────────────────────────────────── */
+.expertise-marquee-wrap {
+  /* Horizontal clip only — vertical visible so the hover translateY(-2px)
+     on chips doesn't get sliced at the top edge. */
+  overflow-x: clip;
+  overflow-y: visible;
+  /* Fade edges so pills scroll in/out smoothly */
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  /* Give the chips room to lift on hover without bumping into the row above */
+  padding: 4px 0;
+}
+
+.expertise-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 10px;
+  animation: expertise-marquee 30s linear infinite;
+  will-change: transform;
+}
+
+/* Pause on hover so users can actually read individual pills */
+.expertise-marquee-wrap:hover .expertise-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes expertise-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Skill chip (icon only; native tooltip via title attribute) ─── */
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  /* 居中對齊 */
-  flex-wrap: wrap;
-  /* 允許換行 */
-  gap: 35px;
-  /* 增加區塊間距 */
-  max-width: 1400px;
-  /* 增加最大寬度限制 */
-  margin: 0 auto;
-  /* 水平居中 */
-}
-
-.skill-category {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
-  padding: 30px;
-  border-radius: 16px;
-  min-width: 350px;
-  max-width: 400px;
-  text-align: left;
-  flex: 1;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: help;
+  transition:
+    background 220ms ease,
+    border-color 220ms ease,
+    transform 220ms ease;
 }
 
-.skill-category:hover {
-  border-color: rgba(127, 90, 240, 0.35);
-  box-shadow: 0 0 20px rgba(127, 90, 240, 0.08), 0 8px 32px rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+.skill-chip:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
   transform: translateY(-2px);
 }
 
-.skill-category h3 {
-  font-size: 1.5em;
-  /* 類別標題大小 */
-  color: var(--clr-headline);
-  /* 使用標題色 */
-  margin-bottom: 15px;
-  /* 與列表間距 */
-  border-bottom: 2px solid var(--clr-button);
-  /* 使用按鈕/高亮色 */
-  padding-bottom: 5px;
-  /* 底線與文字間距 */
-  display: inline-block;
-  /* 讓底線寬度自適應文字 */
+.skill-chip-icon {
+  font-size: 1.25rem;
+  /* color injected inline per icon's brand colour */
 }
 
-/* --- 新的技能項目佈局 --- */
-.skill-items-wrapper {
+/* Static row — used when category has too few items to marquee cleanly */
+.expertise-static-row {
   display: flex;
-  /* 使用 Flexbox 實現橫向排列 */
   flex-wrap: wrap;
-  /* 允許換行 */
-  gap: 25px;
-  /* 增加技能項目之間的間距 */
-  margin-top: 20px;
-  /* 增加與標題的間距 */
-  justify-content: flex-start;
-  /* 左對齊排列 */
-  align-items: flex-start;
-  /* 頂部對齊 */
+  gap: 10px;
 }
 
-.skill-item {
-  display: flex;
-  /* 使用 Flexbox 排列圖示和箭頭 */
-  flex-direction: column;
-  /* 垂直排列 */
-  align-items: center;
-  /* 水平居中對齊 */
-  min-width: 65px;
-  /* 稍微增加最小寬度 */
-  max-width: 80px;
-  /* 添加最大寬度限制 */
-  text-align: center;
-  /* 確保文字（如果有的話）也居中 */
-  flex-shrink: 0;
-  /* 防止項目縮小 */
-}
-
-/* 移除舊的 ul, li, li::before 樣式 */
-/* .skill-category ul { ... } */
-/* .skill-category ul li { ... } */
-/* .skill-category ul li::before { ... } */
-/* .skill-category ul li:has(.skill-icon) { ... } */
-/* .skill-category ul li:has(.skill-icon)::before { ... } */
-
-
-/* 技能圖示樣式 */
-.skill-icon {
-  display: block;
-  font-size: 1.8em;
-  color: rgba(255, 255, 255, 0.85);
-  margin-bottom: 5px;
-  /* 與下方箭頭的間距 */
-  line-height: 1;
-}
-
-/* 技能文字樣式 */
-.skill-text {
-  font-size: 1em;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 5px;
-  /* 與下方箭頭的間距 */
-}
-
-/* 新增：技能箭頭樣式 */
-.skill-arrow {
-  display: block;
-  /* 確保獨佔一行 */
-  color: var(--clr-tertiary);
-  /* 使用第三點綴綠 */
-  font-weight: bold;
-  font-size: 1.2em;
-  /* 調整箭頭大小 */
-}
-
-/* 移除了不需要的 skill-tooltip CSS */
-
-/* 響應式設計 */
-@media (max-width: 1200px) {
-  .skills-container {
-    max-width: 1200px;
-    gap: 30px;
-  }
-
-  .skill-category {
-    min-width: 320px;
-    max-width: 380px;
+@media (prefers-reduced-motion: reduce) {
+  .expertise-marquee-track {
+    animation: none !important;
   }
 }
 
-@media (max-width: 768px) {
-  .expertise-section {
-    padding: 40px 20px;
+@media (max-width: 900px) {
+  .expertise-v2 .expertise-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
   }
-
-  .expertise-section h2 {
-    font-size: 2em;
-  }
-
-  .skills-container {
-    flex-direction: column;
-    /* 垂直排列 */
-    align-items: center;
-    /* 居中對齊 */
-    gap: 25px;
-  }
-
-  .skill-category {
-    width: 90%;
-    /* 調整寬度 */
-    min-width: unset;
-    /* 取消最小寬度 */
-    max-width: 500px;
-    /* 在手機上允許更寬 */
-  }
-
-  .skill-items-wrapper {
-    gap: 20px;
-    /* 在小屏幕上減少間距 */
+  .expertise-hero { position: static; }
+  .expertise-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    align-items: start;
   }
 }

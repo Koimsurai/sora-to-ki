@@ -1,0 +1,116 @@
+.unsubscribe-shell {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  z-index: 2;
+}
+
+.unsubscribe-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 40px 36px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.unsubscribe-brand {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: rgba(199, 184, 255, 0.7);
+  text-decoration: none;
+  margin-bottom: 24px;
+}
+
+.unsubscribe-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.unsubscribe-body {
+  margin: 0 0 24px;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.unsubscribe-email {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(127, 90, 240, 0.1);
+  border: 1px solid rgba(127, 90, 240, 0.22);
+  border-radius: 6px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.85em;
+  color: rgba(199, 184, 255, 0.95);
+  margin: 0 2px;
+}
+
+.unsubscribe-status {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-style: italic;
+}
+
+.unsubscribe-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.unsubscribe-btn,
+.unsubscribe-btn:hover,
+.unsubscribe-btn:focus,
+.unsubscribe-btn:focus-visible,
+.unsubscribe-btn:active {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  border: 1px solid transparent;
+  transition: background 200ms ease, border-color 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.unsubscribe-btn--danger {
+  background: rgba(220, 50, 80, 0.14);
+  border-color: rgba(220, 50, 80, 0.35);
+  color: rgba(255, 200, 210, 0.95);
+}
+.unsubscribe-btn--danger:hover {
+  background: rgba(220, 50, 80, 0.22);
+  border-color: rgba(220, 50, 80, 0.55);
+  color: #ffffff;
+}
+
+.unsubscribe-btn--ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.78);
+}
+.unsubscribe-btn--ghost:hover {
+  background: rgba(199, 184, 255, 0.08);
+  border-color: rgba(199, 184, 255, 0.35);
+  color: #ffffff;
+}

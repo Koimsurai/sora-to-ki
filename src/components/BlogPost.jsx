@@ -1160,12 +1160,31 @@ const TableOfContents = React.memo(({ headings, activeHeading, readingProgress, 
 
 /* ══════════════════════════
    SubscribeModal
+   訂閱狀態存在 localStorage 的 KOIM_NEWSLETTER key 裡，
+   {email, name, ts} 結構。重複打開 modal 會自動偵測，
+   顯示「已訂閱」狀態而不是再來一次表單。
    ══════════════════════════ */
+const NEWSLETTER_LS_KEY = 'koim_newsletter_subscriber';
+
+function readSubscriberLS() {
+  try {
+    const raw = localStorage.getItem(NEWSLETTER_LS_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function writeSubscriberLS(value) {
+  try { localStorage.setItem(NEWSLETTER_LS_KEY, JSON.stringify(value)); } catch { /* localStorage blocked */ }
+}
+function clearSubscriberLS() {
+  try { localStorage.removeItem(NEWSLETTER_LS_KEY); } catch { /* localStorage blocked */ }
+}
+
 const SubscribeModal = ({ onClose }) => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [status, setStatus] = useState('');
   const [message, setMessage] = useState('');
+  const [subscribed, setSubscribed] = useState(() => readSubscriberLS());
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1180,9 +1199,12 @@ const SubscribeModal = ({ onClose }) => {
       if (res.ok) {
         setStatus('success');
         setMessage('訂閱成功！感謝您的訂閱 ✨');
+        const record = { email, name, ts: Date.now() };
+        writeSubscriberLS(record);
+        setSubscribed(record);
         setEmail('');
         setName('');
-        setTimeout(() => onClose(), 2000);
+        setTimeout(() => onClose(), 1800);
       } else {
         setStatus('error');
         setMessage(data.error || '訂閱失敗');
@@ -1190,6 +1212,30 @@ const SubscribeModal = ({ onClose }) => {
     } catch {
       setStatus('error');
       setMessage('網路錯誤，請稍後再試');
+    }
+  };
+
+  const handleUnsubscribe = async () => {
+    if (!subscribed?.email) return;
+    if (!window.confirm(`確定要退訂 ${subscribed.email}?`)) return;
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/newsletter/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: subscribed.email }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || '退訂失敗');
+      }
+      clearSubscriberLS();
+      setSubscribed(null);
+      setStatus('success');
+      setMessage('已退訂。隨時歡迎再回來訂閱。');
+    } catch (e) {
+      setStatus('error');
+      setMessage(e.message || '退訂失敗');
     }
   };
 
@@ -1211,20 +1257,53 @@ const SubscribeModal = ({ onClose }) => {
         transition={{ duration: 0.25 }}
       >
         <button className="subscribe-close" onClick={onClose}><FaTimes /></button>
-        <div className="subscribe-header">
-          <FaEnvelope className="subscribe-icon" />
-          <h3>訂閱電子報</h3>
-          <p>獲取最新文章通知，不錯過任何精彩內容。</p>
-        </div>
-        <form onSubmit={handleSubmit} className="subscribe-form">
-          <input type="text" placeholder="名字（選填）" value={name} onChange={(e) => setName(e.target.value)} disabled={status === 'loading'} />
-          <input type="email" placeholder="電子郵件 *" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={status === 'loading'} />
-          <button type="submit" disabled={status === 'loading'}>
-            {status === 'loading' ? '處理中...' : '訂閱'}
-          </button>
-        </form>
-        {message && <p className={'subscribe-msg ' + status}>{message}</p>}
-        <p className="subscribe-privacy">我們重視您的隱私，不會分享您的資訊。</p>
+
+        {subscribed ? (
+          /* ── 已訂閱狀態 ── */
+          <>
+            <div className="subscribe-header">
+              <FaEnvelope className="subscribe-icon" />
+              <h3>已訂閱 ✓</h3>
+              <p>
+                你已用 <span className="subscribe-email-chip">{subscribed.email}</span> 訂閱了電子報。
+                <br />
+                下次有新文章我們會寄到你信箱。
+              </p>
+            </div>
+            <div className="subscribe-form">
+              <button type="button" onClick={onClose}>
+                好的
+              </button>
+              <button
+                type="button"
+                className="subscribe-secondary"
+                onClick={handleUnsubscribe}
+                disabled={status === 'loading'}
+              >
+                {status === 'loading' ? '處理中…' : '退訂'}
+              </button>
+            </div>
+            {message && <p className={'subscribe-msg ' + status}>{message}</p>}
+          </>
+        ) : (
+          /* ── 訂閱表單 ── */
+          <>
+            <div className="subscribe-header">
+              <FaEnvelope className="subscribe-icon" />
+              <h3>訂閱電子報</h3>
+              <p>獲取最新文章通知，不錯過任何精彩內容。</p>
+            </div>
+            <form onSubmit={handleSubmit} className="subscribe-form">
+              <input type="text" placeholder="名字（選填）" value={name} onChange={(e) => setName(e.target.value)} disabled={status === 'loading'} />
+              <input type="email" placeholder="電子郵件 *" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={status === 'loading'} />
+              <button type="submit" disabled={status === 'loading'}>
+                {status === 'loading' ? '處理中...' : '訂閱'}
+              </button>
+            </form>
+            {message && <p className={'subscribe-msg ' + status}>{message}</p>}
+            <p className="subscribe-privacy">我們重視您的隱私，不會分享您的資訊。</p>
+          </>
+        )}
       </motion.div>
     </motion.div>
   );

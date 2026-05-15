@@ -1,108 +1,142 @@
-.contact-section {
-  padding: 60px 50px; /* 上下 60px，左右 50px 的內距 */
-  /* 背景：完全透明 */
-  background-color: transparent; /* 設置為透明 */
-  /* backdrop-filter: blur(12px); */ /* 移除模糊效果 */
-  /* -webkit-backdrop-filter: blur(12px); */ /* 移除 Safari 支援 */
-  /* border-top: 1px solid rgba(255, 255, 255, 0.1); */ /* 移除頂部邊框 */
-  text-align: center; /* 內容居中 */
-  /* justify-content: center; */ /* 移除垂直居中 */
-  box-sizing: border-box; /* 確保 padding 不會增加高度 */
+.contact-v2 .contact-availability {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(107, 212, 159, 0.92);
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
-.contact-section h2 {
-  font-size: 2.5em;
-  margin-bottom: 40px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.contact-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2cb67d;
+  box-shadow: 0 0 0 4px rgba(44, 182, 125, 0.18);
+  animation: contact-pulse 2s ease-in-out infinite;
 }
 
-.contact-cta {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 1.1em;
-  margin-bottom: 30px; /* 與下方聯絡資訊的間距 */
-  max-width: 500px; /* 限制寬度 */
-  margin-left: auto;
-  margin-right: auto;
+@keyframes contact-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(44, 182, 125, 0.18); }
+  50%      { box-shadow: 0 0 0 6px rgba(44, 182, 125, 0.05); }
 }
 
-.contact-info-container {
-  display: flex; /* 使用 Flexbox 排列 */
-  flex-direction: column; /* 垂直排列 */
-  align-items: center; /* 居中對齊 */
-  gap: 20px; /* 項目間距 */
-  max-width: 600px; /* 限制最大寬度 */
-  margin: 0 auto; /* 水平居中 */
+.contact-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 48px;
+  align-items: stretch;
 }
 
-.contact-item {
-  display: flex; /* 使用 Flexbox 排列 */
-  align-items: center; /* 垂直居中 */
-  /* background-color: var(--clr-bg-primary); */ /* 移除背景色 */
-  padding: 15px 0; /* 調整內距，移除左右內距 */
-  /* border-radius: 8px; */ /* 移除圓角 */
-  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); */ /* 移除陰影 */
-  width: 100%; /* 佔滿容器寬度 */
-  box-sizing: border-box;
-  /* border-bottom: 1px solid rgba(255, 255, 255, 0.1); */ /* 移除底線分隔 */
+.contact-pitch {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.contact-item:last-child {
-  border-bottom: none; /* 最後一個項目移除底線 */
+.contact-title { margin-bottom: 1rem; }
+
+.contact-blurb {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.contact-item .icon {
-  font-size: 1.5em;
-  margin-right: 15px;
-  color: #7f5af0;
-  width: 30px; /* 固定寬度讓文字對齊 */
-  text-align: center;
+.contact-card {
+  padding: 30px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.contact-item a,
-.contact-item span:not(.icon) {
-  font-size: 1.1em;
+.contact-methods {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.contact-method {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.contact-method:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.contact-method-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(127, 90, 240, 0.1);
+  border: 1px solid rgba(127, 90, 240, 0.25);
+  display: grid;
+  place-items: center;
+  color: rgba(199, 184, 255, 0.95);
+  font-size: 1.05rem;
+}
+
+.contact-method-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.contact-method-value {
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  transition: color 200ms ease;
+  word-break: break-all;
+}
+
+.contact-method-value:hover {
+  color: #c7b8ff;
+}
+
+.contact-social {
+  display: flex;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.contact-social-link {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
-  word-break: break-all;
-  transition: color 0.2s ease;
+  font-size: 1rem;
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
 }
 
-.contact-item a:hover {
-  color: #c4b5fd;
-  text-decoration: underline;
+.contact-social-link:hover {
+  background: rgba(127, 90, 240, 0.18);
+  color: #fff;
+  transform: translateY(-1px);
 }
 
-.copyright {
-  margin-top: 50px;
-  font-size: 0.9em;
-  color: rgba(255, 255, 255, 0.3);
-  text-align: center;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .contact-section {
-    padding: 40px 20px;
-  }
-
-  .contact-section h2 {
-    font-size: 2em;
-  }
-
-  .contact-info-container {
-    max-width: 90%;
-  }
-
-  .contact-item .icon {
-    font-size: 1.3em;
-  }
-
-  .contact-item a,
-  .contact-item span:not(.icon) {
-    font-size: 1em;
+@media (max-width: 900px) {
+  .contact-shell {
+    grid-template-columns: 1fr;
+    gap: 32px;
   }
 }

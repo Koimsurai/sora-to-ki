@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SEOHead from './SEOHead';
+import KoimLoader from './KoimLoader';
 import './Music.css';
 
 /* ─── 色彩提取工具：從專輯封面取主色調 ─── */
@@ -247,15 +248,7 @@ const Music = () => {
     return (
       <div className="music-page" style={glowStyle}>
         <div className="music-dim-overlay" />
-        <div className="music-loading">
-          <div className="vinyl-loader">
-            <div className="vinyl-disc" />
-            <div className="vinyl-center" />
-          </div>
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-            正在載入音樂資料...
-          </motion.p>
-        </div>
+        <KoimLoader fullscreen text="載入音樂資料" />
       </div>
     );
   }

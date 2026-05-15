@@ -455,10 +455,25 @@ function initializeDatabase() {
         email TEXT UNIQUE NOT NULL,
         name TEXT,
         status TEXT DEFAULT 'active',
+        unsubscribe_token TEXT UNIQUE,
         subscribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         unsubscribed_at DATETIME
       )
     `);
+
+    // 為舊資料補上 unsubscribe_token 欄位（已存在的 table 不會被 CREATE 影響）
+    db.run("ALTER TABLE newsletter_subscribers ADD COLUMN unsubscribe_token TEXT", (alterErr) => {
+      if (alterErr && !String(alterErr.message).includes('duplicate column')) {
+        console.warn('newsletter_subscribers unsubscribe_token migration skipped:', alterErr.message);
+      }
+    });
+    // 為缺少 token 的舊訂閱者補一個 token
+    db.run(`
+      UPDATE newsletter_subscribers
+      SET unsubscribe_token = lower(hex(randomblob(16)))
+      WHERE unsubscribe_token IS NULL
+    `);
+    db.run("CREATE UNIQUE INDEX IF NOT EXISTS idx_newsletter_token ON newsletter_subscribers(unsubscribe_token)");
 
     // 創建 IP 黑名單表
     db.run(`

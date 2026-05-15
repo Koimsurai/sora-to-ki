@@ -416,10 +416,25 @@ const Activity = () => {
                     className={`steam-recent-card${isCurrent ? ' is-current' : ''}${idx === 0 && !isCurrent ? ' is-featured' : ''}`}
                     role="listitem"
                   >
-                    <div
-                      className="steam-recent-cover"
-                      style={{ backgroundImage: `url(https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg)` }}
-                    />
+                    <div className="steam-recent-cover">
+                      <img
+                        src={`https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/header.jpg`}
+                        alt={g.name}
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          // header.jpg 沒上的新遊戲 fallback：嘗試 capsule，再不行就藏起來露出 placeholder 漸層
+                          const img = e.currentTarget;
+                          if (!img.dataset.fallback) {
+                            img.dataset.fallback = '1';
+                            img.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${g.appid}/capsule_231x87.jpg`;
+                          } else {
+                            img.style.display = 'none';
+                            img.parentElement?.classList.add('is-fallback');
+                          }
+                        }}
+                      />
+                    </div>
                     <div className="steam-recent-overlay" />
                     {isCurrent && <span className="steam-recent-pulse">遊戲中</span>}
                     <div className="steam-recent-info">

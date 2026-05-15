@@ -1,5 +1,8 @@
 /* ══════════════════════════
-   深空暗幕
+   深空暗幕 — 蓋在 3D 場景前面，文字內容才讀得清楚。
+   intro 還在播時保持 opacity 0（被 intro 容器擋住沒差），
+   intro 開始 fade 時跟著淡入，視覺上是 crossfade 不是
+   「突然蓋上一層濾鏡」。
    ══════════════════════════ */
 .nebula-dim-overlay {
   position: fixed;
@@ -7,6 +10,12 @@
   background: rgba(6, 5, 14, 0.65);
   pointer-events: none;
   z-index: 0;
+  opacity: 1;
+  transition: opacity 600ms ease-out;
+}
+
+body.intro-animation-active .nebula-dim-overlay {
+  opacity: 0;
 }
 
 /* ══════════════════════════

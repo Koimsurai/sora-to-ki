@@ -1,99 +1,141 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom'; // 導入 Link 元件
-import photoMainImage from '../assets/Photo-main.webp'; // 導入攝影集封面圖片 (更新為 webp)
-import voltiCarTitleImage from '../assets/volticar_title.png'; // 導入 VoltiCar 專案圖片
-// 移除影片導入，因為它在 public 資料夾中
-import './Portfolio.css'; // 引入對應的 CSS 檔案
+import { Link } from 'react-router-dom';
+import photoMainImage from '../assets/Photo-main.webp';
+import './Portfolio.css';
 
-// 恢復為之前的假資料
-const portfolioItems = [
-  {
-    id: 1,
-    category: 'App 開發 (進行中)',
-    title: 'VoltiCar - 碳權電動車 App',
-    description: '開發一款結合碳權概念、電動車充電資訊與遊戲化元素的 App。目標是鼓勵綠色能源行動，提供便捷充電體驗與趣味互動。目前專案正在開發中 (In Progress)，已完成後端架構設計與核心 API 開發。',
-    imageUrl: 'https://img.youtube.com/vi/eKIJcSIVak0/maxresdefault.jpg',
-    youtubeUrl: 'https://www.youtube.com/watch?v=eKIJcSIVak0',
-    link: 'https://www.youtube.com/watch?v=eKIJcSIVak0'
-  },
+const FEATURE = {
+  id: 1,
+  category: 'App Development',
+  status: 'In Progress',
+  title: 'VoltiCar — 碳權電動車 App',
+  description:
+    '結合碳權概念、電動車充電資訊與遊戲化元素的 App，目標是用便捷與趣味互動鼓勵綠色能源行動。目前已完成後端架構設計與核心 API。',
+  imageUrl: 'https://img.youtube.com/vi/eKIJcSIVak0/maxresdefault.jpg',
+  link: 'https://www.youtube.com/watch?v=eKIJcSIVak0',
+  linkLabel: '▶ 觀看介紹影片',
+  external: true,
+  tags: ['Kotlin', 'Spring Boot', 'PostgreSQL', 'Carbon API'],
+};
+
+const SECONDARY = [
   {
     id: 2,
-    category: '網頁開發',
-    title: '個人形象網站 (本站)',
-    description: '使用 React、Vite 和 CSS 打造的個人作品集網站，展示我的技能、經歷與作品。運用 Framer Motion 製作動態效果，並以 tsparticles 實現互動式背景。',
-    videoUrl: '/videos/Web_video.mkv', // 直接使用 public 資料夾中的路徑
-    link: 'https://github.com/timo9378/web' // GitHub 連結
+    category: 'Web Development',
+    title: '個人形象網站（本站）',
+    description: '使用 React、Vite 與 CSS 打造，Framer Motion 動效與 Canvas 蟲洞 intro。',
+    videoUrl: '/videos/Web_video.mkv',
+    link: 'https://github.com/timo9378/web',
+    linkLabel: '查看原始碼',
+    external: true,
+    tags: ['React', 'Vite', 'Canvas'],
   },
   {
     id: 3,
-    category: '攝影作品集', // 修改分類
-    title: '個人攝影集錦', // 修改標題
-    description: '包含多張個人攝影作品，點擊查看詳情。', // 修改描述
-    imageUrl: photoMainImage, // 使用導入的圖片
-    link: '/photos' // 將連結指向新的照片頁面
-  }
+    category: 'Photography',
+    title: '個人攝影集錦',
+    description: '包含多張個人攝影作品，點擊查看詳情。',
+    imageUrl: photoMainImage,
+    link: '/photos',
+    linkLabel: '查看相簿',
+    external: false,
+    tags: ['Lightroom', '掃街', '人像'],
+  },
 ];
 
-function Portfolio() {
-  return (
-    <section id="portfolio" className="portfolio-section">
-      <motion.div
-        className="portfolio-header"
-        initial={{ opacity: 0, scale: 0.8 }} // 改為縮小
-        whileInView={{ opacity: 1, scale: 1 }} // 改為放大
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        viewport={{ once: true }}
+const ProjectLink = ({ item }) => {
+  if (!item.link) return null;
+  if (item.external) {
+    return (
+      <a
+        href={item.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="portfolio-link"
       >
-        <h2>作品集展示</h2>
-        <p>Part of the portfolio display</p>
-      </motion.div>
+        {item.linkLabel}
+      </a>
+    );
+  }
+  return <Link to={item.link} className="portfolio-link">{item.linkLabel}</Link>;
+};
 
-      {/* 恢復為之前的 Grid 佈局 (用於卡片) */}
-      <div className="portfolio-grid">
-        {portfolioItems.map((item, index) => (
-          <motion.div
-            key={item.id}
-            className="portfolio-item" // 使用舊的 class name
-            initial={{ opacity: 0, scale: 0.8 }} // 移除 y 和 rotateY，調整 scale
-            whileInView={{ opacity: 1, scale: 1 }} // 移除 y 和 rotateY
-            transition={{ duration: 0.6, delay: index * 0.15, ease: "easeOut" }} // 稍微調整 duration 和 delay
-            viewport={{ once: true }}
-          >
-            <div className="portfolio-media-container"> {/* 更新 class name 以反映內容 */}
-              {item.videoUrl ? (
-                <video src={item.videoUrl} className="portfolio-video" controls muted loop playsInline preload="none" /> // lazy: 不自動下載 8.4MB 影片
-              ) : (
-                <img 
-                  src={item.imageUrl} 
-                  alt={item.title} 
-                  className="portfolio-image"
-                  loading="lazy"
-                  decoding="async" 
-                />
-              )}
-            </div>
-            <div className="portfolio-content"> {/* 使用舊的 class name */}
-              <span className="portfolio-category">{item.category}</span> {/* 使用舊的 class name */}
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              {item.link && (
-                item.link.startsWith('/') ? (
-                  <Link to={item.link} className="portfolio-link">
-                    {item.id === 3 ? '查看詳情' : '查看詳情'}
-                  </Link>
-                ) : (
-                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="portfolio-link">
-                    {item.youtubeUrl ? '▶ 觀看介紹影片' : (item.id === 2 ? '查看原始碼' : '查看詳情')}
-                  </a>
-                )
-              )}
-            </div>
-          </motion.div>
-        ))}
+const Portfolio = () => (
+  <section id="portfolio" className="home-section portfolio-v2">
+    <div className="home-section-eyebrow">
+      <span className="section-label">Selected Work</span>
+      <span className="section-eyebrow-count">{1 + SECONDARY.length} projects</span>
+    </div>
+
+    <motion.article
+      className="portfolio-feature glass-card"
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+    >
+      <div className="portfolio-feature-media">
+        <img
+          src={FEATURE.imageUrl}
+          alt={FEATURE.title}
+          loading="lazy"
+          decoding="async"
+        />
       </div>
-    </section>
-  );
-}
+      <div className="portfolio-feature-body">
+        <div className="portfolio-feature-meta">
+          <span className="section-label">{FEATURE.category}</span>
+          <span className="portfolio-status">{FEATURE.status}</span>
+        </div>
+        <h3 className="portfolio-feature-title">{FEATURE.title}</h3>
+        <p className="portfolio-feature-desc">{FEATURE.description}</p>
+        <div className="portfolio-tags">
+          {FEATURE.tags.map((t) => (
+            <span key={t} className="portfolio-tag">{t}</span>
+          ))}
+        </div>
+        <ProjectLink item={FEATURE} />
+      </div>
+    </motion.article>
+
+    <div className="portfolio-secondary-grid">
+      {SECONDARY.map((item, i) => (
+        <motion.article
+          key={item.id}
+          className="portfolio-secondary glass-card"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.5, delay: 0.1 + i * 0.08, ease: 'easeOut' }}
+        >
+          <div className="portfolio-secondary-media">
+            {item.videoUrl ? (
+              <video
+                src={item.videoUrl}
+                muted
+                loop
+                playsInline
+                preload="none"
+                controls
+              />
+            ) : (
+              <img src={item.imageUrl} alt={item.title} loading="lazy" decoding="async" />
+            )}
+          </div>
+          <div className="portfolio-secondary-body">
+            <span className="section-label">{item.category}</span>
+            <h4 className="portfolio-secondary-title">{item.title}</h4>
+            <p className="portfolio-secondary-desc">{item.description}</p>
+            <div className="portfolio-tags">
+              {item.tags.map((t) => (
+                <span key={t} className="portfolio-tag">{t}</span>
+              ))}
+            </div>
+            <ProjectLink item={item} />
+          </div>
+        </motion.article>
+      ))}
+    </div>
+  </section>
+);
 
 export default Portfolio;

@@ -1,161 +1,188 @@
-/* 沿用 Education.css 的區塊樣式，並更新 class name */
-.school-clubs-section {
-  padding: 60px 50px;
-  /* background-color: var(--clr-bg-secondary); */ /* 移除背景色 */
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.school-clubs-section h2 {
-  font-size: 2.5em;
-  margin-bottom: 40px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #e0c3fc 0%, #7f5af0 40%, #dc3278 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* 新的容器樣式，使用 Flexbox 水平排列社團 */
-.clubs-container {
+.clubs-v2 .clubs-list {
   display: flex;
-  justify-content: center; /* 水平居中 */
-  gap: 60px; /* 增加社團之間的間距 */
-  flex-wrap: wrap; /* 允許換行 */
-  align-items: flex-start; /* 讓卡片頂部對齊，減少擠壓感 */
-  /* max-width: 900px; */ /* 移除最大寬度限制，讓容器變寬 */
-  margin: 0 auto; /* 水平居中 */
-  padding: 0 20px; /* 可以加一點左右 padding 避免貼邊 */
+  flex-direction: column;
+  gap: 14px;
 }
 
-/* 每個社團項目的樣式 */
-.club-item {
-  background: rgba(255, 255, 255, 0.03);
-  padding: 20px 25px;
-  border-radius: 16px;
-  min-width: 220px;
-  text-align: left;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+.club-row {
+  position: relative;
   overflow: hidden;
+  transition: border-color 220ms ease, background 220ms ease;
 }
 
-.club-item:hover {
-  border-color: rgba(127, 90, 240, 0.35);
-  box-shadow: 0 0 20px rgba(127, 90, 240, 0.08), 0 8px 32px rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-2px);
+/* 開啟狀態：左側細長 accent bar 點亮 + 邊框微紫，背景幾乎不變 */
+.club-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, #7f5af0 0%, #b13bb1 100%);
+  opacity: 0;
+  transform: scaleY(0.4);
+  transform-origin: center;
+  transition: opacity 220ms ease, transform 260ms ease;
 }
 
-/* --- 新增樣式 --- */
-.club-header {
+/* Open state: don't touch the bg at all — any purple alpha here gets
+   amplified by the .glass-card backdrop-filter sampling whatever bright
+   thing is behind (Saturn, nebula gradient) and turns into a "solid
+   purple block". Open is communicated entirely by:
+   – the left accent bar lighting up
+   – a slightly brighter border
+   – icon wrap tinted purple
+   – the activities list revealing below + caret rotating */
+.clubs-v2 .club-row.open {
+  border-color: rgba(199, 184, 255, 0.22);
+}
+
+.clubs-v2 .club-row.open::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.clubs-v2 .club-row.open .club-icon-wrap {
+  background: rgba(127, 90, 240, 0.18);
+  border-color: rgba(127, 90, 240, 0.45);
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(127, 90, 240, 0.25);
+}
+
+/* High-specificity override: index.css `@layer base` paints all <button>
+   with a solid purple bg and a darker purple on :hover/:focus. After
+   clicking to open the card, focus stays on the button → the entire
+   header turns into a "solid purple block". These rules kill it across
+   every interaction state. */
+.clubs-v2 .club-row-head,
+.clubs-v2 .club-row-head:hover,
+.clubs-v2 .club-row-head:focus,
+.clubs-v2 .club-row-head:focus-visible,
+.clubs-v2 .club-row-head:active {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 22px;
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+/* Accessible focus ring for keyboard users only */
+.clubs-v2 .club-row-head:focus-visible {
+  box-shadow: inset 0 0 0 2px rgba(199, 184, 255, 0.45);
+  border-radius: inherit;
+}
+
+.club-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(127, 90, 240, 0.1);
+  border: 1px solid rgba(127, 90, 240, 0.25);
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  color: rgba(199, 184, 255, 0.95);
+}
+
+.club-meta {
   display: flex;
-  align-items: center; /* 垂直居中圖標和標題 */
-  gap: 10px; /* 圖標和標題間距 */
-  margin-bottom: 8px; /* 與下方角色間距 */
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.club-icon {
-  font-size: 1.5em; /* 圖標大小 */
-  color: var(--clr-accent); /* 使用強調色 */
-  flex-shrink: 0; /* 防止圖標被壓縮 */
+.club-name {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.01em;
 }
 
-.club-item h3 {
-  font-size: 1.3em; /* 調整社團名稱大小 */
-  color: var(--clr-headline); /* 使用標題色 */
-  margin: 0; /* 移除預設 margin */
-  line-height: 1.3; /* 調整行高 */
+.club-period {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.5px;
 }
 
-.club-item p {
-  font-size: 1.05em;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0 0 15px 0; /* 增加下方間距 */
-  padding-left: calc(1.5em + 10px); /* 與標題對齊 (圖標寬度 + gap) */
+.club-role-badge {
+  font-size: 0.75rem;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 500;
 }
 
-/* 活動列表樣式 */
-.club-activities {
-  margin-top: 15px;
-  padding-left: calc(1.5em + 10px); /* 與標題對齊 */
-  border-top: 1px solid rgba(255, 255, 255, 0.1); /* 分隔線 */
-  padding-top: 15px;
+.club-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
 }
 
-.club-activities ul {
-  list-style: disc; /* 使用圓點列表 */
-  padding-left: 20px; /* 列表內縮 */
+.club-caret {
+  display: inline-block;
+  transition: transform 220ms ease;
+  font-size: 0.75rem;
+  color: rgba(199, 184, 255, 0.6);
+}
+
+.club-caret.open { transform: rotate(180deg); }
+
+.club-activities-list {
   margin: 0;
-  color: rgba(255, 255, 255, 0.6);
+  padding: 0 22px 18px 78px;
+  list-style: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.club-activities li {
-  margin-bottom: 8px; /* 列表項間距 */
-  font-size: 0.95em; /* 列表項文字大小 */
-  line-height: 1.5; /* 列表項行高 */
+.club-activity-item {
+  position: relative;
+  padding-left: 14px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
 }
 
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .school-clubs-section {
-    padding: 40px 20px;
-  }
-
-  .school-clubs-section h2 {
-    font-size: 2em;
-  }
-
-  .clubs-container {
-    gap: 20px; /* 縮小間距 */
-    max-width: 100%; /* 移除最大寬度限制 */
-  }
-
-  .club-item {
-    min-width: 200px; /* 調整最小寬度 */
-    padding: 15px 20px; /* 調整內距 */
-  }
-
-  .club-icon {
-    font-size: 1.3em;
-  }
-
-  .club-item h3 {
-    font-size: 1.15em;
-  }
-
-  .club-item p {
-    font-size: 1em;
-    padding-left: calc(1.3em + 10px);
-  }
-
-  .club-activities {
-    padding-left: calc(1.3em + 10px);
-  }
-
-  .club-activities li {
-    font-size: 0.9em;
-  }
+.club-activity-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(127, 90, 240, 0.55);
 }
 
-@media (max-width: 480px) {
-  .school-clubs-section {
-    padding: 30px 15px;
+@media (max-width: 720px) {
+  .club-row-head {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 18px;
   }
-  .school-clubs-section h2 {
-    font-size: 1.8em;
-    margin-bottom: 30px;
+  .club-role-badge,
+  .club-count {
+    grid-column: 2;
+    justify-self: start;
   }
-  .clubs-container {
-    flex-direction: column; /* 垂直堆疊 */
-    align-items: center; /* 居中對齊 */
-    gap: 20px;
-  }
-  .club-item {
-    width: 90%; /* 佔滿寬度 */
-    min-width: unset; /* 移除最小寬度 */
+  .club-activities-list {
+    padding: 0 18px 16px 18px;
   }
 }

@@ -276,23 +276,25 @@
   position: relative;
 }
 .lang-item:hover {
-  background: linear-gradient(135deg, rgba(127, 90, 240, 0.18), rgba(220, 50, 120, 0.1));
+  /* Neutral white tint — no gradient block, just a subtle hover hint */
+  background: rgba(255, 255, 255, 0.045);
   color: #fff;
 }
 .lang-item.active {
-  background: linear-gradient(135deg, rgba(127, 90, 240, 0.22), rgba(220, 50, 120, 0.12));
+  /* Active = very low-alpha purple wash, no multi-stop gradient */
+  background: rgba(127, 90, 240, 0.07);
   color: #fff;
 }
-/* active 左側細線提示 */
+/* active 左側細線提示 — 2px 單色淡紫，不再三色漸層 */
 .lang-item.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 7px;
-  bottom: 7px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: linear-gradient(to bottom, #e0c3fc, #7f5af0, #dc3278);
+  top: 9px;
+  bottom: 9px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: rgba(199, 184, 255, 0.55);
 }
 .lang-item.disabled {
   opacity: 0.4;
@@ -2325,6 +2327,32 @@ a.series-nav-title:hover {
 .subscribe-form button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Secondary ghost button used for the "已訂閱" → 退訂 action */
+.subscribe-form button.subscribe-secondary {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.subscribe-form button.subscribe-secondary:hover {
+  background: rgba(220, 50, 80, 0.1);
+  border-color: rgba(220, 50, 80, 0.35);
+  color: rgba(255, 200, 210, 0.95);
+  opacity: 1;
+}
+
+/* Email chip shown in 已訂閱 confirmation copy */
+.subscribe-email-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  background: rgba(127, 90, 240, 0.12);
+  border: 1px solid rgba(127, 90, 240, 0.25);
+  border-radius: 6px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.85em;
+  color: rgba(199, 184, 255, 0.95);
+  margin: 0 2px;
 }
 
 .subscribe-msg {

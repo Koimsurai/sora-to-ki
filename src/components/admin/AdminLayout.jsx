@@ -20,6 +20,7 @@ import {
   Save,
   Send,
   MessageSquare,
+  Mail,
   Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -99,6 +100,7 @@ const sidebarItems = [
   { id: 'categories', icon: FolderOpen, label: '分類', path: '/admin/categories' },
   { id: 'tags', icon: Tags, label: '標籤', path: '/admin/tags' },
   { id: 'comments', icon: MessageSquare, label: '留言', path: '/admin/comments' },
+  { id: 'subscribers', icon: Mail, label: '電子報訂閱', path: '/admin/subscribers' },
   { id: 'notes', icon: BookOpen, label: '日記', path: '/admin/notes' },
   { id: 'books', icon: Library, label: '書籍', path: '/admin/books' },
   { id: 'collection', icon: Bookmark, label: '收藏站', path: '/admin/collection' },

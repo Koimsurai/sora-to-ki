@@ -1,0 +1,237 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Mail, MailX, RefreshCw, Search, Download, Trash2 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+
+const STATUS_CONFIG = {
+  active:       { label: '已訂閱',   color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: Mail },
+  unsubscribed: { label: '已退訂',   color: 'text-zinc-400',    bg: 'bg-zinc-400/10',    border: 'border-zinc-400/20',    icon: MailX },
+};
+
+const PAGE_SIZE = 100;
+
+export default function SubscribersManager() {
+  const [allSubscribers, setAllSubscribers] = useState({ active: [], unsubscribed: [] });
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('active');
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, sub: null });
+
+  const token = localStorage.getItem('koimsurai_user_token');
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+
+  const fetchAll = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [activeRes, unsubRes] = await Promise.all([
+        fetch(`/api/newsletter/subscribers?status=active&limit=${PAGE_SIZE}`, { headers }),
+        fetch(`/api/newsletter/subscribers?status=unsubscribed&limit=${PAGE_SIZE}`, { headers }),
+      ]);
+      const active = activeRes.ok ? (await activeRes.json()).subscribers || [] : [];
+      const unsubscribed = unsubRes.ok ? (await unsubRes.json()).subscribers || [] : [];
+      setAllSubscribers({ active, unsubscribed });
+    } catch {
+      toast.error('載入訂閱列表失敗');
+    } finally {
+      setIsLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const visible = (allSubscribers[statusFilter] || []).filter((s) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (s.email || '').toLowerCase().includes(q) || (s.name || '').toLowerCase().includes(q);
+  });
+
+  const handleUnsubscribe = async (sub) => {
+    try {
+      const res = await fetch('/api/newsletter/unsubscribe', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ email: sub.email }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || '退訂失敗');
+      }
+      toast.success(`已將 ${sub.email} 標記為退訂`);
+      fetchAll();
+    } catch (e) {
+      toast.error(e.message || '退訂失敗');
+    }
+  };
+
+  const exportCSV = () => {
+    const rows = visible.map((s) => [
+      s.email,
+      s.name || '',
+      s.status,
+      s.subscribed_at || '',
+      s.unsubscribed_at || '',
+    ]);
+    const csv = [
+      ['email', 'name', 'status', 'subscribed_at', 'unsubscribed_at'],
+      ...rows,
+    ].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `subscribers-${statusFilter}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const formatDate = (s) => {
+    if (!s) return '-';
+    const d = new Date(s);
+    return d.toLocaleDateString('zh-TW', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">電子報訂閱</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            管理 Newsletter 訂閱者。新文章可以從文章編輯頁勾選「發佈時推送 Newsletter」自動寄送。
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+            <Download className="h-4 w-4" /> CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchAll}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            重新整理
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {Object.entries(STATUS_CONFIG).map(([status, config]) => {
+          const count = (allSubscribers[status] || []).length;
+          const Icon = config.icon;
+          return (
+            <button
+              key={status}
+              type="button"
+              onClick={() => setStatusFilter(status)}
+              className={`rounded-xl border ${config.border} ${config.bg} p-4 flex items-center gap-3 text-left transition-all ${
+                statusFilter === status ? 'ring-1 ring-offset-2 ring-offset-background ring-violet-400/40' : 'opacity-70 hover:opacity-100'
+              }`}
+            >
+              <div className={`p-2 rounded-lg ${config.bg}`}>
+                <Icon className={`h-5 w-5 ${config.color}`} />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{config.label}</p>
+                <p className="text-2xl font-bold">{count}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="搜尋 Email 或名字..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="rounded-xl border border-border/60 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border/60 bg-muted/30">
+                <th className="text-left p-3 font-medium text-muted-foreground">Email</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">名字</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">訂閱時間</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">退訂時間</th>
+                <th className="text-right p-3 font-medium text-muted-foreground">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">
+                  <RefreshCw className="h-5 w-5 animate-spin mx-auto mb-2" /> 載入中...
+                </td></tr>
+              ) : visible.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">
+                  <Mail className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  {searchQuery ? '找不到符合的訂閱者' : (statusFilter === 'active' ? '尚無訂閱者' : '沒有退訂紀錄')}
+                </td></tr>
+              ) : (
+                visible.map((s) => (
+                  <tr key={s.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
+                    <td className="p-3 font-mono text-xs">{s.email}</td>
+                    <td className="p-3">{s.name || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{formatDate(s.subscribed_at)}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{formatDate(s.unsubscribed_at)}</td>
+                    <td className="p-3 text-right">
+                      {s.status === 'active' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-rose-400 hover:text-rose-300 hover:bg-rose-400/10 h-7 gap-1.5"
+                          onClick={() => setDeleteDialog({ open: true, sub: s })}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> 標記退訂
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ open, sub: deleteDialog.sub })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>標記為退訂?</AlertDialogTitle>
+            <AlertDialogDescription>
+              將 <span className="font-mono">{deleteDialog.sub?.email}</span> 標記為已退訂，未來不會再寄信給此地址。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-rose-500 hover:bg-rose-600"
+              onClick={() => { handleUnsubscribe(deleteDialog.sub); setDeleteDialog({ open: false, sub: null }); }}
+            >
+              標記退訂
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

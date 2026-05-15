@@ -1,122 +1,267 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-// ✅ 優化: 使用解構引入 (Vite 的 tree-shaking 會自動移除未使用的 icons)
 import {
-  SiFigma, SiDart, SiMongodb, SiAdobepremierepro, SiAdobelightroom, SiKotlin, SiNotion, SiCanva,
-  SiReact, SiJavascript, SiTypescript, SiDotnet, SiC, SiGo, SiAdobephotoshop,
-  SiAdobeillustrator, SiHtml5, SiCss3, SiNextdotjs, SiTailwindcss, SiSqlite, SiPostgresql,
-  SiRust, SiExpress, SiMarkdown, SiN8N, SiNginx, SiTraefikproxy
+  SiFigma, SiDart, SiMongodb, SiAdobepremierepro, SiAdobelightroom, SiKotlin,
+  SiNotion, SiCanva, SiReact, SiJavascript, SiTypescript, SiDotnet, SiC,
+  SiCplusplus, SiGo, SiAdobephotoshop, SiAdobeillustrator, SiHtml5, SiCss3,
+  SiNextdotjs, SiTailwindcss, SiSqlite, SiPostgresql, SiRust, SiExpress,
+  SiMarkdown, SiN8N, SiNginx, SiTraefikproxy, SiVite, SiFramer, SiThreedotjs,
+  SiSpringboot, SiTurborepo, SiPnpm, SiEslint, SiPrettier, SiGitlab, SiFlutter,
+  SiNodedotjs, SiFastapi, SiJetpackcompose, SiTauri, SiRedis, SiFirebase,
+  SiMermaid, SiObsidian, SiDiscord, SiGnubash, SiJsonwebtokens, SiScratch,
+  SiAndroid, SiWebgl, SiPostman, SiCloudflare, SiVitest, SiPwa,
+  SiBootstrap, SiPydantic, SiJinja, SiClaude, SiGooglegemini, SiOpenai,
+  SiAnthropic, SiGithubcopilot,
 } from 'react-icons/si';
 import {
-  FaJava, FaPython, FaLinux, FaGithub, FaDocker, FaNetworkWired, FaServer, FaDatabase, FaCode
-} from 'react-icons/fa';
-import './Expertise.css'; // 引入對應的 CSS 檔案
+  FaJava, FaPython, FaLinux, FaGithub, FaDocker, FaNetworkWired, FaServer,
+  FaDatabase, FaCode, FaTerminal, FaCube, FaGamepad, FaLock, FaKey, FaCloud,
+  FaPlug, FaPuzzlePiece, FaPlay,
+} from 'react-icons/fa6';
+import {
+  IconCursor, IconAntigravity, IconCodex, IconMcp, IconVscode,
+} from './BrandIcons';
+import './Expertise.css';
 
-// 將圖示元件化以便複用
-const SkillIcon = ({ icon: Icon, name, animationProps }) => (
-  <motion.span
-    className="skill-icon"
-    title={name}
-    animate={animationProps || { y: [0, -2, 0], rotate: Math.random() > 0.5 ? [0, 3, -3, 0] : 0 }}
-    transition={{ duration: 1.5 + Math.random() * 1.5, repeat: Infinity, ease: "easeInOut" }}
-  >
-    <Icon />
-  </motion.span>
+// Each entry: [Icon, brandColor]. Color preserved per react-icons convention
+// so the marquee looks like a constellation of brand chips, not monochrome.
+const ICON_MAP = {
+  'Next.js':         [SiNextdotjs,     '#ffffff'],
+  'React':           [SiReact,         '#61DAFB'],
+  'TypeScript':      [SiTypescript,    '#3178C6'],
+  'JavaScript':      [SiJavascript,    '#F7DF1E'],
+  'Vite':            [SiVite,          '#646CFF'],
+  'Framer Motion':   [SiFramer,        '#FF4F8E'],
+  'Three.js':        [SiThreedotjs,    '#ffffff'],
+  'WebGL':           [SiWebgl,         '#990000'],
+  'Tauri':           [SiTauri,         '#FFC131'],
+  'PWA':             [SiPwa,           '#5A0FC8'],
+  'Bootstrap':       [SiBootstrap,     '#7952B3'],
+  'Tailwind CSS':    [SiTailwindcss,   '#06B6D4'],
+  'HTML5':           [SiHtml5,         '#E34F26'],
+  'CSS3':            [SiCss3,          '#1572B6'],
+
+  'Rust':            [SiRust,          '#CE422B'],
+  'Express':         [SiExpress,       '#ffffff'],
+  'Node.js':         [SiNodedotjs,     '#5FA04E'],
+  'ASP.NET':         [SiDotnet,        '#5C2D91'],
+  '.NET 8':          [SiDotnet,        '#512BD4'],
+  'Spring Boot':     [SiSpringboot,    '#6DB33F'],
+  'FastAPI':         [SiFastapi,       '#009688'],
+  'Go':              [SiGo,            '#00ADD8'],
+  'Java':            [FaJava,          '#ED8B00'],
+  'Python':          [FaPython,        '#3776AB'],
+  'C++':             [SiCplusplus,     '#00599C'],
+  'C':               [SiC,             '#A8B9CC'],
+  'Pydantic':        [SiPydantic,      '#E92063'],
+  'Jinja2':          [SiJinja,         '#B41717'],
+  /* Python snake in Discord blurple — visually says "Python lib for
+     Discord" at a glance without confusing it with the Discord app. */
+  'discord.py':      [FaPython,        '#5865F2'],
+
+  'Kotlin':          [SiKotlin,        '#7F52FF'],
+  'Android':         [SiAndroid,       '#3DDC84'],
+  'Jetpack Compose': [SiJetpackcompose,'#4285F4'],
+  'Flutter':         [SiFlutter,       '#02569B'],
+  'Dart':            [SiDart,          '#0175C2'],
+
+  'Docker':          [FaDocker,        '#2496ED'],
+  'Turborepo':       [SiTurborepo,     '#EF4444'],
+  'pnpm':            [SiPnpm,          '#F69220'],
+  'ESLint':          [SiEslint,        '#4B32C3'],
+  'Prettier':        [SiPrettier,      '#F7B93E'],
+  'GitLab CI/CD':    [SiGitlab,        '#FC6D26'],
+  'GitHub':          [FaGithub,        '#ffffff'],
+  'n8n':             [SiN8N,           '#EA4B71'],
+  'Nginx':           [SiNginx,         '#009639'],
+  'Traefik':         [SiTraefikproxy,  '#24A1C1'],
+  'Linux':           [FaLinux,         '#FCC624'],
+  'Bash':            [SiGnubash,       '#4EAA25'],
+  'PowerShell':      [FaTerminal,      '#5391FE'],
+  'Cloudflare':      [SiCloudflare,    '#F38020'],
+  'Vitest':          [SiVitest,        '#6E9F18'],
+  'Playwright':      [FaPlay,          '#2EAD33'],
+
+  'Figma':           [SiFigma,         '#F24E1E'],
+  'Photoshop':       [SiAdobephotoshop,'#31A8FF'],
+  'Illustrator':     [SiAdobeillustrator,'#FF9A00'],
+  'Premiere Pro':    [SiAdobepremierepro,'#9999FF'],
+  'Lightroom':       [SiAdobelightroom,'#31A8FF'],
+
+  'PostgreSQL':      [SiPostgresql,    '#4169E1'],
+  'MS SQL Server':   [FaDatabase,      '#CC2927'],
+  'MongoDB':         [SiMongodb,       '#47A248'],
+  'SQLite':          [SiSqlite,        '#5099D8'],
+  'Redis':           [SiRedis,         '#DC382D'],
+  'Firebase':        [SiFirebase,      '#FFCA28'],
+  'JSON':            [FaCode,          '#ffffff'],
+
+  'DNS':             [FaServer,        '#79b8ff'],
+  'SSL/TLS':         [FaLock,          '#22c55e'],
+  'OAuth':           [FaKey,           '#c084fc'],
+  'JWT':             [SiJsonwebtokens, '#FB015B'],
+  'WebSocket':       [FaPlug,          '#56b6c2'],
+  'CDN':             [FaCloud,         '#79b8ff'],
+  'HTTP/HTTPS':      [FaServer,        '#79b8ff'],
+  'TCP/IP':          [FaNetworkWired,  '#79b8ff'],
+
+  'Markdown':        [SiMarkdown,      '#ffffff'],
+  'Notion':          [SiNotion,        '#ffffff'],
+  'Mermaid':         [SiMermaid,       '#FF3670'],
+  'Obsidian':        [SiObsidian,      '#7C3AED'],
+  'Canva':           [SiCanva,         '#00C4CC'],
+  'Discord':         [SiDiscord,       '#5865F2'],
+  'VS Code':         [IconVscode,      '#007ACC'],
+  'Postman':         [SiPostman,       '#FF6C37'],
+
+  'Scratch':         [SiScratch,       '#FF6900'],
+  'pygame':          [FaGamepad,       '#5DBE68'],
+  'MCE (Minecraft)': [FaCube,          '#62B47A'],
+  'App Inventor':    [FaPuzzlePiece,   '#3CA4D9'],
+
+  'Claude':          [SiClaude,        '#DA7756'],
+  'Gemini':          [SiGooglegemini,  '#4285F4'],
+  'GPT':             [SiOpenai,        '#ffffff'],
+  'Codex CLI':       [IconCodex,       '#ffffff'],
+  'GitHub Copilot':  [SiGithubcopilot, '#1F88E5'],
+  'Cursor':          [IconCursor,      '#ffffff'],
+  'Antigravity':     [IconAntigravity, '#4285F4'],
+  'MCP':             [IconMcp,         '#c084fc'],
+};
+
+const CATEGORIES = [
+  {
+    label: 'Frontend', name: '前端開發',
+    items: ['Next.js', 'React', 'TypeScript', 'JavaScript', 'Vite', 'Framer Motion', 'Three.js', 'WebGL', 'Tauri', 'PWA', 'Tailwind CSS', 'Bootstrap', 'HTML5', 'CSS3'],
+  },
+  {
+    label: 'Backend', name: '後端開發',
+    items: ['Rust', 'Express', 'Node.js', 'ASP.NET', '.NET 8', 'Spring Boot', 'FastAPI', 'Pydantic', 'Jinja2', 'discord.py', 'Go', 'Java', 'Python', 'C++', 'C'],
+  },
+  {
+    label: 'Mobile', name: '行動開發',
+    items: ['Kotlin', 'Android', 'Jetpack Compose', 'Flutter', 'Dart'],
+  },
+  {
+    label: 'DevOps', name: '部署運維',
+    items: ['Docker', 'Cloudflare', 'Turborepo', 'pnpm', 'ESLint', 'Prettier', 'Vitest', 'Playwright', 'GitLab CI/CD', 'GitHub', 'n8n', 'Nginx', 'Traefik', 'Linux', 'Bash', 'PowerShell'],
+  },
+  {
+    label: 'Design', name: '設計多媒體',
+    items: ['Figma', 'Photoshop', 'Illustrator', 'Premiere Pro', 'Lightroom'],
+  },
+  {
+    label: 'Data', name: '資料儲存',
+    items: ['PostgreSQL', 'MS SQL Server', 'MongoDB', 'SQLite', 'Redis', 'Firebase', 'JSON'],
+  },
+  {
+    label: 'Network', name: '網路通訊',
+    items: ['HTTP/HTTPS', 'TCP/IP', 'DNS', 'SSL/TLS', 'OAuth', 'JWT', 'WebSocket', 'CDN'],
+  },
+  {
+    label: 'Productivity', name: '生產力',
+    items: ['VS Code', 'Postman', 'Notion', 'Obsidian', 'Markdown', 'Mermaid', 'Canva', 'Discord'],
+  },
+  {
+    label: 'AI Tools', name: 'AI 開發',
+    items: ['Claude', 'Cursor', 'GitHub Copilot', 'Antigravity', 'Gemini', 'GPT', 'Codex CLI', 'MCP'],
+  },
+  {
+    label: 'Teaching', name: '教學工具',
+    items: ['Scratch', 'pygame', 'MCE (Minecraft)', 'App Inventor'],
+  },
+];
+
+const TOTAL = CATEGORIES.reduce((sum, c) => sum + c.items.length, 0);
+
+const SkillIcon = ({ name }) => {
+  const entry = ICON_MAP[name];
+  if (!entry) return null;
+  const [Icon, color] = entry;
+  return (
+    <span className="skill-chip" title={name} aria-label={name}>
+      <Icon className="skill-chip-icon" style={{ color }} />
+    </span>
+  );
+};
+
+// Auto-scrolling marquee for long lists; static row for short ones so
+// the loop doesn't visibly repeat the same icons within the viewport.
+const MIN_FOR_MARQUEE = 7;
+
+const MarqueeRow = ({ items, reverse, duration }) => (
+  <div className="expertise-marquee-wrap">
+    <div
+      className="expertise-marquee-track"
+      style={{
+        animationDuration: `${duration}s`,
+        animationDirection: reverse ? 'reverse' : 'normal',
+      }}
+    >
+      {[...items, ...items].map((item, i) => (
+        <SkillIcon key={`${item}-${i}`} name={item} />
+      ))}
+    </div>
+  </div>
 );
 
+const StaticRow = ({ items }) => (
+  <div className="expertise-static-row">
+    {items.map((item) => (
+      <SkillIcon key={item} name={item} />
+    ))}
+  </div>
+);
 
 function Expertise() {
-  // 更新技能分類和內容，新增前端框架和更多技術
-  const skills = {
-    '前端開發': ['Next.js', 'React', 'JavaScript', 'TypeScript', 'Tailwind CSS', 'HTML5', 'CSS3'],
-    '後端開發': ['Rust', 'Express', 'ASP.NET', 'C', 'Go', 'Java', 'Python', 'SQL Server'],
-    'Mobile Development': ['Dart', 'Kotlin'],
-    'DevOps & Tools': ['Docker', 'Nginx', 'Traefik', 'n8n', 'Linux', 'Github'],
-    'Design & Multimedia': ['Photoshop', 'Illustrator', 'Figma', 'Premiere Pro', 'Lightroom'],
-    'Productivity & Design': ['Markdown', 'Notion', 'Canva'],
-    'Database & Data': ['PostgreSQL', 'SQLite', 'MongoDB', 'JSON'],
-    '網路技術': ['TCP/IP', 'HTTP/HTTPS']
-  };
-
-
   return (
-    <section // 恢復為普通 section
-      id="expertise"
-      className="expertise-section"
-    >
-      <motion.h2 // 為標題添加動畫
-        initial={{ opacity: 0, scale: 0.8 }} // 改為縮小
-        whileInView={{ opacity: 1, scale: 1 }} // 改為放大
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        viewport={{ once: true }}
-      >
-        專業技能
-      </motion.h2>
-      <div // 移除外層 motion.div，改為普通 div
-        className="skills-container"
-      // 移除外層動畫屬性
-      >
-        {Object.entries(skills).map(([category, items], index) => ( // 加入 index
-          <motion.div // 為每個分類添加動畫
-            key={category}
-            className="skill-category"
-            initial={{ opacity: 0, scale: 0.8 }} // 移除 y，調整 scale
-            whileInView={{ opacity: 1, scale: 1 }} // 移除 y
-            transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }} // 錯開動畫
-            viewport={{ once: true }}
-          >
-            <h3>{category}</h3>
-            {/* 改用 div 包裹技能項目，取代 ul */}
-            <div className="skill-items-wrapper">
-              {items.map((item) => (
-                // 改用 div 包裹單個技能，取代 li
-                <div key={item} className="skill-item">
-                  {item === 'React' ? <SkillIcon icon={SiReact} name="React" animationProps={{ rotate: [0, 360], transition: { duration: 4, repeat: Infinity, ease: "linear" } }} /> :
-                    item === 'Next.js' ? <SkillIcon icon={SiNextdotjs} name="Next.js" /> :
-                      item === 'Tailwind CSS' ? <SkillIcon icon={SiTailwindcss} name="Tailwind CSS" /> :
-                        item === 'JavaScript' ? <SkillIcon icon={SiJavascript} name="JavaScript" /> :
-                          item === 'TypeScript' ? <SkillIcon icon={SiTypescript} name="TypeScript" /> :
-                            item === 'HTML5' ? <SkillIcon icon={SiHtml5} name="HTML5" /> :
-                              item === 'CSS3' ? <SkillIcon icon={SiCss3} name="CSS3" /> :
-                                item === 'Rust' ? <SkillIcon icon={SiRust} name="Rust" /> :
-                                  item === 'Express' ? <SkillIcon icon={SiExpress} name="Express" /> :
-                                    item === 'ASP.NET' ? <SkillIcon icon={SiDotnet} name="ASP.NET" /> :
-                                      item === 'C' ? <SkillIcon icon={SiC} name="C" /> :
-                                        item === 'Go' ? <SkillIcon icon={SiGo} name="Go" /> :
-                                          item === 'Java' ? <SkillIcon icon={FaJava} name="Java" /> :
-                                            item === 'Python' ? <SkillIcon icon={FaPython} name="Python" /> :
-                                              item === 'SQL Server' ? <SkillIcon icon={FaDatabase} name="SQL Server" /> :
-                                                item === 'Photoshop' ? <SkillIcon icon={SiAdobephotoshop} name="Photoshop" /> :
-                                                  item === 'Illustrator' ? <SkillIcon icon={SiAdobeillustrator} name="Illustrator" /> :
-                                                    item === 'Figma' ? <SkillIcon icon={SiFigma} name="Figma" animationProps={{ rotate: [0, 5, -5, 0], y: [0, -2, 2, 0] }} /> :
-                                                      item === 'Premiere Pro' ? <SkillIcon icon={SiAdobepremierepro} name="Premiere Pro" /> :
-                                                        item === 'Lightroom' ? <SkillIcon icon={SiAdobelightroom} name="Lightroom" /> :
-                                                          item === 'Dart' ? <SkillIcon icon={SiDart} name="Dart (Flutter)" /> :
-                                                            item === 'Kotlin' ? <SkillIcon icon={SiKotlin} name="Kotlin" /> :
-                                                              item === 'Docker' ? <SkillIcon icon={FaDocker} name="Docker" /> :
-                                                                item === 'Nginx' ? <SkillIcon icon={SiNginx} name="Nginx" /> :
-                                                                  item === 'Traefik' ? <SkillIcon icon={SiTraefikproxy} name="Traefik" /> :
-                                                                    item === 'n8n' ? <SkillIcon icon={SiN8N} name="n8n" /> :
-                                                                      item === 'Linux' ? <SkillIcon icon={FaLinux} name="Linux" /> :
-                                                                        item === 'Github' ? <SkillIcon icon={FaGithub} name="GitHub" /> :
-                                                                          item === 'Markdown' ? <SkillIcon icon={SiMarkdown} name="Markdown" /> :
-                                                                            item === 'Notion' ? <SkillIcon icon={SiNotion} name="Notion" /> :
-                                                                              item === 'Canva' ? <SkillIcon icon={SiCanva} name="Canva" /> :
-                                                                                item === 'PostgreSQL' ? <SkillIcon icon={SiPostgresql} name="PostgreSQL" /> :
-                                                                                  item === 'SQLite' ? <SkillIcon icon={SiSqlite} name="SQLite" /> :
-                                                                                    item === 'MongoDB' ? <SkillIcon icon={SiMongodb} name="MongoDB" /> :
-                                                                                      item === 'JSON' ? <SkillIcon icon={FaCode} name="JSON" /> :
-                                                                                        item === 'TCP/IP' ? <SkillIcon icon={FaNetworkWired} name="TCP/IP" /> :
-                                                                                          item === 'HTTP/HTTPS' ? <SkillIcon icon={FaServer} name="HTTP/HTTPS" /> :
-                                                                                            <span className="skill-text">{item}</span>
-                  }
-                </div>
-              ))}
-            </div>
-          </motion.div> // 結束 motion.div
-        ))}
+    <section id="expertise" className="home-section expertise-v2">
+      <div className="home-section-eyebrow">
+        <span className="section-label">Stack</span>
+        <span className="section-eyebrow-count">{CATEGORIES.length} domains · {TOTAL} technologies</span>
       </div>
-    </section> // 結束 section
+
+      <div className="expertise-grid">
+        <motion.div
+          className="expertise-hero"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
+          <span className="expertise-hero-number">{TOTAL}</span>
+          <span className="expertise-hero-unit">technologies</span>
+          <p className="expertise-hero-blurb">
+            從前端到部署、從設計到教學。<br />
+            每一層都能自己接起來。
+          </p>
+        </motion.div>
+
+        <div className="expertise-rows">
+          {CATEGORIES.map((cat, i) => {
+            const useMarquee = cat.items.length >= MIN_FOR_MARQUEE;
+            const duration = Math.max(22, cat.items.length * 3.2);
+            return (
+              <motion.div
+                key={cat.label}
+                className="expertise-row"
+                initial={{ opacity: 0, x: 12 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.4, delay: i * 0.05, ease: 'easeOut' }}
+              >
+                <div className="expertise-row-label">
+                  <span className="section-label">{cat.label}</span>
+                  <span className="expertise-row-name">{cat.name}</span>
+                </div>
+                {useMarquee
+                  ? <MarqueeRow items={cat.items} reverse={i % 2 === 1} duration={duration} />
+                  : <StaticRow items={cat.items} />}
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
