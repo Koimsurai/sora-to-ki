@@ -1,22 +1,234 @@
+/* ── Footer：暗色漸層 + 4 欄 grid ────────────────────────────────────────────
+   設計參考  的 footer：左品牌欄 + 3 個導覽欄，底下一條分隔線、再一行 meta。
+   背景頂端淡淡發光（purple radial），讓 footer 跟全站星空 dim overlay 連起來。 */
+
 .app-footer {
-  padding: 20px 50px;
-  background-color: #06050e;
-  color: rgba(255, 255, 255, 0.35);
-  text-align: center;
-  font-size: 0.85em;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
   position: relative;
   z-index: 2;
+  margin-top: 0;
+  /* padding-top 拉大成 fade zone（內容跟 footer 文字之間有寬鬆的過渡） */
+  padding: 8rem 2rem 2rem;
+  color: rgba(229, 229, 245, 0.55);
+  font-size: 0.875rem;
+  /* 拿掉 backdrop-filter — 它會在 footer 上緣製造一條清楚的硬邊，跟  的「融合」感衝突。
+     改成純漸層：上半段非常透明，往下慢慢加深，視覺上像「化進去」而不是「接上去」。 */
+  background: linear-gradient(
+    180deg,
+    rgba(10, 9, 24, 0) 0%,
+    rgba(10, 9, 24, 0.3) 18%,
+    rgba(10, 9, 24, 0.65) 50%,
+    rgba(8, 7, 20, 0.85) 100%
+  );
+  border-top: none;
+  overflow: hidden;
 }
 
-.app-footer p {
-  margin: 0; /* 移除段落預設邊距 */
+/* ::before 再往上延伸 100px 進到上方內容區，做一段更柔的 pre-fade。
+   不用 backdrop-filter（同樣為了避免硬邊），純漸層處理。 */
+.app-footer::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 9, 24, 0) 0%,
+    rgba(10, 9, 24, 0.18) 100%
+  );
+  pointer-events: none;
 }
 
-/* 響應式設計 */
-@media (max-width: 768px) {
+/* 頂部紫色 glow — 拉淡一點點，弱化 */
+.app-footer-glow {
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 90%;
+  background: radial-gradient(
+    ellipse at top,
+    rgba(127, 90, 240, 0.08) 0%,
+    rgba(127, 90, 240, 0.025) 35%,
+    transparent 70%
+  );
+  filter: blur(50px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-footer-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* 4 欄 grid — 品牌欄佔較寬 (約 1.6fr)，其餘三欄各 1fr */
+.app-footer-grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr 1fr 1fr;
+  gap: 3rem 2rem;
+  margin-bottom: 2.5rem;
+}
+
+/* ── 品牌欄 ── */
+.app-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 360px;
+}
+.app-footer-brand-name {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(216, 180, 254, 0.95) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.app-footer-brand-tagline {
+  margin: 0;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+}
+.app-footer-copy {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.6;
+}
+.app-footer-copy a {
+  color: rgba(216, 180, 254, 0.85);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+.app-footer-copy a:hover {
+  color: rgba(244, 244, 245, 1);
+}
+.app-footer-meta {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+.app-footer-viewers {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.app-footer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+  animation: footer-pulse 2s ease-in-out infinite;
+}
+@keyframes footer-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(34, 197, 94, 0.7); opacity: 1; }
+  50% { box-shadow: 0 0 14px rgba(34, 197, 94, 0.9); opacity: 0.7; }
+}
+
+/* ── 導覽欄 ── */
+.app-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.app-footer-col-title {
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.92);
+}
+.app-footer-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.18s ease, transform 0.18s ease;
+  width: fit-content;
+}
+.app-footer-link:hover {
+  color: rgba(216, 180, 254, 1);
+  transform: translateX(2px);
+}
+
+/* ── 分隔線 ── */
+.app-footer-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 20%,
+    rgba(255, 255, 255, 0.08) 80%,
+    transparent 100%
+  );
+  margin-bottom: 1.25rem;
+}
+
+/* ── 底部資訊列 ── */
+.app-footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+.app-footer-bottom-left,
+.app-footer-bottom-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.app-footer-bottom-link {
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+.app-footer-bottom-link:hover {
+  color: rgba(216, 180, 254, 0.95);
+}
+.app-footer-bottom-sep {
+  opacity: 0.4;
+}
+.app-footer-bottom-meta {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
   .app-footer {
-    padding: 15px 20px;
-    font-size: 0.8em;
+    padding: 3rem 1.25rem 1.5rem;
+  }
+  .app-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem 1.5rem;
+  }
+  .app-footer-brand {
+    grid-column: 1 / -1;
+    max-width: none;
+  }
+}
+@media (max-width: 600px) {
+  .app-footer-grid {
+    grid-template-columns: 1fr;
+  }
+  .app-footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
   }
 }

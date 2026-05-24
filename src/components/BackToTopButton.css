@@ -52,15 +52,10 @@
     0 0 0 4px rgba(127, 90, 240, 0.1);
 }
 
+/* 把舊的 CSS launch 動畫拿掉，改交給 @animateicons/react Rocket 的內建動畫驅動。
+   保留 hover 時的微弱發光感受。 */
 .back-to-top:hover .back-to-top-icon {
-  animation: back-to-top-launch 700ms ease-out;
-}
-
-@keyframes back-to-top-launch {
-  0%   { transform: translateY(0); }
-  40%  { transform: translateY(-3px); }
-  70%  { transform: translateY(-1px); }
-  100% { transform: translateY(0); }
+  filter: drop-shadow(0 0 6px rgba(199, 184, 255, 0.7));
 }
 
 /* SVG progress ring sitting just inside the pill border */
@@ -83,9 +78,13 @@
 }
 
 .back-to-top-icon {
-  font-size: 1rem;
   position: relative;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(229, 229, 245, 0.9);
+  transition: filter 0.22s ease;
 }
 
 @media (max-width: 768px) {
@@ -99,11 +98,11 @@
     bottom: 20px;
     right: 20px;
   }
-  .back-to-top-icon { font-size: 0.9rem; }
+  .back-to-top-icon svg { width: 18px; height: 18px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .back-to-top:hover .back-to-top-icon {
-    animation: none;
+    filter: none;
   }
 }

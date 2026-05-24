@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faRocket } from '@fortawesome/free-solid-svg-icons';
+import { useState, useEffect, useRef } from 'react';
+import { RocketIcon } from '@animateicons/react/lucide';
 import './BackToTopButton.css';
 
 function BackToTopButton({ isHomePage = false }) {
   const [isVisible, setIsVisible] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [hover, setHover] = useState(false);
+  const rocketRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => {
@@ -19,9 +20,17 @@ function BackToTopButton({ isHomePage = false }) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    if (!rocketRef.current) return;
+    if (hover) rocketRef.current.startAnimation?.();
+    else rocketRef.current.stopAnimation?.();
+  }, [hover]);
+
   if (!isHomePage) return null;
 
   const scrollToTop = () => {
+    // 點下去直接讓 rocket 動一下，給「發射」回饋
+    rocketRef.current?.startAnimation?.();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -34,6 +43,8 @@ function BackToTopButton({ isHomePage = false }) {
     <button
       className={`back-to-top ${isVisible ? 'is-visible' : ''}`}
       onClick={scrollToTop}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       aria-label="回到頂部"
     >
       <svg className="back-to-top-ring" viewBox="0 0 48 48" aria-hidden>
@@ -52,7 +63,9 @@ function BackToTopButton({ isHomePage = false }) {
           transform="rotate(-90 24 24)"
         />
       </svg>
-      <FontAwesomeIcon icon={faRocket} className="back-to-top-icon" />
+      <span className="back-to-top-icon">
+        <RocketIcon ref={rocketRef} size={20} duration={0.8} />
+      </span>
     </button>
   );
 }
