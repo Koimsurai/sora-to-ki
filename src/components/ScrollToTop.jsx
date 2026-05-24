@@ -2,20 +2,20 @@ import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 function ScrollToTop() {
-  const { pathname, hash } = useLocation();
+  const { pathname, hash, state } = useLocation();
   const prevPathname = useRef(pathname);
 
   useEffect(() => {
     // 只在路徑 (pathname) 真正改變時才滾動到頂部
     // 如果只是 hash 改變（錨點跳轉），不干涉滾動行為
+    // 如果是從 preview scroll-to-commit 過來，也不滾頂端（BlogPost 會還原到段落位置）
     if (pathname !== prevPathname.current) {
-      // 如果新的路徑帶有 hash，讓瀏覽器自然處理錨點滾動
-      if (!hash) {
+      if (!hash && !state?.fromPreview) {
         window.scrollTo(0, 0);
       }
       prevPathname.current = pathname;
     }
-  }, [pathname, hash]);
+  }, [pathname, hash, state]);
 
   return null;
 }

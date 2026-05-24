@@ -21,8 +21,29 @@ import {
 import Comments from './Comments';
 import SEOHead from './SEOHead';
 import { BlogImage } from './ImageLightbox';
+import { usePreviewLink } from './article-preview/usePreviewLink';
 import './BlogPost.css';
 import SignatureSVG from './SignatureSVG';
+
+/**
+ * 「sidebar 文章連結」附帶 hover preview 行為
+ * 因為要在 map iteration 內呼叫 hook，必須抽成子元件
+ */
+const PreviewablePostLink = React.memo(({ post, className, children, viewTransition }) => {
+  const { bind } = usePreviewLink(post.id);
+  return (
+    <Link
+      to={'/blog/' + post.id}
+      className={className}
+      title={post.title}
+      viewTransition={viewTransition}
+      {...bind}
+    >
+      {children}
+    </Link>
+  );
+});
+PreviewablePostLink.displayName = 'PreviewablePostLink';
 
 /* ── Mermaid init (with ELK layout) ── */
 mermaid.registerLayoutLoaders(elkLayouts);
@@ -443,6 +464,10 @@ const getLinkMeta = (url) => {
         };
       }
 
+      // Profile URL (只有 username 沒有 repo) → 標成「GitHub Profile」更直覺
+      if (parts.length === 1) {
+        return { type: 'github', icon: FaGithub, color: '#fff', label: 'GitHub Profile', desc: '@' + parts[0] };
+      }
       return { type: 'github', icon: FaGithub, color: '#fff', label: 'GitHub', desc: repo };
     }
     if (host.includes('instagram.com')) return { type: 'instagram', icon: FaInstagram, color: '#E4405F', label: 'Instagram' };
@@ -485,7 +510,7 @@ const getLinkMeta = (url) => {
 /* ══════════════════════════
    InternalLinkCard — fetch and show preview
    ══════════════════════════ */
-const InternalLinkCard = ({ id }) => {
+export const InternalLinkCard = ({ id }) => {
   const [post, setPost] = useState(null);
 
   useEffect(() => {
@@ -519,7 +544,7 @@ const InternalLinkCard = ({ id }) => {
 /* ══════════════════════════
    LinkCard — rich link preview
    ══════════════════════════ */
-const LinkCard = ({ href }) => {
+export const LinkCard = ({ href }) => {
   const meta = getLinkMeta(href);
   if (!meta) return <a href={href} target="_blank" rel="noopener noreferrer">{href}</a>;
 
@@ -929,7 +954,7 @@ const SeriesNav = React.memo(({ seriesName, currentId }) => {
               {isCurrent ? (
                 <span className="series-nav-title">{p.title}</span>
               ) : (
-                <Link to={`/blog/${p.id}`} className="series-nav-title" viewTransition>{p.title}</Link>
+                <PreviewablePostLink post={p} className="series-nav-title" viewTransition>{p.title}</PreviewablePostLink>
               )}
             </li>
           );
@@ -1066,15 +1091,25 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
         <div className="posts-nav-nearby">
           {nearbyPosts.map((p) => {
             const isCurrent = String(p.id) === String(currentId);
+            if (isCurrent) {
+              return (
+                <span
+                  key={p.id}
+                  className="posts-nav-item text-sm py-1 block transition-colors truncate text-white font-semibold posts-nav-current-item"
+                  title={p.title}
+                >
+                  {p.title}
+                </span>
+              );
+            }
             return (
-              <Link
+              <PreviewablePostLink
                 key={p.id}
-                to={'/blog/' + p.id}
-                className={'posts-nav-item text-sm py-1 block transition-colors truncate' + (isCurrent ? ' text-white font-semibold posts-nav-current-item' : ' text-gray-500 hover:text-gray-300')}
-                title={p.title}
+                post={p}
+                className="posts-nav-item text-sm py-1 block transition-colors truncate text-gray-500 hover:text-gray-300"
               >
                 {p.title}
-              </Link>
+              </PreviewablePostLink>
             );
           })}
         </div>
@@ -1100,9 +1135,13 @@ const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
           <span className="text-xs text-gray-600 block mb-2">此專欄的其他文章：</span>
           <div className="flex flex-col gap-1">
             {categoryPosts.map((p) => (
-              <Link key={p.id} to={'/blog/' + p.id} className="posts-nav-item text-sm text-gray-500 hover:text-gray-300 transition-colors py-0.5 block truncate" title={p.title}>
+              <PreviewablePostLink
+                key={p.id}
+                post={p}
+                className="posts-nav-item text-sm text-gray-500 hover:text-gray-300 transition-colors py-0.5 block truncate"
+              >
                 {p.title}
-              </Link>
+              </PreviewablePostLink>
             ))}
           </div>
         </div>
@@ -1545,6 +1584,7 @@ function BlogPost() {
     // 切換文章時不顯示全白 loading，保留舊內容做平滑過渡
     if (!post) setLoading(true);
     setError(null);
+    // 拔掉 preview 錨點還原後，所有進文章路徑都從頂端開始 — 預覽歸預覽，閱讀歸閱讀
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     fetch(`/api/posts/${id}?lang=${encodeURIComponent(pathLocale)}`)
@@ -1567,6 +1607,15 @@ function BlogPost() {
       })
       .catch((e) => { setError(e.message); setLoading(false); });
   }, [id, pathLocale]);
+
+  /* 註：原本這裡有「preview commit 過來自動 scroll 到使用者讀到那段」的邏輯，
+       試了 ratio、文字匹配、比例對應好幾輪，preview 跟 BlogPost 渲染差異太大
+       （contain-intrinsic-size / 欄寬 / 行高 / Shiki 非同步），找不到 100% 對的對應位置。
+       最後決定拔掉 — 預覽是「快速瀏覽」，commit 進文章就從頂端讀，介面比較誠實。
+       sessionStorage 順手清掉避免舊資料殘留。 */
+  useEffect(() => {
+    try { sessionStorage.removeItem('__koim_anchor'); } catch { /* ignore */ }
+  }, []);
 
   /* ── Like state ── */
   useEffect(() => {
@@ -1915,10 +1964,15 @@ function BlogPost() {
           <motion.div
             key={'content-' + id}
             className="post-main-column"
-            initial={{ opacity: 0, y: 24 }}
+            // 從 preview 來的不要做 y: 24 的進場動畫（會跟 scroll 還原打架）
+            initial={location.state?.fromPreview ? { opacity: 0 } : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1], delay: 0.05 }}
+            transition={{
+              duration: location.state?.fromPreview ? 0.28 : 0.4,
+              ease: [0.4, 0, 0.2, 1],
+              delay: location.state?.fromPreview ? 0 : 0.05,
+            }}
           >
             <div className="post-content-wrapper">
               {/* AI Summary — inside card top with gradient fade */}
