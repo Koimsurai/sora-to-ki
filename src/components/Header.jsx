@@ -8,6 +8,11 @@ import {
 } from 'react-icons/fa';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { MegaMenuRoot, MegaMenu as MegaMenuItem } from './mega-menu/MegaMenu';
+import HomeMenuContent from './mega-menu/HomeMenu';
+import BlogMenuContent from './mega-menu/BlogMenu';
+import MoreMenuContent from './mega-menu/MoreMenu';
+import meAvatar from '../assets/me.jpg';
 import './Header.css';
 
 function Header({ activeSection }) {
@@ -133,105 +138,49 @@ function Header({ activeSection }) {
 
   return (
     <header className={'site-header ' + (isScrolled && !mobileOpen ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '')}>
-      <Link to="/" className="site-logo" onClick={() => setMobileOpen(false)}>
-        <span className="logo-icon">✦</span>
-        <span className="logo-text">Koimsurai</span>
+      <Link to="/" className="site-brand" aria-label="返回首頁" onClick={() => setMobileOpen(false)}>
+        <img src={meAvatar} alt="" className="site-brand-img" />
       </Link>
+      <nav className={'site-nav ' + (mobileOpen ? 'mobile-open' : '')} onMouseMove={handleMouseMove}>
+        <MegaMenuRoot className="nav-list nav-list-mega">
+          <MegaMenuItem
+            id="home"
+            label="首頁"
+            icon={<FaHome />}
+            to="/"
+            active={isHomePage && !location.hash}
+          >
+            <HomeMenuContent
+              onSectionClick={(e, sectionId) => { handleNavClick(e, sectionId); }}
+            />
+          </MegaMenuItem>
 
-      <nav className={'site-nav ' + (mobileOpen ? 'mobile-open' : '')}>
-        <LayoutGroup>
-          <ul className="nav-list" onMouseMove={handleMouseMove}>
-            {/* 將 原本的 首頁/關於/技能/作品 改為下拉式選單 */}
-            <li className="dropdown-wrap" ref={homeMenuRef}>
-              <button
-                className={'nav-link dropdown-trigger ' + (isHomePage && !location.hash ? 'active' : '')}
-                onClick={() => setShowHomeMenu(!showHomeMenu)}
-              >
-                <FaHome className="nav-icon" />
-                <span className="nav-label-text">首頁</span>
-                <FaChevronDown className={'chevron ' + (showHomeMenu ? 'rotated' : '')} />
-              </button>
-              <AnimatePresence>
-                {showHomeMenu && (
-                  <motion.div className="dropdown-menu" initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
-                    <a href="#home" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'home'); setShowHomeMenu(false); }}>
-                      <FaHome className="dd-icon" /><div><span className="dd-title">首頁</span><span className="dd-desc">回到頂部</span></div>
-                    </a>
-                    <a href="#about-me" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'about-me'); setShowHomeMenu(false); }}>
-                      <FaUser className="dd-icon" /><div><span className="dd-title">關於</span><span className="dd-desc">了解我的背景</span></div>
-                    </a>
-                    <a href="#expertise" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'expertise'); setShowHomeMenu(false); }}>
-                      <FaCode className="dd-icon" /><div><span className="dd-title">技能</span><span className="dd-desc">我的技術堆疊</span></div>
-                    </a>
-                    <a href="#portfolio" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'portfolio'); setShowHomeMenu(false); }}>
-                      <FaImages className="dd-icon" /><div><span className="dd-title">作品</span><span className="dd-desc">過去的專案</span></div>
-                    </a>
-                    <a href="#contact" className="dropdown-item" onClick={(e) => { handleNavClick(e, 'contact'); setShowHomeMenu(false); }}>
-                      <FaEnvelope className="dd-icon" /><div><span className="dd-title">聯絡</span><span className="dd-desc">與我聯繫</span></div>
-                    </a>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </li>
+          <MegaMenuItem
+            id="blog"
+            label="手記"
+            icon={<FaBookOpen />}
+            to="/blog"
+            active={location.pathname.startsWith('/blog')
+                 || location.pathname.startsWith('/bookshelf')
+                 || location.pathname.startsWith('/music')}
+          >
+            <BlogMenuContent />
+          </MegaMenuItem>
 
-            <li className="dropdown-wrap" ref={blogMenuRef}>
-              <button
-                className={'nav-link dropdown-trigger ' + (location.pathname.startsWith('/blog') || location.pathname.startsWith('/bookshelf') || location.pathname.startsWith('/music') ? 'active' : '')}
-                onClick={() => setShowBlogMenu(!showBlogMenu)}
-              >
-                <FaBookOpen className="nav-icon" />
-                <span className="nav-label-text">手記</span>
-                <FaChevronDown className={'chevron ' + (showBlogMenu ? 'rotated' : '')} />
-              </button>
-              <AnimatePresence>
-                {showBlogMenu && (
-                  <motion.div className="dropdown-menu" initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
-                    <Link to="/blog" className="dropdown-item" onClick={() => { setShowBlogMenu(false); setMobileOpen(false); }}>
-                      <FaBookOpen className="dd-icon" /><div><span className="dd-title">筆記</span><span className="dd-desc">技術學習與思考</span></div>
-                    </Link>
-                    <Link to="/bookshelf" className="dropdown-item" onClick={() => { setShowBlogMenu(false); setMobileOpen(false); }}>
-                      <FaBook className="dd-icon" /><div><span className="dd-title">書櫃</span><span className="dd-desc">閱讀紀錄</span></div>
-                    </Link>
-                    <Link to="/music" className="dropdown-item" onClick={() => { setShowBlogMenu(false); setMobileOpen(false); }}>
-                      <FaMusic className="dd-icon" /><div><span className="dd-title">音樂</span><span className="dd-desc">喜愛的音樂</span></div>
-                    </Link>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </li>
-
-            <li className="dropdown-wrap" ref={moreMenuRef}>
-              <button
-                className={'nav-link dropdown-trigger ' + (showMoreMenu || location.pathname.startsWith('/photos') || location.pathname.startsWith('/activity') || location.pathname.startsWith('/now') || location.pathname.startsWith('/journey') || location.pathname.startsWith('/setup') ? 'active' : '')}
-                onClick={() => setShowMoreMenu(!showMoreMenu)}
-              >
-                <FaChevronDown className={'nav-icon chevron ' + (showMoreMenu ? 'rotated' : '')} />
-                <span className="nav-label-text">更多</span>
-              </button>
-              <AnimatePresence>
-                {showMoreMenu && (
-                  <motion.div className="dropdown-menu" initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
-                    <Link to="/photos" className="dropdown-item" onClick={() => { setShowMoreMenu(false); setMobileOpen(false); }}>
-                      <FaCamera className="dd-icon" /><div><span className="dd-title">照片</span><span className="dd-desc">攝影作品集</span></div>
-                    </Link>
-                    <Link to="/activity" className="dropdown-item" onClick={() => { setShowMoreMenu(false); setMobileOpen(false); }}>
-                      <FaRss className="dd-icon" /><div><span className="dd-title">動態</span><span className="dd-desc">最新活動</span></div>
-                    </Link>
-                    <Link to="/now" className="dropdown-item" onClick={() => { setShowMoreMenu(false); setMobileOpen(false); }}>
-                      <FaClock className="dd-icon" /><div><span className="dd-title">現在</span><span className="dd-desc">我目前在做什麼</span></div>
-                    </Link>
-                    <Link to="/journey" className="dropdown-item" onClick={() => { setShowMoreMenu(false); setMobileOpen(false); }}>
-                      <FaRoute className="dd-icon" /><div><span className="dd-title">成長軌跡</span><span className="dd-desc">學習歷程</span></div>
-                    </Link>
-                    <Link to="/setup" className="dropdown-item" onClick={() => { setShowMoreMenu(false); setMobileOpen(false); }}>
-                      <FaDesktop className="dd-icon" /><div><span className="dd-title">配備</span><span className="dd-desc">設備清單</span></div>
-                    </Link>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </li>
-          </ul>
-        </LayoutGroup>
+          <MegaMenuItem
+            id="more"
+            label="更多"
+            active={location.pathname.startsWith('/photos')
+                 || location.pathname.startsWith('/activity')
+                 || location.pathname.startsWith('/messages')
+                 || location.pathname.startsWith('/journey')
+                 || location.pathname.startsWith('/setup')
+                 || location.pathname.startsWith('/about-site')
+                 || location.pathname.startsWith('/history')}
+          >
+            <MoreMenuContent />
+          </MegaMenuItem>
+        </MegaMenuRoot>
       </nav>
 
       {/* 暫時隱藏履歷按鈕

@@ -568,6 +568,32 @@ function postUrlForLocale(siteUrl, postId, locale, sourceLang) {
   return `${siteUrl}${LOCALE_URL_PREFIX[locale]}/blog/${postId}`;
 }
 
+// 站點統計（給 navbar mega-menu 顯示「文 / 字 / 日」用）
+// days 用站點建立日期 2025-04-01 計算（跟前端 Activity 頁的 getUptime 對齊）
+const SITE_START_AT = new Date('2025-04-01T00:00:00+08:00').getTime();
+apiRouter.get('/stats', (req, res) => {
+  const sql = `
+    SELECT
+      COUNT(*) AS total_posts,
+      COALESCE(SUM(LENGTH(content)), 0) AS total_chars
+    FROM posts
+    WHERE status = 'published'
+  `;
+  db.get(sql, [], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    const days = Math.max(1, Math.floor((Date.now() - SITE_START_AT) / 86400000));
+    res.json({
+      message: 'success',
+      total_posts: row.total_posts || 0,
+      total_chars: row.total_chars || 0,
+      days,
+    });
+  });
+});
+
 // GET all posts (公開)
 apiRouter.get('/posts', (req, res) => {
   const { page = 1, limit = 10, search, tag, category, status = 'published', sortBy = 'newest' } = req.query;

@@ -100,7 +100,10 @@
 }
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
+  font-family: 'MiSans', 'PingFang TC', 'Hiragino Sans TC', 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, Inter, system-ui, Avenir, Helvetica, Arial, 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
+  /* 全站 UI 字型 — MiSans 同時設計過 Latin + CJK，
+     中英混排權重一致，避免 Inter + 系統中文字拼湊感。
+     blog 內文還是會被 BlogPost 的 FONT_OPTIONS scoped 覆蓋，互不干擾。 */
   line-height: 1.5;
   font-weight: 400;
 

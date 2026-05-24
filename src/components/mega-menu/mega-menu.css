@@ -1,0 +1,511 @@
+/* ════════════════════════════════════════════════════════════
+ *  MegaMenu — -inspired rich navbar dropdown
+ *  hover trigger → 2-column panel slide-down，內部 stagger 動畫
+ * ════════════════════════════════════════════════════════════ */
+
+.mega-menu-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mega-menu-item {
+  position: relative;
+  list-style: none;
+}
+
+/* ───── Trigger pill — 簡約  風：預設低調，hover/open 才浮起 ───── */
+.mega-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: rgba(212, 212, 216, 0.72);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  position: relative;
+  white-space: nowrap;
+}
+.mega-menu-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(244, 244, 245, 1);
+}
+.mega-menu-trigger--open {
+  background: rgba(127, 90, 240, 0.14);
+  color: rgba(244, 244, 245, 1);
+  border-color: rgba(127, 90, 240, 0.28);
+}
+.mega-menu-trigger--active {
+  color: rgba(196, 181, 253, 0.95);
+}
+.mega-menu-trigger--active:hover {
+  background: rgba(127, 90, 240, 0.1);
+}
+
+/* Icon hover 動畫：scale + 微微 wiggle + 紫色 tint
+   彈性曲線 (overshoot back-out)，類似 animate-ui 的活潑感 */
+.mega-menu-trigger-icon {
+  display: inline-flex;
+  font-size: 0.9rem;
+  transform-origin: center;
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
+    color 0.25s ease;
+}
+.mega-menu-trigger:hover .mega-menu-trigger-icon {
+  transform: scale(1.2) rotate(-10deg);
+  color: rgba(196, 181, 253, 0.98);
+}
+.mega-menu-trigger--open .mega-menu-trigger-icon {
+  transform: scale(1.12) rotate(6deg);
+  color: rgba(196, 181, 253, 0.98);
+}
+/* （之前的 active 呼吸 animation 會用 transform 蓋掉 hover transition，已移除） */
+
+.mega-menu-trigger-chev {
+  font-size: 0.65rem;
+  opacity: 0.55;
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+}
+.mega-menu-trigger-chev.is-open {
+  transform: rotate(180deg);
+  opacity: 0.9;
+}
+.mega-menu-trigger:hover .mega-menu-trigger-chev {
+  opacity: 0.9;
+}
+
+/* 尊重「減少動態」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .mega-menu-trigger-icon,
+  .mega-menu-trigger-chev {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ───── Panel anchor (純定位，置中對齊 trigger) ───── */
+.mega-menu-panel-anchor {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+}
+
+/* Panel animator (內層，framer-motion 控 opacity / y / scale) */
+.mega-menu-panel-animator {
+  transform-origin: top center;
+}
+
+/* hover bridge — anchor 跟 trigger 中間的透明緩衝區，避免移動時 panel 消失 */
+.mega-menu-panel-anchor::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: -20px;
+  right: -20px;
+  height: 12px;
+}
+
+/* ───── Panel ───── */
+.mega-menu-panel {
+  display: grid;
+  grid-template-columns: 180px 280px;
+  gap: 16px;
+  padding: 14px 18px;
+  /* 加深一點：0.62 → 0.72。在文章頁面背景文字才不會穿透到 panel 內讀不清楚。 */
+  background: rgba(18, 18, 24, 0.72);
+  backdrop-filter: blur(36px) saturate(160%);
+  -webkit-backdrop-filter: blur(36px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow:
+    0 24px 64px -16px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: rgba(228, 228, 231, 0.92);
+}
+/* 首頁：profile + 頁面 + 站點，3 欄 */
+.mega-menu-panel--compact {
+  grid-template-columns: 200px 170px 200px;
+  padding: 14px 16px;
+}
+/* 更多 menu：2 欄等寬連結 */
+.mega-menu-panel--balanced {
+  grid-template-columns: 180px 180px;
+}
+
+/* ───── Column ───── */
+.mega-menu-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  grid-column: span var(--span, 1);
+  min-width: 0;     /* 允許收縮以套用 grid 欄寬，不被內容撐開 */
+  overflow: hidden; /* 內容超出 grid 欄寬時 clip，避免溢出 panel */
+}
+.mega-menu-column--accent {
+  background: linear-gradient(135deg, rgba(127, 90, 240, 0.08), rgba(127, 90, 240, 0.02));
+  border-radius: 12px;
+  padding: 16px;
+  margin: -4px;
+}
+
+.mega-menu-column-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(161, 161, 170, 0.7);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.mega-menu-column-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ───── Link item (commonly used inside columns) ───── */
+.mega-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: rgba(228, 228, 231, 0.85);
+  font-size: 0.88rem;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+/* compact 變體：只有圖示 + 標題，無描述行 */
+.mega-menu-link--compact {
+  padding: 7px 10px;
+}
+.mega-menu-link--compact .mega-menu-link-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 0.8rem;
+}
+.mega-menu-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(244, 244, 245, 1);
+  transform: translateX(2px);
+}
+.mega-menu-link-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(127, 90, 240, 0.12);
+  color: rgba(167, 139, 250, 0.95);
+  font-size: 0.85rem;
+  /* 外框「不動」，只變色 */
+  transition: background 0.22s ease, color 0.22s ease;
+}
+.mega-menu-link:hover .mega-menu-link-icon {
+  background: rgba(127, 90, 240, 0.28);
+  color: rgba(216, 180, 254, 1);
+}
+
+/* SVG 本體：scale + slight rotate（在外框內動，外框靜止） */
+.mega-menu-link-icon > svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+}
+.mega-menu-link:hover .mega-menu-link-icon > svg {
+  transform: scale(1.18) rotate(-6deg);
+}
+
+/* animate-ui 風格的「path 重繪」效果 — 只對 lucide 的 stroke 元素生效 */
+.mega-menu-link-icon > svg path,
+.mega-menu-link-icon > svg circle,
+.mega-menu-link-icon > svg rect,
+.mega-menu-link-icon > svg polyline,
+.mega-menu-link-icon > svg polygon,
+.mega-menu-link-icon > svg line {
+  stroke-dasharray: 64;
+  stroke-dashoffset: 0;
+}
+.mega-menu-link:hover .mega-menu-link-icon > svg path,
+.mega-menu-link:hover .mega-menu-link-icon > svg circle,
+.mega-menu-link:hover .mega-menu-link-icon > svg rect,
+.mega-menu-link:hover .mega-menu-link-icon > svg polyline,
+.mega-menu-link:hover .mega-menu-link-icon > svg polygon,
+.mega-menu-link:hover .mega-menu-link-icon > svg line {
+  animation: icon-path-draw 0.82s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes icon-path-draw {
+  0% { stroke-dashoffset: 64; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* animate-ui icon variant — 由 motion 自己控制 path / circle 動畫，
+   不能讓 CSS scale/rotate/stroke-dashoffset 競爭，否則 motion 的 transform 會被覆蓋。 */
+.mega-menu-link-icon--motion > svg {
+  transform: none !important;
+  transition: none !important;
+}
+.mega-menu-link:hover .mega-menu-link-icon--motion > svg {
+  transform: none !important;
+}
+.mega-menu-link-icon--motion > svg path,
+.mega-menu-link-icon--motion > svg circle,
+.mega-menu-link-icon--motion > svg rect,
+.mega-menu-link-icon--motion > svg polyline,
+.mega-menu-link-icon--motion > svg polygon,
+.mega-menu-link-icon--motion > svg line,
+.mega-menu-link:hover .mega-menu-link-icon--motion > svg path,
+.mega-menu-link:hover .mega-menu-link-icon--motion > svg circle,
+.mega-menu-link:hover .mega-menu-link-icon--motion > svg rect,
+.mega-menu-link:hover .mega-menu-link-icon--motion > svg polyline,
+.mega-menu-link:hover .mega-menu-link-icon--motion > svg polygon,
+.mega-menu-link:hover .mega-menu-link-icon--motion > svg line {
+  stroke-dasharray: none !important;
+  stroke-dashoffset: 0 !important;
+  animation: none !important;
+}
+.mega-menu-link-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mega-menu-link-title {
+  font-weight: 500;
+  color: rgba(244, 244, 245, 0.95);
+  line-height: 1.2;
+}
+.mega-menu-link-desc {
+  font-size: 0.74rem;
+  color: rgba(161, 161, 170, 0.65);
+  line-height: 1.3;
+}
+
+/* ───── Profile card (for 首頁 menu -style compact) ───── */
+.mega-menu-profile {
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  min-width: 220px;
+}
+
+/* compact 版本：頭貼 + 名字水平排，整體 row 高度減少 */
+.mega-menu-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.mega-menu-profile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mega-menu-profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7f5af0, #5096ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.mega-menu-profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mega-menu-profile-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgba(244, 244, 245, 1);
+  line-height: 1.2;
+}
+.mega-menu-profile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: rgba(74, 222, 128, 0.85);
+}
+.mega-menu-profile-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(74, 222, 128);
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+}
+
+.mega-menu-stats {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 10px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mega-menu-stat {
+  text-align: center;
+  flex: 1;
+}
+.mega-menu-stat-num {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(244, 244, 245, 1);
+  line-height: 1.1;
+}
+.mega-menu-stat-label {
+  display: block;
+  font-size: 0.65rem;
+  color: rgba(161, 161, 170, 0.65);
+  margin-top: 2px;
+}
+
+.mega-menu-socials {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.mega-menu-social {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(161, 161, 170, 0.7);
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+.mega-menu-social:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(244, 244, 245, 1);
+  transform: translateY(-1px);
+}
+
+/* ───── Category list (used in 手記 menu) ───── */
+.mega-menu-category {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: rgba(212, 212, 216, 0.82);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s;
+}
+.mega-menu-category:hover,
+.mega-menu-category--active {
+  background: rgba(127, 90, 240, 0.1);
+  color: rgba(244, 244, 245, 0.98);
+}
+.mega-menu-category-count {
+  font-size: 0.7rem;
+  color: rgba(161, 161, 170, 0.6);
+  flex-shrink: 0;
+}
+
+/* ───── Recent posts preview (right column of 手記) ───── */
+.mega-menu-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* 寬度交給 grid track 控制（200px / 320px），這裡只 100% 跟隨 */
+  width: 100%;
+  min-width: 0;
+}
+.mega-menu-post {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+}
+.mega-menu-post:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.mega-menu-post-title {
+  font-size: 0.85rem;
+  color: rgba(244, 244, 245, 0.95);
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+.mega-menu-post-meta {
+  font-size: 0.7rem;
+  color: rgba(161, 161, 170, 0.55);
+}
+.mega-menu-post-meta-dot {
+  margin: 0 6px;
+}
+.mega-menu-view-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 4px 0;
+  font-size: 0.78rem;
+  color: rgba(161, 161, 170, 0.7);
+  text-decoration: none;
+  transition: color 0.15s, transform 0.15s;
+  align-self: flex-end;
+}
+.mega-menu-view-all:hover {
+  color: rgba(196, 181, 253, 0.95);
+  transform: translateX(2px);
+}
+
+/* ───── Mobile fallback：menu 退化為 accordion 在 mobile bar 內 ───── */
+@media (max-width: 768px) {
+  .mega-menu-panel-wrapper {
+    position: static;
+    transform-origin: top center;
+  }
+  .mega-menu-panel {
+    min-width: 0;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    padding: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mega-menu-trigger, .mega-menu-link {
+    transition: none !important;
+  }
+}
