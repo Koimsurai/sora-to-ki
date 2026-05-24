@@ -1,0 +1,217 @@
+/* ── InfoPage：跟 BlogPost 共用 dim overlay + 三欄佈局 + TOC 樣式
+   本檔只放 InfoPage 特有的：標題排版 / pager / timeline / signature 對齊 ─────── */
+
+.info-page {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  /* 跟 BlogPost 對齊：上面留導覽列空間、左右留邊 */
+  padding: 120px 24px 60px;
+}
+/* BlogPost.css 對 .post-content 加了 user-select:none 做防複製，info page 應該可以選文字 */
+.info-page .post-content {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/*  風格：info page 不要 glass card wrapper，字直接浮在背景上。
+   也拿掉 BlogPost .post-content 預設的 content-visibility（資訊頁不需要 lazy layout）。 */
+.info-page .post-content {
+  content-visibility: visible;
+}
+
+/* ── Header (頁面大標) ────────────────────── */
+.info-page-header {
+  max-width: 760px;
+  margin: 0 auto 40px;
+  text-align: left;
+}
+.info-page-title {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(244, 244, 245, 0.98);
+  line-height: 1.2;
+}
+.info-page-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
+  color: rgba(229, 229, 245, 0.5);
+  letter-spacing: 0.04em;
+}
+
+/* ── Sidebar 左側留白（對稱） ──────────────── */
+.info-page-sidebar-left {
+  /* 跟 .post-sidebar-left 同寬，純粹佔位讓 main column 對齊 BlogPost 的視覺中心 */
+}
+
+/* ── content 區（跟 BlogPost .post-content 同基底 — 字級 / 行距 / 段距） ── */
+.info-page-content > p {
+  margin: 0 0 1.2em;
+  /* 拿掉 drop-cap 第一字加大效果（這類資訊頁不需要） */
+}
+
+.info-page-content > h2 {
+  margin: 3rem 0 1.4rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(244, 244, 245, 0.95);
+  scroll-margin-top: 100px;
+}
+.info-page-content > h3 {
+  margin: 2rem 0 0.8rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(216, 180, 254, 0.92);
+  scroll-margin-top: 100px;
+}
+
+.info-page-content ol,
+.info-page-content ul {
+  padding-left: 1.4em;
+  margin: 0 0 1.2em;
+}
+.info-page-content li {
+  margin-bottom: 0.6em;
+}
+
+.info-page-content a {
+  color: rgba(216, 180, 254, 0.95);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(216, 180, 254, 0.35);
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+.info-page-content a:hover {
+  color: rgba(244, 244, 245, 1);
+  border-bottom-color: rgba(244, 244, 245, 0.7);
+}
+
+.info-page-content code {
+  padding: 2px 6px;
+  background: rgba(127, 90, 240, 0.16);
+  border-radius: 4px;
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  color: rgba(216, 180, 254, 1);
+}
+
+/* timeline list (歷史用) */
+.info-page-timeline {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.info-page-timeline-item {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 1rem;
+  align-items: baseline;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+.info-page-timeline-date {
+  font-family: 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  color: rgba(229, 229, 245, 0.45);
+  letter-spacing: 0.02em;
+}
+.info-page-timeline-text {
+  color: rgba(229, 229, 245, 0.86);
+}
+.info-page-timeline-text strong {
+  color: rgba(244, 244, 245, 1);
+  font-weight: 600;
+}
+.info-page-timeline-item--big {
+  margin-top: 0.4rem;
+}
+.info-page-timeline-item--big .info-page-timeline-text {
+  font-weight: 600;
+  color: rgba(244, 244, 245, 1);
+}
+
+/* signature — 跟 BlogPost 的 .blog-signature 一樣靠右浮、30% 寬度 */
+.info-page-signature {
+  display: block;
+  margin: 3rem 0 1rem;
+  margin-left: auto;
+  width: 30%;
+  max-width: 220px;
+  min-width: 140px;
+  opacity: 0.85;
+}
+
+.info-page-closing {
+  margin: 0 0 1.5rem;
+  font-size: 0.85rem;
+  color: rgba(229, 229, 245, 0.45);
+}
+
+/* ── pager (prev / next) ──────────────────────── */
+.info-page-pager {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: 3rem 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.info-page-pager-side {
+  min-width: 0;
+  flex: 1;
+}
+.info-page-pager-side--right {
+  text-align: right;
+}
+.info-page-pager-link {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+  transition: transform 0.2s ease, color 0.2s ease;
+  /* 蓋掉 info-page-content 對 a 加的 dashed underline */
+  border-bottom: none !important;
+}
+.info-page-pager-prev:hover {
+  transform: translateX(-3px);
+}
+.info-page-pager-next:hover {
+  transform: translateX(3px);
+}
+.info-page-pager-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: rgba(216, 180, 254, 0.85);
+}
+.info-page-pager-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(229, 229, 245, 0.92);
+}
+.info-page-pager-link:hover .info-page-pager-title {
+  color: rgba(244, 244, 245, 1);
+}
+
+/* ── comments 區與 BlogPost 一致 ──────────── */
+.info-page-comments {
+  margin-top: 3rem;
+}
+
+/* ── Responsive ───────────────────────────────── */
+@media (max-width: 1024px) {
+  .info-page-header { max-width: 100%; }
+}
+@media (max-width: 600px) {
+  .info-page {
+    padding: 100px 16px 40px;
+  }
+  .info-page-timeline-item {
+    grid-template-columns: 96px 1fr;
+    gap: 0.6rem;
+  }
+}

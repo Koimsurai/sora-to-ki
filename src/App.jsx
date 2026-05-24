@@ -16,6 +16,8 @@ import RandomComets from './components/RandomComets'; // 導入彗星元件
 import RandomUFOs from './components/RandomUFOs'; // 導入 UFO 元件
 import NebulaBackground from './components/NebulaBackground'; // 首頁 + Blog 共用星雲背景
 import BackToTopButton from './components/BackToTopButton'; // 導入回到頂部按鈕
+import { ArticlePreviewProvider } from './components/article-preview/ArticlePreviewContext';
+import ArticlePreviewCard from './components/article-preview/ArticlePreviewCard';
 import TwinklingStars from './components/TwinklingStars'; // <--- 導入閃爍星星元件
 import ForegroundStars from './components/ForegroundStars'; // <--- 導入前景星星元件
 import { Stars, Points, PointMaterial } from '@react-three/drei'; // Import Stars, Points, and PointMaterial
@@ -51,12 +53,14 @@ const LazySubscribersManager = lazy(() => import('./components/admin/Subscribers
 const LazyUsersManager = lazy(() => import('./components/admin/UsersManager'));
 const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
-const LazyNow = lazy(() => import('./components/Now'));
+const LazyMessages = lazy(() => import('./components/Messages'));
 const LazyBookshelf = lazy(() => import('./components/Bookshelf'));
 const LazyMusic = lazy(() => import('./components/Music'));
 const LazyCinema = lazy(() => import('./components/Cinema'));
 const LazyAnime = lazy(() => import('./components/Anime'));
 const LazySetup = lazy(() => import('./components/Setup'));
+const LazyAboutSite = lazy(() => import('./components/AboutSite'));
+const LazyHistory = lazy(() => import('./components/History'));
 const LazyOAuthCallback = lazy(() => import('./components/OAuthCallback'));
 const LazyUnsubscribe = lazy(() => import('./components/Unsubscribe'));
 const LazyNotFound = lazy(() => import('./components/NotFound'));
@@ -309,11 +313,13 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/bookshelf" element={<Suspense fallback={<KoimLoader fullscreen text="載入書籍" />}><LazyBookshelf /></Suspense>} />
           <Route path="/activity" element={<Suspense fallback={<LoadingFallback />}><LazyActivity /></Suspense>} />
           <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />
-          <Route path="/now" element={<Suspense fallback={<LoadingFallback />}><LazyNow /></Suspense>} />
+          <Route path="/messages" element={<Suspense fallback={<LoadingFallback />}><LazyMessages /></Suspense>} />
           <Route path="/music" element={<Suspense fallback={<LoadingFallback />}><LazyMusic /></Suspense>} />
           <Route path="/cinema" element={<Suspense fallback={<LoadingFallback />}><LazyCinema /></Suspense>} />
           <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />
           <Route path="/setup" element={<Suspense fallback={<LoadingFallback />}><LazySetup /></Suspense>} />
+          <Route path="/about-site" element={<Suspense fallback={<LoadingFallback />}><LazyAboutSite /></Suspense>} />
+          <Route path="/history" element={<Suspense fallback={<LoadingFallback />}><LazyHistory /></Suspense>} />
           <Route path="/auth/callback" element={<Suspense fallback={<LoadingFallback />}><LazyOAuthCallback /></Suspense>} />
           <Route path="/unsubscribe" element={<Suspense fallback={<LoadingFallback />}><LazyUnsubscribe /></Suspense>} />
           {/* 後台路由 - 需要 ADMIN/OWNER 權限 */}
@@ -449,6 +455,7 @@ function App() {
         <LocationTracker onPathChange={handlePathChange} />
         <ParallaxProvider>
           <PageVisibilityProvider isVisible={isPageVisible}>
+            <ArticlePreviewProvider>
             <div className="App">
               {introVisible && (
                 <IntroAnimation
@@ -485,7 +492,9 @@ function App() {
               )}
               {!isMobile && <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }} />}
               <BackToTopButton isHomePage={isOnHomePage} />
+              <ArticlePreviewCard />
             </div>
+            </ArticlePreviewProvider>
           </PageVisibilityProvider>
         </ParallaxProvider>
       </AuthProvider>

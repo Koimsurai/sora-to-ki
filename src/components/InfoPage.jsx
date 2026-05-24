@@ -1,0 +1,189 @@
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FaArrowUp } from 'react-icons/fa';
+import SEOHead from './SEOHead';
+import SignatureSVG from './SignatureSVG';
+import Comments from './Comments';
+import './BlogPost.css';     // 拿 BlogPost 的 dim overlay / post-content-wrapper / TOC 樣式
+import './InfoPage.css';
+
+/**
+ * 通用「資訊型頁面」layout —  風格：
+ *   ── 大標 / 副標
+ *   ── 內容區（max-width，中間置中）— 走 BlogPost 的 post-content-wrapper glass card
+ *   ── 右側 sticky TOC（沒有左 sidebar，但 grid 留出對稱空間）
+ *   ── 簽名檔
+ *   ── 「回顧一下」 / 「繼續瞭解」 上下篇 cross-link
+ *   ── Comments
+ *
+ * 用 contentRef 內容自動偵測 h2/h3 來建 TOC，呼叫端只要丟 children 就好。
+ */
+function InfoPage({
+  title,
+  subtitle,
+  slug,           // 用來當 Comments 的 postId
+  prev,           // { to, title } | null
+  next,           // { to, title } | null
+  closingNote,    // 末尾的小字（例：本站已運行 X 天）
+  children,
+}) {
+  const contentRef = useRef(null);
+  const tocRef = useRef(null);
+  const [headings, setHeadings] = useState([]);
+  const [activeId, setActiveId] = useState('');
+  const [progress, setProgress] = useState(0);
+
+  // 從渲染後的 DOM 把 h2/h3 抓出來建 TOC
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const els = contentRef.current.querySelectorAll('h2[id], h3[id]');
+    const list = Array.from(els).map((el) => ({
+      id: el.id,
+      text: el.textContent || '',
+      level: el.tagName === 'H2' ? 2 : 3,
+    }));
+    setHeadings(list);
+  }, [children]);
+
+  // 滾動進度 + scrollspy
+  useEffect(() => {
+    const onScroll = () => {
+      const docH = document.documentElement.scrollHeight - window.innerHeight;
+      const y = window.scrollY;
+      setProgress(docH > 0 ? Math.min(100, (y / docH) * 100) : 0);
+
+      // scrollspy: 找到 viewport 上半部第一個 heading
+      const triggerY = window.innerHeight * 0.3;
+      let current = '';
+      for (const h of headings) {
+        const el = document.getElementById(h.id);
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top;
+        if (top <= triggerY) current = h.id;
+        else break;
+      }
+      setActiveId(current);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [headings]);
+
+  const scrollToHeading = useCallback((id) => {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
+    }, 50);
+  }, []);
+
+  return (
+    <div className="blog-post-container info-page" style={{ fontFamily: 'inherit' }}>
+      <SEOHead title={title} description={subtitle} />
+
+      {/* 同一塊 dim overlay 蓋在 starfield 上面，跟 BlogPost 一致的暗色感 */}
+      <div className="blog-post-dim-overlay" />
+
+      {/* Header */}
+      <motion.header
+        className="post-header info-page-header"
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+      >
+        <h1 className="post-title info-page-title">{title}</h1>
+        {subtitle && <p className="info-page-subtitle">{subtitle}</p>}
+      </motion.header>
+
+      {/* 跟 BlogPost 一樣的三欄佈局：左留白 + 中內容 + 右 TOC */}
+      <div className="post-body info-page-body">
+        {/* 左 sidebar：空白用以對稱（不放 PostsNav，因為 info page 沒有「鄰近文章」概念） */}
+        <aside className="post-sidebar-left info-page-sidebar-left" aria-hidden />
+
+        <motion.div
+          className="post-main-column info-page-main"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1], delay: 0.05 }}
+        >
+          {/* 不用 post-content-wrapper 那個 glass card， 的 about/history 是字直接浮在背景上 */}
+          <article className="post-content info-page-content" ref={contentRef}>
+            {children}
+            <SignatureSVG className="blog-signature info-page-signature" />
+            {closingNote && <p className="info-page-closing">{closingNote}</p>}
+          </article>
+
+          {/* prev / next 「回顧一下 / 繼續瞭解」 */}
+          {(prev || next) && (
+            <nav className="info-page-pager" aria-label="頁面導覽">
+              <div className="info-page-pager-side">
+                {prev && (
+                  <Link to={prev.to} className="info-page-pager-link info-page-pager-prev">
+                    <span className="info-page-pager-label">回顧一下：</span>
+                    <span className="info-page-pager-title">{prev.title}</span>
+                  </Link>
+                )}
+              </div>
+              <div className="info-page-pager-side info-page-pager-side--right">
+                {next && (
+                  <Link to={next.to} className="info-page-pager-link info-page-pager-next">
+                    <span className="info-page-pager-label">繼續瞭解：</span>
+                    <span className="info-page-pager-title">{next.title}</span>
+                  </Link>
+                )}
+              </div>
+            </nav>
+          )}
+
+          {/* 留言區 — Comments 後端用 post_id 隔離，加 meta- 前綴避免跟數字文章 ID 撞 */}
+          {slug && (
+            <div className="info-page-comments post-extras" id="comments">
+              <Comments postId={`meta-${slug}`} />
+            </div>
+          )}
+        </motion.div>
+
+        {/* 右側 sticky TOC — 跟 BlogPost 一致的 class，承襲 BlogPost.css 樣式 */}
+        {headings.length > 0 && (
+          <aside className="post-sidebar-right">
+            <div className="table-of-contents">
+              <div className="toc-header">
+                <h3>目錄</h3>
+                <div className="reading-progress-circle">
+                  <svg viewBox="0 0 36 36">
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      fill="none" stroke="var(--post-accent)" strokeWidth="3"
+                      strokeDasharray={progress + ', 100'} />
+                  </svg>
+                  <span className="progress-text">{Math.round(progress)}%</span>
+                </div>
+              </div>
+              <nav className="toc-nav" ref={tocRef}>
+                {headings.map((h) => (
+                  <button
+                    key={h.id}
+                    data-heading-id={h.id}
+                    className={'toc-item level-' + h.level + (activeId === h.id ? ' active' : '')}
+                    onClick={() => scrollToHeading(h.id)}
+                    title={h.text}
+                  >
+                    <span className="toc-bullet" />
+                    <span className="toc-text">{h.text}</span>
+                  </button>
+                ))}
+              </nav>
+              <button className="toc-bottom-link" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                <FaArrowUp /> 回到頂部
+              </button>
+            </div>
+          </aside>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default InfoPage;

@@ -676,7 +676,7 @@ function Blog() {
             <h3 className="sidebar-heading">導航</h3>
             <div className="quick-nav">
               <Link to="/" className="nav-pill">🏠 首頁</Link>
-              <Link to="/now" className="nav-pill">📡 現在</Link>
+              <Link to="/messages" className="nav-pill">💬 留言</Link>
               <Link to="/setup" className="nav-pill">🖥️ 配備</Link>
               <Link to="/journey" className="nav-pill">🛤️ 旅程</Link>
             </div>
