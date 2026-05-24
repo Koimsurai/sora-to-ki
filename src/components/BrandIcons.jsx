@@ -62,6 +62,110 @@ export const IconMcp = (props) => (
   </svg>
 );
 
+// WebSocket — iconify logos:websocket (Gil Barbara, free for OSS use)
+// Brand-color baked in (#231f20 of the spec mark); ignores style color so it
+// always looks like the WebSocket spec logo, not the surrounding text.
+export const IconWebsocket = (props) => (
+  <svg
+    {...props}
+    width="1.33em"
+    height="1em"
+    viewBox="0 0 256 193"
+    aria-hidden
+  >
+    <path
+      fill="currentColor"
+      d="M192.44 144.645h31.78V68.339l-35.805-35.804l-22.472 22.472l26.497 26.497zm31.864 15.931H113.452L86.954 134.08l11.237-11.236l21.885 21.885h45.028l-44.357-44.441l11.32-11.32l44.357 44.358v-45.03l-21.801-21.801l11.152-11.153L110.685 0H0l31.696 31.696v.084h65.74l23.227 23.227l-33.96 33.96L63.476 65.74V47.712h-31.78v31.193l55.007 55.007L64.314 156.3l35.805 35.805H256z"
+    />
+  </svg>
+);
+
+// Playwright — iconify simple-icons:playwright. Single-color so it picks up
+// brand green (#2EAD33) from inline style like other react-icons brand chips.
+export const IconPlaywright = (props) => (
+  <svg
+    {...props}
+    width="1em"
+    height="1em"
+    viewBox="0 0 24 24"
+    aria-hidden
+  >
+    <path
+      fill="currentColor"
+      d="M23.996 7.462c-.056.837-.257 2.135-.716 3.85c-.995 3.715-4.27 10.874-10.42 9.227c-6.15-1.65-5.407-9.487-4.412-13.201c.46-1.716.934-2.94 1.305-3.694c.42-.853.846-.289 1.815.523c.684.573 2.41 1.791 5.011 2.488s4.706.506 5.583.352c1.245-.219 1.897-.494 1.834.455m-9.807 3.863s-.127-1.819-1.773-2.286c-1.644-.467-2.613 1.04-2.613 1.04Zm4.058 4.539l-7.769-2.172s.446 2.306 3.338 3.153c2.862.836 4.43-.98 4.43-.981Zm2.701-2.51s-.13-1.818-1.773-2.286c-1.644-.469-2.612 1.038-2.612 1.038ZM8.57 18.23c-4.749 1.279-7.261-4.224-8.021-7.08C.197 9.831.044 8.832.003 8.188c-.047-.73.455-.52 1.415-.354c.677.118 2.3.261 4.308-.28a11.3 11.3 0 0 0 2.41-.956q-.087.295-.17.61c-.433 1.618-.827 4.055-.632 6.426c-1.976.732-2.267 2.423-2.267 2.423l2.524-.715c.227 1.002.6 1.987 1.15 2.838zm-4.188-6.298c1.265-.333 1.363-1.631 1.363-1.631l-3.374.888s.745 1.076 2.01.743Z"
+    />
+  </svg>
+);
+
+// JSON — iconify codicon:json. Monochrome braces, picks up color prop.
+export const IconJson = (props) => (
+  <svg
+    {...props}
+    width="1em"
+    height="1em"
+    viewBox="0 0 16 16"
+    aria-hidden
+  >
+    <path
+      fill="currentColor"
+      d="M5 2a2 2 0 0 0-2 2v2.005c0 .53-.008.794-.09.997c-.062.156-.194.331-.634.55a.5.5 0 0 0 0 .895c.44.22.572.395.635.551c.081.204.089.47.089 1.002v2a2 2 0 0 0 2 2a.5.5 0 0 0 0-1a1 1 0 0 1-1-1V9.941c0-.449 0-.91-.16-1.314A1.7 1.7 0 0 0 3.4 8c.196-.18.342-.384.44-.626C4 6.971 4 6.51 4 6.063V4a1 1 0 0 1 1-1a.5.5 0 0 0 0-1m6 0a2 2 0 0 1 2 2v2.005c0 .53.008.794.09.997c.062.156.194.331.634.55a.5.5 0 0 1 0 .895c-.44.22-.572.395-.635.551c-.081.204-.089.47-.089 1.002v2a2 2 0 0 1-2 2a.5.5 0 0 1 0-1a1 1 0 0 0 1-1V9.941c0-.449 0-.91.16-1.314A1.7 1.7 0 0 1 12.6 8a1.7 1.7 0 0 1-.44-.626C12 6.971 12 6.51 12 6.063V4a1 1 0 0 0-1-1a.5.5 0 0 1 0-1"
+    />
+  </svg>
+);
+
+// DNS — iconify iconoir:dns. Stroke-based; uses currentColor for stroke.
+export const IconDns = (props) => (
+  <svg
+    {...props}
+    width="1em"
+    height="1em"
+    viewBox="0 0 24 24"
+    aria-hidden
+  >
+    <g
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+    >
+      <path d="M22 13v-1c0-5.523-4.477-10-10-10S2 6.477 2 12c0 2.251.744 4.329 2 6" />
+      <path d="M13 2.049s3 3.95 3 9.95v1m-5-10.95s-3 3.95-3 9.95v1M2.63 15.5H4m-1.37-7h18.74M7 22v-6h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2zm6 0v-6l3 6v-6m3 6h2a1.5 1.5 0 0 0 1.5-1.5v0A1.5 1.5 0 0 0 21 19h-.5a1.5 1.5 0 0 1-1.5-1.5v0a1.5 1.5 0 0 1 1.5-1.5H22" />
+    </g>
+  </svg>
+);
+
+// CDN — custom: cloud outline + "CDN" label baked into the middle.
+// Stroke uses currentColor so it picks up the ICON_MAP brand color.
+export const IconCdn = (props) => (
+  <svg
+    {...props}
+    width="1em"
+    height="1em"
+    viewBox="0 0 64 48"
+    aria-hidden
+  >
+    <path
+      d="M16 38h32a10 10 0 0 0 1.4-19.9A14 14 0 0 0 22 18.2 9 9 0 0 0 16 38z"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinejoin="round"
+    />
+    <text
+      x="32"
+      y="32"
+      textAnchor="middle"
+      fontSize="13"
+      fontWeight="700"
+      fontFamily="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif"
+      fill="currentColor"
+    >
+      CDN
+    </text>
+  </svg>
+);
+
 // VS Code uses Microsoft brand blues — keep them baked in, color prop
 // is ignored (icon stays VS-Code-blue regardless of inline color).
 // Stripped of the dropshadow filters from the original devicon SVG to

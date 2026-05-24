@@ -14,11 +14,14 @@ import {
 } from 'react-icons/si';
 import {
   FaJava, FaPython, FaLinux, FaGithub, FaDocker, FaNetworkWired, FaServer,
-  FaDatabase, FaCode, FaTerminal, FaCube, FaGamepad, FaLock, FaKey, FaCloud,
-  FaPlug, FaPuzzlePiece, FaPlay,
+  FaDatabase, FaTerminal, FaCube, FaGamepad, FaLock,
+  FaPuzzlePiece,
 } from 'react-icons/fa6';
+import { TbBrandOauth } from 'react-icons/tb';
+import { MdHttp } from 'react-icons/md';
 import {
   IconCursor, IconAntigravity, IconCodex, IconMcp, IconVscode,
+  IconWebsocket, IconPlaywright, IconJson, IconDns, IconCdn,
 } from './BrandIcons';
 import './Expertise.css';
 
@@ -79,7 +82,7 @@ const ICON_MAP = {
   'PowerShell':      [FaTerminal,      '#5391FE'],
   'Cloudflare':      [SiCloudflare,    '#F38020'],
   'Vitest':          [SiVitest,        '#6E9F18'],
-  'Playwright':      [FaPlay,          '#2EAD33'],
+  'Playwright':      [IconPlaywright,  '#2EAD33'],
 
   'Figma':           [SiFigma,         '#F24E1E'],
   'Photoshop':       [SiAdobephotoshop,'#31A8FF'],
@@ -93,15 +96,15 @@ const ICON_MAP = {
   'SQLite':          [SiSqlite,        '#5099D8'],
   'Redis':           [SiRedis,         '#DC382D'],
   'Firebase':        [SiFirebase,      '#FFCA28'],
-  'JSON':            [FaCode,          '#ffffff'],
+  'JSON':            [IconJson,        '#cbd5e1'],
 
-  'DNS':             [FaServer,        '#79b8ff'],
+  'DNS':             [IconDns,         '#79b8ff'],
   'SSL/TLS':         [FaLock,          '#22c55e'],
-  'OAuth':           [FaKey,           '#c084fc'],
+  'OAuth':           [TbBrandOauth,    '#c084fc'],
   'JWT':             [SiJsonwebtokens, '#FB015B'],
-  'WebSocket':       [FaPlug,          '#56b6c2'],
-  'CDN':             [FaCloud,         '#79b8ff'],
-  'HTTP/HTTPS':      [FaServer,        '#79b8ff'],
+  'WebSocket':       [IconWebsocket,   '#56b6c2'],
+  'CDN':             [IconCdn,         '#79b8ff'],
+  'HTTP/HTTPS':      [MdHttp,          '#79b8ff'],
   'TCP/IP':          [FaNetworkWired,  '#79b8ff'],
 
   'Markdown':        [SiMarkdown,      '#ffffff'],

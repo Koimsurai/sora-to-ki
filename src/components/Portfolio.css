@@ -87,6 +87,51 @@
   overflow: hidden;
 }
 
+/* code 卡（沒有圖片的 repo 卡片）— 用大型 glyph 代替 media 區， 風格 */
+.portfolio-secondary-glyph {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(127, 90, 240, 0.08), rgba(127, 90, 240, 0.02));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+.portfolio-secondary-glyph::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(ellipse at center, rgba(127, 90, 240, 0.18) 0%, transparent 60%);
+  pointer-events: none;
+}
+.portfolio-secondary-glyph > span {
+  position: relative;
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 200;
+  color: rgba(216, 180, 254, 0.85);
+  text-shadow: 0 0 24px rgba(127, 90, 240, 0.35);
+  letter-spacing: 0;
+  line-height: 1;
+}
+.portfolio-secondary--code .portfolio-secondary-body {
+  padding-top: 18px;
+}
+
+/* 多個連結時並排（譬如 Frontend + Backend repo） */
+.portfolio-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+.portfolio-link--secondary {
+  opacity: 0.7;
+}
+.portfolio-link--secondary:hover {
+  opacity: 1;
+}
+
 .portfolio-secondary-media img,
 .portfolio-secondary-media video {
   width: 100%;
