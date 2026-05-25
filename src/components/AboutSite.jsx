@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import InfoPage from './InfoPage';
 import { LinkCard } from './BlogPost';
 
@@ -45,14 +46,30 @@ function AboutSite() {
         沒有。沒有實作彩蛋，這裡所見即所得。
       </p>
 
-      <h2 id="name">關於 ID 的由來</h2>
+      <h3 id="q5">5. 這個網站的主要受眾是誰？</h3>
+      <p>
+        最初架這個站，單純是把這裡當作我個人求職使用，沒有特別去社群上宣傳。但說實話，既然我都花這麼多時間弄了，
+        當然還是會希望自己花心血熬夜刻出來的畫面與架構能被人看見。
+      </p>
+      <p>
+        所以，如果你剛好逛到這裡，覺得這個站點的設計或技術棧還合你的胃口，非常歡迎交換友鏈。
+        也歡迎直接在 <Link to="/messages" style={{ color: 'rgba(216, 180, 254, 0.95)', borderBottom: '1px dashed rgba(216, 180, 254, 0.35)', textDecoration: 'none' }}>留言</Link> 留個足跡。
+      </p>
 
-      <h3 id="q5">Q: 為什麼叫 Koimsurai？這名字怎麼唸？</h3>
+      <h2 id="name">關於命名的由來</h2>
+
+      <h3 id="q6">Q: 站點標題「宙と木」是怎麼來的？</h3>
+      <p>
+        沒什麼特別的故事。某天問了 Gemini 一些日文站名候選，看到「宙と木」覺得滿帥的就用了。
+        剛好「宙」（宇宙）跟網站的太空主視覺對得起來，「木」也跟我的網路慣用名「木村盆栽」呼應，就這樣定案了。
+      </p>
+
+      <h3 id="q7">Q: 為什麼叫 Koimsurai？這名字怎麼唸？</h3>
       <p>
         這其實是一個組合字。我在網路上的慣用名是「木村盆栽」（Kimura Bonsai），而 Koimsurai 就是從這兩個詞的羅馬拼音中萃取組合而成的專屬 ID。
       </p>
 
-      <h3 id="q6">Q: 那為什麼當初要叫「木村盆栽」？</h3>
+      <h3 id="q8">Q: 那為什麼當初要叫「木村盆栽」？</h3>
       <p>
         剛開始只是因為很喜歡木村拓哉，就隨意借用了這個姓氏，加上「盆栽」覺得唸起來很順口就用了。
       </p>

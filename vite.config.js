@@ -100,11 +100,11 @@ export default defineConfig(({ command }) => {
         registerType: 'autoUpdate',
         injectRegister: 'auto',
         // pwa-icon.svg / pwa-192/512.png 由 Dockerfile build 階段以 sharp 產生
-        includeAssets: ['favicon.ico', 'pwa-icon.svg', 'og-default.png'],
+        includeAssets: ['favicon.ico', 'pwa-icon.svg', 'og-default-v2.png'],
         manifest: {
-          name: 'Koimsurai · 楊泰和',
+          name: '宙と木 — Koimsurai',
           short_name: 'Koimsurai',
-          description: '全端工程師楊泰和的個人網站，作品集、技術筆記、攝影。',
+          description: 'Koimsurai 的個人空間 — 一個工程師的閱讀筆記、作品紀錄與系統實驗。',
           theme_color: '#7f5af0',
           background_color: '#06030f',
           display: 'standalone',

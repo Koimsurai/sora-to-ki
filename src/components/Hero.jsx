@@ -60,7 +60,7 @@ const useTypingEffect = (text, speed = 100, startDelay = 0) => {
 
 
 function Hero() {
-  const fullHeading = "你好👋\n我是楊泰和";
+  const fullHeading = "你好👋\n我是 Koimsurai";
   const fullTagline = "\"I want to put a ding in the universe.\"\n– Steve Jobs"; // 更新標語並加入換行
 
   // Apply typing effect hook
@@ -75,7 +75,7 @@ function Hero() {
     >
       <SEOHead
         title={null}
-        description="楊泰和（Koimsurai）的個人品牌網站。全端工程師，專注於 React / Next.js 前端架構與 AI 系統開發。作品集、技術筆記、攝影作品一覽。"
+        description="宙と木 — Koimsurai 的個人空間。一個工程師的閱讀筆記、作品紀錄與系統實驗。"
         path="/"
       />
       {/* 移除 Saturn3D 和 Particles 的渲染 */}

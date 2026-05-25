@@ -140,7 +140,7 @@ function Footer() {
           <div className="app-footer-bottom-right">
             <span className="app-footer-bottom-meta">繁體中文</span>
             <span className="app-footer-bottom-sep">·</span>
-            <span className="app-footer-bottom-meta">楊泰和 © {currentYear}</span>
+            <span className="app-footer-bottom-meta">Koimsurai © {currentYear}</span>
           </div>
         </div>
       </div>

@@ -148,7 +148,11 @@ function Header({ activeSection }) {
             label="首頁"
             icon={<FaHome />}
             to="/"
-            active={isHomePage && !location.hash}
+            active={(isHomePage && !location.hash)
+                 || location.pathname.startsWith('/about-site')
+                 || location.pathname.startsWith('/history')
+                 || location.pathname.startsWith('/messages')
+                 || location.pathname.startsWith('/friends')}
           >
             <HomeMenuContent
               onSectionClick={(e, sectionId) => { handleNavClick(e, sectionId); }}
@@ -172,11 +176,8 @@ function Header({ activeSection }) {
             label="更多"
             active={location.pathname.startsWith('/photos')
                  || location.pathname.startsWith('/activity')
-                 || location.pathname.startsWith('/messages')
                  || location.pathname.startsWith('/journey')
-                 || location.pathname.startsWith('/setup')
-                 || location.pathname.startsWith('/about-site')
-                 || location.pathname.startsWith('/history')}
+                 || location.pathname.startsWith('/setup')}
           >
             <MoreMenuContent />
           </MegaMenuItem>
@@ -264,10 +265,10 @@ function Header({ activeSection }) {
             <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowDownloadModal(false)} />
             <motion.div className="download-popover" initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2 }}>
               <h3>選擇要下載的履歷</h3>
-              <a href="/Resume/Software Engineer.pdf" download="楊泰和_履歷_軟體工程師.pdf" className="popover-link">
+              <a href="/Resume/Software Engineer.pdf" download="Koimsurai_Resume_Software_Engineer.pdf" className="popover-link">
                 <span>💼</span> 軟體工程師
               </a>
-              <a href="/Resume/School Clubs.pdf" download="楊泰和_履歷_社團經歷.pdf" className="popover-link">
+              <a href="/Resume/School Clubs.pdf" download="Koimsurai_Resume_School_Clubs.pdf" className="popover-link">
                 <span>🎓</span> 社團經歷
               </a>
               <button className="popover-close" onClick={() => setShowDownloadModal(false)}>關閉</button>

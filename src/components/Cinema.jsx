@@ -369,7 +369,7 @@ function Cinema() {
 
   return (
     <div className="cinema-page">
-      <SEOHead title="電影 | Koimsurai" description="楊泰和的電影推薦與評論回顧。" />
+      <SEOHead title="電影" description="Koimsurai 的電影推薦與評論回顧。" />
       <div className="cinema-hero">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}

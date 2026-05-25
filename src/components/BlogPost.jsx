@@ -1855,7 +1855,7 @@ function BlogPost() {
         title={post.title}
         description={seoDescription}
         path={selfPath}
-        image={`/api/og/${id}.png`}
+        image={`/og-image/${id}`}
         type="article"
         locale={currentLocale}
         alternates={alternates}

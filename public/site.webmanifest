@@ -1,7 +1,7 @@
 {
-  "name": "Koimsurai - 楊泰和的個人網站",
-  "short_name": "Koimsurai",
-  "description": "全端工程師楊泰和的個人品牌網站，展示作品集、技術筆記、攝影作品與個人配備。",
+  "name": "宙と木 — Koimsurai",
+  "short_name": "宙と木",
+  "description": "Koimsurai 的個人空間 — 一個工程師的閱讀筆記、作品紀錄與系統實驗。",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#16161a",

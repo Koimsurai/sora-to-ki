@@ -26,7 +26,7 @@ const SEOHead = ({
   title,
   description,
   path = '/',
-  image = '/og-default.png',
+  image = '/og-default-v2.png',
   type = 'website',
   article = null,
   locale,
@@ -34,8 +34,8 @@ const SEOHead = ({
   xDefaultPath = null,
 }) => {
   const fullTitle = title
-    ? `${title} | Koimsurai`
-    : 'Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發';
+    ? `${title} - 宙と木`
+    : '宙と木';
   const fullUrl = `${BASE_URL}${path}`;
   const fullImage = image.startsWith('http') ? image : `${BASE_URL}${image}`;
 

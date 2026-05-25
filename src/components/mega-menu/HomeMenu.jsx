@@ -5,7 +5,7 @@ import { UserIcon } from '@/components/animate-ui/icons/user';
 import { SparklesIcon } from '@/components/animate-ui/icons/sparkles';
 import { LayersIcon } from '@/components/animate-ui/icons/layers';
 import { SendIcon } from '@/components/animate-ui/icons/send';
-import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon } from '@animateicons/react/lucide';
+import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon, UsersIcon } from '@animateicons/react/lucide';
 import { Link } from 'react-router-dom';
 
 /**
@@ -137,6 +137,7 @@ function HomeMenuContent({ onSectionClick }) {
     { to: '/about-site', AnimateIconsLib: InfoIcon,          title: '此站點', desc: '一個工程師的個人空間' },
     { to: '/history',    AnimateIconsLib: CompassIcon,       title: '歷史',   desc: '站點走過的路' },
     { to: '/messages',   AnimateIconsLib: MessageCircleIcon, title: '留言',   desc: '想說什麼都可以' },
+    { to: '/friends',    AnimateIconsLib: UsersIcon,         title: '朋友們', desc: '友鏈' },
   ];
 
   return (

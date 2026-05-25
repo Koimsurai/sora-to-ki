@@ -248,7 +248,7 @@ const Activity = () => {
 
   return (
     <div className={`activity-page ${!isVisible ? 'is-hidden' : ''}`}>
-      <SEOHead title="動態儀表板 | Koimsurai" description="楊泰和的即時活動儀表板。" />
+      <SEOHead title="動態儀表板" description="Koimsurai 的即時活動儀表板。" />
 
       <div className="activity-dim-overlay" />
       <div className="activity-nebula-bg">

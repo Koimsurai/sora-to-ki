@@ -73,7 +73,7 @@ const Journey = () => {
 
   return (
     <div className="journey-page" ref={containerRef}>
-      <SEOHead title="旅程" description="楊泰和的職業成長與學習旅程時間線。" path="/journey" />
+      <SEOHead title="旅程" description="Koimsurai 的成長與學習旅程時間線。" path="/journey" />
 
       <div className="journey-dim-overlay" />
       <div className="journey-nebula-bg">

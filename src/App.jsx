@@ -54,6 +54,7 @@ const LazyUsersManager = lazy(() => import('./components/admin/UsersManager'));
 const LazyActivity = lazy(() => import('./components/Activity'));
 const LazyJourney = lazy(() => import('./components/Journey'));
 const LazyMessages = lazy(() => import('./components/Messages'));
+const LazyFriends = lazy(() => import('./components/Friends'));
 const LazyBookshelf = lazy(() => import('./components/Bookshelf'));
 const LazyMusic = lazy(() => import('./components/Music'));
 const LazyCinema = lazy(() => import('./components/Cinema'));
@@ -314,6 +315,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/activity" element={<Suspense fallback={<LoadingFallback />}><LazyActivity /></Suspense>} />
           <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />
           <Route path="/messages" element={<Suspense fallback={<LoadingFallback />}><LazyMessages /></Suspense>} />
+          <Route path="/friends" element={<Suspense fallback={<LoadingFallback />}><LazyFriends /></Suspense>} />
           <Route path="/music" element={<Suspense fallback={<LoadingFallback />}><LazyMusic /></Suspense>} />
           <Route path="/cinema" element={<Suspense fallback={<LoadingFallback />}><LazyCinema /></Suspense>} />
           <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />

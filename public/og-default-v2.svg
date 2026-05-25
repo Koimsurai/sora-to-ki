@@ -1,0 +1,86 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Top-right soft purple glow (呼應網站的紫光) -->
+    <radialGradient id="bg-glow" cx="78%" cy="22%" r="70%">
+      <stop offset="0%" stop-color="#7f5af0" stop-opacity="0.18"/>
+      <stop offset="50%" stop-color="#1a0a2e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0a0a1a" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 紫漸層 accent — 用在左邊細條 + 英文小字 -->
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7f5af0"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
+    </linearGradient>
+
+    <!-- 主標題的細微 gradient（白偏淡紫） -->
+    <linearGradient id="title-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d8b4fe" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark base -->
+  <rect width="1200" height="630" fill="#0a0a1a"/>
+
+  <!-- Top-right glow -->
+  <rect width="1200" height="630" fill="url(#bg-glow)"/>
+
+  <!-- 細微 Saturn 環裝飾 — 呼應網站主視覺，極淡 -->
+  <g transform="translate(960, 380)" opacity="0.9">
+    <!-- Outer flat ring -->
+    <ellipse cx="0" cy="0" rx="240" ry="44" fill="none" stroke="#7f5af0" stroke-opacity="0.22" stroke-width="1.5"/>
+    <ellipse cx="0" cy="0" rx="200" ry="36" fill="none" stroke="#a78bfa" stroke-opacity="0.12" stroke-width="1"/>
+    <!-- Planet body -->
+    <circle cx="0" cy="0" r="62" fill="#7f5af0" fill-opacity="0.08"/>
+    <circle cx="0" cy="0" r="62" fill="none" stroke="#d8b4fe" stroke-opacity="0.25" stroke-width="1"/>
+    <!-- Crescent highlight -->
+    <path d="M -50 -35 A 62 62 0 0 1 50 -35" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+  </g>
+
+  <!-- 星點 (極淡) -->
+  <circle cx="180" cy="90" r="1.4" fill="#ffffff" opacity="0.35"/>
+  <circle cx="380" cy="60" r="1" fill="#ffffff" opacity="0.22"/>
+  <circle cx="620" cy="100" r="1.6" fill="#d8b4fe" opacity="0.45"/>
+  <circle cx="820" cy="70" r="1" fill="#ffffff" opacity="0.2"/>
+  <circle cx="1080" cy="160" r="1.2" fill="#ffffff" opacity="0.25"/>
+  <circle cx="140" cy="540" r="1.4" fill="#ffffff" opacity="0.25"/>
+  <circle cx="450" cy="530" r="1" fill="#d8b4fe" opacity="0.4"/>
+  <circle cx="700" cy="560" r="1.2" fill="#ffffff" opacity="0.18"/>
+  <circle cx="850" cy="170" r="1" fill="#ffffff" opacity="0.2"/>
+
+  <!-- Left accent bar -->
+  <rect x="0" y="0" width="4" height="630" fill="url(#accent)"/>
+
+  <!-- Main 主標題：宙と木 -->
+  <text x="84" y="310"
+        font-size="210"
+        font-weight="700"
+        fill="url(#title-grad)"
+        font-family="'Noto Sans CJK JP','Noto Sans CJK TC','Noto Sans CJK SC',sans-serif"
+        letter-spacing="2">宙と木</text>
+
+  <!-- 英文 wordmark — 細小、字間距大 -->
+  <text x="88" y="390"
+        font-size="30"
+        font-weight="500"
+        fill="url(#accent)"
+        font-family="'Noto Sans CJK TC',sans-serif"
+        letter-spacing="14">KOIMSURAI</text>
+
+  <!-- Tagline -->
+  <text x="88" y="475"
+        font-size="24"
+        font-style="italic"
+        fill="#ffffff"
+        fill-opacity="0.55"
+        font-family="'Noto Sans CJK TC',sans-serif">Stay hungry. Stay foolish.</text>
+
+  <!-- URL 底部 -->
+  <text x="88" y="572"
+        font-size="18"
+        fill="#a78bfa"
+        fill-opacity="0.7"
+        font-family="'Noto Sans CJK TC',sans-serif"
+        letter-spacing="1">koimsurai.com</text>
+</svg>

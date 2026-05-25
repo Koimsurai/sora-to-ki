@@ -8,7 +8,7 @@ function Messages() {
       subtitle="想說什麼都可以"
       slug="messages"
       prev={{ to: '/history', title: '歷史 — 站點走過的長河' }}
-      next={null}
+      next={{ to: '/friends', title: '朋友們 — 想結識新朋友嗎' }}
     >
       <p>
         這裡是留言板。不一定要跟文章相關，閒聊、技術問題、合作邀請、單純路過想留個記號都歡迎。

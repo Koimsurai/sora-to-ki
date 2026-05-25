@@ -4465,7 +4465,7 @@ app.get('/rss', (req, res) => {
   <channel>
     <title>Koimsurai 手記</title>
     <link>${siteUrl}/blog</link>
-    <description>楊泰和的個人部落格 — 技術筆記、生活隨筆、影集心得</description>
+    <description>Koimsurai 的個人部落格 — 技術筆記、生活隨筆、影集心得</description>
     <language>zh-TW</language>
     <lastBuildDate>${lastBuild}</lastBuildDate>
     <atom:link href="${siteUrl}/rss" rel="self" type="application/rss+xml"/>

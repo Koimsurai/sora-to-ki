@@ -221,7 +221,7 @@ const Bookshelf = () => {
 
   return (
     <div className="bookshelf-container">
-      <SEOHead title="書架 | Koimsurai" description="楊泰和的閱讀書單與讀書筆記。" />
+      <SEOHead title="書架" description="Koimsurai 的閱讀書單與讀書筆記。" />
       {/* ── Nebula Background ── */}
       <div className="bookshelf-dim-overlay" />
       <div className="bookshelf-nebula-bg">

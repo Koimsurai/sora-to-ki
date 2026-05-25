@@ -458,7 +458,7 @@ function Blog() {
     <div className="blog-page">
       <SEOHead
         title="手記 · Notes"
-        description="楊泰和的技術手記、學習筆記與生活隨筆。涵蓋前端架構、Rust、AI 系統開發等主題。"
+        description="Koimsurai 的技術手記、學習筆記與生活隨筆。涵蓋前端架構、Rust、系統設計等主題。"
         path="/blog"
       />
 

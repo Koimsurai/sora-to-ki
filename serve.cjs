@@ -90,10 +90,10 @@ function escXml(str) {
 /* ── Generate meta tag injected HTML ── */
 function injectMeta(html, meta) {
   const {
-    title = 'Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發',
-    description = '全端工程師楊泰和的個人品牌網站。展示作品集、技術筆記、攝影作品與個人配備。',
+    title = '宙と木',
+    description = '宙と木 — Koimsurai 的個人空間。一個工程師的閱讀筆記、作品紀錄與系統實驗。',
     url = SITE_URL,
-    image = `${SITE_URL}/og-default.png`,
+    image = `${SITE_URL}/og-default-v2.png`,
     type = 'website',
     article = null,
   } = meta;
@@ -115,7 +115,7 @@ function injectMeta(html, meta) {
     <meta property="og:image" content="${fullImage}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="Koimsurai" />
+    <meta property="og:site_name" content="宙と木" />
     <meta property="og:locale" content="zh_TW" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="${fullUrl}" />
@@ -183,7 +183,7 @@ app.get('/og-image/:id', async (req, res) => {
   try {
     const post = await fetchFromBackend(`/api/posts/${req.params.id}`);
     if (!post || post.message !== 'success') {
-      return res.redirect('/og-default.png');
+      return res.redirect('/og-default-v2.png');
     }
 
     const title = post.title || '';
@@ -214,52 +214,64 @@ app.get('/og-image/:id', async (req, res) => {
     }
 
     const titleSvg = titleLines
-      .map((line, i) => `<text x="80" y="${210 + i * 64}" font-size="48" font-weight="700" fill="#fff" font-family="'Noto Sans SC','Noto Sans TC',system-ui,sans-serif">${escXml(line)}</text>`)
+      .map((line, i) => `<text x="80" y="${210 + i * 64}" font-size="48" font-weight="700" fill="#f4f4f5" font-family="'Noto Sans CJK JP','Noto Sans CJK TC','Noto Sans CJK SC',sans-serif">${escXml(line)}</text>`)
       .join('\n      ');
 
+    // 動態 OG 卡：跟 og-default-v2.svg 視覺風格統一
+    // — 同樣的 radial top-right glow / Saturn ring / 4px 左 accent / 純紫漸層（拿掉綠）
+    // — 保留動態部分：分類 badge / 標題 / 作者 / 日期 / tags
+    // — 底部用「宙と木」當 brand mark 取代原本的「Koimsurai」
+    const cBadgeW = category ? category.length * 20 + 28 : 0;
     const svg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0a0a1a"/>
-      <stop offset="50%" stop-color="#12122a"/>
-      <stop offset="100%" stop-color="#1a0a2e"/>
-    </linearGradient>
+    <radialGradient id="bg-glow" cx="78%" cy="22%" r="70%">
+      <stop offset="0%" stop-color="#7f5af0" stop-opacity="0.18"/>
+      <stop offset="50%" stop-color="#1a0a2e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0a0a1a" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0%" stop-color="#7f5af0"/>
-      <stop offset="100%" stop-color="#2cb67d"/>
+      <stop offset="100%" stop-color="#a78bfa"/>
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
-  
-  <!-- Background -->
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  
-  <!-- Decorative elements -->
-  <circle cx="1050" cy="120" r="200" fill="#7f5af0" opacity="0.06"/>
-  <circle cx="150" cy="500" r="150" fill="#2cb67d" opacity="0.05"/>
-  <rect x="0" y="0" width="6" height="630" fill="url(#accent)"/>
-  
-  <!-- Subtle grid pattern -->
-  <line x1="80" y1="160" x2="1120" y2="160" stroke="rgba(127,90,240,0.12)" stroke-width="1"/>
-  <line x1="80" y1="450" x2="1120" y2="450" stroke="rgba(127,90,240,0.12)" stroke-width="1"/>
-  
-  <!-- Category badge -->
-  ${category ? `<rect x="80" y="80" width="${category.length * 22 + 32}" height="36" rx="18" fill="rgba(127,90,240,0.2)" stroke="#7f5af0" stroke-width="1" opacity="0.8"/>
-  <text x="${80 + (category.length * 22 + 32) / 2}" y="104" font-size="16" fill="#a78bfa" text-anchor="middle" font-family="'Noto Sans SC','Noto Sans TC',system-ui,sans-serif">${escXml(category)}</text>` : ''}
-  
-  <!-- Title -->
+
+  <!-- Dark base + 右上紫光 -->
+  <rect width="1200" height="630" fill="#0a0a1a"/>
+  <rect width="1200" height="630" fill="url(#bg-glow)"/>
+
+  <!-- Saturn 環裝飾（右下角，跟 default OG 一致） -->
+  <g transform="translate(1010, 480)" opacity="0.85">
+    <ellipse cx="0" cy="0" rx="180" ry="32" fill="none" stroke="#7f5af0" stroke-opacity="0.2" stroke-width="1.2"/>
+    <ellipse cx="0" cy="0" rx="150" ry="27" fill="none" stroke="#a78bfa" stroke-opacity="0.12" stroke-width="0.8"/>
+    <circle cx="0" cy="0" r="46" fill="#7f5af0" fill-opacity="0.08"/>
+    <circle cx="0" cy="0" r="46" fill="none" stroke="#d8b4fe" stroke-opacity="0.22" stroke-width="0.8"/>
+  </g>
+
+  <!-- 星點 -->
+  <circle cx="180" cy="80" r="1.4" fill="#ffffff" opacity="0.3"/>
+  <circle cx="380" cy="55" r="1" fill="#ffffff" opacity="0.2"/>
+  <circle cx="620" cy="90" r="1.6" fill="#d8b4fe" opacity="0.4"/>
+  <circle cx="820" cy="65" r="1" fill="#ffffff" opacity="0.2"/>
+  <circle cx="140" cy="540" r="1.4" fill="#ffffff" opacity="0.22"/>
+  <circle cx="700" cy="560" r="1.2" fill="#ffffff" opacity="0.18"/>
+
+  <!-- 4px 左 accent bar -->
+  <rect x="0" y="0" width="4" height="630" fill="url(#accent)"/>
+
+  <!-- 分類 badge -->
+  ${category ? `<rect x="80" y="80" width="${cBadgeW}" height="32" rx="16" fill="rgba(127,90,240,0.16)" stroke="#a78bfa" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="${80 + cBadgeW / 2}" y="102" font-size="14" fill="#d8b4fe" text-anchor="middle" font-family="'Noto Sans CJK TC','Noto Sans CJK SC',sans-serif" letter-spacing="1">${escXml(category)}</text>` : ''}
+
+  <!-- 標題 -->
   ${titleSvg}
-  
-  <!-- Meta info -->
-  <text x="80" y="480" font-size="20" fill="rgba(255,255,255,0.5)" font-family="'Noto Sans SC','Noto Sans TC',system-ui,sans-serif">✦ ${escXml(author)}${date ? `  ·  ${escXml(date)}` : ''}</text>
-  ${tags ? `<text x="80" y="515" font-size="16" fill="rgba(127,90,240,0.6)" font-family="'Noto Sans SC','Noto Sans TC',system-ui,sans-serif">${escXml(tags)}</text>` : ''}
-  
-  <!-- Brand -->
-  <text x="80" y="585" font-size="22" font-weight="600" fill="url(#accent)" filter="url(#glow)" font-family="'Noto Sans SC','Noto Sans TC',system-ui,sans-serif">Koimsurai</text>
-  <text x="240" y="585" font-size="16" fill="rgba(255,255,255,0.3)" font-family="'Noto Sans SC','Noto Sans TC',system-ui,sans-serif">koimsurai.com</text>
+
+  <!-- Meta：作者 + 日期 -->
+  <text x="80" y="475" font-size="20" fill="rgba(255,255,255,0.55)" font-family="'Noto Sans CJK TC',sans-serif">✦ ${escXml(author)}${date ? `  ·  ${escXml(date)}` : ''}</text>
+  ${tags ? `<text x="80" y="505" font-size="15" fill="rgba(216,180,254,0.55)" font-family="'Noto Sans CJK TC',sans-serif">${escXml(tags)}</text>` : ''}
+
+  <!-- 底部 brand：宙と木 + URL -->
+  <text x="80" y="585" font-size="28" font-weight="600" fill="url(#accent)" font-family="'Noto Sans CJK JP','Noto Sans CJK TC',sans-serif" letter-spacing="2">宙と木</text>
+  <text x="200" y="583" font-size="15" fill="rgba(255,255,255,0.35)" font-family="'Noto Sans CJK TC',sans-serif" letter-spacing="0.5">koimsurai.com</text>
 </svg>`;
 
     res.set('Cache-Control', 'public, max-age=86400, s-maxage=604800');
@@ -283,7 +295,7 @@ app.get('/og-image/:id', async (req, res) => {
     res.send(svg);
   } catch (err) {
     console.error('[OG-IMAGE] Error:', err.message);
-    res.redirect('/og-default.png');
+    res.redirect('/og-default-v2.png');
   }
 });
 
@@ -386,9 +398,15 @@ app.use(express.static(DIST_DIR, {
     if (/\.(js|css)$/.test(filePath) && /[\.\-][a-f0-9]{6,}\./.test(filePath)) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     }
-    // 圖片/字體長期快取
+    // 圖片/字體：帶 hash 的（Vite build output）→ 1 年 immutable；
+    // 固定檔名（og-default.png / favicon.ico / public/ 內手動放的圖）→ 1 天 + revalidate，
+    // 避免改內容後 browser/CDN bot 抱著舊版死不放。
     if (/\.(woff2?|ttf|otf|eot|webp|png|jpg|jpeg|svg|ico)$/.test(filePath)) {
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable'); // 30d
+      if (/[\.\-][a-f0-9]{6,}\./.test(filePath)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
+      }
     }
   },
 }));
@@ -440,9 +458,9 @@ app.get('*', async (req, res) => {
   if (requestPath === '/blog' && isBot(ua)) {
     const html = injectMeta(indexHtml, {
       title: '手記 · Notes | Koimsurai',
-      description: '楊泰和的技術手記、學習筆記與生活隨筆。涵蓋前端架構、Rust、AI 系統開發等主題。',
+      description: 'Koimsurai 的技術手記、學習筆記與生活隨筆。涵蓋前端架構、Rust、系統設計等主題。',
       url: `${SITE_URL}/blog`,
-      image: '/og-default.png',
+      image: '/og-default-v2.png',
     });
     return res.send(html);
   }
@@ -451,44 +469,44 @@ app.get('*', async (req, res) => {
   if (isBot(ua)) {
     const pageMeta = {
       '/': {
-        title: 'Koimsurai — 楊泰和 | 全端工程師 · AI 系統開發',
-        description: '全端工程師楊泰和的個人品牌網站。展示作品集、技術筆記、攝影作品與個人配備。',
+        title: '宙と木',
+        description: 'Koimsurai 的個人空間 — 一個工程師的閱讀筆記、作品紀錄與系統實驗。',
       },
       '/photos': {
         title: '攝影作品集 | Koimsurai',
-        description: '楊泰和的攝影作品集，記錄旅途中的光影故事。',
+        description: 'Koimsurai 的攝影作品集，記錄旅途中的光影故事。',
       },
       '/now': {
         title: '現在 | Koimsurai',
-        description: '了解楊泰和目前正在進行的事情、專注的項目和最近的動態。',
+        description: 'Koimsurai 目前正在進行的事情、專注的項目和最近的動態。',
       },
       '/setup': {
         title: '裝備清單 | Koimsurai',
-        description: '楊泰和的開發環境、硬體設備與日常工具分享。',
+        description: 'Koimsurai 的開發環境、硬體設備與日常工具分享。',
       },
       '/journey': {
         title: '旅程 | Koimsurai',
-        description: '楊泰和的職業成長與學習旅程時間線。',
+        description: 'Koimsurai 的成長與學習旅程時間線。',
       },
       '/bookshelf': {
         title: '書架 | Koimsurai',
-        description: '楊泰和的閱讀書單與讀書筆記。',
+        description: 'Koimsurai 的閱讀書單與讀書筆記。',
       },
       '/music': {
         title: '音樂 | Koimsurai',
-        description: '楊泰和的音樂品味與 Spotify 即時收聽紀錄。',
+        description: 'Koimsurai 的音樂品味與 Spotify 即時收聽紀錄。',
       },
       '/cinema': {
         title: '電影 | Koimsurai',
-        description: '楊泰和的電影推薦與評論回顧。',
+        description: 'Koimsurai 的電影推薦與評論回顧。',
       },
       '/anime': {
         title: '動漫 | Koimsurai',
-        description: '楊泰和的動漫推薦清單與觀後感。',
+        description: 'Koimsurai 的動漫推薦清單與觀後感。',
       },
       '/activity': {
         title: '動態儀表板 | Koimsurai',
-        description: '楊泰和的即時活動儀表板。',
+        description: 'Koimsurai 的即時活動儀表板。',
       },
     };
 
@@ -497,7 +515,7 @@ app.get('*', async (req, res) => {
       const html = injectMeta(indexHtml, {
         ...meta,
         url: `${SITE_URL}${requestPath}`,
-        image: '/og-default.png',
+        image: '/og-default-v2.png',
       });
       return res.send(html);
     }

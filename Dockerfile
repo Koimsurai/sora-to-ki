@@ -51,8 +51,8 @@ RUN node -e "\
 (async () => {\
   const sharp = require('sharp');\
   const fs = require('fs');\
-  const og = fs.readFileSync('./dist/og-default.svg');\
-  await sharp(og).resize(1200, 630).png({quality: 90}).toFile('./dist/og-default.png');\
+  const og = fs.readFileSync('./dist/og-default-v2.svg');\
+  await sharp(og).resize(1200, 630).png({quality: 90}).toFile('./dist/og-default-v2.png');\
   const icon = fs.readFileSync('./dist/pwa-icon.svg');\
   await sharp(icon).resize(192, 192).png().toFile('./dist/pwa-192.png');\
   await sharp(icon).resize(512, 512).png().toFile('./dist/pwa-512.png');\

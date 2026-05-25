@@ -258,7 +258,7 @@ const Music = () => {
 
   return (
     <div className="music-page" ref={containerRef} style={glowStyle}>
-      <SEOHead title="音樂 | Koimsurai" description="楊泰和的音樂品味與Spotify即時收聽紀錄。" />
+      <SEOHead title="音樂" description="Koimsurai 的音樂品味與 Spotify 即時收聽紀錄。" />
       <div className="music-dim-overlay" />
 
       {/* ═══ 星雲背景 ═══ */}

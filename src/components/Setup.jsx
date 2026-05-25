@@ -170,7 +170,7 @@ function Setup() {
     <div className="setup-page">
       <SEOHead
         title="我的配備 · My Setup"
-        description="楊泰和的個人設備清單：主力 PC、家用伺服器、網路設備、周邊設備完整一覽。My Gear Inventory 2026。"
+        description="Koimsurai 的個人設備清單：主力 PC、家用伺服器、網路設備、周邊設備完整一覽。My Gear Inventory 2026。"
         path="/setup"
       />
       {/* 深空背景 */}
