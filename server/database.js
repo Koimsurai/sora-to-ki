@@ -354,6 +354,22 @@ function initializeDatabase() {
       )
     `);
 
+    // 動畫瘋觀看紀錄 — 從 api.gamer.com.tw/anime/v3/history.php 同步進來。
+    // anime_sn = 整部動畫的 ID, video_sn = 集數 ID, 兩個合一才唯一。
+    // last_watched_at 是「我們第一次同步看到這筆」的時間（Bahamut API 沒給確切觀看時間，
+    // 但 cron 6 小時跑一次，誤差最多 ±6 小時，夠用了）。
+    db.run(`
+      CREATE TABLE IF NOT EXISTS anime_history (
+        anime_sn INTEGER NOT NULL,
+        video_sn INTEGER NOT NULL,
+        title TEXT,
+        cover_url TEXT,
+        last_watched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (anime_sn, video_sn)
+      )
+    `);
+
     // 檢查並更新 comments 表
     db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='comments'", (err, table) => {
       if (err) {

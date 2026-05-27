@@ -53,3 +53,4 @@ IMPLEMENTATION_SUMMARY.md
 BLOG_ROADMAP.md
 .env.docker
 server/db/db.sqlite
+server/db/.bahamut-cookie.json

@@ -310,8 +310,8 @@ export default function BooksManager() {
               <div className="max-h-[65vh] overflow-y-auto pr-2 space-y-4">
                 {/* ISBN/書名搜尋區塊 */}
                 {!editingBook && (
-              <div className="space-y-3 pb-4 border-b">
-                <Label className="text-sm font-medium">📚 快速搜尋 (Google Books)</Label>
+              <div className="space-y-3 pb-4 border-b border-zinc-800/50">
+                <Label className="text-sm font-medium">📚 快速搜尋 (Google Books + OpenLibrary)</Label>
                 <div className="flex gap-2">
                   <Input
                     value={searchQuery}

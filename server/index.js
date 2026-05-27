@@ -3679,112 +3679,145 @@ apiRouter.get('/books/:id', (req, res) => {
   });
 });
 
-// Search books via Google Books API
+// helper: 把 https.get 包成 Promise，避免 nested callback
+function httpsGetJSON(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (apiRes) => {
+      let data = '';
+      apiRes.on('data', (chunk) => { data += chunk; });
+      apiRes.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch (e) { reject(e); }
+      });
+    }).on('error', reject);
+  });
+}
+
+// Google Books 高解析度封面 URL 處理
+function upgradeGoogleBooksCover(url) {
+  if (!url) return '';
+  let coverUrl = url
+    .replace('&zoom=1', '&zoom=0')
+    .replace('&edge=curl', '')
+    .replace('&img=1', '&img=1&w=500&h=800');
+  if (!coverUrl.includes('zoom=')) coverUrl += '&zoom=0';
+  if (!coverUrl.includes('&w=')) coverUrl += '&w=500&h=800';
+  return coverUrl;
+}
+
+// Google Books 搜尋
+async function searchGoogleBooks(searchQuery) {
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=10`;
+  try {
+    const jsonData = await httpsGetJSON(url);
+    if (!jsonData.items || jsonData.items.length === 0) return [];
+    return jsonData.items.map((item) => {
+      const v = item.volumeInfo;
+      const isbn13 = v.industryIdentifiers?.find((id) => id.type === 'ISBN_13')?.identifier;
+      const isbn10 = v.industryIdentifiers?.find((id) => id.type === 'ISBN_10')?.identifier;
+      let coverUrl = v.imageLinks
+        ? (v.imageLinks.large || v.imageLinks.medium || v.imageLinks.thumbnail || v.imageLinks.smallThumbnail || '')
+        : '';
+      coverUrl = upgradeGoogleBooksCover(coverUrl);
+      return {
+        isbn: isbn13 || isbn10 || '',
+        title: v.title || '',
+        authors: v.authors ? v.authors.join(', ') : '',
+        publisher: v.publisher || '',
+        published_date: v.publishedDate || '',
+        description: v.description || '',
+        cover_url: coverUrl,
+        page_count: v.pageCount || null,
+        language: v.language || '',
+        categories: v.categories ? v.categories.join(', ') : '',
+        source: 'google',
+      };
+    });
+  } catch (e) {
+    console.error('[Google Books] error:', e.message);
+    return [];
+  }
+}
+
+// OpenLibrary 搜尋 (給 Google Books 覆蓋不到的台灣本地書當 fallback)
+async function searchOpenLibrary(inputQuery, isISBN) {
+  try {
+    if (isISBN) {
+      const cleanISBN = inputQuery.replace(/[-\s]/g, '');
+      // ISBN lookup
+      const url = `https://openlibrary.org/api/books?bibkeys=ISBN:${cleanISBN}&format=json&jscmd=data`;
+      const data = await httpsGetJSON(url);
+      const key = `ISBN:${cleanISBN}`;
+      if (!data[key]) return [];
+      const b = data[key];
+      return [{
+        isbn: cleanISBN,
+        title: b.title || '',
+        authors: (b.authors || []).map((a) => a.name).join(', '),
+        publisher: (b.publishers || []).map((p) => p.name).join(', '),
+        published_date: b.publish_date || '',
+        description: b.notes || (b.excerpts && b.excerpts[0]?.text) || '',
+        cover_url: b.cover?.large || b.cover?.medium || b.cover?.small || '',
+        page_count: b.number_of_pages || null,
+        language: '',
+        categories: (b.subjects || []).slice(0, 5).map((s) => s.name).join(', '),
+        source: 'openlibrary',
+      }];
+    } else {
+      // 書名搜尋
+      const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(inputQuery)}&limit=10`;
+      const data = await httpsGetJSON(url);
+      if (!data.docs || data.docs.length === 0) return [];
+      return data.docs.slice(0, 10).map((d) => ({
+        isbn: (d.isbn && d.isbn[0]) || '',
+        title: d.title || '',
+        authors: (d.author_name || []).join(', '),
+        publisher: (d.publisher && d.publisher[0]) || '',
+        published_date: d.first_publish_year ? String(d.first_publish_year) : '',
+        description: '',
+        cover_url: d.cover_i ? `https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg` : '',
+        page_count: d.number_of_pages_median || null,
+        language: (d.language && d.language[0]) || '',
+        categories: (d.subject || []).slice(0, 3).join(', '),
+        source: 'openlibrary',
+      }));
+    }
+  } catch (e) {
+    console.error('[OpenLibrary] error:', e.message);
+    return [];
+  }
+}
+
+// Search books — Google Books 為主，OpenLibrary 補位（涵蓋台灣本地書）
 apiRouter.get('/books/search/external', async (req, res) => {
   const { query, isbn } = req.query;
-
   if (!query && !isbn) {
     return res.status(400).json({ error: '請提供書名或 ISBN' });
   }
 
-  let searchQuery;
   const inputQuery = isbn || query;
-
-  // 檢測是否為 ISBN (10或13位數字,可能包含連字符)
   const isISBN = /^[\d-]{10,17}$/.test(inputQuery.replace(/\s/g, ''));
+  const searchQuery = isISBN
+    ? `isbn:${inputQuery.replace(/[-\s]/g, '')}`
+    : inputQuery;
 
-  if (isISBN) {
-    // 移除連字符和空格
-    const cleanISBN = inputQuery.replace(/[-\s]/g, '');
-    searchQuery = `isbn:${cleanISBN}`;
-  } else {
-    searchQuery = inputQuery;
-  }
+  console.log(`[Books API] 搜尋請求: ${inputQuery}, isISBN=${isISBN}`);
 
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=10`;
+  try {
+    // 先打 Google Books
+    let books = await searchGoogleBooks(searchQuery);
 
-  console.log(`[Books API] 搜尋請求: ${inputQuery}, 格式化為: ${searchQuery}`);
+    // Google 空就試 OpenLibrary
+    if (books.length === 0) {
+      console.log('[Books API] Google Books 0 結果 → fallback OpenLibrary');
+      books = await searchOpenLibrary(inputQuery, isISBN);
+    }
 
-  https.get(url, (apiRes) => {
-    let data = '';
-
-    apiRes.on('data', (chunk) => {
-      data += chunk;
-    });
-
-    apiRes.on('end', () => {
-      try {
-        const jsonData = JSON.parse(data);
-
-        if (!jsonData.items || jsonData.items.length === 0) {
-          return res.json({
-            message: 'success',
-            books: []
-          });
-        }
-
-        // Format the response
-        const books = jsonData.items.map(item => {
-          const volumeInfo = item.volumeInfo;
-          const isbn13 = volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_13')?.identifier;
-          const isbn10 = volumeInfo.industryIdentifiers?.find(id => id.type === 'ISBN_10')?.identifier;
-
-          // 獲取高解析度封面圖片
-          // Google Books 的 thumbnail 解析度很低,我們需要替換為更高解析度
-          let coverUrl = '';
-          if (volumeInfo.imageLinks) {
-            // 優先使用這些更高解析度的圖片
-            coverUrl = volumeInfo.imageLinks.large ||
-              volumeInfo.imageLinks.medium ||
-              volumeInfo.imageLinks.thumbnail ||
-              volumeInfo.imageLinks.smallThumbnail || '';
-
-            // 手動修改 URL 以獲取更大的圖片
-            // Google Books 圖片格式: http://books.google.com/books/content?id=xxx&printsec=frontcover&img=1&zoom=1
-            // 我們可以增加尺寸參數
-            if (coverUrl) {
-              // 移除限制參數並設定更大的尺寸
-              coverUrl = coverUrl.replace('&zoom=1', '&zoom=0')
-                .replace('&edge=curl', '')
-                .replace('&img=1', '&img=1&w=500&h=800');
-
-              // 如果 URL 中沒有 zoom 參數,手動添加更大的尺寸
-              if (!coverUrl.includes('zoom=')) {
-                coverUrl += '&zoom=0';
-              }
-              if (!coverUrl.includes('&w=')) {
-                coverUrl += '&w=500&h=800';
-              }
-            }
-          }
-
-          return {
-            isbn: isbn13 || isbn10 || '',
-            title: volumeInfo.title || '',
-            authors: volumeInfo.authors ? volumeInfo.authors.join(', ') : '',
-            publisher: volumeInfo.publisher || '',
-            published_date: volumeInfo.publishedDate || '',
-            description: volumeInfo.description || '',
-            cover_url: coverUrl,
-            page_count: volumeInfo.pageCount || null,
-            language: volumeInfo.language || '',
-            categories: volumeInfo.categories ? volumeInfo.categories.join(', ') : ''
-          };
-        });
-
-        res.json({
-          message: 'success',
-          books
-        });
-      } catch (error) {
-        console.error('Google Books API 解析錯誤:', error);
-        res.status(500).json({ error: 'Failed to parse Google Books API response' });
-      }
-    });
-  }).on('error', (error) => {
-    console.error('Google Books API Error:', error);
+    res.json({ message: 'success', books });
+  } catch (error) {
+    console.error('[Books API] error:', error);
     res.status(500).json({ error: 'Failed to fetch book data' });
-  });
+  }
 });
 
 // POST a new book (admin only)
@@ -4482,6 +4515,241 @@ ${items}
 app.use(function (req, res) {
   res.status(404).send('Not Found');
 });
+
+/* ──────────────────────────────────────────────────────────────────────
+   動畫瘋觀看歷史同步
+   - 從 api.gamer.com.tw/anime/v3/history.php?page=N 拉
+   - 需要 .env 設 BAHAMUT_COOKIE（首次抓 + 之後 fallback）
+   - 每次 API 呼叫的 response 如果帶 Set-Cookie 會自動更新存進記憶體 + 寫檔，
+     只要 cron 持續跑就會被視為活躍 user，Bahamut 通常會默默 rotate JWT，
+     完全不用手動重抓。只有「真的過期 + Bahamut 沒續發」這個 edge case 才要手動更新
+   - cron 每 6 小時跑一次，server 啟動 30 秒後也跑一次
+─────────────────────────────────────────────────────────────────────── */
+const BAHAMUT_COOKIE_FILE = path.join(__dirname, 'db', '.bahamut-cookie.json');
+
+// 把整段 cookie string 解析成 { name: value } object
+function parseCookieString(s) {
+  const out = {};
+  if (!s) return out;
+  s.split(';').forEach((kv) => {
+    const idx = kv.indexOf('=');
+    if (idx < 0) return;
+    const k = kv.slice(0, idx).trim();
+    const v = kv.slice(idx + 1).trim();
+    if (k) out[k] = v;
+  });
+  return out;
+}
+
+function serializeCookies(obj) {
+  return Object.entries(obj).map(([k, v]) => `${k}=${v}`).join('; ');
+}
+
+// 啟動時：先吃 file（最新 rotated 版本），沒有再 fallback env
+let bahamutCookieState = (() => {
+  try {
+    if (fs.existsSync(BAHAMUT_COOKIE_FILE)) {
+      const stored = JSON.parse(fs.readFileSync(BAHAMUT_COOKIE_FILE, 'utf-8'));
+      if (stored && typeof stored === 'object') {
+        console.log('[Bahamut] loaded rotated cookies from', BAHAMUT_COOKIE_FILE);
+        return stored;
+      }
+    }
+  } catch (e) { /* ignore */ }
+  return parseCookieString(process.env.BAHAMUT_COOKIE || '');
+})();
+
+function persistBahamutCookie() {
+  try {
+    fs.writeFileSync(BAHAMUT_COOKIE_FILE, JSON.stringify(bahamutCookieState, null, 2));
+  } catch (e) {
+    console.error('[Bahamut] persist cookie fail:', e.message);
+  }
+}
+
+// 從 response Set-Cookie header 抽出 name=value 部分，合進 state
+function mergeSetCookies(setCookieArr) {
+  if (!Array.isArray(setCookieArr) || setCookieArr.length === 0) return false;
+  let changed = false;
+  for (const line of setCookieArr) {
+    // Set-Cookie 格式：name=value; Path=/; Expires=...; HttpOnly
+    // 我們只要第一個 `=` 前後的 name / value
+    const head = line.split(';')[0];
+    const idx = head.indexOf('=');
+    if (idx < 0) continue;
+    const name = head.slice(0, idx).trim();
+    const value = head.slice(idx + 1).trim();
+    if (!name) continue;
+    if (bahamutCookieState[name] !== value) {
+      bahamutCookieState[name] = value;
+      changed = true;
+    }
+  }
+  if (changed) {
+    console.log('[Bahamut] cookies rotated, persisted');
+    persistBahamutCookie();
+  }
+  return changed;
+}
+
+async function fetchBahamutPage(page) {
+  const url = `https://api.gamer.com.tw/anime/v3/history.php?page=${page}`;
+  try {
+    const res = await axios.get(url, {
+      headers: {
+        'Cookie': serializeCookies(bahamutCookieState),
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://ani.gamer.com.tw/viewList.php',
+        'Origin': 'https://ani.gamer.com.tw',
+        'Accept': '*/*',
+        'Accept-Language': 'zh-TW,zh;q=0.9',
+      },
+      timeout: 8000,
+    });
+    // 抓 Set-Cookie 自動 rotate
+    mergeSetCookies(res.headers?.['set-cookie']);
+    return res.data;
+  } catch (err) {
+    console.error(`[Bahamut] page ${page} fail:`, err.response?.status || err.message);
+    return null;
+  }
+}
+
+// 從 ani.gamer.com.tw/animeRef.php?sn= 的 og:image meta 抓 cover URL
+// cover 路徑是隨機 hash，沒辦法從 animeSn 預測，所以每部要打一次
+async function fetchBahamutCover(animeSn) {
+  try {
+    const url = `https://ani.gamer.com.tw/animeRef.php?sn=${animeSn}`;
+    const res = await axios.get(url, {
+      headers: {
+        'Cookie': serializeCookies(bahamutCookieState),
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      timeout: 6000,
+      maxRedirects: 5,
+    });
+    mergeSetCookies(res.headers?.['set-cookie']);
+    const match = String(res.data || '').match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
+    return match ? match[1] : null;
+  } catch (err) {
+    console.warn(`[Bahamut] cover fetch fail for sn=${animeSn}:`, err.response?.status || err.message);
+    return null;
+  }
+}
+
+let bahamutSyncRunning = false;
+async function syncBahamutHistory() {
+  if (!bahamutCookieState.BAHAID || !bahamutCookieState.BAHARUNE) {
+    console.log('[Bahamut] cookie state missing BAHAID/BAHARUNE, skip sync');
+    return;
+  }
+  if (bahamutSyncRunning) {
+    console.log('[Bahamut] sync already in progress, skip');
+    return;
+  }
+  bahamutSyncRunning = true;
+  console.log('[Bahamut] sync start');
+
+  try {
+    let totalEntries = 0;
+    let newEntries = 0;
+    let coversFetched = 0;
+    let maxPage = 20; // 上限保險
+
+    // 先收集 history entries，再批次處理 cover（避免每集都打一次 animeRef）
+    const allHistory = [];
+    for (let page = 1; page <= maxPage; page++) {
+      const data = await fetchBahamutPage(page);
+      if (!data?.data?.history?.length) break;
+      const history = data.data.history;
+      maxPage = Math.min(maxPage, data.data.totalPage || maxPage);
+      allHistory.push(...history);
+      if (page >= maxPage) break;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+
+    // 1) 找出每個 anime_sn 在 db 是否已有 cover_url（同一部動畫共用一張 cover）
+    const uniqueAnimeSns = [...new Set(allHistory.map((e) => e.animeSn).filter(Boolean))];
+    const existingCovers = new Map(); // animeSn -> cover_url
+    for (const sn of uniqueAnimeSns) {
+      const row = await new Promise((resolve) => {
+        db.get(
+          'SELECT cover_url FROM anime_history WHERE anime_sn = ? AND cover_url IS NOT NULL AND cover_url != "" LIMIT 1',
+          [sn],
+          (err, r) => resolve(err ? null : r),
+        );
+      });
+      if (row?.cover_url) existingCovers.set(sn, row.cover_url);
+    }
+
+    // 2) 對 db 沒紀錄的 anime_sn 打 animeRef 抓 og:image
+    for (const sn of uniqueAnimeSns) {
+      if (existingCovers.has(sn)) continue;
+      const cover = await fetchBahamutCover(sn);
+      if (cover) {
+        existingCovers.set(sn, cover);
+        coversFetched += 1;
+      }
+      await new Promise((r) => setTimeout(r, 400));
+    }
+
+    // 3) upsert 每筆 history
+    for (const entry of allHistory) {
+      const { animeSn, videoSn, title } = entry;
+      if (!animeSn || !videoSn) continue;
+      const coverUrl = existingCovers.get(animeSn) || '';
+
+      const isNew = await new Promise((resolve) => {
+        db.get(
+          'SELECT 1 FROM anime_history WHERE anime_sn = ? AND video_sn = ?',
+          [animeSn, videoSn],
+          (err, row) => resolve(!err && !row),
+        );
+      });
+      if (isNew) newEntries += 1;
+
+      await new Promise((resolve) => {
+        db.run(
+          `INSERT INTO anime_history (anime_sn, video_sn, title, cover_url, last_watched_at, synced_at)
+           VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+           ON CONFLICT(anime_sn, video_sn) DO UPDATE SET
+             title = excluded.title,
+             cover_url = COALESCE(NULLIF(excluded.cover_url, ''), anime_history.cover_url),
+             synced_at = CURRENT_TIMESTAMP`,
+          [animeSn, videoSn, title || '', coverUrl],
+          () => resolve(),
+        );
+      });
+      totalEntries += 1;
+    }
+
+    console.log(`[Bahamut] sync done: ${totalEntries} entries, ${newEntries} new, ${coversFetched} covers fetched (${uniqueAnimeSns.length} unique animes)`);
+  } catch (err) {
+    console.error('[Bahamut] sync error:', err.message);
+  } finally {
+    bahamutSyncRunning = false;
+  }
+}
+
+// GET /api/anime/history — 公開讀取最近觀看
+apiRouter.get('/anime/history', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
+  db.all(
+    `SELECT anime_sn, video_sn, title, cover_url, last_watched_at
+     FROM anime_history
+     ORDER BY last_watched_at DESC
+     LIMIT ?`,
+    [limit],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'success', history: rows });
+    },
+  );
+});
+
+// 啟動 30 秒後跑首次 sync，之後每 6 小時跑一次
+setTimeout(() => syncBahamutHistory(), 30 * 1000);
+setInterval(() => syncBahamutHistory(), 6 * 60 * 60 * 1000);
 
 // Start server
 app.listen(PORT, () => {
