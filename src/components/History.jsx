@@ -8,7 +8,7 @@ const SITE_BIRTH = new Date('2025-04-01T00:00:00+08:00');
 const MILESTONES = [
   { date: '2025-04-01', text: '站點誕生 — Docker + SSL + Nginx 反向代理一次配齊', big: true },
   { date: '2025-04-05', text: 'Hero 區與作品集首版上線' },
-  { date: '2025-08-25', text: '部落格上線 — 前後端完整實作（Express + SQLite + Nginx）', big: true },
+  { date: '2025-08-25', text: '部落格上線 — 前後端完整實作（Express + SQLite + Nginx）。文章跟書籍忘記備份要找一下在哪裡...', big: true },
   { date: '2025-09-24', text: '效能優化大改造 — Lazy loading / useInView / 不可見時暫停動畫' },
   { date: '2025-10-07', text: 'Activity 動態頁面 + Steam / GitHub API 整合' },
   { date: '2025-10-08', text: 'Now 頁面 — 「目前在做什麼」（mood / location / learning / projects）' },
@@ -17,6 +17,7 @@ const MILESTONES = [
   { date: '2025-10-11', text: 'shadcn/ui 元件導入 + 後台 Dashboard 重構' },
   { date: '2025-10-14', text: '自訂網域 — koimsurai.blogsyte.com:13579 → koimsurai.com', big: true },
   { date: '2025-12-10', text: '全專案改用 pnpm，新增 /cinema /anime 頁面' },
+  { date: '2026-01-08', text: '搬家到自家 HomeLab — Ubuntu 重灌、Docker 起跑、站台從舊機器整批遷移過來' },
   { date: '2026-02-11', text: 'SEOHead 動態 metadata + Setup 深空主題頁面' },
   { date: '2026-02-19', text: '玻璃擬態風格全面導入 + AI 文章生成功能' },
   { date: '2026-02-20', text: 'AI 摘要 + AI 標籤建議 + ImageLightbox 燈箱' },
