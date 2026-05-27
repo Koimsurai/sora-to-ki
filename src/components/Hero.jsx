@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react'; // Import useSt
 import { Parallax } from 'react-scroll-parallax'; // 引入 Parallax
 // Remove unused particle imports
 // ✅ 優化: 使用解構引入 (Vite 會自動 tree-shake)
-import { FaGithub, FaLinkedin, FaInstagram, FaFacebook, FaBriefcase } from 'react-icons/fa';
+import { FaGithub, FaLinkedin, FaInstagram, FaFacebook, FaRss, FaEnvelope, FaSpotify } from 'react-icons/fa';
 import SEOHead from './SEOHead';
 import './Hero.css';
 import meImage from '../assets/me.jpg'; // 導入頭像圖片
@@ -114,8 +114,14 @@ function Hero() {
             <a href="https://www.facebook.com/profile.php?id=100003126780663" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
               <FaFacebook />
             </a>
-            <a href="https://pda.104.com.tw/profile/share/8tLJLrLCpeLVYvx6blZCgZAegH4nw6ml" target="_blank" rel="noopener noreferrer" aria-label="104 Job Bank">
-              <FaBriefcase /> {/* 使用公事包圖示代表 104 */}
+            <a href="https://open.spotify.com/user/x6l1h2n0fxtivlao8prrfq1pj?si=b31c38eb1a734038" target="_blank" rel="noopener noreferrer" aria-label="Spotify">
+              <FaSpotify />
+            </a>
+            <a href="mailto:timo9378@gmail.com" aria-label="Email">
+              <FaEnvelope />
+            </a>
+            <a href="/api/rss" target="_blank" rel="noopener noreferrer" aria-label="RSS">
+              <FaRss />
             </a>
           </div>
           <a href="#contact" className="cta-button">聯絡我</a>

@@ -20,22 +20,10 @@ function useStats() {
   return stats;
 }
 
-// 在線人數：嘗試 /api/online，沒有 endpoint 就 fallback 用文章數做估算
+// 在線人數：目前後端沒有 endpoint，直接回傳 null 走 fallback 顯示文章數 / 天數
+// 之後想做即時人數，可加 SSE / WebSocket，或前端 fetch /api/online
 function useOnline() {
-  const [count, setCount] = useState(null);
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/online')
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (cancelled || !data) return;
-        const n = data?.online ?? data?.count ?? data?.viewers;
-        if (typeof n === 'number') setCount(n);
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
-  return count;
+  return null;
 }
 
 const ExternalArrow = () => (

@@ -10,32 +10,33 @@
   padding: 8rem 2rem 2rem;
   color: rgba(229, 229, 245, 0.55);
   font-size: 0.875rem;
-  /* 拿掉 backdrop-filter — 它會在 footer 上緣製造一條清楚的硬邊，跟  的「融合」感衝突。
-     改成純漸層：上半段非常透明，往下慢慢加深，視覺上像「化進去」而不是「接上去」。 */
+  /* 純漸層融合，不用 backdrop-filter（會造硬邊）。
+     重點：開頭 alpha 必須跟 ::before 結尾相同，避免「中間突然斷一截」的透明線 */
   background: linear-gradient(
     180deg,
-    rgba(10, 9, 24, 0) 0%,
-    rgba(10, 9, 24, 0.3) 18%,
-    rgba(10, 9, 24, 0.65) 50%,
-    rgba(8, 7, 20, 0.85) 100%
+    rgba(10, 9, 24, 0.28) 0%,
+    rgba(10, 9, 24, 0.5) 25%,
+    rgba(10, 9, 24, 0.72) 60%,
+    rgba(8, 7, 20, 0.88) 100%
   );
   border-top: none;
   overflow: hidden;
 }
 
-/* ::before 再往上延伸 100px 進到上方內容區，做一段更柔的 pre-fade。
-   不用 backdrop-filter（同樣為了避免硬邊），純漸層處理。 */
+/* ::before 是 footer 上方的「滲透」過渡層，160px 進到內容區，
+   alpha 從 0 慢慢爬到 0.28，**剛好接上** footer 主體開頭。
+   ::before 結尾 == footer 主體開頭 = 0.28，所以兩段拼起來是一條連續漸層 */
 .app-footer::before {
   content: '';
   position: absolute;
-  top: -100px;
+  top: -160px;
   left: 0;
   right: 0;
-  height: 100px;
+  height: 160px;
   background: linear-gradient(
     180deg,
     rgba(10, 9, 24, 0) 0%,
-    rgba(10, 9, 24, 0.18) 100%
+    rgba(10, 9, 24, 0.28) 100%
   );
   pointer-events: none;
 }

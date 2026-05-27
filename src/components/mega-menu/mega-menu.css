@@ -123,10 +123,11 @@
   grid-template-columns: 180px 280px;
   gap: 16px;
   padding: 14px 18px;
-  /* 加深一點：0.62 → 0.72。在文章頁面背景文字才不會穿透到 panel 內讀不清楚。 */
-  background: rgba(18, 18, 24, 0.72);
-  backdrop-filter: blur(36px) saturate(160%);
-  -webkit-backdrop-filter: blur(36px) saturate(160%);
+  /* 文章頁面背景大字會穿透 panel — 加重底色 + 推 blur 到 64px 把後面的內容
+     完全模糊掉，但保留一點透明感讓 panel 不會像浮一塊純黑卡片 */
+  background: rgba(15, 15, 22, 0.82);
+  backdrop-filter: blur(64px) saturate(180%);
+  -webkit-backdrop-filter: blur(64px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   box-shadow:
