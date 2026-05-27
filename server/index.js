@@ -4555,6 +4555,39 @@ const bahamut = new AniGamer({
   },
 });
 
+// 推 Discord webhook（沒設 DISCORD_WEBHOOK_URL 就跳過，同 host 上的 discord-update-notify.sh）
+async function notifyDiscord(content) {
+  const url = process.env.DISCORD_WEBHOOK_URL;
+  if (!url) return;
+  try {
+    await axios.post(url, { content }, { timeout: 8000 });
+  } catch (e) {
+    console.error('[Bahamut] discord notify fail:', e.message);
+  }
+}
+
+// BAHARUNE 約 14 天到期，Bahamut 是否會自動續期未經證實 →「剩 < 3 天」就推 Discord 提醒手動重抓
+// SDK 不做自動登入（Bahamut reCAPTCHA），這是「自動運作、快死大聲提醒」的安全網
+const JWT_WARN_THRESHOLD_SEC = 3 * 24 * 60 * 60;
+let lastJwtAlertAt = 0; // 最多每 24h 提醒一次，避免每次 sync 洗版
+async function checkBahamutJwtExpiry() {
+  const status = bahamut.jwtStatus();
+  if (!status) return;
+  console.log(
+    `[Bahamut] JWT exp ${status.expiresAt.toISOString()} (${Math.floor(status.secondsUntilExpiry / 86400)}d left)`,
+  );
+  const needAlert = status.isExpired || status.secondsUntilExpiry < JWT_WARN_THRESHOLD_SEC;
+  if (needAlert && Date.now() - lastJwtAlertAt > 24 * 60 * 60 * 1000) {
+    lastJwtAlertAt = Date.now();
+    const days = Math.max(0, Math.floor(status.secondsUntilExpiry / 86400));
+    await notifyDiscord(
+      status.isExpired
+        ? `⚠️ **動畫瘋 cookie 已過期** — 觀看歷史同步停擺，請登入 ani.gamer.com.tw 重抓 cookie 更新 BAHAMUT_COOKIE`
+        : `⏳ **動畫瘋 cookie 剩 ${days} 天到期**（${status.expiresAt.toISOString()}）— 找時間登入 ani.gamer.com.tw 重抓 cookie`,
+    );
+  }
+}
+
 let bahamutSyncRunning = false;
 async function syncBahamutHistory() {
   const { ok, missing } = bahamut.validate();
@@ -4568,6 +4601,7 @@ async function syncBahamutHistory() {
   }
   bahamutSyncRunning = true;
   console.log('[Bahamut] sync start');
+  await checkBahamutJwtExpiry();
 
   try {
     let totalEntries = 0;

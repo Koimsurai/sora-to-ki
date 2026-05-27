@@ -11,7 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "anigamer": "^0.1.0",
+    "anigamer": "^0.2.0",
     "axios": "^1.15.2",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
