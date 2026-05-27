@@ -4517,36 +4517,19 @@ app.use(function (req, res) {
 });
 
 /* ──────────────────────────────────────────────────────────────────────
-   動畫瘋觀看歷史同步
-   - 從 api.gamer.com.tw/anime/v3/history.php?page=N 拉
-   - 需要 .env 設 BAHAMUT_COOKIE（首次抓 + 之後 fallback）
-   - 每次 API 呼叫的 response 如果帶 Set-Cookie 會自動更新存進記憶體 + 寫檔，
-     只要 cron 持續跑就會被視為活躍 user，Bahamut 通常會默默 rotate JWT，
-     完全不用手動重抓。只有「真的過期 + Bahamut 沒續發」這個 edge case 才要手動更新
+   動畫瘋觀看歷史同步（用自家開源 SDK：anigamer — https://github.com/timo9378/anigamer）
+   - SDK 負責 cookie 解析 / serialize / Set-Cookie 自動輪替 / history / cover 抓取
+   - 這層只剩：cookie 檔案持久化 + DB upsert + cron
+   - cookie 啟動時先吃 file（最新 rotated 版本），沒有再 fallback env；
+     SDK 偵測到 Bahamut rotate cookie 時，透過 onCookiesRotated 寫回檔案，
+     只要 cron 持續跑就會被視為活躍 user，JWT 通常會默默續發，不用手動重抓
    - cron 每 6 小時跑一次，server 啟動 30 秒後也跑一次
 ─────────────────────────────────────────────────────────────────────── */
+const { AniGamer } = require('anigamer');
 const BAHAMUT_COOKIE_FILE = path.join(__dirname, 'db', '.bahamut-cookie.json');
 
-// 把整段 cookie string 解析成 { name: value } object
-function parseCookieString(s) {
-  const out = {};
-  if (!s) return out;
-  s.split(';').forEach((kv) => {
-    const idx = kv.indexOf('=');
-    if (idx < 0) return;
-    const k = kv.slice(0, idx).trim();
-    const v = kv.slice(idx + 1).trim();
-    if (k) out[k] = v;
-  });
-  return out;
-}
-
-function serializeCookies(obj) {
-  return Object.entries(obj).map(([k, v]) => `${k}=${v}`).join('; ');
-}
-
 // 啟動時：先吃 file（最新 rotated 版本），沒有再 fallback env
-let bahamutCookieState = (() => {
+function loadBahamutCookie() {
   try {
     if (fs.existsSync(BAHAMUT_COOKIE_FILE)) {
       const stored = JSON.parse(fs.readFileSync(BAHAMUT_COOKIE_FILE, 'utf-8'));
@@ -4556,91 +4539,27 @@ let bahamutCookieState = (() => {
       }
     }
   } catch (e) { /* ignore */ }
-  return parseCookieString(process.env.BAHAMUT_COOKIE || '');
-})();
-
-function persistBahamutCookie() {
-  try {
-    fs.writeFileSync(BAHAMUT_COOKIE_FILE, JSON.stringify(bahamutCookieState, null, 2));
-  } catch (e) {
-    console.error('[Bahamut] persist cookie fail:', e.message);
-  }
+  return process.env.BAHAMUT_COOKIE || '';
 }
 
-// 從 response Set-Cookie header 抽出 name=value 部分，合進 state
-function mergeSetCookies(setCookieArr) {
-  if (!Array.isArray(setCookieArr) || setCookieArr.length === 0) return false;
-  let changed = false;
-  for (const line of setCookieArr) {
-    // Set-Cookie 格式：name=value; Path=/; Expires=...; HttpOnly
-    // 我們只要第一個 `=` 前後的 name / value
-    const head = line.split(';')[0];
-    const idx = head.indexOf('=');
-    if (idx < 0) continue;
-    const name = head.slice(0, idx).trim();
-    const value = head.slice(idx + 1).trim();
-    if (!name) continue;
-    if (bahamutCookieState[name] !== value) {
-      bahamutCookieState[name] = value;
-      changed = true;
+// SDK client：Bahamut 回 Set-Cookie 時自動 merge，並透過 callback 寫回檔案
+const bahamut = new AniGamer({
+  cookie: loadBahamutCookie(),
+  onCookiesRotated: (jar) => {
+    try {
+      fs.writeFileSync(BAHAMUT_COOKIE_FILE, JSON.stringify(jar, null, 2));
+      console.log('[Bahamut] cookies rotated, persisted');
+    } catch (e) {
+      console.error('[Bahamut] persist cookie fail:', e.message);
     }
-  }
-  if (changed) {
-    console.log('[Bahamut] cookies rotated, persisted');
-    persistBahamutCookie();
-  }
-  return changed;
-}
-
-async function fetchBahamutPage(page) {
-  const url = `https://api.gamer.com.tw/anime/v3/history.php?page=${page}`;
-  try {
-    const res = await axios.get(url, {
-      headers: {
-        'Cookie': serializeCookies(bahamutCookieState),
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://ani.gamer.com.tw/viewList.php',
-        'Origin': 'https://ani.gamer.com.tw',
-        'Accept': '*/*',
-        'Accept-Language': 'zh-TW,zh;q=0.9',
-      },
-      timeout: 8000,
-    });
-    // 抓 Set-Cookie 自動 rotate
-    mergeSetCookies(res.headers?.['set-cookie']);
-    return res.data;
-  } catch (err) {
-    console.error(`[Bahamut] page ${page} fail:`, err.response?.status || err.message);
-    return null;
-  }
-}
-
-// 從 ani.gamer.com.tw/animeRef.php?sn= 的 og:image meta 抓 cover URL
-// cover 路徑是隨機 hash，沒辦法從 animeSn 預測，所以每部要打一次
-async function fetchBahamutCover(animeSn) {
-  try {
-    const url = `https://ani.gamer.com.tw/animeRef.php?sn=${animeSn}`;
-    const res = await axios.get(url, {
-      headers: {
-        'Cookie': serializeCookies(bahamutCookieState),
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-      timeout: 6000,
-      maxRedirects: 5,
-    });
-    mergeSetCookies(res.headers?.['set-cookie']);
-    const match = String(res.data || '').match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-    return match ? match[1] : null;
-  } catch (err) {
-    console.warn(`[Bahamut] cover fetch fail for sn=${animeSn}:`, err.response?.status || err.message);
-    return null;
-  }
-}
+  },
+});
 
 let bahamutSyncRunning = false;
 async function syncBahamutHistory() {
-  if (!bahamutCookieState.BAHAID || !bahamutCookieState.BAHARUNE) {
-    console.log('[Bahamut] cookie state missing BAHAID/BAHARUNE, skip sync');
+  const { ok, missing } = bahamut.validate();
+  if (!ok) {
+    console.log('[Bahamut] cookie missing', missing.join(','), '— skip sync');
     return;
   }
   if (bahamutSyncRunning) {
@@ -4654,19 +4573,9 @@ async function syncBahamutHistory() {
     let totalEntries = 0;
     let newEntries = 0;
     let coversFetched = 0;
-    let maxPage = 20; // 上限保險
 
-    // 先收集 history entries，再批次處理 cover（避免每集都打一次 animeRef）
-    const allHistory = [];
-    for (let page = 1; page <= maxPage; page++) {
-      const data = await fetchBahamutPage(page);
-      if (!data?.data?.history?.length) break;
-      const history = data.data.history;
-      maxPage = Math.min(maxPage, data.data.totalPage || maxPage);
-      allHistory.push(...history);
-      if (page >= maxPage) break;
-      await new Promise((r) => setTimeout(r, 500));
-    }
+    // SDK 走完所有頁 + 按 animeSn:videoSn 去重
+    const allHistory = await bahamut.historyAll();
 
     // 1) 找出每個 anime_sn 在 db 是否已有 cover_url（同一部動畫共用一張 cover）
     const uniqueAnimeSns = [...new Set(allHistory.map((e) => e.animeSn).filter(Boolean))];
@@ -4682,10 +4591,10 @@ async function syncBahamutHistory() {
       if (row?.cover_url) existingCovers.set(sn, row.cover_url);
     }
 
-    // 2) 對 db 沒紀錄的 anime_sn 打 animeRef 抓 og:image
+    // 2) 對 db 沒紀錄的 anime_sn 用 SDK 抓 cover（og:image）
     for (const sn of uniqueAnimeSns) {
       if (existingCovers.has(sn)) continue;
-      const cover = await fetchBahamutCover(sn);
+      const cover = await bahamut.cover(sn).catch(() => null);
       if (cover) {
         existingCovers.set(sn, cover);
         coversFetched += 1;
