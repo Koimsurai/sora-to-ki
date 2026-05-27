@@ -9,7 +9,7 @@ import './BlogPost.css';     // 拿 BlogPost 的 dim overlay / post-content-wrap
 import './InfoPage.css';
 
 /**
- * 通用「資訊型頁面」layout —  風格：
+ * 通用「資訊型頁面」layout：
  *   ── 大標 / 副標
  *   ── 內容區（max-width，中間置中）— 走 BlogPost 的 post-content-wrapper glass card
  *   ── 右側 sticky TOC（沒有左 sidebar，但 grid 留出對稱空間）
@@ -107,7 +107,7 @@ function InfoPage({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1], delay: 0.05 }}
         >
-          {/* 不用 post-content-wrapper 那個 glass card， 的 about/history 是字直接浮在背景上 */}
+          {/* 不用 post-content-wrapper 那個 glass card，about/history 是字直接浮在背景上 */}
           <article className="post-content info-page-content" ref={contentRef}>
             {children}
             <SignatureSVG className="blog-signature info-page-signature" />

@@ -90,7 +90,7 @@ function AnimatedSocial({ href, AnimIcon, label, external = true }) {
 }
 
 /**
- * 首頁 menu 內容（ 風格）：
+ * 首頁 menu 內容：
  *   左欄：作者頭像 / 線上狀態 / 統計（文章 N 篇 / 字數 / 寫了多少天）/ 社群圖示
  *   右欄：首頁區段（首頁 / 關於 / 技能 / 作品 / 聯絡）
  */

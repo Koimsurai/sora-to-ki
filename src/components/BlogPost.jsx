@@ -1008,7 +1008,7 @@ const PrevNextNav = React.memo(({ currentId }) => {
 });
 
 /* ══════════════════════════
-   PostsNav — Left sidebar showing OTHER article titles (-style)
+   PostsNav — Left sidebar showing OTHER article titles
    ══════════════════════════ */
 const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
   const [nearbyPosts, setNearbyPosts] = useState([]);

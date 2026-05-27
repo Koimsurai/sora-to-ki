@@ -5,7 +5,7 @@
 2026-04-26 - chore(security): 移除遺留的 root package-lock.json
 2026-04-26 - chore(security): 處理 33 個 Dependabot 警報
 2026-04-26 - fix(ui,activity): 滾動到頂白線、刷新動畫、熱圖左邊裁切、年份清單
-2026-04-26 - feat(ui): 統一 KoimLoader、批次遷移按鈕、 風語系下拉
+2026-04-26 - feat(ui): 統一 KoimLoader、批次遷移按鈕、語系下拉
 2026-04-26 - feat(ui): koim 全域按鈕、loader 重設計、Steam 頭像框視覺整合
 2026-04-26 - feat(activity): 拆分 Steam Profile 與最近遊玩為獨立區塊
 2026-04-26 - feat(steam): 整合 Steam 個人化卡片到 Now Playing

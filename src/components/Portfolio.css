@@ -87,7 +87,7 @@
   overflow: hidden;
 }
 
-/* code 卡（沒有圖片的 repo 卡片）— 用大型 glyph 代替 media 區， 風格 */
+/* code 卡（沒有圖片的 repo 卡片）— 用大型 glyph 代替 media 區 */
 .portfolio-secondary-glyph {
   position: relative;
   aspect-ratio: 16 / 10;

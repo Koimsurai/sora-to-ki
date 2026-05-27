@@ -1,14 +1,14 @@
 /* ══════════════════════════════════════════
-   Comments · -style minimal
+   Comments · minimal
    ══════════════════════════════════════════ */
-.comments- {
+.comments-block {
   max-width: 720px;
   margin: 0 auto;
   padding: 0 1rem 4rem;
 }
 
 /* ── Section Divider ── */
-.comments-::before {
+.comments-block::before {
   content: '';
   display: block;
   width: 48px;
@@ -579,7 +579,7 @@
 
 /* ── Mobile ── */
 @media (max-width: 640px) {
-  .comments- {
+  .comments-block {
     padding: 0 0.5rem 2.5rem;
   }
 

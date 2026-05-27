@@ -14,7 +14,7 @@
   user-select: text;
 }
 
-/*  風格：info page 不要 glass card wrapper，字直接浮在背景上。
+/* info page 不要 glass card wrapper，字直接浮在背景上。
    也拿掉 BlogPost .post-content 預設的 content-visibility（資訊頁不需要 lazy layout）。 */
 .info-page .post-content {
   content-visibility: visible;

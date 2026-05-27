@@ -5,7 +5,7 @@ import { FaChevronDown } from 'react-icons/fa';
 import './mega-menu.css';
 
 /**
- * MegaMenu — hover-triggered 2-column rich panel，靈感來自  / Stripe / Linear
+ * MegaMenu — hover-triggered 2-column rich panel，靈感來自 Stripe / Linear
  *
  * 結構：
  *   <MegaMenuRoot>          // 管理「目前哪個 menu 開著」，確保最多 1 個同時打開

@@ -582,12 +582,12 @@
 }
 
 /* Override Comments component styling inside dialog */
-.mc-comment-body .comments- {
+.mc-comment-body .comments-block {
   max-width: none;
   padding: 0.5rem 0 1rem;
 }
 
-.mc-comment-body .comments-::before {
+.mc-comment-body .comments-block::before {
   margin: 0 auto 1.5rem;
 }
 

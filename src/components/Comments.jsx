@@ -178,7 +178,7 @@ function Comments({ postId }) {
   const isUsingLogin = isLoggedIn && !useAnonymous;
 
   return (
-    <div className="comments-">
+    <div className="comments-block">
       {/* ── Comment Form ── */}
       <div className="comment-form-card">
         {(isLoggedIn || commentMode === 'anonymous') && (

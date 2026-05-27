@@ -1,5 +1,5 @@
 /* ── Footer：暗色漸層 + 4 欄 grid ────────────────────────────────────────────
-   設計參考  的 footer：左品牌欄 + 3 個導覽欄，底下一條分隔線、再一行 meta。
+   footer 設計：左品牌欄 + 3 個導覽欄，底下一條分隔線、再一行 meta。
    背景頂端淡淡發光（purple radial），讓 footer 跟全站星空 dim overlay 連起來。 */
 
 .app-footer {

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════
-   BlogPost.css — -style 三欄佈局
+   BlogPost.css — 三欄佈局
    ═══════════════════════════════════════ */
 
 /* ── Variables ── */
@@ -189,7 +189,7 @@
   transform: translateX(-50%) translateY(0);
 }
 
-/* ── 語系切換（ 風） ── */
+/* ── 語系切換 ── */
 .meta-lang-switcher {
   position: relative;
   display: inline-flex;
@@ -232,7 +232,7 @@
 .lang-trigger:hover .lang-caret { opacity: 0.9; }
 .lang-caret.open { transform: rotate(180deg); }
 
-/* 下拉選單：玻璃卡 + 漸層描邊（ 風） */
+/* 下拉選單：玻璃卡 + 漸層描邊 */
 .lang-menu {
   min-width: 180px;
   background: rgba(20, 18, 34, 0.85);
@@ -373,7 +373,7 @@
   overflow-y: auto;
 }
 
-/* Posts navigation (left sidebar) — -style */
+/* Posts navigation (left sidebar) */
 .posts-nav {
   padding: 2.5rem 0 0.5rem 0;
 }

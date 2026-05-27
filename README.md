@@ -36,7 +36,7 @@ Koimsurai 的個人網站原始碼。一個 full-stack blog + portfolio + 多平
   - Spotify circuit breaker：audio-features API 廢棄後改抓 metadata + cache
 - **照片牆** — Masonry layout + EXIF 提取 + AI CLIP Tagger 自動標籤 + 全螢幕 PhotoViewer (zoom/pan/share)
 - **3D 書櫃** — Zero Gravity Library，可拖曳 3D 書本互動
-- **資訊頁** — 此站點 / 歷史 / 留言 / 友鏈， 風 sticky TOC + scrollspy
+- **資訊頁** — 此站點 / 歷史 / 留言 / 友鏈，sticky TOC + scrollspy
 - **OAuth 登入** — GitHub / Google，RBAC 用戶分權
 
 ### Infra
