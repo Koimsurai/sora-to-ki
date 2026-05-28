@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
 import avatarImage from '../../assets/me.jpg';
 import { UserIcon } from '@/components/animate-ui/icons/user';
@@ -95,6 +96,7 @@ function AnimatedSocial({ href, AnimIcon, label, external = true }) {
  *   右欄：首頁區段（首頁 / 關於 / 技能 / 作品 / 聯絡）
  */
 function HomeMenuContent({ onSectionClick }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
@@ -126,18 +128,18 @@ function HomeMenuContent({ onSectionClick }) {
   }, [stats]);
 
   const sections = [
-    { id: 'home',      AnimateIconsLib: HouseIcon, title: '首頁' },
-    { id: 'about-me',  AnimIcon: UserIcon,         title: '關於' },
-    { id: 'expertise', AnimIcon: SparklesIcon,     title: '技能' },
-    { id: 'portfolio', AnimIcon: LayersIcon,       title: '作品' },
-    { id: 'contact',   AnimIcon: SendIcon,         title: '聯絡' },
+    { id: 'home',      AnimateIconsLib: HouseIcon, title: t('megaMenu.items.home') },
+    { id: 'about-me',  AnimIcon: UserIcon,         title: t('megaMenu.items.about') },
+    { id: 'expertise', AnimIcon: SparklesIcon,     title: t('megaMenu.items.expertise') },
+    { id: 'portfolio', AnimIcon: LayersIcon,       title: t('megaMenu.items.portfolio') },
+    { id: 'contact',   AnimIcon: SendIcon,         title: t('megaMenu.items.contact') },
   ];
 
   const siteLinks = [
-    { to: '/about-site', AnimateIconsLib: InfoIcon,          title: '此站點', desc: '一個工程師的個人空間' },
-    { to: '/history',    AnimateIconsLib: CompassIcon,       title: '歷史',   desc: '站點走過的路' },
-    { to: '/messages',   AnimateIconsLib: MessageCircleIcon, title: '留言',   desc: '想說什麼都可以' },
-    { to: '/friends',    AnimateIconsLib: UsersIcon,         title: '朋友們', desc: '友鏈' },
+    { to: '/about-site', AnimateIconsLib: InfoIcon,          title: t('megaMenu.items.aboutSite'), desc: t('megaMenu.items.aboutSiteDesc') },
+    { to: '/history',    AnimateIconsLib: CompassIcon,       title: t('megaMenu.items.history'),   desc: t('megaMenu.items.historyDesc') },
+    { to: '/messages',   AnimateIconsLib: MessageCircleIcon, title: t('megaMenu.items.messages'),   desc: t('megaMenu.items.messagesDesc') },
+    { to: '/friends',    AnimateIconsLib: UsersIcon,         title: t('megaMenu.items.friends'),   desc: t('megaMenu.items.friendsDesc') },
   ];
 
   return (
@@ -150,21 +152,21 @@ function HomeMenuContent({ onSectionClick }) {
             </div>
             <div className="mega-menu-profile-text">
               <div className="mega-menu-profile-name">Koimsurai</div>
-              <div className="mega-menu-profile-status">在線</div>
+              <div className="mega-menu-profile-status">{t('megaMenu.online')}</div>
             </div>
           </div>
           <div className="mega-menu-stats">
             <div className="mega-menu-stat">
               <span className="mega-menu-stat-num">{stats?.total ?? '—'}</span>
-              <span className="mega-menu-stat-label">文</span>
+              <span className="mega-menu-stat-label">{t('megaMenu.stats.posts')}</span>
             </div>
             <div className="mega-menu-stat">
               <span className="mega-menu-stat-num">{wordCountLabel}</span>
-              <span className="mega-menu-stat-label">字</span>
+              <span className="mega-menu-stat-label">{t('megaMenu.stats.words')}</span>
             </div>
             <div className="mega-menu-stat">
               <span className="mega-menu-stat-num">{stats?.days ?? '—'}</span>
-              <span className="mega-menu-stat-label">日</span>
+              <span className="mega-menu-stat-label">{t('megaMenu.stats.days')}</span>
             </div>
           </div>
           <div className="mega-menu-socials">
@@ -175,7 +177,7 @@ function HomeMenuContent({ onSectionClick }) {
         </div>
       </MegaMenuColumn>
 
-      <MegaMenuColumn title="頁面">
+      <MegaMenuColumn title={t('megaMenu.groups.pages')}>
         {sections.map((s) => (
           <AnimatedSectionLink
             key={s.id}
@@ -185,7 +187,7 @@ function HomeMenuContent({ onSectionClick }) {
         ))}
       </MegaMenuColumn>
 
-      <MegaMenuColumn title="站點">
+      <MegaMenuColumn title={t('megaMenu.groups.site')}>
         {siteLinks.map((s) => (
           <AnimatedSiteLink key={s.to} {...s} />
         ))}

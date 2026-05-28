@@ -1,4 +1,96 @@
 {
+  "common": {
+    "loading": "불러오는 중…",
+    "loadingData": "데이터 불러오는 중",
+    "errorBackendApi": "백엔드 API에 연결할 수 없어요",
+    "retry": "다시 시도",
+    "close": "닫기",
+    "cancel": "취소",
+    "save": "저장",
+    "submit": "제출",
+    "send": "보내기",
+    "search": "검색",
+    "all": "전체",
+    "more": "더 보기",
+    "today": "오늘",
+    "justNow": "방금",
+    "daysAgo": "{{count}}일 전",
+    "weeksAgo": "{{count}}주 전",
+    "monthsAgo": "{{count}}개월 전",
+    "yearsAgo": "{{count}}년 전",
+    "minutesAgo": "{{count}}분 전",
+    "hoursAgo": "{{count}}시간 전"
+  },
+  "nav": {
+    "home": "홈",
+    "notes": "노트",
+    "more": "더 보기",
+    "backHome": "홈으로 돌아가기",
+    "downloadResume": "다운로드할 이력서 선택",
+    "resumeSE": "소프트웨어 엔지니어",
+    "resumeClubs": "동아리 경력"
+  },
+  "user": {
+    "adminPanel": "관리자 페이지",
+    "logout": "로그아웃",
+    "signInLabel": "소셜 계정으로 로그인",
+    "signInWithGithub": "GitHub로 로그인",
+    "signInWithGoogle": "Google로 로그인",
+    "notConfigured": "타사 로그인이 설정되지 않았어요"
+  },
+  "megaMenu": {
+    "online": "온라인",
+    "stats": {
+      "posts": "글",
+      "words": "자",
+      "days": "일"
+    },
+    "groups": {
+      "pages": "페이지",
+      "site": "사이트",
+      "categories": "카테고리",
+      "latestPosts": "최신 글",
+      "categoryLatest": "{{cat}} · 최신",
+      "life": "라이프",
+      "personal": "퍼스널"
+    },
+    "items": {
+      "home": "홈",
+      "about": "소개",
+      "expertise": "기술",
+      "portfolio": "작품",
+      "contact": "연락",
+      "aboutSite": "이 사이트",
+      "aboutSiteDesc": "엔지니어의 개인 공간",
+      "history": "역사",
+      "historyDesc": "사이트의 발자취",
+      "messages": "메시지",
+      "messagesDesc": "무엇이든 남겨주세요",
+      "friends": "친구들",
+      "friendsDesc": "웹링",
+      "allPosts": "모든 글",
+      "viewAllPosts": "모든 글 보기 →",
+      "emptyCategory": "이 카테고리에는 아직 글이 없어요",
+      "photos": "사진",
+      "photosDesc": "사진 작품",
+      "activity": "활동",
+      "activityDesc": "최신 활동",
+      "bookshelf": "책장",
+      "bookshelfDesc": "독서 기록",
+      "music": "음악",
+      "musicDesc": "좋아하는 음악",
+      "journey": "여정",
+      "journeyDesc": "학습의 자취",
+      "setup": "장비",
+      "setupDesc": "기기 목록"
+    }
+  },
+  "hero": {
+    "greeting": "안녕하세요👋\nKoimsurai입니다",
+    "tagline": "\"I want to put a ding in the universe.\"\n– Steve Jobs",
+    "description": "Sora to Ki (宙と木) — Koimsurai의 개인 공간. 엔지니어의 독서 노트, 작품 기록, 시스템 실험.",
+    "contactCta": "연락하기"
+  },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
     "poweredBy": "Powered by",
@@ -28,5 +120,304 @@
   "language": {
     "switcher": "언어",
     "current": "현재: {{label}}"
+  },
+  "notFound": {
+    "pageTitle": "404 — 페이지를 찾을 수 없음",
+    "seoDescription": "길을 잃으셨나요? 이 페이지는 존재하지 않습니다.",
+    "lostMessage": "별들 사이에서 길을 잃은 것 같아요.",
+    "subMessage": "이 페이지는 존재하지 않거나 삭제되었습니다.",
+    "backHome": "홈으로 돌아가기"
+  },
+  "home": {
+    "aboutMe": {
+      "eyebrow": "Koimsurai · 코드의 분재",
+      "titleLine1": "복잡한 일을,",
+      "titleLine2": "「자연스럽게」 다루기."
+    },
+    "schoolClubs": {
+      "eyebrowSuffix": "동아리 임원",
+      "activitiesLabel": "활동"
+    },
+    "contact": {
+      "titleLine1": "이야기 나누고 싶다면?",
+      "titleLine2": "Let's build something.",
+      "blurb": "프로젝트 협업, 기술 교류, 인턴십 기회 — 아래 어느 채널로든 편하게 연락 주세요."
+    }
+  },
+  "comments": {
+    "titleN": "{{count}}개의 댓글",
+    "titleEmpty": "아직 댓글이 없어요",
+    "loginLabel": "로그인 방법 선택",
+    "anonymousLabel": "익명으로 댓글",
+    "namePlaceholder": "닉네임 *",
+    "emailPlaceholder": "이메일 (선택, 알림용)",
+    "websitePlaceholder": "웹사이트 (선택)",
+    "contentPlaceholder": "생각을 남겨주세요...",
+    "submit": "보내기",
+    "submitted": "✨ 댓글이 전송됐어요",
+    "submittedAwaitReview": "✨ 전송됨 — 관리자 승인 후 표시됩니다",
+    "authorBadge": "작성자",
+    "reply": "답글",
+    "errorEmpty": "댓글 내용을 입력해주세요",
+    "errorNoName": "닉네임을 입력해주세요",
+    "errorCaptcha": "인증 코드가 틀렸어요. 다시 계산해주세요",
+    "errorFailed": "댓글 전송 실패",
+    "errorFailedTryLater": "댓글 전송 실패. 나중에 다시 시도해주세요",
+    "closedNotice": "이 글의 댓글이 닫혔어요.",
+    "back": "돌아가기",
+    "beFirst": "✨ 첫 댓글을 남겨보세요"
+  },
+  "commandPalette": {
+    "label": "글로벌 명령 팔레트",
+    "placeholder": "페이지, 글, 카테고리, 태그 검색…",
+    "empty": "일치하는 결과가 없어요",
+    "groups": {
+      "pages": "페이지",
+      "posts": "글",
+      "categories": "카테고리",
+      "tags": "태그"
+    }
+  },
+  "backToTop": {
+    "label": "맨 위로"
+  },
+  "activity": {
+    "title": "활동 대시보드",
+    "description": "Koimsurai의 실시간 활동 대시보드.",
+    "loading": "활동 데이터 불러오는 중",
+    "labels": {
+      "gameCollection": "게임 컬렉션",
+      "publicProjects": "공개 프로젝트",
+      "codedToday": "오늘 코딩"
+    },
+    "steam": {
+      "ingame": "게임 중",
+      "online": "온라인",
+      "offline": "오프라인",
+      "playingTwoWeeks": "플레이 중 · 지난 2 주",
+      "recentTwoWeeks": "지난 2 주"
+    },
+    "wakatime": {
+      "todayCoding": "오늘의 코딩 시간",
+      "noDataWeek": "이번 주 코딩 기록 없음"
+    },
+    "refresh": "새로고침",
+    "units": {
+      "min": "분",
+      "hr": "시간"
+    },
+    "gamesUnit": "{{count}}개의 게임",
+    "badgesUnit": "{{count}}개의 뱃지",
+    "titlesUnit": "{{count}}개",
+    "playtime2w": "최근 2주",
+    "playtimeTotal": "누적",
+    "github": {
+      "contributions": "지난 1 년간 <b>{{count}}</b> 회 contribution",
+      "lastYear": "지난 1 년"
+    }
+  },
+  "music": {
+    "title": "음악",
+    "description": "Koimsurai의 음악 취향과 Spotify 실시간 청취 기록.",
+    "loading": "음악 데이터 불러오는 중",
+    "heroTitle": "음악 성역",
+    "heroDesc": "나의 음악 취향, 컬렉션, 청취 분석",
+    "nowPlaying": "재생 중",
+    "lastPlayed": "마지막 재생",
+    "tabs": {
+      "recent": "최근 재생",
+      "genres": "좋아하는 장르",
+      "yearly": "연간 톱",
+      "analytics": "리스닝 분석"
+    },
+    "range": {
+      "short": "최근 4 주",
+      "medium": "최근 6 개월",
+      "long": "전체 기간"
+    },
+    "openInSpotify": "Spotify에서 듣기",
+    "recentHeading": "최근 재생",
+    "genresHeading": "좋아하는 장르 Top 5",
+    "yearlyHeading": "연간 톱",
+    "analyticsHeading": "리스닝 분석",
+    "empty": {
+      "recent": "최근 재생 기록이 아직 없습니다",
+      "genres": "장르 데이터가 아직 없습니다",
+      "yearly": "연간 톱 데이터가 아직 없습니다",
+      "analytics": "로딩 중... 데이터가 계속 나오지 않으면 먼저 「연간 톱」 탭에서 데이터를 불러오세요"
+    },
+    "cols": {
+      "track": "곡",
+      "features": "오디오 특성",
+      "duration": "길이",
+      "playedAt": "재생 시각",
+      "album": "앨범"
+    },
+    "features": {
+      "energy": "에너지",
+      "dance": "댄스",
+      "valence": "발렌스"
+    },
+    "bubbleCount": "{{count}} 명의 아티스트",
+    "analyticsSubtitle": "가장 많이 들은 톱 {{count}} 곡({{range}}) 기반",
+    "analytics": {
+      "popularity": "대중성",
+      "avgDuration": "평균 길이",
+      "avgRelease": "발매 연도 경향",
+      "explicit": "Explicit",
+      "decadeTitle": "연대별 분포"
+    }
+  },
+  "bookshelf": {
+    "title": "책장",
+    "description": "Koimsurai의 독서 목록과 노트.",
+    "loading": "책장 불러오는 중...",
+    "heroTitle": "지식의 별지도",
+    "subtitle": "광활한 책의 바다에서, 읽은 별 하나하나에 표시를",
+    "stats": {
+      "total": "장서",
+      "read": "읽음",
+      "reading": "읽는 중",
+      "avgRating": "평균 평점"
+    },
+    "statuses": {
+      "read": "읽음",
+      "reading": "읽는 중",
+      "toRead": "읽고 싶음"
+    },
+    "noRating": "평점 없음",
+    "searchPlaceholder": "제목이나 저자 검색...",
+    "filter": "필터",
+    "zeroGravity": "Zero-G 모드",
+    "zg": {
+      "hint": "드래그로 회전 · 스크롤로 줌 · 클릭하여 책 보기",
+      "back": "책장으로 돌아가기"
+    },
+    "twoDView": "2D 보기",
+    "filterStatus": "상태",
+    "filterRating": "평점",
+    "filterSort": "정렬",
+    "filterClear": "필터 지우기",
+    "sortOpts": {
+      "dateAddedDesc": "최근 추가순",
+      "dateAddedAsc": "오래된 추가순",
+      "titleAsc": "제목 A-Z",
+      "titleDesc": "제목 Z-A",
+      "ratingDesc": "높은 평점순",
+      "publishedDateDesc": "출판일"
+    }
+  },
+  "blog": {
+    "title": "노트",
+    "metaTitle": "노트",
+    "description": "Koimsurai의 기술 노트, 학습 기록, 생활 에세이. 프런트엔드 아키텍처, Rust, 시스템 설계 등.",
+    "heroTitle": "노트",
+    "loading": "글 불러오는 중",
+    "search": "글 검색...",
+    "sort": {
+      "newest": "최신",
+      "oldest": "오래된 순",
+      "popular": "인기"
+    },
+    "comment": "댓글",
+    "share": "공유",
+    "shareCopied": "복사됨!",
+    "postCount": "글",
+    "heatmapTotal": "개의 글",
+    "heatmapAria": "최근 26주 글쓰기 활동",
+    "heatmapLess": "적음",
+    "heatmapMore": "많음",
+    "codeCopy": "복사",
+    "codeCopied": "복사됨!",
+    "shareCopyLink": "링크 복사",
+    "shareMore": "더 보기...",
+    "shareTitle": "공유",
+    "commentTitle": "댓글",
+    "subscribeTitle": "구독",
+    "fontSwitcherTitle": "폰트 전환"
+  },
+  "watch": {
+    "title": "보는 중",
+    "metaDescription": "나의 애니메이션과 영화 취향 — 動畫瘋과 Letterboxd에서 자동 동기화",
+    "subtitle": "나의 애니메이션과 영화 취향, 한 페이지에 펼쳐서",
+    "eyebrowLive": "● 보는 중",
+    "favoritesTitle": "명예의 전당",
+    "favoritesSubtitle": "누구에게나 추천하는 4편 — hover로 감상 보기",
+    "recentTitle": "최근 본 것",
+    "tasteTitle": "취향",
+    "typeAnime": "애니",
+    "typeFilm": "영화"
+  },
+  "setup": {
+    "title": "내 장비 · My Setup",
+    "description": "Koimsurai의 개인 장비 목록: 메인 PC, 홈 서버, 네트워크 장비, 주변기기 한눈에."
+  },
+  "info": {
+    "aboutSite": {
+      "title": "이 사이트",
+      "subtitle": "엔지니어의 개인 공간"
+    },
+    "history": {
+      "title": "역사",
+      "subtitle": "사이트의 발자취"
+    },
+    "messages": {
+      "title": "메시지",
+      "subtitle": "무엇이든 남겨주세요"
+    },
+    "friends": {
+      "title": "친구들",
+      "subtitle": "웹링"
+    }
+  },
+  "newsletter": {
+    "title": "뉴스레터 구독",
+    "namePlaceholder": "이름 (선택)",
+    "emailPlaceholder": "이메일 *",
+    "submit": "구독",
+    "success": "구독 완료! 감사합니다 ✨",
+    "errorGeneric": "구독에 실패했어요. 잠시 후 다시 시도해주세요",
+    "errorNetwork": "네트워크 오류, 잠시 후 다시 시도해주세요",
+    "description": "최신 글과 기술 노트를 메일로 직접 받아보세요.",
+    "privacyNote": "개인정보를 존중하며 정보를 공유하지 않습니다.",
+    "confirmedTitle": "구독 완료 √",
+    "alreadyBody": "<em>{{email}}</em>(으)로 뉴스레터를 구독 중입니다.",
+    "nextNotice": "새 글이 나오면 메일로 알려드릴게요.",
+    "okBtn": "확인",
+    "unsubBtn": "구독 해지",
+    "subscribeIntro": "새 글이 올라오면 알려드릴게요. 놓치지 마세요.",
+    "namePlaceholderShort": "이름 (선택)",
+    "emailPlaceholderShort": "이메일 *",
+    "processing": "처리 중...",
+    "subscribe": "구독",
+    "unsubProcessing": "처리 중…",
+    "unsubConfirmJs": "{{email}} 구독을 해지할까요?",
+    "unsubFailed": "구독 해지에 실패했어요",
+    "unsubDone": "해지되었습니다. 언제든 다시 환영합니다.",
+    "privacy": "개인정보를 소중히 다루며 공유하지 않습니다.",
+    "successWithEmoji": "구독 완료! 감사합니다 ✨"
+  },
+  "unsubscribe": {
+    "verifying": "링크 확인 중…",
+    "confirmTitle": "구독을 취소할까요?",
+    "processing": "처리 중…",
+    "successTitle": "구독 취소됨 ✓",
+    "errorTitle": "문제가 발생했어요",
+    "missingToken": "링크에 token이 없어요. 뉴스레터 하단의 구독 취소 링크를 이용해주세요.",
+    "invalidLink": "링크가 유효하지 않거나 만료됐어요.",
+    "noServer": "서버에 연결할 수 없어요.",
+    "unsubscribeFailed": "구독 취소 실패",
+    "bodyConfirm": "<em>{{email}}</em>로 Koimsurai 뉴스레터를 구독 취소하려고 합니다.<br />취소 후 새 글은 받지 못해요.",
+    "btnConfirm": "구독 취소 확정",
+    "btnKeep": "아니요, 계속 받을게요",
+    "bodyDoneEmail": "<em>{{email}}</em>를 구독 목록에서 제거했어요.",
+    "bodyDoneFarewell": "함께하지 못해 아쉽지만, 언제든 다시 와주세요.",
+    "viewLatest": "최근 글 보기 →",
+    "btnBackHome": "홈으로"
+  },
+  "oauth": {
+    "loggingIn": "로그인 중...",
+    "errorNoCode": "로그인 실패: 인증 코드를 받지 못했어요",
+    "errorGeneric": "로그인에 실패했어요. 나중에 다시 시도해주세요"
   }
 }

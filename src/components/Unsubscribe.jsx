@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import './Unsubscribe.css';
 
 const PHASE = {
@@ -11,6 +12,7 @@ const PHASE = {
 };
 
 function Unsubscribe() {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const token = params.get('token');
   const [phase, setPhase] = useState(PHASE.loading);
@@ -20,7 +22,7 @@ function Unsubscribe() {
   useEffect(() => {
     if (!token) {
       setPhase(PHASE.error);
-      setError('連結缺少 token，請點電子報底部的退訂連結。');
+      setError(t('unsubscribe.missingToken'));
       return;
     }
     let cancelled = false;
@@ -31,7 +33,7 @@ function Unsubscribe() {
         if (cancelled) return;
         if (!res.ok) {
           setPhase(PHASE.error);
-          setError(data.error || '連結無效或已過期。');
+          setError(data.error || t('unsubscribe.invalidLink'));
           return;
         }
         setSubscriber(data);
@@ -40,7 +42,7 @@ function Unsubscribe() {
       } catch (e) {
         if (cancelled) return;
         setPhase(PHASE.error);
-        setError(e.message || '無法連線到伺服器。');
+        setError(e.message || t('unsubscribe.noServer'));
       }
     })();
     return () => { cancelled = true; };
@@ -56,12 +58,12 @@ function Unsubscribe() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || '退訂失敗');
+        throw new Error(data.error || t('unsubscribe.unsubscribeFailed'));
       }
       setPhase(PHASE.done);
     } catch (e) {
       setPhase(PHASE.error);
-      setError(e.message || '退訂失敗');
+      setError(e.message || t('unsubscribe.unsubscribeFailed'));
     }
   };
 
@@ -71,16 +73,14 @@ function Unsubscribe() {
         <Link to="/" className="unsubscribe-brand">✦ Koimsurai</Link>
 
         {phase === PHASE.loading && (
-          <p className="unsubscribe-status">驗證連結中…</p>
+          <p className="unsubscribe-status">{t('unsubscribe.verifying')}</p>
         )}
 
         {phase === PHASE.confirm && subscriber && (
           <>
-            <h1 className="unsubscribe-title">確認退訂?</h1>
+            <h1 className="unsubscribe-title">{t('unsubscribe.confirmTitle')}</h1>
             <p className="unsubscribe-body">
-              你正在用 <span className="unsubscribe-email">{subscriber.email}</span> 退訂 Koimsurai 電子報。
-              <br />
-              退訂後，未來新文章不會再寄到你的信箱。
+              <Trans i18nKey="unsubscribe.bodyConfirm" values={{ email: subscriber.email }} components={{ em: <span className="unsubscribe-email" /> }} />
             </p>
             <div className="unsubscribe-actions">
               <button
@@ -88,34 +88,34 @@ function Unsubscribe() {
                 className="unsubscribe-btn unsubscribe-btn--danger"
                 onClick={handleConfirm}
               >
-                確認退訂
+                {t('unsubscribe.btnConfirm')}
               </button>
               <Link to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
-                算了，留下來
+                {t('unsubscribe.btnKeep')}
               </Link>
             </div>
           </>
         )}
 
         {phase === PHASE.pending && (
-          <p className="unsubscribe-status">處理中…</p>
+          <p className="unsubscribe-status">{t('unsubscribe.processing')}</p>
         )}
 
         {phase === PHASE.done && (
           <>
-            <h1 className="unsubscribe-title">已退訂 ✓</h1>
+            <h1 className="unsubscribe-title">{t('unsubscribe.successTitle')}</h1>
             <p className="unsubscribe-body">
               {subscriber?.email && (
                 <>
-                  <span className="unsubscribe-email">{subscriber.email}</span> 已從訂閱列表中移除。
+                  <Trans i18nKey="unsubscribe.bodyDoneEmail" values={{ email: subscriber.email }} components={{ em: <span className="unsubscribe-email" /> }} />
                   <br />
                 </>
               )}
-              抱歉沒能繼續陪你，未來想回來隨時都歡迎。
+              {t('unsubscribe.bodyDoneFarewell')}
             </p>
             <div className="unsubscribe-actions">
               <Link to="/blog" className="unsubscribe-btn unsubscribe-btn--ghost">
-                看看最近的文章 →
+                {t('unsubscribe.viewLatest')}
               </Link>
             </div>
           </>
@@ -123,11 +123,11 @@ function Unsubscribe() {
 
         {phase === PHASE.error && (
           <>
-            <h1 className="unsubscribe-title">出了一點問題</h1>
+            <h1 className="unsubscribe-title">{t('unsubscribe.errorTitle')}</h1>
             <p className="unsubscribe-body">{error}</p>
             <div className="unsubscribe-actions">
               <Link to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
-                回首頁
+                {t('unsubscribe.btnBackHome')}
               </Link>
             </div>
           </>

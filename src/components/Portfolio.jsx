@@ -1,109 +1,62 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import photoMainImage from '../assets/Photo-main.webp';
 import './Portfolio.css';
 
-const FEATURE = {
-  id: 1,
-  category: 'App Development · 專題',
-  status: 'In Progress',
-  title: 'VoltiCar — 碳權電動車 App',
-  description:
-    '結合碳權概念、電動車充電資訊與遊戲化元素的 App，目標是用便捷與趣味互動鼓勵綠色能源行動。NTUST IM·IoV 專題系列，包含 Android client、Spring Boot API、Discord Bot 三個 repo。',
-  imageUrl: 'https://img.youtube.com/vi/eKIJcSIVak0/maxresdefault.jpg',
-  link: 'https://www.youtube.com/watch?v=eKIJcSIVak0',
-  linkLabel: '▶ 觀看介紹影片',
-  external: true,
+// 翻譯字典：feature description + section labels (Repo 名稱英文不翻)
+const I18N = {
+  'zh-TW': {
+    feat: { category: 'App Development · 專題', status: 'In Progress', title: 'VoltiCar — 碳權電動車 App', desc: '結合碳權概念、電動車充電資訊與遊戲化元素的 App，目標是用便捷與趣味互動鼓勵綠色能源行動。NTUST IM·IoV 專題系列，包含 Android client、Spring Boot API、Discord Bot 三個 repo。', linkLabel: '▶ 觀看介紹影片' },
+    titles: { 2: '個人形象網站（本站）', 3: '個人攝影集錦', 4: 'flow2code', 5: 'Finbox — 自動記帳 App', 8: 'fakeGPS', 6: 'Pulmote', 7: 'Koimsurai-NAS' },
+    descs: { 2: '使用 React、Vite 與 CSS 打造，Framer Motion 動效與 Canvas 蟲洞 intro。', 3: '包含多張個人攝影作品，點擊查看詳情。', 4: '基於 AST 的視覺化後端邏輯產生器 — 拖拉流程圖節點即可生成可執行程式碼。', 5: '抓 Gmail 通知判斷月訂閱與一次性消費，自動歸類進收支記帳。動機很單純：訂閱多到 Play 商店訂閱管理抓不到，乾脆自己寫一個。', 8: '小工具，模擬 GPS 定位。實作很簡單但意外好用。怎麼用就… 自己想想 :)', 6: 'ESP32 紅外線遙控模擬器與 WiFi bridge — 把舊家電通通接進家庭自動化網路。', 7: '自架 NAS — 自製前端介面 + 自製 backend，整合相簿 / 影音 / 檔案管理。全部跑在家裡那台機器上。' },
+    viewSource: '查看原始碼', viewAlbum: '查看相簿',
+  },
+  'zh-CN': {
+    feat: { category: 'App Development · 毕业专题', status: 'In Progress', title: 'VoltiCar — 碳权电动车 App', desc: '结合碳权概念、电动车充电资讯与游戏化元素的 App，目标是用便捷与趣味互动鼓励绿色能源行动。NTUST IM·IoV 专题系列，包含 Android client、Spring Boot API、Discord Bot 三个 repo。', linkLabel: '▶ 观看介绍视频' },
+    titles: { 2: '个人形象网站（本站）', 3: '个人摄影集锦', 4: 'flow2code', 5: 'Finbox — 自动记账 App', 8: 'fakeGPS', 6: 'Pulmote', 7: 'Koimsurai-NAS' },
+    descs: { 2: '使用 React、Vite 与 CSS 打造，Framer Motion 动效与 Canvas 虫洞 intro。', 3: '包含多张个人摄影作品，点击查看详情。', 4: '基于 AST 的可视化后端逻辑生成器 — 拖拉流程图节点即可生成可执行程式码。', 5: '抓 Gmail 通知判断月订阅与一次性消费，自动归类进收支记账。动机很单纯：订阅多到 Play 商店订阅管理抓不到，干脆自己写一个。', 8: '小工具，模拟 GPS 定位。实作很简单但意外好用。怎么用就… 自己想想 :)', 6: 'ESP32 红外线遥控模拟器与 WiFi bridge — 把旧家电通通接进家庭自动化网络。', 7: '自架 NAS — 自制前端介面 + 自制 backend，整合相簿 / 影音 / 档案管理。全部跑在家里那台机器上。' },
+    viewSource: '查看源码', viewAlbum: '查看相簿',
+  },
+  en: {
+    feat: { category: 'App Development · Capstone', status: 'In Progress', title: 'VoltiCar — Carbon-credit EV App', desc: 'An app combining carbon credits, EV charging info, and gamification — designed to nudge users toward green-energy actions through convenience and play. NTUST IM·IoV capstone project, with Android client, Spring Boot API, and a Discord Bot.', linkLabel: '▶ Watch intro video' },
+    titles: { 2: 'Personal site (this site)', 3: 'Photography portfolio', 4: 'flow2code', 5: 'Finbox — auto-bookkeeping app', 8: 'fakeGPS', 6: 'Pulmote', 7: 'Koimsurai-NAS' },
+    descs: { 2: 'Built with React, Vite and CSS — with Framer Motion effects and a Canvas wormhole intro.', 3: 'A collection of my photography. Click to view full set.', 4: 'AST-based visual backend logic generator — drag flowchart nodes and it spits out runnable code.', 5: 'Scrapes Gmail notifications to identify recurring subscriptions and one-off purchases, auto-classifies them in the ledger. The motivation was simple: I had too many subscriptions for Play Store to track, so I built one.', 8: 'Tiny utility to fake GPS location. Trivially built, surprisingly useful. How you use it… is up to you :)', 6: 'ESP32 IR remote emulator + WiFi bridge — bring legacy appliances into your home automation network.', 7: 'Self-hosted NAS — custom frontend + custom backend, with photo/media/file management. All running on the box at home.' },
+    viewSource: 'View source', viewAlbum: 'View album',
+  },
+  ja: {
+    feat: { category: 'App 開発 · 卒業課題', status: 'In Progress', title: 'VoltiCar — カーボンクレジット EV アプリ', desc: 'カーボンクレジット、EV 充電情報、ゲーミフィケーションを組み合わせたアプリ。便利さと楽しさで、グリーンエネルギー行動を促すことを目指しています。NTUST IM·IoV 卒業課題で、Android クライアント・Spring Boot API・Discord Bot の 3 リポジトリ構成。', linkLabel: '▶ 紹介動画を見る' },
+    titles: { 2: '個人サイト（このサイト）', 3: '写真ポートフォリオ', 4: 'flow2code', 5: 'Finbox — 自動家計簿アプリ', 8: 'fakeGPS', 6: 'Pulmote', 7: 'Koimsurai-NAS' },
+    descs: { 2: 'React・Vite・CSS で構築。Framer Motion のアニメーションと Canvas のワームホールイントロ付き。', 3: '個人撮影作品をまとめたもの。クリックで詳細を表示。', 4: 'AST ベースのビジュアルなバックエンドロジック生成ツール。フローチャートをドラッグすれば実行可能なコードを吐く。', 5: 'Gmail の通知から月額サブスクと単発購入を判別し、家計簿に自動分類。サブスクが多すぎて Play ストアでも管理しきれなかったので、自分で作った。', 8: 'GPS 位置を偽装する小さなツール。実装は簡単だが意外と便利。使い道は… 自分で考えてください :)', 6: 'ESP32 赤外線リモコンエミュレーター + WiFi ブリッジ。古い家電をすべてホームオートメーションにつなぐ。', 7: 'セルフホスト NAS — 自作のフロントエンド + 自作の Backend で、アルバム / 動画 / ファイル管理を統合。すべて家のマシンで稼働。' },
+    viewSource: 'ソースを見る', viewAlbum: 'アルバムを見る',
+  },
+  ko: {
+    feat: { category: '앱 개발 · 졸업과제', status: 'In Progress', title: 'VoltiCar — 탄소 크레딧 전기차 앱', desc: '탄소 크레딧, 전기차 충전 정보, 게이미피케이션을 결합한 앱. 편리함과 재미로 친환경 에너지 행동을 유도하는 것이 목표예요. NTUST IM·IoV 졸업과제로 Android 클라이언트, Spring Boot API, Discord Bot 세 개의 레포지토리로 구성됩니다.', linkLabel: '▶ 소개 영상 보기' },
+    titles: { 2: '개인 사이트(이 사이트)', 3: '사진 포트폴리오', 4: 'flow2code', 5: 'Finbox — 자동 가계부 앱', 8: 'fakeGPS', 6: 'Pulmote', 7: 'Koimsurai-NAS' },
+    descs: { 2: 'React, Vite, CSS로 제작. Framer Motion 애니메이션과 Canvas 웜홀 인트로 포함.', 3: '개인 사진 작품 모음. 클릭해서 상세 보기.', 4: 'AST 기반 시각화 백엔드 로직 생성기. 플로우차트 노드를 끌어다 놓으면 실행 가능한 코드를 생성해요.', 5: 'Gmail 알림에서 월간 구독과 단발 구매를 구분해 가계부에 자동 분류. 동기는 단순합니다: 구독이 너무 많아 Play 스토어로도 관리가 안 되어서 직접 만들었어요.', 8: 'GPS 위치를 위장하는 작은 도구. 구현은 단순하지만 의외로 유용해요. 어떻게 쓸지는… 알아서 :)', 6: 'ESP32 적외선 리모컨 에뮬레이터 + WiFi 브리지 — 오래된 가전을 모두 홈 오토메이션에 연결.', 7: '셀프호스팅 NAS — 자체 제작 프런트엔드 + 자체 제작 백엔드로 앨범 / 미디어 / 파일 관리를 통합. 모두 집에 있는 서버에서 동작해요.' },
+    viewSource: '소스 보기', viewAlbum: '앨범 보기',
+  },
+};
+
+// FEATURE & SECONDARY 只放穩定欄位（URL、tags、media）；title/desc/linkLabel 從 I18N 動態組
+const FEATURE_STATIC = {
+  id: 1, imageUrl: 'https://img.youtube.com/vi/eKIJcSIVak0/maxresdefault.jpg', link: 'https://www.youtube.com/watch?v=eKIJcSIVak0', external: true,
   extras: [
-    { href: 'https://github.com/ntust-im-iov/VoltiCar',     label: 'Android Repo' },
+    { href: 'https://github.com/ntust-im-iov/VoltiCar', label: 'Android Repo' },
     { href: 'https://github.com/ntust-im-iov/VoltiCar_API', label: 'API Repo' },
-    { href: 'https://github.com/ntust-im-iov/Discord-Bot',  label: 'Discord Bot' },
+    { href: 'https://github.com/ntust-im-iov/Discord-Bot', label: 'Discord Bot' },
   ],
   tags: ['Kotlin', 'Spring Boot', 'PostgreSQL', 'Carbon API'],
 };
 
-const SECONDARY = [
-  {
-    id: 2,
-    category: 'Web Development',
-    title: '個人形象網站（本站）',
-    description: '使用 React、Vite 與 CSS 打造，Framer Motion 動效與 Canvas 蟲洞 intro。',
-    videoUrl: '/videos/Web_video.mkv',
-    link: 'https://github.com/timo9378/web',
-    linkLabel: '查看原始碼',
-    external: true,
-    tags: ['React', 'Vite', 'Canvas'],
-  },
-  {
-    id: 3,
-    category: 'Photography',
-    title: '個人攝影集錦',
-    description: '包含多張個人攝影作品，點擊查看詳情。',
-    imageUrl: photoMainImage,
-    link: '/photos',
-    linkLabel: '查看相簿',
-    external: false,
-    tags: ['Lightroom', '掃街', '人像'],
-  },
-  {
-    id: 4,
-    category: 'Developer Tool',
-    title: 'flow2code',
-    description: '基於 AST 的視覺化後端邏輯產生器 — 拖拉流程圖節點即可生成可執行程式碼。',
-    glyph: '⟁',
-    link: 'https://github.com/timo9378/flow2code',
-    linkLabel: '查看原始碼',
-    external: true,
-    tags: ['AST', 'Visual Programming', 'TypeScript'],
-  },
-  {
-    id: 5,
-    category: 'Full-Stack · Mobile',
-    title: 'Finbox — 自動記帳 App',
-    description: '抓 Gmail 通知判斷月訂閱與一次性消費，自動歸類進收支記帳。動機很單純：訂閱多到 Play 商店訂閱管理抓不到，乾脆自己寫一個。',
-    glyph: '$',
-    link: 'https://github.com/timo9378/Finbox',
-    linkLabel: 'Frontend Repo',
-    external: true,
-    secondaryLink: 'https://github.com/timo9378/finbox-backend',
-    secondaryLabel: 'Backend Repo',
-    tags: ['Mobile', 'Gmail API', 'Node.js'],
-  },
-  {
-    id: 8,
-    category: 'Tool',
-    title: 'fakeGPS',
-    description: '小工具，模擬 GPS 定位。實作很簡單但意外好用。怎麼用就… 自己想想 :)',
-    glyph: '⊙',
-    link: 'https://github.com/timo9378/fakeGPS',
-    linkLabel: '查看原始碼',
-    external: true,
-    tags: ['Android', 'Location Mock'],
-  },
-  {
-    id: 6,
-    category: 'IoT / Embedded',
-    title: 'Pulmote',
-    description: 'ESP32 紅外線遙控模擬器與 WiFi bridge — 把舊家電通通接進家庭自動化網路。',
-    glyph: '↯',
-    link: 'https://github.com/timo9378/Pulmote',
-    linkLabel: '查看原始碼',
-    external: true,
-    tags: ['ESP32', 'C++', 'MQTT', 'IR'],
-  },
-  {
-    id: 7,
-    category: 'Self-hosted · Full-Stack',
-    title: 'Koimsurai-NAS',
-    description: '自架 NAS — 自製前端介面 + 自製 backend，整合相簿 / 影音 / 檔案管理。全部跑在家裡那台機器上。',
-    glyph: '◰',
-    link: 'https://github.com/timo9378/Koimsurai-NAS',
-    linkLabel: 'Frontend Repo',
-    external: true,
-    secondaryLink: 'https://github.com/timo9378/Koimsurai-NAS-backend',
-    secondaryLabel: 'Backend Repo',
-    tags: ['React', 'Vite', 'Node.js', 'Self-hosted'],
-  },
+const SECONDARY_STATIC = [
+  { id: 2, category: 'Web Development', videoUrl: '/videos/Web_video.mkv', link: 'https://github.com/timo9378/web', external: true, tags: ['React', 'Vite', 'Canvas'], linkKey: 'viewSource' },
+  { id: 3, category: 'Photography', imageUrl: photoMainImage, link: '/photos', external: false, tags: ['Lightroom', 'Streetscape', 'Portrait'], linkKey: 'viewAlbum' },
+  { id: 4, category: 'Developer Tool', glyph: '⟁', link: 'https://github.com/timo9378/flow2code', external: true, tags: ['AST', 'Visual Programming', 'TypeScript'], linkKey: 'viewSource' },
+  { id: 5, category: 'Full-Stack · Mobile', glyph: '$', link: 'https://github.com/timo9378/Finbox', external: true, secondaryLink: 'https://github.com/timo9378/finbox-backend', secondaryLabel: 'Backend Repo', tags: ['Mobile', 'Gmail API', 'Node.js'], linkLabel: 'Frontend Repo' },
+  { id: 8, category: 'Tool', glyph: '⊙', link: 'https://github.com/timo9378/fakeGPS', external: true, tags: ['Android', 'Location Mock'], linkKey: 'viewSource' },
+  { id: 6, category: 'IoT / Embedded', glyph: '↯', link: 'https://github.com/timo9378/Pulmote', external: true, tags: ['ESP32', 'C++', 'MQTT', 'IR'], linkKey: 'viewSource' },
+  { id: 7, category: 'Self-hosted · Full-Stack', glyph: '◰', link: 'https://github.com/timo9378/Koimsurai-NAS', external: true, secondaryLink: 'https://github.com/timo9378/Koimsurai-NAS-backend', secondaryLabel: 'Backend Repo', tags: ['React', 'Vite', 'Node.js', 'Self-hosted'], linkLabel: 'Frontend Repo' },
 ];
 
 const ProjectLink = ({ item }) => {
@@ -123,7 +76,18 @@ const ProjectLink = ({ item }) => {
   return <Link to={item.link} className="portfolio-link">{item.linkLabel}</Link>;
 };
 
-const Portfolio = () => (
+const Portfolio = () => {
+  const { i18n } = useTranslation();
+  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const dict = I18N[lang] || I18N['zh-TW'];
+  const FEATURE = { ...FEATURE_STATIC, category: dict.feat.category, status: dict.feat.status, title: dict.feat.title, description: dict.feat.desc, linkLabel: dict.feat.linkLabel };
+  const SECONDARY = SECONDARY_STATIC.map((it) => ({
+    ...it,
+    title: dict.titles[it.id],
+    description: dict.descs[it.id],
+    linkLabel: it.linkLabel || dict[it.linkKey],
+  }));
+  return (
   <section id="portfolio" className="home-section portfolio-v2">
     <div className="home-section-eyebrow">
       <span className="section-label">Selected Work</span>
@@ -234,6 +198,7 @@ const Portfolio = () => (
       })}
     </div>
   </section>
-);
+  );
+};
 
 export default Portfolio;

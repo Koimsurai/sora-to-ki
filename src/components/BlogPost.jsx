@@ -12,6 +12,7 @@ import elkLayouts from '@mermaid-js/layout-elk';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslation, Trans } from 'react-i18next';
 import {
   FaRegHeart, FaHeart, FaLink, FaRegComment, FaArrowUp,
   FaEnvelope, FaShareAlt, FaRss, FaTimes,
@@ -631,6 +632,7 @@ export const LinkCard = ({ href }) => {
    CodeBlock
    ══════════════════════════ */
 const CodeBlock = ({ node, inline, className, children, ...props }) => {
+  const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
   const [highlighted, setHighlighted] = useState(null);
   const match = /language-(\w+)/.exec(className || '');
@@ -673,7 +675,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
         <div className="code-block-header">
           <span className="language-name">{lang}</span>
           <button onClick={handleCopy} className="copy-button">
-            {isCopied ? '已複製!' : '複製'}
+            {isCopied ? t('blog.codeCopied') : t('blog.codeCopy')}
           </button>
         </div>
         {highlighted ? (
@@ -1219,6 +1221,7 @@ function clearSubscriberLS() {
 }
 
 const SubscribeModal = ({ onClose }) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [status, setStatus] = useState('');
@@ -1237,7 +1240,7 @@ const SubscribeModal = ({ onClose }) => {
       const data = await res.json();
       if (res.ok) {
         setStatus('success');
-        setMessage('訂閱成功！感謝您的訂閱 ✨');
+        setMessage(t('newsletter.successWithEmoji'));
         const record = { email, name, ts: Date.now() };
         writeSubscriberLS(record);
         setSubscribed(record);
@@ -1246,17 +1249,17 @@ const SubscribeModal = ({ onClose }) => {
         setTimeout(() => onClose(), 1800);
       } else {
         setStatus('error');
-        setMessage(data.error || '訂閱失敗');
+        setMessage(data.error || t('newsletter.errorGeneric'));
       }
     } catch {
       setStatus('error');
-      setMessage('網路錯誤，請稍後再試');
+      setMessage(t('newsletter.errorNetwork'));
     }
   };
 
   const handleUnsubscribe = async () => {
     if (!subscribed?.email) return;
-    if (!window.confirm(`確定要退訂 ${subscribed.email}?`)) return;
+    if (!window.confirm(t('newsletter.unsubConfirmJs', { email: subscribed.email }))) return;
     setStatus('loading');
     try {
       const res = await fetch('/api/newsletter/unsubscribe', {
@@ -1266,15 +1269,15 @@ const SubscribeModal = ({ onClose }) => {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || '退訂失敗');
+        throw new Error(data.error || t('newsletter.unsubFailed'));
       }
       clearSubscriberLS();
       setSubscribed(null);
       setStatus('success');
-      setMessage('已退訂。隨時歡迎再回來訂閱。');
+      setMessage(t('newsletter.unsubDone'));
     } catch (e) {
       setStatus('error');
-      setMessage(e.message || '退訂失敗');
+      setMessage(e.message || t('newsletter.unsubFailed'));
     }
   };
 
@@ -1302,16 +1305,20 @@ const SubscribeModal = ({ onClose }) => {
           <>
             <div className="subscribe-header">
               <FaEnvelope className="subscribe-icon" />
-              <h3>已訂閱 ✓</h3>
+              <h3>{t('newsletter.confirmedTitle')}</h3>
               <p>
-                你已用 <span className="subscribe-email-chip">{subscribed.email}</span> 訂閱了電子報。
+                <Trans
+                  i18nKey="newsletter.alreadyBody"
+                  values={{ email: subscribed.email }}
+                  components={{ em: <span className="subscribe-email-chip" /> }}
+                />
                 <br />
-                下次有新文章我們會寄到你信箱。
+                {t('newsletter.nextNotice')}
               </p>
             </div>
             <div className="subscribe-form">
               <button type="button" onClick={onClose}>
-                好的
+                {t('newsletter.okBtn')}
               </button>
               <button
                 type="button"
@@ -1319,7 +1326,7 @@ const SubscribeModal = ({ onClose }) => {
                 onClick={handleUnsubscribe}
                 disabled={status === 'loading'}
               >
-                {status === 'loading' ? '處理中…' : '退訂'}
+                {status === 'loading' ? t('newsletter.unsubProcessing') : t('newsletter.unsubBtn')}
               </button>
             </div>
             {message && <p className={'subscribe-msg ' + status}>{message}</p>}
@@ -1329,18 +1336,18 @@ const SubscribeModal = ({ onClose }) => {
           <>
             <div className="subscribe-header">
               <FaEnvelope className="subscribe-icon" />
-              <h3>訂閱電子報</h3>
-              <p>獲取最新文章通知，不錯過任何精彩內容。</p>
+              <h3>{t('newsletter.title')}</h3>
+              <p>{t('newsletter.subscribeIntro')}</p>
             </div>
             <form onSubmit={handleSubmit} className="subscribe-form">
-              <input type="text" placeholder="名字（選填）" value={name} onChange={(e) => setName(e.target.value)} disabled={status === 'loading'} />
-              <input type="email" placeholder="電子郵件 *" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={status === 'loading'} />
+              <input type="text" placeholder={t('newsletter.namePlaceholderShort')} value={name} onChange={(e) => setName(e.target.value)} disabled={status === 'loading'} />
+              <input type="email" placeholder={t('newsletter.emailPlaceholderShort')} value={email} onChange={(e) => setEmail(e.target.value)} required disabled={status === 'loading'} />
               <button type="submit" disabled={status === 'loading'}>
-                {status === 'loading' ? '處理中...' : '訂閱'}
+                {status === 'loading' ? t('newsletter.processing') : t('newsletter.subscribe')}
               </button>
             </form>
             {message && <p className={'subscribe-msg ' + status}>{message}</p>}
-            <p className="subscribe-privacy">我們重視您的隱私，不會分享您的資訊。</p>
+            <p className="subscribe-privacy">{t('newsletter.privacy')}</p>
           </>
         )}
       </motion.div>
@@ -1352,11 +1359,12 @@ const SubscribeModal = ({ onClose }) => {
    FontSwitcher — bottom-right popup
    ══════════════════════════ */
 const FontSwitcher = ({ currentFont, onFontChange }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="font-switcher">
-      <button className="font-switcher-btn" onClick={() => setIsOpen(!isOpen)} title="切換字型">
+      <button className="font-switcher-btn" onClick={() => setIsOpen(!isOpen)} title={t('blog.fontSwitcherTitle')}>
         <span>字</span>
       </button>
       <AnimatePresence>
@@ -1532,6 +1540,7 @@ function postPathForLocale(id, locale, sourceLang) {
    BlogPost — 文章內頁
    ═══════════════════════════════════ */
 function BlogPost() {
+  const { t } = useTranslation();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -2040,7 +2049,7 @@ function BlogPost() {
 
       {/* ── Floating side actions (right) ── */}
       <div className="floating-actions">
-        <button className={'float-btn' + (liked ? ' active' : '')} onClick={handleLike} title="讚">
+        <button className={'float-btn' + (liked ? ' active' : '')} onClick={handleLike} title={t('blog.like') || 'Like'}>
           {liked ? <FaHeart /> : <FaRegHeart />}
           {likeCount > 0 && <span>{likeCount}</span>}
         </button>
@@ -2048,7 +2057,7 @@ function BlogPost() {
           <button
             className={'float-btn' + (copied ? ' shared' : '')}
             onClick={() => setShowShareMenu(!showShareMenu)}
-            title="分享"
+            title={t('blog.shareTitle')}
           >
             <FaShareAlt />
           </button>
@@ -2063,18 +2072,18 @@ function BlogPost() {
               >
                 <button onClick={handleShareTwitter}><FaTwitter /> Twitter</button>
                 <button onClick={handleShareFacebook}><FaFacebook /> Facebook</button>
-                <button onClick={handleCopyLink}><FaLink /> {copied ? '已複製!' : '複製連結'}</button>
+                <button onClick={handleCopyLink}><FaLink /> {copied ? t('blog.codeCopied') : t('blog.shareCopyLink')}</button>
                 {navigator.share && (
-                  <button onClick={handleNativeShare}><FaShareAlt /> 更多...</button>
+                  <button onClick={handleNativeShare}><FaShareAlt /> {t('blog.shareMore')}</button>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-        <a href="#comments" className="float-btn" title="留言">
+        <a href="#comments" className="float-btn" title={t('blog.commentTitle')}>
           <FaRegComment />
         </a>
-        <button className="float-btn" onClick={() => setShowSubscribe(true)} title="訂閱">
+        <button className="float-btn" onClick={() => setShowSubscribe(true)} title={t('blog.subscribeTitle')}>
           <FaEnvelope />
         </button>
         <a href="/rss" className="float-btn" title="RSS" target="_blank" rel="noopener noreferrer">

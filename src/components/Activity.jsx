@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation, Trans } from 'react-i18next';
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
 import SEOHead from './SEOHead';
 import KoimLoader from './KoimLoader';
 import './Activity.css';
 
 const Activity = () => {
+  const { t, i18n } = useTranslation();
   const { isVisible } = usePageVisibility();
   const [steamData, setSteamData] = useState(null);
   const [steamProfile, setSteamProfile] = useState(null);
@@ -93,7 +95,7 @@ const Activity = () => {
       if (profileRes && !profileRes.error) setSteamProfile(profileRes);
     } catch (error) {
       console.error('Steam fetch error:', error);
-      setSteamData({ error: '無法連接到後端 API', configured: false });
+      setSteamData({ error: t('common.errorBackendApi'), configured: false });
     }
   };
 
@@ -116,7 +118,7 @@ const Activity = () => {
       });
     } catch (error) {
       console.error('WakaTime fetch error:', error);
-      setWakatimeData({ error: '無法連接到後端 API', configured: false });
+      setWakatimeData({ error: t('common.errorBackendApi'), configured: false });
     }
   };
 
@@ -163,7 +165,7 @@ const Activity = () => {
       else generateContributionData(pushEvents);
     } catch (error) {
       console.error('GitHub fetch error:', error);
-      setGithubData({ error: '無法連接到後端 API' });
+      setGithubData({ error: t('common.errorBackendApi') });
     }
   };
 
@@ -214,7 +216,7 @@ const Activity = () => {
 
   const formatPlaytime = (m) => {
     const h = Math.floor(m / 60);
-    return h < 1 ? `${m} 分鐘` : `${h} 小時`;
+    return h < 1 ? `${m} ${t('activity.units.min')}` : `${h} ${t('activity.units.hr')}`;
   };
 
   const formatDate = (dateString) => {
@@ -241,14 +243,14 @@ const Activity = () => {
           <div className="nebula-layer activity-nebula-3" />
           <div className="activity-nebula-dust" />
         </div>
-        <KoimLoader fullscreen text="載入活動數據" />
+        <KoimLoader fullscreen text={t('activity.loading')} />
       </div>
     );
   }
 
   return (
     <div className={`activity-page ${!isVisible ? 'is-hidden' : ''}`}>
-      <SEOHead title="動態儀表板" description="Koimsurai 的即時活動儀表板。" />
+      <SEOHead title={t('activity.title')} description={t('activity.description')} />
 
       <div className="activity-dim-overlay" />
       <div className="activity-nebula-bg">
@@ -279,7 +281,7 @@ const Activity = () => {
           <div className="status-bar-right">
             <span className="status-bar-meta">Uptime {uptime.days}d {uptime.hours}h</span>
             <span className="status-bar-time">
-              {currentTime.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              {currentTime.toLocaleTimeString(i18n.resolvedLanguage || 'zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </span>
           </div>
         </motion.div>
@@ -293,12 +295,12 @@ const Activity = () => {
         >
           <div className="hero-number-item">
             <span className="hero-num">{steamData?.gameCount || 0}</span>
-            <span className="hero-label">遊戲收藏</span>
+            <span className="hero-label">{t('activity.labels.gameCollection')}</span>
           </div>
           <span className="hero-divider" />
           <div className="hero-number-item">
             <span className="hero-num">{githubData?.user?.public_repos || 0}</span>
-            <span className="hero-label">公開專案</span>
+            <span className="hero-label">{t('activity.labels.publicProjects')}</span>
           </div>
           <span className="hero-divider" />
           <div className="hero-number-item">
@@ -308,7 +310,7 @@ const Activity = () => {
           <span className="hero-divider" />
           <div className="hero-number-item">
             <span className="hero-num">{wakatimeData?.today?.grand_total?.text || '0 hrs'}</span>
-            <span className="hero-label">今日寫碼</span>
+            <span className="hero-label">{t('activity.labels.codedToday')}</span>
           </div>
         </motion.div>
 
@@ -318,8 +320,8 @@ const Activity = () => {
           const hasAnimAvatar = cust.animatedAvatar && cust.animatedAvatar !== cust.avatarFrame;
           const isInGame = !!steamData.playerInfo.gameid;
           const stateText = isInGame
-            ? '遊戲中'
-            : (steamData.playerInfo.personastate === 1 ? '線上' : '離線');
+            ? t('activity.steam.ingame')
+            : (steamData.playerInfo.personastate === 1 ? t('activity.steam.online') : t('activity.steam.offline'));
           return (
             <motion.a
               href={steamProfile?.profileUrl || steamData.playerInfo.profileurl}
@@ -366,11 +368,11 @@ const Activity = () => {
                     <span className="steam-profile-dot" />
                     {stateText}
                     <span className="steam-profile-divider">·</span>
-                    {steamData.gameCount} 個遊戲
+                    {t('activity.gamesUnit', { count: steamData.gameCount })}
                     {steamProfile?.badgeCount ? (
                       <>
                         <span className="steam-profile-divider">·</span>
-                        {steamProfile.badgeCount} 個徽章
+                        {t('activity.badgesUnit', { count: steamProfile.badgeCount })}
                       </>
                     ) : null}
                   </div>
@@ -400,9 +402,9 @@ const Activity = () => {
           >
             <header className="steam-recent-header">
               <span className="section-label">
-                {steamData.playerInfo?.gameid ? '現正遊玩 · 最近兩週' : '最近兩週'}
+                {steamData.playerInfo?.gameid ? t('activity.steam.playingTwoWeeks') : t('activity.steam.recentTwoWeeks')}
               </span>
-              <span className="steam-recent-count">{steamData.recentGames.length} 款</span>
+              <span className="steam-recent-count">{t('activity.titlesUnit', { count: steamData.recentGames.length })}</span>
             </header>
             <div className="steam-recent-scroll" role="list">
               {steamData.recentGames.map((g, idx) => {
@@ -436,13 +438,13 @@ const Activity = () => {
                       />
                     </div>
                     <div className="steam-recent-overlay" />
-                    {isCurrent && <span className="steam-recent-pulse">遊戲中</span>}
+                    {isCurrent && <span className="steam-recent-pulse">{t('activity.steam.ingame')}</span>}
                     <div className="steam-recent-info">
                       <h4 className="steam-recent-title">{g.name}</h4>
                       <div className="steam-recent-stats">
-                        <span>近兩週 {formatPlaytime(g.playtime_2weeks || 0)}</span>
+                        <span>{t('activity.playtime2w')} {formatPlaytime(g.playtime_2weeks || 0)}</span>
                         <span className="steam-recent-divider">·</span>
-                        <span>總 {formatPlaytime(g.playtime_forever || 0)}</span>
+                        <span>{t('activity.playtimeTotal')} {formatPlaytime(g.playtime_forever || 0)}</span>
                       </div>
                     </div>
                   </a>
@@ -466,7 +468,7 @@ const Activity = () => {
               <div className="code-pulse-today">
                 {wakatimeData.today?.grand_total?.text || '0 hrs 0 mins'}
               </div>
-              <span className="code-pulse-sub">今日寫碼時間</span>
+              <span className="code-pulse-sub">{t('activity.wakatime.todayCoding')}</span>
             </div>
             <div className="code-pulse-right">
               {wakatimeData.week?.languages?.length > 0 ? (
@@ -491,7 +493,7 @@ const Activity = () => {
                   ))}
                 </div>
               ) : (
-                <p className="no-data-small">本週無編碼記錄</p>
+                <p className="no-data-small">{t('activity.wakatime.noDataWeek')}</p>
               )}
             </div>
           </motion.div>
@@ -513,16 +515,25 @@ const Activity = () => {
                   <span>{githubData.user.name || githubData.user.login}</span>
                 </a>
               )}
-              {githubData?.contributions?.total && (
-                <div className="heatmap-total">
-                  <span className="heatmap-total-num">
-                    {githubData.contributions.total[Object.keys(githubData.contributions.total)[0]]}
-                  </span>
-                  <span className="heatmap-total-label">
-                    contributions in {contributionYear === 'last' ? 'the last year' : contributionYear}
-                  </span>
-                </div>
-              )}
+              {githubData?.contributions?.total && (() => {
+                const count = githubData.contributions.total[Object.keys(githubData.contributions.total)[0]];
+                return (
+                  <div className="heatmap-total">
+                    {contributionYear === 'last' ? (
+                      <Trans
+                        i18nKey="activity.github.contributions"
+                        values={{ count }}
+                        components={{ b: <span className="heatmap-total-num" /> }}
+                      />
+                    ) : (
+                      <>
+                        <span className="heatmap-total-num">{count}</span>
+                        <span className="heatmap-total-label">contributions in {contributionYear}</span>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
               <button
                 type="button"
                 className={`koim-btn koim-btn--icon koim-btn--sm${isRefreshing ? ' is-refreshing' : ''}`}
@@ -533,7 +544,7 @@ const Activity = () => {
                   setIsRefreshing(false);
                 }}
                 disabled={isRefreshing}
-                title="刷新"
+                title={t('activity.refresh')}
                 aria-label="刷新貢獻圖"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -562,7 +573,7 @@ const Activity = () => {
                     setIsRefreshing(false);
                   }}
                 >
-                  {y === 'last' ? '近一年' : y}
+                  {y === 'last' ? t('activity.github.lastYear') : y}
                 </button>
               ))}
             </div>

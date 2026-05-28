@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FaBookOpen } from 'react-icons/fa';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
 
@@ -10,18 +11,19 @@ import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
  */
 
 function RecentPostRow({ post }) {
+  const { t } = useTranslation();
   const dateLabel = useMemo(() => {
     if (!post.created_at) return '';
     const d = new Date(post.created_at);
     if (Number.isNaN(d.getTime())) return '';
     const now = new Date();
     const diffDays = Math.floor((now - d) / 86400000);
-    if (diffDays < 1) return '今天';
-    if (diffDays < 7) return `${diffDays} 天前`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} 週前`;
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} 個月前`;
-    return `${Math.floor(diffDays / 365)} 年前`;
-  }, [post.created_at]);
+    if (diffDays < 1) return t('common.today');
+    if (diffDays < 7) return t('common.daysAgo', { count: diffDays });
+    if (diffDays < 30) return t('common.weeksAgo', { count: Math.floor(diffDays / 7) });
+    if (diffDays < 365) return t('common.monthsAgo', { count: Math.floor(diffDays / 30) });
+    return t('common.yearsAgo', { count: Math.floor(diffDays / 365) });
+  }, [post.created_at, t]);
 
   return (
     <Link to={`/blog/${post.id}`} className="mega-menu-post" viewTransition>
@@ -36,6 +38,7 @@ function RecentPostRow({ post }) {
 }
 
 function BlogMenuContent() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState([]);
   const [posts, setPosts] = useState([]);
   const [activeCat, setActiveCat] = useState(null); // null = 全部
@@ -63,13 +66,13 @@ function BlogMenuContent() {
 
   return (
     <MegaMenuPanel>
-      <MegaMenuColumn title="分類">
+      <MegaMenuColumn title={t('megaMenu.groups.categories')}>
         <Link
           to="/blog"
           className={`mega-menu-category ${activeCat === null ? 'mega-menu-category--active' : ''}`}
           onMouseEnter={() => setActiveCat(null)}
         >
-          <span>全部文章</span>
+          <span>{t('megaMenu.items.allPosts')}</span>
           <span className="mega-menu-category-count">{posts.length}</span>
         </Link>
         {categories.map((c) => (
@@ -85,18 +88,18 @@ function BlogMenuContent() {
         ))}
       </MegaMenuColumn>
 
-      <MegaMenuColumn title={activeCat ? `${activeCat} · 最新` : '最新文章'} span={1}>
+      <MegaMenuColumn title={activeCat ? t('megaMenu.groups.categoryLatest', { cat: activeCat }) : t('megaMenu.groups.latestPosts')} span={1}>
         <div className="mega-menu-posts">
           {filteredPosts.length === 0 && (
             <div style={{ padding: '8px 12px', fontSize: '0.8rem', color: 'rgba(161,161,170,0.55)' }}>
-              這個分類還沒有文章
+              {t('megaMenu.items.emptyCategory')}
             </div>
           )}
           {filteredPosts.map((p) => (
             <RecentPostRow key={p.id} post={p} />
           ))}
           <Link to="/blog" className="mega-menu-view-all">
-            查看全部文章 →
+            {t('megaMenu.items.viewAllPosts')}
           </Link>
         </div>
       </MegaMenuColumn>

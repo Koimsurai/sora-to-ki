@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'; // Import useState and useEffect
+import { useTranslation } from 'react-i18next';
 // Remove motion import as it's no longer used for text
 import { Parallax } from 'react-scroll-parallax'; // 引入 Parallax
 // Remove unused particle imports
@@ -60,10 +61,11 @@ const useTypingEffect = (text, speed = 100, startDelay = 0) => {
 
 
 function Hero() {
-  const fullHeading = "你好👋\n我是 Koimsurai";
-  const fullTagline = "\"I want to put a ding in the universe.\"\n– Steve Jobs"; // 更新標語並加入換行
+  const { t } = useTranslation();
+  const fullHeading = t('hero.greeting');
+  const fullTagline = t('hero.tagline');
 
-  // Apply typing effect hook
+  // Apply typing effect hook（fullHeading/Tagline 變動會重觸發打字效果，切語系時自動重打）
   const { displayedText: displayedHeading, isTypingComplete: headingComplete } = useTypingEffect(fullHeading, 100, 1000); // Start heading after 1000ms (Increased delay)
   const { displayedText: displayedTagline, isTypingComplete: taglineComplete } = useTypingEffect(fullTagline, 80, headingComplete ? 200 : Infinity); // Start tagline 200ms after heading finishes
 
@@ -75,7 +77,7 @@ function Hero() {
     >
       <SEOHead
         title={null}
-        description="宙と木 — Koimsurai 的個人空間。一個工程師的閱讀筆記、作品紀錄與系統實驗。"
+        description={t('hero.description')}
         path="/"
       />
       {/* 移除 Saturn3D 和 Particles 的渲染 */}
@@ -124,7 +126,7 @@ function Hero() {
               <FaRss />
             </a>
           </div>
-          <a href="#contact" className="cta-button">聯絡我</a>
+          <a href="#contact" className="cta-button">{t('hero.contactCta')}</a>
         </div>
       </div> {/* Close home-hero-content div */}
 

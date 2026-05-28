@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaDesktop, FaServer, FaWifi, FaKeyboard, FaHome } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
 import './Setup.css';
 
@@ -42,6 +43,75 @@ import imgShureMv7Plus from '../assets/setup/shure-mv7-plus.png';
 import imgPsa1Plus from '../assets/setup/PSA1-plus.png';
 import imgArctisNova7Gen2 from '../assets/setup/arctis-nova-7-wireless-gen-2-white.png';
 import imgT100 from '../assets/setup/t100.png';
+
+// --- 文案 i18n ---
+const SETUP_UI = {
+  'zh-TW': {
+    subtitle: 'My Gear Inventory 2026 — 所有個人配備一覽',
+    all: '全部',
+    catSubs: {
+      'main-rig': '全白美學主力機',
+      'server': 'The Lab — 效能與穩定',
+      'network': 'Connectivity — 數位生活核心',
+      'peripherals': 'Input / Output 周邊設備',
+      'base-ii': 'Holiday Rig — 老家備用基地',
+    },
+    retired: '⚙️ Retired Legacy',
+    retiredText: 'Family Shared PC — Powered by NVIDIA GTX 960（目前由家人使用）',
+  },
+  'zh-CN': {
+    subtitle: 'My Gear Inventory 2026 — 所有个人配备一览',
+    all: '全部',
+    catSubs: {
+      'main-rig': '全白美学主力机',
+      'server': 'The Lab — 性能与稳定',
+      'network': 'Connectivity — 数位生活核心',
+      'peripherals': 'Input / Output 周边设备',
+      'base-ii': 'Holiday Rig — 老家备用基地',
+    },
+    retired: '⚙️ Retired Legacy',
+    retiredText: 'Family Shared PC — Powered by NVIDIA GTX 960（目前由家人使用）',
+  },
+  en: {
+    subtitle: 'My Gear Inventory 2026 — everything I roll with',
+    all: 'All',
+    catSubs: {
+      'main-rig': 'All-white main rig',
+      'server': 'The Lab — power & uptime',
+      'network': 'Connectivity — my digital backbone',
+      'peripherals': 'Input / Output gear',
+      'base-ii': 'Holiday Rig — hometown standby',
+    },
+    retired: '⚙️ Retired Legacy',
+    retiredText: 'Family Shared PC — NVIDIA GTX 960 (still in active duty at home)',
+  },
+  ja: {
+    subtitle: 'My Gear Inventory 2026 — 普段使ってる機材一覧',
+    all: '全部',
+    catSubs: {
+      'main-rig': '真っ白なメインリグ',
+      'server': 'The Lab — 性能と安定性',
+      'network': 'Connectivity — デジタル生活の基盤',
+      'peripherals': 'Input / Output の周辺機器',
+      'base-ii': 'Holiday Rig — 実家の予備基地',
+    },
+    retired: '⚙️ Retired Legacy',
+    retiredText: 'ファミリー共有 PC — NVIDIA GTX 960（家族が現役で使用中）',
+  },
+  ko: {
+    subtitle: 'My Gear Inventory 2026 — 사용 중인 모든 장비',
+    all: '전체',
+    catSubs: {
+      'main-rig': '올화이트 메인 PC',
+      'server': 'The Lab — 성능과 안정성',
+      'network': 'Connectivity — 디지털 라이프의 중심',
+      'peripherals': 'Input / Output 주변기기',
+      'base-ii': 'Holiday Rig — 본가 예비 베이스',
+    },
+    retired: '⚙️ Retired Legacy',
+    retiredText: 'Family Shared PC — NVIDIA GTX 960 (현재 가족이 사용 중)',
+  },
+};
 
 // --- 設備資料 ---
 const categories = [
@@ -158,6 +228,9 @@ const sectionVariants = {
 };
 
 function Setup() {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const ui = SETUP_UI[lang] || SETUP_UI['zh-TW'];
   const [activeFilter, setActiveFilter] = useState('all');
 
   const filteredCategories = activeFilter === 'all'
@@ -169,8 +242,8 @@ function Setup() {
   return (
     <div className="setup-page">
       <SEOHead
-        title="我的配備 · My Setup"
-        description="Koimsurai 的個人設備清單：主力 PC、家用伺服器、網路設備、周邊設備完整一覽。My Gear Inventory 2026。"
+        title={t('setup.title')}
+        description={t('setup.description')}
         path="/setup"
       />
       {/* 深空背景 */}
@@ -197,7 +270,7 @@ function Setup() {
           <span className="title-emoji">🖥️</span>
           <span className="title-gradient">My Setup</span>
         </h1>
-        <p className="setup-subtitle">My Gear Inventory 2026 — 所有個人配備一覽</p>
+        <p className="setup-subtitle">{ui.subtitle}</p>
       </motion.div>
 
       {/* Category Filter Tabs */}
@@ -211,7 +284,7 @@ function Setup() {
           className={`setup-category-tab ${activeFilter === 'all' ? 'active' : ''}`}
           onClick={() => setActiveFilter('all')}
         >
-          全部
+          {ui.all}
           <span className="tab-count">{totalItems}</span>
         </button>
         {categories.map(cat => (
@@ -249,7 +322,7 @@ function Setup() {
             <div className="setup-category-header">
               <span className="setup-category-number">{category.number}</span>
               <h2 className="setup-category-title">{category.title}</h2>
-              <span className="setup-category-subtitle">{category.subtitle}</span>
+              <span className="setup-category-subtitle">{ui.catSubs[category.id] || category.subtitle}</span>
             </div>
 
             <motion.div
@@ -299,7 +372,7 @@ function Setup() {
             <div className="setup-category-header">
               <span className="setup-category-number">05</span>
               <h2 className="setup-category-title">Base II: Hometown</h2>
-              <span className="setup-category-subtitle">Holiday Rig — 老家備用基地</span>
+              <span className="setup-category-subtitle">{ui.catSubs['base-ii']}</span>
             </div>
 
             <div className="setup-base-card">
@@ -324,8 +397,8 @@ function Setup() {
               </div>
 
               <div className="setup-retired-section">
-                <p className="setup-retired-title">⚙️ Retired Legacy</p>
-                <p className="setup-retired-text">Family Shared PC — Powered by NVIDIA GTX 960 (Currently in use by family)</p>
+                <p className="setup-retired-title">{ui.retired}</p>
+                <p className="setup-retired-text">{ui.retiredText}</p>
               </div>
             </div>
           </motion.div>

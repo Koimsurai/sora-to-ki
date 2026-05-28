@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Command } from 'cmdk';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FileText, Hash, Folder, Music, BookOpen, Activity,
   Home, Compass, Camera, Film, Tv, Settings, Search,
@@ -22,6 +23,7 @@ const STATIC_PAGES = [
 ];
 
 export default function CommandPalette() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [posts, setPosts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -68,17 +70,17 @@ export default function CommandPalette() {
   return (
     <div className="cmdk-backdrop" onClick={() => setOpen(false)}>
       <div className="cmdk-wrap" onClick={(e) => e.stopPropagation()}>
-        <Command label="全域指令面板" shouldFilter>
+        <Command label={t('commandPalette.label')} shouldFilter>
           <div className="cmdk-input-row">
             <Search className="cmdk-search-icon" size={16} />
-            <Command.Input placeholder="輸入頁面、文章、分類或標籤…" autoFocus />
+            <Command.Input placeholder={t('commandPalette.placeholder')} autoFocus />
             <kbd className="cmdk-kbd">ESC</kbd>
           </div>
 
           <Command.List className="cmdk-list">
-            <Command.Empty className="cmdk-empty">沒有相符的結果</Command.Empty>
+            <Command.Empty className="cmdk-empty">{t('commandPalette.empty')}</Command.Empty>
 
-            <Command.Group heading="頁面">
+            <Command.Group heading={t('commandPalette.groups.pages')}>
               {STATIC_PAGES.map((p) => (
                 <Command.Item
                   key={p.path}
@@ -93,7 +95,7 @@ export default function CommandPalette() {
             </Command.Group>
 
             {postItems.length > 0 && (
-              <Command.Group heading="文章">
+              <Command.Group heading={t('commandPalette.groups.posts')}>
                 {postItems.map((p) => (
                   <Command.Item
                     key={`post-${p.id}`}
@@ -109,7 +111,7 @@ export default function CommandPalette() {
             )}
 
             {categories.length > 0 && (
-              <Command.Group heading="分類">
+              <Command.Group heading={t('commandPalette.groups.categories')}>
                 {categories.map((c) => (
                   <Command.Item
                     key={`cat-${c.id}`}
@@ -118,22 +120,22 @@ export default function CommandPalette() {
                   >
                     <Folder size={14} className="cmdk-icon" />
                     <span>{c.name}</span>
-                    {c.post_count != null && <span className="cmdk-meta">{c.post_count} 篇</span>}
+                    {c.post_count != null && <span className="cmdk-meta">{c.post_count} {t('blog.postCount')}</span>}
                   </Command.Item>
                 ))}
               </Command.Group>
             )}
 
             {tags.length > 0 && (
-              <Command.Group heading="標籤">
-                {tags.slice(0, 30).map((t) => (
+              <Command.Group heading={t('commandPalette.groups.tags')}>
+                {tags.slice(0, 30).map((tag) => (
                   <Command.Item
-                    key={`tag-${t.id || t.name}`}
-                    value={`tag ${t.name}`}
-                    onSelect={() => go(`/blog?tag=${encodeURIComponent(t.name)}`)}
+                    key={`tag-${tag.id || tag.name}`}
+                    value={`tag ${tag.name}`}
+                    onSelect={() => go(`/blog?tag=${encodeURIComponent(tag.name)}`)}
                   >
                     <Hash size={14} className="cmdk-icon" />
-                    <span>{t.name}</span>
+                    <span>{tag.name}</span>
                   </Command.Item>
                 ))}
               </Command.Group>

@@ -1,4 +1,96 @@
 {
+  "common": {
+    "loading": "読み込み中…",
+    "loadingData": "データを読み込み中",
+    "errorBackendApi": "バックエンド API に接続できません",
+    "retry": "再試行",
+    "close": "閉じる",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "submit": "送信",
+    "send": "送る",
+    "search": "検索",
+    "all": "全部",
+    "more": "もっと",
+    "today": "今日",
+    "justNow": "たった今",
+    "daysAgo": "{{count}} 日前",
+    "weeksAgo": "{{count}} 週間前",
+    "monthsAgo": "{{count}} ヶ月前",
+    "yearsAgo": "{{count}} 年前",
+    "minutesAgo": "{{count}} 分前",
+    "hoursAgo": "{{count}} 時間前"
+  },
+  "nav": {
+    "home": "ホーム",
+    "notes": "ノート",
+    "more": "もっと",
+    "backHome": "ホームに戻る",
+    "downloadResume": "ダウンロードする履歴書を選択",
+    "resumeSE": "ソフトウェアエンジニア",
+    "resumeClubs": "サークル経歴"
+  },
+  "user": {
+    "adminPanel": "管理画面へ",
+    "logout": "ログアウト",
+    "signInLabel": "ソーシャルアカウントでログイン",
+    "signInWithGithub": "GitHub でログイン",
+    "signInWithGoogle": "Google でログイン",
+    "notConfigured": "サードパーティログインは未設定"
+  },
+  "megaMenu": {
+    "online": "オンライン",
+    "stats": {
+      "posts": "記事",
+      "words": "字",
+      "days": "日"
+    },
+    "groups": {
+      "pages": "ページ",
+      "site": "サイト",
+      "categories": "カテゴリ",
+      "latestPosts": "最新の記事",
+      "categoryLatest": "{{cat}} · 最新",
+      "life": "ライフ",
+      "personal": "パーソナル"
+    },
+    "items": {
+      "home": "ホーム",
+      "about": "について",
+      "expertise": "スキル",
+      "portfolio": "作品",
+      "contact": "連絡",
+      "aboutSite": "このサイト",
+      "aboutSiteDesc": "エンジニアの個人空間",
+      "history": "歴史",
+      "historyDesc": "サイトの歩み",
+      "messages": "メッセージ",
+      "messagesDesc": "何でもどうぞ",
+      "friends": "友達",
+      "friendsDesc": "ウェブリング",
+      "allPosts": "すべての記事",
+      "viewAllPosts": "すべての記事を見る →",
+      "emptyCategory": "このカテゴリの記事はまだありません",
+      "photos": "写真",
+      "photosDesc": "写真作品",
+      "activity": "アクティビティ",
+      "activityDesc": "最新の活動",
+      "bookshelf": "本棚",
+      "bookshelfDesc": "読書記録",
+      "music": "音楽",
+      "musicDesc": "好きな音楽",
+      "journey": "歩み",
+      "journeyDesc": "学習の軌跡",
+      "setup": "デバイス",
+      "setupDesc": "機材一覧"
+    }
+  },
+  "hero": {
+    "greeting": "こんにちは👋\nKoimsurai です",
+    "tagline": "\"I want to put a ding in the universe.\"\n– Steve Jobs",
+    "description": "宙と木 — Koimsurai の個人空間。エンジニアの読書ノート、作品記録、システム実験。",
+    "contactCta": "連絡する"
+  },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
     "poweredBy": "Powered by",
@@ -28,5 +120,304 @@
   "language": {
     "switcher": "言語",
     "current": "現在：{{label}}"
+  },
+  "notFound": {
+    "pageTitle": "404 — ページが見つかりません",
+    "seoDescription": "迷子になりましたか？このページは存在しません。",
+    "lostMessage": "宇宙のどこかで迷子になったみたい。",
+    "subMessage": "このページは存在しないか、削除されました。",
+    "backHome": "ホームに戻る"
+  },
+  "home": {
+    "aboutMe": {
+      "eyebrow": "Koimsurai · 木村盆栽",
+      "titleLine1": "複雑なことを、",
+      "titleLine2": "「使いやすく」仕上げる。"
+    },
+    "schoolClubs": {
+      "eyebrowSuffix": "サークル幹部",
+      "activitiesLabel": "イベント"
+    },
+    "contact": {
+      "titleLine1": "話しませんか？",
+      "titleLine2": "Let's build something.",
+      "blurb": "プロジェクトのご相談、技術交流、インターン機会、下記いずれからもお気軽にご連絡ください。"
+    }
+  },
+  "comments": {
+    "titleN": "{{count}} 件のコメント",
+    "titleEmpty": "まだコメントがありません",
+    "loginLabel": "ログイン方法を選択",
+    "anonymousLabel": "匿名コメント",
+    "namePlaceholder": "ニックネーム *",
+    "emailPlaceholder": "メール（任意、通知用）",
+    "websitePlaceholder": "ウェブサイト（任意）",
+    "contentPlaceholder": "感想を残してください...",
+    "submit": "送信",
+    "submitted": "✨ コメントを送信しました",
+    "submittedAwaitReview": "✨ 送信完了 — 管理者承認後に表示されます",
+    "authorBadge": "著者",
+    "reply": "返信",
+    "errorEmpty": "コメントを入力してください",
+    "errorNoName": "ニックネームを入力してください",
+    "errorCaptcha": "認証コードが正しくありません",
+    "errorFailed": "コメントに失敗しました",
+    "errorFailedTryLater": "コメントに失敗しました。後でお試しください",
+    "closedNotice": "このページのコメントは閉じられています。",
+    "back": "戻る",
+    "beFirst": "✨ 最初のコメントを残しませんか"
+  },
+  "commandPalette": {
+    "label": "グローバルコマンドパレット",
+    "placeholder": "ページ、記事、カテゴリ、タグを検索…",
+    "empty": "該当する結果がありません",
+    "groups": {
+      "pages": "ページ",
+      "posts": "記事",
+      "categories": "カテゴリ",
+      "tags": "タグ"
+    }
+  },
+  "backToTop": {
+    "label": "トップへ戻る"
+  },
+  "activity": {
+    "title": "アクティビティダッシュボード",
+    "description": "Koimsurai のリアルタイムアクティビティダッシュボード。",
+    "loading": "アクティビティを読み込み中",
+    "labels": {
+      "gameCollection": "ゲームコレクション",
+      "publicProjects": "公開プロジェクト",
+      "codedToday": "今日のコーディング"
+    },
+    "steam": {
+      "ingame": "ゲーム中",
+      "online": "オンライン",
+      "offline": "オフライン",
+      "playingTwoWeeks": "プレイ中 · 過去 2 週間",
+      "recentTwoWeeks": "過去 2 週間"
+    },
+    "wakatime": {
+      "todayCoding": "今日のコーディング時間",
+      "noDataWeek": "今週のコーディング記録なし"
+    },
+    "refresh": "更新",
+    "units": {
+      "min": "分",
+      "hr": "時間"
+    },
+    "gamesUnit": "{{count}} 本",
+    "badgesUnit": "{{count}} バッジ",
+    "titlesUnit": "{{count}} 本",
+    "playtime2w": "直近 2 週",
+    "playtimeTotal": "累計",
+    "github": {
+      "contributions": "過去 1 年で <b>{{count}}</b> 件の contribution",
+      "lastYear": "過去 1 年"
+    }
+  },
+  "music": {
+    "title": "音楽",
+    "description": "Koimsurai の音楽の好みと Spotify のリアルタイム再生記録。",
+    "loading": "音楽データを読み込み中",
+    "heroTitle": "音楽の星域",
+    "heroDesc": "私の音楽の好み、コレクション、リスニング分析",
+    "nowPlaying": "再生中",
+    "lastPlayed": "最後に再生",
+    "tabs": {
+      "recent": "最近の再生",
+      "genres": "好きなジャンル",
+      "yearly": "年間トップ",
+      "analytics": "リスニング分析"
+    },
+    "range": {
+      "short": "直近 4 週間",
+      "medium": "直近 6 か月",
+      "long": "全期間"
+    },
+    "openInSpotify": "Spotify で聴く",
+    "recentHeading": "最近の再生",
+    "genresHeading": "好きなジャンル Top 5",
+    "yearlyHeading": "年間トップ",
+    "analyticsHeading": "リスニング分析",
+    "empty": {
+      "recent": "最近の再生記録はまだありません",
+      "genres": "ジャンルデータがまだありません",
+      "yearly": "年間トップのデータがまだありません",
+      "analytics": "読み込み中... データが出ない場合は、まず「年間トップ」タブを開いてデータを読み込んでください"
+    },
+    "cols": {
+      "track": "曲",
+      "features": "オーディオ特徴",
+      "duration": "長さ",
+      "playedAt": "再生日時",
+      "album": "アルバム"
+    },
+    "features": {
+      "energy": "エナジー",
+      "dance": "ダンス",
+      "valence": "ヴァレンス"
+    },
+    "bubbleCount": "{{count}} 名のアーティスト",
+    "analyticsSubtitle": "よく聴いたトップ {{count}} 曲（{{range}}）から算出",
+    "analytics": {
+      "popularity": "メジャー度",
+      "avgDuration": "平均長さ",
+      "avgRelease": "リリース年の傾向",
+      "explicit": "Explicit",
+      "decadeTitle": "年代別分布"
+    }
+  },
+  "bookshelf": {
+    "title": "本棚",
+    "description": "Koimsurai の読書リストと読書ノート。",
+    "loading": "本棚を読み込み中...",
+    "heroTitle": "知識の星図",
+    "subtitle": "広大な書海の中で、読んだ星の一つひとつに印を",
+    "stats": {
+      "total": "蔵書",
+      "read": "読了",
+      "reading": "読書中",
+      "avgRating": "平均評価"
+    },
+    "statuses": {
+      "read": "読了",
+      "reading": "読書中",
+      "toRead": "読みたい"
+    },
+    "noRating": "未評価",
+    "searchPlaceholder": "書名や著者を検索...",
+    "filter": "フィルター",
+    "zeroGravity": "Zero-G モード",
+    "zg": {
+      "hint": "ドラッグで回転 · ホイールでズーム · クリックで本を開く",
+      "back": "本棚に戻る"
+    },
+    "twoDView": "2D 表示",
+    "filterStatus": "ステータス",
+    "filterRating": "評価",
+    "filterSort": "並び順",
+    "filterClear": "フィルター解除",
+    "sortOpts": {
+      "dateAddedDesc": "新しい順",
+      "dateAddedAsc": "古い順",
+      "titleAsc": "タイトル A-Z",
+      "titleDesc": "タイトル Z-A",
+      "ratingDesc": "評価の高い順",
+      "publishedDateDesc": "出版日付"
+    }
+  },
+  "blog": {
+    "title": "ノート",
+    "metaTitle": "ノート",
+    "description": "Koimsurai の技術ノート、学習ノート、日々の随筆。フロントエンドアーキテクチャ、Rust、システム設計など。",
+    "heroTitle": "ノート",
+    "loading": "記事を読み込み中",
+    "search": "記事を検索...",
+    "sort": {
+      "newest": "最新",
+      "oldest": "古い順",
+      "popular": "人気"
+    },
+    "comment": "コメント",
+    "share": "シェア",
+    "shareCopied": "コピー済み!",
+    "postCount": "記事",
+    "heatmapTotal": "本の記事",
+    "heatmapAria": "直近 26 週間の執筆アクティビティ",
+    "heatmapLess": "少",
+    "heatmapMore": "多",
+    "codeCopy": "コピー",
+    "codeCopied": "コピー済み!",
+    "shareCopyLink": "リンクをコピー",
+    "shareMore": "その他...",
+    "shareTitle": "シェア",
+    "commentTitle": "コメント",
+    "subscribeTitle": "購読",
+    "fontSwitcherTitle": "フォント切替"
+  },
+  "watch": {
+    "title": "視聴中",
+    "metaDescription": "私のアニメと映画の好み — 動畫瘋と Letterboxd から自動同期",
+    "subtitle": "私のアニメと映画の好みを一ページに広げて",
+    "eyebrowLive": "● 視聴中",
+    "favoritesTitle": "殿堂入り",
+    "favoritesSubtitle": "誰にでも勧めたい四本 — hover で感想を",
+    "recentTitle": "最近視聴",
+    "tasteTitle": "好み",
+    "typeAnime": "アニメ",
+    "typeFilm": "映画"
+  },
+  "setup": {
+    "title": "私のセットアップ · My Setup",
+    "description": "Koimsurai の個人デバイスリスト：メイン PC、ホームサーバー、ネットワーク機器、周辺機器一覧。"
+  },
+  "info": {
+    "aboutSite": {
+      "title": "このサイト",
+      "subtitle": "エンジニアの個人空間"
+    },
+    "history": {
+      "title": "歴史",
+      "subtitle": "サイトの歩み"
+    },
+    "messages": {
+      "title": "メッセージ",
+      "subtitle": "何でもどうぞ"
+    },
+    "friends": {
+      "title": "友達",
+      "subtitle": "ウェブリング"
+    }
+  },
+  "newsletter": {
+    "title": "ニュースレター購読",
+    "namePlaceholder": "お名前（任意）",
+    "emailPlaceholder": "メールアドレス *",
+    "submit": "購読",
+    "success": "購読完了！ご購読ありがとうございます ✨",
+    "errorGeneric": "購読に失敗しました。後でお試しください",
+    "errorNetwork": "ネットワークエラー、後でお試しください",
+    "description": "最新の記事と技術ノートを直接メールでお届け。",
+    "privacyNote": "プライバシーを尊重し、情報を共有しません。",
+    "confirmedTitle": "購読済み √",
+    "alreadyBody": "<em>{{email}}</em> でニュースレターを購読しています。",
+    "nextNotice": "新しい記事が出たらメールでお知らせします。",
+    "okBtn": "OK",
+    "unsubBtn": "購読解除",
+    "subscribeIntro": "新しい記事のお知らせをお届けします。",
+    "namePlaceholderShort": "お名前（任意）",
+    "emailPlaceholderShort": "メールアドレス *",
+    "processing": "処理中...",
+    "subscribe": "購読",
+    "unsubProcessing": "処理中…",
+    "unsubConfirmJs": "{{email}} を解除しますか？",
+    "unsubFailed": "解除に失敗しました",
+    "unsubDone": "解除しました。いつでもまたどうぞ。",
+    "privacy": "プライバシーを尊重し、情報を共有することはありません。",
+    "successWithEmoji": "購読完了！ありがとうございます ✨"
+  },
+  "unsubscribe": {
+    "verifying": "リンクを確認中…",
+    "confirmTitle": "購読解除しますか?",
+    "processing": "処理中…",
+    "successTitle": "購読解除完了 ✓",
+    "errorTitle": "問題が発生しました",
+    "missingToken": "リンクに token がありません。ニュースレター下部の購読解除リンクをご利用ください。",
+    "invalidLink": "リンクが無効か期限切れです。",
+    "noServer": "サーバーに接続できません。",
+    "unsubscribeFailed": "購読解除に失敗しました",
+    "bodyConfirm": "<em>{{email}}</em> で Koimsurai ニュースレターを購読解除しようとしています。<br />解除後、新しい記事はメールで届きません。",
+    "btnConfirm": "購読解除を確定",
+    "btnKeep": "やめて、続けます",
+    "bodyDoneEmail": "<em>{{email}}</em> を購読リストから削除しました。",
+    "bodyDoneFarewell": "ご縁を続けられず残念です。いつでも戻ってきてくださいね。",
+    "viewLatest": "最新の記事を見る →",
+    "btnBackHome": "ホームへ"
+  },
+  "oauth": {
+    "loggingIn": "ログイン中...",
+    "errorNoCode": "ログイン失敗：認証コードを受信できませんでした",
+    "errorGeneric": "ログインに失敗しました。後でお試しください"
   }
 }

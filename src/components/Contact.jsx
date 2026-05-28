@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPhone, faEnvelope } from '@fortawesome/free-solid-svg-icons';
 import { FaGithub, FaLinkedin } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import './Contact.css';
 
 const PRIMARY = [
@@ -14,7 +15,9 @@ const SOCIAL = [
   { key: 'linkedin', icon: FaLinkedin, href: 'https://www.linkedin.com/in/timo9378', label: 'LinkedIn' },
 ];
 
-const Contact = () => (
+const Contact = () => {
+  const { t } = useTranslation();
+  return (
   <section id="contact" className="home-section contact-v2">
     <div className="home-section-eyebrow">
       <span className="section-label">Contact</span>
@@ -32,9 +35,9 @@ const Contact = () => (
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
       <div className="contact-pitch">
-        <h2 className="section-hero-title contact-title">想聊聊？<br />Let's build something.</h2>
+        <h2 className="section-hero-title contact-title">{t('home.contact.titleLine1')}<br />{t('home.contact.titleLine2')}</h2>
         <p className="contact-blurb">
-          專案合作、技術交流、實習機會，都歡迎透過下列任一方式聯繫。
+          {t('home.contact.blurb')}
         </p>
       </div>
 
@@ -73,6 +76,7 @@ const Contact = () => (
       </div>
     </motion.div>
   </section>
-);
+  );
+};
 
 export default Contact;

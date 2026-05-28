@@ -1,4 +1,96 @@
 {
+  "common": {
+    "loading": "載入中…",
+    "loadingData": "正在載入資料",
+    "errorBackendApi": "無法連接到後端 API",
+    "retry": "重試",
+    "close": "關閉",
+    "cancel": "取消",
+    "save": "儲存",
+    "submit": "送出",
+    "send": "發送",
+    "search": "搜尋",
+    "all": "全部",
+    "more": "更多",
+    "today": "今天",
+    "justNow": "剛剛",
+    "daysAgo": "{{count}} 天前",
+    "weeksAgo": "{{count}} 週前",
+    "monthsAgo": "{{count}} 個月前",
+    "yearsAgo": "{{count}} 年前",
+    "minutesAgo": "{{count}} 分鐘前",
+    "hoursAgo": "{{count}} 小時前"
+  },
+  "nav": {
+    "home": "首頁",
+    "notes": "手記",
+    "more": "更多",
+    "backHome": "返回首頁",
+    "downloadResume": "選擇要下載的履歷",
+    "resumeSE": "軟體工程師",
+    "resumeClubs": "社團經歷"
+  },
+  "user": {
+    "adminPanel": "進入後台",
+    "logout": "登出",
+    "signInLabel": "社交帳號登入",
+    "signInWithGithub": "GitHub 登入",
+    "signInWithGoogle": "Google 登入",
+    "notConfigured": "第三方登入尚未設定"
+  },
+  "megaMenu": {
+    "online": "在線",
+    "stats": {
+      "posts": "文",
+      "words": "字",
+      "days": "日"
+    },
+    "groups": {
+      "pages": "頁面",
+      "site": "站點",
+      "categories": "分類",
+      "latestPosts": "最新文章",
+      "categoryLatest": "{{cat}} · 最新",
+      "life": "生活",
+      "personal": "個人"
+    },
+    "items": {
+      "home": "首頁",
+      "about": "關於",
+      "expertise": "技能",
+      "portfolio": "作品",
+      "contact": "聯絡",
+      "aboutSite": "此站點",
+      "aboutSiteDesc": "一個工程師的個人空間",
+      "history": "歷史",
+      "historyDesc": "站點走過的路",
+      "messages": "留言",
+      "messagesDesc": "想說什麼都可以",
+      "friends": "朋友們",
+      "friendsDesc": "友鏈",
+      "allPosts": "全部文章",
+      "viewAllPosts": "查看全部文章 →",
+      "emptyCategory": "這個分類還沒有文章",
+      "photos": "照片",
+      "photosDesc": "攝影作品集",
+      "activity": "動態",
+      "activityDesc": "最新活動",
+      "bookshelf": "書櫃",
+      "bookshelfDesc": "閱讀紀錄",
+      "music": "音樂",
+      "musicDesc": "喜愛的音樂",
+      "journey": "成長軌跡",
+      "journeyDesc": "學習歷程",
+      "setup": "配備",
+      "setupDesc": "設備清單"
+    }
+  },
+  "hero": {
+    "greeting": "你好👋\n我是 Koimsurai",
+    "tagline": "\"I want to put a ding in the universe.\"\n– Steve Jobs",
+    "description": "宙と木 — Koimsurai 的個人空間。一個工程師的閱讀筆記、作品紀錄與系統實驗。",
+    "contactCta": "聯絡我"
+  },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
     "poweredBy": "Powered by",
@@ -28,5 +120,304 @@
   "language": {
     "switcher": "語言",
     "current": "目前：{{label}}"
+  },
+  "notFound": {
+    "pageTitle": "404 — 頁面找不到",
+    "seoDescription": "你迷路了嗎？這個頁面不存在。",
+    "lostMessage": "看起來你迷失在星際之間了。",
+    "subMessage": "這個頁面不存在，或已被移除。",
+    "backHome": "返回首頁"
+  },
+  "home": {
+    "aboutMe": {
+      "eyebrow": "Koimsurai · 木村盆栽",
+      "titleLine1": "把複雜的事情",
+      "titleLine2": "做得讓人「順手」。"
+    },
+    "schoolClubs": {
+      "eyebrowSuffix": "社團幹部",
+      "activitiesLabel": "活動"
+    },
+    "contact": {
+      "titleLine1": "想聊聊？",
+      "titleLine2": "Let's build something.",
+      "blurb": "專案合作、技術交流、實習機會，都歡迎透過下列任一方式聯繫。"
+    }
+  },
+  "comments": {
+    "titleN": "{{count}} 條留言",
+    "titleEmpty": "還沒有留言",
+    "loginLabel": "選擇登入方式",
+    "anonymousLabel": "匿名留言",
+    "namePlaceholder": "暱稱 *",
+    "emailPlaceholder": "郵箱（選填，用於通知）",
+    "websitePlaceholder": "網站（選填）",
+    "contentPlaceholder": "留下你的想法...",
+    "submit": "發送",
+    "submitted": "✨ 留言已發送",
+    "submittedAwaitReview": "✨ 留言已送出，經管理員審核後將會顯示",
+    "authorBadge": "作者",
+    "reply": "回覆",
+    "errorEmpty": "留言內容不能為空",
+    "errorNoName": "暱稱不能為空",
+    "errorCaptcha": "驗證碼錯誤，請重新計算",
+    "errorFailed": "留言失敗",
+    "errorFailedTryLater": "留言失敗，請稍後再試",
+    "closedNotice": "作者已關閉這篇文章的留言。",
+    "back": "返回",
+    "beFirst": "✨ 成為第一個留言的人吧"
+  },
+  "commandPalette": {
+    "label": "全域指令面板",
+    "placeholder": "輸入頁面、文章、分類或標籤…",
+    "empty": "沒有相符的結果",
+    "groups": {
+      "pages": "頁面",
+      "posts": "文章",
+      "categories": "分類",
+      "tags": "標籤"
+    }
+  },
+  "backToTop": {
+    "label": "回到頂部"
+  },
+  "activity": {
+    "title": "動態儀表板",
+    "description": "Koimsurai 的即時活動儀表板。",
+    "loading": "載入活動數據",
+    "labels": {
+      "gameCollection": "遊戲收藏",
+      "publicProjects": "公開專案",
+      "codedToday": "今日寫碼"
+    },
+    "steam": {
+      "ingame": "遊戲中",
+      "online": "線上",
+      "offline": "離線",
+      "playingTwoWeeks": "現正遊玩 · 最近兩週",
+      "recentTwoWeeks": "最近兩週"
+    },
+    "wakatime": {
+      "todayCoding": "今日寫碼時間",
+      "noDataWeek": "本週無編碼記錄"
+    },
+    "refresh": "刷新",
+    "units": {
+      "min": "分鐘",
+      "hr": "小時"
+    },
+    "gamesUnit": "{{count}} 個遊戲",
+    "badgesUnit": "{{count}} 個徽章",
+    "titlesUnit": "{{count}} 款",
+    "playtime2w": "近兩週",
+    "playtimeTotal": "總",
+    "github": {
+      "contributions": "近一年 <b>{{count}}</b> 次 contribution",
+      "lastYear": "近一年"
+    }
+  },
+  "music": {
+    "title": "音樂",
+    "description": "Koimsurai 的音樂品味與 Spotify 即時收聽紀錄。",
+    "loading": "載入音樂資料",
+    "heroTitle": "音樂星域",
+    "heroDesc": "我的音樂品味、收藏紀錄與聆聽分析",
+    "nowPlaying": "正在播放",
+    "lastPlayed": "最後播放",
+    "tabs": {
+      "recent": "最近播放",
+      "genres": "最愛曲風",
+      "yearly": "年度歌單",
+      "analytics": "聆聽分析"
+    },
+    "range": {
+      "short": "最近 4 週",
+      "medium": "最近 6 個月",
+      "long": "全部時間"
+    },
+    "openInSpotify": "在 Spotify 收聽",
+    "recentHeading": "最近播放",
+    "genresHeading": "最愛的曲風 Top 5",
+    "yearlyHeading": "年度歌單",
+    "analyticsHeading": "聆聽分析",
+    "empty": {
+      "recent": "暫無最近播放記錄",
+      "genres": "暫無曲風資料",
+      "yearly": "暫無年度歌單資料",
+      "analytics": "載入中... 若持續無資料，請先切換到「年度歌單」分頁載入資料"
+    },
+    "cols": {
+      "track": "曲目",
+      "features": "音訊特性",
+      "duration": "時長",
+      "playedAt": "播放時間",
+      "album": "專輯"
+    },
+    "features": {
+      "energy": "活力",
+      "dance": "節奏",
+      "valence": "正度"
+    },
+    "bubbleCount": "{{count}} 位藝人",
+    "analyticsSubtitle": "依你最常聽的 {{count}} 首歌（{{range}}）推導",
+    "analytics": {
+      "popularity": "主流度",
+      "avgDuration": "平均長度",
+      "avgRelease": "時間偏好",
+      "explicit": "露骨內容",
+      "decadeTitle": "年代分佈"
+    }
+  },
+  "bookshelf": {
+    "title": "書架",
+    "description": "Koimsurai 的閱讀書單與讀書筆記。",
+    "loading": "載入書櫃中...",
+    "heroTitle": "知識星圖",
+    "subtitle": "在浩瀚書海中，標記每一顆閱讀過的星",
+    "stats": {
+      "total": "藏書",
+      "read": "已讀",
+      "reading": "閱讀中",
+      "avgRating": "平均評分"
+    },
+    "statuses": {
+      "read": "已讀",
+      "reading": "閱讀中",
+      "toRead": "想讀"
+    },
+    "noRating": "未評分",
+    "searchPlaceholder": "搜尋書名或作者...",
+    "filter": "篩選",
+    "zeroGravity": "零重力模式",
+    "zg": {
+      "hint": "拖曳旋轉 · 滾輪縮放 · 點擊書籍查看",
+      "back": "返回書架"
+    },
+    "twoDView": "2D 視圖",
+    "filterStatus": "閱讀狀態",
+    "filterRating": "評分",
+    "filterSort": "排序",
+    "filterClear": "清除篩選",
+    "sortOpts": {
+      "dateAddedDesc": "最新加入",
+      "dateAddedAsc": "最早加入",
+      "titleAsc": "標題 A-Z",
+      "titleDesc": "標題 Z-A",
+      "ratingDesc": "評分高到低",
+      "publishedDateDesc": "出版日期"
+    }
+  },
+  "blog": {
+    "title": "手記",
+    "metaTitle": "手記 · Notes",
+    "description": "Koimsurai 的技術手記、學習筆記與生活隨筆。涵蓋前端架構、Rust、系統設計等主題。",
+    "heroTitle": "手記",
+    "loading": "正在載入文章",
+    "search": "搜尋文章...",
+    "sort": {
+      "newest": "最新",
+      "oldest": "最舊",
+      "popular": "熱門"
+    },
+    "comment": "留言",
+    "share": "分享",
+    "shareCopied": "已複製!",
+    "postCount": "文章",
+    "heatmapTotal": "篇文章",
+    "heatmapAria": "近 26 週寫作活動",
+    "heatmapLess": "少",
+    "heatmapMore": "多",
+    "codeCopy": "複製",
+    "codeCopied": "已複製!",
+    "shareCopyLink": "複製連結",
+    "shareMore": "更多...",
+    "shareTitle": "分享",
+    "commentTitle": "留言",
+    "subscribeTitle": "訂閱",
+    "fontSwitcherTitle": "切換字型"
+  },
+  "watch": {
+    "title": "在看什麼",
+    "metaDescription": "我的動畫與電影品味 — 自動同步自動畫瘋與 Letterboxd",
+    "subtitle": "我的動畫與電影品味，一頁攤開給你看",
+    "eyebrowLive": "● 正在看",
+    "favoritesTitle": "鎮站之寶",
+    "favoritesSubtitle": "逢人就推的四部，hover 看我碎念",
+    "recentTitle": "最近在看",
+    "tasteTitle": "口味",
+    "typeAnime": "動畫",
+    "typeFilm": "電影"
+  },
+  "setup": {
+    "title": "我的配備 · My Setup",
+    "description": "Koimsurai 的個人設備清單：主力 PC、家用伺服器、網路設備、周邊設備完整一覽。"
+  },
+  "info": {
+    "aboutSite": {
+      "title": "此站點",
+      "subtitle": "一個工程師的個人空間"
+    },
+    "history": {
+      "title": "歷史",
+      "subtitle": "站點走過的長河"
+    },
+    "messages": {
+      "title": "留言",
+      "subtitle": "想說什麼都可以"
+    },
+    "friends": {
+      "title": "朋友們",
+      "subtitle": "友鏈"
+    }
+  },
+  "newsletter": {
+    "title": "訂閱電子報",
+    "namePlaceholder": "您的名字（選填）",
+    "emailPlaceholder": "您的電子郵件 *",
+    "submit": "訂閱",
+    "success": "訂閱成功！感謝您的訂閱 ✨",
+    "errorGeneric": "訂閱失敗，請稍後再試",
+    "errorNetwork": "網路錯誤，請稍後再試",
+    "description": "獲取最新文章更新與技術分享，直接送到您的信箱。",
+    "privacyNote": "我們重視您的隱私，不會分享您的資訊。",
+    "confirmedTitle": "已訂閱 √",
+    "alreadyBody": "你已用 <em>{{email}}</em> 訂閱了電子報。",
+    "nextNotice": "下次有新文章我們會寄到你信箱。",
+    "okBtn": "好的",
+    "unsubBtn": "退訂",
+    "subscribeIntro": "獲取最新文章通知，不錯過任何精彩內容。",
+    "namePlaceholderShort": "名字（選填）",
+    "emailPlaceholderShort": "電子郵件 *",
+    "processing": "處理中...",
+    "subscribe": "訂閱",
+    "unsubProcessing": "處理中…",
+    "unsubConfirmJs": "確定要退訂 {{email}}?",
+    "unsubFailed": "退訂失敗",
+    "unsubDone": "已退訂。隨時歡迎再回來訂閱。",
+    "privacy": "我們重視您的隱私，不會分享您的資訊。",
+    "successWithEmoji": "訂閱成功！感謝您的訂閱 ✨"
+  },
+  "unsubscribe": {
+    "verifying": "驗證連結中…",
+    "confirmTitle": "確認退訂?",
+    "processing": "處理中…",
+    "successTitle": "已退訂 ✓",
+    "errorTitle": "出了一點問題",
+    "missingToken": "連結缺少 token，請點電子報底部的退訂連結。",
+    "invalidLink": "連結無效或已過期。",
+    "noServer": "無法連線到伺服器。",
+    "unsubscribeFailed": "退訂失敗",
+    "bodyConfirm": "你正在用 <em>{{email}}</em> 退訂 Koimsurai 電子報。<br />退訂後，未來新文章不會再寄到你的信箱。",
+    "btnConfirm": "確認退訂",
+    "btnKeep": "算了，留下來",
+    "bodyDoneEmail": "<em>{{email}}</em> 已從訂閱列表中移除。",
+    "bodyDoneFarewell": "抱歉沒能繼續陪你，未來想回來隨時都歡迎。",
+    "viewLatest": "看看最近的文章 →",
+    "btnBackHome": "回首頁"
+  },
+  "oauth": {
+    "loggingIn": "正在登入...",
+    "errorNoCode": "登入失敗：未收到授權碼",
+    "errorGeneric": "登入失敗，請稍後再試"
   }
 }

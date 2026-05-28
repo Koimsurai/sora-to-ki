@@ -1,13 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
 
 const NotFound = () => {
+  const { t } = useTranslation();
   return (
     <>
       <SEOHead
-        title="404 — 頁面找不到 | Koimsurai"
-        description="你迷路了嗎？這個頁面不存在。"
+        title={`${t('notFound.pageTitle')} | Koimsurai`}
+        description={t('notFound.seoDescription')}
       />
       <div style={{
         minHeight: '70vh',
@@ -39,8 +41,8 @@ const NotFound = () => {
           marginBottom: '2rem',
           maxWidth: '480px',
         }}>
-          看起來你迷失在星際之間了。
-          <br />這個頁面不存在，或已被移除。
+          {t('notFound.lostMessage')}
+          <br />{t('notFound.subMessage')}
         </p>
         <Link
           to="/"
@@ -67,7 +69,7 @@ const NotFound = () => {
             e.currentTarget.style.boxShadow = '0 0 20px rgba(127, 90, 240, 0.3)';
           }}
         >
-          ← 返回首頁
+          ← {t('notFound.backHome')}
         </Link>
       </div>
     </>

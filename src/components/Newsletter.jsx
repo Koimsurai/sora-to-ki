@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './Newsletter.css';
 
 const Newsletter = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [status, setStatus] = useState(''); // 'success', 'error', 'loading'
@@ -25,16 +27,16 @@ const Newsletter = () => {
 
       if (response.ok) {
         setStatus('success');
-        setMessage('訂閱成功！感謝您的訂閱 ✨');
+        setMessage(t('newsletter.success'));
         setEmail('');
         setName('');
       } else {
         setStatus('error');
-        setMessage(data.error || '訂閱失敗，請稍後再試');
+        setMessage(data.error || t('newsletter.errorGeneric'));
       }
     } catch (error) {
       setStatus('error');
-      setMessage('網路錯誤，請稍後再試');
+      setMessage(t('newsletter.errorNetwork'));
       console.error('Newsletter subscription error:', error);
     }
   };
@@ -48,9 +50,9 @@ const Newsletter = () => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
             </svg>
           </div>
-          <h3 className="newsletter-title-v2">訂閱電子報</h3>
+          <h3 className="newsletter-title-v2">{t('newsletter.title')}</h3>
           <p className="newsletter-description-v2">
-            獲取最新文章更新與技術分享，直接送到您的信箱。
+            {t('newsletter.description')}
           </p>
         </div>
 
@@ -58,7 +60,7 @@ const Newsletter = () => {
           <div className="form-group-v2">
             <input
               type="text"
-              placeholder="您的名字（選填）"
+              placeholder={t('newsletter.namePlaceholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="newsletter-input-v2"
@@ -69,7 +71,7 @@ const Newsletter = () => {
           <div className="form-group-v2">
             <input
               type="email"
-              placeholder="您的電子郵件 *"
+              placeholder={t('newsletter.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="newsletter-input-v2"
@@ -86,7 +88,7 @@ const Newsletter = () => {
             {status === 'loading' ? (
               <span className="spinner-v2"></span>
             ) : (
-              '訂閱'
+              t('newsletter.submit')
             )}
           </button>
         </form>
@@ -99,7 +101,7 @@ const Newsletter = () => {
 
         <div className="newsletter-footer-v2">
           <p className="newsletter-note-v2">
-            我們重視您的隱私，不會分享您的資訊。
+            {t('newsletter.privacyNote')}
           </p>
         </div>
       </div>

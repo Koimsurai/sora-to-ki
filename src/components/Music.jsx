@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
 import KoimLoader from './KoimLoader';
 import './Music.css';
@@ -38,6 +39,7 @@ const extractDominantColor = (imageUrl) => {
 };
 
 const Music = () => {
+  const { t, i18n } = useTranslation();
   const [recentlyPlayed, setRecentlyPlayed] = useState(null);
   const [topGenres, setTopGenres] = useState(null);
   const [topTracks, setTopTracks] = useState(null);
@@ -81,7 +83,7 @@ const Music = () => {
       setRecentlyPlayed({ tracks: data.items || [], configured: true });
     } catch (error) {
       console.error('獲取最近播放失敗:', error);
-      setRecentlyPlayed({ error: '無法連接到後端 API', configured: false });
+      setRecentlyPlayed({ error: t('common.errorBackendApi'), configured: false });
     }
   }, [apiUrl]);
 
@@ -93,7 +95,7 @@ const Music = () => {
       setTopGenres({ genres: data.genres || [], configured: true });
     } catch (error) {
       console.error('獲取曲風失敗:', error);
-      setTopGenres({ error: '無法連接到後端 API', configured: false });
+      setTopGenres({ error: t('common.errorBackendApi'), configured: false });
     }
   }, [apiUrl]);
 
@@ -105,7 +107,7 @@ const Music = () => {
       setTopTracks({ tracks: data.items || [], configured: true });
     } catch (error) {
       console.error('獲取年度歌單失敗:', error);
-      setTopTracks({ error: '無法連接到後端 API', configured: false });
+      setTopTracks({ error: t('common.errorBackendApi'), configured: false });
     }
   }, [apiUrl]);
 
@@ -178,9 +180,9 @@ const Music = () => {
     const diffMs = now - date;
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
-    if (diffMins < 60) return `${diffMins} 分鐘前`;
-    if (diffHours < 24) return `${diffHours} 小時前`;
-    return date.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' });
+    if (diffMins < 60) return t('common.minutesAgo', { count: diffMins });
+    if (diffHours < 24) return t('common.hoursAgo', { count: diffHours });
+    return date.toLocaleDateString(i18n.resolvedLanguage || 'zh-TW', { month: 'short', day: 'numeric' });
   };
 
   // 以 topTracks 的 metadata 推導聆聽分析（Spotify 2024/11 已停用 audio-features）
@@ -248,7 +250,7 @@ const Music = () => {
     return (
       <div className="music-page" style={glowStyle}>
         <div className="music-dim-overlay" />
-        <KoimLoader fullscreen text="載入音樂資料" />
+        <KoimLoader fullscreen text={t('music.loading')} />
       </div>
     );
   }
@@ -258,7 +260,7 @@ const Music = () => {
 
   return (
     <div className="music-page" ref={containerRef} style={glowStyle}>
-      <SEOHead title="音樂" description="Koimsurai 的音樂品味與 Spotify 即時收聽紀錄。" />
+      <SEOHead title={t('music.title')} description={t('music.description')} />
       <div className="music-dim-overlay" />
 
       {/* ═══ 星雲背景 ═══ */}
@@ -277,10 +279,10 @@ const Music = () => {
           transition={{ duration: 0.6 }}
         >
           <h1 className="music-hero-title">
-            <span className="music-title-gradient">音樂星域</span>
+            <span className="music-title-gradient">{t('music.heroTitle')}</span>
             <span className="music-title-sub">Music Galaxy</span>
           </h1>
-          <p className="music-hero-desc">我的音樂品味、收藏紀錄與聆聽分析</p>
+          <p className="music-hero-desc">{t('music.heroDesc')}</p>
         </motion.div>
 
         {/* ═══ Now Playing Hero ═══ */}
@@ -309,7 +311,7 @@ const Music = () => {
               <div className="np-info">
                 <div className="np-status-badge">
                   <span className={`np-dot ${npData.isLive ? 'live' : ''}`} />
-                  {npData.isLive ? '正在播放' : '最後播放'}
+                  {npData.isLive ? t('music.nowPlaying') : t('music.lastPlayed')}
                 </div>
                 <h2 className="np-title">{npData.item?.name}</h2>
                 <p className="np-artist">{npData.item?.artists?.map(a => a.name).join(', ')}</p>
@@ -340,7 +342,7 @@ const Music = () => {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
                   </svg>
-                  在 Spotify 收聽
+                  {t('music.openInSpotify')}
                 </a>
               </div>
             </div>
@@ -355,10 +357,10 @@ const Music = () => {
           transition={{ delay: 0.4 }}
         >
           {[
-            { id: 'recent', label: '最近播放' },
-            { id: 'genres', label: '最愛曲風' },
-            { id: 'yearly', label: '年度歌單' },
-            { id: 'analytics', label: '聆聽分析' },
+            { id: 'recent', label: t('music.tabs.recent') },
+            { id: 'genres', label: t('music.tabs.genres') },
+            { id: 'yearly', label: t('music.tabs.yearly') },
+            { id: 'analytics', label: t('music.tabs.analytics') },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -391,7 +393,7 @@ const Music = () => {
                 transition={{ duration: 0.25 }}
                 className="music-section"
               >
-                <h2 className="section-heading">最近播放</h2>
+                <h2 className="section-heading">{t('music.recentHeading')}</h2>
                 {recentlyPlayed?.error ? (
                   <div className="music-error-box">
                     <p>{recentlyPlayed.error}</p>
@@ -413,10 +415,10 @@ const Music = () => {
                     <div className="track-row track-row-header">
                       <span className="tr-num">#</span>
                       <span className="tr-cover-placeholder" />
-                      <span className="tr-title-col">曲目</span>
-                      <span className="tr-features-col">音訊特性</span>
-                      <span className="tr-duration-col">時長</span>
-                      <span className="tr-time-col">播放時間</span>
+                      <span className="tr-title-col">{t('music.cols.track')}</span>
+                      <span className="tr-features-col">{t('music.cols.features')}</span>
+                      <span className="tr-duration-col">{t('music.cols.duration')}</span>
+                      <span className="tr-time-col">{t('music.cols.playedAt')}</span>
                     </div>
                     {recentlyPlayed.tracks.map((item, index) => {
                       const feat = audioFeatures[item.track.id];
@@ -445,9 +447,9 @@ const Music = () => {
                           <div className="tr-features-col">
                             {feat ? (
                               <>
-                                <FeatureBar label="活力" value={feat.energy} color="var(--feat-energy)" />
-                                <FeatureBar label="節奏" value={feat.danceability} color="var(--feat-dance)" />
-                                <FeatureBar label="正度" value={feat.valence} color="var(--feat-valence)" />
+                                <FeatureBar label={t('music.features.energy')} value={feat.energy} color="var(--feat-energy)" />
+                                <FeatureBar label={t('music.features.dance')} value={feat.danceability} color="var(--feat-dance)" />
+                                <FeatureBar label={t('music.features.valence')} value={feat.valence} color="var(--feat-valence)" />
                               </>
                             ) : (
                               <span className="tr-no-feat">—</span>
@@ -460,7 +462,7 @@ const Music = () => {
                     })}
                   </div>
                 ) : (
-                  <p className="music-no-data">暫無最近播放記錄</p>
+                  <p className="music-no-data">{t('music.empty.recent')}</p>
                 )}
               </motion.div>
             )}
@@ -475,7 +477,7 @@ const Music = () => {
                 transition={{ duration: 0.25 }}
                 className="music-section"
               >
-                <h2 className="section-heading">最愛的曲風 Top 5</h2>
+                <h2 className="section-heading">{t('music.genresHeading')}</h2>
                 {topGenres?.error ? (
                   <div className="music-error-box"><p>{topGenres.error}</p></div>
                 ) : topGenres?.genres?.length > 0 ? (
@@ -500,14 +502,14 @@ const Music = () => {
                         >
                           <div className="bubble-rank">#{index + 1}</div>
                           <div className="bubble-name">{genre.genre}</div>
-                          <div className="bubble-count">{genre.count} 位藝人</div>
+                          <div className="bubble-count">{t('music.bubbleCount', { count: genre.count })}</div>
                           <div className="bubble-glow" />
                         </motion.div>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="music-no-data">暫無曲風資料</p>
+                  <p className="music-no-data">{t('music.empty.genres')}</p>
                 )}
               </motion.div>
             )}
@@ -523,12 +525,12 @@ const Music = () => {
                 className="music-section"
               >
                 <div className="yearly-header-row">
-                  <h2 className="section-heading">年度歌單</h2>
+                  <h2 className="section-heading">{t('music.yearlyHeading')}</h2>
                   <div className="time-range-pills">
                     {[
-                      { value: 'short_term', label: '最近 4 週' },
-                      { value: 'medium_term', label: '最近 6 個月' },
-                      { value: 'long_term', label: '全部時間' },
+                      { value: 'short_term', label: t('music.range.short') },
+                      { value: 'medium_term', label: t('music.range.medium') },
+                      { value: 'long_term', label: t('music.range.long') },
                     ].map(r => (
                       <button
                         key={r.value}
@@ -547,10 +549,10 @@ const Music = () => {
                     <div className="track-row track-row-header">
                       <span className="tr-num">#</span>
                       <span className="tr-cover-placeholder" />
-                      <span className="tr-title-col">曲目</span>
-                      <span className="tr-features-col">音訊特性</span>
-                      <span className="tr-duration-col">時長</span>
-                      <span className="tr-album-col">專輯</span>
+                      <span className="tr-title-col">{t('music.cols.track')}</span>
+                      <span className="tr-features-col">{t('music.cols.features')}</span>
+                      <span className="tr-duration-col">{t('music.cols.duration')}</span>
+                      <span className="tr-album-col">{t('music.cols.album')}</span>
                     </div>
                     {topTracks.tracks.map((track, index) => {
                       const feat = audioFeatures[track.id];
@@ -579,9 +581,9 @@ const Music = () => {
                           <div className="tr-features-col">
                             {feat ? (
                               <>
-                                <FeatureBar label="活力" value={feat.energy} color="var(--feat-energy)" />
-                                <FeatureBar label="節奏" value={feat.danceability} color="var(--feat-dance)" />
-                                <FeatureBar label="正度" value={feat.valence} color="var(--feat-valence)" />
+                                <FeatureBar label={t('music.features.energy')} value={feat.energy} color="var(--feat-energy)" />
+                                <FeatureBar label={t('music.features.dance')} value={feat.danceability} color="var(--feat-dance)" />
+                                <FeatureBar label={t('music.features.valence')} value={feat.valence} color="var(--feat-valence)" />
                               </>
                             ) : (
                               <span className="tr-no-feat">—</span>
@@ -594,7 +596,7 @@ const Music = () => {
                     })}
                   </div>
                 ) : (
-                  <p className="music-no-data">暫無年度歌單資料</p>
+                  <p className="music-no-data">{t('music.empty.yearly')}</p>
                 )}
               </motion.div>
             )}
@@ -609,36 +611,37 @@ const Music = () => {
                 transition={{ duration: 0.25 }}
                 className="music-section"
               >
-                <h2 className="section-heading">聆聽分析</h2>
+                <h2 className="section-heading">{t('music.analyticsHeading')}</h2>
                 <p className="analytics-subtitle">
-                  依你最常聽的 {trackAnalytics?.totalTracks || 0} 首歌（{
-                    { short_term: '最近 4 週', medium_term: '最近 6 個月', long_term: '全部時間' }[timeRange]
-                  }）推導
+                  {t('music.analyticsSubtitle', {
+                    count: trackAnalytics?.totalTracks || 0,
+                    range: t(`music.range.${ { short_term: 'short', medium_term: 'medium', long_term: 'long' }[timeRange] }`),
+                  })}
                 </p>
                 {trackAnalytics ? (
                   <>
                     <div className="analytics-dashboard">
                       <AnalyticGauge
-                        label="主流度"
+                        label={t('music.analytics.popularity')}
                         sublabel="Popularity"
                         value={trackAnalytics.avgPopularity / 100}
                       />
                       <div className="analytic-card analytic-tempo">
-                        <div className="analytic-label">平均長度</div>
+                        <div className="analytic-label">{t('music.analytics.avgDuration')}</div>
                         <div className="analytic-sublabel">Avg Duration</div>
                         <div className="tempo-value">
                           <span className="tempo-number">{formatDuration(trackAnalytics.avgDurationMs)}</span>
                         </div>
                       </div>
                       <div className="analytic-card analytic-tempo">
-                        <div className="analytic-label">時間偏好</div>
+                        <div className="analytic-label">{t('music.analytics.avgRelease')}</div>
                         <div className="analytic-sublabel">Avg Release Year</div>
                         <div className="tempo-value">
                           <span className="tempo-number">{trackAnalytics.avgYear ?? '—'}</span>
                         </div>
                       </div>
                       <div className="analytic-card analytic-tempo">
-                        <div className="analytic-label">露骨內容</div>
+                        <div className="analytic-label">{t('music.analytics.explicit')}</div>
                         <div className="analytic-sublabel">Explicit</div>
                         <div className="tempo-value">
                           <span className="tempo-number">{Math.round(trackAnalytics.explicitRatio * 100)}</span>
@@ -649,7 +652,7 @@ const Music = () => {
 
                     {trackAnalytics.decades.length > 0 && (
                       <div className="decade-chart">
-                        <h3 className="decade-chart-title">年代分佈</h3>
+                        <h3 className="decade-chart-title">{t('music.analytics.decadeTitle')}</h3>
                         <div className="decade-bars">
                           {(() => {
                             const max = Math.max(...trackAnalytics.decades.map(d => d.count));
@@ -673,7 +676,7 @@ const Music = () => {
                     )}
                   </>
                 ) : (
-                  <p className="music-no-data">載入中... 若持續無資料，請先切換到「年度歌單」分頁載入資料</p>
+                  <p className="music-no-data">{t('music.empty.analytics')}</p>
                 )}
               </motion.div>
             )}

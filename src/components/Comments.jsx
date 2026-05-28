@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import './Comments.css';
 
 function Comments({ postId, allowComments = true }) {
+  const { t } = useTranslation();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [author, setAuthor] = useState('');
@@ -59,19 +61,19 @@ function Comments({ postId, allowComments = true }) {
     const isUsingLogin = isLoggedIn && !useAnonymous;
 
     if (!newComment.trim()) {
-      setError('留言內容不能為空');
+      setError(t('comments.errorEmpty'));
       return;
     }
 
     // 匿名模式需要暱稱和驗證碼
     if (!isUsingLogin) {
       if (!author.trim()) {
-        setError('暱稱不能為空');
+        setError(t('comments.errorNoName'));
         return;
       }
       const expectedAnswer = captchaQuestion.num1 + captchaQuestion.num2;
       if (parseInt(captchaAnswer) !== expectedAnswer) {
-        setError('驗證碼錯誤，請重新計算');
+        setError(t('comments.errorCaptcha'));
         generateCaptcha();
         setCaptchaAnswer('');
         return;
@@ -124,10 +126,10 @@ function Comments({ postId, allowComments = true }) {
         fetchComments();
       } else {
         const errorData = await response.json();
-        setError(errorData.error || '留言失敗');
+        setError(errorData.error || t('comments.errorFailed'));
       }
     } catch (error) {
-      setError('留言失敗，請稍後再試');
+      setError(t('comments.errorFailedTryLater'));
     } finally {
       setIsLoading(false);
     }
@@ -167,10 +169,10 @@ function Comments({ postId, allowComments = true }) {
     const mins = Math.floor(diff / 60000);
     const hrs = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
-    if (mins < 1) return '剛剛';
-    if (mins < 60) return mins + ' 分鐘前';
-    if (hrs < 24) return hrs + ' 小時前';
-    if (days < 7) return days + ' 天前';
+    if (mins < 1) return t('common.justNow');
+    if (mins < 60) return t('common.minutesAgo', { count: mins });
+    if (hrs < 24) return t('common.hoursAgo', { count: hrs });
+    if (days < 7) return t('common.daysAgo', { count: days });
     return d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
@@ -201,7 +203,7 @@ function Comments({ postId, allowComments = true }) {
 
         {!allowComments && (
           <div className="comment-closed-notice">
-            作者已關閉這篇文章的留言。
+            {t('comments.closedNotice')}
           </div>
         )}
 
@@ -216,7 +218,7 @@ function Comments({ postId, allowComments = true }) {
                   {user?.displayName}
                 </button>
                 <button type="button" className={`mode-btn ${useAnonymous ? 'active' : ''}`} onClick={() => setUseAnonymous(true)}>
-                  匿名留言
+                  {t('comments.anonymousLabel')}
                 </button>
               </>
             ) : (
@@ -224,18 +226,18 @@ function Comments({ postId, allowComments = true }) {
                 {commentMode === 'initial' && (
                   <div className="comment-mode-buttons">
                     <button type="button" className="mode-btn mode-btn--login" onClick={() => setCommentMode('login')}>
-                      🔑 登入留言
+                      🔑 {t('user.signInLabel')}
                     </button>
                     <button type="button" className="mode-btn mode-btn--anon" onClick={() => setCommentMode('anonymous')}>
-                      👤 匿名留言
+                      👤 {t('comments.anonymousLabel')}
                     </button>
                   </div>
                 )}
                 {commentMode === 'login' && (
                   <div className="comment-login-expand">
                     <div className="login-expand-header">
-                      <span className="login-label">選擇登入方式</span>
-                      <button type="button" className="back-btn" onClick={() => setCommentMode('initial')}>← 返回</button>
+                      <span className="login-label">{t('comments.loginLabel')}</span>
+                      <button type="button" className="back-btn" onClick={() => setCommentMode('initial')}>← {t('comments.back')}</button>
                     </div>
                     <div className="login-providers">
                       {providers.github?.enabled && (
@@ -260,8 +262,8 @@ function Comments({ postId, allowComments = true }) {
                 {commentMode === 'anonymous' && (
                   <div className="comment-anon-expand">
                     <div className="login-expand-header">
-                      <span className="login-label">匿名留言</span>
-                      <button type="button" className="back-btn" onClick={() => setCommentMode('initial')}>← 返回</button>
+                      <span className="login-label">{t('comments.anonymousLabel')}</span>
+                      <button type="button" className="back-btn" onClick={() => setCommentMode('initial')}>← {t('comments.back')}</button>
                     </div>
                   </div>
                 )}
@@ -275,7 +277,7 @@ function Comments({ postId, allowComments = true }) {
               <div className="field-group">
                 <input
                   type="text"
-                  placeholder="暱稱 *"
+                  placeholder={t('comments.namePlaceholder')}
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
                   required
@@ -285,7 +287,7 @@ function Comments({ postId, allowComments = true }) {
               <div className="field-group">
                 <input
                   type="email"
-                  placeholder="郵箱（選填，用於通知）"
+                  placeholder={t('comments.emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="field-input"
@@ -294,7 +296,7 @@ function Comments({ postId, allowComments = true }) {
               <div className="field-group">
                 <input
                   type="url"
-                  placeholder="網站（選填）"
+                  placeholder={t('comments.websitePlaceholder')}
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
                   className="field-input"
@@ -309,12 +311,12 @@ function Comments({ postId, allowComments = true }) {
               <div className="textarea-wrap">
                 {replyTo && (
                   <div className="reply-indicator">
-                    <span>回覆 @{replyTo.author}</span>
+                    <span>{t('comments.reply')} @{replyTo.author}</span>
                     <button type="button" onClick={() => setReplyTo(null)}>✕</button>
                   </div>
                 )}
                 <textarea
-                  placeholder="留下你的想法..."
+                  placeholder={t('comments.contentPlaceholder')}
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   required
@@ -341,7 +343,7 @@ function Comments({ postId, allowComments = true }) {
                 <button type="submit" disabled={isLoading} className="submit-btn">
                   {isLoading ? (
                     <span className="spinner" />
-                  ) : '發送'}
+                  ) : t('common.send')}
                 </button>
               </div>
             </>
@@ -366,8 +368,8 @@ function Comments({ postId, allowComments = true }) {
                 exit={{ opacity: 0 }}
               >
                 {isUsingLogin
-                  ? '✨ 留言已發送'
-                  : '✨ 留言已送出，經管理員審核後將會顯示'}
+                  ? t('comments.submitted')
+                  : t('comments.submittedAwaitReview')}
               </motion.p>
             )}
           </AnimatePresence>
@@ -378,7 +380,7 @@ function Comments({ postId, allowComments = true }) {
       {/* ── Comments List ── */}
       <div className="comments-list">
         <div className="comments-header">
-          <h3>{comments.length > 0 ? comments.length + ' 條留言' : '還沒有留言'}</h3>
+          <h3>{comments.length > 0 ? t('comments.titleN', { count: comments.length }) : t('comments.titleEmpty')}</h3>
         </div>
 
         <AnimatePresence>
@@ -411,7 +413,7 @@ function Comments({ postId, allowComments = true }) {
                     <div className="comment-body">
                       <div className="comment-meta">
                         <span className="comment-author">{comment.author}</span>
-                        {isAdmin && <span className="admin-badge">作者</span>}
+                        {isAdmin && <span className="admin-badge">{t('comments.authorBadge')}</span>}
                         <span className="comment-time">{formatDate(comment.created_at)}</span>
                       </div>
                       <p className="comment-text">{comment.content}</p>
@@ -430,7 +432,7 @@ function Comments({ postId, allowComments = true }) {
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                           </svg>
-                          <span>回覆</span>
+                          <span>{t('comments.reply')}</span>
                         </button>
                       </div>
                     </div>
@@ -456,8 +458,8 @@ function Comments({ postId, allowComments = true }) {
                         <div className="comment-body">
                           <div className="comment-meta">
                             <span className="comment-author">{reply.author}</span>
-                            {isReplyAdmin && <span className="admin-badge">作者</span>}
-                            <span className="comment-reply-to">回覆 @{comment.author}</span>
+                            {isReplyAdmin && <span className="admin-badge">{t('comments.authorBadge')}</span>}
+                            <span className="comment-reply-to">{t('comments.reply')} @{comment.author}</span>
                             <span className="comment-time">{formatDate(reply.created_at)}</span>
                           </div>
                           <p className="comment-text">{reply.content}</p>
@@ -476,7 +478,7 @@ function Comments({ postId, allowComments = true }) {
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                               </svg>
-                              <span>回覆</span>
+                              <span>{t('comments.reply')}</span>
                             </button>
                           </div>
                         </div>
@@ -492,7 +494,7 @@ function Comments({ postId, allowComments = true }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <p>✨ 成為第一個留言的人吧</p>
+              <p>{t('comments.beFirst')}</p>
             </motion.div>
           )}
         </AnimatePresence>

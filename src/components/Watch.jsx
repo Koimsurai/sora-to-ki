@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
 import './Watch.css';
 
@@ -54,22 +55,23 @@ const Stars = ({ n }) => (
 );
 
 function Watch() {
+  const { t } = useTranslation();
   return (
     <div className="w-page">
       <div className="w-scrim" />
-      <SEOHead title="在看什麼" description="我的動畫與電影品味 — 自動同步自動畫瘋與 Letterboxd" />
+      <SEOHead title={t('watch.title')} description={t('watch.metaDescription')} />
 
       <div className="w-wrap">
         {/* header */}
         <motion.header className="w-header" {...reveal}>
-          <h1 className="w-title">在看什麼</h1>
-          <p className="w-subtitle">我的動畫與電影品味，一頁攤開給你看</p>
+          <h1 className="w-title">{t('watch.title')}</h1>
+          <p className="w-subtitle">{t('watch.subtitle')}</p>
           <p className="w-stats-line">{STATS}</p>
         </motion.header>
 
         {/* 正在看 */}
         <motion.section className="w-now" {...reveal}>
-          <span className="w-eyebrow w-eyebrow--live">● 正在看</span>
+          <span className="w-eyebrow w-eyebrow--live">{t('watch.eyebrowLive')}</span>
           <div className="w-now-body">
             <div className="w-now-poster">
               <img src={NOW.poster} alt={NOW.title} />
@@ -84,8 +86,8 @@ function Watch() {
 
         {/* 鎮站之寶 —— 品味核心 */}
         <motion.section className="w-section" {...reveal}>
-          <h2 className="w-h2">鎮站之寶</h2>
-          <p className="w-h2-sub">逢人就推的四部，hover 看我碎念</p>
+          <h2 className="w-h2">{t('watch.favoritesTitle')}</h2>
+          <p className="w-h2-sub">{t('watch.favoritesSubtitle')}</p>
           <div className="w-favs">
             {FAVORITES.map((f) => (
               <figure className="w-fav" key={f.id}>
@@ -102,7 +104,7 @@ function Watch() {
 
         {/* 最近在看 */}
         <motion.section className="w-section" {...reveal}>
-          <h2 className="w-h2">最近在看</h2>
+          <h2 className="w-h2">{t('watch.recentTitle')}</h2>
           <ul className="w-recent">
             {RECENT.map((r) => (
               <li className="w-recent-row" key={r.id}>
@@ -117,7 +119,7 @@ function Watch() {
 
         {/* 口味（文字化）*/}
         <motion.section className="w-section" {...reveal}>
-          <h2 className="w-h2">口味</h2>
+          <h2 className="w-h2">{t('watch.tasteTitle')}</h2>
           <p className="w-taste-line">{TASTE_LINE}</p>
           <div className="w-taste-tags">
             {TASTE_TAGS.map((t) => <span className="w-tag" key={t}>{t}</span>)}

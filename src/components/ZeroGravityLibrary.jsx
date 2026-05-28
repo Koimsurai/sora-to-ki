@@ -4,6 +4,7 @@ import { OrbitControls, useTexture, Html, Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { a, useSpring } from '@react-spring/three';
 import * as THREE from 'three';
+import { useTranslation } from 'react-i18next';
 import './ZeroGravityLibrary.css';
 
 // 自訂拖動 Hook - 修復版本
@@ -606,7 +607,9 @@ function Scene({ books, onBookClick, selectedBook }) {
 
 // 主組件
 export default function ZeroGravityLibrary({ books = [], onClose }) {
+  const { t } = useTranslation();
   const [selectedBook, setSelectedBook] = useState(null);
+  const hints = t('bookshelf.zg.hint').split(' · ');
 
   return (
     <div className="zero-gravity-container">
@@ -634,17 +637,18 @@ export default function ZeroGravityLibrary({ books = [], onClose }) {
           </div>
           <button className="zg-close-btn" onClick={onClose}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            返回書架
+            {t('bookshelf.zg.back')}
           </button>
         </div>
 
         {/* Controls hint — bottom center */}
         <div className="zg-hints">
-          <span>拖曳旋轉</span>
-          <span className="zg-hint-dot" />
-          <span>滾輪縮放</span>
-          <span className="zg-hint-dot" />
-          <span>點擊書籍查看</span>
+          {hints.map((h, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <span className="zg-hint-dot" />}
+              <span>{h}</span>
+            </React.Fragment>
+          ))}
         </div>
 
         {/* Book details panel */}

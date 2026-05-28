@@ -25,6 +25,26 @@ export const LOCALE_LABELS = {
   'ko': '한국어',
 };
 
+// 把 detector 拿到的字串對應到我們支援的 5 個 locale。
+// 例如 'zh-HK' / 'zh-Hant' → 'zh-TW'；'en-US' → 'en'；'ja-JP' → 'ja'。
+// 不用 i18next 的 nonExplicitSupportedLngs（會把 'zh-TW' 倒過來砍成 'zh' 害 resource 找不到）。
+function normalizeLocale(detected) {
+  if (!detected) return 'zh-TW';
+  const s = String(detected);
+  // 完全 match
+  if (SUPPORTED_LOCALES.includes(s)) return s;
+  const lower = s.toLowerCase();
+  if (lower.startsWith('zh')) {
+    if (lower.includes('hant') || lower.includes('tw') || lower.includes('hk') || lower.includes('mo')) return 'zh-TW';
+    if (lower.includes('hans') || lower.includes('cn') || lower.includes('sg')) return 'zh-CN';
+    return 'zh-TW'; // 純 'zh' → 預設繁中
+  }
+  if (lower.startsWith('en')) return 'en';
+  if (lower.startsWith('ja')) return 'ja';
+  if (lower.startsWith('ko')) return 'ko';
+  return 'zh-TW';
+}
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -38,13 +58,14 @@ i18n
     },
     fallbackLng: 'zh-TW',
     supportedLngs: SUPPORTED_LOCALES,
-    nonExplicitSupportedLngs: true, // 'zh' / 'en-US' 等也能匹配到 'zh-TW' / 'en'
+    load: 'currentOnly', // 別自動載 'zh' / 'en' base，我們用顯式 normalize
     defaultNS: 'common',
     interpolation: { escapeValue: false }, // React 自己防 XSS
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       lookupLocalStorage: 'koim_locale',
       caches: ['localStorage'],
+      convertDetectedLanguage: normalizeLocale,
     },
   });
 

@@ -1,4 +1,96 @@
 {
+  "common": {
+    "loading": "Loading…",
+    "loadingData": "Loading data",
+    "errorBackendApi": "Can't reach the backend API",
+    "retry": "Retry",
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save",
+    "submit": "Submit",
+    "send": "Send",
+    "search": "Search",
+    "all": "All",
+    "more": "More",
+    "today": "Today",
+    "justNow": "Just now",
+    "daysAgo": "{{count}}d ago",
+    "weeksAgo": "{{count}}w ago",
+    "monthsAgo": "{{count}}mo ago",
+    "yearsAgo": "{{count}}y ago",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago"
+  },
+  "nav": {
+    "home": "Home",
+    "notes": "Notes",
+    "more": "More",
+    "backHome": "Back to home",
+    "downloadResume": "Pick a resume to download",
+    "resumeSE": "Software Engineer",
+    "resumeClubs": "School clubs"
+  },
+  "user": {
+    "adminPanel": "Admin panel",
+    "logout": "Sign out",
+    "signInLabel": "Sign in with social",
+    "signInWithGithub": "Sign in with GitHub",
+    "signInWithGoogle": "Sign in with Google",
+    "notConfigured": "Third-party login not configured"
+  },
+  "megaMenu": {
+    "online": "Online",
+    "stats": {
+      "posts": "Posts",
+      "words": "Words",
+      "days": "Days"
+    },
+    "groups": {
+      "pages": "Pages",
+      "site": "Site",
+      "categories": "Categories",
+      "latestPosts": "Latest posts",
+      "categoryLatest": "{{cat}} · Latest",
+      "life": "Life",
+      "personal": "Personal"
+    },
+    "items": {
+      "home": "Home",
+      "about": "About",
+      "expertise": "Skills",
+      "portfolio": "Work",
+      "contact": "Contact",
+      "aboutSite": "This site",
+      "aboutSiteDesc": "A developer's personal space",
+      "history": "History",
+      "historyDesc": "Where this site has been",
+      "messages": "Messages",
+      "messagesDesc": "Say whatever you want",
+      "friends": "Friends",
+      "friendsDesc": "Webring",
+      "allPosts": "All posts",
+      "viewAllPosts": "View all posts →",
+      "emptyCategory": "No posts in this category yet",
+      "photos": "Photos",
+      "photosDesc": "Photography",
+      "activity": "Activity",
+      "activityDesc": "What's happening",
+      "bookshelf": "Bookshelf",
+      "bookshelfDesc": "Reading log",
+      "music": "Music",
+      "musicDesc": "What I'm listening to",
+      "journey": "Journey",
+      "journeyDesc": "Where I've been",
+      "setup": "Setup",
+      "setupDesc": "My gear"
+    }
+  },
+  "hero": {
+    "greeting": "Hi 👋\nI'm Koimsurai",
+    "tagline": "\"I want to put a ding in the universe.\"\n– Steve Jobs",
+    "description": "Sora to Ki (宙と木) — Koimsurai's personal space. A developer's reading notes, portfolio, and system experiments.",
+    "contactCta": "Get in touch"
+  },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
     "poweredBy": "Powered by",
@@ -28,5 +120,304 @@
   "language": {
     "switcher": "Language",
     "current": "Current: {{label}}"
+  },
+  "notFound": {
+    "pageTitle": "404 — Page not found",
+    "seoDescription": "Looks like you're lost. This page doesn't exist.",
+    "lostMessage": "Looks like you're drifting between stars.",
+    "subMessage": "This page doesn't exist, or has been removed.",
+    "backHome": "Back to home"
+  },
+  "home": {
+    "aboutMe": {
+      "eyebrow": "Koimsurai · Bonsai of code",
+      "titleLine1": "Take the complex,",
+      "titleLine2": "and make it feel effortless."
+    },
+    "schoolClubs": {
+      "eyebrowSuffix": "club roles",
+      "activitiesLabel": "events"
+    },
+    "contact": {
+      "titleLine1": "Want to chat?",
+      "titleLine2": "Let's build something.",
+      "blurb": "Project collaborations, tech chats, internships — reach out via any of the channels below."
+    }
+  },
+  "comments": {
+    "titleN": "{{count}} comments",
+    "titleEmpty": "No comments yet",
+    "loginLabel": "Sign in to comment",
+    "anonymousLabel": "Comment anonymously",
+    "namePlaceholder": "Name *",
+    "emailPlaceholder": "Email (optional, for replies)",
+    "websitePlaceholder": "Website (optional)",
+    "contentPlaceholder": "Leave a thought...",
+    "submit": "Send",
+    "submitted": "✨ Comment sent",
+    "submittedAwaitReview": "✨ Sent — visible after admin review",
+    "authorBadge": "author",
+    "reply": "Reply",
+    "errorEmpty": "Comment can't be empty",
+    "errorNoName": "Name can't be empty",
+    "errorCaptcha": "Captcha incorrect, please recalculate",
+    "errorFailed": "Comment failed",
+    "errorFailedTryLater": "Comment failed, please try again later",
+    "closedNotice": "Comments are closed for this post.",
+    "back": "Back",
+    "beFirst": "✨ Be the first to comment"
+  },
+  "commandPalette": {
+    "label": "Global command palette",
+    "placeholder": "Search pages, posts, categories, tags…",
+    "empty": "No matches",
+    "groups": {
+      "pages": "Pages",
+      "posts": "Posts",
+      "categories": "Categories",
+      "tags": "Tags"
+    }
+  },
+  "backToTop": {
+    "label": "Back to top"
+  },
+  "activity": {
+    "title": "Activity dashboard",
+    "description": "Koimsurai's live activity dashboard.",
+    "loading": "Loading activity",
+    "labels": {
+      "gameCollection": "Games owned",
+      "publicProjects": "Public repos",
+      "codedToday": "Today's code"
+    },
+    "steam": {
+      "ingame": "In game",
+      "online": "Online",
+      "offline": "Offline",
+      "playingTwoWeeks": "Playing now · last 2 weeks",
+      "recentTwoWeeks": "Last 2 weeks"
+    },
+    "wakatime": {
+      "todayCoding": "Today's coding time",
+      "noDataWeek": "No coding logs this week"
+    },
+    "refresh": "Refresh",
+    "units": {
+      "min": "min",
+      "hr": "hr"
+    },
+    "gamesUnit": "{{count}} games",
+    "badgesUnit": "{{count}} badges",
+    "titlesUnit": "{{count}} titles",
+    "playtime2w": "Last 2w",
+    "playtimeTotal": "Total",
+    "github": {
+      "contributions": "<b>{{count}}</b> contributions in the last year",
+      "lastYear": "Last year"
+    }
+  },
+  "music": {
+    "title": "Music",
+    "description": "Koimsurai's music taste and live Spotify listening.",
+    "loading": "Loading music",
+    "heroTitle": "Music Galaxy",
+    "heroDesc": "My music taste, library, and listening analysis",
+    "nowPlaying": "Now playing",
+    "lastPlayed": "Last played",
+    "tabs": {
+      "recent": "Recent",
+      "genres": "Top genres",
+      "yearly": "Top Tracks",
+      "analytics": "Insights"
+    },
+    "range": {
+      "short": "Last 4 weeks",
+      "medium": "Last 6 months",
+      "long": "All time"
+    },
+    "openInSpotify": "Open in Spotify",
+    "recentHeading": "Recently Played",
+    "genresHeading": "Top 5 Genres",
+    "yearlyHeading": "Top Tracks",
+    "analyticsHeading": "Insights",
+    "empty": {
+      "recent": "No recent plays yet",
+      "genres": "No genre data yet",
+      "yearly": "No top tracks data yet",
+      "analytics": "Loading... if there's still no data, switch to Top Tracks to load it first"
+    },
+    "cols": {
+      "track": "Track",
+      "features": "Audio Features",
+      "duration": "Duration",
+      "playedAt": "Played At",
+      "album": "Album"
+    },
+    "features": {
+      "energy": "Energy",
+      "dance": "Dance",
+      "valence": "Valence"
+    },
+    "bubbleCount": "{{count}} artists",
+    "analyticsSubtitle": "Derived from your top {{count}} tracks ({{range}})",
+    "analytics": {
+      "popularity": "Popularity",
+      "avgDuration": "Avg Duration",
+      "avgRelease": "Avg Release Year",
+      "explicit": "Explicit",
+      "decadeTitle": "By Decade"
+    }
+  },
+  "bookshelf": {
+    "title": "Bookshelf",
+    "description": "Koimsurai's reading list and notes.",
+    "loading": "Loading shelf...",
+    "heroTitle": "Knowledge Map",
+    "subtitle": "Marking every star I've read in the sea of books",
+    "stats": {
+      "total": "Books",
+      "read": "Read",
+      "reading": "Reading",
+      "avgRating": "Avg rating"
+    },
+    "statuses": {
+      "read": "Read",
+      "reading": "Reading",
+      "toRead": "To read"
+    },
+    "noRating": "Unrated",
+    "searchPlaceholder": "Search title or author...",
+    "filter": "Filter",
+    "zeroGravity": "Zero-G mode",
+    "zg": {
+      "hint": "Drag to rotate · Scroll to zoom · Click a book",
+      "back": "Back to shelf"
+    },
+    "twoDView": "2D view",
+    "filterStatus": "Status",
+    "filterRating": "Rating",
+    "filterSort": "Sort",
+    "filterClear": "Clear filters",
+    "sortOpts": {
+      "dateAddedDesc": "Newest first",
+      "dateAddedAsc": "Oldest first",
+      "titleAsc": "Title A-Z",
+      "titleDesc": "Title Z-A",
+      "ratingDesc": "Highest rated",
+      "publishedDateDesc": "Published date"
+    }
+  },
+  "blog": {
+    "title": "Notes",
+    "metaTitle": "Notes",
+    "description": "Koimsurai's technical notes, learning logs, and life sketches. Frontend architecture, Rust, system design, and more.",
+    "heroTitle": "Notes",
+    "loading": "Loading posts",
+    "search": "Search posts...",
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "popular": "Popular"
+    },
+    "comment": "Comment",
+    "share": "Share",
+    "shareCopied": "Copied!",
+    "postCount": "Posts",
+    "heatmapTotal": "posts",
+    "heatmapAria": "Writing activity over the last 26 weeks",
+    "heatmapLess": "less",
+    "heatmapMore": "more",
+    "codeCopy": "Copy",
+    "codeCopied": "Copied!",
+    "shareCopyLink": "Copy link",
+    "shareMore": "More...",
+    "shareTitle": "Share",
+    "commentTitle": "Comments",
+    "subscribeTitle": "Subscribe",
+    "fontSwitcherTitle": "Switch font"
+  },
+  "watch": {
+    "title": "Watching",
+    "metaDescription": "My anime + film taste — auto-synced from Bahamut Animation and Letterboxd",
+    "subtitle": "My anime and film taste, one page laid out for you",
+    "eyebrowLive": "● Now watching",
+    "favoritesTitle": "Hall of Fame",
+    "favoritesSubtitle": "The four I'd push on anyone — hover to read my take",
+    "recentTitle": "Recently watching",
+    "tasteTitle": "Taste",
+    "typeAnime": "Anime",
+    "typeFilm": "Film"
+  },
+  "setup": {
+    "title": "My Setup",
+    "description": "Koimsurai's gear: main PC, home server, networking, and peripherals."
+  },
+  "info": {
+    "aboutSite": {
+      "title": "This site",
+      "subtitle": "A developer's personal space"
+    },
+    "history": {
+      "title": "History",
+      "subtitle": "Where this site has been"
+    },
+    "messages": {
+      "title": "Messages",
+      "subtitle": "Say whatever you want"
+    },
+    "friends": {
+      "title": "Friends",
+      "subtitle": "Webring"
+    }
+  },
+  "newsletter": {
+    "title": "Subscribe to the newsletter",
+    "namePlaceholder": "Your name (optional)",
+    "emailPlaceholder": "Your email *",
+    "submit": "Subscribe",
+    "success": "Subscribed! Thanks ✨",
+    "errorGeneric": "Subscription failed, please try again",
+    "errorNetwork": "Network error, please try again later",
+    "description": "Get the latest posts and tech notes straight in your inbox.",
+    "privacyNote": "We respect your privacy and never share your info.",
+    "confirmedTitle": "Subscribed √",
+    "alreadyBody": "You subscribed to the newsletter with <em>{{email}}</em>.",
+    "nextNotice": "We'll email you when there's a new post.",
+    "okBtn": "OK",
+    "unsubBtn": "Unsubscribe",
+    "subscribeIntro": "Get notified about new posts. Don't miss a thing.",
+    "namePlaceholderShort": "Name (optional)",
+    "emailPlaceholderShort": "Email *",
+    "processing": "Processing...",
+    "subscribe": "Subscribe",
+    "unsubProcessing": "Processing…",
+    "unsubConfirmJs": "Unsubscribe {{email}}?",
+    "unsubFailed": "Unsubscribe failed",
+    "unsubDone": "Unsubscribed. You're welcome back anytime.",
+    "privacy": "We value your privacy and will not share your information.",
+    "successWithEmoji": "Subscribed! Thanks for joining ✨"
+  },
+  "unsubscribe": {
+    "verifying": "Verifying link…",
+    "confirmTitle": "Confirm unsubscribe?",
+    "processing": "Processing…",
+    "successTitle": "Unsubscribed ✓",
+    "errorTitle": "Something went wrong",
+    "missingToken": "Link is missing a token. Use the unsubscribe link at the bottom of an email.",
+    "invalidLink": "Link is invalid or expired.",
+    "noServer": "Can't reach the server.",
+    "unsubscribeFailed": "Unsubscribe failed",
+    "bodyConfirm": "You're about to unsubscribe <em>{{email}}</em> from the Koimsurai newsletter.<br />Once unsubscribed, future posts won't reach your inbox.",
+    "btnConfirm": "Confirm unsubscribe",
+    "btnKeep": "Never mind, keep me",
+    "bodyDoneEmail": "<em>{{email}}</em> has been removed from the list.",
+    "bodyDoneFarewell": "Sorry to see you go — come back anytime.",
+    "viewLatest": "Check recent posts →",
+    "btnBackHome": "Back to home"
+  },
+  "oauth": {
+    "loggingIn": "Signing in...",
+    "errorNoCode": "Sign-in failed: no authorization code received",
+    "errorGeneric": "Sign-in failed, please try again later"
   }
 }

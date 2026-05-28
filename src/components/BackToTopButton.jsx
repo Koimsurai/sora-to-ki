@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RocketIcon } from '@animateicons/react/lucide';
 import './BackToTopButton.css';
 
 function BackToTopButton({ isHomePage = false }) {
+  const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const [hover, setHover] = useState(false);
@@ -45,7 +47,7 @@ function BackToTopButton({ isHomePage = false }) {
       onClick={scrollToTop}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      aria-label="回到頂部"
+      aria-label={t('backToTop.label')}
     >
       <svg className="back-to-top-ring" viewBox="0 0 48 48" aria-hidden>
         <circle

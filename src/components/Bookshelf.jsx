@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import ZeroGravityLibrary from './ZeroGravityLibrary';
 import SEOHead from './SEOHead';
 import './Bookshelf.css';
@@ -79,6 +80,7 @@ const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }) => {
 };
 
 const Bookshelf = () => {
+  const { t } = useTranslation();
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -177,15 +179,15 @@ const Bookshelf = () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      'read': { text: '已讀', color: '#10b981' },
-      'reading': { text: '閱讀中', color: '#3b82f6' },
-      'to-read': { text: '想讀', color: '#f59e0b' }
+      'read': { text: t('bookshelf.statuses.read'), color: '#10b981' },
+      'reading': { text: t('bookshelf.statuses.reading'), color: '#3b82f6' },
+      'to-read': { text: t('bookshelf.statuses.toRead'), color: '#f59e0b' }
     };
     return badges[status] || badges['to-read'];
   };
 
   const renderStars = (rating) => {
-    if (rating === null || rating === undefined) return <span className="no-rating">未評分</span>;
+    if (rating === null || rating === undefined) return <span className="no-rating">{t('bookshelf.noRating')}</span>;
     const stars = [];
     const numRating = parseFloat(rating);
 
@@ -213,7 +215,7 @@ const Bookshelf = () => {
       <div className="bookshelf-container">
         <div className="loading-spinner">
           <FaBook className="spinning-book" />
-          <p>載入書櫃中...</p>
+          <p>{t('bookshelf.loading')}</p>
         </div>
       </div>
     );
@@ -221,7 +223,7 @@ const Bookshelf = () => {
 
   return (
     <div className="bookshelf-container">
-      <SEOHead title="書架" description="Koimsurai 的閱讀書單與讀書筆記。" />
+      <SEOHead title={t('bookshelf.title')} description={t('bookshelf.description')} />
       {/* ── Nebula Background ── */}
       <div className="bookshelf-dim-overlay" />
       <div className="bookshelf-nebula-bg">
@@ -240,29 +242,29 @@ const Bookshelf = () => {
           transition={{ duration: 0.6 }}
         >
           <h1 className="bookshelf-title">
-            <span className="bs-title-gradient">知識星圖</span>
+            <span className="bs-title-gradient">{t('bookshelf.heroTitle')}</span>
             <span className="bs-title-sub">Knowledge Constellation</span>
           </h1>
-          <p className="bookshelf-subtitle">在浩瀚書海中，標記每一顆閱讀過的星</p>
+          <p className="bookshelf-subtitle">{t('bookshelf.subtitle')}</p>
 
           {/* Stats Strip */}
           {stats && (
             <div className="stats-strip">
               <div className="stats-strip-item">
                 <div className="stats-strip-value">{stats.total_books}</div>
-                <div className="stats-strip-label">藏書</div>
+                <div className="stats-strip-label">{t('bookshelf.stats.total')}</div>
               </div>
               <div className="stats-strip-item">
                 <div className="stats-strip-value">{stats.books_read}</div>
-                <div className="stats-strip-label">已讀</div>
+                <div className="stats-strip-label">{t('bookshelf.stats.read')}</div>
               </div>
               <div className="stats-strip-item">
                 <div className="stats-strip-value">{stats.books_reading}</div>
-                <div className="stats-strip-label">閱讀中</div>
+                <div className="stats-strip-label">{t('bookshelf.stats.reading')}</div>
               </div>
               <div className="stats-strip-item">
                 <div className="stats-strip-value">{stats.average_rating ? `${stats.average_rating}★` : '—'}</div>
-                <div className="stats-strip-label">平均評分</div>
+                <div className="stats-strip-label">{t('bookshelf.stats.avgRating')}</div>
               </div>
             </div>
           )}
@@ -279,7 +281,7 @@ const Bookshelf = () => {
           <FaSearch className="search-icon" />
           <input
             type="text"
-            placeholder="搜尋書名或作者..."
+            placeholder={t('bookshelf.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -295,14 +297,14 @@ const Bookshelf = () => {
           className="filter-toggle"
           onClick={() => setShowFilters(!showFilters)}
         >
-          <FaFilter /> 篩選
+          <FaFilter /> {t('bookshelf.filter')}
         </button>
 
         <button
           className="view-mode-toggle"
           onClick={() => setIs3DMode(!is3DMode)}
         >
-          {is3DMode ? '2D 視圖' : '🌌 零重力模式'}
+          {is3DMode ? t('bookshelf.twoDView') : `🌌 ${t('bookshelf.zeroGravity')}`}
         </button>
       </motion.div>
 
@@ -317,19 +319,19 @@ const Bookshelf = () => {
             transition={{ duration: 0.3 }}
           >
             <div className="filter-group">
-              <label>閱讀狀態</label>
+              <label>{t('bookshelf.filterStatus')}</label>
               <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                <option value="all">全部</option>
-                <option value="read">已讀</option>
-                <option value="reading">閱讀中</option>
-                <option value="to-read">想讀</option>
+                <option value="all">{t('common.all')}</option>
+                <option value="read">{t('bookshelf.statuses.read')}</option>
+                <option value="reading">{t('bookshelf.statuses.reading')}</option>
+                <option value="to-read">{t('bookshelf.statuses.toRead')}</option>
               </select>
             </div>
 
             <div className="filter-group">
-              <label>評分</label>
+              <label>{t('bookshelf.filterRating')}</label>
               <select value={ratingFilter} onChange={(e) => setRatingFilter(e.target.value)}>
-                <option value="all">全部</option>
+                <option value="all">{t('common.all')}</option>
                 <option value="5">⭐⭐⭐⭐⭐</option>
                 <option value="4">⭐⭐⭐⭐</option>
                 <option value="3">⭐⭐⭐</option>
@@ -339,19 +341,19 @@ const Bookshelf = () => {
             </div>
 
             <div className="filter-group">
-              <label>排序</label>
+              <label>{t('bookshelf.filterSort')}</label>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                <option value="date_added_desc">最新加入</option>
-                <option value="date_added_asc">最早加入</option>
-                <option value="title_asc">標題 A-Z</option>
-                <option value="title_desc">標題 Z-A</option>
-                <option value="rating_desc">評分高到低</option>
-                <option value="published_date_desc">出版日期</option>
+                <option value="date_added_desc">{t('bookshelf.sortOpts.dateAddedDesc')}</option>
+                <option value="date_added_asc">{t('bookshelf.sortOpts.dateAddedAsc')}</option>
+                <option value="title_asc">{t('bookshelf.sortOpts.titleAsc')}</option>
+                <option value="title_desc">{t('bookshelf.sortOpts.titleDesc')}</option>
+                <option value="rating_desc">{t('bookshelf.sortOpts.ratingDesc')}</option>
+                <option value="published_date_desc">{t('bookshelf.sortOpts.publishedDateDesc')}</option>
               </select>
             </div>
 
             <button className="clear-filters" onClick={clearFilters}>
-              清除篩選
+              {t('bookshelf.filterClear')}
             </button>
           </motion.div>
         )}

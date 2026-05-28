@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages,
   FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss,
@@ -16,6 +17,7 @@ import meAvatar from '../assets/me.jpg';
 import './Header.css';
 
 function Header({ activeSection }) {
+  const { t } = useTranslation();
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showHomeMenu, setShowHomeMenu] = useState(false); // 新增這行
@@ -138,14 +140,14 @@ function Header({ activeSection }) {
 
   return (
     <header className={'site-header ' + (isScrolled && !mobileOpen ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '')}>
-      <Link to="/" className="site-brand" aria-label="返回首頁" onClick={() => setMobileOpen(false)}>
+      <Link to="/" className="site-brand" aria-label={t('nav.backHome')} onClick={() => setMobileOpen(false)}>
         <img src={meAvatar} alt="" className="site-brand-img" />
       </Link>
       <nav className={'site-nav ' + (mobileOpen ? 'mobile-open' : '')} onMouseMove={handleMouseMove}>
         <MegaMenuRoot className="nav-list nav-list-mega">
           <MegaMenuItem
             id="home"
-            label="首頁"
+            label={t('nav.home')}
             icon={<FaHome />}
             to="/"
             active={(isHomePage && !location.hash)
@@ -161,7 +163,7 @@ function Header({ activeSection }) {
 
           <MegaMenuItem
             id="blog"
-            label="手記"
+            label={t('nav.notes')}
             icon={<FaBookOpen />}
             to="/blog"
             active={location.pathname.startsWith('/blog')
@@ -173,7 +175,7 @@ function Header({ activeSection }) {
 
           <MegaMenuItem
             id="more"
-            label="更多"
+            label={t('nav.more')}
             active={location.pathname.startsWith('/photos')
                  || location.pathname.startsWith('/activity')
                  || location.pathname.startsWith('/journey')
@@ -213,17 +215,17 @@ function Header({ activeSection }) {
                     <div className="user-dropdown-divider" />
                     {isAdmin && (
                       <button className="user-dropdown-item" onClick={() => { navigate('/admin'); setShowUserMenu(false); }}>
-                        <FaCog /> 進入後台
+                        <FaCog /> {t('user.adminPanel')}
                       </button>
                     )}
                     <button className="user-dropdown-item" onClick={() => { logout(); setShowUserMenu(false); }}>
-                      <FaSignOutAlt /> 登出
+                      <FaSignOutAlt /> {t('user.logout')}
                     </button>
                   </>
                 ) : (
                   <>
                     <div className="user-dropdown-header">
-                      <span className="user-dropdown-name">社交帳號登入</span>
+                      <span className="user-dropdown-name">{t('user.signInLabel')}</span>
                     </div>
                     <div className="user-dropdown-divider" />
                     {providers.github?.enabled && (
@@ -232,7 +234,7 @@ function Header({ activeSection }) {
                         const redirectUri = `${window.location.origin}/auth/callback`;
                         window.location.href = getGitHubAuthUrl(redirectUri) + '&state=github';
                       }}>
-                        <FaGithub /> GitHub 登入
+                        <FaGithub /> {t('user.signInWithGithub')}
                       </button>
                     )}
                     {providers.google?.enabled && (
@@ -241,11 +243,11 @@ function Header({ activeSection }) {
                         const redirectUri = `${window.location.origin}/auth/callback`;
                         window.location.href = getGoogleAuthUrl(redirectUri) + '&state=google';
                       }}>
-                        <FaGoogle /> Google 登入
+                        <FaGoogle /> {t('user.signInWithGoogle')}
                       </button>
                     )}
                     {!providers.github?.enabled && !providers.google?.enabled && (
-                      <div className="user-dropdown-item disabled">第三方登入尚未設定</div>
+                      <div className="user-dropdown-item disabled">{t('user.notConfigured')}</div>
                     )}
                   </>
                 )}
@@ -264,14 +266,14 @@ function Header({ activeSection }) {
           <>
             <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowDownloadModal(false)} />
             <motion.div className="download-popover" initial={{ opacity: 0, y: -10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2 }}>
-              <h3>選擇要下載的履歷</h3>
+              <h3>{t('nav.downloadResume')}</h3>
               <a href="/Resume/Software Engineer.pdf" download="Koimsurai_Resume_Software_Engineer.pdf" className="popover-link">
-                <span>💼</span> 軟體工程師
+                <span>💼</span> {t('nav.resumeSE')}
               </a>
               <a href="/Resume/School Clubs.pdf" download="Koimsurai_Resume_School_Clubs.pdf" className="popover-link">
-                <span>🎓</span> 社團經歷
+                <span>🎓</span> {t('nav.resumeClubs')}
               </a>
-              <button className="popover-close" onClick={() => setShowDownloadModal(false)}>關閉</button>
+              <button className="popover-close" onClick={() => setShowDownloadModal(false)}>{t('common.close')}</button>
             </motion.div>
           </>
         )}

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
 import Comments from './Comments';
 import SEOHead from './SEOHead';
 import NebulaBackground from './NebulaBackground';
@@ -82,6 +83,7 @@ const stagger = {
    ════════════════════════════════════════════════ */
 
 const NoteCard = React.memo(({ post, index, onOpenComments }) => {
+  const { t } = useTranslation();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes || 0);
   const [shareToast, setShareToast] = useState(false);
@@ -216,11 +218,11 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
           </button>
           <button className="note-action-btn" onClick={handleComment}>
             <FaRegComment />
-            <span>留言</span>
+            <span>{t('blog.comment')}</span>
           </button>
           <button className={`note-action-btn${shareToast ? ' shared' : ''}`} onClick={handleShare}>
             <FaShareAlt />
-            <span>{shareToast ? '已複製!' : '分享'}</span>
+            <span>{shareToast ? t('blog.shareCopied') : t('blog.share')}</span>
           </button>
           {post.view_count > 0 && (
             <span className="note-views">
@@ -238,6 +240,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
    ActivityHeatmap — 寫作活動熱圖（過去 26 週）
    ════════════════════════════════════════════════ */
 const ActivityHeatmap = React.memo(({ posts }) => {
+  const { t } = useTranslation();
   const cells = useMemo(() => {
     const WEEKS = 26;
     const today = new Date();
@@ -285,9 +288,9 @@ const ActivityHeatmap = React.memo(({ posts }) => {
     <div className="activity-heatmap">
       <div className="heatmap-stats">
         <span className="heatmap-total">{totalPosts}</span>
-        <span className="heatmap-total-label">篇文章</span>
+        <span className="heatmap-total-label">{t('blog.heatmapTotal')}</span>
       </div>
-      <div className="heatmap-grid" role="img" aria-label="近 26 週寫作活動">
+      <div className="heatmap-grid" role="img" aria-label={t('blog.heatmapAria')}>
         {cells.map((week, wi) => (
           <div key={wi} className="heatmap-col">
             {week.map((cell, di) => (
@@ -301,13 +304,13 @@ const ActivityHeatmap = React.memo(({ posts }) => {
         ))}
       </div>
       <div className="heatmap-legend">
-        <span>少</span>
+        <span>{t('blog.heatmapLess')}</span>
         <span className="heatmap-cell heatmap-level-0" />
         <span className="heatmap-cell heatmap-level-1" />
         <span className="heatmap-cell heatmap-level-2" />
         <span className="heatmap-cell heatmap-level-3" />
         <span className="heatmap-cell heatmap-level-4" />
-        <span>多</span>
+        <span>{t('blog.heatmapMore')}</span>
       </div>
     </div>
   );
@@ -318,6 +321,7 @@ ActivityHeatmap.displayName = 'ActivityHeatmap';
    Blog 主頁面
    ════════════════════════════════════════════════ */
 function Blog() {
+  const { t } = useTranslation();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -441,7 +445,7 @@ function Blog() {
     return (
       <div className="blog-page">
         <NebulaBackground />
-        <KoimLoader fullscreen text="正在載入文章" />
+        <KoimLoader fullscreen text={t('blog.loading')} />
       </div>
     );
   }
@@ -461,8 +465,8 @@ function Blog() {
   return (
     <div className="blog-page">
       <SEOHead
-        title="手記 · Notes"
-        description="Koimsurai 的技術手記、學習筆記與生活隨筆。涵蓋前端架構、Rust、系統設計等主題。"
+        title={t('blog.metaTitle')}
+        description={t('blog.description')}
         path="/blog"
       />
 
@@ -477,7 +481,7 @@ function Blog() {
           {/* Hero 標題 */}
           <motion.header className="blog-hero" initial="hidden" animate="visible" variants={fadeUp}>
             <h1 className="blog-hero-title">
-              <span className="blog-title-gradient">手記</span>
+              <span className="blog-title-gradient">{t('blog.heroTitle')}</span>
               <span className="blog-title-sub">· Notes</span>
             </h1>
             <p className="blog-hero-desc">
@@ -491,7 +495,7 @@ function Blog() {
             <input
               type="text"
               className="blog-search-input"
-              placeholder="搜尋文章..."
+              placeholder={t('blog.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -506,9 +510,9 @@ function Blog() {
           <motion.div className="blog-sort-row" variants={fadeUp} initial="hidden" animate="visible" custom={2}>
             <div className="sort-pills">
               {[
-                { value: 'newest', label: '最新' },
-                { value: 'oldest', label: '最舊' },
-                { value: 'popular', label: '熱門' },
+                { value: 'newest', label: t('blog.sort.newest') },
+                { value: 'oldest', label: t('blog.sort.oldest') },
+                { value: 'popular', label: t('blog.sort.popular') },
               ].map(opt => (
                 <button
                   key={opt.value}
