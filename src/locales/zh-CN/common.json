@@ -348,16 +348,39 @@
     "typeAnime": "动画",
     "typeFilm": "电影",
     "stats": {
-      "yearLabel": "今年",
       "animeLabel": "部动画",
       "filmLabel": "部电影",
-      "avgLabel": "平均评分"
+      "tvLabel": "部影集"
     },
     "recentGroups": {
       "thisWeek": "本周",
       "earlier": "更早"
     },
-    "ending": "下一部会是什么？我自己也很期待。"
+    "ending": "下一部会是什么？我自己也很期待。",
+    "typeTv": "影集",
+    "library": {
+      "title": "看过的完整清单",
+      "subtitle": "所有看过的动画、电影、影集，一页摊开",
+      "tabs": {
+        "anime": "动画",
+        "film": "电影",
+        "tv": "影集"
+      },
+      "search": "搜寻标题…",
+      "sort": {
+        "newest": "最近看的",
+        "oldest": "最早看的",
+        "titleAsc": "标题 A→Z",
+        "titleDesc": "标题 Z→A"
+      },
+      "empty": "没有符合的结果",
+      "epsSuffix": "集",
+      "loading": "载入中…",
+      "openOnLetterboxd": "在 Letterboxd 开启",
+      "openOnTmdb": "在 TMDb 开启",
+      "openOnBahamut": "在动画疯开启",
+      "viewWatch": "← 回 「在看什么」"
+    }
   },
   "setup": {
     "title": "我的装备 · My Setup",

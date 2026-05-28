@@ -348,16 +348,39 @@
     "typeAnime": "アニメ",
     "typeFilm": "映画",
     "stats": {
-      "yearLabel": "今年",
       "animeLabel": "アニメ",
       "filmLabel": "映画",
-      "avgLabel": "平均評価"
+      "tvLabel": "ドラマ作品"
     },
     "recentGroups": {
       "thisWeek": "今週",
       "earlier": "それより前"
     },
-    "ending": "次は何を観るかな。自分でも楽しみ。"
+    "ending": "次は何を観るかな。自分でも楽しみ。",
+    "typeTv": "ドラマ",
+    "library": {
+      "title": "視聴ライブラリ",
+      "subtitle": "観たアニメ・映画・ドラマをまとめて一枚に",
+      "tabs": {
+        "anime": "アニメ",
+        "film": "映画",
+        "tv": "ドラマ"
+      },
+      "search": "タイトルで検索…",
+      "sort": {
+        "newest": "最近観た順",
+        "oldest": "古い順",
+        "titleAsc": "タイトル A→Z",
+        "titleDesc": "タイトル Z→A"
+      },
+      "empty": "該当なし",
+      "epsSuffix": "話",
+      "loading": "読み込み中…",
+      "openOnLetterboxd": "Letterboxd で開く",
+      "openOnTmdb": "TMDb で開く",
+      "openOnBahamut": "動畫瘋で開く",
+      "viewWatch": "← 「今みているもの」へ戻る"
+    }
   },
   "setup": {
     "title": "私のセットアップ · My Setup",

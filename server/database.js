@@ -393,6 +393,41 @@ function initializeDatabase() {
       }
     });
 
+    // ── film_history：電影觀看紀錄（Netflix CSV import + 之後 Letterboxd RSS）──
+    // PRIMARY KEY: id auto；唯一鍵 (title, watched_date) 防重複匯入
+    db.run(`
+      CREATE TABLE IF NOT EXISTS film_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        watched_date DATE,
+        rating INTEGER,
+        source TEXT,
+        tmdb_id INTEGER,
+        poster_url TEXT,
+        release_year INTEGER,
+        genres TEXT,
+        notes TEXT,
+        synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(title, watched_date)
+      )
+    `);
+
+    // ── tv_history：影集觀看紀錄 — 一筆 = 一集（Netflix CSV 是 episode-level）──
+    db.run(`
+      CREATE TABLE IF NOT EXISTS tv_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        series_name TEXT NOT NULL,
+        episode_label TEXT,
+        watched_date DATE,
+        source TEXT,
+        tmdb_id INTEGER,
+        poster_url TEXT,
+        genres TEXT,
+        synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(series_name, episode_label, watched_date)
+      )
+    `);
+
     // 檢查並更新 comments 表
     db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='comments'", (err, table) => {
       if (err) {

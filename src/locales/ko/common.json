@@ -348,16 +348,39 @@
     "typeAnime": "애니",
     "typeFilm": "영화",
     "stats": {
-      "yearLabel": "올해",
       "animeLabel": "편 애니",
       "filmLabel": "편 영화",
-      "avgLabel": "평균 평점"
+      "tvLabel": "편 드라마"
     },
     "recentGroups": {
       "thisWeek": "이번 주",
       "earlier": "더 이전"
     },
-    "ending": "다음은 뭘 볼까. 나도 궁금해요."
+    "ending": "다음은 뭘 볼까. 나도 궁금해요.",
+    "typeTv": "드라마",
+    "library": {
+      "title": "시청 라이브러리",
+      "subtitle": "본 애니·영화·드라마를 한 페이지에 모았어요",
+      "tabs": {
+        "anime": "애니",
+        "film": "영화",
+        "tv": "드라마"
+      },
+      "search": "제목 검색…",
+      "sort": {
+        "newest": "최근 본 순",
+        "oldest": "오래 전 본 순",
+        "titleAsc": "제목 A→Z",
+        "titleDesc": "제목 Z→A"
+      },
+      "empty": "결과 없음",
+      "epsSuffix": "화",
+      "loading": "불러오는 중…",
+      "openOnLetterboxd": "Letterboxd에서 열기",
+      "openOnTmdb": "TMDb에서 열기",
+      "openOnBahamut": "動畫瘋에서 열기",
+      "viewWatch": "← 「지금 보고 있는 것」으로 돌아가기"
+    }
   },
   "setup": {
     "title": "내 장비 · My Setup",

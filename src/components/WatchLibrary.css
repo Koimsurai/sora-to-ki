@@ -1,0 +1,314 @@
+/* ──────────────────────────────────────────────────────────────
+   /watch/library — Bookshelf 風完整清單頁
+─────────────────────────────────────────────────────────────── */
+
+.wl-page {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  background: transparent;
+  padding: 120px 24px 120px;
+}
+
+.wl-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgba(6, 5, 14, 0.55);
+  pointer-events: none;
+}
+
+.wl-wrap {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── header ── */
+.wl-header { margin-bottom: 2.5rem; }
+
+.wl-back {
+  display: inline-block;
+  font-size: 0.86rem;
+  color: rgba(216, 180, 254, 0.7);
+  text-decoration: none;
+  border-bottom: 1px dashed transparent;
+  margin-bottom: 18px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.wl-back:hover { color: rgba(216, 180, 254, 1); border-bottom-color: rgba(216, 180, 254, 0.5); }
+
+.wl-title {
+  font-size: clamp(2rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(244, 244, 245, 0.98);
+  margin: 0 0 10px;
+}
+
+.wl-subtitle {
+  font-size: 0.98rem;
+  color: rgba(229, 229, 245, 0.55);
+  margin: 0;
+}
+
+/* ── tabs ── */
+.wl-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wl-tab {
+  position: relative;
+  background: transparent;
+  border: none;
+  padding: 12px 4px 14px;
+  cursor: pointer;
+  color: rgba(229, 229, 245, 0.5);
+  font-size: 0.96rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  transition: color 0.2s ease;
+}
+
+.wl-tab + .wl-tab { margin-left: 22px; }
+
+.wl-tab:hover { color: rgba(244, 244, 245, 0.88); }
+
+.wl-tab.active { color: rgba(244, 244, 245, 1); }
+
+.wl-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1.5px;
+  background: linear-gradient(90deg, rgba(216, 180, 254, 0), rgba(216, 180, 254, 0.85), rgba(216, 180, 254, 0));
+}
+
+.wl-tab-count {
+  font-size: 0.72rem;
+  color: rgba(229, 229, 245, 0.4);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s ease;
+}
+
+.wl-tab.active .wl-tab-count { color: rgba(216, 180, 254, 0.75); }
+
+/* ── controls ── */
+.wl-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.wl-search {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: rgba(229, 229, 245, 0.5);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.wl-search:focus-within {
+  border-color: rgba(216, 180, 254, 0.4);
+  background: rgba(216, 180, 254, 0.04);
+  color: rgba(216, 180, 254, 0.85);
+}
+
+.wl-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 12px 0;
+  color: rgba(244, 244, 245, 0.95);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.wl-search input::placeholder { color: rgba(229, 229, 245, 0.4); }
+
+/* custom sort popup（自製，不用 native <select>）*/
+.wl-sort { position: relative; }
+
+.wl-sort-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: rgba(244, 244, 245, 0.88);
+  font-size: 0.92rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  min-width: 140px;
+  justify-content: space-between;
+}
+
+.wl-sort-trigger:hover, .wl-sort-trigger[aria-expanded="true"] {
+  border-color: rgba(216, 180, 254, 0.4);
+  background: rgba(216, 180, 254, 0.06);
+  color: rgba(244, 244, 245, 1);
+}
+
+.wl-sort-chev {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+.wl-sort-chev.is-open { transform: rotate(180deg); }
+
+.wl-sort-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  min-width: 160px;
+  background: rgba(26, 22, 38, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(216, 180, 254, 0.18);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+  transform-origin: top right;
+}
+
+.wl-sort-menu li { margin: 0; }
+
+.wl-sort-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 0.88rem;
+  color: rgba(229, 229, 245, 0.75);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wl-sort-item:hover {
+  background: rgba(216, 180, 254, 0.1);
+  color: rgba(244, 244, 245, 1);
+}
+
+.wl-sort-item.active {
+  color: rgba(216, 180, 254, 0.95);
+  background: rgba(216, 180, 254, 0.08);
+}
+
+/* ── grid ── */
+.wl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 24px;
+}
+
+.wl-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wl-card:hover { transform: translateY(-4px); }
+
+.wl-card-poster {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  margin-bottom: 10px;
+  transition: box-shadow 0.3s ease;
+}
+
+.wl-card:hover .wl-card-poster {
+  box-shadow: 0 18px 40px rgba(127, 90, 240, 0.28);
+}
+
+.wl-card-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.wl-card-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 2.4rem;
+  opacity: 0.4;
+}
+
+.wl-card-meta { padding: 0 2px; }
+
+.wl-card-title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: rgba(244, 244, 245, 0.95);
+  margin: 0 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.wl-card-sub {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.76rem;
+  color: rgba(229, 229, 245, 0.45);
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.wl-card-date {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── info / loading / empty ── */
+.wl-info {
+  text-align: center;
+  font-size: 0.95rem;
+  color: rgba(229, 229, 245, 0.5);
+  padding: 4rem 0;
+}
+
+.wl-info--err { color: rgba(255, 180, 180, 0.65); }
+
+/* ── RWD ── */
+@media (max-width: 720px) {
+  .wl-page { padding: 100px 16px 90px; }
+  .wl-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 16px; }
+  .wl-card-title { font-size: 0.82rem; }
+  .wl-card-sub { font-size: 0.72rem; }
+  .wl-tab { padding: 10px 12px; font-size: 0.9rem; }
+}

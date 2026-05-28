@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
@@ -64,10 +65,12 @@ const FAVORITES_BY_LANG = {
   ],
 };
 
-/* 電影最近在看（暫時手動，等 Letterboxd / Trakt 串好替換） */
-const FILMS_RECENT = [
-  { id: 'f1', type: 'film', poster: TMDB('/d5NXSklXo0qyIYkgV94XAgMIckC.jpg'), rating: 4, isoDate: '2026-05-26', date: '5/26', titleByLang: { 'zh-TW': '沙丘', 'zh-CN': '沙丘', en: 'Dune', ja: 'デューン 砂の惑星', ko: '듄' } },
-];
+/* short date formatter: '2026-02-07' → '2/7' */
+const toShortDate = (iso) => {
+  if (!iso) return '';
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${parseInt(m[2], 10)}/${parseInt(m[3], 10)}` : '';
+};
 
 const TASTE_BY_LANG = {
   'zh-TW': {
@@ -127,15 +130,26 @@ function Watch() {
   const { t, i18n } = useTranslation();
   const lang = i18n.resolvedLanguage || 'zh-TW';
   const [animeHistory, setAnimeHistory] = useState(null);
+  const [films, setFilms] = useState(null);
+  const [series, setSeries] = useState(null);
+  const [stats, setStats] = useState(null);
   const [err, setErr] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/anime/history?limit=200`);
-        const json = await res.json();
-        if (!cancelled) setAnimeHistory(json.history || []);
+        const [a, f, s, st] = await Promise.all([
+          fetch(`${API_URL}/anime/history?limit=200`).then((r) => r.json()),
+          fetch(`${API_URL}/films/recent?limit=20`).then((r) => r.json()),
+          fetch(`${API_URL}/tv/recent?limit=20`).then((r) => r.json()),
+          fetch(`${API_URL}/watch/stats`).then((r) => r.json()),
+        ]);
+        if (cancelled) return;
+        setAnimeHistory(a.history || []);
+        setFilms(f.films || []);
+        setSeries(s.series || []);
+        setStats(st);
       } catch (e) {
         if (!cancelled) setErr(e.message || 'fetch failed');
       }
@@ -144,9 +158,9 @@ function Watch() {
   }, []);
 
   /* ── 從 anime_history 聚合成「每部動畫一筆」── */
-  const { now, recentAnime, animeCount } = useMemo(() => {
+  const { now, recentAnime } = useMemo(() => {
     if (!animeHistory || animeHistory.length === 0) {
-      return { now: null, recentAnime: [], animeCount: 0 };
+      return { now: null, recentAnime: [] };
     }
     // group by anime_sn，每部取 last_watched_at 最新一筆做代表
     const byAnime = new Map();
@@ -197,15 +211,34 @@ function Watch() {
           bahamutUrl: `https://ani.gamer.com.tw/animeVideo.php?sn=${g.video_sn}`,
         };
       }),
-      animeCount: grouped.length,
     };
   }, [animeHistory]);
 
   const favsLocale = FAVORITES_BY_LANG[lang] || FAVORITES_BY_LANG['zh-TW'];
   const favorites = FAVORITES_STATIC.map((s, i) => ({ ...s, ...favsLocale[i] }));
 
-  const films = FILMS_RECENT.map((f) => ({ ...f, title: f.titleByLang[lang] || f.titleByLang['zh-TW'] }));
-  const recentAll = [...recentAnime, ...films].sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || '')).slice(0, 12);
+  /* 把三條源 normalize 成同 shape，依 isoDate DESC 合流，取 12 筆 */
+  const filmItems = (films || []).map((f) => ({
+    id: `f${f.id}`,
+    type: 'film',
+    title: f.title,
+    poster: f.poster_url,
+    isoDate: f.watched_date,
+    date: toShortDate(f.watched_date),
+    year: f.release_year,
+  }));
+  const tvItems = (series || []).map((s) => ({
+    id: `t${s.series_name}`,
+    type: 'tv',
+    title: s.series_name,
+    poster: s.poster_url,
+    isoDate: s.last_watched,
+    date: toShortDate(s.last_watched),
+    epCount: s.ep_count,
+  }));
+  const recentAll = [...recentAnime, ...filmItems, ...tvItems]
+    .sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
+    .slice(0, 14);
   const recentGrouped = groupByWeek(recentAll);
 
   const taste = TASTE_BY_LANG[lang] || TASTE_BY_LANG['zh-TW'];
@@ -216,11 +249,21 @@ function Watch() {
       <img className="w-recent-thumb" src={r.poster} alt={r.title} loading="lazy" />
       <span className="w-recent-title">{r.title}</span>
       <span className="w-recent-detail">
-        {r.type === 'anime'
-          ? (r.episode
-              ? interpolate(epTemplate, { n: r.episode })
-              : <span className="w-recent-badge w-recent-badge--anime">{t('watch.typeAnime')}</span>)
-          : (r.rating ? <Stars n={r.rating} /> : <span className="w-recent-badge w-recent-badge--film">{t('watch.typeFilm')}</span>)}
+        {r.type === 'anime' && (r.episode
+          ? interpolate(epTemplate, { n: r.episode })
+          : <span className="w-recent-badge w-recent-badge--anime">{t('watch.typeAnime')}</span>)}
+        {r.type === 'film' && (
+          <>
+            <span className="w-recent-badge w-recent-badge--film">{t('watch.typeFilm')}</span>
+            {r.year ? <span className="w-recent-year">{r.year}</span> : null}
+          </>
+        )}
+        {r.type === 'tv' && (
+          <>
+            <span className="w-recent-badge w-recent-badge--tv">{t('watch.typeTv')}</span>
+            <span className="w-recent-eps">{interpolate(epTemplate, { n: r.epCount })}</span>
+          </>
+        )}
       </span>
       <span className="w-recent-date">{r.date}</span>
     </li>
@@ -239,18 +282,17 @@ function Watch() {
 
           <div className="w-stats">
             <div className="w-stat">
-              <span className="w-stat-num">{animeCount || '—'}</span>
+              <span className="w-stat-num">{stats?.animeCount ?? '—'}</span>
               <span className="w-stat-label">{t('watch.stats.animeLabel')}</span>
             </div>
             <div className="w-stat">
-              <span className="w-stat-num">{FILMS_RECENT.length || '—'}</span>
+              <span className="w-stat-num">{stats?.filmCount ?? '—'}</span>
               <span className="w-stat-label">{t('watch.stats.filmLabel')}</span>
             </div>
             <div className="w-stat">
-              <span className="w-stat-num">★ {FAVORITES_STATIC.length > 0 ? (FAVORITES_STATIC.reduce((s, f) => s + f.rating, 0) / FAVORITES_STATIC.length).toFixed(1) : '—'}</span>
-              <span className="w-stat-label">{t('watch.stats.avgLabel')}</span>
+              <span className="w-stat-num">{stats?.tvSeriesCount ?? '—'}</span>
+              <span className="w-stat-label">{t('watch.stats.tvLabel')}</span>
             </div>
-            <span className="w-stats-year">{t('watch.stats.yearLabel')}</span>
           </div>
         </motion.header>
 
@@ -294,7 +336,12 @@ function Watch() {
 
         {/* 最近在看（依週分組） */}
         <motion.section className="w-section" {...reveal}>
-          <h2 className="w-h2">{t('watch.recentTitle')}</h2>
+          <div className="w-h2-row">
+            <h2 className="w-h2">{t('watch.recentTitle')}</h2>
+            <Link to="/watch/library" className="w-section-link">
+              {t('watch.library.title')} →
+            </Link>
+          </div>
           {err && <p className="w-recent-err">⚠️ {err}</p>}
           {recentGrouped.thisWeek.length > 0 && (
             <>

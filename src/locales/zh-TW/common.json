@@ -348,16 +348,39 @@
     "typeAnime": "動畫",
     "typeFilm": "電影",
     "stats": {
-      "yearLabel": "今年",
       "animeLabel": "部動畫",
       "filmLabel": "部電影",
-      "avgLabel": "平均評分"
+      "tvLabel": "部影集"
     },
     "recentGroups": {
       "thisWeek": "本週",
       "earlier": "更早"
     },
-    "ending": "下一部會是什麼？我自己也很期待。"
+    "ending": "下一部會是什麼？我自己也很期待。",
+    "typeTv": "影集",
+    "library": {
+      "title": "看過的完整清單",
+      "subtitle": "所有看過的動畫、電影、影集，一頁攤開",
+      "tabs": {
+        "anime": "動畫",
+        "film": "電影",
+        "tv": "影集"
+      },
+      "search": "搜尋標題…",
+      "sort": {
+        "newest": "最近看的",
+        "oldest": "最早看的",
+        "titleAsc": "標題 A→Z",
+        "titleDesc": "標題 Z→A"
+      },
+      "empty": "沒有符合的結果",
+      "epsSuffix": "集",
+      "loading": "載入中…",
+      "openOnLetterboxd": "在 Letterboxd 開啟",
+      "openOnTmdb": "在 TMDb 開啟",
+      "openOnBahamut": "在動畫瘋開啟",
+      "viewWatch": "← 回 「在看什麼」"
+    }
   },
   "setup": {
     "title": "我的配備 · My Setup",

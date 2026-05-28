@@ -61,6 +61,7 @@ const LazyMusic = lazy(() => import('./components/Music'));
 const LazyCinema = lazy(() => import('./components/Cinema'));
 const LazyAnime = lazy(() => import('./components/Anime'));
 const LazyWatch = lazy(() => import('./components/Watch'));
+const LazyWatchLibrary = lazy(() => import('./components/WatchLibrary'));
 const LazySetup = lazy(() => import('./components/Setup'));
 const LazyAboutSite = lazy(() => import('./components/AboutSite'));
 const LazyHistory = lazy(() => import('./components/History'));
@@ -322,6 +323,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/cinema" element={<Suspense fallback={<LoadingFallback />}><LazyCinema /></Suspense>} />
           <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />
           <Route path="/watch" element={<Suspense fallback={<LoadingFallback />}><LazyWatch /></Suspense>} />
+          <Route path="/watch/library" element={<Suspense fallback={<LoadingFallback />}><LazyWatchLibrary /></Suspense>} />
           <Route path="/setup" element={<Suspense fallback={<LoadingFallback />}><LazySetup /></Suspense>} />
           <Route path="/about-site" element={<Suspense fallback={<LoadingFallback />}><LazyAboutSite /></Suspense>} />
           <Route path="/history" element={<Suspense fallback={<LoadingFallback />}><LazyHistory /></Suspense>} />

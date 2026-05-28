@@ -4674,38 +4674,50 @@ async function syncBahamutHistory() {
       await new Promise((r) => setTimeout(r, 400));
     }
 
-    // 3) upsert 每筆 history（用 SDK 給的 watchedAt + episode，不再 CURRENT_TIMESTAMP）
+    // 3) upsert 每集 — 展開 SDK 提供的 nested history[]（每個 anime 的全部觀看集數）
+    //    每筆對應一集：(anime_sn, video_sn) 為主鍵。title 存系列名（清理掉 "[8]" 後綴）。
     for (const entry of allHistory) {
-      const { animeSn, videoSn, title, episode, watchedAt } = entry;
-      if (!animeSn || !videoSn) continue;
+      const { animeSn, title: seriesTitle } = entry;
+      if (!animeSn) continue;
       const coverUrl = existingCovers.get(animeSn) || '';
-      // watchedAt 是 "2026-05-27 13:20:00" 字串（Bahamut 本地時間），SQLite 直接吃
-      const watchAtSql = watchedAt || null;
+      // entry.raw.history 是 [{ videoSn, title: '婚姻劇毒 [8]', watchTime: '2026-05-28...' }, ...]
+      // 若沒 raw 退回單筆（最新一集）
+      const eps = entry.raw?.history?.length
+        ? entry.raw.history
+        : [{ videoSn: entry.videoSn, title: entry.title, watchTime: entry.watchedAt }];
 
-      const isNew = await new Promise((resolve) => {
-        db.get(
-          'SELECT 1 FROM anime_history WHERE anime_sn = ? AND video_sn = ?',
-          [animeSn, videoSn],
-          (err, row) => resolve(!err && !row),
-        );
-      });
-      if (isNew) newEntries += 1;
+      for (const ep of eps) {
+        if (!ep?.videoSn) continue;
+        // 從 "婚姻劇毒 [8]" 抽出 "8"；抽不到就 null
+        const m = String(ep.title || '').match(/\[([^\]]+)\]\s*$/);
+        const epLabel = m ? m[1] : null;
+        const watchAtSql = ep.watchTime || null;
 
-      await new Promise((resolve) => {
-        db.run(
-          `INSERT INTO anime_history (anime_sn, video_sn, title, cover_url, episode, last_watched_at, synced_at)
-           VALUES (?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)
-           ON CONFLICT(anime_sn, video_sn) DO UPDATE SET
-             title = excluded.title,
-             cover_url = COALESCE(NULLIF(excluded.cover_url, ''), anime_history.cover_url),
-             episode = COALESCE(excluded.episode, anime_history.episode),
-             last_watched_at = COALESCE(excluded.last_watched_at, anime_history.last_watched_at),
-             synced_at = CURRENT_TIMESTAMP`,
-          [animeSn, videoSn, title || '', coverUrl, episode || null, watchAtSql],
-          () => resolve(),
-        );
-      });
-      totalEntries += 1;
+        const isNew = await new Promise((resolve) => {
+          db.get(
+            'SELECT 1 FROM anime_history WHERE anime_sn = ? AND video_sn = ?',
+            [animeSn, ep.videoSn],
+            (err, row) => resolve(!err && !row),
+          );
+        });
+        if (isNew) newEntries += 1;
+
+        await new Promise((resolve) => {
+          db.run(
+            `INSERT INTO anime_history (anime_sn, video_sn, title, cover_url, episode, last_watched_at, synced_at)
+             VALUES (?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)
+             ON CONFLICT(anime_sn, video_sn) DO UPDATE SET
+               title = excluded.title,
+               cover_url = COALESCE(NULLIF(excluded.cover_url, ''), anime_history.cover_url),
+               episode = COALESCE(excluded.episode, anime_history.episode),
+               last_watched_at = COALESCE(excluded.last_watched_at, anime_history.last_watched_at),
+               synced_at = CURRENT_TIMESTAMP`,
+            [animeSn, ep.videoSn, seriesTitle || '', coverUrl, epLabel, watchAtSql],
+            () => resolve(),
+          );
+        });
+        totalEntries += 1;
+      }
     }
 
     console.log(`[Bahamut] sync done: ${totalEntries} entries, ${newEntries} new, ${coversFetched} covers fetched (${uniqueAnimeSns.length} unique animes)`);
@@ -4718,7 +4730,8 @@ async function syncBahamutHistory() {
 
 // GET /api/anime/history — 公開讀取最近觀看
 apiRouter.get('/anime/history', (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
+  // cap 2000 (DB 約 900 列、之後成長有空間；前端 library 一次拿完 group by anime_sn)
+  const limit = Math.min(parseInt(req.query.limit || '50', 10), 2000);
   db.all(
     `SELECT anime_sn, video_sn, title, cover_url, episode, last_watched_at
      FROM anime_history
@@ -4732,9 +4745,282 @@ apiRouter.get('/anime/history', (req, res) => {
   );
 });
 
+// GET /api/films/recent — 最近看的電影（id auto，依 watched_date DESC）
+apiRouter.get('/films/recent', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
+  db.all(
+    `SELECT id, title, watched_date, rating, source, tmdb_id, poster_url, release_year, genres
+     FROM film_history
+     ORDER BY watched_date DESC NULLS LAST, id DESC
+     LIMIT ?`,
+    [limit],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'success', films: rows });
+    },
+  );
+});
+
+// GET /api/tv/recent — 影集，依 series 聚合，每部一筆，附 episode count + 最新觀看日
+apiRouter.get('/tv/recent', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
+  db.all(
+    `SELECT
+       series_name,
+       MAX(watched_date) AS last_watched,
+       COUNT(*) AS ep_count,
+       MAX(tmdb_id) AS tmdb_id,
+       MAX(poster_url) AS poster_url,
+       MAX(genres) AS genres,
+       MAX(source) AS source
+     FROM tv_history
+     GROUP BY series_name
+     ORDER BY last_watched DESC NULLS LAST
+     LIMIT ?`,
+    [limit],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'success', series: rows });
+    },
+  );
+});
+
+// GET /api/watch/stats — 給 Watch 頁面 STATS chip 用
+apiRouter.get('/watch/stats', (req, res) => {
+  const queries = {
+    animeCount: 'SELECT COUNT(DISTINCT anime_sn) AS n FROM anime_history',
+    animeEpisodes: 'SELECT COUNT(*) AS n FROM anime_history',
+    filmCount: 'SELECT COUNT(*) AS n FROM film_history',
+    tvSeriesCount: 'SELECT COUNT(DISTINCT series_name) AS n FROM tv_history',
+    tvEpisodes: 'SELECT COUNT(*) AS n FROM tv_history',
+  };
+  Promise.all(
+    Object.entries(queries).map(
+      ([k, sql]) =>
+        new Promise((resolve) => {
+          db.get(sql, (err, row) => resolve([k, err ? 0 : row.n]));
+        }),
+    ),
+  ).then((entries) => res.json({ message: 'success', ...Object.fromEntries(entries) }));
+});
+
 // 啟動 30 秒後跑首次 sync，之後每 6 小時跑一次
 setTimeout(() => syncBahamutHistory(), 30 * 1000);
 setInterval(() => syncBahamutHistory(), 6 * 60 * 60 * 1000);
+
+/* ═════════════════════════════════════════════════════════════
+   Trakt sync — going-forward HBO Max / Disney+ / 任何手動 log
+   流程：device-auth 拿到 token 後存 db/.trakt-token.json，
+   這裡 cron 每天拉 /sync/history 補進 film_history + tv_history
+═════════════════════════════════════════════════════════════ */
+const TRAKT_TOKEN_FILE = path.join(__dirname, 'db', '.trakt-token.json');
+const TRAKT_CLIENT_ID = process.env.TRAKT_CLIENT_ID;
+const TRAKT_CLIENT_SECRET = process.env.TRAKT_CLIENT_SECRET;
+
+function loadTraktToken() {
+  try {
+    if (!fs.existsSync(TRAKT_TOKEN_FILE)) return null;
+    return JSON.parse(fs.readFileSync(TRAKT_TOKEN_FILE, 'utf-8'));
+  } catch (e) {
+    console.warn('[Trakt] token file unreadable:', e.message);
+    return null;
+  }
+}
+
+function saveTraktToken(tok) {
+  fs.writeFileSync(TRAKT_TOKEN_FILE, JSON.stringify(tok, null, 2));
+  fs.chmodSync(TRAKT_TOKEN_FILE, 0o600);
+}
+
+const TRAKT_UA = 'koimsurai/1.0 (+https://koimsurai.com)';
+async function refreshTraktToken(tok) {
+  const r = await fetch('https://api.trakt.tv/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'User-Agent': TRAKT_UA },
+    body: JSON.stringify({
+      refresh_token: tok.refresh_token,
+      client_id: TRAKT_CLIENT_ID,
+      client_secret: TRAKT_CLIENT_SECRET,
+      grant_type: 'refresh_token',
+    }),
+  });
+  if (!r.ok) throw new Error(`refresh ${r.status}: ${await r.text()}`);
+  const j = await r.json();
+  const out = {
+    access_token: j.access_token,
+    refresh_token: j.refresh_token,
+    scope: j.scope,
+    expires_at: (j.created_at + j.expires_in) * 1000,
+    created_at: j.created_at * 1000,
+  };
+  saveTraktToken(out);
+  console.log('[Trakt] token refreshed, new expiry', new Date(out.expires_at).toISOString());
+  return out;
+}
+
+async function getValidTraktToken() {
+  let tok = loadTraktToken();
+  if (!tok) return null;
+  // refresh if < 7 days to expiry (Trakt tokens last 90 days; 7d buffer is plenty)
+  if (Date.now() + 7 * 86400_000 >= tok.expires_at) {
+    try { tok = await refreshTraktToken(tok); }
+    catch (e) { console.error('[Trakt] refresh failed:', e.message); return null; }
+  }
+  return tok;
+}
+
+async function traktGet(tok, pathStr) {
+  const r = await fetch(`https://api.trakt.tv${pathStr}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': TRAKT_UA,
+      'trakt-api-version': '2',
+      'trakt-api-key': TRAKT_CLIENT_ID,
+      Authorization: `Bearer ${tok.access_token}`,
+    },
+  });
+  if (!r.ok) throw new Error(`${pathStr} ${r.status}: ${await r.text()}`);
+  return { data: await r.json(), pagecount: parseInt(r.headers.get('x-pagination-page-count') || '1', 10) };
+}
+
+let traktSyncRunning = false;
+async function syncTraktHistory() {
+  if (traktSyncRunning) { console.log('[Trakt] sync in progress, skip'); return; }
+  const tok = await getValidTraktToken();
+  if (!tok) { console.log('[Trakt] no token — skip sync (run trakt-device-auth.js to authorize)'); return; }
+
+  traktSyncRunning = true;
+  console.log('[Trakt] sync start');
+  try {
+    let films = 0, episodes = 0;
+
+    // movies: page through /sync/history/movies (Trakt sorts DESC by watched_at)
+    for (let page = 1; ; page++) {
+      const { data, pagecount } = await traktGet(tok, `/sync/history/movies?page=${page}&limit=100`);
+      for (const item of data) {
+        const m = item.movie;
+        if (!m) continue;
+        const watched = (item.watched_at || '').slice(0, 10) || null;
+        await new Promise((resolve) => {
+          db.run(
+            `INSERT OR IGNORE INTO film_history (title, watched_date, source, tmdb_id, release_year)
+             VALUES (?, ?, 'trakt', ?, ?)`,
+            [m.title, watched, m.ids?.tmdb || null, m.year || null],
+            () => { films += 1; resolve(); },
+          );
+        });
+      }
+      if (page >= pagecount) break;
+      await new Promise((r) => setTimeout(r, 300));
+    }
+
+    // tv episodes
+    for (let page = 1; ; page++) {
+      const { data, pagecount } = await traktGet(tok, `/sync/history/episodes?page=${page}&limit=100`);
+      for (const item of data) {
+        const ep = item.episode;
+        const show = item.show;
+        if (!ep || !show) continue;
+        const watched = (item.watched_at || '').slice(0, 10) || null;
+        const epLabel = `S${String(ep.season).padStart(2, '0')}E${String(ep.number).padStart(2, '0')}`;
+        await new Promise((resolve) => {
+          db.run(
+            `INSERT OR IGNORE INTO tv_history (series_name, episode_label, watched_date, source, tmdb_id)
+             VALUES (?, ?, ?, 'trakt', ?)`,
+            [show.title, epLabel, watched, show.ids?.tmdb || null],
+            () => { episodes += 1; resolve(); },
+          );
+        });
+      }
+      if (page >= pagecount) break;
+      await new Promise((r) => setTimeout(r, 300));
+    }
+
+    console.log(`[Trakt] sync done: ${films} film rows, ${episodes} tv ep rows scanned`);
+  } catch (e) {
+    console.error('[Trakt] sync error:', e.message);
+  } finally {
+    traktSyncRunning = false;
+  }
+}
+
+// 啟動 90 秒後跑首次（讓 Bahamut sync 先跑），之後每 6 小時跑一次
+setTimeout(() => syncTraktHistory(), 90 * 1000);
+setInterval(() => syncTraktHistory(), 6 * 60 * 60 * 1000);
+
+/* ═════════════════════════════════════════════════════════════
+   Letterboxd RSS — 拉 timo9378 的 diary RSS、塞 film_history
+   只能拿到 user 之後手動 log 的 diary entry；watched 清單不在 RSS 裡
+═════════════════════════════════════════════════════════════ */
+const LETTERBOXD_RSS = 'https://letterboxd.com/timo9378/rss/';
+const LETTERBOXD_UA = 'koimsurai/1.0 (+https://koimsurai.com)';
+
+/** 從 Letterboxd RSS <item> 抽我們要的欄位。RSS 簡單，用正則撐住。 */
+function parseLetterboxdItem(itemXml) {
+  const grab = (tag) => {
+    const m = itemXml.match(new RegExp(`<${tag.replace('.', '\\.')}>([\\s\\S]*?)<\\/${tag.replace('.', '\\.')}>`));
+    if (!m) return null;
+    return m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/, '$1').trim();
+  };
+  const title = grab('letterboxd:filmTitle');
+  if (!title) return null;
+  return {
+    title,
+    year: parseInt(grab('letterboxd:filmYear') || '', 10) || null,
+    watchedDate: grab('letterboxd:watchedDate'), // 'YYYY-MM-DD'
+    rating: parseFloat(grab('letterboxd:memberRating') || ''), // 0~5.0, 半顆星可
+    tmdbId: parseInt(grab('tmdb:movieId') || '', 10) || null,
+  };
+}
+
+let letterboxdSyncRunning = false;
+async function syncLetterboxdRss() {
+  if (letterboxdSyncRunning) { console.log('[Letterboxd] sync in progress, skip'); return; }
+  letterboxdSyncRunning = true;
+  console.log('[Letterboxd] sync start');
+  try {
+    const r = await fetch(LETTERBOXD_RSS, { headers: { 'User-Agent': LETTERBOXD_UA } });
+    if (!r.ok) throw new Error(`fetch ${r.status}`);
+    const xml = await r.text();
+    const items = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+    let added = 0, updated = 0;
+    for (const itemXml of items) {
+      const parsed = parseLetterboxdItem(itemXml);
+      if (!parsed?.title || !parsed?.watchedDate) continue;
+      // ON CONFLICT: keep Netflix tmdb_id but bring in rating + letterboxd ID
+      await new Promise((resolve) => {
+        db.run(
+          `INSERT INTO film_history (title, watched_date, rating, source, tmdb_id, release_year)
+           VALUES (?, ?, ?, 'letterboxd', ?, ?)
+           ON CONFLICT(title, watched_date) DO UPDATE SET
+             rating = COALESCE(excluded.rating, film_history.rating),
+             tmdb_id = COALESCE(film_history.tmdb_id, excluded.tmdb_id),
+             release_year = COALESCE(film_history.release_year, excluded.release_year)`,
+          [
+            parsed.title,
+            parsed.watchedDate,
+            Number.isFinite(parsed.rating) ? Math.round(parsed.rating) : null,
+            parsed.tmdbId,
+            parsed.year,
+          ],
+          function () {
+            if (this.changes > 0) (this.lastID > 0 ? added++ : updated++);
+            resolve();
+          },
+        );
+      });
+    }
+    console.log(`[Letterboxd] sync done: ${items.length} items processed (added/updated)`);
+  } catch (e) {
+    console.error('[Letterboxd] sync error:', e.message);
+  } finally {
+    letterboxdSyncRunning = false;
+  }
+}
+
+// 啟動 120 秒後跑首次，之後每 4 小時跑一次（Letterboxd RSS 沒 rate limit 但別太頻繁）
+setTimeout(() => syncLetterboxdRss(), 120 * 1000);
+setInterval(() => syncLetterboxdRss(), 4 * 60 * 60 * 1000);
 
 // Start server
 app.listen(PORT, () => {

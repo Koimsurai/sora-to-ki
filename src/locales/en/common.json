@@ -348,16 +348,39 @@
     "typeAnime": "Anime",
     "typeFilm": "Film",
     "stats": {
-      "yearLabel": "This year",
       "animeLabel": "anime",
       "filmLabel": "films",
-      "avgLabel": "avg rating"
+      "tvLabel": "TV series"
     },
     "recentGroups": {
       "thisWeek": "This week",
       "earlier": "Earlier"
     },
-    "ending": "What's next? I'm curious too."
+    "ending": "What's next? I'm curious too.",
+    "typeTv": "TV",
+    "library": {
+      "title": "Library",
+      "subtitle": "Everything I've watched — anime, film, TV, all in one place",
+      "tabs": {
+        "anime": "Anime",
+        "film": "Films",
+        "tv": "TV"
+      },
+      "search": "Search title…",
+      "sort": {
+        "newest": "Recently watched",
+        "oldest": "Earliest watched",
+        "titleAsc": "Title A→Z",
+        "titleDesc": "Title Z→A"
+      },
+      "empty": "No matches",
+      "epsSuffix": "ep",
+      "loading": "Loading…",
+      "openOnLetterboxd": "Open on Letterboxd",
+      "openOnTmdb": "Open on TMDb",
+      "openOnBahamut": "Open on Bahamut Anime",
+      "viewWatch": "← Back to What I'm watching"
+    }
   },
   "setup": {
     "title": "My Setup",
