@@ -2015,7 +2015,7 @@ function BlogPost() {
 
             {/* ── Comments ── */}
             <div className="post-extras" id="comments">
-              <Comments postId={id} />
+              <Comments postId={id} allowComments={post?.allow_comments !== 0 && post?.allow_comments !== false} />
             </div>
           </motion.div>
         </AnimatePresence>

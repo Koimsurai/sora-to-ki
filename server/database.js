@@ -225,6 +225,9 @@ function initializeDatabase() {
           { name: 'title_ja', type: 'TEXT' },
           { name: 'content_ja', type: 'TEXT' },
           { name: 'excerpt_ja', type: 'TEXT' },
+          { name: 'title_ko', type: 'TEXT' },
+          { name: 'content_ko', type: 'TEXT' },
+          { name: 'excerpt_ko', type: 'TEXT' },
         ];
         i18nColumns.forEach(col => {
           if (!existing.has(col.name)) {
@@ -248,6 +251,14 @@ function initializeDatabase() {
             });
           }
         });
+
+        // 允許留言 toggle
+        if (!existing.has('allow_comments')) {
+          db.run("ALTER TABLE posts ADD COLUMN allow_comments INTEGER DEFAULT 1", (alterErr) => {
+            if (alterErr) console.error('allow_comments migration 錯誤:', alterErr);
+            else console.log('allow_comments 欄位新增成功');
+          });
+        }
       });
     }, 500);
 

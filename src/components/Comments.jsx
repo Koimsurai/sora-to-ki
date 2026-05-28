@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import './Comments.css';
 
-function Comments({ postId }) {
+function Comments({ postId, allowComments = true }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [author, setAuthor] = useState('');
@@ -199,6 +199,13 @@ function Comments({ postId }) {
           </div>
         )}
 
+        {!allowComments && (
+          <div className="comment-closed-notice">
+            作者已關閉這篇文章的留言。
+          </div>
+        )}
+
+        {allowComments && (
         <form onSubmit={handleSubmit} className="comment-form">
           {/* ── 模式切換 ── */}
           <div className="comment-mode-switch">
@@ -365,6 +372,7 @@ function Comments({ postId }) {
             )}
           </AnimatePresence>
         </form>
+        )}
       </div>
 
       {/* ── Comments List ── */}

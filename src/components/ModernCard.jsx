@@ -6,7 +6,7 @@ import Comments from './Comments';
 import './ModernCard.css';
 
 /* ── Comment floating dialog ── */
-const CommentDialog = ({ postId, postTitle, onClose }) => {
+const CommentDialog = ({ postId, postTitle, allowComments = true, onClose }) => {
   useEffect(() => {
     const scrollY = window.scrollY;
     document.body.style.position = 'fixed';
@@ -61,7 +61,7 @@ const CommentDialog = ({ postId, postTitle, onClose }) => {
           </button>
         </div>
         <div className="mc-comment-body">
-          <Comments postId={postId} />
+          <Comments postId={postId} allowComments={allowComments} />
         </div>
       </motion.div>
     </motion.div>
@@ -212,6 +212,7 @@ const ModernCard = ({ post, index }) => {
           <CommentDialog
             postId={post.id}
             postTitle={post.title}
+            allowComments={post.allow_comments !== 0 && post.allow_comments !== false}
             onClose={() => setShowComments(false)}
           />,
           document.body

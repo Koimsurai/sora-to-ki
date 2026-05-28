@@ -98,6 +98,7 @@ const LOCALE_TABS = [
   { code: 'en',    label: 'English', column: 'en' },
   { code: 'zh-CN', label: '简体',    column: 'zh_cn' },
   { code: 'ja',    label: '日本語',  column: 'ja' },
+  { code: 'ko',    label: '한국어',  column: 'ko' },
 ];
 // 依 activeLocale + sourceLanguage 取得表單 field 名稱
 function fieldNameFor(base, activeLocale, sourceLanguage) {
@@ -137,15 +138,14 @@ export default function PostEditor() {
       cover: '',
       status: 'draft',
       layout_type: 'record',
-      allowComments: true,
-      pin: false,
-      pinOrder: 0,
+      allow_comments: true,
       send_newsletter: false,
       // i18n
       source_language: 'zh-TW',
       title_en: '', content_en: '', summary_en: '',
       title_zh_cn: '', content_zh_cn: '', summary_zh_cn: '',
       title_ja: '', content_ja: '', summary_ja: '',
+      title_ko: '', content_ko: '', summary_ko: '',
       // 系列文
       series_name: '',
       series_order: '',
@@ -285,6 +285,8 @@ export default function PostEditor() {
           title_en: data.title_en || '', content_en: data.content_en || '', summary_en: data.excerpt_en || '',
           title_zh_cn: data.title_zh_cn || '', content_zh_cn: data.content_zh_cn || '', summary_zh_cn: data.excerpt_zh_cn || '',
           title_ja: data.title_ja || '', content_ja: data.content_ja || '', summary_ja: data.excerpt_ja || '',
+          title_ko: data.title_ko || '', content_ko: data.content_ko || '', summary_ko: data.excerpt_ko || '',
+          allow_comments: data.allow_comments !== 0 && data.allow_comments !== false,
           series_name: data.series_name || '',
           series_order: data.series_order ?? '',
           // Newsletter trigger is a transient form-only flag — never persisted on the post.
@@ -305,9 +307,7 @@ export default function PostEditor() {
           summary: '這是測試文章的摘要',
           cover: '',
           status: 'draft',
-          allowComments: true,
-          pin: false,
-          pinOrder: 0,
+          allow_comments: true,
           send_newsletter: false,
         };
         form.reset(mockData);
@@ -326,9 +326,7 @@ export default function PostEditor() {
         summary: '',
         cover: '',
         status: 'draft',
-        allowComments: true,
-        pin: false,
-        pinOrder: 0,
+        allow_comments: true,
       };
       form.reset(mockData);
       toast.warning('API 連接失敗，使用模擬數據');
@@ -367,9 +365,7 @@ export default function PostEditor() {
       cover: n8nData.cover || '',
       status: n8nData.status || 'draft',
       layout_type: n8nData.layout_type || 'record',
-      allowComments: n8nData.allowComments !== false,
-      pin: n8nData.pin || false,
-      pinOrder: n8nData.pinOrder || 0,
+      allow_comments: n8nData.allowComments !== false && n8nData.allow_comments !== false,
       send_newsletter: false,
     });
 
@@ -495,7 +491,7 @@ export default function PostEditor() {
       ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
       : [];
     const {
-      summary, summary_en, summary_zh_cn, summary_ja,
+      summary, summary_en, summary_zh_cn, summary_ja, summary_ko,
       ...rest
     } = data;
     return {
@@ -504,6 +500,7 @@ export default function PostEditor() {
       excerpt_en: summary_en,
       excerpt_zh_cn: summary_zh_cn,
       excerpt_ja: summary_ja,
+      excerpt_ko: summary_ko,
       tags: tagsArray,
       ...overrides,
     };
@@ -1122,29 +1119,11 @@ export default function PostEditor() {
 
                     <FormField
                       control={form.control}
-                      name="allowComments"
+                      name="allow_comments"
                       render={({ field }) => (
                         <FormItem className="flex items-center justify-between">
                           <FormLabel className="text-xs text-muted-foreground">
                             允許留言
-                          </FormLabel>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="pin"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between">
-                          <FormLabel className="text-xs text-muted-foreground">
-                            置頂文章
                           </FormLabel>
                           <FormControl>
                             <Switch

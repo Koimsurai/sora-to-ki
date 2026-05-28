@@ -13,13 +13,11 @@ export const postSchema = z.object({
   cover: z.string().optional(),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
   layout_type: z.enum(['record', 'column']).default('record'),
-  allowComments: z.boolean().default(true),
-  pin: z.boolean().default(false),
-  pinOrder: z.number().default(0),
+  allow_comments: z.boolean().default(true),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   // i18n：原文語言 + 其他語系的 title/content/summary 複本
-  source_language: z.enum(['zh-TW', 'zh-CN', 'en', 'ja']).default('zh-TW'),
+  source_language: z.enum(['zh-TW', 'zh-CN', 'en', 'ja', 'ko']).default('zh-TW'),
   title_en: z.string().optional(),
   content_en: z.string().optional(),
   summary_en: z.string().optional(),
@@ -29,6 +27,9 @@ export const postSchema = z.object({
   title_ja: z.string().optional(),
   content_ja: z.string().optional(),
   summary_ja: z.string().optional(),
+  title_ko: z.string().optional(),
+  content_ko: z.string().optional(),
+  summary_ko: z.string().optional(),
 });
 
 export type PostFormData = z.infer<typeof postSchema>;

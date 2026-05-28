@@ -61,7 +61,10 @@ const requireOwner = createRequireOwner(db);
 const app = express();
 app.set('trust proxy', 1);
 app.use(cors());
-app.use(express.json()); // Middleware to parse JSON bodies
+// JSON body limit 預設 100KB → 撞 413（長文/英韓多 byte 句長或夾雜 base64 圖會爆）。
+// 拉到 10MB 容下整篇 markdown + 中等量 inline image；urlencoded 也順手放寬。
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const PORT = process.env.PORT || 3001;
 const STEAM_API_KEY = process.env.STEAM_API_KEY;
@@ -512,7 +515,7 @@ apiRouter.post('/auth/login', async (req, res) => {
 
 // ─── i18n helpers ──────────────────────────────────────
 // 支援的 locale 與對應的 DB 欄位後綴 / HTML hreflang / html lang
-const I18N_LOCALES = ['zh-TW', 'zh-CN', 'en', 'ja'];
+const I18N_LOCALES = ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'];
 const LOCALE_COLUMN_SUFFIX = { 'zh-CN': 'zh_cn', 'en': 'en', 'ja': 'ja' };
 const LOCALE_HREFLANG = { 'zh-TW': 'zh-Hant', 'zh-CN': 'zh-Hans', 'en': 'en', 'ja': 'ja' };
 const LOCALE_URL_PREFIX = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja' };
@@ -1518,7 +1521,9 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
     title_en, content_en, excerpt_en,
     title_zh_cn, content_zh_cn, excerpt_zh_cn,
     title_ja, content_ja, excerpt_ja,
+    title_ko, content_ko, excerpt_ko,
     series_name, series_order,
+    allow_comments = 1,
     send_newsletter = false,
   } = req.body;
 
@@ -1536,10 +1541,12 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
       title_en, content_en, excerpt_en,
       title_zh_cn, content_zh_cn, excerpt_zh_cn,
       title_ja, content_ja, excerpt_ja,
+      title_ko, content_ko, excerpt_ko,
       series_name, series_order,
+      allow_comments,
       created_at, updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `;
   const params = [
     title, content, excerpt, category || null, status, 'Koimsurai', layout_type,
@@ -1547,8 +1554,10 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
     title_en || null, content_en || null, excerpt_en || null,
     title_zh_cn || null, content_zh_cn || null, excerpt_zh_cn || null,
     title_ja || null, content_ja || null, excerpt_ja || null,
+    title_ko || null, content_ko || null, excerpt_ko || null,
     (series_name && String(series_name).trim()) ? String(series_name).trim() : null,
     Number.isFinite(Number(series_order)) ? Number(series_order) : null,
+    allow_comments ? 1 : 0,
   ];
 
   db.run(sql, params, function (err) {
@@ -1591,7 +1600,9 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
     title_en, content_en, excerpt_en,
     title_zh_cn, content_zh_cn, excerpt_zh_cn,
     title_ja, content_ja, excerpt_ja,
+    title_ko, content_ko, excerpt_ko,
     series_name, series_order,
+    allow_comments,
     send_newsletter = false,
   } = req.body;
 
@@ -1610,6 +1621,10 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
   const nb_title_ja = toNullable(title_ja);
   const nb_content_ja = toNullable(content_ja);
   const nb_excerpt_ja = toNullable(excerpt_ja);
+  const nb_title_ko = toNullable(title_ko);
+  const nb_content_ko = toNullable(content_ko);
+  const nb_excerpt_ko = toNullable(excerpt_ko);
+  const nb_allow_comments = (allow_comments === undefined) ? undefined : (allow_comments ? 1 : 0);
 
   const nb_series_name = (series_name === undefined)
     ? undefined
@@ -1636,8 +1651,12 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
       title_ja       = CASE WHEN ? = 1 THEN ? ELSE title_ja END,
       content_ja     = CASE WHEN ? = 1 THEN ? ELSE content_ja END,
       excerpt_ja     = CASE WHEN ? = 1 THEN ? ELSE excerpt_ja END,
+      title_ko       = CASE WHEN ? = 1 THEN ? ELSE title_ko END,
+      content_ko     = CASE WHEN ? = 1 THEN ? ELSE content_ko END,
+      excerpt_ko     = CASE WHEN ? = 1 THEN ? ELSE excerpt_ko END,
       series_name    = CASE WHEN ? = 1 THEN ? ELSE series_name END,
       series_order   = CASE WHEN ? = 1 THEN ? ELSE series_order END,
+      allow_comments = CASE WHEN ? = 1 THEN ? ELSE allow_comments END,
       updated_at = datetime('now')
     WHERE id = ?
   `;
@@ -1654,8 +1673,12 @@ apiRouter.put('/admin/posts/:id', requireAdmin, (req, res) => {
     flag(nb_title_ja), nb_title_ja ?? null,
     flag(nb_content_ja), nb_content_ja ?? null,
     flag(nb_excerpt_ja), nb_excerpt_ja ?? null,
+    flag(nb_title_ko), nb_title_ko ?? null,
+    flag(nb_content_ko), nb_content_ko ?? null,
+    flag(nb_excerpt_ko), nb_excerpt_ko ?? null,
     flag(nb_series_name), nb_series_name ?? null,
     flag(nb_series_order), nb_series_order ?? null,
+    flag(nb_allow_comments), nb_allow_comments ?? null,
     req.params.id,
   ];
 

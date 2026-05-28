@@ -621,3 +621,16 @@
     opacity: 1;
   }
 }
+
+/* 作者關閉留言時的提示 */
+.comment-closed-notice {
+  margin: 1.5rem 0 2rem;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(229, 229, 245, 0.55);
+  font-size: 0.9rem;
+  text-align: center;
+  letter-spacing: 0.02em;
+}

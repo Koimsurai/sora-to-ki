@@ -13,7 +13,7 @@ import './Blog.css';
 /* ════════════════════════════════════════════════
    FloatingComments — 浮動留言視窗 (Portal)
    ════════════════════════════════════════════════ */
-const FloatingComments = ({ postId, postTitle, onClose }) => {
+const FloatingComments = ({ postId, postTitle, allowComments = true, onClose }) => {
   useEffect(() => {
     const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleEsc);
@@ -51,7 +51,7 @@ const FloatingComments = ({ postId, postTitle, onClose }) => {
             <button className="floating-comments-close" onClick={onClose}><FaTimes /></button>
           </div>
           <div className="floating-comments-body">
-            <Comments postId={postId} />
+            <Comments postId={postId} allowComments={allowComments} />
           </div>
         </motion.div>
       </motion.div>
@@ -141,7 +141,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
   const handleComment = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onOpenComments?.(post.id, post.title);
+    onOpenComments?.(post.id, post.title, post.allow_comments);
   };
 
   // 列表頁優先顯示內文截斷，而非 AI 摘要
@@ -332,8 +332,12 @@ function Blog() {
   const isInitialLoad = React.useRef(true);
   const [searchParams] = useSearchParams();
 
-  const handleOpenComments = useCallback((postId, postTitle) => {
-    setFloatingComment({ postId: String(postId), postTitle });
+  const handleOpenComments = useCallback((postId, postTitle, allowComments) => {
+    setFloatingComment({
+      postId: String(postId),
+      postTitle,
+      allowComments: allowComments !== 0 && allowComments !== false,
+    });
   }, []);
 
   // 讀取 URL 參數自動帶入篩選
@@ -691,6 +695,7 @@ function Blog() {
           <FloatingComments
             postId={floatingComment.postId}
             postTitle={floatingComment.postTitle}
+            allowComments={floatingComment.allowComments}
             onClose={() => setFloatingComment(null)}
           />
         )}
