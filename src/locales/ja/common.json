@@ -1,0 +1,32 @@
+{
+  "footer": {
+    "tagline": "Stay hungry. Stay foolish.",
+    "poweredBy": "Powered by",
+    "viewersOnline": "現在 {{count}} 人が閲覧中",
+    "statsLine": "{{posts}} 本の記事 · {{days}} 日間執筆",
+    "loading": "読み込み中…",
+    "sections": {
+      "about": "について",
+      "more": "もっと",
+      "contact": "連絡"
+    },
+    "links": {
+      "aboutSite": "このサイトについて",
+      "aboutMe": "私について",
+      "aboutProject": "このプロジェクト",
+      "photos": "写真",
+      "setup": "デバイス",
+      "activity": "アクティビティ",
+      "messages": "メッセージを残す",
+      "email": "メール",
+      "github": "GitHub",
+      "rss": "RSS フィード",
+      "sitemap": "サイトマップ",
+      "subscribe": "購読"
+    }
+  },
+  "language": {
+    "switcher": "言語",
+    "current": "現在：{{label}}"
+  }
+}

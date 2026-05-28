@@ -100,10 +100,13 @@
 }
 
 :root {
-  font-family: 'MiSans', 'PingFang TC', 'Hiragino Sans TC', 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, Inter, system-ui, Avenir, Helvetica, Arial, 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Apple Color Emoji', sans-serif;
-  /* 全站 UI 字型 — MiSans 同時設計過 Latin + CJK，
-     中英混排權重一致，避免 Inter + 系統中文字拼湊感。
-     blog 內文還是會被 BlogPost 的 FONT_OPTIONS scoped 覆蓋，互不干擾。 */
+  /* CJK 字體棧 — 預設繁中：MiSans 主體 + 思源黑體 TC 局部疊（C 方案）+ 系統 fallback
+     :lang(...) 規則會在 ja / ko / zh-CN 時覆寫成各自的 CJK 字體偏好 */
+  --cjk-font: 'MiSans', 'Source Han Sans TC', 'Noto Sans TC', 'PingFang TC', 'Hiragino Sans TC', 'Microsoft JhengHei', sans-serif;
+
+  /* Latin 字體：TASA Orbiter 為首（自家開源 SDK 同理，台灣太空中心字體，跟站名 / 主題一脈相承）
+     Latin 字元走 TASA，CJK 字元自動 fallback 到 --cjk-font 鏈 */
+  font-family: 'TASA Orbiter Variable', var(--cjk-font), -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -229,4 +232,35 @@ body.intro-animation-active {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Per-locale CJK 字體切換 — :lang() 跟著 <html lang> 走
+   Phase 3 切語系時 React 會改 html lang → CSS 自動套對應字體
+─────────────────────────────────────────────────────────────── */
+:lang(zh-CN) {
+  --cjk-font: 'Source Han Sans SC', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'MiSans', sans-serif;
+}
+
+:lang(ja) {
+  --cjk-font: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Source Han Sans JP', 'Noto Sans JP', sans-serif;
+}
+
+:lang(ko) {
+  --cjk-font: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Source Han Sans KR', 'Noto Sans KR', sans-serif;
+}
+
+:lang(en) {
+  /* 英文不需 CJK：把鏈設空，Latin 全走 TASA，沒 CJK 字符所以不影響 */
+  --cjk-font: inherit;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Brand / display wordmark — TASA Explorer（geometric、鋒利）
+   給「Koimsurai」logo、英文 hero 大標、希望「電影感」的標題用
+─────────────────────────────────────────────────────────────── */
+.brand-wordmark,
+.tasa-display {
+  font-family: 'TASA Explorer Variable', 'TASA Orbiter Variable', var(--cjk-font), sans-serif;
+  letter-spacing: 0.01em;
 }

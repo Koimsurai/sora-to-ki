@@ -25,6 +25,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useRef, useMemo } from 'react'; // Add useMemo
 import * as THREE from 'three'; // Import THREE
 import './App.css';
+import { useHtmlLang } from './hooks/useHtmlLang';
 
 // --- Lazy Loaded Components ---
 const LazyAboutMe = lazy(() => import('./components/AboutMe'));
@@ -59,6 +60,7 @@ const LazyBookshelf = lazy(() => import('./components/Bookshelf'));
 const LazyMusic = lazy(() => import('./components/Music'));
 const LazyCinema = lazy(() => import('./components/Cinema'));
 const LazyAnime = lazy(() => import('./components/Anime'));
+const LazyWatch = lazy(() => import('./components/Watch'));
 const LazySetup = lazy(() => import('./components/Setup'));
 const LazyAboutSite = lazy(() => import('./components/AboutSite'));
 const LazyHistory = lazy(() => import('./components/History'));
@@ -319,6 +321,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/music" element={<Suspense fallback={<LoadingFallback />}><LazyMusic /></Suspense>} />
           <Route path="/cinema" element={<Suspense fallback={<LoadingFallback />}><LazyCinema /></Suspense>} />
           <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />
+          <Route path="/watch" element={<Suspense fallback={<LoadingFallback />}><LazyWatch /></Suspense>} />
           <Route path="/setup" element={<Suspense fallback={<LoadingFallback />}><LazySetup /></Suspense>} />
           <Route path="/about-site" element={<Suspense fallback={<LoadingFallback />}><LazyAboutSite /></Suspense>} />
           <Route path="/history" element={<Suspense fallback={<LoadingFallback />}><LazyHistory /></Suspense>} />
@@ -370,6 +373,7 @@ function Layout({ activeSection, onSectionChange }) {
 const INTRO_ROUTES = new Set(['/']);
 
 function App() {
+  useHtmlLang(); // 把 i18n 當前語系同步到 <html lang>，CSS :lang() 跟著切 CJK 字體
   const [isLoading, setIsLoading] = useState(true);
   const isMobile = useMediaQuery('(max-width: 768px)'); // 偵測是否為手機版
   const introCompleted = sessionStorage.getItem('introCompleted') === 'true';

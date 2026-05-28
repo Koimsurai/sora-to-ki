@@ -1,0 +1,32 @@
+{
+  "footer": {
+    "tagline": "Stay hungry. Stay foolish.",
+    "poweredBy": "Powered by",
+    "viewersOnline": "{{count}} viewers right now",
+    "statsLine": "{{posts}} posts · writing for {{days}} days",
+    "loading": "Loading…",
+    "sections": {
+      "about": "About",
+      "more": "More",
+      "contact": "Contact"
+    },
+    "links": {
+      "aboutSite": "About this site",
+      "aboutMe": "About me",
+      "aboutProject": "About the project",
+      "photos": "Photos",
+      "setup": "Setup",
+      "activity": "Activity",
+      "messages": "Leave a note",
+      "email": "Email",
+      "github": "GitHub",
+      "rss": "RSS Feed",
+      "sitemap": "Sitemap",
+      "subscribe": "Subscribe"
+    }
+  },
+  "language": {
+    "switcher": "Language",
+    "current": "Current: {{label}}"
+  }
+}

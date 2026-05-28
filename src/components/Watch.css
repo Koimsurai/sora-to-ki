@@ -1,0 +1,283 @@
+/* ──────────────────────────────────────────────────────────────
+   在看什麼 — 編輯風：內容浮在背景、不裝玻璃盒、留白大
+   柔白 rgba(244,244,245,.98) · 柔薰衣草 rgba(216,180,254,..)
+─────────────────────────────────────────────────────────────── */
+
+.w-page {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  background: transparent;
+  padding: 120px 24px 120px;
+}
+
+/* dim scrim：壓暗亮星雲（.nebula-bg z-1），跟首頁一致 */
+.w-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgba(6, 5, 14, 0.55);
+  pointer-events: none;
+}
+
+.w-wrap {
+  position: relative;
+  z-index: 2;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+/* ── header ── */
+.w-header {
+  margin-bottom: 5rem;
+}
+
+.w-title {
+  font-size: clamp(2rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: rgba(244, 244, 245, 0.98);
+  margin: 0 0 10px;
+}
+
+.w-subtitle {
+  font-size: 0.98rem;
+  color: rgba(229, 229, 245, 0.5);
+  letter-spacing: 0.04em;
+  margin: 0 0 18px;
+}
+
+.w-stats-line {
+  font-size: 0.86rem;
+  color: rgba(216, 180, 254, 0.7);
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* ── eyebrow ── */
+.w-eyebrow {
+  display: inline-block;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  margin-bottom: 16px;
+}
+.w-eyebrow--live { color: #2cb67d; }
+
+/* ── 正在看（海報浮動，不裝盒）── */
+.w-now {
+  margin-bottom: 5.5rem;
+}
+
+.w-now-body {
+  display: flex;
+  gap: 30px;
+  align-items: flex-start;
+}
+
+.w-now-poster {
+  flex: 0 0 150px;
+  aspect-ratio: 2 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+
+.w-now:hover .w-now-poster {
+  transform: translateY(-6px) rotate(-1deg);
+  box-shadow: 0 28px 64px rgba(127, 90, 240, 0.3);
+}
+
+.w-now-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.w-now-text { flex: 1; min-width: 0; padding-top: 4px; }
+
+.w-now-title {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: rgba(244, 244, 245, 0.98);
+  margin: 0 0 10px;
+}
+
+.w-now-meta {
+  font-size: 0.92rem;
+  color: rgba(229, 229, 245, 0.55);
+  letter-spacing: 0.03em;
+  margin: 0 0 18px;
+}
+
+.w-now-note {
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: rgba(229, 229, 245, 0.82);
+  max-width: 460px;
+  margin: 0;
+}
+
+/* ── section 通用 ── */
+.w-section { margin-bottom: 5.5rem; }
+
+.w-h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(244, 244, 245, 0.96);
+  margin: 0 0 6px;
+}
+
+.w-h2-sub {
+  font-size: 0.86rem;
+  color: rgba(229, 229, 245, 0.45);
+  margin: 0 0 28px;
+}
+
+/* ── 鎮站之寶 ── */
+.w-favs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+}
+
+.w-fav { margin: 0; }
+
+.w-fav-poster {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+}
+
+.w-fav-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease, filter 0.4s ease;
+}
+
+.w-fav:hover .w-fav-poster {
+  transform: translateY(-8px);
+  box-shadow: 0 26px 56px rgba(127, 90, 240, 0.32);
+}
+
+.w-fav:hover .w-fav-poster img { transform: scale(1.06); filter: brightness(0.45); }
+
+/* hover 才浮現的碎念 */
+.w-fav-quote {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: rgba(244, 244, 245, 0.96);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.w-fav:hover .w-fav-quote { opacity: 1; transform: translateY(0); }
+
+.w-fav-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: rgba(244, 244, 245, 0.95);
+  margin: 12px 0 3px;
+}
+
+.w-fav-line { margin: 0; display: flex; align-items: center; gap: 8px; }
+.w-fav-year { font-size: 0.76rem; color: rgba(229, 229, 245, 0.4); }
+
+/* ── 最近在看（清單，文字為主）── */
+.w-recent { list-style: none; margin: 0; padding: 0; }
+
+.w-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  transition: padding-left 0.25s ease;
+}
+
+.w-recent-row:hover { padding-left: 12px; }
+
+.w-recent-thumb {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 7px;
+}
+
+.w-recent-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(244, 244, 245, 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.w-recent-detail { font-size: 0.84rem; color: rgba(229, 229, 245, 0.55); white-space: nowrap; }
+.w-recent-date { font-size: 0.8rem; color: rgba(229, 229, 245, 0.38); flex: 0 0 auto; width: 42px; text-align: right; }
+
+/* ── 口味（文字化）── */
+.w-taste-line {
+  font-size: 1.08rem;
+  line-height: 1.8;
+  color: rgba(229, 229, 245, 0.82);
+  max-width: 600px;
+  margin: 0 0 24px;
+}
+
+.w-taste-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.w-tag {
+  font-size: 0.84rem;
+  color: rgba(216, 180, 254, 0.88);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(216, 180, 254, 0.25);
+  background: rgba(216, 180, 254, 0.06);
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  cursor: default;
+}
+
+.w-tag:hover {
+  background: rgba(216, 180, 254, 0.14);
+  border-color: rgba(216, 180, 254, 0.5);
+  transform: translateY(-2px);
+}
+
+/* ── stars ── */
+.w-stars { color: #f5c518; font-size: 0.84rem; letter-spacing: 1px; white-space: nowrap; }
+.w-stars-dim { color: rgba(255, 255, 255, 0.2); }
+
+/* ════════ RWD ════════ */
+@media (max-width: 720px) {
+  .w-page { padding: 100px 20px 90px; }
+  .w-header { margin-bottom: 3.5rem; }
+  .w-now, .w-section { margin-bottom: 4rem; }
+  .w-now-body { flex-direction: column; gap: 20px; }
+  .w-now-poster { flex-basis: 130px; width: 130px; }
+  .w-favs { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  /* 手機沒 hover：碎念常駐淡淡顯示 */
+  .w-fav-quote {
+    position: static;
+    opacity: 1;
+    transform: none;
+    padding: 8px 0 0;
+    color: rgba(229, 229, 245, 0.55);
+    font-size: 0.78rem;
+  }
+  .w-fav:hover .w-fav-poster img { filter: none; }
+}

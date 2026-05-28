@@ -1,0 +1,32 @@
+{
+  "footer": {
+    "tagline": "Stay hungry. Stay foolish.",
+    "poweredBy": "Powered by",
+    "viewersOnline": "지금 {{count}} 명이 보고 있어요",
+    "statsLine": "{{posts}}개의 글 · {{days}}일 동안 쓰는 중",
+    "loading": "불러오는 중…",
+    "sections": {
+      "about": "소개",
+      "more": "더 보기",
+      "contact": "연락"
+    },
+    "links": {
+      "aboutSite": "사이트 소개",
+      "aboutMe": "나에 대해",
+      "aboutProject": "이 프로젝트",
+      "photos": "사진",
+      "setup": "장비",
+      "activity": "활동",
+      "messages": "메시지 남기기",
+      "email": "이메일",
+      "github": "GitHub",
+      "rss": "RSS 피드",
+      "sitemap": "사이트맵",
+      "subscribe": "구독"
+    }
+  },
+  "language": {
+    "switcher": "언어",
+    "current": "현재: {{label}}"
+  }
+}

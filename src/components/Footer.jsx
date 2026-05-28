@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import LanguagePicker from './LanguagePicker';
 import './Footer.css';
 
 const START_YEAR = 2025;
@@ -33,6 +35,7 @@ const ExternalArrow = () => (
 );
 
 function Footer() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const yearRange = currentYear > START_YEAR ? `${START_YEAR}-${currentYear}` : String(START_YEAR);
   const stats = useStats();
@@ -45,10 +48,10 @@ function Footer() {
         <div className="app-footer-grid">
           {/* 品牌欄 */}
           <div className="app-footer-brand">
-            <h3 className="app-footer-brand-name">Koimsurai</h3>
-            <p className="app-footer-brand-tagline">Stay hungry. Stay foolish.</p>
+            <h3 className="app-footer-brand-name brand-wordmark">Koimsurai</h3>
+            <p className="app-footer-brand-tagline">{t('footer.tagline')}</p>
             <p className="app-footer-copy">
-              © {yearRange} Powered by{' '}
+              © {yearRange} {t('footer.poweredBy')}{' '}
               <a href="https://github.com/timo9378/web" target="_blank" rel="noopener noreferrer">
                 Koim Stack
               </a>
@@ -59,43 +62,43 @@ function Footer() {
               <span className="app-footer-viewers">
                 <span className="app-footer-dot" />
                 {typeof online === 'number'
-                  ? `正被 ${online} 人披覽`
+                  ? t('footer.viewersOnline', { count: online })
                   : stats
-                    ? `已累積 ${stats.total} 篇文 · 寫了 ${stats.days} 天`
-                    : '載入中…'}
+                    ? t('footer.statsLine', { posts: stats.total, days: stats.days })
+                    : t('footer.loading')}
               </span>
             </div>
           </div>
 
           {/* 關於 */}
           <div className="app-footer-col">
-            <h4 className="app-footer-col-title">關於</h4>
-            <Link to="/about-site" className="app-footer-link">關於本站</Link>
-            <a href="/#about-me" className="app-footer-link">關於我</a>
+            <h4 className="app-footer-col-title">{t('footer.sections.about')}</h4>
+            <Link to="/about-site" className="app-footer-link">{t('footer.links.aboutSite')}</Link>
+            <a href="/#about-me" className="app-footer-link">{t('footer.links.aboutMe')}</a>
             <a
               href="https://github.com/timo9378/web"
               target="_blank"
               rel="noopener noreferrer"
               className="app-footer-link"
             >
-              關於此專案 <ExternalArrow />
+              {t('footer.links.aboutProject')} <ExternalArrow />
             </a>
           </div>
 
           {/* 更多 */}
           <div className="app-footer-col">
-            <h4 className="app-footer-col-title">更多</h4>
-            <Link to="/photos" className="app-footer-link">照片廊</Link>
-            <Link to="/setup" className="app-footer-link">配備</Link>
-            <Link to="/activity" className="app-footer-link">動態</Link>
+            <h4 className="app-footer-col-title">{t('footer.sections.more')}</h4>
+            <Link to="/photos" className="app-footer-link">{t('footer.links.photos')}</Link>
+            <Link to="/setup" className="app-footer-link">{t('footer.links.setup')}</Link>
+            <Link to="/activity" className="app-footer-link">{t('footer.links.activity')}</Link>
           </div>
 
           {/* 聯絡 */}
           <div className="app-footer-col">
-            <h4 className="app-footer-col-title">聯繫</h4>
-            <a href="/#contact" className="app-footer-link">寫留言</a>
+            <h4 className="app-footer-col-title">{t('footer.sections.contact')}</h4>
+            <a href="/#contact" className="app-footer-link">{t('footer.links.messages')}</a>
             <a href="mailto:timo9378@gmail.com" className="app-footer-link">
-              發郵件 <ExternalArrow />
+              {t('footer.links.email')} <ExternalArrow />
             </a>
             <a
               href="https://github.com/timo9378"
@@ -103,7 +106,7 @@ function Footer() {
               rel="noopener noreferrer"
               className="app-footer-link"
             >
-              GitHub <ExternalArrow />
+              {t('footer.links.github')} <ExternalArrow />
             </a>
           </div>
         </div>
@@ -115,20 +118,20 @@ function Footer() {
         <div className="app-footer-bottom">
           <div className="app-footer-bottom-left">
             <a href="/api/rss" target="_blank" rel="noopener noreferrer" className="app-footer-bottom-link">
-              RSS 訂閱
+              {t('footer.links.rss')}
             </a>
             <span className="app-footer-bottom-sep">·</span>
             <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="app-footer-bottom-link">
-              站點地圖
+              {t('footer.links.sitemap')}
             </a>
             <span className="app-footer-bottom-sep">·</span>
-            <a href="/#contact" className="app-footer-bottom-link">訂閱</a>
+            <a href="/#contact" className="app-footer-bottom-link">{t('footer.links.subscribe')}</a>
           </div>
 
           <div className="app-footer-bottom-right">
-            <span className="app-footer-bottom-meta">繁體中文</span>
+            <LanguagePicker />
             <span className="app-footer-bottom-sep">·</span>
-            <span className="app-footer-bottom-meta">Koimsurai © {currentYear}</span>
+            <span className="app-footer-bottom-meta brand-wordmark">Koimsurai © {currentYear}</span>
           </div>
         </div>
       </div>

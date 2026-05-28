@@ -1,0 +1,32 @@
+{
+  "footer": {
+    "tagline": "Stay hungry. Stay foolish.",
+    "poweredBy": "Powered by",
+    "viewersOnline": "正被 {{count}} 人披覽",
+    "statsLine": "已累積 {{posts}} 篇文 · 寫了 {{days}} 天",
+    "loading": "載入中…",
+    "sections": {
+      "about": "關於",
+      "more": "更多",
+      "contact": "聯繫"
+    },
+    "links": {
+      "aboutSite": "關於本站",
+      "aboutMe": "關於我",
+      "aboutProject": "關於此專案",
+      "photos": "照片廊",
+      "setup": "配備",
+      "activity": "動態",
+      "messages": "寫留言",
+      "email": "發郵件",
+      "github": "GitHub",
+      "rss": "RSS 訂閱",
+      "sitemap": "站點地圖",
+      "subscribe": "訂閱"
+    }
+  },
+  "language": {
+    "switcher": "語言",
+    "current": "目前：{{label}}"
+  }
+}

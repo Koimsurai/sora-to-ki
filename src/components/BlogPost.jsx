@@ -1413,6 +1413,7 @@ const LANG_OPTIONS = [
   { code: 'zh-CN', label: '简体中文' },
   { code: 'en',    label: 'English' },
   { code: 'ja',    label: '日本語' },
+  { code: 'ko',    label: '한국어' },
 ];
 
 const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect, onUnavailable }) => {
@@ -1511,8 +1512,8 @@ const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect,
 };
 
 /* URL prefix mapping — 必須與後端 LOCALE_URL_PREFIX 一致 */
-const LOCALE_URL_PREFIX = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja' };
-const LOCALE_TO_DATE_LOCALE = { 'zh-TW': 'zh-TW', 'zh-CN': 'zh-CN', 'en': 'en-US', 'ja': 'ja-JP' };
+const LOCALE_URL_PREFIX = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja', 'ko': '/ko' };
+const LOCALE_TO_DATE_LOCALE = { 'zh-TW': 'zh-TW', 'zh-CN': 'zh-CN', 'en': 'en-US', 'ja': 'ja-JP', 'ko': 'ko-KR' };
 
 function parseLocaleFromPath(pathname) {
   if (pathname.startsWith('/en/blog/')) return 'en';
