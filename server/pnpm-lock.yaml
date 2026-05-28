@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       anigamer:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.2.1
+        version: 0.2.1
       axios:
         specifier: ^1.15.2
         version: 1.15.2
@@ -225,8 +225,8 @@ packages:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
 
-  anigamer@0.2.0:
-    resolution: {integrity: sha512-dRRYJDCOTIArcunU1NMm/fhAPQZN0Ts4mrgr5PgtM+TQ3RHk4sQagxSZXffgWVdegs6N0V1dTFaMBsnGdtVm8A==}
+  anigamer@0.2.1:
+    resolution: {integrity: sha512-T8fiJZ58gO6Q92txVuzw7VfO3c/9wc21VJbodj0TSfr2z17FrEh1UG4BlJTTl3KnQ+11IhL9KTHy52rSN163Zg==}
     engines: {node: '>=20'}
 
   append-field@1.0.0:
@@ -1107,7 +1107,7 @@ snapshots:
   agent-base@7.1.4:
     optional: true
 
-  anigamer@0.2.0: {}
+  anigamer@0.2.1: {}
 
   append-field@1.0.0: {}
 

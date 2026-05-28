@@ -337,16 +337,27 @@
     "fontSwitcherTitle": "Switch font"
   },
   "watch": {
-    "title": "Watching",
-    "metaDescription": "My anime + film taste — auto-synced from Bahamut Animation and Letterboxd",
-    "subtitle": "My anime and film taste, one page laid out for you",
-    "eyebrowLive": "● Now watching",
-    "favoritesTitle": "Hall of Fame",
-    "favoritesSubtitle": "The four I'd push on anyone — hover to read my take",
-    "recentTitle": "Recently watching",
+    "title": "What I'm watching",
+    "metaDescription": "My anime and film taste — auto-synced from Bahamut Anime and Letterboxd",
+    "subtitle": "Anime and film taste, all in one page",
+    "eyebrowLive": "● Now",
+    "favoritesTitle": "All-time loves",
+    "favoritesSubtitle": "Whoever lives in my head — hover for the mumbling",
+    "recentTitle": "Recently watched",
     "tasteTitle": "Taste",
     "typeAnime": "Anime",
-    "typeFilm": "Film"
+    "typeFilm": "Film",
+    "stats": {
+      "yearLabel": "This year",
+      "animeLabel": "anime",
+      "filmLabel": "films",
+      "avgLabel": "avg rating"
+    },
+    "recentGroups": {
+      "thisWeek": "This week",
+      "earlier": "Earlier"
+    },
+    "ending": "What's next? I'm curious too."
   },
   "setup": {
     "title": "My Setup",

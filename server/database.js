@@ -375,11 +375,23 @@ function initializeDatabase() {
         video_sn INTEGER NOT NULL,
         title TEXT,
         cover_url TEXT,
+        episode TEXT,
         last_watched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (anime_sn, video_sn)
       )
     `);
+
+    // 補加 episode 欄位（舊 DB 沒有時 ALTER）
+    db.all("PRAGMA table_info(anime_history)", (err, cols) => {
+      if (err) return;
+      if (!cols.some((c) => c.name === 'episode')) {
+        db.run("ALTER TABLE anime_history ADD COLUMN episode TEXT", (e) => {
+          if (e) console.error('add episode column fail:', e.message);
+          else console.log('[anime_history] added episode column');
+        });
+      }
+    });
 
     // 檢查並更新 comments 表
     db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='comments'", (err, table) => {

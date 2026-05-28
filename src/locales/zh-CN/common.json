@@ -341,12 +341,23 @@
     "metaDescription": "我的动画与电影品味 — 自动同步自动画疯与 Letterboxd",
     "subtitle": "我的动画与电影品味，一页摊开给你看",
     "eyebrowLive": "● 正在看",
-    "favoritesTitle": "镇站之宝",
-    "favoritesSubtitle": "逢人就推的四部，hover 看我碎念",
+    "favoritesTitle": "一生推",
+    "favoritesSubtitle": "想到谁就丢上来，hover 看我碎念",
     "recentTitle": "最近在看",
     "tasteTitle": "口味",
     "typeAnime": "动画",
-    "typeFilm": "电影"
+    "typeFilm": "电影",
+    "stats": {
+      "yearLabel": "今年",
+      "animeLabel": "部动画",
+      "filmLabel": "部电影",
+      "avgLabel": "平均评分"
+    },
+    "recentGroups": {
+      "thisWeek": "本周",
+      "earlier": "更早"
+    },
+    "ending": "下一部会是什么？我自己也很期待。"
   },
   "setup": {
     "title": "我的装备 · My Setup",

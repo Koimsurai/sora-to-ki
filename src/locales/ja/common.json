@@ -337,16 +337,27 @@
     "fontSwitcherTitle": "フォント切替"
   },
   "watch": {
-    "title": "視聴中",
-    "metaDescription": "私のアニメと映画の好み — 動畫瘋と Letterboxd から自動同期",
-    "subtitle": "私のアニメと映画の好みを一ページに広げて",
+    "title": "今みているもの",
+    "metaDescription": "アニメと映画の趣味 — Bahamut Anime と Letterboxd から自動同期",
+    "subtitle": "アニメと映画の趣味、まとめて一枚に",
     "eyebrowLive": "● 視聴中",
-    "favoritesTitle": "殿堂入り",
-    "favoritesSubtitle": "誰にでも勧めたい四本 — hover で感想を",
-    "recentTitle": "最近視聴",
+    "favoritesTitle": "一生推し",
+    "favoritesSubtitle": "頭に住んでる作品たち、hover でひと言",
+    "recentTitle": "最近みたもの",
     "tasteTitle": "好み",
     "typeAnime": "アニメ",
-    "typeFilm": "映画"
+    "typeFilm": "映画",
+    "stats": {
+      "yearLabel": "今年",
+      "animeLabel": "アニメ",
+      "filmLabel": "映画",
+      "avgLabel": "平均評価"
+    },
+    "recentGroups": {
+      "thisWeek": "今週",
+      "earlier": "それより前"
+    },
+    "ending": "次は何を観るかな。自分でも楽しみ。"
   },
   "setup": {
     "title": "私のセットアップ · My Setup",

@@ -4593,17 +4593,32 @@ async function notifyDiscord(content) {
 // SDK 不做自動登入（Bahamut reCAPTCHA），這是「自動運作、快死大聲提醒」的安全網
 const JWT_WARN_THRESHOLD_SEC = 3 * 24 * 60 * 60;
 let lastJwtAlertAt = 0; // 最多每 24h 提醒一次，避免每次 sync 洗版
+async function maybeAlertDiscord(msg) {
+  if (Date.now() - lastJwtAlertAt <= 24 * 60 * 60 * 1000) return;
+  lastJwtAlertAt = Date.now();
+  await notifyDiscord(msg);
+}
 async function checkBahamutJwtExpiry() {
+  // 補強：jwtStatus() 只認 JWT 格式 BAHARUNE，若 BAHARUNE 被 server 端 Set-Cookie 成 "deleted"
+  // 或非 JWT 字串，原本會 silent return 整個略過警告 — 改成這裡顯式偵測
+  const jar = bahamut.cookies || {};
+  const baharune = jar.BAHARUNE;
+  if (!baharune || baharune === 'deleted' || !String(baharune).includes('.')) {
+    console.warn('[Bahamut] BAHARUNE missing or non-JWT (got:', baharune ? `'${String(baharune).slice(0, 16)}'` : 'undefined', ')');
+    await maybeAlertDiscord(
+      `⚠️ **動畫瘋 BAHARUNE 不是有效 JWT**（值：\`${String(baharune || 'undefined').slice(0, 24)}\`）— 觀看歷史同步停擺，請登入 ani.gamer.com.tw 重抓 cookie`,
+    );
+    return;
+  }
   const status = bahamut.jwtStatus();
   if (!status) return;
   console.log(
     `[Bahamut] JWT exp ${status.expiresAt.toISOString()} (${Math.floor(status.secondsUntilExpiry / 86400)}d left)`,
   );
   const needAlert = status.isExpired || status.secondsUntilExpiry < JWT_WARN_THRESHOLD_SEC;
-  if (needAlert && Date.now() - lastJwtAlertAt > 24 * 60 * 60 * 1000) {
-    lastJwtAlertAt = Date.now();
+  if (needAlert) {
     const days = Math.max(0, Math.floor(status.secondsUntilExpiry / 86400));
-    await notifyDiscord(
+    await maybeAlertDiscord(
       status.isExpired
         ? `⚠️ **動畫瘋 cookie 已過期** — 觀看歷史同步停擺，請登入 ani.gamer.com.tw 重抓 cookie 更新 BAHAMUT_COOKIE`
         : `⏳ **動畫瘋 cookie 剩 ${days} 天到期**（${status.expiresAt.toISOString()}）— 找時間登入 ani.gamer.com.tw 重抓 cookie`,
@@ -4659,11 +4674,13 @@ async function syncBahamutHistory() {
       await new Promise((r) => setTimeout(r, 400));
     }
 
-    // 3) upsert 每筆 history
+    // 3) upsert 每筆 history（用 SDK 給的 watchedAt + episode，不再 CURRENT_TIMESTAMP）
     for (const entry of allHistory) {
-      const { animeSn, videoSn, title } = entry;
+      const { animeSn, videoSn, title, episode, watchedAt } = entry;
       if (!animeSn || !videoSn) continue;
       const coverUrl = existingCovers.get(animeSn) || '';
+      // watchedAt 是 "2026-05-27 13:20:00" 字串（Bahamut 本地時間），SQLite 直接吃
+      const watchAtSql = watchedAt || null;
 
       const isNew = await new Promise((resolve) => {
         db.get(
@@ -4676,13 +4693,15 @@ async function syncBahamutHistory() {
 
       await new Promise((resolve) => {
         db.run(
-          `INSERT INTO anime_history (anime_sn, video_sn, title, cover_url, last_watched_at, synced_at)
-           VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          `INSERT INTO anime_history (anime_sn, video_sn, title, cover_url, episode, last_watched_at, synced_at)
+           VALUES (?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), CURRENT_TIMESTAMP)
            ON CONFLICT(anime_sn, video_sn) DO UPDATE SET
              title = excluded.title,
              cover_url = COALESCE(NULLIF(excluded.cover_url, ''), anime_history.cover_url),
+             episode = COALESCE(excluded.episode, anime_history.episode),
+             last_watched_at = COALESCE(excluded.last_watched_at, anime_history.last_watched_at),
              synced_at = CURRENT_TIMESTAMP`,
-          [animeSn, videoSn, title || '', coverUrl],
+          [animeSn, videoSn, title || '', coverUrl, episode || null, watchAtSql],
           () => resolve(),
         );
       });
@@ -4701,7 +4720,7 @@ async function syncBahamutHistory() {
 apiRouter.get('/anime/history', (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '50', 10), 200);
   db.all(
-    `SELECT anime_sn, video_sn, title, cover_url, last_watched_at
+    `SELECT anime_sn, video_sn, title, cover_url, episode, last_watched_at
      FROM anime_history
      ORDER BY last_watched_at DESC
      LIMIT ?`,

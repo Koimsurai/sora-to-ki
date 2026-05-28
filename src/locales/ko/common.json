@@ -337,16 +337,27 @@
     "fontSwitcherTitle": "폰트 전환"
   },
   "watch": {
-    "title": "보는 중",
-    "metaDescription": "나의 애니메이션과 영화 취향 — 動畫瘋과 Letterboxd에서 자동 동기화",
-    "subtitle": "나의 애니메이션과 영화 취향, 한 페이지에 펼쳐서",
-    "eyebrowLive": "● 보는 중",
-    "favoritesTitle": "명예의 전당",
-    "favoritesSubtitle": "누구에게나 추천하는 4편 — hover로 감상 보기",
-    "recentTitle": "최근 본 것",
+    "title": "지금 보고 있는 것",
+    "metaDescription": "내가 좋아하는 애니메이션·영화 — Bahamut Anime, Letterboxd 자동 동기화",
+    "subtitle": "애니와 영화 취향, 한 페이지에 펼쳐 놓아요",
+    "eyebrowLive": "● 시청 중",
+    "favoritesTitle": "인생작",
+    "favoritesSubtitle": "머릿속에 살고 있는 작품들 — hover로 한마디",
+    "recentTitle": "최근에 본 것",
     "tasteTitle": "취향",
     "typeAnime": "애니",
-    "typeFilm": "영화"
+    "typeFilm": "영화",
+    "stats": {
+      "yearLabel": "올해",
+      "animeLabel": "편 애니",
+      "filmLabel": "편 영화",
+      "avgLabel": "평균 평점"
+    },
+    "recentGroups": {
+      "thisWeek": "이번 주",
+      "earlier": "더 이전"
+    },
+    "ending": "다음은 뭘 볼까. 나도 궁금해요."
   },
   "setup": {
     "title": "내 장비 · My Setup",

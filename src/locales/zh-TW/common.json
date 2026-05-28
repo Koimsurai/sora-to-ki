@@ -341,12 +341,23 @@
     "metaDescription": "我的動畫與電影品味 — 自動同步自動畫瘋與 Letterboxd",
     "subtitle": "我的動畫與電影品味，一頁攤開給你看",
     "eyebrowLive": "● 正在看",
-    "favoritesTitle": "鎮站之寶",
-    "favoritesSubtitle": "逢人就推的四部，hover 看我碎念",
+    "favoritesTitle": "一生推",
+    "favoritesSubtitle": "想到誰就丟上來，hover 看我碎念",
     "recentTitle": "最近在看",
     "tasteTitle": "口味",
     "typeAnime": "動畫",
-    "typeFilm": "電影"
+    "typeFilm": "電影",
+    "stats": {
+      "yearLabel": "今年",
+      "animeLabel": "部動畫",
+      "filmLabel": "部電影",
+      "avgLabel": "平均評分"
+    },
+    "recentGroups": {
+      "thisWeek": "本週",
+      "earlier": "更早"
+    },
+    "ending": "下一部會是什麼？我自己也很期待。"
   },
   "setup": {
     "title": "我的配備 · My Setup",

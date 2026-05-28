@@ -48,11 +48,46 @@
   margin: 0 0 18px;
 }
 
-.w-stats-line {
-  font-size: 0.86rem;
-  color: rgba(216, 180, 254, 0.7);
-  letter-spacing: 0.05em;
-  margin: 0;
+/* ── stats chips（取代原本一行小字）── */
+.w-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.w-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-right: 18px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+.w-stat:last-of-type { border-right: none; }
+
+.w-stat-num {
+  font-size: 1.42rem;
+  font-weight: 700;
+  color: rgba(244, 244, 245, 0.98);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+.w-stat-label {
+  font-size: 0.74rem;
+  color: rgba(229, 229, 245, 0.5);
+  letter-spacing: 0.06em;
+}
+
+.w-stats-year {
+  font-size: 0.74rem;
+  color: rgba(216, 180, 254, 0.55);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-left: auto;
+  padding-bottom: 2px;
 }
 
 /* ── eyebrow ── */
@@ -77,7 +112,7 @@
 }
 
 .w-now-poster {
-  flex: 0 0 150px;
+  flex: 0 0 180px;
   aspect-ratio: 2 / 3;
   border-radius: 14px;
   overflow: hidden;
@@ -134,10 +169,10 @@
   margin: 0 0 28px;
 }
 
-/* ── 鎮站之寶 ── */
+/* ── 一生推（不鎖數量；用 auto-fit 撐 N 部） ── */
 .w-favs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 22px;
 }
 
@@ -194,7 +229,18 @@
 .w-fav-line { margin: 0; display: flex; align-items: center; gap: 8px; }
 .w-fav-year { font-size: 0.76rem; color: rgba(229, 229, 245, 0.4); }
 
-/* ── 最近在看（清單，文字為主）── */
+/* ── 最近在看（清單 + 週分組）── */
+.w-recent-group {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(216, 180, 254, 0.7);
+  margin: 28px 0 8px;
+}
+.w-recent-group:first-of-type { margin-top: 0; }
+.w-recent-group--dim { color: rgba(229, 229, 245, 0.32); }
+
 .w-recent { list-style: none; margin: 0; padding: 0; }
 
 .w-recent-row {
@@ -228,6 +274,25 @@
 }
 
 .w-recent-detail { font-size: 0.84rem; color: rgba(229, 229, 245, 0.55); white-space: nowrap; }
+
+.w-recent-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  border: 1px solid currentColor;
+  opacity: 0.7;
+}
+.w-recent-badge--anime { color: rgba(216, 180, 254, 0.85); }
+.w-recent-badge--film  { color: rgba(255, 224, 158, 0.75); }
+
+.w-recent-err {
+  font-size: 0.86rem;
+  color: rgba(255, 180, 180, 0.7);
+  margin: 0 0 14px;
+}
 .w-recent-date { font-size: 0.8rem; color: rgba(229, 229, 245, 0.38); flex: 0 0 auto; width: 42px; text-align: right; }
 
 /* ── 口味（文字化）── */
@@ -258,6 +323,16 @@
   transform: translateY(-2px);
 }
 
+/* ── 收尾句（與 Journey/History 收尾呼應）── */
+.w-ending {
+  margin: 4rem 0 0;
+  font-size: 0.96rem;
+  color: rgba(229, 229, 245, 0.55);
+  text-align: center;
+  letter-spacing: 0.05em;
+  font-style: italic;
+}
+
 /* ── stars ── */
 .w-stars { color: #f5c518; font-size: 0.84rem; letter-spacing: 1px; white-space: nowrap; }
 .w-stars-dim { color: rgba(255, 255, 255, 0.2); }
@@ -268,8 +343,12 @@
   .w-header { margin-bottom: 3.5rem; }
   .w-now, .w-section { margin-bottom: 4rem; }
   .w-now-body { flex-direction: column; gap: 20px; }
-  .w-now-poster { flex-basis: 130px; width: 130px; }
-  .w-favs { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .w-now-poster { flex: 0 0 140px; width: 140px; }
+  .w-favs { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px; }
+  .w-stats { gap: 16px; }
+  .w-stat { padding-right: 12px; }
+  .w-stat-num { font-size: 1.2rem; }
+  .w-stats-year { margin-left: 0; width: 100%; }
   /* 手機沒 hover：碎念常駐淡淡顯示 */
   .w-fav-quote {
     position: static;
