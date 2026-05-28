@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      anigamer:
+        specifier: ^0.2.0
+        version: 0.2.0
       axios:
         specifier: ^1.15.2
         version: 1.15.2
@@ -221,6 +224,10 @@ packages:
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
+
+  anigamer@0.2.0:
+    resolution: {integrity: sha512-dRRYJDCOTIArcunU1NMm/fhAPQZN0Ts4mrgr5PgtM+TQ3RHk4sQagxSZXffgWVdegs6N0V1dTFaMBsnGdtVm8A==}
+    engines: {node: '>=20'}
 
   append-field@1.0.0:
     resolution: {integrity: sha512-klpgFSWLW1ZEs8svjfb7g4qWY0YS5imI82dTg+QahUvJ8YqAY0P10Uk8tTyh9ZGuYEZEMaeJYCF5BFuX552hsw==}
@@ -1099,6 +1106,8 @@ snapshots:
 
   agent-base@7.1.4:
     optional: true
+
+  anigamer@0.2.0: {}
 
   append-field@1.0.0: {}
 
