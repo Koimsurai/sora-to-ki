@@ -380,7 +380,9 @@
       "openOnTmdb": "Open on TMDb",
       "openOnBahamut": "Open on Bahamut Anime",
       "viewWatch": "← Back to What I'm watching"
-    }
+    },
+    "continueOn": "Continue on {{service}}",
+    "tasteDataLabel": "What the data says"
   },
   "setup": {
     "title": "My Setup",

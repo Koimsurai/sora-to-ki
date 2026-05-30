@@ -243,25 +243,47 @@ function Watch() {
 
   const taste = TASTE_BY_LANG[lang] || TASTE_BY_LANG['zh-TW'];
 
+  /* ── 從 films + tv 資料推導 top genres（DB 存 comma-separated 简体）── */
+  const dataGenres = useMemo(() => {
+    const counts = new Map();
+    const accumulate = (rows) => {
+      for (const row of rows || []) {
+        if (!row.genres) continue;
+        for (const g of String(row.genres).split(',')) {
+          const name = g.trim();
+          if (!name) continue;
+          counts.set(name, (counts.get(name) || 0) + 1);
+        }
+      }
+    };
+    accumulate(films);
+    accumulate(series);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+  }, [films, series]);
+
   const epTemplate = EP_LABEL[lang] || EP_LABEL['zh-TW'];
   const RecentRow = (r) => (
     <li className="w-recent-row" key={r.id}>
+      <span className="w-recent-dot" aria-hidden="true" />
       <img className="w-recent-thumb" src={r.poster} alt={r.title} loading="lazy" />
       <span className="w-recent-title">{r.title}</span>
-      <span className="w-recent-detail">
-        {r.type === 'anime' && (r.episode
-          ? interpolate(epTemplate, { n: r.episode })
-          : <span className="w-recent-badge w-recent-badge--anime">{t('watch.typeAnime')}</span>)}
+      <span className="w-recent-tags">
+        {r.type === 'anime' && (
+          <>
+            <span className="w-recent-badge w-recent-badge--anime">{t('watch.typeAnime')}</span>
+            {r.episode && <span className="w-recent-meta">{interpolate(epTemplate, { n: r.episode })}</span>}
+          </>
+        )}
         {r.type === 'film' && (
           <>
             <span className="w-recent-badge w-recent-badge--film">{t('watch.typeFilm')}</span>
-            {r.year ? <span className="w-recent-year">{r.year}</span> : null}
+            {r.year && <span className="w-recent-meta">{r.year}</span>}
           </>
         )}
         {r.type === 'tv' && (
           <>
             <span className="w-recent-badge w-recent-badge--tv">{t('watch.typeTv')}</span>
-            <span className="w-recent-eps">{interpolate(epTemplate, { n: r.epCount })}</span>
+            {r.epCount && <span className="w-recent-meta">{interpolate(epTemplate, { n: r.epCount })}</span>}
           </>
         )}
       </span>
@@ -296,21 +318,37 @@ function Watch() {
           </div>
         </motion.header>
 
-        {/* 正在看 */}
+        {/* 正在看 — 用海報做 blurred backdrop，海報坐左、meta + CTA 撐右半 */}
         {now && (
           <motion.section className="w-now" {...reveal}>
-            <span className="w-eyebrow w-eyebrow--live">{t('watch.eyebrowLive')}</span>
-            <div className="w-now-body">
-              <a className="w-now-poster" href={now.bahamutUrl} target="_blank" rel="noopener noreferrer">
-                <img src={now.poster} alt={now.title} />
-              </a>
-              <div className="w-now-text">
-                <h2 className="w-now-title">{now.title}</h2>
-                <p className="w-now-meta">
-                  {interpolate(EP_LABEL[lang] || EP_LABEL['zh-TW'], { n: now.episode ?? now.epCount })}
-                  {' · '}{SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW']}
-                  {now.date ? ` · ${now.date}` : ''}
-                </p>
+            <div
+              className="w-now-bg"
+              style={{ backgroundImage: now.poster ? `url(${now.poster})` : undefined }}
+              aria-hidden="true"
+            />
+            <div className="w-now-inner">
+              <span className="w-eyebrow w-eyebrow--live">{t('watch.eyebrowLive')}</span>
+              <div className="w-now-body">
+                <a className="w-now-poster" href={now.bahamutUrl} target="_blank" rel="noopener noreferrer">
+                  <img src={now.poster} alt={now.title} />
+                </a>
+                <div className="w-now-text">
+                  <h2 className="w-now-title">{now.title}</h2>
+                  <p className="w-now-meta">
+                    {interpolate(EP_LABEL[lang] || EP_LABEL['zh-TW'], { n: now.episode ?? now.epCount })}
+                    {' · '}{SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW']}
+                    {now.date ? ` · ${now.date}` : ''}
+                  </p>
+                  {now.epCount > 1 && (
+                    <p className="w-now-stat">
+                      <span className="w-now-stat-num">{now.epCount}</span>
+                      <span className="w-now-stat-label">{t('watch.library.epsSuffix')}</span>
+                    </p>
+                  )}
+                  <a className="w-now-cta" href={now.bahamutUrl} target="_blank" rel="noopener noreferrer">
+                    {t('watch.continueOn', { service: SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW'] })} →
+                  </a>
+                </div>
               </div>
             </div>
           </motion.section>
@@ -357,13 +395,25 @@ function Watch() {
           )}
         </motion.section>
 
-        {/* 口味（文字化）*/}
+        {/* 口味（文字化 + data-derived genres）*/}
         <motion.section className="w-section" {...reveal}>
           <h2 className="w-h2">{t('watch.tasteTitle')}</h2>
           <p className="w-taste-line">{taste.line}</p>
           <div className="w-taste-tags">
             {taste.tags.map((tag) => <span className="w-tag" key={tag}>{tag}</span>)}
           </div>
+          {dataGenres.length > 0 && (
+            <div className="w-taste-data">
+              <h3 className="w-taste-data-label">{t('watch.tasteDataLabel')}</h3>
+              <div className="w-taste-tags">
+                {dataGenres.map(([name, count]) => (
+                  <span className="w-tag w-tag--data" key={name}>
+                    {name}<span className="w-tag-count">{count}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </motion.section>
 
         {/* 收尾 */}

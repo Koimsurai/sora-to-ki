@@ -380,7 +380,9 @@
       "openOnTmdb": "在 TMDb 开启",
       "openOnBahamut": "在动画疯开启",
       "viewWatch": "← 回 「在看什么」"
-    }
+    },
+    "continueOn": "在 {{service}} 继续看",
+    "tasteDataLabel": "从资料看出来的"
   },
   "setup": {
     "title": "我的装备 · My Setup",

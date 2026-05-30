@@ -380,7 +380,9 @@
       "openOnTmdb": "在 TMDb 開啟",
       "openOnBahamut": "在動畫瘋開啟",
       "viewWatch": "← 回 「在看什麼」"
-    }
+    },
+    "continueOn": "在 {{service}} 繼續看",
+    "tasteDataLabel": "從資料看出來的"
   },
   "setup": {
     "title": "我的配備 · My Setup",

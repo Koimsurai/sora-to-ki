@@ -380,7 +380,9 @@
       "openOnTmdb": "TMDb에서 열기",
       "openOnBahamut": "動畫瘋에서 열기",
       "viewWatch": "← 「지금 보고 있는 것」으로 돌아가기"
-    }
+    },
+    "continueOn": "{{service}}에서 이어보기",
+    "tasteDataLabel": "데이터에서 보이는 것"
   },
   "setup": {
     "title": "내 장비 · My Setup",
