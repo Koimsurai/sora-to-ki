@@ -5112,7 +5112,9 @@ setInterval(() => syncTraktHistory(), 6 * 60 * 60 * 1000);
    狀態存記憶體、短 TTL；沒 heartbeat / 沒在播就自然過期 → 前端退回「最近看完」
 ═════════════════════════════════════════════════════════════ */
 const NOW_WATCHING_TTL_MS = 90 * 1000; // 兩個 heartbeat 沒來就過期
+const TRAKT_POLL_MIN_MS = 25 * 1000;   // /watch/now 被打時，最多每 25 秒問 Trakt 一次（節流）
 let nowWatching = null; // { type, title, cover, tmdbId, episode, progressPct, source, externalUrl, startedAt, expiresAt }
+let lastTraktPollAt = 0;
 
 function currentNowWatching() {
   return nowWatching && Date.now() < nowWatching.expiresAt ? nowWatching : null;
@@ -5168,7 +5170,13 @@ apiRouter.post('/admin/watch/now', bahamutPushAuth, async (req, res) => {
 });
 
 // 公開讀取目前即時觀看
-apiRouter.get('/watch/now', (req, res) => {
+// Trakt 改「按需 + 節流」：只有有人在看 /watch 這頁、且距上次 >25s 才問 Trakt；閒置時完全不打。
+// 動畫瘋是 push（heartbeat），最即時，優先採用。
+apiRouter.get('/watch/now', async (req, res) => {
+  const cur = currentNowWatching();
+  if (!(cur && cur.source === 'bahamut') && Date.now() - lastTraktPollAt > TRAKT_POLL_MIN_MS) {
+    await pollTraktWatching();
+  }
   const w = currentNowWatching();
   if (!w) return res.json({ watching: null });
   const { expiresAt, ...pub } = w;
@@ -5188,10 +5196,12 @@ async function getTraktSlug(tok) {
   return traktSlug;
 }
 async function pollTraktWatching() {
+  lastTraktPollAt = Date.now();
   const tok = await getValidTraktToken();
   if (!tok) return;
   const slug = await getTraktSlug(tok);
   if (!slug) return;
+  const clearTrakt = () => { if (nowWatching?.source === 'trakt') nowWatching = null; };
   try {
     const r = await fetch(`https://api.trakt.tv/users/${slug}/watching`, {
       headers: {
@@ -5202,8 +5212,7 @@ async function pollTraktWatching() {
         Authorization: `Bearer ${tok.access_token}`,
       },
     });
-    if (r.status === 204 || r.status === 404) return; // 沒在看 → 不動，讓 TTL 自然清
-    if (!r.ok) return;
+    if (r.status === 204 || r.status === 404 || !r.ok) { clearTrakt(); return; } // 沒在看 → 清掉 Trakt 那條
     const d = await r.json();
     let type = null;
     let title = null;
@@ -5219,6 +5228,7 @@ async function pollTraktWatching() {
       tmdbId = d.show.ids?.tmdb || null;
       episode = `S${String(d.episode.season).padStart(2, '0')}E${String(d.episode.number).padStart(2, '0')}`;
     } else {
+      clearTrakt();
       return;
     }
     const now = Date.now();
@@ -5244,8 +5254,7 @@ async function pollTraktWatching() {
     /* ignore */
   }
 }
-setTimeout(() => pollTraktWatching(), 20 * 1000);
-setInterval(() => pollTraktWatching(), 45 * 1000);
+// 不在背景常駐輪詢；改由 GET /watch/now 按需 + 節流觸發（見上）
 
 /* ═════════════════════════════════════════════════════════════
    Letterboxd RSS — 拉 timo9378 的 diary RSS、塞 film_history
