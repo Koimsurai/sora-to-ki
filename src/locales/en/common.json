@@ -342,10 +342,8 @@
     "subtitle": "Anime and film taste, all in one page",
     "eyebrowLive": "● Now",
     "favoritesTitle": "All-time loves",
-    "favoritesSubtitle": "Whoever lives in my head — hover for the mumbling",
-    "recentTitle": "Recently watched",
-    "tasteTitle": "Taste",
-    "typeAnime": "Anime",
+    "favoritesSubtitle": "Sci-fi and slow-burn storytelling, a disciple of Nolan and Villeneuve; on the anime side I pick comfort slice-of-life.",
+    "recentTitle": "Recently watched",    "typeAnime": "Anime",
     "typeFilm": "Film",
     "stats": {
       "animeLabel": "anime",
@@ -382,7 +380,7 @@
       "viewWatch": "← Back to What I'm watching"
     },
     "continueOn": "Continue on {{service}}",
-    "tasteDataLabel": "What the data says"
+    "viewOnTmdb": "View on TMDb"
   },
   "setup": {
     "title": "My Setup",

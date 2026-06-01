@@ -342,10 +342,8 @@
     "subtitle": "我的动画与电影品味，一页摊开给你看",
     "eyebrowLive": "● 正在看",
     "favoritesTitle": "一生推",
-    "favoritesSubtitle": "想到谁就丢上来，hover 看我碎念",
-    "recentTitle": "最近在看",
-    "tasteTitle": "口味",
-    "typeAnime": "动画",
+    "favoritesSubtitle": "偏好科幻与慢节奏叙事，是 Nolan 与 Villeneuve 的信徒；动画挑日常治愈系。",
+    "recentTitle": "最近在看",    "typeAnime": "动画",
     "typeFilm": "电影",
     "stats": {
       "animeLabel": "部动画",
@@ -382,7 +380,7 @@
       "viewWatch": "← 回 「在看什么」"
     },
     "continueOn": "在 {{service}} 继续看",
-    "tasteDataLabel": "从资料看出来的"
+    "viewOnTmdb": "在 TMDb 查看"
   },
   "setup": {
     "title": "我的装备 · My Setup",

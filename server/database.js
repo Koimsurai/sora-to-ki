@@ -382,13 +382,20 @@ function initializeDatabase() {
       )
     `);
 
-    // 補加 episode 欄位（舊 DB 沒有時 ALTER）
+    // 補加 episode + tmdb_id 欄位（舊 DB 沒有時 ALTER）
     db.all("PRAGMA table_info(anime_history)", (err, cols) => {
       if (err) return;
-      if (!cols.some((c) => c.name === 'episode')) {
+      const names = new Set(cols.map((c) => c.name));
+      if (!names.has('episode')) {
         db.run("ALTER TABLE anime_history ADD COLUMN episode TEXT", (e) => {
           if (e) console.error('add episode column fail:', e.message);
           else console.log('[anime_history] added episode column');
+        });
+      }
+      if (!names.has('tmdb_id')) {
+        db.run("ALTER TABLE anime_history ADD COLUMN tmdb_id INTEGER", (e) => {
+          if (e) console.error('add tmdb_id column fail:', e.message);
+          else console.log('[anime_history] added tmdb_id column');
         });
       }
     });

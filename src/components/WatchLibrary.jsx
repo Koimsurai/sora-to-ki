@@ -30,6 +30,8 @@ function normalizeAnime(rows) {
   return [...byAnime.values()].map((eps) => {
     const sorted = eps.slice().sort((a, b) => (b.last_watched_at || '').localeCompare(a.last_watched_at || ''));
     const head = sorted[0];
+    // tmdb_id 取「該動畫任一筆有值的」— 最新集數常是剛同步、還沒 enrich 的 NULL
+    const tmdbId = head.tmdb_id ?? eps.find((e) => e.tmdb_id != null)?.tmdb_id ?? null;
     return {
       id: `a${head.anime_sn}`,
       type: 'anime',
@@ -38,7 +40,11 @@ function normalizeAnime(rows) {
       isoDate: (head.last_watched_at || '').slice(0, 10),
       episode: head.episode,
       epCount: eps.length,
-      externalUrl: `https://ani.gamer.com.tw/animeVideo.php?sn=${head.video_sn}`,
+      tmdbId,
+      // 連結走 TMDb（動畫算 TV）；尚未 enrich 就退到 TMDb 搜尋頁
+      externalUrl: tmdbId
+        ? `https://www.themoviedb.org/tv/${tmdbId}`
+        : `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title)}`,
     };
   });
 }

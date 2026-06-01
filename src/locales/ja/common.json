@@ -342,10 +342,8 @@
     "subtitle": "アニメと映画の趣味、まとめて一枚に",
     "eyebrowLive": "● 視聴中",
     "favoritesTitle": "一生推し",
-    "favoritesSubtitle": "頭に住んでる作品たち、hover でひと言",
-    "recentTitle": "最近みたもの",
-    "tasteTitle": "好み",
-    "typeAnime": "アニメ",
+    "favoritesSubtitle": "SF とスローテンポの物語が好きで、Nolan と Villeneuve の信者。アニメは日常系の癒し作品を選びがちです。",
+    "recentTitle": "最近みたもの",    "typeAnime": "アニメ",
     "typeFilm": "映画",
     "stats": {
       "animeLabel": "アニメ",
@@ -382,7 +380,7 @@
       "viewWatch": "← 「今みているもの」へ戻る"
     },
     "continueOn": "{{service}} で続きを見る",
-    "tasteDataLabel": "データから見えるもの"
+    "viewOnTmdb": "TMDb で見る"
   },
   "setup": {
     "title": "私のセットアップ · My Setup",

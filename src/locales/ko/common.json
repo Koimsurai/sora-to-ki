@@ -342,10 +342,8 @@
     "subtitle": "애니와 영화 취향, 한 페이지에 펼쳐 놓아요",
     "eyebrowLive": "● 시청 중",
     "favoritesTitle": "인생작",
-    "favoritesSubtitle": "머릿속에 살고 있는 작품들 — hover로 한마디",
-    "recentTitle": "최근에 본 것",
-    "tasteTitle": "취향",
-    "typeAnime": "애니",
+    "favoritesSubtitle": "SF 와 느린 호흡의 서사를 선호하고, Nolan 과 Villeneuve 의 신도예요. 애니메이션은 일상 힐링물을 고르는 편.",
+    "recentTitle": "최근에 본 것",    "typeAnime": "애니",
     "typeFilm": "영화",
     "stats": {
       "animeLabel": "편 애니",
@@ -382,7 +380,7 @@
       "viewWatch": "← 「지금 보고 있는 것」으로 돌아가기"
     },
     "continueOn": "{{service}}에서 이어보기",
-    "tasteDataLabel": "데이터에서 보이는 것"
+    "viewOnTmdb": "TMDb에서 보기"
   },
   "setup": {
     "title": "내 장비 · My Setup",

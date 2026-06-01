@@ -15,6 +15,10 @@ import './Watch.css';
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const TMDB = (p) => `https://image.tmdb.org/t/p/w500${p}`;
 
+/* 連結通通走 TMDb：電影 → /movie/{id}、動畫/影集 → /tv/{id} */
+const tmdbUrl = (kind, id) =>
+  id ? `https://www.themoviedb.org/${kind === 'film' || kind === 'movie' ? 'movie' : 'tv'}/${id}` : null;
+
 /* ── 一生推（手動策展，想加就加；anime/drama/film 都可）── */
 /* 「第 N 集」、「動畫瘋」服務名按語系切換 */
 const EP_LABEL = {
@@ -26,10 +30,10 @@ const SERVICE_LABEL = {
 const interpolate = (tpl, vars) => tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
 
 const FAVORITES_STATIC = [
-  { id: 'a', kind: 'film',  year: 2014, poster: TMDB('/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg'), rating: 5 },
-  { id: 'b', kind: 'film',  year: 2017, poster: TMDB('/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg'), rating: 5 },
-  { id: 'c', kind: 'film',  year: 2010, poster: TMDB('/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'), rating: 5 },
-  { id: 'd', kind: 'film',  year: 1999, poster: TMDB('/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg'), rating: 5 },
+  { id: 'a', kind: 'film',  year: 2014, tmdbId: 157336, poster: TMDB('/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg'), rating: 5 }, // 星際效應
+  { id: 'b', kind: 'film',  year: 2017, tmdbId: 335984, poster: TMDB('/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg'), rating: 5 }, // 銀翼殺手 2049
+  { id: 'c', kind: 'film',  year: 2010, tmdbId: 27205,  poster: TMDB('/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'), rating: 5 }, // 全面啟動
+  { id: 'd', kind: 'film',  year: 1999, tmdbId: 603,    poster: TMDB('/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg'), rating: 5 }, // 駭客任務
 ];
 
 const FAVORITES_BY_LANG = {
@@ -70,29 +74,6 @@ const toShortDate = (iso) => {
   if (!iso) return '';
   const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? `${parseInt(m[2], 10)}/${parseInt(m[3], 10)}` : '';
-};
-
-const TASTE_BY_LANG = {
-  'zh-TW': {
-    line: '偏好科幻與慢節奏敘事，是 Nolan 與 Villeneuve 的信徒；動畫挑日常療癒系。',
-    tags: ['科幻', '賽博龐克', '慢節奏', '諾蘭', 'Villeneuve', '日常系', '太空歌劇'],
-  },
-  'zh-CN': {
-    line: '偏好科幻与慢节奏叙事，是 Nolan 与 Villeneuve 的信徒；动画挑日常治愈系。',
-    tags: ['科幻', '赛博朋克', '慢节奏', '诺兰', 'Villeneuve', '日常系', '太空歌剧'],
-  },
-  en: {
-    line: 'Sci-fi and slow-burn storytelling, a disciple of Nolan and Villeneuve; on the anime side I pick comfort slice-of-life.',
-    tags: ['Sci-fi', 'Cyberpunk', 'Slow burn', 'Nolan', 'Villeneuve', 'Slice of life', 'Space opera'],
-  },
-  ja: {
-    line: 'SF とスローテンポの物語が好きで、Nolan と Villeneuve の信者。アニメは日常系の癒し作品を選びがちです。',
-    tags: ['SF', 'サイバーパンク', 'スローテンポ', 'ノーラン', 'Villeneuve', '日常系', 'スペースオペラ'],
-  },
-  ko: {
-    line: 'SF 와 느린 호흡의 서사를 선호하고, Nolan 과 Villeneuve 의 신도예요. 애니메이션은 일상 힐링물을 고르는 편.',
-    tags: ['SF', '사이버펑크', '슬로우 템포', '놀란', 'Villeneuve', '일상물', '스페이스 오페라'],
-  },
 };
 
 const reveal = {
@@ -177,6 +158,8 @@ function Watch() {
         title: head.title,
         cover_url: head.cover_url,
         episode: head.episode,
+        // tmdb_id 取「該動畫任一筆有值的」— 最新集數常是剛同步、還沒 enrich 的 NULL
+        tmdbId: head.tmdb_id ?? eps.find((e) => e.tmdb_id != null)?.tmdb_id ?? null,
         lastWatchedAt: head.last_watched_at,
         epCount: eps.length,
       };
@@ -195,7 +178,9 @@ function Watch() {
         episode: head.episode,
         epCount: head.epCount,
         date: headParsed.shortDate,
-        bahamutUrl: `https://ani.gamer.com.tw/animeVideo.php?sn=${head.video_sn}`,
+        // 連結走 TMDb；還沒 enrich（無 tmdb_id）就退而求其次連 TMDb 搜尋頁
+        externalUrl: tmdbUrl('tv', head.tmdbId)
+          || `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title)}`,
       },
       recentAnime: grouped.slice(1, 12).map((g) => {
         const { isoDate, shortDate } = parseAnimeDate(g.lastWatchedAt);
@@ -208,14 +193,18 @@ function Watch() {
           epCount: g.epCount,
           isoDate,
           date: shortDate,
-          bahamutUrl: `https://ani.gamer.com.tw/animeVideo.php?sn=${g.video_sn}`,
+          externalUrl: tmdbUrl('tv', g.tmdbId),
         };
       }),
     };
   }, [animeHistory]);
 
   const favsLocale = FAVORITES_BY_LANG[lang] || FAVORITES_BY_LANG['zh-TW'];
-  const favorites = FAVORITES_STATIC.map((s, i) => ({ ...s, ...favsLocale[i] }));
+  const favorites = FAVORITES_STATIC.map((s, i) => ({
+    ...s,
+    ...favsLocale[i],
+    externalUrl: tmdbUrl(s.kind, s.tmdbId),
+  }));
 
   /* 把三條源 normalize 成同 shape，依 isoDate DESC 合流，取 12 筆 */
   const filmItems = (films || []).map((f) => ({
@@ -226,6 +215,7 @@ function Watch() {
     isoDate: f.watched_date,
     date: toShortDate(f.watched_date),
     year: f.release_year,
+    externalUrl: tmdbUrl('movie', f.tmdb_id),
   }));
   const tvItems = (series || []).map((s) => ({
     id: `t${s.series_name}`,
@@ -235,61 +225,54 @@ function Watch() {
     isoDate: s.last_watched,
     date: toShortDate(s.last_watched),
     epCount: s.ep_count,
+    externalUrl: tmdbUrl('tv', s.tmdb_id),
   }));
   const recentAll = [...recentAnime, ...filmItems, ...tvItems]
     .sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
     .slice(0, 14);
   const recentGrouped = groupByWeek(recentAll);
 
-  const taste = TASTE_BY_LANG[lang] || TASTE_BY_LANG['zh-TW'];
-
-  /* ── 從 films + tv 資料推導 top genres（DB 存 comma-separated 简体）── */
-  const dataGenres = useMemo(() => {
-    const counts = new Map();
-    const accumulate = (rows) => {
-      for (const row of rows || []) {
-        if (!row.genres) continue;
-        for (const g of String(row.genres).split(',')) {
-          const name = g.trim();
-          if (!name) continue;
-          counts.set(name, (counts.get(name) || 0) + 1);
-        }
-      }
-    };
-    accumulate(films);
-    accumulate(series);
-    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
-  }, [films, series]);
-
   const epTemplate = EP_LABEL[lang] || EP_LABEL['zh-TW'];
-  const RecentRow = (r) => (
-    <li className="w-recent-row" key={r.id}>
-      <span className="w-recent-dot" aria-hidden="true" />
-      <img className="w-recent-thumb" src={r.poster} alt={r.title} loading="lazy" />
-      <span className="w-recent-title">{r.title}</span>
-      <span className="w-recent-tags">
-        {r.type === 'anime' && (
-          <>
-            <span className="w-recent-badge w-recent-badge--anime">{t('watch.typeAnime')}</span>
-            {r.episode && <span className="w-recent-meta">{interpolate(epTemplate, { n: r.episode })}</span>}
-          </>
-        )}
-        {r.type === 'film' && (
-          <>
-            <span className="w-recent-badge w-recent-badge--film">{t('watch.typeFilm')}</span>
-            {r.year && <span className="w-recent-meta">{r.year}</span>}
-          </>
-        )}
-        {r.type === 'tv' && (
-          <>
-            <span className="w-recent-badge w-recent-badge--tv">{t('watch.typeTv')}</span>
-            {r.epCount && <span className="w-recent-meta">{interpolate(epTemplate, { n: r.epCount })}</span>}
-          </>
-        )}
-      </span>
-      <span className="w-recent-date">{r.date}</span>
-    </li>
-  );
+  /* 同一天的 row 共用一個日期 anchor。傳入 prev 用來判斷是否要顯示日期 */
+  const RecentRow = (r, prev) => {
+    const showDate = !prev || prev.date !== r.date;
+    const Inner = r.externalUrl ? 'a' : 'div';
+    const linkProps = r.externalUrl
+      ? { href: r.externalUrl, target: '_blank', rel: 'noopener noreferrer' }
+      : {};
+    return (
+      <li className="w-recent-row" key={r.id}>
+        <Inner
+          className={'w-recent-link' + (showDate ? ' has-anchor' : '') + (r.externalUrl ? ' is-link' : '')}
+          {...linkProps}
+        >
+          <span className="w-recent-anchor">{showDate ? r.date : ''}</span>
+          <img className="w-recent-thumb" src={r.poster} alt={r.title} loading="lazy" />
+          <span className="w-recent-title">{r.title}</span>
+          <span className="w-recent-tags">
+            {r.type === 'anime' && (
+              <>
+                <span className="w-recent-badge w-recent-badge--anime">{t('watch.typeAnime')}</span>
+                {r.episode && <span className="w-recent-meta">{interpolate(epTemplate, { n: r.episode })}</span>}
+              </>
+            )}
+            {r.type === 'film' && (
+              <>
+                <span className="w-recent-badge w-recent-badge--film">{t('watch.typeFilm')}</span>
+                {r.year && <span className="w-recent-meta">{r.year}</span>}
+              </>
+            )}
+            {r.type === 'tv' && (
+              <>
+                <span className="w-recent-badge w-recent-badge--tv">{t('watch.typeTv')}</span>
+                {r.epCount && <span className="w-recent-meta">{interpolate(epTemplate, { n: r.epCount })}</span>}
+              </>
+            )}
+          </span>
+        </Inner>
+      </li>
+    );
+  };
 
   return (
     <div className="w-page">
@@ -318,39 +301,22 @@ function Watch() {
           </div>
         </motion.header>
 
-        {/* 正在看 — 用海報做 blurred backdrop，海報坐左、meta + CTA 撐右半 */}
+        {/* 正在看 — banner hero（風格 C）：3:2 橫幅、收在 .w-wrap 內、底部 gradient + overlay，連結走 TMDb */}
         {now && (
           <motion.section className="w-now" {...reveal}>
-            <div
-              className="w-now-bg"
-              style={{ backgroundImage: now.poster ? `url(${now.poster})` : undefined }}
-              aria-hidden="true"
-            />
-            <div className="w-now-inner">
-              <span className="w-eyebrow w-eyebrow--live">{t('watch.eyebrowLive')}</span>
-              <div className="w-now-body">
-                <a className="w-now-poster" href={now.bahamutUrl} target="_blank" rel="noopener noreferrer">
-                  <img src={now.poster} alt={now.title} />
-                </a>
-                <div className="w-now-text">
-                  <h2 className="w-now-title">{now.title}</h2>
-                  <p className="w-now-meta">
-                    {interpolate(EP_LABEL[lang] || EP_LABEL['zh-TW'], { n: now.episode ?? now.epCount })}
-                    {' · '}{SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW']}
-                    {now.date ? ` · ${now.date}` : ''}
-                  </p>
-                  {now.epCount > 1 && (
-                    <p className="w-now-stat">
-                      <span className="w-now-stat-num">{now.epCount}</span>
-                      <span className="w-now-stat-label">{t('watch.library.epsSuffix')}</span>
-                    </p>
-                  )}
-                  <a className="w-now-cta" href={now.bahamutUrl} target="_blank" rel="noopener noreferrer">
-                    {t('watch.continueOn', { service: SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW'] })} →
-                  </a>
-                </div>
+            <a className="w-now-banner" href={now.externalUrl} target="_blank" rel="noopener noreferrer">
+              {now.poster && <img className="w-now-banner-img" src={now.poster} alt={now.title} />}
+              <div className="w-now-overlay">
+                <span className="w-eyebrow w-eyebrow--live">{t('watch.eyebrowLive')}</span>
+                <h2 className="w-now-title">{now.title}</h2>
+                <p className="w-now-meta">
+                  {interpolate(EP_LABEL[lang] || EP_LABEL['zh-TW'], { n: now.episode ?? now.epCount })}
+                  {' · '}{SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW']}
+                  {now.date ? ` · ${now.date}` : ''}
+                </p>
               </div>
-            </div>
+              <span className="w-now-cta">{t('watch.viewOnTmdb')} →</span>
+            </a>
           </motion.section>
         )}
 
@@ -361,10 +327,10 @@ function Watch() {
           <div className="w-favs">
             {favorites.map((f) => (
               <figure className="w-fav" key={f.id}>
-                <div className="w-fav-poster">
+                <a className="w-fav-poster" href={f.externalUrl} target="_blank" rel="noopener noreferrer">
                   <img src={f.poster} alt={f.title} loading="lazy" />
                   <figcaption className="w-fav-quote">「{f.quote}」</figcaption>
-                </div>
+                </a>
                 <p className="w-fav-title">{f.title}</p>
                 <p className="w-fav-line"><Stars n={f.rating} /> <span className="w-fav-year">{f.year}</span></p>
               </figure>
@@ -384,35 +350,18 @@ function Watch() {
           {recentGrouped.thisWeek.length > 0 && (
             <>
               <h3 className="w-recent-group">{t('watch.recentGroups.thisWeek')}</h3>
-              <ul className="w-recent">{recentGrouped.thisWeek.map(RecentRow)}</ul>
+              <ul className="w-recent">
+                {recentGrouped.thisWeek.map((r, i) => RecentRow(r, recentGrouped.thisWeek[i - 1]))}
+              </ul>
             </>
           )}
           {recentGrouped.earlier.length > 0 && (
             <>
               <h3 className="w-recent-group w-recent-group--dim">{t('watch.recentGroups.earlier')}</h3>
-              <ul className="w-recent">{recentGrouped.earlier.map(RecentRow)}</ul>
+              <ul className="w-recent">
+                {recentGrouped.earlier.map((r, i) => RecentRow(r, recentGrouped.earlier[i - 1]))}
+              </ul>
             </>
-          )}
-        </motion.section>
-
-        {/* 口味（文字化 + data-derived genres）*/}
-        <motion.section className="w-section" {...reveal}>
-          <h2 className="w-h2">{t('watch.tasteTitle')}</h2>
-          <p className="w-taste-line">{taste.line}</p>
-          <div className="w-taste-tags">
-            {taste.tags.map((tag) => <span className="w-tag" key={tag}>{tag}</span>)}
-          </div>
-          {dataGenres.length > 0 && (
-            <div className="w-taste-data">
-              <h3 className="w-taste-data-label">{t('watch.tasteDataLabel')}</h3>
-              <div className="w-taste-tags">
-                {dataGenres.map(([name, count]) => (
-                  <span className="w-tag w-tag--data" key={name}>
-                    {name}<span className="w-tag-count">{count}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
           )}
         </motion.section>
 

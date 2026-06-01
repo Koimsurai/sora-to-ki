@@ -100,116 +100,87 @@
 }
 .w-eyebrow--live { color: #2cb67d; }
 
-/* ── 正在看（hero card：海報模糊鋪底 + 左海報右文字）── */
+/* ── 正在看（風格 C：3:2 橫幅、收在 .w-wrap 880px 內、不破出）── */
 .w-now {
   position: relative;
-  margin-bottom: 5.5rem;
-  border-radius: 22px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 5rem;
 }
 
-.w-now-bg {
-  position: absolute;
-  inset: -50px;
-  background-position: center;
-  background-size: cover;
-  filter: blur(70px) saturate(1.2);
-  opacity: 0.32;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.w-now-bg::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(6, 5, 14, 0.45) 0%, rgba(15, 12, 26, 0.7) 100%);
-}
-
-.w-now-inner {
+.w-now-banner {
   position: relative;
-  z-index: 1;
-  padding: 32px 36px;
-  backdrop-filter: blur(2px);
-}
-
-.w-now-body {
-  display: flex;
-  gap: 36px;
-  align-items: flex-start;
-  margin-top: 16px;
-}
-
-.w-now-poster {
-  flex: 0 0 200px;
-  aspect-ratio: 2 / 3;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
   display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: 18px;
+  overflow: hidden;
+  background: rgba(10, 8, 18, 0.6);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
 }
 
-.w-now:hover .w-now-poster {
-  transform: translateY(-4px);
-  box-shadow: 0 28px 64px rgba(127, 90, 240, 0.3);
+.w-now-banner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 60px rgba(127, 90, 240, 0.24);
 }
 
-.w-now-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.w-now-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s ease;
+}
 
-.w-now-text { flex: 1; min-width: 0; padding-top: 6px; display: flex; flex-direction: column; }
+.w-now-banner:hover .w-now-banner-img { transform: scale(1.03); }
+
+/* 漸層 overlay 在底部、保證標題可讀 */
+.w-now-overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 56px 36px 30px;
+  background: linear-gradient(180deg,
+    rgba(6, 5, 14, 0) 0%,
+    rgba(6, 5, 14, 0.55) 55%,
+    rgba(6, 5, 14, 0.92) 100%);
+}
 
 .w-now-title {
-  font-size: clamp(1.8rem, 3.2vw, 2.4rem);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
   font-weight: 700;
   line-height: 1.15;
-  color: rgba(244, 244, 245, 0.98);
-  margin: 0 0 12px;
+  color: rgba(244, 244, 245, 1);
+  margin: 10px 0 8px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
 }
 
 .w-now-meta {
-  font-size: 0.94rem;
-  color: rgba(229, 229, 245, 0.65);
+  font-size: 0.92rem;
+  color: rgba(244, 244, 245, 0.78);
   letter-spacing: 0.03em;
-  margin: 0 0 20px;
-}
-
-.w-now-stat {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin: 0 0 22px;
-}
-.w-now-stat-num {
-  font-size: 2.4rem;
-  font-weight: 700;
-  color: rgba(216, 180, 254, 0.9);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.w-now-stat-label {
-  font-size: 0.86rem;
-  color: rgba(229, 229, 245, 0.55);
+  margin: 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
 }
 
 .w-now-cta {
-  display: inline-block;
-  align-self: flex-start;
-  padding: 9px 18px;
-  font-size: 0.88rem;
-  color: rgba(216, 180, 254, 0.95);
-  background: rgba(216, 180, 254, 0.1);
-  border: 1px solid rgba(216, 180, 254, 0.3);
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  color: rgba(244, 244, 245, 0.95);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 9999px;
-  text-decoration: none;
+  backdrop-filter: blur(8px);
   letter-spacing: 0.03em;
-  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+  transition: background 0.25s ease, border-color 0.25s ease;
 }
-.w-now-cta:hover {
-  background: rgba(216, 180, 254, 0.2);
-  border-color: rgba(216, 180, 254, 0.55);
-  transform: translateY(-2px);
+
+.w-now-banner:hover .w-now-cta {
+  background: rgba(216, 180, 254, 0.25);
+  border-color: rgba(216, 180, 254, 0.65);
 }
 
 /* ── section 通用 ── */
@@ -341,59 +312,43 @@
 .w-recent-group:first-of-type { margin-top: 0; }
 .w-recent-group--dim { color: rgba(229, 229, 245, 0.32); }
 
-/* ── 最近在看 list：左側 timeline rail + 每行 dot + 統一 tag ── */
+/* ── 最近在看（風格 D：純清單，日期 column + 縮圖 + 標題 + tag，無裝飾線）── */
 .w-recent {
   list-style: none;
   margin: 0;
-  padding: 0 0 0 28px;
-  position: relative;
-}
-
-/* 垂直 rail (淡紫漸層) */
-.w-recent::before {
-  content: '';
-  position: absolute;
-  left: 7px;
-  top: 18px;
-  bottom: 18px;
-  width: 1px;
-  background: linear-gradient(180deg,
-    rgba(216, 180, 254, 0) 0%,
-    rgba(216, 180, 254, 0.3) 12%,
-    rgba(216, 180, 254, 0.3) 88%,
-    rgba(216, 180, 254, 0) 100%);
+  padding: 0;
 }
 
 .w-recent-row {
-  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.w-recent-row:last-child { border-bottom: none; }
+
+/* 一列的內容容器：可點時是 <a>，否則 <div>。grid 在這層 */
+.w-recent-link {
+  display: grid;
+  grid-template-columns: 52px 40px 1fr auto;
+  gap: 14px;
   align-items: center;
-  gap: 16px;
-  padding: 14px 4px 14px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  position: relative;
+  padding: 12px 4px;
+  text-decoration: none;
+  color: inherit;
   transition: transform 0.25s ease;
 }
+.w-recent-link.is-link { cursor: pointer; }
+.w-recent-link.is-link:hover { transform: translateX(4px); }
 
-.w-recent-row:last-child { border-bottom: none; }
-.w-recent-row:hover { transform: translateX(4px); }
-
-/* timeline dot */
-.w-recent-dot {
-  position: absolute;
-  left: -24px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(216, 180, 254, 0.6);
-  box-shadow: 0 0 0 3px rgba(216, 180, 254, 0.08);
-  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+/* 日期 anchor — 同一天只第一筆顯示 */
+.w-recent-anchor {
+  font-size: 0.84rem;
+  color: rgba(229, 229, 245, 0.45);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: 0.02em;
 }
-.w-recent-row:hover .w-recent-dot {
-  background: rgba(216, 180, 254, 0.95);
-  box-shadow: 0 0 0 4px rgba(216, 180, 254, 0.18);
-  transform: translateY(-50%) scale(1.15);
+.w-recent-link.has-anchor .w-recent-anchor {
+  color: rgba(216, 180, 254, 0.85);
 }
 
 .w-recent-thumb {
@@ -413,7 +368,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: color 0.2s ease;
 }
+.w-recent-link.is-link:hover .w-recent-title { color: rgba(216, 180, 254, 0.95); }
 
 .w-recent-tags {
   display: inline-flex;
@@ -447,72 +404,9 @@
   color: rgba(255, 180, 180, 0.7);
   margin: 0 0 14px;
 }
-.w-recent-date { font-size: 0.8rem; color: rgba(229, 229, 245, 0.38); flex: 0 0 auto; width: 42px; text-align: right; }
-
-/* ── 口味（文字化）── */
-.w-taste-line {
-  font-size: 1.08rem;
-  line-height: 1.8;
-  color: rgba(229, 229, 245, 0.82);
-  max-width: 600px;
-  margin: 0 0 24px;
-}
-
-.w-taste-tags { display: flex; flex-wrap: wrap; gap: 10px; }
-
-.w-tag {
-  font-size: 0.84rem;
-  color: rgba(216, 180, 254, 0.88);
-  padding: 6px 14px;
-  border-radius: 9999px;
-  border: 1px solid rgba(216, 180, 254, 0.25);
-  background: rgba(216, 180, 254, 0.06);
-  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
-  cursor: default;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.w-tag:hover {
-  background: rgba(216, 180, 254, 0.14);
-  border-color: rgba(216, 180, 254, 0.5);
-  transform: translateY(-2px);
-}
-
-/* data-derived tag：用較暗色彩跟手動策展 tag 區分 */
-.w-tag--data {
-  color: rgba(229, 229, 245, 0.7);
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.03);
-}
-.w-tag--data:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-.w-tag-count {
-  font-size: 0.72rem;
-  color: rgba(229, 229, 245, 0.4);
-  font-variant-numeric: tabular-nums;
-}
-
-.w-taste-data {
-  margin-top: 2rem;
-}
-
-.w-taste-data-label {
-  font-size: 0.74rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(229, 229, 245, 0.4);
-  margin: 0 0 12px;
-}
-
 /* ── 收尾句（與 Journey/History 收尾呼應）── */
 .w-ending {
-  margin: 4rem 0 0;
+  margin: 1.5rem 0 0;
   font-size: 0.96rem;
   color: rgba(229, 229, 245, 0.55);
   text-align: center;
@@ -529,11 +423,11 @@
   .w-page { padding: 100px 20px 90px; }
   .w-header { margin-bottom: 3.5rem; }
   .w-now, .w-section { margin-bottom: 4rem; }
-  .w-now-body { flex-direction: column; gap: 20px; }
-  .w-now-inner { padding: 24px 20px; }
-  .w-now-poster { flex: 0 0 140px; width: 140px; }
-  .w-now-stat-num { font-size: 1.8rem; }
-  .w-now-body { gap: 24px; }
+  .w-now-banner { border-radius: 14px; aspect-ratio: 4 / 3; }
+  .w-now-overlay { padding: 48px 20px 22px; }
+  .w-now-cta { top: 12px; right: 12px; padding: 8px 14px; font-size: 0.78rem; }
+  .w-recent-link { grid-template-columns: 42px 36px 1fr auto; gap: 12px; }
+  .w-recent-anchor { font-size: 0.76rem; }
   .w-favs { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 18px; }
   .w-stats { gap: 16px; }
   .w-stat { padding-right: 12px; }

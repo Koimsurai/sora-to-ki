@@ -5,7 +5,8 @@
  * Strategy:
  *   - For each film: TMDb /search/movie?query=<title>&language=zh-TW (first result)
  *   - For each unique series_name in tv_history: TMDb /search/tv?...
- *   - Update tmdb_id, poster_url, release_year, genres
+ *   - For each unique anime_sn in anime_history: TMDb /search/tv?... (動畫在 TMDb 算 TV)
+ *   - Update tmdb_id, poster_url, release_year, genres（anime 只補 tmdb_id，封面維持動畫瘋）
  *
  * Run idempotently — rows already enriched are skipped.
  *
@@ -14,6 +15,7 @@
  *   node tmdb-enrich.js                # enrich all NULL rows
  *   node tmdb-enrich.js --force-films  # re-enrich every film (overwrite)
  *   node tmdb-enrich.js --force-tv     # re-enrich every series
+ *   node tmdb-enrich.js --force-anime  # re-enrich every anime
  *   node tmdb-enrich.js --limit 20     # only enrich up to 20 of each kind
  */
 const fs = require('node:fs');
@@ -29,6 +31,7 @@ if (!TOKEN) {
 const args = process.argv.slice(2);
 const forceFilms = args.includes('--force-films');
 const forceTv = args.includes('--force-tv');
+const forceAnime = args.includes('--force-anime');
 const limitIdx = args.indexOf('--limit');
 const LIMIT = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : Infinity;
 
@@ -163,6 +166,65 @@ async function enrichTv(genreMap) {
   console.log(`[tv] done: ${ok} matched, ${miss} missed`);
 }
 
+/**
+ * 動畫瘋標題常帶季數/格式後綴，TMDb 收的是系列名 → 去掉後綴再搜一次。
+ * 例：「關於我轉生變成史萊姆這檔事 第四季」→「關於我轉生變成史萊姆這檔事」
+ *     「一拳超人(第三季)」「擁有超常技能…美食家 S2」「Re：從零…」
+ */
+function simplifyAnimeTitle(title) {
+  return title
+    .replace(/[（(]\s*第[^)）]*[)）]/g, ' ')              // (第三季)
+    .replace(/\s*第[一二三四五六七八九十百零\d]+[季期]\s*$/u, '') // … 第四季 / 第二期
+    .replace(/\s*[Ss](?:eason)?\s*\d+\s*$/u, '')           // … S2 / Season 2
+    .replace(/\s*\[[^\]]*\]\s*/g, ' ')                     // [年齡限制版]
+    .replace(/[：]/g, ':')                                  // 全形冒號 → 半形
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function enrichAnime() {
+  // 動畫在 TMDb 算 TV。title 是動畫瘋中文名 → /search/tv?language=zh-TW
+  // 只補 tmdb_id（連結用），封面維持動畫瘋的 landscape cover_url。
+  const where = forceAnime ? '' : 'WHERE tmdb_id IS NULL';
+  const anime = await allp(
+    `SELECT anime_sn, MAX(title) AS title
+       FROM anime_history ${where}
+      GROUP BY anime_sn
+      ORDER BY MAX(last_watched_at) DESC
+      LIMIT ?`,
+    [LIMIT === Infinity ? -1 : LIMIT],
+  );
+  console.log(`[anime] ${anime.length} titles to enrich`);
+  let ok = 0, miss = 0;
+  for (const a of anime) {
+    try {
+      let r = await searchTitle('tv', a.title);
+      // 對不上 → 去季數/格式後綴再搜一次
+      if (!r) {
+        const simple = simplifyAnimeTitle(a.title);
+        if (simple && simple !== a.title) r = await searchTitle('tv', simple);
+      }
+      if (!r) {
+        console.warn(`  ✗ no match: ${a.title}`);
+        miss++;
+      } else {
+        // 更新該 anime_sn 的所有 row
+        await runp(
+          'UPDATE anime_history SET tmdb_id = ? WHERE anime_sn = ?',
+          [r.id, a.anime_sn],
+        );
+        ok++;
+        if (ok % 10 === 0) console.log(`  ${ok}/${anime.length} anime done`);
+      }
+      await sleep(150);
+    } catch (e) {
+      console.error(`  ERR ${a.title}:`, e.message);
+      miss++;
+    }
+  }
+  console.log(`[anime] done: ${ok} matched, ${miss} missed`);
+}
+
 (async () => {
   console.log('Loading TMDb genre maps...');
   const genreMap = await loadGenres();
@@ -170,6 +232,7 @@ async function enrichTv(genreMap) {
 
   await enrichFilms(genreMap);
   await enrichTv(genreMap);
+  await enrichAnime();
 
   db.close();
   console.log('all done');
