@@ -4549,6 +4549,7 @@ app.use(function (req, res) {
    - cron 每 6 小時跑一次，server 啟動 30 秒後也跑一次
 ─────────────────────────────────────────────────────────────────────── */
 const { AniGamer } = require('anigamer');
+const crypto = require('node:crypto');
 const BAHAMUT_COOKIE_FILE = path.join(__dirname, 'db', '.bahamut-cookie.json');
 
 // 啟動時：先吃 file（最新 rotated 版本），沒有再 fallback env
@@ -4565,18 +4566,28 @@ function loadBahamutCookie() {
   return process.env.BAHAMUT_COOKIE || '';
 }
 
-// SDK client：Bahamut 回 Set-Cookie 時自動 merge，並透過 callback 寫回檔案
-const bahamut = new AniGamer({
-  cookie: loadBahamutCookie(),
-  onCookiesRotated: (jar) => {
-    try {
-      fs.writeFileSync(BAHAMUT_COOKIE_FILE, JSON.stringify(jar, null, 2));
-      console.log('[Bahamut] cookies rotated, persisted');
-    } catch (e) {
-      console.error('[Bahamut] persist cookie fail:', e.message);
-    }
-  },
-});
+// SDK client：Bahamut 回 Set-Cookie 時自動 merge，並透過 callback 寫回檔案。
+// factory + let → 讓後台 / 瀏覽器擴充能熱抽換 cookie 而不必重啟容器。
+function makeBahamutClient(cookie) {
+  return new AniGamer({
+    cookie,
+    onCookiesRotated: (jar) => {
+      // 守門：若 rotate 後 BAHARUNE 不見了（Bahamut 有時 Set-Cookie 把 web cookie 刪掉），
+      // 別把好檔覆寫成掏空的 jar — 否則重啟載到空檔、sync 永遠 skip（先前的災情根因）。
+      if (!jar?.BAHARUNE || !String(jar.BAHARUNE).includes('.')) {
+        console.warn('[Bahamut] rotation dropped BAHARUNE — NOT persisting (keep previous good cookie)');
+        return;
+      }
+      try {
+        fs.writeFileSync(BAHAMUT_COOKIE_FILE, JSON.stringify(jar, null, 2));
+        console.log('[Bahamut] cookies rotated, persisted');
+      } catch (e) {
+        console.error('[Bahamut] persist cookie fail:', e.message);
+      }
+    },
+  });
+}
+let bahamut = makeBahamutClient(loadBahamutCookie());
 
 // 推 Discord webhook（沒設 DISCORD_WEBHOOK_URL 就跳過，同 host 上的 discord-update-notify.sh）
 async function notifyDiscord(content) {
@@ -4626,16 +4637,72 @@ async function checkBahamutJwtExpiry() {
   }
 }
 
+// 動畫 TMDb 補值：每次同步後自動跑，新動畫/新集數的 NULL tmdb_id 自動補上，免手動跑 scripts/tmdb-enrich.js
+const TMDB_API_TOKEN = process.env.TMDB_API_TOKEN;
+function simplifyAnimeTitle(t) {
+  return String(t)
+    .replace(/[（(]\s*第[^)）]*[)）]/g, ' ')                 // (第三季)
+    .replace(/\s*第[一二三四五六七八九十百零\d]+[季期]\s*$/u, '')  // … 第四季 / 第二期
+    .replace(/\s*[Ss](?:eason)?\s*\d+\s*$/u, '')              // … S2 / Season 2
+    .replace(/\s*\[[^\]]*\]\s*/g, ' ')                        // [年齡限制版]
+    .replace(/[：]/g, ':')                                     // 全形冒號
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+async function tmdbSearchTvId(title) {
+  const q = async (query) => {
+    const res = await fetch(
+      `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(query)}&language=zh-TW&include_adult=false`,
+      { headers: { Authorization: `Bearer ${TMDB_API_TOKEN}`, accept: 'application/json' } },
+    );
+    if (!res.ok) return null;
+    const j = await res.json();
+    return j.results?.[0]?.id ?? null;
+  };
+  let id = await q(title);
+  if (!id) {
+    const s = simplifyAnimeTitle(title);
+    if (s && s !== title) id = await q(s);
+  }
+  return id;
+}
+async function enrichNullAnime() {
+  if (!TMDB_API_TOKEN) return;
+  const rows = await new Promise((resolve) =>
+    db.all(
+      'SELECT anime_sn, MAX(title) AS title FROM anime_history WHERE tmdb_id IS NULL GROUP BY anime_sn',
+      (e, r) => resolve(e ? [] : r),
+    ),
+  );
+  if (!rows.length) return;
+  let ok = 0;
+  for (const a of rows) {
+    try {
+      const id = await tmdbSearchTvId(a.title);
+      if (id) {
+        await new Promise((res) =>
+          db.run('UPDATE anime_history SET tmdb_id = ? WHERE anime_sn = ?', [id, a.anime_sn], () => res()),
+        );
+        ok += 1;
+      }
+      await new Promise((r) => setTimeout(r, 150)); // 溫和：~6 req/s
+    } catch {
+      /* 單筆失敗略過 */
+    }
+  }
+  console.log(`[Bahamut] anime TMDb enrich: ${ok}/${rows.length} matched`);
+}
+
 let bahamutSyncRunning = false;
 async function syncBahamutHistory() {
   const { ok, missing } = bahamut.validate();
   if (!ok) {
     console.log('[Bahamut] cookie missing', missing.join(','), '— skip sync');
-    return;
+    return { ok: false, skipped: 'missing-cookie', missing };
   }
   if (bahamutSyncRunning) {
     console.log('[Bahamut] sync already in progress, skip');
-    return;
+    return { ok: false, busy: true };
   }
   bahamutSyncRunning = true;
   console.log('[Bahamut] sync start');
@@ -4648,6 +4715,16 @@ async function syncBahamutHistory() {
 
     // SDK 走完所有頁 + 按 animeSn:videoSn 去重
     const allHistory = await bahamut.historyAll();
+
+    // soft-401 安全網：舊版 SDK 對「HTTP 200 + {error:NO_LOGIN}」會 silent 回 0 筆。
+    // 你帳號有歷史紀錄，健康時絕不會 0 → 視為 session 失效，告警並中止（不覆寫既有資料）。
+    if (allHistory.length === 0) {
+      console.warn('[Bahamut] historyAll 回 0 筆 — session 多半已失效（NO_LOGIN）');
+      await maybeAlertDiscord(
+        '⚠️ **動畫瘋同步抓到 0 筆**，session 多半已失效。請在動畫瘋分頁點瀏覽器擴充推一次新 cookie（或後台更新）。',
+      );
+      return { ok: false, deadSession: true, totalEntries: 0, newEntries: 0 };
+    }
 
     // 1) 找出每個 anime_sn 在 db 是否已有 cover_url（同一部動畫共用一張 cover）
     const uniqueAnimeSns = [...new Set(allHistory.map((e) => e.animeSn).filter(Boolean))];
@@ -4720,20 +4797,100 @@ async function syncBahamutHistory() {
       }
     }
 
+    // 同步後自動補 TMDb（新動畫/新集數的 NULL tmdb_id）→ 連結不會再退到搜尋頁
+    try {
+      await enrichNullAnime();
+    } catch (e) {
+      console.error('[Bahamut] anime enrich fail:', e.message);
+    }
+
     console.log(`[Bahamut] sync done: ${totalEntries} entries, ${newEntries} new, ${coversFetched} covers fetched (${uniqueAnimeSns.length} unique animes)`);
+    return { ok: true, totalEntries, newEntries, coversFetched };
   } catch (err) {
     console.error('[Bahamut] sync error:', err.message);
+    // 新版 SDK 對 NO_LOGIN 會 throw（帶 isAuthError/status）→ 告警並標記 session 死
+    if (err.isAuthError || err.status === 'NO_LOGIN' || /NO_LOGIN|尚未登入/.test(err.message || '')) {
+      await maybeAlertDiscord(
+        '⚠️ **動畫瘋 session 失效（NO_LOGIN）** — 請在動畫瘋分頁點瀏覽器擴充推一次新 cookie。',
+      );
+      return { ok: false, deadSession: true, error: err.message };
+    }
+    return { ok: false, error: err.message };
   } finally {
     bahamutSyncRunning = false;
   }
 }
+
+// ── 動畫瘋 cookie 熱更新 ───────────────────────────────────────
+// 來源：瀏覽器擴充（一鍵抓 cookie）或後台手動貼。寫檔 + 熱抽換 SDK + 立刻重跑同步，免重啟、免改 env。
+// 授權：① 一次性 BAHAMUT_PUSH_TOKEN（給擴充用，header X-Bahamut-Token，免登入）或 ② admin JWT。
+function hasValidBahamutPushToken(req) {
+  const token = process.env.BAHAMUT_PUSH_TOKEN;
+  if (!token) return false;
+  const got = req.header('X-Bahamut-Token') || '';
+  if (got.length !== token.length) return false;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(got), Buffer.from(token));
+  } catch {
+    return false;
+  }
+}
+const bahamutPushAuth = (req, res, next) =>
+  hasValidBahamutPushToken(req) ? next() : requireAdmin(req, res, next);
+
+// GET 目前 cookie 狀態（擴充推送前後可顯示剩餘天數）
+apiRouter.get('/admin/bahamut/status', bahamutPushAuth, (req, res) => {
+  const v = bahamut.validate();
+  const s = bahamut.jwtStatus();
+  res.json({
+    ok: v.ok,
+    missing: v.missing,
+    jwtExpiresAt: s?.expiresAt || null,
+    daysLeft: s ? Math.floor(s.secondsUntilExpiry / 86400) : null,
+  });
+});
+
+// POST 熱更新 cookie：body 接受 { jar: {name:value,...} }（擴充）或 { cookie: "a=b; c=d" }（手貼）
+apiRouter.post('/admin/bahamut/cookie', bahamutPushAuth, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const input =
+      body.jar && typeof body.jar === 'object'
+        ? body.jar
+        : typeof body.cookie === 'string'
+          ? body.cookie
+          : null;
+    if (!input) return res.status(400).json({ ok: false, message: '缺少 cookie 或 jar' });
+
+    const candidate = makeBahamutClient(input);
+    const { ok, missing } = candidate.validate();
+    if (!ok) return res.status(400).json({ ok: false, message: '缺少必要 cookie', missing });
+
+    const status = candidate.jwtStatus();
+    fs.writeFileSync(BAHAMUT_COOKIE_FILE, JSON.stringify(candidate.cookies, null, 2));
+    bahamut = candidate; // 熱抽換
+    lastJwtAlertAt = 0; // 換新 cookie → 重置告警節流
+    console.log('[Bahamut] cookie 經 endpoint 熱更新，觸發同步');
+
+    const sync = await syncBahamutHistory();
+    return res.json({
+      ok: true,
+      jwtExpiresAt: status?.expiresAt || null,
+      daysLeft: status ? Math.floor(status.secondsUntilExpiry / 86400) : null,
+      sync,
+    });
+  } catch (e) {
+    console.error('[Bahamut] cookie 更新失敗:', e.message);
+    return res.status(500).json({ ok: false, message: e.message });
+  }
+});
 
 // GET /api/anime/history — 公開讀取最近觀看
 apiRouter.get('/anime/history', (req, res) => {
   // cap 2000 (DB 約 900 列、之後成長有空間；前端 library 一次拿完 group by anime_sn)
   const limit = Math.min(parseInt(req.query.limit || '50', 10), 2000);
   db.all(
-    `SELECT anime_sn, video_sn, title, cover_url, episode, last_watched_at
+    `SELECT anime_sn, video_sn, title, cover_url, episode, tmdb_id, last_watched_at
      FROM anime_history
      ORDER BY last_watched_at DESC
      LIMIT ?`,
