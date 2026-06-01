@@ -5040,6 +5040,12 @@ async function traktGet(tok, pathStr) {
   return { data: await r.json(), pagecount: parseInt(r.headers.get('x-pagination-page-count') || '1', 10) };
 }
 
+// Trakt 有時 watched_at 是 epoch（當初批次標記沒給日期）→ 1970，當「無日期」存 NULL
+function cleanWatchedDate(raw) {
+  const d = (raw || '').slice(0, 10);
+  return !d || d <= '1970-01-02' ? null : d;
+}
+
 let traktSyncRunning = false;
 async function syncTraktHistory() {
   if (traktSyncRunning) { console.log('[Trakt] sync in progress, skip'); return; }
@@ -5057,7 +5063,7 @@ async function syncTraktHistory() {
       for (const item of data) {
         const m = item.movie;
         if (!m) continue;
-        const watched = (item.watched_at || '').slice(0, 10) || null;
+        const watched = cleanWatchedDate(item.watched_at);
         await new Promise((resolve) => {
           db.run(
             `INSERT OR IGNORE INTO film_history (title, watched_date, source, tmdb_id, release_year)
@@ -5078,7 +5084,7 @@ async function syncTraktHistory() {
         const ep = item.episode;
         const show = item.show;
         if (!ep || !show) continue;
-        const watched = (item.watched_at || '').slice(0, 10) || null;
+        const watched = cleanWatchedDate(item.watched_at);
         const epLabel = `S${String(ep.season).padStart(2, '0')}E${String(ep.number).padStart(2, '0')}`;
         await new Promise((resolve) => {
           db.run(
@@ -5326,9 +5332,10 @@ async function syncLetterboxdRss() {
   }
 }
 
-// 啟動 120 秒後跑首次，之後每 4 小時跑一次（Letterboxd RSS 沒 rate limit 但別太頻繁）
-setTimeout(() => syncLetterboxdRss(), 120 * 1000);
-setInterval(() => syncLetterboxdRss(), 4 * 60 * 60 * 1000);
+// Letterboxd RSS 同步：已停用（電影改走 Trakt，Letterboxd 對電影重複；現有資料不受影響）。
+// parseLetterboxdItem / syncLetterboxdRss 保留在上方，想復用就把下面兩行取消註解即可。
+// setTimeout(() => syncLetterboxdRss(), 120 * 1000);
+// setInterval(() => syncLetterboxdRss(), 4 * 60 * 60 * 1000);
 
 // Start server
 app.listen(PORT, () => {

@@ -98,23 +98,30 @@ const runp = (sql, params = []) =>
   );
 
 async function enrichFilms(genreMap) {
-  const where = forceFilms ? '' : 'WHERE tmdb_id IS NULL';
+  // 也補「有 tmdb_id 但沒海報」的（例：Letterboxd 來的 Napoleon）
+  const where = forceFilms ? '' : 'WHERE tmdb_id IS NULL OR poster_url IS NULL';
   const films = await allp(
-    `SELECT id, title FROM film_history ${where} ORDER BY watched_date DESC NULLS LAST LIMIT ?`,
+    `SELECT id, title, tmdb_id, poster_url FROM film_history ${where} ORDER BY watched_date DESC NULLS LAST LIMIT ?`,
     [LIMIT === Infinity ? -1 : LIMIT],
   );
   console.log(`[films] ${films.length} to enrich`);
   let ok = 0, miss = 0;
   for (const f of films) {
     try {
-      const r = await searchTitle('movie', f.title);
+      // 已有 tmdb_id 但缺海報 → 直接用 id 抓 detail（不重搜，避免把 tmdb_id 改錯）
+      const r = f.tmdb_id && !f.poster_url
+        ? await tmdbGet(`/movie/${f.tmdb_id}?language=zh-TW`)
+        : await searchTitle('movie', f.title);
       if (!r) {
         console.warn(`  ✗ no match: ${f.title}`);
         miss++;
       } else {
         const year = r.release_date ? parseInt(r.release_date.slice(0, 4), 10) : null;
         const poster = r.poster_path ? `${IMG_BASE}${r.poster_path}` : null;
-        const genres = genreNames(genreMap, 'movie', r.genre_ids);
+        // detail 回的是 genres:[{name}]，search 回的是 genre_ids
+        const genres = Array.isArray(r.genres)
+          ? (r.genres.map((g) => g.name).join(',') || null)
+          : genreNames(genreMap, 'movie', r.genre_ids);
         await runp(
           'UPDATE film_history SET tmdb_id = ?, poster_url = ?, release_year = ?, genres = ? WHERE id = ?',
           [r.id, poster, year, genres, f.id],

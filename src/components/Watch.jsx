@@ -19,6 +19,21 @@ const TMDB = (p) => `https://image.tmdb.org/t/p/w500${p}`;
 const tmdbUrl = (kind, id) =>
   id ? `https://www.themoviedb.org/${kind === 'film' || kind === 'movie' ? 'movie' : 'tv'}/${id}` : null;
 
+/* 跨來源去重：同 tmdb_id 視為同一部（movie/tv 命名空間分開，避免同數字撞），保留集數最多的那筆。
+   沒 tmdb_id 的不去重（避免用名字誤殺劇場版/相似名）。 */
+const dedupeByTmdb = (items) => {
+  const byKey = new Map();
+  const out = [];
+  for (const it of items) {
+    if (it.tmdbId == null) { out.push(it); continue; }
+    const key = `${it.type === 'film' || it.type === 'movie' ? 'm' : 't'}:${it.tmdbId}`;
+    const idx = byKey.get(key);
+    if (idx == null) { byKey.set(key, out.length); out.push(it); }
+    else if ((it.epCount ?? 0) > (out[idx].epCount ?? 0)) out[idx] = it; // 留集數多的
+  }
+  return out;
+};
+
 /* ── 一生推（手動策展，想加就加；anime/drama/film 都可）── */
 /* 「第 N 集」、「動畫瘋」服務名按語系切換 */
 const EP_LABEL = {
@@ -206,6 +221,7 @@ function Watch() {
           title: g.title,
           episode: g.episode,
           epCount: g.epCount,
+          tmdbId: g.tmdbId,
           isoDate,
           date: shortDate,
           externalUrl: tmdbUrl('tv', g.tmdbId),
@@ -230,6 +246,7 @@ function Watch() {
     isoDate: f.watched_date,
     date: toShortDate(f.watched_date),
     year: f.release_year,
+    tmdbId: f.tmdb_id,
     externalUrl: tmdbUrl('movie', f.tmdb_id),
   }));
   const tvItems = (series || []).map((s) => ({
@@ -240,9 +257,11 @@ function Watch() {
     isoDate: s.last_watched,
     date: toShortDate(s.last_watched),
     epCount: s.ep_count,
+    tmdbId: s.tmdb_id,
     externalUrl: tmdbUrl('tv', s.tmdb_id),
   }));
-  const recentAll = [...recentAnime, ...filmItems, ...tvItems]
+  // 先跨來源去重（同 tmdb_id 留集數多的），再依日期 DESC 取 14 筆
+  const recentAll = dedupeByTmdb([...recentAnime, ...filmItems, ...tvItems])
     .sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
     .slice(0, 14);
   const recentGrouped = groupByWeek(recentAll);

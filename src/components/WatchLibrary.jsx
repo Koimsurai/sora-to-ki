@@ -121,8 +121,27 @@ function WatchLibrary() {
     return () => { cancelled = true; };
   }, []);
 
+  // 跨「動畫(Bahamut)/影集(Netflix/Trakt)」去重：同 tmdb_id 視為同一部，保留集數最多的那筆。
+  // 沒 tmdb_id 的不去重（避免用名字誤殺劇場版/相似名）。
+  const deduped = useMemo(() => {
+    const anime = items.anime || [];
+    const tv = items.tv || [];
+    const winner = new Map();
+    for (const it of [...anime, ...tv]) {
+      if (it.tmdbId == null) continue;
+      const cur = winner.get(it.tmdbId);
+      if (!cur || (it.epCount ?? 0) > (cur.epCount ?? 0)) winner.set(it.tmdbId, it);
+    }
+    const keep = (it) => it.tmdbId == null || winner.get(it.tmdbId) === it;
+    return {
+      anime: items.anime ? anime.filter(keep) : null,
+      film: items.film,
+      tv: items.tv ? tv.filter(keep) : null,
+    };
+  }, [items]);
+
   const visible = useMemo(() => {
-    const list = items[activeTab] || [];
+    const list = deduped[activeTab] || [];
     const term = search.trim().toLowerCase();
     const filtered = term
       ? list.filter((it) => (it.title || '').toLowerCase().includes(term))
@@ -138,12 +157,12 @@ function WatchLibrary() {
       }
     });
     return sorted;
-  }, [items, activeTab, search, sortBy]);
+  }, [deduped, activeTab, search, sortBy]);
 
   const counts = {
-    anime: items.anime?.length ?? 0,
-    film: items.film?.length ?? 0,
-    tv: items.tv?.length ?? 0,
+    anime: deduped.anime?.length ?? 0,
+    film: deduped.film?.length ?? 0,
+    tv: deduped.tv?.length ?? 0,
   };
 
   return (
