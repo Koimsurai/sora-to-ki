@@ -98,7 +98,25 @@
   letter-spacing: 0.14em;
   margin-bottom: 16px;
 }
-.w-eyebrow--live { color: #2cb67d; }
+.w-eyebrow--live { color: #2cb67d; animation: w-live-pulse 2s ease-in-out infinite; }
+.w-eyebrow--last { color: rgba(229, 229, 245, 0.5); }
+@keyframes w-live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* 即時播放進度條（貼底） */
+.w-now-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.15);
+}
+.w-now-progress > span {
+  display: block;
+  height: 100%;
+  background: #2cb67d;
+  transition: width 0.6s ease;
+}
 
 /* ── 正在看（風格 C：3:2 橫幅、收在 .w-wrap 880px 內、不破出）── */
 .w-now {

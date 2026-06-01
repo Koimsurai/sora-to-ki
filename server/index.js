@@ -5106,6 +5106,148 @@ setTimeout(() => syncTraktHistory(), 90 * 1000);
 setInterval(() => syncTraktHistory(), 6 * 60 * 60 * 1000);
 
 /* ═════════════════════════════════════════════════════════════
+   即時觀看 now-watching（對齊 Spotify now-playing）
+   來源：① 動畫瘋瀏覽器擴充 heartbeat（POST /admin/watch/now）
+        ② 後台輪詢 Trakt /users/{slug}/watching（TV/電影，需有 scrobbler 餵 Trakt）
+   狀態存記憶體、短 TTL；沒 heartbeat / 沒在播就自然過期 → 前端退回「最近看完」
+═════════════════════════════════════════════════════════════ */
+const NOW_WATCHING_TTL_MS = 90 * 1000; // 兩個 heartbeat 沒來就過期
+let nowWatching = null; // { type, title, cover, tmdbId, episode, progressPct, source, externalUrl, startedAt, expiresAt }
+
+function currentNowWatching() {
+  return nowWatching && Date.now() < nowWatching.expiresAt ? nowWatching : null;
+}
+function tmdbUrlFor(type, id) {
+  if (!id) return null;
+  return `https://www.themoviedb.org/${type === 'movie' ? 'movie' : 'tv'}/${id}`;
+}
+
+// 擴充 heartbeat：{ playing, videoSn, title, episode, progressPct }
+apiRouter.post('/admin/watch/now', bahamutPushAuth, async (req, res) => {
+  const b = req.body || {};
+  if (b.playing === false) {
+    if (nowWatching?.source === 'bahamut') nowWatching = null; // 只清自己這條，別動 Trakt
+    return res.json({ ok: true, cleared: true });
+  }
+  let title = b.title || null;
+  let cover = null;
+  let tmdbId = null;
+  let episode = b.episode || null;
+  // 用 video_sn 反查 anime_history，補上正規標題 / 封面 / tmdb_id
+  if (b.videoSn) {
+    const row = await new Promise((resolve) =>
+      db.get(
+        'SELECT anime_sn, title, cover_url, tmdb_id, episode FROM anime_history WHERE video_sn = ? LIMIT 1',
+        [b.videoSn],
+        (e, r) => resolve(e ? null : r),
+      ),
+    );
+    if (row) {
+      title = row.title || title;
+      cover = row.cover_url || null;
+      tmdbId = row.tmdb_id || null;
+      episode = episode || row.episode || null;
+    }
+  }
+  if (!title) return res.status(400).json({ ok: false, message: 'need title or known videoSn' });
+  const now = Date.now();
+  nowWatching = {
+    type: 'anime',
+    title,
+    cover,
+    tmdbId,
+    episode,
+    progressPct: typeof b.progressPct === 'number' ? Math.max(0, Math.min(100, Math.round(b.progressPct))) : null,
+    source: 'bahamut',
+    externalUrl: tmdbUrlFor('tv', tmdbId)
+      || (b.videoSn ? `https://ani.gamer.com.tw/animeVideo.php?sn=${b.videoSn}` : null),
+    startedAt: nowWatching?.source === 'bahamut' && nowWatching.title === title ? nowWatching.startedAt : now,
+    expiresAt: now + NOW_WATCHING_TTL_MS,
+  };
+  res.json({ ok: true });
+});
+
+// 公開讀取目前即時觀看
+apiRouter.get('/watch/now', (req, res) => {
+  const w = currentNowWatching();
+  if (!w) return res.json({ watching: null });
+  const { expiresAt, ...pub } = w;
+  res.json({ watching: pub });
+});
+
+// ── 後台輪詢 Trakt /watching（TV/電影即時；需 Plex/瀏覽器 scrobbler 餵 Trakt）──
+let traktSlug = null;
+async function getTraktSlug(tok) {
+  if (traktSlug) return traktSlug;
+  try {
+    const { data } = await traktGet(tok, '/users/settings');
+    traktSlug = data?.user?.ids?.slug || null;
+  } catch (e) {
+    /* ignore */
+  }
+  return traktSlug;
+}
+async function pollTraktWatching() {
+  const tok = await getValidTraktToken();
+  if (!tok) return;
+  const slug = await getTraktSlug(tok);
+  if (!slug) return;
+  try {
+    const r = await fetch(`https://api.trakt.tv/users/${slug}/watching`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': TRAKT_UA,
+        'trakt-api-version': '2',
+        'trakt-api-key': TRAKT_CLIENT_ID,
+        Authorization: `Bearer ${tok.access_token}`,
+      },
+    });
+    if (r.status === 204 || r.status === 404) return; // 沒在看 → 不動，讓 TTL 自然清
+    if (!r.ok) return;
+    const d = await r.json();
+    let type = null;
+    let title = null;
+    let tmdbId = null;
+    let episode = null;
+    if (d.type === 'movie' && d.movie) {
+      type = 'movie';
+      title = d.movie.title;
+      tmdbId = d.movie.ids?.tmdb || null;
+    } else if (d.type === 'episode' && d.show && d.episode) {
+      type = 'tv';
+      title = d.show.title;
+      tmdbId = d.show.ids?.tmdb || null;
+      episode = `S${String(d.episode.season).padStart(2, '0')}E${String(d.episode.number).padStart(2, '0')}`;
+    } else {
+      return;
+    }
+    const now = Date.now();
+    const started = d.started_at ? Date.parse(d.started_at) : now;
+    let progressPct = null;
+    if (d.started_at && d.expires_at) {
+      const total = Date.parse(d.expires_at) - started;
+      if (total > 0) progressPct = Math.max(0, Math.min(100, Math.round(((now - started) / total) * 100)));
+    }
+    nowWatching = {
+      type,
+      title,
+      cover: null,
+      tmdbId,
+      episode,
+      progressPct,
+      source: 'trakt',
+      externalUrl: tmdbUrlFor(type, tmdbId),
+      startedAt: started,
+      expiresAt: now + NOW_WATCHING_TTL_MS,
+    };
+  } catch (e) {
+    /* ignore */
+  }
+}
+setTimeout(() => pollTraktWatching(), 20 * 1000);
+setInterval(() => pollTraktWatching(), 45 * 1000);
+
+/* ═════════════════════════════════════════════════════════════
    Letterboxd RSS — 拉 timo9378 的 diary RSS、塞 film_history
    只能拿到 user 之後手動 log 的 diary entry；watched 清單不在 RSS 裡
 ═════════════════════════════════════════════════════════════ */

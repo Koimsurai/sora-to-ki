@@ -114,6 +114,7 @@ function Watch() {
   const [films, setFilms] = useState(null);
   const [series, setSeries] = useState(null);
   const [stats, setStats] = useState(null);
+  const [liveNow, setLiveNow] = useState(null);
   const [err, setErr] = useState(null);
 
   useEffect(() => {
@@ -136,6 +137,20 @@ function Watch() {
       }
     })();
     return () => { cancelled = true; };
+  }, []);
+
+  /* 即時觀看：輪詢 /watch/now（有人在播才有內容；30 秒一次）*/
+  useEffect(() => {
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const r = await fetch(`${API_URL}/watch/now`).then((x) => x.json());
+        if (!cancelled) setLiveNow(r.watching || null);
+      } catch { /* ignore */ }
+    };
+    poll();
+    const id = setInterval(poll, 30000);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   /* ── 從 anime_history 聚合成「每部動畫一筆」── */
@@ -274,6 +289,37 @@ function Watch() {
     );
   };
 
+  const serviceLabel = SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW'];
+  /* hero：即時優先（有人在播 → liveNow），否則退回「最近看完」的 now */
+  const hero = liveNow
+    ? {
+        isLive: true,
+        poster: liveNow.cover || now?.poster || null,
+        title: liveNow.title,
+        externalUrl: liveNow.externalUrl,
+        progressPct: liveNow.progressPct,
+        metaParts: [
+          liveNow.episode ? interpolate(epTemplate, { n: liveNow.episode }) : null,
+          liveNow.source === 'bahamut'
+            ? serviceLabel
+            : (liveNow.type === 'movie' ? t('watch.typeFilm') : t('watch.typeTv')),
+        ].filter(Boolean),
+      }
+    : now
+      ? {
+          isLive: false,
+          poster: now.poster,
+          title: now.title,
+          externalUrl: now.externalUrl,
+          progressPct: null,
+          metaParts: [
+            interpolate(epTemplate, { n: now.episode ?? now.epCount }),
+            serviceLabel,
+            now.date || null,
+          ].filter(Boolean),
+        }
+      : null;
+
   return (
     <div className="w-page">
       <div className="w-scrim" />
@@ -301,21 +347,29 @@ function Watch() {
           </div>
         </motion.header>
 
-        {/* 正在看 — banner hero（風格 C）：3:2 橫幅、收在 .w-wrap 內、底部 gradient + overlay，連結走 TMDb */}
-        {now && (
+        {/* hero（風格 C）：有人在播 → 真「● 正在看」LIVE + 進度條；否則「最近看完」。連結走 TMDb */}
+        {hero && (
           <motion.section className="w-now" {...reveal}>
-            <a className="w-now-banner" href={now.externalUrl} target="_blank" rel="noopener noreferrer">
-              {now.poster && <img className="w-now-banner-img" src={now.poster} alt={now.title} />}
+            <a
+              className={'w-now-banner' + (hero.isLive ? ' is-live' : '')}
+              href={hero.externalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {hero.poster && <img className="w-now-banner-img" src={hero.poster} alt={hero.title} />}
               <div className="w-now-overlay">
-                <span className="w-eyebrow w-eyebrow--live">{t('watch.eyebrowLive')}</span>
-                <h2 className="w-now-title">{now.title}</h2>
-                <p className="w-now-meta">
-                  {interpolate(EP_LABEL[lang] || EP_LABEL['zh-TW'], { n: now.episode ?? now.epCount })}
-                  {' · '}{SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW']}
-                  {now.date ? ` · ${now.date}` : ''}
-                </p>
+                <span className={'w-eyebrow ' + (hero.isLive ? 'w-eyebrow--live' : 'w-eyebrow--last')}>
+                  {hero.isLive ? t('watch.eyebrowLive') : t('watch.eyebrowLast')}
+                </span>
+                <h2 className="w-now-title">{hero.title}</h2>
+                <p className="w-now-meta">{hero.metaParts.join(' · ')}</p>
               </div>
               <span className="w-now-cta">{t('watch.viewOnTmdb')} →</span>
+              {hero.isLive && hero.progressPct != null && (
+                <span className="w-now-progress" aria-hidden="true">
+                  <span style={{ width: `${hero.progressPct}%` }} />
+                </span>
+              )}
             </a>
           </motion.section>
         )}
