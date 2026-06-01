@@ -148,12 +148,18 @@ function WatchLibrary() {
       : list;
     const sorted = filtered.slice();
     sorted.sort((a, b) => {
+      const ad = a.isoDate || '';
+      const bd = b.isoDate || '';
       switch (sortBy) {
-        case 'oldest': return (a.isoDate || '').localeCompare(b.isoDate || '');
         case 'titleAsc': return (a.title || '').localeCompare(b.title || '');
         case 'titleDesc': return (b.title || '').localeCompare(a.title || '');
+        case 'oldest':
+          if (!ad || !bd) return (!ad ? 1 : 0) - (!bd ? 1 : 0); // 無日期一律排最後
+          return ad.localeCompare(bd);
         case 'newest':
-        default: return (b.isoDate || '').localeCompare(a.isoDate || '');
+        default:
+          if (!ad || !bd) return (!ad ? 1 : 0) - (!bd ? 1 : 0); // 無日期一律排最後
+          return bd.localeCompare(ad);
       }
     });
     return sorted;
@@ -274,7 +280,7 @@ function WatchLibrary() {
                     {it.type === 'anime' && it.epCount
                       ? <span>{it.epCount} {t('watch.library.epsSuffix')}</span>
                       : null}
-                    {it.isoDate ? <span className="wl-card-date">{it.isoDate}</span> : null}
+                    <span className="wl-card-date">{it.isoDate || t('watch.library.undated')}</span>
                   </p>
                 </div>
               </a>

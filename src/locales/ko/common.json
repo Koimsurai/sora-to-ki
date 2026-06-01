@@ -374,6 +374,7 @@
       },
       "empty": "결과 없음",
       "epsSuffix": "화",
+      "undated": "날짜 불명",
       "loading": "불러오는 중…",
       "openOnLetterboxd": "Letterboxd에서 열기",
       "openOnTmdb": "TMDb에서 열기",

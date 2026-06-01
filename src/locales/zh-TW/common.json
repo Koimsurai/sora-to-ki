@@ -374,6 +374,7 @@
       },
       "empty": "沒有符合的結果",
       "epsSuffix": "集",
+      "undated": "日期不明",
       "loading": "載入中…",
       "openOnLetterboxd": "在 Letterboxd 開啟",
       "openOnTmdb": "在 TMDb 開啟",

@@ -374,6 +374,7 @@
       },
       "empty": "No matches",
       "epsSuffix": "ep",
+      "undated": "Date unknown",
       "loading": "Loading…",
       "openOnLetterboxd": "Open on Letterboxd",
       "openOnTmdb": "Open on TMDb",
