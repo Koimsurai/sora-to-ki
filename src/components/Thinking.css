@@ -185,14 +185,40 @@
 }
 
 /* footer：互動數 + 查看（查看 hover 卡片才出現） */
+/* icon 列上方分隔線（Innei 風） */
+.tk-divider { height: 1px; background: rgba(255, 255, 255, 0.07); margin-top: 16px; }
+
 .tk-card-foot {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 16px;
+  margin-top: 12px;
 }
-.tk-stats { display: flex; gap: 18px; font-size: 0.82rem; color: rgba(229, 229, 245, 0.42); }
-.tk-stats span { display: inline-flex; align-items: center; gap: 6px; }
+.tk-stats { display: flex; gap: 4px; }
+/* 互動 icon：hover 變色 + 放大；按下後依讚/倒讚上色 */
+.tk-ic {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: rgba(229, 229, 245, 0.42);
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.tk-ic svg { transition: transform 0.2s ease, fill 0.2s ease; }
+.tk-ic:not(.tk-ic--static):hover { color: rgba(216, 180, 254, 0.95); background: rgba(216, 180, 254, 0.08); }
+.tk-ic:not(.tk-ic--static):hover svg { transform: scale(1.18); }
+.tk-ic:disabled { cursor: default; }
+.tk-ic--static { cursor: default; }
+.tk-ic.is-like { color: #f472a6; }
+.tk-ic.is-like svg { fill: #f472a6; }
+.tk-ic.is-dislike { color: #fcd34d; }
+.tk-ic.is-dislike svg { fill: #fcd34d; }
 .tk-view {
   font-size: 0.82rem;
   color: rgba(216, 180, 254, 0.75);
@@ -273,6 +299,31 @@
   letter-spacing: 0.05em;
   font-style: italic;
 }
+
+/* 標題列 + RSS icon */
+.tk-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.tk-title-row .tk-title { margin: 0; }
+.tk-rss {
+  display: inline-flex;
+  color: rgba(229, 229, 245, 0.4);
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.tk-rss:hover { color: rgba(216, 180, 254, 0.95); transform: scale(1.1); }
+
+.tk-feed-item { list-style: none; }
+
+/* 詳情頁 */
+.tk-wrap--detail { max-width: 720px; }
+.tk-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: rgba(216, 180, 254, 0.7);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+.tk-back:hover { color: rgba(216, 180, 254, 1); }
+.tk-comments { margin-top: 28px; }
 
 /* ════════ RWD ════════ */
 @media (max-width: 640px) {

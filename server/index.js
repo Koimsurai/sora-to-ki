@@ -1986,78 +1986,57 @@ apiRouter.get('/posts/:id/comments', (req, res) => {
   });
 });
 
-// POST a new comment (public - with keyword filter + IP blacklist)
-apiRouter.post('/posts/:id/comments', (req, res) => {
-  const { author, content, captcha, email, website, avatar_url, provider, parent_id } = req.body;
+// 建立留言（posts 與 thoughts 共用同一套：驗證碼 / IP 黑名單 / 關鍵字過濾 / 審核狀態）
+// targetCol = 'post_id' | 'thought_id'（固定字串，無注入風險）
+function createComment(req, res, targetCol, targetId) {
+  const { author, content, captcha, email, website, avatar_url, parent_id } = req.body;
   if (!author || !content) {
     return res.status(400).json({ "error": "Author and content are required" });
   }
-
   // 檢查是否為登入用戶（帶有 Bearer token）
   let isOAuthUser = false;
   const authHeader = req.header('Authorization');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const decoded = jwt.verify(authHeader.substring(7), JWT_SECRET);
-      if (decoded.userId && decoded.provider) {
-        isOAuthUser = true;
-      }
+      if (decoded.userId && decoded.provider) isOAuthUser = true;
     } catch (_) { }
   }
-
   // 簡易驗證碼檢查（僅匿名用戶）
   if (!isOAuthUser && captcha !== undefined) {
-    const expectedAnswer = req.body.captchaAnswer;
-    if (captcha != expectedAnswer) {
+    if (captcha != req.body.captchaAnswer) {
       return res.status(400).json({ "error": "驗證碼錯誤" });
     }
   }
-
-  // 取得用戶 IP
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || '';
-
-  // 檢查 IP 黑名單
   db.get("SELECT id FROM ip_blacklist WHERE ip = ?", [ip], (err, blocked) => {
     if (blocked) {
       return res.status(403).json({ "error": "您的留言權限已被限制" });
     }
-
-    // 檢查關鍵字過濾（使用快取）
     getKeywordFilters().then(filters => {
       const lowerContent = (content + ' ' + author).toLowerCase();
       let matchedAction = null;
       if (filters) {
         for (const f of filters) {
-          if (lowerContent.includes(f.keyword.toLowerCase())) {
-            matchedAction = f.action;
-            break;
-          }
+          if (lowerContent.includes(f.keyword.toLowerCase())) { matchedAction = f.action; break; }
         }
       }
-
       if (matchedAction === 'reject') {
         return res.status(400).json({ "error": "留言內容包含不允許的詞彙" });
       }
-
       const status = matchedAction === 'spam' ? 'spam' : (isOAuthUser ? 'approved' : 'pending');
-
-      const sql = 'INSERT INTO comments (post_id, author, content, email, website, ip, status, is_admin, avatar_url, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)';
-      const params = [req.params.id, author, content, email || '', website || '', ip, status, avatar_url || '', parent_id || null];
-
-      db.run(sql, params, function (err) {
-        if (err) {
-          res.status(400).json({ "error": err.message });
-          return;
-        }
-        res.status(201).json({
-          "message": "success",
-          "id": this.lastID,
-          "status": status
-        });
+      const sql = `INSERT INTO comments (${targetCol}, author, content, email, website, ip, status, is_admin, avatar_url, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`;
+      const params = [targetId, author, content, email || '', website || '', ip, status, avatar_url || '', parent_id || null];
+      db.run(sql, params, function (e) {
+        if (e) { res.status(400).json({ "error": e.message }); return; }
+        res.status(201).json({ "message": "success", "id": this.lastID, "status": status });
       });
     });
   });
-});
+}
+
+// POST a new comment (public - with keyword filter + IP blacklist)
+apiRouter.post('/posts/:id/comments', (req, res) => createComment(req, res, 'post_id', req.params.id));
 
 // POST like a comment
 apiRouter.post('/comments/:id/like', (req, res) => {
@@ -4927,7 +4906,8 @@ apiRouter.get('/thoughts', (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || '30', 10), 100);
   const offset = Math.max(parseInt(req.query.offset || '0', 10), 0);
   db.all(
-    'SELECT * FROM thoughts ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?',
+    `SELECT t.*, (SELECT COUNT(*) FROM comments c WHERE c.thought_id = t.id AND c.status = 'approved') AS comment_count
+       FROM thoughts t ORDER BY t.created_at DESC, t.id DESC LIMIT ? OFFSET ?`,
     [limit, offset],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -4937,9 +4917,30 @@ apiRouter.get('/thoughts', (req, res) => {
   );
 });
 
+// 公開：RSS feed（必須在 /:id 之前註冊，否則 'rss' 會被當成 id）
+apiRouter.get('/thoughts/rss', (req, res) => {
+  db.all('SELECT * FROM thoughts ORDER BY created_at DESC, id DESC LIMIT 30', (err, rows) => {
+    if (err) return res.status(500).send('error');
+    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const items = (rows || []).map((r) => {
+      const link = `https://koimsurai.com/thinking/${r.id}`;
+      const ref = safeParse(r.ref_json);
+      let desc = r.content || '';
+      if (r.ref_type === 'link' && ref) desc += `\n\n🔗 ${ref.title || ''} ${r.ref_url || ''}`;
+      else if (r.ref_type === 'media' && ref) desc += `\n\n🎬 ${ref.title || ''}`;
+      const pub = new Date(String(r.created_at).replace(' ', 'T') + 'Z').toUTCString();
+      return `<item><title>${esc((r.content || '').slice(0, 60))}</title><link>${link}</link><guid>${link}</guid><pubDate>${pub}</pubDate><description>${esc(desc)}</description></item>`;
+    }).join('');
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>碎念 · Koimsurai</title><link>https://koimsurai.com/thinking</link><description>想到什麼寫什麼</description>${items}</channel></rss>`;
+    res.set('Content-Type', 'application/rss+xml; charset=utf-8').send(xml);
+  });
+});
+
 // 公開：單篇
 apiRouter.get('/thoughts/:id', (req, res) => {
-  db.get('SELECT * FROM thoughts WHERE id = ?', [req.params.id], (err, r) => {
+  db.get(
+    `SELECT t.*, (SELECT COUNT(*) FROM comments c WHERE c.thought_id = t.id AND c.status = 'approved') AS comment_count
+       FROM thoughts t WHERE t.id = ?`, [req.params.id], (err, r) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!r) return res.status(404).json({ error: 'not found' });
     res.json({ message: 'success', thought: { ...r, edited: !!r.edited, ref: safeParse(r.ref_json) } });
@@ -4985,11 +4986,38 @@ apiRouter.put('/admin/thoughts/:id', requireAdmin, async (req, res) => {
   });
 });
 
-// admin：刪除
+// admin：刪除（連同其留言）
 apiRouter.delete('/admin/thoughts/:id', requireAdmin, (req, res) => {
+  db.run('DELETE FROM comments WHERE thought_id = ?', [req.params.id], () => {});
   db.run('DELETE FROM thoughts WHERE id = ?', [req.params.id], (err) =>
     (err ? res.status(500).json({ error: err.message }) : res.json({ message: 'success' })),
   );
+});
+
+// thought 留言（複用 blog 同一套留言系統，只是 key 在 thought_id）
+apiRouter.get('/thoughts/:id/comments', (req, res) => {
+  db.all(
+    "SELECT * FROM comments WHERE thought_id = ? AND status = 'approved' ORDER BY created_at ASC",
+    [req.params.id],
+    (err, rows) => (err ? res.status(400).json({ error: err.message }) : res.json({ message: 'success', comments: rows })),
+  );
+});
+apiRouter.post('/thoughts/:id/comments', (req, res) => createComment(req, res, 'thought_id', req.params.id));
+
+// 讚 / 倒讚（前端用 localStorage 防重複；後端單純 +1）
+apiRouter.post('/thoughts/:id/like', (req, res) => {
+  db.run('UPDATE thoughts SET likes = likes + 1 WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(400).json({ error: err.message });
+    db.get('SELECT likes FROM thoughts WHERE id = ?', [req.params.id], (e, row) =>
+      res.json({ message: 'success', likes: row ? row.likes : 0 }));
+  });
+});
+apiRouter.post('/thoughts/:id/dislike', (req, res) => {
+  db.run('UPDATE thoughts SET dislikes = dislikes + 1 WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(400).json({ error: err.message });
+    db.get('SELECT dislikes FROM thoughts WHERE id = ?', [req.params.id], (e, row) =>
+      res.json({ message: 'success', dislikes: row ? row.dislikes : 0 }));
+  });
 });
 
 // GET /api/anime/history — 公開讀取最近觀看

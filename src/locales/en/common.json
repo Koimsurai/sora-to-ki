@@ -340,7 +340,9 @@
     "title": "Murmurs",
     "subtitle": "Short notes — whatever's on my mind, or what I just watched.",
     "ending": "Most of the time, just thinking out loud.",
-    "empty": "Nothing here yet."
+    "empty": "Nothing here yet.",
+    "back": "Back",
+    "notFound": "Thought not found."
   },
   "watch": {
     "title": "What I'm watching",

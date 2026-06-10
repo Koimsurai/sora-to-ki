@@ -63,6 +63,7 @@ const LazyAnime = lazy(() => import('./components/Anime'));
 const LazyWatch = lazy(() => import('./components/Watch'));
 const LazyWatchLibrary = lazy(() => import('./components/WatchLibrary'));
 const LazyThinking = lazy(() => import('./components/Thinking'));
+const LazyThinkingDetail = lazy(() => import('./components/ThinkingDetail'));
 const LazySetup = lazy(() => import('./components/Setup'));
 const LazyAboutSite = lazy(() => import('./components/AboutSite'));
 const LazyHistory = lazy(() => import('./components/History'));
@@ -325,8 +326,9 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/anime" element={<Suspense fallback={<LoadingFallback />}><LazyAnime /></Suspense>} />
           <Route path="/watch" element={<Suspense fallback={<LoadingFallback />}><LazyWatch /></Suspense>} />
           <Route path="/watch/library" element={<Suspense fallback={<LoadingFallback />}><LazyWatchLibrary /></Suspense>} />
-          {/* 碎念/思考 feed — 預覽用，未公開（不在導覽列） */}
+          {/* 碎念/思考 feed — 未公開（不在導覽列） */}
           <Route path="/thinking" element={<Suspense fallback={<LoadingFallback />}><LazyThinking /></Suspense>} />
+          <Route path="/thinking/:id" element={<Suspense fallback={<LoadingFallback />}><LazyThinkingDetail /></Suspense>} />
           <Route path="/setup" element={<Suspense fallback={<LoadingFallback />}><LazySetup /></Suspense>} />
           <Route path="/about-site" element={<Suspense fallback={<LoadingFallback />}><LazyAboutSite /></Suspense>} />
           <Route path="/history" element={<Suspense fallback={<LoadingFallback />}><LazyHistory /></Suspense>} />

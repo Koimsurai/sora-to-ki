@@ -1,0 +1,118 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Heart, ThumbsDown, MessageCircle } from 'lucide-react';
+
+/* 單則碎念卡片（feed 與詳情頁共用）。讚/倒讚用 localStorage 防重複（一票）。 */
+
+const API = import.meta.env.VITE_API_URL || '/api';
+const AUTHOR = 'Koimsurai';
+
+const toDate = (at) => new Date(String(at).replace(' ', 'T') + (String(at).includes('Z') ? '' : 'Z'));
+const relTime = (at) => {
+  const d = toDate(at);
+  if (Number.isNaN(d.getTime())) return at;
+  const sec = (Date.now() - d.getTime()) / 1000;
+  if (sec < 60) return '剛剛';
+  if (sec < 3600) return `${Math.floor(sec / 60)} 分鐘前`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)} 小時前`;
+  if (sec < 86400 * 30) return `${Math.floor(sec / 86400)} 天前`;
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+};
+const WK = ['日', '一', '二', '三', '四', '五', '六'];
+const fullCh = (at) => {
+  const d = toDate(at);
+  if (Number.isNaN(d.getTime())) return at;
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日星期${WK[d.getDay()]}`;
+};
+
+export default function ThoughtCard({ th, isAdmin, onDelete, detail = false }) {
+  const [likes, setLikes] = useState(th.likes || 0);
+  const [dislikes, setDislikes] = useState(th.dislikes || 0);
+  const key = 'tk_react_' + th.id;
+  const [reacted, setReacted] = useState(() => {
+    try { return localStorage.getItem(key) || ''; } catch { return ''; }
+  });
+
+  const react = async (kind) => {
+    if (reacted) return; // 一票
+    try {
+      const r = await fetch(`${API}/thoughts/${th.id}/${kind}`, { method: 'POST' });
+      const d = await r.json().catch(() => ({}));
+      if (kind === 'like') setLikes(d.likes ?? likes + 1);
+      else setDislikes(d.dislikes ?? dislikes + 1);
+      localStorage.setItem(key, kind);
+      setReacted(kind);
+    } catch { /* ignore */ }
+  };
+
+  return (
+    <div className="tk-card">
+      <div className="tk-card-head">
+        <span className="tk-author">{AUTHOR}</span>
+        <time className="tk-time" dateTime={th.created_at}>{relTime(th.created_at)}</time>
+        {th.edited && th.updated_at && (
+          <span className="tk-edited" data-edited={`編輯於 ${fullCh(th.updated_at)}`}>（已編輯）</span>
+        )}
+      </div>
+
+      <p className="tk-text">{th.content}</p>
+
+      {th.ref_type === 'link' && th.ref && (
+        <a className="tk-embed tk-embed--link tk-linkcard" href={th.ref_url} target="_blank" rel="noopener noreferrer">
+          <div className="tk-embed-info">
+            <h3 className="tk-embed-title">{th.ref.title || th.ref_url}</h3>
+            {th.ref.desc && <p className="tk-embed-desc">{th.ref.desc}</p>}
+            <span className="tk-embed-meta"><span className="tk-embed-site">🌐 {th.ref.site}</span></span>
+          </div>
+          {th.ref.image && <img className="tk-linkcard-img" src={th.ref.image} alt="" loading="lazy" />}
+        </a>
+      )}
+
+      {th.ref_type === 'media' && th.ref && (
+        <a className="tk-embed tk-embed--media tk-media" href={th.ref.url || th.ref_url} target="_blank" rel="noopener noreferrer">
+          <div className="tk-embed-info">
+            <span className="tk-embed-kind">{th.ref.kind} · {th.ref.year}</span>
+            <h3 className="tk-embed-title">{th.ref.title}</h3>
+            {th.ref.overview && <p className="tk-embed-desc">{th.ref.overview}</p>}
+            <span className="tk-embed-meta">★ {th.ref.rating} · {th.ref.genres} · {th.ref.source}</span>
+          </div>
+          {th.ref.poster && <img className="tk-media-poster" src={th.ref.poster} alt={th.ref.title} loading="lazy" />}
+        </a>
+      )}
+
+      <div className="tk-divider" />
+
+      <div className="tk-card-foot">
+        <div className="tk-stats">
+          <button
+            className={'tk-ic' + (reacted === 'like' ? ' is-like' : '')}
+            onClick={() => react('like')}
+            disabled={!!reacted}
+            aria-label="讚"
+          >
+            <Heart size={16} /> <span>{likes}</span>
+          </button>
+          <button
+            className={'tk-ic' + (reacted === 'dislike' ? ' is-dislike' : '')}
+            onClick={() => react('dislike')}
+            disabled={!!reacted}
+            aria-label="倒讚"
+          >
+            <ThumbsDown size={16} /> <span>{dislikes}</span>
+          </button>
+          {detail ? (
+            <span className="tk-ic tk-ic--static"><MessageCircle size={16} /> <span>{th.comment_count || 0}</span></span>
+          ) : (
+            <Link className="tk-ic" to={`/thinking/${th.id}`} aria-label="留言">
+              <MessageCircle size={16} /> <span>{th.comment_count || 0}</span>
+            </Link>
+          )}
+        </div>
+        <div className="tk-foot-actions">
+          {isAdmin && <button className="tk-act" onClick={() => onDelete(th.id)}>刪除</button>}
+          {!detail && <Link className="tk-view" to={`/thinking/${th.id}`}>查看 →</Link>}
+        </div>
+      </div>
+    </div>
+  );
+}

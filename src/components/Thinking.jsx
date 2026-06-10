@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { Rss } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEOHead from './SEOHead';
+import ThoughtCard from './ThoughtCard';
 import './Thinking.css';
 
-/* ──────────────────────────────────────────────────────────────
-   碎念 / 思考 — Innei 式短想法 feed（接 /api/thoughts）
-   - 路由未公開（不在導覽列）
-   - admin 可在頂端發文（content + 選填連結 → 後端 unfurl 出 OG 卡）
-   - 待接：詳情頁/評論浮窗/按讚、/watch 一鍵發、blog 引用
-─────────────────────────────────────────────────────────────── */
+/* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。
+   admin 可在頂端發文（content + 選填連結 → 後端 unfurl）。 */
 
 const API = import.meta.env.VITE_API_URL || '/api';
-const AUTHOR = 'Koimsurai';
 
 const listV = { hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } } };
 const cardV = {
@@ -24,25 +21,6 @@ const headReveal = {
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-};
-
-// sqlite 時間是 UTC（'YYYY-MM-DD HH:MM:SS'）→ 補 Z 再 parse
-const toDate = (at) => new Date(String(at).replace(' ', 'T') + (String(at).includes('Z') ? '' : 'Z'));
-const relTime = (at) => {
-  const d = toDate(at);
-  if (Number.isNaN(d.getTime())) return at;
-  const sec = (Date.now() - d.getTime()) / 1000;
-  if (sec < 60) return '剛剛';
-  if (sec < 3600) return `${Math.floor(sec / 60)} 分鐘前`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)} 小時前`;
-  if (sec < 86400 * 30) return `${Math.floor(sec / 86400)} 天前`;
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-};
-const WK = ['日', '一', '二', '三', '四', '五', '六'];
-const fullCh = (at) => {
-  const d = toDate(at);
-  if (Number.isNaN(d.getTime())) return at;
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日星期${WK[d.getDay()]}`;
 };
 
 function Thinking() {
@@ -91,7 +69,12 @@ function Thinking() {
 
       <div className="tk-wrap">
         <motion.header className="tk-header" {...headReveal}>
-          <h1 className="tk-title">{t('thinking.title')}</h1>
+          <div className="tk-title-row">
+            <h1 className="tk-title">{t('thinking.title')}</h1>
+            <a className="tk-rss" href={`${API}/thoughts/rss`} target="_blank" rel="noopener noreferrer" aria-label="RSS">
+              <Rss size={18} />
+            </a>
+          </div>
           <p className="tk-subtitle">{t('thinking.subtitle')}</p>
         </motion.header>
 
@@ -130,50 +113,8 @@ function Thinking() {
             viewport={{ once: true, margin: '-40px' }}
           >
             {thoughts.map((th) => (
-              <motion.li className="tk-card" key={th.id} variants={cardV}>
-                <div className="tk-card-head">
-                  <span className="tk-author">{AUTHOR}</span>
-                  <time className="tk-time" dateTime={th.created_at}>{relTime(th.created_at)}</time>
-                  {th.edited && th.updated_at && (
-                    <span className="tk-edited" data-edited={`編輯於 ${fullCh(th.updated_at)}`}>（已編輯）</span>
-                  )}
-                </div>
-
-                <p className="tk-text">{th.content}</p>
-
-                {th.ref_type === 'link' && th.ref && (
-                  <a className="tk-embed tk-embed--link tk-linkcard" href={th.ref_url} target="_blank" rel="noopener noreferrer">
-                    <div className="tk-embed-info">
-                      <h3 className="tk-embed-title">{th.ref.title || th.ref_url}</h3>
-                      {th.ref.desc && <p className="tk-embed-desc">{th.ref.desc}</p>}
-                      <span className="tk-embed-meta"><span className="tk-embed-site">🌐 {th.ref.site}</span></span>
-                    </div>
-                    {th.ref.image && <img className="tk-linkcard-img" src={th.ref.image} alt="" loading="lazy" />}
-                  </a>
-                )}
-
-                {th.ref_type === 'media' && th.ref && (
-                  <a className="tk-embed tk-embed--media tk-media" href={th.ref.url || th.ref_url} target="_blank" rel="noopener noreferrer">
-                    <div className="tk-embed-info">
-                      <span className="tk-embed-kind">{th.ref.kind} · {th.ref.year}</span>
-                      <h3 className="tk-embed-title">{th.ref.title}</h3>
-                      {th.ref.overview && <p className="tk-embed-desc">{th.ref.overview}</p>}
-                      <span className="tk-embed-meta">★ {th.ref.rating} · {th.ref.genres} · {th.ref.source}</span>
-                    </div>
-                    {th.ref.poster && <img className="tk-media-poster" src={th.ref.poster} alt={th.ref.title} loading="lazy" />}
-                  </a>
-                )}
-
-                <div className="tk-card-foot">
-                  <div className="tk-stats">
-                    <span>♡ {th.likes || 0}</span>
-                    <span>☷ 0</span>
-                  </div>
-                  <div className="tk-foot-actions">
-                    {isAdmin && <button className="tk-act" onClick={() => del(th.id)}>刪除</button>}
-                    <span className="tk-view">查看 →</span>
-                  </div>
-                </div>
+              <motion.li className="tk-feed-item" key={th.id} variants={cardV}>
+                <ThoughtCard th={th} isAdmin={isAdmin} onDelete={del} />
               </motion.li>
             ))}
           </motion.ul>

@@ -445,11 +445,18 @@ function initializeDatabase() {
         ref_url TEXT,
         ref_json TEXT,
         likes INTEGER DEFAULT 0,
+        dislikes INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME,
         edited INTEGER DEFAULT 0
       )
     `);
+    // thoughts 既有表補 dislikes 欄位
+    db.all('PRAGMA table_info(thoughts)', (err, cols) => {
+      if (!err && cols && !cols.some((c) => c.name === 'dislikes')) {
+        db.run('ALTER TABLE thoughts ADD COLUMN dislikes INTEGER DEFAULT 0', () => {});
+      }
+    });
 
     // 檢查並更新 comments 表
     db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='comments'", (err, table) => {
@@ -510,6 +517,7 @@ function initializeDatabase() {
               { col: 'email', sql: "ALTER TABLE comments ADD COLUMN email TEXT DEFAULT ''" },
               { col: 'website', sql: "ALTER TABLE comments ADD COLUMN website TEXT DEFAULT ''" },
               { col: 'avatar_url', sql: "ALTER TABLE comments ADD COLUMN avatar_url TEXT DEFAULT ''" },
+              { col: 'thought_id', sql: "ALTER TABLE comments ADD COLUMN thought_id INTEGER DEFAULT NULL" },
             ];
             migrations.forEach(({ col, sql }) => {
               if (!columnNames.includes(col)) {

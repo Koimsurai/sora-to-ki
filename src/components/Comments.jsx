@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import './Comments.css';
 
-function Comments({ postId, allowComments = true }) {
+function Comments({ postId, allowComments = true, basePath = 'posts' }) {
   const { t } = useTranslation();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -26,7 +26,7 @@ function Comments({ postId, allowComments = true }) {
 
   useEffect(() => {
     fetchComments();
-    const liked = JSON.parse(localStorage.getItem('liked_comments_' + postId) || '[]');
+    const liked = JSON.parse(localStorage.getItem('liked_comments_' + basePath + '_' + postId) || '[]');
     setLikedComments(liked);
     generateCaptcha();
     // Restore saved author info
@@ -36,7 +36,7 @@ function Comments({ postId, allowComments = true }) {
     if (savedAuthor) setAuthor(savedAuthor);
     if (savedEmail) setEmail(savedEmail);
     if (savedWebsite) setWebsite(savedWebsite);
-  }, [postId]);
+  }, [postId, basePath]);
 
   const generateCaptcha = () => {
     const num1 = Math.floor(Math.random() * 10) + 1;
@@ -46,7 +46,7 @@ function Comments({ postId, allowComments = true }) {
 
   const fetchComments = async () => {
     try {
-      const response = await fetch('/api/posts/' + postId + '/comments');
+      const response = await fetch('/api/' + basePath + '/' + postId + '/comments');
       if (response.ok) {
         const data = await response.json();
         setComments(data.comments);
@@ -101,7 +101,7 @@ function Comments({ postId, allowComments = true }) {
     }
 
     try {
-      const response = await fetch('/api/posts/' + postId + '/comments', {
+      const response = await fetch('/api/' + basePath + '/' + postId + '/comments', {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -128,7 +128,7 @@ function Comments({ postId, allowComments = true }) {
         const errorData = await response.json();
         setError(errorData.error || t('comments.errorFailed'));
       }
-    } catch (error) {
+    } catch {
       setError(t('comments.errorFailedTryLater'));
     } finally {
       setIsLoading(false);
@@ -147,7 +147,7 @@ function Comments({ postId, allowComments = true }) {
         ));
         const newLiked = [...likedComments, commentId];
         setLikedComments(newLiked);
-        localStorage.setItem('liked_comments_' + postId, JSON.stringify(newLiked));
+        localStorage.setItem('liked_comments_' + basePath + '_' + postId, JSON.stringify(newLiked));
       }
     } catch (error) {
       console.error('Error liking comment:', error);
