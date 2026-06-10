@@ -182,6 +182,30 @@ body.intro-animation-active {
    consistent typography and spacing while keeping its
    own layout pattern.
    ═══════════════════════════════════════════════════ */
+/* ── 質感層：全站 film grain + 邊緣 vignette ──
+   深色漸層大面積容易 banding、看起來「太數位」；
+   一層極淡的靜態噪點 + 邊緣壓暗補上底片質地與景深。
+   z-index 49/50：蓋過內容（1~5），低於 header / modal（999+）。 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+  pointer-events: none;
+  background: radial-gradient(ellipse 130% 95% at 50% 38%, transparent 58%, rgba(2, 1, 8, 0.34) 100%);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.04;
+}
+
 .home-section {
   position: relative;
   width: 100%;
@@ -198,18 +222,29 @@ body.intro-animation-active {
   margin-bottom: 2.5rem;
 }
 
+/* eyebrow 前的紫色 accent 短線 — 增加 wayfinding 與精緻度 */
+.home-section-eyebrow::before {
+  content: '';
+  width: 18px;
+  height: 1px;
+  align-self: center;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, rgba(127, 90, 240, 0.9), rgba(216, 180, 254, 0.25));
+  box-shadow: 0 0 8px rgba(127, 90, 240, 0.5);
+}
+
 .section-label {
   display: inline-block;
   font-size: 0.7rem;
-  letter-spacing: 2.5px;
-  color: rgba(255, 255, 255, 0.32);
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .section-eyebrow-count {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.38);
 }
 
 .section-hero-title {
@@ -229,6 +264,10 @@ body.intro-animation-active {
   border-radius: 18px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  /* 玻璃寫實感：頂緣一條受光高光 + 下方柔和落影（拉出與星空背景的層次） */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 50px -22px rgba(0, 0, 0, 0.6);
 }
 
 @media (max-width: 640px) {

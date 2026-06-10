@@ -355,13 +355,24 @@
 }
 
 .home-hero-content h1 {
-  font-family: 'HarmonyOS Sans SC', sans-serif;
-  font-size: 3em;
+  /* 跟全站一致：TASA / MiSans 字體棧（原本獨用 HarmonyOS 不協調），
+     並沿用 section 標題的 白→淡紫 漸層，首屏與內頁同一套語言 */
+  font-size: clamp(2.6rem, 4.6vw, 3.9rem);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.16;
+  letter-spacing: -0.015em;
   margin-bottom: 25px;
-  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, #ffffff 0%, #c7b8ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   white-space: pre-wrap;
+}
+
+/* 漸層文字會讓 ::after 游標也變透明，補回實色 */
+.home-hero-content h1.typing-text::after {
+  -webkit-text-fill-color: #c7b8ff;
+  color: #c7b8ff;
 }
 
 .home-hero-content .tagline {
@@ -669,6 +680,47 @@
   /* 將圖片放大 20% */
 }
 
+/* scroll 提示 — 底部中央一條細線，光點往下流動，打字結束後淡入 */
+.hero-scroll-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.8s ease 0.4s;
+  pointer-events: none;
+}
+
+.hero-scroll-cue.fade-in {
+  opacity: 1;
+}
+
+.hero-scroll-cue span {
+  position: absolute;
+  left: 0;
+  top: -14px;
+  width: 1px;
+  height: 14px;
+  background: linear-gradient(180deg, transparent, rgba(216, 180, 254, 0.95));
+  animation: scroll-cue-drop 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes scroll-cue-drop {
+  0%   { transform: translateY(0); opacity: 0; }
+  25%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { transform: translateY(62px); opacity: 0; }
+}
+
+@media (max-width: 768px) {
+  .hero-scroll-cue { display: none; }
+}
+
 /* 可選：加入背景文字樣式 */
 .background-text {
   position: absolute;
@@ -713,7 +765,9 @@
   box-shadow:
     inset 0 0 40px rgba(0, 0, 0, 0.35),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04),
-    0 8px 30px rgba(0, 0, 0, 0.25);
+    0 8px 30px rgba(0, 0, 0, 0.25),
+    /* 極淡的紫色環境光 — 頭像照片偏暗，把它從深色星空裡分離出來 */
+    0 0 90px rgba(127, 90, 240, 0.13);
   transition:
     border-color 0.4s ease,
     box-shadow 0.4s ease,

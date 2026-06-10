@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Import useState and useEffect
+import React, { useState, useEffect } from 'react'; // Import useState and useEffect
 import { useTranslation } from 'react-i18next';
 // Remove motion import as it's no longer used for text
 import { Parallax } from 'react-scroll-parallax'; // 引入 Parallax
@@ -146,6 +146,9 @@ function Hero() {
 
       {/* Figma 中還有一個巨大的背景文字 "Sergio"，可以考慮加入 */}
       <div className="background-text">Koimsurai</div> {/* 加入背景文字 */}
+
+      {/* scroll 提示線 — 跟 hero-actions 同步淡入 */}
+      <div className={`hero-scroll-cue ${taglineComplete ? 'fade-in' : ''}`} aria-hidden="true"><span /></div>
     </section> // 結束 section
   );
 }

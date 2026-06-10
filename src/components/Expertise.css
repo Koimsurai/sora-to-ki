@@ -3,6 +3,18 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr);
   gap: 56px;
   align-items: start;
+  position: relative;
+}
+
+/* 背景土星剛好落在圖示網格正後方，會跟彩色 icon 打架；
+   墊一層柔和的 radial 暗幕把行星壓暗，內容對比拉回來（不動行星本身） */
+.expertise-v2 .expertise-grid::before {
+  content: '';
+  position: absolute;
+  inset: -48px -72px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 78% 72% at 48% 50%, rgba(5, 3, 14, 0.7), transparent 76%);
 }
 
 /* ── Left hero column ──────────────────────────── */
