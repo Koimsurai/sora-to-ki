@@ -5004,20 +5004,23 @@ apiRouter.get('/thoughts/:id/comments', (req, res) => {
 });
 apiRouter.post('/thoughts/:id/comments', (req, res) => createComment(req, res, 'thought_id', req.params.id));
 
-// 讚 / 倒讚（前端用 localStorage 防重複；後端單純 +1）
-apiRouter.post('/thoughts/:id/like', (req, res) => {
-  db.run('UPDATE thoughts SET likes = likes + 1 WHERE id = ?', [req.params.id], function (err) {
-    if (err) return res.status(400).json({ error: err.message });
-    db.get('SELECT likes FROM thoughts WHERE id = ?', [req.params.id], (e, row) =>
-      res.json({ message: 'success', likes: row ? row.likes : 0 }));
-  });
-});
-apiRouter.post('/thoughts/:id/dislike', (req, res) => {
-  db.run('UPDATE thoughts SET dislikes = dislikes + 1 WHERE id = ?', [req.params.id], function (err) {
-    if (err) return res.status(400).json({ error: err.message });
-    db.get('SELECT dislikes FROM thoughts WHERE id = ?', [req.params.id], (e, row) =>
-      res.json({ message: 'success', dislikes: row ? row.dislikes : 0 }));
-  });
+// 讚 / 倒讚：可取消、可切換。前端傳 { prev, next }（''|'like'|'dislike'），後端依差值調整計數。
+// 無 per-user 表，信任 client 的 prev（個人站可接受，與留言讚同模型）。
+apiRouter.post('/thoughts/:id/react', (req, res) => {
+  const { prev, next } = req.body || {};
+  const ok = (v) => v === 'like' || v === 'dislike' || v === '' || v == null;
+  if (!ok(prev) || !ok(next)) return res.status(400).json({ error: 'bad reaction' });
+  const dLike = (next === 'like' ? 1 : 0) - (prev === 'like' ? 1 : 0);
+  const dDislike = (next === 'dislike' ? 1 : 0) - (prev === 'dislike' ? 1 : 0);
+  db.run(
+    'UPDATE thoughts SET likes = MAX(0, likes + ?), dislikes = MAX(0, dislikes + ?) WHERE id = ?',
+    [dLike, dDislike, req.params.id],
+    function (err) {
+      if (err) return res.status(400).json({ error: err.message });
+      db.get('SELECT likes, dislikes FROM thoughts WHERE id = ?', [req.params.id], (e, row) =>
+        res.json({ message: 'success', likes: row ? row.likes : 0, dislikes: row ? row.dislikes : 0 }));
+    },
+  );
 });
 
 // GET /api/anime/history — 公開讀取最近觀看

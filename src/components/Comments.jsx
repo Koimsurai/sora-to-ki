@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import KoimLoader from './KoimLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,6 +14,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState('');
   const [likedComments, setLikedComments] = useState([]);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
@@ -53,6 +55,8 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
+    } finally {
+      setLoadingList(false);
     }
   };
 
@@ -379,7 +383,12 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
 
       {/* ── Comments List ── */}
       <div className="comments-list">
-        <div className="comments-header">
+        {loadingList && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
+            <KoimLoader inline size="sm" />
+          </div>
+        )}
+        <div className="comments-header" style={loadingList ? { display: 'none' } : undefined}>
           <h3>{comments.length > 0 ? t('comments.titleN', { count: comments.length }) : t('comments.titleEmpty')}</h3>
         </div>
 

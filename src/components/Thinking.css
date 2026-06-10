@@ -211,7 +211,10 @@
   transition: color 0.2s ease, background 0.2s ease;
 }
 .tk-ic svg { transition: transform 0.2s ease, fill 0.2s ease; }
-.tk-ic:not(.tk-ic--static):hover { color: rgba(216, 180, 254, 0.95); background: rgba(216, 180, 254, 0.08); }
+/* 蓋掉全域 button 的紫底/光暈/外框，只留變色 + svg 放大 */
+.tk-ic:hover, .tk-ic:focus { background: transparent; border-color: transparent; box-shadow: none; }
+.tk-ic:focus-visible { outline: none; }
+.tk-ic:not(.tk-ic--static):hover { color: rgba(216, 180, 254, 0.95); }
 .tk-ic:not(.tk-ic--static):hover svg { transform: scale(1.18); }
 .tk-ic:disabled { cursor: default; }
 .tk-ic--static { cursor: default; }
@@ -270,19 +273,101 @@
 .tk-compose-send:hover { background: #6c47e0; }
 .tk-compose-send:disabled { opacity: 0.5; cursor: default; }
 
-/* footer 動作（刪除，hover 才現） */
-.tk-foot-actions { display: flex; align-items: center; gap: 14px; }
+/* footer 動作（編輯/刪除，ghost 文字鈕，hover 才現）— 蓋掉全域 button 實心樣式 */
+.tk-foot-actions { display: flex; align-items: center; gap: 12px; }
 .tk-act {
-  background: none;
+  background: transparent;
   border: none;
+  box-shadow: none;
+  padding: 2px 6px;
   cursor: pointer;
   font-size: 0.8rem;
-  color: rgba(255, 150, 150, 0.7);
+  color: rgba(229, 229, 245, 0.5);
   opacity: 0;
   transition: opacity 0.25s ease, color 0.2s ease;
 }
 .tk-card:hover .tk-act { opacity: 1; }
-.tk-act:hover { color: rgba(255, 150, 150, 1); }
+.tk-act:hover, .tk-act:focus { background: transparent; border-color: transparent; box-shadow: none; color: rgba(216, 180, 254, 0.95); }
+.tk-act:focus-visible { outline: none; }
+.tk-act--del { color: rgba(255, 150, 150, 0.7); }
+.tk-act--del:hover, .tk-act--del:focus { color: rgba(255, 120, 120, 1); }
+
+/* inline 編輯 */
+.tk-edit-text {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  color: rgba(244, 244, 245, 0.95);
+  font: inherit;
+  line-height: 1.7;
+  padding: 10px 12px;
+  resize: vertical;
+}
+.tk-edit-text:focus { outline: none; border-color: rgba(216, 180, 254, 0.4); }
+.tk-edit-row { display: flex; gap: 8px; margin-top: 8px; }
+.tk-edit-save, .tk-edit-cancel {
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.tk-edit-save { background: #7f5af0; color: #fff; }
+.tk-edit-save:hover, .tk-edit-save:focus { background: #6c47e0; border-color: transparent; box-shadow: none; }
+.tk-edit-cancel { background: rgba(255, 255, 255, 0.08); color: rgba(244, 244, 245, 0.8); }
+.tk-edit-cancel:hover, .tk-edit-cancel:focus { background: rgba(255, 255, 255, 0.14); border-color: transparent; box-shadow: none; }
+.tk-edit-save:focus-visible, .tk-edit-cancel:focus-visible { outline: none; }
+
+/* 留言浮動視窗 */
+.tk-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(6, 5, 14, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh 16px 16px;
+  overflow-y: auto;
+  animation: tk-modal-fade 0.2s ease;
+}
+@keyframes tk-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+.tk-modal {
+  width: 100%;
+  max-width: 680px;
+  background: rgba(18, 15, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  animation: tk-modal-pop 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes tk-modal-pop { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+.tk-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  font-weight: 700;
+  color: rgba(244, 244, 245, 0.95);
+}
+.tk-modal-close {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: rgba(229, 229, 245, 0.6);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  line-height: 1;
+}
+.tk-modal-close:hover, .tk-modal-close:focus { background: transparent; border-color: transparent; box-shadow: none; color: #fff; }
+.tk-modal-close:focus-visible { outline: none; }
+.tk-modal-body { padding: 16px 20px 20px; }
 
 .tk-empty {
   margin: 3rem 0;

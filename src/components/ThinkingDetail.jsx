@@ -32,6 +32,14 @@ function ThinkingDetail() {
     });
     window.location.href = '/thinking';
   };
+  const edit = async (tid, content) => {
+    await fetch(`${API}/admin/thoughts/${tid}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ content }),
+    });
+    fetch(`${API}/thoughts/${tid}`).then((r) => (r.ok ? r.json() : null)).then((d) => setThought(d ? d.thought : null));
+  };
 
   return (
     <div className="tk-page">
@@ -50,7 +58,7 @@ function ThinkingDetail() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <ThoughtCard th={thought} isAdmin={isAdmin} onDelete={del} detail />
+            <ThoughtCard th={thought} isAdmin={isAdmin} onDelete={del} onEdit={edit} detail />
             <div className="tk-comments">
               <Comments postId={thought.id} basePath="thoughts" />
             </div>

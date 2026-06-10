@@ -1,8 +1,13 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Heart, ThumbsDown, MessageCircle } from 'lucide-react';
+import Comments from './Comments';
 
-/* 單則碎念卡片（feed 與詳情頁共用）。讚/倒讚用 localStorage 防重複（一票）。 */
+/* 單則碎念卡片（feed 與詳情頁共用）。
+   - 讚/倒讚：可取消、可切換（localStorage 記 reaction，後端依差值調整）
+   - 留言：feed 模式點 icon 跳浮動視窗；detail 模式直接顯示在頁面
+   - admin：inline 編輯 + 刪除（ghost 文字鈕） */
 
 const API = import.meta.env.VITE_API_URL || '/api';
 const AUTHOR = 'Koimsurai';
@@ -25,24 +30,36 @@ const fullCh = (at) => {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日星期${WK[d.getDay()]}`;
 };
 
-export default function ThoughtCard({ th, isAdmin, onDelete, detail = false }) {
+export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = false }) {
   const [likes, setLikes] = useState(th.likes || 0);
   const [dislikes, setDislikes] = useState(th.dislikes || 0);
   const key = 'tk_react_' + th.id;
   const [reacted, setReacted] = useState(() => {
     try { return localStorage.getItem(key) || ''; } catch { return ''; }
   });
+  const [showComments, setShowComments] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(th.content);
 
   const react = async (kind) => {
-    if (reacted) return; // 一票
+    const next = reacted === kind ? '' : kind; // 同一顆=取消；不同=切換
     try {
-      const r = await fetch(`${API}/thoughts/${th.id}/${kind}`, { method: 'POST' });
+      const r = await fetch(`${API}/thoughts/${th.id}/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prev: reacted, next }),
+      });
       const d = await r.json().catch(() => ({}));
-      if (kind === 'like') setLikes(d.likes ?? likes + 1);
-      else setDislikes(d.dislikes ?? dislikes + 1);
-      localStorage.setItem(key, kind);
-      setReacted(kind);
+      if (typeof d.likes === 'number') setLikes(d.likes);
+      if (typeof d.dislikes === 'number') setDislikes(d.dislikes);
+      localStorage.setItem(key, next);
+      setReacted(next);
     } catch { /* ignore */ }
+  };
+
+  const saveEdit = () => {
+    if (editText.trim() && onEdit) onEdit(th.id, editText.trim());
+    setEditing(false);
   };
 
   return (
@@ -55,7 +72,17 @@ export default function ThoughtCard({ th, isAdmin, onDelete, detail = false }) {
         )}
       </div>
 
-      <p className="tk-text">{th.content}</p>
+      {editing ? (
+        <div className="tk-edit">
+          <textarea className="tk-edit-text" value={editText} onChange={(e) => setEditText(e.target.value)} rows={3} />
+          <div className="tk-edit-row">
+            <button className="tk-edit-save" onClick={saveEdit}>儲存</button>
+            <button className="tk-edit-cancel" onClick={() => setEditing(false)}>取消</button>
+          </div>
+        </div>
+      ) : (
+        <p className="tk-text">{th.content}</p>
+      )}
 
       {th.ref_type === 'link' && th.ref && (
         <a className="tk-embed tk-embed--link tk-linkcard" href={th.ref_url} target="_blank" rel="noopener noreferrer">
@@ -84,35 +111,43 @@ export default function ThoughtCard({ th, isAdmin, onDelete, detail = false }) {
 
       <div className="tk-card-foot">
         <div className="tk-stats">
-          <button
-            className={'tk-ic' + (reacted === 'like' ? ' is-like' : '')}
-            onClick={() => react('like')}
-            disabled={!!reacted}
-            aria-label="讚"
-          >
+          <button className={'tk-ic' + (reacted === 'like' ? ' is-like' : '')} onClick={() => react('like')} aria-label="讚">
             <Heart size={16} /> <span>{likes}</span>
           </button>
-          <button
-            className={'tk-ic' + (reacted === 'dislike' ? ' is-dislike' : '')}
-            onClick={() => react('dislike')}
-            disabled={!!reacted}
-            aria-label="倒讚"
-          >
+          <button className={'tk-ic' + (reacted === 'dislike' ? ' is-dislike' : '')} onClick={() => react('dislike')} aria-label="倒讚">
             <ThumbsDown size={16} /> <span>{dislikes}</span>
           </button>
           {detail ? (
             <span className="tk-ic tk-ic--static"><MessageCircle size={16} /> <span>{th.comment_count || 0}</span></span>
           ) : (
-            <Link className="tk-ic" to={`/thinking/${th.id}`} aria-label="留言">
+            <button className="tk-ic" onClick={() => setShowComments(true)} aria-label="留言">
               <MessageCircle size={16} /> <span>{th.comment_count || 0}</span>
-            </Link>
+            </button>
           )}
         </div>
         <div className="tk-foot-actions">
-          {isAdmin && <button className="tk-act" onClick={() => onDelete(th.id)}>刪除</button>}
+          {isAdmin && (
+            <button className="tk-act" onClick={() => { setEditText(th.content); setEditing(true); }}>編輯</button>
+          )}
+          {isAdmin && <button className="tk-act tk-act--del" onClick={() => onDelete(th.id)}>刪除</button>}
           {!detail && <Link className="tk-view" to={`/thinking/${th.id}`}>查看 →</Link>}
         </div>
       </div>
+
+      {showComments && createPortal(
+        <div className="tk-modal-overlay" onClick={() => setShowComments(false)}>
+          <div className="tk-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="tk-modal-head">
+              <span>評論</span>
+              <button className="tk-modal-close" onClick={() => setShowComments(false)} aria-label="關閉">✕</button>
+            </div>
+            <div className="tk-modal-body">
+              <Comments postId={th.id} basePath="thoughts" />
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

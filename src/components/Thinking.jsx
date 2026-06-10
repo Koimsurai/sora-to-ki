@@ -61,6 +61,14 @@ function Thinking() {
     });
     if (r.ok) load();
   };
+  const edit = async (id, content) => {
+    const r = await fetch(`${API}/admin/thoughts/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      body: JSON.stringify({ content }),
+    });
+    if (r.ok) load();
+  };
 
   return (
     <div className="tk-page">
@@ -114,7 +122,7 @@ function Thinking() {
           >
             {thoughts.map((th) => (
               <motion.li className="tk-feed-item" key={th.id} variants={cardV}>
-                <ThoughtCard th={th} isAdmin={isAdmin} onDelete={del} />
+                <ThoughtCard th={th} isAdmin={isAdmin} onDelete={del} onEdit={edit} />
               </motion.li>
             ))}
           </motion.ul>
