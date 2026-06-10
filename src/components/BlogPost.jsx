@@ -670,7 +670,7 @@ export const LinkCard = ({ href }) => {
 /* ══════════════════════════
    CodeBlock
    ══════════════════════════ */
-const CodeBlock = ({ node, inline, className, children, ...props }) => {
+const CodeBlock = ({ node: _node, inline, className, children, ...props }) => {
   const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
   const [highlighted, setHighlighted] = useState(null);
@@ -731,7 +731,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }) => {
 /* ══════════════════════════
    Custom paragraph — detect standalone link lines for LinkCard
    ══════════════════════════ */
-const CustomParagraph = ({ children, node, ...props }) => {
+const CustomParagraph = ({ children, node: _node, ...props }) => {
   const childArray = React.Children.toArray(children);
 
   const extractFirstUrlFromText = (text) => {
@@ -925,7 +925,7 @@ const Reactions = React.memo(({ postId }) => {
     setMine(prev => {
       const next = new Set(prev);
       if (has) next.delete(emoji); else next.add(emoji);
-      try { localStorage.setItem(`reactions:${postId}`, JSON.stringify([...next])); } catch {}
+      try { localStorage.setItem(`reactions:${postId}`, JSON.stringify([...next])); } catch { /* localStorage 不可用就略過 */ }
       return next;
     });
     fetch(`/api/posts/${postId}/reactions`, {
@@ -1051,7 +1051,7 @@ const PrevNextNav = React.memo(({ currentId }) => {
 /* ══════════════════════════
    PostsNav — Left sidebar showing OTHER article titles
    ══════════════════════════ */
-const PostsNav = React.memo(({ currentId, postTitle, postCategory }) => {
+const PostsNav = React.memo(({ currentId, postCategory }) => {
   const [nearbyPosts, setNearbyPosts] = useState([]);
   const [categoryPosts, setCategoryPosts] = useState([]);
   const [categoryInfo, setCategoryInfo] = useState(null);
