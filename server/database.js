@@ -465,8 +465,10 @@ function initializeDatabase() {
       'CREATE INDEX IF NOT EXISTS idx_anime_history_video ON anime_history(video_sn)',
       'CREATE INDEX IF NOT EXISTS idx_film_history_tmdb ON film_history(tmdb_id)',
       'CREATE INDEX IF NOT EXISTS idx_tv_history_series ON tv_history(series_name)',
-      'CREATE INDEX IF NOT EXISTS idx_comments_thought ON comments(thought_id, status)',
       'CREATE INDEX IF NOT EXISTS idx_thoughts_created ON thoughts(created_at DESC)',
+      // 注意：idx_comments_thought 不放這裡 — comments.thought_id/status 是靠下方
+      // 非同步 ALTER 遷移補出來的，在這個同步段建索引會比欄位早跑而炸掉。
+      // 改在遷移送出後（同連線依送出順序執行）才建，見下方 comments 遷移區。
     ].forEach((sql) => db.run(sql, (e) => { if (e) console.error('index 建立失敗:', e.message); }));
 
     // 檢查並更新 comments 表
@@ -539,6 +541,10 @@ function initializeDatabase() {
                 });
               }
             });
+
+            // thought_id / status 欄位確定都已送出（同連線依序執行），這裡才安全建索引
+            db.run('CREATE INDEX IF NOT EXISTS idx_comments_thought ON comments(thought_id, status)',
+              (e) => { if (e) console.error('index 建立失敗:', e.message); });
 
                 // 建立 collection_items 資料表
                 db.run(`CREATE TABLE IF NOT EXISTS collection_items (
