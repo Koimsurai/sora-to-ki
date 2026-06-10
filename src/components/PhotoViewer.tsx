@@ -6,7 +6,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useKey } from 'react-use';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Keyboard, Thumbs } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -36,8 +35,12 @@ const PhotoViewer: React.FC = () => {
   const [currentPhoto, setCurrentPhoto] = useState(selectedPhoto);
   const [imageScale, setImageScale] = useState(1);
 
-  // 鍵盤快捷鍵
-  useKey('Escape', closeViewer);
+  // 鍵盤快捷鍵（原生實作，取代 react-use 的 useKey — 整包只用到這一個 hook）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeViewer(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [closeViewer]);
 
   // Callback for ProgressiveImage to report its scale
   const handleScaleChange = useCallback((scale: number) => {
