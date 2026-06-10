@@ -458,6 +458,17 @@ function initializeDatabase() {
       }
     });
 
+    // ── 索引：對齊實際查詢模式（history 排序 / sn 反查 / tmdb 去重 / thought 留言數 / feed 排序）──
+    [
+      'CREATE INDEX IF NOT EXISTS idx_anime_history_watched ON anime_history(last_watched_at DESC)',
+      'CREATE INDEX IF NOT EXISTS idx_anime_history_sn ON anime_history(anime_sn)',
+      'CREATE INDEX IF NOT EXISTS idx_anime_history_video ON anime_history(video_sn)',
+      'CREATE INDEX IF NOT EXISTS idx_film_history_tmdb ON film_history(tmdb_id)',
+      'CREATE INDEX IF NOT EXISTS idx_tv_history_series ON tv_history(series_name)',
+      'CREATE INDEX IF NOT EXISTS idx_comments_thought ON comments(thought_id, status)',
+      'CREATE INDEX IF NOT EXISTS idx_thoughts_created ON thoughts(created_at DESC)',
+    ].forEach((sql) => db.run(sql, (e) => { if (e) console.error('index 建立失敗:', e.message); }));
+
     // 檢查並更新 comments 表
     db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='comments'", (err, table) => {
       if (err) {

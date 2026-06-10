@@ -1,5 +1,7 @@
-// Shiki 單例 highlighter — lazy 載入主題與語言，多次呼叫共用同個實例。
-// 第一次呼叫某個語言／主題時才下載對應的 grammar / theme json。
+// Shiki 單例 highlighter — fine-grained core：只打包白名單語言的 grammar。
+// 之前用完整 bundle（import 'shiki'），rollup 會把全部 ~200 個 grammar 各自切成 chunk
+// （emacs-lisp 764K、wolfram 260K…），dist 被撐到 40MB+。改用 shiki/core +
+// 顯式語言載入表後，只 emit 下面 LANG_LOADERS 列的語言。
 
 let highlighterPromise = null;
 const loadedLangs = new Set(['text']);
@@ -11,8 +13,6 @@ const FALLBACK_LANG = 'text';
 const LANG_ALIAS = {
   js: 'javascript',
   ts: 'typescript',
-  jsx: 'jsx',
-  tsx: 'tsx',
   py: 'python',
   rb: 'ruby',
   rs: 'rust',
@@ -23,40 +23,94 @@ const LANG_ALIAS = {
   md: 'markdown',
   'c++': 'cpp',
   'objective-c': 'objc',
-  vue: 'vue',
-  svelte: 'svelte',
   dockerfile: 'docker',
   makefile: 'make',
+  // 非合法 shiki id → 最接近的 grammar（舊版會直接 fallback 成純文字）
+  svg: 'xml',
+  mysql: 'sql',
+  postgresql: 'sql',
+  plsql: 'sql',
 };
 
-// Shiki 認得的語言白名單（節錄常用的）— 不在此名單的會 fallback 到 text
-const KNOWN_LANGS = new Set([
-  'javascript', 'typescript', 'jsx', 'tsx', 'json', 'json5', 'jsonc',
-  'html', 'xml', 'svg', 'css', 'scss', 'sass', 'less', 'stylus',
-  'python', 'ruby', 'rust', 'go', 'java', 'kotlin', 'swift', 'scala',
-  'c', 'cpp', 'csharp', 'objc', 'php', 'lua', 'dart', 'haskell', 'elixir', 'erlang',
-  'bash', 'shell', 'powershell', 'fish', 'docker', 'make', 'cmake',
-  'sql', 'graphql', 'plsql', 'mysql', 'postgresql',
-  'yaml', 'toml', 'ini', 'markdown', 'mdx', 'tex', 'latex', 'diff',
-  'vue', 'svelte', 'astro', 'angular-html',
-  'regex', 'bnf', 'log',
-]);
+// 白名單語言 → 顯式動態 import（bundler 只會打包這些 grammar）
+const LANG_LOADERS = {
+  javascript: () => import('@shikijs/langs/javascript'),
+  typescript: () => import('@shikijs/langs/typescript'),
+  jsx: () => import('@shikijs/langs/jsx'),
+  tsx: () => import('@shikijs/langs/tsx'),
+  json: () => import('@shikijs/langs/json'),
+  json5: () => import('@shikijs/langs/json5'),
+  jsonc: () => import('@shikijs/langs/jsonc'),
+  html: () => import('@shikijs/langs/html'),
+  xml: () => import('@shikijs/langs/xml'),
+  css: () => import('@shikijs/langs/css'),
+  scss: () => import('@shikijs/langs/scss'),
+  sass: () => import('@shikijs/langs/sass'),
+  less: () => import('@shikijs/langs/less'),
+  stylus: () => import('@shikijs/langs/stylus'),
+  python: () => import('@shikijs/langs/python'),
+  ruby: () => import('@shikijs/langs/ruby'),
+  rust: () => import('@shikijs/langs/rust'),
+  go: () => import('@shikijs/langs/go'),
+  java: () => import('@shikijs/langs/java'),
+  kotlin: () => import('@shikijs/langs/kotlin'),
+  swift: () => import('@shikijs/langs/swift'),
+  scala: () => import('@shikijs/langs/scala'),
+  c: () => import('@shikijs/langs/c'),
+  cpp: () => import('@shikijs/langs/cpp'),
+  csharp: () => import('@shikijs/langs/csharp'),
+  objc: () => import('@shikijs/langs/objc'),
+  php: () => import('@shikijs/langs/php'),
+  lua: () => import('@shikijs/langs/lua'),
+  dart: () => import('@shikijs/langs/dart'),
+  haskell: () => import('@shikijs/langs/haskell'),
+  elixir: () => import('@shikijs/langs/elixir'),
+  erlang: () => import('@shikijs/langs/erlang'),
+  bash: () => import('@shikijs/langs/bash'),
+  shellscript: () => import('@shikijs/langs/shellscript'),
+  powershell: () => import('@shikijs/langs/powershell'),
+  fish: () => import('@shikijs/langs/fish'),
+  docker: () => import('@shikijs/langs/docker'),
+  make: () => import('@shikijs/langs/make'),
+  cmake: () => import('@shikijs/langs/cmake'),
+  sql: () => import('@shikijs/langs/sql'),
+  graphql: () => import('@shikijs/langs/graphql'),
+  yaml: () => import('@shikijs/langs/yaml'),
+  toml: () => import('@shikijs/langs/toml'),
+  ini: () => import('@shikijs/langs/ini'),
+  markdown: () => import('@shikijs/langs/markdown'),
+  mdx: () => import('@shikijs/langs/mdx'),
+  tex: () => import('@shikijs/langs/tex'),
+  latex: () => import('@shikijs/langs/latex'),
+  diff: () => import('@shikijs/langs/diff'),
+  vue: () => import('@shikijs/langs/vue'),
+  svelte: () => import('@shikijs/langs/svelte'),
+  astro: () => import('@shikijs/langs/astro'),
+  'angular-html': () => import('@shikijs/langs/angular-html'),
+  regex: () => import('@shikijs/langs/regexp'),
+  log: () => import('@shikijs/langs/log'),
+};
 
 function resolveLang(input) {
   if (!input) return FALLBACK_LANG;
   const lower = String(input).toLowerCase();
   const resolved = LANG_ALIAS[lower] || lower;
-  return KNOWN_LANGS.has(resolved) ? resolved : FALLBACK_LANG;
+  return LANG_LOADERS[resolved] ? resolved : FALLBACK_LANG;
 }
 
 async function getHighlighter() {
   if (highlighterPromise) return highlighterPromise;
   highlighterPromise = (async () => {
-    const { createHighlighter } = await import('shiki');
-    const h = await createHighlighter({
-      themes: [THEME],
-      langs: ['javascript', 'typescript', 'tsx'], // 預載常用，其餘 lazy
+    const [{ createHighlighterCore }, { createOnigurumaEngine }] = await Promise.all([
+      import('shiki/core'),
+      import('shiki/engine/oniguruma'),
+    ]);
+    const h = await createHighlighterCore({
+      themes: [import('@shikijs/themes/vitesse-dark')],
+      langs: [LANG_LOADERS.javascript(), LANG_LOADERS.typescript(), LANG_LOADERS.tsx()], // 預載常用，其餘 lazy
+      engine: createOnigurumaEngine(import('shiki/wasm')),
     });
+    loadedLangs.add('javascript').add('typescript').add('tsx');
     return h;
   })();
   return highlighterPromise;
@@ -67,12 +121,12 @@ export async function highlightCode(code, langInput) {
   const h = await getHighlighter();
   if (lang !== 'text' && !loadedLangs.has(lang)) {
     try {
-      await h.loadLanguage(lang);
+      await h.loadLanguage(await LANG_LOADERS[lang]());
       loadedLangs.add(lang);
     } catch {
       // 載入失敗就 fallback
       return h.codeToHtml(code, { lang: 'text', theme: THEME });
     }
   }
-  return h.codeToHtml(code, { lang, theme: THEME });
+  return h.codeToHtml(code, { lang: lang === 'text' ? 'text' : lang, theme: THEME });
 }
