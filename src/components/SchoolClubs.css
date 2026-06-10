@@ -4,43 +4,21 @@
   gap: 14px;
 }
 
+/* 卡片：無 accent bar（之前左側色條反饋偏突兀）。
+   開合語意改由：icon 點亮 + 邊框微紫 + caret 旋轉 + 內容展開 來傳達。 */
 .club-row {
   position: relative;
   overflow: hidden;
-  transition: border-color 220ms ease, background 220ms ease;
+  transition: border-color 220ms ease, transform 220ms ease, box-shadow 220ms ease;
 }
 
-/* 開啟狀態：左側細長 accent bar 點亮 + 邊框微紫，背景幾乎不變 */
-.club-row::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 14px;
-  bottom: 14px;
-  width: 3px;
-  border-radius: 0 4px 4px 0;
-  background: linear-gradient(180deg, #7f5af0 0%, #b13bb1 100%);
-  opacity: 0;
-  transform: scaleY(0.4);
-  transform-origin: center;
-  transition: opacity 220ms ease, transform 260ms ease;
+.club-row:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
-/* Open state: don't touch the bg at all — any purple alpha here gets
-   amplified by the .glass-card backdrop-filter sampling whatever bright
-   thing is behind (Saturn, nebula gradient) and turns into a "solid
-   purple block". Open is communicated entirely by:
-   – the left accent bar lighting up
-   – a slightly brighter border
-   – icon wrap tinted purple
-   – the activities list revealing below + caret rotating */
 .clubs-v2 .club-row.open {
   border-color: rgba(199, 184, 255, 0.22);
-}
-
-.clubs-v2 .club-row.open::before {
-  opacity: 1;
-  transform: scaleY(1);
 }
 
 .clubs-v2 .club-row.open .club-icon-wrap {
@@ -83,22 +61,25 @@
 }
 
 .club-icon-wrap {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   background: rgba(127, 90, 240, 0.1);
   border: 1px solid rgba(127, 90, 240, 0.25);
   display: grid;
   place-items: center;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   color: rgba(199, 184, 255, 0.95);
+  transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 
+/* 名稱 + 職位 chip 同一行（期間移到右側欄） */
 .club-meta {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .club-name {
@@ -108,20 +89,23 @@
   letter-spacing: 0.01em;
 }
 
-.club-period {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.5px;
+.club-role-badge {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  background: rgba(127, 90, 240, 0.14);
+  border: 1px solid rgba(127, 90, 240, 0.3);
+  border-radius: 999px;
+  color: rgba(216, 180, 254, 0.95);
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
-.club-role-badge {
-  font-size: 0.75rem;
-  padding: 4px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  color: rgba(255, 255, 255, 0.78);
-  font-weight: 500;
+.club-period {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.38);
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .club-count {
@@ -131,6 +115,7 @@
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.45);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .club-caret {
@@ -142,14 +127,16 @@
 
 .club-caret.open { transform: rotate(180deg); }
 
+/* 展開：hairline 分隔 + 桌面雙欄活動格（吉他社 8 項不再拖成長串） */
 .club-activities-list {
-  margin: 0;
-  padding: 0 22px 18px 78px;
+  margin: 0 22px;
+  padding: 14px 0 18px 60px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
   list-style: none;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 32px;
 }
 
 .club-activity-item {
@@ -177,12 +164,14 @@
     gap: 14px;
     padding: 16px 18px;
   }
-  .club-role-badge,
+  .club-period,
   .club-count {
     grid-column: 2;
     justify-self: start;
   }
   .club-activities-list {
-    padding: 0 18px 16px 18px;
+    margin: 0 18px;
+    padding: 12px 0 16px 0;
+    grid-template-columns: 1fr;
   }
 }

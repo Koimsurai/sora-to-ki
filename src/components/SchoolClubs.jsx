@@ -75,9 +75,9 @@ function SchoolClubs() {
                 </span>
                 <div className="club-meta">
                   <span className="club-name">{club.name}</span>
-                  <span className="club-period">{club.period}</span>
+                  <span className="club-role-badge">{club.role}</span>
                 </div>
-                <div className="club-role-badge">{club.role}</div>
+                <span className="club-period">{club.period}</span>
                 <span className="club-count">
                   {club.activities.length} {t('home.schoolClubs.activitiesLabel')}
                   <span className={`club-caret ${isOpen ? 'open' : ''}`}>▾</span>

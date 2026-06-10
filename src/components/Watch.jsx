@@ -98,7 +98,7 @@ function Watch() {
   const navigate = useNavigate();
 
   const loadFavorites = useCallback(() => {
-    fetch(`${API_URL}/watch/favorites?locale=${encodeURIComponent(lang)}`)
+    fetch(`${API_URL}/watch/favorites?locale=${encodeURIComponent(lang)}`, { cache: 'no-store' })
       .then((r) => r.json())
       .then((d) => setFavorites(d.favorites || []))
       .catch(() => setFavorites([]));

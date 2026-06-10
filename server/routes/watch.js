@@ -474,7 +474,8 @@ apiRouter.get('/watch/favorites', (req, res) => {
         externalUrl: `https://www.themoviedb.org/${f.kind === 'tv' ? 'tv' : 'movie'}/${f.tmdb_id}`,
       };
     }));
-    res.set('Cache-Control', 'public, max-age=300');
+    // 不給瀏覽器快取：admin 編輯後會立刻重抓，max-age 會讓重抓命中舊快取（畫面要硬重整才更新）
+    res.set('Cache-Control', 'no-store');
     res.json({ message: 'success', favorites: out });
   });
 });

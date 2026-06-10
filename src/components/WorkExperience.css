@@ -5,12 +5,14 @@
   gap: 0;
 }
 
-/* Vertical rail line that runs through all entries */
+/* Vertical rail line that runs through all entries
+   x 對齊 rail dot 中心：rail 欄 140px + gap 32px，dot 在 right:-22px（中心 ≈ 156.5px）
+   → 線放 156px 讓點串在線上 */
 .work-v2 .work-timeline::before {
   content: '';
   position: absolute;
-  left: 119px;
-  top: 8px;
+  left: 156px;
+  top: 26px; /* 從第一個點的中心起跑，不要冒出點上方 */
   bottom: 8px;
   width: 1px;
   background: linear-gradient(
