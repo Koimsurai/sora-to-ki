@@ -208,15 +208,25 @@ export default defineConfig(({ command }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-three': ['three', '@react-three/fiber', '@react-three/drei', '@react-three/postprocessing'],
-            'vendor-monaco': ['monaco-editor', '@monaco-editor/react'],
-            'vendor-mermaid': ['mermaid'],
-            // motion-dom / motion-utils 是 framer-motion v12 拆出的內部包，不列會漏進 index chunk
-            'vendor-ui': ['framer-motion', 'motion-dom', 'motion-utils', 'recharts', 'swiper'],
-            'vendor-markdown': ['react-markdown', 'rehype-raw', 'remark-gfm', 'remark-github-blockquote-alert'],
-            'vendor-shiki': ['shiki'],
-            'vendor-cmdk': ['cmdk'],
+          // 函式形式（而非陣列）：用模組路徑分類即可，不會把套件名當 entry module 去解析。
+          // motion-dom / motion-utils 是 framer-motion v12 的傳遞依賴，在 pnpm 嚴格佈局下
+          // 無法當頂層 entry，用陣列形式會 "Could not resolve entry module"；函式形式則安全。
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            const norm = id.replace(/\\/g, '/');
+            const groups = {
+              'vendor-three': ['three', '@react-three/fiber', '@react-three/drei', '@react-three/postprocessing'],
+              'vendor-monaco': ['monaco-editor', '@monaco-editor/react'],
+              'vendor-mermaid': ['mermaid'],
+              'vendor-ui': ['framer-motion', 'motion-dom', 'motion-utils', 'recharts', 'swiper'],
+              'vendor-markdown': ['react-markdown', 'rehype-raw', 'remark-gfm', 'remark-github-blockquote-alert'],
+              'vendor-shiki': ['shiki'],
+              'vendor-cmdk': ['cmdk'],
+            };
+            for (const [chunk, pkgs] of Object.entries(groups)) {
+              // pnpm 與 flat node_modules 都會在路徑出現 /node_modules/<pkg>/
+              if (pkgs.some((p) => norm.includes(`/node_modules/${p}/`))) return chunk;
+            }
           },
         },
       },
