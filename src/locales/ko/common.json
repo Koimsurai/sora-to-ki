@@ -142,6 +142,31 @@
       "titleLine1": "이야기 나누고 싶다면?",
       "titleLine2": "Let's build something.",
       "blurb": "프로젝트 협업, 기술 교류, 인턴십 기회 — 아래 어느 채널로든 편하게 연락 주세요."
+    },
+    "lately": {
+      "eyebrow": "최근의 글과 소식",
+      "postsTitle": "최근 쓴 글",
+      "murmursTitle": "중얼거림",
+      "echoesTitle": "메아리",
+      "orbitTitle": "올해의 궤적",
+      "orbitStat": "올해 {{count}}편",
+      "viewAll": "전체 보기",
+      "more": "더 보기",
+      "empty": "아직 조용해요",
+      "justNow": "방금",
+      "hoursAgo": "{{n}}시간 전",
+      "daysAgo": "{{n}}일 전",
+      "today": "오늘",
+      "seasons": {
+        "spring": "봄",
+        "summer": "여름",
+        "autumn": "가을",
+        "winter": "겨울"
+      }
+    },
+    "signal": {
+      "label": "오늘의 시그널",
+      "open": "협업 제안 환영"
     }
   },
   "comments": {
@@ -352,7 +377,8 @@
     "eyebrowLast": "최근 시청",
     "favoritesTitle": "인생작",
     "favoritesSubtitle": "SF 와 느린 호흡의 서사를 선호하고, Nolan 과 Villeneuve 의 신도예요. 애니메이션은 일상 힐링물을 고르는 편.",
-    "recentTitle": "최근에 본 것",    "typeAnime": "애니",
+    "recentTitle": "최근에 본 것",
+    "typeAnime": "애니",
     "typeFilm": "영화",
     "stats": {
       "animeLabel": "편 애니",

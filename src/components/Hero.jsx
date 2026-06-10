@@ -60,6 +60,13 @@ const useTypingEffect = (text, speed = 100, startDelay = 0) => {
 };
 
 
+// h1 的漸層用 background-clip: text 實作，會把彩色 emoji 一起剪成漸層填色（👋 變全白）；
+// 把 pictographic 字元挑出來包 span 還原原生色彩
+const renderWithEmoji = (s) =>
+  [...s].map((ch, i) =>
+    /\p{Extended_Pictographic}/u.test(ch) ? <span key={i} className="emoji-native">{ch}</span> : ch
+  );
+
 function Hero() {
   const { t } = useTranslation();
   const fullHeading = t('hero.greeting');
@@ -88,7 +95,7 @@ function Hero() {
         <Parallax speed={10}> {/* 稍微快一點 */}
           {/* Use pre-wrap to handle newline characters */}
           <h1 className={`typing-text ${headingComplete ? 'typing-complete' : ''}`} style={{ whiteSpace: 'pre-wrap' }}>
-            {displayedHeading}
+            {renderWithEmoji(displayedHeading)}
           </h1>
         </Parallax>
         {/* Apply Parallax, but remove motion from p */}

@@ -4524,6 +4524,7 @@ app.use(function (req, res) {
 ─────────────────────────────────────────────────────────────────────── */
 require('./routes/watch')({ apiRouter, db, requireAdmin });
 require('./routes/thoughts')({ apiRouter, db, requireAdmin, createComment });
+require('./routes/home')({ apiRouter, db });
 
 // Start server
 app.listen(PORT, () => {

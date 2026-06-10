@@ -142,6 +142,31 @@
       "titleLine1": "想聊聊？",
       "titleLine2": "Let's build something.",
       "blurb": "專案合作、技術交流、實習機會，都歡迎透過下列任一方式聯繫。"
+    },
+    "lately": {
+      "eyebrow": "最近的文字與動靜",
+      "postsTitle": "最近寫了",
+      "murmursTitle": "碎念",
+      "echoesTitle": "迴聲",
+      "orbitTitle": "今年軌跡",
+      "orbitStat": "今年 {{count}} 篇",
+      "viewAll": "看全部",
+      "more": "更多",
+      "empty": "目前還很安靜",
+      "justNow": "剛剛",
+      "hoursAgo": "{{n}} 小時前",
+      "daysAgo": "{{n}} 天前",
+      "today": "今天",
+      "seasons": {
+        "spring": "春",
+        "summer": "夏",
+        "autumn": "秋",
+        "winter": "冬"
+      }
+    },
+    "signal": {
+      "label": "今日訊號",
+      "open": "開放合作與聊聊"
     }
   },
   "comments": {
@@ -352,7 +377,8 @@
     "eyebrowLast": "最近看完",
     "favoritesTitle": "一生推",
     "favoritesSubtitle": "偏好科幻與慢節奏敘事，是 Nolan 與 Villeneuve 的信徒；動畫挑日常療癒系。",
-    "recentTitle": "最近在看",    "typeAnime": "動畫",
+    "recentTitle": "最近在看",
+    "typeAnime": "動畫",
     "typeFilm": "電影",
     "stats": {
       "animeLabel": "部動畫",

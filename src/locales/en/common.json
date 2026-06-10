@@ -142,6 +142,31 @@
       "titleLine1": "Want to chat?",
       "titleLine2": "Let's build something.",
       "blurb": "Project collaborations, tech chats, internships — reach out via any of the channels below."
+    },
+    "lately": {
+      "eyebrow": "words & happenings",
+      "postsTitle": "Recent writing",
+      "murmursTitle": "Murmurs",
+      "echoesTitle": "Echoes",
+      "orbitTitle": "This year in orbit",
+      "orbitStat": "{{count}} posts this year",
+      "viewAll": "View all",
+      "more": "More",
+      "empty": "Quiet for now",
+      "justNow": "just now",
+      "hoursAgo": "{{n}}h ago",
+      "daysAgo": "{{n}}d ago",
+      "today": "Today",
+      "seasons": {
+        "spring": "SPRING",
+        "summer": "SUMMER",
+        "autumn": "AUTUMN",
+        "winter": "WINTER"
+      }
+    },
+    "signal": {
+      "label": "Signal of the day",
+      "open": "Open for opportunities"
     }
   },
   "comments": {
@@ -352,7 +377,8 @@
     "eyebrowLast": "Last watched",
     "favoritesTitle": "All-time loves",
     "favoritesSubtitle": "Sci-fi and slow-burn storytelling, a disciple of Nolan and Villeneuve; on the anime side I pick comfort slice-of-life.",
-    "recentTitle": "Recently watched",    "typeAnime": "Anime",
+    "recentTitle": "Recently watched",
+    "typeAnime": "Anime",
     "typeFilm": "Film",
     "stats": {
       "animeLabel": "anime",

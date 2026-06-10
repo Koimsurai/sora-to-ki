@@ -375,6 +375,15 @@
   color: #c7b8ff;
 }
 
+/* 彩色 emoji 不吃漸層剪裁，還原原生色彩（由 Hero.jsx 的 renderWithEmoji 包出來） */
+.home-hero-content h1 .emoji-native {
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-text-fill-color: initial;
+  color: #fff;
+}
+
 .home-hero-content .tagline {
   font-size: 1.5em;
   font-style: italic;

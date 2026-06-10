@@ -142,6 +142,31 @@
       "titleLine1": "話しませんか？",
       "titleLine2": "Let's build something.",
       "blurb": "プロジェクトのご相談、技術交流、インターン機会、下記いずれからもお気軽にご連絡ください。"
+    },
+    "lately": {
+      "eyebrow": "最近の言葉と動き",
+      "postsTitle": "最近の執筆",
+      "murmursTitle": "つぶやき",
+      "echoesTitle": "こだま",
+      "orbitTitle": "今年の軌跡",
+      "orbitStat": "今年 {{count}} 本",
+      "viewAll": "すべて見る",
+      "more": "もっと",
+      "empty": "まだ静かです",
+      "justNow": "たった今",
+      "hoursAgo": "{{n}} 時間前",
+      "daysAgo": "{{n}} 日前",
+      "today": "今日",
+      "seasons": {
+        "spring": "春",
+        "summer": "夏",
+        "autumn": "秋",
+        "winter": "冬"
+      }
+    },
+    "signal": {
+      "label": "今日のシグナル",
+      "open": "お仕事のご相談歓迎"
     }
   },
   "comments": {
@@ -352,7 +377,8 @@
     "eyebrowLast": "最近見たもの",
     "favoritesTitle": "一生推し",
     "favoritesSubtitle": "SF とスローテンポの物語が好きで、Nolan と Villeneuve の信者。アニメは日常系の癒し作品を選びがちです。",
-    "recentTitle": "最近みたもの",    "typeAnime": "アニメ",
+    "recentTitle": "最近みたもの",
+    "typeAnime": "アニメ",
     "typeFilm": "映画",
     "stats": {
       "animeLabel": "アニメ",

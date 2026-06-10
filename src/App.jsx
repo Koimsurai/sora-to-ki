@@ -33,7 +33,8 @@ const LazyExpertise = lazy(() => import('./components/Expertise'));
 const LazyWorkExperience = lazy(() => import('./components/WorkExperience'));
 const LazySchoolClubs = lazy(() => import('./components/SchoolClubs'));
 const LazyPortfolio = lazy(() => import('./components/Portfolio'));
-const LazyContact = lazy(() => import('./components/Contact'));
+// Contact section 改為 HomeLately（動態帶 + 今日訊號收尾）；訊號區塊內部承接 id="contact" 錨點
+const LazyHomeLately = lazy(() => import('./components/HomeLately'));
 const LazyFooter = lazy(() => import('./components/Footer'));
 const LazyPhotoGallery = lazy(() => import('./components/PhotoGallery'));
 const LazyTransitionAnimation = lazy(() => import('./components/TransitionAnimation'));
@@ -151,8 +152,8 @@ function MainPage({ onSectionChange }) { // Accept callback prop
           <Suspense fallback={<LoadingFallback />}><LazyPortfolio /></Suspense>
         </SectionWrapper>
         <Suspense fallback={<LoadingFallback />}><LazyTransitionAnimation /></Suspense>
-        <SectionWrapper id="contact" onInViewChange={onSectionChange}>
-          <Suspense fallback={<LoadingFallback />}><LazyContact /></Suspense>
+        <SectionWrapper id="lately" onInViewChange={onSectionChange}>
+          <Suspense fallback={<LoadingFallback />}><LazyHomeLately /></Suspense>
         </SectionWrapper>
       </main>
     </>
