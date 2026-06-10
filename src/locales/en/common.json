@@ -54,7 +54,8 @@
       "latestPosts": "Latest posts",
       "categoryLatest": "{{cat}} · Latest",
       "life": "Life",
-      "personal": "Personal"
+      "personal": "Personal",
+      "collection": "Collection"
     },
     "items": {
       "home": "Home",
@@ -84,7 +85,11 @@
       "journey": "Journey",
       "journeyDesc": "Where I've been",
       "setup": "Setup",
-      "setupDesc": "My gear"
+      "setupDesc": "My gear",
+      "watch": "Watching",
+      "watchDesc": "Recent anime / shows / films",
+      "thinking": "Murmurs",
+      "thinkingDesc": "Fleeting short thoughts"
     }
   },
   "hero": {
@@ -418,7 +423,14 @@
       "viewWatch": "← Back to What I'm watching"
     },
     "continueOn": "Continue on {{service}}",
-    "viewOnTmdb": "View on TMDb"
+    "viewOnTmdb": "View on TMDb",
+    "favManage": "Manage favorites",
+    "favEmpty": "No favorites yet",
+    "favSearchPlaceholder": "Search TMDb title…",
+    "favSearching": "Searching…",
+    "favQuotePlaceholder": "A short note… (optional)",
+    "kindFilm": "Film",
+    "kindTv": "TV / Anime"
   },
   "setup": {
     "title": "My Setup",

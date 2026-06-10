@@ -5,7 +5,7 @@ import {
   FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages,
   FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss,
   FaClock, FaRoute, FaBook, FaMusic, FaCamera, FaDesktop,
-  FaGithub, FaGoogle, FaSignOutAlt, FaCog, FaFilm, FaCommentDots,
+  FaGithub, FaGoogle, FaSignOutAlt, FaCog,
 } from 'react-icons/fa';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -154,7 +154,8 @@ function Header({ activeSection }) {
                  || location.pathname.startsWith('/about-site')
                  || location.pathname.startsWith('/history')
                  || location.pathname.startsWith('/messages')
-                 || location.pathname.startsWith('/friends')}
+                 || location.pathname.startsWith('/friends')
+                 || location.pathname.startsWith('/thinking')}
           >
             <HomeMenuContent
               onSectionClick={(e, sectionId) => { handleNavClick(e, sectionId); }}
@@ -173,30 +174,14 @@ function Header({ activeSection }) {
             <BlogMenuContent />
           </MegaMenuItem>
 
-          {/* 無下拉的頂層連結：在看（/watch）與碎念（/thinking） */}
-          <MegaMenuItem
-            id="watch"
-            label={t('nav.watch')}
-            icon={<FaFilm />}
-            to="/watch"
-            active={location.pathname.startsWith('/watch')}
-          />
-
-          <MegaMenuItem
-            id="thinking"
-            label={t('nav.thinking')}
-            icon={<FaCommentDots />}
-            to="/thinking"
-            active={location.pathname.startsWith('/thinking')}
-          />
-
           <MegaMenuItem
             id="more"
             label={t('nav.more')}
             active={location.pathname.startsWith('/photos')
                  || location.pathname.startsWith('/activity')
                  || location.pathname.startsWith('/journey')
-                 || location.pathname.startsWith('/setup')}
+                 || location.pathname.startsWith('/setup')
+                 || location.pathname.startsWith('/watch')}
           >
             <MoreMenuContent />
           </MegaMenuItem>

@@ -54,7 +54,8 @@
       "latestPosts": "최신 글",
       "categoryLatest": "{{cat}} · 최신",
       "life": "라이프",
-      "personal": "퍼스널"
+      "personal": "퍼스널",
+      "collection": "컬렉션"
     },
     "items": {
       "home": "홈",
@@ -84,7 +85,11 @@
       "journey": "여정",
       "journeyDesc": "학습의 자취",
       "setup": "장비",
-      "setupDesc": "기기 목록"
+      "setupDesc": "기기 목록",
+      "watch": "시청 중",
+      "watchDesc": "최근 본 애니 / 드라마 / 영화",
+      "thinking": "중얼거림",
+      "thinkingDesc": "지금 떠오른 짧은 생각"
     }
   },
   "hero": {
@@ -418,7 +423,14 @@
       "viewWatch": "← 「지금 보고 있는 것」으로 돌아가기"
     },
     "continueOn": "{{service}}에서 이어보기",
-    "viewOnTmdb": "TMDb에서 보기"
+    "viewOnTmdb": "TMDb에서 보기",
+    "favManage": "인생작 관리",
+    "favEmpty": "아직 없습니다",
+    "favSearchPlaceholder": "TMDb 제목 검색…",
+    "favSearching": "검색 중…",
+    "favQuotePlaceholder": "한 줄 평… (선택)",
+    "kindFilm": "영화",
+    "kindTv": "드라마／애니"
   },
   "setup": {
     "title": "내 장비 · My Setup",

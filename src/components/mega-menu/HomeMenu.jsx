@@ -6,7 +6,7 @@ import { UserIcon } from '@/components/animate-ui/icons/user';
 import { SparklesIcon } from '@/components/animate-ui/icons/sparkles';
 import { LayersIcon } from '@/components/animate-ui/icons/layers';
 import { SendIcon } from '@/components/animate-ui/icons/send';
-import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon, UsersIcon } from '@animateicons/react/lucide';
+import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon, UsersIcon, SparklesIcon as SparklesAnimIcon } from '@animateicons/react/lucide';
 import { Link } from 'react-router-dom';
 
 /**
@@ -137,6 +137,7 @@ function HomeMenuContent({ onSectionClick }) {
 
   const siteLinks = [
     { to: '/about-site', AnimateIconsLib: InfoIcon,          title: t('megaMenu.items.aboutSite'), desc: t('megaMenu.items.aboutSiteDesc') },
+    { to: '/thinking',   AnimateIconsLib: SparklesAnimIcon,  title: t('megaMenu.items.thinking'),  desc: t('megaMenu.items.thinkingDesc') },
     { to: '/history',    AnimateIconsLib: CompassIcon,       title: t('megaMenu.items.history'),   desc: t('megaMenu.items.historyDesc') },
     { to: '/messages',   AnimateIconsLib: MessageCircleIcon, title: t('megaMenu.items.messages'),   desc: t('megaMenu.items.messagesDesc') },
     { to: '/friends',    AnimateIconsLib: UsersIcon,         title: t('megaMenu.items.friends'),   desc: t('megaMenu.items.friendsDesc') },

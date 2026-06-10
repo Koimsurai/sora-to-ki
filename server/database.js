@@ -458,6 +458,37 @@ function initializeDatabase() {
       }
     });
 
+    // ── watch_favorites：/watch「一生推」手動策展，admin 前台 CRUD ──
+    // 標題/海報/年份由 tmdb_id 即時向 TMDb 取（依語系在地化）；這裡只存策展資料
+    db.run(`
+      CREATE TABLE IF NOT EXISTS watch_favorites (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tmdb_id INTEGER NOT NULL,
+        kind TEXT NOT NULL DEFAULT 'film',
+        rating INTEGER DEFAULT 5,
+        quote TEXT DEFAULT '',
+        poster_url TEXT,
+        year INTEGER,
+        sort_order INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `, () => {
+      // 首次建立時，種入原本寫死的 4 部，避免部署後一生推空掉
+      db.get('SELECT COUNT(*) AS n FROM watch_favorites', (e, row) => {
+        if (e || (row && row.n > 0)) return;
+        const seed = [
+          [157336, 'film', 5, '在 IMAX 看完那刻，覺得電影這個媒介還有救。', 2014],
+          [335984, 'film', 5, '美術跟攝影直接封神，每一格都能截圖當桌布。', 2017],
+          [27205, 'film', 5, '第一次知道敘事可以這樣摺疊。', 2010],
+          [603, 'film', 5, '紅藥丸還是藍藥丸 —— 看完只想選紅的。', 1999],
+        ];
+        seed.forEach((s, i) => db.run(
+          'INSERT INTO watch_favorites (tmdb_id, kind, rating, quote, year, sort_order) VALUES (?,?,?,?,?,?)',
+          [...s.slice(0, 4), s[4], i], () => {},
+        ));
+      });
+    });
+
     // ── 索引：對齊實際查詢模式（history 排序 / sn 反查 / tmdb 去重 / thought 留言數 / feed 排序）──
     [
       'CREATE INDEX IF NOT EXISTS idx_anime_history_watched ON anime_history(last_watched_at DESC)',

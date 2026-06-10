@@ -54,7 +54,8 @@
       "latestPosts": "最新文章",
       "categoryLatest": "{{cat}} · 最新",
       "life": "生活",
-      "personal": "个人"
+      "personal": "个人",
+      "collection": "收藏"
     },
     "items": {
       "home": "首页",
@@ -84,7 +85,11 @@
       "journey": "成长轨迹",
       "journeyDesc": "学习历程",
       "setup": "装备",
-      "setupDesc": "设备清单"
+      "setupDesc": "设备清单",
+      "watch": "在看",
+      "watchDesc": "最近追的动画 / 剧集 / 电影",
+      "thinking": "碎念",
+      "thinkingDesc": "一些当下的短想法"
     }
   },
   "hero": {
@@ -418,7 +423,14 @@
       "viewWatch": "← 回 「在看什么」"
     },
     "continueOn": "在 {{service}} 继续看",
-    "viewOnTmdb": "在 TMDb 查看"
+    "viewOnTmdb": "在 TMDb 查看",
+    "favManage": "管理一生推",
+    "favEmpty": "还没有任何收藏",
+    "favSearchPlaceholder": "搜索 TMDb 片名…",
+    "favSearching": "搜索中…",
+    "favQuotePlaceholder": "写句短评…（选填）",
+    "kindFilm": "电影",
+    "kindTv": "剧集／动画"
   },
   "setup": {
     "title": "我的装备 · My Setup",

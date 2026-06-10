@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import SEOHead from './SEOHead';
+import FavoritesEditor from './FavoritesEditor';
 import './Watch.css';
 
 /* ──────────────────────────────────────────────────────────────
@@ -14,7 +15,6 @@ import './Watch.css';
 ─────────────────────────────────────────────────────────────── */
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
-const TMDB = (p) => `https://image.tmdb.org/t/p/w500${p}`;
 
 /* 連結通通走 TMDb：電影 → /movie/{id}、動畫/影集 → /tv/{id} */
 const tmdbUrl = (kind, id) =>
@@ -44,46 +44,6 @@ const SERVICE_LABEL = {
   'zh-TW': '動畫瘋', 'zh-CN': '动画疯', en: 'Bahamut Anime', ja: '動畫瘋', ko: '動畫瘋',
 };
 const interpolate = (tpl, vars) => tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
-
-const FAVORITES_STATIC = [
-  { id: 'a', kind: 'film',  year: 2014, tmdbId: 157336, poster: TMDB('/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg'), rating: 5 }, // 星際效應
-  { id: 'b', kind: 'film',  year: 2017, tmdbId: 335984, poster: TMDB('/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg'), rating: 5 }, // 銀翼殺手 2049
-  { id: 'c', kind: 'film',  year: 2010, tmdbId: 27205,  poster: TMDB('/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg'), rating: 5 }, // 全面啟動
-  { id: 'd', kind: 'film',  year: 1999, tmdbId: 603,    poster: TMDB('/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg'), rating: 5 }, // 駭客任務
-];
-
-const FAVORITES_BY_LANG = {
-  'zh-TW': [
-    { title: '星際效應',      quote: '在 IMAX 看完那刻，覺得電影這個媒介還有救。' },
-    { title: '銀翼殺手 2049', quote: '美術跟攝影直接封神，每一格都能截圖當桌布。' },
-    { title: '全面啟動',      quote: '第一次知道敘事可以這樣摺疊。' },
-    { title: '駭客任務',      quote: '紅藥丸還是藍藥丸 —— 看完只想選紅的。' },
-  ],
-  'zh-CN': [
-    { title: '星际穿越',      quote: '在 IMAX 看完那刻，觉得电影这个媒介还有救。' },
-    { title: '银翼杀手 2049', quote: '美术跟摄影直接封神，每一格都能截图当桌布。' },
-    { title: '盗梦空间',      quote: '第一次知道叙事可以这样折叠。' },
-    { title: '黑客帝国',      quote: '红药丸还是蓝药丸 —— 看完只想选红的。' },
-  ],
-  en: [
-    { title: 'Interstellar',      quote: 'Walking out of the IMAX hall, I felt cinema still had a future.' },
-    { title: 'Blade Runner 2049', quote: 'Production design and cinematography straight to god tier — every frame a wallpaper.' },
-    { title: 'Inception',         quote: 'First time I realised narrative could fold like this.' },
-    { title: 'The Matrix',        quote: 'Red pill or blue pill — afterwards I only wanted the red.' },
-  ],
-  ja: [
-    { title: 'インターステラー',      quote: 'IMAX で観終わった瞬間、映画というメディアにはまだ未来があると思いました。' },
-    { title: 'ブレードランナー 2049', quote: '美術と撮影が神の領域。どのフレームも壁紙にできる。' },
-    { title: 'インセプション',        quote: '物語をこんなふうに折りたためるんだ、と初めて知った作品。' },
-    { title: 'マトリックス',          quote: '赤い薬か青い薬か —— 観終わったあと、赤しか選びたくなかった。' },
-  ],
-  ko: [
-    { title: '인터스텔라',        quote: 'IMAX 에서 본 순간, 영화라는 매체에 아직 미래가 있다고 느꼈어요.' },
-    { title: '블레이드 러너 2049', quote: '미술과 촬영이 신의 영역. 모든 프레임이 배경화면감.' },
-    { title: '인셉션',             quote: '서사를 이렇게 접을 수 있다는 걸 처음 알게 해 준 작품.' },
-    { title: '매트릭스',           quote: '빨간 약인지 파란 약인지 — 본 뒤엔 빨간 거밖에 안 끌렸습니다.' },
-  ],
-};
 
 /* short date formatter: '2026-02-07' → '2/7' */
 const toShortDate = (iso) => {
@@ -131,9 +91,18 @@ function Watch() {
   const [series, setSeries] = useState(null);
   const [stats, setStats] = useState(null);
   const [liveNow, setLiveNow] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [favEditing, setFavEditing] = useState(false);
   const [err, setErr] = useState(null);
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  const loadFavorites = useCallback(() => {
+    fetch(`${API_URL}/watch/favorites?locale=${encodeURIComponent(lang)}`)
+      .then((r) => r.json())
+      .then((d) => setFavorites(d.favorites || []))
+      .catch(() => setFavorites([]));
+  }, [lang]);
 
   // 一鍵發碎念：把這部帶到 /thinking 的發文框（compose 會讀 sessionStorage 預填）
   const shareToThinking = (item) => {
@@ -170,6 +139,9 @@ function Watch() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  /* 一生推：API 驅動（標題/海報/年份依語系在地化）；切語系時重抓 */
+  useEffect(() => { loadFavorites(); }, [loadFavorites]);
 
   /* 即時觀看：輪詢 /watch/now（有人在播才有內容；30 秒一次）*/
   useEffect(() => {
@@ -247,13 +219,6 @@ function Watch() {
       }),
     };
   }, [animeHistory]);
-
-  const favsLocale = FAVORITES_BY_LANG[lang] || FAVORITES_BY_LANG['zh-TW'];
-  const favorites = FAVORITES_STATIC.map((s, i) => ({
-    ...s,
-    ...favsLocale[i],
-    externalUrl: tmdbUrl(s.kind, s.tmdbId),
-  }));
 
   /* 把三條源 normalize 成同 shape，依 isoDate DESC 合流，取 12 筆 */
   const filmItems = (films || []).map((f) => ({
@@ -413,14 +378,25 @@ function Watch() {
 
         {/* 一生推 */}
         <motion.section className="w-section" {...reveal}>
-          <h2 className="w-h2">{t('watch.favoritesTitle')}</h2>
-          <p className="w-h2-sub">{t('watch.favoritesSubtitle')}</p>
+          <div className="w-h2-row">
+            <div>
+              <h2 className="w-h2">{t('watch.favoritesTitle')}</h2>
+              <p className="w-h2-sub">{t('watch.favoritesSubtitle')}</p>
+            </div>
+            {isAdmin && (
+              <button className="w-share-btn" onClick={() => setFavEditing(true)}>
+                {t('watch.favManage')}
+              </button>
+            )}
+          </div>
           <div className="w-favs">
             {favorites.map((f) => (
               <figure className="w-fav" key={f.id}>
                 <a className="w-fav-poster" href={f.externalUrl} target="_blank" rel="noopener noreferrer">
-                  <img src={f.poster} alt={f.title} loading="lazy" />
-                  <figcaption className="w-fav-quote">「{f.quote}」</figcaption>
+                  {f.poster
+                    ? <img src={f.poster} alt={f.title} loading="lazy" />
+                    : <span className="w-fav-noposter">{f.title}</span>}
+                  {f.quote && <figcaption className="w-fav-quote">「{f.quote}」</figcaption>}
                 </a>
                 <p className="w-fav-title">{f.title}</p>
                 <p className="w-fav-line"><Stars n={f.rating} /> <span className="w-fav-year">{f.year}</span></p>
@@ -428,6 +404,14 @@ function Watch() {
             ))}
           </div>
         </motion.section>
+
+        {favEditing && (
+          <FavoritesEditor
+            favorites={favorites}
+            onClose={() => setFavEditing(false)}
+            onChanged={loadFavorites}
+          />
+        )}
 
         {/* 最近在看（依週分組） */}
         <motion.section className="w-section" {...reveal}>

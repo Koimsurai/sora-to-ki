@@ -432,6 +432,117 @@ apiRouter.get('/watch/stats', (req, res) => {
   ).then((entries) => res.json({ message: 'success', ...Object.fromEntries(entries) }));
 });
 
+/* ── /watch 一生推（watch_favorites）：公開讀取（依語系在地化）+ admin CRUD ── */
+const TMDB_LANG = { 'zh-TW': 'zh-TW', 'zh-CN': 'zh-CN', en: 'en-US', ja: 'ja-JP', ko: 'ko-KR' };
+const tmdbDetailCache = new Map(); // `${kind}:${id}:${lang}` → { title, poster_url, year }
+
+async function tmdbDetail(kind, id, locale) {
+  const lang = TMDB_LANG[locale] || 'zh-TW';
+  const key = `${kind}:${id}:${lang}`;
+  if (tmdbDetailCache.has(key)) return tmdbDetailCache.get(key);
+  if (!TMDB_API_TOKEN) return null;
+  try {
+    const path = kind === 'tv' ? 'tv' : 'movie';
+    const r = await fetch(`https://api.themoviedb.org/3/${path}/${id}?language=${lang}`,
+      { headers: { Authorization: `Bearer ${TMDB_API_TOKEN}`, accept: 'application/json' } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const out = {
+      title: j.title || j.name || '',
+      poster_url: j.poster_path ? `https://image.tmdb.org/t/p/w342${j.poster_path}` : null,
+      year: parseInt((j.release_date || j.first_air_date || '').slice(0, 4), 10) || null,
+    };
+    tmdbDetailCache.set(key, out);
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+// GET /api/watch/favorites?locale= — 公開；標題/海報/年份依語系即時補（poster/year 失敗時退回 DB 快照）
+apiRouter.get('/watch/favorites', (req, res) => {
+  const locale = TMDB_LANG[req.query.locale] ? req.query.locale : 'zh-TW';
+  db.all('SELECT * FROM watch_favorites ORDER BY sort_order ASC, id ASC', async (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const out = await Promise.all((rows || []).map(async (f) => {
+      const d = await tmdbDetail(f.kind, f.tmdb_id, locale);
+      return {
+        id: f.id, kind: f.kind, tmdbId: f.tmdb_id, rating: f.rating, quote: f.quote,
+        title: d?.title || `#${f.tmdb_id}`,
+        poster: d?.poster_url || f.poster_url || null,
+        year: d?.year || f.year || null,
+        externalUrl: `https://www.themoviedb.org/${f.kind === 'tv' ? 'tv' : 'movie'}/${f.tmdb_id}`,
+      };
+    }));
+    res.set('Cache-Control', 'public, max-age=300');
+    res.json({ message: 'success', favorites: out });
+  });
+});
+
+// GET /api/watch/tmdb-search?q=&kind=  — admin 選片用（回標題/年份/海報）
+apiRouter.get('/watch/tmdb-search', requireAdmin, async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  const kind = req.query.kind === 'tv' ? 'tv' : 'movie';
+  if (!q) return res.json({ message: 'success', results: [] });
+  if (!TMDB_API_TOKEN) return res.status(500).json({ error: 'TMDB_API_TOKEN 未設定' });
+  try {
+    const r = await fetch(
+      `https://api.themoviedb.org/3/search/${kind}?query=${encodeURIComponent(q)}&language=zh-TW&include_adult=false`,
+      { headers: { Authorization: `Bearer ${TMDB_API_TOKEN}`, accept: 'application/json' } });
+    const j = await r.json();
+    const results = (j.results || []).slice(0, 8).map((it) => ({
+      tmdbId: it.id, kind,
+      title: it.title || it.name,
+      year: parseInt((it.release_date || it.first_air_date || '').slice(0, 4), 10) || null,
+      poster: it.poster_path ? `https://image.tmdb.org/t/p/w185${it.poster_path}` : null,
+    }));
+    res.json({ message: 'success', results });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/watch/favorites  {tmdbId, kind, rating, quote}  — admin 新增（接到清單末尾）
+apiRouter.post('/watch/favorites', requireAdmin, async (req, res) => {
+  const { tmdbId, kind = 'film', rating = 5, quote = '' } = req.body || {};
+  if (!tmdbId) return res.status(400).json({ error: 'tmdbId 必填' });
+  const k = kind === 'tv' ? 'tv' : 'film';
+  const d = await tmdbDetail(k, tmdbId, 'zh-TW'); // 存一份快照當 fallback
+  db.get('SELECT MAX(sort_order) AS m FROM watch_favorites', (e, row) => {
+    const order = (row?.m ?? -1) + 1;
+    db.run(
+      'INSERT INTO watch_favorites (tmdb_id, kind, rating, quote, poster_url, year, sort_order) VALUES (?,?,?,?,?,?,?)',
+      [tmdbId, k, Math.max(1, Math.min(5, rating)), String(quote).slice(0, 280), d?.poster_url || null, d?.year || null, order],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'success', id: this.lastID });
+      });
+  });
+});
+
+// PUT /api/watch/favorites/:id  {rating, quote, sort_order}  — admin 編輯
+apiRouter.put('/watch/favorites/:id', requireAdmin, (req, res) => {
+  const { rating, quote, sort_order } = req.body || {};
+  const sets = [], params = [];
+  if (rating != null) { sets.push('rating = ?'); params.push(Math.max(1, Math.min(5, rating))); }
+  if (quote != null) { sets.push('quote = ?'); params.push(String(quote).slice(0, 280)); }
+  if (sort_order != null) { sets.push('sort_order = ?'); params.push(sort_order); }
+  if (!sets.length) return res.status(400).json({ error: '無可更新欄位' });
+  params.push(req.params.id);
+  db.run(`UPDATE watch_favorites SET ${sets.join(', ')} WHERE id = ?`, params, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'success' });
+  });
+});
+
+// DELETE /api/watch/favorites/:id — admin 刪除
+apiRouter.delete('/watch/favorites/:id', requireAdmin, (req, res) => {
+  db.run('DELETE FROM watch_favorites WHERE id = ?', [req.params.id], (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'success' });
+  });
+});
+
 // 啟動 30 秒後跑首次 sync，之後每 6 小時跑一次
 setTimeout(() => syncBahamutHistory(), 30 * 1000);
 setInterval(() => syncBahamutHistory(), 6 * 60 * 60 * 1000);

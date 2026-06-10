@@ -8,7 +8,7 @@ import { RadioTowerIcon } from '@/components/animate-ui/icons/radio-tower';
 import { AudioLinesIcon } from '@/components/animate-ui/icons/audio-lines';
 import { ClockIcon } from '@/components/animate-ui/icons/clock';
 import { RouteIcon } from '@/components/animate-ui/icons/route';
-import { BookOpenTextIcon } from '@animateicons/react/lucide';
+import { BookOpenTextIcon, EyeIcon } from '@animateicons/react/lucide';
 
 /**
  * @animateicons/react 的 icon 不會 watch isAnimated prop 變化來播動畫，
@@ -58,9 +58,13 @@ function AnimatedMenuLink({ to, AnimIcon, FallbackIcon, AnimateIconsLib, title, 
  */
 function MoreMenuContent() {
   const { t } = useTranslation();
+  // 三欄 3-2-2：生活（在看/照片/動態）｜收藏（書櫃/音樂）｜個人（旅程/設定）
   const life = [
+    { to: '/watch',     AnimateIconsLib: EyeIcon,            title: t('megaMenu.items.watch'),     desc: t('megaMenu.items.watchDesc') },
     { to: '/photos',    AnimIcon: FrameIcon,                 title: t('megaMenu.items.photos'),    desc: t('megaMenu.items.photosDesc') },
     { to: '/activity',  AnimIcon: RadioTowerIcon,            title: t('megaMenu.items.activity'),  desc: t('megaMenu.items.activityDesc') },
+  ];
+  const collection = [
     { to: '/bookshelf', AnimateIconsLib: BookOpenTextIcon,   title: t('megaMenu.items.bookshelf'), desc: t('megaMenu.items.bookshelfDesc') },
     { to: '/music',     AnimIcon: AudioLinesIcon,            title: t('megaMenu.items.music'),     desc: t('megaMenu.items.musicDesc') },
   ];
@@ -74,8 +78,9 @@ function MoreMenuContent() {
   ));
 
   return (
-    <MegaMenuPanel className="mega-menu-panel--balanced">
+    <MegaMenuPanel className="mega-menu-panel--more">
       <MegaMenuColumn title={t('megaMenu.groups.life')}>{renderLinks(life)}</MegaMenuColumn>
+      <MegaMenuColumn title={t('megaMenu.groups.collection')}>{renderLinks(collection)}</MegaMenuColumn>
       <MegaMenuColumn title={t('megaMenu.groups.personal')}>{renderLinks(personal)}</MegaMenuColumn>
     </MegaMenuPanel>
   );

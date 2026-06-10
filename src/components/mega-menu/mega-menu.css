@@ -145,6 +145,12 @@
   grid-template-columns: 180px 180px;
 }
 
+/* 更多 menu（含在看後）：3 欄 生活／收藏／個人 */
+.mega-menu-panel--more {
+  grid-template-columns: 172px 162px 162px;
+  padding: 14px 16px;
+}
+
 /* ───── Column ───── */
 .mega-menu-column {
   display: flex;

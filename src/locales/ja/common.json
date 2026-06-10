@@ -54,7 +54,8 @@
       "latestPosts": "最新の記事",
       "categoryLatest": "{{cat}} · 最新",
       "life": "ライフ",
-      "personal": "パーソナル"
+      "personal": "パーソナル",
+      "collection": "コレクション"
     },
     "items": {
       "home": "ホーム",
@@ -84,7 +85,11 @@
       "journey": "歩み",
       "journeyDesc": "学習の軌跡",
       "setup": "デバイス",
-      "setupDesc": "機材一覧"
+      "setupDesc": "機材一覧",
+      "watch": "視聴中",
+      "watchDesc": "最近のアニメ / ドラマ / 映画",
+      "thinking": "つぶやき",
+      "thinkingDesc": "今この瞬間の短い思い"
     }
   },
   "hero": {
@@ -418,7 +423,14 @@
       "viewWatch": "← 「今みているもの」へ戻る"
     },
     "continueOn": "{{service}} で続きを見る",
-    "viewOnTmdb": "TMDb で見る"
+    "viewOnTmdb": "TMDb で見る",
+    "favManage": "お気に入り管理",
+    "favEmpty": "まだ登録がありません",
+    "favSearchPlaceholder": "TMDb でタイトル検索…",
+    "favSearching": "検索中…",
+    "favQuotePlaceholder": "ひとこと…（任意）",
+    "kindFilm": "映画",
+    "kindTv": "ドラマ／アニメ"
   },
   "setup": {
     "title": "私のセットアップ · My Setup",
