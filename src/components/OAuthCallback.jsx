@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import KoimLoader from './KoimLoader';
 
 function OAuthCallback() {
   const { t } = useTranslation();
@@ -48,14 +49,8 @@ function OAuthCallback() {
     );
   }
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#06050e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ width: '36px', height: '36px', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#7f5af0', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-        <p>{t('oauth.loggingIn')}</p>
-      </div>
-    </div>
-  );
+  // 統一用站內 KoimLoader（不再用獨立的 spinner）
+  return <KoimLoader fullscreen size="lg" text={t('oauth.loggingIn')} />;
 }
 
 export default OAuthCallback;
