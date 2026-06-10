@@ -435,6 +435,22 @@ function initializeDatabase() {
       )
     `);
 
+    // ── thoughts：碎念 / 思考 feed（Innei 式短想法）──
+    // ref_type: NULL | 'link' | 'media'；ref_json 存 OG / TMDb 卡片資料
+    db.run(`
+      CREATE TABLE IF NOT EXISTS thoughts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        ref_type TEXT,
+        ref_url TEXT,
+        ref_json TEXT,
+        likes INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME,
+        edited INTEGER DEFAULT 0
+      )
+    `);
+
     // 檢查並更新 comments 表
     db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='comments'", (err, table) => {
       if (err) {

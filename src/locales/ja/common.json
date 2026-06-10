@@ -336,6 +336,12 @@
     "subscribeTitle": "購読",
     "fontSwitcherTitle": "フォント切替"
   },
+  "thinking": {
+    "title": "つぶやき",
+    "subtitle": "思いついたこと、観たもの、ふと書き留める。",
+    "ending": "たいていは、ただのひとりごと。",
+    "empty": "まだ何もない。"
+  },
   "watch": {
     "title": "今みているもの",
     "metaDescription": "アニメと映画の趣味 — Bahamut Anime と Letterboxd から自動同期",

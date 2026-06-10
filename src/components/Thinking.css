@@ -1,0 +1,287 @@
+/* ──────────────────────────────────────────────────────────────
+   碎念 / 思考 feed — 卡片式（Innei 風，但更柔和）
+   調色沿用 Watch：柔白 rgba(244,244,245,.98) · 薰衣草 rgba(216,180,254)
+─────────────────────────────────────────────────────────────── */
+
+.tk-page {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  background: transparent;
+  padding: 120px 24px 120px;
+}
+
+.tk-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgba(6, 5, 14, 0.55);
+  pointer-events: none;
+}
+
+.tk-wrap {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* ── header ── */
+.tk-header { margin-bottom: 2.6rem; }
+.tk-title {
+  font-size: clamp(2rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: rgba(244, 244, 245, 0.98);
+  margin: 0 0 10px;
+}
+.tk-subtitle {
+  font-size: 0.98rem;
+  color: rgba(229, 229, 245, 0.5);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+/* ── feed ── */
+.tk-feed { list-style: none; margin: 0; padding: 0; }
+
+/* 卡片：柔玻璃底 + 細邊（不裁切，讓「已編輯」tooltip 能溢出） */
+.tk-card {
+  position: relative;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  border-radius: 16px;
+  background: rgba(15, 12, 24, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease;
+}
+.tk-card:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, 0.1); }
+@keyframes tk-sheen { from { background-position: 120% 0; } to { background-position: -20% 0; } }
+
+/* head：作者 + 時間 + （已編輯） */
+.tk-card-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.tk-author { font-size: 0.9rem; font-weight: 700; color: rgba(244, 244, 245, 0.92); }
+.tk-time { font-size: 0.78rem; color: rgba(229, 229, 245, 0.4); }
+
+.tk-edited { position: relative; font-size: 0.78rem; color: rgba(229, 229, 245, 0.35); cursor: default; }
+.tk-edited::after {
+  content: attr(data-edited);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(30, 24, 45, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(244, 244, 245, 0.9);
+  font-size: 0.74rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 5;
+}
+.tk-edited:hover::after { opacity: 1; }
+
+.tk-text {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.85;
+  color: rgba(244, 244, 245, 0.9);
+  letter-spacing: 0.01em;
+}
+
+/* ── 內文嵌入卡（連結 OG / TMDb 媒體共用底）── */
+.tk-embed {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+/* hover 漸層 sheen — 掃過嵌入卡本身 */
+.tk-embed::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgba(216, 180, 254, 0.14) 50%, transparent 70%);
+  background-size: 220% 100%;
+  background-position: 120% 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.tk-embed:hover { border-color: rgba(216, 180, 254, 0.3); background: rgba(0, 0, 0, 0.3); }
+.tk-embed:hover::before { opacity: 1; animation: tk-sheen 1.3s ease forwards; }
+.tk-embed > * { position: relative; z-index: 1; }
+
+.tk-embed-info { flex: 1; min-width: 0; }
+/* 媒體類型：極淡中性 chip（取代飽和左色條） */
+.tk-embed-kind {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(229, 229, 245, 0.7);
+}
+.tk-embed-title {
+  margin: 4px 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(244, 244, 245, 0.95);
+}
+.tk-embed-desc {
+  margin: 0 0 8px;
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: rgba(229, 229, 245, 0.6);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tk-embed-meta {
+  font-size: 0.74rem;
+  color: rgba(229, 229, 245, 0.45);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.tk-embed-site { color: rgba(229, 229, 245, 0.6); }
+
+/* 媒體：直式海報 */
+.tk-media-poster {
+  width: 64px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex: 0 0 auto;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+/* 連結 OG：橫式縮圖 */
+.tk-linkcard-img {
+  width: 124px;
+  height: 78px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex: 0 0 auto;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+
+/* footer：互動數 + 查看（查看 hover 卡片才出現） */
+.tk-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+.tk-stats { display: flex; gap: 18px; font-size: 0.82rem; color: rgba(229, 229, 245, 0.42); }
+.tk-stats span { display: inline-flex; align-items: center; gap: 6px; }
+.tk-view {
+  font-size: 0.82rem;
+  color: rgba(216, 180, 254, 0.75);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.25s ease, transform 0.25s ease, color 0.2s ease;
+}
+.tk-card:hover .tk-view { opacity: 1; transform: translateX(0); }
+.tk-view:hover { color: rgba(216, 180, 254, 1); }
+
+/* admin 發文框 */
+.tk-compose {
+  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(15, 12, 24, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.tk-compose-text,
+.tk-compose-url {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  color: rgba(244, 244, 245, 0.95);
+  font: inherit;
+  padding: 10px 12px;
+}
+.tk-compose-text { min-height: 56px; line-height: 1.7; resize: vertical; }
+.tk-compose-url { margin-top: 8px; font-size: 0.86rem; }
+.tk-compose-text:focus,
+.tk-compose-url:focus { outline: none; border-color: rgba(216, 180, 254, 0.4); }
+.tk-compose-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+.tk-compose-send {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 9999px;
+  background: #7f5af0;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+.tk-compose-send:hover { background: #6c47e0; }
+.tk-compose-send:disabled { opacity: 0.5; cursor: default; }
+
+/* footer 動作（刪除，hover 才現） */
+.tk-foot-actions { display: flex; align-items: center; gap: 14px; }
+.tk-act {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: rgba(255, 150, 150, 0.7);
+  opacity: 0;
+  transition: opacity 0.25s ease, color 0.2s ease;
+}
+.tk-card:hover .tk-act { opacity: 1; }
+.tk-act:hover { color: rgba(255, 150, 150, 1); }
+
+.tk-empty {
+  margin: 3rem 0;
+  text-align: center;
+  color: rgba(229, 229, 245, 0.45);
+  font-style: italic;
+}
+
+.tk-ending {
+  margin: 2.5rem 0 0;
+  font-size: 0.96rem;
+  color: rgba(229, 229, 245, 0.5);
+  text-align: center;
+  letter-spacing: 0.05em;
+  font-style: italic;
+}
+
+/* ════════ RWD ════════ */
+@media (max-width: 640px) {
+  .tk-page { padding: 100px 18px 90px; }
+  .tk-header { margin-bottom: 2rem; }
+  .tk-card { padding: 18px 18px; }
+  .tk-media-poster { width: 54px; height: 81px; }
+  .tk-linkcard-img { width: 96px; height: 60px; }
+  .tk-embed-desc { -webkit-line-clamp: 3; }
+  /* 手機沒 hover：查看常駐 */
+  .tk-view { opacity: 1; transform: none; }
+}

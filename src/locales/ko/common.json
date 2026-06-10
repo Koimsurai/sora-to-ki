@@ -336,6 +336,12 @@
     "subscribeTitle": "구독",
     "fontSwitcherTitle": "폰트 전환"
   },
+  "thinking": {
+    "title": "혼잣말",
+    "subtitle": "떠오르는 생각이나 방금 본 것을 가볍게.",
+    "ending": "대개는 그냥 혼잣말.",
+    "empty": "아직 아무것도 없어요."
+  },
   "watch": {
     "title": "지금 보고 있는 것",
     "metaDescription": "내가 좋아하는 애니메이션·영화 — Bahamut Anime, Letterboxd 자동 동기화",

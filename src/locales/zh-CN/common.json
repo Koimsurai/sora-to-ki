@@ -336,6 +336,12 @@
     "subscribeTitle": "订阅",
     "fontSwitcherTitle": "切换字型"
   },
+  "thinking": {
+    "title": "碎念",
+    "subtitle": "想到什么写什么，看完什么顺手丢上来。",
+    "ending": "更多时候，只是想说给空气听。",
+    "empty": "还没有碎念。"
+  },
   "watch": {
     "title": "在看什么",
     "metaDescription": "我的动画与电影品味 — 自动同步自动画疯与 Letterboxd",

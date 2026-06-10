@@ -4885,6 +4885,113 @@ apiRouter.post('/admin/bahamut/cookie', bahamutPushAuth, async (req, res) => {
   }
 });
 
+/* ═════════════════════════════════════════════════════════════
+   碎念 / 思考 thoughts — 公開 feed + admin CRUD（連結自動 unfurl og）
+═════════════════════════════════════════════════════════════ */
+const safeParse = (s) => { try { return JSON.parse(s); } catch { return null; } };
+
+// 簡易 unfurl：抓 URL 的 og:title/description/image/site_name（admin 建立連結碎念時用）
+async function unfurlUrl(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 6000);
+    const r = await fetch(url, {
+      signal: ac.signal,
+      redirect: 'follow',
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; koimsurai-bot/1.0; +https://koimsurai.com)' },
+    }).finally(() => clearTimeout(timer));
+    if (!r.ok) return null;
+    const html = (await r.text()).slice(0, 200000); // head 夠了
+    const og = (prop) => {
+      const a = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']+)["']`, 'i'));
+      const b = html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${prop}["']`, 'i'));
+      return (a && a[1]) || (b && b[1]) || null;
+    };
+    const dec = (s) => (s ? s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'") : s);
+    const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    return {
+      title: dec(og('og:title') || (titleTag ? titleTag[1].trim() : null)),
+      desc: dec(og('og:description') || og('description')),
+      image: og('og:image'),
+      site: dec(og('og:site_name')) || u.hostname.replace(/^www\./, ''),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// 公開：列表
+apiRouter.get('/thoughts', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit || '30', 10), 100);
+  const offset = Math.max(parseInt(req.query.offset || '0', 10), 0);
+  db.all(
+    'SELECT * FROM thoughts ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?',
+    [limit, offset],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      const thoughts = (rows || []).map((r) => ({ ...r, edited: !!r.edited, ref: safeParse(r.ref_json) }));
+      res.json({ message: 'success', thoughts });
+    },
+  );
+});
+
+// 公開：單篇
+apiRouter.get('/thoughts/:id', (req, res) => {
+  db.get('SELECT * FROM thoughts WHERE id = ?', [req.params.id], (err, r) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!r) return res.status(404).json({ error: 'not found' });
+    res.json({ message: 'success', thought: { ...r, edited: !!r.edited, ref: safeParse(r.ref_json) } });
+  });
+});
+
+// admin：建立（content 必填；可帶 refUrl 連結自動 unfurl，或 ref:{type,url,json}）
+apiRouter.post('/admin/thoughts', requireAdmin, async (req, res) => {
+  const { content, refUrl, ref } = req.body || {};
+  if (!content || !String(content).trim()) return res.status(400).json({ error: 'content required' });
+  let refType = null, rUrl = null, refJson = null;
+  if (ref && ref.type && ref.json) {
+    refType = ref.type; rUrl = ref.url || null; refJson = JSON.stringify(ref.json);
+  } else if (refUrl) {
+    const meta = await unfurlUrl(refUrl);
+    refType = 'link'; rUrl = refUrl; refJson = JSON.stringify(meta || {});
+  }
+  db.run(
+    'INSERT INTO thoughts (content, ref_type, ref_url, ref_json) VALUES (?, ?, ?, ?)',
+    [String(content).trim(), refType, rUrl, refJson],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ message: 'success', id: this.lastID });
+    },
+  );
+});
+
+// admin：編輯（標記 edited + updated_at）
+apiRouter.put('/admin/thoughts/:id', requireAdmin, async (req, res) => {
+  const { content, refUrl, ref, clearRef } = req.body || {};
+  db.get('SELECT * FROM thoughts WHERE id = ?', [req.params.id], async (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'not found' });
+    let refType = row.ref_type, rUrl = row.ref_url, refJson = row.ref_json;
+    if (clearRef) { refType = null; rUrl = null; refJson = null; }
+    else if (ref && ref.type && ref.json) { refType = ref.type; rUrl = ref.url || null; refJson = JSON.stringify(ref.json); }
+    else if (refUrl && refUrl !== row.ref_url) { const meta = await unfurlUrl(refUrl); refType = 'link'; rUrl = refUrl; refJson = JSON.stringify(meta || {}); }
+    db.run(
+      'UPDATE thoughts SET content = ?, ref_type = ?, ref_url = ?, ref_json = ?, updated_at = CURRENT_TIMESTAMP, edited = 1 WHERE id = ?',
+      [content != null ? String(content).trim() : row.content, refType, rUrl, refJson, req.params.id],
+      (e) => (e ? res.status(500).json({ error: e.message }) : res.json({ message: 'success' })),
+    );
+  });
+});
+
+// admin：刪除
+apiRouter.delete('/admin/thoughts/:id', requireAdmin, (req, res) => {
+  db.run('DELETE FROM thoughts WHERE id = ?', [req.params.id], (err) =>
+    (err ? res.status(500).json({ error: err.message }) : res.json({ message: 'success' })),
+  );
+});
+
 // GET /api/anime/history — 公開讀取最近觀看
 apiRouter.get('/anime/history', (req, res) => {
   // cap 2000 (DB 約 900 列、之後成長有空間；前端 library 一次拿完 group by anime_sn)

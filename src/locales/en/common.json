@@ -336,6 +336,12 @@
     "subscribeTitle": "Subscribe",
     "fontSwitcherTitle": "Switch font"
   },
+  "thinking": {
+    "title": "Murmurs",
+    "subtitle": "Short notes — whatever's on my mind, or what I just watched.",
+    "ending": "Most of the time, just thinking out loud.",
+    "empty": "Nothing here yet."
+  },
   "watch": {
     "title": "What I'm watching",
     "metaDescription": "My anime and film taste — auto-synced from Bahamut Anime and Letterboxd",

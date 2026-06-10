@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 全站文字選取（取代瀏覽器原生）— 柔和薰衣草，呼應整站色 */
+::selection {
+  background: rgba(216, 180, 254, 0.30);
+  color: #fff;
+  text-shadow: none;
+}
+::-moz-selection {
+  background: rgba(216, 180, 254, 0.30);
+  color: #fff;
+  text-shadow: none;
+}
+
 @layer base {
   :root {
     /* 現代化暗色系主題 - 柔和色調 */
