@@ -1,8 +1,19 @@
 /* ── 獨立頁面層 ─────────────────────────────────── */
 .portfolio-page {
+  position: relative;
+  z-index: 2;
   padding-top: 64px; /* fixed header 偏移 */
   padding-bottom: 40px;
   min-height: 100vh;
+}
+
+/* dim scrim：壓暗亮星空，跟 .w-scrim / .tk-scrim 同款 */
+.portfolio-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(6, 5, 14, 0.55);
+  pointer-events: none;
 }
 
 .portfolio-page-title {

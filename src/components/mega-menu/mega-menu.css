@@ -178,6 +178,7 @@
 .mega-menu-column-body {
   display: flex;
   flex-direction: column;
+  flex: 1; /* 撐滿欄高，讓 profile 欄能上下分佈對齊其他欄 */
   gap: 2px;
 }
 
@@ -309,6 +310,11 @@
   flex-direction: column;
   padding: 2px;
   min-width: 220px;
+  /* 左欄高度撐滿面板：頭像/統計/社群三段均分，跟右側兩欄底部對齊
+     （原本內容擠在上半部，下方一大塊留白，跟右欄落差很大） */
+  height: 100%;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 /* compact 版本：頭貼 + 名字水平排，整體 row 高度減少 */

@@ -127,8 +127,33 @@
 
 .club-caret.open { transform: rotate(180deg); }
 
+/* 展開動畫：grid-template-rows 0fr→1fr（純 CSS，比 JS 量測 height:auto 順）
+   內層 min-height:0 + overflow:hidden 是 0fr 收合的必要條件 */
+.club-activities-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 340ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.club-activities-wrap.open {
+  grid-template-rows: 1fr;
+}
+
+/* 內容淡入比展開略慢一點，收合時先淡出 */
+.club-activities-wrap .club-activities-list {
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.club-activities-wrap.open .club-activities-list {
+  opacity: 1;
+  transition: opacity 260ms ease 100ms;
+}
+
 /* 展開：hairline 分隔 + 桌面雙欄活動格（吉他社 8 項不再拖成長串） */
 .club-activities-list {
+  min-height: 0;
   margin: 0 22px;
   padding: 14px 0 18px 60px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);

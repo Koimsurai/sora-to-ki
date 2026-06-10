@@ -37,6 +37,8 @@ function AboutPage() {
 
   return (
     <div className="about-page">
+      {/* 前景濾鏡：壓暗亮星空，跟 /watch /thinking 一致 */}
+      <div className="about-scrim" />
       <SEOHead title={seo.title} description={seo.desc} path="/about" />
       <AboutMe />
       <Expertise />

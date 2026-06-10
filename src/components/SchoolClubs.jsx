@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FaUniversity, FaGuitar, FaCamera } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import './SchoolClubs.css';
@@ -84,22 +84,14 @@ function SchoolClubs() {
                 </span>
               </button>
 
-              <AnimatePresence initial={false}>
-                {isOpen && (
-                  <motion.ul
-                    key="activities"
-                    className="club-activities-list"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.28, ease: 'easeOut' }}
-                  >
-                    {club.activities.map((a, j) => (
-                      <li key={j} className="club-activity-item">{a}</li>
-                    ))}
-                  </motion.ul>
-                )}
-              </AnimatePresence>
+              {/* 展開動畫：CSS grid-rows 0fr→1fr（framer 的 height:auto 量測會卡） */}
+              <div className={`club-activities-wrap ${isOpen ? 'open' : ''}`}>
+                <ul className="club-activities-list">
+                  {club.activities.map((a, j) => (
+                    <li key={j} className="club-activity-item">{a}</li>
+                  ))}
+                </ul>
+              </div>
             </motion.div>
           );
         })}

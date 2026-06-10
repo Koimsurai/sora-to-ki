@@ -12,6 +12,11 @@ const reveal = {
   transition: { duration: 0.5, ease: 'easeOut' },
 };
 
+// 職位類里程碑（猿創力 4 / 高偉 5 / MSI 7）跟同頁的 Experience 區完全重疊，
+// 軌跡只保留人生敘事：出生 → 日料店啟蒙 → 大學前期 → 畢業專題 → 個人專案 → 持續探索。
+// 資料仍完整保留在 journeyData.js，想恢復把 id 從這個集合拿掉即可。
+const DEDUP_WITH_EXPERIENCE = new Set([4, 5, 7]);
+
 function JourneyTimeline() {
   const { i18n } = useTranslation();
   const lang = i18n.resolvedLanguage || 'zh-TW';
@@ -24,7 +29,7 @@ function JourneyTimeline() {
     isFuture: s.year === 'FUTURE',
     ...locale[i],
     allTags: [...s.tags, ...(locale[i].extraTags || [])],
-  }));
+  })).filter((m) => !DEDUP_WITH_EXPERIENCE.has(m.id));
 
   return (
     <section id="journey" className="home-section journey-v2">

@@ -5,7 +5,7 @@ import {
   FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages,
   FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss,
   FaClock, FaRoute, FaBook, FaMusic, FaCamera, FaDesktop,
-  FaGithub, FaGoogle, FaSignOutAlt, FaCog,
+  FaGithub, FaGoogle, FaSignOutAlt, FaCog, FaThLarge,
 } from 'react-icons/fa';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -179,6 +179,7 @@ function Header({ activeSection }) {
           <MegaMenuItem
             id="more"
             label={t('nav.more')}
+            icon={<FaThLarge />}
             active={location.pathname.startsWith('/photos')
                  || location.pathname.startsWith('/activity')
                  || location.pathname.startsWith('/setup')

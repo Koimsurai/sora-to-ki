@@ -113,6 +113,8 @@ const Portfolio = () => {
   }));
   return (
   <div className="portfolio-page">
+  {/* 前景濾鏡：壓暗亮星空，跟 /watch /thinking 一致 */}
+  <div className="portfolio-scrim" />
   <SEOHead title={dict.pageTitle} description={dict.pageSub} path="/portfolio" />
   <section id="portfolio" className="home-section portfolio-v2">
     <div className="home-section-eyebrow">
