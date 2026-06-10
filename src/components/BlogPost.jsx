@@ -499,6 +499,12 @@ const getLinkMeta = (url) => {
       if (id && id !== 'blog') return { type: 'internal', id };
     }
 
+    // 碎念 / 思考引用
+    if (host.includes('koimsurai.com') && u.pathname.startsWith('/thinking/')) {
+      const tid = u.pathname.split('/').pop();
+      if (tid && tid !== 'thinking') return { type: 'thought', id: tid };
+    }
+
     // Internal Web Link Detection (non-blog pages)
     if (host.includes('koimsurai.com')) {
       return { type: 'internal-page', icon: FaExternalLinkAlt, color: 'var(--post-accent)', label: '站內連結', path: u.pathname };
@@ -543,6 +549,35 @@ export const InternalLinkCard = ({ id }) => {
 };
 
 /* ══════════════════════════
+   ThoughtPreviewCard — 引用一則碎念/思考
+   ══════════════════════════ */
+export const ThoughtPreviewCard = ({ id }) => {
+  const [th, setTh] = useState(null);
+  useEffect(() => {
+    fetch(`/api/thoughts/${id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && d.thought) setTh(d.thought); })
+      .catch(() => { });
+  }, [id]);
+
+  if (!th) return <a href={`/thinking/${id}`} target="_blank" rel="noopener noreferrer">/thinking/{id}</a>;
+
+  return (
+    <Link to={`/thinking/${id}`} className="link-card link-card-internal">
+      <div className="link-card-body">
+        <div className="link-card-site">
+          <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
+          <span>碎念</span>
+        </div>
+        <div className="link-card-title" style={{ whiteSpace: 'normal', fontSize: '0.98rem' }}>
+          {th.content.length > 80 ? th.content.slice(0, 80) + '…' : th.content}
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+/* ══════════════════════════
    LinkCard — rich link preview
    ══════════════════════════ */
 export const LinkCard = ({ href }) => {
@@ -551,6 +586,10 @@ export const LinkCard = ({ href }) => {
 
   if (meta.type === 'internal') {
     return <InternalLinkCard id={meta.id} />;
+  }
+
+  if (meta.type === 'thought') {
+    return <ThoughtPreviewCard id={meta.id} />;
   }
 
   // Spotify embed

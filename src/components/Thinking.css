@@ -258,6 +258,32 @@
 .tk-compose-url { margin-top: 8px; font-size: 0.86rem; }
 .tk-compose-text:focus,
 .tk-compose-url:focus { outline: none; border-color: rgba(216, 180, 254, 0.4); }
+/* 一鍵發帶來的附加媒體 chip */
+.tk-compose-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(216, 180, 254, 0.1);
+  border: 1px solid rgba(216, 180, 254, 0.22);
+  color: rgba(216, 180, 254, 0.9);
+  font-size: 0.8rem;
+}
+.tk-compose-chip button {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: rgba(229, 229, 245, 0.6);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.tk-compose-chip button:hover, .tk-compose-chip button:focus { background: transparent; border-color: transparent; box-shadow: none; color: #fff; }
+.tk-compose-chip button:focus-visible { outline: none; }
+
 .tk-compose-row { display: flex; justify-content: flex-end; margin-top: 10px; }
 .tk-compose-send {
   padding: 8px 20px;

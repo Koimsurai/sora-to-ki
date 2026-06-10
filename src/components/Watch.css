@@ -227,6 +227,28 @@
 }
 .w-h2-row .w-h2 { margin-bottom: 0; }
 
+.w-h2-actions { display: flex; align-items: center; gap: 14px; }
+/* 一鍵發碎念（ghost pill，蓋掉全域 button 實心樣式） */
+.w-share-btn {
+  background: transparent;
+  border: 1px solid rgba(216, 180, 254, 0.3);
+  box-shadow: none;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  color: rgba(216, 180, 254, 0.85);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.w-share-btn:hover, .w-share-btn:focus {
+  background: rgba(216, 180, 254, 0.12);
+  border-color: rgba(216, 180, 254, 0.5);
+  box-shadow: none;
+  color: rgba(216, 180, 254, 1);
+}
+.w-share-btn:focus-visible { outline: none; }
+
 .w-section-link {
   font-size: 0.86rem;
   color: rgba(216, 180, 254, 0.7);

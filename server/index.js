@@ -4947,12 +4947,39 @@ apiRouter.get('/thoughts/:id', (req, res) => {
   });
 });
 
+// 媒體 ref：給 tmdbId + mediaType，抓 TMDb 詳情補成完整卡片資料（/watch 一鍵發用）
+async function enrichMediaRef(json) {
+  const out = { ...json, source: 'www.themoviedb.org' };
+  const mt = json.mediaType === 'movie' ? 'movie' : 'tv';
+  out.url = json.tmdbId ? `https://www.themoviedb.org/${mt}/${json.tmdbId}` : null;
+  if (TMDB_API_TOKEN && json.tmdbId) {
+    try {
+      const r = await fetch(`https://api.themoviedb.org/3/${mt}/${json.tmdbId}?language=zh-TW`, {
+        headers: { Authorization: `Bearer ${TMDB_API_TOKEN}`, accept: 'application/json' },
+      });
+      if (r.ok) {
+        const d = await r.json();
+        out.title = json.title || d.title || d.name || '';
+        out.overview = d.overview || '';
+        out.rating = d.vote_average ? Number(d.vote_average).toFixed(1) : null;
+        out.genres = (d.genres || []).map((g) => g.name).join(', ') || null;
+        out.year = (d.release_date || d.first_air_date || '').slice(0, 4) || json.year || null;
+        out.poster = json.poster || (d.poster_path ? `https://image.tmdb.org/t/p/w500${d.poster_path}` : null);
+      }
+    } catch { /* 抓不到就用傳入的基本資料 */ }
+  }
+  return out;
+}
+
 // admin：建立（content 必填；可帶 refUrl 連結自動 unfurl，或 ref:{type,url,json}）
 apiRouter.post('/admin/thoughts', requireAdmin, async (req, res) => {
   const { content, refUrl, ref } = req.body || {};
   if (!content || !String(content).trim()) return res.status(400).json({ error: 'content required' });
   let refType = null, rUrl = null, refJson = null;
-  if (ref && ref.type && ref.json) {
+  if (ref && ref.type === 'media' && ref.json) {
+    const m = await enrichMediaRef(ref.json);
+    refType = 'media'; rUrl = m.url || null; refJson = JSON.stringify(m);
+  } else if (ref && ref.type && ref.json) {
     refType = ref.type; rUrl = ref.url || null; refJson = JSON.stringify(ref.json);
   } else if (refUrl) {
     const meta = await unfurlUrl(refUrl);

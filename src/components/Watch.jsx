@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/AuthContext';
 import SEOHead from './SEOHead';
 import './Watch.css';
 
@@ -131,6 +132,22 @@ function Watch() {
   const [stats, setStats] = useState(null);
   const [liveNow, setLiveNow] = useState(null);
   const [err, setErr] = useState(null);
+  const { isAdmin } = useAuth();
+  const navigate = useNavigate();
+
+  // 一鍵發碎念：把這部帶到 /thinking 的發文框（compose 會讀 sessionStorage 預填）
+  const shareToThinking = (item) => {
+    if (!item) return;
+    const media = {
+      tmdbId: item.tmdbId || null,
+      mediaType: item.type === 'film' ? 'movie' : 'tv',
+      kind: item.type === 'anime' ? '動畫' : item.type === 'film' ? '電影' : '影集',
+      title: item.title,
+      poster: item.poster,
+    };
+    try { sessionStorage.setItem('thinking_prefill', JSON.stringify(media)); } catch { /* ignore */ }
+    navigate('/thinking');
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -207,6 +224,7 @@ function Watch() {
         videoSn: head.video_sn,
         episode: head.episode,
         epCount: head.epCount,
+        tmdbId: head.tmdbId,
         date: headParsed.shortDate,
         // 連結走 TMDb；還沒 enrich（無 tmdb_id）就退而求其次連 TMDb 搜尋頁
         externalUrl: tmdbUrl('tv', head.tmdbId)
@@ -415,9 +433,14 @@ function Watch() {
         <motion.section className="w-section" {...reveal}>
           <div className="w-h2-row">
             <h2 className="w-h2">{t('watch.recentTitle')}</h2>
-            <Link to="/watch/library" className="w-section-link">
-              {t('watch.library.title')} →
-            </Link>
+            <div className="w-h2-actions">
+              {isAdmin && now && (
+                <button className="w-share-btn" onClick={() => shareToThinking(now)}>＋ 發碎念</button>
+              )}
+              <Link to="/watch/library" className="w-section-link">
+                {t('watch.library.title')} →
+              </Link>
+            </div>
           </div>
           {err && <p className="w-recent-err">⚠️ {err}</p>}
           {recentGrouped.thisWeek.length > 0 && (

@@ -30,6 +30,14 @@ function Thinking() {
   const [draft, setDraft] = useState('');
   const [draftUrl, setDraftUrl] = useState('');
   const [posting, setPosting] = useState(false);
+  const [prefill, setPrefill] = useState(null); // 從 /watch 一鍵發帶來的 media
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('thinking_prefill');
+      if (raw) { setPrefill(JSON.parse(raw)); sessionStorage.removeItem('thinking_prefill'); }
+    } catch { /* ignore */ }
+  }, []);
 
   const load = useCallback(() => {
     fetch(`${API}/thoughts?limit=50`)
@@ -46,9 +54,13 @@ function Thinking() {
       const r = await fetch(`${API}/admin/thoughts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-        body: JSON.stringify({ content: draft.trim(), refUrl: draftUrl.trim() || undefined }),
+        body: JSON.stringify({
+          content: draft.trim(),
+          refUrl: draftUrl.trim() || undefined,
+          ref: prefill ? { type: 'media', json: prefill } : undefined,
+        }),
       });
-      if (r.ok) { setDraft(''); setDraftUrl(''); load(); }
+      if (r.ok) { setDraft(''); setDraftUrl(''); setPrefill(null); load(); }
     } finally {
       setPosting(false);
     }
@@ -102,6 +114,12 @@ function Thinking() {
               value={draftUrl}
               onChange={(e) => setDraftUrl(e.target.value)}
             />
+            {prefill && (
+              <div className="tk-compose-chip">
+                <span>🎬 {prefill.kind} · {prefill.title}</span>
+                <button onClick={() => setPrefill(null)} aria-label="移除附加">✕</button>
+              </div>
+            )}
             <div className="tk-compose-row">
               <button className="tk-compose-send" onClick={submit} disabled={posting || !draft.trim()}>
                 {posting ? '發送中…' : '發送'}
