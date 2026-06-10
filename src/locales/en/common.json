@@ -28,7 +28,9 @@
     "backHome": "Back to home",
     "downloadResume": "Pick a resume to download",
     "resumeSE": "Software Engineer",
-    "resumeClubs": "School clubs"
+    "resumeClubs": "School clubs",
+    "watch": "Watching",
+    "thinking": "Murmurs"
   },
   "user": {
     "adminPanel": "Admin panel",

@@ -28,7 +28,9 @@
     "backHome": "ホームに戻る",
     "downloadResume": "ダウンロードする履歴書を選択",
     "resumeSE": "ソフトウェアエンジニア",
-    "resumeClubs": "サークル経歴"
+    "resumeClubs": "サークル経歴",
+    "watch": "視聴中",
+    "thinking": "つぶやき"
   },
   "user": {
     "adminPanel": "管理画面へ",

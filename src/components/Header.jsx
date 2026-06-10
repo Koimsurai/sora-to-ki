@@ -5,7 +5,7 @@ import {
   FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages,
   FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss,
   FaClock, FaRoute, FaBook, FaMusic, FaCamera, FaDesktop,
-  FaGithub, FaGoogle, FaSignOutAlt, FaCog,
+  FaGithub, FaGoogle, FaSignOutAlt, FaCog, FaFilm, FaCommentDots,
 } from 'react-icons/fa';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -172,6 +172,23 @@ function Header({ activeSection }) {
           >
             <BlogMenuContent />
           </MegaMenuItem>
+
+          {/* 無下拉的頂層連結：在看（/watch）與碎念（/thinking） */}
+          <MegaMenuItem
+            id="watch"
+            label={t('nav.watch')}
+            icon={<FaFilm />}
+            to="/watch"
+            active={location.pathname.startsWith('/watch')}
+          />
+
+          <MegaMenuItem
+            id="thinking"
+            label={t('nav.thinking')}
+            icon={<FaCommentDots />}
+            to="/thinking"
+            active={location.pathname.startsWith('/thinking')}
+          />
 
           <MegaMenuItem
             id="more"

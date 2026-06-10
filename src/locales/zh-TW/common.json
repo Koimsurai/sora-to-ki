@@ -28,7 +28,9 @@
     "backHome": "返回首頁",
     "downloadResume": "選擇要下載的履歷",
     "resumeSE": "軟體工程師",
-    "resumeClubs": "社團經歷"
+    "resumeClubs": "社團經歷",
+    "watch": "在看",
+    "thinking": "碎念"
   },
   "user": {
     "adminPanel": "進入後台",

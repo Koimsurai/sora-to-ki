@@ -28,7 +28,9 @@
     "backHome": "返回首页",
     "downloadResume": "选择要下载的简历",
     "resumeSE": "软件工程师",
-    "resumeClubs": "社团经历"
+    "resumeClubs": "社团经历",
+    "watch": "在看",
+    "thinking": "碎念"
   },
   "user": {
     "adminPanel": "进入后台",
