@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useInView } from 'motion/react';
+import { useInView } from 'framer-motion';
 
 function useIsInView(ref, options = {}) {
   const { inView, inViewOnce = false, inViewMargin = '0px' } = options;

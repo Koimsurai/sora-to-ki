@@ -212,7 +212,8 @@ export default defineConfig(({ command }) => {
             'vendor-three': ['three', '@react-three/fiber', '@react-three/drei', '@react-three/postprocessing'],
             'vendor-monaco': ['monaco-editor', '@monaco-editor/react'],
             'vendor-mermaid': ['mermaid'],
-            'vendor-ui': ['framer-motion', 'recharts', 'swiper'],
+            // motion-dom / motion-utils 是 framer-motion v12 拆出的內部包，不列會漏進 index chunk
+            'vendor-ui': ['framer-motion', 'motion-dom', 'motion-utils', 'recharts', 'swiper'],
             'vendor-markdown': ['react-markdown', 'rehype-raw', 'remark-gfm', 'remark-github-blockquote-alert'],
             'vendor-shiki': ['shiki'],
             'vendor-cmdk': ['cmdk'],

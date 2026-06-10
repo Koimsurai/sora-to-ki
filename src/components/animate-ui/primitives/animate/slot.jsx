@@ -1,6 +1,6 @@
 'use client';;
 import * as React from 'react';
-import { motion, isMotionComponent } from 'motion/react';
+import { motion, isMotionComponent } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 function mergeRefs(...refs) {

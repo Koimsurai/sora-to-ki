@@ -62,7 +62,6 @@
     "mermaid": "^11.15.0",
     "monaco-editor": "0.53.0",
     "monaco-vim": "^0.4.4",
-    "motion": "^12.40.0",
     "pangu": "^7.2.1",
     "prism-react-renderer": "^2.4.1",
     "prismjs": "^1.30.0",

@@ -2,11 +2,29 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
+// 只有預設語系（zh-TW）打進主 bundle（首屏零閃爍）；
+// 其餘 4 個語系改成切換時動態載入（各 ~13KB，省下主 chunk ~50KB）。
 import zhTW from './locales/zh-TW/common.json';
-import zhCN from './locales/zh-CN/common.json';
-import en from './locales/en/common.json';
-import ja from './locales/ja/common.json';
-import ko from './locales/ko/common.json';
+
+const LOCALE_LOADERS = {
+  'zh-CN': () => import('./locales/zh-CN/common.json'),
+  en: () => import('./locales/en/common.json'),
+  ja: () => import('./locales/ja/common.json'),
+  ko: () => import('./locales/ko/common.json'),
+};
+
+/** 確保某語系的 bundle 已載入（zh-TW 內建；已載入則 no-op）。 */
+async function ensureLocale(lng) {
+  if (!lng || lng === 'zh-TW' || i18n.hasResourceBundle(lng, 'common')) return;
+  const loader = LOCALE_LOADERS[lng];
+  if (!loader) return;
+  try {
+    const mod = await loader();
+    i18n.addResourceBundle(lng, 'common', mod.default, true, true);
+  } catch {
+    /* 載入失敗 → fallbackLng(zh-TW) 撐住 */
+  }
+}
 
 /* ──────────────────────────────────────────────────────────────
    全站 UI i18n
@@ -51,16 +69,17 @@ i18n
   .init({
     resources: {
       'zh-TW': { common: zhTW },
-      'zh-CN': { common: zhCN },
-      en: { common: en },
-      ja: { common: ja },
-      ko: { common: ko },
     },
     fallbackLng: 'zh-TW',
     supportedLngs: SUPPORTED_LOCALES,
     load: 'currentOnly', // 別自動載 'zh' / 'en' base，我們用顯式 normalize
     defaultNS: 'common',
     interpolation: { escapeValue: false }, // React 自己防 XSS
+    react: {
+      // bundle 動態載入完成（addResourceBundle）時也觸發 re-render，
+      // 處理「初次進站偵測到非 zh-TW」的非同步補載
+      bindI18nStore: 'added',
+    },
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       lookupLocalStorage: 'koim_locale',
@@ -68,5 +87,15 @@ i18n
       convertDetectedLanguage: normalizeLocale,
     },
   });
+
+// 手動切語系：先載 bundle 再切，切換瞬間不會閃 fallback
+const origChangeLanguage = i18n.changeLanguage.bind(i18n);
+i18n.changeLanguage = async (lng, ...args) => {
+  await ensureLocale(lng);
+  return origChangeLanguage(lng, ...args);
+};
+
+// 初次進站：偵測到的語系若非 zh-TW，立刻補載（bindI18nStore: 'added' 會讓畫面跟著更新）
+ensureLocale(i18n.resolvedLanguage || i18n.language);
 
 export default i18n;
