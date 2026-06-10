@@ -109,7 +109,7 @@
   color: rgba(212, 212, 216, 0.78);
   margin: 0 0 1.5rem;
   padding-left: 12px;
-  border-left: 2px solid rgba(127, 90, 240, 0.4);
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Mermaid 圖表 placeholder — preview 不實際渲染 */
@@ -134,8 +134,8 @@
 .article-preview-card .post-ai-summary-inline {
   margin: 1rem 0 1.25rem;
   padding: 14px 16px;
-  background: linear-gradient(135deg, rgba(127, 90, 240, 0.08), rgba(127, 90, 240, 0.02));
-  border-left: 2px solid rgba(127, 90, 240, 0.45);
+  background: linear-gradient(135deg, rgba(127, 90, 240, 0.06), rgba(127, 90, 240, 0.015));
+  border: 1px solid rgba(127, 90, 240, 0.16);
   border-radius: 10px;
   position: relative;
 }

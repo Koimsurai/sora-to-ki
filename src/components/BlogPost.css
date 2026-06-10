@@ -2594,8 +2594,8 @@ a.series-nav-title:hover {
 
 /* Internal Link Card */
 .link-card-internal {
-  border-left: 3px solid var(--post-accent);
-  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(127, 90, 240, 0.22);
+  background: rgba(127, 90, 240, 0.04);
 }
 
 .link-card-internal .link-card-title {
