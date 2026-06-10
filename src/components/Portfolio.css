@@ -1,3 +1,32 @@
+/* ── 獨立頁面層 ─────────────────────────────────── */
+.portfolio-page {
+  padding-top: 64px; /* fixed header 偏移 */
+  padding-bottom: 40px;
+  min-height: 100vh;
+}
+
+.portfolio-page-title {
+  margin-bottom: 0.4rem;
+}
+
+.portfolio-page-sub {
+  margin: 0 0 2.4rem;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 卡片 hover：浮起 + 邊框亮（跟全站卡片語言一致） */
+.portfolio-feature,
+.portfolio-secondary {
+  transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.portfolio-feature:hover,
+.portfolio-secondary:hover {
+  transform: translateY(-3px);
+  border-color: rgba(199, 184, 255, 0.22);
+}
+
 /* ── Feature card (asymmetric: media left, body right) ─── */
 .portfolio-feature {
   display: grid;
@@ -87,33 +116,66 @@
   overflow: hidden;
 }
 
-/* code 卡（沒有圖片的 repo 卡片）— 用大型 glyph 代替 media 區 */
+/* code 卡（沒有圖片的 repo 卡片）— glyph 收進小方塊 tile + 點陣紋理 + 分類浮水印
+   （原本 5rem 巨型 glyph 看起來像 placeholder） */
 .portfolio-secondary-glyph {
   position: relative;
   aspect-ratio: 16 / 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(127, 90, 240, 0.08), rgba(127, 90, 240, 0.02));
+  background:
+    radial-gradient(rgba(216, 180, 254, 0.07) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    linear-gradient(135deg, rgba(127, 90, 240, 0.07), rgba(127, 90, 240, 0.015));
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   overflow: hidden;
 }
+
 .portfolio-secondary-glyph::before {
   content: '';
   position: absolute;
   inset: -30%;
-  background: radial-gradient(ellipse at center, rgba(127, 90, 240, 0.18) 0%, transparent 60%);
+  background: radial-gradient(ellipse at center, rgba(127, 90, 240, 0.14) 0%, transparent 60%);
   pointer-events: none;
 }
-.portfolio-secondary-glyph > span {
+
+.portfolio-glyph-tile {
   position: relative;
-  font-size: clamp(3rem, 6vw, 5rem);
-  font-weight: 200;
-  color: rgba(216, 180, 254, 0.85);
-  text-shadow: 0 0 24px rgba(127, 90, 240, 0.35);
-  letter-spacing: 0;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  font-size: 2.1rem;
+  font-weight: 300;
   line-height: 1;
+  color: rgba(216, 180, 254, 0.95);
+  background: rgba(127, 90, 240, 0.1);
+  border: 1px solid rgba(127, 90, 240, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 32px -12px rgba(127, 90, 240, 0.4);
+  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 260ms ease;
 }
+
+.portfolio-secondary:hover .portfolio-glyph-tile {
+  transform: scale(1.08) rotate(-3deg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 16px 40px -12px rgba(127, 90, 240, 0.6);
+}
+
+.portfolio-glyph-cat {
+  position: absolute;
+  left: 20px;
+  bottom: 14px;
+  font-size: 0.66rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.22);
+  user-select: none;
+}
+
 .portfolio-secondary--code .portfolio-secondary-body {
   padding-top: 18px;
 }

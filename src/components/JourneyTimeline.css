@@ -1,0 +1,132 @@
+/* 成長軌跡精簡版 — rail 結構對齊 WorkExperience（140px 欄 + 32px gap，線在 156px） */
+.journey-v2 .jt-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.journey-v2 .jt-timeline::before {
+  content: '';
+  position: absolute;
+  left: 156px;
+  top: 26px;
+  bottom: 8px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(127, 90, 240, 0.5) 0%,
+    rgba(127, 90, 240, 0.2) 60%,
+    rgba(127, 90, 240, 0.05) 100%
+  );
+}
+
+.jt-entry {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 32px;
+  padding-bottom: 28px;
+  position: relative;
+}
+
+.jt-entry:last-child { padding-bottom: 0; }
+
+.jt-rail {
+  position: relative;
+  padding-top: 20px;
+  text-align: right;
+}
+
+/* 每個里程碑保留自己的主題色（舊頁的彩色記憶點，收斂成光點） */
+.jt-rail-dot {
+  position: absolute;
+  top: 24px;
+  right: -22px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--dot, #7f5af0);
+  box-shadow:
+    0 0 0 4px rgba(127, 90, 240, 0.12),
+    0 0 14px var(--dot, #7f5af0);
+}
+
+.jt-year {
+  font-size: 0.78rem;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.jt-card {
+  padding: 22px 26px;
+}
+
+.jt-title {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.jt-subtitle {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: rgba(199, 184, 255, 0.75);
+}
+
+.jt-desc {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.jt-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.jt-tag {
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 未來項：虛線弱化，留「未完待續」感 */
+.jt-entry--future .jt-card {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.jt-entry--future .jt-rail-dot {
+  background: transparent;
+  border: 1.5px dashed var(--dot, #ec4899);
+  box-shadow: none;
+}
+
+.jt-ending {
+  margin: 40px 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  color: rgba(199, 184, 255, 0.55);
+}
+
+@media (max-width: 720px) {
+  .journey-v2 .jt-timeline::before { display: none; }
+  .jt-entry {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .jt-rail {
+    padding-top: 0;
+    text-align: left;
+  }
+  .jt-rail-dot { display: none; }
+}

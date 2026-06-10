@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
 import avatarImage from '../../assets/me.jpg';
 import { UserIcon } from '@/components/animate-ui/icons/user';
-import { SparklesIcon } from '@/components/animate-ui/icons/sparkles';
 import { LayersIcon } from '@/components/animate-ui/icons/layers';
 import { SendIcon } from '@/components/animate-ui/icons/send';
+import { RouteIcon } from '@/components/animate-ui/icons/route';
 import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon, UsersIcon, SparklesIcon as SparklesAnimIcon } from '@animateicons/react/lucide';
 import { Link } from 'react-router-dom';
 
@@ -27,16 +27,10 @@ function AnimateIconsLibIcon({ Comp, size = 16, duration = 0.6, hover }) {
  * Section anchor：用 hover state 驅動 icon animate prop。
  * 同時支援 animate-ui（animate prop）跟 @animateicons/react（ref imperative）兩家。
  */
-function AnimatedSectionLink({ id, AnimIcon, AnimateIconsLib, FallbackIcon, title, onClick }) {
+function AnimatedSectionLink({ id, to, AnimIcon, AnimateIconsLib, FallbackIcon, title, onClick }) {
   const [hover, setHover] = useState(false);
-  return (
-    <a
-      className="mega-menu-link mega-menu-link--compact"
-      href={`#${id}`}
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
+  const inner = (
+    <>
       <span className={`mega-menu-link-icon${(AnimIcon || AnimateIconsLib) ? ' mega-menu-link-icon--motion' : ''}`}>
         {AnimIcon
           ? <AnimIcon size={16} animate={hover ? 'default' : false} />
@@ -46,8 +40,16 @@ function AnimatedSectionLink({ id, AnimIcon, AnimateIconsLib, FallbackIcon, titl
         }
       </span>
       <span className="mega-menu-link-title">{title}</span>
-    </a>
+    </>
   );
+  const common = {
+    className: 'mega-menu-link mega-menu-link--compact',
+    onMouseEnter: () => setHover(true),
+    onMouseLeave: () => setHover(false),
+  };
+  // to = 頁面連結（/about、/portfolio…）；id = 首頁區段錨點
+  if (to) return <Link to={to} {...common} onClick={onClick}>{inner}</Link>;
+  return <a href={`#${id}`} {...common} onClick={onClick}>{inner}</a>;
 }
 
 /**
@@ -127,12 +129,13 @@ function HomeMenuContent({ onSectionClick }) {
     return String(stats.wordCount);
   }, [stats]);
 
+  // 首頁瘦身後：關於我/成長軌跡/作品 是獨立頁面連結；首頁/聯絡 仍是首頁錨點
   const sections = [
-    { id: 'home',      AnimateIconsLib: HouseIcon, title: t('megaMenu.items.home') },
-    { id: 'about-me',  AnimIcon: UserIcon,         title: t('megaMenu.items.about') },
-    { id: 'expertise', AnimIcon: SparklesIcon,     title: t('megaMenu.items.expertise') },
-    { id: 'portfolio', AnimIcon: LayersIcon,       title: t('megaMenu.items.portfolio') },
-    { id: 'contact',   AnimIcon: SendIcon,         title: t('megaMenu.items.contact') },
+    { id: 'home',           AnimateIconsLib: HouseIcon, title: t('megaMenu.items.home') },
+    { to: '/about',         AnimIcon: UserIcon,         title: t('megaMenu.items.about') },
+    { to: '/about#journey', AnimIcon: RouteIcon,        title: t('megaMenu.items.journey') },
+    { to: '/portfolio',     AnimIcon: LayersIcon,       title: t('megaMenu.items.portfolio') },
+    { id: 'contact',        AnimIcon: SendIcon,         title: t('megaMenu.items.contact') },
   ];
 
   const siteLinks = [
@@ -181,9 +184,10 @@ function HomeMenuContent({ onSectionClick }) {
       <MegaMenuColumn title={t('megaMenu.groups.pages')}>
         {sections.map((s) => (
           <AnimatedSectionLink
-            key={s.id}
+            key={s.id || s.to}
             {...s}
-            onClick={(e) => onSectionClick?.(e, s.id)}
+            // 只有錨點項走 section handler；頁面 Link 交給 react-router
+            onClick={s.id ? (e) => onSectionClick?.(e, s.id) : undefined}
           />
         ))}
       </MegaMenuColumn>

@@ -1,0 +1,10 @@
+/* 關於我 — 各 section 自帶 home-section 樣式，這裡只處理頁面級 offset */
+.about-page {
+  padding-top: 64px; /* fixed header 偏移；第一個 section 自帶 96px padding */
+  padding-bottom: 40px;
+  min-height: 100vh;
+}
+
+@media (max-width: 640px) {
+  .about-page { padding-top: 48px; }
+}

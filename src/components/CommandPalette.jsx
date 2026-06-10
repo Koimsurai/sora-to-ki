@@ -14,7 +14,7 @@ const STATIC_PAGES = [
   { label: '書櫃',    path: '/bookshelf', icon: BookOpen, keywords: 'books 閱讀 reading' },
   { label: '音樂',    path: '/music',     icon: Music,    keywords: 'music spotify 音樂' },
   { label: '活動',    path: '/activity',  icon: Activity, keywords: 'activity 活動 動態' },
-  { label: '軌跡',    path: '/journey',   icon: Compass,  keywords: 'journey 旅程 時間線' },
+  { label: '軌跡',    path: '/about#journey',   icon: Compass,  keywords: 'journey 旅程 時間線' },
   { label: '留言',    path: '/messages',  icon: Compass,  keywords: 'messages 留言 guestbook contact' },
   { label: '相簿',    path: '/photos',    icon: Camera,   keywords: 'photos 照片 相簿' },
   { label: '影劇',    path: '/cinema',    icon: Film,     keywords: 'cinema movie 影劇' },

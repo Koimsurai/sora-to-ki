@@ -28,10 +28,8 @@ import './App.css';
 import { useHtmlLang } from './hooks/useHtmlLang';
 
 // --- Lazy Loaded Components ---
-const LazyAboutMe = lazy(() => import('./components/AboutMe'));
-const LazyExpertise = lazy(() => import('./components/Expertise'));
-const LazyWorkExperience = lazy(() => import('./components/WorkExperience'));
-const LazySchoolClubs = lazy(() => import('./components/SchoolClubs'));
+// 履歷叢集移到 /about（AboutPage 內含 AboutMe/Expertise/Work/Clubs/Journey）；作品獨立 /portfolio
+const LazyAboutPage = lazy(() => import('./components/AboutPage'));
 const LazyPortfolio = lazy(() => import('./components/Portfolio'));
 // Contact section 改為 HomeLately（動態帶 + 今日訊號收尾）；訊號區塊內部承接 id="contact" 錨點
 const LazyHomeLately = lazy(() => import('./components/HomeLately'));
@@ -54,7 +52,6 @@ const LazyCommentsManager = lazy(() => import('./components/admin/CommentsManage
 const LazySubscribersManager = lazy(() => import('./components/admin/SubscribersManager'));
 const LazyUsersManager = lazy(() => import('./components/admin/UsersManager'));
 const LazyActivity = lazy(() => import('./components/Activity'));
-const LazyJourney = lazy(() => import('./components/Journey'));
 const LazyMessages = lazy(() => import('./components/Messages'));
 const LazyFriends = lazy(() => import('./components/Friends'));
 const LazyBookshelf = lazy(() => import('./components/Bookshelf'));
@@ -128,28 +125,10 @@ function MainPage({ onSectionChange }) { // Accept callback prop
     <>
       <NebulaBackground />
       <main>
+        {/* 首頁瘦身（Innei 式內容優先）：Hero → Lately（含軌跡與訊號收尾）。
+            履歷叢集（About/Expertise/Work/Clubs/Journey）→ /about；作品 → /portfolio */}
         <SectionWrapper id="home" onInViewChange={onSectionChange}>
           <Hero />
-        </SectionWrapper>
-        <Suspense fallback={<LoadingFallback />}><LazyTransitionAnimation /></Suspense>
-        <SectionWrapper id="about-me" onInViewChange={onSectionChange}>
-          <Suspense fallback={<LoadingFallback />}><LazyAboutMe /></Suspense>
-        </SectionWrapper>
-        <Suspense fallback={<LoadingFallback />}><LazyTransitionAnimation /></Suspense>
-        <SectionWrapper id="expertise" onInViewChange={onSectionChange}>
-          <Suspense fallback={<LoadingFallback />}><LazyExpertise /></Suspense>
-        </SectionWrapper>
-        <Suspense fallback={<LoadingFallback />}><LazyTransitionAnimation /></Suspense>
-        <SectionWrapper id="work-experience" onInViewChange={onSectionChange}>
-          <Suspense fallback={<LoadingFallback />}><LazyWorkExperience /></Suspense>
-        </SectionWrapper>
-        <Suspense fallback={<LoadingFallback />}><LazyTransitionAnimation /></Suspense>
-        <SectionWrapper id="school-clubs" onInViewChange={onSectionChange}>
-          <Suspense fallback={<LoadingFallback />}><LazySchoolClubs /></Suspense>
-        </SectionWrapper>
-        <Suspense fallback={<LoadingFallback />}><LazyTransitionAnimation /></Suspense>
-        <SectionWrapper id="portfolio" onInViewChange={onSectionChange}>
-          <Suspense fallback={<LoadingFallback />}><LazyPortfolio /></Suspense>
         </SectionWrapper>
         <Suspense fallback={<LoadingFallback />}><LazyTransitionAnimation /></Suspense>
         <SectionWrapper id="lately" onInViewChange={onSectionChange}>
@@ -319,7 +298,10 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/ja/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
           <Route path="/bookshelf" element={<Suspense fallback={<KoimLoader fullscreen text="載入書籍" />}><LazyBookshelf /></Suspense>} />
           <Route path="/activity" element={<Suspense fallback={<LoadingFallback />}><LazyActivity /></Suspense>} />
-          <Route path="/journey" element={<Suspense fallback={<LoadingFallback />}><LazyJourney /></Suspense>} />
+          <Route path="/about" element={<Suspense fallback={<LoadingFallback />}><LazyAboutPage /></Suspense>} />
+          <Route path="/portfolio" element={<Suspense fallback={<LoadingFallback />}><LazyPortfolio /></Suspense>} />
+          {/* 舊 /journey 已併入 /about（成長軌跡 section） */}
+          <Route path="/journey" element={<Navigate to="/about#journey" replace />} />
           <Route path="/messages" element={<Suspense fallback={<LoadingFallback />}><LazyMessages /></Suspense>} />
           <Route path="/friends" element={<Suspense fallback={<LoadingFallback />}><LazyFriends /></Suspense>} />
           <Route path="/music" element={<Suspense fallback={<LoadingFallback />}><LazyMusic /></Suspense>} />

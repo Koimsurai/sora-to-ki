@@ -7,7 +7,6 @@ import { FrameIcon } from '@/components/animate-ui/icons/frame';
 import { RadioTowerIcon } from '@/components/animate-ui/icons/radio-tower';
 import { AudioLinesIcon } from '@/components/animate-ui/icons/audio-lines';
 import { ClockIcon } from '@/components/animate-ui/icons/clock';
-import { RouteIcon } from '@/components/animate-ui/icons/route';
 import { BookOpenTextIcon, EyeIcon } from '@animateicons/react/lucide';
 
 /**
@@ -58,7 +57,8 @@ function AnimatedMenuLink({ to, AnimIcon, FallbackIcon, AnimateIconsLib, title, 
  */
 function MoreMenuContent() {
   const { t } = useTranslation();
-  // 三欄 3-2-2：生活（在看/照片/動態）｜收藏（書櫃/音樂）｜個人（旅程/設定）
+  // 兩欄 3-3：生活（在看/照片/動態）｜收藏（書櫃/音樂/配備）
+  // 成長軌跡已併入 /about（首頁選單的頁面欄），不再出現在這裡
   const life = [
     { to: '/watch',     AnimateIconsLib: EyeIcon,            title: t('megaMenu.items.watch'),     desc: t('megaMenu.items.watchDesc') },
     { to: '/photos',    AnimIcon: FrameIcon,                 title: t('megaMenu.items.photos'),    desc: t('megaMenu.items.photosDesc') },
@@ -67,10 +67,7 @@ function MoreMenuContent() {
   const collection = [
     { to: '/bookshelf', AnimateIconsLib: BookOpenTextIcon,   title: t('megaMenu.items.bookshelf'), desc: t('megaMenu.items.bookshelfDesc') },
     { to: '/music',     AnimIcon: AudioLinesIcon,            title: t('megaMenu.items.music'),     desc: t('megaMenu.items.musicDesc') },
-  ];
-  const personal = [
-    { to: '/journey', AnimIcon: RouteIcon,    title: t('megaMenu.items.journey'), desc: t('megaMenu.items.journeyDesc') },
-    { to: '/setup',   FallbackIcon: Monitor,  title: t('megaMenu.items.setup'),   desc: t('megaMenu.items.setupDesc') },
+    { to: '/setup',     FallbackIcon: Monitor,               title: t('megaMenu.items.setup'),     desc: t('megaMenu.items.setupDesc') },
   ];
 
   const renderLinks = (items) => items.map((e) => (
@@ -78,10 +75,9 @@ function MoreMenuContent() {
   ));
 
   return (
-    <MegaMenuPanel className="mega-menu-panel--more">
+    <MegaMenuPanel className="mega-menu-panel--balanced">
       <MegaMenuColumn title={t('megaMenu.groups.life')}>{renderLinks(life)}</MegaMenuColumn>
       <MegaMenuColumn title={t('megaMenu.groups.collection')}>{renderLinks(collection)}</MegaMenuColumn>
-      <MegaMenuColumn title={t('megaMenu.groups.personal')}>{renderLinks(personal)}</MegaMenuColumn>
     </MegaMenuPanel>
   );
 }

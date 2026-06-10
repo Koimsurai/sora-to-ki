@@ -155,7 +155,9 @@ function Header({ activeSection }) {
                  || location.pathname.startsWith('/history')
                  || location.pathname.startsWith('/messages')
                  || location.pathname.startsWith('/friends')
-                 || location.pathname.startsWith('/thinking')}
+                 || location.pathname.startsWith('/thinking')
+                 || location.pathname.startsWith('/about')
+                 || location.pathname.startsWith('/portfolio')}
           >
             <HomeMenuContent
               onSectionClick={(e, sectionId) => { handleNavClick(e, sectionId); }}
@@ -179,7 +181,6 @@ function Header({ activeSection }) {
             label={t('nav.more')}
             active={location.pathname.startsWith('/photos')
                  || location.pathname.startsWith('/activity')
-                 || location.pathname.startsWith('/journey')
                  || location.pathname.startsWith('/setup')
                  || location.pathname.startsWith('/watch')}
           >

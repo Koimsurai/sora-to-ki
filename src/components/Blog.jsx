@@ -686,7 +686,7 @@ function Blog() {
               <Link to="/" className="nav-pill">🏠 首頁</Link>
               <Link to="/messages" className="nav-pill">💬 留言</Link>
               <Link to="/setup" className="nav-pill">🖥️ 配備</Link>
-              <Link to="/journey" className="nav-pill">🛤️ 旅程</Link>
+              <Link to="/about#journey" className="nav-pill">🛤️ 旅程</Link>
             </div>
           </div>
           </aside>
