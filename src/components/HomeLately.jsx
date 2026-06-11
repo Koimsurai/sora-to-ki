@@ -35,6 +35,15 @@ function OrbitTimeline({ timeline, t }) {
     { pct: 54, key: 'summer' },
     { pct: 79, key: 'autumn' },
   ];
+  // 同天（或太近）的點往右錯開，不要疊在一起；timeline 已依日期 ASC
+  const MIN_GAP = 1.1; // %
+  let lastPct = -Infinity;
+  const dots = timeline.map((p) => {
+    let pct = yearPct(p.created_at);
+    if (pct - lastPct < MIN_GAP) pct = lastPct + MIN_GAP;
+    lastPct = pct;
+    return { ...p, pct: Math.min(pct, 99) };
+  });
   return (
     <div className="lately-orbit">
       <h3 className="lately-h">{t('home.lately.orbitTitle')}</h3>
@@ -45,12 +54,12 @@ function OrbitTimeline({ timeline, t }) {
             {t(`home.lately.seasons.${s.key}`)}
           </span>
         ))}
-        {timeline.map((p) => (
+        {dots.map((p) => (
           <Link
             key={p.id}
             to={`/blog/${p.id}`}
             className="orbit-dot"
-            style={{ left: `${yearPct(p.created_at)}%` }}
+            style={{ left: `${p.pct}%` }}
             data-title={p.title}
             aria-label={p.title}
           />
@@ -77,6 +86,15 @@ export default function HomeLately() {
       .then((d) => setDigest(d))
       .catch(() => setDigest({ posts: [], thoughts: [], comments: [], timeline: [] }));
   }, []);
+
+  // /#contact 深連結：本元件 lazy 掛載比 Header 的 100ms hash 捲動晚，掛載後自己補捲
+  useEffect(() => {
+    if (digest && window.location.hash === '#contact') {
+      requestAnimationFrame(() => {
+        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+  }, [digest]);
 
   useEffect(() => {
     fetch(`${API}/quote/daily?locale=${encodeURIComponent(i18n.resolvedLanguage || i18n.language)}`)

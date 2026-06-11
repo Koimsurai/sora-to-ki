@@ -93,10 +93,15 @@
     }
   },
   "hero": {
-    "greeting": "你好👋\n我是 Koimsurai",
-    "tagline": "把想法磨成順手的產品。",
     "description": "宙と木 — Koimsurai 的個人空間。一個工程師的閱讀筆記、作品紀錄與系統實驗。",
-    "contactCta": "聯絡我"
+    "intro": "你好，我是 ",
+    "introSuffix": "",
+    "l2pre": "我把 ",
+    "l2accent": "想法",
+    "l2mid": " 磨成 ",
+    "chip": "順手的產品",
+    "l2end": "",
+    "sub": "全端工程師——寫介面、搭系統、也養著一小片宇宙。"
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -121,7 +126,8 @@
       "github": "GitHub",
       "rss": "RSS 訂閱",
       "sitemap": "站點地圖",
-      "subscribe": "訂閱"
+      "subscribe": "訂閱",
+      "status": "服務狀態"
     }
   },
   "language": {

@@ -311,19 +311,23 @@
   flex-direction: column;
   padding: 2px;
   min-width: 200px;
-  /* 左欄高度撐滿面板：頭像/統計/社群三段均分，跟右側兩欄底部對齊 */
+  /* 上段（頭像+統計）聚在頂部，社群推到底部對齊右欄
+     （space-between 會讓統計懸在垂直正中間，看起來卡卡的） */
   height: 100%;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
-/* 統計單行版 — 安靜的 meta 文字，取代原本三組大數字 */
+/* 統計單行版 — 緊貼在頭像列下方的安靜 meta */
 .mega-menu-stats-line {
   margin: 0;
   font-size: 0.76rem;
   color: rgba(255, 255, 255, 0.45);
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
+}
+
+.mega-menu-profile .mega-menu-socials {
+  margin-top: auto; /* 推到欄底，跟右欄底對齊 */
 }
 
 .mega-menu-stats-dot {

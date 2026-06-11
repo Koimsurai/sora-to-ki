@@ -93,10 +93,15 @@
     }
   },
   "hero": {
-    "greeting": "こんにちは👋\nKoimsurai です",
-    "tagline": "アイデアを、手に馴染むプロダクトに。",
     "description": "宙と木 — Koimsurai の個人空間。エンジニアの読書ノート、作品記録、システム実験。",
-    "contactCta": "連絡する"
+    "intro": "こんにちは、",
+    "introSuffix": " です",
+    "l2pre": "",
+    "l2accent": "アイデア",
+    "l2mid": " を ",
+    "chip": "手に馴染むプロダクト",
+    "l2end": " に磨いています",
+    "sub": "インターフェイスもシステムも、小さな宇宙もつくるフルスタックエンジニア。"
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -121,7 +126,8 @@
       "github": "GitHub",
       "rss": "RSS フィード",
       "sitemap": "サイトマップ",
-      "subscribe": "購読"
+      "subscribe": "購読",
+      "status": "サービス状態"
     }
   },
   "language": {

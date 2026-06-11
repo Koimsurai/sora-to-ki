@@ -354,32 +354,97 @@
   padding: 0;
 }
 
-.home-hero-content h1 {
-  /* 跟全站一致：TASA / MiSans 字體棧（原本獨用 HarmonyOS 不協調），
-     並沿用 section 標題的 白→淡紫 漸層，首屏與內頁同一套語言 */
-  font-size: clamp(2.6rem, 4.6vw, 3.9rem);
+/* ── Innei 式三行 hero ──
+   line1：名字漸層高亮；line2：斜體 accent + 發光框 chip（打字機+游標）；
+   sub：小描述行。line1/2 用 CSS 進場，chip 文字打字。 */
+.hero-line1 {
+  font-size: clamp(2.3rem, 4vw, 3.4rem);
   font-weight: 700;
-  line-height: 1.16;
+  line-height: 1.2;
   letter-spacing: -0.015em;
-  margin-bottom: 25px;
-  background: linear-gradient(135deg, #ffffff 0%, #c7b8ff 100%);
+  margin: 0 0 14px;
+  color: rgba(255, 255, 255, 0.95);
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-name {
+  background: linear-gradient(120deg, #c7b8ff 0%, #ec7dd6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  white-space: pre-wrap;
 }
 
-/* 漸層文字會讓 ::after 游標也變透明，補回實色 */
-.home-hero-content h1.typing-text::after {
-  -webkit-text-fill-color: #c7b8ff;
-  color: #c7b8ff;
+.hero-line2 {
+  font-size: clamp(1.2rem, 2.1vw, 1.7rem);
+  font-weight: 500;
+  line-height: 1.55;
+  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.82);
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
 }
 
-/* 彩色 emoji 不吃漸層剪裁，還原原生色彩（由 Hero.jsx 的 renderWithEmoji 包出來） */
-.home-hero-content h1 .emoji-native {
-  background: none;
-  -webkit-background-clip: initial;
-  background-clip: initial;
+.hero-accent {
+  font-style: italic;
+  color: #d8b4fe;
+  padding-right: 0.08em;
+}
+
+/* 發光框 chip — 打字機文字 + 閃爍游標 */
+.hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0.3em;
+  padding: 0.18em 0.7em 0.22em;
+  border-radius: 999px;
+  border: 1px solid rgba(216, 180, 254, 0.45);
+  background: rgba(127, 90, 240, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 18px rgba(127, 90, 240, 0.25);
+  color: #efe9ff;
+  font-size: 0.92em;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.hero-chip-spark {
+  color: #ec7dd6;
+  font-size: 0.8em;
+  text-shadow: 0 0 10px rgba(236, 125, 214, 0.8);
+}
+
+.hero-chip-text:empty::before {
+  content: '\200b'; /* 撐住高度，打字前 chip 不塌 */
+}
+
+.hero-caret {
+  width: 2px;
+  height: 1.05em;
+  border-radius: 1px;
+  background: #d8b4fe;
+  box-shadow: 0 0 8px rgba(216, 180, 254, 0.8);
+  animation: blink 0.85s steps(1) infinite;
+}
+
+.hero-sub {
+  margin: 0 0 30px;
+  font-size: 0.8rem;
+  letter-spacing: 1.8px;
+  color: rgba(255, 255, 255, 0.45);
+  opacity: 0;
+  transition: opacity 0.7s ease 0.15s;
+}
+
+.hero-sub.fade-in { opacity: 1; }
+
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 彩色 emoji 保險（沿用全站 class） */
+.home-hero-content .emoji-native {
   -webkit-text-fill-color: initial;
   color: #fff;
 }
@@ -917,3 +982,5 @@
     /* 預設在小螢幕隱藏 */
   }
 }
+/* 名字+emoji 黏在一起換行（避免 👋 自己掉到下一行） */
+.hero-name-wrap { white-space: nowrap; }

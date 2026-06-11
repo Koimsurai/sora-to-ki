@@ -93,10 +93,15 @@
     }
   },
   "hero": {
-    "greeting": "Hi 👋\nI'm Koimsurai",
-    "tagline": "Shaping ideas into products that feel right.",
     "description": "Sora to Ki (宙と木) — Koimsurai's personal space. A developer's reading notes, portfolio, and system experiments.",
-    "contactCta": "Get in touch"
+    "intro": "Hi, I'm ",
+    "introSuffix": "",
+    "l2pre": "I shape ",
+    "l2accent": "ideas",
+    "l2mid": " into ",
+    "chip": "products that feel right",
+    "l2end": "",
+    "sub": "A FULL-STACK ENGINEER BUILDING INTERFACES, SYSTEMS, AND A TINY UNIVERSE."
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -121,7 +126,8 @@
       "github": "GitHub",
       "rss": "RSS Feed",
       "sitemap": "Sitemap",
-      "subscribe": "Subscribe"
+      "subscribe": "Subscribe",
+      "status": "Status"
     }
   },
   "language": {

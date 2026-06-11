@@ -60,21 +60,12 @@ const useTypingEffect = (text, speed = 100, startDelay = 0) => {
 };
 
 
-// h1 的漸層用 background-clip: text 實作，會把彩色 emoji 一起剪成漸層填色（👋 變全白）；
-// 把 pictographic 字元挑出來包 span 還原原生色彩
-const renderWithEmoji = (s) =>
-  [...s].map((ch, i) =>
-    /\p{Extended_Pictographic}/u.test(ch) ? <span key={i} className="emoji-native">{ch}</span> : ch
-  );
-
 function Hero() {
   const { t } = useTranslation();
-  const fullHeading = t('hero.greeting');
-  const fullTagline = t('hero.tagline');
 
-  // Apply typing effect hook（fullHeading/Tagline 變動會重觸發打字效果，切語系時自動重打）
-  const { displayedText: displayedHeading, isTypingComplete: headingComplete } = useTypingEffect(fullHeading, 100, 1000); // Start heading after 1000ms (Increased delay)
-  const { displayedText: displayedTagline, isTypingComplete: taglineComplete } = useTypingEffect(fullTagline, 80, headingComplete ? 200 : Infinity); // Start tagline 200ms after heading finishes
+  // Innei 式三行：名字高亮 → accent + 發光 chip（打字機）→ 小描述行。
+  // 只有 chip 文字打字（切語系自動重打），其餘段落 CSS 進場。
+  const { displayedText: typedChip, isTypingComplete: chipComplete } = useTypingEffect(t('hero.chip'), 80, 900);
 
   // 根據 Figma 設計和履歷內容
   return (
@@ -91,25 +82,32 @@ function Hero() {
 
       {/* Keep motion.div for overall content animation, but remove whileInView for text */}
       <div className="home-hero-content">
-        {/* Apply Parallax, but remove motion from h1 */}
-        <Parallax speed={10}> {/* 稍微快一點 */}
-          {/* Use pre-wrap to handle newline characters */}
-          <h1 className={`typing-text ${headingComplete ? 'typing-complete' : ''}`} style={{ whiteSpace: 'pre-wrap' }}>
-            {renderWithEmoji(displayedHeading)}
+        <Parallax speed={10}>
+          <h1 className="hero-line1">
+            {t('hero.intro')}
+            <span className="hero-name">Koimsurai</span>
+            {t('hero.introSuffix')}
+            {' '}
+            <span className="emoji-native">👋</span>
           </h1>
         </Parallax>
-        {/* Apply Parallax, but remove motion from p */}
-        <Parallax speed={5}> {/* 比標題慢一點，比背景快 */}
-          {/* Use pre-wrap to handle newline characters in tagline */}
-          <p className={`tagline typing-text ${taglineComplete ? 'typing-complete' : ''}`} style={{ whiteSpace: 'pre-wrap' }}>
-            {displayedTagline}
+        <Parallax speed={5}>
+          <p className="hero-line2">
+            {t('hero.l2pre')}
+            <em className="hero-accent">{t('hero.l2accent')}</em>
+            {t('hero.l2mid')}
+            <span className="hero-chip">
+              <span className="hero-chip-spark" aria-hidden="true">✦</span>
+              <span className="hero-chip-text">{typedChip}</span>
+              <span className="hero-caret" aria-hidden="true" />
+            </span>
+            {t('hero.l2end')}
           </p>
         </Parallax>
-        {/* Description removed and moved to AboutMe component */}
-        {/* 可以考慮加入 Figma 中的 "A brave climber..." 或其他標語 */}
+        <p className={`hero-sub ${chipComplete ? 'fade-in' : ''}`}>{t('hero.sub')}</p>
 
-        {/* Animate actions fade-in after tagline finishes */}
-        <div className={`hero-actions ${taglineComplete ? 'fade-in' : ''}`}>
+        {/* Animate actions fade-in after chip finishes */}
+        <div className={`hero-actions ${chipComplete ? 'fade-in' : ''}`}>
           <div className="social-links">
             <a href="https://github.com/timo9378" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
               <FaGithub />
@@ -155,7 +153,7 @@ function Hero() {
       <div className="background-text">Koimsurai</div> {/* 加入背景文字 */}
 
       {/* scroll 提示線 — 跟 hero-actions 同步淡入 */}
-      <div className={`hero-scroll-cue ${taglineComplete ? 'fade-in' : ''}`} aria-hidden="true"><span /></div>
+      <div className={`hero-scroll-cue ${chipComplete ? 'fade-in' : ''}`} aria-hidden="true"><span /></div>
     </section> // 結束 section
   );
 }
