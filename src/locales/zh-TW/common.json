@@ -93,15 +93,7 @@
     }
   },
   "hero": {
-    "description": "宙と木 — Koimsurai 的個人空間。一個工程師的閱讀筆記、作品紀錄與系統實驗。",
-    "intro": "你好，我是 ",
-    "introSuffix": "",
-    "l2pre": "我把 ",
-    "l2accent": "想法",
-    "l2mid": " 磨成 ",
-    "chip": "順手的產品",
-    "l2end": "",
-    "sub": "全端工程師——寫介面、搭系統、也養著一小片宇宙。"
+    "description": "宙と木 — Koimsurai 的個人空間。一個工程師的閱讀筆記、作品紀錄與系統實驗。"
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",

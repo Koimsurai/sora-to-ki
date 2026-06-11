@@ -93,15 +93,7 @@
     }
   },
   "hero": {
-    "description": "Sora to Ki (宙と木) — Koimsurai의 개인 공간. 엔지니어의 독서 노트, 작품 기록, 시스템 실험.",
-    "intro": "안녕하세요, ",
-    "introSuffix": " 입니다",
-    "l2pre": "",
-    "l2accent": "아이디어",
-    "l2mid": "를 ",
-    "chip": "손에 익는 제품",
-    "l2end": "으로 다듬는 중",
-    "sub": "인터페이스, 시스템, 그리고 작은 우주를 만드는 풀스택 엔지니어."
+    "description": "Sora to Ki (宙と木) — Koimsurai의 개인 공간. 엔지니어의 독서 노트, 작품 기록, 시스템 실험."
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",

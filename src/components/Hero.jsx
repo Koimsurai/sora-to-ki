@@ -64,8 +64,8 @@ function Hero() {
   const { t } = useTranslation();
 
   // Innei 式三行：名字高亮 → accent + 發光 chip（打字機）→ 小描述行。
-  // 只有 chip 文字打字（切語系自動重打），其餘段落 CSS 進場。
-  const { displayedText: typedChip, isTypingComplete: chipComplete } = useTypingEffect(t('hero.chip'), 80, 900);
+  // hero 文案統一英文（不跟語系走），只有 chip 文字打字。
+  const { displayedText: typedChip, isTypingComplete: chipComplete } = useTypingEffect('products that feel right', 80, 900);
 
   // 根據 Figma 設計和履歷內容
   return (
@@ -84,27 +84,29 @@ function Hero() {
       <div className="home-hero-content">
         <Parallax speed={10}>
           <h1 className="hero-line1">
-            {t('hero.intro')}
-            <span className="hero-name">Koimsurai</span>
-            {t('hero.introSuffix')}
-            {' '}
-            <span className="emoji-native">👋</span>
+            {"Hi, I'm "}
+            <span className="hero-name-wrap">
+              <span className="hero-name">Koimsurai</span>
+              {' '}
+              <span className="emoji-native hero-wave">👋</span>
+            </span>
           </h1>
         </Parallax>
         <Parallax speed={5}>
           <p className="hero-line2">
-            {t('hero.l2pre')}
-            <em className="hero-accent">{t('hero.l2accent')}</em>
-            {t('hero.l2mid')}
+            {'I shape '}
+            <em className="hero-accent">ideas</em>
+            {' into '}
             <span className="hero-chip">
               <span className="hero-chip-spark" aria-hidden="true">✦</span>
               <span className="hero-chip-text">{typedChip}</span>
               <span className="hero-caret" aria-hidden="true" />
             </span>
-            {t('hero.l2end')}
           </p>
         </Parallax>
-        <p className={`hero-sub ${chipComplete ? 'fade-in' : ''}`}>{t('hero.sub')}</p>
+        <p className={`hero-sub ${chipComplete ? 'fade-in' : ''}`}>
+          A FULL-STACK ENGINEER BUILDING INTERFACES, SYSTEMS, AND A TINY UNIVERSE.
+        </p>
 
         {/* Animate actions fade-in after chip finishes */}
         <div className={`hero-actions ${chipComplete ? 'fade-in' : ''}`}>
