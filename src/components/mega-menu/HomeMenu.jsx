@@ -6,7 +6,7 @@ import { UserIcon } from '@/components/animate-ui/icons/user';
 import { LayersIcon } from '@/components/animate-ui/icons/layers';
 import { SendIcon } from '@/components/animate-ui/icons/send';
 import { RouteIcon } from '@/components/animate-ui/icons/route';
-import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon, UsersIcon, SparklesIcon as SparklesAnimIcon } from '@animateicons/react/lucide';
+import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon, UsersIcon, SparklesIcon as SparklesAnimIcon, FacebookIcon, InstagramIcon, WifiIcon } from '@animateicons/react/lucide';
 import { Link } from 'react-router-dom';
 
 /**
@@ -52,34 +52,11 @@ function AnimatedSectionLink({ id, to, AnimIcon, AnimateIconsLib, FallbackIcon, 
   return <a href={`#${id}`} {...common} onClick={onClick}>{inner}</a>;
 }
 
-/**
- * 站點頁面的內部連結（此站點 / 歷史 / 留言）— 走 Link to=…，不是 hash anchor。
- */
-function AnimatedSiteLink({ to, AnimateIconsLib, title, desc }) {
-  const [hover, setHover] = useState(false);
-  return (
-    <Link
-      to={to}
-      className="mega-menu-link"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-    >
-      <span className="mega-menu-link-icon mega-menu-link-icon--motion">
-        <AnimateIconsLibIcon Comp={AnimateIconsLib} hover={hover} />
-      </span>
-      <span className="mega-menu-link-text">
-        <span className="mega-menu-link-title">{title}</span>
-        <span className="mega-menu-link-desc">{desc}</span>
-      </span>
-    </Link>
-  );
-}
-
-function AnimatedSocial({ href, AnimIcon, label, external = true }) {
+function AnimatedSocial({ href, AnimIcon, label, external = true, className = '' }) {
   const [hover, setHover] = useState(false);
   return (
     <a
-      className="mega-menu-social mega-menu-social--motion"
+      className={`mega-menu-social mega-menu-social--motion ${className}`}
       href={href}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
@@ -138,12 +115,13 @@ function HomeMenuContent({ onSectionClick }) {
     { id: 'contact',        AnimIcon: SendIcon,         title: t('megaMenu.items.contact') },
   ];
 
+  // 說明文字拔掉（跟頁面欄完全同款 compact），兩欄整齊對齊
   const siteLinks = [
-    { to: '/about-site', AnimateIconsLib: InfoIcon,          title: t('megaMenu.items.aboutSite'), desc: t('megaMenu.items.aboutSiteDesc') },
-    { to: '/thinking',   AnimateIconsLib: SparklesAnimIcon,  title: t('megaMenu.items.thinking'),  desc: t('megaMenu.items.thinkingDesc') },
-    { to: '/history',    AnimateIconsLib: CompassIcon,       title: t('megaMenu.items.history'),   desc: t('megaMenu.items.historyDesc') },
-    { to: '/messages',   AnimateIconsLib: MessageCircleIcon, title: t('megaMenu.items.messages'),   desc: t('megaMenu.items.messagesDesc') },
-    { to: '/friends',    AnimateIconsLib: UsersIcon,         title: t('megaMenu.items.friends'),   desc: t('megaMenu.items.friendsDesc') },
+    { to: '/about-site', AnimateIconsLib: InfoIcon,          title: t('megaMenu.items.aboutSite') },
+    { to: '/thinking',   AnimateIconsLib: SparklesAnimIcon,  title: t('megaMenu.items.thinking') },
+    { to: '/history',    AnimateIconsLib: CompassIcon,       title: t('megaMenu.items.history') },
+    { to: '/messages',   AnimateIconsLib: MessageCircleIcon, title: t('megaMenu.items.messages') },
+    { to: '/friends',    AnimateIconsLib: UsersIcon,         title: t('megaMenu.items.friends') },
   ];
 
   return (
@@ -159,24 +137,22 @@ function HomeMenuContent({ onSectionClick }) {
               <div className="mega-menu-profile-status">{t('megaMenu.online')}</div>
             </div>
           </div>
-          <div className="mega-menu-stats">
-            <div className="mega-menu-stat">
-              <span className="mega-menu-stat-num">{stats?.total ?? '—'}</span>
-              <span className="mega-menu-stat-label">{t('megaMenu.stats.posts')}</span>
-            </div>
-            <div className="mega-menu-stat">
-              <span className="mega-menu-stat-num">{wordCountLabel}</span>
-              <span className="mega-menu-stat-label">{t('megaMenu.stats.words')}</span>
-            </div>
-            <div className="mega-menu-stat">
-              <span className="mega-menu-stat-num">{stats?.days ?? '—'}</span>
-              <span className="mega-menu-stat-label">{t('megaMenu.stats.days')}</span>
-            </div>
-          </div>
+          {/* 統計收斂成安靜的單行 meta（原本三組大數字太搶，跟右欄落差大） */}
+          <p className="mega-menu-stats-line">
+            {stats?.total ?? '—'} {t('megaMenu.stats.posts')}
+            <span className="mega-menu-stats-dot">·</span>
+            {wordCountLabel} {t('megaMenu.stats.words')}
+            <span className="mega-menu-stats-dot">·</span>
+            {stats?.days ?? '—'} {t('megaMenu.stats.days')}
+          </p>
           <div className="mega-menu-socials">
             <AnimatedSocial href="https://github.com/timo9378" AnimIcon={GithubIcon} label="GitHub" />
             <AnimatedSocial href="https://www.linkedin.com/in/timo9378" AnimIcon={LinkedinIcon} label="LinkedIn" />
             <AnimatedSocial href="mailto:timo9378@gmail.com" AnimIcon={MailIcon} label="Email" external={false} />
+            <AnimatedSocial href="https://www.facebook.com/profile.php?id=100003126780663" AnimIcon={FacebookIcon} label="Facebook" />
+            <AnimatedSocial href="https://www.instagram.com/koimsurai.23/?hl=zh-tw" AnimIcon={InstagramIcon} label="Instagram" />
+            {/* RSS 沒有現成動畫 icon：Wifi 轉 45° 就是 RSS 的形（CSS 處理旋轉） */}
+            <AnimatedSocial href="/api/rss" AnimIcon={WifiIcon} label="RSS" className="mega-menu-social--rss" />
           </div>
         </div>
       </MegaMenuColumn>
@@ -194,7 +170,7 @@ function HomeMenuContent({ onSectionClick }) {
 
       <MegaMenuColumn title={t('megaMenu.groups.site')}>
         {siteLinks.map((s) => (
-          <AnimatedSiteLink key={s.to} {...s} />
+          <AnimatedSectionLink key={s.to} {...s} />
         ))}
       </MegaMenuColumn>
     </MegaMenuPanel>

@@ -27,12 +27,12 @@ function AnimateIconsLibIcon({ Comp, size = 16, duration = 0.6, hover }) {
  * 單一 menu link：用 hover state 驅動 icon animate prop。
  * 同時支援 animate-ui（animate prop）跟 @animateicons/react（ref imperative）兩家。
  */
-function AnimatedMenuLink({ to, AnimIcon, FallbackIcon, AnimateIconsLib, title, desc }) {
+function AnimatedMenuLink({ to, AnimIcon, FallbackIcon, AnimateIconsLib, title }) {
   const [hover, setHover] = useState(false);
   return (
     <Link
       to={to}
-      className="mega-menu-link"
+      className="mega-menu-link mega-menu-link--compact"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
@@ -44,10 +44,7 @@ function AnimatedMenuLink({ to, AnimIcon, FallbackIcon, AnimateIconsLib, title, 
             : <FallbackIcon />
         }
       </span>
-      <span className="mega-menu-link-text">
-        <span className="mega-menu-link-title">{title}</span>
-        <span className="mega-menu-link-desc">{desc}</span>
-      </span>
+      <span className="mega-menu-link-title">{title}</span>
     </Link>
   );
 }
@@ -59,15 +56,16 @@ function MoreMenuContent() {
   const { t } = useTranslation();
   // 兩欄 3-3：生活（在看/照片/動態）｜收藏（書櫃/音樂/配備）
   // 成長軌跡已併入 /about（首頁選單的頁面欄），不再出現在這裡
+  // 說明文字拔掉，跟首頁選單同款 compact 對齊
   const life = [
-    { to: '/watch',     AnimateIconsLib: EyeIcon,            title: t('megaMenu.items.watch'),     desc: t('megaMenu.items.watchDesc') },
-    { to: '/photos',    AnimIcon: FrameIcon,                 title: t('megaMenu.items.photos'),    desc: t('megaMenu.items.photosDesc') },
-    { to: '/activity',  AnimIcon: RadioTowerIcon,            title: t('megaMenu.items.activity'),  desc: t('megaMenu.items.activityDesc') },
+    { to: '/watch',     AnimateIconsLib: EyeIcon,            title: t('megaMenu.items.watch') },
+    { to: '/photos',    AnimIcon: FrameIcon,                 title: t('megaMenu.items.photos') },
+    { to: '/activity',  AnimIcon: RadioTowerIcon,            title: t('megaMenu.items.activity') },
   ];
   const collection = [
-    { to: '/bookshelf', AnimateIconsLib: BookOpenTextIcon,   title: t('megaMenu.items.bookshelf'), desc: t('megaMenu.items.bookshelfDesc') },
-    { to: '/music',     AnimIcon: AudioLinesIcon,            title: t('megaMenu.items.music'),     desc: t('megaMenu.items.musicDesc') },
-    { to: '/setup',     FallbackIcon: Monitor,               title: t('megaMenu.items.setup'),     desc: t('megaMenu.items.setupDesc') },
+    { to: '/bookshelf', AnimateIconsLib: BookOpenTextIcon,   title: t('megaMenu.items.bookshelf') },
+    { to: '/music',     AnimIcon: AudioLinesIcon,            title: t('megaMenu.items.music') },
+    { to: '/setup',     FallbackIcon: Monitor,               title: t('megaMenu.items.setup') },
   ];
 
   const renderLinks = (items) => items.map((e) => (

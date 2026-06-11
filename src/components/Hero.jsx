@@ -133,7 +133,7 @@ function Hero() {
               <FaRss />
             </a>
           </div>
-          <a href="#contact" className="cta-button">{t('hero.contactCta')}</a>
+          {/* 聯絡 CTA 已移除 — 社群連結與頁尾訊號區已涵蓋聯絡方式 */}
         </div>
       </div> {/* Close home-hero-content div */}
 

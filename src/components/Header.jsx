@@ -5,8 +5,9 @@ import {
   FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages,
   FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss,
   FaClock, FaRoute, FaBook, FaMusic, FaCamera, FaDesktop,
-  FaGithub, FaGoogle, FaSignOutAlt, FaCog, FaThLarge,
+  FaGithub, FaGoogle, FaSignOutAlt, FaCog,
 } from 'react-icons/fa';
+import { HouseIcon, BookOpenTextIcon, LayoutGridIcon } from '@animateicons/react/lucide';
 import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { MegaMenuRoot, MegaMenu as MegaMenuItem } from './mega-menu/MegaMenu';
@@ -15,6 +16,18 @@ import BlogMenuContent from './mega-menu/BlogMenu';
 import MoreMenuContent from './mega-menu/MoreMenu';
 import meAvatar from '../assets/me.jpg';
 import './Header.css';
+
+/* 導覽列 trigger 的動畫 icon — 跟選單內同款（@animateicons imperative handle），
+   hover prop 由 MegaMenu 的 trigger hover/open 狀態 cloneElement 注入 */
+function TriggerAnimIcon({ Comp, hover }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!ref.current) return;
+    if (hover) ref.current.startAnimation?.();
+    else ref.current.stopAnimation?.();
+  }, [hover]);
+  return <Comp ref={ref} size={15} duration={0.6} />;
+}
 
 function Header({ activeSection }) {
   const { t } = useTranslation();
@@ -148,7 +161,7 @@ function Header({ activeSection }) {
           <MegaMenuItem
             id="home"
             label={t('nav.home')}
-            icon={<FaHome />}
+            icon={<TriggerAnimIcon Comp={HouseIcon} />}
             to="/"
             active={(isHomePage && !location.hash)
                  || location.pathname.startsWith('/about-site')
@@ -167,7 +180,7 @@ function Header({ activeSection }) {
           <MegaMenuItem
             id="blog"
             label={t('nav.notes')}
-            icon={<FaBookOpen />}
+            icon={<TriggerAnimIcon Comp={BookOpenTextIcon} />}
             to="/blog"
             active={location.pathname.startsWith('/blog')
                  || location.pathname.startsWith('/bookshelf')
@@ -179,7 +192,7 @@ function Header({ activeSection }) {
           <MegaMenuItem
             id="more"
             label={t('nav.more')}
-            icon={<FaThLarge />}
+            icon={<TriggerAnimIcon Comp={LayoutGridIcon} />}
             active={location.pathname.startsWith('/photos')
                  || location.pathname.startsWith('/activity')
                  || location.pathname.startsWith('/setup')

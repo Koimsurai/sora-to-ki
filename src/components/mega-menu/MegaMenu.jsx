@@ -37,6 +37,8 @@ export function MegaMenu({ id, label, icon, active = false, to = null, children,
   if (!ctx) throw new Error('<MegaMenu> must be inside <MegaMenuRoot>');
   const { openId, setOpenId } = ctx;
   const isOpen = openId === id;
+  // trigger hover 狀態：傳給 icon 元素驅動動畫（icon 需接受 hover prop）
+  const [hovering, setHovering] = useState(false);
 
   const enterTimerRef = useRef(null);
   const leaveTimerRef = useRef(null);
@@ -85,14 +87,23 @@ export function MegaMenu({ id, label, icon, active = false, to = null, children,
 
   const triggerInner = (
     <>
-      {icon && <span className="mega-menu-trigger-icon">{icon}</span>}
+      {icon && (
+        <span className="mega-menu-trigger-icon">
+          {/* clone 注入 hover：icon 元件（如 TriggerAnimIcon）可據此播放動畫 */}
+          {React.isValidElement(icon) ? React.cloneElement(icon, { hover: hovering || isOpen }) : icon}
+        </span>
+      )}
       <span className="mega-menu-trigger-label">{label}</span>
       {children && <FaChevronDown className={`mega-menu-trigger-chev ${isOpen ? 'is-open' : ''}`} />}
     </>
   );
 
   return (
-    <li className="mega-menu-item" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <li
+      className="mega-menu-item"
+      onMouseEnter={() => { setHovering(true); handleMouseEnter(); }}
+      onMouseLeave={() => { setHovering(false); handleMouseLeave(); }}
+    >
       {to ? (
         <Link to={to} className={triggerClass} onClick={handleTriggerClick}>
           {triggerInner}

@@ -136,13 +136,14 @@
   color: rgba(228, 228, 231, 0.92);
 }
 /* 首頁：profile + 頁面 + 站點，3 欄 */
+/* 說明文字拔掉後欄寬收緊，三欄等高對齊 */
 .mega-menu-panel--compact {
-  grid-template-columns: 200px 170px 200px;
+  grid-template-columns: 200px 150px 150px;
   padding: 14px 16px;
 }
 /* 更多 menu：2 欄等寬連結 */
 .mega-menu-panel--balanced {
-  grid-template-columns: 180px 180px;
+  grid-template-columns: 156px 156px;
 }
 
 /* 更多 menu（含在看後）：3 欄 生活／收藏／個人 */
@@ -309,12 +310,30 @@
   display: flex;
   flex-direction: column;
   padding: 2px;
-  min-width: 220px;
-  /* 左欄高度撐滿面板：頭像/統計/社群三段均分，跟右側兩欄底部對齊
-     （原本內容擠在上半部，下方一大塊留白，跟右欄落差很大） */
+  min-width: 200px;
+  /* 左欄高度撐滿面板：頭像/統計/社群三段均分，跟右側兩欄底部對齊 */
   height: 100%;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
+}
+
+/* 統計單行版 — 安靜的 meta 文字，取代原本三組大數字 */
+.mega-menu-stats-line {
+  margin: 0;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mega-menu-stats-dot {
+  margin: 0 6px;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+/* RSS = Wifi 轉 45°（沒有現成的 rss 動畫 icon） */
+.mega-menu-social--rss svg {
+  transform: rotate(45deg);
 }
 
 /* compact 版本：頭貼 + 名字水平排，整體 row 高度減少 */
