@@ -234,7 +234,8 @@ function App() {
   const isMobile = useMediaQuery('(max-width: 768px)'); // 偵測是否為手機版
   const introCompleted = sessionStorage.getItem('introCompleted') === 'true';
   const isIntroRoute = INTRO_ROUTES.has(window.location.pathname);
-  const shouldSkipIntro = introCompleted || !isIntroRoute;
+  // 手機不跑 WebGL（土星/星空全改 CSS）也不播 intro Canvas —— 直接進內容
+  const shouldSkipIntro = introCompleted || !isIntroRoute || isMobile;
   const [animateSaturn, setAnimateSaturn] = useState(shouldSkipIntro);
   const [showMainHtmlContent, setShowMainHtmlContent] = useState(shouldSkipIntro);
   const [saturnZIndex, setSaturnZIndex] = useState(1);
@@ -292,14 +293,14 @@ function App() {
     };
   }, []);
 
-  // 無 intro 時：首次繪製後的閒置時段才掛 Three.js 背景，內容先上畫面
+  // 無 intro 時：首次繪製後的閒置時段才掛 Three.js 背景，內容先上畫面（手機不跑 WebGL，跳過）
   useEffect(() => {
-    if (backdropReady) return;
+    if (backdropReady || isMobile) return;
     const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
     const cancel = window.cancelIdleCallback || clearTimeout;
     const id = ric(() => setBackdropReady(true), { timeout: 1200 });
     return () => cancel(id);
-  }, [backdropReady]);
+  }, [backdropReady, isMobile]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -320,19 +321,17 @@ function App() {
           <PageVisibilityProvider isVisible={isPageVisible}>
             <ArticlePreviewProvider>
             <div className="App">
-              {/* 秒出的 CSS 星空底 + 星雲 —— Three.js 背景載入前的 placeholder，
-                  避免初始黑屏，畫面最終結果跟以前一致（3D 載好後疊在上面） */}
+              {/* CSS 星空底：手機唯一背景（零 WebGL）；桌面則是 3D 載入前的秒出 placeholder */}
               <CSSStarfield />
-              {introVisible && (
+              {/* 以下 WebGL（intro + Three.js 場景）只在桌面跑；手機完全不載 vendor-three */}
+              {!isMobile && introVisible && (
                 <IntroAnimation
                   onAnimationComplete={handleAnimationComplete}
                   onExplosionStart={handleExplosionStart}
                   onPreReveal={handlePreReveal}
                 />
               )}
-              {/* Three.js 太空背景：lazy chunk，三維場景與特效全保留（含手機）；
-                  只是離開主 bundle，不再卡首屏 JS 執行 */}
-              {backdropReady && (
+              {!isMobile && backdropReady && (
                 <Suspense fallback={null}>
                   <LazySpaceBackdrop
                     isMobile={isMobile}

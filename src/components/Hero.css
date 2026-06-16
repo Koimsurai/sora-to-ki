@@ -921,51 +921,51 @@
 /* 移除粒子背景樣式 */
 
 
-/* 響應式設計：小螢幕調整 */
+/* 響應式設計：小螢幕調整 —— Innei 式內容優先：
+   avatar 置頂 → 文字 → chip → 描述 → 社群，全部置中、緊湊，不再整屏空白 */
 @media (max-width: 768px) {
   .hero-section {
     flex-direction: column;
-    /* 垂直排列 */
+    align-items: center;
+    justify-content: flex-start;
     text-align: center;
-    /* 文字居中 */
-    padding: 30px 20px;
+    padding: 96px 22px 40px; /* 上方留給 fixed header */
     min-height: auto;
-    /* 取消最小高度限制 */
+    gap: 0;
+  }
+
+  /* avatar 移到最上面（DOM 上它在內容之後，用 order 提前） */
+  .hero-avatar-wrapper {
+    order: -1;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 1.4rem;
   }
 
   .home-hero-content {
-    max-width: 90%;
-    margin-left: 0;
-    /* 在小屏幕上移除左邊距 */
-    padding-left: 0;
-    /* 在小屏幕上移除內邊距 */
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
+  /* Parallax 包了一層，置中要往內推 */
+  .home-hero-content > * { width: 100%; }
+
+  .hero-line1 { font-size: clamp(1.7rem, 7vw, 2.3rem); margin-bottom: 10px; }
+  .hero-line2 { font-size: clamp(1rem, 4.4vw, 1.3rem); margin-bottom: 14px; }
+  .hero-sub { font-size: 0.72rem; letter-spacing: 1.2px; margin-bottom: 22px; }
+
+  .hero-actions { justify-content: center; }
+  .social-links { justify-content: center; }
+
   .hero-image-container {
+    width: 200px;
+    height: 200px;
     max-width: 90%;
     margin-bottom: 30px;
-  }
-
-  .home-hero-content h1 {
-    font-size: 2.5em;
-  }
-
-  .home-hero-content .description {
-    font-size: 1em;
-  }
-
-  .hero-avatar-wrapper {
-    width: 200px;
-    height: 200px;
-    margin-top: 2rem;
-  }
-
-  .hero-image-container {
-    /* 更新容器在小螢幕的尺寸 */
-    width: 200px;
-    height: 200px;
-    /* max-width: 90%; */
-    /* 繼承自上方，但固定尺寸優先 */
   }
 
   .background-text {
