@@ -128,7 +128,7 @@ function TwinklingStars({ count = 1500, rotationRef }) { // Increased count
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
-    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+    uPixelRatio: { value: typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1.5 }, // worker 內無 window
     uBaseSize: { value: 15.0 } // Base size multiplier - adjust this value to change overall star size
   }), []);
 
