@@ -1,0 +1,54 @@
+/* 手機後備星空 — 用 radial-gradient 平鋪出星點，兩層不同密度/速度緩慢漂移。
+   全程 GPU transform，不碰主執行緒。 */
+.css-starfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 30%, #0d0a1a 0%, #06030f 70%);
+}
+
+.css-stars {
+  position: absolute;
+  inset: -50%;
+  background-repeat: repeat;
+  will-change: transform;
+}
+
+/* 遠景：細密小星，慢漂 */
+.css-stars--far {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 80px 120px, rgba(199, 184, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 160px 60px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 230px 180px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 300px 90px, rgba(216, 180, 254, 0.5), transparent);
+  background-size: 340px 240px;
+  animation: starfield-drift 140s linear infinite;
+  opacity: 0.7;
+}
+
+/* 近景：稀疏亮星，稍快、帶呼吸 */
+.css-stars--near {
+  background-image:
+    radial-gradient(1.6px 1.6px at 50px 80px, rgba(255, 255, 255, 0.95), transparent),
+    radial-gradient(1.6px 1.6px at 200px 150px, rgba(216, 180, 254, 0.85), transparent),
+    radial-gradient(2px 2px at 320px 40px, rgba(255, 255, 255, 0.9), transparent);
+  background-size: 420px 320px;
+  animation: starfield-drift 90s linear infinite, starfield-twinkle 6s ease-in-out infinite;
+}
+
+@keyframes starfield-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-340px, -240px, 0); }
+}
+
+@keyframes starfield-twinkle {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .css-stars { animation: none; }
+}

@@ -1,31 +1,26 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react'; // Import useCallback, lazy, Suspense
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { useInView } from 'react-intersection-observer'; // Import useInView
-import Saturn3D from './components/Saturn3D';
-import IntroAnimation from './components/IntroAnimation';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import IntroAnimation from './components/IntroAnimation';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { useMediaQuery } from 'usehooks-ts'; // 導入 useMediaQuery
-import CursorTrail from './components/CursorTrail';
 import ScrollToTop from './components/ScrollToTop'; // <--- 導入 ScrollToTop 元件
 import { PageVisibilityProvider } from './contexts/PageVisibilityContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import RandomShootingStars from './components/RandomShootingStars';
-import RandomComets from './components/RandomComets'; // 導入彗星元件
-import RandomUFOs from './components/RandomUFOs'; // 導入 UFO 元件
 import NebulaBackground from './components/NebulaBackground'; // 首頁 + Blog 共用星雲背景
+import CSSStarfield from './components/CSSStarfield'; // 秒出的 CSS 星空底（Three.js 載入前的 placeholder）
 import BackToTopButton from './components/BackToTopButton'; // 導入回到頂部按鈕
 import { ArticlePreviewProvider } from './components/article-preview/ArticlePreviewContext';
 import ArticlePreviewCard from './components/article-preview/ArticlePreviewCard';
-import TwinklingStars from './components/TwinklingStars'; // <--- 導入閃爍星星元件
-import ForegroundStars from './components/ForegroundStars'; // <--- 導入前景星星元件
-import { Stars, Points, PointMaterial } from '@react-three/drei'; // Import Stars, Points, and PointMaterial
-import { Canvas, useFrame } from '@react-three/fiber';
-import { useRef, useMemo } from 'react'; // Add useMemo
-import * as THREE from 'three'; // Import THREE
+import { useRef } from 'react';
 import './App.css';
 import { useHtmlLang } from './hooks/useHtmlLang';
+
+// Three.js 太空背景（星空/土星/intro/特效）抽成 lazy chunk：vendor-three 離開主 bundle，
+// 首屏內容不必等 1.1MB three.js parse；掛載延到首次繪製之後（見 backdropReady）。
+const LazySpaceBackdrop = lazy(() => import('./components/SpaceBackdrop'));
 
 // --- Lazy Loaded Components ---
 // 履歷叢集移到 /about（AboutPage 內含 AboutMe/Expertise/Work/Clubs/Journey）；作品獨立 /portfolio
@@ -139,135 +134,6 @@ function MainPage({ onSectionChange }) { // Accept callback prop
   );
 }
 
-// --- 用於星空背景的內部元件 ---
-function StarfieldScene({ mainStarsRef, isMobile, isHomePage = true }) {
-  const galaxyRef = useRef();
-  const scrollSpeedMultiplier = useRef(1);
-  const scrollTimeoutRef = useRef(null);
-  const baseSpeedMultiplier = 1;
-  const boostedSpeedMultiplier = 3;
-  const scrollResetDelay = 150;
-
-  useEffect(() => {
-    const handleScroll = () => {
-      scrollSpeedMultiplier.current = boostedSpeedMultiplier;
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      scrollTimeoutRef.current = setTimeout(() => {
-        scrollSpeedMultiplier.current = baseSpeedMultiplier;
-      }, scrollResetDelay);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useFrame((state, delta) => {
-    const speedMultiplier = scrollSpeedMultiplier.current;
-    if (mainStarsRef.current) {
-      mainStarsRef.current.rotation.x += delta * 0.01 * speedMultiplier;
-      mainStarsRef.current.rotation.y += delta * 0.02 * speedMultiplier;
-    }
-    if (galaxyRef.current) {
-      galaxyRef.current.rotation.x += delta * 0.008 * speedMultiplier;
-      galaxyRef.current.rotation.y += delta * 0.015 * speedMultiplier;
-    }
-  });
-
-  return (
-    <>
-      <Suspense fallback={null}>
-        <Stars
-          ref={mainStarsRef}
-          radius={100}
-          depth={50}
-          count={isMobile ? 3000 : (isHomePage ? 10000 : 4000)}
-          factor={3.5}
-          saturation={0.1}
-          fade
-          speed={0.5}
-        />
-        <Stars
-          ref={galaxyRef}
-          radius={90}
-          depth={20}
-          count={isMobile ? 2000 : (isHomePage ? 8000 : 3000)}
-          factor={5}
-          saturation={0.2}
-          fade
-          speed={0.3}
-          rotation={[0, Math.PI / 3, Math.PI / 5]}
-        />
-      </Suspense>
-    </>
-  );
-}
-
-// --- 新增：太空碎片元件 ---
-function SpaceDebris({ count = 200 }) {
-  const pointsRef = useRef();
-  const particlesPosition = useMemo(() => {
-    const positions = new Float32Array(count * 3);
-    const distance = 100;
-    for (let i = 0; i < count; i++) {
-      const theta = THREE.MathUtils.randFloatSpread(360);
-      const phi = THREE.MathUtils.randFloatSpread(360);
-      const r = THREE.MathUtils.randFloat(distance * 0.5, distance);
-      const x = r * Math.sin(theta) * Math.cos(phi);
-      const y = r * Math.sin(theta) * Math.sin(phi);
-      const z = r * Math.cos(theta) + THREE.MathUtils.randFloatSpread(20);
-      positions.set([x, y, z], i * 3);
-    }
-    return positions;
-  }, [count]);
-
-  const particleData = useMemo(() =>
-    Array.from({ length: count }, () => ({
-      velocity: new THREE.Vector3(
-        THREE.MathUtils.randFloatSpread(0.02),
-        THREE.MathUtils.randFloatSpread(0.02),
-        THREE.MathUtils.randFloatSpread(0.02)
-      ),
-    })),
-    [count]);
-
-  useFrame((state, delta) => {
-    if (pointsRef.current) {
-      const positions = pointsRef.current.geometry.attributes.position.array;
-      const distance = 100;
-      for (let i = 0; i < count; i++) {
-        const i3 = i * 3;
-        positions[i3] += particleData[i].velocity.x * delta * 50;
-        positions[i3 + 1] += particleData[i].velocity.y * delta * 50;
-        positions[i3 + 2] += particleData[i].velocity.z * delta * 50;
-
-        if (Math.abs(positions[i3]) > distance) positions[i3] *= -0.99;
-        if (Math.abs(positions[i3 + 1]) > distance) positions[i3 + 1] *= -0.99;
-        if (positions[i3 + 2] > distance * 1.5) positions[i3 + 2] = -distance * 1.5;
-        if (positions[i3 + 2] < -distance * 1.5) positions[i3 + 2] = distance * 1.5;
-      }
-      pointsRef.current.geometry.attributes.position.needsUpdate = true;
-    }
-  });
-
-  return (
-    <Points ref={pointsRef} positions={particlesPosition} stride={3} frustumCulled={false}>
-      <PointMaterial
-        transparent
-        color="#555555"
-        size={0.08}
-        sizeAttenuation={true}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </Points>
-  );
-}
 
 // --- Layout Component to handle conditional rendering of Header/Footer ---
 function Layout({ activeSection, onSectionChange }) {
@@ -296,6 +162,7 @@ function Layout({ activeSection, onSectionChange }) {
           <Route path="/en/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
           <Route path="/zh-cn/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
           <Route path="/ja/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
+          <Route path="/ko/blog/:id" element={<Suspense fallback={<LoadingFallback />}><LazyBlogPost /></Suspense>} />
           <Route path="/bookshelf" element={<Suspense fallback={<KoimLoader fullscreen text="載入書籍" />}><LazyBookshelf /></Suspense>} />
           <Route path="/activity" element={<Suspense fallback={<LoadingFallback />}><LazyActivity /></Suspense>} />
           <Route path="/about" element={<Suspense fallback={<LoadingFallback />}><LazyAboutPage /></Suspense>} />
@@ -364,7 +231,6 @@ const INTRO_ROUTES = new Set(['/']);
 
 function App() {
   useHtmlLang(); // 把 i18n 當前語系同步到 <html lang>，CSS :lang() 跟著切 CJK 字體
-  const [isLoading, setIsLoading] = useState(true);
   const isMobile = useMediaQuery('(max-width: 768px)'); // 偵測是否為手機版
   const introCompleted = sessionStorage.getItem('introCompleted') === 'true';
   const isIntroRoute = INTRO_ROUTES.has(window.location.pathname);
@@ -373,6 +239,9 @@ function App() {
   const [showMainHtmlContent, setShowMainHtmlContent] = useState(shouldSkipIntro);
   const [saturnZIndex, setSaturnZIndex] = useState(1);
   const [introVisible, setIntroVisible] = useState(!shouldSkipIntro);
+  // Three.js 背景的掛載時機：有 intro（首訪首頁）→ 立刻載（intro 播放時順便把 chunk 抓好，
+  // 爆炸 reveal 時土星已就緒）；無 intro → 延到首次繪製後的 idle，先讓內容上畫面
+  const [backdropReady, setBackdropReady] = useState(!shouldSkipIntro);
   const introCompleteTimeoutRef = useRef(null);
   const sharedRotationRef = useRef();
   const [activeSection, setActiveSection] = useState('home');
@@ -423,12 +292,14 @@ function App() {
     };
   }, []);
 
+  // 無 intro 時：首次繪製後的閒置時段才掛 Three.js 背景，內容先上畫面
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (backdropReady) return;
+    const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
+    const cancel = window.cancelIdleCallback || clearTimeout;
+    const id = ric(() => setBackdropReady(true), { timeout: 1200 });
+    return () => cancel(id);
+  }, [backdropReady]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -440,10 +311,6 @@ function App() {
     };
   }, []);
 
-  if (isLoading) {
-    return <KoimLoader fullscreen text="LOADING" />;
-  }
-
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -453,6 +320,9 @@ function App() {
           <PageVisibilityProvider isVisible={isPageVisible}>
             <ArticlePreviewProvider>
             <div className="App">
+              {/* 秒出的 CSS 星空底 + 星雲 —— Three.js 背景載入前的 placeholder，
+                  避免初始黑屏，畫面最終結果跟以前一致（3D 載好後疊在上面） */}
+              <CSSStarfield />
               {introVisible && (
                 <IntroAnimation
                   onAnimationComplete={handleAnimationComplete}
@@ -460,33 +330,22 @@ function App() {
                   onPreReveal={handlePreReveal}
                 />
               )}
-              <Canvas
-                camera={{ position: [0, 0, 5] }}
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  zIndex: saturnZIndex,
-                  pointerEvents: 'none'
-                }}
-              >
+              {/* Three.js 太空背景：lazy chunk，三維場景與特效全保留（含手機）；
+                  只是離開主 bundle，不再卡首屏 JS 執行 */}
+              {backdropReady && (
                 <Suspense fallback={null}>
-                  <StarfieldScene mainStarsRef={sharedRotationRef} isMobile={isMobile} isHomePage={isOnHomePage} />
-                  {isOnHomePage && <SpaceDebris count={isMobile ? 50 : 300} />}
-                  {isOnHomePage && <Saturn3D animate={animateSaturn} isMobile={isMobile} />}
-                  <TwinklingStars rotationRef={sharedRotationRef} count={isMobile ? 200 : (isOnHomePage ? 800 : 300)} />
+                  <LazySpaceBackdrop
+                    isMobile={isMobile}
+                    isOnHomePage={isOnHomePage}
+                    animateSaturn={animateSaturn}
+                    saturnZIndex={saturnZIndex}
+                    sharedRotationRef={sharedRotationRef}
+                  />
                 </Suspense>
-              </Canvas>
-              {isOnHomePage && <ForegroundStars count={isMobile ? 5 : 15} />}
-              {isOnHomePage && !isMobile && <RandomShootingStars />}
-              {isOnHomePage && !isMobile && <RandomComets />}
-              {isOnHomePage && <RandomUFOs />}
+              )}
               {showMainHtmlContent && (
                 <Layout activeSection={activeSection} onSectionChange={handleSectionChange} />
               )}
-              {!isMobile && <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }} />}
               <BackToTopButton isHomePage={isOnHomePage} />
               <ArticlePreviewCard />
             </div>
