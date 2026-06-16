@@ -115,6 +115,7 @@
     "thumbhash": "^0.1.1",
     "tsx": "^4.20.6",
     "vite": "^6.4.2",
+    "vite-plugin-image-optimizer": "^2.0.3",
     "vite-plugin-purgecss": "^0.2.13",
     "vite-plugin-pwa": "^1.2.0"
   },

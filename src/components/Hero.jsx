@@ -7,7 +7,7 @@ import { Parallax } from 'react-scroll-parallax'; // 引入 Parallax
 import { FaGithub, FaLinkedin, FaInstagram, FaFacebook, FaRss, FaEnvelope, FaSpotify } from 'react-icons/fa';
 import SEOHead from './SEOHead';
 import './Hero.css';
-import meImage from '../assets/me.jpg'; // 導入頭像圖片
+import meImage from '../assets/me-avatar.webp'; // 導入頭像圖片
 
 // Helper function for typing effect
 const useTypingEffect = (text, speed = 100, startDelay = 0) => {

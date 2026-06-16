@@ -6,6 +6,7 @@ import path from 'path'; // 引入 path 模組用於路徑別名
 console.log(`[VITE-CONFIG-LOAD] ${new Date().toISOString()} - vite.config.js file is being parsed.`);
 import { visualizer } from 'rollup-plugin-visualizer'; // 引入 visualizer
 import { VitePWA } from 'vite-plugin-pwa';
+import { ViteImageOptimizer } from 'vite-plugin-image-optimizer'; // build 時用 sharp 壓縮 src 匯入的圖
 
 // 自訂插件用於記錄 IP 和請求
 const MyIpLoggerPlugin = () => {
@@ -95,6 +96,15 @@ export default defineConfig(({ command }) => {
     // configureServer: (server) => { ... }, // <-- 原來的 configureServer 已移至插件
     plugins: [
       react(),
+      // 壓縮 src 匯入的點陣圖（setup/portfolio 等產品圖原本是數 MB 的 PNG）。
+      // 只處理 build 期間經過 bundler 的圖；public/ 照片不受影響。視覺幾乎無損。
+      ViteImageOptimizer({
+        // 只壓 PNG / JPEG（原本數 MB 的產品圖）；webp 已優化、svg 交給原樣，避免重壓變大或缺 svgo 報錯
+        test: /\.(png|jpe?g)$/i,
+        png: { quality: 80 },
+        jpeg: { quality: 80 },
+        jpg: { quality: 80 },
+      }),
       MyIpLoggerPlugin(), // <-- 加入自訂插件
       VitePWA({
         registerType: 'autoUpdate',

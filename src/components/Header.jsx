@@ -14,7 +14,7 @@ import { MegaMenuRoot, MegaMenu as MegaMenuItem } from './mega-menu/MegaMenu';
 import HomeMenuContent from './mega-menu/HomeMenu';
 import BlogMenuContent from './mega-menu/BlogMenu';
 import MoreMenuContent from './mega-menu/MoreMenu';
-import meAvatar from '../assets/me.jpg';
+import meAvatar from '../assets/me-avatar.webp';
 import './Header.css';
 
 /* 導覽列 trigger 的動畫 icon — 跟選單內同款（@animateicons imperative handle），

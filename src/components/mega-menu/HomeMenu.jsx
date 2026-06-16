@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
-import avatarImage from '../../assets/me.jpg';
+import avatarImage from '../../assets/me-avatar.webp';
 import { UserIcon } from '@/components/animate-ui/icons/user';
 import { LayersIcon } from '@/components/animate-ui/icons/layers';
 import { SendIcon } from '@/components/animate-ui/icons/send';
