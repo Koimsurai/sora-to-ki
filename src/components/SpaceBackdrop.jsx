@@ -1,8 +1,8 @@
 // 桌面專屬的 Three.js 太空背景（星空 / 碎片 / 土星 / 開場動畫 / 隨機特效）。
 // 從 App.jsx 抽出並用 lazy() 載入 —— 手機完全不下載也不執行這支與整包 vendor-three，
 // 是手機 Lighthouse 從 40 分起跳的關鍵（TBT 主因是這裡的 useFrame 渲染迴圈）。
-import React, { useRef, useMemo, useEffect, Suspense } from 'react';
-import { Stars, Points, PointMaterial } from '@react-three/drei';
+import React, { useRef, useMemo, useEffect, useState, Suspense } from 'react';
+import { Stars, Points, PointMaterial, PerformanceMonitor } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import Saturn3D from './Saturn3D';
@@ -116,15 +116,32 @@ function SpaceDebris({ count = 200 }) {
 export default function SpaceBackdrop({
   isMobile, isOnHomePage, animateSaturn, saturnZIndex, sharedRotationRef,
 }) {
+  // 自適應畫質：強 GPU 維持滿解析度（dpr 2）；FPS 撐不住（弱機/無 GPU 軟體渲染）
+  // 自動降 dpr → 每幀少算像素、變便宜 → 主執行緒負擔/TBT 下降。星數完全不動。
+  const [dpr, setDpr] = useState(isMobile ? 1 : 1.5);
+  // 分頁切到背景就停渲染（省 CPU/電），回前景再跑
+  const [frameloop, setFrameloop] = useState('always');
+  useEffect(() => {
+    const onVis = () => setFrameloop(document.hidden ? 'never' : 'always');
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+
   return (
     <>
       <Canvas
         camera={{ position: [0, 0, 5] }}
-        dpr={isMobile ? 1 : [1, 2]}
-        frameloop="always"
+        dpr={dpr}
+        frameloop={frameloop}
         gl={{ powerPreference: 'high-performance', antialias: !isMobile }}
         style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: saturnZIndex, pointerEvents: 'none' }}
       >
+        {/* FPS 掉到門檻下 → onDecline 降 dpr（下限 0.6）；回穩 → onIncline 升回（上限 2） */}
+        <PerformanceMonitor
+          factor={1}
+          onDecline={() => setDpr((d) => Math.max(0.6, +(d - 0.4).toFixed(2)))}
+          onIncline={() => setDpr((d) => Math.min(2, +(d + 0.3).toFixed(2)))}
+        />
         <Suspense fallback={null}>
           <StarfieldScene mainStarsRef={sharedRotationRef} isMobile={isMobile} isHomePage={isOnHomePage} />
           {isOnHomePage && <SpaceDebris count={isMobile ? 50 : 300} />}
