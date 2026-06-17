@@ -921,16 +921,16 @@
 /* 移除粒子背景樣式 */
 
 
-/* 響應式設計：小螢幕調整 —— Innei 式內容優先：
-   avatar 置頂 → 文字 → chip → 描述 → 社群，全部置中、緊湊，不再整屏空白 */
+/* 響應式設計：小螢幕 —— Innei 式：hero 佔滿整個視窗高、垂直置中，
+   avatar 置頂 → 文字 → chip → 描述 → 社群；「最近寫了」自然落到下方需捲動才看到 */
 @media (max-width: 768px) {
   .hero-section {
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center; /* 垂直置中，hero 進來時占據畫面中央 */
     text-align: center;
-    padding: 96px 22px 40px; /* 上方留給 fixed header */
-    min-height: auto;
+    padding: 80px 22px 48px; /* 上方留給 fixed header */
+    min-height: 100svh; /* 佔滿一屏（svh 避開行動瀏覽器網址列高度跳動） */
     gap: 0;
   }
 

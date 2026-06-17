@@ -36,7 +36,13 @@ export default function MobileNav({ open, onClose }) {
   ];
 
   return (
-    <div className={`mnav ${open ? 'mnav--open' : ''}`} role="dialog" aria-modal="true" aria-hidden={!open}>
+    <div
+      className={`mnav ${open ? 'mnav--open' : ''}`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('nav.menu')}
+      inert={!open ? '' : undefined}
+    >
       <div className="mnav-head">
         <span className="mnav-brand">宙と木</span>
         <button className="mnav-close" onClick={onClose} aria-label={t('common.close')}><FaTimes /></button>

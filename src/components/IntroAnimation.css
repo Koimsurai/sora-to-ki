@@ -62,7 +62,11 @@
   opacity: 0;
   transform: scale(0.3);
   animation: intro-flash 1100ms 2200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  mix-blend-mode: screen;
+  /* 移除 mix-blend-mode: screen —— 全螢幕縮放的混合層需逐幀讀背景重新合成，
+     是結束閃光頓一下的主因。改獨立合成層（will-change/isolation），純 GPU 不卡。
+     視覺上仍是白色強閃（此時 streaks 已清空，少了 screen 疊加幾乎無差）。 */
+  will-change: opacity, transform;
+  isolation: isolate;
 }
 
 @keyframes intro-flash {

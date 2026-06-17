@@ -49,7 +49,7 @@ function SaturnModel({ animate, isVisible, isMobile }) {
     if (groupRef.current) {
       groupRef.current.scale.set(0, 0, 0); // Start scaled down
     }
-    currentScale.current = 0; // Initialize ref to 0
+    currentScale.current = 0.0001; // 極小起始：預熱渲染管線（見下方 targetScale 註解）
 
     // Read initial scroll position and set base rotation
     scrollRotationY.current = window.scrollY * 0.001;
@@ -86,7 +86,9 @@ function SaturnModel({ animate, isVisible, isMobile }) {
 
       // Animate scale
       const baseScale = isMobile ? 0.7 : 1; // Scale down on mobile
-      const targetScale = animate ? baseScale : 0; // Target scale based on prop
+      // 未 animate 時用極小 epsilon（非 0）：Saturn 仍被繪製→材質/bloom pipeline 在 intro
+      // 平靜期就編譯好，explosion 時只是放大，不會在閃光當下才編譯 shader 而頓一下
+      const targetScale = animate ? baseScale : 0.0001;
       // Interpolate current scale towards target scale
       const oldScale = currentScale.current; // Log old scale for comparison
       currentScale.current = THREE.MathUtils.lerp(currentScale.current, targetScale, 0.08); // Adjust lerp factor for speed
