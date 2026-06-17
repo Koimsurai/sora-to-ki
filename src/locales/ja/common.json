@@ -38,7 +38,8 @@
     "signInLabel": "ソーシャルアカウントでログイン",
     "signInWithGithub": "GitHub でログイン",
     "signInWithGoogle": "Google でログイン",
-    "notConfigured": "サードパーティログインは未設定"
+    "notConfigured": "サードパーティログインは未設定",
+    "menuLabel": "ユーザーメニュー"
   },
   "megaMenu": {
     "online": "オンライン",

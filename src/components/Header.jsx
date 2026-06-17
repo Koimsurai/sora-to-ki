@@ -213,7 +213,7 @@ function Header({ activeSection }) {
       <div className="header-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         {/* User Avatar / Login */}
         <div className="user-area" ref={userMenuRef}>
-          <button className="user-avatar-btn" onClick={() => setShowUserMenu(!showUserMenu)}>
+          <button className="user-avatar-btn" onClick={() => setShowUserMenu(!showUserMenu)} aria-label={t('user.menuLabel')} aria-expanded={showUserMenu}>
             {isLoggedIn && user?.avatar ? (
               <img src={user.avatar} alt={user.displayName} className="user-avatar-img" referrerPolicy="no-referrer" />
             ) : (

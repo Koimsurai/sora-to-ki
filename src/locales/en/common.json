@@ -38,7 +38,8 @@
     "signInLabel": "Sign in with social",
     "signInWithGithub": "Sign in with GitHub",
     "signInWithGoogle": "Sign in with Google",
-    "notConfigured": "Third-party login not configured"
+    "notConfigured": "Third-party login not configured",
+    "menuLabel": "User menu"
   },
   "megaMenu": {
     "online": "Online",

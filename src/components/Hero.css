@@ -937,9 +937,9 @@
   /* avatar 移到最上面（DOM 上它在內容之後，用 order 提前） */
   .hero-avatar-wrapper {
     order: -1;
-    width: 120px;
-    height: 120px;
-    margin: 0 auto 1.4rem;
+    width: 116px;
+    height: 116px;
+    margin: 0 auto 2.4rem; /* 跟 hero 文字拉開，不要黏在一起 */
   }
 
   .home-hero-content {

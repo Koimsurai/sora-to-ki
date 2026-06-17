@@ -38,7 +38,8 @@
     "signInLabel": "社交帳號登入",
     "signInWithGithub": "GitHub 登入",
     "signInWithGoogle": "Google 登入",
-    "notConfigured": "第三方登入尚未設定"
+    "notConfigured": "第三方登入尚未設定",
+    "menuLabel": "使用者選單"
   },
   "megaMenu": {
     "online": "在線",

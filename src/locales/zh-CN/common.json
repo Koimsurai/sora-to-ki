@@ -38,7 +38,8 @@
     "signInLabel": "社交账号登录",
     "signInWithGithub": "GitHub 登录",
     "signInWithGoogle": "Google 登录",
-    "notConfigured": "第三方登录尚未配置"
+    "notConfigured": "第三方登录尚未配置",
+    "menuLabel": "用户菜单"
   },
   "megaMenu": {
     "online": "在线",

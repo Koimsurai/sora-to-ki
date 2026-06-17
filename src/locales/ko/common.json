@@ -38,7 +38,8 @@
     "signInLabel": "소셜 계정으로 로그인",
     "signInWithGithub": "GitHub로 로그인",
     "signInWithGoogle": "Google로 로그인",
-    "notConfigured": "타사 로그인이 설정되지 않았어요"
+    "notConfigured": "타사 로그인이 설정되지 않았어요",
+    "menuLabel": "사용자 메뉴"
   },
   "megaMenu": {
     "online": "온라인",

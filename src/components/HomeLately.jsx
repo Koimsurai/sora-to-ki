@@ -46,7 +46,7 @@ function OrbitTimeline({ timeline, t }) {
   });
   return (
     <div className="lately-orbit">
-      <h3 className="lately-h">{t('home.lately.orbitTitle')}</h3>
+      <h2 className="lately-h">{t('home.lately.orbitTitle')}</h2>
       <div className="orbit-track" aria-hidden="false">
         <div className="orbit-line" />
         {seasons.map((s) => (
@@ -118,7 +118,7 @@ export default function HomeLately() {
       <div className="lately-grid">
         {/* 左欄：近期文章 */}
         <div className="lately-posts">
-          <h3 className="lately-h">{t('home.lately.postsTitle')}</h3>
+          <h2 className="lately-h">{t('home.lately.postsTitle')}</h2>
           {posts.length === 0 && <p className="lately-empty">{t('home.lately.empty')}</p>}
           <ol className="lately-post-list">
             {posts.map((p, i) => (
@@ -140,10 +140,10 @@ export default function HomeLately() {
         {/* 右欄：碎念 + 迴聲 */}
         <aside className="lately-side">
           <div className="lately-block">
-            <h3 className="lately-h">
+            <h2 className="lately-h">
               {t('home.lately.murmursTitle')}
               <Link to="/thinking" className="lately-more lately-h-more">{t('home.lately.more')} →</Link>
-            </h3>
+            </h2>
             {thoughts.length === 0 && <p className="lately-empty">{t('home.lately.empty')}</p>}
             <ul className="lately-murmurs">
               {thoughts.map((th) => (
@@ -160,7 +160,7 @@ export default function HomeLately() {
           <div className="lately-divider" />
 
           <div className="lately-block">
-            <h3 className="lately-h">{t('home.lately.echoesTitle')}</h3>
+            <h2 className="lately-h">{t('home.lately.echoesTitle')}</h2>
             {comments.length === 0 && <p className="lately-empty">{t('home.lately.empty')}</p>}
             <ul className="lately-echoes">
               {comments.map((c) => (

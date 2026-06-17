@@ -240,9 +240,11 @@ function App() {
   const [showMainHtmlContent, setShowMainHtmlContent] = useState(shouldSkipIntro);
   const [saturnZIndex, setSaturnZIndex] = useState(1);
   const [introVisible, setIntroVisible] = useState(!shouldSkipIntro);
-  // Three.js 背景的掛載時機：有 intro（首訪首頁）→ 立刻載（intro 播放時順便把 chunk 抓好，
-  // 爆炸 reveal 時土星已就緒）；無 intro → 延到首次繪製後的 idle，先讓內容上畫面
-  const [backdropReady, setBackdropReady] = useState(!shouldSkipIntro);
+  // Three.js 背景掛載時機：
+  //  ‧ 有 intro（首訪首頁）→ 延到 preReveal(1800ms) 才掛，讓 intro 加速期(0~1800ms)的 2D 動畫
+  //    獨佔主執行緒不被 Saturn 的 WebGL 初始化/shader 編譯卡到；preReveal→explosion 還有 1.1s 讓土星就緒
+  //  ‧ 無 intro（重訪/非首頁/手機已排除）→ 直接掛（非首頁只有 worker 星空，主執行緒便宜）
+  const [backdropReady, setBackdropReady] = useState(shouldSkipIntro && !isMobile);
   const introCompleteTimeoutRef = useRef(null);
   const sharedRotationRef = useRef();
   const [activeSection, setActiveSection] = useState('home');
@@ -267,6 +269,7 @@ function App() {
   // jank at the moment the intro fades into the home page.
   const handlePreReveal = useCallback(() => {
     setShowMainHtmlContent(true);
+    setBackdropReady(true); // intro 加速期已過，現在才掛 3D 背景（土星在 explosion 前約 1.1s 就緒）
   }, []);
 
   const handleAnimationComplete = () => {
@@ -293,14 +296,6 @@ function App() {
     };
   }, []);
 
-  // 無 intro 時：首次繪製後的閒置時段才掛 Three.js 背景，內容先上畫面（手機不跑 WebGL，跳過）
-  useEffect(() => {
-    if (backdropReady || isMobile) return;
-    const ric = window.requestIdleCallback || ((cb) => setTimeout(cb, 200));
-    const cancel = window.cancelIdleCallback || clearTimeout;
-    const id = ric(() => setBackdropReady(true), { timeout: 1200 });
-    return () => cancel(id);
-  }, [backdropReady, isMobile]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
