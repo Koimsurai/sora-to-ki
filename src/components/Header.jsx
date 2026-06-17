@@ -14,6 +14,7 @@ import { MegaMenuRoot, MegaMenu as MegaMenuItem } from './mega-menu/MegaMenu';
 import HomeMenuContent from './mega-menu/HomeMenu';
 import BlogMenuContent from './mega-menu/BlogMenu';
 import MoreMenuContent from './mega-menu/MoreMenu';
+import MobileNav from './MobileNav';
 import meAvatar from '../assets/me-avatar.webp';
 import './Header.css';
 
@@ -152,11 +153,13 @@ function Header({ activeSection }) {
   };
 
   return (
-    <header className={'site-header ' + (isScrolled && !mobileOpen ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '')}>
+    <header className={'site-header ' + (isScrolled && !mobileOpen ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '') + (mobileOpen ? 'menu-open ' : '')}>
       <Link to="/" className="site-brand" aria-label={t('nav.backHome')} onClick={() => setMobileOpen(false)}>
         <img src={meAvatar} alt="" className="site-brand-img" />
       </Link>
-      <nav className={'site-nav ' + (mobileOpen ? 'mobile-open' : '')} onMouseMove={handleMouseMove}>
+      {/* 手機導覽（Innei 式手風琴）— 桌面用下面的 mega-menu */}
+      <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <nav className="site-nav" onMouseMove={handleMouseMove}>
         <MegaMenuRoot className="nav-list nav-list-mega">
           <MegaMenuItem
             id="home"

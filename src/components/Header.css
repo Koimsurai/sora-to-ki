@@ -578,25 +578,17 @@
     display: flex;
   }
 
+  /* 手機改用 MobileNav 手風琴；桌面 mega-menu 整個隱藏 */
   .site-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(6, 5, 14, 0.96);
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    transform: translateX(100%);
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1001;
+    display: none;
   }
 
-  .site-nav.mobile-open {
-    transform: translateX(0);
+  /* 選單開啟時，header 自身的 brand / 漢堡 / 使用者鈕都收起，
+     讓 MobileNav 自己的品牌 + 關閉 X 當主角（避免右上重複的 X 與人像） */
+  .site-header.menu-open .site-brand,
+  .site-header.menu-open .mobile-toggle,
+  .site-header.menu-open .header-right-actions {
+    display: none;
   }
 
   .nav-list {
