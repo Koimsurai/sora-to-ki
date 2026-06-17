@@ -97,9 +97,9 @@ function Hero() {
             {'I shape '}
             <em className="hero-accent">ideas</em>
             {' into '}
-            <span className="hero-chip">
+            <span className="hero-chip hero-chip--rift">
               <span className="hero-chip-spark" aria-hidden="true">✦</span>
-              <span className="hero-chip-text">{typedChip}</span>
+              <span className="hero-chip-text" data-text={typedChip}>{typedChip}</span>
               <span className="hero-caret" aria-hidden="true" />
             </span>
           </p>

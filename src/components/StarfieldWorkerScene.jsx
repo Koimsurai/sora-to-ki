@@ -4,6 +4,7 @@
 // 唯一差別：拿掉 window.scrollY 的捲動加速（worker 無 window），改固定轉速。
 import React, { useRef, useMemo, Suspense } from 'react';
 import { Stars, Points, PointMaterial } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import TwinklingStars from './TwinklingStars';
@@ -88,6 +89,11 @@ export default function StarfieldWorkerScene() {
       <Galaxy />
       <SpaceDebris count={300} />
       <TwinklingStars count={800} />
+      {/* 還原星空光暈：原本星空跟 Saturn 同 canvas 會吃到 bloom，搬進 worker 後要自己加。
+          在 worker 執行緒跑，不卡主執行緒。 */}
+      <EffectComposer>
+        <Bloom intensity={0.9} luminanceThreshold={0.25} luminanceSmoothing={0.85} mipmapBlur />
+      </EffectComposer>
     </>
   );
 }

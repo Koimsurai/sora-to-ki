@@ -408,10 +408,114 @@
   vertical-align: baseline;
 }
 
-.hero-chip-spark {
-  color: #ec7dd6;
-  font-size: 0.8em;
-  text-shadow: 0 0 10px rgba(236, 125, 214, 0.8);
+/* ── 次元割裂變體：黑白單色 glitch「失憶閃回」 ──
+   無外框、裸文字；平時靜止，突然一陣劇烈撕裂 + 白光閃爍 + 抖動，瞬間恢復。 */
+.hero-chip--rift {
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.18em 0.2em 0.22em;
+  color: #ffffff;
+}
+
+.hero-chip--rift .hero-chip-spark {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+  animation: rift-spark 5s steps(1) infinite;
+}
+
+.hero-chip--rift .hero-caret {
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+}
+
+.hero-chip--rift .hero-chip-text {
+  position: relative;
+  color: #ffffff;
+  /* 基準文字：閃回時抖動 + 白光爆閃 + 短暫熄滅 */
+  animation: rift-base 5s steps(1) infinite;
+}
+
+/* 兩層重影：data-text 複製文字，裁水平條帶 + 大幅錯位 */
+.hero-chip--rift .hero-chip-text::before,
+.hero-chip--rift .hero-chip-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.hero-chip--rift .hero-chip-text::before {
+  color: #ffffff;
+  text-shadow: -2px 0 rgba(255, 255, 255, 0.6);
+  animation: rift-top 5s steps(1) infinite;
+}
+
+.hero-chip--rift .hero-chip-text::after {
+  color: rgba(130, 130, 140, 0.9);
+  text-shadow: 2px 0 rgba(60, 60, 70, 0.7);
+  animation: rift-bottom 5s steps(1) infinite;
+}
+
+/* 基準文字：閃回瞬間整體抖 + 兩次白光爆閃 + 夾一格熄滅 */
+@keyframes rift-base {
+  0%, 78%, 100% { transform: translate(0, 0); text-shadow: none; opacity: 1; }
+  79% { transform: translate(4px, -1px); text-shadow: 0 0 22px #fff, 0 0 4px #fff; }
+  80% { transform: translate(-5px, 1px); opacity: 0.15; }              /* 短暫熄滅 */
+  81% { transform: translate(3px, 2px); text-shadow: 0 0 26px #fff; opacity: 1; }
+  82% { transform: translate(-3px, -2px); }
+  83% { transform: translate(2px, 0); text-shadow: 0 0 14px #fff; }
+  84% { transform: translate(-2px, 1px); opacity: 0.4; }
+  85% { transform: translate(0, 0); text-shadow: 0 0 10px #fff; opacity: 1; }
+  86% { transform: translate(1px, 0); }
+}
+
+/* 上層白重影：往左大幅錯，多段水平撕裂條帶 */
+@keyframes rift-top {
+  0%, 78%, 100% { opacity: 0; transform: translate(0, 0); clip-path: inset(0 0 60% 0); }
+  79% { opacity: 1; transform: translate(-9px, -2px); clip-path: inset(0 0 72% 0); }
+  80.5% { opacity: 1; transform: translate(8px, 0); clip-path: inset(28% 0 48% 0); }
+  82% { opacity: 0.95; transform: translate(-7px, 1px); clip-path: inset(8% 0 78% 0); }
+  83.5% { opacity: 0.9; transform: translate(6px, -1px); clip-path: inset(42% 0 34% 0); }
+  85% { opacity: 0.85; transform: translate(-4px, 0); clip-path: inset(0 0 55% 0); }
+}
+
+/* 下層灰重影：往右大幅錯，多段水平撕裂條帶 */
+@keyframes rift-bottom {
+  0%, 78%, 100% { opacity: 0; transform: translate(0, 0); clip-path: inset(60% 0 0 0); }
+  79% { opacity: 1; transform: translate(9px, 2px); clip-path: inset(66% 0 0 0); }
+  80.5% { opacity: 1; transform: translate(-8px, 0); clip-path: inset(52% 0 12% 0); }
+  82% { opacity: 0.95; transform: translate(7px, -1px); clip-path: inset(78% 0 0 0); }
+  83.5% { opacity: 0.9; transform: translate(-6px, 1px); clip-path: inset(46% 0 22% 0); }
+  85% { opacity: 0.85; transform: translate(4px, 0); clip-path: inset(58% 0 0 0); }
+}
+
+/* 閃回瞬間 spark 暴閃 */
+@keyframes rift-spark {
+  0%, 78%, 100% { opacity: 1; }
+  79% { opacity: 1; text-shadow: 0 0 16px #fff; }
+  80% { opacity: 0.1; }
+  81% { opacity: 1; text-shadow: 0 0 20px #fff; }
+  83% { opacity: 0.3; }
+  85% { opacity: 1; }
+}
+
+/* hover 主動觸發一次強撕裂（把 79~86% 那段壓進 0.55s 播一次） */
+.hero-chip--rift:hover .hero-chip-text { animation: rift-base 0.55s steps(1) 1; }
+.hero-chip--rift:hover .hero-chip-text::before { animation: rift-top 0.55s steps(1) 1; }
+.hero-chip--rift:hover .hero-chip-text::after { animation: rift-bottom 0.55s steps(1) 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-chip--rift .hero-chip-text,
+  .hero-chip--rift .hero-chip-text::before,
+  .hero-chip--rift .hero-chip-text::after,
+  .hero-chip--rift .hero-chip-spark { animation: none; opacity: 1; }
+  .hero-chip--rift .hero-chip-text::before,
+  .hero-chip--rift .hero-chip-text::after { opacity: 0; }
 }
 
 .hero-chip-text:empty::before {
