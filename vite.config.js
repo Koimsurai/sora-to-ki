@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 import fs from 'fs'; // 引入 fs 模組來讀取憑證檔案
 import path from 'path'; // 引入 path 模組用於路徑別名
 
@@ -95,7 +96,12 @@ export default defineConfig(({ command }) => {
     },
     // configureServer: (server) => { ... }, // <-- 原來的 configureServer 已移至插件
     plugins: [
+      // React Compiler（自動 memo）。Vite 8 + @vitejs/plugin-react v6：Babel 已換成 oxc，
+      // 故 React Compiler（Babel plugin）改由 @rolldown/plugin-babel + reactCompilerPreset 跑（target React 19 自動）。
       react(),
+      babel({
+        presets: [reactCompilerPreset()],
+      }),
       // 壓縮 src 匯入的點陣圖（setup/portfolio 等產品圖原本是數 MB 的 PNG）。
       // 只處理 build 期間經過 bundler 的圖；public/ 照片不受影響。視覺幾乎無損。
       ViteImageOptimizer({
@@ -216,27 +222,21 @@ export default defineConfig(({ command }) => {
       // HTTPS is disabled
     },
     build: {
-      rollupOptions: {
+      rolldownOptions: {
         output: {
-          // 函式形式（而非陣列）：用模組路徑分類即可，不會把套件名當 entry module 去解析。
-          // motion-dom / motion-utils 是 framer-motion v12 的傳遞依賴，在 pnpm 嚴格佈局下
-          // 無法當頂層 entry，用陣列形式會 "Could not resolve entry module"；函式形式則安全。
-          manualChunks(id) {
-            if (!id.includes('node_modules')) return;
-            const norm = id.replace(/\\/g, '/');
-            const groups = {
-              'vendor-three': ['three', '@react-three/fiber', '@react-three/drei', '@react-three/postprocessing'],
-              'vendor-monaco': ['monaco-editor', '@monaco-editor/react'],
-              'vendor-mermaid': ['mermaid'],
-              'vendor-ui': ['framer-motion', 'motion-dom', 'motion-utils', 'recharts', 'swiper'],
-              'vendor-markdown': ['react-markdown', 'rehype-raw', 'remark-gfm', 'remark-github-blockquote-alert'],
-              'vendor-shiki': ['shiki'],
-              'vendor-cmdk': ['cmdk'],
-            };
-            for (const [chunk, pkgs] of Object.entries(groups)) {
-              // pnpm 與 flat node_modules 都會在路徑出現 /node_modules/<pkg>/
-              if (pkgs.some((p) => norm.includes(`/node_modules/${p}/`))) return chunk;
-            }
+          // Vite 8 / Rolldown：manualChunks 已不支援（會被忽略），改用 codeSplitting.groups
+          // （advancedChunks 已 deprecated）。test 以 regex 比對模組路徑；
+          // /node_modules/<pkg>/ 對 pnpm 與 flat 佈局都成立；尾端 [\\/] 避免 three 誤中 three-mesh-bvh。
+          codeSplitting: {
+            groups: [
+              { name: 'vendor-three', test: /[\\/]node_modules[\\/](three|@react-three[\\/](fiber|drei|postprocessing))[\\/]/ },
+              { name: 'vendor-monaco', test: /[\\/]node_modules[\\/](monaco-editor|@monaco-editor[\\/]react)[\\/]/ },
+              { name: 'vendor-mermaid', test: /[\\/]node_modules[\\/]mermaid[\\/]/ },
+              { name: 'vendor-ui', test: /[\\/]node_modules[\\/](framer-motion|motion-dom|motion-utils|recharts|swiper)[\\/]/ },
+              { name: 'vendor-markdown', test: /[\\/]node_modules[\\/](react-markdown|rehype-raw|remark-gfm|remark-github-blockquote-alert)[\\/]/ },
+              { name: 'vendor-shiki', test: /[\\/]node_modules[\\/]shiki[\\/]/ },
+              { name: 'vendor-cmdk', test: /[\\/]node_modules[\\/]cmdk[\\/]/ },
+            ],
           },
         },
       },
