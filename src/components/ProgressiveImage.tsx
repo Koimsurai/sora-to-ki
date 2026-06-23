@@ -19,7 +19,6 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
   src,
   thumbSrc,
   alt = '',
-  thumbHash,
   onLoad,
   className = '',
   enablePan = true,

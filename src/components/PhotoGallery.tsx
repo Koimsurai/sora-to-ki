@@ -25,8 +25,8 @@ const PhotoItem = memo(({ data, width, onPhotoClick }: {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const displayDate = data.exif?.DateTimeOriginal?.split(' ')[0].split(':').slice(1).join('/') || '';
-  const displayYear = data.exif?.DateTimeOriginal?.split(':')[0] || '';
+  const displayDate = data.exif?.DateTimeOriginal?.split(' ')[0].split(':').slice(1).join('/') ?? '';
+  const displayYear = data.exif?.DateTimeOriginal?.split(':')[0] ?? '';
   const calculatedHeight = width / data.aspectRatio;
 
   return (
@@ -88,8 +88,8 @@ const PhotoItem = memo(({ data, width, onPhotoClick }: {
             <p className="photo-date text-2xl font-bold">{displayDate}</p>
             <p className="photo-year text-lg opacity-80">{displayYear}</p>
             {data.tags && data.tags.length > 0 && (
-              <div className="flex gap-2 mt-2">
-                {data.tags.map((tag) => (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {data.tags.slice(0, 5).map((tag) => (
                   <span key={tag} className="px-2 py-1 text-xs bg-white/20 rounded-full backdrop-blur-sm">
                     #{tag}
                   </span>
@@ -125,11 +125,16 @@ function PhotoGallery() {
         counts[t] = (counts[t] || 0) + 1;
       });
     });
-    // 依出現次數降冪排序
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+    // 依出現次數降冪排序；只保留出現 ≥2 次的標籤當篩選
+    // （RAM++ 會產生大量只出現一次的標籤，全塞進下拉會爆），整體再上限 24 個
+    const FILTER_MAX = 24;
+    const sorted = Object.entries(counts)
+      .filter(([, n]) => n >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .map(e => e[0]);
     return {
       topTags: sorted.slice(0, 4),
-      otherTags: sorted.slice(4)
+      otherTags: sorted.slice(4, FILTER_MAX)
     };
   }, [photos]);
 
@@ -150,7 +155,7 @@ function PhotoGallery() {
       }
     }
 
-    loadPhotos();
+    void loadPhotos();
   }, [setPhotosAtom]);
 
   // 照片點擊處理

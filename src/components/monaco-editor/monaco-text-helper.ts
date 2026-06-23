@@ -1,5 +1,6 @@
 import type { editor } from 'monaco-editor';
-import { TEXT_ACTIONS, TextAction } from './types';
+import type { TextAction } from './types';
+import { TEXT_ACTIONS } from './types';
 
 /**
  * Monaco 編輯器文字處理工具類

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { IKeyboardEvent } from 'monaco-editor';
-import { MonacoShortcutsProps } from './types';
+import type { MonacoShortcutsProps } from './types';
 
 /**
  * Monaco 編輯器快捷鍵 Hook

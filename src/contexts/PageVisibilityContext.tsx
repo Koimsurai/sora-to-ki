@@ -1,10 +1,14 @@
-import React, { createContext, useContext } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
+
+interface PageVisibilityValue {
+  isVisible: boolean;
+}
 
 // 創建 Page Visibility Context
-const PageVisibilityContext = createContext();
+const PageVisibilityContext = createContext<PageVisibilityValue | undefined>(undefined);
 
 // Provider 組件
-export const PageVisibilityProvider = ({ children, isVisible }) => {
+export const PageVisibilityProvider = ({ children, isVisible }: { children: ReactNode; isVisible: boolean }) => {
   return (
     <PageVisibilityContext.Provider value={{ isVisible }}>
       {children}

@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
@@ -14,7 +12,7 @@ import {
 } from "@/components/ui/popover"
 
 export function DatePicker() {
-  const [date, setDate] = React.useState()
+  const [date, setDate] = React.useState<Date | undefined>()
 
   return (
     <Popover>

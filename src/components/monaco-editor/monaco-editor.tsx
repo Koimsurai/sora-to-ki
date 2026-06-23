@@ -2,16 +2,31 @@ import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import Editor from '@monaco-editor/react';
 import type { editor, IDisposable } from 'monaco-editor';
+import type * as Monaco from 'monaco-editor';
 import { MonacoToolbar } from './monaco-toolbar';
 import PhotoSelectorModal from '../admin/PhotoSelectorModal';
 import PostLinkModal from '../admin/PostLinkModal';
 import { useMonacoShortcuts } from './monaco-shortcuts';
 import { MonacoTextHelper } from './monaco-text-helper';
-import { MonacoEditorProps } from './types';
+import type { MonacoEditorProps } from './types';
 import { getActiveSnippets } from './monaco-snippets';
 import './monaco-glass.css';
 
 const VIM_MODE_KEY = 'koimsurai_vim_mode';
+
+/** @monaco-editor/react 的 loader 會把 monaco 掛到 window；用型別安全方式取用全域 monaco */
+function getMonaco(): typeof Monaco | undefined {
+  return (window as unknown as { monaco?: typeof Monaco }).monaco;
+}
+
+/** NAS/上傳照片選擇器回傳的照片形狀（僅取用到的欄位） */
+interface SelectablePhoto {
+  title?: string;
+  highResUrl?: string;
+  originalUrl?: string;
+  thumbnailUrl?: string;
+  urls?: { full?: string };
+}
 
 export default function MonacoEditor({
   value,
@@ -20,7 +35,6 @@ export default function MonacoEditor({
   theme = 'vs-dark',
   height = '400px',
   options = {},
-  onSave,
   showToolbar = true,
   path,
 }: MonacoEditorProps) {
@@ -42,8 +56,7 @@ export default function MonacoEditor({
     try { return localStorage.getItem(VIM_MODE_KEY) === '1'; } catch { return false; }
   });
   const vimStatusRef = useRef<HTMLDivElement | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const vimAdapterRef = useRef<any>(null);
+  const vimAdapterRef = useRef<{ dispose: () => void } | null>(null);
 
   // 統計數據
   const [totalWords, setTotalWords] = useState(0);
@@ -64,24 +77,23 @@ export default function MonacoEditor({
   /**
    * 處理 NAS 照片選擇
    */
-  const handleNASSelect = useCallback((photo: any) => {
+  const handleNASSelect = useCallback((photo: SelectablePhoto) => {
     // 插入 markdown 圖片
     const editor = editorRef.current;
     if (!editor) return;
 
     const position = editor.getPosition();
     if (position) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const monacoNs = (window as any).monaco;
+      const monacoNs = getMonaco();
       if (monacoNs) {
         // 使用 highResUrl 或 thumbnailUrl，這裡預設 highResUrl
         // 需注意 url 已經包含 /nas-images/ 前綴
         const imageUrl =
-          photo.highResUrl ||
-          photo.originalUrl ||
-          photo?.urls?.full ||
+          photo.highResUrl ??
+          photo.originalUrl ??
+          photo.urls?.full ??
           photo.thumbnailUrl;
-        const textToInsert = `![${photo.title || 'image'}](${imageUrl})\n`;
+        const textToInsert = `![${photo.title ?? 'image'}](${imageUrl})\n`;
 
         editor.executeEdits('insert-nas-image', [{
           range: new monacoNs.Range(position.lineNumber, position.column, position.lineNumber, position.column),
@@ -101,7 +113,7 @@ export default function MonacoEditor({
 
   const handleFileSelected = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file?.type.startsWith('image/')) return;
     // Reset input so same file can be selected again
     e.target.value = '';
 
@@ -146,18 +158,17 @@ export default function MonacoEditor({
       });
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Upload failed');
+        const errData = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(errData.error ?? 'Upload failed');
       }
 
-      const data = await res.json();
+      const data = await res.json() as { url: string };
       const imageUrl = data.url;
 
       // 插入 markdown
       const position = editorInstance.getPosition();
       if (position) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const monacoNs = (window as any).monaco;
+        const monacoNs = getMonaco();
         if (monacoNs) {
           const altText = file.name.replace(/\.[^/.]+$/, '');
           editorInstance.executeEdits('upload-image', [{
@@ -166,9 +177,9 @@ export default function MonacoEditor({
           }]);
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Upload image error:', err);
-      alert('圖片上傳失敗: ' + err.message);
+      alert('圖片上傳失敗: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setUploading(false);
     }
@@ -189,15 +200,13 @@ export default function MonacoEditor({
       const countGraphemes = (text: string): number => {
         if (!text) return 0;
         const normalized = text.replace(/\r\n/g, '\n');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const Seg = (Intl as any).Segmenter;
-        if (Seg) {
+        if ('Segmenter' in Intl) {
           try {
-            const seg = new Seg(undefined, { granularity: 'grapheme' });
+            const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
             let count = 0;
             for (const _ of seg.segment(normalized)) count++;
             return count;
-          } catch (e) {
+          } catch {
             // fallback
           }
         }
@@ -213,30 +222,21 @@ export default function MonacoEditor({
         const hasCJK =
           /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);
         if (hasCJK) {
-          const hanMatches = text.match(/\p{Script=Han}/gu) || [];
-          const hiraganaMatches = text.match(/\p{Script=Hiragana}/gu) || [];
-          const katakanaMatches = text.match(/\p{Script=Katakana}/gu) || [];
-          const cjkCount =
-            hanMatches.length + hiraganaMatches.length + katakanaMatches.length;
-
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const Seg = (Intl as any).Segmenter;
-          if (Seg) {
+          if ('Segmenter' in Intl) {
             try {
-              const seg = new Seg(undefined, { granularity: 'word' });
+              const seg = new Intl.Segmenter(undefined, { granularity: 'word' });
               let count = 0;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              for (const segment of seg.segment(text) as any) {
+              for (const segment of seg.segment(text)) {
                 if (segment.isWordLike) count++;
               }
               if (count > 0) return count;
-            } catch (e) {
+            } catch {
               // fallback
             }
           }
         }
 
-        const other = text.match(/\p{L}+/gu) || [];
+        const other = text.match(/\p{L}+/gu) ?? [];
         return other.length;
       };
 
@@ -251,7 +251,7 @@ export default function MonacoEditor({
           setTotalChars(countGraphemes(value));
           setTotalLines(model.getLineCount());
           setTotalWords(countWords(value));
-        } catch (e) {
+        } catch {
           // ignore
         }
       };
@@ -276,7 +276,7 @@ export default function MonacoEditor({
             selectedText ? selectedText.split(/\r\n|\r|\n/).length : 0
           );
           setSelWords(countWords(selectedText));
-        } catch (e) {
+        } catch {
           // ignore
         }
       };
@@ -308,16 +308,15 @@ export default function MonacoEditor({
 
         // 檢查是否有圖片檔案
         let imageFile: File | null = null;
-        for (let i = 0; i < e.clipboardData.files.length; i++) {
-          if (e.clipboardData.files[i].type.startsWith('image/')) {
-            imageFile = e.clipboardData.files[i];
+        for (const f of e.clipboardData.files) {
+          if (f.type.startsWith('image/')) {
+            imageFile = f;
             break;
           }
         }
         // 也檢查 items (某些瀏覽器用 items 而非 files)
         if (!imageFile && e.clipboardData.items) {
-          for (let i = 0; i < e.clipboardData.items.length; i++) {
-            const item = e.clipboardData.items[i];
+          for (const item of e.clipboardData.items) {
             if (item.type.startsWith('image/')) {
               imageFile = item.getAsFile();
               break;
@@ -359,18 +358,17 @@ export default function MonacoEditor({
           });
 
           if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.error || 'Upload failed');
+            const errData = await res.json().catch(() => ({})) as { error?: string };
+            throw new Error(errData.error ?? 'Upload failed');
           }
 
-          const data = await res.json();
+          const data = await res.json() as { url: string };
           const imageUrl = data.url; // e.g., /uploads/2023/10/xyz.webp
 
           // 插入 markdown 圖片
           const position = editor.getPosition();
           if (position) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const monacoNs = (window as any).monaco;
+            const monacoNs = getMonaco();
             if (monacoNs) {
               editor.executeEdits('paste-image', [{
                 range: new monacoNs.Range(position.lineNumber, position.column, position.lineNumber, position.column),
@@ -378,18 +376,19 @@ export default function MonacoEditor({
               }]);
             }
           }
-        } catch (err: any) {
+        } catch (err) {
           console.error('Paste/Upload image error:', err);
-          alert('圖片上傳失敗: ' + err.message);
+          alert('圖片上傳失敗: ' + (err instanceof Error ? err.message : String(err)));
         }
       };
 
       // 使用 capture: true 讓事件在 capture 階段就被攔截，優先於 Monaco 的 handler
-      window.addEventListener('paste', pasteHandler, true);
+      const onPasteCapture = (e: ClipboardEvent): void => { void pasteHandler(e); };
+      window.addEventListener('paste', onPasteCapture, true);
 
       // 添加到 cleanup
       disposablesRef.current.push({
-        dispose: () => window.removeEventListener('paste', pasteHandler, true)
+        dispose: () => window.removeEventListener('paste', onPasteCapture, true)
       });
 
       /* ── 拖放圖片上傳（與 paste 共用 upload 邏輯）── */
@@ -425,11 +424,10 @@ export default function MonacoEditor({
             body: formData,
           });
           if (!res.ok) throw new Error('Upload failed');
-          const data = await res.json();
+          const data = await res.json() as { url: string };
           const position = editor.getPosition();
           if (position) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const monacoNs = (window as any).monaco;
+            const monacoNs = getMonaco();
             if (monacoNs) {
               const altText = imageFile.name.replace(/\.[^/.]+$/, '');
               editor.executeEdits('drop-image', [{
@@ -461,29 +459,28 @@ export default function MonacoEditor({
         e.preventDefault();
         e.stopPropagation();
         for (const f of imageFiles) {
-          // eslint-disable-next-line no-await-in-loop
+           
           await uploadAndInsertImage(f);
         }
       };
+      const onDrop = (e: DragEvent): void => { void dropHandler(e); };
       domNode.addEventListener('dragover', dragOverHandler);
       domNode.addEventListener('dragleave', dragLeaveHandler);
-      domNode.addEventListener('drop', dropHandler);
+      domNode.addEventListener('drop', onDrop);
       disposablesRef.current.push({
         dispose: () => {
           domNode.removeEventListener('dragover', dragOverHandler);
           domNode.removeEventListener('dragleave', dragLeaveHandler);
-          domNode.removeEventListener('drop', dropHandler);
+          domNode.removeEventListener('drop', onDrop);
         }
       });
 
       /* ── 斜線指令選單（markdown 模板插入；C-2: 內建 + 使用者自訂） ── */
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const monacoNs = (window as any).monaco;
-      if (monacoNs && monacoNs.languages) {
+      const monacoNs = getMonaco();
+      if (monacoNs?.languages) {
         const provider = monacoNs.languages.registerCompletionItemProvider('markdown', {
           triggerCharacters: ['/'],
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          provideCompletionItems: (model: any, position: any) => {
+          provideCompletionItems: (model, position) => {
             const lineUntil = model.getValueInRange({
               startLineNumber: position.lineNumber, startColumn: 1,
               endLineNumber: position.lineNumber, endColumn: position.column,
@@ -590,7 +587,7 @@ export default function MonacoEditor({
    * 從 PostLinkModal 選定後插入 markdown 連結
    */
   const handlePostLinkSelect = useCallback(
-    (post: { title: string; id?: number | string }) => {
+    (post: { title?: string; id?: number | string }) => {
       const editor = editorRef.current;
       setShowPostLinkModal(false);
       if (!editor) return;
@@ -599,8 +596,7 @@ export default function MonacoEditor({
       const model = editor.getModel();
       const selectedText = selection && model ? model.getValueInRange(selection) : '';
       const text = `[${selectedText || post.title}](${url})`;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const monacoNs = (window as any).monaco;
+      const monacoNs = getMonaco();
       if (!monacoNs || !selection) return;
       editor.executeEdits('insert-post-link', [{
         range: new monacoNs.Range(selection.startLineNumber, selection.startColumn, selection.endLineNumber, selection.endColumn),
@@ -652,8 +648,7 @@ export default function MonacoEditor({
   useEffect(() => {
     const editor = editorRef.current;
     if (!isEditorReady || !editor) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const monacoNs = (window as any).monaco;
+    const monacoNs = getMonaco();
     if (!monacoNs) return;
     const action = editor.addAction({
       id: 'koimsurai.insert-post-link',
@@ -729,7 +724,7 @@ export default function MonacoEditor({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        onChange={handleFileSelected}
+        onChange={(e) => { void handleFileSelected(e); }}
         style={{ display: 'none' }}
       />
 

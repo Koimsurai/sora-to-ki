@@ -1,12 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaSearch, FaImage } from 'react-icons/fa';
 import { loadPhotosManifest } from '../../utils/manifestLoader';
+import type { PhotoManifest } from '../../types/photo';
 import { Blurhash } from 'react-blurhash';
 import { toast } from 'sonner';
 
-const PhotoSelectorModal = ({ isOpen, onClose, onSelect }) => {
-    const [photos, setPhotos] = useState([]);
+interface PhotoSelectorModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (photo: PhotoManifest) => void;
+}
+
+const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalProps) => {
+    const [photos, setPhotos] = useState<PhotoManifest[]>([]);
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -26,7 +33,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }) => {
 
     useEffect(() => {
         if (isOpen) {
-            fetchPhotos();
+            void fetchPhotos();
         }
     }, [isOpen]);
 
@@ -48,16 +55,20 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }) => {
                 },
             });
 
-            const data = await response.json().catch(() => ({}));
+            const data = await response.json().catch(() => ({})) as {
+                error?: string;
+                processed?: number;
+                skipped?: number;
+            };
             if (!response.ok) {
-                throw new Error(data.error || '同步失敗');
+                throw new Error(data.error ?? '同步失敗');
             }
 
             toast.success(`同步完成：新增 ${data.processed ?? 0}，略過 ${data.skipped ?? 0}`);
             await fetchPhotos();
         } catch (err) {
             console.error('NAS sync failed:', err);
-            toast.error(`同步失敗：${err.message || '未知錯誤'}`);
+            toast.error(`同步失敗：${err instanceof Error ? err.message : '未知錯誤'}`);
         } finally {
             setSyncing(false);
         }
@@ -67,14 +78,14 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }) => {
         if (!searchTerm) return photos;
         const lower = searchTerm.toLowerCase();
         return photos.filter(p =>
-            (p.title && p.title.toLowerCase().includes(lower)) ||
-            (p.description && p.description.toLowerCase().includes(lower)) ||
-            (p.tags && p.tags.some(t => t.toLowerCase().includes(lower)))
+            p.title.toLowerCase().includes(lower) ||
+            (p.description?.toLowerCase().includes(lower) ?? false) ||
+            (p.tags?.some(t => t.toLowerCase().includes(lower)) ?? false)
         );
     }, [photos, searchTerm]);
 
     // Handle click outside to close
-    const handleBackdropClick = (e) => {
+    const handleBackdropClick = (e: React.MouseEvent) => {
         if (e.target === e.currentTarget) {
             onClose();
         }
@@ -111,7 +122,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }) => {
                         </h3>
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={handleSync}
+                                onClick={() => { void handleSync(); }}
                                 disabled={syncing || loading}
                                 className="h-7 px-2.5 text-[11px] rounded-md border border-border/40 text-muted-foreground hover:text-foreground/90 hover:bg-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >

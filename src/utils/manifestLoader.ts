@@ -1,9 +1,10 @@
+/// <reference types="vite/client" />
 /**
  * Photo Manifest Loader
  * 載入照片 manifest 資料
  */
 
-import { PhotoManifest } from '../types/photo';
+import type { PhotoManifest } from '../types/photo';
 
 export interface PhotosManifestData {
   version: string;
@@ -24,7 +25,7 @@ export async function loadPhotosManifest(): Promise<PhotoManifest[]> {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data: PhotosManifestData = await response.json();
+    const data = await response.json() as PhotosManifestData;
 
     console.log(`✅ 載入 ${data.totalPhotos} 張照片`);
     console.log(`📅 生成時間: ${data.generatedAt}`);
@@ -43,20 +44,19 @@ export async function loadPhotosManifest(): Promise<PhotoManifest[]> {
  * 回退方案: 使用 Vite 的 import.meta.glob 載入本地圖片
  */
 function loadLocalPhotos(): PhotoManifest[] {
-  // @ts-ignore - Vite specific
   const imageModules = import.meta.glob('../assets/Portfolio/*.{webp,jpg,jpeg,png,gif,svg}', {
     eager: true
   });
 
   return Object.entries(imageModules).map(([path, module], index) => {
     const fileName = path.split('/').pop()!.split('.')[0];
-    const imageUrl = (module as any).default;
+    const imageUrl = (module as { default: string }).default;
 
     let shootTime: number | undefined;
     let title = fileName;
 
     // 嘗試從檔名提取日期
-    const dateMatch = fileName.match(/^(\d{4})(\d{2})(\d{2})/);
+    const dateMatch = /^(\d{4})(\d{2})(\d{2})/.exec(fileName);
     if (dateMatch) {
       const [, year, month, day] = dateMatch;
       shootTime = new Date(`${year}-${month}-${day}`).getTime();
@@ -79,7 +79,7 @@ function loadLocalPhotos(): PhotoManifest[] {
       height: 1080,
       aspectRatio: 16 / 9,
       size: 0,
-      format: path.split('.').pop()?.toLowerCase() || 'jpg',
+      format: path.split('.').pop()?.toLowerCase() ?? 'jpg',
       shootTime,
       exif: dateMatch ? {
         DateTimeOriginal: `${dateMatch[1]}:${dateMatch[2]}:${dateMatch[3]} 00:00:00`,
@@ -93,7 +93,7 @@ function loadLocalPhotos(): PhotoManifest[] {
  * 取得圖片格式
  */
 export function getImageFormat(url: string): string {
-  const ext = url.split('.').pop()?.toLowerCase() || '';
+  const ext = url.split('.').pop()?.toLowerCase() ?? '';
   return ext.toUpperCase();
 }
 

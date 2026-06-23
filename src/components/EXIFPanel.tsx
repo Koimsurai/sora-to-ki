@@ -5,7 +5,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { PhotoManifest } from '../types/photo';
+import type { PhotoManifest } from '../types/photo';
 import './EXIFPanel.css';
 
 interface EXIFPanelProps {

@@ -1,6 +1,6 @@
-import { Toaster as Sonner } from 'sonner';
+import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
-const Toaster = ({ ...props }) => {
+const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme="dark"

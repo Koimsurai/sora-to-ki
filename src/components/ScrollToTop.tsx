@@ -10,7 +10,7 @@ function ScrollToTop() {
     // 如果只是 hash 改變（錨點跳轉），不干涉滾動行為
     // 如果是從 preview scroll-to-commit 過來，也不滾頂端（BlogPost 會還原到段落位置）
     if (pathname !== prevPathname.current) {
-      if (!hash && !state?.fromPreview) {
+      if (!hash && !(state as { fromPreview?: boolean } | null)?.fromPreview) {
         window.scrollTo(0, 0);
       }
       prevPathname.current = pathname;

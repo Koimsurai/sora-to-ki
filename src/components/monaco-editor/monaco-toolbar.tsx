@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Bold,
   Italic,
@@ -12,7 +11,7 @@ import {
   FileText,
   Terminal,
 } from 'lucide-react';
-import { MonacoToolbarProps } from './types';
+import type { MonacoToolbarProps } from './types';
 
 /**
  * Monaco 編輯器工具欄組件

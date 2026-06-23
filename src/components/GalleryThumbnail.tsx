@@ -6,7 +6,7 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { FreeMode, Navigation, Thumbs } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
-import { PhotoManifest } from '../types/photo';
+import type { PhotoManifest } from '../types/photo';
 import 'swiper/css';
 import 'swiper/css/free-mode';
 import 'swiper/css/navigation';

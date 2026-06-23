@@ -9,7 +9,7 @@
 export interface N8NPostData {
   title: string;
   content: string;
-  tags?: string[] | Array<{ label: string; value: string }>;
+  tags?: string[] | { label: string; value: string }[];
   category?: string;
   slug?: string;
   summary?: string;
@@ -23,7 +23,7 @@ export interface N8NPostData {
 export interface EditorPostData {
   title: string;
   content: string;
-  tags: Array<{ label: string; value: string }>;
+  tags: { label: string; value: string }[];
   category?: string;
   slug?: string;
   summary?: string;
@@ -39,20 +39,20 @@ export interface EditorPostData {
  */
 export function transformN8NData(n8nData: N8NPostData): EditorPostData {
   // 處理 tags 格式轉換
-  let transformedTags: Array<{ label: string; value: string }> = [];
+  let transformedTags: { label: string; value: string }[] = [];
 
   if (n8nData.tags) {
     if (Array.isArray(n8nData.tags)) {
       // 檢查是字串陣列還是物件陣列
       if (typeof n8nData.tags[0] === 'string') {
         // 字串陣列：["React", "TypeScript"]
-        transformedTags = (n8nData.tags as string[]).map((tag, index) => ({
+        transformedTags = (n8nData.tags as string[]).map((tag) => ({
           label: tag,
           value: tag.toLowerCase().replace(/\s+/g, '-'), // 自動生成 value
         }));
       } else {
         // 已經是正確格式的物件陣列
-        transformedTags = n8nData.tags as Array<{ label: string; value: string }>;
+        transformedTags = n8nData.tags as { label: string; value: string }[];
       }
     }
   }
@@ -63,10 +63,10 @@ export function transformN8NData(n8nData: N8NPostData): EditorPostData {
     content: n8nData.content || '',
     tags: transformedTags,
     category: n8nData.category,
-    slug: n8nData.slug || generateSlug(n8nData.title),
-    summary: n8nData.summary || extractSummary(n8nData.content),
+    slug: n8nData.slug ?? generateSlug(n8nData.title),
+    summary: n8nData.summary ?? extractSummary(n8nData.content),
     cover: n8nData.cover,
-    status: n8nData.status || 'draft',
+    status: n8nData.status ?? 'draft',
     allowComments: true,
     pin: false,
     pinOrder: 0,
@@ -76,7 +76,7 @@ export function transformN8NData(n8nData: N8NPostData): EditorPostData {
 /**
  * 將編輯器資料轉換為 API 需要的格式
  */
-export function transformToAPIData(editorData: EditorPostData): any {
+export function transformToAPIData(editorData: EditorPostData) {
   return {
     title: editorData.title,
     content: editorData.content,
@@ -114,7 +114,7 @@ function generateSlug(title: string): string {
 /**
  * 從內容中提取摘要（取前 150 字）
  */
-function extractSummary(content: string, maxLength: number = 150): string {
+function extractSummary(content: string, maxLength = 150): string {
   if (!content) return '';
   
   // 移除 Markdown 標記
@@ -140,18 +140,19 @@ function extractSummary(content: string, maxLength: number = 150): string {
 /**
  * 驗證 N8N 資料是否完整
  */
-export function validateN8NData(data: any): { valid: boolean; errors: string[] } {
+export function validateN8NData(data: unknown): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
+  const d = (typeof data === 'object' && data !== null ? data : {}) as Record<string, unknown>;
 
-  if (!data.title || typeof data.title !== 'string' || data.title.trim() === '') {
+  if (typeof d.title !== 'string' || d.title.trim() === '') {
     errors.push('標題 (title) 為必填欄位');
   }
 
-  if (!data.content || typeof data.content !== 'string' || data.content.trim() === '') {
+  if (typeof d.content !== 'string' || d.content.trim() === '') {
     errors.push('內容 (content) 為必填欄位');
   }
 
-  if (data.tags && !Array.isArray(data.tags)) {
+  if (d.tags !== undefined && !Array.isArray(d.tags)) {
     errors.push('標籤 (tags) 必須是陣列格式');
   }
 

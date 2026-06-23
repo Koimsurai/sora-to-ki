@@ -3,7 +3,7 @@
  * 支援 Swiper 輪播、模糊背景、底部縮圖導覽、右側 EXIF 面板
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -113,7 +113,7 @@ const PhotoViewer: React.FC = () => {
           {/* 頂部照片資訊 */}
           <div className="photo-viewer-info" onClick={(e) => e.stopPropagation()}>
             <div className="photo-title">
-              照片 {currentPhoto.exif?.DateTimeOriginal || currentPhoto.title || currentPhoto.id}
+              照片 {currentPhoto.exif?.DateTimeOriginal ?? currentPhoto.title ?? currentPhoto.id}
             </div>
           </div>
 
@@ -129,7 +129,7 @@ const PhotoViewer: React.FC = () => {
                     title: currentPhoto.title || '照片分享',
                     text: `查看我的照片作品`,
                     url: window.location.href,
-                  }).catch(() => { });
+                  }).catch(() => { /* 使用者取消分享 */ });
                 }
               }}
               title="分享"

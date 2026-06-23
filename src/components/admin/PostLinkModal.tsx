@@ -1,26 +1,41 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaSearch, FaFileAlt } from 'react-icons/fa';
+
+interface LinkablePost {
+  id: number | string;
+  title?: string;
+  excerpt?: string;
+  status?: string;
+}
+
+type PostsResponse = LinkablePost[] | { posts?: LinkablePost[] };
+
+interface PostLinkModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (post: LinkablePost) => void;
+}
 
 /**
  * 舊文章連結選擇器（C-3）
  * 由 Monaco editor 透過 Cmd/Ctrl+Shift+K 或 toolbar 按鈕觸發。
  * 拉一份 published posts 清單，提供模糊搜尋，點擊後 onSelect(post) 回傳。
  */
-const PostLinkModal = ({ isOpen, onClose, onSelect }) => {
-  const [posts, setPosts] = useState([]);
+const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
+  const [posts, setPosts] = useState<LinkablePost[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     setLoading(true);
     fetch('/api/posts?limit=300')
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => (r.ok ? (r.json() as Promise<PostsResponse>) : null))
       .then((data) => {
-        if (!data) return setPosts([]);
-        const list = Array.isArray(data) ? data : data.posts || [];
+        if (!data) { setPosts([]); return; }
+        const list = Array.isArray(data) ? data : (data.posts ?? []);
         setPosts(list.filter((p) => p.status === 'published' || !p.status));
       })
       .catch(() => setPosts([]))
@@ -39,8 +54,8 @@ const PostLinkModal = ({ isOpen, onClose, onSelect }) => {
     if (!q) return posts.slice(0, 50);
     return posts
       .filter((p) =>
-        (p.title || '').toLowerCase().includes(q) ||
-        (p.excerpt || '').toLowerCase().includes(q)
+        (p.title ?? '').toLowerCase().includes(q) ||
+        (p.excerpt ?? '').toLowerCase().includes(q)
       )
       .slice(0, 50);
   }, [posts, query]);
@@ -110,7 +125,7 @@ const PostLinkModal = ({ isOpen, onClose, onSelect }) => {
                       <FaFileAlt className="text-zinc-500 mt-0.5 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm text-zinc-100 truncate">
-                          {p.title || `(無標題) #${p.id}`}
+                          {p.title ?? `(無標題) #${p.id}`}
                         </div>
                         {p.excerpt && (
                           <div className="text-xs text-zinc-500 truncate mt-0.5">

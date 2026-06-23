@@ -5,7 +5,7 @@
 
 import { atom } from 'jotai';
 import { atomWithReset } from 'jotai/utils';
-import { PhotoManifest } from '../types/photo';
+import type { PhotoManifest } from '../types/photo';
 
 /**
  * 當前選中的照片
