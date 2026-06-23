@@ -131,7 +131,7 @@ const Activity = () => {
         generateContributionDataFromAPI(data);
         setGithubData(prev => prev ? { ...prev, contributions: data } : prev);
       }
-    } catch {}
+    } catch { /* ignore */ }
   };
 
   const fetchGithubData = async () => {
@@ -157,7 +157,7 @@ const Activity = () => {
         contributionsData = await fetch(
           `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=${contributionYear}&_=${Date.now()}`
         ).then(r => r.json());
-      } catch {}
+      } catch { /* ignore */ }
 
       setGithubData({ user: userData, recentCommits: pushEvents, recentRepos: reposData, contributions: contributionsData });
 

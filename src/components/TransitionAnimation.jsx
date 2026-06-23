@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import './TransitionAnimation.css'; // 引入 CSS 樣式
 

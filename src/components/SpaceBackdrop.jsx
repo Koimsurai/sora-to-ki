@@ -7,7 +7,7 @@
 //   ‧ Saturn（單一物件，但有貼圖 / 捲動 / cursor / bloom 後處理等 DOM 依賴，無法進 worker）
 //     留在主執行緒 Canvas；單物件成本遠低於 27k 點。
 //   ‧ 自適應 DPR（PerformanceMonitor）只掛在 Saturn canvas：弱機自動降解析度。
-import React, { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { PerformanceMonitor } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
 import { Canvas as OffscreenCanvas } from '@react-three/offscreen';

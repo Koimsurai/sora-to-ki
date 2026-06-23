@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './RandomShootingStars.css'; // 導入 CSS
 import { usePageVisibility } from '../contexts/PageVisibilityContext';

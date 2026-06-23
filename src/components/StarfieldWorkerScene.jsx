@@ -2,7 +2,7 @@
 // 規則：不可碰 window / document / React context（worker 裡都沒有）。
 // 內容對齊原 SpaceBackdrop 的星空（兩層 drei Stars + 太空碎片 + 閃爍星），
 // 唯一差別：拿掉 window.scrollY 的捲動加速（worker 無 window），改固定轉速。
-import React, { useRef, useMemo, Suspense } from 'react';
+import { useRef, useMemo, Suspense } from 'react';
 import { Stars, Points, PointMaterial } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { useFrame } from '@react-three/fiber';

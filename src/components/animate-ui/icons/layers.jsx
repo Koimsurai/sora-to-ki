@@ -1,5 +1,4 @@
 'use client';;
-import * as React from 'react';
 import { motion } from 'framer-motion';
 
 import { getVariants, useAnimateIconContext, IconWrapper } from '@/components/animate-ui/icons/icon';

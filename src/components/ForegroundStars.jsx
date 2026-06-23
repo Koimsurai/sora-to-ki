@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './ForegroundStars.css';
 
 const ForegroundStars = ({ count = 50 }) => {

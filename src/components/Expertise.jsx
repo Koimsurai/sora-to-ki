@@ -10,11 +10,10 @@ import {
   SiNodedotjs, SiFastapi, SiJetpackcompose, SiTauri, SiRedis, SiFirebase,
   SiMermaid, SiObsidian, SiDiscord, SiGnubash, SiJsonwebtokens, SiScratch,
   SiAndroid, SiWebgl, SiPostman, SiCloudflare, SiVitest, SiPwa,
-  SiBootstrap, SiPydantic, SiJinja, SiClaude, SiGooglegemini, SiOpenai,
-  SiAnthropic, SiGithubcopilot,
+  SiBootstrap, SiPydantic, SiJinja, SiClaude, SiGooglegemini, SiOpenai, SiGithubcopilot,
 } from 'react-icons/si';
 import {
-  FaJava, FaPython, FaLinux, FaGithub, FaDocker, FaNetworkWired, FaServer,
+  FaJava, FaPython, FaLinux, FaGithub, FaDocker, FaNetworkWired,
   FaDatabase, FaTerminal, FaCube, FaGamepad, FaLock,
   FaPuzzlePiece,
 } from 'react-icons/fa6';

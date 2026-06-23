@@ -103,6 +103,18 @@ try {
   // Keep server bootable even if sharp is missing; sync endpoint will report dependency error.
 }
 
+// chokidar：偵測 Blog_Source 新圖自動 sync（guard：缺套件也能開機）
+let chokidar = null;
+try { chokidar = require('chokidar'); }
+catch (_e) { console.warn('[gallery-watch] chokidar 未安裝，自動監看停用'); }
+
+// EXIF 抽取 + RAM++ 標籤（抽到 ./photoTagger；guard：缺套件也能開機）
+let extractExif = async () => null;
+let tagPhoto = async () => null;
+try { ({ extractExif, tagPhoto } = require('./photoTagger')); }
+catch (e) { console.warn('[photoTagger] 載入失敗，EXIF/標籤自動化停用:', e.message); }
+const PHOTO_TAGGER_GALLERY_PREFIX = process.env.PHOTO_TAGGER_GALLERY_PREFIX || '/gallery';
+
 // thumbhash is ESM-only; load lazily via dynamic import to use from CommonJS.
 let _thumbhashLib = null;
 let _thumbhashLoading = null;
@@ -201,11 +213,13 @@ async function processSingleGalleryImage(sourcePath, fullOutputPath, thumbOutput
     .toFile(thumbOutputPath);
 
   const fullStat = await fs.promises.stat(fullOutputPath);
+  const exif = await extractExif(sourcePath);
   return {
     width: metadata.width || 0,
     height: metadata.height || 0,
     size: fullStat.size,
     format: (metadata.format || path.extname(sourcePath).replace('.', '') || 'jpg').toLowerCase(),
+    exif,
   };
 }
 
@@ -256,7 +270,7 @@ async function syncGalleryManifest() {
     }
 
     try {
-      const { width, height, size, format } = await processSingleGalleryImage(
+      const { width, height, size, format, exif } = await processSingleGalleryImage(
         sourcePath,
         fullOutputPath,
         thumbOutputPath
@@ -282,7 +296,9 @@ async function syncGalleryManifest() {
         size,
         format,
         shootTime: existing?.shootTime || sourceStat.mtimeMs,
+        exif: exif || existing?.exif,
         tags: Array.isArray(existing?.tags) ? existing.tags : [],
+        tagsEn: Array.isArray(existing?.tagsEn) ? existing.tagsEn : [],
       };
 
       nextPhotos.push(nextPhoto);
@@ -290,6 +306,19 @@ async function syncGalleryManifest() {
     } catch (err) {
       failed += 1;
       console.error(`[Gallery Sync] Failed processing ${fileName}:`, err.message || err);
+    }
+  }
+
+  // RAM++ 自動標籤：對缺 tagsEn 的照片（新圖 + 舊 moondream 圖）打標籤。
+  // 失敗（服務沒起/逾時）就跳過、保留原本 tags，不擋 sync。
+  let tagged = 0;
+  for (const p of nextPhotos) {
+    if (Array.isArray(p.tagsEn) && p.tagsEn.length) continue;
+    const r = await tagPhoto(`${PHOTO_TAGGER_GALLERY_PREFIX}/${p.id}.webp`);
+    if (r && (r.tagsEn.length || r.tags.length)) {
+      p.tags = r.tags;
+      p.tagsEn = r.tagsEn;
+      tagged += 1;
     }
   }
 
@@ -307,6 +336,7 @@ async function syncGalleryManifest() {
     processed,
     skipped,
     failed,
+    tagged,
     totalPhotos: manifest.totalPhotos,
     generatedAt: manifest.generatedAt,
   };
@@ -516,9 +546,9 @@ apiRouter.post('/auth/login', async (req, res) => {
 // ─── i18n helpers ──────────────────────────────────────
 // 支援的 locale 與對應的 DB 欄位後綴 / HTML hreflang / html lang
 const I18N_LOCALES = ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'];
-const LOCALE_COLUMN_SUFFIX = { 'zh-CN': 'zh_cn', 'en': 'en', 'ja': 'ja' };
-const LOCALE_HREFLANG = { 'zh-TW': 'zh-Hant', 'zh-CN': 'zh-Hans', 'en': 'en', 'ja': 'ja' };
-const LOCALE_URL_PREFIX = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja' };
+const LOCALE_COLUMN_SUFFIX = { 'zh-CN': 'zh_cn', 'en': 'en', 'ja': 'ja', 'ko': 'ko' };
+const LOCALE_HREFLANG = { 'zh-TW': 'zh-Hant', 'zh-CN': 'zh-Hans', 'en': 'en', 'ja': 'ja', 'ko': 'ko' };
+const LOCALE_URL_PREFIX = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja', 'ko': '/ko' };
 
 // OpenCC 繁→簡 轉換器（lazy load）
 let _openccT2S = null;
@@ -536,6 +566,7 @@ function parseLocale(raw) {
   if (lower === 'zh-cn' || lower === 'zh-hans') return 'zh-CN';
   if (lower === 'en') return 'en';
   if (lower === 'ja') return 'ja';
+  if (lower === 'ko') return 'ko';
   return null;
 }
 
@@ -1546,7 +1577,7 @@ apiRouter.post('/admin/posts', requireAdmin, (req, res) => {
       allow_comments,
       created_at, updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
   `;
   const params = [
     title, content, excerpt, category || null, status, 'Koimsurai', layout_type,
@@ -4530,3 +4561,39 @@ require('./routes/home')({ apiRouter, db });
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// ── 自動監看 Blog_Source：有新圖就 debounce 後自動 sync（含縮圖/EXIF/RAM++ 標籤）──
+if (chokidar) {
+  const DEBOUNCE_MS = Number(process.env.GALLERY_WATCH_DEBOUNCE_MS || 8000);
+  let debounceTimer = null;
+  const triggerSync = () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      if (gallerySyncInProgress) return;
+      gallerySyncInProgress = true;
+      try {
+        const r = await syncGalleryManifest();
+        console.log('[gallery-watch] auto-sync done:', JSON.stringify(r));
+      } catch (e) {
+        console.error('[gallery-watch] auto-sync failed:', e.message || e);
+      } finally {
+        gallerySyncInProgress = false;
+      }
+    }, DEBOUNCE_MS);
+  };
+  try {
+    chokidar
+      .watch(GALLERY_SOURCE_PATH, {
+        ignoreInitial: true,
+        awaitWriteFinish: { stabilityThreshold: 4000, pollInterval: 500 },
+        usePolling: process.env.GALLERY_WATCH_POLLING === '1',
+        depth: 4,
+      })
+      .on('add', triggerSync)
+      .on('change', triggerSync)
+      .on('error', (e) => console.error('[gallery-watch] watcher error:', e.message || e));
+    console.log('[gallery-watch] watching', GALLERY_SOURCE_PATH);
+  } catch (e) {
+    console.error('[gallery-watch] failed to start watcher:', e.message || e);
+  }
+}

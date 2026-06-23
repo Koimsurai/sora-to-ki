@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
 import avatarImage from '../../assets/me-avatar.webp';

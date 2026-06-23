@@ -1,18 +1,14 @@
 
 import {
-  Bell,
   CircleUser,
   Home,
-  LineChart,
   Menu,
   Package,
   Package2,
-  Search,
   ShoppingCart,
   Users,
 } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -29,7 +25,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
   Breadcrumb,

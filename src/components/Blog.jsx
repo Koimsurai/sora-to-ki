@@ -148,7 +148,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
 
   // 列表頁優先顯示內文截斷，而非 AI 摘要
   const excerpt = post.content
-    ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>\-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
+    ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
     : '';
   const dateObj = new Date(post.created_at);
   const dayStr = dateObj.getDate();

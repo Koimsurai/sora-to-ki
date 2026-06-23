@@ -493,9 +493,10 @@ const getLinkMeta = (url) => {
       return { type: 'bilibili', icon: FaExternalLinkAlt, color: '#00A1D6', label: 'Bilibili', bvid };
     }
 
-    // Internal Blog Link Detection
-    if (host.includes('koimsurai.com') && u.pathname.startsWith('/blog/')) {
-      const id = u.pathname.split('/').pop();
+    // Internal Blog Link Detection — 含語系前綴（/en/blog/、/ko/blog/…）
+    const blogMatch = u.pathname.match(/^(?:\/(?:en|zh-cn|ja|ko))?\/blog\/([^/]+)$/);
+    if (host.includes('koimsurai.com') && blogMatch) {
+      const id = blogMatch[1];
       if (id && id !== 'blog') return { type: 'internal', id };
     }
 
@@ -1566,6 +1567,7 @@ function parseLocaleFromPath(pathname) {
   if (pathname.startsWith('/en/blog/')) return 'en';
   if (pathname.startsWith('/zh-cn/blog/')) return 'zh-CN';
   if (pathname.startsWith('/ja/blog/')) return 'ja';
+  if (pathname.startsWith('/ko/blog/')) return 'ko';
   return 'zh-TW';
 }
 

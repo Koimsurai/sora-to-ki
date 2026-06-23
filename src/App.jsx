@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react'; // Import useCallback, lazy, Suspense
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'; // Import useCallback, lazy, Suspense
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { useInView } from 'react-intersection-observer'; // Import useInView
 import Header from './components/Header';

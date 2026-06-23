@@ -1,6 +1,6 @@
-import React, { useRef, Suspense, useEffect, useLayoutEffect, useState } from 'react'; // 引入 useState
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useTexture } from '@react-three/drei';
+import { useRef, useEffect, useLayoutEffect, useState } from 'react'; // 引入 useState
+import { useFrame } from '@react-three/fiber';
+import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 // 引入 ChromaticAberration
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';

@@ -1,14 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  FaHome, FaUser, FaCode, FaBriefcase, FaUsers, FaImages,
-  FaEnvelope, FaDownload, FaBookOpen, FaChevronDown, FaRss,
-  FaClock, FaRoute, FaBook, FaMusic, FaCamera, FaDesktop,
+import { FaUser,
   FaGithub, FaGoogle, FaSignOutAlt, FaCog,
 } from 'react-icons/fa';
 import { HouseIcon, BookOpenTextIcon, LayoutGridIcon } from '@animateicons/react/lucide';
-import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { MegaMenuRoot, MegaMenu as MegaMenuItem } from './mega-menu/MegaMenu';
 import HomeMenuContent from './mega-menu/HomeMenu';

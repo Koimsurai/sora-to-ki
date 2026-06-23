@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '../../contexts/AuthContext';
 import './AdminTheme.css';
 import './ModernEnhancements.css';

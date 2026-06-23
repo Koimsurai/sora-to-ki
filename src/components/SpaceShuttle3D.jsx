@@ -1,4 +1,3 @@
-import React from 'react';
 import './SpaceShuttle3D.css';
 
 const SpaceShuttle3D = ({ className = '', style = {} }) => {

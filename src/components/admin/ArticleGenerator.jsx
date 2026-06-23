@@ -16,15 +16,9 @@ import {
     Copy,
     Check,
     Send,
-    Loader2,
     FileText,
-    Wand2,
-    Eye,
-    Code,
-    ArrowRight,
     RotateCcw,
     RotateCw,
-    Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';

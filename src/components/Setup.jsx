@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaDesktop, FaServer, FaWifi, FaKeyboard, FaHome } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
@@ -33,7 +33,6 @@ import imgG502x from '../assets/setup/g502-x-lightspeed.png';
 import imgG502Hero from '../assets/setup/g502-hero.png';
 import imgCherry31s from '../assets/setup/cherry-3.1s.png';
 import imgCherry20s from '../assets/setup/Cherry-2.0s-mx2a.png';
-import imgMk882 from '../assets/setup/mk882.png';
 import imgHyperxFps from '../assets/setup/HyperX-Alloy-FPS.png';
 import imgPuddingKeycaps from '../assets/setup/HyperX-Pudding-Keycaps.png';
 import imgPixelBuds from '../assets/setup/Pixel-buds-pro2.png';

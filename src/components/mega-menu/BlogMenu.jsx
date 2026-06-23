@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FaBookOpen } from 'react-icons/fa';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Monitor } from 'lucide-react';
@@ -6,7 +6,6 @@ import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
 import { FrameIcon } from '@/components/animate-ui/icons/frame';
 import { RadioTowerIcon } from '@/components/animate-ui/icons/radio-tower';
 import { AudioLinesIcon } from '@/components/animate-ui/icons/audio-lines';
-import { ClockIcon } from '@/components/animate-ui/icons/clock';
 import { BookOpenTextIcon, EyeIcon } from '@animateicons/react/lucide';
 
 /**

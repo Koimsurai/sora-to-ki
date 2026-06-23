@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Film, Tv, Plus, Pencil, Trash2, Star, Globe } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Film, Tv, Plus, Pencil, Trash2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,

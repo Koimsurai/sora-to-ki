@@ -7,7 +7,6 @@ import { postSchema } from '@/schemas/post';
 import { MonacoEditor } from '@/components/monaco-editor';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Form,
@@ -27,13 +26,9 @@ import {
 import { Switch } from '@/components/ui/switch';
 import {
   FileText,
-  Save,
-  Send,
-  Eye,
   Clock,
   Folder,
   ImageIcon,
-  ArrowLeft,
   X,
   Sparkles,
   Loader2,
@@ -44,7 +39,7 @@ import {
   Minimize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 /**
  * v0 風格標籤搜尋選擇器
@@ -530,10 +525,12 @@ export default function PostEditor() {
 
       if (response.ok) {
         toast.success('草稿已儲存');
-        try { localStorage.removeItem(autosaveKey); } catch {}
+        try { localStorage.removeItem(autosaveKey); } catch { /* ignore */ }
         const result = await response.json();
-        if (!id && result.id) {
-          navigate(`/admin/posts/edit/${result.id}`);
+        // 後端 create 回 { data: { id } }；沒抓到就會每次都 POST → 重複建立草稿
+        const newId = result?.data?.id ?? result?.id;
+        if (!id && newId) {
+          navigate(`/admin/posts/edit/${newId}`);
         }
       } else {
         toast.error('儲存失敗');
@@ -571,7 +568,7 @@ export default function PostEditor() {
 
       if (response.ok) {
         toast.success('文章已發佈');
-        try { localStorage.removeItem(autosaveKey); } catch {}
+        try { localStorage.removeItem(autosaveKey); } catch { /* ignore */ }
         navigate('/admin/posts');
       } else {
         toast.error('發佈失敗');
