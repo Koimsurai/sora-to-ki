@@ -115,7 +115,7 @@ function injectMeta(html, meta) {
     <meta property="og:image" content="${fullImage}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="宙と木" />
+    <meta property="og:site_name" content="宙と木 · Koimsurai" />
     <meta property="og:locale" content="zh_TW" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="${fullUrl}" />
@@ -169,8 +169,9 @@ function injectMeta(html, meta) {
     .replace(/<meta\s+name="description"[^>]*>/g, '')
     .replace(/<meta\s+property="og:[^"]*"[^>]*>/g, '')
     .replace(/<meta\s+name="twitter:[^"]*"[^>]*>/g, '')
-    .replace(/<link\s+rel="canonical"[^>]*>/g, '')
-    .replace(/<script\s+type="application\/ld\+json">[\s\S]*?<\/script>/g, '');
+    .replace(/<link\s+rel="canonical"[^>]*>/g, '');
+  // 不再移除站級 JSON-LD：index.html 的 WebSite / Person schema 要留給爬蟲（品牌實體辨識）。
+  // 文章頁的 BlogPosting 由上方 metaTags 另外疊加注入，不衝突。
 
   // 注入新的 meta tags
   result = result.replace('</head>', `${metaTags}\n  </head>`);
@@ -338,7 +339,9 @@ app.get('/sitemap.xml', async (req, res) => {
 
     // 動態文章頁面
     for (const post of posts) {
-      const lastmod = (post.updated_at || post.created_at || '').split('T')[0] || today;
+      // DB 日期是 'YYYY-MM-DD HH:MM:SS'（空格、無 T），用 slice 取前 10 字才是合法的 sitemap lastmod；
+      // .split('T') 切不開空格格式，會把時間漏進 lastmod → GSC 報「日期無效」。
+      const lastmod = (post.updated_at || post.created_at || '').slice(0, 10) || today;
       xml += `  <url>
     <loc>${SITE_URL}/blog/${post.id}</loc>
     <lastmod>${lastmod}</lastmod>
@@ -469,7 +472,7 @@ app.get('*', async (req, res) => {
   if (isBot(ua)) {
     const pageMeta = {
       '/': {
-        title: '宙と木',
+        title: '宙と木 · Koimsurai',
         description: 'Koimsurai 的個人空間 — 一個工程師的閱讀筆記、作品紀錄與系統實驗。',
       },
       '/photos': {
