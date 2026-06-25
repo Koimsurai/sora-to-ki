@@ -1,10 +1,29 @@
 import React from 'react';
 import './SearchAndFilter.css';
 
-const SearchAndFilter = ({ 
-  searchTerm, 
-  setSearchTerm, 
-  selectedTag, 
+interface CategoryItem { category: string; post_count: number }
+interface TagObject { name: string; post_count?: number }
+type TagItem = string | TagObject;
+
+interface SearchAndFilterProps {
+  searchTerm: string;
+  setSearchTerm: (v: string) => void;
+  selectedTag: string;
+  setSelectedTag: (v: string) => void;
+  selectedCategory: string;
+  setSelectedCategory?: (v: string) => void;
+  sortBy?: string;
+  setSortBy?: (v: string) => void;
+  viewMode?: string;
+  setViewMode?: (v: string) => void;
+  allTags?: TagItem[];
+  allCategories?: CategoryItem[];
+}
+
+const SearchAndFilter = ({
+  searchTerm,
+  setSearchTerm,
+  selectedTag,
   setSelectedTag,
   selectedCategory,
   setSelectedCategory,
@@ -13,8 +32,8 @@ const SearchAndFilter = ({
   viewMode,
   setViewMode,
   allTags,
-  allCategories 
-}) => {
+  allCategories
+}: SearchAndFilterProps) => {
   return (
     <div className="search-filter-container">
       {/* Search input with modern design */}
@@ -32,7 +51,7 @@ const SearchAndFilter = ({
             className="modern-search-input"
           />
           {searchTerm && (
-            <button 
+            <button
               className="clear-search-btn"
               onClick={() => setSearchTerm('')}
             >
@@ -64,10 +83,10 @@ const SearchAndFilter = ({
             </svg>
             排序方式
           </label>
-          <select 
+          <select
             className="modern-select"
-            value={sortBy || 'newest'}
-            onChange={(e) => setSortBy && setSortBy(e.target.value)}
+            value={sortBy ?? 'newest'}
+            onChange={(e) => setSortBy?.(e.target.value)}
           >
             <option value="newest">最新發佈</option>
             <option value="oldest">最舊發佈</option>
@@ -88,8 +107,8 @@ const SearchAndFilter = ({
           </label>
           <div className="view-mode-buttons">
             <button
-              className={`view-mode-btn ${(viewMode || 'card') === 'card' ? 'active' : ''}`}
-              onClick={() => setViewMode && setViewMode('card')}
+              className={`view-mode-btn ${(viewMode ?? 'card') === 'card' ? 'active' : ''}`}
+              onClick={() => setViewMode?.('card')}
               title="卡片模式"
             >
               <svg viewBox="0 0 24 24" fill="none">
@@ -101,7 +120,7 @@ const SearchAndFilter = ({
             </button>
             <button
               className={`view-mode-btn ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode && setViewMode('list')}
+              onClick={() => setViewMode?.('list')}
               title="列表模式"
             >
               <svg viewBox="0 0 24 24" fill="none">
@@ -115,7 +134,7 @@ const SearchAndFilter = ({
             </button>
             <button
               className={`view-mode-btn ${viewMode === 'timeline' ? 'active' : ''}`}
-              onClick={() => setViewMode && setViewMode('timeline')}
+              onClick={() => setViewMode?.('timeline')}
               title="時間軸模式"
             >
               <svg viewBox="0 0 24 24" fill="none">
@@ -142,7 +161,7 @@ const SearchAndFilter = ({
           <div className="modern-tags-filter">
             <button
               className={`filter-tag ${selectedCategory === '' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory && setSelectedCategory('')}
+              onClick={() => setSelectedCategory?.('')}
             >
               <span className="tag-icon">📁</span>
               全部分類
@@ -151,7 +170,7 @@ const SearchAndFilter = ({
               <button
                 key={cat.category}
                 className={`filter-tag ${selectedCategory === cat.category ? 'active' : ''}`}
-                onClick={() => setSelectedCategory && setSelectedCategory(cat.category)}
+                onClick={() => setSelectedCategory?.(cat.category)}
               >
                 <span className="tag-icon">📂</span>
                 {cat.category}
@@ -180,8 +199,14 @@ const SearchAndFilter = ({
   );
 };
 
+interface TagFilterProps {
+  allTags?: TagItem[];
+  selectedTag: string;
+  setSelectedTag: (v: string) => void;
+}
+
 /** 摺疊式標籤篩選元件 */
-const TagFilter = ({ allTags, selectedTag, setSelectedTag }) => {
+const TagFilter = ({ allTags, selectedTag, setSelectedTag }: TagFilterProps) => {
   const [expanded, setExpanded] = React.useState(false);
   const maxShow = 10;
   const tagsToShow = expanded ? allTags : allTags?.slice(0, maxShow);
@@ -195,19 +220,23 @@ const TagFilter = ({ allTags, selectedTag, setSelectedTag }) => {
         <span className="tag-icon">🌟</span>
         全部標籤
       </button>
-      {tagsToShow && tagsToShow.map(tag => (
-        <button
-          key={typeof tag === 'object' ? tag.name : tag}
-          className={`filter-tag ${selectedTag === (typeof tag === 'object' ? tag.name : tag) ? 'active' : ''}`}
-          onClick={() => setSelectedTag(typeof tag === 'object' ? tag.name : tag)}
-        >
-          <span className="tag-icon">#</span>
-          {typeof tag === 'object' ? tag.name : tag}
-          {typeof tag === 'object' && tag.post_count && (
-            <span className="tag-count">({tag.post_count})</span>
-          )}
-        </button>
-      ))}
+      {tagsToShow?.map(tag => {
+        const name = typeof tag === 'object' ? tag.name : tag;
+        const count = typeof tag === 'object' ? tag.post_count : undefined;
+        return (
+          <button
+            key={name}
+            className={`filter-tag ${selectedTag === name ? 'active' : ''}`}
+            onClick={() => setSelectedTag(name)}
+          >
+            <span className="tag-icon">#</span>
+            {name}
+            {count && (
+              <span className="tag-count">({count})</span>
+            )}
+          </button>
+        );
+      })}
       {allTags && allTags.length > maxShow && (
         <button
           className="filter-tag expand-tag"

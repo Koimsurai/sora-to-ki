@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import './Newsletter.css';
 
@@ -9,7 +9,7 @@ const Newsletter = () => {
   const [status, setStatus] = useState(''); // 'success', 'error', 'loading'
   const [message, setMessage] = useState('');
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus('loading');
     setMessage('');
@@ -23,7 +23,7 @@ const Newsletter = () => {
         body: JSON.stringify({ email, name }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as { error?: string };
 
       if (response.ok) {
         setStatus('success');
@@ -32,7 +32,7 @@ const Newsletter = () => {
         setName('');
       } else {
         setStatus('error');
-        setMessage(data.error || t('newsletter.errorGeneric'));
+        setMessage(data.error ?? t('newsletter.errorGeneric'));
       }
     } catch (error) {
       setStatus('error');
@@ -56,7 +56,7 @@ const Newsletter = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="newsletter-form-v2">
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="newsletter-form-v2">
           <div className="form-group-v2">
             <input
               type="text"
@@ -67,7 +67,7 @@ const Newsletter = () => {
               disabled={status === 'loading'}
             />
           </div>
-          
+
           <div className="form-group-v2">
             <input
               type="email"
@@ -80,8 +80,8 @@ const Newsletter = () => {
             />
           </div>
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`newsletter-submit-v2 ${status}`}
             disabled={status === 'loading'}
           >

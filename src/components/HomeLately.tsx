@@ -4,12 +4,20 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import './HomeLately.css';
 
-const API = import.meta.env.VITE_API_URL || '/api';
+const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
+
+interface Post { id: number; title: string; category?: string; created_at: string }
+interface Thought { id: number; content: string; created_at: string }
+interface CommentItem { id: number; content: string; author: string; thought_id?: number; post_id?: number; post_title?: string }
+interface TimelineItem { id: number; title: string; created_at: string }
+interface Digest { posts: Post[]; thoughts: Thought[]; comments: CommentItem[]; timeline: TimelineItem[] }
+interface Quote { text: string; from?: string }
 
 /** 相對時間（30 天內），更久就顯示日期 */
-function timeAgo(iso, t) {
+function timeAgo(iso: string, t: TFunction) {
   const d = new Date(String(iso).replace(' ', 'T') + (String(iso).includes('Z') ? '' : 'Z'));
   const sec = Math.max(0, (Date.now() - d.getTime()) / 1000);
   if (sec < 3600) return t('home.lately.justNow');
@@ -19,14 +27,14 @@ function timeAgo(iso, t) {
 }
 
 /** 年度軌跡：把日期轉成 0~100% 位置 */
-function yearPct(iso) {
+function yearPct(iso: string) {
   const d = new Date(String(iso).replace(' ', 'T'));
   const start = new Date(d.getFullYear(), 0, 1);
   const end = new Date(d.getFullYear() + 1, 0, 1);
-  return ((d - start) / (end - start)) * 100;
+  return ((d.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100;
 }
 
-function OrbitTimeline({ timeline, t }) {
+function OrbitTimeline({ timeline, t }: { timeline: TimelineItem[]; t: TFunction }) {
   const now = new Date();
   const nowPct = yearPct(now.toISOString());
   const seasons = [
@@ -77,12 +85,12 @@ function OrbitTimeline({ timeline, t }) {
 
 export default function HomeLately() {
   const { t, i18n } = useTranslation();
-  const [digest, setDigest] = useState(null);
-  const [quote, setQuote] = useState(null);
+  const [digest, setDigest] = useState<Digest | null>(null);
+  const [quote, setQuote] = useState<Quote | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/home/digest`)
-      .then((r) => r.json())
+    void fetch(`${API}/home/digest`)
+      .then((r) => r.json() as Promise<Digest>)
       .then((d) => setDigest(d))
       .catch(() => setDigest({ posts: [], thoughts: [], comments: [], timeline: [] }));
   }, []);
@@ -97,16 +105,16 @@ export default function HomeLately() {
   }, [digest]);
 
   useEffect(() => {
-    fetch(`${API}/quote/daily?locale=${encodeURIComponent(i18n.resolvedLanguage || i18n.language)}`)
-      .then((r) => r.json())
+    void fetch(`${API}/quote/daily?locale=${encodeURIComponent(i18n.resolvedLanguage ?? i18n.language)}`)
+      .then((r) => r.json() as Promise<{ quote: Quote | null }>)
       .then((d) => setQuote(d.quote))
       .catch(() => setQuote(null));
   }, [i18n.resolvedLanguage, i18n.language]);
 
-  const posts = digest?.posts || [];
-  const thoughts = digest?.thoughts || [];
-  const comments = digest?.comments || [];
-  const timeline = digest?.timeline || [];
+  const posts = digest?.posts ?? [];
+  const thoughts = digest?.thoughts ?? [];
+  const comments = digest?.comments ?? [];
+  const timeline = digest?.timeline ?? [];
 
   return (
     <section className="home-section lately-v1">

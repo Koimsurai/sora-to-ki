@@ -1,9 +1,11 @@
+interface QuickFact { label: string; value: string }
+
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import './AboutMe.css';
 
 // Quick Facts label 是英文(不翻),value 隨語系變
-const QUICK_FACTS_BY_LANG = {
+const QUICK_FACTS_BY_LANG: Record<string, QuickFact[]> = {
   'zh-TW': [
     { label: 'Born', value: '2004 · 雲林' },
     { label: 'School', value: 'NTUST · 資管系 4 年級' },
@@ -41,7 +43,7 @@ const QUICK_FACTS_BY_LANG = {
   ],
 };
 
-const PARAGRAPHS_BY_LANG = {
+const PARAGRAPHS_BY_LANG: Record<string, string[]> = {
   'zh-TW': [
     '我是 Koimsurai，2004 年出生的雲林人。目前就讀國立台灣科技大學資訊管理系四年級，現於微星科技 (MSI) 擔任軟體工程實習生，並於部門內實質負責前端框架標準與底層架構設計。',
     '過去具備 C++ / Python / Golang 與 App 開發經驗。在微星任職期間，我主導導入 Tauri + Rust 現代化輕量架構，替換原有龐大系統；獨立建置跨環境的 CI/CD 自動化部署管線，並完成「雲地混合 (Cloud-Edge Hybrid)」的 AI 系統部署架構。具備從前端 UI/UX 到系統底層記憶體控管的全端落地能力，並能解決複雜的跨環境編譯與資安漏洞問題。',
@@ -76,7 +78,7 @@ const PARAGRAPHS_BY_LANG = {
 
 const AboutMe = () => {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const QUICK_FACTS = QUICK_FACTS_BY_LANG[lang] || QUICK_FACTS_BY_LANG['zh-TW'];
   const PARAGRAPHS = PARAGRAPHS_BY_LANG[lang] || PARAGRAPHS_BY_LANG['zh-TW'];
   return (

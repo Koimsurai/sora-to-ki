@@ -6,8 +6,33 @@ import photoMainImage from '../assets/Photo-main.webp';
 import SEOHead from './SEOHead';
 import './Portfolio.css';
 
+interface FeatText { category: string; status: string; title: string; desc: string; linkLabel: string }
+interface DictEntry {
+  pageTitle: string;
+  pageSub: string;
+  feat: FeatText;
+  titles: Record<number, string>;
+  descs: Record<number, string>;
+  viewSource: string;
+  viewAlbum: string;
+}
+interface SecondaryStatic {
+  id: number;
+  category: string;
+  videoUrl?: string;
+  imageUrl?: string;
+  glyph?: string;
+  link: string;
+  external: boolean;
+  secondaryLink?: string;
+  secondaryLabel?: string;
+  tags: string[];
+  linkKey?: 'viewSource' | 'viewAlbum';
+  linkLabel?: string;
+}
+
 // 翻譯字典：feature description + section labels (Repo 名稱英文不翻)
-const I18N = {
+const I18N: Record<string, DictEntry> = {
   'zh-TW': {
     pageTitle: '作品', pageSub: '做過的、正在做的——專題、工具與自架服務。',
     feat: { category: 'App Development · 專題', status: 'In Progress', title: 'VoltiCar — 碳權電動車 App', desc: '結合碳權概念、電動車充電資訊與遊戲化元素的 App，目標是用便捷與趣味互動鼓勵綠色能源行動。NTUST IM·IoV 專題系列，包含 Android client、Spring Boot API、Discord Bot 三個 repo。', linkLabel: '▶ 觀看介紹影片' },
@@ -56,7 +81,7 @@ const FEATURE_STATIC = {
   tags: ['Kotlin', 'Spring Boot', 'PostgreSQL', 'Carbon API'],
 };
 
-const SECONDARY_STATIC = [
+const SECONDARY_STATIC: SecondaryStatic[] = [
   { id: 2, category: 'Web Development', videoUrl: '/videos/Web_video.mkv', link: 'https://github.com/timo9378/web', external: true, tags: ['React', 'Vite', 'Canvas'], linkKey: 'viewSource' },
   { id: 3, category: 'Photography', imageUrl: photoMainImage, link: '/photos', external: false, tags: ['Lightroom', 'Streetscape', 'Portrait'], linkKey: 'viewAlbum' },
   { id: 4, category: 'Developer Tool', glyph: '⟁', link: 'https://github.com/timo9378/flow2code', external: true, tags: ['AST', 'Visual Programming', 'TypeScript'], linkKey: 'viewSource' },
@@ -67,8 +92,8 @@ const SECONDARY_STATIC = [
 ];
 
 /* 影片封面：拿掉原生控制列（chrome 很破壞排版），hover 進場才播、離開暫停 */
-const HoverVideo = ({ src }) => {
-  const ref = useRef(null);
+const HoverVideo = ({ src }: { src: string }) => {
+  const ref = useRef<HTMLVideoElement>(null);
   return (
     <video
       ref={ref}
@@ -77,13 +102,13 @@ const HoverVideo = ({ src }) => {
       loop
       playsInline
       preload="metadata"
-      onMouseEnter={() => ref.current?.play().catch(() => {})}
+      onMouseEnter={() => { void ref.current?.play().catch(() => { /* ignore autoplay block */ }); }}
       onMouseLeave={() => { ref.current?.pause(); }}
     />
   );
 };
 
-const ProjectLink = ({ item }) => {
+const ProjectLink = ({ item }: { item: { link?: string; external?: boolean; linkLabel?: string } }) => {
   if (!item.link) return null;
   if (item.external) {
     return (
@@ -102,14 +127,14 @@ const ProjectLink = ({ item }) => {
 
 const Portfolio = () => {
   const { i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const dict = I18N[lang] || I18N['zh-TW'];
   const FEATURE = { ...FEATURE_STATIC, category: dict.feat.category, status: dict.feat.status, title: dict.feat.title, description: dict.feat.desc, linkLabel: dict.feat.linkLabel };
   const SECONDARY = SECONDARY_STATIC.map((it) => ({
     ...it,
     title: dict.titles[it.id],
     description: dict.descs[it.id],
-    linkLabel: it.linkLabel || dict[it.linkKey],
+    linkLabel: it.linkLabel ?? (it.linkKey ? dict[it.linkKey] : ''),
   }));
   return (
   <div className="portfolio-page">
@@ -153,7 +178,7 @@ const Portfolio = () => {
         </div>
         <div className="portfolio-links">
           <ProjectLink item={FEATURE} />
-          {FEATURE.extras && FEATURE.extras.map((ex) => (
+          {FEATURE.extras.map((ex) => (
             <a
               key={ex.href}
               href={ex.href}
@@ -170,7 +195,7 @@ const Portfolio = () => {
 
     <div className="portfolio-secondary-grid">
       {SECONDARY.map((item, i) => {
-        const hasMedia = !!(item.videoUrl || item.imageUrl);
+        const hasMedia = !!(item.videoUrl ?? item.imageUrl);
         return (
         <motion.article
           key={item.id}
@@ -190,7 +215,7 @@ const Portfolio = () => {
             </div>
           ) : (
             <div className="portfolio-secondary-glyph" aria-hidden>
-              <span className="portfolio-glyph-tile">{item.glyph || '◇'}</span>
+              <span className="portfolio-glyph-tile">{item.glyph ?? '◇'}</span>
               <span className="portfolio-glyph-cat">{item.category}</span>
             </div>
           )}

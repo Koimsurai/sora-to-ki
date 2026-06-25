@@ -1,12 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Comments from './Comments';
 import './ModernCard.css';
 
+interface BlogPostCard {
+  id: number;
+  title: string;
+  summary?: string;
+  author?: string;
+  date?: string;
+  likes?: number;
+  tags?: string[];
+  allow_comments?: number | boolean;
+}
+
+interface CommentDialogProps {
+  postId: number | string;
+  postTitle: string;
+  allowComments?: boolean;
+  onClose: () => void;
+}
+
 /* ── Comment floating dialog ── */
-const CommentDialog = ({ postId, postTitle, allowComments = true, onClose }) => {
+const CommentDialog = ({ postId, postTitle, allowComments = true, onClose }: CommentDialogProps) => {
   useEffect(() => {
     const scrollY = window.scrollY;
     document.body.style.position = 'fixed';
@@ -14,7 +32,7 @@ const CommentDialog = ({ postId, postTitle, allowComments = true, onClose }) => 
     document.body.style.left = '0';
     document.body.style.right = '0';
     document.body.style.width = '100%';
-    const esc = (e) => { if (e.key === 'Escape') onClose(); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', esc);
     return () => {
       document.body.style.position = '';
@@ -68,30 +86,30 @@ const CommentDialog = ({ postId, postTitle, allowComments = true, onClose }) => 
   );
 };
 
-const ModernCard = ({ post, index }) => {
+const ModernCard = ({ post, index }: { post: BlogPostCard; index: number }) => {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes || 0);
+  const [likeCount, setLikeCount] = useState(post.likes ?? 0);
   const [showComments, setShowComments] = useState(false);
 
   useEffect(() => {
-    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') ?? '[]') as number[];
     if (likedPosts.includes(post.id)) {
       setLiked(true);
     }
   }, [post.id]);
 
-  const handleLike = async (e) => {
+  const handleLike = async (e: MouseEvent) => {
     e.stopPropagation();
     const newLikedState = !liked;
     try {
       const endpoint = newLikedState ? 'like' : 'unlike';
       const response = await fetch(`/api/posts/${post.id}/${endpoint}`, { method: 'POST' });
-      const data = await response.json();
+      const data = await response.json() as { likes: number };
       if (response.ok) {
         setLiked(newLikedState);
         setLikeCount(data.likes);
-        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') ?? '[]') as number[];
         if (newLikedState) {
           if (!likedPosts.includes(post.id)) localStorage.setItem('likedPosts', JSON.stringify([...likedPosts, post.id]));
         } else {
@@ -103,26 +121,29 @@ const ModernCard = ({ post, index }) => {
     }
   };
 
-  const handleComment = (e) => {
+  const handleComment = (e: MouseEvent) => {
     e.stopPropagation();
     setShowComments(true);
   };
 
-  const handleShare = async (e) => {
+  const handleShare = async (e: MouseEvent) => {
     e.stopPropagation();
     const url = `${window.location.origin}/blog/${post.id}`;
     if (navigator.share) {
-      try { await navigator.share({ title: post.title, text: post.summary || '', url }); } catch { /* cancelled */ }
+      try { await navigator.share({ title: post.title, text: post.summary ?? '', url }); } catch { /* cancelled */ }
     } else {
       try {
         await navigator.clipboard.writeText(url);
-        const btn = e.currentTarget;
-        const orig = btn.querySelector('span').textContent;
-        btn.querySelector('span').textContent = '已複製!';
-        setTimeout(() => { btn.querySelector('span').textContent = orig; }, 1500);
+        const btn = e.currentTarget as HTMLElement;
+        const span = btn.querySelector('span');
+        const orig = span?.textContent;
+        if (span) span.textContent = '已複製!';
+        setTimeout(() => { if (span) span.textContent = orig ?? ''; }, 1500);
       } catch { /* fallback */ }
     }
   };
+
+  const tags = post.tags ?? [];
 
   return (
     <div
@@ -135,7 +156,7 @@ const ModernCard = ({ post, index }) => {
         <div className="modern-card-shimmer"></div>
 
         {/* 可點擊導航區域 — 不含互動按鈕 */}
-        <div className="modern-card-link" onClick={() => navigate(`/blog/${post.id}`)}>
+        <div className="modern-card-link" onClick={() => { void navigate(`/blog/${post.id}`); }}>
           <div className="modern-card-header">
             <div className="author-section">
               <div className="author-avatar">
@@ -145,7 +166,7 @@ const ModernCard = ({ post, index }) => {
                 </span>
               </div>
               <div className="author-details">
-                <span className="author-name">{post.author || '匿名作者'}</span>
+                <span className="author-name">{post.author ?? '匿名作者'}</span>
                 <span className="post-timestamp">{post.date}</span>
               </div>
             </div>
@@ -156,15 +177,15 @@ const ModernCard = ({ post, index }) => {
             <p className="post-summary-modern">{post.summary}</p>
           </div>
 
-          {post.tags && post.tags.length > 0 && (
+          {tags.length > 0 && (
             <div className="modern-tags-container">
-              {post.tags.slice(0, 3).map((tag, tagIndex) => (
+              {tags.slice(0, 3).map((tag, tagIndex) => (
                 <span key={tag} className="modern-tag" style={{ animationDelay: `${tagIndex * 50}ms` }}>
                   #{tag}
                 </span>
               ))}
-              {post.tags.length > 3 && (
-                <span className="more-tags">+{post.tags.length - 3}</span>
+              {tags.length > 3 && (
+                <span className="more-tags">+{tags.length - 3}</span>
               )}
             </div>
           )}
@@ -173,7 +194,7 @@ const ModernCard = ({ post, index }) => {
         {/* 互動列 — 獨立於導航區域 */}
         <div className="modern-card-footer">
           <div className="interaction-buttons">
-            <button className={`interaction-btn like-btn ${liked ? 'liked' : ''}`} onClick={handleLike}>
+            <button className={`interaction-btn like-btn ${liked ? 'liked' : ''}`} onClick={(e) => { void handleLike(e); }}>
               <svg viewBox="0 0 24 24" fill={liked ? "currentColor" : "none"}>
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
@@ -185,7 +206,7 @@ const ModernCard = ({ post, index }) => {
               </svg>
               <span>留言</span>
             </button>
-            <button className="interaction-btn share-btn" onClick={handleShare}>
+            <button className="interaction-btn share-btn" onClick={(e) => { void handleShare(e); }}>
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                 <polyline points="16,6 12,2 8,6" />

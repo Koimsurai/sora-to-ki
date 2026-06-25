@@ -6,9 +6,30 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import './FavoritesEditor.css';
 
-const API = import.meta.env.VITE_API_URL || '/api';
+const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
-function StarPicker({ value, onChange }) {
+interface Favorite {
+  id: number;
+  poster?: string;
+  title: string;
+  year?: number;
+  rating: number;
+  quote?: string;
+}
+
+interface SearchResult {
+  tmdbId: number;
+  poster?: string;
+  title: string;
+  year?: number;
+}
+
+interface StarPickerProps {
+  value: number;
+  onChange: (n: number) => void;
+}
+
+function StarPicker({ value, onChange }: StarPickerProps) {
   return (
     <span className="fe-stars" role="radiogroup" aria-label="rating">
       {[1, 2, 3, 4, 5].map((n) => (
@@ -24,7 +45,13 @@ function StarPicker({ value, onChange }) {
   );
 }
 
-export default function FavoritesEditor({ favorites, onClose, onChanged }) {
+interface FavoritesEditorProps {
+  favorites: Favorite[];
+  onClose: () => void;
+  onChanged: () => void;
+}
+
+export default function FavoritesEditor({ favorites, onClose, onChanged }: FavoritesEditorProps) {
   const { t } = useTranslation();
   const { getToken } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -32,40 +59,42 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }) {
   // 新增區：TMDb 搜尋
   const [kind, setKind] = useState('film');
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
-  const debRef = useRef(null);
+  const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const authHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${getToken()}`,
+    Authorization: `Bearer ${getToken() ?? ''}`,
   }), [getToken]);
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); };
   }, [onClose]);
 
   // 搜尋（debounce 400ms）
   useEffect(() => {
     if (debRef.current) clearTimeout(debRef.current);
     if (!query.trim()) { setResults([]); return; }
-    debRef.current = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const r = await fetch(
-          `${API}/watch/tmdb-search?q=${encodeURIComponent(query)}&kind=${kind === 'film' ? 'movie' : 'tv'}`,
-          { headers: authHeaders() },
-        ).then((x) => x.json());
-        setResults(r.results || []);
-      } catch { setResults([]); }
-      setSearching(false);
+    debRef.current = setTimeout(() => {
+      void (async () => {
+        setSearching(true);
+        try {
+          const r = await fetch(
+            `${API}/watch/tmdb-search?q=${encodeURIComponent(query)}&kind=${kind === 'film' ? 'movie' : 'tv'}`,
+            { headers: authHeaders() },
+          ).then((x) => x.json()) as { results?: SearchResult[] };
+          setResults(r.results ?? []);
+        } catch { setResults([]); }
+        setSearching(false);
+      })();
     }, 400);
-    return () => debRef.current && clearTimeout(debRef.current);
+    return () => { if (debRef.current) clearTimeout(debRef.current); };
   }, [query, kind, authHeaders]);
 
-  const addFavorite = async (item) => {
+  const addFavorite = async (item: SearchResult) => {
     setBusy(true);
     try {
       await fetch(`${API}/watch/favorites`, {
@@ -78,14 +107,14 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }) {
     } finally { setBusy(false); }
   };
 
-  const patchFavorite = async (id, patch) => {
+  const patchFavorite = async (id: number, patch: Record<string, unknown>) => {
     await fetch(`${API}/watch/favorites/${id}`, {
       method: 'PUT', headers: authHeaders(), body: JSON.stringify(patch),
     });
     onChanged();
   };
 
-  const removeFavorite = async (id) => {
+  const removeFavorite = async (id: number) => {
     setBusy(true);
     try {
       await fetch(`${API}/watch/favorites/${id}`, { method: 'DELETE', headers: authHeaders() });
@@ -94,7 +123,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }) {
   };
 
   // 移動排序：跟相鄰項互換 sort_order
-  const move = async (idx, dir) => {
+  const move = async (idx: number, dir: number) => {
     const a = favorites[idx], b = favorites[idx + dir];
     if (!a || !b) return;
     setBusy(true);
@@ -126,17 +155,17 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }) {
                 <div className="fe-item-top">
                   <span className="fe-item-title">{f.title}{f.year ? ` · ${f.year}` : ''}</span>
                   <span className="fe-item-actions">
-                    <button disabled={i === 0 || busy} onClick={() => move(i, -1)} aria-label="up">↑</button>
-                    <button disabled={i === favorites.length - 1 || busy} onClick={() => move(i, 1)} aria-label="down">↓</button>
-                    <button className="fe-del" disabled={busy} onClick={() => removeFavorite(f.id)} aria-label="delete">🗑</button>
+                    <button disabled={i === 0 || busy} onClick={() => { void move(i, -1); }} aria-label="up">↑</button>
+                    <button disabled={i === favorites.length - 1 || busy} onClick={() => { void move(i, 1); }} aria-label="down">↓</button>
+                    <button className="fe-del" disabled={busy} onClick={() => { void removeFavorite(f.id); }} aria-label="delete">🗑</button>
                   </span>
                 </div>
-                <StarPicker value={f.rating} onChange={(n) => patchFavorite(f.id, { rating: n })} />
+                <StarPicker value={f.rating} onChange={(n) => { void patchFavorite(f.id, { rating: n }); }} />
                 <textarea
                   className="fe-quote"
                   defaultValue={f.quote}
                   placeholder={t('watch.favQuotePlaceholder')}
-                  onBlur={(e) => { if (e.target.value !== f.quote) patchFavorite(f.id, { quote: e.target.value }); }}
+                  onBlur={(e) => { if (e.target.value !== f.quote) void patchFavorite(f.id, { quote: e.target.value }); }}
                 />
               </div>
             </div>
@@ -162,13 +191,13 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }) {
             <ul className="fe-results">
               {results.map((r) => (
                 <li key={r.tmdbId}>
-                  <button className="fe-result" disabled={busy} onClick={() => addFavorite(r)}>
+                  <button className="fe-result" disabled={busy} onClick={() => { void addFavorite(r); }}>
                     {r.poster
                       ? <img src={r.poster} alt={r.title} loading="lazy" />
                       : <span className="fe-result-blank">—</span>}
                     <span className="fe-result-meta">
                       <span className="fe-result-title">{r.title}</span>
-                      <span className="fe-result-year">{r.year || ''}</span>
+                      <span className="fe-result-year">{r.year ?? ''}</span>
                     </span>
                     <span className="fe-result-add">＋</span>
                   </button>

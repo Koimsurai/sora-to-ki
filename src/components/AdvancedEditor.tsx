@@ -1,11 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import MDEditor from '@uiw/react-md-editor';
 import { motion, AnimatePresence } from 'framer-motion';
 import './AdvancedEditor.css';
 
+interface PostForm {
+  title: string;
+  content: string;
+  excerpt: string;
+  tags: string[];
+  status: string;
+}
+
+interface FetchedPost {
+  title: string;
+  content: string;
+  excerpt?: string;
+  tags?: string[];
+  status: string;
+}
+
 function AdvancedEditor() {
-  const [post, setPost] = useState({
+  const [post, setPost] = useState<PostForm>({
     title: '',
     content: '',
     excerpt: '',
@@ -23,13 +39,13 @@ function AdvancedEditor() {
     // 檢查登入狀態
     const token = localStorage.getItem('adminToken');
     if (!token) {
-      navigate('/admin/login');
+      void navigate('/admin/login');
       return;
     }
 
     // 如果是編輯模式，載入文章資料
     if (isEdit) {
-      fetchPost();
+      void fetchPost();
     }
   }, [id, isEdit, navigate]);
 
@@ -38,23 +54,23 @@ function AdvancedEditor() {
       const token = localStorage.getItem('adminToken');
       const response = await fetch(`/api/posts/${id}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token ?? ''}`
         }
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as FetchedPost;
         setPost({
           title: data.title,
           content: data.content,
-          excerpt: data.excerpt || '',
-          tags: data.tags || [],
+          excerpt: data.excerpt ?? '',
+          tags: data.tags ?? [],
           status: data.status
         });
         setTagInput(data.tags ? data.tags.join(', ') : '');
       } else if (response.status === 401) {
         localStorage.removeItem('adminToken');
-        navigate('/admin/login');
+        void navigate('/admin/login');
       } else {
         setError('無法載入文章資料');
       }
@@ -64,7 +80,7 @@ function AdvancedEditor() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -93,20 +109,20 @@ function AdvancedEditor() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token ?? ''}`
         },
         body: JSON.stringify(postData)
       });
 
       if (response.ok) {
         alert(isEdit ? '文章已更新！' : '文章已創建！');
-        navigate('/admin');
+        void navigate('/admin');
       } else if (response.status === 401) {
         localStorage.removeItem('adminToken');
-        navigate('/admin/login');
+        void navigate('/admin/login');
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || '儲存失敗');
+        const errorData = await response.json() as { message?: string };
+        setError(errorData.message ?? '儲存失敗');
       }
     } catch (error) {
       console.error('儲存文章失敗:', error);
@@ -119,7 +135,7 @@ function AdvancedEditor() {
   const handleSaveDraft = () => {
     setPost(prev => ({ ...prev, status: 'draft' }));
     setTimeout(() => {
-      document.querySelector('form').dispatchEvent(
+      document.querySelector('form')?.dispatchEvent(
         new Event('submit', { cancelable: true, bubbles: true })
       );
     }, 0);
@@ -128,7 +144,7 @@ function AdvancedEditor() {
   const handlePublish = () => {
     setPost(prev => ({ ...prev, status: 'published' }));
     setTimeout(() => {
-      document.querySelector('form').dispatchEvent(
+      document.querySelector('form')?.dispatchEvent(
         new Event('submit', { cancelable: true, bubbles: true })
       );
     }, 0);
@@ -136,7 +152,7 @@ function AdvancedEditor() {
 
   return (
     <div className="advanced-editor">
-      <motion.header 
+      <motion.header
         className="editor-header"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -149,7 +165,7 @@ function AdvancedEditor() {
         >
           {isEdit ? '編輯文章' : '創建新文章'}
         </motion.h1>
-        <motion.div 
+        <motion.div
           className="header-actions"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -158,7 +174,7 @@ function AdvancedEditor() {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => navigate('/admin')}
+            onClick={() => { void navigate('/admin'); }}
           >
             返回後台
           </button>
@@ -167,7 +183,7 @@ function AdvancedEditor() {
 
       <AnimatePresence>
         {error && (
-          <motion.div 
+          <motion.div
             className="error-message"
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -179,15 +195,15 @@ function AdvancedEditor() {
         )}
       </AnimatePresence>
 
-      <motion.form 
-        onSubmit={handleSubmit} 
+      <motion.form
+        onSubmit={(e) => { void handleSubmit(e); }}
         className="editor-form"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
       >
         <div className="editor-main-content">
-          <motion.div 
+          <motion.div
             className="form-row"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -207,7 +223,7 @@ function AdvancedEditor() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="form-group"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -217,7 +233,7 @@ function AdvancedEditor() {
             <div id="advanced-editor-wrapper" className="markdown-editor-container glass-container">
               <MDEditor
                 value={post.content}
-                onChange={(value) => setPost(prev => ({ ...prev, content: value || '' }))}
+                onChange={(value) => setPost(prev => ({ ...prev, content: value ?? '' }))}
                 preview="edit"
                 height={500}
                 data-color-mode="dark"
@@ -226,7 +242,7 @@ function AdvancedEditor() {
           </motion.div>
         </div>
 
-        <motion.div 
+        <motion.div
           className="editor-sidebar"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -234,8 +250,8 @@ function AdvancedEditor() {
         >
           <div className="sidebar-section glass-container">
             <label>文章設定</label>
-            
-            <motion.div 
+
+            <motion.div
               className="form-group"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -248,11 +264,11 @@ function AdvancedEditor() {
                 onChange={(e) => setPost(prev => ({ ...prev, excerpt: e.target.value }))}
                 disabled={isLoading}
                 placeholder="輸入文章摘要（留空將自動生成）..."
-                rows="3"
+                rows={3}
               />
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="form-group"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -269,7 +285,7 @@ function AdvancedEditor() {
               />
               <small className="form-hint">例如：JavaScript, React, 教學</small>
               {tagInput && (
-                <motion.div 
+                <motion.div
                   className="tags-preview"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -277,7 +293,7 @@ function AdvancedEditor() {
                 >
                   {tagInput.split(',').map((tag, index) => (
                     tag.trim() && (
-                      <motion.span 
+                      <motion.span
                         key={index}
                         className="tag-preview"
                         initial={{ opacity: 0, scale: 0.8 }}
@@ -293,15 +309,15 @@ function AdvancedEditor() {
             </motion.div>
           </div>
 
-          <motion.div 
+          <motion.div
             className="editor-actions glass-container"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 1.0 }}
           >
             <div className="status-info">
-              當前狀態: 
-              <motion.span 
+              當前狀態:
+              <motion.span
                 className={`status-badge ${post.status}`}
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
@@ -310,7 +326,7 @@ function AdvancedEditor() {
                 {post.status === 'published' ? '已發佈' : '草稿'}
               </motion.span>
             </div>
-            
+
             <div className="action-buttons">
               <motion.button
                 type="button"

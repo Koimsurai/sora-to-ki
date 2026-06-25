@@ -4,11 +4,17 @@ import { FaUniversity, FaGuitar, FaCamera } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import './SchoolClubs.css';
 
+interface ClubEntry {
+  name: string;
+  role: string;
+  activities: string[];
+}
+
 // 圖示 + 期間穩定,name/role/activities 隨語系
 const CLUB_ICONS = [FaUniversity, FaGuitar, FaCamera];
 const CLUB_PERIODS = ['2022 — 2023', '2023 — 2024', '2023 — 2024'];
 
-const CLUBS_BY_LANG = {
+const CLUBS_BY_LANG: Record<string, ClubEntry[]> = {
   'zh-TW': [
     { name: '111 屆資管系學會', role: '會長', activities: ['宿營 活動副組長', '迎新茶會 總召、主持人', '十三系聯合聖誕夜店趴 副召', '系座談會 總召、主持人'] },
     { name: '112 屆絃韻吉他社', role: '文書', activities: ['吉他太美（迎新） 總召', '詐騙吉團（期初） 攝影', '吉拜郎（民歌之夜） 副召、攝影', '七校聯展 協辦', '吉卜力（社友會） 場佈、主持人', '吉良吉影（期末） 公關組長、攝影組長', '吉惡世代（期初下） 副召、主持人', '金絃獎 文宣、內招組長'] },
@@ -38,11 +44,11 @@ const CLUBS_BY_LANG = {
 
 function SchoolClubs() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const CLUBS = (CLUBS_BY_LANG[lang] || CLUBS_BY_LANG['zh-TW']).map((c, i) => ({
     ...c, icon: CLUB_ICONS[i], period: CLUB_PERIODS[i],
   }));
-  const [openIndex, setOpenIndex] = useState(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <section id="school-clubs" className="home-section clubs-v2">

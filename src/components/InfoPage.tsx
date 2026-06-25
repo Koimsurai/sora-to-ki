@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaArrowUp } from 'react-icons/fa';
@@ -7,6 +7,19 @@ import SignatureSVG from './SignatureSVG';
 import Comments from './Comments';
 import './BlogPost.css';     // 拿 BlogPost 的 dim overlay / post-content-wrapper / TOC 樣式
 import './InfoPage.css';
+
+interface PagerLink { to: string; title: string }
+interface Heading { id: string; text: string; level: number }
+
+interface InfoPageProps {
+  title: string;
+  subtitle?: string;
+  slug?: string;           // 用來當 Comments 的 postId
+  prev?: PagerLink | null; // { to, title } | null
+  next?: PagerLink | null; // { to, title } | null
+  closingNote?: ReactNode; // 末尾的小字（例：本站已運行 X 天）
+  children?: ReactNode;
+}
 
 /**
  * 通用「資訊型頁面」layout：
@@ -22,15 +35,15 @@ import './InfoPage.css';
 function InfoPage({
   title,
   subtitle,
-  slug,           // 用來當 Comments 的 postId
-  prev,           // { to, title } | null
-  next,           // { to, title } | null
-  closingNote,    // 末尾的小字（例：本站已運行 X 天）
+  slug,
+  prev,
+  next,
+  closingNote,
   children,
-}) {
-  const contentRef = useRef(null);
-  const tocRef = useRef(null);
-  const [headings, setHeadings] = useState([]);
+}: InfoPageProps) {
+  const contentRef = useRef<HTMLElement>(null);
+  const tocRef = useRef<HTMLElement>(null);
+  const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeId, setActiveId] = useState('');
   const [progress, setProgress] = useState(0);
 
@@ -40,7 +53,7 @@ function InfoPage({
     const els = contentRef.current.querySelectorAll('h2[id], h3[id]');
     const list = Array.from(els).map((el) => ({
       id: el.id,
-      text: el.textContent || '',
+      text: el.textContent ?? '',
       level: el.tagName === 'H2' ? 2 : 3,
     }));
     setHeadings(list);
@@ -67,10 +80,10 @@ function InfoPage({
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); };
   }, [headings]);
 
-  const scrollToHeading = useCallback((id) => {
+  const scrollToHeading = useCallback((id: string) => {
     setTimeout(() => {
       const el = document.getElementById(id);
       if (!el) return;
@@ -115,7 +128,7 @@ function InfoPage({
           </article>
 
           {/* prev / next 「回顧一下 / 繼續瞭解」 */}
-          {(prev || next) && (
+          {(prev ?? next) && (
             <nav className="info-page-pager" aria-label="頁面導覽">
               <div className="info-page-pager-side">
                 {prev && (

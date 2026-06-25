@@ -11,12 +11,17 @@ const PHASE = {
   error: 'error',
 };
 
+interface Subscriber {
+  email?: string;
+  status?: string;
+}
+
 function Unsubscribe() {
   const { t } = useTranslation();
   const [params] = useSearchParams();
   const token = params.get('token');
   const [phase, setPhase] = useState(PHASE.loading);
-  const [subscriber, setSubscriber] = useState(null);
+  const [subscriber, setSubscriber] = useState<Subscriber | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -26,14 +31,14 @@ function Unsubscribe() {
       return;
     }
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
         const res = await fetch(`/api/newsletter/by-token/${encodeURIComponent(token)}`);
-        const data = await res.json();
+        const data = await res.json() as Subscriber & { error?: string };
         if (cancelled) return;
         if (!res.ok) {
           setPhase(PHASE.error);
-          setError(data.error || t('unsubscribe.invalidLink'));
+          setError(data.error ?? t('unsubscribe.invalidLink'));
           return;
         }
         setSubscriber(data);
@@ -42,7 +47,7 @@ function Unsubscribe() {
       } catch (e) {
         if (cancelled) return;
         setPhase(PHASE.error);
-        setError(e.message || t('unsubscribe.noServer'));
+        setError(e instanceof Error ? e.message : t('unsubscribe.noServer'));
       }
     })();
     return () => { cancelled = true; };
@@ -57,13 +62,13 @@ function Unsubscribe() {
         body: JSON.stringify({ token }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || t('unsubscribe.unsubscribeFailed'));
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error ?? t('unsubscribe.unsubscribeFailed'));
       }
       setPhase(PHASE.done);
     } catch (e) {
       setPhase(PHASE.error);
-      setError(e.message || t('unsubscribe.unsubscribeFailed'));
+      setError(e instanceof Error ? e.message : t('unsubscribe.unsubscribeFailed'));
     }
   };
 
@@ -86,7 +91,7 @@ function Unsubscribe() {
               <button
                 type="button"
                 className="unsubscribe-btn unsubscribe-btn--danger"
-                onClick={handleConfirm}
+                onClick={() => { void handleConfirm(); }}
               >
                 {t('unsubscribe.btnConfirm')}
               </button>

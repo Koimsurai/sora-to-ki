@@ -1,3 +1,6 @@
+interface ExpGroup { heading: string; items: string[] }
+interface Experience { title: string; role: string; groups?: ExpGroup[]; bullets?: string[] }
+
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import './WorkExperience.css';
@@ -10,7 +13,7 @@ const TAGS = [
   ['Kotlin', 'Android', 'Premiere Pro'],
 ];
 
-const EXPERIENCES_BY_LANG = {
+const EXPERIENCES_BY_LANG: Record<string, Experience[]> = {
   'zh-TW': [
     { title: '微星科技股份有限公司', role: '軟體工程師', groups: [
       { heading: '前端架構與標準化', items: ['主導導入 Monorepo 架構：用 Turborepo 整合內部多個前端專案，解決跨專案代碼共用與版控痛點', '建立 ESLint / Prettier / TypeScript 嚴格規則，提升團隊代碼品質', '封裝共用 UI Library 與 Utility Libraries，提供其他團隊（如 IT Team）復用', '撰寫標準化開發文件與 README，協助團隊成員上手新架構'] },
@@ -65,7 +68,7 @@ const EXPERIENCES_BY_LANG = {
 
 const WorkExperience = () => {
   const { i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const list = (EXPERIENCES_BY_LANG[lang] || EXPERIENCES_BY_LANG['zh-TW']);
   const EXPERIENCES = list.map((e, i) => ({ ...e, period: PERIODS[i], tags: TAGS[i] }));
   return (

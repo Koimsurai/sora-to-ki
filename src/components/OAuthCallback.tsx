@@ -14,7 +14,7 @@ function OAuthCallback() {
   useEffect(() => {
     const code = searchParams.get('code');
     const state = searchParams.get('state'); // provider name
-    const provider = state || 'google'; // fallback
+    const provider = state ?? 'google'; // fallback
 
     if (!code) {
       setError(t('oauth.errorNoCode'));
@@ -23,14 +23,14 @@ function OAuthCallback() {
 
     const redirectUri = `${window.location.origin}/auth/callback`;
 
-    loginWithOAuth(provider, code, redirectUri)
+    void loginWithOAuth(provider, code, redirectUri)
       .then(() => {
         // 回到之前的頁面
-        const returnTo = sessionStorage.getItem('oauth_return_to') || '/blog';
+        const returnTo = sessionStorage.getItem('oauth_return_to') ?? '/blog';
         sessionStorage.removeItem('oauth_return_to');
-        navigate(returnTo, { replace: true });
+        void navigate(returnTo, { replace: true });
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error('OAuth login error:', err);
         setError(t('oauth.errorGeneric'));
       });
@@ -41,7 +41,7 @@ function OAuthCallback() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', color: '#fff' }}>
         <div style={{ textAlign: 'center' }}>
           <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>❌ {error}</p>
-          <button onClick={() => navigate('/blog')} style={{ padding: '8px 20px', borderRadius: '8px', background: 'rgba(127,90,240,0.2)', border: '1px solid rgba(127,90,240,0.4)', color: '#c4b5fd', cursor: 'pointer' }}>
+          <button onClick={() => { void navigate('/blog'); }} style={{ padding: '8px 20px', borderRadius: '8px', background: 'rgba(127,90,240,0.2)', border: '1px solid rgba(127,90,240,0.4)', color: '#c4b5fd', cursor: 'pointer' }}>
 {t('nav.notes')}
           </button>
         </div>

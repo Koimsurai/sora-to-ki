@@ -24,10 +24,13 @@ import {
   IconWebsocket, IconPlaywright, IconJson, IconDns, IconCdn,
 } from './BrandIcons';
 import './Expertise.css';
+import type { ComponentType, CSSProperties } from 'react';
+
+type IconComp = ComponentType<{ className?: string; style?: CSSProperties }>;
 
 // Each entry: [Icon, brandColor]. Color preserved per react-icons convention
 // so the marquee looks like a constellation of brand chips, not monochrome.
-const ICON_MAP = {
+const ICON_MAP: Record<string, [IconComp, string]> = {
   'Next.js':         [SiNextdotjs,     '#ffffff'],
   'React':           [SiReact,         '#61DAFB'],
   'TypeScript':      [SiTypescript,    '#3178C6'],
@@ -132,7 +135,7 @@ const ICON_MAP = {
 };
 
 // 中文名稱 per locale。label 是英文鍵,items 是技術名（不翻）。
-const NAMES_BY_LANG = {
+const NAMES_BY_LANG: Record<string, Record<string, string>> = {
   'zh-TW': { Frontend: '前端開發', Backend: '後端開發', Mobile: '行動開發', DevOps: '部署運維', Design: '設計多媒體', Data: '資料儲存', Network: '網路通訊', Productivity: '生產力', 'AI Tools': 'AI 開發', Teaching: '教學工具' },
   'zh-CN': { Frontend: '前端开发', Backend: '后端开发', Mobile: '移动开发', DevOps: '部署运维', Design: '设计多媒体', Data: '数据存储', Network: '网络通讯', Productivity: '生产力', 'AI Tools': 'AI 开发', Teaching: '教学工具' },
   en:      { Frontend: 'Frontend', Backend: 'Backend', Mobile: 'Mobile', DevOps: 'DevOps', Design: 'Design', Data: 'Data', Network: 'Network', Productivity: 'Productivity', 'AI Tools': 'AI Tools', Teaching: 'Teaching' },
@@ -140,7 +143,7 @@ const NAMES_BY_LANG = {
   ko:      { Frontend: '프런트엔드', Backend: '백엔드', Mobile: '모바일', DevOps: '데브옵스', Design: '디자인 · 미디어', Data: '데이터 저장', Network: '네트워크', Productivity: '생산성', 'AI Tools': 'AI 개발', Teaching: '교육 도구' },
 };
 
-const HERO_BY_LANG = {
+const HERO_BY_LANG: Record<string, { line1: string; line2: string }> = {
   'zh-TW': { line1: '從前端到部署、從設計到教學。', line2: '每一層都能自己接起來。' },
   'zh-CN': { line1: '从前端到部署、从设计到教学。', line2: '每一层都能自己接起来。' },
   en:      { line1: 'From frontend to deploy, from design to teaching.', line2: 'Every layer, I can wire it myself.' },
@@ -148,7 +151,7 @@ const HERO_BY_LANG = {
   ko:      { line1: '프런트엔드부터 배포까지, 디자인부터 교육까지.', line2: '모든 레이어를 직접 연결할 수 있어요.' },
 };
 
-const CATEGORIES_BASE = [
+const CATEGORIES_BASE: { label: string; items: string[] }[] = [
   { label: 'Frontend',     items: ['Next.js', 'React', 'TypeScript', 'JavaScript', 'Vite', 'Framer Motion', 'Three.js', 'WebGL', 'Tauri', 'PWA', 'Tailwind CSS', 'Bootstrap', 'HTML5', 'CSS3'] },
   { label: 'Backend',      items: ['Rust', 'Express', 'Node.js', 'ASP.NET', '.NET 8', 'Spring Boot', 'FastAPI', 'Pydantic', 'Jinja2', 'discord.py', 'Go', 'Java', 'Python', 'C++', 'C'] },
   { label: 'Mobile',       items: ['Kotlin', 'Android', 'Jetpack Compose', 'Flutter', 'Dart'] },
@@ -165,7 +168,7 @@ const CATEGORIES = CATEGORIES_BASE; // 元件 render 時用 i18n 動態接 name
 
 const TOTAL = CATEGORIES.reduce((sum, c) => sum + c.items.length, 0);
 
-const SkillIcon = ({ name }) => {
+const SkillIcon = ({ name }: { name: string }) => {
   const entry = ICON_MAP[name];
   if (!entry) return null;
   const [Icon, color] = entry;
@@ -180,7 +183,7 @@ const SkillIcon = ({ name }) => {
 // the loop doesn't visibly repeat the same icons within the viewport.
 const MIN_FOR_MARQUEE = 7;
 
-const MarqueeRow = ({ items, reverse, duration }) => (
+const MarqueeRow = ({ items, reverse, duration }: { items: string[]; reverse?: boolean; duration: number }) => (
   <div className="expertise-marquee-wrap">
     <div
       className="expertise-marquee-track"
@@ -196,7 +199,7 @@ const MarqueeRow = ({ items, reverse, duration }) => (
   </div>
 );
 
-const StaticRow = ({ items }) => (
+const StaticRow = ({ items }: { items: string[] }) => (
   <div className="expertise-static-row">
     {items.map((item) => (
       <SkillIcon key={item} name={item} />
@@ -206,7 +209,7 @@ const StaticRow = ({ items }) => (
 
 function Expertise() {
   const { i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const names = NAMES_BY_LANG[lang] || NAMES_BY_LANG['zh-TW'];
   const hero = HERO_BY_LANG[lang] || HERO_BY_LANG['zh-TW'];
   return (

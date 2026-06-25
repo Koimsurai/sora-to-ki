@@ -11,7 +11,7 @@ import SchoolClubs from './SchoolClubs';
 import JourneyTimeline from './JourneyTimeline';
 import './AboutPage.css';
 
-const SEO = {
+const SEO: Record<string, { title: string; desc: string }> = {
   'zh-TW': { title: '關於我', desc: 'Koimsurai — 全端工程師。技能、經歷、社團與成長軌跡。' },
   'zh-CN': { title: '关于我', desc: 'Koimsurai — 全栈工程师。技能、经历、社团与成长轨迹。' },
   en: { title: 'About', desc: 'Koimsurai — full-stack engineer. Skills, experience, communities and journey.' },
@@ -21,7 +21,7 @@ const SEO = {
 
 function AboutPage() {
   const { i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const seo = SEO[lang] || SEO['zh-TW'];
   const { hash } = useLocation();
 
