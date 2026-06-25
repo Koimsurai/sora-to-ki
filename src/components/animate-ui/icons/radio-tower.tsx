@@ -1,11 +1,11 @@
 'use client';;
 import { motion } from 'framer-motion';
 
-import { getVariants, useAnimateIconContext, IconWrapper } from '@/components/animate-ui/icons/icon';
+import { getVariants, useAnimateIconContext, IconWrapper, type AnimateIconAnimation, type AnimateIconAnimations, type IconComponentProps, type IconProps } from '@/components/animate-ui/icons/icon';
 
-const animations = {
+const animations: AnimateIconAnimations = {
   default: (() => {
-    const animation = {};
+    const animation: AnimateIconAnimation = {};
 
     for (let i = 1; i <= 2; i++) {
       animation[`path${i}`] = {
@@ -42,7 +42,7 @@ const animations = {
 function IconComponent({
   size,
   ...props
-}) {
+}: IconComponentProps) {
   const { controls } = useAnimateIconContext();
   const variants = getVariants(animations);
 
@@ -99,7 +99,7 @@ function IconComponent({
   );
 }
 
-function RadioTower(props) {
+function RadioTower(props: IconProps) {
   return <IconWrapper icon={IconComponent} {...props} />;
 }
 

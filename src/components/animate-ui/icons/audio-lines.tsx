@@ -1,9 +1,9 @@
 'use client';;
 import { motion } from 'framer-motion';
 
-import { getVariants, useAnimateIconContext, IconWrapper } from '@/components/animate-ui/icons/icon';
+import { getVariants, useAnimateIconContext, IconWrapper, type AnimateIconAnimations, type IconComponentProps, type IconProps } from '@/components/animate-ui/icons/icon';
 
-const animations = {
+const animations: AnimateIconAnimations = {
   default: {
     line1: {
       initial: {
@@ -106,7 +106,7 @@ const animations = {
 function IconComponent({
   size,
   ...props
-}) {
+}: IconComponentProps) {
   const { controls } = useAnimateIconContext();
   const variants = getVariants(animations);
 
@@ -174,7 +174,7 @@ function IconComponent({
   );
 }
 
-function AudioLines(props) {
+function AudioLines(props: IconProps) {
   return <IconWrapper icon={IconComponent} {...props} />;
 }
 

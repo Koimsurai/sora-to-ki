@@ -4,6 +4,14 @@ import { DayPicker } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
+function CalendarChevron({ orientation }: { orientation?: "up" | "down" | "left" | "right" }) {
+  return orientation === "left" ? (
+    <ChevronLeft className="h-4 w-4" />
+  ) : (
+    <ChevronRight className="h-4 w-4" />
+  )
+}
+
 function Calendar({
   className,
   classNames,
@@ -50,12 +58,7 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        Chevron: ({ orientation }) =>
-          orientation === "left" ? (
-            <ChevronLeft className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          ),
+        Chevron: CalendarChevron,
       }}
       {...props}
     />

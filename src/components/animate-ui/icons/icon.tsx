@@ -1,12 +1,59 @@
-'use client';;
+'use client';
 import * as React from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import { motion, useAnimation, type Variants, type HTMLMotionProps } from 'framer-motion';
 
 import { cn } from '@/lib/utils';
-import { useIsInView } from '@/hooks/use-is-in-view';
+import { useIsInView, type UseIsInViewOptions } from '@/hooks/use-is-in-view';
 import { Slot } from '@/components/animate-ui/primitives/animate/slot';
 
-const staticAnimations = {
+type MotionSvgProps = React.ComponentProps<typeof motion.svg>;
+type AnimationControls = ReturnType<typeof useAnimation>;
+
+// 一個動畫集：以「元素 key（circle/line1…）」對應到 framer Variants。
+export type AnimateIconAnimation = Record<string, Variants>;
+// 一個圖示的所有動畫：以「動畫名（default/path…）」對應到動畫集。
+export type AnimateIconAnimations = Record<string, AnimateIconAnimation>;
+
+export interface AnimateIconProps {
+  asChild?: boolean;
+  animate?: boolean | string;
+  animateOnHover?: boolean | string;
+  animateOnTap?: boolean | string;
+  animateOnView?: boolean | string;
+  animateOnViewMargin?: UseIsInViewOptions['inViewMargin'];
+  animateOnViewOnce?: boolean;
+  animation?: string;
+  loop?: boolean;
+  loopDelay?: number;
+  initialOnAnimateEnd?: boolean;
+  completeOnStop?: boolean;
+  persistOnAnimateEnd?: boolean;
+  delay?: number;
+  children?: React.ReactNode;
+}
+
+// 單一圖示對外的 props（會被 IconWrapper 拆解）。motion 自己的 `animate` 與旗標 animate 衝突，故 Omit；
+// className 在 motion 是 string|MotionValue，這裡收斂成 string 方便傳給 cn()。
+export type IconProps = AnimateIconProps & { size?: number } &
+  Omit<MotionSvgProps, 'animate' | 'children' | 'className'> & { className?: string };
+
+// 圖示本體（motion.svg 包裝）收到的 props——IconWrapper 已拆掉所有旗標。
+export type IconComponentProps = { size?: number } & MotionSvgProps;
+
+interface AnimateIconContextValue {
+  controls: AnimationControls | undefined;
+  animation: string;
+  loop?: boolean;
+  loopDelay?: number;
+  active?: boolean;
+  animate?: boolean | string;
+  initialOnAnimateEnd?: boolean;
+  completeOnStop?: boolean;
+  persistOnAnimateEnd?: boolean;
+  delay?: number;
+}
+
+const staticAnimations: Record<string, Variants> = {
   path: {
     initial: { pathLength: 1 },
 
@@ -32,9 +79,9 @@ const staticAnimations = {
   }
 };
 
-const AnimateIconContext = React.createContext(null);
+const AnimateIconContext = React.createContext<AnimateIconContextValue | null>(null);
 
-function useAnimateIconContext() {
+function useAnimateIconContext(): AnimateIconContextValue {
   const context = React.useContext(AnimateIconContext);
   if (!context)
     return {
@@ -52,8 +99,18 @@ function useAnimateIconContext() {
   return context;
 }
 
-function composeEventHandlers(theirs, ours) {
-  return (event) => {
+interface ChildEventProps {
+  onMouseEnter?: React.MouseEventHandler;
+  onMouseLeave?: React.MouseEventHandler;
+  onPointerDown?: React.PointerEventHandler;
+  onPointerUp?: React.PointerEventHandler;
+}
+
+function composeEventHandlers<E>(
+  theirs: ((event: E) => void) | undefined,
+  ours: ((event: E) => void) | undefined,
+) {
+  return (event: E) => {
     theirs?.(event);
     ours?.(event);
   };
@@ -76,7 +133,7 @@ function AnimateIcon({
   delay = 0,
   children,
   ...props
-}) {
+}: AnimateIconProps & Omit<HTMLMotionProps<'span'>, 'animate' | 'children'>) {
   const controls = useAnimation();
 
   const [localAnimate, setLocalAnimate] = React.useState(() => {
@@ -86,11 +143,11 @@ function AnimateIcon({
   const [currentAnimation, setCurrentAnimation] = React.useState(typeof animate === 'string' ? animate : animation);
   const [status, setStatus] = React.useState('initial');
 
-  const delayRef = React.useRef(null);
-  const loopDelayRef = React.useRef(null);
+  const delayRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loopDelayRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAnimateInProgressRef = React.useRef(false);
-  const animateEndPromiseRef = React.useRef(null);
-  const resolveAnimateEndRef = React.useRef(null);
+  const animateEndPromiseRef = React.useRef<Promise<void> | null>(null);
+  const resolveAnimateEndRef = React.useRef<(() => void) | null>(null);
   const activeRef = React.useRef(localAnimate);
 
   const runGenRef = React.useRef(0);
@@ -100,7 +157,7 @@ function AnimateIcon({
     runGenRef.current++;
   }, []);
 
-  const startAnimation = React.useCallback((trigger) => {
+  const startAnimation = React.useCallback((trigger: boolean | string) => {
     const next = typeof trigger === 'string' ? trigger : animation;
     bumpGeneration();
     if (delayRef.current) {
@@ -150,14 +207,14 @@ function AnimateIcon({
     };
   }, []);
 
-  const viewOuterRef = React.useRef(null);
-  const { ref: inViewRef, isInView } = useIsInView(viewOuterRef, {
+  const viewOuterRef = React.useRef<HTMLSpanElement>(null);
+  const { ref: inViewRef, isInView } = useIsInView<HTMLSpanElement>(viewOuterRef, {
     inView: !!animateOnView,
     inViewOnce: animateOnViewOnce,
     inViewMargin: animateOnViewMargin,
   });
 
-  const startAnim = React.useCallback(async (anim, method = 'start') => {
+  const startAnim = React.useCallback(async (anim: string, method: 'start' | 'set' = 'start') => {
     try {
       await controls[method](anim);
       setStatus(anim);
@@ -213,7 +270,7 @@ function AnimateIcon({
       }
 
       isAnimateInProgressRef.current = true;
-      animateEndPromiseRef.current = new Promise((resolve) => {
+      animateEndPromiseRef.current = new Promise<void>((resolve) => {
         resolveAnimateEndRef.current = resolve;
       });
 
@@ -252,7 +309,7 @@ function AnimateIcon({
 
       if (loop) {
         if (loopDelay > 0) {
-          await new Promise((resolve) => {
+          await new Promise<void>((resolve) => {
             loopDelayRef.current = setTimeout(() => {
               loopDelayRef.current = null;
               resolve();
@@ -299,7 +356,7 @@ function AnimateIcon({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localAnimate, controls]);
 
-  const childProps = (React.isValidElement(children) ? (children).props : {});
+  const childProps: ChildEventProps = React.isValidElement<ChildEventProps>(children) ? children.props : {};
 
   const handleMouseEnter = composeEventHandlers(childProps.onMouseEnter, () => {
     if (animateOnHover) startAnimation(animateOnHover);
@@ -325,7 +382,7 @@ function AnimateIcon({
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       {...props}>
-      {children}
+      {children as React.ReactElement<Record<string, unknown> & { ref?: React.Ref<unknown> }>}
     </Slot>
   ) : (
     <motion.span
@@ -360,6 +417,10 @@ function AnimateIcon({
 const pathClassName =
   "[&_[stroke-dasharray='1px_1px']]:![stroke-dasharray:1px_0px]";
 
+type IconWrapperProps = IconProps & {
+  icon: React.ComponentType<IconComponentProps>;
+};
+
 function IconWrapper(
   {
     size = 28,
@@ -379,7 +440,7 @@ function IconWrapper(
     completeOnStop,
     className,
     ...props
-  }
+  }: IconWrapperProps
 ) {
   const context = React.useContext(AnimateIconContext);
 
@@ -511,11 +572,12 @@ function IconWrapper(
   );
 }
 
-function getVariants(animations) {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+function getVariants(animations: AnimateIconAnimations): AnimateIconAnimation {
+  // animate-ui 既有設計：getVariants 是 render 期 helper，刻意在其中讀 context（等同 hook）。
+  // eslint-disable-next-line react-hooks/rules-of-hooks, @eslint-react/rules-of-hooks
   const { animation: animationType } = useAnimateIconContext();
 
-  let result;
+  let result: AnimateIconAnimation;
 
   if (animationType in staticAnimations) {
     const variant = staticAnimations[animationType];
@@ -529,7 +591,7 @@ function getVariants(animations) {
       result[key] = variant;
     }
   } else {
-    result = (animations[animationType]) ?? animations.default;
+    result = animations[animationType] ?? animations.default;
   }
 
   return result;
