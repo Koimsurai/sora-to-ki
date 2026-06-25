@@ -1,7 +1,12 @@
+interface YearLabel { NOW: string; FUTURE: string }
+interface JourneyUIText { title: string; subtitle: string; expand: string; collapse: string; endingTitle: string; endingText: string }
+interface MilestoneStatic { id: number; year: string; icon: string; color: string; tags: string[] }
+interface MilestoneLang { title: string; subtitle: string; description: string; extraTags: string[] }
+
 // 成長軌跡資料 — 從舊 /journey 頁搬過來（頁面已汰汰、併入 /about）。
 // icon/color/tags 穩定；title/subtitle/description 隨語系。
 
-const YEAR_LABELS = {
+const YEAR_LABELS: Record<string, YearLabel> = {
   'zh-TW': { NOW: '現在', FUTURE: '未來' },
   'zh-CN': { NOW: '现在', FUTURE: '未来' },
   en:      { NOW: 'Now', FUTURE: 'Future' },
@@ -9,7 +14,7 @@ const YEAR_LABELS = {
   ko:      { NOW: '지금', FUTURE: '미래' },
 };
 
-const JOURNEY_UI = {
+const JOURNEY_UI: Record<string, JourneyUIText> = {
   'zh-TW': {
     title: '我的成長軌跡',
     subtitle: '從第一行代碼到星辰大海，記錄每一個重要時刻',
@@ -52,7 +57,7 @@ const JOURNEY_UI = {
   },
 };
 
-const MILESTONE_STATIC = [
+const MILESTONE_STATIC: MilestoneStatic[] = [
   { id: 1, year: '2004',      icon: '🌟', color: '#c084fc', tags: ['Full-Stack', 'Photography', 'Design'] },
   { id: 2, year: '2019-2021', icon: '🍱', color: '#4ade80', tags: [] },
   { id: 3, year: '2022-2023', icon: '👥', color: '#60a5fa', tags: ['Python', 'Golang', 'Java'] },
@@ -64,7 +69,7 @@ const MILESTONE_STATIC = [
   { id: 9, year: 'FUTURE',    icon: '🚀', color: '#ec4899', tags: [] },
 ];
 
-const MILESTONES_BY_LANG = {
+const MILESTONES_BY_LANG: Record<string, MilestoneLang[]> = {
   'zh-TW': [
     { title: '出生', subtitle: '水瓶座 A 型', description: '出生於 2004 年。理性的程式邏輯與感性的美學設計——這兩種看似衝突的特質，讓我在開發前端介面與規劃系統架構時，能同時兼顧使用者的視覺體驗與程式碼的運作效率。', extraTags: ['全端工程師', '攝影', '設計'] },
     { title: '啟蒙與磨練', subtitle: '日本料理店內外場', description: '高中時期的第一份工作是在日本料理店擔任內外場人員。日本職人對於「備料規矩」與「服務禮儀」的嚴苛要求，深深影響了我日後的工作態度。即使在忙碌的高壓環境下，仍能保持冷靜依照 SOP 處理繁雜事務，培養出優異的時間管理能力與抗壓性。', extraTags: ['抗壓性', '工作素養', '時間管理'] },

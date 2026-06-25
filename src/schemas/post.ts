@@ -14,6 +14,10 @@ export const postSchema = z.object({
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
   layout_type: z.enum(['record', 'column']).default('record'),
   allow_comments: z.boolean().default(true),
+  send_newsletter: z.boolean().default(false),
+  // 系列文（選填）
+  series_name: z.string().optional(),
+  series_order: z.string().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   // i18n：原文語言 + 其他語系的 title/content/summary 複本
@@ -33,3 +37,5 @@ export const postSchema = z.object({
 });
 
 export type PostFormData = z.infer<typeof postSchema>;
+// 表單值用的是 schema 的「輸入」型別（含 .default() 的欄位在輸入端為選填）
+export type PostFormInput = z.input<typeof postSchema>;

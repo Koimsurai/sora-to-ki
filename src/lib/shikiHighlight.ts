@@ -3,14 +3,18 @@
 // （emacs-lisp 764K、wolfram 260K…），dist 被撐到 40MB+。改用 shiki/core +
 // 顯式語言載入表後，只 emit 下面 LANG_LOADERS 列的語言。
 
-let highlighterPromise = null;
-const loadedLangs = new Set(['text']);
+import type { HighlighterCore, LanguageRegistration } from 'shiki/core';
+
+interface LangModule { default: LanguageRegistration[] }
+
+let highlighterPromise: Promise<HighlighterCore> | null = null;
+const loadedLangs = new Set<string>(['text']);
 
 const THEME = 'vitesse-dark';
 const FALLBACK_LANG = 'text';
 
 // 常見語言的 alias → Shiki 內建 id
-const LANG_ALIAS = {
+const LANG_ALIAS: Record<string, string> = {
   js: 'javascript',
   ts: 'typescript',
   py: 'python',
@@ -33,7 +37,7 @@ const LANG_ALIAS = {
 };
 
 // 白名單語言 → 顯式動態 import（bundler 只會打包這些 grammar）
-const LANG_LOADERS = {
+const LANG_LOADERS: Record<string, () => Promise<LangModule>> = {
   javascript: () => import('@shikijs/langs/javascript'),
   typescript: () => import('@shikijs/langs/typescript'),
   jsx: () => import('@shikijs/langs/jsx'),
@@ -91,14 +95,14 @@ const LANG_LOADERS = {
   log: () => import('@shikijs/langs/log'),
 };
 
-function resolveLang(input) {
+function resolveLang(input: string | undefined): string {
   if (!input) return FALLBACK_LANG;
   const lower = String(input).toLowerCase();
   const resolved = LANG_ALIAS[lower] || lower;
   return LANG_LOADERS[resolved] ? resolved : FALLBACK_LANG;
 }
 
-async function getHighlighter() {
+async function getHighlighter(): Promise<HighlighterCore> {
   if (highlighterPromise) return highlighterPromise;
   highlighterPromise = (async () => {
     const [{ createHighlighterCore }, { createOnigurumaEngine }] = await Promise.all([
@@ -116,7 +120,7 @@ async function getHighlighter() {
   return highlighterPromise;
 }
 
-export async function highlightCode(code, langInput) {
+export async function highlightCode(code: string, langInput?: string): Promise<string> {
   const lang = resolveLang(langInput);
   const h = await getHighlighter();
   if (lang !== 'text' && !loadedLangs.has(lang)) {

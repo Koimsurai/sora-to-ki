@@ -6,7 +6,9 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 // 其餘 4 個語系改成切換時動態載入（各 ~13KB，省下主 chunk ~50KB）。
 import zhTW from './locales/zh-TW/common.json';
 
-const LOCALE_LOADERS = {
+interface LocaleModule { default: Record<string, unknown> }
+
+const LOCALE_LOADERS: Record<string, () => Promise<LocaleModule>> = {
   'zh-CN': () => import('./locales/zh-CN/common.json'),
   en: () => import('./locales/en/common.json'),
   ja: () => import('./locales/ja/common.json'),
@@ -14,7 +16,7 @@ const LOCALE_LOADERS = {
 };
 
 /** 確保某語系的 bundle 已載入（zh-TW 內建；已載入則 no-op）。 */
-async function ensureLocale(lng) {
+async function ensureLocale(lng: string | undefined) {
   if (!lng || lng === 'zh-TW' || i18n.hasResourceBundle(lng, 'common')) return;
   const loader = LOCALE_LOADERS[lng];
   if (!loader) return;
@@ -33,9 +35,9 @@ async function ensureLocale(lng) {
    - 切語系時：i18n.changeLanguage() → useEffect 同步 <html lang>
      CSS :lang() 規則隨之套用對應 CJK 字體
 ─────────────────────────────────────────────────────────────── */
-export const SUPPORTED_LOCALES = ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'];
+export const SUPPORTED_LOCALES: string[] = ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'];
 
-export const LOCALE_LABELS = {
+export const LOCALE_LABELS: Record<string, string> = {
   'zh-TW': '繁體中文',
   'zh-CN': '简体中文',
   'en': 'English',
@@ -46,7 +48,7 @@ export const LOCALE_LABELS = {
 // 把 detector 拿到的字串對應到我們支援的 5 個 locale。
 // 例如 'zh-HK' / 'zh-Hant' → 'zh-TW'；'en-US' → 'en'；'ja-JP' → 'ja'。
 // 不用 i18next 的 nonExplicitSupportedLngs（會把 'zh-TW' 倒過來砍成 'zh' 害 resource 找不到）。
-function normalizeLocale(detected) {
+function normalizeLocale(detected: string): string {
   if (!detected) return 'zh-TW';
   const s = String(detected);
   // 完全 match
@@ -63,7 +65,7 @@ function normalizeLocale(detected) {
   return 'zh-TW';
 }
 
-i18n
+void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
@@ -90,12 +92,12 @@ i18n
 
 // 手動切語系：先載 bundle 再切，切換瞬間不會閃 fallback
 const origChangeLanguage = i18n.changeLanguage.bind(i18n);
-i18n.changeLanguage = async (lng, ...args) => {
+i18n.changeLanguage = (async (lng, ...args) => {
   await ensureLocale(lng);
   return origChangeLanguage(lng, ...args);
-};
+}) as typeof i18n.changeLanguage;
 
 // 初次進站：偵測到的語系若非 zh-TW，立刻補載（bindI18nStore: 'added' 會讓畫面跟著更新）
-ensureLocale(i18n.resolvedLanguage || i18n.language);
+void ensureLocale(i18n.resolvedLanguage ?? i18n.language);
 
 export default i18n;

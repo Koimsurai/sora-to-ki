@@ -28,7 +28,7 @@ interface Alternate {
 }
 
 interface SEOHeadProps {
-  title?: string;
+  title?: string | null;
   description?: string;
   path?: string;
   image?: string;
