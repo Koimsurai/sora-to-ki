@@ -14,6 +14,7 @@ const MILESTONE_META = [
   { date: '2026-04-20', big: true }, { date: '2026-04-25' }, { date: '2026-04-26', big: true }, { date: '2026-04-26' }, { date: '2026-05-08' },
   { date: '2026-05-15', big: true }, { date: '2026-05-25', big: true },
   { date: '2026-05-28', big: true },
+  { date: '2026-06-24', big: true },
 ];
 
 const MILESTONE_TEXTS = {
@@ -46,6 +47,7 @@ const MILESTONE_TEXTS = {
     '首頁版面重做 + 蟲洞 intro + Newsletter 全套訂閱系統（Resend）',
     '新增 此站點 / 歷史 / 留言 三頁 + Portfolio 補上 GitHub repos + 全站字型統一 MiSans + Hero / Footer / Mega menu 視覺重整',
     '全站 i18n 落地 — 5 語系 + 瀏覽器語言自動偵測 + 個人內容全數翻譯 + 字型 :lang() 切換',
+    '全站 JS → TS 遷移完成 — 162 檔轉 TypeScript strict、tsc / eslint 全 0 error',
   ],
   'zh-CN': [
     '站点诞生 — Docker + SSL + Nginx 反向代理一次配齐',
@@ -76,6 +78,7 @@ const MILESTONE_TEXTS = {
     '首页版面重做 + 虫洞 intro + Newsletter 全套订阅系统（Resend）',
     '新增 此站点 / 历史 / 留言 三页 + Portfolio 补上 GitHub repos + 全站字型统一 MiSans + Hero / Footer / Mega menu 视觉重整',
     '全站 i18n 落地 — 5 语系 + 浏览器语言自动侦测 + 个人内容全数翻译 + 字型 :lang() 切换',
+    '全站 JS → TS 迁移完成 — 162 档转 TypeScript strict、tsc / eslint 全 0 error',
   ],
   en: [
     'Site born — Docker + SSL + Nginx reverse proxy all set in one shot',
@@ -106,6 +109,7 @@ const MILESTONE_TEXTS = {
     'Home page redo + wormhole intro + full Newsletter subscription stack (Resend)',
     'Added About-site / History / Messages pages + Portfolio GitHub repos + site-wide MiSans font + Hero / Footer / Mega menu visual refresh',
     'Site-wide i18n landed — 5 locales + browser auto-detect + every personal section translated + per-locale font swap via :lang()',
+    'Whole codebase JS → TS migration done — 162 files to strict TypeScript, 0 tsc / eslint errors',
   ],
   ja: [
     'サイト誕生 — Docker + SSL + Nginx リバプロを一気に整備',
@@ -136,6 +140,7 @@ const MILESTONE_TEXTS = {
     'ホームページ刷新 + ワームホール intro + Newsletter 購読システム一式（Resend）',
     'このサイト / 歴史 / メッセージの 3 ページを追加 + Portfolio に GitHub repos 追加 + 全サイトフォントを MiSans に統一 + Hero / Footer / Mega menu の視覚刷新',
     'サイト全体に i18n を導入 — 5 言語対応 + ブラウザ言語の自動判定 + 個人セクションすべて翻訳 + :lang() による言語別フォント切替',
+    'サイト全体を JS → TS へ移行完了 — 162 ファイルを strict TypeScript 化、tsc / eslint エラー 0',
   ],
   ko: [
     '사이트 탄생 — Docker + SSL + Nginx 리버스 프록시를 한 번에 정비',
@@ -166,6 +171,7 @@ const MILESTONE_TEXTS = {
     '홈 페이지 재작업 + 웜홀 인트로 + Newsletter 구독 시스템 일체(Resend)',
     '이 사이트 / 역사 / 메시지 세 페이지 추가 + Portfolio에 GitHub 레포 추가 + 사이트 전체 폰트를 MiSans로 통일 + Hero / Footer / Mega menu 비주얼 정비',
     '사이트 전반에 i18n 도입 — 5 개 로케일 + 브라우저 언어 자동 감지 + 개인 섹션 전체 번역 + :lang() 기반 폰트 전환',
+    '사이트 전체 JS → TS 마이그레이션 완료 — 162개 파일 strict TypeScript 전환, tsc / eslint 에러 0',
   ],
 };
 
