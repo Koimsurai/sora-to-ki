@@ -1,14 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Mail, MailX, RefreshCw, Search, Download, Trash2 } from 'lucide-react';
+import { Mail, MailX, RefreshCw, Search, Download, Trash2, type LucideIcon } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
-const STATUS_CONFIG = {
+interface Subscriber {
+  id: number;
+  email: string;
+  name?: string;
+  status: string;
+  subscribed_at?: string;
+  unsubscribed_at?: string;
+}
+
+interface StatusConfigEntry { label: string; color: string; bg: string; border: string; icon: LucideIcon }
+
+const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
   active:       { label: '已訂閱',   color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20', icon: Mail },
   unsubscribed: { label: '已退訂',   color: 'text-zinc-400',    bg: 'bg-zinc-400/10',    border: 'border-zinc-400/20',    icon: MailX },
 };
@@ -16,14 +27,14 @@ const STATUS_CONFIG = {
 const PAGE_SIZE = 100;
 
 export default function SubscribersManager() {
-  const [allSubscribers, setAllSubscribers] = useState({ active: [], unsubscribed: [] });
+  const [allSubscribers, setAllSubscribers] = useState<Record<string, Subscriber[]>>({ active: [], unsubscribed: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, sub: null });
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; sub: Subscriber | null }>({ open: false, sub: null });
 
   const token = localStorage.getItem('koimsurai_user_token');
-  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const headers = { Authorization: `Bearer ${token ?? ''}`, 'Content-Type': 'application/json' };
 
   const fetchAll = useCallback(async () => {
     setIsLoading(true);
@@ -32,8 +43,8 @@ export default function SubscribersManager() {
         fetch(`/api/newsletter/subscribers?status=active&limit=${PAGE_SIZE}`, { headers }),
         fetch(`/api/newsletter/subscribers?status=unsubscribed&limit=${PAGE_SIZE}`, { headers }),
       ]);
-      const active = activeRes.ok ? (await activeRes.json()).subscribers || [] : [];
-      const unsubscribed = unsubRes.ok ? (await unsubRes.json()).subscribers || [] : [];
+      const active = activeRes.ok ? ((await activeRes.json()) as { subscribers?: Subscriber[] }).subscribers ?? [] : [];
+      const unsubscribed = unsubRes.ok ? ((await unsubRes.json()) as { subscribers?: Subscriber[] }).subscribers ?? [] : [];
       setAllSubscribers({ active, unsubscribed });
     } catch {
       toast.error('載入訂閱列表失敗');
@@ -43,15 +54,15 @@ export default function SubscribersManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => { void fetchAll(); }, [fetchAll]);
 
   const visible = (allSubscribers[statusFilter] || []).filter((s) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (s.email || '').toLowerCase().includes(q) || (s.name || '').toLowerCase().includes(q);
+    return s.email.toLowerCase().includes(q) || (s.name ?? '').toLowerCase().includes(q);
   });
 
-  const handleUnsubscribe = async (sub) => {
+  const handleUnsubscribe = async (sub: Subscriber) => {
     try {
       const res = await fetch('/api/newsletter/unsubscribe', {
         method: 'POST',
@@ -59,23 +70,23 @@ export default function SubscribersManager() {
         body: JSON.stringify({ email: sub.email }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || '退訂失敗');
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error ?? '退訂失敗');
       }
       toast.success(`已將 ${sub.email} 標記為退訂`);
-      fetchAll();
+      void fetchAll();
     } catch (e) {
-      toast.error(e.message || '退訂失敗');
+      toast.error(e instanceof Error ? e.message : '退訂失敗');
     }
   };
 
   const exportCSV = () => {
     const rows = visible.map((s) => [
       s.email,
-      s.name || '',
+      s.name ?? '',
       s.status,
-      s.subscribed_at || '',
-      s.unsubscribed_at || '',
+      s.subscribed_at ?? '',
+      s.unsubscribed_at ?? '',
     ]);
     const csv = [
       ['email', 'name', 'status', 'subscribed_at', 'unsubscribed_at'],
@@ -90,7 +101,7 @@ export default function SubscribersManager() {
     URL.revokeObjectURL(url);
   };
 
-  const formatDate = (s) => {
+  const formatDate = (s?: string) => {
     if (!s) return '-';
     const d = new Date(s);
     return d.toLocaleDateString('zh-TW', {
@@ -116,7 +127,7 @@ export default function SubscribersManager() {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchAll}
+            onClick={() => { void fetchAll(); }}
             disabled={isLoading}
             className="gap-2"
           >
@@ -190,7 +201,7 @@ export default function SubscribersManager() {
                 visible.map((s) => (
                   <tr key={s.id} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
                     <td className="p-3 font-mono text-xs">{s.email}</td>
-                    <td className="p-3">{s.name || <span className="text-muted-foreground">—</span>}</td>
+                    <td className="p-3">{s.name ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="p-3 text-muted-foreground text-xs">{formatDate(s.subscribed_at)}</td>
                     <td className="p-3 text-muted-foreground text-xs">{formatDate(s.unsubscribed_at)}</td>
                     <td className="p-3 text-right">
@@ -225,7 +236,7 @@ export default function SubscribersManager() {
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
               className="bg-rose-500 hover:bg-rose-600"
-              onClick={() => { handleUnsubscribe(deleteDialog.sub); setDeleteDialog({ open: false, sub: null }); }}
+              onClick={() => { if (deleteDialog.sub) void handleUnsubscribe(deleteDialog.sub); setDeleteDialog({ open: false, sub: null }); }}
             >
               標記退訂
             </AlertDialogAction>

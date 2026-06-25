@@ -8,12 +8,24 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, RefreshCw, Shield, ShieldCheck, Crown, Search } from 'lucide-react';
+import { Users, RefreshCw, Shield, ShieldCheck, Crown, Search, type LucideIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
-const ROLE_CONFIG = {
+interface AdminUser {
+  id: number | string;
+  display_name?: string;
+  email?: string;
+  provider?: string;
+  role: string;
+  avatar?: string;
+  created_at?: string;
+}
+
+interface RoleConfig { label: string; color: string; bg: string; border: string; icon: LucideIcon }
+
+const ROLE_CONFIG: Record<string, RoleConfig> = {
   OWNER: { label: 'Owner', color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20', icon: Crown },
   ADMIN: { label: 'Admin', color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', icon: ShieldCheck },
   USER: { label: 'User', color: 'text-zinc-400', bg: 'bg-zinc-400/10', border: 'border-zinc-400/20', icon: Shield },
@@ -21,32 +33,33 @@ const ROLE_CONFIG = {
 
 export default function UsersManager() {
   const { user: currentUser, isOwner } = useAuth();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleChangeDialog, setRoleChangeDialog] = useState({ open: false, user: null, newRole: '' });
+  const [roleChangeDialog, setRoleChangeDialog] = useState<{ open: boolean; user: AdminUser | null; newRole: string }>({ open: false, user: null, newRole: '' });
 
   const token = localStorage.getItem('koimsurai_user_token');
-  const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const headers = { 'Authorization': `Bearer ${token ?? ''}`, 'Content-Type': 'application/json' };
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetch('/api/admin/users', { headers });
       if (res.ok) {
-        const data = await res.json();
-        setUsers(data.users || []);
+        const data = await res.json() as { users?: AdminUser[] };
+        setUsers(data.users ?? []);
       } else {
         toast.error('載入用戶列表失敗');
       }
-    } catch (e) {
+    } catch {
       toast.error('載入用戶列表失敗');
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => { void fetchUsers(); }, [fetchUsers]);
 
   const handleRoleChange = async () => {
     const { user: targetUser, newRole } = roleChangeDialog;
@@ -59,13 +72,13 @@ export default function UsersManager() {
         body: JSON.stringify({ role: newRole }),
       });
       if (res.ok) {
-        toast.success(`已將 ${targetUser.display_name} 的角色更改為 ${ROLE_CONFIG[newRole].label}`);
-        fetchUsers();
+        toast.success(`已將 ${targetUser.display_name ?? ''} 的角色更改為 ${ROLE_CONFIG[newRole]?.label ?? newRole}`);
+        void fetchUsers();
       } else {
-        const data = await res.json();
-        toast.error(data.error || '更改角色失敗');
+        const data = await res.json() as { error?: string };
+        toast.error(data.error ?? '更改角色失敗');
       }
-    } catch (e) {
+    } catch {
       toast.error('更改角色失敗');
     } finally {
       setRoleChangeDialog({ open: false, user: null, newRole: '' });
@@ -76,13 +89,13 @@ export default function UsersManager() {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      (u.display_name || '').toLowerCase().includes(q) ||
-      (u.email || '').toLowerCase().includes(q) ||
-      (u.provider || '').toLowerCase().includes(q)
+      (u.display_name ?? '').toLowerCase().includes(q) ||
+      (u.email ?? '').toLowerCase().includes(q) ||
+      (u.provider ?? '').toLowerCase().includes(q)
     );
   });
 
-  const formatDate = (dateStr) => {
+  const formatDate = (dateStr?: string) => {
     if (!dateStr) return '-';
     const d = new Date(dateStr);
     return d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -99,7 +112,7 @@ export default function UsersManager() {
         <Button
           variant="outline"
           size="sm"
-          onClick={fetchUsers}
+          onClick={() => { void fetchUsers(); }}
           disabled={isLoading}
           className="gap-2"
         >
@@ -184,21 +197,21 @@ export default function UsersManager() {
                           <Avatar className="size-8 shrink-0">
                             {u.avatar && <AvatarImage src={u.avatar} alt={u.display_name} />}
                             <AvatarFallback className="bg-zinc-800 text-zinc-300 text-xs font-medium border border-zinc-700/60">
-                              {(u.display_name || '?').slice(0, 2).toUpperCase()}
+                              {(u.display_name ?? '?').slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium truncate max-w-[150px]">
-                            {u.display_name || '-'}
+                            {u.display_name ?? '-'}
                             {isSelf && <span className="ml-1.5 text-xs text-muted-foreground">(你)</span>}
                           </span>
                         </div>
                       </td>
                       {/* Email */}
-                      <td className="p-3 text-muted-foreground truncate max-w-[200px]">{u.email || '-'}</td>
+                      <td className="p-3 text-muted-foreground truncate max-w-[200px]">{u.email ?? '-'}</td>
                       {/* Provider */}
                       <td className="p-3">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-300 border border-zinc-700/60">
-                          {u.provider === 'google' ? '🔵 Google' : u.provider === 'github' ? '⚫ GitHub' : u.provider || '-'}
+                          {u.provider === 'google' ? '🔵 Google' : u.provider === 'github' ? '⚫ GitHub' : (u.provider ?? '-')}
                         </span>
                       </td>
                       {/* Role */}
@@ -254,20 +267,20 @@ export default function UsersManager() {
       {/* Role Change Confirmation Dialog */}
       <AlertDialog
         open={roleChangeDialog.open}
-        onOpenChange={(open) => !open && setRoleChangeDialog({ open: false, user: null, newRole: '' })}
+        onOpenChange={(open) => { if (!open) setRoleChangeDialog({ open: false, user: null, newRole: '' }); }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>確認更改角色</AlertDialogTitle>
             <AlertDialogDescription>
               確定要將 <strong>{roleChangeDialog.user?.display_name}</strong> 的角色從{' '}
-              <strong>{ROLE_CONFIG[roleChangeDialog.user?.role]?.label}</strong> 更改為{' '}
+              <strong>{roleChangeDialog.user ? ROLE_CONFIG[roleChangeDialog.user.role]?.label : ''}</strong> 更改為{' '}
               <strong>{ROLE_CONFIG[roleChangeDialog.newRole]?.label}</strong> 嗎？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRoleChange}>確認更改</AlertDialogAction>
+            <AlertDialogAction onClick={() => { void handleRoleChange(); }}>確認更改</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

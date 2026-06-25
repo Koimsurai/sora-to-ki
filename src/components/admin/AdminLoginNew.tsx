@@ -9,7 +9,7 @@ export const AdminLoginNew = () => {
   const [error, setError] = React.useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -24,12 +24,12 @@ export const AdminLoginNew = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { token: string };
         localStorage.setItem('adminToken', data.token);
-        navigate('/admin/dashboard');
+        void navigate('/admin/dashboard');
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || '登入失敗');
+        const errorData = await response.json() as { message?: string };
+        setError(errorData.message ?? '登入失敗');
       }
     } catch (error) {
       console.error('登入錯誤:', error);
@@ -58,7 +58,7 @@ export const AdminLoginNew = () => {
             <p className="mt-1 text-sm text-[#71717a]">輸入您的帳號密碼以登入</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={(e) => { void handleSubmit(e); }} className="space-y-4">
             {error && (
               <div className="rounded-lg bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.2)] p-3 text-sm text-[#fca5a5]">
                 {error}
@@ -115,7 +115,7 @@ export const AdminLoginNew = () => {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => { void navigate('/'); }}
               className="text-sm text-[#71717a] hover:text-[#a1a1aa] transition-colors bg-transparent border-none shadow-none"
               style={{ background: 'transparent', boxShadow: 'none' }}
             >

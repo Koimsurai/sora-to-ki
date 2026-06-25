@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { postSchema } from '@/schemas/post';
+import { postSchema, type PostFormInput } from '@/schemas/post';
 import { MonacoEditor } from '@/components/monaco-editor';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -41,17 +41,61 @@ import {
 import { toast } from 'sonner';
 import { useNavigate, useParams } from 'react-router-dom';
 
+interface TagOption { label: string; value: string }
+interface Category { id: number | string; name: string }
+interface N8NData {
+  title?: string;
+  content?: string;
+  tags?: unknown;
+  slug?: string;
+  summary?: string;
+  category?: string;
+  cover?: string;
+  status?: 'draft' | 'published' | 'archived';
+  layout_type?: 'record' | 'column';
+  allowComments?: boolean;
+  allow_comments?: boolean;
+}
+// 後端 /api/admin/posts/:id 回傳的原始貼文資料（excerpt* 對應表單的 summary*）
+interface PostApiData {
+  title?: string;
+  content?: string;
+  slug?: string;
+  category?: string;
+  cover?: string;
+  status?: 'draft' | 'published' | 'archived';
+  layout_type?: 'record' | 'column';
+  tags?: unknown;
+  excerpt?: string;
+  summary?: string;
+  source_language?: 'zh-TW' | 'zh-CN' | 'en' | 'ja' | 'ko';
+  title_en?: string; content_en?: string; excerpt_en?: string;
+  title_zh_cn?: string; content_zh_cn?: string; excerpt_zh_cn?: string;
+  title_ja?: string; content_ja?: string; excerpt_ja?: string;
+  title_ko?: string; content_ko?: string; excerpt_ko?: string;
+  allow_comments?: number | boolean;
+  series_name?: string;
+  series_order?: string | number;
+}
+
+type LocalizedField =
+  | 'title' | 'content' | 'summary'
+  | 'title_en' | 'content_en' | 'summary_en'
+  | 'title_zh_cn' | 'content_zh_cn' | 'summary_zh_cn'
+  | 'title_ja' | 'content_ja' | 'summary_ja'
+  | 'title_ko' | 'content_ko' | 'summary_ko';
+
 /**
  * v0 風格標籤搜尋選擇器
  */
-function TagSearchInput({ tags, selectedTags, onChange }) {
+function TagSearchInput({ tags, selectedTags, onChange }: { tags: TagOption[]; selectedTags: TagOption[]; onChange: (tags: TagOption[]) => void }) {
   const [tagSearch, setTagSearch] = useState('');
   const selectedValues = new Set(selectedTags.map(t => t.value));
   const filteredTags = tags.filter(
     t => !selectedValues.has(t.value) && t.label.toLowerCase().includes(tagSearch.toLowerCase())
   );
 
-  const addTag = (tag) => {
+  const addTag = (tag: TagOption) => {
     onChange([...selectedTags, tag]);
     setTagSearch('');
   };
@@ -96,12 +140,11 @@ const LOCALE_TABS = [
   { code: 'ko',    label: '한국어',  column: 'ko' },
 ];
 // 依 activeLocale + sourceLanguage 取得表單 field 名稱
-function fieldNameFor(base, activeLocale, sourceLanguage) {
-  // base: 'title' | 'content' | 'summary'
+function fieldNameFor(base: 'title' | 'content' | 'summary', activeLocale: string, sourceLanguage: string): LocalizedField {
   if (activeLocale === sourceLanguage) return base;
   const tab = LOCALE_TABS.find(t => t.code === activeLocale);
-  if (!tab || !tab.column) return base; // fallback：未知 locale 用原文
-  return `${base}_${tab.column}`;
+  if (!tab?.column) return base; // fallback：未知 locale 用原文
+  return `${base}_${tab.column}` as LocalizedField;
 }
 
 export default function PostEditor() {
@@ -112,14 +155,15 @@ export default function PostEditor() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isGeneratingZhCN, setIsGeneratingZhCN] = useState(false);
   const [editorView, setEditorView] = useState('edit'); // edit | split | preview
-  const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<TagOption[]>([]);
   const [isLoading, setIsLoading] = useState(!!id);
   const [activeLocale, setActiveLocale] = useState('zh-TW');
   const [zenMode, setZenMode] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState(''); // '', 'saved', 'restoring'
   const submitLockRef = useRef(false);
-  const autosaveKey = `postEditor:autosave:${id || 'new'}`;
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autosaveKey = `postEditor:autosave:${id ?? 'new'}`;
 
   const form = useForm({
     resolver: zodResolver(postSchema),
@@ -147,16 +191,16 @@ export default function PostEditor() {
     },
   });
 
-  const sourceLanguage = form.watch('source_language') || 'zh-TW';
+  const sourceLanguage = form.watch('source_language') ?? 'zh-TW';
   const titleName = fieldNameFor('title', activeLocale, sourceLanguage);
   const contentName = fieldNameFor('content', activeLocale, sourceLanguage);
   const summaryName = fieldNameFor('summary', activeLocale, sourceLanguage);
 
   // 直接訂閱當前 locale 對應的欄位值，避免 <FormField name={dynamic}> 在切換時
   // 共用 controller/Monaco model 造成「第二次切回顯示舊內容」的 bug。
-  const titleValue = form.watch(titleName) || '';
-  const contentValue = form.watch(contentName) || '';
-  const summaryValue = form.watch(summaryName) || '';
+  const titleValue = form.watch(titleName) ?? '';
+  const contentValue = form.watch(contentName) ?? '';
+  const summaryValue = form.watch(summaryName) ?? '';
 
   // 若 sourceLanguage 切到目前 activeLocale 不合法時（例如原本 source=zh-TW, activeLocale=en，之後改 source=en
   // 則 en 的編輯欄位切到 base 欄位），這裡確保 activeLocale 仍然指向有效 tab
@@ -167,10 +211,10 @@ export default function PostEditor() {
   // ── localStorage 自動備份草稿（debounce 1.2s）──
   useEffect(() => {
     const sub = form.watch((values) => {
-      if (window.__autosaveTimer) clearTimeout(window.__autosaveTimer);
-      window.__autosaveTimer = setTimeout(() => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = setTimeout(() => {
         try {
-          const hasContent = (values.title || '').trim() || (values.content || '').trim();
+          const hasContent = (values.title ?? '').trim() || (values.content ?? '').trim();
           if (!hasContent) return;
           localStorage.setItem(autosaveKey, JSON.stringify({ values, savedAt: Date.now() }));
           setAutosaveStatus('saved');
@@ -187,7 +231,7 @@ export default function PostEditor() {
     try {
       const raw = localStorage.getItem(autosaveKey);
       if (!raw) return;
-      const { values, savedAt } = JSON.parse(raw);
+      const { values, savedAt } = JSON.parse(raw) as { values?: PostFormInput; savedAt?: number };
       if (!values || !savedAt) return;
       // 24 小時內的草稿才還原
       if (Date.now() - savedAt > 24 * 60 * 60 * 1000) {
@@ -195,7 +239,7 @@ export default function PostEditor() {
         return;
       }
       const current = form.getValues();
-      if ((current.title || current.content || '').trim()) return;
+      if (((current.title ?? '') || (current.content ?? '')).trim()) return;
       const ago = Math.round((Date.now() - savedAt) / 60000);
       toast(`偵測到 ${ago} 分鐘前的未儲存草稿`, {
         action: {
@@ -213,7 +257,7 @@ export default function PostEditor() {
 
   // ── Zen 模式：F11 / Esc 切換 ──
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'F11') { e.preventDefault(); setZenMode(z => !z); }
       else if (e.key === 'Escape' && zenMode) setZenMode(false);
     };
@@ -236,7 +280,7 @@ export default function PostEditor() {
   // 載入文章數據（如果是編輯模式）
   useEffect(() => {
     if (id) {
-      fetchPost();
+      void fetchPost();
     }
   }, [id]);
 
@@ -247,7 +291,7 @@ export default function PostEditor() {
     
     if (n8nData && !id) {
       try {
-        const parsedData = JSON.parse(decodeURIComponent(n8nData));
+        const parsedData = JSON.parse(decodeURIComponent(n8nData)) as N8NData;
         handleN8NImport(parsedData);
       } catch (error) {
         console.error('解析 N8N 資料失敗:', error);
@@ -258,8 +302,8 @@ export default function PostEditor() {
 
   // 載入分類和標籤
   useEffect(() => {
-    fetchCategories();
-    fetchTags();
+    void fetchCategories();
+    void fetchTags();
   }, []);
 
   const fetchPost = async () => {
@@ -270,30 +314,29 @@ export default function PostEditor() {
       });
       
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as PostApiData;
         // 確保 tags 格式正確，並將 API 的 excerpt 映射到表單的 summary（各 locale 同步處理）
         const formattedData = {
           ...data,
           tags: formatTags(data.tags),
-          summary: data.excerpt || data.summary || '',
-          source_language: data.source_language || 'zh-TW',
-          title_en: data.title_en || '', content_en: data.content_en || '', summary_en: data.excerpt_en || '',
-          title_zh_cn: data.title_zh_cn || '', content_zh_cn: data.content_zh_cn || '', summary_zh_cn: data.excerpt_zh_cn || '',
-          title_ja: data.title_ja || '', content_ja: data.content_ja || '', summary_ja: data.excerpt_ja || '',
-          title_ko: data.title_ko || '', content_ko: data.content_ko || '', summary_ko: data.excerpt_ko || '',
+          summary: data.excerpt ?? data.summary ?? '',
+          source_language: data.source_language ?? 'zh-TW',
+          title_en: data.title_en ?? '', content_en: data.content_en ?? '', summary_en: data.excerpt_en ?? '',
+          title_zh_cn: data.title_zh_cn ?? '', content_zh_cn: data.content_zh_cn ?? '', summary_zh_cn: data.excerpt_zh_cn ?? '',
+          title_ja: data.title_ja ?? '', content_ja: data.content_ja ?? '', summary_ja: data.excerpt_ja ?? '',
+          title_ko: data.title_ko ?? '', content_ko: data.content_ko ?? '', summary_ko: data.excerpt_ko ?? '',
           allow_comments: data.allow_comments !== 0 && data.allow_comments !== false,
-          series_name: data.series_name || '',
+          series_name: data.series_name ?? '',
           series_order: data.series_order ?? '',
           // Newsletter trigger is a transient form-only flag — never persisted on the post.
           send_newsletter: false,
         };
-        form.reset(formattedData);
-        setActiveLocale(data.source_language || 'zh-TW');
+        form.reset(formattedData as PostFormInput);
+        setActiveLocale(data.source_language ?? 'zh-TW');
       } else {
         // API 不存在時使用模擬數據進行測試
         console.warn('API 未連接，使用模擬數據');
         const mockData = {
-          id: id,
           title: '測試文章標題',
           content: '# 這是測試內容\n\n這是一段測試內容，用於展示編輯器功能。\n\n## 副標題\n\n- 列表項目 1\n- 列表項目 2\n- 列表項目 3\n\n```javascript\nconsole.log("Hello World");\n```',
           tags: [{label: 'React', value: 'react'}, {label: 'TypeScript', value: 'typescript'}],
@@ -301,7 +344,7 @@ export default function PostEditor() {
           slug: 'test-article',
           summary: '這是測試文章的摘要',
           cover: '',
-          status: 'draft',
+          status: 'draft' as const,
           allow_comments: true,
           send_newsletter: false,
         };
@@ -312,7 +355,6 @@ export default function PostEditor() {
       console.error('載入文章失敗:', error);
       // 即使出錯也使用模擬數據
       const mockData = {
-        id: id,
         title: '測試文章標題',
         content: '# 這是測試內容\n\n編輯器已就緒，請開始編寫您的文章...',
         tags: [],
@@ -320,7 +362,7 @@ export default function PostEditor() {
         slug: '',
         summary: '',
         cover: '',
-        status: 'draft',
+        status: 'draft' as const,
         allow_comments: true,
       };
       form.reset(mockData);
@@ -333,7 +375,7 @@ export default function PostEditor() {
   /**
    * 處理 N8N 自動匯入的資料
    */
-  const handleN8NImport = (n8nData) => {
+  const handleN8NImport = (n8nData: N8NData) => {
     // 驗證必填欄位
     if (!n8nData.title || !n8nData.content) {
       toast.error('N8N 資料缺少必填欄位 (title 或 content)');
@@ -344,22 +386,22 @@ export default function PostEditor() {
     const formattedTags = formatTags(n8nData.tags);
 
     // 自動生成 slug（如果沒有）
-    const slug = n8nData.slug || generateSlugFromTitle(n8nData.title);
+    const slug = n8nData.slug ?? generateSlugFromTitle(n8nData.title);
 
     // 提取摘要（如果沒有）
-    const summary = n8nData.summary || extractSummary(n8nData.content);
+    const summary = n8nData.summary ?? extractSummary(n8nData.content);
 
     // 填充表單
     form.reset({
       title: n8nData.title,
       content: n8nData.content,
       tags: formattedTags,
-      category: n8nData.category || '',
+      category: n8nData.category ?? '',
       slug: slug,
       summary: summary,
-      cover: n8nData.cover || '',
-      status: n8nData.status || 'draft',
-      layout_type: n8nData.layout_type || 'record',
+      cover: n8nData.cover ?? '',
+      status: n8nData.status ?? 'draft',
+      layout_type: n8nData.layout_type ?? 'record',
       allow_comments: n8nData.allowComments !== false && n8nData.allow_comments !== false,
       send_newsletter: false,
     });
@@ -374,12 +416,12 @@ export default function PostEditor() {
    * 2. 物件陣列: [{label: "React", value: "1"}]
    * 3. 混合格式
    */
-  const formatTags = (tags) => {
-    if (!tags || !Array.isArray(tags)) {
+  const formatTags = (tags: unknown): TagOption[] => {
+    if (!Array.isArray(tags)) {
       return [];
     }
 
-    return tags.map((tag, index) => {
+    return (tags as unknown[]).map((tag, index) => {
       // 如果是字串，轉換為物件格式
       if (typeof tag === 'string') {
         return {
@@ -389,9 +431,10 @@ export default function PostEditor() {
       }
       // 如果已經是物件，確保有 label 和 value
       if (tag && typeof tag === 'object') {
+        const t = tag as { label?: string; name?: string; value?: string; id?: number | string };
         return {
-          label: tag.label || tag.name || `Tag ${index + 1}`,
-          value: tag.value || tag.id?.toString() || `tag-${index}`,
+          label: t.label ?? t.name ?? `Tag ${index + 1}`,
+          value: t.value ?? t.id?.toString() ?? `tag-${index}`,
         };
       }
       // 預設值
@@ -405,7 +448,26 @@ export default function PostEditor() {
   /**
    * 從標題生成 slug
    */
-  const generateSlugFromTitle = (title) => {
+  const handleSendNewsletter = async () => {
+    if (!confirm('要立即推送這篇文章給所有訂閱者嗎？')) return;
+    try {
+      const token = localStorage.getItem('koimsurai_user_token');
+      const res = await fetch(`/api/admin/posts/${id}/send-newsletter`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json() as { error?: string; sent?: number; failed?: number };
+      if (!res.ok) {
+        toast.error(data.error ?? '推送失敗');
+        return;
+      }
+      toast.success(`已寄出 ${data.sent} 封，失敗 ${data.failed}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : '推送失敗');
+    }
+  };
+
+  const generateSlugFromTitle = (title: string) => {
     if (!title) return '';
     
     return title
@@ -419,7 +481,7 @@ export default function PostEditor() {
   /**
    * 從內容提取摘要
    */
-  const extractSummary = (content, maxLength = 150) => {
+  const extractSummary = (content: string, maxLength = 150) => {
     if (!content) return '';
     
     const plainText = content
@@ -446,7 +508,7 @@ export default function PostEditor() {
       });
       
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as Category[];
         setCategories(data);
       }
     } catch (error) {
@@ -462,7 +524,7 @@ export default function PostEditor() {
       });
       
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { name: string; id: number | string }[];
         console.log('✅ 載入標籤數據:', data);
         const formattedTags = data.map(tag => ({ 
           label: tag.name, 
@@ -481,7 +543,7 @@ export default function PostEditor() {
   };
 
   // 將表單 data 轉成送往 API 的 payload（包含 i18n 欄位，並把 summary* 對應到 excerpt*）
-  const buildPayload = (data, overrides = {}) => {
+  const buildPayload = (data: PostFormInput, overrides: Record<string, unknown> = {}) => {
     const tagsArray = Array.isArray(data.tags)
       ? data.tags.map(tag => typeof tag === 'string' ? tag : tag.label)
       : [];
@@ -501,7 +563,7 @@ export default function PostEditor() {
     };
   };
 
-  const onSaveDraft = async (data) => {
+  const onSaveDraft = async (data: PostFormInput) => {
     if (submitLockRef.current) {
       toast.info('正在儲存中，請稍候');
       return;
@@ -526,11 +588,11 @@ export default function PostEditor() {
       if (response.ok) {
         toast.success('草稿已儲存');
         try { localStorage.removeItem(autosaveKey); } catch { /* ignore */ }
-        const result = await response.json();
+        const result = await response.json() as { data?: { id?: string | number }; id?: string | number };
         // 後端 create 回 { data: { id } }；沒抓到就會每次都 POST → 重複建立草稿
-        const newId = result?.data?.id ?? result?.id;
+        const newId = result.data?.id ?? result.id;
         if (!id && newId) {
-          navigate(`/admin/posts/edit/${newId}`);
+          void navigate(`/admin/posts/edit/${newId}`);
         }
       } else {
         toast.error('儲存失敗');
@@ -544,7 +606,7 @@ export default function PostEditor() {
     }
   };
 
-  const onPublish = async (data) => {
+  const onPublish = async (data: PostFormInput) => {
     if (submitLockRef.current) {
       toast.info('正在處理中，請稍候');
       return;
@@ -569,7 +631,7 @@ export default function PostEditor() {
       if (response.ok) {
         toast.success('文章已發佈');
         try { localStorage.removeItem(autosaveKey); } catch { /* ignore */ }
-        navigate('/admin/posts');
+        void navigate('/admin/posts');
       } else {
         toast.error('發佈失敗');
       }
@@ -592,7 +654,7 @@ export default function PostEditor() {
       toast.error('只能從 zh-TW 原文自動產生简体中文');
       return;
     }
-    const existing = form.getValues('title_zh_cn') || form.getValues('content_zh_cn');
+    const existing = form.getValues('title_zh_cn') ?? form.getValues('content_zh_cn');
     if (existing && !window.confirm('已有简体中文內容，要覆蓋嗎？')) return;
 
     setIsGeneratingZhCN(true);
@@ -610,18 +672,18 @@ export default function PostEditor() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `API 錯誤 (${res.status})`);
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? `API 錯誤 (${res.status})`);
       }
-      const data = await res.json();
-      form.setValue('title_zh_cn', data.title_zh_cn || '');
-      form.setValue('content_zh_cn', data.content_zh_cn || '');
-      form.setValue('summary_zh_cn', data.excerpt_zh_cn || '');
+      const data = await res.json() as { title_zh_cn?: string; content_zh_cn?: string; excerpt_zh_cn?: string };
+      form.setValue('title_zh_cn', data.title_zh_cn ?? '');
+      form.setValue('content_zh_cn', data.content_zh_cn ?? '');
+      form.setValue('summary_zh_cn', data.excerpt_zh_cn ?? '');
       toast.success('简体中文已生成（OpenCC 繁轉簡）');
       setActiveLocale('zh-CN');
     } catch (e) {
       console.error('OpenCC 生成失敗:', e);
-      toast.error(`生成失敗：${e.message}`);
+      toast.error(`生成失敗：${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setIsGeneratingZhCN(false);
     }
@@ -662,7 +724,7 @@ export default function PostEditor() {
             },
             {
               role: 'user',
-              content: `文章標題：${title || '未命名'}\n\n文章內容：\n${content.substring(0, 8000)}`,
+              content: `文章標題：${title ?? '未命名'}\n\n文章內容：\n${content.substring(0, 8000)}`,
             },
           ],
           max_tokens: 512,
@@ -672,16 +734,16 @@ export default function PostEditor() {
 
       if (!response.ok) throw new Error(`API 錯誤 (${response.status})`);
 
-      const data = await response.json();
-      const resultText = data.choices?.[0]?.message?.content || '';
+      const data = await response.json() as { choices?: { message?: { content?: string } }[] };
+      const resultText = data.choices?.[0]?.message?.content ?? '';
 
-      let parsed;
+      let parsed: { summary?: string; tags?: string[] } | undefined;
       try {
-        parsed = JSON.parse(resultText);
+        parsed = JSON.parse(resultText) as { summary?: string; tags?: string[] };
       } catch {
-        const match = resultText.match(/(\{[\s\S]*\})/);
+        const match = /(\{[\s\S]*\})/.exec(resultText);
         if (match) {
-          try { parsed = JSON.parse(match[1]); } catch { /* fallback */ }
+          try { parsed = JSON.parse(match[1]) as { summary?: string; tags?: string[] }; } catch { /* fallback */ }
         }
       }
 
@@ -690,10 +752,10 @@ export default function PostEditor() {
         toast.success(`摘要已生成（${activeLocale}）`);
 
         // 如果 AI 也回傳了標籤，且目前標籤為空，則自動填入
-        if (parsed.tags?.length > 0) {
-          const currentTags = form.getValues('tags') || [];
+        if ((parsed.tags?.length ?? 0) > 0) {
+          const currentTags = form.getValues('tags') ?? [];
           if (currentTags.length === 0) {
-            const formattedTags = parsed.tags.map(t => ({
+            const formattedTags = (parsed.tags ?? []).map(t => ({
               label: t,
               value: t.toLowerCase().replace(/\s+/g, '-'),
             }));
@@ -706,7 +768,7 @@ export default function PostEditor() {
       }
     } catch (err) {
       console.error('AI 摘要生成失敗:', err);
-      toast.error(`摘要生成失敗：${err.message}`);
+      toast.error(`摘要生成失敗：${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsGeneratingSummary(false);
     }
@@ -735,14 +797,14 @@ export default function PostEditor() {
               type="button"
               className="hidden"
               disabled={isSavingDraft || isPublishing}
-              onClick={form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))}
+              onClick={(e) => { void form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))(e); }}
             />
             <button
               id="publish-btn"
               type="button"
               className="hidden"
               disabled={isSavingDraft || isPublishing}
-              onClick={form.handleSubmit(onPublish, () => toast.error('請先填寫標題與內容'))}
+              onClick={(e) => { void form.handleSubmit(onPublish, () => toast.error('請先填寫標題與內容'))(e); }}
             />
             {/* Left Column - Editor */}
             <main className="flex-1 overflow-y-auto p-6 min-w-0 space-y-0">
@@ -752,7 +814,7 @@ export default function PostEditor() {
                   {LOCALE_TABS.map(t => {
                     const isSource = t.code === sourceLanguage;
                     const titleVal = form.watch(fieldNameFor('title', t.code, sourceLanguage));
-                    const hasContent = !!(titleVal && titleVal.trim());
+                    const hasContent = !!titleVal?.trim();
                     return (
                       <button
                         key={t.code}
@@ -777,7 +839,7 @@ export default function PostEditor() {
                   {sourceLanguage === 'zh-TW' && (
                     <button
                       type="button"
-                      onClick={handleGenerateZhCN}
+                      onClick={() => { void handleGenerateZhCN(); }}
                       disabled={isGeneratingZhCN}
                       className="ml-auto inline-flex items-center gap-1 rounded-md border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[11px] text-violet-300 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                       title="OpenCC 繁→簡，純字詞轉換不丟 LLM"
@@ -855,7 +917,7 @@ export default function PostEditor() {
                       language="markdown"
                       height={editorView === 'split' ? '360px' : '700px'}
                       theme="vs-dark"
-                      onSave={() => form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))()}
+                      onSave={() => { void form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))(); }}
                     />
                   )}
 
@@ -915,7 +977,7 @@ export default function PostEditor() {
                       control={form.control}
                       name="tags"
                       render={({ field }) => {
-                        const selectedTags = field.value || [];
+                        const selectedTags = field.value ?? [];
                         return (
                           <FormItem>
                             <FormLabel className="text-xs text-muted-foreground">
@@ -1051,7 +1113,7 @@ export default function PostEditor() {
                               field.onChange(v);
                               if (activeLocale === sourceLanguage) setActiveLocale(v);
                             }}
-                            value={field.value || 'zh-TW'}
+                            value={field.value ?? 'zh-TW'}
                           >
                             <FormControl>
                               <SelectTrigger className="h-8 bg-accent/30">
@@ -1097,7 +1159,7 @@ export default function PostEditor() {
                           </FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            value={field.value || 'record'}
+                            value={field.value ?? 'record'}
                           >
                             <FormControl>
                               <SelectTrigger className="h-8 bg-accent/30">
@@ -1162,24 +1224,7 @@ export default function PostEditor() {
                         type="button"
                         className="w-full mt-1 px-3 py-2 text-xs rounded-md border border-violet-500/30 bg-violet-500/8 text-violet-200 hover:bg-violet-500/15 hover:border-violet-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isSavingDraft || isPublishing}
-                        onClick={async () => {
-                          if (!confirm('要立即推送這篇文章給所有訂閱者嗎？')) return;
-                          try {
-                            const token = localStorage.getItem('koimsurai_user_token');
-                            const res = await fetch(`/api/admin/posts/${id}/send-newsletter`, {
-                              method: 'POST',
-                              headers: { Authorization: `Bearer ${token}` },
-                            });
-                            const data = await res.json();
-                            if (!res.ok) {
-                              toast.error(data.error || '推送失敗');
-                              return;
-                            }
-                            toast.success(`已寄出 ${data.sent} 封，失敗 ${data.failed}`);
-                          } catch (e) {
-                            toast.error(e.message || '推送失敗');
-                          }
-                        }}
+                        onClick={() => { void handleSendNewsletter(); }}
                       >
                         立即推送 Newsletter
                       </button>
@@ -1230,7 +1275,7 @@ export default function PostEditor() {
                         </label>
                         <button
                           type="button"
-                          onClick={handleGenerateSummary}
+                          onClick={() => { void handleGenerateSummary(); }}
                           disabled={isGeneratingSummary}
                           className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >

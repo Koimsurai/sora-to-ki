@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Mail,
   Home,
+  type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const BREADCRUMB_LABELS = {
+const BREADCRUMB_LABELS: Record<string, string> = {
   admin: '後台',
   dashboard: '儀表板',
   posts: '文章',
@@ -93,7 +94,9 @@ const AdminBreadcrumb = () => {
   );
 };
 
-const sidebarItems = [
+interface SidebarItem { id: string; icon: LucideIcon; label: string; path: string; ownerOnly?: boolean }
+
+const sidebarItems: SidebarItem[] = [
   { id: 'dashboard', icon: LayoutDashboard, label: '儀表板', path: '/admin/dashboard' },
   { id: 'posts', icon: FileText, label: '文章', path: '/admin/posts' },
   { id: 'categories', icon: FolderOpen, label: '分類', path: '/admin/categories' },
@@ -116,7 +119,7 @@ export const AdminLayout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    void navigate('/');
   };
 
   useEffect(() => {
@@ -205,15 +208,15 @@ export const AdminLayout = () => {
                   )}
                 >
                   <Avatar className="size-7 shrink-0">
-                    {user?.avatar && <AvatarImage src={user.avatar} alt={user?.displayName || '管理員'} />}
+                    {user?.avatar && <AvatarImage src={user.avatar} alt={user.displayName ?? '管理員'} />}
                     <AvatarFallback className="bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700/60">
-                      {(user?.displayName || '管理員').slice(0, 2).toUpperCase()}
+                      {(user?.displayName ?? '管理員').slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   {sidebarOpen && (
                     <div className="flex flex-col min-w-0 text-left">
-                      <span className="text-[13px] font-medium text-foreground/80 truncate leading-tight">{user?.displayName || '管理員'}</span>
-                      <span className="text-[11px] text-muted-foreground truncate leading-tight">{user?.email || ''}</span>
+                      <span className="text-[13px] font-medium text-foreground/80 truncate leading-tight">{user?.displayName ?? '管理員'}</span>
+                      <span className="text-[11px] text-muted-foreground truncate leading-tight">{user?.email ?? ''}</span>
                     </div>
                   )}
                 </button>
@@ -221,7 +224,7 @@ export const AdminLayout = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>我的帳戶</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/')}>
+                <DropdownMenuItem onClick={() => { void navigate('/'); }}>
                   <Home className="mr-2 h-4 w-4" />
                   回到前台
                 </DropdownMenuItem>

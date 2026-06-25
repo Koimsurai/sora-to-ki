@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Film, Tv, Plus, Pencil, Trash2, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,15 +21,48 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
+interface CollectionItem {
+  id: number | string;
+  title: string;
+  original_title?: string;
+  year?: number | string;
+  poster_url?: string;
+  overview?: string;
+  external_id?: string;
+  collection_type?: string;
+  media_format?: string;
+  status?: string;
+  rating?: number;
+  review?: string;
+  is_favorite?: number;
+  watch_date?: string;
+}
+
+interface CollectionFormData {
+  title: string;
+  original_title: string;
+  year: number | string;
+  poster_url: string;
+  overview: string;
+  external_id: string;
+  collection_type: string;
+  media_format: string;
+  status: string;
+  rating: number;
+  review: string;
+  is_favorite: boolean;
+  watch_date: string;
+}
+
 const CollectionManager = () => {
   const [collectionType, setCollectionType] = useState('cinema');
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<CollectionItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<CollectionItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<CollectionFormData>({
     title: '',
     original_title: '',
     year: '',
@@ -46,15 +79,15 @@ const CollectionManager = () => {
   });
 
   useEffect(() => {
-    fetchCollectionItems();
+    void fetchCollectionItems();
   }, [collectionType]);
 
   const fetchCollectionItems = async () => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/collection/${collectionType}`);
-      const data = await response.json();
-      setItems(data.items || []);
+      const data = await response.json() as { items?: CollectionItem[] };
+      setItems(data.items ?? []);
     } catch (error) {
       console.error('獲取收藏項目失敗:', error);
     } finally {
@@ -62,7 +95,7 @@ const CollectionManager = () => {
     }
   };
 
-  const handleAdd = async (e) => {
+  const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('koimsurai_user_token');
@@ -83,9 +116,9 @@ const CollectionManager = () => {
         alert('收藏項目已新增！');
         setShowAddDialog(false);
         resetForm();
-        fetchCollectionItems();
+        void fetchCollectionItems();
       } else {
-        const error = await response.json();
+        const error = await response.json() as { error?: string };
         alert(`新增失敗: ${error.error}`);
       }
     } catch (error) {
@@ -94,11 +127,11 @@ const CollectionManager = () => {
     }
   };
 
-  const handleUpdate = async (e) => {
+  const handleUpdate = async (e: FormEvent) => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('koimsurai_user_token');
-      const response = await fetch(`/api/collection/${selectedItem.id}`, {
+      const response = await fetch(`/api/collection/${selectedItem?.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -115,9 +148,9 @@ const CollectionManager = () => {
         setShowEditDialog(false);
         setSelectedItem(null);
         resetForm();
-        fetchCollectionItems();
+        void fetchCollectionItems();
       } else {
-        const error = await response.json();
+        const error = await response.json() as { error?: string };
         alert(`更新失敗: ${error.error}`);
       }
     } catch (error) {
@@ -126,7 +159,7 @@ const CollectionManager = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number | string) => {
     if (!window.confirm('確定要刪除這個收藏項目嗎？')) return;
 
     try {
@@ -140,7 +173,7 @@ const CollectionManager = () => {
 
       if (response.ok) {
         alert('收藏項目已刪除！');
-        fetchCollectionItems();
+        void fetchCollectionItems();
       } else {
         alert('刪除失敗！');
       }
@@ -150,22 +183,22 @@ const CollectionManager = () => {
     }
   };
 
-  const openEditDialog = (item) => {
+  const openEditDialog = (item: CollectionItem) => {
     setSelectedItem(item);
     setFormData({
-      title: item.title || '',
-      original_title: item.original_title || '',
-      year: item.year || '',
-      poster_url: item.poster_url || '',
-      overview: item.overview || '',
-      external_id: item.external_id || '',
-      collection_type: item.collection_type || collectionType,
-      media_format: item.media_format || 'movie',
-      status: item.status || 'completed',
-      rating: item.rating || 0,
-      review: item.review || '',
+      title: item.title ?? '',
+      original_title: item.original_title ?? '',
+      year: item.year ?? '',
+      poster_url: item.poster_url ?? '',
+      overview: item.overview ?? '',
+      external_id: item.external_id ?? '',
+      collection_type: item.collection_type ?? collectionType,
+      media_format: item.media_format ?? 'movie',
+      status: item.status ?? 'completed',
+      rating: item.rating ?? 0,
+      review: item.review ?? '',
       is_favorite: item.is_favorite === 1,
-      watch_date: item.watch_date || ''
+      watch_date: item.watch_date ?? ''
     });
     setShowEditDialog(true);
   };
@@ -188,7 +221,7 @@ const CollectionManager = () => {
     });
   };
 
-  const renderStars = (rating) => {
+  const renderStars = (rating: number) => {
     return (
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -211,13 +244,13 @@ const CollectionManager = () => {
     );
   });
 
-  const statusLabels = {
+  const statusLabels: Record<string, string> = {
     'completed': '已完成',
     'watching': '追番中',
     'plan_to_watch': '計劃觀看',
   };
 
-  const statusConfig = {
+  const statusConfig: Record<string, string> = {
     'completed': 'text-foreground/50 bg-accent/50',
     'watching': 'text-foreground/70 bg-accent/60',
     'plan_to_watch': 'text-muted-foreground/60 bg-accent/25',
@@ -242,7 +275,7 @@ const CollectionManager = () => {
             <DialogHeader>
               <DialogTitle>新增{collectionType === 'cinema' ? '電影' : '動漫'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleAdd} className="space-y-4">
+            <form onSubmit={(e) => { void handleAdd(e); }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="title">標題 *</Label>
@@ -369,7 +402,7 @@ const CollectionManager = () => {
                 <Checkbox
                   id="is_favorite"
                   checked={formData.is_favorite}
-                  onCheckedChange={(checked) => setFormData({...formData, is_favorite: checked})}
+                  onCheckedChange={(checked) => setFormData({...formData, is_favorite: checked === true})}
                 />
                 <Label htmlFor="is_favorite">設為精選</Label>
               </div>
@@ -440,12 +473,12 @@ const CollectionManager = () => {
                   )}
                   <div className="flex items-center gap-2 mb-1.5">
                     {item.year && <span className="text-[10px] text-muted-foreground/40">{item.year}</span>}
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusConfig[item.status] || 'bg-accent/25 text-muted-foreground/60'}`}>
-                      {statusLabels[item.status] || item.status}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusConfig[item.status ?? ''] || 'bg-accent/25 text-muted-foreground/60'}`}>
+                      {statusLabels[item.status ?? ''] || item.status}
                     </span>
                   </div>
-                  {item.rating > 0 && (
-                    <div className="mb-1">{renderStars(item.rating)}</div>
+                  {(item.rating ?? 0) > 0 && (
+                    <div className="mb-1">{renderStars(item.rating ?? 0)}</div>
                   )}
                   {item.review && (
                     <p className="text-[12px] text-muted-foreground/60 leading-relaxed line-clamp-2">{item.review}</p>
@@ -459,7 +492,7 @@ const CollectionManager = () => {
                     <Pencil className="size-3" />
                   </button>
                   <button
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => { void handleDelete(item.id); }}
                     className="size-6 flex items-center justify-center rounded-md text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="size-3" />
@@ -483,7 +516,7 @@ const CollectionManager = () => {
             <DialogHeader>
               <DialogTitle>編輯{collectionType === 'cinema' ? '電影' : '動漫'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleUpdate} className="space-y-4">
+            <form onSubmit={(e) => { void handleUpdate(e); }} className="space-y-4">
               {/* 表單內容與新增相同,省略 */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

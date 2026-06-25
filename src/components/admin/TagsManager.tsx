@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,12 +24,26 @@ import {
 import { Plus, X, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface TagItem {
+  id: number;
+  name: string;
+  slug?: string;
+  color?: string;
+  post_count?: number;
+}
+
+interface TagForm {
+  name: string;
+  slug: string;
+  color: string;
+}
+
 export default function TagsManager() {
-  const [tags, setTags] = useState([]);
+  const [tags, setTags] = useState<TagItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingTag, setEditingTag] = useState(null);
-  const [deleteId, setDeleteId] = useState(null);
-  const [formData, setFormData] = useState({
+  const [editingTag, setEditingTag] = useState<TagItem | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<TagForm>({
     name: '',
     slug: '',
     color: '#7f5af0',
@@ -38,24 +52,24 @@ export default function TagsManager() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetchTags();
+    void fetchTags();
   }, []);
 
   const filteredTags = tags.filter((t) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const sortedTags = [...filteredTags].sort((a, b) => (b.post_count || 0) - (a.post_count || 0));
+  const sortedTags = [...filteredTags].sort((a, b) => (b.post_count ?? 0) - (a.post_count ?? 0));
 
   const fetchTags = async () => {
     try {
       const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/admin/tags', {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token ?? ''}` },
       });
-      
+
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as TagItem[];
         setTags(data);
       }
     } catch (error) {
@@ -66,12 +80,12 @@ export default function TagsManager() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     try {
       const token = localStorage.getItem('koimsurai_user_token');
-      const url = editingTag 
+      const url = editingTag
         ? `/api/admin/tags/${editingTag.id}`
         : '/api/admin/tags';
       const method = editingTag ? 'PUT' : 'POST';
@@ -80,7 +94,7 @@ export default function TagsManager() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token ?? ''}`,
         },
         body: JSON.stringify(formData),
       });
@@ -89,7 +103,7 @@ export default function TagsManager() {
         toast.success(editingTag ? '標籤已更新' : '標籤已創建');
         setDialogOpen(false);
         resetForm();
-        fetchTags();
+        void fetchTags();
       } else {
         toast.error('操作失敗');
       }
@@ -99,12 +113,12 @@ export default function TagsManager() {
     }
   };
 
-  const handleEdit = (tag) => {
+  const handleEdit = (tag: TagItem) => {
     setEditingTag(tag);
     setFormData({
       name: tag.name,
-      slug: tag.slug || '',
-      color: tag.color || '#7f5af0',
+      slug: tag.slug ?? '',
+      color: tag.color ?? '#7f5af0',
     });
     setDialogOpen(true);
   };
@@ -116,12 +130,12 @@ export default function TagsManager() {
       const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/tags/${deleteId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token ?? ''}` },
       });
 
       if (response.ok) {
         toast.success('標籤已刪除');
-        fetchTags();
+        void fetchTags();
       } else {
         toast.error('刪除失敗');
       }
@@ -173,7 +187,7 @@ export default function TagsManager() {
                 {editingTag ? '修改標籤資訊' : '創建新的文章標籤'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => { void handleSubmit(e); }}>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">標籤名稱</Label>
@@ -239,7 +253,7 @@ export default function TagsManager() {
         <div className="glass rounded-xl p-5">
           <div className="flex flex-wrap gap-2">
             {sortedTags.map((tag) => {
-              const count = tag.post_count || 0;
+              const count = tag.post_count ?? 0;
               const sizeClass = count >= 10
                 ? 'text-sm px-3 py-1.5'
                 : count >= 5
@@ -295,7 +309,7 @@ export default function TagsManager() {
                     </div>
                   </td>
                   <td className="px-4 py-2 text-right">
-                    <span className="text-[12px] text-muted-foreground/60">{tag.post_count || 0}</span>
+                    <span className="text-[12px] text-muted-foreground/60">{tag.post_count ?? 0}</span>
                   </td>
                   <td className="px-4 py-2 text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -336,7 +350,7 @@ export default function TagsManager() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={() => { void handleDelete(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               刪除
             </AlertDialogAction>
           </AlertDialogFooter>

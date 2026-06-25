@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Plus, 
-  Trash2, 
+import {
+  Plus,
+  Trash2,
   Search,
   Pencil,
   ExternalLink
@@ -25,27 +25,40 @@ import {
 
 dayjs.locale('zh-tw');
 
+interface PostTag { name?: string; label?: string }
+interface PostItem {
+  id: number;
+  title: string;
+  tags?: (string | PostTag)[];
+  category?: string;
+  status: string;
+  created_at: string;
+  slug?: string;
+}
+
+const tagText = (tag: string | PostTag): string => (typeof tag === 'string' ? tag : (tag.name ?? tag.label ?? ''));
+
 export default function PostsList() {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<PostItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [deleteId, setDeleteId] = useState(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    fetchPosts();
+    void fetchPosts();
   }, []);
 
   const fetchPosts = async () => {
     try {
       const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/admin/posts', {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token ?? ''}` },
       });
-      
+
       if (response.ok) {
-        const data = await response.json();
-        setPosts(data.posts || data || []);
+        const data = await response.json() as { posts?: PostItem[] } | PostItem[];
+        setPosts(Array.isArray(data) ? data : (data.posts ?? []));
       }
     } catch (error) {
       console.error('獲取文章列表失敗:', error);
@@ -62,12 +75,12 @@ export default function PostsList() {
       const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/posts/${deleteId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token ?? ''}` },
       });
 
       if (response.ok) {
         toast.success('文章已刪除');
-        fetchPosts();
+        void fetchPosts();
       } else {
         toast.error('刪除失敗');
       }
@@ -79,13 +92,13 @@ export default function PostsList() {
     }
   };
 
-  const statusLabels = {
+  const statusLabels: Record<string, string> = {
     published: '已發佈',
     draft: '草稿',
     archived: '已封存',
   };
 
-  const statusStyle = {
+  const statusStyle: Record<string, string> = {
     published: 'text-foreground/50 bg-accent/50',
     draft: 'text-muted-foreground/70 bg-accent/25',
     archived: 'text-muted-foreground/50 bg-accent/20',
@@ -185,8 +198,8 @@ export default function PostsList() {
                       {post.tags && post.tags.length > 0 && (
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {(Array.isArray(post.tags) ? post.tags : []).slice(0, 3).map((tag) => (
-                            <span key={typeof tag === 'string' ? tag : tag.name || tag.label} className="text-[10px] text-muted-foreground/35 font-mono">
-                              #{typeof tag === 'string' ? tag : tag.name || tag.label}
+                            <span key={tagText(tag)} className="text-[10px] text-muted-foreground/35 font-mono">
+                              #{tagText(tag)}
                             </span>
                           ))}
                         </div>
@@ -194,7 +207,7 @@ export default function PostsList() {
                     </div>
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className="text-[11px] text-muted-foreground/60">{post.category || '未分類'}</span>
+                    <span className="text-[11px] text-muted-foreground/60">{post.category ?? '未分類'}</span>
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusStyle[post.status] || 'text-muted-foreground bg-accent/20'}`}>
@@ -265,7 +278,7 @@ export default function PostsList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={() => { void handleDelete(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               刪除
             </AlertDialogAction>
           </AlertDialogFooter>

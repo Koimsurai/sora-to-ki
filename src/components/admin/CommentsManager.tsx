@@ -15,7 +15,22 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const STATUS_CONFIG = {
+interface Comment {
+  id: number | string;
+  author: string;
+  email?: string;
+  content: string;
+  status: string;
+  is_admin?: number | boolean;
+  created_at: string;
+  ip?: string;
+  post_id?: number | string;
+  post_title?: string;
+}
+interface BlacklistEntry { id: number | string; ip: string; reason?: string; created_at: string }
+interface KeywordFilter { id: number | string; keyword: string; action: string }
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   pending: { label: '待審核', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
   approved: { label: '已批准', color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/20' },
   spam: { label: '垃圾訊息', color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20' },
@@ -23,8 +38,8 @@ const STATUS_CONFIG = {
 };
 
 export default function CommentsManager() {
-  const [comments, setComments] = useState([]);
-  const [counts, setCounts] = useState({ pending: 0, approved: 0, spam: 0, trash: 0 });
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({ pending: 0, approved: 0, spam: 0, trash: 0 });
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -32,16 +47,16 @@ export default function CommentsManager() {
   const [page, setPage] = useState(1);
 
   // Dialogs
-  const [replyDialog, setReplyDialog] = useState({ open: false, comment: null });
+  const [replyDialog, setReplyDialog] = useState<{ open: boolean; comment: Comment | null }>({ open: false, comment: null });
   const [replyText, setReplyText] = useState('');
-  const [editDialog, setEditDialog] = useState({ open: false, comment: null });
+  const [editDialog, setEditDialog] = useState<{ open: boolean; comment: Comment | null }>({ open: false, comment: null });
   const [editText, setEditText] = useState('');
-  const [deleteId, setDeleteId] = useState(null);
+  const [deleteId, setDeleteId] = useState<number | string | null>(null);
 
   // Blacklist & Keyword tabs
   const [activeTab, setActiveTab] = useState('comments'); // comments | blacklist | keywords
-  const [blacklist, setBlacklist] = useState([]);
-  const [keywordFilters, setKeywordFilters] = useState([]);
+  const [blacklist, setBlacklist] = useState<BlacklistEntry[]>([]);
+  const [keywordFilters, setKeywordFilters] = useState<KeywordFilter[]>([]);
   const [newBlacklistIp, setNewBlacklistIp] = useState('');
   const [newBlacklistReason, setNewBlacklistReason] = useState('');
   const [newKeyword, setNewKeyword] = useState('');
@@ -53,82 +68,82 @@ export default function CommentsManager() {
   const fetchComments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({ page, limit: 50 });
+      const params = new URLSearchParams({ page: String(page), limit: '50' });
       if (statusFilter !== 'all') params.set('status', statusFilter);
       if (searchQuery) params.set('search', searchQuery);
-      const res = await fetch(`/api/admin/comments?${params}`, { headers });
+      const res = await fetch(`/api/admin/comments?${params.toString()}`, { headers });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as { comments: Comment[]; counts: Record<string, number>; total: number };
         setComments(data.comments);
         setCounts(data.counts);
         setTotal(data.total);
       }
-    } catch (e) {
+    } catch {
       toast.error('載入留言失敗');
     } finally {
       setIsLoading(false);
     }
   }, [statusFilter, searchQuery, page]);
 
-  useEffect(() => { fetchComments(); }, [fetchComments]);
+  useEffect(() => { void fetchComments(); }, [fetchComments]);
 
   const fetchBlacklist = async () => {
     try {
       const res = await fetch('/api/admin/blacklist', { headers });
-      if (res.ok) { const d = await res.json(); setBlacklist(d.blacklist); }
-    } catch (e) { toast.error('載入黑名單失敗'); }
+      if (res.ok) { const d = await res.json() as { blacklist: BlacklistEntry[] }; setBlacklist(d.blacklist); }
+    } catch { toast.error('載入黑名單失敗'); }
   };
 
   const fetchKeywords = async () => {
     try {
       const res = await fetch('/api/admin/keyword-filters', { headers });
-      if (res.ok) { const d = await res.json(); setKeywordFilters(d.filters); }
-    } catch (e) { toast.error('載入關鍵字失敗'); }
+      if (res.ok) { const d = await res.json() as { filters: KeywordFilter[] }; setKeywordFilters(d.filters); }
+    } catch { toast.error('載入關鍵字失敗'); }
   };
 
   useEffect(() => {
-    if (activeTab === 'blacklist') fetchBlacklist();
-    if (activeTab === 'keywords') fetchKeywords();
+    if (activeTab === 'blacklist') void fetchBlacklist();
+    if (activeTab === 'keywords') void fetchKeywords();
   }, [activeTab]);
 
   // ── Actions ──
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id: number | string, status: string) => {
     try {
       const res = await fetch(`/api/admin/comments/${id}/status`, {
         method: 'PATCH', headers, body: JSON.stringify({ status }),
       });
-      if (res.ok) { toast.success(STATUS_CONFIG[status].label); fetchComments(); }
+      if (res.ok) { toast.success(STATUS_CONFIG[status].label); void fetchComments(); }
     } catch { toast.error('操作失敗'); }
   };
 
   const handleReply = async () => {
     if (!replyText.trim()) return;
     try {
-      const res = await fetch(`/api/admin/comments/${replyDialog.comment.id}/reply`, {
+      const res = await fetch(`/api/admin/comments/${replyDialog.comment?.id}/reply`, {
         method: 'POST', headers, body: JSON.stringify({ content: replyText }),
       });
-      if (res.ok) { toast.success('回覆成功'); setReplyDialog({ open: false, comment: null }); setReplyText(''); fetchComments(); }
+      if (res.ok) { toast.success('回覆成功'); setReplyDialog({ open: false, comment: null }); setReplyText(''); void fetchComments(); }
     } catch { toast.error('回覆失敗'); }
   };
 
   const handleEdit = async () => {
     if (!editText.trim()) return;
     try {
-      const res = await fetch(`/api/admin/comments/${editDialog.comment.id}`, {
+      const res = await fetch(`/api/admin/comments/${editDialog.comment?.id}`, {
         method: 'PUT', headers, body: JSON.stringify({ content: editText }),
       });
-      if (res.ok) { toast.success('已修改'); setEditDialog({ open: false, comment: null }); fetchComments(); }
+      if (res.ok) { toast.success('已修改'); setEditDialog({ open: false, comment: null }); void fetchComments(); }
     } catch { toast.error('修改失敗'); }
   };
 
   const handleDelete = async () => {
     try {
       const res = await fetch(`/api/admin/comments/${deleteId}`, { method: 'DELETE', headers });
-      if (res.ok) { toast.success('已永久刪除'); setDeleteId(null); fetchComments(); }
+      if (res.ok) { toast.success('已永久刪除'); setDeleteId(null); void fetchComments(); }
     } catch { toast.error('刪除失敗'); }
   };
 
-  const blockIp = async (ip) => {
+  const blockIp = async (ip: string) => {
     try {
       const res = await fetch('/api/admin/blacklist', {
         method: 'POST', headers, body: JSON.stringify({ ip, reason: '來自留言管理封鎖' }),
@@ -143,14 +158,14 @@ export default function CommentsManager() {
       const res = await fetch('/api/admin/blacklist', {
         method: 'POST', headers, body: JSON.stringify({ ip: newBlacklistIp, reason: newBlacklistReason }),
       });
-      if (res.ok) { toast.success('已加入黑名單'); setNewBlacklistIp(''); setNewBlacklistReason(''); fetchBlacklist(); }
+      if (res.ok) { toast.success('已加入黑名單'); setNewBlacklistIp(''); setNewBlacklistReason(''); void fetchBlacklist(); }
     } catch { toast.error('操作失敗'); }
   };
 
-  const removeBlacklist = async (id) => {
+  const removeBlacklist = async (id: number | string) => {
     try {
       const res = await fetch(`/api/admin/blacklist/${id}`, { method: 'DELETE', headers });
-      if (res.ok) { toast.success('已移除'); fetchBlacklist(); }
+      if (res.ok) { toast.success('已移除'); void fetchBlacklist(); }
     } catch { toast.error('操作失敗'); }
   };
 
@@ -160,18 +175,18 @@ export default function CommentsManager() {
       const res = await fetch('/api/admin/keyword-filters', {
         method: 'POST', headers, body: JSON.stringify({ keyword: newKeyword, action: newKeywordAction }),
       });
-      if (res.ok) { toast.success('已新增過濾詞'); setNewKeyword(''); fetchKeywords(); }
+      if (res.ok) { toast.success('已新增過濾詞'); setNewKeyword(''); void fetchKeywords(); }
     } catch { toast.error('操作失敗'); }
   };
 
-  const removeKeyword = async (id) => {
+  const removeKeyword = async (id: number | string) => {
     try {
       const res = await fetch(`/api/admin/keyword-filters/${id}`, { method: 'DELETE', headers });
-      if (res.ok) { toast.success('已移除'); fetchKeywords(); }
+      if (res.ok) { toast.success('已移除'); void fetchKeywords(); }
     } catch { toast.error('操作失敗'); }
   };
 
-  const formatDate = (d) => new Date(d).toLocaleString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const formatDate = (d: string) => new Date(d).toLocaleString('zh-TW', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   const totalAll = Object.values(counts).reduce((a, b) => a + b, 0);
 
@@ -185,7 +200,7 @@ export default function CommentsManager() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">審核、回覆和管理所有留言</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchComments} className="gap-1.5">
+        <Button variant="outline" size="sm" onClick={() => { void fetchComments(); }} className="gap-1.5">
           <RefreshCw className="size-3.5" /> 重新整理
         </Button>
       </div>
@@ -288,19 +303,19 @@ export default function CommentsManager() {
                       <div className="flex items-center gap-1 pl-9 opacity-0 group-hover:opacity-100 transition-opacity">
                         {c.status !== 'approved' && (
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-green-400 hover:text-green-300 hover:bg-green-400/10"
-                            onClick={() => updateStatus(c.id, 'approved')}>
+                            onClick={() => { void updateStatus(c.id, 'approved'); }}>
                             <Check className="size-3" /> 批准
                           </Button>
                         )}
                         {c.status !== 'spam' && (
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-red-400 hover:text-red-300 hover:bg-red-400/10"
-                            onClick={() => updateStatus(c.id, 'spam')}>
+                            onClick={() => { void updateStatus(c.id, 'spam'); }}>
                             <AlertTriangle className="size-3" /> 垃圾
                           </Button>
                         )}
                         {c.status !== 'trash' && (
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-400/10"
-                            onClick={() => updateStatus(c.id, 'trash')}>
+                            onClick={() => { void updateStatus(c.id, 'trash'); }}>
                             <Trash2 className="size-3" /> 丟棄
                           </Button>
                         )}
@@ -314,7 +329,7 @@ export default function CommentsManager() {
                         </Button>
                         {c.ip && (
                           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-orange-400 hover:text-orange-300 hover:bg-orange-400/10"
-                            onClick={() => blockIp(c.ip)}>
+                            onClick={() => { if (c.ip) void blockIp(c.ip); }}>
                             <Ban className="size-3" /> 封鎖 IP
                           </Button>
                         )}
@@ -349,7 +364,7 @@ export default function CommentsManager() {
           <div className="flex gap-2">
             <Input placeholder="IP 位址" value={newBlacklistIp} onChange={e => setNewBlacklistIp(e.target.value)} className="h-8 text-xs w-40" />
             <Input placeholder="原因（選填）" value={newBlacklistReason} onChange={e => setNewBlacklistReason(e.target.value)} className="h-8 text-xs flex-1" />
-            <Button size="sm" onClick={addBlacklist} className="h-8 text-xs gap-1"><Ban className="size-3" /> 新增</Button>
+            <Button size="sm" onClick={() => { void addBlacklist(); }} className="h-8 text-xs gap-1"><Ban className="size-3" /> 新增</Button>
           </div>
           {blacklist.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">黑名單是空的</p>
@@ -363,7 +378,7 @@ export default function CommentsManager() {
                     <span className="text-[11px] text-muted-foreground ml-3">{formatDate(b.created_at)}</span>
                   </div>
                   <Button variant="ghost" size="sm" className="h-7 text-xs text-red-400 hover:text-red-300"
-                    onClick={() => removeBlacklist(b.id)}>
+                    onClick={() => { void removeBlacklist(b.id); }}>
                     <X className="size-3" />
                   </Button>
                 </div>
@@ -383,7 +398,7 @@ export default function CommentsManager() {
               <option value="spam">標記為垃圾</option>
               <option value="reject">直接拒絕</option>
             </select>
-            <Button size="sm" onClick={addKeyword} className="h-8 text-xs gap-1"><Filter className="size-3" /> 新增</Button>
+            <Button size="sm" onClick={() => { void addKeyword(); }} className="h-8 text-xs gap-1"><Filter className="size-3" /> 新增</Button>
           </div>
           {keywordFilters.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">尚無過濾關鍵字</p>
@@ -395,7 +410,7 @@ export default function CommentsManager() {
                 }`}>
                   <span>{f.keyword}</span>
                   <span className="opacity-50">({f.action === 'reject' ? '拒絕' : '垃圾'})</span>
-                  <button onClick={() => removeKeyword(f.id)} className="ml-0.5 hover:text-foreground transition-colors">
+                  <button onClick={() => { void removeKeyword(f.id); }} className="ml-0.5 hover:text-foreground transition-colors">
                     <X className="size-3" />
                   </button>
                 </div>
@@ -423,7 +438,7 @@ export default function CommentsManager() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReplyDialog({ open: false, comment: null })}>取消</Button>
-            <Button onClick={handleReply}>發送回覆</Button>
+            <Button onClick={() => { void handleReply(); }}>發送回覆</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -439,7 +454,7 @@ export default function CommentsManager() {
             className="w-full min-h-[120px] rounded-lg border border-border/40 bg-transparent p-3 text-sm text-foreground/90 resize-none outline-none focus:border-blue-500/40" />
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialog({ open: false, comment: null })}>取消</Button>
-            <Button onClick={handleEdit}>儲存修改</Button>
+            <Button onClick={() => { void handleEdit(); }}>儲存修改</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -453,7 +468,7 @@ export default function CommentsManager() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">永久刪除</AlertDialogAction>
+            <AlertDialogAction onClick={() => { void handleDelete(); }} className="bg-red-600 hover:bg-red-700">永久刪除</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

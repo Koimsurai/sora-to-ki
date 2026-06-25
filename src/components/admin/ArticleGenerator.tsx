@@ -137,7 +137,11 @@ const MAX_INPUT_CHARS = 50000;
 const LLM_TIMEOUT_MS = 180_000;  // 3 分鐘
 const CONTEXT_BRIDGE_CHARS = 300;
 
-async function fetchLLM(messages, { maxTokens = 4096, temperature = 0.75 } = {}) {
+interface LLMMessage { role: string; content: string }
+interface OutlineSection { heading?: string; brief?: string }
+interface Outline { sections?: OutlineSection[] }
+
+async function fetchLLM(messages: LLMMessage[], { maxTokens = 4096, temperature = 0.75 }: { maxTokens?: number; temperature?: number } = {}): Promise<string> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
 
@@ -164,12 +168,12 @@ async function fetchLLM(messages, { maxTokens = 4096, temperature = 0.75 } = {})
             throw new Error(`LLM API 錯誤 (${response.status}): ${errText.slice(0, 200)}`);
         }
 
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || '';
+        const data = await response.json() as { choices?: { message?: { content?: string } }[] };
+        const content = data.choices?.[0]?.message?.content ?? '';
         console.log('[ArticleGen] Got response:', content.length, 'chars');
         return content;
     } catch (err) {
-        if (err.name === 'AbortError') {
+        if (err instanceof DOMException && err.name === 'AbortError') {
             throw new Error('請求逾時（超過 3 分鐘），請嘗試縮短素材長度後重試');
         }
         throw err;
@@ -178,7 +182,7 @@ async function fetchLLM(messages, { maxTokens = 4096, temperature = 0.75 } = {})
     }
 }
 
-function trimMaterial(text) {
+function trimMaterial(text: string) {
     if (text.length <= MAX_INPUT_CHARS) return text;
     // 保留頭部 40K + 尾部 8K  → 共 48K
     const head = text.slice(0, 40000);
@@ -186,7 +190,7 @@ function trimMaterial(text) {
     return `${head}\n\n[...中間省略約 ${(text.length - 48000).toLocaleString()} 字...]\n\n${tail}`;
 }
 
-function cleanSectionOutput(text) {
+function cleanSectionOutput(text: string) {
     let t = text.trim();
     if (t.startsWith('```')) {
         t = t.replace(/^```\w*\n?/, '').replace(/\n?```\s*$/, '');
@@ -197,7 +201,7 @@ function cleanSectionOutput(text) {
 /**
  * 多階段長文生成：大綱 → 逐段展開
  */
-async function generateLongForm(systemPrompt, userContent, guide, onProgress, onLog) {
+async function generateLongForm(systemPrompt: string, userContent: string, guide: string, onProgress?: (msg: string) => void, onLog?: (msg: string) => void): Promise<string> {
     const material = trimMaterial(userContent);
     onLog?.(`📝 Material trimmed length: ${material.length}`);
 
@@ -228,7 +232,7 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
         '- **Each brief must clearly differentiate what THIS section covers vs others — no vague or shared descriptions**\n' +
         '- If a detail appears in one section brief, it must NOT appear in any other section brief\n';
 
-    const outlineMessages = [
+    const outlineMessages: LLMMessage[] = [
         { role: 'system', content: outlineSystem },
     ];
     if (guide?.trim()) {
@@ -239,16 +243,16 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
         content: `以下是素材，請產出文章大綱：\n\n---\n${material}\n---`,
     });
 
-    const outlineRaw = await fetchLLM(outlineMessages, { maxTokens: 1024, temperature: 0.5 }, onLog);
+    const outlineRaw = await fetchLLM(outlineMessages, { maxTokens: 1024, temperature: 0.5 });
     onLog?.(`📄 Outline Raw: ${outlineRaw.slice(0, 100)}...`);
     console.log('[ArticleGen] Outline raw:', outlineRaw.slice(0, 300));
-    let outline;
+    let outline: Outline | undefined;
     try {
-        outline = JSON.parse(outlineRaw);
+        outline = JSON.parse(outlineRaw) as Outline;
     } catch {
-        const match = outlineRaw.match(/(\{[\s\S]*\})/);
+        const match = /(\{[\s\S]*\})/.exec(outlineRaw);
         if (match) {
-            try { outline = JSON.parse(match[1]); } catch { /* fallback */ }
+            try { outline = JSON.parse(match[1]) as Outline; } catch { /* fallback */ }
         }
     }
 
@@ -258,7 +262,7 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
     if (!sections || sections.length < 4) {
         onProgress?.('✍️ 素材較少，使用單次生成...');
         onLog?.('⚠️ Outline parse failed or too few sections, falling back to single pass.');
-        const messages = [{ role: 'system', content: systemPrompt }];
+        const messages: LLMMessage[] = [{ role: 'system', content: systemPrompt }];
         if (guide?.trim()) {
             messages.push({ role: 'system', content: `## 導演指令（優先遵守）\n${guide.trim()}` });
         }
@@ -266,7 +270,7 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
             role: 'user',
             content: `以下是素材，請撰寫文章：\n\n---\n${material}\n---`,
         });
-        return await fetchLLM(messages, {}, onLog);
+        return await fetchLLM(messages, {});
     }
 
     onProgress?.(`📐 大綱完成：${sections.length} 個段落`);
@@ -274,19 +278,19 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
 
     // ── Phase 2：逐段展開 ────────────────────────────────
     const outlineSummary = sections.map((s, i) =>
-        `${i + 1}. ${s.heading || '（開場段）'}：${s.brief || ''}`
+        `${i + 1}. ${s.heading ?? '（開場段）'}：${s.brief ?? ''}`
     ).join('\n');
 
-    const allParts = [];
+    const allParts: string[] = [];
     let previousTail = '';
-    const completedHeadings = [];
+    const completedHeadings: { heading: string; brief: string }[] = [];
 
     for (let idx = 0; idx < sections.length; idx++) {
         const section = sections[idx];
         const isFirst = idx === 0;
         const isLast = idx === sections.length - 1;
-        const heading = section.heading || '';
-        const brief = section.brief || '';
+        const heading = section.heading ?? '';
+        const brief = section.brief ?? '';
 
         const positionDesc = isFirst
             ? '文章開頭（含自然開場段）'
@@ -306,7 +310,7 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
         if (completedHeadings.length > 0) {
             expandSystem += `## 已完成段落（嚴禁重複這些段落的內容）\n` +
                 `以下段落已經寫完，你**絕對不可以**重複或改寫這些段落涵蓋的主題和細節：\n` +
-                completedHeadings.map((h, i) => `${i + 1}. ${h.heading || '開場段'}：${h.brief}`).join('\n') + '\n\n';
+                completedHeadings.map((h, i) => `${i + 1}. ${h.heading ?? '開場段'}：${h.brief}`).join('\n') + '\n\n';
         }
 
         expandSystem += '## 展開約束\n' +
@@ -331,12 +335,12 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
             '- **嚴禁與前面段落產生內容重疊**：如果某個觀點、事件、或技術細節已在前面段落出現過，此段不得再次提及或以不同措辭重述\n' +
             '- 每段專注挖掘大綱中指定的**獨立主題**，絕不回頭複述已寫過的內容\n';
 
-        const expandMessages = [{ role: 'system', content: expandSystem }];
+        const expandMessages: LLMMessage[] = [{ role: 'system', content: expandSystem }];
         if (guide?.trim()) {
             expandMessages.push({ role: 'system', content: `## 導演指令（優先遵守）\n${guide.trim()}` });
         }
 
-        let userParts = [];
+        const userParts: string[] = [];
         if (previousTail) {
             userParts.push(`【上一段的結尾（銜接參考，嚴禁重複其內容）】：\n"""\n${previousTail}\n"""`);
         }
@@ -344,7 +348,7 @@ async function generateLongForm(systemPrompt, userContent, guide, onProgress, on
 
         expandMessages.push({ role: 'user', content: userParts.join('\n\n') });
 
-        const sectionText = await fetchLLM(expandMessages, { maxTokens: 2048, temperature: 0.7 }, onLog);
+        const sectionText = await fetchLLM(expandMessages, { maxTokens: 2048, temperature: 0.7 });
         if (sectionText && !sectionText.startsWith('抱歉')) {
             const cleaned = cleanSectionOutput(sectionText);
             allParts.push(cleaned);
@@ -375,17 +379,17 @@ export default function ArticleGenerator() {
     const [progressText, setProgressText] = useState('');
     const [viewMode, setViewMode] = useState('preview'); // 'preview' | 'source'
     const [copied, setCopied] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const textareaRef = useRef(null);
+    const [, setIsSaving] = useState(false);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    const [logs, setLogs] = useState([]);
+    const [logs, setLogs] = useState<string[]>([]);
 
-    const addLog = (msg) => {
+    const addLog = (msg: string) => {
         const time = new Date().toLocaleTimeString();
         setLogs(prev => [...prev, `[${time}] ${msg}`]);
     };
 
-    const selectedType = ARTICLE_TYPES[articleType];
+    const selectedType = ARTICLE_TYPES[articleType as keyof typeof ARTICLE_TYPES];
 
     // ── 生成文章 ──
     const handleGenerate = async () => {
@@ -426,8 +430,9 @@ export default function ArticleGenerator() {
             addLog('✅ Generation completed successfully.');
         } catch (err) {
             console.error('生成失敗:', err);
-            toast.error(`生成失敗：${err.message}`);
-            addLog(`❌ Fatal Error: ${err.message}`);
+            const message = err instanceof Error ? err.message : String(err);
+            toast.error(`生成失敗：${message}`);
+            addLog(`❌ Fatal Error: ${message}`);
         } finally {
             setIsGenerating(false);
             setProgressText('');
@@ -453,7 +458,7 @@ export default function ArticleGenerator() {
         setIsSaving(true);
 
         // 從 Markdown 中提取標題
-        const titleMatch = generatedContent.match(/^#\s+(.+)$/m);
+        const titleMatch = /^#\s+(.+)$/m.exec(generatedContent);
         const title = titleMatch ? titleMatch[1].trim() : '未命名文章';
 
         // 移除標題行，剩餘作為正文
@@ -463,7 +468,7 @@ export default function ArticleGenerator() {
 
         // 使用 AI 生成摘要與標籤（模仿 Jarvis 的 prompt）
         let summary = '';
-        let tags = [];
+        let tags: string[] = [];
         try {
             toast.info('正在使用 AI 生成摘要與標籤...');
             const metaResult = await fetchLLM([
@@ -487,19 +492,19 @@ export default function ArticleGenerator() {
                 },
             ], { maxTokens: 512, temperature: 0.3 });
 
-            let parsed;
+            let parsed: { summary?: string; tags?: string[] } | undefined;
             try {
-                parsed = JSON.parse(metaResult);
+                parsed = JSON.parse(metaResult) as { summary?: string; tags?: string[] };
             } catch {
-                const match = metaResult.match(/(\{[\s\S]*\})/);
+                const match = /(\{[\s\S]*\})/.exec(metaResult);
                 if (match) {
-                    try { parsed = JSON.parse(match[1]); } catch { /* fallback */ }
+                    try { parsed = JSON.parse(match[1]) as { summary?: string; tags?: string[] }; } catch { /* fallback */ }
                 }
             }
 
             if (parsed) {
-                summary = parsed.summary || '';
-                tags = parsed.tags || [];
+                summary = parsed.summary ?? '';
+                tags = parsed.tags ?? [];
             }
         } catch (err) {
             console.error('AI 摘要生成失敗，使用備用摘要:', err);
@@ -521,7 +526,7 @@ export default function ArticleGenerator() {
         };
 
         const encoded = encodeURIComponent(JSON.stringify(articleData));
-        navigate(`/admin/posts/create?n8n_data=${encoded}`);
+        void navigate(`/admin/posts/create?n8n_data=${encoded}`);
         toast.success('已匯入文章編輯器（含 AI 摘要與標籤）');
         setIsSaving(false);
     };
@@ -603,7 +608,7 @@ export default function ArticleGenerator() {
                                 variant="outline"
                                 size="sm"
                                 className="text-xs gap-1.5 h-7 px-3 border-border/50 text-foreground/70 hover:bg-accent/40"
-                                onClick={handleGenerate}
+                                onClick={() => { void handleGenerate(); }}
                                 disabled={isGenerating || !conversationText.trim()}
                             >
                                 {isGenerating ? (
@@ -646,13 +651,13 @@ export default function ArticleGenerator() {
                                             </button>
                                         </div>
                                         <button
-                                            onClick={handleCopy}
+                                            onClick={() => { void handleCopy(); }}
                                             className="size-7 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
                                         >
                                             {copied ? <Check className="size-3.5 text-green-400" /> : <Copy className="size-3.5" />}
                                         </button>
                                         <button
-                                            onClick={handleSendToEditor}
+                                            onClick={() => { void handleSendToEditor(); }}
                                             className="size-7 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
                                         >
                                             <FileText className="size-3.5" />
@@ -698,7 +703,7 @@ export default function ArticleGenerator() {
                                         variant="ghost"
                                         size="sm"
                                         className="text-xs gap-1.5 h-7 text-muted-foreground/60 hover:text-foreground/70"
-                                        onClick={handleSendToEditor}
+                                        onClick={() => { void handleSendToEditor(); }}
                                     >
                                         <Send className="size-3" />
                                         匯入至文章

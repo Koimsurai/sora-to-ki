@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,12 +24,28 @@ import {
 import { Plus, Pencil, Trash2, FolderOpen, GripVertical, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface Category {
+  id: number;
+  name: string;
+  slug?: string;
+  description?: string;
+  short_description?: string;
+  post_count?: number;
+}
+
+interface CategoryForm {
+  name: string;
+  slug: string;
+  description: string;
+  short_description: string;
+}
+
 export default function CategoriesManager() {
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [deleteId, setDeleteId] = useState(null);
-  const [formData, setFormData] = useState({
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [formData, setFormData] = useState<CategoryForm>({
     name: '',
     slug: '',
     description: '',
@@ -39,23 +55,24 @@ export default function CategoriesManager() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    fetchCategories();
+    void fetchCategories();
   }, []);
 
+  const q = searchQuery.toLowerCase();
   const filteredCategories = categories.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (c.slug && c.slug.toLowerCase().includes(searchQuery.toLowerCase()))
+    c.name.toLowerCase().includes(q) ||
+    c.slug?.toLowerCase().includes(q)
   );
 
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch('/api/admin/categories', {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token ?? ''}` },
       });
-      
+
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as Category[];
         setCategories(data);
       }
     } catch (error) {
@@ -66,12 +83,12 @@ export default function CategoriesManager() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     try {
       const token = localStorage.getItem('koimsurai_user_token');
-      const url = editingCategory 
+      const url = editingCategory
         ? `/api/admin/categories/${editingCategory.id}`
         : '/api/admin/categories';
       const method = editingCategory ? 'PUT' : 'POST';
@@ -80,7 +97,7 @@ export default function CategoriesManager() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token ?? ''}`,
         },
         body: JSON.stringify(formData),
       });
@@ -89,7 +106,7 @@ export default function CategoriesManager() {
         toast.success(editingCategory ? '分類已更新' : '分類已創建');
         setDialogOpen(false);
         resetForm();
-        fetchCategories();
+        void fetchCategories();
       } else {
         toast.error('操作失敗');
       }
@@ -99,13 +116,13 @@ export default function CategoriesManager() {
     }
   };
 
-  const handleEdit = (category) => {
+  const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
-      slug: category.slug || '',
-      description: category.description || '',
-      short_description: category.short_description || '',
+      slug: category.slug ?? '',
+      description: category.description ?? '',
+      short_description: category.short_description ?? '',
     });
     setDialogOpen(true);
   };
@@ -117,12 +134,12 @@ export default function CategoriesManager() {
       const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/categories/${deleteId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token ?? ''}` },
       });
 
       if (response.ok) {
         toast.success('分類已刪除');
-        fetchCategories();
+        void fetchCategories();
       } else {
         toast.error('刪除失敗');
       }
@@ -174,7 +191,7 @@ export default function CategoriesManager() {
                 {editingCategory ? '修改分類資訊' : '創建新的文章分類'}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => { void handleSubmit(e); }}>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">分類名稱</Label>
@@ -255,7 +272,7 @@ export default function CategoriesManager() {
               </div>
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 shrink-0 mr-2">
                 <FileText className="size-3" />
-                {cat.post_count || 0}
+                {cat.post_count ?? 0}
               </div>
               <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
@@ -292,7 +309,7 @@ export default function CategoriesManager() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={() => { void handleDelete(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               刪除
             </AlertDialogAction>
           </AlertDialogFooter>

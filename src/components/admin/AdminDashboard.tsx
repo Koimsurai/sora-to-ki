@@ -7,8 +7,27 @@ import 'dayjs/locale/zh-tw';
 
 dayjs.locale('zh-tw');
 
+interface DashboardStats {
+  totalPosts: number;
+  publishedPosts: number;
+  draftPosts: number;
+  visitors: number;
+  comments: number;
+  growth: number;
+  postsThisMonth?: number;
+  commentsThisWeek?: number;
+}
+
+interface RecentPost {
+  id: number;
+  title: string;
+  category?: string;
+  created_at: string;
+  status?: string;
+}
+
 export const AdminDashboard = () => {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     totalPosts: 0,
     publishedPosts: 0,
     draftPosts: 0,
@@ -16,35 +35,35 @@ export const AdminDashboard = () => {
     comments: 0,
     growth: 0,
   });
-  const [recentPosts, setRecentPosts] = useState([]);
+  const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
+    void fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('koimsurai_user_token');
-      
+
       // Fetch posts
       const postsResponse = await fetch('/api/admin/posts?limit=5', {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token ?? ''}` },
       });
-      
+
       if (postsResponse.ok) {
-        const postsData = await postsResponse.json();
-        setRecentPosts(postsData.posts || []);
-        setStats(prev => ({ ...prev, totalPosts: postsData.total || postsData.posts?.length || 0 }));
+        const postsData = await postsResponse.json() as { posts?: RecentPost[]; total?: number };
+        setRecentPosts(postsData.posts ?? []);
+        setStats(prev => ({ ...prev, totalPosts: postsData.total ?? postsData.posts?.length ?? 0 }));
       }
 
       // Fetch stats
       const statsResponse = await fetch('/api/admin/stats', {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { 'Authorization': `Bearer ${token ?? ''}` },
       });
-      
+
       if (statsResponse.ok) {
-        const statsData = await statsResponse.json();
+        const statsData = await statsResponse.json() as Partial<DashboardStats>;
         setStats(prev => ({ ...prev, ...statsData }));
       }
     } catch (error) {
@@ -55,9 +74,9 @@ export const AdminDashboard = () => {
   };
 
   const statItems = [
-    { label: '文章總數', value: stats.totalPosts, icon: FileText, change: `+${stats.postsThisMonth || Math.floor(stats.totalPosts * 0.1)}` },
+    { label: '文章總數', value: stats.totalPosts, icon: FileText, change: `+${stats.postsThisMonth ?? Math.floor(stats.totalPosts * 0.1)}` },
     { label: '本月瀏覽', value: stats.visitors || 1665, icon: Eye, change: '+12%' },
-    { label: '留言數', value: stats.comments || 56, icon: MessageSquare, change: `+${stats.commentsThisWeek || Math.floor((stats.comments || 56) * 0.05)}` },
+    { label: '留言數', value: stats.comments || 56, icon: MessageSquare, change: `+${stats.commentsThisWeek ?? Math.floor((stats.comments || 56) * 0.05)}` },
     { label: '成長率', value: `+${stats.growth || 23}%`, icon: TrendingUp, change: '較上月' },
   ];
 
@@ -120,7 +139,7 @@ export const AdminDashboard = () => {
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] text-foreground/80 truncate">{post.title}</div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[11px] text-muted-foreground/60">{post.category || '未分類'}</span>
+                      <span className="text-[11px] text-muted-foreground/60">{post.category ?? '未分類'}</span>
                       <span className="text-border/50">/</span>
                       <span className="text-[11px] text-muted-foreground/60">{dayjs(post.created_at).format('YYYY-MM-DD')}</span>
                     </div>

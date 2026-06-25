@@ -23,16 +23,50 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, BookOpen, Search, Loader2, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { type FormEvent } from 'react';
+
+interface Book {
+  id: number | string;
+  isbn?: string;
+  title: string;
+  authors?: string;
+  publisher?: string;
+  published_date?: string;
+  description?: string;
+  cover_url?: string;
+  page_count?: number | string;
+  language?: string;
+  categories?: string;
+  reading_status?: string;
+  rating?: number | null;
+  personal_notes?: string;
+}
+
+interface BookFormData {
+  isbn: string;
+  title: string;
+  authors: string;
+  publisher: string;
+  published_date: string;
+  description: string;
+  cover_url: string;
+  page_count: number | string;
+  language: string;
+  categories: string;
+  reading_status: string;
+  rating: number | null;
+  personal_notes: string;
+}
 
 export default function BooksManager() {
-  const [books, setBooks] = useState([]);
+  const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingBook, setEditingBook] = useState(null);
-  const [deleteId, setDeleteId] = useState(null);
+  const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [deleteId, setDeleteId] = useState<number | string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState<Book[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<BookFormData>({
     isbn: '',
     title: '',
     authors: '',
@@ -52,7 +86,7 @@ export default function BooksManager() {
   const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
-    fetchBooks();
+    void fetchBooks();
   }, []);
 
   const filteredBooks = books.filter(book => {
@@ -60,19 +94,19 @@ export default function BooksManager() {
     const query = localSearchQuery.toLowerCase();
     return (
       book.title.toLowerCase().includes(query) ||
-      (book.authors && book.authors.toLowerCase().includes(query)) ||
-      (book.isbn && book.isbn.toLowerCase().includes(query))
+      (book.authors?.toLowerCase().includes(query) ?? false) ||
+      (book.isbn?.toLowerCase().includes(query) ?? false)
     );
   });
 
-  const statusCounts = {
+  const statusCounts: Record<string, number> = {
     all: books.length,
     'to-read': books.filter(b => b.reading_status === 'to-read').length,
     'reading': books.filter(b => b.reading_status === 'reading').length,
     'read': books.filter(b => b.reading_status === 'read').length,
   };
 
-  const statusConfig = {
+  const statusConfig: Record<string, string> = {
     'to-read': 'text-muted-foreground/60 bg-accent/25',
     'reading': 'text-foreground/70 bg-accent/60',
     'read': 'text-foreground/50 bg-accent/50',
@@ -86,8 +120,8 @@ export default function BooksManager() {
       });
       
       if (response.ok) {
-        const data = await response.json();
-        setBooks(data.books || data);
+        const data = await response.json() as { books?: Book[] } | Book[];
+        setBooks(Array.isArray(data) ? data : (data.books ?? []));
       }
     } catch (error) {
       console.error('獲取書籍失敗:', error);
@@ -109,7 +143,7 @@ export default function BooksManager() {
       const response = await fetch(
         `/api/books/search/external?query=${encodeURIComponent(searchQuery)}`
       );
-      const data = await response.json();
+      const data = await response.json() as { message?: string; books?: Book[] };
       
       if (data.message === 'success' && data.books) {
         setSearchResults(data.books);
@@ -130,18 +164,18 @@ export default function BooksManager() {
   };
 
   // 從搜尋結果選擇書籍
-  const handleSelectFromSearch = (book) => {
+  const handleSelectFromSearch = (book: Book) => {
     setFormData({
-      isbn: book.isbn || '',
+      isbn: book.isbn ?? '',
       title: book.title || '',
-      authors: book.authors || '',
-      publisher: book.publisher || '',
-      published_date: book.published_date || '',
-      description: book.description || '',
-      cover_url: book.cover_url || '',
-      page_count: book.page_count || '',
-      language: book.language || '',
-      categories: book.categories || '',
+      authors: book.authors ?? '',
+      publisher: book.publisher ?? '',
+      published_date: book.published_date ?? '',
+      description: book.description ?? '',
+      cover_url: book.cover_url ?? '',
+      page_count: book.page_count ?? '',
+      language: book.language ?? '',
+      categories: book.categories ?? '',
       reading_status: 'to-read',
       rating: null,
       personal_notes: '',
@@ -151,13 +185,13 @@ export default function BooksManager() {
     toast.success('已自動填入書籍資訊');
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
     try {
       const token = localStorage.getItem('koimsurai_user_token');
       const url = editingBook 
-        ? `/api/books/${editingBook.id}`
+        ? `/api/books/${editingBook?.id}`
         : '/api/books';
       const method = editingBook ? 'PUT' : 'POST';
 
@@ -174,7 +208,7 @@ export default function BooksManager() {
         toast.success(editingBook ? '書籍已更新' : '書籍已新增');
         setDialogOpen(false);
         resetForm();
-        fetchBooks();
+        void fetchBooks();
       } else {
         toast.error('操作失敗');
       }
@@ -184,22 +218,22 @@ export default function BooksManager() {
     }
   };
 
-  const handleEdit = (book) => {
+  const handleEdit = (book: Book) => {
     setEditingBook(book);
     setFormData({
-      isbn: book.isbn || '',
+      isbn: book.isbn ?? '',
       title: book.title || '',
-      authors: book.authors || '',
-      publisher: book.publisher || '',
-      published_date: book.published_date || '',
-      description: book.description || '',
-      cover_url: book.cover_url || '',
-      page_count: book.page_count || '',
-      language: book.language || '',
-      categories: book.categories || '',
-      reading_status: book.reading_status || 'to-read',
-      rating: book.rating || null,
-      personal_notes: book.personal_notes || '',
+      authors: book.authors ?? '',
+      publisher: book.publisher ?? '',
+      published_date: book.published_date ?? '',
+      description: book.description ?? '',
+      cover_url: book.cover_url ?? '',
+      page_count: book.page_count ?? '',
+      language: book.language ?? '',
+      categories: book.categories ?? '',
+      reading_status: book.reading_status ?? 'to-read',
+      rating: book.rating ?? null,
+      personal_notes: book.personal_notes ?? '',
     });
     setDialogOpen(true);
   };
@@ -216,7 +250,7 @@ export default function BooksManager() {
 
       if (response.ok) {
         toast.success('書籍已刪除');
-        fetchBooks();
+        void fetchBooks();
       } else {
         toast.error('刪除失敗');
       }
@@ -249,14 +283,14 @@ export default function BooksManager() {
     setSearchQuery('');
   };
 
-  const statusLabels = {
+  const statusLabels: Record<string, string> = {
     'to-read': '想讀',
     'reading': '閱讀中',
     'read': '已完成',
   };
 
-  const renderStars = (rating) => {
-    const numRating = Math.round(parseFloat(rating) || 0);
+  const renderStars = (rating: number | string | null) => {
+    const numRating = Math.round(parseFloat(String(rating ?? 0)) || 0);
     return (
       <div className="flex items-center gap-0.5">
         {Array.from({ length: 5 }, (_, i) => (
@@ -305,7 +339,7 @@ export default function BooksManager() {
               </DialogDescription>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => { void handleSubmit(e); }}>
               {/* 內容滾動區域 */}
               <div className="max-h-[65vh] overflow-y-auto pr-2 space-y-4">
                 {/* ISBN/書名搜尋區塊 */}
@@ -316,13 +350,13 @@ export default function BooksManager() {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), searchExternalBooks())}
+                    onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); void searchExternalBooks(); } }}
                     placeholder="輸入 ISBN 或書名搜尋..."
                     className="flex-1"
                   />
                   <Button
                     type="button"
-                    onClick={searchExternalBooks}
+                    onClick={() => { void searchExternalBooks(); }}
                     disabled={isSearching || !searchQuery.trim()}
                   >
                     {isSearching ? (
@@ -507,7 +541,7 @@ export default function BooksManager() {
                       min="0"
                       max="5"
                       step="0.1"
-                      value={formData.rating || ''}
+                      value={formData.rating ?? ''}
                       onChange={(e) => setFormData({ ...formData, rating: e.target.value ? parseFloat(e.target.value) : null })}
                       placeholder="5"
                     />
@@ -586,15 +620,15 @@ export default function BooksManager() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[14px] font-medium text-foreground/80">{book.title}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusConfig[book.reading_status] || ''}`}>
-                      {statusLabels[book.reading_status] || book.reading_status}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${statusConfig[book.reading_status ?? ''] || ''}`}>
+                      {statusLabels[book.reading_status ?? ''] || book.reading_status}
                     </span>
                   </div>
                   {book.authors && (
                     <div className="text-[12px] text-muted-foreground/50 mb-1.5">{book.authors}</div>
                   )}
-                  {book.rating > 0 && (
-                    <div className="mb-1.5">{renderStars(book.rating)}</div>
+                  {(book.rating ?? 0) > 0 && (
+                    <div className="mb-1.5">{renderStars(book.rating ?? null)}</div>
                   )}
                   {book.personal_notes && (
                     <p className="text-[12px] text-muted-foreground/60 leading-relaxed line-clamp-2">{book.personal_notes}</p>
@@ -639,7 +673,7 @@ export default function BooksManager() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={() => { void handleDelete(); }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               刪除
             </AlertDialogAction>
           </AlertDialogFooter>

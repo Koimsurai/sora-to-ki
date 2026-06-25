@@ -1,8 +1,15 @@
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { type Column } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function DataTableColumnHeader({ column, title, className }) {
+interface DataTableColumnHeaderProps<TData, TValue> {
+  column: Column<TData, TValue>;
+  title: string;
+  className?: string;
+}
+
+export function DataTableColumnHeader<TData, TValue>({ column, title, className }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
     return <div className={cn(className)}>{title}</div>;
   }
