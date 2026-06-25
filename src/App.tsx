@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react'; // Import useCallback, lazy, Suspense
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react'; // Import useCallback, lazy, Suspense
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { useInView } from 'react-intersection-observer'; // Import useInView
 import Header from './components/Header';
@@ -35,7 +35,6 @@ const LazyBlog = lazy(() => import('./components/Blog'));
 const LazyBlogPost = lazy(() => import('./components/BlogPost'));
 const LazyAdminLayout = lazy(() => import('./components/admin/AdminLayout'));
 const LazyAdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
-const LazyAdvancedEditor = lazy(() => import('./components/AdvancedEditor'));
 const LazyPostEditor = lazy(() => import('./components/admin/PostEditor'));
 const LazyPostsList = lazy(() => import('./components/admin/PostsList'));
 const LazyCategoriesManager = lazy(() => import('./components/admin/CategoriesManager'));
@@ -69,7 +68,7 @@ const LazyCommandPalette = lazy(() => import('./components/CommandPalette'));
 import KoimLoader from './components/KoimLoader';
 const LoadingFallback = () => <KoimLoader inline size="sm" />;
 
-const AdminPlaceholder = ({ title }) => (
+const AdminPlaceholder = ({ title }: { title: string }) => (
   <div style={{ padding: '2rem', color: 'white', background: '#1a202c', borderRadius: '8px', margin: '2rem' }}>
     <h2 style={{ borderBottom: '1px solid #333', paddingBottom: '1rem' }}>{title}</h2>
     <p style={{ marginTop: '1rem' }}>此頁面功能正在開發中。</p>
@@ -77,7 +76,7 @@ const AdminPlaceholder = ({ title }) => (
 );
 
 // 路由保護：非 ADMIN/OWNER 導回首頁
-function RequireAdmin({ children }) {
+function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { user, isLoggedIn, loading } = useAuth();
   if (loading) return <LoadingFallback />;
   if (!isLoggedIn || !user?.role || (user.role !== 'ADMIN' && user.role !== 'OWNER')) {
@@ -86,7 +85,7 @@ function RequireAdmin({ children }) {
   return children;
 }
 
-function LocationTracker({ onPathChange }) {
+function LocationTracker({ onPathChange }: { onPathChange: (path: string) => void }) {
   const location = useLocation();
   useEffect(() => { onPathChange(location.pathname); }, [location.pathname, onPathChange]);
   return null;
@@ -94,7 +93,7 @@ function LocationTracker({ onPathChange }) {
 
 // --- Section Wrapper Component ---
 // This component wraps each section and uses useInView to track visibility
-function SectionWrapper({ id, children, onInViewChange }) {
+function SectionWrapper({ id, children, onInViewChange }: { id: string; children: React.ReactNode; onInViewChange: (id: string) => void }) {
   const { ref, inView } = useInView({
     threshold: 0.5, // Trigger when 50% of the section is visible
     triggerOnce: false, // Keep observing
@@ -115,7 +114,7 @@ function SectionWrapper({ id, children, onInViewChange }) {
 
 
 // 主頁元件 - Modified to use SectionWrapper
-function MainPage({ onSectionChange }) { // Accept callback prop
+function MainPage({ onSectionChange }: { onSectionChange: (id: string) => void }) {
   return (
     <>
       <NebulaBackground />
@@ -136,7 +135,7 @@ function MainPage({ onSectionChange }) { // Accept callback prop
 
 
 // --- Layout Component to handle conditional rendering of Header/Footer ---
-function Layout({ activeSection, onSectionChange }) {
+function Layout({ activeSection, onSectionChange }: { activeSection: string; onSectionChange: (id: string) => void }) {
   const location = useLocation();
   const isAdminPage = location.pathname.startsWith('/admin');
   const isPhotoPage = location.pathname === '/photos';
@@ -214,7 +213,7 @@ function Layout({ activeSection, onSectionChange }) {
       </main>
       {!isAdminPage && !isPhotoPage && (
         <Suspense fallback={<LoadingFallback />}>
-          <LazyFooter style={{ zIndex: 20 }} />
+          <LazyFooter />
         </Suspense>
       )}
       {!isAdminPage && (
@@ -245,15 +244,14 @@ function App() {
   //    獨佔主執行緒不被 Saturn 的 WebGL 初始化/shader 編譯卡到；preReveal→explosion 還有 1.1s 讓土星就緒
   //  ‧ 無 intro（重訪/非首頁/手機已排除）→ 直接掛（非首頁只有 worker 星空，主執行緒便宜）
   const [backdropReady, setBackdropReady] = useState(shouldSkipIntro && !isMobile);
-  const introCompleteTimeoutRef = useRef(null);
-  const sharedRotationRef = useRef();
+  const introCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeSection, setActiveSection] = useState('home');
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [currentPath, setCurrentPath] = useState('/');
   const isOnHomePage = currentPath === '/';
-  const handlePathChange = useCallback((p) => setCurrentPath(p), []);
+  const handlePathChange = useCallback((p: string) => setCurrentPath(p), []);
 
-  const handleSectionChange = useCallback((sectionId) => {
+  const handleSectionChange = useCallback((sectionId: string) => {
     setActiveSection(sectionId);
   }, []);
 
@@ -279,7 +277,7 @@ function App() {
     } catch (error) {
       console.error("無法寫入 sessionStorage", error);
     }
-    clearTimeout(introCompleteTimeoutRef.current);
+    clearTimeout(introCompleteTimeoutRef.current ?? undefined);
     // Keep Saturn at z=10000 throughout the fade so the intro container
     // (which still has a dark background while fading) can't occlude it.
     // Both the unmount and the z-index drop happen in the same tick after
@@ -292,7 +290,7 @@ function App() {
 
   useEffect(() => {
     return () => {
-      clearTimeout(introCompleteTimeoutRef.current);
+      clearTimeout(introCompleteTimeoutRef.current ?? undefined);
     };
   }, []);
 
@@ -333,7 +331,6 @@ function App() {
                     isOnHomePage={isOnHomePage}
                     animateSaturn={animateSaturn}
                     saturnZIndex={saturnZIndex}
-                    sharedRotationRef={sharedRotationRef}
                   />
                 </Suspense>
               )}

@@ -7,9 +7,11 @@ import '@fontsource-variable/tasa-orbiter';
 import '@fontsource-variable/tasa-explorer';
 import './i18n'; // initialize i18next（detect localStorage > navigator > fallback zh-TW）
 import './index.css';
-import App from './App.jsx';
+import App from './App';
 
-const root = createRoot(document.getElementById('root'));
+const rootEl = document.getElementById('root');
+if (!rootEl) throw new Error('#root not found');
+const root = createRoot(rootEl);
 
 // StrictMode disabled for better performance
 root.render(
