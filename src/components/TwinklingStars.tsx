@@ -66,10 +66,15 @@ const fragmentShader = `
   }
 `;
 
-function TwinklingStars({ count = 1500, rotationRef }) { // Increased count
-  const pointsRef = useRef();
-  const materialRef = useRef();
-  const geometryRef = useRef(); // Ref for the geometry
+interface TwinklingStarsProps {
+  count?: number;
+  rotationRef?: React.RefObject<THREE.Object3D | null>;
+}
+
+function TwinklingStars({ count = 1500, rotationRef }: TwinklingStarsProps) { // Increased count
+  const pointsRef = useRef<THREE.Points>(null);
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
+  const geometryRef = useRef<THREE.BufferGeometry>(null); // Ref for the geometry
 
   // Generate particle attributes and geometry
   const geometry = useMemo(() => {
@@ -132,7 +137,7 @@ function TwinklingStars({ count = 1500, rotationRef }) { // Increased count
     uBaseSize: { value: 15.0 } // Base size multiplier - adjust this value to change overall star size
   }), []);
 
-  useFrame(({ clock, camera }) => {
+  useFrame(({ clock }) => {
     const elapsedTime = clock.getElapsedTime();
     if (materialRef.current) {
       materialRef.current.uniforms.uTime.value = elapsedTime;

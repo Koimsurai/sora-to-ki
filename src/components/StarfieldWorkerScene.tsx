@@ -10,29 +10,32 @@ import * as THREE from 'three';
 import TwinklingStars from './TwinklingStars';
 
 function Galaxy() {
-  const mainRef = useRef();
-  const galaxyRef = useRef();
+  const mainRef = useRef<THREE.Points>(null);
+  const galaxyRef = useRef<THREE.Points>(null);
   useFrame((_, delta) => {
+    // 夾住 delta：worker 切回前景時 clock 凍結期間的時間會灌進第一幀，不夾星空會瞬間跳轉。
+    const dt = Math.min(delta, 0.05);
     if (mainRef.current) {
-      mainRef.current.rotation.x += delta * 0.01;
-      mainRef.current.rotation.y += delta * 0.02;
+      mainRef.current.rotation.x += dt * 0.01;
+      mainRef.current.rotation.y += dt * 0.02;
     }
     if (galaxyRef.current) {
-      galaxyRef.current.rotation.x += delta * 0.008;
-      galaxyRef.current.rotation.y += delta * 0.015;
+      galaxyRef.current.rotation.x += dt * 0.008;
+      galaxyRef.current.rotation.y += dt * 0.015;
     }
   });
   return (
     <Suspense fallback={null}>
       <Stars ref={mainRef} radius={100} depth={50} count={10000} factor={3.5} saturation={0.1} fade speed={0.5} />
-      <Stars ref={galaxyRef} radius={90} depth={20} count={8000} factor={5} saturation={0.2} fade speed={0.3}
-        rotation={[0, Math.PI / 3, Math.PI / 5]} />
+      {/* drei <Stars> 只 render 內部 <points>、不轉發 rotation，故原本的 rotation prop 一直是 no-op；
+          遷移階段維持現狀。若日後想真的傾斜這層，需用 <group rotation={[0, Math.PI/3, Math.PI/5]}> 包起來。 */}
+      <Stars ref={galaxyRef} radius={90} depth={20} count={8000} factor={5} saturation={0.2} fade speed={0.3} />
     </Suspense>
   );
 }
 
-function SpaceDebris({ count = 300 }) {
-  const pointsRef = useRef();
+function SpaceDebris({ count = 300 }: { count?: number }) {
+  const pointsRef = useRef<THREE.Points>(null);
   const particlesPosition = useMemo(() => {
     const positions = new Float32Array(count * 3);
     const distance = 100;
@@ -60,13 +63,14 @@ function SpaceDebris({ count = 300 }) {
 
   useFrame((_, delta) => {
     if (!pointsRef.current) return;
+    const dt = Math.min(delta, 0.05); // 夾住 delta，避免切回前景時碎片一次噴飛
     const positions = pointsRef.current.geometry.attributes.position.array;
     const distance = 100;
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
-      positions[i3] += particleData[i].velocity.x * delta * 50;
-      positions[i3 + 1] += particleData[i].velocity.y * delta * 50;
-      positions[i3 + 2] += particleData[i].velocity.z * delta * 50;
+      positions[i3] += particleData[i].velocity.x * dt * 50;
+      positions[i3 + 1] += particleData[i].velocity.y * dt * 50;
+      positions[i3 + 2] += particleData[i].velocity.z * dt * 50;
       if (Math.abs(positions[i3]) > distance) positions[i3] *= -0.99;
       if (Math.abs(positions[i3 + 1]) > distance) positions[i3 + 1] *= -0.99;
       if (positions[i3 + 2] > distance * 1.5) positions[i3 + 2] = -distance * 1.5;

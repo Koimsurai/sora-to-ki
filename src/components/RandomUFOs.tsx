@@ -3,10 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './RandomUFOs.css'; // 導入 UFO 的 CSS
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
-const getRandomValue = (min, max) => Math.random() * (max - min) + min;
+const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
+
+interface UFO {
+  id: number;
+  startX: string;
+  startY: string;
+  keyframesX: number[];
+  keyframesY: number[];
+  duration: number;
+  delay: number;
+  scale: number;
+}
 
 // 創建 UFO 數據 - 加入更多隨機移動點
-const createUFO = () => {
+const createUFO = (): UFO => {
   const duration = getRandomValue(20, 40); // 增加持續時間，更慢更飄
   const startX = getRandomValue(10, 90);
   const startY = getRandomValue(10, 90);
@@ -40,9 +51,13 @@ const createUFO = () => {
   };
 };
 
-const RandomUFOs = ({ count = 1 }) => { // UFO 數量減少為 1
+interface RandomUFOsProps {
+  count?: number;
+}
+
+const RandomUFOs = ({ count = 1 }: RandomUFOsProps) => { // UFO 數量減少為 1
   const { isVisible } = usePageVisibility();
-  const [ufos, setUfos] = useState(() =>
+  const [ufos, setUfos] = useState<UFO[]>(() =>
     Array.from({ length: count }, createUFO)
   );
 
@@ -66,7 +81,7 @@ const RandomUFOs = ({ count = 1 }) => { // UFO 數量減少為 1
       }
     }, 25000); // 每 25 秒嘗試更新一個 UFO (頻率更低)
 
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); };
   }, [count, isVisible]);
 
   return (

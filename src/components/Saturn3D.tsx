@@ -6,16 +6,26 @@ import * as THREE from 'three';
 import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
 import { usePageVisibility } from '../contexts/PageVisibilityContext'; // 導入 hook
 
+interface SatelliteProps {
+  position: [number, number, number];
+  speed: number;
+  size?: number;
+  isVisible: boolean;
+}
+
 // 衛星元件
-function Satellite({ position, speed, size = 0.05, isVisible }) { // Accept isVisible
-  const meshRef = useRef();
+function Satellite({ position, speed, size = 0.05, isVisible }: SatelliteProps) { // Accept isVisible
+  const meshRef = useRef<THREE.Mesh>(null);
   const angleRef = useRef(Math.random() * Math.PI * 2); // Start at a random angle
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     if (!isVisible) return; // Pause animation when not visible
     if (meshRef.current) {
+      // 夾住 delta：分頁切回來時 R3F clock 凍結期間的時間會一次灌進第一幀，
+      // 不夾的話衛星會瞬間跳一大圈（土星轉超快的同源問題）。
+      const dt = Math.min(delta, 0.05);
       // Increment angle based on delta time
-      angleRef.current += speed * delta;
+      angleRef.current += speed * dt;
 
       // 簡單的圓周運動
       meshRef.current.position.x = position[0] * Math.cos(angleRef.current);
@@ -32,10 +42,16 @@ function Satellite({ position, speed, size = 0.05, isVisible }) { // Accept isVi
   );
 }
 
+interface SaturnModelProps {
+  animate: boolean;
+  isVisible: boolean;
+  isMobile: boolean;
+}
+
 // Modify SaturnModel to accept the animate, isVisible and isMobile props
-function SaturnModel({ animate, isVisible, isMobile }) {
-  const groupRef = useRef(); // Restore ref
-  const ringsRef = useRef(); // Ref for rings mesh
+function SaturnModel({ animate, isVisible, isMobile }: SaturnModelProps) {
+  const groupRef = useRef<THREE.Group>(null); // Restore ref
+  const ringsRef = useRef<THREE.Mesh>(null); // Ref for rings mesh
   const scrollRotationY = useRef(0); // Restore scroll rotation logic
   const currentRotationY = useRef(0); // Store current applied rotation for smoothing
   const currentScale = useRef(0); // Store current applied scale for animation
@@ -72,10 +88,13 @@ function SaturnModel({ animate, isVisible, isMobile }) {
 
   const saturnRotationRef = useRef(0); // Ref to accumulate auto-rotation
 
-  useFrame((state, delta) => {
+  useFrame((_state, delta) => {
     if (groupRef.current && isVisible) { // Check isVisible
+      // 夾住 delta：分頁隱藏時 frameloop='never' 讓 R3F clock 凍結，切回來第一幀的 delta
+      // 會是整段離開時間 → 不夾的話 0.05*delta 會讓土星瞬間轉超快。夾到 0.05s 上限即平滑。
+      const dt = Math.min(delta, 0.05);
       // Accumulate auto-rotation based on delta time
-      saturnRotationRef.current += 0.05 * delta;
+      saturnRotationRef.current += 0.05 * dt;
 
       const targetRotationY = scrollRotationY.current + saturnRotationRef.current;
 
@@ -90,12 +109,9 @@ function SaturnModel({ animate, isVisible, isMobile }) {
       // 平靜期就編譯好，explosion 時只是放大，不會在閃光當下才編譯 shader 而頓一下
       const targetScale = animate ? baseScale : 0.0001;
       // Interpolate current scale towards target scale
-      const oldScale = currentScale.current; // Log old scale for comparison
       currentScale.current = THREE.MathUtils.lerp(currentScale.current, targetScale, 0.08); // Adjust lerp factor for speed
       // Apply interpolated scale
       groupRef.current.scale.set(currentScale.current, currentScale.current, currentScale.current);
-
-      // Removed scale logging from useFrame
     }
   });
 
@@ -139,7 +155,7 @@ function SaturnModel({ animate, isVisible, isMobile }) {
             setIsRingHovered(true);
             document.body.style.cursor = 'pointer'; // 改變鼠標樣式
           }}
-          onPointerOut={(event) => {
+          onPointerOut={() => {
             setIsRingHovered(false);
             document.body.style.cursor = 'auto'; // 恢復鼠標樣式
           }}
@@ -154,8 +170,13 @@ function SaturnModel({ animate, isVisible, isMobile }) {
   );
 }
 
+interface Saturn3DProps {
+  animate: boolean;
+  isMobile: boolean;
+}
+
 // Modify Saturn3D to accept isMobile
-function Saturn3D({ animate, isMobile }) {
+function Saturn3D({ animate, isMobile }: Saturn3DProps) {
   const { isVisible } = usePageVisibility(); // Use the hook
 
   // Directly return 3D objects for App.jsx's Canvas to render
@@ -167,16 +188,6 @@ function Saturn3D({ animate, isMobile }) {
       <pointLight position={[4.5, 3.5, 5.5]} intensity={400} castShadow /> {/* Intensity reduced from 800 to 400 */}
       {/* Saturn model - pass the animate and isVisible prop */}
       <SaturnModel animate={animate} isVisible={isVisible} isMobile={isMobile} />
-      {/* Optional shadow plane */}
-      {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3, 0]} receiveShadow>
-        <planeGeometry args={[20, 20]} />
-        <shadowMaterial opacity={0.3} />
-      </mesh> */}
-      {/* 移除星座群組渲染 */}
-      {/* 移除軌道控制器註解 */}
-      {/* 移除隨機流星渲染註解 */}
-      {/*
-      {/* 移除 HTML 和 RandomShootingStars，它們應該在 App.jsx 中處理 */}
 
       {/* 添加後處理效果 - 手機版為求效能予以關閉 */}
       {!isMobile && (

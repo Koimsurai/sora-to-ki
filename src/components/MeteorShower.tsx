@@ -3,7 +3,7 @@ import './MeteorShower.css';
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
 const MeteorShower = () => {
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { isVisible } = usePageVisibility();
 
   useEffect(() => {
@@ -18,23 +18,23 @@ const MeteorShower = () => {
 
       const meteor = document.createElement('div');
       meteor.className = 'meteor';
-      
+
       // 隨機位置和大小
       const startX = Math.random() * window.innerWidth;
       const startY = -50;
       const size = Math.random() * 3 + 1;
       const duration = Math.random() * 3 + 2;
       const delay = Math.random() * 2;
-      
+
       meteor.style.left = `${startX}px`;
       meteor.style.top = `${startY}px`;
       meteor.style.width = `${size}px`;
       meteor.style.height = `${size}px`;
       meteor.style.animationDuration = `${duration}s`;
       meteor.style.animationDelay = `${delay}s`;
-      
+
       containerRef.current.appendChild(meteor);
-      
+
       // 動畫結束後移除元素
       setTimeout(() => {
         if (meteor.parentNode) {
@@ -49,7 +49,7 @@ const MeteorShower = () => {
         createMeteor();
       }
     }, 5000); // 從 3 秒增加到 5 秒
-    
+
     // 減少初始流星數量
     for (let i = 0; i < 2; i++) {
       setTimeout(() => {
@@ -64,7 +64,7 @@ const MeteorShower = () => {
       // 清理所有現存的流星
       if (containerRef.current) {
         const meteors = containerRef.current.querySelectorAll('.meteor');
-        meteors.forEach(meteor => meteor.remove());
+        meteors.forEach(meteor => { meteor.remove(); });
       }
     };
   }, [isVisible]);

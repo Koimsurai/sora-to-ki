@@ -3,10 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './RandomShootingStars.css'; // 導入 CSS
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
-const getRandomValue = (min, max) => Math.random() * (max - min) + min;
+const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
+
+interface ShootingStar {
+  id: number;
+  startX: string;
+  startY: string;
+  endX: number;
+  endY: number;
+  duration: number;
+  delay: number;
+  rotate: number;
+  sizeScale: number;
+}
 
 // 創建流星數據
-const createShootingStar = () => {
+const createShootingStar = (): ShootingStar => {
   const duration = getRandomValue(2.0, 5.0); // 動畫持續時間 (增加範圍)
   const angle = getRandomValue(0, 360); // 隨機角度 (0-360 度)
   const distance = getRandomValue(300, 700); // 飛行距離 (px) (增加範圍)
@@ -31,15 +43,19 @@ const createShootingStar = () => {
   };
 };
 
-const RandomShootingStars = ({ count = 5 }) => { // Reduce default shooting star count to 5
+interface RandomShootingStarsProps {
+  count?: number;
+}
+
+const RandomShootingStars = ({ count = 5 }: RandomShootingStarsProps) => { // Reduce default shooting star count to 5
   const { isVisible } = usePageVisibility();
-  const [stars, setStars] = useState(() =>
+  const [stars, setStars] = useState<ShootingStar[]>(() =>
     Array.from({ length: count }, createShootingStar)
   );
 
   // Remove useEffect with setInterval
 
-  const handleAnimationComplete = (id) => {
+  const handleAnimationComplete = (id: number) => {
     setStars(prevStars =>
       prevStars.map(star =>
         star.id === id ? createShootingStar() : star
@@ -95,7 +111,7 @@ const RandomShootingStars = ({ count = 5 }) => { // Reduce default shooting star
               y: { duration: isVisible ? star.duration : 0, ease: 'linear' },
               opacity: { duration: isVisible ? star.duration : 0, times: [0, 0.3, 0.95, 1] } // Restore times array
             }}
-            onAnimationComplete={() => handleAnimationComplete(star.id)} // Trigger replacement on completion
+            onAnimationComplete={() => { handleAnimationComplete(star.id); }} // Trigger replacement on completion
             exit={{ opacity: 0 }} // Keep exit for AnimatePresence handling if needed
           />
         ))}

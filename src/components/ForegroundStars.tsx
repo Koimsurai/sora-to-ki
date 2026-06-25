@@ -1,13 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import './ForegroundStars.css';
 
-const ForegroundStars = ({ count = 50 }) => {
-  const [stars, setStars] = useState([]);
-  const containerRef = useRef(null);
+interface Star {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  brightness: number;
+  parallaxFactor: number;
+  transform?: string;
+}
+
+interface ForegroundStarsProps {
+  count?: number;
+}
+
+const ForegroundStars = ({ count = 50 }: ForegroundStarsProps) => {
+  const [stars, setStars] = useState<Star[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // 初始化星星
   useEffect(() => {
-    const newStars = [];
+    const newStars: Star[] = [];
     for (let i = 0; i < count; i++) {
       newStars.push({
         id: i,
@@ -23,7 +37,7 @@ const ForegroundStars = ({ count = 50 }) => {
 
   // 處理滑鼠移動以實現視差效果
   useEffect(() => {
-    const handleMouseMove = (event) => {
+    const handleMouseMove = (event: MouseEvent) => {
       if (!containerRef.current) return;
 
       const { clientWidth, clientHeight } = containerRef.current;
@@ -72,7 +86,7 @@ const ForegroundStars = ({ count = 50 }) => {
             width: `${star.size}px`,
             height: `${star.size}px`,
             opacity: star.brightness,
-            transform: star.transform || 'translate(0, 0)', // Apply transform for parallax
+            transform: star.transform ?? 'translate(0, 0)', // Apply transform for parallax
             // Glow effect is now handled by CSS
           }}
         />

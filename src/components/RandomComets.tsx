@@ -3,10 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import './RandomComets.css'; // 引入彗星的 CSS
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
 
-const getRandomValue = (min, max) => Math.random() * (max - min) + min;
+const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
+
+interface Comet {
+  id: number;
+  startX: string;
+  startY: string;
+  endX: number;
+  endY: number;
+  duration: number;
+  delay: number;
+  rotate: number;
+  sizeScale: number;
+}
 
 // 創建彗星數據 (基於流星修改)
-const createComet = () => {
+const createComet = (): Comet => {
   const duration = getRandomValue(8.0, 15.0); // 動畫持續時間 (顯著增加，更慢)
   const angle = getRandomValue(0, 360); // 隨機角度
   const distance = getRandomValue(600, 1200); // 飛行距離 (顯著增加)
@@ -30,15 +42,19 @@ const createComet = () => {
   };
 };
 
-const RandomComets = ({ count = 1 }) => { // Reduce default comet count to 1
+interface RandomCometsProps {
+  count?: number;
+}
+
+const RandomComets = ({ count = 1 }: RandomCometsProps) => { // Reduce default comet count to 1
   const { isVisible } = usePageVisibility();
-  const [comets, setComets] = useState(() =>
+  const [comets, setComets] = useState<Comet[]>(() =>
     Array.from({ length: count }, createComet)
   );
 
   // Remove useEffect with setInterval
 
-  const handleAnimationComplete = (id) => {
+  const handleAnimationComplete = (id: number) => {
     setComets(prevComets =>
       prevComets.map(comet =>
         comet.id === id ? createComet() : comet
@@ -87,7 +103,7 @@ const RandomComets = ({ count = 1 }) => { // Reduce default comet count to 1
               y: { duration: isVisible ? comet.duration : 0, ease: 'linear' },
               opacity: { duration: isVisible ? comet.duration : 0, times: [0, 0.15, 0.9, 1] } // Restore times array
             }}
-            onAnimationComplete={() => handleAnimationComplete(comet.id)} // Trigger replacement on completion
+            onAnimationComplete={() => { handleAnimationComplete(comet.id); }} // Trigger replacement on completion
             exit={{ opacity: 0 }} // Keep exit for AnimatePresence handling if needed
           />
         ))}

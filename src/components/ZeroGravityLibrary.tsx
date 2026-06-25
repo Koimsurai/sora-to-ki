@@ -1,11 +1,21 @@
 import React, { useRef, useState, useMemo, Suspense, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { OrbitControls, useTexture, Html, Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import { a, useSpring } from '@react-spring/three';
 import * as THREE from 'three';
 import { useTranslation } from 'react-i18next';
 import './ZeroGravityLibrary.css';
+
+interface Book {
+  id: string | number;
+  title: string;
+  coverUrl?: string;
+  authors?: string[];
+  description?: string;
+  publishedDate?: string;
+  pageCount?: number;
+}
 
 // 自訂拖動 Hook - 修復版本
 function useDragObject() {
@@ -17,12 +27,12 @@ function useDragObject() {
   const currentPosition = useRef(new THREE.Vector3());
 
   const bind = useMemo(() => {
-    const onPointerDown = (e) => {
+    const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
       e.stopPropagation();
-      
+
       // 保存當前位置
       currentPosition.current.copy(e.object.position);
-      
+
       // 設定拖動平面 (平行於相機視角)
       const cameraDirection = new THREE.Vector3();
       camera.getWorldDirection(cameraDirection);
@@ -30,16 +40,16 @@ function useDragObject() {
         cameraDirection,
         currentPosition.current
       );
-      
+
       // 計算點擊點與物體中心的偏移
       dragPlane.current.projectPoint(e.point, intersection.current);
       offset.current.copy(intersection.current).sub(currentPosition.current);
-      
+
       setIsDragging(true);
       gl.domElement.style.cursor = 'grabbing';
     };
 
-    const onPointerUp = (e) => {
+    const onPointerUp = (_e: ThreeEvent<PointerEvent>) => {
       setIsDragging(false);
       gl.domElement.style.cursor = 'grab';
     };
@@ -53,29 +63,37 @@ function useDragObject() {
   return { ...bind, isDragging };
 }
 
+interface Book3DProps {
+  book: Book;
+  initialPosition: [number, number, number];
+  onClick: () => void;
+  isSelected: boolean;
+  onDragStateChange?: (isDragging: boolean) => void;
+}
+
 // 單本 3D 書籍組件 (有封面) - 支援拖動
-function Book3DWithTexture({ book, initialPosition, onClick, isSelected, onDragStateChange }) {
-  const groupRef = useRef();
-  const meshRef = useRef();
+function Book3DWithTexture({ book, initialPosition, onClick, isSelected, onDragStateChange }: Book3DProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   const [position, setPosition] = useState(initialPosition);
   const { onPointerDown, onPointerUp, isDragging } = useDragObject();
-  const { camera, raycaster, gl } = useThree();
-  
+  const { camera, raycaster } = useThree();
+
   const dragPlane = useRef(new THREE.Plane());
   const offset = useRef(new THREE.Vector3());
-  
+
   // 通知父組件拖動狀態改變
   useEffect(() => {
     if (onDragStateChange) {
       onDragStateChange(isDragging);
     }
   }, [isDragging, onDragStateChange]);
-  
+
   // 建立指向後端代理的 URL,解決 CORS 問題
-  const originalUrl = book.coverUrl;
+  const originalUrl = book.coverUrl ?? '';
   const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(originalUrl)}`;
-  
+
   // 使用代理 URL 載入貼圖
   const texture = useTexture(proxyUrl, (tex) => {
     tex.minFilter = THREE.LinearFilter;
@@ -84,57 +102,54 @@ function Book3DWithTexture({ book, initialPosition, onClick, isSelected, onDragS
 
   // 書本漂浮動畫 (拖動時停用)
   useFrame((state) => {
-    if (groupRef.current && !isDragging && !isSelected) {
+    if (groupRef.current && meshRef.current && !isDragging && !isSelected) {
       meshRef.current.rotation.y += 0.002;
       const floatY = Math.sin(state.clock.elapsedTime + position[0]) * 0.1;
       groupRef.current.position.y = position[1] + floatY;
     }
-    
+
     // 拖動時更新位置
     if (isDragging && groupRef.current) {
       const intersection = new THREE.Vector3();
       raycaster.ray.intersectPlane(dragPlane.current, intersection);
-      if (intersection) {
-        groupRef.current.position.copy(intersection.sub(offset.current));
-      }
+      groupRef.current.position.copy(intersection.sub(offset.current));
     }
   });
 
   // 處理按下
-  const handlePointerDown = (e) => {
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    
-    // 設定拖動平面
-    const cameraDirection = new THREE.Vector3();
-    camera.getWorldDirection(cameraDirection);
-    dragPlane.current.setFromNormalAndCoplanarPoint(
-      cameraDirection,
-      groupRef.current.position
-    );
-    
-    // 計算偏移
-    const intersection = new THREE.Vector3();
-    raycaster.ray.intersectPlane(dragPlane.current, intersection);
-    offset.current.copy(intersection).sub(groupRef.current.position);
-    
+
+    if (groupRef.current) {
+      // 設定拖動平面
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      dragPlane.current.setFromNormalAndCoplanarPoint(
+        cameraDirection,
+        groupRef.current.position
+      );
+
+      // 計算偏移
+      const intersection = new THREE.Vector3();
+      raycaster.ray.intersectPlane(dragPlane.current, intersection);
+      offset.current.copy(intersection).sub(groupRef.current.position);
+    }
+
     onPointerDown(e);
   };
 
   // 處理釋放
-  const handlePointerUp = (e) => {
-    if (isDragging) {
+  const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
+    if (isDragging && groupRef.current) {
       // 保存新位置
-      setPosition([
-        groupRef.current.position.x,
-        groupRef.current.position.y,
-        groupRef.current.position.z
-      ]);
+      const p = groupRef.current.position;
+      setPosition([p.x, p.y, p.z]);
     }
     onPointerUp(e);
   };
 
   // 處理點擊
-  const handleClick = (e) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     if (!isDragging) {
       e.stopPropagation();
       onClick();
@@ -166,7 +181,7 @@ function Book3DWithTexture({ book, initialPosition, onClick, isSelected, onDragS
       {/* 書本主體 */}
       <mesh ref={meshRef} castShadow receiveShadow>
         <boxGeometry args={[bookWidth, bookHeight, bookDepth]} />
-        <meshStandardMaterial 
+        <meshStandardMaterial
           map={texture}
           metalness={0.2}
           roughness={0.6}
@@ -203,17 +218,17 @@ function Book3DWithTexture({ book, initialPosition, onClick, isSelected, onDragS
 }
 
 // 單本 3D 書籍組件 (無封面 - 純色) - 支援拖動
-function Book3DNoTexture({ book, initialPosition, onClick, isSelected, onDragStateChange }) {
-  const groupRef = useRef();
-  const meshRef = useRef();
+function Book3DNoTexture({ book, initialPosition, onClick, isSelected, onDragStateChange }: Book3DProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   const [position, setPosition] = useState(initialPosition);
   const { onPointerDown, onPointerUp, isDragging } = useDragObject();
-  const { camera, raycaster, gl } = useThree();
-  
+  const { camera, raycaster } = useThree();
+
   const dragPlane = useRef(new THREE.Plane());
   const offset = useRef(new THREE.Vector3());
-  
+
   // 通知父組件拖動狀態改變
   useEffect(() => {
     if (onDragStateChange) {
@@ -223,57 +238,54 @@ function Book3DNoTexture({ book, initialPosition, onClick, isSelected, onDragSta
 
   // 書本漂浮動畫 (拖動時停用)
   useFrame((state) => {
-    if (groupRef.current && !isDragging && !isSelected) {
+    if (groupRef.current && meshRef.current && !isDragging && !isSelected) {
       meshRef.current.rotation.y += 0.002;
       const floatY = Math.sin(state.clock.elapsedTime + position[0]) * 0.1;
       groupRef.current.position.y = position[1] + floatY;
     }
-    
+
     // 拖動時更新位置
     if (isDragging && groupRef.current) {
       const intersection = new THREE.Vector3();
       raycaster.ray.intersectPlane(dragPlane.current, intersection);
-      if (intersection) {
-        groupRef.current.position.copy(intersection.sub(offset.current));
-      }
+      groupRef.current.position.copy(intersection.sub(offset.current));
     }
   });
 
   // 處理按下
-  const handlePointerDown = (e) => {
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    
-    // 設定拖動平面
-    const cameraDirection = new THREE.Vector3();
-    camera.getWorldDirection(cameraDirection);
-    dragPlane.current.setFromNormalAndCoplanarPoint(
-      cameraDirection,
-      groupRef.current.position
-    );
-    
-    // 計算偏移
-    const intersection = new THREE.Vector3();
-    raycaster.ray.intersectPlane(dragPlane.current, intersection);
-    offset.current.copy(intersection).sub(groupRef.current.position);
-    
+
+    if (groupRef.current) {
+      // 設定拖動平面
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+      dragPlane.current.setFromNormalAndCoplanarPoint(
+        cameraDirection,
+        groupRef.current.position
+      );
+
+      // 計算偏移
+      const intersection = new THREE.Vector3();
+      raycaster.ray.intersectPlane(dragPlane.current, intersection);
+      offset.current.copy(intersection).sub(groupRef.current.position);
+    }
+
     onPointerDown(e);
   };
 
   // 處理釋放
-  const handlePointerUp = (e) => {
-    if (isDragging) {
+  const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
+    if (isDragging && groupRef.current) {
       // 保存新位置
-      setPosition([
-        groupRef.current.position.x,
-        groupRef.current.position.y,
-        groupRef.current.position.z
-      ]);
+      const p = groupRef.current.position;
+      setPosition([p.x, p.y, p.z]);
     }
     onPointerUp(e);
   };
 
   // 處理點擊
-  const handleClick = (e) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     if (!isDragging) {
       e.stopPropagation();
       onClick();
@@ -305,7 +317,7 @@ function Book3DNoTexture({ book, initialPosition, onClick, isSelected, onDragSta
       {/* 書本主體 */}
       <mesh ref={meshRef} castShadow receiveShadow>
         <boxGeometry args={[bookWidth, bookHeight, bookDepth]} />
-        <meshStandardMaterial 
+        <meshStandardMaterial
           color='#7f5af0'
           metalness={0.5}
           roughness={0.3}
@@ -345,7 +357,7 @@ function Book3DNoTexture({ book, initialPosition, onClick, isSelected, onDragSta
 }
 
 // 包裝組件 - 根據是否有封面選擇組件
-function Book3D({ book, initialPosition, onClick, isSelected, onDragStateChange }) {
+function Book3D({ book, initialPosition, onClick, isSelected, onDragStateChange }: Book3DProps) {
   // 如果書本有 coverUrl，就使用有材質的版本，否則使用純色版
   if (book.coverUrl) {
     return (
@@ -458,7 +470,7 @@ const diskFragmentShader = `
 
 // 知識黑洞 — event horizon + accretion disk
 function KnowledgeBlackHole() {
-  const diskRef = useRef();
+  const diskRef = useRef<THREE.Mesh>(null);
   const uniformsRef = useRef({ uTime: { value: 0 } });
 
   useFrame((state) => {
@@ -500,41 +512,47 @@ function KnowledgeBlackHole() {
   );
 }
 
+interface SceneProps {
+  books: Book[];
+  onBookClick: (book: Book) => void;
+  selectedBook: Book | null;
+}
+
 // 3D 場景內容
-function Scene({ books, onBookClick, selectedBook }) {
-  const controlsRef = useRef();
-  const draggingBooksRef = useRef(new Set());
+function Scene({ books, onBookClick, selectedBook }: SceneProps) {
+  const controlsRef = useRef<React.ComponentRef<typeof OrbitControls>>(null);
+  const draggingBooksRef = useRef(new Set<Book['id']>());
   const [isDraggingAnyBook, setIsDraggingAnyBook] = useState(false);
-  
+
   // 處理書籍拖動狀態變化
-  const handleBookDragStateChange = (bookId, isDragging) => {
+  const handleBookDragStateChange = (bookId: Book['id'], isDragging: boolean) => {
     if (isDragging) {
       draggingBooksRef.current.add(bookId);
     } else {
       draggingBooksRef.current.delete(bookId);
     }
-    
+
     // 只要有任何一本書在拖動,就禁用 OrbitControls
     setIsDraggingAnyBook(draggingBooksRef.current.size > 0);
   };
-  
+
   // 將書籍排列成多個環形軌道
   const booksPerRing = 12;
   const numberOfRings = Math.ceil(books.length / booksPerRing);
-  
+
   const bookPositions = useMemo(() => {
-    const positions = [];
-    books.forEach((book, index) => {
+    const positions: [number, number, number][] = [];
+    books.forEach((_, index) => {
       const ringIndex = Math.floor(index / booksPerRing);
       const positionInRing = index % booksPerRing;
       const angle = (positionInRing / booksPerRing) * Math.PI * 2;
-      
+
       // 半徑隨著環數增加
       const radius = 8 + ringIndex * 3;
       const x = Math.cos(angle) * radius;
       const y = (ringIndex - numberOfRings / 2) * 2.5;
       const z = Math.sin(angle) * radius;
-      
+
       positions.push([x, y, z]);
     });
     return positions;
@@ -553,7 +571,7 @@ function Scene({ books, onBookClick, selectedBook }) {
       {/* 外圍環境光 — 照亮書籍軌道區域 */}
       <pointLight position={[0, 8, 0]} intensity={1} distance={60} decay={1} />
       <pointLight position={[0, -8, 0]} intensity={0.6} distance={60} decay={1} />
-      
+
       {/* 背景星空 */}
       <Stars
         radius={300}
@@ -605,10 +623,15 @@ function Scene({ books, onBookClick, selectedBook }) {
   );
 }
 
+interface ZeroGravityLibraryProps {
+  books?: Book[];
+  onClose: () => void;
+}
+
 // 主組件
-export default function ZeroGravityLibrary({ books = [], onClose }) {
+export default function ZeroGravityLibrary({ books = [], onClose }: ZeroGravityLibraryProps) {
   const { t } = useTranslation();
-  const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const hints = t('bookshelf.zg.hint').split(' · ');
 
   return (
@@ -661,8 +684,8 @@ export default function ZeroGravityLibrary({ books = [], onClose }) {
               <img src={selectedBook.coverUrl} alt={selectedBook.title} className="zg-detail-cover" />
             )}
             <h3 className="zg-detail-title">{selectedBook.title}</h3>
-            {selectedBook.authors?.length > 0 && (
-              <p className="zg-detail-author">{selectedBook.authors.join(', ')}</p>
+            {(selectedBook.authors?.length ?? 0) > 0 && (
+              <p className="zg-detail-author">{selectedBook.authors?.join(', ')}</p>
             )}
             {selectedBook.description && (
               <p className="zg-detail-desc">{selectedBook.description}</p>

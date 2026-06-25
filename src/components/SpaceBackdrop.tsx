@@ -19,41 +19,57 @@ import RandomUFOs from './RandomUFOs';
 import CursorTrail from './CursorTrail';
 import StarfieldWorkerScene from './StarfieldWorkerScene';
 
-const fixedFull = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' };
+const fixedFull: React.CSSProperties = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' };
 
 // 模組級單例：整個 app 生命週期只起一個星空 worker（避免重掛載/重渲染重複 spawn、重複下載 832K）
-let _spaceWorker = null;
-function getSpaceWorker() {
+let _spaceWorker: Worker | null = null;
+function getSpaceWorker(): Worker | null {
   if (!_spaceWorker && typeof Worker !== 'undefined') {
-    _spaceWorker = new Worker(new URL('../workers/spaceWorker.jsx', import.meta.url), { type: 'module' });
+    _spaceWorker = new Worker(new URL('../workers/spaceWorker.tsx', import.meta.url), { type: 'module' });
   }
   return _spaceWorker;
 }
 
+interface SpaceBackdropProps {
+  isMobile: boolean;
+  isOnHomePage: boolean;
+  animateSaturn: boolean;
+  saturnZIndex: number;
+}
+
 export default function SpaceBackdrop({
   isMobile, isOnHomePage, animateSaturn, saturnZIndex,
-}) {
+}: SpaceBackdropProps) {
   const worker = useMemo(() => getSpaceWorker(), []);
 
   // Saturn canvas 的自適應畫質 + 分頁隱藏暫停
   const [dpr, setDpr] = useState(1.5);
-  const [frameloop, setFrameloop] = useState('always');
+  const [frameloop, setFrameloop] = useState<'always' | 'never'>('always');
   useEffect(() => {
-    const onVis = () => setFrameloop(document.hidden ? 'never' : 'always');
+    const onVis = () => {
+      const fl = document.hidden ? 'never' : 'always';
+      setFrameloop(fl); // Saturn（主執行緒 Canvas）的暫停/恢復
+      // 星空 worker 的 rAF 不會隨分頁隱藏自動停（OffscreenCanvas in Worker 的已知行為）→
+      // 離開分頁後背景仍持續跑。透過 @react-three/offscreen 的 'props' 訊息改 worker 內 r3f 的
+      // frameloop，真正把 worker 的 render loop 停下；切回來時 delta 已在 scene 內夾住故不會暴衝。
+      worker?.postMessage({ type: 'props', payload: { frameloop: fl } });
+    };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
-  }, []);
+  }, [worker]);
 
   return (
     <>
       {/* 星空：worker 渲染（z 在 Saturn 之下）。fallback 在不支援 OffscreenCanvas 時走主執行緒 */}
-      <OffscreenCanvas
-        worker={worker}
-        fallback={<StarfieldWorkerScene />}
-        camera={{ position: [0, 0, 5] }}
-        dpr={[1, 2]}
-        style={{ ...fixedFull, zIndex: 1 }}
-      />
+      {worker && (
+        <OffscreenCanvas
+          worker={worker}
+          fallback={<StarfieldWorkerScene />}
+          camera={{ position: [0, 0, 5] }}
+          dpr={[1, 2]}
+          style={{ ...fixedFull, zIndex: 1 }}
+        />
+      )}
 
       {/* Saturn：主執行緒（貼圖/bloom/捲動互動需要 DOM）。intro 爆炸時 saturnZIndex 拉高 */}
       {isOnHomePage && (
@@ -79,7 +95,8 @@ export default function SpaceBackdrop({
       {isOnHomePage && !isMobile && <RandomShootingStars />}
       {isOnHomePage && !isMobile && <RandomComets />}
       {isOnHomePage && <RandomUFOs />}
-      {!isMobile && <CursorTrail style={{ position: 'fixed', top: 0, left: 0, zIndex: 50, pointerEvents: 'none' }} />}
+      {/* CursorTrail 自身無 props：定位/層級全由 CursorTrail.css 處理（原本傳入的 style 從未被讀取） */}
+      {!isMobile && <CursorTrail />}
     </>
   );
 }

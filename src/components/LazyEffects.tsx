@@ -7,7 +7,7 @@ export const LazySpaceShuttle3D = React.lazy(() => import('./SpaceShuttle3D'));
 
 // 為不同組件提供專門的載入佔位符
 export const SpaceParticlesPlaceholder = () => (
-  <div 
+  <div
     style={{
       position: 'fixed',
       top: 0,
@@ -22,7 +22,7 @@ export const SpaceParticlesPlaceholder = () => (
 );
 
 export const MeteorShowerPlaceholder = () => (
-  <div 
+  <div
     style={{
       position: 'fixed',
       top: 0,
@@ -37,7 +37,7 @@ export const MeteorShowerPlaceholder = () => (
 );
 
 export const SpaceShuttle3DPlaceholder = () => (
-  <div 
+  <div
     style={{
       width: '100%',
       height: '400px',

@@ -1,42 +1,50 @@
 import { useRef, useEffect, useCallback } from 'react';
 import './CursorTrail.css';
 
-const CursorTrail = () => {
-  const canvasRef = useRef(null);
-  const particles = useRef([]);
-  const mousePos = useRef({ x: 0, y: 0 });
-  const animationFrameId = useRef(null);
+// 粒子類別 (簡單版)
+class Particle {
+  x: number;
+  y: number;
+  size: number;
+  opacity: number;
+  decay: number;
+  vx: number;
+  vy: number;
 
-  // 粒子類別 (簡單版)
-  class Particle {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-      this.size = Math.random() * 2 + 1; // 粒子大小 1-3px
-      this.opacity = 1;
-      this.decay = Math.random() * 0.015 + 0.01; // 衰減速度 0.01 - 0.025
-      // 可選：添加微小的隨機移動
-      this.vx = (Math.random() - 0.5) * 0.5;
-      this.vy = (Math.random() - 0.5) * 0.5;
-    }
-
-    update() {
-      this.opacity -= this.decay;
-      this.x += this.vx;
-      this.y += this.vy;
-      this.size *= 0.98; // 粒子逐漸縮小
-    }
-
-    draw(ctx) {
-      ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`; // 白色粒子
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+    this.size = Math.random() * 2 + 1; // 粒子大小 1-3px
+    this.opacity = 1;
+    this.decay = Math.random() * 0.015 + 0.01; // 衰減速度 0.01 - 0.025
+    // 可選：添加微小的隨機移動
+    this.vx = (Math.random() - 0.5) * 0.5;
+    this.vy = (Math.random() - 0.5) * 0.5;
   }
 
+  update() {
+    this.opacity -= this.decay;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.size *= 0.98; // 粒子逐漸縮小
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`; // 白色粒子
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+const CursorTrail = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particles = useRef<Particle[]>([]);
+  const mousePos = useRef({ x: 0, y: 0 });
+  const animationFrameId = useRef<number>(0);
+
   // 更新滑鼠位置
-  const handleMouseMove = useCallback((event) => {
+  const handleMouseMove = useCallback((event: MouseEvent) => {
     mousePos.current = { x: event.clientX, y: event.clientY };
     if (Math.random() > 0.5) { // 50% 機率添加
        particles.current.push(new Particle(mousePos.current.x, mousePos.current.y));
@@ -79,10 +87,8 @@ const CursorTrail = () => {
     canvas.height = window.innerHeight;
 
     const handleResize = () => {
-      if (canvas) { // Add this check
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
