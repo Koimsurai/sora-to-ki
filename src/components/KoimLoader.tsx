@@ -1,13 +1,20 @@
 import './KoimLoader.css';
 
+interface KoimLoaderProps {
+  /** 預設 md */
+  size?: 'sm' | 'md' | 'lg';
+  /** 載入文字（可省略） */
+  text?: string;
+  /** 是否撐滿視窗高度（預設 false） */
+  fullscreen?: boolean;
+  /** 內嵌模式：尺寸縮小且不留白（用於 Suspense fallback） */
+  inline?: boolean;
+}
+
 /**
  * 全站統一 loader：雙層軌道 + 漸層核心 + 紫光暈呼吸
- * @param {'sm'|'md'|'lg'} size  - 預設 md
- * @param {string} text          - 載入文字（可省略）
- * @param {boolean} fullscreen   - 是否撐滿視窗高度（預設 false）
- * @param {boolean} inline       - 內嵌模式：尺寸縮小且不留白（用於 Suspense fallback）
  */
-function KoimLoader({ size = 'md', text, fullscreen = false, inline = false }) {
+function KoimLoader({ size = 'md', text, fullscreen = false, inline = false }: KoimLoaderProps) {
   const cls = [
     'koim-loader-shell',
     `koim-loader-shell--${size}`,

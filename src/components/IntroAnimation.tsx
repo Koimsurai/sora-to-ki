@@ -24,9 +24,19 @@ const TIMINGS = {
   unmount: 3500,
 };
 
-const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+interface Star {
+  angle: number;
+  r: number;
+  baseSpeed: number;
+  streakLen: number;
+  seed: number;
+  baseAlpha: number;
+  spawnDelay: number;
+}
 
-const getSpeedMult = (elapsed) => {
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+const getSpeedMult = (elapsed: number) => {
   if (elapsed < TIMINGS.rampEnd) {
     const t = elapsed / TIMINGS.rampEnd;
     // Start from 0 (fully still) — gives a real "we're entering hyperspace"
@@ -44,7 +54,7 @@ const getSpeedMult = (elapsed) => {
   return 0;
 };
 
-const spawnStar = () => {
+const spawnStar = (): Star => {
   // Wide speed range (≈14×) gives a natural depth illusion: slow stars
   // act as the "very distant" layer that used to be the static bg, but
   // they still stream — physically consistent with being inside a tunnel.
@@ -60,12 +70,18 @@ const spawnStar = () => {
   };
 };
 
+interface IntroAnimationProps {
+  onAnimationComplete?: () => void;
+  onExplosionStart?: () => void;
+  onPreReveal?: () => void;
+}
+
 const IntroAnimation = ({
   onAnimationComplete,
   onExplosionStart,
   onPreReveal,
-}) => {
-  const canvasRef = useRef(null);
+}: IntroAnimationProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ending, setEnding] = useState(false);
   const [done, setDone] = useState(false);
   const [skipped, setSkipped] = useState(false);
@@ -83,7 +99,7 @@ const IntroAnimation = ({
 
   useEffect(() => {
     document.body.classList.add('intro-animation-active');
-    return () => document.body.classList.remove('intro-animation-active');
+    return () => { document.body.classList.remove('intro-animation-active'); };
   }, []);
 
   // Remove the body class the moment the container starts fading out so
@@ -98,9 +114,9 @@ const IntroAnimation = ({
   useEffect(() => {
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-    const timers = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     let raf = 0;
     let explosionFired = false;
     let completeFired = false;
@@ -150,6 +166,9 @@ const IntroAnimation = ({
       return () => timers.forEach(clearTimeout);
     }
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return () => timers.forEach(clearTimeout);
+    }
 
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -190,7 +209,7 @@ const IntroAnimation = ({
     const startTime = performance.now();
     let lastFrame = startTime;
 
-    const tick = (now) => {
+    const tick = (now: number) => {
       const elapsed = now - startTime;
       const dt = Math.min(now - lastFrame, 33);
       lastFrame = now;
@@ -220,8 +239,7 @@ const IntroAnimation = ({
       const fadeOutStart = maxR * FADE_OUT_FACTOR;
       const fadeOutSpan = maxR - fadeOutStart;
 
-      for (let i = 0; i < stars.length; i++) {
-        const s = stars[i];
+      for (const s of stars) {
         if (elapsed < s.spawnDelay) continue;
 
         s.r += s.baseSpeed * speedMult * (dt / 1000);

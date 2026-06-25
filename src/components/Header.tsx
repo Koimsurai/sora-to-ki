@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, createElement, type ElementType, type MouseEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FaUser,
@@ -15,19 +15,25 @@ import MobileNav from './MobileNav';
 import meAvatar from '../assets/me-avatar.webp';
 import './Header.css';
 
+interface AnimIconHandle { startAnimation?: () => void; stopAnimation?: () => void }
+
 /* 導覽列 trigger 的動畫 icon — 跟選單內同款（@animateicons imperative handle），
    hover prop 由 MegaMenu 的 trigger hover/open 狀態 cloneElement 注入 */
-function TriggerAnimIcon({ Comp, hover }) {
-  const ref = useRef(null);
+function TriggerAnimIcon({ Comp, hover }: { Comp: ElementType; hover?: boolean }) {
+  const ref = useRef<AnimIconHandle>(null);
   useEffect(() => {
     if (!ref.current) return;
     if (hover) ref.current.startAnimation?.();
     else ref.current.stopAnimation?.();
   }, [hover]);
-  return <Comp ref={ref} size={15} duration={0.6} />;
+  return createElement(Comp, { ref, size: 15, duration: 0.6 });
 }
 
-function Header({ activeSection }) {
+interface HeaderProps {
+  activeSection?: string;
+}
+
+function Header(_props: HeaderProps) {
   const { t } = useTranslation();
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -38,15 +44,14 @@ function Header({ activeSection }) {
   const [navHidden, setNavHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const lastScrollYRef = useRef(0);
-  const homeMenuRef = useRef(null); // 新增這行
-  const moreMenuRef = useRef(null);
-  const blogMenuRef = useRef(null);
-  const userMenuRef = useRef(null);
+  const homeMenuRef = useRef<HTMLDivElement>(null); // 新增這行
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+  const blogMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isLoggedIn, logout, providers, getGoogleAuthUrl, getGitHubAuthUrl, isAdmin } = useAuth();
   const isHomePage = location.pathname === '/';
-  const isPhotoPage = location.pathname === '/photos';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -64,7 +69,7 @@ function Header({ activeSection }) {
       }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => { window.removeEventListener('scroll', handleScroll); };
   }, []);
 
   useEffect(() => {
@@ -78,71 +83,29 @@ function Header({ activeSection }) {
   }, [location.hash, isHomePage]);
 
   useEffect(() => {
-    const handler = (e) => {
-      if (homeMenuRef.current && !homeMenuRef.current.contains(e.target)) setShowHomeMenu(false);
-      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) setShowMoreMenu(false);
-      if (blogMenuRef.current && !blogMenuRef.current.contains(e.target)) setShowBlogMenu(false);
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false);
+    const handler = (e: MouseEvent | Event) => {
+      const target = e.target as Node;
+      if (homeMenuRef.current && !homeMenuRef.current.contains(target)) setShowHomeMenu(false);
+      if (moreMenuRef.current && !moreMenuRef.current.contains(target)) setShowMoreMenu(false);
+      if (blogMenuRef.current && !blogMenuRef.current.contains(target)) setShowBlogMenu(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) setShowUserMenu(false);
     };
     if (showHomeMenu || showMoreMenu || showBlogMenu || showUserMenu) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    return () => { document.removeEventListener('mousedown', handler); };
   }, [showHomeMenu, showMoreMenu, showBlogMenu, showUserMenu]);
 
-  const handleNavClick = (e, sectionId) => {
+  const handleNavClick = (e: MouseEvent<Element>, sectionId: string) => {
     e.preventDefault();
     setMobileOpen(false);
     if (isHomePage) {
       const el = document.getElementById(sectionId);
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     } else {
-      navigate('/#' + sectionId);
+      void navigate('/#' + sectionId);
     }
   };
 
-  const NavLink = ({ sectionId, icon: Icon, text, to }) => {
-    const isActive = to
-      ? location.pathname.startsWith(to)
-      : activeSection === sectionId && isHomePage;
-
-    const inner = (
-      <>
-        <Icon className="nav-icon" />
-        <span className="nav-label-text">{text}</span>
-        {isActive && (
-          <motion.span
-            layoutId="active-pill"
-            className="active-pill"
-            initial={false}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          />
-        )}
-      </>
-    );
-
-    if (to) {
-      return (
-        <li>
-          <Link to={to} className={'nav-link ' + (isActive ? 'active' : '')} onClick={() => setMobileOpen(false)}>
-            {inner}
-          </Link>
-        </li>
-      );
-    }
-
-    return (
-      <li>
-        <a
-          href={'#' + sectionId}
-          className={'nav-link ' + (isActive ? 'active' : '')}
-          onClick={(e) => handleNavClick(e, sectionId)}
-        >
-          {inner}
-        </a>
-      </li>
-    );
-  };
-
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: MouseEvent<HTMLElement>) => {
     const nav = e.currentTarget;
     const rect = nav.getBoundingClientRect();
     nav.style.setProperty('--mx', ((e.clientX - rect.left) / rect.width * 100) + '%');
@@ -226,12 +189,12 @@ function Header({ activeSection }) {
                 {isLoggedIn ? (
                   <>
                     <div className="user-dropdown-header">
-                      <span className="user-dropdown-name">{user.displayName}</span>
-                      <span className="user-dropdown-provider">@{user.displayName}</span>
+                      <span className="user-dropdown-name">{user?.displayName}</span>
+                      <span className="user-dropdown-provider">@{user?.displayName}</span>
                     </div>
                     <div className="user-dropdown-divider" />
                     {isAdmin && (
-                      <button className="user-dropdown-item" onClick={() => { navigate('/admin'); setShowUserMenu(false); }}>
+                      <button className="user-dropdown-item" onClick={() => { void navigate('/admin'); setShowUserMenu(false); }}>
                         <FaCog /> {t('user.adminPanel')}
                       </button>
                     )}

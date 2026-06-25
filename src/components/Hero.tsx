@@ -10,7 +10,7 @@ import './Hero.css';
 import meImage from '../assets/me-avatar.webp'; // 導入頭像圖片
 
 // Helper function for typing effect
-const useTypingEffect = (text, speed = 100, startDelay = 0) => {
+const useTypingEffect = (text: string, speed = 100, startDelay = 0) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const hasStartedRef = React.useRef(false); // Use useRef to track if started
@@ -22,8 +22,8 @@ const useTypingEffect = (text, speed = 100, startDelay = 0) => {
     hasStartedRef.current = false; // Reset started flag
 
     let index = 0;
-    let intervalId = null;
-    let startTimeoutId = null;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    let startTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
     // Only proceed if the delay is a finite number
     if (isFinite(startDelay)) {
@@ -144,7 +144,7 @@ function Hero() {
           alt="Koimsurai Avatar"
           className="hero-avatar"
           draggable="false"
-          fetchpriority="high"
+          fetchPriority="high"
           decoding="async"
           width="280"
           height="280"

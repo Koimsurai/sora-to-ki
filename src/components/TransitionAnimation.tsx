@@ -1,9 +1,9 @@
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import './TransitionAnimation.css'; // 引入 CSS 樣式
 
 const TransitionAnimation = () => {
   // 動畫變體
-  const starVariants = {
+  const starVariants: Variants = {
     hidden: {
       x: '-100%', // 從左邊螢幕外開始
       y: '-100%',

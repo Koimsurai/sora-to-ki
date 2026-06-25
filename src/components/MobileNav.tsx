@@ -6,13 +6,30 @@ import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaTimes } from 'react-icons/fa';
 import './MobileNav.css';
 
-export default function MobileNav({ open, onClose }) {
+interface MobileNavProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+interface NavChild {
+  to: string;
+  label: string;
+}
+
+interface NavGroup {
+  key: string;
+  label: string;
+  to?: string;
+  children?: NavChild[];
+}
+
+export default function MobileNav({ open, onClose }: MobileNavProps) {
   const { t } = useTranslation();
-  const [expanded, setExpanded] = useState(null);
-  const toggle = (key) => setExpanded((cur) => (cur === key ? null : key));
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const toggle = (key: string) => { setExpanded((cur) => (cur === key ? null : key)); };
 
   // 主結構：可展開的列帶 children；純連結的列直接走 Link
-  const groups = [
+  const groups: NavGroup[] = [
     { key: 'home', label: t('nav.home'), to: '/', children: [
       { to: '/about', label: t('megaMenu.items.about') },
       { to: '/about#journey', label: t('megaMenu.items.journey') },
@@ -41,7 +58,7 @@ export default function MobileNav({ open, onClose }) {
       role="dialog"
       aria-modal="true"
       aria-label={t('nav.menu')}
-      inert={!open ? '' : undefined}
+      inert={!open}
     >
       <div className="mnav-head">
         <span className="mnav-brand">宙と木</span>
@@ -50,7 +67,6 @@ export default function MobileNav({ open, onClose }) {
 
       <nav className="mnav-list">
         {groups.map((g) => {
-          const hasChildren = !!g.children;
           const isOpen = expanded === g.key;
           return (
             <div className={`mnav-group ${isOpen ? 'is-open' : ''}`} key={g.key}>
@@ -60,7 +76,7 @@ export default function MobileNav({ open, onClose }) {
                 ) : (
                   <button className="mnav-row-label" onClick={() => toggle(g.key)}>{g.label}</button>
                 )}
-                {hasChildren && (
+                {g.children && (
                   <button
                     className="mnav-row-toggle"
                     onClick={() => toggle(g.key)}
@@ -71,7 +87,7 @@ export default function MobileNav({ open, onClose }) {
                   </button>
                 )}
               </div>
-              {hasChildren && (
+              {g.children && (
                 <div className="mnav-sub-wrap">
                   <div className="mnav-sub">
                     {g.children.map((c) => (

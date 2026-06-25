@@ -6,17 +6,22 @@ import './Footer.css';
 
 const START_YEAR = 2025;
 
+interface Stats {
+  total: number;
+  days: number;
+}
+
 function useStats() {
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState<Stats | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/stats')
-      .then((r) => r.json())
+    void fetch('/api/stats')
+      .then((r) => r.json() as Promise<{ message?: string; total_posts?: number; days?: number }>)
       .then((data) => {
-        if (cancelled || data?.message !== 'success') return;
-        setStats({ total: data.total_posts || 0, days: data.days || 1 });
+        if (cancelled || data.message !== 'success') return;
+        setStats({ total: data.total_posts ?? 0, days: data.days ?? 1 });
       })
-      .catch(() => {});
+      .catch(() => { /* 統計載入失敗時靜默 */ });
     return () => { cancelled = true; };
   }, []);
   return stats;
@@ -24,7 +29,7 @@ function useStats() {
 
 // 在線人數：目前後端沒有 endpoint，直接回傳 null 走 fallback 顯示文章數 / 天數
 // 之後想做即時人數，可加 SSE / WebSocket，或前端 fetch /api/online
-function useOnline() {
+function useOnline(): number | null {
   return null;
 }
 

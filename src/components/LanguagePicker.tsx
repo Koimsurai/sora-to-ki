@@ -15,15 +15,15 @@ import './LanguagePicker.css';
 function LanguagePicker() {
   const { i18n } = useTranslation();
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   // 點外面關掉 + Esc 關掉
   useEffect(() => {
     if (!open) return;
-    const onClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    const onEsc = (e) => { if (e.key === 'Escape') setOpen(false); };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onClick);
     document.addEventListener('keydown', onEsc);
     return () => {
@@ -32,10 +32,10 @@ function LanguagePicker() {
     };
   }, [open]);
 
-  const current = i18n.resolvedLanguage || i18n.language || 'zh-TW';
+  const current = i18n.resolvedLanguage ?? i18n.language ?? 'zh-TW';
 
-  const select = (code) => {
-    i18n.changeLanguage(code);
+  const select = (code: string) => {
+    void i18n.changeLanguage(code);
     setOpen(false);
   };
 

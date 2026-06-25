@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, createContext, useContext, useState } from 'react';
+import React, { useRef, useCallback, createContext, useContext, useState, type ReactNode, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaChevronDown } from 'react-icons/fa';
@@ -21,10 +21,15 @@ import './mega-menu.css';
 const OPEN_DELAY_MS = 80;
 const CLOSE_DELAY_MS = 220;
 
-const MegaMenuContext = createContext(null);
+interface MegaMenuContextValue {
+  openId: string | null;
+  setOpenId: React.Dispatch<React.SetStateAction<string | null>>;
+}
 
-export function MegaMenuRoot({ children, className = '' }) {
-  const [openId, setOpenId] = useState(null);
+const MegaMenuContext = createContext<MegaMenuContextValue | null>(null);
+
+export function MegaMenuRoot({ children, className = '' }: { children: ReactNode; className?: string }) {
+  const [openId, setOpenId] = useState<string | null>(null);
   return (
     <MegaMenuContext.Provider value={{ openId, setOpenId }}>
       <ul className={`mega-menu-bar ${className}`}>{children}</ul>
@@ -32,7 +37,17 @@ export function MegaMenuRoot({ children, className = '' }) {
   );
 }
 
-export function MegaMenu({ id, label, icon, active = false, to = null, children, onClick }) {
+interface MegaMenuProps {
+  id: string;
+  label: ReactNode;
+  icon?: ReactNode;
+  active?: boolean;
+  to?: string | null;
+  children?: ReactNode;
+  onClick?: (e: React.MouseEvent) => void;
+}
+
+export function MegaMenu({ id, label, icon, active = false, to = null, children, onClick }: MegaMenuProps) {
   const ctx = useContext(MegaMenuContext);
   if (!ctx) throw new Error('<MegaMenu> must be inside <MegaMenuRoot>');
   const { openId, setOpenId } = ctx;
@@ -40,8 +55,8 @@ export function MegaMenu({ id, label, icon, active = false, to = null, children,
   // trigger hover 狀態：傳給 icon 元素驅動動畫（icon 需接受 hover prop）
   const [hovering, setHovering] = useState(false);
 
-  const enterTimerRef = useRef(null);
-  const leaveTimerRef = useRef(null);
+  const enterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearAll = useCallback(() => {
     if (enterTimerRef.current) { clearTimeout(enterTimerRef.current); enterTimerRef.current = null; }
@@ -72,7 +87,7 @@ export function MegaMenu({ id, label, icon, active = false, to = null, children,
   // 點擊行為：
   //  - 有 `to` → 是個 Link，正常 navigate，順手關 panel；onClick 仍可呼叫
   //  - 沒 `to` → 純 trigger，點擊切換 panel 開關
-  const handleTriggerClick = useCallback((e) => {
+  const handleTriggerClick = useCallback((e: React.MouseEvent) => {
     if (to) {
       setOpenId(null);
     } else if (isOpen) {
@@ -90,7 +105,7 @@ export function MegaMenu({ id, label, icon, active = false, to = null, children,
       {icon && (
         <span className="mega-menu-trigger-icon">
           {/* clone 注入 hover：icon 元件（如 TriggerAnimIcon）可據此播放動畫 */}
-          {React.isValidElement(icon) ? React.cloneElement(icon, { hover: hovering || isOpen }) : icon}
+          {React.isValidElement<{ hover?: boolean }>(icon) ? React.cloneElement(icon, { hover: hovering || isOpen }) : icon}
         </span>
       )}
       <span className="mega-menu-trigger-label">{label}</span>
@@ -136,13 +151,21 @@ export function MegaMenu({ id, label, icon, active = false, to = null, children,
   );
 }
 
-export function MegaMenuPanel({ children, className = '' }) {
+export function MegaMenuPanel({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`mega-menu-panel ${className}`}>{children}</div>;
 }
 
-export function MegaMenuColumn({ title, accent = false, children, className = '', span = 1 }) {
+interface MegaMenuColumnProps {
+  title?: ReactNode;
+  accent?: boolean;
+  children: ReactNode;
+  className?: string;
+  span?: number;
+}
+
+export function MegaMenuColumn({ title, accent = false, children, className = '', span = 1 }: MegaMenuColumnProps) {
   return (
-    <div className={`mega-menu-column ${accent ? 'mega-menu-column--accent' : ''} ${className}`} style={{ '--span': span }}>
+    <div className={`mega-menu-column ${accent ? 'mega-menu-column--accent' : ''} ${className}`} style={{ '--span': span } as CSSProperties}>
       {title && <div className="mega-menu-column-title">{title}</div>}
       <div className="mega-menu-column-body">{children}</div>
     </div>

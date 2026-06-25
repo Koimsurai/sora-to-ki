@@ -9,14 +9,17 @@ import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
  *   右欄：最新 N 篇（隨 hover 的分類動態切換）
  */
 
-function RecentPostRow({ post }) {
+interface CategoryItem { id: number; name: string; post_count?: number }
+interface BlogPostItem { id: number; title: string; created_at?: string; category?: string; status?: string }
+
+function RecentPostRow({ post }: { post: BlogPostItem }) {
   const { t } = useTranslation();
   const dateLabel = useMemo(() => {
     if (!post.created_at) return '';
     const d = new Date(post.created_at);
     if (Number.isNaN(d.getTime())) return '';
     const now = new Date();
-    const diffDays = Math.floor((now - d) / 86400000);
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
     if (diffDays < 1) return t('common.today');
     if (diffDays < 7) return t('common.daysAgo', { count: diffDays });
     if (diffDays < 30) return t('common.weeksAgo', { count: Math.floor(diffDays / 7) });
@@ -38,19 +41,19 @@ function RecentPostRow({ post }) {
 
 function BlogMenuContent() {
   const { t } = useTranslation();
-  const [categories, setCategories] = useState([]);
-  const [posts, setPosts] = useState([]);
-  const [activeCat, setActiveCat] = useState(null); // null = 全部
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [posts, setPosts] = useState<BlogPostItem[]>([]);
+  const [activeCat, setActiveCat] = useState<string | null>(null); // null = 全部
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      fetch('/api/categories').then((r) => r.json()).catch(() => null),
-      fetch('/api/posts?limit=50').then((r) => r.json()).catch(() => null),
+    void Promise.all([
+      fetch('/api/categories').then((r) => r.json() as Promise<unknown>).catch(() => null),
+      fetch('/api/posts?limit=50').then((r) => r.json() as Promise<unknown>).catch(() => null),
     ]).then(([catsRes, postsRes]) => {
       if (cancelled) return;
-      const cats = Array.isArray(catsRes) ? catsRes : catsRes?.categories || [];
-      const list = Array.isArray(postsRes) ? postsRes : postsRes?.posts || [];
+      const cats = Array.isArray(catsRes) ? (catsRes as CategoryItem[]) : ((catsRes as { categories?: CategoryItem[] } | null)?.categories ?? []);
+      const list = Array.isArray(postsRes) ? (postsRes as BlogPostItem[]) : ((postsRes as { posts?: BlogPostItem[] } | null)?.posts ?? []);
       // 只顯示有文章的分類，避免空欄位佔版面
       setCategories(cats.filter((c) => (c.post_count ?? 0) > 0));
       setPosts(list.filter((p) => p.status === 'published' || !p.status));

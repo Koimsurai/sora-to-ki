@@ -1,8 +1,10 @@
+import type { SVGProps } from 'react';
+
 // Inline brand SVG icons — pulled individually so we don't ship an entire
 // icon library for 5 logos. Each component accepts {className, style} so
 // the existing ICON_MAP color/sizing flow keeps working.
 
-export const IconCursor = (props) => (
+export const IconCursor = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     viewBox="0 0 24 24"
@@ -16,7 +18,7 @@ export const IconCursor = (props) => (
   </svg>
 );
 
-export const IconAntigravity = (props) => (
+export const IconAntigravity = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     viewBox="0 0 24 24"
@@ -30,7 +32,7 @@ export const IconAntigravity = (props) => (
   </svg>
 );
 
-export const IconCodex = (props) => (
+export const IconCodex = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     viewBox="0 0 24 24"
@@ -47,7 +49,7 @@ export const IconCodex = (props) => (
   </svg>
 );
 
-export const IconMcp = (props) => (
+export const IconMcp = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     viewBox="0 0 24 24"
@@ -65,7 +67,7 @@ export const IconMcp = (props) => (
 // WebSocket — iconify logos:websocket (Gil Barbara, free for OSS use)
 // Brand-color baked in (#231f20 of the spec mark); ignores style color so it
 // always looks like the WebSocket spec logo, not the surrounding text.
-export const IconWebsocket = (props) => (
+export const IconWebsocket = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     width="1.33em"
@@ -82,7 +84,7 @@ export const IconWebsocket = (props) => (
 
 // Playwright — iconify simple-icons:playwright. Single-color so it picks up
 // brand green (#2EAD33) from inline style like other react-icons brand chips.
-export const IconPlaywright = (props) => (
+export const IconPlaywright = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     width="1em"
@@ -98,7 +100,7 @@ export const IconPlaywright = (props) => (
 );
 
 // JSON — iconify codicon:json. Monochrome braces, picks up color prop.
-export const IconJson = (props) => (
+export const IconJson = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     width="1em"
@@ -114,7 +116,7 @@ export const IconJson = (props) => (
 );
 
 // DNS — iconify iconoir:dns. Stroke-based; uses currentColor for stroke.
-export const IconDns = (props) => (
+export const IconDns = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     width="1em"
@@ -137,7 +139,7 @@ export const IconDns = (props) => (
 
 // CDN — custom: cloud outline + "CDN" label baked into the middle.
 // Stroke uses currentColor so it picks up the ICON_MAP brand color.
-export const IconCdn = (props) => (
+export const IconCdn = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     width="1em"
@@ -170,7 +172,7 @@ export const IconCdn = (props) => (
 // is ignored (icon stays VS-Code-blue regardless of inline color).
 // Stripped of the dropshadow filters from the original devicon SVG to
 // keep payload light; visually identical at icon scales.
-export const IconVscode = (props) => (
+export const IconVscode = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     viewBox="0 0 128 128"

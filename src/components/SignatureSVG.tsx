@@ -1,8 +1,12 @@
 import './SignatureSVG.css';
 
-const SignatureSVG = ({ className }) => {
+interface SignatureSVGProps {
+    className?: string;
+}
+
+const SignatureSVG = ({ className }: SignatureSVGProps) => {
     return (
-        <div className={`signature-svg-container ${className || ''}`}>
+        <div className={`signature-svg-container ${className ?? ''}`}>
             <svg width="100%" height="100%" viewBox="-20 -20 1100 300" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="0%">

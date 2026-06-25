@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RocketIcon } from '@animateicons/react/lucide';
+import { RocketIcon, type RocketIconHandle } from '@animateicons/react/lucide';
 import './BackToTopButton.css';
 
-function BackToTopButton({ isHomePage = false }) {
+interface BackToTopButtonProps {
+  isHomePage?: boolean;
+}
+
+function BackToTopButton({ isHomePage = false }: BackToTopButtonProps) {
   const { t } = useTranslation();
   const [isVisible, setIsVisible] = useState(false);
   const [progress, setProgress] = useState(0);
   const [hover, setHover] = useState(false);
-  const rocketRef = useRef(null);
+  const rocketRef = useRef<RocketIconHandle>(null);
 
   useEffect(() => {
     const onScroll = () => {
@@ -19,20 +23,20 @@ function BackToTopButton({ isHomePage = false }) {
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); };
   }, []);
 
   useEffect(() => {
     if (!rocketRef.current) return;
-    if (hover) rocketRef.current.startAnimation?.();
-    else rocketRef.current.stopAnimation?.();
+    if (hover) rocketRef.current.startAnimation();
+    else rocketRef.current.stopAnimation();
   }, [hover]);
 
   if (!isHomePage) return null;
 
   const scrollToTop = () => {
     // 點下去直接讓 rocket 動一下，給「發射」回饋
-    rocketRef.current?.startAnimation?.();
+    rocketRef.current?.startAnimation();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
