@@ -1,18 +1,23 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import InfoPage from './InfoPage';
 
+interface Friend { name: string; url: string; avatar?: string; tagline?: string }
+interface FailedSite { name: string; url: string }
+interface BlacklistSite { name: string; reason?: string }
+interface FriendForm { name: string; site: string; url: string; avatar: string; email: string; tagline: string }
+
 /**
  * 友鏈列表 — 之後手動加，格式：{ name, url, avatar, tagline }
  * 還沒人就讓它空著，頁面會顯示「歡迎成為第一個」。
  */
-const FRIENDS = [];
+const FRIENDS: Friend[] = [];
 
-const FAILED = [];        // 失聯的（網站掛了/換域名等）
-const BLACKLIST = [];     // 黑名單（違規/變廣告農場）
+const FAILED: FailedSite[] = [];        // 失聯的（網站掛了/換域名等）
+const BLACKLIST: BlacklistSite[] = [];     // 黑名單（違規/變廣告農場）
 
 // 本站訊息卡 — 給對方寫進他們的友鏈頁
 const SITE_INFO = {
@@ -27,7 +32,7 @@ const SITE_INFO = {
   avatar: 'https://nas.koimsurai.com/s/99881e40-51d4-4ea2-8dbd-47692f6343ff',
 };
 
-const FRIENDS_BY_LANG = {
+const FRIENDS_BY_LANG: Record<string, Record<string, string>> = {
   'zh-TW': {
     intro: '友鏈的中文圈起源像是古早 SEO 時代「我貼你、你貼我」的互助文化。對我來說更像「我在這片網海裡看見了你，幫你掛個牌子」。',
     listHeading: '目前的朋友',
@@ -155,7 +160,7 @@ const FRIENDS_BY_LANG = {
   },
 };
 
-const FORM_BY_LANG = {
+const FORM_BY_LANG: Record<string, Record<string, string>> = {
   'zh-TW': {
     modalTitle: '來自網海的問候',
     close: '關閉',
@@ -233,18 +238,18 @@ const FORM_BY_LANG = {
   },
 };
 
-function ApplicationForm({ onClose }) {
+function ApplicationForm({ onClose }: { onClose: () => void }) {
   const { i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const f = FORM_BY_LANG[lang] || FORM_BY_LANG['zh-TW'];
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FriendForm>({
     name: '', site: '', url: '', avatar: '', email: '', tagline: '',
   });
   const [submitted, setSubmitted] = useState(false);
 
-  const update = (key) => (e) => setForm((s) => ({ ...s, [key]: e.target.value }));
+  const update = (key: keyof FriendForm) => (e: ChangeEvent<HTMLInputElement>) => setForm((s) => ({ ...s, [key]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const subject = `[Friend-link] ${form.site || form.name}`;
     const body = [
@@ -356,7 +361,7 @@ function ApplicationForm({ onClose }) {
 
 function Friends() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const c = FRIENDS_BY_LANG[lang] || FRIENDS_BY_LANG['zh-TW'];
   const [showForm, setShowForm] = useState(false);
 

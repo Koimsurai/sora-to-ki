@@ -1,48 +1,50 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Rss } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SEOHead from './SEOHead';
-import ThoughtCard from './ThoughtCard';
+import ThoughtCard, { type Thought } from './ThoughtCard';
 import './Thinking.css';
 
 /* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。
    admin 可在頂端發文（content + 選填連結 → 後端 unfurl）。 */
 
-const API = import.meta.env.VITE_API_URL || '/api';
+const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
-const listV = { hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } } };
-const cardV = {
+interface Prefill { kind?: string; title?: string }
+
+const listV: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } } };
+const cardV: Variants = {
   hidden: { opacity: 0, x: -48 },
   show: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 };
 const headReveal = {
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 };
 
 function Thinking() {
   const { t } = useTranslation();
   const { isAdmin, getToken } = useAuth();
-  const [thoughts, setThoughts] = useState(null);
+  const [thoughts, setThoughts] = useState<Thought[] | null>(null);
   const [draft, setDraft] = useState('');
   const [draftUrl, setDraftUrl] = useState('');
   const [posting, setPosting] = useState(false);
-  const [prefill, setPrefill] = useState(null); // 從 /watch 一鍵發帶來的 media
+  const [prefill, setPrefill] = useState<Prefill | null>(null); // 從 /watch 一鍵發帶來的 media
 
   useEffect(() => {
     try {
       const raw = sessionStorage.getItem('thinking_prefill');
-      if (raw) { setPrefill(JSON.parse(raw)); sessionStorage.removeItem('thinking_prefill'); }
+      if (raw) { setPrefill(JSON.parse(raw) as Prefill); sessionStorage.removeItem('thinking_prefill'); }
     } catch { /* ignore */ }
   }, []);
 
   const load = useCallback(() => {
-    fetch(`${API}/thoughts?limit=50`)
-      .then((r) => r.json())
-      .then((d) => setThoughts(d.thoughts || []))
+    void fetch(`${API}/thoughts?limit=50`)
+      .then((r) => r.json() as Promise<{ thoughts?: Thought[] }>)
+      .then((d) => setThoughts(d.thoughts ?? []))
       .catch(() => setThoughts([]));
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -53,7 +55,7 @@ function Thinking() {
     try {
       const r = await fetch(`${API}/admin/thoughts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
         body: JSON.stringify({
           content: draft.trim(),
           refUrl: draftUrl.trim() || undefined,
@@ -65,18 +67,18 @@ function Thinking() {
       setPosting(false);
     }
   };
-  const del = async (id) => {
+  const del = async (id: number) => {
     if (!window.confirm('刪除這則碎念？')) return;
     const r = await fetch(`${API}/admin/thoughts/${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${getToken()}` },
+      headers: { Authorization: `Bearer ${getToken() ?? ''}` },
     });
     if (r.ok) load();
   };
-  const edit = async (id, content) => {
+  const edit = async (id: number, content: string) => {
     const r = await fetch(`${API}/admin/thoughts/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
       body: JSON.stringify({ content }),
     });
     if (r.ok) load();
@@ -121,16 +123,16 @@ function Thinking() {
               </div>
             )}
             <div className="tk-compose-row">
-              <button className="tk-compose-send" onClick={submit} disabled={posting || !draft.trim()}>
+              <button className="tk-compose-send" onClick={() => { void submit(); }} disabled={posting || !draft.trim()}>
                 {posting ? '發送中…' : '發送'}
               </button>
             </div>
           </div>
         )}
 
-        {thoughts && thoughts.length === 0 && <p className="tk-empty">{t('thinking.empty')}</p>}
+        {thoughts?.length === 0 && <p className="tk-empty">{t('thinking.empty')}</p>}
 
-        {thoughts && thoughts.length > 0 && (
+        {!!thoughts?.length && (
           <motion.ul
             className="tk-feed"
             variants={listV}
@@ -140,13 +142,13 @@ function Thinking() {
           >
             {thoughts.map((th) => (
               <motion.li className="tk-feed-item" key={th.id} variants={cardV}>
-                <ThoughtCard th={th} isAdmin={isAdmin} onDelete={del} onEdit={edit} />
+                <ThoughtCard th={th} isAdmin={isAdmin} onDelete={(id) => { void del(id); }} onEdit={(id, content) => { void edit(id, content); }} />
               </motion.li>
             ))}
           </motion.ul>
         )}
 
-        {thoughts && thoughts.length > 0 && (
+        {!!thoughts?.length && (
           <motion.p className="tk-ending" {...headReveal}>{t('thinking.ending')}</motion.p>
         )}
       </div>

@@ -1,13 +1,38 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
 import KoimLoader from './KoimLoader';
 import './Music.css';
 
+interface RGB { r: number; g: number; b: number }
+
+interface SpotifyImage { url: string }
+interface SpotifyArtist { name: string }
+interface SpotifyAlbum { name: string; images: SpotifyImage[]; release_date?: string }
+interface SpotifyTrack {
+  id: string;
+  name: string;
+  artists: SpotifyArtist[];
+  album: SpotifyAlbum;
+  duration_ms: number;
+  external_urls: { spotify: string };
+  popularity?: number;
+  explicit?: boolean;
+}
+interface RecentItem { track: SpotifyTrack; played_at: string }
+interface AudioFeature { id: string; energy: number; danceability: number; valence: number }
+interface Genre { genre: string; count: number }
+
+interface NowPlaying { is_playing?: boolean; item?: SpotifyTrack; progress_ms?: number; played_at?: string }
+interface NowPlayingData extends NowPlaying { isLive: boolean }
+interface RecentlyPlayedState { tracks?: RecentItem[]; configured?: boolean; error?: string }
+interface TopGenresState { genres?: Genre[]; configured?: boolean; error?: string }
+interface TopTracksState { tracks?: SpotifyTrack[]; configured?: boolean; error?: string }
+
 /* ─── 色彩提取工具：從專輯封面取主色調 ─── */
-const extractDominantColor = (imageUrl) => {
-  return new Promise((resolve) => {
+const extractDominantColor = (imageUrl: string): Promise<RGB> => {
+  return new Promise<RGB>((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -15,6 +40,7 @@ const extractDominantColor = (imageUrl) => {
       canvas.width = 50;
       canvas.height = 50;
       const ctx = canvas.getContext('2d');
+      if (!ctx) { resolve({ r: 127, g: 90, b: 240 }); return; }
       ctx.drawImage(img, 0, 0, 50, 50);
       const data = ctx.getImageData(0, 0, 50, 50).data;
       let r = 0, g = 0, b = 0, count = 0;
@@ -33,35 +59,35 @@ const extractDominantColor = (imageUrl) => {
     };
     img.onerror = () => resolve({ r: 127, g: 90, b: 240 });
     // 使用代理避免 CORS
-    const apiUrl = import.meta.env.VITE_API_URL || '/api';
+    const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
     img.src = `${apiUrl}/image-proxy?url=${encodeURIComponent(imageUrl)}`;
   });
 };
 
 const Music = () => {
   const { t, i18n } = useTranslation();
-  const [recentlyPlayed, setRecentlyPlayed] = useState(null);
-  const [topGenres, setTopGenres] = useState(null);
-  const [topTracks, setTopTracks] = useState(null);
-  const [nowPlaying, setNowPlaying] = useState(null);
-  const [audioFeatures, setAudioFeatures] = useState({});
+  const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayedState | null>(null);
+  const [topGenres, setTopGenres] = useState<TopGenresState | null>(null);
+  const [topTracks, setTopTracks] = useState<TopTracksState | null>(null);
+  const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
+  const [audioFeatures, setAudioFeatures] = useState<Record<string, AudioFeature | undefined>>({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('recent');
   const [timeRange, setTimeRange] = useState('medium_term');
-  const [dominantColor, setDominantColor] = useState({ r: 127, g: 90, b: 240 });
-  const containerRef = useRef(null);
+  const [dominantColor, setDominantColor] = useState<RGB>({ r: 127, g: 90, b: 240 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   /* ─── API 呼叫 ─── */
-  const apiUrl = import.meta.env.VITE_API_URL || '/api';
+  const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
   const fetchNowPlaying = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/spotify/now-playing`);
-      const data = await response.json();
+      const data = await response.json() as NowPlaying;
       setNowPlaying(data);
 
       // 提取封面色彩
-      const coverUrl = data?.item?.album?.images?.[0]?.url;
+      const coverUrl = data.item?.album.images[0]?.url;
       if (coverUrl) {
         const color = await extractDominantColor(coverUrl);
         setDominantColor(color);
@@ -75,12 +101,12 @@ const Music = () => {
   const fetchRecentlyPlayed = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/spotify/recently-played`);
-      const data = await response.json();
+      const data = await response.json() as { error?: string; items?: RecentItem[] };
       if (data.error) {
         setRecentlyPlayed({ error: data.error, configured: false });
         return;
       }
-      setRecentlyPlayed({ tracks: data.items || [], configured: true });
+      setRecentlyPlayed({ tracks: data.items ?? [], configured: true });
     } catch (error) {
       console.error('獲取最近播放失敗:', error);
       setRecentlyPlayed({ error: t('common.errorBackendApi'), configured: false });
@@ -90,34 +116,34 @@ const Music = () => {
   const fetchTopGenres = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/spotify/top-genres`);
-      const data = await response.json();
+      const data = await response.json() as { error?: string; genres?: Genre[] };
       if (data.error) { setTopGenres({ error: data.error, configured: false }); return; }
-      setTopGenres({ genres: data.genres || [], configured: true });
+      setTopGenres({ genres: data.genres ?? [], configured: true });
     } catch (error) {
       console.error('獲取曲風失敗:', error);
       setTopGenres({ error: t('common.errorBackendApi'), configured: false });
     }
   }, [apiUrl]);
 
-  const fetchTopTracks = useCallback(async (range) => {
+  const fetchTopTracks = useCallback(async (range: string) => {
     try {
       const response = await fetch(`${apiUrl}/spotify/top-tracks?time_range=${range}&limit=20`);
-      const data = await response.json();
+      const data = await response.json() as { error?: string; items?: SpotifyTrack[] };
       if (data.error) { setTopTracks({ error: data.error, configured: false }); return; }
-      setTopTracks({ tracks: data.items || [], configured: true });
+      setTopTracks({ tracks: data.items ?? [], configured: true });
     } catch (error) {
       console.error('獲取年度歌單失敗:', error);
       setTopTracks({ error: t('common.errorBackendApi'), configured: false });
     }
   }, [apiUrl]);
 
-  const fetchAudioFeatures = useCallback(async (trackIds) => {
-    if (!trackIds || trackIds.length === 0) return;
+  const fetchAudioFeatures = useCallback(async (trackIds: string[]) => {
+    if (trackIds.length === 0) return;
     try {
       const response = await fetch(`${apiUrl}/spotify/audio-features?ids=${trackIds.join(',')}`);
-      const data = await response.json();
+      const data = await response.json() as { audio_features?: (AudioFeature | null)[] };
       if (data.audio_features) {
-        const featuresMap = {};
+        const featuresMap: Record<string, AudioFeature> = {};
         data.audio_features.forEach(f => { if (f) featuresMap[f.id] = f; });
         setAudioFeatures(prev => ({ ...prev, ...featuresMap }));
       }
@@ -138,51 +164,53 @@ const Music = () => {
       ]);
       setLoading(false);
     };
-    init();
-    const interval = setInterval(fetchNowPlaying, 30000); // 30秒更新正在播放
+    void init();
+    const interval = setInterval(() => { void fetchNowPlaying(); }, 30000); // 30秒更新正在播放
     const dataInterval = setInterval(() => {
-      fetchRecentlyPlayed();
-      fetchTopGenres();
+      void fetchRecentlyPlayed();
+      void fetchTopGenres();
     }, 10 * 60 * 1000);
     return () => { clearInterval(interval); clearInterval(dataInterval); };
   }, [fetchNowPlaying, fetchRecentlyPlayed, fetchTopGenres, fetchTopTracks]);
 
   /* ─── Tab 切換時載入對應資料 ─── */
   useEffect(() => {
-    if (activeTab === 'yearly') fetchTopTracks(timeRange);
+    if (activeTab === 'yearly') void fetchTopTracks(timeRange);
   }, [timeRange, activeTab, fetchTopTracks]);
 
   /* ─── 載入 Audio Features ─── */
   useEffect(() => {
-    if (recentlyPlayed?.tracks?.length > 0 && activeTab === 'recent') {
-      const ids = recentlyPlayed.tracks.map(t => t.track.id).filter(id => !audioFeatures[id]);
-      if (ids.length > 0) fetchAudioFeatures(ids);
+    const recentTracks = recentlyPlayed?.tracks;
+    if (recentTracks && recentTracks.length > 0 && activeTab === 'recent') {
+      const ids = recentTracks.map(t => t.track.id).filter(id => !audioFeatures[id]);
+      if (ids.length > 0) void fetchAudioFeatures(ids);
     }
   }, [recentlyPlayed, activeTab, audioFeatures, fetchAudioFeatures]);
 
   useEffect(() => {
-    if (topTracks?.tracks?.length > 0 && activeTab === 'yearly') {
-      const ids = topTracks.tracks.map(t => t.id).filter(id => !audioFeatures[id]);
-      if (ids.length > 0) fetchAudioFeatures(ids);
+    const yearlyTracks = topTracks?.tracks;
+    if (yearlyTracks && yearlyTracks.length > 0 && activeTab === 'yearly') {
+      const ids = yearlyTracks.map(t => t.id).filter(id => !audioFeatures[id]);
+      if (ids.length > 0) void fetchAudioFeatures(ids);
     }
   }, [topTracks, activeTab, audioFeatures, fetchAudioFeatures]);
 
   /* ─── 工具 ─── */
-  const formatDuration = (ms) => {
+  const formatDuration = (ms: number) => {
     const minutes = Math.floor(ms / 60000);
     const seconds = Math.floor((ms % 60000) / 1000);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffMs = now - date;
+    const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     if (diffMins < 60) return t('common.minutesAgo', { count: diffMins });
     if (diffHours < 24) return t('common.hoursAgo', { count: diffHours });
-    return date.toLocaleDateString(i18n.resolvedLanguage || 'zh-TW', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(i18n.resolvedLanguage ?? 'zh-TW', { month: 'short', day: 'numeric' });
   };
 
   // 以 topTracks 的 metadata 推導聆聽分析（Spotify 2024/11 已停用 audio-features）
@@ -191,19 +219,19 @@ const Music = () => {
     if (!tracks || tracks.length === 0) return null;
     const n = tracks.length;
 
-    const totalPopularity = tracks.reduce((s, t) => s + (t.popularity || 0), 0);
+    const totalPopularity = tracks.reduce((s, t) => s + (t.popularity ?? 0), 0);
     const totalDuration = tracks.reduce((s, t) => s + (t.duration_ms || 0), 0);
     const explicitCount = tracks.filter(t => t.explicit).length;
 
     const years = tracks
-      .map(t => parseInt((t.album?.release_date || '').slice(0, 4), 10))
+      .map(t => parseInt((t.album.release_date ?? '').slice(0, 4), 10))
       .filter(y => !Number.isNaN(y));
     const avgYear = years.length ? Math.round(years.reduce((s, y) => s + y, 0) / years.length) : null;
 
-    const decadeMap = new Map();
+    const decadeMap = new Map<string, number>();
     years.forEach(y => {
       const dec = `${Math.floor(y / 10) * 10}s`;
-      decadeMap.set(dec, (decadeMap.get(dec) || 0) + 1);
+      decadeMap.set(dec, (decadeMap.get(dec) ?? 0) + 1);
     });
     const decades = Array.from(decadeMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
@@ -221,13 +249,13 @@ const Music = () => {
   };
 
   /* ─── Now Playing 資訊 ─── */
-  const getNowPlayingData = () => {
-    if (nowPlaying?.is_playing && nowPlaying?.item) {
+  const getNowPlayingData = (): NowPlayingData | null => {
+    if (nowPlaying?.is_playing && nowPlaying.item) {
       return { ...nowPlaying, isLive: true };
     }
     // Fallback: 最近播放的第一首
-    if (recentlyPlayed?.tracks?.[0]) {
-      const recent = recentlyPlayed.tracks[0];
+    const recent = recentlyPlayed?.tracks?.[0];
+    if (recent) {
       return {
         is_playing: false,
         isLive: false,
@@ -243,7 +271,7 @@ const Music = () => {
     '--glow-r': dominantColor.r,
     '--glow-g': dominantColor.g,
     '--glow-b': dominantColor.b,
-  };
+  } as CSSProperties;
 
   /* ─── Loading ─── */
   if (loading) {
@@ -257,6 +285,7 @@ const Music = () => {
 
   const npData = getNowPlayingData();
   const trackAnalytics = getTrackAnalytics();
+  const decadeMax = trackAnalytics?.decades.length ? Math.max(...trackAnalytics.decades.map(d => d.count)) : 1;
 
   return (
     <div className="music-page" ref={containerRef} style={glowStyle}>
@@ -303,7 +332,7 @@ const Music = () => {
                 />
                 {/* Audio Visualizer */}
                 <div className={`np-visualizer ${npData.isLive ? 'active' : ''}`}>
-                  {[...Array(5)].map((_, i) => (
+                  {Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="eq-bar" style={{ animationDelay: `${i * 0.12}s` }} />
                   ))}
                 </div>
@@ -314,18 +343,18 @@ const Music = () => {
                   {npData.isLive ? t('music.nowPlaying') : t('music.lastPlayed')}
                 </div>
                 <h2 className="np-title">{npData.item?.name}</h2>
-                <p className="np-artist">{npData.item?.artists?.map(a => a.name).join(', ')}</p>
-                <p className="np-album">{npData.item?.album?.name}</p>
-                {npData.isLive && npData.progress_ms > 0 && npData.item?.duration_ms && (
+                <p className="np-artist">{npData.item?.artists.map(a => a.name).join(', ')}</p>
+                <p className="np-album">{npData.item?.album.name}</p>
+                {npData.isLive && (npData.progress_ms ?? 0) > 0 && npData.item?.duration_ms && (
                   <div className="np-progress-area">
                     <div className="np-progress-bar">
                       <div
                         className="np-progress-fill"
-                        style={{ width: `${(npData.progress_ms / npData.item.duration_ms) * 100}%` }}
+                        style={{ width: `${((npData.progress_ms ?? 0) / npData.item.duration_ms) * 100}%` }}
                       />
                     </div>
                     <div className="np-time">
-                      <span>{formatDuration(npData.progress_ms)}</span>
+                      <span>{formatDuration(npData.progress_ms ?? 0)}</span>
                       <span>{formatDuration(npData.item.duration_ms)}</span>
                     </div>
                   </div>
@@ -409,7 +438,7 @@ const Music = () => {
                       </div>
                     )}
                   </div>
-                ) : recentlyPlayed?.tracks?.length > 0 ? (
+                ) : (recentlyPlayed?.tracks?.length ?? 0) > 0 ? (
                   <div className="track-row-list">
                     {/* 列表標題 */}
                     <div className="track-row track-row-header">
@@ -420,7 +449,7 @@ const Music = () => {
                       <span className="tr-duration-col">{t('music.cols.duration')}</span>
                       <span className="tr-time-col">{t('music.cols.playedAt')}</span>
                     </div>
-                    {recentlyPlayed.tracks.map((item, index) => {
+                    {recentlyPlayed?.tracks?.map((item, index) => {
                       const feat = audioFeatures[item.track.id];
                       return (
                         <motion.a
@@ -436,7 +465,7 @@ const Music = () => {
                         >
                           <span className="tr-num">{index + 1}</span>
                           <img
-                            src={item.track.album.images[2]?.url || item.track.album.images[0]?.url}
+                            src={item.track.album.images[2]?.url ?? item.track.album.images[0]?.url}
                             alt=""
                             className="tr-cover"
                           />
@@ -480,10 +509,10 @@ const Music = () => {
                 <h2 className="section-heading">{t('music.genresHeading')}</h2>
                 {topGenres?.error ? (
                   <div className="music-error-box"><p>{topGenres.error}</p></div>
-                ) : topGenres?.genres?.length > 0 ? (
+                ) : (topGenres?.genres?.length ?? 0) > 0 ? (
                   <div className="galaxy-bubbles">
-                    {topGenres.genres.map((genre, index) => {
-                      const maxCount = topGenres.genres[0].count;
+                    {(topGenres?.genres ?? []).map((genre, index) => {
+                      const maxCount = topGenres?.genres?.[0]?.count ?? 1;
                       const ratio = genre.count / maxCount;
                       const size = 120 + ratio * 80; // 120-200px
                       return (
@@ -544,7 +573,7 @@ const Music = () => {
                 </div>
                 {topTracks?.error ? (
                   <div className="music-error-box"><p>{topTracks.error}</p></div>
-                ) : topTracks?.tracks?.length > 0 ? (
+                ) : (topTracks?.tracks?.length ?? 0) > 0 ? (
                   <div className="track-row-list">
                     <div className="track-row track-row-header">
                       <span className="tr-num">#</span>
@@ -554,7 +583,7 @@ const Music = () => {
                       <span className="tr-duration-col">{t('music.cols.duration')}</span>
                       <span className="tr-album-col">{t('music.cols.album')}</span>
                     </div>
-                    {topTracks.tracks.map((track, index) => {
+                    {topTracks?.tracks?.map((track, index) => {
                       const feat = audioFeatures[track.id];
                       return (
                         <motion.a
@@ -570,7 +599,7 @@ const Music = () => {
                         >
                           <span className="tr-num">{index + 1}</span>
                           <img
-                            src={track.album.images[2]?.url || track.album.images[0]?.url}
+                            src={track.album.images[2]?.url ?? track.album.images[0]?.url}
                             alt=""
                             className="tr-cover"
                           />
@@ -614,8 +643,8 @@ const Music = () => {
                 <h2 className="section-heading">{t('music.analyticsHeading')}</h2>
                 <p className="analytics-subtitle">
                   {t('music.analyticsSubtitle', {
-                    count: trackAnalytics?.totalTracks || 0,
-                    range: t(`music.range.${ { short_term: 'short', medium_term: 'medium', long_term: 'long' }[timeRange] }`),
+                    count: trackAnalytics?.totalTracks ?? 0,
+                    range: t(`music.range.${({ short_term: 'short', medium_term: 'medium', long_term: 'long' } as Record<string, string>)[timeRange]}`),
                   })}
                 </p>
                 {trackAnalytics ? (
@@ -654,23 +683,20 @@ const Music = () => {
                       <div className="decade-chart">
                         <h3 className="decade-chart-title">{t('music.analytics.decadeTitle')}</h3>
                         <div className="decade-bars">
-                          {(() => {
-                            const max = Math.max(...trackAnalytics.decades.map(d => d.count));
-                            return trackAnalytics.decades.map(({ decade, count }) => (
+                          {trackAnalytics.decades.map(({ decade, count }) => (
                               <div key={decade} className="decade-row">
                                 <span className="decade-label">{decade}</span>
                                 <div className="decade-bar-track">
                                   <motion.div
                                     className="decade-bar-fill"
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${(count / max) * 100}%` }}
+                                    animate={{ width: `${(count / decadeMax) * 100}%` }}
                                     transition={{ duration: 0.8, ease: 'easeOut' }}
                                   />
                                 </div>
                                 <span className="decade-count">{count}</span>
                               </div>
-                            ));
-                          })()}
+                            ))}
                         </div>
                       </div>
                     )}
@@ -688,7 +714,7 @@ const Music = () => {
 };
 
 /* ─── 子組件：Audio Feature 進度條 ─── */
-const FeatureBar = ({ label, value, color }) => (
+const FeatureBar = ({ label, value, color }: { label: string; value: number; color: string }) => (
   <div className="feat-bar-wrapper">
     <span className="feat-label">{label}</span>
     <div className="feat-bar-track">
@@ -705,7 +731,7 @@ const FeatureBar = ({ label, value, color }) => (
 );
 
 /* ─── 子組件：分析儀表圓環 ─── */
-const AnalyticGauge = ({ label, sublabel, value }) => {
+const AnalyticGauge = ({ label, sublabel, value }: { label: string; sublabel: string; value: number }) => {
   const percent = Math.round(value * 100);
   const circumference = 2 * Math.PI * 42;
   const offset = circumference - (percent / 100) * circumference;

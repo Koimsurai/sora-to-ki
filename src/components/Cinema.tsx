@@ -4,8 +4,42 @@ import { FaStar, FaPlay, FaTimes, FaFilter, FaSortAmountDown } from 'react-icons
 import SEOHead from './SEOHead';
 import './Cinema.css';
 
+interface Movie {
+  id: number | string;
+  title: string;
+  titleEn: string;
+  year: number;
+  poster: string;
+  rating: number;
+  genre: string[];
+  watchDate: string;
+  featured: boolean;
+  myTake: string;
+  description: string;
+  trailerUrl: string;
+}
+
+// 後端 /api/collection/cinema 回傳的原始格式
+interface CinemaApiItem {
+  id: number | string;
+  title: string;
+  original_title?: string;
+  year?: number;
+  poster_url?: string;
+  rating?: number;
+  overview?: string;
+  media_format?: string;
+  watch_date?: string;
+  is_favorite?: number;
+  review?: string;
+}
+
+interface CinemaApiResponse {
+  items?: CinemaApiItem[];
+}
+
 // 模擬電影數據 - 實際使用時可以從 API 或數據庫獲取
-const moviesData = [
+const moviesData: Movie[] = [
   {
     id: 1,
     title: '星際效應',
@@ -93,7 +127,7 @@ const moviesData = [
 ];
 
 // 精選輪播元件
-const FeaturedCarousel = ({ movies, onMovieClick }) => {
+const FeaturedCarousel = ({ movies, onMovieClick }: { movies: Movie[]; onMovieClick: (movie: Movie) => void }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const nextSlide = () => {
@@ -128,7 +162,7 @@ const FeaturedCarousel = ({ movies, onMovieClick }) => {
           <h2>{currentMovie.title}</h2>
           <p className="featured-en-title">{currentMovie.titleEn}</p>
           <div className="featured-rating">
-            {[...Array(5)].map((_, i) => (
+            {Array.from({ length: 5 }).map((_, i) => (
               <FaStar key={i} className={i < currentMovie.rating ? 'star-filled' : 'star-empty'} />
             ))}
           </div>
@@ -153,7 +187,7 @@ const FeaturedCarousel = ({ movies, onMovieClick }) => {
 };
 
 // 電影卡片元件
-const MovieCard = ({ movie, onClick }) => {
+const MovieCard = ({ movie, onClick }: { movie: Movie; onClick: (movie: Movie) => void }) => {
   return (
     <motion.div 
       className="movie-card"
@@ -173,7 +207,7 @@ const MovieCard = ({ movie, onClick }) => {
         whileHover={{ opacity: 1, y: 0 }}
       >
         <div className="movie-rating">
-          {[...Array(5)].map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <FaStar key={i} className={i < movie.rating ? 'star-filled' : 'star-empty'} />
           ))}
         </div>
@@ -184,7 +218,7 @@ const MovieCard = ({ movie, onClick }) => {
 };
 
 // 電影詳情 Modal
-const MovieModal = ({ movie, onClose }) => {
+const MovieModal = ({ movie, onClose }: { movie: Movie | null; onClose: () => void }) => {
   if (!movie) return null;
 
   return (
@@ -227,7 +261,7 @@ const MovieModal = ({ movie, onClose }) => {
               <p className="modal-en-title">{movie.titleEn} ({movie.year})</p>
               
               <div className="modal-rating">
-                {[...Array(5)].map((_, i) => (
+                {Array.from({ length: 5 }).map((_, i) => (
                   <FaStar key={i} className={i < movie.rating ? 'star-filled' : 'star-empty'} />
                 ))}
               </div>
@@ -261,37 +295,37 @@ const MovieModal = ({ movie, onClose }) => {
 
 // 主元件
 function Cinema() {
-  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [filterGenre, setFilterGenre] = useState('全部');
   const [sortBy, setSortBy] = useState('date');
   const [showFilters, setShowFilters] = useState(false);
-  const [moviesFromAPI, setMoviesFromAPI] = useState([]);
+  const [moviesFromAPI, setMoviesFromAPI] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // 從 API 獲取電影數據
   useEffect(() => {
-    fetchMovies();
+    void fetchMovies();
   }, []);
 
   const fetchMovies = async () => {
     try {
       const response = await fetch('/api/collection/cinema');
-      const data = await response.json();
-      
+      const data = await response.json() as CinemaApiResponse;
+
       if (data.items && data.items.length > 0) {
         // 將後端數據轉換為前端格式
-        const formattedMovies = data.items.map(item => ({
+        const formattedMovies: Movie[] = data.items.map((item) => ({
           id: item.id,
           title: item.title,
-          titleEn: item.original_title || item.title,
-          year: item.year || new Date().getFullYear(),
-          poster: item.poster_url || '',
-          rating: item.rating || 0,
-          genre: item.overview ? [item.media_format] : ['電影'],
-          watchDate: item.watch_date || new Date().toISOString().split('T')[0],
+          titleEn: item.original_title ?? item.title,
+          year: item.year ?? new Date().getFullYear(),
+          poster: item.poster_url ?? '',
+          rating: item.rating ?? 0,
+          genre: item.overview ? [item.media_format ?? '電影'] : ['電影'],
+          watchDate: item.watch_date ?? new Date().toISOString().split('T')[0],
           featured: item.is_favorite === 1,
-          myTake: item.review || '暫無評論',
-          description: item.overview || '暫無劇情簡介',
+          myTake: item.review ?? '暫無評論',
+          description: item.overview ?? '暫無劇情簡介',
           trailerUrl: ''
         }));
         setMoviesFromAPI(formattedMovies);
@@ -308,7 +342,7 @@ function Cinema() {
 
   // 獲取所有類型
   const allGenres = useMemo(() => {
-    const genres = new Set();
+    const genres = new Set<string>();
     currentMoviesData.forEach(movie => {
       movie.genre.forEach(g => genres.add(g));
     });
@@ -327,7 +361,7 @@ function Cinema() {
     // 排序
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === 'date') {
-        return new Date(b.watchDate) - new Date(a.watchDate);
+        return new Date(b.watchDate).getTime() - new Date(a.watchDate).getTime();
       } else if (sortBy === 'rating') {
         return b.rating - a.rating;
       }

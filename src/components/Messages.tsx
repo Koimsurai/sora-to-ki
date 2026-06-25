@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import InfoPage from './InfoPage';
 
-const MESSAGES_BY_LANG = {
+const MESSAGES_BY_LANG: Record<string, Record<string, string>> = {
   'zh-TW': {
     intro: '這裡是留言板。不一定要跟文章相關，閒聊、技術問題、合作邀請、單純路過想留個記號都歡迎。',
     rulesHeading: '幾個小規則',
@@ -111,7 +111,7 @@ const MESSAGES_BY_LANG = {
 
 function Messages() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const c = MESSAGES_BY_LANG[lang] || MESSAGES_BY_LANG['zh-TW'];
 
   return (

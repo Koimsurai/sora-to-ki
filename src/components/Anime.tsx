@@ -5,7 +5,45 @@ import SEOHead from './SEOHead';
 import './Anime.css';
 
 // 模擬動漫數據
-const animeData = [
+interface AnimeItem {
+  id: number | string;
+  title: string;
+  titleEn: string;
+  year: number;
+  poster: string;
+  rating: number;
+  genre: string[];
+  status: string;
+  statusColor: string;
+  currentEpisode: string;
+  totalEpisodes: number;
+  watchDate: string;
+  watching: boolean;
+  myTake: string;
+  description: string;
+  communityRating: number;
+}
+
+// 後端 /api/collection/anime 回傳的原始格式
+interface AnimeApiItem {
+  id: number | string;
+  title: string;
+  original_title?: string;
+  year?: number;
+  poster_url?: string;
+  rating?: number;
+  status?: string;
+  media_format?: string;
+  watch_date?: string;
+  review?: string;
+  overview?: string;
+}
+
+interface AnimeApiResponse {
+  items?: AnimeApiItem[];
+}
+
+const animeData: AnimeItem[] = [
   {
     id: 1,
     title: '進擊的巨人',
@@ -153,7 +191,7 @@ const animeData = [
 ];
 
 // 正在追番區塊元件
-const WatchingSection = ({ animes, onAnimeClick }) => {
+const WatchingSection = ({ animes, onAnimeClick }: { animes: AnimeItem[]; onAnimeClick: (anime: AnimeItem) => void }) => {
   const watchingAnimes = animes.filter(a => a.watching);
 
   if (watchingAnimes.length === 0) return null;
@@ -184,7 +222,7 @@ const WatchingSection = ({ animes, onAnimeClick }) => {
                 <div 
                   className="progress-fill"
                   style={{ 
-                    width: `${(parseInt(anime.currentEpisode.match(/\d+/)?.[0] || 0) / anime.totalEpisodes) * 100}%` 
+                    width: `${(parseInt(/\d+/.exec(anime.currentEpisode)?.[0] ?? '0', 10) / anime.totalEpisodes) * 100}%` 
                   }}
                 />
               </div>
@@ -198,7 +236,7 @@ const WatchingSection = ({ animes, onAnimeClick }) => {
 };
 
 // 動漫卡片元件 (瀑布流)
-const AnimeCard = ({ anime, onClick }) => {
+const AnimeCard = ({ anime, onClick }: { anime: AnimeItem; onClick: (anime: AnimeItem) => void }) => {
   return (
     <motion.div 
       className="anime-card"
@@ -221,7 +259,7 @@ const AnimeCard = ({ anime, onClick }) => {
       <div className="anime-info">
         <h3>{anime.title}</h3>
         <div className="anime-rating">
-          {[...Array(5)].map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <FaStar key={i} className={i < anime.rating ? 'star-filled' : 'star-empty'} />
           ))}
         </div>
@@ -231,7 +269,7 @@ const AnimeCard = ({ anime, onClick }) => {
 };
 
 // 動漫詳情 Modal
-const AnimeModal = ({ anime, onClose }) => {
+const AnimeModal = ({ anime, onClose }: { anime: AnimeItem | null; onClose: () => void }) => {
   if (!anime) return null;
 
   return (
@@ -273,7 +311,7 @@ const AnimeModal = ({ anime, onClose }) => {
                 <div className="rating-item">
                   <span className="rating-label">我的評分</span>
                   <div className="modal-rating">
-                    {[...Array(5)].map((_, i) => (
+                    {Array.from({ length: 5 }).map((_, i) => (
                       <FaStar key={i} className={i < anime.rating ? 'star-filled' : 'star-empty'} />
                     ))}
                   </div>
@@ -300,7 +338,7 @@ const AnimeModal = ({ anime, onClose }) => {
                     <div 
                       className="progress-fill"
                       style={{ 
-                        width: `${(parseInt(anime.currentEpisode.match(/\d+/)?.[0] || 0) / anime.totalEpisodes) * 100}%` 
+                        width: `${(parseInt(/\d+/.exec(anime.currentEpisode)?.[0] ?? '0', 10) / anime.totalEpisodes) * 100}%` 
                       }}
                     />
                   </div>
@@ -330,42 +368,42 @@ const AnimeModal = ({ anime, onClose }) => {
 
 // 主元件
 function Anime() {
-  const [selectedAnime, setSelectedAnime] = useState(null);
+  const [selectedAnime, setSelectedAnime] = useState<AnimeItem | null>(null);
   const [filterGenre, setFilterGenre] = useState('全部');
   const [filterStatus, setFilterStatus] = useState('全部');
   const [sortBy, setSortBy] = useState('date');
   const [showFilters, setShowFilters] = useState(false);
-  const [animeFromAPI, setAnimeFromAPI] = useState([]);
+  const [animeFromAPI, setAnimeFromAPI] = useState<AnimeItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // 從 API 獲取動漫數據
   useEffect(() => {
-    fetchAnime();
+    void fetchAnime();
   }, []);
 
   const fetchAnime = async () => {
     try {
       const response = await fetch('/api/collection/anime');
-      const data = await response.json();
-      
+      const data = await response.json() as AnimeApiResponse;
+
       if (data.items && data.items.length > 0) {
         // 將後端數據轉換為前端格式
-        const formattedAnime = data.items.map(item => ({
+        const formattedAnime: AnimeItem[] = data.items.map((item) => ({
           id: item.id,
           title: item.title,
-          titleEn: item.original_title || item.title,
-          year: item.year || new Date().getFullYear(),
-          poster: item.poster_url || '',
-          rating: item.rating || 0,
+          titleEn: item.original_title ?? item.title,
+          year: item.year ?? new Date().getFullYear(),
+          poster: item.poster_url ?? '',
+          rating: item.rating ?? 0,
           genre: ['動畫'], // 可以之後擴展
           status: item.status === 'watching' ? '追番中' : item.status === 'completed' ? '已追完' : '計劃觀看',
           statusColor: item.status === 'watching' ? '#3b82f6' : '#22c55e',
-          currentEpisode: item.media_format || 'TV',
+          currentEpisode: item.media_format ?? 'TV',
           totalEpisodes: 0,
-          watchDate: item.watch_date || new Date().toISOString().split('T')[0],
+          watchDate: item.watch_date ?? new Date().toISOString().split('T')[0],
           watching: item.status === 'watching',
-          myTake: item.review || '暫無評論',
-          description: item.overview || '暫無劇情簡介',
+          myTake: item.review ?? '暫無評論',
+          description: item.overview ?? '暫無劇情簡介',
           communityRating: 0
         }));
         setAnimeFromAPI(formattedAnime);
@@ -382,8 +420,8 @@ function Anime() {
 
   // 獲取所有類型和狀態
   const { allGenres, allStatuses } = useMemo(() => {
-    const genres = new Set();
-    const statuses = new Set();
+    const genres = new Set<string>();
+    const statuses = new Set<string>();
     currentAnimeData.forEach(anime => {
       anime.genre.forEach(g => genres.add(g));
       statuses.add(anime.status);
@@ -411,7 +449,7 @@ function Anime() {
     // 排序
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === 'date') {
-        return new Date(b.watchDate) - new Date(a.watchDate);
+        return new Date(b.watchDate).getTime() - new Date(a.watchDate).getTime();
       } else if (sortBy === 'rating') {
         return b.rating - a.rating;
       }

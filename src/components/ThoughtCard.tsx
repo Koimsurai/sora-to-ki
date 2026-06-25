@@ -9,11 +9,48 @@ import Comments from './Comments';
    - 留言：feed 模式點 icon 跳浮動視窗；detail 模式直接顯示在頁面
    - admin：inline 編輯 + 刪除（ghost 文字鈕） */
 
-const API = import.meta.env.VITE_API_URL || '/api';
+const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 const AUTHOR = 'Koimsurai';
 
-const toDate = (at) => new Date(String(at).replace(' ', 'T') + (String(at).includes('Z') ? '' : 'Z'));
-const relTime = (at) => {
+interface ThoughtRef {
+  title?: string;
+  desc?: string;
+  site?: string;
+  image?: string;
+  url?: string;
+  kind?: string;
+  year?: string | number;
+  overview?: string;
+  rating?: string | number;
+  genres?: string;
+  source?: string;
+  poster?: string;
+}
+
+export interface Thought {
+  id: number;
+  content: string;
+  created_at: string;
+  updated_at?: string;
+  edited?: boolean | number;
+  likes?: number;
+  dislikes?: number;
+  comment_count?: number;
+  ref_type?: string;
+  ref?: ThoughtRef;
+  ref_url?: string;
+}
+
+interface ThoughtCardProps {
+  th: Thought;
+  isAdmin?: boolean;
+  onDelete?: (id: number) => void;
+  onEdit?: (id: number, content: string) => void;
+  detail?: boolean;
+}
+
+const toDate = (at: string) => new Date(String(at).replace(' ', 'T') + (String(at).includes('Z') ? '' : 'Z'));
+const relTime = (at: string): string => {
   const d = toDate(at);
   if (Number.isNaN(d.getTime())) return at;
   const sec = (Date.now() - d.getTime()) / 1000;
@@ -24,24 +61,24 @@ const relTime = (at) => {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 };
 const WK = ['日', '一', '二', '三', '四', '五', '六'];
-const fullCh = (at) => {
+const fullCh = (at: string): string => {
   const d = toDate(at);
   if (Number.isNaN(d.getTime())) return at;
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日星期${WK[d.getDay()]}`;
 };
 
-export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = false }) {
-  const [likes, setLikes] = useState(th.likes || 0);
-  const [dislikes, setDislikes] = useState(th.dislikes || 0);
+export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = false }: ThoughtCardProps) {
+  const [likes, setLikes] = useState(th.likes ?? 0);
+  const [dislikes, setDislikes] = useState(th.dislikes ?? 0);
   const key = 'tk_react_' + th.id;
   const [reacted, setReacted] = useState(() => {
-    try { return localStorage.getItem(key) || ''; } catch { return ''; }
+    try { return localStorage.getItem(key) ?? ''; } catch { return ''; }
   });
   const [showComments, setShowComments] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(th.content);
 
-  const react = async (kind) => {
+  const react = async (kind: string) => {
     const next = reacted === kind ? '' : kind; // 同一顆=取消；不同=切換
     try {
       const r = await fetch(`${API}/thoughts/${th.id}/react`, {
@@ -49,7 +86,7 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prev: reacted, next }),
       });
-      const d = await r.json().catch(() => ({}));
+      const d = await r.json().catch(() => ({})) as { likes?: number; dislikes?: number };
       if (typeof d.likes === 'number') setLikes(d.likes);
       if (typeof d.dislikes === 'number') setDislikes(d.dislikes);
       localStorage.setItem(key, next);
@@ -87,7 +124,7 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
       {th.ref_type === 'link' && th.ref && (
         <a className="tk-embed tk-embed--link tk-linkcard" href={th.ref_url} target="_blank" rel="noopener noreferrer">
           <div className="tk-embed-info">
-            <h3 className="tk-embed-title">{th.ref.title || th.ref_url}</h3>
+            <h3 className="tk-embed-title">{th.ref.title ?? th.ref_url}</h3>
             {th.ref.desc && <p className="tk-embed-desc">{th.ref.desc}</p>}
             <span className="tk-embed-meta"><span className="tk-embed-site">🌐 {th.ref.site}</span></span>
           </div>
@@ -96,7 +133,7 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
       )}
 
       {th.ref_type === 'media' && th.ref && (
-        <a className="tk-embed tk-embed--media tk-media" href={th.ref.url || th.ref_url} target="_blank" rel="noopener noreferrer">
+        <a className="tk-embed tk-embed--media tk-media" href={th.ref.url ?? th.ref_url} target="_blank" rel="noopener noreferrer">
           <div className="tk-embed-info">
             <span className="tk-embed-kind">{th.ref.kind} · {th.ref.year}</span>
             <h3 className="tk-embed-title">{th.ref.title}</h3>
@@ -111,17 +148,17 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
 
       <div className="tk-card-foot">
         <div className="tk-stats">
-          <button className={'tk-ic' + (reacted === 'like' ? ' is-like' : '')} onClick={() => react('like')} aria-label="讚">
+          <button className={'tk-ic' + (reacted === 'like' ? ' is-like' : '')} onClick={() => { void react('like'); }} aria-label="讚">
             <Heart size={16} /> <span>{likes}</span>
           </button>
-          <button className={'tk-ic' + (reacted === 'dislike' ? ' is-dislike' : '')} onClick={() => react('dislike')} aria-label="倒讚">
+          <button className={'tk-ic' + (reacted === 'dislike' ? ' is-dislike' : '')} onClick={() => { void react('dislike'); }} aria-label="倒讚">
             <ThumbsDown size={16} /> <span>{dislikes}</span>
           </button>
           {detail ? (
-            <span className="tk-ic tk-ic--static"><MessageCircle size={16} /> <span>{th.comment_count || 0}</span></span>
+            <span className="tk-ic tk-ic--static"><MessageCircle size={16} /> <span>{th.comment_count ?? 0}</span></span>
           ) : (
             <button className="tk-ic" onClick={() => setShowComments(true)} aria-label="留言">
-              <MessageCircle size={16} /> <span>{th.comment_count || 0}</span>
+              <MessageCircle size={16} /> <span>{th.comment_count ?? 0}</span>
             </button>
           )}
         </div>
@@ -129,7 +166,7 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
           {isAdmin && (
             <button className="tk-act" onClick={() => { setEditText(th.content); setEditing(true); }}>編輯</button>
           )}
-          {isAdmin && <button className="tk-act tk-act--del" onClick={() => onDelete(th.id)}>刪除</button>}
+          {isAdmin && <button className="tk-act tk-act--del" onClick={() => onDelete?.(th.id)}>刪除</button>}
           {!detail && <Link className="tk-view" to={`/thinking/${th.id}`}>查看 →</Link>}
         </div>
       </div>

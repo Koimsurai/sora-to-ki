@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, type ElementType, type ReactElement } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -9,25 +9,45 @@ import './Watch.css';
 
 /* ──────────────────────────────────────────────────────────────
    在看什麼 — 編輯風「品味展示」
-   - 動畫資料：/api/anime/history（後端透過 anigamer SDK 抓 Bahamut）
-   - 電影資料：暫手動 curate（Letterboxd RSS 等之後接）
-   - 一生推：純手動策展（這是主觀清單，不打算 auto-derive）
 ─────────────────────────────────────────────────────────────── */
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
-/* 連結通通走 TMDb：電影 → /movie/{id}、動畫/影集 → /tv/{id} */
-const tmdbUrl = (kind, id) =>
+type WatchType = 'anime' | 'film' | 'tv';
+
+interface WatchEntry {
+  id?: string;
+  type: WatchType;
+  title: string;
+  poster?: string;
+  isoDate?: string;
+  date?: string;
+  episode?: number | string;
+  epCount?: number;
+  year?: number | string;
+  tmdbId?: number | string | null;
+  externalUrl?: string | null;
+  animeSn?: number | string;
+  videoSn?: number | string;
+}
+
+interface AnimeRow { anime_sn: number | string; video_sn?: number | string; last_watched_at?: string; tmdb_id?: number | string | null; title: string; cover_url?: string; episode?: number | string }
+interface FilmRow { id: number | string; title: string; poster_url?: string; watched_date?: string; release_year?: number | string; tmdb_id?: number | string | null }
+interface TvRow { series_name: string; poster_url?: string; last_watched?: string; ep_count?: number; tmdb_id?: number | string | null }
+interface WatchStats { animeCount?: number; filmCount?: number; tvSeriesCount?: number }
+interface LiveNow { cover?: string; title: string; externalUrl?: string; progressPct?: number | null; episode?: number | string; source?: string; type?: string }
+interface WatchFavorite { id: number; title: string; rating: number; poster?: string; quote?: string; year?: number; externalUrl?: string }
+
+/* 連結通通走 TMDb */
+const tmdbUrl = (kind: string, id?: number | string | null): string | null =>
   id ? `https://www.themoviedb.org/${kind === 'film' || kind === 'movie' ? 'movie' : 'tv'}/${id}` : null;
 
-/* 跨來源去重：同 tmdb_id 視為同一部（movie/tv 命名空間分開，避免同數字撞），保留集數最多的那筆。
-   沒 tmdb_id 的不去重（避免用名字誤殺劇場版/相似名）。 */
-const dedupeByTmdb = (items) => {
-  const byKey = new Map();
-  const out = [];
+const dedupeByTmdb = (items: WatchEntry[]): WatchEntry[] => {
+  const byKey = new Map<string, number>();
+  const out: WatchEntry[] = [];
   for (const it of items) {
     if (it.tmdbId == null) { out.push(it); continue; }
-    const key = `${it.type === 'film' || it.type === 'movie' ? 'm' : 't'}:${it.tmdbId}`;
+    const key = `${it.type === 'film' ? 'm' : 't'}:${it.tmdbId}`;
     const idx = byKey.get(key);
     if (idx == null) { byKey.set(key, out.length); out.push(it); }
     else if ((it.epCount ?? 0) > (out[idx].epCount ?? 0)) out[idx] = it; // 留集數多的
@@ -35,20 +55,19 @@ const dedupeByTmdb = (items) => {
   return out;
 };
 
-/* ── 一生推（手動策展，想加就加；anime/drama/film 都可）── */
-/* 「第 N 集」、「動畫瘋」服務名按語系切換 */
-const EP_LABEL = {
+const EP_LABEL: Record<string, string> = {
   'zh-TW': '第 {{n}} 集', 'zh-CN': '第 {{n}} 集', en: 'Ep. {{n}}', ja: '第 {{n}} 話', ko: '{{n}}화',
 };
-const SERVICE_LABEL = {
+const SERVICE_LABEL: Record<string, string> = {
   'zh-TW': '動畫瘋', 'zh-CN': '动画疯', en: 'Bahamut Anime', ja: '動畫瘋', ko: '動畫瘋',
 };
-const interpolate = (tpl, vars) => tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
+const interpolate = (tpl: string, vars: Record<string, string | number | undefined>) =>
+  tpl.replace(/\{\{(\w+)\}\}/g, (_, k: string) => String(vars[k] ?? ''));
 
 /* short date formatter: '2026-02-07' → '2/7' */
-const toShortDate = (iso) => {
+const toShortDate = (iso?: string): string => {
   if (!iso) return '';
-  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   return m ? `${parseInt(m[2], 10)}/${parseInt(m[3], 10)}` : '';
 };
 
@@ -56,26 +75,24 @@ const reveal = {
   initial: { opacity: 0, y: 26, filter: 'blur(8px)' },
   whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' },
   viewport: { once: true, margin: '-60px' },
-  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 };
 
-const Stars = ({ n }) => (
+const Stars = ({ n }: { n: number }) => (
   <span className="w-stars">{'★'.repeat(n)}<span className="w-stars-dim">{'★'.repeat(5 - n)}</span></span>
 );
 
-/* '2026-05-27 16:53:40' → '5/27'，並產 isoDate */
-const parseAnimeDate = (raw) => {
+const parseAnimeDate = (raw?: string): { isoDate: string; shortDate: string } => {
   if (!raw) return { isoDate: '', shortDate: '' };
   const d = new Date(raw.replace(' ', 'T') + 'Z');
   if (Number.isNaN(d.getTime())) return { isoDate: '', shortDate: '' };
   return { isoDate: d.toISOString().slice(0, 10), shortDate: `${d.getUTCMonth() + 1}/${d.getUTCDate()}` };
 };
 
-/* 把 RECENT 依 isoDate 分本週 / 更早 */
-const groupByWeek = (items) => {
+const groupByWeek = (items: WatchEntry[]): { thisWeek: WatchEntry[]; earlier: WatchEntry[] } => {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 7);
-  const thisWeek = [], earlier = [];
+  const thisWeek: WatchEntry[] = [], earlier: WatchEntry[] = [];
   for (const item of items) {
     const d = item.isoDate ? new Date(item.isoDate) : null;
     if (d && d >= cutoff) thisWeek.push(item); else earlier.push(item);
@@ -85,91 +102,88 @@ const groupByWeek = (items) => {
 
 function Watch() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
-  const [animeHistory, setAnimeHistory] = useState(null);
-  const [films, setFilms] = useState(null);
-  const [series, setSeries] = useState(null);
-  const [stats, setStats] = useState(null);
-  const [liveNow, setLiveNow] = useState(null);
-  const [favorites, setFavorites] = useState([]);
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
+  const [animeHistory, setAnimeHistory] = useState<AnimeRow[] | null>(null);
+  const [films, setFilms] = useState<FilmRow[] | null>(null);
+  const [series, setSeries] = useState<TvRow[] | null>(null);
+  const [stats, setStats] = useState<WatchStats | null>(null);
+  const [liveNow, setLiveNow] = useState<LiveNow | null>(null);
+  const [favorites, setFavorites] = useState<WatchFavorite[]>([]);
   const [favEditing, setFavEditing] = useState(false);
-  const [err, setErr] = useState(null);
+  const [err, setErr] = useState<string | null>(null);
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const loadFavorites = useCallback(() => {
-    fetch(`${API_URL}/watch/favorites?locale=${encodeURIComponent(lang)}`, { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((d) => setFavorites(d.favorites || []))
+    void fetch(`${API_URL}/watch/favorites?locale=${encodeURIComponent(lang)}`, { cache: 'no-store' })
+      .then((r) => r.json() as Promise<{ favorites?: WatchFavorite[] }>)
+      .then((d) => setFavorites(d.favorites ?? []))
       .catch(() => setFavorites([]));
   }, [lang]);
 
-  // 一鍵發碎念：把這部帶到 /thinking 的發文框（compose 會讀 sessionStorage 預填）
-  const shareToThinking = (item) => {
+  const shareToThinking = (item: WatchEntry | null) => {
     if (!item) return;
     const media = {
-      tmdbId: item.tmdbId || null,
+      tmdbId: item.tmdbId ?? null,
       mediaType: item.type === 'film' ? 'movie' : 'tv',
       kind: item.type === 'anime' ? '動畫' : item.type === 'film' ? '電影' : '影集',
       title: item.title,
       poster: item.poster,
     };
     try { sessionStorage.setItem('thinking_prefill', JSON.stringify(media)); } catch { /* ignore */ }
-    navigate('/thinking');
+    void navigate('/thinking');
   };
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
         const [a, f, s, st] = await Promise.all([
-          fetch(`${API_URL}/anime/history?limit=200`).then((r) => r.json()),
-          fetch(`${API_URL}/films/recent?limit=20`).then((r) => r.json()),
-          fetch(`${API_URL}/tv/recent?limit=20`).then((r) => r.json()),
-          fetch(`${API_URL}/watch/stats`).then((r) => r.json()),
+          fetch(`${API_URL}/anime/history?limit=200`).then((r) => r.json() as Promise<{ history?: AnimeRow[] }>),
+          fetch(`${API_URL}/films/recent?limit=20`).then((r) => r.json() as Promise<{ films?: FilmRow[] }>),
+          fetch(`${API_URL}/tv/recent?limit=20`).then((r) => r.json() as Promise<{ series?: TvRow[] }>),
+          fetch(`${API_URL}/watch/stats`).then((r) => r.json() as Promise<WatchStats>),
         ]);
         if (cancelled) return;
-        setAnimeHistory(a.history || []);
-        setFilms(f.films || []);
-        setSeries(s.series || []);
+        setAnimeHistory(a.history ?? []);
+        setFilms(f.films ?? []);
+        setSeries(s.series ?? []);
         setStats(st);
       } catch (e) {
-        if (!cancelled) setErr(e.message || 'fetch failed');
+        if (!cancelled) setErr(e instanceof Error ? e.message : 'fetch failed');
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  /* 一生推：API 驅動（標題/海報/年份依語系在地化）；切語系時重抓 */
   useEffect(() => { loadFavorites(); }, [loadFavorites]);
 
-  /* 即時觀看：輪詢 /watch/now（有人在播才有內容；30 秒一次）*/
+  /* 即時觀看：輪詢 /watch/now */
   useEffect(() => {
     let cancelled = false;
     const poll = async () => {
       try {
-        const r = await fetch(`${API_URL}/watch/now`).then((x) => x.json());
-        if (!cancelled) setLiveNow(r.watching || null);
+        const r = await fetch(`${API_URL}/watch/now`).then((x) => x.json() as Promise<{ watching?: LiveNow | null }>);
+        if (!cancelled) setLiveNow(r.watching ?? null);
       } catch { /* ignore */ }
     };
-    poll();
-    const id = setInterval(poll, 30000);
+    void poll();
+    const id = setInterval(() => { void poll(); }, 30000);
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
   /* ── 從 anime_history 聚合成「每部動畫一筆」── */
-  const { now, recentAnime } = useMemo(() => {
+  const { now, recentAnime } = useMemo<{ now: WatchEntry | null; recentAnime: WatchEntry[] }>(() => {
     if (!animeHistory || animeHistory.length === 0) {
       return { now: null, recentAnime: [] };
     }
-    // group by anime_sn，每部取 last_watched_at 最新一筆做代表
-    const byAnime = new Map();
+    const byAnime = new Map<number | string, AnimeRow[]>();
     for (const row of animeHistory) {
-      if (!byAnime.has(row.anime_sn)) byAnime.set(row.anime_sn, []);
-      byAnime.get(row.anime_sn).push(row);
+      const arr = byAnime.get(row.anime_sn);
+      if (arr) arr.push(row); else byAnime.set(row.anime_sn, [row]);
     }
     const grouped = [...byAnime.values()].map((eps) => {
-      const sorted = eps.slice().sort((a, b) => (b.last_watched_at || '').localeCompare(a.last_watched_at || ''));
+      const sorted = eps.slice().sort((a, b) => (b.last_watched_at ?? '').localeCompare(a.last_watched_at ?? ''));
       const head = sorted[0];
       return {
         anime_sn: head.anime_sn,
@@ -177,19 +191,17 @@ function Watch() {
         title: head.title,
         cover_url: head.cover_url,
         episode: head.episode,
-        // tmdb_id 取「該動畫任一筆有值的」— 最新集數常是剛同步、還沒 enrich 的 NULL
         tmdbId: head.tmdb_id ?? eps.find((e) => e.tmdb_id != null)?.tmdb_id ?? null,
         lastWatchedAt: head.last_watched_at,
         epCount: eps.length,
       };
     });
-    // 按真實看的時間 DESC
-    grouped.sort((a, b) => (b.lastWatchedAt || '').localeCompare(a.lastWatchedAt || ''));
+    grouped.sort((a, b) => (b.lastWatchedAt ?? '').localeCompare(a.lastWatchedAt ?? ''));
     const head = grouped[0];
     const headParsed = parseAnimeDate(head.lastWatchedAt);
     return {
       now: {
-        type: 'anime',
+        type: 'anime' as const,
         poster: head.cover_url,
         title: head.title,
         animeSn: head.anime_sn,
@@ -198,15 +210,14 @@ function Watch() {
         epCount: head.epCount,
         tmdbId: head.tmdbId,
         date: headParsed.shortDate,
-        // 連結走 TMDb；還沒 enrich（無 tmdb_id）就退而求其次連 TMDb 搜尋頁
         externalUrl: tmdbUrl('tv', head.tmdbId)
-          || `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title)}`,
+          ?? `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title)}`,
       },
       recentAnime: grouped.slice(1, 12).map((g) => {
         const { isoDate, shortDate } = parseAnimeDate(g.lastWatchedAt);
         return {
           id: `a${g.anime_sn}`,
-          type: 'anime',
+          type: 'anime' as const,
           poster: g.cover_url,
           title: g.title,
           episode: g.episode,
@@ -220,8 +231,7 @@ function Watch() {
     };
   }, [animeHistory]);
 
-  /* 把三條源 normalize 成同 shape，依 isoDate DESC 合流，取 12 筆 */
-  const filmItems = (films || []).map((f) => ({
+  const filmItems: WatchEntry[] = (films ?? []).map((f) => ({
     id: `f${f.id}`,
     type: 'film',
     title: f.title,
@@ -232,7 +242,7 @@ function Watch() {
     tmdbId: f.tmdb_id,
     externalUrl: tmdbUrl('movie', f.tmdb_id),
   }));
-  const tvItems = (series || []).map((s) => ({
+  const tvItems: WatchEntry[] = (series ?? []).map((s) => ({
     id: `t${s.series_name}`,
     type: 'tv',
     title: s.series_name,
@@ -243,17 +253,15 @@ function Watch() {
     tmdbId: s.tmdb_id,
     externalUrl: tmdbUrl('tv', s.tmdb_id),
   }));
-  // 先跨來源去重（同 tmdb_id 留集數多的），再依日期 DESC 取 14 筆
   const recentAll = dedupeByTmdb([...recentAnime, ...filmItems, ...tvItems])
-    .sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
+    .sort((a, b) => (b.isoDate ?? '').localeCompare(a.isoDate ?? ''))
     .slice(0, 14);
   const recentGrouped = groupByWeek(recentAll);
 
   const epTemplate = EP_LABEL[lang] || EP_LABEL['zh-TW'];
-  /* 同一天的 row 共用一個日期 anchor。傳入 prev 用來判斷是否要顯示日期 */
-  const RecentRow = (r, prev) => {
+  const renderRecentRow = (r: WatchEntry, prev?: WatchEntry): ReactElement => {
     const showDate = !prev || prev.date !== r.date;
-    const Inner = r.externalUrl ? 'a' : 'div';
+    const Inner: ElementType = r.externalUrl ? 'a' : 'div';
     const linkProps = r.externalUrl
       ? { href: r.externalUrl, target: '_blank', rel: 'noopener noreferrer' }
       : {};
@@ -292,11 +300,10 @@ function Watch() {
   };
 
   const serviceLabel = SERVICE_LABEL[lang] || SERVICE_LABEL['zh-TW'];
-  /* hero：即時優先（有人在播 → liveNow），否則退回「最近看完」的 now */
   const hero = liveNow
     ? {
         isLive: true,
-        poster: liveNow.cover || now?.poster || null,
+        poster: liveNow.cover ?? now?.poster ?? null,
         title: liveNow.title,
         externalUrl: liveNow.externalUrl,
         progressPct: liveNow.progressPct,
@@ -317,7 +324,7 @@ function Watch() {
           metaParts: [
             interpolate(epTemplate, { n: now.episode ?? now.epCount }),
             serviceLabel,
-            now.date || null,
+            now.date ?? null,
           ].filter(Boolean),
         }
       : null;
@@ -349,16 +356,15 @@ function Watch() {
           </div>
         </motion.header>
 
-        {/* hero（風格 C）：有人在播 → 真「● 正在看」LIVE + 進度條；否則「最近看完」。連結走 TMDb */}
         {hero && (
           <motion.section className="w-now" {...reveal}>
             <a
               className={'w-now-banner' + (hero.isLive ? ' is-live' : '')}
-              href={hero.externalUrl}
+              href={hero.externalUrl ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
             >
-              {hero.poster && <img className="w-now-banner-img" src={hero.poster} alt={hero.title} />}
+              {hero.poster && <img className="w-now-banner-img" src={hero.poster ?? undefined} alt={hero.title} />}
               <div className="w-now-overlay">
                 <span className={'w-eyebrow ' + (hero.isLive ? 'w-eyebrow--live' : 'w-eyebrow--last')}>
                   {hero.isLive ? t('watch.eyebrowLive') : t('watch.eyebrowLast')}
@@ -431,7 +437,7 @@ function Watch() {
             <>
               <h3 className="w-recent-group">{t('watch.recentGroups.thisWeek')}</h3>
               <ul className="w-recent">
-                {recentGrouped.thisWeek.map((r, i) => RecentRow(r, recentGrouped.thisWeek[i - 1]))}
+                {recentGrouped.thisWeek.map((r, i) => renderRecentRow(r, recentGrouped.thisWeek[i - 1]))}
               </ul>
             </>
           )}
@@ -439,7 +445,7 @@ function Watch() {
             <>
               <h3 className="w-recent-group w-recent-group--dim">{t('watch.recentGroups.earlier')}</h3>
               <ul className="w-recent">
-                {recentGrouped.earlier.map((r, i) => RecentRow(r, recentGrouped.earlier[i - 1]))}
+                {recentGrouped.earlier.map((r, i) => renderRecentRow(r, recentGrouped.earlier[i - 1]))}
               </ul>
             </>
           )}

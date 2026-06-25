@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, type ReactElement } from 'react';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { FaDesktop, FaServer, FaWifi, FaKeyboard, FaHome } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
@@ -44,7 +44,11 @@ import imgArctisNova7Gen2 from '../assets/setup/arctis-nova-7-wireless-gen-2-whi
 import imgT100 from '../assets/setup/t100.png';
 
 // --- 文案 i18n ---
-const SETUP_UI = {
+interface SetupUi { subtitle: string; all: string; catSubs: Record<string, string>; retired: string; retiredText: string }
+interface SetupItem { title: string; subtitle: string; image?: string | null; iconOnly?: boolean }
+interface SetupCategory { id: string; number: string; title: string; subtitle: string; icon: ReactElement; items: SetupItem[] }
+
+const SETUP_UI: Record<string, SetupUi> = {
   'zh-TW': {
     subtitle: 'My Gear Inventory 2026 — 所有個人配備一覽',
     all: '全部',
@@ -113,7 +117,7 @@ const SETUP_UI = {
 };
 
 // --- 設備資料 ---
-const categories = [
+const categories: SetupCategory[] = [
   {
     id: 'main-rig',
     number: '01',
@@ -191,7 +195,7 @@ const categories = [
   }
 ];
 
-const baseIISpecs = [
+const baseIISpecs: { label: string; value: string }[] = [
   { label: 'GPU', value: 'NVIDIA RTX 2060 Super 8GB' },
   { label: 'CPU', value: 'Intel Core i5-9400F' },
   { label: 'RAM', value: '24GB DDR4 Mixed (Corsair RGB + Kingston)' },
@@ -202,7 +206,7 @@ const baseIISpecs = [
 ];
 
 // --- 動畫設定 ---
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -210,7 +214,7 @@ const containerVariants = {
   }
 };
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, y: 30, scale: 0.95 },
   visible: {
     opacity: 1, y: 0, scale: 1,
@@ -218,7 +222,7 @@ const cardVariants = {
   }
 };
 
-const sectionVariants = {
+const sectionVariants: Variants = {
   hidden: { opacity: 0, y: 40 },
   visible: {
     opacity: 1, y: 0,
@@ -228,7 +232,7 @@ const sectionVariants = {
 
 function Setup() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const ui = SETUP_UI[lang] || SETUP_UI['zh-TW'];
   const [activeFilter, setActiveFilter] = useState('all');
 
@@ -343,7 +347,7 @@ function Setup() {
                   ) : (
                     <div className="setup-card-image-wrapper">
                       <img
-                        src={item.image}
+                        src={item.image ?? undefined}
                         alt={item.title}
                         className="setup-card-image"
                         loading="lazy"

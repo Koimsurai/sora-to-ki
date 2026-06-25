@@ -11,33 +11,53 @@ import './WatchLibrary.css';
    依賴：/api/anime/history、/api/films/recent、/api/tv/recent
 ─────────────────────────────────────────────────────────────── */
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
+
+type WatchType = 'anime' | 'film' | 'tv';
+
+interface WatchItem {
+  id: string;
+  type: WatchType;
+  title: string;
+  poster?: string;
+  isoDate?: string;
+  episode?: number | string;
+  epCount?: number;
+  year?: number | string;
+  tmdbId?: number | string | null;
+  genres?: string;
+  externalUrl?: string | null;
+}
+
+interface AnimeRow { anime_sn: number | string; last_watched_at?: string; tmdb_id?: number | string | null; title: string; cover_url?: string; episode?: number | string }
+interface FilmRow { id: number | string; title: string; poster_url?: string; watched_date?: string; release_year?: number | string; tmdb_id?: number | string | null; genres?: string }
+interface TvRow { series_name: string; poster_url?: string; last_watched?: string; ep_count?: number; tmdb_id?: number | string | null; genres?: string }
 
 const reveal = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
 };
 
 /* ── normalize 三條源到同一個 shape ────────────────────────── */
-function normalizeAnime(rows) {
+function normalizeAnime(rows?: AnimeRow[]): WatchItem[] {
   // group by anime_sn，每部一筆
-  const byAnime = new Map();
-  for (const r of rows || []) {
-    if (!byAnime.has(r.anime_sn)) byAnime.set(r.anime_sn, []);
-    byAnime.get(r.anime_sn).push(r);
+  const byAnime = new Map<number | string, AnimeRow[]>();
+  for (const r of rows ?? []) {
+    const arr = byAnime.get(r.anime_sn);
+    if (arr) arr.push(r); else byAnime.set(r.anime_sn, [r]);
   }
   return [...byAnime.values()].map((eps) => {
-    const sorted = eps.slice().sort((a, b) => (b.last_watched_at || '').localeCompare(a.last_watched_at || ''));
+    const sorted = eps.slice().sort((a, b) => (b.last_watched_at ?? '').localeCompare(a.last_watched_at ?? ''));
     const head = sorted[0];
     // tmdb_id 取「該動畫任一筆有值的」— 最新集數常是剛同步、還沒 enrich 的 NULL
     const tmdbId = head.tmdb_id ?? eps.find((e) => e.tmdb_id != null)?.tmdb_id ?? null;
     return {
       id: `a${head.anime_sn}`,
-      type: 'anime',
+      type: 'anime' as const,
       title: head.title,
       poster: head.cover_url,
-      isoDate: (head.last_watched_at || '').slice(0, 10),
+      isoDate: (head.last_watched_at ?? '').slice(0, 10),
       episode: head.episode,
       epCount: eps.length,
       tmdbId,
@@ -49,10 +69,10 @@ function normalizeAnime(rows) {
   });
 }
 
-function normalizeFilms(rows) {
-  return (rows || []).map((f) => ({
+function normalizeFilms(rows?: FilmRow[]): WatchItem[] {
+  return (rows ?? []).map((f) => ({
     id: `f${f.id}`,
-    type: 'film',
+    type: 'film' as const,
     title: f.title,
     poster: f.poster_url,
     isoDate: f.watched_date,
@@ -63,10 +83,10 @@ function normalizeFilms(rows) {
   }));
 }
 
-function normalizeTv(rows) {
-  return (rows || []).map((s) => ({
+function normalizeTv(rows?: TvRow[]): WatchItem[] {
+  return (rows ?? []).map((s) => ({
     id: `t${s.series_name}`,
-    type: 'tv',
+    type: 'tv' as const,
     title: s.series_name,
     poster: s.poster_url,
     isoDate: s.last_watched,
@@ -79,33 +99,35 @@ function normalizeTv(rows) {
 
 const SORT_OPTIONS = ['newest', 'oldest', 'titleAsc', 'titleDesc'];
 
+interface WatchItems { anime: WatchItem[] | null; film: WatchItem[] | null; tv: WatchItem[] | null }
+
 function WatchLibrary() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('anime');
+  const [activeTab, setActiveTab] = useState<WatchType>('anime');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [sortOpen, setSortOpen] = useState(false);
-  const sortRef = useRef(null);
-  const [items, setItems] = useState({ anime: null, film: null, tv: null });
+  const sortRef = useRef<HTMLDivElement>(null);
+  const [items, setItems] = useState<WatchItems>({ anime: null, film: null, tv: null });
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
+  const [err, setErr] = useState<string | null>(null);
 
   // close sort popup on outside click
   useEffect(() => {
     if (!sortOpen) return;
-    const onDoc = (e) => { if (!sortRef.current?.contains(e.target)) setSortOpen(false); };
+    const onDoc = (e: MouseEvent) => { if (!sortRef.current?.contains(e.target as Node)) setSortOpen(false); };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    return () => { document.removeEventListener('mousedown', onDoc); };
   }, [sortOpen]);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    void (async () => {
       try {
         const [a, f, s] = await Promise.all([
-          fetch(`${API_URL}/anime/history?limit=2000`).then((r) => r.json()),
-          fetch(`${API_URL}/films/recent?limit=200`).then((r) => r.json()),
-          fetch(`${API_URL}/tv/recent?limit=200`).then((r) => r.json()),
+          fetch(`${API_URL}/anime/history?limit=2000`).then((r) => r.json() as Promise<{ history?: AnimeRow[] }>),
+          fetch(`${API_URL}/films/recent?limit=200`).then((r) => r.json() as Promise<{ films?: FilmRow[] }>),
+          fetch(`${API_URL}/tv/recent?limit=200`).then((r) => r.json() as Promise<{ series?: TvRow[] }>),
         ]);
         if (cancelled) return;
         setItems({
@@ -115,7 +137,7 @@ function WatchLibrary() {
         });
         setLoading(false);
       } catch (e) {
-        if (!cancelled) { setErr(e.message); setLoading(false); }
+        if (!cancelled) { setErr(e instanceof Error ? e.message : '載入失敗'); setLoading(false); }
       }
     })();
     return () => { cancelled = true; };
@@ -124,15 +146,15 @@ function WatchLibrary() {
   // 跨「動畫(Bahamut)/影集(Netflix/Trakt)」去重：同 tmdb_id 視為同一部，保留集數最多的那筆。
   // 沒 tmdb_id 的不去重（避免用名字誤殺劇場版/相似名）。
   const deduped = useMemo(() => {
-    const anime = items.anime || [];
-    const tv = items.tv || [];
-    const winner = new Map();
+    const anime = items.anime ?? [];
+    const tv = items.tv ?? [];
+    const winner = new Map<number | string, WatchItem>();
     for (const it of [...anime, ...tv]) {
       if (it.tmdbId == null) continue;
       const cur = winner.get(it.tmdbId);
       if (!cur || (it.epCount ?? 0) > (cur.epCount ?? 0)) winner.set(it.tmdbId, it);
     }
-    const keep = (it) => it.tmdbId == null || winner.get(it.tmdbId) === it;
+    const keep = (it: WatchItem) => it.tmdbId == null || winner.get(it.tmdbId) === it;
     return {
       anime: items.anime ? anime.filter(keep) : null,
       film: items.film,
@@ -141,18 +163,18 @@ function WatchLibrary() {
   }, [items]);
 
   const visible = useMemo(() => {
-    const list = deduped[activeTab] || [];
+    const list = deduped[activeTab] ?? [];
     const term = search.trim().toLowerCase();
     const filtered = term
-      ? list.filter((it) => (it.title || '').toLowerCase().includes(term))
+      ? list.filter((it) => (it.title ?? '').toLowerCase().includes(term))
       : list;
     const sorted = filtered.slice();
     sorted.sort((a, b) => {
-      const ad = a.isoDate || '';
-      const bd = b.isoDate || '';
+      const ad = a.isoDate ?? '';
+      const bd = b.isoDate ?? '';
       switch (sortBy) {
-        case 'titleAsc': return (a.title || '').localeCompare(b.title || '');
-        case 'titleDesc': return (b.title || '').localeCompare(a.title || '');
+        case 'titleAsc': return (a.title ?? '').localeCompare(b.title ?? '');
+        case 'titleDesc': return (b.title ?? '').localeCompare(a.title ?? '');
         case 'oldest':
           if (!ad || !bd) return (!ad ? 1 : 0) - (!bd ? 1 : 0); // 無日期一律排最後
           return ad.localeCompare(bd);
@@ -185,7 +207,7 @@ function WatchLibrary() {
 
         {/* tabs */}
         <div className="wl-tabs">
-          {['anime', 'film', 'tv'].map((k) => (
+          {(['anime', 'film', 'tv'] as const).map((k) => (
             <button
               key={k}
               className={`wl-tab ${activeTab === k ? 'active' : ''}`}
@@ -256,7 +278,7 @@ function WatchLibrary() {
             {visible.map((it) => (
               <a
                 key={it.id}
-                href={it.externalUrl || '#'}
+                href={it.externalUrl ?? '#'}
                 target={it.externalUrl ? '_blank' : undefined}
                 rel="noopener noreferrer"
                 className="wl-card"
@@ -280,7 +302,7 @@ function WatchLibrary() {
                     {it.type === 'anime' && it.epCount
                       ? <span>{it.epCount} {t('watch.library.epsSuffix')}</span>
                       : null}
-                    <span className="wl-card-date">{it.isoDate || t('watch.library.undated')}</span>
+                    <span className="wl-card-date">{it.isoDate ?? t('watch.library.undated')}</span>
                   </p>
                 </div>
               </a>

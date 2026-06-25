@@ -5,10 +5,17 @@ import { useTranslation } from 'react-i18next';
 import {
   FileText, Hash, Folder, Music, BookOpen, Activity,
   Home, Compass, Camera, Film, Tv, Settings, Search,
+  type LucideIcon,
 } from 'lucide-react';
 import './CommandPalette.css';
 
-const STATIC_PAGES = [
+interface Post { id: number; title: string; excerpt?: string; tags?: string[]; category?: string; status?: string }
+interface Category { id: number; name: string; short_description?: string; post_count?: number }
+interface Tag { id?: number; name: string }
+
+interface StaticPage { label: string; path: string; icon: LucideIcon; keywords: string }
+
+const STATIC_PAGES: StaticPage[] = [
   { label: '首頁',    path: '/',          icon: Home,     keywords: 'home index 主頁' },
   { label: '手記',    path: '/blog',      icon: FileText, keywords: 'blog posts 文章 日記' },
   { label: '書櫃',    path: '/bookshelf', icon: BookOpen, keywords: 'books 閱讀 reading' },
@@ -25,15 +32,15 @@ const STATIC_PAGES = [
 export default function CommandPalette() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [posts, setPosts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loaded, setLoaded] = useState(false);
   const navigate = useNavigate();
 
   // ⌘K / Ctrl+K 開關
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setOpen((v) => !v);
@@ -42,26 +49,26 @@ export default function CommandPalette() {
       }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); };
   }, []);
 
   // 首次打開時才載入清單（降低首屏成本）
   useEffect(() => {
     if (!open || loaded) return;
-    Promise.all([
-      fetch('/api/posts?limit=200').then(r => r.json()).catch(() => ({})),
-      fetch('/api/categories').then(r => r.json()).catch(() => ({})),
-      fetch('/api/tags').then(r => r.json()).catch(() => ({})),
+    void Promise.all([
+      fetch('/api/posts?limit=200').then((r) => r.json() as Promise<unknown>).catch(() => ({})),
+      fetch('/api/categories').then((r) => r.json() as Promise<unknown>).catch(() => ({})),
+      fetch('/api/tags').then((r) => r.json() as Promise<unknown>).catch(() => ({})),
     ]).then(([postsRes, catsRes, tagsRes]) => {
-      const postsList = Array.isArray(postsRes) ? postsRes : (postsRes.posts || []);
-      setPosts(postsList.filter(p => p.status === 'published' || !p.status));
-      setCategories(catsRes.categories || []);
-      setTags(tagsRes.tags || tagsRes || []);
+      const postsList = Array.isArray(postsRes) ? (postsRes as Post[]) : ((postsRes as { posts?: Post[] }).posts ?? []);
+      setPosts(postsList.filter((p) => p.status === 'published' || !p.status));
+      setCategories((catsRes as { categories?: Category[] }).categories ?? []);
+      setTags((tagsRes as { tags?: Tag[] }).tags ?? (Array.isArray(tagsRes) ? (tagsRes as Tag[]) : []));
       setLoaded(true);
-    }).catch(console.error);
+    }).catch((err: unknown) => { console.error(err); });
   }, [open, loaded]);
 
-  const go = (path) => { setOpen(false); navigate(path); };
+  const go = (path: string) => { setOpen(false); void navigate(path); };
 
   const postItems = useMemo(() => posts.slice(0, 50), [posts]);
 
@@ -99,7 +106,7 @@ export default function CommandPalette() {
                 {postItems.map((p) => (
                   <Command.Item
                     key={`post-${p.id}`}
-                    value={`${p.title} ${p.excerpt || ''} ${(p.tags || []).join(' ')} ${p.category || ''}`}
+                    value={`${p.title} ${p.excerpt ?? ''} ${(p.tags ?? []).join(' ')} ${p.category ?? ''}`}
                     onSelect={() => go(`/blog/${p.id}`)}
                   >
                     <FileText size={14} className="cmdk-icon" />
@@ -115,7 +122,7 @@ export default function CommandPalette() {
                 {categories.map((c) => (
                   <Command.Item
                     key={`cat-${c.id}`}
-                    value={`category ${c.name} ${c.short_description || ''}`}
+                    value={`category ${c.name} ${c.short_description ?? ''}`}
                     onSelect={() => go(`/blog?category=${encodeURIComponent(c.name)}`)}
                   >
                     <Folder size={14} className="cmdk-icon" />
@@ -130,7 +137,7 @@ export default function CommandPalette() {
               <Command.Group heading={t('commandPalette.groups.tags')}>
                 {tags.slice(0, 30).map((tag) => (
                   <Command.Item
-                    key={`tag-${tag.id || tag.name}`}
+                    key={`tag-${tag.id ?? tag.name}`}
                     value={`tag ${tag.name}`}
                     onSelect={() => go(`/blog?tag=${encodeURIComponent(tag.name)}`)}
                   >

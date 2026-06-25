@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
@@ -6,12 +6,44 @@ import ZeroGravityLibrary from './ZeroGravityLibrary';
 import SEOHead from './SEOHead';
 import './Bookshelf.css';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
+
+// 書封走後端 image-proxy：① 把 http://books.google.com 升 https（去掉 mixed-content 警告）
+// ② 變成同源資源，crossOrigin canvas 取色才不會被 CORS 擋（Google Books 不送 CORS header）。
+const proxiedCover = (url?: string): string =>
+  url ? `${API_URL}/image-proxy?url=${encodeURIComponent(url)}` : '';
+
+interface RGB { r: number; g: number; b: number }
+
+interface Book {
+  id: number | string;
+  title: string;
+  authors?: string;
+  cover_url?: string;
+  reading_status?: string;
+  rating?: number | null;
+  date_added?: string;
+  date_started?: string;
+  date_finished?: string;
+  published_date?: string;
+  publisher?: string;
+  isbn?: string;
+  page_count?: number;
+  description?: string;
+  personal_notes?: string;
+}
+
+interface BookStats {
+  total_books: number;
+  books_read: number;
+  books_reading: number;
+  average_rating?: number;
+}
 
 /* ── Extract dominant color from an image for cover glow ── */
-const extractDominantColor = (imgSrc) =>
-  new Promise((resolve) => {
-    const fallback = { r: 127, g: 90, b: 240 };
+const extractDominantColor = (imgSrc?: string): Promise<RGB> =>
+  new Promise<RGB>((resolve) => {
+    const fallback: RGB = { r: 127, g: 90, b: 240 };
     if (!imgSrc) return resolve(fallback);
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -20,6 +52,7 @@ const extractDominantColor = (imgSrc) =>
         const canvas = document.createElement('canvas');
         canvas.width = canvas.height = 50;
         const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(fallback);
         ctx.drawImage(img, 0, 0, 50, 50);
         const data = ctx.getImageData(0, 0, 50, 50).data;
         let rSum = 0, gSum = 0, bSum = 0, count = 0;
@@ -37,18 +70,24 @@ const extractDominantColor = (imgSrc) =>
   });
 
 /* ── Book card with cover-glow ── */
-const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }) => {
-  const [glowColor, setGlowColor] = useState(null);
-  const imgRef = useRef(null);
+const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }: {
+  book: Book;
+  delay: number;
+  onClick: () => void;
+  getStatusBadge: (status?: string) => { text: string; color: string };
+  renderStars: (rating?: number | null) => ReactNode;
+}) => {
+  const [glowColor, setGlowColor] = useState<RGB | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     if (book.cover_url) {
-      extractDominantColor(book.cover_url).then(setGlowColor);
+      void extractDominantColor(proxiedCover(book.cover_url)).then(setGlowColor);
     }
   }, [book.cover_url]);
 
-  const style = glowColor
-    ? { '--cover-r': glowColor.r, '--cover-g': glowColor.g, '--cover-b': glowColor.b }
+  const style: CSSProperties | undefined = glowColor
+    ? { '--cover-r': glowColor.r, '--cover-g': glowColor.g, '--cover-b': glowColor.b } as CSSProperties
     : undefined;
 
   return (
@@ -62,7 +101,7 @@ const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }) => {
     >
       <div className="book-cover-wrapper">
         {book.cover_url ? (
-          <img ref={imgRef} src={book.cover_url} alt={book.title} className="book-cover" loading="lazy" />
+          <img ref={imgRef} src={proxiedCover(book.cover_url)} alt={book.title} className="book-cover" loading="lazy" />
         ) : (
           <div className="book-cover-placeholder"><FaBook /></div>
         )}
@@ -81,24 +120,24 @@ const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }) => {
 
 const Bookshelf = () => {
   const { t } = useTranslation();
-  const [books, setBooks] = useState([]);
-  const [filteredBooks, setFilteredBooks] = useState([]);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date_added_desc');
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState<BookStats | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [is3DMode, setIs3DMode] = useState(false);
 
   useEffect(() => {
-    fetchBooks();
-    fetchStats();
+    void fetchBooks();
+    void fetchStats();
     const dataRefreshInterval = setInterval(() => {
-      fetchBooks();
-      fetchStats();
+      void fetchBooks();
+      void fetchStats();
     }, 15 * 60 * 1000);
     return () => clearInterval(dataRefreshInterval);
   }, []);
@@ -110,8 +149,8 @@ const Bookshelf = () => {
   const fetchBooks = async () => {
     try {
       const response = await fetch(`${API_URL}/books`);
-      const data = await response.json();
-      if (data.message === 'success') {
+      const data = await response.json() as { message?: string; books?: Book[] };
+      if (data.message === 'success' && data.books) {
         setBooks(data.books);
       }
     } catch (error) {
@@ -124,8 +163,8 @@ const Bookshelf = () => {
   const fetchStats = async () => {
     try {
       const response = await fetch(`${API_URL}/books/stats/summary`);
-      const data = await response.json();
-      if (data.message === 'success') {
+      const data = await response.json() as { message?: string; stats?: BookStats };
+      if (data.message === 'success' && data.stats) {
         setStats(data.stats);
       }
     } catch (error) {
@@ -140,7 +179,7 @@ const Bookshelf = () => {
     if (searchTerm) {
       filtered = filtered.filter(book =>
         book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (book.authors && book.authors.toLowerCase().includes(searchTerm.toLowerCase()))
+        (book.authors?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
       );
     }
 
@@ -151,24 +190,24 @@ const Bookshelf = () => {
 
     // Rating filter
     if (ratingFilter !== 'all') {
-      filtered = filtered.filter(book => book.rating === parseInt(ratingFilter));
+      filtered = filtered.filter(book => book.rating === parseInt(ratingFilter, 10));
     }
 
     // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'date_added_asc':
-          return new Date(a.date_added) - new Date(b.date_added);
+          return new Date(a.date_added ?? '').getTime() - new Date(b.date_added ?? '').getTime();
         case 'date_added_desc':
-          return new Date(b.date_added) - new Date(a.date_added);
+          return new Date(b.date_added ?? '').getTime() - new Date(a.date_added ?? '').getTime();
         case 'title_asc':
           return a.title.localeCompare(b.title);
         case 'title_desc':
           return b.title.localeCompare(a.title);
         case 'rating_desc':
-          return (b.rating || 0) - (a.rating || 0);
+          return (b.rating ?? 0) - (a.rating ?? 0);
         case 'published_date_desc':
-          return (b.published_date || '').localeCompare(a.published_date || '');
+          return (b.published_date ?? '').localeCompare(a.published_date ?? '');
         default:
           return 0;
       }
@@ -177,19 +216,20 @@ const Bookshelf = () => {
     setFilteredBooks(filtered);
   };
 
-  const getStatusBadge = (status) => {
-    const badges = {
+  const getStatusBadge = (status?: string) => {
+    const badges: Record<'read' | 'reading' | 'to-read', { text: string; color: string }> = {
       'read': { text: t('bookshelf.statuses.read'), color: '#10b981' },
       'reading': { text: t('bookshelf.statuses.reading'), color: '#3b82f6' },
       'to-read': { text: t('bookshelf.statuses.toRead'), color: '#f59e0b' }
     };
-    return badges[status] || badges['to-read'];
+    const key = status === 'read' || status === 'reading' || status === 'to-read' ? status : 'to-read';
+    return badges[key];
   };
 
-  const renderStars = (rating) => {
+  const renderStars = (rating?: number | null) => {
     if (rating === null || rating === undefined) return <span className="no-rating">{t('bookshelf.noRating')}</span>;
-    const stars = [];
-    const numRating = parseFloat(rating);
+    const stars: ReactNode[] = [];
+    const numRating = rating;
 
     for (let i = 1; i <= 5; i++) {
       if (numRating >= i) {
@@ -410,7 +450,7 @@ const Bookshelf = () => {
               <div className="modal-body">
                 <div className="modal-cover">
                   {selectedBook.cover_url ? (
-                    <img src={selectedBook.cover_url} alt={selectedBook.title} />
+                    <img src={proxiedCover(selectedBook.cover_url)} alt={selectedBook.title} />
                   ) : (
                     <div className="modal-cover-placeholder">
                       <FaBook />
@@ -472,7 +512,7 @@ const Bookshelf = () => {
                     </div>
                   )}
 
-                  {(selectedBook.date_started || selectedBook.date_finished) && (
+                  {(selectedBook.date_started ?? selectedBook.date_finished) && (
                     <div className="modal-dates">
                       {selectedBook.date_started && (
                         <p><strong>開始閱讀:</strong> {new Date(selectedBook.date_started).toLocaleDateString('zh-TW')}</p>

@@ -6,33 +6,97 @@ import SEOHead from './SEOHead';
 import KoimLoader from './KoimLoader';
 import './Activity.css';
 
+interface ServerStatus { status: string; responseTime: number; lastCheck: Date }
+
+interface SteamGame { appid: number; name: string; playtime_2weeks?: number; playtime_forever?: number }
+interface SteamPlayer {
+  gameid?: string | number;
+  personastate?: number;
+  personaname?: string;
+  avatarfull?: string;
+  profileurl?: string;
+}
+interface SteamData {
+  recentGames?: SteamGame[];
+  ownedGames?: SteamGame[];
+  gameCount?: number;
+  playerInfo?: SteamPlayer | null;
+  configured?: boolean;
+  error?: string;
+}
+interface SteamFeaturedBadge { xp?: string | number; icon?: string; name?: string }
+interface SteamCustomization {
+  animatedAvatar?: string;
+  avatarFrame?: string;
+  nameplateWebm?: string;
+  nameplateMp4?: string;
+  featuredBadge?: SteamFeaturedBadge;
+}
+interface SteamProfile {
+  customization?: SteamCustomization;
+  profileUrl?: string;
+  level?: number;
+  xp?: number;
+  xpToNext?: number;
+  badgeCount?: number;
+  error?: string;
+}
+
+interface WakatimeToday { grand_total?: { text?: string } }
+interface WakatimeStat { name: string; text: string; percent: number }
+interface WakatimeWeek { languages?: WakatimeStat[]; projects?: WakatimeStat[] }
+interface WakatimeData {
+  today?: WakatimeToday | null;
+  week?: WakatimeWeek | null;
+  actualCodingTime?: unknown;
+  configured?: boolean;
+  error?: string;
+}
+
+interface GithubUser { public_repos?: number; html_url?: string; avatar_url?: string; name?: string; login?: string }
+interface GithubRepo { id: number; html_url: string; name: string; description?: string; language?: string; stargazers_count: number }
+interface GithubCommit { sha: string; message: string }
+interface GithubEventPayload { commits?: GithubCommit[]; before?: string; head?: string; size?: number }
+interface GithubEvent { id: string; type: string; repo: { name: string }; created_at: string; payload: GithubEventPayload }
+interface GithubContributionDay { date: string; count: number }
+interface GithubContributions { total?: Record<string, number>; contributions?: GithubContributionDay[] }
+interface GithubData {
+  user?: GithubUser;
+  recentCommits?: GithubEvent[];
+  recentRepos?: GithubRepo[];
+  contributions?: GithubContributions | null;
+  error?: string;
+}
+
+interface ContributionCell { date: string; count: number; level: number }
+
 const Activity = () => {
   const { t, i18n } = useTranslation();
   const { isVisible } = usePageVisibility();
-  const [steamData, setSteamData] = useState(null);
-  const [steamProfile, setSteamProfile] = useState(null);
-  const [githubData, setGithubData] = useState(null);
-  const [wakatimeData, setWakatimeData] = useState(null);
+  const [steamData, setSteamData] = useState<SteamData | null>(null);
+  const [steamProfile, setSteamProfile] = useState<SteamProfile | null>(null);
+  const [githubData, setGithubData] = useState<GithubData | null>(null);
+  const [wakatimeData, setWakatimeData] = useState<WakatimeData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [contributionData, setContributionData] = useState([]);
+  const [contributionData, setContributionData] = useState<ContributionCell[][]>([]);
   const [contributionYear, setContributionYear] = useState('last');
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [serverStatus, setServerStatus] = useState(null);
+  const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
 
 
   const GITHUB_USERNAME = 'timo9378';
 
   useEffect(() => {
-    fetchActivityData();
-    checkServerStatus();
+    void fetchActivityData();
+    void checkServerStatus();
 
     const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000);
     const statusInterval = setInterval(() => {
-      if (!document.hidden) checkServerStatus();
+      if (!document.hidden) void checkServerStatus();
     }, 30000);
     const dataRefreshInterval = setInterval(() => {
-      if (!document.hidden) fetchActivityData();
+      if (!document.hidden) void fetchActivityData();
     }, 10 * 60 * 1000);
 
     return () => {
@@ -50,7 +114,7 @@ const Activity = () => {
 
   const checkServerStatus = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
       const startTime = Date.now();
       const response = await fetch(`${apiUrl}/health`);
       const responseTime = Date.now() - startTime;
@@ -65,7 +129,7 @@ const Activity = () => {
 
   const getUptime = () => {
     const startDate = new Date('2025-04-01T00:00:00+08:00');
-    const diffTime = Math.abs(new Date() - startDate);
+    const diffTime = Math.abs(new Date().getTime() - startDate.getTime());
     return {
       days: Math.floor(diffTime / (1000 * 60 * 60 * 24)),
       hours: Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
@@ -74,22 +138,22 @@ const Activity = () => {
 
   const fetchSteamData = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
       const [recentRes, playerRes, ownedRes, profileRes] = await Promise.all([
-        fetch(`${apiUrl}/steam/recent-games`).then(r => r.json()),
-        fetch(`${apiUrl}/steam/player`).then(r => r.json()),
-        fetch(`${apiUrl}/steam/owned-games`).then(r => r.json()),
-        fetch(`${apiUrl}/steam/profile`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`${apiUrl}/steam/recent-games`).then(r => r.json() as Promise<{ error?: string; response?: { games?: SteamGame[] } }>),
+        fetch(`${apiUrl}/steam/player`).then(r => r.json() as Promise<{ error?: string; response?: { players?: SteamPlayer[] } }>),
+        fetch(`${apiUrl}/steam/owned-games`).then(r => r.json() as Promise<{ response?: { games?: SteamGame[]; game_count?: number } }>),
+        fetch(`${apiUrl}/steam/profile`).then(r => r.ok ? r.json() as Promise<SteamProfile> : null).catch(() => null),
       ]);
       if (recentRes.error || playerRes.error) {
-        setSteamData({ error: recentRes.error || playerRes.error, configured: false });
+        setSteamData({ error: recentRes.error ?? playerRes.error, configured: false });
         return;
       }
       setSteamData({
-        recentGames: recentRes.response?.games || [],
-        ownedGames: ownedRes.response?.games || [],
-        gameCount: ownedRes.response?.game_count || 0,
-        playerInfo: playerRes.response?.players?.[0] || null,
+        recentGames: recentRes.response?.games ?? [],
+        ownedGames: ownedRes.response?.games ?? [],
+        gameCount: ownedRes.response?.game_count ?? 0,
+        playerInfo: playerRes.response?.players?.[0] ?? null,
         configured: true,
       });
       if (profileRes && !profileRes.error) setSteamProfile(profileRes);
@@ -101,19 +165,19 @@ const Activity = () => {
 
   const fetchWakatimeData = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
       const [todayRes, weekRes] = await Promise.all([
-        fetch(`${apiUrl}/wakatime/today`).then(r => r.json()),
-        fetch(`${apiUrl}/wakatime/week`).then(r => r.json()),
+        fetch(`${apiUrl}/wakatime/today`).then(r => r.json() as Promise<{ error?: string; data?: WakatimeToday[]; actualCodingTime?: unknown }>),
+        fetch(`${apiUrl}/wakatime/week`).then(r => r.json() as Promise<{ error?: string; data?: WakatimeWeek }>),
       ]);
       if (todayRes.error || weekRes.error) {
-        setWakatimeData({ error: todayRes.error || weekRes.error, configured: false });
+        setWakatimeData({ error: todayRes.error ?? weekRes.error, configured: false });
         return;
       }
       setWakatimeData({
-        today: todayRes.data?.[0] || null,
-        week: weekRes.data || null,
-        actualCodingTime: todayRes.actualCodingTime || null,
+        today: todayRes.data?.[0] ?? null,
+        week: weekRes.data ?? null,
+        actualCodingTime: todayRes.actualCodingTime ?? null,
         configured: true,
       });
     } catch (error) {
@@ -122,11 +186,11 @@ const Activity = () => {
     }
   };
 
-  const fetchContributions = async (year = contributionYear) => {
+  const fetchContributions = async (year: string = contributionYear) => {
     try {
       const data = await fetch(
         `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=${year}&_=${Date.now()}`
-      ).then(r => r.json());
+      ).then(r => r.json() as Promise<GithubContributions>);
       if (data) {
         generateContributionDataFromAPI(data);
         setGithubData(prev => prev ? { ...prev, contributions: data } : prev);
@@ -136,27 +200,27 @@ const Activity = () => {
 
   const fetchGithubData = async () => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
       const [userData, eventsData] = await Promise.all([
-        fetch(`${apiUrl}/github/user/${GITHUB_USERNAME}`).then(r => r.json()),
-        fetch(`${apiUrl}/github/events/${GITHUB_USERNAME}`).then(r => r.json()),
+        fetch(`${apiUrl}/github/user/${GITHUB_USERNAME}`).then(r => r.json() as Promise<GithubUser & { error?: string }>),
+        fetch(`${apiUrl}/github/events/${GITHUB_USERNAME}`).then(r => r.json() as Promise<GithubEvent[] & { error?: string }>),
       ]);
 
       if (userData.error || eventsData.error) {
-        setGithubData({ error: userData.error || eventsData.error });
+        setGithubData({ error: userData.error ?? eventsData.error });
         return;
       }
 
       const pushEvents = eventsData.filter(e => e.type === 'PushEvent').slice(0, 10);
       const reposData = await fetch(
         `https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=5`
-      ).then(r => r.json());
+      ).then(r => r.json() as Promise<GithubRepo[]>);
 
-      let contributionsData = null;
+      let contributionsData: GithubContributions | null = null;
       try {
         contributionsData = await fetch(
           `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=${contributionYear}&_=${Date.now()}`
-        ).then(r => r.json());
+        ).then(r => r.json() as Promise<GithubContributions>);
       } catch { /* ignore */ }
 
       setGithubData({ user: userData, recentCommits: pushEvents, recentRepos: reposData, contributions: contributionsData });
@@ -169,16 +233,17 @@ const Activity = () => {
     }
   };
 
-  const generateContributionDataFromAPI = (apiData) => {
-    if (!apiData?.contributions) return;
-    const data = [];
-    const totalWeeks = Math.ceil(apiData.contributions.length / 7);
+  const generateContributionDataFromAPI = (apiData: GithubContributions) => {
+    if (!apiData.contributions) return;
+    const contributions = apiData.contributions;
+    const data: ContributionCell[][] = [];
+    const totalWeeks = Math.ceil(contributions.length / 7);
     for (let i = 0; i < totalWeeks; i++) {
-      const weekData = [];
+      const weekData: ContributionCell[] = [];
       for (let j = 0; j < 7; j++) {
         const idx = i * 7 + j;
-        if (idx < apiData.contributions.length) {
-          const day = apiData.contributions[idx];
+        if (idx < contributions.length) {
+          const day = contributions[idx];
           const count = day.count || 0;
           weekData.push({ date: day.date, count, level: count === 0 ? 0 : count <= 3 ? 1 : count <= 6 ? 2 : count <= 9 ? 3 : 4 });
         } else {
@@ -190,23 +255,23 @@ const Activity = () => {
     setContributionData(data);
   };
 
-  const generateContributionData = (events) => {
-    const data = [];
+  const generateContributionData = (events: GithubEvent[]) => {
+    const data: ContributionCell[][] = [];
     const today = new Date();
-    const commitsByDate = {};
+    const commitsByDate: Record<string, number> = {};
     events.forEach(e => {
       if (e.type === 'PushEvent') {
         const d = new Date(e.created_at).toDateString();
-        commitsByDate[d] = (commitsByDate[d] || 0) + (e.payload.commits?.length || 1);
+        commitsByDate[d] = (commitsByDate[d] ?? 0) + (e.payload.commits?.length ?? 1);
       }
     });
     for (let week = 51; week >= 0; week--) {
-      const weekData = [];
+      const weekData: ContributionCell[] = [];
       for (let day = 0; day < 7; day++) {
         const d = new Date(today);
         d.setDate(d.getDate() - (week * 7 + day));
         const ds = d.toDateString();
-        const count = commitsByDate[ds] || 0;
+        const count = commitsByDate[ds] ?? 0;
         weekData.push({ date: ds, count, level: count === 0 ? 0 : count <= 2 ? 1 : count <= 5 ? 2 : count <= 8 ? 3 : 4 });
       }
       data.push(weekData);
@@ -214,14 +279,14 @@ const Activity = () => {
     setContributionData(data.reverse());
   };
 
-  const formatPlaytime = (m) => {
+  const formatPlaytime = (m: number) => {
     const h = Math.floor(m / 60);
     return h < 1 ? `${m} ${t('activity.units.min')}` : `${h} ${t('activity.units.hr')}`;
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const diffMs = new Date() - date;
+    const diffMs = new Date().getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
@@ -232,6 +297,21 @@ const Activity = () => {
   };
 
   const uptime = getUptime();
+
+  // ── 從 JSX 中抽出來的衍生值（避免 JSX 內 IIFE）──
+  const steamCust: SteamCustomization = steamProfile?.customization ?? {};
+  const steamHasAnimAvatar = Boolean(steamCust.animatedAvatar && steamCust.animatedAvatar !== steamCust.avatarFrame);
+  const steamIsInGame = Boolean(steamData?.playerInfo?.gameid);
+  const steamStateText = steamIsInGame
+    ? t('activity.steam.ingame')
+    : (steamData?.playerInfo?.personastate === 1 ? t('activity.steam.online') : t('activity.steam.offline'));
+  const sortedOwnedGames = steamData?.ownedGames
+    ? [...steamData.ownedGames].sort((a, b) => (b.playtime_forever ?? 0) - (a.playtime_forever ?? 0)).slice(0, 30)
+    : [];
+  const contributionTotal = githubData?.contributions?.total;
+  const contributionCount = contributionTotal ? (contributionTotal[Object.keys(contributionTotal)[0]] ?? 0) : 0;
+  const heatmapCurrentYear = new Date().getFullYear();
+  const heatmapYears = ['last', String(heatmapCurrentYear), String(heatmapCurrentYear - 1), String(heatmapCurrentYear - 2)];
 
   if (loading) {
     return (
@@ -270,18 +350,18 @@ const Activity = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="status-bar-left">
-            <div className={`status-dot-inline ${serverStatus?.status || 'checking'}`} />
+            <div className={`status-dot-inline ${serverStatus?.status ?? 'checking'}`} />
             <span className="status-bar-text">
               {serverStatus?.status === 'online' ? 'Server Online' : serverStatus?.status === 'offline' ? 'Offline' : 'Checking...'}
             </span>
-            {serverStatus?.responseTime > 0 && (
-              <span className="status-bar-meta">{serverStatus.responseTime}ms</span>
+            {(serverStatus?.responseTime ?? 0) > 0 && (
+              <span className="status-bar-meta">{serverStatus?.responseTime}ms</span>
             )}
           </div>
           <div className="status-bar-right">
             <span className="status-bar-meta">Uptime {uptime.days}d {uptime.hours}h</span>
             <span className="status-bar-time">
-              {currentTime.toLocaleTimeString(i18n.resolvedLanguage || 'zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+              {currentTime.toLocaleTimeString(i18n.resolvedLanguage ?? 'zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </span>
           </div>
         </motion.div>
@@ -294,65 +374,58 @@ const Activity = () => {
           transition={{ duration: 0.6, delay: 0.1 }}
         >
           <div className="hero-number-item">
-            <span className="hero-num">{steamData?.gameCount || 0}</span>
+            <span className="hero-num">{steamData?.gameCount ?? 0}</span>
             <span className="hero-label">{t('activity.labels.gameCollection')}</span>
           </div>
           <span className="hero-divider" />
           <div className="hero-number-item">
-            <span className="hero-num">{githubData?.user?.public_repos || 0}</span>
+            <span className="hero-num">{githubData?.user?.public_repos ?? 0}</span>
             <span className="hero-label">{t('activity.labels.publicProjects')}</span>
           </div>
           <span className="hero-divider" />
           <div className="hero-number-item">
-            <span className="hero-num">{githubData?.recentRepos?.reduce((s, r) => s + r.stargazers_count, 0) || 0}</span>
+            <span className="hero-num">{githubData?.recentRepos?.reduce((s, r) => s + r.stargazers_count, 0) ?? 0}</span>
             <span className="hero-label">Stars</span>
           </div>
           <span className="hero-divider" />
           <div className="hero-number-item">
-            <span className="hero-num">{wakatimeData?.today?.grand_total?.text || '0 hrs'}</span>
+            <span className="hero-num">{wakatimeData?.today?.grand_total?.text ?? '0 hrs'}</span>
             <span className="hero-label">{t('activity.labels.codedToday')}</span>
           </div>
         </motion.div>
 
         {/* ─── Section 3a: Steam Profile — Steam hover-card 風格 ─── */}
-        {steamData?.playerInfo && (() => {
-          const cust = steamProfile?.customization || {};
-          const hasAnimAvatar = cust.animatedAvatar && cust.animatedAvatar !== cust.avatarFrame;
-          const isInGame = !!steamData.playerInfo.gameid;
-          const stateText = isInGame
-            ? t('activity.steam.ingame')
-            : (steamData.playerInfo.personastate === 1 ? t('activity.steam.online') : t('activity.steam.offline'));
-          return (
+        {steamData?.playerInfo && (
             <motion.a
-              href={steamProfile?.profileUrl || steamData.playerInfo.profileurl}
+              href={steamProfile?.profileUrl ?? steamData.playerInfo.profileurl}
               target="_blank"
               rel="noopener noreferrer"
-              className={`steam-profile-card ${isInGame ? 'is-in-game' : ''} ${steamData.playerInfo.personastate === 1 ? 'is-online' : 'is-offline'}`}
+              className={`steam-profile-card ${steamIsInGame ? 'is-in-game' : ''} ${steamData.playerInfo.personastate === 1 ? 'is-online' : 'is-offline'}`}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              {cust.nameplateWebm && (
+              {steamCust.nameplateWebm && (
                 <video
                   className="steam-profile-bg"
                   autoPlay muted loop playsInline
-                  poster={cust.nameplateMp4}
+                  poster={steamCust.nameplateMp4}
                 >
-                  <source src={cust.nameplateWebm} type="video/webm" />
-                  {cust.nameplateMp4 && <source src={cust.nameplateMp4} type="video/mp4" />}
+                  <source src={steamCust.nameplateWebm} type="video/webm" />
+                  {steamCust.nameplateMp4 && <source src={steamCust.nameplateMp4} type="video/mp4" />}
                 </video>
               )}
               <div className="steam-profile-overlay" />
               <div className="steam-profile-content">
                 <div className="steam-profile-avatar-wrap">
                   <img
-                    src={hasAnimAvatar ? cust.animatedAvatar : steamData.playerInfo.avatarfull}
+                    src={steamHasAnimAvatar ? steamCust.animatedAvatar : steamData.playerInfo.avatarfull}
                     alt="Steam avatar"
                     className="steam-profile-avatar"
                   />
-                  {cust.avatarFrame && (
-                    <img className="steam-profile-avatar-frame" src={cust.avatarFrame} alt="" aria-hidden />
+                  {steamCust.avatarFrame && (
+                    <img className="steam-profile-avatar-frame" src={steamCust.avatarFrame} alt="" aria-hidden />
                   )}
                 </div>
                 <div className="steam-profile-meta">
@@ -366,7 +439,7 @@ const Activity = () => {
                   </div>
                   <div className="steam-profile-status">
                     <span className="steam-profile-dot" />
-                    {stateText}
+                    {steamStateText}
                     <span className="steam-profile-divider">·</span>
                     {t('activity.gamesUnit', { count: steamData.gameCount })}
                     {steamProfile?.badgeCount ? (
@@ -377,7 +450,7 @@ const Activity = () => {
                     ) : null}
                   </div>
                   {steamProfile?.customization?.featuredBadge && (
-                    <div className="steam-profile-featured" title={steamProfile.customization.featuredBadge.xp}>
+                    <div className="steam-profile-featured" title={String(steamProfile.customization.featuredBadge.xp ?? '')}>
                       <img src={steamProfile.customization.featuredBadge.icon} alt="" />
                       <span>{steamProfile.customization.featuredBadge.name}</span>
                     </div>
@@ -388,11 +461,10 @@ const Activity = () => {
                 </span>
               </div>
             </motion.a>
-          );
-        })()}
+        )}
 
         {/* ─── Section 3b: 最近遊玩 — horizontal snap scroll ─── */}
-        {steamData?.recentGames?.length > 0 && (
+        {(steamData?.recentGames?.length ?? 0) > 0 && (
           <motion.section
             className="steam-recent-section"
             initial={{ opacity: 0, y: 20 }}
@@ -402,13 +474,13 @@ const Activity = () => {
           >
             <header className="steam-recent-header">
               <span className="section-label">
-                {steamData.playerInfo?.gameid ? t('activity.steam.playingTwoWeeks') : t('activity.steam.recentTwoWeeks')}
+                {steamData?.playerInfo?.gameid ? t('activity.steam.playingTwoWeeks') : t('activity.steam.recentTwoWeeks')}
               </span>
-              <span className="steam-recent-count">{t('activity.titlesUnit', { count: steamData.recentGames.length })}</span>
+              <span className="steam-recent-count">{t('activity.titlesUnit', { count: steamData?.recentGames?.length ?? 0 })}</span>
             </header>
             <div className="steam-recent-scroll" role="list">
-              {steamData.recentGames.map((g, idx) => {
-                const isCurrent = String(steamData.playerInfo?.gameid || '') === String(g.appid);
+              {steamData?.recentGames?.map((g, idx) => {
+                const isCurrent = String(steamData.playerInfo?.gameid ?? '') === String(g.appid);
                 return (
                   <a
                     key={g.appid}
@@ -442,9 +514,9 @@ const Activity = () => {
                     <div className="steam-recent-info">
                       <h4 className="steam-recent-title">{g.name}</h4>
                       <div className="steam-recent-stats">
-                        <span>{t('activity.playtime2w')} {formatPlaytime(g.playtime_2weeks || 0)}</span>
+                        <span>{t('activity.playtime2w')} {formatPlaytime(g.playtime_2weeks ?? 0)}</span>
                         <span className="steam-recent-divider">·</span>
-                        <span>{t('activity.playtimeTotal')} {formatPlaytime(g.playtime_forever || 0)}</span>
+                        <span>{t('activity.playtimeTotal')} {formatPlaytime(g.playtime_forever ?? 0)}</span>
                       </div>
                     </div>
                   </a>
@@ -466,14 +538,14 @@ const Activity = () => {
             <div className="code-pulse-left">
               <span className="section-label">CODE PULSE</span>
               <div className="code-pulse-today">
-                {wakatimeData.today?.grand_total?.text || '0 hrs 0 mins'}
+                {wakatimeData.today?.grand_total?.text ?? '0 hrs 0 mins'}
               </div>
               <span className="code-pulse-sub">{t('activity.wakatime.todayCoding')}</span>
             </div>
             <div className="code-pulse-right">
-              {wakatimeData.week?.languages?.length > 0 ? (
+              {(wakatimeData.week?.languages?.length ?? 0) > 0 ? (
                 <div className="lang-bars">
-                  {wakatimeData.week.languages.slice(0, 5).map((lang, i) => (
+                  {wakatimeData.week?.languages?.slice(0, 5).map((lang, i) => (
                     <div key={i} className="lang-bar-row">
                       <div className="lang-bar-meta">
                         <span className="lang-bar-name">{lang.name}</span>
@@ -512,36 +584,32 @@ const Activity = () => {
               {githubData?.user && (
                 <a href={githubData.user.html_url} target="_blank" rel="noopener noreferrer" className="heatmap-profile">
                   <img src={githubData.user.avatar_url} alt="GitHub" className="heatmap-avatar" />
-                  <span>{githubData.user.name || githubData.user.login}</span>
+                  <span>{githubData.user.name ?? githubData.user.login}</span>
                 </a>
               )}
-              {githubData?.contributions?.total && (() => {
-                const count = githubData.contributions.total[Object.keys(githubData.contributions.total)[0]];
-                return (
+              {contributionTotal && (
                   <div className="heatmap-total">
                     {contributionYear === 'last' ? (
                       <Trans
                         i18nKey="activity.github.contributions"
-                        values={{ count }}
+                        values={{ count: contributionCount }}
                         components={{ b: <span className="heatmap-total-num" /> }}
                       />
                     ) : (
                       <>
-                        <span className="heatmap-total-num">{count}</span>
+                        <span className="heatmap-total-num">{contributionCount}</span>
                         <span className="heatmap-total-label">contributions in {contributionYear}</span>
                       </>
                     )}
                   </div>
-                );
-              })()}
+              )}
               <button
                 type="button"
                 className={`koim-btn koim-btn--icon koim-btn--sm${isRefreshing ? ' is-refreshing' : ''}`}
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.currentTarget.blur(); // 點完離焦，避免桌面瀏覽器把 :focus 視為持續 hover
                   setIsRefreshing(true);
-                  await fetchContributions();
-                  setIsRefreshing(false);
+                  void fetchContributions().finally(() => { setIsRefreshing(false); });
                 }}
                 disabled={isRefreshing}
                 title={t('activity.refresh')}
@@ -556,21 +624,17 @@ const Activity = () => {
               </button>
             </div>
             <div className="heatmap-year-selector">
-              {(() => {
-                const currentYear = new Date().getFullYear();
-                return ['last', String(currentYear), String(currentYear - 1), String(currentYear - 2)];
-              })().map(y => (
+              {heatmapYears.map(y => (
                 <button
                   key={y}
                   type="button"
                   className={`koim-btn koim-btn--sm${contributionYear === y ? ' is-active' : ''}`}
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.currentTarget.blur();
                     if (contributionYear === y) return;
                     setContributionYear(y);
                     setIsRefreshing(true);
-                    await fetchContributions(y);
-                    setIsRefreshing(false);
+                    void fetchContributions(y).finally(() => { setIsRefreshing(false); });
                   }}
                 >
                   {y === 'last' ? t('activity.github.lastYear') : y}
@@ -614,7 +678,7 @@ const Activity = () => {
         )}
 
         {/* ─── Section 6: Recent Commits — minimal timeline ─── */}
-        {githubData?.recentCommits?.length > 0 && (
+        {(githubData?.recentCommits?.length ?? 0) > 0 && (
           <motion.div
             className="commits-section"
             initial={{ opacity: 0, y: 30 }}
@@ -624,7 +688,7 @@ const Activity = () => {
           >
             <span className="section-label">RECENT COMMITS</span>
             <div className="commits-list">
-              {githubData.recentCommits.slice(0, 8).map((event, i) => (
+              {githubData?.recentCommits?.slice(0, 8).map((event, i) => (
                 <div key={`${event.id}-${i}`} className="commit-event">
                   <div className="commit-event-header">
                     <div className="commit-dot" />
@@ -632,9 +696,9 @@ const Activity = () => {
                     <span className="commit-when">{formatDate(event.created_at)}</span>
                   </div>
                   <div className="commit-messages">
-                    {(event.payload.commits || []).length > 0 ? (
+                    {(event.payload.commits ?? []).length > 0 ? (
                       <>
-                        {event.payload.commits.slice(0, 3).map((commit, ci) => (
+                        {event.payload.commits?.slice(0, 3).map((commit, ci) => (
                           <a
                             key={ci}
                             className="commit-msg-row"
@@ -646,8 +710,8 @@ const Activity = () => {
                             <span className="commit-msg">{commit.message.split('\n')[0]}</span>
                           </a>
                         ))}
-                        {event.payload.commits.length > 3 && (
-                          <span className="commit-more">+{event.payload.commits.length - 3} more</span>
+                        {(event.payload.commits?.length ?? 0) > 3 && (
+                          <span className="commit-more">+{(event.payload.commits?.length ?? 0) - 3} more</span>
                         )}
                       </>
                     ) : (
@@ -657,8 +721,8 @@ const Activity = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <code className="commit-sha">{event.payload.head?.slice(0, 7) || '—'}</code>
-                        <span className="commit-msg">Pushed {event.payload.size || 1} commit{(event.payload.size || 1) > 1 ? 's' : ''}</span>
+                        <code className="commit-sha">{event.payload.head?.slice(0, 7) ?? '—'}</code>
+                        <span className="commit-msg">Pushed {event.payload.size ?? 1} commit{(event.payload.size ?? 1) > 1 ? 's' : ''}</span>
                       </a>
                     )}
                   </div>
@@ -669,7 +733,7 @@ const Activity = () => {
         )}
 
         {/* ─── Section 7: Projects time distribution ─── */}
-        {wakatimeData?.week?.projects?.length > 0 && (
+        {(wakatimeData?.week?.projects?.length ?? 0) > 0 && (
           <motion.div
             className="projects-section"
             initial={{ opacity: 0, y: 30 }}
@@ -679,7 +743,7 @@ const Activity = () => {
           >
             <span className="section-label">WEEKLY PROJECTS</span>
             <div className="projects-bars">
-              {wakatimeData.week.projects.slice(0, 6).map((project, i) => (
+              {wakatimeData?.week?.projects?.slice(0, 6).map((project, i) => (
                 <div key={i} className="project-row">
                   <div className="project-row-meta">
                     <span className="project-row-name">{project.name}</span>
@@ -701,11 +765,7 @@ const Activity = () => {
         )}
 
         {/* ─── Section 8: Game Gallery — auto-scroll marquee ─── */}
-        {steamData?.ownedGames?.length > 0 && (() => {
-          const sortedGames = [...steamData.ownedGames]
-            .sort((a, b) => (b.playtime_forever || 0) - (a.playtime_forever || 0))
-            .slice(0, 30);
-          return (
+        {(steamData?.ownedGames?.length ?? 0) > 0 && (
             <motion.div
               className="game-gallery-section"
               initial={{ opacity: 0, y: 30 }}
@@ -715,11 +775,11 @@ const Activity = () => {
             >
               <div className="game-gallery-header">
                 <span className="section-label">GAME LIBRARY</span>
-                <span className="game-gallery-count">{steamData.gameCount} games</span>
+                <span className="game-gallery-count">{steamData?.gameCount} games</span>
               </div>
               <div className="game-marquee-wrapper">
                 <div className="game-marquee-track">
-                  {[...sortedGames, ...sortedGames].map((game, i) => (
+                  {[...sortedOwnedGames, ...sortedOwnedGames].map((game, i) => (
                     <a
                       key={`${game.appid}-${i}`}
                       href={`https://store.steampowered.com/app/${game.appid}`}
@@ -732,23 +792,22 @@ const Activity = () => {
                         alt={game.name}
                         loading="lazy"
                         onError={(e) => {
-                          e.target.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/capsule_616x353.jpg`;
+                          e.currentTarget.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/capsule_616x353.jpg`;
                         }}
                       />
                       <div className="game-gallery-info">
                         <span>{game.name}</span>
-                        <span className="game-gallery-time">{formatPlaytime(game.playtime_forever || 0)}</span>
+                        <span className="game-gallery-time">{formatPlaytime(game.playtime_forever ?? 0)}</span>
                       </div>
                     </a>
                   ))}
                 </div>
               </div>
             </motion.div>
-          );
-        })()}
+        )}
 
         {/* ─── Section 9: Repos — simple list ─── */}
-        {githubData?.recentRepos?.length > 0 && (
+        {(githubData?.recentRepos?.length ?? 0) > 0 && (
           <motion.div
             className="repos-section"
             initial={{ opacity: 0, y: 30 }}
@@ -758,11 +817,11 @@ const Activity = () => {
           >
             <span className="section-label">RECENT REPOS</span>
             <div className="repos-list">
-              {githubData.recentRepos.map(repo => (
+              {githubData?.recentRepos?.map(repo => (
                 <a key={repo.id} href={repo.html_url} target="_blank" rel="noopener noreferrer" className="repo-row">
                   <div className="repo-row-left">
                     <h4>{repo.name}</h4>
-                    <p>{repo.description || '沒有描述'}</p>
+                    <p>{repo.description ?? '沒有描述'}</p>
                   </div>
                   <div className="repo-row-right">
                     {repo.language && (
@@ -784,14 +843,14 @@ const Activity = () => {
   );
 };
 
-const getLanguageColor = (lang) => {
-  const c = { JavaScript:'#f1e05a', TypeScript:'#2b7489', Python:'#3572A5', Java:'#b07219', 'C++':'#f34b7d', C:'#555', Go:'#00ADD8', Rust:'#dea584', PHP:'#4F5D95', Ruby:'#701516', Swift:'#ffac45', Kotlin:'#F18E33', Dart:'#00B4AB', HTML:'#e34c26', CSS:'#563d7c' };
-  return c[lang] || '#8257e6';
+const getLanguageColor = (lang: string) => {
+  const c: Record<string, string> = { JavaScript:'#f1e05a', TypeScript:'#2b7489', Python:'#3572A5', Java:'#b07219', 'C++':'#f34b7d', C:'#555', Go:'#00ADD8', Rust:'#dea584', PHP:'#4F5D95', Ruby:'#701516', Swift:'#ffac45', Kotlin:'#F18E33', Dart:'#00B4AB', HTML:'#e34c26', CSS:'#563d7c' };
+  return c[lang] ?? '#8257e6';
 };
 
-const getLanguageColorGradient = (lang) => {
-  const g = { JavaScript:'rgba(241,224,90,0.8),rgba(241,224,90,0.4)', TypeScript:'rgba(43,116,137,0.8),rgba(43,116,137,0.4)', Python:'rgba(53,114,165,0.8),rgba(53,114,165,0.4)', Java:'rgba(176,114,25,0.8),rgba(176,114,25,0.4)', 'C++':'rgba(243,75,125,0.8),rgba(243,75,125,0.4)', C:'rgba(85,85,85,0.8),rgba(85,85,85,0.4)', Go:'rgba(0,173,216,0.8),rgba(0,173,216,0.4)', Rust:'rgba(222,165,132,0.8),rgba(222,165,132,0.4)', PHP:'rgba(79,93,149,0.8),rgba(79,93,149,0.4)', Ruby:'rgba(112,21,22,0.8),rgba(112,21,22,0.4)', Swift:'rgba(255,172,69,0.8),rgba(255,172,69,0.4)', Kotlin:'rgba(241,142,51,0.8),rgba(241,142,51,0.4)', Dart:'rgba(0,180,171,0.8),rgba(0,180,171,0.4)', HTML:'rgba(227,76,38,0.8),rgba(227,76,38,0.4)', CSS:'rgba(86,61,124,0.8),rgba(86,61,124,0.4)' };
-  return g[lang] || 'rgba(130,87,230,0.8),rgba(130,87,230,0.4)';
+const getLanguageColorGradient = (lang: string) => {
+  const g: Record<string, string> = { JavaScript:'rgba(241,224,90,0.8),rgba(241,224,90,0.4)', TypeScript:'rgba(43,116,137,0.8),rgba(43,116,137,0.4)', Python:'rgba(53,114,165,0.8),rgba(53,114,165,0.4)', Java:'rgba(176,114,25,0.8),rgba(176,114,25,0.4)', 'C++':'rgba(243,75,125,0.8),rgba(243,75,125,0.4)', C:'rgba(85,85,85,0.8),rgba(85,85,85,0.4)', Go:'rgba(0,173,216,0.8),rgba(0,173,216,0.4)', Rust:'rgba(222,165,132,0.8),rgba(222,165,132,0.4)', PHP:'rgba(79,93,149,0.8),rgba(79,93,149,0.4)', Ruby:'rgba(112,21,22,0.8),rgba(112,21,22,0.4)', Swift:'rgba(255,172,69,0.8),rgba(255,172,69,0.4)', Kotlin:'rgba(241,142,51,0.8),rgba(241,142,51,0.4)', Dart:'rgba(0,180,171,0.8),rgba(0,180,171,0.4)', HTML:'rgba(227,76,38,0.8),rgba(227,76,38,0.4)', CSS:'rgba(86,61,124,0.8),rgba(86,61,124,0.4)' };
+  return g[lang] ?? 'rgba(130,87,230,0.8),rgba(130,87,230,0.4)';
 };
 
 export default Activity;
