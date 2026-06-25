@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type ImgHTMLAttributes } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
@@ -11,24 +11,42 @@ import { thumbHashToDataURL, thumbHashToApproximateAspectRatio } from 'thumbhash
  * - NAS 圖片 hover 顯示完整 EXIF 資訊（從 manifest 讀取）
  */
 
-/* ── NAS manifest 快取 ── */
-let _manifestCache = null;
-let _manifestLoading = false;
-let _manifestCallbacks = [];
+interface ExifData {
+  make?: string;
+  model?: string;
+  LensModel?: string;
+  FNumber?: number | string;
+  ISO?: number | null;
+  ExposureTime?: number | string;
+  FocalLength?: number | string;
+  FocalLengthIn35mmFormat?: string;
+}
 
-const fetchManifest = () => {
+interface Photo {
+  thumbnailUrl?: string;
+  originalUrl?: string;
+  urls?: { thumb?: string; full?: string };
+  exif?: ExifData;
+}
+
+/* ── NAS manifest 快取 ── */
+let _manifestCache: Map<string, Photo> | null = null;
+let _manifestLoading = false;
+let _manifestCallbacks: ((map: Map<string, Photo>) => void)[] = [];
+
+const fetchManifest = (): Promise<Map<string, Photo>> => {
   if (_manifestCache) return Promise.resolve(_manifestCache);
   if (_manifestLoading) {
-    return new Promise((resolve) => _manifestCallbacks.push(resolve));
+    return new Promise<Map<string, Photo>>((resolve) => { _manifestCallbacks.push(resolve); });
   }
   _manifestLoading = true;
   return fetch('/api/gallery/photos')
-    .then(r => r.ok ? r.json() : null)
-    .then(data => {
+    .then((r) => (r.ok ? r.json() as Promise<{ photos?: Photo[] } | null> : null))
+    .then((data) => {
       if (data?.photos) {
         // 建立 URL → photo 的快速查詢 map
-        const map = new Map();
-        data.photos.forEach(p => {
+        const map = new Map<string, Photo>();
+        data.photos.forEach((p) => {
           if (p.thumbnailUrl) map.set(p.thumbnailUrl, p);
           if (p.originalUrl) map.set(p.originalUrl, p);
           if (p.urls?.thumb) map.set(p.urls.thumb, p);
@@ -38,30 +56,30 @@ const fetchManifest = () => {
       } else {
         _manifestCache = new Map();
       }
-      _manifestCallbacks.forEach(cb => cb(_manifestCache));
+      _manifestCallbacks.forEach((cb) => cb(_manifestCache!));
       _manifestCallbacks = [];
       return _manifestCache;
     })
     .catch(() => {
       _manifestCache = new Map();
-      _manifestCallbacks.forEach(cb => cb(_manifestCache));
+      _manifestCallbacks.forEach((cb) => cb(_manifestCache!));
       _manifestCallbacks = [];
       return _manifestCache;
     });
 };
 
 // 判斷是否為 NAS 圖片
-const isNASImage = (src) => src && src.includes('/nas-images/');
+const isNASImage = (src?: string): boolean => !!src && src.includes('/nas-images/');
 
 // 取得 NAS 高解析度 URL（thumbnail → 原圖）
-const getNASHighResUrl = (src) => {
+const getNASHighResUrl = (src?: string): string | undefined => {
   if (!src) return src;
   // -thumb.webp → .webp (高解析度也是 webp 格式)
   return src.replace(/-thumb\.webp$/, '.webp');
 };
 
 // 取得內文用的顯示 URL（thumbnail → 高解析度，讓文章內圖片清晰）
-const getNASDisplayUrl = (src) => {
+const getNASDisplayUrl = (src?: string): string | undefined => {
   if (!src || !isNASImage(src)) return src;
   // 如果是 thumbnail，改用高解析度版本
   if (src.includes('-thumb.webp')) {
@@ -70,6 +88,8 @@ const getNASDisplayUrl = (src) => {
   return src;
 };
 
+interface ThumbPlaceholder { dataUrl: string; aspectRatio: number }
+
 /**
  * 從圖片 URL 的 #th=<base64url> fragment 解出 thumbhash，
  * 回傳 { dataUrl, aspectRatio } 供模糊佔位使用。沒 fragment 或解析失敗回 null。
@@ -77,9 +97,9 @@ const getNASDisplayUrl = (src) => {
  * 後端 (server/index.js 的 /admin/upload) 上傳時會把 thumbhash 編進 URL fragment，
  * 瀏覽器送 HTTP 請求時不會帶 fragment，所以對 nginx 快取無影響。
  */
-const decodeThumbHashFromSrc = (src) => {
+const decodeThumbHashFromSrc = (src?: string): ThumbPlaceholder | null => {
   if (!src) return null;
-  const m = src.match(/#th=([A-Za-z0-9_-]+)/);
+  const m = /#th=([A-Za-z0-9_-]+)/.exec(src);
   if (!m) return null;
   try {
     let b64 = m[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -96,11 +116,13 @@ const decodeThumbHashFromSrc = (src) => {
   }
 };
 
+type BlogImageProps = { src?: string; alt?: string } & ImgHTMLAttributes<HTMLImageElement>;
+
 // 獨立的圖片包裝組件
-export const BlogImage = ({ src, alt, ...props }) => {
+export const BlogImage = ({ src, alt, ...props }: BlogImageProps) => {
   const [showLightbox, setShowLightbox] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const [exifData, setExifData] = useState(null);
+  const [exifData, setExifData] = useState<ExifData | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
   const isNAS = isNASImage(src);
 
@@ -116,28 +138,29 @@ export const BlogImage = ({ src, alt, ...props }) => {
   // 載入 EXIF 資訊
   useEffect(() => {
     if (!isNAS) return;
-    fetchManifest().then(map => {
+    void fetchManifest().then((map) => {
+      if (!src) return;
       // 嘗試用 thumbnail URL 或高解析度 URL 查詢
-      const photo = map.get(src) || map.get(getNASHighResUrl(src));
+      const photo = map.get(src) ?? map.get(getNASHighResUrl(src) ?? '');
       if (photo?.exif) setExifData(photo.exif);
     });
   }, [src, isNAS]);
 
   // 判斷 EXIF 是否有足夠資訊顯示（至少要有拍攝參數或相機/鏡頭資訊）
-  const hasExifContent = exifData && (
-    exifData.make || exifData.model || exifData.LensModel ||
-    exifData.FNumber || exifData.ISO != null || exifData.ExposureTime ||
-    exifData.FocalLength || exifData.FocalLengthIn35mmFormat
+  const hasExifContent = exifData != null && (
+    exifData.make != null || exifData.model != null || exifData.LensModel != null ||
+    exifData.FNumber != null || exifData.ISO != null || exifData.ExposureTime != null ||
+    exifData.FocalLength != null || exifData.FocalLengthIn35mmFormat != null
   );
   // 只有日期 → 不顯示 EXIF overlay（避免只顯示一個 📅 日期很奇怪）
   const showExif = isNAS && showInfo && hasExifContent;
 
   // 相機資訊：優先 make+model，fallback 到 LensModel
-  const cameraLabel = exifData && (
-    (exifData.make && exifData.model)
+  const cameraLabel = exifData
+    ? ((exifData.make && exifData.model)
       ? `${exifData.make} ${exifData.model}`
-      : exifData.model || ''
-  );
+      : (exifData.model ?? ''))
+    : '';
 
   // 鏡頭資訊：去除與相機名稱重複的部分
   const lensLabel = (() => {
@@ -145,10 +168,13 @@ export const BlogImage = ({ src, alt, ...props }) => {
     const lens = exifData.LensModel;
     // 如果 LensModel 完全等於 cameraLabel → 重複，不顯示
     if (lens === cameraLabel) return '';
+    if (!cameraLabel) return lens;
+    const lensLower = lens.toLowerCase();
+    const camLower = cameraLabel.toLowerCase();
     // 如果 LensModel 包含相機型號名稱（如 "Pixel 8 Pro back camera"） → 不顯示
-    if (cameraLabel && lens.toLowerCase().includes(cameraLabel.toLowerCase())) return '';
+    if (lensLower.includes(camLower)) return '';
     // 如果相機名稱包含鏡頭名稱 → 重複，不顯示
-    if (cameraLabel && cameraLabel.toLowerCase().includes(lens.toLowerCase())) return '';
+    if (camLower.includes(lensLower)) return '';
     return lens;
   })();
 
@@ -162,14 +188,14 @@ export const BlogImage = ({ src, alt, ...props }) => {
         <img
           {...props}
           src={displaySrc}
-          alt={alt || ''}
+          alt={alt ?? ''}
           onClick={() => setShowLightbox(true)}
           onLoad={() => setImgLoaded(true)}
           className={`blog-image-clickable${placeholder && !imgLoaded ? ' blog-image-loading' : ''}`}
           loading="lazy"
           decoding="async"
           style={placeholder ? {
-            ...(props.style || {}),
+            ...(props.style ?? {}),
             backgroundImage: `url(${placeholder.dataUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -184,7 +210,7 @@ export const BlogImage = ({ src, alt, ...props }) => {
             {exifData.FNumber && <span>ƒ/{exifData.FNumber}</span>}
             {exifData.ISO != null && <span>ISO {exifData.ISO}</span>}
             {exifData.ExposureTime && <span>{exifData.ExposureTime}s</span>}
-            {(exifData.FocalLength || exifData.FocalLengthIn35mmFormat) && <span>{exifData.FocalLengthIn35mmFormat ? `${exifData.FocalLengthIn35mmFormat.replace(' mm', 'mm')}` : exifData.FocalLength}</span>}
+            {(exifData.FocalLength ?? exifData.FocalLengthIn35mmFormat) != null && <span>{exifData.FocalLengthIn35mmFormat ? `${exifData.FocalLengthIn35mmFormat.replace(' mm', 'mm')}` : exifData.FocalLength}</span>}
           </span>
         )}
       </span>
@@ -195,8 +221,14 @@ export const BlogImage = ({ src, alt, ...props }) => {
   );
 };
 
+interface ImageLightboxProps {
+  src?: string;
+  alt?: string;
+  onClose: () => void;
+}
+
 // Lightbox 主組件 — 使用 Portal 渲染到 body
-function ImageLightbox({ src, alt, onClose }) {
+function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
   const closingRef = useRef(false);
 
   const handleClose = useCallback(() => {
@@ -210,7 +242,7 @@ function ImageLightbox({ src, alt, onClose }) {
     const handleWheel = () => handleClose();
     const handleScroll = () => handleClose();
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') handleClose();
     };
 
@@ -238,7 +270,7 @@ function ImageLightbox({ src, alt, onClose }) {
       >
         <motion.img
           src={src}
-          alt={alt || ''}
+          alt={alt ?? ''}
           className="image-lightbox-img"
           initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

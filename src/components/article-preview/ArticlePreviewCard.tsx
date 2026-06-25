@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, type HTMLAttributes } from 'react';
 import ReactDOM, { flushSync } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type MotionStyle } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import rehypeRaw from 'rehype-raw';
@@ -13,15 +13,24 @@ import { highlightCode } from '../../lib/shikiHighlight';
 import '../BlogPost.css';
 import './article-preview.css';
 
+interface Article {
+  title?: string;
+  excerpt?: string;
+  content?: string;
+  category?: { name?: string };
+}
+
+type CodeProps = HTMLAttributes<HTMLElement> & { inline?: boolean; node?: unknown };
+
 /**
  * Preview 用簡化版 CodeBlock — 跟 BlogPost 的 .code-block-wrapper / .shiki-output 共用樣式，
  * 只是去掉複製按鈕跟 mermaid 處理（preview 看一眼就好）
  */
-function PreviewCodeBlock({ inline, className, children, ...props }) {
-  const [highlighted, setHighlighted] = useState(null);
-  const match = /language-(\w+)/.exec(className || '');
+function PreviewCodeBlock({ inline, className, children, node: _node, ...props }: CodeProps) {
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const match = /language-(\w+)/.exec(className ?? '');
   const lang = match ? match[1] : 'text';
-  const codeText = String(children).replace(/\n$/, '');
+  const codeText = String(children as string).replace(/\n$/, '');
 
   // 自動偵測 mermaid — 跟 BlogPost 的 CodeBlock 同邏輯
   const isMermaid = lang === 'mermaid' || (
@@ -34,7 +43,7 @@ function PreviewCodeBlock({ inline, className, children, ...props }) {
     let cancelled = false;
     highlightCode(codeText, lang)
       .then((html) => { if (!cancelled) setHighlighted(html); })
-      .catch(() => {});
+      .catch(() => { /* 預覽高亮失敗無妨 */ });
     return () => { cancelled = true; };
   }, [codeText, lang, inline, match, isMermaid]);
 
@@ -85,16 +94,16 @@ function ArticlePreviewCard() {
   } = useArticlePreview();
 
   const navigate = useNavigate();
-  const [article, setArticle] = useState(null);
+  const [article, setArticle] = useState<Article | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const scrollerRef = useRef(null);
-  const cardRef = useRef(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // 點卡片外部（document-level）→ 關。card 內部 stopPropagation 不關
   useEffect(() => {
     if (state !== 'peeking') return;
-    const onDocClick = (e) => {
-      if (cardRef.current && cardRef.current.contains(e.target)) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (cardRef.current?.contains(e.target as Node)) return;
       dismissPreview();
     };
     // 用 setTimeout 確保 hover 觸發 preview 的同一輪 click 不會立即又關掉
@@ -119,7 +128,7 @@ function ArticlePreviewCard() {
     setLoadError(false);
     if (scrollerRef.current) scrollerRef.current.scrollTop = 0;
     getArticle(previewId)
-      .then((data) => { if (!cancelled) setArticle(data); })
+      .then((data) => { if (!cancelled) setArticle(data as unknown as Article); })
       .catch(() => { if (!cancelled) setLoadError(true); });
     return () => { cancelled = true; };
   }, [previewId]);
@@ -139,21 +148,19 @@ function ArticlePreviewCard() {
   }, [reportScrollProgress]);
 
   // ── commit 觸發：單純 navigate 到文章頁，不再做位置還原 ──
-  // 以前試過 ratio / element text matching / 比例對應，preview 跟 BlogPost 渲染差異
-  // 太大（contain-intrinsic-size / 欄寬 / 行高），找不到 100% 對的對應位置。
-  // 拔掉後 user 進文章就是從頂端開始 — 預覽歸預覽，閱讀歸閱讀，介面比較誠實。
   useEffect(() => {
     if (state !== 'committing' || !previewId) return;
     const targetUrl = `/blog/${previewId}`;
+    // eslint-disable-next-line @eslint-react/dom-no-flush-sync -- 刻意同步 commit，讓 View Transition API 接手 morph
     flushSync(() => {
       reset();
-      navigate(targetUrl, { state: { fromPreview: true } });
+      void navigate(targetUrl, { state: { fromPreview: true } });
     });
   }, [state, previewId, navigate, reset]);
 
   // ── 卡片定位 — 統一用 peek style，commit 改靠 exit 動畫消除（不再 morph 撐大） ──
   // 注意：translateX(-50%) 必須走 framer-motion style.x，不可用 transform 字串（會被覆蓋）
-  const peekStyle = {
+  const peekStyle: MotionStyle = {
     position: 'fixed',
     top: '12vh',
     left: '50%',
@@ -189,7 +196,7 @@ function ArticlePreviewCard() {
         onMouseEnter={() => { if (state === 'peeking') cancelClose(); }}
         onMouseLeave={() => { if (state === 'peeking') scheduleClose(); }}
         role="dialog"
-        aria-label={article?.title || '文章預覽'}
+        aria-label={article?.title ?? '文章預覽'}
       >
         <div
           ref={scrollerRef}
@@ -226,11 +233,11 @@ function ArticlePreviewCard() {
                   remarkPlugins={[remarkGfm, remarkAlert]}
                   rehypePlugins={[rehypeRaw]}
                   components={{
-                    code: PreviewCodeBlock,
-                    img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
+                    code: PreviewCodeBlock as Components['code'],
+                    img: ({ node: _node, src, alt, ...rest }) => <BlogImage src={typeof src === 'string' ? src : undefined} alt={alt} {...rest} />,
                   }}
                 >
-                  {article.content || ''}
+                  {article.content ?? ''}
                 </ReactMarkdown>
               </article>
             </div>

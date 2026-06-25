@@ -15,9 +15,9 @@ import { prefetchPost } from '../../lib/prefetchPost';
  *   const previewLink = usePreviewLink(post.id);
  *   <Link to={`/blog/${post.id}`} {...previewLink.bind} viewTransition>...</Link>
  */
-export function usePreviewLink(postId, options = {}) {
+export function usePreviewLink(postId: string, options: { lang?: string } = {}) {
   const { lang } = options;
-  const anchorRef = useRef(null);
+  const anchorRef = useRef<HTMLAnchorElement>(null);
   const { isHoverCapable, requestPreview, cancelPendingHover, scheduleClose, dismissPreview } = useArticlePreview();
 
   const handleMouseEnter = useCallback(() => {

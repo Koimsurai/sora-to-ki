@@ -8,15 +8,33 @@ import Comments from './Comments';
 import SEOHead from './SEOHead';
 import NebulaBackground from './NebulaBackground';
 import KoimLoader from './KoimLoader';
+import type { Variants } from 'framer-motion';
 import { prefetchPost } from '../lib/prefetchPost';
 import './Blog.css';
+
+interface Post {
+  id: string | number;
+  title: string;
+  content?: string;
+  created_at?: string;
+  category?: string;
+  tags?: (string | { name?: string })[] | string;
+  likes?: number;
+  layout_type?: string;
+  allow_comments?: number | boolean;
+  view_count?: number;
+}
+type Tag = string | { name: string; post_count?: number };
+interface Category { name: string; post_count?: number }
+interface PostGroup { year: number; month: number; label: string; posts: Post[] }
+interface HeatmapCell { date: Date; count: number; level: number }
 
 /* ════════════════════════════════════════════════
    FloatingComments — 浮動留言視窗 (Portal)
    ════════════════════════════════════════════════ */
-const FloatingComments = ({ postId, postTitle, allowComments = true, onClose }) => {
+const FloatingComments = ({ postId, postTitle, allowComments = true, onClose }: { postId: string | number; postTitle: string; allowComments?: boolean; onClose: () => void }) => {
   useEffect(() => {
-    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handleEsc);
     // 防止背景滾動
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -64,7 +82,7 @@ const FloatingComments = ({ postId, postTitle, allowComments = true, onClose }) 
 /* ════════════════════════════════════════════════
    動畫 variants
    ════════════════════════════════════════════════ */
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
   visible: (i = 0) => ({
     opacity: 1,
@@ -73,7 +91,7 @@ const fadeUp = {
   }),
 };
 
-const stagger = {
+const stagger: Variants = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.07 } },
 };
@@ -82,30 +100,30 @@ const stagger = {
    NoteCard — 支援 record / column 兩種樣板
    ════════════════════════════════════════════════ */
 
-const NoteCard = React.memo(({ post, index, onOpenComments }) => {
+const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; index: number; onOpenComments?: (postId: string | number, postTitle: string, allowComments?: number | boolean) => void }) => {
   const { t } = useTranslation();
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes || 0);
+  const [likeCount, setLikeCount] = useState(post.likes ?? 0);
   const [shareToast, setShareToast] = useState(false);
   const isColumn = post.layout_type === 'column';
 
   useEffect(() => {
-    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+    const likedPosts = JSON.parse(localStorage.getItem('likedPosts') ?? '[]') as unknown[];
     if (likedPosts.includes(post.id)) setLiked(true);
   }, [post.id]);
 
-  const handleLike = async (e) => {
+  const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const newState = !liked;
     try {
       const endpoint = newState ? 'like' : 'unlike';
       const res = await fetch(`/api/posts/${post.id}/${endpoint}`, { method: 'POST' });
-      const data = await res.json();
+      const data = await res.json() as { likes?: number };
       if (res.ok) {
         setLiked(newState);
-        setLikeCount(data.likes);
-        const stored = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+        setLikeCount(data.likes ?? 0);
+        const stored = JSON.parse(localStorage.getItem('likedPosts') ?? '[]') as unknown[];
         if (newState) {
           if (!stored.includes(post.id)) localStorage.setItem('likedPosts', JSON.stringify([...stored, post.id]));
         } else {
@@ -117,7 +135,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
     }
   };
 
-  const handleShare = async (e) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const shareUrl = `${window.location.origin}/blog/${post.id}`;
@@ -127,20 +145,20 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
         await navigator.share(shareData);
       } catch (err) {
         // 使用者取消分享，不做處理
-        if (err.name !== 'AbortError') {
-          navigator.clipboard.writeText(shareUrl);
+        if (!(err instanceof Error && err.name === 'AbortError')) {
+          void navigator.clipboard.writeText(shareUrl);
           setShareToast(true);
           setTimeout(() => setShareToast(false), 2000);
         }
       }
     } else {
-      navigator.clipboard.writeText(shareUrl);
+      void navigator.clipboard.writeText(shareUrl);
       setShareToast(true);
       setTimeout(() => setShareToast(false), 2000);
     }
   };
 
-  const handleComment = (e) => {
+  const handleComment = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     onOpenComments?.(post.id, post.title, post.allow_comments);
@@ -150,7 +168,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
   const excerpt = post.content
     ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
     : '';
-  const dateObj = new Date(post.created_at);
+  const dateObj = new Date(post.created_at ?? '');
   const dayStr = dateObj.getDate();
   const monthStr = dateObj.toLocaleDateString('zh-TW', { month: 'short' });
   const fullDate = dateObj.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -204,7 +222,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
         {post.tags && post.tags.length > 0 && (
           <div className="note-tags">
             {(Array.isArray(post.tags) ? post.tags : post.tags.split(',')).slice(0, 4).map((tag, i) => {
-              const name = typeof tag === 'string' ? tag : (tag.name || tag);
+              const name = typeof tag === 'string' ? tag : (tag.name ?? '');
               return <span key={i} className="note-tag">#{name}</span>;
             })}
           </div>
@@ -212,7 +230,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
 
         {/* 底部互動列 */}
         <div className="note-actions">
-          <button className={`note-action-btn ${liked ? 'liked' : ''}`} onClick={handleLike}>
+          <button className={`note-action-btn ${liked ? 'liked' : ''}`} onClick={(e) => { void handleLike(e); }}>
             {liked ? <FaHeart /> : <FaRegHeart />}
             <span>{likeCount > 0 ? likeCount : ''}</span>
           </button>
@@ -220,11 +238,11 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
             <FaRegComment />
             <span>{t('blog.comment')}</span>
           </button>
-          <button className={`note-action-btn${shareToast ? ' shared' : ''}`} onClick={handleShare}>
+          <button className={`note-action-btn${shareToast ? ' shared' : ''}`} onClick={(e) => { void handleShare(e); }}>
             <FaShareAlt />
             <span>{shareToast ? t('blog.shareCopied') : t('blog.share')}</span>
           </button>
-          {post.view_count > 0 && (
+          {(post.view_count ?? 0) > 0 && (
             <span className="note-views">
               <FaRegEye />
               {post.view_count}
@@ -239,7 +257,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }) => {
 /* ════════════════════════════════════════════════
    ActivityHeatmap — 寫作活動熱圖（過去 26 週）
    ════════════════════════════════════════════════ */
-const ActivityHeatmap = React.memo(({ posts }) => {
+const ActivityHeatmap = React.memo(({ posts }: { posts: Post[] }) => {
   const { t } = useTranslation();
   const cells = useMemo(() => {
     const WEEKS = 26;
@@ -253,21 +271,21 @@ const ActivityHeatmap = React.memo(({ posts }) => {
     startDay.setDate(lastDay.getDate() - WEEKS * 7 + 1);
 
     // 統計每日發文數
-    const counts = new Map();
+    const counts = new Map<string, number>();
     posts.forEach(p => {
       if (!p.created_at) return;
       const d = new Date(p.created_at);
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      counts.set(key, (counts.get(key) || 0) + 1);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
     });
 
-    const grid = [];
+    const grid: HeatmapCell[][] = [];
     const cur = new Date(startDay);
     for (let w = 0; w < WEEKS; w++) {
-      const col = [];
+      const col: HeatmapCell[] = [];
       for (let d = 0; d < 7; d++) {
         const key = `${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`;
-        const count = counts.get(key) || 0;
+        const count = counts.get(key) ?? 0;
         const isFuture = cur > today;
         col.push({
           date: new Date(cur),
@@ -282,7 +300,7 @@ const ActivityHeatmap = React.memo(({ posts }) => {
   }, [posts]);
 
   const totalPosts = posts.length;
-  const formatDate = (d) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short', day: 'numeric' });
+  const formatDate = (d: Date) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short', day: 'numeric' });
 
   return (
     <div className="activity-heatmap">
@@ -322,21 +340,21 @@ ActivityHeatmap.displayName = 'ActivityHeatmap';
    ════════════════════════════════════════════════ */
 function Blog() {
   const { t } = useTranslation();
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
-  const [allTags, setAllTags] = useState([]);
-  const [allCategories, setAllCategories] = useState([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [tagsExpanded, setTagsExpanded] = useState(false);
-  const [floatingComment, setFloatingComment] = useState(null); // { postId, postTitle }
+  const [floatingComment, setFloatingComment] = useState<{ postId: string; postTitle: string; allowComments: boolean } | null>(null);
   const isInitialLoad = React.useRef(true);
   const [searchParams] = useSearchParams();
 
-  const handleOpenComments = useCallback((postId, postTitle, allowComments) => {
+  const handleOpenComments = useCallback((postId: string | number, postTitle: string, allowComments?: number | boolean) => {
     setFloatingComment({
       postId: String(postId),
       postTitle,
@@ -358,10 +376,10 @@ function Blog() {
     } else {
       window.scrollTo(0, 0);
     }
-    fetchPosts();
+    void fetchPosts();
     if (isInitialLoad.current) {
-      fetchTags();
-      fetchCategories();
+      void fetchTags();
+      void fetchCategories();
       isInitialLoad.current = false;
     }
   }, [sortBy]);
@@ -372,12 +390,12 @@ function Blog() {
       if (!posts.length) setLoading(true);
       const res = await fetch(`/api/posts?sortBy=${sortBy}&limit=100`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = await res.json() as { posts?: Post[] };
       if (data.posts && Array.isArray(data.posts)) {
-        setPosts(data.posts.map(p => ({ ...p, tags: p.tags || [] })));
+        setPosts(data.posts.map(p => ({ ...p, tags: p.tags ?? [] })));
       }
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : '載入失敗');
     } finally {
       setLoading(false);
     }
@@ -386,7 +404,7 @@ function Blog() {
   const fetchTags = async () => {
     try {
       const res = await fetch('/api/tags');
-      const data = await res.json();
+      const data = await res.json() as { tags?: Tag[] };
       if (data.tags) setAllTags(data.tags);
     } catch (err) { console.error(err); }
   };
@@ -394,7 +412,7 @@ function Blog() {
   const fetchCategories = async () => {
     try {
       const res = await fetch('/api/categories');
-      const data = await res.json();
+      const data = await res.json() as { categories?: Category[] };
       if (data.categories) setAllCategories(data.categories);
     } catch (err) { console.error(err); }
   };
@@ -402,7 +420,7 @@ function Blog() {
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
       const matchSearch = !searchTerm || post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchTerm.toLowerCase());
+        (post.content?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
       const matchTag = !selectedTag || (Array.isArray(post.tags)
         ? post.tags.includes(selectedTag)
         : post.tags?.split(',').includes(selectedTag));
@@ -413,9 +431,9 @@ function Blog() {
 
   // 按年月分組
   const groupedPosts = useMemo(() => {
-    const groups = {};
+    const groups: Record<string, PostGroup> = {};
     filteredPosts.forEach(post => {
-      const d = new Date(post.created_at);
+      const d = new Date(post.created_at ?? '');
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       if (!groups[key]) {
         groups[key] = {
@@ -528,7 +546,7 @@ function Blog() {
               <span className="stats-sep">｜</span>
               <span>標籤 <em>{allTags.length}</em></span>
               <span className="stats-sep">｜</span>
-              <span>閱讀 <em>{filteredPosts.reduce((sum, p) => sum + (p.view_count || 0), 0)}</em></span>
+              <span>閱讀 <em>{filteredPosts.reduce((sum, p) => sum + (p.view_count ?? 0), 0)}</em></span>
             </div>
           </motion.div>
 
@@ -601,7 +619,7 @@ function Blog() {
                 >
                   全部
                 </button>
-                {allCategories.filter(cat => cat.post_count > 0).map(cat => (
+                {allCategories.filter(cat => (cat.post_count ?? 0) > 0).map(cat => (
                   <button
                     key={cat.name}
                     className={`category-item ${selectedCategory === cat.name ? 'active' : ''}`}
@@ -664,7 +682,7 @@ function Blog() {
                     >
                       <span className="featured-text">{p.title}</span>
                       <span className="featured-date">
-                        {new Date(p.created_at).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
+                        {new Date(p.created_at ?? '').toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
                       </span>
                     </Link>
                   </li>

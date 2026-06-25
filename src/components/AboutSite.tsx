@@ -178,8 +178,8 @@ const ABOUT_SITE_BY_LANG = {
 
 function AboutSite() {
   const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage || 'zh-TW';
-  const c = ABOUT_SITE_BY_LANG[lang] || ABOUT_SITE_BY_LANG['zh-TW'];
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
+  const c = ABOUT_SITE_BY_LANG[lang as keyof typeof ABOUT_SITE_BY_LANG] ?? ABOUT_SITE_BY_LANG['zh-TW'];
 
   return (
     <InfoPage

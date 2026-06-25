@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 
 /**
  * Article Preview 全域狀態管理
@@ -15,21 +15,38 @@ import { createContext, useContext, useState, useCallback, useRef, useEffect } f
  *   - 行動裝置（無 hover）→ isHoverCapable=false，跳過 preview 整套邏輯
  */
 
-const ArticlePreviewContext = createContext(null);
+type PreviewState = 'idle' | 'peeking' | 'committing' | 'committed';
+
+interface ArticlePreviewValue {
+  state: PreviewState;
+  previewId: string | null;
+  isHoverCapable: boolean;
+  requestPreview: (id: string) => void;
+  cancelPendingHover: () => void;
+  scheduleClose: (delay?: number) => void;
+  cancelClose: () => void;
+  dismissPreview: () => void;
+  reportScrollProgress: (progress: number) => void;
+  commit: () => void;
+  markCommitted: () => void;
+  reset: () => void;
+}
+
+const ArticlePreviewContext = createContext<ArticlePreviewValue | null>(null);
 
 const HOVER_DELAY_MS = 200;
 const LEAVE_GRACE_MS = 400; // 移出 anchor / card 後，多久收回 preview
 
-export function ArticlePreviewProvider({ children }) {
-  const [state, setState] = useState('idle');
-  const [previewId, setPreviewId] = useState(null);
+export function ArticlePreviewProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<PreviewState>('idle');
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
-  const hoverTimerRef = useRef(null);
-  const closeTimerRef = useRef(null);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollProgressRef = useRef(0);
 
   const isHoverCapable = typeof window !== 'undefined'
-    && window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
+    && !!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches;
 
   const cancelPendingHover = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -58,7 +75,7 @@ export function ArticlePreviewProvider({ children }) {
   }, [cancelClose, cancelPendingHover]);
 
   // 觸發 preview hover（延遲 200ms，避免滑過誤觸）
-  const requestPreview = useCallback((id) => {
+  const requestPreview = useCallback((id: string) => {
     if (!isHoverCapable || !id) return;
     cancelPendingHover();
     cancelClose(); // 同時取消上一個 anchor 的 close timer
@@ -80,7 +97,7 @@ export function ArticlePreviewProvider({ children }) {
 
   // 報告 scroll 進度 — 純紀錄，不再自動觸發 commit
   // （早期 scroll 到 60% auto-commit，現在 commit 只透過「進入文章 →」按鈕）
-  const reportScrollProgress = useCallback((progress) => {
+  const reportScrollProgress = useCallback((progress: number) => {
     scrollProgressRef.current = progress;
   }, []);
 
@@ -89,7 +106,7 @@ export function ArticlePreviewProvider({ children }) {
     setState((s) => (s === 'peeking' ? 'committing' : s));
   }, []);
 
-  const markCommitted = useCallback(() => setState('committed'), []);
+  const markCommitted = useCallback(() => { setState('committed'); }, []);
 
   const reset = useCallback(() => {
     cancelPendingHover();
@@ -102,9 +119,9 @@ export function ArticlePreviewProvider({ children }) {
   // Esc → 關
   useEffect(() => {
     if (state === 'idle') return;
-    const onKey = (e) => { if (e.key === 'Escape') dismissPreview(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dismissPreview(); };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); };
   }, [state, dismissPreview]);
 
   useEffect(() => () => {
@@ -112,7 +129,7 @@ export function ArticlePreviewProvider({ children }) {
     cancelClose();
   }, [cancelPendingHover, cancelClose]);
 
-  const value = {
+  const value: ArticlePreviewValue = {
     state,
     previewId,
     isHoverCapable,
@@ -134,22 +151,23 @@ export function ArticlePreviewProvider({ children }) {
   );
 }
 
-export function useArticlePreview() {
+export function useArticlePreview(): ArticlePreviewValue {
   const ctx = useContext(ArticlePreviewContext);
   if (!ctx) {
+    const noop = () => { /* default no-op when used outside provider */ };
     return {
       state: 'idle',
       previewId: null,
       isHoverCapable: false,
-      requestPreview: () => {},
-      cancelPendingHover: () => {},
-      scheduleClose: () => {},
-      cancelClose: () => {},
-      dismissPreview: () => {},
-      reportScrollProgress: () => {},
-      commit: () => {},
-      markCommitted: () => {},
-      reset: () => {},
+      requestPreview: noop,
+      cancelPendingHover: noop,
+      scheduleClose: noop,
+      cancelClose: noop,
+      dismissPreview: noop,
+      reportScrollProgress: noop,
+      commit: noop,
+      markCommitted: noop,
+      reset: noop,
     };
   }
   return ctx;

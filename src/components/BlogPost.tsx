@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from './KoimLoader';
@@ -25,13 +26,66 @@ import { BlogImage } from './ImageLightbox';
 import { usePreviewLink } from './article-preview/usePreviewLink';
 import './BlogPost.css';
 import SignatureSVG from './SignatureSVG';
+import type { IconType } from 'react-icons';
+
+type PostTag = string | { name?: string };
+interface Post {
+  id: string | number;
+  title: string;
+  content?: string;
+  created_at?: string;
+  updated_at?: string;
+  category?: string;
+  status?: string;
+  series_order?: string | number;
+  series_name?: string;
+  likes?: number;
+  locale?: string;
+  excerpt?: string;
+  cover?: string;
+  tags?: PostTag[] | string;
+  date?: string;
+  author?: string;
+  view_count?: number;
+  source_language?: string;
+  available_locales?: string[];
+  layout_type?: string;
+  allow_comments?: number | boolean;
+  message?: string;
+}
+
+interface CategoryInfo {
+  name?: string;
+  short_description?: string;
+  description?: string;
+  post_count?: number;
+  updated_at?: string;
+}
+
+interface Heading { id: string; text: string; level: number }
+
+interface LinkMeta {
+  type: string;
+  id?: string;
+  icon?: IconType;
+  color?: string;
+  label?: string;
+  thumb?: string | null;
+  vid?: string;
+  desc?: string;
+  embedUrl?: string | null;
+  bvid?: string;
+  path?: string;
+}
+
+interface MermaidOption { value: string; label: string; icon?: string }
 
 /**
  * 「sidebar 文章連結」附帶 hover preview 行為
  * 因為要在 map iteration 內呼叫 hook，必須抽成子元件
  */
-const PreviewablePostLink = React.memo(({ post, className, children, viewTransition }) => {
-  const { bind } = usePreviewLink(post.id);
+const PreviewablePostLink = React.memo(({ post, className, children, viewTransition }: { post: Post; className?: string; children?: React.ReactNode; viewTransition?: boolean }) => {
+  const { bind } = usePreviewLink(String(post.id));
   return (
     <Link
       to={'/blog/' + post.id}
@@ -121,24 +175,27 @@ const DARK_THEME_VARS = {
   fontSize: '14px',
 };
 
-function parseMermaidFrontmatter(code) {
+function parseMermaidFrontmatter(code: string): { config: Record<string, string | Record<string, string>>; body: string } {
   const trimmed = code.trim();
-  const fm = trimmed.match(/^---\s*\n([\s\S]*?)\n---\s*\n?/);
+  const fm = /^---\s*\n([\s\S]*?)\n---\s*\n?/.exec(trimmed);
   if (!fm) return { config: {}, body: trimmed };
   const yamlBlock = fm[1];
-  const config = {};
-  let current = null;
+  const config: Record<string, string | Record<string, string>> = {};
+  let current: string | null = null;
   for (const line of yamlBlock.split('\n')) {
     const indent = line.search(/\S/);
     const trimLine = line.trim();
     if (!trimLine || trimLine.startsWith('#')) continue;
-    const kv = trimLine.match(/^(\w[\w-]*):\s*(.*)/);
+    const kv = /^(\w[\w-]*):\s*(.*)/.exec(trimLine);
     if (kv) {
       if (indent === 0 || indent === 2) {
         if (kv[2]) { config[kv[1]] = kv[2]; current = null; }
         else { config[kv[1]] = {}; current = kv[1]; }
-      } else if (current && typeof config[current] === 'object') {
-        config[current][kv[1]] = kv[2];
+      } else if (current) {
+        const cur = config[current];
+        if (cur && typeof cur === 'object') {
+          cur[kv[1]] = kv[2];
+        }
       }
     }
   }
@@ -146,8 +203,8 @@ function parseMermaidFrontmatter(code) {
 }
 
 /* ── MermaidDiagram (shared renderer used in inline + fullscreen) ── */
-const MermaidDiagram = ({ code, theme, look, layout, direction, onError }) => {
-  const containerRef = useRef(null);
+const MermaidDiagram = ({ code, theme, look, layout, direction, onError }: { code: string; theme: string; look: string; layout: string; direction: string; onError?: (err: string | null) => void }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(0);
 
   const parsed = useMemo(() => parseMermaidFrontmatter(code), [code]);
@@ -159,7 +216,7 @@ const MermaidDiagram = ({ code, theme, look, layout, direction, onError }) => {
     let body = parsed.body;
     body = body.replace(/((?:flowchart|graph)\s+)(?:TB|BT|LR|RL)/, `$1${direction}`);
 
-    let themeVars = theme === 'dark' ? { ...DARK_THEME_VARS } : {};
+    const themeVars: Record<string, string> = theme === 'dark' ? { ...DARK_THEME_VARS } : {};
     if (look === 'neo' && themeVars.clusterBkg) {
       delete themeVars.clusterBkg;
       delete themeVars.clusterBorder;
@@ -175,7 +232,7 @@ const MermaidDiagram = ({ code, theme, look, layout, direction, onError }) => {
           themeVariables: themeVars,
           flowchart: { curve: 'basis', useMaxWidth: false },
           securityLevel: 'loose',
-        });
+        } as Parameters<typeof mermaid.initialize>[0]);
         const { svg } = await mermaid.render(id, body);
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
@@ -183,25 +240,25 @@ const MermaidDiagram = ({ code, theme, look, layout, direction, onError }) => {
         }
       } catch (e) {
         console.warn('Mermaid render error:', e);
-        onError?.(e.message || 'Mermaid 渲染失敗');
+        onError?.(e instanceof Error ? e.message : 'Mermaid 渲染失敗');
         const errNode = document.getElementById('d' + id);
         if (errNode) errNode.remove();
       }
     };
-    render();
+    void render();
   }, [code, theme, look, layout, direction, parsed.body]);
 
   return <div className="mermaid-render" ref={containerRef} />;
 };
 
 /* ── Toolbar icon menu ── */
-const ToolbarMenu = ({ icon, label, value, options, onChange }) => {
+const ToolbarMenu = ({ icon, label, value, options, onChange }: { icon: React.ReactNode; label: string; value: string; options: MermaidOption[]; onChange: (value: string) => void }) => {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const handler = (e: PointerEvent) => { if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
   }, [open]);
@@ -235,7 +292,7 @@ const ToolbarMenu = ({ icon, label, value, options, onChange }) => {
 };
 
 /* ── Fullscreen Modal ── */
-const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLook, onLayout, onDirection, onClose }) => {
+const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLook, onLayout, onDirection, onClose }: { code: string; theme: string; look: string; layout: string; direction: string; onTheme: (v: string) => void; onLook: (v: string) => void; onLayout: (v: string) => void; onDirection: (v: string) => void; onClose: () => void }) => {
   /* Lock scroll SYNCHRONOUSLY before paint — useLayoutEffect runs before the browser paints */
   useLayoutEffect(() => {
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
@@ -245,7 +302,7 @@ const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLo
     document.body.style.paddingRight = `${scrollbarWidth}px`;
     // 強制保持原位置（防止 overflow:hidden 改變 scroll position）
     window.scrollTo(0, scrollY);
-    const esc = (e) => { if (e.key === 'Escape') onClose(); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', esc);
     return () => {
       document.documentElement.style.overflow = '';
@@ -258,7 +315,7 @@ const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);  // mount/unmount only — onClose is stable via useCallback
 
-  const [err, setErr] = useState(null);
+  const [err, setErr] = useState<string | null>(null);
 
   return ReactDOM.createPortal(
     <motion.div
@@ -322,16 +379,18 @@ const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLo
 };
 
 /* ── MermaidBlock (main entry) ── */
-const MermaidBlock = ({ code }) => {
-  const [error, setError] = useState(null);
+const MermaidBlock = ({ code }: { code: string }) => {
+  const [error, setError] = useState<string | null>(null);
   const [hovered, setHovered] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
 
   const parsed = useMemo(() => parseMermaidFrontmatter(code), [code]);
-  const initCfg = parsed.config.config || parsed.config;
-  const initLayout = (typeof initCfg === 'object' ? initCfg.layout : null) || 'dagre';
-  const initTheme = (typeof initCfg === 'object' ? initCfg.theme : null) || 'dark';
-  const dirMatch = parsed.body.match(/(?:flowchart|graph)\s+(TB|BT|LR|RL)/);
+  const initCfg = parsed.config.config ?? parsed.config;
+  const cfgStr = (key: string): string | null =>
+    (typeof initCfg === 'object' && typeof initCfg[key] === 'string') ? initCfg[key] : null;
+  const initLayout = cfgStr('layout') ?? 'dagre';
+  const initTheme = cfgStr('theme') ?? 'dark';
+  const dirMatch = /(?:flowchart|graph)\s+(TB|BT|LR|RL)/.exec(parsed.body);
   const initDir = dirMatch ? dirMatch[1] : 'TB';
 
   const [theme, setTheme] = useState(initTheme);
@@ -341,10 +400,10 @@ const MermaidBlock = ({ code }) => {
 
   /* Stable callbacks — 不會因 re-render 產生新參考，避免子元件 effect 被重新觸發 */
   const handleCloseFullscreen = useCallback(() => setFullscreen(false), []);
-  const handleSetTheme = useCallback((v) => setTheme(v), []);
-  const handleSetLook = useCallback((v) => setLook(v), []);
-  const handleSetLayout = useCallback((v) => setLayout(v), []);
-  const handleSetDirection = useCallback((v) => setDirection(v), []);
+  const handleSetTheme = useCallback((v: string) => setTheme(v), []);
+  const handleSetLook = useCallback((v: string) => setLook(v), []);
+  const handleSetLayout = useCallback((v: string) => setLayout(v), []);
+  const handleSetDirection = useCallback((v: string) => setDirection(v), []);
 
   if (error) {
     return (
@@ -415,11 +474,22 @@ const MermaidBlock = ({ code }) => {
 };
 
 /* ── helpers ── */
-const slugify = (text) =>
+const slugify = (text: string) =>
   text.toString().toLowerCase().trim()
     .replace(/\s+/g, '-')
     .replace(/[^\w\-\u4e00-\u9fa5]+/g, '')
     .replace(/--+/g, '-');
+
+/* \u5b89\u5168\u5730\u628a React children \u6524\u5e73\u6210\u7d14\u6587\u5b57\uff08\u907f\u514d String(obj) \u2192 [object Object]\uff09 */
+const nodeText = (node: React.ReactNode): string => {
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(nodeText).join('');
+  if (React.isValidElement(node)) {
+    const p = node.props as { children?: React.ReactNode };
+    return nodeText(p.children);
+  }
+  return '';
+};
 
 /* ── Font Options ── */
 const FONT_OPTIONS = [
@@ -430,14 +500,14 @@ const FONT_OPTIONS = [
 ];
 
 /* ── Link type detection ── */
-const getLinkMeta = (url) => {
+const getLinkMeta = (url: string): LinkMeta | null => {
   try {
     const u = new URL(url);
     const host = u.hostname.replace('www.', '');
     if (host.includes('youtube.com') || host.includes('youtu.be')) {
       let vid = '';
       if (host.includes('youtu.be')) vid = u.pathname.slice(1);
-      else vid = u.searchParams.get('v') || '';
+      else vid = u.searchParams.get('v') ?? '';
       return { type: 'youtube', icon: FaYoutube, color: '#ff0000', label: 'YouTube', thumb: vid ? 'https://img.youtube.com/vi/' + vid + '/mqdefault.jpg' : null, vid };
     }
     if (host.includes('github.com')) {
@@ -488,13 +558,13 @@ const getLinkMeta = (url) => {
     // Bilibili
     if (host.includes('bilibili.com') || host.includes('b23.tv')) {
       let bvid = '';
-      const bvMatch = u.pathname.match(/BV\w+/);
+      const bvMatch = /BV\w+/.exec(u.pathname);
       if (bvMatch) bvid = bvMatch[0];
       return { type: 'bilibili', icon: FaExternalLinkAlt, color: '#00A1D6', label: 'Bilibili', bvid };
     }
 
     // Internal Blog Link Detection — 含語系前綴（/en/blog/、/ko/blog/…）
-    const blogMatch = u.pathname.match(/^(?:\/(?:en|zh-cn|ja|ko))?\/blog\/([^/]+)$/);
+    const blogMatch = /^(?:\/(?:en|zh-cn|ja|ko))?\/blog\/([^/]+)$/.exec(u.pathname);
     if (host.includes('koimsurai.com') && blogMatch) {
       const id = blogMatch[1];
       if (id && id !== 'blog') return { type: 'internal', id };
@@ -518,16 +588,16 @@ const getLinkMeta = (url) => {
 /* ══════════════════════════
    InternalLinkCard — fetch and show preview
    ══════════════════════════ */
-export const InternalLinkCard = ({ id }) => {
-  const [post, setPost] = useState(null);
+export const InternalLinkCard = ({ id }: { id: string }) => {
+  const [post, setPost] = useState<Post | null>(null);
 
   useEffect(() => {
     fetch(`/api/posts/${id}`)
-      .then(r => r.ok ? r.json() : null)
+      .then(r => r.ok ? r.json() as Promise<Post> : null)
       .then(data => {
-        if (data && data.message === 'success') setPost(data);
+        if (data?.message === 'success') setPost(data);
       })
-      .catch(() => { });
+      .catch(() => { /* ignore */ });
   }, [id]);
 
   if (!post) return <a href={`/blog/${id}`} target="_blank" rel="noopener noreferrer">/blog/{id}</a>;
@@ -541,7 +611,7 @@ export const InternalLinkCard = ({ id }) => {
         </div>
         <div className="link-card-title">{post.title}</div>
         <div className="link-card-meta">
-          <span>{new Date(post.created_at).getFullYear()}</span>
+          <span>{new Date(post.created_at ?? '').getFullYear()}</span>
           {post.category && <> · <span>{post.category}</span></>}
         </div>
       </div>
@@ -552,13 +622,13 @@ export const InternalLinkCard = ({ id }) => {
 /* ══════════════════════════
    ThoughtPreviewCard — 引用一則碎念/思考
    ══════════════════════════ */
-export const ThoughtPreviewCard = ({ id }) => {
-  const [th, setTh] = useState(null);
+export const ThoughtPreviewCard = ({ id }: { id: string }) => {
+  const [th, setTh] = useState<{ content: string } | null>(null);
   useEffect(() => {
     fetch(`/api/thoughts/${id}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d && d.thought) setTh(d.thought); })
-      .catch(() => { });
+      .then((r) => (r.ok ? r.json() as Promise<{ thought?: { content: string } }> : null))
+      .then((d) => { if (d?.thought) setTh(d.thought); })
+      .catch(() => { /* ignore */ });
   }, [id]);
 
   if (!th) return <a href={`/thinking/${id}`} target="_blank" rel="noopener noreferrer">/thinking/{id}</a>;
@@ -581,16 +651,16 @@ export const ThoughtPreviewCard = ({ id }) => {
 /* ══════════════════════════
    LinkCard — rich link preview
    ══════════════════════════ */
-export const LinkCard = ({ href }) => {
+export const LinkCard = ({ href }: { href: string }) => {
   const meta = getLinkMeta(href);
   if (!meta) return <a href={href} target="_blank" rel="noopener noreferrer">{href}</a>;
 
   if (meta.type === 'internal') {
-    return <InternalLinkCard id={meta.id} />;
+    return <InternalLinkCard id={meta.id ?? ''} />;
   }
 
   if (meta.type === 'thought') {
-    return <ThoughtPreviewCard id={meta.id} />;
+    return <ThoughtPreviewCard id={meta.id ?? ''} />;
   }
 
   // Spotify embed
@@ -636,7 +706,7 @@ export const LinkCard = ({ href }) => {
   // Internal web page link
   if (meta.type === 'internal-page') {
     return (
-      <Link to={meta.path} className="link-card link-card-internal">
+      <Link to={meta.path ?? '/'} className="link-card link-card-internal">
         <div className="link-card-body">
           <div className="link-card-site">
             <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
@@ -659,10 +729,10 @@ export const LinkCard = ({ href }) => {
       )}
       <div className="link-card-body">
         <div className="link-card-site">
-          <Icon style={{ color: meta.color, fontSize: '1rem' }} />
+          {Icon && <Icon style={{ color: meta.color, fontSize: '1rem' }} />}
           <span>{meta.label}</span>
         </div>
-        <div className="link-card-url">{meta.desc || href}</div>
+        <div className="link-card-url">{meta.desc ?? href}</div>
       </div>
     </a>
   );
@@ -671,13 +741,13 @@ export const LinkCard = ({ href }) => {
 /* ══════════════════════════
    CodeBlock
    ══════════════════════════ */
-const CodeBlock = ({ node: _node, inline, className, children, ...props }) => {
+const CodeBlock = ({ node: _node, inline, className, children, ...props }: { node?: unknown; inline?: boolean; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) => {
   const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
-  const [highlighted, setHighlighted] = useState(null);
-  const match = /language-(\w+)/.exec(className || '');
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const match = /language-(\w+)/.exec(className ?? '');
   const lang = match ? match[1] : 'text';
-  const codeText = String(children).replace(/\n$/, '');
+  const codeText = nodeText(children).replace(/\n$/, '');
 
   // 自動偵測 mermaid 圖表：有 language tag 或內容以 mermaid 關鍵字開頭
   const isMermaid = lang === 'mermaid' || (
@@ -689,7 +759,7 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }) => {
   useEffect(() => {
     if (inline || isMermaid || !match) return;
     let cancelled = false;
-    const idle = (cb) => (window.requestIdleCallback ? window.requestIdleCallback(cb, { timeout: 1500 }) : setTimeout(cb, 80));
+    const idle = (cb: () => void) => (window.requestIdleCallback ? window.requestIdleCallback(cb, { timeout: 1500 }) : setTimeout(cb, 80));
     idle(() => {
       highlightCode(codeText, lang).then((html) => {
         if (!cancelled) setHighlighted(html);
@@ -703,7 +773,7 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }) => {
   }
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(codeText).then(() => {
+    void navigator.clipboard.writeText(codeText).then(() => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     });
@@ -732,35 +802,38 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }) => {
 /* ══════════════════════════
    Custom paragraph — detect standalone link lines for LinkCard
    ══════════════════════════ */
-const CustomParagraph = ({ children, node: _node, ...props }) => {
+const CustomParagraph = ({ children, node: _node, ...props }: { children?: React.ReactNode; node?: unknown } & React.HTMLAttributes<HTMLParagraphElement>) => {
   const childArray = React.Children.toArray(children);
 
-  const extractFirstUrlFromText = (text) => {
+  const extractFirstUrlFromText = (text: string | null | undefined) => {
     if (!text) return null;
     // Capture URL while trimming common trailing wrappers like ")" or "]".
-    const match = text.match(/https?:\/\/[^\s<>)\]]+/i);
+    const match = /https?:\/\/[^\s<>)\]]+/i.exec(text);
     return match ? match[0] : null;
   };
 
   // 遞迴取得所有子文字內容
-  const getText = (node) => {
+  const getText = (node: React.ReactNode): string => {
     if (typeof node === 'string') return node;
     if (Array.isArray(node)) return node.map(getText).join('');
-    if (node?.props?.children) return getText(node.props.children);
+    if (React.isValidElement(node)) {
+      const p = node.props as { children?: React.ReactNode };
+      if (p.children) return getText(p.children);
+    }
     return '';
   };
 
   // 從 children 中找出所有 <a> 元素
-  const findLinks = (arr) => {
-    const links = [];
+  const findLinks = (arr: React.ReactNode[]): React.ReactElement[] => {
+    const links: React.ReactElement[] = [];
     arr.forEach(child => {
-      if (child?.props?.href) links.push(child);
+      if (React.isValidElement(child) && (child.props as { href?: string }).href) links.push(child);
     });
     return links;
   };
 
   // 可嵌入的連結類型
-  const isEmbeddableLink = (href) => {
+  const isEmbeddableLink = (href: string) => {
     try {
       const u = new URL(href);
       const host = u.hostname.replace('www.', '');
@@ -794,9 +867,10 @@ const CustomParagraph = ({ children, node: _node, ...props }) => {
     }
 
     // ReactMarkdown <a> 元素（remarkGfm autolink 或 markdown 連結）
-    if (child?.props?.href) {
-      const href = child.props.href;
-      const text = getText(child.props.children).trim();
+    if (React.isValidElement(child) && (child.props as { href?: string }).href) {
+      const cprops = child.props as { href: string; children?: React.ReactNode };
+      const href = cprops.href;
+      const text = getText(cprops.children).trim();
       // Allow cards for embeddable links even when markdown link text is custom.
       if (isEmbeddableLink(href) || text === href || text === '' || href.includes(text) || text.includes(href)) {
         return <LinkCard href={href} />;
@@ -807,10 +881,10 @@ const CustomParagraph = ({ children, node: _node, ...props }) => {
   // 多子元素 — 檢查是否包含可嵌入的連結（如「【標題】 url」格式）
   if (childArray.length >= 2) {
     const links = findLinks(childArray);
-    const embeddableLink = links.find(link => isEmbeddableLink(link.props.href));
+    const embeddableLink = links.find(link => isEmbeddableLink((link.props as { href?: string }).href ?? ''));
 
     if (embeddableLink) {
-      const href = embeddableLink.props.href;
+      const href = (embeddableLink.props as { href: string }).href;
       // 取得非連結部分的文字
       const textParts = childArray.filter(c => c !== embeddableLink);
       const hasText = textParts.some(c => {
@@ -838,8 +912,8 @@ const CustomParagraph = ({ children, node: _node, ...props }) => {
 /* ══════════════════════════
    CategoryTooltipTrigger — hover 顯示分類 tooltip (Portal 到 body)
    ══════════════════════════ */
-const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnter, onLeave, linkClassName, compact = false }) => {
-  const triggerRef = useRef(null);
+const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnter, onLeave, linkClassName, compact = false }: { postCategory: string; categoryInfo: CategoryInfo | null; showTooltip: boolean; onEnter: () => void; onLeave: () => void; linkClassName?: string; compact?: boolean }) => {
+  const triggerRef = useRef<HTMLSpanElement>(null);
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
@@ -861,7 +935,7 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
     >
       <Link
         to={'/blog?category=' + encodeURIComponent(postCategory)}
-        className={linkClassName || 'text-sm text-white hover:text-purple-400 transition-colors font-semibold'}
+        className={linkClassName ?? 'text-sm text-white hover:text-purple-400 transition-colors font-semibold'}
       >
         {postCategory}
       </Link>
@@ -899,11 +973,11 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
    ReactionBar — Emoji 反應列
    ══════════════════════════ */
 const REACTIONS = ['👍', '❤️', '🎉', '🚀', '🤔', '😂'];
-const Reactions = React.memo(({ postId }) => {
-  const [counts, setCounts] = useState({});
+const Reactions = React.memo(({ postId }: { postId: string | number }) => {
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [mine, setMine] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem(`reactions:${postId}`) || '[]')); }
-    catch { return new Set(); }
+    try { return new Set<string>(JSON.parse(localStorage.getItem(`reactions:${postId}`) ?? '[]') as string[]); }
+    catch { return new Set<string>(); }
   });
 
   useEffect(() => {
@@ -911,14 +985,14 @@ const Reactions = React.memo(({ postId }) => {
     fetch(`/api/posts/${postId}/reactions`)
       .then(r => r.json())
       .then(data => {
-        const map = {};
-        (data.reactions || []).forEach(r => { map[r.emoji] = r.count; });
+        const map: Record<string, number> = {};
+        ((data as { reactions?: { emoji: string; count: number }[] }).reactions ?? []).forEach(r => { map[r.emoji] = r.count; });
         setCounts(map);
       })
-      .catch(() => {});
+      .catch(() => { /* ignore */ });
   }, [postId]);
 
-  const toggle = useCallback((emoji) => {
+  const toggle = useCallback((emoji: string) => {
     const has = mine.has(emoji);
     const delta = has ? -1 : 1;
     // optimistic
@@ -933,9 +1007,10 @@ const Reactions = React.memo(({ postId }) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ emoji, delta }),
-    }).then(r => r.json()).then(data => {
-      if (typeof data?.count === 'number') {
-        setCounts(c => ({ ...c, [emoji]: data.count }));
+    }).then(r => r.json() as Promise<{ count?: number }>).then(data => {
+      const count = data.count;
+      if (typeof count === 'number') {
+        setCounts(c => ({ ...c, [emoji]: count }));
       }
     }).catch(() => { /* 失敗就保持 optimistic 結果 */ });
   }, [mine, postId]);
@@ -967,13 +1042,13 @@ Reactions.displayName = 'Reactions';
 /* ══════════════════════════
    SeriesNav — 系列文導覽（若文章屬於某系列）
    ══════════════════════════ */
-const SeriesNav = React.memo(({ seriesName, currentId }) => {
-  const [posts, setPosts] = useState([]);
+const SeriesNav = React.memo(({ seriesName, currentId }: { seriesName: string; currentId: string | number }) => {
+  const [posts, setPosts] = useState<Post[]>([]);
   useEffect(() => {
     if (!seriesName) return;
     fetch(`/api/series/${encodeURIComponent(seriesName)}`)
       .then(r => r.json())
-      .then(data => setPosts(data.posts || []))
+      .then(data => setPosts((data as { posts?: Post[] }).posts ?? []))
       .catch(() => setPosts([]));
   }, [seriesName]);
   if (!seriesName || posts.length === 0) return null;
@@ -1010,17 +1085,17 @@ SeriesNav.displayName = 'SeriesNav';
 /* ══════════════════════════
    PrevNextNav — 文章底部上/下一篇導覽
    ══════════════════════════ */
-const PrevNextNav = React.memo(({ currentId }) => {
-  const [prev, setPrev] = useState(null);
-  const [next, setNext] = useState(null);
+const PrevNextNav = React.memo(({ currentId }: { currentId: string | number }) => {
+  const [prev, setPrev] = useState<Post | null>(null);
+  const [next, setNext] = useState<Post | null>(null);
 
   useEffect(() => {
     fetch('/api/posts?limit=200')
-      .then(r => r.json())
+      .then(r => r.json() as Promise<Post[] | { posts?: Post[] }>)
       .then(data => {
-        const posts = Array.isArray(data) ? data : (data.posts || []);
+        const posts: Post[] = Array.isArray(data) ? data : (data.posts ?? []);
         const published = posts.filter(p => p.status === 'published' || !p.status);
-        const sorted = [...published].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        const sorted = [...published].sort((a, b) => new Date(a.created_at ?? '').getTime() - new Date(b.created_at ?? '').getTime());
         const idx = sorted.findIndex(p => String(p.id) === String(currentId));
         if (idx === -1) return;
         setPrev(idx > 0 ? sorted[idx - 1] : null);
@@ -1052,10 +1127,10 @@ const PrevNextNav = React.memo(({ currentId }) => {
 /* ══════════════════════════
    PostsNav — Left sidebar showing OTHER article titles
    ══════════════════════════ */
-const PostsNav = React.memo(({ currentId, postCategory }) => {
-  const [nearbyPosts, setNearbyPosts] = useState([]);
-  const [categoryPosts, setCategoryPosts] = useState([]);
-  const [categoryInfo, setCategoryInfo] = useState(null);
+const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | number; postTitle?: string; postCategory?: string }) => {
+  const [nearbyPosts, setNearbyPosts] = useState<Post[]>([]);
+  const [categoryPosts, setCategoryPosts] = useState<Post[]>([]);
+  const [categoryInfo, setCategoryInfo] = useState<CategoryInfo | null>(null);
   const [showCategoryTooltip, setShowCategoryTooltip] = useState(false);
 
   // 取得分類詳情
@@ -1064,7 +1139,7 @@ const PostsNav = React.memo(({ currentId, postCategory }) => {
     fetch('/api/categories')
       .then(r => r.json())
       .then(data => {
-        const cats = data.categories || [];
+        const cats: CategoryInfo[] = (data as { categories?: CategoryInfo[] }).categories ?? [];
         const found = cats.find(c => c.name === postCategory);
         if (found) setCategoryInfo(found);
       })
@@ -1073,13 +1148,13 @@ const PostsNav = React.memo(({ currentId, postCategory }) => {
 
   useEffect(() => {
     fetch('/api/posts?limit=100')
-      .then((r) => r.json())
+      .then((r) => r.json() as Promise<Post[] | { posts?: Post[] }>)
       .then((data) => {
-        const posts = Array.isArray(data) ? data : (data.posts || []);
+        const posts: Post[] = Array.isArray(data) ? data : (data.posts ?? []);
         if (!posts.length) return;
 
         // 按時間排序（最新在前）
-        const sorted = [...posts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const sorted = [...posts].sort((a, b) => new Date(b.created_at ?? '').getTime() - new Date(a.created_at ?? '').getTime());
 
         // 找到當前文章的索引位置
         const currentIndex = sorted.findIndex(p => String(p.id) === String(currentId));
@@ -1195,11 +1270,11 @@ const PostsNav = React.memo(({ currentId, postCategory }) => {
 /* ══════════════════════════
    TableOfContents — Right sidebar (TOC with reading progress)
    ══════════════════════════ */
-const TableOfContents = React.memo(({ headings, activeHeading, readingProgress, tocRef }) => {
-  const scrollToHeading = useCallback((headingId) => {
+const TableOfContents = React.memo(({ headings, activeHeading, readingProgress, tocRef }: { headings: Heading[]; activeHeading: string; readingProgress: number; tocRef: React.RefObject<HTMLElement | null> }) => {
+  const scrollToHeading = useCallback((headingId: string) => {
     setTimeout(() => {
       const el =
-        document.getElementById(headingId) ||
+        document.getElementById(headingId) ??
         document.querySelector('[id="' + headingId + '"]');
       if (!el) return;
       window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
@@ -1250,25 +1325,25 @@ const NEWSLETTER_LS_KEY = 'koim_newsletter_subscriber';
 function readSubscriberLS() {
   try {
     const raw = localStorage.getItem(NEWSLETTER_LS_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? (JSON.parse(raw) as { email?: string; name?: string }) : null;
   } catch { return null; }
 }
-function writeSubscriberLS(value) {
+function writeSubscriberLS(value: unknown) {
   try { localStorage.setItem(NEWSLETTER_LS_KEY, JSON.stringify(value)); } catch { /* localStorage blocked */ }
 }
 function clearSubscriberLS() {
   try { localStorage.removeItem(NEWSLETTER_LS_KEY); } catch { /* localStorage blocked */ }
 }
 
-const SubscribeModal = ({ onClose }) => {
+const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [status, setStatus] = useState('');
   const [message, setMessage] = useState('');
-  const [subscribed, setSubscribed] = useState(() => readSubscriberLS());
+  const [subscribed, setSubscribed] = useState<{ email?: string; name?: string } | null>(() => readSubscriberLS());
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
     try {
@@ -1277,7 +1352,7 @@ const SubscribeModal = ({ onClose }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name }),
       });
-      const data = await res.json();
+      const data = await res.json() as { error?: string };
       if (res.ok) {
         setStatus('success');
         setMessage(t('newsletter.successWithEmoji'));
@@ -1289,7 +1364,7 @@ const SubscribeModal = ({ onClose }) => {
         setTimeout(() => onClose(), 1800);
       } else {
         setStatus('error');
-        setMessage(data.error || t('newsletter.errorGeneric'));
+        setMessage(data.error ?? t('newsletter.errorGeneric'));
       }
     } catch {
       setStatus('error');
@@ -1308,8 +1383,8 @@ const SubscribeModal = ({ onClose }) => {
         body: JSON.stringify({ email: subscribed.email }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || t('newsletter.unsubFailed'));
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error ?? t('newsletter.unsubFailed'));
       }
       clearSubscriberLS();
       setSubscribed(null);
@@ -1317,7 +1392,7 @@ const SubscribeModal = ({ onClose }) => {
       setMessage(t('newsletter.unsubDone'));
     } catch (e) {
       setStatus('error');
-      setMessage(e.message || t('newsletter.unsubFailed'));
+      setMessage(e instanceof Error ? e.message : t('newsletter.unsubFailed'));
     }
   };
 
@@ -1363,7 +1438,7 @@ const SubscribeModal = ({ onClose }) => {
               <button
                 type="button"
                 className="subscribe-secondary"
-                onClick={handleUnsubscribe}
+                onClick={() => { void handleUnsubscribe(); }}
                 disabled={status === 'loading'}
               >
                 {status === 'loading' ? t('newsletter.unsubProcessing') : t('newsletter.unsubBtn')}
@@ -1379,7 +1454,7 @@ const SubscribeModal = ({ onClose }) => {
               <h3>{t('newsletter.title')}</h3>
               <p>{t('newsletter.subscribeIntro')}</p>
             </div>
-            <form onSubmit={handleSubmit} className="subscribe-form">
+            <form onSubmit={(e) => { void handleSubmit(e); }} className="subscribe-form">
               <input type="text" placeholder={t('newsletter.namePlaceholderShort')} value={name} onChange={(e) => setName(e.target.value)} disabled={status === 'loading'} />
               <input type="email" placeholder={t('newsletter.emailPlaceholderShort')} value={email} onChange={(e) => setEmail(e.target.value)} required disabled={status === 'loading'} />
               <button type="submit" disabled={status === 'loading'}>
@@ -1398,7 +1473,7 @@ const SubscribeModal = ({ onClose }) => {
 /* ══════════════════════════
    FontSwitcher — bottom-right popup
    ══════════════════════════ */
-const FontSwitcher = ({ currentFont, onFontChange }) => {
+const FontSwitcher = ({ currentFont, onFontChange }: { currentFont: string; onFontChange: (id: string) => void }) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -1436,7 +1511,7 @@ const FontSwitcher = ({ currentFont, onFontChange }) => {
 /* ═══════════════════════════════════
    Toast — 短暫提示
    ═══════════════════════════════════ */
-const Toast = ({ message, onDone }) => {
+const Toast = ({ message, onDone }: { message: React.ReactNode; onDone: () => void }) => {
   useEffect(() => {
     const t = setTimeout(onDone, 2200);
     return () => clearTimeout(t);
@@ -1464,21 +1539,21 @@ const LANG_OPTIONS = [
   { code: 'ko',    label: '한국어' },
 ];
 
-const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect, onUnavailable }) => {
-  const wrapRef = useRef(null);
-  const triggerRef = useRef(null);
+const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect, onUnavailable }: { open: boolean; setOpen: (v: boolean) => void; current: string; source: string; available: string[]; onSelect: (code: string) => void; onUnavailable: (label: string) => void }) => {
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, minWidth: 160 });
 
   // 外點關閉 + ESC 關閉
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e) => {
-      if (wrapRef.current && wrapRef.current.contains(e.target)) return;
+    const onDoc = (e: MouseEvent) => {
+      if (wrapRef.current && e.target instanceof Node && wrapRef.current.contains(e.target)) return;
       const menu = document.getElementById('blog-lang-menu');
-      if (menu && menu.contains(e.target)) return;
+      if (menu && e.target instanceof Node && menu.contains(e.target)) return;
       setOpen(false);
     };
-    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -1491,6 +1566,7 @@ const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect,
   useEffect(() => {
     if (!open || !triggerRef.current) return;
     const compute = () => {
+      if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
       setMenuPos({
         top: rect.bottom + window.scrollY + 6,
@@ -1507,7 +1583,7 @@ const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect,
     };
   }, [open]);
 
-  const currentLabel = LANG_OPTIONS.find(o => o.code === current)?.label || current;
+  const currentLabel = LANG_OPTIONS.find(o => o.code === current)?.label ?? current;
 
   return (
     <span className="meta-lang-switcher" ref={wrapRef}>
@@ -1560,10 +1636,10 @@ const LanguageSwitcher = ({ open, setOpen, current, source, available, onSelect,
 };
 
 /* URL prefix mapping — 必須與後端 LOCALE_URL_PREFIX 一致 */
-const LOCALE_URL_PREFIX = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja', 'ko': '/ko' };
-const LOCALE_TO_DATE_LOCALE = { 'zh-TW': 'zh-TW', 'zh-CN': 'zh-CN', 'en': 'en-US', 'ja': 'ja-JP', 'ko': 'ko-KR' };
+const LOCALE_URL_PREFIX: Record<string, string> = { 'zh-TW': '', 'zh-CN': '/zh-cn', 'en': '/en', 'ja': '/ja', 'ko': '/ko' };
+const LOCALE_TO_DATE_LOCALE: Record<string, string> = { 'zh-TW': 'zh-TW', 'zh-CN': 'zh-CN', 'en': 'en-US', 'ja': 'ja-JP', 'ko': 'ko-KR' };
 
-function parseLocaleFromPath(pathname) {
+function parseLocaleFromPath(pathname: string) {
   if (pathname.startsWith('/en/blog/')) return 'en';
   if (pathname.startsWith('/zh-cn/blog/')) return 'zh-CN';
   if (pathname.startsWith('/ja/blog/')) return 'ja';
@@ -1571,7 +1647,7 @@ function parseLocaleFromPath(pathname) {
   return 'zh-TW';
 }
 
-function postPathForLocale(id, locale, sourceLang) {
+function postPathForLocale(id: string | number | undefined, locale: string, sourceLang: string) {
   // 原文永遠走不帶 prefix 的規範路徑（與後端 postUrlForLocale 一致）
   if (locale === sourceLang) return `/blog/${id}`;
   return `${LOCALE_URL_PREFIX[locale] || ''}/blog/${id}`;
@@ -1582,11 +1658,11 @@ function postPathForLocale(id, locale, sourceLang) {
    ═══════════════════════════════════ */
 function BlogPost() {
   const { t } = useTranslation();
-  const [post, setPost] = useState(null);
+  const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [readingProgress, setReadingProgress] = useState(0);
-  const [headings, setHeadings] = useState([]);
+  const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeHeading, setActiveHeading] = useState('');
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -1594,15 +1670,16 @@ function BlogPost() {
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
-  const [metaCategoryInfo, setMetaCategoryInfo] = useState(null);
+  const [metaCategoryInfo, setMetaCategoryInfo] = useState<CategoryInfo | null>(null);
   const [showMetaCatTooltip, setShowMetaCatTooltip] = useState(false);
-  const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') || 'noto-serif');
-  const contentRef = useRef(null);
-  const tocRef = useRef(null);
-  const { id } = useParams();
+  const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') ?? 'noto-serif');
+  const contentRef = useRef<HTMLDivElement>(null);
+  const tocRef = useRef<HTMLElement>(null);
+  const { id = '' } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const pathLocale = useMemo(() => parseLocaleFromPath(location.pathname), [location.pathname]);
+  const navState = location.state as { fromPreview?: boolean } | null;
 
   /* Font family memo */
   const fontFamily = useMemo(() => {
@@ -1610,16 +1687,16 @@ function BlogPost() {
     return font ? font.family : FONT_OPTIONS[0].family;
   }, [currentFont]);
 
-  const handleFontChange = useCallback((fontId) => {
+  const handleFontChange = useCallback((fontId: string) => {
     setCurrentFont(fontId);
     localStorage.setItem('blogFont', fontId);
   }, []);
 
   /* heading components */
-  const createHeading = useCallback((level) => {
-    return ({ children, ...props }) => {
+  const createHeading = useCallback((level: number) => {
+    return ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => {
       const Tag = 'h' + level;
-      const text = React.Children.toArray(children).join('');
+      const text = nodeText(children);
       const hid = slugify(text);
       return React.createElement(Tag, { id: hid, ...props }, children);
     };
@@ -1642,21 +1719,21 @@ function BlogPost() {
       .then((r) => {
         if (r.status === 404) throw new Error('LOCALE_NOT_AVAILABLE');
         if (!r.ok) throw new Error('Post not found');
-        return r.json();
+        return r.json() as Promise<Post>;
       })
       .then((data) => {
         if (data.message === 'success') {
-          const dateLocale = LOCALE_TO_DATE_LOCALE[data.locale] || 'zh-TW';
+          const dateLocale = LOCALE_TO_DATE_LOCALE[data.locale ?? ''] ?? 'zh-TW';
           setPost({
             ...data,
-            date: new Date(data.created_at).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
+            date: new Date(data.created_at ?? '').toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
           });
           setLiked(false);
           fetch('/api/posts/' + id + '/view', { method: 'POST' }).catch(console.error);
         } else { throw new Error('Post not found'); }
         setLoading(false);
       })
-      .catch((e) => { setError(e.message); setLoading(false); });
+      .catch((e: unknown) => { setError(e instanceof Error ? e.message : 'Post not found'); setLoading(false); });
   }, [id, pathLocale]);
 
   /* 註：原本這裡有「preview commit 過來自動 scroll 到使用者讀到那段」的邏輯，
@@ -1671,10 +1748,10 @@ function BlogPost() {
   /* ── Like state ── */
   useEffect(() => {
     if (!post) return;
-    const stored = JSON.parse(localStorage.getItem('likedPosts') || '[]');
-    const pid = post.id || parseInt(id);
+    const stored = JSON.parse(localStorage.getItem('likedPosts') ?? '[]') as unknown[];
+    const pid = post?.id ?? parseInt(id ?? '', 10);
     if (stored.includes(pid)) setLiked(true);
-    setLikeCount(post.likes || 0);
+    setLikeCount(post.likes ?? 0);
   }, [post, id]);
 
   /* ── 排版優化：CJK-Latin 自動加空格 + 腳註 hover 浮窗 ── */
@@ -1687,22 +1764,22 @@ function BlogPost() {
       try {
         root.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th').forEach((el) => {
           if (el.closest('pre') || el.closest('code')) return;
-          pangu.spacingElementByNode(el);
+          (pangu as unknown as { spacingElementByNode: (node: Node) => void }).spacingElementByNode(el);
         });
       } catch { /* pangu 失敗不影響閱讀 */ }
 
       // 2) 腳註 hover 浮窗：把腳註內容寫到 ref 連結的 data-fn-content
       try {
-        const fnMap = new Map();
+        const fnMap = new Map<string, string>();
         root.querySelectorAll('.footnotes li[id^="user-content-fn-"], .footnotes li[id^="fn-"]').forEach((li) => {
           const id = li.id;
-          const clone = li.cloneNode(true);
+          const clone = li.cloneNode(true) as Element;
           clone.querySelectorAll('a.data-footnote-backref, a[href^="#user-content-fnref"], a[href^="#fnref"]').forEach((a) => a.remove());
-          const text = clone.textContent.trim().replace(/\s+/g, ' ').slice(0, 320);
+          const text = (clone.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 320);
           fnMap.set(id, text);
         });
         root.querySelectorAll('sup a[data-footnote-ref], sup a.footnote-ref').forEach((a) => {
-          const href = a.getAttribute('href') || '';
+          const href = a.getAttribute('href') ?? '';
           const targetId = href.replace(/^#/, '');
           const text = fnMap.get(targetId);
           if (text) a.setAttribute('data-fn-content', text);
@@ -1717,20 +1794,20 @@ function BlogPost() {
     fetch('/api/categories')
       .then(r => r.json())
       .then(data => {
-        const cats = data.categories || [];
+        const cats: CategoryInfo[] = (data as { categories?: CategoryInfo[] }).categories ?? [];
         const found = cats.find(c => c.name === post.category);
-        setMetaCategoryInfo(found || null);
+        setMetaCategoryInfo(found ?? null);
       })
       .catch(console.error);
   }, [post?.category]);
 
   /* ── Copy protection ── */
   useEffect(() => {
-    const preventCopy = (e) => {
+    const preventCopy = (e: ClipboardEvent) => {
       const sel = window.getSelection();
-      if (sel && sel.anchorNode) {
+      if (sel?.anchorNode) {
         const parent = sel.anchorNode.parentElement;
-        if (parent && parent.closest('.code-block-wrapper')) return;
+        if (parent?.closest('.code-block-wrapper')) return;
       }
       e.preventDefault();
       e.clipboardData?.setData('text/plain', '此內容受版權保護，禁止複製。\n原文連結：' + window.location.href);
@@ -1741,28 +1818,28 @@ function BlogPost() {
 
   /* ── Like handler ── */
   const handleLike = async () => {
-    const pid = post.id || parseInt(id);
+    const pid = post?.id ?? parseInt(id ?? '', 10);
     const next = !liked;
     try {
       const res = await fetch('/api/posts/' + pid + '/' + (next ? 'like' : 'unlike'), { method: 'POST' });
-      const data = await res.json();
+      const data = await res.json() as { likes?: number };
       if (res.ok) {
         setLiked(next);
-        setLikeCount(data.likes);
-        const stored = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+        setLikeCount(data.likes ?? 0);
+        const stored = JSON.parse(localStorage.getItem('likedPosts') ?? '[]') as unknown[];
         localStorage.setItem('likedPosts', JSON.stringify(next ? [...stored.filter((i) => i !== pid), pid] : stored.filter((i) => i !== pid)));
       }
-    } catch (e) { console.error('Like failed:', e); }
+    } catch (err) { console.error('Like failed:', err); }
   };
 
   const [showShareMenu, setShowShareMenu] = useState(false);
 
   /* ── Share handlers ── */
   const shareUrl = window.location.origin + '/blog/' + id;
-  const shareTitle = post?.title || '';
+  const shareTitle = post?.title ?? '';
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareUrl).then(() => {
+    void navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       setShowShareMenu(false);
       setTimeout(() => setCopied(false), 2000);
@@ -1781,7 +1858,7 @@ function BlogPost() {
 
   const handleNativeShare = () => {
     if (navigator.share) {
-      navigator.share({ title: shareTitle, url: shareUrl }).catch(() => {});
+      void navigator.share({ title: shareTitle, url: shareUrl }).catch(() => { /* ignore */ });
     } else {
       handleCopyLink();
     }
@@ -1800,7 +1877,7 @@ function BlogPost() {
     if (!post?.content) return;
     const clean = post.content.replace(/```[\s\S]*?```/g, '');
     const re = /^(#{1,4})\s+(.+)$/gm;
-    const out = [];
+    const out: Heading[] = [];
     let m;
     while ((m = re.exec(clean)) !== null) {
       out.push({ id: slugify(m[2].trim()), text: m[2].trim(), level: m[1].length });
@@ -1811,7 +1888,7 @@ function BlogPost() {
   /* ── Scroll / progress / active heading ── */
   useEffect(() => {
     if (!post) return;
-    let timer = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     let lastActive = activeHeading;
 
     const handleScroll = () => {
@@ -1832,9 +1909,9 @@ function BlogPost() {
           if (t <= 200 && t >= -100 && Math.abs(t - 100) < minD) { minD = Math.abs(t - 100); cur = el.id; }
         });
         if (!cur) {
-          for (let i = 0; i < els.length; i++) {
-            const t = els[i].getBoundingClientRect().top;
-            if (t > 0 && t < wh) { cur = els[i].id; break; }
+          for (const el of els) {
+            const t = el.getBoundingClientRect().top;
+            if (t > 0 && t < wh) { cur = el.id; break; }
           }
         }
         if (cur && cur !== lastActive) {
@@ -1854,7 +1931,7 @@ function BlogPost() {
     };
     window.addEventListener('scroll', listener, { passive: true });
     const init = setTimeout(handleScroll, 500);
-    return () => { window.removeEventListener('scroll', listener); clearTimeout(timer); clearTimeout(init); };
+    return () => { window.removeEventListener('scroll', listener); if (timer) clearTimeout(timer); clearTimeout(init); };
   }, [post, headings]);
 
   /* ════════ Loading ════════ */
@@ -1888,11 +1965,13 @@ function BlogPost() {
   }
 
   /* ════════ Main Render ════════ */
-  const seoDescription = post.excerpt || post.content?.substring(0, 160).replace(/<[^>]+>/g, '').replace(/[#*`>\-\n]/g, '').trim();
-  const postTags = Array.isArray(post.tags) ? post.tags : (post.tags ? post.tags.split(',') : []);
-  const sourceLang = post.source_language || 'zh-TW';
-  const availableLocales = post.available_locales || [sourceLang];
-  const currentLocale = post.locale || pathLocale;
+  const seoDescription = post.excerpt ?? post.content?.substring(0, 160).replace(/<[^>]+>/g, '').replace(/[#*`>\-\n]/g, '').trim();
+  const postTags: string[] = Array.isArray(post.tags)
+    ? post.tags.map(tg => typeof tg === 'string' ? tg : (tg.name ?? ''))
+    : (typeof post.tags === 'string' ? post.tags.split(',') : []);
+  const sourceLang = post.source_language ?? 'zh-TW';
+  const availableLocales = post.available_locales ?? [sourceLang];
+  const currentLocale = post.locale ?? pathLocale;
   const selfPath = postPathForLocale(id, currentLocale, sourceLang);
   const alternates = availableLocales.map(loc => ({
     locale: loc,
@@ -1912,9 +1991,9 @@ function BlogPost() {
         alternates={alternates}
         xDefaultPath={xDefaultPath}
         article={{
-          author: post.author || 'Koimsurai',
+          author: post.author ?? 'Koimsurai',
           datePublished: post.created_at,
-          dateModified: post.updated_at || post.created_at,
+          dateModified: post.updated_at ?? post.created_at,
           tags: postTags,
         }}
       />
@@ -1953,7 +2032,7 @@ function BlogPost() {
             )}
             <span className="meta-tip meta-author" data-tooltip="作者">✦ {post.author}</span>
             <span className="meta-sep">·</span>
-            <span className="meta-tip" data-tooltip="累計閱讀次數">📖 {post.view_count || 0}</span>
+            <span className="meta-tip" data-tooltip="累計閱讀次數">📖 {post.view_count ?? 0}</span>
             <span className="meta-sep">·</span>
             <span className="meta-tip" data-tooltip="讀者喜歡數">❤️ {likeCount}</span>
             <span className="meta-sep">·</span>
@@ -1987,18 +2066,17 @@ function BlogPost() {
               available={availableLocales}
               onSelect={(loc) => {
                 const target = postPathForLocale(id, loc, sourceLang);
-                navigate(target);
+                void navigate(target);
               }}
               onUnavailable={(name) => setToastMsg(`「${name}」版本尚未提供`)}
             />
           </div>
 
-          {post.tags && post.tags.length > 0 && (
+          {postTags.length > 0 && (
             <div className="post-tags">
-              {post.tags.map((tag) => {
-                const name = typeof tag === 'string' ? tag : (tag.name || tag);
-                return <span key={name} className="tag">#{name}</span>;
-              })}
+              {postTags.map((name) => (
+                <span key={name} className="tag">#{name}</span>
+              ))}
             </div>
           )}
         </motion.header>
@@ -2016,13 +2094,13 @@ function BlogPost() {
             key={'content-' + id}
             className="post-main-column"
             // 從 preview 來的不要做 y: 24 的進場動畫（會跟 scroll 還原打架）
-            initial={location.state?.fromPreview ? { opacity: 0 } : { opacity: 0, y: 24 }}
+            initial={navState?.fromPreview ? { opacity: 0 } : { opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{
-              duration: location.state?.fromPreview ? 0.28 : 0.4,
+              duration: navState?.fromPreview ? 0.28 : 0.4,
               ease: [0.4, 0, 0.2, 1],
-              delay: location.state?.fromPreview ? 0 : 0.05,
+              delay: navState?.fromPreview ? 0 : 0.05,
             }}
           >
             <div className="post-content-wrapper">
@@ -2047,7 +2125,7 @@ function BlogPost() {
                     p: CustomParagraph,
                     img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
                     ...headingComponents,
-                  }}
+                  } as Components}
                 >
                   {post.content}
                 </ReactMarkdown>
@@ -2090,7 +2168,7 @@ function BlogPost() {
 
       {/* ── Floating side actions (right) ── */}
       <div className="floating-actions">
-        <button className={'float-btn' + (liked ? ' active' : '')} onClick={handleLike} title={t('blog.like') || 'Like'}>
+        <button className={'float-btn' + (liked ? ' active' : '')} onClick={() => { void handleLike(); }} title={t('blog.like') || 'Like'}>
           {liked ? <FaHeart /> : <FaRegHeart />}
           {likeCount > 0 && <span>{likeCount}</span>}
         </button>
@@ -2114,7 +2192,7 @@ function BlogPost() {
                 <button onClick={handleShareTwitter}><FaTwitter /> Twitter</button>
                 <button onClick={handleShareFacebook}><FaFacebook /> Facebook</button>
                 <button onClick={handleCopyLink}><FaLink /> {copied ? t('blog.codeCopied') : t('blog.shareCopyLink')}</button>
-                {navigator.share && (
+                {typeof navigator.share === 'function' && (
                   <button onClick={handleNativeShare}><FaShareAlt /> {t('blog.shareMore')}</button>
                 )}
               </motion.div>

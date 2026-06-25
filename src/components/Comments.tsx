@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type FormEvent } from 'react';
 import KoimLoader from './KoimLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -6,9 +6,29 @@ import { useAuth } from '../contexts/AuthContext';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import './Comments.css';
 
-function Comments({ postId, allowComments = true, basePath = 'posts' }) {
+interface CommentRow {
+  id: number;
+  author: string;
+  content: string;
+  created_at: string;
+  likes?: number;
+  is_admin?: number;
+  parent_id?: number | null;
+  avatar_url?: string;
+  provider?: string;
+}
+
+interface ReplyTarget { id: number; author: string }
+
+interface CommentsProps {
+  postId: number | string;
+  allowComments?: boolean;
+  basePath?: string;
+}
+
+function Comments({ postId, allowComments = true, basePath = 'posts' }: CommentsProps) {
   const { t } = useTranslation();
-  const [comments, setComments] = useState([]);
+  const [comments, setComments] = useState<CommentRow[]>([]);
   const [newComment, setNewComment] = useState('');
   const [author, setAuthor] = useState('');
   const [email, setEmail] = useState('');
@@ -16,10 +36,10 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState('');
-  const [likedComments, setLikedComments] = useState([]);
+  const [likedComments, setLikedComments] = useState<number[]>([]);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
-  const [captchaQuestion, setCaptchaQuestion] = useState({ num1: 0, num2: 0 });
-  const [replyTo, setReplyTo] = useState(null); // { id, author } or null
+  const [captchaQuestion, setCaptchaQuestion] = useState<{ num1: number; num2: number }>({ num1: 0, num2: 0 });
+  const [replyTo, setReplyTo] = useState<ReplyTarget | null>(null); // { id, author } or null
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [useAnonymous, setUseAnonymous] = useState(false); // 是否使用匿名模式
   const [commentMode, setCommentMode] = useState('initial'); // 'initial' | 'login' | 'anonymous'
@@ -27,8 +47,8 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
   const { user, isLoggedIn, providers, getGoogleAuthUrl, getGitHubAuthUrl, getToken } = useAuth();
 
   useEffect(() => {
-    fetchComments();
-    const liked = JSON.parse(localStorage.getItem('liked_comments_' + basePath + '_' + postId) || '[]');
+    void fetchComments();
+    const liked = JSON.parse(localStorage.getItem('liked_comments_' + basePath + '_' + postId) ?? '[]') as number[];
     setLikedComments(liked);
     generateCaptcha();
     // Restore saved author info
@@ -50,7 +70,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
     try {
       const response = await fetch('/api/' + basePath + '/' + postId + '/comments');
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { comments: CommentRow[] };
         setComments(data.comments);
       }
     } catch (error) {
@@ -60,7 +80,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const isUsingLogin = isLoggedIn && !useAnonymous;
 
@@ -76,7 +96,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
         return;
       }
       const expectedAnswer = captchaQuestion.num1 + captchaQuestion.num2;
-      if (parseInt(captchaAnswer) !== expectedAnswer) {
+      if (parseInt(captchaAnswer, 10) !== expectedAnswer) {
         setError(t('comments.errorCaptcha'));
         generateCaptcha();
         setCaptchaAnswer('');
@@ -94,14 +114,14 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
       localStorage.setItem('comment_website', website);
     }
 
-    const submitAuthor = isUsingLogin ? user.displayName : author;
-    const submitEmail = isUsingLogin ? (user.email || '') : email;
+    const submitAuthor = isUsingLogin ? (user?.displayName ?? '') : author;
+    const submitEmail = isUsingLogin ? (user?.email ?? '') : email;
     const expectedAnswer = captchaQuestion.num1 + captchaQuestion.num2;
 
-    const headers = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (isUsingLogin) {
       const token = getToken();
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (token) headers.Authorization = `Bearer ${token}`;
     }
 
     try {
@@ -113,10 +133,10 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
           content: replyTo ? '@' + replyTo.author + ' ' + newComment : newComment,
           email: submitEmail,
           website: isUsingLogin ? '' : website,
-          avatar_url: isUsingLogin ? (user.avatar || '') : '',
-          provider: isUsingLogin ? user.provider : '',
+          avatar_url: isUsingLogin ? (user?.avatar ?? '') : '',
+          provider: isUsingLogin ? (user?.provider ?? '') : '',
           parent_id: replyTo ? replyTo.id : null,
-          ...(!isUsingLogin && { captcha: parseInt(captchaAnswer), captchaAnswer: expectedAnswer }),
+          ...(!isUsingLogin && { captcha: parseInt(captchaAnswer, 10), captchaAnswer: expectedAnswer }),
         }),
       });
 
@@ -127,10 +147,10 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
         generateCaptcha();
         setSubmitSuccess(true);
         setTimeout(() => setSubmitSuccess(false), 5000);
-        fetchComments();
+        void fetchComments();
       } else {
-        const errorData = await response.json();
-        setError(errorData.error || t('comments.errorFailed'));
+        const errorData = await response.json() as { error?: string };
+        setError(errorData.error ?? t('comments.errorFailed'));
       }
     } catch {
       setError(t('comments.errorFailedTryLater'));
@@ -139,13 +159,13 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
     }
   };
 
-  const handleLike = async (commentId) => {
+  const handleLike = async (commentId: number) => {
     if (likedComments.includes(commentId)) return;
 
     try {
       const response = await fetch('/api/comments/' + commentId + '/like', { method: 'POST' });
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { likes: number };
         setComments(comments.map(comment =>
           comment.id === commentId ? { ...comment, likes: data.likes } : comment
         ));
@@ -158,18 +178,18 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
     }
   };
 
-  const getAvatarColor = (name) => {
+  const getAvatarColor = (name: string) => {
     const colors = ['#7f5af0', '#2cb67d', '#e53170', '#ff8906', '#3da9fc', '#ef4444', '#8b5cf6', '#06b6d4'];
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
   };
 
-  const formatDate = (dateStr) => {
+  const formatDate = (dateStr: string) => {
     // SQLite CURRENT_TIMESTAMP 是 UTC，需要加 Z 後綴確保正確解析
     const d = new Date(dateStr.includes('T') || dateStr.includes('Z') ? dateStr : dateStr + 'Z');
     const now = new Date();
-    const diff = now - d;
+    const diff = now.getTime() - d.getTime();
     const mins = Math.floor(diff / 60000);
     const hrs = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
@@ -212,7 +232,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
         )}
 
         {allowComments && (
-        <form onSubmit={handleSubmit} className="comment-form">
+        <form onSubmit={(e) => { void handleSubmit(e); }} className="comment-form">
           {/* ── 模式切換 ── */}
           <div className="comment-mode-switch">
             {isLoggedIn ? (
@@ -324,7 +344,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   required
-                  rows="4"
+                  rows={4}
                   className="comment-textarea"
                 />
               </div>
@@ -429,15 +449,15 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
                       <div className="comment-actions">
                         <button
                           className={'action-btn like ' + (likedComments.includes(comment.id) ? 'liked' : '')}
-                          onClick={() => handleLike(comment.id)}
+                          onClick={() => { void handleLike(comment.id); }}
                           disabled={likedComments.includes(comment.id)}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill={likedComments.includes(comment.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                           </svg>
-                          <span>{comment.likes || 0}</span>
+                          <span>{comment.likes ?? 0}</span>
                         </button>
-                        <button className="action-btn reply" onClick={() => { setReplyTo({ id: comment.id, author: comment.author }); document.querySelector('.comment-textarea')?.focus(); }}>
+                        <button className="action-btn reply" onClick={() => { setReplyTo({ id: comment.id, author: comment.author }); document.querySelector<HTMLTextAreaElement>('.comment-textarea')?.focus(); }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                           </svg>
@@ -475,15 +495,15 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }) {
                           <div className="comment-actions">
                             <button
                               className={'action-btn like ' + (likedComments.includes(reply.id) ? 'liked' : '')}
-                              onClick={() => handleLike(reply.id)}
+                              onClick={() => { void handleLike(reply.id); }}
                               disabled={likedComments.includes(reply.id)}
                             >
                               <svg width="14" height="14" viewBox="0 0 24 24" fill={likedComments.includes(reply.id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                               </svg>
-                              <span>{reply.likes || 0}</span>
+                              <span>{reply.likes ?? 0}</span>
                             </button>
-                            <button className="action-btn reply" onClick={() => { setReplyTo({ id: comment.id, author: reply.author }); document.querySelector('.comment-textarea')?.focus(); }}>
+                            <button className="action-btn reply" onClick={() => { setReplyTo({ id: comment.id, author: reply.author }); document.querySelector<HTMLTextAreaElement>('.comment-textarea')?.focus(); }}>
                               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                               </svg>
