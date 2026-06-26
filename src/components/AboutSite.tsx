@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import InfoPage from './InfoPage';
-import { LinkCard } from './BlogPost';
+import { LinkCard } from './LinkCard';
 
 const ABOUT_SITE_BY_LANG = {
   'zh-TW': {
@@ -214,7 +214,7 @@ function AboutSite() {
       <p>{c.a5_p1}</p>
       <p>
         {c.a5_p2_pre}
-        <Link to="/messages" style={{ color: 'rgba(216, 180, 254, 0.95)', borderBottom: '1px dashed rgba(216, 180, 254, 0.35)', textDecoration: 'none' }}>{c.a5_p2_link}</Link>
+        <LocaleLink to="/messages" style={{ color: 'rgba(216, 180, 254, 0.95)', borderBottom: '1px dashed rgba(216, 180, 254, 0.35)', textDecoration: 'none' }}>{c.a5_p2_link}</LocaleLink>
         {c.a5_p2_post}
       </p>
 

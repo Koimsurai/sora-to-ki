@@ -15,11 +15,13 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as FriendsRouteImport } from './routes/friends'
 import { Route as CinemaRouteImport } from './routes/cinema'
 import { Route as BookshelfRouteImport } from './routes/bookshelf'
 import { Route as AnimeRouteImport } from './routes/anime'
 import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as AboutSiteRouteImport } from './routes/about-site'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WatchIndexRouteImport } from './routes/watch/index'
@@ -33,11 +35,13 @@ import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
 import { Route as LocalePortfolioRouteImport } from './routes/$locale/portfolio'
 import { Route as LocaleMusicRouteImport } from './routes/$locale/music'
 import { Route as LocaleMessagesRouteImport } from './routes/$locale/messages'
+import { Route as LocaleHistoryRouteImport } from './routes/$locale/history'
 import { Route as LocaleFriendsRouteImport } from './routes/$locale/friends'
 import { Route as LocaleCinemaRouteImport } from './routes/$locale/cinema'
 import { Route as LocaleBookshelfRouteImport } from './routes/$locale/bookshelf'
 import { Route as LocaleAnimeRouteImport } from './routes/$locale/anime'
 import { Route as LocaleActivityRouteImport } from './routes/$locale/activity'
+import { Route as LocaleAboutSiteRouteImport } from './routes/$locale/about-site'
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about'
 import { Route as LocaleWatchIndexRouteImport } from './routes/$locale/watch/index'
 import { Route as LocaleBlogIndexRouteImport } from './routes/$locale/blog/index'
@@ -74,6 +78,11 @@ const MessagesRoute = MessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FriendsRoute = FriendsRouteImport.update({
   id: '/friends',
   path: '/friends',
@@ -97,6 +106,11 @@ const AnimeRoute = AnimeRouteImport.update({
 const ActivityRoute = ActivityRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutSiteRoute = AboutSiteRouteImport.update({
+  id: '/about-site',
+  path: '/about-site',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -164,6 +178,11 @@ const LocaleMessagesRoute = LocaleMessagesRouteImport.update({
   path: '/$locale/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleHistoryRoute = LocaleHistoryRouteImport.update({
+  id: '/$locale/history',
+  path: '/$locale/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleFriendsRoute = LocaleFriendsRouteImport.update({
   id: '/$locale/friends',
   path: '/$locale/friends',
@@ -187,6 +206,11 @@ const LocaleAnimeRoute = LocaleAnimeRouteImport.update({
 const LocaleActivityRoute = LocaleActivityRouteImport.update({
   id: '/$locale/activity',
   path: '/$locale/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleAboutSiteRoute = LocaleAboutSiteRouteImport.update({
+  id: '/$locale/about-site',
+  path: '/$locale/about-site',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleAboutRoute = LocaleAboutRouteImport.update({
@@ -218,11 +242,13 @@ const LocaleBlogIdRoute = LocaleBlogIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/about-site': typeof AboutSiteRoute
   '/activity': typeof ActivityRoute
   '/anime': typeof AnimeRoute
   '/bookshelf': typeof BookshelfRoute
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
+  '/history': typeof HistoryRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
   '/portfolio': typeof PortfolioRoute
@@ -230,11 +256,13 @@ export interface FileRoutesByFullPath {
   '/thinking': typeof ThinkingRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
+  '/$locale/about-site': typeof LocaleAboutSiteRoute
   '/$locale/activity': typeof LocaleActivityRoute
   '/$locale/anime': typeof LocaleAnimeRoute
   '/$locale/bookshelf': typeof LocaleBookshelfRoute
   '/$locale/cinema': typeof LocaleCinemaRoute
   '/$locale/friends': typeof LocaleFriendsRoute
+  '/$locale/history': typeof LocaleHistoryRoute
   '/$locale/messages': typeof LocaleMessagesRoute
   '/$locale/music': typeof LocaleMusicRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
@@ -254,11 +282,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/about-site': typeof AboutSiteRoute
   '/activity': typeof ActivityRoute
   '/anime': typeof AnimeRoute
   '/bookshelf': typeof BookshelfRoute
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
+  '/history': typeof HistoryRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
   '/portfolio': typeof PortfolioRoute
@@ -266,11 +296,13 @@ export interface FileRoutesByTo {
   '/thinking': typeof ThinkingRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
+  '/$locale/about-site': typeof LocaleAboutSiteRoute
   '/$locale/activity': typeof LocaleActivityRoute
   '/$locale/anime': typeof LocaleAnimeRoute
   '/$locale/bookshelf': typeof LocaleBookshelfRoute
   '/$locale/cinema': typeof LocaleCinemaRoute
   '/$locale/friends': typeof LocaleFriendsRoute
+  '/$locale/history': typeof LocaleHistoryRoute
   '/$locale/messages': typeof LocaleMessagesRoute
   '/$locale/music': typeof LocaleMusicRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
@@ -291,11 +323,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/about-site': typeof AboutSiteRoute
   '/activity': typeof ActivityRoute
   '/anime': typeof AnimeRoute
   '/bookshelf': typeof BookshelfRoute
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
+  '/history': typeof HistoryRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
   '/portfolio': typeof PortfolioRoute
@@ -303,11 +337,13 @@ export interface FileRoutesById {
   '/thinking': typeof ThinkingRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
+  '/$locale/about-site': typeof LocaleAboutSiteRoute
   '/$locale/activity': typeof LocaleActivityRoute
   '/$locale/anime': typeof LocaleAnimeRoute
   '/$locale/bookshelf': typeof LocaleBookshelfRoute
   '/$locale/cinema': typeof LocaleCinemaRoute
   '/$locale/friends': typeof LocaleFriendsRoute
+  '/$locale/history': typeof LocaleHistoryRoute
   '/$locale/messages': typeof LocaleMessagesRoute
   '/$locale/music': typeof LocaleMusicRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
@@ -329,11 +365,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/about-site'
     | '/activity'
     | '/anime'
     | '/bookshelf'
     | '/cinema'
     | '/friends'
+    | '/history'
     | '/messages'
     | '/music'
     | '/portfolio'
@@ -341,11 +379,13 @@ export interface FileRouteTypes {
     | '/thinking'
     | '/unsubscribe'
     | '/$locale/about'
+    | '/$locale/about-site'
     | '/$locale/activity'
     | '/$locale/anime'
     | '/$locale/bookshelf'
     | '/$locale/cinema'
     | '/$locale/friends'
+    | '/$locale/history'
     | '/$locale/messages'
     | '/$locale/music'
     | '/$locale/portfolio'
@@ -365,11 +405,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/about-site'
     | '/activity'
     | '/anime'
     | '/bookshelf'
     | '/cinema'
     | '/friends'
+    | '/history'
     | '/messages'
     | '/music'
     | '/portfolio'
@@ -377,11 +419,13 @@ export interface FileRouteTypes {
     | '/thinking'
     | '/unsubscribe'
     | '/$locale/about'
+    | '/$locale/about-site'
     | '/$locale/activity'
     | '/$locale/anime'
     | '/$locale/bookshelf'
     | '/$locale/cinema'
     | '/$locale/friends'
+    | '/$locale/history'
     | '/$locale/messages'
     | '/$locale/music'
     | '/$locale/portfolio'
@@ -401,11 +445,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/about-site'
     | '/activity'
     | '/anime'
     | '/bookshelf'
     | '/cinema'
     | '/friends'
+    | '/history'
     | '/messages'
     | '/music'
     | '/portfolio'
@@ -413,11 +459,13 @@ export interface FileRouteTypes {
     | '/thinking'
     | '/unsubscribe'
     | '/$locale/about'
+    | '/$locale/about-site'
     | '/$locale/activity'
     | '/$locale/anime'
     | '/$locale/bookshelf'
     | '/$locale/cinema'
     | '/$locale/friends'
+    | '/$locale/history'
     | '/$locale/messages'
     | '/$locale/music'
     | '/$locale/portfolio'
@@ -438,11 +486,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AboutSiteRoute: typeof AboutSiteRoute
   ActivityRoute: typeof ActivityRoute
   AnimeRoute: typeof AnimeRoute
   BookshelfRoute: typeof BookshelfRoute
   CinemaRoute: typeof CinemaRoute
   FriendsRoute: typeof FriendsRoute
+  HistoryRoute: typeof HistoryRoute
   MessagesRoute: typeof MessagesRoute
   MusicRoute: typeof MusicRoute
   PortfolioRoute: typeof PortfolioRoute
@@ -450,11 +500,13 @@ export interface RootRouteChildren {
   ThinkingRoute: typeof ThinkingRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   LocaleAboutRoute: typeof LocaleAboutRoute
+  LocaleAboutSiteRoute: typeof LocaleAboutSiteRoute
   LocaleActivityRoute: typeof LocaleActivityRoute
   LocaleAnimeRoute: typeof LocaleAnimeRoute
   LocaleBookshelfRoute: typeof LocaleBookshelfRoute
   LocaleCinemaRoute: typeof LocaleCinemaRoute
   LocaleFriendsRoute: typeof LocaleFriendsRoute
+  LocaleHistoryRoute: typeof LocaleHistoryRoute
   LocaleMessagesRoute: typeof LocaleMessagesRoute
   LocaleMusicRoute: typeof LocaleMusicRoute
   LocalePortfolioRoute: typeof LocalePortfolioRoute
@@ -516,6 +568,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/friends': {
       id: '/friends'
       path: '/friends'
@@ -549,6 +608,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/activity'
       preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about-site': {
+      id: '/about-site'
+      path: '/about-site'
+      fullPath: '/about-site'
+      preLoaderRoute: typeof AboutSiteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -642,6 +708,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/history': {
+      id: '/$locale/history'
+      path: '/$locale/history'
+      fullPath: '/$locale/history'
+      preLoaderRoute: typeof LocaleHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/friends': {
       id: '/$locale/friends'
       path: '/$locale/friends'
@@ -675,6 +748,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/activity'
       fullPath: '/$locale/activity'
       preLoaderRoute: typeof LocaleActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/about-site': {
+      id: '/$locale/about-site'
+      path: '/$locale/about-site'
+      fullPath: '/$locale/about-site'
+      preLoaderRoute: typeof LocaleAboutSiteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/about': {
@@ -718,11 +798,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AboutSiteRoute: AboutSiteRoute,
   ActivityRoute: ActivityRoute,
   AnimeRoute: AnimeRoute,
   BookshelfRoute: BookshelfRoute,
   CinemaRoute: CinemaRoute,
   FriendsRoute: FriendsRoute,
+  HistoryRoute: HistoryRoute,
   MessagesRoute: MessagesRoute,
   MusicRoute: MusicRoute,
   PortfolioRoute: PortfolioRoute,
@@ -730,11 +812,13 @@ const rootRouteChildren: RootRouteChildren = {
   ThinkingRoute: ThinkingRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   LocaleAboutRoute: LocaleAboutRoute,
+  LocaleAboutSiteRoute: LocaleAboutSiteRoute,
   LocaleActivityRoute: LocaleActivityRoute,
   LocaleAnimeRoute: LocaleAnimeRoute,
   LocaleBookshelfRoute: LocaleBookshelfRoute,
   LocaleCinemaRoute: LocaleCinemaRoute,
   LocaleFriendsRoute: LocaleFriendsRoute,
+  LocaleHistoryRoute: LocaleHistoryRoute,
   LocaleMessagesRoute: LocaleMessagesRoute,
   LocaleMusicRoute: LocaleMusicRoute,
   LocalePortfolioRoute: LocalePortfolioRoute,

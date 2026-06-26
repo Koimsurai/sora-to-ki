@@ -17,7 +17,6 @@ import { useTranslation, Trans } from 'react-i18next';
 import {
   FaRegHeart, FaHeart, FaLink, FaRegComment, FaArrowUp,
   FaEnvelope, FaShareAlt, FaRss, FaTimes,
-  FaYoutube, FaGithub, FaInstagram, FaExternalLinkAlt,
   FaTwitter, FaFacebook,
 } from 'react-icons/fa';
 import Comments from './Comments';
@@ -26,7 +25,7 @@ import { BlogImage } from './ImageLightbox';
 import { usePreviewLink } from './article-preview/usePreviewLink';
 import './BlogPost.css';
 import SignatureSVG from './SignatureSVG';
-import type { IconType } from 'react-icons';
+import { LinkCard } from './LinkCard';
 
 type PostTag = string | { name?: string };
 interface Post {
@@ -63,20 +62,6 @@ interface CategoryInfo {
 }
 
 interface Heading { id: string; text: string; level: number }
-
-interface LinkMeta {
-  type: string;
-  id?: string;
-  icon?: IconType;
-  color?: string;
-  label?: string;
-  thumb?: string | null;
-  vid?: string;
-  desc?: string;
-  embedUrl?: string | null;
-  bvid?: string;
-  path?: string;
-}
 
 interface MermaidOption { value: string; label: string; icon?: string }
 
@@ -499,244 +484,6 @@ const FONT_OPTIONS = [
   { id: 'source-han', name: '思源黑體', family: '"Noto Sans SC", "Noto Sans TC", "Source Han Sans SC", sans-serif' },
 ];
 
-/* ── Link type detection ── */
-const getLinkMeta = (url: string): LinkMeta | null => {
-  try {
-    const u = new URL(url);
-    const host = u.hostname.replace('www.', '');
-    if (host.includes('youtube.com') || host.includes('youtu.be')) {
-      let vid = '';
-      if (host.includes('youtu.be')) vid = u.pathname.slice(1);
-      else vid = u.searchParams.get('v') ?? '';
-      return { type: 'youtube', icon: FaYoutube, color: '#ff0000', label: 'YouTube', thumb: vid ? 'https://img.youtube.com/vi/' + vid + '/mqdefault.jpg' : null, vid };
-    }
-    if (host.includes('github.com')) {
-      const parts = u.pathname.split('/').filter(Boolean);
-      const repo = parts.length >= 2 ? parts[0] + '/' + parts[1] : u.pathname;
-
-      // Better descriptions for common GitHub deep links.
-      if (parts.length >= 4 && parts[2] === 'issues') {
-        return {
-          type: 'github',
-          icon: FaGithub,
-          color: '#fff',
-          label: 'GitHub Issue',
-          desc: repo + '#' + parts[3],
-        };
-      }
-
-      if (parts.length >= 4 && (parts[2] === 'pull' || parts[2] === 'pulls')) {
-        return {
-          type: 'github',
-          icon: FaGithub,
-          color: '#fff',
-          label: 'GitHub PR',
-          desc: repo + '#' + parts[3],
-        };
-      }
-
-      // Profile URL (只有 username 沒有 repo) → 標成「GitHub Profile」更直覺
-      if (parts.length === 1) {
-        return { type: 'github', icon: FaGithub, color: '#fff', label: 'GitHub Profile', desc: '@' + parts[0] };
-      }
-      return { type: 'github', icon: FaGithub, color: '#fff', label: 'GitHub', desc: repo };
-    }
-    if (host.includes('instagram.com')) return { type: 'instagram', icon: FaInstagram, color: '#E4405F', label: 'Instagram' };
-    if (host.includes('threads.net')) return { type: 'threads', icon: FaExternalLinkAlt, color: '#fff', label: 'Threads' };
-
-    // Spotify
-    if (host.includes('spotify.com') || host.includes('open.spotify.com')) {
-      // Extract Spotify embed URL
-      const pathParts = u.pathname.split('/');
-      let embedUrl = null;
-      if (pathParts.includes('track') || pathParts.includes('album') || pathParts.includes('playlist') || pathParts.includes('episode')) {
-        embedUrl = `https://open.spotify.com/embed${u.pathname}`;
-      }
-      return { type: 'spotify', icon: FaExternalLinkAlt, color: '#1DB954', label: 'Spotify', embedUrl };
-    }
-
-    // Bilibili
-    if (host.includes('bilibili.com') || host.includes('b23.tv')) {
-      let bvid = '';
-      const bvMatch = /BV\w+/.exec(u.pathname);
-      if (bvMatch) bvid = bvMatch[0];
-      return { type: 'bilibili', icon: FaExternalLinkAlt, color: '#00A1D6', label: 'Bilibili', bvid };
-    }
-
-    // Internal Blog Link Detection — 含語系前綴（/en/blog/、/ko/blog/…）
-    const blogMatch = /^(?:\/(?:en|zh-cn|ja|ko))?\/blog\/([^/]+)$/.exec(u.pathname);
-    if (host.includes('koimsurai.com') && blogMatch) {
-      const id = blogMatch[1];
-      if (id && id !== 'blog') return { type: 'internal', id };
-    }
-
-    // 碎念 / 思考引用
-    if (host.includes('koimsurai.com') && u.pathname.startsWith('/thinking/')) {
-      const tid = u.pathname.split('/').pop();
-      if (tid && tid !== 'thinking') return { type: 'thought', id: tid };
-    }
-
-    // Internal Web Link Detection (non-blog pages)
-    if (host.includes('koimsurai.com')) {
-      return { type: 'internal-page', icon: FaExternalLinkAlt, color: 'var(--post-accent)', label: '站內連結', path: u.pathname };
-    }
-
-    return { type: 'generic', icon: FaExternalLinkAlt, color: 'var(--post-muted)', label: host };
-  } catch { return null; }
-};
-
-/* ══════════════════════════
-   InternalLinkCard — fetch and show preview
-   ══════════════════════════ */
-export const InternalLinkCard = ({ id }: { id: string }) => {
-  const [post, setPost] = useState<Post | null>(null);
-
-  useEffect(() => {
-    fetch(`/api/posts/${id}`)
-      .then(r => r.ok ? r.json() as Promise<Post> : null)
-      .then(data => {
-        if (data?.message === 'success') setPost(data);
-      })
-      .catch(() => { /* ignore */ });
-  }, [id]);
-
-  if (!post) return <a href={`/blog/${id}`} target="_blank" rel="noopener noreferrer">/blog/{id}</a>;
-
-  return (
-    <Link to={`/blog/${id}`} className="link-card link-card-internal">
-      <div className="link-card-body">
-        <div className="link-card-site">
-          <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
-          <span>站內文章</span>
-        </div>
-        <div className="link-card-title">{post.title}</div>
-        <div className="link-card-meta">
-          <span>{new Date(post.created_at ?? '').getFullYear()}</span>
-          {post.category && <> · <span>{post.category}</span></>}
-        </div>
-      </div>
-    </Link>
-  );
-};
-
-/* ══════════════════════════
-   ThoughtPreviewCard — 引用一則碎念/思考
-   ══════════════════════════ */
-export const ThoughtPreviewCard = ({ id }: { id: string }) => {
-  const [th, setTh] = useState<{ content: string } | null>(null);
-  useEffect(() => {
-    fetch(`/api/thoughts/${id}`)
-      .then((r) => (r.ok ? r.json() as Promise<{ thought?: { content: string } }> : null))
-      .then((d) => { if (d?.thought) setTh(d.thought); })
-      .catch(() => { /* ignore */ });
-  }, [id]);
-
-  if (!th) return <a href={`/thinking/${id}`} target="_blank" rel="noopener noreferrer">/thinking/{id}</a>;
-
-  return (
-    <Link to={`/thinking/${id}`} className="link-card link-card-internal">
-      <div className="link-card-body">
-        <div className="link-card-site">
-          <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
-          <span>碎念</span>
-        </div>
-        <div className="link-card-title" style={{ whiteSpace: 'normal', fontSize: '0.98rem' }}>
-          {th.content.length > 80 ? th.content.slice(0, 80) + '…' : th.content}
-        </div>
-      </div>
-    </Link>
-  );
-};
-
-/* ══════════════════════════
-   LinkCard — rich link preview
-   ══════════════════════════ */
-export const LinkCard = ({ href }: { href: string }) => {
-  const meta = getLinkMeta(href);
-  if (!meta) return <a href={href} target="_blank" rel="noopener noreferrer">{href}</a>;
-
-  if (meta.type === 'internal') {
-    return <InternalLinkCard id={meta.id ?? ''} />;
-  }
-
-  if (meta.type === 'thought') {
-    return <ThoughtPreviewCard id={meta.id ?? ''} />;
-  }
-
-  // Spotify embed
-  if (meta.type === 'spotify' && meta.embedUrl) {
-    return (
-      <div className="link-card link-card-spotify">
-        <iframe
-          src={meta.embedUrl + '?theme=0'}
-          width="100%"
-          height="152"
-          frameBorder="0"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
-          className="rounded-lg"
-          style={{ border: 'none' }}
-        />
-      </div>
-    );
-  }
-
-  // Bilibili embed
-  if (meta.type === 'bilibili' && meta.bvid) {
-    return (
-      <div className="link-card link-card-bilibili">
-        <div className="link-card-embed-wrapper">
-          <iframe
-            src={`https://player.bilibili.com/player.html?bvid=${meta.bvid}&high_quality=1&danmaku=0`}
-            scrolling="no"
-            frameBorder="0"
-            allowFullScreen
-            loading="lazy"
-            className="link-card-bilibili-iframe"
-            style={{ border: 'none' }}
-          />
-        </div>
-        <a href={href} target="_blank" rel="noopener noreferrer" className="link-card-embed-link">
-          <span style={{ color: '#00A1D6' }}>▶</span> 在 Bilibili 觀看
-        </a>
-      </div>
-    );
-  }
-
-  // Internal web page link
-  if (meta.type === 'internal-page') {
-    return (
-      <Link to={meta.path ?? '/'} className="link-card link-card-internal">
-        <div className="link-card-body">
-          <div className="link-card-site">
-            <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
-            <span>{meta.label}</span>
-          </div>
-          <div className="link-card-url">{meta.path}</div>
-        </div>
-      </Link>
-    );
-  }
-
-  const Icon = meta.icon;
-
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={'link-card link-card-' + meta.type}>
-      {meta.thumb && (
-        <div className="link-card-thumb">
-          <img src={meta.thumb} alt="" loading="lazy" />
-        </div>
-      )}
-      <div className="link-card-body">
-        <div className="link-card-site">
-          {Icon && <Icon style={{ color: meta.color, fontSize: '1rem' }} />}
-          <span>{meta.label}</span>
-        </div>
-        <div className="link-card-url">{meta.desc ?? href}</div>
-      </div>
-    </a>
-  );
-};
 
 /* ══════════════════════════
    CodeBlock

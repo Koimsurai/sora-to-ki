@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import InfoPage from './InfoPage';
-import { LinkCard } from './BlogPost';
+import { LinkCard } from './LinkCard';
 
 const SITE_BIRTH = new Date('2025-04-01T00:00:00+08:00');
 
