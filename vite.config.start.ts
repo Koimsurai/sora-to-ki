@@ -39,6 +39,11 @@ export default defineConfig(async () => ({
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
+  // prerender 會起一個內部 Vite server 再自己 crawl;預設綁 localhost 在 Docker(BuildKit)裡可能解析到
+  // ::1 / 非監聽介面,而 crawler 連 127.0.0.1(IPv4)→ ECONNREFUSED。綁死 127.0.0.1 讓兩邊一致,
+  // 才能在 Docker build 內 prerender(TanStack issue #6275 / PR #6305:用既有 preview/server 設定自控)。
+  server: { host: '127.0.0.1' },
+  preview: { host: '127.0.0.1' },
   // react-helmet-async 是 CJS,要 vite 轉譯才能在 SSR 用具名匯出(過渡 bridge,之後 SEOHead→head() 可移除)
   ssr: { noExternal: ['react-helmet-async'] },
   plugins: [
