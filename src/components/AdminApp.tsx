@@ -44,11 +44,13 @@ const lazyEl = (El: React.ComponentType) => (
 );
 
 export default function AdminApp() {
+  // 不用 basename:AdminLayout 內部連結是絕對的 /admin/...,所以路由就以 /admin 前綴定義(對齊舊 App.tsx),
+  // 避免 basename 疊出 /admin/admin/... 雙前綴。
   return (
-    <BrowserRouter basename="/admin">
+    <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Navigate to="/" replace />} />
-        <Route path="/" element={<RequireAdmin>{lazyEl(LazyAdminLayout)}</RequireAdmin>}>
+        <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
+        <Route path="/admin" element={<RequireAdmin>{lazyEl(LazyAdminLayout)}</RequireAdmin>}>
           <Route index element={lazyEl(LazyAdminDashboard)} />
           <Route path="dashboard" element={lazyEl(LazyAdminDashboard)} />
           <Route path="posts" element={lazyEl(LazyPostsList)} />
