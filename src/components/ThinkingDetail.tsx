@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from '@tanstack/react-router';
+import { LocaleLink } from '../locale-link';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,7 +14,7 @@ const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/ap
 
 function ThinkingDetail() {
   const { t } = useTranslation();
-  const { id } = useParams();
+  const { id } = useParams({ strict: false }); // 兩種路由（/thinking/$id、/$locale/thinking/$id）共用
   const { isAdmin, getToken } = useAuth();
   const [thought, setThought] = useState<Thought | null | undefined>(undefined); // undefined=載入中, null=找不到
 
@@ -47,7 +48,7 @@ function ThinkingDetail() {
       <SEOHead title={t('thinking.title')} description={thought?.content ?? t('thinking.subtitle')} path={`/thinking/${id}`} />
 
       <div className="tk-wrap tk-wrap--detail">
-        <Link to="/thinking" className="tk-back">← {t('thinking.back')}</Link>
+        <LocaleLink to="/thinking" className="tk-back">← {t('thinking.back')}</LocaleLink>
 
         {thought === undefined && <KoimLoader inline size="sm" />}
         {thought === null && <p className="tk-empty">{t('thinking.notFound')}</p>}

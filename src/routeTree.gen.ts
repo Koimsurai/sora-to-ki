@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as ThinkingRouteImport } from './routes/thinking'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PhotosRouteImport } from './routes/photos'
@@ -27,13 +26,14 @@ import { Route as AboutSiteRouteImport } from './routes/about-site'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WatchIndexRouteImport } from './routes/watch/index'
+import { Route as ThinkingIndexRouteImport } from './routes/thinking/index'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as WatchLibraryRouteImport } from './routes/watch/library'
+import { Route as ThinkingIdRouteImport } from './routes/thinking/$id'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscribe'
-import { Route as LocaleThinkingRouteImport } from './routes/$locale/thinking'
 import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
 import { Route as LocalePortfolioRouteImport } from './routes/$locale/portfolio'
 import { Route as LocalePhotosRouteImport } from './routes/$locale/photos'
@@ -48,18 +48,15 @@ import { Route as LocaleActivityRouteImport } from './routes/$locale/activity'
 import { Route as LocaleAboutSiteRouteImport } from './routes/$locale/about-site'
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about'
 import { Route as LocaleWatchIndexRouteImport } from './routes/$locale/watch/index'
+import { Route as LocaleThinkingIndexRouteImport } from './routes/$locale/thinking/index'
 import { Route as LocaleBlogIndexRouteImport } from './routes/$locale/blog/index'
 import { Route as LocaleWatchLibraryRouteImport } from './routes/$locale/watch/library'
+import { Route as LocaleThinkingIdRouteImport } from './routes/$locale/thinking/$id'
 import { Route as LocaleBlogIdRouteImport } from './routes/$locale/blog/$id'
 
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ThinkingRoute = ThinkingRouteImport.update({
-  id: '/thinking',
-  path: '/thinking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SetupRoute = SetupRouteImport.update({
@@ -142,6 +139,11 @@ const WatchIndexRoute = WatchIndexRouteImport.update({
   path: '/watch/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ThinkingIndexRoute = ThinkingIndexRouteImport.update({
+  id: '/thinking/',
+  path: '/thinking/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -157,6 +159,11 @@ const WatchLibraryRoute = WatchLibraryRouteImport.update({
   path: '/watch/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ThinkingIdRoute = ThinkingIdRouteImport.update({
+  id: '/thinking/$id',
+  path: '/thinking/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlogIdRoute = BlogIdRouteImport.update({
   id: '/blog/$id',
   path: '/blog/$id',
@@ -170,11 +177,6 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
 const LocaleUnsubscribeRoute = LocaleUnsubscribeRouteImport.update({
   id: '/$locale/unsubscribe',
   path: '/$locale/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleThinkingRoute = LocaleThinkingRouteImport.update({
-  id: '/$locale/thinking',
-  path: '/$locale/thinking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleSetupRoute = LocaleSetupRouteImport.update({
@@ -247,6 +249,11 @@ const LocaleWatchIndexRoute = LocaleWatchIndexRouteImport.update({
   path: '/$locale/watch/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleThinkingIndexRoute = LocaleThinkingIndexRouteImport.update({
+  id: '/$locale/thinking/',
+  path: '/$locale/thinking/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleBlogIndexRoute = LocaleBlogIndexRouteImport.update({
   id: '/$locale/blog/',
   path: '/$locale/blog/',
@@ -255,6 +262,11 @@ const LocaleBlogIndexRoute = LocaleBlogIndexRouteImport.update({
 const LocaleWatchLibraryRoute = LocaleWatchLibraryRouteImport.update({
   id: '/$locale/watch/library',
   path: '/$locale/watch/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleThinkingIdRoute = LocaleThinkingIdRouteImport.update({
+  id: '/$locale/thinking/$id',
+  path: '/$locale/thinking/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleBlogIdRoute = LocaleBlogIdRouteImport.update({
@@ -279,7 +291,6 @@ export interface FileRoutesByFullPath {
   '/photos': typeof PhotosRoute
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
-  '/thinking': typeof ThinkingRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/about-site': typeof LocaleAboutSiteRoute
@@ -294,17 +305,20 @@ export interface FileRoutesByFullPath {
   '/$locale/photos': typeof LocalePhotosRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
-  '/$locale/thinking': typeof LocaleThinkingRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
+  '/thinking/$id': typeof ThinkingIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/thinking/': typeof ThinkingIndexRoute
   '/watch/': typeof WatchIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
+  '/$locale/thinking/$id': typeof LocaleThinkingIdRoute
   '/$locale/watch/library': typeof LocaleWatchLibraryRoute
   '/$locale/blog/': typeof LocaleBlogIndexRoute
+  '/$locale/thinking/': typeof LocaleThinkingIndexRoute
   '/$locale/watch/': typeof LocaleWatchIndexRoute
 }
 export interface FileRoutesByTo {
@@ -323,7 +337,6 @@ export interface FileRoutesByTo {
   '/photos': typeof PhotosRoute
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
-  '/thinking': typeof ThinkingRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/about-site': typeof LocaleAboutSiteRoute
@@ -338,17 +351,20 @@ export interface FileRoutesByTo {
   '/$locale/photos': typeof LocalePhotosRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
-  '/$locale/thinking': typeof LocaleThinkingRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
+  '/thinking/$id': typeof ThinkingIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale': typeof LocaleIndexRoute
   '/blog': typeof BlogIndexRoute
+  '/thinking': typeof ThinkingIndexRoute
   '/watch': typeof WatchIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
+  '/$locale/thinking/$id': typeof LocaleThinkingIdRoute
   '/$locale/watch/library': typeof LocaleWatchLibraryRoute
   '/$locale/blog': typeof LocaleBlogIndexRoute
+  '/$locale/thinking': typeof LocaleThinkingIndexRoute
   '/$locale/watch': typeof LocaleWatchIndexRoute
 }
 export interface FileRoutesById {
@@ -368,7 +384,6 @@ export interface FileRoutesById {
   '/photos': typeof PhotosRoute
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
-  '/thinking': typeof ThinkingRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/about-site': typeof LocaleAboutSiteRoute
@@ -383,17 +398,20 @@ export interface FileRoutesById {
   '/$locale/photos': typeof LocalePhotosRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
-  '/$locale/thinking': typeof LocaleThinkingRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
+  '/thinking/$id': typeof ThinkingIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
   '/blog/': typeof BlogIndexRoute
+  '/thinking/': typeof ThinkingIndexRoute
   '/watch/': typeof WatchIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
+  '/$locale/thinking/$id': typeof LocaleThinkingIdRoute
   '/$locale/watch/library': typeof LocaleWatchLibraryRoute
   '/$locale/blog/': typeof LocaleBlogIndexRoute
+  '/$locale/thinking/': typeof LocaleThinkingIndexRoute
   '/$locale/watch/': typeof LocaleWatchIndexRoute
 }
 export interface FileRouteTypes {
@@ -414,7 +432,6 @@ export interface FileRouteTypes {
     | '/photos'
     | '/portfolio'
     | '/setup'
-    | '/thinking'
     | '/unsubscribe'
     | '/$locale/about'
     | '/$locale/about-site'
@@ -429,17 +446,20 @@ export interface FileRouteTypes {
     | '/$locale/photos'
     | '/$locale/portfolio'
     | '/$locale/setup'
-    | '/$locale/thinking'
     | '/$locale/unsubscribe'
     | '/auth/callback'
     | '/blog/$id'
+    | '/thinking/$id'
     | '/watch/library'
     | '/$locale/'
     | '/blog/'
+    | '/thinking/'
     | '/watch/'
     | '/$locale/blog/$id'
+    | '/$locale/thinking/$id'
     | '/$locale/watch/library'
     | '/$locale/blog/'
+    | '/$locale/thinking/'
     | '/$locale/watch/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -458,7 +478,6 @@ export interface FileRouteTypes {
     | '/photos'
     | '/portfolio'
     | '/setup'
-    | '/thinking'
     | '/unsubscribe'
     | '/$locale/about'
     | '/$locale/about-site'
@@ -473,17 +492,20 @@ export interface FileRouteTypes {
     | '/$locale/photos'
     | '/$locale/portfolio'
     | '/$locale/setup'
-    | '/$locale/thinking'
     | '/$locale/unsubscribe'
     | '/auth/callback'
     | '/blog/$id'
+    | '/thinking/$id'
     | '/watch/library'
     | '/$locale'
     | '/blog'
+    | '/thinking'
     | '/watch'
     | '/$locale/blog/$id'
+    | '/$locale/thinking/$id'
     | '/$locale/watch/library'
     | '/$locale/blog'
+    | '/$locale/thinking'
     | '/$locale/watch'
   id:
     | '__root__'
@@ -502,7 +524,6 @@ export interface FileRouteTypes {
     | '/photos'
     | '/portfolio'
     | '/setup'
-    | '/thinking'
     | '/unsubscribe'
     | '/$locale/about'
     | '/$locale/about-site'
@@ -517,17 +538,20 @@ export interface FileRouteTypes {
     | '/$locale/photos'
     | '/$locale/portfolio'
     | '/$locale/setup'
-    | '/$locale/thinking'
     | '/$locale/unsubscribe'
     | '/auth/callback'
     | '/blog/$id'
+    | '/thinking/$id'
     | '/watch/library'
     | '/$locale/'
     | '/blog/'
+    | '/thinking/'
     | '/watch/'
     | '/$locale/blog/$id'
+    | '/$locale/thinking/$id'
     | '/$locale/watch/library'
     | '/$locale/blog/'
+    | '/$locale/thinking/'
     | '/$locale/watch/'
   fileRoutesById: FileRoutesById
 }
@@ -547,7 +571,6 @@ export interface RootRouteChildren {
   PhotosRoute: typeof PhotosRoute
   PortfolioRoute: typeof PortfolioRoute
   SetupRoute: typeof SetupRoute
-  ThinkingRoute: typeof ThinkingRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   LocaleAboutRoute: typeof LocaleAboutRoute
   LocaleAboutSiteRoute: typeof LocaleAboutSiteRoute
@@ -562,17 +585,20 @@ export interface RootRouteChildren {
   LocalePhotosRoute: typeof LocalePhotosRoute
   LocalePortfolioRoute: typeof LocalePortfolioRoute
   LocaleSetupRoute: typeof LocaleSetupRoute
-  LocaleThinkingRoute: typeof LocaleThinkingRoute
   LocaleUnsubscribeRoute: typeof LocaleUnsubscribeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   BlogIdRoute: typeof BlogIdRoute
+  ThinkingIdRoute: typeof ThinkingIdRoute
   WatchLibraryRoute: typeof WatchLibraryRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
   BlogIndexRoute: typeof BlogIndexRoute
+  ThinkingIndexRoute: typeof ThinkingIndexRoute
   WatchIndexRoute: typeof WatchIndexRoute
   LocaleBlogIdRoute: typeof LocaleBlogIdRoute
+  LocaleThinkingIdRoute: typeof LocaleThinkingIdRoute
   LocaleWatchLibraryRoute: typeof LocaleWatchLibraryRoute
   LocaleBlogIndexRoute: typeof LocaleBlogIndexRoute
+  LocaleThinkingIndexRoute: typeof LocaleThinkingIndexRoute
   LocaleWatchIndexRoute: typeof LocaleWatchIndexRoute
 }
 
@@ -583,13 +609,6 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/thinking': {
-      id: '/thinking'
-      path: '/thinking'
-      fullPath: '/thinking'
-      preLoaderRoute: typeof ThinkingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/setup': {
@@ -704,6 +723,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/thinking/': {
+      id: '/thinking/'
+      path: '/thinking'
+      fullPath: '/thinking/'
+      preLoaderRoute: typeof ThinkingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog/': {
       id: '/blog/'
       path: '/blog'
@@ -725,6 +751,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchLibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/thinking/$id': {
+      id: '/thinking/$id'
+      path: '/thinking/$id'
+      fullPath: '/thinking/$id'
+      preLoaderRoute: typeof ThinkingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/blog/$id': {
       id: '/blog/$id'
       path: '/blog/$id'
@@ -744,13 +777,6 @@ declare module '@tanstack/react-router' {
       path: '/$locale/unsubscribe'
       fullPath: '/$locale/unsubscribe'
       preLoaderRoute: typeof LocaleUnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/thinking': {
-      id: '/$locale/thinking'
-      path: '/$locale/thinking'
-      fullPath: '/$locale/thinking'
-      preLoaderRoute: typeof LocaleThinkingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/setup': {
@@ -851,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWatchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/thinking/': {
+      id: '/$locale/thinking/'
+      path: '/$locale/thinking'
+      fullPath: '/$locale/thinking/'
+      preLoaderRoute: typeof LocaleThinkingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/blog/': {
       id: '/$locale/blog/'
       path: '/$locale/blog'
@@ -863,6 +896,13 @@ declare module '@tanstack/react-router' {
       path: '/$locale/watch/library'
       fullPath: '/$locale/watch/library'
       preLoaderRoute: typeof LocaleWatchLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/thinking/$id': {
+      id: '/$locale/thinking/$id'
+      path: '/$locale/thinking/$id'
+      fullPath: '/$locale/thinking/$id'
+      preLoaderRoute: typeof LocaleThinkingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/blog/$id': {
@@ -891,7 +931,6 @@ const rootRouteChildren: RootRouteChildren = {
   PhotosRoute: PhotosRoute,
   PortfolioRoute: PortfolioRoute,
   SetupRoute: SetupRoute,
-  ThinkingRoute: ThinkingRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   LocaleAboutRoute: LocaleAboutRoute,
   LocaleAboutSiteRoute: LocaleAboutSiteRoute,
@@ -906,17 +945,20 @@ const rootRouteChildren: RootRouteChildren = {
   LocalePhotosRoute: LocalePhotosRoute,
   LocalePortfolioRoute: LocalePortfolioRoute,
   LocaleSetupRoute: LocaleSetupRoute,
-  LocaleThinkingRoute: LocaleThinkingRoute,
   LocaleUnsubscribeRoute: LocaleUnsubscribeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   BlogIdRoute: BlogIdRoute,
+  ThinkingIdRoute: ThinkingIdRoute,
   WatchLibraryRoute: WatchLibraryRoute,
   LocaleIndexRoute: LocaleIndexRoute,
   BlogIndexRoute: BlogIndexRoute,
+  ThinkingIndexRoute: ThinkingIndexRoute,
   WatchIndexRoute: WatchIndexRoute,
   LocaleBlogIdRoute: LocaleBlogIdRoute,
+  LocaleThinkingIdRoute: LocaleThinkingIdRoute,
   LocaleWatchLibraryRoute: LocaleWatchLibraryRoute,
   LocaleBlogIndexRoute: LocaleBlogIndexRoute,
+  LocaleThinkingIndexRoute: LocaleThinkingIndexRoute,
   LocaleWatchIndexRoute: LocaleWatchIndexRoute,
 }
 export const routeTree = rootRouteImport
