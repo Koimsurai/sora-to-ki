@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
 
@@ -43,7 +43,7 @@ const NotFound = () => {
           {t('notFound.lostMessage')}
           <br />{t('notFound.subMessage')}
         </p>
-        <Link
+        <LocaleLink
           to="/"
           style={{
             display: 'inline-flex',
@@ -69,7 +69,7 @@ const NotFound = () => {
           }}
         >
           ← {t('notFound.backHome')}
-        </Link>
+        </LocaleLink>
       </div>
     </>
   );

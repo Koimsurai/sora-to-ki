@@ -13,6 +13,8 @@ import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
 import { ArticlePreviewProvider } from '../components/article-preview/ArticlePreviewContext';
 import { localeFromPathname } from '../start-i18n';
 import AppShell from '../components/AppShell';
+import NotFound from '../components/NotFound';
+import { localeWrap } from '../localePage';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -22,6 +24,8 @@ export const Route = createRootRoute({
       { title: '宙と木 · Koimsurai' },
     ],
   }),
+  // 未知路由 → 站內 404 頁(在 AppShell 內,保留導覽列);localeWrap 提供 i18n + locale。
+  notFoundComponent: localeWrap(NotFound),
   component: RootComponent,
 });
 
