@@ -15,6 +15,7 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as JourneyRouteImport } from './routes/journey'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as FriendsRouteImport } from './routes/friends'
 import { Route as CinemaRouteImport } from './routes/cinema'
@@ -29,6 +30,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as WatchLibraryRouteImport } from './routes/watch/library'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscribe'
 import { Route as LocaleThinkingRouteImport } from './routes/$locale/thinking'
 import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
@@ -76,6 +78,11 @@ const MusicRoute = MusicRouteImport.update({
 const MessagesRoute = MessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JourneyRoute = JourneyRouteImport.update({
+  id: '/journey',
+  path: '/journey',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -146,6 +153,11 @@ const WatchLibraryRoute = WatchLibraryRouteImport.update({
 const BlogIdRoute = BlogIdRouteImport.update({
   id: '/blog/$id',
   path: '/blog/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleUnsubscribeRoute = LocaleUnsubscribeRouteImport.update({
@@ -249,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
+  '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
   '/portfolio': typeof PortfolioRoute
@@ -269,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -289,6 +303,7 @@ export interface FileRoutesByTo {
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
+  '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
   '/portfolio': typeof PortfolioRoute
@@ -309,6 +324,7 @@ export interface FileRoutesByTo {
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale': typeof LocaleIndexRoute
@@ -330,6 +346,7 @@ export interface FileRoutesById {
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
+  '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
   '/portfolio': typeof PortfolioRoute
@@ -350,6 +367,7 @@ export interface FileRoutesById {
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -372,6 +390,7 @@ export interface FileRouteTypes {
     | '/cinema'
     | '/friends'
     | '/history'
+    | '/journey'
     | '/messages'
     | '/music'
     | '/portfolio'
@@ -392,6 +411,7 @@ export interface FileRouteTypes {
     | '/$locale/setup'
     | '/$locale/thinking'
     | '/$locale/unsubscribe'
+    | '/auth/callback'
     | '/blog/$id'
     | '/watch/library'
     | '/$locale/'
@@ -412,6 +432,7 @@ export interface FileRouteTypes {
     | '/cinema'
     | '/friends'
     | '/history'
+    | '/journey'
     | '/messages'
     | '/music'
     | '/portfolio'
@@ -432,6 +453,7 @@ export interface FileRouteTypes {
     | '/$locale/setup'
     | '/$locale/thinking'
     | '/$locale/unsubscribe'
+    | '/auth/callback'
     | '/blog/$id'
     | '/watch/library'
     | '/$locale'
@@ -452,6 +474,7 @@ export interface FileRouteTypes {
     | '/cinema'
     | '/friends'
     | '/history'
+    | '/journey'
     | '/messages'
     | '/music'
     | '/portfolio'
@@ -472,6 +495,7 @@ export interface FileRouteTypes {
     | '/$locale/setup'
     | '/$locale/thinking'
     | '/$locale/unsubscribe'
+    | '/auth/callback'
     | '/blog/$id'
     | '/watch/library'
     | '/$locale/'
@@ -493,6 +517,7 @@ export interface RootRouteChildren {
   CinemaRoute: typeof CinemaRoute
   FriendsRoute: typeof FriendsRoute
   HistoryRoute: typeof HistoryRoute
+  JourneyRoute: typeof JourneyRoute
   MessagesRoute: typeof MessagesRoute
   MusicRoute: typeof MusicRoute
   PortfolioRoute: typeof PortfolioRoute
@@ -513,6 +538,7 @@ export interface RootRouteChildren {
   LocaleSetupRoute: typeof LocaleSetupRoute
   LocaleThinkingRoute: typeof LocaleThinkingRoute
   LocaleUnsubscribeRoute: typeof LocaleUnsubscribeRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   BlogIdRoute: typeof BlogIdRoute
   WatchLibraryRoute: typeof WatchLibraryRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
@@ -566,6 +592,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages'
       preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/journey': {
+      id: '/journey'
+      path: '/journey'
+      fullPath: '/journey'
+      preLoaderRoute: typeof JourneyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -664,6 +697,13 @@ declare module '@tanstack/react-router' {
       path: '/blog/$id'
       fullPath: '/blog/$id'
       preLoaderRoute: typeof BlogIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/unsubscribe': {
@@ -805,6 +845,7 @@ const rootRouteChildren: RootRouteChildren = {
   CinemaRoute: CinemaRoute,
   FriendsRoute: FriendsRoute,
   HistoryRoute: HistoryRoute,
+  JourneyRoute: JourneyRoute,
   MessagesRoute: MessagesRoute,
   MusicRoute: MusicRoute,
   PortfolioRoute: PortfolioRoute,
@@ -825,6 +866,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleSetupRoute: LocaleSetupRoute,
   LocaleThinkingRoute: LocaleThinkingRoute,
   LocaleUnsubscribeRoute: LocaleUnsubscribeRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   BlogIdRoute: BlogIdRoute,
   WatchLibraryRoute: WatchLibraryRoute,
   LocaleIndexRoute: LocaleIndexRoute,

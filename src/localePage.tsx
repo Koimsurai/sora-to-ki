@@ -5,7 +5,7 @@ import { useLocale } from './locale-link';
 
 // 共用:把現有頁面元件包成 Start 路由 options(LocaleProvider 包覆 + 逐 locale hreflang)。
 // component 用 useLocale() 從 URL 推 locale,所以 default 與 $locale 路由共用同一個 wrapper。
-function localeWrap(Comp: ComponentType): () => ReactElement {
+export function localeWrap(Comp: ComponentType): () => ReactElement {
   return function Wrapped() {
     const locale = useLocale();
     return (
