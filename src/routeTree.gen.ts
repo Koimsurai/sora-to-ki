@@ -33,6 +33,7 @@ import { Route as WatchLibraryRouteImport } from './routes/watch/library'
 import { Route as ThinkingIdRouteImport } from './routes/thinking/$id'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as AdminSplatRouteImport } from './routes/admin/$'
 import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscribe'
 import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
 import { Route as LocalePortfolioRouteImport } from './routes/$locale/portfolio'
@@ -174,6 +175,11 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSplatRoute = AdminSplatRouteImport.update({
+  id: '/admin/$',
+  path: '/admin/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleUnsubscribeRoute = LocaleUnsubscribeRouteImport.update({
   id: '/$locale/unsubscribe',
   path: '/$locale/unsubscribe',
@@ -306,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/admin/$': typeof AdminSplatRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/thinking/$id': typeof ThinkingIdRoute
@@ -352,6 +359,7 @@ export interface FileRoutesByTo {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/admin/$': typeof AdminSplatRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/thinking/$id': typeof ThinkingIdRoute
@@ -399,6 +407,7 @@ export interface FileRoutesById {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/admin/$': typeof AdminSplatRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
   '/thinking/$id': typeof ThinkingIdRoute
@@ -447,6 +456,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/unsubscribe'
+    | '/admin/$'
     | '/auth/callback'
     | '/blog/$id'
     | '/thinking/$id'
@@ -493,6 +503,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/unsubscribe'
+    | '/admin/$'
     | '/auth/callback'
     | '/blog/$id'
     | '/thinking/$id'
@@ -539,6 +550,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/unsubscribe'
+    | '/admin/$'
     | '/auth/callback'
     | '/blog/$id'
     | '/thinking/$id'
@@ -586,6 +598,7 @@ export interface RootRouteChildren {
   LocalePortfolioRoute: typeof LocalePortfolioRoute
   LocaleSetupRoute: typeof LocaleSetupRoute
   LocaleUnsubscribeRoute: typeof LocaleUnsubscribeRoute
+  AdminSplatRoute: typeof AdminSplatRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   BlogIdRoute: typeof BlogIdRoute
   ThinkingIdRoute: typeof ThinkingIdRoute
@@ -772,6 +785,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/$': {
+      id: '/admin/$'
+      path: '/admin/$'
+      fullPath: '/admin/$'
+      preLoaderRoute: typeof AdminSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/unsubscribe': {
       id: '/$locale/unsubscribe'
       path: '/$locale/unsubscribe'
@@ -946,6 +966,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocalePortfolioRoute: LocalePortfolioRoute,
   LocaleSetupRoute: LocaleSetupRoute,
   LocaleUnsubscribeRoute: LocaleUnsubscribeRoute,
+  AdminSplatRoute: AdminSplatRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   BlogIdRoute: BlogIdRoute,
   ThinkingIdRoute: ThinkingIdRoute,
