@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FaSearch, FaChevronDown } from 'react-icons/fa';
@@ -200,7 +200,7 @@ function WatchLibrary() {
 
       <div className="wl-wrap">
         <motion.header className="wl-header" {...reveal}>
-          <Link to="/watch" className="wl-back">{t('watch.library.viewWatch')}</Link>
+          <LocaleLink to="/watch" className="wl-back">{t('watch.library.viewWatch')}</LocaleLink>
           <h1 className="wl-title">{t('watch.library.title')}</h1>
           <p className="wl-subtitle">{t('watch.library.subtitle')}</p>
         </motion.header>

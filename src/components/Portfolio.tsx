@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import photoMainImage from '../assets/Photo-main.webp';
 import SEOHead from './SEOHead';
@@ -122,7 +122,7 @@ const ProjectLink = ({ item }: { item: { link?: string; external?: boolean; link
       </a>
     );
   }
-  return <Link to={item.link} className="portfolio-link">{item.linkLabel}</Link>;
+  return <LocaleLink to={item.link} className="portfolio-link">{item.linkLabel}</LocaleLink>;
 };
 
 const Portfolio = () => {

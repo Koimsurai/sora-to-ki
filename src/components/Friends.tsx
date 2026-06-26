@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
@@ -438,7 +438,7 @@ function Friends() {
 
       <p>
         {c.contactPre}
-        <Link to="/messages">{c.contactLink}</Link>
+        <LocaleLink to="/messages">{c.contactLink}</LocaleLink>
         {c.contactPost1}
         <a href="mailto:timo9378@gmail.com">timo9378@gmail.com</a>
         {c.contactPost2}
