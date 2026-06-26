@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { Heart, ThumbsDown, MessageCircle } from 'lucide-react';
 import Comments from './Comments';
 
@@ -167,7 +167,7 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
             <button className="tk-act" onClick={() => { setEditText(th.content); setEditing(true); }}>編輯</button>
           )}
           {isAdmin && <button className="tk-act tk-act--del" onClick={() => onDelete?.(th.id)}>刪除</button>}
-          {!detail && <Link className="tk-view" to={`/thinking/${th.id}`}>查看 →</Link>}
+          {!detail && <LocaleLink className="tk-view" to={`/thinking/${th.id}`}>查看 →</LocaleLink>}
         </div>
       </div>
 

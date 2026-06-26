@@ -24,10 +24,15 @@ async function blogPages(): Promise<{ path: string }[]> {
   }
 }
 
+const LOCALE_PREFIXES = ['en', 'ja', 'ko', 'zh-cn'];
+// UI 頁(全 5 語都有):每頁生 default(/x)+ 4 個前綴(/en/x …)。加新頁只要加名字。
+const UI_PAGES = ['about', 'setup', 'bookshelf', 'activity', 'music', 'cinema', 'anime', 'thinking', 'messages'];
 const STATIC_PAGES = [
-  { path: '/en' }, { path: '/ja' }, { path: '/ko' }, { path: '/zh-cn' },
-  { path: '/about' }, { path: '/en/about' }, { path: '/ja/about' }, { path: '/ko/about' }, { path: '/zh-cn/about' },
-  { path: '/setup' }, { path: '/en/setup' }, { path: '/ja/setup' }, { path: '/ko/setup' }, { path: '/zh-cn/setup' },
+  ...LOCALE_PREFIXES.map((p) => ({ path: `/${p}` })),
+  ...UI_PAGES.flatMap((page) => [
+    { path: `/${page}` },
+    ...LOCALE_PREFIXES.map((loc) => ({ path: `/${loc}/${page}` })),
+  ]),
 ];
 
 export default defineConfig(async () => ({
@@ -40,7 +45,7 @@ export default defineConfig(async () => ({
     tanstackStart({
       prerender: {
         enabled: true,
-        crawlLinks: true,
+        crawlLinks: false, // 用明確的 pages 清單;不跟著頁面連結亂爬(會誤踩 RSS/API/外部連結)
         filter: (page) => page.path !== '/', // / 交給 server 做 Accept-Language 導向
       },
       pages: [...STATIC_PAGES, ...(await blogPages())],

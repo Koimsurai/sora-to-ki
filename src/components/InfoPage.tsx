@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { motion } from 'framer-motion';
 import { FaArrowUp } from 'react-icons/fa';
 import SEOHead from './SEOHead';
@@ -132,18 +132,18 @@ function InfoPage({
             <nav className="info-page-pager" aria-label="頁面導覽">
               <div className="info-page-pager-side">
                 {prev && (
-                  <Link to={prev.to} className="info-page-pager-link info-page-pager-prev">
+                  <LocaleLink to={prev.to} className="info-page-pager-link info-page-pager-prev">
                     <span className="info-page-pager-label">回顧一下：</span>
                     <span className="info-page-pager-title">{prev.title}</span>
-                  </Link>
+                  </LocaleLink>
                 )}
               </div>
               <div className="info-page-pager-side info-page-pager-side--right">
                 {next && (
-                  <Link to={next.to} className="info-page-pager-link info-page-pager-next">
+                  <LocaleLink to={next.to} className="info-page-pager-link info-page-pager-next">
                     <span className="info-page-pager-label">繼續瞭解：</span>
                     <span className="info-page-pager-title">{next.title}</span>
-                  </Link>
+                  </LocaleLink>
                 )}
               </div>
             </nav>

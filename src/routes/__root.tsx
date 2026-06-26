@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Outlet,
   createRootRoute,
@@ -7,6 +7,10 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import { HelmetProvider } from 'react-helmet-async';
+import { ParallaxProvider } from 'react-scroll-parallax';
+import { AuthProvider } from '../contexts/AuthContext';
+import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
+import { ArticlePreviewProvider } from '../components/article-preview/ArticlePreviewContext';
 import { localeFromPathname } from '../start-i18n';
 
 export const Route = createRootRoute({
@@ -19,6 +23,18 @@ export const Route = createRootRoute({
   }),
   component: RootComponent,
 });
+
+// PageVisibilityProvider 是受控的(需 isVisible)。SSR 預設 visible,client 端追蹤 document.hidden。
+function PageVisibilityBridge({ children }: Readonly<{ children: ReactNode }>) {
+  const [isVisible, setIsVisible] = useState(true);
+  useEffect(() => {
+    const onChange = () => setIsVisible(!document.hidden);
+    onChange();
+    document.addEventListener('visibilitychange', onChange);
+    return () => document.removeEventListener('visibilitychange', onChange);
+  }, []);
+  return <PageVisibilityProvider isVisible={isVisible}>{children}</PageVisibilityProvider>;
+}
 
 function RootComponent() {
   return (
@@ -38,8 +54,16 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <HeadContent />
       </head>
       <body>
-        {/* 過渡 bridge:讓現有 SEOHead(react-helmet-async)頁面不致崩;SEO 之後逐頁改用 Start head() */}
-        <HelmetProvider>{children}</HelmetProvider>
+        {/* 全域 providers(對齊舊 App.tsx 疊法);HelmetProvider 是 SEOHead 過渡 bridge */}
+        <HelmetProvider>
+          <AuthProvider>
+            <ParallaxProvider>
+              <PageVisibilityBridge>
+                <ArticlePreviewProvider>{children}</ArticlePreviewProvider>
+              </PageVisibilityBridge>
+            </ParallaxProvider>
+          </AuthProvider>
+        </HelmetProvider>
         <Scripts />
       </body>
     </html>

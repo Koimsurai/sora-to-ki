@@ -9,18 +9,67 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ThinkingRouteImport } from './routes/thinking'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as MusicRouteImport } from './routes/music'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as CinemaRouteImport } from './routes/cinema'
+import { Route as BookshelfRouteImport } from './routes/bookshelf'
+import { Route as AnimeRouteImport } from './routes/anime'
+import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
+import { Route as LocaleThinkingRouteImport } from './routes/$locale/thinking'
 import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
+import { Route as LocaleMusicRouteImport } from './routes/$locale/music'
+import { Route as LocaleMessagesRouteImport } from './routes/$locale/messages'
+import { Route as LocaleCinemaRouteImport } from './routes/$locale/cinema'
+import { Route as LocaleBookshelfRouteImport } from './routes/$locale/bookshelf'
+import { Route as LocaleAnimeRouteImport } from './routes/$locale/anime'
+import { Route as LocaleActivityRouteImport } from './routes/$locale/activity'
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about'
 import { Route as LocaleBlogIdRouteImport } from './routes/$locale/blog/$id'
 
+const ThinkingRoute = ThinkingRouteImport.update({
+  id: '/thinking',
+  path: '/thinking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MusicRoute = MusicRouteImport.update({
+  id: '/music',
+  path: '/music',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CinemaRoute = CinemaRouteImport.update({
+  id: '/cinema',
+  path: '/cinema',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookshelfRoute = BookshelfRouteImport.update({
+  id: '/bookshelf',
+  path: '/bookshelf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnimeRoute = AnimeRouteImport.update({
+  id: '/anime',
+  path: '/anime',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivityRoute = ActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -43,9 +92,44 @@ const BlogIdRoute = BlogIdRouteImport.update({
   path: '/blog/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleThinkingRoute = LocaleThinkingRouteImport.update({
+  id: '/$locale/thinking',
+  path: '/$locale/thinking',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleSetupRoute = LocaleSetupRouteImport.update({
   id: '/$locale/setup',
   path: '/$locale/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleMusicRoute = LocaleMusicRouteImport.update({
+  id: '/$locale/music',
+  path: '/$locale/music',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleMessagesRoute = LocaleMessagesRouteImport.update({
+  id: '/$locale/messages',
+  path: '/$locale/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleCinemaRoute = LocaleCinemaRouteImport.update({
+  id: '/$locale/cinema',
+  path: '/$locale/cinema',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleBookshelfRoute = LocaleBookshelfRouteImport.update({
+  id: '/$locale/bookshelf',
+  path: '/$locale/bookshelf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleAnimeRoute = LocaleAnimeRouteImport.update({
+  id: '/$locale/anime',
+  path: '/$locale/anime',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleActivityRoute = LocaleActivityRouteImport.update({
+  id: '/$locale/activity',
+  path: '/$locale/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleAboutRoute = LocaleAboutRouteImport.update({
@@ -62,9 +146,23 @@ const LocaleBlogIdRoute = LocaleBlogIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/activity': typeof ActivityRoute
+  '/anime': typeof AnimeRoute
+  '/bookshelf': typeof BookshelfRoute
+  '/cinema': typeof CinemaRoute
+  '/messages': typeof MessagesRoute
+  '/music': typeof MusicRoute
   '/setup': typeof SetupRoute
+  '/thinking': typeof ThinkingRoute
   '/$locale/about': typeof LocaleAboutRoute
+  '/$locale/activity': typeof LocaleActivityRoute
+  '/$locale/anime': typeof LocaleAnimeRoute
+  '/$locale/bookshelf': typeof LocaleBookshelfRoute
+  '/$locale/cinema': typeof LocaleCinemaRoute
+  '/$locale/messages': typeof LocaleMessagesRoute
+  '/$locale/music': typeof LocaleMusicRoute
   '/$locale/setup': typeof LocaleSetupRoute
+  '/$locale/thinking': typeof LocaleThinkingRoute
   '/blog/$id': typeof BlogIdRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
@@ -72,9 +170,23 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/activity': typeof ActivityRoute
+  '/anime': typeof AnimeRoute
+  '/bookshelf': typeof BookshelfRoute
+  '/cinema': typeof CinemaRoute
+  '/messages': typeof MessagesRoute
+  '/music': typeof MusicRoute
   '/setup': typeof SetupRoute
+  '/thinking': typeof ThinkingRoute
   '/$locale/about': typeof LocaleAboutRoute
+  '/$locale/activity': typeof LocaleActivityRoute
+  '/$locale/anime': typeof LocaleAnimeRoute
+  '/$locale/bookshelf': typeof LocaleBookshelfRoute
+  '/$locale/cinema': typeof LocaleCinemaRoute
+  '/$locale/messages': typeof LocaleMessagesRoute
+  '/$locale/music': typeof LocaleMusicRoute
   '/$locale/setup': typeof LocaleSetupRoute
+  '/$locale/thinking': typeof LocaleThinkingRoute
   '/blog/$id': typeof BlogIdRoute
   '/$locale': typeof LocaleIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
@@ -83,9 +195,23 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/activity': typeof ActivityRoute
+  '/anime': typeof AnimeRoute
+  '/bookshelf': typeof BookshelfRoute
+  '/cinema': typeof CinemaRoute
+  '/messages': typeof MessagesRoute
+  '/music': typeof MusicRoute
   '/setup': typeof SetupRoute
+  '/thinking': typeof ThinkingRoute
   '/$locale/about': typeof LocaleAboutRoute
+  '/$locale/activity': typeof LocaleActivityRoute
+  '/$locale/anime': typeof LocaleAnimeRoute
+  '/$locale/bookshelf': typeof LocaleBookshelfRoute
+  '/$locale/cinema': typeof LocaleCinemaRoute
+  '/$locale/messages': typeof LocaleMessagesRoute
+  '/$locale/music': typeof LocaleMusicRoute
   '/$locale/setup': typeof LocaleSetupRoute
+  '/$locale/thinking': typeof LocaleThinkingRoute
   '/blog/$id': typeof BlogIdRoute
   '/$locale/': typeof LocaleIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
@@ -95,9 +221,23 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/activity'
+    | '/anime'
+    | '/bookshelf'
+    | '/cinema'
+    | '/messages'
+    | '/music'
     | '/setup'
+    | '/thinking'
     | '/$locale/about'
+    | '/$locale/activity'
+    | '/$locale/anime'
+    | '/$locale/bookshelf'
+    | '/$locale/cinema'
+    | '/$locale/messages'
+    | '/$locale/music'
     | '/$locale/setup'
+    | '/$locale/thinking'
     | '/blog/$id'
     | '/$locale/'
     | '/$locale/blog/$id'
@@ -105,9 +245,23 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/activity'
+    | '/anime'
+    | '/bookshelf'
+    | '/cinema'
+    | '/messages'
+    | '/music'
     | '/setup'
+    | '/thinking'
     | '/$locale/about'
+    | '/$locale/activity'
+    | '/$locale/anime'
+    | '/$locale/bookshelf'
+    | '/$locale/cinema'
+    | '/$locale/messages'
+    | '/$locale/music'
     | '/$locale/setup'
+    | '/$locale/thinking'
     | '/blog/$id'
     | '/$locale'
     | '/$locale/blog/$id'
@@ -115,9 +269,23 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
+    | '/activity'
+    | '/anime'
+    | '/bookshelf'
+    | '/cinema'
+    | '/messages'
+    | '/music'
     | '/setup'
+    | '/thinking'
     | '/$locale/about'
+    | '/$locale/activity'
+    | '/$locale/anime'
+    | '/$locale/bookshelf'
+    | '/$locale/cinema'
+    | '/$locale/messages'
+    | '/$locale/music'
     | '/$locale/setup'
+    | '/$locale/thinking'
     | '/blog/$id'
     | '/$locale/'
     | '/$locale/blog/$id'
@@ -126,9 +294,23 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ActivityRoute: typeof ActivityRoute
+  AnimeRoute: typeof AnimeRoute
+  BookshelfRoute: typeof BookshelfRoute
+  CinemaRoute: typeof CinemaRoute
+  MessagesRoute: typeof MessagesRoute
+  MusicRoute: typeof MusicRoute
   SetupRoute: typeof SetupRoute
+  ThinkingRoute: typeof ThinkingRoute
   LocaleAboutRoute: typeof LocaleAboutRoute
+  LocaleActivityRoute: typeof LocaleActivityRoute
+  LocaleAnimeRoute: typeof LocaleAnimeRoute
+  LocaleBookshelfRoute: typeof LocaleBookshelfRoute
+  LocaleCinemaRoute: typeof LocaleCinemaRoute
+  LocaleMessagesRoute: typeof LocaleMessagesRoute
+  LocaleMusicRoute: typeof LocaleMusicRoute
   LocaleSetupRoute: typeof LocaleSetupRoute
+  LocaleThinkingRoute: typeof LocaleThinkingRoute
   BlogIdRoute: typeof BlogIdRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
   LocaleBlogIdRoute: typeof LocaleBlogIdRoute
@@ -136,11 +318,60 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/thinking': {
+      id: '/thinking'
+      path: '/thinking'
+      fullPath: '/thinking'
+      preLoaderRoute: typeof ThinkingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/setup': {
       id: '/setup'
       path: '/setup'
       fullPath: '/setup'
       preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/music': {
+      id: '/music'
+      path: '/music'
+      fullPath: '/music'
+      preLoaderRoute: typeof MusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cinema': {
+      id: '/cinema'
+      path: '/cinema'
+      fullPath: '/cinema'
+      preLoaderRoute: typeof CinemaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bookshelf': {
+      id: '/bookshelf'
+      path: '/bookshelf'
+      fullPath: '/bookshelf'
+      preLoaderRoute: typeof BookshelfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/anime': {
+      id: '/anime'
+      path: '/anime'
+      fullPath: '/anime'
+      preLoaderRoute: typeof AnimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activity': {
+      id: '/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof ActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -171,11 +402,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/thinking': {
+      id: '/$locale/thinking'
+      path: '/$locale/thinking'
+      fullPath: '/$locale/thinking'
+      preLoaderRoute: typeof LocaleThinkingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/setup': {
       id: '/$locale/setup'
       path: '/$locale/setup'
       fullPath: '/$locale/setup'
       preLoaderRoute: typeof LocaleSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/music': {
+      id: '/$locale/music'
+      path: '/$locale/music'
+      fullPath: '/$locale/music'
+      preLoaderRoute: typeof LocaleMusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/messages': {
+      id: '/$locale/messages'
+      path: '/$locale/messages'
+      fullPath: '/$locale/messages'
+      preLoaderRoute: typeof LocaleMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/cinema': {
+      id: '/$locale/cinema'
+      path: '/$locale/cinema'
+      fullPath: '/$locale/cinema'
+      preLoaderRoute: typeof LocaleCinemaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/bookshelf': {
+      id: '/$locale/bookshelf'
+      path: '/$locale/bookshelf'
+      fullPath: '/$locale/bookshelf'
+      preLoaderRoute: typeof LocaleBookshelfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/anime': {
+      id: '/$locale/anime'
+      path: '/$locale/anime'
+      fullPath: '/$locale/anime'
+      preLoaderRoute: typeof LocaleAnimeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/activity': {
+      id: '/$locale/activity'
+      path: '/$locale/activity'
+      fullPath: '/$locale/activity'
+      preLoaderRoute: typeof LocaleActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/about': {
@@ -198,9 +478,23 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ActivityRoute: ActivityRoute,
+  AnimeRoute: AnimeRoute,
+  BookshelfRoute: BookshelfRoute,
+  CinemaRoute: CinemaRoute,
+  MessagesRoute: MessagesRoute,
+  MusicRoute: MusicRoute,
   SetupRoute: SetupRoute,
+  ThinkingRoute: ThinkingRoute,
   LocaleAboutRoute: LocaleAboutRoute,
+  LocaleActivityRoute: LocaleActivityRoute,
+  LocaleAnimeRoute: LocaleAnimeRoute,
+  LocaleBookshelfRoute: LocaleBookshelfRoute,
+  LocaleCinemaRoute: LocaleCinemaRoute,
+  LocaleMessagesRoute: LocaleMessagesRoute,
+  LocaleMusicRoute: LocaleMusicRoute,
   LocaleSetupRoute: LocaleSetupRoute,
+  LocaleThinkingRoute: LocaleThinkingRoute,
   BlogIdRoute: BlogIdRoute,
   LocaleIndexRoute: LocaleIndexRoute,
   LocaleBlogIdRoute: LocaleBlogIdRoute,
