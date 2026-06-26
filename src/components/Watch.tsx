@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, type ElementType, type ReactElement } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { LocaleLink, useLocaleNavigate } from '../locale-link';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -112,7 +112,7 @@ function Watch() {
   const [favEditing, setFavEditing] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const { isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useLocaleNavigate();
 
   const loadFavorites = useCallback(() => {
     void fetch(`${API_URL}/watch/favorites?locale=${encodeURIComponent(lang)}`, { cache: 'no-store' })
@@ -427,9 +427,9 @@ function Watch() {
               {isAdmin && now && (
                 <button className="w-share-btn" onClick={() => shareToThinking(now)}>＋ 發碎念</button>
               )}
-              <Link to="/watch/library" className="w-section-link">
+              <LocaleLink to="/watch/library" className="w-section-link">
                 {t('watch.library.title')} →
-              </Link>
+              </LocaleLink>
             </div>
           </div>
           {err && <p className="w-recent-err">⚠️ {err}</p>}

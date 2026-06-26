@@ -1,10 +1,17 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { LOCALE_PREFIX, localeFromPathname, type Locale } from './start-i18n';
 
 /** 目前路由的 locale(由 URL pathname 推得)。 */
 export function useLocale(): Locale {
   return useRouterState({ select: (s) => localeFromPathname(s.location.pathname) });
+}
+
+/** locale-aware 程式化導航:navigate('/thinking') 會帶上目前 locale 前綴。 */
+export function useLocaleNavigate() {
+  const navigate = useNavigate();
+  const locale = useLocale();
+  return (to: string) => navigate({ to: localizedPath(to, locale) as '/' });
 }
 
 /** 把「無前綴邏輯路徑」(如 '/about')加上目前 locale 前綴 → '/en/about';預設語言不加。 */

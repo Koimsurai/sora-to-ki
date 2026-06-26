@@ -1,7 +1,7 @@
 // 關於我 — 從首頁移出的「履歷叢集」：About / Expertise / Work / Clubs，
 // 收尾接上精簡版成長軌跡（舊 /journey 併入此頁，/journey 轉址過來）。
 import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
 import AboutMe from './AboutMe';
@@ -23,7 +23,7 @@ function AboutPage() {
   const { i18n } = useTranslation();
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const seo = SEO[lang] || SEO['zh-TW'];
-  const { hash } = useLocation();
+  const hash = useRouterState({ select: (s) => s.location.hash });
 
   // /about#journey 之類的 hash 進場：等 section 掛載後捲過去
   useEffect(() => {
