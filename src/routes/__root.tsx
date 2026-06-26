@@ -1,3 +1,9 @@
+// 全域樣式/字型 —— 對齊舊 main.tsx 的 entry import(P2 之前漏掉導致全站無 Tailwind/CSS 變數/字型 → 全破版)。
+// index.css 先載(@tailwind base + :root 變數 + body/grain/:lang 字型切換),component CSS 才能覆蓋。
+import '@fontsource-variable/tasa-orbiter';
+import '@fontsource-variable/tasa-explorer';
+import '../index.css';
+import '../App.css';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Outlet,
@@ -11,7 +17,7 @@ import { ParallaxProvider } from 'react-scroll-parallax';
 import { AuthProvider } from '../contexts/AuthContext';
 import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
 import { ArticlePreviewProvider } from '../components/article-preview/ArticlePreviewContext';
-import { localeFromPathname } from '../start-i18n';
+import { LocaleProvider, localeFromPathname } from '../start-i18n';
 import AppShell from '../components/AppShell';
 import NotFound from '../components/NotFound';
 import { localeWrap } from '../localePage';
@@ -66,7 +72,12 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
           <AuthProvider>
             <ParallaxProvider>
               <PageVisibilityBridge>
-                <ArticlePreviewProvider>{children}</ArticlePreviewProvider>
+                {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
+                    否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
+                    prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
+                <ArticlePreviewProvider>
+                  <LocaleProvider locale={locale}>{children}</LocaleProvider>
+                </ArticlePreviewProvider>
               </PageVisibilityBridge>
             </ParallaxProvider>
           </AuthProvider>

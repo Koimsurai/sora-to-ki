@@ -138,6 +138,16 @@ async function sitemap(res) {
 
 const ROBOTS = `User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin/*\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`;
 
+// 自毀 service worker —— 舊 SPA(vite-plugin-pwa autoUpdate)在回訪者瀏覽器留了 SW + 預快取舊資產,
+// 攔截請求服務舊 shell/資產配新 P2 HTML → CSS 破版 + hydration 錯。P2 已無 PWA;
+// 瀏覽器更新檢查會抓到這個新 /sw.js → 解除註冊 + 清所有快取 + reload → 乾淨進 P2。
+const KILL_SW = `self.addEventListener('install',()=>self.skipWaiting());
+self.addEventListener('activate',(e)=>{e.waitUntil((async()=>{
+  for(const k of await caches.keys()) await caches.delete(k);
+  await self.registration.unregister();
+  for(const c of await self.clients.matchAll({type:'window'})) c.navigate(c.url);
+})());});`;
+
 const server = createServer(async (req, res) => {
   try {
     const u = new URL(`http://x${req.url}`);
@@ -148,6 +158,8 @@ const server = createServer(async (req, res) => {
     if (og) return await ogImage(og[1], res);
     if (pathname === '/sitemap.xml') return await sitemap(res);
     if (pathname === '/robots.txt') { res.writeHead(200, { 'content-type': 'text/plain' }); return res.end(ROBOTS); }
+    // 舊 SPA 的 SW 在 /sw.js;回訪者更新檢查抓到自毀版 → 清掉舊快取。no-cache 確保每次都拿到。
+    if (pathname === '/sw.js') { res.writeHead(200, { 'content-type': 'text/javascript', 'cache-control': 'no-cache, no-store, must-revalidate' }); return res.end(KILL_SW); }
 
     // 2) 靜態檔(資產 or prerender 的 index.html)
     const safe = normalize(pathname).replace(/^(\.\.[/\\])+/, '');

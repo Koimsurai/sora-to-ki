@@ -86,12 +86,11 @@ const SEOHead = ({
     mainEntityOfPage: { '@type': 'WebPage', '@id': fullUrl },
   } : null;
 
-  const htmlLang = locale ? LOCALE_TO_HREFLANG[locale] ?? locale : 'zh-Hant';
   const ogLocale = locale ? LOCALE_TO_OG[locale] ?? 'zh_TW' : 'zh_TW';
 
   return (
     <Helmet>
-      <html lang={htmlLang} />
+      {/* <html lang> 由 RootDocument(URL-based)獨佔;SEOHead 不再設(免 zh-Hant 蓋掉正確 locale + helmet/root 爭 lang) */}
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={fullUrl} />
