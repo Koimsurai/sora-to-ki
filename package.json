@@ -7,8 +7,10 @@
     "build:gallery": "pnpm tsx scripts/builder/index.ts",
     "dev": "vite",
     "build": "vite build",
+    "build:start": "vite build --config vite.config.start.ts",
     "lint": "eslint .",
     "preview": "vite preview --port 13579",
+    "preview:start": "node serve.mjs",
     "build:photos": "tsx scripts/builder/index.ts && node ../ai-tagger/clip_tagger.js",
     "build:all": "pnpm run build:photos && pnpm run build"
   },
