@@ -1,7 +1,8 @@
-import { notFound } from '@tanstack/react-router';
-import type { ComponentType, ReactElement } from 'react';
+import { ClientOnly, notFound } from '@tanstack/react-router';
+import { Suspense, lazy, type ComponentType, type ReactElement } from 'react';
 import { DEFAULT_LOCALE, LocaleProvider, buildAlternateLinks, localeFromPrefix } from './start-i18n';
 import { useLocale } from './locale-link';
+import KoimLoader from './components/KoimLoader';
 
 // 共用:把現有頁面元件包成 Start 路由 options(LocaleProvider 包覆 + 逐 locale hreflang)。
 // component 用 useLocale() 從 URL 推 locale,所以 default 與 $locale 路由共用同一個 wrapper。
@@ -22,6 +23,31 @@ export function localePage(basePath: string, Comp: ComponentType) {
     head: () => ({ links: buildAlternateLinks(basePath, DEFAULT_LOCALE) }),
     component: localeWrap(Comp),
   };
+}
+
+// 純瀏覽器頁(masonic / three / monaco / swiper 等不該 SSR 的重元件):
+// 整頁 lazy + ClientOnly,server 端只出 loader shell + SEO head(hreflang/canonical),client 才載入真正元件。
+function clientOnlyComp(factory: () => Promise<{ default: ComponentType }>): ComponentType {
+  const Lazy = lazy(factory);
+  return function ClientOnlyPage() {
+    return (
+      <ClientOnly fallback={<KoimLoader fullscreen size="lg" />}>
+        <Suspense fallback={<KoimLoader fullscreen size="lg" />}>
+          <Lazy />
+        </Suspense>
+      </ClientOnly>
+    );
+  };
+}
+
+/** 預設語言 client-only 頁。 */
+export function localePageClient(basePath: string, factory: () => Promise<{ default: ComponentType }>) {
+  return localePage(basePath, clientOnlyComp(factory));
+}
+
+/** 帶前綴 client-only 頁。 */
+export function localePageClientPrefixed(basePath: string, factory: () => Promise<{ default: ComponentType }>) {
+  return localePagePrefixed(basePath, clientOnlyComp(factory));
 }
 
 /** 帶前綴 /$locale/... 頁的 route options。 */

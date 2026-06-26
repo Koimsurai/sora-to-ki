@@ -13,6 +13,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as ThinkingRouteImport } from './routes/thinking'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
+import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as JourneyRouteImport } from './routes/journey'
@@ -35,6 +36,7 @@ import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscr
 import { Route as LocaleThinkingRouteImport } from './routes/$locale/thinking'
 import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
 import { Route as LocalePortfolioRouteImport } from './routes/$locale/portfolio'
+import { Route as LocalePhotosRouteImport } from './routes/$locale/photos'
 import { Route as LocaleMusicRouteImport } from './routes/$locale/music'
 import { Route as LocaleMessagesRouteImport } from './routes/$locale/messages'
 import { Route as LocaleHistoryRouteImport } from './routes/$locale/history'
@@ -68,6 +70,11 @@ const SetupRoute = SetupRouteImport.update({
 const PortfolioRoute = PortfolioRouteImport.update({
   id: '/portfolio',
   path: '/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhotosRoute = PhotosRouteImport.update({
+  id: '/photos',
+  path: '/photos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MusicRoute = MusicRouteImport.update({
@@ -180,6 +187,11 @@ const LocalePortfolioRoute = LocalePortfolioRouteImport.update({
   path: '/$locale/portfolio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocalePhotosRoute = LocalePhotosRouteImport.update({
+  id: '/$locale/photos',
+  path: '/$locale/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleMusicRoute = LocaleMusicRouteImport.update({
   id: '/$locale/music',
   path: '/$locale/music',
@@ -264,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
+  '/photos': typeof PhotosRoute
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
   '/thinking': typeof ThinkingRoute
@@ -278,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/$locale/history': typeof LocaleHistoryRoute
   '/$locale/messages': typeof LocaleMessagesRoute
   '/$locale/music': typeof LocaleMusicRoute
+  '/$locale/photos': typeof LocalePhotosRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
@@ -306,6 +320,7 @@ export interface FileRoutesByTo {
   '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
+  '/photos': typeof PhotosRoute
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
   '/thinking': typeof ThinkingRoute
@@ -320,6 +335,7 @@ export interface FileRoutesByTo {
   '/$locale/history': typeof LocaleHistoryRoute
   '/$locale/messages': typeof LocaleMessagesRoute
   '/$locale/music': typeof LocaleMusicRoute
+  '/$locale/photos': typeof LocalePhotosRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
@@ -349,6 +365,7 @@ export interface FileRoutesById {
   '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
+  '/photos': typeof PhotosRoute
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
   '/thinking': typeof ThinkingRoute
@@ -363,6 +380,7 @@ export interface FileRoutesById {
   '/$locale/history': typeof LocaleHistoryRoute
   '/$locale/messages': typeof LocaleMessagesRoute
   '/$locale/music': typeof LocaleMusicRoute
+  '/$locale/photos': typeof LocalePhotosRoute
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
@@ -393,6 +411,7 @@ export interface FileRouteTypes {
     | '/journey'
     | '/messages'
     | '/music'
+    | '/photos'
     | '/portfolio'
     | '/setup'
     | '/thinking'
@@ -407,6 +426,7 @@ export interface FileRouteTypes {
     | '/$locale/history'
     | '/$locale/messages'
     | '/$locale/music'
+    | '/$locale/photos'
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/thinking'
@@ -435,6 +455,7 @@ export interface FileRouteTypes {
     | '/journey'
     | '/messages'
     | '/music'
+    | '/photos'
     | '/portfolio'
     | '/setup'
     | '/thinking'
@@ -449,6 +470,7 @@ export interface FileRouteTypes {
     | '/$locale/history'
     | '/$locale/messages'
     | '/$locale/music'
+    | '/$locale/photos'
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/thinking'
@@ -477,6 +499,7 @@ export interface FileRouteTypes {
     | '/journey'
     | '/messages'
     | '/music'
+    | '/photos'
     | '/portfolio'
     | '/setup'
     | '/thinking'
@@ -491,6 +514,7 @@ export interface FileRouteTypes {
     | '/$locale/history'
     | '/$locale/messages'
     | '/$locale/music'
+    | '/$locale/photos'
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/thinking'
@@ -520,6 +544,7 @@ export interface RootRouteChildren {
   JourneyRoute: typeof JourneyRoute
   MessagesRoute: typeof MessagesRoute
   MusicRoute: typeof MusicRoute
+  PhotosRoute: typeof PhotosRoute
   PortfolioRoute: typeof PortfolioRoute
   SetupRoute: typeof SetupRoute
   ThinkingRoute: typeof ThinkingRoute
@@ -534,6 +559,7 @@ export interface RootRouteChildren {
   LocaleHistoryRoute: typeof LocaleHistoryRoute
   LocaleMessagesRoute: typeof LocaleMessagesRoute
   LocaleMusicRoute: typeof LocaleMusicRoute
+  LocalePhotosRoute: typeof LocalePhotosRoute
   LocalePortfolioRoute: typeof LocalePortfolioRoute
   LocaleSetupRoute: typeof LocaleSetupRoute
   LocaleThinkingRoute: typeof LocaleThinkingRoute
@@ -578,6 +604,13 @@ declare module '@tanstack/react-router' {
       path: '/portfolio'
       fullPath: '/portfolio'
       preLoaderRoute: typeof PortfolioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/photos': {
+      id: '/photos'
+      path: '/photos'
+      fullPath: '/photos'
+      preLoaderRoute: typeof PhotosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/music': {
@@ -734,6 +767,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalePortfolioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/photos': {
+      id: '/$locale/photos'
+      path: '/$locale/photos'
+      fullPath: '/$locale/photos'
+      preLoaderRoute: typeof LocalePhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/music': {
       id: '/$locale/music'
       path: '/$locale/music'
@@ -848,6 +888,7 @@ const rootRouteChildren: RootRouteChildren = {
   JourneyRoute: JourneyRoute,
   MessagesRoute: MessagesRoute,
   MusicRoute: MusicRoute,
+  PhotosRoute: PhotosRoute,
   PortfolioRoute: PortfolioRoute,
   SetupRoute: SetupRoute,
   ThinkingRoute: ThinkingRoute,
@@ -862,6 +903,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleHistoryRoute: LocaleHistoryRoute,
   LocaleMessagesRoute: LocaleMessagesRoute,
   LocaleMusicRoute: LocaleMusicRoute,
+  LocalePhotosRoute: LocalePhotosRoute,
   LocalePortfolioRoute: LocalePortfolioRoute,
   LocaleSetupRoute: LocaleSetupRoute,
   LocaleThinkingRoute: LocaleThinkingRoute,
