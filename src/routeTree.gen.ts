@@ -13,8 +13,10 @@ import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
+import { Route as BlogIdRouteImport } from './routes/blog/$id'
 import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about'
+import { Route as LocaleBlogIdRouteImport } from './routes/$locale/blog/$id'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -36,6 +38,11 @@ const LocaleIndexRoute = LocaleIndexRouteImport.update({
   path: '/$locale/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIdRoute = BlogIdRouteImport.update({
+  id: '/blog/$id',
+  path: '/blog/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleSetupRoute = LocaleSetupRouteImport.update({
   id: '/$locale/setup',
   path: '/$locale/setup',
@@ -46,6 +53,11 @@ const LocaleAboutRoute = LocaleAboutRouteImport.update({
   path: '/$locale/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleBlogIdRoute = LocaleBlogIdRouteImport.update({
+  id: '/$locale/blog/$id',
+  path: '/$locale/blog/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,7 +65,9 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/setup': typeof LocaleSetupRoute
+  '/blog/$id': typeof BlogIdRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/blog/$id': typeof LocaleBlogIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +75,9 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/setup': typeof LocaleSetupRoute
+  '/blog/$id': typeof BlogIdRoute
   '/$locale': typeof LocaleIndexRoute
+  '/$locale/blog/$id': typeof LocaleBlogIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,7 +86,9 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/setup': typeof LocaleSetupRoute
+  '/blog/$id': typeof BlogIdRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/$locale/blog/$id': typeof LocaleBlogIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,7 +98,9 @@ export interface FileRouteTypes {
     | '/setup'
     | '/$locale/about'
     | '/$locale/setup'
+    | '/blog/$id'
     | '/$locale/'
+    | '/$locale/blog/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -88,7 +108,9 @@ export interface FileRouteTypes {
     | '/setup'
     | '/$locale/about'
     | '/$locale/setup'
+    | '/blog/$id'
     | '/$locale'
+    | '/$locale/blog/$id'
   id:
     | '__root__'
     | '/'
@@ -96,7 +118,9 @@ export interface FileRouteTypes {
     | '/setup'
     | '/$locale/about'
     | '/$locale/setup'
+    | '/blog/$id'
     | '/$locale/'
+    | '/$locale/blog/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -105,7 +129,9 @@ export interface RootRouteChildren {
   SetupRoute: typeof SetupRoute
   LocaleAboutRoute: typeof LocaleAboutRoute
   LocaleSetupRoute: typeof LocaleSetupRoute
+  BlogIdRoute: typeof BlogIdRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleBlogIdRoute: typeof LocaleBlogIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -138,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/$id': {
+      id: '/blog/$id'
+      path: '/blog/$id'
+      fullPath: '/blog/$id'
+      preLoaderRoute: typeof BlogIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/setup': {
       id: '/$locale/setup'
       path: '/$locale/setup'
@@ -152,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/blog/$id': {
+      id: '/$locale/blog/$id'
+      path: '/$locale/blog/$id'
+      fullPath: '/$locale/blog/$id'
+      preLoaderRoute: typeof LocaleBlogIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -161,7 +201,9 @@ const rootRouteChildren: RootRouteChildren = {
   SetupRoute: SetupRoute,
   LocaleAboutRoute: LocaleAboutRoute,
   LocaleSetupRoute: LocaleSetupRoute,
+  BlogIdRoute: BlogIdRoute,
   LocaleIndexRoute: LocaleIndexRoute,
+  LocaleBlogIdRoute: LocaleBlogIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

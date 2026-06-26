@@ -39,6 +39,12 @@ export function localeFromPrefix(prefix: string | undefined): Locale | null {
   return PREFIX_TO_LOCALE[prefix.toLowerCase()] ?? null;
 }
 
+/** 後端 available_locales(字串陣列)→ 我們支援的 Locale[](保序、濾掉不支援的)。給 blog 逐篇 hreflang 用。 */
+export function toLocales(arr: readonly string[] | undefined): Locale[] {
+  if (!arr || arr.length === 0) return [DEFAULT_LOCALE];
+  return SUPPORTED_LOCALES.filter((l) => arr.includes(l));
+}
+
 /** 完整 pathname → locale(給 __root 設 <html lang>)。第一段非 locale(如 /blog)→ 預設。 */
 export function localeFromPathname(pathname: string): Locale {
   const seg = pathname.split('/').find(Boolean);
