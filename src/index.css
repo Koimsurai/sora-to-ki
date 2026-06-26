@@ -176,6 +176,12 @@ body.intro-animation-active {
   overflow: hidden;
 }
 
+/* 首訪桌面首頁:intro 是 client-only(SSR 不知道會不會播),內容卻已 SSR → 會「先閃首頁再跑 intro」。
+   __root 的 pre-paint inline script 符合條件時加 html.intro-pending → 先藏內容;
+   SpaceBackdropShell 在 intro pre-reveal 時移除(內容在 bloom 下淡入)。inline script 內另有安全 timeout 兜底。 */
+.main-content-container { transition: opacity 0.45s ease; }
+html.intro-pending .main-content-container { opacity: 0; }
+
 /* ═══════════════════════════════════════════════════
    Home section shared tokens — aligned with Activity /
    Notes pages. Each home section reuses these for

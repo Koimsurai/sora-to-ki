@@ -32,7 +32,10 @@ export default function SpaceBackdropShell() {
     setTimeout(() => { setAnimateSaturn(true); }, 200);
   };
   // intro 加速期已過 → 現在才掛 3D 背景(土星在 explosion 前約 1.1s 就緒)
-  const handlePreReveal = useCallback(() => { setBackdropReady(true); }, []);
+  const handlePreReveal = useCallback(() => {
+    setBackdropReady(true);
+    document.documentElement.classList.remove('intro-pending'); // 內容在 intro bloom 下淡入(配合 __root pre-paint gate)
+  }, []);
   const handleAnimationComplete = () => {
     try { sessionStorage.setItem('introCompleted', 'true'); } catch { /* sessionStorage 不可用就略過 */ }
     clearTimeout(introCompleteTimeoutRef.current ?? undefined);
@@ -43,6 +46,11 @@ export default function SpaceBackdropShell() {
   };
 
   useEffect(() => () => { clearTimeout(introCompleteTimeoutRef.current ?? undefined); }, []);
+
+  // intro 不會播(重訪/非首頁/手機 → introVisible 一開始就 false)→ 立即放行內容,別讓 pre-paint gate 卡住。
+  useEffect(() => {
+    if (!introVisible) document.documentElement.classList.remove('intro-pending');
+  }, [introVisible]);
 
   if (isMobile) return null; // 手機完全不載 vendor-three
 

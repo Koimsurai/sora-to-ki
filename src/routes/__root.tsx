@@ -65,6 +65,14 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
     <html lang={locale}>
       <head>
         <HeadContent />
+        {/* pre-paint:首訪+桌面+首頁時先藏內容(避免 client-only intro 掛上前先閃首頁);
+            SpaceBackdropShell pre-reveal 移除,4s safety timeout 兜底(JS 失敗也不會卡住)。 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var d=sessionStorage.getItem('introCompleted')==='true';var m=matchMedia('(max-width:768px)').matches;var p=location.pathname;var h=p==='/'||/^\\/(en|ja|ko|zh-cn)\\/?$/.test(p);if(!d&&!m&&h){document.documentElement.classList.add('intro-pending');setTimeout(function(){document.documentElement.classList.remove('intro-pending')},4000);}}catch(e){}})()",
+          }}
+        />
       </head>
       <body>
         {/* 全域 providers(對齊舊 App.tsx 疊法);HelmetProvider 是 SEOHead 過渡 bridge */}
