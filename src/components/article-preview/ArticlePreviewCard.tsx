@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback, type HTMLAttributes } from 'react';
 import ReactDOM, { flushSync } from 'react-dom';
 import { motion, AnimatePresence, type MotionStyle } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@tanstack/react-router';
+import { useLocale, localizedPath } from '../../locale-link';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
@@ -94,6 +95,7 @@ function ArticlePreviewCard() {
   } = useArticlePreview();
 
   const navigate = useNavigate();
+  const locale = useLocale();
   const [article, setArticle] = useState<Article | null>(null);
   const [loadError, setLoadError] = useState(false);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -154,9 +156,10 @@ function ArticlePreviewCard() {
     // eslint-disable-next-line @eslint-react/dom-no-flush-sync -- 刻意同步 commit，讓 View Transition API 接手 morph
     flushSync(() => {
       reset();
-      void navigate(targetUrl, { state: { fromPreview: true } });
+      // fromPreview:讓 ScrollToTop 略過回頂(BlogPost 自行還原段落位置);TanStack 的 state 型別嚴格,cast 帶過
+      void navigate({ href: localizedPath(targetUrl, locale), state: { fromPreview: true } as never });
     });
-  }, [state, previewId, navigate, reset]);
+  }, [state, previewId, navigate, reset, locale]);
 
   // ── 卡片定位 — 統一用 peek style，commit 改靠 exit 動畫消除（不再 morph 撐大） ──
   // 注意：translateX(-50%) 必須走 framer-motion style.x，不可用 transform 字串（會被覆蓋）

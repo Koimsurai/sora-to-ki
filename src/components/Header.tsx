@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, createElement, type ElementType, type MouseEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useRouterState } from '@tanstack/react-router';
+import { LocaleLink, useLocaleNavigate } from '../locale-link';
+import { stripLocalePrefix } from '../start-i18n';
 import { useTranslation } from 'react-i18next';
 import { FaUser,
   FaGithub, FaGoogle, FaSignOutAlt, FaCog,
@@ -48,10 +50,11 @@ function Header(_props: HeaderProps) {
   const moreMenuRef = useRef<HTMLDivElement>(null);
   const blogMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location = useRouterState({ select: (s) => s.location });
+  const navigate = useLocaleNavigate();
   const { user, isLoggedIn, logout, providers, getGoogleAuthUrl, getGitHubAuthUrl, isAdmin } = useAuth();
-  const isHomePage = location.pathname === '/';
+  const bare = stripLocalePrefix(location.pathname); // 去 locale 前綴後的邏輯路徑(無前導斜線)
+  const isHomePage = bare === '';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -114,9 +117,9 @@ function Header(_props: HeaderProps) {
 
   return (
     <header className={'site-header ' + (isScrolled && !mobileOpen ? 'scrolled ' : '') + (navHidden && !mobileOpen ? 'nav-hidden ' : '') + (mobileOpen ? 'menu-open ' : '')}>
-      <Link to="/" className="site-brand" aria-label={t('nav.backHome')} onClick={() => setMobileOpen(false)}>
+      <LocaleLink to="/" className="site-brand" aria-label={t('nav.backHome')} onClick={() => setMobileOpen(false)}>
         <img src={meAvatar} alt="" className="site-brand-img" />
-      </Link>
+      </LocaleLink>
       {/* 手機導覽（Innei 式手風琴）— 桌面用下面的 mega-menu */}
       <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
       <nav className="site-nav" onMouseMove={handleMouseMove}>
@@ -127,13 +130,13 @@ function Header(_props: HeaderProps) {
             icon={<TriggerAnimIcon Comp={HouseIcon} />}
             to="/"
             active={(isHomePage && !location.hash)
-                 || location.pathname.startsWith('/about-site')
-                 || location.pathname.startsWith('/history')
-                 || location.pathname.startsWith('/messages')
-                 || location.pathname.startsWith('/friends')
-                 || location.pathname.startsWith('/thinking')
-                 || location.pathname.startsWith('/about')
-                 || location.pathname.startsWith('/portfolio')}
+                 || bare.startsWith('about-site')
+                 || bare.startsWith('history')
+                 || bare.startsWith('messages')
+                 || bare.startsWith('friends')
+                 || bare.startsWith('thinking')
+                 || bare.startsWith('about')
+                 || bare.startsWith('portfolio')}
           >
             <HomeMenuContent
               onSectionClick={(e, sectionId) => { handleNavClick(e, sectionId); }}
@@ -145,9 +148,9 @@ function Header(_props: HeaderProps) {
             label={t('nav.notes')}
             icon={<TriggerAnimIcon Comp={BookOpenTextIcon} />}
             to="/blog"
-            active={location.pathname.startsWith('/blog')
-                 || location.pathname.startsWith('/bookshelf')
-                 || location.pathname.startsWith('/music')}
+            active={bare.startsWith('blog')
+                 || bare.startsWith('bookshelf')
+                 || bare.startsWith('music')}
           >
             <BlogMenuContent />
           </MegaMenuItem>
@@ -156,10 +159,10 @@ function Header(_props: HeaderProps) {
             id="more"
             label={t('nav.more')}
             icon={<TriggerAnimIcon Comp={LayoutGridIcon} />}
-            active={location.pathname.startsWith('/photos')
-                 || location.pathname.startsWith('/activity')
-                 || location.pathname.startsWith('/setup')
-                 || location.pathname.startsWith('/watch')}
+            active={bare.startsWith('photos')
+                 || bare.startsWith('activity')
+                 || bare.startsWith('setup')
+                 || bare.startsWith('watch')}
           >
             <MoreMenuContent />
           </MegaMenuItem>
@@ -194,7 +197,7 @@ function Header(_props: HeaderProps) {
                     </div>
                     <div className="user-dropdown-divider" />
                     {isAdmin && (
-                      <button className="user-dropdown-item" onClick={() => { void navigate('/admin'); setShowUserMenu(false); }}>
+                      <button className="user-dropdown-item" onClick={() => { window.location.assign('/admin'); setShowUserMenu(false); }}>
                         <FaCog /> {t('user.adminPanel')}
                       </button>
                     )}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Command } from 'cmdk';
-import { useNavigate } from 'react-router-dom';
+import { useLocaleNavigate } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import {
   FileText, Hash, Folder, Music, BookOpen, Activity,
@@ -36,7 +36,7 @@ export default function CommandPalette() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useLocaleNavigate();
 
   // ⌘K / Ctrl+K 開關
   useEffect(() => {

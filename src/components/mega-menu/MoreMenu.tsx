@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, createElement, type ReactNode, type ElementType } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../../locale-link';
 import { useTranslation } from 'react-i18next';
 import { Monitor } from 'lucide-react';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
@@ -39,7 +39,7 @@ interface MenuLink {
 function AnimatedMenuLink({ to, AnimIcon, FallbackIcon, AnimateIconsLib, title }: MenuLink) {
   const [hover, setHover] = useState(false);
   return (
-    <Link
+    <LocaleLink
       to={to}
       className="mega-menu-link mega-menu-link--compact"
       onMouseEnter={() => setHover(true)}
@@ -54,7 +54,7 @@ function AnimatedMenuLink({ to, AnimIcon, FallbackIcon, AnimateIconsLib, title }
         }
       </span>
       <span className="mega-menu-link-title">{title}</span>
-    </Link>
+    </LocaleLink>
   );
 }
 

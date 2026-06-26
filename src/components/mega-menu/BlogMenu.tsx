@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../../locale-link';
 import { useTranslation } from 'react-i18next';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
 
@@ -28,14 +28,14 @@ function RecentPostRow({ post }: { post: BlogPostItem }) {
   }, [post.created_at, t]);
 
   return (
-    <Link to={`/blog/${post.id}`} className="mega-menu-post" viewTransition>
+    <LocaleLink to={`/blog/${post.id}`} className="mega-menu-post" viewTransition>
       <div className="mega-menu-post-title">{post.title}</div>
       <div className="mega-menu-post-meta">
         {post.category && <span>{post.category}</span>}
         {post.category && dateLabel && <span className="mega-menu-post-meta-dot">·</span>}
         {dateLabel && <span>{dateLabel}</span>}
       </div>
-    </Link>
+    </LocaleLink>
   );
 }
 
@@ -69,16 +69,16 @@ function BlogMenuContent() {
   return (
     <MegaMenuPanel>
       <MegaMenuColumn title={t('megaMenu.groups.categories')}>
-        <Link
+        <LocaleLink
           to="/blog"
           className={`mega-menu-category ${activeCat === null ? 'mega-menu-category--active' : ''}`}
           onMouseEnter={() => setActiveCat(null)}
         >
           <span>{t('megaMenu.items.allPosts')}</span>
           <span className="mega-menu-category-count">{posts.length}</span>
-        </Link>
+        </LocaleLink>
         {categories.map((c) => (
-          <Link
+          <LocaleLink
             key={c.id}
             to={`/blog?category=${encodeURIComponent(c.name)}`}
             className={`mega-menu-category ${activeCat === c.name ? 'mega-menu-category--active' : ''}`}
@@ -86,7 +86,7 @@ function BlogMenuContent() {
           >
             <span>{c.name}</span>
             <span className="mega-menu-category-count">{c.post_count ?? 0}</span>
-          </Link>
+          </LocaleLink>
         ))}
       </MegaMenuColumn>
 
@@ -100,9 +100,9 @@ function BlogMenuContent() {
           {filteredPosts.map((p) => (
             <RecentPostRow key={p.id} post={p} />
           ))}
-          <Link to="/blog" className="mega-menu-view-all">
+          <LocaleLink to="/blog" className="mega-menu-view-all">
             {t('megaMenu.items.viewAllPosts')}
-          </Link>
+          </LocaleLink>
         </div>
       </MegaMenuColumn>
     </MegaMenuPanel>

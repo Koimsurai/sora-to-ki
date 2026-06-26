@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import LanguagePicker from './LanguagePicker';
 import './Footer.css';
@@ -78,8 +78,8 @@ function Footer() {
           {/* 關於 */}
           <div className="app-footer-col">
             <h4 className="app-footer-col-title">{t('footer.sections.about')}</h4>
-            <Link to="/about-site" className="app-footer-link">{t('footer.links.aboutSite')}</Link>
-            <Link to="/about" className="app-footer-link">{t('footer.links.aboutMe')}</Link>
+            <LocaleLink to="/about-site" className="app-footer-link">{t('footer.links.aboutSite')}</LocaleLink>
+            <LocaleLink to="/about" className="app-footer-link">{t('footer.links.aboutMe')}</LocaleLink>
             <a
               href="https://github.com/timo9378/web"
               target="_blank"
@@ -93,8 +93,8 @@ function Footer() {
           {/* 更多 — 配備改放服務狀態（Kuma），配備仍可從導覽列「更多」進 */}
           <div className="app-footer-col">
             <h4 className="app-footer-col-title">{t('footer.sections.more')}</h4>
-            <Link to="/photos" className="app-footer-link">{t('footer.links.photos')}</Link>
-            <Link to="/activity" className="app-footer-link">{t('footer.links.activity')}</Link>
+            <LocaleLink to="/photos" className="app-footer-link">{t('footer.links.photos')}</LocaleLink>
+            <LocaleLink to="/activity" className="app-footer-link">{t('footer.links.activity')}</LocaleLink>
             <a
               href="https://status.koimsurai.com"
               target="_blank"
@@ -109,7 +109,7 @@ function Footer() {
           <div className="app-footer-col">
             <h4 className="app-footer-col-title">{t('footer.sections.contact')}</h4>
             {/* 寫留言改連留言板頁（原本 /#contact 在 lazy section 掛載前 hash 捲動會失敗） */}
-            <Link to="/messages" className="app-footer-link">{t('footer.links.messages')}</Link>
+            <LocaleLink to="/messages" className="app-footer-link">{t('footer.links.messages')}</LocaleLink>
             <a href="mailto:timo9378@gmail.com" className="app-footer-link">
               {t('footer.links.email')} <ExternalArrow />
             </a>

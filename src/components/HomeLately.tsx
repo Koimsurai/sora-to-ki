@@ -2,7 +2,7 @@
 // 取代原本的 Contact section（聯絡資訊 hero 與 footer 已足夠），
 // 收尾的訊號區塊掛 id="contact" 讓既有錨點（hero CTA / footer / Messages）續用。
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import './HomeLately.css';
@@ -63,7 +63,7 @@ function OrbitTimeline({ timeline, t }: { timeline: TimelineItem[]; t: TFunction
           </span>
         ))}
         {dots.map((p) => (
-          <Link
+          <LocaleLink
             key={p.id}
             to={`/blog/${p.id}`}
             className="orbit-dot"
@@ -77,7 +77,7 @@ function OrbitTimeline({ timeline, t }: { timeline: TimelineItem[]; t: TFunction
       <div className="orbit-stat">
         {t('home.lately.orbitStat', { count: timeline.length })}
         <span className="orbit-stat-dot">·</span>
-        <Link to="/blog" className="lately-more">{t('home.lately.viewAll')} →</Link>
+        <LocaleLink to="/blog" className="lately-more">{t('home.lately.viewAll')} →</LocaleLink>
       </div>
     </div>
   );
@@ -131,7 +131,7 @@ export default function HomeLately() {
           <ol className="lately-post-list">
             {posts.map((p, i) => (
               <li key={p.id}>
-                <Link to={`/blog/${p.id}`} className="lately-post">
+                <LocaleLink to={`/blog/${p.id}`} className="lately-post">
                   <span className="lately-post-no">{String(i + 1).padStart(2, '0')}</span>
                   <span className="lately-post-body">
                     <span className="lately-post-title">{p.title}</span>
@@ -139,7 +139,7 @@ export default function HomeLately() {
                       {p.category ? `${p.category} · ` : ''}{timeAgo(p.created_at, t)}
                     </span>
                   </span>
-                </Link>
+                </LocaleLink>
               </li>
             ))}
           </ol>
@@ -150,16 +150,16 @@ export default function HomeLately() {
           <div className="lately-block">
             <h2 className="lately-h">
               {t('home.lately.murmursTitle')}
-              <Link to="/thinking" className="lately-more lately-h-more">{t('home.lately.more')} →</Link>
+              <LocaleLink to="/thinking" className="lately-more lately-h-more">{t('home.lately.more')} →</LocaleLink>
             </h2>
             {thoughts.length === 0 && <p className="lately-empty">{t('home.lately.empty')}</p>}
             <ul className="lately-murmurs">
               {thoughts.map((th) => (
                 <li key={th.id}>
-                  <Link to={`/thinking/${th.id}`} className="lately-murmur">
+                  <LocaleLink to={`/thinking/${th.id}`} className="lately-murmur">
                     <p className="lately-murmur-text">「{th.content}」</p>
                     <span className="lately-post-meta">{timeAgo(th.created_at, t)}</span>
-                  </Link>
+                  </LocaleLink>
                 </li>
               ))}
             </ul>
@@ -173,7 +173,7 @@ export default function HomeLately() {
             <ul className="lately-echoes">
               {comments.map((c) => (
                 <li key={c.id}>
-                  <Link
+                  <LocaleLink
                     to={c.thought_id ? `/thinking/${c.thought_id}` : `/blog/${c.post_id}`}
                     className="lately-echo"
                   >
@@ -182,7 +182,7 @@ export default function HomeLately() {
                       — {c.author}
                       {c.post_title ? ` · ${c.post_title}` : ''}
                     </span>
-                  </Link>
+                  </LocaleLink>
                 </li>
               ))}
             </ul>

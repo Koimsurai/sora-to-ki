@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useRouterState } from '@tanstack/react-router';
 
 function ScrollToTop() {
-  const location = useLocation();
+  const location = useRouterState({ select: (s) => s.location });
   const { pathname, hash } = location;
   const state = location.state as { fromPreview?: boolean } | null;
   const prevPathname = useRef(pathname);

@@ -1,7 +1,7 @@
 // 手機導覽 — Innei 式全寬手風琴（取代 mega-menu 在手機被硬塞的 hover 面板）。
 // 頂部品牌 + 關閉；可展開的列點 chevron 內聯展開子項；底部「更多」快捷 + 訂閱。
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import { FaChevronDown, FaTimes } from 'react-icons/fa';
 import './MobileNav.css';
@@ -72,7 +72,7 @@ export default function MobileNav({ open, onClose }: MobileNavProps) {
             <div className={`mnav-group ${isOpen ? 'is-open' : ''}`} key={g.key}>
               <div className="mnav-row">
                 {g.to ? (
-                  <Link to={g.to} className="mnav-row-label" onClick={onClose}>{g.label}</Link>
+                  <LocaleLink to={g.to} className="mnav-row-label" onClick={onClose}>{g.label}</LocaleLink>
                 ) : (
                   <button className="mnav-row-label" onClick={() => toggle(g.key)}>{g.label}</button>
                 )}
@@ -91,7 +91,7 @@ export default function MobileNav({ open, onClose }: MobileNavProps) {
                 <div className="mnav-sub-wrap">
                   <div className="mnav-sub">
                     {g.children.map((c) => (
-                      <Link key={c.to} to={c.to} className="mnav-sub-link" onClick={onClose}>{c.label}</Link>
+                      <LocaleLink key={c.to} to={c.to} className="mnav-sub-link" onClick={onClose}>{c.label}</LocaleLink>
                     ))}
                   </div>
                 </div>
@@ -102,7 +102,7 @@ export default function MobileNav({ open, onClose }: MobileNavProps) {
       </nav>
 
       <div className="mnav-foot">
-        <Link to="/#contact" className="mnav-subscribe" onClick={onClose}>{t('footer.links.subscribe')}</Link>
+        <LocaleLink to="/#contact" className="mnav-subscribe" onClick={onClose}>{t('footer.links.subscribe')}</LocaleLink>
       </div>
     </div>
   );

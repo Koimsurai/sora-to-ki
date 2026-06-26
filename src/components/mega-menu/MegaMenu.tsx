@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, createContext, useContext, useState, type ReactNode, type CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../../locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaChevronDown } from 'react-icons/fa';
 import './mega-menu.css';
@@ -120,9 +120,9 @@ export function MegaMenu({ id, label, icon, active = false, to = null, children,
       onMouseLeave={() => { setHovering(false); handleMouseLeave(); }}
     >
       {to ? (
-        <Link to={to} className={triggerClass} onClick={handleTriggerClick}>
+        <LocaleLink to={to} className={triggerClass} onClick={handleTriggerClick}>
           {triggerInner}
-        </Link>
+        </LocaleLink>
       ) : (
         <button type="button" className={triggerClass} onClick={handleTriggerClick}>
           {triggerInner}

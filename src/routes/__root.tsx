@@ -12,6 +12,7 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
 import { ArticlePreviewProvider } from '../components/article-preview/ArticlePreviewContext';
 import { localeFromPathname } from '../start-i18n';
+import AppShell from '../components/AppShell';
 
 export const Route = createRootRoute({
   head: () => ({
@@ -39,7 +40,9 @@ function PageVisibilityBridge({ children }: Readonly<{ children: ReactNode }>) {
 function RootComponent() {
   return (
     <RootDocument>
-      <Outlet />
+      <AppShell>
+        <Outlet />
+      </AppShell>
     </RootDocument>
   );
 }

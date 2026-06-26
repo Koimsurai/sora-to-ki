@@ -7,7 +7,7 @@ import { LayersIcon } from '@/components/animate-ui/icons/layers';
 import { SendIcon } from '@/components/animate-ui/icons/send';
 import { RouteIcon } from '@/components/animate-ui/icons/route';
 import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon, UsersIcon, SparklesIcon as SparklesAnimIcon, FacebookIcon, InstagramIcon, WifiIcon } from '@animateicons/react/lucide';
-import { Link } from 'react-router-dom';
+import { LocaleLink } from '../../locale-link';
 
 interface AnimateIconHandle { startAnimation?: () => void; stopAnimation?: () => void }
 
@@ -60,7 +60,7 @@ function AnimatedSectionLink({ id, to, AnimIcon, AnimateIconsLib, FallbackIcon, 
     onMouseLeave: () => setHover(false),
   };
   // to = 頁面連結（/about、/portfolio…）；id = 首頁區段錨點
-  if (to) return <Link to={to} {...common} onClick={onClick}>{inner}</Link>;
+  if (to) return <LocaleLink to={to} {...common} onClick={onClick}>{inner}</LocaleLink>;
   return <a href={`#${id ?? ''}`} {...common} onClick={onClick}>{inner}</a>;
 }
 

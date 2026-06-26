@@ -11,7 +11,7 @@ import {
   pickLocaleFromAcceptLanguage,
   type Locale,
 } from '../start-i18n';
-import { LocaleHome } from '../pages/LocaleHome';
+import MainPage from '../components/MainPage';
 
 // server-only:讀 UA / cookie / Accept-Language → 決定首頁要導向哪個 locale。
 // 包在 createServerFn 裡,server-only 的 header API 才不會被打進 client bundle。
@@ -39,7 +39,7 @@ export const Route = createFileRoute('/')({
   },
   component: () => (
     <LocaleProvider locale={DEFAULT_LOCALE}>
-      <LocaleHome />
+      <MainPage />
     </LocaleProvider>
   ),
 });
