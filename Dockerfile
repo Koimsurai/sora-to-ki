@@ -1,34 +1,21 @@
 # ─────────────────────────────────────────────────────────────
-# P2: TanStack Start SSG/SSR。Stage 1 build → dist/client(prerender 靜態)+ dist/server(SSR handler);
-# Stage 2 跑 serve.mjs(靜態服務 + SSR fallback + og-image/sitemap/robots)。
-# 舊 SPA 版見 git 歷史(serve.cjs + `vite build`)。
+# P2: TanStack Start SSG/SSR — 打包(非建置)。
+# dist 在 *host* 端先 build:`pnpm run build:start`(→ dist/client prerender + dist/server SSR handler)。
+# 不在 Docker 內 prerender:其內部 render server 在 BuildKit 網路下 loopback(127.0.0.1)連不到 → ECONNREFUSED。
+# 本映像只負責:裝 production 依賴 + 打包 dist + 跑 serve.mjs。
+# 舊 SPA 版見 git 歷史(多階段 build + serve.cjs)。
 # ─────────────────────────────────────────────────────────────
-
-# Stage 1: Build
-FROM node:20.19.5-bullseye AS builder
-WORKDIR /app
-RUN npm config set script-shell sh && npm install -g pnpm
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
-COPY . .
-
-# 客戶端 runtime 用相對 /api(經 nginx proxy 到 backend);build 時 vite.config.start.ts 另打 koimsurai.com/api 抓文章做 prerender
-ENV VITE_API_URL=/api
-RUN pnpm run build:start
-
-# Stage 2: Production SSR server
 FROM node:20.19.5-bullseye
 WORKDIR /app
 
 ENV TZ=Asia/Taipei
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 只裝 production 依賴(SSR bundle 只外部依賴 react + @tanstack/react-router;og-image 需要 sharp)
+# 只裝 production 依賴。node-linker=hoisted:npm 式扁平 node_modules,讓 SSR bundle 的 split chunks
+# 能解析到 transitive 外部依賴(如 react-fast-compare via react-helmet-async)——pnpm 嚴格佈局不提頂層會 ERR_MODULE_NOT_FOUND。
 RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
+RUN echo 'node-linker=hoisted' > .npmrc && pnpm install --prod --frozen-lockfile
 
 # CJK 字型 — og-image 的 sharp SVG→PNG 要渲染中日文標題
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -36,9 +23,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache -f
 
-# 產物 + 伺服器
-COPY --from=builder /app/dist ./dist
+# host 端 build:start 的產物 + 伺服器
+COPY dist ./dist
 COPY serve.mjs ./serve.mjs
+# 防呆:忘了先在 host build → 明確失敗,別打包出殘缺映像
+RUN test -f ./dist/server/server.js && test -d ./dist/client \
+    || (echo "ERROR: dist 未建置。請先在 host 跑 'pnpm run build:start'" && exit 1)
 
 # 預設 OG 圖(SVG→PNG)+ PWA icons → dist/client(package.json 是 type:module,故 node -e 強制 commonjs 才能 require)
 RUN node --input-type=commonjs -e "\

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@animateicons/react": "^0.3.3",
+    "sharp": "^0.34.4",
     "@fontsource-variable/tasa-explorer": "^5.2.2",
     "@fontsource-variable/tasa-orbiter": "^5.2.2",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -122,7 +123,6 @@
     "heic-convert": "^2.1.0",
     "postcss": "^8.5.6",
     "rollup-plugin-visualizer": "^7.0.1",
-    "sharp": "^0.34.4",
     "tailwindcss": "^3.4.17",
     "thumbhash": "^0.1.1",
     "tsx": "^4.20.6",

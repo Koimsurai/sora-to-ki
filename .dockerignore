@@ -2,7 +2,8 @@
 node_modules
 
 # Ignore build artifacts
-dist
+# 注意:dist 故意「不」忽略 —— P2 在 host 端 `pnpm run build:start` 後,Docker 直接打包這份 prerender 產物
+# (Docker build 內跑 prerender 不穩:其內部 render server 在 BuildKit 網路下 loopback 連不到)
 build
 
 # Ignore .env files potentially containing secrets
