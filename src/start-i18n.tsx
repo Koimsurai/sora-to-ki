@@ -1,0 +1,138 @@
+import { createInstance, type i18n as I18nInstance } from 'i18next';
+import { I18nextProvider, initReactI18next } from 'react-i18next';
+import { useMemo, type ReactNode } from 'react';
+import zhTW from './locales/zh-TW/common.json';
+import zhCN from './locales/zh-CN/common.json';
+import en from './locales/en/common.json';
+import ja from './locales/ja/common.json';
+import ko from './locales/ko/common.json';
+
+// ──────────────────────────────────────────────────────────────
+// P2:URL 驅動的 i18n（SSR/SSG 用)。
+// 語言來源 = URL 的 locale 前綴(不是 localStorage/navigator)→ server 端可確定性渲染、
+// 零 hydration mismatch。每次 render 建「獨立 instance」避免 ISR 並發請求共用 singleton 互踩。
+// ──────────────────────────────────────────────────────────────
+
+export const SUPPORTED_LOCALES = ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'] as const;
+export type Locale = (typeof SUPPORTED_LOCALES)[number];
+export const DEFAULT_LOCALE: Locale = 'zh-TW';
+
+// 預設 zh-TW 不帶前綴(保留既有已索引 URL),其餘用小寫前綴。
+export const LOCALE_PREFIX: Record<Locale, string> = {
+  'zh-TW': '',
+  'zh-CN': 'zh-cn',
+  en: 'en',
+  ja: 'ja',
+  ko: 'ko',
+};
+
+const PREFIX_TO_LOCALE: Record<string, Locale> = {
+  en: 'en',
+  ja: 'ja',
+  ko: 'ko',
+  'zh-cn': 'zh-CN',
+};
+
+/** URL 前綴 → locale。undefined(無前綴)= 預設;非支援前綴 = null(讓路由 notFound)。 */
+export function localeFromPrefix(prefix: string | undefined): Locale | null {
+  if (!prefix) return DEFAULT_LOCALE;
+  return PREFIX_TO_LOCALE[prefix.toLowerCase()] ?? null;
+}
+
+/** 完整 pathname → locale(給 __root 設 <html lang>)。第一段非 locale(如 /blog)→ 預設。 */
+export function localeFromPathname(pathname: string): Locale {
+  const seg = pathname.split('/').find(Boolean);
+  return localeFromPrefix(seg) ?? DEFAULT_LOCALE;
+}
+
+/** 去掉 pathname 的 locale 前綴 → 無前綴邏輯路徑('/en/blog/39'→'blog/39';'/en'→'';'/'→'')。 */
+export function stripLocalePrefix(pathname: string): string {
+  const segs = pathname.split('/').filter(Boolean);
+  const loc = segs.length ? localeFromPrefix(segs[0]) : null;
+  if (loc && loc !== DEFAULT_LOCALE) segs.shift(); // 第一段是 en/ja/ko/zh-cn 才剝掉
+  return segs.join('/');
+}
+
+/** Accept-Language header → 最佳支援 locale(依 q 值排序;認不出 → 預設 zh-TW)。 */
+export function pickLocaleFromAcceptLanguage(header: string | undefined | null): Locale {
+  if (!header) return DEFAULT_LOCALE;
+  const ranked = header
+    .split(',')
+    .map((part) => {
+      const [tag, ...params] = part.trim().split(';');
+      const qParam = params.map((p) => p.trim()).find((p) => p.startsWith('q='));
+      const q = qParam ? Number.parseFloat(qParam.slice(2)) : 1;
+      return { tag: tag.trim().toLowerCase(), q: Number.isFinite(q) ? q : 1 };
+    })
+    .filter((x) => x.tag)
+    .sort((a, b) => b.q - a.q);
+  for (const { tag } of ranked) {
+    if (tag.startsWith('zh')) {
+      if (/hant|tw|hk|mo/.test(tag)) return 'zh-TW';
+      if (/hans|cn|sg/.test(tag)) return 'zh-CN';
+      return 'zh-TW'; // 純 zh → 預設繁中
+    }
+    if (tag.startsWith('en')) return 'en';
+    if (tag.startsWith('ja')) return 'ja';
+    if (tag.startsWith('ko')) return 'ko';
+  }
+  return DEFAULT_LOCALE;
+}
+
+// 粗略 bot 偵測:爬蟲不自動導向(讓它看到預設 zh-TW + 靠 hreflang 索引各語言,避免只索引到一種)
+const BOT_UA_RE =
+  /bot|crawl|spider|slurp|bing|google|baidu|yandex|duckduck|facebookexternalhit|embedly|quora|whatsapp|telegram|discord|slack|lighthouse|headless|preview/i;
+export function isBotUserAgent(ua: string | undefined | null): boolean {
+  return !!ua && BOT_UA_RE.test(ua);
+}
+
+export const SITE_URL = 'https://koimsurai.com';
+
+/** 某 locale 下、某邏輯路徑(無前綴,如 '' 或 'blog/39')的絕對 URL。 */
+export function localeUrl(locale: Locale, basePath = ''): string {
+  const segs = [LOCALE_PREFIX[locale], basePath.replace(/^\/+/, '')].filter(Boolean).join('/');
+  return segs ? `${SITE_URL}/${segs}` : `${SITE_URL}/`;
+}
+
+/**
+ * canonical + hreflang alternates(含 x-default = 預設語言),給路由 head() 用。
+ * locales 預設全 5 語(UI 頁都有翻譯);blog 之後傳該篇的 available_locales,只連真的有的語言。
+ */
+export function buildAlternateLinks(
+  basePath: string,
+  currentLocale: Locale,
+  locales: readonly Locale[] = SUPPORTED_LOCALES,
+): { rel: string; href: string; hreflang?: string }[] {
+  return [
+    { rel: 'canonical', href: localeUrl(currentLocale, basePath) },
+    ...locales.map((loc) => ({ rel: 'alternate', hreflang: loc, href: localeUrl(loc, basePath) })),
+    { rel: 'alternate', hreflang: 'x-default', href: localeUrl(DEFAULT_LOCALE, basePath) },
+  ];
+}
+
+const RESOURCES = {
+  'zh-TW': { common: zhTW },
+  'zh-CN': { common: zhCN },
+  en: { common: en },
+  ja: { common: ja },
+  ko: { common: ko },
+};
+
+export function createI18n(locale: Locale): I18nInstance {
+  const instance = createInstance();
+  void instance.use(initReactI18next).init({
+    resources: RESOURCES,
+    lng: locale,
+    fallbackLng: DEFAULT_LOCALE,
+    supportedLngs: [...SUPPORTED_LOCALES],
+    defaultNS: 'common',
+    interpolation: { escapeValue: false }, // React 自己防 XSS
+  });
+  return instance;
+}
+
+/** 依 locale 提供一個獨立 i18n instance 給子樹。server/client 皆可,以 locale memo。 */
+export function LocaleProvider({ locale, children }: { locale: Locale; children: ReactNode }) {
+  const i18n = useMemo(() => createI18n(locale), [locale]);
+  return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
+}

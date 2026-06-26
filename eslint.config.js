@@ -71,4 +71,12 @@ export default tseslint.config(
     files: ['**/*.{js,jsx,cjs}'],
     extends: [tseslint.configs.disableTypeChecked],
   },
+
+  // ── routes：TanStack Router 用 throw redirect()/notFound() 做控制流程，放行 only-throw-error ──
+  {
+    files: ['src/routes/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/only-throw-error': 'off',
+    },
+  },
 )

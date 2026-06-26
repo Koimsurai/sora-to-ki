@@ -57,3 +57,5 @@ server/db/db.sqlite-shm
 server/db/db.sqlite-wal
 server/db/db.sqlite-journal
 server/db/.bahamut-cookie.json
+.output/
+.nitro/

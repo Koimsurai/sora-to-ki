@@ -1,0 +1,25 @@
+import { createFileRoute, notFound } from '@tanstack/react-router';
+import { buildAlternateLinks, DEFAULT_LOCALE, localeFromPrefix, LocaleProvider } from '../../start-i18n';
+import { LocaleHome } from '../../pages/LocaleHome';
+
+// 帶前綴的 locale 首頁:/en、/ja、/ko、/zh-cn。
+// 非支援前綴 → notFound;預設 zh-TW → notFound(走無前綴的 routes/index)。
+export const Route = createFileRoute('/$locale/')({
+  head: ({ params }) => ({
+    links: buildAlternateLinks('', localeFromPrefix(params.locale) ?? DEFAULT_LOCALE),
+  }),
+  loader: ({ params }) => {
+    const locale = localeFromPrefix(params.locale);
+    if (!locale || locale === 'zh-TW') throw notFound();
+  },
+  component: RouteComponent,
+});
+
+function RouteComponent() {
+  const locale = localeFromPrefix(Route.useParams().locale) ?? DEFAULT_LOCALE;
+  return (
+    <LocaleProvider locale={locale}>
+      <LocaleHome />
+    </LocaleProvider>
+  );
+}
