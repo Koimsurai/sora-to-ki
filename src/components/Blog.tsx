@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useRouterState } from '@tanstack/react-router';
+import { LocaleLink } from '../locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
@@ -205,7 +206,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; inde
         )}
 
         {/* 標題 */}
-        <Link
+        <LocaleLink
           to={`/blog/${post.id}`}
           className="note-title-link"
           viewTransition
@@ -213,7 +214,7 @@ const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; inde
           onFocus={() => prefetchPost(post.id)}
         >
           <h2 className="note-title">{post.title}</h2>
-        </Link>
+        </LocaleLink>
 
         {/* 摘要 */}
         <p className="note-excerpt">{excerpt}</p>
@@ -352,7 +353,7 @@ function Blog() {
   const [tagsExpanded, setTagsExpanded] = useState(false);
   const [floatingComment, setFloatingComment] = useState<{ postId: string; postTitle: string; allowComments: boolean } | null>(null);
   const isInitialLoad = React.useRef(true);
-  const [searchParams] = useSearchParams();
+  const search = useRouterState({ select: (s) => s.location.search }) as { category?: string; tag?: string };
 
   const handleOpenComments = useCallback((postId: string | number, postTitle: string, allowComments?: number | boolean) => {
     setFloatingComment({
@@ -364,11 +365,9 @@ function Blog() {
 
   // 讀取 URL 參數自動帶入篩選
   useEffect(() => {
-    const catParam = searchParams.get('category');
-    const tagParam = searchParams.get('tag');
-    if (catParam) setSelectedCategory(catParam);
-    if (tagParam) setSelectedTag(tagParam);
-  }, [searchParams]);
+    if (search.category) setSelectedCategory(search.category);
+    if (search.tag) setSelectedTag(search.tag);
+  }, [search.category, search.tag]);
 
   useEffect(() => {
     if (!isInitialLoad.current) {
@@ -674,7 +673,7 @@ function Blog() {
               <ul className="featured-list">
                 {featuredPosts.map(p => (
                   <li key={p.id}>
-                    <Link
+                    <LocaleLink
                       to={`/blog/${p.id}`}
                       className="featured-link"
                       onMouseEnter={() => prefetchPost(p.id)}
@@ -684,7 +683,7 @@ function Blog() {
                       <span className="featured-date">
                         {new Date(p.created_at ?? '').toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
                       </span>
-                    </Link>
+                    </LocaleLink>
                   </li>
                 ))}
               </ul>
@@ -701,10 +700,10 @@ function Blog() {
           <div className="sidebar-section">
             <h3 className="sidebar-heading">導航</h3>
             <div className="quick-nav">
-              <Link to="/" className="nav-pill">🏠 首頁</Link>
-              <Link to="/messages" className="nav-pill">💬 留言</Link>
-              <Link to="/setup" className="nav-pill">🖥️ 配備</Link>
-              <Link to="/about#journey" className="nav-pill">🛤️ 旅程</Link>
+              <LocaleLink to="/" className="nav-pill">🏠 首頁</LocaleLink>
+              <LocaleLink to="/messages" className="nav-pill">💬 留言</LocaleLink>
+              <LocaleLink to="/setup" className="nav-pill">🖥️ 配備</LocaleLink>
+              <LocaleLink to="/about#journey" className="nav-pill">🛤️ 旅程</LocaleLink>
             </div>
           </div>
           </aside>

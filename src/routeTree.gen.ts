@@ -22,6 +22,7 @@ import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WatchIndexRouteImport } from './routes/watch/index'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as WatchLibraryRouteImport } from './routes/watch/library'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
@@ -37,6 +38,7 @@ import { Route as LocaleAnimeRouteImport } from './routes/$locale/anime'
 import { Route as LocaleActivityRouteImport } from './routes/$locale/activity'
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about'
 import { Route as LocaleWatchIndexRouteImport } from './routes/$locale/watch/index'
+import { Route as LocaleBlogIndexRouteImport } from './routes/$locale/blog/index'
 import { Route as LocaleWatchLibraryRouteImport } from './routes/$locale/watch/library'
 import { Route as LocaleBlogIdRouteImport } from './routes/$locale/blog/$id'
 
@@ -103,6 +105,11 @@ const IndexRoute = IndexRouteImport.update({
 const WatchIndexRoute = WatchIndexRouteImport.update({
   id: '/watch/',
   path: '/watch/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleIndexRoute = LocaleIndexRouteImport.update({
@@ -180,6 +187,11 @@ const LocaleWatchIndexRoute = LocaleWatchIndexRouteImport.update({
   path: '/$locale/watch/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleBlogIndexRoute = LocaleBlogIndexRouteImport.update({
+  id: '/$locale/blog/',
+  path: '/$locale/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleWatchLibraryRoute = LocaleWatchLibraryRouteImport.update({
   id: '/$locale/watch/library',
   path: '/$locale/watch/library',
@@ -218,9 +230,11 @@ export interface FileRoutesByFullPath {
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/watch/': typeof WatchIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
   '/$locale/watch/library': typeof LocaleWatchLibraryRoute
+  '/$locale/blog/': typeof LocaleBlogIndexRoute
   '/$locale/watch/': typeof LocaleWatchIndexRoute
 }
 export interface FileRoutesByTo {
@@ -250,9 +264,11 @@ export interface FileRoutesByTo {
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale': typeof LocaleIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/watch': typeof WatchIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
   '/$locale/watch/library': typeof LocaleWatchLibraryRoute
+  '/$locale/blog': typeof LocaleBlogIndexRoute
   '/$locale/watch': typeof LocaleWatchIndexRoute
 }
 export interface FileRoutesById {
@@ -283,9 +299,11 @@ export interface FileRoutesById {
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/watch/': typeof WatchIndexRoute
   '/$locale/blog/$id': typeof LocaleBlogIdRoute
   '/$locale/watch/library': typeof LocaleWatchLibraryRoute
+  '/$locale/blog/': typeof LocaleBlogIndexRoute
   '/$locale/watch/': typeof LocaleWatchIndexRoute
 }
 export interface FileRouteTypes {
@@ -317,9 +335,11 @@ export interface FileRouteTypes {
     | '/blog/$id'
     | '/watch/library'
     | '/$locale/'
+    | '/blog/'
     | '/watch/'
     | '/$locale/blog/$id'
     | '/$locale/watch/library'
+    | '/$locale/blog/'
     | '/$locale/watch/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -349,9 +369,11 @@ export interface FileRouteTypes {
     | '/blog/$id'
     | '/watch/library'
     | '/$locale'
+    | '/blog'
     | '/watch'
     | '/$locale/blog/$id'
     | '/$locale/watch/library'
+    | '/$locale/blog'
     | '/$locale/watch'
   id:
     | '__root__'
@@ -381,9 +403,11 @@ export interface FileRouteTypes {
     | '/blog/$id'
     | '/watch/library'
     | '/$locale/'
+    | '/blog/'
     | '/watch/'
     | '/$locale/blog/$id'
     | '/$locale/watch/library'
+    | '/$locale/blog/'
     | '/$locale/watch/'
   fileRoutesById: FileRoutesById
 }
@@ -414,9 +438,11 @@ export interface RootRouteChildren {
   BlogIdRoute: typeof BlogIdRoute
   WatchLibraryRoute: typeof WatchLibraryRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   WatchIndexRoute: typeof WatchIndexRoute
   LocaleBlogIdRoute: typeof LocaleBlogIdRoute
   LocaleWatchLibraryRoute: typeof LocaleWatchLibraryRoute
+  LocaleBlogIndexRoute: typeof LocaleBlogIndexRoute
   LocaleWatchIndexRoute: typeof LocaleWatchIndexRoute
 }
 
@@ -511,6 +537,13 @@ declare module '@tanstack/react-router' {
       path: '/watch'
       fullPath: '/watch/'
       preLoaderRoute: typeof WatchIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/': {
@@ -618,6 +651,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleWatchIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/blog/': {
+      id: '/$locale/blog/'
+      path: '/$locale/blog'
+      fullPath: '/$locale/blog/'
+      preLoaderRoute: typeof LocaleBlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale/watch/library': {
       id: '/$locale/watch/library'
       path: '/$locale/watch/library'
@@ -662,9 +702,11 @@ const rootRouteChildren: RootRouteChildren = {
   BlogIdRoute: BlogIdRoute,
   WatchLibraryRoute: WatchLibraryRoute,
   LocaleIndexRoute: LocaleIndexRoute,
+  BlogIndexRoute: BlogIndexRoute,
   WatchIndexRoute: WatchIndexRoute,
   LocaleBlogIdRoute: LocaleBlogIdRoute,
   LocaleWatchLibraryRoute: LocaleWatchLibraryRoute,
+  LocaleBlogIndexRoute: LocaleBlogIndexRoute,
   LocaleWatchIndexRoute: LocaleWatchIndexRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import type { ReactNode } from 'react';
+import type { ComponentProps } from 'react';
 import { LOCALE_PREFIX, localeFromPathname, type Locale } from './start-i18n';
 
 /** 目前路由的 locale(由 URL pathname 推得)。 */
@@ -25,20 +25,11 @@ export function localizedPath(to: string, locale: Locale): string {
  * 內部導覽連結:自動帶上「目前 locale」前綴,讓使用者在 /en 下點連結還是留在 /en/*。
  * to 用無前綴邏輯路徑(如 '/'、'/about'、'/blog/39')。
  */
-export function LocaleLink({
-  to,
-  children,
-  className,
-}: {
-  to: string;
-  children?: ReactNode;
-  className?: string;
-}) {
+// 轉發所有底層 Link 的 props(className / children / onMouseEnter / onFocus / viewTransition / preload …),
+// 只把 `to` 換成「無前綴邏輯路徑」並加上目前 locale 前綴。
+type LocaleLinkProps = Omit<ComponentProps<typeof Link>, 'to'> & { to: string };
+
+export function LocaleLink({ to, ...rest }: LocaleLinkProps) {
   const locale = useLocale();
-  // 動態 locale 前綴 ↔ TanStack 型別安全路由的邊界:此處單一轉型(非散落各處的 as any)
-  return (
-    <Link to={localizedPath(to, locale) as '/'} className={className}>
-      {children}
-    </Link>
-  );
+  return <Link to={localizedPath(to, locale)} {...rest} />;
 }
