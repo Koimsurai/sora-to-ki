@@ -1,9 +1,12 @@
-import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense, type CSSProperties, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
-import ZeroGravityLibrary from './ZeroGravityLibrary';
 import SEOHead from './SEOHead';
+
+// 3D 圖書館用 lazy import:three.js/R3F 只在 client 切到 3D 模式時才動態載入,
+// 完全不進 server bundle / SSR render(避免每個請求白跑 three.js 的伺服器負擔)。
+const ZeroGravityLibrary = lazy(() => import('./ZeroGravityLibrary'));
 import './Bookshelf.css';
 
 const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
@@ -529,8 +532,9 @@ const Bookshelf = () => {
         )}
       </AnimatePresence>
 
-      {/* 3D 零重力圖書館 */}
+      {/* 3D 零重力圖書館(client-only,lazy)*/}
       {is3DMode && (
+        <Suspense fallback={null}>
         <ZeroGravityLibrary
           books={filteredBooks.map(book => ({
             id: book.id,
@@ -543,6 +547,7 @@ const Bookshelf = () => {
           }))}
           onClose={() => setIs3DMode(false)}
         />
+        </Suspense>
       )}
     </div>
   );
