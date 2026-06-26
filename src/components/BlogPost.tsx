@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useRouterState, useNavigate } from '@tanstack/react-router';
+import { LocaleLink } from '../locale-link';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -72,7 +73,7 @@ interface MermaidOption { value: string; label: string; icon?: string }
 const PreviewablePostLink = React.memo(({ post, className, children, viewTransition }: { post: Post; className?: string; children?: React.ReactNode; viewTransition?: boolean }) => {
   const { bind } = usePreviewLink(String(post.id));
   return (
-    <Link
+    <LocaleLink
       to={'/blog/' + post.id}
       className={className}
       title={post.title}
@@ -80,7 +81,7 @@ const PreviewablePostLink = React.memo(({ post, className, children, viewTransit
       {...bind}
     >
       {children}
-    </Link>
+    </LocaleLink>
   );
 });
 PreviewablePostLink.displayName = 'PreviewablePostLink';
@@ -680,12 +681,12 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
       onMouseLeave={onLeave}
       style={{ display: 'inline-block' }}
     >
-      <Link
+      <LocaleLink
         to={'/blog?category=' + encodeURIComponent(postCategory)}
         className={linkClassName ?? 'text-sm text-white hover:text-purple-400 transition-colors font-semibold'}
       >
         {postCategory}
-      </Link>
+      </LocaleLink>
       {showTooltip && categoryInfo && ReactDOM.createPortal(
         <div
           className={compact ? 'category-tooltip category-tooltip-compact' : 'category-tooltip'}
@@ -856,16 +857,16 @@ const PrevNextNav = React.memo(({ currentId }: { currentId: string | number }) =
   return (
     <nav className="prev-next-nav" aria-label="上一篇與下一篇">
       {prev ? (
-        <Link to={`/blog/${prev.id}`} className="prev-next-card prev-next-prev" viewTransition>
+        <LocaleLink to={`/blog/${prev.id}`} className="prev-next-card prev-next-prev" viewTransition>
           <span className="prev-next-label">← 上一篇</span>
           <span className="prev-next-title">{prev.title}</span>
-        </Link>
+        </LocaleLink>
       ) : <span className="prev-next-placeholder" />}
       {next ? (
-        <Link to={`/blog/${next.id}`} className="prev-next-card prev-next-next" viewTransition>
+        <LocaleLink to={`/blog/${next.id}`} className="prev-next-card prev-next-next" viewTransition>
           <span className="prev-next-label">下一篇 →</span>
           <span className="prev-next-title">{next.title}</span>
-        </Link>
+        </LocaleLink>
       ) : <span className="prev-next-placeholder" />}
     </nav>
   );
@@ -1422,8 +1423,8 @@ function BlogPost() {
   const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') ?? 'noto-serif');
   const contentRef = useRef<HTMLDivElement>(null);
   const tocRef = useRef<HTMLElement>(null);
-  const { id = '' } = useParams();
-  const location = useLocation();
+  const { id = '' } = useParams({ strict: false });
+  const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
   const pathLocale = useMemo(() => parseLocaleFromPath(location.pathname), [location.pathname]);
   const navState = location.state as { fromPreview?: boolean } | null;
@@ -1702,9 +1703,9 @@ function BlogPost() {
           <h1>{isLocaleMissing ? '此語言版本尚未提供' : '文章航線丟失'}</h1>
           <p>{isLocaleMissing ? '您請求的語言目前還沒有翻譯版本，可以前往原文頁面閱讀。' : '抱歉，我們在宇宙中找不到您要找的文章。'}</p>
           {isLocaleMissing ? (
-            <Link to={`/blog/${id}`} className="back-to-blog-link">前往原文 →</Link>
+            <LocaleLink to={`/blog/${id}`} className="back-to-blog-link">前往原文 →</LocaleLink>
           ) : (
-            <Link to="/blog" className="back-to-blog-link">‹ 返回手記</Link>
+            <LocaleLink to="/blog" className="back-to-blog-link">‹ 返回手記</LocaleLink>
           )}
         </div>
       </div>
@@ -1812,8 +1813,8 @@ function BlogPost() {
               source={sourceLang}
               available={availableLocales}
               onSelect={(loc) => {
-                const target = postPathForLocale(id, loc, sourceLang);
-                void navigate(target);
+                const target = postPathForLocale(id, loc, sourceLang); // 已是絕對 locale 路徑,用 href 不再加前綴
+                void navigate({ href: target });
               }}
               onUnavailable={(name) => setToastMsg(`「${name}」版本尚未提供`)}
             />

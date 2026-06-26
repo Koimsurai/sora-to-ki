@@ -1,7 +1,10 @@
-import { createFileRoute, notFound } from '@tanstack/react-router';
+import { ClientOnly, createFileRoute, notFound } from '@tanstack/react-router';
+import { Suspense, lazy } from 'react';
 import { LocaleProvider, buildAlternateLinks, localeFromPrefix, toLocales } from '../../../start-i18n';
 import { BlogPostPage, type PostData } from '../../../pages/BlogPostPage';
 import { apiUrl } from '../../../api';
+
+const FullBlogPost = lazy(() => import('../../../components/BlogPost'));
 
 // 帶前綴文章頁:/$locale/blog/:id(/en/blog/39 等)。loader 依 locale 抓翻譯版內容。
 export const Route = createFileRoute('/$locale/blog/$id')({
@@ -27,7 +30,11 @@ function RouteComponent() {
   const { post, locale } = Route.useLoaderData();
   return (
     <LocaleProvider locale={locale}>
-      <BlogPostPage post={post} />
+      <ClientOnly fallback={<BlogPostPage post={post} />}>
+        <Suspense fallback={<BlogPostPage post={post} />}>
+          <FullBlogPost />
+        </Suspense>
+      </ClientOnly>
     </LocaleProvider>
   );
 }

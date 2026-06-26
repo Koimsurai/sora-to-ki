@@ -1,7 +1,12 @@
-import { createFileRoute, notFound } from '@tanstack/react-router';
+import { ClientOnly, createFileRoute, notFound } from '@tanstack/react-router';
+import { Suspense, lazy } from 'react';
 import { DEFAULT_LOCALE, LocaleProvider, buildAlternateLinks, toLocales } from '../../start-i18n';
 import { BlogPostPage, type PostData } from '../../pages/BlogPostPage';
 import { apiUrl } from '../../api';
+
+// 完整互動文章(mermaid / zoom / TOC / 留言 / reactions / 字體 / link 卡):純 client 元件(自抓資料、render 讀 localStorage、eager mermaid)。
+// lazy + ClientOnly → 模組與 mermaid 副作用只在 client 載入;SSR 用 BlogPostPage 把內文 + SEO baked 進 HTML。
+const FullBlogPost = lazy(() => import('../../components/BlogPost'));
 
 // 預設語言(zh-TW)文章頁:/blog/:id。loader 在 prerender 時抓內容並 baked。
 export const Route = createFileRoute('/blog/$id')({
@@ -26,7 +31,11 @@ function RouteComponent() {
   const { post } = Route.useLoaderData();
   return (
     <LocaleProvider locale={DEFAULT_LOCALE}>
-      <BlogPostPage post={post} />
+      <ClientOnly fallback={<BlogPostPage post={post} />}>
+        <Suspense fallback={<BlogPostPage post={post} />}>
+          <FullBlogPost />
+        </Suspense>
+      </ClientOnly>
     </LocaleProvider>
   );
 }
