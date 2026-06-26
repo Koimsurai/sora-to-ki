@@ -26,7 +26,7 @@ async function blogPages(): Promise<{ path: string }[]> {
 
 const LOCALE_PREFIXES = ['en', 'ja', 'ko', 'zh-cn'];
 // UI 頁(全 5 語都有):每頁生 default(/x)+ 4 個前綴(/en/x …)。加新頁只要加名字。
-const UI_PAGES = ['about', 'setup', 'bookshelf', 'activity', 'music', 'cinema', 'anime', 'thinking', 'messages', 'portfolio', 'friends', 'watch/library', 'watch', 'blog'];
+const UI_PAGES = ['about', 'setup', 'bookshelf', 'activity', 'music', 'cinema', 'anime', 'thinking', 'messages', 'portfolio', 'friends', 'watch/library', 'watch', 'blog', 'unsubscribe'];
 const STATIC_PAGES = [
   ...LOCALE_PREFIXES.map((p) => ({ path: `/${p}` })),
   ...UI_PAGES.flatMap((page) => [

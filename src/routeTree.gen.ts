@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as ThinkingRouteImport } from './routes/thinking'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
@@ -26,6 +27,7 @@ import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
 import { Route as WatchLibraryRouteImport } from './routes/watch/library'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
+import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscribe'
 import { Route as LocaleThinkingRouteImport } from './routes/$locale/thinking'
 import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
 import { Route as LocalePortfolioRouteImport } from './routes/$locale/portfolio'
@@ -42,6 +44,11 @@ import { Route as LocaleBlogIndexRouteImport } from './routes/$locale/blog/index
 import { Route as LocaleWatchLibraryRouteImport } from './routes/$locale/watch/library'
 import { Route as LocaleBlogIdRouteImport } from './routes/$locale/blog/$id'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ThinkingRoute = ThinkingRouteImport.update({
   id: '/thinking',
   path: '/thinking',
@@ -125,6 +132,11 @@ const WatchLibraryRoute = WatchLibraryRouteImport.update({
 const BlogIdRoute = BlogIdRouteImport.update({
   id: '/blog/$id',
   path: '/blog/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleUnsubscribeRoute = LocaleUnsubscribeRouteImport.update({
+  id: '/$locale/unsubscribe',
+  path: '/$locale/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleThinkingRoute = LocaleThinkingRouteImport.update({
@@ -216,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
   '/thinking': typeof ThinkingRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/activity': typeof LocaleActivityRoute
   '/$locale/anime': typeof LocaleAnimeRoute
@@ -227,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
+  '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -250,6 +264,7 @@ export interface FileRoutesByTo {
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
   '/thinking': typeof ThinkingRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/activity': typeof LocaleActivityRoute
   '/$locale/anime': typeof LocaleAnimeRoute
@@ -261,6 +276,7 @@ export interface FileRoutesByTo {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
+  '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale': typeof LocaleIndexRoute
@@ -285,6 +301,7 @@ export interface FileRoutesById {
   '/portfolio': typeof PortfolioRoute
   '/setup': typeof SetupRoute
   '/thinking': typeof ThinkingRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/$locale/about': typeof LocaleAboutRoute
   '/$locale/activity': typeof LocaleActivityRoute
   '/$locale/anime': typeof LocaleAnimeRoute
@@ -296,6 +313,7 @@ export interface FileRoutesById {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/thinking': typeof LocaleThinkingRoute
+  '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/blog/$id': typeof BlogIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -321,6 +339,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/setup'
     | '/thinking'
+    | '/unsubscribe'
     | '/$locale/about'
     | '/$locale/activity'
     | '/$locale/anime'
@@ -332,6 +351,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/thinking'
+    | '/$locale/unsubscribe'
     | '/blog/$id'
     | '/watch/library'
     | '/$locale/'
@@ -355,6 +375,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/setup'
     | '/thinking'
+    | '/unsubscribe'
     | '/$locale/about'
     | '/$locale/activity'
     | '/$locale/anime'
@@ -366,6 +387,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/thinking'
+    | '/$locale/unsubscribe'
     | '/blog/$id'
     | '/watch/library'
     | '/$locale'
@@ -389,6 +411,7 @@ export interface FileRouteTypes {
     | '/portfolio'
     | '/setup'
     | '/thinking'
+    | '/unsubscribe'
     | '/$locale/about'
     | '/$locale/activity'
     | '/$locale/anime'
@@ -400,6 +423,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/thinking'
+    | '/$locale/unsubscribe'
     | '/blog/$id'
     | '/watch/library'
     | '/$locale/'
@@ -424,6 +448,7 @@ export interface RootRouteChildren {
   PortfolioRoute: typeof PortfolioRoute
   SetupRoute: typeof SetupRoute
   ThinkingRoute: typeof ThinkingRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   LocaleAboutRoute: typeof LocaleAboutRoute
   LocaleActivityRoute: typeof LocaleActivityRoute
   LocaleAnimeRoute: typeof LocaleAnimeRoute
@@ -435,6 +460,7 @@ export interface RootRouteChildren {
   LocalePortfolioRoute: typeof LocalePortfolioRoute
   LocaleSetupRoute: typeof LocaleSetupRoute
   LocaleThinkingRoute: typeof LocaleThinkingRoute
+  LocaleUnsubscribeRoute: typeof LocaleUnsubscribeRoute
   BlogIdRoute: typeof BlogIdRoute
   WatchLibraryRoute: typeof WatchLibraryRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
@@ -448,6 +474,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/thinking': {
       id: '/thinking'
       path: '/thinking'
@@ -565,6 +598,13 @@ declare module '@tanstack/react-router' {
       path: '/blog/$id'
       fullPath: '/blog/$id'
       preLoaderRoute: typeof BlogIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/unsubscribe': {
+      id: '/$locale/unsubscribe'
+      path: '/$locale/unsubscribe'
+      fullPath: '/$locale/unsubscribe'
+      preLoaderRoute: typeof LocaleUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/thinking': {
@@ -688,6 +728,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortfolioRoute: PortfolioRoute,
   SetupRoute: SetupRoute,
   ThinkingRoute: ThinkingRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   LocaleAboutRoute: LocaleAboutRoute,
   LocaleActivityRoute: LocaleActivityRoute,
   LocaleAnimeRoute: LocaleAnimeRoute,
@@ -699,6 +740,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocalePortfolioRoute: LocalePortfolioRoute,
   LocaleSetupRoute: LocaleSetupRoute,
   LocaleThinkingRoute: LocaleThinkingRoute,
+  LocaleUnsubscribeRoute: LocaleUnsubscribeRoute,
   BlogIdRoute: BlogIdRoute,
   WatchLibraryRoute: WatchLibraryRoute,
   LocaleIndexRoute: LocaleIndexRoute,

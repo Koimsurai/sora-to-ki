@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useRouterState } from '@tanstack/react-router';
+import { LocaleLink } from '../locale-link';
 import { useTranslation, Trans } from 'react-i18next';
 import './Unsubscribe.css';
 
@@ -18,8 +19,8 @@ interface Subscriber {
 
 function Unsubscribe() {
   const { t } = useTranslation();
-  const [params] = useSearchParams();
-  const token = params.get('token');
+  const search = useRouterState({ select: (s) => s.location.search }) as { token?: string };
+  const token = search.token;
   const [phase, setPhase] = useState(PHASE.loading);
   const [subscriber, setSubscriber] = useState<Subscriber | null>(null);
   const [error, setError] = useState('');
@@ -75,7 +76,7 @@ function Unsubscribe() {
   return (
     <div className="unsubscribe-shell">
       <div className="unsubscribe-card">
-        <Link to="/" className="unsubscribe-brand">✦ Koimsurai</Link>
+        <LocaleLink to="/" className="unsubscribe-brand">✦ Koimsurai</LocaleLink>
 
         {phase === PHASE.loading && (
           <p className="unsubscribe-status">{t('unsubscribe.verifying')}</p>
@@ -95,9 +96,9 @@ function Unsubscribe() {
               >
                 {t('unsubscribe.btnConfirm')}
               </button>
-              <Link to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
+              <LocaleLink to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
                 {t('unsubscribe.btnKeep')}
-              </Link>
+              </LocaleLink>
             </div>
           </>
         )}
@@ -119,9 +120,9 @@ function Unsubscribe() {
               {t('unsubscribe.bodyDoneFarewell')}
             </p>
             <div className="unsubscribe-actions">
-              <Link to="/blog" className="unsubscribe-btn unsubscribe-btn--ghost">
+              <LocaleLink to="/blog" className="unsubscribe-btn unsubscribe-btn--ghost">
                 {t('unsubscribe.viewLatest')}
-              </Link>
+              </LocaleLink>
             </div>
           </>
         )}
@@ -131,9 +132,9 @@ function Unsubscribe() {
             <h1 className="unsubscribe-title">{t('unsubscribe.errorTitle')}</h1>
             <p className="unsubscribe-body">{error}</p>
             <div className="unsubscribe-actions">
-              <Link to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
+              <LocaleLink to="/" className="unsubscribe-btn unsubscribe-btn--ghost">
                 {t('unsubscribe.btnBackHome')}
-              </Link>
+              </LocaleLink>
             </div>
           </>
         )}
