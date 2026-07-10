@@ -7,6 +7,14 @@ use axum::{
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
 
+/// 可寫欄位白名單（行為清理版：原 Express 把 body key 直接插 SQL，非法欄名 500）。
+/// 未知欄位靜默忽略；過濾後無欄位 → 400。
+const ALLOWED_FIELDS: [&str; 14] = [
+    "title", "original_title", "year", "poster_url", "overview", "external_id",
+    "collection_type", "media_format", "source", "status", "rating", "review",
+    "is_favorite", "watch_date",
+];
+
 use crate::state::AppState;
 use crate::{
     auth::require_admin,
@@ -112,7 +120,7 @@ pub async fn create_item(
         )
             .into_response();
     }
-    let keys: Vec<&String> = body.keys().collect();
+    let keys: Vec<&String> = body.keys().filter(|k| ALLOWED_FIELDS.contains(&k.as_str())).collect();
     let fields = keys.iter().map(|k| k.as_str()).collect::<Vec<_>>().join(", ");
     let placeholders = vec!["?"; keys.len()].join(", ");
     let sql = format!("INSERT INTO collection_items ({fields}) VALUES ({placeholders})");
@@ -136,14 +144,15 @@ pub async fn update_item(
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();
     }
-    if body.is_empty() {
+    let keys: Vec<&String> = body.keys().filter(|k| ALLOWED_FIELDS.contains(&k.as_str())).collect();
+    if keys.is_empty() {
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "沒有要更新的欄位" }))).into_response();
     }
-    let sets = body.keys().map(|k| format!("{k} = ?")).collect::<Vec<_>>().join(", ");
+    let sets = keys.iter().map(|k| format!("{k} = ?")).collect::<Vec<_>>().join(", ");
     let sql = format!("UPDATE collection_items SET {sets}, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
     let mut q = sqlx::query(&sql);
-    for k in body.keys() {
-        q = bind_val(q, body.get(k));
+    for k in &keys {
+        q = bind_val(q, body.get(*k));
     }
     q = q.bind(&id);
     match q.execute(&state.pool).await {

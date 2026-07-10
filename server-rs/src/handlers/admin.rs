@@ -930,7 +930,9 @@ pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> R
 }
 
 /// `PUT /api/admin/posts/:id` —— 更新（COALESCE / CASE-flag 語意逐字照抄）。
-/// ⚠️ 對齊 Express：`category = ?` 無 COALESCE——**缺 category 也會被清成 NULL**；tags 缺 → 清空所有關聯。
+/// 行為清理版（原 Express：`category = ?` 無 COALESCE=缺 key 清 NULL、tags 缺=清空關聯，
+/// 前端恆送全欄位故從未觸發）：category 改 CASE-flag、tags 缺 key 跳過 manage_tags——
+/// 部分更新不再誤刪資料。
 pub async fn admin_update_post(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -994,7 +996,8 @@ pub async fn admin_update_post(
     let mut q = sqlx::query(
         "UPDATE posts SET \
          title = COALESCE(?, title), content = COALESCE(?, content), excerpt = COALESCE(?, excerpt), \
-         category = ?, status = COALESCE(?, status), layout_type = COALESCE(?, layout_type), \
+         category = CASE WHEN ? = 1 THEN ? ELSE category END, \
+         status = COALESCE(?, status), layout_type = COALESCE(?, layout_type), \
          source_language = COALESCE(?, source_language), \
          title_en = CASE WHEN ? = 1 THEN ? ELSE title_en END, \
          content_en = CASE WHEN ? = 1 THEN ? ELSE content_en END, \
@@ -1016,7 +1019,8 @@ pub async fn admin_update_post(
     .bind(b.get("title").and_then(to_s))
     .bind(b.get("content").and_then(to_s))
     .bind(b.get("excerpt").and_then(to_s))
-    .bind(b.get("category").and_then(to_s)) // 直接綁，無 COALESCE
+    .bind(if b.contains_key("category") { 1i64 } else { 0 })
+    .bind(b.get("category").and_then(to_s))
     .bind(b.get("status").and_then(to_s))
     .bind(b.get("layout_type").and_then(to_s))
     .bind(b.get("source_language").and_then(to_s));
@@ -1040,9 +1044,12 @@ pub async fn admin_update_post(
         }
         Ok(_) => {}
     }
+    // tags 有帶 key（含空陣列）才重建關聯；缺 key 不動（回應仍回 body 的 tags 或 []）
     let tags = tags_from(&b);
-    if let Err(e) = manage_tags(&state, &id, &tags).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+    if b.contains_key("tags") {
+        if let Err(e) = manage_tags(&state, &id, &tags).await {
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+        }
     }
 
     let mut data = Map::new();
@@ -1198,6 +1205,39 @@ pub async fn admin_update_user_role(
     {
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "error": "用戶不存在" }))).into_response(),
         Ok(_) => Json(json!({ "message": "角色更新成功", "role": role })).into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+    }
+}
+
+
+/// `PATCH /api/admin/comments/batch/status` —— 批次審核。
+/// Express 原版因 `:id/status` 先註冊而永遠打不到（bug #2）；axum matchit 靜態段
+/// 天然優先於參數段，此處為修好後的行為。
+pub async fn admin_batch_comment_status(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(body): Json<Map<String, Value>>,
+) -> Response {
+    if let Err(e) = require_admin(&headers, &state).await {
+        return e.into_response();
+    }
+    let ids: Vec<i64> = body
+        .get("ids")
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_i64()).collect())
+        .unwrap_or_default();
+    let status = body.get("status").and_then(|v| v.as_str()).unwrap_or("");
+    if ids.is_empty() || !matches!(status, "pending" | "approved" | "spam" | "trash") {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Invalid request" }))).into_response();
+    }
+    let placeholders = vec!["?"; ids.len()].join(",");
+    let sql = format!("UPDATE comments SET status = ? WHERE id IN ({placeholders})");
+    let mut q = sqlx::query(&sql).bind(status);
+    for id in &ids {
+        q = q.bind(id);
+    }
+    match q.execute(&state.pool).await {
+        Ok(r) => Json(json!({ "message": "success", "affected": r.rows_affected() })).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
     }
 }

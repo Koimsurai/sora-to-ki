@@ -215,13 +215,14 @@ pub struct ResetAdminBody {
     password: Option<String>,
 }
 
-/// `POST /api/auth/reset-admin` —— 開發用密碼重置。照抄 Express：
-/// `NODE_ENV==='production'` 才回 404（⚠️ 現行容器 NODE_ENV 未設 → 端點是活的，見 STRANGLER 安全備註）。
+/// `POST /api/auth/reset-admin` —— 開發用密碼重置。行為清理版（原 Express 靠
+/// NODE_ENV==='production' 擋、容器沒設=在正式環境是活的=安全發現 #3）：
+/// **fail-safe 預設關閉**，需顯式 `ENABLE_RESET_ADMIN=1` 才開。
 pub async fn reset_admin(
     State(state): State<AppState>,
     body: Option<Json<ResetAdminBody>>,
 ) -> Result<Response, AppError> {
-    if std::env::var("NODE_ENV").as_deref() == Ok("production") {
+    if std::env::var("ENABLE_RESET_ADMIN").as_deref() != Ok("1") {
         return Ok((StatusCode::NOT_FOUND, Json(json!({ "message": "Not found" }))).into_response());
     }
     let b = body.map(|Json(x)| x).unwrap_or(ResetAdminBody { username: None, password: None });

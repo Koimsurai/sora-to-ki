@@ -320,6 +320,11 @@ async fn main() -> anyhow::Result<()> {
             "/api/admin/comments",
             get(handlers::admin::admin_comments).fallback(proxy::proxy_to_express),
         )
+        // 批次審核（Express bug #2 死路由的修好版；靜態段優先於 :id/status）
+        .route(
+            "/api/admin/comments/batch/status",
+            patch(handlers::admin::admin_batch_comment_status).fallback(proxy::proxy_to_express),
+        )
         // 後台統計（⚠️ visitors 用 Math.random，非 byte 對拍——除該欄外對拍）
         .route(
             "/api/admin/stats",
