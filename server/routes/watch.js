@@ -545,8 +545,11 @@ apiRouter.delete('/watch/favorites/:id', requireAdmin, (req, res) => {
 });
 
 // 啟動 30 秒後跑首次 sync，之後每 6 小時跑一次
-setTimeout(() => syncBahamutHistory(), 30 * 1000);
-setInterval(() => syncBahamutHistory(), 6 * 60 * 60 * 1000);
+// DISABLE_WATCH_CRON=1 → 關閉（strangler 切換：同步 worker 移交 Rust 時設）
+if (!process.env.DISABLE_WATCH_CRON) {
+  setTimeout(() => syncBahamutHistory(), 30 * 1000);
+  setInterval(() => syncBahamutHistory(), 6 * 60 * 60 * 1000);
+}
 
 /* ═════════════════════════════════════════════════════════════
    Trakt sync — going-forward HBO Max / Disney+ / 任何手動 log
@@ -691,8 +694,11 @@ async function syncTraktHistory() {
 }
 
 // 啟動 90 秒後跑首次（讓 Bahamut sync 先跑），之後每 6 小時跑一次
-setTimeout(() => syncTraktHistory(), 90 * 1000);
-setInterval(() => syncTraktHistory(), 6 * 60 * 60 * 1000);
+// DISABLE_WATCH_CRON=1 → 關閉（Trakt 同步已有 Rust 版：server-rs ENABLE_TRAKT_SYNC=1）
+if (!process.env.DISABLE_WATCH_CRON) {
+  setTimeout(() => syncTraktHistory(), 90 * 1000);
+  setInterval(() => syncTraktHistory(), 6 * 60 * 60 * 1000);
+}
 
 /* ═════════════════════════════════════════════════════════════
    即時觀看 now-watching（對齊 Spotify now-playing）
