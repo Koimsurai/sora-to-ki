@@ -1,0 +1,51 @@
+[package]
+name = "koimsurai-web-backend"
+version = "0.1.0"
+edition = "2021"
+description = "Rust (axum + sqlx) strangler 前置代理，逐端點接管 Express 後端"
+
+[dependencies]
+axum = { version = "0.7", features = ["multipart"] }  # multipart 給 /admin/upload
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+# preserve_order：讓解析 JSON（thoughts 的 ref）再序列化時保留原始 key 順序，
+# 與 Express 的 JSON.parse→res.json 一致（byte-level 對拍）。
+# float_roundtrip：serde_json 預設浮點解析快速但有損（差 1 ULP，gallery manifest 的
+# aspectRatio 1.7829716193656093 被 parse 成 …609）；開啟後 parse→serialize 精確 round-trip 對齊 V8。
+serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls", "macros"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["trace", "cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+dotenvy = "0.15"
+bytes = "1"
+# JWT 驗章/簽章（HS256），對齊 Express 的 jsonwebtoken
+jsonwebtoken = "9"
+# bcrypt 驗密碼，相容 Express 的 bcryptjs（$2a/$2b/$2y）
+bcrypt = "0.19"
+# proxy fallback 用：把未接管的請求原樣轉回 Express；stream 給 /image-proxy 串流代理
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+# unfurl（og meta 抽取）用，複製 Express 的 regex
+regex = "1"
+# newsletter unsubscribe token（crypto.randomBytes(16).hex 等價）
+rand = "0.8"
+# in-process cache 的鎖（短臨界區、無 poison；不跨 await 持有）
+parking_lot = "0.12"
+# /posts/legacy 的 Basic auth 解碼
+base64 = "0.22"
+# 自家 bahamut SDK（獨立 crate；部署 P4 monorepo 時改 workspace/vendor）
+anigamer = { path = "../../anigamer-rs" }
+# opencc 簡繁轉換（純 Rust、內建 OpenCC 字典，免 libopencc C 依賴）。
+# Tw2s 對 opencc-js {from:'tw',to:'cn'} 實測 byte-identical（33 真實欄位 + 20 對抗案例全過）。
+ferrous-opencc = "0.4"
+# OG 圖：SVG 光柵化（取代 sharp/librsvg）。純 Rust；text feature 在 default 內，吃系統字型（Noto Sans CJK）。
+resvg = "0.47"
+# upload thumbhash + gallery 圖片管線（取代 sharp）。實測 thumbhash 對 sharp 版 2/5 byte 同、3/5 差 ≤2 字元（視覺零差異）。
+image = "0.25"
+thumbhash = "0.1"
+# gallery sync 的 lossy webp q85/q80（image crate 只有 lossless webp）。libwebp-sys vendored 編譯（輕量 C，非 libvips 量級）。
+webp = "0.3"
+# EXIF：orientation（rotate 對齊 sharp .rotate()）+ 欄位抽取（對齊 exifr pick）
+kamadak-exif = "0.6"
