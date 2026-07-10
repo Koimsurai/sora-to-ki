@@ -1,0 +1,977 @@
+//! watch 域：anime/films/tv/stats 公開讀、watch_favorites CRUD（TMDb 在地化）、
+//! now-watching（heartbeat push + Trakt 按需輪詢）。
+//! ⚠️ bahamut sync / Trakt 歷史同步 cron **留在 Express**（單寫者：history 表寫者=Express cron）；
+//! `/admin/bahamut/*` 留 proxy（anigamer 硬骨頭輪）。
+
+use std::sync::atomic::Ordering;
+
+use axum::{
+    extract::{Path, Query, State},
+    http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Response},
+    Json,
+};
+use serde::Deserialize;
+use serde_json::{json, Map, Value};
+
+use crate::handlers::admin::bind_num;
+use crate::state::AppState;
+use crate::util::{bind_val, js_interp, js_normalize_numbers, js_substring_prefix, js_truthy, row_to_json};
+
+fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0)
+}
+
+// ── 公開讀 ────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct LimitQuery {
+    limit: Option<String>,
+}
+
+/// `parseInt(limit||default)` 後 `Math.min(cap)`；NaN → 綁 NULL（LIMIT NULL=無限制，同 node）。
+fn js_limit(q: &LimitQuery, default: &str, cap: i64) -> Option<i64> {
+    let raw = q.limit.as_deref().filter(|s| !s.is_empty()).unwrap_or(default);
+    crate::util::js_parse_int_opt(raw).map(|n| n.min(cap))
+}
+
+/// `GET /api/anime/history`
+pub async fn anime_history(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
+    let mut query = sqlx::query(
+        "SELECT anime_sn, video_sn, title, cover_url, episode, tmdb_id, last_watched_at \
+         FROM anime_history ORDER BY last_watched_at DESC LIMIT ?",
+    );
+    query = match js_limit(&q, "50", 2000) {
+        Some(n) => query.bind(n),
+        None => query.bind(Option::<i64>::None),
+    };
+    match query.fetch_all(&state.pool).await {
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Ok(rows) => {
+            let history: Vec<Value> = rows.iter().map(|r| Value::Object(row_to_json(r))).collect();
+            Json(json!({ "message": "success", "history": history })).into_response()
+        }
+    }
+}
+
+/// `GET /api/films/recent`
+pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
+    let mut query = sqlx::query(
+        "SELECT id, title, watched_date, rating, source, tmdb_id, poster_url, release_year, genres \
+         FROM film_history ORDER BY watched_date DESC NULLS LAST, id DESC LIMIT ?",
+    );
+    query = match js_limit(&q, "50", 200) {
+        Some(n) => query.bind(n),
+        None => query.bind(Option::<i64>::None),
+    };
+    match query.fetch_all(&state.pool).await {
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Ok(rows) => {
+            let films: Vec<Value> = rows.iter().map(|r| Value::Object(row_to_json(r))).collect();
+            Json(json!({ "message": "success", "films": films })).into_response()
+        }
+    }
+}
+
+/// `GET /api/tv/recent`
+pub async fn tv_recent(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
+    let mut query = sqlx::query(
+        "SELECT series_name, MAX(watched_date) AS last_watched, COUNT(*) AS ep_count, \
+                MAX(tmdb_id) AS tmdb_id, MAX(poster_url) AS poster_url, MAX(genres) AS genres, MAX(source) AS source \
+         FROM tv_history GROUP BY series_name ORDER BY last_watched DESC NULLS LAST LIMIT ?",
+    );
+    query = match js_limit(&q, "50", 200) {
+        Some(n) => query.bind(n),
+        None => query.bind(Option::<i64>::None),
+    };
+    match query.fetch_all(&state.pool).await {
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Ok(rows) => {
+            let series: Vec<Value> = rows.iter().map(|r| Value::Object(row_to_json(r))).collect();
+            Json(json!({ "message": "success", "series": series })).into_response()
+        }
+    }
+}
+
+/// `GET /api/watch/stats` —— 5 個 count（單一 count 失敗 → 0，照抄）。
+pub async fn watch_stats(State(state): State<AppState>) -> Response {
+    let count = |sql: &'static str| {
+        let pool = state.pool.clone();
+        async move { sqlx::query_scalar::<_, i64>(sql).fetch_one(&pool).await.unwrap_or(0) }
+    };
+    let (anime_count, anime_eps, film_count, tv_series, tv_eps) = tokio::join!(
+        count("SELECT COUNT(DISTINCT anime_sn) AS n FROM anime_history"),
+        count("SELECT COUNT(*) AS n FROM anime_history"),
+        count("SELECT COUNT(*) AS n FROM film_history"),
+        count("SELECT COUNT(DISTINCT series_name) AS n FROM tv_history"),
+        count("SELECT COUNT(*) AS n FROM tv_history")
+    );
+    Json(json!({
+        "message": "success",
+        "animeCount": anime_count,
+        "animeEpisodes": anime_eps,
+        "filmCount": film_count,
+        "tvSeriesCount": tv_series,
+        "tvEpisodes": tv_eps,
+    }))
+    .into_response()
+}
+
+// ── TMDb detail（含 in-process 快取，無 TTL＝同 Express）────────────────────
+
+fn tmdb_lang(locale: &str) -> Option<&'static str> {
+    match locale {
+        "zh-TW" => Some("zh-TW"),
+        "zh-CN" => Some("zh-CN"),
+        "en" => Some("en-US"),
+        "ja" => Some("ja-JP"),
+        "ko" => Some("ko-KR"),
+        _ => None,
+    }
+}
+
+async fn tmdb_detail(state: &AppState, kind: &str, id: &Value, locale: &str) -> Option<Value> {
+    let lang = tmdb_lang(locale).unwrap_or("zh-TW");
+    let id_s = js_interp(id);
+    let key = format!("{kind}:{id_s}:{lang}");
+    if let Some(v) = state.watch.tmdb_detail.lock().get(&key) {
+        return Some(v.clone());
+    }
+    let token = std::env::var("TMDB_API_TOKEN").ok().filter(|s| !s.is_empty())?;
+    let path = if kind == "tv" { "tv" } else { "movie" };
+    let resp = state
+        .http
+        .get(format!("https://api.themoviedb.org/3/{path}/{id_s}?language={lang}"))
+        .bearer_auth(&token)
+        .header("accept", "application/json")
+        .send()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let mut j: Value = serde_json::from_str(&resp.text().await.ok()?).ok()?;
+    js_normalize_numbers(&mut j);
+    let title = j
+        .get("title")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .or_else(|| j.get("name").and_then(|v| v.as_str()).filter(|s| !s.is_empty()))
+        .unwrap_or("");
+    let poster = j
+        .get("poster_path")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|p| Value::from(format!("https://image.tmdb.org/t/p/w342{p}")))
+        .unwrap_or(Value::Null);
+    let date = j
+        .get("release_date")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .or_else(|| j.get("first_air_date").and_then(|v| v.as_str()).filter(|s| !s.is_empty()))
+        .unwrap_or("");
+    let year = crate::util::js_parse_int_opt(&date.chars().take(4).collect::<String>())
+        .filter(|&y| y != 0)
+        .map(Value::from)
+        .unwrap_or(Value::Null);
+    let out = json!({ "title": title, "poster_url": poster, "year": year });
+    state.watch.tmdb_detail.lock().insert(key, out.clone());
+    Some(out)
+}
+
+// ── watch_favorites ──────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct FavQuery {
+    locale: Option<String>,
+}
+
+/// `GET /api/watch/favorites?locale=` —— 公開；TMDb 即時在地化、失敗退 DB 快照；Cache-Control: no-store。
+pub async fn favorites(State(state): State<AppState>, Query(q): Query<FavQuery>) -> Response {
+    let locale = q.locale.as_deref().filter(|l| tmdb_lang(l).is_some()).unwrap_or("zh-TW").to_string();
+    let rows = match sqlx::query("SELECT * FROM watch_favorites ORDER BY sort_order ASC, id ASC")
+        .fetch_all(&state.pool)
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+    };
+    let mut out = Vec::new();
+    for row in &rows {
+        let f = row_to_json(row);
+        let kind = f.get("kind").and_then(|v| v.as_str()).unwrap_or("film").to_string();
+        let tmdb_id = f.get("tmdb_id").cloned().unwrap_or(Value::Null);
+        let d = tmdb_detail(&state, &kind, &tmdb_id, &locale).await;
+        let title = d
+            .as_ref()
+            .and_then(|x| x.get("title"))
+            .filter(|v| js_truthy(Some(v)))
+            .cloned()
+            .unwrap_or_else(|| Value::from(format!("#{}", js_interp(&tmdb_id))));
+        let poster = d
+            .as_ref()
+            .and_then(|x| x.get("poster_url"))
+            .filter(|v| js_truthy(Some(v)))
+            .cloned()
+            .or_else(|| f.get("poster_url").filter(|v| js_truthy(Some(v))).cloned())
+            .unwrap_or(Value::Null);
+        let year = d
+            .as_ref()
+            .and_then(|x| x.get("year"))
+            .filter(|v| js_truthy(Some(v)))
+            .cloned()
+            .or_else(|| f.get("year").filter(|v| js_truthy(Some(v))).cloned())
+            .unwrap_or(Value::Null);
+        let ext = format!(
+            "https://www.themoviedb.org/{}/{}",
+            if kind == "tv" { "tv" } else { "movie" },
+            js_interp(&tmdb_id)
+        );
+        out.push(json!({
+            "id": f.get("id").cloned().unwrap_or(Value::Null),
+            "kind": kind,
+            "tmdbId": tmdb_id,
+            "rating": f.get("rating").cloned().unwrap_or(Value::Null),
+            "quote": f.get("quote").cloned().unwrap_or(Value::Null),
+            "title": title,
+            "poster": poster,
+            "year": year,
+            "externalUrl": ext,
+        }));
+    }
+    let mut resp = Json(json!({ "message": "success", "favorites": out })).into_response();
+    resp.headers_mut().insert("Cache-Control", axum::http::HeaderValue::from_static("no-store"));
+    resp
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TmdbSearchQuery {
+    q: Option<String>,
+    kind: Option<String>,
+}
+
+/// `GET /api/watch/tmdb-search`（requireAdmin）。
+pub async fn tmdb_search(State(state): State<AppState>, headers: HeaderMap, Query(qq): Query<TmdbSearchQuery>) -> Response {
+    if let Err(e) = crate::auth::require_admin(&headers, &state).await {
+        return e.into_response();
+    }
+    let q = qq.q.unwrap_or_default().trim().to_string();
+    let kind = if qq.kind.as_deref() == Some("tv") { "tv" } else { "movie" };
+    if q.is_empty() {
+        return Json(json!({ "message": "success", "results": [] })).into_response();
+    }
+    let Some(token) = std::env::var("TMDB_API_TOKEN").ok().filter(|s| !s.is_empty()) else {
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "TMDB_API_TOKEN 未設定" }))).into_response();
+    };
+    let r: Result<Value, String> = async {
+        let resp = state
+            .http
+            .get(format!(
+                "https://api.themoviedb.org/3/search/{kind}?query={}&language=zh-TW&include_adult=false",
+                crate::util::encode_uri_component(&q)
+            ))
+            .bearer_auth(&token)
+            .header("accept", "application/json")
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+        // Express 不看狀態碼、直接 parse（parse 失敗 → catch）
+        let mut v: Value = serde_json::from_str(&resp.text().await.map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+        js_normalize_numbers(&mut v);
+        Ok(v)
+    }
+    .await;
+    match r {
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e }))).into_response(),
+        Ok(j) => {
+            let results: Vec<Value> = j
+                .get("results")
+                .and_then(|r| r.as_array())
+                .map(|a| {
+                    a.iter()
+                        .take(8)
+                        .map(|it| {
+                            let title = it
+                                .get("title")
+                                .filter(|v| js_truthy(Some(v)))
+                                .or_else(|| it.get("name"))
+                                .cloned()
+                                .unwrap_or(Value::Null);
+                            let date = it
+                                .get("release_date")
+                                .and_then(|v| v.as_str())
+                                .filter(|s| !s.is_empty())
+                                .or_else(|| it.get("first_air_date").and_then(|v| v.as_str()).filter(|s| !s.is_empty()))
+                                .unwrap_or("");
+                            let year = crate::util::js_parse_int_opt(&date.chars().take(4).collect::<String>())
+                                .filter(|&y| y != 0)
+                                .map(Value::from)
+                                .unwrap_or(Value::Null);
+                            let poster = it
+                                .get("poster_path")
+                                .and_then(|v| v.as_str())
+                                .filter(|s| !s.is_empty())
+                                .map(|p| Value::from(format!("https://image.tmdb.org/t/p/w185{p}")))
+                                .unwrap_or(Value::Null);
+                            json!({ "tmdbId": it.get("id").cloned().unwrap_or(Value::Null), "kind": kind, "title": title, "year": year, "poster": poster })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            Json(json!({ "message": "success", "results": results })).into_response()
+        }
+    }
+}
+
+/// JS ToNumber + Math.max(1, Math.min(5, x))（NaN 傳染 → 綁 NULL）。
+fn clamp_rating(v: &Value) -> Option<f64> {
+    let n = match v {
+        Value::Null => 0.0,
+        Value::Bool(b) => *b as i64 as f64,
+        Value::Number(x) => x.as_f64().unwrap_or(f64::NAN),
+        Value::String(s) => {
+            let t = s.trim();
+            if t.is_empty() { 0.0 } else { t.parse::<f64>().unwrap_or(f64::NAN) }
+        }
+        _ => f64::NAN,
+    };
+    if n.is_nan() {
+        None
+    } else {
+        Some(n.clamp(1.0, 5.0))
+    }
+}
+
+/// `POST /api/watch/favorites`（requireAdmin）。
+pub async fn create_favorite(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(b): Json<Map<String, Value>>,
+) -> Response {
+    if let Err(e) = crate::auth::require_admin(&headers, &state).await {
+        return e.into_response();
+    }
+    if !js_truthy(b.get("tmdbId")) {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "tmdbId 必填" }))).into_response();
+    }
+    let tmdb_id = b.get("tmdbId").cloned().unwrap_or(Value::Null);
+    let kind = if b.get("kind").and_then(|v| v.as_str()) == Some("tv") { "tv" } else { "film" };
+    let rating_v = if b.contains_key("rating") { b.get("rating").cloned().unwrap_or(Value::Null) } else { json!(5) };
+    let quote_v = if b.contains_key("quote") { b.get("quote").cloned().unwrap_or(Value::Null) } else { json!("") };
+    let d = tmdb_detail(&state, kind, &tmdb_id, "zh-TW").await;
+
+    let max_order = sqlx::query_scalar::<_, Option<i64>>("SELECT MAX(sort_order) AS m FROM watch_favorites")
+        .fetch_one(&state.pool)
+        .await
+        .ok()
+        .flatten();
+    let order = max_order.unwrap_or(-1) + 1;
+
+    let mut q = sqlx::query(
+        "INSERT INTO watch_favorites (tmdb_id, kind, rating, quote, poster_url, year, sort_order) VALUES (?,?,?,?,?,?,?)",
+    );
+    q = bind_val(q, Some(&tmdb_id));
+    q = q.bind(kind);
+    q = bind_num(q, clamp_rating(&rating_v));
+    q = q.bind(js_substring_prefix(&js_interp(&quote_v), 280));
+    q = bind_val(q, d.as_ref().and_then(|x| x.get("poster_url")).filter(|v| js_truthy(Some(v))));
+    q = bind_val(q, d.as_ref().and_then(|x| x.get("year")).filter(|v| js_truthy(Some(v))));
+    q = q.bind(order);
+    match q.execute(&state.pool).await {
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Ok(r) => Json(json!({ "message": "success", "id": r.last_insert_rowid() })).into_response(),
+    }
+}
+
+/// `PUT /api/watch/favorites/:id`（requireAdmin）—— rating/quote/sort_order 選擇性更新；無 404。
+pub async fn update_favorite(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+    Json(b): Json<Map<String, Value>>,
+) -> Response {
+    if let Err(e) = crate::auth::require_admin(&headers, &state).await {
+        return e.into_response();
+    }
+    // `x != null`：排除 null 與缺 key
+    let has = |k: &str| b.get(k).is_some_and(|v| !v.is_null());
+    let mut sets: Vec<&str> = Vec::new();
+    if has("rating") {
+        sets.push("rating = ?");
+    }
+    if has("quote") {
+        sets.push("quote = ?");
+    }
+    if has("sort_order") {
+        sets.push("sort_order = ?");
+    }
+    if sets.is_empty() {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "無可更新欄位" }))).into_response();
+    }
+    let sql = format!("UPDATE watch_favorites SET {} WHERE id = ?", sets.join(", "));
+    let mut q = sqlx::query(&sql);
+    if has("rating") {
+        q = bind_num(q, clamp_rating(b.get("rating").unwrap_or(&Value::Null)));
+    }
+    if has("quote") {
+        q = q.bind(js_substring_prefix(&js_interp(b.get("quote").unwrap_or(&Value::Null)), 280));
+    }
+    if has("sort_order") {
+        q = bind_val(q, b.get("sort_order"));
+    }
+    q = q.bind(&id);
+    match q.execute(&state.pool).await {
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Ok(_) => Json(json!({ "message": "success" })).into_response(),
+    }
+}
+
+/// `DELETE /api/watch/favorites/:id`（requireAdmin）—— 無 404。
+pub async fn delete_favorite(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
+    if let Err(e) = crate::auth::require_admin(&headers, &state).await {
+        return e.into_response();
+    }
+    match sqlx::query("DELETE FROM watch_favorites WHERE id = ?").bind(&id).execute(&state.pool).await {
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Ok(_) => Json(json!({ "message": "success" })).into_response(),
+    }
+}
+
+// ── now-watching（heartbeat push + Trakt 按需輪詢）─────────────────────────
+
+const NOW_WATCHING_TTL_MS: i64 = 90 * 1000;
+const TRAKT_POLL_MIN_MS: i64 = 25 * 1000;
+const TRAKT_UA: &str = "koimsurai/1.0 (+https://koimsurai.com)";
+
+/// timingSafeEqual（長度不同直接 false，同 Express 先比長度）。
+fn timing_safe_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut d = 0u8;
+    for (x, y) in a.iter().zip(b) {
+        d |= x ^ y;
+    }
+    d == 0
+}
+
+/// bahamutPushAuth：X-Bahamut-Token（constant-time）或 admin JWT。
+async fn bahamut_push_auth(headers: &HeaderMap, state: &AppState) -> Result<(), Response> {
+    if let Ok(token) = std::env::var("BAHAMUT_PUSH_TOKEN") {
+        if !token.is_empty() {
+            let got = headers.get("X-Bahamut-Token").and_then(|v| v.to_str().ok()).unwrap_or("");
+            if timing_safe_eq(got.as_bytes(), token.as_bytes()) {
+                return Ok(());
+            }
+        }
+    }
+    crate::auth::require_admin(headers, state).await.map(|_| ()).map_err(|e| e.into_response())
+}
+
+fn current_now_watching(state: &AppState) -> Option<Value> {
+    let g = state.watch.now.lock();
+    g.as_ref()
+        .filter(|w| w.get("expiresAt").and_then(|v| v.as_i64()).map(|e| now_ms() < e).unwrap_or(false))
+        .cloned()
+}
+
+fn tmdb_url_for(kind: &str, id: &Value) -> Value {
+    if !js_truthy(Some(id)) {
+        return Value::Null;
+    }
+    Value::from(format!(
+        "https://www.themoviedb.org/{}/{}",
+        if kind == "movie" { "movie" } else { "tv" },
+        js_interp(id)
+    ))
+}
+
+/// `POST /api/admin/watch/now`（bahamutPushAuth）—— 動畫瘋擴充 heartbeat。
+pub async fn heartbeat(State(state): State<AppState>, headers: HeaderMap, Json(b): Json<Map<String, Value>>) -> Response {
+    if let Err(resp) = bahamut_push_auth(&headers, &state).await {
+        return resp;
+    }
+    // playing === false（嚴格 boolean）→ 只清 bahamut 那條
+    if b.get("playing") == Some(&Value::Bool(false)) {
+        {
+            let mut g = state.watch.now.lock();
+            if g.as_ref().and_then(|w| w.get("source")).and_then(|s| s.as_str()) == Some("bahamut") {
+                *g = None;
+            }
+        }
+        return Json(json!({ "ok": true, "cleared": true })).into_response();
+    }
+    let mut title = b.get("title").filter(|v| js_truthy(Some(v))).cloned();
+    let mut cover: Value = Value::Null;
+    let mut tmdb_id: Value = Value::Null;
+    let mut episode = b.get("episode").filter(|v| js_truthy(Some(v))).cloned();
+
+    let video_sn = b.get("videoSn").filter(|v| js_truthy(Some(v))).cloned();
+    if let Some(sn) = &video_sn {
+        let row = {
+            let mut q = sqlx::query(
+                "SELECT anime_sn, title, cover_url, tmdb_id, episode FROM anime_history WHERE video_sn = ? LIMIT 1",
+            );
+            q = bind_val(q, Some(sn));
+            q.fetch_optional(&state.pool).await.ok().flatten()
+        };
+        if let Some(r) = row {
+            let m = row_to_json(&r);
+            if let Some(t) = m.get("title").filter(|v| js_truthy(Some(v))) {
+                title = Some(t.clone());
+            }
+            cover = m.get("cover_url").filter(|v| js_truthy(Some(v))).cloned().unwrap_or(Value::Null);
+            tmdb_id = m.get("tmdb_id").filter(|v| js_truthy(Some(v))).cloned().unwrap_or(Value::Null);
+            if episode.is_none() {
+                episode = m.get("episode").filter(|v| js_truthy(Some(v))).cloned();
+            }
+        }
+    }
+    let Some(title) = title else {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "ok": false, "message": "need title or known videoSn" }))).into_response();
+    };
+    let now = now_ms();
+    let progress = b
+        .get("progressPct")
+        .and_then(|v| v.as_f64())
+        .map(|p| Value::from(p.clamp(0.0, 100.0).round() as i64))
+        .unwrap_or(Value::Null);
+    let external = if tmdb_url_for("tv", &tmdb_id) != Value::Null {
+        tmdb_url_for("tv", &tmdb_id)
+    } else if let Some(sn) = &video_sn {
+        Value::from(format!("https://ani.gamer.com.tw/animeVideo.php?sn={}", js_interp(sn)))
+    } else {
+        Value::Null
+    };
+    // 同一部持續播放 → 保留 startedAt
+    let started = {
+        let g = state.watch.now.lock();
+        match g.as_ref() {
+            Some(w)
+                if w.get("source").and_then(|s| s.as_str()) == Some("bahamut")
+                    && w.get("title") == Some(&title) =>
+            {
+                w.get("startedAt").cloned().unwrap_or(json!(now))
+            }
+            _ => json!(now),
+        }
+    };
+    *state.watch.now.lock() = Some(json!({
+        "type": "anime",
+        "title": title,
+        "cover": cover,
+        "tmdbId": tmdb_id,
+        "episode": episode.unwrap_or(Value::Null),
+        "progressPct": progress,
+        "source": "bahamut",
+        "externalUrl": external,
+        "startedAt": started,
+        "expiresAt": now + NOW_WATCHING_TTL_MS,
+    }));
+    Json(json!({ "ok": true })).into_response()
+}
+
+// ── Trakt token / 輪詢 ────────────────────────────────────────────────────
+
+fn trakt_token_file() -> String {
+    if let Ok(p) = std::env::var("TRAKT_TOKEN_FILE") {
+        if !p.is_empty() {
+            return p;
+        }
+    }
+    // 預設：與 DATABASE_URL 同目錄（sqlite:///path/db.sqlite → /path/.trakt-token.json）
+    let url = std::env::var("DATABASE_URL").unwrap_or_default();
+    let path = url.trim_start_matches("sqlite://");
+    let dir = std::path::Path::new(path).parent().map(|p| p.to_path_buf()).unwrap_or_default();
+    dir.join(".trakt-token.json").to_string_lossy().to_string()
+}
+
+async fn load_trakt_token() -> Option<Value> {
+    let content = tokio::fs::read_to_string(trakt_token_file()).await.ok()?;
+    serde_json::from_str(&content).ok()
+}
+
+async fn save_trakt_token(tok: &Value) {
+    let file = trakt_token_file();
+    if tokio::fs::write(&file, serde_json::to_string_pretty(tok).unwrap_or_default()).await.is_ok() {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Err(e) = tokio::fs::set_permissions(&file, std::fs::Permissions::from_mode(0o600)).await {
+                tracing::warn!("[Trakt] token 檔 chmod 600 失敗: {e}");
+            }
+        }
+    }
+}
+
+async fn refresh_trakt_token(state: &AppState, tok: &Value) -> Option<Value> {
+    let client_id = std::env::var("TRAKT_CLIENT_ID").unwrap_or_default();
+    let client_secret = std::env::var("TRAKT_CLIENT_SECRET").unwrap_or_default();
+    let body = json!({
+        "refresh_token": tok.get("refresh_token").cloned().unwrap_or(Value::Null),
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "grant_type": "refresh_token",
+    });
+    let resp = state
+        .http
+        .post("https://api.trakt.tv/oauth/token")
+        .header("Content-Type", "application/json")
+        .header("User-Agent", TRAKT_UA)
+        .body(serde_json::to_string(&body).unwrap_or_default())
+        .send()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let j: Value = serde_json::from_str(&resp.text().await.ok()?).ok()?;
+    let created = j.get("created_at").and_then(|v| v.as_i64()).unwrap_or(0);
+    let expires_in = j.get("expires_in").and_then(|v| v.as_i64()).unwrap_or(0);
+    let out = json!({
+        "access_token": j.get("access_token").cloned().unwrap_or(Value::Null),
+        "refresh_token": j.get("refresh_token").cloned().unwrap_or(Value::Null),
+        "scope": j.get("scope").cloned().unwrap_or(Value::Null),
+        "expires_at": (created + expires_in) * 1000,
+        "created_at": created * 1000,
+    });
+    save_trakt_token(&out).await;
+    Some(out)
+}
+
+/// ⚠️ deviation（修 Express bug #5，非照抄）：
+/// ① refresh 門檻 = min(7 天, token 壽命的一半)——Express 固定 7 天，但 Trakt 現發 7 天 token，
+///    門檻 ≥ 壽命 → 每次呼叫都 refresh（一次性 refresh token 高速輪替，養大 race 面積）。
+/// ② refresh 全程持 tokio Mutex 串行 + 進鎖後重讀檔——Express 無鎖，cron 與 /watch/now 併發
+///    搶刷同一個一次性 refresh token，race 後 invalid_grant 永久死（live 於 2026-06-29 實際發生）。
+async fn get_valid_trakt_token(state: &AppState) -> Option<Value> {
+    let tok = load_trakt_token().await?;
+    let expires_at = tok.get("expires_at").and_then(|v| v.as_i64()).unwrap_or(0);
+    let created_at = tok.get("created_at").and_then(|v| v.as_i64()).unwrap_or(0);
+    let lifetime = (expires_at - created_at).max(0);
+    let threshold = (7 * 86_400_000i64).min(lifetime / 2);
+    if now_ms() + threshold < expires_at {
+        return Some(tok);
+    }
+    // 需要 refresh：串行化 + double-check（別的 task 可能剛刷好寫回檔案）
+    let _g = state.watch.trakt_refresh_lock.lock().await;
+    let tok = load_trakt_token().await?;
+    let expires_at = tok.get("expires_at").and_then(|v| v.as_i64()).unwrap_or(0);
+    let created_at = tok.get("created_at").and_then(|v| v.as_i64()).unwrap_or(0);
+    let threshold = (7 * 86_400_000i64).min((expires_at - created_at).max(0) / 2);
+    if now_ms() + threshold < expires_at {
+        return Some(tok);
+    }
+    refresh_trakt_token(state, &tok).await
+}
+
+async fn trakt_get(state: &AppState, tok: &Value, path: &str) -> Option<Value> {
+    let access = tok.get("access_token").and_then(|v| v.as_str()).unwrap_or("");
+    let client_id = std::env::var("TRAKT_CLIENT_ID").unwrap_or_default();
+    let resp = state
+        .http
+        .get(format!("https://api.trakt.tv{path}"))
+        .header("Content-Type", "application/json")
+        .header("User-Agent", TRAKT_UA)
+        .header("trakt-api-version", "2")
+        .header("trakt-api-key", &client_id)
+        .bearer_auth(access)
+        .send()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let mut v: Value = serde_json::from_str(&resp.text().await.ok()?).ok()?;
+    js_normalize_numbers(&mut v);
+    Some(v)
+}
+
+async fn get_trakt_slug(state: &AppState, tok: &Value) -> Option<String> {
+    if let Some(s) = state.watch.trakt_slug.lock().clone() {
+        return Some(s);
+    }
+    let data = trakt_get(state, tok, "/users/settings").await?;
+    let slug = data.pointer("/user/ids/slug").and_then(|v| v.as_str()).map(String::from)?;
+    *state.watch.trakt_slug.lock() = Some(slug.clone());
+    Some(slug)
+}
+
+async fn poll_trakt_watching(state: &AppState) {
+    state.watch.last_trakt_poll.store(now_ms(), Ordering::Relaxed);
+    let Some(tok) = get_valid_trakt_token(state).await else { return };
+    let Some(slug) = get_trakt_slug(state, &tok).await else { return };
+    let clear_trakt = |state: &AppState| {
+        let mut g = state.watch.now.lock();
+        if g.as_ref().and_then(|w| w.get("source")).and_then(|s| s.as_str()) == Some("trakt") {
+            *g = None;
+        }
+    };
+    let access = tok.get("access_token").and_then(|v| v.as_str()).unwrap_or("");
+    let client_id = std::env::var("TRAKT_CLIENT_ID").unwrap_or_default();
+    let resp = state
+        .http
+        .get(format!("https://api.trakt.tv/users/{slug}/watching"))
+        .header("Content-Type", "application/json")
+        .header("User-Agent", TRAKT_UA)
+        .header("trakt-api-version", "2")
+        .header("trakt-api-key", &client_id)
+        .bearer_auth(access)
+        .send()
+        .await;
+    let Ok(resp) = resp else { return };
+    let status = resp.status();
+    if status == StatusCode::NO_CONTENT || status == StatusCode::NOT_FOUND || !status.is_success() {
+        clear_trakt(state);
+        return;
+    }
+    let Ok(text) = resp.text().await else { return };
+    let Ok(mut d) = serde_json::from_str::<Value>(&text) else { return };
+    js_normalize_numbers(&mut d);
+
+    let (kind, title, tmdb_id, episode): (&str, Value, Value, Value) = if d.get("type").and_then(|v| v.as_str()) == Some("movie")
+        && d.get("movie").is_some_and(|m| !m.is_null())
+    {
+        (
+            "movie",
+            d.pointer("/movie/title").cloned().unwrap_or(Value::Null),
+            d.pointer("/movie/ids/tmdb").filter(|v| js_truthy(Some(v))).cloned().unwrap_or(Value::Null),
+            Value::Null,
+        )
+    } else if d.get("type").and_then(|v| v.as_str()) == Some("episode")
+        && d.get("show").is_some_and(|m| !m.is_null())
+        && d.get("episode").is_some_and(|m| !m.is_null())
+    {
+        let season = d.pointer("/episode/season").and_then(|v| v.as_i64()).unwrap_or(0);
+        let number = d.pointer("/episode/number").and_then(|v| v.as_i64()).unwrap_or(0);
+        (
+            "tv",
+            d.pointer("/show/title").cloned().unwrap_or(Value::Null),
+            d.pointer("/show/ids/tmdb").filter(|v| js_truthy(Some(v))).cloned().unwrap_or(Value::Null),
+            Value::from(format!("S{season:02}E{number:02}")),
+        )
+    } else {
+        clear_trakt(state);
+        return;
+    };
+
+    let now = now_ms();
+    // Date.parse(ISO8601) — 用簡化 parser（Trakt 回 RFC3339）
+    let started = d
+        .get("started_at")
+        .and_then(|v| v.as_str())
+        .and_then(parse_rfc3339_ms)
+        .unwrap_or(now);
+    let progress = match (
+        d.get("started_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms),
+        d.get("expires_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms),
+    ) {
+        (Some(s), Some(e)) if e - s > 0 => {
+            let pct = ((now - s) as f64 / (e - s) as f64 * 100.0).round();
+            Value::from(pct.clamp(0.0, 100.0) as i64)
+        }
+        _ => Value::Null,
+    };
+    *state.watch.now.lock() = Some(json!({
+        "type": kind,
+        "title": title,
+        "cover": Value::Null,
+        "tmdbId": tmdb_id,
+        "episode": episode,
+        "progressPct": progress,
+        "source": "trakt",
+        "externalUrl": tmdb_url_for(kind, &tmdb_id),
+        "startedAt": started,
+        "expiresAt": now + NOW_WATCHING_TTL_MS,
+    }));
+}
+
+/// RFC3339（`2026-07-03T12:34:56.000Z` / 帶 offset）→ epoch ms。
+fn parse_rfc3339_ms(s: &str) -> Option<i64> {
+    static RFC3339_RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+        regex::Regex::new(
+            r"^(\d{4})-(\d{2})-(\d{2})[Tt ](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(?:[Zz]|([+-])(\d{2}):(\d{2}))?$",
+        )
+        .unwrap()
+    });
+    let c = RFC3339_RE.captures(s)?;
+    let g = |i: usize| c.get(i).map(|m| m.as_str().parse::<i64>().unwrap_or(0)).unwrap_or(0);
+    let (y, mo, d, h, mi, sec) = (g(1), g(2), g(3), g(4), g(5), g(6));
+    let ms = c.get(7).map(|m| format!("{:0<3}", m.as_str()).parse::<i64>().unwrap_or(0)).unwrap_or(0);
+    // days_from_civil（Hinnant）
+    let yy = if mo <= 2 { y - 1 } else { y };
+    let era = yy.div_euclid(400);
+    let yoe = yy - era * 400;
+    let mp = (mo + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    let mut t = days * 86_400_000 + h * 3_600_000 + mi * 60_000 + sec * 1000 + ms;
+    if let Some(sign) = c.get(8).map(|m| m.as_str()) {
+        let off = (g(9) * 60 + g(10)) * 60_000;
+        t += if sign == "-" { off } else { -off };
+    }
+    Some(t)
+}
+
+/// `GET /api/watch/now` —— 公開；bahamut push 優先，否則按需+節流輪詢 Trakt。
+pub async fn watch_now(State(state): State<AppState>) -> Response {
+    let cur = current_now_watching(&state);
+    let is_baha = cur
+        .as_ref()
+        .and_then(|w| w.get("source"))
+        .and_then(|s| s.as_str())
+        == Some("bahamut");
+    if !is_baha && now_ms() - state.watch.last_trakt_poll.load(Ordering::Relaxed) > TRAKT_POLL_MIN_MS {
+        poll_trakt_watching(&state).await;
+    }
+    match current_now_watching(&state) {
+        None => Json(json!({ "watching": Value::Null })).into_response(),
+        Some(w) => {
+            let mut pub_w = w.as_object().cloned().unwrap_or_default();
+            pub_w.remove("expiresAt");
+            Json(json!({ "watching": Value::Object(pub_w) })).into_response()
+        }
+    }
+}
+
+// ── Trakt 歷史同步 worker（cron 遷移；ENABLE_TRAKT_SYNC=1 才啟動）─────────
+// 單寫者切換：strangler 驗證期 Express cron 是 film/tv_history 寫者（此 flag 關）；
+// 切換上線時 Express 設 DISABLE_WATCH_CRON=1、Rust 設 ENABLE_TRAKT_SYNC=1。
+
+async fn trakt_get_paged(state: &AppState, tok: &Value, path: &str) -> Option<(Value, i64)> {
+    let access = tok.get("access_token").and_then(|v| v.as_str()).unwrap_or("");
+    let client_id = std::env::var("TRAKT_CLIENT_ID").unwrap_or_default();
+    let resp = state
+        .http
+        .get(format!("https://api.trakt.tv{path}"))
+        .header("Content-Type", "application/json")
+        .header("User-Agent", TRAKT_UA)
+        .header("trakt-api-version", "2")
+        .header("trakt-api-key", &client_id)
+        .bearer_auth(access)
+        .send()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None; // Express traktGet throw → 整包中止
+    }
+    let pagecount = resp
+        .headers()
+        .get("x-pagination-page-count")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse::<i64>().ok())
+        .unwrap_or(1);
+    let mut v: Value = serde_json::from_str(&resp.text().await.ok()?).ok()?;
+    js_normalize_numbers(&mut v);
+    Some((v, pagecount))
+}
+
+/// Trakt watched_at 清理：epoch 假日期（<=1970-01-02）當無日期存 NULL。
+fn clean_watched_date(raw: Option<&str>) -> Option<String> {
+    let d: String = raw.unwrap_or("").chars().take(10).collect();
+    if d.is_empty() || d.as_str() <= "1970-01-02" {
+        None
+    } else {
+        Some(d)
+    }
+}
+
+async fn sync_trakt_history(state: &AppState) {
+    let Some(tok) = get_valid_trakt_token(state).await else {
+        tracing::info!("[Trakt] no token — skip sync");
+        return;
+    };
+    tracing::info!("[Trakt] sync start");
+    let mut films = 0u32;
+    let mut episodes = 0u32;
+
+    // movies
+    let mut page = 1i64;
+    loop {
+        let Some((data, pagecount)) = trakt_get_paged(state, &tok, &format!("/sync/history/movies?page={page}&limit=100")).await else {
+            tracing::error!("[Trakt] sync error (movies page {page})");
+            return;
+        };
+        for item in data.as_array().map(|a| a.as_slice()).unwrap_or(&[]) {
+            let Some(m) = item.get("movie").filter(|v| !v.is_null()) else { continue };
+            let watched = clean_watched_date(item.get("watched_at").and_then(|v| v.as_str()));
+            let mut q = sqlx::query(
+                "INSERT OR IGNORE INTO film_history (title, watched_date, source, tmdb_id, release_year) VALUES (?, ?, 'trakt', ?, ?)",
+            );
+            q = bind_val(q, m.get("title"));
+            q = q.bind(&watched);
+            q = bind_val(q, m.pointer("/ids/tmdb").filter(|v| js_truthy(Some(v))));
+            q = bind_val(q, m.get("year").filter(|v| js_truthy(Some(v))));
+            if let Err(e) = q.execute(&state.pool).await {
+                tracing::warn!("[Trakt] upsert film_history fail: {e}");
+            }
+            films += 1;
+        }
+        if page >= pagecount {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        page += 1;
+    }
+
+    // tv episodes
+    let mut page = 1i64;
+    loop {
+        let Some((data, pagecount)) = trakt_get_paged(state, &tok, &format!("/sync/history/episodes?page={page}&limit=100")).await else {
+            tracing::error!("[Trakt] sync error (episodes page {page})");
+            return;
+        };
+        for item in data.as_array().map(|a| a.as_slice()).unwrap_or(&[]) {
+            let (Some(ep), Some(show)) = (
+                item.get("episode").filter(|v| !v.is_null()),
+                item.get("show").filter(|v| !v.is_null()),
+            ) else {
+                continue;
+            };
+            let watched = clean_watched_date(item.get("watched_at").and_then(|v| v.as_str()));
+            let season = ep.get("season").and_then(|v| v.as_i64()).unwrap_or(0);
+            let number = ep.get("number").and_then(|v| v.as_i64()).unwrap_or(0);
+            let label = format!("S{season:02}E{number:02}");
+            let mut q = sqlx::query(
+                "INSERT OR IGNORE INTO tv_history (series_name, episode_label, watched_date, source, tmdb_id) VALUES (?, ?, ?, 'trakt', ?)",
+            );
+            q = bind_val(q, show.get("title"));
+            q = q.bind(&label);
+            q = q.bind(&watched);
+            q = bind_val(q, show.pointer("/ids/tmdb").filter(|v| js_truthy(Some(v))));
+            if let Err(e) = q.execute(&state.pool).await {
+                tracing::warn!("[Trakt] upsert tv_history fail: {e}");
+            }
+            episodes += 1;
+        }
+        if page >= pagecount {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        page += 1;
+    }
+    tracing::info!("[Trakt] sync done: {films} film rows, {episodes} tv ep rows scanned");
+}
+
+/// 啟動 Trakt 同步 worker（90 秒後首跑、每 6 小時一次；`TRAKT_SYNC_DELAY_SECS` 可調首跑延遲）。
+pub fn spawn_trakt_sync(state: AppState) {
+    let enabled = std::env::var("ENABLE_TRAKT_SYNC")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    if !enabled {
+        tracing::info!("[Trakt] sync worker disabled (ENABLE_TRAKT_SYNC unset) — Express cron 仍為寫者");
+        return;
+    }
+    let delay = std::env::var("TRAKT_SYNC_DELAY_SECS").ok().and_then(|v| v.parse().ok()).unwrap_or(90u64);
+    tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_secs(delay)).await;
+        loop {
+            sync_trakt_history(&state).await;
+            tokio::time::sleep(std::time::Duration::from_secs(6 * 3600)).await;
+        }
+    });
+}
