@@ -169,7 +169,9 @@
 > - **最終留 proxy（僅 2 條）**：`/spotify/callback`（一次性 setup 大 HTML）、`/quote/daily`（隨機外部
 >   名言＋每日快取；opencc 部分已證可移植、來源非決定性故留）。加上刻意不註冊的
 >   `PATCH /admin/comments/batch/status`（bug #2 死路由）。**其餘 120 條全部接管**。
->   ⚠️ cutover 清單另有：nginx `location /uploads/` 直達 Express:3001（static 檔），切換時要改。
+>   ⚠️ cutover 清單另有：nginx `location /uploads/` 直達 Express:3001（static 檔），切換時要改；
+>   ②備份 db 後跑 `scripts/migrate-comments-post-id-nullable.sh`（修 bug #1，Rust 同樣需要）；
+>   ③live 動畫瘋同步現正停擺（bug #9，記憶體 jar 掏空）——不處置，Rust 起來讀磁碟好檔第一輪自癒。
 >   （`admin/stats` #109 已接管——visitors 用 `Math.random` 除該欄外 byte-identical；`sync/collection` #110 已接管。）
 >   ⚠️ **`/sitemap.xml` `/rss` 不在 strangler 範圍**：nginx `location /` → 前端(13588)、只有 `/api/` → 後端。
 >   Express 的 `app.get('/sitemap.xml'|'/rss')` 是 app-level（非 `/api/`），前端服（sitemap）或前端 404（`/rss`
@@ -580,7 +582,7 @@ byte-equivalence 階段照抄的爛行為統一修正（自此起 Rust 與 Expre
 
 | Bug | 修法 | 驗證 |
 |---|---|---|
-| #1 thought 留言發不出（post_id NOT NULL） | `scripts/migrate-comments-post-id-nullable.sh`（12-step 重建+index 重建） | fixture 演練：列數不變/fk OK/index 在；修復後 thought 留言 201。**⚠️ live 尚未執行** |
+| #1 thought 留言發不出（post_id NOT NULL） | `scripts/migrate-comments-post-id-nullable.sh`（12-step 重建+index 重建） | fixture 演練：列數不變/fk OK/index 在；修復後 thought 留言 201。**⚠️ 約束在 db.sqlite 裡（非 Express 碼）——Rust 也需要；使用者裁示併入 cutover 一起跑** |
 | #2 batch/status 死路由 | Rust 實作正確版（靜態段優先於 :id） | 400 分支/批次 UPDATE affected/單筆不受影響 |
 | #3 reset-admin 正式環境是活的 | fail-safe：預設 404，`ENABLE_RESET_ADMIN=1` 才開 | 未設 flag → 404 |
 | collection 欄名注入面 | 14 欄白名單（忽略未知、全非法 400） | id/evil_column 注入被擋 |
