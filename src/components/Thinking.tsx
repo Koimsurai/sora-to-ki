@@ -132,13 +132,14 @@ function Thinking() {
 
         {thoughts?.length === 0 && <p className="tk-empty">{t('thinking.empty')}</p>}
 
+        {/* animate（非 whileInView+once）：whileInView 只觸發一次，發文後 load() 新掛載的
+            卡片會卡在 hidden（opacity:0）變空白佔位；animate 讓新卡掛載即播進場 */}
         {!!thoughts?.length && (
           <motion.ul
             className="tk-feed"
             variants={listV}
             initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-40px' }}
+            animate="show"
           >
             {thoughts.map((th) => (
               <motion.li className="tk-feed-item" key={th.id} variants={cardV}>
