@@ -572,3 +572,19 @@ src/
 ### 驗證
 - 修復後冒煙：tags/thoughts-rss/home-digest/gallery-photos/posts 五端點 **body byte-identical 不變**；
   CORS/preflight/3MB/SIGTERM 全過。兩 crate clippy 0、測試全綠（server-rs 2 + anigamer 30）。
+
+
+## 行為清理版（2026-07-11，commit f27f514）
+
+byte-equivalence 階段照抄的爛行為統一修正（自此起 Rust 與 Express 在這些點**刻意不同**）：
+
+| Bug | 修法 | 驗證 |
+|---|---|---|
+| #1 thought 留言發不出（post_id NOT NULL） | `scripts/migrate-comments-post-id-nullable.sh`（12-step 重建+index 重建） | fixture 演練：列數不變/fk OK/index 在；修復後 thought 留言 201。**⚠️ live 尚未執行** |
+| #2 batch/status 死路由 | Rust 實作正確版（靜態段優先於 :id） | 400 分支/批次 UPDATE affected/單筆不受影響 |
+| #3 reset-admin 正式環境是活的 | fail-safe：預設 404，`ENABLE_RESET_ADMIN=1` 才開 | 未設 flag → 404 |
+| collection 欄名注入面 | 14 欄白名單（忽略未知、全非法 400） | id/evil_column 注入被擋 |
+| PUT posts 缺 key 誤刪 | category CASE-flag、tags contains_key | 只帶 title 時 category/tags 不動 |
+
+已在移植期修掉：#4 ghFetch 亂碼、#5 Trakt refresh race、#7 multer 500 stack trace、#9 記憶體 jar 掏空（anigamer 守門）。
+Express 端一律不修（將拋棄）。前端相容性：PostEditor 恆送全欄位，以上變更零影響。
