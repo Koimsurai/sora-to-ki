@@ -215,11 +215,15 @@ fn extract_exif(bytes: &[u8]) -> (Option<Map<String, Value>>, u32) {
     if let Some(v) = num(exif::Tag::FocalLengthIn35mmFilm) {
         m.insert("FocalLengthIn35mmFormat".into(), v);
     }
-    // DateTimeOriginal："2023:04:27 10:56:22" → exifr Date(容器 UTC) → toISOString
+    // DateTimeOriginal："2023:04:27 10:56:22"——exifr 以**容器本地時區**（TZ=Asia/Taipei）
+    // 解析再 toISOString（UTC）→ chrono 同語意：naive → Local → UTC ISO。
     if let Some(v) = ascii(exif::Tag::DateTimeOriginal) {
-        let iso = v.replacen(':', "-", 2).replacen(' ', "T", 1);
-        if iso.len() >= 19 {
-            m.insert("DateTimeOriginal".into(), Value::from(format!("{}.000Z", &iso[..19])));
+        if let Ok(naive) = chrono::NaiveDateTime::parse_from_str(&v, "%Y:%m:%d %H:%M:%S") {
+            use chrono::TimeZone;
+            if let chrono::LocalResult::Single(local) = chrono::Local.from_local_datetime(&naive) {
+                let utc = local.with_timezone(&chrono::Utc);
+                m.insert("DateTimeOriginal".into(), Value::from(utc.format("%Y-%m-%dT%H:%M:%S.000Z").to_string()));
+            }
         }
     }
     let e = if m.is_empty() { None } else { Some(m) };

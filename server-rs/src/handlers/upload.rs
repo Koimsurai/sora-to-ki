@@ -78,10 +78,12 @@ pub async fn upload(State(state): State<AppState>, req: Request) -> Response {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
         .unwrap_or(0);
-    // 年月取本地時區？Express 用 new Date().getFullYear()/getMonth()＝**容器時區**（TZ 未設=UTC）。
-    // 用 UTC 對齊（容器無 TZ env）。
-    let iso = crate::util::iso_from_millis(now_ms);
-    let (year, month) = (&iso[0..4], &iso[5..7]);
+    // Express 用 new Date().getFullYear()/getMonth()＝容器本地時區（compose TZ=Asia/Taipei）
+    // → chrono Local（尊重 TZ env）對齊，月界不會放錯目錄。
+    let now_local = chrono::Local::now();
+    let year_s = now_local.format("%Y").to_string();
+    let month_s = now_local.format("%m").to_string();
+    let (year, month) = (year_s.as_str(), month_s.as_str());
     let ext = std::path::Path::new(&original)
         .extension()
         .map(|e| format!(".{}", e.to_string_lossy()))

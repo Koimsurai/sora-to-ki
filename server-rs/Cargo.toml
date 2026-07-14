@@ -49,3 +49,6 @@ thumbhash = "0.1"
 webp = "0.3"
 # EXIF：orientation（rotate 對齊 sharp .rotate()）+ 欄位抽取（對齊 exifr pick）
 kamadak-exif = "0.6"
+# 本地時區（upload YYYY/MM 目錄、exif DateTimeOriginal——Express 容器 TZ=Asia/Taipei，
+# JS Date 走本地時區；chrono 尊重 TZ env 對齊）
+chrono = { version = "0.4", default-features = false, features = ["clock"] }

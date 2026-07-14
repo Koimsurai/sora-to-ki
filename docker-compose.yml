@@ -24,6 +24,42 @@ services:
       backend:
         condition: service_healthy
 
+  backend-rs:
+    build:
+      # context 拉高到 ~/Server：anigamer（獨立 repo）是 path dep，見 ~/Server/.dockerignore 白名單
+      context: ..
+      dockerfile: web/server-rs/Dockerfile
+    container_name: personal-website-backend-rs
+    environment:
+      - TZ=Asia/Taipei
+      - GALLERY_SOURCE_PATH=/usr/src/app/storage/Blog_Source
+      - DATABASE_URL=sqlite:///usr/src/app/db/db.sqlite
+      - EXPRESS_UPSTREAM=http://backend:3001
+      - BIND_ADDR=0.0.0.0:3002
+      - RUST_LOG=info,koimsurai_web_backend=info
+      # worker 先不開（Express cron 仍為 history 表寫者；cutover 穩定後再切）
+      # - ENABLE_TRAKT_SYNC=1
+      # - ENABLE_BAHAMUT_SYNC=1
+    volumes:
+      - backend-db-data:/usr/src/app/db
+      - /mnt/hdd16tb_01/Blog/uploads:/usr/src/app/storage/uploads
+      - /mnt/hdd16tb_01/nas-storage/Blog_Source:/usr/src/app/storage/Blog_Source:ro
+      - /mnt/hdd16tb_01/nas-storage/gallery:/usr/src/app/storage/gallery
+    env_file:
+      - ./server/.env
+    ports:
+      - "127.0.0.1:3002:3002"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3002/api/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   backend:
     build:
       context: ./server
