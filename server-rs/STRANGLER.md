@@ -15,7 +15,12 @@
                                   共用同一個 sqlite（WAL）◄───────────┘
 ```
 
-- **目前線上**：`nginx /api/ → Express:3001`（未切換，本 session 只在本機驗證）。
+- **🚀 已上線（2026-07-14）**：`nginx /api/ → Rust:3002`。指紋確認（接管端點無 X-Powered-By、
+  未接管經 proxy 有）、/uploads//rss 完好、線上 body byte-identical、瀏覽器煙測 0 error。
+  rollback：`sites-available/koimsurai.bak-enabled-20260714` 還原 + reload。
+  ⚠️ 坑：`sites-enabled/koimsurai` 曾是**實體檔非 symlink**（與 available 漂移），已收斂回 symlink。
+  ⚠️ 更正：enabled 版有 `location = /rss → Express`——線上 RSS 一直是活的（先前「前端 404」判斷
+  是直打 13588 所測，經 nginx 不同）。`/rss` 為 app-level 路由，退役 Express 前要遷。
 - **切換方式**：把 nginx `location /api/` 的 `proxy_pass` 從 `:3001` 改成 `:3002`，reload。
   Rust 沒接管的全部 fallback 回 Express，行為不變；接管的走 sqlx。可隨時 revert。
 - **DB 共用**：Rust 與 Express 開同一個 sqlite。`/etc/.../web_backend-db-data` volume
@@ -590,3 +595,14 @@ byte-equivalence 階段照抄的爛行為統一修正（自此起 Rust 與 Expre
 
 已在移植期修掉：#4 ghFetch 亂碼、#5 Trakt refresh race、#7 multer 500 stack trace、#9 記憶體 jar 掏空（anigamer 守門）。
 Express 端一律不修（將拋棄）。前端相容性：PostEditor 恆送全欄位，以上變更零影響。
+
+
+## 上線記錄（2026-07-14）
+
+- compose `backend-rs` 上線：nginx `/api/` → Rust:3002。Express 仍服務：proxy 目標（quote/daily、
+  spotify/callback）、`/uploads/` static、`= /rss`、cron workers（Trakt/bahamut 寫者）。
+- **前端 SSR 仍直連 Express**（serve.mjs `BACKEND_URL=http://backend:3001` 容器直連不經 nginx）——
+  瀏覽器端 fetch 走 nginx→Rust、SSR 走 Express，混合但行為一致（byte-identical 保證）。
+- **退役 Express 前的殘留清單**：①quote/daily ②spotify/callback ③/uploads static（建議 nginx 直接
+  serve 檔案）④/rss ⑤SSR BACKEND_URL 改指 rust ⑥workers 切換（ENABLE_*_SYNC=1 + DISABLE_WATCH_CRON=1，
+  同時做避免雙寫）⑦db migration（bug #1）⑧sites-available/enabled 已收斂 symlink。
