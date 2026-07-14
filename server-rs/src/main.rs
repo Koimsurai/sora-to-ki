@@ -48,8 +48,8 @@ async fn main() -> anyhow::Result<()> {
         .connect_with(connect_opts)
         .await?;
 
-    let upstream = env::var("EXPRESS_UPSTREAM")
-        .unwrap_or_else(|_| "http://127.0.0.1:3001".to_string());
+    // 空字串＝退役模式（無 Express，可 proxy 的路由回 404）
+    let upstream = env::var("EXPRESS_UPSTREAM").unwrap_or_default();
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(30))
         .build()?;
@@ -120,7 +120,14 @@ async fn main() -> anyhow::Result<()> {
             "/api/health",
             get(handlers::home::health).fallback(proxy::proxy_to_express),
         )
-        // home digest（純 DB 讀）；/quote/daily 走外部 API+opencc，留 proxy
+        // 每日名言（opencc cn→tw + 當日快取；Express 退役輪移植）
+        .route(
+            "/api/quote/daily",
+            get(handlers::quote::quote_daily).fallback(proxy::proxy_to_express),
+        )
+        // 全站 RSS（app-level 非 /api；nginx `location = /rss` 指過來）
+        .route("/rss", get(handlers::rss::site_rss))
+        // home digest（純 DB 讀）
         .route(
             "/api/home/digest",
             get(handlers::home::home_digest).fallback(proxy::proxy_to_express),
@@ -217,7 +224,12 @@ async fn main() -> anyhow::Result<()> {
             "/api/admin/users/:id/role",
             put(handlers::admin::admin_update_user_role).fallback(proxy::proxy_to_express),
         )
-        // OAuth callbacks（google/github；spotify/callback 一次性 setup 留 proxy）
+        // spotify 一次性 setup callback（Express 退役輪移植，簡版 HTML）
+        .route(
+            "/api/spotify/callback",
+            get(handlers::spotify::spotify_callback).fallback(proxy::proxy_to_express),
+        )
+        // OAuth callbacks（google/github）
         .route(
             "/api/auth/google/callback",
             post(handlers::oauth::google_callback).fallback(proxy::proxy_to_express),
@@ -567,7 +579,11 @@ async fn main() -> anyhow::Result<()> {
         env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:3002".to_string());
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
     tracing::info!("koimsurai-web-backend (strangler) listening on http://{bind_addr}");
-    tracing::info!("proxying un-migrated routes to {upstream}");
+    if upstream.is_empty() {
+        tracing::info!("退役模式：無 EXPRESS_UPSTREAM，未接管路由回 404");
+    } else {
+        tracing::info!("proxying un-migrated routes to {upstream}");
+    }
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;

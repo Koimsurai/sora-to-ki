@@ -384,3 +384,49 @@ pub async fn me(State(state): State<AppState>) -> Response {
         Err(e) => err_json("Failed to fetch Spotify user data", &e),
     }
 }
+
+/// `GET /api/spotify/callback` —— 一次性 setup：授權碼換 refresh_token 顯示（存 .env 用）。
+/// 簡版 HTML（原 Express 版有整頁 CSS；此頁僅 admin 重新授權時用一次）。
+pub async fn spotify_callback(
+    State(state): State<AppState>,
+    Query(q): Query<std::collections::HashMap<String, String>>,
+) -> Response {
+    use axum::http::header;
+    if let Some(e) = q.get("error") {
+        return (StatusCode::BAD_REQUEST, [(header::CONTENT_TYPE, "text/html; charset=utf-8")], format!("授權失敗: {e}")).into_response();
+    }
+    let Some(code) = q.get("code") else {
+        return (StatusCode::BAD_REQUEST, [(header::CONTENT_TYPE, "text/html; charset=utf-8")], "缺少授權碼".to_string()).into_response();
+    };
+    let cid = std::env::var("SPOTIFY_CLIENT_ID").unwrap_or_default();
+    let secret = std::env::var("SPOTIFY_CLIENT_SECRET").unwrap_or_default();
+    let redirect = std::env::var("SPOTIFY_REDIRECT_URI").unwrap_or_default();
+    let body = format!(
+        "grant_type=authorization_code&code={}&redirect_uri={}",
+        crate::util::encode_uri_component(code),
+        crate::util::encode_uri_component(&redirect)
+    );
+    let resp = state
+        .http
+        .post("https://accounts.spotify.com/api/token")
+        .basic_auth(&cid, Some(&secret))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(body)
+        .send()
+        .await;
+    let data: serde_json::Value = match resp {
+        Ok(r) if r.status().is_success() => match serde_json::from_str(&r.text().await.unwrap_or_default()) {
+            Ok(v) => v,
+            Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, [(header::CONTENT_TYPE, "text/html; charset=utf-8")], "token 交換失敗".to_string()).into_response(),
+        },
+        _ => return (StatusCode::INTERNAL_SERVER_ERROR, [(header::CONTENT_TYPE, "text/html; charset=utf-8")], "token 交換失敗".to_string()).into_response(),
+    };
+    let refresh = data.get("refresh_token").and_then(|v| v.as_str()).unwrap_or("(無)");
+    let html = format!(
+        "<html><head><title>Spotify 授權成功</title></head><body style=\"font-family:sans-serif;max-width:640px;margin:40px auto\">\
+         <h2>✅ Spotify 授權成功</h2><p>把下面的 refresh token 存進 <code>server/.env</code> 的 <code>SPOTIFY_REFRESH_TOKEN</code>：</p>\
+         <pre style=\"background:#f4f4f4;padding:12px;border-radius:8px;word-break:break-all;white-space:pre-wrap\">{refresh}</pre>\
+         <p>此頁僅 setup 用，token 不會被儲存。</p></body></html>"
+    );
+    ([(header::CONTENT_TYPE, "text/html; charset=utf-8")], html).into_response()
+}

@@ -13,6 +13,8 @@ pub mod oauth;
 pub mod og;
 pub mod opencc;
 pub mod posts;
+pub mod quote;
+pub mod rss;
 pub mod series;
 pub mod spotify;
 pub mod stats;

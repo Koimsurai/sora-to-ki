@@ -37,6 +37,16 @@ pub async fn proxy_to_express(
     State(state): State<AppState>,
     req: Request,
 ) -> Result<Response, AppError> {
+    // 退役模式：Express 已停（EXPRESS_UPSTREAM 空）→ 對齊原 catch-all `404 'Not Found'`
+    if state.upstream.is_empty() {
+        return Ok((
+            axum::http::StatusCode::NOT_FOUND,
+            [(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")],
+            "Not Found",
+        )
+            .into_response());
+    }
+
     let (parts, body) = req.into_parts();
 
     let path_and_query = parts
