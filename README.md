@@ -88,8 +88,8 @@ Koimsurai 的個人網站原始碼。一個 full-stack blog + portfolio + 多平
 ### Setup
 
 ```bash
-git clone https://github.com/timo9378/web.git
-cd web
+git clone https://github.com/timo9378/sora-to-ki.git
+cd sora-to-ki
 
 # 後端 .env
 cp backend/.env.example .env.backend
