@@ -59,6 +59,8 @@ dependencies = [
 [[package]]
 name = "anigamer"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5de92a734248fb86e6e1d681fdbdc331c73dedf4105317c4c32da528c665d722"
 dependencies = [
  "base64",
  "indexmap",

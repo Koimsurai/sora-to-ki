@@ -17,7 +17,7 @@ COPY . .
 
 # 客戶端 runtime 用相對 /api(經 nginx proxy 到 backend);build 時 vite.config.start.ts 另打 koimsurai.com/api 抓文章做 prerender
 ENV VITE_API_URL=/api
-RUN pnpm run build:start
+RUN pnpm run build
 
 # Stage 2: Production SSR server
 FROM node:20.19.5-bullseye

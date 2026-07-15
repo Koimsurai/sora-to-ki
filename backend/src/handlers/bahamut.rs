@@ -337,18 +337,19 @@ pub async fn sync_bahamut_history(state: &AppState) -> Value {
             unique.push(e.anime_sn);
         }
     }
-    // 現有 cover
+    // 現有 cover（行為清理：原 per-sn N+1 → 一次 GROUP BY 撈全部，結果等價）
     let mut covers: std::collections::HashMap<i64, String> = std::collections::HashMap::new();
-    for sn in &unique {
-        if let Ok(Some(url)) = sqlx::query_scalar::<_, Option<String>>(
-            "SELECT cover_url FROM anime_history WHERE anime_sn = ? AND cover_url IS NOT NULL AND cover_url != '' LIMIT 1",
-        )
-        .bind(sn)
-        .fetch_optional(&state.pool)
-        .await
-        .map(|o| o.flatten())
-        {
-            covers.insert(*sn, url);
+    if !unique.is_empty() {
+        let placeholders = vec!["?"; unique.len()].join(",");
+        let sql = format!(
+            "SELECT anime_sn, MAX(cover_url) FROM anime_history              WHERE anime_sn IN ({placeholders}) AND cover_url IS NOT NULL AND cover_url != ''              GROUP BY anime_sn"
+        );
+        let mut q = sqlx::query_as::<_, (i64, String)>(&sql);
+        for sn in &unique {
+            q = q.bind(sn);
+        }
+        if let Ok(rows) = q.fetch_all(&state.pool).await {
+            covers.extend(rows);
         }
     }
     // 沒 cover 的抓（og:image）

@@ -4,7 +4,6 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
 use sqlx::FromRow;
@@ -1139,8 +1138,8 @@ pub async fn admin_get_post(State(state): State<AppState>, Path(id): Path<String
 }
 
 /// `GET /api/admin/stats` —— requireAdmin。文章/留言統計 + 模擬訪客數（`Math.random`）。
-/// ⚠️ `visitors` 是 `Math.floor(Math.random()*1000)+1000`（[1000,1999] 整數）→ **不可 byte 對拍**；
-/// 其餘欄位全確定性 DB count，A/B 以「除 visitors 外 byte-identical + visitors ∈ [1000,1999]」驗。
+/// 行為清理版：原 Express 的 `visitors` 是 `Math.random()` 模擬數據 →
+/// 改為 `SUM(posts.view_count)`（真實累計瀏覽）。其餘欄位照舊（確定性 DB count）。
 pub async fn admin_stats(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();
@@ -1168,7 +1167,13 @@ pub async fn admin_stats(State(state): State<AppState>, headers: HeaderMap) -> R
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
     };
     // Math.floor(Math.random()*1000)+1000 → [1000,1999]
-    let visitors: i64 = rand::thread_rng().gen_range(1000..2000);
+    let visitors: i64 = match sqlx::query_scalar::<_, i64>("SELECT COALESCE(SUM(view_count), 0) FROM posts")
+        .fetch_one(&state.pool)
+        .await
+    {
+        Ok(v) => v,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+    };
     Json(json!({
         "totalPosts": total_posts,
         "publishedPosts": published,

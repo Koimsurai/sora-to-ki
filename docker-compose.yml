@@ -26,9 +26,8 @@ services:
 
   backend-rs:
     build:
-      # context 拉高到 ~/Server：anigamer（獨立 repo）是 path dep，見 ~/Server/.dockerignore 白名單
-      context: ..
-      dockerfile: web/backend/Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: personal-website-backend-rs
     environment:
       - TZ=Asia/Taipei

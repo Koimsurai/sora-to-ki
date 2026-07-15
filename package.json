@@ -4,25 +4,23 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build:gallery": "pnpm tsx scripts/builder/index.ts",
-    "dev": "vite",
-    "build": "vite build",
-    "build:start": "vite build --config vite.config.start.ts",
+    "build": "vite build --config vite.config.start.ts",
+    "preview": "node serve.mjs",
     "lint": "eslint .",
-    "preview": "vite preview --port 13579",
-    "preview:start": "node serve.mjs",
+    "build:gallery": "pnpm tsx scripts/builder/index.ts",
     "build:photos": "tsx scripts/builder/index.ts && node ../ai-tagger/clip_tagger.js",
-    "build:all": "pnpm run build:photos && pnpm run build"
+    "build:all": "pnpm run build:photos && pnpm run build",
+    "export:types": "cd backend && cargo run --bin export_types"
   },
   "dependencies": {
     "@animateicons/react": "^0.3.3",
-    "sharp": "^0.34.4",
     "@fontsource-variable/tasa-explorer": "^5.2.2",
     "@fontsource-variable/tasa-orbiter": "^5.2.2",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@hookform/resolvers": "^5.2.2",
+    "@koimsurai/api-types": "workspace:*",
     "@mermaid-js/layout-elk": "^0.2.0",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-alert-dialog": "^1.1.2",
@@ -91,6 +89,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "remark-github-blockquote-alert": "^2.1.0",
+    "sharp": "^0.34.4",
     "shiki": "^4.0.2",
     "sonner": "^1.7.1",
     "swiper": "^12.1.2",
@@ -99,8 +98,7 @@
     "three": "^0.175.0",
     "tsparticles-slim": "^2.12.0",
     "usehooks-ts": "^3.1.1",
-    "zod": "^4.1.12",
-    "@koimsurai/api-types": "workspace:*"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.9.1",
@@ -122,6 +120,7 @@
     "exif-reader": "^2.0.2",
     "globals": "^15.15.0",
     "heic-convert": "^2.1.0",
+    "jsonwebtoken": "^9.0.3",
     "postcss": "^8.5.6",
     "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^3.4.17",
