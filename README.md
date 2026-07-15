@@ -1,14 +1,16 @@
 # 宙と木 (Koimsurai) — Personal Site & Blog
 
 [![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![TanStack Start](https://img.shields.io/badge/TanStack_Start-EF4444?style=for-the-badge&logo=react&logoColor=white)](https://tanstack.com/start)
+[![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Axum](https://img.shields.io/badge/axum-5A5A5A?style=for-the-badge&logo=rust&logoColor=white)](https://github.com/tokio-rs/axum)
 [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
 Koimsurai 的個人網站原始碼。一個 full-stack blog + portfolio + 多平台 activity dashboard，從 2025 年 4 月持續開發到現在。
+
+> 2026-07：後端完成 **Express → Rust (axum)** strangler 遷移（120+ 端點逐一 byte-identical 對拍驗證），前端為 **TanStack Start SSG**。遷移全記錄見 [`backend/STRANGLER.md`](backend/STRANGLER.md)。
 
 🌐 **Live**: <https://koimsurai.com>
 
@@ -41,7 +43,7 @@ Koimsurai 的個人網站原始碼。一個 full-stack blog + portfolio + 多平
 
 ### Infra
 
-- **API Gateway** — Express.js proxy，串接外部 API 並保護 keys
+- **API Gateway** — Rust (axum) 後端，串接外部 API 並保護 keys
 - **動態 Sitemap** — 每語系獨立 URL + hreflang alternates
 - **OG 圖自動生成** — 文章發布時自動產 1200×630 OG card
 - **Dependabot 緊跟** — 漏洞 < 24 小時內處理
@@ -51,7 +53,7 @@ Koimsurai 的個人網站原始碼。一個 full-stack blog + portfolio + 多平
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 19** + **Vite** + **React Router**
+- **React 19** + **TanStack Start**（SSG + SSR）+ **Vite**
 - **Tailwind CSS** + 大量 scoped CSS modules
 - **Three.js / @react-three/fiber** for 3D scenes
 - **Framer Motion** + **React Spring** for animations
@@ -60,20 +62,19 @@ Koimsurai 的個人網站原始碼。一個 full-stack blog + portfolio + 多平
 - **Mermaid** with ELK layout
 - **React-Markdown** + remark-gfm + remarkAlert + rehype-raw
 
-### Backend
-- **Node.js** + **Express.js**
-- **SQLite** with `sqlite3` native bindings (含 migration)
-- **JWT** + **bcryptjs** authentication
-- **Sharp** for image processing
-- **Thumbhash** for blur placeholder
-- **OpenCC-js** for 繁簡 conversion
-- **Resend** for transactional email
-- **opencc-js**, **axios**, **express-rate-limit**
+### Backend（Rust）
+- **axum** + **tokio** + **sqlx**（SQLite）
+- **JWT (HS256)** + **bcrypt** authentication（與舊 bcryptjs hash 相容）
+- **image / resvg / webp / thumbhash / kamadak-exif** — 圖片管線（取代 sharp）
+- **ferrous-opencc** — 繁簡轉換（純 Rust）
+- **[anigamer](https://github.com/timo9378/anigamer-rs)** — 自製巴哈動畫瘋 SDK（獨立 crate）
+- **Resend**（reqwest 直打 API）transactional email
+- **specta** — Rust struct → TS 型別（`packages/api-types`，前端型別單一來源）
 
 ### DevOps
-- **Docker Compose** (`frontend` + `backend` + 共用 volumes)
-- **Nginx** reverse proxy
-- **pnpm** monorepo（含 frozen-lockfile build）
+- **Docker Compose**（`frontend` + `backend-rs` + 共用 volumes）
+- **Nginx** reverse proxy（靜態圖 alias 直 serve）
+- **pnpm workspace** + **Cargo workspace** monorepo
 
 ---
 
@@ -91,8 +92,8 @@ git clone https://github.com/timo9378/web.git
 cd web
 
 # 後端 .env
-cp server/.env.example server/.env
-# 編輯 .env，填入 ADMIN_USERNAME / ADMIN_PASSWORD / JWT_SECRET /
+cp backend/.env.example .env.backend
+# 編輯 .env.backend，填入 ADMIN_USERNAME / ADMIN_PASSWORD / JWT_SECRET /
 # WAKATIME_API_KEY / STEAM_API_KEY / STEAM_ID / SPOTIFY_* / RESEND_API_KEY 等
 
 # 安裝
@@ -105,9 +106,9 @@ pnpm dev
 ### Docker (推薦)
 
 ```bash
-docker-compose up -d --build
+docker compose up -d --build
 # 站點：http://localhost:13588
-docker-compose logs -f frontend backend
+docker compose logs -f frontend backend-rs
 ```
 
 ---
@@ -116,10 +117,13 @@ docker-compose logs -f frontend backend
 
 ```
 /
-├── server/                  # Express API gateway + SQLite
-│   ├── index.js             # 主入口（routes / migrations / cron）
-│   ├── mailer.js            # Resend newsletter batch sender
-│   └── db/db.sqlite         # gitignored
+├── backend/                 # Rust (axum) API — 全部業務邏輯
+│   ├── src/main.rs          # 路由總表（120+ 端點）
+│   ├── src/handlers/        # 按域拆分（posts/thoughts/watch/gallery/…）
+│   ├── src/bin/export_types.rs  # specta → packages/api-types
+│   └── STRANGLER.md         # Express→Rust 遷移全記錄
+├── packages/
+│   └── api-types/           # Rust struct 生成的 TS 型別（勿手改）
 ├── src/
 │   ├── components/
 │   │   ├── animate-ui/      # shadcn animate-ui icons
@@ -146,7 +150,8 @@ pnpm preview       # serve production build
 pnpm build:photos  # 處理照片牆圖片（EXIF + thumbhash + CLIP tagger）
 
 # 後端
-cd server && pnpm start  # or pnpm dev for auto-reload
+cd backend && cargo run              # 本機跑（讀 .env）
+cd backend && cargo run --bin export_types  # 重生 TS 型別
 ```
 
 ---
