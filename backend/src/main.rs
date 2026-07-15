@@ -11,13 +11,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod auth;
-mod error;
-mod handlers;
-mod proxy;
-mod state;
-mod util;
-
+use koimsurai_web_backend::{handlers, proxy, state};
 use state::AppState;
 
 #[tokio::main]

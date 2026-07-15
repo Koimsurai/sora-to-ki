@@ -52,3 +52,7 @@ kamadak-exif = "0.6"
 # 本地時區（upload YYYY/MM 目錄、exif DateTimeOriginal——Express 容器 TZ=Asia/Taipei，
 # JS Date 走本地時區；chrono 尊重 TZ env 對齊）
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+# P4：Rust struct → TS 型別（packages/api-types）。export bin：cargo run --bin export_types
+specta = { version = "=2.0.0-rc.25", features = ["derive"] }
+specta-typescript = "0.0.12"
+specta-serde = "0.0.12"

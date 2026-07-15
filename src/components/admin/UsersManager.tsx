@@ -13,15 +13,10 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface AdminUser {
-  id: number | string;
-  display_name?: string;
-  email?: string;
-  provider?: string;
-  role: string;
-  avatar?: string;
-  created_at?: string;
-}
+import type { AdminUserRow } from '@koimsurai/api-types';
+
+// 型別來源＝Rust struct（specta 生成）；原手寫 interface 已與 API 漂移（avatar vs avatar_url、id 型別）
+type AdminUser = AdminUserRow;
 
 interface RoleConfig { label: string; color: string; bg: string; border: string; icon: LucideIcon }
 
@@ -185,7 +180,7 @@ export default function UsersManager() {
                 </tr>
               ) : (
                 filteredUsers.map((u) => {
-                  const roleConfig = ROLE_CONFIG[u.role] || ROLE_CONFIG.USER;
+                  const roleConfig = ROLE_CONFIG[u.role ?? 'USER'] || ROLE_CONFIG.USER;
                   const RoleIcon = roleConfig.icon;
                   const isSelf = currentUser && (String(currentUser.id) === String(u.id) || currentUser.email === u.email);
 
@@ -195,7 +190,7 @@ export default function UsersManager() {
                       <td className="p-3">
                         <div className="flex items-center gap-2.5">
                           <Avatar className="size-8 shrink-0">
-                            {u.avatar && <AvatarImage src={u.avatar} alt={u.display_name} />}
+                            {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.display_name ?? undefined} />}
                             <AvatarFallback className="bg-zinc-800 text-zinc-300 text-xs font-medium border border-zinc-700/60">
                               {(u.display_name ?? '?').slice(0, 2).toUpperCase()}
                             </AvatarFallback>
@@ -222,7 +217,7 @@ export default function UsersManager() {
                         </span>
                       </td>
                       {/* Created At */}
-                      <td className="p-3 text-muted-foreground text-xs">{formatDate(u.created_at)}</td>
+                      <td className="p-3 text-muted-foreground text-xs">{formatDate(u.created_at ?? undefined)}</td>
                       {/* Actions */}
                       {isOwner && (
                         <td className="p-3">
@@ -232,7 +227,7 @@ export default function UsersManager() {
                             <span className="text-xs text-muted-foreground">—</span>
                           ) : (
                             <Select
-                              value={u.role}
+                              value={u.role ?? 'USER'}
                               onValueChange={(newRole) => {
                                 if (newRole !== u.role) {
                                   setRoleChangeDialog({ open: true, user: u, newRole });
@@ -274,7 +269,7 @@ export default function UsersManager() {
             <AlertDialogTitle>確認更改角色</AlertDialogTitle>
             <AlertDialogDescription>
               確定要將 <strong>{roleChangeDialog.user?.display_name}</strong> 的角色從{' '}
-              <strong>{roleChangeDialog.user ? ROLE_CONFIG[roleChangeDialog.user.role]?.label : ''}</strong> 更改為{' '}
+              <strong>{roleChangeDialog.user ? ROLE_CONFIG[roleChangeDialog.user.role ?? 'USER']?.label : ''}</strong> 更改為{' '}
               <strong>{ROLE_CONFIG[roleChangeDialog.newRole]?.label}</strong> 嗎？
             </AlertDialogDescription>
           </AlertDialogHeader>

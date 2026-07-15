@@ -17,11 +17,13 @@ use crate::{
 };
 
 /// `GET /api/admin/tags` 單列（admin 版：含 0 篇的 tag、依名排序）。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct AdminTagRow {
+    #[specta(type = specta_typescript::Number)]
     pub id: i64,
     pub name: String,
     pub created_at: String,
+    #[specta(type = specta_typescript::Number)]
     pub post_count: i64,
 }
 
@@ -47,8 +49,9 @@ pub async fn admin_tags(
 }
 
 /// `GET /api/admin/categories`（requireAdmin）。裸陣列。admin 版含 created_at、且 JOIN 不過濾 status。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct AdminCategoryRow {
+    #[specta(type = specta_typescript::Number)]
     pub id: i64,
     pub name: String,
     pub slug: String,
@@ -56,6 +59,7 @@ pub struct AdminCategoryRow {
     pub short_description: Option<String>,
     pub created_at: String,
     pub updated_at: Option<String>,
+    #[specta(type = specta_typescript::Number)]
     pub post_count: i64,
 }
 
@@ -78,8 +82,9 @@ pub async fn admin_categories(
 }
 
 /// `GET /api/admin/users`（**requireOwner**）。`{ users: [...] }`，顯式欄位。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct AdminUserRow {
+    #[specta(type = specta_typescript::Number)]
     pub id: i64,
     pub provider: Option<String>,
     pub provider_id: Option<String>,
@@ -87,12 +92,13 @@ pub struct AdminUserRow {
     pub email: Option<String>,
     pub avatar_url: Option<String>,
     pub role: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
     pub linked_to: Option<i64>,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct AdminUsersResponse {
     pub users: Vec<AdminUserRow>,
 }

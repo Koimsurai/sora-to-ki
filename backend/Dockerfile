@@ -1,7 +1,7 @@
 # koimsurai-web-backend（Rust strangler）
 # build context = ~/Server（見 ~/Server/.dockerignore 白名單）——
 # anigamer 是獨立 repo 的 path dep（../../anigamer-rs），context 拉高才收得進來。
-# 容器內佈局 /build/web/server-rs + /build/anigamer-rs → 相對路徑對位。
+# 容器內佈局 /build/web/backend + /build/anigamer-rs → 相對路徑對位。
 
 FROM rust:1.95-slim AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
 COPY anigamer-rs ./anigamer-rs
-COPY web/server-rs ./web/server-rs
-WORKDIR /build/web/server-rs
+COPY web/Cargo.toml ./web/Cargo.toml
+COPY web/backend ./web/backend
+WORKDIR /build/web/backend
 RUN cargo build --release
 
 FROM debian:bookworm-slim
@@ -21,6 +22,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 # 與 Express 容器同 workdir——預設路徑（db/storage）一致
 WORKDIR /usr/src/app
-COPY --from=builder /build/web/server-rs/target/release/koimsurai-web-backend /usr/local/bin/koimsurai-web-backend
+COPY --from=builder /build/web/target/release/koimsurai-web-backend /usr/local/bin/koimsurai-web-backend
 EXPOSE 3002
 CMD ["koimsurai-web-backend"]

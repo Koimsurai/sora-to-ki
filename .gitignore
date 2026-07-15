@@ -59,5 +59,6 @@ server/db/db.sqlite-journal
 server/db/.bahamut-cookie.json
 .output/
 .nitro/
-server-rs/target/
+/target/
+backend/target/
 .env.backend
