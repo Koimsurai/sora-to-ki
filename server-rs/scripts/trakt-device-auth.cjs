@@ -10,8 +10,9 @@
  *
  * Env: TRAKT_CLIENT_ID, TRAKT_CLIENT_SECRET
  *
- * Usage:
- *   docker exec -it personal-website-backend node /usr/src/app/scripts/trakt-device-auth.js
+ * Usage（Express 已退役，host 直接跑；token 檔在 backend-db-data volume）:
+ *   TOKEN_FILE=$(docker inspect personal-website-backend-rs --format '{{range .Mounts}}{{if eq .Destination "/usr/src/app/db"}}{{.Source}}{{end}}{{end}}')/.trakt-token.json
+ *   TRAKT_CLIENT_ID=… TRAKT_CLIENT_SECRET=… TRAKT_TOKEN_FILE=$TOKEN_FILE node trakt-device-auth.cjs
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -23,7 +24,7 @@ if (!CLIENT_ID || !CLIENT_SECRET) {
   process.exit(1);
 }
 
-const TOKEN_FILE = path.resolve(__dirname, '../db/.trakt-token.json');
+const TOKEN_FILE = process.env.TRAKT_TOKEN_FILE || path.resolve(__dirname, '../db/.trakt-token.json');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function main() {

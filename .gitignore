@@ -60,3 +60,4 @@ server/db/.bahamut-cookie.json
 .output/
 .nitro/
 server-rs/target/
+.env.backend
