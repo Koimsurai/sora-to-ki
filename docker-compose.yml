@@ -16,6 +16,9 @@ services:
       - TZ=Asia/Taipei
       - BACKEND_URL=http://backend-rs:3002
       - SITE_URL=https://koimsurai.com
+      # 發文/改文後 backend-rs 會打 /_revalidate 清 ISR 快取，不必等 TTL（文章頁 1h）。
+      # 密鑰放未提交的 ./.env（compose 會自動載入做 ${} 替換）；沒設 = 端點回 404、功能不啟用。
+      - REVALIDATE_SECRET=${REVALIDATE_SECRET:-}
     ports:
       # 【修改點】明確指定只綁定到 127.0.0.1
       - "127.0.0.1:13588:13579"
@@ -35,6 +38,10 @@ services:
       - DATABASE_URL=sqlite:///usr/src/app/db/db.sqlite
       - BIND_ADDR=0.0.0.0:3002
       - RUST_LOG=info,koimsurai_web_backend=info
+      # 文章內容變更後通知前端清 ISR 快取（fire-and-forget，失敗只會 warn，最壞就是等 TTL）。
+      # 13579 = 前端容器內部 port（Dockerfile ENV PORT=13579）。兩邊密鑰必須相同。
+      - FRONTEND_REVALIDATE_URL=http://frontend:13579/_revalidate
+      - REVALIDATE_SECRET=${REVALIDATE_SECRET:-}
       # workers：Express 退役後 Rust 為 history 表唯一寫者
       - ENABLE_TRAKT_SYNC=1
       - ENABLE_BAHAMUT_SYNC=1
