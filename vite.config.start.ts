@@ -1,60 +1,62 @@
 import { defineConfig } from 'vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import { nitro } from 'nitro/vite';
 import viteReact from '@vitejs/plugin-react';
 import path from 'node:path';
 
-const API_BASE = 'https://koimsurai.com';
-const PREFIX: Record<string, string> = { 'zh-TW': '', 'zh-CN': 'zh-cn', en: 'en', ja: 'ja', ko: 'ko' };
-
-// data-driven prerender:build 時打 /api/posts,逐篇 × available_locales 生成要靜態化的文章頁。
-// 之後幫某篇補一個語系翻譯 → 下次 build(或 ISR 即時)就自動多那條 URL,不用改 code。
-async function blogPages(): Promise<{ path: string }[]> {
-  try {
-    const res = await fetch(`${API_BASE}/api/posts?limit=100`);
-    const { posts } = (await res.json()) as { posts: { id: number; available_locales?: string[] }[] };
-    return posts.flatMap((p) =>
-      (p.available_locales ?? ['zh-TW']).flatMap((loc) => {
-        const pre = PREFIX[loc];
-        if (pre === undefined) return [];
-        return [{ path: pre ? `/${pre}/blog/${p.id}` : `/blog/${p.id}` }];
-      }),
-    );
-  } catch {
-    return []; // API 抓不到就只 prerender 靜態頁,不擋 build
-  }
-}
+// 不做 prerender,改走 ISR(見下方 routeRules)。理由是實測出來的,不是偏好:
+//   在 nitro/vite + TanStack Start 下,prerender 產出的 HTML 寫進 .output/public 後
+//   *不會被 nitro 註冊成靜態資產* —— /assets/*.css 與 /favicon.ico 都 200,唯獨
+//   /blog/index.html、/en/index.html 一律 404,實際請求每次都重新 SSR(連打兩次 md5 不同)。
+//   等於 prerender 生出 111 個檔案卻沒有任何一個被送出過,純粹浪費 build 時間。
+// 拿掉它同時消滅:build 期打 https://koimsurai.com 撈文章清單(build 依賴線上站活著),
+// 以及為了 prerender 內部 crawler 而綁 server/preview host 的 hack。
+// ISR 已實測能給出同樣完整的 HTML(/blog 有文章標題與連結、/blog/$id 有內文與 meta)。
 
 const LOCALE_PREFIXES = ['en', 'ja', 'ko', 'zh-cn'];
-// UI 頁(全 5 語都有):每頁生 default(/x)+ 4 個前綴(/en/x …)。加新頁只要加名字。
+// UI 頁(全 5 語都有)。加新頁只要加名字,ISR 規則會自動涵蓋 5 個語系路徑。
 const UI_PAGES = ['about', 'setup', 'bookshelf', 'activity', 'music', 'cinema', 'anime', 'thinking', 'messages', 'portfolio', 'friends', 'watch/library', 'watch', 'blog', 'unsubscribe', 'about-site', 'history', 'photos'];
-const STATIC_PAGES = [
-  ...LOCALE_PREFIXES.map((p) => ({ path: `/${p}` })),
-  ...UI_PAGES.flatMap((page) => [
-    { path: `/${page}` },
-    ...LOCALE_PREFIXES.map((loc) => ({ path: `/${loc}/${page}` })),
-  ]),
-];
 
-export default defineConfig(async () => ({
+// ── ISR / SWR route rules ───────────────────────────────────────────────────
+// 一頁 → 該頁 5 個語系路徑(/x + /en/x …)。
+const localeVariants = (page: string): string[] => [`/${page}`, ...LOCALE_PREFIXES.map((l) => `/${l}/${page}`)];
+const swrRules = (paths: string[], seconds: number) =>
+  Object.fromEntries(paths.map((p) => [p, { swr: seconds }]));
+
+// 刻意採「白名單」而非 '/**' 全站包:全站包是 fail-open —— 日後新增任何讀 cookie/header 或
+// render 使用者資料的頁面,都會被預設公開快取且沒人會察覺。白名單則是新頁預設不快取,最壞只是少個快取。
+// 明確不快取(因此不列於此):
+//   /              → createServerFn 讀 cookie/Accept-Language 做 302 導向,快取會把首位訪客的語言發給所有人
+//   /admin/**      → 後台
+//   /auth/**       → 登入流程
+//   /unsubscribe   → 帶 token 的使用者專屬頁
+// 可安全快取的前提:登入狀態只存在 client 的 localStorage(AuthContext 在 useEffect 才讀),
+// 所以 SSR 一律 render 未登入外殼,HTML 對所有訪客相同。
+const ISR_PAGES = UI_PAGES.filter((p) => p !== 'blog' && p !== 'unsubscribe');
+const ISR_ROUTE_RULES = {
+  ...swrRules(ISR_PAGES.flatMap(localeVariants), 3600),
+  ...swrRules(localeVariants('blog'), 300), // 列表頁:發新文要早點出現 → 5 分鐘
+  ...swrRules(localeVariants('blog').map((p) => `${p}/**`), 3600), // 文章頁:內容幾乎不動 → 1 小時
+};
+
+export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
-  // prerender 會起一個內部 Vite server 再自己 crawl;預設綁 localhost 在 Docker(BuildKit)裡可能解析到
-  // ::1 / 非監聽介面,而 crawler 連 127.0.0.1(IPv4)→ ECONNREFUSED。綁死 127.0.0.1 讓兩邊一致,
-  // 才能在 Docker build 內 prerender(TanStack issue #6275 / PR #6305:用既有 preview/server 設定自控)。
-  server: { host: '127.0.0.1' },
-  preview: { host: '127.0.0.1' },
   // react-helmet-async 是 CJS,要 vite 轉譯才能在 SSR 用具名匯出(過渡 bridge,之後 SEOHead→head() 可移除)
   ssr: { noExternal: ['react-helmet-async'] },
   plugins: [
-    tanstackStart({
-      prerender: {
-        enabled: true,
-        crawlLinks: false, // 用明確的 pages 清單;不跟著頁面連結亂爬(會誤踩 RSS/API/外部連結)
-        filter: (page) => page.path !== '/', // / 交給 server 做 Accept-Language 導向
-      },
-      pages: [...STATIC_PAGES, ...(await blogPages())],
-    }),
+    tanstackStart(),
     viteReact(),
+    nitro({
+      config: {
+        serverDir: './server', // 掃 server/routes/ 的檔案系統路由(預設不掃 → 404)
+        // ISR：node-server preset 內建 SWR（TTL 過期先回舊、背景重生，不需 CDN）
+        routeRules: {
+          ...ISR_ROUTE_RULES,
+          '/isr-demo': { swr: 20 }, // ISR 煙霧測試用(短 TTL 好觀察);上線前可連同 routes/isr-demo.tsx 一起刪
+        },
+      },
+    }),
   ],
-}));
+});

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#7f5af0" />
+    <title>離線中 · 宙と木</title>
+    <!--
+      刻意是「純靜態 HTML、零 JS 框架」。
+      不能拿 TanStack 的 /offline 路由當離線 fallback:那產出的是完整 SPA 文件,
+      SW 把它回給 /blog 之類的導覽後,client 會 hydrate → router 依網址重跑該路由的 loader
+      → 斷網下直接變成 "Failed to fetch",離線頁等於被自己的 router 蓋掉。(已實測踩過)
+    -->
+    <style>
+      html, body { margin: 0; height: 100%; }
+      body {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 14px; padding: 24px; text-align: center;
+        background: #16161a; color: #fffffe;
+        font-family: system-ui, -apple-system, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      }
+      h1 { margin: 0; font-size: 30px; letter-spacing: .08em; font-weight: 600; }
+      p  { margin: 0; color: #94a1b2; font-size: 16px; }
+      p.hint { color: #72757e; font-size: 13px; }
+      button {
+        margin-top: 10px; padding: 10px 26px; font-size: 15px; font-family: inherit;
+        color: #16161a; background: #7f5af0; border: 0; border-radius: 8px; cursor: pointer;
+      }
+      button:hover { opacity: .9; }
+    </style>
+  </head>
+  <body>
+    <h1>宙と木</h1>
+    <p>目前處於離線狀態</p>
+    <p class="hint">連線恢復後重新整理即可繼續瀏覽。</p>
+    <button onclick="location.reload()">重新整理</button>
+  </body>
+</html>

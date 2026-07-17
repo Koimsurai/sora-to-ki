@@ -11,6 +11,8 @@ export interface PostData {
   source_language?: string;
   available_locales?: string[];
   created_at?: string;
+  updated_at?: string;
+  author?: string;
 }
 
 // 2e:文章頁(最小可 SSR 版)。loader 在 prerender 時依 locale 抓內容,這裡把 title + markdown 內文

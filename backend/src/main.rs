@@ -11,7 +11,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use koimsurai_web_backend::{handlers, proxy, state};
+use koimsurai_web_backend::{handlers, proxy, revalidate, state};
 use state::AppState;
 
 #[tokio::main]
@@ -566,6 +566,8 @@ async fn main() -> anyhow::Result<()> {
         )
         // 對齊 Express `express.json({limit:'10mb'})`（axum 預設 2MB 會讓長文 PUT 413）
         .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
+        // 文章內容變更後通知前端清 ISR 快取（fire-and-forget；未設 env 則不啟用）
+        .layer(axum::middleware::from_fn(revalidate::notify_on_post_write))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 

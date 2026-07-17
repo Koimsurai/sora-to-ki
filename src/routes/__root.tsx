@@ -28,6 +28,12 @@ export const Route = createRootRoute({
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: '宙と木 · Koimsurai' },
+      { name: 'theme-color', content: '#7f5af0' },
+    ],
+    // PWA:manifest 過去從沒被掛上 → 瀏覽器根本看不到它,站台不可安裝。
+    links: [
+      { rel: 'manifest', href: '/site.webmanifest' },
+      { rel: 'apple-touch-icon', href: '/pwa-192.png' },
     ],
   }),
   // 未知路由 → 站內 404 頁(在 AppShell 內,保留導覽列);localeWrap 提供 i18n + locale。
@@ -48,6 +54,7 @@ function PageVisibilityBridge({ children }: Readonly<{ children: ReactNode }>) {
 }
 
 function RootComponent() {
+  useServiceWorker();
   return (
     <RootDocument>
       <AppShell>
@@ -55,6 +62,22 @@ function RootComponent() {
       </AppShell>
     </RootDocument>
   );
+}
+
+// 註冊 /sw.js(只快取 /assets/* 與離線頁,不碰 HTML —— HTML 交給 Nitro 的 ISR)。
+// 取代 serve.mjs 時代那支「自毀 SW」:它的任務(清掉更早 SPA PWA 的殘留)已完成,
+// 回訪者的瀏覽器會用這份新的取代它。
+function useServiceWorker() {
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    const onLoad = () => void navigator.serviceWorker.register('/sw.js').catch(() => {});
+    // 等 load 之後再註冊,避免跟首屏資源搶頻寬
+    if (document.readyState === 'complete') onLoad();
+    else {
+      window.addEventListener('load', onLoad, { once: true });
+      return () => window.removeEventListener('load', onLoad);
+    }
+  }, []);
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {

@@ -3,6 +3,7 @@
     "target": "ESNext",
     "useDefineForClassFields": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"], // SSR 讀 runtime env(process.env.BACKEND_URL);vite/client 由 vite-env.d.ts 的 triple-slash 引入
     "module": "ESNext",
     "skipLibCheck": true,
 

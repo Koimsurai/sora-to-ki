@@ -1733,7 +1733,7 @@ function BlogPost() {
         title={post.title}
         description={seoDescription}
         path={selfPath}
-        image={`/og-image/${id}`}
+        image={`/api/og/${id}.png`}
         type="article"
         locale={currentLocale}
         alternates={alternates}

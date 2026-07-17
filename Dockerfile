@@ -1,8 +1,18 @@
 # ─────────────────────────────────────────────────────────────
-# P2: TanStack Start SSG/SSR。Stage 1 在 Docker 內 build:start(prerender + SSR bundle);
-# Stage 2 跑 serve.mjs(靜態 dist/client + SSR fallback + og-image/sitemap/robots)。
-# Docker 內 prerender 需 vite.config.start.ts 把 server/preview host 綁 127.0.0.1(否則 BuildKit loopback ECONNREFUSED)。
-# 舊 SPA 版見 git 歷史(serve.cjs + `vite build`)。
+# TanStack Start + Nitro v3(node-server preset)。
+# Stage 1 build 出 .output;Stage 2 只要 node + .output 就能跑。
+#
+# 相較 serve.mjs 版少了一整串東西,都是實測後確認不需要的:
+#   - pnpm install --prod + node-linker=hoisted hack
+#     → nitro 的 .output 是自足 bundle(.output/server/node_modules 為空,
+#       單獨複製到空目錄即可啟動),不需要 runtime node_modules。
+#   - sharp + fonts-noto-cjk(~18MB 字型 + 原生模組)
+#     → OG 圖改由後端 resvg 產(/api/og/:id.png);預設 OG 圖與 PWA icons 已預先生成進 public/,
+#       不必每次 build 重跑 SVG→PNG。
+#   - prerender 相關(host 綁 127.0.0.1 的 hack、build 期打 koimsurai.com 撈文章)
+#     → 改走 ISR(nitro routeRules swr)。實測 prerender 產物不會被 nitro 註冊成靜態資產,
+#       生出來也沒人送,純浪費。
+# 舊版見 git 歷史(serve.mjs / serve.cjs)。
 # ─────────────────────────────────────────────────────────────
 
 # Stage 1: Build
@@ -15,51 +25,25 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# 客戶端 runtime 用相對 /api(經 nginx proxy 到 backend);build 時 vite.config.start.ts 另打 koimsurai.com/api 抓文章做 prerender
+# client runtime 走相對 /api(經 nginx proxy 到 backend-rs)
 ENV VITE_API_URL=/api
 RUN pnpm run build
 
-# Stage 2: Production SSR server
-FROM node:20.19.5-bullseye
+# Stage 2: Production server
+FROM node:20.19.5-bullseye-slim
 WORKDIR /app
 
 ENV TZ=Asia/Taipei
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 只裝 production 依賴。node-linker=hoisted:npm 式扁平 node_modules,讓 SSR bundle 的 split chunks
-# 能解析到 transitive 外部依賴(如 react-fast-compare via react-helmet-async)——pnpm 嚴格佈局不提頂層會 ERR_MODULE_NOT_FOUND。
-RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml ./
-RUN echo 'node-linker=hoisted' > .npmrc && pnpm install --prod --frozen-lockfile
-
-# CJK 字型 — og-image 的 sharp SVG→PNG 要渲染中日文標題
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    fonts-noto-cjk fontconfig \
-    && rm -rf /var/lib/apt/lists/* \
-    && fc-cache -f
-
-# 產物 + 伺服器
-COPY --from=builder /app/dist ./dist
-COPY serve.mjs ./serve.mjs
-
-# 預設 OG 圖(SVG→PNG)+ PWA icons → dist/client(package.json 是 type:module,故 node -e 強制 commonjs 才能 require)
-RUN node --input-type=commonjs -e "\
-(async () => {\
-  const sharp = require('sharp');\
-  const fs = require('fs');\
-  const C = './dist/client';\
-  await sharp(fs.readFileSync(C + '/og-default-v2.svg')).resize(1200, 630).png({quality: 90}).toFile(C + '/og-default-v2.png');\
-  const icon = fs.readFileSync(C + '/pwa-icon.svg');\
-  await sharp(icon).resize(192, 192).png().toFile(C + '/pwa-192.png');\
-  await sharp(icon).resize(512, 512).png().toFile(C + '/pwa-512.png');\
-  await sharp(icon).resize(512, 512).png().toFile(C + '/pwa-maskable-512.png');\
-  console.log('OG + PWA icons generated');\
-})().catch(e => { console.error('Image gen failed:', e.message); process.exit(1); });\
-"
+COPY --from=builder /app/.output ./.output
 
 EXPOSE 13579
 ENV PORT=13579
-ENV BACKEND_URL=http://backend:3001
+# 容器內要對外監聽(預設綁 [::] 雖多半可用,明確指定避免相依於 IPv6 行為)
+ENV HOST=0.0.0.0
+# 預設值對齊現況(compose 仍會覆寫);舊值 http://backend:3001 是 Express 時代的殘留
+ENV BACKEND_URL=http://backend-rs:3002
 ENV SITE_URL=https://koimsurai.com
 
-CMD ["node", "serve.mjs"]
+CMD ["node", ".output/server/index.mjs"]

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
-import { useRouterState } from '@tanstack/react-router';
+import { useLoaderData, useRouterState } from '@tanstack/react-router';
 import { LocaleLink } from '../locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
@@ -13,7 +13,7 @@ import type { Variants } from 'framer-motion';
 import { prefetchPost } from '../lib/prefetchPost';
 import './Blog.css';
 
-interface Post {
+export interface Post {
   id: string | number;
   title: string;
   content?: string;
@@ -341,8 +341,12 @@ ActivityHeatmap.displayName = 'ActivityHeatmap';
    ════════════════════════════════════════════════ */
 function Blog() {
   const { t } = useTranslation();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 路由 loader 在 server 端抓好的首屏文章。元件被 /blog 與 /$locale/blog 共用 → strict:false
+  // (官方給共用元件的用法:忽略 from、型別放寬)。有值就當初始資料 → SSR 直接 render 出文章,
+  // 而不是卡在下面的 `if (loading)` 骨架屏。
+  const initialPosts = (useLoaderData({ strict: false }) as { posts?: Post[] } | undefined)?.posts ?? [];
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [loading, setLoading] = useState(initialPosts.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
@@ -370,13 +374,13 @@ function Blog() {
   }, [search.category, search.tag]);
 
   useEffect(() => {
-    if (!isInitialLoad.current) {
-      // 切換排序不需要 scroll to top
-    } else {
-      window.scrollTo(0, 0);
+    const firstRun = isInitialLoad.current;
+    if (firstRun) {
+      window.scrollTo(0, 0); // 切換排序不需要 scroll to top
     }
-    void fetchPosts();
-    if (isInitialLoad.current) {
+    // loader 已經在 server 端抓好首屏('newest') → hydrate 後不再重打一次;切換排序才 refetch
+    if (!(firstRun && initialPosts.length)) void fetchPosts();
+    if (firstRun) {
       void fetchTags();
       void fetchCategories();
       isInitialLoad.current = false;

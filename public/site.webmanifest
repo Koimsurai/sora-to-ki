@@ -3,6 +3,7 @@
   "short_name": "宙と木",
   "description": "Koimsurai 的個人空間 — 一個工程師的閱讀筆記、作品紀錄與系統實驗。",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#16161a",
   "theme_color": "#7f5af0",
@@ -12,6 +13,24 @@
       "src": "/favicon.ico",
       "sizes": "48x48",
       "type": "image/x-icon"
+    },
+    {
+      "src": "/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
