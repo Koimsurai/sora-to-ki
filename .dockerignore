@@ -1,9 +1,11 @@
 # Ignore node_modules
 node_modules
 
-# Ignore build artifacts(Docker 內 build:start 自己產 dist,別把 host 的 stale dist COPY 進 builder)
+# Ignore build artifacts(Docker 內自己 build,別把 host 的 stale 產物 COPY 進 builder)
 dist
 build
+.output
+.nitro
 
 # Ignore .env files potentially containing secrets
 .env*
