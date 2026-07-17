@@ -503,5 +503,17 @@
     "loggingIn": "로그인 중...",
     "errorNoCode": "로그인 실패: 인증 코드를 받지 못했어요",
     "errorGeneric": "로그인에 실패했어요. 나중에 다시 시도해주세요"
+  },
+  "about": {
+    "title": "소개",
+    "description": "Koimsurai — 풀스택 엔지니어. 기술, 경력, 커뮤니티와 여정."
+  },
+  "portfolio": {
+    "title": "프로젝트",
+    "description": "만든 것과 만들고 있는 것 — 과제, 도구, 셀프호스팅."
+  },
+  "photos": {
+    "title": "사진 작품집",
+    "description": "Koimsurai 의 사진 작품집. 여행길의 빛과 그림자 기록."
   }
 }

@@ -29,12 +29,11 @@ export const PAGE_SEO: Record<string, SeoEntry> = {
   thinking: { titleKey: 'thinking.title', descKey: 'thinking.subtitle' },
   watch: { titleKey: 'watch.title', descKey: 'watch.metaDescription' },
   'watch/library': { titleKey: 'watch.library.title', descKey: 'watch.library.subtitle' },
-
-  // 沿用元件內原本寫死的字串（i18n 沒有對應 key）。這幾頁的標題在各語系都是中文；
-  // 要正確在地化得先補 locales/*/common.json 的 key，屬另一件事。
-  photos: { title: '攝影作品集', description: 'Koimsurai 的攝影作品集，記錄旅途中的光影故事。' },
-  portfolio: { title: '作品', description: '做過的、正在做的——專題、工具與自架服務。' },
-  about: { title: '關於我', description: 'Koimsurai — 一個工程師的閱讀筆記、作品紀錄與系統實驗。' },
+  // 這三頁的各語系翻譯原本散在元件內（AboutPage.SEO / Portfolio.dict）或直接寫死中文，
+  // 已搬進 locales/*/common.json → 標題現在會跟著語系走，不再各語系都出中文。
+  about: { titleKey: 'about.title', descKey: 'about.description' },
+  portfolio: { titleKey: 'portfolio.title', descKey: 'portfolio.description' },
+  photos: { titleKey: 'photos.title', descKey: 'photos.description' },
 };
 
 // createI18n 每次呼叫都會建新實例；head() 每次 render 都會跑，所以以 locale 快取。

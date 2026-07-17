@@ -503,5 +503,17 @@
     "loggingIn": "正在登录...",
     "errorNoCode": "登录失败：未收到授权码",
     "errorGeneric": "登录失败，请稍后再试"
+  },
+  "about": {
+    "title": "关于我",
+    "description": "Koimsurai — 全栈工程师。技能、经历、社团与成长轨迹。"
+  },
+  "portfolio": {
+    "title": "作品",
+    "description": "做过的、正在做的——专题、工具与自架服务。"
+  },
+  "photos": {
+    "title": "摄影作品集",
+    "description": "Koimsurai 的摄影作品集，记录旅途中的光影故事。"
   }
 }

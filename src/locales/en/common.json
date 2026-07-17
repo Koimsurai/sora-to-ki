@@ -503,5 +503,17 @@
     "loggingIn": "Signing in...",
     "errorNoCode": "Sign-in failed: no authorization code received",
     "errorGeneric": "Sign-in failed, please try again later"
+  },
+  "about": {
+    "title": "About",
+    "description": "Koimsurai — full-stack engineer. Skills, experience, communities and journey."
+  },
+  "portfolio": {
+    "title": "Projects",
+    "description": "Things built and being built — capstones, tools, self-hosted services."
+  },
+  "photos": {
+    "title": "Photography",
+    "description": "Koimsurai's photography — light and shadow from the road."
   }
 }

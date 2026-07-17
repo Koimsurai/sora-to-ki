@@ -503,5 +503,17 @@
     "loggingIn": "ログイン中...",
     "errorNoCode": "ログイン失敗：認証コードを受信できませんでした",
     "errorGeneric": "ログインに失敗しました。後でお試しください"
+  },
+  "about": {
+    "title": "私について",
+    "description": "Koimsurai — フルスタックエンジニア。スキル・経歴・コミュニティ・歩み。"
+  },
+  "portfolio": {
+    "title": "作品",
+    "description": "作ったもの・作っているもの——課題、ツール、セルフホスト。"
+  },
+  "photos": {
+    "title": "写真作品集",
+    "description": "Koimsurai の写真作品集。旅先の光と影の記録。"
   }
 }

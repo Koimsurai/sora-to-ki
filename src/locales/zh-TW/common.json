@@ -503,5 +503,17 @@
     "loggingIn": "正在登入...",
     "errorNoCode": "登入失敗：未收到授權碼",
     "errorGeneric": "登入失敗，請稍後再試"
+  },
+  "about": {
+    "title": "關於我",
+    "description": "Koimsurai — 全端工程師。技能、經歷、社團與成長軌跡。"
+  },
+  "portfolio": {
+    "title": "作品",
+    "description": "做過的、正在做的——專題、工具與自架服務。"
+  },
+  "photos": {
+    "title": "攝影作品集",
+    "description": "Koimsurai 的攝影作品集，記錄旅途中的光影故事。"
   }
 }
