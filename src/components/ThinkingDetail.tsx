@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from '@tanstack/react-router';
+import { useLoaderData, useParams } from '@tanstack/react-router';
 import { LocaleLink } from '../locale-link';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -16,9 +16,12 @@ function ThinkingDetail() {
   const { t } = useTranslation();
   const { id } = useParams({ strict: false }); // 兩種路由（/thinking/$id、/$locale/thinking/$id）共用
   const { isAdmin, getToken } = useAuth();
-  const [thought, setThought] = useState<Thought | null | undefined>(undefined); // undefined=載入中, null=找不到
+  // 路由 loader 在 server 端抓好的碎念（兩條路由共用此元件 → strict:false）
+  const initial = (useLoaderData({ strict: false }) as { thought?: Thought } | undefined)?.thought;
+  const [thought, setThought] = useState<Thought | null | undefined>(initial); // undefined=載入中, null=找不到
 
   useEffect(() => {
+    if (initial) return; // loader 已在 server 端抓好 → 不重打
     void fetch(`${API}/thoughts/${id}`)
       .then((r) => (r.ok ? r.json() as Promise<{ thought: Thought }> : null))
       .then((d) => setThought(d ? d.thought : null))
