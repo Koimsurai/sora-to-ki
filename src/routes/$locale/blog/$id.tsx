@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { LocaleProvider, buildAlternateLinks, localeFromPrefix, toLocales } from '../../../start-i18n';
 import { BlogPostPage, type PostData } from '../../../pages/BlogPostPage';
 import { apiUrl } from '../../../api';
+import { articleMeta } from '../../../seoMeta';
 
 const FullBlogPost = lazy(() => import('../../../components/BlogPost'));
 
@@ -15,11 +16,12 @@ export const Route = createFileRoute('/$locale/blog/$id')({
     if (!res.ok) throw notFound();
     return { post: (await res.json()) as PostData, locale };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     if (!loaderData) return {};
     const { post, locale } = loaderData;
     return {
-      meta: [{ title: post.title }, { name: 'description', content: post.excerpt ?? '' }],
+      // og/twitter 也在這裡出（理由同 /blog/$id）
+      meta: articleMeta(post, `/${params.locale}/blog/${post.id}`, locale),
       links: buildAlternateLinks(`blog/${post.id}`, locale, toLocales(post.available_locales)),
     };
   },
