@@ -16,7 +16,6 @@ import { Route as PhotosRouteImport } from './routes/photos'
 import { Route as MusicRouteImport } from './routes/music'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as JourneyRouteImport } from './routes/journey'
-import { Route as IsrDemoRouteImport } from './routes/isr-demo'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as FriendsRouteImport } from './routes/friends'
 import { Route as CinemaRouteImport } from './routes/cinema'
@@ -89,11 +88,6 @@ const MessagesRoute = MessagesRouteImport.update({
 const JourneyRoute = JourneyRouteImport.update({
   id: '/journey',
   path: '/journey',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IsrDemoRoute = IsrDemoRouteImport.update({
-  id: '/isr-demo',
-  path: '/isr-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoryRoute = HistoryRouteImport.update({
@@ -297,7 +291,6 @@ export interface FileRoutesByFullPath {
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
-  '/isr-demo': typeof IsrDemoRoute
   '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
@@ -345,7 +338,6 @@ export interface FileRoutesByTo {
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
-  '/isr-demo': typeof IsrDemoRoute
   '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
@@ -394,7 +386,6 @@ export interface FileRoutesById {
   '/cinema': typeof CinemaRoute
   '/friends': typeof FriendsRoute
   '/history': typeof HistoryRoute
-  '/isr-demo': typeof IsrDemoRoute
   '/journey': typeof JourneyRoute
   '/messages': typeof MessagesRoute
   '/music': typeof MusicRoute
@@ -444,7 +435,6 @@ export interface FileRouteTypes {
     | '/cinema'
     | '/friends'
     | '/history'
-    | '/isr-demo'
     | '/journey'
     | '/messages'
     | '/music'
@@ -492,7 +482,6 @@ export interface FileRouteTypes {
     | '/cinema'
     | '/friends'
     | '/history'
-    | '/isr-demo'
     | '/journey'
     | '/messages'
     | '/music'
@@ -540,7 +529,6 @@ export interface FileRouteTypes {
     | '/cinema'
     | '/friends'
     | '/history'
-    | '/isr-demo'
     | '/journey'
     | '/messages'
     | '/music'
@@ -589,7 +577,6 @@ export interface RootRouteChildren {
   CinemaRoute: typeof CinemaRoute
   FriendsRoute: typeof FriendsRoute
   HistoryRoute: typeof HistoryRoute
-  IsrDemoRoute: typeof IsrDemoRoute
   JourneyRoute: typeof JourneyRoute
   MessagesRoute: typeof MessagesRoute
   MusicRoute: typeof MusicRoute
@@ -677,13 +664,6 @@ declare module '@tanstack/react-router' {
       path: '/journey'
       fullPath: '/journey'
       preLoaderRoute: typeof JourneyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/isr-demo': {
-      id: '/isr-demo'
-      path: '/isr-demo'
-      fullPath: '/isr-demo'
-      preLoaderRoute: typeof IsrDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/history': {
@@ -965,7 +945,6 @@ const rootRouteChildren: RootRouteChildren = {
   CinemaRoute: CinemaRoute,
   FriendsRoute: FriendsRoute,
   HistoryRoute: HistoryRoute,
-  IsrDemoRoute: IsrDemoRoute,
   JourneyRoute: JourneyRoute,
   MessagesRoute: MessagesRoute,
   MusicRoute: MusicRoute,

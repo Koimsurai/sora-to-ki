@@ -52,10 +52,7 @@ export default defineConfig({
       config: {
         serverDir: './server', // 掃 server/routes/ 的檔案系統路由(預設不掃 → 404)
         // ISR：node-server preset 內建 SWR（TTL 過期先回舊、背景重生，不需 CDN）
-        routeRules: {
-          ...ISR_ROUTE_RULES,
-          '/isr-demo': { swr: 20 }, // ISR 煙霧測試用(短 TTL 好觀察);上線前可連同 routes/isr-demo.tsx 一起刪
-        },
+        routeRules: ISR_ROUTE_RULES,
       },
     }),
   ],
