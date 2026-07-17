@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
+import { useLoaderData } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import SEOHead from './SEOHead';
@@ -26,9 +27,9 @@ interface Genre { genre: string; count: number }
 
 interface NowPlaying { is_playing?: boolean; item?: SpotifyTrack; progress_ms?: number; played_at?: string }
 interface NowPlayingData extends NowPlaying { isLive: boolean }
-interface RecentlyPlayedState { tracks?: RecentItem[]; configured?: boolean; error?: string }
-interface TopGenresState { genres?: Genre[]; configured?: boolean; error?: string }
-interface TopTracksState { tracks?: SpotifyTrack[]; configured?: boolean; error?: string }
+export interface RecentlyPlayedState { tracks?: RecentItem[]; configured?: boolean; error?: string }
+export interface TopGenresState { genres?: Genre[]; configured?: boolean; error?: string }
+export interface TopTracksState { tracks?: SpotifyTrack[]; configured?: boolean; error?: string }
 
 /* ─── 色彩提取工具：從專輯封面取主色調 ─── */
 const extractDominantColor = (imageUrl: string): Promise<RGB> => {
@@ -66,12 +67,17 @@ const extractDominantColor = (imageUrl: string): Promise<RGB> => {
 
 const Music = () => {
   const { t, i18n } = useTranslation();
-  const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayedState | null>(null);
-  const [topGenres, setTopGenres] = useState<TopGenresState | null>(null);
-  const [topTracks, setTopTracks] = useState<TopTracksState | null>(null);
+  // 路由 loader 在 server 端抓好的穩定資料（元件被 /music 與 /$locale/music 共用 → strict:false）。
+  // now-playing 不在其中：那是 30 秒輪詢的即時狀態，不該 baked 進 HTML（詳見 musicData.ts）。
+  const initial = useLoaderData({ strict: false }) as
+    | { recentlyPlayed?: RecentlyPlayedState; topGenres?: TopGenresState; topTracks?: TopTracksState }
+    | undefined;
+  const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayedState | null>(initial?.recentlyPlayed ?? null);
+  const [topGenres, setTopGenres] = useState<TopGenresState | null>(initial?.topGenres ?? null);
+  const [topTracks, setTopTracks] = useState<TopTracksState | null>(initial?.topTracks ?? null);
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
   const [audioFeatures, setAudioFeatures] = useState<Record<string, AudioFeature | undefined>>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initial?.recentlyPlayed);
   const [activeTab, setActiveTab] = useState('recent');
   const [timeRange, setTimeRange] = useState('medium_term');
   const [dominantColor, setDominantColor] = useState<RGB>({ r: 127, g: 90, b: 240 });
@@ -155,6 +161,11 @@ const Music = () => {
   /* ─── 初始載入 ─── */
   useEffect(() => {
     const init = async () => {
+      // loader 已給穩定資料 → 只補即時的 now-playing，不要重打其餘三個，也不要再閃一次 loading
+      if (initial?.recentlyPlayed) {
+        await fetchNowPlaying();
+        return;
+      }
       setLoading(true);
       await Promise.all([
         fetchNowPlaying(),
