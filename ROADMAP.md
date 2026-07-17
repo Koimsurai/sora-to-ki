@@ -5,9 +5,47 @@
 > 原則：對**個人站**分級，不照搬企業級 checklist。標 ❌ 的是刻意不做（附理由）。
 
 ## 已在做 / 已規劃（獨立計畫）
-- **Nitro v3 遷移**：`NITRO_MIGRATION_PLAN.md`（serve.mjs 退休 + self-host ISR；順收 OG 雙套/PWA 半殘/前端 sharp）。Phase A worktree 探坑中。
-- **specta 型別遷移**：`backend/SPECTA_PLAN.md`（動態 JSON → typed，前端型別單一來源）。
+- **Nitro v3 遷移**：✅ **已完成並上線（2026-07-17）**。詳見 `NITRO_MIGRATION_PLAN.md`。
+- **specta 型別遷移**：`backend/SPECTA_PLAN.md`（動態 JSON → typed，前端型別單一來源）。**下一個主要工作**。
 - **Bun 化**：延後至 Rust 版 stable（見 vault 決策；現在青黃不接期）。
+
+---
+
+## 交接：Nitro 遷移收尾後的未完事項（2026-07-17）
+
+遷移本身已完成上線（serve.mjs 退役、ISR + on-demand revalidation 運作中、image 3.35GB → 759MB）。
+過程順手修掉三個**無聲失效**的既有缺陷：全站 `<title>` 重複且無 description、og 標籤從沒進過
+SSR（社群預覽一直是壞的）、`public/sitemap.xml` 是 2026-02-11 的 0 篇文章死清單。
+
+### 仍未做（有意識的決定，不是遺漏）
+
+| 項目 | 狀態與理由 |
+|---|---|
+| **`/watch/library` 補 loader** | **決定不做**。全量 1,174 筆（anime 997 + film 96 + tv 81）、JSON 279KB；照 `/watch` 的 ~360 bytes/筆推估，SSR 會產出 ~420KB HTML + 279KB 水合資料 ≈ 700KB。這是有分頁/排序的瀏覽 UI，SEO 增益相對 `/watch`（已 SSR 最近 200 筆）很邊際。title/og 已有。 |
+| **`/activity` 補 loader** | **決定不做**。抓的是 Steam/health 即時儀表板，baked 進 HTML 只會是過期快照，SEO 無價值。 |
+| **`/music` 的 now-playing** | **刻意排除在 loader 外**。30 秒輪詢的即時狀態，配 ISR 1h TTL 會讓爬蟲與首屏永遠看到錯的「正在播放」。其餘（recently-played/top-genres/top-tracks）已 SSR。 |
+| **ISR 快取在記憶體** | 未掛 fs driver。**每次部署／重啟快取歸零**，之後首批請求要冷 render（實測 40–190ms）。流量不大時無感；要跨重啟存活需掛 unstorage fs driver + volume。 |
+| **後台 CollectionManager + 後端 `/api/collection`** | `/anime` `/cinema` 頁面已刪（資料源回 0 筆、使用者確認廢棄），但**後台 UI 與後端端點（含 n8n 批次匯入）仍在**——使用者說的是「頁面」廢棄，後端是否退役是另一個決定。 |
+| **`nitro-migration` 分支** | 已 merge 進 main，分支保留當歷史紀錄；worktree 已移除。 |
+| **GitHub dependabot 警告** | push 時 GitHub 回了安全警告連結，沒看過。 |
+
+### 已知的既有缺陷（未修）
+
+- **其餘頁面的 `<SEOHead>` 仍是 helmet**：`/blog/$id`、`/thinking/$id` 與所有走 `localePage` 的頁
+  已改由 `head()` 出 meta（進得了 SSR）。但元件內的 `<SEOHead>` 沒清掉，等於同一組 og 在
+  hydrate 後又被 helmet 掛一次 → DOM 裡可能有重複 meta（爬蟲只讀 SSR，無實害，但該收）。
+  徹底解法是 `SEOHead` 全面退休。
+- **`/watch/library`、`/activity` 等頁 SSR 仍是空殼**（見上，刻意）。
+- **`friends`/`messages`/`history`/`about-site` 沒進 `pageSeo` 表** → 這幾頁的 `<title>` 仍是站台預設值。
+  補法很機械：在 `src/pageSeo.ts` 加一筆（有 i18n key 用 `titleKey`，沒有就先寫死或補 `common.json`）。
+
+### 驗證方法的坑（吃過大虧，寫給下一個 session）
+
+- **SSR 輸出含 null byte** → `grep` 當 binary 處理、**靜靜輸出空字串（不是 0）** → 大量假陰性。
+  查 SSR 內容一律 `grep -a`。
+- **`grep -c` 在單行 JSON 上只會回 0/1**（它數的是「符合的行數」），別拿來當筆數。
+- **管線會吃掉 exit code**：`cmd | head` 的 `$?` 是 `head` 的。`pnpm exec tsc … | head` 會讓失敗看起來像成功。
+- 別拿兩個可能為空的變數互比（`[ "$A" = "$B" ]` 對兩個空字串成立 → 印出假的「✓ 通過」）。
 
 ---
 

@@ -1,5 +1,8 @@
 # 前端 serve 層遷移計畫：serve.mjs → Nitro v3
 
+> ✅ **已完成並上線（2026-07-17）**。Phase A–E 全數完成，serve.mjs 已刪除。
+> 未完事項與刻意不做的決定見 ROADMAP.md「交接」章節。
+
 > 狀態：**計畫待審**，未動工。給下個 session（或本 session 批准後）執行。
 > 前置：`backend/STRANGLER.md`（後端史）、本檔。
 
