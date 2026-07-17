@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLoaderData } from '@tanstack/react-router';
 import { motion, type Variants } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Rss } from 'lucide-react';
@@ -28,7 +29,10 @@ const headReveal = {
 function Thinking() {
   const { t } = useTranslation();
   const { isAdmin, getToken } = useAuth();
-  const [thoughts, setThoughts] = useState<Thought[] | null>(null);
+  // 路由 loader 在 server 端抓好的碎念（元件被 /thinking 與 /$locale/thinking 共用 → strict:false）。
+  // 有值就當初始資料 → SSR 直接 render 出碎念，而不是停在 null（載入中）。
+  const initialThoughts = (useLoaderData({ strict: false }) as { thoughts?: Thought[] } | undefined)?.thoughts;
+  const [thoughts, setThoughts] = useState<Thought[] | null>(initialThoughts ?? null);
   const [draft, setDraft] = useState('');
   const [draftUrl, setDraftUrl] = useState('');
   const [posting, setPosting] = useState(false);
@@ -47,7 +51,13 @@ function Thinking() {
       .then((d) => setThoughts(d.thoughts ?? []))
       .catch(() => setThoughts([]));
   }, []);
-  useEffect(() => { load(); }, [load]);
+  // loader 已在 server 端抓好首屏 → hydrate 後不再立刻重打一次。
+  // 發文／刪除後呼叫的 load() 不受影響（那是使用者動作觸發，不走這個 effect）。
+  const skipFirstLoad = useRef(Boolean(initialThoughts));
+  useEffect(() => {
+    if (skipFirstLoad.current) { skipFirstLoad.current = false; return; }
+    load();
+  }, [load]);
 
   const submit = async () => {
     if (!draft.trim() || posting) return;

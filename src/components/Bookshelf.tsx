@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense, type CSSProperties, type ReactNode } from 'react';
+import { useLoaderData } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
@@ -18,7 +19,7 @@ const proxiedCover = (url?: string): string =>
 
 interface RGB { r: number; g: number; b: number }
 
-interface Book {
+export interface Book {
   id: number | string;
   title: string;
   authors?: string;
@@ -36,7 +37,7 @@ interface Book {
   personal_notes?: string;
 }
 
-interface BookStats {
+export interface BookStats {
   total_books: number;
   books_read: number;
   books_reading: number;
@@ -123,21 +124,28 @@ const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }: {
 
 const Bookshelf = () => {
   const { t } = useTranslation();
-  const [books, setBooks] = useState<Book[]>([]);
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
+  // 路由 loader 在 server 端抓好的書單（元件被 /bookshelf 與 /$locale/bookshelf 共用 → strict:false）。
+  // 有值就當初始資料 → SSR 直接 render 出書單，而不是卡在下面的 `if (loading)` 骨架屏。
+  const initial = useLoaderData({ strict: false }) as { books?: Book[]; stats?: BookStats | null } | undefined;
+  const initialBooks = initial?.books ?? [];
+  const [books, setBooks] = useState<Book[]>(initialBooks);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>(initialBooks);
+  const [loading, setLoading] = useState(initialBooks.length === 0);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date_added_desc');
-  const [stats, setStats] = useState<BookStats | null>(null);
+  const [stats, setStats] = useState<BookStats | null>(initial?.stats ?? null);
   const [showFilters, setShowFilters] = useState(false);
   const [is3DMode, setIs3DMode] = useState(false);
 
   useEffect(() => {
-    void fetchBooks();
-    void fetchStats();
+    // loader 已在 server 端抓好首屏 → hydrate 後不再立刻重打一次
+    if (!initialBooks.length) {
+      void fetchBooks();
+      void fetchStats();
+    }
     const dataRefreshInterval = setInterval(() => {
       void fetchBooks();
       void fetchStats();
