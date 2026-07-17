@@ -4,7 +4,7 @@ import { useLocaleNavigate } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import {
   FileText, Hash, Folder, Music, BookOpen, Activity,
-  Home, Compass, Camera, Film, Tv, Settings, Search,
+  Home, Compass, Camera, Settings, Search,
   type LucideIcon,
 } from 'lucide-react';
 import './CommandPalette.css';
@@ -24,8 +24,6 @@ const STATIC_PAGES: StaticPage[] = [
   { label: '軌跡',    path: '/about#journey',   icon: Compass,  keywords: 'journey 旅程 時間線' },
   { label: '留言',    path: '/messages',  icon: Compass,  keywords: 'messages 留言 guestbook contact' },
   { label: '相簿',    path: '/photos',    icon: Camera,   keywords: 'photos 照片 相簿' },
-  { label: '影劇',    path: '/cinema',    icon: Film,     keywords: 'cinema movie 影劇' },
-  { label: '動漫',    path: '/anime',     icon: Tv,       keywords: 'anime 動畫 動漫' },
   { label: '工作站',  path: '/setup',     icon: Settings, keywords: 'setup 設備' },
 ];
 

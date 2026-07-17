@@ -30,10 +30,8 @@ export const PAGE_SEO: Record<string, SeoEntry> = {
   watch: { titleKey: 'watch.title', descKey: 'watch.metaDescription' },
   'watch/library': { titleKey: 'watch.library.title', descKey: 'watch.library.subtitle' },
 
-  // 沿用元件內原本寫死的字串（i18n 沒有對應 key）。維持現況＝這幾頁的標題在各語系都是中文；
+  // 沿用元件內原本寫死的字串（i18n 沒有對應 key）。這幾頁的標題在各語系都是中文；
   // 要正確在地化得先補 locales/*/common.json 的 key，屬另一件事。
-  anime: { title: '動漫', description: 'Koimsurai 的動漫推薦清單與觀後感。' },
-  cinema: { title: '電影', description: 'Koimsurai 的電影推薦與評論回顧。' },
   photos: { title: '攝影作品集', description: 'Koimsurai 的攝影作品集，記錄旅途中的光影故事。' },
   portfolio: { title: '作品', description: '做過的、正在做的——專題、工具與自架服務。' },
   about: { title: '關於我', description: 'Koimsurai — 一個工程師的閱讀筆記、作品紀錄與系統實驗。' },

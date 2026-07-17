@@ -15,7 +15,7 @@ import path from 'node:path';
 
 const LOCALE_PREFIXES = ['en', 'ja', 'ko', 'zh-cn'];
 // UI 頁(全 5 語都有)。加新頁只要加名字,ISR 規則會自動涵蓋 5 個語系路徑。
-const UI_PAGES = ['about', 'setup', 'bookshelf', 'activity', 'music', 'cinema', 'anime', 'thinking', 'messages', 'portfolio', 'friends', 'watch/library', 'watch', 'blog', 'unsubscribe', 'about-site', 'history', 'photos'];
+const UI_PAGES = ['about', 'setup', 'bookshelf', 'activity', 'music', 'thinking', 'messages', 'portfolio', 'friends', 'watch/library', 'watch', 'blog', 'unsubscribe', 'about-site', 'history', 'photos'];
 
 // ── ISR / SWR route rules ───────────────────────────────────────────────────
 // 一頁 → 該頁 5 個語系路徑(/x + /en/x …)。
