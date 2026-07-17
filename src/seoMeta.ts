@@ -36,6 +36,40 @@ const toIso = (s?: string): string | undefined => {
   return `${s.replace(' ', 'T')}Z`;
 };
 
+/** 一般頁面（非文章）head() 用的 meta。canonicalPath 例:/music、/en/music */
+export function pageMeta(
+  title: string | null,
+  description: string,
+  canonicalPath: string,
+  locale: string,
+): MetaTag[] {
+  const url = `${BASE_URL}${canonicalPath}`;
+  const image = `${BASE_URL}/og-default-v2.png`;
+  // 對齊 SEOHead 既有的標題格式
+  const fullTitle = title ? `${title} - 宙と木` : SITE_NAME;
+
+  return [
+    { title: fullTitle },
+    { name: 'description', content: description },
+
+    { property: 'og:type', content: 'website' },
+    { property: 'og:title', content: fullTitle },
+    { property: 'og:description', content: description },
+    { property: 'og:url', content: url },
+    { property: 'og:image', content: image },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
+    { property: 'og:site_name', content: SITE_NAME },
+    { property: 'og:locale', content: LOCALE_TO_OG[locale] ?? 'zh_TW' },
+
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: fullTitle },
+    { name: 'twitter:description', content: description },
+    { name: 'twitter:image', content: image },
+    { name: 'twitter:url', content: url },
+  ];
+}
+
 /** 文章頁 head() 用的 meta。canonicalPath 例:/blog/39、/en/blog/39 */
 export function articleMeta(post: PostData, canonicalPath: string, locale: string): MetaTag[] {
   const description = post.excerpt ?? '';

@@ -1,13 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { DEFAULT_LOCALE, LocaleProvider, buildAlternateLinks } from '../start-i18n';
+import { localePage } from '../localePage';
 import Setup from '../components/Setup';
 
-// 2d:真實 UI 頁(Setup)遷到 Start —— 預設語言無前綴 /setup。
-export const Route = createFileRoute('/setup')({
-  head: () => ({ links: buildAlternateLinks('setup', DEFAULT_LOCALE) }),
-  component: () => (
-    <LocaleProvider locale={DEFAULT_LOCALE}>
-      <Setup />
-    </LocaleProvider>
-  ),
-});
+// 原本手寫 head/component（早於 localePage 存在），做的事與 localePage 相同，
+// 但也因此繞過集中式 SEO 表 → SSR 的 <title> 一直停在預設值。改用共用 wrapper。
+export const Route = createFileRoute('/setup')(localePage('setup', Setup));

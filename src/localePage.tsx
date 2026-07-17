@@ -3,6 +3,7 @@ import { Suspense, lazy, type ComponentType, type ReactElement } from 'react';
 import { DEFAULT_LOCALE, LocaleProvider, buildAlternateLinks, localeFromPrefix } from './start-i18n';
 import { useLocale } from './locale-link';
 import KoimLoader from './components/KoimLoader';
+import { seoMetaFor } from './pageSeo';
 
 // 共用:把現有頁面元件包成 Start 路由 options(LocaleProvider 包覆 + 逐 locale hreflang)。
 // component 用 useLocale() 從 URL 推 locale,所以 default 與 $locale 路由共用同一個 wrapper。
@@ -20,7 +21,12 @@ export function localeWrap(Comp: ComponentType): () => ReactElement {
 /** 預設語言(zh-TW)無前綴頁的 route options。basePath = 無前綴邏輯路徑(如 'bookshelf')。 */
 export function localePage(basePath: string, Comp: ComponentType) {
   return {
-    head: () => ({ links: buildAlternateLinks(basePath, DEFAULT_LOCALE) }),
+    // meta 走 head() 而非元件內的 <SEOHead>：SEOHead 是 helmet，hydrate 後才掛，爬蟲看不到
+    // → 過去每頁 SSR 的 <title> 全是同一個預設值、且無 description。詳見 pageSeo.ts。
+    head: () => ({
+      meta: seoMetaFor(basePath, DEFAULT_LOCALE, `/${basePath}`),
+      links: buildAlternateLinks(basePath, DEFAULT_LOCALE),
+    }),
     component: localeWrap(Comp),
   };
 }
@@ -65,9 +71,13 @@ export function localeGuardedPage(Comp: ComponentType) {
 /** 帶前綴 /$locale/... 頁的 route options。 */
 export function localePagePrefixed(basePath: string, Comp: ComponentType) {
   return {
-    head: ({ params }: { params: { locale: string } }) => ({
-      links: buildAlternateLinks(basePath, localeFromPrefix(params.locale) ?? DEFAULT_LOCALE),
-    }),
+    head: ({ params }: { params: { locale: string } }) => {
+      const locale = localeFromPrefix(params.locale) ?? DEFAULT_LOCALE;
+      return {
+        meta: seoMetaFor(basePath, locale, `/${params.locale}/${basePath}`),
+        links: buildAlternateLinks(basePath, locale),
+      };
+    },
     loader: ({ params }: { params: { locale: string } }) => {
       const locale = localeFromPrefix(params.locale);
       if (!locale || locale === 'zh-TW') throw notFound();

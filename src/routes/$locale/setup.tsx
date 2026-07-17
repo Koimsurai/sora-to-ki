@@ -1,24 +1,7 @@
-import { createFileRoute, notFound } from '@tanstack/react-router';
-import { buildAlternateLinks, DEFAULT_LOCALE, localeFromPrefix, LocaleProvider } from '../../start-i18n';
+import { createFileRoute } from '@tanstack/react-router';
+import { localePagePrefixed } from '../../localePage';
 import Setup from '../../components/Setup';
 
-// 2d:帶前綴的 /$locale/setup(/en/setup 等)。
-export const Route = createFileRoute('/$locale/setup')({
-  head: ({ params }) => ({
-    links: buildAlternateLinks('setup', localeFromPrefix(params.locale) ?? DEFAULT_LOCALE),
-  }),
-  loader: ({ params }) => {
-    const locale = localeFromPrefix(params.locale);
-    if (!locale || locale === 'zh-TW') throw notFound();
-  },
-  component: RouteComponent,
-});
-
-function RouteComponent() {
-  const locale = localeFromPrefix(Route.useParams().locale) ?? DEFAULT_LOCALE;
-  return (
-    <LocaleProvider locale={locale}>
-      <Setup />
-    </LocaleProvider>
-  );
-}
+// 原本手寫 head/loader/component（早於 localePage 存在），做的事與 localePagePrefixed 相同
+// （含 zh-TW/不合法前綴 → notFound 的守門），但也因此繞過集中式 SEO 表。改用共用 wrapper。
+export const Route = createFileRoute('/$locale/setup')(localePagePrefixed('setup', Setup));
