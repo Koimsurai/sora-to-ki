@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
+import { siteStatsQueryOptions } from '../homeData';
 import LanguagePicker from './LanguagePicker';
 import './Footer.css';
 
@@ -11,20 +12,12 @@ interface Stats {
   days: number;
 }
 
-function useStats() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void fetch('/api/stats')
-      .then((r) => r.json() as Promise<{ message?: string; total_posts?: number; days?: number }>)
-      .then((data) => {
-        if (cancelled || data.message !== 'success') return;
-        setStats({ total: data.total_posts ?? 0, days: data.days ?? 1 });
-      })
-      .catch(() => { /* 統計載入失敗時靜默 */ });
-    return () => { cancelled = true; };
-  }, []);
-  return stats;
+// 站台統計改由 TanStack Query 讀（與 mega-menu 共用 siteStatsQueryOptions 快取）。
+// 失敗 / 未載入時 data 為 undefined → 回 null，走 fallback 顯示（對齊舊 catch 靜默）。
+function useStats(): Stats | null {
+  const { data } = useQuery(siteStatsQueryOptions);
+  if (!data || data.message !== 'success') return null;
+  return { total: data.total_posts, days: data.days };
 }
 
 // 在線人數：目前後端沒有 endpoint，直接回傳 null 走 fallback 顯示文章數 / 天數

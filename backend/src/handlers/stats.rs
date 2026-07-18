@@ -15,11 +15,14 @@ struct StatsRow {
     total_chars: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct StatsResponse {
-    pub message: &'static str,
+    pub message: String,
+    #[specta(type = specta_typescript::Number)]
     pub total_posts: i64,
+    #[specta(type = specta_typescript::Number)]
     pub total_chars: i64,
+    #[specta(type = specta_typescript::Number)]
     pub days: i64,
 }
 
@@ -46,7 +49,7 @@ pub async fn site_stats(State(state): State<AppState>) -> Result<Json<StatsRespo
     let days = std::cmp::max(1, (now_ms - SITE_START_AT_MS) / 86_400_000);
 
     Ok(Json(StatsResponse {
-        message: "success",
+        message: "success".to_string(),
         total_posts: row.total_posts,
         total_chars: row.total_chars,
         days,

@@ -1,5 +1,5 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { PostsListResponse } from '@koimsurai/api-types';
+import type { PostListItem, PostsListResponse } from '@koimsurai/api-types';
 import { apiUrl } from './api';
 import type { Post, Tag, Category } from './components/Blog';
 
@@ -13,6 +13,19 @@ export const postsListQueryOptions = (locale: string, sortBy: string) =>
     queryKey: ['posts', 'list', locale, sortBy],
     queryFn: async (): Promise<Post[]> => {
       const res = await fetch(apiUrl(`/api/posts?sortBy=${sortBy}&limit=100&lang=${locale}`));
+      if (!res.ok) throw new Error(`GET /api/posts ${res.status}`);
+      const data = (await res.json()) as PostsListResponse;
+      return data.posts;
+    },
+    staleTime: STALE,
+  });
+
+// mega-menu「手記」用：最新 N 篇（無 sort/lang，menu 自己在 client 依 hover 分類過濾）。
+export const recentPostsQueryOptions = (limit: number) =>
+  queryOptions({
+    queryKey: ['posts', 'recent', limit],
+    queryFn: async (): Promise<PostListItem[]> => {
+      const res = await fetch(apiUrl(`/api/posts?limit=${limit}`));
       if (!res.ok) throw new Error(`GET /api/posts ${res.status}`);
       const data = (await res.json()) as PostsListResponse;
       return data.posts;

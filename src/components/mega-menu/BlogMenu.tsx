@@ -1,18 +1,19 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { LocaleLink } from '../../locale-link';
 import { useTranslation } from 'react-i18next';
+import { blogCategoriesQueryOptions, recentPostsQueryOptions } from '../../blogList';
+import type { PostListItem } from '@koimsurai/api-types';
 import { MegaMenuPanel, MegaMenuColumn } from './MegaMenu';
 
 /**
  * 手記 menu 內容（categories + recent posts hover-linked）
  *   左欄：分類列表（hover 高亮 + filter 右欄）
  *   右欄：最新 N 篇（隨 hover 的分類動態切換）
+ * 資料改由 TanStack Query 讀（categories 與 Blog 頁共用快取；posts 用 recentPostsQueryOptions(50)）。
  */
 
-interface CategoryItem { id: number; name: string; post_count?: number }
-interface BlogPostItem { id: number; title: string; created_at?: string; category?: string; status?: string }
-
-function RecentPostRow({ post }: { post: BlogPostItem }) {
+function RecentPostRow({ post }: { post: PostListItem }) {
   const { t } = useTranslation();
   const dateLabel = useMemo(() => {
     if (!post.created_at) return '';
@@ -41,25 +42,16 @@ function RecentPostRow({ post }: { post: BlogPostItem }) {
 
 function BlogMenuContent() {
   const { t } = useTranslation();
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [posts, setPosts] = useState<BlogPostItem[]>([]);
+  const { data: allCategories = [] } = useQuery(blogCategoriesQueryOptions);
+  const { data: allPosts = [] } = useQuery(recentPostsQueryOptions(50));
   const [activeCat, setActiveCat] = useState<string | null>(null); // null = 全部
 
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.all([
-      fetch('/api/categories').then((r) => r.json() as Promise<unknown>).catch(() => null),
-      fetch('/api/posts?limit=50').then((r) => r.json() as Promise<unknown>).catch(() => null),
-    ]).then(([catsRes, postsRes]) => {
-      if (cancelled) return;
-      const cats = Array.isArray(catsRes) ? (catsRes as CategoryItem[]) : ((catsRes as { categories?: CategoryItem[] } | null)?.categories ?? []);
-      const list = Array.isArray(postsRes) ? (postsRes as BlogPostItem[]) : ((postsRes as { posts?: BlogPostItem[] } | null)?.posts ?? []);
-      // 只顯示有文章的分類，避免空欄位佔版面
-      setCategories(cats.filter((c) => (c.post_count ?? 0) > 0));
-      setPosts(list.filter((p) => p.status === 'published' || !p.status));
-    });
-    return () => { cancelled = true; };
-  }, []);
+  // 只顯示有文章的分類，避免空欄位佔版面
+  const categories = useMemo(() => allCategories.filter((c) => (c.post_count ?? 0) > 0), [allCategories]);
+  const posts = useMemo(
+    () => allPosts.filter((p) => p.status === 'published' || !p.status),
+    [allPosts],
+  );
 
   const filteredPosts = useMemo(() => {
     if (!activeCat) return posts.slice(0, 5);
@@ -79,7 +71,7 @@ function BlogMenuContent() {
         </LocaleLink>
         {categories.map((c) => (
           <LocaleLink
-            key={c.id}
+            key={c.name}
             to={`/blog?category=${encodeURIComponent(c.name)}`}
             className={`mega-menu-category ${activeCat === c.name ? 'mega-menu-category--active' : ''}`}
             onMouseEnter={() => setActiveCat(c.name)}

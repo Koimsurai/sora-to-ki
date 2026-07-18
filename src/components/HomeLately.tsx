@@ -1,20 +1,14 @@
 // 首頁「動態帶」— 近期文章 / 碎念 / 留言迴聲 / 年度軌跡 / 今日訊號收尾。
 // 取代原本的 Contact section（聯絡資訊 hero 與 footer 已足夠），
 // 收尾的訊號區塊掛 id="contact" 讓既有錨點（hero CTA / footer / Messages）續用。
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import type { DigestTimeline } from '@koimsurai/api-types';
+import { homeDigestQueryOptions, dailyQuoteQueryOptions } from '../homeData';
 import './HomeLately.css';
-
-const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
-
-interface Post { id: number; title: string; category?: string; created_at: string }
-interface Thought { id: number; content: string; created_at: string }
-interface CommentItem { id: number; content: string; author: string; thought_id?: number; post_id?: number; post_title?: string }
-interface TimelineItem { id: number; title: string; created_at: string }
-interface Digest { posts: Post[]; thoughts: Thought[]; comments: CommentItem[]; timeline: TimelineItem[] }
-interface Quote { text: string; from?: string }
 
 /** 相對時間（30 天內），更久就顯示日期 */
 function timeAgo(iso: string, t: TFunction) {
@@ -34,7 +28,7 @@ function yearPct(iso: string) {
   return ((d.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100;
 }
 
-function OrbitTimeline({ timeline, t }: { timeline: TimelineItem[]; t: TFunction }) {
+function OrbitTimeline({ timeline, t }: { timeline: DigestTimeline[]; t: TFunction }) {
   const now = new Date();
   const nowPct = yearPct(now.toISOString());
   const seasons = [
@@ -85,15 +79,9 @@ function OrbitTimeline({ timeline, t }: { timeline: TimelineItem[]; t: TFunction
 
 export default function HomeLately() {
   const { t, i18n } = useTranslation();
-  const [digest, setDigest] = useState<Digest | null>(null);
-  const [quote, setQuote] = useState<Quote | null>(null);
-
-  useEffect(() => {
-    void fetch(`${API}/home/digest`)
-      .then((r) => r.json() as Promise<Digest>)
-      .then((d) => setDigest(d))
-      .catch(() => setDigest({ posts: [], thoughts: [], comments: [], timeline: [] }));
-  }, []);
+  // 動態帶 / 每日名言改由 TanStack Query 讀（queryFn 內建 catch 降級，對齊舊 UX）。
+  const { data: digest } = useQuery(homeDigestQueryOptions);
+  const { data: quote } = useQuery(dailyQuoteQueryOptions(i18n.resolvedLanguage ?? i18n.language));
 
   // /#contact 深連結：本元件 lazy 掛載比 Header 的 100ms hash 捲動晚，掛載後自己補捲
   useEffect(() => {
@@ -103,13 +91,6 @@ export default function HomeLately() {
       });
     }
   }, [digest]);
-
-  useEffect(() => {
-    void fetch(`${API}/quote/daily?locale=${encodeURIComponent(i18n.resolvedLanguage ?? i18n.language)}`)
-      .then((r) => r.json() as Promise<{ quote: Quote | null }>)
-      .then((d) => setQuote(d.quote))
-      .catch(() => setQuote(null));
-  }, [i18n.resolvedLanguage, i18n.language]);
 
   const posts = digest?.posts ?? [];
   const thoughts = digest?.thoughts ?? [];

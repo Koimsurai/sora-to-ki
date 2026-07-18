@@ -1,22 +1,13 @@
 import React, { useState, useEffect, type FormEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import KoimLoader from './KoimLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
+import type { CommentRow } from '@koimsurai/api-types';
+import { commentsQueryOptions } from '../commentsData';
 import './Comments.css';
-
-interface CommentRow {
-  id: number;
-  author: string;
-  content: string;
-  created_at: string;
-  likes?: number;
-  is_admin?: number;
-  parent_id?: number | null;
-  avatar_url?: string;
-  provider?: string;
-}
 
 interface ReplyTarget { id: number; author: string }
 
@@ -28,13 +19,15 @@ interface CommentsProps {
 
 function Comments({ postId, allowComments = true, basePath = 'posts' }: CommentsProps) {
   const { t } = useTranslation();
-  const [comments, setComments] = useState<CommentRow[]>([]);
+  const queryClient = useQueryClient();
+  // 留言列表改由 TanStack Query 讀；送出/按讚後 invalidate / setQueryData 更新同一份快取。
+  const commentsKey = commentsQueryOptions(basePath, postId).queryKey;
+  const { data: comments = [], isPending: loadingList } = useQuery(commentsQueryOptions(basePath, postId));
   const [newComment, setNewComment] = useState('');
   const [author, setAuthor] = useState('');
   const [email, setEmail] = useState('');
   const [website, setWebsite] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState('');
   const [likedComments, setLikedComments] = useState<number[]>([]);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
@@ -47,7 +40,6 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }: Comments
   const { user, isLoggedIn, providers, getGoogleAuthUrl, getGitHubAuthUrl, getToken } = useAuth();
 
   useEffect(() => {
-    void fetchComments();
     const liked = JSON.parse(localStorage.getItem('liked_comments_' + basePath + '_' + postId) ?? '[]') as number[];
     setLikedComments(liked);
     generateCaptcha();
@@ -64,20 +56,6 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }: Comments
     const num1 = Math.floor(Math.random() * 10) + 1;
     const num2 = Math.floor(Math.random() * 10) + 1;
     setCaptchaQuestion({ num1, num2 });
-  };
-
-  const fetchComments = async () => {
-    try {
-      const response = await fetch('/api/' + basePath + '/' + postId + '/comments');
-      if (response.ok) {
-        const data = await response.json() as { comments: CommentRow[] };
-        setComments(data.comments);
-      }
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-    } finally {
-      setLoadingList(false);
-    }
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -147,7 +125,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }: Comments
         generateCaptcha();
         setSubmitSuccess(true);
         setTimeout(() => setSubmitSuccess(false), 5000);
-        void fetchComments();
+        void queryClient.invalidateQueries({ queryKey: commentsKey });
       } else {
         const errorData = await response.json() as { error?: string };
         setError(errorData.error ?? t('comments.errorFailed'));
@@ -166,9 +144,11 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }: Comments
       const response = await fetch('/api/comments/' + commentId + '/like', { method: 'POST' });
       if (response.ok) {
         const data = await response.json() as { likes: number };
-        setComments(comments.map(comment =>
-          comment.id === commentId ? { ...comment, likes: data.likes } : comment
-        ));
+        queryClient.setQueryData<CommentRow[]>(commentsKey, (old) =>
+          (old ?? []).map((comment) =>
+            comment.id === commentId ? { ...comment, likes: data.likes } : comment,
+          ),
+        );
         const newLiked = [...likedComments, commentId];
         setLikedComments(newLiked);
         localStorage.setItem('liked_comments_' + basePath + '_' + postId, JSON.stringify(newLiked));

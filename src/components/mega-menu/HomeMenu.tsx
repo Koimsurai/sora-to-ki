@@ -8,6 +8,8 @@ import { SendIcon } from '@/components/animate-ui/icons/send';
 import { RouteIcon } from '@/components/animate-ui/icons/route';
 import { HouseIcon, MailIcon, GithubIcon, LinkedinIcon, InfoIcon, CompassIcon, MessageCircleIcon, UsersIcon, SparklesIcon as SparklesAnimIcon, FacebookIcon, InstagramIcon, WifiIcon } from '@animateicons/react/lucide';
 import { LocaleLink } from '../../locale-link';
+import { useQuery } from '@tanstack/react-query';
+import { siteStatsQueryOptions } from '../../homeData';
 
 interface AnimateIconHandle { startAnimation?: () => void; stopAnimation?: () => void }
 
@@ -98,24 +100,11 @@ interface SectionLink {
  */
 function HomeMenuContent({ onSectionClick }: { onSectionClick?: (e: React.MouseEvent, id: string) => void }) {
   const { t } = useTranslation();
-  const [stats, setStats] = useState<Stats | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetch('/api/stats')
-      .then((r) => r.json() as Promise<{ message?: string; total_posts?: number; total_chars?: number; days?: number }>)
-      .then((data) => {
-        if (cancelled) return;
-        if (data.message !== 'success') return;
-        setStats({
-          total: data.total_posts ?? 0,
-          wordCount: data.total_chars ?? 0,
-          days: data.days ?? 1,
-        });
-      })
-      .catch(() => { /* 統計載入失敗時靜默 */ });
-    return () => { cancelled = true; };
-  }, []);
+  // 站台統計改吃共用 siteStatsQueryOptions 快取（Footer 也用同一把）。
+  const { data: statsData } = useQuery(siteStatsQueryOptions);
+  const stats: Stats | null = statsData && statsData.message === 'success'
+    ? { total: statsData.total_posts, wordCount: statsData.total_chars, days: statsData.days }
+    : null;
 
   const wordCountLabel = useMemo(() => {
     if (!stats?.wordCount) return '—';

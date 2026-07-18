@@ -8,6 +8,10 @@ use koimsurai_web_backend::handlers::admin::{
     CommentCounts, KeywordFilterRow, KeywordFiltersResponse,
 };
 use koimsurai_web_backend::handlers::books::{BookDetailResponse, BookRow, BooksListResponse};
+use koimsurai_web_backend::handlers::home::{
+    DigestComment, DigestPost, DigestResponse, DigestThought, DigestTimeline,
+};
+use koimsurai_web_backend::handlers::stats::StatsResponse;
 use koimsurai_web_backend::handlers::newsletter::{SubscriberByToken, SubscriberRow, SubscribersResponse};
 use koimsurai_web_backend::handlers::watch::{
     AnimeHistoryResponse, AnimeRow, FilmRow, FilmsResponse, TvResponse, TvRow, WatchStatsResponse,
@@ -60,7 +64,15 @@ fn main() {
         .register::<FilmsResponse>()
         .register::<TvRow>()
         .register::<TvResponse>()
-        .register::<WatchStatsResponse>();
+        .register::<WatchStatsResponse>()
+        // home digest（首頁動態帶）
+        .register::<DigestPost>()
+        .register::<DigestThought>()
+        .register::<DigestComment>()
+        .register::<DigestTimeline>()
+        .register::<DigestResponse>()
+        // site stats（Footer / mega-menu）
+        .register::<StatsResponse>();
     Typescript::default()
         .header("// 由 backend `cargo run --bin export_types` 產生 — 勿手改\n")
         .export_to("../packages/api-types/index.ts", &types, specta_serde::Format)

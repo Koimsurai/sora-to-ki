@@ -4,47 +4,53 @@ use sqlx::FromRow;
 
 use crate::{error::AppError, state::AppState};
 
-#[derive(Debug, Serialize, FromRow)]
-struct DigestPost {
-    id: i64,
-    title: String,
-    category: Option<String>,
-    created_at: String,
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct DigestPost {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub title: String,
+    pub category: Option<String>,
+    pub created_at: String,
 }
 
-#[derive(Debug, Serialize, FromRow)]
-struct DigestThought {
-    id: i64,
-    content: String,
-    ref_type: Option<String>,
-    created_at: String,
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct DigestThought {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub content: String,
+    pub ref_type: Option<String>,
+    pub created_at: String,
 }
 
-#[derive(Debug, Serialize, FromRow)]
-struct DigestComment {
-    id: i64,
-    author: String,
-    content: String,
-    created_at: String,
-    post_id: Option<i64>,
-    thought_id: Option<i64>,
-    post_title: Option<String>,
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct DigestComment {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub author: String,
+    pub content: String,
+    pub created_at: String,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub post_id: Option<i64>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub thought_id: Option<i64>,
+    pub post_title: Option<String>,
 }
 
-#[derive(Debug, Serialize, FromRow)]
-struct DigestTimeline {
-    id: i64,
-    title: String,
-    created_at: String,
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct DigestTimeline {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub title: String,
+    pub created_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct DigestResponse {
-    message: &'static str,
-    posts: Vec<DigestPost>,
-    thoughts: Vec<DigestThought>,
-    comments: Vec<DigestComment>,
-    timeline: Vec<DigestTimeline>,
+    pub message: String,
+    pub posts: Vec<DigestPost>,
+    pub thoughts: Vec<DigestThought>,
+    pub comments: Vec<DigestComment>,
+    pub timeline: Vec<DigestTimeline>,
 }
 
 /// `GET /api/home/digest` —— 首頁動態帶（近期文章/碎念/留言迴聲/年度軌跡）。
@@ -84,7 +90,7 @@ pub async fn home_digest(State(state): State<AppState>) -> Result<Json<DigestRes
     .await?;
 
     Ok(Json(DigestResponse {
-        message: "success",
+        message: "success".to_string(),
         posts,
         thoughts,
         comments,

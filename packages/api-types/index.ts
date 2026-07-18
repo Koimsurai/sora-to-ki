@@ -218,6 +218,44 @@ export type CommentsResponse = {
 	comments: CommentRow[],
 };
 
+export type DigestComment = {
+	id: number,
+	author: string,
+	content: string,
+	created_at: string,
+	post_id: number | null,
+	thought_id: number | null,
+	post_title: string | null,
+};
+
+export type DigestPost = {
+	id: number,
+	title: string,
+	category: string | null,
+	created_at: string,
+};
+
+export type DigestResponse = {
+	message: string,
+	posts: DigestPost[],
+	thoughts: DigestThought[],
+	comments: DigestComment[],
+	timeline: DigestTimeline[],
+};
+
+export type DigestThought = {
+	id: number,
+	content: string,
+	ref_type: string | null,
+	created_at: string,
+};
+
+export type DigestTimeline = {
+	id: number,
+	title: string,
+	created_at: string,
+};
+
 /**  `GET /api/films/recent` 一列。 */
 export type FilmRow = {
 	id: number,
@@ -322,6 +360,13 @@ export type ReactionRow = {
 
 export type ReactionsResponse = {
 	reactions: ReactionRow[],
+};
+
+export type StatsResponse = {
+	message: string,
+	total_posts: number,
+	total_chars: number,
+	days: number,
 };
 
 /**  `GET /api/newsletter/by-token/:token` 的回應（顯式 3 欄）。 */
