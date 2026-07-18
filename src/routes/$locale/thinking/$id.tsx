@@ -1,18 +1,18 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { localeWrap } from '../../../localePage';
 import ThinkingDetail from '../../../components/ThinkingDetail';
-import { loadThought, thoughtTitle } from '../../../thoughtData';
+import { thoughtDetailQueryOptions, thoughtTitle } from '../../../thoughtData';
 import { pageMeta } from '../../../seoMeta';
 import { DEFAULT_LOCALE, localeFromPrefix } from '../../../start-i18n';
 
 export const Route = createFileRoute('/$locale/thinking/$id')({
-  loader: async ({ params }) => {
+  loader: async ({ context, params }) => {
     // 保留 localeGuardedPage 原本的前綴守門
     const locale = localeFromPrefix(params.locale);
     if (!locale || locale === 'zh-TW') throw notFound();
-    const data = await loadThought(params.id);
-    if (!data) throw notFound();
-    return data;
+    const thought = await context.queryClient.ensureQueryData(thoughtDetailQueryOptions(params.id));
+    if (!thought) throw notFound();
+    return { thought };
   },
   head: ({ loaderData, params }) => {
     if (!loaderData) return {};

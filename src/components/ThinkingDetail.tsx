@@ -1,31 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useLoaderData, useParams } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LocaleLink } from '../locale-link';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import KoimLoader from './KoimLoader';
-import ThoughtCard, { type Thought } from './ThoughtCard';
+import ThoughtCard from './ThoughtCard';
 import Comments from './Comments';
+import { thoughtDetailQueryOptions } from '../thoughtData';
 import './Thinking.css';
 
 const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 function ThinkingDetail() {
   const { t } = useTranslation();
-  const { id } = useParams({ strict: false }); // 兩種路由（/thinking/$id、/$locale/thinking/$id）共用
+  const { id = '' } = useParams({ strict: false }); // 兩種路由（/thinking/$id、/$locale/thinking/$id）共用
   const { isAdmin, getToken } = useAuth();
-  // 路由 loader 在 server 端抓好的碎念（兩條路由共用此元件 → strict:false）
-  const initial = (useLoaderData({ strict: false }) as { thought?: Thought } | undefined)?.thought;
-  const [thought, setThought] = useState<Thought | null | undefined>(initial); // undefined=載入中, null=找不到
-
-  useEffect(() => {
-    if (initial) return; // loader 已在 server 端抓好 → 不重打
-    void fetch(`${API}/thoughts/${id}`)
-      .then((r) => (r.ok ? r.json() as Promise<{ thought: Thought }> : null))
-      .then((d) => setThought(d ? d.thought : null))
-      .catch(() => setThought(null));
-  }, [id]);
+  const queryClient = useQueryClient();
+  // 碎念改由 useQuery 讀：route loader 已 ensureQueryData 預取 → SSR baked、hydrate 讀快取。
+  // data：undefined=載入中、null=找不到、Thought=有。
+  const { data: thought } = useQuery(thoughtDetailQueryOptions(id));
 
   const del = async (tid: number) => {
     if (!window.confirm('刪除這則碎念？')) return;
@@ -41,7 +35,7 @@ function ThinkingDetail() {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
       body: JSON.stringify({ content }),
     });
-    void fetch(`${API}/thoughts/${tid}`).then((r) => (r.ok ? r.json() as Promise<{ thought: Thought }> : null)).then((d) => setThought(d ? d.thought : null));
+    void queryClient.invalidateQueries({ queryKey: thoughtDetailQueryOptions(String(tid)).queryKey });
   };
 
   return (
