@@ -1273,3 +1273,23 @@
     animation-duration: 40s;
   }
 }
+
+/* ── Commit 牆載入骨架（github 最慢 → 佔位避免版面跳動 + 瞬間彈出）── */
+.commit-skeleton { pointer-events: none; }
+.commit-skeleton .sk-box {
+  display: inline-block;
+  height: 0.85em;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+  background-size: 200% 100%;
+  animation: activity-sk-shimmer 1.4s ease-in-out infinite;
+}
+.commit-skeleton .commit-repo { width: 110px; }
+.commit-skeleton .commit-when { width: 56px; }
+.commit-skeleton .sk-line { display: block; height: 1em; margin: 5px 0; }
+.commit-skeleton .sk-line:nth-child(1) { width: 78%; }
+.commit-skeleton .sk-line:nth-child(2) { width: 54%; }
+@keyframes activity-sk-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

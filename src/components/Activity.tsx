@@ -85,7 +85,7 @@ const Activity = () => {
   const steamData = steam?.steamData ?? null;
   const steamProfile = steam?.steamProfile ?? null;
   const { data: wakatimeData = null } = useQuery(wakatimeQueryOptions);
-  const { data: githubData = null } = useQuery(githubQueryOptions);
+  const { data: githubData = null, isLoading: githubLoading } = useQuery(githubQueryOptions);
   const { data: serverStatus = null } = useQuery(serverStatusQueryOptions);
   const [contributionYear, setContributionYear] = useState('last');
   const { data: contributions = null, isFetching: contributionsFetching, refetch: refetchContributions } =
@@ -544,7 +544,8 @@ const Activity = () => {
         )}
 
         {/* ─── Section 6: Recent Commits — minimal timeline ─── */}
-        {(githubData?.recentCommits?.length ?? 0) > 0 && (
+        {/* github commit 牆最慢 → 載入中放骨架佔位（保留版面高度），避免「整個消失→載完瞬間彈出」。 */}
+        {(githubLoading || (githubData?.recentCommits?.length ?? 0) > 0) && (
           <motion.div
             className="commits-section"
             initial={{ opacity: 0, y: 30 }}
@@ -554,7 +555,21 @@ const Activity = () => {
           >
             <span className="section-label">RECENT COMMITS</span>
             <div className="commits-list">
-              {githubData?.recentCommits?.slice(0, 8).map((event, i) => (
+              {(githubData?.recentCommits?.length ?? 0) === 0
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <div key={`sk-${i}`} className="commit-event commit-skeleton" aria-hidden>
+                      <div className="commit-event-header">
+                        <div className="commit-dot" />
+                        <span className="commit-repo sk-box" />
+                        <span className="commit-when sk-box" />
+                      </div>
+                      <div className="commit-messages">
+                        <span className="sk-box sk-line" />
+                        <span className="sk-box sk-line" />
+                      </div>
+                    </div>
+                  ))
+                : githubData?.recentCommits?.slice(0, 8).map((event, i) => (
                 <div key={`${event.id}-${i}`} className="commit-event">
                   <div className="commit-event-header">
                     <div className="commit-dot" />

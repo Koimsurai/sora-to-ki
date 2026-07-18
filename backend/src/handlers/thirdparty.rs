@@ -107,13 +107,12 @@ pub async fn github_user(State(state): State<AppState>, Path(username): Path<Str
     .await
 }
 
-/// `GET /api/github/events/:username` —— 有 token 用 /events?per_page=30 並 enrich 空 commits 的 PushEvent。
+/// `GET /api/github/events/:username` —— **一律用 /events/public**（只回公開事件）。
+/// 有 token 時仍帶（拉高 rate limit + 供下面 enrich 空 commits 的 compare API 用），
+/// 但端點固定 public：否則帶自己的 token 打 /events 會連**私有 repo 的 push 也回傳**（隱私外洩）。
 pub async fn github_events(State(state): State<AppState>, Path(username): Path<String>) -> Response {
     let token = std::env::var("GITHUB_TOKEN").ok().filter(|s| !s.is_empty());
-    let path = match &token {
-        Some(_) => format!("/users/{username}/events?per_page=30"),
-        None => format!("/users/{username}/events/public"),
-    };
+    let path = format!("/users/{username}/events/public?per_page=30");
     let events = gh_fetch(&state.http, &path, token.as_deref()).await;
 
     let Some(Value::Array(mut events)) = events else {
