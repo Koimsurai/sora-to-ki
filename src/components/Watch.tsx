@@ -1,5 +1,6 @@
 import { useState, useMemo, type ElementType, type ReactElement } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AnimeRow } from '@koimsurai/api-types';
 import { LocaleLink, useLocaleNavigate } from '../locale-link';
 import {
   animeHistoryQueryOptions,
@@ -38,10 +39,8 @@ interface WatchEntry {
   videoSn?: number | string;
 }
 
-export interface AnimeRow { anime_sn: number | string; video_sn?: number | string; last_watched_at?: string; tmdb_id?: number | string | null; title: string; cover_url?: string; episode?: number | string }
-export interface FilmRow { id: number | string; title: string; poster_url?: string; watched_date?: string; release_year?: number | string; tmdb_id?: number | string | null }
-export interface TvRow { series_name: string; poster_url?: string; last_watched?: string; ep_count?: number; tmdb_id?: number | string | null }
-export interface WatchStats { animeCount?: number; filmCount?: number; tvSeriesCount?: number }
+// AnimeRow/FilmRow/TvRow/WatchStatsResponse 改由後端 specta 生成（見 backend/SPECTA_PLAN.md）。
+// LiveNow（watch/now 即時狀態，動態組）與 WatchFavorite（favorites TMDb 在地化）維持手寫（非 row_to_json 端點）。
 export interface LiveNow { cover?: string; title: string; externalUrl?: string; progressPct?: number | null; episode?: number | string; source?: string; type?: string }
 export interface WatchFavorite { id: number; title: string; rating: number; poster?: string; quote?: string; year?: number; externalUrl?: string }
 
@@ -72,7 +71,7 @@ const interpolate = (tpl: string, vars: Record<string, string | number | undefin
   tpl.replace(/\{\{(\w+)\}\}/g, (_, k: string) => String(vars[k] ?? ''));
 
 /* short date formatter: '2026-02-07' → '2/7' */
-const toShortDate = (iso?: string): string => {
+const toShortDate = (iso?: string | null): string => {
   if (!iso) return '';
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   return m ? `${parseInt(m[2], 10)}/${parseInt(m[3], 10)}` : '';
@@ -89,7 +88,7 @@ const Stars = ({ n }: { n: number }) => (
   <span className="w-stars">{'★'.repeat(n)}<span className="w-stars-dim">{'★'.repeat(5 - n)}</span></span>
 );
 
-const parseAnimeDate = (raw?: string): { isoDate: string; shortDate: string } => {
+const parseAnimeDate = (raw?: string | null): { isoDate: string; shortDate: string } => {
   if (!raw) return { isoDate: '', shortDate: '' };
   const d = new Date(raw.replace(' ', 'T') + 'Z');
   if (Number.isNaN(d.getTime())) return { isoDate: '', shortDate: '' };
@@ -170,25 +169,26 @@ function Watch() {
     return {
       now: {
         type: 'anime' as const,
-        poster: head.cover_url,
-        title: head.title,
+        // 生成 AnimeRow 是 nullable（DB 欄位可為 null）→ WatchEntry 的 title 必填、poster/episode optional，橋接。
+        poster: head.cover_url ?? undefined,
+        title: head.title ?? '',
         animeSn: head.anime_sn,
         videoSn: head.video_sn,
-        episode: head.episode,
+        episode: head.episode ?? undefined,
         epCount: head.epCount,
         tmdbId: head.tmdbId,
         date: headParsed.shortDate,
         externalUrl: tmdbUrl('tv', head.tmdbId)
-          ?? `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title)}`,
+          ?? `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title ?? '')}`,
       },
       recentAnime: grouped.slice(1, 12).map((g) => {
         const { isoDate, shortDate } = parseAnimeDate(g.lastWatchedAt);
         return {
           id: `a${g.anime_sn}`,
           type: 'anime' as const,
-          poster: g.cover_url,
-          title: g.title,
-          episode: g.episode,
+          poster: g.cover_url ?? undefined,
+          title: g.title ?? '',
+          episode: g.episode ?? undefined,
           epCount: g.epCount,
           tmdbId: g.tmdbId,
           isoDate,
@@ -203,10 +203,11 @@ function Watch() {
     id: `f${f.id}`,
     type: 'film',
     title: f.title,
-    poster: f.poster_url,
-    isoDate: f.watched_date,
+    // 生成型別是 `| null`；WatchEntry 用 optional → `?? undefined` 橋接。
+    poster: f.poster_url ?? undefined,
+    isoDate: f.watched_date ?? undefined,
     date: toShortDate(f.watched_date),
-    year: f.release_year,
+    year: f.release_year ?? undefined,
     tmdbId: f.tmdb_id,
     externalUrl: tmdbUrl('movie', f.tmdb_id),
   }));
@@ -214,8 +215,8 @@ function Watch() {
     id: `t${s.series_name}`,
     type: 'tv',
     title: s.series_name,
-    poster: s.poster_url,
-    isoDate: s.last_watched,
+    poster: s.poster_url ?? undefined,
+    isoDate: s.last_watched ?? undefined,
     date: toShortDate(s.last_watched),
     epCount: s.ep_count,
     tmdbId: s.tmdb_id,

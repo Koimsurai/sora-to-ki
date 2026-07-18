@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import { apiUrl } from './api';
-import type { AnimeRow, FilmRow, TvRow, WatchStats, LiveNow, WatchFavorite } from './components/Watch';
+import type { AnimeRow, FilmRow, TvRow, WatchStatsResponse } from '@koimsurai/api-types';
+import type { LiveNow, WatchFavorite } from './components/Watch';
 
 // 在看什麼頁資料改由 TanStack Query 管理。loader 用 prefetchQuery 預取這 4 個（SSR baked）。
 // liveNow（正在看，30 秒輪詢）與 favorites（依 UI 語系）刻意不進 loader，client 自己抓。
@@ -42,10 +43,10 @@ export const seriesQueryOptions = queryOptions({
 
 export const watchStatsQueryOptions = queryOptions({
   queryKey: ['watch', 'stats'],
-  queryFn: async (): Promise<WatchStats> => {
+  queryFn: async (): Promise<WatchStatsResponse> => {
     const res = await fetch(apiUrl('/api/watch/stats'));
     if (!res.ok) throw new Error(`GET /api/watch/stats ${res.status}`);
-    return (await res.json()) as WatchStats;
+    return (await res.json()) as WatchStatsResponse;
   },
   staleTime: STALE,
 });

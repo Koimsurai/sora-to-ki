@@ -11,12 +11,101 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
+use sqlx::FromRow;
 
 use crate::handlers::admin::bind_num;
 use crate::state::AppState;
 use crate::util::{bind_val, js_interp, js_normalize_numbers, js_substring_prefix, js_truthy, row_to_json};
+
+// ── 公開讀端點的 typed 回應（欄位序 = SELECT 序，對齊舊 row_to_json）─────────────
+
+/// `GET /api/anime/history` 一列。
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct AnimeRow {
+    #[specta(type = specta_typescript::Number)]
+    pub anime_sn: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub video_sn: i64,
+    pub title: Option<String>,
+    pub cover_url: Option<String>,
+    pub episode: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub tmdb_id: Option<i64>,
+    pub last_watched_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct AnimeHistoryResponse {
+    pub message: String,
+    pub history: Vec<AnimeRow>,
+}
+
+/// `GET /api/films/recent` 一列。
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct FilmRow {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub title: String,
+    pub watched_date: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub rating: Option<i64>,
+    pub source: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub tmdb_id: Option<i64>,
+    pub poster_url: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub release_year: Option<i64>,
+    pub genres: Option<String>,
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct FilmsResponse {
+    pub message: String,
+    pub films: Vec<FilmRow>,
+}
+
+/// `GET /api/tv/recent` 一列（GROUP BY series_name 聚合）。
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct TvRow {
+    pub series_name: String,
+    pub last_watched: Option<String>,
+    #[specta(type = specta_typescript::Number)]
+    pub ep_count: i64,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub tmdb_id: Option<i64>,
+    pub poster_url: Option<String>,
+    pub genres: Option<String>,
+    pub source: Option<String>,
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct TvResponse {
+    pub message: String,
+    pub series: Vec<TvRow>,
+}
+
+/// `GET /api/watch/stats` —— 5 個 count（key 為 camelCase）。
+#[derive(Debug, Serialize, specta::Type)]
+pub struct WatchStatsResponse {
+    pub message: String,
+    #[serde(rename = "animeCount")]
+    #[specta(type = specta_typescript::Number)]
+    pub anime_count: i64,
+    #[serde(rename = "animeEpisodes")]
+    #[specta(type = specta_typescript::Number)]
+    pub anime_episodes: i64,
+    #[serde(rename = "filmCount")]
+    #[specta(type = specta_typescript::Number)]
+    pub film_count: i64,
+    #[serde(rename = "tvSeriesCount")]
+    #[specta(type = specta_typescript::Number)]
+    pub tv_series_count: i64,
+    #[serde(rename = "tvEpisodes")]
+    #[specta(type = specta_typescript::Number)]
+    pub tv_episodes: i64,
+}
 
 fn now_ms() -> i64 {
     std::time::SystemTime::now()
@@ -40,7 +129,7 @@ fn js_limit(q: &LimitQuery, default: &str, cap: i64) -> Option<i64> {
 
 /// `GET /api/anime/history`
 pub async fn anime_history(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
-    let mut query = sqlx::query(
+    let mut query = sqlx::query_as::<_, AnimeRow>(
         "SELECT anime_sn, video_sn, title, cover_url, episode, tmdb_id, last_watched_at \
          FROM anime_history ORDER BY last_watched_at DESC LIMIT ?",
     );
@@ -50,16 +139,13 @@ pub async fn anime_history(State(state): State<AppState>, Query(q): Query<LimitQ
     };
     match query.fetch_all(&state.pool).await {
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
-        Ok(rows) => {
-            let history: Vec<Value> = rows.iter().map(|r| Value::Object(row_to_json(r))).collect();
-            Json(json!({ "message": "success", "history": history })).into_response()
-        }
+        Ok(history) => Json(AnimeHistoryResponse { message: "success".into(), history }).into_response(),
     }
 }
 
 /// `GET /api/films/recent`
 pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
-    let mut query = sqlx::query(
+    let mut query = sqlx::query_as::<_, FilmRow>(
         "SELECT id, title, watched_date, rating, source, tmdb_id, poster_url, release_year, genres \
          FROM film_history ORDER BY watched_date DESC NULLS LAST, id DESC LIMIT ?",
     );
@@ -69,16 +155,13 @@ pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQu
     };
     match query.fetch_all(&state.pool).await {
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
-        Ok(rows) => {
-            let films: Vec<Value> = rows.iter().map(|r| Value::Object(row_to_json(r))).collect();
-            Json(json!({ "message": "success", "films": films })).into_response()
-        }
+        Ok(films) => Json(FilmsResponse { message: "success".into(), films }).into_response(),
     }
 }
 
 /// `GET /api/tv/recent`
 pub async fn tv_recent(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
-    let mut query = sqlx::query(
+    let mut query = sqlx::query_as::<_, TvRow>(
         "SELECT series_name, MAX(watched_date) AS last_watched, COUNT(*) AS ep_count, \
                 MAX(tmdb_id) AS tmdb_id, MAX(poster_url) AS poster_url, MAX(genres) AS genres, MAX(source) AS source \
          FROM tv_history GROUP BY series_name ORDER BY last_watched DESC NULLS LAST LIMIT ?",
@@ -89,10 +172,7 @@ pub async fn tv_recent(State(state): State<AppState>, Query(q): Query<LimitQuery
     };
     match query.fetch_all(&state.pool).await {
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
-        Ok(rows) => {
-            let series: Vec<Value> = rows.iter().map(|r| Value::Object(row_to_json(r))).collect();
-            Json(json!({ "message": "success", "series": series })).into_response()
-        }
+        Ok(series) => Json(TvResponse { message: "success".into(), series }).into_response(),
     }
 }
 
@@ -102,21 +182,21 @@ pub async fn watch_stats(State(state): State<AppState>) -> Response {
         let pool = state.pool.clone();
         async move { sqlx::query_scalar::<_, i64>(sql).fetch_one(&pool).await.unwrap_or(0) }
     };
-    let (anime_count, anime_eps, film_count, tv_series, tv_eps) = tokio::join!(
+    let (anime_count, anime_episodes, film_count, tv_series_count, tv_episodes) = tokio::join!(
         count("SELECT COUNT(DISTINCT anime_sn) AS n FROM anime_history"),
         count("SELECT COUNT(*) AS n FROM anime_history"),
         count("SELECT COUNT(*) AS n FROM film_history"),
         count("SELECT COUNT(DISTINCT series_name) AS n FROM tv_history"),
         count("SELECT COUNT(*) AS n FROM tv_history")
     );
-    Json(json!({
-        "message": "success",
-        "animeCount": anime_count,
-        "animeEpisodes": anime_eps,
-        "filmCount": film_count,
-        "tvSeriesCount": tv_series,
-        "tvEpisodes": tv_eps,
-    }))
+    Json(WatchStatsResponse {
+        message: "success".into(),
+        anime_count,
+        anime_episodes,
+        film_count,
+        tv_series_count,
+        tv_episodes,
+    })
     .into_response()
 }
 

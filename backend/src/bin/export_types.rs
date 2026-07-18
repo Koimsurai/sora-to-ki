@@ -9,6 +9,9 @@ use koimsurai_web_backend::handlers::admin::{
 };
 use koimsurai_web_backend::handlers::books::{BookDetailResponse, BookRow, BooksListResponse};
 use koimsurai_web_backend::handlers::newsletter::{SubscriberByToken, SubscriberRow, SubscribersResponse};
+use koimsurai_web_backend::handlers::watch::{
+    AnimeHistoryResponse, AnimeRow, FilmRow, FilmsResponse, TvResponse, TvRow, WatchStatsResponse,
+};
 use koimsurai_web_backend::handlers::posts::{
     CommentRow, CommentsResponse, Pagination, PostDetailResponse, PostListItem, PostsListResponse, ReactionRow,
     ReactionsResponse,
@@ -49,7 +52,15 @@ fn main() {
         // newsletter
         .register::<SubscriberRow>()
         .register::<SubscribersResponse>()
-        .register::<SubscriberByToken>();
+        .register::<SubscriberByToken>()
+        // watch（anime/films/tv/stats）
+        .register::<AnimeRow>()
+        .register::<AnimeHistoryResponse>()
+        .register::<FilmRow>()
+        .register::<FilmsResponse>()
+        .register::<TvRow>()
+        .register::<TvResponse>()
+        .register::<WatchStatsResponse>();
     Typescript::default()
         .header("// 由 backend `cargo run --bin export_types` 產生 — 勿手改\n")
         .export_to("../packages/api-types/index.ts", &types, specta_serde::Format)

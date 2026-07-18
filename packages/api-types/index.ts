@@ -124,6 +124,22 @@ export type AdminUsersResponse = {
 	users: AdminUserRow[],
 };
 
+export type AnimeHistoryResponse = {
+	message: string,
+	history: AnimeRow[],
+};
+
+/**  `GET /api/anime/history` 一列。 */
+export type AnimeRow = {
+	anime_sn: number,
+	video_sn: number,
+	title: string | null,
+	cover_url: string | null,
+	episode: string | null,
+	tmdb_id: number | null,
+	last_watched_at: string | null,
+};
+
 export type BlacklistResponse = {
 	blacklist: BlacklistRow[],
 };
@@ -200,6 +216,24 @@ export type CommentRow = {
 export type CommentsResponse = {
 	message: string,
 	comments: CommentRow[],
+};
+
+/**  `GET /api/films/recent` 一列。 */
+export type FilmRow = {
+	id: number,
+	title: string,
+	watched_date: string | null,
+	rating: number | null,
+	source: string | null,
+	tmdb_id: number | null,
+	poster_url: string | null,
+	release_year: number | null,
+	genres: string | null,
+};
+
+export type FilmsResponse = {
+	message: string,
+	films: FilmRow[],
 };
 
 /**  `GET /api/admin/keyword-filters`（requireAdmin）。`{ filters: rows }`（SELECT *；目前空表）。 */
@@ -312,4 +346,30 @@ export type SubscribersResponse = {
 	message: string,
 	subscribers: SubscriberRow[],
 	pagination: Pagination,
+};
+
+export type TvResponse = {
+	message: string,
+	series: TvRow[],
+};
+
+/**  `GET /api/tv/recent` 一列（GROUP BY series_name 聚合）。 */
+export type TvRow = {
+	series_name: string,
+	last_watched: string | null,
+	ep_count: number,
+	tmdb_id: number | null,
+	poster_url: string | null,
+	genres: string | null,
+	source: string | null,
+};
+
+/**  `GET /api/watch/stats` —— 5 個 count（key 為 camelCase）。 */
+export type WatchStatsResponse = {
+	message: string,
+	animeCount: number,
+	animeEpisodes: number,
+	filmCount: number,
+	tvSeriesCount: number,
+	tvEpisodes: number,
 };
