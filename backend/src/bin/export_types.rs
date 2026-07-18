@@ -3,8 +3,9 @@
 //! P4 起手：先收已 typed 的端點 struct；動態 JSON 端點待 typed 化後逐步 register。
 
 use koimsurai_web_backend::handlers::admin::{
-    AdminCategoryRow, AdminPostDetailResponse, AdminPostFull, AdminPostsResponse, AdminTagRow, AdminUserRow,
-    AdminUsersResponse,
+    AdminCategoryRow, AdminCommentRow, AdminCommentsResponse, AdminPostDetailResponse, AdminPostFull,
+    AdminPostsResponse, AdminTagRow, AdminUserRow, AdminUsersResponse, BlacklistResponse, BlacklistRow,
+    CommentCounts, KeywordFilterRow, KeywordFiltersResponse,
 };
 use koimsurai_web_backend::handlers::posts::{
     CommentRow, CommentsResponse, Pagination, PostDetailResponse, PostListItem, PostsListResponse, ReactionRow,
@@ -30,7 +31,15 @@ fn main() {
         // posts（admin）
         .register::<AdminPostFull>()
         .register::<AdminPostsResponse>()
-        .register::<AdminPostDetailResponse>();
+        .register::<AdminPostDetailResponse>()
+        // comments / blacklist / keyword-filters（admin）
+        .register::<AdminCommentRow>()
+        .register::<CommentCounts>()
+        .register::<AdminCommentsResponse>()
+        .register::<BlacklistRow>()
+        .register::<BlacklistResponse>()
+        .register::<KeywordFilterRow>()
+        .register::<KeywordFiltersResponse>();
     Typescript::default()
         .header("// 由 backend `cargo run --bin export_types` 產生 — 勿手改\n")
         .export_to("../packages/api-types/index.ts", &types, specta_serde::Format)

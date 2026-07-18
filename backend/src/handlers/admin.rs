@@ -13,7 +13,7 @@ use crate::{
     error::AppError,
     handlers::posts::{available_locales_with_source, PostRow},
     state::AppState,
-    util::{gen_slug, is_unique_violation, js_substring_prefix, parse_int, row_to_json, split_tags},
+    util::{gen_slug, is_unique_violation, js_substring_prefix, parse_int, split_tags},
 };
 
 /// `GET /api/admin/tags` 單列（admin 版：含 0 篇的 tag、依名排序）。
@@ -118,15 +118,16 @@ pub async fn admin_users(
 }
 
 /// `GET /api/admin/blacklist`（requireAdmin）。`{ blacklist: rows }`（SELECT *；目前空表）。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct BlacklistRow {
+    #[specta(type = specta_typescript::Number)]
     pub id: i64,
     pub ip: String,
     pub reason: Option<String>,
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct BlacklistResponse {
     pub blacklist: Vec<BlacklistRow>,
 }
@@ -145,15 +146,16 @@ pub async fn admin_blacklist(
 }
 
 /// `GET /api/admin/keyword-filters`（requireAdmin）。`{ filters: rows }`（SELECT *；目前空表）。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct KeywordFilterRow {
+    #[specta(type = specta_typescript::Number)]
     pub id: i64,
     pub keyword: String,
     pub action: Option<String>,
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct KeywordFiltersResponse {
     pub filters: Vec<KeywordFilterRow>,
 }
@@ -362,12 +364,67 @@ pub struct AdminCommentsQuery {
     limit: Option<String>,
 }
 
+/// admin 留言列的一列：comments 表全欄（DB 宣告序）+ LEFT JOIN 的 post_title。
+/// 欄位序對齊舊 `row_to_json`（`SELECT c.*` → comments 宣告序，post_title 附在最後）。
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct AdminCommentRow {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    // thought 留言的 post_id 為 NULL
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub post_id: Option<i64>,
+    pub author: String,
+    pub content: String,
+    #[specta(type = specta_typescript::Number)]
+    pub likes: i64,
+    pub created_at: String,
+    #[specta(type = specta_typescript::Number)]
+    pub is_admin: i64,
+    pub email: Option<String>,
+    pub website: Option<String>,
+    pub status: Option<String>,
+    pub ip: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub parent_id: Option<i64>,
+    pub avatar_url: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub thought_id: Option<i64>,
+    // LEFT JOIN posts：blog 留言有標題、thought 留言為 NULL。
+    pub post_title: Option<String>,
+}
+
+/// 全站留言的狀態計數（**不受 status/search/post_id 過濾影響**，永遠是全域分佈）。
+/// status 受限於這四種（見 comments.rs 建立邏輯 + admin 審核端點），故可 typed 成固定欄位。
+#[derive(Debug, Serialize, specta::Type, Default)]
+pub struct CommentCounts {
+    #[specta(type = specta_typescript::Number)]
+    pub pending: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub approved: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub spam: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub trash: i64,
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct AdminCommentsResponse {
+    pub comments: Vec<AdminCommentRow>,
+    #[specta(type = specta_typescript::Number)]
+    pub total: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub page: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub limit: i64,
+    pub counts: CommentCounts,
+}
+
 /// `{ comments:[c.*+post_title], total, page, limit, counts }`。
 pub async fn admin_comments(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<AdminCommentsQuery>,
-) -> Result<Json<Value>, AppError> {
+) -> Result<Json<AdminCommentsResponse>, AppError> {
     require_admin(&headers, &state).await?;
     let page = parse_int(q.page.as_deref(), 1);
     let limit = parse_int(q.limit.as_deref(), 50);
@@ -408,7 +465,7 @@ pub async fn admin_comments(
          LEFT JOIN posts p ON c.post_id = p.id WHERE {where_} \
          ORDER BY c.created_at DESC LIMIT ? OFFSET ?"
     );
-    let mut query = sqlx::query(&sql);
+    let mut query = sqlx::query_as::<_, AdminCommentRow>(&sql);
     if use_status {
         query = query.bind(status_filter.clone());
     }
@@ -419,32 +476,32 @@ pub async fn admin_comments(
         let like = format!("%{s}%");
         query = query.bind(like.clone()).bind(like.clone()).bind(like);
     }
-    let rows = query.bind(limit).bind(offset).fetch_all(&state.pool).await?;
-    let comments: Vec<Value> = rows.iter().map(|r| Value::Object(row_to_json(r))).collect();
+    let comments = query.bind(limit).bind(offset).fetch_all(&state.pool).await?;
 
-    // counts：預設 4 個 0，再用 GROUP BY status 覆寫（保留順序、未知狀態追加）
-    let mut counts = Map::new();
-    for k in ["pending", "approved", "spam", "trash"] {
-        counts.insert(k.to_string(), json!(0));
-    }
+    // counts：全站分佈（不套用上面的過濾），四種狀態各歸位；不在四種內的忽略（實務不會有）。
+    let mut counts = CommentCounts::default();
     let status_counts = sqlx::query_as::<_, (Option<String>, i64)>(
         "SELECT status, COUNT(*) as count FROM comments GROUP BY status",
     )
     .fetch_all(&state.pool)
     .await?;
     for (status, count) in status_counts {
-        if let Some(s) = status {
-            counts.insert(s, json!(count));
+        match status.as_deref() {
+            Some("pending") => counts.pending = count,
+            Some("approved") => counts.approved = count,
+            Some("spam") => counts.spam = count,
+            Some("trash") => counts.trash = count,
+            _ => {}
         }
     }
 
-    Ok(Json(json!({
-        "comments": comments,
-        "total": total,
-        "page": page,
-        "limit": limit,
-        "counts": Value::Object(counts),
-    })))
+    Ok(Json(AdminCommentsResponse {
+        comments,
+        total,
+        page,
+        limit,
+        counts,
+    }))
 }
 
 // ════════════════════ Admin CRUD 寫入（requireAdmin）════════════════════

@@ -14,6 +14,36 @@ export type AdminCategoryRow = {
 };
 
 /**
+ *  admin 留言列的一列：comments 表全欄（DB 宣告序）+ LEFT JOIN 的 post_title。
+ *  欄位序對齊舊 `row_to_json`（`SELECT c.*` → comments 宣告序，post_title 附在最後）。
+ */
+export type AdminCommentRow = {
+	id: number,
+	post_id: number | null,
+	author: string,
+	content: string,
+	likes: number,
+	created_at: string,
+	is_admin: number,
+	email: string | null,
+	website: string | null,
+	status: string | null,
+	ip: string | null,
+	parent_id: number | null,
+	avatar_url: string | null,
+	thought_id: number | null,
+	post_title: string | null,
+};
+
+export type AdminCommentsResponse = {
+	comments: AdminCommentRow[],
+	total: number,
+	page: number,
+	limit: number,
+	counts: CommentCounts,
+};
+
+/**
  *  `GET /api/admin/posts/:id` 成功回應：`{message, ...row, tags, available_locales}`。
  *  flatten 讓 row 的欄位攤平在頂層，key 序 = message → AdminPostFull 欄位序 → available_locales。
  */
@@ -94,6 +124,29 @@ export type AdminUsersResponse = {
 	users: AdminUserRow[],
 };
 
+export type BlacklistResponse = {
+	blacklist: BlacklistRow[],
+};
+
+/**  `GET /api/admin/blacklist`（requireAdmin）。`{ blacklist: rows }`（SELECT *；目前空表）。 */
+export type BlacklistRow = {
+	id: number,
+	ip: string,
+	reason: string | null,
+	created_at: string,
+};
+
+/**
+ *  全站留言的狀態計數（**不受 status/search/post_id 過濾影響**，永遠是全域分佈）。
+ *  status 受限於這四種（見 comments.rs 建立邏輯 + admin 審核端點），故可 typed 成固定欄位。
+ */
+export type CommentCounts = {
+	pending: number,
+	approved: number,
+	spam: number,
+	trash: number,
+};
+
 /**  comments 一列。欄位順序對齊 live 表實際 `SELECT *` 展開順序。 */
 export type CommentRow = {
 	id: number,
@@ -115,6 +168,18 @@ export type CommentRow = {
 export type CommentsResponse = {
 	message: string,
 	comments: CommentRow[],
+};
+
+/**  `GET /api/admin/keyword-filters`（requireAdmin）。`{ filters: rows }`（SELECT *；目前空表）。 */
+export type KeywordFilterRow = {
+	id: number,
+	keyword: string,
+	action: string | null,
+	created_at: string,
+};
+
+export type KeywordFiltersResponse = {
+	filters: KeywordFilterRow[],
 };
 
 export type Pagination = {

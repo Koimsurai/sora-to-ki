@@ -14,21 +14,17 @@ import {
   Search, RefreshCw, Reply, Pencil, Filter, AlertTriangle, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import type {
+  AdminCommentRow,
+  AdminCommentsResponse,
+  BlacklistRow,
+  KeywordFilterRow,
+} from '@koimsurai/api-types';
 
-interface Comment {
-  id: number | string;
-  author: string;
-  email?: string;
-  content: string;
-  status: string;
-  is_admin?: number | boolean;
-  created_at: string;
-  ip?: string;
-  post_id?: number | string;
-  post_title?: string;
-}
-interface BlacklistEntry { id: number | string; ip: string; reason?: string; created_at: string }
-interface KeywordFilter { id: number | string; keyword: string; action: string }
+/** 型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
+type Comment = AdminCommentRow;
+type BlacklistEntry = BlacklistRow;
+type KeywordFilter = KeywordFilterRow;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   pending: { label: '待審核', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
@@ -73,7 +69,7 @@ export default function CommentsManager() {
       if (searchQuery) params.set('search', searchQuery);
       const res = await fetch(`/api/admin/comments?${params.toString()}`, { headers });
       if (res.ok) {
-        const data = await res.json() as { comments: Comment[]; counts: Record<string, number>; total: number };
+        const data = await res.json() as AdminCommentsResponse;
         setComments(data.comments);
         setCounts(data.counts);
         setTotal(data.total);
@@ -261,7 +257,7 @@ export default function CommentsManager() {
           ) : (
             <div className="space-y-2">
               {comments.map(c => {
-                const cfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.pending;
+                const cfg = STATUS_CONFIG[c.status ?? 'pending'] || STATUS_CONFIG.pending;
                 return (
                   <div key={c.id} className="group rounded-lg border border-border/40 bg-card/50 hover:bg-accent/20 transition-colors">
                     <div className="p-4">
