@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Command } from 'cmdk';
 import { useLocaleNavigate } from '../locale-link';
 import { useTranslation } from 'react-i18next';
@@ -7,11 +8,8 @@ import {
   Home, Compass, Camera, Settings, Search,
   type LucideIcon,
 } from 'lucide-react';
+import { recentPostsQueryOptions, blogCategoriesQueryOptions, blogTagsQueryOptions } from '../blogList';
 import './CommandPalette.css';
-
-interface Post { id: number; title: string; excerpt?: string; tags?: string[]; category?: string; status?: string }
-interface Category { id: number; name: string; short_description?: string; post_count?: number }
-interface Tag { id?: number; name: string }
 
 interface StaticPage { label: string; path: string; icon: LucideIcon; keywords: string }
 
@@ -30,10 +28,6 @@ const STATIC_PAGES: StaticPage[] = [
 export default function CommandPalette() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [loaded, setLoaded] = useState(false);
   const navigate = useLocaleNavigate();
 
   // ⌘K / Ctrl+K 開關
@@ -50,21 +44,11 @@ export default function CommandPalette() {
     return () => { window.removeEventListener('keydown', onKey); };
   }, []);
 
-  // 首次打開時才載入清單（降低首屏成本）
-  useEffect(() => {
-    if (!open || loaded) return;
-    void Promise.all([
-      fetch('/api/posts?limit=200').then((r) => r.json() as Promise<unknown>).catch(() => ({})),
-      fetch('/api/categories').then((r) => r.json() as Promise<unknown>).catch(() => ({})),
-      fetch('/api/tags').then((r) => r.json() as Promise<unknown>).catch(() => ({})),
-    ]).then(([postsRes, catsRes, tagsRes]) => {
-      const postsList = Array.isArray(postsRes) ? (postsRes as Post[]) : ((postsRes as { posts?: Post[] }).posts ?? []);
-      setPosts(postsList.filter((p) => p.status === 'published' || !p.status));
-      setCategories((catsRes as { categories?: Category[] }).categories ?? []);
-      setTags((tagsRes as { tags?: Tag[] }).tags ?? (Array.isArray(tagsRes) ? (tagsRes as Tag[]) : []));
-      setLoaded(true);
-    }).catch((err: unknown) => { console.error(err); });
-  }, [open, loaded]);
+  // 首次打開才載入（enabled: open，降低首屏成本）；三源改吃共用 query 快取。
+  const { data: postsData = [] } = useQuery({ ...recentPostsQueryOptions(200), enabled: open });
+  const { data: categories = [] } = useQuery({ ...blogCategoriesQueryOptions, enabled: open });
+  const { data: tags = [] } = useQuery({ ...blogTagsQueryOptions, enabled: open });
+  const posts = useMemo(() => postsData.filter((p) => p.status === 'published' || !p.status), [postsData]);
 
   const go = (path: string) => { setOpen(false); void navigate(path); };
 
@@ -104,7 +88,7 @@ export default function CommandPalette() {
                 {postItems.map((p) => (
                   <Command.Item
                     key={`post-${p.id}`}
-                    value={`${p.title} ${p.excerpt ?? ''} ${(p.tags ?? []).join(' ')} ${p.category ?? ''}`}
+                    value={`${p.title} ${p.excerpt} ${p.tags.join(' ')} ${p.category ?? ''}`}
                     onSelect={() => go(`/blog/${p.id}`)}
                   >
                     <FileText size={14} className="cmdk-icon" />
@@ -119,8 +103,8 @@ export default function CommandPalette() {
               <Command.Group heading={t('commandPalette.groups.categories')}>
                 {categories.map((c) => (
                   <Command.Item
-                    key={`cat-${c.id}`}
-                    value={`category ${c.name} ${c.short_description ?? ''}`}
+                    key={`cat-${c.name}`}
+                    value={`category ${c.name}`}
                     onSelect={() => go(`/blog?category=${encodeURIComponent(c.name)}`)}
                   >
                     <Folder size={14} className="cmdk-icon" />
@@ -133,16 +117,20 @@ export default function CommandPalette() {
 
             {tags.length > 0 && (
               <Command.Group heading={t('commandPalette.groups.tags')}>
-                {tags.slice(0, 30).map((tag) => (
-                  <Command.Item
-                    key={`tag-${tag.id ?? tag.name}`}
-                    value={`tag ${tag.name}`}
-                    onSelect={() => go(`/blog?tag=${encodeURIComponent(tag.name)}`)}
-                  >
-                    <Hash size={14} className="cmdk-icon" />
-                    <span>{tag.name}</span>
-                  </Command.Item>
-                ))}
+                {tags.slice(0, 30).map((tag) => {
+                  // blogTagsQueryOptions 的 Tag 是 string | {name} union（對齊 Blog 頁）
+                  const name = typeof tag === 'object' ? tag.name : tag;
+                  return (
+                    <Command.Item
+                      key={`tag-${name}`}
+                      value={`tag ${name}`}
+                      onSelect={() => go(`/blog?tag=${encodeURIComponent(name)}`)}
+                    >
+                      <Hash size={14} className="cmdk-icon" />
+                      <span>{name}</span>
+                    </Command.Item>
+                  );
+                })}
               </Command.Group>
             )}
           </Command.List>

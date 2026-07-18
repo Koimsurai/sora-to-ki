@@ -51,6 +51,41 @@ export const watchStatsQueryOptions = queryOptions({
   staleTime: STALE,
 });
 
+// 藏書庫頁（/watch/library）：要全量做前端搜尋/排序/跨源去重，limit 拉大，另開 queryKey
+// 避免和「在看什麼」頁的 recent（limit 小）互相污染快取。同樣 consume 生成的 row 型別。
+export const animeLibraryQueryOptions = queryOptions({
+  queryKey: ['watch', 'anime-library'],
+  queryFn: async (): Promise<AnimeRow[]> => {
+    const res = await fetch(apiUrl('/api/anime/history?limit=2000'));
+    if (!res.ok) throw new Error(`GET /api/anime/history ${res.status}`);
+    const data = (await res.json()) as { history?: AnimeRow[] };
+    return data.history ?? [];
+  },
+  staleTime: STALE,
+});
+
+export const filmsLibraryQueryOptions = queryOptions({
+  queryKey: ['watch', 'films-library'],
+  queryFn: async (): Promise<FilmRow[]> => {
+    const res = await fetch(apiUrl('/api/films/recent?limit=200'));
+    if (!res.ok) throw new Error(`GET /api/films/recent ${res.status}`);
+    const data = (await res.json()) as { films?: FilmRow[] };
+    return data.films ?? [];
+  },
+  staleTime: STALE,
+});
+
+export const tvLibraryQueryOptions = queryOptions({
+  queryKey: ['watch', 'tv-library'],
+  queryFn: async (): Promise<TvRow[]> => {
+    const res = await fetch(apiUrl('/api/tv/recent?limit=200'));
+    if (!res.ok) throw new Error(`GET /api/tv/recent ${res.status}`);
+    const data = (await res.json()) as { series?: TvRow[] };
+    return data.series ?? [];
+  },
+  staleTime: STALE,
+});
+
 // liveNow：30 秒輪詢；不進 loader。失敗回 null（對齊舊 poll 的 catch）。
 export const liveNowQueryOptions = queryOptions({
   queryKey: ['watch', 'now'],

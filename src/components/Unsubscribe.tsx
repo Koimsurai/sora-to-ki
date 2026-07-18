@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useRouterState } from '@tanstack/react-router';
 import { LocaleLink } from '../locale-link';
 import { useTranslation, Trans } from 'react-i18next';
+import { subscriberByTokenQueryOptions } from '../newsletterData';
 import './Unsubscribe.css';
 
 const PHASE = {
@@ -12,50 +14,40 @@ const PHASE = {
   error: 'error',
 };
 
-interface Subscriber {
-  email?: string;
-  status?: string;
-}
-
 function Unsubscribe() {
   const { t } = useTranslation();
   const search = useRouterState({ select: (s) => s.location.search }) as { token?: string };
   const token = search.token;
-  const [phase, setPhase] = useState(PHASE.loading);
-  const [subscriber, setSubscriber] = useState<Subscriber | null>(null);
-  const [error, setError] = useState('');
+  // token 驗證讀取改由 TanStack Query（consume 生成 SubscriberByToken）；
+  // 退訂 POST 仍是 mutation，用 action 狀態驅動 confirm→pending→done。
+  const { data: subscriber, isLoading, isError, error: qError } = useQuery({
+    ...subscriberByTokenQueryOptions(token ?? ''),
+    enabled: !!token,
+  });
+  const [action, setAction] = useState<'idle' | 'pending' | 'done' | 'error'>('idle');
+  const [actionError, setActionError] = useState('');
 
-  useEffect(() => {
-    if (!token) {
-      setPhase(PHASE.error);
-      setError(t('unsubscribe.missingToken'));
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch(`/api/newsletter/by-token/${encodeURIComponent(token)}`);
-        const data = await res.json() as Subscriber & { error?: string };
-        if (cancelled) return;
-        if (!res.ok) {
-          setPhase(PHASE.error);
-          setError(data.error ?? t('unsubscribe.invalidLink'));
-          return;
-        }
-        setSubscriber(data);
-        // Already unsubscribed → just show the "done" state.
-        setPhase(data.status === 'unsubscribed' ? PHASE.done : PHASE.confirm);
-      } catch (e) {
-        if (cancelled) return;
-        setPhase(PHASE.error);
-        setError(e instanceof Error ? e.message : t('unsubscribe.noServer'));
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [token]);
+  // phase 由 query 狀態 + 使用者動作 derive（動作優先於 query）
+  let phase: string;
+  if (!token) phase = PHASE.error;
+  else if (action === 'pending') phase = PHASE.pending;
+  else if (action === 'done') phase = PHASE.done;
+  else if (action === 'error') phase = PHASE.error;
+  else if (isLoading) phase = PHASE.loading;
+  else if (isError) phase = PHASE.error;
+  else if (subscriber) phase = subscriber.status === 'unsubscribed' ? PHASE.done : PHASE.confirm;
+  else phase = PHASE.loading;
+
+  const error = !token
+    ? t('unsubscribe.missingToken')
+    : action === 'error'
+      ? actionError
+      : isError
+        ? (qError instanceof Error && qError.message ? qError.message : t('unsubscribe.invalidLink'))
+        : '';
 
   const handleConfirm = async () => {
-    setPhase(PHASE.pending);
+    setAction('pending');
     try {
       const res = await fetch('/api/newsletter/unsubscribe', {
         method: 'POST',
@@ -66,10 +58,10 @@ function Unsubscribe() {
         const data = await res.json().catch(() => ({})) as { error?: string };
         throw new Error(data.error ?? t('unsubscribe.unsubscribeFailed'));
       }
-      setPhase(PHASE.done);
+      setAction('done');
     } catch (e) {
-      setPhase(PHASE.error);
-      setError(e instanceof Error ? e.message : t('unsubscribe.unsubscribeFailed'));
+      setAction('error');
+      setActionError(e instanceof Error ? e.message : t('unsubscribe.unsubscribeFailed'));
     }
   };
 

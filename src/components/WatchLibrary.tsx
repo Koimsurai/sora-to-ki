@@ -1,16 +1,17 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { LocaleLink } from '../locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FaSearch, FaChevronDown } from 'react-icons/fa';
+import type { AnimeRow, FilmRow, TvRow } from '@koimsurai/api-types';
+import { animeLibraryQueryOptions, filmsLibraryQueryOptions, tvLibraryQueryOptions } from '../watchData';
 import './WatchLibrary.css';
 
 /* ──────────────────────────────────────────────────────────────
    /watch/library — 完整清單（Bookshelf 風，3 tab：動畫 / 電影 / 影集）
-   依賴：/api/anime/history、/api/films/recent、/api/tv/recent
+   依賴：/api/anime/history、/api/films/recent、/api/tv/recent（TanStack Query 管理）
 ─────────────────────────────────────────────────────────────── */
-
-const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 type WatchType = 'anime' | 'film' | 'tv';
 
@@ -27,10 +28,6 @@ interface WatchItem {
   genres?: string;
   externalUrl?: string | null;
 }
-
-interface AnimeRow { anime_sn: number | string; last_watched_at?: string; tmdb_id?: number | string | null; title: string; cover_url?: string; episode?: number | string }
-interface FilmRow { id: number | string; title: string; poster_url?: string; watched_date?: string; release_year?: number | string; tmdb_id?: number | string | null; genres?: string }
-interface TvRow { series_name: string; poster_url?: string; last_watched?: string; ep_count?: number; tmdb_id?: number | string | null; genres?: string }
 
 const reveal = {
   initial: { opacity: 0, y: 20 },
@@ -54,16 +51,17 @@ function normalizeAnime(rows?: AnimeRow[]): WatchItem[] {
     return {
       id: `a${head.anime_sn}`,
       type: 'anime' as const,
-      title: head.title,
-      poster: head.cover_url,
+      // 生成 AnimeRow 為 nullable（DB 可 null）→ WatchItem 的 title 必填、poster/episode optional，橋接。
+      title: head.title ?? '',
+      poster: head.cover_url ?? undefined,
       isoDate: (head.last_watched_at ?? '').slice(0, 10),
-      episode: head.episode,
+      episode: head.episode ?? undefined,
       epCount: eps.length,
       tmdbId,
       // 連結走 TMDb（動畫算 TV）；尚未 enrich 就退到 TMDb 搜尋頁
       externalUrl: tmdbId
         ? `https://www.themoviedb.org/tv/${tmdbId}`
-        : `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title)}`,
+        : `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title ?? '')}`,
     };
   });
 }
@@ -73,11 +71,11 @@ function normalizeFilms(rows?: FilmRow[]): WatchItem[] {
     id: `f${f.id}`,
     type: 'film' as const,
     title: f.title,
-    poster: f.poster_url,
-    isoDate: f.watched_date,
-    year: f.release_year,
+    poster: f.poster_url ?? undefined,
+    isoDate: f.watched_date ?? undefined,
+    year: f.release_year ?? undefined,
     tmdbId: f.tmdb_id,
-    genres: f.genres,
+    genres: f.genres ?? undefined,
     externalUrl: f.tmdb_id ? `https://www.themoviedb.org/movie/${f.tmdb_id}` : null,
   }));
 }
@@ -87,11 +85,11 @@ function normalizeTv(rows?: TvRow[]): WatchItem[] {
     id: `t${s.series_name}`,
     type: 'tv' as const,
     title: s.series_name,
-    poster: s.poster_url,
-    isoDate: s.last_watched,
+    poster: s.poster_url ?? undefined,
+    isoDate: s.last_watched ?? undefined,
     epCount: s.ep_count,
     tmdbId: s.tmdb_id,
-    genres: s.genres,
+    genres: s.genres ?? undefined,
     externalUrl: s.tmdb_id ? `https://www.themoviedb.org/tv/${s.tmdb_id}` : null,
   }));
 }
@@ -107,9 +105,17 @@ function WatchLibrary() {
   const [sortBy, setSortBy] = useState('newest');
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
-  const [items, setItems] = useState<WatchItems>({ anime: null, film: null, tv: null });
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
+  // 三源改由 TanStack Query 讀（library limit 版）；items / loading / err 由 query 結果 derive。
+  const animeQ = useQuery(animeLibraryQueryOptions);
+  const filmsQ = useQuery(filmsLibraryQueryOptions);
+  const tvQ = useQuery(tvLibraryQueryOptions);
+  const items = useMemo<WatchItems>(() => ({
+    anime: animeQ.data ? normalizeAnime(animeQ.data) : null,
+    film: filmsQ.data ? normalizeFilms(filmsQ.data) : null,
+    tv: tvQ.data ? normalizeTv(tvQ.data) : null,
+  }), [animeQ.data, filmsQ.data, tvQ.data]);
+  const loading = animeQ.isPending || filmsQ.isPending || tvQ.isPending;
+  const err = (animeQ.isError || filmsQ.isError || tvQ.isError) ? '載入失敗' : null;
 
   // close sort popup on outside click
   useEffect(() => {
@@ -118,29 +124,6 @@ function WatchLibrary() {
     document.addEventListener('mousedown', onDoc);
     return () => { document.removeEventListener('mousedown', onDoc); };
   }, [sortOpen]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const [a, f, s] = await Promise.all([
-          fetch(`${API_URL}/anime/history?limit=2000`).then((r) => r.json() as Promise<{ history?: AnimeRow[] }>),
-          fetch(`${API_URL}/films/recent?limit=200`).then((r) => r.json() as Promise<{ films?: FilmRow[] }>),
-          fetch(`${API_URL}/tv/recent?limit=200`).then((r) => r.json() as Promise<{ series?: TvRow[] }>),
-        ]);
-        if (cancelled) return;
-        setItems({
-          anime: normalizeAnime(a.history),
-          film: normalizeFilms(f.films),
-          tv: normalizeTv(s.series),
-        });
-        setLoading(false);
-      } catch (e) {
-        if (!cancelled) { setErr(e instanceof Error ? e.message : '載入失敗'); setLoading(false); }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   // 跨「動畫(Bahamut)/影集(Netflix/Trakt)」去重：同 tmdb_id 視為同一部，保留集數最多的那筆。
   // 沒 tmdb_id 的不去重（避免用名字誤殺劇場版/相似名）。
