@@ -1,50 +1,103 @@
+import { queryOptions } from '@tanstack/react-query';
 import { apiUrl } from './api';
-import type { RecentlyPlayedState, TopGenresState, TopTracksState } from './components/Music';
+import type {
+  RecentlyPlayedState,
+  TopGenresState,
+  TopTracksState,
+  NowPlaying,
+  AudioFeature,
+} from './components/Music';
 
-export interface MusicData {
-  recentlyPlayed: RecentlyPlayedState;
-  topGenres: TopGenresState;
-  topTracks: TopTracksState;
+// 音樂頁資料改由 TanStack Query 管理（取代 loader + 元件內 fetch + 兩個 setInterval）。
+//
+// Spotify 端點的 queryFn **不 throw**：{error, configured:false} 是合法的回應狀態
+// （例如「未設定 Spotify」），元件會 render 它，所以當作資料回傳、不是失敗。
+// 後端不通（catch）也回一份空 error-state，對齊舊 loadMusic 的行為（SSR 不擋頁）。
+//
+// now-playing 刻意不進 loader 預取：30 秒輪詢的即時狀態，烤進 SSR 只會是過期快照。
+const STALE = 5 * 60 * 1000;
+const DATA_REFRESH = 10 * 60 * 1000;
+const NOW_PLAYING_REFRESH = 30 * 1000;
+
+async function getState<T>(
+  path: string,
+  ok: (d: Record<string, unknown>) => T,
+  bad: (msg: string) => T,
+): Promise<T> {
+  try {
+    const res = await fetch(apiUrl(path));
+    const data = (await res.json()) as Record<string, unknown>;
+    if (typeof data.error === 'string') return bad(data.error);
+    return ok(data);
+  } catch {
+    return bad('');
+  }
 }
 
-// 音樂頁 loader：只把「相對穩定」的資料 baked 進 SSR HTML。
-//
-// 刻意不含 now-playing：那是 30 秒輪詢一次的即時狀態，烤進 HTML 只會是一份過期快照
-// （而且 ISR 快取 1 小時的話，爬蟲與首屏看到的「正在播放」永遠是錯的）。它留在 client 端抓，
-// 首屏先 render 其餘內容，now-playing 掛載後自己補上。
-//
-// 回傳形狀對齊元件既有的 state（{ tracks/genres, configured } 或 { error, configured: false }），
-// 讓元件可以直接拿來當初始值，不必改 render 邏輯。
-export async function loadMusic(): Promise<MusicData> {
-  const get = async <T>(path: string, ok: (d: Record<string, unknown>) => T, bad: (msg: string) => T): Promise<T> => {
-    try {
-      const res = await fetch(apiUrl(path));
-      const data = (await res.json()) as Record<string, unknown>;
-      if (typeof data.error === 'string') return bad(data.error);
-      return ok(data);
-    } catch {
-      // 後端不通不擋頁面：交給 client 端重抓（元件的 10 分鐘定期刷新也會補）
-      return bad('');
-    }
-  };
-
-  const [recentlyPlayed, topGenres, topTracks] = await Promise.all([
-    get<RecentlyPlayedState>(
+export const recentlyPlayedQueryOptions = queryOptions({
+  queryKey: ['spotify', 'recently-played'],
+  queryFn: () =>
+    getState<RecentlyPlayedState>(
       '/api/spotify/recently-played',
       (d) => ({ tracks: (d.items as RecentlyPlayedState['tracks']) ?? [], configured: true }),
       (error) => ({ error, configured: false }),
     ),
-    get<TopGenresState>(
+  staleTime: STALE,
+  refetchInterval: DATA_REFRESH,
+});
+
+export const topGenresQueryOptions = queryOptions({
+  queryKey: ['spotify', 'top-genres'],
+  queryFn: () =>
+    getState<TopGenresState>(
       '/api/spotify/top-genres',
       (d) => ({ genres: (d.genres as TopGenresState['genres']) ?? [], configured: true }),
       (error) => ({ error, configured: false }),
     ),
-    get<TopTracksState>(
-      '/api/spotify/top-tracks?time_range=medium_term&limit=20',
-      (d) => ({ tracks: (d.items as TopTracksState['tracks']) ?? [], configured: true }),
-      (error) => ({ error, configured: false }),
-    ),
-  ]);
+  staleTime: STALE,
+  refetchInterval: DATA_REFRESH,
+});
 
-  return { recentlyPlayed, topGenres, topTracks };
-}
+export const topTracksQueryOptions = (range: string) =>
+  queryOptions({
+    queryKey: ['spotify', 'top-tracks', range],
+    queryFn: () =>
+      getState<TopTracksState>(
+        `/api/spotify/top-tracks?time_range=${range}&limit=20`,
+        (d) => ({ tracks: (d.items as TopTracksState['tracks']) ?? [], configured: true }),
+        (error) => ({ error, configured: false }),
+      ),
+    staleTime: STALE,
+  });
+
+// now-playing：30 秒輪詢；不進 loader。失敗回 { is_playing:false }（對齊舊 fetchNowPlaying catch）。
+export const nowPlayingQueryOptions = queryOptions({
+  queryKey: ['spotify', 'now-playing'],
+  queryFn: async (): Promise<NowPlaying> => {
+    try {
+      const res = await fetch(apiUrl('/api/spotify/now-playing'));
+      return (await res.json()) as NowPlaying;
+    } catch {
+      return { is_playing: false };
+    }
+  },
+  staleTime: 0,
+  refetchInterval: NOW_PLAYING_REFRESH,
+});
+
+// audio-features：依當前分頁的可見曲目 id 抓（Spotify 2024/11 已停用，通常回 null）。
+export const audioFeaturesQueryOptions = (ids: string[]) =>
+  queryOptions({
+    queryKey: ['spotify', 'audio-features', [...ids].sort()],
+    queryFn: async (): Promise<Record<string, AudioFeature>> => {
+      const res = await fetch(apiUrl(`/api/spotify/audio-features?ids=${ids.join(',')}`));
+      const data = (await res.json()) as { audio_features?: (AudioFeature | null)[] };
+      const map: Record<string, AudioFeature> = {};
+      (data.audio_features ?? []).forEach((f) => {
+        if (f) map[f.id] = f;
+      });
+      return map;
+    },
+    enabled: ids.length > 0,
+    staleTime: Infinity,
+  });

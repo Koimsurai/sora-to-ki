@@ -1,5 +1,12 @@
-import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
-import { useLoaderData } from '@tanstack/react-router';
+import { useState, useEffect, useRef, type CSSProperties } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  recentlyPlayedQueryOptions,
+  topGenresQueryOptions,
+  topTracksQueryOptions,
+  nowPlayingQueryOptions,
+  audioFeaturesQueryOptions,
+} from '../musicData';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import KoimLoader from './KoimLoader';
@@ -21,10 +28,10 @@ interface SpotifyTrack {
   explicit?: boolean;
 }
 interface RecentItem { track: SpotifyTrack; played_at: string }
-interface AudioFeature { id: string; energy: number; danceability: number; valence: number }
+export interface AudioFeature { id: string; energy: number; danceability: number; valence: number }
 interface Genre { genre: string; count: number }
 
-interface NowPlaying { is_playing?: boolean; item?: SpotifyTrack; progress_ms?: number; played_at?: string }
+export interface NowPlaying { is_playing?: boolean; item?: SpotifyTrack; progress_ms?: number; played_at?: string }
 interface NowPlayingData extends NowPlaying { isLive: boolean }
 export interface RecentlyPlayedState { tracks?: RecentItem[]; configured?: boolean; error?: string }
 export interface TopGenresState { genres?: Genre[]; configured?: boolean; error?: string }
@@ -66,144 +73,34 @@ const extractDominantColor = (imageUrl: string): Promise<RGB> => {
 
 const Music = () => {
   const { t, i18n } = useTranslation();
-  // 路由 loader 在 server 端抓好的穩定資料（元件被 /music 與 /$locale/music 共用 → strict:false）。
-  // now-playing 不在其中：那是 30 秒輪詢的即時狀態，不該 baked 進 HTML（詳見 musicData.ts）。
-  const initial = useLoaderData({ strict: false }) as
-    | { recentlyPlayed?: RecentlyPlayedState; topGenres?: TopGenresState; topTracks?: TopTracksState }
-    | undefined;
-  const [recentlyPlayed, setRecentlyPlayed] = useState<RecentlyPlayedState | null>(initial?.recentlyPlayed ?? null);
-  const [topGenres, setTopGenres] = useState<TopGenresState | null>(initial?.topGenres ?? null);
-  const [topTracks, setTopTracks] = useState<TopTracksState | null>(initial?.topTracks ?? null);
-  const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
-  const [audioFeatures, setAudioFeatures] = useState<Record<string, AudioFeature | undefined>>({});
-  const [loading, setLoading] = useState(!initial?.recentlyPlayed);
   const [activeTab, setActiveTab] = useState('recent');
   const [timeRange, setTimeRange] = useState('medium_term');
   const [dominantColor, setDominantColor] = useState<RGB>({ r: 127, g: 90, b: 240 });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  /* ─── API 呼叫 ─── */
-  const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
+  // 資料改由 TanStack Query 管理：route loader 已 prefetch recently/genres/top-tracks(medium)
+  // → SSR baked、hydrate 後 useQuery 讀快取。now-playing 是 30 秒輪詢即時狀態、不進 SSR。
+  const { data: recentlyPlayed = null, isPending: recentPending } = useQuery(recentlyPlayedQueryOptions);
+  const { data: topGenres = null } = useQuery(topGenresQueryOptions);
+  const { data: topTracks = null } = useQuery(topTracksQueryOptions(timeRange));
+  const { data: nowPlaying = null } = useQuery(nowPlayingQueryOptions);
+  const loading = recentPending;
 
-  const fetchNowPlaying = useCallback(async () => {
-    try {
-      const response = await fetch(`${apiUrl}/spotify/now-playing`);
-      const data = await response.json() as NowPlaying;
-      setNowPlaying(data);
+  // audio-features：依當前分頁的可見曲目 id 抓（Spotify 2024/11 已停用，多半回空）。
+  const featureIds =
+    activeTab === 'recent'
+      ? (recentlyPlayed?.tracks ?? []).map((x) => x.track.id)
+      : activeTab === 'yearly'
+        ? (topTracks?.tracks ?? []).map((x) => x.id)
+        : [];
+  const { data: audioFeatures = {} } = useQuery(audioFeaturesQueryOptions(featureIds));
 
-      // 提取封面色彩
-      const coverUrl = data.item?.album.images[0]?.url;
-      if (coverUrl) {
-        const color = await extractDominantColor(coverUrl);
-        setDominantColor(color);
-      }
-    } catch (error) {
-      console.error('獲取正在播放失敗:', error);
-      setNowPlaying({ is_playing: false });
-    }
-  }, [apiUrl]);
-
-  const fetchRecentlyPlayed = useCallback(async () => {
-    try {
-      const response = await fetch(`${apiUrl}/spotify/recently-played`);
-      const data = await response.json() as { error?: string; items?: RecentItem[] };
-      if (data.error) {
-        setRecentlyPlayed({ error: data.error, configured: false });
-        return;
-      }
-      setRecentlyPlayed({ tracks: data.items ?? [], configured: true });
-    } catch (error) {
-      console.error('獲取最近播放失敗:', error);
-      setRecentlyPlayed({ error: t('common.errorBackendApi'), configured: false });
-    }
-  }, [apiUrl]);
-
-  const fetchTopGenres = useCallback(async () => {
-    try {
-      const response = await fetch(`${apiUrl}/spotify/top-genres`);
-      const data = await response.json() as { error?: string; genres?: Genre[] };
-      if (data.error) { setTopGenres({ error: data.error, configured: false }); return; }
-      setTopGenres({ genres: data.genres ?? [], configured: true });
-    } catch (error) {
-      console.error('獲取曲風失敗:', error);
-      setTopGenres({ error: t('common.errorBackendApi'), configured: false });
-    }
-  }, [apiUrl]);
-
-  const fetchTopTracks = useCallback(async (range: string) => {
-    try {
-      const response = await fetch(`${apiUrl}/spotify/top-tracks?time_range=${range}&limit=20`);
-      const data = await response.json() as { error?: string; items?: SpotifyTrack[] };
-      if (data.error) { setTopTracks({ error: data.error, configured: false }); return; }
-      setTopTracks({ tracks: data.items ?? [], configured: true });
-    } catch (error) {
-      console.error('獲取年度歌單失敗:', error);
-      setTopTracks({ error: t('common.errorBackendApi'), configured: false });
-    }
-  }, [apiUrl]);
-
-  const fetchAudioFeatures = useCallback(async (trackIds: string[]) => {
-    if (trackIds.length === 0) return;
-    try {
-      const response = await fetch(`${apiUrl}/spotify/audio-features?ids=${trackIds.join(',')}`);
-      const data = await response.json() as { audio_features?: (AudioFeature | null)[] };
-      if (data.audio_features) {
-        const featuresMap: Record<string, AudioFeature> = {};
-        data.audio_features.forEach(f => { if (f) featuresMap[f.id] = f; });
-        setAudioFeatures(prev => ({ ...prev, ...featuresMap }));
-      }
-    } catch (error) {
-      console.error('獲取音訊特性失敗:', error);
-    }
-  }, [apiUrl]);
-
-  /* ─── 初始載入 ─── */
+  // now-playing 封面 → 主色調（取代舊 fetchNowPlaying 內的副作用）。
   useEffect(() => {
-    const init = async () => {
-      // loader 已給穩定資料 → 只補即時的 now-playing，不要重打其餘三個，也不要再閃一次 loading
-      if (initial?.recentlyPlayed) {
-        await fetchNowPlaying();
-        return;
-      }
-      setLoading(true);
-      await Promise.all([
-        fetchNowPlaying(),
-        fetchRecentlyPlayed(),
-        fetchTopGenres(),
-        fetchTopTracks('medium_term')
-      ]);
-      setLoading(false);
-    };
-    void init();
-    const interval = setInterval(() => { void fetchNowPlaying(); }, 30000); // 30秒更新正在播放
-    const dataInterval = setInterval(() => {
-      void fetchRecentlyPlayed();
-      void fetchTopGenres();
-    }, 10 * 60 * 1000);
-    return () => { clearInterval(interval); clearInterval(dataInterval); };
-  }, [fetchNowPlaying, fetchRecentlyPlayed, fetchTopGenres, fetchTopTracks]);
+    const coverUrl = nowPlaying?.item?.album.images[0]?.url;
+    if (coverUrl) void extractDominantColor(coverUrl).then(setDominantColor);
+  }, [nowPlaying]);
 
-  /* ─── Tab 切換時載入對應資料 ─── */
-  useEffect(() => {
-    if (activeTab === 'yearly') void fetchTopTracks(timeRange);
-  }, [timeRange, activeTab, fetchTopTracks]);
-
-  /* ─── 載入 Audio Features ─── */
-  useEffect(() => {
-    const recentTracks = recentlyPlayed?.tracks;
-    if (recentTracks && recentTracks.length > 0 && activeTab === 'recent') {
-      const ids = recentTracks.map(t => t.track.id).filter(id => !audioFeatures[id]);
-      if (ids.length > 0) void fetchAudioFeatures(ids);
-    }
-  }, [recentlyPlayed, activeTab, audioFeatures, fetchAudioFeatures]);
-
-  useEffect(() => {
-    const yearlyTracks = topTracks?.tracks;
-    if (yearlyTracks && yearlyTracks.length > 0 && activeTab === 'yearly') {
-      const ids = yearlyTracks.map(t => t.id).filter(id => !audioFeatures[id]);
-      if (ids.length > 0) void fetchAudioFeatures(ids);
-    }
-  }, [topTracks, activeTab, audioFeatures, fetchAudioFeatures]);
 
   /* ─── 工具 ─── */
   const formatDuration = (ms: number) => {
@@ -369,7 +266,10 @@ const Music = () => {
                   </div>
                 )}
                 {!npData.isLive && npData.played_at && (
-                  <p className="np-last-played">{formatDate(npData.played_at)}</p>
+                  // 相對時間（formatDate 用 new Date()）server/client 算出來可能差一分鐘 →
+                  // hydration text mismatch（React #418）。suppressHydrationWarning：保留 SSR 文字
+                  // （SEO 看得到）、client 自行更新、不當成錯配。
+                  <p className="np-last-played" suppressHydrationWarning>{formatDate(npData.played_at)}</p>
                 )}
                 <a
                   href={npData.item?.external_urls?.spotify}
@@ -494,7 +394,7 @@ const Music = () => {
                             )}
                           </div>
                           <span className="tr-duration">{formatDuration(item.track.duration_ms)}</span>
-                          <span className="tr-time">{formatDate(item.played_at)}</span>
+                          <span className="tr-time" suppressHydrationWarning>{formatDate(item.played_at)}</span>
                         </motion.a>
                       );
                     })}
