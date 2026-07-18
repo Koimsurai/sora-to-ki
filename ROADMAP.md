@@ -31,13 +31,21 @@ SSR（社群預覽一直是壞的）、`public/sitemap.xml` 是 2026-02-11 的 0
 
 ### 已知的既有缺陷（未修）
 
-- **其餘頁面的 `<SEOHead>` 仍是 helmet**：`/blog/$id`、`/thinking/$id` 與所有走 `localePage` 的頁
-  已改由 `head()` 出 meta（進得了 SSR）。但元件內的 `<SEOHead>` 沒清掉，等於同一組 og 在
-  hydrate 後又被 helmet 掛一次 → DOM 裡可能有重複 meta（爬蟲只讀 SSR，無實害，但該收）。
-  徹底解法是 `SEOHead` 全面退休。
+- ~~**其餘頁面的 `<SEOHead>` 仍是 helmet**~~ ✅ **2026-07-18 全面退休**：所有 16 個 `<SEOHead>`
+  用法清除、`SEOHead.tsx` 與 `HelmetProvider` 刪除、`react-helmet-async` 依賴移除。
+  所有頁面的 title/description/og 一律走 `head()` 進 SSR；文章頁的 BlogPosting JSON-LD 也搬進
+  `head().scripts`（首次進 SSR）。順手補了兩個原本沒 SSR meta 的頁：首頁（原本 head() 只出 links、
+  SSR 零 og/description）、404。
+- ~~**`friends`/`messages`/`history`/`about-site` 沒進 `pageSeo` 表**~~ ✅ **2026-07-18**：四頁補進
+  `PAGE_SEO`（用 `info.*.title` / `info.*.subtitle`，五語系齊全）。
 - **`/watch/library`、`/activity` 等頁 SSR 仍是空殼**（見上，刻意）。
-- **`friends`/`messages`/`history`/`about-site` 沒進 `pageSeo` 表** → 這幾頁的 `<title>` 仍是站台預設值。
-  補法很機械：在 `src/pageSeo.ts` 加一筆（有 i18n key 用 `titleKey`，沒有就先寫死或補 `common.json`）。
+- **`no-unnecessary-type-assertion` eslint error ×5**（Bookshelf/Music/Thinking/ThinkingDetail/Watch）：
+  跟 Blog.tsx:348 同一個 `(useLoaderData({strict:false}) as {...})` 慣例，router 其實已推得型別、
+  assertion 多餘。Blog 那個已修（驗證過移除後型別仍是具體型別非 any）；其餘 5 個同樣安全，
+  但各需一次 probe 確認，未在此次一併處理。
+- **未做：`WebSite`/`Organization` JSON-LD（root head）** —— TanStack SEO 文件建議在 `__root` 出
+  站台級結構化資料，正好對應 `[[project_koimsurai_seo_brand]]`（Koimsurai 被辨識成 Katsurai）的解法。
+  這次只搬了文章級 BlogPosting，站台級留待品牌 SEO 那批一起做。
 
 ### 驗證方法的坑（吃過大虧，寫給下一個 session）
 
@@ -135,8 +143,14 @@ Sentry SaaS / LogRocket 仍 ❌（GlitchTip 已覆蓋且自主）。
 ## 建議施工順序
 
 1. **A1 security headers**（半天、高價值、符合你興趣）← 現在就能做，不等 Nitro
-2. **Nitro 遷移**（Phase A→E，含 OG/PWA/ISR 收尾）← 進行中
-3. **specta + utoipa（B6）同批**（給 struct 加 derive 一次做兩件）
+2. ~~**Nitro 遷移**（Phase A→E，含 OG/PWA/ISR 收尾）~~ ✅ 2026-07-17 完成上線
+3. **specta + utoipa（B6）同批**（給 struct 加 derive 一次做兩件）← **進行中**
+   - ✅ 2026-07-17：posts 全家（公開 + admin）typed 化，生成型別 4 → 15 個。
+     順手抓到 4 個「build 過、200、但功能從沒生效」的既有缺陷（allow_comments 開關對公開站
+     從沒生效、部落格列表 excerpt 全空、後台開新分頁按鈕從不出現、PostEditor 的 summary 死路）。
+     細節見 `backend/SPECTA_PLAN.md`「已抓到的漂移」。
+   - 下一棒：`admin_comments`（解鎖前端 CommentsManager）→ thoughts/books。
+   - utoipa 還沒動（原計畫是跟 specta derive 同批做，目前只做了 specta）。
 4. **A2 i18n 補完**（內容工作，穿插做）
 5. **B1 CI + C4 極簡 pre-commit**（一起，push 驗證）
 6. **B3/B4/B5**（圖片/vitals/字型優化，效能批）
