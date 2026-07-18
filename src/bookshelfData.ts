@@ -1,31 +1,38 @@
+import { queryOptions } from '@tanstack/react-query';
+import type { BookRow, BooksListResponse } from '@koimsurai/api-types';
 import { apiUrl } from './api';
-import type { Book, BookStats } from './components/Bookshelf';
+import type { BookStats } from './components/Bookshelf';
 
-export interface BookshelfData {
-  books: Book[];
-  stats: BookStats | null;
-}
+// 書櫃資料改由 TanStack Query 管理（取代原本的 loader + 元件內 fetch + setInterval 輪詢）。
+// - loader 用 context.queryClient.prefetchQuery 預取 → SSR 首屏 baked 進 HTML（SEO）。
+//   用 prefetchQuery（非 ensureQueryData）：後端不通時吞掉錯誤、不擋整頁（對齊舊 loadBookshelf
+//   的「任一失敗都不擋頁面」）。
+// - 元件用 useQuery 讀同一份快取，hydrate 後不重抓（staleTime 內視為新鮮）。
+// - queryFn 失敗時 throw：refetch 失敗 Query 會**保留上一份資料**（對齊舊 fetchBooks 失敗不清空）。
+// - refetchInterval 取代舊的 15 分鐘 setInterval（只在 client 跑，SSR 不受影響）。
+const STALE = 5 * 60 * 1000;
+const REFRESH = 15 * 60 * 1000;
 
-// 書櫃頁 loader：在 server 端先抓好書單 baked 進 HTML。
-// 元件原本只在 useEffect 抓，而 useEffect 不在 server 執行 → loading 初始 true → SSR 只吐骨架屏、
-// HTML 裡 0 本書（Google 看不到書單，ISR 也只快取到空殼）。
-// 兩個端點並行；任一失敗都不擋頁面（退回 client 端自己抓）。
-export async function loadBookshelf(): Promise<BookshelfData> {
-  const get = async <T>(path: string, pick: (d: Record<string, unknown>) => T, fallback: T): Promise<T> => {
-    try {
-      const res = await fetch(apiUrl(path));
-      if (!res.ok) return fallback;
-      const data = (await res.json()) as Record<string, unknown>;
-      return data.message === 'success' ? pick(data) : fallback;
-    } catch {
-      return fallback;
-    }
-  };
+export const booksQueryOptions = queryOptions({
+  queryKey: ['books'],
+  queryFn: async (): Promise<BookRow[]> => {
+    const res = await fetch(apiUrl('/api/books'));
+    if (!res.ok) throw new Error(`GET /api/books ${res.status}`);
+    const data = (await res.json()) as BooksListResponse;
+    return data.books;
+  },
+  staleTime: STALE,
+  refetchInterval: REFRESH,
+});
 
-  const [books, stats] = await Promise.all([
-    get<Book[]>('/api/books', (d) => (d.books as Book[]) ?? [], []),
-    get<BookStats | null>('/api/books/stats/summary', (d) => (d.stats as BookStats) ?? null, null),
-  ]);
-
-  return { books, stats };
-}
+export const bookStatsQueryOptions = queryOptions({
+  queryKey: ['books', 'stats'],
+  queryFn: async (): Promise<BookStats | null> => {
+    const res = await fetch(apiUrl('/api/books/stats/summary'));
+    if (!res.ok) throw new Error(`GET /api/books/stats/summary ${res.status}`);
+    const data = (await res.json()) as { message?: string; stats?: BookStats };
+    return data.message === 'success' ? (data.stats ?? null) : null;
+  },
+  staleTime: STALE,
+  refetchInterval: REFRESH,
+});

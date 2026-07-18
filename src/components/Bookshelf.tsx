@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, lazy, Suspense, type CSSProperties, type ReactNode } from 'react';
-import { useLoaderData } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import type { BookRow } from '@koimsurai/api-types';
+import { booksQueryOptions, bookStatsQueryOptions } from '../bookshelfData';
 
 // 3D 圖書館用 lazy import:three.js/R3F 只在 client 切到 3D 模式時才動態載入,
 // 完全不進 server bundle / SSR render(避免每個請求白跑 three.js 的伺服器負擔)。
@@ -109,67 +110,23 @@ const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }: {
 
 const Bookshelf = () => {
   const { t } = useTranslation();
-  // 路由 loader 在 server 端抓好的書單（元件被 /bookshelf 與 /$locale/bookshelf 共用 → strict:false）。
-  // 有值就當初始資料 → SSR 直接 render 出書單，而不是卡在下面的 `if (loading)` 骨架屏。
-  // strict:false 回傳跨路由 loader 的 union；此斷言把 stats narrow 成 BookStats
-  // （否則會混入 /watch loader 的 WatchStats）。no-unnecessary-type-assertion 在此為誤報。
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-  const initial = useLoaderData({ strict: false }) as { books?: Book[]; stats?: BookStats | null } | undefined;
-  const initialBooks = initial?.books ?? [];
-  const [books, setBooks] = useState<Book[]>(initialBooks);
-  const [filteredBooks, setFilteredBooks] = useState<Book[]>(initialBooks);
-  const [loading, setLoading] = useState(initialBooks.length === 0);
+  // 資料改由 TanStack Query 管理：route loader 已 ensureQueryData 預取 → SSR 首屏 baked、
+  // hydrate 後 useQuery 讀同一份快取（不重抓）；15 分鐘輪詢 = queryOptions 的 refetchInterval。
+  const { data: books = [], isPending } = useQuery(booksQueryOptions);
+  const { data: stats = null } = useQuery(bookStatsQueryOptions);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>(books);
+  const loading = isPending;
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [ratingFilter, setRatingFilter] = useState('all');
   const [sortBy, setSortBy] = useState('date_added_desc');
-  const [stats, setStats] = useState<BookStats | null>(initial?.stats ?? null);
   const [showFilters, setShowFilters] = useState(false);
   const [is3DMode, setIs3DMode] = useState(false);
 
   useEffect(() => {
-    // loader 已在 server 端抓好首屏 → hydrate 後不再立刻重打一次
-    if (!initialBooks.length) {
-      void fetchBooks();
-      void fetchStats();
-    }
-    const dataRefreshInterval = setInterval(() => {
-      void fetchBooks();
-      void fetchStats();
-    }, 15 * 60 * 1000);
-    return () => clearInterval(dataRefreshInterval);
-  }, []);
-
-  useEffect(() => {
     filterAndSortBooks();
   }, [books, searchTerm, statusFilter, ratingFilter, sortBy]);
-
-  const fetchBooks = async () => {
-    try {
-      const response = await fetch(`${API_URL}/books`);
-      const data = await response.json() as { message?: string; books?: Book[] };
-      if (data.message === 'success' && data.books) {
-        setBooks(data.books);
-      }
-    } catch (error) {
-      console.error('載入書籍失敗:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch(`${API_URL}/books/stats/summary`);
-      const data = await response.json() as { message?: string; stats?: BookStats };
-      if (data.message === 'success' && data.stats) {
-        setStats(data.stats);
-      }
-    } catch (error) {
-      console.error('載入統計失敗:', error);
-    }
-  };
 
   const filterAndSortBooks = () => {
     let filtered = [...books];
