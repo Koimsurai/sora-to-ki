@@ -289,3 +289,27 @@ export type ReactionRow = {
 export type ReactionsResponse = {
 	reactions: ReactionRow[],
 };
+
+/**  `GET /api/newsletter/by-token/:token` 的回應（顯式 3 欄）。 */
+export type SubscriberByToken = {
+	email: string,
+	name: string | null,
+	status: string | null,
+};
+
+/**  `newsletter_subscribers` 一列（`SELECT *`）。欄位序 = 表宣告序，對齊舊 `row_to_json`。 */
+export type SubscriberRow = {
+	id: number,
+	email: string,
+	name: string | null,
+	status: string | null,
+	subscribed_at: string | null,
+	unsubscribed_at: string | null,
+	unsubscribe_token: string | null,
+};
+
+export type SubscribersResponse = {
+	message: string,
+	subscribers: SubscriberRow[],
+	pagination: Pagination,
+};

@@ -8,6 +8,7 @@ use koimsurai_web_backend::handlers::admin::{
     CommentCounts, KeywordFilterRow, KeywordFiltersResponse,
 };
 use koimsurai_web_backend::handlers::books::{BookDetailResponse, BookRow, BooksListResponse};
+use koimsurai_web_backend::handlers::newsletter::{SubscriberByToken, SubscriberRow, SubscribersResponse};
 use koimsurai_web_backend::handlers::posts::{
     CommentRow, CommentsResponse, Pagination, PostDetailResponse, PostListItem, PostsListResponse, ReactionRow,
     ReactionsResponse,
@@ -44,7 +45,11 @@ fn main() {
         // books
         .register::<BookRow>()
         .register::<BooksListResponse>()
-        .register::<BookDetailResponse>();
+        .register::<BookDetailResponse>()
+        // newsletter
+        .register::<SubscriberRow>()
+        .register::<SubscribersResponse>()
+        .register::<SubscriberByToken>();
     Typescript::default()
         .header("// 由 backend `cargo run --bin export_types` 產生 — 勿手改\n")
         .export_to("../packages/api-types/index.ts", &types, specta_serde::Format)

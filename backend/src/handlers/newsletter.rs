@@ -5,14 +5,41 @@ use axum::{
     Json,
 };
 use rand::RngCore;
-use serde::Deserialize;
-use serde_json::{json, Value};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use sqlx::FromRow;
 
+use crate::handlers::posts::Pagination;
 use crate::state::AppState;
-use crate::{
-    auth::require_admin,
-    util::{parse_int, row_to_json},
-};
+use crate::{auth::require_admin, util::parse_int};
+
+/// `newsletter_subscribers` 一列（`SELECT *`）。欄位序 = 表宣告序，對齊舊 `row_to_json`。
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct SubscriberRow {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub email: String,
+    pub name: Option<String>,
+    pub status: Option<String>,
+    pub subscribed_at: Option<String>,
+    pub unsubscribed_at: Option<String>,
+    pub unsubscribe_token: Option<String>,
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct SubscribersResponse {
+    pub message: String,
+    pub subscribers: Vec<SubscriberRow>,
+    pub pagination: Pagination,
+}
+
+/// `GET /api/newsletter/by-token/:token` 的回應（顯式 3 欄）。
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct SubscriberByToken {
+    pub email: String,
+    pub name: Option<String>,
+    pub status: Option<String>,
+}
 
 /// `crypto.randomBytes(16).toString('hex')` 等價：32 hex 字元。
 fn gen_unsub_token() -> String {
@@ -121,7 +148,7 @@ pub async fn unsubscribe(State(state): State<AppState>, Json(b): Json<Unsubscrib
 
 /// `GET /api/newsletter/by-token/:token` —— 退訂確認頁用（裸 row：email/name/status）。
 pub async fn by_token(State(state): State<AppState>, Path(token): Path<String>) -> Response {
-    match sqlx::query_as::<_, (Option<String>, Option<String>, Option<String>)>(
+    match sqlx::query_as::<_, SubscriberByToken>(
         "SELECT email, name, status FROM newsletter_subscribers WHERE unsubscribe_token = ?",
     )
     .bind(&token)
@@ -130,9 +157,7 @@ pub async fn by_token(State(state): State<AppState>, Path(token): Path<String>) 
     {
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
         Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "error": "invalid token" }))).into_response(),
-        Ok(Some((email, name, status))) => {
-            Json(json!({ "email": email, "name": name, "status": status })).into_response()
-        }
+        Ok(Some(sub)) => Json(sub).into_response(),
     }
 }
 
@@ -157,7 +182,7 @@ pub async fn subscribers(
     let offset = (page - 1) * limit;
     let status = q.status.as_deref().unwrap_or("active");
 
-    let rows = match sqlx::query(
+    let subscribers = match sqlx::query_as::<_, SubscriberRow>(
         "SELECT * FROM newsletter_subscribers WHERE status = ? ORDER BY subscribed_at DESC LIMIT ? OFFSET ?",
     )
     .bind(status)
@@ -177,12 +202,16 @@ pub async fn subscribers(
         Ok(t) => t,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
     };
-    let subs: Vec<Value> = rows.iter().map(|r| Value::Object(row_to_json(r))).collect();
     let total_pages = if limit > 0 { (total + limit - 1) / limit } else { 0 };
-    Json(json!({
-        "message": "success",
-        "subscribers": subs,
-        "pagination": { "page": page, "limit": limit, "total": total, "totalPages": total_pages }
-    }))
+    Json(SubscribersResponse {
+        message: "success".into(),
+        subscribers,
+        pagination: Pagination {
+            page,
+            limit,
+            total,
+            total_pages,
+        },
+    })
     .into_response()
 }

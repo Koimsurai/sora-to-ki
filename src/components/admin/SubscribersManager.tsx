@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { SubscriberRow } from '@koimsurai/api-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail, MailX, RefreshCw, Search, Download, Trash2, type LucideIcon } from 'lucide-react';
@@ -8,14 +9,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 
-interface Subscriber {
-  id: number;
-  email: string;
-  name?: string;
-  status: string;
-  subscribed_at?: string;
-  unsubscribed_at?: string;
-}
+/** `GET /api/newsletter/subscribers` 的單列，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
+type Subscriber = SubscriberRow;
 
 interface StatusConfigEntry { label: string; color: string; bg: string; border: string; icon: LucideIcon }
 
@@ -101,7 +96,7 @@ export default function SubscribersManager() {
     URL.revokeObjectURL(url);
   };
 
-  const formatDate = (s?: string) => {
+  const formatDate = (s?: string | null) => {
     if (!s) return '-';
     const d = new Date(s);
     return d.toLocaleDateString('zh-TW', {
