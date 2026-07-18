@@ -3,6 +3,7 @@ import { useLoaderData } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
+import type { BookRow } from '@koimsurai/api-types';
 
 // 3D 圖書館用 lazy import:three.js/R3F 只在 client 切到 3D 模式時才動態載入,
 // 完全不進 server bundle / SSR render(避免每個請求白跑 three.js 的伺服器負擔)。
@@ -18,23 +19,8 @@ const proxiedCover = (url?: string): string =>
 
 interface RGB { r: number; g: number; b: number }
 
-export interface Book {
-  id: number | string;
-  title: string;
-  authors?: string;
-  cover_url?: string;
-  reading_status?: string;
-  rating?: number | null;
-  date_added?: string;
-  date_started?: string;
-  date_finished?: string;
-  published_date?: string;
-  publisher?: string;
-  isbn?: string;
-  page_count?: number;
-  description?: string;
-  personal_notes?: string;
-}
+/** `GET /api/books` 的單本，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
+export type Book = BookRow;
 
 export interface BookStats {
   total_books: number;
@@ -77,7 +63,7 @@ const BookCard = ({ book, delay, onClick, getStatusBadge, renderStars }: {
   book: Book;
   delay: number;
   onClick: () => void;
-  getStatusBadge: (status?: string) => { text: string; color: string };
+  getStatusBadge: (status?: string | null) => { text: string; color: string };
   renderStars: (rating?: number | null) => ReactNode;
 }) => {
   const [glowColor, setGlowColor] = useState<RGB | null>(null);
@@ -125,6 +111,9 @@ const Bookshelf = () => {
   const { t } = useTranslation();
   // 路由 loader 在 server 端抓好的書單（元件被 /bookshelf 與 /$locale/bookshelf 共用 → strict:false）。
   // 有值就當初始資料 → SSR 直接 render 出書單，而不是卡在下面的 `if (loading)` 骨架屏。
+  // strict:false 回傳跨路由 loader 的 union；此斷言把 stats narrow 成 BookStats
+  // （否則會混入 /watch loader 的 WatchStats）。no-unnecessary-type-assertion 在此為誤報。
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
   const initial = useLoaderData({ strict: false }) as { books?: Book[]; stats?: BookStats | null } | undefined;
   const initialBooks = initial?.books ?? [];
   const [books, setBooks] = useState<Book[]>(initialBooks);
@@ -226,7 +215,7 @@ const Bookshelf = () => {
     setFilteredBooks(filtered);
   };
 
-  const getStatusBadge = (status?: string) => {
+  const getStatusBadge = (status?: string | null) => {
     const badges: Record<'read' | 'reading' | 'to-read', { text: string; color: string }> = {
       'read': { text: t('bookshelf.statuses.read'), color: '#10b981' },
       'reading': { text: t('bookshelf.statuses.reading'), color: '#3b82f6' },
@@ -546,10 +535,11 @@ const Bookshelf = () => {
             id: book.id,
             title: book.title,
             authors: book.authors ? book.authors.split(',') : [],
-            coverUrl: book.cover_url,
-            description: book.description,
-            publishedDate: book.published_date,
-            pageCount: book.page_count,
+            // 生成型別是 `| null`（serde 語意）；ZGL 的介面用 optional，`?? undefined` 橋接。
+            coverUrl: book.cover_url ?? undefined,
+            description: book.description ?? undefined,
+            publishedDate: book.published_date ?? undefined,
+            pageCount: book.page_count ?? undefined,
           }))}
           onClose={() => setIs3DMode(false)}
         />

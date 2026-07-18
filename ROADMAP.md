@@ -39,10 +39,11 @@ SSR（社群預覽一直是壞的）、`public/sitemap.xml` 是 2026-02-11 的 0
 - ~~**`friends`/`messages`/`history`/`about-site` 沒進 `pageSeo` 表**~~ ✅ **2026-07-18**：四頁補進
   `PAGE_SEO`（用 `info.*.title` / `info.*.subtitle`，五語系齊全）。
 - **`/watch/library`、`/activity` 等頁 SSR 仍是空殼**（見上，刻意）。
-- **`no-unnecessary-type-assertion` eslint error ×5**（Bookshelf/Music/Thinking/ThinkingDetail/Watch）：
-  跟 Blog.tsx:348 同一個 `(useLoaderData({strict:false}) as {...})` 慣例，router 其實已推得型別、
-  assertion 多餘。Blog 那個已修（驗證過移除後型別仍是具體型別非 any）；其餘 5 個同樣安全，
-  但各需一次 probe 確認，未在此次一併處理。
+- **`no-unnecessary-type-assertion` eslint error ×4**（Music/Thinking/ThinkingDetail/Watch）：
+  跟 Blog.tsx 同一個 `(useLoaderData({strict:false}) as {...})` 慣例。**但不是每個都能移除**——
+  strict:false 回傳跨路由 union，斷言在 narrow 到本頁 loader 形狀。Blog（`posts` 別頁沒有）已安全移除；
+  Bookshelf（`stats` 會跟 Watch 的 `WatchStats` 混）驗出斷言**必要**、加了 eslint-disable 註解。
+  剩下 4 個要各自 probe（移除後跑 tsc，若別頁 loader 有同名欄位就是必要的、不能移）。
 - **未做：`WebSite`/`Organization` JSON-LD（root head）** —— TanStack SEO 文件建議在 `__root` 出
   站台級結構化資料，正好對應 `[[project_koimsurai_seo_brand]]`（Koimsurai 被辨識成 Katsurai）的解法。
   這次只搬了文章級 BlogPosting，站台級留待品牌 SEO 那批一起做。

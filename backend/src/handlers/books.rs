@@ -4,14 +4,64 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
+use sqlx::FromRow;
 
 use crate::{
     auth::require_admin,
-    util::{bind_val, js_num_value, js_parse_int_opt, js_truthy, row_to_json},
+    util::{bind_val, js_num_value, js_parse_int_opt, js_truthy},
 };
 use crate::state::AppState;
+
+/// books 一列（`SELECT *`）。欄位序 = books 表宣告序，對齊舊 `row_to_json` 的 key 序。
+#[derive(Debug, Serialize, FromRow, specta::Type)]
+pub struct BookRow {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub isbn: Option<String>,
+    pub title: String,
+    pub authors: Option<String>,
+    pub publisher: Option<String>,
+    pub published_date: Option<String>,
+    pub description: Option<String>,
+    pub cover_url: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub page_count: Option<i64>,
+    pub language: Option<String>,
+    pub categories: Option<String>,
+    pub reading_status: Option<String>,
+    // REAL：整值輸出整數（4.0 → 4，對齊舊 row_to_json 的 js_num_value；4.1 等維持 float）。
+    #[serde(serialize_with = "serialize_rating")]
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub rating: Option<f64>,
+    pub personal_notes: Option<String>,
+    pub date_added: Option<String>,
+    pub date_updated: Option<String>,
+    pub date_started: Option<String>,
+    pub date_finished: Option<String>,
+}
+
+/// rating（REAL）序列化：整值 float → 整數（`4.0`→`4`），非整值維持 float，None → null。
+/// 對齊舊 `row_to_json` 對 REAL 欄位走 `js_num_value` 的行為。
+fn serialize_rating<S: serde::Serializer>(v: &Option<f64>, s: S) -> Result<S::Ok, S::Error> {
+    match v {
+        None => s.serialize_none(),
+        Some(f) => js_num_value(*f).serialize(s),
+    }
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct BooksListResponse {
+    pub message: String,
+    pub books: Vec<BookRow>,
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct BookDetailResponse {
+    pub message: String,
+    pub book: BookRow,
+}
 
 #[derive(Debug, Deserialize)]
 pub struct BooksQuery {
@@ -24,7 +74,7 @@ pub struct BooksQuery {
 }
 
 /// 共用查詢（/books 與 /admin/books 完全同邏輯，只差回應形狀）。
-async fn query_books(state: &AppState, q: &BooksQuery) -> Result<Vec<Value>, sqlx::Error> {
+async fn query_books(state: &AppState, q: &BooksQuery) -> Result<Vec<BookRow>, sqlx::Error> {
     let mut sql = String::from("SELECT * FROM books WHERE 1=1");
     if q.status.is_some() {
         sql.push_str(" AND reading_status = ?");
@@ -47,7 +97,7 @@ async fn query_books(state: &AppState, q: &BooksQuery) -> Result<Vec<Value>, sql
         _ => " ORDER BY date_added DESC",
     });
 
-    let mut query = sqlx::query(&sql);
+    let mut query = sqlx::query_as::<_, BookRow>(&sql);
     if let Some(s) = &q.status {
         query = query.bind(s.clone());
     }
@@ -65,14 +115,13 @@ async fn query_books(state: &AppState, q: &BooksQuery) -> Result<Vec<Value>, sql
         let like = format!("%{s}%");
         query = query.bind(like.clone()).bind(like);
     }
-    let rows = query.fetch_all(&state.pool).await?;
-    Ok(rows.iter().map(|r| Value::Object(row_to_json(r))).collect())
+    query.fetch_all(&state.pool).await
 }
 
 /// `GET /api/books` —— 公開列表，`{message, books}`。
 pub async fn list_books(State(state): State<AppState>, Query(q): Query<BooksQuery>) -> Response {
     match query_books(&state, &q).await {
-        Ok(books) => Json(json!({ "message": "success", "books": books })).into_response(),
+        Ok(books) => Json(BooksListResponse { message: "success".into(), books }).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
     }
 }
@@ -87,17 +136,17 @@ pub async fn admin_books(
         return e.into_response();
     }
     match query_books(&state, &q).await {
-        Ok(books) => Json(json!(books)).into_response(),
+        Ok(books) => Json(books).into_response(),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
     }
 }
 
 /// `GET /api/books/:id` —— 公開單本，`{message, book}`；404 `{message:'Book not found'}`。
 pub async fn get_book(State(state): State<AppState>, Path(id): Path<String>) -> Response {
-    match sqlx::query("SELECT * FROM books WHERE id = ?").bind(&id).fetch_optional(&state.pool).await {
+    match sqlx::query_as::<_, BookRow>("SELECT * FROM books WHERE id = ?").bind(&id).fetch_optional(&state.pool).await {
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
         Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "message": "Book not found" }))).into_response(),
-        Ok(Some(row)) => Json(json!({ "message": "success", "book": Value::Object(row_to_json(&row)) })).into_response(),
+        Ok(Some(book)) => Json(BookDetailResponse { message: "success".into(), book }).into_response(),
     }
 }
 

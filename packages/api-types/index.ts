@@ -136,6 +136,38 @@ export type BlacklistRow = {
 	created_at: string,
 };
 
+export type BookDetailResponse = {
+	message: string,
+	book: BookRow,
+};
+
+/**  books 一列（`SELECT *`）。欄位序 = books 表宣告序，對齊舊 `row_to_json` 的 key 序。 */
+export type BookRow = {
+	id: number,
+	isbn: string | null,
+	title: string,
+	authors: string | null,
+	publisher: string | null,
+	published_date: string | null,
+	description: string | null,
+	cover_url: string | null,
+	page_count: number | null,
+	language: string | null,
+	categories: string | null,
+	reading_status: string | null,
+	rating: number | null,
+	personal_notes: string | null,
+	date_added: string | null,
+	date_updated: string | null,
+	date_started: string | null,
+	date_finished: string | null,
+};
+
+export type BooksListResponse = {
+	message: string,
+	books: BookRow[],
+};
+
 /**
  *  全站留言的狀態計數（**不受 status/search/post_id 過濾影響**，永遠是全域分佈）。
  *  status 受限於這四種（見 comments.rs 建立邏輯 + admin 審核端點），故可 typed 成固定欄位。

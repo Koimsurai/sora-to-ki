@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { BookRow } from '@koimsurai/api-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,22 +26,8 @@ import { Plus, Pencil, BookOpen, Search, Loader2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { type FormEvent } from 'react';
 
-interface Book {
-  id: number | string;
-  isbn?: string;
-  title: string;
-  authors?: string;
-  publisher?: string;
-  published_date?: string;
-  description?: string;
-  cover_url?: string;
-  page_count?: number | string;
-  language?: string;
-  categories?: string;
-  reading_status?: string;
-  rating?: number | null;
-  personal_notes?: string;
-}
+/** `GET /api/books` 的單本，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
+type Book = BookRow;
 
 interface BookFormData {
   isbn: string;
