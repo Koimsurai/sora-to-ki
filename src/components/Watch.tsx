@@ -1,6 +1,14 @@
-import { useEffect, useState, useMemo, useCallback, useRef, type ElementType, type ReactElement } from 'react';
-import { useLoaderData } from '@tanstack/react-router';
+import { useState, useMemo, type ElementType, type ReactElement } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LocaleLink, useLocaleNavigate } from '../locale-link';
+import {
+  animeHistoryQueryOptions,
+  filmsQueryOptions,
+  seriesQueryOptions,
+  watchStatsQueryOptions,
+  liveNowQueryOptions,
+  watchFavoritesQueryOptions,
+} from '../watchData';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,7 +19,6 @@ import './Watch.css';
    在看什麼 — 編輯風「品味展示」
 ─────────────────────────────────────────────────────────────── */
 
-const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 type WatchType = 'anime' | 'film' | 'tv';
 
@@ -35,8 +42,8 @@ export interface AnimeRow { anime_sn: number | string; video_sn?: number | strin
 export interface FilmRow { id: number | string; title: string; poster_url?: string; watched_date?: string; release_year?: number | string; tmdb_id?: number | string | null }
 export interface TvRow { series_name: string; poster_url?: string; last_watched?: string; ep_count?: number; tmdb_id?: number | string | null }
 export interface WatchStats { animeCount?: number; filmCount?: number; tvSeriesCount?: number }
-interface LiveNow { cover?: string; title: string; externalUrl?: string; progressPct?: number | null; episode?: number | string; source?: string; type?: string }
-interface WatchFavorite { id: number; title: string; rating: number; poster?: string; quote?: string; year?: number; externalUrl?: string }
+export interface LiveNow { cover?: string; title: string; externalUrl?: string; progressPct?: number | null; episode?: number | string; source?: string; type?: string }
+export interface WatchFavorite { id: number; title: string; rating: number; poster?: string; quote?: string; year?: number; externalUrl?: string }
 
 /* 連結通通走 TMDb */
 const tmdbUrl = (kind: string, id?: number | string | null): string | null =>
@@ -103,28 +110,22 @@ const groupByWeek = (items: WatchEntry[]): { thisWeek: WatchEntry[]; earlier: Wa
 function Watch() {
   const { t, i18n } = useTranslation();
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  // 路由 loader 在 server 端抓好的觀看紀錄（元件被 /watch 與 /$locale/watch 共用 → strict:false）。
-  // 有值就當初始資料 → SSR 直接 render 出紀錄，而不是停在 null（載入中）。
-  const initial = useLoaderData({ strict: false }) as
-    | { animeHistory?: AnimeRow[]; films?: FilmRow[]; series?: TvRow[]; stats?: WatchStats | null }
-    | undefined;
-  const [animeHistory, setAnimeHistory] = useState<AnimeRow[] | null>(initial?.animeHistory ?? null);
-  const [films, setFilms] = useState<FilmRow[] | null>(initial?.films ?? null);
-  const [series, setSeries] = useState<TvRow[] | null>(initial?.series ?? null);
-  const [stats, setStats] = useState<WatchStats | null>(initial?.stats ?? null);
-  const [liveNow, setLiveNow] = useState<LiveNow | null>(null);
-  const [favorites, setFavorites] = useState<WatchFavorite[]>([]);
+  // 資料改由 TanStack Query 管理：route loader 已 prefetch anime/films/tv/stats（SSR baked）。
+  // liveNow（30 秒輪詢即時狀態）與 favorites（依 UI 語系）不進 SSR、client 自己抓。
+  const { data: animeHistory = null, error: animeError } = useQuery(animeHistoryQueryOptions);
+  const { data: films = null } = useQuery(filmsQueryOptions);
+  const { data: series = null } = useQuery(seriesQueryOptions);
+  const { data: stats = null } = useQuery(watchStatsQueryOptions);
+  const { data: liveNow = null } = useQuery(liveNowQueryOptions);
+  const { data: favorites = [] } = useQuery(watchFavoritesQueryOptions(lang));
+  const err = animeError ? (animeError instanceof Error ? animeError.message : 'fetch failed') : null;
   const [favEditing, setFavEditing] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   const { isAdmin } = useAuth();
   const navigate = useLocaleNavigate();
+  const queryClient = useQueryClient();
 
-  const loadFavorites = useCallback(() => {
-    void fetch(`${API_URL}/watch/favorites?locale=${encodeURIComponent(lang)}`, { cache: 'no-store' })
-      .then((r) => r.json() as Promise<{ favorites?: WatchFavorite[] }>)
-      .then((d) => setFavorites(d.favorites ?? []))
-      .catch(() => setFavorites([]));
-  }, [lang]);
+  // FavoritesEditor 改動後重抓 favorites（所有語系版本）。
+  const reloadFavorites = () => { void queryClient.invalidateQueries({ queryKey: ['watch', 'favorites'] }); };
 
   const shareToThinking = (item: WatchEntry | null) => {
     if (!item) return;
@@ -138,47 +139,6 @@ function Watch() {
     try { sessionStorage.setItem('thinking_prefill', JSON.stringify(media)); } catch { /* ignore */ }
     void navigate('/thinking');
   };
-
-  // loader 已在 server 端抓好首屏 → hydrate 後不再重打這四個端點
-  const skipFirstFetch = useRef(Boolean(initial?.animeHistory));
-  useEffect(() => {
-    if (skipFirstFetch.current) { skipFirstFetch.current = false; return; }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const [a, f, s, st] = await Promise.all([
-          fetch(`${API_URL}/anime/history?limit=200`).then((r) => r.json() as Promise<{ history?: AnimeRow[] }>),
-          fetch(`${API_URL}/films/recent?limit=20`).then((r) => r.json() as Promise<{ films?: FilmRow[] }>),
-          fetch(`${API_URL}/tv/recent?limit=20`).then((r) => r.json() as Promise<{ series?: TvRow[] }>),
-          fetch(`${API_URL}/watch/stats`).then((r) => r.json() as Promise<WatchStats>),
-        ]);
-        if (cancelled) return;
-        setAnimeHistory(a.history ?? []);
-        setFilms(f.films ?? []);
-        setSeries(s.series ?? []);
-        setStats(st);
-      } catch (e) {
-        if (!cancelled) setErr(e instanceof Error ? e.message : 'fetch failed');
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => { loadFavorites(); }, [loadFavorites]);
-
-  /* 即時觀看：輪詢 /watch/now */
-  useEffect(() => {
-    let cancelled = false;
-    const poll = async () => {
-      try {
-        const r = await fetch(`${API_URL}/watch/now`).then((x) => x.json() as Promise<{ watching?: LiveNow | null }>);
-        if (!cancelled) setLiveNow(r.watching ?? null);
-      } catch { /* ignore */ }
-    };
-    void poll();
-    const id = setInterval(() => { void poll(); }, 30000);
-    return () => { cancelled = true; clearInterval(id); };
-  }, []);
 
   /* ── 從 anime_history 聚合成「每部動畫一筆」── */
   const { now, recentAnime } = useMemo<{ now: WatchEntry | null; recentAnime: WatchEntry[] }>(() => {
@@ -422,7 +382,7 @@ function Watch() {
           <FavoritesEditor
             favorites={favorites}
             onClose={() => setFavEditing(false)}
-            onChanged={loadFavorites}
+            onChanged={reloadFavorites}
           />
         )}
 
