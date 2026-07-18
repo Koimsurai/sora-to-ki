@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
-import { useLoaderData, useRouterState } from '@tanstack/react-router';
-import { LocaleLink } from '../locale-link';
+import { useRouterState } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { LocaleLink, useLocale } from '../locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
@@ -10,13 +11,14 @@ import NebulaBackground from './NebulaBackground';
 import KoimLoader from './KoimLoader';
 import type { Variants } from 'framer-motion';
 import type { PostListItem } from '@koimsurai/api-types';
+import { postsListQueryOptions, blogTagsQueryOptions, blogCategoriesQueryOptions } from '../blogList';
 import { prefetchPost } from '../lib/prefetchPost';
 import './Blog.css';
 
 /** `GET /api/posts` 的單篇摘要，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
 export type Post = PostListItem;
-type Tag = string | { name: string; post_count?: number };
-interface Category { name: string; post_count?: number }
+export type Tag = string | { name: string; post_count?: number };
+export interface Category { name: string; post_count?: number }
 interface PostGroup { year: number; month: number; label: string; posts: Post[] }
 interface HeatmapCell { date: Date; count: number; level: number }
 
@@ -344,19 +346,20 @@ function Blog() {
   // 路由 loader 在 server 端抓好的首屏文章。元件被 /blog 與 /$locale/blog 共用 → strict:false
   // (官方給共用元件的用法:忽略 from、型別放寬)。有值就當初始資料 → SSR 直接 render 出文章,
   // 而不是卡在下面的 `if (loading)` 骨架屏。
-  const initialPosts = useLoaderData({ strict: false })?.posts ?? [];
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [loading, setLoading] = useState(initialPosts.length === 0);
-  const [error, setError] = useState<string | null>(null);
+  const locale = useLocale();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
-  const [allTags, setAllTags] = useState<Tag[]>([]);
-  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  // 資料改由 TanStack Query 管理：route loader 已 prefetch 首屏（newest）→ SSR baked、
+  // hydrate 後 useQuery 讀快取。切換排序 = 換 queryKey 自動 refetch（且帶 locale）。
+  const { data: posts = [], isPending: postsPending, error: postsError } = useQuery(postsListQueryOptions(locale, sortBy));
+  const { data: allTags = [] } = useQuery(blogTagsQueryOptions);
+  const { data: allCategories = [] } = useQuery(blogCategoriesQueryOptions);
+  const loading = postsPending;
+  const error = postsError ? (postsError instanceof Error ? postsError.message : '載入失敗') : null;
   const [tagsExpanded, setTagsExpanded] = useState(false);
   const [floatingComment, setFloatingComment] = useState<{ postId: string; postTitle: string; allowComments: boolean } | null>(null);
-  const isInitialLoad = React.useRef(true);
   const search = useRouterState({ select: (s) => s.location.search }) as { category?: string; tag?: string };
 
   const handleOpenComments = useCallback((postId: string | number, postTitle: string, allowComments: boolean) => {
@@ -373,52 +376,8 @@ function Blog() {
     if (search.tag) setSelectedTag(search.tag);
   }, [search.category, search.tag]);
 
-  useEffect(() => {
-    const firstRun = isInitialLoad.current;
-    if (firstRun) {
-      window.scrollTo(0, 0); // 切換排序不需要 scroll to top
-    }
-    // loader 已經在 server 端抓好首屏('newest') → hydrate 後不再重打一次;切換排序才 refetch
-    if (!(firstRun && initialPosts.length)) void fetchPosts();
-    if (firstRun) {
-      void fetchTags();
-      void fetchCategories();
-      isInitialLoad.current = false;
-    }
-  }, [sortBy]);
-
-  const fetchPosts = async () => {
-    try {
-      // 只有首次載入才顯示全頁 loading，排序切換時不顯示
-      if (!posts.length) setLoading(true);
-      const res = await fetch(`/api/posts?sortBy=${sortBy}&limit=100`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json() as { posts?: Post[] };
-      if (data.posts && Array.isArray(data.posts)) {
-        setPosts(data.posts.map(p => ({ ...p, tags: p.tags ?? [] })));
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '載入失敗');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchTags = async () => {
-    try {
-      const res = await fetch('/api/tags');
-      const data = await res.json() as { tags?: Tag[] };
-      if (data.tags) setAllTags(data.tags);
-    } catch (err) { console.error(err); }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const res = await fetch('/api/categories');
-      const data = await res.json() as { categories?: Category[] };
-      if (data.categories) setAllCategories(data.categories);
-    } catch (err) { console.error(err); }
-  };
+  // posts / tags / categories 都改由 useQuery 管理（見檔案上方）；
+  // 排序切換由 sortBy 進 queryKey 自動 refetch，不再需要手動 fetch useEffect。
 
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {

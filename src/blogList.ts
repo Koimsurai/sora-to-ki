@@ -1,21 +1,43 @@
+import { queryOptions } from '@tanstack/react-query';
+import type { PostsListResponse } from '@koimsurai/api-types';
 import { apiUrl } from './api';
-import type { Post } from './components/Blog';
+import type { Post, Tag, Category } from './components/Blog';
 
-export interface BlogListData {
-  posts: Post[];
-}
+// 列表頁資料改由 TanStack Query 管理。loader 用 prefetchQuery 預取 → SSR baked。
+// posts query 依 (locale, sortBy) 參數化：切換排序 = 換 queryKey 自動 refetch，
+// 且**帶著 locale**（舊的 client refetch 漏了 lang，/en/blog 切排序會抓成 zh-TW）。
+const STALE = 5 * 60 * 1000;
 
-// 列表頁 loader:在 server 端(SSR/ISR)先抓好首屏文章 baked 進 HTML。
-// Blog 元件原本只在 useEffect 抓資料,而 useEffect 不在 server 執行 → SSR 只吐骨架屏、
-// HTML 裡 0 筆文章(SEO 看不到、ISR 也只快取到空殼)。
-// sortBy 用 'newest' 對齊元件的初始排序;切換排序仍由元件自己 refetch。
-export async function loadBlogPosts(locale: string): Promise<BlogListData> {
-  try {
-    const res = await fetch(apiUrl(`/api/posts?sortBy=newest&limit=100&lang=${locale}`));
-    if (!res.ok) return { posts: [] };
-    const data = (await res.json()) as { posts?: Post[] };
-    return { posts: (data.posts ?? []).map((p) => ({ ...p, tags: p.tags ?? [] })) };
-  } catch {
-    return { posts: [] }; // 後端不通時不擋整頁:退回 client 端自己抓
-  }
-}
+export const postsListQueryOptions = (locale: string, sortBy: string) =>
+  queryOptions({
+    queryKey: ['posts', 'list', locale, sortBy],
+    queryFn: async (): Promise<Post[]> => {
+      const res = await fetch(apiUrl(`/api/posts?sortBy=${sortBy}&limit=100&lang=${locale}`));
+      if (!res.ok) throw new Error(`GET /api/posts ${res.status}`);
+      const data = (await res.json()) as PostsListResponse;
+      return data.posts;
+    },
+    staleTime: STALE,
+  });
+
+export const blogTagsQueryOptions = queryOptions({
+  queryKey: ['tags'],
+  queryFn: async (): Promise<Tag[]> => {
+    const res = await fetch(apiUrl('/api/tags'));
+    if (!res.ok) throw new Error(`GET /api/tags ${res.status}`);
+    const data = (await res.json()) as { tags?: Tag[] };
+    return data.tags ?? [];
+  },
+  staleTime: STALE,
+});
+
+export const blogCategoriesQueryOptions = queryOptions({
+  queryKey: ['categories'],
+  queryFn: async (): Promise<Category[]> => {
+    const res = await fetch(apiUrl('/api/categories'));
+    if (!res.ok) throw new Error(`GET /api/categories ${res.status}`);
+    const data = (await res.json()) as { categories?: Category[] };
+    return data.categories ?? [];
+  },
+  staleTime: STALE,
+});

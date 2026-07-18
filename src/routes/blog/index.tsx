@@ -1,10 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { localePage } from '../../localePage';
 import Blog from '../../components/Blog';
-import { loadBlogPosts } from '../../blogList';
+import { postsListQueryOptions } from '../../blogList';
 import { DEFAULT_LOCALE } from '../../start-i18n';
 
 export const Route = createFileRoute('/blog/')({
   ...localePage('blog', Blog),
-  loader: () => loadBlogPosts(DEFAULT_LOCALE),
+  // 預取首屏文章（sortBy=newest，對齊元件初始排序）→ SSR baked。prefetchQuery 吞錯不擋頁。
+  loader: async ({ context }) => {
+    await context.queryClient.prefetchQuery(postsListQueryOptions(DEFAULT_LOCALE, 'newest'));
+  },
 });
