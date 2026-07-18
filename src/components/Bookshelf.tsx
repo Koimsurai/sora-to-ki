@@ -3,7 +3,6 @@ import { useLoaderData } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaStarHalfAlt, FaBook, FaSearch, FaFilter, FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
-import SEOHead from './SEOHead';
 
 // 3D 圖書館用 lazy import:three.js/R3F 只在 client 切到 3D 模式時才動態載入,
 // 完全不進 server bundle / SSR render(避免每個請求白跑 three.js 的伺服器負擔)。
@@ -274,7 +273,6 @@ const Bookshelf = () => {
 
   return (
     <div className="bookshelf-container">
-      <SEOHead title={t('bookshelf.title')} description={t('bookshelf.description')} />
       {/* ── Nebula Background ── */}
       <div className="bookshelf-dim-overlay" />
       <div className="bookshelf-nebula-bg">

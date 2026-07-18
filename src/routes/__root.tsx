@@ -12,7 +12,6 @@ import {
   Scripts,
   useRouterState,
 } from '@tanstack/react-router';
-import { HelmetProvider } from 'react-helmet-async';
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { AuthProvider } from '../contexts/AuthContext';
 import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
@@ -98,21 +97,19 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         />
       </head>
       <body>
-        {/* 全域 providers(對齊舊 App.tsx 疊法);HelmetProvider 是 SEOHead 過渡 bridge */}
-        <HelmetProvider>
-          <AuthProvider>
-            <ParallaxProvider>
-              <PageVisibilityBridge>
-                {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
-                    否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
-                    prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
-                <ArticlePreviewProvider>
-                  <LocaleProvider locale={locale}>{children}</LocaleProvider>
-                </ArticlePreviewProvider>
-              </PageVisibilityBridge>
-            </ParallaxProvider>
-          </AuthProvider>
-        </HelmetProvider>
+        {/* 全域 providers(對齊舊 App.tsx 疊法)。SEOHead 已退休 → HelmetProvider/react-helmet-async 一併移除。 */}
+        <AuthProvider>
+          <ParallaxProvider>
+            <PageVisibilityBridge>
+              {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
+                  否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
+                  prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
+              <ArticlePreviewProvider>
+                <LocaleProvider locale={locale}>{children}</LocaleProvider>
+              </ArticlePreviewProvider>
+            </PageVisibilityBridge>
+          </ParallaxProvider>
+        </AuthProvider>
         <Scripts />
       </body>
     </html>

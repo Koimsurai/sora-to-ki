@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback, type CSSProperties } from 're
 import { useLoaderData } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import SEOHead from './SEOHead';
 import KoimLoader from './KoimLoader';
 import './Music.css';
 
@@ -300,7 +299,6 @@ const Music = () => {
 
   return (
     <div className="music-page" ref={containerRef} style={glowStyle}>
-      <SEOHead title={t('music.title')} description={t('music.description')} />
       <div className="music-dim-overlay" />
 
       {/* ═══ 星雲背景 ═══ */}

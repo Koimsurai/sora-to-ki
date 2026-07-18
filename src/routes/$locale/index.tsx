@@ -1,13 +1,18 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { buildAlternateLinks, DEFAULT_LOCALE, localeFromPrefix, LocaleProvider } from '../../start-i18n';
 import MainPage from '../../components/MainPage';
+import { seoMetaFor } from '../../pageSeo';
 
 // 帶前綴的 locale 首頁:/en、/ja、/ko、/zh-cn。
 // 非支援前綴 → notFound;預設 zh-TW → notFound(走無前綴的 routes/index)。
 export const Route = createFileRoute('/$locale/')({
-  head: ({ params }) => ({
-    links: buildAlternateLinks('', localeFromPrefix(params.locale) ?? DEFAULT_LOCALE),
-  }),
+  head: ({ params }) => {
+    const locale = localeFromPrefix(params.locale) ?? DEFAULT_LOCALE;
+    return {
+      meta: seoMetaFor('', locale, `/${params.locale}`),
+      links: buildAlternateLinks('', locale),
+    };
+  },
   loader: ({ params }) => {
     const locale = localeFromPrefix(params.locale);
     if (!locale || locale === 'zh-TW') throw notFound();

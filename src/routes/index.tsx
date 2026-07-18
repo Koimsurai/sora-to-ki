@@ -12,6 +12,7 @@ import {
   type Locale,
 } from '../start-i18n';
 import MainPage from '../components/MainPage';
+import { seoMetaFor } from '../pageSeo';
 
 // server-only:讀 UA / cookie / Accept-Language → 決定首頁要導向哪個 locale。
 // 包在 createServerFn 裡,server-only 的 header API 才不會被打進 client bundle。
@@ -29,7 +30,10 @@ const detectLocale = createServerFn({ method: 'GET' }).handler((): Locale => {
 // 預設語言(zh-TW)無前綴首頁 +「依 Accept-Language 自動導向」入口。
 // `/` 不進 prerender(見 vite.config.start.ts 的 filter)→ 每次請求都在 server 跑 beforeLoad。
 export const Route = createFileRoute('/')({
-  head: () => ({ links: buildAlternateLinks('', DEFAULT_LOCALE) }),
+  head: () => ({
+    meta: seoMetaFor('', DEFAULT_LOCALE, '/'),
+    links: buildAlternateLinks('', DEFAULT_LOCALE),
+  }),
   beforeLoad: async () => {
     if (typeof window !== 'undefined') return; // 只在 server 初次請求偵測;client 端導覽回首頁不被導走
     const target = await detectLocale();

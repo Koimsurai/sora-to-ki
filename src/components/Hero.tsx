@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react'; // Import useState and useEffect
-import { useTranslation } from 'react-i18next';
 // Remove motion import as it's no longer used for text
 import { Parallax } from 'react-scroll-parallax'; // 引入 Parallax
 // Remove unused particle imports
 // ✅ 優化: 使用解構引入 (Vite 會自動 tree-shake)
 import { FaGithub, FaLinkedin, FaInstagram, FaFacebook, FaRss, FaEnvelope, FaSpotify } from 'react-icons/fa';
-import SEOHead from './SEOHead';
 import './Hero.css';
 import meImage from '../assets/me-avatar.webp'; // 導入頭像圖片
 
@@ -61,8 +59,6 @@ const useTypingEffect = (text: string, speed = 100, startDelay = 0) => {
 
 
 function Hero() {
-  const { t } = useTranslation();
-
   // Innei 式三行：名字高亮 → accent + 發光 chip（打字機）→ 小描述行。
   // hero 文案統一英文（不跟語系走），只有 chip 文字打字。
   const { displayedText: typedChip, isTypingComplete: chipComplete } = useTypingEffect('products that feel right', 80, 900);
@@ -73,11 +69,6 @@ function Hero() {
       id="home"
       className="hero-section"
     >
-      <SEOHead
-        title={null}
-        description={t('hero.description')}
-        path="/"
-      />
       {/* 移除 Saturn3D 和 Particles 的渲染 */}
 
       {/* Keep motion.div for overall content animation, but remove whileInView for text */}

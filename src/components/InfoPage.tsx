@@ -2,7 +2,6 @@ import { useEffect, useState, useRef, useCallback, type ReactNode } from 'react'
 import { LocaleLink } from '../locale-link';
 import { motion } from 'framer-motion';
 import { FaArrowUp } from 'react-icons/fa';
-import SEOHead from './SEOHead';
 import SignatureSVG from './SignatureSVG';
 import Comments from './Comments';
 import './BlogPost.css';     // 拿 BlogPost 的 dim overlay / post-content-wrapper / TOC 樣式
@@ -93,7 +92,6 @@ function InfoPage({
 
   return (
     <div className="blog-post-container info-page" style={{ fontFamily: 'inherit' }}>
-      <SEOHead title={title} description={subtitle} />
 
       {/* 同一塊 dim overlay 蓋在 starfield 上面，跟 BlogPost 一致的暗色感 */}
       <div className="blog-post-dim-overlay" />

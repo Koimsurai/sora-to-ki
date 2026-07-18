@@ -8,7 +8,6 @@ import { photosAtom, openViewerAtom } from '../store/photoStore';
 import PhotoViewer from './PhotoViewer.tsx';
 import { loadPhotosManifest } from '../utils/manifestLoader';
 import './PhotoGallery.css';
-import SEOHead from './SEOHead';
 import type { PhotoManifest, MasonryItemType } from '../types/photo';
 
 // 照片項目組件
@@ -203,7 +202,6 @@ function PhotoGallery() {
 
   return (
     <section id="photo-gallery" className="photo-gallery-section min-h-screen pt-24 pb-20 px-4 lg:px-8">
-      <SEOHead title="攝影作品集" description="Koimsurai 的攝影作品集，記錄旅途中的光影故事。" />
       {/* Hero 區塊 */}
       <div className="afilmory-hero-container">
         <motion.h1

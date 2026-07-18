@@ -2,7 +2,6 @@ import { useState, type ReactElement } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { FaDesktop, FaServer, FaWifi, FaKeyboard, FaHome } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
-import SEOHead from './SEOHead';
 import './Setup.css';
 
 // --- 圖片導入 ---
@@ -231,7 +230,7 @@ const sectionVariants: Variants = {
 };
 
 function Setup() {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const ui = SETUP_UI[lang] || SETUP_UI['zh-TW'];
   const [activeFilter, setActiveFilter] = useState('all');
@@ -244,11 +243,6 @@ function Setup() {
 
   return (
     <div className="setup-page">
-      <SEOHead
-        title={t('setup.title')}
-        description={t('setup.description')}
-        path="/setup"
-      />
       {/* 深空背景 */}
       <div className="setup-deep-space-bg" />
 

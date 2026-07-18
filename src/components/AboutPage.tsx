@@ -2,8 +2,6 @@
 // 收尾接上精簡版成長軌跡（舊 /journey 併入此頁，/journey 轉址過來）。
 import { useEffect } from 'react';
 import { useRouterState } from '@tanstack/react-router';
-import { useTranslation } from 'react-i18next';
-import SEOHead from './SEOHead';
 import AboutMe from './AboutMe';
 import Expertise from './Expertise';
 import WorkExperience from './WorkExperience';
@@ -11,18 +9,9 @@ import SchoolClubs from './SchoolClubs';
 import JourneyTimeline from './JourneyTimeline';
 import './AboutPage.css';
 
-const SEO: Record<string, { title: string; desc: string }> = {
-  'zh-TW': { title: '關於我', desc: 'Koimsurai — 全端工程師。技能、經歷、社團與成長軌跡。' },
-  'zh-CN': { title: '关于我', desc: 'Koimsurai — 全栈工程师。技能、经历、社团与成长轨迹。' },
-  en: { title: 'About', desc: 'Koimsurai — full-stack engineer. Skills, experience, communities and journey.' },
-  ja: { title: '私について', desc: 'Koimsurai — フルスタックエンジニア。スキル・経歴・コミュニティ・歩み。' },
-  ko: { title: '소개', desc: 'Koimsurai — 풀스택 엔지니어. 기술, 경력, 커뮤니티와 여정.' },
-};
-
+// title/description 由 head() 出（pageSeo 的 about.title / about.description，進 SSR）。
+// 舊的 SEO 表 + <SEOHead>（helmet、爬蟲看不到）已隨 SEOHead 退休一併移除。
 function AboutPage() {
-  const { i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const seo = SEO[lang] || SEO['zh-TW'];
   const hash = useRouterState({ select: (s) => s.location.hash });
 
   // /about#journey 之類的 hash 進場：等 section 掛載後捲過去
@@ -39,7 +28,6 @@ function AboutPage() {
     <div className="about-page">
       {/* 前景濾鏡：壓暗亮星空，跟 /watch /thinking 一致 */}
       <div className="about-scrim" />
-      <SEOHead title={seo.title} description={seo.desc} path="/about" />
       <AboutMe />
       <Expertise />
       <WorkExperience />

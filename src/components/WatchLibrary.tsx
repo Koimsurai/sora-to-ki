@@ -3,7 +3,6 @@ import { LocaleLink } from '../locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FaSearch, FaChevronDown } from 'react-icons/fa';
-import SEOHead from './SEOHead';
 import './WatchLibrary.css';
 
 /* ──────────────────────────────────────────────────────────────
@@ -196,7 +195,6 @@ function WatchLibrary() {
   return (
     <div className="wl-page">
       <div className="wl-scrim" />
-      <SEOHead title={t('watch.library.title')} description={t('watch.library.subtitle')} path="/watch/library" />
 
       <div className="wl-wrap">
         <motion.header className="wl-header" {...reveal}>

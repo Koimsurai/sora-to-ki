@@ -4,7 +4,6 @@ import { motion, type Variants } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Rss } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import SEOHead from './SEOHead';
 import ThoughtCard, { type Thought } from './ThoughtCard';
 import './Thinking.css';
 
@@ -97,7 +96,6 @@ function Thinking() {
   return (
     <div className="tk-page">
       <div className="tk-scrim" />
-      <SEOHead title={t('thinking.title')} description={t('thinking.subtitle')} path="/thinking" />
 
       <div className="tk-wrap">
         <motion.header className="tk-header" {...headReveal}>

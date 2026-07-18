@@ -8,7 +8,8 @@ import type { PostData } from './pages/BlogPostPage';
 // 文章頁更特殊：SSR 走的是 <ClientOnly> 的 fallback `BlogPostPage`，它根本沒掛 SEOHead，
 // 真正有 SEOHead 的 `BlogPost` 是 client-only 元件。
 //
-// 其餘 21 個用 SEOHead 的頁面有同樣問題（og 進不了 SSR），屬既有缺陷，未在此次一併處理。
+// （2026-07：SEOHead 已全面退休。所有頁面的 title/description/og 都改由 head() 出、進 SSR；
+//  文章頁的 BlogPosting JSON-LD 也搬進 head().scripts。react-helmet-async 依賴已移除。）
 
 const BASE_URL = 'https://koimsurai.com';
 const SITE_NAME = '宙と木 · Koimsurai';
@@ -101,4 +102,30 @@ export function articleMeta(post: PostData, canonicalPath: string, locale: strin
     ...(toIso(post.updated_at) ? [{ property: 'article:modified_time', content: toIso(post.updated_at)! }] : []),
     ...(post.author ? [{ property: 'article:author', content: post.author }] : []),
   ];
+}
+
+/**
+ * 文章頁的 BlogPosting JSON-LD，放進 head() 的 `scripts` → **進 SSR**。
+ * 過去這段結構化資料只在元件的 <SEOHead>（helmet）裡出 → hydrate 後才掛、爬蟲看不到。
+ * SEOHead 退休後改由此在 SSR 出，結構化資料首次讓不執行 JS 的爬蟲讀得到。
+ */
+export function articleJsonLd(post: PostData, canonicalPath: string): { type: string; children: string } {
+  const url = `${BASE_URL}${canonicalPath}`;
+  const image = `${BASE_URL}/api/og/${post.id}.png`;
+  const published = toIso(post.created_at);
+  const jsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt ?? '',
+    url,
+    image,
+    author: { '@type': 'Person', name: post.author ?? 'Koimsurai', url: BASE_URL },
+    publisher: { '@type': 'Person', name: 'Koimsurai', url: BASE_URL },
+    ...(published ? { datePublished: published } : {}),
+    dateModified: toIso(post.updated_at) ?? published,
+    ...((post.tags?.length ?? 0) > 0 ? { keywords: post.tags!.join(', ') } : {}),
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+  };
+  return { type: 'application/ld+json', children: JSON.stringify(jsonLd) };
 }

@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
-import SEOHead from './SEOHead';
 import KoimLoader from './KoimLoader';
 import './Activity.css';
 
@@ -330,7 +329,6 @@ const Activity = () => {
 
   return (
     <div className={`activity-page ${!isVisible ? 'is-hidden' : ''}`}>
-      <SEOHead title={t('activity.title')} description={t('activity.description')} />
 
       <div className="activity-dim-overlay" />
       <div className="activity-nebula-bg">

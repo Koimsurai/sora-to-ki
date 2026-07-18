@@ -3,7 +3,7 @@ import { Suspense, lazy } from 'react';
 import { LocaleProvider, buildAlternateLinks, localeFromPrefix, toLocales } from '../../../start-i18n';
 import { BlogPostPage, type PostData } from '../../../pages/BlogPostPage';
 import { apiUrl } from '../../../api';
-import { articleMeta } from '../../../seoMeta';
+import { articleJsonLd, articleMeta } from '../../../seoMeta';
 
 const FullBlogPost = lazy(() => import('../../../components/BlogPost'));
 
@@ -23,6 +23,7 @@ export const Route = createFileRoute('/$locale/blog/$id')({
       // og/twitter 也在這裡出（理由同 /blog/$id）
       meta: articleMeta(post, `/${params.locale}/blog/${post.id}`, locale),
       links: buildAlternateLinks(`blog/${post.id}`, locale, toLocales(post.available_locales)),
+      scripts: [articleJsonLd(post, `/${params.locale}/blog/${post.id}`)],
     };
   },
   component: RouteComponent,

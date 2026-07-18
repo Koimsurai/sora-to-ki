@@ -4,7 +4,6 @@ import { LocaleLink, useLocaleNavigate } from '../locale-link';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import SEOHead from './SEOHead';
 import FavoritesEditor from './FavoritesEditor';
 import './Watch.css';
 
@@ -341,7 +340,6 @@ function Watch() {
   return (
     <div className="w-page">
       <div className="w-scrim" />
-      <SEOHead title={t('watch.title')} description={t('watch.metaDescription')} />
 
       <div className="w-wrap">
         {/* header */}

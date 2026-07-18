@@ -4,7 +4,6 @@ import { LocaleLink } from '../locale-link';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import SEOHead from './SEOHead';
 import KoimLoader from './KoimLoader';
 import ThoughtCard, { type Thought } from './ThoughtCard';
 import Comments from './Comments';
@@ -48,7 +47,6 @@ function ThinkingDetail() {
   return (
     <div className="tk-page">
       <div className="tk-scrim" />
-      <SEOHead title={t('thinking.title')} description={thought?.content ?? t('thinking.subtitle')} path={`/thinking/${id}`} />
 
       <div className="tk-wrap tk-wrap--detail">
         <LocaleLink to="/thinking" className="tk-back">← {t('thinking.back')}</LocaleLink>

@@ -1,15 +1,10 @@
 import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
-import SEOHead from './SEOHead';
 
 const NotFound = () => {
   const { t } = useTranslation();
   return (
     <>
-      <SEOHead
-        title={`${t('notFound.pageTitle')} | Koimsurai`}
-        description={t('notFound.seoDescription')}
-      />
       <div style={{
         minHeight: '70vh',
         display: 'flex',

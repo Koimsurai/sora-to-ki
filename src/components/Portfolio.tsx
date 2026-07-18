@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
 import photoMainImage from '../assets/Photo-main.webp';
-import SEOHead from './SEOHead';
 import './Portfolio.css';
 
 interface FeatText { category: string; status: string; title: string; desc: string; linkLabel: string }
@@ -140,7 +139,6 @@ const Portfolio = () => {
   <div className="portfolio-page">
   {/* 前景濾鏡：壓暗亮星空，跟 /watch /thinking 一致 */}
   <div className="portfolio-scrim" />
-  <SEOHead title={dict.pageTitle} description={dict.pageSub} path="/portfolio" />
   <section id="portfolio" className="home-section portfolio-v2">
     <div className="home-section-eyebrow">
       <span className="section-label">Selected Work</span>
