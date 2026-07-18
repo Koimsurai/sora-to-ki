@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { postSchema, type PostFormInput } from '@/schemas/post';
+import type { AdminPostDetailResponse } from '@koimsurai/api-types';
 import { MonacoEditor } from '@/components/monaco-editor';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -56,27 +57,9 @@ interface N8NData {
   allowComments?: boolean;
   allow_comments?: boolean;
 }
-// 後端 /api/admin/posts/:id 回傳的原始貼文資料（excerpt* 對應表單的 summary*）
-interface PostApiData {
-  title?: string;
-  content?: string;
-  slug?: string;
-  category?: string;
-  cover?: string;
-  status?: 'draft' | 'published' | 'archived';
-  layout_type?: 'record' | 'column';
-  tags?: unknown;
-  excerpt?: string;
-  summary?: string;
-  source_language?: 'zh-TW' | 'zh-CN' | 'en' | 'ja' | 'ko';
-  title_en?: string; content_en?: string; excerpt_en?: string;
-  title_zh_cn?: string; content_zh_cn?: string; excerpt_zh_cn?: string;
-  title_ja?: string; content_ja?: string; excerpt_ja?: string;
-  title_ko?: string; content_ko?: string; excerpt_ko?: string;
-  allow_comments?: number | boolean;
-  series_name?: string;
-  series_order?: string | number;
-}
+// 後端 /api/admin/posts/:id 回傳的原始貼文資料（excerpt* 對應表單的 summary*）。
+// 型別由後端 Rust struct 生成；`summary` 只存在於表單、API 不回傳，故此處不含。
+type PostApiData = AdminPostDetailResponse;
 
 type LocalizedField =
   | 'title' | 'content' | 'summary'
@@ -319,13 +302,13 @@ export default function PostEditor() {
         const formattedData = {
           ...data,
           tags: formatTags(data.tags),
-          summary: data.excerpt ?? data.summary ?? '',
+          summary: data.excerpt ?? '',
           source_language: data.source_language ?? 'zh-TW',
           title_en: data.title_en ?? '', content_en: data.content_en ?? '', summary_en: data.excerpt_en ?? '',
           title_zh_cn: data.title_zh_cn ?? '', content_zh_cn: data.content_zh_cn ?? '', summary_zh_cn: data.excerpt_zh_cn ?? '',
           title_ja: data.title_ja ?? '', content_ja: data.content_ja ?? '', summary_ja: data.excerpt_ja ?? '',
           title_ko: data.title_ko ?? '', content_ko: data.content_ko ?? '', summary_ko: data.excerpt_ko ?? '',
-          allow_comments: data.allow_comments !== 0 && data.allow_comments !== false,
+          allow_comments: data.allow_comments,
           series_name: data.series_name ?? '',
           series_order: data.series_order ?? '',
           // Newsletter trigger is a transient form-only flag — never persisted on the post.

@@ -3,6 +3,7 @@ import { useParams, useRouterState, useNavigate } from '@tanstack/react-router';
 import { LocaleLink } from '../locale-link';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
+import type { PostDetailResponse } from '@koimsurai/api-types';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from './KoimLoader';
@@ -21,38 +22,17 @@ import {
   FaTwitter, FaFacebook,
 } from 'react-icons/fa';
 import Comments from './Comments';
-import SEOHead from './SEOHead';
 import { BlogImage } from './ImageLightbox';
 import { usePreviewLink } from './article-preview/usePreviewLink';
 import './BlogPost.css';
 import SignatureSVG from './SignatureSVG';
 import { LinkCard } from './LinkCard';
 
-type PostTag = string | { name?: string };
-interface Post {
-  id: string | number;
-  title: string;
-  content?: string;
-  created_at?: string;
-  updated_at?: string;
-  category?: string;
-  status?: string;
-  series_order?: string | number;
-  series_name?: string;
-  likes?: number;
-  locale?: string;
-  excerpt?: string;
-  cover?: string;
-  tags?: PostTag[] | string;
-  date?: string;
-  author?: string;
-  view_count?: number;
-  source_language?: string;
-  available_locales?: string[];
-  layout_type?: string;
-  allow_comments?: number | boolean;
-  message?: string;
-}
+/// `GET /api/posts/:id` 的成功回應（型別由後端 Rust struct 生成），外加 client 端自己算的
+/// `date`（由 created_at 依語系格式化，見下方 setPost）。API 不回傳 date。
+/// 該端點的 404 走另一組 JSON（只有 message / locale / available_locales），
+/// 呼叫端用 `data.message === 'success'` 擋掉，所以這裡只描述成功形狀。
+type Post = PostDetailResponse & { date?: string };
 
 interface CategoryInfo {
   name?: string;
@@ -1713,39 +1693,15 @@ function BlogPost() {
   }
 
   /* ════════ Main Render ════════ */
-  const seoDescription = post.excerpt ?? post.content?.substring(0, 160).replace(/<[^>]+>/g, '').replace(/[#*`>\-\n]/g, '').trim();
-  const postTags: string[] = Array.isArray(post.tags)
-    ? post.tags.map(tg => typeof tg === 'string' ? tg : (tg.name ?? ''))
-    : (typeof post.tags === 'string' ? post.tags.split(',') : []);
+  // title/description/og/JSON-LD 由路由 head()（articleMeta + articleJsonLd）出，進 SSR。
+  // 舊的 seoDescription/selfPath/alternates/xDefaultPath 只餵已退休的 <SEOHead>，一併移除。
+  const postTags: string[] = post.tags;
   const sourceLang = post.source_language ?? 'zh-TW';
   const availableLocales = post.available_locales ?? [sourceLang];
   const currentLocale = post.locale ?? pathLocale;
-  const selfPath = postPathForLocale(id, currentLocale, sourceLang);
-  const alternates = availableLocales.map(loc => ({
-    locale: loc,
-    path: postPathForLocale(id, loc, sourceLang),
-  }));
-  const xDefaultPath = postPathForLocale(id, sourceLang, sourceLang);
 
   return (
     <div className="blog-post-container" style={{ fontFamily }}>
-      <SEOHead
-        title={post.title}
-        description={seoDescription}
-        path={selfPath}
-        image={`/api/og/${id}.png`}
-        type="article"
-        locale={currentLocale}
-        alternates={alternates}
-        xDefaultPath={xDefaultPath}
-        article={{
-          author: post.author ?? 'Koimsurai',
-          datePublished: post.created_at,
-          dateModified: post.updated_at ?? post.created_at,
-          tags: postTags,
-        }}
-      />
-
       {/* Dim overlay over global starfield */}
       <div className="blog-post-dim-overlay" />
 
@@ -1834,7 +1790,7 @@ function BlogPost() {
       <div className="post-body">
         {/* Left sidebar — other article titles */}
         <aside className="post-sidebar-left">
-          <PostsNav currentId={id} postTitle={post.title} postCategory={post.category} />
+          <PostsNav currentId={id} postTitle={post.title} postCategory={post.category ?? undefined} />
         </aside>
 
         <AnimatePresence mode="wait">
@@ -1892,7 +1848,7 @@ function BlogPost() {
 
             {/* ── Comments ── */}
             <div className="post-extras" id="comments">
-              <Comments postId={id} allowComments={post?.allow_comments !== 0 && post?.allow_comments !== false} />
+              <Comments postId={id} allowComments={post.allow_comments} />
             </div>
           </motion.div>
         </AnimatePresence>

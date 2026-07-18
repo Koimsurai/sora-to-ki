@@ -11,6 +11,7 @@ use sqlx::FromRow;
 use crate::{
     auth::{require_admin, require_owner},
     error::AppError,
+    handlers::posts::{available_locales_with_source, PostRow},
     state::AppState,
     util::{gen_slug, is_unique_violation, js_substring_prefix, parse_int, row_to_json, split_tags},
 };
@@ -179,13 +180,105 @@ pub struct AdminPostsQuery {
     status: Option<String>,
 }
 
+/// admin 端點的整列 post（`SELECT p.*` 全欄，含 12 個 i18n 欄）。
+///
+/// **欄位序 = posts 表宣告序 + tags**，對齊舊 `row_to_json` 的 key 序（serde_json
+/// preserve_order → struct 欄位序即 JSON key 序）。`/api/admin/posts` 與
+/// `/api/admin/posts/:id` 共用；兩者對 excerpt / source_language 的處理不同，由呼叫端覆寫。
+#[derive(Debug, Serialize, specta::Type)]
+pub struct AdminPostFull {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub title: String,
+    pub content: String,
+    pub excerpt: Option<String>,
+    pub category: Option<String>,
+    pub status: String,
+    pub author: Option<String>,
+    #[specta(type = specta_typescript::Number)]
+    pub view_count: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub likes: i64,
+    pub created_at: String,
+    pub updated_at: Option<String>,
+    pub layout_type: Option<String>,
+    pub excerpt_zh_cn: Option<String>,
+    pub title_ja: Option<String>,
+    pub content_ja: Option<String>,
+    pub excerpt_ja: Option<String>,
+    pub title_en: Option<String>,
+    pub content_en: Option<String>,
+    pub excerpt_en: Option<String>,
+    pub source_language: Option<String>,
+    pub title_zh_cn: Option<String>,
+    pub content_zh_cn: Option<String>,
+    pub series_name: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub series_order: Option<i64>,
+    pub title_ko: Option<String>,
+    pub content_ko: Option<String>,
+    pub allow_comments: bool,
+    pub excerpt_ko: Option<String>,
+    pub tags: Vec<String>,
+}
+
+impl AdminPostFull {
+    /// 原樣轉換（excerpt / source_language 皆為 DB 原值）。
+    fn from_row(r: &PostRow) -> Self {
+        Self {
+            id: r.id,
+            title: r.title.clone(),
+            content: r.content.clone(),
+            excerpt: r.excerpt.clone(),
+            category: r.category.clone(),
+            status: r.status.clone(),
+            author: r.author.clone(),
+            view_count: r.view_count,
+            likes: r.likes,
+            created_at: r.created_at.clone(),
+            updated_at: r.updated_at.clone(),
+            layout_type: r.layout_type.clone(),
+            excerpt_zh_cn: r.excerpt_zh_cn.clone(),
+            title_ja: r.title_ja.clone(),
+            content_ja: r.content_ja.clone(),
+            excerpt_ja: r.excerpt_ja.clone(),
+            title_en: r.title_en.clone(),
+            content_en: r.content_en.clone(),
+            excerpt_en: r.excerpt_en.clone(),
+            source_language: r.source_language.clone(),
+            title_zh_cn: r.title_zh_cn.clone(),
+            content_zh_cn: r.content_zh_cn.clone(),
+            series_name: r.series_name.clone(),
+            series_order: r.series_order,
+            title_ko: r.title_ko.clone(),
+            content_ko: r.content_ko.clone(),
+            allow_comments: r.allow_comments(),
+            excerpt_ko: r.excerpt_ko.clone(),
+            tags: split_tags(r.tags.as_deref()),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, specta::Type)]
+pub struct AdminPostsResponse {
+    pub posts: Vec<AdminPostFull>,
+    #[serde(rename = "totalPages")]
+    #[specta(type = specta_typescript::Number)]
+    pub total_pages: i64,
+    #[serde(rename = "currentPage")]
+    #[specta(type = specta_typescript::Number)]
+    pub current_page: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub total: i64,
+}
+
 /// `{ posts:[{...p.*, tags:[], excerpt}], totalPages, currentPage, total }`。
-/// 整列 spread 用動態 row→JSON（DB 欄位序）；tags/excerpt 覆寫對齊 Express。
+/// excerpt 覆寫為「原 excerpt || content 前 150 字 + '...'」，對齊 Express。
 pub async fn admin_posts(
     State(state): State<AppState>,
     headers: HeaderMap,
     Query(q): Query<AdminPostsQuery>,
-) -> Result<Json<Value>, AppError> {
+) -> Result<Json<AdminPostsResponse>, AppError> {
     require_admin(&headers, &state).await?;
     let page = parse_int(q.page.as_deref(), 1);
     let limit = parse_int(q.limit.as_deref(), 10);
@@ -204,7 +297,7 @@ pub async fn admin_posts(
     }
     sql.push_str(" GROUP BY p.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?");
 
-    let mut query = sqlx::query(&sql);
+    let mut query = sqlx::query_as::<_, PostRow>(&sql);
     if let Some(s) = &q.status {
         query = query.bind(s.clone());
     }
@@ -235,31 +328,28 @@ pub async fn admin_posts(
     }
     let total: i64 = count_q.fetch_one(&state.pool).await?;
 
-    let posts: Vec<Value> = rows
+    let posts: Vec<AdminPostFull> = rows
         .iter()
         .map(|row| {
-            let mut m = row_to_json(row);
-            let tags_owned = m.get("tags").and_then(|v| v.as_str()).map(String::from);
-            let excerpt_owned = m.get("excerpt").and_then(|v| v.as_str()).map(String::from);
-            let content_owned = m.get("content").and_then(|v| v.as_str()).unwrap_or("").to_string();
-            let tags_arr = split_tags(tags_owned.as_deref());
+            let mut item = AdminPostFull::from_row(row);
             // excerpt: row.excerpt || (content.substring(0,150) + '...')
-            let excerpt = excerpt_owned
-                .filter(|s| !s.is_empty())
-                .unwrap_or_else(|| format!("{}...", js_substring_prefix(&content_owned, 150)));
-            m.insert("tags".into(), json!(tags_arr));
-            m.insert("excerpt".into(), json!(excerpt));
-            Value::Object(m)
+            item.excerpt = Some(
+                item.excerpt
+                    .take()
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or_else(|| format!("{}...", js_substring_prefix(&row.content, 150))),
+            );
+            item
         })
         .collect();
 
     let total_pages = if limit > 0 { (total + limit - 1) / limit } else { 0 };
-    Ok(Json(json!({
-        "posts": posts,
-        "totalPages": total_pages,
-        "currentPage": page,
-        "total": total,
-    })))
+    Ok(Json(AdminPostsResponse {
+        posts,
+        total_pages,
+        current_page: page,
+        total,
+    }))
 }
 
 // ── GET /api/admin/comments（分頁；requireAdmin）──────────────────────────
@@ -735,7 +825,7 @@ pub async fn reply_comment(
 use axum::body::Body;
 use axum::extract::Request;
 
-use crate::handlers::posts::{locale_suffix, I18N_LOCALES};
+use crate::handlers::posts::I18N_LOCALES;
 use crate::proxy;
 use crate::util::{js_interp, js_truthy};
 
@@ -1086,12 +1176,22 @@ pub async fn admin_delete_post(State(state): State<AppState>, Path(id): Path<Str
     }
 }
 
-/// `GET /api/admin/posts/:id` —— 編輯器用，回全 locale 欄位（動態 row→JSON spread）。
+/// `GET /api/admin/posts/:id` 成功回應：`{message, ...row, tags, available_locales}`。
+/// flatten 讓 row 的欄位攤平在頂層，key 序 = message → AdminPostFull 欄位序 → available_locales。
+#[derive(Debug, Serialize, specta::Type)]
+pub struct AdminPostDetailResponse {
+    pub message: String,
+    #[serde(flatten)]
+    pub post: AdminPostFull,
+    pub available_locales: Vec<String>,
+}
+
+/// `GET /api/admin/posts/:id` —— 編輯器用，回全 locale 欄位。
 pub async fn admin_get_post(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();
     }
-    let row = sqlx::query(
+    let row = sqlx::query_as::<_, PostRow>(
         "SELECT p.*, GROUP_CONCAT(t.name) as tags FROM posts p \
          LEFT JOIN post_tags pt ON p.id = pt.post_id \
          LEFT JOIN tags t ON pt.tag_id = t.id WHERE p.id = ? GROUP BY p.id",
@@ -1104,37 +1204,22 @@ pub async fn admin_get_post(State(state): State<AppState>, Path(id): Path<String
         Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "message": "Post not found" }))).into_response(),
         Ok(Some(r)) => r,
     };
-    let m = row_to_json(&row);
-    // {message:'success', ...row, source_language: row.source_language||'zh-TW', available_locales, tags:[...]}
-    let mut out = Map::new();
-    out.insert("message".into(), json!("success"));
-    for (k, v) in &m {
-        out.insert(k.clone(), v.clone());
-    }
-    let source = m
-        .get("source_language")
-        .and_then(|v| v.as_str())
+    let mut post = AdminPostFull::from_row(&row);
+    // source_language: row.source_language || 'zh-TW'（空字串也算缺；與公開端點的規則不同）
+    let source = post
+        .source_language
+        .as_deref()
         .filter(|s| !s.is_empty())
         .unwrap_or("zh-TW")
         .to_string();
-    out.insert("source_language".into(), json!(source));
-    // availableLocales（map 版）：source 最前，其餘依 I18N_LOCALES 序檢查 title_sfx/content_sfx truthy
-    let mut locales = vec![source.clone()];
-    for loc in I18N_LOCALES {
-        if loc == source {
-            continue;
-        }
-        if let Some(sfx) = locale_suffix(loc) {
-            let ok = |k: String| m.get(&k).and_then(|v| v.as_str()).is_some_and(|s| !s.is_empty());
-            if ok(format!("title_{sfx}")) && ok(format!("content_{sfx}")) {
-                locales.push(loc.to_string());
-            }
-        }
-    }
-    out.insert("available_locales".into(), json!(locales));
-    let tags = m.get("tags").and_then(|v| v.as_str()).map(String::from);
-    out.insert("tags".into(), json!(split_tags(tags.as_deref())));
-    Json(Value::Object(out)).into_response()
+    post.source_language = Some(source.clone());
+    let available_locales = available_locales_with_source(&row, &source);
+    Json(AdminPostDetailResponse {
+        message: "success".into(),
+        post,
+        available_locales,
+    })
+    .into_response()
 }
 
 /// `GET /api/admin/stats` —— requireAdmin。文章/留言統計 + 模擬訪客數（`Math.random`）。

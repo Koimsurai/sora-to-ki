@@ -37,37 +37,50 @@ fn parse_locale(raw: Option<&str>) -> Option<&'static str> {
 }
 
 /// posts 一列（含全部 i18n 欄位；用 `SELECT p.*` 取，FromRow 依名對應、忽略多餘欄位）。
+///
+/// **欄位序 = posts 表宣告序**（見 `PRAGMA table_info(posts)`），因為 admin 端點的
+/// `AdminPostFull` 照這個順序出 JSON，要對齊舊 `row_to_json`（DB 欄位序）的 key 序。
 #[derive(Debug, FromRow)]
 pub struct PostRow {
-    id: i64,
-    title: String,
-    content: String,
-    excerpt: Option<String>,
-    category: Option<String>,
-    status: String,
-    author: Option<String>,
-    view_count: i64,
-    likes: i64,
-    layout_type: Option<String>,
-    created_at: String,
-    updated_at: Option<String>,
-    source_language: Option<String>,
-    series_name: Option<String>,
-    series_order: Option<i64>,
-    title_en: Option<String>,
-    content_en: Option<String>,
-    excerpt_en: Option<String>,
-    title_zh_cn: Option<String>,
-    content_zh_cn: Option<String>,
-    excerpt_zh_cn: Option<String>,
-    title_ja: Option<String>,
-    content_ja: Option<String>,
-    excerpt_ja: Option<String>,
-    title_ko: Option<String>,
-    content_ko: Option<String>,
-    excerpt_ko: Option<String>,
+    pub(crate) id: i64,
+    pub(crate) title: String,
+    pub(crate) content: String,
+    pub(crate) excerpt: Option<String>,
+    pub(crate) category: Option<String>,
+    pub(crate) status: String,
+    pub(crate) author: Option<String>,
+    pub(crate) view_count: i64,
+    pub(crate) likes: i64,
+    pub(crate) created_at: String,
+    pub(crate) updated_at: Option<String>,
+    pub(crate) layout_type: Option<String>,
+    pub(crate) excerpt_zh_cn: Option<String>,
+    pub(crate) title_ja: Option<String>,
+    pub(crate) content_ja: Option<String>,
+    pub(crate) excerpt_ja: Option<String>,
+    pub(crate) title_en: Option<String>,
+    pub(crate) content_en: Option<String>,
+    pub(crate) excerpt_en: Option<String>,
+    pub(crate) source_language: Option<String>,
+    pub(crate) title_zh_cn: Option<String>,
+    pub(crate) content_zh_cn: Option<String>,
+    pub(crate) series_name: Option<String>,
+    pub(crate) series_order: Option<i64>,
+    pub(crate) title_ko: Option<String>,
+    pub(crate) content_ko: Option<String>,
+    // 欄位可為 NULL（`allow_comments INTEGER DEFAULT 1`，舊列理論上可能沒值）。
+    // NULL 在舊 JS 語意等同「允許」（`null !== 0 && null !== false`）→ 見 allow_comments()。
+    pub(crate) allow_comments: Option<bool>,
+    pub(crate) excerpt_ko: Option<String>,
     // GROUP_CONCAT(t.name)；無 tag 時為 NULL
-    tags: Option<String>,
+    pub(crate) tags: Option<String>,
+}
+
+impl PostRow {
+    /// DB 可為 NULL，但 API 對外恆為 boolean：NULL → true（對齊舊行為，null 視為允許）。
+    pub(crate) fn allow_comments(&self) -> bool {
+        self.allow_comments.unwrap_or(true)
+    }
 }
 
 /// 取某後綴的 (title, content, excerpt) 三元組。
@@ -114,7 +127,13 @@ fn locale_content(row: &PostRow, locale: &str) -> Option<(String, String, String
 
 /// availableLocales：列出該文實際有內容的 locale（source 永遠在最前）。
 fn available_locales(row: &PostRow) -> Vec<String> {
-    let source = source_lang(row).to_string();
+    available_locales_with_source(row, source_lang(row))
+}
+
+/// 同上，但 source 由呼叫端給。admin 端點對 source_language 的預設規則跟公開端點不同
+/// （admin 會把空字串也視為缺、退回 zh-TW），所以不能共用 `source_lang`。
+pub(crate) fn available_locales_with_source(row: &PostRow, source: &str) -> Vec<String> {
+    let source = source.to_string();
     let mut list = vec![source.clone()];
     for loc in I18N_LOCALES {
         if loc == source {
@@ -155,39 +174,52 @@ fn parse_int(s: Option<&str>, default: i64) -> i64 {
     s.and_then(|v| v.trim().parse::<i64>().ok()).unwrap_or(default)
 }
 
-#[derive(Debug, Serialize)]
-struct PostListItem {
-    id: i64,
-    title: String,
-    excerpt: String,
-    category: Option<String>,
-    status: String,
-    author: Option<String>,
-    view_count: i64,
-    likes: i64,
-    layout_type: Option<String>,
-    created_at: String,
-    updated_at: Option<String>,
-    source_language: String,
-    available_locales: Vec<String>,
-    tags: Vec<String>,
+/// `GET /api/posts` 的單篇摘要。`title`/`excerpt` 已依 `?lang=` 取好該語系內容。
+#[derive(Debug, Serialize, specta::Type)]
+pub struct PostListItem {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub title: String,
+    pub excerpt: String,
+    /// 該語系內文的前 260 個 UTF-16 code unit（= JS `content.substring(0,260)`）。
+    /// 列表卡片顯示的是內文截斷而非 AI 摘要（見 Blog.tsx NoteCard），但整篇 content
+    /// 進列表要多 ~188KB，所以只送前端截斷所需的長度。
+    pub content_preview: String,
+    pub category: Option<String>,
+    pub status: String,
+    pub author: Option<String>,
+    #[specta(type = specta_typescript::Number)]
+    pub view_count: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub likes: i64,
+    pub layout_type: Option<String>,
+    pub allow_comments: bool,
+    pub created_at: String,
+    pub updated_at: Option<String>,
+    pub source_language: String,
+    pub available_locales: Vec<String>,
+    pub tags: Vec<String>,
 }
 
-#[derive(Debug, Serialize)]
-struct Pagination {
-    page: i64,
-    limit: i64,
-    total: i64,
+#[derive(Debug, Serialize, specta::Type)]
+pub struct Pagination {
+    #[specta(type = specta_typescript::Number)]
+    pub page: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub limit: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub total: i64,
     #[serde(rename = "totalPages")]
-    total_pages: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub total_pages: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct PostsListResponse {
-    message: &'static str,
-    posts: Vec<PostListItem>,
-    locale: Option<&'static str>,
-    pagination: Pagination,
+    pub message: String,
+    pub posts: Vec<PostListItem>,
+    pub locale: Option<String>,
+    pub pagination: Pagination,
 }
 
 /// `GET /api/posts` —— 公開分頁列表（過濾 / 排序 / 多語）。SQL 與分頁邏輯照抄 Express。
@@ -275,19 +307,21 @@ pub async fn list_posts(
             Some(loc) => locale_content(row, loc),
             None => Some((row.title.clone(), row.content.clone(), row.excerpt.clone().unwrap_or_default())),
         };
-        let Some((title, _content, excerpt)) = content else {
+        let Some((title, locale_content_str, excerpt)) = content else {
             continue; // 該語言無翻譯 → 不出現在列表
         };
         posts.push(PostListItem {
             id: row.id,
             title,
             excerpt,
+            content_preview: crate::util::js_substring_prefix(&locale_content_str, 260),
             category: row.category.clone(),
             status: row.status.clone(),
             author: row.author.clone(),
             view_count: row.view_count,
             likes: row.likes,
             layout_type: row.layout_type.clone(),
+            allow_comments: row.allow_comments(),
             created_at: row.created_at.clone(),
             updated_at: row.updated_at.clone(),
             source_language: source_lang(row).to_string(),
@@ -304,9 +338,9 @@ pub async fn list_posts(
     };
 
     Ok(Json(PostsListResponse {
-        message: "success",
+        message: "success".into(),
         posts,
-        locale: requested_locale,
+        locale: requested_locale.map(String::from),
         pagination: Pagination {
             page,
             limit,
@@ -320,6 +354,37 @@ pub async fn list_posts(
 #[derive(Debug, Deserialize)]
 pub struct LangQuery {
     lang: Option<String>,
+}
+
+/// `GET /api/posts/:id` 成功回應。欄位序對齊舊 `json!` 的 key 序。
+/// 404 路徑（找不到 / 該語系無內容）仍是各自的錯誤 JSON，不走這個型別。
+#[derive(Debug, Serialize, specta::Type)]
+pub struct PostDetailResponse {
+    pub message: String,
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub title: String,
+    pub content: String,
+    pub excerpt: String,
+    pub category: Option<String>,
+    pub status: String,
+    pub author: Option<String>,
+    #[specta(type = specta_typescript::Number)]
+    pub view_count: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub likes: i64,
+    pub layout_type: Option<String>,
+    pub allow_comments: bool,
+    pub series_name: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub series_order: Option<i64>,
+    pub created_at: String,
+    pub updated_at: Option<String>,
+    pub locale: String,
+    pub source_language: String,
+    pub is_source: bool,
+    pub available_locales: Vec<String>,
+    pub tags: Vec<String>,
 }
 
 /// `GET /api/posts/:id` —— 公開單篇（多語；找不到 / 該語無內容皆回對應 404）。
@@ -361,41 +426,43 @@ pub async fn get_post(
     };
 
     let is_source = requested == source;
-    Ok(Json(json!({
-        "message": "success",
-        "id": row.id,
-        "title": title,
-        "content": content,
-        "excerpt": excerpt,
-        "category": row.category,
-        "status": row.status,
-        "author": row.author,
-        "view_count": row.view_count,
-        "likes": row.likes,
-        "layout_type": row.layout_type,
-        "series_name": row.series_name,
-        "series_order": row.series_order,
-        "created_at": row.created_at,
-        "updated_at": row.updated_at,
-        "locale": requested,
-        "source_language": source,
-        "is_source": is_source,
-        "available_locales": available_locales(&row),
-        "tags": split_tags(&row.tags),
-    }))
+    Ok(Json(PostDetailResponse {
+        message: "success".into(),
+        id: row.id,
+        title,
+        content,
+        excerpt,
+        category: row.category.clone(),
+        status: row.status.clone(),
+        author: row.author.clone(),
+        view_count: row.view_count,
+        likes: row.likes,
+        layout_type: row.layout_type.clone(),
+        allow_comments: row.allow_comments(),
+        series_name: row.series_name.clone(),
+        series_order: row.series_order,
+        created_at: row.created_at.clone(),
+        updated_at: row.updated_at.clone(),
+        locale: requested.to_string(),
+        source_language: source.clone(),
+        is_source,
+        available_locales: available_locales(&row),
+        tags: split_tags(&row.tags),
+    })
     .into_response())
 }
 
 // ── GET /api/posts/:id/reactions ─────────────────────────────────────────
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct ReactionRow {
-    emoji: String,
-    count: i64,
+    pub emoji: String,
+    #[specta(type = specta_typescript::Number)]
+    pub count: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct ReactionsResponse {
-    reactions: Vec<ReactionRow>,
+    pub reactions: Vec<ReactionRow>,
 }
 
 /// `GET /api/posts/:id/reactions` —— 公開純讀。
@@ -414,36 +481,42 @@ pub async fn post_reactions(
 
 // ── GET /api/posts/:id/comments ──────────────────────────────────────────
 /// comments 一列。欄位順序對齊 live 表實際 `SELECT *` 展開順序。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct CommentRow {
-    id: i64,
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
     // thought 留言的 post_id 為 NULL（createComment 只填 thought_id）；blog 留言為文章 id。
     // Option 對兩者都正確：Some→數字、None→null。
-    post_id: Option<i64>,
-    author: String,
-    content: String,
-    likes: i64,
-    created_at: String,
-    is_admin: i64,
-    email: Option<String>,
-    website: Option<String>,
-    status: Option<String>,
-    ip: Option<String>,
-    parent_id: Option<i64>,
-    avatar_url: Option<String>,
-    thought_id: Option<i64>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub post_id: Option<i64>,
+    pub author: String,
+    pub content: String,
+    #[specta(type = specta_typescript::Number)]
+    pub likes: i64,
+    pub created_at: String,
+    #[specta(type = specta_typescript::Number)]
+    pub is_admin: i64,
+    pub email: Option<String>,
+    pub website: Option<String>,
+    pub status: Option<String>,
+    pub ip: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub parent_id: Option<i64>,
+    pub avatar_url: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
+    pub thought_id: Option<i64>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct CommentsResponse {
-    message: &'static str,
-    comments: Vec<CommentRow>,
+    pub message: String,
+    pub comments: Vec<CommentRow>,
 }
 
 impl CommentsResponse {
     pub fn new(comments: Vec<CommentRow>) -> Self {
         Self {
-            message: "success",
+            message: "success".into(),
             comments,
         }
     }
@@ -461,10 +534,7 @@ pub async fn post_comments(
     .bind(&id)
     .fetch_all(&state.pool)
     .await?;
-    Ok(Json(CommentsResponse {
-        message: "success",
-        comments,
-    }))
+    Ok(Json(CommentsResponse::new(comments)))
 }
 
 // ── 計數寫入（公開）────────────────────────────────────────────────────────

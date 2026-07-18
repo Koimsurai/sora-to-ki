@@ -6,25 +6,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaRegHeart, FaHeart, FaRegComment, FaShareAlt, FaRegEye, FaSearch, FaTimes, FaChevronDown } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import Comments from './Comments';
-import SEOHead from './SEOHead';
 import NebulaBackground from './NebulaBackground';
 import KoimLoader from './KoimLoader';
 import type { Variants } from 'framer-motion';
+import type { PostListItem } from '@koimsurai/api-types';
 import { prefetchPost } from '../lib/prefetchPost';
 import './Blog.css';
 
-export interface Post {
-  id: string | number;
-  title: string;
-  content?: string;
-  created_at?: string;
-  category?: string;
-  tags?: (string | { name?: string })[] | string;
-  likes?: number;
-  layout_type?: string;
-  allow_comments?: number | boolean;
-  view_count?: number;
-}
+/** `GET /api/posts` 的單篇摘要，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
+export type Post = PostListItem;
 type Tag = string | { name: string; post_count?: number };
 interface Category { name: string; post_count?: number }
 interface PostGroup { year: number; month: number; label: string; posts: Post[] }
@@ -101,7 +91,7 @@ const stagger: Variants = {
    NoteCard — 支援 record / column 兩種樣板
    ════════════════════════════════════════════════ */
 
-const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; index: number; onOpenComments?: (postId: string | number, postTitle: string, allowComments?: number | boolean) => void }) => {
+const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; index: number; onOpenComments?: (postId: string | number, postTitle: string, allowComments: boolean) => void }) => {
   const { t } = useTranslation();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes ?? 0);
@@ -165,9 +155,20 @@ const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; inde
     onOpenComments?.(post.id, post.title, post.allow_comments);
   };
 
-  // 列表頁優先顯示內文截斷，而非 AI 摘要
-  const excerpt = post.content
-    ? post.content.substring(0, 260).replace(/<[^>]+>/g, '').replace(/#{1,6}\s?/g, '').replace(/[*`>-]/g, '').replace(/!?\[[^\]]*\]\([^)]*\)/g, '').replace(/\n+/g, ' ').trim().substring(0, 220) + '...'
+  // 列表頁優先顯示內文截斷，而非 AI 摘要。content_preview 是後端已截好的前 260 字
+  // （整篇 content 進列表會多 ~188KB）。
+  // markdown → 純文字：連結保留文字、圖片整個丟掉；`-` `*` `>` 只在行首當標記時吃掉，
+  // 不然 `tool-calling` 會被清成 `toolcalling`。
+  const excerpt = post.content_preview
+    ? post.content_preview
+        .replace(/<[^>]+>/g, '')
+        .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+        .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/^\s{0,3}(#{1,6}\s+|[-*+]\s+|>\s?)/gm, '')
+        .replace(/[*`]/g, '')
+        .replace(/\n+/g, ' ')
+        .trim()
+        .substring(0, 220) + '...'
     : '';
   const dateObj = new Date(post.created_at ?? '');
   const dayStr = dateObj.getDate();
@@ -220,12 +221,11 @@ const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; inde
         <p className="note-excerpt">{excerpt}</p>
 
         {/* 標籤 */}
-        {post.tags && post.tags.length > 0 && (
+        {post.tags.length > 0 && (
           <div className="note-tags">
-            {(Array.isArray(post.tags) ? post.tags : post.tags.split(',')).slice(0, 4).map((tag, i) => {
-              const name = typeof tag === 'string' ? tag : (tag.name ?? '');
-              return <span key={i} className="note-tag">#{name}</span>;
-            })}
+            {post.tags.slice(0, 4).map((tag, i) => (
+              <span key={i} className="note-tag">#{tag}</span>
+            ))}
           </div>
         )}
 
@@ -344,7 +344,7 @@ function Blog() {
   // 路由 loader 在 server 端抓好的首屏文章。元件被 /blog 與 /$locale/blog 共用 → strict:false
   // (官方給共用元件的用法:忽略 from、型別放寬)。有值就當初始資料 → SSR 直接 render 出文章,
   // 而不是卡在下面的 `if (loading)` 骨架屏。
-  const initialPosts = (useLoaderData({ strict: false }) as { posts?: Post[] } | undefined)?.posts ?? [];
+  const initialPosts = useLoaderData({ strict: false })?.posts ?? [];
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loading, setLoading] = useState(initialPosts.length === 0);
   const [error, setError] = useState<string | null>(null);
@@ -359,11 +359,11 @@ function Blog() {
   const isInitialLoad = React.useRef(true);
   const search = useRouterState({ select: (s) => s.location.search }) as { category?: string; tag?: string };
 
-  const handleOpenComments = useCallback((postId: string | number, postTitle: string, allowComments?: number | boolean) => {
+  const handleOpenComments = useCallback((postId: string | number, postTitle: string, allowComments: boolean) => {
     setFloatingComment({
       postId: String(postId),
       postTitle,
-      allowComments: allowComments !== 0 && allowComments !== false,
+      allowComments,
     });
   }, []);
 
@@ -422,11 +422,11 @@ function Blog() {
 
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
+      // 內文只搜得到 content_preview（前 260 字）；列表本來就沒有整篇 content。
+      // 全文搜尋要走後端 `/api/posts?search=`（SQL 對 p.content LIKE）。
       const matchSearch = !searchTerm || post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (post.content?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
-      const matchTag = !selectedTag || (Array.isArray(post.tags)
-        ? post.tags.includes(selectedTag)
-        : post.tags?.split(',').includes(selectedTag));
+        post.content_preview.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchTag = !selectedTag || post.tags.includes(selectedTag);
       const matchCat = !selectedCategory || post.category === selectedCategory;
       return matchSearch && matchTag && matchCat;
     });
@@ -485,12 +485,6 @@ function Blog() {
 
   return (
     <div className="blog-page">
-      <SEOHead
-        title={t('blog.metaTitle')}
-        description={t('blog.description')}
-        path="/blog"
-      />
-
       {/* ── 深空暗幕 + 星雲背景（共用元件） ── */}
       <NebulaBackground />
 

@@ -13,6 +13,61 @@ export type AdminCategoryRow = {
 	post_count: number,
 };
 
+/**
+ *  `GET /api/admin/posts/:id` 成功回應：`{message, ...row, tags, available_locales}`。
+ *  flatten 讓 row 的欄位攤平在頂層，key 序 = message → AdminPostFull 欄位序 → available_locales。
+ */
+export type AdminPostDetailResponse = {
+	message: string,
+	available_locales: string[],
+} & AdminPostFull;
+
+/**
+ *  admin 端點的整列 post（`SELECT p.*` 全欄，含 12 個 i18n 欄）。
+ * 
+ *  **欄位序 = posts 表宣告序 + tags**，對齊舊 `row_to_json` 的 key 序（serde_json
+ *  preserve_order → struct 欄位序即 JSON key 序）。`/api/admin/posts` 與
+ *  `/api/admin/posts/:id` 共用；兩者對 excerpt / source_language 的處理不同，由呼叫端覆寫。
+ */
+export type AdminPostFull = {
+	id: number,
+	title: string,
+	content: string,
+	excerpt: string | null,
+	category: string | null,
+	status: string,
+	author: string | null,
+	view_count: number,
+	likes: number,
+	created_at: string,
+	updated_at: string | null,
+	layout_type: string | null,
+	excerpt_zh_cn: string | null,
+	title_ja: string | null,
+	content_ja: string | null,
+	excerpt_ja: string | null,
+	title_en: string | null,
+	content_en: string | null,
+	excerpt_en: string | null,
+	source_language: string | null,
+	title_zh_cn: string | null,
+	content_zh_cn: string | null,
+	series_name: string | null,
+	series_order: number | null,
+	title_ko: string | null,
+	content_ko: string | null,
+	allow_comments: boolean,
+	excerpt_ko: string | null,
+	tags: string[],
+};
+
+export type AdminPostsResponse = {
+	posts: AdminPostFull[],
+	totalPages: number,
+	currentPage: number,
+	total: number,
+};
+
 /**  `GET /api/admin/tags` 單列（admin 版：含 0 篇的 tag、依名排序）。 */
 export type AdminTagRow = {
 	id: number,
@@ -37,4 +92,103 @@ export type AdminUserRow = {
 
 export type AdminUsersResponse = {
 	users: AdminUserRow[],
+};
+
+/**  comments 一列。欄位順序對齊 live 表實際 `SELECT *` 展開順序。 */
+export type CommentRow = {
+	id: number,
+	post_id: number | null,
+	author: string,
+	content: string,
+	likes: number,
+	created_at: string,
+	is_admin: number,
+	email: string | null,
+	website: string | null,
+	status: string | null,
+	ip: string | null,
+	parent_id: number | null,
+	avatar_url: string | null,
+	thought_id: number | null,
+};
+
+export type CommentsResponse = {
+	message: string,
+	comments: CommentRow[],
+};
+
+export type Pagination = {
+	page: number,
+	limit: number,
+	total: number,
+	totalPages: number,
+};
+
+/**
+ *  `GET /api/posts/:id` 成功回應。欄位序對齊舊 `json!` 的 key 序。
+ *  404 路徑（找不到 / 該語系無內容）仍是各自的錯誤 JSON，不走這個型別。
+ */
+export type PostDetailResponse = {
+	message: string,
+	id: number,
+	title: string,
+	content: string,
+	excerpt: string,
+	category: string | null,
+	status: string,
+	author: string | null,
+	view_count: number,
+	likes: number,
+	layout_type: string | null,
+	allow_comments: boolean,
+	series_name: string | null,
+	series_order: number | null,
+	created_at: string,
+	updated_at: string | null,
+	locale: string,
+	source_language: string,
+	is_source: boolean,
+	available_locales: string[],
+	tags: string[],
+};
+
+/**  `GET /api/posts` 的單篇摘要。`title`/`excerpt` 已依 `?lang=` 取好該語系內容。 */
+export type PostListItem = {
+	id: number,
+	title: string,
+	excerpt: string,
+	/**
+	 *  該語系內文的前 260 個 UTF-16 code unit（= JS `content.substring(0,260)`）。
+	 *  列表卡片顯示的是內文截斷而非 AI 摘要（見 Blog.tsx NoteCard），但整篇 content
+	 *  進列表要多 ~188KB，所以只送前端截斷所需的長度。
+	 */
+	content_preview: string,
+	category: string | null,
+	status: string,
+	author: string | null,
+	view_count: number,
+	likes: number,
+	layout_type: string | null,
+	allow_comments: boolean,
+	created_at: string,
+	updated_at: string | null,
+	source_language: string,
+	available_locales: string[],
+	tags: string[],
+};
+
+export type PostsListResponse = {
+	message: string,
+	posts: PostListItem[],
+	locale: string | null,
+	pagination: Pagination,
+};
+
+export type ReactionRow = {
+	emoji: string,
+	count: number,
+};
+
+export type ReactionsResponse = {
+	reactions: ReactionRow[],
 };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { AdminPostFull, AdminPostsResponse } from '@koimsurai/api-types';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,18 +26,8 @@ import {
 
 dayjs.locale('zh-tw');
 
-interface PostTag { name?: string; label?: string }
-interface PostItem {
-  id: number;
-  title: string;
-  tags?: (string | PostTag)[];
-  category?: string;
-  status: string;
-  created_at: string;
-  slug?: string;
-}
-
-const tagText = (tag: string | PostTag): string => (typeof tag === 'string' ? tag : (tag.name ?? tag.label ?? ''));
+/** `GET /api/admin/posts` 的單列（型別由後端 Rust struct 生成）。 */
+type PostItem = AdminPostFull;
 
 export default function PostsList() {
   const [posts, setPosts] = useState<PostItem[]>([]);
@@ -57,8 +48,8 @@ export default function PostsList() {
       });
 
       if (response.ok) {
-        const data = await response.json() as { posts?: PostItem[] } | PostItem[];
-        setPosts(Array.isArray(data) ? data : (data.posts ?? []));
+        const data = await response.json() as AdminPostsResponse;
+        setPosts(data.posts);
       }
     } catch (error) {
       console.error('獲取文章列表失敗:', error);
@@ -195,11 +186,11 @@ export default function PostsList() {
                   <td className="px-4 py-2.5">
                     <div>
                       <span className="text-[13px] text-foreground/80 group-hover:text-foreground/90 transition-colors">{post.title}</span>
-                      {post.tags && post.tags.length > 0 && (
+                      {post.tags.length > 0 && (
                         <div className="flex items-center gap-1.5 mt-0.5">
-                          {(Array.isArray(post.tags) ? post.tags : []).slice(0, 3).map((tag) => (
-                            <span key={tagText(tag)} className="text-[10px] text-muted-foreground/35 font-mono">
-                              #{tagText(tag)}
+                          {post.tags.slice(0, 3).map((tag) => (
+                            <span key={tag} className="text-[10px] text-muted-foreground/35 font-mono">
+                              #{tag}
                             </span>
                           ))}
                         </div>
@@ -225,15 +216,14 @@ export default function PostsList() {
                       >
                         <Pencil className="size-3" />
                       </Link>
-                      {post.slug && (
-                        <Link
-                          to={`/blog/${post.slug}`}
-                          target="_blank"
-                          className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
-                        >
-                          <ExternalLink className="size-3" />
-                        </Link>
-                      )}
+                      {/* 文章網址是 /blog/:id（posts 表沒有 slug 欄位） */}
+                      <Link
+                        to={`/blog/${post.id}`}
+                        target="_blank"
+                        className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
+                      >
+                        <ExternalLink className="size-3" />
+                      </Link>
                       <button
                         onClick={() => setDeleteId(post.id)}
                         className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
