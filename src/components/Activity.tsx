@@ -1,21 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
 import { usePageVisibility } from '../contexts/PageVisibilityContext';
-import KoimLoader from './KoimLoader';
+import {
+  steamQueryOptions,
+  wakatimeQueryOptions,
+  githubQueryOptions,
+  contributionsQueryOptions,
+  serverStatusQueryOptions,
+} from '../activityData';
 import './Activity.css';
 
-interface ServerStatus { status: string; responseTime: number; lastCheck: Date }
+export interface ServerStatus { status: string; responseTime: number; lastCheck: Date }
 
-interface SteamGame { appid: number; name: string; playtime_2weeks?: number; playtime_forever?: number }
-interface SteamPlayer {
+export interface SteamGame { appid: number; name: string; playtime_2weeks?: number; playtime_forever?: number }
+export interface SteamPlayer {
   gameid?: string | number;
   personastate?: number;
   personaname?: string;
   avatarfull?: string;
   profileurl?: string;
 }
-interface SteamData {
+export interface SteamData {
   recentGames?: SteamGame[];
   ownedGames?: SteamGame[];
   gameCount?: number;
@@ -31,7 +38,7 @@ interface SteamCustomization {
   nameplateMp4?: string;
   featuredBadge?: SteamFeaturedBadge;
 }
-interface SteamProfile {
+export interface SteamProfile {
   customization?: SteamCustomization;
   profileUrl?: string;
   level?: number;
@@ -41,10 +48,10 @@ interface SteamProfile {
   error?: string;
 }
 
-interface WakatimeToday { grand_total?: { text?: string } }
+export interface WakatimeToday { grand_total?: { text?: string } }
 interface WakatimeStat { name: string; text: string; percent: number }
-interface WakatimeWeek { languages?: WakatimeStat[]; projects?: WakatimeStat[] }
-interface WakatimeData {
+export interface WakatimeWeek { languages?: WakatimeStat[]; projects?: WakatimeStat[] }
+export interface WakatimeData {
   today?: WakatimeToday | null;
   week?: WakatimeWeek | null;
   actualCodingTime?: unknown;
@@ -52,14 +59,14 @@ interface WakatimeData {
   error?: string;
 }
 
-interface GithubUser { public_repos?: number; html_url?: string; avatar_url?: string; name?: string; login?: string }
-interface GithubRepo { id: number; html_url: string; name: string; description?: string; language?: string; stargazers_count: number }
+export interface GithubUser { public_repos?: number; html_url?: string; avatar_url?: string; name?: string; login?: string }
+export interface GithubRepo { id: number; html_url: string; name: string; description?: string; language?: string; stargazers_count: number }
 interface GithubCommit { sha: string; message: string }
 interface GithubEventPayload { commits?: GithubCommit[]; before?: string; head?: string; size?: number }
-interface GithubEvent { id: string; type: string; repo: { name: string }; created_at: string; payload: GithubEventPayload }
+export interface GithubEvent { id: string; type: string; repo: { name: string }; created_at: string; payload: GithubEventPayload }
 interface GithubContributionDay { date: string; count: number }
-interface GithubContributions { total?: Record<string, number>; contributions?: GithubContributionDay[] }
-interface GithubData {
+export interface GithubContributions { total?: Record<string, number>; contributions?: GithubContributionDay[] }
+export interface GithubData {
   user?: GithubUser;
   recentCommits?: GithubEvent[];
   recentRepos?: GithubRepo[];
@@ -72,59 +79,25 @@ interface ContributionCell { date: string; count: number; level: number }
 const Activity = () => {
   const { t, i18n } = useTranslation();
   const { isVisible } = usePageVisibility();
-  const [steamData, setSteamData] = useState<SteamData | null>(null);
-  const [steamProfile, setSteamProfile] = useState<SteamProfile | null>(null);
-  const [githubData, setGithubData] = useState<GithubData | null>(null);
-  const [wakatimeData, setWakatimeData] = useState<WakatimeData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [contributionData, setContributionData] = useState<ContributionCell[][]>([]);
+  // 資料改由 TanStack Query 管理：每個資料源各自一個 query → 進頁面立刻 render、各區到齊各補
+  // （取代舊的「等 steam+github+wakatime 全部 API 好才進」的全螢幕 loading gate）。
+  const { data: steam } = useQuery(steamQueryOptions);
+  const steamData = steam?.steamData ?? null;
+  const steamProfile = steam?.steamProfile ?? null;
+  const { data: wakatimeData = null } = useQuery(wakatimeQueryOptions);
+  const { data: githubData = null } = useQuery(githubQueryOptions);
+  const { data: serverStatus = null } = useQuery(serverStatusQueryOptions);
   const [contributionYear, setContributionYear] = useState('last');
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const { data: contributions = null, isFetching: contributionsFetching, refetch: refetchContributions } =
+    useQuery(contributionsQueryOptions(contributionYear));
+  const isRefreshing = contributionsFetching;
+  const [currentTime, setCurrentTime] = useState(() => new Date());
 
-
-  const GITHUB_USERNAME = 'timo9378';
-
+  // 1 秒時鐘（非資料 → 維持 setInterval）。
   useEffect(() => {
-    void fetchActivityData();
-    void checkServerStatus();
-
-    const timeInterval = setInterval(() => setCurrentTime(new Date()), 1000);
-    const statusInterval = setInterval(() => {
-      if (!document.hidden) void checkServerStatus();
-    }, 30000);
-    const dataRefreshInterval = setInterval(() => {
-      if (!document.hidden) void fetchActivityData();
-    }, 10 * 60 * 1000);
-
-    return () => {
-      clearInterval(timeInterval);
-      clearInterval(statusInterval);
-      clearInterval(dataRefreshInterval);
-    };
+    const id = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(id);
   }, []);
-
-  const fetchActivityData = async () => {
-    setLoading(true);
-    await Promise.all([fetchSteamData(), fetchGithubData(), fetchWakatimeData()]);
-    setLoading(false);
-  };
-
-  const checkServerStatus = async () => {
-    try {
-      const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
-      const startTime = Date.now();
-      const response = await fetch(`${apiUrl}/health`);
-      const responseTime = Date.now() - startTime;
-      setServerStatus(response.ok
-        ? { status: 'online', responseTime, lastCheck: new Date() }
-        : { status: 'error', responseTime, lastCheck: new Date() }
-      );
-    } catch {
-      setServerStatus({ status: 'offline', responseTime: 0, lastCheck: new Date() });
-    }
-  };
 
   const getUptime = () => {
     const startDate = new Date('2025-04-01T00:00:00+08:00');
@@ -135,105 +108,9 @@ const Activity = () => {
     };
   };
 
-  const fetchSteamData = async () => {
-    try {
-      const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
-      const [recentRes, playerRes, ownedRes, profileRes] = await Promise.all([
-        fetch(`${apiUrl}/steam/recent-games`).then(r => r.json() as Promise<{ error?: string; response?: { games?: SteamGame[] } }>),
-        fetch(`${apiUrl}/steam/player`).then(r => r.json() as Promise<{ error?: string; response?: { players?: SteamPlayer[] } }>),
-        fetch(`${apiUrl}/steam/owned-games`).then(r => r.json() as Promise<{ response?: { games?: SteamGame[]; game_count?: number } }>),
-        fetch(`${apiUrl}/steam/profile`).then(r => r.ok ? r.json() as Promise<SteamProfile> : null).catch(() => null),
-      ]);
-      if (recentRes.error || playerRes.error) {
-        setSteamData({ error: recentRes.error ?? playerRes.error, configured: false });
-        return;
-      }
-      setSteamData({
-        recentGames: recentRes.response?.games ?? [],
-        ownedGames: ownedRes.response?.games ?? [],
-        gameCount: ownedRes.response?.game_count ?? 0,
-        playerInfo: playerRes.response?.players?.[0] ?? null,
-        configured: true,
-      });
-      if (profileRes && !profileRes.error) setSteamProfile(profileRes);
-    } catch (error) {
-      console.error('Steam fetch error:', error);
-      setSteamData({ error: t('common.errorBackendApi'), configured: false });
-    }
-  };
-
-  const fetchWakatimeData = async () => {
-    try {
-      const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
-      const [todayRes, weekRes] = await Promise.all([
-        fetch(`${apiUrl}/wakatime/today`).then(r => r.json() as Promise<{ error?: string; data?: WakatimeToday[]; actualCodingTime?: unknown }>),
-        fetch(`${apiUrl}/wakatime/week`).then(r => r.json() as Promise<{ error?: string; data?: WakatimeWeek }>),
-      ]);
-      if (todayRes.error || weekRes.error) {
-        setWakatimeData({ error: todayRes.error ?? weekRes.error, configured: false });
-        return;
-      }
-      setWakatimeData({
-        today: todayRes.data?.[0] ?? null,
-        week: weekRes.data ?? null,
-        actualCodingTime: todayRes.actualCodingTime ?? null,
-        configured: true,
-      });
-    } catch (error) {
-      console.error('WakaTime fetch error:', error);
-      setWakatimeData({ error: t('common.errorBackendApi'), configured: false });
-    }
-  };
-
-  const fetchContributions = async (year: string = contributionYear) => {
-    try {
-      const data = await fetch(
-        `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=${year}&_=${Date.now()}`
-      ).then(r => r.json() as Promise<GithubContributions>);
-      if (data) {
-        generateContributionDataFromAPI(data);
-        setGithubData(prev => prev ? { ...prev, contributions: data } : prev);
-      }
-    } catch { /* ignore */ }
-  };
-
-  const fetchGithubData = async () => {
-    try {
-      const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
-      const [userData, eventsData] = await Promise.all([
-        fetch(`${apiUrl}/github/user/${GITHUB_USERNAME}`).then(r => r.json() as Promise<GithubUser & { error?: string }>),
-        fetch(`${apiUrl}/github/events/${GITHUB_USERNAME}`).then(r => r.json() as Promise<GithubEvent[] & { error?: string }>),
-      ]);
-
-      if (userData.error || eventsData.error) {
-        setGithubData({ error: userData.error ?? eventsData.error });
-        return;
-      }
-
-      const pushEvents = eventsData.filter(e => e.type === 'PushEvent').slice(0, 10);
-      const reposData = await fetch(
-        `https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=5`
-      ).then(r => r.json() as Promise<GithubRepo[]>);
-
-      let contributionsData: GithubContributions | null = null;
-      try {
-        contributionsData = await fetch(
-          `https://github-contributions-api.jogruber.de/v4/${GITHUB_USERNAME}?y=${contributionYear}&_=${Date.now()}`
-        ).then(r => r.json() as Promise<GithubContributions>);
-      } catch { /* ignore */ }
-
-      setGithubData({ user: userData, recentCommits: pushEvents, recentRepos: reposData, contributions: contributionsData });
-
-      if (contributionsData) generateContributionDataFromAPI(contributionsData);
-      else generateContributionData(pushEvents);
-    } catch (error) {
-      console.error('GitHub fetch error:', error);
-      setGithubData({ error: t('common.errorBackendApi') });
-    }
-  };
-
-  const generateContributionDataFromAPI = (apiData: GithubContributions) => {
-    if (!apiData.contributions) return;
+  // contribution 熱力圖格子（純函式，回傳格子；優先 jogruber contributions，沒有就用 push events 推）。
+  const gridFromContributions = (apiData: GithubContributions): ContributionCell[][] => {
+    if (!apiData.contributions) return [];
     const contributions = apiData.contributions;
     const data: ContributionCell[][] = [];
     const totalWeeks = Math.ceil(contributions.length / 7);
@@ -251,10 +128,10 @@ const Activity = () => {
       }
       data.push(weekData);
     }
-    setContributionData(data);
+    return data;
   };
 
-  const generateContributionData = (events: GithubEvent[]) => {
+  const gridFromEvents = (events: GithubEvent[]): ContributionCell[][] => {
     const data: ContributionCell[][] = [];
     const today = new Date();
     const commitsByDate: Record<string, number> = {};
@@ -275,8 +152,13 @@ const Activity = () => {
       }
       data.push(weekData);
     }
-    setContributionData(data.reverse());
+    return data.reverse();
   };
+
+  const contributionData = useMemo<ContributionCell[][]>(
+    () => (contributions?.contributions ? gridFromContributions(contributions) : gridFromEvents(githubData?.recentCommits ?? [])),
+    [contributions, githubData],
+  );
 
   const formatPlaytime = (m: number) => {
     const h = Math.floor(m / 60);
@@ -307,26 +189,13 @@ const Activity = () => {
   const sortedOwnedGames = steamData?.ownedGames
     ? [...steamData.ownedGames].sort((a, b) => (b.playtime_forever ?? 0) - (a.playtime_forever ?? 0)).slice(0, 30)
     : [];
-  const contributionTotal = githubData?.contributions?.total;
+  const contributionTotal = contributions?.total;
   const contributionCount = contributionTotal ? (contributionTotal[Object.keys(contributionTotal)[0]] ?? 0) : 0;
   const heatmapCurrentYear = new Date().getFullYear();
   const heatmapYears = ['last', String(heatmapCurrentYear), String(heatmapCurrentYear - 1), String(heatmapCurrentYear - 2)];
 
-  if (loading) {
-    return (
-      <div className="activity-page">
-        <div className="activity-dim-overlay" />
-        <div className="activity-nebula-bg">
-          <div className="nebula-layer activity-nebula-1" />
-          <div className="nebula-layer activity-nebula-2" />
-          <div className="nebula-layer activity-nebula-3" />
-          <div className="activity-nebula-dust" />
-        </div>
-        <KoimLoader fullscreen text={t('activity.loading')} />
-      </div>
-    );
-  }
-
+  // 不再等所有 API 好才進頁面：各區靠自己的 query 資料條件渲染（null → 先隱藏，到齊再補），
+  // 進頁面立刻 render 骨架 + nebula 背景，比舊的全螢幕 loading gate 快很多。
   return (
     <div className={`activity-page ${!isVisible ? 'is-hidden' : ''}`}>
 
@@ -357,8 +226,9 @@ const Activity = () => {
             )}
           </div>
           <div className="status-bar-right">
-            <span className="status-bar-meta">Uptime {uptime.days}d {uptime.hours}h</span>
-            <span className="status-bar-time">
+            {/* uptime / 時鐘用 new Date()，server 與 client render 時間不同 → suppressHydrationWarning */}
+            <span className="status-bar-meta" suppressHydrationWarning>Uptime {uptime.days}d {uptime.hours}h</span>
+            <span className="status-bar-time" suppressHydrationWarning>
               {currentTime.toLocaleTimeString(i18n.resolvedLanguage ?? 'zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
             </span>
           </div>
@@ -606,8 +476,7 @@ const Activity = () => {
                 className={`koim-btn koim-btn--icon koim-btn--sm${isRefreshing ? ' is-refreshing' : ''}`}
                 onClick={(e) => {
                   e.currentTarget.blur(); // 點完離焦，避免桌面瀏覽器把 :focus 視為持續 hover
-                  setIsRefreshing(true);
-                  void fetchContributions().finally(() => { setIsRefreshing(false); });
+                  void refetchContributions();
                 }}
                 disabled={isRefreshing}
                 title={t('activity.refresh')}
@@ -630,9 +499,8 @@ const Activity = () => {
                   onClick={(e) => {
                     e.currentTarget.blur();
                     if (contributionYear === y) return;
+                    // 換年份 → contributionsQueryOptions(y) 的 queryKey 變 → 自動 refetch。
                     setContributionYear(y);
-                    setIsRefreshing(true);
-                    void fetchContributions(y).finally(() => { setIsRefreshing(false); });
                   }}
                 >
                   {y === 'last' ? t('activity.github.lastYear') : y}
@@ -790,7 +658,16 @@ const Activity = () => {
                         alt={game.name}
                         loading="lazy"
                         onError={(e) => {
-                          e.currentTarget.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/capsule_616x353.jpg`;
+                          // header.jpg 沒上 → 試 capsule；capsule 也失敗 → 藏 img（露出 placeholder），
+                          // 不再讓破圖 + alt 文字閃（跟 steam-recent-cover 同一套 fallback）。
+                          const img = e.currentTarget;
+                          if (!img.dataset.fallback) {
+                            img.dataset.fallback = '1';
+                            img.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/capsule_616x353.jpg`;
+                          } else {
+                            img.style.display = 'none';
+                            img.parentElement?.classList.add('is-fallback');
+                          }
                         }}
                       />
                       <div className="game-gallery-info">
