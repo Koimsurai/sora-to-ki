@@ -7,11 +7,12 @@ import '../App.css';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   Outlet,
-  createRootRoute,
+  createRootRouteWithContext,
   HeadContent,
   Scripts,
   useRouterState,
 } from '@tanstack/react-router';
+import type { QueryClient } from '@tanstack/react-query';
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { AuthProvider } from '../contexts/AuthContext';
 import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
@@ -21,7 +22,7 @@ import AppShell from '../components/AppShell';
 import NotFound from '../components/NotFound';
 import { localeWrap } from '../localePage';
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
