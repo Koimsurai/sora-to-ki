@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useLoaderData } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, type Variants } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Rss } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import ThoughtCard, { type Thought } from './ThoughtCard';
+import ThoughtCard from './ThoughtCard';
+import { thoughtsListQueryOptions } from '../thinkingData';
 import './Thinking.css';
 
 /* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。
@@ -28,13 +29,12 @@ const headReveal = {
 function Thinking() {
   const { t } = useTranslation();
   const { isAdmin, getToken } = useAuth();
-  // 路由 loader 在 server 端抓好的碎念（元件被 /thinking 與 /$locale/thinking 共用 → strict:false）。
-  // 有值就當初始資料 → SSR 直接 render 出碎念，而不是停在 null（載入中）。
-  const initialThoughts = (useLoaderData({ strict: false }) as { thoughts?: Thought[] } | undefined)?.thoughts;
-  const [thoughts, setThoughts] = useState<Thought[] | null>(initialThoughts ?? null);
+  const queryClient = useQueryClient();
+  // 碎念列表改由 TanStack Query 管理：route loader 已 prefetch → SSR baked、
+  // hydrate 後 useQuery 讀快取。發文／編輯／刪除用 useMutation，成功後 invalidate 重抓。
+  const { data: thoughts } = useQuery(thoughtsListQueryOptions);
   const [draft, setDraft] = useState('');
   const [draftUrl, setDraftUrl] = useState('');
-  const [posting, setPosting] = useState(false);
   const [prefill, setPrefill] = useState<Prefill | null>(null); // 從 /watch 一鍵發帶來的 media
 
   useEffect(() => {
@@ -44,24 +44,10 @@ function Thinking() {
     } catch { /* ignore */ }
   }, []);
 
-  const load = useCallback(() => {
-    void fetch(`${API}/thoughts?limit=50`)
-      .then((r) => r.json() as Promise<{ thoughts?: Thought[] }>)
-      .then((d) => setThoughts(d.thoughts ?? []))
-      .catch(() => setThoughts([]));
-  }, []);
-  // loader 已在 server 端抓好首屏 → hydrate 後不再立刻重打一次。
-  // 發文／刪除後呼叫的 load() 不受影響（那是使用者動作觸發，不走這個 effect）。
-  const skipFirstLoad = useRef(Boolean(initialThoughts));
-  useEffect(() => {
-    if (skipFirstLoad.current) { skipFirstLoad.current = false; return; }
-    load();
-  }, [load]);
+  const refreshThoughts = () => queryClient.invalidateQueries({ queryKey: thoughtsListQueryOptions.queryKey });
 
-  const submit = async () => {
-    if (!draft.trim() || posting) return;
-    setPosting(true);
-    try {
+  const createMutation = useMutation({
+    mutationFn: async () => {
       const r = await fetch(`${API}/admin/thoughts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
@@ -71,27 +57,44 @@ function Thinking() {
           ref: prefill ? { type: 'media', json: prefill } : undefined,
         }),
       });
-      if (r.ok) { setDraft(''); setDraftUrl(''); setPrefill(null); load(); }
-    } finally {
-      setPosting(false);
-    }
+      if (!r.ok) throw new Error(`POST /admin/thoughts ${r.status}`);
+    },
+    onSuccess: () => { setDraft(''); setDraftUrl(''); setPrefill(null); void refreshThoughts(); },
+  });
+  const posting = createMutation.isPending;
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const r = await fetch(`${API}/admin/thoughts/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken() ?? ''}` },
+      });
+      if (!r.ok) throw new Error(`DELETE /admin/thoughts/${id} ${r.status}`);
+    },
+    onSuccess: () => void refreshThoughts(),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ id, content }: { id: number; content: string }) => {
+      const r = await fetch(`${API}/admin/thoughts/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
+        body: JSON.stringify({ content }),
+      });
+      if (!r.ok) throw new Error(`PUT /admin/thoughts/${id} ${r.status}`);
+    },
+    onSuccess: () => void refreshThoughts(),
+  });
+
+  const submit = () => {
+    if (!draft.trim() || posting) return;
+    createMutation.mutate();
   };
-  const del = async (id: number) => {
+  const del = (id: number) => {
     if (!window.confirm('刪除這則碎念？')) return;
-    const r = await fetch(`${API}/admin/thoughts/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${getToken() ?? ''}` },
-    });
-    if (r.ok) load();
+    deleteMutation.mutate(id);
   };
-  const edit = async (id: number, content: string) => {
-    const r = await fetch(`${API}/admin/thoughts/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
-      body: JSON.stringify({ content }),
-    });
-    if (r.ok) load();
-  };
+  const edit = (id: number, content: string) => editMutation.mutate({ id, content });
 
   return (
     <div className="tk-page">
