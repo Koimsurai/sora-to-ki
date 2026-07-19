@@ -68,6 +68,11 @@ SSR（社群預覽一直是壞的）、`public/sitemap.xml` 是 2026-02-11 的 0
 
 ### 🟢 A — 真缺口 + 高價值低成本（優先做）
 
+> **⏸ A1 延後（2026-07-19 使用者決定）**：安全 header 批次**等整體架構定案後再做**（CSP 耦合到站上載入的資源，架構還會變 → 現在做要重盤）。
+> - **HSTS：已批准**（憑證 Certbot 自動續簽、不會掉 → 無鎖人風險）。做時 max-age 可直接給長、includeSubDomains 要先確認子網域全 HTTPS。
+> - **CSP：要評估**，到時 `Content-Security-Policy-Report-Only` 先跑觀察再 enforce。
+> - 4 個零風險 header（nosniff/X-Frame/Referrer-Policy/Permissions-Policy）隨 A1 批次一起上。
+
 **A1. nginx security headers**（最該做，你是自架資安控，一次 config）
 現況：只有 cache-control + SSL。缺 HSTS / CSP / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy。
 做法：koimsurai nginx 加一組 `add_header`（server block 層）。CSP 要對現有 inline script（intro gate）+ 外部資源盤一輪，先 report-only 再 enforce。
@@ -182,7 +187,7 @@ Sentry SaaS / LogRocket 仍 ❌（GlitchTip 已覆蓋且自主）。
 
 ## 建議施工順序
 
-1. **A1 security headers**（半天、高價值、符合你興趣）← 現在就能做，不等 Nitro
+1. ~~**A1 security headers**~~ **⏸ 延後**（2026-07-19 使用者決定：等架構定案；HSTS 已批准、CSP 待評估）
 2. ~~**Nitro 遷移**（Phase A→E，含 OG/PWA/ISR 收尾）~~ ✅ 2026-07-17 完成上線
 3. **specta ✅ 完成（2026-07-19）／ utoipa（B6）未動**
    - ✅ specta 全 typed-able 端點：posts/admin/comments/books/newsletter/watch/home/stats/series，
