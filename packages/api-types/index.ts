@@ -362,6 +362,33 @@ export type ReactionsResponse = {
 	reactions: ReactionRow[],
 };
 
+export type SeriesDetailResponse = {
+	name: string,
+	posts: SeriesPostRow[],
+};
+
+export type SeriesListResponse = {
+	series: SeriesRow[],
+};
+
+/**  `GET /api/series/:name` 單列：某系列下的文章（精簡欄位）。 */
+export type SeriesPostRow = {
+	id: number,
+	title: string,
+	excerpt: string | null,
+	series_name: string | null,
+	series_order: number | null,
+	created_at: string,
+};
+
+/**  `GET /api/series` 單列：系列名 + 篇數 + 起訖時間。 */
+export type SeriesRow = {
+	name: string,
+	count: number,
+	first_at: string | null,
+	last_at: string | null,
+};
+
 export type StatsResponse = {
 	message: string,
 	total_posts: number,

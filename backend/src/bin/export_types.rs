@@ -12,6 +12,9 @@ use koimsurai_web_backend::handlers::home::{
     DigestComment, DigestPost, DigestResponse, DigestThought, DigestTimeline,
 };
 use koimsurai_web_backend::handlers::stats::StatsResponse;
+use koimsurai_web_backend::handlers::series::{
+    SeriesDetailResponse, SeriesListResponse, SeriesPostRow, SeriesRow,
+};
 use koimsurai_web_backend::handlers::newsletter::{SubscriberByToken, SubscriberRow, SubscribersResponse};
 use koimsurai_web_backend::handlers::watch::{
     AnimeHistoryResponse, AnimeRow, FilmRow, FilmsResponse, TvResponse, TvRow, WatchStatsResponse,
@@ -72,7 +75,12 @@ fn main() {
         .register::<DigestTimeline>()
         .register::<DigestResponse>()
         // site stats（Footer / mega-menu）
-        .register::<StatsResponse>();
+        .register::<StatsResponse>()
+        // series（系列文導覽）
+        .register::<SeriesRow>()
+        .register::<SeriesListResponse>()
+        .register::<SeriesPostRow>()
+        .register::<SeriesDetailResponse>();
     Typescript::default()
         .header("// 由 backend `cargo run --bin export_types` 產生 — 勿手改\n")
         .export_to("../packages/api-types/index.ts", &types, specta_serde::Format)

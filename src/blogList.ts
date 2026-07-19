@@ -1,7 +1,30 @@
 import { queryOptions } from '@tanstack/react-query';
-import type { PostListItem, PostsListResponse } from '@koimsurai/api-types';
+import type {
+  PostDetailResponse, PostListItem, PostsListResponse,
+  ReactionRow, SeriesPostRow, SeriesDetailResponse, ReactionsResponse,
+} from '@koimsurai/api-types';
 import { apiUrl } from './api';
 import type { Post, Tag, Category } from './components/Blog';
+
+// 單篇文章（/api/posts/:id?lang=）。route loader 用 ensureQueryData 預取 → SSR head +
+// dehydrate；BlogPost（ClientOnly）hydrate 後 useQuery 讀同一份快取，消掉「loader + 元件
+// 各抓一次」的雙抓。404 = 該語系無此文（LOCALE_NOT_AVAILABLE），queryFn throw 讓 loader
+// 轉 notFound()、元件顯示語系缺失。
+export const postDetailQueryOptions = (id: string | number, lang: string) =>
+  queryOptions({
+    queryKey: ['post', 'detail', String(id), lang],
+    queryFn: async (): Promise<PostDetailResponse> => {
+      // lang 空字串 = 取原文（不帶 lang 參數，對齊舊 articleCache/preview 的 no-lang 行為）。
+      const url = lang ? `/api/posts/${id}?lang=${encodeURIComponent(lang)}` : `/api/posts/${id}`;
+      const res = await fetch(apiUrl(url));
+      if (res.status === 404) throw new Error('LOCALE_NOT_AVAILABLE');
+      if (!res.ok) throw new Error('Post not found');
+      const data = (await res.json()) as PostDetailResponse;
+      if (data.message !== 'success') throw new Error('Post not found');
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
 // 列表頁資料改由 TanStack Query 管理。loader 用 prefetchQuery 預取 → SSR baked。
 // posts query 依 (locale, sortBy) 參數化：切換排序 = 換 queryKey 自動 refetch，
@@ -18,6 +41,32 @@ export const postsListQueryOptions = (locale: string, sortBy: string) =>
       return data.posts;
     },
     staleTime: STALE,
+  });
+
+// 文章 emoji 反應。POST toggle 後由元件 setQueryData 更新快取（optimistic）。
+export const postReactionsQueryOptions = (postId: string | number) =>
+  queryOptions({
+    queryKey: ['post', 'reactions', String(postId)],
+    queryFn: async (): Promise<ReactionRow[]> => {
+      const res = await fetch(apiUrl(`/api/posts/${postId}/reactions`));
+      if (!res.ok) throw new Error(`GET /api/posts/${postId}/reactions ${res.status}`);
+      const data = (await res.json()) as ReactionsResponse;
+      return data.reactions ?? [];
+    },
+    staleTime: 60 * 1000,
+  });
+
+// 系列文導覽（某系列下所有文章，精簡欄位）。
+export const seriesQueryOptions = (seriesName: string) =>
+  queryOptions({
+    queryKey: ['series', seriesName],
+    queryFn: async (): Promise<SeriesPostRow[]> => {
+      const res = await fetch(apiUrl(`/api/series/${encodeURIComponent(seriesName)}`));
+      if (!res.ok) throw new Error(`GET /api/series ${res.status}`);
+      const data = (await res.json()) as SeriesDetailResponse;
+      return data.posts ?? [];
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
 // mega-menu「手記」用：最新 N 篇（無 sort/lang，menu 自己在 client 依 hover 分類過濾）。
@@ -50,6 +99,26 @@ export const blogCategoriesQueryOptions = queryOptions({
     const res = await fetch(apiUrl('/api/categories'));
     if (!res.ok) throw new Error(`GET /api/categories ${res.status}`);
     const data = (await res.json()) as { categories?: Category[] };
+    return data.categories ?? [];
+  },
+  staleTime: STALE,
+});
+
+// 分類詳情（含 description / short_description，文章頁 tooltip 用）。/api/categories 非 specta
+// 端點，型別手寫。與上面窄版共用同一端點但不同 queryKey；文章頁只掛這個、不會雙抓。
+export interface CategoryInfo {
+  name?: string;
+  short_description?: string;
+  description?: string;
+  post_count?: number;
+  updated_at?: string;
+}
+export const blogCategoriesDetailQueryOptions = queryOptions({
+  queryKey: ['categories', 'detail'],
+  queryFn: async (): Promise<CategoryInfo[]> => {
+    const res = await fetch(apiUrl('/api/categories'));
+    if (!res.ok) throw new Error(`GET /api/categories ${res.status}`);
+    const data = (await res.json()) as { categories?: CategoryInfo[] };
     return data.categories ?? [];
   },
   staleTime: STALE,

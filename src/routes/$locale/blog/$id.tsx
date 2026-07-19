@@ -1,20 +1,23 @@
 import { ClientOnly, createFileRoute, notFound } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { LocaleProvider, buildAlternateLinks, localeFromPrefix, toLocales } from '../../../start-i18n';
-import { BlogPostPage, type PostData } from '../../../pages/BlogPostPage';
-import { apiUrl } from '../../../api';
+import { BlogPostPage } from '../../../pages/BlogPostPage';
+import { postDetailQueryOptions } from '../../../blogList';
 import { articleJsonLd, articleMeta } from '../../../seoMeta';
 
 const FullBlogPost = lazy(() => import('../../../components/BlogPost'));
 
 // 帶前綴文章頁:/$locale/blog/:id(/en/blog/39 等)。loader 依 locale 抓翻譯版內容。
 export const Route = createFileRoute('/$locale/blog/$id')({
-  loader: async ({ params }) => {
+  loader: async ({ context, params }) => {
     const locale = localeFromPrefix(params.locale);
     if (!locale || locale === 'zh-TW') throw notFound();
-    const res = await fetch(apiUrl(`/api/posts/${params.id}?lang=${locale}`));
-    if (!res.ok) throw notFound();
-    return { post: (await res.json()) as PostData, locale };
+    try {
+      const post = await context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, locale));
+      return { post, locale };
+    } catch {
+      throw notFound();
+    }
   },
   head: ({ loaderData, params }) => {
     if (!loaderData) return {};

@@ -8,15 +8,16 @@ use sqlx::FromRow;
 use crate::{error::AppError, state::AppState};
 
 /// `GET /api/series` 單列：系列名 + 篇數 + 起訖時間。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct SeriesRow {
     pub name: String,
+    #[specta(type = specta_typescript::Number)]
     pub count: i64,
     pub first_at: Option<String>,
     pub last_at: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct SeriesListResponse {
     pub series: Vec<SeriesRow>,
 }
@@ -39,17 +40,19 @@ pub async fn list_series(State(state): State<AppState>) -> Result<Json<SeriesLis
 }
 
 /// `GET /api/series/:name` 單列：某系列下的文章（精簡欄位）。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, specta::Type)]
 pub struct SeriesPostRow {
+    #[specta(type = specta_typescript::Number)]
     pub id: i64,
     pub title: String,
     pub excerpt: Option<String>,
     pub series_name: Option<String>,
+    #[specta(type = Option<specta_typescript::Number>)]
     pub series_order: Option<i64>,
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct SeriesDetailResponse {
     pub name: String,
     pub posts: Vec<SeriesPostRow>,

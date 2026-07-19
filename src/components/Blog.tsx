@@ -12,7 +12,7 @@ import KoimLoader from './KoimLoader';
 import type { Variants } from 'framer-motion';
 import type { PostListItem } from '@koimsurai/api-types';
 import { postsListQueryOptions, blogTagsQueryOptions, blogCategoriesQueryOptions } from '../blogList';
-import { prefetchPost } from '../lib/prefetchPost';
+import { usePrefetchArticle } from '../lib/usePrefetchArticle';
 import './Blog.css';
 
 /** `GET /api/posts` 的單篇摘要，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
@@ -95,6 +95,7 @@ const stagger: Variants = {
 
 const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; index: number; onOpenComments?: (postId: string | number, postTitle: string, allowComments: boolean) => void }) => {
   const { t } = useTranslation();
+  const prefetchArticle = usePrefetchArticle();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes ?? 0);
   const [shareToast, setShareToast] = useState(false);
@@ -213,8 +214,8 @@ const NoteCard = React.memo(({ post, index, onOpenComments }: { post: Post; inde
           to={`/blog/${post.id}`}
           className="note-title-link"
           viewTransition
-          onMouseEnter={() => prefetchPost(post.id)}
-          onFocus={() => prefetchPost(post.id)}
+          onMouseEnter={() => prefetchArticle(post.id)}
+          onFocus={() => prefetchArticle(post.id)}
         >
           <h2 className="note-title">{post.title}</h2>
         </LocaleLink>
@@ -347,6 +348,7 @@ function Blog() {
   // (官方給共用元件的用法:忽略 from、型別放寬)。有值就當初始資料 → SSR 直接 render 出文章,
   // 而不是卡在下面的 `if (loading)` 骨架屏。
   const locale = useLocale();
+  const prefetchArticle = usePrefetchArticle();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -633,8 +635,8 @@ function Blog() {
                     <LocaleLink
                       to={`/blog/${p.id}`}
                       className="featured-link"
-                      onMouseEnter={() => prefetchPost(p.id)}
-                      onFocus={() => prefetchPost(p.id)}
+                      onMouseEnter={() => prefetchArticle(p.id)}
+                      onFocus={() => prefetchArticle(p.id)}
                     >
                       <span className="featured-text">{p.title}</span>
                       <span className="featured-date">

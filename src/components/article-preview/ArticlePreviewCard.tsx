@@ -7,8 +7,9 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import rehypeRaw from 'rehype-raw';
+import { useQuery } from '@tanstack/react-query';
 import { useArticlePreview } from './ArticlePreviewContext';
-import { getArticle } from '../../lib/articleCache';
+import { postDetailQueryOptions } from '../../blogList';
 import { BlogImage } from '../ImageLightbox';
 import { highlightCode } from '../../lib/shikiHighlight';
 import '../BlogPost.css';
@@ -118,21 +119,20 @@ function ArticlePreviewCard() {
     };
   }, [state, dismissPreview]);
 
-  // ── 取資料 + 重置 scrollTop ──
-  // 注意：previewId 變 null 時「不」清 article，讓 AnimatePresence 的 exit 動畫
-  // 仍能顯示上一篇內容；下次 hover 新文章再 fetch 取代
+  // ── 取資料（改由 TanStack Query，與 BlogPost 主文共用同一份文章快取；preview 取原文＝no-lang）──
+  const { data: previewData, isError: previewError } = useQuery({
+    ...postDetailQueryOptions(previewId ?? '', ''),
+    enabled: !!previewId,
+  });
+  // 同步到 local article：previewId → null 時「不」清 article，讓 AnimatePresence 的 exit 動畫
+  // 仍能顯示上一篇內容；下次 hover 新文章 query 取代
   useEffect(() => {
-    if (!previewId) {
-      setLoadError(false);
-      return;
-    }
-    let cancelled = false;
-    setLoadError(false);
-    if (scrollerRef.current) scrollerRef.current.scrollTop = 0;
-    getArticle(previewId)
-      .then((data) => { if (!cancelled) setArticle(data as unknown as Article); })
-      .catch(() => { if (!cancelled) setLoadError(true); });
-    return () => { cancelled = true; };
+    if (previewData) setArticle(previewData as unknown as Article);
+  }, [previewData]);
+  useEffect(() => { setLoadError(previewError); }, [previewError]);
+  // previewId 變更 → 重置 scrollTop（原本在 fetch 前做）
+  useEffect(() => {
+    if (previewId && scrollerRef.current) scrollerRef.current.scrollTop = 0;
   }, [previewId]);
 
   useEffect(() => {

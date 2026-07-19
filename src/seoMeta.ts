@@ -31,7 +31,7 @@ interface MetaTag {
 
 // 後端存的是 SQLite `datetime('now')` → UTC、格式 'YYYY-MM-DD HH:MM:SS'，不是 ISO 8601。
 // og 的 article:published_time / modified_time 規格要 ISO 8601，直接塞原字串爬蟲會解析失敗。
-const toIso = (s?: string): string | undefined => {
+const toIso = (s?: string | null): string | undefined => {
   if (!s) return undefined;
   if (s.includes('T')) return s; // 已是 ISO 就不動
   return `${s.replace(' ', 'T')}Z`;
@@ -124,7 +124,7 @@ export function articleJsonLd(post: PostData, canonicalPath: string): { type: st
     publisher: { '@type': 'Person', name: 'Koimsurai', url: BASE_URL },
     ...(published ? { datePublished: published } : {}),
     dateModified: toIso(post.updated_at) ?? published,
-    ...((post.tags?.length ?? 0) > 0 ? { keywords: post.tags!.join(', ') } : {}),
+    ...((post.tags?.length ?? 0) > 0 ? { keywords: post.tags.join(', ') } : {}),
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
   };
   return { type: 'application/ld+json', children: JSON.stringify(jsonLd) };

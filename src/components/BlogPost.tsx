@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouterState, useNavigate } from '@tanstack/react-router';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { LocaleLink } from '../locale-link';
+import { postDetailQueryOptions, blogCategoriesDetailQueryOptions, recentPostsQueryOptions, postReactionsQueryOptions, seriesQueryOptions, type CategoryInfo } from '../blogList';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
-import type { PostDetailResponse } from '@koimsurai/api-types';
+import type { PostDetailResponse, PostListItem, ReactionRow } from '@koimsurai/api-types';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from './KoimLoader';
@@ -34,14 +36,6 @@ import { LinkCard } from './LinkCard';
 /// 呼叫端用 `data.message === 'success'` 擋掉，所以這裡只描述成功形狀。
 type Post = PostDetailResponse & { date?: string };
 
-interface CategoryInfo {
-  name?: string;
-  short_description?: string;
-  description?: string;
-  post_count?: number;
-  updated_at?: string;
-}
-
 interface Heading { id: string; text: string; level: number }
 
 interface MermaidOption { value: string; label: string; icon?: string }
@@ -50,7 +44,7 @@ interface MermaidOption { value: string; label: string; icon?: string }
  * 「sidebar 文章連結」附帶 hover preview 行為
  * 因為要在 map iteration 內呼叫 hook，必須抽成子元件
  */
-const PreviewablePostLink = React.memo(({ post, className, children, viewTransition }: { post: Post; className?: string; children?: React.ReactNode; viewTransition?: boolean }) => {
+const PreviewablePostLink = React.memo(({ post, className, children, viewTransition }: { post: { id: number | string; title: string }; className?: string; children?: React.ReactNode; viewTransition?: boolean }) => {
   const { bind } = usePreviewLink(String(post.id));
   return (
     <LocaleLink
@@ -702,29 +696,39 @@ const CategoryTooltipTrigger = ({ postCategory, categoryInfo, showTooltip, onEnt
    ══════════════════════════ */
 const REACTIONS = ['👍', '❤️', '🎉', '🚀', '🤔', '😂'];
 const Reactions = React.memo(({ postId }: { postId: string | number }) => {
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const queryClient = useQueryClient();
+  const reactionsKey = postReactionsQueryOptions(postId).queryKey;
+  // 反應數改由 Query 讀；counts 由列表 derive。toggle 走 setQueryData optimistic +
+  // 伺服器回真值再校正（對齊舊的 optimistic → 校正流程）。mine 仍是 localStorage 本地態。
+  const { data: reactions = [] } = useQuery(postReactionsQueryOptions(postId));
+  const counts = useMemo(() => {
+    const map: Record<string, number> = {};
+    reactions.forEach(r => { map[r.emoji] = r.count; });
+    return map;
+  }, [reactions]);
   const [mine, setMine] = useState(() => {
     try { return new Set<string>(JSON.parse(localStorage.getItem(`reactions:${postId}`) ?? '[]') as string[]); }
     catch { return new Set<string>(); }
   });
 
-  useEffect(() => {
-    if (!postId) return;
-    fetch(`/api/posts/${postId}/reactions`)
-      .then(r => r.json())
-      .then(data => {
-        const map: Record<string, number> = {};
-        ((data as { reactions?: { emoji: string; count: number }[] }).reactions ?? []).forEach(r => { map[r.emoji] = r.count; });
-        setCounts(map);
-      })
-      .catch(() => { /* ignore */ });
-  }, [postId]);
+  const patchCount = useCallback((emoji: string, resolve: (prev: number) => number) => {
+    queryClient.setQueryData<ReactionRow[]>(reactionsKey, (old) => {
+      const list = old ?? [];
+      const idx = list.findIndex(r => r.emoji === emoji);
+      if (idx >= 0) {
+        const next = list.slice();
+        next[idx] = { ...next[idx], count: Math.max(0, resolve(next[idx].count)) };
+        return next;
+      }
+      return [...list, { emoji, count: Math.max(0, resolve(0)) }];
+    });
+  }, [queryClient, reactionsKey]);
 
   const toggle = useCallback((emoji: string) => {
     const has = mine.has(emoji);
     const delta = has ? -1 : 1;
     // optimistic
-    setCounts(c => ({ ...c, [emoji]: Math.max(0, (c[emoji] || 0) + delta) }));
+    patchCount(emoji, (c) => c + delta);
     setMine(prev => {
       const next = new Set(prev);
       if (has) next.delete(emoji); else next.add(emoji);
@@ -737,11 +741,9 @@ const Reactions = React.memo(({ postId }: { postId: string | number }) => {
       body: JSON.stringify({ emoji, delta }),
     }).then(r => r.json() as Promise<{ count?: number }>).then(data => {
       const count = data.count;
-      if (typeof count === 'number') {
-        setCounts(c => ({ ...c, [emoji]: count }));
-      }
+      if (typeof count === 'number') patchCount(emoji, () => count);
     }).catch(() => { /* 失敗就保持 optimistic 結果 */ });
-  }, [mine, postId]);
+  }, [mine, postId, patchCount]);
 
   return (
     <div className="reaction-bar" role="group" aria-label="Emoji 反應">
@@ -771,14 +773,7 @@ Reactions.displayName = 'Reactions';
    SeriesNav — 系列文導覽（若文章屬於某系列）
    ══════════════════════════ */
 const SeriesNav = React.memo(({ seriesName, currentId }: { seriesName: string; currentId: string | number }) => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  useEffect(() => {
-    if (!seriesName) return;
-    fetch(`/api/series/${encodeURIComponent(seriesName)}`)
-      .then(r => r.json())
-      .then(data => setPosts((data as { posts?: Post[] }).posts ?? []))
-      .catch(() => setPosts([]));
-  }, [seriesName]);
+  const { data: posts = [] } = useQuery({ ...seriesQueryOptions(seriesName), enabled: !!seriesName });
   if (!seriesName || posts.length === 0) return null;
   const currentIdx = posts.findIndex(p => String(p.id) === String(currentId));
   return (
@@ -814,23 +809,17 @@ SeriesNav.displayName = 'SeriesNav';
    PrevNextNav — 文章底部上/下一篇導覽
    ══════════════════════════ */
 const PrevNextNav = React.memo(({ currentId }: { currentId: string | number }) => {
-  const [prev, setPrev] = useState<Post | null>(null);
-  const [next, setNext] = useState<Post | null>(null);
-
-  useEffect(() => {
-    fetch('/api/posts?limit=200')
-      .then(r => r.json() as Promise<Post[] | { posts?: Post[] }>)
-      .then(data => {
-        const posts: Post[] = Array.isArray(data) ? data : (data.posts ?? []);
-        const published = posts.filter(p => p.status === 'published' || !p.status);
-        const sorted = [...published].sort((a, b) => new Date(a.created_at ?? '').getTime() - new Date(b.created_at ?? '').getTime());
-        const idx = sorted.findIndex(p => String(p.id) === String(currentId));
-        if (idx === -1) return;
-        setPrev(idx > 0 ? sorted[idx - 1] : null);
-        setNext(idx < sorted.length - 1 ? sorted[idx + 1] : null);
-      })
-      .catch(console.error);
-  }, [currentId]);
+  const { data: allPosts = [] } = useQuery(recentPostsQueryOptions(200));
+  const { prev, next } = useMemo<{ prev: PostListItem | null; next: PostListItem | null }>(() => {
+    const published = allPosts.filter(p => p.status === 'published' || !p.status);
+    const sorted = [...published].sort((a, b) => new Date(a.created_at ?? '').getTime() - new Date(b.created_at ?? '').getTime());
+    const idx = sorted.findIndex(p => String(p.id) === String(currentId));
+    if (idx === -1) return { prev: null, next: null };
+    return {
+      prev: idx > 0 ? sorted[idx - 1] : null,
+      next: idx < sorted.length - 1 ? sorted[idx + 1] : null,
+    };
+  }, [allPosts, currentId]);
 
   if (!prev && !next) return null;
 
@@ -856,78 +845,41 @@ const PrevNextNav = React.memo(({ currentId }: { currentId: string | number }) =
    PostsNav — Left sidebar showing OTHER article titles
    ══════════════════════════ */
 const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | number; postTitle?: string; postCategory?: string }) => {
-  const [nearbyPosts, setNearbyPosts] = useState<Post[]>([]);
-  const [categoryPosts, setCategoryPosts] = useState<Post[]>([]);
-  const [categoryInfo, setCategoryInfo] = useState<CategoryInfo | null>(null);
   const [showCategoryTooltip, setShowCategoryTooltip] = useState(false);
 
-  // 取得分類詳情
-  useEffect(() => {
-    if (!postCategory) return;
-    fetch('/api/categories')
-      .then(r => r.json())
-      .then(data => {
-        const cats: CategoryInfo[] = (data as { categories?: CategoryInfo[] }).categories ?? [];
-        const found = cats.find(c => c.name === postCategory);
-        if (found) setCategoryInfo(found);
-      })
-      .catch(console.error);
-  }, [postCategory]);
+  // 分類詳情改由 Query 讀（有 postCategory 才抓）。
+  const { data: allCategories = [] } = useQuery({ ...blogCategoriesDetailQueryOptions, enabled: !!postCategory });
+  const categoryInfo = useMemo<CategoryInfo | null>(
+    () => (postCategory ? (allCategories.find(c => c.name === postCategory) ?? null) : null),
+    [allCategories, postCategory],
+  );
 
-  useEffect(() => {
-    fetch('/api/posts?limit=100')
-      .then((r) => r.json() as Promise<Post[] | { posts?: Post[] }>)
-      .then((data) => {
-        const posts: Post[] = Array.isArray(data) ? data : (data.posts ?? []);
-        if (!posts.length) return;
+  // 附近文章 + 同專欄文章：從 posts(limit 100) 依時間排序後開視窗，改由 Query + useMemo derive。
+  const { data: allPosts = [] } = useQuery(recentPostsQueryOptions(100));
+  const { nearbyPosts, categoryPosts } = useMemo<{ nearbyPosts: PostListItem[]; categoryPosts: PostListItem[] }>(() => {
+    if (!allPosts.length) return { nearbyPosts: [], categoryPosts: [] };
+    // 按時間排序（最新在前）
+    const sorted = [...allPosts].sort((a, b) => new Date(b.created_at ?? '').getTime() - new Date(a.created_at ?? '').getTime());
+    const currentIndex = sorted.findIndex(p => String(p.id) === String(currentId));
+    if (currentIndex === -1) return { nearbyPosts: [], categoryPosts: [] };
 
-        // 按時間排序（最新在前）
-        const sorted = [...posts].sort((a, b) => new Date(b.created_at ?? '').getTime() - new Date(a.created_at ?? '').getTime());
-
-        // 找到當前文章的索引位置
-        const currentIndex = sorted.findIndex(p => String(p.id) === String(currentId));
-        if (currentIndex === -1) return;
-
-        // 計算顯示範圍
-        // 最新文章 → 往前 5 篇 (含自身 = 6)
-        // 第2新 → 含最新 + 往前取，總共 7 篇
-        // 第3新及之後 → 以當前為中心前後各取，總共 9 篇
-        let start, end;
-        if (currentIndex === 0) {
-          // 最新文章
-          start = 0;
-          end = Math.min(sorted.length, 6);
-        } else if (currentIndex === 1) {
-          // 第2新
-          start = 0;
-          end = Math.min(sorted.length, 7);
-        } else {
-          // 第3新及之後：以當前為中心，前後各4篇
-          const half = 4;
-          start = Math.max(0, currentIndex - half);
-          end = Math.min(sorted.length, currentIndex + half + 1);
-          // 如果上方不滿 4 篇，從下方補
-          if (currentIndex - start < half) {
-            end = Math.min(sorted.length, end + (half - (currentIndex - start)));
-          }
-          // 如果下方不滿 4 篇，從上方補
-          if (end - currentIndex - 1 < half) {
-            start = Math.max(0, start - (half - (end - currentIndex - 1)));
-          }
-        }
-
-        setNearbyPosts(sorted.slice(start, end));
-
-        // 篩選同分類文章
-        if (postCategory) {
-          const sameCategory = sorted
-            .filter(p => p.category === postCategory && String(p.id) !== String(currentId))
-            .slice(0, 5);
-          setCategoryPosts(sameCategory);
-        }
-      })
-      .catch(console.error);
-  }, [currentId, postCategory]);
+    // 顯示範圍：最新→往前6、第2新→7、其後→以當前為中心前後各4（不滿則另一側補）
+    let start, end;
+    if (currentIndex === 0) { start = 0; end = Math.min(sorted.length, 6); }
+    else if (currentIndex === 1) { start = 0; end = Math.min(sorted.length, 7); }
+    else {
+      const half = 4;
+      start = Math.max(0, currentIndex - half);
+      end = Math.min(sorted.length, currentIndex + half + 1);
+      if (currentIndex - start < half) end = Math.min(sorted.length, end + (half - (currentIndex - start)));
+      if (end - currentIndex - 1 < half) start = Math.max(0, start - (half - (end - currentIndex - 1)));
+    }
+    const nearby = sorted.slice(start, end);
+    const cat = postCategory
+      ? sorted.filter(p => p.category === postCategory && String(p.id) !== String(currentId)).slice(0, 5)
+      : [];
+    return { nearbyPosts: nearby, categoryPosts: cat };
+  }, [allPosts, currentId, postCategory]);
 
   return (
     <nav className="posts-nav">
@@ -1386,9 +1338,6 @@ function postPathForLocale(id: string | number | undefined, locale: string, sour
    ═══════════════════════════════════ */
 function BlogPost() {
   const { t } = useTranslation();
-  const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [readingProgress, setReadingProgress] = useState(0);
   const [headings, setHeadings] = useState<Heading[]>([]);
   const [activeHeading, setActiveHeading] = useState('');
@@ -1398,7 +1347,6 @@ function BlogPost() {
   const [showSubscribe, setShowSubscribe] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
-  const [metaCategoryInfo, setMetaCategoryInfo] = useState<CategoryInfo | null>(null);
   const [showMetaCatTooltip, setShowMetaCatTooltip] = useState(false);
   const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') ?? 'noto-serif');
   const contentRef = useRef<HTMLDivElement>(null);
@@ -1408,6 +1356,31 @@ function BlogPost() {
   const navigate = useNavigate();
   const pathLocale = useMemo(() => parseLocaleFromPath(location.pathname), [location.pathname]);
   const navState = location.state as { fromPreview?: boolean } | null;
+
+  // 主文改由 TanStack Query 讀：route loader 已 ensureQueryData 預取 → SSR baked、
+  // hydrate 讀同一份快取，不再重打 API。placeholderData 保留上一篇資料做平滑過渡（不閃白）。
+  // date 是 client 依語系格式化的衍生欄位（API 不回傳）。
+  const { data: postData, isPending, error: queryError } = useQuery({
+    ...postDetailQueryOptions(id, pathLocale),
+    placeholderData: keepPreviousData,
+  });
+  const post = useMemo<Post | null>(() => {
+    if (!postData) return null;
+    const dateLocale = LOCALE_TO_DATE_LOCALE[postData.locale ?? ''] ?? 'zh-TW';
+    return {
+      ...postData,
+      date: new Date(postData.created_at ?? '').toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
+    };
+  }, [postData]);
+  const loading = isPending;
+  const error = queryError ? (queryError instanceof Error ? queryError.message : 'Post not found') : null;
+
+  // 專欄 tooltip 的分類詳情：與 PostsNav 共用同一份 categories detail 快取（單抓）。
+  const { data: metaCats = [] } = useQuery({ ...blogCategoriesDetailQueryOptions, enabled: !!postData?.category });
+  const metaCategoryInfo = useMemo<CategoryInfo | null>(
+    () => (postData?.category ? (metaCats.find(c => c.name === postData.category) ?? null) : null),
+    [metaCats, postData?.category],
+  );
 
   /* Font family memo */
   const fontFamily = useMemo(() => {
@@ -1435,34 +1408,17 @@ function BlogPost() {
     [createHeading],
   );
 
-  /* ── Fetch post ── */
+  /* ── 換文章：捲頂（preview 歸預覽、閱讀歸閱讀，都從頂端開始）── */
   useEffect(() => {
-    // 切換文章時不顯示全白 loading，保留舊內容做平滑過渡
-    if (!post) setLoading(true);
-    setError(null);
-    // 拔掉 preview 錨點還原後，所有進文章路徑都從頂端開始 — 預覽歸預覽，閱讀歸閱讀
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    fetch(`/api/posts/${id}?lang=${encodeURIComponent(pathLocale)}`)
-      .then((r) => {
-        if (r.status === 404) throw new Error('LOCALE_NOT_AVAILABLE');
-        if (!r.ok) throw new Error('Post not found');
-        return r.json() as Promise<Post>;
-      })
-      .then((data) => {
-        if (data.message === 'success') {
-          const dateLocale = LOCALE_TO_DATE_LOCALE[data.locale ?? ''] ?? 'zh-TW';
-          setPost({
-            ...data,
-            date: new Date(data.created_at ?? '').toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
-          });
-          setLiked(false);
-          fetch('/api/posts/' + id + '/view', { method: 'POST' }).catch(console.error);
-        } else { throw new Error('Post not found'); }
-        setLoading(false);
-      })
-      .catch((e: unknown) => { setError(e instanceof Error ? e.message : 'Post not found'); setLoading(false); });
   }, [id, pathLocale]);
+
+  /* ── 成功載入一篇：重置 liked + 增加瀏覽數（每次載入新文章打一次）── */
+  useEffect(() => {
+    if (!postData?.id) return;
+    setLiked(false);
+    fetch('/api/posts/' + postData.id + '/view', { method: 'POST' }).catch(console.error);
+  }, [postData?.id]);
 
   /* 註：原本這裡有「preview commit 過來自動 scroll 到使用者讀到那段」的邏輯，
        試了 ratio、文字匹配、比例對應好幾輪，preview 跟 BlogPost 渲染差異太大
@@ -1515,19 +1471,6 @@ function BlogPost() {
       } catch { /* 腳註處理失敗就忽略 */ }
     });
   }, [post?.content]);
-
-  /* ── Category (專欄) info for meta-row hover tooltip ── */
-  useEffect(() => {
-    if (!post?.category) { setMetaCategoryInfo(null); return; }
-    fetch('/api/categories')
-      .then(r => r.json())
-      .then(data => {
-        const cats: CategoryInfo[] = (data as { categories?: CategoryInfo[] }).categories ?? [];
-        const found = cats.find(c => c.name === post.category);
-        setMetaCategoryInfo(found ?? null);
-      })
-      .catch(console.error);
-  }, [post?.category]);
 
   /* ── Copy protection ── */
   useEffect(() => {

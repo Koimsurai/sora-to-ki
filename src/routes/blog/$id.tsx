@@ -1,8 +1,8 @@
 import { ClientOnly, createFileRoute, notFound } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 import { DEFAULT_LOCALE, LocaleProvider, buildAlternateLinks, toLocales } from '../../start-i18n';
-import { BlogPostPage, type PostData } from '../../pages/BlogPostPage';
-import { apiUrl } from '../../api';
+import { BlogPostPage } from '../../pages/BlogPostPage';
+import { postDetailQueryOptions } from '../../blogList';
 import { articleJsonLd, articleMeta } from '../../seoMeta';
 
 // 完整互動文章(mermaid / zoom / TOC / 留言 / reactions / 字體 / link 卡):純 client 元件(自抓資料、render 讀 localStorage、eager mermaid)。
@@ -11,10 +11,15 @@ const FullBlogPost = lazy(() => import('../../components/BlogPost'));
 
 // 預設語言(zh-TW)文章頁:/blog/:id。loader 在 prerender 時抓內容並 baked。
 export const Route = createFileRoute('/blog/$id')({
-  loader: async ({ params }) => {
-    const res = await fetch(apiUrl(`/api/posts/${params.id}?lang=zh-TW`));
-    if (!res.ok) throw notFound();
-    return { post: (await res.json()) as PostData };
+  loader: async ({ context, params }) => {
+    // ensureQueryData：SSR 預取進 query 快取（dehydrate 帶到 client）+ 回傳給 head()。
+    // BlogPost（ClientOnly）hydrate 後 useQuery 讀同一份，不再重打 API。
+    try {
+      const post = await context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, 'zh-TW'));
+      return { post };
+    } catch {
+      throw notFound();
+    }
   },
   head: ({ loaderData }) => {
     if (!loaderData) return {};
