@@ -13,6 +13,12 @@
 - **B7 TanStack Query 全面導入**：✅ **完成（2026-07-19）**。見下方 B7。
 - **collection 收藏站退役**：✅ **完成（2026-07-19）**。後端 handler+路由 + 前端 CollectionManager+nav
   全刪，/api/collection/* 現 404（`collection_items` 空表保留）。
+- **Express strangler 死鷹架清理 + newsletter 遷移補完**：✅ **完成（2026-07-19）**。稽核發現 Express
+  雖已退役，但程式碼留大量死 proxy 鷹架（proxy 模組 + 96 個 `.fallback(proxy_to_express)` + `upstream`
+  plumbing），且「發佈即推送 newsletter」是**漏接的遷移**——`admin_create/update_post` 仍整包委派死
+  Express（→ 404），儘管 Rust mailer 早已存在。→ 補完 newsletter（改呼叫 Rust `dispatch_newsletter`）、
+  刪盡 proxy 鷹架（未接管方法改回標準 405 + Allow header、全域 not_found）。詳 git `fix(newsletter)` /
+  `refactor(backend)`。
 - **Bun 化**：延後至 Rust 版 stable（見 vault 決策；現在青黃不接期）。
 
 ---
@@ -78,10 +84,11 @@ SSR（社群預覽一直是壞的）、`public/sitemap.xml` 是 2026-02-11 的 0
 做法：koimsurai nginx 加一組 `add_header`（server block 層）。CSP 要對現有 inline script（intro gate）+ 外部資源盤一輪，先 report-only 再 enforce。
 成本：半天（CSP 最花時間）。**價值：高**（你這種站沒 HSTS 是硬傷）。
 
-**A2. i18n ja/ko 補完**
-現況：History.tsx 等組件 ja/ko 翻譯不完整（zh-TW/en 完整）。
-做法：盤所有 i18n key，補 ja/ko；或決定「ja/ko 缺的 fallback en」的策略。內容工作，可 AI 輔助。
-成本：看內容量。**價值：中高**（你支援 5 語，殘缺比不支援更糟）。
+**A2. i18n ja/ko 補完 — ✅ 完成（2026-07-19）**
+盤點結果：`common.json` 五語系（zh-TW/zh-CN/en/ja/ko）**391 個 leaf key 全齊、零缺零多**；組件
+內嵌翻譯（History 的 MILESTONE_TEXTS/UPTIME_UNITS/HISTORY_EXTRAS 等）也早補齊 ja/ko——原 ROADMAP
+的「不完整」已過時（那之後補過）。全掃唯一真缺口：`seoMeta.ts` 的 `LOCALE_TO_OG` 漏 `ko → ko_KR`
+（韓文頁 og:locale 會 fallback 錯）→ 已補。**價值：中高（5 語一致性）已達成。**
 
 ### 🟡 B — 真缺口 + 中價值（值得做，不急）
 
@@ -176,9 +183,11 @@ Sentry SaaS / LogRocket 仍 ❌（GlitchTip 已覆蓋且自主）。
 **C3. helmet.js ❌**
 理由：那是 Express 中介層，功能＝設 security headers。你的等價＝A1（nginx 層做，更該在那做）+ Rust 已有 CORS/nosniff。**不需要 helmet。**
 
-**C4. husky + lint-staged + commitlint（整套）🔸 降級**
-理由：團隊協作工具（強制多人遵守）。你單人 + 已遵守 Conventional Commits + 手動跑 tsc/eslint 勤。整套 CP 值低。
-可選極簡版：一個 `.git/hooks/pre-commit` 跑 `tsc --noEmit && eslint`（擋自己手滑），**不裝 husky/commitlint 生態**。
+**C4. husky + lint-staged + commitlint（整套）🔸 降級 → 極簡版 ✅ 完成（2026-07-19）**
+理由：整套是團隊協作工具（強制多人遵守），單人 CP 值低。**採極簡版**：`scripts/hooks/pre-commit`
+（**版控**、非 `.git/hooks` 隱形檔）條件觸發——動到前端 ts/tsx 才跑 `tsc --noEmit` + `eslint src --quiet`，
+動到後端 rs 才跑 `cargo clippy -D warnings`；`git commit --no-verify` 可跳。以
+`git config core.hooksPath scripts/hooks` 啟用（**重 clone 需重跑一次此指令**）。不裝 husky/commitlint 生態。
 
 **C5. 自動 changelog ❌**
 理由：你沒有 versioned release（個人站持續部署）。changelog 是給「有 release cycle + 使用者」的專案。你的「history」頁 + git log 已足夠。**不做。**
@@ -197,9 +206,9 @@ Sentry SaaS / LogRocket 仍 ❌（GlitchTip 已覆蓋且自主）。
      前端全面 useQuery 吃生成型別（見 B7）。多輪抓到「build 過、200、但功能從沒生效」的既有缺陷
      （allow_comments、列表 excerpt 全空、後台按鈕、summary 死路、github private commit 洩漏…）。
    - ⏳ **utoipa 還沒動**（原計畫跟 specta derive 同批，目前只做了 specta）→ 這是 B6，剩下的一半。
-4. **A2 i18n 補完**（內容工作，穿插做）
-5. **B1 CI + C4 極簡 pre-commit**（一起，push 驗證）
-6. **B3/B4/B5**（圖片/vitals/字型優化，效能批）
+4. ~~**A2 i18n 補完**~~ ✅ **完成（2026-07-19）**（原已幾乎補齊，只差 seoMeta `ko→ko_KR`）
+5. ~~**B1 CI + C4 極簡 pre-commit**~~ ✅ **完成（2026-07-19）**（B1 GitHub Actions 兩 job 全綠；C4 版控 pre-commit hook）
+6. **B3/B4/B5**（圖片/vitals/字型優化，效能批）← **下一批**
 7. **B2 前端測試**（持續累積，不衝刺）
 
 **明確不做**：Sentry SaaS（改自架 GlitchTip）、C2 CSRF、C3 helmet、C5 changelog、husky/commitlint 生態、**Redis（見下）**。
