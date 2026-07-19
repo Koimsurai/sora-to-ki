@@ -9,7 +9,7 @@
 // 參數對齊現行 pmndrs 星空（intensity 0.9 / threshold 0.25）。之後單 canvas 合併時
 // 這裡的 pass 換成 setMRT(mrt({output, emissive})) 做 selective bloom（官方文件同款）。
 import * as THREE from 'three/webgpu';
-import { pass, attribute, pointUV, time, sin, mix, smoothstep, vec2, vec3 } from 'three/tsl';
+import { pass, attribute, pointUV, uv, time, sin, mix, smoothstep, vec2, vec3 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 
 export const STAR_COUNT = 26000; // 14k 主層 + 12k 星系層（≈舊棧全部點數 27.1k；WebGPU 下加星幾乎免費）
@@ -48,7 +48,7 @@ const LAYERS: StarLayerCfg[] = [
 
 /// 單層星：per-star 尺寸/色溫/閃爍相位進 attribute，閃爍與柔光全在 shader（TSL）——
 /// 舊棧 800 顆 TwinklingStars 的 CPU 逐幀更新歸零，18k 顆全都會呼吸。
-function buildStarLayer(cfg: StarLayerCfg): THREE.Points {
+function buildStarLayer(cfg: StarLayerCfg, isWebGPU: boolean): THREE.Points {
   const positions = new Float32Array(cfg.count * 3);
   const scales = new Float32Array(cfg.count);
   const phases = new Float32Array(cfg.count);
@@ -81,10 +81,14 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Points {
   const starColor = mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.9, 0.78), tint);
   mat.colorNode = mix(vec3(1, 1, 1), starColor, 0.35).mul(2.6); // >1 的 HDR 餘量餵 bloom（HalfFloat 管線）
 
-  // 徑向柔光：quad 中心亮、邊緣柔滑歸零。points geometry 沒有 uv attribute——
-  // quad 內座標要用 pointUV（gl_PointCoord 等價），用 uv() 會全 0 → 整片黑（踩過）。
+  // 徑向柔光的 quad 內座標——兩個 backend 來源不同（都踩過，別再改壞）：
+  //   WebGL2 = 真 GL_POINTS → pointUV（gl_PointCoord）；uv() 無值 → 全黑
+  //   WebGPU = 實例化 quad（1px point 限制）→ uv()；pointUV 的 generate() 硬編碼
+  //            GLSL 'gl_PointCoord' → WGSL 解析直接 GPUValidationError（官方 shapeCircle
+  //            預設 uv() 即此路徑的旁證）
   // as never：@types/three 的 PointUVNode 漏掛 Node<'vec2'> extension（runtime 是正常節點）
-  const d = vec2(pointUV as never).sub(0.5).length().mul(2.0); // 0 = 中心, 1 = 邊
+  const coord = isWebGPU ? uv() : vec2(pointUV as never);
+  const d = coord.sub(0.5).length().mul(2.0); // 0 = 中心, 1 = 邊
   // 碟形輪廓（對齊 drei Stars 的 fade 觀感）：d<0.55 全亮平台、0.55→1 柔滑歸零。
   // 尖峰漸暗輪廓會讓大部分 quad 面積落在暗區 → 星野整體偏暗（統計驗過 22% vs 基準）。
   const falloff = smoothstep(1.0, 0.55, d);
@@ -120,7 +124,7 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{ runn
   const camera = new THREE.PerspectiveCamera(75, init.width / init.height, 0.1, 400);
   camera.position.set(0, 0, 5);
 
-  const layers = LAYERS.map((cfg) => ({ points: buildStarLayer(cfg), cfg }));
+  const layers = LAYERS.map((cfg) => ({ points: buildStarLayer(cfg, backend === 'WebGPU'), cfg }));
   for (const l of layers) scene.add(l.points);
 
   // TSL bloom：scenePass 顏色 + bloom(顏色) 疊加（BloomNode 官方文件用法）
