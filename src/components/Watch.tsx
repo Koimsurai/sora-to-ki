@@ -272,7 +272,9 @@ function Watch() {
   const hero = liveNow
     ? {
         isLive: true,
-        poster: liveNow.cover ?? now?.poster ?? null,
+        // liveNow 的封面只用它自己的 cover——不能 fallback 到 now（最近一部動畫），
+        // 否則看 Trakt 電影卻顯示上一部動畫瘋番的封面（backend 已補 TMDb cover，這是防呆）。
+        poster: liveNow.cover ?? null,
         title: liveNow.title,
         externalUrl: liveNow.externalUrl,
         progressPct: liveNow.progressPct,

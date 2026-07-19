@@ -263,6 +263,13 @@ async fn tmdb_detail(state: &AppState, kind: &str, id: &Value, locale: &str) -> 
         .filter(|s| !s.is_empty())
         .map(|p| Value::from(format!("https://image.tmdb.org/t/p/w342{p}")))
         .unwrap_or(Value::Null);
+    // backdrop = 橫式劇照（給「正在看」橫幅 hero 用；poster 是直式、放橫幅會被切到剩中間）。
+    let backdrop = j
+        .get("backdrop_path")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|p| Value::from(format!("https://image.tmdb.org/t/p/original{p}")))
+        .unwrap_or(Value::Null);
     let date = j
         .get("release_date")
         .and_then(|v| v.as_str())
@@ -273,7 +280,7 @@ async fn tmdb_detail(state: &AppState, kind: &str, id: &Value, locale: &str) -> 
         .filter(|&y| y != 0)
         .map(Value::from)
         .unwrap_or(Value::Null);
-    let out = json!({ "title": title, "poster_url": poster, "year": year });
+    let out = json!({ "title": title, "poster_url": poster, "backdrop_url": backdrop, "year": year });
     state.watch.tmdb_detail.lock().insert(key, out.clone());
     Some(out)
 }
@@ -871,10 +878,27 @@ async fn poll_trakt_watching(state: &AppState) {
         }
         _ => Value::Null,
     };
+    // Trakt 不回海報 → 用 tmdbId 抓 TMDb 海報當 cover（快取在 tmdb_detail；無 token/失敗 → Null）。
+    // 修 bug：cover 一直是 null → 前端 fallback 到「最近一部動畫」的封面（看電影卻顯示上一部動畫瘋番）。
+    // 「正在看」是橫式 hero → 優先用 backdrop（橫式劇照、original 解析）；沒 backdrop 才退
+    // poster（換 original，直式塞橫幅會被切但總比糊/無圖好）。w342 只留給 favorites 小卡。
+    let cover = if js_truthy(Some(&tmdb_id)) {
+        let dd = tmdb_detail(state, kind, &tmdb_id, "zh-TW").await;
+        dd.as_ref()
+            .and_then(|d| d.get("backdrop_url").filter(|v| !v.is_null()).cloned())
+            .or_else(|| {
+                dd.as_ref()
+                    .and_then(|d| d.get("poster_url").and_then(|v| v.as_str()))
+                    .map(|s| Value::from(s.replace("/t/p/w342/", "/t/p/original/")))
+            })
+            .unwrap_or(Value::Null)
+    } else {
+        Value::Null
+    };
     *state.watch.now.lock() = Some(json!({
         "type": kind,
         "title": title,
-        "cover": Value::Null,
+        "cover": cover,
         "tmdbId": tmdb_id,
         "episode": episode,
         "progressPct": progress,
