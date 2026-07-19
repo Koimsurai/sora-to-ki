@@ -87,12 +87,34 @@ function SpaceDebris({ count = 300 }: { count?: number }) {
   );
 }
 
+/// 量測探針：每秒回報一次 worker 渲染迴圈的 fps / 平均幀時（給 ?debug=perf overlay）。
+/// 只在 worker 環境發——注意 @react-three/offscreen 在 worker 內 shim 了 `self.document = {}`，
+/// 不能用 typeof document 判定；改測 createElement（shim 空物件沒有、真 document 有）。
+/// fallback 掛主執行緒時走 StatsGl 量測，不重複發。成本 = 每幀兩個加法，常駐無妨。
+function WorkerPerfProbe() {
+  const acc = useRef({ frames: 0, t: 0 });
+  useFrame((_, delta) => {
+    const a = acc.current;
+    a.frames += 1;
+    a.t += delta;
+    if (a.t >= 1) {
+      if (typeof (document as Partial<Document>).createElement !== 'function') {
+        self.postMessage({ type: 'perf', fps: a.frames / a.t, avgMs: (a.t / a.frames) * 1000 });
+      }
+      a.frames = 0;
+      a.t = 0;
+    }
+  });
+  return null;
+}
+
 export default function StarfieldWorkerScene() {
   return (
     <>
       <Galaxy />
       <SpaceDebris count={300} />
       <TwinklingStars count={800} />
+      <WorkerPerfProbe />
       {/* 還原星空光暈：原本星空跟 Saturn 同 canvas 會吃到 bloom，搬進 worker 後要自己加。
           在 worker 執行緒跑，不卡主執行緒。 */}
       <EffectComposer>
