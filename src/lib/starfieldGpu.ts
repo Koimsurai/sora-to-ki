@@ -9,11 +9,10 @@
 // 參數對齊現行 pmndrs 星空（intensity 0.9 / threshold 0.25）。之後單 canvas 合併時
 // 這裡的 pass 換成 setMRT(mrt({output, emissive})) 做 selective bloom（官方文件同款）。
 import * as THREE from 'three/webgpu';
-import { pass } from 'three/tsl';
+import { pass, attribute, pointUV, time, sin, mix, smoothstep, vec2, vec3 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { color } from 'three/tsl';
 
-export const STAR_COUNT = 18000;
+export const STAR_COUNT = 26000; // 14k 主層 + 12k 星系層（≈舊棧全部點數 27.1k；WebGPU 下加星幾乎免費）
 
 export interface StarfieldRunner {
   setSize(width: number, height: number): void;
@@ -30,11 +29,32 @@ export interface StarfieldInit {
   onPerf?: (fps: number, avgMs: number) => void;
 }
 
-function buildStars(): THREE.Points {
-  const positions = new Float32Array(STAR_COUNT * 3);
-  for (let i = 0; i < STAR_COUNT; i++) {
-    // 球殼分佈（radius 60~100，跟現行星空同構）
-    const r = 60 + Math.random() * 40;
+interface StarLayerCfg {
+  count: number;
+  rMin: number;
+  rMax: number;
+  /** quad 基準尺寸（world 單位，隨距離衰減）。quad 刻意偏大 + 徑向柔光：
+   *  亮核看起來仍小，但 footprint 永不亞像素 → 無 MSAA 也不閃爍/不掉星（驗收核心）。 */
+  size: number;
+  rotX: number;
+  rotY: number;
+}
+
+// 對齊舊視覺：主層（radius 100 depth 50、細、快轉）+ 星系層（radius 90 depth 20、大、慢轉）
+const LAYERS: StarLayerCfg[] = [
+  { count: 14000, rMin: 100, rMax: 150, size: 6.5, rotX: 0.01, rotY: 0.02 },
+  { count: 12000, rMin: 90, rMax: 110, size: 9.0, rotX: 0.008, rotY: 0.015 },
+];
+
+/// 單層星：per-star 尺寸/色溫/閃爍相位進 attribute，閃爍與柔光全在 shader（TSL）——
+/// 舊棧 800 顆 TwinklingStars 的 CPU 逐幀更新歸零，18k 顆全都會呼吸。
+function buildStarLayer(cfg: StarLayerCfg): THREE.Points {
+  const positions = new Float32Array(cfg.count * 3);
+  const scales = new Float32Array(cfg.count);
+  const phases = new Float32Array(cfg.count);
+  const tints = new Float32Array(cfg.count);
+  for (let i = 0; i < cfg.count; i++) {
+    const r = cfg.rMin + Math.random() * (cfg.rMax - cfg.rMin);
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
     positions.set([
@@ -42,15 +62,40 @@ function buildStars(): THREE.Points {
       r * Math.sin(phi) * Math.sin(theta),
       r * Math.cos(phi),
     ], i * 3);
+    // 尺寸：偏態分佈（多小星、少亮星）
+    scales[i] = 0.5 + Math.pow(Math.random(), 2.5) * 1.3;
+    phases[i] = Math.random() * Math.PI * 2;
+    tints[i] = Math.random();
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
+  geo.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+  geo.setAttribute('aTint', new THREE.BufferAttribute(tints, 1));
 
   // WebGPU 管線的 PointsNodeMaterial = SpriteNodeMaterial 子類（實例化 billboard quad）
-  // → 星星 footprint 與 MSAA 無關，不會像舊棧亞像素點那樣被 rasterizer 丟掉（驗收核心）。
   const mat = new THREE.PointsNodeMaterial();
-  mat.colorNode = color(0xffffff);
-  mat.size = 1.6;
+
+  // 色溫：白為主，冷暖微變（±35% 飽和）——貼近真實星野的色彩分佈
+  const tint = attribute<'float'>('aTint', 'float');
+  const starColor = mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.9, 0.78), tint);
+  mat.colorNode = mix(vec3(1, 1, 1), starColor, 0.35).mul(2.6); // >1 的 HDR 餘量餵 bloom（HalfFloat 管線）
+
+  // 徑向柔光：quad 中心亮、邊緣柔滑歸零。points geometry 沒有 uv attribute——
+  // quad 內座標要用 pointUV（gl_PointCoord 等價），用 uv() 會全 0 → 整片黑（踩過）。
+  // as never：@types/three 的 PointUVNode 漏掛 Node<'vec2'> extension（runtime 是正常節點）
+  const d = vec2(pointUV as never).sub(0.5).length().mul(2.0); // 0 = 中心, 1 = 邊
+  // 碟形輪廓（對齊 drei Stars 的 fade 觀感）：d<0.55 全亮平台、0.55→1 柔滑歸零。
+  // 尖峰漸暗輪廓會讓大部分 quad 面積落在暗區 → 星野整體偏暗（統計驗過 22% vs 基準）。
+  const falloff = smoothstep(1.0, 0.55, d);
+  // 閃爍：溫和呼吸（0.72~1.0，相位/速率 per-star）——不會像亞像素 pop 那樣硬閃
+  const phase = attribute<'float'>('aPhase', 'float');
+  const twinkle = sin(time.mul(phase.mul(0.15).add(0.6)).add(phase)).mul(0.14).add(0.86);
+  mat.opacityNode = falloff.mul(twinkle);
+
+  // per-star 尺寸（scaleNode 乘在 sprite 縮放上）
+  mat.scaleNode = attribute<'float'>('aScale', 'float');
+  mat.size = cfg.size;
   mat.sizeAttenuation = true;
   mat.transparent = true;
   mat.depthWrite = false;
@@ -75,24 +120,26 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{ runn
   const camera = new THREE.PerspectiveCamera(75, init.width / init.height, 0.1, 400);
   camera.position.set(0, 0, 5);
 
-  const stars = buildStars();
-  scene.add(stars);
+  const layers = LAYERS.map((cfg) => ({ points: buildStarLayer(cfg), cfg }));
+  for (const l of layers) scene.add(l.points);
 
   // TSL bloom：scenePass 顏色 + bloom(顏色) 疊加（BloomNode 官方文件用法）
   const scenePass = pass(scene, camera);
   const scenePassColor = scenePass.getTextureNode('output');
-  const bloomPass = bloom(scenePassColor, 0.9, 0.4, 0.25); // strength / radius / threshold
+  const bloomPass = bloom(scenePassColor, 0.9, 0.55, 0.25); // strength / radius / threshold
   const pipeline = new THREE.RenderPipeline(renderer, scenePassColor.add(bloomPass));
 
   // 渲染迴圈：delta 夾住（分頁切回不暴衝，同舊棧慣例）+ perf 累積
   let last = -1;
   let frames = 0;
   let acc = 0;
-  const loop = (time: number) => {
-    const delta = last < 0 ? 0.016 : Math.min((time - last) / 1000, 0.05);
-    last = time;
-    stars.rotation.x += delta * 0.01;
-    stars.rotation.y += delta * 0.02;
+  const loop = (now: number) => {
+    const delta = last < 0 ? 0.016 : Math.min((now - last) / 1000, 0.05);
+    last = now;
+    for (const l of layers) {
+      l.points.rotation.x += delta * l.cfg.rotX;
+      l.points.rotation.y += delta * l.cfg.rotY;
+    }
     pipeline.render();
     frames += 1;
     acc += delta;
@@ -123,8 +170,10 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{ runn
       dispose() {
         void renderer.setAnimationLoop(null);
         pipeline.dispose();
-        stars.geometry.dispose();
-        (stars.material as THREE.Material).dispose();
+        for (const l of layers) {
+          l.points.geometry.dispose();
+          (l.points.material as THREE.Material).dispose();
+        }
         void renderer.dispose();
       },
     },
