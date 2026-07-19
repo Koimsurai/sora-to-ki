@@ -26,7 +26,9 @@ import {
 import Comments from './Comments';
 import { BlogImage } from './ImageLightbox';
 import { usePreviewLink } from './article-preview/usePreviewLink';
-import './BlogPost.css';
+// BlogPost.css 改由 BlogPostPage（fallback，路由 eager）匯入——讓 CSS 進文章路由 chunk 而非
+// 全域 index.css（否則首頁等非文章頁也白背這 2658 行）。FullBlogPost 渲染時 BlogPostPage 必已
+// 先載入該 CSS（它是 fallback），故這裡不需再 import。
 import SignatureSVG from './SignatureSVG';
 import { LinkCard } from './LinkCard';
 

@@ -2657,3 +2657,19 @@ a.series-nav-title:hover {
   width: 9rem;
   max-width: 100%;
 }
+/* ── SSR fallback 的 skeleton 載入（BlogPostPage 側欄/目錄用；FullBlogPost 載入後替換）── */
+@keyframes bp-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.bp-skel {
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.035) 25%,
+    rgba(255, 255, 255, 0.085) 37%,
+    rgba(255, 255, 255, 0.035) 63%
+  );
+  background-size: 200% 100%;
+  animation: bp-shimmer 1.5s ease-in-out infinite;
+}
