@@ -21,4 +21,5 @@ pub mod tags;
 pub mod thirdparty;
 pub mod watch;
 pub mod thoughts;
+pub mod vitals;
 pub mod upload;

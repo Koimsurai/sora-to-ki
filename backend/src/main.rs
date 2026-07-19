@@ -54,6 +54,23 @@ async fn main() -> anyhow::Result<()> {
         .timeout(Duration::from_secs(30))
         .build()?;
 
+    // web_vitals 表（B4 前端 CWV 收集）：本 repo 無 migration 框架，新表用冪等建表。
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS web_vitals (\
+           id INTEGER PRIMARY KEY AUTOINCREMENT,\
+           metric TEXT NOT NULL,\
+           value REAL NOT NULL,\
+           rating TEXT NOT NULL,\
+           path TEXT NOT NULL,\
+           is_mobile INTEGER NOT NULL DEFAULT 0,\
+           created_at TEXT NOT NULL DEFAULT (datetime('now')))",
+    )
+    .execute(&pool)
+    .await?;
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_web_vitals_metric_created ON web_vitals(metric, created_at)")
+        .execute(&pool)
+        .await?;
+
     // 與 Express 共用 JWT_SECRET（HS256 驗章）。fail-fast：沒設就不啟動。
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set (與 Express 共用)");
 
@@ -96,6 +113,9 @@ async fn main() -> anyhow::Result<()> {
             "/api/stats",
             get(handlers::stats::site_stats),
         )
+        // 前端 Core Web Vitals（B4）：beacon 寫入 + 聚合自看
+        .route("/api/vitals", post(handlers::vitals::report_vital))
+        .route("/api/vitals/stats", get(handlers::vitals::vitals_stats))
         // thoughts：/rss 靜態路由（axum matchit 優先於 /{id}）；已接管的 RSS feed。
         .route(
             "/api/thoughts/rss",
