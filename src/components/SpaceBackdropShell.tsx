@@ -9,6 +9,8 @@ import { stripLocalePrefix } from '../start-i18n';
 
 // Three.js 太空背景(星空/土星/特效)→ lazy chunk:vendor-three 不進主 bundle。
 const LazySpaceBackdrop = lazy(() => import('./SpaceBackdrop'));
+// WebGPU 重寫 PoC（?webgpu=1 才載，three/webgpu 獨立 chunk，訪客零下載）
+const LazyStarfieldGpu = lazy(() => import('./StarfieldGpu'));
 
 // 桌面 WebGL 背景 + 首訪首頁開場動畫(Saturn explosion)的編排殼。
 // 整包只在 client 跑(由 __root 以 ClientOnly + lazy 掛載)→ three.js / IntroAnimation 永不進 SSR。
@@ -20,6 +22,8 @@ export default function SpaceBackdropShell() {
   // WebGL pre-flight（Chromium 137 移除 SwiftShader 後，加速壞掉的機器 getContext 回 null）。
   // 不可用 → 完全不掛 3D、不下載 vendor-three chunk，降級純 DOM 特效。本元件 client-only，可安全 probe。
   const webglOk = useMemo(() => isWebGLAvailable(), []);
+  // WebGPU 重寫 PoC 旗標：?webgpu=1 → 以 StarfieldGpu 取代整組背景（無 Saturn/intro 疊加干擾）
+  const webgpuPoc = useMemo(() => new URLSearchParams(window.location.search).get('webgpu') === '1', []);
 
   const introCompleted = (() => {
     try { return sessionStorage.getItem('introCompleted') === 'true'; } catch { return false; }
@@ -59,6 +63,15 @@ export default function SpaceBackdropShell() {
   }, [introVisible]);
 
   if (isMobile) return null; // 手機完全不載 vendor-three
+
+  // WebGPU PoC：取代整組背景（無 Saturn/intro 疊加干擾）；所有 hooks 已跑完，早退安全
+  if (webgpuPoc) {
+    return (
+      <Suspense fallback={null}>
+        <LazyStarfieldGpu />
+      </Suspense>
+    );
+  }
 
   return (
     <>
