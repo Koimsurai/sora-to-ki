@@ -12,8 +12,9 @@ import KoimLoader from './KoimLoader';
 import rehypeRaw from 'rehype-raw';
 import pangu from 'pangu';
 import { highlightCode } from '../lib/shikiHighlight';
-import mermaid from 'mermaid';
-import elkLayouts from '@mermaid-js/layout-elk';
+// mermaid + ELK 改為「偵測到圖才動態載入」（見下方 loadMermaid singleton）——只有 2/11 篇有圖，
+// 其餘文章不背這顆數百 KB 的 lib。頂層只留 type import（型別不進 runtime bundle）。
+import type { Mermaid } from 'mermaid';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -31,6 +32,9 @@ import { usePreviewLink } from './article-preview/usePreviewLink';
 // 先載入該 CSS（它是 fallback），故這裡不需再 import。
 import SignatureSVG from './SignatureSVG';
 import { LinkCard } from './LinkCard';
+// slugify / extractHeadings / computeReadTime：與 BlogPostPage（SSR fallback）共用同一份，
+// 確保 heading anchor id / TOC / 閱讀時間兩邊逐字一致。
+import { slugify, extractHeadings, computeReadTime } from '../lib/blogContent';
 
 /// `GET /api/posts/:id` 的成功回應（型別由後端 Rust struct 生成），外加 client 端自己算的
 /// `date`（由 created_at 依語系格式化，見下方 setPost）。API 不回傳 date。
@@ -62,8 +66,20 @@ const PreviewablePostLink = React.memo(({ post, className, children, viewTransit
 });
 PreviewablePostLink.displayName = 'PreviewablePostLink';
 
-/* ── Mermaid init (with ELK layout) ── */
-mermaid.registerLayoutLoaders(elkLayouts);
+/* ── Mermaid：延遲載入 singleton ──
+   偵測到 mermaid 區塊才動態 import mermaid + ELK layout（其餘文章零負擔）。
+   Promise 快取 → registerLayoutLoaders 只跑一次；多個圖表共用同一次載入。 */
+let mermaidPromise: Promise<Mermaid> | null = null;
+function loadMermaid(): Promise<Mermaid> {
+  mermaidPromise ??= Promise.all([
+    import('mermaid'),
+    import('@mermaid-js/layout-elk'),
+  ]).then(([m, elk]) => {
+    m.default.registerLayoutLoaders(elk.default);
+    return m.default;
+  });
+  return mermaidPromise;
+}
 
 const MERMAID_THEMES = [
   { value: 'dark', label: 'Dark', icon: '🌙' },
@@ -186,6 +202,7 @@ const MermaidDiagram = ({ code, theme, look, layout, direction, onError }: { cod
 
     const render = async () => {
       try {
+        const mermaid = await loadMermaid();
         mermaid.initialize({
           startOnLoad: false,
           theme,
@@ -436,13 +453,8 @@ const MermaidBlock = ({ code }: { code: string }) => {
 };
 
 /* ── helpers ── */
-const slugify = (text: string) =>
-  text.toString().toLowerCase().trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^\w\-\u4e00-\u9fa5]+/g, '')
-    .replace(/--+/g, '-');
 
-/* \u5b89\u5168\u5730\u628a React children \u6524\u5e73\u6210\u7d14\u6587\u5b57\uff08\u907f\u514d String(obj) \u2192 [object Object]\uff09 */
+/* 安全地把 React children 攤平成純文字（避免 String(obj) → [object Object]） */
 const nodeText = (node: React.ReactNode): string => {
   if (typeof node === 'string' || typeof node === 'number') return String(node);
   if (Array.isArray(node)) return node.map(nodeText).join('');
@@ -1341,7 +1353,7 @@ function postPathForLocale(id: string | number | undefined, locale: string, sour
 function BlogPost() {
   const { t } = useTranslation();
   const [readingProgress, setReadingProgress] = useState(0);
-  const [headings, setHeadings] = useState<Heading[]>([]);
+  // headings 改為同步 useMemo（在 post 定義後、下方 Extract headings 處）→ 第一幀就有值
   const [activeHeading, setActiveHeading] = useState('');
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -1357,7 +1369,6 @@ function BlogPost() {
   const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
   const pathLocale = useMemo(() => parseLocaleFromPath(location.pathname), [location.pathname]);
-  const navState = location.state as { fromPreview?: boolean } | null;
 
   // 主文改由 TanStack Query 讀：route loader 已 ensureQueryData 預取 → SSR baked、
   // hydrate 讀同一份快取，不再重打 API。placeholderData 保留上一篇資料做平滑過渡（不閃白）。
@@ -1538,25 +1549,12 @@ function BlogPost() {
     setShowShareMenu(false);
   };
 
-  /* ── Read time ── */
-  const readTime = useMemo(() => {
-    if (!post?.content) return 1;
-    const len = post.content.replace(/<[^>]+>/g, '').replace(/[#*`>\-[\]()]/g, '').length;
-    return Math.max(1, Math.ceil(len / 500));
-  }, [post?.content]);
+  /* ── Read time（與 fallback 共用同一算法）── */
+  const readTime = useMemo(() => computeReadTime(post?.content ?? ''), [post?.content]);
 
-  /* ── Extract headings ── */
-  useEffect(() => {
-    if (!post?.content) return;
-    const clean = post.content.replace(/```[\s\S]*?```/g, '');
-    const re = /^(#{1,4})\s+(.+)$/gm;
-    const out: Heading[] = [];
-    let m;
-    while ((m = re.exec(clean)) !== null) {
-      out.push({ id: slugify(m[2].trim()), text: m[2].trim(), level: m[1].length });
-    }
-    setHeadings(out);
-  }, [post?.content]);
+  /* ── Extract headings：同步 useMemo（不再 useEffect 延遲）→ 第一幀 TOC 就有值、
+        scroll-spy 也能更早啟動；與 fallback 共用 extractHeadings，anchor id 逐字一致 ── */
+  const headings = useMemo<Heading[]>(() => extractHeadings(post?.content ?? ''), [post?.content]);
 
   /* ── Scroll / progress / active heading ── */
   useEffect(() => {
@@ -1665,7 +1663,9 @@ function BlogPost() {
         <motion.header
           key={'header-' + id}
           className="post-header"
-          initial={{ opacity: 0, y: 18 }}
+          // 就地不動：SSR fallback（BlogPostPage）已把 header 定位顯示了，完整版接管時不再重新
+          // 滑入一次（原本 y:18 的進場動畫會把已顯示的內容重置 → 使用者看到「怪位移」）。
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
@@ -1742,15 +1742,13 @@ function BlogPost() {
           <motion.div
             key={'content-' + id}
             className="post-main-column"
-            // 從 preview 來的不要做 y: 24 的進場動畫（會跟 scroll 還原打架）
-            initial={navState?.fromPreview ? { opacity: 0 } : { opacity: 0, y: 24 }}
+            // 就地不動：SSR fallback 已把主文定位顯示（實測 fallback 態 opacity 1、就位），完整版
+            // 接管時原本的 y:24 進場會把它重置成 opacity 0 + 下移 24px 再滑一次 = 使用者回報的
+            // 「怪位移」。改 initial={false} 直接就位；shiki/側欄的「增強」各自淡入（見 CSS）。
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            transition={{
-              duration: navState?.fromPreview ? 0.28 : 0.4,
-              ease: [0.4, 0, 0.2, 1],
-              delay: navState?.fromPreview ? 0 : 0.05,
-            }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
           >
             <div className="post-content-wrapper">
               {/* AI Summary — inside card top with gradient fade */}

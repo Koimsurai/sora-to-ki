@@ -3,6 +3,7 @@ import { Suspense, lazy } from 'react';
 import { DEFAULT_LOCALE, LocaleProvider, buildAlternateLinks, toLocales } from '../../start-i18n';
 import { BlogPostPage } from '../../pages/BlogPostPage';
 import { postDetailQueryOptions } from '../../blogList';
+import { extractHeadings } from '../../lib/blogContent';
 import { articleJsonLd, articleMeta } from '../../seoMeta';
 
 // 完整互動文章(mermaid / zoom / TOC / 留言 / reactions / 字體 / link 卡):純 client 元件(自抓資料、render 讀 localStorage、eager mermaid)。
@@ -16,7 +17,9 @@ export const Route = createFileRoute('/blog/$id')({
     // BlogPost（ClientOnly）hydrate 後 useQuery 讀同一份，不再重打 API。
     try {
       const post = await context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, 'zh-TW'));
-      return { post };
+      // TOC 在 loader（SSR）就從內文切好 → fallback 首幀即渲染真目錄（SEO 拿到結構、右欄不需 skeleton）。
+      const toc = extractHeadings(post.content);
+      return { post, toc };
     } catch {
       throw notFound();
     }
@@ -38,11 +41,11 @@ export const Route = createFileRoute('/blog/$id')({
 });
 
 function RouteComponent() {
-  const { post } = Route.useLoaderData();
+  const { post, toc } = Route.useLoaderData();
   return (
     <LocaleProvider locale={DEFAULT_LOCALE}>
-      <ClientOnly fallback={<BlogPostPage post={post} />}>
-        <Suspense fallback={<BlogPostPage post={post} />}>
+      <ClientOnly fallback={<BlogPostPage post={post} toc={toc} />}>
+        <Suspense fallback={<BlogPostPage post={post} toc={toc} />}>
           <FullBlogPost />
         </Suspense>
       </ClientOnly>
