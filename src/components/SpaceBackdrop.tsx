@@ -21,6 +21,7 @@ import { Canvas as OffscreenCanvas } from '@react-three/offscreen';
 import Saturn3D from './Saturn3D';
 import DomSpaceEffects from './DomSpaceEffects';
 import StarfieldWorkerScene from './StarfieldWorkerScene';
+import { parsePerfKnobs, isDefaultKnobs } from '../lib/perfKnobs';
 
 const fixedFull: React.CSSProperties = { position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' };
 
@@ -62,14 +63,16 @@ export default function SpaceBackdrop({
   const workerDeadRef = useRef(false);
   // Saturn 的 WebGL context 中途遺失（GPU reset/process 崩潰）→ 本 session 卸載該 canvas
   const [saturnLost, setSaturnLost] = useState(false);
-  // ?debug=perf 量測台：Saturn canvas 掛 StatsGl（FPS/CPU/GPU）+ 星空 worker 幀時 overlay
+  // ?debug=perf 量測台：Saturn canvas 掛 StatsGl（FPS/CPU/GPU）+ 星空 worker 幀時 overlay。
+  // 旋鈕（&msaa=0|2|4|8、&smaa=1）→ 兩條管線同時套用，A/B 畫質 vs 成本。
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
-  const [workerPerf, setWorkerPerf] = useState<{ fps: number; avgMs: number } | null>(null);
+  const knobs = useMemo(() => parsePerfKnobs(window.location.search), []);
+  const [workerPerf, setWorkerPerf] = useState<{ fps: number; avgMs: number; msaa?: number; smaa?: boolean } | null>(null);
 
   useEffect(() => {
     if (!worker) return;
     // 與 offscreen 套件的 worker.onmessage（property 賦值）並存：addEventListener 不互蓋
-    const onWorkerMessage = (e: MessageEvent<{ type?: string; fps?: number; avgMs?: number }>) => {
+    const onWorkerMessage = (e: MessageEvent<{ type?: string; fps?: number; avgMs?: number; msaa?: number; smaa?: boolean }>) => {
       if (e.data?.type === 'error') {
         workerDeadRef.current = true;
         _workerFailed = true;
@@ -77,12 +80,24 @@ export default function SpaceBackdrop({
         worker.terminate();
         _spaceWorker = null;
       } else if (e.data?.type === 'perf' && perfDebug) {
-        setWorkerPerf({ fps: e.data.fps ?? 0, avgMs: e.data.avgMs ?? 0 });
+        setWorkerPerf({ fps: e.data.fps ?? 0, avgMs: e.data.avgMs ?? 0, msaa: e.data.msaa, smaa: e.data.smaa });
       }
     };
     worker.addEventListener('message', onWorkerMessage);
     return () => worker.removeEventListener('message', onWorkerMessage);
   }, [worker, perfDebug]);
+
+  // 旋鈕轉發給 worker 場景（非預設才發；scene 的 listener 要等 init + mount，補兩次重送）
+  useEffect(() => {
+    if (!worker || isDefaultKnobs(knobs)) return;
+    const send = () => {
+      if (!workerDeadRef.current) worker.postMessage({ type: 'knobs', payload: knobs });
+    };
+    send();
+    const t1 = setTimeout(send, 1500);
+    const t2 = setTimeout(send, 4000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [worker, knobs]);
 
   // Saturn canvas 的自適應畫質 + 分頁隱藏暫停
   const [dpr, setDpr] = useState(1.5);
@@ -146,12 +161,13 @@ export default function SpaceBackdrop({
           />
           {perfDebug && <StatsGl trackGPU horizontal={false} />}
           <Suspense fallback={null}>
-            <Saturn3D animate={animateSaturn} isMobile={isMobile} />
+            <Saturn3D animate={animateSaturn} isMobile={isMobile} msaa={knobs.msaa} smaa={knobs.smaa} />
           </Suspense>
         </Canvas>
       )}
 
-      {/* 量測台：星空 worker 幀時（StatsGl 只能量主執行緒的 Saturn canvas，worker 靠探針回報） */}
+      {/* 量測台：星空 worker 幀時（StatsGl 只能量主執行緒的 Saturn canvas，worker 靠探針回報）。
+          msaa/smaa 由 worker 回報值顯示 = 自證旋鈕真的送達並生效 */}
       {perfDebug && workerPerf && (
         <div style={{
           position: 'fixed', top: 8, right: 8, zIndex: 99999, padding: '6px 10px',
@@ -159,6 +175,7 @@ export default function SpaceBackdrop({
           borderRadius: 6, pointerEvents: 'none',
         }}>
           starfield worker: {workerPerf.fps.toFixed(0)} fps · {workerPerf.avgMs.toFixed(2)} ms
+          {workerPerf.msaa !== undefined && ` · msaa ${workerPerf.msaa}${workerPerf.smaa ? '+smaa' : ''}`}
         </div>
       )}
 

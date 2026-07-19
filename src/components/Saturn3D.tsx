@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 // 引入 ChromaticAberration
-import { EffectComposer, Bloom, ChromaticAberration } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, ChromaticAberration, SMAA } from '@react-three/postprocessing';
 import { usePageVisibility } from '../contexts/PageVisibilityContext'; // 導入 hook
 
 interface SatelliteProps {
@@ -173,10 +173,14 @@ function SaturnModel({ animate, isVisible, isMobile }: SaturnModelProps) {
 interface Saturn3DProps {
   animate: boolean;
   isMobile: boolean;
+  /** composer MSAA 樣本數（?debug=perf 旋鈕；預設 8 = 現行行為） */
+  msaa?: number;
+  /** MSAA 關掉時補 SMAA 後處理 AA（?debug=perf 旋鈕） */
+  smaa?: boolean;
 }
 
 // Modify Saturn3D to accept isMobile
-function Saturn3D({ animate, isMobile }: Saturn3DProps) {
+function Saturn3D({ animate, isMobile, msaa = 8, smaa = false }: Saturn3DProps) {
   const { isVisible } = usePageVisibility(); // Use the hook
 
   // Directly return 3D objects for App.jsx's Canvas to render
@@ -189,9 +193,9 @@ function Saturn3D({ animate, isMobile }: Saturn3DProps) {
       {/* Saturn model - pass the animate and isVisible prop */}
       <SaturnModel animate={animate} isVisible={isVisible} isMobile={isMobile} />
 
-      {/* 添加後處理效果 - 手機版為求效能予以關閉 */}
+      {/* 添加後處理效果 - 手機版為求效能予以關閉。multisampling 預設 8 = 現行行為，?debug=perf 可 A/B */}
       {!isMobile && (
-        <EffectComposer>
+        <EffectComposer multisampling={msaa}>
           <Bloom
             intensity={0.15} // 進一步降低光暈強度
             luminanceThreshold={0.7} // 提高亮度閾值，使更亮的區域才產生光暈
@@ -202,6 +206,7 @@ function Saturn3D({ animate, isMobile }: Saturn3DProps) {
           <ChromaticAberration
             offset={new THREE.Vector2(0.0005, 0.0005)} // 非常小的偏移量，產生微妙效果
           />
+          {smaa ? <SMAA /> : <></>}
         </EffectComposer>
       )}
     </>

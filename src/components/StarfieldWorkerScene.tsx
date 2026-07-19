@@ -2,12 +2,13 @@
 // 規則：不可碰 window / document / React context（worker 裡都沒有）。
 // 內容對齊原 SpaceBackdrop 的星空（兩層 drei Stars + 太空碎片 + 閃爍星），
 // 唯一差別：拿掉 window.scrollY 的捲動加速（worker 無 window），改固定轉速。
-import { useRef, useMemo, Suspense } from 'react';
+import { useRef, useMemo, useState, useEffect, Suspense } from 'react';
 import { Stars, Points, PointMaterial } from '@react-three/drei';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, SMAA } from '@react-three/postprocessing';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import TwinklingStars from './TwinklingStars';
+import { DEFAULT_KNOBS, type PerfKnobs } from '../lib/perfKnobs';
 
 function Galaxy() {
   const mainRef = useRef<THREE.Points>(null);
@@ -87,19 +88,28 @@ function SpaceDebris({ count = 300 }: { count?: number }) {
   );
 }
 
-/// 量測探針：每秒回報一次 worker 渲染迴圈的 fps / 平均幀時（給 ?debug=perf overlay）。
-/// 只在 worker 環境發——注意 @react-three/offscreen 在 worker 內 shim 了 `self.document = {}`，
+/// 是否在 worker 環境——注意 @react-three/offscreen 在 worker 內 shim 了 `self.document = {}`，
 /// 不能用 typeof document 判定；改測 createElement（shim 空物件沒有、真 document 有）。
-/// fallback 掛主執行緒時走 StatsGl 量測，不重複發。成本 = 每幀兩個加法，常駐無妨。
-function WorkerPerfProbe() {
+const isWorkerEnv = () => typeof (document as Partial<Document>).createElement !== 'function';
+
+/// 量測探針：每秒回報一次 worker 渲染迴圈的 fps / 平均幀時 + 當前套用的旋鈕（給 ?debug=perf
+/// overlay，順便自證旋鈕真的生效了）。fallback 掛主執行緒時走 StatsGl 量測，不重複發。
+/// 成本 = 每幀兩個加法，常駐無妨。
+function WorkerPerfProbe({ knobs }: { knobs: PerfKnobs }) {
   const acc = useRef({ frames: 0, t: 0 });
   useFrame((_, delta) => {
     const a = acc.current;
     a.frames += 1;
     a.t += delta;
     if (a.t >= 1) {
-      if (typeof (document as Partial<Document>).createElement !== 'function') {
-        self.postMessage({ type: 'perf', fps: a.frames / a.t, avgMs: (a.t / a.frames) * 1000 });
+      if (isWorkerEnv()) {
+        self.postMessage({
+          type: 'perf',
+          fps: a.frames / a.t,
+          avgMs: (a.t / a.frames) * 1000,
+          msaa: knobs.msaa,
+          smaa: knobs.smaa,
+        });
       }
       a.frames = 0;
       a.t = 0;
@@ -108,17 +118,39 @@ function WorkerPerfProbe() {
   return null;
 }
 
+/// 旋鈕接收：worker 環境聽主執行緒 postMessage 的 {type:'knobs'}（?debug=perf A/B 用）。
+/// 主執行緒 fallback 時不收（self=window 會收到不相干訊息），維持預設。
+function useKnobs(): PerfKnobs {
+  const [knobs, setKnobs] = useState(DEFAULT_KNOBS);
+  useEffect(() => {
+    if (!isWorkerEnv()) return;
+    const h = (e: MessageEvent<{ type?: string; payload?: PerfKnobs }>) => {
+      if (e.data?.type === 'knobs' && e.data.payload) setKnobs(e.data.payload);
+    };
+    self.addEventListener('message', h as EventListener);
+    return () => self.removeEventListener('message', h as EventListener);
+  }, []);
+  return knobs;
+}
+
 export default function StarfieldWorkerScene() {
+  const knobs = useKnobs();
+  // SMAA 在 worker 內必炸：postprocessing 的 SMAAEffect 用 new Image() 載 lookup 貼圖，
+  // worker 沒有 Image（實測 worker 直接死給你看）→ smaa 旋鈕只在主執行緒（Saturn canvas
+  // 與本場景的 main-thread fallback）生效，worker 星空忽略。
+  const smaaApplied = knobs.smaa && !isWorkerEnv();
   return (
     <>
       <Galaxy />
       <SpaceDebris count={300} />
       <TwinklingStars count={800} />
-      <WorkerPerfProbe />
+      <WorkerPerfProbe knobs={{ msaa: knobs.msaa, smaa: smaaApplied }} />
       {/* 還原星空光暈：原本星空跟 Saturn 同 canvas 會吃到 bloom，搬進 worker 後要自己加。
-          在 worker 執行緒跑，不卡主執行緒。 */}
-      <EffectComposer>
+          在 worker 執行緒跑，不卡主執行緒。
+          multisampling 預設 8（= 套件預設、現行線上行為）；?debug=perf 旋鈕可 A/B。 */}
+      <EffectComposer multisampling={knobs.msaa}>
         <Bloom intensity={0.9} luminanceThreshold={0.25} luminanceSmoothing={0.85} mipmapBlur />
+        {smaaApplied ? <SMAA /> : <></>}
       </EffectComposer>
     </>
   );
