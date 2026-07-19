@@ -84,9 +84,12 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   // Sprite 的 quad geometry 有 uv attribute → uv() 兩個 backend 都有值。
   const d = uv().sub(0.5).length().mul(2.0); // 0 = 中心, 1 = 邊
   const falloff = smoothstep(1.0, 0.55, d);
-  // 閃爍：溫和呼吸（振幅 ±14%，相位/速率 per-star）——不會像亞像素 pop 那樣硬閃
+  // 閃爍：慢速呼吸（週期 10–25s）+ 振幅 per-star 分佈——多數星幾乎不閃、少數明顯，
+  // 對齊舊觀感（舊棧 27k 顆只有 800 顆閃爍星；26k 全閃會產生忙碌的快閃感，使用者實測嫌快）。
   const phase = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(phases, 1), 'float');
-  const twinkle = sin(time.mul(phase.mul(0.15).add(0.6)).add(phase)).mul(0.14).add(0.86);
+  const amp = phase.mul(0.02).add(0.02); // 0.02~0.145：多數星振幅極小
+  const speed = phase.mul(0.06).add(0.25); // 0.25~0.63 rad/s
+  const twinkle = sin(time.mul(speed).add(phase.mul(7.0))).mul(amp).add(amp.oneMinus());
   mat.opacityNode = falloff.mul(twinkle);
 
   // per-star 尺寸（scaleNode 乘在 sprite 縮放上）
@@ -125,7 +128,7 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{ runn
   // TSL bloom：scenePass 顏色 + bloom(顏色) 疊加（BloomNode 官方文件用法）
   const scenePass = pass(scene, camera);
   const scenePassColor = scenePass.getTextureNode('output');
-  const bloomPass = bloom(scenePassColor, 0.8, 0.55, 0.5); // strength / radius / threshold——threshold 壓灰底霧，只讓亮星發暈
+  const bloomPass = bloom(scenePassColor, 0.55, 0.35, 0.5); // strength / radius / threshold——壓灰霧：只亮星發暈、暈徑收斂（TSL BloomNode 與 pmndrs 參數不對齊，需獨立配平）
   const pipeline = new THREE.RenderPipeline(renderer, scenePassColor.add(bloomPass));
 
   // 渲染迴圈：delta 夾住（分頁切回不暴衝，同舊棧慣例）+ perf 累積

@@ -64,11 +64,13 @@ export default function SpaceBackdropShell() {
 
   if (isMobile) return null; // 手機完全不載 vendor-three
 
-  // WebGPU PoC：取代整組背景（無 Saturn/intro 疊加干擾）；所有 hooks 已跑完，早退安全
+  // WebGPU PoC：星空換新管線；DOM 特效（流星/UFO/游標尾跡，非 WebGL）照常掛。
+  // Saturn/intro 留待單 canvas 合併階段。所有 hooks 已跑完，早退安全。
   if (webgpuPoc) {
     return (
       <Suspense fallback={null}>
         <LazyStarfieldGpu />
+        <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />
       </Suspense>
     );
   }
