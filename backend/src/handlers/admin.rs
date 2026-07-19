@@ -883,7 +883,6 @@ use axum::body::Body;
 use axum::extract::Request;
 
 use crate::handlers::posts::I18N_LOCALES;
-use crate::proxy;
 use crate::util::{js_interp, js_truthy};
 
 /// JS 值 → SQL 綁定字串：null→None、字串原樣、其他型別 js 字串化。
@@ -957,40 +956,36 @@ fn tags_from(body: &Map<String, Value>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// 讀 body bytes + 解析 JSON object。解析失敗回 None（呼叫端 proxy 回 Express 讓其原樣處理）。
-async fn read_json_body(body: Body) -> Option<(bytes::Bytes, Map<String, Value>)> {
+/// 讀 body + 解析成 JSON object。非 JSON / 非 object → None（呼叫端回 400）。
+async fn read_json_body(body: Body) -> Option<Map<String, Value>> {
     let bytes = axum::body::to_bytes(body, 10 * 1024 * 1024).await.ok()?;
     let v: Value = serde_json::from_slice(&bytes).ok()?;
-    let obj = v.as_object().cloned()?;
-    Some((bytes, obj))
+    v.as_object().cloned()
 }
 
-/// 把（已拆開的）請求重組後委派給 Express proxy。
-async fn delegate(state: AppState, parts: axum::http::request::Parts, bytes: bytes::Bytes) -> Response {
-    match proxy::proxy_to_express(State(state), Request::from_parts(parts, Body::from(bytes))).await {
-        Ok(r) => r,
-        Err(e) => e.into_response(),
+/// 建/改文「發佈即推送」共用：呼叫 Rust mailer，回前端可讀結果（{sent,failed,errors} 或 {error}）。
+/// 寄信失敗不影響建/改文本身——文章已寫入，只把結果附在回應的 `data.newsletter`。
+async fn dispatch_newsletter_result(state: &AppState, post_id: i64) -> Value {
+    match crate::handlers::mailer::dispatch_newsletter(state, post_id).await {
+        Ok((sent, failed, errors)) => json!({ "sent": sent, "failed": failed, "errors": errors }),
+        Err(e) => json!({ "error": e }),
     }
 }
 
 /// `POST /api/admin/posts` —— 建文（i18n 欄位 + tags + series）。
-/// `send_newsletter && status==='published'` 時**整包委派 Express**（newsletter=resend 硬骨頭未遷移）。
+/// `send_newsletter && status==='published'` → 建文後用 Rust mailer 推送電子報（原委派 Express 已退役）。
 pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> Response {
     let (parts, body) = req.into_parts();
     if let Err(e) = require_admin(&parts.headers, &state).await {
         return e.into_response();
     }
-    let Some((bytes, b)) = read_json_body(body).await else {
-        // 非 JSON body → 交回 Express 原樣處理
-        return delegate(state, parts, bytes::Bytes::new()).await;
+    let Some(b) = read_json_body(body).await else {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "invalid JSON body" }))).into_response();
     };
 
-    // newsletter 觸發 → 委派
-    let status_raw = b.get("status").cloned();
-    let status_str = status_raw.as_ref().and_then(|v| v.as_str()).map(String::from);
-    if js_truthy(b.get("send_newsletter")) && status_str.as_deref() == Some("published") {
-        return delegate(state, parts, bytes).await;
-    }
+    // 發佈時是否推送 Newsletter：先記旗標，建文成功後再寄（見下方）。
+    let status_str = b.get("status").and_then(|v| v.as_str()).map(String::from);
+    let want_newsletter = js_truthy(b.get("send_newsletter")) && status_str.as_deref() == Some("published");
 
     if !js_truthy(b.get("title")) || !js_truthy(b.get("content")) {
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "缺少必填欄位: title, content" }))).into_response();
@@ -1078,6 +1073,9 @@ pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> R
     data.insert("tags".into(), json!(tags_from(&b)));
     data.insert("status".into(), b.get("status").cloned().unwrap_or_else(|| json!("draft")));
     data.insert("source_language".into(), json!(source_language));
+    if want_newsletter {
+        data.insert("newsletter".into(), dispatch_newsletter_result(&state, post_id).await);
+    }
     (StatusCode::CREATED, Json(json!({ "message": "success", "data": Value::Object(data) }))).into_response()
 }
 
@@ -1094,13 +1092,12 @@ pub async fn admin_update_post(
     if let Err(e) = require_admin(&parts.headers, &state).await {
         return e.into_response();
     }
-    let Some((bytes, b)) = read_json_body(body).await else {
-        return delegate(state, parts, bytes::Bytes::new()).await;
+    let Some(b) = read_json_body(body).await else {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "invalid JSON body" }))).into_response();
     };
     let status_str = b.get("status").and_then(|v| v.as_str()).map(String::from);
-    if js_truthy(b.get("send_newsletter")) && status_str.as_deref() == Some("published") {
-        return delegate(state, parts, bytes).await;
-    }
+    // 發佈時是否推送 Newsletter：先記旗標，更新成功後再寄（見下方）。
+    let want_newsletter = js_truthy(b.get("send_newsletter")) && status_str.as_deref() == Some("published");
 
     if let Some(v) = b.get("source_language") {
         let s = v.as_str().unwrap_or("");
@@ -1214,6 +1211,11 @@ pub async fn admin_update_post(
     data.insert("tags".into(), json!(tags));
     if let Some(v) = b.get("status") {
         data.insert("status".into(), v.clone());
+    }
+    if want_newsletter {
+        if let Ok(pid) = id.parse::<i64>() {
+            data.insert("newsletter".into(), dispatch_newsletter_result(&state, pid).await);
+        }
     }
     Json(json!({ "message": "success", "data": Value::Object(data) })).into_response()
 }

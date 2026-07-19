@@ -513,6 +513,15 @@ export default function PostEditor() {
 
       if (response.ok) {
         toast.success('文章已發佈');
+        // 若有勾「發佈時推送 Newsletter」，後端會在 data.newsletter 回寄送結果
+        try {
+          const body = await response.json() as {
+            data?: { newsletter?: { sent?: number; failed?: number; error?: string } };
+          };
+          const nl = body.data?.newsletter;
+          if (nl?.error) toast.error(`電子報寄送失敗：${nl.error}`);
+          else if (nl) toast.success(`電子報已寄出 ${nl.sent ?? 0} 封，失敗 ${nl.failed ?? 0}`);
+        } catch { /* 回應非 JSON 不影響發佈成功 */ }
         try { localStorage.removeItem(autosaveKey); } catch { /* ignore */ }
         void navigate('/admin/posts');
       } else {

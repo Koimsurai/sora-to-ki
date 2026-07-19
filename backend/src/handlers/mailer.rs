@@ -241,6 +241,36 @@ async fn send_newsletter(state: &AppState, post: &Post, subs: &[Sub]) -> (i64, i
     (sent, failed, errors)
 }
 
+/// 依 post_id 載入文章標題/摘要 + active 訂閱者並寄送電子報。回 (sent, failed, errors)。
+/// 無 active 訂閱者 → (0, 0, [])。呼叫端負責 requireAdmin / 狀態 / RESEND 設定檢查。
+/// 供 admin 建/改文「發佈即推送」與手動 route 共用底層 `send_newsletter`。
+pub(crate) async fn dispatch_newsletter(
+    state: &AppState,
+    post_id: i64,
+) -> Result<(i64, i64, Vec<String>), String> {
+    let row = sqlx::query_as::<_, (Option<String>, Option<String>)>(
+        "SELECT title, excerpt FROM posts WHERE id = ?",
+    )
+    .bind(post_id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    let (title, excerpt) = row.ok_or_else(|| "post not found".to_string())?;
+    let subs = sqlx::query_as::<_, (String, Option<String>, String)>(
+        "SELECT email, name, unsubscribe_token FROM newsletter_subscribers WHERE status = ? AND unsubscribe_token IS NOT NULL",
+    )
+    .bind("active")
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    if subs.is_empty() {
+        return Ok((0, 0, vec![]));
+    }
+    let subs: Vec<Sub> = subs.into_iter().map(|(email, name, token)| Sub { email, name, token }).collect();
+    let post = Post { id: json!(post_id), title: title.unwrap_or_default(), excerpt };
+    Ok(send_newsletter(state, &post, &subs).await)
+}
+
 /// `POST /api/admin/posts/:id/send-newsletter` —— requireAdmin。
 pub async fn send_newsletter_route(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
