@@ -13,6 +13,8 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use koimsurai_web_backend::{handlers, openapi, proxy, revalidate, state};
 use state::AppState;
+use utoipa::OpenApi;
+use utoipa_scalar::{Scalar, Servable};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -84,14 +86,14 @@ async fn main() -> anyhow::Result<()> {
             get(handlers::series::list_series).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/series/:name",
+            "/api/series/{name}",
             get(handlers::series::series_by_name).fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/stats",
             get(handlers::stats::site_stats).fallback(proxy::proxy_to_express),
         )
-        // thoughts：/rss 靜態路由（axum matchit 優先於 /:id）；已接管的 RSS feed。
+        // thoughts：/rss 靜態路由（axum matchit 優先於 /{id}）；已接管的 RSS feed。
         .route(
             "/api/thoughts/rss",
             get(handlers::thoughts::thoughts_rss).fallback(proxy::proxy_to_express),
@@ -101,11 +103,11 @@ async fn main() -> anyhow::Result<()> {
             get(handlers::thoughts::list_thoughts).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/thoughts/:id",
+            "/api/thoughts/{id}",
             get(handlers::thoughts::get_thought).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/thoughts/:id/comments",
+            "/api/thoughts/{id}/comments",
             get(handlers::thoughts::list_thought_comments)
                 .post(handlers::comments::thought_comment)
                 .fallback(proxy::proxy_to_express),
@@ -134,14 +136,14 @@ async fn main() -> anyhow::Result<()> {
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/posts/:id",
+            "/api/posts/{id}",
             get(handlers::posts::get_post)
                 .put(handlers::posts::update_post_public)
                 .delete(handlers::posts::delete_post_public)
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/posts/:id/status",
+            "/api/posts/{id}/status",
             patch(handlers::posts::patch_post_status).fallback(proxy::proxy_to_express),
         )
         .route(
@@ -149,36 +151,36 @@ async fn main() -> anyhow::Result<()> {
             post(handlers::posts::create_post_legacy).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/posts/:id/reactions",
+            "/api/posts/{id}/reactions",
             get(handlers::posts::post_reactions)
                 .post(handlers::posts::post_reaction)
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/posts/:id/comments",
+            "/api/posts/{id}/comments",
             get(handlers::posts::post_comments)
                 .post(handlers::comments::post_comment)
                 .fallback(proxy::proxy_to_express),
         )
         // 計數寫入（公開）
         .route(
-            "/api/posts/:id/view",
+            "/api/posts/{id}/view",
             post(handlers::posts::post_view).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/posts/:id/like",
+            "/api/posts/{id}/like",
             post(handlers::posts::post_like).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/posts/:id/unlike",
+            "/api/posts/{id}/unlike",
             post(handlers::posts::post_unlike).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/comments/:id/like",
+            "/api/comments/{id}/like",
             post(handlers::posts::comment_like).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/thoughts/:id/react",
+            "/api/thoughts/{id}/react",
             post(handlers::thoughts::thought_react).fallback(proxy::proxy_to_express),
         )
         // admin thoughts CRUD（unfurl / TMDb enrich）
@@ -187,7 +189,7 @@ async fn main() -> anyhow::Result<()> {
             post(handlers::thoughts::admin_create_thought).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/admin/thoughts/:id",
+            "/api/admin/thoughts/{id}",
             put(handlers::thoughts::admin_update_thought)
                 .delete(handlers::thoughts::admin_delete_thought)
                 .fallback(proxy::proxy_to_express),
@@ -215,7 +217,7 @@ async fn main() -> anyhow::Result<()> {
         )
         // 用戶角色管理（requireOwner）
         .route(
-            "/api/admin/users/:id/role",
+            "/api/admin/users/{id}/role",
             put(handlers::admin::admin_update_user_role).fallback(proxy::proxy_to_express),
         )
         // spotify 一次性 setup callback（Express 退役輪移植，簡版 HTML）
@@ -242,7 +244,7 @@ async fn main() -> anyhow::Result<()> {
             post(handlers::newsletter::unsubscribe).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/newsletter/by-token/:token",
+            "/api/newsletter/by-token/{token}",
             get(handlers::newsletter::by_token).fallback(proxy::proxy_to_express),
         )
         .route(
@@ -257,7 +259,7 @@ async fn main() -> anyhow::Result<()> {
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/admin/tags/:id",
+            "/api/admin/tags/{id}",
             put(handlers::admin::update_tag)
                 .delete(handlers::admin::delete_tag)
                 .fallback(proxy::proxy_to_express),
@@ -269,7 +271,7 @@ async fn main() -> anyhow::Result<()> {
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/admin/categories/:id",
+            "/api/admin/categories/{id}",
             put(handlers::admin::update_category)
                 .delete(handlers::admin::delete_category)
                 .fallback(proxy::proxy_to_express),
@@ -285,7 +287,7 @@ async fn main() -> anyhow::Result<()> {
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/admin/blacklist/:id",
+            "/api/admin/blacklist/{id}",
             delete(handlers::admin::delete_blacklist).fallback(proxy::proxy_to_express),
         )
         .route(
@@ -295,7 +297,7 @@ async fn main() -> anyhow::Result<()> {
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/admin/keyword-filters/:id",
+            "/api/admin/keyword-filters/{id}",
             delete(handlers::admin::delete_keyword_filter).fallback(proxy::proxy_to_express),
         )
         .route(
@@ -306,7 +308,7 @@ async fn main() -> anyhow::Result<()> {
         )
         // …/send-newsletter（resend 硬骨頭）仍走全域 fallback proxy
         .route(
-            "/api/admin/posts/:id",
+            "/api/admin/posts/{id}",
             get(handlers::admin::admin_get_post)
                 .put(handlers::admin::admin_update_post)
                 .delete(handlers::admin::admin_delete_post)
@@ -314,12 +316,12 @@ async fn main() -> anyhow::Result<()> {
         )
         // generate-zh-cn（opencc 硬骨頭 → ferrous-opencc Tw2s，byte-identical）
         .route(
-            "/api/admin/posts/:id/generate-zh-cn",
+            "/api/admin/posts/{id}/generate-zh-cn",
             post(handlers::opencc::generate_zh_cn).fallback(proxy::proxy_to_express),
         )
         // send-newsletter（resend 硬骨頭 → reqwest 直打 Resend batch API）
         .route(
-            "/api/admin/posts/:id/send-newsletter",
+            "/api/admin/posts/{id}/send-newsletter",
             post(handlers::mailer::send_newsletter_route).fallback(proxy::proxy_to_express),
         )
         .route(
@@ -341,15 +343,15 @@ async fn main() -> anyhow::Result<()> {
         // 使 batch 成為死路由（`batch/status` 被當 id="batch" → UPDATE 0 列 → 404）。為等價，Rust 亦
         // 讓 `batch/status` 落到 `:id/status`（id="batch"）→ 同樣 404。（Express 端 batch 端點失效之既有 bug。）
         .route(
-            "/api/admin/comments/:id/status",
+            "/api/admin/comments/{id}/status",
             patch(handlers::admin::patch_comment_status).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/admin/comments/:id/reply",
+            "/api/admin/comments/{id}/reply",
             post(handlers::admin::reply_comment).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/admin/comments/:id",
+            "/api/admin/comments/{id}",
             put(handlers::admin::update_comment)
                 .delete(handlers::admin::delete_comment)
                 .fallback(proxy::proxy_to_express),
@@ -362,7 +364,7 @@ async fn main() -> anyhow::Result<()> {
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/books/:id",
+            "/api/books/{id}",
             get(handlers::books::get_book)
                 .put(handlers::books::update_book)
                 .delete(handlers::books::delete_book)
@@ -392,7 +394,7 @@ async fn main() -> anyhow::Result<()> {
         )
         // OG 圖（sharp/librsvg → resvg；axum 不支援 :id.png 部分參數，handler 內 strip 後綴）
         .route(
-            "/api/og/:file",
+            "/api/og/{file}",
             get(handlers::og::og_png).fallback(proxy::proxy_to_express),
         )
         // 上傳（multer → axum multipart；thumbhash 實測等價）
@@ -405,11 +407,11 @@ async fn main() -> anyhow::Result<()> {
         )
         // 第三方代理（/steam/profile SWR 快取、/quote/daily 每日快取+opencc、spotify、watch 域留 proxy）
         .route(
-            "/api/github/user/:username",
+            "/api/github/user/{username}",
             get(handlers::thirdparty::github_user).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/github/events/:username",
+            "/api/github/events/{username}",
             get(handlers::thirdparty::github_events).fallback(proxy::proxy_to_express),
         )
         .route(
@@ -469,7 +471,7 @@ async fn main() -> anyhow::Result<()> {
             get(handlers::thirdparty::steam_owned_games).fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/steam/achievements/:appid",
+            "/api/steam/achievements/{appid}",
             get(handlers::thirdparty::steam_achievements).fallback(proxy::proxy_to_express),
         )
         // watch 域（bahamut status/cookie 留 proxy=anigamer 硬骨頭；cron 同步留 Express）
@@ -496,7 +498,7 @@ async fn main() -> anyhow::Result<()> {
                 .fallback(proxy::proxy_to_express),
         )
         .route(
-            "/api/watch/favorites/:id",
+            "/api/watch/favorites/{id}",
             put(handlers::watch::update_favorite)
                 .delete(handlers::watch::delete_favorite)
                 .fallback(proxy::proxy_to_express),
@@ -526,9 +528,9 @@ async fn main() -> anyhow::Result<()> {
             "/api/books/search/external",
             get(handlers::thirdparty::books_search_external).fallback(proxy::proxy_to_express),
         )
-        // OpenAPI 文件（utoipa，與前端 specta 型別同源）：spec 自架 + Scalar UI
+        // OpenAPI 文件（utoipa，與前端 specta 型別同源）：spec 自架 + Scalar UI（utoipa-scalar 原生整合）
         .route("/api/openapi.json", get(openapi::openapi_json))
-        .route("/api/docs", get(openapi::scalar_ui))
+        .merge(Scalar::with_url("/api/docs", openapi::ApiDoc::openapi()))
         .fallback(proxy::proxy_to_express)
         // 對齊 Express `app.use(cors())`：所有回應 ACAO:*；preflight 回六 methods、
         // Allow-Headers reflect 請求（mirror_request = cors 套件預設行為）。

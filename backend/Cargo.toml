@@ -5,7 +5,7 @@ edition = "2021"
 description = "Rust (axum + sqlx) strangler 前置代理，逐端點接管 Express 後端"
 
 [dependencies]
-axum = { version = "0.7", features = ["multipart"] }  # multipart 給 /admin/upload
+axum = { version = "0.8", features = ["multipart"] }  # multipart 給 /admin/upload
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 # preserve_order：讓解析 JSON（thoughts 的 ref）再序列化時保留原始 key 順序，
@@ -14,8 +14,8 @@ serde = { version = "1", features = ["derive"] }
 # aspectRatio 1.7829716193656093 被 parse 成 …609）；開啟後 parse→serialize 精確 round-trip 對齊 V8。
 serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls", "macros"] }
-tower = { version = "0.4", features = ["util"] }
-tower-http = { version = "0.5", features = ["trace", "cors"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["trace", "cors"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 anyhow = "1"
@@ -57,3 +57,4 @@ specta = { version = "=2.0.0-rc.25", features = ["derive"] }
 specta-typescript = "0.0.12"
 specta-serde = "0.0.12"
 utoipa = { version = "5.5.0", features = ["axum_extras"] }
+utoipa-scalar = { version = "0.3.0", features = ["axum"] }

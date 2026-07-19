@@ -2,7 +2,7 @@
 //! 同時 derive `specta::Type`（給前端 TS）與 `utoipa::ToSchema`（給 OpenAPI）。
 //! 首波只收公開讀端點；admin/mutation/第三方待後續增量（照 SPECTA/ROADMAP B6）。
 
-use axum::{response::Html, Json};
+use axum::Json;
 use utoipa::OpenApi;
 
 use crate::handlers;
@@ -63,27 +63,8 @@ use crate::handlers;
 )]
 pub struct ApiDoc;
 
-/// `GET /api/openapi.json` —— 機器可讀 OpenAPI 3.1 spec（完全自架、無外部依賴）。
+/// `GET /api/openapi.json` —— 機器可讀 OpenAPI 3.1 spec（完全自架）。
+/// UI（Scalar）由 utoipa-scalar 整合在 main.rs 掛 `/api/docs`（axum 0.8 後可原生 merge）。
 pub async fn openapi_json() -> Json<utoipa::openapi::OpenApi> {
     Json(ApiDoc::openapi())
-}
-
-/// `GET /api/docs` —— Scalar 文件 UI。
-/// ⚠️ UI 的 JS 走 jsDelivr CDN（utoipa-scalar 綁 axum 0.8、本專案 axum 0.7 不相容，故不用該整合）。
-/// spec 本身 (/api/openapi.json) 完全自架；這頁只是個 dev/debug 檢視器。要全自主可改自託管 Scalar JS。
-pub async fn scalar_ui() -> Html<&'static str> {
-    Html(
-        r#"<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>koimsurai / 宙と木 API</title>
-</head>
-<body>
-<script id="api-reference" data-url="/api/openapi.json"></script>
-<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-</body>
-</html>"#,
-    )
 }

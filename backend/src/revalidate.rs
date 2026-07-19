@@ -99,8 +99,8 @@ mod tests {
 
     fn app() -> Router {
         Router::new()
-            .route("/api/posts/:id", put(|| async { "ok" }))
-            .route("/api/posts/:id/view", put(|| async { "ok" }))
+            .route("/api/posts/{id}", put(|| async { "ok" }))
+            .route("/api/posts/{id}/view", put(|| async { "ok" }))
             .layer(axum::middleware::from_fn(notify_on_post_write))
     }
 
