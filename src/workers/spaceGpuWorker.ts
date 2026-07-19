@@ -11,9 +11,14 @@ import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu
 interface InitMsg { type: 'init'; canvas: OffscreenCanvas; width: number; height: number; dpr: number }
 interface ResizeMsg { type: 'resize'; width: number; height: number }
 interface RunningMsg { type: 'running'; value: boolean }
-type InMsg = InitMsg | ResizeMsg | RunningMsg;
+interface ScrollMsg { type: 'scroll'; y: number }
+interface SaturnMsg { type: 'saturn'; visible: boolean; animate: boolean }
+type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg;
 
 let runner: StarfieldRunner | null = null;
+// init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
+let lastScroll = 0;
+let lastSaturn: { visible: boolean; animate: boolean } | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
@@ -28,6 +33,8 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           onPerf: (fps, avgMs) => self.postMessage({ type: 'perf', fps, avgMs }),
         });
         runner = r;
+        runner.setScroll(lastScroll);
+        if (lastSaturn) runner.setSaturn(lastSaturn.visible, lastSaturn.animate);
         self.postMessage({ type: 'ready', backend });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
@@ -37,5 +44,11 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
     runner?.setSize(msg.width, msg.height);
   } else if (msg.type === 'running') {
     runner?.setRunning(msg.value);
+  } else if (msg.type === 'scroll') {
+    lastScroll = msg.y;
+    runner?.setScroll(msg.y);
+  } else if (msg.type === 'saturn') {
+    lastSaturn = { visible: msg.visible, animate: msg.animate };
+    runner?.setSaturn(msg.visible, msg.animate);
   }
 };

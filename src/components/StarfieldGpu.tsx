@@ -16,11 +16,27 @@ const canvasStyle: React.CSSProperties = {
   position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1,
 };
 
-export default function StarfieldGpu() {
+interface StarfieldGpuProps {
+  /** 土星僅首頁顯示（對齊舊架構的 isOnHomePage gating） */
+  isOnHomePage?: boolean;
+}
+
+export default function StarfieldGpu({ isOnHomePage = false }: StarfieldGpuProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [backend, setBackend] = useState('初始化中…');
   const [perf, setPerf] = useState<{ fps: number; avgMs: number } | null>(null);
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
+  // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
+  const controlRef = useRef<{ scroll(y: number): void; saturn(v: boolean, a: boolean): void } | null>(null);
+
+  // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態
+  useEffect(() => {
+    const onScroll = () => controlRef.current?.scroll(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    controlRef.current?.saturn(isOnHomePage, true);
+    controlRef.current?.scroll(window.scrollY);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isOnHomePage, backend]); // backend 變化 = runner 就緒的訊號，重新同步
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -36,6 +52,10 @@ export default function StarfieldGpu() {
         { type: 'init', canvas: offscreen, width, height, dpr: window.devicePixelRatio },
         [offscreen],
       );
+      controlRef.current = {
+        scroll: (y) => worker.postMessage({ type: 'scroll', y }),
+        saturn: (v, a) => worker.postMessage({ type: 'saturn', visible: v, animate: a }),
+      };
       const onMsg = (e: MessageEvent<{ type: string; backend?: string; fps?: number; avgMs?: number; message?: string }>) => {
         if (e.data.type === 'ready') setBackend(`${e.data.backend} · worker`);
         else if (e.data.type === 'perf') setPerf({ fps: e.data.fps ?? 0, avgMs: e.data.avgMs ?? 0 });
@@ -69,6 +89,10 @@ export default function StarfieldGpu() {
         });
         if (disposed) { runner.dispose(); return; }
         runnerHandle = runner;
+        controlRef.current = {
+          scroll: (y) => runner.setScroll(y),
+          saturn: (v, a) => runner.setSaturn(v, a),
+        };
         setBackend(`${be} · main`);
       } catch (err) {
         console.warn('[StarfieldGpu] 主執行緒初始化失敗:', err);

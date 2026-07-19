@@ -69,7 +69,7 @@ export default function SpaceBackdropShell() {
   if (webgpuPoc) {
     return (
       <Suspense fallback={null}>
-        <LazyStarfieldGpu />
+        <LazyStarfieldGpu isOnHomePage={isOnHomePage} />
         <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />
       </Suspense>
     );
