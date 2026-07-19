@@ -376,16 +376,6 @@ async fn main() -> anyhow::Result<()> {
             "/api/admin/books",
             get(handlers::books::admin_books).fallback(proxy::proxy_to_express),
         )
-        // collection 域
-        .route(
-            "/api/collection",
-            post(handlers::collection::create_item).fallback(proxy::proxy_to_express),
-        )
-        // n8n 批次匯入（x-api-key）——Rust 已是 collection_items 寫者，併入維持單寫者
-        .route(
-            "/api/sync/collection",
-            post(handlers::collection::sync_collection).fallback(proxy::proxy_to_express),
-        )
         // gallery（零 sharp 部分：讀 manifest / 串流代理）
         .route(
             "/api/gallery/photos",
@@ -412,17 +402,6 @@ async fn main() -> anyhow::Result<()> {
                 .fallback(proxy::proxy_to_express)
                 // multer limits.fileSize = 50MB（其餘路由走全域 10MB）
                 .route_layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
-        )
-        .route(
-            "/api/collection/search-external",
-            post(handlers::collection::search_external).fallback(proxy::proxy_to_express),
-        )
-        .route(
-            "/api/collection/:type",
-            get(handlers::collection::list_collection)
-                .put(handlers::collection::update_item)
-                .delete(handlers::collection::delete_item)
-                .fallback(proxy::proxy_to_express),
         )
         // 第三方代理（/steam/profile SWR 快取、/quote/daily 每日快取+opencc、spotify、watch 域留 proxy）
         .route(

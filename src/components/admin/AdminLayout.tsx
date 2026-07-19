@@ -7,7 +7,6 @@ import {
   Tags,
   BookOpen,
   Library,
-  Bookmark,
   Sparkles,
   Menu,
   X,
@@ -105,7 +104,6 @@ const sidebarItems: SidebarItem[] = [
   { id: 'subscribers', icon: Mail, label: '電子報訂閱', path: '/admin/subscribers' },
   { id: 'notes', icon: BookOpen, label: '日記', path: '/admin/notes' },
   { id: 'books', icon: Library, label: '書籍', path: '/admin/books' },
-  { id: 'collection', icon: Bookmark, label: '收藏站', path: '/admin/collection' },
   { id: 'article-generator', icon: Sparkles, label: 'AI 寫作', path: '/admin/article-generator' },
   { id: 'users', icon: Users, label: '用戶管理', path: '/admin/users', ownerOnly: true },
 ];

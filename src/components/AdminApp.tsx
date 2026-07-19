@@ -12,7 +12,6 @@ const LazyPostsList = lazy(() => import('./admin/PostsList'));
 const LazyCategoriesManager = lazy(() => import('./admin/CategoriesManager'));
 const LazyTagsManager = lazy(() => import('./admin/TagsManager'));
 const LazyBooksManager = lazy(() => import('./admin/BooksManager'));
-const LazyCollectionManager = lazy(() => import('./admin/CollectionManager'));
 const LazyArticleGenerator = lazy(() => import('./admin/ArticleGenerator'));
 const LazyCommentsManager = lazy(() => import('./admin/CommentsManager'));
 const LazySubscribersManager = lazy(() => import('./admin/SubscribersManager'));
@@ -59,7 +58,6 @@ export default function AdminApp() {
           <Route path="categories" element={lazyEl(LazyCategoriesManager)} />
           <Route path="tags" element={lazyEl(LazyTagsManager)} />
           <Route path="books" element={lazyEl(LazyBooksManager)} />
-          <Route path="collection" element={lazyEl(LazyCollectionManager)} />
           <Route path="article-generator" element={lazyEl(LazyArticleGenerator)} />
           <Route path="comments" element={lazyEl(LazyCommentsManager)} />
           <Route path="subscribers" element={lazyEl(LazySubscribersManager)} />
