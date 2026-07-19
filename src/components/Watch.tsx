@@ -28,6 +28,8 @@ interface WatchEntry {
   type: WatchType;
   title: string;
   poster?: string;
+  // 橫式劇照——只有 film 會帶（後端 films_recent 補），給「最近看完」hero 填滿寬幅橫幅用。
+  backdrop?: string;
   isoDate?: string;
   date?: string;
   episode?: number | string;
@@ -199,6 +201,7 @@ function Watch() {
         episode: head.episode ?? undefined,
         epCount: head.epCount,
         tmdbId: head.tmdbId,
+        isoDate: headParsed.isoDate,
         date: headParsed.shortDate,
         externalUrl: tmdbUrl('tv', head.tmdbId)
           ?? `https://www.themoviedb.org/search?query=${encodeURIComponent(head.title ?? '')}`,
@@ -227,6 +230,7 @@ function Watch() {
     title: f.title,
     // 生成型別是 `| null`；WatchEntry 用 optional → `?? undefined` 橋接。
     poster: f.poster_url ?? undefined,
+    backdrop: f.backdrop_url ?? undefined,
     isoDate: f.watched_date ?? undefined,
     date: toShortDate(f.watched_date),
     year: f.release_year ?? undefined,
@@ -244,6 +248,11 @@ function Watch() {
     tmdbId: s.tmdb_id,
     externalUrl: tmdbUrl('tv', s.tmdb_id),
   }));
+  // 「最近看完」hero fallback：跨類型取最近一筆（動畫#1 / 電影#1 / 影集#1 比日期），
+  // 不再只看動畫——否則看完 Trakt 電影，hero 仍顯示上一部動畫（史萊姆）。
+  const recentMost: WatchEntry | null = [now, filmItems[0], tvItems[0]]
+    .filter((e): e is WatchEntry => e != null)
+    .sort((a, b) => (b.isoDate ?? '').localeCompare(a.isoDate ?? ''))[0] ?? null;
   const recentAll = dedupeByTmdb([...recentAnime, ...filmItems, ...tvItems])
     .sort((a, b) => (b.isoDate ?? '').localeCompare(a.isoDate ?? ''))
     .slice(0, 14);
@@ -307,18 +316,21 @@ function Watch() {
             : (liveNow.type === 'movie' ? t('watch.typeFilm') : t('watch.typeTv')),
         ].filter(Boolean),
       }
-    : now
+    : recentMost
       ? {
           isLive: false,
-          poster: now.poster,
-          title: now.title,
-          externalUrl: now.externalUrl,
+          // film 優先用橫式劇照填滿橫幅（poster 是直式會被裁+放大糊）；anime/tv 用自己的圖。
+          poster: recentMost.backdrop ?? recentMost.poster ?? null,
+          title: recentMost.title,
+          externalUrl: recentMost.externalUrl,
           progressPct: null,
-          metaParts: [
-            interpolate(epTemplate, { n: now.episode ?? now.epCount }),
-            serviceLabel,
-            now.date ?? null,
-          ].filter(Boolean),
+          metaParts: (
+            recentMost.type === 'anime'
+              ? [recentMost.episode ? interpolate(epTemplate, { n: recentMost.episode }) : null, serviceLabel]
+              : recentMost.type === 'film'
+                ? [t('watch.typeFilm'), recentMost.year != null ? String(recentMost.year) : null]
+                : [t('watch.typeTv'), recentMost.epCount ? interpolate(epTemplate, { n: recentMost.epCount }) : null]
+          ).concat(recentMost.date ?? null).filter(Boolean),
         }
       : null;
 

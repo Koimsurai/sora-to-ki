@@ -55,6 +55,9 @@ pub struct FilmRow {
     #[specta(type = Option<specta_typescript::Number>)]
     pub tmdb_id: Option<i64>,
     pub poster_url: Option<String>,
+    // DB 沒這欄（sqlx default）；films_recent 補圖時順便帶 TMDb 橫式劇照，給「最近看完」hero 用。
+    #[sqlx(default)]
+    pub backdrop_url: Option<String>,
     #[specta(type = Option<specta_typescript::Number>)]
     pub release_year: Option<i64>,
     pub genres: Option<String>,
@@ -165,7 +168,22 @@ pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQu
     };
     match query.fetch_all(&state.pool).await {
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
-        Ok(films) => Json(FilmsResponse { message: "success".into(), films }).into_response(),
+        Ok(mut films) => {
+            // Trakt 同步進來的 film 沒存 poster_url（sync 只寫 title/date/tmdb_id）→ 用 tmdb_id
+            // 從 TMDb 補海報（w342 小卡夠；tmdb_detail 有快取，只有缺圖的才打）。
+            for f in films.iter_mut() {
+                if f.poster_url.as_deref().unwrap_or("").is_empty() {
+                    if let Some(id) = f.tmdb_id {
+                        if let Some(dd) = tmdb_detail(&state, "movie", &Value::from(id), "zh-TW").await {
+                            let get = |k: &str| dd.get(k).and_then(|v| v.as_str().map(String::from));
+                            f.poster_url = get("poster_url"); // w342 給小卡
+                            f.backdrop_url = get("backdrop_url"); // 橫式原圖給「最近看完」hero
+                        }
+                    }
+                }
+            }
+            Json(FilmsResponse { message: "success".into(), films }).into_response()
+        }
     }
 }
 
