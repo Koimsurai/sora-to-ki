@@ -9,7 +9,7 @@
 // 參數對齊現行 pmndrs 星空（intensity 0.9 / threshold 0.25）。之後單 canvas 合併時
 // 這裡的 pass 換成 setMRT(mrt({output, emissive})) 做 selective bloom（官方文件同款）。
 import * as THREE from 'three/webgpu';
-import { pass, attribute, pointUV, uv, time, sin, mix, smoothstep, vec2, vec3 } from 'three/tsl';
+import { pass, instancedBufferAttribute, uv, time, sin, mix, smoothstep, vec3 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 
 export const STAR_COUNT = 26000; // 14k 主層 + 12k 星系層（≈舊棧全部點數 27.1k；WebGPU 下加星幾乎免費）
@@ -42,13 +42,16 @@ interface StarLayerCfg {
 
 // 對齊舊視覺：主層（radius 100 depth 50、細、快轉）+ 星系層（radius 90 depth 20、大、慢轉）
 const LAYERS: StarLayerCfg[] = [
-  { count: 14000, rMin: 100, rMax: 150, size: 6.5, rotX: 0.01, rotY: 0.02 },
-  { count: 12000, rMin: 90, rMax: 110, size: 9.0, rotX: 0.008, rotY: 0.015 },
+  { count: 14000, rMin: 100, rMax: 150, size: 0.2, rotX: 0.01, rotY: 0.02 },
+  { count: 12000, rMin: 90, rMax: 110, size: 0.28, rotX: 0.008, rotY: 0.015 },
 ];
 
-/// 單層星：per-star 尺寸/色溫/閃爍相位進 attribute，閃爍與柔光全在 shader（TSL）——
-/// 舊棧 800 顆 TwinklingStars 的 CPU 逐幀更新歸零，18k 顆全都會呼吸。
-function buildStarLayer(cfg: StarLayerCfg, isWebGPU: boolean): THREE.Points {
+/// 單層星——官方 WebGPU 點雲模式：THREE.Sprite + instancing（PointsNodeMaterial 文件指定）。
+/// 重要：WebGPU 上 THREE.Points 永遠 1px（平台限制、size 無效、也沒有 quad uv）——
+/// 一開始用 Points 在 WebGPU 上就是「1px 閃爍細星」慘案（實測）。Sprite+instancing
+/// 兩個 backend 都走實例化 quad：size/scaleNode 生效、uv() 有值，單一路徑無分叉。
+/// per-star 尺寸/色溫/閃爍相位進 instanced attribute，閃爍與柔光全在 shader（TSL）。
+function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   const positions = new Float32Array(cfg.count * 3);
   const scales = new Float32Array(cfg.count);
   const phases = new Float32Array(cfg.count);
@@ -67,44 +70,36 @@ function buildStarLayer(cfg: StarLayerCfg, isWebGPU: boolean): THREE.Points {
     phases[i] = Math.random() * Math.PI * 2;
     tints[i] = Math.random();
   }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
-  geo.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
-  geo.setAttribute('aTint', new THREE.BufferAttribute(tints, 1));
 
-  // WebGPU 管線的 PointsNodeMaterial = SpriteNodeMaterial 子類（實例化 billboard quad）
   const mat = new THREE.PointsNodeMaterial();
+  // instanced 位置：官方模式 positionNode = instancedBufferAttribute(...)
+  mat.positionNode = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(positions, 3), 'vec3');
 
   // 色溫：白為主，冷暖微變（±35% 飽和）——貼近真實星野的色彩分佈
-  const tint = attribute<'float'>('aTint', 'float');
+  const tint = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(tints, 1), 'float');
   const starColor = mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.9, 0.78), tint);
-  mat.colorNode = mix(vec3(1, 1, 1), starColor, 0.35).mul(2.6); // >1 的 HDR 餘量餵 bloom（HalfFloat 管線）
+  mat.colorNode = mix(vec3(1, 1, 1), starColor, 0.35).mul(1.35); // >1 的 HDR 餘量餵 bloom（HalfFloat 管線）
 
-  // 徑向柔光的 quad 內座標——兩個 backend 來源不同（都踩過，別再改壞）：
-  //   WebGL2 = 真 GL_POINTS → pointUV（gl_PointCoord）；uv() 無值 → 全黑
-  //   WebGPU = 實例化 quad（1px point 限制）→ uv()；pointUV 的 generate() 硬編碼
-  //            GLSL 'gl_PointCoord' → WGSL 解析直接 GPUValidationError（官方 shapeCircle
-  //            預設 uv() 即此路徑的旁證）
-  // as never：@types/three 的 PointUVNode 漏掛 Node<'vec2'> extension（runtime 是正常節點）
-  const coord = isWebGPU ? uv() : vec2(pointUV as never);
-  const d = coord.sub(0.5).length().mul(2.0); // 0 = 中心, 1 = 邊
-  // 碟形輪廓（對齊 drei Stars 的 fade 觀感）：d<0.55 全亮平台、0.55→1 柔滑歸零。
-  // 尖峰漸暗輪廓會讓大部分 quad 面積落在暗區 → 星野整體偏暗（統計驗過 22% vs 基準）。
+  // 碟形柔光輪廓（對齊 drei Stars 的 fade 觀感）：d<0.55 全亮平台、0.55→1 柔滑歸零。
+  // Sprite 的 quad geometry 有 uv attribute → uv() 兩個 backend 都有值。
+  const d = uv().sub(0.5).length().mul(2.0); // 0 = 中心, 1 = 邊
   const falloff = smoothstep(1.0, 0.55, d);
-  // 閃爍：溫和呼吸（0.72~1.0，相位/速率 per-star）——不會像亞像素 pop 那樣硬閃
-  const phase = attribute<'float'>('aPhase', 'float');
+  // 閃爍：溫和呼吸（振幅 ±14%，相位/速率 per-star）——不會像亞像素 pop 那樣硬閃
+  const phase = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(phases, 1), 'float');
   const twinkle = sin(time.mul(phase.mul(0.15).add(0.6)).add(phase)).mul(0.14).add(0.86);
   mat.opacityNode = falloff.mul(twinkle);
 
   // per-star 尺寸（scaleNode 乘在 sprite 縮放上）
-  mat.scaleNode = attribute<'float'>('aScale', 'float');
+  mat.scaleNode = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(scales, 1), 'float');
   mat.size = cfg.size;
   mat.sizeAttenuation = true;
   mat.transparent = true;
   mat.depthWrite = false;
   mat.blending = THREE.AdditiveBlending;
-  return new THREE.Points(geo, mat);
+
+  const sprite = new THREE.Sprite(mat);
+  sprite.count = cfg.count; // instanced 數量
+  return sprite;
 }
 
 export async function createStarfieldRunner(init: StarfieldInit): Promise<{ runner: StarfieldRunner; backend: 'WebGPU' | 'WebGL2' }> {
@@ -124,13 +119,13 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{ runn
   const camera = new THREE.PerspectiveCamera(75, init.width / init.height, 0.1, 400);
   camera.position.set(0, 0, 5);
 
-  const layers = LAYERS.map((cfg) => ({ points: buildStarLayer(cfg, backend === 'WebGPU'), cfg }));
+  const layers = LAYERS.map((cfg) => ({ points: buildStarLayer(cfg), cfg }));
   for (const l of layers) scene.add(l.points);
 
   // TSL bloom：scenePass 顏色 + bloom(顏色) 疊加（BloomNode 官方文件用法）
   const scenePass = pass(scene, camera);
   const scenePassColor = scenePass.getTextureNode('output');
-  const bloomPass = bloom(scenePassColor, 0.9, 0.55, 0.25); // strength / radius / threshold
+  const bloomPass = bloom(scenePassColor, 0.8, 0.55, 0.5); // strength / radius / threshold——threshold 壓灰底霧，只讓亮星發暈
   const pipeline = new THREE.RenderPipeline(renderer, scenePassColor.add(bloomPass));
 
   // 渲染迴圈：delta 夾住（分頁切回不暴衝，同舊棧慣例）+ perf 累積
@@ -175,7 +170,7 @@ export async function createStarfieldRunner(init: StarfieldInit): Promise<{ runn
         void renderer.setAnimationLoop(null);
         pipeline.dispose();
         for (const l of layers) {
-          l.points.geometry.dispose();
+          // Sprite 的 quad geometry 為 three 內部共享，不 dispose；材質是我們的
           (l.points.material as THREE.Material).dispose();
         }
         void renderer.dispose();
