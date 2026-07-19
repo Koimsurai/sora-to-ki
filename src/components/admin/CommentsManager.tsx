@@ -1,4 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  adminCommentsQueryOptions, adminBlacklistQueryOptions, adminKeywordFiltersQueryOptions,
+} from '../../adminData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,17 +18,10 @@ import {
   Search, RefreshCw, Reply, Pencil, Filter, AlertTriangle, ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import type {
-  AdminCommentRow,
-  AdminCommentsResponse,
-  BlacklistRow,
-  KeywordFilterRow,
-} from '@koimsurai/api-types';
+import type { AdminCommentRow } from '@koimsurai/api-types';
 
-/** 型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
+/** 型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）；blacklist/keywords 由 query 推導。 */
 type Comment = AdminCommentRow;
-type BlacklistEntry = BlacklistRow;
-type KeywordFilter = KeywordFilterRow;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   pending: { label: '待審核', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
@@ -34,10 +31,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
 };
 
 export default function CommentsManager() {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [counts, setCounts] = useState<Record<string, number>>({ pending: 0, approved: 0, spam: 0, trash: 0 });
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
@@ -51,8 +45,6 @@ export default function CommentsManager() {
 
   // Blacklist & Keyword tabs
   const [activeTab, setActiveTab] = useState('comments'); // comments | blacklist | keywords
-  const [blacklist, setBlacklist] = useState<BlacklistEntry[]>([]);
-  const [keywordFilters, setKeywordFilters] = useState<KeywordFilter[]>([]);
   const [newBlacklistIp, setNewBlacklistIp] = useState('');
   const [newBlacklistReason, setNewBlacklistReason] = useState('');
   const [newKeyword, setNewKeyword] = useState('');
@@ -61,46 +53,24 @@ export default function CommentsManager() {
   const token = localStorage.getItem('koimsurai_user_token');
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-  const fetchComments = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), limit: '50' });
-      if (statusFilter !== 'all') params.set('status', statusFilter);
-      if (searchQuery) params.set('search', searchQuery);
-      const res = await fetch(`/api/admin/comments?${params.toString()}`, { headers });
-      if (res.ok) {
-        const data = await res.json() as AdminCommentsResponse;
-        setComments(data.comments);
-        setCounts(data.counts);
-        setTotal(data.total);
-      }
-    } catch {
-      toast.error('載入留言失敗');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [statusFilter, searchQuery, page]);
+  // 留言列表改由 TanStack Query 讀（分頁/篩選進 queryKey），blacklist/keywords 依 activeTab 才抓。
+  const commentsQuery = useMemo(() => {
+    const params = new URLSearchParams({ page: String(page), limit: '50' });
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (searchQuery) params.set('search', searchQuery);
+    return params.toString();
+  }, [page, statusFilter, searchQuery]);
+  const { data: commentsData, isPending: isLoading } = useQuery(adminCommentsQueryOptions(commentsQuery));
+  const comments: Comment[] = commentsData?.comments ?? [];
+  const counts = commentsData?.counts ?? { pending: 0, approved: 0, spam: 0, trash: 0 };
+  const total = commentsData?.total ?? 0;
 
-  useEffect(() => { void fetchComments(); }, [fetchComments]);
+  const { data: blacklist = [] } = useQuery({ ...adminBlacklistQueryOptions, enabled: activeTab === 'blacklist' });
+  const { data: keywordFilters = [] } = useQuery({ ...adminKeywordFiltersQueryOptions, enabled: activeTab === 'keywords' });
 
-  const fetchBlacklist = async () => {
-    try {
-      const res = await fetch('/api/admin/blacklist', { headers });
-      if (res.ok) { const d = await res.json() as { blacklist: BlacklistEntry[] }; setBlacklist(d.blacklist); }
-    } catch { toast.error('載入黑名單失敗'); }
-  };
-
-  const fetchKeywords = async () => {
-    try {
-      const res = await fetch('/api/admin/keyword-filters', { headers });
-      if (res.ok) { const d = await res.json() as { filters: KeywordFilter[] }; setKeywordFilters(d.filters); }
-    } catch { toast.error('載入關鍵字失敗'); }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'blacklist') void fetchBlacklist();
-    if (activeTab === 'keywords') void fetchKeywords();
-  }, [activeTab]);
+  const invalidateComments = () => queryClient.invalidateQueries({ queryKey: ['admin', 'comments'] });
+  const invalidateBlacklist = () => queryClient.invalidateQueries({ queryKey: adminBlacklistQueryOptions.queryKey });
+  const invalidateKeywords = () => queryClient.invalidateQueries({ queryKey: adminKeywordFiltersQueryOptions.queryKey });
 
   // ── Actions ──
   const updateStatus = async (id: number | string, status: string) => {
@@ -108,7 +78,7 @@ export default function CommentsManager() {
       const res = await fetch(`/api/admin/comments/${id}/status`, {
         method: 'PATCH', headers, body: JSON.stringify({ status }),
       });
-      if (res.ok) { toast.success(STATUS_CONFIG[status].label); void fetchComments(); }
+      if (res.ok) { toast.success(STATUS_CONFIG[status].label); void invalidateComments(); }
     } catch { toast.error('操作失敗'); }
   };
 
@@ -118,7 +88,7 @@ export default function CommentsManager() {
       const res = await fetch(`/api/admin/comments/${replyDialog.comment?.id}/reply`, {
         method: 'POST', headers, body: JSON.stringify({ content: replyText }),
       });
-      if (res.ok) { toast.success('回覆成功'); setReplyDialog({ open: false, comment: null }); setReplyText(''); void fetchComments(); }
+      if (res.ok) { toast.success('回覆成功'); setReplyDialog({ open: false, comment: null }); setReplyText(''); void invalidateComments(); }
     } catch { toast.error('回覆失敗'); }
   };
 
@@ -128,14 +98,14 @@ export default function CommentsManager() {
       const res = await fetch(`/api/admin/comments/${editDialog.comment?.id}`, {
         method: 'PUT', headers, body: JSON.stringify({ content: editText }),
       });
-      if (res.ok) { toast.success('已修改'); setEditDialog({ open: false, comment: null }); void fetchComments(); }
+      if (res.ok) { toast.success('已修改'); setEditDialog({ open: false, comment: null }); void invalidateComments(); }
     } catch { toast.error('修改失敗'); }
   };
 
   const handleDelete = async () => {
     try {
       const res = await fetch(`/api/admin/comments/${deleteId}`, { method: 'DELETE', headers });
-      if (res.ok) { toast.success('已永久刪除'); setDeleteId(null); void fetchComments(); }
+      if (res.ok) { toast.success('已永久刪除'); setDeleteId(null); void invalidateComments(); }
     } catch { toast.error('刪除失敗'); }
   };
 
@@ -154,14 +124,14 @@ export default function CommentsManager() {
       const res = await fetch('/api/admin/blacklist', {
         method: 'POST', headers, body: JSON.stringify({ ip: newBlacklistIp, reason: newBlacklistReason }),
       });
-      if (res.ok) { toast.success('已加入黑名單'); setNewBlacklistIp(''); setNewBlacklistReason(''); void fetchBlacklist(); }
+      if (res.ok) { toast.success('已加入黑名單'); setNewBlacklistIp(''); setNewBlacklistReason(''); void invalidateBlacklist(); }
     } catch { toast.error('操作失敗'); }
   };
 
   const removeBlacklist = async (id: number | string) => {
     try {
       const res = await fetch(`/api/admin/blacklist/${id}`, { method: 'DELETE', headers });
-      if (res.ok) { toast.success('已移除'); void fetchBlacklist(); }
+      if (res.ok) { toast.success('已移除'); void invalidateBlacklist(); }
     } catch { toast.error('操作失敗'); }
   };
 
@@ -171,14 +141,14 @@ export default function CommentsManager() {
       const res = await fetch('/api/admin/keyword-filters', {
         method: 'POST', headers, body: JSON.stringify({ keyword: newKeyword, action: newKeywordAction }),
       });
-      if (res.ok) { toast.success('已新增過濾詞'); setNewKeyword(''); void fetchKeywords(); }
+      if (res.ok) { toast.success('已新增過濾詞'); setNewKeyword(''); void invalidateKeywords(); }
     } catch { toast.error('操作失敗'); }
   };
 
   const removeKeyword = async (id: number | string) => {
     try {
       const res = await fetch(`/api/admin/keyword-filters/${id}`, { method: 'DELETE', headers });
-      if (res.ok) { toast.success('已移除'); void fetchKeywords(); }
+      if (res.ok) { toast.success('已移除'); void invalidateKeywords(); }
     } catch { toast.error('操作失敗'); }
   };
 
@@ -196,7 +166,7 @@ export default function CommentsManager() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">審核、回覆和管理所有留言</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => { void fetchComments(); }} className="gap-1.5">
+        <Button variant="outline" size="sm" onClick={() => { void invalidateComments(); }} className="gap-1.5">
           <RefreshCw className="size-3.5" /> 重新整理
         </Button>
       </div>
@@ -233,7 +203,7 @@ export default function CommentsManager() {
                 className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                   statusFilter === key ? `${cfg.border} ${cfg.color} ${cfg.bg}` : 'border-border/40 text-muted-foreground hover:text-foreground/70'
                 }`}>
-                {cfg.label} <span className="ml-1 opacity-60">{counts[key] || 0}</span>
+                {cfg.label} <span className="ml-1 opacity-60">{(counts as Record<string, number>)[key] || 0}</span>
               </button>
             ))}
 

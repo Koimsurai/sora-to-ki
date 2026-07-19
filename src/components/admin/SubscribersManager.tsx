@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SubscriberRow } from '@koimsurai/api-types';
+import { adminSubscribersByStatusQueryOptions } from '../../adminData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail, MailX, RefreshCw, Search, Download, Trash2, type LucideIcon } from 'lucide-react';
@@ -19,37 +21,21 @@ const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
   unsubscribed: { label: '已退訂',   color: 'text-zinc-400',    bg: 'bg-zinc-400/10',    border: 'border-zinc-400/20',    icon: MailX },
 };
 
-const PAGE_SIZE = 100;
-
 export default function SubscribersManager() {
-  const [allSubscribers, setAllSubscribers] = useState<Record<string, Subscriber[]>>({ active: [], unsubscribed: [] });
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // 訂閱列表改由 TanStack Query 讀：active / unsubscribed 兩把（原 Promise.all 兩抓）。
+  const { data: active = [], isPending: la } = useQuery(adminSubscribersByStatusQueryOptions('active'));
+  const { data: unsubscribed = [], isPending: lu } = useQuery(adminSubscribersByStatusQueryOptions('unsubscribed'));
+  const allSubscribers = useMemo<Record<string, Subscriber[]>>(() => ({ active, unsubscribed }), [active, unsubscribed]);
+  const isLoading = la || lu;
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; sub: Subscriber | null }>({ open: false, sub: null });
 
   const token = localStorage.getItem('koimsurai_user_token');
   const headers = { Authorization: `Bearer ${token ?? ''}`, 'Content-Type': 'application/json' };
-
-  const fetchAll = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [activeRes, unsubRes] = await Promise.all([
-        fetch(`/api/newsletter/subscribers?status=active&limit=${PAGE_SIZE}`, { headers }),
-        fetch(`/api/newsletter/subscribers?status=unsubscribed&limit=${PAGE_SIZE}`, { headers }),
-      ]);
-      const active = activeRes.ok ? ((await activeRes.json()) as { subscribers?: Subscriber[] }).subscribers ?? [] : [];
-      const unsubscribed = unsubRes.ok ? ((await unsubRes.json()) as { subscribers?: Subscriber[] }).subscribers ?? [] : [];
-      setAllSubscribers({ active, unsubscribed });
-    } catch {
-      toast.error('載入訂閱列表失敗');
-    } finally {
-      setIsLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => { void fetchAll(); }, [fetchAll]);
+  // 退訂/刪除等 mutation 後重抓兩把（prefix invalidate）
+  const invalidateSubs = () => queryClient.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
 
   const visible = (allSubscribers[statusFilter] || []).filter((s) => {
     if (!searchQuery) return true;
@@ -69,7 +55,7 @@ export default function SubscribersManager() {
         throw new Error(data.error ?? '退訂失敗');
       }
       toast.success(`已將 ${sub.email} 標記為退訂`);
-      void fetchAll();
+      void invalidateSubs();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '退訂失敗');
     }
@@ -122,7 +108,7 @@ export default function SubscribersManager() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => { void fetchAll(); }}
+            onClick={() => { void invalidateSubs(); }}
             disabled={isLoading}
             className="gap-2"
           >

@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import type { AdminPostFull, AdminPostsResponse } from '@koimsurai/api-types';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AdminPostFull } from '@koimsurai/api-types';
+import { adminPostsQueryOptions } from '../../adminData';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,34 +32,13 @@ dayjs.locale('zh-tw');
 type PostItem = AdminPostFull;
 
 export default function PostsList() {
-  const [posts, setPosts] = useState<PostItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // 文章列表改由 TanStack Query 讀（生成 AdminPostsResponse）；刪除後 invalidate 重抓。
+  const { data, isPending: isLoading } = useQuery(adminPostsQueryOptions(''));
+  const posts: PostItem[] = data?.posts ?? [];
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
-
-  useEffect(() => {
-    void fetchPosts();
-  }, []);
-
-  const fetchPosts = async () => {
-    try {
-      const token = localStorage.getItem('koimsurai_user_token');
-      const response = await fetch('/api/admin/posts', {
-        headers: { 'Authorization': `Bearer ${token ?? ''}` },
-      });
-
-      if (response.ok) {
-        const data = await response.json() as AdminPostsResponse;
-        setPosts(data.posts);
-      }
-    } catch (error) {
-      console.error('獲取文章列表失敗:', error);
-      toast.error('獲取文章列表失敗');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -71,7 +52,7 @@ export default function PostsList() {
 
       if (response.ok) {
         toast.success('文章已刪除');
-        void fetchPosts();
+        void queryClient.invalidateQueries({ queryKey: ['admin', 'posts'] });
       } else {
         toast.error('刪除失敗');
       }

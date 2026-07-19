@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaSearch, FaFileAlt } from 'react-icons/fa';
+import { recentPostsQueryOptions } from '../../blogList';
 
 interface LinkablePost {
   id: number | string;
@@ -8,8 +10,6 @@ interface LinkablePost {
   excerpt?: string;
   status?: string;
 }
-
-type PostsResponse = LinkablePost[] | { posts?: LinkablePost[] };
 
 interface PostLinkModalProps {
   isOpen: boolean;
@@ -23,24 +23,15 @@ interface PostLinkModalProps {
  * 拉一份 published posts 清單，提供模糊搜尋，點擊後 onSelect(post) 回傳。
  */
 const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
-  const [posts, setPosts] = useState<LinkablePost[]>([]);
-  const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    setLoading(true);
-    fetch('/api/posts?limit=300')
-      .then((r) => (r.ok ? (r.json() as Promise<PostsResponse>) : null))
-      .then((data) => {
-        if (!data) { setPosts([]); return; }
-        const list = Array.isArray(data) ? data : (data.posts ?? []);
-        setPosts(list.filter((p) => p.status === 'published' || !p.status));
-      })
-      .catch(() => setPosts([]))
-      .finally(() => setLoading(false));
-  }, [isOpen]);
+  // 文章清單改由 TanStack Query 讀（開啟才抓）；reuse 公開 recentPostsQueryOptions(300)。
+  const { data: allPosts = [], isFetching: loading } = useQuery({ ...recentPostsQueryOptions(300), enabled: isOpen });
+  const posts = useMemo(
+    () => allPosts.filter((p) => p.status === 'published' || !p.status),
+    [allPosts],
+  );
 
   useEffect(() => {
     if (isOpen) {

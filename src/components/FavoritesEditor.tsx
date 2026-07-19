@@ -1,6 +1,7 @@
 // /watch 一生推 admin 編輯浮窗：TMDb 搜尋選片 → 設星等 + 短評 → 存。
 // 標題/海報/年份由後端依語系即時帶，這裡只管策展資料（rating/quote/排序/增刪）。
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,9 +60,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
   // 新增區：TMDb 搜尋
   const [kind, setKind] = useState('film');
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
 
   const authHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
@@ -74,25 +73,25 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
     return () => { window.removeEventListener('keydown', onKey); };
   }, [onClose]);
 
-  // 搜尋（debounce 400ms）
+  // 搜尋輸入 debounce 400ms → debouncedQuery
   useEffect(() => {
-    if (debRef.current) clearTimeout(debRef.current);
-    if (!query.trim()) { setResults([]); return; }
-    debRef.current = setTimeout(() => {
-      void (async () => {
-        setSearching(true);
-        try {
-          const r = await fetch(
-            `${API}/watch/tmdb-search?q=${encodeURIComponent(query)}&kind=${kind === 'film' ? 'movie' : 'tv'}`,
-            { headers: authHeaders() },
-          ).then((x) => x.json()) as { results?: SearchResult[] };
-          setResults(r.results ?? []);
-        } catch { setResults([]); }
-        setSearching(false);
-      })();
-    }, 400);
-    return () => { if (debRef.current) clearTimeout(debRef.current); };
-  }, [query, kind, authHeaders]);
+    const id = setTimeout(() => setDebouncedQuery(query.trim()), 400);
+    return () => clearTimeout(id);
+  }, [query]);
+
+  // TMDb 搜尋改由 TanStack Query（debouncedQuery + kind 進 queryKey；空字串不抓）。
+  const { data: results = [], isFetching: searching } = useQuery({
+    queryKey: ['watch', 'tmdb-search', debouncedQuery, kind],
+    queryFn: async (): Promise<SearchResult[]> => {
+      const r = await fetch(
+        `${API}/watch/tmdb-search?q=${encodeURIComponent(debouncedQuery)}&kind=${kind === 'film' ? 'movie' : 'tv'}`,
+        { headers: authHeaders() },
+      ).then((x) => x.json()) as { results?: SearchResult[] };
+      return r.results ?? [];
+    },
+    enabled: !!debouncedQuery,
+    staleTime: 60 * 1000,
+  });
 
   const addFavorite = async (item: SearchResult) => {
     setBusy(true);
@@ -102,7 +101,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
         headers: authHeaders(),
         body: JSON.stringify({ tmdbId: item.tmdbId, kind, rating: 5, quote: '' }),
       });
-      setQuery(''); setResults([]);
+      setQuery(''); setDebouncedQuery('');
       onChanged();
     } finally { setBusy(false); }
   };

@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaSearch, FaImage } from 'react-icons/fa';
 import { loadPhotosManifest } from '../../utils/manifestLoader';
@@ -13,29 +14,16 @@ interface PhotoSelectorModalProps {
 }
 
 const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalProps) => {
-    const [photos, setPhotos] = useState<PhotoManifest[]>([]);
-    const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    const fetchPhotos = async () => {
-        setLoading(true);
-        try {
-            const data = await loadPhotosManifest();
-            setPhotos(data);
-        } catch (err) {
-            console.error('Failed to load photos:', err);
-            toast.error('載入 NAS 照片失敗');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (isOpen) {
-            void fetchPhotos();
-        }
-    }, [isOpen]);
+    // 照片 manifest 改由 TanStack Query 讀（開啟才抓）；同步後 refetch。
+    const { data: photos = [], isFetching: loading, refetch } = useQuery({
+        queryKey: ['photos', 'manifest'],
+        queryFn: loadPhotosManifest,
+        enabled: isOpen,
+        staleTime: 60 * 1000,
+    });
 
     const handleSync = async () => {
         if (syncing) return;
@@ -65,7 +53,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
             }
 
             toast.success(`同步完成：新增 ${data.processed ?? 0}，略過 ${data.skipped ?? 0}`);
-            await fetchPhotos();
+            await refetch();
         } catch (err) {
             console.error('NAS sync failed:', err);
             toast.error(`同步失敗：${err instanceof Error ? err.message : '未知錯誤'}`);

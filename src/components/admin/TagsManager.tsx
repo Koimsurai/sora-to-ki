@@ -1,4 +1,7 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AdminTagRow } from '@koimsurai/api-types';
+import { adminTagsQueryOptions } from '../../adminData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,14 +27,6 @@ import {
 import { Plus, X, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface TagItem {
-  id: number;
-  name: string;
-  slug?: string;
-  color?: string;
-  post_count?: number;
-}
-
 interface TagForm {
   name: string;
   slug: string;
@@ -39,10 +34,13 @@ interface TagForm {
 }
 
 export default function TagsManager() {
-  const [tags, setTags] = useState<TagItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [editingTag, setEditingTag] = useState<TagItem | null>(null);
+  const queryClient = useQueryClient();
+  // 標籤列表改由 TanStack Query 讀（生成 AdminTagRow）；CRUD 後 invalidate 重抓。
+  const { data: tags = [], isPending: isLoading } = useQuery(adminTagsQueryOptions);
+  const invalidateTags = () => queryClient.invalidateQueries({ queryKey: adminTagsQueryOptions.queryKey });
+  const [editingTag, setEditingTag] = useState<AdminTagRow | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  // slug/color 是舊表單殘留欄位（後端 create_tag 只寫 name、列表也不回傳）→ 保留輸入但實為 inert。
   const [formData, setFormData] = useState<TagForm>({
     name: '',
     slug: '',
@@ -51,34 +49,11 @@ export default function TagsManager() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    void fetchTags();
-  }, []);
-
   const filteredTags = tags.filter((t) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const sortedTags = [...filteredTags].sort((a, b) => (b.post_count ?? 0) - (a.post_count ?? 0));
-
-  const fetchTags = async () => {
-    try {
-      const token = localStorage.getItem('koimsurai_user_token');
-      const response = await fetch('/api/admin/tags', {
-        headers: { 'Authorization': `Bearer ${token ?? ''}` },
-      });
-
-      if (response.ok) {
-        const data = await response.json() as TagItem[];
-        setTags(data);
-      }
-    } catch (error) {
-      console.error('獲取標籤失敗:', error);
-      toast.error('獲取標籤失敗');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -103,7 +78,7 @@ export default function TagsManager() {
         toast.success(editingTag ? '標籤已更新' : '標籤已創建');
         setDialogOpen(false);
         resetForm();
-        void fetchTags();
+        void invalidateTags();
       } else {
         toast.error('操作失敗');
       }
@@ -113,12 +88,13 @@ export default function TagsManager() {
     }
   };
 
-  const handleEdit = (tag: TagItem) => {
+  const handleEdit = (tag: AdminTagRow) => {
     setEditingTag(tag);
+    // AdminTagRow 無 slug/color（後端不存不回）→ 編輯時走預設，與舊行為一致
     setFormData({
       name: tag.name,
-      slug: tag.slug ?? '',
-      color: tag.color ?? '#7f5af0',
+      slug: '',
+      color: '#7f5af0',
     });
     setDialogOpen(true);
   };
@@ -135,7 +111,7 @@ export default function TagsManager() {
 
       if (response.ok) {
         toast.success('標籤已刪除');
-        void fetchTags();
+        void invalidateTags();
       } else {
         toast.error('刪除失敗');
       }
@@ -265,9 +241,6 @@ export default function TagsManager() {
                   key={tag.id}
                   className={`group inline-flex items-center gap-1.5 rounded-lg border border-border/40 text-foreground/60 hover:text-foreground/80 hover:border-border/60 transition-colors cursor-default ${sizeClass}`}
                 >
-                  {tag.color && (
-                    <span className="size-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
-                  )}
                   <span>{tag.name}</span>
                   <span className="text-muted-foreground/40 text-[10px]">{count}</span>
                   <button
@@ -302,9 +275,6 @@ export default function TagsManager() {
                 <tr key={tag.id} className="group hover:bg-accent/15 transition-colors">
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2">
-                      {tag.color && (
-                        <span className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
-                      )}
                       <span className="text-[13px] text-foreground/70 font-mono">{tag.name}</span>
                     </div>
                   </td>

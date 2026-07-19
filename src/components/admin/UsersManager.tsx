@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { adminUsersQueryOptions } from '../../adminData';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -28,33 +30,14 @@ const ROLE_CONFIG: Record<string, RoleConfig> = {
 
 export default function UsersManager() {
   const { user: currentUser, isOwner } = useAuth();
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // 用戶列表改由 TanStack Query 讀（生成 AdminUserRow）；改角色後 invalidate 重抓。
+  const { data: users = [], isPending: isLoading } = useQuery(adminUsersQueryOptions);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleChangeDialog, setRoleChangeDialog] = useState<{ open: boolean; user: AdminUser | null; newRole: string }>({ open: false, user: null, newRole: '' });
 
   const token = localStorage.getItem('koimsurai_user_token');
   const headers = { 'Authorization': `Bearer ${token ?? ''}`, 'Content-Type': 'application/json' };
-
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/admin/users', { headers });
-      if (res.ok) {
-        const data = await res.json() as { users?: AdminUser[] };
-        setUsers(data.users ?? []);
-      } else {
-        toast.error('載入用戶列表失敗');
-      }
-    } catch {
-      toast.error('載入用戶列表失敗');
-    } finally {
-      setIsLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => { void fetchUsers(); }, [fetchUsers]);
 
   const handleRoleChange = async () => {
     const { user: targetUser, newRole } = roleChangeDialog;
@@ -68,7 +51,7 @@ export default function UsersManager() {
       });
       if (res.ok) {
         toast.success(`已將 ${targetUser.display_name ?? ''} 的角色更改為 ${ROLE_CONFIG[newRole]?.label ?? newRole}`);
-        void fetchUsers();
+        void queryClient.invalidateQueries({ queryKey: adminUsersQueryOptions.queryKey });
       } else {
         const data = await res.json() as { error?: string };
         toast.error(data.error ?? '更改角色失敗');
@@ -107,7 +90,7 @@ export default function UsersManager() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => { void fetchUsers(); }}
+          onClick={() => { void queryClient.invalidateQueries({ queryKey: adminUsersQueryOptions.queryKey }); }}
           disabled={isLoading}
           className="gap-2"
         >

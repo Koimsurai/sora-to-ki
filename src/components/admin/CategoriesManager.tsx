@@ -1,4 +1,7 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { AdminCategoryRow } from '@koimsurai/api-types';
+import { adminCategoriesQueryOptions } from '../../adminData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,15 +27,6 @@ import {
 import { Plus, Pencil, Trash2, FolderOpen, GripVertical, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Category {
-  id: number;
-  name: string;
-  slug?: string;
-  description?: string;
-  short_description?: string;
-  post_count?: number;
-}
-
 interface CategoryForm {
   name: string;
   slug: string;
@@ -41,9 +35,11 @@ interface CategoryForm {
 }
 
 export default function CategoriesManager() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const queryClient = useQueryClient();
+  // 分類列表改由 TanStack Query 讀（生成 AdminCategoryRow）；CRUD 後 invalidate 重抓。
+  const { data: categories = [], isPending: isLoading } = useQuery(adminCategoriesQueryOptions);
+  const invalidateCategories = () => queryClient.invalidateQueries({ queryKey: adminCategoriesQueryOptions.queryKey });
+  const [editingCategory, setEditingCategory] = useState<AdminCategoryRow | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [formData, setFormData] = useState<CategoryForm>({
     name: '',
@@ -54,34 +50,11 @@ export default function CategoriesManager() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    void fetchCategories();
-  }, []);
-
   const q = searchQuery.toLowerCase();
   const filteredCategories = categories.filter((c) =>
     c.name.toLowerCase().includes(q) ||
-    c.slug?.toLowerCase().includes(q)
+    c.slug.toLowerCase().includes(q)
   );
-
-  const fetchCategories = async () => {
-    try {
-      const token = localStorage.getItem('koimsurai_user_token');
-      const response = await fetch('/api/admin/categories', {
-        headers: { 'Authorization': `Bearer ${token ?? ''}` },
-      });
-
-      if (response.ok) {
-        const data = await response.json() as Category[];
-        setCategories(data);
-      }
-    } catch (error) {
-      console.error('獲取分類失敗:', error);
-      toast.error('獲取分類失敗');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -106,7 +79,7 @@ export default function CategoriesManager() {
         toast.success(editingCategory ? '分類已更新' : '分類已創建');
         setDialogOpen(false);
         resetForm();
-        void fetchCategories();
+        void invalidateCategories();
       } else {
         toast.error('操作失敗');
       }
@@ -116,11 +89,11 @@ export default function CategoriesManager() {
     }
   };
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = (category: AdminCategoryRow) => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
-      slug: category.slug ?? '',
+      slug: category.slug,
       description: category.description ?? '',
       short_description: category.short_description ?? '',
     });
@@ -139,7 +112,7 @@ export default function CategoriesManager() {
 
       if (response.ok) {
         toast.success('分類已刪除');
-        void fetchCategories();
+        void invalidateCategories();
       } else {
         toast.error('刪除失敗');
       }

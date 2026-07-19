@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import type { AdminPostFull } from '@koimsurai/api-types';
+import { adminPostsQueryOptions, adminStatsQueryOptions } from '../../adminData';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FileText, Eye, MessageSquare, TrendingUp, Plus, Edit, Clock, ArrowUpRight } from 'lucide-react';
@@ -18,59 +20,17 @@ interface DashboardStats {
   commentsThisWeek?: number;
 }
 
-interface RecentPost {
-  id: number;
-  title: string;
-  category?: string;
-  created_at: string;
-  status?: string;
-}
-
 export const AdminDashboard = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalPosts: 0,
-    publishedPosts: 0,
-    draftPosts: 0,
-    visitors: 0,
-    comments: 0,
-    growth: 0,
-  });
-  const [recentPosts, setRecentPosts] = useState<RecentPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    void fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('koimsurai_user_token');
-
-      // Fetch posts
-      const postsResponse = await fetch('/api/admin/posts?limit=5', {
-        headers: { 'Authorization': `Bearer ${token ?? ''}` },
-      });
-
-      if (postsResponse.ok) {
-        const postsData = await postsResponse.json() as { posts?: RecentPost[]; total?: number };
-        setRecentPosts(postsData.posts ?? []);
-        setStats(prev => ({ ...prev, totalPosts: postsData.total ?? postsData.posts?.length ?? 0 }));
-      }
-
-      // Fetch stats
-      const statsResponse = await fetch('/api/admin/stats', {
-        headers: { 'Authorization': `Bearer ${token ?? ''}` },
-      });
-
-      if (statsResponse.ok) {
-        const statsData = await statsResponse.json() as Partial<DashboardStats>;
-        setStats(prev => ({ ...prev, ...statsData }));
-      }
-    } catch (error) {
-      console.error('獲取數據失敗:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  // 儀表板改由 TanStack Query 讀：最近文章（limit=5）+ 站台統計（非 specta 動態端點）。
+  const { data: postsData, isPending: lp } = useQuery(adminPostsQueryOptions('limit=5'));
+  const { data: statsData, isPending: ls } = useQuery(adminStatsQueryOptions);
+  const isLoading = lp || ls;
+  const recentPosts: AdminPostFull[] = postsData?.posts ?? [];
+  // 預設 → posts.total → statsData 覆寫（對齊舊的兩次 setStats 合併順序）
+  const stats: DashboardStats = {
+    totalPosts: 0, publishedPosts: 0, draftPosts: 0, visitors: 0, comments: 0, growth: 0,
+    ...(postsData ? { totalPosts: postsData.total } : {}),
+    ...statsData,
   };
 
   const statItems = [

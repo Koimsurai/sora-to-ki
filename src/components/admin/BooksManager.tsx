@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { BookRow } from '@koimsurai/api-types';
+import { adminBooksQueryOptions } from '../../adminData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,8 +48,10 @@ interface BookFormData {
 }
 
 export default function BooksManager() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // 書籍列表改由 TanStack Query 讀（生成 BookRow）；CRUD 後 invalidate 重抓。
+  const { data: books = [], isPending: isLoading } = useQuery(adminBooksQueryOptions);
+  const invalidateBooks = () => queryClient.invalidateQueries({ queryKey: adminBooksQueryOptions.queryKey });
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [deleteId, setDeleteId] = useState<number | string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,10 +76,6 @@ export default function BooksManager() {
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  useEffect(() => {
-    void fetchBooks();
-  }, []);
-
   const filteredBooks = books.filter(book => {
     if (filterStatus !== 'all' && book.reading_status !== filterStatus) return false;
     const query = localSearchQuery.toLowerCase();
@@ -97,25 +97,6 @@ export default function BooksManager() {
     'to-read': 'text-muted-foreground/60 bg-accent/25',
     'reading': 'text-foreground/70 bg-accent/60',
     'read': 'text-foreground/50 bg-accent/50',
-  };
-
-  const fetchBooks = async () => {
-    try {
-      const token = localStorage.getItem('koimsurai_user_token');
-      const response = await fetch('/api/books', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      
-      if (response.ok) {
-        const data = await response.json() as { books?: Book[] } | Book[];
-        setBooks(Array.isArray(data) ? data : (data.books ?? []));
-      }
-    } catch (error) {
-      console.error('獲取書籍失敗:', error);
-      toast.error('獲取書籍失敗');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   // 搜尋外部書籍 (Google Books API)
@@ -195,7 +176,7 @@ export default function BooksManager() {
         toast.success(editingBook ? '書籍已更新' : '書籍已新增');
         setDialogOpen(false);
         resetForm();
-        void fetchBooks();
+        void invalidateBooks();
       } else {
         toast.error('操作失敗');
       }
@@ -237,7 +218,7 @@ export default function BooksManager() {
 
       if (response.ok) {
         toast.success('書籍已刪除');
-        void fetchBooks();
+        void invalidateBooks();
       } else {
         toast.error('刪除失敗');
       }

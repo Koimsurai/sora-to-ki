@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { adminCategoriesQueryOptions, adminTagsQueryOptions, adminPostDetailQueryOptions } from '../../adminData';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { postSchema, type PostFormInput } from '@/schemas/post';
-import type { AdminPostDetailResponse } from '@koimsurai/api-types';
 import { MonacoEditor } from '@/components/monaco-editor';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -43,7 +44,6 @@ import { toast } from 'sonner';
 import { useNavigate, useParams } from 'react-router-dom';
 
 interface TagOption { label: string; value: string }
-interface Category { id: number | string; name: string }
 interface N8NData {
   title?: string;
   content?: string;
@@ -57,10 +57,6 @@ interface N8NData {
   allowComments?: boolean;
   allow_comments?: boolean;
 }
-// 後端 /api/admin/posts/:id 回傳的原始貼文資料（excerpt* 對應表單的 summary*）。
-// 型別由後端 Rust struct 生成；`summary` 只存在於表單、API 不回傳，故此處不含。
-type PostApiData = AdminPostDetailResponse;
-
 type LocalizedField =
   | 'title' | 'content' | 'summary'
   | 'title_en' | 'content_en' | 'summary_en'
@@ -138,9 +134,12 @@ export default function PostEditor() {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isGeneratingZhCN, setIsGeneratingZhCN] = useState(false);
   const [editorView, setEditorView] = useState('edit'); // edit | split | preview
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tags, setTags] = useState<TagOption[]>([]);
-  const [isLoading, setIsLoading] = useState(!!id);
+  // 分類/標籤/文章明細改由 TanStack Query 讀（生成型別）；儲存等 mutation 各自處理。
+  const { data: categories = [] } = useQuery(adminCategoriesQueryOptions);
+  const { data: tagsData = [] } = useQuery(adminTagsQueryOptions);
+  const tags = useMemo<TagOption[]>(() => tagsData.map((tag) => ({ label: tag.name, value: tag.id.toString() })), [tagsData]);
+  const { data: postData, isPending: postPending } = useQuery({ ...adminPostDetailQueryOptions(id ?? ''), enabled: !!id });
+  const isLoading = !!id && postPending; // 編輯模式載入文章時的骨架 gate
   const [activeLocale, setActiveLocale] = useState('zh-TW');
   const [zenMode, setZenMode] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState(''); // '', 'saved', 'restoring'
@@ -260,12 +259,27 @@ export default function PostEditor() {
     };
   }, [zenMode]);
 
-  // 載入文章數據（如果是編輯模式）
+  // 編輯模式：query 取回文章後填入 RHF 表單（excerpt* → summary*、tags 格式化、各 locale 同步）。
   useEffect(() => {
-    if (id) {
-      void fetchPost();
-    }
-  }, [id]);
+    if (!postData) return;
+    const formattedData = {
+      ...postData,
+      tags: formatTags(postData.tags),
+      summary: postData.excerpt ?? '',
+      source_language: postData.source_language ?? 'zh-TW',
+      title_en: postData.title_en ?? '', content_en: postData.content_en ?? '', summary_en: postData.excerpt_en ?? '',
+      title_zh_cn: postData.title_zh_cn ?? '', content_zh_cn: postData.content_zh_cn ?? '', summary_zh_cn: postData.excerpt_zh_cn ?? '',
+      title_ja: postData.title_ja ?? '', content_ja: postData.content_ja ?? '', summary_ja: postData.excerpt_ja ?? '',
+      title_ko: postData.title_ko ?? '', content_ko: postData.content_ko ?? '', summary_ko: postData.excerpt_ko ?? '',
+      allow_comments: postData.allow_comments,
+      series_name: postData.series_name ?? '',
+      series_order: postData.series_order ?? '',
+      send_newsletter: false,
+    };
+    form.reset(formattedData as PostFormInput);
+    setActiveLocale(postData.source_language ?? 'zh-TW');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postData]);
 
   // 從 URL 參數載入 N8N 自動匯入的資料
   useEffect(() => {
@@ -282,78 +296,6 @@ export default function PostEditor() {
       }
     }
   }, []);
-
-  // 載入分類和標籤
-  useEffect(() => {
-    void fetchCategories();
-    void fetchTags();
-  }, []);
-
-  const fetchPost = async () => {
-    try {
-      const token = localStorage.getItem('koimsurai_user_token');
-      const response = await fetch(`/api/admin/posts/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (response.ok) {
-        const data = await response.json() as PostApiData;
-        // 確保 tags 格式正確，並將 API 的 excerpt 映射到表單的 summary（各 locale 同步處理）
-        const formattedData = {
-          ...data,
-          tags: formatTags(data.tags),
-          summary: data.excerpt ?? '',
-          source_language: data.source_language ?? 'zh-TW',
-          title_en: data.title_en ?? '', content_en: data.content_en ?? '', summary_en: data.excerpt_en ?? '',
-          title_zh_cn: data.title_zh_cn ?? '', content_zh_cn: data.content_zh_cn ?? '', summary_zh_cn: data.excerpt_zh_cn ?? '',
-          title_ja: data.title_ja ?? '', content_ja: data.content_ja ?? '', summary_ja: data.excerpt_ja ?? '',
-          title_ko: data.title_ko ?? '', content_ko: data.content_ko ?? '', summary_ko: data.excerpt_ko ?? '',
-          allow_comments: data.allow_comments,
-          series_name: data.series_name ?? '',
-          series_order: data.series_order ?? '',
-          // Newsletter trigger is a transient form-only flag — never persisted on the post.
-          send_newsletter: false,
-        };
-        form.reset(formattedData as PostFormInput);
-        setActiveLocale(data.source_language ?? 'zh-TW');
-      } else {
-        // API 不存在時使用模擬數據進行測試
-        console.warn('API 未連接，使用模擬數據');
-        const mockData = {
-          title: '測試文章標題',
-          content: '# 這是測試內容\n\n這是一段測試內容，用於展示編輯器功能。\n\n## 副標題\n\n- 列表項目 1\n- 列表項目 2\n- 列表項目 3\n\n```javascript\nconsole.log("Hello World");\n```',
-          tags: [{label: 'React', value: 'react'}, {label: 'TypeScript', value: 'typescript'}],
-          category: 'tech',
-          slug: 'test-article',
-          summary: '這是測試文章的摘要',
-          cover: '',
-          status: 'draft' as const,
-          allow_comments: true,
-          send_newsletter: false,
-        };
-        form.reset(mockData);
-        toast.info('使用模擬數據（API 未連接）');
-      }
-    } catch (error) {
-      console.error('載入文章失敗:', error);
-      // 即使出錯也使用模擬數據
-      const mockData = {
-        title: '測試文章標題',
-        content: '# 這是測試內容\n\n編輯器已就緒，請開始編寫您的文章...',
-        tags: [],
-        category: '',
-        slug: '',
-        summary: '',
-        cover: '',
-        status: 'draft' as const,
-        allow_comments: true,
-      };
-      form.reset(mockData);
-      toast.warning('API 連接失敗，使用模擬數據');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   /**
    * 處理 N8N 自動匯入的資料
@@ -481,48 +423,6 @@ export default function PostEditor() {
     return plainText.length > maxLength 
       ? plainText.substring(0, maxLength) + '...'
       : plainText;
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const token = localStorage.getItem('koimsurai_user_token');
-      const response = await fetch('/api/admin/categories', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (response.ok) {
-        const data = await response.json() as Category[];
-        setCategories(data);
-      }
-    } catch (error) {
-      console.error('載入分類失敗:', error);
-    }
-  };
-
-  const fetchTags = async () => {
-    try {
-      const token = localStorage.getItem('koimsurai_user_token');
-      const response = await fetch('/api/admin/tags', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (response.ok) {
-        const data = await response.json() as { name: string; id: number | string }[];
-        console.log('✅ 載入標籤數據:', data);
-        const formattedTags = data.map(tag => ({ 
-          label: tag.name, 
-          value: tag.id.toString() 
-        }));
-        console.log('✅ 格式化後的標籤:', formattedTags);
-        setTags(formattedTags);
-      } else {
-        console.error('❌ 載入標籤失敗，狀態碼:', response.status);
-        toast.error('載入標籤失敗');
-      }
-    } catch (error) {
-      console.error('❌ 載入標籤異常:', error);
-      toast.error('載入標籤失敗');
-    }
   };
 
   // 將表單 data 轉成送往 API 的 payload（包含 i18n 欄位，並把 summary* 對應到 excerpt*）
