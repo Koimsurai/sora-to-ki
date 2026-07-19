@@ -272,6 +272,9 @@ pub(crate) async fn dispatch_newsletter(
 }
 
 /// `POST /api/admin/posts/:id/send-newsletter` —— requireAdmin。
+#[utoipa::path(post, path = "/api/admin/posts/{id}/send-newsletter", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "電子報寄送結果（動態 JSON）"), (status = 400, description = "只有已發佈文章可寄送"), (status = 401, description = "未授權"), (status = 404, description = "文章不存在"), (status = 500, description = "RESEND_API_KEY 未設定或伺服器錯誤")))]
 pub async fn send_newsletter_route(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();

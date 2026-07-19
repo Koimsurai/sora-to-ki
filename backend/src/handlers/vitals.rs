@@ -19,7 +19,7 @@ use crate::{error::AppError, state::AppState};
 const METRICS: [&str; 5] = ["LCP", "CLS", "INP", "FCP", "TTFB"];
 const RATINGS: [&str; 3] = ["good", "needs-improvement", "poor"];
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct VitalBeacon {
     pub metric: String,
     pub value: f64,
@@ -31,6 +31,8 @@ pub struct VitalBeacon {
 
 /// `POST /api/vitals` —— 單筆 beacon 寫入。驗證失敗一律 204（beacon 無人讀回應，
 /// 不給探測者回饋面）；只有格式錯到解不開才 4xx（axum Json extractor 層）。
+#[utoipa::path(post, path = "/api/vitals", tag = "misc",
+    responses((status = 204, description = "已接收（驗證失敗也回 204，不給探測回饋）")))]
 pub async fn report_vital(
     State(state): State<AppState>,
     Json(b): Json<VitalBeacon>,
@@ -79,6 +81,8 @@ pub struct MetricStat {
 /// `GET /api/vitals/stats` —— 各 metric 聚合（count / p75 / rating 分佈）。
 /// 純聚合無 PII，公開讀（同 site_stats 慣例）。p75 用 ORDER BY + OFFSET（SQLite 無
 /// percentile 函數；每 metric 一小查詢，五個 metric 規模下無感）。
+#[utoipa::path(get, path = "/api/vitals/stats", tag = "misc",
+    responses((status = 200, description = "各 metric 聚合統計（動態 JSON）")))]
 pub async fn vitals_stats(
     State(state): State<AppState>,
     Query(q): Query<StatsQuery>,

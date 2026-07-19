@@ -111,6 +111,8 @@ pub struct QuoteQuery {
 }
 
 /// `GET /api/quote/daily?locale=zh-TW`
+#[utoipa::path(get, path = "/api/quote/daily", tag = "misc",
+    responses((status = 200, description = "每日名言（動態 JSON）")))]
 pub async fn quote_daily(State(state): State<AppState>, Query(q): Query<QuoteQuery>) -> Response {
     let locale = q.locale.as_deref().filter(|l| SUPPORTED.contains(l)).unwrap_or("zh-TW").to_string();
     // today = toISOString().slice(0,10)＝UTC 日期（JS 語意）

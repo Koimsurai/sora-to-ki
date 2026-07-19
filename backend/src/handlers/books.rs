@@ -128,6 +128,8 @@ pub async fn list_books(State(state): State<AppState>, Query(q): Query<BooksQuer
 }
 
 /// `GET /api/admin/books` —— requireAdmin，**裸陣列**。
+#[utoipa::path(get, path = "/api/admin/books", tag = "admin", security(("bearer" = [])),
+    responses((status = 200, body = Vec<BookRow>), (status = 401, description = "未授權")))]
 pub async fn admin_books(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -143,6 +145,9 @@ pub async fn admin_books(
 }
 
 /// `GET /api/books/:id` —— 公開單本，`{message, book}`；404 `{message:'Book not found'}`。
+#[utoipa::path(get, path = "/api/books/{id}", tag = "books",
+    params(("id" = String, Path)),
+    responses((status = 200, body = BookDetailResponse)))]
 pub async fn get_book(State(state): State<AppState>, Path(id): Path<String>) -> Response {
     match sqlx::query_as::<_, BookRow>("SELECT * FROM books WHERE id = ?").bind(&id).fetch_optional(&state.pool).await {
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
@@ -158,6 +163,8 @@ const BOOK_FIELDS: [&str; 13] = [
 ];
 
 /// `POST /api/books`（requireAdmin）—— 建書。回應 `{message, book:{id, ...req.body}}`（spread 原 body）。
+#[utoipa::path(post, path = "/api/books", tag = "books", security(("bearer" = [])),
+    responses((status = 200, description = "建立書籍（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn create_book(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -197,6 +204,9 @@ pub async fn create_book(
 }
 
 /// `PUT /api/books/:id`（requireAdmin）—— 15 欄全 COALESCE（缺/null → 保留舊值）。
+#[utoipa::path(put, path = "/api/books/{id}", tag = "books", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "更新書籍（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn update_book(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -233,6 +243,9 @@ pub async fn update_book(
 }
 
 /// `DELETE /api/books/:id`（requireAdmin）。
+#[utoipa::path(delete, path = "/api/books/{id}", tag = "books", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "刪除書籍（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn delete_book(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();
@@ -248,6 +261,8 @@ pub async fn delete_book(State(state): State<AppState>, Path(id): Path<String>, 
 
 /// `GET /api/books/stats/summary` —— 公開統計。
 /// average_rating：truthy 才 toFixed(1)+parseFloat（0/null → null）；整值輸出整數。
+#[utoipa::path(get, path = "/api/books/stats/summary", tag = "books",
+    responses((status = 200, description = "書籍統計摘要（動態 JSON）")))]
 pub async fn book_stats(State(state): State<AppState>) -> Response {
     let row = sqlx::query_as::<_, (i64, i64, i64, i64, Option<f64>, Option<i64>)>(
         "SELECT COUNT(*) as total_books, \

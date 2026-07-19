@@ -12,7 +12,7 @@ use crate::{
     state::AppState,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CommentBody {
     author: Option<String>,
     content: Option<String>,
@@ -169,6 +169,11 @@ async fn create_comment(
 }
 
 /// `POST /api/posts/:id/comments`
+#[utoipa::path(
+    post, path = "/api/posts/{id}/comments", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, description = "新增文章留言（動態 JSON）")),
+)]
 pub async fn post_comment(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -179,6 +184,11 @@ pub async fn post_comment(
 }
 
 /// `POST /api/thoughts/:id/comments`
+#[utoipa::path(
+    post, path = "/api/thoughts/{id}/comments", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, description = "新增碎念留言（動態 JSON）")),
+)]
 pub async fn thought_comment(
     State(state): State<AppState>,
     Path(id): Path<String>,

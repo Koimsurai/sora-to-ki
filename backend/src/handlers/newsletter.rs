@@ -14,7 +14,7 @@ use crate::state::AppState;
 use crate::{auth::require_admin, util::parse_int};
 
 /// `newsletter_subscribers` 一列（`SELECT *`）。欄位序 = 表宣告序，對齊舊 `row_to_json`。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct SubscriberRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -26,7 +26,7 @@ pub struct SubscriberRow {
     pub unsubscribe_token: Option<String>,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct SubscribersResponse {
     pub message: String,
     pub subscribers: Vec<SubscriberRow>,
@@ -34,7 +34,7 @@ pub struct SubscribersResponse {
 }
 
 /// `GET /api/newsletter/by-token/:token` 的回應（顯式 3 欄）。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct SubscriberByToken {
     pub email: String,
     pub name: Option<String>,
@@ -48,13 +48,15 @@ fn gen_unsub_token() -> String {
     b.iter().map(|x| format!("{x:02x}")).collect()
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct SubscribeBody {
     email: Option<String>,
     name: Option<String>,
 }
 
 /// `POST /api/newsletter/subscribe` —— 公開訂閱；重複 email 且非 active → 重新啟用。
+#[utoipa::path(post, path = "/api/newsletter/subscribe", tag = "newsletter",
+    responses((status = 200, description = "訂閱電子報（動態 JSON）")))]
 pub async fn subscribe(State(state): State<AppState>, Json(b): Json<SubscribeBody>) -> Response {
     let email = b.email.unwrap_or_default();
     if email.is_empty() {
@@ -113,13 +115,15 @@ pub async fn subscribe(State(state): State<AppState>, Json(b): Json<SubscribeBod
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UnsubscribeBody {
     email: Option<String>,
     token: Option<String>,
 }
 
 /// `POST /api/newsletter/unsubscribe` —— email 或 token 擇一（token 優先）。
+#[utoipa::path(post, path = "/api/newsletter/unsubscribe", tag = "newsletter",
+    responses((status = 200, description = "退訂電子報（動態 JSON）")))]
 pub async fn unsubscribe(State(state): State<AppState>, Json(b): Json<UnsubscribeBody>) -> Response {
     let email = b.email.filter(|s| !s.is_empty());
     let token = b.token.filter(|s| !s.is_empty());
@@ -147,6 +151,9 @@ pub async fn unsubscribe(State(state): State<AppState>, Json(b): Json<Unsubscrib
 }
 
 /// `GET /api/newsletter/by-token/:token` —— 退訂確認頁用（裸 row：email/name/status）。
+#[utoipa::path(get, path = "/api/newsletter/by-token/{token}", tag = "newsletter",
+    params(("token" = String, Path)),
+    responses((status = 200, body = SubscriberByToken)))]
 pub async fn by_token(State(state): State<AppState>, Path(token): Path<String>) -> Response {
     match sqlx::query_as::<_, SubscriberByToken>(
         "SELECT email, name, status FROM newsletter_subscribers WHERE unsubscribe_token = ?",
@@ -169,6 +176,8 @@ pub struct SubscribersQuery {
 }
 
 /// `GET /api/newsletter/subscribers`（requireAdmin）—— 分頁列表（SELECT * 動態 row）。
+#[utoipa::path(get, path = "/api/newsletter/subscribers", tag = "newsletter", security(("bearer" = [])),
+    responses((status = 200, body = SubscribersResponse), (status = 401, description = "未授權")))]
 pub async fn subscribers(
     State(state): State<AppState>,
     headers: HeaderMap,

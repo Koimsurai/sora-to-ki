@@ -100,6 +100,8 @@ pub async fn home_digest(State(state): State<AppState>) -> Result<Json<DigestRes
 }
 
 /// `GET /api/health` —— 純文字 `OK`（Express `res.status(200).send('OK')`）。
+#[utoipa::path(get, path = "/api/health", tag = "home",
+    responses((status = 200, description = "健康檢查，回純文字 OK")))]
 pub async fn health() -> axum::response::Response {
     use axum::response::IntoResponse;
     ([(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")], "OK").into_response()

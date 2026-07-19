@@ -481,6 +481,11 @@ pub struct ReactionsResponse {
 }
 
 /// `GET /api/posts/:id/reactions` —— 公開純讀。
+#[utoipa::path(
+    get, path = "/api/posts/{id}/reactions", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, body = ReactionsResponse)),
+)]
 pub async fn post_reactions(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -538,6 +543,11 @@ impl CommentsResponse {
 }
 
 /// `GET /api/posts/:id/comments` —— 公開純讀（只列 approved）。
+#[utoipa::path(
+    get, path = "/api/posts/{id}/comments", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, body = CommentsResponse)),
+)]
 pub async fn post_comments(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -554,6 +564,11 @@ pub async fn post_comments(
 
 // ── 計數寫入（公開）────────────────────────────────────────────────────────
 /// `POST /api/posts/:id/view` —— view_count + 1。
+#[utoipa::path(
+    post, path = "/api/posts/{id}/view", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, description = "瀏覽數 +1（動態 JSON）")),
+)]
 pub async fn post_view(State(state): State<AppState>, Path(id): Path<String>) -> Response {
     match sqlx::query("UPDATE posts SET view_count = view_count + 1 WHERE id = ?")
         .bind(&id)
@@ -596,22 +611,37 @@ async fn adjust_post_likes(state: &AppState, id: &str, like: bool) -> Response {
 }
 
 /// `POST /api/posts/:id/like`
+#[utoipa::path(
+    post, path = "/api/posts/{id}/like", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, description = "文章讚 +1（動態 JSON）")),
+)]
 pub async fn post_like(State(state): State<AppState>, Path(id): Path<String>) -> Response {
     adjust_post_likes(&state, &id, true).await
 }
 
 /// `POST /api/posts/:id/unlike`
+#[utoipa::path(
+    post, path = "/api/posts/{id}/unlike", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, description = "文章取消讚（動態 JSON）")),
+)]
 pub async fn post_unlike(State(state): State<AppState>, Path(id): Path<String>) -> Response {
     adjust_post_likes(&state, &id, false).await
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ReactionBody {
     emoji: Option<String>,
     delta: Option<i64>,
 }
 
 /// `POST /api/posts/:id/reactions` —— emoji 反應 upsert（clamp 0）。
+#[utoipa::path(
+    post, path = "/api/posts/{id}/reactions", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, description = "emoji 反應 upsert（動態 JSON）")),
+)]
 pub async fn post_reaction(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -651,6 +681,11 @@ pub async fn post_reaction(
 }
 
 /// `POST /api/comments/:id/like` —— comments.likes + 1。
+#[utoipa::path(
+    post, path = "/api/comments/{id}/like", tag = "posts",
+    params(("id" = String, Path)),
+    responses((status = 200, description = "留言讚 +1（動態 JSON）")),
+)]
 pub async fn comment_like(State(state): State<AppState>, Path(id): Path<String>) -> Response {
     match sqlx::query("UPDATE comments SET likes = likes + 1 WHERE id = ?")
         .bind(&id)
@@ -697,6 +732,10 @@ fn v_to_s(v: &Value) -> Option<String> {
 }
 
 /// `POST /api/posts`（requireAdmin）—— 簡版建文（無 i18n）。錯誤回 **400**（對齊 Express 此端點）。
+#[utoipa::path(
+    post, path = "/api/posts", tag = "posts", security(("bearer" = [])),
+    responses((status = 200, description = "建立文章（動態 JSON）"), (status = 401, description = "未授權")),
+)]
 pub async fn create_post_public(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
@@ -747,6 +786,11 @@ pub async fn create_post_public(
 }
 
 /// `PUT /api/posts/:id`（requireAdmin）—— 6 欄 COALESCE（**category 也 COALESCE**，與 admin 版不同）。
+#[utoipa::path(
+    put, path = "/api/posts/{id}", tag = "posts", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "更新文章（動態 JSON）"), (status = 401, description = "未授權")),
+)]
 pub async fn update_post_public(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -784,12 +828,17 @@ pub async fn update_post_public(
     Json(json!({ "message": "success", "changes": changes })).into_response()
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct StatusBody {
     status: Option<String>,
 }
 
 /// `PATCH /api/posts/:id/status`（requireAdmin）—— 僅 published|draft。
+#[utoipa::path(
+    patch, path = "/api/posts/{id}/status", tag = "posts", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "更新文章狀態（動態 JSON）"), (status = 401, description = "未授權")),
+)]
 pub async fn patch_post_status(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -816,6 +865,11 @@ pub async fn patch_post_status(
 }
 
 /// `DELETE /api/posts/:id`（requireAdmin）—— post_tags 先清（錯 500），posts 刪（錯 400）。
+#[utoipa::path(
+    delete, path = "/api/posts/{id}", tag = "posts", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "刪除文章（動態 JSON）"), (status = 401, description = "未授權")),
+)]
 pub async fn delete_post_public(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -835,6 +889,10 @@ pub async fn delete_post_public(
 }
 
 /// `POST /api/posts/legacy`（**basicAuth**）—— 舊匯入端點。
+#[utoipa::path(
+    post, path = "/api/posts/legacy", tag = "posts", security(("bearer" = [])),
+    responses((status = 200, description = "舊匯入建文（動態 JSON）"), (status = 401, description = "未授權")),
+)]
 pub async fn create_post_legacy(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,

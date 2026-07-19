@@ -30,8 +30,8 @@ struct ThoughtRow {
 }
 
 /// 對外輸出的 thought：欄位順序 = Express `{ ...r, edited, ref }` 後的實際 key 順序。
-#[derive(Debug, Serialize)]
-struct ThoughtOut {
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+pub struct ThoughtOut {
     id: i64,
     content: String,
     ref_type: Option<String>,
@@ -113,13 +113,16 @@ fn js_parse_int(s: &str, default: i64) -> i64 {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ThoughtsListResponse {
     message: &'static str,
     thoughts: Vec<ThoughtOut>,
 }
 
 /// `GET /api/thoughts` —— 公開列表。limit/offset 夾擠規則照抄 Express。
+#[utoipa::path(get, path = "/api/thoughts", tag = "thoughts",
+    params(("limit" = Option<String>, Query), ("offset" = Option<String>, Query)),
+    responses((status = 200, body = ThoughtsListResponse)))]
 pub async fn list_thoughts(
     State(state): State<AppState>,
     Query(q): Query<ListQuery>,
@@ -153,13 +156,16 @@ pub async fn list_thoughts(
     }))
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ThoughtDetailResponse {
     message: &'static str,
     thought: ThoughtOut,
 }
 
 /// `GET /api/thoughts/:id` —— 公開單篇。找不到回 404 `{"error":"not found"}`（對齊 Express）。
+#[utoipa::path(get, path = "/api/thoughts/{id}", tag = "thoughts",
+    params(("id" = String, Path)),
+    responses((status = 200, body = ThoughtDetailResponse), (status = 404, description = "找不到")))]
 pub async fn get_thought(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -182,6 +188,9 @@ pub async fn get_thought(
 
 /// `GET /api/thoughts/:id/comments` —— 與 blog 留言共用同一張 comments 表，
 /// 只是 key 在 thought_id。重用 `posts::CommentRow`（其 14 欄 row 解碼已由 post 留言驗過）。
+#[utoipa::path(get, path = "/api/thoughts/{id}/comments", tag = "thoughts",
+    params(("id" = String, Path)),
+    responses((status = 200, body = CommentsResponse)))]
 pub async fn list_thought_comments(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -196,7 +205,7 @@ pub async fn list_thought_comments(
     Ok(Json(CommentsResponse::new(comments)))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ReactBody {
     prev: Option<String>,
     next: Option<String>,
@@ -209,6 +218,9 @@ fn react_ok(v: &Option<String>) -> bool {
 
 /// `POST /api/thoughts/:id/react` —— 讚/倒讚切換（依 prev→next 差值調整，clamp 0）。
 /// 信任 client 的 prev（個人站可接受）。找不到 id 也回 success+0/0（對齊 Express，不 404）。
+#[utoipa::path(post, path = "/api/thoughts/{id}/react", tag = "thoughts",
+    params(("id" = String, Path)),
+    responses((status = 200, description = "讚/噓（動態 JSON）")))]
 pub async fn thought_react(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -424,7 +436,7 @@ async fn enrich_media_ref(http: &reqwest::Client, json: &Map<String, Value>) -> 
     out
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AdminThoughtBody {
     content: Option<String>,
     #[serde(rename = "refUrl")]
@@ -468,6 +480,8 @@ async fn resolve_ref_for_create(
 }
 
 /// `POST /api/admin/thoughts` —— 建立碎念（可帶 refUrl 自動 unfurl，或 ref:{type,url,json}；media 會 TMDb enrich）。
+#[utoipa::path(post, path = "/api/admin/thoughts", tag = "admin", security(("bearer" = [])),
+    responses((status = 200, description = "建立碎念（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn admin_create_thought(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -497,6 +511,9 @@ pub async fn admin_create_thought(
 /// `PUT /api/admin/thoughts/:id` —— 編輯（標記 edited + updated_at）。
 /// ref 分支對齊 Express：clearRef → 清空；ref{type,json} → 直接覆寫（**不** enrich）；
 /// refUrl 且與現值不同 → 重新 unfurl；否則保留原 ref。
+#[utoipa::path(put, path = "/api/admin/thoughts/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "更新碎念（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn admin_update_thought(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -560,6 +577,9 @@ pub async fn admin_update_thought(
 
 /// `DELETE /api/admin/thoughts/:id` —— 刪碎念（連同其留言）。
 /// 注意：Express 此端點**不回 404**（刪 0 列也回 success），照抄。
+#[utoipa::path(delete, path = "/api/admin/thoughts/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "刪除碎念"), (status = 401, description = "未授權")))]
 pub async fn admin_delete_thought(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -578,6 +598,8 @@ pub async fn admin_delete_thought(
 }
 
 /// `GET /api/thoughts/rss` —— 公開 RSS feed（碎念，最新 30 筆）。移植 `routes/thoughts.js`。
+#[utoipa::path(get, path = "/api/thoughts/rss", tag = "thoughts",
+    responses((status = 200, description = "碎念 RSS feed（XML）")))]
 pub async fn thoughts_rss(State(state): State<AppState>) -> Response {
     use crate::util::{js_date_to_utc_string, js_interp, js_substring_prefix, js_truthy, xml_esc};
     type Row = (i64, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>);

@@ -42,6 +42,9 @@ fn err(code: StatusCode, msg: &str) -> Response {
 }
 
 /// `POST /api/admin/posts/:id/generate-zh-cn` —— requireAdmin。
+#[utoipa::path(post, path = "/api/admin/posts/{id}/generate-zh-cn", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "zh-CN 轉換結果（動態 JSON）"), (status = 400, description = "來源語言非 zh-TW 或缺 title/content"), (status = 401, description = "未授權"), (status = 404, description = "文章不存在"), (status = 500, description = "OpenCC 轉換或 DB 失敗")))]
 pub async fn generate_zh_cn(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();

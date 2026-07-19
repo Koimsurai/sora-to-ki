@@ -96,6 +96,9 @@ async fn gh_fetch(http: &reqwest::Client, path: &str, token: Option<&str>) -> Op
 }
 
 /// `GET /api/github/user/:username` —— 無 token 純代理（原樣回 200，含 GitHub 錯誤物件）。
+#[utoipa::path(get, path = "/api/github/user/{username}", tag = "integrations",
+    params(("username" = String, Path)),
+    responses((status = 200, description = "GitHub 使用者資料（動態 JSON，第三方 proxy）")))]
 pub async fn github_user(State(state): State<AppState>, Path(username): Path<String>) -> Response {
     passthrough_json(
         &state.http,
@@ -110,6 +113,9 @@ pub async fn github_user(State(state): State<AppState>, Path(username): Path<Str
 /// `GET /api/github/events/:username` —— **一律用 /events/public**（只回公開事件）。
 /// 有 token 時仍帶（拉高 rate limit + 供下面 enrich 空 commits 的 compare API 用），
 /// 但端點固定 public：否則帶自己的 token 打 /events 會連**私有 repo 的 push 也回傳**（隱私外洩）。
+#[utoipa::path(get, path = "/api/github/events/{username}", tag = "integrations",
+    params(("username" = String, Path)),
+    responses((status = 200, description = "GitHub 公開活動事件（動態 JSON，第三方 proxy）")))]
 pub async fn github_events(State(state): State<AppState>, Path(username): Path<String>) -> Response {
     let token = std::env::var("GITHUB_TOKEN").ok().filter(|s| !s.is_empty());
     let path = format!("/users/{username}/events/public?per_page=30");
@@ -214,6 +220,8 @@ fn waka_err(kind: &str, e: (StatusCode, Value)) -> Response {
 }
 
 /// `GET /api/wakatime/today` —— summaries + durations 並行，合併 actualCodingTime。
+#[utoipa::path(get, path = "/api/wakatime/today", tag = "integrations",
+    responses((status = 200, description = "WakaTime 今日編碼統計（動態 JSON，第三方 proxy）")))]
 pub async fn wakatime_today(State(state): State<AppState>) -> Response {
     let Some(key) = wakatime_key() else { return waka_unconfigured() };
     let date = today_utc();
@@ -270,10 +278,14 @@ async fn wakatime_stats(state: &AppState, err_kind: &str) -> Response {
     }
 }
 
+#[utoipa::path(get, path = "/api/wakatime/week", tag = "integrations",
+    responses((status = 200, description = "WakaTime 近 7 日統計（動態 JSON，第三方 proxy）")))]
 pub async fn wakatime_week(State(state): State<AppState>) -> Response {
     wakatime_stats(&state, "Failed to fetch WakaTime week data").await
 }
 
+#[utoipa::path(get, path = "/api/wakatime/projects", tag = "integrations",
+    responses((status = 200, description = "WakaTime 專案統計（動態 JSON，第三方 proxy）")))]
 pub async fn wakatime_projects(State(state): State<AppState>) -> Response {
     wakatime_stats(&state, "Failed to fetch WakaTime projects data").await
 }
@@ -294,6 +306,8 @@ fn steam_unconfigured() -> Response {
         .into_response()
 }
 
+#[utoipa::path(get, path = "/api/steam/player", tag = "integrations",
+    responses((status = 200, description = "Steam 玩家摘要（動態 JSON，第三方 proxy）")))]
 pub async fn steam_player(State(state): State<AppState>) -> Response {
     let Some((key, id)) = steam_env() else { return steam_unconfigured() };
     passthrough_json(
@@ -306,6 +320,8 @@ pub async fn steam_player(State(state): State<AppState>) -> Response {
     .await
 }
 
+#[utoipa::path(get, path = "/api/steam/recent-games", tag = "integrations",
+    responses((status = 200, description = "Steam 近期遊玩遊戲（動態 JSON，第三方 proxy）")))]
 pub async fn steam_recent_games(State(state): State<AppState>) -> Response {
     let Some((key, id)) = steam_env() else { return steam_unconfigured() };
     passthrough_json(
@@ -318,6 +334,8 @@ pub async fn steam_recent_games(State(state): State<AppState>) -> Response {
     .await
 }
 
+#[utoipa::path(get, path = "/api/steam/owned-games", tag = "integrations",
+    responses((status = 200, description = "Steam 擁有遊戲清單（動態 JSON，第三方 proxy）")))]
 pub async fn steam_owned_games(State(state): State<AppState>) -> Response {
     let Some((key, id)) = steam_env() else { return steam_unconfigured() };
     passthrough_json(
@@ -330,6 +348,9 @@ pub async fn steam_owned_games(State(state): State<AppState>) -> Response {
     .await
 }
 
+#[utoipa::path(get, path = "/api/steam/achievements/{appid}", tag = "integrations",
+    params(("appid" = String, Path)),
+    responses((status = 200, description = "Steam 遊戲成就（動態 JSON，第三方 proxy）")))]
 pub async fn steam_achievements(State(state): State<AppState>, Path(appid): Path<String>) -> Response {
     let Some((key, id)) = steam_env() else { return steam_unconfigured() };
     passthrough_json(
@@ -514,6 +535,8 @@ pub struct BookSearchQuery {
 }
 
 /// `GET /api/books/search/external` —— Google Books 為主、OpenLibrary 補位。
+#[utoipa::path(get, path = "/api/books/search/external", tag = "integrations",
+    responses((status = 200, description = "書籍外部搜尋（Google Books + OpenLibrary，動態 JSON，第三方 proxy）")))]
 pub async fn books_search_external(State(state): State<AppState>, Query(q): Query<BookSearchQuery>) -> Response {
     let query = q.query.filter(|s| !s.is_empty());
     let isbn = q.isbn.filter(|s| !s.is_empty());
@@ -683,6 +706,8 @@ async fn refresh_steam_profile(state: &AppState, key: &str, id: &str) -> Result<
 
 /// `GET /api/steam/profile` —— stale-while-revalidate：有快取直接回、過期背景重抓；
 /// 首抓需等待（tokio Mutex dedup 併發重抓）。
+#[utoipa::path(get, path = "/api/steam/profile", tag = "integrations",
+    responses((status = 200, description = "Steam 個人檔案（含等級/徽章/客製，動態 JSON，第三方 proxy）")))]
 pub async fn steam_profile(State(state): State<AppState>) -> Response {
     let Some((key, id)) = steam_env() else {
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "Steam API 未配置" }))).into_response();

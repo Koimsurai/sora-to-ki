@@ -44,6 +44,8 @@ fn compute_thumbhash(bytes: &[u8]) -> Option<String> {
 /// ⚠️ Multipart 不能當參數 extractor：body extractor 在 handler 前跑，
 /// 無 auth 的非 multipart 請求會先吃 400、requireAdmin 沒機會回 401（順序與 Express 反）。
 /// 故收 Request、先驗 auth 再手動抽 multipart。
+#[utoipa::path(post, path = "/api/admin/upload", tag = "admin", security(("bearer" = [])),
+    responses((status = 200, description = "上傳結果（url/filename/thumbhash，動態 JSON）"), (status = 400, description = "未上傳檔案"), (status = 401, description = "未授權"), (status = 500, description = "寫檔失敗")))]
 pub async fn upload(State(state): State<AppState>, req: Request) -> Response {
     if let Err(e) = require_admin(req.headers(), &state).await {
         return e.into_response();

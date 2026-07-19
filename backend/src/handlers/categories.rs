@@ -5,7 +5,7 @@ use sqlx::FromRow;
 use crate::{error::AppError, state::AppState};
 
 /// `GET /api/categories` 單列。欄位順序對齊 Express SELECT。
-#[derive(Debug, Serialize, FromRow)]
+#[derive(Debug, Serialize, FromRow, utoipa::ToSchema)]
 pub struct CategoryRow {
     pub id: i64,
     pub name: String,
@@ -16,13 +16,15 @@ pub struct CategoryRow {
     pub post_count: i64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct CategoriesResponse {
     pub message: &'static str,
     pub categories: Vec<CategoryRow>,
 }
 
 /// `GET /api/categories` —— 公開純讀。SQL 逐字照抄 Express。
+#[utoipa::path(get, path = "/api/categories", tag = "categories",
+    responses((status = 200, body = CategoriesResponse)))]
 pub async fn list_categories(
     State(state): State<AppState>,
 ) -> Result<Json<CategoriesResponse>, AppError> {

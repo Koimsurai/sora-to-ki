@@ -105,6 +105,8 @@ fn jwt_fields(state: &AppState) -> (Value, Value) {
 }
 
 /// `GET /api/admin/bahamut/status`
+#[utoipa::path(get, path = "/api/admin/bahamut/status", tag = "admin", security(("bearer" = [])),
+    responses((status = 200, description = "動畫瘋 cookie/JWT 狀態（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn status(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if let Err(r) = push_auth(&headers, &state).await {
         return r;
@@ -115,6 +117,8 @@ pub async fn status(State(state): State<AppState>, headers: HeaderMap) -> Respon
 }
 
 /// `POST /api/admin/bahamut/cookie` —— 熱更新 cookie（jar 或 cookie 字串）+ 觸發同步。
+#[utoipa::path(post, path = "/api/admin/bahamut/cookie", tag = "admin", security(("bearer" = [])),
+    responses((status = 200, description = "熱更新 cookie + 觸發同步（動態 JSON）"), (status = 400, description = "缺少或無效 cookie"), (status = 401, description = "未授權")))]
 pub async fn cookie(State(state): State<AppState>, headers: HeaderMap, Json(body): Json<Map<String, Value>>) -> Response {
     if let Err(r) = push_auth(&headers, &state).await {
         return r;

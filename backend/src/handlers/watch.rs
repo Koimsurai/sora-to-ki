@@ -322,6 +322,8 @@ pub struct FavQuery {
 }
 
 /// `GET /api/watch/favorites?locale=` —— 公開；TMDb 即時在地化、失敗退 DB 快照；Cache-Control: no-store。
+#[utoipa::path(get, path = "/api/watch/favorites", tag = "watch",
+    responses((status = 200, description = "收藏影視清單（TMDb 在地化，動態 JSON）")))]
 pub async fn favorites(State(state): State<AppState>, Query(q): Query<FavQuery>) -> Response {
     let locale = q.locale.as_deref().filter(|l| tmdb_lang(l).is_some()).unwrap_or("zh-TW").to_string();
     let rows = match sqlx::query("SELECT * FROM watch_favorites ORDER BY sort_order ASC, id ASC")
@@ -386,6 +388,8 @@ pub struct TmdbSearchQuery {
 }
 
 /// `GET /api/watch/tmdb-search`（requireAdmin）。
+#[utoipa::path(get, path = "/api/watch/tmdb-search", tag = "watch", security(("bearer" = [])),
+    responses((status = 200, description = "TMDb 搜尋結果（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn tmdb_search(State(state): State<AppState>, headers: HeaderMap, Query(qq): Query<TmdbSearchQuery>) -> Response {
     if let Err(e) = crate::auth::require_admin(&headers, &state).await {
         return e.into_response();
@@ -478,6 +482,8 @@ fn clamp_rating(v: &Value) -> Option<f64> {
 }
 
 /// `POST /api/watch/favorites`（requireAdmin）。
+#[utoipa::path(post, path = "/api/watch/favorites", tag = "watch", security(("bearer" = [])),
+    responses((status = 200, description = "新增收藏（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn create_favorite(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -519,6 +525,9 @@ pub async fn create_favorite(
 }
 
 /// `PUT /api/watch/favorites/:id`（requireAdmin）—— rating/quote/sort_order 選擇性更新；無 404。
+#[utoipa::path(put, path = "/api/watch/favorites/{id}", tag = "watch", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "更新收藏（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn update_favorite(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -562,6 +571,9 @@ pub async fn update_favorite(
 }
 
 /// `DELETE /api/watch/favorites/:id`（requireAdmin）—— 無 404。
+#[utoipa::path(delete, path = "/api/watch/favorites/{id}", tag = "watch", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses((status = 200, description = "刪除收藏（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn delete_favorite(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     if let Err(e) = crate::auth::require_admin(&headers, &state).await {
         return e.into_response();
@@ -622,6 +634,8 @@ fn tmdb_url_for(kind: &str, id: &Value) -> Value {
 }
 
 /// `POST /api/admin/watch/now`（bahamutPushAuth）—— 動畫瘋擴充 heartbeat。
+#[utoipa::path(post, path = "/api/admin/watch/now", tag = "admin", security(("bearer" = [])),
+    responses((status = 200, description = "動畫瘋 heartbeat（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn heartbeat(State(state): State<AppState>, headers: HeaderMap, Json(b): Json<Map<String, Value>>) -> Response {
     if let Err(resp) = bahamut_push_auth(&headers, &state).await {
         return resp;
@@ -987,6 +1001,8 @@ fn parse_rfc3339_ms(s: &str) -> Option<i64> {
 }
 
 /// `GET /api/watch/now` —— 公開；bahamut push 優先，否則按需+節流輪詢 Trakt。
+#[utoipa::path(get, path = "/api/watch/now", tag = "watch",
+    responses((status = 200, description = "目前正在看（動態 JSON）")))]
 pub async fn watch_now(State(state): State<AppState>) -> Response {
     let cur = current_now_watching(&state);
     let is_baha = cur

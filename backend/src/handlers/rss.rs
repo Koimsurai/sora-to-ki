@@ -12,6 +12,8 @@ fn esc_xml(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
+#[utoipa::path(get, path = "/rss", tag = "misc",
+    responses((status = 200, description = "全站 RSS feed（XML）")))]
 pub async fn site_rss(State(state): State<AppState>) -> Response {
     let site_url = std::env::var("SITE_URL").ok().filter(|s| !s.is_empty()).unwrap_or_else(|| "https://koimsurai.com".into());
     type Row = (i64, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>);

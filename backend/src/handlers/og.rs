@@ -144,6 +144,9 @@ fn text_resp(code: StatusCode, body: &'static str) -> Response {
 }
 
 /// `GET /api/og/:file`（axum 不支援 `:id.png` 部分參數）——非 `.png` 後綴回 404。
+#[utoipa::path(get, path = "/api/og/{file}", tag = "media",
+    params(("file" = String, Path)),
+    responses((status = 200, description = "OG 圖（PNG）"), (status = 304, description = "Not Modified（ETag 命中）"), (status = 404, description = "找不到"), (status = 500, description = "OG 產生失敗")))]
 pub async fn og_png(State(state): State<AppState>, Path(file): Path<String>, req: Request) -> Response {
     let Some(id) = file.strip_suffix(".png") else {
         // 只處理 /og/:id.png；其他後綴 → 404（原委派 Express，已退役）

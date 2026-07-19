@@ -16,7 +16,7 @@ use crate::{
     state::AppState,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct LoginBody {
     #[serde(default)]
     username: Option<String>,
@@ -26,6 +26,13 @@ pub struct LoginBody {
 
 /// `POST /api/auth/login` —— 管理員密碼登入（bcrypt 驗證 → 簽 7d JWT）。
 /// 純讀（查 users + 簽 token，不寫 DB），邏輯與回應逐字照抄 Express。
+#[utoipa::path(
+    post, path = "/api/auth/login", tag = "auth",
+    responses(
+        (status = 200, description = "登入成功，回 JWT + 使用者（動態 JSON）"),
+        (status = 401, description = "帳密錯誤"),
+    ),
+)]
 pub async fn login(
     State(state): State<AppState>,
     Json(body): Json<LoginBody>,
@@ -105,6 +112,8 @@ pub async fn login(
 
 /// `GET /api/auth/providers` —— 回前端 OAuth 設定（clientId 為公開值；enabled = clientId 非空）。
 /// clientId 由 env `GOOGLE_CLIENT_ID`/`GITHUB_CLIENT_ID` 提供（與 Express 同源）。
+#[utoipa::path(get, path = "/api/auth/providers", tag = "auth",
+    responses((status = 200, description = "可用 OAuth provider 清單（動態 JSON）")))]
 pub async fn providers() -> Json<serde_json::Value> {
     let g = std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default();
     let gh = std::env::var("GITHUB_CLIENT_ID").unwrap_or_default();
@@ -115,6 +124,8 @@ pub async fn providers() -> Json<serde_json::Value> {
 }
 
 /// `POST /api/auth/logout` —— JWT 無狀態，前端清 token 即可；這裡僅回 ok。
+#[utoipa::path(post, path = "/api/auth/logout", tag = "auth",
+    responses((status = 200, description = "登出（stateless JWT，client 端清 token）")))]
 pub async fn logout() -> Json<serde_json::Value> {
     Json(json!({ "message": "ok" }))
 }
@@ -140,6 +151,8 @@ fn me_user_json(u: &OauthRow) -> serde_json::Value {
 }
 
 /// `GET /api/auth/me` —— 前端用來恢復 session。錯誤回應用 `{"error":...}`（注意：非 message）。
+#[utoipa::path(get, path = "/api/auth/me", tag = "auth", security(("bearer" = [])),
+    responses((status = 200, description = "當前登入使用者（動態 JSON）"), (status = 401, description = "未登入")))]
 pub async fn me(State(state): State<AppState>, headers: HeaderMap) -> Result<Response, AppError> {
     let unauth = |msg: &str| {
         (StatusCode::UNAUTHORIZED, Json(json!({ "error": msg }))).into_response()
@@ -209,7 +222,7 @@ pub async fn me(State(state): State<AppState>, headers: HeaderMap) -> Result<Res
     Ok(unauth("Invalid token"))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ResetAdminBody {
     username: Option<String>,
     password: Option<String>,
@@ -218,6 +231,8 @@ pub struct ResetAdminBody {
 /// `POST /api/auth/reset-admin` —— 開發用密碼重置。行為清理版（原 Express 靠
 /// NODE_ENV==='production' 擋、容器沒設=在正式環境是活的=安全發現 #3）：
 /// **fail-safe 預設關閉**，需顯式 `ENABLE_RESET_ADMIN=1` 才開。
+#[utoipa::path(post, path = "/api/auth/reset-admin", tag = "auth",
+    responses((status = 200, description = "重置成功"), (status = 403, description = "未啟用 ENABLE_RESET_ADMIN")))]
 pub async fn reset_admin(
     State(state): State<AppState>,
     body: Option<Json<ResetAdminBody>>,

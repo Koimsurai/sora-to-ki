@@ -17,7 +17,7 @@ use crate::{
 };
 
 /// `GET /api/admin/tags` 單列（admin 版：含 0 篇的 tag、依名排序）。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct AdminTagRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -29,6 +29,11 @@ pub struct AdminTagRow {
 
 /// `GET /api/admin/tags` —— requireAdmin。回應為**裸陣列**（對齊 Express `res.json(rows)`）。
 /// 第一個被 Rust 接管的 authed 端點，驗證 JWT 中介層等價。
+#[utoipa::path(get, path = "/api/admin/tags", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, body = Vec<AdminTagRow>),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_tags(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -49,7 +54,7 @@ pub async fn admin_tags(
 }
 
 /// `GET /api/admin/categories`（requireAdmin）。裸陣列。admin 版含 created_at、且 JOIN 不過濾 status。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct AdminCategoryRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -63,6 +68,11 @@ pub struct AdminCategoryRow {
     pub post_count: i64,
 }
 
+#[utoipa::path(get, path = "/api/admin/categories", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, body = Vec<AdminCategoryRow>),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_categories(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -82,7 +92,7 @@ pub async fn admin_categories(
 }
 
 /// `GET /api/admin/users`（**requireOwner**）。`{ users: [...] }`，顯式欄位。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct AdminUserRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -98,11 +108,16 @@ pub struct AdminUserRow {
     pub updated_at: Option<String>,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct AdminUsersResponse {
     pub users: Vec<AdminUserRow>,
 }
 
+#[utoipa::path(get, path = "/api/admin/users", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, body = AdminUsersResponse),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_users(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -118,7 +133,7 @@ pub async fn admin_users(
 }
 
 /// `GET /api/admin/blacklist`（requireAdmin）。`{ blacklist: rows }`（SELECT *；目前空表）。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct BlacklistRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -127,11 +142,16 @@ pub struct BlacklistRow {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct BlacklistResponse {
     pub blacklist: Vec<BlacklistRow>,
 }
 
+#[utoipa::path(get, path = "/api/admin/blacklist", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, body = BlacklistResponse),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_blacklist(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -146,7 +166,7 @@ pub async fn admin_blacklist(
 }
 
 /// `GET /api/admin/keyword-filters`（requireAdmin）。`{ filters: rows }`（SELECT *；目前空表）。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct KeywordFilterRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -155,11 +175,16 @@ pub struct KeywordFilterRow {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct KeywordFiltersResponse {
     pub filters: Vec<KeywordFilterRow>,
 }
 
+#[utoipa::path(get, path = "/api/admin/keyword-filters", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, body = KeywordFiltersResponse),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_keyword_filters(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -187,7 +212,7 @@ pub struct AdminPostsQuery {
 /// **欄位序 = posts 表宣告序 + tags**，對齊舊 `row_to_json` 的 key 序（serde_json
 /// preserve_order → struct 欄位序即 JSON key 序）。`/api/admin/posts` 與
 /// `/api/admin/posts/:id` 共用；兩者對 excerpt / source_language 的處理不同，由呼叫端覆寫。
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct AdminPostFull {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -261,7 +286,7 @@ impl AdminPostFull {
     }
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct AdminPostsResponse {
     pub posts: Vec<AdminPostFull>,
     #[serde(rename = "totalPages")]
@@ -276,6 +301,11 @@ pub struct AdminPostsResponse {
 
 /// `{ posts:[{...p.*, tags:[], excerpt}], totalPages, currentPage, total }`。
 /// excerpt 覆寫為「原 excerpt || content 前 150 字 + '...'」，對齊 Express。
+#[utoipa::path(get, path = "/api/admin/posts", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, body = AdminPostsResponse),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_posts(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -366,7 +396,7 @@ pub struct AdminCommentsQuery {
 
 /// admin 留言列的一列：comments 表全欄（DB 宣告序）+ LEFT JOIN 的 post_title。
 /// 欄位序對齊舊 `row_to_json`（`SELECT c.*` → comments 宣告序，post_title 附在最後）。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct AdminCommentRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -395,7 +425,7 @@ pub struct AdminCommentRow {
 
 /// 全站留言的狀態計數（**不受 status/search/post_id 過濾影響**，永遠是全域分佈）。
 /// status 受限於這四種（見 comments.rs 建立邏輯 + admin 審核端點），故可 typed 成固定欄位。
-#[derive(Debug, Serialize, specta::Type, Default)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema, Default)]
 pub struct CommentCounts {
     #[specta(type = specta_typescript::Number)]
     pub pending: i64,
@@ -407,7 +437,7 @@ pub struct CommentCounts {
     pub trash: i64,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct AdminCommentsResponse {
     pub comments: Vec<AdminCommentRow>,
     #[specta(type = specta_typescript::Number)]
@@ -420,6 +450,11 @@ pub struct AdminCommentsResponse {
 }
 
 /// `{ comments:[c.*+post_title], total, page, limit, counts }`。
+#[utoipa::path(get, path = "/api/admin/comments", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, body = AdminCommentsResponse),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_comments(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -516,11 +551,16 @@ macro_rules! auth_or_return {
 }
 
 // ── tags ──
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct TagBody {
     name: Option<String>,
 }
 
+#[utoipa::path(post, path = "/api/admin/tags", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, description = "建立標籤（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn create_tag(State(state): State<AppState>, headers: HeaderMap, Json(body): Json<TagBody>) -> Response {
     auth_or_return!(&headers, &state);
     let name = body.name.unwrap_or_default();
@@ -542,6 +582,12 @@ pub async fn create_tag(State(state): State<AppState>, headers: HeaderMap, Json(
     }
 }
 
+#[utoipa::path(put, path = "/api/admin/tags/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "更新標籤（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn update_tag(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -566,6 +612,12 @@ pub async fn update_tag(
     }
 }
 
+#[utoipa::path(delete, path = "/api/admin/tags/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "刪除標籤（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn delete_tag(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     auth_or_return!(&headers, &state);
     if let Err(e) = sqlx::query("DELETE FROM post_tags WHERE tag_id = ?").bind(&id).execute(&state.pool).await {
@@ -579,7 +631,7 @@ pub async fn delete_tag(State(state): State<AppState>, Path(id): Path<String>, h
 }
 
 // ── categories ──
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CategoryBody {
     name: Option<String>,
     description: Option<String>,
@@ -595,6 +647,11 @@ fn resolve_slug(slug: &Option<String>, name: &str) -> String {
     }
 }
 
+#[utoipa::path(post, path = "/api/admin/categories", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, description = "建立分類（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn create_category(State(state): State<AppState>, headers: HeaderMap, Json(body): Json<CategoryBody>) -> Response {
     auth_or_return!(&headers, &state);
     let name = body.name.clone().unwrap_or_default();
@@ -630,6 +687,12 @@ pub async fn create_category(State(state): State<AppState>, headers: HeaderMap, 
     }
 }
 
+#[utoipa::path(put, path = "/api/admin/categories/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "更新分類（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn update_category(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -683,6 +746,12 @@ pub async fn update_category(
     Json(json!({ "id": id, "name": name, "slug": slug, "description": description, "updated": updated })).into_response()
 }
 
+#[utoipa::path(delete, path = "/api/admin/categories/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "刪除分類（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn delete_category(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     auth_or_return!(&headers, &state);
     let cat_name = match sqlx::query_scalar::<_, String>("SELECT name FROM categories WHERE id = ?")
@@ -709,12 +778,17 @@ pub async fn delete_category(State(state): State<AppState>, Path(id): Path<Strin
 }
 
 // ── ip_blacklist ──
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct BlacklistBody {
     ip: Option<String>,
     reason: Option<String>,
 }
 
+#[utoipa::path(post, path = "/api/admin/blacklist", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, description = "新增黑名單 IP（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn create_blacklist(State(state): State<AppState>, headers: HeaderMap, Json(body): Json<BlacklistBody>) -> Response {
     auth_or_return!(&headers, &state);
     let ip = body.ip.unwrap_or_default();
@@ -732,6 +806,12 @@ pub async fn create_blacklist(State(state): State<AppState>, headers: HeaderMap,
     }
 }
 
+#[utoipa::path(delete, path = "/api/admin/blacklist/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "刪除黑名單 IP（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn delete_blacklist(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     auth_or_return!(&headers, &state);
     match sqlx::query("DELETE FROM ip_blacklist WHERE id = ?").bind(&id).execute(&state.pool).await {
@@ -741,12 +821,17 @@ pub async fn delete_blacklist(State(state): State<AppState>, Path(id): Path<Stri
 }
 
 // ── keyword_filters ──
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct KeywordBody {
     keyword: Option<String>,
     action: Option<String>,
 }
 
+#[utoipa::path(post, path = "/api/admin/keyword-filters", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, description = "新增關鍵字過濾（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn create_keyword_filter(State(state): State<AppState>, headers: HeaderMap, Json(body): Json<KeywordBody>) -> Response {
     auth_or_return!(&headers, &state);
     let keyword = body.keyword.unwrap_or_default();
@@ -768,6 +853,12 @@ pub async fn create_keyword_filter(State(state): State<AppState>, headers: Heade
     }
 }
 
+#[utoipa::path(delete, path = "/api/admin/keyword-filters/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "刪除關鍵字過濾（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn delete_keyword_filter(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     auth_or_return!(&headers, &state);
     match sqlx::query("DELETE FROM keyword_filters WHERE id = ?").bind(&id).execute(&state.pool).await {
@@ -779,12 +870,18 @@ pub async fn delete_keyword_filter(State(state): State<AppState>, Path(id): Path
 // ── comments moderation（requireAdmin）──
 const VALID_STATUSES: [&str; 4] = ["pending", "approved", "spam", "trash"];
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct StatusBody {
     status: Option<String>,
 }
 
 /// `PATCH /api/admin/comments/:id/status`
+#[utoipa::path(patch, path = "/api/admin/comments/{id}/status", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "更新留言狀態（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn patch_comment_status(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -807,12 +904,18 @@ pub async fn patch_comment_status(
 // 死路由（`batch/status` 被當 id="batch" → UPDATE 0 列 → 404）。Rust 亦不註冊 batch，讓它落到
 // `:id/status`(id="batch") → 同樣 404，行為等價。見 main.rs 路由註解。
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ContentBody {
     content: Option<String>,
 }
 
 /// `PUT /api/admin/comments/:id`（改內容）
+#[utoipa::path(put, path = "/api/admin/comments/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "更新留言內容（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn update_comment(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -832,6 +935,12 @@ pub async fn update_comment(
 }
 
 /// `DELETE /api/admin/comments/:id`（永久刪除）
+#[utoipa::path(delete, path = "/api/admin/comments/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "刪除留言（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn delete_comment(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     auth_or_return!(&headers, &state);
     match sqlx::query("DELETE FROM comments WHERE id = ?").bind(&id).execute(&state.pool).await {
@@ -842,6 +951,12 @@ pub async fn delete_comment(State(state): State<AppState>, Path(id): Path<String
 }
 
 /// `POST /api/admin/comments/:id/reply` —— 站長回覆（is_admin=1, status=approved, author='站長'）。
+#[utoipa::path(post, path = "/api/admin/comments/{id}/reply", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "站長回覆留言（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn reply_comment(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -974,6 +1089,11 @@ async fn dispatch_newsletter_result(state: &AppState, post_id: i64) -> Value {
 
 /// `POST /api/admin/posts` —— 建文（i18n 欄位 + tags + series）。
 /// `send_newsletter && status==='published'` → 建文後用 Rust mailer 推送電子報（原委派 Express 已退役）。
+#[utoipa::path(post, path = "/api/admin/posts", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, description = "建立文章（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> Response {
     let (parts, body) = req.into_parts();
     if let Err(e) = require_admin(&parts.headers, &state).await {
@@ -1083,6 +1203,12 @@ pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> R
 /// 行為清理版（原 Express：`category = ?` 無 COALESCE=缺 key 清 NULL、tags 缺=清空關聯，
 /// 前端恆送全欄位故從未觸發）：category 改 CASE-flag、tags 缺 key 跳過 manage_tags——
 /// 部分更新不再誤刪資料。
+#[utoipa::path(put, path = "/api/admin/posts/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "更新文章（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_update_post(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -1221,6 +1347,12 @@ pub async fn admin_update_post(
 }
 
 /// `DELETE /api/admin/posts/:id` —— 先清 post_tags 再刪文；404 對齊。
+#[utoipa::path(delete, path = "/api/admin/posts/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, description = "刪除文章（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_delete_post(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();
@@ -1237,7 +1369,7 @@ pub async fn admin_delete_post(State(state): State<AppState>, Path(id): Path<Str
 
 /// `GET /api/admin/posts/:id` 成功回應：`{message, ...row, tags, available_locales}`。
 /// flatten 讓 row 的欄位攤平在頂層，key 序 = message → AdminPostFull 欄位序 → available_locales。
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct AdminPostDetailResponse {
     pub message: String,
     #[serde(flatten)]
@@ -1246,6 +1378,12 @@ pub struct AdminPostDetailResponse {
 }
 
 /// `GET /api/admin/posts/:id` —— 編輯器用，回全 locale 欄位。
+#[utoipa::path(get, path = "/api/admin/posts/{id}", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    responses(
+        (status = 200, body = AdminPostDetailResponse),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_get_post(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();
@@ -1284,6 +1422,11 @@ pub async fn admin_get_post(State(state): State<AppState>, Path(id): Path<String
 /// `GET /api/admin/stats` —— requireAdmin。文章/留言統計 + 模擬訪客數（`Math.random`）。
 /// 行為清理版：原 Express 的 `visitors` 是 `Math.random()` 模擬數據 →
 /// 改為 `SUM(posts.view_count)`（真實累計瀏覽）。其餘欄位照舊（確定性 DB count）。
+#[utoipa::path(get, path = "/api/admin/stats", tag = "admin", security(("bearer" = [])),
+    responses(
+        (status = 200, description = "後台統計（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_stats(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if let Err(e) = require_admin(&headers, &state).await {
         return e.into_response();
@@ -1332,6 +1475,13 @@ pub async fn admin_stats(State(state): State<AppState>, headers: HeaderMap) -> R
 }
 
 /// `PUT /api/admin/users/:id/role` —— requireOwner。改用戶角色（不能改自己）。
+#[utoipa::path(put, path = "/api/admin/users/{id}/role", tag = "admin", security(("bearer" = [])),
+    params(("id" = String, Path)),
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "更新使用者角色（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_update_user_role(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -1368,6 +1518,12 @@ pub async fn admin_update_user_role(
 /// `PATCH /api/admin/comments/batch/status` —— 批次審核。
 /// Express 原版因 `:id/status` 先註冊而永遠打不到（bug #2）；axum matchit 靜態段
 /// 天然優先於參數段，此處為修好後的行為。
+#[utoipa::path(patch, path = "/api/admin/comments/batch/status", tag = "admin", security(("bearer" = [])),
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "批次更新留言狀態（動態 JSON）"),
+        (status = 401, description = "未授權"),
+    ))]
 pub async fn admin_batch_comment_status(
     State(state): State<AppState>,
     headers: HeaderMap,

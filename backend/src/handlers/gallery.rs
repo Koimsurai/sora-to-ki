@@ -23,6 +23,8 @@ fn manifest_path() -> std::path::PathBuf {
 }
 
 /// `GET /api/gallery/photos` —— 讀 manifest.json 原樣回傳（parse 後 res.json，非直接送檔）。
+#[utoipa::path(get, path = "/api/gallery/photos", tag = "gallery",
+    responses((status = 200, description = "相簿 manifest（動態 JSON）")))]
 pub async fn gallery_photos() -> Response {
     match tokio::fs::read_to_string(manifest_path()).await {
         Ok(data) => match serde_json::from_str::<Value>(&data) {
@@ -56,6 +58,8 @@ pub struct ImageProxyQuery {
 }
 
 /// `GET /api/image-proxy?url=…` —— 圖片串流代理（解 CORS）。上游 bytes 原樣過。
+#[utoipa::path(get, path = "/api/image-proxy", tag = "gallery",
+    responses((status = 200, description = "串流上游圖片 bytes")))]
 pub async fn image_proxy(State(state): State<AppState>, Query(q): Query<ImageProxyQuery>) -> Response {
     let Some(url) = q.url.filter(|u| !u.is_empty()) else {
         // Express：res.status(400).send('Missing image URL')（text/html）
@@ -303,6 +307,8 @@ async fn tag_photo(state: &AppState, tagger_path: &str) -> Option<(Vec<Value>, V
 static GALLERY_SYNC_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// `POST /api/admin/gallery/sync` —— requireAdmin；同時只跑一個（409）。
+#[utoipa::path(post, path = "/api/admin/gallery/sync", tag = "admin", security(("bearer" = [])),
+    responses((status = 200, description = "相簿同步結果（動態 JSON）"), (status = 401, description = "未授權"), (status = 409, description = "同步進行中")))]
 pub async fn gallery_sync(State(state): State<AppState>, headers: HeaderMap) -> Response {
     if let Err(e) = crate::auth::require_admin(&headers, &state).await {
         return e.into_response();

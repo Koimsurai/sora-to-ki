@@ -126,6 +126,8 @@ fn err_json(kind: &str, e: &SpErr) -> Response {
 }
 
 /// `GET /api/spotify/login` —— 302 至 Spotify 授權頁（URLSearchParams 編碼：空白→+）。
+#[utoipa::path(get, path = "/api/spotify/login", tag = "integrations",
+    responses((status = 200, description = "Spotify 授權導向（302 轉跳授權頁，第三方 proxy）")))]
 pub async fn login() -> Response {
     let scope = "user-read-recently-played user-top-read user-read-private user-read-email user-read-currently-playing user-read-playback-state";
     let client_id = std::env::var("SPOTIFY_CLIENT_ID").unwrap_or_else(|_| "undefined".into());
@@ -150,6 +152,8 @@ pub async fn login() -> Response {
 }
 
 /// `GET /api/spotify/recently-played`
+#[utoipa::path(get, path = "/api/spotify/recently-played", tag = "integrations",
+    responses((status = 200, description = "最近播放曲目（動態 JSON，第三方 proxy）")))]
 pub async fn recently_played(State(state): State<AppState>) -> Response {
     let r: Result<Value, SpErr> = async {
         let token = access_token(&state).await?;
@@ -164,6 +168,8 @@ pub async fn recently_played(State(state): State<AppState>) -> Response {
 }
 
 /// `GET /api/spotify/now-playing` —— 錯誤一律優雅回 `{is_playing:false}`（200）。
+#[utoipa::path(get, path = "/api/spotify/now-playing", tag = "integrations",
+    responses((status = 200, description = "目前播放中曲目（動態 JSON，第三方 proxy）")))]
 pub async fn now_playing(State(state): State<AppState>) -> Response {
     let token = match access_token(&state).await {
         Ok(t) => t,
@@ -191,6 +197,8 @@ pub async fn now_playing(State(state): State<AppState>) -> Response {
 }
 
 /// `GET /api/spotify/top-genres` —— 6h 快取 + 403/429 熔斷 1h。
+#[utoipa::path(get, path = "/api/spotify/top-genres", tag = "integrations",
+    responses((status = 200, description = "最常聽曲風 Top（動態 JSON，第三方 proxy）")))]
 pub async fn top_genres(State(state): State<AppState>) -> Response {
     let now = now_ms();
     if let Some((data, exp)) = state.spotify.top_genres.lock().clone() {
@@ -257,6 +265,8 @@ pub struct TopTracksQuery {
 }
 
 /// `GET /api/spotify/top-tracks` —— 1h 快取（per time_range:limit）+ 熔斷。
+#[utoipa::path(get, path = "/api/spotify/top-tracks", tag = "integrations",
+    responses((status = 200, description = "最常聽曲目 Top（動態 JSON，第三方 proxy）")))]
 pub async fn top_tracks(State(state): State<AppState>, Query(q): Query<TopTracksQuery>) -> Response {
     let time_range = q.time_range.unwrap_or_else(|| "medium_term".into());
     let limit = q.limit.unwrap_or_else(|| "20".into());
@@ -308,6 +318,8 @@ pub struct AudioFeaturesQuery {
 }
 
 /// `GET /api/spotify/audio-features` —— per-track 24h 快取 + 熔斷；一律優雅降級（cached+null）。
+#[utoipa::path(get, path = "/api/spotify/audio-features", tag = "integrations",
+    responses((status = 200, description = "曲目音訊特徵（動態 JSON，第三方 proxy）")))]
 pub async fn audio_features(State(state): State<AppState>, Query(q): Query<AudioFeaturesQuery>) -> Response {
     let Some(ids) = q.ids.filter(|s| !s.is_empty()) else {
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Missing track IDs" }))).into_response();
@@ -372,6 +384,8 @@ pub async fn audio_features(State(state): State<AppState>, Query(q): Query<Audio
 }
 
 /// `GET /api/spotify/me`
+#[utoipa::path(get, path = "/api/spotify/me", tag = "integrations",
+    responses((status = 200, description = "Spotify 使用者資料（動態 JSON，第三方 proxy）")))]
 pub async fn me(State(state): State<AppState>) -> Response {
     let r: Result<Value, SpErr> = async {
         let token = access_token(&state).await?;
@@ -387,6 +401,8 @@ pub async fn me(State(state): State<AppState>) -> Response {
 
 /// `GET /api/spotify/callback` —— 一次性 setup：授權碼換 refresh_token 顯示（存 .env 用）。
 /// 簡版 HTML（原 Express 版有整頁 CSS；此頁僅 admin 重新授權時用一次）。
+#[utoipa::path(get, path = "/api/spotify/callback", tag = "integrations",
+    responses((status = 200, description = "Spotify OAuth 回呼：授權碼換 refresh token（HTML 頁，一次性 setup）")))]
 pub async fn spotify_callback(
     State(state): State<AppState>,
     Query(q): Query<std::collections::HashMap<String, String>>,
