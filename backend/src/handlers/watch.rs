@@ -22,7 +22,7 @@ use crate::util::{bind_val, js_interp, js_normalize_numbers, js_substring_prefix
 // ── 公開讀端點的 typed 回應（欄位序 = SELECT 序，對齊舊 row_to_json）─────────────
 
 /// `GET /api/anime/history` 一列。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct AnimeRow {
     #[specta(type = specta_typescript::Number)]
     pub anime_sn: i64,
@@ -36,14 +36,14 @@ pub struct AnimeRow {
     pub last_watched_at: Option<String>,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct AnimeHistoryResponse {
     pub message: String,
     pub history: Vec<AnimeRow>,
 }
 
 /// `GET /api/films/recent` 一列。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct FilmRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -60,14 +60,14 @@ pub struct FilmRow {
     pub genres: Option<String>,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct FilmsResponse {
     pub message: String,
     pub films: Vec<FilmRow>,
 }
 
 /// `GET /api/tv/recent` 一列（GROUP BY series_name 聚合）。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct TvRow {
     pub series_name: String,
     pub last_watched: Option<String>,
@@ -80,14 +80,14 @@ pub struct TvRow {
     pub source: Option<String>,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct TvResponse {
     pub message: String,
     pub series: Vec<TvRow>,
 }
 
 /// `GET /api/watch/stats` —— 5 個 count（key 為 camelCase）。
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct WatchStatsResponse {
     pub message: String,
     #[serde(rename = "animeCount")]
@@ -128,6 +128,11 @@ fn js_limit(q: &LimitQuery, default: &str, cap: i64) -> Option<i64> {
 }
 
 /// `GET /api/anime/history`
+#[utoipa::path(
+    get, path = "/api/anime/history", tag = "watch",
+    params(("limit" = Option<String>, Query, description = "筆數上限")),
+    responses((status = 200, body = AnimeHistoryResponse)),
+)]
 pub async fn anime_history(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
     let mut query = sqlx::query_as::<_, AnimeRow>(
         "SELECT anime_sn, video_sn, title, cover_url, episode, tmdb_id, last_watched_at \
@@ -144,6 +149,11 @@ pub async fn anime_history(State(state): State<AppState>, Query(q): Query<LimitQ
 }
 
 /// `GET /api/films/recent`
+#[utoipa::path(
+    get, path = "/api/films/recent", tag = "watch",
+    params(("limit" = Option<String>, Query, description = "筆數上限")),
+    responses((status = 200, body = FilmsResponse)),
+)]
 pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
     let mut query = sqlx::query_as::<_, FilmRow>(
         "SELECT id, title, watched_date, rating, source, tmdb_id, poster_url, release_year, genres \
@@ -160,6 +170,11 @@ pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQu
 }
 
 /// `GET /api/tv/recent`
+#[utoipa::path(
+    get, path = "/api/tv/recent", tag = "watch",
+    params(("limit" = Option<String>, Query, description = "筆數上限")),
+    responses((status = 200, body = TvResponse)),
+)]
 pub async fn tv_recent(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
     let mut query = sqlx::query_as::<_, TvRow>(
         "SELECT series_name, MAX(watched_date) AS last_watched, COUNT(*) AS ep_count, \
@@ -177,6 +192,7 @@ pub async fn tv_recent(State(state): State<AppState>, Query(q): Query<LimitQuery
 }
 
 /// `GET /api/watch/stats` —— 5 個 count（單一 count 失敗 → 0，照抄）。
+#[utoipa::path(get, path = "/api/watch/stats", tag = "watch", responses((status = 200, body = WatchStatsResponse)))]
 pub async fn watch_stats(State(state): State<AppState>) -> Response {
     let count = |sql: &'static str| {
         let pool = state.pool.clone();

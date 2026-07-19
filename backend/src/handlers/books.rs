@@ -15,7 +15,7 @@ use crate::{
 use crate::state::AppState;
 
 /// books 一列（`SELECT *`）。欄位序 = books 表宣告序，對齊舊 `row_to_json` 的 key 序。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct BookRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -51,13 +51,13 @@ fn serialize_rating<S: serde::Serializer>(v: &Option<f64>, s: S) -> Result<S::Ok
     }
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct BooksListResponse {
     pub message: String,
     pub books: Vec<BookRow>,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct BookDetailResponse {
     pub message: String,
     pub book: BookRow,
@@ -119,6 +119,7 @@ async fn query_books(state: &AppState, q: &BooksQuery) -> Result<Vec<BookRow>, s
 }
 
 /// `GET /api/books` —— 公開列表，`{message, books}`。
+#[utoipa::path(get, path = "/api/books", tag = "books", responses((status = 200, body = BooksListResponse)))]
 pub async fn list_books(State(state): State<AppState>, Query(q): Query<BooksQuery>) -> Response {
     match query_books(&state, &q).await {
         Ok(books) => Json(BooksListResponse { message: "success".into(), books }).into_response(),

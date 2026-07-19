@@ -175,7 +175,7 @@ fn parse_int(s: Option<&str>, default: i64) -> i64 {
 }
 
 /// `GET /api/posts` 的單篇摘要。`title`/`excerpt` 已依 `?lang=` 取好該語系內容。
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct PostListItem {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -201,7 +201,7 @@ pub struct PostListItem {
     pub tags: Vec<String>,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct Pagination {
     #[specta(type = specta_typescript::Number)]
     pub page: i64,
@@ -214,7 +214,7 @@ pub struct Pagination {
     pub total_pages: i64,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct PostsListResponse {
     pub message: String,
     pub posts: Vec<PostListItem>,
@@ -223,6 +223,16 @@ pub struct PostsListResponse {
 }
 
 /// `GET /api/posts` —— 公開分頁列表（過濾 / 排序 / 多語）。SQL 與分頁邏輯照抄 Express。
+#[utoipa::path(
+    get, path = "/api/posts", tag = "posts",
+    params(
+        ("page" = Option<String>, Query), ("limit" = Option<String>, Query),
+        ("sortBy" = Option<String>, Query), ("search" = Option<String>, Query),
+        ("tag" = Option<String>, Query), ("category" = Option<String>, Query),
+        ("lang" = Option<String>, Query, description = "語系（zh-TW/en/ja/ko/zh-cn）"),
+    ),
+    responses((status = 200, body = PostsListResponse)),
+)]
 pub async fn list_posts(
     State(state): State<AppState>,
     Query(q): Query<ListQuery>,
@@ -358,7 +368,7 @@ pub struct LangQuery {
 
 /// `GET /api/posts/:id` 成功回應。欄位序對齊舊 `json!` 的 key 序。
 /// 404 路徑（找不到 / 該語系無內容）仍是各自的錯誤 JSON，不走這個型別。
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct PostDetailResponse {
     pub message: String,
     #[specta(type = specta_typescript::Number)]
@@ -388,6 +398,11 @@ pub struct PostDetailResponse {
 }
 
 /// `GET /api/posts/:id` —— 公開單篇（多語；找不到 / 該語無內容皆回對應 404）。
+#[utoipa::path(
+    get, path = "/api/posts/{id}", tag = "posts",
+    params(("id" = String, Path), ("lang" = Option<String>, Query, description = "語系")),
+    responses((status = 200, body = PostDetailResponse), (status = 404, description = "找不到 / 該語系無內容")),
+)]
 pub async fn get_post(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -453,14 +468,14 @@ pub async fn get_post(
 }
 
 // ── GET /api/posts/:id/reactions ─────────────────────────────────────────
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct ReactionRow {
     pub emoji: String,
     #[specta(type = specta_typescript::Number)]
     pub count: i64,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct ReactionsResponse {
     pub reactions: Vec<ReactionRow>,
 }
@@ -481,7 +496,7 @@ pub async fn post_reactions(
 
 // ── GET /api/posts/:id/comments ──────────────────────────────────────────
 /// comments 一列。欄位順序對齊 live 表實際 `SELECT *` 展開順序。
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct CommentRow {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -507,7 +522,7 @@ pub struct CommentRow {
     pub thought_id: Option<i64>,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct CommentsResponse {
     pub message: String,
     pub comments: Vec<CommentRow>,

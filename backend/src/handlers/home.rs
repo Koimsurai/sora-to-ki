@@ -4,7 +4,7 @@ use sqlx::FromRow;
 
 use crate::{error::AppError, state::AppState};
 
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct DigestPost {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -13,7 +13,7 @@ pub struct DigestPost {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct DigestThought {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -22,7 +22,7 @@ pub struct DigestThought {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct DigestComment {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -36,7 +36,7 @@ pub struct DigestComment {
     pub post_title: Option<String>,
 }
 
-#[derive(Debug, Serialize, FromRow, specta::Type)]
+#[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct DigestTimeline {
     #[specta(type = specta_typescript::Number)]
     pub id: i64,
@@ -44,7 +44,7 @@ pub struct DigestTimeline {
     pub created_at: String,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct DigestResponse {
     pub message: String,
     pub posts: Vec<DigestPost>,
@@ -56,6 +56,7 @@ pub struct DigestResponse {
 /// `GET /api/home/digest` —— 首頁動態帶（近期文章/碎念/留言迴聲/年度軌跡）。
 /// Express 有 60s 記憶體快取，這裡每次都讀同一 DB（資料一致即等價，不複製快取）；
 /// 4 條查詢與欄位逐字照抄，回應 key 順序 message→posts→thoughts→comments→timeline。
+#[utoipa::path(get, path = "/api/home/digest", tag = "home", responses((status = 200, body = DigestResponse)))]
 pub async fn home_digest(State(state): State<AppState>) -> Result<Json<DigestResponse>, AppError> {
     let posts = sqlx::query_as::<_, DigestPost>(
         "SELECT id, title, category, created_at FROM posts \

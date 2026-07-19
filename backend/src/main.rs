@@ -11,7 +11,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use koimsurai_web_backend::{handlers, proxy, revalidate, state};
+use koimsurai_web_backend::{handlers, openapi, proxy, revalidate, state};
 use state::AppState;
 
 #[tokio::main]
@@ -526,6 +526,9 @@ async fn main() -> anyhow::Result<()> {
             "/api/books/search/external",
             get(handlers::thirdparty::books_search_external).fallback(proxy::proxy_to_express),
         )
+        // OpenAPI 文件（utoipa，與前端 specta 型別同源）：spec 自架 + Scalar UI
+        .route("/api/openapi.json", get(openapi::openapi_json))
+        .route("/api/docs", get(openapi::scalar_ui))
         .fallback(proxy::proxy_to_express)
         // 對齊 Express `app.use(cors())`：所有回應 ACAO:*；preflight 回六 methods、
         // Allow-Headers reflect 請求（mirror_request = cors 套件預設行為）。

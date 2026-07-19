@@ -15,7 +15,7 @@ struct StatsRow {
     total_chars: i64,
 }
 
-#[derive(Debug, Serialize, specta::Type)]
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct StatsResponse {
     pub message: String,
     #[specta(type = specta_typescript::Number)]
@@ -29,6 +29,7 @@ pub struct StatsResponse {
 /// `GET /api/stats` —— 公開純讀 + 站齡日數。
 /// `days` 複製 Express 的 JS 日期數學（`Math.floor` 對正數＝截斷，max(1, …)）；
 /// 與 Express 同一時刻呼叫即一致。
+#[utoipa::path(get, path = "/api/stats", tag = "stats", responses((status = 200, body = StatsResponse)))]
 pub async fn site_stats(State(state): State<AppState>) -> Result<Json<StatsResponse>, AppError> {
     let row = sqlx::query_as::<_, StatsRow>(
         r#"
