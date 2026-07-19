@@ -110,6 +110,10 @@
   bottom: 0;
   height: 3px;
   background: rgba(255, 255, 255, 0.15);
+  /* 自己一層 GPU 合成——否則 hover 時 banner-img scale(1.03) 的下緣掃過這條半透明
+     進度條會 repaint 閃爍 */
+  transform: translateZ(0);
+  z-index: 1;
 }
 .w-now-progress > span {
   display: block;
@@ -149,6 +153,8 @@
   object-fit: cover;
   display: block;
   transition: transform 0.6s ease;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .w-now-banner:hover .w-now-banner-img { transform: scale(1.03); }

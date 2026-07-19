@@ -1,4 +1,4 @@
-import { useState, useMemo, type ElementType, type ReactElement } from 'react';
+import { useState, useMemo, useEffect, type ElementType, type ReactElement } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AnimeRow } from '@koimsurai/api-types';
 import { LocaleLink, useLocaleNavigate } from '../locale-link';
@@ -41,7 +41,7 @@ interface WatchEntry {
 
 // AnimeRow/FilmRow/TvRow/WatchStatsResponse 改由後端 specta 生成（見 backend/SPECTA_PLAN.md）。
 // LiveNow（watch/now 即時狀態，動態組）與 WatchFavorite（favorites TMDb 在地化）維持手寫（非 row_to_json 端點）。
-export interface LiveNow { cover?: string; title: string; externalUrl?: string; progressPct?: number | null; episode?: number | string; source?: string; type?: string }
+export interface LiveNow { cover?: string; title: string; externalUrl?: string; progressPct?: number | null; episode?: number | string; source?: string; type?: string; startedAt?: number; endsAt?: number | null }
 export interface WatchFavorite { id: number; title: string; rating: number; poster?: string; quote?: string; year?: number; externalUrl?: string }
 
 /* 連結通通走 TMDb */
@@ -118,6 +118,21 @@ function Watch() {
   const { data: liveNow = null } = useQuery(liveNowQueryOptions);
   const { data: favorites = [] } = useQuery(watchFavoritesQueryOptions(lang));
   const err = animeError ? (animeError instanceof Error ? animeError.message : 'fetch failed') : null;
+
+  // 進度條 client 端插值：兩次 30s 輪詢之間用本地 timer 依 startedAt/endsAt 平滑推進
+  // （不加輪詢、不用 ws；有 startedAt/endsAt 才插值，否則退回後端快照 progressPct）。
+  const [liveProgress, setLiveProgress] = useState<number | null>(null);
+  useEffect(() => {
+    if (!liveNow) { setLiveProgress(null); return; }
+    const s = liveNow.startedAt;
+    const e = liveNow.endsAt;
+    if (s == null || e == null || e <= s) { setLiveProgress(liveNow.progressPct ?? null); return; }
+    const compute = () => setLiveProgress(Math.min(100, Math.max(0, ((Date.now() - s) / (e - s)) * 100)));
+    compute();
+    const id = setInterval(compute, 1000);
+    return () => clearInterval(id);
+  }, [liveNow]);
+
   const [favEditing, setFavEditing] = useState(false);
   const { isAdmin } = useAuth();
   const navigate = useLocaleNavigate();
@@ -343,9 +358,9 @@ function Watch() {
                 <p className="w-now-meta">{hero.metaParts.join(' · ')}</p>
               </div>
               <span className="w-now-cta">{t('watch.viewOnTmdb')} →</span>
-              {hero.isLive && hero.progressPct != null && (
+              {hero.isLive && liveProgress != null && (
                 <span className="w-now-progress" aria-hidden="true">
-                  <span style={{ width: `${hero.progressPct}%` }} />
+                  <span style={{ width: `${liveProgress}%` }} />
                 </span>
               )}
             </a>

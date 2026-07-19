@@ -868,9 +868,12 @@ async fn poll_trakt_watching(state: &AppState) {
         .and_then(|v| v.as_str())
         .and_then(parse_rfc3339_ms)
         .unwrap_or(now);
+    // Trakt 的 expires_at ≈ 內容結束時間；連同 started_at 給前端做 client 端進度插值
+    // （本地 timer 在兩次輪詢間平滑推進度條，不用加輪詢也不用 ws）。
+    let ends = d.get("expires_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms);
     let progress = match (
         d.get("started_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms),
-        d.get("expires_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms),
+        ends,
     ) {
         (Some(s), Some(e)) if e - s > 0 => {
             let pct = ((now - s) as f64 / (e - s) as f64 * 100.0).round();
@@ -905,6 +908,7 @@ async fn poll_trakt_watching(state: &AppState) {
         "source": "trakt",
         "externalUrl": tmdb_url_for(kind, &tmdb_id),
         "startedAt": started,
+        "endsAt": ends,
         "expiresAt": now + NOW_WATCHING_TTL_MS,
     }));
 }
