@@ -140,6 +140,10 @@
   color: inherit;
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
   transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+  /* 預先升成合成層 + 新 stacking context——否則 hover 時卡片(translateY)與海報(scale)
+     各自 mid-transition 臨時升層互搶 z-order → 海報層閃爍 */
+  will-change: transform;
+  isolation: isolate;
 }
 
 .w-now-banner:hover {

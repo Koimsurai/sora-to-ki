@@ -280,7 +280,18 @@ async fn tmdb_detail(state: &AppState, kind: &str, id: &Value, locale: &str) -> 
         .filter(|&y| y != 0)
         .map(Value::from)
         .unwrap_or(Value::Null);
-    let out = json!({ "title": title, "poster_url": poster, "backdrop_url": backdrop, "year": year });
+    // runtime（分鐘）：movie 直接有 runtime；tv 用 episode_run_time[0]。給進度條算穩定 duration。
+    let runtime_min = j
+        .get("runtime")
+        .and_then(|v| v.as_i64())
+        .or_else(|| {
+            j.get("episode_run_time")
+                .and_then(|v| v.as_array())
+                .and_then(|a| a.first())
+                .and_then(|v| v.as_i64())
+        })
+        .filter(|&r| r > 0);
+    let out = json!({ "title": title, "poster_url": poster, "backdrop_url": backdrop, "year": year, "runtime_min": runtime_min });
     state.watch.tmdb_detail.lock().insert(key, out.clone());
     Some(out)
 }
@@ -868,35 +879,37 @@ async fn poll_trakt_watching(state: &AppState) {
         .and_then(|v| v.as_str())
         .and_then(parse_rfc3339_ms)
         .unwrap_or(now);
-    // Trakt 的 expires_at ≈ 內容結束時間；連同 started_at 給前端做 client 端進度插值
-    // （本地 timer 在兩次輪詢間平滑推進度條，不用加輪詢也不用 ws）。
-    let ends = d.get("expires_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms);
-    let progress = match (
-        d.get("started_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms),
-        ends,
-    ) {
-        (Some(s), Some(e)) if e - s > 0 => {
-            let pct = ((now - s) as f64 / (e - s) as f64 * 100.0).round();
+    // tmdb_detail 一次拿 cover + runtime（快取；無 token/失敗 → None）。
+    let dd = if js_truthy(Some(&tmdb_id)) {
+        tmdb_detail(state, kind, &tmdb_id, "zh-TW").await
+    } else {
+        None
+    };
+    // cover：Trakt 不回海報 → 用 TMDb 圖。「正在看」是橫式 hero → 優先 backdrop（橫式劇照
+    // original 解析）；沒 backdrop 才退 poster（換 original）。w342 只留給 favorites 小卡。
+    let cover = dd
+        .as_ref()
+        .and_then(|d| d.get("backdrop_url").filter(|v| !v.is_null()).cloned())
+        .or_else(|| {
+            dd.as_ref()
+                .and_then(|d| d.get("poster_url").and_then(|v| v.as_str()))
+                .map(|s| Value::from(s.replace("/t/p/w342/", "/t/p/original/")))
+        })
+        .unwrap_or(Value::Null);
+    // 進度 duration 用 **TMDb runtime**（穩定），不用 Trakt expires_at——實測 Trakt 的
+    // started_at/expires_at 會跳（player 重 scrobble），算出來的進度時對時錯。沒 runtime
+    // 才退 Trakt expires_at。endsAt 一起給前端做 client 端插值（本地 timer 平滑推進）。
+    let ends = dd
+        .as_ref()
+        .and_then(|d| d.get("runtime_min").and_then(|v| v.as_i64()))
+        .map(|m| started + m * 60_000)
+        .or_else(|| d.get("expires_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms));
+    let progress = match ends {
+        Some(e) if e - started > 0 => {
+            let pct = ((now - started) as f64 / (e - started) as f64 * 100.0).round();
             Value::from(pct.clamp(0.0, 100.0) as i64)
         }
         _ => Value::Null,
-    };
-    // Trakt 不回海報 → 用 tmdbId 抓 TMDb 海報當 cover（快取在 tmdb_detail；無 token/失敗 → Null）。
-    // 修 bug：cover 一直是 null → 前端 fallback 到「最近一部動畫」的封面（看電影卻顯示上一部動畫瘋番）。
-    // 「正在看」是橫式 hero → 優先用 backdrop（橫式劇照、original 解析）；沒 backdrop 才退
-    // poster（換 original，直式塞橫幅會被切但總比糊/無圖好）。w342 只留給 favorites 小卡。
-    let cover = if js_truthy(Some(&tmdb_id)) {
-        let dd = tmdb_detail(state, kind, &tmdb_id, "zh-TW").await;
-        dd.as_ref()
-            .and_then(|d| d.get("backdrop_url").filter(|v| !v.is_null()).cloned())
-            .or_else(|| {
-                dd.as_ref()
-                    .and_then(|d| d.get("poster_url").and_then(|v| v.as_str()))
-                    .map(|s| Value::from(s.replace("/t/p/w342/", "/t/p/original/")))
-            })
-            .unwrap_or(Value::Null)
-    } else {
-        Value::Null
     };
     *state.watch.now.lock() = Some(json!({
         "type": kind,

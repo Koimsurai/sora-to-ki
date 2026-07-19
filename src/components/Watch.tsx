@@ -115,23 +115,30 @@ function Watch() {
   const { data: films = null } = useQuery(filmsQueryOptions);
   const { data: series = null } = useQuery(seriesQueryOptions);
   const { data: stats = null } = useQuery(watchStatsQueryOptions);
-  const { data: liveNow = null } = useQuery(liveNowQueryOptions);
+  const { data: liveNow = null, dataUpdatedAt: liveNowUpdatedAt } = useQuery(liveNowQueryOptions);
   const { data: favorites = [] } = useQuery(watchFavoritesQueryOptions(lang));
   const err = animeError ? (animeError instanceof Error ? animeError.message : 'fetch failed') : null;
 
-  // 進度條 client 端插值：兩次 30s 輪詢之間用本地 timer 依 startedAt/endsAt 平滑推進
-  // （不加輪詢、不用 ws；有 startedAt/endsAt 才插值，否則退回後端快照 progressPct）。
+  // 進度條 client 端插值：兩次 30s 輪詢之間平滑推進（不加輪詢、不用 ws）。
+  // **以後端快照 progressPct 為錨**（server 端算的、準）+ client 端「收到資料後流逝的 delta」
+  // （用 useQuery 的 dataUpdatedAt 取 delta，而非絕對 startedAt）→ 免疫 client 時鐘偏差、
+  // poll 當下值 100% 對齊後端。沒 startedAt/endsAt（bahamut 動畫）就退回靜態快照。
   const [liveProgress, setLiveProgress] = useState<number | null>(null);
   useEffect(() => {
     if (!liveNow) { setLiveProgress(null); return; }
+    const base = liveNow.progressPct;
     const s = liveNow.startedAt;
     const e = liveNow.endsAt;
-    if (s == null || e == null || e <= s) { setLiveProgress(liveNow.progressPct ?? null); return; }
-    const compute = () => setLiveProgress(Math.min(100, Math.max(0, ((Date.now() - s) / (e - s)) * 100)));
+    if (base == null || s == null || e == null || e <= s) { setLiveProgress(base ?? null); return; }
+    const durationMs = e - s;
+    const compute = () => {
+      const elapsed = Date.now() - liveNowUpdatedAt;
+      setLiveProgress(Math.min(100, Math.max(0, base + (elapsed / durationMs) * 100)));
+    };
     compute();
     const id = setInterval(compute, 1000);
     return () => clearInterval(id);
-  }, [liveNow]);
+  }, [liveNow, liveNowUpdatedAt]);
 
   const [favEditing, setFavEditing] = useState(false);
   const { isAdmin } = useAuth();
