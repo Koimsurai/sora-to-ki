@@ -20,6 +20,7 @@ const LOCALE_TO_OG: Record<string, string> = {
   'zh-CN': 'zh_CN',
   en: 'en_US',
   ja: 'ja_JP',
+  ko: 'ko_KR',
 };
 
 interface MetaTag {
