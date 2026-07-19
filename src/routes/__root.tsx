@@ -70,7 +70,7 @@ function RootComponent() {
 function useServiceWorker() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
-    const onLoad = () => void navigator.serviceWorker.register('/sw.js').catch(() => {});
+    const onLoad = () => void navigator.serviceWorker.register('/sw.js').catch(() => { /* SW 註冊失敗無妨 */ });
     // 等 load 之後再註冊,避免跟首屏資源搶頻寬
     if (document.readyState === 'complete') onLoad();
     else {

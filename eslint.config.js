@@ -14,7 +14,7 @@ import unusedImports from 'eslint-plugin-unused-imports'
 // - 型別感知(type-checked)規則「只」掛 **/*.{ts,tsx}，避免在還沒型別的 .js/.jsx 上狂噴
 // - 噪音大的規則遷移期先設 warn，逐檔清完再翻 error
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist', 'stats.html'] },
+  { ignores: ['dist', 'dev-dist', 'stats.html', '.output', '.nitro', 'packages/*/index.ts'] },
 
   // ── 全體 ──
   js.configs.recommended,
