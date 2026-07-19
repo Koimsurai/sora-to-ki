@@ -13,6 +13,12 @@
 - **B7 TanStack Query 全面導入**：✅ **完成（2026-07-19）**。見下方 B7。
 - **collection 收藏站退役**：✅ **完成（2026-07-19）**。後端 handler+路由 + 前端 CollectionManager+nav
   全刪，/api/collection/* 現 404（`collection_items` 空表保留）。
+- **3D 背景 WebGPU/TSL 重寫**：✅ **完成並轉正（2026-07-19，單日 strangler）**。舊 pmndrs 雙 canvas
+  棧退役（五檔刪除 + @react-three/offscreen 下船）。新架構：單 canvas、three r185 WebGPURenderer
+  （WebGL2 自動 fallback）、自製 worker entry（純命令式無 React）、26k 顆 Sprite-instancing 星
+  （全 shader 閃爍/柔光）、mrtNode selective bloom、土星完整移植。成果：**GPU 85-90% → 25%、
+  眼測 99% 相似、亮核保留 114%**。詳 vault「web 3D 背景 — WebGPU 重寫決策」（含踩坑錄）。
+  ⏳ 殘留：ZeroGravityLibrary（書櫃零重力）仍用 fiber/drei/pmndrs——該四依賴待其遷移後移除。
 - **Express strangler 死鷹架清理 + newsletter 遷移補完**：✅ **完成（2026-07-19）**。稽核發現 Express
   雖已退役，但程式碼留大量死 proxy 鷹架（proxy 模組 + 96 個 `.fallback(proxy_to_express)` + `upstream`
   plumbing），且「發佈即推送 newsletter」是**漏接的遷移**——`admin_create/update_post` 仍整包委派死
