@@ -819,9 +819,20 @@ async fn poll_trakt_watching(state: &AppState) {
     let Some(tok) = get_valid_trakt_token(state).await else { return };
     let Some(slug) = get_trakt_slug(state, &tok).await else { return };
     let clear_trakt = |state: &AppState| {
-        let mut g = state.watch.now.lock();
-        if g.as_ref().and_then(|w| w.get("source")).and_then(|s| s.as_str()) == Some("trakt") {
-            *g = None;
+        let was_watching = {
+            let mut g = state.watch.now.lock();
+            if g.as_ref().and_then(|w| w.get("source")).and_then(|s| s.as_str()) == Some("trakt") {
+                *g = None;
+                true
+            } else {
+                false
+            }
+        };
+        // 剛從「正在看」→「沒在看」= 看完了 → 立刻同步 Trakt 歷史（否則「最近看完」列表
+        // 要等 6h 的 worker）。idempotent（INSERT OR IGNORE）、只在轉換當下觸發一次。
+        if was_watching {
+            let st = state.clone();
+            tokio::spawn(async move { sync_trakt_history(&st).await; });
         }
     };
     let access = tok.get("access_token").and_then(|v| v.as_str()).unwrap_or("");
@@ -896,20 +907,23 @@ async fn poll_trakt_watching(state: &AppState) {
                 .map(|s| Value::from(s.replace("/t/p/w342/", "/t/p/original/")))
         })
         .unwrap_or(Value::Null);
-    // 進度 duration 用 **TMDb runtime**（穩定），不用 Trakt expires_at——實測 Trakt 的
-    // started_at/expires_at 會跳（player 重 scrobble），算出來的進度時對時錯。沒 runtime
-    // 才退 Trakt expires_at。endsAt 一起給前端做 client 端插值（本地 timer 平滑推進）。
-    let ends = dd
-        .as_ref()
-        .and_then(|d| d.get("runtime_min").and_then(|v| v.as_i64()))
-        .map(|m| started + m * 60_000)
-        .or_else(|| d.get("expires_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms));
-    let progress = match ends {
-        Some(e) if e - started > 0 => {
-            let pct = ((now - started) as f64 / (e - started) as f64 * 100.0).round();
-            Value::from(pct.clamp(0.0, 100.0) as i64)
-        }
-        _ => Value::Null,
+    // 進度**錨定 Trakt expires_at**（實測比 started_at 穩——started_at 會隨 player 重 scrobble
+    // 大跳，導致看到 90% 卻顯示 30%；expires_at ≈ 真實結束時間、漂移小）+ TMDb runtime 反推 start。
+    // 都有 → (expires-runtime, expires)；缺 runtime → Trakt started/expires；缺 expires → started+runtime；
+    // 都缺 → 無進度。startedAt/endsAt 一起給前端做 client 端插值（本地 timer 平滑推進）。
+    let trakt_expires = d.get("expires_at").and_then(|v| v.as_str()).and_then(parse_rfc3339_ms);
+    let runtime_ms = dd.as_ref().and_then(|d| d.get("runtime_min").and_then(|v| v.as_i64())).map(|m| m * 60_000);
+    let (started, ends) = match (trakt_expires, runtime_ms) {
+        (Some(e), Some(r)) => (e - r, e),
+        (Some(e), None) => (started, e),
+        (None, Some(r)) => (started, started + r),
+        (None, None) => (started, started),
+    };
+    let progress = if ends > started {
+        let pct = ((now - started) as f64 / (ends - started) as f64 * 100.0).round();
+        Value::from(pct.clamp(0.0, 100.0) as i64)
+    } else {
+        Value::Null
     };
     *state.watch.now.lock() = Some(json!({
         "type": kind,
