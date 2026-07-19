@@ -8,12 +8,9 @@ pub struct AppState {
     /// sqlx 連線池，連到與 Express 相同的 sqlite 檔（strangler 期間共用）。
     /// sqlx pool over the SAME sqlite file Express uses (shared during the strangler period).
     pub pool: Pool<Sqlite>,
-    /// 轉發未接管請求用的 HTTP client。
-    /// HTTP client used to forward not-yet-migrated requests.
+    /// 對外部 API（TMDb / Trakt / Resend / Spotify / Steam）發請求用的 HTTP client。
+    /// HTTP client for outbound calls to third-party APIs.
     pub http: reqwest::Client,
-    /// Express 上游位址，例：`http://127.0.0.1:3001`。
-    /// Express upstream base URL, e.g. `http://127.0.0.1:3001`.
-    pub upstream: Arc<str>,
     /// JWT 簽章密鑰，與 Express 的 `JWT_SECRET` 共用（HS256）。
     /// JWT signing secret, shared with Express `JWT_SECRET` (HS256).
     pub jwt_secret: Arc<str>,

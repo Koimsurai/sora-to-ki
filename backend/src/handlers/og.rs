@@ -143,14 +143,11 @@ fn text_resp(code: StatusCode, body: &'static str) -> Response {
     (code, [(header::CONTENT_TYPE, "text/html; charset=utf-8")], body).into_response()
 }
 
-/// `GET /api/og/:file`（axum 不支援 `:id.png` 部分參數）——非 `.png` 後綴轉回 proxy（=Express 404）。
+/// `GET /api/og/:file`（axum 不支援 `:id.png` 部分參數）——非 `.png` 後綴回 404。
 pub async fn og_png(State(state): State<AppState>, Path(file): Path<String>, req: Request) -> Response {
     let Some(id) = file.strip_suffix(".png") else {
-        // Express 只註冊 /og/:id.png → 其他路徑落 catch-all；原樣轉回 Express
-        return match crate::proxy::proxy_to_express(State(state), req).await {
-            Ok(r) => r,
-            Err(e) => e.into_response(),
-        };
+        // 只處理 /og/:id.png；其他後綴 → 404（原委派 Express，已退役）
+        return text_resp(StatusCode::NOT_FOUND, "not found");
     };
     let inm = req.headers().get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok()).map(String::from);
 

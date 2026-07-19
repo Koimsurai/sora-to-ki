@@ -4,7 +4,6 @@ pub mod auth;
 pub mod error;
 pub mod handlers;
 pub mod openapi;
-pub mod proxy;
 pub mod revalidate;
 pub mod state;
 pub mod util;

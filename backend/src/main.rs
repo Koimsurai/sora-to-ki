@@ -11,10 +11,16 @@ use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use koimsurai_web_backend::{handlers, openapi, proxy, revalidate, state};
+use koimsurai_web_backend::{handlers, openapi, revalidate, state};
 use state::AppState;
 use utoipa::OpenApi;
 use utoipa_scalar::{Scalar, Servable};
+
+/// 全域 404（Express 退役後取代舊的 proxy fallback）：未知路徑回 404；
+/// 未接管的「方法」則由 axum MethodRouter 自動回 405（標準語意）。
+async fn not_found() -> (axum::http::StatusCode, &'static str) {
+    (axum::http::StatusCode::NOT_FOUND, "Not Found")
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -44,8 +50,6 @@ async fn main() -> anyhow::Result<()> {
         .connect_with(connect_opts)
         .await?;
 
-    // 空字串＝退役模式（無 Express，可 proxy 的路由回 404）
-    let upstream = env::var("EXPRESS_UPSTREAM").unwrap_or_default();
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(30))
         .build()?;
@@ -56,7 +60,6 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState {
         pool,
         http,
-        upstream: Arc::from(upstream.as_str()),
         jwt_secret: Arc::from(jwt_secret.as_str()),
         spotify: Arc::new(state::SpotifyState::default()),
         steam: Arc::new(state::SteamState::default()),
@@ -75,236 +78,223 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route(
             "/api/tags",
-            get(handlers::tags::list_tags).fallback(proxy::proxy_to_express),
+            get(handlers::tags::list_tags),
         )
         .route(
             "/api/categories",
-            get(handlers::categories::list_categories).fallback(proxy::proxy_to_express),
+            get(handlers::categories::list_categories),
         )
         .route(
             "/api/series",
-            get(handlers::series::list_series).fallback(proxy::proxy_to_express),
+            get(handlers::series::list_series),
         )
         .route(
             "/api/series/{name}",
-            get(handlers::series::series_by_name).fallback(proxy::proxy_to_express),
+            get(handlers::series::series_by_name),
         )
         .route(
             "/api/stats",
-            get(handlers::stats::site_stats).fallback(proxy::proxy_to_express),
+            get(handlers::stats::site_stats),
         )
         // thoughts：/rss 靜態路由（axum matchit 優先於 /{id}）；已接管的 RSS feed。
         .route(
             "/api/thoughts/rss",
-            get(handlers::thoughts::thoughts_rss).fallback(proxy::proxy_to_express),
+            get(handlers::thoughts::thoughts_rss),
         )
         .route(
             "/api/thoughts",
-            get(handlers::thoughts::list_thoughts).fallback(proxy::proxy_to_express),
+            get(handlers::thoughts::list_thoughts),
         )
         .route(
             "/api/thoughts/{id}",
-            get(handlers::thoughts::get_thought).fallback(proxy::proxy_to_express),
+            get(handlers::thoughts::get_thought),
         )
         .route(
             "/api/thoughts/{id}/comments",
             get(handlers::thoughts::list_thought_comments)
                 .post(handlers::comments::thought_comment)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/health",
-            get(handlers::home::health).fallback(proxy::proxy_to_express),
+            get(handlers::home::health),
         )
         // 每日名言（opencc cn→tw + 當日快取；Express 退役輪移植）
         .route(
             "/api/quote/daily",
-            get(handlers::quote::quote_daily).fallback(proxy::proxy_to_express),
+            get(handlers::quote::quote_daily),
         )
         // 全站 RSS（app-level 非 /api；nginx `location = /rss` 指過來）
         .route("/rss", get(handlers::rss::site_rss))
         // home digest（純 DB 讀）
         .route(
             "/api/home/digest",
-            get(handlers::home::home_digest).fallback(proxy::proxy_to_express),
+            get(handlers::home::home_digest),
         )
         // posts：列表 / 單篇 / 反應 / 留言（皆公開純讀；寫入與 view/like 走 method-fallback proxy）
         .route(
             "/api/posts",
             get(handlers::posts::list_posts)
                 .post(handlers::posts::create_post_public)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/posts/{id}",
             get(handlers::posts::get_post)
                 .put(handlers::posts::update_post_public)
                 .delete(handlers::posts::delete_post_public)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/posts/{id}/status",
-            patch(handlers::posts::patch_post_status).fallback(proxy::proxy_to_express),
+            patch(handlers::posts::patch_post_status),
         )
         .route(
             "/api/posts/legacy",
-            post(handlers::posts::create_post_legacy).fallback(proxy::proxy_to_express),
+            post(handlers::posts::create_post_legacy),
         )
         .route(
             "/api/posts/{id}/reactions",
             get(handlers::posts::post_reactions)
                 .post(handlers::posts::post_reaction)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/posts/{id}/comments",
             get(handlers::posts::post_comments)
                 .post(handlers::comments::post_comment)
-                .fallback(proxy::proxy_to_express),
         )
         // 計數寫入（公開）
         .route(
             "/api/posts/{id}/view",
-            post(handlers::posts::post_view).fallback(proxy::proxy_to_express),
+            post(handlers::posts::post_view),
         )
         .route(
             "/api/posts/{id}/like",
-            post(handlers::posts::post_like).fallback(proxy::proxy_to_express),
+            post(handlers::posts::post_like),
         )
         .route(
             "/api/posts/{id}/unlike",
-            post(handlers::posts::post_unlike).fallback(proxy::proxy_to_express),
+            post(handlers::posts::post_unlike),
         )
         .route(
             "/api/comments/{id}/like",
-            post(handlers::posts::comment_like).fallback(proxy::proxy_to_express),
+            post(handlers::posts::comment_like),
         )
         .route(
             "/api/thoughts/{id}/react",
-            post(handlers::thoughts::thought_react).fallback(proxy::proxy_to_express),
+            post(handlers::thoughts::thought_react),
         )
         // admin thoughts CRUD（unfurl / TMDb enrich）
         .route(
             "/api/admin/thoughts",
-            post(handlers::thoughts::admin_create_thought).fallback(proxy::proxy_to_express),
+            post(handlers::thoughts::admin_create_thought),
         )
         .route(
             "/api/admin/thoughts/{id}",
             put(handlers::thoughts::admin_update_thought)
                 .delete(handlers::thoughts::admin_delete_thought)
-                .fallback(proxy::proxy_to_express),
         )
         // auth：登入 / 當前使用者 / 登出 / OAuth 設定（OAuth callbacks 打外部 API 留 proxy）
         .route(
             "/api/auth/login",
-            post(handlers::auth::login).fallback(proxy::proxy_to_express),
+            post(handlers::auth::login),
         )
         .route(
             "/api/auth/me",
-            get(handlers::auth::me).fallback(proxy::proxy_to_express),
+            get(handlers::auth::me),
         )
         .route(
             "/api/auth/logout",
-            post(handlers::auth::logout).fallback(proxy::proxy_to_express),
+            post(handlers::auth::logout),
         )
         .route(
             "/api/auth/providers",
-            get(handlers::auth::providers).fallback(proxy::proxy_to_express),
+            get(handlers::auth::providers),
         )
         .route(
             "/api/auth/reset-admin",
-            post(handlers::auth::reset_admin).fallback(proxy::proxy_to_express),
+            post(handlers::auth::reset_admin),
         )
         // 用戶角色管理（requireOwner）
         .route(
             "/api/admin/users/{id}/role",
-            put(handlers::admin::admin_update_user_role).fallback(proxy::proxy_to_express),
+            put(handlers::admin::admin_update_user_role),
         )
         // spotify 一次性 setup callback（Express 退役輪移植，簡版 HTML）
         .route(
             "/api/spotify/callback",
-            get(handlers::spotify::spotify_callback).fallback(proxy::proxy_to_express),
+            get(handlers::spotify::spotify_callback),
         )
         // OAuth callbacks（google/github）
         .route(
             "/api/auth/google/callback",
-            post(handlers::oauth::google_callback).fallback(proxy::proxy_to_express),
+            post(handlers::oauth::google_callback),
         )
         .route(
             "/api/auth/github/callback",
-            post(handlers::oauth::github_callback).fallback(proxy::proxy_to_express),
+            post(handlers::oauth::github_callback),
         )
         // newsletter（send-newsletter 走全域 proxy=resend 硬骨頭）
         .route(
             "/api/newsletter/subscribe",
-            post(handlers::newsletter::subscribe).fallback(proxy::proxy_to_express),
+            post(handlers::newsletter::subscribe),
         )
         .route(
             "/api/newsletter/unsubscribe",
-            post(handlers::newsletter::unsubscribe).fallback(proxy::proxy_to_express),
+            post(handlers::newsletter::unsubscribe),
         )
         .route(
             "/api/newsletter/by-token/{token}",
-            get(handlers::newsletter::by_token).fallback(proxy::proxy_to_express),
+            get(handlers::newsletter::by_token),
         )
         .route(
             "/api/newsletter/subscribers",
-            get(handlers::newsletter::subscribers).fallback(proxy::proxy_to_express),
+            get(handlers::newsletter::subscribers),
         )
         // admin authed 讀 + CRUD 寫入（同路徑掛多方法；未接管方法走 fallback proxy）
         .route(
             "/api/admin/tags",
             get(handlers::admin::admin_tags)
                 .post(handlers::admin::create_tag)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/admin/tags/{id}",
             put(handlers::admin::update_tag)
                 .delete(handlers::admin::delete_tag)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/admin/categories",
             get(handlers::admin::admin_categories)
                 .post(handlers::admin::create_category)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/admin/categories/{id}",
             put(handlers::admin::update_category)
                 .delete(handlers::admin::delete_category)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/admin/users",
-            get(handlers::admin::admin_users).fallback(proxy::proxy_to_express),
+            get(handlers::admin::admin_users),
         )
         .route(
             "/api/admin/blacklist",
             get(handlers::admin::admin_blacklist)
                 .post(handlers::admin::create_blacklist)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/admin/blacklist/{id}",
-            delete(handlers::admin::delete_blacklist).fallback(proxy::proxy_to_express),
+            delete(handlers::admin::delete_blacklist),
         )
         .route(
             "/api/admin/keyword-filters",
             get(handlers::admin::admin_keyword_filters)
                 .post(handlers::admin::create_keyword_filter)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/admin/keyword-filters/{id}",
-            delete(handlers::admin::delete_keyword_filter).fallback(proxy::proxy_to_express),
+            delete(handlers::admin::delete_keyword_filter),
         )
         .route(
             "/api/admin/posts",
             get(handlers::admin::admin_posts)
                 .post(handlers::admin::admin_create_post)
-                .fallback(proxy::proxy_to_express),
         )
         // …/send-newsletter（resend 硬骨頭）仍走全域 fallback proxy
         .route(
@@ -312,31 +302,30 @@ async fn main() -> anyhow::Result<()> {
             get(handlers::admin::admin_get_post)
                 .put(handlers::admin::admin_update_post)
                 .delete(handlers::admin::admin_delete_post)
-                .fallback(proxy::proxy_to_express),
         )
         // generate-zh-cn（opencc 硬骨頭 → ferrous-opencc Tw2s，byte-identical）
         .route(
             "/api/admin/posts/{id}/generate-zh-cn",
-            post(handlers::opencc::generate_zh_cn).fallback(proxy::proxy_to_express),
+            post(handlers::opencc::generate_zh_cn),
         )
         // send-newsletter（resend 硬骨頭 → reqwest 直打 Resend batch API）
         .route(
             "/api/admin/posts/{id}/send-newsletter",
-            post(handlers::mailer::send_newsletter_route).fallback(proxy::proxy_to_express),
+            post(handlers::mailer::send_newsletter_route),
         )
         .route(
             "/api/admin/comments",
-            get(handlers::admin::admin_comments).fallback(proxy::proxy_to_express),
+            get(handlers::admin::admin_comments),
         )
         // 批次審核（Express bug #2 死路由的修好版；靜態段優先於 :id/status）
         .route(
             "/api/admin/comments/batch/status",
-            patch(handlers::admin::admin_batch_comment_status).fallback(proxy::proxy_to_express),
+            patch(handlers::admin::admin_batch_comment_status),
         )
         // 後台統計（⚠️ visitors 用 Math.random，非 byte 對拍——除該欄外對拍）
         .route(
             "/api/admin/stats",
-            get(handlers::admin::admin_stats).fallback(proxy::proxy_to_express),
+            get(handlers::admin::admin_stats),
         )
         // comments moderation。
         // ⚠️ 不註冊 `/batch/status`：Express 按註冊順序，`:id/status`(先註冊) 遮蔽了 `batch/status`，
@@ -344,194 +333,188 @@ async fn main() -> anyhow::Result<()> {
         // 讓 `batch/status` 落到 `:id/status`（id="batch"）→ 同樣 404。（Express 端 batch 端點失效之既有 bug。）
         .route(
             "/api/admin/comments/{id}/status",
-            patch(handlers::admin::patch_comment_status).fallback(proxy::proxy_to_express),
+            patch(handlers::admin::patch_comment_status),
         )
         .route(
             "/api/admin/comments/{id}/reply",
-            post(handlers::admin::reply_comment).fallback(proxy::proxy_to_express),
+            post(handlers::admin::reply_comment),
         )
         .route(
             "/api/admin/comments/{id}",
             put(handlers::admin::update_comment)
                 .delete(handlers::admin::delete_comment)
-                .fallback(proxy::proxy_to_express),
         )
         // books 域（/books/search/external 打 Google/OpenLibrary，留全域 proxy 待第三方輪）
         .route(
             "/api/books",
             get(handlers::books::list_books)
                 .post(handlers::books::create_book)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/books/{id}",
             get(handlers::books::get_book)
                 .put(handlers::books::update_book)
                 .delete(handlers::books::delete_book)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/books/stats/summary",
-            get(handlers::books::book_stats).fallback(proxy::proxy_to_express),
+            get(handlers::books::book_stats),
         )
         .route(
             "/api/admin/books",
-            get(handlers::books::admin_books).fallback(proxy::proxy_to_express),
+            get(handlers::books::admin_books),
         )
         // gallery（零 sharp 部分：讀 manifest / 串流代理）
         .route(
             "/api/gallery/photos",
-            get(handlers::gallery::gallery_photos).fallback(proxy::proxy_to_express),
+            get(handlers::gallery::gallery_photos),
         )
         .route(
             "/api/image-proxy",
-            get(handlers::gallery::image_proxy).fallback(proxy::proxy_to_express),
+            get(handlers::gallery::image_proxy),
         )
         // gallery sync（sharp 硬骨頭本體：rotate+resize+lossy webp+EXIF+manifest）
         .route(
             "/api/admin/gallery/sync",
-            post(handlers::gallery::gallery_sync).fallback(proxy::proxy_to_express),
+            post(handlers::gallery::gallery_sync),
         )
         // OG 圖（sharp/librsvg → resvg；axum 不支援 :id.png 部分參數，handler 內 strip 後綴）
         .route(
             "/api/og/{file}",
-            get(handlers::og::og_png).fallback(proxy::proxy_to_express),
+            get(handlers::og::og_png),
         )
         // 上傳（multer → axum multipart；thumbhash 實測等價）
         .route(
             "/api/admin/upload",
             post(handlers::upload::upload)
-                .fallback(proxy::proxy_to_express)
                 // multer limits.fileSize = 50MB（其餘路由走全域 10MB）
                 .route_layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
         // 第三方代理（/steam/profile SWR 快取、/quote/daily 每日快取+opencc、spotify、watch 域留 proxy）
         .route(
             "/api/github/user/{username}",
-            get(handlers::thirdparty::github_user).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::github_user),
         )
         .route(
             "/api/github/events/{username}",
-            get(handlers::thirdparty::github_events).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::github_events),
         )
         .route(
             "/api/wakatime/today",
-            get(handlers::thirdparty::wakatime_today).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::wakatime_today),
         )
         .route(
             "/api/wakatime/week",
-            get(handlers::thirdparty::wakatime_week).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::wakatime_week),
         )
         .route(
             "/api/wakatime/projects",
-            get(handlers::thirdparty::wakatime_projects).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::wakatime_projects),
         )
         .route(
             "/api/steam/profile",
-            get(handlers::thirdparty::steam_profile).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::steam_profile),
         )
         .route(
             "/api/spotify/login",
-            get(handlers::spotify::login).fallback(proxy::proxy_to_express),
+            get(handlers::spotify::login),
         )
         .route(
             "/api/spotify/recently-played",
-            get(handlers::spotify::recently_played).fallback(proxy::proxy_to_express),
+            get(handlers::spotify::recently_played),
         )
         .route(
             "/api/spotify/now-playing",
-            get(handlers::spotify::now_playing).fallback(proxy::proxy_to_express),
+            get(handlers::spotify::now_playing),
         )
         .route(
             "/api/spotify/top-genres",
-            get(handlers::spotify::top_genres).fallback(proxy::proxy_to_express),
+            get(handlers::spotify::top_genres),
         )
         .route(
             "/api/spotify/top-tracks",
-            get(handlers::spotify::top_tracks).fallback(proxy::proxy_to_express),
+            get(handlers::spotify::top_tracks),
         )
         .route(
             "/api/spotify/audio-features",
-            get(handlers::spotify::audio_features).fallback(proxy::proxy_to_express),
+            get(handlers::spotify::audio_features),
         )
         .route(
             "/api/spotify/me",
-            get(handlers::spotify::me).fallback(proxy::proxy_to_express),
+            get(handlers::spotify::me),
         )
         .route(
             "/api/steam/player",
-            get(handlers::thirdparty::steam_player).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::steam_player),
         )
         .route(
             "/api/steam/recent-games",
-            get(handlers::thirdparty::steam_recent_games).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::steam_recent_games),
         )
         .route(
             "/api/steam/owned-games",
-            get(handlers::thirdparty::steam_owned_games).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::steam_owned_games),
         )
         .route(
             "/api/steam/achievements/{appid}",
-            get(handlers::thirdparty::steam_achievements).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::steam_achievements),
         )
         // watch 域（bahamut status/cookie 留 proxy=anigamer 硬骨頭；cron 同步留 Express）
         .route(
             "/api/anime/history",
-            get(handlers::watch::anime_history).fallback(proxy::proxy_to_express),
+            get(handlers::watch::anime_history),
         )
         .route(
             "/api/films/recent",
-            get(handlers::watch::films_recent).fallback(proxy::proxy_to_express),
+            get(handlers::watch::films_recent),
         )
         .route(
             "/api/tv/recent",
-            get(handlers::watch::tv_recent).fallback(proxy::proxy_to_express),
+            get(handlers::watch::tv_recent),
         )
         .route(
             "/api/watch/stats",
-            get(handlers::watch::watch_stats).fallback(proxy::proxy_to_express),
+            get(handlers::watch::watch_stats),
         )
         .route(
             "/api/watch/favorites",
             get(handlers::watch::favorites)
                 .post(handlers::watch::create_favorite)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/watch/favorites/{id}",
             put(handlers::watch::update_favorite)
                 .delete(handlers::watch::delete_favorite)
-                .fallback(proxy::proxy_to_express),
         )
         .route(
             "/api/watch/tmdb-search",
-            get(handlers::watch::tmdb_search).fallback(proxy::proxy_to_express),
+            get(handlers::watch::tmdb_search),
         )
         .route(
             "/api/watch/now",
-            get(handlers::watch::watch_now).fallback(proxy::proxy_to_express),
+            get(handlers::watch::watch_now),
         )
         .route(
             "/api/admin/watch/now",
-            post(handlers::watch::heartbeat).fallback(proxy::proxy_to_express),
+            post(handlers::watch::heartbeat),
         )
         // 動畫瘋 cookie/status（bahamutPushAuth）
         .route(
             "/api/admin/bahamut/status",
-            get(handlers::bahamut::status).fallback(proxy::proxy_to_express),
+            get(handlers::bahamut::status),
         )
         .route(
             "/api/admin/bahamut/cookie",
-            post(handlers::bahamut::cookie).fallback(proxy::proxy_to_express),
+            post(handlers::bahamut::cookie),
         )
         .route(
             "/api/books/search/external",
-            get(handlers::thirdparty::books_search_external).fallback(proxy::proxy_to_express),
+            get(handlers::thirdparty::books_search_external),
         )
         // OpenAPI 文件（utoipa，與前端 specta 型別同源）：spec 自架 + Scalar UI（utoipa-scalar 原生整合）
         .route("/api/openapi.json", get(openapi::openapi_json))
         .merge(Scalar::with_url("/api/docs", openapi::ApiDoc::openapi()))
-        .fallback(proxy::proxy_to_express)
+        .fallback(not_found)
         // 對齊 Express `app.use(cors())`：所有回應 ACAO:*；preflight 回六 methods、
         // Allow-Headers reflect 請求（mirror_request = cors 套件預設行為）。
         // 已知微差：preflight Rust 回 200、Express 回 204（瀏覽器語意等價）。
@@ -558,12 +541,7 @@ async fn main() -> anyhow::Result<()> {
     let bind_addr =
         env::var("BIND_ADDR").unwrap_or_else(|_| "127.0.0.1:3002".to_string());
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
-    tracing::info!("koimsurai-web-backend (strangler) listening on http://{bind_addr}");
-    if upstream.is_empty() {
-        tracing::info!("退役模式：無 EXPRESS_UPSTREAM，未接管路由回 404");
-    } else {
-        tracing::info!("proxying un-migrated routes to {upstream}");
-    }
+    tracing::info!("koimsurai-web-backend listening on http://{bind_addr}");
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
