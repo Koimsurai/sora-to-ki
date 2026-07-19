@@ -1,6 +1,6 @@
-// WebGPU 星空（?webgpu=1 旗標，lazy chunk，訪客零影響）。
+// WebGPU 太空背景（星空 + 土星，單 canvas）——正式預設（2026-07-19 翻線，舊 pmndrs 雙 canvas 棧退役）。
 //
-// 架構（重寫目標架構的雛形）：
+// 架構：
 //   主路徑   = worker + OffscreenCanvas（spaceGpuWorker.ts，自製極簡協定）
 //   fallback = 主執行緒直接跑同一個 runner（無 OffscreenCanvas 的瀏覽器）
 //   backend  = WebGPU（有 adapter）/ WebGL2（three 自動 fallback）——同一份場景碼四種組合全吃
@@ -19,11 +19,16 @@ const canvasStyle: React.CSSProperties = {
 interface StarfieldGpuProps {
   /** 土星僅首頁顯示（對齊舊架構的 isOnHomePage gating） */
   isOnHomePage?: boolean;
+  /** intro 爆炸前為 false（土星維持 epsilon 縮放、管線先編譯好），爆炸時轉 true 放大 */
+  animateSaturn?: boolean;
+  /** intro 爆炸期整張 canvas 抬到 intro 遮罩之上（對齊舊 saturnZIndex 機制） */
+  zIndex?: number;
 }
 
-export default function StarfieldGpu({ isOnHomePage = false }: StarfieldGpuProps) {
+export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = true, zIndex = 1 }: StarfieldGpuProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [backend, setBackend] = useState('初始化中…');
+  const [failed, setFailed] = useState(false);
   const [perf, setPerf] = useState<{ fps: number; avgMs: number } | null>(null);
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
   // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
@@ -33,10 +38,10 @@ export default function StarfieldGpu({ isOnHomePage = false }: StarfieldGpuProps
   useEffect(() => {
     const onScroll = () => controlRef.current?.scroll(window.scrollY);
     window.addEventListener('scroll', onScroll, { passive: true });
-    controlRef.current?.saturn(isOnHomePage, true);
+    controlRef.current?.saturn(isOnHomePage, animateSaturn);
     controlRef.current?.scroll(window.scrollY);
     return () => window.removeEventListener('scroll', onScroll);
-  }, [isOnHomePage, backend]); // backend 變化 = runner 就緒的訊號，重新同步
+  }, [isOnHomePage, animateSaturn, backend]); // backend 變化 = runner 就緒的訊號，重新同步
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -62,7 +67,7 @@ export default function StarfieldGpu({ isOnHomePage = false }: StarfieldGpuProps
         else if (e.data.type === 'error') {
           // canvas 已 transfer、無法回收給主執行緒重用 → 本 session 放棄（外層有 DOM 特效兜底）
           console.warn('[StarfieldGpu] worker 初始化失敗:', e.data.message);
-          setBackend(`初始化失敗（${e.data.message ?? 'unknown'}）`);
+          setFailed(true);
           worker.terminate();
         }
       };
@@ -96,7 +101,7 @@ export default function StarfieldGpu({ isOnHomePage = false }: StarfieldGpuProps
         setBackend(`${be} · main`);
       } catch (err) {
         console.warn('[StarfieldGpu] 主執行緒初始化失敗:', err);
-        setBackend('初始化失敗');
+        setFailed(true);
       }
     });
     const onResize = () => runnerHandle?.setSize(canvas.clientWidth, canvas.clientHeight);
@@ -111,19 +116,24 @@ export default function StarfieldGpu({ isOnHomePage = false }: StarfieldGpuProps
     };
   }, []);
 
+  // 初始化失敗（無 WebGPU 也無 WebGL 的機器）→ 優雅消失，DOM 特效由 shell 兜底
+  if (failed) return null;
+
   return (
     <>
-      <canvas ref={canvasRef} style={canvasStyle} />
-      {/* backend 徽章：自證跑在哪條 backend + 哪條執行緒 */}
-      <div style={{
-        position: 'fixed', bottom: 8, right: 8, zIndex: 99999, padding: '6px 10px',
-        background: 'rgba(0,0,0,.75)',
-        color: backend.startsWith('WebGPU') ? '#7fdcff' : '#ffd27f',
-        font: '12px/1.5 monospace', borderRadius: 6, pointerEvents: 'none',
-      }}>
-        StarfieldGpu · {backend} · TSL bloom
-        {perfDebug && perf && ` · ${perf.fps.toFixed(0)} fps · ${perf.avgMs.toFixed(2)} ms`}
-      </div>
+      <canvas ref={canvasRef} style={{ ...canvasStyle, zIndex }} />
+      {/* backend 徽章：?debug=perf 才顯示（正式訪客不看 debug 資訊） */}
+      {perfDebug && (
+        <div style={{
+          position: 'fixed', bottom: 8, right: 8, zIndex: 99999, padding: '6px 10px',
+          background: 'rgba(0,0,0,.75)',
+          color: backend.startsWith('WebGPU') ? '#7fdcff' : '#ffd27f',
+          font: '12px/1.5 monospace', borderRadius: 6, pointerEvents: 'none',
+        }}>
+          StarfieldGpu · {backend} · TSL bloom
+          {perf && ` · ${perf.fps.toFixed(0)} fps · ${perf.avgMs.toFixed(2)} ms`}
+        </div>
+      )}
     </>
   );
 }

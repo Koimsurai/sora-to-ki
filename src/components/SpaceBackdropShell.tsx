@@ -7,9 +7,8 @@ import DomSpaceEffects from './DomSpaceEffects';
 import { isWebGLAvailable } from '../lib/webglSupport';
 import { stripLocalePrefix } from '../start-i18n';
 
-// Three.js 太空背景(星空/土星/特效)→ lazy chunk:vendor-three 不進主 bundle。
-const LazySpaceBackdrop = lazy(() => import('./SpaceBackdrop'));
-// WebGPU 重寫 PoC（?webgpu=1 才載，three/webgpu 獨立 chunk，訪客零下載）
+// WebGPU 太空背景（星空+土星單 canvas，three/webgpu 獨立 lazy chunk，不進主 bundle）。
+// 2026-07-19 翻預設：取代舊 pmndrs 雙 canvas 棧（strangler 完成）。
 const LazyStarfieldGpu = lazy(() => import('./StarfieldGpu'));
 
 // 桌面 WebGL 背景 + 首訪首頁開場動畫(Saturn explosion)的編排殼。
@@ -19,11 +18,10 @@ export default function SpaceBackdropShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isOnHomePage = stripLocalePrefix(pathname) === '';
   const isMobile = useMediaQuery('(max-width: 768px)');
-  // WebGL pre-flight（Chromium 137 移除 SwiftShader 後，加速壞掉的機器 getContext 回 null）。
-  // 不可用 → 完全不掛 3D、不下載 vendor-three chunk，降級純 DOM 特效。本元件 client-only，可安全 probe。
-  const webglOk = useMemo(() => isWebGLAvailable(), []);
-  // WebGPU 重寫 PoC 旗標：?webgpu=1 → 以 StarfieldGpu 取代整組背景（無 Saturn/intro 疊加干擾）
-  const webgpuPoc = useMemo(() => new URLSearchParams(window.location.search).get('webgpu') === '1', []);
+  // 3D pre-flight：WebGPU（renderer 首選）或 WebGL（自動 fallback backend）任一可用才掛 3D；
+  // 都沒有（Chromium 137 移除 SwiftShader 後加速全壞的機器）→ 不下載 three chunk，降級純 DOM 特效。
+  // 本元件 client-only，可安全 probe。runtime 才炸的殘餘情況由 ErrorBoundary + worker error 通道接。
+  const gpu3dOk = useMemo(() => isWebGLAvailable() || 'gpu' in navigator, []);
 
   const introCompleted = (() => {
     try { return sessionStorage.getItem('introCompleted') === 'true'; } catch { return false; }
@@ -62,18 +60,7 @@ export default function SpaceBackdropShell() {
     if (!introVisible) document.documentElement.classList.remove('intro-pending');
   }, [introVisible]);
 
-  if (isMobile) return null; // 手機完全不載 vendor-three
-
-  // WebGPU PoC：星空換新管線；DOM 特效（流星/UFO/游標尾跡，非 WebGL）照常掛。
-  // Saturn/intro 留待單 canvas 合併階段。所有 hooks 已跑完，早退安全。
-  if (webgpuPoc) {
-    return (
-      <Suspense fallback={null}>
-        <LazyStarfieldGpu isOnHomePage={isOnHomePage} />
-        <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />
-      </Suspense>
-    );
-  }
+  if (isMobile) return null; // 手機完全不載 three
 
   return (
     <>
@@ -84,24 +71,21 @@ export default function SpaceBackdropShell() {
           onPreReveal={handlePreReveal}
         />
       )}
-      {backdropReady && (webglOk ? (
-        // runtime 才炸（GPU process 中途死亡等）由 ErrorBoundary 接：背景失敗只失去背景，不准殺 app
-        <BackdropErrorBoundary
-          fallback={<DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />}
-        >
+      {/* 3D 背景（WebGPU/WebGL2 自動選 backend）。runtime 才炸由 ErrorBoundary 接；
+          worker 內失敗則 StarfieldGpu 自行歸 null——兩種情況 DOM 特效都還在（下方獨立掛載）。 */}
+      {backdropReady && gpu3dOk && (
+        <BackdropErrorBoundary fallback={null}>
           <Suspense fallback={null}>
-            <LazySpaceBackdrop
-              isMobile={isMobile}
+            <LazyStarfieldGpu
               isOnHomePage={isOnHomePage}
               animateSaturn={animateSaturn}
-              saturnZIndex={saturnZIndex}
+              zIndex={saturnZIndex}
             />
           </Suspense>
         </BackdropErrorBoundary>
-      ) : (
-        // WebGL 不可用：純 DOM 特效（流星/UFO/游標尾跡），頁面仍有生命感、零 three 下載
-        <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />
-      ))}
+      )}
+      {/* DOM 特效（流星/UFO/游標尾跡，非 WebGL）：無論 3D 成敗都掛，頁面永遠有生命感 */}
+      {backdropReady && <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />}
     </>
   );
 }
