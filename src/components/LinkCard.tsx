@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { IconType } from 'react-icons';
 import { FaYoutube, FaGithub, FaInstagram, FaExternalLinkAlt } from 'react-icons/fa';
 import { LocaleLink } from '../locale-link';
+import { postDetailQueryOptions } from '../blogList';
+import { thoughtDetailQueryOptions } from '../thoughtData';
 
 // 抽自 BlogPost：連結預覽卡 cluster。本身 SSR-safe（不碰 window/document），
 // 與 mermaid 等 browser-only 依賴脫鉤，可在任何頁面（History/AboutSite/文章）直接 SSR。
@@ -20,13 +22,6 @@ interface LinkMeta {
   path?: string;
 }
 
-// InternalLinkCard 只用到 Post 的這幾個欄位（避免跟 BlogPost 的完整 Post 型別耦合）
-interface LinkCardPost {
-  title: string;
-  created_at?: string;
-  category?: string;
-  message?: string;
-}
 
 /* ── Link type detection ── */
 const getLinkMeta = (url: string): LinkMeta | null => {
@@ -118,16 +113,8 @@ const getLinkMeta = (url: string): LinkMeta | null => {
    InternalLinkCard — fetch and show preview
    ══════════════════════════ */
 export const InternalLinkCard = ({ id }: { id: string }) => {
-  const [post, setPost] = useState<LinkCardPost | null>(null);
-
-  useEffect(() => {
-    fetch(`/api/posts/${id}`)
-      .then(r => r.ok ? r.json() as Promise<LinkCardPost> : null)
-      .then(data => {
-        if (data?.message === 'success') setPost(data);
-      })
-      .catch(() => { /* ignore */ });
-  }, [id]);
+  // 站內文章預覽卡：reuse postDetailQueryOptions（取原文=no-lang）→ 與 BlogPost/preview 共用快取。
+  const { data: post } = useQuery({ ...postDetailQueryOptions(id, ''), retry: false });
 
   if (!post) return <a href={`/blog/${id}`} target="_blank" rel="noopener noreferrer">/blog/{id}</a>;
 
@@ -152,13 +139,8 @@ export const InternalLinkCard = ({ id }: { id: string }) => {
    ThoughtPreviewCard — 引用一則碎念/思考
    ══════════════════════════ */
 export const ThoughtPreviewCard = ({ id }: { id: string }) => {
-  const [th, setTh] = useState<{ content: string } | null>(null);
-  useEffect(() => {
-    fetch(`/api/thoughts/${id}`)
-      .then((r) => (r.ok ? r.json() as Promise<{ thought?: { content: string } }> : null))
-      .then((d) => { if (d?.thought) setTh(d.thought); })
-      .catch(() => { /* ignore */ });
-  }, [id]);
+  // 碎念引用卡：reuse thoughtDetailQueryOptions → 與 ThinkingDetail 共用快取。
+  const { data: th } = useQuery(thoughtDetailQueryOptions(id));
 
   if (!th) return <a href={`/thinking/${id}`} target="_blank" rel="noopener noreferrer">/thinking/{id}</a>;
 
