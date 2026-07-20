@@ -26,7 +26,6 @@ import {
 } from 'react-icons/fa';
 import Comments from './Comments';
 import { BlogImage } from './ImageLightbox';
-import { usePreviewLink } from './article-preview/usePreviewLink';
 // BlogPost.css：Tier-2 後本元件直接 SSR（不再靠 BlogPostPage fallback）→ CSS 由這裡匯入。
 // 本元件是路由 eager import（進 /blog/$id 路由 chunk），故 CSS 進「文章路由 chunk」而非全域
 // index.css（首頁等非文章頁不會白背這 2600+ 行）。
@@ -52,9 +51,9 @@ interface MermaidOption { value: string; label: string; icon?: string }
  * 因為要在 map iteration 內呼叫 hook，必須抽成子元件
  */
 const PreviewablePostLink = React.memo(({ post, className, children, viewTransition, style, current }: { post: { id: number | string; title: string }; className?: string; children?: React.ReactNode; viewTransition?: boolean; style?: React.CSSProperties; current?: boolean }) => {
-  const { bind } = usePreviewLink(String(post.id));
-  // current 也走同一個 <a>（只換 class）——若「目前這篇」改渲 <span>，換文章時該列的元素類型
-  // 由 a→span，React 必定卸載重掛 → 新 DOM 節點 → CSS 進場動畫重播 = 使用者看到「被點的那列
+  // hover 預覽卡已移除（連同 article-preview 那整套）——側欄只是純連結。
+  // current 也走同一個 <a>（只換 class）：若「目前這篇」改渲 <span>，換文章時該列的元素類型
+  // 由 a→span，React 必定卸載重掛 → 新 DOM 節點 → 進場動畫重播 = 使用者看到「被點的那列
   // 整組消失再跑一次」。維持同型別才能讓 React 重用節點、只有真正新露出的列才播動畫。
   return (
     <LocaleLink
@@ -64,7 +63,6 @@ const PreviewablePostLink = React.memo(({ post, className, children, viewTransit
       viewTransition={viewTransition}
       style={style}
       aria-current={current ? 'page' : undefined}
-      {...(current ? {} : bind)}
     >
       {children}
     </LocaleLink>
@@ -918,23 +916,36 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
       {/* 附近文章列表（清單未到時先出骨架佔位，不是空白 → 不 raw pop）*/}
       {nearbyPosts.length > 0 ? (
         <div className="posts-nav-nearby">
-          {nearbyPosts.map((p, i) => {
-            const isCurrent = String(p.id) === String(currentId);
-            return (
-              <PreviewablePostLink
-                key={p.id}
-                post={p}
-                current={isCurrent}
-                className={
-                  'posts-nav-item side-item-in text-sm py-1 block transition-colors truncate '
-                  + (isCurrent ? 'text-white font-semibold posts-nav-current-item' : 'text-gray-500 hover:text-gray-300')
-                }
-                style={{ '--i': i } as React.CSSProperties}
-              >
-                {p.title}
-              </PreviewablePostLink>
-            );
-          })}
+          {/* 進場＝CSS（第一幀就跑、不等 JS）；退場＝framer AnimatePresence（CSS 動不了
+              「正在被移除的節點」）。initial={false} → framer 不插手進場，避免跟 CSS 搶。
+              layout → 有列收合時，其餘列平順上移而不是瞬間跳。 */}
+          <AnimatePresence initial={false}>
+            {nearbyPosts.map((p, i) => {
+              const isCurrent = String(p.id) === String(currentId);
+              return (
+                <motion.div
+                  key={p.id}
+                  layout
+                  initial={false}
+                  exit={{ opacity: 0, x: -14, height: 0, marginTop: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <PreviewablePostLink
+                    post={p}
+                    current={isCurrent}
+                    className={
+                      'posts-nav-item side-item-in text-sm py-1 block transition-colors truncate '
+                      + (isCurrent ? 'text-white font-semibold posts-nav-current-item' : 'text-gray-500 hover:text-gray-300')
+                    }
+                    style={{ '--i': i } as React.CSSProperties}
+                  >
+                    {p.title}
+                  </PreviewablePostLink>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       ) : allPosts.length === 0 ? (
         <div className="posts-nav-nearby" aria-hidden="true">
@@ -958,21 +969,31 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
         </div>
       )}
 
-      {/* 此專欄其他文章（逐行，索引接在分類區塊後） */}
+      {/* 此專欄其他文章（逐行，索引接在分類區塊後；同樣有退場動畫） */}
       {categoryPosts.length > 0 && (
         <div className="posts-nav-list mt-4">
           <span className="text-xs text-gray-600 block mb-2 side-item-in" style={{ '--i': catBase + 1 } as React.CSSProperties}>此專欄的其他文章：</span>
           <div className="flex flex-col gap-1">
-            {categoryPosts.map((p, i) => (
-              <PreviewablePostLink
-                key={p.id}
-                post={p}
-                className="posts-nav-item side-item-in text-sm text-gray-500 hover:text-gray-300 transition-colors py-0.5 block truncate"
-                style={{ '--i': catBase + 2 + i } as React.CSSProperties}
-              >
-                {p.title}
-              </PreviewablePostLink>
-            ))}
+            <AnimatePresence initial={false}>
+              {categoryPosts.map((p, i) => (
+                <motion.div
+                  key={p.id}
+                  layout
+                  initial={false}
+                  exit={{ opacity: 0, x: -14, height: 0, marginTop: 0, marginBottom: 0 }}
+                  transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+                  style={{ overflow: 'hidden' }}
+                >
+                  <PreviewablePostLink
+                    post={p}
+                    className="posts-nav-item side-item-in text-sm text-gray-500 hover:text-gray-300 transition-colors py-0.5 block truncate"
+                    style={{ '--i': catBase + 2 + i } as React.CSSProperties}
+                  >
+                    {p.title}
+                  </PreviewablePostLink>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         </div>
       )}

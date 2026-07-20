@@ -16,7 +16,6 @@ import type { QueryClient } from '@tanstack/react-query';
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { AuthProvider } from '../contexts/AuthContext';
 import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
-import { ArticlePreviewProvider } from '../components/article-preview/ArticlePreviewContext';
 import { LocaleProvider, localeFromPathname } from '../start-i18n';
 import AppShell from '../components/AppShell';
 import NotFound from '../components/NotFound';
@@ -105,9 +104,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
               {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
                   否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
                   prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
-              <ArticlePreviewProvider>
                 <LocaleProvider locale={locale}>{children}</LocaleProvider>
-              </ArticlePreviewProvider>
             </PageVisibilityBridge>
           </ParallaxProvider>
         </AuthProvider>
