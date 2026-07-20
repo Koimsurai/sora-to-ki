@@ -2673,3 +2673,34 @@ a.series-nav-title:hover {
   background-size: 200% 100%;
   animation: bp-shimmer 1.5s ease-in-out infinite;
 }
+
+/* ── 文章進場動畫（CSS 版，取代 LCP 關鍵路徑上的 JS 進場）──
+   為什麼用 CSS 而不是 framer-motion：CSS 動畫在「第一幀 paint」就開始跑，不必等 JS hydrate；
+   framer-motion 會把 initial 狀態（opacity:0）寫進 SSR HTML，內容要等 hydration 才顯示，
+   而 Chrome 的 LCP 不計 opacity:0 的元素 → LCP 會被 hydration 時間綁住。
+   只動 transform、不動 opacity：內容第一幀就可見，LCP 完全不受影響，但仍有「滑入」動感。
+   用 backwards（不是 forwards/both）：延遲期間套用起始狀態，動畫結束後把樣式交還給
+   framer-motion —— 換文章時的 exit 動畫（AnimatePresence）才不會被 CSS 的最終狀態卡住。
+   prefers-reduced-motion 由 index.css 的全域覆寫自動處理。 */
+@keyframes post-enter {
+  from { transform: translateY(10px); }
+  to   { transform: translateY(0); }
+}
+
+.post-header {
+  animation: post-enter 420ms cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.post-content-wrapper {
+  /* 晚 60ms 起跑 → 大標先到位、內文隨後，做出層次感 */
+  animation: post-enter 480ms cubic-bezier(0.4, 0, 0.2, 1) 60ms backwards;
+}
+
+/* 站內連結卡的載入骨架：保留與真卡相近的高度 → 資料補上時不位移（主路徑已 SSR-real，
+   此骨架只在「連結指向 top-100 之外的文章」或非文章頁 reuse 時短暫出現）。 */
+.link-card-skeleton {
+  min-height: 110px; /* ≈ 真卡（padding + 3 行）高度 → 換成真卡時幾乎不位移 */
+  cursor: default;
+  pointer-events: none;
+}
+.link-card-skeleton .link-card-body { width: 100%; }

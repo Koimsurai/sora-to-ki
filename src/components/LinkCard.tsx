@@ -2,8 +2,19 @@ import { useQuery } from '@tanstack/react-query';
 import type { IconType } from 'react-icons';
 import { FaYoutube, FaGithub, FaInstagram, FaExternalLinkAlt } from 'react-icons/fa';
 import { LocaleLink } from '../locale-link';
-import { postDetailQueryOptions } from '../blogList';
+import { recentPostsQueryOptions } from '../blogList';
 import { thoughtDetailQueryOptions } from '../thoughtData';
+
+// 卡片形狀的載入骨架（保留與真卡相同的高度/結構）→ 資料未到時佔位不塌、client 補上時不位移。
+const LinkCardSkeleton = () => (
+  <span className="link-card link-card-internal link-card-skeleton" aria-hidden="true">
+    <span className="link-card-body">
+      <span className="link-card-site"><span className="bp-skel" style={{ width: 64, height: 12, display: 'inline-block' }} /></span>
+      <span className="link-card-title"><span className="bp-skel" style={{ width: '70%', height: 16, display: 'block' }} /></span>
+      <span className="link-card-meta"><span className="bp-skel" style={{ width: 90, height: 12, display: 'inline-block' }} /></span>
+    </span>
+  </span>
+);
 
 // 抽自 BlogPost：連結預覽卡 cluster。本身 SSR-safe（不碰 window/document），
 // 與 mermaid 等 browser-only 依賴脫鉤，可在任何頁面（History/AboutSite/文章）直接 SSR。
@@ -113,10 +124,13 @@ const getLinkMeta = (url: string): LinkMeta | null => {
    InternalLinkCard — fetch and show preview
    ══════════════════════════ */
 export const InternalLinkCard = ({ id }: { id: string }) => {
-  // 站內文章預覽卡：reuse postDetailQueryOptions（取原文=no-lang）→ 與 BlogPost/preview 共用快取。
-  const { data: post } = useQuery({ ...postDetailQueryOptions(id, ''), retry: false });
+  // 卡片只需 title / created_at / category —— 這些 recentPosts 清單就有，而文章 loader 已把該
+  // 清單預取進快取 → SSR 首幀就是真卡片（不必為每個連結各打一次 post detail）。
+  // 清單裡找不到（例如連到 top-100 之外）才退回骨架，且骨架保留高度 → 換上時不位移。
+  const { data: posts } = useQuery(recentPostsQueryOptions(100));
+  const post = posts?.find((p) => String(p.id) === id);
 
-  if (!post) return <a href={`/blog/${id}`} target="_blank" rel="noopener noreferrer">/blog/{id}</a>;
+  if (!post) return <LinkCardSkeleton />;
 
   return (
     <LocaleLink to={`/blog/${id}`} className="link-card link-card-internal">
@@ -143,7 +157,7 @@ export const ThoughtPreviewCard = ({ id }: { id: string }) => {
   // 碎念引用卡：reuse thoughtDetailQueryOptions → 與 ThinkingDetail 共用快取。
   const { data: th } = useQuery(thoughtDetailQueryOptions(id));
 
-  if (!th) return <a href={`/thinking/${id}`} target="_blank" rel="noopener noreferrer">/thinking/{id}</a>;
+  if (!th) return <LinkCardSkeleton />;
 
   return (
     <LocaleLink to={`/thinking/${id}`} className="link-card link-card-internal">

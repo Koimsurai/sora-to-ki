@@ -906,8 +906,8 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
 
   return (
     <nav className="posts-nav">
-      {/* 附近文章列表 */}
-      {nearbyPosts.length > 0 && (
+      {/* 附近文章列表（清單未到時先出骨架佔位，不是空白 → 不 raw pop）*/}
+      {nearbyPosts.length > 0 ? (
         <div className="posts-nav-nearby">
           {nearbyPosts.map((p) => {
             const isCurrent = String(p.id) === String(currentId);
@@ -933,7 +933,13 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
             );
           })}
         </div>
-      )}
+      ) : allPosts.length === 0 ? (
+        <div className="posts-nav-nearby" aria-hidden="true">
+          {[88, 72, 94, 63, 80].map((w, i) => (
+            <div key={`skel-${w}-${i}`} className="bp-skel" style={{ height: 13, width: `${w}%`, margin: '0 0 12px' }} />
+          ))}
+        </div>
+      ) : null}
 
       {/* 此文章收錄於分類 */}
       {postCategory && (
@@ -1688,8 +1694,9 @@ function BlogPost() {
         <motion.header
           key={'header-' + id}
           className="post-header"
-          // 就地不動：SSR fallback（BlogPostPage）已把 header 定位顯示了，完整版接管時不再重新
-          // 滑入一次（原本 y:18 的進場動畫會把已顯示的內容重置 → 使用者看到「怪位移」）。
+          // 進場動畫改由 CSS（BlogPost.css 的 post-enter）負責：它在第一幀 paint 就跑，
+          // 不必等 hydration，LCP 不被綁住。這裡維持 initial={false}，避免 JS 在 hydrate 後
+          // 又把已顯示的內容重設一次（那會變成「重播」而不是進場）。exit 仍交給 framer-motion。
           initial={false}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -12 }}
@@ -1767,9 +1774,9 @@ function BlogPost() {
           <motion.div
             key={'content-' + id}
             className="post-main-column"
-            // 就地不動：SSR fallback 已把主文定位顯示（實測 fallback 態 opacity 1、就位），完整版
-            // 接管時原本的 y:24 進場會把它重置成 opacity 0 + 下移 24px 再滑一次 = 使用者回報的
-            // 「怪位移」。改 initial={false} 直接就位；shiki/側欄的「增強」各自淡入（見 CSS）。
+            // 進場動畫由 CSS 負責，但作用在「內層」的 .post-content-wrapper（見 BlogPost.css
+            // 的 post-enter）→ 與這層 framer-motion 是不同元素，兩者不會搶同一個 transform。
+            // 這層維持 initial={false}（不讓 JS 在 hydrate 後重設已顯示的內容），只保留 exit。
             initial={false}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}

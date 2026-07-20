@@ -132,7 +132,10 @@
 
 html {
   overflow-y: scroll;
-  scroll-behavior: smooth;
+  /* 這裡「不」設 scroll-behavior: smooth —— 全域 smooth 會把「每一次程式化捲動」都變成動畫，
+     包含 TanStack scrollRestoration 的位置還原；而後續呼叫又會打斷前一次動畫、從原地重啟，
+     實測連續 8 次 scrollBy(900) 只前進 1241px（關掉後正確到 7221px），表現就是「捲動被握住」。
+     站內需要平滑的地方（TOC 點擊、回到頂部）都在 JS 明寫 behavior:'smooth'，不受影響。 */
 }
 
 html, body, #root {

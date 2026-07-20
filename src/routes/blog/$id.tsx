@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { DEFAULT_LOCALE, LocaleProvider, buildAlternateLinks, toLocales } from '../../start-i18n';
 import FullBlogPost from '../../components/BlogPost';
-import { postDetailQueryOptions } from '../../blogList';
+import { postDetailQueryOptions, recentPostsQueryOptions, blogCategoriesDetailQueryOptions } from '../../blogList';
 import { articleJsonLd, articleMeta } from '../../seoMeta';
 
 // 預設語言(zh-TW)文章頁:/blog/:id。
@@ -12,8 +12,15 @@ export const Route = createFileRoute('/blog/$id')({
   loader: async ({ context, params }) => {
     // ensureQueryData：SSR 預取進 query 快取（dehydrate 帶到 client）+ 回傳給 head()。
     // BlogPost SSR 時 useQuery 讀同一份、hydrate 後不再重打 API。
+    // 側欄 posts-nav 與內文站內連結卡的「首幀完整」：平行預取文章清單 / 分類詳情
+    // （prefetchQuery 吞錯不擋頁），dehydrate 帶到 client → SSR 首幀就是真側欄 / 真連結卡，
+    // 不再 client 才補上造成位移。（實測：post detail 的 dehydrate 完整、無汙染。）
     try {
-      const post = await context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, 'zh-TW'));
+      const [post] = await Promise.all([
+        context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, 'zh-TW')),
+        context.queryClient.prefetchQuery(recentPostsQueryOptions(100)),
+        context.queryClient.prefetchQuery(blogCategoriesDetailQueryOptions),
+      ]);
       return { post };
     } catch {
       throw notFound();
