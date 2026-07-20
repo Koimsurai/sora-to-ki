@@ -51,7 +51,7 @@ interface MermaidOption { value: string; label: string; icon?: string }
  * 「sidebar 文章連結」附帶 hover preview 行為
  * 因為要在 map iteration 內呼叫 hook，必須抽成子元件
  */
-const PreviewablePostLink = React.memo(({ post, className, children, viewTransition }: { post: { id: number | string; title: string }; className?: string; children?: React.ReactNode; viewTransition?: boolean }) => {
+const PreviewablePostLink = React.memo(({ post, className, children, viewTransition, style }: { post: { id: number | string; title: string }; className?: string; children?: React.ReactNode; viewTransition?: boolean; style?: React.CSSProperties }) => {
   const { bind } = usePreviewLink(String(post.id));
   return (
     <LocaleLink
@@ -59,6 +59,7 @@ const PreviewablePostLink = React.memo(({ post, className, children, viewTransit
       className={className}
       title={post.title}
       viewTransition={viewTransition}
+      style={style}
       {...bind}
     >
       {children}
@@ -904,18 +905,23 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
     return { nearbyPosts: nearby, categoryPosts: cat };
   }, [allPosts, currentId, postCategory]);
 
+  // 逐行進場的瀑布索引：附近清單 0..n-1，分類標頭 / 專欄其他文章接續往下 → 整條側欄
+  // 一路 cascade。key 綁 post id（穩定）→ 換文章時只有「新露出的列」是新 DOM 節點，
+  // 只有它們會重播 side-item-in（逐行塞入）；還在窗內的列不動。
+  const catBase = nearbyPosts.length;
   return (
     <nav className="posts-nav">
       {/* 附近文章列表（清單未到時先出骨架佔位，不是空白 → 不 raw pop）*/}
       {nearbyPosts.length > 0 ? (
         <div className="posts-nav-nearby">
-          {nearbyPosts.map((p) => {
+          {nearbyPosts.map((p, i) => {
             const isCurrent = String(p.id) === String(currentId);
             if (isCurrent) {
               return (
                 <span
                   key={p.id}
-                  className="posts-nav-item text-sm py-1 block transition-colors truncate text-white font-semibold posts-nav-current-item"
+                  className="posts-nav-item side-item-in text-sm py-1 block transition-colors truncate text-white font-semibold posts-nav-current-item"
+                  style={{ '--i': i } as React.CSSProperties}
                   title={p.title}
                 >
                   {p.title}
@@ -926,7 +932,8 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
               <PreviewablePostLink
                 key={p.id}
                 post={p}
-                className="posts-nav-item text-sm py-1 block transition-colors truncate text-gray-500 hover:text-gray-300"
+                className="posts-nav-item side-item-in text-sm py-1 block transition-colors truncate text-gray-500 hover:text-gray-300"
+                style={{ '--i': i } as React.CSSProperties}
               >
                 {p.title}
               </PreviewablePostLink>
@@ -941,9 +948,9 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
         </div>
       ) : null}
 
-      {/* 此文章收錄於分類 */}
+      {/* 此文章收錄於分類（接續瀑布索引） */}
       {postCategory && (
-        <div className="posts-nav-category mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative' }}>
+        <div className="posts-nav-category side-item-in mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', position: 'relative', '--i': catBase } as React.CSSProperties}>
           <span className="text-xs text-gray-600 block mb-1">此文章收錄於專欄：</span>
           <CategoryTooltipTrigger
             postCategory={postCategory}
@@ -955,16 +962,17 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
         </div>
       )}
 
-      {/* 此專欄其他文章 */}
+      {/* 此專欄其他文章（逐行，索引接在分類區塊後） */}
       {categoryPosts.length > 0 && (
         <div className="posts-nav-list mt-4">
-          <span className="text-xs text-gray-600 block mb-2">此專欄的其他文章：</span>
+          <span className="text-xs text-gray-600 block mb-2 side-item-in" style={{ '--i': catBase + 1 } as React.CSSProperties}>此專欄的其他文章：</span>
           <div className="flex flex-col gap-1">
-            {categoryPosts.map((p) => (
+            {categoryPosts.map((p, i) => (
               <PreviewablePostLink
                 key={p.id}
                 post={p}
-                className="posts-nav-item text-sm text-gray-500 hover:text-gray-300 transition-colors py-0.5 block truncate"
+                className="posts-nav-item side-item-in text-sm text-gray-500 hover:text-gray-300 transition-colors py-0.5 block truncate"
+                style={{ '--i': catBase + 2 + i } as React.CSSProperties}
               >
                 {p.title}
               </PreviewablePostLink>
@@ -1003,11 +1011,12 @@ const TableOfContents = React.memo(({ headings, activeHeading, readingProgress, 
         </div>
       </div>
       <nav className="toc-nav" ref={tocRef}>
-        {headings.map((h) => (
+        {headings.map((h, i) => (
           <button
             key={h.id}
             data-heading-id={h.id}
             className={'toc-item level-' + h.level + (activeHeading === h.id ? ' active' : '')}
+            style={{ '--i': i } as React.CSSProperties}
             onClick={() => scrollToHeading(h.id)}
             title={h.text}
           >
@@ -1828,21 +1837,16 @@ function BlogPost() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Right sidebar — TOC */}
-        <AnimatePresence mode="wait">
-          {headings.length > 0 && (
-            <motion.aside
-              key={'toc-' + id}
-              className="post-sidebar-right"
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 16 }}
-              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
-            >
-              <TableOfContents headings={headings} activeHeading={activeHeading} readingProgress={readingProgress} tocRef={tocRef} />
-            </motion.aside>
-          )}
-        </AnimatePresence>
+        {/* Right sidebar — TOC。
+            不用 framer/AnimatePresence：實測（線上量測）mode="wait" + initial 會在導航時把
+            進場重播（opacity 0→1→重設 0→1）、文章切文章時舊 TOC 卡在 opacity 0 數秒。
+            進場改由 CSS 逐行 stagger（.toc-item 的 side-item-in，SSR 首幀就開跑）；
+            key 綁文章 id → 換文章時整個 aside 重掛、逐行動畫重新演一次。 */}
+        {headings.length > 0 && (
+          <aside key={'toc-' + id} className="post-sidebar-right">
+            <TableOfContents headings={headings} activeHeading={activeHeading} readingProgress={readingProgress} tocRef={tocRef} />
+          </aside>
+        )}
       </div>
 
       {/* ── Floating side actions (right) ── */}
