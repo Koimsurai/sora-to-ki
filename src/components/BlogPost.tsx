@@ -51,8 +51,11 @@ interface MermaidOption { value: string; label: string; icon?: string }
  * 「sidebar 文章連結」附帶 hover preview 行為
  * 因為要在 map iteration 內呼叫 hook，必須抽成子元件
  */
-const PreviewablePostLink = React.memo(({ post, className, children, viewTransition, style }: { post: { id: number | string; title: string }; className?: string; children?: React.ReactNode; viewTransition?: boolean; style?: React.CSSProperties }) => {
+const PreviewablePostLink = React.memo(({ post, className, children, viewTransition, style, current }: { post: { id: number | string; title: string }; className?: string; children?: React.ReactNode; viewTransition?: boolean; style?: React.CSSProperties; current?: boolean }) => {
   const { bind } = usePreviewLink(String(post.id));
+  // current 也走同一個 <a>（只換 class）——若「目前這篇」改渲 <span>，換文章時該列的元素類型
+  // 由 a→span，React 必定卸載重掛 → 新 DOM 節點 → CSS 進場動畫重播 = 使用者看到「被點的那列
+  // 整組消失再跑一次」。維持同型別才能讓 React 重用節點、只有真正新露出的列才播動畫。
   return (
     <LocaleLink
       to={'/blog/' + post.id}
@@ -60,7 +63,8 @@ const PreviewablePostLink = React.memo(({ post, className, children, viewTransit
       title={post.title}
       viewTransition={viewTransition}
       style={style}
-      {...bind}
+      aria-current={current ? 'page' : undefined}
+      {...(current ? {} : bind)}
     >
       {children}
     </LocaleLink>
@@ -916,23 +920,15 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
         <div className="posts-nav-nearby">
           {nearbyPosts.map((p, i) => {
             const isCurrent = String(p.id) === String(currentId);
-            if (isCurrent) {
-              return (
-                <span
-                  key={p.id}
-                  className="posts-nav-item side-item-in text-sm py-1 block transition-colors truncate text-white font-semibold posts-nav-current-item"
-                  style={{ '--i': i } as React.CSSProperties}
-                  title={p.title}
-                >
-                  {p.title}
-                </span>
-              );
-            }
             return (
               <PreviewablePostLink
                 key={p.id}
                 post={p}
-                className="posts-nav-item side-item-in text-sm py-1 block transition-colors truncate text-gray-500 hover:text-gray-300"
+                current={isCurrent}
+                className={
+                  'posts-nav-item side-item-in text-sm py-1 block transition-colors truncate '
+                  + (isCurrent ? 'text-white font-semibold posts-nav-current-item' : 'text-gray-500 hover:text-gray-300')
+                }
                 style={{ '--i': i } as React.CSSProperties}
               >
                 {p.title}

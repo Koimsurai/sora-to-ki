@@ -454,11 +454,15 @@
   line-height: 1;
 }
 
-/* Highlighted current item in nearby posts list */
+/* Highlighted current item in nearby posts list。
+   注意：它與其他列同樣是 <a>（見 PreviewablePostLink 的 current 註解——維持同型別，
+   換文章時 React 才會重用節點、不重播進場動畫）。這裡把「目前這篇」關成不可點。 */
 .posts-nav-current-item {
   color: #fff !important;
   position: relative;
   padding-left: 0.75rem !important;
+  cursor: default;
+  pointer-events: none;
 }
 
 .posts-nav-current-item::before {
