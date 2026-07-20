@@ -71,6 +71,19 @@ async fn main() -> anyhow::Result<()> {
         .execute(&pool)
         .await?;
 
+    // link_previews 表（內文連結 hover 預覽的 OG 快取）：同樣冪等建表。
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS link_previews (\
+           url TEXT PRIMARY KEY,\
+           title TEXT,\
+           description TEXT,\
+           image TEXT,\
+           site_name TEXT,\
+           fetched_at TEXT NOT NULL DEFAULT (datetime('now')))",
+    )
+    .execute(&pool)
+    .await?;
+
     // 與 Express 共用 JWT_SECRET（HS256 驗章）。fail-fast：沒設就不啟動。
     let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set (與 Express 共用)");
 
@@ -116,6 +129,7 @@ async fn main() -> anyhow::Result<()> {
         // 前端 Core Web Vitals（B4）：beacon 寫入 + 聚合自看
         .route("/api/vitals", post(handlers::vitals::report_vital))
         .route("/api/vitals/stats", get(handlers::vitals::vitals_stats))
+        .route("/api/link-preview", get(handlers::link_preview::link_preview))
         // thoughts：/rss 靜態路由（axum matchit 優先於 /{id}）；已接管的 RSS feed。
         .route(
             "/api/thoughts/rss",

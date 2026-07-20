@@ -6,6 +6,7 @@ pub mod categories;
 pub mod comments;
 pub mod gallery;
 pub mod home;
+pub mod link_preview;
 pub mod mailer;
 pub mod newsletter;
 pub mod oauth;

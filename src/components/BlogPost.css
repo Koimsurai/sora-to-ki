@@ -371,6 +371,16 @@
   top: 100px;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  /* 捲軸隱藏但保留可捲動：內容超過視窗高、或退場動畫收合過程中高度暫時變動時，
+     原本會閃出一條捲軸（使用者回報）。overscroll-behavior 順便擋捲動穿透到主文。 */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+}
+.post-sidebar-left::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* Posts navigation (left sidebar) */
@@ -775,6 +785,15 @@ a.series-nav-title:hover {
   top: 100px;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  /* 同左欄：藏捲軸但保留可捲動（長 TOC 仍能捲） */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: contain;
+}
+.post-sidebar-right::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* Table of Contents */

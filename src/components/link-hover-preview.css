@@ -1,0 +1,100 @@
+/* 內文連結 hover 預覽卡（LinkHoverPreview）。
+   走 portal 掛在 body → 不受文章的 overflow/transform 夾住。
+   圖片卡與降級卡共用同一組尺寸，載入完成換內容時卡片不跳大小。 */
+
+.lhp-card {
+  position: fixed;
+  z-index: 9999;
+  width: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(18, 18, 26, 0.96);
+  border: 1px solid rgba(127, 90, 240, 0.22);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  pointer-events: auto;
+}
+
+/* 視覺區（圖片 / 降級 / 骨架）固定高 → 三種狀態切換不改變卡片高度 */
+.lhp-img,
+.lhp-fallback,
+.lhp-skel {
+  display: block;
+  width: 100%;
+  height: 158px;
+}
+
+.lhp-img {
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.lhp-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  background: linear-gradient(140deg, rgba(127, 90, 240, 0.14), rgba(255, 255, 255, 0.03));
+}
+
+.lhp-favicon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+
+.lhp-site {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.02em;
+}
+
+.lhp-skel {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.035) 25%,
+    rgba(255, 255, 255, 0.085) 37%,
+    rgba(255, 255, 255, 0.035) 63%
+  );
+  background-size: 200% 100%;
+  animation: bp-shimmer 1.5s ease-in-out infinite;
+}
+
+.lhp-body {
+  padding: 0.7rem 0.85rem 0.8rem;
+}
+
+.lhp-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lhp-desc {
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lhp-skel { animation: none; }
+}
+
+/* 手機沒有 hover，直接不顯示（避免觸控誤觸） */
+@media (hover: none) {
+  .lhp-card { display: none; }
+}
