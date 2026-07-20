@@ -39,7 +39,10 @@ export const linkPreviewQueryOptions = (url: string) =>
   });
 
 const HOVER_OPEN_DELAY = 320; // 滑過就跳卡片很吵 → 停留一下才開
+const HOVER_CLOSE_DELAY = 140; // 讓滑鼠有時間從連結移進卡片，不會一離開連結就關
 const CARD_W = 300;
+const CARD_H = 300; // 估高（圖 158 + 文字區）——只用來決定要不要翻到上方
+const GAP = 12;
 
 export function LinkHoverPreview({ href, children, className }: { href: string; children: React.ReactNode; className?: string }) {
   const [open, setOpen] = useState(false);
@@ -55,17 +58,28 @@ export function LinkHoverPreview({ href, children, className }: { href: string; 
       const el = anchorRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      // 空間不夠就翻到連結上方；水平置中但夾在視窗內
-      const above = r.top > 260;
-      const x = Math.min(Math.max(r.left + r.width / 2, CARD_W / 2 + 12), window.innerWidth - CARD_W / 2 - 12);
-      setPos({ x, y: above ? r.top - 10 : r.bottom + 10, above });
+      // 位置一律用 left/top 算好——不要用 transform 定位：framer-motion 的 animate（y/scale）
+      // 也會寫 transform，會把 translateX(-50%) 覆蓋掉 → 卡片偏到游標底下、蓋住文字，
+      // 還會因為蓋住連結而立刻觸發 mouseleave（= 使用者說的「有時候跑不出來」）。
+      const spaceBelow = window.innerHeight - r.bottom;
+      const above = spaceBelow < CARD_H + GAP && r.top > CARD_H + GAP;
+      const x = Math.min(
+        Math.max(r.left + r.width / 2 - CARD_W / 2, GAP),
+        window.innerWidth - CARD_W - GAP,
+      );
+      setPos({ x, y: above ? r.top - CARD_H - GAP : r.bottom + GAP, above });
       setOpen(true);
     }, HOVER_OPEN_DELAY);
   }, []);
 
-  const closeNow = useCallback(() => {
+  // 延遲關閉：滑鼠從連結移到卡片之間有空隙，立刻關會讓卡片永遠碰不到
+  const closeSoon = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
-    setOpen(false);
+    timer.current = setTimeout(() => setOpen(false), HOVER_CLOSE_DELAY);
+  }, []);
+
+  const cancelClose = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
   }, []);
 
   const isInternal = /^\/(blog|thinking)\//.test(href) || href.includes('koimsurai.com');
@@ -79,9 +93,9 @@ export function LinkHoverPreview({ href, children, className }: { href: string; 
         target={isInternal ? undefined : '_blank'}
         rel={isInternal ? undefined : 'noopener noreferrer'}
         onMouseEnter={openSoon}
-        onMouseLeave={closeNow}
+        onMouseLeave={closeSoon}
         onFocus={openSoon}
-        onBlur={closeNow}
+        onBlur={closeSoon}
       >
         {children}
       </a>
@@ -95,13 +109,10 @@ export function LinkHoverPreview({ href, children, className }: { href: string; 
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: pos.above ? 6 : -6, scale: 0.96 }}
               transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-              style={{
-                left: pos.x,
-                top: pos.y,
-                transform: `translateX(-50%) ${pos.above ? 'translateY(-100%)' : ''}`,
-              }}
-              onMouseEnter={() => { if (timer.current) clearTimeout(timer.current); }}
-              onMouseLeave={closeNow}
+              /* 只給 left/top —— transform 保留給 framer（見 openSoon 的註解） */
+              style={{ left: pos.x, top: pos.y }}
+              onMouseEnter={cancelClose}
+              onMouseLeave={closeSoon}
             >
               {isPending ? (
                 <div className="lhp-skel" />
