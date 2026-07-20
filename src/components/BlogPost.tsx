@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
-import { useParams, useRouterState, useNavigate } from '@tanstack/react-router';
+import { useParams, useRouterState, useNavigate, ClientOnly } from '@tanstack/react-router';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { LocaleLink } from '../locale-link';
 import { postDetailQueryOptions, blogCategoriesDetailQueryOptions, recentPostsQueryOptions, postReactionsQueryOptions, seriesQueryOptions, type CategoryInfo } from '../blogList';
@@ -27,9 +27,10 @@ import {
 import Comments from './Comments';
 import { BlogImage } from './ImageLightbox';
 import { usePreviewLink } from './article-preview/usePreviewLink';
-// BlogPost.css 改由 BlogPostPage（fallback，路由 eager）匯入——讓 CSS 進文章路由 chunk 而非
-// 全域 index.css（否則首頁等非文章頁也白背這 2658 行）。FullBlogPost 渲染時 BlogPostPage 必已
-// 先載入該 CSS（它是 fallback），故這裡不需再 import。
+// BlogPost.css：Tier-2 後本元件直接 SSR（不再靠 BlogPostPage fallback）→ CSS 由這裡匯入。
+// 本元件是路由 eager import（進 /blog/$id 路由 chunk），故 CSS 進「文章路由 chunk」而非全域
+// index.css（首頁等非文章頁不會白背這 2600+ 行）。
+import './BlogPost.css';
 import SignatureSVG from './SignatureSVG';
 import { LinkCard } from './LinkCard';
 // slugify / extractHeadings / computeReadTime：與 BlogPostPage（SSR fallback）共用同一份，
@@ -505,7 +506,13 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }: { nod
   }, [codeText, lang, inline, isMermaid, match]);
 
   if (!inline && isMermaid) {
-    return <MermaidBlock code={codeText} />;
+    // mermaid 用 react-zoom-pan-pinch（render 期碰 window，非 SSR-safe）→ 只把這個島包 ClientOnly。
+    // fallback 是固定高 .mm-sandbox 空殼（CSS height:420px）→ SSR 佔位穩定、client 接手渲染圖時不 reflow。
+    return (
+      <ClientOnly fallback={<div className="mm-sandbox" />}>
+        <MermaidBlock code={codeText} />
+      </ClientOnly>
+    );
   }
 
   const handleCopy = () => {
@@ -720,10 +727,12 @@ const Reactions = React.memo(({ postId }: { postId: string | number }) => {
     reactions.forEach(r => { map[r.emoji] = r.count; });
     return map;
   }, [reactions]);
-  const [mine, setMine] = useState(() => {
-    try { return new Set<string>(JSON.parse(localStorage.getItem(`reactions:${postId}`) ?? '[]') as string[]); }
-    catch { return new Set<string>(); }
-  });
+  // SSR-safe：初始空 Set（server 無 localStorage），掛載後才讀本地已按過的 reactions → 不 mismatch。
+  const [mine, setMine] = useState<Set<string>>(() => new Set<string>());
+  useEffect(() => {
+    try { setMine(new Set<string>(JSON.parse(localStorage.getItem(`reactions:${postId}`) ?? '[]') as string[])); }
+    catch { /* localStorage 不可用就維持空 */ }
+  }, [postId]);
 
   const patchCount = useCallback((emoji: string, resolve: (prev: number) => number) => {
     queryClient.setQueryData<ReactionRow[]>(reactionsKey, (old) => {
@@ -1362,7 +1371,8 @@ function BlogPost() {
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [showMetaCatTooltip, setShowMetaCatTooltip] = useState(false);
-  const [currentFont, setCurrentFont] = useState(() => localStorage.getItem('blogFont') ?? 'noto-serif');
+  // SSR-safe：初始用預設（server 無 localStorage），掛載後才讀本地偏好 → 首次 client render 與 SSR 一致、不 mismatch。
+  const [currentFont, setCurrentFont] = useState('noto-serif');
   const contentRef = useRef<HTMLDivElement>(null);
   const tocRef = useRef<HTMLElement>(null);
   const { id = '' } = useParams({ strict: false });
@@ -1382,7 +1392,8 @@ function BlogPost() {
     const dateLocale = LOCALE_TO_DATE_LOCALE[postData.locale ?? ''] ?? 'zh-TW';
     return {
       ...postData,
-      date: new Date(postData.created_at ?? '').toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
+      // timeZone 固定 Asia/Taipei → server(UTC) 與 client 同一天、同 weekday，不 hydration mismatch。
+      date: new Date(postData.created_at ?? '').toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', timeZone: 'Asia/Taipei' }),
     };
   }, [postData]);
   const loading = isPending;
@@ -1406,6 +1417,12 @@ function BlogPost() {
     localStorage.setItem('blogFont', fontId);
   }, []);
 
+  // 掛載後補讀本地字體偏好（見上方 currentFont 的 SSR-safe 初始）。
+  useEffect(() => {
+    const stored = localStorage.getItem('blogFont');
+    if (stored) setCurrentFont(stored);
+  }, []);
+
   /* heading components */
   const createHeading = useCallback((level: number) => {
     return ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => {
@@ -1421,9 +1438,16 @@ function BlogPost() {
     [createHeading],
   );
 
-  /* ── 換文章：捲頂（preview 歸預覽、閱讀歸閱讀，都從頂端開始）── */
+  /* ── 換文章才捲頂（初次掛載/重整不搶捲動，交給 scrollRestoration 還原）──
+     否則 reload 時序會變成：首幀頂端 → scrollRestoration 還原到原位 → 這裡又 smooth 捲頂，
+     使用者看到「上→下→上」。用 ref 記前一個 key，只有真的換文章（key 變）才捲頂。 */
+  const prevScrollKey = useRef<string | null>(null);
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const key = `${id}:${pathLocale}`;
+    if (prevScrollKey.current !== null && prevScrollKey.current !== key) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    prevScrollKey.current = key;
   }, [id, pathLocale]);
 
   /* ── 成功載入一篇：重置 liked + 增加瀏覽數（每次載入新文章打一次）── */
@@ -1519,7 +1543,8 @@ function BlogPost() {
   const [showShareMenu, setShowShareMenu] = useState(false);
 
   /* ── Share handlers ── */
-  const shareUrl = window.location.origin + '/blog/' + id;
+  // SSR-safe：server 無 window（只在 share 按鈕 handler 用到、不進 DOM，故 SSR 給空 origin 不影響 hydration）。
+  const shareUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/blog/' + id;
   const shareTitle = post?.title ?? '';
 
   const handleCopyLink = () => {

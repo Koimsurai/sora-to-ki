@@ -127,7 +127,8 @@ export const InternalLinkCard = ({ id }: { id: string }) => {
         </div>
         <div className="link-card-title">{post.title}</div>
         <div className="link-card-meta">
-          <span>{new Date(post.created_at ?? '').getFullYear()}</span>
+          {/* 年份直接取 ISO 字串前 4 碼（不經 Date/時區）→ SSR 與 client 一致，不 mismatch。 */}
+          <span>{(post.created_at ?? '').slice(0, 4)}</span>
           {post.category && <> · <span>{post.category}</span></>}
         </div>
       </div>

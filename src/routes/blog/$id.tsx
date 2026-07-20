@@ -1,25 +1,20 @@
-import { ClientOnly, createFileRoute, notFound } from '@tanstack/react-router';
-import { Suspense, lazy } from 'react';
+import { createFileRoute, notFound } from '@tanstack/react-router';
 import { DEFAULT_LOCALE, LocaleProvider, buildAlternateLinks, toLocales } from '../../start-i18n';
-import { BlogPostPage } from '../../pages/BlogPostPage';
+import FullBlogPost from '../../components/BlogPost';
 import { postDetailQueryOptions } from '../../blogList';
-import { extractHeadings } from '../../lib/blogContent';
 import { articleJsonLd, articleMeta } from '../../seoMeta';
 
-// 完整互動文章(mermaid / zoom / TOC / 留言 / reactions / 字體 / link 卡):純 client 元件(自抓資料、render 讀 localStorage、eager mermaid)。
-// lazy + ClientOnly → 模組與 mermaid 副作用只在 client 載入;SSR 用 BlogPostPage 把內文 + SEO baked 進 HTML。
-const FullBlogPost = lazy(() => import('../../components/BlogPost'));
-
-// 預設語言(zh-TW)文章頁:/blog/:id。loader 在 prerender 時抓內容並 baked。
+// 預設語言(zh-TW)文章頁:/blog/:id。
+// Tier-2：BlogPost 改為 SSR-safe，直接 eager import + 單次 SSR（不再 ClientOnly 蓋 BlogPostPage
+// fallback → 消除進場的雙渲染 swap）。內文/TOC/程式碼(plain)在 SSR 就出；shiki 反白、mermaid
+// 圖、互動於 hydration 後原地增強，不再卸載重掛。eager import 只進「文章路由 chunk」不進全域。
 export const Route = createFileRoute('/blog/$id')({
   loader: async ({ context, params }) => {
     // ensureQueryData：SSR 預取進 query 快取（dehydrate 帶到 client）+ 回傳給 head()。
-    // BlogPost（ClientOnly）hydrate 後 useQuery 讀同一份，不再重打 API。
+    // BlogPost SSR 時 useQuery 讀同一份、hydrate 後不再重打 API。
     try {
       const post = await context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, 'zh-TW'));
-      // TOC 在 loader（SSR）就從內文切好 → fallback 首幀即渲染真目錄（SEO 拿到結構、右欄不需 skeleton）。
-      const toc = extractHeadings(post.content);
-      return { post, toc };
+      return { post };
     } catch {
       throw notFound();
     }
@@ -41,14 +36,9 @@ export const Route = createFileRoute('/blog/$id')({
 });
 
 function RouteComponent() {
-  const { post, toc } = Route.useLoaderData();
   return (
     <LocaleProvider locale={DEFAULT_LOCALE}>
-      <ClientOnly fallback={<BlogPostPage post={post} toc={toc} />}>
-        <Suspense fallback={<BlogPostPage post={post} toc={toc} />}>
-          <FullBlogPost />
-        </Suspense>
-      </ClientOnly>
+      <FullBlogPost />
     </LocaleProvider>
   );
 }
