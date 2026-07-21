@@ -246,6 +246,8 @@ pub struct AdminPostFull {
     pub content_ko: Option<String>,
     pub allow_comments: bool,
     pub excerpt_ko: Option<String>,
+    /// 內容格式：'markdown'（預設）| 'mdx'。
+    pub format: Option<String>,
     pub tags: Vec<String>,
 }
 
@@ -281,6 +283,7 @@ impl AdminPostFull {
             content_ko: r.content_ko.clone(),
             allow_comments: r.allow_comments(),
             excerpt_ko: r.excerpt_ko.clone(),
+            format: r.format.clone(),
             tags: split_tags(r.tags.as_deref()),
         }
     }
@@ -1131,6 +1134,7 @@ pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> R
     let category = truthy_s(b.get("category")); // || null
     let status = if b.contains_key("status") { b.get("status").and_then(to_s) } else { Some("draft".into()) };
     let layout_type = if b.contains_key("layout_type") { b.get("layout_type").and_then(to_s) } else { Some("record".into()) };
+    let format = if b.contains_key("format") { b.get("format").and_then(to_s) } else { Some("markdown".into()) };
     let i18n = |k: &str| truthy_s(b.get(k)); // || null
     let series_name = b
         .get("series_name")
@@ -1146,11 +1150,11 @@ pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> R
     };
 
     let mut q = sqlx::query(
-        "INSERT INTO posts (title, content, excerpt, category, status, author, layout_type, source_language, \
+        "INSERT INTO posts (title, content, excerpt, category, status, author, layout_type, format, source_language, \
          title_en, content_en, excerpt_en, title_zh_cn, content_zh_cn, excerpt_zh_cn, \
          title_ja, content_ja, excerpt_ja, title_ko, content_ko, excerpt_ko, \
          series_name, series_order, allow_comments, created_at, updated_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
     )
     .bind(&title)
     .bind(&content)
@@ -1159,6 +1163,7 @@ pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> R
     .bind(&status)
     .bind("Koimsurai")
     .bind(&layout_type)
+    .bind(&format)
     .bind(&source_language);
     for k in [
         "title_en", "content_en", "excerpt_en", "title_zh_cn", "content_zh_cn", "excerpt_zh_cn",
@@ -1273,6 +1278,7 @@ pub async fn admin_update_post(
          title = COALESCE(?, title), content = COALESCE(?, content), excerpt = COALESCE(?, excerpt), \
          category = CASE WHEN ? = 1 THEN ? ELSE category END, \
          status = COALESCE(?, status), layout_type = COALESCE(?, layout_type), \
+         format = COALESCE(?, format), \
          source_language = COALESCE(?, source_language), \
          title_en = CASE WHEN ? = 1 THEN ? ELSE title_en END, \
          content_en = CASE WHEN ? = 1 THEN ? ELSE content_en END, \
@@ -1298,6 +1304,7 @@ pub async fn admin_update_post(
     .bind(b.get("category").and_then(to_s))
     .bind(b.get("status").and_then(to_s))
     .bind(b.get("layout_type").and_then(to_s))
+    .bind(b.get("format").and_then(to_s))
     .bind(b.get("source_language").and_then(to_s));
     for k in [
         "title_en", "content_en", "excerpt_en", "title_zh_cn", "content_zh_cn", "excerpt_zh_cn",

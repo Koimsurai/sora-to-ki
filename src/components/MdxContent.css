@@ -1,0 +1,71 @@
+/* 作者註卡（MDX <Note>）：站長旁白，跟彩色 alert 明顯區隔——
+   偏手寫感、左側筆記標記、暖中性底，不搶內文。 */
+.mdx-note {
+  display: flex;
+  gap: 0.9rem;
+  margin: 1.75rem 0;
+  padding: 1.1rem 1.3rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid rgba(196, 181, 253, 0.55);
+}
+
+.mdx-note-mark {
+  flex: 0 0 auto;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(196, 181, 253, 0.12);
+  color: rgba(196, 181, 253, 0.9);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.mdx-note-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mdx-note-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(196, 181, 253, 0.85);
+  margin-bottom: 0.35rem;
+}
+
+.mdx-note-content {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.96rem;
+  line-height: 1.7;
+}
+
+.mdx-note-content > :first-child {
+  margin-top: 0;
+}
+
+.mdx-note-content > :last-child {
+  margin-bottom: 0;
+}
+
+.mdx-error {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border: 1px solid rgba(252, 165, 165, 0.4);
+  background: rgba(252, 165, 165, 0.06);
+  color: #fca5a5;
+  font-size: 0.9rem;
+}
+
+.mdx-error pre {
+  margin: 0.5rem 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}

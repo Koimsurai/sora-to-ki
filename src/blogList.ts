@@ -4,7 +4,11 @@ import type {
   ReactionRow, SeriesPostRow, SeriesDetailResponse, ReactionsResponse,
 } from '@koimsurai/api-types';
 import { apiUrl } from './api';
+import { compileMdx } from './lib/mdx-compile';
 import type { Post, Tag, Category } from './components/Blog';
+
+// format='mdx' 的文章多帶一個 server 端編譯好的 function-body（前端用 runSync 執行）。
+export type PostDetail = PostDetailResponse & { compiledMdx?: string };
 
 // 單篇文章（/api/posts/:id?lang=）。route loader 用 ensureQueryData 預取 → SSR head +
 // dehydrate；BlogPost（ClientOnly）hydrate 後 useQuery 讀同一份快取，消掉「loader + 元件
@@ -13,7 +17,7 @@ import type { Post, Tag, Category } from './components/Blog';
 export const postDetailQueryOptions = (id: string | number, lang: string) =>
   queryOptions({
     queryKey: ['post', 'detail', String(id), lang],
-    queryFn: async (): Promise<PostDetailResponse> => {
+    queryFn: async (): Promise<PostDetail> => {
       // lang 空字串 = 取原文（不帶 lang 參數，對齊舊 articleCache/preview 的 no-lang 行為）。
       const url = lang ? `/api/posts/${id}?lang=${encodeURIComponent(lang)}` : `/api/posts/${id}`;
       const res = await fetch(apiUrl(url));
@@ -21,6 +25,11 @@ export const postDetailQueryOptions = (id: string | number, lang: string) =>
       if (!res.ok) throw new Error('Post not found');
       const data = (await res.json()) as PostDetailResponse;
       if (data.message !== 'success') throw new Error('Post not found');
+      // MDX 文章：server 端編譯（compiler 不進 client bundle），結果隨 query dehydrate 到 client。
+      if (data.format === 'mdx') {
+        const compiledMdx = await compileMdx({ data: data.content });
+        return { ...data, compiledMdx };
+      }
       return data;
     },
     staleTime: 5 * 60 * 1000,

@@ -72,6 +72,9 @@ pub struct PostRow {
     // NULL 在舊 JS 語意等同「允許」（`null !== 0 && null !== false`）→ 見 allow_comments()。
     pub(crate) allow_comments: Option<bool>,
     pub(crate) excerpt_ko: Option<String>,
+    // 內容格式：'markdown'（預設）| 'mdx'。舊列/未設 → NULL → 前端當 markdown。
+    #[sqlx(default)]
+    pub(crate) format: Option<String>,
     // GROUP_CONCAT(t.name)；無 tag 時為 NULL
     pub(crate) tags: Option<String>,
 }
@@ -385,6 +388,8 @@ pub struct PostDetailResponse {
     pub likes: i64,
     pub layout_type: Option<String>,
     pub allow_comments: bool,
+    /// 內容格式：'markdown'（預設）| 'mdx'。前端據此選渲染管線。
+    pub format: Option<String>,
     pub series_name: Option<String>,
     #[specta(type = Option<specta_typescript::Number>)]
     pub series_order: Option<i64>,
@@ -454,6 +459,7 @@ pub async fn get_post(
         likes: row.likes,
         layout_type: row.layout_type.clone(),
         allow_comments: row.allow_comments(),
+        format: row.format.clone(),
         series_name: row.series_name.clone(),
         series_order: row.series_order,
         created_at: row.created_at.clone(),

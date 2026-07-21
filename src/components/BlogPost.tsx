@@ -33,6 +33,7 @@ import './BlogPost.css';
 import SignatureSVG from './SignatureSVG';
 import { LinkCard } from './LinkCard';
 import { LinkHoverPreview } from './LinkHoverPreview';
+import { MdxContent } from './MdxContent';
 // slugify / extractHeadings / computeReadTime：與 BlogPostPage（SSR fallback）共用同一份，
 // 確保 heading anchor id / TOC / 閱讀時間兩邊逐字一致。
 import { slugify, extractHeadings, computeReadTime } from '../lib/blogContent';
@@ -1875,26 +1876,31 @@ function BlogPost() {
               )}
 
               <article className="post-content drop-cap-first" ref={contentRef}>
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm, remarkAlert]}
-                  rehypePlugins={[rehypeRaw]}
-                  components={{
-                    code: CodeBlock,
-                    p: CustomParagraph,
-                    img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
-                    // 行內連結 → hover 預覽卡（資料來自自家 /api/link-preview，不外送給第三方）。
-                    // 「整段只有一個連結」那種會先被 CustomParagraph 攔去做 LinkCard 區塊卡，
-                    // 所以這裡拿到的都是真正的行內連結。錨點（#foo）不預覽。
-                    a: ({ href, children, ...rest }) => {
-                      const h = typeof href === 'string' ? href : '';
-                      if (!h || h.startsWith('#')) return <a href={h} {...rest}>{children}</a>;
-                      return <LinkHoverPreview href={h} className={(rest as { className?: string }).className}>{children}</LinkHoverPreview>;
-                    },
-                    ...headingComponents,
-                  } as Components}
-                >
-                  {post.content}
-                </ReactMarkdown>
+                {postData?.compiledMdx ? (
+                  // format='mdx'：server 端已編譯，這裡 runSync 執行成 React 元件（含自訂 block）。
+                  <MdxContent compiled={postData.compiledMdx} />
+                ) : (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkAlert]}
+                    rehypePlugins={[rehypeRaw]}
+                    components={{
+                      code: CodeBlock,
+                      p: CustomParagraph,
+                      img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
+                      // 行內連結 → hover 預覽卡（資料來自自家 /api/link-preview，不外送給第三方）。
+                      // 「整段只有一個連結」那種會先被 CustomParagraph 攔去做 LinkCard 區塊卡，
+                      // 所以這裡拿到的都是真正的行內連結。錨點（#foo）不預覽。
+                      a: ({ href, children, ...rest }) => {
+                        const h = typeof href === 'string' ? href : '';
+                        if (!h || h.startsWith('#')) return <a href={h} {...rest}>{children}</a>;
+                        return <LinkHoverPreview href={h} className={(rest as { className?: string }).className}>{children}</LinkHoverPreview>;
+                      },
+                      ...headingComponents,
+                    } as Components}
+                  >
+                    {post.content}
+                  </ReactMarkdown>
+                )}
               </article>
               <SignatureSVG className="blog-signature" />
             </div>

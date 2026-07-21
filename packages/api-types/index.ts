@@ -88,6 +88,8 @@ export type AdminPostFull = {
 	content_ko: string | null,
 	allow_comments: boolean,
 	excerpt_ko: string | null,
+	/**  內容格式：'markdown'（預設）| 'mdx'。 */
+	format: string | null,
 	tags: string[],
 };
 
@@ -311,6 +313,8 @@ export type PostDetailResponse = {
 	likes: number,
 	layout_type: string | null,
 	allow_comments: boolean,
+	/**  內容格式：'markdown'（預設）| 'mdx'。前端據此選渲染管線。 */
+	format: string | null,
 	series_name: string | null,
 	series_order: number | null,
 	created_at: string,
