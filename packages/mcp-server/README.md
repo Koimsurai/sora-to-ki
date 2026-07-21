@@ -17,19 +17,28 @@ Claude Code ──啟動子程序──▶ mcp-server (stdio)
 - **認證**：啟動時用 `ADMIN_USERNAME`/`ADMIN_PASSWORD` 打 `/api/auth/login` 換 JWT，快取於記憶體、
   401 自動重登一次。token 不落地。
 
-## 設定（Claude Code）
+## 設定（Claude Code，在 server 上）
 
-專案根目錄已有 [`.mcp.json`](../../.mcp.json)，開啟專案時 Claude Code 會自動偵測。憑證走環境變數
-展開（**不寫進 .mcp.json**），啟動 Claude Code 前先匯出（可從 `.env.backend` 取）：
+⚠️ **一定要用跑在 server 那台的 Claude Code**（後端 `127.0.0.1:3002` 只綁 loopback，
+出不了那台機器；開發機的 Claude Desktop 連不到、也看不到這份 `.mcp.json`）。
 
-```bash
-export KOIMSURAI_ADMIN_USERNAME="$(grep -oP '^ADMIN_USERNAME=\K.*' .env.backend)"
-export KOIMSURAI_ADMIN_PASSWORD="$(grep -oP '^ADMIN_PASSWORD=\K.*' .env.backend)"
-# 選用：後端不在預設位址時
-# export KOIMSURAI_API_URL=http://127.0.0.1:3002
-```
+專案根有 [`.mcp.json`](../../.mcp.json)，Claude Code 開啟專案時**自動偵測**、跳出來讓你允許
+`koimsurai-admin`。憑證**零設定**——server 上直接讀後端同一份 `.env.backend`（`ADMIN_USERNAME`
+/ `ADMIN_PASSWORD`），不必碰環境變數。
 
-或改用預先簽好的 JWT：`export KOIMSURAI_ADMIN_TOKEN=<jwt>`（跳過帳密登入）。
+> `.mcp.json` 是在既有 session 啟動後才建立的話，該 session 不會熱載入 → **開一個新的
+> Claude Code session** 才會偵測到。
+
+### 覆寫（可選）
+
+環境變數優先於 `.env.backend`；要覆寫時才設：
+
+| 變數 | 預設 | 說明 |
+|---|---|---|
+| `KOIMSURAI_API_URL` | `http://127.0.0.1:3002` | 後端位址 |
+| `KOIMSURAI_ADMIN_USERNAME` / `_PASSWORD` | 讀 `.env.backend` | 後台帳密 |
+| `KOIMSURAI_ADMIN_TOKEN` | — | 預簽 JWT（設了就跳過登入） |
+| `KOIMSURAI_ENV_FILE` | `./.env.backend` | 憑證檔路徑 |
 
 ## 環境變數
 

@@ -10,13 +10,12 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 import { ApiClient } from './api.js';
+import { resolveCredentials } from './credentials.js';
 import { makeTools } from './tools.js';
 
 const api = new ApiClient({
   baseUrl: process.env.KOIMSURAI_API_URL ?? 'http://127.0.0.1:3002',
-  username: process.env.KOIMSURAI_ADMIN_USERNAME,
-  password: process.env.KOIMSURAI_ADMIN_PASSWORD,
-  token: process.env.KOIMSURAI_ADMIN_TOKEN,
+  ...resolveCredentials(),
 });
 
 const tools = makeTools(api);

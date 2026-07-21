@@ -2,12 +2,7 @@
   "mcpServers": {
     "koimsurai-admin": {
       "command": "pnpm",
-      "args": ["exec", "tsx", "packages/mcp-server/src/index.ts"],
-      "env": {
-        "KOIMSURAI_API_URL": "${KOIMSURAI_API_URL:-http://127.0.0.1:3002}",
-        "KOIMSURAI_ADMIN_USERNAME": "${KOIMSURAI_ADMIN_USERNAME}",
-        "KOIMSURAI_ADMIN_PASSWORD": "${KOIMSURAI_ADMIN_PASSWORD}"
-      }
+      "args": ["exec", "tsx", "packages/mcp-server/src/index.ts"]
     }
   }
 }
