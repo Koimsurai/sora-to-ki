@@ -4,6 +4,55 @@
 > 本檔＝剩餘工作總覽，含 Nitro/specta 兩份既有計畫 + 生產強化清單的**誠實分級**。
 > 原則：對**個人站**分級，不照搬企業級 checklist。標 ❌ 的是刻意不做（附理由）。
 
+---
+
+## 2026-07-20/21 全專案架構審查 + 一輪還債（安全/清理/測試/備份）
+
+4-agent 平行架構審查（前端 / Rust 後端 / 建置部署 / 程式碼品質）→ 綜評 **7.2/10（B+）**。
+拉分項＝測試幾近零 + 一個現行 SSRF；其餘多是「遷移收尾沒清戰場」的殭屍檔/死依賴。
+下列全部已 commit（8 個，未推送；trailer 已依要求剝除）：
+
+**安全**
+- **image-proxy SSRF 堵**（`net_guard` 模組）：scheme 白名單 + 私網/迴環/CGNAT/IPv6-ULA 封鎖 +
+  連線後對 peer IP 再驗（防 DNS rebinding）+ 僅代理圖片 Content-Type + 20MB 上限 + 回應加 CSP/nosniff
+  （堵惡意 SVG）。link-preview 的既有防護抽成共用模組。
+- **JWT 強制 exp**：移除 `required_spec_claims.clear()`，不帶 exp 的 token 一律拒絕（原本永不過期）。
+- **DB 錯誤原文不外洩**：`AppError` 的 Database/Upstream/Anyhow 改回泛用訊息、原文只進 log；75 處手排
+  `e.to_string()` 外洩改用 `internal_error` helper（`#[track_caller]` 記呼叫點）。
+- **整合測試第一天抓到真漏洞**：`http://[::1]/` IPv6 字面量 `host_str()` 帶方括號 → parse 失敗 → IP 檢查
+  被靜默跳過（v6 SSRF 繞過）。已修（剝括號再 parse）+ 測試釘住。
+
+**測試安全網（Express 對拍 oracle 退役後的接棒）**
+- **sqlx migrations**：`backend/migrations/0001_init.sql` baseline（Express `database.js` DDL + 歷次 ALTER
+  折疊 + Rust 期新表，全 `IF NOT EXISTS`）——退役後首個 schema 管理。main.rs 開機自動跑 + WAL + `create_if_missing`。
+- **router 抽取**：120 端點路由表 → `backend/src/router.rs::build_router(state)`，測試與正式同一條組裝路徑。
+- **15 個後端整合測試**（`backend/tests/api.rs`，in-memory SQLite + tower `oneshot`）：公開讀寫、admin 守衛、
+  JWT exp/錯 secret、newsletter 全流程、SSRF 防護。
+- **18 個前端 vitest**（`src/start-i18n.test.ts`）：locale 解析/hreflang/Accept-Language/bot 偵測/五語 key
+  集合一致性/SSR instance 隔離。CI 加 `pnpm test`。
+
+**清理**
+- 刪 10 死依賴（prism 全家 4 / tsparticles×2 / @react-spring core+web / exif-reader v2 / dayjs）；重複的
+  頂層 `overrides`（pnpm 不讀、且與 pnpm.overrides 矛盾）刪；殭屍檔刪（vite.config.js 12.5KB /
+  stats.html 2.8MB / favicon.ico.bak / builder.config.ts / postcss.config.cjs）。
+- `src/i18n.ts` 退役（LOCALE_LABELS 併入 start-i18n）；`src/pages/BlogPostPage.tsx` 退役（Tier-2 後無人
+  render，seoMeta 的 PostData 直接別名 api-types）；手寫 useInView 併入 react-intersection-observer。
+- 文件歸檔 → `docs/archive/`（NOW / Setup / NITRO_MIGRATION_PLAN / TS_MIGRATION_HANDOFF）。
+
+**基建**
+- CI 補 `pnpm build`（build 壞了原本要到部署才知道）+ eslint `--max-warnings 404` ratchet（擋新增警告）；
+  前端容器加 healthcheck（node fetch，slim 無 curl）。
+- **DB 每日備份 sidecar**（`db-backup` service，alpine + sqlite）：`VACUUM INTO` 快照（WAL-safe、不阻塞
+  後端寫入）→ gzip → HDD bind mount（`/mnt/hdd16tb_01/Blog/db-backups`，與 DB volume 不同碟），14 天輪替。
+  **已實測還原**（integrity ok、22 表資料完整）。還原＝`gzip -dc db-*.sqlite.gz > db.sqlite`。
+- 刪 legacy Express profile（`./server` 原始碼退役時已刪、build context 不存在、回滾路徑早失效）+ 孤兒
+  `backend-db-backup` volume。
+
+**修 bug**：相簿圖片管線在 EXIF 旋轉**前**讀寬高 → 直式照片（orientation 5~8）manifest `aspectRatio`
+顛倒 → 瀑布流版面錯位。Rust gallery sync + TS builder 兩管線都修（TS 順手修 `size` 欄位＝輸入原檔 → 輸出 webp）。
+
+---
+
 ## 已在做 / 已規劃（獨立計畫）
 - **Nitro v3 遷移**：✅ **已完成並上線（2026-07-17）**。詳見 `NITRO_MIGRATION_PLAN.md`。
 - **specta 型別遷移**：✅ **完成（2026-07-19）**。所有 typed-able 讀取端點 typed 化 + 生成型別，
@@ -80,15 +129,14 @@ SSR（社群預覽一直是壞的）、`public/sitemap.xml` 是 2026-02-11 的 0
 
 ### 🟢 A — 真缺口 + 高價值低成本（優先做）
 
-> **⏸ A1 延後（2026-07-19 使用者決定）**：安全 header 批次**等整體架構定案後再做**（CSP 耦合到站上載入的資源，架構還會變 → 現在做要重盤）。
-> - **HSTS：已批准**（憑證 Certbot 自動續簽、不會掉 → 無鎖人風險）。做時 max-age 可直接給長、includeSubDomains 要先確認子網域全 HTTPS。
-> - **CSP：要評估**，到時 `Content-Security-Policy-Report-Only` 先跑觀察再 enforce。
-> - 4 個零風險 header（nosniff/X-Frame/Referrer-Policy/Permissions-Policy）隨 A1 批次一起上。
+> **✅ A1 大半完成（2026-07-21）**：HSTS + nosniff + X-Frame-Options + Referrer-Policy 已上（nginx
+> server block，並在 `/uploads/`、`/nas-images/` 補 nosniff——nginx 的 add_header 不被自帶 add_header 的
+> location 繼承）。**剩 CSP 未 enforce**：`__root` 有 inline intro/no-flash script，要先 nonce 化才能上
+> CSP（否則打壞站），到時 `Content-Security-Policy-Report-Only` 先觀察。Permissions-Policy 可隨 CSP 批次補。
 
-**A1. nginx security headers**（最該做，你是自架資安控，一次 config）
-現況：只有 cache-control + SSL。缺 HSTS / CSP / X-Frame-Options / X-Content-Type-Options / Referrer-Policy / Permissions-Policy。
-做法：koimsurai nginx 加一組 `add_header`（server block 層）。CSP 要對現有 inline script（intro gate）+ 外部資源盤一輪，先 report-only 再 enforce。
-成本：半天（CSP 最花時間）。**價值：高**（你這種站沒 HSTS 是硬傷）。
+**A1. nginx security headers** — ✅ **HSTS + 4 零風險 header 已上（2026-07-21）**，CSP 待 nonce 化
+原況：只有 cache-control + SSL。現已補 HSTS / X-Content-Type-Options / X-Frame-Options / Referrer-Policy。
+剩 CSP（耦合 __root inline script，需 nonce）+ Permissions-Policy（隨 CSP 批次）。
 
 **A2. i18n ja/ko 補完 — ✅ 完成（2026-07-19）**
 盤點結果：`common.json` 五語系（zh-TW/zh-CN/en/ja/ko）**391 個 leaf key 全齊、零缺零多**；組件
@@ -204,6 +252,50 @@ Sentry SaaS / LogRocket 仍 ❌（GlitchTip 已覆蓋且自主）。
 
 **C6. 應用層 rate limiting 🔸**
 理由：**CrowdSec 機器層已 active**（入侵/掃描防護）。應用層 rate limit（如登入嘗試）可補一個薄的（Rust 端對 /auth/login 計數），但不是急件——你流量小 + CrowdSec 兜著。低優先。
+
+---
+
+## 架構還債 backlog（2026-07-21 盤點，審查後剩餘）
+
+> 審查綜評 7.2 → 目標甜蜜點 **9.0–9.3**（有安全網、無已知漏洞、無殭屍；再往上是單人站的邊際保險）。
+> **原則**：純拆檔若降不了耦合＝只是把行搬到別的檔，價值有限 → 優先解耦或修真問題。
+
+### 🟢 高價值 + 需在場邊改邊看（下次一起做）
+- **拆 BlogPost.tsx（1933 行 god-component）**：85 hook + ~18 個內部元件（Mermaid 三件組 / CodeBlock /
+  TOC / Reactions / SeriesNav / SubscribeModal…）。審查最顯眼的單一 god-component。⚠️ 前端零元件測試 →
+  拆分只有 tsc/build 接得住編譯錯、接不住 runtime UI 行為 → 需在場驗證（故不在無人看管時做）。
+- **auth 守衛 extractor 化**：`require_admin` 現為 **46 個手動呼叫點**（忘了呼叫＝安全漏洞，審查點名的
+  forget-prone）。轉成 axum `FromRequestParts` extractor → 編譯期保證有守衛。⚠️ 46 點樣態不統一
+  （`?` / `if let Err` / 吃整個 Request 的 upload / macro / `parts.headers`），逐一轉需在場避免留半成品；
+  已有 admin 守衛整合測試護著（401/200/exp/錯 secret）。
+
+### 🟡 中價值 + 需先解耦再拆（不急）
+- **後端 admin.rs（1554）/ watch.rs（1162）god-module**：watch.rs 實測耦合重（now_ms / tmdb_detail /
+  now-watching state / Trakt 輪詢交織）→ 純拆會留十幾個 `pub(super)`、降不了耦合。要拆得先抽真正獨立的
+  子域（Trakt 整合＝token 狀態機 + 輪詢 + 同步 ~400 行，是最乾淨的邊界）。
+- **components/ 頂層 129 檔平鋪** → feature 資料夾分組。
+- **狀態快取加 TTL**：`WatchState.tmdb_detail` / `SpotifyState.audio_features` 無 TTL 無淘汰（個人站流量下
+  是慢性洩漏非災難，但該補 moka 或過期戳）。
+- **blog/$id 兩對重複 loader**（default vs $locale，各 ~40 行近乎相同）抽共用。
+
+### 🟢 低成本雜項（有空就清）
+- **燒 eslint 警告**（現 404，`--max-warnings` ratchet 已擋新增）：大宗＝no-unnecessary-condition 143 /
+  no-forward-ref 67（React 19 deprecation）/ set-state-in-effect 50 / 未清 setTimeout 13。分批降 max-warnings。
+- **重啟 a11y lint**：jsx-a11y 因 ESLint 9 flat config 相容 crash 被停用 → 換相容 fork 或等上游修。
+- **上 Prettier**（目前無 formatter，格式全靠人肉）。
+- **collection_items 空表**：Rust 無端點使用，決定 drop（破壞性 migration）或留著對齊。
+- **8.4MB `public/videos/Web_video.mkv` 進了 git** → 移 NAS/LFS（要你決定改由 nginx 直接服務還是 LFS）。
+- **`heic-convert` / `jsonwebtoken` devDep**：repo 零引用，疑 `../ai-tagger` 用 → 確認後決定刪否。
+- **`mutagen.yml`** 疑過期的開發同步設定（backend 現為編譯 binary、非 code-sync）→ 確認是否還用。
+
+### 🔵 生產強化（階段四，持續投入）
+- **可觀測性**：GlitchTip（error + 後端 perf，見 C1）尚未架；後端有 tracing 但無集中收集。
+- **自動部署到 staging**（見「架構決策」）：CI 綠燈 → build + compose up；prod 仍手動 promote。
+- **backend Dockerfile cargo-chef 快取層**（現在改一行原始碼全量重編所有 crate）。
+- **Nitro 脫離 beta 釘選**（`3.0.260610-beta` 被 yank 會斷 `--frozen-lockfile` build）。
+- **Renovate/Dependabot** 自動依賴更新（取代手動 overrides 打地鼠）。
+- **型別契約收尾**：utoipa `schemas()` 與 specta register 是兩份手動平行清單 → 合一（只 specta 那份受 CI 守）。
+- **Playwright E2E**：全頁覆蓋、本地一鍵跑（見 B2；本 session 只補了 vitest 純邏輯）。
 
 ---
 
