@@ -38,8 +38,11 @@ pub fn validate_url(raw: &str) -> Option<(String, String)> {
         return None;
     }
     let host = u.host_str()?.to_string();
-    // 直接寫 IP 的先擋（走 DNS 的在 fetch 時由 resolve 再擋一次）
-    if let Ok(ip) = host.parse::<IpAddr>() {
+    // 直接寫 IP 的先擋（走 DNS 的在 fetch 時由 resolve 再擋一次）。
+    // IPv6 字面量 host_str() 帶方括號（"[::1]"），先剝掉才 parse 得出來——
+    // 不剝的話 parse 失敗會靜默跳過檢查，變成 v6 繞過（整合測試抓到的真 bug）。
+    let bare = host.trim_start_matches('[').trim_end_matches(']');
+    if let Ok(ip) = bare.parse::<IpAddr>() {
         if is_blocked_ip(&ip) {
             return None;
         }

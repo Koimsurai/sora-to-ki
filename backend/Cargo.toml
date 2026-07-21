@@ -58,3 +58,7 @@ specta-typescript = "0.0.12"
 specta-serde = "0.0.12"
 utoipa = { version = "5.5.0", features = ["axum_extras"] }
 utoipa-scalar = { version = "0.3.0", features = ["axum"] }
+
+[dev-dependencies]
+# 整合測試（tests/api.rs）：tower oneshot 打 build_router + 收 body
+http-body-util = "0.1"
