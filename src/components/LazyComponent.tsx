@@ -1,5 +1,5 @@
 import { Suspense, type ReactNode, type CSSProperties } from 'react';
-import { useInViewOnce } from '../hooks/useInView';
+import { useInView } from 'react-intersection-observer';
 import './LazyComponent.css';
 
 interface LazyComponentProps {
@@ -25,9 +25,10 @@ const LazyComponent = ({
   className = '',
   style = {},
 }: LazyComponentProps) => {
-  const [ref, hasBeenInView] = useInViewOnce({
+  const { ref, inView: hasBeenInView } = useInView({
     rootMargin,
     threshold,
+    triggerOnce: true,
   });
 
   return (

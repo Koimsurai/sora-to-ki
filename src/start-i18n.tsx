@@ -26,6 +26,16 @@ export const LOCALE_PREFIX: Record<Locale, string> = {
   ko: 'ko',
 };
 
+// 語言切換器（footer LanguagePicker）顯示用的原生語名。
+// key 放寬成 string：呼叫端拿到的 current language 是 i18next 的 string 型別。
+export const LOCALE_LABELS: Record<string, string> = {
+  'zh-TW': '繁體中文',
+  'zh-CN': '简体中文',
+  en: 'English',
+  ja: '日本語',
+  ko: '한국어',
+};
+
 const PREFIX_TO_LOCALE: Record<string, Locale> = {
   en: 'en',
   ja: 'ja',

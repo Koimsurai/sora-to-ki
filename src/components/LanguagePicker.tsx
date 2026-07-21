@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaGlobe, FaCheck } from 'react-icons/fa';
-import { SUPPORTED_LOCALES, LOCALE_LABELS } from '../i18n';
+import { SUPPORTED_LOCALES, LOCALE_LABELS } from '../start-i18n';
 import './LanguagePicker.css';
 
 /* ──────────────────────────────────────────────────────────────

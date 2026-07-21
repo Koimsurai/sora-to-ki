@@ -4,10 +4,7 @@ import { adminPostsQueryOptions, adminStatsQueryOptions } from '../../adminData'
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FileText, Eye, MessageSquare, TrendingUp, Plus, Edit, Clock, ArrowUpRight } from 'lucide-react';
-import dayjs from 'dayjs';
-import 'dayjs/locale/zh-tw';
-
-dayjs.locale('zh-tw');
+import { format } from 'date-fns';
 
 interface DashboardStats {
   totalPosts: number;
@@ -101,7 +98,7 @@ export const AdminDashboard = () => {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[11px] text-muted-foreground/60">{post.category ?? '未分類'}</span>
                       <span className="text-border/50">/</span>
-                      <span className="text-[11px] text-muted-foreground/60">{dayjs(post.created_at).format('YYYY-MM-DD')}</span>
+                      <span className="text-[11px] text-muted-foreground/60">{post.created_at ? format(new Date(post.created_at), 'yyyy-MM-dd') : ''}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">

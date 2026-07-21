@@ -1,4 +1,5 @@
-import type { PostData } from './pages/BlogPostPage';
+// PostData = 後端生成的單篇回應型別（原本繞道 BlogPostPage 的別名，該 fallback 元件已退役）。
+import type { PostDetailResponse as PostData } from '@koimsurai/api-types';
 
 // 文章頁的完整 SEO meta，放在路由 head() —— 那是唯一會進 SSR HTML 的地方。
 //

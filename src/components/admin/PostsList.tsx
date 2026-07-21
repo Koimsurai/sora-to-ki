@@ -12,8 +12,7 @@ import {
   Pencil,
   ExternalLink
 } from 'lucide-react';
-import dayjs from 'dayjs';
-import 'dayjs/locale/zh-tw';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -25,8 +24,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-
-dayjs.locale('zh-tw');
 
 /** `GET /api/admin/posts` 的單列（型別由後端 Rust struct 生成）。 */
 type PostItem = AdminPostFull;
@@ -187,7 +184,7 @@ export default function PostsList() {
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <span className="text-[11px] text-muted-foreground/40">{dayjs(post.created_at).format('YYYY-MM-DD')}</span>
+                    <span className="text-[11px] text-muted-foreground/40">{post.created_at ? format(new Date(post.created_at), 'yyyy-MM-dd') : ''}</span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
                     <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">

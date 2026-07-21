@@ -59,6 +59,10 @@ server/db/db.sqlite-journal
 server/db/.bahamut-cookie.json
 .output/
 .nitro/
+.tanstack/
 /target/
 backend/target/
 .env.backend
+
+# rollup-plugin-visualizer 產物（舊 vite.config.js 遺留；勿再入庫）
+stats.html
