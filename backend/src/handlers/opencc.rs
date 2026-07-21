@@ -57,7 +57,7 @@ pub async fn generate_zh_cn(State(state): State<AppState>, Path(id): Path<String
     .fetch_optional(&state.pool)
     .await;
     let (source_language, title, content, excerpt) = match row {
-        Err(e) => return err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => return err(StatusCode::NOT_FOUND, "文章不存在"),
         Ok(Some(r)) => r,
     };
@@ -103,7 +103,7 @@ pub async fn generate_zh_cn(State(state): State<AppState>, Path(id): Path<String
     .execute(&state.pool)
     .await;
     if let Err(e) = upd {
-        return err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string());
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
 
     Json(json!({

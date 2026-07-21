@@ -242,7 +242,7 @@ pub async fn thought_react(
     .execute(&state.pool)
     .await
     {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::BAD_REQUEST, e);
     }
 
     let row = sqlx::query_as::<_, (i64, i64)>("SELECT likes, dislikes FROM thoughts WHERE id = ?")
@@ -504,7 +504,7 @@ pub async fn admin_create_thought(
         .await
     {
         Ok(r) => Json(json!({ "message": "success", "id": r.last_insert_rowid() })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -530,7 +530,7 @@ pub async fn admin_update_thought(
     .fetch_optional(&state.pool)
     .await;
     let (old_content, mut ref_type, mut r_url, mut ref_json) = match row {
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "not found" }))).into_response(),
         Ok(Some(r)) => r,
     };
@@ -571,7 +571,7 @@ pub async fn admin_update_thought(
     .await
     {
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -593,7 +593,7 @@ pub async fn admin_delete_thought(
     }
     match sqlx::query("DELETE FROM thoughts WHERE id = ?").bind(&id).execute(&state.pool).await {
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 

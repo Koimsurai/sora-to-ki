@@ -123,7 +123,7 @@ async fn query_books(state: &AppState, q: &BooksQuery) -> Result<Vec<BookRow>, s
 pub async fn list_books(State(state): State<AppState>, Query(q): Query<BooksQuery>) -> Response {
     match query_books(&state, &q).await {
         Ok(books) => Json(BooksListResponse { message: "success".into(), books }).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -140,7 +140,7 @@ pub async fn admin_books(
     }
     match query_books(&state, &q).await {
         Ok(books) => Json(books).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -150,7 +150,7 @@ pub async fn admin_books(
     responses((status = 200, body = BookDetailResponse)))]
 pub async fn get_book(State(state): State<AppState>, Path(id): Path<String>) -> Response {
     match sqlx::query_as::<_, BookRow>("SELECT * FROM books WHERE id = ?").bind(&id).fetch_optional(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "message": "Book not found" }))).into_response(),
         Ok(Some(book)) => Json(BookDetailResponse { message: "success".into(), book }).into_response(),
     }
@@ -190,7 +190,7 @@ pub async fn create_book(
         }
     }
     match q.execute(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(r) => {
             // {id: lastID, ...req.body}：body 的 key 覆寫值、id 位置保持最前
             let mut book = Map::new();
@@ -234,7 +234,7 @@ pub async fn update_book(
     q = bind_val(q, body.get("date_finished"));
     q = q.bind(&id);
     match q.execute(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(r) if r.rows_affected() == 0 => {
             (StatusCode::NOT_FOUND, Json(json!({ "message": "Book not found" }))).into_response()
         }
@@ -251,7 +251,7 @@ pub async fn delete_book(State(state): State<AppState>, Path(id): Path<String>, 
         return e.into_response();
     }
     match sqlx::query("DELETE FROM books WHERE id = ?").bind(&id).execute(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(r) if r.rows_affected() == 0 => {
             (StatusCode::NOT_FOUND, Json(json!({ "message": "Book not found" }))).into_response()
         }
@@ -275,7 +275,7 @@ pub async fn book_stats(State(state): State<AppState>) -> Response {
     .fetch_one(&state.pool)
     .await;
     match row {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok((total, read, reading, to_read, avg, pages)) => {
             let average_rating = match avg {
                 Some(v) if v != 0.0 => {

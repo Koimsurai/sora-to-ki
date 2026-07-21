@@ -575,7 +575,7 @@ pub async fn post_view(State(state): State<AppState>, Path(id): Path<String>) ->
         .execute(&state.pool)
         .await
     {
-        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) if r.rows_affected() == 0 => {
             (StatusCode::NOT_FOUND, Json(json!({ "message": "Post not found" }))).into_response()
         }
@@ -594,7 +594,7 @@ async fn adjust_post_likes(state: &AppState, id: &str, like: bool) -> Response {
         )
     };
     match sqlx::query(sql).bind(id).execute(&state.pool).await {
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) if r.rows_affected() == 0 => {
             return (StatusCode::NOT_FOUND, Json(json!({ "message": not_found }))).into_response()
         }
@@ -606,7 +606,7 @@ async fn adjust_post_likes(state: &AppState, id: &str, like: bool) -> Response {
         .await
     {
         Ok(likes) => Json(json!({ "message": "success", "likes": likes })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -665,7 +665,7 @@ pub async fn post_reaction(
     .execute(&state.pool)
     .await
     {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
     let count = sqlx::query_scalar::<_, i64>(
         "SELECT count FROM post_reactions WHERE post_id = ? AND emoji = ?",
@@ -692,7 +692,7 @@ pub async fn comment_like(State(state): State<AppState>, Path(id): Path<String>)
         .execute(&state.pool)
         .await
     {
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) if r.rows_affected() == 0 => {
             return (StatusCode::NOT_FOUND, Json(json!({ "message": "Comment not found" }))).into_response()
         }
@@ -704,7 +704,7 @@ pub async fn comment_like(State(state): State<AppState>, Path(id): Path<String>)
         .await
     {
         Ok(likes) => Json(json!({ "message": "success", "likes": likes })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -764,11 +764,11 @@ pub async fn create_post_public(
     .await;
     let post_id = match r {
         Ok(r) => r.last_insert_rowid(),
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::BAD_REQUEST, e),
     };
     let tags = tags_vec(&b);
     if let Err(e) = manage_tags(&state, &post_id.to_string(), &tags).await {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::BAD_REQUEST, e);
     }
     let mut data = Map::new();
     data.insert("id".into(), json!(post_id));
@@ -816,14 +816,14 @@ pub async fn update_post_public(
     .await;
     let changes = match r {
         Ok(r) => r.rows_affected(),
-        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::BAD_REQUEST, e),
     };
     if changes == 0 {
         return (StatusCode::NOT_FOUND, Json(json!({ "message": "Post not found" }))).into_response();
     }
     let tags = tags_vec(&b);
     if let Err(e) = manage_tags(&state, &id, &tags).await {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::BAD_REQUEST, e);
     }
     Json(json!({ "message": "success", "changes": changes })).into_response()
 }
@@ -858,7 +858,7 @@ pub async fn patch_post_status(
         .execute(&state.pool)
         .await
     {
-        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "message": "找不到文章" }))).into_response(),
         Ok(r) => Json(json!({ "message": "狀態更新成功", "status": status, "changes": r.rows_affected() })).into_response(),
     }
@@ -879,10 +879,10 @@ pub async fn delete_post_public(
         return e.into_response();
     }
     if let Err(e) = sqlx::query("DELETE FROM post_tags WHERE post_id = ?").bind(&id).execute(&state.pool).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
     match sqlx::query("DELETE FROM posts WHERE id = ?").bind(&id).execute(&state.pool).await {
-        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "message": "Post not found" }))).into_response(),
         Ok(r) => Json(json!({ "message": "deleted", "changes": r.rows_affected() })).into_response(),
     }
@@ -915,7 +915,7 @@ pub async fn create_post_legacy(
     .execute(&state.pool)
     .await
     {
-        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) => {
             // {id: lastID, ...req.body}
             let mut data = Map::new();

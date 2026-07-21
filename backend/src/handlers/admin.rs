@@ -578,7 +578,7 @@ pub async fn create_tag(State(state): State<AppState>, headers: HeaderMap, Json(
         )
             .into_response(),
         Err(e) if is_unique_violation(&e) => (StatusCode::CONFLICT, Json(json!({ "error": "標籤已存在" }))).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -608,7 +608,7 @@ pub async fn update_tag(
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "error": "標籤不存在" }))).into_response(),
         Ok(r) => Json(json!({ "id": id, "name": name, "updated": r.rows_affected() })).into_response(),
         Err(e) if is_unique_violation(&e) => (StatusCode::CONFLICT, Json(json!({ "error": "標籤名稱已存在" }))).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -621,12 +621,12 @@ pub async fn update_tag(
 pub async fn delete_tag(State(state): State<AppState>, Path(id): Path<String>, headers: HeaderMap) -> Response {
     auth_or_return!(&headers, &state);
     if let Err(e) = sqlx::query("DELETE FROM post_tags WHERE tag_id = ?").bind(&id).execute(&state.pool).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
     match sqlx::query("DELETE FROM tags WHERE id = ?").bind(&id).execute(&state.pool).await {
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "error": "標籤不存在" }))).into_response(),
         Ok(_) => Json(json!({ "message": "標籤已刪除" })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -683,7 +683,7 @@ pub async fn create_category(State(state): State<AppState>, headers: HeaderMap, 
         Err(e) if is_unique_violation(&e) => {
             (StatusCode::CONFLICT, Json(json!({ "error": "分類名稱或 slug 已存在" }))).into_response()
         }
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -712,7 +712,7 @@ pub async fn update_category(
     {
         Ok(Some(n)) => n,
         Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "分類不存在" }))).into_response(),
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let slug = resolve_slug(&body.slug, &name);
     let description = body.description.clone().unwrap_or_default();
@@ -732,7 +732,7 @@ pub async fn update_category(
         Err(e) if is_unique_violation(&e) => {
             return (StatusCode::CONFLICT, Json(json!({ "error": "分類名稱或 slug 已存在" }))).into_response()
         }
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     // 名稱變更 → 同步 posts.category（Express 忽略此步錯誤）
     if old_name != name {
@@ -761,7 +761,7 @@ pub async fn delete_category(State(state): State<AppState>, Path(id): Path<Strin
     {
         Ok(Some(n)) => n,
         Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "分類不存在" }))).into_response(),
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let affected = match sqlx::query("UPDATE posts SET category = NULL WHERE category = ?")
         .bind(&cat_name)
@@ -769,11 +769,11 @@ pub async fn delete_category(State(state): State<AppState>, Path(id): Path<Strin
         .await
     {
         Ok(r) => r.rows_affected(),
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     match sqlx::query("DELETE FROM categories WHERE id = ?").bind(&id).execute(&state.pool).await {
         Ok(_) => Json(json!({ "message": "分類已刪除", "affectedPosts": affected })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -802,7 +802,7 @@ pub async fn create_blacklist(State(state): State<AppState>, headers: HeaderMap,
         .await
     {
         Ok(r) => (StatusCode::CREATED, Json(json!({ "message": "success", "id": r.last_insert_rowid() }))).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -816,7 +816,7 @@ pub async fn delete_blacklist(State(state): State<AppState>, Path(id): Path<Stri
     auth_or_return!(&headers, &state);
     match sqlx::query("DELETE FROM ip_blacklist WHERE id = ?").bind(&id).execute(&state.pool).await {
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -849,7 +849,7 @@ pub async fn create_keyword_filter(State(state): State<AppState>, headers: Heade
         .await
     {
         Ok(r) => (StatusCode::CREATED, Json(json!({ "message": "success", "id": r.last_insert_rowid() }))).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -863,7 +863,7 @@ pub async fn delete_keyword_filter(State(state): State<AppState>, Path(id): Path
     auth_or_return!(&headers, &state);
     match sqlx::query("DELETE FROM keyword_filters WHERE id = ?").bind(&id).execute(&state.pool).await {
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -896,7 +896,7 @@ pub async fn patch_comment_status(
     match sqlx::query("UPDATE comments SET status = ? WHERE id = ?").bind(&status).bind(&id).execute(&state.pool).await {
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "error": "Comment not found" }))).into_response(),
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -930,7 +930,7 @@ pub async fn update_comment(
     match sqlx::query("UPDATE comments SET content = ? WHERE id = ?").bind(&content).bind(&id).execute(&state.pool).await {
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "error": "Comment not found" }))).into_response(),
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -946,7 +946,7 @@ pub async fn delete_comment(State(state): State<AppState>, Path(id): Path<String
     match sqlx::query("DELETE FROM comments WHERE id = ?").bind(&id).execute(&state.pool).await {
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "error": "Comment not found" }))).into_response(),
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -974,7 +974,7 @@ pub async fn reply_comment(
         .fetch_optional(&state.pool)
         .await;
     let post_id = match parent {
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "Parent comment not found" }))).into_response(),
         Ok(Some(pid)) => pid,
     };
@@ -989,7 +989,7 @@ pub async fn reply_comment(
     .await
     {
         Ok(r) => (StatusCode::CREATED, Json(json!({ "message": "success", "id": r.last_insert_rowid() }))).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -1172,11 +1172,11 @@ pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> R
 
     let post_id = match q.execute(&state.pool).await {
         Ok(r) => r.last_insert_rowid(),
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let tags = tags_from(&b);
     if let Err(e) = manage_tags(&state, &post_id.to_string(), &tags).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
 
     // data 物件：undefined（body 缺 key）→ 該 key 省略（JSON.stringify 語意）
@@ -1313,7 +1313,7 @@ pub async fn admin_update_post(
     q = q.bind(&id);
 
     match q.execute(&state.pool).await {
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(r) if r.rows_affected() == 0 => {
             return (StatusCode::NOT_FOUND, Json(json!({ "error": "文章不存在" }))).into_response()
         }
@@ -1323,7 +1323,7 @@ pub async fn admin_update_post(
     let tags = tags_from(&b);
     if b.contains_key("tags") {
         if let Err(e) = manage_tags(&state, &id, &tags).await {
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+            return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
         }
     }
 
@@ -1358,12 +1358,12 @@ pub async fn admin_delete_post(State(state): State<AppState>, Path(id): Path<Str
         return e.into_response();
     }
     if let Err(e) = sqlx::query("DELETE FROM post_tags WHERE post_id = ?").bind(&id).execute(&state.pool).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
     match sqlx::query("DELETE FROM posts WHERE id = ?").bind(&id).execute(&state.pool).await {
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "error": "文章不存在" }))).into_response(),
         Ok(r) => Json(json!({ "message": "文章已刪除", "deleted": r.rows_affected() })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -1397,7 +1397,7 @@ pub async fn admin_get_post(State(state): State<AppState>, Path(id): Path<String
     .fetch_optional(&state.pool)
     .await;
     let row = match row {
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "message": "Post not found" }))).into_response(),
         Ok(Some(r)) => r,
     };
@@ -1442,7 +1442,7 @@ pub async fn admin_stats(State(state): State<AppState>, headers: HeaderMap) -> R
     .await;
     let (total_posts, published, draft, this_month) = match posts {
         Ok(r) => r,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let comments = sqlx::query_as::<_, (i64, i64)>(
         "SELECT COUNT(*), COUNT(CASE WHEN created_at >= date('now', '-7 days') THEN 1 END) FROM comments",
@@ -1451,7 +1451,7 @@ pub async fn admin_stats(State(state): State<AppState>, headers: HeaderMap) -> R
     .await;
     let (total_comments, comments_this_week) = match comments {
         Ok(r) => r,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     // Math.floor(Math.random()*1000)+1000 → [1000,1999]
     let visitors: i64 = match sqlx::query_scalar::<_, i64>("SELECT COALESCE(SUM(view_count), 0) FROM posts")
@@ -1459,7 +1459,7 @@ pub async fn admin_stats(State(state): State<AppState>, headers: HeaderMap) -> R
         .await
     {
         Ok(v) => v,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     Json(json!({
         "totalPosts": total_posts,
@@ -1510,7 +1510,7 @@ pub async fn admin_update_user_role(
     {
         Ok(r) if r.rows_affected() == 0 => (StatusCode::NOT_FOUND, Json(json!({ "error": "用戶不存在" }))).into_response(),
         Ok(_) => Json(json!({ "message": "角色更新成功", "role": role })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 
@@ -1549,6 +1549,6 @@ pub async fn admin_batch_comment_status(
     }
     match q.execute(&state.pool).await {
         Ok(r) => Json(json!({ "message": "success", "affected": r.rows_affected() })).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }

@@ -27,7 +27,6 @@ pub struct AdminUser {
 pub fn verify_jwt(token: &str, secret: &str) -> Option<serde_json::Value> {
     let mut validation = Validation::new(Algorithm::HS256);
     validation.leeway = 0;
-    validation.required_spec_claims.clear();
     decode::<serde_json::Value>(token, &DecodingKey::from_secret(secret.as_bytes()), &validation)
         .ok()
         .map(|d| d.claims)
@@ -115,10 +114,10 @@ async fn authorize(
         .and_then(|h| h.strip_prefix("Bearer "))
         .ok_or_else(|| AppError::unauthorized("未提供有效的授權令牌"))?;
 
-    // 2) 驗章。對齊 node jwt.verify：leeway=0、不強制 exp（有才驗）、僅 HS256。
+    // 2) 驗章：leeway=0、僅 HS256、強制 exp（兩個簽發點都帶 exp——login 7 天、OAuth 30 天；
+    //    不帶 exp 的 token 一律拒絕，避免永不過期。刻意偏離 node jwt.verify 的「有才驗」）。
     let mut validation = Validation::new(Algorithm::HS256);
     validation.leeway = 0;
-    validation.required_spec_claims.clear();
     let claims = decode::<Claims>(
         token,
         &DecodingKey::from_secret(state.jwt_secret.as_bytes()),

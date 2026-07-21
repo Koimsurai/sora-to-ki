@@ -290,7 +290,7 @@ pub async fn send_newsletter_route(State(state): State<AppState>, Path(id): Path
     .fetch_optional(&state.pool)
     .await;
     let (post_id, title, excerpt, status) = match row {
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "post not found" }))).into_response(),
         Ok(Some(r)) => r,
     };
@@ -306,7 +306,7 @@ pub async fn send_newsletter_route(State(state): State<AppState>, Path(id): Path
     .fetch_all(&state.pool)
     .await;
     let subs = match subs {
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(rows) => rows,
     };
     if subs.is_empty() {

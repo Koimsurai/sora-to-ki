@@ -159,7 +159,7 @@ async fn create_comment(
         .await;
 
     match result {
-        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) => (
             StatusCode::CREATED,
             Json(json!({ "message": "success", "id": r.last_insert_rowid(), "status": status })),

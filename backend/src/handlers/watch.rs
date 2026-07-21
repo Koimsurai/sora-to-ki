@@ -146,7 +146,7 @@ pub async fn anime_history(State(state): State<AppState>, Query(q): Query<LimitQ
         None => query.bind(Option::<i64>::None),
     };
     match query.fetch_all(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(history) => Json(AnimeHistoryResponse { message: "success".into(), history }).into_response(),
     }
 }
@@ -167,7 +167,7 @@ pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQu
         None => query.bind(Option::<i64>::None),
     };
     match query.fetch_all(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(mut films) => {
             // Trakt 同步進來的 film 沒存 poster_url（sync 只寫 title/date/tmdb_id）→ 用 tmdb_id
             // 從 TMDb 補海報（w342 小卡夠；tmdb_detail 有快取，只有缺圖的才打）。
@@ -204,7 +204,7 @@ pub async fn tv_recent(State(state): State<AppState>, Query(q): Query<LimitQuery
         None => query.bind(Option::<i64>::None),
     };
     match query.fetch_all(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(series) => Json(TvResponse { message: "success".into(), series }).into_response(),
     }
 }
@@ -331,7 +331,7 @@ pub async fn favorites(State(state): State<AppState>, Query(q): Query<FavQuery>)
         .await
     {
         Ok(r) => r,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let mut out = Vec::new();
     for row in &rows {
@@ -519,7 +519,7 @@ pub async fn create_favorite(
     q = bind_val(q, d.as_ref().and_then(|x| x.get("year")).filter(|v| js_truthy(Some(v))));
     q = q.bind(order);
     match q.execute(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(r) => Json(json!({ "message": "success", "id": r.last_insert_rowid() })).into_response(),
     }
 }
@@ -565,7 +565,7 @@ pub async fn update_favorite(
     }
     q = q.bind(&id);
     match q.execute(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
     }
 }
@@ -579,7 +579,7 @@ pub async fn delete_favorite(State(state): State<AppState>, Path(id): Path<Strin
         return e.into_response();
     }
     match sqlx::query("DELETE FROM watch_favorites WHERE id = ?").bind(&id).execute(&state.pool).await {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
     }
 }

@@ -94,11 +94,11 @@ pub async fn upload(State(state): State<AppState>, req: Request) -> Response {
     let filename = format!("{now_ms}-{rand_part}{ext}");
     let dir = uploads_base().join(year).join(month);
     if let Err(e) = tokio::fs::create_dir_all(&dir).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
     let path = dir.join(&filename);
     if let Err(e) = tokio::fs::write(&path, &bytes).await {
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response();
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
 
     let mut file_url = format!("/uploads/{year}/{month}/{filename}");

@@ -13,7 +13,7 @@
 //!   3. 逾時 6s、不跟隨跨站重導超過 3 次、回應體上限 512KB（只需要 <head>）
 //!   4. 失敗一律回 200 + 空欄位（前端顯示降級卡），不把上游錯誤細節外露
 
-use std::{net::IpAddr, time::Duration};
+use std::time::Duration;
 
 use axum::{
     extract::{Query, State},
@@ -21,7 +21,11 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{error::AppError, state::AppState};
+use crate::{
+    error::AppError,
+    net_guard::{is_blocked_ip, validate_url},
+    state::AppState,
+};
 
 /// 快取存活時間：7 天（站外頁面的 og 很少變）
 const CACHE_TTL_SECS: i64 = 7 * 24 * 60 * 60;
@@ -56,48 +60,6 @@ pub struct LinkPreviewResponse {
     pub site_name: Option<String>,
     /// favicon（固定用 /favicon.ico 的絕對路徑，降級卡用）
     pub favicon: Option<String>,
-}
-
-/// 私網/迴環/link-local/CGNAT → 一律拒絕（SSRF 防護）
-fn is_blocked_ip(ip: &IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(v4) => {
-            v4.is_private()
-                || v4.is_loopback()
-                || v4.is_link_local()
-                || v4.is_broadcast()
-                || v4.is_unspecified()
-                || v4.is_documentation()
-                // CGNAT 100.64.0.0/10
-                || (v4.octets()[0] == 100 && (64..=127).contains(&v4.octets()[1]))
-        }
-        IpAddr::V6(v6) => {
-            v6.is_loopback()
-                || v6.is_unspecified()
-                // fc00::/7 unique-local、fe80::/10 link-local
-                || (v6.segments()[0] & 0xfe00) == 0xfc00
-                || (v6.segments()[0] & 0xffc0) == 0xfe80
-        }
-    }
-}
-
-/// 驗證 URL 可安全抓取；回傳正規化後的 URL 與 host
-fn validate_url(raw: &str) -> Option<(String, String)> {
-    let u = reqwest::Url::parse(raw).ok()?;
-    if !matches!(u.scheme(), "http" | "https") {
-        return None;
-    }
-    let host = u.host_str()?.to_string();
-    // 直接寫 IP 的先擋（走 DNS 的在 fetch 時由 resolve 再擋一次）
-    if let Ok(ip) = host.parse::<IpAddr>() {
-        if is_blocked_ip(&ip) {
-            return None;
-        }
-    }
-    if host.eq_ignore_ascii_case("localhost") {
-        return None;
-    }
-    Some((u.to_string(), host))
 }
 
 /// 從 HTML <head> 擷取一個 meta 內容。用輕量掃描而非完整 DOM parser：

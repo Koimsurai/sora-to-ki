@@ -142,7 +142,7 @@ pub async fn unsubscribe(State(state): State<AppState>, Json(b): Json<Unsubscrib
         }
     };
     match sqlx::query(sql).bind("unsubscribed").bind(&param).execute(&state.pool).await {
-        Err(e) => (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::BAD_REQUEST, e),
         Ok(r) if r.rows_affected() == 0 => {
             (StatusCode::NOT_FOUND, Json(json!({ "message": "Subscriber not found" }))).into_response()
         }
@@ -162,7 +162,7 @@ pub async fn by_token(State(state): State<AppState>, Path(token): Path<String>) 
     .fetch_optional(&state.pool)
     .await
     {
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "error": "invalid token" }))).into_response(),
         Ok(Some(sub)) => Json(sub).into_response(),
     }
@@ -201,7 +201,7 @@ pub async fn subscribers(
     .await
     {
         Ok(r) => r,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let total = match sqlx::query_scalar::<_, i64>("SELECT COUNT(*) as total FROM newsletter_subscribers WHERE status = ?")
         .bind(status)
@@ -209,7 +209,7 @@ pub async fn subscribers(
         .await
     {
         Ok(t) => t,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
     let total_pages = if limit > 0 { (total + limit - 1) / limit } else { 0 };
     Json(SubscribersResponse {

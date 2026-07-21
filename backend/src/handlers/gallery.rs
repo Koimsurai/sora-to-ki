@@ -57,18 +57,25 @@ pub struct ImageProxyQuery {
     url: Option<String>,
 }
 
+/// 代理上限：書封/專輯封面都在幾百 KB 級，20MB 已極寬鬆（只在上游給 Content-Length 時驗）
+const MAX_PROXY_BYTES: u64 = 20 * 1024 * 1024;
+
 /// `GET /api/image-proxy?url=…` —— 圖片串流代理（解 CORS）。上游 bytes 原樣過。
+/// SSRF 防護（Express 版沒有，刻意的行為差異）：URL 先過 net_guard 驗證，
+/// 連線後再對實際 peer IP 驗一次（DNS rebinding / redirect 進內網都落在這層）；
+/// 且只代理圖片型 Content-Type——不讓這支變成任意網頁的匿名代理。
 #[utoipa::path(get, path = "/api/image-proxy", tag = "gallery",
     responses((status = 200, description = "串流上游圖片 bytes")))]
 pub async fn image_proxy(State(state): State<AppState>, Query(q): Query<ImageProxyQuery>) -> Response {
-    let Some(url) = q.url.filter(|u| !u.is_empty()) else {
+    let bad_request = |msg: &'static str| {
         // Express：res.status(400).send('Missing image URL')（text/html）
-        return (
-            StatusCode::BAD_REQUEST,
-            [(header::CONTENT_TYPE, "text/html; charset=utf-8")],
-            "Missing image URL",
-        )
-            .into_response();
+        (StatusCode::BAD_REQUEST, [(header::CONTENT_TYPE, "text/html; charset=utf-8")], msg).into_response()
+    };
+    let Some(url) = q.url.filter(|u| !u.is_empty()) else {
+        return bad_request("Missing image URL");
+    };
+    let Some((url, _host)) = crate::net_guard::validate_url(&url) else {
+        return bad_request("Invalid image URL");
     };
     let resp = state
         .http
@@ -80,18 +87,33 @@ pub async fn image_proxy(State(state): State<AppState>, Query(q): Query<ImagePro
     match resp {
         // axios 預設非 2xx 會 throw → 走 catch 回 500；reqwest 不 throw，手動對齊
         Ok(r) if r.status().is_success() => {
+            if let Some(addr) = r.remote_addr() {
+                if crate::net_guard::is_blocked_ip(&addr.ip()) {
+                    return bad_request("Invalid image URL");
+                }
+            }
+            if r.content_length().is_some_and(|len| len > MAX_PROXY_BYTES) {
+                return bad_request("Image too large");
+            }
             let content_type = r
                 .headers()
                 .get(header::CONTENT_TYPE)
                 .and_then(|v| v.to_str().ok())
                 .unwrap_or("image/jpeg")
                 .to_string();
+            // octet-stream 給不標 CT 的圖片 CDN 留活口；缺 CT 沿用上面的 image/jpeg 預設
+            if !(content_type.starts_with("image/") || content_type.starts_with("application/octet-stream")) {
+                return bad_request("Not an image");
+            }
             let stream = r.bytes_stream();
             (
                 [
                     (header::CONTENT_TYPE, content_type),
                     (header::ACCESS_CONTROL_ALLOW_ORIGIN, "*".to_string()),
                     (header::CACHE_CONTROL, "public, max-age=86400".to_string()),
+                    // SVG 等被當「文件」直接開時不得執行 script（<img> 載入不受回應 CSP 影響）
+                    (header::CONTENT_SECURITY_POLICY, "default-src 'none'".to_string()),
+                    (header::X_CONTENT_TYPE_OPTIONS, "nosniff".to_string()),
                 ],
                 Body::from_stream(stream),
             )
