@@ -23,6 +23,13 @@ services:
       # 【修改點】明確指定只綁定到 127.0.0.1
       - "127.0.0.1:13588:13579"
     restart: unless-stopped # 設定容器重啟策略
+    healthcheck:
+      # slim image 沒有 curl/wget → 用 node 內建 fetch 打首頁
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:13579/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       backend-rs:
         condition: service_healthy

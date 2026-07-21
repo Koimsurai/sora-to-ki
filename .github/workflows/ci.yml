@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   frontend:
-    name: Frontend · tsc + eslint
+    name: Frontend · tsc + eslint + vitest + build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,8 +27,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: tsc --noEmit
         run: pnpm exec tsc --noEmit
+      # --max-warnings 是 ratchet：擋住新增警告，存量（404）分批燒掉後再往下調
       - name: eslint (src)
-        run: pnpm exec eslint src
+        run: pnpm exec eslint src --max-warnings 404
+      - name: vitest
+        run: pnpm test
+      # 真正的建置驗證——tsc/eslint 過不代表 Nitro/Vite build 不會炸
+      - name: build (vite + nitro)
+        run: pnpm build
 
   backend:
     name: Backend · clippy + test + specta drift
