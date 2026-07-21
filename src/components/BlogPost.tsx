@@ -15,7 +15,7 @@ import { highlightCode } from '../lib/shikiHighlight';
 // mermaid + ELK 改為「偵測到圖才動態載入」（見下方 loadMermaid singleton）——只有 2/11 篇有圖，
 // 其餘文章不背這顆數百 KB 的 lib。頂層只留 type import（型別不進 runtime bundle）。
 import type { Mermaid } from 'mermaid';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
@@ -185,10 +185,40 @@ function parseMermaidFrontmatter(code: string): { config: Record<string, string 
   return { config, body: trimmed.slice(fm[0].length) };
 }
 
+/* ── Mermaid 自動置中 + fit ──
+   圖是 SVG 非同步塞進 DOM 的（先載 mermaid、再 render）。TransformWrapper 的 centerOnInit
+   只在掛載當下（內容還空）算一次 → SVG 出現後 transform 已過時（偏一邊、又沒 fit）。
+   解法：SVG 渲染完後，依它的 viewBox 內在尺寸算出剛好塞滿容器的縮放，置中套上去。 */
+function fitMermaidView(ref: ReactZoomPanPinchRef | null): void {
+  const wrapper = ref?.instance.wrapperComponent;
+  const svg = wrapper?.querySelector('svg') as SVGSVGElement | null;
+  if (!ref || !wrapper || !svg) return;
+  // viewBox 是內在尺寸（不受目前 CSS transform 影響）；無 viewBox 時 baseVal 為 0 → 退回量測值。
+  const vb = svg.viewBox.baseVal;
+  const svgW = vb.width || svg.getBoundingClientRect().width;
+  const svgH = vb.height || svg.getBoundingClientRect().height;
+  if (!svgW || !svgH || !wrapper.clientWidth || !wrapper.clientHeight) {
+    ref.centerView(1, 0);
+    return;
+  }
+  const pad = 0.86; // 留點邊距，別讓圖貼滿容器
+  const raw = Math.min(wrapper.clientWidth / svgW, wrapper.clientHeight / svgH) * pad;
+  const scale = Math.max(0.15, Math.min(raw, 1.5)); // 小圖也別放大過頭
+  ref.centerView(scale, 0);
+}
+
+/** 等兩幀（DOM 已 layout、lib 的 ResizeObserver 也更新過 content 尺寸）再 fit。 */
+function scheduleFitMermaid(ref: ReactZoomPanPinchRef | null): void {
+  requestAnimationFrame(() => requestAnimationFrame(() => fitMermaidView(ref)));
+}
+
 /* ── MermaidDiagram (shared renderer used in inline + fullscreen) ── */
-const MermaidDiagram = ({ code, theme, look, layout, direction, onError }: { code: string; theme: string; look: string; layout: string; direction: string; onError?: (err: string | null) => void }) => {
+const MermaidDiagram = ({ code, theme, look, layout, direction, onError, onRendered }: { code: string; theme: string; look: string; layout: string; direction: string; onError?: (err: string | null) => void; onRendered?: () => void }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(0);
+  // 以 ref 存 onRendered，避免它進 effect deps 而重跑渲染（與既有 onError 同慣例）。
+  const onRenderedRef = useRef(onRendered);
+  onRenderedRef.current = onRendered;
 
   const parsed = useMemo(() => parseMermaidFrontmatter(code), [code]);
 
@@ -221,6 +251,7 @@ const MermaidDiagram = ({ code, theme, look, layout, direction, onError }: { cod
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
           onError?.(null);
+          onRenderedRef.current?.();
         }
       } catch (e) {
         console.warn('Mermaid render error:', e);
@@ -300,6 +331,8 @@ const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLo
   }, []);  // mount/unmount only — onClose is stable via useCallback
 
   const [err, setErr] = useState<string | null>(null);
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
+  const handleRendered = useCallback(() => scheduleFitMermaid(transformRef.current), []);
 
   return ReactDOM.createPortal(
     <motion.div
@@ -332,8 +365,9 @@ const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLo
           </div>
         </div>
         {/* Canvas */}
-        <div className="mm-fullscreen-canvas">
+        <div className="mm-fullscreen-canvas" onDoubleClick={handleRendered}>
           <TransformWrapper
+            ref={transformRef}
             initialScale={0.8}
             minScale={0.15}
             maxScale={6}
@@ -341,7 +375,7 @@ const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLo
             limitToBounds={false}
             smooth
             wheel={{ step: 0.03, smoothStep: 0.003 }}
-            doubleClick={{ mode: 'reset' }}
+            doubleClick={{ disabled: true }}
             panning={{ velocityDisabled: true }}
           >
             <TransformComponent
@@ -351,7 +385,7 @@ const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLo
               {err ? (
                 <div className="mermaid-error"><span>⚠ {err}</span></div>
               ) : (
-                <MermaidDiagram code={code} theme={theme} look={look} layout={layout} direction={direction} onError={setErr} />
+                <MermaidDiagram code={code} theme={theme} look={look} layout={layout} direction={direction} onError={setErr} onRendered={handleRendered} />
               )}
             </TransformComponent>
           </TransformWrapper>
@@ -381,6 +415,7 @@ const MermaidBlock = ({ code }: { code: string }) => {
   const [look, setLook] = useState('classic');
   const [layout, setLayout] = useState(initLayout);
   const [direction, setDirection] = useState(initDir);
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
   /* Stable callbacks — 不會因 re-render 產生新參考，避免子元件 effect 被重新觸發 */
   const handleCloseFullscreen = useCallback(() => setFullscreen(false), []);
@@ -388,6 +423,8 @@ const MermaidBlock = ({ code }: { code: string }) => {
   const handleSetLook = useCallback((v: string) => setLook(v), []);
   const handleSetLayout = useCallback((v: string) => setLayout(v), []);
   const handleSetDirection = useCallback((v: string) => setDirection(v), []);
+  // SVG 渲染完 → fit；也綁到雙擊當「重新置中」（原本雙擊 reset 會退回沒 fit 的初始狀態）。
+  const handleRendered = useCallback(() => scheduleFitMermaid(transformRef.current), []);
 
   if (error) {
     return (
@@ -404,6 +441,7 @@ const MermaidBlock = ({ code }: { code: string }) => {
         className="mm-sandbox"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        onDoubleClick={handleRendered}
       >
         {/* Toolbar bar */}
         <div className={`mm-toolbar ${hovered ? 'mm-toolbar--visible' : ''}`}>
@@ -418,6 +456,7 @@ const MermaidBlock = ({ code }: { code: string }) => {
 
         {/* Zoomable canvas */}
         <TransformWrapper
+          ref={transformRef}
           initialScale={0.65}
           minScale={0.15}
           maxScale={5}
@@ -425,14 +464,14 @@ const MermaidBlock = ({ code }: { code: string }) => {
           limitToBounds={false}
           smooth
           wheel={{ step: 0.03, smoothStep: 0.003 }}
-          doubleClick={{ mode: 'reset' }}
+          doubleClick={{ disabled: true }}
           panning={{ velocityDisabled: true }}
         >
           <TransformComponent
             wrapperStyle={{ width: '100%', height: '100%' }}
             contentStyle={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '2rem' }}
           >
-            <MermaidDiagram code={code} theme={theme} look={look} layout={layout} direction={direction} onError={setError} />
+            <MermaidDiagram code={code} theme={theme} look={look} layout={layout} direction={direction} onError={setError} onRendered={handleRendered} />
           </TransformComponent>
         </TransformWrapper>
 
