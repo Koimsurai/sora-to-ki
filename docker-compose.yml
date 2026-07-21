@@ -1,10 +1,8 @@
 volumes:
-  backend-db-data: # Volume for the database file
-  backend-db-backup:
-    # Volume for database backups
+  backend-db-data: # DB 檔的 docker volume（backend-rs + db-backup 共用）
 
-    # 啟用 Docker BuildKit 的 Bake 功能以提升建置效能
-    # 在您的 shell 環境中設定此變數: export COMPOSE_BAKE=true (Linux/macOS) 或 $env:COMPOSE_BAKE="true" (Windows PowerShell)
+# 啟用 Docker BuildKit 的 Bake 功能以提升建置效能
+# 在您的 shell 環境中設定此變數: export COMPOSE_BAKE=true (Linux/macOS) 或 $env:COMPOSE_BAKE="true" (Windows PowerShell)
 
 services:
   frontend:
@@ -69,31 +67,18 @@ services:
       retries: 5
       start_period: 15s
 
-  backend:
-    profiles: ["legacy"]
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    container_name: personal-website-backend
+  # SQLite 每日線上備份 → HDD（VACUUM INTO 快照 + gzip + 依天數輪替）。
+  # alpine 開機裝 sqlite（唯一執行期依賴），跑 scripts/backup-db.sh。
+  db-backup:
+    image: alpine:3.20
+    container_name: personal-website-db-backup
     environment:
       - TZ=Asia/Taipei
-      - GALLERY_SOURCE_PATH=/usr/src/app/storage/Blog_Source
+      - BACKUP_INTERVAL_SECONDS=86400
+      - BACKUP_KEEP_DAYS=14
     volumes:
-      - backend-db-data:/usr/src/app/db # Mount the database directory
-      - backend-db-backup:/usr/src/app/db-backup # 使用 named volume 備份資料庫
-      # HDD Mounts
-      - /mnt/hdd16tb_01/Blog/uploads:/usr/src/app/storage/uploads
-      - /mnt/hdd16tb_01/nas-storage/Blog_Source:/usr/src/app/storage/Blog_Source:ro
-      - /mnt/hdd16tb_01/nas-storage/gallery:/usr/src/app/storage/gallery
-    env_file:
-      - ./.env.backend
-    ports:
-      # 【修改點】明確指定只綁定到 127.0.0.1
-      - "127.0.0.1:3001:3001"
+      - backend-db-data:/db # 與 backend-rs 共用（WAL 支援多程序讀）
+      - ./scripts/backup-db.sh:/backup-db.sh:ro
+      - /mnt/hdd16tb_01/Blog/db-backups:/backups
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache sqlite >/dev/null && exec /bin/sh /backup-db.sh"]
     restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3001/api/health" ]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
