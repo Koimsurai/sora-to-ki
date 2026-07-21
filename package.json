@@ -131,6 +131,8 @@
       "glob": "^10.5.0",
       "@xmldom/xmldom": "^0.9.10",
       "ajv": "^6.14.0",
+      "@modelcontextprotocol/sdk>ajv": "^8.17.1",
+      "ajv-formats>ajv": "^8.17.1",
       "dompurify": ">=3.4.11",
       "picomatch": "^4.0.4",
       "minimatch": "^9.0.7",

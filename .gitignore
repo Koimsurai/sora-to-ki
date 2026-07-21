@@ -66,3 +66,6 @@ backend/target/
 
 # rollup-plugin-visualizer 產物（舊 vite.config.js 遺留；勿再入庫）
 stats.html
+
+# MCP server 編譯輸出（.mcp.json 走 tsx 跑源碼，dist 不入庫）
+packages/mcp-server/dist/

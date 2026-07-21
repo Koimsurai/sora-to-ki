@@ -1,0 +1,20 @@
+{
+  "name": "@koimsurai/mcp-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "koimsurai 後台 MCP server（stdio）——把 admin REST API 包成 MCP 工具給 Claude 用",
+  "bin": {
+    "koimsurai-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@koimsurai/api-types": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.19.1"
+  }
+}

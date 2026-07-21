@@ -27,6 +27,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: tsc --noEmit
         run: pnpm exec tsc --noEmit
+      - name: mcp-server typecheck
+        run: pnpm --filter @koimsurai/mcp-server typecheck
       # --max-warnings 是 ratchet：擋住新增警告，存量（404）分批燒掉後再往下調
       - name: eslint (src)
         run: pnpm exec eslint src --max-warnings 404
