@@ -117,6 +117,18 @@
   letter-spacing: -0.02em;
 }
 
+/* 副標（標題「主標：副標」的冒號後段）：明顯次於主標——較小、較淡、常規字重。 */
+.post-subtitle {
+  margin: 0.7rem auto 0;
+  max-width: 40rem;
+  font-size: 1.06rem;
+  font-weight: 400;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
 .post-meta-row {
   display: flex;
   flex-wrap: wrap;
@@ -2611,6 +2623,11 @@ a.series-nav-title:hover {
 
   .post-title {
     font-size: 1.6rem;
+  }
+
+  .post-subtitle {
+    font-size: 0.95rem;
+    margin-top: 0.55rem;
   }
 }
 

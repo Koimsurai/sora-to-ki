@@ -498,6 +498,17 @@ const MermaidBlock = ({ code }: { code: string }) => {
 
 /* ── helpers ── */
 
+/* 標題「主標：副標」拆分（display 用）：第一個全形「：」或半形「: 」切開，前面主標、後面副標。
+   兩側都要有內容才拆，否則整串當主標。SEO 的 document title / og:title 仍用完整 post.title
+   （搜尋結果要完整描述性標題），這裡只影響頁面上 h1 的呈現。 */
+function splitTitle(title: string): { main: string; sub: string | null } {
+  const m = /：|:\s/.exec(title);
+  if (!m || m.index === 0) return { main: title, sub: null };
+  const main = title.slice(0, m.index).trim();
+  const sub = title.slice(m.index + m[0].length).trim();
+  return main && sub ? { main, sub } : { main: title, sub: null };
+}
+
 /* 安全地把 React children 攤平成純文字（避免 String(obj) → [object Object]） */
 const nodeText = (node: React.ReactNode): string => {
   if (typeof node === 'string' || typeof node === 'number') return String(node);
@@ -1739,6 +1750,7 @@ function BlogPost() {
   const sourceLang = post.source_language ?? 'zh-TW';
   const availableLocales = post.available_locales ?? [sourceLang];
   const currentLocale = post.locale ?? pathLocale;
+  const titleParts = splitTitle(post.title);
 
   return (
     <div className="blog-post-container" style={{ fontFamily }}>
@@ -1768,7 +1780,8 @@ function BlogPost() {
           exit={{ opacity: 0, y: -12 }}
           transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
         >
-          <h1 className="post-title">{post.title}</h1>
+          <h1 className="post-title">{titleParts.main}</h1>
+          {titleParts.sub && <p className="post-subtitle">{titleParts.sub}</p>}
 
           <div className="post-meta-row">
             {post.layout_type !== 'column' && (
