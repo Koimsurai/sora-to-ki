@@ -278,8 +278,6 @@ fn process_single_image(source: &std::path::Path, full_out: &std::path::Path, th
     let bytes = std::fs::read(source)?;
     let (exif_map, orientation) = extract_exif(&bytes);
     let img = image::load_from_memory(&bytes)?; // failOn:'none' ≈ 盡量解
-    // metadata（原檔、rotate 前）
-    let (meta_w, meta_h) = (img.width(), img.height());
     let format = image::guess_format(&bytes)
         .map(|f| match f {
             image::ImageFormat::Jpeg => "jpeg",
@@ -290,6 +288,9 @@ fn process_single_image(source: &std::path::Path, full_out: &std::path::Path, th
         .unwrap_or("jpg")
         .to_string();
     let rotated = apply_orientation(img, orientation);
+    // 尺寸取「旋轉後」的實際值——EXIF orientation 5~8 會交換寬高，
+    // 用旋轉前的值會讓直式照片 manifest 的 aspectRatio 顛倒 → 瀑布流版面錯位。
+    let (out_w, out_h) = (rotated.width(), rotated.height());
     for (out_path, max_w, q) in [(full_out, 1920u32, 85.0f32), (thumb_out, 400u32, 80.0f32)] {
         let (tw, th) = fit_width(rotated.width(), rotated.height(), max_w);
         let resized = if (tw, th) == (rotated.width(), rotated.height()) {
@@ -303,7 +304,7 @@ fn process_single_image(source: &std::path::Path, full_out: &std::path::Path, th
         std::fs::write(out_path, &*mem)?;
     }
     let size = std::fs::metadata(full_out)?.len();
-    Ok(Processed { width: meta_w, height: meta_h, size, format, exif: exif_map })
+    Ok(Processed { width: out_w, height: out_h, size, format, exif: exif_map })
 }
 
 /// `tagPhoto`：POST {path} → {zh_tw,en}。失敗 None（不擋 sync）。

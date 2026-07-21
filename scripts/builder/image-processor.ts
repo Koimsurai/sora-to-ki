@@ -30,7 +30,6 @@ export async function processImage(
   config: BuilderConfig
 ): Promise<ProcessedImage> {
   const fileName = path.basename(inputPath, path.extname(inputPath));
-  const stats = await fs.stat(inputPath);
 
   // 確保輸出目錄存在
   await fs.mkdir(outputDir, { recursive: true });
@@ -51,8 +50,11 @@ export async function processImage(
   // 自動旋轉 (根據 EXIF Orientation)
   image = image.rotate();
 
-  const originalWidth = metadata.width || 0;
-  const originalHeight = metadata.height || 0;
+  // 尺寸取「旋轉後」的實際值：EXIF orientation 5~8 為 90°/270° 旋轉、會交換寬高。
+  // 用旋轉前的 metadata 會讓直式照片 manifest 的 aspectRatio 顛倒 → 瀑布流版面錯位。
+  const swapWH = (metadata.orientation ?? 1) >= 5;
+  const originalWidth = (swapWH ? metadata.height : metadata.width) || 0;
+  const originalHeight = (swapWH ? metadata.width : metadata.height) || 0;
 
   // 1. 生成縮圖
   const thumbnailFileName = `${fileName}-thumb.${config.processing.thumbnail.format}`;
@@ -75,7 +77,7 @@ export async function processImage(
   const highResFileName = `${fileName}.${config.processing.highRes.format}`;
   const highResPath = path.join(outputDir, highResFileName);
 
-  await image
+  const highResInfo = await image
     .clone()
     .resize(config.processing.highRes.maxWidth, null, {
       withoutEnlargement: true,
@@ -119,7 +121,8 @@ export async function processImage(
     thumbHash,
     width: originalWidth,
     height: originalHeight,
-    size: stats.size,
+    // 輸出 webp 的實際大小（原本誤填輸入原檔的 stats.size）
+    size: highResInfo.size,
     format: metadata.format || 'unknown',
   };
 }
