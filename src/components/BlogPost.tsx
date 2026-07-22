@@ -1509,11 +1509,21 @@ function BlogPost() {
 
   /* heading components */
   const createHeading = useCallback((level: number) => {
-    return ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => {
+    return ({ children, node: _node, ...props }: { children?: React.ReactNode; node?: unknown; [key: string]: unknown }) => {
       const Tag = 'h' + level;
       const text = nodeText(children);
       const hid = slugify(text);
-      return React.createElement(Tag, { id: hid, ...props }, children);
+      // hover 時字後面浮出 # 錨點連結（點了複製/跳到該段）。
+      return React.createElement(
+        Tag,
+        { id: hid, ...props },
+        children,
+        React.createElement(
+          'a',
+          { href: '#' + hid, className: 'heading-anchor', 'aria-label': '本段錨點連結', tabIndex: -1 },
+          '#',
+        ),
+      );
     };
   }, []);
 
@@ -1700,7 +1710,10 @@ function BlogPost() {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         if (!contentRef.current || !headings.length) return;
-        const els = contentRef.current.querySelectorAll('[id]');
+        // 只看「TOC 有列到的標題」——原本抓所有 [id]（含腳註/alert 的 id），會被非標題元素
+        // 劫持 active 狀態、害 TOC 高亮消失。以 heading id 集合過濾。
+        const headingIds = new Set(headings.map((h) => h.id));
+        const els = Array.from(contentRef.current.querySelectorAll('[id]')).filter((el) => headingIds.has(el.id));
         let cur = '';
         let minD = Infinity;
         els.forEach((el) => {

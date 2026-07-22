@@ -880,7 +880,8 @@ a.series-nav-title:hover {
   color: rgba(255, 255, 255, 0.4);
   font-size: 0.78rem;
   line-height: 1.45;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, transform 0.28s cubic-bezier(0.34, 1.25, 0.5, 1);
+  transform-origin: left center;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -905,6 +906,11 @@ a.series-nav-title:hover {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  /* 定位到的那項小小放大，讓 user 意識到自己在哪一段 */
+  transform: scale(1.07);
+}
+.toc-item.active .toc-text {
+  font-weight: 600;
 }
 
 .toc-item.active:hover {
@@ -947,6 +953,7 @@ a.series-nav-title:hover {
 .toc-item.active .toc-bullet {
   background: var(--post-accent);
   box-shadow: 0 0 6px var(--post-accent-glow);
+  transform: scale(1.3);
 }
 
 .toc-item:hover .toc-bullet {
@@ -1240,6 +1247,35 @@ a.series-nav-title:hover {
   font-size: 1.1rem;
   margin: 1.5rem 0 0.6rem;
   color: rgba(255, 255, 255, 0.9);
+}
+
+/* 標題 hover 錨點：字後面浮出 #，點了跳到/複製該段連結。 */
+.post-content h1,
+.post-content h2,
+.post-content h3,
+.post-content h4 {
+  scroll-margin-top: 6rem; /* 錨點跳轉時不被頂部遮住 */
+}
+.heading-anchor {
+  margin-left: 0.4em;
+  color: var(--post-accent);
+  font-weight: 400;
+  text-decoration: none;
+  border-bottom: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  user-select: none;
+}
+.post-content h1:hover .heading-anchor,
+.post-content h2:hover .heading-anchor,
+.post-content h3:hover .heading-anchor,
+.post-content h4:hover .heading-anchor {
+  opacity: 0.5;
+}
+.heading-anchor:hover,
+.heading-anchor:focus-visible {
+  opacity: 1;
+  border-bottom: none;
 }
 
 .post-content p {
