@@ -782,10 +782,21 @@ a.series-nav-title:hover {
 /* ── Content card ── */
 .post-content-wrapper {
   position: relative;
-  background: var(--post-card-bg);
+  isolation: isolate;
   border: 1px solid var(--post-card-border);
   border-radius: 16px;
   padding: 2.5rem;
+}
+/* 底色＋玻璃模糊移到 ::before：filter/backdrop-filter 會把子孫的絕對定位內容裁切到自身邊界，
+   於是 <Annot> 站長註卡片一超出這張卡就被切掉（連 position:fixed 也逃不掉，filter 會變成它的
+   containing block）。改放在「不含卡片」的偽元素上 → wrapper 本身無 filter，卡片能正常溢出。 */
+.post-content-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--post-card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
