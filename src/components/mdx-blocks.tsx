@@ -1,6 +1,6 @@
 // MDX 自訂 block 元件。之後每加一個 block 就在這裡多一個元件 export，
 // 再到 MdxContent 的 scope 註冊。未來可由此衍生 prop 驗證 + Agent 的 block 目錄。
-import { lazy, Suspense, useState, type ReactNode } from 'react';
+import { Children, isValidElement, lazy, Suspense, useState, type ReactElement, type ReactNode } from 'react';
 import { ClientOnly } from '@tanstack/react-router';
 import { FaGithub, FaXTwitter } from 'react-icons/fa6';
 import CodeTabsBlock from './CodeTabsBlock';
@@ -8,6 +8,7 @@ import CodeTabsBlock from './CodeTabsBlock';
 // 重的元件 lazy import，只有文章真的用到才進 bundle。
 const BarChartImpl = lazy(() => import('./BarChartBlock'));
 const MathImpl = lazy(() => import('./MathBlock'));
+const SketchImpl = lazy(() => import('./SketchBlock'));
 const chartFallback = <div className="mdx-chart-loading" aria-hidden />;
 
 /** 作者註卡：段落長度的站長旁白，在內文流裡的卡片（跟一般 alert 區隔）。 */
@@ -89,7 +90,7 @@ export function Mention({ platform = 'github', user }: { platform?: string; user
   return (
     <a className="mdx-mention" href={href} target="_blank" rel="noreferrer noopener">
       {isX ? <FaXTwitter aria-hidden /> : <FaGithub aria-hidden />}
-      <span>@{u}</span>
+      <span>{u}</span>
     </a>
   );
 }
@@ -111,6 +112,69 @@ export function Math(props: { tex?: string; display?: boolean }) {
     <ClientOnly fallback={fallback}>
       <Suspense fallback={fallback}>
         <MathImpl {...props} />
+      </Suspense>
+    </ClientOnly>
+  );
+}
+
+interface TabProps {
+  title?: string;
+  children?: ReactNode;
+}
+
+/** 內容分頁容器：藥丸切換，每個 <Tab title="…"> 放整段內容（prose、code、其他 block 皆可）。
+ *  用法：
+ *  <Tabs>
+ *    <Tab title="做法 A（推薦）">…</Tab>
+ *    <Tab title="做法 B">…</Tab>
+ *  </Tabs>
+ *  適合「同一件事的多種做法/取捨」對照。 */
+export function Tabs({ children }: { children?: ReactNode }) {
+  // Children.toArray：取 <Tab> 子元素成陣列（要 map 出藥丸 + 只渲染 active 那頁）。分頁清單靜態不重排。
+  // eslint-disable-next-line @eslint-react/no-children-to-array
+  const tabs = Children.toArray(children).filter(isValidElement) as ReactElement<TabProps>[];
+  const [active, setActive] = useState(0);
+  if (!tabs.length) return null;
+  // ⚠ 本模組 export 了名為 Math 的元件（KaTeX），會遮蔽全域 Math → 不能用 Math.min。
+  const cur = active < tabs.length ? active : tabs.length - 1;
+  return (
+    <div className="mdx-tabs">
+      <div className="mdx-tabs-bar" role="tablist">
+        {tabs.map((t, i) => (
+          <button
+            // 靜態分頁清單不重排 → index 當 key 安全
+            // eslint-disable-next-line @eslint-react/no-array-index-key
+            key={t.props.title ?? `tab-${i}`}
+            type="button"
+            role="tab"
+            aria-selected={i === cur}
+            className={i === cur ? 'mdx-tabs-pill active' : 'mdx-tabs-pill'}
+            onClick={() => setActive(i)}
+          >
+            {t.props.title ?? `分頁 ${i + 1}`}
+          </button>
+        ))}
+      </div>
+      <div className="mdx-tabs-panel" role="tabpanel">
+        {tabs[cur]}
+      </div>
+    </div>
+  );
+}
+
+/** <Tabs> 的單一分頁。title 為藥丸標籤；children 為該頁內容。 */
+export function Tab({ children }: TabProps) {
+  return <div className="mdx-tab">{children}</div>;
+}
+
+/** mermaid → Excalidraw 真手繪風（rough.js）SVG。用法 <Sketch chart="graph TD; A-->B" title="…" />。
+ *  chart 收 mermaid 定義；重套件（excalidraw）→ 只在 client、lazy 載入（只有用到才進 bundle）。 */
+export function Sketch(props: { chart?: string; title?: string }) {
+  const fallback = <div className="mdx-sketch-loading" aria-hidden />;
+  return (
+    <ClientOnly fallback={fallback}>
+      <Suspense fallback={fallback}>
+        <SketchImpl {...props} />
       </Suspense>
     </ClientOnly>
   );

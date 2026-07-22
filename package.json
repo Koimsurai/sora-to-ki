@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build --config vite.config.start.ts",
+    "dev": "BACKEND_URL=http://127.0.0.1:3009 vite dev --config vite.config.start.ts --port 13998 --host",
     "preview": "node .output/server/index.mjs",
     "lint": "eslint .",
     "test": "vitest run",
@@ -16,6 +17,8 @@
   },
   "dependencies": {
     "@animateicons/react": "^0.3.3",
+    "@excalidraw/excalidraw": "^0.18.1",
+    "@excalidraw/mermaid-to-excalidraw": "^2.2.2",
     "@fontsource-variable/tasa-explorer": "^5.2.2",
     "@fontsource-variable/tasa-orbiter": "^5.2.2",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",

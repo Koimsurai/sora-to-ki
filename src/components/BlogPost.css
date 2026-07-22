@@ -1313,8 +1313,8 @@ a.series-nav-title:hover {
 }
 
 .post-content code {
-  background: rgba(127, 90, 240, 0.12);
-  color: #d4bfff;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8e6ef;
   padding: 0.15rem 0.45rem;
   border-radius: 4px;
   font-size: 0.9em;
@@ -1862,7 +1862,6 @@ a.series-nav-title:hover {
   border-radius: 12px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.06);
   margin: 1.5rem 0;
 }
 
@@ -1878,27 +1877,26 @@ a.series-nav-title:hover {
 }
 
 .code-block-wrapper ::-webkit-scrollbar-thumb {
-  background: rgba(127, 90, 240, 0.3);
+  background: rgba(255, 255, 255, 0.13);
   border-radius: 3px;
   transition: background 0.2s;
 }
 
 .code-block-wrapper ::-webkit-scrollbar-thumb:hover {
-  background: rgba(127, 90, 240, 0.5);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .code-block-wrapper * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(127, 90, 240, 0.3) rgba(255, 255, 255, 0.03);
+  scrollbar-color: rgba(255, 255, 255, 0.13) transparent;
 }
 
 .code-block-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.6rem 1rem 0.35rem;
+  background: transparent;
 }
 
 .language-name {
@@ -1909,56 +1907,81 @@ a.series-nav-title:hover {
 }
 
 .copy-button {
-  background: rgba(127, 90, 240, 0.15);
-  border: 1px solid rgba(127, 90, 240, 0.3);
-  color: var(--post-accent);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
   padding: 0.2rem 0.6rem;
   border-radius: 6px;
   font-size: 0.72rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
-.copy-button:hover {
-  background: rgba(127, 90, 240, 0.25);
+/* 蓋掉全域 button:hover 的紫底＋光暈（specificity 0,2,0 > 0,1,1） */
+.copy-button:hover,
+.copy-button:focus,
+.copy-button:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  box-shadow: none;
+  outline: none;
 }
 
-/* ── Shiki 反白輸出 ──
-   重點：水平 scroll 容器只放 block padding，inline padding 放在 pre 上並用 width:max-content
-   這樣即使滾到行尾也看得見右側 padding（避免 overflow + padding 的常見坑）
-*/
-.code-block-wrapper .shiki-output,
-.code-block-wrapper .shiki-fallback {
+/* ── 共用程式碼本體 .code-surface-body（一般 code block 與 CodeTabs 共用）──
+   內距放在外層 scroll 容器（短碼不硬撐橫向捲軸）；pre 透明底、等寬字、width:max-content；
+   行號由 CSS counter 掛在每個 .line 前。 */
+.code-surface-body .shiki-output,
+.code-surface-body .shiki-fallback {
   margin: 0;
   overflow-x: auto;
-  padding: 1.5rem 0;
+  padding: 1.1rem 1.3rem 1.3rem;
 }
-.code-block-wrapper .shiki-output pre.shiki,
-.code-block-wrapper .shiki-fallback {
+.code-surface-body .shiki-output pre.shiki {
   margin: 0 !important;
-  padding: 0 2rem !important;
+  padding: 0 !important;
   background: transparent !important;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.7;
   font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace !important;
   width: max-content;
   min-width: 100%;
-  box-sizing: content-box;
+  box-sizing: border-box;
 }
-.code-block-wrapper .shiki-output code {
+.code-surface-body .shiki-output code {
   background: none !important;
   padding: 0 !important;
+  border: 0 !important; /* 防呆：不吃 .post-content code 的 inline 樣式（框線/底） */
   font-family: inherit !important;
   display: block;
+  counter-reset: shiki-ln;
 }
-.code-block-wrapper .shiki-fallback {
+/* 行號：CSS counter 掛在每行 .line 前 */
+.code-surface-body .shiki-output .line {
+  counter-increment: shiki-ln;
+}
+.code-surface-body .shiki-output .line::before {
+  content: counter(shiki-ln);
+  display: inline-block;
+  width: 1.6rem;
+  margin-right: 1.3rem;
+  text-align: right;
+  color: rgba(255, 255, 255, 0.22);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.code-surface-body .shiki-fallback {
   color: rgba(255, 255, 255, 0.7);
   white-space: pre;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   animation: shikiPulse 1.4s ease-in-out infinite;
 }
-.code-block-wrapper .shiki-fallback code {
+.code-surface-body .shiki-fallback code {
   background: none !important;
   padding: 0 !important;
+  border: 0 !important;
   font-family: inherit !important;
 }
 @keyframes shikiPulse {
@@ -1966,7 +1989,68 @@ a.series-nav-title:hover {
   50% { opacity: 0.85; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .code-block-wrapper .shiki-fallback { animation: none; opacity: 0.7; }
+  .code-surface-body .shiki-fallback { animation: none; opacity: 0.7; }
+}
+
+/* ── 長碼收合：超過門檻先夾住高度，底部漸層淡出 + 「展開程式碼(共N行)」條 ── */
+.code-surface-body--collapsed .shiki-output,
+.code-surface-body--collapsed .shiki-fallback {
+  max-height: 20rem;
+  overflow: hidden;
+}
+.code-surface-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.76rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+/* 蓋掉全域 button{紫底}＋button:hover{紫底+光暈}（specificity 0,2,0 > 0,1,1） */
+.code-surface-toggle:hover,
+.code-surface-toggle:focus,
+.code-surface-toggle:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  box-shadow: none;
+  border-color: transparent;
+  outline: none;
+}
+.code-surface-toggle-chevron {
+  font-size: 0.7em;
+  opacity: 0.7;
+}
+.code-surface-body--collapsed .code-surface-toggle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 3.5rem;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+  pointer-events: none;
+}
+/* emoji 語言標頭（小寫，跟參考一致；覆蓋原本的 uppercase） */
+.language-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  text-transform: none;
+}
+.language-emoji {
+  font-size: 0.95em;
+  line-height: 1;
 }
 
 /* ═══════════════════════

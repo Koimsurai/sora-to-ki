@@ -216,68 +216,186 @@
   font-weight: 400;
 }
 
-/* ── <Mention> 社群徽章 ── */
+/* ── <Mention> 社群提及：低調的暗色小藥丸（GitHub/X 圖示＋帳號），
+   刻意做小、不搶內文，跟站上那種紫色 CTA 按鈕明確區隔。 ── */
 .mdx-mention {
   display: inline-flex;
   align-items: center;
-  gap: 0.28em;
-  padding: 0.05em 0.45em;
-  margin: 0 0.1em;
+  gap: 0.32em;
+  padding: 0.05em 0.5em 0.05em 0.42em;
+  margin: 0 0.06em;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.9em;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.88em;
+  font-weight: 500;
+  line-height: 1.5;
   text-decoration: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: background 0.2s ease;
+  white-space: nowrap;
   vertical-align: baseline;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.mdx-mention svg {
+  flex: 0 0 auto;
+  font-size: 0.95em;
+  opacity: 0.85;
 }
 .mdx-mention:hover {
-  background: rgba(139, 124, 246, 0.18);
-  border-color: rgba(139, 124, 246, 0.4);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+.mdx-mention:hover svg {
+  opacity: 1;
+}
+/* .post-content a 用 accent 紫上色＋紫底線(specificity 0,1,1)會蓋過上面 .mdx-mention(0,1,0)：
+   提及會變紫字＋多一條紫底線。用 .post-content a.mdx-mention(0,2,1)搶回中性色與四邊一致的細邊。
+   圖示以 currentColor 上色 → 一併變中性白，不再是紫的。 */
+.post-content a.mdx-mention {
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.post-content a.mdx-mention:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* ── <CodeTabs> 多檔程式碼分頁 ── */
+/* ── <CodeTabs> 多檔程式碼分頁：一體暗色（比照 .code-block-wrapper），分頁帶檔案類型彩色圖示，
+   active 用低調淺色 pill（非紫塊、非底線），程式碼區 shiki 呈現與一般 code block 一致，
+   滾動條中性細緻。 ── */
 .mdx-codetabs {
-  margin: 1.75rem 0;
-  border-radius: 10px;
+  margin: 1.5rem 0;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.4);
 }
 .mdx-codetabs-bar {
   display: flex;
-  gap: 2px;
-  padding: 0.35rem 0.5rem 0;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 0.3rem;
+  padding: 0.55rem 0.6rem 0.2rem;
   overflow-x: auto;
 }
 .mdx-codetabs-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
   flex: 0 0 auto;
-  padding: 0.35rem 0.75rem;
+  padding: 0.34rem 0.7rem;
   border: none;
-  background: none;
-  color: rgba(255, 255, 255, 0.45);
+  border-radius: 7px;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.8rem;
-  font-family: inherit;
+  font-weight: 500;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace;
   cursor: pointer;
-  border-radius: 6px 6px 0 0;
-  border-bottom: 2px solid transparent;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.mdx-codetabs-tab-icon {
+  flex: 0 0 auto;
+  font-size: 1.05em;
+}
+/* 站上有全域 button{background:紫}＋button:hover{紫底+光暈}；tab 各互動態一律壓掉陰影/外框，
+   背景改用下面的中性 pill。.mdx-codetabs-tab:hover(0,2,0) 贏過全域 button:hover(0,1,1)。 */
+.mdx-codetabs-tab:hover,
+.mdx-codetabs-tab:focus,
+.mdx-codetabs-tab:focus-visible,
+.mdx-codetabs-tab:active {
+  box-shadow: none;
+  border-color: transparent;
+  outline: none;
 }
 .mdx-codetabs-tab:hover {
-  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.82);
 }
-.mdx-codetabs-tab.active {
+.mdx-codetabs-tab.active,
+.mdx-codetabs-tab.active:hover,
+.mdx-codetabs-tab.active:focus {
+  background: rgba(255, 255, 255, 0.09);
   color: #fff;
-  border-bottom-color: var(--post-accent);
-  background: rgba(255, 255, 255, 0.04);
+  box-shadow: none;
 }
-.mdx-codetabs-body .shiki-output,
-.mdx-codetabs-body .shiki-fallback {
-  margin: 0;
-  border-radius: 0;
+/* 程式碼本體走共用 .code-surface-body（見 BlogPost.css）→ 行號/收合/內距與一般 code block 一致。 */
+/* 細緻中性滾動條（不用紫，配合去紫方向；避開 OS 預設那條粗醜的） */
+.mdx-codetabs ::-webkit-scrollbar {
+  height: 7px;
+  width: 7px;
+}
+.mdx-codetabs ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mdx-codetabs ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 4px;
+}
+.mdx-codetabs ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+.mdx-codetabs * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.13) transparent;
+}
+
+/* ── <Tabs>/<Tab> 內容分頁：藥丸切換，每頁放整段內容（prose+code） ── */
+.mdx-tabs {
+  margin: 1.75rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.015);
+}
+.mdx-tabs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+.mdx-tabs-pill {
+  padding: 0.4rem 0.95rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+/* 蓋掉全域 button{紫底}＋button:hover{紫底+光暈}（specificity 0,2,0 > 0,1,1） */
+.mdx-tabs-pill:hover,
+.mdx-tabs-pill:focus,
+.mdx-tabs-pill:focus-visible {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: none;
+  outline: none;
+}
+.mdx-tabs-pill.active,
+.mdx-tabs-pill.active:hover,
+.mdx-tabs-pill.active:focus {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  box-shadow: none;
+}
+.mdx-tabs-panel {
+  padding: 1.15rem 1.35rem;
+}
+.mdx-tabs-panel > .mdx-tab > :first-child {
+  margin-top: 0;
+}
+.mdx-tabs-panel > .mdx-tab > :last-child {
+  margin-bottom: 0;
 }
 
 /* ── <Math> KaTeX ── */
@@ -294,6 +412,48 @@
 }
 .mdx-math-inline {
   white-space: nowrap;
+}
+
+/* ── <Sketch> mermaid→Excalidraw 手繪風 SVG ── */
+.mdx-sketch {
+  margin: 1.75rem 0;
+  text-align: center;
+}
+.mdx-sketch-canvas {
+  overflow-x: auto;
+}
+.mdx-sketch-canvas--loading {
+  min-height: 180px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.mdx-sketch-loading {
+  min-height: 220px;
+  margin: 1.75rem 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mdx-sketch-caption {
+  margin-top: 0.7rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+.mdx-sketch-error {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  border: 1px dashed rgba(252, 165, 165, 0.35);
+  background: rgba(252, 165, 165, 0.06);
+  color: #fca5a5;
+  font-size: 0.88rem;
+}
+.mdx-sketch-error pre {
+  margin: 0.4rem 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8rem;
+  opacity: 0.85;
 }
 
 .mdx-error {

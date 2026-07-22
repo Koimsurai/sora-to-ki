@@ -83,7 +83,7 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 
 ## 3. 內文格式（純 markdown，兩種 format 都能用）
 - 標題 \`##\` \`###\`（自動生 TOC 錨點，hover 出 #）
-- 程式碼 \`\`\`語言 …\`\`\`（自動 shiki 高亮 + 複製鈕）
+- 程式碼 \`\`\`語言 …\`\`\`（自動 shiki 高亮 + emoji 語言標頭 + 行號 + 複製鈕；超過 15 行自動「展開程式碼」收合）
 - Mermaid 圖 \`\`\`mermaid …\`\`\`
 - **GitHub 彩色提示框**（善用，別通篇純引用 \`>\`）：
   \`> [!NOTE]\` 藍｜\`> [!TIP]\` 綠｜\`> [!IMPORTANT]\` 紫｜\`> [!WARNING]\` 琥珀｜\`> [!CAUTION]\` 紅
@@ -95,15 +95,19 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 - 防劇透（點擊揭開）：\`兇手是 <Spoiler>管家</Spoiler>。\`
 - 吃資料的長條圖（benchmark 對比）：
   \`<BarChart title="吞吐對比" unit="tok/s" data={[{ label: 'int8', value: 42 }, { label: 'fp16', value: 31 }]} />\`
-- 多檔程式碼分頁：
+- 多檔程式碼分頁（同一份程式的多個檔案；分頁會依副檔名帶檔案類型圖示）：
   \`<CodeTabs files={[{ name: 'index.ts', lang: 'ts', code: '…' }, { name: 'test.ts', lang: 'ts', code: '…' }]} />\`
+- 內容分頁（同一件事的多種做法/取捨對照，每頁放整段 prose+code，包成一張卡片）：
+  \`<Tabs><Tab title="做法 A（推薦）">…</Tab><Tab title="做法 B">…</Tab></Tabs>\`
+  ⚠ 每個 <Tab> 內的內容要**頂左寫、前後留空行**才會被當 markdown 解析（縮排 4 空格會變成程式碼區塊）。
 - 數學公式（KaTeX，tex 用**屬性字串**傳，公式裡的 { } 才不會被當表達式）：
   行內 \`<Math tex="E=mc^2" />\`；區塊 \`<Math tex="\\\\int_0^1 x\\\\,dx" display />\`
 - CJK 注音：\`<Ruby text="漢字" reading="かんじ" />\`
 - 社群提及徽章：\`<Mention platform="github" user="innei" />\`（platform: github|x）
 - 行內算式（在文章裡求值，少用）：\`今天 {new Date().getFullYear()} 年\`
-- **手繪風圖表**：不用 Excalidraw——直接寫 mermaid \`\`\`mermaid\`\`\`，讀者可切「Hand Drawn」look（或圖上加
-  \`%%{init: {'look':'handDrawn'}}%%\`）。Agent 只要產 mermaid 文字即可。
+- **Excalidraw 手繪風圖表**：\`<Sketch chart="graph TD; A[使用者] --> B[前端]; B --> C[後端]" title="流程圖" />\`
+  chart 收 mermaid 定義（單行用 ; 分隔多句），轉成 Excalidraw 真手繪風靜態 SVG，適合流程/架構草圖。
+  ⚠ 要可切 theme/layout 的**互動**圖仍用 \`\`\`mermaid\`\`\`（有工具列）；純手繪靜態草圖才用 <Sketch>。
 
 ## 5. ⚠️ MDX 的坑（format='mdx' 一定遵守，寫錯會編譯失敗）
 在**一般段落文字**裡，\`<\` 和 \`{\` 會被當成 JSX/表達式 → 編譯失敗（會退回醜醜的純文字）。

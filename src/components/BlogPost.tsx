@@ -12,6 +12,8 @@ import KoimLoader from './KoimLoader';
 import rehypeRaw from 'rehype-raw';
 import pangu from 'pangu';
 import { highlightCode } from '../lib/shikiHighlight';
+import { langEmoji } from '../lib/langEmoji';
+import { CodeBody } from './CodeSurface';
 // mermaid + ELK 改為「偵測到圖才動態載入」（見下方 loadMermaid singleton）——只有 2/11 篇有圖，
 // 其餘文章不背這顆數百 KB 的 lib。頂層只留 type import（型別不進 runtime bundle）。
 import type { Mermaid } from 'mermaid';
@@ -85,6 +87,43 @@ function loadMermaid(): Promise<Mermaid> {
     return m.default;
   });
   return mermaidPromise;
+}
+
+/* ── ELK layout 的 JSON.stringify 護欄 ──
+   @mermaid-js/layout-elk（0.2.x，升級未修）在 layout 過程會 JSON.stringify 整個 elk 圖：
+   兩處 log.debug 的參數一律先求值 + subgraph 用 JSON.parse(JSON.stringify(node)) 深拷貝。
+   本站 <html> 由 React（TanStack Start）渲染、documentElement 帶 __reactFiber（own enumerable
+   屬性），圖裡只要夾到任何 DOM 節點，序列化就會 "Converting circular structure to JSON" → 整張
+   ELK 圖畫不出來（一般站的 documentElement 無 fiber、DOM 節點序列化成 {} 不會炸，故只有本站踩到）。
+   上游改不了 → render 期間暫時把 JSON.stringify 換成「遇 DOM 節點就略過」的安全版：對非 DOM 輸入
+   輸出完全相同（深拷貝仍保留座標等數值，只是丟掉不需要的 DOM ref），僅避免 throw。ref-count 支援多圖並行。 */
+let stringifyGuardDepth = 0;
+let savedStringify: typeof JSON.stringify | null = null;
+async function withDomSafeStringify<T>(fn: () => Promise<T>): Promise<T> {
+  if (stringifyGuardDepth++ === 0) {
+    const orig = JSON.stringify;
+    savedStringify = orig;
+    const patched = ((value: unknown, replacer?: unknown, space?: string | number) =>
+      orig(
+        value,
+        function (this: unknown, key: string, val: unknown) {
+          if (val && typeof val === 'object' && (val as { nodeType?: unknown }).nodeType != null) return undefined;
+          return typeof replacer === 'function'
+            ? (replacer as (this: unknown, k: string, v: unknown) => unknown).call(this, key, val)
+            : val;
+        },
+        space,
+      )) as typeof JSON.stringify;
+    JSON.stringify = patched;
+  }
+  try {
+    return await fn();
+  } finally {
+    if (--stringifyGuardDepth === 0 && savedStringify) {
+      JSON.stringify = savedStringify;
+      savedStringify = null;
+    }
+  }
 }
 
 const MERMAID_THEMES = [
@@ -248,7 +287,8 @@ const MermaidDiagram = ({ code, theme, look, layout, direction, onError, onRende
           flowchart: { curve: 'basis', useMaxWidth: false },
           securityLevel: 'loose',
         } as Parameters<typeof mermaid.initialize>[0]);
-        const { svg } = await mermaid.render(id, body);
+        // ELK layout 內部序列化整張圖會撈到 DOM 節點 → 用護欄迴避循環參照 throw（見 withDomSafeStringify）。
+        const { svg } = await withDomSafeStringify(() => mermaid.render(id, body));
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
           onError?.(null);
@@ -581,16 +621,15 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }: { nod
     return (
       <div className="code-block-wrapper">
         <div className="code-block-header">
-          <span className="language-name">{lang}</span>
+          <span className="language-name">
+            <span className="language-emoji" aria-hidden>{langEmoji(lang)}</span>
+            {lang}
+          </span>
           <button onClick={handleCopy} className="copy-button">
             {isCopied ? t('blog.codeCopied') : t('blog.codeCopy')}
           </button>
         </div>
-        {highlighted ? (
-          <div className="shiki-output" dangerouslySetInnerHTML={{ __html: highlighted }} />
-        ) : (
-          <pre className="shiki-fallback"><code>{codeText}</code></pre>
-        )}
+        <CodeBody highlighted={highlighted} code={codeText} />
       </div>
     );
   }
