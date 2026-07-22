@@ -1939,6 +1939,93 @@ a.series-nav-title:hover {
   outline: none;
 }
 
+/* ── 終端機渲染（bash/shell 類）：macOS 風視窗，紅黃綠燈 + 標題列，無行號，唯讀 ── */
+.terminal-block {
+  margin: 1.5rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0b0c11;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.85rem;
+  background: rgba(255, 255, 255, 0.035);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.terminal-dots {
+  display: inline-flex;
+  gap: 0.45rem;
+}
+.terminal-dot {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 50%;
+}
+.terminal-dot--r {
+  background: #ff5f56;
+}
+.terminal-dot--y {
+  background: #ffbd2e;
+}
+.terminal-dot--g {
+  background: #27c93f;
+}
+.terminal-title {
+  margin-left: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.42);
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+}
+.terminal-block .copy-button {
+  margin-left: auto;
+}
+.terminal-body {
+  overflow-x: auto;
+  padding: 0.9rem 0 1rem;
+}
+.terminal-body .shiki-output,
+.terminal-body .shiki-fallback {
+  margin: 0;
+}
+.terminal-body .shiki-output pre.shiki {
+  margin: 0 !important;
+  padding: 0 1.1rem !important;
+  background: transparent !important;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace !important;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+.terminal-body .shiki-output code {
+  background: none !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font-family: inherit !important;
+  display: block;
+}
+.terminal-body .shiki-fallback {
+  margin: 0 !important;
+  padding: 0 1.1rem !important;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: pre;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+}
+.terminal-block ::-webkit-scrollbar {
+  height: 7px;
+}
+.terminal-block ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.13);
+  border-radius: 4px;
+}
+
 /* ── 共用程式碼本體 .code-surface-body（一般 code block 與 CodeTabs 共用）──
    內距放在外層 scroll 容器（短碼不硬撐橫向捲軸）；pre 透明底、等寬字、width:max-content；
    行號由 CSS counter 掛在每個 .line 前。 */

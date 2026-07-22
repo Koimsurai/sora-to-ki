@@ -573,6 +573,9 @@ const FONT_OPTIONS = [
 /* ══════════════════════════
    CodeBlock
    ══════════════════════════ */
+// 這些語言的 fenced code 改渲染成「終端機視窗」而非一般 code block。
+const TERMINAL_LANGS = new Set(['bash', 'sh', 'shell', 'zsh', 'console', 'terminal', 'shellsession', 'shellscript']);
+
 const CodeBlock = ({ node: _node, inline, className, children, ...props }: { node?: unknown; inline?: boolean; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) => {
   const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
@@ -618,6 +621,35 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }: { nod
   };
 
   if (!inline && match) {
+    // 終端機類語言 → 渲染成終端機視窗（紅黃綠燈 + 無行號），跟一般 code block 明確區隔。唯讀。
+    if (TERMINAL_LANGS.has(lang)) {
+      return (
+        <div className="terminal-block">
+          <div className="terminal-bar">
+            <span className="terminal-dots" aria-hidden>
+              <span className="terminal-dot terminal-dot--r" />
+              <span className="terminal-dot terminal-dot--y" />
+              <span className="terminal-dot terminal-dot--g" />
+            </span>
+            <span className="terminal-title">{lang}</span>
+            <button onClick={handleCopy} className="copy-button">
+              {isCopied ? t('blog.codeCopied') : t('blog.codeCopy')}
+            </button>
+          </div>
+          <div className="terminal-body">
+            {highlighted ? (
+              // shiki 高亮的可信 HTML（作者內容 + shiki）
+              // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
+              <div className="shiki-output" dangerouslySetInnerHTML={{ __html: highlighted }} />
+            ) : (
+              <pre className="shiki-fallback">
+                <code>{codeText}</code>
+              </pre>
+            )}
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="code-block-wrapper">
         <div className="code-block-header">
