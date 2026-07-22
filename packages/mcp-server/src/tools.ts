@@ -31,6 +31,7 @@ const POST_WRITE_FIELDS = [
   'excerpt',
   'category',
   'status',
+  'format',
   'layout_type',
   'tags',
   'series_name',
@@ -45,6 +46,12 @@ const postWriteProps = {
   excerpt: { type: 'string', description: '摘要；省略=NULL' },
   category: { type: 'string', description: '分類名（需已存在於 categories）' },
   status: { type: 'string', enum: ['draft', 'published'], description: '狀態；建立時預設 draft' },
+  format: {
+    type: 'string',
+    enum: ['markdown', 'mdx'],
+    description:
+      "內容格式。用到自訂 block（<Note>/<Annot>/<Spoiler>/<BarChart>）或行內 JS {…} → 'mdx'；純文字/markdown → 'markdown'（預設）。用 mdx 前務必先讀 koimsurai_authoring_guide（有 <、{ 的跳脫規則）。",
+  },
   layout_type: { type: 'string', description: "版面型別，預設 'record'" },
   tags: { type: 'array', items: { type: 'string' }, description: '標籤名陣列（不存在的會自動建立）' },
   series_name: { type: 'string', description: '系列名（可選）' },
@@ -56,8 +63,65 @@ const postWriteProps = {
   },
 };
 
+// 完整撰寫指南——寫一篇文章前先讀。目標：Agent 一次產出結構完整、格式正確、可直接發布的文章。
+const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
+
+寫「一篇完整文章」前先讀這份。目標：一次到位——結構完整、格式正確、站長只要審不用大改。
+
+## 1. 動手前
+- 先 koimsurai_list_categories 看現有分類，用既有的（或明確跟站長確認要新分類）。
+- 先 status='draft'。發布交給站長（審過再 set_post_status 或 send_newsletter）。
+
+## 2. 文章欄位（create_post 參數）
+- **title**：想要副標就用全形冒號分隔「主標：副標」，前端自動把冒號後段渲染成副標。
+  例：關掉翻譯器，程式卻關不掉：一個躺了兩年的 thread_local 死鎖
+- **excerpt**：會渲染成文章開頭的「🔑 關鍵洞察」框 → 寫 2~4 句**真正的重點摘要**，不是複製第一段。
+- **category**：必須是已存在的分類名。
+- **tags**：3~5 個；不存在的會自動建立。
+- **format**：用到下面「自訂 block / 圖表 / 行內 JS」→ 'mdx'；純文字 → 'markdown'（預設）。
+- **status**：預設 draft。
+
+## 3. 內文格式（純 markdown，兩種 format 都能用）
+- 標題 \`##\` \`###\`（自動生 TOC 錨點，hover 出 #）
+- 程式碼 \`\`\`語言 …\`\`\`（自動 shiki 高亮 + 複製鈕）
+- Mermaid 圖 \`\`\`mermaid …\`\`\`
+- **GitHub 彩色提示框**（善用，別通篇純引用 \`>\`）：
+  \`> [!NOTE]\` 藍｜\`> [!TIP]\` 綠｜\`> [!IMPORTANT]\` 紫｜\`> [!WARNING]\` 琥珀｜\`> [!CAUTION]\` 紅
+- 表格 / 清單 / 粗體 / 行內連結（行內連結自動有 hover 預覽卡）
+
+## 4. MDX 自訂 block（**只在 format='mdx'**）
+- 作者旁白卡（段落長度）：\`<Note title="站長註">這段當初卡很久…</Note>\`
+- 行內註解（hover 某詞出小卡）：\`這句有 <Annot note="註解內容">被註解的詞</Annot>。\`
+- 防劇透（點擊揭開）：\`兇手是 <Spoiler>管家</Spoiler>。\`
+- 吃資料的長條圖（benchmark 對比）：
+  \`<BarChart title="吞吐對比" unit="tok/s" data={[{ label: 'int8', value: 42 }, { label: 'fp16', value: 31 }]} />\`
+- 行內算式（在文章裡求值，少用）：\`今天 {new Date().getFullYear()} 年\`
+
+## 5. ⚠️ MDX 的坑（format='mdx' 一定遵守，寫錯會編譯失敗）
+在**一般段落文字**裡，\`<\` 和 \`{\` 會被當成 JSX/表達式 → 編譯失敗（會退回醜醜的純文字）。
+- 要寫字面的角括號/大括號/泛型/JSON/指令 → **一律包反引號變 inline code**：
+  ✅ \`Vec<String>\`、\`{ "key": 1 }\`、\`a < b\`、\`npm run <script>\`
+  ❌ 正文直接寫 Vec<String> 或 { "key": 1 }
+- 程式碼區塊 \`\`\` 裡的一切都安全，不用跳脫。
+- 不需要自訂 block/行內 JS → 直接 format='markdown'，完全沒這個坑。
+
+## 6. 一次寫好的檢查清單
+1) 分類存在　2) title 決定要不要副標（冒號）　3) excerpt 是真的關鍵洞察
+4) 內文穿插彩色 alert / 程式碼 / 圖表，別通篇純引用　5) format='mdx' 的話正文 \`<\`/\`{\` 都跳脫了
+6) tags 3~5　7) status='draft' 交站長審`;
+
 export function makeTools(api: ApiClient): Tool[] {
   return [
+    // ── 撰寫指南 ────────────────────────────────────────────────
+    {
+      name: 'koimsurai_authoring_guide',
+      description:
+        '取得 koimsurai 文章撰寫指南（欄位慣例、可用 block、彩色 alert、MDX 語法坑、檢查清單）。' +
+        '寫「一篇完整文章」前先呼叫這個，尤其要用 format=mdx / 圖表 / 自訂 block 時。',
+      inputSchema: EMPTY,
+      handler: () => Promise.resolve(AUTHORING_GUIDE),
+    },
+
     // ── 文章 CRUD ──────────────────────────────────────────────
     {
       name: 'koimsurai_list_posts',
@@ -92,6 +156,9 @@ export function makeTools(api: ApiClient): Tool[] {
       name: 'koimsurai_create_post',
       description:
         '建立文章。title/content 必填，其餘可選。預設 status=draft（不會直接公開）。' +
+        '⭐ 寫「完整文章」前先呼叫 koimsurai_authoring_guide（副標/關鍵洞察/彩色 alert/自訂 block/MDX 坑/檢查清單）。' +
+        'title 用「主標：副標」冒號分隔會自動出副標；excerpt 會變成開頭的「關鍵洞察」框。' +
+        '用到 <Note>/<Annot>/<Spoiler>/<BarChart> 或行內 JS → format=\'mdx\'。' +
         '注意 send_newsletter=true 且 published 會寄電子報。',
       inputSchema: {
         type: 'object',
