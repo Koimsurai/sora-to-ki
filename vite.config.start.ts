@@ -41,7 +41,14 @@ const ISR_ROUTE_RULES = {
 
 export default defineConfig({
   resolve: {
-    alias: { '@': path.resolve(import.meta.dirname, './src') },
+    alias: {
+      '@': path.resolve(import.meta.dirname, './src'),
+      // recharts 依賴 decimal.js-light；rolldown 的 prod build 對它的 CJS 版做 interop 時把 default
+      // 二次包裝（default.default）→ recharts 內 `new Decimal()` 變 `new G.default` 而爆
+      // "G.default is not a constructor"（dev 的 esbuild 不會）。強制指向它的 ESM 版（乾淨的
+      // export default Decimal）即可迴避。
+      'decimal.js-light': path.resolve(import.meta.dirname, './node_modules/decimal.js-light/decimal.mjs'),
+    },
   },
   // react-helmet-async 是 CJS,要 vite 轉譯才能在 SSR 用具名匯出(過渡 bridge,之後 SEOHead→head() 可移除)
   ssr: { noExternal: ['react-helmet-async'] },
