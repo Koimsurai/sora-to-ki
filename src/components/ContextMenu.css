@@ -1,0 +1,71 @@
+.ctx-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 13rem;
+  padding: 0.35rem;
+  border-radius: 12px;
+  background: rgba(20, 18, 28, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: ctx-in 0.13s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+@keyframes ctx-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.85rem;
+  font-weight: 400;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+/* 蓋掉全域 button{紫底}＋button:hover{紫底+光暈} */
+.ctx-item:hover,
+.ctx-item:focus,
+.ctx-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  box-shadow: none;
+  border-color: transparent;
+  outline: none;
+}
+.ctx-icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  opacity: 0.75;
+}
+.ctx-divider {
+  height: 1px;
+  margin: 0.3rem;
+  background: rgba(255, 255, 255, 0.08);
+}
+.ctx-hint {
+  padding: 0.45rem 0.7rem 0.3rem;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.4;
+}

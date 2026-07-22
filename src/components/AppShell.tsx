@@ -10,6 +10,7 @@ import BackToTopButton from './BackToTopButton';
 // 桌面 WebGL 背景/開場 + 互動式 overlay → 純 client(three.js / portal 不進 SSR)
 const SpaceBackdropShell = lazy(() => import('./SpaceBackdropShell'));
 const CommandPalette = lazy(() => import('./CommandPalette'));
+const ContextMenu = lazy(() => import('./ContextMenu'));
 
 // 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):Header / Footer / 背景 / chrome 包住路由內容(children = <Outlet/>)。
 // admin 隱藏 Header/Footer/CommandPalette;photos 隱藏 Footer。
@@ -57,6 +58,12 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
           </ClientOnly>
         )}
       </div>
+
+      {!isAdminPage && (
+        <ClientOnly fallback={null}>
+          <Suspense fallback={null}><ContextMenu /></Suspense>
+        </ClientOnly>
+      )}
 
       <BackToTopButton isHomePage={isHomePage} />
     </div>

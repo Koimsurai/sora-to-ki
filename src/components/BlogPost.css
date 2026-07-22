@@ -1220,8 +1220,11 @@ a.series-nav-title:hover {
   color: var(--alert-accent, #c4b5fd);
   letter-spacing: 0.02em;
 }
-.post-content .markdown-alert-title svg {
+.post-content .markdown-alert-title svg,
+.post-content .markdown-alert-title svg path {
   flex-shrink: 0;
+  /* icon 之前沒設 fill → 用預設黑色；強制跟著該類型的 accent 色（藍/綠/紫/琥珀/紅） */
+  fill: var(--alert-accent, #c4b5fd);
 }
 .post-content .markdown-alert p {
   margin: 4px 0;
