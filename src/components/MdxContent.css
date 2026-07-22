@@ -136,6 +136,36 @@
   display: block;
 }
 
+/* ── portal 版小卡（掛到 body、fixed 定位）：覆蓋原本 absolute/hover 那套，
+   left/top 由 JS inline 給；預設在詞上方（translateY(-100%)），空間不夠改下方。 ── */
+.annot-card--portal {
+  position: fixed;
+  bottom: auto;
+  left: auto;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-100%);
+  animation: annot-portal-in 0.16s ease;
+}
+.annot-card--portal.annot-card--below {
+  transform: none;
+}
+@keyframes annot-portal-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+/* 下方時箭頭改指上 */
+.annot-card--below::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: rgba(36, 30, 20, 0.97);
+}
+
 /* ── 防劇透 <Spoiler>：模糊，點擊揭開 ── */
 .spoiler {
   cursor: pointer;

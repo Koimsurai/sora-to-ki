@@ -626,11 +626,7 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }: { nod
       return (
         <div className="terminal-block">
           <div className="terminal-bar">
-            <span className="terminal-dots" aria-hidden>
-              <span className="terminal-dot terminal-dot--r" />
-              <span className="terminal-dot terminal-dot--y" />
-              <span className="terminal-dot terminal-dot--g" />
-            </span>
+            <span className="terminal-glyph" aria-hidden>❯_</span>
             <span className="terminal-title">{lang}</span>
             <button onClick={handleCopy} className="copy-button">
               {isCopied ? t('blog.codeCopied') : t('blog.codeCopy')}
@@ -646,6 +642,10 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }: { nod
                 <code>{codeText}</code>
               </pre>
             )}
+            <div className="terminal-cursor-line" aria-hidden>
+              <span className="terminal-prompt-sym">❯</span>
+              <span className="terminal-cursor" />
+            </div>
           </div>
         </div>
       );

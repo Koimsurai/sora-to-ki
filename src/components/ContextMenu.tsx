@@ -2,7 +2,7 @@
 // 右鍵在連結上 → 多出「開新分頁 / 複製連結」；隨處都有「隨機文章 / 回到頂部」。
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowUp, Copy, ExternalLink, Shuffle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, Copy, ExternalLink, RotateCw, Shuffle } from 'lucide-react';
 import './ContextMenu.css';
 
 interface MenuState {
@@ -97,6 +97,18 @@ export default function ContextMenu() {
       style={{ left: pos.left, top: pos.top }}
       onContextMenu={(e) => e.preventDefault()}
     >
+      <div className="ctx-nav">
+        <button type="button" className="ctx-nav-btn" title="上一頁" aria-label="上一頁" onClick={() => run(() => history.back())}>
+          <ArrowLeft className="ctx-icon" aria-hidden />
+        </button>
+        <button type="button" className="ctx-nav-btn" title="下一頁" aria-label="下一頁" onClick={() => run(() => history.forward())}>
+          <ArrowRight className="ctx-icon" aria-hidden />
+        </button>
+        <button type="button" className="ctx-nav-btn" title="重新整理" aria-label="重新整理" onClick={() => run(() => location.reload())}>
+          <RotateCw className="ctx-icon" aria-hidden />
+        </button>
+      </div>
+      <div className="ctx-divider" />
       {href ? (
         <>
           <button

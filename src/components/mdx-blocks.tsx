@@ -1,6 +1,18 @@
 // MDX 自訂 block 元件。之後每加一個 block 就在這裡多一個元件 export，
 // 再到 MdxContent 的 scope 註冊。未來可由此衍生 prop 驗證 + Agent 的 block 目錄。
-import { Children, isValidElement, lazy, Suspense, useState, type ReactElement, type ReactNode } from 'react';
+import {
+  Children,
+  isValidElement,
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
+import { createPortal } from 'react-dom';
 import { ClientOnly } from '@tanstack/react-router';
 import { FaGithub, FaXTwitter } from 'react-icons/fa6';
 import CodeTabsBlock from './CodeTabsBlock';
@@ -28,31 +40,73 @@ export function Note({ children, title }: { children?: ReactNode; title?: string
   );
 }
 
+// useLayoutEffect 只在 client（SSR 用 useEffect 避免警告）。
+const useIsoLayoutEffect = typeof document !== 'undefined' ? useLayoutEffect : useEffect;
+
 /** 行內作者註解：被註解的文字帶虛線底，hover/點擊 → 底線由左長出 + 冒出小卡。
- *  刻意跟「連結 hover 預覽卡」區隔：琥珀色調、純文字小卡、無 OG 圖。 */
+ *  小卡 portal 到 body（fixed 定位、夾進視窗）→ 不被文章卡片的 overflow:clip / backdrop-filter 裁掉。 */
 export function Annot({ children, note }: { children?: ReactNode; note?: ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // 觸控：點擊 toggle
+  const [hover, setHover] = useState(false); // 桌機：hover
+  const ref = useRef<HTMLSpanElement>(null);
+  const [pos, setPos] = useState<{ left: number; top: number; below: boolean } | null>(null);
+  const show = open || hover;
+
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!show || !el) return;
+    const r = el.getBoundingClientRect();
+    const pad = 8;
+    const vw = window.innerWidth;
+    // ⚠ 本模組 export 了名為 Math 的元件（KaTeX），會遮蔽全域 Math → 不能用 Math.min。
+    const cardW = 304 < vw - pad * 2 ? 304 : vw - pad * 2;
+    let left = r.left;
+    if (left + cardW > vw - pad) left = vw - pad - cardW;
+    if (left < pad) left = pad;
+    const below = r.top < 170; // 太靠視窗頂 → 卡片放下方
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setPos({ left, top: below ? r.bottom + 9 : r.top - 9, below });
+  }, [show]);
+
   return (
-    <span
-      className="annot"
-      data-open={open ? 'true' : undefined}
-      tabIndex={0}
-      // 觸控裝置沒有 hover：點一下 toggle（桌機 hover 由 CSS 顯示，這裡不影響）
-      onClick={() => setOpen((o) => !o)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          setOpen((o) => !o);
-        }
-      }}
-      role="note"
-    >
-      <span className="annot-text">{children}</span>
-      <span className="annot-card" role="tooltip">
-        <span className="annot-card-label">站長註</span>
-        <span className="annot-card-body">{note}</span>
+    <>
+      <span
+        ref={ref}
+        className="annot"
+        data-open={show ? 'true' : undefined}
+        tabIndex={0}
+        role="note"
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        onFocus={() => setHover(true)}
+        onBlur={() => setHover(false)}
+        onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setOpen((o) => !o);
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+            setHover(false);
+          }
+        }}
+      >
+        <span className="annot-text">{children}</span>
       </span>
-    </span>
+      {show && pos
+        ? createPortal(
+            <div
+              className={pos.below ? 'annot-card annot-card--portal annot-card--below' : 'annot-card annot-card--portal'}
+              role="tooltip"
+              style={{ left: pos.left, top: pos.top }}
+            >
+              <span className="annot-card-label">站長註</span>
+              <span className="annot-card-body">{note}</span>
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 
