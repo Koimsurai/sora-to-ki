@@ -151,6 +151,35 @@ html, body, #root {
   box-sizing: inherit;
 }
 
+/* ── 全域捲軸重設計 ──
+   細、暗、中性（配合去紫）；用「透明邊框 + background-clip:padding-box」讓 thumb 視覺更細、
+   兩側留白；hover 才提亮。code block / CodeTabs 有各自更細的捲軸（會覆蓋這裡）。 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 body {
   color: var(--clr-paragraph);
   background-color: transparent;
