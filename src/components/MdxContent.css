@@ -159,6 +159,56 @@
   cursor: text;
 }
 
+/* ── <BarChart> 吃資料的長條圖容器 ── */
+.mdx-chart {
+  margin: 1.75rem 0;
+  padding: 1rem 0.6rem 0.5rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.mdx-chart-title {
+  margin: 0 0 0.6rem 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.6);
+}
+.mdx-chart-loading {
+  height: 300px;
+  margin: 1.75rem 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.mdx-chart-empty {
+  margin: 1.75rem 0;
+  padding: 1.2rem;
+  border-radius: 10px;
+  border: 1px dashed rgba(252, 165, 165, 0.35);
+  color: rgba(252, 165, 165, 0.8);
+  font-size: 0.88rem;
+  text-align: center;
+}
+/* hover tooltip */
+.mdx-chart-tip {
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(24, 20, 32, 0.97);
+  border: 1px solid rgba(139, 124, 246, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.mdx-chart-tip-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.15rem;
+}
+.mdx-chart-tip-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #b5a8ff;
+}
+
 .mdx-error {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;

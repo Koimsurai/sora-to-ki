@@ -1,6 +1,11 @@
 // MDX 自訂 block 元件。之後每加一個 block 就在這裡多一個元件 export，
 // 再到 MdxContent 的 scope 註冊。未來可由此衍生 prop 驗證 + Agent 的 block 目錄。
-import { useState, type ReactNode } from 'react';
+import { lazy, Suspense, useState, type ReactNode } from 'react';
+import { ClientOnly } from '@tanstack/react-router';
+
+// recharts 很重 → lazy import，只有文章真的用到 <BarChart> 才進 bundle。
+const BarChartImpl = lazy(() => import('./BarChartBlock'));
+const chartFallback = <div className="mdx-chart-loading" aria-hidden />;
 
 /** 作者註卡：段落長度的站長旁白，在內文流裡的卡片（跟一般 alert 區隔）。 */
 export function Note({ children, title }: { children?: ReactNode; title?: string }) {
@@ -42,6 +47,24 @@ export function Annot({ children, note }: { children?: ReactNode; note?: ReactNo
         <span className="annot-card-body">{note}</span>
       </span>
     </span>
+  );
+}
+
+/** 吃 JSON 資料的長條圖（recharts）。SSR 不友善（要量容器尺寸）→ ClientOnly 包 + lazy 載，
+ *  fallback 是固定高佔位（避免 hydration reflow）。
+ *  用法：<BarChart data={[{label:'int8',value:42},…]} title="…" unit="tok/s" /> */
+export function BarChart(props: {
+  data?: { label: string; value: number }[];
+  title?: string;
+  unit?: string;
+  color?: string;
+}) {
+  return (
+    <ClientOnly fallback={chartFallback}>
+      <Suspense fallback={chartFallback}>
+        <BarChartImpl {...props} />
+      </Suspense>
+    </ClientOnly>
   );
 }
 

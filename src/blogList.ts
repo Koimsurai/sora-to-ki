@@ -26,9 +26,15 @@ export const postDetailQueryOptions = (id: string | number, lang: string) =>
       const data = (await res.json()) as PostDetailResponse;
       if (data.message !== 'success') throw new Error('Post not found');
       // MDX 文章：server 端編譯（compiler 不進 client bundle），結果隨 query dehydrate 到 client。
+      // 編譯失敗（Agent 寫錯語法，如 prose 裡有裸 <Tag>）→ 不 404 整篇，退回 markdown 渲染（至少可讀）。
       if (data.format === 'mdx') {
-        const compiledMdx = await compileMdx({ data: data.content });
-        return { ...data, compiledMdx };
+        try {
+          const compiledMdx = await compileMdx({ data: data.content });
+          return { ...data, compiledMdx };
+        } catch (e) {
+          console.error('[mdx] 編譯失敗，退回 markdown 渲染：', e);
+          return data;
+        }
       }
       return data;
     },
