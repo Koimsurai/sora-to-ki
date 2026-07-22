@@ -9,6 +9,8 @@ import CodeTabsBlock from './CodeTabsBlock';
 const BarChartImpl = lazy(() => import('./BarChartBlock'));
 const MathImpl = lazy(() => import('./MathBlock'));
 const SketchImpl = lazy(() => import('./SketchBlock'));
+const ChartImpl = lazy(() => import('./ChartBlock'));
+const InteractiveChartImpl = lazy(() => import('./InteractiveChartBlock'));
 const chartFallback = <div className="mdx-chart-loading" aria-hidden />;
 
 /** 作者註卡：段落長度的站長旁白，在內文流裡的卡片（跟一般 alert 區隔）。 */
@@ -67,6 +69,50 @@ export function BarChart(props: {
     <ClientOnly fallback={chartFallback}>
       <Suspense fallback={chartFallback}>
         <BarChartImpl {...props} />
+      </Suspense>
+    </ClientOnly>
+  );
+}
+
+/** 統一圖表（recharts）：type = line/area/bar/pie/donut/scatter/radar。
+ *  用法 <Chart type="line" data={[{label:'2020', a:3, b:5}]} series={['a','b']} title="…" /> */
+export function Chart(props: {
+  type?: string;
+  data?: Record<string, unknown>[];
+  series?: (string | { key: string; name?: string; color?: string })[];
+  categoryKey?: string;
+  title?: string;
+  unit?: string;
+  stacked?: boolean;
+  xKey?: string;
+  yKey?: string;
+  zKey?: string;
+  height?: number;
+}) {
+  return (
+    <ClientOnly fallback={chartFallback}>
+      <Suspense fallback={chartFallback}>
+        <ChartImpl {...(props as Parameters<typeof ChartImpl>[0])} />
+      </Suspense>
+    </ClientOnly>
+  );
+}
+
+/** 互動圖表：讀者拉滑桿改值 → 即時重繪。用法
+ *  <InteractiveChart type="bar" data={[{label:'A', value:40}]} title="…" unit="…" /> */
+export function InteractiveChart(props: {
+  type?: 'bar' | 'line' | 'area';
+  data?: { label?: string; value?: number }[];
+  title?: string;
+  unit?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  return (
+    <ClientOnly fallback={chartFallback}>
+      <Suspense fallback={chartFallback}>
+        <InteractiveChartImpl {...props} />
       </Suspense>
     </ClientOnly>
   );

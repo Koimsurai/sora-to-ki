@@ -94,8 +94,12 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 - 作者旁白卡（段落長度）：\`<Note title="站長註">這段當初卡很久…</Note>\`
 - 行內註解（hover 某詞出小卡）：\`這句有 <Annot note="註解內容">被註解的詞</Annot>。\`
 - 防劇透（點擊揭開）：\`兇手是 <Spoiler>管家</Spoiler>。\`
-- 吃資料的長條圖（benchmark 對比）：
+- 吃資料的長條圖（benchmark 對比，單色階）：
   \`<BarChart title="吞吐對比" unit="tok/s" data={[{ label: 'int8', value: 42 }, { label: 'fp16', value: 31 }]} />\`
+- 各種圖表（recharts，色盲安全分類色盤）：\`<Chart type="line" data={[{ label:'v1', A:20, B:12 }]} series={['A','B']} title="…" unit="…" />\`
+  - type：line/area/bar/pie/donut/scatter/radar。多序列（line/area/bar/radar）：data 每列一類別 + 各序列欄位，series 列出要畫的欄位名
+  - pie/donut：\`data={[{ label, value }]}\`；scatter：\`data={[{ x, y }]}\` 搭 xKey/yKey；area、bar 可加 \`stacked\`
+- 互動圖表（讀者拉滑桿即時改值）：\`<InteractiveChart type="bar" data={[{ label:'方案A', value:40 }]} title="…" unit="ms" />\`（type: bar/line/area）
 - 多檔程式碼分頁（同一份程式的多個檔案；分頁會依副檔名帶檔案類型圖示）：
   \`<CodeTabs files={[{ name: 'index.ts', lang: 'ts', code: '…' }, { name: 'test.ts', lang: 'ts', code: '…' }]} />\`
 - 內容分頁（同一件事的多種做法/取捨對照，每頁放整段 prose+code，包成一張卡片）：
