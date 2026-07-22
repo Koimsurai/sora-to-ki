@@ -2,9 +2,12 @@
 // 再到 MdxContent 的 scope 註冊。未來可由此衍生 prop 驗證 + Agent 的 block 目錄。
 import { lazy, Suspense, useState, type ReactNode } from 'react';
 import { ClientOnly } from '@tanstack/react-router';
+import { FaGithub, FaXTwitter } from 'react-icons/fa6';
+import CodeTabsBlock from './CodeTabsBlock';
 
-// recharts 很重 → lazy import，只有文章真的用到 <BarChart> 才進 bundle。
+// 重的元件 lazy import，只有文章真的用到才進 bundle。
 const BarChartImpl = lazy(() => import('./BarChartBlock'));
+const MathImpl = lazy(() => import('./MathBlock'));
 const chartFallback = <div className="mdx-chart-loading" aria-hidden />;
 
 /** 作者註卡：段落長度的站長旁白，在內文流裡的卡片（跟一般 alert 區隔）。 */
@@ -63,6 +66,51 @@ export function BarChart(props: {
     <ClientOnly fallback={chartFallback}>
       <Suspense fallback={chartFallback}>
         <BarChartImpl {...props} />
+      </Suspense>
+    </ClientOnly>
+  );
+}
+
+/** CJK 注音（Ruby）：base 字 + 上方讀音。用法 <Ruby text="漢字" reading="かんじ" />。 */
+export function Ruby({ text, reading }: { text?: ReactNode; reading?: string }) {
+  return (
+    <ruby className="mdx-ruby">
+      {text}
+      {reading ? <rt>{reading}</rt> : null}
+    </ruby>
+  );
+}
+
+/** 社群提及徽章。用法 <Mention platform="github" user="innei" /> 或 platform="x"。 */
+export function Mention({ platform = 'github', user }: { platform?: string; user?: string }) {
+  const u = (user ?? '').replace(/^@/, '');
+  const isX = platform === 'x' || platform === 'twitter';
+  const href = isX ? `https://x.com/${u}` : `https://github.com/${u}`;
+  return (
+    <a className="mdx-mention" href={href} target="_blank" rel="noreferrer noopener">
+      {isX ? <FaXTwitter aria-hidden /> : <FaGithub aria-hidden />}
+      <span>@{u}</span>
+    </a>
+  );
+}
+
+/** 多檔程式碼分頁。用法 <CodeTabs files={[{ name:'index.ts', lang:'ts', code:'…' }, …]} />。 */
+export function CodeTabs(props: { files?: { name: string; lang?: string; code: string }[] }) {
+  return <CodeTabsBlock {...props} />;
+}
+
+/** KaTeX 數學公式。tex 用屬性字串傳（避免 { } 被 MDX 當表達式）。
+ *  <Math tex="E=mc^2" /> 行內；<Math tex="\\int_0^1 x\\,dx" display /> 區塊。 */
+export function Math(props: { tex?: string; display?: boolean }) {
+  const fallback = props.display ? (
+    <div className="mdx-math-loading" aria-hidden />
+  ) : (
+    <span className="mdx-math-inline">{props.tex}</span>
+  );
+  return (
+    <ClientOnly fallback={fallback}>
+      <Suspense fallback={fallback}>
+        <MathImpl {...props} />
       </Suspense>
     </ClientOnly>
   );

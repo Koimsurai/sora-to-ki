@@ -95,7 +95,15 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 - 防劇透（點擊揭開）：\`兇手是 <Spoiler>管家</Spoiler>。\`
 - 吃資料的長條圖（benchmark 對比）：
   \`<BarChart title="吞吐對比" unit="tok/s" data={[{ label: 'int8', value: 42 }, { label: 'fp16', value: 31 }]} />\`
+- 多檔程式碼分頁：
+  \`<CodeTabs files={[{ name: 'index.ts', lang: 'ts', code: '…' }, { name: 'test.ts', lang: 'ts', code: '…' }]} />\`
+- 數學公式（KaTeX，tex 用**屬性字串**傳，公式裡的 { } 才不會被當表達式）：
+  行內 \`<Math tex="E=mc^2" />\`；區塊 \`<Math tex="\\\\int_0^1 x\\\\,dx" display />\`
+- CJK 注音：\`<Ruby text="漢字" reading="かんじ" />\`
+- 社群提及徽章：\`<Mention platform="github" user="innei" />\`（platform: github|x）
 - 行內算式（在文章裡求值，少用）：\`今天 {new Date().getFullYear()} 年\`
+- **手繪風圖表**：不用 Excalidraw——直接寫 mermaid \`\`\`mermaid\`\`\`，讀者可切「Hand Drawn」look（或圖上加
+  \`%%{init: {'look':'handDrawn'}}%%\`）。Agent 只要產 mermaid 文字即可。
 
 ## 5. ⚠️ MDX 的坑（format='mdx' 一定遵守，寫錯會編譯失敗）
 在**一般段落文字**裡，\`<\` 和 \`{\` 會被當成 JSX/表達式 → 編譯失敗（會退回醜醜的純文字）。

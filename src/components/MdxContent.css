@@ -209,6 +209,93 @@
   color: #b5a8ff;
 }
 
+/* ── <Ruby> CJK 注音 ── */
+.mdx-ruby rt {
+  font-size: 0.55em;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 400;
+}
+
+/* ── <Mention> 社群徽章 ── */
+.mdx-mention {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+  padding: 0.05em 0.45em;
+  margin: 0 0.1em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9em;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.2s ease;
+  vertical-align: baseline;
+}
+.mdx-mention:hover {
+  background: rgba(139, 124, 246, 0.18);
+  border-color: rgba(139, 124, 246, 0.4);
+}
+
+/* ── <CodeTabs> 多檔程式碼分頁 ── */
+.mdx-codetabs {
+  margin: 1.75rem 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.25);
+}
+.mdx-codetabs-bar {
+  display: flex;
+  gap: 2px;
+  padding: 0.35rem 0.5rem 0;
+  background: rgba(255, 255, 255, 0.03);
+  overflow-x: auto;
+}
+.mdx-codetabs-tab {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.75rem;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.mdx-codetabs-tab:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+.mdx-codetabs-tab.active {
+  color: #fff;
+  border-bottom-color: var(--post-accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+.mdx-codetabs-body .shiki-output,
+.mdx-codetabs-body .shiki-fallback {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* ── <Math> KaTeX ── */
+.mdx-math-block {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  text-align: center;
+}
+.mdx-math-loading {
+  height: 2.4rem;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.mdx-math-inline {
+  white-space: nowrap;
+}
+
 .mdx-error {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
