@@ -52,6 +52,113 @@
   margin-bottom: 0;
 }
 
+/* ── 行內作者註解 <Annot>：hover 底線由左長出 + 冒出小卡 ──
+   刻意跟連結 hover 預覽卡區隔：琥珀色調、純文字小卡、無 OG 圖、體積小。 */
+.annot {
+  position: relative;
+  cursor: help;
+  outline: none;
+}
+.annot-text {
+  position: relative;
+  /* 持久的可發現提示：淡虛線底（讓讀者知道這裡有註） */
+  border-bottom: 1px dashed rgba(252, 211, 77, 0.4);
+  padding-bottom: 1px;
+}
+/* hover/focus：實線由左長出，蓋在虛線上 */
+.annot-text::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1.5px;
+  background: #fcd34d;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.annot:hover .annot-text::after,
+.annot:focus-visible .annot-text::after,
+.annot[data-open='true'] .annot-text::after {
+  transform: scaleX(1);
+}
+
+.annot-card {
+  position: absolute;
+  bottom: calc(100% + 9px);
+  left: 0;
+  z-index: 30;
+  min-width: 11rem;
+  max-width: 19rem;
+  width: max-content;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  background: rgba(36, 30, 20, 0.97);
+  border: 1px solid rgba(252, 211, 77, 0.22);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  transform-origin: bottom left;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.3, 0.5, 1);
+}
+.annot:hover .annot-card,
+.annot:focus-within .annot-card,
+.annot[data-open='true'] .annot-card {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+/* 小箭頭指回文字 */
+.annot-card::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 1.1rem;
+  border: 6px solid transparent;
+  border-top-color: rgba(36, 30, 20, 0.97);
+}
+.annot-card-label {
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  color: rgba(252, 211, 77, 0.9);
+  margin-bottom: 0.28rem;
+}
+.annot-card-body {
+  display: block;
+}
+
+/* ── 防劇透 <Spoiler>：模糊，點擊揭開 ── */
+.spoiler {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 3px;
+  background: rgba(255, 255, 255, 0.06);
+  filter: blur(6px);
+  transition: filter 0.35s ease, background 0.35s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  outline: none;
+}
+.spoiler:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.spoiler--revealed {
+  filter: none;
+  background: rgba(252, 211, 77, 0.09);
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+
 .mdx-error {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;

@@ -5,11 +5,11 @@
 import { useMemo } from 'react';
 import * as jsxRuntime from 'react/jsx-runtime';
 import { runSync } from '@mdx-js/mdx';
-import { Note } from './mdx-blocks';
+import { Annot, Note, Spoiler } from './mdx-blocks';
 import './MdxContent.css';
 
-// MDX 渲染可用的自訂 block。key = 文章裡寫的標籤名（`<Note>`）。
-const MDX_BLOCKS = { Note };
+// MDX 渲染可用的自訂 block。key = 文章裡寫的標籤名（`<Note>` / `<Annot>` / `<Spoiler>`）。
+const MDX_BLOCKS = { Note, Annot, Spoiler };
 
 interface MdxContentProps {
   compiled: string;
