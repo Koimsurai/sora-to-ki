@@ -59,6 +59,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^4.1.0",
+    "decimal.js-light": "^2.5.1",
     "exifreader": "^4.41.0",
     "framer-motion": "^12.6.2",
     "i18next": "^26.3.0",
