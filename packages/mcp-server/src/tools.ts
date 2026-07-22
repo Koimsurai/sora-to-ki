@@ -88,6 +88,7 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 - **GitHub 彩色提示框**（善用，別通篇純引用 \`>\`）：
   \`> [!NOTE]\` 藍｜\`> [!TIP]\` 綠｜\`> [!IMPORTANT]\` 紫｜\`> [!WARNING]\` 琥珀｜\`> [!CAUTION]\` 紅
 - 表格 / 清單 / 粗體 / 行內連結（行內連結自動有 hover 預覽卡）
+- 圖片：先呼叫 \`koimsurai_upload_image\`（path / url / base64 三擇一）拿到 \`/uploads/…\` url，再用 \`![說明](url)\` 引用。別直接貼外部熱連結。
 
 ## 4. MDX 自訂 block（**只在 format='mdx'**）
 - 作者旁白卡（段落長度）：\`<Note title="站長註">這段當初卡很久…</Note>\`
@@ -122,6 +123,71 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 4) 內文穿插彩色 alert / 程式碼 / 圖表，別通篇純引用　5) format='mdx' 的話正文 \`<\`/\`{\` 都跳脫了
 6) tags 3~5　7) status='draft' 交站長審`;
 
+// 圖片 mime ↔ 副檔名（後端用「原始檔名的副檔名」決定存檔 ext、用 mimetype 判斷是否算 thumbhash）。
+const EXT_MIME: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  avif: 'image/avif',
+  bmp: 'image/bmp',
+};
+const MIME_EXT: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/svg+xml': 'svg',
+  'image/avif': 'avif',
+  'image/bmp': 'bmp',
+};
+function extOf(name: string): string {
+  return /\.([a-z0-9]+)$/i.exec(name)?.[1]?.toLowerCase() ?? '';
+}
+
+/** 從 path / url / data(base64) 三擇一解析出圖片 bytes + 檔名 + mimetype。 */
+async function resolveImage(a: {
+  path?: string;
+  url?: string;
+  data?: string;
+  filename?: string;
+}): Promise<{ bytes: Uint8Array; filename: string; mime: string }> {
+  let bytes: Uint8Array;
+  let name = a.filename;
+  let mime: string | undefined;
+
+  if (a.path) {
+    const { readFile } = await import('node:fs/promises');
+    const { basename } = await import('node:path');
+    bytes = new Uint8Array(await readFile(a.path));
+    name ??= basename(a.path);
+  } else if (a.url) {
+    const res = await fetch(a.url);
+    if (!res.ok) throw new Error(`下載圖片失敗 (${res.status})：${a.url}`);
+    bytes = new Uint8Array(await res.arrayBuffer());
+    mime = res.headers.get('content-type')?.split(';')[0]?.trim() || undefined;
+    name ??= new URL(a.url).pathname.split('/').pop() || 'image';
+  } else if (a.data) {
+    const m = /^data:([^;]+);base64,(.*)$/s.exec(a.data.trim());
+    mime = m ? m[1] : mime;
+    bytes = new Uint8Array(Buffer.from(m ? m[2] : a.data.trim(), 'base64'));
+    name ??= 'image';
+  } else {
+    throw new Error('請提供 path、url 或 data（base64）其中之一');
+  }
+
+  // 確保檔名有副檔名（後端靠它決定存檔 ext）；沒有就用 mimetype 推。
+  if (!extOf(name)) {
+    const ext = (mime && MIME_EXT[mime.toLowerCase()]) || 'png';
+    name = `${name}.${ext}`;
+  }
+  // mimetype 沒拿到就用副檔名推（後端只看 starts_with('image/') 決定 thumbhash）。
+  mime ??= EXT_MIME[extOf(name)] || 'application/octet-stream';
+  return { bytes, filename: name, mime };
+}
+
 export function makeTools(api: ApiClient): Tool[] {
   return [
     // ── 撰寫指南 ────────────────────────────────────────────────
@@ -132,6 +198,46 @@ export function makeTools(api: ApiClient): Tool[] {
         '寫「一篇完整文章」前先呼叫這個，尤其要用 format=mdx / 圖表 / 自訂 block 時。',
       inputSchema: EMPTY,
       handler: () => Promise.resolve(AUTHORING_GUIDE),
+    },
+
+    // ── 圖片上傳 ────────────────────────────────────────────────
+    {
+      name: 'koimsurai_upload_image',
+      description:
+        '上傳圖片到後台（storage/uploads），回傳可直接放進文章的相對 URL 與 markdown。' +
+        '來源三擇一：path（MCP server 本機檔案路徑）/ url（遠端圖片，下載後轉存）/ data（base64，可含 data: 前綴）。' +
+        '回傳 url 形如 /uploads/YYYY/MM/xxx.png#th=…（#th 是模糊佔位 thumbhash，原樣保留即可）。文章裡用 ![alt](url) 引用。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: '本機圖片檔案路徑（三擇一）' },
+          url: { type: 'string', description: '遠端圖片 URL，會下載後上傳（三擇一）' },
+          data: { type: 'string', description: '圖片 base64，可含 data:image/…;base64, 前綴（三擇一）' },
+          filename: {
+            type: 'string',
+            description: '檔名（決定副檔名）。path/url 可省略自動推斷；data 建議提供以帶正確副檔名',
+          },
+          alt: { type: 'string', description: '圖片替代文字，用於回傳的 markdown ![alt](url)' },
+        },
+        additionalProperties: false,
+      },
+      handler: async (a) => {
+        const { bytes, filename, mime } = await resolveImage(
+          a as { path?: string; url?: string; data?: string; filename?: string },
+        );
+        const result = await api.uploadFile<{
+          url: string;
+          filename: string;
+          thumbhash?: string | null;
+        }>('/api/admin/upload', bytes, filename, mime);
+        const alt = typeof a.alt === 'string' ? a.alt : '';
+        return {
+          url: result.url,
+          filename: result.filename,
+          thumbhash: result.thumbhash ?? null,
+          markdown: `![${alt}](${result.url})`,
+        };
+      },
     },
 
     // ── 文章 CRUD ──────────────────────────────────────────────

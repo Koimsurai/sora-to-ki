@@ -99,4 +99,51 @@ export class ApiClient {
     }
     return parsed as T;
   }
+
+  /** 上傳檔案（multipart/form-data，欄位名 file——對齊後端 multer.single('file')）。
+   *  Bearer 認證 + 401 自動清 token 重登一次。FormData 每次 send 重建（body 只能消費一次）。 */
+  async uploadFile<T = unknown>(
+    path: string,
+    bytes: Uint8Array,
+    filename: string,
+    contentType?: string,
+  ): Promise<T> {
+    const send = (bearer: string): Promise<Response> => {
+      const form = new FormData();
+      const blob = new Blob([bytes], contentType ? { type: contentType } : {});
+      form.append('file', blob, filename);
+      // 不手動設 content-type：讓 fetch 自動帶 multipart boundary。
+      return fetch(`${this.cfg.baseUrl}${path}`, {
+        method: 'POST',
+        headers: { authorization: `Bearer ${bearer}` },
+        body: form,
+      });
+    };
+
+    let res = await send(await this.ensureToken());
+    if (res.status === 401 && this.cfg.username && this.cfg.password) {
+      this.token = undefined;
+      res = await send(await this.login());
+    }
+
+    const text = await res.text();
+    let parsed: unknown = null;
+    if (text) {
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = text;
+      }
+    }
+    if (!res.ok) {
+      const msg =
+        parsed && typeof parsed === 'object'
+          ? ((parsed as Record<string, unknown>).error ??
+              (parsed as Record<string, unknown>).message ??
+              text)
+          : text || res.statusText;
+      throw new Error(`POST ${path} → ${res.status}: ${String(msg)}`);
+    }
+    return parsed as T;
+  }
 }
