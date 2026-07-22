@@ -1522,6 +1522,25 @@ function BlogPost() {
     [createHeading],
   );
 
+  // MDX 文章的基礎元素 override：與 markdown 管線共用同一批元件（shiki 高亮、mermaid、
+  // 連結卡、圖片燈箱、標題錨點）→ MDX 文不比 markdown 文遜。傳給 MdxContent。
+  const mdxBaseComponents = useMemo(
+    () => ({
+      code: CodeBlock,
+      // MDX 把 block code 包 <pre>，但 CodeBlock 自出 .code-block-wrapper（div）→ pre 透傳避免 div-in-pre。
+      pre: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+      p: CustomParagraph,
+      img: ({ src, alt, ...rest }: { src?: string; alt?: string }) => <BlogImage src={src} alt={alt} {...rest} />,
+      a: ({ href, children, ...rest }: { href?: string; children?: React.ReactNode }) => {
+        const h = typeof href === 'string' ? href : '';
+        if (!h || h.startsWith('#')) return <a href={h} {...rest}>{children}</a>;
+        return <LinkHoverPreview href={h} className={(rest as { className?: string }).className}>{children}</LinkHoverPreview>;
+      },
+      ...headingComponents,
+    }),
+    [headingComponents],
+  );
+
   /* ── 換文章才捲頂（初次掛載/重整不搶捲動，交給 scrollRestoration 還原）──
      否則 reload 時序會變成：首幀頂端 → scrollRestoration 還原到原位 → 這裡又 smooth 捲頂，
      使用者看到「上→下→上」。用 ref 記前一個 key，只有真的換文章（key 變）才捲頂。 */
@@ -1877,8 +1896,9 @@ function BlogPost() {
 
               <article className="post-content drop-cap-first" ref={contentRef}>
                 {postData?.compiledMdx ? (
-                  // format='mdx'：server 端已編譯，這裡 runSync 執行成 React 元件（含自訂 block）。
-                  <MdxContent compiled={postData.compiledMdx} />
+                  // format='mdx'：server 端已編譯，這裡 runSync 執行成 React 元件（自訂 block +
+                  // 與 markdown 共用的 code/link/img/heading override）。
+                  <MdxContent compiled={postData.compiledMdx} baseComponents={mdxBaseComponents} />
                 ) : (
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkAlert]}

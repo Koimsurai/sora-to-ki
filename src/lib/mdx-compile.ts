@@ -10,10 +10,12 @@ export const compileMdx = createServerFn({ method: 'POST' })
   .handler(async ({ data: source }): Promise<string> => {
     const { compile } = await import('@mdx-js/mdx');
     const remarkGfm = (await import('remark-gfm')).default;
+    const { remarkAlert } = await import('remark-github-blockquote-alert');
     const compiled = await compile(source, {
       outputFormat: 'function-body',
       development: false,
-      remarkPlugins: [remarkGfm],
+      // GFM（表格/刪除線/腳註）+ GitHub 式彩色 alert（`> [!WARNING]` 等），與 markdown 管線對齊。
+      remarkPlugins: [remarkGfm, remarkAlert],
     });
     return String(compiled);
   });
