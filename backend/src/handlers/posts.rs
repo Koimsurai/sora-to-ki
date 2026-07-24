@@ -271,7 +271,7 @@ pub async fn list_posts(
     }
     sql.push_str(" LIMIT ? OFFSET ?");
 
-    let mut query = sqlx::query_as::<_, PostRow>(&sql).bind(status);
+    let mut query = sqlx::query_as::<_, PostRow>(sqlx::AssertSqlSafe(sql.as_str())).bind(status);
     if let Some(s) = &q.search {
         let like = format!("%{s}%");
         query = query.bind(like.clone()).bind(like);
@@ -301,7 +301,7 @@ pub async fn list_posts(
     if q.category.is_some() {
         count_sql.push_str(" AND p.category = ?");
     }
-    let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql).bind(status);
+    let mut count_q = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(count_sql.as_str())).bind(status);
     if let Some(s) = &q.search {
         let like = format!("%{s}%");
         count_q = count_q.bind(like.clone()).bind(like);

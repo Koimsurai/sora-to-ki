@@ -332,7 +332,7 @@ pub async fn admin_posts(
     }
     sql.push_str(" GROUP BY p.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?");
 
-    let mut query = sqlx::query_as::<_, PostRow>(&sql);
+    let mut query = sqlx::query_as::<_, PostRow>(sqlx::AssertSqlSafe(sql.as_str()));
     if let Some(s) = &q.status {
         query = query.bind(s.clone());
     }
@@ -353,7 +353,7 @@ pub async fn admin_posts(
     if q.search.is_some() {
         count_sql.push_str(" AND (p.title LIKE ? OR p.content LIKE ?)");
     }
-    let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
+    let mut count_q = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(count_sql.as_str()));
     if let Some(s) = &q.status {
         count_q = count_q.bind(s.clone());
     }
@@ -484,7 +484,7 @@ pub async fn admin_comments(
 
     // count
     let count_sql = format!("SELECT COUNT(*) as total FROM comments c WHERE {where_}");
-    let mut count_q = sqlx::query_scalar::<_, i64>(&count_sql);
+    let mut count_q = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(count_sql.as_str()));
     if use_status {
         count_q = count_q.bind(status_filter.clone());
     }
@@ -503,7 +503,7 @@ pub async fn admin_comments(
          LEFT JOIN posts p ON c.post_id = p.id WHERE {where_} \
          ORDER BY c.created_at DESC LIMIT ? OFFSET ?"
     );
-    let mut query = sqlx::query_as::<_, AdminCommentRow>(&sql);
+    let mut query = sqlx::query_as::<_, AdminCommentRow>(sqlx::AssertSqlSafe(sql.as_str()));
     if use_status {
         query = query.bind(status_filter.clone());
     }
@@ -1038,9 +1038,9 @@ fn js_number(v: Option<&Value>) -> Option<f64> {
 
 /// series_order 綁定：整數值綁 i64、其餘 f64。
 pub(crate) fn bind_num<'q>(
-    q: sqlx::query::Query<'q, sqlx::Sqlite, sqlx::sqlite::SqliteArguments<'q>>,
+    q: sqlx::query::Query<'q, sqlx::Sqlite, sqlx::sqlite::SqliteArguments>,
     n: Option<f64>,
-) -> sqlx::query::Query<'q, sqlx::Sqlite, sqlx::sqlite::SqliteArguments<'q>> {
+) -> sqlx::query::Query<'q, sqlx::Sqlite, sqlx::sqlite::SqliteArguments> {
     match n {
         Some(f) if f.fract() == 0.0 && f.abs() < 9e15 => q.bind(f as i64),
         Some(f) => q.bind(f),
@@ -1550,7 +1550,7 @@ pub async fn admin_batch_comment_status(
     }
     let placeholders = vec!["?"; ids.len()].join(",");
     let sql = format!("UPDATE comments SET status = ? WHERE id IN ({placeholders})");
-    let mut q = sqlx::query(&sql).bind(status);
+    let mut q = sqlx::query(sqlx::AssertSqlSafe(sql.as_str())).bind(status);
     for id in &ids {
         q = q.bind(id);
     }

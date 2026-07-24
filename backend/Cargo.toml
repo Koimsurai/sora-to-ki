@@ -13,7 +13,9 @@ serde = { version = "1", features = ["derive"] }
 # float_roundtrip：serde_json 預設浮點解析快速但有損（差 1 ULP，gallery manifest 的
 # aspectRatio 1.7829716193656093 被 parse 成 …609）；開啟後 parse→serialize 精確 round-trip 對齊 V8。
 serde_json = { version = "1", features = ["preserve_order", "float_roundtrip"] }
-sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls", "macros"] }
+# 0.9：runtime 與 tls 拆開（舊 runtime-tokio-rustls 已移除）。sqlite 為本地檔,不需 TLS → tls-none。
+# sqlite feature 0.9 仍預設 bundled（vendored 靜態連,Docker 免裝 libsqlite3-dev）。
+sqlx = { version = "0.9", features = ["sqlite", "runtime-tokio", "tls-none", "macros"] }
 tower = { version = "0.5", features = ["util"] }
 tower-http = { version = "0.6", features = ["trace", "cors"] }
 tracing = "0.1"

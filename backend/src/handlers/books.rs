@@ -97,7 +97,7 @@ async fn query_books(state: &AppState, q: &BooksQuery) -> Result<Vec<BookRow>, s
         _ => " ORDER BY date_added DESC",
     });
 
-    let mut query = sqlx::query_as::<_, BookRow>(&sql);
+    let mut query = sqlx::query_as::<_, BookRow>(sqlx::AssertSqlSafe(sql.as_str()));
     if let Some(s) = &q.status {
         query = query.bind(s.clone());
     }

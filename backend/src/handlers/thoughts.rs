@@ -144,7 +144,7 @@ pub async fn list_thoughts(
     let sql = format!(
         "SELECT {THOUGHT_SELECT} FROM thoughts t ORDER BY t.created_at DESC, t.id DESC LIMIT ? OFFSET ?"
     );
-    let rows = sqlx::query_as::<_, ThoughtRow>(&sql)
+    let rows = sqlx::query_as::<_, ThoughtRow>(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(limit)
         .bind(offset)
         .fetch_all(&state.pool)
@@ -171,7 +171,7 @@ pub async fn get_thought(
     Path(id): Path<String>,
 ) -> Result<Json<ThoughtDetailResponse>, AppError> {
     let sql = format!("SELECT {THOUGHT_SELECT} FROM thoughts t WHERE t.id = ?");
-    let row = sqlx::query_as::<_, ThoughtRow>(&sql)
+    let row = sqlx::query_as::<_, ThoughtRow>(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(&id)
         .fetch_optional(&state.pool)
         .await?;

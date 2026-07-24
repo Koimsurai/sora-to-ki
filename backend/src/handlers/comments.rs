@@ -145,7 +145,7 @@ async fn create_comment(
          VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)"
     );
     let parent = body.parent_id.filter(|&n| n != 0);
-    let result = sqlx::query(&sql)
+    let result = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(target_id)
         .bind(&author)
         .bind(&content)

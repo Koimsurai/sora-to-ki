@@ -348,7 +348,7 @@ pub async fn sync_bahamut_history(state: &AppState) -> Value {
         let sql = format!(
             "SELECT anime_sn, MAX(cover_url) FROM anime_history              WHERE anime_sn IN ({placeholders}) AND cover_url IS NOT NULL AND cover_url != ''              GROUP BY anime_sn"
         );
-        let mut q = sqlx::query_as::<_, (i64, String)>(&sql);
+        let mut q = sqlx::query_as::<_, (i64, String)>(sqlx::AssertSqlSafe(sql.as_str()));
         for sn in &unique {
             q = q.bind(sn);
         }

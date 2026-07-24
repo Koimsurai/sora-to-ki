@@ -64,9 +64,9 @@ pub fn js_parse_int_opt(s: &str) -> Option<i64> {
 /// 把任意 JSON value 綁進 SQL 參數（對齊 node-sqlite3 的動態綁定）：
 /// null→NULL、字串→TEXT、整數→INTEGER、浮點→REAL、bool→0/1、其他→JSON 字串。
 pub fn bind_val<'q>(
-    q: sqlx::query::Query<'q, sqlx::Sqlite, sqlx::sqlite::SqliteArguments<'q>>,
+    q: sqlx::query::Query<'q, sqlx::Sqlite, sqlx::sqlite::SqliteArguments>,
     v: Option<&Value>,
-) -> sqlx::query::Query<'q, sqlx::Sqlite, sqlx::sqlite::SqliteArguments<'q>> {
+) -> sqlx::query::Query<'q, sqlx::Sqlite, sqlx::sqlite::SqliteArguments> {
     match v {
         None | Some(Value::Null) => q.bind(Option::<String>::None),
         Some(Value::String(s)) => q.bind(s.clone()),

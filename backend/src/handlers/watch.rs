@@ -553,7 +553,7 @@ pub async fn update_favorite(
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "無可更新欄位" }))).into_response();
     }
     let sql = format!("UPDATE watch_favorites SET {} WHERE id = ?", sets.join(", "));
-    let mut q = sqlx::query(&sql);
+    let mut q = sqlx::query(sqlx::AssertSqlSafe(sql.as_str()));
     if has("rating") {
         q = bind_num(q, clamp_rating(b.get("rating").unwrap_or(&Value::Null)));
     }
