@@ -22,7 +22,7 @@ anyhow = "1"
 dotenvy = "0.15"
 bytes = "1"
 # JWT 驗章/簽章（HS256），對齊 Express 的 jsonwebtoken
-jsonwebtoken = "9"
+jsonwebtoken = "10.3"
 # bcrypt 驗密碼，相容 Express 的 bcryptjs（$2a/$2b/$2y）
 bcrypt = "0.19"
 # proxy fallback 用：把未接管的請求原樣轉回 Express；stream 給 /image-proxy 串流代理
