@@ -1,2 +1,37 @@
 packages:
   - 'packages/*'
+
+# pnpm 11 預設封鎖 postinstall build script,需顯式核可。
+# esbuild:平台 binary 安裝;exifreader:套件的 prepare。兩者為既有相依,允許執行。
+allowBuilds:
+  esbuild: true
+  exifreader: true
+
+# overrides:pnpm 11 起不再讀 package.json 的 pnpm.overrides,設定移到此處(top-level)。
+# 多為 CVE remediation 的 transitive pin(對齊 Dependabot 修補),勿刪。
+overrides:
+  rollup: '^4.59.0'
+  glob: '^10.5.0'
+  '@xmldom/xmldom': '^0.9.10'
+  ajv: '^6.14.0'
+  '@modelcontextprotocol/sdk>ajv': '^8.17.1'
+  'ajv-formats>ajv': '^8.17.1'
+  dompurify: '>=3.4.11'
+  picomatch: '^4.0.4'
+  minimatch: '^9.0.7'
+  trim-newlines: '^3.0.1'
+  flatted: '^3.4.2'
+  fast-xml-parser: '^5.3.1'
+  js-yaml: '>=4.3.0'
+  mdast-util-to-hast: '^13.2.1'
+  svgo: '^2.8.1'
+  lodash: '^4.17.21'
+  lodash-es: '^4.18.1'
+  serialize-javascript: '^7.0.5'
+  uuid: '^14.0.0'
+  postcss: '^8.5.12'
+  'nanoid@3': '^3.3.8'
+  'nanoid@>=4.0.0 <5.0.9': '^5.0.9'
+  'brace-expansion@>=2.0.0 <2.1.2': '^2.1.2'
+  '@hono/node-server': '^2.0.5'
+  sharp: '^0.35.0'

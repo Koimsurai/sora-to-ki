@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "packageManager": "pnpm@11.17.0",
   "scripts": {
     "build": "vite build --config vite.config.start.ts",
     "dev": "BACKEND_URL=http://127.0.0.1:3009 vite dev --config vite.config.start.ts --port 13998 --host",
@@ -105,7 +109,7 @@
     "@eslint/js": "^9.21.0",
     "@rolldown/plugin-babel": "^0.2.3",
     "@types/katex": "^0.16.8",
-    "@types/node": "^20.19.43",
+    "@types/node": "^26",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@types/three": "0.185.1",
@@ -132,34 +136,5 @@
     "vite": "^8.0.16",
     "vite-plugin-image-optimizer": "^2.0.3",
     "vitest": "^4.1.10"
-  },
-  "pnpm": {
-    "overrides": {
-      "rollup": "^4.59.0",
-      "glob": "^10.5.0",
-      "@xmldom/xmldom": "^0.9.10",
-      "ajv": "^6.14.0",
-      "@modelcontextprotocol/sdk>ajv": "^8.17.1",
-      "ajv-formats>ajv": "^8.17.1",
-      "dompurify": ">=3.4.11",
-      "picomatch": "^4.0.4",
-      "minimatch": "^9.0.7",
-      "trim-newlines": "^3.0.1",
-      "flatted": "^3.4.2",
-      "fast-xml-parser": "^5.3.1",
-      "js-yaml": ">=4.3.0",
-      "mdast-util-to-hast": "^13.2.1",
-      "svgo": "^2.8.1",
-      "lodash": "^4.17.21",
-      "lodash-es": "^4.18.1",
-      "serialize-javascript": "^7.0.5",
-      "uuid": "^14.0.0",
-      "postcss": "^8.5.12",
-      "nanoid@3": "^3.3.8",
-      "nanoid@>=4.0.0 <5.0.9": "^5.0.9",
-      "brace-expansion@>=2.0.0 <2.1.2": "^2.1.2",
-      "@hono/node-server": "^2.0.5",
-      "sharp": "^0.35.0"
-    }
   }
 }
