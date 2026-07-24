@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Save,
+  SaveAll,
   Send,
   MessageSquare,
   Mail,
@@ -268,6 +269,10 @@ export const AdminLayout = () => {
               <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground/80 px-2.5" onClick={() => document.getElementById('save-draft-btn')?.click()}>
                 <Save className="size-3.5" />
                 儲存草稿
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground/80 px-2.5" onClick={() => document.getElementById('save-exit-btn')?.click()}>
+                <SaveAll className="size-3.5" />
+                存並回列表
               </Button>
               <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5 text-foreground/80 border-border/50 hover:bg-accent/50 px-3" onClick={() => document.getElementById('publish-btn')?.click()}>
                 <Send className="size-3.5" />

@@ -7,8 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { postSchema, type PostFormInput } from '@/schemas/post';
 import { MonacoEditor } from '@/components/monaco-editor';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { PostPreview } from './PostPreview';
 import { Input } from '@/components/ui/input';
 import {
   Form,
@@ -142,6 +141,10 @@ export default function PostEditor() {
   const isLoading = !!id && postPending; // 編輯模式載入文章時的骨架 gate
   const [activeLocale, setActiveLocale] = useState('zh-TW');
   const [zenMode, setZenMode] = useState(false);
+  // 載入既有文章時，form.reset 在 Select mount 之後才跑 → Radix Select 的觸發器不會反映
+  // 「事後才填進來的受控值」，看起來像被 reset（值其實有）。用這個旗標當 key 讓 Select 在
+  // reset 完成後重新 mount 一次，用正確的值初始化 → 顯示正常。新文章保持 false（預設值本就正確）。
+  const [hydrated, setHydrated] = useState(false);
   const [autosaveStatus, setAutosaveStatus] = useState(''); // '', 'saved', 'restoring'
   const submitLockRef = useRef(false);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -181,8 +184,12 @@ export default function PostEditor() {
   // 直接訂閱當前 locale 對應的欄位值，避免 <FormField name={dynamic}> 在切換時
   // 共用 controller/Monaco model 造成「第二次切回顯示舊內容」的 bug。
   const titleValue = form.watch(titleName) ?? '';
-  const contentValue = form.watch(contentName) ?? '';
+  const contentValueRaw = form.watch(contentName);
+  const contentValue = typeof contentValueRaw === 'string' ? contentValueRaw : '';
   const summaryValue = form.watch(summaryName) ?? '';
+  // 預覽走 mdx / markdown 哪條渲染路。編輯器不管理 format 欄位（由 MCP/後端預設決定），
+  // 所以看載入文章的 format；新文章沿用後端預設 markdown。
+  const format = postData?.format ?? 'markdown';
 
   // 若 sourceLanguage 切到目前 activeLocale 不合法時（例如原本 source=zh-TW, activeLocale=en，之後改 source=en
   // 則 en 的編輯欄位切到 base 欄位），這裡確保 activeLocale 仍然指向有效 tab
@@ -278,6 +285,9 @@ export default function PostEditor() {
     };
     form.reset(formattedData as PostFormInput);
     setActiveLocale(postData.source_language ?? 'zh-TW');
+    // reset 完成 → 讓下方 Select 依 key 重新 mount、以正確值初始化（此 set-state 是刻意的）
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postData]);
 
@@ -446,7 +456,7 @@ export default function PostEditor() {
     };
   };
 
-  const onSaveDraft = async (data: PostFormInput) => {
+  const onSaveDraft = async (data: PostFormInput, opts: { exit?: boolean } = {}) => {
     if (submitLockRef.current) {
       toast.info('正在儲存中，請稍候');
       return;
@@ -474,8 +484,10 @@ export default function PostEditor() {
         const result = await response.json() as { data?: { id?: string | number }; id?: string | number };
         // 後端 create 回 { data: { id } }；沒抓到就會每次都 POST → 重複建立草稿
         const newId = result.data?.id ?? result.id;
-        if (!id && newId) {
-          void navigate(`/admin/posts/edit/${newId}`);
+        if (opts.exit) {
+          void navigate('/admin/posts'); // 「存並回列表」：存完直接回列表
+        } else if (!id && newId) {
+          void navigate(`/admin/posts/edit/${newId}`); // 新草稿存完換到 edit 網址（避免重複建立）
         }
       } else {
         toast.error('儲存失敗');
@@ -689,7 +701,14 @@ export default function PostEditor() {
               type="button"
               className="hidden"
               disabled={isSavingDraft || isPublishing}
-              onClick={(e) => { void form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))(e); }}
+              onClick={(e) => { void form.handleSubmit((d) => onSaveDraft(d), () => toast.error('請先填寫標題與內容'))(e); }}
+            />
+            <button
+              id="save-exit-btn"
+              type="button"
+              className="hidden"
+              disabled={isSavingDraft || isPublishing}
+              onClick={(e) => { void form.handleSubmit((d) => onSaveDraft(d, { exit: true }), () => toast.error('請先填寫標題與內容'))(e); }}
             />
             <button
               id="publish-btn"
@@ -809,17 +828,14 @@ export default function PostEditor() {
                       language="markdown"
                       height={editorView === 'split' ? '360px' : '700px'}
                       theme="vs-dark"
-                      onSave={() => { void form.handleSubmit(onSaveDraft, () => toast.error('請先填寫標題與內容'))(); }}
+                      onSave={() => { void form.handleSubmit((d) => onSaveDraft(d), () => toast.error('請先填寫標題與內容'))(); }}
                     />
                   )}
 
                   {editorView !== 'edit' && (
                     <div className={`${editorView === 'split' ? 'max-h-[340px]' : 'max-h-[700px]'} overflow-y-auto border-t border-border/40 bg-background/70 p-4`}>
-                      <article className="prose prose-invert max-w-none prose-p:leading-7 prose-pre:rounded-lg">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {contentValue || '*尚無內容*'}
-                        </ReactMarkdown>
-                      </article>
+                      {/* 跟前台同一套渲染（MDX blocks / shiki / alert / 連結卡）→ 所見即所得 */}
+                      <PostPreview content={contentValue} format={format} />
                     </div>
                   )}
                 </div>
@@ -844,6 +860,9 @@ export default function PostEditor() {
                             分類
                           </FormLabel>
                           <Select
+                            // hydrated + categories.length 進 key：載入完成或選項到齊時重新 mount，
+                            // 讓觸發器顯示已載入的分類（Radix Select 不反映 mount 後才變的受控值）。
+                            key={`category-${hydrated ? 'r' : 'i'}-${categories.length}`}
                             onValueChange={field.onChange}
                             value={field.value}
                           >
@@ -972,6 +991,7 @@ export default function PostEditor() {
                             狀態
                           </FormLabel>
                           <Select
+                            key={`status-${hydrated ? 'r' : 'i'}`}
                             onValueChange={field.onChange}
                             value={field.value}
                           >
@@ -1001,6 +1021,7 @@ export default function PostEditor() {
                             原文語言
                           </FormLabel>
                           <Select
+                            key={`srclang-${hydrated ? 'r' : 'i'}`}
                             onValueChange={(v) => {
                               field.onChange(v);
                               if (activeLocale === sourceLanguage) setActiveLocale(v);
@@ -1050,6 +1071,7 @@ export default function PostEditor() {
                             樣板類型
                           </FormLabel>
                           <Select
+                            key={`layout-${hydrated ? 'r' : 'i'}`}
                             onValueChange={field.onChange}
                             value={field.value ?? 'record'}
                           >

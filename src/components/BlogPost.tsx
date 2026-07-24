@@ -180,6 +180,36 @@ const IconExpand = (
     <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
   </svg>
 );
+const IconZoomIn = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+  </svg>
+);
+const IconZoomOut = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/><line x1="8" y1="11" x2="14" y2="11"/>
+  </svg>
+);
+const IconFit = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
+  </svg>
+);
+const IconCopyCode = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+  </svg>
+);
+const IconCheckMark = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+const IconDownload = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+);
 
 const DARK_THEME_VARS = {
   primaryColor: '#7f5af0',
@@ -252,6 +282,61 @@ function scheduleFitMermaid(ref: ReactZoomPanPinchRef | null): void {
   requestAnimationFrame(() => requestAnimationFrame(() => fitMermaidView(ref)));
 }
 
+/** 取當前 mermaid 圖的 <svg> 元素（在 zoom wrapper 內）。 */
+function mermaidSvgEl(ref: ReactZoomPanPinchRef | null): SVGSVGElement | null {
+  return ref?.instance.wrapperComponent?.querySelector('svg') ?? null;
+}
+
+function triggerDownload(url: string, filename: string): void {
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+/** 下載當前圖為 SVG（向量）。 */
+function downloadMermaidSvg(ref: ReactZoomPanPinchRef | null): void {
+  const svg = mermaidSvgEl(ref);
+  if (!svg) return;
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  const data = new XMLSerializer().serializeToString(clone);
+  const url = URL.createObjectURL(new Blob([data], { type: 'image/svg+xml;charset=utf-8' }));
+  triggerDownload(url, 'mermaid-diagram.svg');
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** 下載當前圖為 PNG（2× 點陣、深色底）。 */
+function downloadMermaidPng(ref: ReactZoomPanPinchRef | null): void {
+  const svg = mermaidSvgEl(ref);
+  if (!svg) return;
+  const vb = svg.viewBox.baseVal;
+  const w = vb.width || svg.getBoundingClientRect().width || 800;
+  const h = vb.height || svg.getBoundingClientRect().height || 600;
+  const scale = 2;
+  const data = new XMLSerializer().serializeToString(svg);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(w * scale);
+    canvas.height = Math.round(h * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#0d1017';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      triggerDownload(url, 'mermaid-diagram.png');
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  };
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(data);
+}
+
 /* ── MermaidDiagram (shared renderer used in inline + fullscreen) ── */
 const MermaidDiagram = ({ code, theme, look, layout, direction, onError, onRendered }: { code: string; theme: string; look: string; layout: string; direction: string; onError?: (err: string | null) => void; onRendered?: () => void }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -291,6 +376,18 @@ const MermaidDiagram = ({ code, theme, look, layout, direction, onError, onRende
         const { svg } = await withDomSafeStringify(() => mermaid.render(id, body));
         if (containerRef.current) {
           containerRef.current.innerHTML = svg;
+          // mermaid 的 SVG 是 width=100% + max-width → 在 shrink-to-fit 的 zoom 容器裡會塌成 ~300px，
+          // fit 依 viewBox 算出的縮放就套在錯的 layout 尺寸上，圖變超小。強制把 SVG 尺寸設成 viewBox
+          // 內在尺寸（1438×648 之類）當 layout size → fit 縮放對得上、圖能填滿容器。
+          const svgEl = containerRef.current.querySelector('svg');
+          if (svgEl) {
+            const vb = svgEl.viewBox.baseVal;
+            if (vb.width && vb.height) {
+              svgEl.setAttribute('width', String(vb.width));
+              svgEl.setAttribute('height', String(vb.height));
+              svgEl.style.maxWidth = 'none';
+            }
+          }
           onError?.(null);
           onRenderedRef.current?.();
         }
@@ -322,9 +419,13 @@ const ToolbarMenu = ({ icon, label, value, options, onChange }: { icon: React.Re
   return (
     <div className="mm-menu" ref={ref}>
       <button
+        type="button"
         className={`mm-menu-trigger${open ? ' mm-menu-trigger--open' : ''}`}
         onClick={() => setOpen(!open)}
         data-tooltip={label}
+        aria-label={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
       >
         {icon}
       </button>
@@ -343,6 +444,27 @@ const ToolbarMenu = ({ icon, label, value, options, onChange }: { icon: React.Re
           ))}
         </div>
       )}
+    </div>
+  );
+};
+
+/* ── Mermaid 動作鈕（縮放 / 重新置中 / 複製原始碼 / 下載 SVG·PNG）── */
+const MermaidActions = ({ transformRef, code }: { transformRef: React.RefObject<ReactZoomPanPinchRef | null>; code: string }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = useCallback(() => {
+    void navigator.clipboard.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }, [code]);
+  return (
+    <div className="mm-toolbar-actions">
+      <button type="button" className="mm-action-btn" onClick={() => transformRef.current?.zoomOut(0.3)} data-tooltip="縮小" aria-label="縮小">{IconZoomOut}</button>
+      <button type="button" className="mm-action-btn" onClick={() => transformRef.current?.zoomIn(0.3)} data-tooltip="放大" aria-label="放大">{IconZoomIn}</button>
+      <button type="button" className="mm-action-btn" onClick={() => scheduleFitMermaid(transformRef.current)} data-tooltip="重新置中" aria-label="重新置中">{IconFit}</button>
+      <button type="button" className="mm-action-btn" onClick={copy} data-tooltip={copied ? '已複製' : '複製原始碼'} aria-label="複製原始碼">{copied ? IconCheckMark : IconCopyCode}</button>
+      <button type="button" className="mm-action-btn mm-action-btn--dl" onClick={() => downloadMermaidSvg(transformRef.current)} data-tooltip="下載 SVG" aria-label="下載 SVG">{IconDownload}<span className="mm-action-ext">SVG</span></button>
+      <button type="button" className="mm-action-btn mm-action-btn--dl" onClick={() => downloadMermaidPng(transformRef.current)} data-tooltip="下載 PNG" aria-label="下載 PNG">{IconDownload}<span className="mm-action-ext">PNG</span></button>
     </div>
   );
 };
@@ -400,6 +522,7 @@ const MermaidFullscreen = ({ code, theme, look, layout, direction, onTheme, onLo
             <ToolbarMenu icon={IconLayout} label="Layout" value={layout} options={MERMAID_LAYOUTS} onChange={onLayout} />
             <ToolbarMenu icon={IconDirection} label="Direction" value={direction} options={MERMAID_DIRECTIONS} onChange={onDirection} />
           </div>
+          <MermaidActions transformRef={transformRef} code={code} />
           <div className="mm-toolbar-right">
             <span className="mm-toolbar-hint">滾輪縮放 · 拖曳平移 · 雙擊還原</span>
             <button className="mm-close-btn" onClick={onClose} title="關閉 (Esc)">✕</button>
@@ -492,7 +615,7 @@ const MermaidBlock = ({ code }: { code: string }) => {
             <ToolbarMenu icon={IconLayout} label="Layout" value={layout} options={MERMAID_LAYOUTS} onChange={setLayout} />
             <ToolbarMenu icon={IconDirection} label="Direction" value={direction} options={MERMAID_DIRECTIONS} onChange={setDirection} />
           </div>
-          <span className="mm-toolbar-hint">滾輪縮放 · 拖曳平移</span>
+          <MermaidActions transformRef={transformRef} code={code} />
         </div>
 
         {/* Zoomable canvas */}
@@ -517,7 +640,7 @@ const MermaidBlock = ({ code }: { code: string }) => {
         </TransformWrapper>
 
         {/* Expand button */}
-        <button className="mm-expand-btn" onClick={() => setFullscreen(true)} data-tooltip="放大檢視">
+        <button type="button" className="mm-expand-btn" onClick={() => setFullscreen(true)} data-tooltip="放大檢視" aria-label="放大檢視">
           {IconExpand}
         </button>
       </div>
@@ -576,7 +699,17 @@ const FONT_OPTIONS = [
 // 這些語言的 fenced code 改渲染成「終端機視窗」而非一般 code block。
 const TERMINAL_LANGS = new Set(['bash', 'sh', 'shell', 'zsh', 'console', 'terminal', 'shellsession', 'shellscript']);
 
-const CodeBlock = ({ node: _node, inline, className, children, ...props }: { node?: unknown; inline?: boolean; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) => {
+// 非原文語系的文章：頂部掛「AI 翻譯、未經人工審校」提示（站長無法人工審日/韓等語法）。
+// 文字用目標語言寫（提示會出現在該語系頁），連回原文（source_language，走不帶 prefix 的規範路徑）。
+const AI_TRANSLATION_NOTICE: Record<string, { text: string; original: string }> = {
+  en: { text: 'AI-translated from the original (Traditional Chinese) — not human-reviewed, so wording may be imperfect.', original: 'View original' },
+  ja: { text: 'この記事は原文（繁体字中国語）からのAI翻訳です。人手による校正はしていないため、表現に不自然さが残る場合があります。', original: '原文を見る' },
+  ko: { text: '이 글은 원문(번체 중국어)의 AI 번역본이며, 사람이 검수하지 않아 표현이 어색할 수 있습니다.', original: '원문 보기' },
+  'zh-CN': { text: '本文由原文（繁体中文）AI 翻译，未经人工审校，措辞可能不够自然。', original: '查看原文' },
+};
+
+// 後台編輯器預覽（PostPreview）也重用這批 → export，讓預覽跟前台同一套渲染（shiki/mermaid/terminal）。
+export const CodeBlock = ({ node: _node, inline, className, children, ...props }: { node?: unknown; inline?: boolean; className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) => {
   const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
   const [highlighted, setHighlighted] = useState<string | null>(null);
@@ -671,7 +804,7 @@ const CodeBlock = ({ node: _node, inline, className, children, ...props }: { nod
 /* ══════════════════════════
    Custom paragraph — detect standalone link lines for LinkCard
    ══════════════════════════ */
-const CustomParagraph = ({ children, node: _node, ...props }: { children?: React.ReactNode; node?: unknown } & React.HTMLAttributes<HTMLParagraphElement>) => {
+export const CustomParagraph = ({ children, node: _node, ...props }: { children?: React.ReactNode; node?: unknown } & React.HTMLAttributes<HTMLParagraphElement>) => {
   const childArray = React.Children.toArray(children);
 
   const extractFirstUrlFromText = (text: string | null | undefined) => {
@@ -1271,7 +1404,7 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.25 }}
       >
-        <button className="subscribe-close" onClick={onClose}><FaTimes /></button>
+        <button type="button" className="subscribe-close" onClick={onClose} aria-label="關閉"><FaTimes /></button>
 
         {subscribed ? (
           /* ── 已訂閱狀態 ── */
@@ -1312,9 +1445,14 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
               <h3>{t('newsletter.title')}</h3>
               <p>{t('newsletter.subscribeIntro')}</p>
             </div>
-            <form onSubmit={(e) => { void handleSubmit(e); }} className="subscribe-form">
-              <input type="text" placeholder={t('newsletter.namePlaceholderShort')} value={name} onChange={(e) => setName(e.target.value)} disabled={status === 'loading'} />
-              <input type="email" placeholder={t('newsletter.emailPlaceholderShort')} value={email} onChange={(e) => setEmail(e.target.value)} required disabled={status === 'loading'} />
+            <form
+              onSubmit={(e) => { void handleSubmit(e); }}
+              className="subscribe-form"
+              toolname="subscribe_newsletter"
+              tooldescription="訂閱 koimsurai 電子報，有新文章時以 email 通知"
+            >
+              <input type="text" name="name" toolparamdescription="訂閱者暱稱（選填）" placeholder={t('newsletter.namePlaceholderShort')} value={name} onChange={(e) => setName(e.target.value)} disabled={status === 'loading'} />
+              <input type="email" name="email" toolparamdescription="訂閱用的 email 地址" placeholder={t('newsletter.emailPlaceholderShort')} value={email} onChange={(e) => setEmail(e.target.value)} required disabled={status === 'loading'} />
               <button type="submit" disabled={status === 'loading'}>
                 {status === 'loading' ? t('newsletter.processing') : t('newsletter.subscribe')}
               </button>
@@ -1965,12 +2103,21 @@ function BlogPost() {
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
           >
+            {/* 非原文語系 → AI 翻譯提示（連回原文）。放卡片「外」：.post-ai-summary-inline 用負 margin
+                貼齊卡片頂邊、圓角只在上方，必須是卡片第一個子元素，banner 插進去會壓壞它。 */}
+            {currentLocale !== sourceLang && AI_TRANSLATION_NOTICE[currentLocale] && (
+              <div className="ai-translation-notice">
+                <span className="ai-translation-icon" aria-hidden>🌐</span>
+                <span className="ai-translation-text">{AI_TRANSLATION_NOTICE[currentLocale].text}</span>
+                <a className="ai-translation-original" href={`/blog/${id}`}>{AI_TRANSLATION_NOTICE[currentLocale].original} →</a>
+              </div>
+            )}
             <div className="post-content-wrapper">
               {/* AI Summary — inside card top with gradient fade */}
               {post.excerpt && (
                 <div className="post-ai-summary-inline">
                   <div className="ai-summary-top-row">
-                    <h4>🔑 關鍵洞察</h4>
+                    <h4>🔑 {t('blog.keyInsights')}</h4>
                     <span className="ai-badge">✦ AI·GEN</span>
                   </div>
                   <p>{post.excerpt}</p>

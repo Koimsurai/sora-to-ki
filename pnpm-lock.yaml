@@ -204,6 +204,9 @@ importers:
       react-blurhash:
         specifier: ^0.3.0
         version: 0.3.0(blurhash@2.0.5)(react@19.2.1)
+      react-compare-slider:
+        specifier: ^4.0.0
+        version: 4.0.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-day-picker:
         specifier: ^9.11.1
         version: 9.12.0(react@19.2.1)
@@ -5369,6 +5372,13 @@ packages:
     peerDependencies:
       blurhash: ^2.0.3
       react: '>=15'
+
+  react-compare-slider@4.0.0:
+    resolution: {integrity: sha512-XNpwfWa8OHvJZIsC+ywhjpRWX8VCY8fIavQ82R63Tever1pQndhicr0ecDuU69GjA+YjesoV7LX3QnKsECtMDw==}
+    engines: {node: '>=20.0.0'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
 
   react-day-picker@9.12.0:
     resolution: {integrity: sha512-t8OvG/Zrciso5CQJu5b1A7yzEmebvST+S3pOVQJWxwjjVngyG/CA2htN/D15dLI4uTEuLLkbZyS4YYt480FAtA==}
@@ -12208,6 +12218,11 @@ snapshots:
     dependencies:
       blurhash: 2.0.5
       react: 19.2.1
+
+  react-compare-slider@4.0.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
+    dependencies:
+      react: 19.2.1
+      react-dom: 19.2.1(react@19.2.1)
 
   react-day-picker@9.12.0(react@19.2.1):
     dependencies:

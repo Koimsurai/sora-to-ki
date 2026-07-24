@@ -25,6 +25,14 @@ function pick(args: Record<string, unknown>, keys: string[]): Record<string, unk
   return out;
 }
 
+// i18n 欄位（4 語 × 3 欄）。zh-TW 是來源（存在 title/content/excerpt），這裡是譯文欄。
+const I18N_FIELDS = [
+  'title_en', 'content_en', 'excerpt_en',
+  'title_ja', 'content_ja', 'excerpt_ja',
+  'title_ko', 'content_ko', 'excerpt_ko',
+  'title_zh_cn', 'content_zh_cn', 'excerpt_zh_cn',
+] as const;
+
 const POST_WRITE_FIELDS = [
   'title',
   'content',
@@ -38,6 +46,8 @@ const POST_WRITE_FIELDS = [
   'series_order',
   'allow_comments',
   'send_newsletter',
+  'source_language',
+  ...I18N_FIELDS,
 ] as const;
 
 const postWriteProps = {
@@ -61,7 +71,30 @@ const postWriteProps = {
     type: 'boolean',
     description: '⚠️ 若同時 status=published，會寄電子報給所有訂閱者——請先確認再設 true',
   },
+  source_language: {
+    type: 'string',
+    enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+    description: "來源語言（title/content 用哪一語寫的），預設 'zh-TW'。其餘語言放 *_en/*_ja/*_ko/*_zh_cn 欄。",
+  },
+  ...i18nProps(),
 };
+
+/** 4 語 × 3 欄的 i18n 屬性。zh-TW 是來源（存 title/content/excerpt）；這裡放各譯文語言。 */
+function i18nProps(): Record<string, { type: 'string'; description: string }> {
+  const langLabel: Record<string, string> = { en: '英文', ja: '日文', ko: '韓文', zh_cn: '簡體中文' };
+  const fieldLabel: Record<string, string> = { title: '標題', content: '內文', excerpt: '摘要' };
+  const out: Record<string, { type: 'string'; description: string }> = {};
+  for (const lang of ['en', 'ja', 'ko', 'zh_cn'] as const) {
+    for (const field of ['title', 'content', 'excerpt'] as const) {
+      const zhcnNote = lang === 'zh_cn' ? '；簡體通常改用 generate_post_zh_cn 自動轉，不必手填' : '';
+      out[`${field}_${lang}`] = {
+        type: 'string',
+        description: `${langLabel[lang]}${fieldLabel[field]}（譯文，可選）${zhcnNote}`,
+      };
+    }
+  }
+  return out;
+}
 
 // 完整撰寫指南——寫一篇文章前先讀。目標：Agent 一次產出結構完整、格式正確、可直接發布的文章。
 const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
@@ -114,6 +147,22 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
   chart 收 mermaid 定義（單行用 ; 分隔多句），轉成 Excalidraw 真手繪風靜態 SVG，適合流程/架構草圖。
   ⚠ 要可切 theme/layout 的**互動**圖仍用 \`\`\`mermaid\`\`\`（有工具列）；純手繪靜態草圖才用 <Sketch>。
 
+- **程式碼前後對比 <Diff>**（除錯文超好用）：行首 \`+\` 新增、\`-\` 刪除、其餘上下文；code 用**屬性字串**傳（多行用範本字面值），lang 是 base 語言：
+  用法：<Diff lang="ts" title="修法" code={\`-const a = 1\\n+const a = 2\`} />（多行用範本字面值，\\n 分行）
+- **段落級收合 <Details>**（把冗長 log／證明／旁支收起來）：\`<Details summary="完整錯誤 log">…可放任何內容…</Details>\`（要預設展開加 open）
+- **前後圖對比滑桿 <ImageCompare>**（UI/破圖前後）：\`<ImageCompare before="/uploads/before.png" after="/uploads/after.png" beforeLabel="修前" afterLabel="修後" caption="…" />\`（圖先用 upload_image 上傳）
+- **編號步驟 <Steps>/<Step>**（教學/設定流程）：\`<Steps><Step title="裝依賴">…</Step><Step title="設定">…</Step></Steps>\`（每 <Step> 內容比照 <Tab>：頂左寫、前後留空行）
+- **專案結構樹 <FileTree>**：tree 用屬性字串傳，縮排每 2 空格一層、結尾 \`/\` 為資料夾：
+  用法：<FileTree tree={\`src/\\n  components/\\n    Button.tsx\\n  index.ts\\npackage.json\`} />
+- **數字磚 <Stats>/<Stat>**（benchmark 重點數）：\`<Stats><Stat label="吞吐" value="42" unit="tok/s" trend="up" /><Stat label="延遲" value="8" unit="ms" trend="down" /></Stats>\`（trend: up/down/flat 可選）
+- **鍵盤鍵 <Kbd>**：\`按 <Kbd>Ctrl</Kbd> + <Kbd>C</Kbd> 複製\`
+- **套件安裝分頁 <Install>**（自動生 npm/pnpm/yarn/bun）：\`<Install pkg="react-compare-slider" />\`（開發依賴加 dev）
+- **影片**：自架 \`<Video src="/uploads/demo.mp4" poster="…" caption="…" />\`；YouTube \`<YouTube id="影片ID" title="…" />\`（點擊才載，對隱私/CSP 友善）
+- **文末參考連結 <Refs>**（有參考資料/連結清單就用它，**別用裸網址的 markdown list**——那會每條都彈 hover 卡、很吵）：
+  依網域自動帶品牌 icon（GitHub/npm/crates.io…）。用法：
+  <Refs items={[{ label: 'anigamer · TS', links: [{ text: 'GitHub', href: 'https://github.com/…' }, { text: 'npm', href: 'https://npmjs.com/…' }] }, { label: '延伸閱讀', links: [{ text: '在看什麼那篇', href: 'https://koimsurai.com/blog/44' }] }]} />
+  註：站內文章想要「卡片」樣式，就讓**整段只放一個 \`/blog/\` 連結**（自動變站內文章卡）；<Refs> 是給緊湊清單用。
+
 ## 5. ⚠️ MDX 的坑（format='mdx' 一定遵守，寫錯會編譯失敗）
 在**一般段落文字**裡，\`<\` 和 \`{\` 會被當成 JSX/表達式 → 編譯失敗（會退回醜醜的純文字）。
 - 要寫字面的角括號/大括號/泛型/JSON/指令 → **一律包反引號變 inline code**：
@@ -122,10 +171,19 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 - 程式碼區塊 \`\`\` 裡的一切都安全，不用跳脫。
 - 不需要自訂 block/行內 JS → 直接 format='markdown'，完全沒這個坑。
 
-## 6. 一次寫好的檢查清單
+## 6. 多語系（i18n）——站台支援 5 語（zh-TW 來源／zh-CN／en／ja／ko）
+- **來源**：title/content/excerpt 即來源語言（預設 zh-TW；非繁中寫的用 source_language 指定）。
+- **簡體 zh-CN**：別手翻。建立/更新繁體後呼叫 \`koimsurai_generate_post_zh_cn\`（OpenCC 自動繁→簡）即可。
+- **英/日/韓 en/ja/ko**：要出多語就翻好填進對應欄位（create_post / update_post 都能帶）——
+  \`title_en\`/\`content_en\`/\`excerpt_en\`、\`title_ja\`/\`content_ja\`/\`excerpt_ja\`、\`title_ko\`/\`content_ko\`/\`excerpt_ko\`。
+  - content_* 與來源共用同一 format（全篇一種）；自訂 block／程式碼區塊照用，第 5 點的 MDX 跳脫規則一樣要守。
+  - 某語譯文留空 → 前端該語自動 fallback 回來源，不會壞頁。可先發繁體、之後再 update_post 補譯文。
+- 只想單發繁體 → 這段整段略過。
+
+## 7. 一次寫好的檢查清單
 1) 分類存在　2) title 決定要不要副標（冒號）　3) excerpt 是真的關鍵洞察
 4) 內文穿插彩色 alert / 程式碼 / 圖表，別通篇純引用　5) format='mdx' 的話正文 \`<\`/\`{\` 都跳脫了
-6) tags 3~5　7) status='draft' 交站長審`;
+6) tags 3~5　7) status='draft' 交站長審　8) 要多語？zh-CN 用 generate 工具、en/ja/ko 填譯文欄`;
 
 // 圖片 mime ↔ 副檔名（後端用「原始檔名的副檔名」決定存檔 ext、用 mimetype 判斷是否算 thumbhash）。
 const EXT_MIME: Record<string, string> = {
@@ -281,6 +339,7 @@ export function makeTools(api: ApiClient): Tool[] {
         '⭐ 寫「完整文章」前先呼叫 koimsurai_authoring_guide（副標/關鍵洞察/彩色 alert/自訂 block/MDX 坑/檢查清單）。' +
         'title 用「主標：副標」冒號分隔會自動出副標；excerpt 會變成開頭的「關鍵洞察」框。' +
         '用到 <Note>/<Annot>/<Spoiler>/<BarChart> 或行內 JS → format=\'mdx\'。' +
+        '多語系：zh-CN 用 generate_post_zh_cn 自動轉；en/ja/ko 填 title_en/content_en…等譯文欄（見指南第 6 點）。' +
         '注意 send_newsletter=true 且 published 會寄電子報。',
       inputSchema: {
         type: 'object',

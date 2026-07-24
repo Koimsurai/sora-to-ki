@@ -59,6 +59,17 @@ Claude Code ──啟動子程序──▶ mcp-server (stdio)
 - **碎念**：`create_thought` / `update_thought` / `delete_thought`
 - **相簿**：`gallery_sync`
 
+### 多語系（i18n）
+
+站台支援 5 語：`zh-TW`（來源）／`zh-CN`／`en`／`ja`／`ko`。**沒有獨立的 i18n 工具**——譯文是
+`create_post` / `update_post` 的參數：
+
+- `source_language`：來源語言（`title`/`content`/`excerpt` 是哪一語寫的），預設 `zh-TW`。
+- 譯文欄（皆可選）：`title_en` / `content_en` / `excerpt_en`、`title_ja` / `content_ja` / `excerpt_ja`、
+  `title_ko` / `content_ko` / `excerpt_ko`、`title_zh_cn` / `content_zh_cn` / `excerpt_zh_cn`。
+- **簡體 `zh-CN` 通常不手填**：建好繁體後呼叫 `generate_post_zh_cn`（OpenCC 繁→簡自動生成）。
+- 某語譯文留空 → 前端該語自動 fallback 回來源語言，不會壞頁。
+
 > ⚠️ 破壞性 / 有副作用的工具（`delete_*`、`set_post_status` 發布、`create_post` 帶
 > `send_newsletter=true` 會寄信給訂閱者、`gallery_sync` 耗時）在描述中都有標注；MCP client
 > 呼叫前會讓你確認。

@@ -1,7 +1,7 @@
 // 首頁「動態帶」— 近期文章 / 碎念 / 留言迴聲 / 年度軌跡 / 今日訊號收尾。
 // 取代原本的 Contact section（聯絡資訊 hero 與 footer 已足夠），
 // 收尾的訊號區塊掛 id="contact" 讓既有錨點（hero CTA / footer / Messages）續用。
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LocaleLink } from '../locale-link';
 import { useTranslation } from 'react-i18next';
@@ -28,44 +28,78 @@ function yearPct(iso: string) {
   return ((d.getTime() - start.getTime()) / (end.getTime() - start.getTime())) * 100;
 }
 
-function OrbitTimeline({ timeline, t }: { timeline: DigestTimeline[]; t: TFunction }) {
-  const now = new Date();
-  const nowPct = yearPct(now.toISOString());
-  const seasons = [
-    { pct: 4, key: 'winter' },
-    { pct: 29, key: 'spring' },
-    { pct: 54, key: 'summer' },
-    { pct: 79, key: 'autumn' },
-  ];
-  // 同天（或太近）的點往右錯開，不要疊在一起；timeline 已依日期 ASC
-  const MIN_GAP = 1.1; // %
-  let lastPct = -Infinity;
-  const dots = timeline.map((p) => {
-    let pct = yearPct(p.created_at);
-    if (pct - lastPct < MIN_GAP) pct = lastPct + MIN_GAP;
-    lastPct = pct;
-    return { ...p, pct: Math.min(pct, 99) };
-  });
+/** 年度軌跡：依「月份」分組。每月一個群組節點（大小 ∝ 篇數、點擊區 ≥24px → 過 a11y target-size），
+ *  hover / 點擊 / focus 冒出當月文章標題清單（可點）。取代舊「每篇一個 7px 點」的做法。 */
+function OrbitTimeline({ timeline, t, locale }: { timeline: DigestTimeline[]; t: TFunction; locale: string }) {
+  const [openMonth, setOpenMonth] = useState<number | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current); }, []);
+  const openNow = (m: number) => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current); setOpenMonth(m); };
+  const closeSoon = () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current); closeTimerRef.current = setTimeout(() => setOpenMonth(null), 160); };
+
+  // 「今」的位置只算一次（new Date() 不能在 render 期直接呼叫 → 放 state initializer）。
+  const [nowPct] = useState(() => yearPct(new Date().toISOString()));
+
+  // 依月份（0-11）分組，只留有文章的月份；每篇連結仍可點（在清單裡）。
+  const byMonth = new Map<number, DigestTimeline[]>();
+  for (const p of timeline) {
+    const m = new Date(String(p.created_at).replace(' ', 'T')).getMonth();
+    const arr = byMonth.get(m);
+    if (arr) arr.push(p);
+    else byMonth.set(m, [p]);
+  }
+  const clusters = [...byMonth.entries()].map(([month, posts]) => ({ month, posts })).sort((a, b) => a.month - b.month);
+  const monthPct = (m: number) => ((m + 0.5) / 12) * 100;
+  const monthName = (m: number) => new Date(2000, m, 1).toLocaleDateString(locale, { month: 'long' });
+
   return (
     <div className="lately-orbit">
       <h2 className="lately-h">{t('home.lately.orbitTitle')}</h2>
-      <div className="orbit-track" aria-hidden="false">
+      <div className="orbit-track">
         <div className="orbit-line" />
-        {seasons.map((s) => (
-          <span key={s.key} className="orbit-season" style={{ left: `${s.pct}%` }}>
-            {t(`home.lately.seasons.${s.key}`)}
-          </span>
+        {Array.from({ length: 12 }, (_, m) => (
+          <span key={`m${m}`} className="orbit-month-tick" style={{ left: `${monthPct(m)}%` }}>{m + 1}</span>
         ))}
-        {dots.map((p) => (
-          <LocaleLink
-            key={p.id}
-            to={`/blog/${p.id}`}
-            className="orbit-dot"
-            style={{ left: `${p.pct}%` }}
-            data-title={p.title}
-            aria-label={p.title}
-          />
-        ))}
+        {clusters.map(({ month, posts }) => {
+          const open = openMonth === month;
+          const size = Math.min(8 + (posts.length - 1) * 2, 16);
+          const label = `${monthName(month)} · ${posts.length}`;
+          return (
+            <div
+              key={month}
+              className={open ? 'orbit-month orbit-month--open' : 'orbit-month'}
+              style={{ left: `${monthPct(month)}%` }}
+              onMouseEnter={() => openNow(month)}
+              onMouseLeave={closeSoon}
+              onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpenMonth(null); }}
+            >
+              <button
+                type="button"
+                className="orbit-month-btn"
+                aria-label={label}
+                aria-expanded={open}
+                onClick={() => setOpenMonth(open ? null : month)}
+                onFocus={() => openNow(month)}
+              >
+                <span className="orbit-month-dot" style={{ width: `${size}px`, height: `${size}px` }} aria-hidden />
+              </button>
+              {open && (
+                <div className="orbit-month-pop">
+                  <div className="orbit-month-pop-head">{label}</div>
+                  <ul className="orbit-month-pop-list">
+                    {posts.map((p) => (
+                      <li key={p.id}>
+                        <LocaleLink to={`/blog/${p.id}`} className="orbit-month-link" onClick={() => setOpenMonth(null)}>
+                          {p.title}
+                        </LocaleLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          );
+        })}
         <span className="orbit-now" style={{ left: `${nowPct}%` }} data-title={t('home.lately.today')} />
       </div>
       <div className="orbit-stat">
@@ -171,7 +205,7 @@ export default function HomeLately() {
         </aside>
       </div>
 
-      <OrbitTimeline timeline={timeline} t={t} />
+      <OrbitTimeline timeline={timeline} t={t} locale={i18n.resolvedLanguage ?? i18n.language} />
 
       {/* 今日訊號 — 詩意收尾，承接 #contact 錨點 */}
       <div className="lately-signal" id="contact">

@@ -16,6 +16,12 @@ import { createPortal } from 'react-dom';
 import { ClientOnly } from '@tanstack/react-router';
 import { FaGithub, FaXTwitter } from 'react-icons/fa6';
 import CodeTabsBlock from './CodeTabsBlock';
+import DiffImpl from './DiffBlock';
+import InstallImpl from './InstallBlock';
+import RefsImpl from './RefsBlock';
+
+// 影片 block（Video 自架、YouTube facade）直接重新匯出 → 一併在 MdxContent scope 註冊。
+export { Video, YouTube } from './MediaEmbed';
 
 // 重的元件 lazy import，只有文章真的用到才進 bundle。
 const BarChartImpl = lazy(() => import('./BarChartBlock'));
@@ -23,6 +29,7 @@ const MathImpl = lazy(() => import('./MathBlock'));
 const SketchImpl = lazy(() => import('./SketchBlock'));
 const ChartImpl = lazy(() => import('./ChartBlock'));
 const InteractiveChartImpl = lazy(() => import('./InteractiveChartBlock'));
+const ImageCompareImpl = lazy(() => import('./ImageCompareBlock'));
 const chartFallback = <div className="mdx-chart-loading" aria-hidden />;
 
 /** 作者註卡：段落長度的站長旁白，在內文流裡的卡片（跟一般 alert 區隔）。 */
@@ -299,5 +306,121 @@ export function Spoiler({ children }: { children?: ReactNode }) {
     >
       {children}
     </span>
+  );
+}
+
+/** 程式碼前後對比（行首 + 新增、- 刪除；重用 shiki 高亮 base 語言）。code 用屬性字串傳、
+ *  多行用範本字面值：<Diff lang="ts" code={`-const a = 1\n+const a = 2`} title="patch" /> */
+export function Diff(props: { code?: string; lang?: string; title?: string }) {
+  return <DiffImpl {...props} />;
+}
+
+/** 套件安裝指令分頁（npm/pnpm/yarn/bun）。<Install pkg="react-compare-slider" />；dev 為開發依賴。 */
+export function Install(props: { pkg?: string; dev?: boolean }) {
+  return <InstallImpl {...props} />;
+}
+
+/** 文末參考連結區（每列標籤 + 連結，依網域自動帶品牌 icon，不觸發 hover 卡）。
+ *  <Refs items={[{ label:'anigamer · TS', links:[{ text:'GitHub', href:'…' }, { text:'npm', href:'…' }] }]} /> */
+export function Refs(props: { items?: { label?: string; links?: { text: string; href: string }[] }[]; title?: string }) {
+  return <RefsImpl {...props} />;
+}
+
+/** 前後圖對比滑桿（拖曳分隔線）。<ImageCompare before="/uploads/a.png" after="/uploads/b.png" /> */
+export function ImageCompare(props: {
+  before?: string;
+  after?: string;
+  beforeLabel?: string;
+  afterLabel?: string;
+  alt?: string;
+  caption?: string;
+}) {
+  const fallback = <div className="mdx-imgcompare-loading" aria-hidden />;
+  return (
+    <ClientOnly fallback={fallback}>
+      <Suspense fallback={fallback}>
+        <ImageCompareImpl {...props} />
+      </Suspense>
+    </ClientOnly>
+  );
+}
+
+/** 鍵盤按鍵。<Kbd>Ctrl</Kbd> + <Kbd>C</Kbd> */
+export function Kbd({ children }: { children?: ReactNode }) {
+  return <kbd className="mdx-kbd">{children}</kbd>;
+}
+
+/** 段落級收合區塊（點 summary 展開）。<Details summary="完整 log">…</Details>。open 預設收合。 */
+export function Details({ summary, children, open }: { summary?: ReactNode; children?: ReactNode; open?: boolean }) {
+  return (
+    <details className="mdx-details" open={open}>
+      <summary className="mdx-details-summary">{summary ?? '展開'}</summary>
+      <div className="mdx-details-body">{children}</div>
+    </details>
+  );
+}
+
+/** 編號步驟流程（步驟號由 CSS counter 產生）。
+ *  <Steps><Step title="裝依賴">…</Step><Step title="設定">…</Step></Steps> */
+export function Steps({ children }: { children?: ReactNode }) {
+  return <div className="mdx-steps">{children}</div>;
+}
+
+/** <Steps> 的單一步驟。 */
+export function Step({ title, children }: { title?: ReactNode; children?: ReactNode }) {
+  return (
+    <div className="mdx-step">
+      {title ? <div className="mdx-step-title">{title}</div> : null}
+      <div className="mdx-step-body">{children}</div>
+    </div>
+  );
+}
+
+/** 專案結構樹。tree 用屬性字串傳，縮排（每 2 空格一層）表層級、結尾 / 為資料夾：
+ *  <FileTree tree={`src/\n  components/\n    Button.tsx\n  index.ts\npackage.json`} /> */
+export function FileTree({ tree = '' }: { tree?: string }) {
+  const lines = tree.replace(/^\n+/, '').replace(/\n+$/, '').split('\n').filter((l) => l.trim());
+  return (
+    <div className="mdx-filetree">
+      {lines.map((line, i) => {
+        const indent = line.length - line.trimStart().length;
+        const name = line.trim();
+        const isFolder = name.endsWith('/');
+        return (
+          // 靜態清單、不重排 → index 併入 key 安全
+          // eslint-disable-next-line @eslint-react/no-array-index-key
+          <div key={`${i}-${name}`} className={isFolder ? 'mdx-filetree-row mdx-filetree-row--folder' : 'mdx-filetree-row'} style={{ paddingLeft: `${indent * 0.55 + 0.2}rem` }}>
+            <span className="mdx-filetree-icon" aria-hidden>{isFolder ? '📁' : '📄'}</span>
+            <span className="mdx-filetree-name">{isFolder ? name.slice(0, -1) : name}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** 數字磚容器（一排 KPI）。<Stats><Stat label="吞吐" value="42" unit="tok/s" /></Stats> */
+export function Stats({ children }: { children?: ReactNode }) {
+  return <div className="mdx-stats">{children}</div>;
+}
+
+/** 單一數字磚。trend 可選（up 綠 / down 紅 / flat 灰）。 */
+export function Stat({ label, value, unit, trend, hint }: {
+  label?: ReactNode;
+  value?: ReactNode;
+  unit?: string;
+  trend?: 'up' | 'down' | 'flat';
+  hint?: ReactNode;
+}) {
+  return (
+    <div className="mdx-stat">
+      <div className="mdx-stat-value">
+        {value}
+        {unit ? <span className="mdx-stat-unit">{unit}</span> : null}
+      </div>
+      {label ? <div className="mdx-stat-label">{label}</div> : null}
+      {hint ? <div className="mdx-stat-hint">{hint}</div> : null}
+      {trend ? <span className={`mdx-stat-trend mdx-stat-trend--${trend}`} aria-hidden /> : null}
+    </div>
   );
 }

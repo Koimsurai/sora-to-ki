@@ -18,6 +18,14 @@ export default function SpaceBackdropShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isOnHomePage = stripLocalePrefix(pathname) === '';
   const isMobile = useMediaQuery('(max-width: 768px)');
+  // 爬蟲 / 稽核工具（Googlebot/Bingbot/Lighthouse…）：跟手機一樣完全不載 three。
+  // 純裝飾背景、無內容 → 不算 cloaking；手機版本來就跳過故對 Google 一致；真人 UA 不含這些關鍵字，
+  // 體驗不變。好處：桌機爬蟲/Rich Results/社群卡片抓取器不再卡在重的 WebGL render。
+  const isBot = useMemo(
+    () => typeof navigator !== 'undefined'
+      && /bot|crawl|spider|lighthouse|headless|slurp|bingbot|googlebot|duckduckbot|baiduspider|yandex/i.test(navigator.userAgent),
+    [],
+  );
   // 3D pre-flight：WebGPU（renderer 首選）或 WebGL（自動 fallback backend）任一可用才掛 3D；
   // 都沒有（Chromium 137 移除 SwiftShader 後加速全壞的機器）→ 不下載 three chunk，降級純 DOM 特效。
   // 本元件 client-only，可安全 probe。runtime 才炸的殘餘情況由 ErrorBoundary + worker error 通道接。
@@ -60,7 +68,7 @@ export default function SpaceBackdropShell() {
     if (!introVisible) document.documentElement.classList.remove('intro-pending');
   }, [introVisible]);
 
-  if (isMobile) return null; // 手機完全不載 three
+  if (isMobile || isBot) return null; // 手機 / 爬蟲：完全不載 three
 
   return (
     <>

@@ -318,7 +318,7 @@
 }
 .lang-badge {
   font-size: 0.66rem;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', 'Courier New', var(--cjk-font), monospace;
   letter-spacing: 0.04em;
   padding: 2px 7px;
   border-radius: 9999px;
@@ -807,7 +807,6 @@ a.series-nav-title:hover {
   position: sticky;
   top: 100px;
   max-height: calc(100vh - 120px);
-  overflow-y: auto;
   /* 同左欄：藏捲軸但保留可捲動（長 TOC 仍能捲） */
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -870,7 +869,6 @@ a.series-nav-title:hover {
   flex-direction: column;
   gap: 0;
   max-height: calc(100vh - 260px);
-  overflow-y: auto;
   scrollbar-width: none;
 }
 
@@ -1332,7 +1330,7 @@ a.series-nav-title:hover {
   padding: 0.15rem 0.45rem;
   border-radius: 4px;
   font-size: 0.9em;
-  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-family: 'Fira Code', 'JetBrains Mono', var(--cjk-font), monospace;
 }
 
 .post-content img {
@@ -1961,7 +1959,7 @@ a.series-nav-title:hover {
 /* 左側提示符（取代紅黃綠燈）：綠色 ❯_ ，乾淨的終端機味 */
 .terminal-glyph {
   color: #4ade80;
-  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-family: 'Fira Code', 'JetBrains Mono', var(--cjk-font), monospace;
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: -0.05em;
@@ -1970,7 +1968,7 @@ a.series-nav-title:hover {
   font-size: 0.72rem;
   letter-spacing: 0.03em;
   color: rgba(255, 255, 255, 0.42);
-  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-family: 'Fira Code', 'JetBrains Mono', var(--cjk-font), monospace;
 }
 .terminal-block .copy-button {
   margin-left: auto;
@@ -1989,7 +1987,7 @@ a.series-nav-title:hover {
   background: transparent !important;
   font-size: 0.88rem;
   line-height: 1.75;
-  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace !important;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, var(--cjk-font), monospace !important;
   width: max-content;
   min-width: 100%;
   box-sizing: border-box;
@@ -2008,7 +2006,7 @@ a.series-nav-title:hover {
   white-space: pre;
   font-size: 0.88rem;
   line-height: 1.75;
-  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-family: 'Fira Code', 'JetBrains Mono', var(--cjk-font), monospace;
 }
 .terminal-block ::-webkit-scrollbar {
   height: 7px;
@@ -2026,7 +2024,7 @@ a.series-nav-title:hover {
 }
 .terminal-prompt-sym {
   color: #4ade80;
-  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-family: 'Fira Code', 'JetBrains Mono', var(--cjk-font), monospace;
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -2067,7 +2065,7 @@ a.series-nav-title:hover {
   background: transparent !important;
   font-size: 0.9rem;
   line-height: 1.7;
-  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace !important;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, var(--cjk-font), monospace !important;
   width: max-content;
   min-width: 100%;
   box-sizing: border-box;
@@ -2099,7 +2097,7 @@ a.series-nav-title:hover {
   white-space: pre;
   font-size: 0.9rem;
   line-height: 1.7;
-  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-family: 'Fira Code', 'JetBrains Mono', 'SF Mono', Consolas, var(--cjk-font), monospace;
   animation: shikiPulse 1.4s ease-in-out infinite;
 }
 .code-surface-body .shiki-fallback code {
@@ -3018,3 +3016,66 @@ a.series-nav-title:hover {
   pointer-events: none;
 }
 .link-card-skeleton .link-card-body { width: 100%; }
+
+/* ── AI 翻譯提示 banner（非原文語系文章頂部）── */
+.ai-translation-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.5rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(252, 211, 77, 0.25);
+  border-radius: 10px;
+  background: rgba(252, 211, 77, 0.06);
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.5;
+}
+.ai-translation-icon { font-size: 1rem; flex: 0 0 auto; }
+.ai-translation-text { flex: 1 1 auto; min-width: 12rem; }
+.ai-translation-original {
+  flex: 0 0 auto;
+  color: rgba(252, 211, 77, 0.9);
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+.ai-translation-original:hover { border-bottom-color: rgba(252, 211, 77, 0.6); }
+
+/* ── Mermaid 工具列動作鈕（縮放/置中/複製/下載）── */
+.mm-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  padding-left: 0.3rem;
+  margin-left: 0.15rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+.mm-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.4rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.mm-action-btn:hover,
+.mm-action-btn:focus,
+.mm-action-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  box-shadow: none;
+  border-color: transparent;
+  outline: none;
+}
+.mm-action-btn--dl { padding: 0.4rem 0.5rem; }
+.mm-action-ext { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.02em; }
