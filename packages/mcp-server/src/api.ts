@@ -110,7 +110,9 @@ export class ApiClient {
   ): Promise<T> {
     const send = (bearer: string): Promise<Response> => {
       const form = new FormData();
-      const blob = new Blob([bytes], contentType ? { type: contentType } : {});
+      // @types/node 26 起 Uint8Array 泛型化為 Uint8Array<ArrayBufferLike>;Blob/BlobPart 要
+      // Uint8Array<ArrayBuffer>。bytes 為上傳檔案資料（fs/網路,非 SharedArrayBuffer）→ 收斂型別安全。
+      const blob = new Blob([bytes as Uint8Array<ArrayBuffer>], contentType ? { type: contentType } : {});
       form.append('file', blob, filename);
       // 不手動設 content-type：讓 fetch 自動帶 multipart boundary。
       return fetch(`${this.cfg.baseUrl}${path}`, {
