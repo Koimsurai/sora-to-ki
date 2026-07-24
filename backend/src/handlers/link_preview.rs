@@ -71,14 +71,13 @@ fn meta_content(html: &str, keys: &[&str]) -> Option<String> {
             format!(r#"(?is)<meta[^>]+(?:property|name)\s*=\s*["']{k}["'][^>]*content\s*=\s*["']([^"']*)["']"#, k = regex::escape(key)),
             format!(r#"(?is)<meta[^>]+content\s*=\s*["']([^"']*)["'][^>]*(?:property|name)\s*=\s*["']{k}["']"#, k = regex::escape(key)),
         ] {
-            if let Ok(re) = regex::Regex::new(&pat) {
-                if let Some(c) = re.captures(html) {
+            if let Ok(re) = regex::Regex::new(&pat)
+                && let Some(c) = re.captures(html) {
                     let v = c.get(1)?.as_str().trim();
                     if !v.is_empty() {
                         return Some(decode_entities(v));
                     }
                 }
-            }
         }
     }
     None
@@ -136,8 +135,8 @@ pub async fn link_preview(
     .fetch_optional(&state.pool)
     .await?;
 
-    if let Some(c) = cached {
-        if c.age_secs < CACHE_TTL_SECS {
+    if let Some(c) = cached
+        && c.age_secs < CACHE_TTL_SECS {
             return Ok(Json(LinkPreviewResponse {
                 title: c.title,
                 description: c.description,
@@ -146,7 +145,6 @@ pub async fn link_preview(
                 favicon: Some(format!("https://{host}/favicon.ico")),
             }));
         }
-    }
 
     // ── 抓取（失敗一律降級，不回錯誤）──
     let client = reqwest::Client::builder()
@@ -159,11 +157,10 @@ pub async fn link_preview(
     let fetched = async {
         let resp = client.get(&url).send().await.ok()?;
         // 解析後的 peer IP 再擋一次（DNS rebinding / 域名指向私網）
-        if let Some(addr) = resp.remote_addr() {
-            if is_blocked_ip(&addr.ip()) {
+        if let Some(addr) = resp.remote_addr()
+            && is_blocked_ip(&addr.ip()) {
                 return None;
             }
-        }
         if !resp.status().is_success() {
             return None;
         }

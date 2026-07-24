@@ -12,11 +12,10 @@ use crate::state::BahamutState;
 
 /// cookie 持久化路徑：`BAHAMUT_COOKIE_FILE` env，否則 DATABASE_URL 同目錄 `.bahamut-cookie.json`。
 fn cookie_file_path(database_url: &str) -> PathBuf {
-    if let Ok(p) = std::env::var("BAHAMUT_COOKIE_FILE") {
-        if !p.is_empty() {
+    if let Ok(p) = std::env::var("BAHAMUT_COOKIE_FILE")
+        && !p.is_empty() {
             return PathBuf::from(p);
         }
-    }
     let path = database_url.trim_start_matches("sqlite://");
     let dir = std::path::Path::new(path).parent().map(|p| p.to_path_buf()).unwrap_or_default();
     dir.join(".bahamut-cookie.json")
@@ -24,11 +23,10 @@ fn cookie_file_path(database_url: &str) -> PathBuf {
 
 /// 啟動時：先吃檔（最新 rotated），沒有再 fallback env `BAHAMUT_COOKIE`。
 fn load_cookie(file: &PathBuf) -> CookieJar {
-    if let Ok(content) = std::fs::read_to_string(file) {
-        if let Ok(jar) = serde_json::from_str::<CookieJar>(&content) {
+    if let Ok(content) = std::fs::read_to_string(file)
+        && let Ok(jar) = serde_json::from_str::<CookieJar>(&content) {
             return jar;
         }
-    }
     anigamer::parse_cookie_string(std::env::var("BAHAMUT_COOKIE").ok().as_deref())
 }
 
@@ -39,14 +37,13 @@ pub fn build_state(database_url: &str) -> Arc<BahamutState> {
     // rotation 守門：BAHARUNE 不見或非 JWT（不含 '.'）→ 不寫（別把好檔掏空成空 jar）。
     let client = AniGamer::new(ClientOptions::new(jar).on_cookies_rotated(Arc::new(move |jar| {
         let ok = jar.get("BAHARUNE").map(|b| b.contains('.')).unwrap_or(false);
-        if ok {
-            if let Ok(json) = serde_json::to_string_pretty(jar) {
+        if ok
+            && let Ok(json) = serde_json::to_string_pretty(jar) {
                 // callback 為同步簽名（crate 內 async 路徑呼叫）；3.5KB 寫檔亞毫秒，可接受
                 if let Err(e) = std::fs::write(&cf, json) {
                     tracing::error!("[Bahamut] persist cookie fail: {e}");
                 }
             }
-        }
     })));
     Arc::new(BahamutState {
         client: Arc::new(client),
@@ -76,8 +73,8 @@ fn now_ms() -> i64 {
 
 /// bahamutPushAuth：X-Bahamut-Token（constant-time）或 admin JWT。
 async fn push_auth(headers: &HeaderMap, state: &AppState) -> Result<(), Response> {
-    if let Ok(token) = std::env::var("BAHAMUT_PUSH_TOKEN") {
-        if !token.is_empty() {
+    if let Ok(token) = std::env::var("BAHAMUT_PUSH_TOKEN")
+        && !token.is_empty() {
             let got = headers.get("X-Bahamut-Token").and_then(|v| v.to_str().ok()).unwrap_or("");
             if got.len() == token.len() {
                 let mut d = 0u8;
@@ -89,7 +86,6 @@ async fn push_auth(headers: &HeaderMap, state: &AppState) -> Result<(), Response
                 }
             }
         }
-    }
     crate::auth::require_admin(headers, state).await.map(|_| ()).map_err(|e| e.into_response())
 }
 
@@ -145,11 +141,10 @@ pub async fn cookie(State(state): State<AppState>, headers: HeaderMap, Json(body
     // jwtStatus 用新 jar：先算再換（避免順序歧義）
     let js = jar.get("BAHARUNE").and_then(|b| anigamer::check_jwt_expiry_default(b));
     // 寫檔 + 熱抽換（內部短鎖，非換整個 client）
-    if let Ok(json) = serde_json::to_string_pretty(&jar) {
-        if let Err(e) = tokio::fs::write(&state.bahamut.cookie_file, json).await {
+    if let Ok(json) = serde_json::to_string_pretty(&jar)
+        && let Err(e) = tokio::fs::write(&state.bahamut.cookie_file, json).await {
             tracing::error!("[Bahamut] persist cookie fail: {e}");
         }
-    }
     state.bahamut.client.set_cookies(jar);
     state.bahamut.last_jwt_alert_at.store(0, Ordering::Relaxed); // 換新 cookie → 重置告警節流
     tracing::info!("[Bahamut] cookie 經 endpoint 熱更新，觸發同步");

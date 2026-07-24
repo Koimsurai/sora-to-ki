@@ -44,12 +44,11 @@ pub fn js_parse_int_opt(s: &str) -> Option<i64> {
     let t = s.trim_start();
     let mut out = String::new();
     let mut it = t.chars().peekable();
-    if let Some(&c) = it.peek() {
-        if c == '+' || c == '-' {
+    if let Some(&c) = it.peek()
+        && (c == '+' || c == '-') {
             out.push(c);
             it.next();
         }
-    }
     while let Some(&c) = it.peek() {
         if c.is_ascii_digit() {
             out.push(c);
@@ -177,11 +176,10 @@ pub fn encode_uri_component(s: &str) -> String {
 pub fn js_normalize_numbers(v: &mut Value) {
     match v {
         Value::Number(n) => {
-            if let Some(f) = n.as_f64() {
-                if n.as_i64().is_none() && n.as_u64().is_none() && f.fract() == 0.0 && f.abs() < 9.0e15 {
+            if let Some(f) = n.as_f64()
+                && n.as_i64().is_none() && n.as_u64().is_none() && f.fract() == 0.0 && f.abs() < 9.0e15 {
                     *v = Value::from(f as i64);
                 }
-            }
         }
         Value::Array(a) => a.iter_mut().for_each(js_normalize_numbers),
         Value::Object(o) => o.values_mut().for_each(js_normalize_numbers),

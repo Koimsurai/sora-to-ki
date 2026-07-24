@@ -172,15 +172,13 @@ pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQu
             // Trakt 同步進來的 film 沒存 poster_url（sync 只寫 title/date/tmdb_id）→ 用 tmdb_id
             // 從 TMDb 補海報（w342 小卡夠；tmdb_detail 有快取，只有缺圖的才打）。
             for f in films.iter_mut() {
-                if f.poster_url.as_deref().unwrap_or("").is_empty() {
-                    if let Some(id) = f.tmdb_id {
-                        if let Some(dd) = tmdb_detail(&state, "movie", &Value::from(id), "zh-TW").await {
+                if f.poster_url.as_deref().unwrap_or("").is_empty()
+                    && let Some(id) = f.tmdb_id
+                        && let Some(dd) = tmdb_detail(&state, "movie", &Value::from(id), "zh-TW").await {
                             let get = |k: &str| dd.get(k).and_then(|v| v.as_str().map(String::from));
                             f.poster_url = get("poster_url"); // w342 給小卡
                             f.backdrop_url = get("backdrop_url"); // 橫式原圖給「最近看完」hero
                         }
-                    }
-                }
             }
             Json(FilmsResponse { message: "success".into(), films }).into_response()
         }
@@ -604,14 +602,13 @@ fn timing_safe_eq(a: &[u8], b: &[u8]) -> bool {
 
 /// bahamutPushAuth：X-Bahamut-Token（constant-time）或 admin JWT。
 async fn bahamut_push_auth(headers: &HeaderMap, state: &AppState) -> Result<(), Response> {
-    if let Ok(token) = std::env::var("BAHAMUT_PUSH_TOKEN") {
-        if !token.is_empty() {
+    if let Ok(token) = std::env::var("BAHAMUT_PUSH_TOKEN")
+        && !token.is_empty() {
             let got = headers.get("X-Bahamut-Token").and_then(|v| v.to_str().ok()).unwrap_or("");
             if timing_safe_eq(got.as_bytes(), token.as_bytes()) {
                 return Ok(());
             }
         }
-    }
     crate::auth::require_admin(headers, state).await.map(|_| ()).map_err(|e| e.into_response())
 }
 
@@ -723,11 +720,10 @@ pub async fn heartbeat(State(state): State<AppState>, headers: HeaderMap, Json(b
 // ── Trakt token / 輪詢 ────────────────────────────────────────────────────
 
 fn trakt_token_file() -> String {
-    if let Ok(p) = std::env::var("TRAKT_TOKEN_FILE") {
-        if !p.is_empty() {
+    if let Ok(p) = std::env::var("TRAKT_TOKEN_FILE")
+        && !p.is_empty() {
             return p;
         }
-    }
     // 預設：與 DATABASE_URL 同目錄（sqlite:///path/db.sqlite → /path/.trakt-token.json）
     let url = std::env::var("DATABASE_URL").unwrap_or_default();
     let path = url.trim_start_matches("sqlite://");

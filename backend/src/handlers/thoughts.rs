@@ -92,12 +92,11 @@ fn js_parse_int(s: &str, default: i64) -> i64 {
     let t = s.trim_start();
     let mut out = String::new();
     let mut chars = t.chars().peekable();
-    if let Some(&c) = chars.peek() {
-        if c == '+' || c == '-' {
+    if let Some(&c) = chars.peek()
+        && (c == '+' || c == '-') {
             out.push(c);
             chars.next();
         }
-    }
     while let Some(&c) = chars.peek() {
         if c.is_ascii_digit() {
             out.push(c);
@@ -361,16 +360,16 @@ async fn enrich_media_ref(http: &reqwest::Client, json: &Map<String, Value>) -> 
         },
     );
     let token = std::env::var("TMDB_API_TOKEN").unwrap_or_default();
-    if !token.is_empty() {
-        if let Some(id) = &tmdb_id {
+    if !token.is_empty()
+        && let Some(id) = &tmdb_id {
             let resp = http
                 .get(format!("https://api.themoviedb.org/3/{mt}/{id}?language=zh-TW"))
                 .bearer_auth(&token)
                 .header("accept", "application/json")
                 .send()
                 .await;
-            if let Ok(r) = resp {
-                if r.status().is_success() {
+            if let Ok(r) = resp
+                && r.status().is_success() {
                     // reqwest 未開 json feature，text + serde 解析
                     if let Ok(d) = r
                         .text()
@@ -430,9 +429,7 @@ async fn enrich_media_ref(http: &reqwest::Client, json: &Map<String, Value>) -> 
                         out.insert("poster".into(), poster);
                     }
                 }
-            }
         }
-    }
     out
 }
 
@@ -546,14 +543,13 @@ pub async fn admin_update_thought(
             r_url = r.get("url").filter(|v| js_truthy(Some(v))).and_then(|v| v.as_str()).map(String::from);
             ref_json = r.get("json").and_then(|j| serde_json::to_string(j).ok());
         }
-    } else if let Some(u) = body.ref_url.as_deref().filter(|s| !s.is_empty()) {
-        if Some(u.to_string()) != r_url {
+    } else if let Some(u) = body.ref_url.as_deref().filter(|s| !s.is_empty())
+        && Some(u.to_string()) != r_url {
             let meta = unfurl_url(&state.http, u).await.unwrap_or_else(|| serde_json::json!({}));
             ref_type = Some("link".into());
             r_url = Some(u.to_string());
             ref_json = serde_json::to_string(&meta).ok();
         }
-    }
 
     let new_content = match &body.content {
         Some(c) => c.trim().to_string(),

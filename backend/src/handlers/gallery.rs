@@ -87,11 +87,10 @@ pub async fn image_proxy(State(state): State<AppState>, Query(q): Query<ImagePro
     match resp {
         // axios 預設非 2xx 會 throw → 走 catch 回 500；reqwest 不 throw，手動對齊
         Ok(r) if r.status().is_success() => {
-            if let Some(addr) = r.remote_addr() {
-                if crate::net_guard::is_blocked_ip(&addr.ip()) {
+            if let Some(addr) = r.remote_addr()
+                && crate::net_guard::is_blocked_ip(&addr.ip()) {
                     return bad_request("Invalid image URL");
                 }
-            }
             if r.content_length().is_some_and(|len| len > MAX_PROXY_BYTES) {
                 return bad_request("Image too large");
             }
@@ -194,11 +193,10 @@ fn extract_exif(bytes: &[u8]) -> (Option<Map<String, Value>>, u32) {
         Ok(e) => e,
         Err(_) => return (None, orientation),
     };
-    if let Some(f) = exif.get_field(exif::Tag::Orientation, exif::In::PRIMARY) {
-        if let Some(v) = f.value.get_uint(0) {
+    if let Some(f) = exif.get_field(exif::Tag::Orientation, exif::In::PRIMARY)
+        && let Some(v) = f.value.get_uint(0) {
             orientation = v;
         }
-    }
     let mut m = Map::new();
     let ascii = |tag: exif::Tag| -> Option<String> {
         exif.get_field(tag, exif::In::PRIMARY).and_then(|f| match &f.value {
@@ -243,15 +241,14 @@ fn extract_exif(bytes: &[u8]) -> (Option<Map<String, Value>>, u32) {
     }
     // DateTimeOriginal："2023:04:27 10:56:22"——exifr 以**容器本地時區**（TZ=Asia/Taipei）
     // 解析再 toISOString（UTC）→ chrono 同語意：naive → Local → UTC ISO。
-    if let Some(v) = ascii(exif::Tag::DateTimeOriginal) {
-        if let Ok(naive) = chrono::NaiveDateTime::parse_from_str(&v, "%Y:%m:%d %H:%M:%S") {
+    if let Some(v) = ascii(exif::Tag::DateTimeOriginal)
+        && let Ok(naive) = chrono::NaiveDateTime::parse_from_str(&v, "%Y:%m:%d %H:%M:%S") {
             use chrono::TimeZone;
             if let chrono::LocalResult::Single(local) = chrono::Local.from_local_datetime(&naive) {
                 let utc = local.with_timezone(&chrono::Utc);
                 m.insert("DateTimeOriginal".into(), Value::from(utc.format("%Y-%m-%dT%H:%M:%S.000Z").to_string()));
             }
         }
-    }
     let e = if m.is_empty() { None } else { Some(m) };
     (e, orientation)
 }
@@ -400,13 +397,12 @@ async fn sync_gallery_manifest(state: &AppState) -> anyhow::Result<Vec<(String, 
         let thumb_out = output_dir.join(format!("{id}-thumb.webp"));
 
         // skip：existing 有且兩個輸出檔都在（exists 為快速 stat，容忍在 async 內）
-        if let Some(ex) = existing {
-            if full_out.exists() && thumb_out.exists() {
+        if let Some(ex) = existing
+            && full_out.exists() && thumb_out.exists() {
                 next_photos.push(ex.clone());
                 skipped += 1;
                 continue;
             }
-        }
 
         let sp = source_path.clone();
         let (fo, to) = (full_out.clone(), thumb_out.clone());
@@ -487,15 +483,14 @@ async fn sync_gallery_manifest(state: &AppState) -> anyhow::Result<Vec<(String, 
             continue;
         }
         let id = p.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        if let Some((zh, en)) = tag_photo(state, &format!("{tagger_prefix}/{id}.webp")).await {
-            if !zh.is_empty() || !en.is_empty() {
+        if let Some((zh, en)) = tag_photo(state, &format!("{tagger_prefix}/{id}.webp")).await
+            && (!zh.is_empty() || !en.is_empty()) {
                 if let Some(obj) = p.as_object_mut() {
                     obj.insert("tags".into(), Value::Array(zh));
                     obj.insert("tagsEn".into(), Value::Array(en));
                 }
                 tagged += 1;
             }
-        }
     }
 
     // manifest 寫檔（JSON.stringify(manifest, null, 2)）

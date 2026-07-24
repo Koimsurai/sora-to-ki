@@ -546,7 +546,7 @@ pub async fn admin_comments(
 // 每個 handler 先跑 require_admin；auth 失敗回其 401/403 response。
 
 macro_rules! auth_or_return {
-    ($headers:expr, $state:expr) => {
+    ($headers:expr_2021, $state:expr_2021) => {
         if let Err(e) = require_admin($headers, $state).await {
             return e.into_response();
         }
@@ -1328,11 +1328,10 @@ pub async fn admin_update_post(
     }
     // tags 有帶 key（含空陣列）才重建關聯；缺 key 不動（回應仍回 body 的 tags 或 []）
     let tags = tags_from(&b);
-    if b.contains_key("tags") {
-        if let Err(e) = manage_tags(&state, &id, &tags).await {
+    if b.contains_key("tags")
+        && let Err(e) = manage_tags(&state, &id, &tags).await {
             return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
         }
-    }
 
     let mut data = Map::new();
     data.insert("id".into(), json!(id));
@@ -1345,11 +1344,10 @@ pub async fn admin_update_post(
     if let Some(v) = b.get("status") {
         data.insert("status".into(), v.clone());
     }
-    if want_newsletter {
-        if let Ok(pid) = id.parse::<i64>() {
+    if want_newsletter
+        && let Ok(pid) = id.parse::<i64>() {
             data.insert("newsletter".into(), dispatch_newsletter_result(&state, pid).await);
         }
-    }
     Json(json!({ "message": "success", "data": Value::Object(data) })).into_response()
 }
 
@@ -1504,11 +1502,10 @@ pub async fn admin_update_user_role(
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "無效的角色，允許值：USER, ADMIN, OWNER" }))).into_response();
     }
     // req.user.dbUser.id === parseInt(userId)（legacy token 無 dbUser → 跳過）
-    if let (Some(db_id), Some(target)) = (owner.db_user_id, crate::util::js_parse_int_opt(&id)) {
-        if db_id == target {
+    if let (Some(db_id), Some(target)) = (owner.db_user_id, crate::util::js_parse_int_opt(&id))
+        && db_id == target {
             return (StatusCode::BAD_REQUEST, Json(json!({ "error": "不能修改自己的角色" }))).into_response();
         }
-    }
     match sqlx::query("UPDATE oauth_users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
         .bind(role)
         .bind(&id)

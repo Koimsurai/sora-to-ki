@@ -54,12 +54,11 @@ fn wrap_title(title: &str, max_chars_per_line: usize, max_lines: usize) -> Vec<S
         out.push(line);
     }
     let joined16: usize = out.iter().map(|l| l.encode_utf16().count()).sum();
-    if out.len() == max_lines && t_len16 > joined16 {
-        if let Some(last) = out.last_mut() {
+    if out.len() == max_lines && t_len16 > joined16
+        && let Some(last) = out.last_mut() {
             let truncated = crate::util::js_substring_prefix(last, max_chars_per_line - 1);
             *last = format!("{truncated}…");
         }
-    }
     out
 }
 
@@ -176,8 +175,8 @@ pub async fn og_png(State(state): State<AppState>, Path(file): Path<String>, req
     let og = og_state();
     {
         let cache = og.cache.lock();
-        if let Some(c) = cache.get(&post_id) {
-            if c.key == cache_key {
+        if let Some(c) = cache.get(&post_id)
+            && c.key == cache_key {
                 if inm.as_deref() == Some(c.etag.as_str()) {
                     return StatusCode::NOT_MODIFIED.into_response();
                 }
@@ -191,7 +190,6 @@ pub async fn og_png(State(state): State<AppState>, Path(file): Path<String>, req
                 )
                     .into_response();
             }
-        }
     }
 
     // date = (created_at || '').slice(0,10)

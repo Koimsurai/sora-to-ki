@@ -108,8 +108,10 @@ mod tests {
     #[tokio::test]
     async fn 內容變更會實際發出通知_瀏覽則不會() {
         let (url, rx) = mock_frontend().await;
-        std::env::set_var("FRONTEND_REVALIDATE_URL", &url);
-        std::env::set_var("REVALIDATE_SECRET", "s3cret");
+        // FIXME: Audit that the environment access only happens in single-threaded code.
+        unsafe { std::env::set_var("FRONTEND_REVALIDATE_URL", &url) };
+        // FIXME: Audit that the environment access only happens in single-threaded code.
+        unsafe { std::env::set_var("REVALIDATE_SECRET", "s3cret") };
 
         // 1) 高頻瀏覽端點:不該發通知
         let res = app()

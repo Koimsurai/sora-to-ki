@@ -74,15 +74,14 @@ async fn upsert_oauth_user(
             .bind(ex_id)
             .execute(&state.pool)
             .await?;
-        if let Some(primary_id) = linked_to {
-            if let Some(primary) = sqlx::query("SELECT * FROM oauth_users WHERE id = ?")
+        if let Some(primary_id) = linked_to
+            && let Some(primary) = sqlx::query("SELECT * FROM oauth_users WHERE id = ?")
                 .bind(primary_id)
                 .fetch_optional(&state.pool)
                 .await?
             {
                 return Ok(row_to_user(&primary));
             }
-        }
         return Ok(OauthUser {
             id: ex_id,
             display_name: Some(display_name.to_string()),
@@ -303,26 +302,20 @@ pub async fn github_callback(State(state): State<AppState>, Json(body): Json<Map
 
     // 無 email → /user/emails 取 primary（失敗吞掉）
     let mut user_email = email;
-    if user_email.is_empty() {
-        if let Ok(r) = state
+    if user_email.is_empty()
+        && let Ok(r) = state
             .http
             .get(&emails_url)
             .bearer_auth(&access_token)
             .header("User-Agent", "koimsurai-app")
             .send()
             .await
-        {
-            if r.status().is_success() {
-                if let Ok(Value::Array(arr)) = serde_json::from_str::<Value>(&r.text().await.unwrap_or_default()) {
-                    if let Some(primary) = arr.iter().find(|e| e.get("primary").and_then(|p| p.as_bool()).unwrap_or(false)) {
-                        if let Some(em) = primary.get("email").and_then(|v| v.as_str()) {
+            && r.status().is_success()
+                && let Ok(Value::Array(arr)) = serde_json::from_str::<Value>(&r.text().await.unwrap_or_default())
+                    && let Some(primary) = arr.iter().find(|e| e.get("primary").and_then(|p| p.as_bool()).unwrap_or(false))
+                        && let Some(em) = primary.get("email").and_then(|v| v.as_str()) {
                             user_email = em.to_string();
                         }
-                    }
-                }
-            }
-        }
-    }
 
     let display_name = name.unwrap_or(login).to_string();
     match upsert_oauth_user(&state, "github", &id, &display_name, &user_email, &avatar).await {

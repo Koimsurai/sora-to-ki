@@ -64,11 +64,10 @@ fn redirect_uri() -> String {
 async fn access_token(state: &AppState) -> Result<String, SpErr> {
     {
         let g = state.spotify.token.lock();
-        if let Some((t, exp)) = &*g {
-            if now_ms() < *exp {
+        if let Some((t, exp)) = &*g
+            && now_ms() < *exp {
                 return Ok(t.clone());
             }
-        }
     }
     let id = std::env::var("SPOTIFY_CLIENT_ID").unwrap_or_default();
     let secret = std::env::var("SPOTIFY_CLIENT_SECRET").unwrap_or_default();
@@ -201,11 +200,10 @@ pub async fn now_playing(State(state): State<AppState>) -> Response {
     responses((status = 200, description = "最常聽曲風 Top（動態 JSON，第三方 proxy）")))]
 pub async fn top_genres(State(state): State<AppState>) -> Response {
     let now = now_ms();
-    if let Some((data, exp)) = state.spotify.top_genres.lock().clone() {
-        if exp > now {
+    if let Some((data, exp)) = state.spotify.top_genres.lock().clone()
+        && exp > now {
             return Json(data).into_response();
         }
-    }
     if state.spotify.top_disabled_until.load(Ordering::Relaxed) > now {
         if let Some((data, _)) = state.spotify.top_genres.lock().clone() {
             return Json(data).into_response();
@@ -273,11 +271,10 @@ pub async fn top_tracks(State(state): State<AppState>, Query(q): Query<TopTracks
     let key = format!("{time_range}:{limit}");
     let now = now_ms();
     let cached = state.spotify.top_tracks.lock().get(&key).cloned();
-    if let Some((data, exp)) = &cached {
-        if *exp > now {
+    if let Some((data, exp)) = &cached
+        && *exp > now {
             return Json(data.clone()).into_response();
         }
-    }
     if state.spotify.top_disabled_until.load(Ordering::Relaxed) > now {
         if let Some((data, _)) = &cached {
             return Json(data.clone()).into_response();

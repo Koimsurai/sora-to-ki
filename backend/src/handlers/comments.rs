@@ -85,14 +85,13 @@ async fn create_comment(
         });
 
     // captcha 檢查（僅匿名且有帶 captcha 欄位時）
-    if !is_oauth {
-        if let Some(captcha) = &body.captcha {
+    if !is_oauth
+        && let Some(captcha) = &body.captcha {
             let answer = body.captcha_answer.clone().unwrap_or(Value::Null);
             if !js_loose_eq(captcha, &answer) {
                 return (StatusCode::BAD_REQUEST, Json(json!({ "error": "驗證碼錯誤" }))).into_response();
             }
         }
-    }
 
     let ip = client_ip(headers);
 

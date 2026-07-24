@@ -42,11 +42,10 @@ pub fn validate_url(raw: &str) -> Option<(String, String)> {
     // IPv6 字面量 host_str() 帶方括號（"[::1]"），先剝掉才 parse 得出來——
     // 不剝的話 parse 失敗會靜默跳過檢查，變成 v6 繞過（整合測試抓到的真 bug）。
     let bare = host.trim_start_matches('[').trim_end_matches(']');
-    if let Ok(ip) = bare.parse::<IpAddr>() {
-        if is_blocked_ip(&ip) {
+    if let Ok(ip) = bare.parse::<IpAddr>()
+        && is_blocked_ip(&ip) {
             return None;
         }
-    }
     if host.eq_ignore_ascii_case("localhost") {
         return None;
     }
