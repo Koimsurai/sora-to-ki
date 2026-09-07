@@ -66,13 +66,18 @@ jobs:
       # JS/TS 是 oxlint 的地盤，兩個 linter 管同一批檔案只會互相矛盾，而且 Biome
       # 沒有等價的型別感知檢查。
       #
-      # ⚠️ 刻意不加 --error-on-warnings：目前有 190 個 !important 與 21 個
-      # noDescendingSpecificity 沒清。它們會出現在 CI 輸出裡但不擋——跟 knip 當初
-      # 的處理一樣，藏起來就沒有人會回來清。這一步擋的是「格式漂移」與 error 類。
-      # （noDescendingSpecificity 守的是可讀性不是正確性：高特異性的規則寫在前面
-      #  照樣會贏，行為是對的。細節見 CLAUDE.md。）
+      # ⚠️ 刻意不加 --error-on-warnings：目前是 27 個 noImportantStyles 沒清
+      # （noDescendingSpecificity 已經清完）。它們會出現在 CI 輸出裡但不擋——跟 knip
+      # 當初的處理一樣，藏起來就沒有人會回來清。這一步擋的是「格式漂移」與 error 類。
+      # 那 27 個每一個上面都有註解寫明為什麼留，看到 warning 不要直接拿掉。
       - name: biome（CSS 格式與 lint）
         run: pnpm lint:css
+      # 間距 token 的棘輪。biome 沒有「限制某個屬性的合法值」這類規則，而引入
+      # stylelint 等於讓兩個 linter 管同一批 CSS，所以走 scripts/check-*.ts 的既有慣例。
+      # 擋的是「又開始現編間距值」：原本 87 種值、1594 次、token 覆蓋 0，收斂花了
+      # 兩支 PR；沒有這道，CSS 的 git 歷史（寫 51,785 行刪 30,103 行）說明它會長回來。
+      - name: 間距 token（不要現編新的間距值）
+        run: pnpm check:css-tokens
       # JS/TS 的格式。⚠️ oxfmt 不是只認 js/ts——它同時會排 css / json / md，所以
       # .oxfmtrc.json 把這三類都明確排除掉，每一條都是實際撞到的：
       #   css  → biome 的地盤，兩邊 quoteStyle 相反（biome 雙引號、oxfmt 單引號），

@@ -36,6 +36,10 @@ if echo "$staged" | grep -qE '\.css$'; then
   # 存量的 211 個 warning 每次 commit 展開就是兩百行，理由同上面 oxlint 的 --quiet。
   # 不帶 --error-on-warnings：擋的是格式漂移與 error 類。
   pnpm exec biome check --config-path=.config/biome.json --reporter=summary . || fail=1
+  # 間距 token 的棘輪。放在 pre-commit 是因為它的回饋是「你這行該寫 var(--space-2)」——
+  # 那種事在 commit 前知道，比在 CI 紅了之後才回來改省事。
+  echo "▶ 間距 token"
+  pnpm check:css-tokens || fail=1
 fi
 
 if echo "$staged" | grep -qE '^backend/.*\.rs$'; then

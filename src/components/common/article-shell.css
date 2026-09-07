@@ -33,7 +33,7 @@
   background: transparent;
   overflow: clip;
   /* critical: keep sticky working */
-  padding-bottom: 4rem;
+  padding-bottom: var(--space-16);
 }
 
 /* ── Dim overlay: uniform color over the starfield canvas ── */
