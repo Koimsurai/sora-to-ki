@@ -18,7 +18,7 @@
   box-shadow: none;
   outline: none;
   color: var(--white-60);
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   font-family: inherit;
   text-decoration: none;
   cursor: pointer;

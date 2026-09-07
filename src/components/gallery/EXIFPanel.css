@@ -50,7 +50,7 @@
 
 .exif-section-title {
   color: white;
-  font-size: 1.1rem;
+  font-size: var(--fs-18);
   font-weight: 600;
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-2);
@@ -68,7 +68,7 @@
 
 .exif-label {
   color: var(--white-60);
-  font-size: 0.875rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   flex-shrink: 0;
   min-width: 80px;
@@ -76,7 +76,7 @@
 
 .exif-value {
   color: white;
-  font-size: 0.875rem;
+  font-size: var(--fs-14);
   text-align: right;
   word-break: break-word;
 }
@@ -94,7 +94,7 @@
   padding: var(--space-1) var(--space-3);
   background: rgba(59, 130, 246, 0.2);
   color: #60a5fa;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   font-weight: 500;
   border-radius: 9999px;
   border: 1px solid rgba(59, 130, 246, 0.3);
@@ -136,12 +136,12 @@
   }
 
   .exif-section-title {
-    font-size: 1rem;
+    font-size: var(--fs-16);
   }
 
   .exif-label,
   .exif-value {
-    font-size: 0.8rem;
+    font-size: var(--fs-13);
   }
 }
 

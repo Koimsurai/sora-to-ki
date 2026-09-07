@@ -224,7 +224,7 @@
 }
 
 .setup-subtitle {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   color: rgba(148, 161, 178, 0.7);
   font-weight: 300;
   letter-spacing: 2px;
@@ -246,7 +246,7 @@
   background: var(--white-03);
   color: rgba(148, 161, 178, 0.7);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   transition: all 0.3s ease;
   display: flex;
@@ -274,7 +274,7 @@
 }
 
 .setup-category-tab .tab-count {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   background: var(--white-08);
   padding: var(--space-px) 7px;
   border-radius: 10px;
@@ -301,7 +301,7 @@
 }
 
 .setup-category-number {
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   font-weight: 700;
   color: var(--clr-button, var(--brand));
   background: rgba(var(--brand-rgb), 0.1);
@@ -312,14 +312,14 @@
 }
 
 .setup-category-title {
-  font-size: 1.5rem;
+  font-size: var(--fs-24);
   font-weight: 700;
   color: #fff;
   margin: 0;
 }
 
 .setup-category-subtitle {
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: rgba(148, 161, 178, 0.5);
   margin-left: auto;
   font-style: italic;
@@ -389,12 +389,12 @@
   padding: var(--space-2-5);
   background: rgba(var(--brand-rgb), 0.04);
   border-radius: 10px;
-  font-size: 3.5rem;
+  font-size: var(--fs-56);
   color: rgba(var(--brand-rgb), 0.5);
 }
 
 .setup-card-title {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   font-weight: 700;
   color: #fff;
   margin-bottom: var(--space-1);
@@ -402,7 +402,7 @@
 }
 
 .setup-card-subtitle {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   /* alpha 0.6 → 0.8。疊在 #101014 上的實際顏色是 #5f6773，對比只有 **3.32:1**，
      而 0.78rem 屬於「一般文字」，WCAG AA 要求 4.5:1（axe 判 serious）。
      基色不動、只調 alpha：
@@ -440,7 +440,7 @@
 }
 
 .setup-base-quote {
-  font-size: 1.05rem;
+  font-size: var(--fs-16);
   font-style: italic;
   color: rgba(var(--brand-rgb), 0.7);
   margin-bottom: var(--space-7);
@@ -471,7 +471,7 @@
 }
 
 .setup-base-spec-label {
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   font-weight: 700;
   color: var(--clr-button, var(--brand));
   text-transform: uppercase;
@@ -480,7 +480,7 @@
 }
 
 .setup-base-spec-value {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--white-85);
 }
 
@@ -492,13 +492,13 @@
 }
 
 .setup-retired-title {
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   color: rgba(148, 161, 178, 0.5);
   margin-bottom: var(--space-2);
 }
 
 .setup-retired-text {
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: rgba(148, 161, 178, 0.35);
   font-style: italic;
 }
@@ -535,11 +535,11 @@
   }
 
   .setup-card-title {
-    font-size: 0.85rem;
+    font-size: var(--fs-14);
   }
 
   .setup-card-subtitle {
-    font-size: 0.72rem;
+    font-size: var(--fs-12);
   }
 
   .setup-base-card {

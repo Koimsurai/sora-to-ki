@@ -23,7 +23,7 @@
 
 .unsubscribe-brand {
   display: inline-block;
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   letter-spacing: 0.22em;
   text-transform: uppercase;
   font-weight: 700;
@@ -33,7 +33,7 @@
 }
 
 .unsubscribe-title {
-  font-size: 1.6rem;
+  font-size: var(--fs-24);
   font-weight: 700;
   margin: 0 0 var(--space-4);
   color: #fff;
@@ -42,7 +42,7 @@
 
 .unsubscribe-body {
   margin: 0 0 var(--space-6);
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.66);
 }
@@ -61,7 +61,7 @@
 
 .unsubscribe-status {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: var(--white-55);
   font-style: italic;
 }
@@ -83,7 +83,7 @@
   align-items: center;
   padding: 11px var(--space-4-5);
   border-radius: 10px;
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   letter-spacing: 0.02em;
   text-decoration: none;

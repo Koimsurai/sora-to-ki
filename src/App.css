@@ -18,7 +18,7 @@ body {
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
   border-radius: 12px;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: rgba(255, 255, 255, 0.92);
@@ -111,7 +111,7 @@ body {
 
 .koim-btn--sm {
   padding: var(--space-2) var(--space-4);
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   border-radius: 9px;
 }
 

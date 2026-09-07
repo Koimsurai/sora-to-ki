@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1-5);
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -19,14 +19,14 @@
 }
 
 .mdx-note-quote {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   line-height: 1;
   color: rgba(196, 181, 253, 0.55);
 }
 
 .mdx-note-content {
   color: rgba(255, 255, 255, 0.72);
-  font-size: 0.96rem;
+  font-size: var(--fs-16);
   line-height: 1.7;
 }
 
@@ -93,7 +93,7 @@
   border: 1px solid rgba(252, 211, 77, 0.22);
   box-shadow: 0 10px 30px var(--black-45);
   color: var(--white-82);
-  font-size: 0.84rem;
+  font-size: var(--fs-13);
   line-height: 1.55;
   text-align: left;
   white-space: normal;
@@ -123,7 +123,7 @@
 }
 .annot-card-label {
   display: block;
-  font-size: 0.64rem;
+  font-size: var(--fs-10);
   font-weight: 600;
   letter-spacing: 0.09em;
   color: rgba(252, 211, 77, 0.9);
@@ -204,7 +204,7 @@
 }
 .mdx-chart-title {
   margin: 0 0 var(--space-2-5) var(--space-1-5);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--white-60);
@@ -222,7 +222,7 @@
   border-radius: 10px;
   border: 1px dashed rgba(252, 165, 165, 0.35);
   color: rgba(252, 165, 165, 0.8);
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   text-align: center;
 }
 /* hover tooltip */
@@ -234,12 +234,12 @@
   box-shadow: 0 8px 24px var(--black-50);
 }
 .mdx-chart-tip-label {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--white-50);
   margin-bottom: var(--space-0-5);
 }
 .mdx-chart-tip-value {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   font-weight: 600;
   color: #b5a8ff;
 }
@@ -248,7 +248,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   margin-top: var(--space-0-5);
 }
 .mdx-chart-tip-swatch {
@@ -263,7 +263,7 @@
 }
 .mdx-chart-tip-row .mdx-chart-tip-value {
   margin-left: auto;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: #fff;
 }
 /* recharts 圖例文字改亮 */
@@ -291,7 +291,7 @@
   grid-template-columns: minmax(4rem, 6rem) 1fr 4rem;
   align-items: center;
   gap: var(--space-3);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
 }
 .mdx-chart-slider-label {
   color: var(--white-60);
@@ -308,7 +308,7 @@
   text-align: right;
   color: var(--white-82);
   font-variant-numeric: tabular-nums;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
 }
 
 /* ── <Ruby> CJK 注音 ── */
@@ -393,7 +393,7 @@
   box-shadow: none;
   outline: none;
   color: var(--white-50);
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   font-weight: 500;
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   cursor: pointer;
@@ -471,7 +471,7 @@
   box-shadow: none;
   outline: none;
   color: var(--white-60);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
@@ -546,7 +546,7 @@
 }
 .mdx-sketch-caption {
   margin-top: var(--space-3);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-50);
 }
 .mdx-sketch-error {
@@ -556,13 +556,13 @@
   border: 1px dashed rgba(252, 165, 165, 0.35);
   background: rgba(252, 165, 165, 0.06);
   color: #fca5a5;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
 }
 .mdx-sketch-error pre {
   margin: var(--space-1-5) 0 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   opacity: 0.85;
 }
 
@@ -573,14 +573,14 @@
   border: 1px solid rgba(252, 165, 165, 0.4);
   background: rgba(252, 165, 165, 0.06);
   color: #fca5a5;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
 }
 
 .mdx-error pre {
   margin: var(--space-2) 0 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   opacity: 0.85;
 }
 
@@ -605,7 +605,7 @@
 .mdx-diff-stat {
   display: inline-flex;
   gap: var(--space-2);
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   font-variant-numeric: tabular-nums;
 }
 .mdx-diff-stat-add {
@@ -640,7 +640,7 @@
   top: 0.6rem;
   padding: var(--space-0-5) var(--space-2);
   border-radius: 6px;
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: #fff;
   background: var(--black-55);
   backdrop-filter: blur(4px);
@@ -661,7 +661,7 @@
 .mdx-imgcompare figcaption {
   margin-top: var(--space-2);
   text-align: center;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-50);
 }
 
@@ -706,7 +706,7 @@
 }
 .mdx-details-summary::before {
   content: "▶";
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--white-40);
   transition: transform 0.18s ease;
 }
@@ -765,7 +765,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: #fff;
   background: rgba(139, 124, 246, 0.9);
@@ -787,7 +787,7 @@
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.015);
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   line-height: 1.9;
   overflow-x: auto;
 }
@@ -803,7 +803,7 @@
   font-weight: 500;
 }
 .mdx-filetree-icon {
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
 }
 
 /* ── Stat 數字磚 ── */
@@ -822,26 +822,26 @@
   background: var(--white-02);
 }
 .mdx-stat-value {
-  font-size: 1.7rem;
+  font-size: var(--fs-28);
   font-weight: 700;
   color: #fff;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 .mdx-stat-unit {
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   color: var(--white-50);
   margin-left: var(--space-1);
 }
 .mdx-stat-label {
   margin-top: var(--space-1-5);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-55);
 }
 .mdx-stat-hint {
   margin-top: var(--space-0-5);
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--white-40);
 }
 .mdx-stat-trend {
@@ -933,7 +933,7 @@
   border-radius: 50%;
   background: rgba(230, 33, 23, 0.92);
   color: #fff;
-  font-size: 1.3rem;
+  font-size: var(--fs-20);
   padding-left: var(--space-1);
   box-shadow: 0 6px 24px var(--black-50);
 }
@@ -947,7 +947,7 @@
   background: rgba(255, 255, 255, 0.015);
 }
 .mdx-refs-title {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -971,7 +971,7 @@
 .mdx-refs-label {
   flex: 0 0 auto;
   min-width: 9rem;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: rgba(255, 255, 255, 0.72);
   font-weight: 500;
 }
@@ -984,7 +984,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--white-82); /* 中性文字，讓彩色品牌 icon 跳出來、不打架 */
   text-decoration: none;
   border-bottom: 1px solid transparent;
@@ -1013,7 +1013,7 @@
   background: rgba(255, 255, 255, 0.015);
 }
 .mdx-poll-q {
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: var(--white-82);
   margin-bottom: var(--space-3);
@@ -1041,7 +1041,7 @@
   box-shadow: none;
   outline: none;
   color: rgba(255, 255, 255, 0.75);
-  font-size: 0.87rem;
+  font-size: var(--fs-14);
   font-family: inherit;
   text-align: left;
   cursor: pointer;
@@ -1094,7 +1094,7 @@
 .mdx-poll-pct {
   position: relative;
   flex: 0 0 auto;
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   font-variant-numeric: tabular-nums;
   color: var(--white-45);
 }
@@ -1106,7 +1106,7 @@
   align-items: center;
   gap: var(--space-3);
   margin-top: var(--space-2-5);
-  font-size: 0.73rem;
+  font-size: var(--fs-12);
   color: rgba(255, 255, 255, 0.38);
 }
 .mdx-poll-peek {
@@ -1116,7 +1116,7 @@
   box-shadow: none;
   outline: none;
   color: rgba(196, 181, 253, 0.75);
-  font-size: 0.73rem;
+  font-size: var(--fs-12);
   font-family: inherit;
   cursor: pointer;
   text-decoration: underline dotted;

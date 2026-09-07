@@ -27,7 +27,7 @@
   border: 1px solid transparent;
   border-radius: 999px;
   color: rgba(212, 212, 216, 0.72);
-  font-size: 0.875rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   cursor: pointer;
   text-decoration: none;
@@ -58,7 +58,7 @@
    彈性曲線 (overshoot back-out)，類似 animate-ui 的活潑感 */
 .mega-menu-trigger-icon {
   display: inline-flex;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   transform-origin: center;
   transition:
     transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -75,7 +75,7 @@
 /* （之前的 active 呼吸 animation 會用 transform 蓋掉 hover transition，已移除） */
 
 .mega-menu-trigger-chev {
-  font-size: 0.65rem;
+  font-size: var(--fs-10);
   opacity: 0.55;
   transition:
     transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -170,7 +170,7 @@
 }
 
 .mega-menu-column-title {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(161, 161, 170, 0.7);
@@ -193,7 +193,7 @@
   border-radius: 10px;
   text-decoration: none;
   color: rgba(228, 228, 231, 0.85);
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   transition:
     background 0.15s ease,
     color 0.15s ease,
@@ -214,7 +214,7 @@
   border-radius: 8px;
   background: rgba(var(--brand-rgb), 0.12);
   color: rgba(167, 139, 250, 0.95);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   /* 外框「不動」，只變色 */
   transition:
     background 0.22s ease,
@@ -224,7 +224,7 @@
 .mega-menu-link--compact .mega-menu-link-icon {
   width: 24px;
   height: 24px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
 }
 .mega-menu-link:hover {
   background: var(--white-06);
@@ -320,7 +320,7 @@
 /* 統計單行版 — 緊貼在頭像列下方的安靜 meta */
 .mega-menu-stats-line {
   margin: 0;
-  font-size: 0.76rem;
+  font-size: var(--fs-12);
   color: var(--white-45);
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
@@ -367,7 +367,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: var(--fs-18);
   font-weight: 600;
   color: white;
   overflow: hidden;
@@ -380,7 +380,7 @@
 }
 .mega-menu-profile-name {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: #f4f4f5;
   line-height: 1.2;
 }
@@ -388,7 +388,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: rgba(74, 222, 128, 0.85);
 }
 .mega-menu-profile-status::before {
@@ -427,7 +427,7 @@
     color 0.15s,
     transform 0.15s;
   text-decoration: none;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
 }
 .mega-menu-social:hover {
   background: var(--white-10);
@@ -446,7 +446,7 @@
   text-decoration: none;
   color: rgba(212, 212, 216, 0.82);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   transition:
     background 0.15s,
     color 0.15s;
@@ -457,7 +457,7 @@
   color: rgba(244, 244, 245, 0.98);
 }
 .mega-menu-category-count {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: rgba(161, 161, 170, 0.6);
   flex-shrink: 0;
 }
@@ -483,7 +483,7 @@
   background: var(--white-04);
 }
 .mega-menu-post-title {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: rgba(244, 244, 245, 0.95);
   font-weight: 500;
   line-height: 1.4;
@@ -496,7 +496,7 @@
   overflow-wrap: anywhere;
 }
 .mega-menu-post-meta {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: rgba(161, 161, 170, 0.55);
 }
 .mega-menu-post-meta-dot {
@@ -508,7 +508,7 @@
   gap: var(--space-1);
   margin-top: var(--space-2);
   padding: var(--space-1) 0;
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: rgba(161, 161, 170, 0.7);
   text-decoration: none;
   transition:

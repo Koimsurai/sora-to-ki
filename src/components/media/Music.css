@@ -66,14 +66,14 @@
 }
 
 .music-title-sub {
-  font-size: 1.15rem;
+  font-size: var(--fs-18);
   color: var(--white-40);
   font-weight: 400;
   font-style: italic;
 }
 
 .music-hero-desc {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   color: var(--text-secondary);
   line-height: 1.7;
   max-width: 520px;
@@ -209,7 +209,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   color: var(--brand-light);
   margin-bottom: var(--space-2-5);
@@ -241,7 +241,7 @@
 }
 
 .np-title {
-  font-size: 1.6rem;
+  font-size: var(--fs-24);
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 var(--space-1) 0;
@@ -251,7 +251,7 @@
 }
 
 .np-artist {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   color: var(--text-secondary);
   margin: 0 0 var(--space-0-5) 0;
   overflow: hidden;
@@ -260,7 +260,7 @@
 }
 
 .np-album {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--text-tertiary);
   margin: 0 0 var(--space-3) 0;
   overflow: hidden;
@@ -292,13 +292,13 @@
 .np-time {
   display: flex;
   justify-content: space-between;
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--text-tertiary);
   font-family: "JetBrains Mono", "Courier New", monospace;
 }
 
 .np-last-played {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--brand-light);
   margin: 0;
   opacity: 0.8;
@@ -314,7 +314,7 @@
   border: 1px solid rgba(29, 185, 84, 0.3);
   background: rgba(29, 185, 84, 0.1);
   color: #1db954;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   font-weight: 600;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -340,7 +340,7 @@
   position: relative;
   padding: 7px var(--space-4-5);
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -381,7 +381,7 @@
 }
 
 .section-heading {
-  font-size: 1.1rem;
+  font-size: var(--fs-18);
   font-weight: 700;
   color: var(--white-70);
   margin: 0 0 var(--space-5) 0;
@@ -414,7 +414,7 @@
 }
 
 .track-row-header {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   color: var(--text-tertiary);
   text-transform: uppercase;
@@ -427,7 +427,7 @@
 .tr-num {
   width: 28px;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--text-tertiary);
   font-weight: 600;
   font-family: "JetBrains Mono", "Courier New", monospace;
@@ -457,7 +457,7 @@
 }
 
 .tr-name {
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: var(--text-primary);
   overflow: hidden;
@@ -466,7 +466,7 @@
 }
 
 .tr-artist {
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -483,14 +483,14 @@
 
 .tr-no-feat {
   color: var(--white-15);
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
 }
 
 .tr-duration-col,
 .tr-duration {
   width: 50px;
   text-align: right;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--text-tertiary);
   font-family: "JetBrains Mono", "Courier New", monospace;
   flex-shrink: 0;
@@ -500,7 +500,7 @@
 .tr-time {
   width: 80px;
   text-align: right;
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--brand-light);
   opacity: 0.7;
   flex-shrink: 0;
@@ -509,7 +509,7 @@
 .tr-album-col {
   width: 160px;
   flex-shrink: 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--text-tertiary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -529,7 +529,7 @@
 
 .feat-label {
   width: 24px;
-  font-size: 0.65rem;
+  font-size: var(--fs-10);
   color: var(--text-tertiary);
   flex-shrink: 0;
 }
@@ -550,7 +550,7 @@
 
 .feat-value {
   width: 20px;
-  font-size: 0.62rem;
+  font-size: var(--fs-10);
   color: var(--text-tertiary);
   text-align: right;
   font-family: "JetBrains Mono", "Courier New", monospace;
@@ -610,7 +610,7 @@
 }
 
 .bubble-rank {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   font-weight: 700;
   color: var(--brand-light);
   margin-bottom: var(--space-1);
@@ -618,7 +618,7 @@
 }
 
 .bubble-name {
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   font-weight: 700;
   color: var(--text-primary);
   text-align: center;
@@ -628,7 +628,7 @@
 }
 
 .bubble-count {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--text-tertiary);
   margin-top: var(--space-1);
 }
@@ -670,7 +670,7 @@
 .range-pill {
   padding: var(--space-1-5) var(--space-3-5);
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   font-weight: 600;
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
@@ -697,7 +697,7 @@
    ══════════════════════════════════════ */
 .analytics-subtitle {
   color: var(--text-tertiary);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   margin: -0.5rem 0 var(--space-5);
 }
 
@@ -718,7 +718,7 @@
 }
 
 .decade-chart-title {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   font-weight: 600;
   color: var(--white-85);
   margin: 0 0 var(--space-4);
@@ -739,7 +739,7 @@
 
 .decade-label {
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--text-tertiary);
   letter-spacing: 0.03em;
 }
@@ -759,7 +759,7 @@
 
 .decade-count {
   font-family: "JetBrains Mono", "Courier New", monospace;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--text-primary);
   text-align: right;
 }
@@ -786,14 +786,14 @@
 }
 
 .analytic-label {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--white-70);
   margin-bottom: var(--space-0-5);
 }
 
 .analytic-sublabel {
-  font-size: 0.68rem;
+  font-size: var(--fs-11);
   color: var(--text-tertiary);
   font-family: "JetBrains Mono", "Courier New", monospace;
   letter-spacing: 0.05em;
@@ -832,14 +832,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: var(--fs-24);
   font-weight: 700;
   color: var(--text-primary);
   font-family: "JetBrains Mono", "Courier New", monospace;
 }
 
 .gauge-percent {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--text-tertiary);
   margin-left: var(--space-px);
 }
@@ -856,7 +856,7 @@
 }
 
 .tempo-number {
-  font-size: 2.4rem;
+  font-size: var(--fs-40);
   font-weight: 700;
   color: var(--text-primary);
   font-family: "JetBrains Mono", "Courier New", monospace;
@@ -864,7 +864,7 @@
 }
 
 .tempo-unit {
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   color: var(--text-tertiary);
   font-family: "JetBrains Mono", "Courier New", monospace;
   font-weight: 600;
@@ -877,7 +877,7 @@
   text-align: center;
   padding: var(--space-8);
   color: var(--text-secondary);
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 12px;
   background: rgba(239, 68, 68, 0.05);
@@ -887,7 +887,7 @@
   text-align: center;
   padding: var(--space-12);
   color: var(--text-tertiary);
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
 }
 
 .config-hint {
@@ -916,7 +916,7 @@
   border-radius: 4px;
   font-family: "JetBrains Mono", "Courier New", monospace;
   color: var(--brand-light);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
 }
 
 .config-hint a {
@@ -948,7 +948,7 @@
   }
 
   .music-hero-title {
-    font-size: 2rem;
+    font-size: var(--fs-32);
     flex-direction: column;
     gap: var(--space-1);
   }
@@ -966,7 +966,7 @@
   }
 
   .np-title {
-    font-size: 1.2rem;
+    font-size: var(--fs-20);
   }
 
   .music-tabs {
@@ -976,7 +976,7 @@
 
   .music-tab-btn {
     padding: var(--space-1-5) var(--space-3-5);
-    font-size: 0.82rem;
+    font-size: var(--fs-13);
   }
 
   .yearly-header-row {
@@ -1033,6 +1033,6 @@
 
   .tr-num {
     width: 20px;
-    font-size: 0.75rem;
+    font-size: var(--fs-12);
   }
 }

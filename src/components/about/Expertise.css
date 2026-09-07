@@ -38,7 +38,7 @@
 }
 
 .expertise-hero-unit {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   letter-spacing: 2px;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.42);
@@ -48,7 +48,7 @@
 
 .expertise-hero-blurb {
   margin: var(--space-6) 0 0;
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   line-height: 1.7;
   color: var(--white-55);
 }
@@ -86,7 +86,7 @@
 }
 
 .expertise-row-name {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: var(--white-55);
   font-weight: 500;
 }
@@ -151,7 +151,7 @@
 }
 
 .skill-chip-icon {
-  font-size: 1.25rem;
+  font-size: var(--fs-20);
   /* color injected inline per icon's brand colour */
 }
 

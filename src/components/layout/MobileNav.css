@@ -46,7 +46,7 @@
   }
 
   .mnav-brand {
-    font-size: 1.05rem;
+    font-size: var(--fs-16);
     font-weight: 700;
     letter-spacing: 0.04em;
     color: rgba(255, 255, 255, 0.92);
@@ -56,7 +56,7 @@
     background: transparent;
     border: none;
     color: var(--white-55);
-    font-size: 1.05rem;
+    font-size: var(--fs-16);
     padding: var(--space-2);
     cursor: pointer;
     transition: color 0.2s;
@@ -98,7 +98,7 @@
     border: none;
     color: var(--white-90);
     font: inherit;
-    font-size: 1.12rem;
+    font-size: var(--fs-18);
     font-weight: 500;
     letter-spacing: 0.02em;
     padding: var(--space-4) 0;
@@ -131,7 +131,7 @@
   }
 
   .mnav-chev {
-    font-size: 0.8rem;
+    font-size: var(--fs-13);
     transition: transform 0.3s ease;
   }
   .mnav-chev.is-open {
@@ -158,7 +158,7 @@
 
   .mnav-sub-link {
     padding: var(--space-3) 0 var(--space-3) var(--space-4);
-    font-size: 1rem;
+    font-size: var(--fs-16);
     color: rgba(255, 255, 255, 0.62);
     text-decoration: none;
     border-top: 1px solid var(--white-05);
@@ -192,7 +192,7 @@
   }
 
   .mnav-subscribe {
-    font-size: 0.95rem;
+    font-size: var(--fs-16);
     font-weight: 600;
     color: #ec7dd6;
     text-decoration: none;

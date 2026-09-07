@@ -1,14 +1,18 @@
 /**
- * 擋住「又開始現編間距值」。
+ * 擋住「又開始現編間距值與字級」。
  *
  * ## 補這道的理由
  *
- * 這個專案原本沒有間距尺，margin/padding/gap 用了 **87 種**不同的長度值、1594 次，
- * token 覆蓋 0。沒有尺的後果不是「值很多」，是**需要一個間距時沒有標準答案**——
- * 於是每次都現編一個，長出 `0.15rem` / `0.35rem` / `0.45rem` / `0.55rem` 這種
- * 不屬於任何體系的值，同一個尺寸還被 px 與 rem 各寫一遍（15 個尺寸都是這樣）。
+ * 這個專案原本兩把尺都沒有：
+ *   · margin/padding/gap  **87 種**長度值、1594 次、token 覆蓋 0
+ *   · font-size           **57 種**值、584 次、token 覆蓋 0
  *
- * 收斂那 1456 處花了兩支 PR。**沒有這道檢查，半年後會原封不動長回來**——
+ * 沒有尺的後果不是「值很多」，是**需要一個值時沒有標準答案**——於是每次都現編一個。
+ * 間距長出 `0.15rem` / `0.35rem` / `0.45rem` / `0.55rem`；字級更誇張，是有人拿著
+ * 0.02rem 在肉眼微調（0.7 / 0.72 / 0.74 / 0.76 / 0.78 / 0.8 / 0.82 / 0.85 / 0.88 /
+ * 0.9 / 0.92 / 0.95rem 全部同時存在），91% 的用量擠在 10–18px 之間。
+ *
+ * 收斂那 2040 處花了三支 PR。**沒有這道檢查，半年後會原封不動長回來**——
  * 這不是假設：CSS 的 git 歷史是寫了 51,785 行、刪掉 30,103 行（58%），
  * 前一年一路淨增 +87%~+94%，直到一次 −95% 的大清理才拉回來。
  *
@@ -100,8 +104,29 @@ const GRANDFATHERED = new Set([
   '-2.5rem',
 ]);
 
+/**
+ * index.css 的 `--fs-*`。名字就是 px 值。
+ *
+ * ⚠ **不要改成 `--text-*`**：那是 Tailwind v4 生 utility 的 namespace，佔用它會改變
+ * `text-sm` 產出什麼；而且這個專案的 `--text-primary` / `-secondary` / `-tertiary`
+ * 已經是**顏色**。也不要直接 `var(--text-3xl)`——v4 會 tree-shake 掉沒被 utility
+ * 用到的 theme 變數，實測產物裡只有 xs/sm/base/lg/xl/2xl/6xl，3xl/4xl/5xl 不存在，
+ * 引用它會是未定義、字級直接退回繼承值。
+ */
+const FONT_SIZE_PX = new Set([10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36, 40, 48, 56]);
+
+/**
+ * 字級的豁免。導入時只有這些。
+ *
+ * `em` 不在這裡也不會被檢查——它是相對父層字級的，換成固定 token 會改變語意
+ * （MdxContent 有一批 0.55em / 0.82em / 1.05em 就是刻意要跟著父層走）。
+ * `calc()` / `clamp()` 同理，那是流體字級。
+ */
+const FONT_SIZE_GRANDFATHERED = new Set<string>([]);
+
 const SPACING_PROP = /^(margin|padding|gap|row-gap|column-gap)/;
 const LENGTH = /(?<![\w.-])(-?\d*\.?\d+)(px|rem)(?![\w-])/g;
+const EM = /(?<![\w.-])\d*\.?\d+em(?![\w-])/;
 const DECL = /([-a-zA-Z]+)\s*:\s*([^;{}]+)/g;
 
 /**
@@ -144,15 +169,39 @@ function check(file: string): Problem[] {
   for (const m of scan.matchAll(DECL)) {
     const prop = m[1].trim();
     const value = m[2].trim();
-    if (prop.startsWith('--') || !SPACING_PROP.test(prop)) continue;
-    // calc() 裡的數字常常是「一半」「兩倍」這類推導值，不是尺上的一格
-    if (value.includes('calc(')) continue;
+    if (prop.startsWith('--')) continue;
+    const isSpacing = SPACING_PROP.test(prop);
+    const isFontSize = prop === 'font-size';
+    if (!isSpacing && !isFontSize) continue;
+    // calc() / clamp() 裡的數字是推導值或流體字級，不是尺上的一格
+    if (value.includes('calc(') || value.includes('clamp(')) continue;
+    // 字級的 em 是相對父層的，換成固定 token 會改變語意
+    if (isFontSize && EM.test(value)) continue;
+    const line = src.slice(0, m.index).split('\n').length;
+
     for (const lm of value.matchAll(LENGTH)) {
       const raw = lm[1] + lm[2];
-      if (GRANDFATHERED.has(raw)) continue;
       const px = Number(lm[1]) * (lm[2] === 'rem' ? 16 : 1);
       if (px === 0) continue;
-      const line = src.slice(0, m.index).split('\n').length;
+
+      if (isFontSize) {
+        if (FONT_SIZE_GRANDFATHERED.has(raw)) continue;
+        problems.push(
+          FONT_SIZE_PX.has(px)
+            ? { file, line, prop, raw, why: `${px}px 尺上有這一格`, fix: `改用 var(--fs-${px})` }
+            : {
+                file,
+                line,
+                prop,
+                raw,
+                why: `${px}px 不在字級尺上`,
+                fix: `改用最接近的 var(--fs-*)，或把這個尺寸加進 index.css 的尺`,
+              },
+        );
+        continue;
+      }
+
+      if (GRANDFATHERED.has(raw)) continue;
       const token = SCALE_PX[px];
       problems.push(
         token
@@ -175,18 +224,18 @@ const files = walk('src');
 const problems = files.flatMap(check);
 
 if (problems.length === 0) {
-  console.log(`✅ 間距 token：檢查 ${files.length} 個 CSS 檔，沒有現編的間距值`);
+  console.log(`✅ 間距與字級 token：檢查 ${files.length} 個 CSS 檔，沒有現編的間距或字級`);
   process.exit(0);
 }
 
-console.error(`\n❌ ${problems.length} 處間距沒有走 token：\n`);
+console.error(`\n❌ ${problems.length} 處沒有走 token：\n`);
 for (const p of problems) {
   console.error(`  ${p.file}:${p.line}`);
   console.error(`    ${p.prop}: ${p.raw}  —— ${p.why}`);
   console.error(`    → ${p.fix}\n`);
 }
 console.error(
-  '間距尺定義在 src/index.css 的 @theme（--space-*）。\n' +
+  '間距尺與字級尺都定義在 src/index.css 的 @theme（--space-* / --fs-*）。\n' +
     '真的需要新尺寸就加進那把尺，或加進 scripts/check-css-tokens.ts 的 GRANDFATHERED 並寫明理由。\n',
 );
 process.exit(1);

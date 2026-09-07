@@ -152,7 +152,7 @@
   align-items: center;
   gap: var(--space-1);
   margin: 0;
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   letter-spacing: 0.08em;
   background: linear-gradient(90deg, var(--white-45) 0%, rgba(224, 195, 252, 0.95) 50%, var(--white-45) 100%);
   background-size: 200% 100%;
@@ -162,10 +162,10 @@
   animation: koimShimmer 3s linear infinite;
 }
 .koim-loader-shell--sm .koim-loader-text {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
 }
 .koim-loader-shell--lg .koim-loader-text {
-  font-size: 1.05rem;
+  font-size: var(--fs-16);
 }
 
 @keyframes koimShimmer {

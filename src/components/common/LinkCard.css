@@ -3,7 +3,7 @@
 
 .link-card-with-text > p {
   margin-bottom: var(--space-1-5);
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: var(--post-text);
 }
 
@@ -55,13 +55,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   font-weight: 500;
   color: var(--white-70);
 }
 
 .link-card-url {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--post-muted);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -118,7 +118,7 @@
   align-items: center;
   gap: var(--space-1-5);
   padding: var(--space-2-5) var(--space-4);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-60);
   text-decoration: none;
   border-top: 1px solid var(--white-06);
@@ -130,7 +130,7 @@
 }
 
 .link-card-internal .link-card-title {
-  font-size: 1.1rem;
+  font-size: var(--fs-18);
   font-weight: 600;
   color: #fff;
   margin: var(--space-1) 0;
@@ -138,7 +138,7 @@
 }
 
 .link-card-internal .link-card-meta {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--post-muted);
   display: flex;
   gap: var(--space-2);

@@ -133,7 +133,7 @@
   border: 1px solid var(--white-06);
   border-radius: 40px;
   background: var(--white-02);
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-50);
   gap: var(--space-4);
   flex-wrap: wrap;
@@ -215,7 +215,7 @@
 }
 
 .hero-label {
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   color: var(--white-35);
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -343,7 +343,7 @@
   flex-wrap: wrap;
 }
 .steam-profile-name {
-  font-size: 1.6rem;
+  font-size: var(--fs-24);
   font-weight: 700;
   color: #fff;
   margin: 0;
@@ -357,7 +357,7 @@
   background: linear-gradient(135deg, #ff8a4c 0%, #d54a26 100%);
   color: #fff;
   border-radius: 5px;
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   font-weight: 700;
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
@@ -370,7 +370,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--white-85);
 }
 .steam-profile-dot {
@@ -406,7 +406,7 @@
   background: var(--black-30);
   border: 1px solid var(--white-10);
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: var(--fs-12);
   color: rgba(255, 255, 255, 0.78);
   width: fit-content;
   backdrop-filter: blur(4px);
@@ -440,7 +440,7 @@
     justify-content: center;
   }
   .steam-profile-name {
-    font-size: 1.3rem;
+    font-size: var(--fs-20);
   }
   .steam-profile-avatar-wrap {
     width: 92px;
@@ -470,7 +470,7 @@
   padding: 0 var(--space-1);
 }
 .steam-recent-count {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-45);
   font-variant-numeric: tabular-nums;
 }
@@ -579,7 +579,7 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
 }
 .steam-recent-title {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   font-weight: 700;
   color: #fff;
   margin: 0 0 var(--space-1);
@@ -590,7 +590,7 @@
   overflow: hidden;
 }
 .steam-recent-stats {
-  font-size: 0.74rem;
+  font-size: var(--fs-12);
   color: var(--white-70);
   display: flex;
   gap: var(--space-1-5);
@@ -608,7 +608,7 @@
   padding: 3px 9px;
   background: linear-gradient(135deg, #90ba3c, #5e8c1a);
   color: #fff;
-  font-size: 0.68rem;
+  font-size: var(--fs-11);
   font-weight: 700;
   letter-spacing: 0.06em;
   border-radius: 4px;
@@ -659,7 +659,7 @@
 }
 
 .code-pulse-sub {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-35);
 }
 
@@ -683,7 +683,7 @@
 .lang-bar-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
 }
 
 .lang-bar-name {
@@ -694,7 +694,7 @@
 .lang-bar-time {
   color: var(--white-35);
   font-family: "Courier New", monospace;
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
 }
 
 .lang-bar-track {
@@ -730,7 +730,7 @@
   gap: var(--space-2);
   text-decoration: none;
   color: rgba(255, 255, 255, 0.65);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   transition: color 0.2s;
 }
@@ -753,7 +753,7 @@
 }
 
 .heatmap-total-num {
-  font-size: 1.3rem;
+  font-size: var(--fs-20);
   font-weight: 700;
   background: linear-gradient(135deg, var(--brand), var(--brand-light));
   -webkit-background-clip: text;
@@ -762,7 +762,7 @@
 }
 
 .heatmap-total-label {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-40);
 }
 
@@ -883,7 +883,7 @@
   color: #fff;
   padding: var(--space-1) var(--space-2);
   border-radius: 6px;
-  font-size: 0.68rem;
+  font-size: var(--fs-11);
   white-space: nowrap;
   pointer-events: none;
   z-index: 100;
@@ -905,7 +905,7 @@
   opacity: 1;
 }
 .tooltip-date {
-  font-size: 0.6rem;
+  font-size: var(--fs-10);
   color: var(--white-40);
   margin-top: var(--space-px);
 }
@@ -916,7 +916,7 @@
   justify-content: flex-end;
   gap: var(--space-1-5);
   margin-top: var(--space-3);
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--white-35);
 }
 .legend-squares {
@@ -980,13 +980,13 @@
 }
 
 .commit-repo {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   font-weight: 600;
   color: var(--white-80);
 }
 
 .commit-when {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--white-25);
   white-space: nowrap;
   margin-left: auto;
@@ -1015,7 +1015,7 @@
 }
 
 .commit-sha {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   font-family: "Courier New", monospace;
   color: var(--brand);
   flex-shrink: 0;
@@ -1025,7 +1025,7 @@
 }
 
 .commit-msg {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-50);
   white-space: nowrap;
   overflow: hidden;
@@ -1034,7 +1034,7 @@
 }
 
 .commit-more {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--white-25);
   padding-left: var(--space-1);
 }
@@ -1062,7 +1062,7 @@
 .project-row-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
 }
 
 .project-row-name {
@@ -1073,7 +1073,7 @@
 .project-row-time {
   color: var(--white-30);
   font-family: "Courier New", monospace;
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
 }
 
 .project-row-track {
@@ -1100,7 +1100,7 @@
      margin-top 要顯式歸零：h2 有 UA 預設上邊距，不歸零會整頁位移。 */
   margin-top: 0;
   display: block;
-  font-size: 0.68rem;
+  font-size: var(--fs-11);
   letter-spacing: 2.5px;
   color: var(--white-30);
   font-weight: 700;
@@ -1127,7 +1127,7 @@
 }
 
 .game-gallery-count {
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   color: var(--white-25);
 }
 
@@ -1187,7 +1187,7 @@
   padding: var(--space-2) var(--space-2-5);
   opacity: 0;
   transition: opacity 0.25s;
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   color: #fffffe;
   font-weight: 500;
 }
@@ -1196,7 +1196,7 @@
 }
 
 .game-gallery-time {
-  font-size: 0.65rem;
+  font-size: var(--fs-10);
   color: var(--white-45);
 }
 
@@ -1236,14 +1236,14 @@
 }
 
 .repo-row-left h4 {
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: var(--white-85);
   margin-bottom: var(--space-0-5);
 }
 
 .repo-row-left p {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-35);
   white-space: nowrap;
   overflow: hidden;
@@ -1255,7 +1255,7 @@
   align-items: center;
   gap: var(--space-3);
   flex-shrink: 0;
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-40);
 }
 
@@ -1278,7 +1278,7 @@
   text-align: center;
   padding: var(--space-8) var(--space-4);
   color: var(--white-30);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1350,7 +1350,7 @@
   }
 
   .status-bar {
-    font-size: 0.72rem;
+    font-size: var(--fs-12);
     padding: var(--space-2) var(--space-3-5);
   }
 
@@ -1363,7 +1363,7 @@
   }
 
   .steam-profile-name {
-    font-size: 1.2rem;
+    font-size: var(--fs-20);
   }
   .steam-recent-card {
     height: 110px;

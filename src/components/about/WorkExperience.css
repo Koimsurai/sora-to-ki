@@ -55,7 +55,7 @@
 }
 
 .work-period {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   letter-spacing: 1.5px;
   font-weight: 600;
   color: var(--white-50);
@@ -74,7 +74,7 @@
 }
 
 .work-card-title {
-  font-size: 1.15rem;
+  font-size: var(--fs-18);
   font-weight: 600;
   margin: 0;
   color: var(--white-95);
@@ -82,7 +82,7 @@
 }
 
 .work-card-role {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: rgba(199, 184, 255, 0.7);
   font-weight: 500;
 }
@@ -95,7 +95,7 @@
 }
 
 .work-tag {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   padding: 3px 9px;
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.22);
@@ -115,7 +115,7 @@
   display: block;
   margin-bottom: var(--space-2);
   color: rgba(199, 184, 255, 0.55);
-  font-size: 0.68rem;
+  font-size: var(--fs-11);
   letter-spacing: 2px;
 }
 
@@ -131,7 +131,7 @@
 .work-bullets li {
   position: relative;
   padding-left: var(--space-4);
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   line-height: 1.65;
   color: rgba(255, 255, 255, 0.72);
 }
@@ -148,7 +148,7 @@
 }
 
 .work-bullets-flat li {
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
 }
 
 @media (max-width: 720px) {

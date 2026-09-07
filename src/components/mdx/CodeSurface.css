@@ -5,7 +5,7 @@
   padding: 0;
   /* ⚠ 同上：shiki 的主題背景要壓掉，背景由外層 .code-surface-body 畫 */
   background: transparent !important;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   line-height: 1.7;
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   width: max-content;
@@ -33,7 +33,7 @@
 .code-surface-body .shiki-fallback {
   color: var(--white-70);
   white-space: pre;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   line-height: 1.7;
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   animation: shikiPulse 1.4s ease-in-out infinite;
@@ -67,7 +67,7 @@
   box-shadow: none;
   outline: none;
   color: var(--white-55);
-  font-size: 0.76rem;
+  font-size: var(--fs-12);
   font-family: inherit;
   cursor: pointer;
   transition:

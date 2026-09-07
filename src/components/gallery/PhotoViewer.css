@@ -32,7 +32,7 @@
 
 .photo-title {
   color: var(--white-95);
-  font-size: 16px;
+  font-size: var(--fs-16);
   font-weight: 600;
   text-shadow: 0 2px 8px var(--black-50);
   letter-spacing: 0.5px;
@@ -266,7 +266,7 @@
   }
 
   .photo-title {
-    font-size: 14px;
+    font-size: var(--fs-14);
   }
 
   .viewer-top-right-buttons {
@@ -312,7 +312,7 @@
 
 @media (max-width: 640px) {
   .photo-title {
-    font-size: 12px;
+    font-size: var(--fs-12);
   }
 
   .action-btn {
@@ -356,7 +356,7 @@
   color: white;
   padding: var(--space-1-5) var(--space-3);
   border-radius: 18px;
-  font-size: 14px;
+  font-size: var(--fs-14);
   font-weight: 600;
   backdrop-filter: blur(10px);
   border: 1px solid var(--white-20);

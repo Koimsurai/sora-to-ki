@@ -42,7 +42,7 @@
 }
 
 .w-subtitle {
-  font-size: 0.98rem;
+  font-size: var(--fs-16);
   color: rgba(229, 229, 245, 0.5);
   letter-spacing: 0.04em;
   margin: 0 0 var(--space-4-5);
@@ -70,7 +70,7 @@
 }
 
 .w-stat-num {
-  font-size: 1.42rem;
+  font-size: var(--fs-22);
   font-weight: 700;
   color: rgba(244, 244, 245, 0.98);
   line-height: 1.1;
@@ -78,7 +78,7 @@
 }
 
 .w-stat-label {
-  font-size: 0.74rem;
+  font-size: var(--fs-12);
   color: rgba(229, 229, 245, 0.5);
   letter-spacing: 0.06em;
 }
@@ -86,7 +86,7 @@
 /* ── eyebrow ── */
 .w-eyebrow {
   display: inline-block;
-  font-size: 0.76rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   letter-spacing: 0.14em;
   margin-bottom: var(--space-4);
@@ -191,7 +191,7 @@
 }
 
 .w-now-meta {
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   color: rgba(244, 244, 245, 0.78);
   letter-spacing: 0.03em;
   margin: 0;
@@ -203,7 +203,7 @@
   top: 18px;
   right: 18px;
   padding: var(--space-2) var(--space-4);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: rgba(244, 244, 245, 0.95);
   background: var(--black-45);
   border: 1px solid var(--white-25);
@@ -226,7 +226,7 @@
 }
 
 .w-h2 {
-  font-size: 1.5rem;
+  font-size: var(--fs-24);
   font-weight: 700;
   letter-spacing: 0.01em;
   color: rgba(244, 244, 245, 0.96);
@@ -234,7 +234,7 @@
 }
 
 .w-h2-sub {
-  font-size: 0.86rem;
+  font-size: var(--fs-14);
   color: rgba(229, 229, 245, 0.45);
   margin: 0 0 var(--space-7);
 }
@@ -262,7 +262,7 @@
   box-shadow: none;
   padding: var(--space-1) var(--space-3);
   border-radius: 9999px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: rgba(216, 180, 254, 0.85);
   cursor: pointer;
   white-space: nowrap;
@@ -283,7 +283,7 @@
 }
 
 .w-section-link {
-  font-size: 0.86rem;
+  font-size: var(--fs-14);
   color: rgba(216, 180, 254, 0.7);
   text-decoration: none;
   border-bottom: 1px dashed transparent;
@@ -359,7 +359,7 @@
   display: flex;
   align-items: center;
   padding: var(--space-4);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   line-height: 1.6;
   color: rgba(244, 244, 245, 0.96);
   opacity: 0;
@@ -375,7 +375,7 @@
 }
 
 .w-fav-title {
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: rgba(244, 244, 245, 0.95);
   margin: var(--space-3-5) 0 var(--space-1);
@@ -392,13 +392,13 @@
   gap: var(--space-2);
 }
 .w-fav-year {
-  font-size: 0.76rem;
+  font-size: var(--fs-12);
   color: rgba(229, 229, 245, 0.4);
 }
 
 /* ── 最近在看（清單 + 週分組）── */
 .w-recent-group {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -446,7 +446,7 @@
 
 /* 日期 anchor — 同一天只第一筆顯示 */
 .w-recent-anchor {
-  font-size: 0.84rem;
+  font-size: var(--fs-13);
   color: rgba(229, 229, 245, 0.45);
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -468,7 +468,7 @@
 .w-recent-title {
   flex: 1;
   min-width: 0;
-  font-size: 1rem;
+  font-size: var(--fs-16);
   font-weight: 500;
   color: rgba(244, 244, 245, 0.92);
   white-space: nowrap;
@@ -489,7 +489,7 @@
 
 .w-recent-badge {
   display: inline-block;
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   font-weight: 600;
   letter-spacing: 0.08em;
   padding: 3px 9px;
@@ -508,20 +508,20 @@
 }
 
 .w-recent-meta {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: rgba(229, 229, 245, 0.5);
   font-variant-numeric: tabular-nums;
 }
 
 .w-recent-err {
-  font-size: 0.86rem;
+  font-size: var(--fs-14);
   color: rgba(255, 180, 180, 0.7);
   margin: 0 0 var(--space-3-5);
 }
 /* ── 收尾句（與 Journey/History 收尾呼應）── */
 .w-ending {
   margin: var(--space-6) 0 0;
-  font-size: 0.96rem;
+  font-size: var(--fs-16);
   color: rgba(229, 229, 245, 0.55);
   text-align: center;
   letter-spacing: 0.05em;
@@ -531,7 +531,7 @@
 /* ── stars ── */
 .w-stars {
   color: #f5c518;
-  font-size: 0.84rem;
+  font-size: var(--fs-13);
   letter-spacing: 1px;
   white-space: nowrap;
 }
@@ -562,14 +562,14 @@
     top: 12px;
     right: 12px;
     padding: var(--space-2) var(--space-3-5);
-    font-size: 0.78rem;
+    font-size: var(--fs-12);
   }
   .w-recent-link {
     grid-template-columns: 42px 36px 1fr auto;
     gap: var(--space-3);
   }
   .w-recent-anchor {
-    font-size: 0.76rem;
+    font-size: var(--fs-12);
   }
   .w-favs {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -582,7 +582,7 @@
     padding-right: var(--space-3);
   }
   .w-stat-num {
-    font-size: 1.2rem;
+    font-size: var(--fs-20);
   }
   /* 手機沒 hover：碎念常駐淡淡顯示 */
   .w-fav-quote {
@@ -591,7 +591,7 @@
     transform: none;
     padding: var(--space-2) 0 0;
     color: rgba(229, 229, 245, 0.55);
-    font-size: 0.78rem;
+    font-size: var(--fs-12);
   }
   .w-fav:hover .w-fav-poster img {
     filter: none;

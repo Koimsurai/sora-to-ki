@@ -32,7 +32,7 @@
 
 .wl-back {
   display: inline-block;
-  font-size: 0.86rem;
+  font-size: var(--fs-14);
   color: rgba(216, 180, 254, 0.7);
   text-decoration: none;
   border-bottom: 1px dashed transparent;
@@ -55,7 +55,7 @@
 }
 
 .wl-subtitle {
-  font-size: 0.98rem;
+  font-size: var(--fs-16);
   color: rgba(229, 229, 245, 0.55);
   margin: 0;
 }
@@ -75,7 +75,7 @@
   padding: var(--space-3) var(--space-1) var(--space-3-5);
   cursor: pointer;
   color: rgba(229, 229, 245, 0.5);
-  font-size: 0.96rem;
+  font-size: var(--fs-16);
   font-weight: 500;
   letter-spacing: 0.04em;
   display: inline-flex;
@@ -107,7 +107,7 @@
 }
 
 .wl-tab-count {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: rgba(229, 229, 245, 0.4);
   font-variant-numeric: tabular-nums;
   transition: color 0.2s ease;
@@ -153,7 +153,7 @@
   border: none;
   padding: var(--space-3) 0;
   color: rgba(244, 244, 245, 0.95);
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   outline: none;
 }
 
@@ -175,7 +175,7 @@
   border: 1px solid var(--white-08);
   border-radius: 10px;
   color: rgba(244, 244, 245, 0.88);
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   cursor: pointer;
   outline: none;
   transition:
@@ -194,7 +194,7 @@
 }
 
 .wl-sort-chev {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   opacity: 0.6;
   transition: transform 0.2s ease;
 }
@@ -230,7 +230,7 @@
   background: transparent;
   border: none;
   text-align: left;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   color: rgba(229, 229, 245, 0.75);
   cursor: pointer;
   border-radius: 6px;
@@ -294,7 +294,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-size: 2.4rem;
+  font-size: var(--fs-40);
   opacity: 0.4;
 }
 
@@ -303,7 +303,7 @@
 }
 
 .wl-card-title {
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   color: rgba(244, 244, 245, 0.95);
   margin: 0 0 var(--space-1);
@@ -318,7 +318,7 @@
   display: flex;
   gap: var(--space-2);
   align-items: center;
-  font-size: 0.76rem;
+  font-size: var(--fs-12);
   color: rgba(229, 229, 245, 0.45);
   margin: 0;
   flex-wrap: wrap;
@@ -332,7 +332,7 @@
 /* ── info / loading / empty ── */
 .wl-info {
   text-align: center;
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: rgba(229, 229, 245, 0.5);
   padding: var(--space-16) 0;
 }
@@ -351,13 +351,13 @@
     gap: var(--space-4);
   }
   .wl-card-title {
-    font-size: 0.82rem;
+    font-size: var(--fs-13);
   }
   .wl-card-sub {
-    font-size: 0.72rem;
+    font-size: var(--fs-12);
   }
   .wl-tab {
     padding: var(--space-2-5) var(--space-3);
-    font-size: 0.9rem;
+    font-size: var(--fs-14);
   }
 }

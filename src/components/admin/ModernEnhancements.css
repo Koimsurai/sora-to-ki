@@ -116,7 +116,7 @@
 .admin-layout label {
   color: rgba(228, 228, 231, 0.85);
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: var(--fs-14);
   letter-spacing: 0.01em;
 }
 

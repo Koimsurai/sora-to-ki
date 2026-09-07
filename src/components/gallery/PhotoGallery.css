@@ -124,7 +124,7 @@
 /* Date Info */
 
 .photo-date {
-  font-size: 1.75rem;
+  font-size: var(--fs-28);
   font-weight: 800;
   margin-bottom: var(--space-2);
   text-shadow: 0 3px 6px rgba(0, 0, 0, 0.6);
@@ -133,7 +133,7 @@
 }
 
 .photo-year {
-  font-size: 1.25rem;
+  font-size: var(--fs-20);
   font-weight: 600;
   opacity: 0.95;
   text-shadow: 0 2px 4px var(--black-50);
@@ -153,7 +153,7 @@
 }
 
 .afilmory-hero-title {
-  font-size: 3.5rem;
+  font-size: var(--fs-56);
   font-weight: 300;
   color: #fff;
   margin-bottom: var(--space-4);
@@ -166,7 +166,7 @@
 }
 
 .afilmory-hero-subtitle {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   color: var(--white-60);
   line-height: 1.6;
   margin-bottom: var(--space-8);
@@ -183,7 +183,7 @@
   border: 1px solid var(--white-10);
   border-radius: 9999px;
   color: var(--white-50);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -209,7 +209,7 @@
   border: 1px solid var(--white-08);
   border-radius: 9999px;
   color: var(--white-60);
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(8px);
@@ -254,11 +254,11 @@
   }
 
   .photo-date {
-    font-size: 1.25rem;
+    font-size: var(--fs-20);
   }
 
   .photo-year {
-    font-size: 1rem;
+    font-size: var(--fs-16);
   }
 }
 
@@ -268,10 +268,10 @@
   }
 
   .photo-date {
-    font-size: 1.125rem;
+    font-size: var(--fs-18);
   }
 
   .photo-year {
-    font-size: 0.875rem;
+    font-size: var(--fs-14);
   }
 }

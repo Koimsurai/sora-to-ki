@@ -86,14 +86,14 @@
 }
 
 .blog-title-sub {
-  font-size: 1.15rem;
+  font-size: var(--fs-18);
   color: var(--white-40);
   font-weight: 400;
   font-style: italic;
 }
 
 .blog-hero-desc {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   color: var(--white-50);
   line-height: 1.7;
   max-width: 520px;
@@ -114,7 +114,7 @@
   top: 50%;
   transform: translateY(-50%);
   color: var(--white-25);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
 }
 
 .blog-search-input {
@@ -125,7 +125,7 @@
   border-bottom: 1px solid var(--white-12);
   border-radius: 0;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   outline: none;
   transition: border-color 0.3s ease;
   box-sizing: border-box;
@@ -147,7 +147,7 @@
   border: none;
   color: var(--white-40);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   padding: var(--space-1);
 }
 
@@ -170,7 +170,7 @@
 .sort-pill {
   padding: var(--space-1-5) var(--space-4);
   border-radius: 20px;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   font-weight: 600;
   border: 1px solid var(--white-08);
   background: var(--white-03);
@@ -210,7 +210,7 @@
   gap: var(--space-1-5);
   padding: 5px var(--space-3);
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
   color: var(--brand-light);
@@ -221,7 +221,7 @@
   border: none;
   color: inherit;
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   padding: 0;
   display: flex;
 }
@@ -231,7 +231,7 @@
   border: none;
   color: var(--white-40);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   text-decoration: underline;
   padding: var(--space-1) var(--space-2);
 }
@@ -253,7 +253,7 @@
 }
 
 .timeline-group-label {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 700;
   color: var(--white-40);
   letter-spacing: 0.08em;
@@ -281,14 +281,14 @@
 }
 
 .note-day {
-  font-size: 1.6rem;
+  font-size: var(--fs-24);
   font-weight: 800;
   color: rgba(255, 255, 255, 0.75);
   line-height: 1;
 }
 
 .note-month {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--white-35);
   font-weight: 500;
 }
@@ -324,12 +324,12 @@
 }
 
 .note-full-date {
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--white-35);
 }
 
 .note-category {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   padding: 3px var(--space-2-5);
   border-radius: 12px;
@@ -344,7 +344,7 @@
 }
 
 .note-title {
-  font-size: 1.35rem;
+  font-size: var(--fs-22);
   font-weight: 700;
   color: #fffffe;
   margin: 0 0 var(--space-2-5) 0;
@@ -358,7 +358,7 @@
 
 /* Excerpt */
 .note-excerpt {
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   line-height: 1.7;
   color: var(--white-50);
   margin: 0 0 var(--space-3-5) 0;
@@ -378,7 +378,7 @@
 }
 
 .note-tag {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   font-weight: 500;
   padding: 3px var(--space-2-5);
   border-radius: 10px;
@@ -408,7 +408,7 @@
   gap: 5px;
   padding: var(--space-1-5) var(--space-3);
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--white-40);
   background: none;
   border: none;
@@ -430,7 +430,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-25);
   margin-left: auto;
 }
@@ -527,7 +527,7 @@
 
 /* 標題 — 對齊 BlogPost TOC 標題風格 */
 .sidebar-heading {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: var(--white-70);
   margin: 0 0 var(--space-3) 0;
@@ -541,7 +541,7 @@
   display: flex;
   align-items: center;
   gap: 0;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-45);
 }
 
@@ -570,7 +570,7 @@
   align-items: center;
   padding: var(--space-1-5) var(--space-2);
   border-radius: 6px;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-50);
   background: none;
   border: none;
@@ -593,7 +593,7 @@
 }
 
 .cat-count {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--white-25);
 }
 
@@ -607,7 +607,7 @@
 .cloud-tag {
   padding: 3px 9px;
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   font-weight: 500;
   color: var(--white-45);
   background: transparent;
@@ -641,7 +641,7 @@
   border-radius: 6px;
   color: var(--white-35);
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   font-weight: 500;
   padding: 3px 9px;
   transition:
@@ -659,7 +659,7 @@
 
 .toggle-icon {
   transition: transform 0.25s ease;
-  font-size: 0.65rem;
+  font-size: var(--fs-10);
 }
 
 .toggle-icon.expanded {
@@ -688,7 +688,7 @@
 }
 
 .featured-text {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-50);
   flex: 1;
   overflow: hidden;
@@ -702,7 +702,7 @@
 }
 
 .featured-date {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--white-20);
   flex-shrink: 0;
 }
@@ -717,7 +717,7 @@
 .nav-pill {
   padding: var(--space-1) var(--space-2-5);
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--white-45);
   text-decoration: none;
   background: transparent;
@@ -764,26 +764,26 @@
 }
 
 .blog-empty .empty-icon {
-  font-size: 3rem;
+  font-size: var(--fs-48);
   margin-bottom: var(--space-4);
 }
 
 .blog-empty h3 {
-  font-size: 1.4rem;
+  font-size: var(--fs-22);
   color: var(--white-70);
   margin-bottom: var(--space-2-5);
 }
 
 .blog-empty p {
   color: var(--white-40);
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   margin-bottom: var(--space-6);
 }
 
 .empty-clear-btn {
   padding: var(--space-2) var(--space-5);
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   background: rgba(var(--brand-rgb), 0.15);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
@@ -837,7 +837,7 @@
   }
 
   .blog-title-sub {
-    font-size: 1rem;
+    font-size: var(--fs-16);
   }
 
   .note-card {
@@ -863,10 +863,10 @@
   }
 
   .note-day {
-    font-size: 1rem;
+    font-size: var(--fs-16);
   }
   .note-month {
-    font-size: 0.72rem;
+    font-size: var(--fs-12);
   }
 
   .note-body {
@@ -878,7 +878,7 @@
   }
 
   .note-title {
-    font-size: 1.15rem;
+    font-size: var(--fs-18);
   }
 
   .blog-sidebar {
@@ -898,7 +898,7 @@
   }
 
   .stats-inline {
-    font-size: 0.75rem;
+    font-size: var(--fs-12);
   }
 
   .note-actions {
@@ -945,7 +945,7 @@
 }
 
 .floating-comments-header h3 {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   font-weight: 600;
   color: var(--white-90);
   margin: 0;
@@ -1006,13 +1006,13 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  font-size: 1.4rem;
+  font-size: var(--fs-22);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 .activity-heatmap .heatmap-total-label {
   color: var(--white-55);
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
 }
 .activity-heatmap .heatmap-grid {
   display: grid;
@@ -1063,7 +1063,7 @@
   align-items: center;
   gap: var(--space-1);
   margin-top: var(--space-1-5);
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--white-40);
 }
 .activity-heatmap .heatmap-legend .heatmap-cell {

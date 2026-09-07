@@ -121,7 +121,7 @@
   gap: 5px;
   padding: var(--space-2) var(--space-3-5);
   border-radius: 9999px;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   color: var(--white-70);
   text-decoration: none;
@@ -216,7 +216,7 @@
   gap: var(--space-1-5);
   padding: var(--space-2) var(--space-4-5);
   border-radius: 9999px;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   color: #fff;
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.8), rgba(var(--brand-rgb), 0.5));
@@ -284,7 +284,7 @@
 }
 
 .user-avatar-icon {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--white-45);
 }
 
@@ -311,13 +311,13 @@
 }
 
 .user-dropdown-name {
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: #fff;
 }
 
 .user-dropdown-provider {
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   color: var(--white-40);
 }
 
@@ -333,7 +333,7 @@
   gap: var(--space-2-5);
   width: 100%;
   padding: 9px var(--space-4);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--white-70);
   background: none;
   border: none;
@@ -389,7 +389,7 @@
 }
 
 .download-popover h3 {
-  font-size: 1.1rem;
+  font-size: var(--fs-18);
   font-weight: 600;
   color: #fff;
   margin: 0 0 var(--space-4);
@@ -407,7 +407,7 @@
   border: 1px solid rgba(var(--brand-rgb), 0.15);
   transition: all 0.2s ease;
   margin-bottom: var(--space-2);
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
 }
 
 .popover-link:hover {
@@ -424,7 +424,7 @@
   border: 1px solid var(--white-10);
   background: var(--white-04);
   color: var(--white-50);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: var(--space-1);
@@ -481,7 +481,7 @@
 @media (max-width: 1100px) {
   .nav-link {
     padding: 7px var(--space-2-5);
-    font-size: 0.82rem;
+    font-size: var(--fs-13);
   }
 
   .nav-list {
@@ -525,7 +525,7 @@
 
   .nav-link {
     padding: var(--space-3) var(--space-5);
-    font-size: 1rem;
+    font-size: var(--fs-16);
     width: 100%;
     justify-content: flex-start;
   }

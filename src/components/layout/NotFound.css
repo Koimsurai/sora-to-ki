@@ -165,7 +165,7 @@
   justify-content: center;
   gap: var(--space-0-5) var(--space-2-5);
   margin: var(--space-6) 0 0;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   line-height: 1.9;
 }
 
@@ -211,7 +211,7 @@
      壓到 `#5b3fc0` 之後純白是 7.2、0.8 的白是 4.9，兩層都有餘裕。 */
   background: #5b3fc0;
   box-shadow: none;
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: #fff;
   cursor: pointer;
@@ -231,7 +231,7 @@
 /* kbd 不再是「按鈕裡的小按鈕」——拿掉邊框與底色，只用透明度把它推到次要層次 */
 .nf-kbd {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.76rem;
+  font-size: var(--fs-12);
   font-weight: 500;
   color: var(--white-80);
 }
@@ -240,7 +240,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   color: rgba(255, 255, 255, 0.66);
   text-decoration: none;

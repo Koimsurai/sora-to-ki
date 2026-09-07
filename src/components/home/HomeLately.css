@@ -12,7 +12,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  font-size: 1.05rem;
+  font-size: var(--fs-16);
   font-weight: 700;
   color: rgba(255, 255, 255, 0.88);
   margin: 0 0 var(--space-4-5);
@@ -24,7 +24,7 @@
 }
 
 .lately-more {
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: rgba(216, 180, 254, 0.75);
   text-decoration: none;
   transition: color 0.25s ease;
@@ -35,7 +35,7 @@
 }
 
 .lately-empty {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--white-35);
   margin: 0;
 }
@@ -65,7 +65,7 @@
 }
 
 .lately-post-no {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   font-weight: 700;
   letter-spacing: 1px;
   color: rgba(var(--brand-rgb), 0.85);
@@ -81,7 +81,7 @@
 }
 
 .lately-post-title {
-  font-size: 0.98rem;
+  font-size: var(--fs-16);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.88);
   line-height: 1.45;
@@ -93,7 +93,7 @@
 }
 
 .lately-post-meta {
-  font-size: 0.74rem;
+  font-size: var(--fs-12);
   color: rgba(255, 255, 255, 0.38);
   letter-spacing: 0.02em;
 }
@@ -138,7 +138,7 @@
 .lately-murmur-text,
 .lately-echo-text {
   margin: 0 0 var(--space-1);
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.72);
   display: -webkit-box;
@@ -149,7 +149,7 @@
 
 .lately-echo-text {
   color: rgba(255, 255, 255, 0.62);
-  font-size: 0.84rem;
+  font-size: var(--fs-13);
 }
 
 /* ── 年度軌跡 ── */
@@ -197,7 +197,7 @@
   position: absolute;
   top: calc(var(--orbit-line-y) + 20px);
   transform: translateX(-50%);
-  font-size: 0.6rem;
+  font-size: var(--fs-10);
   color: var(--white-20);
   user-select: none;
   -webkit-user-select: none;
@@ -350,7 +350,7 @@
   }
 }
 .orbit-month-pop-head {
-  font-size: 0.64rem;
+  font-size: var(--fs-10);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--white-40);
@@ -365,7 +365,7 @@
   display: block;
   padding: 7px var(--space-2);
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   line-height: 1.35;
   color: var(--white-82);
   text-decoration: none;
@@ -391,7 +391,7 @@
   text-overflow: ellipsis;
   padding: var(--space-1-5) var(--space-3);
   border-radius: 9px;
-  font-size: 0.74rem;
+  font-size: var(--fs-12);
   color: var(--white-90);
   background: rgba(18, 14, 30, 0.92);
   border: 1px solid var(--white-10);
@@ -457,7 +457,7 @@
   }
 }
 .orbit-month-pop-head {
-  font-size: 0.64rem;
+  font-size: var(--fs-10);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--white-40);
@@ -472,7 +472,7 @@
   display: block;
   padding: 7px var(--space-2);
   border-radius: 8px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   line-height: 1.35;
   color: var(--white-82);
   text-decoration: none;
@@ -502,7 +502,7 @@
 
 .orbit-stat {
   margin-top: var(--space-3-5);
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: rgba(255, 255, 255, 0.42);
   text-align: center;
 }
@@ -539,7 +539,7 @@
 }
 
 .signal-from {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-40);
 }
 
@@ -547,7 +547,7 @@
   margin-top: 26px;
   display: inline-flex;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--white-55);
 }
 

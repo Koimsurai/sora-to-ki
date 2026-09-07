@@ -422,7 +422,7 @@
 
 .hero-sub {
   margin: 0 0 30px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   letter-spacing: 1.8px;
   color: var(--white-45);
   opacity: 0;
@@ -778,7 +778,7 @@
     margin-bottom: var(--space-3-5);
   }
   .hero-sub {
-    font-size: 0.72rem;
+    font-size: var(--fs-12);
     letter-spacing: 1.2px;
     margin-bottom: var(--space-5-5);
   }

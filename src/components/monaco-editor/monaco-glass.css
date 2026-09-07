@@ -131,7 +131,7 @@
 /* Vim 模式狀態列（C-1）— 顯示在編輯器底部，:command / current mode 提示 */
 .monaco-vim-status {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 11px;
+  font-size: var(--fs-11);
   padding: var(--space-0-5) var(--space-2-5);
   color: #a1a1aa;
   background: rgba(24, 24, 27, 0.6);

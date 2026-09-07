@@ -46,7 +46,7 @@
 }
 
 .lhp-site {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-60);
   letter-spacing: 0.02em;
 }
@@ -67,7 +67,7 @@
 }
 
 .lhp-title {
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: #fff;
   line-height: 1.4;
@@ -80,7 +80,7 @@
 
 .lhp-desc {
   margin-top: var(--space-1);
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--white-55);
   line-height: 1.5;
   display: -webkit-box;

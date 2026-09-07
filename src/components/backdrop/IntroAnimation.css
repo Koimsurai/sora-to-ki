@@ -118,7 +118,7 @@
   left: 50%;
   transform: translateX(-50%);
   font-family: ui-monospace, "SF Mono", Menlo, "Roboto Mono", monospace;
-  font-size: 10px;
+  font-size: var(--fs-10);
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: rgba(207, 250, 254, 0.32);

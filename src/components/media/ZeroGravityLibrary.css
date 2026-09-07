@@ -49,7 +49,7 @@
 }
 
 .zg-brand-title {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -60,7 +60,7 @@
 }
 
 .zg-brand-sub {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--white-30);
   letter-spacing: 0.5px;
 }
@@ -74,7 +74,7 @@
   border: 1px solid var(--white-10);
   border-radius: 10px;
   color: var(--white-60);
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -100,7 +100,7 @@
   backdrop-filter: blur(12px);
   border: 1px solid var(--white-06);
   border-radius: 20px;
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--white-30);
   letter-spacing: 0.3px;
 }
@@ -181,7 +181,7 @@
 }
 
 .zg-detail-title {
-  font-size: 1.15rem;
+  font-size: var(--fs-18);
   font-weight: 700;
   color: #fffffe;
   line-height: 1.3;
@@ -189,14 +189,14 @@
 }
 
 .zg-detail-author {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--brand-light);
   font-weight: 500;
   margin-bottom: var(--space-3);
 }
 
 .zg-detail-desc {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-50);
   line-height: 1.7;
   max-height: 160px;
@@ -209,7 +209,7 @@
   gap: var(--space-4);
   padding-top: var(--space-3);
   border-top: 1px solid var(--white-06);
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   color: var(--white-30);
 }
 
@@ -220,7 +220,7 @@
   border: 1px solid rgba(var(--brand-rgb), 0.35);
   border-radius: 8px;
   color: var(--brand-light);
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   font-weight: 500;
   white-space: nowrap;
   max-width: 260px;
@@ -236,13 +236,13 @@
   }
 
   .zg-brand-title {
-    font-size: 0.72rem;
+    font-size: var(--fs-12);
   }
 
   .zg-hints {
     gap: var(--space-2);
     padding: var(--space-1-5) var(--space-3-5);
-    font-size: 0.65rem;
+    font-size: var(--fs-10);
     bottom: 1rem;
   }
 

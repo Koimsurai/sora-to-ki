@@ -65,7 +65,7 @@
 .post-subtitle {
   margin: var(--space-3) auto 0;
   max-width: 40rem;
-  font-size: 1.06rem;
+  font-size: var(--fs-16);
   font-weight: 400;
   line-height: 1.55;
   color: var(--white-50);
@@ -79,7 +79,7 @@
   justify-content: center;
   gap: var(--space-1-5) var(--space-2-5);
   margin-top: var(--space-4);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--post-muted);
 }
 
@@ -130,7 +130,7 @@
   transform: translateX(-50%) translateY(-2px);
   background: rgba(12, 10, 24, 0.95);
   color: #fff;
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   font-weight: 400;
   padding: var(--space-1) var(--space-2-5);
   border-radius: 6px;
@@ -177,7 +177,7 @@
   background: var(--white-06);
 }
 .lang-icon {
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   line-height: 1;
   opacity: 0.8;
 }
@@ -189,7 +189,7 @@
   transition:
     transform 0.2s ease,
     opacity 0.2s ease;
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   opacity: 0.55;
   margin-left: var(--space-px);
 }
@@ -240,7 +240,7 @@
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.78);
-  font-size: 0.86rem;
+  font-size: var(--fs-14);
   font-family: inherit;
   text-align: left;
   padding: 9px var(--space-3);
@@ -281,7 +281,7 @@
   color: var(--white-50);
 }
 .lang-badge {
-  font-size: 0.66rem;
+  font-size: var(--fs-11);
   font-family: "JetBrains Mono", "Courier New", var(--cjk-font), monospace;
   letter-spacing: 0.04em;
   padding: var(--space-0-5) 7px;
@@ -303,7 +303,7 @@
   border-radius: 9999px;
   border: 1px solid rgba(var(--brand-rgb), 0.3);
   box-shadow: 0 12px 36px var(--black-50);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   z-index: 9999;
   backdrop-filter: blur(12px);
 }
@@ -317,7 +317,7 @@
 }
 
 .post-tags .tag {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--post-accent);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
@@ -331,7 +331,7 @@
 }
 
 .posts-nav-category {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--post-muted);
   margin-bottom: var(--space-2-5);
   line-height: 1.5;
@@ -346,7 +346,7 @@
 .posts-nav-item {
   display: block;
   padding: var(--space-1) 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--white-50);
   text-decoration: none;
   transition: color 0.2s ease;
@@ -447,7 +447,7 @@
   text-align: right;
 }
 .prev-next-label {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--white-40);
   letter-spacing: 0.04em;
 }
@@ -455,7 +455,7 @@
   color: var(--brand-light);
 }
 .prev-next-title {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: var(--white-90);
   font-weight: 500;
   line-height: 1.4;
@@ -493,7 +493,7 @@
   border: 1px solid var(--white-07);
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.78);
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   cursor: pointer;
   transition:
     transform 0.15s ease,
@@ -514,11 +514,11 @@
   box-shadow: 0 0 12px rgba(var(--brand-rgb), 0.25);
 }
 .reaction-btn .reaction-emoji {
-  font-size: 1.05rem;
+  font-size: var(--fs-16);
   line-height: 1;
 }
 .reaction-btn .reaction-count {
-  font-size: 0.74rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   color: rgba(255, 255, 255, 0.65);
   font-variant-numeric: tabular-nums;
@@ -545,13 +545,13 @@
   border-bottom: 1px dashed var(--white-08);
 }
 .series-nav-label {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--brand-light);
 }
 .series-nav-name {
-  font-size: 1.15rem;
+  font-size: var(--fs-18);
   font-weight: 600;
   background: linear-gradient(135deg, #e0c3fc 0%, var(--brand) 60%, #dc3278 100%);
   -webkit-background-clip: text;
@@ -560,7 +560,7 @@
   margin: 0;
 }
 .series-nav-progress {
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-55);
 }
 .series-nav-list {
@@ -593,13 +593,13 @@
   border-radius: 6px;
   background: var(--white-06);
   color: var(--white-55);
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   font-weight: 600;
 }
 .series-nav-title {
   color: rgba(255, 255, 255, 0.78);
   text-decoration: none;
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   line-height: 1.5;
   transition: color 0.18s ease;
 }
@@ -625,7 +625,7 @@ a.series-nav-title:hover {
   padding: var(--space-2-5) var(--space-3);
 }
 .category-tooltip-short {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-90);
   font-weight: 500;
   margin: 0 0 var(--space-1-5) 0;
@@ -665,7 +665,7 @@ a.series-nav-title:hover {
 }
 
 .category-tooltip-desc {
-  font-size: 0.74rem;
+  font-size: var(--fs-12);
   color: var(--white-50);
   margin: 0 0 var(--space-2-5) 0;
   line-height: 1.5;
@@ -675,7 +675,7 @@ a.series-nav-title:hover {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
   color: var(--white-35);
   border-top: 1px solid var(--white-06);
   padding-top: var(--space-2);
@@ -684,7 +684,7 @@ a.series-nav-title:hover {
 .toc-item.level-3,
 .toc-item.level-4 {
   padding-left: var(--space-4);
-  font-size: 0.74rem;
+  font-size: var(--fs-12);
 }
 
 /* ═══════════════════════
@@ -714,13 +714,13 @@ a.series-nav-title:hover {
 
 .ai-summary-top-row h2 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   color: var(--white-70);
   font-weight: 600;
 }
 
 .ai-badge {
-  font-size: 0.65rem;
+  font-size: var(--fs-10);
   padding: var(--space-0-5) var(--space-2);
   border-radius: 4px;
   background: rgba(var(--brand-rgb), 0.15);
@@ -731,7 +731,7 @@ a.series-nav-title:hover {
 
 .post-ai-summary-inline p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   color: var(--white-55);
   line-height: 1.7;
 }
@@ -766,11 +766,11 @@ a.series-nav-title:hover {
   margin-top: var(--space-12);
   padding-top: var(--space-6);
   border-top: 1px dashed var(--white-15);
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   color: rgba(255, 255, 255, 0.65);
 }
 .post-content .footnotes h2 {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--white-50);
@@ -847,7 +847,7 @@ a.series-nav-title:hover {
   align-items: center;
   gap: var(--space-1-5);
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: var(--fs-14);
   margin-bottom: var(--space-1);
   color: var(--alert-accent, var(--brand-light));
   letter-spacing: 0.02em;
@@ -861,7 +861,7 @@ a.series-nav-title:hover {
 .post-content .markdown-alert p {
   margin: var(--space-1) 0;
   color: inherit;
-  font-size: 0.98rem;
+  font-size: var(--fs-16);
 }
 .post-content .markdown-alert p:last-child {
   margin-bottom: 0;
@@ -933,7 +933,7 @@ a.series-nav-title:hover {
   background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(16px);
   border-radius: 10px;
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--white-82);
   white-space: nowrap;
   pointer-events: none;
@@ -1005,7 +1005,7 @@ a.series-nav-title:hover {
 }
 
 .language-name {
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   color: var(--post-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1017,7 +1017,7 @@ a.series-nav-title:hover {
   color: var(--white-60);
   padding: var(--space-1) var(--space-2-5);
   border-radius: 6px;
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   cursor: pointer;
   transition:
     background 0.2s,
@@ -1057,12 +1057,12 @@ a.series-nav-title:hover {
 .terminal-glyph {
   color: #4ade80;
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   font-weight: 700;
   letter-spacing: -0.05em;
 }
 .terminal-title {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   letter-spacing: 0.03em;
   color: rgba(255, 255, 255, 0.42);
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
@@ -1084,7 +1084,7 @@ a.series-nav-title:hover {
   /* ⚠ !important 不能拿掉：shiki 會把主題背景寫進 pre 自己的樣式，這裡要的是
      透明（背景由外層 .terminal-body 畫）。實測拿掉之後變成 rgb(18,18,18)。 */
   background: transparent !important;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   line-height: 1.75;
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   width: max-content;
@@ -1103,7 +1103,7 @@ a.series-nav-title:hover {
   padding: 0 var(--space-4-5);
   color: rgba(255, 255, 255, 0.75);
   white-space: pre;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   line-height: 1.75;
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
 }
@@ -1124,7 +1124,7 @@ a.series-nav-title:hover {
 .terminal-prompt-sym {
   color: #4ade80;
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   font-weight: 700;
 }
 .terminal-cursor {
@@ -1268,7 +1268,7 @@ a.series-nav-title:hover {
   gap: 0;
   cursor: pointer;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   color: var(--white-70);
   background:
     linear-gradient(135deg, rgba(var(--brand-rgb), 0.12) 0%, rgba(220, 50, 120, 0.08) 100%), rgba(20, 18, 38, 0.55);
@@ -1323,7 +1323,7 @@ a.series-nav-title:hover {
   z-index: 2;
 }
 .float-btn span {
-  font-size: 0.55rem;
+  font-size: var(--fs-10);
   line-height: 1;
 }
 .float-btn:hover {
@@ -1402,7 +1402,7 @@ a.series-nav-title:hover {
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.78);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   cursor: pointer;
   border-radius: 8px;
   transition:
@@ -1454,7 +1454,7 @@ a.series-nav-title:hover {
   background: none;
   border: none;
   color: var(--post-muted);
-  font-size: 1rem;
+  font-size: var(--fs-16);
   cursor: pointer;
 }
 
@@ -1467,19 +1467,19 @@ a.series-nav-title:hover {
 }
 
 .subscribe-icon {
-  font-size: 2rem;
+  font-size: var(--fs-32);
   color: var(--post-accent);
   margin-bottom: var(--space-2);
 }
 
 .subscribe-header h3 {
-  font-size: 1.2rem;
+  font-size: var(--fs-20);
   color: #fff;
   margin: var(--space-2) 0 var(--space-1);
 }
 
 .subscribe-header p {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--post-muted);
   margin: 0;
 }
@@ -1496,7 +1496,7 @@ a.series-nav-title:hover {
   border: 1px solid var(--white-10);
   background: var(--white-04);
   color: #fff;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -1511,7 +1511,7 @@ a.series-nav-title:hover {
   border-radius: 8px;
   background: var(--post-accent);
   color: #fff;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
@@ -1554,7 +1554,7 @@ a.series-nav-title:hover {
 
 .subscribe-msg {
   margin-top: var(--space-3);
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
 }
 
 .subscribe-msg.success {
@@ -1567,7 +1567,7 @@ a.series-nav-title:hover {
 
 .subscribe-privacy {
   margin-top: var(--space-3);
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--white-25);
 }
 
@@ -1588,7 +1588,7 @@ a.series-nav-title:hover {
   background: var(--white-06);
   border: 1px solid var(--white-10);
   color: var(--white-60);
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -1626,7 +1626,7 @@ a.series-nav-title:hover {
   border: none;
   background: none;
   color: var(--white-60);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   cursor: pointer;
   border-radius: 8px;
   text-align: left;
@@ -1655,7 +1655,7 @@ a.series-nav-title:hover {
   border: 1px solid rgba(var(--brand-rgb), 0.3);
   color: var(--post-accent);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   transition: all 0.2s;
 }
 
@@ -1681,12 +1681,12 @@ a.series-nav-title:hover {
 }
 
 .error-icon {
-  font-size: 3rem;
+  font-size: var(--fs-48);
   margin-bottom: var(--space-4);
 }
 
 .error-content h1 {
-  font-size: 1.6rem;
+  font-size: var(--fs-24);
   margin-bottom: var(--space-2);
 }
 
@@ -1711,7 +1711,7 @@ a.series-nav-title:hover {
   }
 
   .post-subtitle {
-    font-size: 0.95rem;
+    font-size: var(--fs-16);
     margin-top: var(--space-2);
   }
 }
@@ -1812,12 +1812,12 @@ a.series-nav-title:hover {
   border: 1px solid rgba(252, 211, 77, 0.25);
   border-radius: 10px;
   background: rgba(252, 211, 77, 0.06);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: rgba(255, 255, 255, 0.72);
   line-height: 1.5;
 }
 .ai-translation-icon {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   flex: 0 0 auto;
 }
 .ai-translation-text {

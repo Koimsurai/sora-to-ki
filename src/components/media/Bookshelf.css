@@ -46,14 +46,14 @@
 }
 
 .bs-title-sub {
-  font-size: 1.15rem;
+  font-size: var(--fs-18);
   color: var(--white-40);
   font-weight: 400;
   font-style: italic;
 }
 
 .bookshelf-subtitle {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   color: var(--text-secondary);
   line-height: 1.7;
   max-width: 520px;
@@ -100,14 +100,14 @@
 }
 
 .stats-strip-value {
-  font-size: 1.4rem;
+  font-size: var(--fs-22);
   font-weight: 700;
   color: var(--brand-light);
   line-height: 1.2;
 }
 
 .stats-strip-label {
-  font-size: 0.65rem;
+  font-size: var(--fs-10);
   color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -140,7 +140,7 @@
   opacity: 0.5;
   pointer-events: none;
   z-index: 1;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
 }
 
 .search-input {
@@ -150,7 +150,7 @@
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   transition: all 0.3s ease;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -194,7 +194,7 @@
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   color: var(--brand-light);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -242,7 +242,7 @@
 }
 
 .filter-group label {
-  font-size: 0.65rem;
+  font-size: var(--fs-10);
   color: var(--brand-light);
   font-weight: 600;
   text-transform: uppercase;
@@ -255,7 +255,7 @@
   border: 1px solid var(--glass-border);
   border-radius: 8px;
   color: var(--text-primary);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -274,7 +274,7 @@
   color: var(--brand-light);
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   font-weight: 500;
   align-self: flex-end;
   box-shadow: none;
@@ -371,7 +371,7 @@
   justify-content: center;
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.08), rgba(220, 50, 120, 0.06));
   color: rgba(var(--brand-rgb), 0.3);
-  font-size: 2.5rem;
+  font-size: var(--fs-40);
   border-radius: 10px;
 }
 
@@ -382,7 +382,7 @@
   transform: translateX(-50%);
   padding: var(--space-1) var(--space-3);
   border-radius: 20px;
-  font-size: 0.6rem;
+  font-size: var(--fs-10);
   font-weight: 600;
   color: white;
   backdrop-filter: blur(8px);
@@ -399,7 +399,7 @@
 }
 
 .book-title {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: var(--space-1-5);
@@ -413,7 +413,7 @@
 }
 
 .book-author {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: var(--text-secondary);
   margin-bottom: var(--space-2);
   display: -webkit-box;
@@ -427,7 +427,7 @@
 .stars {
   display: flex;
   gap: var(--space-1);
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   justify-content: flex-start;
 }
 
@@ -441,7 +441,7 @@
 }
 
 .no-rating {
-  font-size: 0.65rem;
+  font-size: var(--fs-10);
   color: var(--text-tertiary);
 }
 
@@ -456,13 +456,13 @@
 }
 
 .no-books-icon {
-  font-size: 3rem;
+  font-size: var(--fs-48);
   margin-bottom: var(--space-4);
   opacity: 0.25;
 }
 
 .no-books p {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   opacity: 0.6;
 }
 
@@ -479,7 +479,7 @@
 }
 
 .spinning-book {
-  font-size: 3rem;
+  font-size: var(--fs-48);
   animation: spin 2s linear infinite;
   margin-bottom: var(--space-4);
   color: var(--brand);
@@ -581,11 +581,11 @@
   border-radius: 10px;
   border: 1px solid var(--glass-border);
   color: rgba(var(--brand-rgb), 0.3);
-  font-size: 3rem;
+  font-size: var(--fs-48);
 }
 
 .modal-details h2 {
-  font-size: 1.6rem;
+  font-size: var(--fs-24);
   color: var(--text-primary);
   margin-bottom: var(--space-2);
   line-height: 1.3;
@@ -593,7 +593,7 @@
 }
 
 .modal-author {
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: var(--brand-light);
   margin-bottom: var(--space-5);
   opacity: 0.8;
@@ -610,7 +610,7 @@
 }
 
 .meta-item {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--text-secondary);
 }
 
@@ -629,7 +629,7 @@
 .modal-status-badge {
   padding: var(--space-1-5) var(--space-3-5);
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   font-weight: 600;
   color: white;
   border: 1px solid var(--white-15);
@@ -642,7 +642,7 @@
 
 .modal-description h3,
 .modal-notes h3 {
-  font-size: 1rem;
+  font-size: var(--fs-16);
   color: var(--brand-light);
   margin-bottom: var(--space-2-5);
   font-weight: 600;
@@ -650,7 +650,7 @@
 
 .modal-description p,
 .modal-notes p {
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   color: rgba(229, 231, 235, 0.75);
   line-height: 1.7;
 }
@@ -664,7 +664,7 @@
 }
 
 .modal-dates p {
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   color: var(--text-secondary);
   margin-bottom: var(--space-1-5);
 }
@@ -696,7 +696,7 @@
   }
 
   .stats-strip-value {
-    font-size: 1.2rem;
+    font-size: var(--fs-20);
   }
 
   .modal-body {

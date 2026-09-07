@@ -9,7 +9,7 @@
   /* padding-top 拉大成 fade zone（內容跟 footer 文字之間有寬鬆的過渡） */
   padding: 8rem var(--space-8) var(--space-8);
   color: rgba(229, 229, 245, 0.55);
-  font-size: 0.875rem;
+  font-size: var(--fs-14);
   /* 純漸層融合，不用 backdrop-filter（會造硬邊）。
      重點：開頭 alpha 必須跟 ::before 結尾相同，避免「中間突然斷一截」的透明線 */
   background: linear-gradient(
@@ -80,7 +80,7 @@
 }
 .app-footer-brand-name {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--fs-24);
   font-weight: 700;
   letter-spacing: 0.02em;
   background: linear-gradient(135deg, #fff 0%, rgba(216, 180, 254, 0.95) 100%);
@@ -91,13 +91,13 @@
 .app-footer-brand-tagline {
   margin: 0;
   font-style: italic;
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: var(--white-55);
   letter-spacing: 0.02em;
 }
 .app-footer-copy {
   margin: var(--space-2) 0 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--white-45);
   line-height: 1.6;
 }
@@ -111,7 +111,7 @@
 }
 .app-footer-meta {
   margin-top: var(--space-3);
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-40);
 }
 .app-footer-viewers {
@@ -147,7 +147,7 @@
 }
 .app-footer-col-title {
   margin: 0 0 var(--space-1);
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -156,7 +156,7 @@
 .app-footer-link {
   display: inline-flex;
   align-items: center;
-  font-size: 0.875rem;
+  font-size: var(--fs-14);
   color: var(--white-50);
   text-decoration: none;
   transition:
@@ -183,7 +183,7 @@
   align-items: center;
   gap: var(--space-4);
   flex-wrap: wrap;
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: var(--white-35);
 }
 .app-footer-bottom-left,

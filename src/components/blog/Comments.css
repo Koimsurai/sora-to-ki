@@ -48,7 +48,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--fs-16);
   color: #fff;
   transition: background 0.3s;
 }
@@ -74,7 +74,7 @@
   gap: var(--space-1-5);
   padding: 5px var(--space-3-5);
   border-radius: 20px;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   font-weight: 500;
   border: 1px solid var(--white-08);
   background: transparent;
@@ -132,7 +132,7 @@
   border: 1px solid var(--white-08);
   background: var(--white-03);
   color: var(--white-70);
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   cursor: pointer;
   transition: all 0.25s ease;
   display: flex;
@@ -168,7 +168,7 @@
 }
 
 .back-btn {
-  font-size: 0.76rem;
+  font-size: var(--fs-12);
   color: var(--white-40);
   background: none;
   border: none;
@@ -186,7 +186,7 @@
 }
 
 .login-label {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: var(--white-45);
 }
 
@@ -206,13 +206,13 @@
   background: transparent;
   color: rgba(255, 255, 255, 0.65);
   cursor: pointer;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   transition: all 0.25s ease;
   box-shadow: none;
 }
 
 .provider-btn span {
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
 }
 
 .provider-btn:hover,
@@ -237,7 +237,7 @@
   border: 1px solid var(--white-06);
   background: transparent;
   color: #e2e0ea;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   transition: border-color 0.2s;
   outline: none;
 }
@@ -259,7 +259,7 @@
   margin-bottom: var(--space-1-5);
   border-radius: 6px;
   background: rgba(var(--brand-rgb), 0.08);
-  font-size: 0.78rem;
+  font-size: var(--fs-12);
   color: #a78bfa;
 }
 
@@ -268,7 +268,7 @@
   border: none;
   color: var(--white-30);
   cursor: pointer;
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   padding: 0 var(--space-0-5);
   margin-left: auto;
   line-height: 1;
@@ -290,7 +290,7 @@
   border: 1px solid var(--white-06);
   background: transparent;
   color: #e2e0ea;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   line-height: 1.65;
   resize: vertical;
   min-height: 90px;
@@ -321,7 +321,7 @@
 }
 
 .captcha-q {
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: var(--white-30);
   font-family: "SF Mono", "Fira Code", monospace;
 }
@@ -333,7 +333,7 @@
   border: 1px solid var(--white-08);
   background: transparent;
   color: #e2e0ea;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   text-align: center;
   outline: none;
   transition: border-color 0.2s;
@@ -355,7 +355,7 @@
   border: none;
   background: var(--brand);
   color: #fff;
-  font-size: 0.85rem;
+  font-size: var(--fs-14);
   font-weight: 600;
   cursor: pointer;
   transition:
@@ -395,14 +395,14 @@
 /* ── Error / Success ── */
 .form-error {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: #ef4444;
   padding: var(--space-1) 0;
 }
 
 .form-success {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-13);
   color: #2cb67d;
   padding: var(--space-1-5) var(--space-3);
   background: rgba(44, 182, 125, 0.08);
@@ -416,7 +416,7 @@
   align-items: center;
   padding: var(--space-px) var(--space-1-5);
   border-radius: 4px;
-  font-size: 0.68rem;
+  font-size: var(--fs-11);
   font-weight: 700;
   background: rgba(var(--brand-rgb), 0.15);
   color: #a78bfa;
@@ -432,7 +432,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: var(--fs-13);
   color: #fff;
   flex-shrink: 0;
   opacity: 0.9;
@@ -449,7 +449,7 @@
 }
 
 .comment-reply-to {
-  font-size: 0.72rem;
+  font-size: var(--fs-12);
   color: rgba(var(--brand-rgb), 0.6);
   font-weight: 400;
 }
@@ -477,7 +477,7 @@
 }
 
 .comments-header h2 {
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   font-weight: 500;
   color: var(--white-40);
   margin: 0 0 var(--space-5);
@@ -522,18 +522,18 @@
 
 .comment-author {
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   color: #e2e0ea;
 }
 
 .comment-time {
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   color: var(--white-22);
 }
 
 .comment-text {
   margin: 0 0 var(--space-2);
-  font-size: 0.88rem;
+  font-size: var(--fs-14);
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.62);
   word-break: break-word;
@@ -560,7 +560,7 @@
   border: none;
   background: transparent;
   color: var(--white-25);
-  font-size: 0.75rem;
+  font-size: var(--fs-12);
   cursor: pointer;
   transition:
     color 0.2s,
@@ -588,7 +588,7 @@
 }
 
 .no-comments p {
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   color: var(--white-22);
 }
 
@@ -629,7 +629,7 @@
   .comment-avatar {
     width: 28px;
     height: 28px;
-    font-size: 0.72rem;
+    font-size: var(--fs-12);
   }
 
   .comment-actions {
@@ -645,7 +645,7 @@
   background: var(--white-03);
   border: 1px solid var(--white-08);
   color: rgba(229, 229, 245, 0.55);
-  font-size: 0.9rem;
+  font-size: var(--fs-14);
   text-align: center;
   letter-spacing: 0.02em;
 }
