@@ -28,7 +28,7 @@
 
 /* ── header ── */
 .tk-header {
-  margin-bottom: 2.6rem;
+  margin-bottom: var(--space-10);
 }
 .tk-title {
   font-size: clamp(2rem, 3.5vw, 2.6rem);

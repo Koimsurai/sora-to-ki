@@ -2,7 +2,7 @@
    ⚠ 不是 blog 專屬——/history、/friends 也在用，所以歸 common/。 */
 
 .link-card-with-text > p {
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-1-5);
   font-size: 0.95rem;
   color: var(--post-text);
 }
@@ -14,7 +14,7 @@
   border-radius: 12px;
   overflow: hidden;
   text-decoration: none;
-  margin: 1.2rem 0;
+  margin: var(--space-5) 0;
   background: var(--white-03);
   transition: all 0.25s ease;
   max-width: 100%;
@@ -44,11 +44,11 @@
 .link-card-body {
   flex: 1;
   min-width: 0;
-  padding: var(--space-4) 1.2rem;
+  padding: var(--space-4) var(--space-5);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
 }
 
 .link-card-site {
@@ -116,8 +116,8 @@
 .link-card-embed-link {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem var(--space-4);
+  gap: var(--space-1-5);
+  padding: var(--space-2-5) var(--space-4);
   font-size: 0.82rem;
   color: var(--white-60);
   text-decoration: none;
@@ -133,7 +133,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   color: #fff;
-  margin: 0.2rem 0;
+  margin: var(--space-1) 0;
   line-height: 1.4;
 }
 

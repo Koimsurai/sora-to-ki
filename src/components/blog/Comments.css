@@ -21,8 +21,8 @@
 /* ── Comment Form Card ── */
 .comment-form-card {
   display: flex;
-  gap: 0.9rem;
-  padding: var(--space-5) 1.4rem 1.4rem;
+  gap: var(--space-3-5);
+  padding: var(--space-5) var(--space-5-5) var(--space-5-5);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(var(--brand-rgb), 0.06);
@@ -232,7 +232,7 @@
 
 .field-input {
   width: 100%;
-  padding: 0.45rem 0.7rem;
+  padding: var(--space-2) var(--space-3);
   border-radius: 8px;
   border: 1px solid var(--white-06);
   background: transparent;
@@ -254,9 +254,9 @@
 .reply-indicator {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.3rem 0.65rem;
-  margin-bottom: 0.35rem;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2-5);
+  margin-bottom: var(--space-1-5);
   border-radius: 6px;
   background: rgba(var(--brand-rgb), 0.08);
   font-size: 0.78rem;
@@ -285,7 +285,7 @@
 
 .comment-textarea {
   width: 100%;
-  padding: 0.65rem 0.8rem;
+  padding: var(--space-2-5) var(--space-3);
   border-radius: 10px;
   border: 1px solid var(--white-06);
   background: transparent;
@@ -317,7 +317,7 @@
 .captcha-area {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-1-5);
 }
 
 .captcha-q {
@@ -328,7 +328,7 @@
 
 .captcha-input {
   width: 48px;
-  padding: 0.35rem var(--space-2);
+  padding: var(--space-1-5) var(--space-2);
   border-radius: 6px;
   border: 1px solid var(--white-08);
   background: transparent;
@@ -350,7 +350,7 @@
 }
 
 .submit-btn {
-  padding: 0.42rem 1.4rem;
+  padding: var(--space-1-5) var(--space-5-5);
   border-radius: 8px;
   border: none;
   background: var(--brand);
@@ -363,7 +363,7 @@
     transform 0.15s;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
 }
 
 .submit-btn:hover:not(:disabled) {
@@ -404,7 +404,7 @@
   margin: 0;
   font-size: 0.8rem;
   color: #2cb67d;
-  padding: 0.4rem 0.7rem;
+  padding: var(--space-1-5) var(--space-3);
   background: rgba(44, 182, 125, 0.08);
   border-radius: 6px;
   border: 1px solid rgba(44, 182, 125, 0.15);
@@ -480,8 +480,8 @@
   font-size: 0.88rem;
   font-weight: 500;
   color: var(--white-40);
-  margin: 0 0 1.2rem;
-  padding-bottom: 0.6rem;
+  margin: 0 0 var(--space-5);
+  padding-bottom: var(--space-2-5);
   border-bottom: 1px solid var(--white-04);
   letter-spacing: 0.02em;
 }
@@ -489,7 +489,7 @@
 /* ── Individual Comment ── */
 .comment-card {
   display: flex;
-  gap: 0.85rem;
+  gap: var(--space-3-5);
   padding-bottom: var(--space-1);
 }
 
@@ -510,14 +510,14 @@
 
 .comment-body {
   flex: 1;
-  padding-bottom: 1.4rem;
+  padding-bottom: var(--space-5-5);
 }
 
 .comment-meta {
   display: flex;
   align-items: baseline;
-  gap: 0.55rem;
-  margin-bottom: 0.3rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .comment-author {
@@ -532,7 +532,7 @@
 }
 
 .comment-text {
-  margin: 0 0 0.45rem;
+  margin: 0 0 var(--space-2);
   font-size: 0.88rem;
   line-height: 1.7;
   color: rgba(255, 255, 255, 0.62);
@@ -555,7 +555,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 0.15rem 0.4rem;
+  padding: var(--space-0-5) var(--space-1-5);
   border-radius: 5px;
   border: none;
   background: transparent;
@@ -601,7 +601,7 @@
   .comment-form-card {
     flex-direction: column;
     align-items: flex-start;
-    padding: var(--space-4) 1.1rem 1.2rem;
+    padding: var(--space-4) var(--space-4-5) var(--space-5);
   }
 
   .form-avatar {
@@ -623,7 +623,7 @@
   }
 
   .comment-card {
-    gap: 0.65rem;
+    gap: var(--space-2-5);
   }
 
   .comment-avatar {

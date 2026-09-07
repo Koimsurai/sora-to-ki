@@ -233,7 +233,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
-  padding: 0.3rem 0;
+  padding: var(--space-1) 0;
   background: none;
   border: none;
   outline: none;
@@ -311,7 +311,7 @@
   flex-shrink: 0;
   width: 5px;
   height: 5px;
-  margin-top: 0.4rem;
+  margin-top: var(--space-1-5);
   border-radius: 50%;
   background: var(--white-15);
   transition: all 0.2s ease;
@@ -330,7 +330,7 @@
 .toc-bottom-link {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
   margin-top: var(--space-4);
   padding: var(--space-3) 0 0;
   /* ⚠ 這兩條的 !important 不能拿掉：這是個 <button>，而 index.css 的 @layer base 有
@@ -453,14 +453,14 @@
 
 .post-content h3 {
   font-size: 1.25rem;
-  margin: var(--space-8) 0 0.8rem;
+  margin: var(--space-8) 0 var(--space-3);
   color: var(--white-95);
   font-weight: 600;
 }
 
 .post-content h4 {
   font-size: 1.1rem;
-  margin: var(--space-6) 0 0.6rem;
+  margin: var(--space-6) 0 var(--space-2-5);
   color: var(--white-90);
 }
 
@@ -473,7 +473,7 @@
 }
 
 .post-content p {
-  margin: 0 0 1.2rem;
+  margin: 0 0 var(--space-5);
 }
 
 .post-content a {
@@ -503,13 +503,13 @@
 }
 
 .post-content li {
-  margin: 0.4rem 0;
+  margin: var(--space-1-5) 0;
 }
 
 .post-content code {
   background: var(--white-08);
   color: #e8e6ef;
-  padding: 0.15rem 0.45rem;
+  padding: var(--space-0-5) var(--space-2);
   border-radius: 4px;
   font-size: 0.9em;
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
@@ -535,7 +535,7 @@
 
 .post-content th,
 .post-content td {
-  padding: 0.6rem var(--space-4);
+  padding: var(--space-2-5) var(--space-4);
   border: 1px solid var(--white-08);
   text-align: left;
   font-size: 0.92rem;

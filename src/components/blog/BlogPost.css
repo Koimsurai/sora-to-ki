@@ -63,7 +63,7 @@
 
 /* 副標（標題「主標：副標」的冒號後段）：明顯次於主標——較小、較淡、常規字重。 */
 .post-subtitle {
-  margin: 0.7rem auto 0;
+  margin: var(--space-3) auto 0;
   max-width: 40rem;
   font-size: 1.06rem;
   font-weight: 400;
@@ -77,7 +77,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.35rem 0.6rem;
+  gap: var(--space-1-5) var(--space-2-5);
   margin-top: var(--space-4);
   font-size: 0.82rem;
   color: var(--post-muted);
@@ -313,7 +313,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: var(--space-2);
-  margin-top: 0.8rem;
+  margin-top: var(--space-3);
 }
 
 .post-tags .tag {
@@ -321,7 +321,7 @@
   color: var(--post-accent);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
-  padding: 0.15rem 0.65rem;
+  padding: var(--space-0-5) var(--space-2-5);
   border-radius: 9999px;
 }
 
@@ -333,14 +333,14 @@
 .posts-nav-category {
   font-size: 0.78rem;
   color: var(--post-muted);
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--space-2-5);
   line-height: 1.5;
 }
 
 .posts-nav-list {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--space-1);
 }
 
 .posts-nav-item {
@@ -365,7 +365,7 @@
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--space-1);
   white-space: nowrap;
   overflow: hidden;
 }
@@ -478,8 +478,8 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.4rem;
-  margin: 2.8rem auto 1.2rem;
+  gap: var(--space-1-5);
+  margin: var(--space-12) auto var(--space-5);
   padding: 0;
   background: transparent;
   border: none;
@@ -487,8 +487,8 @@
 .reaction-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.32rem 0.7rem;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid var(--white-07);
   border-radius: 999px;
@@ -530,7 +530,7 @@
 /* ── Series 系列文導覽（文末，文章區塊外） ── */
 .series-nav {
   margin: var(--space-10) 0 var(--space-6);
-  padding: 1.4rem 1.6rem;
+  padding: var(--space-5-5) var(--space-6);
   background: rgba(var(--brand-rgb), 0.05);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: 14px;
@@ -540,8 +540,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  margin-bottom: 0.9rem;
-  padding-bottom: 0.9rem;
+  margin-bottom: var(--space-3-5);
+  padding-bottom: var(--space-3-5);
   border-bottom: 1px dashed var(--white-08);
 }
 .series-nav-label {
@@ -569,15 +569,15 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: var(--space-2);
   counter-reset: series-counter;
 }
 .series-nav-item {
   display: grid;
   grid-template-columns: 28px 1fr;
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.4rem 0.55rem;
+  gap: var(--space-3);
+  padding: var(--space-1-5) var(--space-2);
   border-radius: 8px;
   transition: background 0.18s ease;
 }
@@ -709,7 +709,7 @@ a.series-nav-title:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--space-2-5);
 }
 
 .ai-summary-top-row h2 {
@@ -721,7 +721,7 @@ a.series-nav-title:hover {
 
 .ai-badge {
   font-size: 0.65rem;
-  padding: 0.15rem var(--space-2);
+  padding: var(--space-0-5) var(--space-2);
   border-radius: 4px;
   background: rgba(var(--brand-rgb), 0.15);
   color: var(--post-accent);
@@ -1000,7 +1000,7 @@ a.series-nav-title:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.6rem var(--space-4) 0.35rem;
+  padding: var(--space-2-5) var(--space-4) var(--space-1-5);
   background: transparent;
 }
 
@@ -1015,7 +1015,7 @@ a.series-nav-title:hover {
   background: var(--white-05);
   border: 1px solid var(--white-10);
   color: var(--white-60);
-  padding: 0.2rem 0.6rem;
+  padding: var(--space-1) var(--space-2-5);
   border-radius: 6px;
   font-size: 0.72rem;
   cursor: pointer;
@@ -1048,8 +1048,8 @@ a.series-nav-title:hover {
 .terminal-bar {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: var(--space-2) 0.85rem;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3-5);
   background: rgba(255, 255, 255, 0.035);
   border-bottom: 1px solid var(--white-05);
 }
@@ -1072,7 +1072,7 @@ a.series-nav-title:hover {
 }
 .terminal-body {
   overflow-x: auto;
-  padding: 0.9rem 0 var(--space-4);
+  padding: var(--space-3-5) 0 var(--space-4);
 }
 .terminal-body .shiki-output,
 .terminal-body .shiki-fallback {
@@ -1080,7 +1080,7 @@ a.series-nav-title:hover {
 }
 .terminal-body .shiki-output pre.shiki {
   margin: 0;
-  padding: 0 1.1rem;
+  padding: 0 var(--space-4-5);
   /* ⚠ !important 不能拿掉：shiki 會把主題背景寫進 pre 自己的樣式，這裡要的是
      透明（背景由外層 .terminal-body 畫）。實測拿掉之後變成 rgb(18,18,18)。 */
   background: transparent !important;
@@ -1100,7 +1100,7 @@ a.series-nav-title:hover {
 }
 .terminal-body .shiki-fallback {
   margin: 0;
-  padding: 0 1.1rem;
+  padding: 0 var(--space-4-5);
   color: rgba(255, 255, 255, 0.75);
   white-space: pre;
   font-size: 0.88rem;
@@ -1119,7 +1119,7 @@ a.series-nav-title:hover {
   display: flex;
   align-items: center;
   gap: 0.5em;
-  padding: var(--space-1) 1.1rem 0;
+  padding: var(--space-1) var(--space-4-5) 0;
 }
 .terminal-prompt-sym {
   color: #4ade80;
@@ -1158,7 +1158,7 @@ a.series-nav-title:hover {
 .code-surface-body .shiki-fallback {
   margin: 0;
   overflow-x: auto;
-  padding: 1.1rem 1.3rem 1.3rem;
+  padding: var(--space-4-5) var(--space-5) var(--space-5);
 }
 /* 行號：CSS counter 掛在每行 .line 前 */
 .code-surface-body .shiki-output .line {
@@ -1381,7 +1381,7 @@ a.series-nav-title:hover {
   background: rgba(20, 18, 34, 0.85);
   border: 1px solid var(--white-08);
   border-radius: 12px;
-  padding: 0.35rem;
+  padding: var(--space-1-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-0-5);
@@ -1397,8 +1397,8 @@ a.series-nav-title:hover {
 .share-menu button {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.55rem var(--space-3);
+  gap: var(--space-2-5);
+  padding: var(--space-2) var(--space-3);
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.78);
@@ -1475,7 +1475,7 @@ a.series-nav-title:hover {
 .subscribe-header h3 {
   font-size: 1.2rem;
   color: #fff;
-  margin: var(--space-2) 0 0.3rem;
+  margin: var(--space-2) 0 var(--space-1);
 }
 
 .subscribe-header p {
@@ -1491,7 +1491,7 @@ a.series-nav-title:hover {
 }
 
 .subscribe-form input {
-  padding: 0.7rem var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-radius: 8px;
   border: 1px solid var(--white-10);
   background: var(--white-04);
@@ -1506,7 +1506,7 @@ a.series-nav-title:hover {
 }
 
 .subscribe-form button {
-  padding: 0.7rem;
+  padding: var(--space-3);
   border: none;
   border-radius: 8px;
   background: var(--post-accent);
@@ -1615,14 +1615,14 @@ a.series-nav-title:hover {
   padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--space-1);
   min-width: 140px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
 .font-option {
-  padding: var(--space-2) 0.8rem;
+  padding: var(--space-2) var(--space-3);
   border: none;
   background: none;
   color: var(--white-60);
@@ -1649,7 +1649,7 @@ a.series-nav-title:hover {
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-6);
-  padding: 0.6rem var(--space-6);
+  padding: var(--space-2-5) var(--space-6);
   border-radius: 8px;
   background: rgba(var(--brand-rgb), 0.15);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
@@ -1712,7 +1712,7 @@ a.series-nav-title:hover {
 
   .post-subtitle {
     font-size: 0.95rem;
-    margin-top: 0.55rem;
+    margin-top: var(--space-2);
   }
 }
 
@@ -1805,10 +1805,10 @@ a.series-nav-title:hover {
 .ai-translation-notice {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-2-5);
   flex-wrap: wrap;
   margin: 0 0 var(--space-6);
-  padding: 0.7rem var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid rgba(252, 211, 77, 0.25);
   border-radius: 10px;
   background: rgba(252, 211, 77, 0.06);

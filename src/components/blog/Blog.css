@@ -833,7 +833,7 @@
 
   .blog-hero-title {
     flex-direction: column;
-    gap: 0.2rem;
+    gap: var(--space-1);
   }
 
   .blog-title-sub {
@@ -998,7 +998,7 @@
 .activity-heatmap .heatmap-stats {
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
   margin-bottom: var(--space-1);
 }
 .activity-heatmap .heatmap-total {
@@ -1062,7 +1062,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  margin-top: 0.4rem;
+  margin-top: var(--space-1-5);
   font-size: 0.7rem;
   color: var(--white-40);
 }

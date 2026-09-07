@@ -17,11 +17,11 @@
 }
 
 .portfolio-page-title {
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-1-5);
 }
 
 .portfolio-page-sub {
-  margin: 0 0 2.4rem;
+  margin: 0 0 var(--space-10);
   font-size: 0.92rem;
   color: var(--white-50);
 }

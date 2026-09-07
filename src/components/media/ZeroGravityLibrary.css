@@ -45,7 +45,7 @@
 .zg-brand {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--space-1);
 }
 
 .zg-brand-title {
@@ -185,7 +185,7 @@
   font-weight: 700;
   color: #fffffe;
   line-height: 1.3;
-  margin-bottom: 0.3rem;
+  margin-bottom: var(--space-1);
 }
 
 .zg-detail-author {

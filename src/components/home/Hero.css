@@ -752,7 +752,7 @@
     order: -1;
     width: 116px;
     height: 116px;
-    margin: 0 auto 2.4rem; /* 跟 hero 文字拉開，不要黏在一起 */
+    margin: 0 auto var(--space-10); /* 跟 hero 文字拉開，不要黏在一起 */
   }
 
   .home-hero-content {

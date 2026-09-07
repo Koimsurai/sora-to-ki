@@ -146,7 +146,7 @@
 }
 
 .nf-sub {
-  margin: 0.6rem 0 0;
+  margin: var(--space-2-5) 0 0;
   font-size: clamp(0.9rem, 1.6vw, 1rem);
   line-height: 1.8;
   color: rgba(255, 255, 255, 0.58);
@@ -163,7 +163,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: center;
-  gap: 0.15rem 0.6rem;
+  gap: var(--space-0-5) var(--space-2-5);
   margin: var(--space-6) 0 0;
   font-size: 0.82rem;
   line-height: 1.9;
@@ -201,8 +201,8 @@
 .nf-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 0.72rem var(--space-6);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
   border: 0;
   border-radius: 999px;
   /* ⚠ 比站上主色 `#7f5af0` 深一階，這是被 a11y 守門逼出來的：
@@ -239,7 +239,7 @@
 .nf-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
   font-size: 0.92rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.66);

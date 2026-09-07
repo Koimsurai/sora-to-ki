@@ -24,7 +24,7 @@
   content: counter(shiki-ln);
   display: inline-block;
   width: 1.6rem;
-  margin-right: 1.3rem;
+  margin-right: var(--space-5);
   text-align: right;
   color: var(--white-22);
   user-select: none;

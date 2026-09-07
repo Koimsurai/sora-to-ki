@@ -35,7 +35,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
+  gap: var(--space-2);
   background: linear-gradient(140deg, rgba(var(--brand-rgb), 0.14), var(--white-03));
 }
 
@@ -63,7 +63,7 @@
 }
 
 .lhp-body {
-  padding: 0.7rem 0.85rem 0.8rem;
+  padding: var(--space-3) var(--space-3-5) var(--space-3);
 }
 
 .lhp-title {
@@ -79,7 +79,7 @@
 }
 
 .lhp-desc {
-  margin-top: 0.3rem;
+  margin-top: var(--space-1);
   font-size: 0.8rem;
   color: var(--white-55);
   line-height: 1.5;

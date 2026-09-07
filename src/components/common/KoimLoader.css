@@ -10,18 +10,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.6rem;
+  gap: var(--space-6);
   position: relative;
   z-index: 2;
   padding: var(--space-8) var(--space-4);
 }
 .koim-loader-shell--fullscreen {
   min-height: 80vh;
-  gap: 2.2rem;
+  gap: var(--space-9);
 }
 .koim-loader-shell--inline {
   padding: var(--space-4);
-  gap: 0.8rem;
+  gap: var(--space-3);
   min-height: auto;
 }
 

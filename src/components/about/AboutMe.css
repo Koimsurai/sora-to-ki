@@ -9,7 +9,7 @@
   font-size: 0.98rem;
   line-height: 1.85;
   color: rgba(255, 255, 255, 0.72);
-  margin: 0 0 1.1rem;
+  margin: 0 0 var(--space-4-5);
   letter-spacing: 0.02em;
 }
 

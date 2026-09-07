@@ -49,7 +49,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 0.35rem 0.6rem;
+  padding: var(--space-1-5) var(--space-2-5);
   background: rgba(20, 20, 30, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -79,9 +79,9 @@
   font-size: 0.65rem;
   color: var(--white-30);
   white-space: nowrap;
-  padding-left: 0.4rem;
+  padding-left: var(--space-1-5);
   border-left: 1px solid var(--white-08);
-  margin-left: 0.2rem;
+  margin-left: var(--space-1);
 }
 
 /* ─── Icon menu trigger ─── */
@@ -162,7 +162,7 @@
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--white-08);
   border-radius: 10px;
-  padding: 0.3rem;
+  padding: var(--space-1);
   box-shadow: 0 8px 32px var(--black-50);
   z-index: 50;
   animation: mmDropIn 0.15s ease-out;
@@ -182,7 +182,7 @@
 .mm-menu-label {
   font-size: 0.65rem;
   color: var(--white-35);
-  padding: 0.2rem var(--space-2) 0.3rem;
+  padding: var(--space-1) var(--space-2) var(--space-1);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
@@ -191,9 +191,9 @@
 .mm-menu-item {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
   width: 100%;
-  padding: 0.4rem var(--space-2);
+  padding: var(--space-1-5) var(--space-2);
   border: none;
   background: transparent;
   color: var(--white-70);
@@ -432,16 +432,16 @@
 .mm-toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.1rem;
-  padding-left: 0.3rem;
-  margin-left: 0.15rem;
+  gap: var(--space-0-5);
+  padding-left: var(--space-1);
+  margin-left: var(--space-0-5);
   border-left: 1px solid var(--white-12);
 }
 .mm-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.22rem;
-  padding: 0.4rem;
+  gap: var(--space-1);
+  padding: var(--space-1-5);
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -463,7 +463,7 @@
   outline: none;
 }
 .mm-action-btn--dl {
-  padding: 0.4rem var(--space-2);
+  padding: var(--space-1-5) var(--space-2);
 }
 .mm-action-ext {
   font-size: 0.62rem;

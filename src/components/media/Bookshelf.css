@@ -199,7 +199,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
   transition: all 0.3s ease;
   white-space: nowrap;
   backdrop-filter: blur(16px);
@@ -238,7 +238,7 @@
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
 }
 
 .filter-group label {
@@ -250,7 +250,7 @@
 }
 
 .filter-group select {
-  padding: 0.6rem var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   background: var(--white-04);
   border: 1px solid var(--glass-border);
   border-radius: 8px;
@@ -267,7 +267,7 @@
 }
 
 .clear-filters {
-  padding: 0.6rem var(--space-4);
+  padding: var(--space-2-5) var(--space-4);
   background: rgba(var(--brand-rgb), 0.06);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: 8px;
@@ -380,7 +380,7 @@
   top: 0.5rem;
   left: 50%;
   transform: translateX(-50%);
-  padding: var(--space-1) 0.7rem;
+  padding: var(--space-1) var(--space-3);
   border-radius: 20px;
   font-size: 0.6rem;
   font-weight: 600;
@@ -402,7 +402,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.35rem;
+  margin-bottom: var(--space-1-5);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -426,7 +426,7 @@
 
 .stars {
   display: flex;
-  gap: 0.2rem;
+  gap: var(--space-1);
   font-size: 0.75rem;
   justify-content: flex-start;
 }
@@ -606,7 +606,7 @@
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-5);
   display: grid;
-  gap: 0.4rem;
+  gap: var(--space-1-5);
 }
 
 .meta-item {
@@ -627,7 +627,7 @@
 }
 
 .modal-status-badge {
-  padding: 0.4rem 0.9rem;
+  padding: var(--space-1-5) var(--space-3-5);
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -644,7 +644,7 @@
 .modal-notes h3 {
   font-size: 1rem;
   color: var(--brand-light);
-  margin-bottom: 0.6rem;
+  margin-bottom: var(--space-2-5);
   font-weight: 600;
 }
 
@@ -666,7 +666,7 @@
 .modal-dates p {
   font-size: 0.85rem;
   color: var(--text-secondary);
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--space-1-5);
 }
 
 .modal-dates p:last-child {
