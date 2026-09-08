@@ -11,13 +11,13 @@
   width: 100%;
   max-width: 460px;
   padding: var(--space-10) var(--space-9);
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--white-02);
   border: 1px solid var(--white-08);
   border-radius: 20px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   text-align: center;
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--white-90);
   box-shadow: 0 24px 60px var(--black-45);
 }
 
@@ -44,14 +44,14 @@
   margin: 0 0 var(--space-6);
   font-size: var(--fs-16);
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.66);
+  color: var(--white-70);
 }
 
 .unsubscribe-email {
   display: inline-block;
   padding: var(--space-0-5) var(--space-2);
   background: rgba(var(--brand-rgb), 0.1);
-  border: 1px solid rgba(var(--brand-rgb), 0.22);
+  border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: 6px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.85em;
@@ -98,12 +98,12 @@
 }
 
 .unsubscribe-btn--danger {
-  background: rgba(220, 50, 80, 0.14);
+  background: rgba(220, 50, 80, 0.15);
   border-color: rgba(220, 50, 80, 0.35);
   color: rgba(255, 200, 210, 0.95);
 }
 .unsubscribe-btn--danger:hover {
-  background: rgba(220, 50, 80, 0.22);
+  background: rgba(220, 50, 80, 0.2);
   border-color: rgba(220, 50, 80, 0.55);
   color: #fff;
 }
@@ -111,7 +111,7 @@
 .unsubscribe-btn--ghost {
   background: var(--white-04);
   border-color: var(--white-10);
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--white-80);
 }
 .unsubscribe-btn--ghost:hover {
   background: rgba(199, 184, 255, 0.08);

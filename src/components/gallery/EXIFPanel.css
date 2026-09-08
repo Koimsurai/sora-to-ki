@@ -6,13 +6,13 @@
   right: 0;
   bottom: 0;
   width: 400px;
-  background: rgba(0, 0, 0, 0.98);
+  background: var(--black-95);
   backdrop-filter: blur(30px);
   border-left: 1.5px solid var(--white-10);
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 30;
-  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6);
+  box-shadow: -20px 0 60px var(--black-60);
 }
 
 /* 自定義滾動條 */
@@ -106,7 +106,7 @@
 }
 
 .exif-panel::-webkit-scrollbar-track {
-  background: var(--white-05);
+  background: var(--white-06);
 }
 
 .exif-panel::-webkit-scrollbar-thumb {

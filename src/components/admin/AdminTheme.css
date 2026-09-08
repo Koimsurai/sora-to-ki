@@ -60,11 +60,11 @@
   background-image:
     radial-gradient(1px 1px at 20px 30px, var(--white-15), transparent),
     radial-gradient(1px 1px at 40px 70px, var(--white-10), transparent),
-    radial-gradient(1px 1px at 50px 160px, var(--white-12), transparent),
+    radial-gradient(1px 1px at 50px 160px, var(--white-10), transparent),
     radial-gradient(1px 1px at 90px 40px, var(--white-08), transparent),
     radial-gradient(1px 1px at 130px 80px, var(--white-10), transparent),
     radial-gradient(1px 1px at 160px 120px, var(--white-06), transparent),
-    radial-gradient(1px 1px at 200px 50px, var(--white-12), transparent),
+    radial-gradient(1px 1px at 200px 50px, var(--white-10), transparent),
     radial-gradient(1px 1px at 220px 180px, var(--white-08), transparent),
     radial-gradient(1px 1px at 280px 90px, var(--white-10), transparent),
     radial-gradient(1px 1px at 320px 200px, var(--white-06), transparent),
@@ -108,7 +108,7 @@
 
 /* ── Glass Sidebar ── */
 :is(.admin-layout, .admin-mode) aside {
-  background: rgba(0, 0, 0, 0.78);
+  background: var(--black-80);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
   border-color: rgba(39, 39, 42, 0.6);
@@ -116,7 +116,7 @@
 
 /* ── Glass Header ── */
 :is(.admin-layout, .admin-mode) > div > header {
-  background: rgba(0, 0, 0, 0.65);
+  background: var(--black-70);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-color: rgba(39, 39, 42, 0.6);
@@ -138,7 +138,7 @@
   border-color: rgba(39, 39, 42, 0.6);
   border-radius: 16px;
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.25),
+    0 4px 24px var(--black-25),
     inset 0 1px 0 var(--white-04);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -189,14 +189,14 @@
   /* 同上：base 帶了 !important，focus 也要帶 */
   border-color: rgba(82, 82, 91, 0.8) !important;
   box-shadow: 0 0 0 3px rgba(82, 82, 91, 0.2);
-  background: rgba(24, 24, 27, 0.75);
+  background: rgba(24, 24, 27, 0.8);
 }
 
 /* ── Dropdowns & Dialogs — Glass ── */
 :is(.admin-layout, .admin-mode) [role="menu"],
 :is(.admin-layout, .admin-mode) [role="dialog"],
 :is(.admin-layout, .admin-mode) [data-radix-popper-content-wrapper] [role="listbox"] {
-  background: rgba(24, 24, 27, 0.92);
+  background: rgba(24, 24, 27, 0.9);
   backdrop-filter: saturate(180%) blur(28px);
   -webkit-backdrop-filter: saturate(180%) blur(28px);
   border-color: rgba(39, 39, 42, 0.6);
@@ -237,7 +237,7 @@
 
 /* ── Badges — Glass ── */
 :is(.admin-layout, .admin-mode) [class*="badge"][class*="default"] {
-  background: rgba(228, 228, 231, 0.12);
+  background: rgba(228, 228, 231, 0.1);
   border: 1px solid rgba(228, 228, 231, 0.2);
   color: #e4e4e7;
   border-radius: 8px;
@@ -304,14 +304,14 @@
 /* ── Default Buttons — Neutral glass style ── */
 :is(.admin-layout, .admin-mode) .bg-primary,
 :is(.admin-layout, .admin-mode) [class*="bg-primary"] {
-  background: rgba(228, 228, 231, 0.12);
+  background: rgba(228, 228, 231, 0.1);
   color: #e4e4e7;
   border: 1px solid rgba(228, 228, 231, 0.2);
 }
 
 :is(.admin-layout, .admin-mode) .bg-primary:hover,
 :is(.admin-layout, .admin-mode) [class*="bg-primary"]:hover {
-  background: rgba(228, 228, 231, 0.18);
+  background: rgba(228, 228, 231, 0.2);
 }
 
 /* ── Link variant — Neutral text ── */

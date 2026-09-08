@@ -6,7 +6,7 @@
   position: relative;
   padding: var(--space-8) var(--space-4);
   /* Transparent background to show global 3D stars, with a much darker subtle glow */
-  background: radial-gradient(circle at 50% 50%, rgba(90, 60, 180, 0.08) 0%, rgba(0, 0, 0, 0.95) 100%);
+  background: radial-gradient(circle at 50% 50%, rgba(90, 60, 180, 0.08) 0%, var(--black-95) 100%);
   background-attachment: fixed;
   overflow: hidden;
 }
@@ -71,16 +71,16 @@
   overflow: hidden;
   border-radius: 0.75rem;
   box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.15),
-    0 6px 6px rgba(0, 0, 0, 0.1);
+    0 10px 20px var(--black-15),
+    0 6px 6px var(--black-10);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
 }
 
 .photo-card:hover {
   box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.25),
-    0 12px 12px rgba(0, 0, 0, 0.15),
+    0 20px 40px var(--black-25),
+    0 12px 12px var(--black-15),
     0 0 30px rgba(139, 92, 246, 0.3);
   transform: translateZ(0);
 }
@@ -107,7 +107,7 @@
      但只要式子裡有 `var()` 就放棄這個最佳化、原樣輸出。所以同樣的漸層寫成字面值
      或 token，computed value 的字串會不同（渲染相同）——computed-style 基準因此
      對 `var()` 敏感，看到這種 diff 先確認是不是只有方向與色停順序被翻過來。 */
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, var(--black-40) 50%, transparent 100%);
+  background: linear-gradient(to top, var(--black-80) 0%, var(--black-40) 50%, transparent 100%);
   opacity: 0;
   transition: opacity 0.4s ease;
   display: flex;
@@ -127,7 +127,7 @@
   font-size: var(--fs-28);
   font-weight: 800;
   margin-bottom: var(--space-2);
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 3px 6px var(--black-60);
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
@@ -179,7 +179,7 @@
   display: inline-flex;
   align-items: center;
   padding: var(--space-1-5) var(--space-4);
-  background: var(--white-05);
+  background: var(--white-06);
   border: 1px solid var(--white-10);
   border-radius: 9999px;
   color: var(--white-50);
@@ -205,7 +205,7 @@
 
 .category-tab {
   padding: var(--space-2) var(--space-6);
-  background: var(--white-03);
+  background: var(--white-02);
   border: 1px solid var(--white-08);
   border-radius: 9999px;
   color: var(--white-60);

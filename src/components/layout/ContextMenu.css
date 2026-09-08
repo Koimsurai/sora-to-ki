@@ -4,7 +4,7 @@
   min-width: 13rem;
   padding: var(--space-1-5);
   border-radius: 12px;
-  background: rgba(20, 20, 30, 0.92);
+  background: rgba(20, 20, 30, 0.9);
   border: 1px solid var(--white-10);
   box-shadow: 0 14px 44px var(--black-55);
   backdrop-filter: blur(16px);
@@ -39,7 +39,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--white-70);
   cursor: pointer;
   transition:
     background 0.14s ease,
@@ -65,7 +65,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--white-82);
+  color: var(--white-80);
   font-size: var(--fs-14);
   font-weight: 400;
   font-family: inherit;

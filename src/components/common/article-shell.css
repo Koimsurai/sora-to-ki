@@ -23,7 +23,7 @@
 
 .blog-post-container * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: var(--white-15) transparent;
 }
 
 /* ── Container ── */
@@ -45,7 +45,7 @@
 .blog-post-dim-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(6, 5, 14, 0.75);
+  background: rgba(6, 5, 14, 0.8);
   pointer-events: none;
   z-index: 0;
 }
@@ -373,7 +373,7 @@
    ═══════════════════════ */
 /* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .post-content` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
 .post-content {
-  color: var(--white-82);
+  color: var(--white-80);
   font-size: var(--fs-16);
   line-height: 1.85;
   letter-spacing: 0.01em;
@@ -413,10 +413,10 @@
   min-width: 220px;
   max-width: min(420px, 80vw);
   padding: var(--space-2-5) var(--space-3-5);
-  background: rgba(18, 14, 30, 0.96);
+  background: rgba(18, 14, 30, 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.35);
   border-radius: 10px;
-  color: var(--white-85);
+  color: var(--white-80);
   font-size: var(--fs-14);
   font-weight: 400;
   line-height: 1.55;
@@ -432,7 +432,7 @@
     visibility 0.2s;
   box-shadow:
     0 16px 40px var(--black-50),
-    0 0 24px rgba(var(--brand-rgb), 0.18);
+    0 0 24px rgba(var(--brand-rgb), 0.2);
   z-index: 30;
 }
 .post-content sup a[data-fn-content]:hover::after,
@@ -491,7 +491,7 @@
   margin: var(--space-6) 0;
   padding: var(--space-4) var(--space-6);
   border-left: 3px solid var(--post-accent);
-  background: rgba(var(--brand-rgb), 0.05);
+  background: rgba(var(--brand-rgb), 0.06);
   border-radius: 0 8px 8px 0;
   color: var(--white-70);
 }

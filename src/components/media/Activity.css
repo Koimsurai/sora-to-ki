@@ -16,7 +16,7 @@
 .activity-dim-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 5, 14, 0.65);
+  background: rgba(6, 5, 14, 0.7);
   pointer-events: none;
   z-index: 0;
 }
@@ -69,9 +69,9 @@
     radial-gradient(1px 1px at 10% 20%, var(--white-10) 0%, transparent 100%),
     radial-gradient(1px 1px at 30% 65%, var(--white-06) 0%, transparent 100%),
     radial-gradient(1px 1px at 50% 10%, var(--white-08) 0%, transparent 100%),
-    radial-gradient(1px 1px at 75% 50%, var(--white-05) 0%, transparent 100%),
+    radial-gradient(1px 1px at 75% 50%, var(--white-06) 0%, transparent 100%),
     radial-gradient(1.2px 1.2px at 18% 85%, rgba(var(--brand-rgb), 0.1) 0%, transparent 100%),
-    radial-gradient(1.2px 1.2px at 90% 12%, rgba(200, 50, 140, 0.07) 0%, transparent 100%);
+    radial-gradient(1.2px 1.2px at 90% 12%, rgba(200, 50, 140, 0.08) 0%, transparent 100%);
 }
 
 @keyframes a-neb1 {
@@ -251,7 +251,7 @@
   transform: translateY(-2px);
   border-color: rgba(var(--brand-rgb), 0.5);
   box-shadow:
-    0 16px 50px rgba(var(--brand-rgb), 0.22),
+    0 16px 50px rgba(var(--brand-rgb), 0.2),
     0 0 0 1px rgba(var(--brand-rgb), 0.25) inset;
 }
 
@@ -270,7 +270,7 @@
   z-index: 1;
   /* 從左下深→右上漸亮，讓 nameplate 整體變柔和但仍可見動畫 */
   background:
-    linear-gradient(135deg, rgba(6, 5, 14, 0.78) 0%, rgba(6, 5, 14, 0.32) 55%, rgba(6, 5, 14, 0.55) 100%),
+    linear-gradient(135deg, rgba(6, 5, 14, 0.8) 0%, rgba(6, 5, 14, 0.3) 55%, rgba(6, 5, 14, 0.55) 100%),
     linear-gradient(to top, rgba(6, 5, 14, 0.5) 0%, rgba(6, 5, 14, 0) 60%);
 }
 
@@ -297,7 +297,7 @@
   position: absolute;
   inset: 8px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.25), rgba(220, 50, 120, 0.18));
+  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.25), rgba(220, 50, 120, 0.2));
   filter: blur(12px);
   opacity: 0.7;
   z-index: 0;
@@ -363,7 +363,7 @@
   font-variant-numeric: tabular-nums;
   box-shadow:
     0 0 0 1px rgba(255, 138, 76, 0.45),
-    0 0 14px rgba(255, 138, 76, 0.32);
+    0 0 14px rgba(255, 138, 76, 0.3);
   text-shadow: none;
 }
 .steam-profile-status {
@@ -371,7 +371,7 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--fs-14);
-  color: var(--white-85);
+  color: var(--white-80);
 }
 .steam-profile-dot {
   width: 8px;
@@ -386,7 +386,7 @@
 }
 .steam-profile-card.is-in-game .steam-profile-dot {
   background: #90ba3c;
-  box-shadow: 0 0 10px rgba(144, 186, 60, 0.85);
+  box-shadow: 0 0 10px rgba(144, 186, 60, 0.8);
 }
 .steam-profile-card.is-offline .steam-profile-dot {
   background: #6c757d;
@@ -407,7 +407,7 @@
   border: 1px solid var(--white-10);
   border-radius: 999px;
   font-size: var(--fs-12);
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--white-80);
   width: fit-content;
   backdrop-filter: blur(4px);
 }
@@ -530,7 +530,7 @@
   border-color: rgba(144, 186, 60, 0.55);
   box-shadow:
     0 0 0 1px rgba(144, 186, 60, 0.3),
-    0 0 18px rgba(144, 186, 60, 0.18);
+    0 0 18px rgba(144, 186, 60, 0.2);
 }
 .steam-recent-cover {
   position: absolute;
@@ -540,7 +540,7 @@
   /* Fallback gradient shown when both header.jpg and capsule fail
      (.is-fallback class added by onError once <img> is hidden) */
   background:
-    radial-gradient(120% 80% at 50% 35%, rgba(var(--brand-rgb), 0.28) 0%, transparent 65%),
+    radial-gradient(120% 80% at 50% 35%, rgba(var(--brand-rgb), 0.3) 0%, transparent 65%),
     linear-gradient(135deg, #1a1530 0%, #120e1e 100%);
 }
 .steam-recent-cover img {
@@ -568,7 +568,7 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(to top, rgba(6, 5, 14, 0.92) 0%, rgba(6, 5, 14, 0.55) 45%, rgba(6, 5, 14, 0.05) 100%);
+  background: linear-gradient(to top, rgba(6, 5, 14, 0.9) 0%, rgba(6, 5, 14, 0.55) 45%, rgba(6, 5, 14, 0.06) 100%);
 }
 .steam-recent-info {
   position: absolute;
@@ -576,7 +576,7 @@
   left: 1rem;
   right: 1rem;
   bottom: 0.85rem;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 1px 4px var(--black-70);
 }
 .steam-recent-title {
   font-size: var(--fs-16);
@@ -621,7 +621,7 @@
     box-shadow: 0 0 12px rgba(144, 186, 60, 0.55);
   }
   50% {
-    box-shadow: 0 0 20px rgba(144, 186, 60, 0.85);
+    box-shadow: 0 0 20px rgba(144, 186, 60, 0.8);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -729,7 +729,7 @@
   align-items: center;
   gap: var(--space-2);
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--white-70);
   font-size: var(--fs-14);
   font-weight: 500;
   transition: color 0.2s;
@@ -871,7 +871,7 @@
   background: rgba(var(--brand-rgb), 0.6);
 }
 .heatmap-day.level-4 {
-  background: rgba(200, 50, 140, 0.65);
+  background: rgba(200, 50, 140, 0.7);
 }
 
 .day-tooltip {
@@ -941,7 +941,7 @@
   background: rgba(var(--brand-rgb), 0.6);
 }
 .legend-square.level-4 {
-  background: rgba(200, 50, 140, 0.65);
+  background: rgba(200, 50, 140, 0.7);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1238,7 +1238,7 @@
 .repo-row-left h4 {
   font-size: var(--fs-14);
   font-weight: 600;
-  color: var(--white-85);
+  color: var(--white-80);
   margin-bottom: var(--space-0-5);
 }
 

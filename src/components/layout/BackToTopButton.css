@@ -14,7 +14,7 @@
   padding: 0;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(199, 184, 255, 0.22);
+  border: 1px solid rgba(199, 184, 255, 0.2);
   background: rgba(20, 18, 38, 0.55);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -34,7 +34,7 @@
     box-shadow 220ms ease;
   z-index: 1000;
   outline: none;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 22px var(--black-35);
 }
 
 .back-to-top.is-visible {
@@ -44,11 +44,11 @@
 }
 
 .back-to-top:hover {
-  background: rgba(var(--brand-rgb), 0.18);
+  background: rgba(var(--brand-rgb), 0.2);
   border-color: rgba(199, 184, 255, 0.55);
   color: #fff;
   box-shadow:
-    0 6px 22px rgba(0, 0, 0, 0.35),
+    0 6px 22px var(--black-35),
     0 0 0 4px rgba(var(--brand-rgb), 0.1);
 }
 
@@ -78,11 +78,11 @@
 }
 
 .back-to-top-ring-track {
-  stroke: var(--white-05);
+  stroke: var(--white-06);
 }
 
 .back-to-top-ring-progress {
-  stroke: rgba(199, 184, 255, 0.85);
+  stroke: rgba(199, 184, 255, 0.8);
   transition: stroke-dashoffset 120ms linear;
   filter: drop-shadow(0 0 4px rgba(var(--brand-rgb), 0.5));
 }

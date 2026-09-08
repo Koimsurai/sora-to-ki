@@ -360,7 +360,7 @@
 
 .music-tab-btn:hover:not(.active) {
   border-color: var(--white-15);
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--white-80);
 }
 
 .tab-active-line {
@@ -689,7 +689,7 @@
 
 .range-pill:hover:not(.active) {
   border-color: var(--white-15);
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--white-80);
 }
 
 /* ══════════════════════════════════════
@@ -720,7 +720,7 @@
 .decade-chart-title {
   font-size: var(--fs-16);
   font-weight: 600;
-  color: var(--white-85);
+  color: var(--white-80);
   margin: 0 0 var(--space-4);
 }
 
@@ -880,7 +880,7 @@
   font-size: var(--fs-14);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 12px;
-  background: rgba(239, 68, 68, 0.05);
+  background: rgba(239, 68, 68, 0.06);
 }
 
 .music-no-data {
@@ -893,7 +893,7 @@
 .config-hint {
   margin-top: var(--space-6);
   text-align: left;
-  background: var(--white-03);
+  background: var(--white-02);
   padding: var(--space-6);
   border-radius: 8px;
   border: 1px solid var(--glass-border);

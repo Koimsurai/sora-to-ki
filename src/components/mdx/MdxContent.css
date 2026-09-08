@@ -25,7 +25,7 @@
 }
 
 .mdx-note-content {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--white-70);
   font-size: var(--fs-16);
   line-height: 1.7;
 }
@@ -89,10 +89,10 @@
   width: max-content;
   padding: var(--space-2-5) var(--space-3);
   border-radius: 10px;
-  background: rgba(36, 30, 20, 0.97);
-  border: 1px solid rgba(252, 211, 77, 0.22);
+  background: rgba(36, 30, 20, 0.95);
+  border: 1px solid rgba(252, 211, 77, 0.2);
   box-shadow: 0 10px 30px var(--black-45);
-  color: var(--white-82);
+  color: var(--white-80);
   font-size: var(--fs-13);
   line-height: 1.55;
   text-align: left;
@@ -119,7 +119,7 @@
   top: 100%;
   left: 1.1rem;
   border: 6px solid transparent;
-  border-top-color: rgba(36, 30, 20, 0.97);
+  border-top-color: rgba(36, 30, 20, 0.95);
 }
 .annot-card-label {
   display: block;
@@ -160,7 +160,7 @@
   top: auto;
   bottom: 100%;
   border-top-color: transparent;
-  border-bottom-color: rgba(36, 30, 20, 0.97);
+  border-bottom-color: rgba(36, 30, 20, 0.95);
 }
 
 /* ── 防劇透 <Spoiler>：模糊，點擊揭開 ── */
@@ -188,7 +188,7 @@
 }
 .spoiler--revealed {
   filter: none;
-  background: rgba(252, 211, 77, 0.09);
+  background: rgba(252, 211, 77, 0.08);
   user-select: text;
   -webkit-user-select: text;
   cursor: text;
@@ -199,8 +199,8 @@
   margin: var(--space-7) 0;
   padding: var(--space-4) var(--space-2-5) var(--space-2);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid var(--white-07);
+  background: var(--white-02);
+  border: 1px solid var(--white-08);
 }
 .mdx-chart-title {
   margin: 0 0 var(--space-2-5) var(--space-1-5);
@@ -229,7 +229,7 @@
 .mdx-chart-tip {
   padding: var(--space-2) var(--space-2-5);
   border-radius: 8px;
-  background: rgba(18, 14, 30, 0.97);
+  background: rgba(18, 14, 30, 0.95);
   border: 1px solid rgba(139, 124, 246, 0.3);
   box-shadow: 0 8px 24px var(--black-50);
 }
@@ -275,8 +275,8 @@
   margin: var(--space-7) 0;
   padding: var(--space-4) var(--space-2-5) var(--space-4-5);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid var(--white-07);
+  background: var(--white-02);
+  border: 1px solid var(--white-08);
 }
 .mdx-chart-interactive .mdx-chart {
   margin: 0;
@@ -306,7 +306,7 @@
 }
 .mdx-chart-slider-value {
   text-align: right;
-  color: var(--white-82);
+  color: var(--white-80);
   font-variant-numeric: tabular-nums;
   font-size: var(--fs-13);
 }
@@ -327,9 +327,9 @@
   padding: 0.05em 0.5em 0.05em 0.42em;
   margin: 0 0.06em;
   border-radius: 6px;
-  background: var(--white-05);
+  background: var(--white-06);
   border: 1px solid var(--white-08);
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--white-90);
   font-size: 0.88em;
   font-weight: 500;
   line-height: 1.5;
@@ -347,7 +347,7 @@
   opacity: 0.85;
 }
 .mdx-mention:hover {
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--white-08);
   border-color: var(--white-15);
   color: #fff;
 }
@@ -416,13 +416,13 @@
   outline: none;
 }
 .mdx-codetabs-tab:hover {
-  background: rgba(255, 255, 255, 0.045);
-  color: var(--white-82);
+  background: var(--white-04);
+  color: var(--white-80);
 }
 .mdx-codetabs-tab.active,
 .mdx-codetabs-tab.active:hover,
 .mdx-codetabs-tab.active:focus {
-  background: rgba(255, 255, 255, 0.09);
+  background: var(--white-08);
   color: #fff;
   box-shadow: none;
 }
@@ -436,15 +436,15 @@
   background: transparent;
 }
 .mdx-codetabs ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.13);
+  background: var(--white-15);
   border-radius: 4px;
 }
 .mdx-codetabs ::-webkit-scrollbar-thumb:hover {
-  background: var(--white-22);
+  background: var(--white-20);
 }
 .mdx-codetabs * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.13) transparent;
+  scrollbar-color: var(--white-15) transparent;
 }
 
 /* ── <Tabs>/<Tab> 內容分頁：藥丸切換，每頁放整段內容（prose+code） ── */
@@ -453,7 +453,7 @@
   border: 1px solid var(--white-10);
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--white-02);
 }
 .mdx-tabs-bar {
   display: flex;
@@ -485,16 +485,16 @@
 .mdx-tabs-pill:focus,
 .mdx-tabs-pill:focus-visible {
   background: var(--white-04);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: var(--white-85);
+  border-color: var(--white-15);
+  color: var(--white-80);
   box-shadow: none;
   outline: none;
 }
 .mdx-tabs-pill.active,
 .mdx-tabs-pill.active:hover,
 .mdx-tabs-pill.active:focus {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: var(--white-22);
+  background: var(--white-08);
+  border-color: var(--white-20);
   color: #fff;
   box-shadow: none;
 }
@@ -518,7 +518,7 @@
   height: 2.4rem;
   margin: var(--space-6) 0;
   border-radius: 8px;
-  background: var(--white-03);
+  background: var(--white-02);
 }
 .mdx-math-inline {
   white-space: nowrap;
@@ -542,7 +542,7 @@
   margin: var(--space-7) 0;
   border-radius: 12px;
   background: var(--white-02);
-  border: 1px solid var(--white-05);
+  border: 1px solid var(--white-06);
 }
 .mdx-sketch-caption {
   margin-top: var(--space-3);
@@ -595,11 +595,11 @@
   display: grid;
 }
 .mdx-diff .shiki-output .line.diff-line-add {
-  background: rgba(63, 185, 80, 0.14);
+  background: rgba(63, 185, 80, 0.15);
   box-shadow: inset 3px 0 #3fb950;
 }
 .mdx-diff .shiki-output .line.diff-line-del {
-  background: rgba(248, 81, 73, 0.14);
+  background: rgba(248, 81, 73, 0.15);
   box-shadow: inset 3px 0 #f85149;
 }
 .mdx-diff-stat {
@@ -656,7 +656,7 @@
 .mdx-imgcompare-loading {
   height: 320px;
   border-radius: 12px;
-  background: var(--white-03);
+  background: var(--white-02);
 }
 .mdx-imgcompare figcaption {
   margin-top: var(--space-2);
@@ -673,9 +673,9 @@
   font-family: inherit;
   font-size: 0.82em;
   line-height: 1.4;
-  color: var(--white-85);
+  color: var(--white-80);
   background: var(--white-06);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--white-15);
   border-bottom-width: 2px;
   border-radius: 6px;
   box-shadow: 0 1px 0 var(--black-30);
@@ -686,7 +686,7 @@
   margin: var(--space-6) 0;
   border: 1px solid var(--white-10);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--white-02);
   overflow: hidden;
 }
 .mdx-details-summary {
@@ -729,7 +729,7 @@
   block-size: auto;
 }
 .mdx-details-summary:hover {
-  background: var(--white-03);
+  background: var(--white-02);
 }
 .mdx-details-body {
   padding: 0 var(--space-4) var(--space-3);
@@ -785,7 +785,7 @@
   padding: var(--space-3-5) var(--space-4);
   border: 1px solid var(--white-10);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--white-02);
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   font-size: var(--fs-14);
   line-height: 1.9;
@@ -799,7 +799,7 @@
   white-space: nowrap;
 }
 .mdx-filetree-row--folder {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--white-90);
   font-weight: 500;
 }
 .mdx-filetree-icon {
@@ -916,11 +916,11 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--black-20);
   transition: background 0.2s;
 }
 .mdx-youtube-facade:hover::after {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--black-06);
 }
 .mdx-youtube-play {
   position: relative;
@@ -931,7 +931,7 @@
   width: 4rem;
   height: 4rem;
   border-radius: 50%;
-  background: rgba(230, 33, 23, 0.92);
+  background: rgba(230, 33, 23, 0.9);
   color: #fff;
   font-size: var(--fs-20);
   padding-left: var(--space-1);
@@ -944,14 +944,14 @@
   padding: var(--space-4) var(--space-5);
   border: 1px solid var(--white-10);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--white-02);
 }
 .mdx-refs-title {
   font-size: var(--fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--white-40);
   margin-bottom: var(--space-3);
 }
 .mdx-refs-list {
@@ -972,7 +972,7 @@
   flex: 0 0 auto;
   min-width: 9rem;
   font-size: var(--fs-14);
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--white-70);
   font-weight: 500;
 }
 .mdx-refs-links {
@@ -985,7 +985,7 @@
   align-items: center;
   gap: var(--space-1-5);
   font-size: var(--fs-14);
-  color: var(--white-82); /* 中性文字，讓彩色品牌 icon 跳出來、不打架 */
+  color: var(--white-80); /* 中性文字，讓彩色品牌 icon 跳出來、不打架 */
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition:
@@ -1008,14 +1008,14 @@
 .mdx-poll {
   margin: var(--space-7) 0;
   padding: var(--space-4) var(--space-4-5);
-  border: 1px solid var(--white-07);
+  border: 1px solid var(--white-08);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--white-02);
 }
 .mdx-poll-q {
   font-size: var(--fs-14);
   font-weight: 600;
-  color: var(--white-82);
+  color: var(--white-80);
   margin-bottom: var(--space-3);
 }
 .mdx-poll-list {
@@ -1037,10 +1037,10 @@
   padding: var(--space-2) var(--space-3);
   border: 0;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.035); /* 淡軌道取代描邊 */
+  background: var(--white-04); /* 淡軌道取代描邊 */
   box-shadow: none;
   outline: none;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--white-80);
   font-size: var(--fs-14);
   font-family: inherit;
   text-align: left;
@@ -1069,12 +1069,12 @@
   left: 0;
   top: 0;
   bottom: 0;
-  background: rgba(167, 139, 250, 0.16);
+  background: rgba(167, 139, 250, 0.15);
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 .mdx-poll-opt--mine .mdx-poll-bar {
-  background: rgba(167, 139, 250, 0.26);
+  background: rgba(167, 139, 250, 0.25);
 }
 .mdx-poll-opt-label {
   position: relative;
@@ -1107,7 +1107,7 @@
   gap: var(--space-3);
   margin-top: var(--space-2-5);
   font-size: var(--fs-12);
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--white-40);
 }
 .mdx-poll-peek {
   padding: 0;
@@ -1115,7 +1115,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: rgba(196, 181, 253, 0.75);
+  color: rgba(196, 181, 253, 0.8);
   font-size: var(--fs-12);
   font-family: inherit;
   cursor: pointer;

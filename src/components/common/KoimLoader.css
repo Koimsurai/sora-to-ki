@@ -55,7 +55,7 @@
     from 0deg,
     transparent 0deg,
     rgba(var(--brand-rgb), 0.6) 110deg,
-    rgba(220, 50, 120, 0.85) 200deg,
+    rgba(220, 50, 120, 0.8) 200deg,
     transparent 240deg
   );
   -webkit-mask: radial-gradient(
@@ -80,7 +80,7 @@
   background: conic-gradient(
     from 180deg,
     transparent 0deg,
-    rgba(224, 195, 252, 0.85) 90deg,
+    rgba(224, 195, 252, 0.8) 90deg,
     rgba(var(--brand-rgb), 0.55) 180deg,
     transparent 220deg
   );
@@ -121,7 +121,7 @@
 .koim-loader-glow {
   position: absolute;
   inset: -20px;
-  background: radial-gradient(circle, rgba(var(--brand-rgb), 0.18) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(var(--brand-rgb), 0.2) 0%, transparent 65%);
   pointer-events: none;
   filter: blur(4px);
   animation: koimLoaderBreath 2.4s ease-in-out infinite reverse;

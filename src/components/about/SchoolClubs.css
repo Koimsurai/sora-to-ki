@@ -17,11 +17,11 @@
 
 .club-row:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--white-15);
 }
 
 .clubs-v2 .club-row.open {
-  border-color: rgba(199, 184, 255, 0.22);
+  border-color: rgba(199, 184, 255, 0.2);
 }
 
 .club-icon-wrap {
@@ -41,7 +41,7 @@
 }
 
 .clubs-v2 .club-row.open .club-icon-wrap {
-  background: rgba(var(--brand-rgb), 0.18);
+  background: rgba(var(--brand-rgb), 0.2);
   border-color: rgba(var(--brand-rgb), 0.45);
   color: #fff;
   box-shadow: 0 0 18px rgba(var(--brand-rgb), 0.25);
@@ -91,14 +91,14 @@
 .club-name {
   font-size: var(--fs-16);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--white-90);
   letter-spacing: 0.01em;
 }
 
 .club-role-badge {
   font-size: var(--fs-12);
   padding: 3px var(--space-2-5);
-  background: rgba(var(--brand-rgb), 0.14);
+  background: rgba(var(--brand-rgb), 0.15);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
   border-radius: 999px;
   color: rgba(216, 180, 254, 0.95);
@@ -108,7 +108,7 @@
 
 .club-period {
   font-size: var(--fs-12);
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--white-40);
   letter-spacing: 0.5px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -153,7 +153,7 @@
   min-height: 0;
   margin: 0 var(--space-5-5);
   padding: var(--space-3-5) 0 var(--space-4-5) 60px;
-  border-top: 1px solid var(--white-07);
+  border-top: 1px solid var(--white-08);
   list-style: none;
   overflow: hidden;
   display: grid;

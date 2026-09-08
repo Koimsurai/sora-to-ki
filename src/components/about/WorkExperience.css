@@ -19,7 +19,7 @@
     180deg,
     rgba(var(--brand-rgb), 0.5) 0%,
     rgba(var(--brand-rgb), 0.2) 50%,
-    rgba(var(--brand-rgb), 0.05) 100%
+    rgba(var(--brand-rgb), 0.06) 100%
   );
 }
 
@@ -98,8 +98,8 @@
   font-size: var(--fs-12);
   padding: 3px 9px;
   background: rgba(var(--brand-rgb), 0.1);
-  border: 1px solid rgba(var(--brand-rgb), 0.22);
-  color: rgba(199, 184, 255, 0.85);
+  border: 1px solid rgba(var(--brand-rgb), 0.2);
+  color: rgba(199, 184, 255, 0.8);
   border-radius: 999px;
   font-weight: 500;
   letter-spacing: 0.02em;
@@ -133,7 +133,7 @@
   padding-left: var(--space-4);
   font-size: var(--fs-14);
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--white-70);
 }
 
 .work-bullets li::before {
@@ -144,7 +144,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: rgba(var(--brand-rgb), 0.65);
+  background: rgba(var(--brand-rgb), 0.7);
 }
 
 .work-bullets-flat li {

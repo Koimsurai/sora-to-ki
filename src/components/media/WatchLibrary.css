@@ -50,7 +50,7 @@
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: rgba(244, 244, 245, 0.98);
+  color: rgba(244, 244, 245, 0.95);
   margin: 0 0 var(--space-2-5);
 }
 
@@ -89,7 +89,7 @@
 }
 
 .wl-tab:hover {
-  color: rgba(244, 244, 245, 0.88);
+  color: rgba(244, 244, 245, 0.9);
 }
 
 .wl-tab.active {
@@ -103,7 +103,7 @@
   right: 0;
   bottom: -1px;
   height: 1.5px;
-  background: linear-gradient(90deg, rgba(216, 180, 254, 0), rgba(216, 180, 254, 0.85), rgba(216, 180, 254, 0));
+  background: linear-gradient(90deg, rgba(216, 180, 254, 0), rgba(216, 180, 254, 0.8), rgba(216, 180, 254, 0));
 }
 
 .wl-tab-count {
@@ -114,7 +114,7 @@
 }
 
 .wl-tab.active .wl-tab-count {
-  color: rgba(216, 180, 254, 0.75);
+  color: rgba(216, 180, 254, 0.8);
 }
 
 /* ── controls ── */
@@ -144,7 +144,7 @@
 .wl-search:focus-within {
   border-color: rgba(216, 180, 254, 0.4);
   background: rgba(216, 180, 254, 0.04);
-  color: rgba(216, 180, 254, 0.85);
+  color: rgba(216, 180, 254, 0.8);
 }
 
 .wl-search input {
@@ -174,7 +174,7 @@
   background: var(--white-04);
   border: 1px solid var(--white-08);
   border-radius: 10px;
-  color: rgba(244, 244, 245, 0.88);
+  color: rgba(244, 244, 245, 0.9);
   font-size: var(--fs-14);
   cursor: pointer;
   outline: none;
@@ -211,9 +211,9 @@
   margin: 0;
   padding: var(--space-1-5);
   min-width: 160px;
-  background: rgba(20, 18, 38, 0.96);
+  background: rgba(20, 18, 38, 0.95);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(216, 180, 254, 0.18);
+  border: 1px solid rgba(216, 180, 254, 0.2);
   border-radius: 10px;
   box-shadow: 0 12px 32px var(--black-55);
   transform-origin: top right;
@@ -231,7 +231,7 @@
   border: none;
   text-align: left;
   font-size: var(--fs-14);
-  color: rgba(229, 229, 245, 0.75);
+  color: rgba(229, 229, 245, 0.8);
   cursor: pointer;
   border-radius: 6px;
   transition:
@@ -279,7 +279,7 @@
 }
 
 .wl-card:hover .wl-card-poster {
-  box-shadow: 0 18px 40px rgba(var(--brand-rgb), 0.28);
+  box-shadow: 0 18px 40px rgba(var(--brand-rgb), 0.3);
 }
 
 .wl-card-poster img {
@@ -338,7 +338,7 @@
 }
 
 .wl-info--err {
-  color: rgba(255, 180, 180, 0.65);
+  color: rgba(255, 180, 180, 0.7);
 }
 
 /* ── RWD ── */

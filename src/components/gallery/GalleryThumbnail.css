@@ -6,7 +6,7 @@
   left: 0;
   right: 400px; /* 為右側 EXIF 面板留空間 */
   height: 120px;
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, var(--black-40) 100%);
+  background: linear-gradient(0deg, var(--black-80) 0%, var(--black-40) 100%);
   backdrop-filter: blur(20px);
   padding: var(--space-3) var(--space-6);
   z-index: 10;

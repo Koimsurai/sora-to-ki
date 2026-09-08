@@ -65,7 +65,7 @@
   font-size: clamp(5rem, 17vw, 11rem);
   font-weight: 800;
   letter-spacing: -0.04em;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--white-95);
   /* 讓數字跟土星在同一個「發光」的世界裡，不然它會像貼上去的 */
   text-shadow: 0 0 60px rgba(var(--brand-rgb), 0.45);
   user-select: none;
@@ -140,7 +140,7 @@
   font-size: clamp(1.35rem, 3vw, 1.9rem);
   font-weight: 700;
   line-height: 1.45;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--white-95);
   /* 沒有這行標題會斷成「…星際之間」/「了。」，最後兩個字孤零零掉一行 */
   text-wrap: balance;
 }
@@ -149,7 +149,7 @@
   margin: var(--space-2-5) 0 0;
   font-size: clamp(0.9rem, 1.6vw, 1rem);
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--white-60);
 }
 
 /* ── 你要找的位置 ──
@@ -177,7 +177,7 @@
 
 .nf-addr-path {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--white-80);
   /* 有人會把一整串網址貼進來——換行，不要撐破版面 */
   overflow-wrap: anywhere;
 }
@@ -242,7 +242,7 @@
   gap: var(--space-1-5);
   font-size: var(--fs-14);
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.66);
+  color: var(--white-70);
   text-decoration: none;
   transition: color 0.18s ease;
 }

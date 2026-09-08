@@ -211,7 +211,7 @@
 .view-mode-toggle:hover {
   border-color: var(--glass-hover-border);
   background: rgba(var(--brand-rgb), 0.08);
-  box-shadow: 0 0 16px rgba(var(--brand-rgb), 0.12);
+  box-shadow: 0 0 16px rgba(var(--brand-rgb), 0.1);
   color: var(--text-primary);
 }
 
@@ -263,7 +263,7 @@
 .filter-group select:focus {
   outline: none;
   border-color: var(--brand);
-  box-shadow: 0 0 12px rgba(var(--brand-rgb), 0.12);
+  box-shadow: 0 0 12px rgba(var(--brand-rgb), 0.1);
 }
 
 .clear-filters {
@@ -281,7 +281,7 @@
 }
 
 .clear-filters:hover {
-  background: rgba(var(--brand-rgb), 0.12);
+  background: rgba(var(--brand-rgb), 0.1);
   border-color: var(--brand);
   box-shadow: none;
 }
@@ -501,7 +501,7 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--black-80);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -513,7 +513,7 @@
 }
 
 .modal-content {
-  background: rgba(6, 5, 14, 0.96);
+  background: rgba(6, 5, 14, 0.95);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   max-width: 860px;
@@ -651,7 +651,7 @@
 .modal-description p,
 .modal-notes p {
   font-size: var(--fs-14);
-  color: rgba(229, 231, 235, 0.75);
+  color: rgba(229, 231, 235, 0.8);
   line-height: 1.7;
 }
 

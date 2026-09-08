@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-6);
-  background: rgba(6, 5, 14, 0.72);
+  background: rgba(6, 5, 14, 0.7);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: fe-fade 0.2s ease;
@@ -27,7 +27,7 @@
   max-height: 86vh;
   display: flex;
   flex-direction: column;
-  background: rgba(18, 14, 30, 0.96);
+  background: rgba(18, 14, 30, 0.95);
   border: 1px solid var(--white-10);
   border-radius: 18px;
   box-shadow: 0 30px 80px var(--black-55);
@@ -51,7 +51,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4-5) var(--space-5-5);
-  border-bottom: 1px solid var(--white-07);
+  border-bottom: 1px solid var(--white-08);
 }
 
 .fe-head h3 {
@@ -99,7 +99,7 @@
   display: flex;
   gap: var(--space-3-5);
   padding-bottom: var(--space-3-5);
-  border-bottom: 1px solid var(--white-05);
+  border-bottom: 1px solid var(--white-06);
 }
 .fe-item:last-child {
   border-bottom: none;
@@ -112,7 +112,7 @@
   flex-shrink: 0;
   object-fit: cover;
   border-radius: 8px;
-  background: var(--white-05);
+  background: var(--white-06);
 }
 .fe-item-poster--blank {
   display: flex;
@@ -207,14 +207,14 @@
   width: 100%;
   min-height: 38px;
   resize: vertical;
-  background: var(--white-03);
+  background: var(--white-02);
   border: 1px solid var(--white-08);
   border-radius: 9px;
   padding: 7px var(--space-2-5);
   font: inherit;
   font-size: var(--fs-13);
   line-height: 1.6;
-  color: var(--white-85);
+  color: var(--white-80);
 }
 .fe-quote:focus {
   outline: none;
@@ -223,7 +223,7 @@
 
 /* ── 新增區 ── */
 .fe-add {
-  border-top: 1px solid var(--white-07);
+  border-top: 1px solid var(--white-08);
   padding: var(--space-4) var(--space-5-5) var(--space-5);
 }
 
@@ -250,17 +250,17 @@
   transition: all 0.2s;
 }
 .fe-kind button.on {
-  background: rgba(var(--brand-rgb), 0.28);
+  background: rgba(var(--brand-rgb), 0.3);
   color: #fff;
 }
 .fe-kind button:hover:not(.on) {
-  background: var(--white-05);
+  background: var(--white-06);
   box-shadow: none;
 }
 
 .fe-search {
   flex: 1;
-  background: var(--white-03);
+  background: var(--white-02);
   border: 1px solid var(--white-10);
   border-radius: 9px;
   padding: 9px var(--space-3);
@@ -320,7 +320,7 @@
   width: 36px;
   height: 54px;
   border-radius: 6px;
-  background: var(--white-05);
+  background: var(--white-06);
   display: inline-flex;
   align-items: center;
   justify-content: center;

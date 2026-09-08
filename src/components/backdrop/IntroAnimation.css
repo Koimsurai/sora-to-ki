@@ -82,9 +82,9 @@
   background: radial-gradient(
     circle at center,
     #fff 0%,
-    rgba(232, 238, 255, 0.92) 14%,
+    rgba(232, 238, 255, 0.9) 14%,
     rgba(190, 215, 255, 0.5) 32%,
-    rgba(130, 165, 230, 0.18) 55%,
+    rgba(130, 165, 230, 0.2) 55%,
     transparent 78%
   );
   opacity: 0;
@@ -121,7 +121,7 @@
   font-size: var(--fs-10);
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: rgba(207, 250, 254, 0.32);
+  color: rgba(207, 250, 254, 0.3);
   pointer-events: none;
   opacity: 0;
   animation: intro-hint-in 600ms 600ms ease-out forwards;

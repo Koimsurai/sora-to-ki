@@ -26,7 +26,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 999px;
-  color: rgba(212, 212, 216, 0.72);
+  color: rgba(212, 212, 216, 0.7);
   font-size: var(--fs-14);
   font-weight: 500;
   cursor: pointer;
@@ -39,13 +39,13 @@
   white-space: nowrap;
 }
 .mega-menu-trigger:hover {
-  background: var(--white-05);
+  background: var(--white-06);
   color: #f4f4f5;
 }
 .mega-menu-trigger--open {
-  background: rgba(var(--brand-rgb), 0.14);
+  background: rgba(var(--brand-rgb), 0.15);
   color: #f4f4f5;
-  border-color: rgba(var(--brand-rgb), 0.28);
+  border-color: rgba(var(--brand-rgb), 0.3);
 }
 .mega-menu-trigger--active {
   color: rgba(196, 181, 253, 0.95);
@@ -66,11 +66,11 @@
 }
 .mega-menu-trigger:hover .mega-menu-trigger-icon {
   transform: scale(1.2) rotate(-10deg);
-  color: rgba(196, 181, 253, 0.98);
+  color: rgba(196, 181, 253, 0.95);
 }
 .mega-menu-trigger--open .mega-menu-trigger-icon {
   transform: scale(1.12) rotate(6deg);
-  color: rgba(196, 181, 253, 0.98);
+  color: rgba(196, 181, 253, 0.95);
 }
 /* （之前的 active 呼吸 animation 會用 transform 蓋掉 hover transition，已移除） */
 
@@ -130,7 +130,7 @@
   padding: var(--space-3-5) var(--space-4-5);
   /* 文章頁面背景大字會穿透 panel — 加重底色 + 推 blur 到 64px 把後面的內容
      完全模糊掉，但保留一點透明感讓 panel 不會像浮一塊純黑卡片 */
-  background: rgba(6, 5, 14, 0.82);
+  background: rgba(6, 5, 14, 0.8);
   backdrop-filter: blur(64px) saturate(180%);
   -webkit-backdrop-filter: blur(64px) saturate(180%);
   border: 1px solid var(--white-08);
@@ -138,7 +138,7 @@
   box-shadow:
     0 24px 64px -16px var(--black-55),
     inset 0 1px 0 var(--white-06);
-  color: rgba(228, 228, 231, 0.92);
+  color: rgba(228, 228, 231, 0.9);
 }
 /* 首頁：profile + 頁面 + 站點，3 欄 */
 /* 說明文字拔掉後欄寬收緊，三欄等高對齊 */
@@ -192,7 +192,7 @@
   padding: 9px var(--space-3);
   border-radius: 10px;
   text-decoration: none;
-  color: rgba(228, 228, 231, 0.85);
+  color: rgba(228, 228, 231, 0.8);
   font-size: var(--fs-14);
   transition:
     background 0.15s ease,
@@ -212,7 +212,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: rgba(var(--brand-rgb), 0.12);
+  background: rgba(var(--brand-rgb), 0.1);
   color: rgba(167, 139, 250, 0.95);
   font-size: var(--fs-14);
   /* 外框「不動」，只變色 */
@@ -232,7 +232,7 @@
   transform: translateX(2px);
 }
 .mega-menu-link:hover .mega-menu-link-icon {
-  background: rgba(var(--brand-rgb), 0.28);
+  background: rgba(var(--brand-rgb), 0.3);
   color: #d8b4fe;
 }
 
@@ -338,7 +338,7 @@
 
 .mega-menu-stats-dot {
   margin: 0 var(--space-1-5);
-  color: var(--white-22);
+  color: var(--white-20);
 }
 
 /* RSS = Wifi 轉 45°（沒有現成的 rss 動畫 icon） */
@@ -389,7 +389,7 @@
   align-items: center;
   gap: var(--space-1);
   font-size: var(--fs-11);
-  color: rgba(74, 222, 128, 0.85);
+  color: rgba(74, 222, 128, 0.8);
 }
 .mega-menu-profile-status::before {
   content: "";
@@ -405,8 +405,8 @@
   gap: var(--space-2-5);
   margin: var(--space-1) 0 var(--space-2-5);
   padding: var(--space-2) 0;
-  border-top: 1px solid var(--white-05);
-  border-bottom: 1px solid var(--white-05);
+  border-top: 1px solid var(--white-06);
+  border-bottom: 1px solid var(--white-06);
 }
 .mega-menu-stat {
   text-align: center;
@@ -444,7 +444,7 @@
   padding: var(--space-2) var(--space-3);
   border-radius: 8px;
   text-decoration: none;
-  color: rgba(212, 212, 216, 0.82);
+  color: rgba(212, 212, 216, 0.8);
   cursor: pointer;
   font-size: var(--fs-14);
   transition:
@@ -454,7 +454,7 @@
 .mega-menu-category:hover,
 .mega-menu-category--active {
   background: rgba(var(--brand-rgb), 0.1);
-  color: rgba(244, 244, 245, 0.98);
+  color: rgba(244, 244, 245, 0.95);
 }
 .mega-menu-category-count {
   font-size: var(--fs-11);

@@ -8,7 +8,7 @@
   --post-accent-glow: rgba(var(--brand-rgb), 0.35);
   --post-green: #2cb67d;
   --post-muted: var(--white-45);
-  --post-card-bg: var(--white-03);
+  --post-card-bg: var(--white-02);
   --post-card-border: var(--white-06);
   --post-page-bg: rgb(6, 5, 14);
 }
@@ -88,7 +88,7 @@
 }
 
 .meta-category {
-  color: var(--white-85);
+  color: var(--white-80);
   font-weight: 500;
 }
 
@@ -99,7 +99,7 @@
   position: relative;
 }
 .meta-category-link {
-  color: var(--white-85);
+  color: var(--white-80);
   font-weight: 500;
   text-decoration: none;
   background-image: linear-gradient(90deg, rgba(var(--brand-rgb), 0.6), rgba(220, 50, 120, 0.6));
@@ -162,7 +162,7 @@
   background: transparent;
   border: none;
   padding: var(--space-0-5) var(--space-1);
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--white-80);
   font-size: inherit;
   font-family: inherit;
   cursor: pointer;
@@ -203,7 +203,7 @@
 /* 下拉選單：玻璃卡 + 漸層描邊 */
 .lang-menu {
   min-width: 180px;
-  background: rgba(20, 18, 38, 0.85);
+  background: rgba(20, 18, 38, 0.8);
   border: 1px solid var(--white-08);
   border-radius: 14px;
   padding: var(--space-1-5);
@@ -239,7 +239,7 @@
   gap: var(--space-2-5);
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--white-80);
   font-size: var(--fs-14);
   font-family: inherit;
   text-align: left;
@@ -253,12 +253,12 @@
 }
 .lang-item:hover {
   /* Neutral white tint — no gradient block, just a subtle hover hint */
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--white-04);
   color: #fff;
 }
 .lang-item.active {
   /* Active = very low-alpha purple wash, no multi-stop gradient */
-  background: rgba(var(--brand-rgb), 0.07);
+  background: rgba(var(--brand-rgb), 0.08);
   color: #fff;
 }
 /* active 左側細線提示 — 2px 單色淡紫，不再三色漸層 */
@@ -287,7 +287,7 @@
   padding: var(--space-0-5) 7px;
   border-radius: 9999px;
   background: var(--white-06);
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--white-70);
   border: 1px solid var(--white-08);
 }
 
@@ -297,7 +297,7 @@
   top: 80px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(18, 14, 30, 0.96);
+  background: rgba(18, 14, 30, 0.95);
   color: #fff;
   padding: var(--space-2-5) var(--space-4-5);
   border-radius: 9999px;
@@ -423,10 +423,10 @@
   gap: var(--space-1-5);
   padding: var(--space-3-5) var(--space-4-5);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--white-02);
   border: 1px solid var(--white-06);
   text-decoration: none;
-  color: var(--white-82);
+  color: var(--white-80);
   transition:
     border-color 0.3s,
     background 0.3s,
@@ -436,10 +436,10 @@
 }
 .prev-next-card:hover {
   border-color: rgba(var(--brand-rgb), 0.35);
-  background: rgba(var(--brand-rgb), 0.05);
+  background: rgba(var(--brand-rgb), 0.06);
   box-shadow:
     0 0 20px rgba(var(--brand-rgb), 0.08),
-    0 8px 24px rgba(0, 0, 0, 0.25);
+    0 8px 24px var(--black-25);
   transform: translateY(-2px);
 }
 .prev-next-next {
@@ -489,10 +489,10 @@
   align-items: center;
   gap: var(--space-1-5);
   padding: var(--space-1-5) var(--space-3);
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid var(--white-07);
+  background: var(--white-04);
+  border: 1px solid var(--white-08);
   border-radius: 999px;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--white-80);
   font-size: var(--fs-14);
   cursor: pointer;
   transition:
@@ -502,13 +502,13 @@
     color 0.18s ease;
 }
 .reaction-btn:hover {
-  background: rgba(var(--brand-rgb), 0.13);
-  border-color: rgba(var(--brand-rgb), 0.32);
+  background: rgba(var(--brand-rgb), 0.15);
+  border-color: rgba(var(--brand-rgb), 0.3);
   color: #fff;
   transform: translateY(-1px);
 }
 .reaction-btn.is-active {
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.22), rgba(220, 50, 120, 0.18));
+  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.2), rgba(220, 50, 120, 0.2));
   border-color: rgba(var(--brand-rgb), 0.55);
   color: #fff;
   box-shadow: 0 0 12px rgba(var(--brand-rgb), 0.25);
@@ -520,7 +520,7 @@
 .reaction-btn .reaction-count {
   font-size: var(--fs-12);
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--white-70);
   font-variant-numeric: tabular-nums;
 }
 .reaction-btn.is-active .reaction-count {
@@ -531,7 +531,7 @@
 .series-nav {
   margin: var(--space-10) 0 var(--space-6);
   padding: var(--space-5-5) var(--space-6);
-  background: rgba(var(--brand-rgb), 0.05);
+  background: rgba(var(--brand-rgb), 0.06);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: 14px;
   backdrop-filter: blur(8px);
@@ -597,7 +597,7 @@
   font-weight: 600;
 }
 .series-nav-title {
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--white-80);
   text-decoration: none;
   font-size: var(--fs-16);
   line-height: 1.5;
@@ -607,7 +607,7 @@ a.series-nav-title:hover {
   color: var(--brand-light);
 }
 .series-nav-item.is-current {
-  background: rgba(var(--brand-rgb), 0.12);
+  background: rgba(var(--brand-rgb), 0.1);
 }
 .series-nav-item.is-current .series-nav-num {
   background: linear-gradient(135deg, var(--brand), #dc3278);
@@ -697,7 +697,7 @@ a.series-nav-title:hover {
   background: linear-gradient(
     180deg,
     rgba(var(--brand-rgb), 0.08) 0%,
-    rgba(var(--brand-rgb), 0.03) 60%,
+    rgba(var(--brand-rgb), 0.02) 60%,
     transparent 100%
   );
   border-radius: 16px 16px 0 0;
@@ -767,7 +767,7 @@ a.series-nav-title:hover {
   padding-top: var(--space-6);
   border-top: 1px dashed var(--white-15);
   font-size: var(--fs-14);
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--white-70);
 }
 .post-content .footnotes h2 {
   font-size: var(--fs-16);
@@ -784,7 +784,7 @@ a.series-nav-title:hover {
   padding: 0 var(--space-1);
   margin: 0 var(--space-px);
   border-radius: 4px;
-  background: rgba(var(--brand-rgb), 0.12);
+  background: rgba(var(--brand-rgb), 0.1);
   color: var(--brand-light);
   text-decoration: none;
   font-size: 0.78em;
@@ -793,7 +793,7 @@ a.series-nav-title:hover {
 }
 .post-content sup a[data-footnote-ref]:hover,
 .post-content a.footnote-ref:hover {
-  background: rgba(var(--brand-rgb), 0.28);
+  background: rgba(var(--brand-rgb), 0.3);
   color: #fff;
 }
 
@@ -840,7 +840,7 @@ a.series-nav-title:hover {
   border-left: 3px solid var(--alert-accent, rgba(var(--brand-rgb), 0.6));
   border-radius: 0 10px 10px 0;
   background: var(--alert-bg, rgba(var(--brand-rgb), 0.06));
-  color: var(--white-82);
+  color: var(--white-80);
 }
 .post-content .markdown-alert-title {
   display: flex;
@@ -881,11 +881,11 @@ a.series-nav-title:hover {
 }
 .post-content .markdown-alert-warning {
   --alert-accent: #fcd34d;
-  --alert-bg: rgba(252, 211, 77, 0.07);
+  --alert-bg: rgba(252, 211, 77, 0.08);
 }
 .post-content .markdown-alert-caution {
   --alert-accent: #fca5a5;
-  --alert-bg: rgba(252, 165, 165, 0.07);
+  --alert-bg: rgba(252, 165, 165, 0.08);
 }
 .heading-anchor {
   margin-left: 0.4em;
@@ -930,11 +930,11 @@ a.series-nav-title:hover {
   align-items: center;
   gap: var(--space-3);
   padding: 7px var(--space-4);
-  background: rgba(0, 0, 0, 0.78);
+  background: var(--black-80);
   backdrop-filter: blur(16px);
   border-radius: 10px;
   font-size: var(--fs-12);
-  color: var(--white-82);
+  color: var(--white-80);
   white-space: nowrap;
   pointer-events: none;
   z-index: 5;
@@ -954,7 +954,7 @@ a.series-nav-title:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.88);
+  background: var(--black-90);
   backdrop-filter: blur(8px);
   cursor: zoom-out;
 }
@@ -977,23 +977,23 @@ a.series-nav-title:hover {
 }
 
 .code-block-wrapper ::-webkit-scrollbar-track {
-  background: var(--white-03);
+  background: var(--white-02);
   border-radius: 3px;
 }
 
 .code-block-wrapper ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.13);
+  background: var(--white-15);
   border-radius: 3px;
   transition: background 0.2s;
 }
 
 .code-block-wrapper ::-webkit-scrollbar-thumb:hover {
-  background: var(--white-22);
+  background: var(--white-20);
 }
 
 .code-block-wrapper * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.13) transparent;
+  scrollbar-color: var(--white-15) transparent;
 }
 
 .code-block-header {
@@ -1012,7 +1012,7 @@ a.series-nav-title:hover {
 }
 
 .copy-button {
-  background: var(--white-05);
+  background: var(--white-06);
   border: 1px solid var(--white-10);
   color: var(--white-60);
   padding: var(--space-1) var(--space-2-5);
@@ -1030,7 +1030,7 @@ a.series-nav-title:hover {
 .copy-button:focus,
 .copy-button:focus-visible {
   background: var(--white-10);
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: var(--white-20);
   color: #fff;
   box-shadow: none;
   outline: none;
@@ -1043,15 +1043,15 @@ a.series-nav-title:hover {
   border-radius: 12px;
   overflow: hidden;
   background: #06050e;
-  border: 1px solid var(--white-07);
+  border: 1px solid var(--white-08);
 }
 .terminal-bar {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3-5);
-  background: rgba(255, 255, 255, 0.035);
-  border-bottom: 1px solid var(--white-05);
+  background: var(--white-04);
+  border-bottom: 1px solid var(--white-06);
 }
 /* 左側提示符（取代紅黃綠燈）：綠色 ❯_ ，乾淨的終端機味 */
 .terminal-glyph {
@@ -1064,7 +1064,7 @@ a.series-nav-title:hover {
 .terminal-title {
   font-size: var(--fs-12);
   letter-spacing: 0.03em;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--white-40);
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
 }
 .terminal-block .copy-button {
@@ -1101,7 +1101,7 @@ a.series-nav-title:hover {
 .terminal-body .shiki-fallback {
   margin: 0;
   padding: 0 var(--space-4-5);
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--white-80);
   white-space: pre;
   font-size: var(--fs-14);
   line-height: 1.75;
@@ -1111,7 +1111,7 @@ a.series-nav-title:hover {
   height: 7px;
 }
 .terminal-block ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.13);
+  background: var(--white-15);
   border-radius: 4px;
 }
 /* 底部「下一個提示符 + 閃爍游標」——終端機等待輸入的感覺（唯讀，純視覺） */
@@ -1131,7 +1131,7 @@ a.series-nav-title:hover {
   display: inline-block;
   width: 0.4rem;
   height: 1rem;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--white-80);
   animation: terminal-blink 1.05s steps(1) infinite;
 }
 @keyframes terminal-blink {
@@ -1271,11 +1271,11 @@ a.series-nav-title:hover {
   font-size: var(--fs-14);
   color: var(--white-70);
   background:
-    linear-gradient(135deg, rgba(var(--brand-rgb), 0.12) 0%, rgba(220, 50, 120, 0.08) 100%), rgba(20, 18, 38, 0.55);
-  border: 1px solid var(--white-07);
+    linear-gradient(135deg, rgba(var(--brand-rgb), 0.1) 0%, rgba(220, 50, 120, 0.08) 100%), rgba(20, 18, 38, 0.55);
+  border: 1px solid var(--white-08);
   box-shadow:
-    inset 0 1px 0 var(--white-07),
-    0 4px 14px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 var(--white-08),
+    0 4px 14px var(--black-20);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   isolation: isolate;
@@ -1333,7 +1333,7 @@ a.series-nav-title:hover {
   box-shadow:
     inset 0 1px 0 var(--white-15),
     0 6px 20px rgba(var(--brand-rgb), 0.3),
-    0 0 28px rgba(220, 50, 120, 0.12);
+    0 0 28px rgba(220, 50, 120, 0.1);
 }
 .float-btn:hover::before {
   opacity: 1;
@@ -1345,12 +1345,11 @@ a.series-nav-title:hover {
 /* 紅色喜歡狀態 — 維持紅色情感色但用 koim 質感 */
 .float-btn.active {
   color: #ffb3bd;
-  background:
-    linear-gradient(135deg, rgba(255, 71, 87, 0.28) 0%, rgba(220, 50, 120, 0.18) 100%), rgba(20, 18, 38, 0.55);
+  background: linear-gradient(135deg, rgba(255, 71, 87, 0.3) 0%, rgba(220, 50, 120, 0.2) 100%), rgba(20, 18, 38, 0.55);
   border-color: transparent;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 6px 20px rgba(255, 71, 87, 0.28);
+    inset 0 1px 0 var(--white-20),
+    0 6px 20px rgba(255, 71, 87, 0.3);
 }
 .float-btn.active::before {
   background: linear-gradient(135deg, rgba(255, 180, 200, 0.6), rgba(255, 71, 87, 0.5) 45%, rgba(220, 50, 120, 0.5));
@@ -1364,8 +1363,8 @@ a.series-nav-title:hover {
     linear-gradient(135deg, rgba(44, 182, 125, 0.25) 0%, rgba(64, 200, 144, 0.15) 100%), rgba(20, 18, 38, 0.55);
   border-color: transparent;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 6px 20px rgba(44, 182, 125, 0.28);
+    inset 0 1px 0 var(--white-20),
+    0 6px 20px rgba(44, 182, 125, 0.3);
 }
 
 .float-btn-wrapper {
@@ -1378,7 +1377,7 @@ a.series-nav-title:hover {
   right: 52px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(20, 18, 38, 0.85);
+  background: rgba(20, 18, 38, 0.8);
   border: 1px solid var(--white-08);
   border-radius: 12px;
   padding: var(--space-1-5);
@@ -1401,7 +1400,7 @@ a.series-nav-title:hover {
   padding: var(--space-2) var(--space-3);
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--white-80);
   font-size: var(--fs-14);
   cursor: pointer;
   border-radius: 8px;
@@ -1411,7 +1410,7 @@ a.series-nav-title:hover {
   white-space: nowrap;
 }
 .share-menu button:hover {
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.18), rgba(220, 50, 120, 0.1));
+  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.2), rgba(220, 50, 120, 0.1));
   color: #fff;
 }
 /* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.share-menu button:hover` 設按鈕自己的底色與字色，這裡設的是按鈕裡面的 svg，不同節點。 */
@@ -1425,7 +1424,7 @@ a.series-nav-title:hover {
 .subscribe-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--black-60);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1530,7 +1529,7 @@ a.series-nav-title:hover {
 .subscribe-form button.subscribe-secondary {
   background: transparent;
   color: var(--white-55);
-  border: 1px solid var(--white-12);
+  border: 1px solid var(--white-10);
 }
 .subscribe-form button.subscribe-secondary:hover {
   background: rgba(220, 50, 80, 0.1);
@@ -1543,7 +1542,7 @@ a.series-nav-title:hover {
 .subscribe-email-chip {
   display: inline-block;
   padding: var(--space-px) var(--space-2);
-  background: rgba(var(--brand-rgb), 0.12);
+  background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
   border-radius: 6px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
@@ -1634,7 +1633,7 @@ a.series-nav-title:hover {
 }
 
 .font-option:hover {
-  background: var(--white-05);
+  background: var(--white-06);
   color: #fff;
 }
 
@@ -1722,7 +1721,7 @@ a.series-nav-title:hover {
 
 /* Internal Link Card */
 .link-card-internal {
-  border-color: rgba(var(--brand-rgb), 0.22);
+  border-color: rgba(var(--brand-rgb), 0.2);
   background: rgba(var(--brand-rgb), 0.04);
 }
 /* ── SSR fallback 的 skeleton 載入（BlogPostPage 側欄/目錄用；FullBlogPost 載入後替換）── */
@@ -1736,12 +1735,7 @@ a.series-nav-title:hover {
 }
 .bp-skel {
   border-radius: 4px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.035) 25%,
-    rgba(255, 255, 255, 0.085) 37%,
-    rgba(255, 255, 255, 0.035) 63%
-  );
+  background: linear-gradient(90deg, var(--white-04) 25%, var(--white-08) 37%, var(--white-04) 63%);
   background-size: 200% 100%;
   animation: bp-shimmer 1.5s ease-in-out infinite;
 }
@@ -1813,7 +1807,7 @@ a.series-nav-title:hover {
   border-radius: 10px;
   background: rgba(252, 211, 77, 0.06);
   font-size: var(--fs-14);
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--white-70);
   line-height: 1.5;
 }
 .ai-translation-icon {

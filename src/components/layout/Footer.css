@@ -14,10 +14,10 @@
      重點：開頭 alpha 必須跟 ::before 結尾相同，避免「中間突然斷一截」的透明線 */
   background: linear-gradient(
     180deg,
-    rgba(18, 14, 30, 0.28) 0%,
+    rgba(18, 14, 30, 0.3) 0%,
     rgba(18, 14, 30, 0.5) 25%,
-    rgba(18, 14, 30, 0.72) 60%,
-    rgba(6, 5, 14, 0.88) 100%
+    rgba(18, 14, 30, 0.7) 60%,
+    rgba(6, 5, 14, 0.9) 100%
   );
   border-top: none;
   overflow: hidden;
@@ -33,7 +33,7 @@
   left: 0;
   right: 0;
   height: 160px;
-  background: linear-gradient(180deg, rgba(18, 14, 30, 0) 0%, rgba(18, 14, 30, 0.28) 100%);
+  background: linear-gradient(180deg, rgba(18, 14, 30, 0) 0%, rgba(18, 14, 30, 0.3) 100%);
   pointer-events: none;
 }
 
@@ -48,7 +48,7 @@
   background: radial-gradient(
     ellipse at top,
     rgba(var(--brand-rgb), 0.08) 0%,
-    rgba(var(--brand-rgb), 0.025) 35%,
+    rgba(var(--brand-rgb), 0.02) 35%,
     transparent 70%
   );
   filter: blur(50px);
@@ -102,7 +102,7 @@
   line-height: 1.6;
 }
 .app-footer-copy a {
-  color: rgba(216, 180, 254, 0.85);
+  color: rgba(216, 180, 254, 0.8);
   text-decoration: none;
   transition: color 0.18s ease;
 }
@@ -151,7 +151,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--white-90);
 }
 .app-footer-link {
   display: inline-flex;

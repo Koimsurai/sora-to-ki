@@ -34,7 +34,7 @@
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: rgba(244, 244, 245, 0.98);
+  color: rgba(244, 244, 245, 0.95);
   margin: 0 0 var(--space-2-5);
 }
 .tk-subtitle {
@@ -57,7 +57,7 @@
   padding: var(--space-5) var(--space-5-5);
   margin-bottom: var(--space-4-5);
   border-radius: 16px;
-  background: rgba(18, 14, 30, 0.48);
+  background: rgba(18, 14, 30, 0.5);
   border: 1px solid var(--white-06);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -88,7 +88,7 @@
 .tk-author {
   font-size: var(--fs-14);
   font-weight: 700;
-  color: rgba(244, 244, 245, 0.92);
+  color: rgba(244, 244, 245, 0.9);
 }
 .tk-time {
   font-size: var(--fs-12);
@@ -110,7 +110,7 @@
   white-space: nowrap;
   padding: var(--space-1-5) var(--space-2-5);
   border-radius: 8px;
-  background: rgba(20, 18, 38, 0.96);
+  background: rgba(20, 18, 38, 0.95);
   border: 1px solid var(--white-08);
   color: rgba(244, 244, 245, 0.9);
   font-size: var(--fs-12);
@@ -142,7 +142,7 @@
   padding: var(--space-3-5) var(--space-4);
   border: 1px solid var(--white-06);
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--black-20);
   text-decoration: none;
   color: inherit;
   transition:
@@ -156,7 +156,7 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(110deg, transparent 30%, rgba(216, 180, 254, 0.14) 50%, transparent 70%);
+  background: linear-gradient(110deg, transparent 30%, rgba(216, 180, 254, 0.15) 50%, transparent 70%);
   background-size: 220% 100%;
   background-position: 120% 0;
   opacity: 0;
@@ -183,7 +183,7 @@
 .tk-embed-kind {
   display: inline-block;
   padding: var(--space-0-5) var(--space-2);
-  border: 1px solid var(--white-12);
+  border: 1px solid var(--white-10);
   border-radius: 6px;
   font-size: var(--fs-11);
   font-weight: 600;
@@ -241,7 +241,7 @@
 /* icon 列上方分隔線（Innei 風） */
 .tk-divider {
   height: 1px;
-  background: var(--white-07);
+  background: var(--white-08);
   margin-top: var(--space-4);
 }
 
@@ -264,7 +264,7 @@
   border: none;
   border-radius: 8px;
   background: none;
-  color: rgba(229, 229, 245, 0.42);
+  color: rgba(229, 229, 245, 0.4);
   font-size: var(--fs-13);
   cursor: pointer;
   text-decoration: none;
@@ -313,7 +313,7 @@
 }
 .tk-view {
   font-size: var(--fs-13);
-  color: rgba(216, 180, 254, 0.75);
+  color: rgba(216, 180, 254, 0.8);
   cursor: pointer;
   opacity: 0;
   transform: translateX(-4px);
@@ -336,7 +336,7 @@
   padding: var(--space-4);
   border-radius: 14px;
   background: rgba(18, 14, 30, 0.5);
-  border: 1px solid var(--white-07);
+  border: 1px solid var(--white-08);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -344,7 +344,7 @@
 .tk-compose-url {
   width: 100%;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--black-25);
   border: 1px solid var(--white-08);
   border-radius: 9px;
   color: rgba(244, 244, 245, 0.95);
@@ -374,7 +374,7 @@
   padding: 5px var(--space-2-5);
   border-radius: 8px;
   background: rgba(216, 180, 254, 0.1);
-  border: 1px solid rgba(216, 180, 254, 0.22);
+  border: 1px solid rgba(216, 180, 254, 0.2);
   color: rgba(216, 180, 254, 0.9);
   font-size: var(--fs-13);
 }
@@ -469,7 +469,7 @@
 .tk-edit-text {
   width: 100%;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--black-25);
   border: 1px solid var(--white-10);
   border-radius: 9px;
   color: rgba(244, 244, 245, 0.95);
@@ -511,7 +511,7 @@
 }
 .tk-edit-cancel:hover,
 .tk-edit-cancel:focus {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--white-15);
   border-color: transparent;
   box-shadow: none;
 }
@@ -546,10 +546,10 @@
 .tk-modal {
   width: 100%;
   max-width: 680px;
-  background: rgba(18, 14, 30, 0.98);
+  background: rgba(18, 14, 30, 0.95);
   border: 1px solid var(--white-08);
   border-radius: 16px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 30px 80px var(--black-60);
   animation: tk-modal-pop 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes tk-modal-pop {
@@ -567,7 +567,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--white-07);
+  border-bottom: 1px solid var(--white-08);
   font-weight: 700;
   color: rgba(244, 244, 245, 0.95);
 }

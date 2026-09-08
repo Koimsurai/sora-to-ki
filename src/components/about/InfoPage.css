@@ -31,7 +31,7 @@
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: rgba(244, 244, 245, 0.98);
+  color: rgba(244, 244, 245, 0.95);
   line-height: 1.2;
 }
 .info-page-subtitle {
@@ -64,7 +64,7 @@
   margin: var(--space-8) 0 var(--space-3);
   font-size: var(--fs-18);
   font-weight: 600;
-  color: rgba(216, 180, 254, 0.92);
+  color: rgba(216, 180, 254, 0.9);
   scroll-margin-top: 100px;
 }
 
@@ -92,7 +92,7 @@
 
 .info-page-content code {
   padding: var(--space-0-5) var(--space-1-5);
-  background: rgba(var(--brand-rgb), 0.16);
+  background: rgba(var(--brand-rgb), 0.15);
   border-radius: 4px;
   font-family: "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.88em;
@@ -123,7 +123,7 @@
   letter-spacing: 0.02em;
 }
 .info-page-timeline-text {
-  color: rgba(229, 229, 245, 0.86);
+  color: rgba(229, 229, 245, 0.9);
 }
 .info-page-timeline-text strong {
   color: #f4f4f5;
@@ -190,12 +190,12 @@
 .info-page-pager-label {
   font-size: var(--fs-12);
   letter-spacing: 0.08em;
-  color: rgba(216, 180, 254, 0.85);
+  color: rgba(216, 180, 254, 0.8);
 }
 .info-page-pager-title {
   font-size: var(--fs-16);
   font-weight: 600;
-  color: rgba(229, 229, 245, 0.92);
+  color: rgba(229, 229, 245, 0.9);
 }
 .info-page-pager-link:hover .info-page-pager-title {
   color: #f4f4f5;
@@ -218,7 +218,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-3-5);
-  background: var(--white-03);
+  background: var(--white-02);
   border: 1px solid var(--white-06);
   border-radius: 12px;
   text-decoration: none;
@@ -262,7 +262,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2-5) var(--space-5-5);
-  background: rgba(var(--brand-rgb), 0.14);
+  background: rgba(var(--brand-rgb), 0.15);
   color: rgba(244, 244, 245, 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.45);
   border-radius: 9999px;
@@ -276,9 +276,9 @@
     transform 0.2s ease;
 }
 .friends-apply-btn:hover {
-  background: rgba(var(--brand-rgb), 0.28);
+  background: rgba(var(--brand-rgb), 0.3);
   border-color: rgba(216, 180, 254, 0.7);
-  box-shadow: 0 0 0 4px rgba(var(--brand-rgb), 0.12);
+  box-shadow: 0 0 0 4px rgba(var(--brand-rgb), 0.1);
   transform: translateY(-1px);
 }
 
@@ -298,12 +298,12 @@
 .friends-modal {
   width: 100%;
   max-width: 540px;
-  background: rgba(24, 24, 27, 0.96);
+  background: rgba(24, 24, 27, 0.95);
   border: 1px solid var(--white-08);
   border-radius: 18px;
   box-shadow:
-    0 24px 64px -16px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 var(--white-05);
+    0 24px 64px -16px var(--black-60),
+    inset 0 1px 0 var(--white-06);
   overflow: hidden;
   color: rgba(228, 228, 231, 0.95);
 }
@@ -360,11 +360,11 @@
 }
 .friends-modal-field > span {
   font-size: var(--fs-12);
-  color: rgba(229, 229, 245, 0.65);
+  color: rgba(229, 229, 245, 0.7);
   letter-spacing: 0.04em;
 }
 .friends-modal-field .req {
-  color: rgba(216, 180, 254, 0.85);
+  color: rgba(216, 180, 254, 0.8);
   margin-left: var(--space-0-5);
 }
 .friends-modal-field input {
@@ -395,7 +395,7 @@
 }
 .friends-modal-submit {
   padding: 9px var(--space-5-5);
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.85), rgba(var(--brand-rgb), 0.6));
+  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.8), rgba(var(--brand-rgb), 0.6));
   color: #fff;
   border: 1px solid rgba(var(--brand-rgb), 0.5);
   border-radius: 9999px;
@@ -423,7 +423,7 @@
 }
 .friends-modal-success code {
   font-size: var(--fs-14);
-  background: rgba(var(--brand-rgb), 0.16);
+  background: rgba(var(--brand-rgb), 0.15);
   padding: var(--space-0-5) var(--space-1-5);
   border-radius: 4px;
   color: #d8b4fe;

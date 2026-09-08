@@ -122,7 +122,7 @@
   padding: var(--space-2-5) var(--space-8) var(--space-2-5) 26px;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--white-12);
+  border-bottom: 1px solid var(--white-10);
   border-radius: 0;
   color: #fff;
   font-size: var(--fs-16);
@@ -173,7 +173,7 @@
   font-size: var(--fs-13);
   font-weight: 600;
   border: 1px solid var(--white-08);
-  background: var(--white-03);
+  background: var(--white-02);
   color: var(--white-55);
   cursor: pointer;
   transition: all 0.25s ease;
@@ -190,8 +190,8 @@
 .sort-pill:hover:not(.active),
 .sort-pill:focus:not(.active) {
   border-color: var(--white-15);
-  color: rgba(255, 255, 255, 0.75);
-  background: var(--white-03);
+  color: var(--white-80);
+  background: var(--white-02);
   box-shadow: none;
 }
 
@@ -283,7 +283,7 @@
 .note-day {
   font-size: var(--fs-24);
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--white-80);
   line-height: 1;
 }
 
@@ -296,7 +296,7 @@
 .note-body {
   flex: 1;
   min-width: 0;
-  background: var(--white-03);
+  background: var(--white-02);
   border: 1px solid var(--white-08);
   border-radius: 16px;
   padding: var(--space-5-5) var(--space-6);
@@ -310,7 +310,7 @@
   box-shadow:
     0 0 20px rgba(var(--brand-rgb), 0.08),
     0 8px 32px var(--black-30);
-  background: var(--white-05);
+  background: var(--white-06);
   transform: translateY(-2px);
 }
 
@@ -418,7 +418,7 @@
 }
 
 .note-action-btn:hover {
-  background: var(--white-05);
+  background: var(--white-06);
   color: var(--white-70);
 }
 
@@ -445,8 +445,8 @@
 /* 微弱紫色光暈 — before 偽元素 */
 .note-card--column .note-body {
   position: relative;
-  border-color: rgba(168, 85, 247, 0.12);
-  background: rgba(168, 85, 247, 0.03);
+  border-color: rgba(168, 85, 247, 0.1);
+  background: rgba(168, 85, 247, 0.02);
 }
 
 .note-card--column .note-body::before {
@@ -456,9 +456,9 @@
   border-radius: 17px;
   background: linear-gradient(
     135deg,
-    rgba(168, 85, 247, 0.12) 0%,
+    rgba(168, 85, 247, 0.1) 0%,
     rgba(var(--brand-rgb), 0.06) 50%,
-    rgba(168, 85, 247, 0.12) 100%
+    rgba(168, 85, 247, 0.1) 100%
   );
   z-index: -1;
   filter: blur(8px);
@@ -473,7 +473,7 @@
 .note-card--column .note-body:hover {
   border-color: rgba(168, 85, 247, 0.3);
   box-shadow:
-    0 0 24px rgba(168, 85, 247, 0.12),
+    0 0 24px rgba(168, 85, 247, 0.1),
     0 8px 32px var(--black-30);
 }
 
@@ -582,7 +582,7 @@
 
 .category-item:hover,
 .category-item:focus {
-  color: var(--white-85);
+  color: var(--white-80);
   background: none;
   box-shadow: none;
   border-color: transparent;
@@ -916,7 +916,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--black-60);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -928,7 +928,7 @@
   display: flex;
   flex-direction: column;
   background: rgba(18, 14, 30, 0.95);
-  border: 1px solid rgba(var(--brand-rgb), 0.18);
+  border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: 16px;
   box-shadow:
     0 24px 64px var(--black-50),
@@ -971,7 +971,7 @@
 }
 
 .floating-comments-close:hover {
-  background: var(--white-12);
+  background: var(--white-10);
   color: white;
 }
 
@@ -1029,7 +1029,7 @@
 .activity-heatmap .heatmap-cell {
   aspect-ratio: 1 / 1;
   border-radius: 2px;
-  background: var(--white-05);
+  background: var(--white-06);
   transition:
     transform 0.18s ease,
     background 0.18s ease;
@@ -1039,16 +1039,16 @@
   z-index: 2;
 }
 .activity-heatmap .heatmap-level-0 {
-  background: var(--white-05);
+  background: var(--white-06);
 }
 .activity-heatmap .heatmap-level-1 {
-  background: rgba(var(--brand-rgb), 0.32);
+  background: rgba(var(--brand-rgb), 0.3);
 }
 .activity-heatmap .heatmap-level-2 {
   background: rgba(var(--brand-rgb), 0.55);
 }
 .activity-heatmap .heatmap-level-3 {
-  background: rgba(var(--brand-rgb), 0.78);
+  background: rgba(var(--brand-rgb), 0.8);
 }
 .activity-heatmap .heatmap-level-4 {
   background: linear-gradient(135deg, var(--brand), #dc3278);

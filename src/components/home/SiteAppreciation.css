@@ -29,9 +29,9 @@
 }
 .site-appr-item:hover:not(:disabled),
 .site-appr-item:focus-visible:not(:disabled) {
-  color: rgba(255, 255, 255, 0.92);
-  border-color: var(--white-22);
-  background: var(--white-05);
+  color: var(--white-90);
+  border-color: var(--white-20);
+  background: var(--white-06);
   box-shadow: none;
   outline: none;
 }
@@ -44,7 +44,7 @@
 }
 /* 按過之後：心變粉紅、留著（表示這台瀏覽器已經按過） */
 .site-appr-item--liked {
-  color: var(--white-85);
+  color: var(--white-80);
   border-color: rgba(244, 114, 182, 0.35);
 }
 .site-appr-item--liked .site-appr-icon {
@@ -61,7 +61,7 @@
 .site-appr-sep {
   width: 1px;
   height: 14px;
-  background: var(--white-12);
+  background: var(--white-10);
 }
 @media (max-width: 480px) {
   .site-appr-sep {

@@ -8,8 +8,8 @@
   width: 300px;
   border-radius: 12px;
   overflow: hidden;
-  background: rgba(20, 20, 30, 0.96);
-  border: 1px solid rgba(var(--brand-rgb), 0.22);
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid rgba(var(--brand-rgb), 0.2);
   box-shadow: 0 12px 32px var(--black-45);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
@@ -36,7 +36,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  background: linear-gradient(140deg, rgba(var(--brand-rgb), 0.14), var(--white-03));
+  background: linear-gradient(140deg, rgba(var(--brand-rgb), 0.15), var(--white-02));
 }
 
 .lhp-favicon {
@@ -52,12 +52,7 @@
 }
 
 .lhp-skel {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.035) 25%,
-    rgba(255, 255, 255, 0.085) 37%,
-    rgba(255, 255, 255, 0.035) 63%
-  );
+  background: linear-gradient(90deg, var(--white-04) 25%, var(--white-08) 37%, var(--white-04) 63%);
   background-size: 200% 100%;
   animation: bp-shimmer 1.5s ease-in-out infinite;
 }

@@ -261,25 +261,26 @@
     --brand-rgb: 127, 90, 240;
     --starlight: #ede9fe;
 
-    /* 白／黑透明度階梯。只收全站用過 10 次以上的級距——把每一種 alpha 都命名等於把
-       雜訊合法化；用不到 10 次的維持字面值，它們在 diff 裡會自己浮出來，就是之後要
-       收斂級距時的清單。
+    /* ── 透明度階梯（白／黑共用同一把尺，19 階）──────────────────────────
+         0.02 0.04 0.06 0.08 0.10 · 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 · 0.70 0.80 0.90 0.95
+       低端 0.02 步：髮絲線與分隔線，0.02 與 0.04 在感知上差兩倍，這裡不能粗。
+       中段 0.05 步：底色與填充。高段 0.10 步：近乎不透明的遮罩，0.05 在那裡只是 6%。
+
+       在這之前是 26 階 + 另外 29 個不在階梯上的字面 alpha = 55 種白色透明度，
+       那不是階梯是連續光譜；品牌紫的 rgba(var(--brand-rgb), a) 更是 36 種 a 自由填。
+       重訂時算過：貼到這 19 階平均位移 0.006、最大 0.05，且最大位移全落在 0.65–0.98
+       的高端。**任何 alpha 都必須在這 19 階上**，scripts/check-css-tokens.ts 在擋。
 
        ⚠️ 名字用數字不用語意（不是 `--border-subtle` 這種），因為同一個 alpha 同時被
        拿來當邊框、底色與文字色——套語意名會騙人。語意層是下面 `--glass-*`／
        `--text-*` 那幾個，它們指向這裡的階梯。 */
     --white-02: rgba(255, 255, 255, 0.02);
-    --white-03: rgba(255, 255, 255, 0.03);
     --white-04: rgba(255, 255, 255, 0.04);
-    --white-05: rgba(255, 255, 255, 0.05);
     --white-06: rgba(255, 255, 255, 0.06);
-    --white-07: rgba(255, 255, 255, 0.07);
     --white-08: rgba(255, 255, 255, 0.08);
     --white-10: rgba(255, 255, 255, 0.1);
-    --white-12: rgba(255, 255, 255, 0.12);
     --white-15: rgba(255, 255, 255, 0.15);
     --white-20: rgba(255, 255, 255, 0.2);
-    --white-22: rgba(255, 255, 255, 0.22);
     --white-25: rgba(255, 255, 255, 0.25);
     --white-30: rgba(255, 255, 255, 0.3);
     --white-35: rgba(255, 255, 255, 0.35);
@@ -290,19 +291,31 @@
     --white-60: rgba(255, 255, 255, 0.6);
     --white-70: rgba(255, 255, 255, 0.7);
     --white-80: rgba(255, 255, 255, 0.8);
-    --white-82: rgba(255, 255, 255, 0.82);
-    --white-85: rgba(255, 255, 255, 0.85);
     --white-90: rgba(255, 255, 255, 0.9);
     --white-95: rgba(255, 255, 255, 0.95);
+    --black-02: rgba(0, 0, 0, 0.02);
+    --black-04: rgba(0, 0, 0, 0.04);
+    --black-06: rgba(0, 0, 0, 0.06);
+    --black-08: rgba(0, 0, 0, 0.08);
+    --black-10: rgba(0, 0, 0, 0.1);
+    --black-15: rgba(0, 0, 0, 0.15);
+    --black-20: rgba(0, 0, 0, 0.2);
+    --black-25: rgba(0, 0, 0, 0.25);
     --black-30: rgba(0, 0, 0, 0.3);
+    --black-35: rgba(0, 0, 0, 0.35);
     --black-40: rgba(0, 0, 0, 0.4);
     --black-45: rgba(0, 0, 0, 0.45);
     --black-50: rgba(0, 0, 0, 0.5);
     --black-55: rgba(0, 0, 0, 0.55);
+    --black-60: rgba(0, 0, 0, 0.6);
+    --black-70: rgba(0, 0, 0, 0.7);
+    --black-80: rgba(0, 0, 0, 0.8);
+    --black-90: rgba(0, 0, 0, 0.9);
+    --black-95: rgba(0, 0, 0, 0.95);
 
-    --glass-bg: var(--white-03);
+    --glass-bg: var(--white-02);
     --glass-border: var(--white-08);
-    --glass-hover-bg: var(--white-05);
+    --glass-hover-bg: var(--white-06);
     --glass-hover-border: rgba(var(--brand-rgb), 0.35);
     --text-primary: #fffffe;
     --text-secondary: var(--white-50);
@@ -473,7 +486,7 @@ html {
    兩側留白；hover 才提亮。code block / CodeTabs 有各自更細的捲軸（會覆蓋這裡）。 */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+  scrollbar-color: var(--white-15) transparent;
 }
 ::-webkit-scrollbar {
   width: 11px;
@@ -483,7 +496,7 @@ html {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--white-15);
   border-radius: 999px;
   border: 3px solid transparent;
   background-clip: padding-box;
@@ -563,7 +576,7 @@ body::before {
   inset: 0;
   z-index: 49;
   pointer-events: none;
-  background: radial-gradient(ellipse 130% 95% at 50% 38%, transparent 58%, rgba(0, 0, 0, 0.34) 100%);
+  background: radial-gradient(ellipse 130% 95% at 50% 38%, transparent 58%, var(--black-35) 100%);
 }
 
 body::after {
@@ -583,7 +596,7 @@ body::after {
   max-width: 1080px;
   margin: 0 auto;
   padding: var(--space-24) var(--space-8);
-  color: var(--white-85);
+  color: var(--white-80);
 }
 
 .home-section-eyebrow {
@@ -615,7 +628,7 @@ body::after {
 
 .section-eyebrow-count {
   font-size: var(--fs-12);
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--white-40);
 }
 
 .section-hero-title {
@@ -630,15 +643,15 @@ body::after {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid var(--white-07);
+  background: var(--white-02);
+  border: 1px solid var(--white-08);
   border-radius: 18px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   /* 玻璃寫實感：頂緣一條受光高光 + 下方柔和落影（拉出與星空背景的層次） */
   box-shadow:
     inset 0 1px 0 var(--white-06),
-    0 18px 50px -22px rgba(0, 0, 0, 0.6);
+    0 18px 50px -22px var(--black-60);
 }
 
 @media (max-width: 640px) {
@@ -734,7 +747,7 @@ html.no-gpu [class*="nebula"] {
 }
 /* 玻璃卡片沒了模糊會變太透 → 補一點不透明度，維持可讀性 */
 html.no-gpu .post-content-wrapper::before {
-  background: rgba(18, 14, 30, 0.92);
+  background: rgba(18, 14, 30, 0.9);
 }
 @media (prefers-reduced-motion: no-preference) {
   html.no-gpu .comet,

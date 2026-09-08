@@ -74,7 +74,7 @@
 }
 
 .action-btn:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--black-70);
   border-color: var(--white-40);
   transform: scale(1.08);
   box-shadow: 0 4px 16px var(--black-40);
@@ -189,7 +189,7 @@
 
 .custom-swiper-button-prev:hover,
 .custom-swiper-button-next:hover {
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--black-70);
   border-color: var(--white-40);
   opacity: 1;
   transform: translateY(-50%) scale(1.05);
@@ -352,7 +352,7 @@
   bottom: 130px; /* Adjust to be above the thumbnails */
   left: 24px;
   z-index: 20;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: var(--black-60);
   color: white;
   padding: var(--space-1-5) var(--space-3);
   border-radius: 18px;

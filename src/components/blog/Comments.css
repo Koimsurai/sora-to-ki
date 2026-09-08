@@ -24,14 +24,14 @@
   gap: var(--space-3-5);
   padding: var(--space-5) var(--space-5-5) var(--space-5-5);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--white-02);
   border: 1px solid rgba(var(--brand-rgb), 0.06);
   margin-bottom: var(--space-10);
   transition: border-color 0.3s;
 }
 
 .comment-form-card:focus-within {
-  border-color: rgba(var(--brand-rgb), 0.18);
+  border-color: rgba(var(--brand-rgb), 0.2);
 }
 
 /* ── Form Avatar ── */
@@ -130,7 +130,7 @@
   padding: var(--space-2-5) var(--space-4);
   border-radius: 10px;
   border: 1px solid var(--white-08);
-  background: var(--white-03);
+  background: var(--white-02);
   color: var(--white-70);
   font-size: var(--fs-14);
   cursor: pointer;
@@ -202,9 +202,9 @@
   gap: var(--space-2);
   padding: var(--space-2-5) var(--space-6);
   border-radius: 10px;
-  border: 1px solid var(--white-12);
+  border: 1px solid var(--white-10);
   background: transparent;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--white-70);
   cursor: pointer;
   font-size: var(--fs-14);
   transition: all 0.25s ease;
@@ -304,7 +304,7 @@
 }
 
 .comment-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.18);
+  color: var(--white-20);
 }
 
 /* ── Form Actions ── */
@@ -504,7 +504,7 @@
   width: 1.5px;
   flex: 1;
   margin-top: var(--space-1-5);
-  background: var(--white-05);
+  background: var(--white-06);
   border-radius: 999px;
 }
 
@@ -528,14 +528,14 @@
 
 .comment-time {
   font-size: var(--fs-12);
-  color: var(--white-22);
+  color: var(--white-20);
 }
 
 .comment-text {
   margin: 0 0 var(--space-2);
   font-size: var(--fs-14);
   line-height: 1.7;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--white-60);
   word-break: break-word;
 }
 
@@ -589,7 +589,7 @@
 
 .no-comments p {
   font-size: var(--fs-14);
-  color: var(--white-22);
+  color: var(--white-20);
 }
 
 /* ── Mobile ── */
@@ -642,7 +642,7 @@
   margin: var(--space-6) 0 var(--space-8);
   padding: var(--space-3-5) var(--space-4-5);
   border-radius: 12px;
-  background: var(--white-03);
+  background: var(--white-02);
   border: 1px solid var(--white-08);
   color: rgba(229, 229, 245, 0.55);
   font-size: var(--fs-14);

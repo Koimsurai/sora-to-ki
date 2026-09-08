@@ -81,7 +81,7 @@
 .vp-bigplay:hover,
 .vp-bigplay:focus,
 .vp-bigplay:focus-visible {
-  background: rgba(139, 124, 246, 0.85);
+  background: rgba(139, 124, 246, 0.8);
   border-color: var(--white-25);
   transform: translate(-50%, -50%) scale(1.08);
   box-shadow: 0 6px 22px var(--black-45);
@@ -104,7 +104,7 @@
   gap: var(--space-2);
   padding: var(--space-1-5) var(--space-2-5);
   border-radius: 10px;
-  background: rgba(6, 5, 14, 0.72);
+  background: rgba(6, 5, 14, 0.7);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--white-08);
@@ -135,7 +135,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--white-82);
+  color: var(--white-80);
   font-size: var(--fs-13);
   cursor: pointer;
   text-decoration: none;
@@ -166,7 +166,7 @@
 }
 .vp-btn:focus:not(:focus-visible) {
   background: transparent;
-  color: var(--white-82);
+  color: var(--white-80);
 }
 .vp-btn:focus-visible {
   outline: 1px solid var(--white-50);
@@ -178,7 +178,7 @@ a.vp-btn,
 a.vp-btn:hover,
 a.vp-btn:focus,
 a.vp-btn:active {
-  color: var(--white-82);
+  color: var(--white-80);
   text-shadow: none;
   text-decoration: none;
 }
@@ -207,7 +207,7 @@ a.vp-btn:focus-visible {
 }
 .vp-progress-track {
   right: 0;
-  background: var(--white-22);
+  background: var(--white-20);
 }
 .vp-progress-fill {
   background: var(--brand-light);
@@ -250,7 +250,7 @@ a.vp-btn:focus-visible {
   padding: var(--space-3);
   max-height: 22rem;
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--white-15);
   border-radius: 8px;
   background: var(--black-55);
   color: var(--white-80);

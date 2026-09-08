@@ -15,14 +15,14 @@
   overflow: hidden;
   text-decoration: none;
   margin: var(--space-5) 0;
-  background: var(--white-03);
+  background: var(--white-02);
   transition: all 0.25s ease;
   max-width: 100%;
 }
 
 .link-card:hover {
   border-color: rgba(var(--brand-rgb), 0.3);
-  background: rgba(var(--brand-rgb), 0.05);
+  background: rgba(var(--brand-rgb), 0.06);
   transform: translateY(-1px);
   box-shadow: 0 4px 20px var(--black-30);
 }

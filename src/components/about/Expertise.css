@@ -41,7 +41,7 @@
   font-size: var(--fs-16);
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--white-40);
   margin-top: var(--space-1);
   font-weight: 600;
 }
@@ -66,7 +66,7 @@
   gap: var(--space-6);
   align-items: center;
   padding: var(--space-1-5) 0;
-  border-bottom: 1px solid var(--white-05);
+  border-bottom: 1px solid var(--white-06);
   padding-bottom: var(--space-5-5);
 }
 
@@ -135,8 +135,8 @@
   height: 42px;
   flex-shrink: 0;
   border-radius: 12px;
-  background: var(--white-03);
-  border: 1px solid var(--white-07);
+  background: var(--white-02);
+  border: 1px solid var(--white-08);
   cursor: help;
   transition:
     background 220ms ease,
@@ -146,7 +146,7 @@
 
 .skill-chip:hover {
   background: var(--white-06);
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: var(--white-20);
   transform: translateY(-2px);
 }
 

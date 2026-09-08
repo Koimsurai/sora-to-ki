@@ -16,7 +16,7 @@
     180deg,
     rgba(var(--brand-rgb), 0.5) 0%,
     rgba(var(--brand-rgb), 0.2) 60%,
-    rgba(var(--brand-rgb), 0.05) 100%
+    rgba(var(--brand-rgb), 0.06) 100%
   );
 }
 
@@ -48,7 +48,7 @@
   border-radius: 50%;
   background: var(--dot, var(--brand));
   box-shadow:
-    0 0 0 4px rgba(var(--brand-rgb), 0.12),
+    0 0 0 4px rgba(var(--brand-rgb), 0.1),
     0 0 14px var(--dot, var(--brand));
 }
 
@@ -68,20 +68,20 @@
   margin: 0 0 var(--space-0-5);
   font-size: var(--fs-16);
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--white-90);
 }
 
 .jt-subtitle {
   margin: 0 0 var(--space-2-5);
   font-size: var(--fs-13);
-  color: rgba(199, 184, 255, 0.75);
+  color: rgba(199, 184, 255, 0.8);
 }
 
 .jt-desc {
   margin: 0;
   font-size: var(--fs-14);
   line-height: 1.75;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--white-70);
 }
 
 .jt-tags {
@@ -103,7 +103,7 @@
 /* 未來項：虛線弱化，留「未完待續」感 */
 .jt-entry--future .jt-card {
   border-style: dashed;
-  background: rgba(255, 255, 255, 0.012);
+  background: var(--white-02);
 }
 
 .jt-entry--future .jt-rail-dot {
