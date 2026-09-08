@@ -175,7 +175,7 @@ body {
 .App {
   position: relative; /* 為了讓 fixed 定位的子元素正確 */
   width: 100%;
-  background-color: #000010; /* 深藍黑色背景 */
+  background-color: #06050e; /* 深藍黑色背景 */
   /* 將塵埃帶加回背景 */
   background-image:
 /* 塵埃帶 (使用之前檔案中的值) */

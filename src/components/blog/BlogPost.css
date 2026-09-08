@@ -128,7 +128,7 @@
   top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%) translateY(-2px);
-  background: rgba(12, 10, 24, 0.95);
+  background: rgba(18, 14, 30, 0.95);
   color: #fff;
   font-size: var(--fs-12);
   font-weight: 400;
@@ -203,7 +203,7 @@
 /* 下拉選單：玻璃卡 + 漸層描邊 */
 .lang-menu {
   min-width: 180px;
-  background: rgba(20, 18, 34, 0.85);
+  background: rgba(20, 18, 38, 0.85);
   border: 1px solid var(--white-08);
   border-radius: 14px;
   padding: var(--space-1-5);
@@ -297,7 +297,7 @@
   top: 80px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(12, 10, 24, 0.96);
+  background: rgba(18, 14, 30, 0.96);
   color: #fff;
   padding: var(--space-2-5) var(--space-4-5);
   border-radius: 9999px;
@@ -639,7 +639,7 @@ a.series-nav-title:hover {
 .category-tooltip {
   width: 240px;
   padding: var(--space-3-5);
-  background: rgba(18, 16, 30, 0.95);
+  background: rgba(18, 14, 30, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
@@ -1042,7 +1042,7 @@ a.series-nav-title:hover {
   margin: var(--space-6) 0;
   border-radius: 12px;
   overflow: hidden;
-  background: #0b0c11;
+  background: #06050e;
   border: 1px solid var(--white-07);
 }
 .terminal-bar {
@@ -1378,7 +1378,7 @@ a.series-nav-title:hover {
   right: 52px;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(20, 18, 34, 0.85);
+  background: rgba(20, 18, 38, 0.85);
   border: 1px solid var(--white-08);
   border-radius: 12px;
   padding: var(--space-1-5);
@@ -1438,7 +1438,7 @@ a.series-nav-title:hover {
   position: relative;
   width: 90%;
   max-width: 400px;
-  background: rgba(20, 18, 34, 0.95);
+  background: rgba(20, 18, 38, 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: 16px;
   padding: var(--space-8);
@@ -1609,7 +1609,7 @@ a.series-nav-title:hover {
   position: absolute;
   bottom: 48px;
   right: 0;
-  background: rgba(20, 18, 34, 0.95);
+  background: rgba(20, 18, 38, 0.95);
   border: 1px solid var(--white-10);
   border-radius: 12px;
   padding: var(--space-2);

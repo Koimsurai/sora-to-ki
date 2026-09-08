@@ -298,7 +298,7 @@
 .friends-modal {
   width: 100%;
   max-width: 540px;
-  background: rgba(18, 18, 24, 0.96);
+  background: rgba(24, 24, 27, 0.96);
   border: 1px solid var(--white-08);
   border-radius: 18px;
   box-shadow:

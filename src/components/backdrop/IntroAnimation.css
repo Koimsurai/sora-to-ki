@@ -18,7 +18,7 @@
   display: block;
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center, #050620 0%, #02020a 70%);
+  background: radial-gradient(ellipse at center, #050620 0%, #000000 70%);
   z-index: 9999;
   cursor: pointer;
   overflow: hidden;
@@ -31,7 +31,7 @@
 .intro-stage:hover,
 .intro-stage:focus,
 .intro-stage:focus-visible {
-  background: radial-gradient(ellipse at center, #050620 0%, #02020a 70%);
+  background: radial-gradient(ellipse at center, #050620 0%, #000000 70%);
   border-color: transparent;
   box-shadow: none;
 }

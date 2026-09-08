@@ -14,7 +14,7 @@
   inset: -48px -72px;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse 78% 72% at 48% 50%, rgba(5, 3, 14, 0.7), transparent 76%);
+  background: radial-gradient(ellipse 78% 72% at 48% 50%, rgba(6, 5, 14, 0.7), transparent 76%);
 }
 
 /* ── Left hero column ──────────────────────────── */

@@ -130,7 +130,7 @@
   padding: var(--space-3-5) var(--space-4-5);
   /* 文章頁面背景大字會穿透 panel — 加重底色 + 推 blur 到 64px 把後面的內容
      完全模糊掉，但保留一點透明感讓 panel 不會像浮一塊純黑卡片 */
-  background: rgba(15, 15, 22, 0.82);
+  background: rgba(6, 5, 14, 0.82);
   backdrop-filter: blur(64px) saturate(180%);
   -webkit-backdrop-filter: blur(64px) saturate(180%);
   border: 1px solid var(--white-08);

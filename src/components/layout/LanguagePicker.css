@@ -48,7 +48,7 @@
   padding: var(--space-1-5);
   min-width: 160px;
   border-radius: 12px;
-  background: rgba(15, 15, 22, 0.88);
+  background: rgba(6, 5, 14, 0.88);
   border: 1px solid var(--white-10);
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);

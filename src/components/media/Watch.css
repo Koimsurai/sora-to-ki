@@ -141,7 +141,7 @@
   aspect-ratio: 3 / 2;
   border-radius: 18px;
   overflow: hidden;
-  background: rgba(10, 8, 18, 0.6);
+  background: rgba(6, 5, 14, 0.6);
   text-decoration: none;
   color: inherit;
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.42);
@@ -308,7 +308,7 @@
 .w-fav {
   margin: 0;
   padding: var(--space-3-5) var(--space-3-5) var(--space-4);
-  background: rgba(15, 12, 24, 0.55);
+  background: rgba(18, 14, 30, 0.55);
   border: 1px solid var(--white-06);
   border-radius: 16px;
   backdrop-filter: blur(8px);
@@ -322,7 +322,7 @@
 
 .w-fav:hover {
   transform: translateY(-6px);
-  background: rgba(20, 16, 32, 0.7);
+  background: rgba(20, 18, 38, 0.7);
   border-color: rgba(216, 180, 254, 0.28);
   box-shadow:
     0 22px 50px var(--black-50),

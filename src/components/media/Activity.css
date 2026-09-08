@@ -541,7 +541,7 @@
      (.is-fallback class added by onError once <img> is hidden) */
   background:
     radial-gradient(120% 80% at 50% 35%, rgba(var(--brand-rgb), 0.28) 0%, transparent 65%),
-    linear-gradient(135deg, #1a1530 0%, #0d0a1c 100%);
+    linear-gradient(135deg, #1a1530 0%, #120e1e 100%);
 }
 .steam-recent-cover img {
   width: 100%;

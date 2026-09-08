@@ -459,7 +459,7 @@ body,
  * 這不改變任何正常狀態下的外觀——`.App` 照樣蓋在上面，顏色也刻意取一樣的值。
  */
 html {
-  background-color: #000010;
+  background-color: #06050e;
 }
 
 *,
@@ -563,7 +563,7 @@ body::before {
   inset: 0;
   z-index: 49;
   pointer-events: none;
-  background: radial-gradient(ellipse 130% 95% at 50% 38%, transparent 58%, rgba(2, 1, 8, 0.34) 100%);
+  background: radial-gradient(ellipse 130% 95% at 50% 38%, transparent 58%, rgba(0, 0, 0, 0.34) 100%);
 }
 
 body::after {
@@ -734,7 +734,7 @@ html.no-gpu [class*="nebula"] {
 }
 /* 玻璃卡片沒了模糊會變太透 → 補一點不透明度，維持可讀性 */
 html.no-gpu .post-content-wrapper::before {
-  background: rgba(18, 16, 28, 0.92);
+  background: rgba(18, 14, 30, 0.92);
 }
 @media (prefers-reduced-motion: no-preference) {
   html.no-gpu .comet,

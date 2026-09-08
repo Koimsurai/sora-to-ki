@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-6);
-  background: rgba(4, 2, 12, 0.72);
+  background: rgba(6, 5, 14, 0.72);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: fe-fade 0.2s ease;
@@ -27,7 +27,7 @@
   max-height: 86vh;
   display: flex;
   flex-direction: column;
-  background: rgba(17, 13, 28, 0.96);
+  background: rgba(18, 14, 30, 0.96);
   border: 1px solid var(--white-10);
   border-radius: 18px;
   box-shadow: 0 30px 80px var(--black-55);

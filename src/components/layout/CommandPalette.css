@@ -23,7 +23,7 @@
 
 .cmdk-wrap {
   width: min(640px, 92vw);
-  background: rgba(14, 12, 26, 0.92);
+  background: rgba(18, 14, 30, 0.92);
   border: 1px solid rgba(var(--brand-rgb), 0.22);
   border-radius: 14px;
   box-shadow:

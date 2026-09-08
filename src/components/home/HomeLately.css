@@ -535,7 +535,7 @@
   color: var(--white-85);
   max-width: 38em;
   /* 背景土星視差經過時保持可讀 */
-  text-shadow: 0 1px 20px rgba(2, 1, 8, 0.85);
+  text-shadow: 0 1px 20px rgba(0, 0, 0, 0.85);
 }
 
 .signal-from {

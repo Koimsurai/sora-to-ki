@@ -6,7 +6,7 @@
   position: relative;
   padding: var(--space-8) var(--space-4);
   /* Transparent background to show global 3D stars, with a much darker subtle glow */
-  background: radial-gradient(circle at 50% 50%, rgba(90, 60, 180, 0.08) 0%, rgba(2, 2, 7, 0.95) 100%);
+  background: radial-gradient(circle at 50% 50%, rgba(90, 60, 180, 0.08) 0%, rgba(0, 0, 0, 0.95) 100%);
   background-attachment: fixed;
   overflow: hidden;
 }

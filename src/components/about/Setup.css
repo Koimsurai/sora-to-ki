@@ -3,7 +3,7 @@
 .setup-page {
   position: relative;
   min-height: 100vh;
-  background: #050508;
+  background: #000000;
   overflow: hidden;
 }
 
@@ -17,8 +17,8 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(10, 5, 25, 0.8) 0%, #050508 70%),
-    radial-gradient(ellipse at 20% 80%, rgba(15, 5, 30, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(18, 14, 30, 0.8) 0%, #000000 70%),
+    radial-gradient(ellipse at 20% 80%, rgba(20, 18, 38, 0.4) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, rgba(5, 10, 25, 0.3) 0%, transparent 50%);
 }
 
@@ -335,7 +335,7 @@
 /* === Equipment Card === */
 .setup-card {
   position: relative;
-  background: rgba(18, 18, 22, 0.85);
+  background: rgba(24, 24, 27, 0.85);
   border: 1px solid var(--white-06);
   border-radius: 14px;
   padding: var(--space-5);
@@ -421,7 +421,7 @@
 
 .setup-base-card {
   position: relative;
-  background: rgba(18, 18, 22, 0.7);
+  background: rgba(24, 24, 27, 0.7);
   border: 1px solid var(--white-06);
   border-radius: 16px;
   padding: var(--space-10) var(--space-9);

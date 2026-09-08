@@ -14,10 +14,10 @@
      重點：開頭 alpha 必須跟 ::before 結尾相同，避免「中間突然斷一截」的透明線 */
   background: linear-gradient(
     180deg,
-    rgba(10, 9, 24, 0.28) 0%,
-    rgba(10, 9, 24, 0.5) 25%,
-    rgba(10, 9, 24, 0.72) 60%,
-    rgba(8, 7, 20, 0.88) 100%
+    rgba(18, 14, 30, 0.28) 0%,
+    rgba(18, 14, 30, 0.5) 25%,
+    rgba(18, 14, 30, 0.72) 60%,
+    rgba(6, 5, 14, 0.88) 100%
   );
   border-top: none;
   overflow: hidden;
@@ -33,7 +33,7 @@
   left: 0;
   right: 0;
   height: 160px;
-  background: linear-gradient(180deg, rgba(10, 9, 24, 0) 0%, rgba(10, 9, 24, 0.28) 100%);
+  background: linear-gradient(180deg, rgba(18, 14, 30, 0) 0%, rgba(18, 14, 30, 0.28) 100%);
   pointer-events: none;
 }
 

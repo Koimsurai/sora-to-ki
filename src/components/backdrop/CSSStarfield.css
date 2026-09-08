@@ -6,7 +6,7 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 30%, #0d0a1a 0%, #06030f 70%);
+  background: radial-gradient(ellipse at 50% 30%, #120e1e 0%, #06050e 70%);
 }
 
 .css-stars {

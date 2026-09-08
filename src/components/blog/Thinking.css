@@ -57,7 +57,7 @@
   padding: var(--space-5) var(--space-5-5);
   margin-bottom: var(--space-4-5);
   border-radius: 16px;
-  background: rgba(15, 12, 24, 0.48);
+  background: rgba(18, 14, 30, 0.48);
   border: 1px solid var(--white-06);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -110,7 +110,7 @@
   white-space: nowrap;
   padding: var(--space-1-5) var(--space-2-5);
   border-radius: 8px;
-  background: rgba(30, 24, 45, 0.96);
+  background: rgba(20, 18, 38, 0.96);
   border: 1px solid var(--white-08);
   color: rgba(244, 244, 245, 0.9);
   font-size: var(--fs-12);
@@ -335,7 +335,7 @@
   margin-bottom: var(--space-6);
   padding: var(--space-4);
   border-radius: 14px;
-  background: rgba(15, 12, 24, 0.5);
+  background: rgba(18, 14, 30, 0.5);
   border: 1px solid var(--white-07);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -546,7 +546,7 @@
 .tk-modal {
   width: 100%;
   max-width: 680px;
-  background: rgba(18, 15, 28, 0.98);
+  background: rgba(18, 14, 30, 0.98);
   border: 1px solid var(--white-08);
   border-radius: 16px;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);

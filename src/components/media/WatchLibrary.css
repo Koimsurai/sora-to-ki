@@ -211,7 +211,7 @@
   margin: 0;
   padding: var(--space-1-5);
   min-width: 160px;
-  background: rgba(26, 22, 38, 0.96);
+  background: rgba(20, 18, 38, 0.96);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(216, 180, 254, 0.18);
   border-radius: 10px;

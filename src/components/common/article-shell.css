@@ -413,7 +413,7 @@
   min-width: 220px;
   max-width: min(420px, 80vw);
   padding: var(--space-2-5) var(--space-3-5);
-  background: rgba(15, 14, 26, 0.96);
+  background: rgba(18, 14, 30, 0.96);
   border: 1px solid rgba(var(--brand-rgb), 0.35);
   border-radius: 10px;
   color: var(--white-85);
