@@ -260,7 +260,7 @@
   border-radius: 6px;
   background: rgba(var(--brand-rgb), 0.08);
   font-size: var(--fs-12);
-  color: #a78bfa;
+  color: var(--violet-400);
 }
 
 .reply-indicator button {
@@ -396,18 +396,18 @@
 .form-error {
   margin: 0;
   font-size: var(--fs-13);
-  color: #ef4444;
+  color: var(--red-500);
   padding: var(--space-1) 0;
 }
 
 .form-success {
   margin: 0;
   font-size: var(--fs-13);
-  color: #2cb67d;
+  color: var(--clr-tertiary);
   padding: var(--space-1-5) var(--space-3);
-  background: rgba(44, 182, 125, 0.08);
+  background: rgba(var(--clr-tertiary-rgb), 0.08);
   border-radius: 6px;
-  border: 1px solid rgba(44, 182, 125, 0.15);
+  border: 1px solid rgba(var(--clr-tertiary-rgb), 0.15);
 }
 
 /* ── Admin Badge ── */
@@ -419,7 +419,7 @@
   font-size: var(--fs-11);
   font-weight: 700;
   background: rgba(var(--brand-rgb), 0.15);
-  color: #a78bfa;
+  color: var(--violet-400);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
   letter-spacing: 0.03em;
 }
@@ -578,7 +578,7 @@
 }
 
 .action-btn.reply:hover {
-  color: #a78bfa;
+  color: var(--violet-400);
 }
 
 /* ── Empty State ── */

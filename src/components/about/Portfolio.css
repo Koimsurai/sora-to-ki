@@ -87,8 +87,8 @@
   font-size: var(--fs-11);
   padding: 3px 9px;
   border-radius: 999px;
-  background: rgba(44, 182, 125, 0.1);
-  border: 1px solid rgba(44, 182, 125, 0.35);
+  background: rgba(var(--clr-tertiary-rgb), 0.1);
+  border: 1px solid rgba(var(--clr-tertiary-rgb), 0.35);
   color: #6bd49f;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -139,7 +139,7 @@
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(rgba(216, 180, 254, 0.08) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    radial-gradient(rgba(var(--purple-300-rgb), 0.08) 1px, transparent 1.5px) 0 0 / 22px 22px,
     linear-gradient(135deg, rgba(var(--brand-rgb), 0.08), rgba(var(--brand-rgb), 0.02));
   border-bottom: 1px solid var(--white-04);
   overflow: hidden;
@@ -163,7 +163,7 @@
   font-size: var(--fs-32);
   font-weight: 300;
   line-height: 1;
-  color: rgba(216, 180, 254, 0.95);
+  color: rgba(var(--purple-300-rgb), 0.95);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
   box-shadow:

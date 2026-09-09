@@ -878,9 +878,9 @@
   padding: var(--space-8);
   color: var(--text-secondary);
   font-size: var(--fs-14);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(var(--red-500-rgb), 0.2);
   border-radius: 12px;
-  background: rgba(239, 68, 68, 0.06);
+  background: rgba(var(--red-500-rgb), 0.06);
 }
 
 .music-no-data {

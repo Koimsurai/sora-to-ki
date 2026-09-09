@@ -26,7 +26,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 999px;
-  color: rgba(212, 212, 216, 0.7);
+  color: rgba(var(--zinc-300-rgb), 0.7);
   font-size: var(--fs-14);
   font-weight: 500;
   cursor: pointer;
@@ -40,15 +40,15 @@
 }
 .mega-menu-trigger:hover {
   background: var(--white-06);
-  color: #f4f4f5;
+  color: var(--zinc-100);
 }
 .mega-menu-trigger--open {
   background: rgba(var(--brand-rgb), 0.15);
-  color: #f4f4f5;
+  color: var(--zinc-100);
   border-color: rgba(var(--brand-rgb), 0.3);
 }
 .mega-menu-trigger--active {
-  color: rgba(196, 181, 253, 0.95);
+  color: rgba(var(--violet-300-rgb), 0.95);
 }
 .mega-menu-trigger--active:hover {
   background: rgba(var(--brand-rgb), 0.1);
@@ -66,11 +66,11 @@
 }
 .mega-menu-trigger:hover .mega-menu-trigger-icon {
   transform: scale(1.2) rotate(-10deg);
-  color: rgba(196, 181, 253, 0.95);
+  color: rgba(var(--violet-300-rgb), 0.95);
 }
 .mega-menu-trigger--open .mega-menu-trigger-icon {
   transform: scale(1.12) rotate(6deg);
-  color: rgba(196, 181, 253, 0.95);
+  color: rgba(var(--violet-300-rgb), 0.95);
 }
 /* （之前的 active 呼吸 animation 會用 transform 蓋掉 hover transition，已移除） */
 
@@ -138,7 +138,7 @@
   box-shadow:
     0 24px 64px -16px var(--black-55),
     inset 0 1px 0 var(--white-06);
-  color: rgba(228, 228, 231, 0.9);
+  color: rgba(var(--zinc-200-rgb), 0.9);
 }
 /* 首頁：profile + 頁面 + 站點，3 欄 */
 /* 說明文字拔掉後欄寬收緊，三欄等高對齊 */
@@ -173,7 +173,7 @@
   font-size: var(--fs-12);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(161, 161, 170, 0.7);
+  color: rgba(var(--zinc-400-rgb), 0.7);
   font-weight: 600;
   margin-bottom: var(--space-1);
 }
@@ -192,7 +192,7 @@
   padding: 9px var(--space-3);
   border-radius: 10px;
   text-decoration: none;
-  color: rgba(228, 228, 231, 0.8);
+  color: rgba(var(--zinc-200-rgb), 0.8);
   font-size: var(--fs-14);
   transition:
     background 0.15s ease,
@@ -213,7 +213,7 @@
   justify-content: center;
   border-radius: 8px;
   background: rgba(var(--brand-rgb), 0.1);
-  color: rgba(167, 139, 250, 0.95);
+  color: rgba(var(--violet-400-rgb), 0.95);
   font-size: var(--fs-14);
   /* 外框「不動」，只變色 */
   transition:
@@ -228,12 +228,12 @@
 }
 .mega-menu-link:hover {
   background: var(--white-06);
-  color: #f4f4f5;
+  color: var(--zinc-100);
   transform: translateX(2px);
 }
 .mega-menu-link:hover .mega-menu-link-icon {
   background: rgba(var(--brand-rgb), 0.3);
-  color: #d8b4fe;
+  color: var(--purple-300);
 }
 
 /* SVG 本體：scale + slight rotate（在外框內動，外框靜止） */
@@ -301,7 +301,7 @@
 }
 .mega-menu-link-title {
   font-weight: 500;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   line-height: 1.2;
 }
 
@@ -381,7 +381,7 @@
 .mega-menu-profile-name {
   font-weight: 600;
   font-size: var(--fs-16);
-  color: #f4f4f5;
+  color: var(--zinc-100);
   line-height: 1.2;
 }
 .mega-menu-profile-status {
@@ -389,15 +389,15 @@
   align-items: center;
   gap: var(--space-1);
   font-size: var(--fs-11);
-  color: rgba(74, 222, 128, 0.8);
+  color: rgba(var(--green-400-rgb), 0.8);
 }
 .mega-menu-profile-status::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgb(74, 222, 128);
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+  background: var(--green-400);
+  box-shadow: 0 0 8px rgba(var(--green-400-rgb), 0.6);
 }
 
 .mega-menu-stats {
@@ -420,7 +420,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(161, 161, 170, 0.7);
+  color: rgba(var(--zinc-400-rgb), 0.7);
   background: var(--white-04);
   transition:
     background 0.15s,
@@ -431,7 +431,7 @@
 }
 .mega-menu-social:hover {
   background: var(--white-10);
-  color: #f4f4f5;
+  color: var(--zinc-100);
   transform: translateY(-1px);
 }
 
@@ -444,7 +444,7 @@
   padding: var(--space-2) var(--space-3);
   border-radius: 8px;
   text-decoration: none;
-  color: rgba(212, 212, 216, 0.8);
+  color: rgba(var(--zinc-300-rgb), 0.8);
   cursor: pointer;
   font-size: var(--fs-14);
   transition:
@@ -454,11 +454,11 @@
 .mega-menu-category:hover,
 .mega-menu-category--active {
   background: rgba(var(--brand-rgb), 0.1);
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
 }
 .mega-menu-category-count {
   font-size: var(--fs-11);
-  color: rgba(161, 161, 170, 0.6);
+  color: rgba(var(--zinc-400-rgb), 0.6);
   flex-shrink: 0;
 }
 
@@ -484,7 +484,7 @@
 }
 .mega-menu-post-title {
   font-size: var(--fs-14);
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   font-weight: 500;
   line-height: 1.4;
   margin-bottom: var(--space-1);
@@ -497,7 +497,7 @@
 }
 .mega-menu-post-meta {
   font-size: var(--fs-11);
-  color: rgba(161, 161, 170, 0.55);
+  color: rgba(var(--zinc-400-rgb), 0.55);
 }
 .mega-menu-post-meta-dot {
   margin: 0 var(--space-1-5);
@@ -509,7 +509,7 @@
   margin-top: var(--space-2);
   padding: var(--space-1) 0;
   font-size: var(--fs-12);
-  color: rgba(161, 161, 170, 0.7);
+  color: rgba(var(--zinc-400-rgb), 0.7);
   text-decoration: none;
   transition:
     color 0.15s,
@@ -517,7 +517,7 @@
   align-self: flex-end;
 }
 .mega-menu-view-all:hover {
-  color: rgba(196, 181, 253, 0.95);
+  color: rgba(var(--violet-300-rgb), 0.95);
   transform: translateX(2px);
 }
 

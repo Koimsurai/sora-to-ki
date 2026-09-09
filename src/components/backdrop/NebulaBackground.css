@@ -60,7 +60,12 @@ body.intro-animation-active .nebula-dim-overlay {
   height: 380px;
   top: 45%;
   left: 55%;
-  background: radial-gradient(circle, rgba(56, 178, 172, 0.25) 0%, rgba(44, 182, 125, 0.1) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(56, 178, 172, 0.25) 0%,
+    rgba(var(--clr-tertiary-rgb), 0.1) 50%,
+    transparent 70%
+  );
   animation: nebula-anim3 24s ease-in-out infinite;
 }
 

@@ -37,7 +37,7 @@
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.2;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   margin: 0 0 var(--space-2-5);
 }
 
@@ -72,7 +72,7 @@
 .w-stat-num {
   font-size: var(--fs-22);
   font-weight: 700;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   line-height: 1.1;
   letter-spacing: 0.01em;
 }
@@ -92,7 +92,7 @@
   margin-bottom: var(--space-4);
 }
 .w-eyebrow--live {
-  color: #2cb67d;
+  color: var(--clr-tertiary);
   animation: w-live-pulse 2s ease-in-out infinite;
 }
 .w-eyebrow--last {
@@ -124,7 +124,7 @@
 .w-now-progress > span {
   display: block;
   height: 100%;
-  background: #2cb67d;
+  background: var(--clr-tertiary);
   transition: width 0.6s ease;
 }
 
@@ -185,14 +185,14 @@
   font-size: clamp(1.6rem, 3vw, 2.2rem);
   font-weight: 700;
   line-height: 1.15;
-  color: #f4f4f5;
+  color: var(--zinc-100);
   margin: var(--space-2-5) 0 var(--space-2);
   text-shadow: 0 2px 18px var(--black-55);
 }
 
 .w-now-meta {
   font-size: var(--fs-14);
-  color: rgba(244, 244, 245, 0.8);
+  color: rgba(var(--zinc-100-rgb), 0.8);
   letter-spacing: 0.03em;
   margin: 0;
   text-shadow: 0 1px 8px var(--black-55);
@@ -204,7 +204,7 @@
   right: 18px;
   padding: var(--space-2) var(--space-4);
   font-size: var(--fs-13);
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   background: var(--black-45);
   border: 1px solid var(--white-25);
   border-radius: 9999px;
@@ -216,8 +216,8 @@
 }
 
 .w-now-banner:hover .w-now-cta {
-  background: rgba(216, 180, 254, 0.25);
-  border-color: rgba(216, 180, 254, 0.7);
+  background: rgba(var(--purple-300-rgb), 0.25);
+  border-color: rgba(var(--purple-300-rgb), 0.7);
 }
 
 /* ── section 通用 ── */
@@ -229,7 +229,7 @@
   font-size: var(--fs-24);
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   margin: 0 0 var(--space-1-5);
 }
 
@@ -258,12 +258,12 @@
 /* 一鍵發碎念（ghost pill，蓋掉全域 button 實心樣式） */
 .w-share-btn {
   background: transparent;
-  border: 1px solid rgba(216, 180, 254, 0.3);
+  border: 1px solid rgba(var(--purple-300-rgb), 0.3);
   box-shadow: none;
   padding: var(--space-1) var(--space-3);
   border-radius: 9999px;
   font-size: var(--fs-13);
-  color: rgba(216, 180, 254, 0.8);
+  color: rgba(var(--purple-300-rgb), 0.8);
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -273,10 +273,10 @@
 }
 .w-share-btn:hover,
 .w-share-btn:focus {
-  background: rgba(216, 180, 254, 0.1);
-  border-color: rgba(216, 180, 254, 0.5);
+  background: rgba(var(--purple-300-rgb), 0.1);
+  border-color: rgba(var(--purple-300-rgb), 0.5);
   box-shadow: none;
-  color: #d8b4fe;
+  color: var(--purple-300);
 }
 .w-share-btn:focus-visible {
   outline: none;
@@ -284,7 +284,7 @@
 
 .w-section-link {
   font-size: var(--fs-14);
-  color: rgba(216, 180, 254, 0.7);
+  color: rgba(var(--purple-300-rgb), 0.7);
   text-decoration: none;
   border-bottom: 1px dashed transparent;
   transition:
@@ -293,8 +293,8 @@
   white-space: nowrap;
 }
 .w-section-link:hover {
-  color: #d8b4fe;
-  border-bottom-color: rgba(216, 180, 254, 0.5);
+  color: var(--purple-300);
+  border-bottom-color: rgba(var(--purple-300-rgb), 0.5);
 }
 
 /* ── 一生推（不鎖數量；用 auto-fit 撐 N 部） ── */
@@ -323,7 +323,7 @@
 .w-fav:hover {
   transform: translateY(-6px);
   background: rgba(20, 18, 38, 0.7);
-  border-color: rgba(216, 180, 254, 0.3);
+  border-color: rgba(var(--purple-300-rgb), 0.3);
   box-shadow:
     0 22px 50px var(--black-50),
     0 0 28px rgba(var(--brand-rgb), 0.1);
@@ -361,7 +361,7 @@
   padding: var(--space-4);
   font-size: var(--fs-13);
   line-height: 1.6;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   opacity: 0;
   transform: translateY(8px);
   transition:
@@ -377,7 +377,7 @@
 .w-fav-title {
   font-size: var(--fs-14);
   font-weight: 600;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   margin: var(--space-3-5) 0 var(--space-1);
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -402,7 +402,7 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(216, 180, 254, 0.7);
+  color: rgba(var(--purple-300-rgb), 0.7);
   margin: var(--space-7) 0 var(--space-2);
 }
 .w-recent-group:first-of-type {
@@ -454,7 +454,7 @@
   letter-spacing: 0.02em;
 }
 .w-recent-link.has-anchor .w-recent-anchor {
-  color: rgba(216, 180, 254, 0.8);
+  color: rgba(var(--purple-300-rgb), 0.8);
 }
 
 .w-recent-thumb {
@@ -470,14 +470,14 @@
   min-width: 0;
   font-size: var(--fs-16);
   font-weight: 500;
-  color: rgba(244, 244, 245, 0.9);
+  color: rgba(var(--zinc-100-rgb), 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: color 0.2s ease;
 }
 .w-recent-link.is-link:hover .w-recent-title {
-  color: rgba(216, 180, 254, 0.95);
+  color: rgba(var(--purple-300-rgb), 0.95);
 }
 
 .w-recent-tags {
@@ -498,13 +498,13 @@
   opacity: 0.75;
 }
 .w-recent-badge--anime {
-  color: rgba(216, 180, 254, 0.9);
+  color: rgba(var(--purple-300-rgb), 0.9);
 }
 .w-recent-badge--film {
   color: rgba(255, 224, 158, 0.8);
 }
 .w-recent-badge--tv {
-  color: rgba(134, 239, 172, 0.8);
+  color: rgba(var(--green-300-rgb), 0.8);
 }
 
 .w-recent-meta {

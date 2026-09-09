@@ -166,7 +166,7 @@
 }
 .fe-item-actions button:hover:not(:disabled) {
   color: #fff;
-  border-color: rgba(216, 180, 254, 0.4);
+  border-color: rgba(var(--purple-300-rgb), 0.4);
   box-shadow: none;
 }
 .fe-item-actions button:disabled {
@@ -174,8 +174,8 @@
   cursor: default;
 }
 .fe-item-actions .fe-del:hover:not(:disabled) {
-  color: #fca5a5;
-  border-color: rgba(248, 113, 113, 0.4);
+  color: var(--red-300);
+  border-color: rgba(var(--red-400-rgb), 0.4);
 }
 
 /* 星等 */
@@ -194,7 +194,7 @@
   transition: color 0.15s;
 }
 .fe-star.on {
-  color: #fcd34d;
+  color: var(--amber-300);
 }
 .fe-star:hover,
 .fe-star:focus {
@@ -218,7 +218,7 @@
 }
 .fe-quote:focus {
   outline: none;
-  border-color: rgba(216, 180, 254, 0.4);
+  border-color: rgba(var(--purple-300-rgb), 0.4);
 }
 
 /* ── 新增區 ── */
@@ -270,7 +270,7 @@
 }
 .fe-search:focus {
   outline: none;
-  border-color: rgba(216, 180, 254, 0.4);
+  border-color: rgba(var(--purple-300-rgb), 0.4);
 }
 
 .fe-searching {
@@ -306,7 +306,7 @@
 }
 .fe-result:hover:not(:disabled) {
   background: var(--white-04);
-  border-color: rgba(216, 180, 254, 0.25);
+  border-color: rgba(var(--purple-300-rgb), 0.25);
   box-shadow: none;
 }
 .fe-result img {
@@ -346,7 +346,7 @@
 }
 .fe-result-add {
   font-size: var(--fs-18);
-  color: rgba(216, 180, 254, 0.8);
+  color: rgba(var(--purple-300-rgb), 0.8);
   flex-shrink: 0;
 }
 

@@ -193,12 +193,12 @@
 @layer utilities {
   /* 全站文字選取（取代瀏覽器原生）— 柔和薰衣草，呼應整站色 */
   ::selection {
-    background: rgba(216, 180, 254, 0.3);
+    background: rgba(var(--purple-300-rgb), 0.3);
     color: #fff;
     text-shadow: none;
   }
   ::-moz-selection {
-    background: rgba(216, 180, 254, 0.3);
+    background: rgba(var(--purple-300-rgb), 0.3);
     color: #fff;
     text-shadow: none;
   }
@@ -236,18 +236,72 @@
     /* 更大的圓角 - 更現代 */
     --radius: 0.75rem;
 
-    /* 原有的 Happy Hues 調色板 */
-    --clr-bg-primary: #16161a;
-    --clr-bg-secondary: #242629;
+    /* ── 調色盤：Tailwind v3 色票 ──────────────────────────────────────────
+       全站有 23 個底色、315 次使用是**一字不差**的 Tailwind v3 色票（purple-300 就用了
+       90 次）。用色票名命名是客觀的，不用猜語意；值就是原本在用的 hex，零視覺變化。
+
+       ⚠️ 不要改成引用 Tailwind 自己的 `--color-purple-300`：v4 的色票是 **oklch**，
+       跟 v3 的 hex 不相等，換過去就不是零變化；而且哪些 shade 有輸出取決於 utility
+       用到誰（跟 `--text-3xl` 被 tree-shake 掉是同一個陷阱）。這裡自己定義。
+
+       帶透明度時用 `rgba(var(--zinc-100-rgb), a)`，跟 `--brand-rgb` 同一套寫法。 */
+    --zinc-100: #f4f4f5;
+    --zinc-100-rgb: 244, 244, 245;
+    --zinc-200: #e4e4e7;
+    --zinc-200-rgb: 228, 228, 231;
+    --zinc-300: #d4d4d8;
+    --zinc-300-rgb: 212, 212, 216;
+    --zinc-400: #a1a1aa;
+    --zinc-400-rgb: 161, 161, 170;
+    --zinc-500: #71717a;
+    --zinc-500-rgb: 113, 113, 122;
+    --zinc-600: #52525b;
+    --zinc-600-rgb: 82, 82, 91;
+    --zinc-700: #3f3f46;
+    --zinc-700-rgb: 63, 63, 70;
+    --zinc-800: #27272a;
+    --zinc-800-rgb: 39, 39, 42;
+    --zinc-900: #18181b;
+    --zinc-900-rgb: 24, 24, 27;
+    --purple-300: #d8b4fe;
+    --purple-300-rgb: 216, 180, 254;
+    --purple-500: #a855f7;
+    --purple-500-rgb: 168, 85, 247;
+    --violet-300: #c4b5fd;
+    --violet-300-rgb: 196, 181, 253;
+    --violet-400: #a78bfa;
+    --violet-400-rgb: 167, 139, 250;
+    --violet-500: #8b5cf6;
+    --violet-500-rgb: 139, 92, 246;
+    --amber-300: #fcd34d;
+    --amber-300-rgb: 252, 211, 77;
+    --amber-400: #fbbf24;
+    --amber-400-rgb: 251, 191, 36;
+    --red-300: #fca5a5;
+    --red-300-rgb: 252, 165, 165;
+    --red-400: #f87171;
+    --red-400-rgb: 248, 113, 113;
+    --red-500: #ef4444;
+    --red-500-rgb: 239, 68, 68;
+    --green-300: #86efac;
+    --green-300-rgb: 134, 239, 172;
+    --green-400: #4ade80;
+    --green-400-rgb: 74, 222, 128;
+    --green-500: #22c55e;
+    --green-500-rgb: 34, 197, 94;
+    --pink-500: #ec4899;
+    --pink-500-rgb: 236, 72, 153;
+
+    /* Happy Hues 調色板的殘餘。原本 11 個，7 個引用 0 次（掃過 387 個 ts/tsx/css/js 檔）
+       已退役：--clr-bg-primary / -bg-secondary / -stroke / -secondary / -white / -light-gray /
+       --starlight。留下的這幾個還有人用，先不動名字。 */
     --clr-headline: #fffffe;
     --clr-paragraph: #94a1b2;
+    --clr-paragraph-rgb: 148, 161, 178;
     --clr-button: var(--brand);
     --clr-button-text: #fffffe;
-    --clr-stroke: #010101;
-    --clr-secondary: #72757e;
     --clr-tertiary: #2cb67d;
-    --clr-white: #fffffe;
-    --clr-light-gray: #f8f9fa;
+    --clr-tertiary-rgb: 44, 182, 125;
 
     /* 深空玻璃質感的共用 token。元件 CSS 用這裡的名字，不要各自複製一份。
 
@@ -255,11 +309,10 @@
        （`216 34% 17%`），`@theme` 拿它做 `hsl(var(--accent))`；把 `#7f5af0` 塞進同一個
        名字會讓全站 shadcn accent 變成 `hsl(#7f5af0)` 這種無效值。所以叫 `--brand`。 */
     --brand: #7f5af0;
-    --brand-light: #c4b5fd;
-    /* 帶透明度的品牌紫寫 `rgba(var(--brand-rgb), 0.3)`。分成三個分量是因為 alpha
-       有 37 種,一一命名沒有意義——真正要單一來源的是色相本身。 */
+    /* brand-light 就是 violet-300，指過去而不是再抄一份 hex——單一來源 */
+    --brand-light: var(--violet-300);
+    /* 帶透明度的品牌紫寫 `rgba(var(--brand-rgb), 0.3)`，alpha 必須在上面那 19 階上。 */
     --brand-rgb: 127, 90, 240;
-    --starlight: #ede9fe;
 
     /* ── 透明度階梯（白／黑共用同一把尺，19 階）──────────────────────────
          0.02 0.04 0.06 0.08 0.10 · 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 · 0.70 0.80 0.90 0.95
@@ -613,7 +666,7 @@ body::after {
   height: 1px;
   align-self: center;
   flex-shrink: 0;
-  background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.9), rgba(216, 180, 254, 0.25));
+  background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.9), rgba(var(--purple-300-rgb), 0.25));
   box-shadow: 0 0 8px rgba(var(--brand-rgb), 0.5);
 }
 

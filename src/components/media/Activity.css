@@ -59,7 +59,12 @@
   height: 380px;
   top: 45%;
   left: 55%;
-  background: radial-gradient(circle, rgba(56, 178, 172, 0.25) 0%, rgba(44, 182, 125, 0.1) 50%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(56, 178, 172, 0.25) 0%,
+    rgba(var(--clr-tertiary-rgb), 0.1) 50%,
+    transparent 70%
+  );
   animation: a-neb3 24s ease-in-out infinite;
 }
 .activity-nebula-dust {
@@ -153,15 +158,15 @@
   flex-shrink: 0;
 }
 .status-dot-inline.online {
-  background: #22c55e;
-  box-shadow: 0 0 6px #22c55e;
+  background: var(--green-500);
+  box-shadow: 0 0 6px var(--green-500);
 }
 .status-dot-inline.offline {
-  background: #ef4444;
-  box-shadow: 0 0 6px #ef4444;
+  background: var(--red-500);
+  box-shadow: 0 0 6px var(--red-500);
 }
 .status-dot-inline.error {
-  background: #fbbf24;
+  background: var(--amber-400);
 }
 .status-dot-inline.checking {
   background: #94a3b8;
@@ -206,7 +211,7 @@
 .hero-num {
   font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 800;
-  background: linear-gradient(135deg, #fffffe 20%, var(--brand-light) 80%);
+  background: linear-gradient(135deg, var(--clr-headline) 20%, var(--brand-light) 80%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1188,7 +1193,7 @@
   opacity: 0;
   transition: opacity 0.25s;
   font-size: var(--fs-12);
-  color: #fffffe;
+  color: var(--clr-headline);
   font-weight: 500;
 }
 .game-gallery-item:hover .game-gallery-info {

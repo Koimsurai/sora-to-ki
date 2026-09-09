@@ -432,8 +432,8 @@
 }
 
 .star-filled {
-  color: #fbbf24;
-  filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.4));
+  color: var(--amber-400);
+  filter: drop-shadow(0 0 3px rgba(var(--amber-400-rgb), 0.4));
 }
 
 .star-empty {

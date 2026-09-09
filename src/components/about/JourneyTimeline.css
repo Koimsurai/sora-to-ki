@@ -108,7 +108,7 @@
 
 .jt-entry--future .jt-rail-dot {
   background: transparent;
-  border: 1.5px dashed var(--dot, #ec4899);
+  border: 1.5px dashed var(--dot, var(--pink-500));
   box-shadow: none;
 }
 

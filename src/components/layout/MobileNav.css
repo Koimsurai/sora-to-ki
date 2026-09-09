@@ -108,7 +108,7 @@
   }
   .mnav-row-label:hover,
   .mnav-row-label:focus {
-    color: #d8b4fe;
+    color: var(--purple-300);
     background: transparent;
     box-shadow: none;
   }
@@ -136,7 +136,7 @@
   }
   .mnav-chev.is-open {
     transform: rotate(180deg);
-    color: #d8b4fe;
+    color: var(--purple-300);
   }
 
   /* 子項：grid-rows 0fr→1fr 內聯展開（純 CSS，順） */
@@ -171,7 +171,7 @@
   }
   .mnav-sub-link:hover,
   .mnav-sub-link:focus {
-    color: #d8b4fe;
+    color: var(--purple-300);
     padding-left: var(--space-5-5);
   }
   /* 收合時子項淡出 */

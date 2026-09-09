@@ -3,7 +3,7 @@
 .mdx-note {
   margin: var(--space-7) 0;
   padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
-  border-left: 2px solid rgba(196, 181, 253, 0.45);
+  border-left: 2px solid rgba(var(--violet-300-rgb), 0.45);
 }
 
 .mdx-note-label {
@@ -14,14 +14,14 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(196, 181, 253, 0.8);
+  color: rgba(var(--violet-300-rgb), 0.8);
   margin-bottom: var(--space-1-5);
 }
 
 .mdx-note-quote {
   font-size: var(--fs-16);
   line-height: 1;
-  color: rgba(196, 181, 253, 0.55);
+  color: rgba(var(--violet-300-rgb), 0.55);
 }
 
 .mdx-note-content {
@@ -57,7 +57,7 @@
 .annot-text {
   position: relative;
   /* 持久的可發現提示：淡虛線底（讓讀者知道這裡有註） */
-  border-bottom: 1px dashed rgba(252, 211, 77, 0.4);
+  border-bottom: 1px dashed rgba(var(--amber-300-rgb), 0.4);
   padding-bottom: var(--space-px);
 }
 /* hover/focus：實線由左長出，蓋在虛線上 */
@@ -68,7 +68,7 @@
   right: 0;
   bottom: -1px;
   height: 1.5px;
-  background: #fcd34d;
+  background: var(--amber-300);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
@@ -90,7 +90,7 @@
   padding: var(--space-2-5) var(--space-3);
   border-radius: 10px;
   background: rgba(36, 30, 20, 0.95);
-  border: 1px solid rgba(252, 211, 77, 0.2);
+  border: 1px solid rgba(var(--amber-300-rgb), 0.2);
   box-shadow: 0 10px 30px var(--black-45);
   color: var(--white-80);
   font-size: var(--fs-13);
@@ -126,7 +126,7 @@
   font-size: var(--fs-10);
   font-weight: 600;
   letter-spacing: 0.09em;
-  color: rgba(252, 211, 77, 0.9);
+  color: rgba(var(--amber-300-rgb), 0.9);
   margin-bottom: var(--space-1);
 }
 .annot-card-body {
@@ -188,7 +188,7 @@
 }
 .spoiler--revealed {
   filter: none;
-  background: rgba(252, 211, 77, 0.08);
+  background: rgba(var(--amber-300-rgb), 0.08);
   user-select: text;
   -webkit-user-select: text;
   cursor: text;
@@ -220,8 +220,8 @@
   margin: var(--space-7) 0;
   padding: var(--space-5);
   border-radius: 10px;
-  border: 1px dashed rgba(252, 165, 165, 0.35);
-  color: rgba(252, 165, 165, 0.8);
+  border: 1px dashed rgba(var(--red-300-rgb), 0.35);
+  color: rgba(var(--red-300-rgb), 0.8);
   font-size: var(--fs-14);
   text-align: center;
 }
@@ -553,9 +553,9 @@
   margin: var(--space-6) 0;
   padding: var(--space-4) var(--space-5);
   border-radius: 10px;
-  border: 1px dashed rgba(252, 165, 165, 0.35);
-  background: rgba(252, 165, 165, 0.06);
-  color: #fca5a5;
+  border: 1px dashed rgba(var(--red-300-rgb), 0.35);
+  background: rgba(var(--red-300-rgb), 0.06);
+  color: var(--red-300);
   font-size: var(--fs-14);
 }
 .mdx-sketch-error pre {
@@ -570,9 +570,9 @@
   margin: var(--space-6) 0;
   padding: var(--space-4) var(--space-5);
   border-radius: 10px;
-  border: 1px solid rgba(252, 165, 165, 0.4);
-  background: rgba(252, 165, 165, 0.06);
-  color: #fca5a5;
+  border: 1px solid rgba(var(--red-300-rgb), 0.4);
+  background: rgba(var(--red-300-rgb), 0.06);
+  color: var(--red-300);
   font-size: var(--fs-14);
 }
 
@@ -1069,12 +1069,12 @@
   left: 0;
   top: 0;
   bottom: 0;
-  background: rgba(167, 139, 250, 0.15);
+  background: rgba(var(--violet-400-rgb), 0.15);
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
 }
 .mdx-poll-opt--mine .mdx-poll-bar {
-  background: rgba(167, 139, 250, 0.25);
+  background: rgba(var(--violet-400-rgb), 0.25);
 }
 .mdx-poll-opt-label {
   position: relative;
@@ -1088,7 +1088,7 @@
   width: 0.4rem;
   height: 0.4rem;
   border-radius: 50%;
-  background: #a78bfa;
+  background: var(--violet-400);
   flex: 0 0 auto;
 }
 .mdx-poll-pct {
@@ -1115,7 +1115,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: rgba(196, 181, 253, 0.8);
+  color: rgba(var(--violet-300-rgb), 0.8);
   font-size: var(--fs-12);
   font-family: inherit;
   cursor: pointer;

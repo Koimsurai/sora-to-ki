@@ -23,7 +23,7 @@
     radial-gradient(1px 1px at 80px 120px, rgba(199, 184, 255, 0.6), transparent),
     radial-gradient(1px 1px at 160px 60px, var(--white-50), transparent),
     radial-gradient(1px 1px at 230px 180px, var(--white-60), transparent),
-    radial-gradient(1px 1px at 300px 90px, rgba(216, 180, 254, 0.5), transparent);
+    radial-gradient(1px 1px at 300px 90px, rgba(var(--purple-300-rgb), 0.5), transparent);
   background-size: 340px 240px;
   animation: starfield-drift 140s linear infinite;
   opacity: 0.7;
@@ -33,7 +33,7 @@
 .css-stars--near {
   background-image:
     radial-gradient(1.6px 1.6px at 50px 80px, var(--white-95), transparent),
-    radial-gradient(1.6px 1.6px at 200px 150px, rgba(216, 180, 254, 0.8), transparent),
+    radial-gradient(1.6px 1.6px at 200px 150px, rgba(var(--purple-300-rgb), 0.8), transparent),
     radial-gradient(2px 2px at 320px 40px, var(--white-90), transparent);
   background-size: 420px 320px;
   animation:

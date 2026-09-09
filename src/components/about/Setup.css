@@ -37,7 +37,7 @@
     radial-gradient(1px 1px at 70% 40%, var(--white-08) 0%, transparent 100%),
     radial-gradient(1px 1px at 90% 80%, var(--white-10) 0%, transparent 100%),
     radial-gradient(1.5px 1.5px at 15% 85%, rgba(var(--brand-rgb), 0.15) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 85% 15%, rgba(44, 182, 125, 0.1) 0%, transparent 100%);
+    radial-gradient(1.5px 1.5px at 85% 15%, rgba(var(--clr-tertiary-rgb), 0.1) 0%, transparent 100%);
   animation: dust-drift 60s linear infinite;
 }
 
@@ -133,9 +133,9 @@
   background: conic-gradient(
     from 60deg,
     transparent 0deg,
-    rgba(44, 182, 125, 0.1) 60deg,
+    rgba(var(--clr-tertiary-rgb), 0.1) 60deg,
     rgba(60, 150, 200, 0.2) 120deg,
-    rgba(44, 182, 125, 0.1) 200deg,
+    rgba(var(--clr-tertiary-rgb), 0.1) 200deg,
     rgba(70, 120, 180, 0.15) 280deg,
     transparent 360deg
   );
@@ -212,7 +212,7 @@
 }
 
 .setup-title .title-gradient {
-  background: linear-gradient(135deg, #c0a0ff 0%, var(--brand) 50%, #2cb67d 100%);
+  background: linear-gradient(135deg, #c0a0ff 0%, var(--brand) 50%, var(--clr-tertiary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -225,7 +225,7 @@
 
 .setup-subtitle {
   font-size: var(--fs-16);
-  color: rgba(148, 161, 178, 0.7);
+  color: rgba(var(--clr-paragraph-rgb), 0.7);
   font-weight: 300;
   letter-spacing: 2px;
 }
@@ -244,7 +244,7 @@
   border-radius: 50px;
   border: 1px solid var(--white-08);
   background: var(--white-02);
-  color: rgba(148, 161, 178, 0.7);
+  color: rgba(var(--clr-paragraph-rgb), 0.7);
   cursor: pointer;
   font-size: var(--fs-14);
   font-weight: 500;
@@ -320,7 +320,7 @@
 
 .setup-category-subtitle {
   font-size: var(--fs-13);
-  color: rgba(148, 161, 178, 0.5);
+  color: rgba(var(--clr-paragraph-rgb), 0.5);
   margin-left: auto;
   font-style: italic;
 }
@@ -335,7 +335,7 @@
 /* === Equipment Card === */
 .setup-card {
   position: relative;
-  background: rgba(24, 24, 27, 0.8);
+  background: rgba(var(--zinc-900-rgb), 0.8);
   border: 1px solid var(--white-06);
   border-radius: 14px;
   padding: var(--space-5);
@@ -410,7 +410,7 @@
        0.75  #737d8b  4.54:1  剛好壓線
        0.80  #7a8492  5.01:1  ← 取這個，留餘裕
      這是設備清單的型號說明，看不清楚等於那一行不存在。 */
-  color: rgba(148, 161, 178, 0.8);
+  color: rgba(var(--clr-paragraph-rgb), 0.8);
   line-height: 1.35;
 }
 
@@ -421,7 +421,7 @@
 
 .setup-base-card {
   position: relative;
-  background: rgba(24, 24, 27, 0.7);
+  background: rgba(var(--zinc-900-rgb), 0.7);
   border: 1px solid var(--white-06);
   border-radius: 16px;
   padding: var(--space-10) var(--space-9);
@@ -493,13 +493,13 @@
 
 .setup-retired-title {
   font-size: var(--fs-14);
-  color: rgba(148, 161, 178, 0.5);
+  color: rgba(var(--clr-paragraph-rgb), 0.5);
   margin-bottom: var(--space-2);
 }
 
 .setup-retired-text {
   font-size: var(--fs-13);
-  color: rgba(148, 161, 178, 0.35);
+  color: rgba(var(--clr-paragraph-rgb), 0.35);
   font-style: italic;
 }
 

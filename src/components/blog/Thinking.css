@@ -34,7 +34,7 @@
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   margin: 0 0 var(--space-2-5);
 }
 .tk-subtitle {
@@ -88,7 +88,7 @@
 .tk-author {
   font-size: var(--fs-14);
   font-weight: 700;
-  color: rgba(244, 244, 245, 0.9);
+  color: rgba(var(--zinc-100-rgb), 0.9);
 }
 .tk-time {
   font-size: var(--fs-12);
@@ -112,7 +112,7 @@
   border-radius: 8px;
   background: rgba(20, 18, 38, 0.95);
   border: 1px solid var(--white-08);
-  color: rgba(244, 244, 245, 0.9);
+  color: rgba(var(--zinc-100-rgb), 0.9);
   font-size: var(--fs-12);
   opacity: 0;
   pointer-events: none;
@@ -128,7 +128,7 @@
   margin: 0;
   font-size: var(--fs-16);
   line-height: 1.85;
-  color: rgba(244, 244, 245, 0.9);
+  color: rgba(var(--zinc-100-rgb), 0.9);
   letter-spacing: 0.01em;
 }
 
@@ -156,14 +156,14 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(110deg, transparent 30%, rgba(216, 180, 254, 0.15) 50%, transparent 70%);
+  background: linear-gradient(110deg, transparent 30%, rgba(var(--purple-300-rgb), 0.15) 50%, transparent 70%);
   background-size: 220% 100%;
   background-position: 120% 0;
   opacity: 0;
   transition: opacity 0.4s ease;
 }
 .tk-embed:hover {
-  border-color: rgba(216, 180, 254, 0.3);
+  border-color: rgba(var(--purple-300-rgb), 0.3);
   background: var(--black-30);
 }
 .tk-embed:hover::before {
@@ -194,7 +194,7 @@
   margin: var(--space-1) 0 var(--space-1-5);
   font-size: var(--fs-16);
   font-weight: 700;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
 }
 .tk-embed-desc {
   margin: 0 0 var(--space-2);
@@ -288,7 +288,7 @@
   outline: none;
 }
 .tk-ic:not(.tk-ic--static):hover {
-  color: rgba(216, 180, 254, 0.95);
+  color: rgba(var(--purple-300-rgb), 0.95);
 }
 .tk-ic:not(.tk-ic--static):hover svg {
   transform: scale(1.18);
@@ -306,14 +306,14 @@
   fill: #f472a6;
 }
 .tk-ic.is-dislike {
-  color: #fcd34d;
+  color: var(--amber-300);
 }
 .tk-ic.is-dislike svg {
-  fill: #fcd34d;
+  fill: var(--amber-300);
 }
 .tk-view {
   font-size: var(--fs-13);
-  color: rgba(216, 180, 254, 0.8);
+  color: rgba(var(--purple-300-rgb), 0.8);
   cursor: pointer;
   opacity: 0;
   transform: translateX(-4px);
@@ -327,7 +327,7 @@
   transform: translateX(0);
 }
 .tk-view:hover {
-  color: #d8b4fe;
+  color: var(--purple-300);
 }
 
 /* admin 發文框 */
@@ -347,7 +347,7 @@
   background: var(--black-25);
   border: 1px solid var(--white-08);
   border-radius: 9px;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   font: inherit;
   padding: var(--space-2-5) var(--space-3);
 }
@@ -363,7 +363,7 @@
 .tk-compose-text:focus,
 .tk-compose-url:focus {
   outline: none;
-  border-color: rgba(216, 180, 254, 0.4);
+  border-color: rgba(var(--purple-300-rgb), 0.4);
 }
 /* 一鍵發帶來的附加媒體 chip */
 .tk-compose-chip {
@@ -373,9 +373,9 @@
   margin-top: var(--space-2);
   padding: 5px var(--space-2-5);
   border-radius: 8px;
-  background: rgba(216, 180, 254, 0.1);
-  border: 1px solid rgba(216, 180, 254, 0.2);
-  color: rgba(216, 180, 254, 0.9);
+  background: rgba(var(--purple-300-rgb), 0.1);
+  border: 1px solid rgba(var(--purple-300-rgb), 0.2);
+  color: rgba(var(--purple-300-rgb), 0.9);
   font-size: var(--fs-13);
 }
 .tk-compose-chip button {
@@ -452,7 +452,7 @@
   background: transparent;
   border-color: transparent;
   box-shadow: none;
-  color: rgba(216, 180, 254, 0.95);
+  color: rgba(var(--purple-300-rgb), 0.95);
 }
 .tk-act:focus-visible {
   outline: none;
@@ -472,7 +472,7 @@
   background: var(--black-25);
   border: 1px solid var(--white-10);
   border-radius: 9px;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   font: inherit;
   line-height: 1.7;
   padding: var(--space-2-5) var(--space-3);
@@ -480,7 +480,7 @@
 }
 .tk-edit-text:focus {
   outline: none;
-  border-color: rgba(216, 180, 254, 0.4);
+  border-color: rgba(var(--purple-300-rgb), 0.4);
 }
 .tk-edit-row {
   display: flex;
@@ -507,7 +507,7 @@
 }
 .tk-edit-cancel {
   background: var(--white-08);
-  color: rgba(244, 244, 245, 0.8);
+  color: rgba(var(--zinc-100-rgb), 0.8);
 }
 .tk-edit-cancel:hover,
 .tk-edit-cancel:focus {
@@ -569,7 +569,7 @@
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--white-08);
   font-weight: 700;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
 }
 .tk-modal-close {
   background: transparent;
@@ -629,7 +629,7 @@
     transform 0.2s ease;
 }
 .tk-rss:hover {
-  color: rgba(216, 180, 254, 0.95);
+  color: rgba(var(--purple-300-rgb), 0.95);
   transform: scale(1.1);
 }
 
@@ -644,13 +644,13 @@
 .tk-back {
   display: inline-block;
   margin-bottom: var(--space-5);
-  color: rgba(216, 180, 254, 0.7);
+  color: rgba(var(--purple-300-rgb), 0.7);
   text-decoration: none;
   font-size: var(--fs-14);
   transition: color 0.2s ease;
 }
 .tk-back:hover {
-  color: #d8b4fe;
+  color: var(--purple-300);
 }
 .tk-comments {
   margin-top: var(--space-7);

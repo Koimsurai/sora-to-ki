@@ -101,7 +101,7 @@
   background: rgba(var(--brand-rgb), 0.15);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
   border-radius: 999px;
-  color: rgba(216, 180, 254, 0.95);
+  color: rgba(var(--purple-300-rgb), 0.95);
   font-weight: 500;
   flex-shrink: 0;
 }

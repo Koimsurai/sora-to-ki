@@ -159,6 +159,33 @@ const LADDER_REF = /var\(\s*--(white|black)-(\d+)\s*\)/g;
 const LADDER_DEF = /^--(white|black)-\d+$/;
 
 /**
+ * 具名顏色 token：從 index.css 讀出來，不另抄一份。
+ *
+ * 規則 4：字面值跟某個 token 的值**一模一樣**就得用那個 token。這條零誤判——
+ * 值都相等了，寫字面值只剩「不知道有 token」這一種原因。導入調色盤那次
+ * （Tailwind v3 色票 23 個 + Happy Hues 殘餘）一口氣換了 340 處。
+ *
+ * 兩張表：`#hex → --name`（實心）、`r,g,b → --name-rgb`（帶 alpha 時用
+ * `rgba(var(--name-rgb), a)`，跟 --brand-rgb 同一套寫法）。
+ */
+const INDEX_CSS = fs.readFileSync(path.join('src', 'index.css'), 'utf8');
+const HEX_TOKEN = new Map<string, string>();
+const RGB_TOKEN = new Map<string, string>();
+for (const m of blankComments(INDEX_CSS).matchAll(
+  /(--[\w-]+)\s*:\s*(#[0-9a-fA-F]{6}|\d{1,3},\s*\d{1,3},\s*\d{1,3})\s*;/g,
+)) {
+  const [, name, val] = m;
+  if (LADDER_DEF.test(name)) continue;
+  if (val.startsWith('#')) {
+    if (!HEX_TOKEN.has(val.toLowerCase())) HEX_TOKEN.set(val.toLowerCase(), name);
+  } else if (name.endsWith('-rgb')) {
+    RGB_TOKEN.set(val.replace(/\s+/g, ''), name);
+  }
+}
+const HEX6 = /#([0-9a-fA-F]{6})\b(?![0-9a-fA-F])/g;
+const HEX3 = /#([0-9a-fA-F]{3})\b(?![0-9a-fA-F])/g;
+
+/**
  * 把註解換成**等長空白**，而不是「比對時跳過起點在註解裡的 match」。
  *
  * ⚠ 後者有個不明顯的洞，而且實際踩到了：`/* critical: keep sticky working *\/`
@@ -275,6 +302,33 @@ function check(file: string): Problem[] {
     }
 
     if (prop.startsWith('--')) continue;
+
+    // ── 規則 4：字面值等於某個 token 的值 → 用 token ──
+    for (const r of value.matchAll(HEX6)) {
+      const tok = HEX_TOKEN.get(`#${r[1].toLowerCase()}`);
+      if (tok) problems.push({ file, line, prop, raw: r[0], why: `這就是 ${tok} 的值`, fix: `改用 var(${tok})` });
+    }
+    for (const r of value.matchAll(HEX3)) {
+      const full = `#${[...r[1]]
+        .map((c) => c + c)
+        .join('')
+        .toLowerCase()}`;
+      const tok = HEX_TOKEN.get(full);
+      if (tok) problems.push({ file, line, prop, raw: r[0], why: `這就是 ${tok} 的值`, fix: `改用 var(${tok})` });
+    }
+    for (const r of value.matchAll(RGBA_LIT)) {
+      const tok = RGB_TOKEN.get(`${r[1]},${r[2]},${r[3]}`);
+      if (tok)
+        problems.push({
+          file,
+          line,
+          prop,
+          raw: r[0],
+          why: `這就是 ${tok} 的三元組`,
+          fix: `改用 rgba(var(${tok}), ${r[4]})`,
+        });
+    }
+
     const isSpacing = SPACING_PROP.test(prop);
     const isFontSize = prop === 'font-size';
     if (!isSpacing && !isFontSize) continue;

@@ -25,13 +25,13 @@
 
 .lately-more {
   font-size: var(--fs-13);
-  color: rgba(216, 180, 254, 0.8);
+  color: rgba(var(--purple-300-rgb), 0.8);
   text-decoration: none;
   transition: color 0.25s ease;
 }
 
 .lately-more:hover {
-  color: #d8b4fe;
+  color: var(--purple-300);
 }
 
 .lately-empty {
@@ -418,7 +418,7 @@
   background:
     linear-gradient(90deg, transparent 0%, rgba(233, 213, 255, 0.95) 50%, transparent 100%) center / 100% 1px no-repeat,
     linear-gradient(180deg, transparent 0%, rgba(233, 213, 255, 0.95) 50%, transparent 100%) center / 1px 100% no-repeat,
-    radial-gradient(circle, #fff 0%, #e9d5ff 30%, rgba(216, 180, 254, 0) 62%) center / 9px 9px no-repeat;
+    radial-gradient(circle, #fff 0%, #e9d5ff 30%, rgba(var(--purple-300-rgb), 0) 62%) center / 9px 9px no-repeat;
   animation: orbit-now-pulse 3.4s ease-in-out infinite;
 }
 
@@ -549,9 +549,9 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #22c55e;
+  background: var(--green-500);
   margin-right: 9px;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  box-shadow: 0 0 8px rgba(var(--green-500-rgb), 0.6);
   animation: signal-dot-pulse 2s ease-in-out infinite;
 }
 
@@ -566,13 +566,13 @@
 }
 
 .signal-mail {
-  color: rgba(216, 180, 254, 0.8);
+  color: rgba(var(--purple-300-rgb), 0.8);
   text-decoration: none;
   transition: color 0.25s ease;
 }
 
 .signal-mail:hover {
-  color: #d8b4fe;
+  color: var(--purple-300);
 }
 
 /* ── 響應式 ── */

@@ -228,7 +228,7 @@ a.vp-btn:focus-visible {
   opacity: 1;
 }
 .vp-progress:focus-visible .vp-progress-track {
-  background: rgba(196, 181, 253, 0.5);
+  background: rgba(var(--violet-300-rgb), 0.5);
 }
 
 .vp-time {

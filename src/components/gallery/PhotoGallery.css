@@ -37,7 +37,7 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--violet-500-rgb), 0.1) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.4s ease;
   pointer-events: none;
@@ -81,7 +81,7 @@
   box-shadow:
     0 20px 40px var(--black-25),
     0 12px 12px var(--black-15),
-    0 0 30px rgba(139, 92, 246, 0.3);
+    0 0 30px rgba(var(--violet-500-rgb), 0.3);
   transform: translateZ(0);
 }
 

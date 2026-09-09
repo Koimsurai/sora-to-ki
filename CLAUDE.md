@@ -185,6 +185,34 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 
 `margin` / `padding` / `gap` / `font-size` 不准再寫字面值。
 
+### 調色盤：Tailwind v3 色票名，值是原本在用的 hex
+
+`index.css` 的 `:root` 有 `--zinc-100…900`、`--purple-300/500`、`--violet-300/400/500`、
+`--amber-300/400`、`--red-300/400/500`、`--green-300/400/500`、`--pink-500`，各配一個
+`-rgb` 三元組（帶 alpha 時寫 `rgba(var(--zinc-100-rgb), a)`）。
+
+為什麼用色票名：全站有 23 個底色、315 次是**一字不差**的 Tailwind v3 色票
+（`#d8b4fe` = purple-300 就用了 90 次），用它命名是客觀的，不用猜語意。
+
+⚠️ **不要改成引用 Tailwind 自己的 `--color-purple-300`。** v4 的色票是 **oklch**，跟 v3 的
+hex 不相等，換過去就不是零視覺變化；而且哪些 shade 有輸出取決於 utility 用到誰——
+跟 `--text-3xl` 被 tree-shake 掉是同一個陷阱。
+
+⚠️ **把 gradient 裡的字面色換成 `var()` 會讓 computed-style 報 `background-image` 變了，
+但那不是視覺變化。** 導入調色盤那次後台 3 頁各紅 1 個元素，逐字比對兩個 build 的計算值
+只差一個字元：`at 50% 0px`（main）vs `at 50% 0%`（新）。來源 CSS 兩邊都寫 `0%`——把它折成
+`0px` 是 lightningcss 對**純字面值** gradient 做的 minify，換成 `var()` 之後 gradient 不再是
+常數，minifier 就跳過它。位置 0 不管單位都是 0，直接更新基準即可。判斷方法：拿兩個 build
+在同一個 stack 上跑同一支 probe，不要看 hash 猜。
+
+⚠️ **字面值等於某個 token 的值就必須用 token**，`check:css-tokens` 的規則 4 在擋，
+token 表是從 `index.css` 讀的，加新 token 不用改腳本。這條零誤判：值都相等了，
+寫字面值只剩「不知道有 token」一種原因。
+
+Happy Hues 那組 `--clr-*` 原本 11 個，7 個引用 0 次（掃過 387 個 ts/tsx/css/js 檔）
+已退役。留下的 `--clr-headline` / `-paragraph` / `-button` / `-button-text` / `-tertiary`
+還有人用。`--brand-light` 現在指向 `var(--violet-300)`——它就是那個色票，不再另抄一份 hex。
+
 ### 透明度也有一把尺：19 階，白／黑／品牌紫共用
 
 ```

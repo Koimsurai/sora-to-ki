@@ -2,8 +2,8 @@
 
 /* 編輯器容器 */
 .monaco-editor-glass {
-  background: rgba(24, 24, 27, 0.6);
-  border: 1px solid rgba(39, 39, 42, 0.6);
+  background: rgba(var(--zinc-900-rgb), 0.6);
+  border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   border-radius: 0.75rem;
   box-shadow:
     0 4px 24px var(--black-25),
@@ -14,7 +14,7 @@
 /* 工具欄 — 輕薄 border-bottom 風格 */
 .monaco-toolbar-glass {
   background: transparent;
-  border-bottom: 1px solid rgba(39, 39, 42, 0.4);
+  border-bottom: 1px solid rgba(var(--zinc-800-rgb), 0.4);
 }
 
 /* 工具欄按鈕 — 確保可見 */
@@ -22,12 +22,12 @@
   background: transparent;
   border: none;
   border-radius: 0.375rem;
-  color: #a1a1aa;
+  color: var(--zinc-400);
   cursor: pointer;
 }
 .monaco-toolbar-glass button:hover:not(:disabled) {
-  background: rgba(39, 39, 42, 0.5);
-  color: #e4e4e7;
+  background: rgba(var(--zinc-800-rgb), 0.5);
+  color: var(--zinc-200);
 }
 .monaco-toolbar-glass button:disabled {
   opacity: 0.4;
@@ -35,13 +35,13 @@
 
 /* 工具欄分隔線 */
 .monaco-toolbar-glass .w-px {
-  background: rgba(39, 39, 42, 0.5);
+  background: rgba(var(--zinc-800-rgb), 0.5);
 }
 
 /* 狀態欄 — 輕薄 border-top 風格 */
 .monaco-statusbar-glass {
   background: transparent;
-  border-top: 1px solid rgba(39, 39, 42, 0.3);
+  border-top: 1px solid rgba(var(--zinc-800-rgb), 0.3);
 }
 
 /* Monaco Editor 內部樣式 */
@@ -87,18 +87,18 @@
 
 /* 懸停提示 */
 .monaco-editor-glass .monaco-hover {
-  background: rgba(24, 24, 27, 0.95);
+  background: rgba(var(--zinc-900-rgb), 0.95);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(39, 39, 42, 0.6);
+  border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   border-radius: 0.5rem;
   box-shadow: 0 8px 32px var(--black-50);
 }
 
 /* 建議框 */
 .monaco-editor-glass .suggest-widget {
-  background: rgba(24, 24, 27, 0.95);
+  background: rgba(var(--zinc-900-rgb), 0.95);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(39, 39, 42, 0.6);
+  border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   border-radius: 0.5rem;
   box-shadow: 0 8px 32px var(--black-50);
 }
@@ -123,7 +123,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(24, 24, 27, 0.8);
+  background: rgba(var(--zinc-900-rgb), 0.8);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -133,9 +133,9 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: var(--fs-11);
   padding: var(--space-0-5) var(--space-2-5);
-  color: #a1a1aa;
-  background: rgba(24, 24, 27, 0.6);
-  border-top: 1px solid rgba(39, 39, 42, 0.3);
+  color: var(--zinc-400);
+  background: rgba(var(--zinc-900-rgb), 0.6);
+  border-top: 1px solid rgba(var(--zinc-800-rgb), 0.3);
   min-height: 18px;
   white-space: pre;
   overflow: hidden;
@@ -143,6 +143,6 @@
 }
 .monaco-vim-status:empty::before {
   content: "-- 一般模式 (Esc) --";
-  color: #71717a;
+  color: var(--zinc-500);
   opacity: 0.6;
 }

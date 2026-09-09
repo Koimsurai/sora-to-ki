@@ -33,7 +33,7 @@
 .wl-back {
   display: inline-block;
   font-size: var(--fs-14);
-  color: rgba(216, 180, 254, 0.7);
+  color: rgba(var(--purple-300-rgb), 0.7);
   text-decoration: none;
   border-bottom: 1px dashed transparent;
   margin-bottom: var(--space-4-5);
@@ -42,15 +42,15 @@
     border-color 0.2s ease;
 }
 .wl-back:hover {
-  color: #d8b4fe;
-  border-bottom-color: rgba(216, 180, 254, 0.5);
+  color: var(--purple-300);
+  border-bottom-color: rgba(var(--purple-300-rgb), 0.5);
 }
 
 .wl-title {
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   margin: 0 0 var(--space-2-5);
 }
 
@@ -89,11 +89,11 @@
 }
 
 .wl-tab:hover {
-  color: rgba(244, 244, 245, 0.9);
+  color: rgba(var(--zinc-100-rgb), 0.9);
 }
 
 .wl-tab.active {
-  color: #f4f4f5;
+  color: var(--zinc-100);
 }
 
 .wl-tab.active::after {
@@ -103,7 +103,12 @@
   right: 0;
   bottom: -1px;
   height: 1.5px;
-  background: linear-gradient(90deg, rgba(216, 180, 254, 0), rgba(216, 180, 254, 0.8), rgba(216, 180, 254, 0));
+  background: linear-gradient(
+    90deg,
+    rgba(var(--purple-300-rgb), 0),
+    rgba(var(--purple-300-rgb), 0.8),
+    rgba(var(--purple-300-rgb), 0)
+  );
 }
 
 .wl-tab-count {
@@ -114,7 +119,7 @@
 }
 
 .wl-tab.active .wl-tab-count {
-  color: rgba(216, 180, 254, 0.8);
+  color: rgba(var(--purple-300-rgb), 0.8);
 }
 
 /* ── controls ── */
@@ -142,9 +147,9 @@
 }
 
 .wl-search:focus-within {
-  border-color: rgba(216, 180, 254, 0.4);
-  background: rgba(216, 180, 254, 0.04);
-  color: rgba(216, 180, 254, 0.8);
+  border-color: rgba(var(--purple-300-rgb), 0.4);
+  background: rgba(var(--purple-300-rgb), 0.04);
+  color: rgba(var(--purple-300-rgb), 0.8);
 }
 
 .wl-search input {
@@ -152,7 +157,7 @@
   background: transparent;
   border: none;
   padding: var(--space-3) 0;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   font-size: var(--fs-16);
   outline: none;
 }
@@ -174,7 +179,7 @@
   background: var(--white-04);
   border: 1px solid var(--white-08);
   border-radius: 10px;
-  color: rgba(244, 244, 245, 0.9);
+  color: rgba(var(--zinc-100-rgb), 0.9);
   font-size: var(--fs-14);
   cursor: pointer;
   outline: none;
@@ -188,9 +193,9 @@
 
 .wl-sort-trigger:hover,
 .wl-sort-trigger[aria-expanded="true"] {
-  border-color: rgba(216, 180, 254, 0.4);
-  background: rgba(216, 180, 254, 0.06);
-  color: #f4f4f5;
+  border-color: rgba(var(--purple-300-rgb), 0.4);
+  background: rgba(var(--purple-300-rgb), 0.06);
+  color: var(--zinc-100);
 }
 
 .wl-sort-chev {
@@ -213,7 +218,7 @@
   min-width: 160px;
   background: rgba(20, 18, 38, 0.95);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(216, 180, 254, 0.2);
+  border: 1px solid rgba(var(--purple-300-rgb), 0.2);
   border-radius: 10px;
   box-shadow: 0 12px 32px var(--black-55);
   transform-origin: top right;
@@ -240,13 +245,13 @@
 }
 
 .wl-sort-item:hover {
-  background: rgba(216, 180, 254, 0.1);
-  color: #f4f4f5;
+  background: rgba(var(--purple-300-rgb), 0.1);
+  color: var(--zinc-100);
 }
 
 .wl-sort-item.active {
-  color: rgba(216, 180, 254, 0.95);
-  background: rgba(216, 180, 254, 0.08);
+  color: rgba(var(--purple-300-rgb), 0.95);
+  background: rgba(var(--purple-300-rgb), 0.08);
 }
 
 /* ── grid ── */
@@ -305,7 +310,7 @@
 .wl-card-title {
   font-size: var(--fs-14);
   font-weight: 500;
-  color: rgba(244, 244, 245, 0.95);
+  color: rgba(var(--zinc-100-rgb), 0.95);
   margin: 0 0 var(--space-1);
   display: -webkit-box;
   -webkit-line-clamp: 2;
