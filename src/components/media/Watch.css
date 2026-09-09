@@ -16,7 +16,7 @@
   position: fixed;
   inset: 0;
   z-index: 1;
-  background: rgba(6, 5, 14, 0.55);
+  background: rgba(var(--surface-0-rgb), 0.55);
   pointer-events: none;
 }
 
@@ -43,7 +43,7 @@
 
 .w-subtitle {
   font-size: var(--fs-16);
-  color: rgba(229, 229, 245, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   letter-spacing: 0.04em;
   margin: 0 0 var(--space-4-5);
 }
@@ -79,7 +79,7 @@
 
 .w-stat-label {
   font-size: var(--fs-12);
-  color: rgba(229, 229, 245, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   letter-spacing: 0.06em;
 }
 
@@ -96,7 +96,7 @@
   animation: w-live-pulse 2s ease-in-out infinite;
 }
 .w-eyebrow--last {
-  color: rgba(229, 229, 245, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
 }
 @keyframes w-live-pulse {
   0%,
@@ -141,7 +141,7 @@
   aspect-ratio: 3 / 2;
   border-radius: 18px;
   overflow: hidden;
-  background: rgba(6, 5, 14, 0.6);
+  background: rgba(var(--surface-0-rgb), 0.6);
   text-decoration: none;
   color: inherit;
   box-shadow: 0 16px 44px var(--black-40);
@@ -178,7 +178,12 @@
   position: absolute;
   inset: auto 0 0 0;
   padding: var(--space-14) var(--space-9) 30px;
-  background: linear-gradient(180deg, rgba(6, 5, 14, 0) 0%, rgba(6, 5, 14, 0.55) 55%, rgba(6, 5, 14, 0.9) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(var(--surface-0-rgb), 0) 0%,
+    rgba(var(--surface-0-rgb), 0.55) 55%,
+    rgba(var(--surface-0-rgb), 0.9) 100%
+  );
 }
 
 .w-now-title {
@@ -235,7 +240,7 @@
 
 .w-h2-sub {
   font-size: var(--fs-14);
-  color: rgba(229, 229, 245, 0.45);
+  color: rgba(var(--ink-rgb), 0.45);
   margin: 0 0 var(--space-7);
 }
 
@@ -308,7 +313,7 @@
 .w-fav {
   margin: 0;
   padding: var(--space-3-5) var(--space-3-5) var(--space-4);
-  background: rgba(18, 14, 30, 0.55);
+  background: rgba(var(--surface-1-rgb), 0.55);
   border: 1px solid var(--white-06);
   border-radius: 16px;
   backdrop-filter: blur(8px);
@@ -322,7 +327,7 @@
 
 .w-fav:hover {
   transform: translateY(-6px);
-  background: rgba(20, 18, 38, 0.7);
+  background: rgba(var(--surface-3-rgb), 0.7);
   border-color: rgba(var(--purple-300-rgb), 0.3);
   box-shadow:
     0 22px 50px var(--black-50),
@@ -393,7 +398,7 @@
 }
 .w-fav-year {
   font-size: var(--fs-12);
-  color: rgba(229, 229, 245, 0.4);
+  color: rgba(var(--ink-rgb), 0.4);
 }
 
 /* ── 最近在看（清單 + 週分組）── */
@@ -409,7 +414,7 @@
   margin-top: 0;
 }
 .w-recent-group--dim {
-  color: rgba(229, 229, 245, 0.3);
+  color: rgba(var(--ink-rgb), 0.3);
 }
 
 /* ── 最近在看（風格 D：純清單，日期 column + 縮圖 + 標題 + tag，無裝飾線）── */
@@ -447,7 +452,7 @@
 /* 日期 anchor — 同一天只第一筆顯示 */
 .w-recent-anchor {
   font-size: var(--fs-13);
-  color: rgba(229, 229, 245, 0.45);
+  color: rgba(var(--ink-rgb), 0.45);
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
@@ -509,7 +514,7 @@
 
 .w-recent-meta {
   font-size: var(--fs-12);
-  color: rgba(229, 229, 245, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   font-variant-numeric: tabular-nums;
 }
 
@@ -522,7 +527,7 @@
 .w-ending {
   margin: var(--space-6) 0 0;
   font-size: var(--fs-16);
-  color: rgba(229, 229, 245, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
   text-align: center;
   letter-spacing: 0.05em;
   font-style: italic;
@@ -590,7 +595,7 @@
     opacity: 1;
     transform: none;
     padding: var(--space-2) 0 0;
-    color: rgba(229, 229, 245, 0.55);
+    color: rgba(var(--ink-rgb), 0.55);
     font-size: var(--fs-12);
   }
   .w-fav:hover .w-fav-poster img {

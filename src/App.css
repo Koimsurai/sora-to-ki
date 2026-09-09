@@ -25,7 +25,8 @@ body {
   text-decoration: none;
   cursor: pointer;
   background:
-    linear-gradient(135deg, rgba(var(--brand-rgb), 0.15) 0%, rgba(220, 50, 120, 0.1) 100%), rgba(20, 18, 38, 0.5);
+    linear-gradient(135deg, rgba(var(--brand-rgb), 0.15) 0%, rgba(var(--magenta-rgb), 0.1) 100%),
+    rgba(var(--surface-3-rgb), 0.5);
   border: 1px solid var(--white-08);
   box-shadow:
     inset 0 1px 0 var(--white-08),
@@ -49,9 +50,9 @@ body {
   padding: var(--space-px);
   background: linear-gradient(
     135deg,
-    rgba(224, 195, 252, 0.55),
+    rgba(var(--lavender-soft-rgb), 0.55),
     rgba(var(--brand-rgb), 0.45) 45%,
-    rgba(220, 50, 120, 0.35)
+    rgba(var(--magenta-rgb), 0.35)
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -85,7 +86,7 @@ body {
   box-shadow:
     inset 0 1px 0 var(--white-15),
     0 8px 24px rgba(var(--brand-rgb), 0.2),
-    0 0 32px rgba(220, 50, 120, 0.1);
+    0 0 32px rgba(var(--magenta-rgb), 0.1);
 }
 .koim-btn:hover::before {
   opacity: 1;
@@ -137,7 +138,8 @@ body {
   color: #fff;
   border-color: transparent;
   background:
-    linear-gradient(135deg, rgba(var(--brand-rgb), 0.5) 0%, rgba(220, 50, 120, 0.35) 100%), rgba(20, 18, 38, 0.6);
+    linear-gradient(135deg, rgba(var(--brand-rgb), 0.5) 0%, rgba(var(--magenta-rgb), 0.35) 100%),
+    rgba(var(--surface-3-rgb), 0.6);
   box-shadow:
     inset 0 1px 0 var(--white-20),
     0 6px 20px rgba(var(--brand-rgb), 0.3);
@@ -175,7 +177,7 @@ body {
 .App {
   position: relative; /* 為了讓 fixed 定位的子元素正確 */
   width: 100%;
-  background-color: #06050e; /* 深藍黑色背景 */
+  background-color: var(--surface-0); /* 深藍黑色背景 */
   /* 將塵埃帶加回背景 */
   background-image:
 /* 塵埃帶 (使用之前檔案中的值) */

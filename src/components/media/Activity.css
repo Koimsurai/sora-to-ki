@@ -16,7 +16,7 @@
 .activity-dim-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 5, 14, 0.7);
+  background: rgba(var(--surface-0-rgb), 0.7);
   pointer-events: none;
   z-index: 0;
 }
@@ -51,7 +51,12 @@
   height: 520px;
   bottom: -6%;
   right: -8%;
-  background: radial-gradient(circle, rgba(200, 50, 140, 0.4) 0%, rgba(140, 30, 170, 0.2) 45%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(var(--magenta-deep-rgb), 0.4) 0%,
+    rgba(140, 30, 170, 0.2) 45%,
+    transparent 70%
+  );
   animation: a-neb2 36s ease-in-out infinite;
 }
 .activity-nebula-3 {
@@ -76,7 +81,7 @@
     radial-gradient(1px 1px at 50% 10%, var(--white-08) 0%, transparent 100%),
     radial-gradient(1px 1px at 75% 50%, var(--white-06) 0%, transparent 100%),
     radial-gradient(1.2px 1.2px at 18% 85%, rgba(var(--brand-rgb), 0.1) 0%, transparent 100%),
-    radial-gradient(1.2px 1.2px at 90% 12%, rgba(200, 50, 140, 0.08) 0%, transparent 100%);
+    radial-gradient(1.2px 1.2px at 90% 12%, rgba(var(--magenta-deep-rgb), 0.08) 0%, transparent 100%);
 }
 
 @keyframes a-neb1 {
@@ -246,7 +251,7 @@
   isolation: isolate;
   min-height: 140px;
   border: 1px solid var(--white-08);
-  background: rgba(20, 18, 38, 0.55);
+  background: rgba(var(--surface-3-rgb), 0.55);
   transition:
     transform 0.25s ease,
     border-color 0.25s ease,
@@ -275,8 +280,13 @@
   z-index: 1;
   /* 從左下深→右上漸亮，讓 nameplate 整體變柔和但仍可見動畫 */
   background:
-    linear-gradient(135deg, rgba(6, 5, 14, 0.8) 0%, rgba(6, 5, 14, 0.3) 55%, rgba(6, 5, 14, 0.55) 100%),
-    linear-gradient(to top, rgba(6, 5, 14, 0.5) 0%, rgba(6, 5, 14, 0) 60%);
+    linear-gradient(
+      135deg,
+      rgba(var(--surface-0-rgb), 0.8) 0%,
+      rgba(var(--surface-0-rgb), 0.3) 55%,
+      rgba(var(--surface-0-rgb), 0.55) 100%
+    ),
+    linear-gradient(to top, rgba(var(--surface-0-rgb), 0.5) 0%, rgba(var(--surface-0-rgb), 0) 60%);
 }
 
 .steam-profile-content {
@@ -302,7 +312,7 @@
   position: absolute;
   inset: 8px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.25), rgba(220, 50, 120, 0.2));
+  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.25), rgba(var(--magenta-rgb), 0.2));
   filter: blur(12px);
   opacity: 0.7;
   z-index: 0;
@@ -546,7 +556,7 @@
      (.is-fallback class added by onError once <img> is hidden) */
   background:
     radial-gradient(120% 80% at 50% 35%, rgba(var(--brand-rgb), 0.3) 0%, transparent 65%),
-    linear-gradient(135deg, #1a1530 0%, #120e1e 100%);
+    linear-gradient(135deg, #1a1530 0%, var(--surface-1) 100%);
 }
 .steam-recent-cover img {
   width: 100%;
@@ -565,15 +575,20 @@
   background-image:
     radial-gradient(1.5px 1.5px at 18% 30%, var(--white-50) 0%, transparent 100%),
     radial-gradient(1.5px 1.5px at 72% 22%, var(--white-35) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 88% 70%, rgba(199, 184, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 88% 70%, rgba(var(--lavender-rgb), 0.4) 0%, transparent 100%),
     radial-gradient(1.5px 1.5px at 30% 78%, var(--white-30) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 56% 50%, rgba(199, 184, 255, 0.45) 0%, transparent 100%);
+    radial-gradient(1.5px 1.5px at 56% 50%, rgba(var(--lavender-rgb), 0.45) 0%, transparent 100%);
 }
 .steam-recent-overlay {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(to top, rgba(6, 5, 14, 0.9) 0%, rgba(6, 5, 14, 0.55) 45%, rgba(6, 5, 14, 0.06) 100%);
+  background: linear-gradient(
+    to top,
+    rgba(var(--surface-0-rgb), 0.9) 0%,
+    rgba(var(--surface-0-rgb), 0.55) 45%,
+    rgba(var(--surface-0-rgb), 0.06) 100%
+  );
 }
 .steam-recent-info {
   position: absolute;
@@ -809,7 +824,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, rgba(6, 5, 14, 0.25) 0%, rgba(6, 5, 14, 0.5) 100%);
+  background: linear-gradient(180deg, rgba(var(--surface-0-rgb), 0.25) 0%, rgba(var(--surface-0-rgb), 0.5) 100%);
   border-radius: 8px;
   z-index: 5;
   pointer-events: none;
@@ -876,7 +891,7 @@
   background: rgba(var(--brand-rgb), 0.6);
 }
 .heatmap-day.level-4 {
-  background: rgba(200, 50, 140, 0.7);
+  background: rgba(var(--magenta-deep-rgb), 0.7);
 }
 
 .day-tooltip {
@@ -884,7 +899,7 @@
   bottom: 120%;
   left: 50%;
   transform: translateX(-50%) scale(0);
-  background: rgba(6, 5, 14, 0.95);
+  background: rgba(var(--surface-0-rgb), 0.95);
   color: #fff;
   padding: var(--space-1) var(--space-2);
   border-radius: 6px;
@@ -903,7 +918,7 @@
   left: 50%;
   transform: translateX(-50%);
   border: 4px solid transparent;
-  border-top-color: rgba(6, 5, 14, 0.95);
+  border-top-color: rgba(var(--surface-0-rgb), 0.95);
 }
 .heatmap-day:hover .day-tooltip {
   transform: translateX(-50%) scale(1);
@@ -946,7 +961,7 @@
   background: rgba(var(--brand-rgb), 0.6);
 }
 .legend-square.level-4 {
-  background: rgba(200, 50, 140, 0.7);
+  background: rgba(var(--magenta-deep-rgb), 0.7);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1090,7 +1105,7 @@
 
 .project-row-fill {
   height: 100%;
-  background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.6), rgba(200, 50, 140, 0.5));
+  background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.6), rgba(var(--magenta-deep-rgb), 0.5));
   border-radius: 3px;
 }
 
@@ -1185,7 +1200,7 @@
 .game-gallery-info {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(6, 5, 14, 0.9) 0%, transparent 55%);
+  background: linear-gradient(to top, rgba(var(--surface-0-rgb), 0.9) 0%, transparent 55%);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;

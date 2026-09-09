@@ -236,6 +236,35 @@
     /* 更大的圓角 - 更現代 */
     --radius: 0.75rem;
 
+    /* ── 站點自己的品牌色 ──────────────────────────────────────────────────
+       下面那批 Tailwind 色票是「抄過來的」，這一批是這個站自己的顏色——不在任何
+       公開色票上，所以只能靠語意命名。值就是原本在用的 hex，零視覺變化。
+
+       `--surface-*` 依明度排（0 最深）：0 是頁面底，1–3 是疊在上面的面板與卡片。
+       這四個都是近黑，2026-09-08 的收斂已經把 56 個近黑併成 10 個，剩下的這四個
+       是**真的有層次差別**的那幾層，不要再往下併。
+
+       帶透明度時用 `rgba(var(--surface-0-rgb), a)`，跟 `--brand-rgb` 同一套寫法。
+       這九個**每一個都有帶 alpha 的用法**，所以九個都配了 -rgb。 */
+    --surface-0: #06050e; /* 頁面底 */
+    --surface-0-rgb: 6, 5, 14;
+    --surface-1: #120e1e;
+    --surface-1-rgb: 18, 14, 30;
+    --surface-2: #14141e;
+    --surface-2-rgb: 20, 20, 30;
+    --surface-3: #141226;
+    --surface-3-rgb: 20, 18, 38;
+    --ink: #e5e5f5; /* 主文字 */
+    --ink-rgb: 229, 229, 245;
+    --lavender: #c7b8ff;
+    --lavender-rgb: 199, 184, 255;
+    --lavender-soft: #e0c3fc;
+    --lavender-soft-rgb: 224, 195, 252;
+    --magenta: #dc3278;
+    --magenta-rgb: 220, 50, 120;
+    --magenta-deep: #c8328c;
+    --magenta-deep-rgb: 200, 50, 140;
+
     /* ── 調色盤：Tailwind v3 色票 ──────────────────────────────────────────
        全站有 23 個底色、315 次使用是**一字不差**的 Tailwind v3 色票（purple-300 就用了
        90 次）。用色票名命名是客觀的，不用猜語意；值就是原本在用的 hex，零視覺變化。
@@ -525,7 +554,7 @@ body,
  * 這不改變任何正常狀態下的外觀——`.App` 照樣蓋在上面，顏色也刻意取一樣的值。
  */
 html {
-  background-color: #06050e;
+  background-color: var(--surface-0);
 }
 
 *,
@@ -689,7 +718,7 @@ body::after {
   font-weight: 700;
   line-height: 1.18;
   margin: 0 0 var(--space-6);
-  background: linear-gradient(135deg, #fff 0%, #c7b8ff 100%);
+  background: linear-gradient(135deg, #fff 0%, var(--lavender) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -800,7 +829,7 @@ html.no-gpu [class*="nebula"] {
 }
 /* 玻璃卡片沒了模糊會變太透 → 補一點不透明度，維持可讀性 */
 html.no-gpu .post-content-wrapper::before {
-  background: rgba(18, 14, 30, 0.9);
+  background: rgba(var(--surface-1-rgb), 0.9);
 }
 @media (prefers-reduced-motion: no-preference) {
   html.no-gpu .comet,

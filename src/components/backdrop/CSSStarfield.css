@@ -6,7 +6,7 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 30%, #120e1e 0%, #06050e 70%);
+  background: radial-gradient(ellipse at 50% 30%, var(--surface-1) 0%, var(--surface-0) 70%);
 }
 
 .css-stars {
@@ -20,7 +20,7 @@
 .css-stars--far {
   background-image:
     radial-gradient(1px 1px at 20px 30px, var(--white-70), transparent),
-    radial-gradient(1px 1px at 80px 120px, rgba(199, 184, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 80px 120px, rgba(var(--lavender-rgb), 0.6), transparent),
     radial-gradient(1px 1px at 160px 60px, var(--white-50), transparent),
     radial-gradient(1px 1px at 230px 180px, var(--white-60), transparent),
     radial-gradient(1px 1px at 300px 90px, rgba(var(--purple-300-rgb), 0.5), transparent);

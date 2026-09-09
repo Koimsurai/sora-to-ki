@@ -105,7 +105,7 @@
 }
 
 .hero-name {
-  background: linear-gradient(120deg, #c7b8ff 0%, #ec7dd6 100%);
+  background: linear-gradient(120deg, var(--lavender) 0%, #ec7dd6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -526,7 +526,7 @@
   background: transparent;
   border: 1px solid var(--white-06);
   border-radius: 50%;
-  color: rgba(229, 229, 245, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
   text-decoration: none;
   font-size: 1.05em;
   transition:

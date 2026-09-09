@@ -79,7 +79,7 @@
 }
 
 .blog-title-gradient {
-  background: linear-gradient(135deg, #e0c3fc 0%, var(--brand) 40%, #dc3278 100%);
+  background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 40%, var(--magenta) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -927,7 +927,7 @@
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  background: rgba(18, 14, 30, 0.95);
+  background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: 16px;
   box-shadow:
@@ -1002,7 +1002,7 @@
   margin-bottom: var(--space-1);
 }
 .activity-heatmap .heatmap-total {
-  background: linear-gradient(135deg, #e0c3fc 0%, var(--brand) 60%, #dc3278 100%);
+  background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 60%, var(--magenta) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1051,7 +1051,7 @@
   background: rgba(var(--brand-rgb), 0.8);
 }
 .activity-heatmap .heatmap-level-4 {
-  background: linear-gradient(135deg, var(--brand), #dc3278);
+  background: linear-gradient(135deg, var(--brand), var(--magenta));
   box-shadow: 0 0 8px rgba(var(--brand-rgb), 0.4);
 }
 .activity-heatmap .heatmap-level--1 {

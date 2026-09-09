@@ -8,16 +8,16 @@
   margin-top: 0;
   /* padding-top 拉大成 fade zone（內容跟 footer 文字之間有寬鬆的過渡） */
   padding: 8rem var(--space-8) var(--space-8);
-  color: rgba(229, 229, 245, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
   font-size: var(--fs-14);
   /* 純漸層融合，不用 backdrop-filter（會造硬邊）。
      重點：開頭 alpha 必須跟 ::before 結尾相同，避免「中間突然斷一截」的透明線 */
   background: linear-gradient(
     180deg,
-    rgba(18, 14, 30, 0.3) 0%,
-    rgba(18, 14, 30, 0.5) 25%,
-    rgba(18, 14, 30, 0.7) 60%,
-    rgba(6, 5, 14, 0.9) 100%
+    rgba(var(--surface-1-rgb), 0.3) 0%,
+    rgba(var(--surface-1-rgb), 0.5) 25%,
+    rgba(var(--surface-1-rgb), 0.7) 60%,
+    rgba(var(--surface-0-rgb), 0.9) 100%
   );
   border-top: none;
   overflow: hidden;
@@ -33,7 +33,7 @@
   left: 0;
   right: 0;
   height: 160px;
-  background: linear-gradient(180deg, rgba(18, 14, 30, 0) 0%, rgba(18, 14, 30, 0.3) 100%);
+  background: linear-gradient(180deg, rgba(var(--surface-1-rgb), 0) 0%, rgba(var(--surface-1-rgb), 0.3) 100%);
   pointer-events: none;
 }
 

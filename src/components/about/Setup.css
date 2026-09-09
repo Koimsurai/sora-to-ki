@@ -17,8 +17,8 @@
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(18, 14, 30, 0.8) 0%, #000000 70%),
-    radial-gradient(ellipse at 20% 80%, rgba(20, 18, 38, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(var(--surface-1-rgb), 0.8) 0%, #000000 70%),
+    radial-gradient(ellipse at 20% 80%, rgba(var(--surface-3-rgb), 0.4) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, rgba(5, 10, 25, 0.3) 0%, transparent 50%);
 }
 

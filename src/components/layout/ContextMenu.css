@@ -4,7 +4,7 @@
   min-width: 13rem;
   padding: var(--space-1-5);
   border-radius: 12px;
-  background: rgba(20, 20, 30, 0.9);
+  background: rgba(var(--surface-2-rgb), 0.9);
   border: 1px solid var(--white-10);
   box-shadow: 0 14px 44px var(--black-55);
   backdrop-filter: blur(16px);

@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: rgba(6, 5, 14, 0.55);
+  background: rgba(var(--surface-0-rgb), 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;
@@ -23,7 +23,7 @@
 
 .cmdk-wrap {
   width: min(640px, 92vw);
-  background: rgba(18, 14, 30, 0.9);
+  background: rgba(var(--surface-1-rgb), 0.9);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: 14px;
   box-shadow:

@@ -37,7 +37,7 @@
 .info-page-subtitle {
   margin: 0;
   font-size: var(--fs-16);
-  color: rgba(229, 229, 245, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   letter-spacing: 0.04em;
 }
 
@@ -119,11 +119,11 @@
 .info-page-timeline-date {
   font-family: "SF Mono", Menlo, Consolas, monospace;
   font-size: var(--fs-14);
-  color: rgba(229, 229, 245, 0.45);
+  color: rgba(var(--ink-rgb), 0.45);
   letter-spacing: 0.02em;
 }
 .info-page-timeline-text {
-  color: rgba(229, 229, 245, 0.9);
+  color: rgba(var(--ink-rgb), 0.9);
 }
 .info-page-timeline-text strong {
   color: var(--zinc-100);
@@ -151,7 +151,7 @@
 .info-page-closing {
   margin: 0 0 var(--space-6);
   font-size: var(--fs-14);
-  color: rgba(229, 229, 245, 0.45);
+  color: rgba(var(--ink-rgb), 0.45);
 }
 
 /* ── pager (prev / next) ──────────────────────── */
@@ -195,7 +195,7 @@
 .info-page-pager-title {
   font-size: var(--fs-16);
   font-weight: 600;
-  color: rgba(229, 229, 245, 0.9);
+  color: rgba(var(--ink-rgb), 0.9);
 }
 .info-page-pager-link:hover .info-page-pager-title {
   color: var(--zinc-100);
@@ -249,7 +249,7 @@
   text-overflow: ellipsis;
 }
 .friend-card-tagline {
-  color: rgba(229, 229, 245, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
   font-size: var(--fs-13);
   white-space: nowrap;
   overflow: hidden;
@@ -291,7 +291,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-5);
-  background: rgba(6, 5, 14, 0.7);
+  background: rgba(var(--surface-0-rgb), 0.7);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -360,7 +360,7 @@
 }
 .friends-modal-field > span {
   font-size: var(--fs-12);
-  color: rgba(229, 229, 245, 0.7);
+  color: rgba(var(--ink-rgb), 0.7);
   letter-spacing: 0.04em;
 }
 .friends-modal-field .req {
@@ -385,7 +385,7 @@
   background: var(--white-06);
 }
 .friends-modal-field input::placeholder {
-  color: rgba(229, 229, 245, 0.3);
+  color: rgba(var(--ink-rgb), 0.3);
 }
 
 .friends-modal-actions {

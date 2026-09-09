@@ -14,7 +14,7 @@
   inset: -48px -72px;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse 78% 72% at 48% 50%, rgba(6, 5, 14, 0.7), transparent 76%);
+  background: radial-gradient(ellipse 78% 72% at 48% 50%, rgba(var(--surface-0-rgb), 0.7), transparent 76%);
 }
 
 /* ── Left hero column ──────────────────────────── */
@@ -30,7 +30,7 @@
   font-size: clamp(4rem, 9vw, 7.5rem);
   font-weight: 800;
   line-height: 0.95;
-  background: linear-gradient(135deg, #c7b8ff 0%, #ec7dd6 100%);
+  background: linear-gradient(135deg, var(--lavender) 0%, #ec7dd6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -82,7 +82,7 @@
 }
 
 .expertise-row-label .section-label {
-  color: rgba(199, 184, 255, 0.6);
+  color: rgba(var(--lavender-rgb), 0.6);
 }
 
 .expertise-row-name {

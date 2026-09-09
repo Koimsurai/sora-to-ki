@@ -325,7 +325,7 @@
   max-width: min(340px, 80vw);
   padding: var(--space-2);
   border-radius: 12px;
-  background: rgba(18, 14, 30, 0.95);
+  background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid var(--white-10);
   box-shadow: 0 12px 34px var(--black-50);
   backdrop-filter: blur(12px);
@@ -387,7 +387,7 @@
   border-radius: 9px;
   font-size: var(--fs-12);
   color: var(--white-90);
-  background: rgba(18, 14, 30, 0.9);
+  background: rgba(var(--surface-1-rgb), 0.9);
   border: 1px solid var(--white-10);
   box-shadow: 0 8px 24px var(--black-40);
   opacity: 0;
@@ -432,7 +432,7 @@
   max-width: min(340px, 80vw);
   padding: var(--space-2);
   border-radius: 12px;
-  background: rgba(18, 14, 30, 0.95);
+  background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid var(--white-10);
   box-shadow: 0 12px 34px var(--black-50);
   backdrop-filter: blur(12px);

@@ -21,7 +21,7 @@
 }
 
 .clubs-v2 .club-row.open {
-  border-color: rgba(199, 184, 255, 0.2);
+  border-color: rgba(var(--lavender-rgb), 0.2);
 }
 
 .club-icon-wrap {
@@ -33,7 +33,7 @@
   display: grid;
   place-items: center;
   font-size: var(--fs-18);
-  color: rgba(199, 184, 255, 0.95);
+  color: rgba(var(--lavender-rgb), 0.95);
   transition:
     background 220ms ease,
     border-color 220ms ease,
@@ -75,7 +75,7 @@
 
 /* Accessible focus ring for keyboard users only */
 .clubs-v2 .club-row-head:focus-visible {
-  box-shadow: inset 0 0 0 2px rgba(199, 184, 255, 0.45);
+  box-shadow: inset 0 0 0 2px rgba(var(--lavender-rgb), 0.45);
   border-radius: inherit;
 }
 
@@ -128,7 +128,7 @@
   display: inline-block;
   transition: transform 220ms ease;
   font-size: var(--fs-12);
-  color: rgba(199, 184, 255, 0.6);
+  color: rgba(var(--lavender-rgb), 0.6);
 }
 
 .club-caret.open {

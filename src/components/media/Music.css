@@ -59,7 +59,7 @@
 }
 
 .music-title-gradient {
-  background: linear-gradient(135deg, #e0c3fc 0%, var(--brand) 40%, #dc3278 100%);
+  background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 40%, var(--magenta) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -753,7 +753,7 @@
 
 .decade-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.8), rgba(220, 50, 120, 0.8));
+  background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.8), rgba(var(--magenta-rgb), 0.8));
   border-radius: 5px;
 }
 

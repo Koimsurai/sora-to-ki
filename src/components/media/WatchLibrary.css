@@ -14,7 +14,7 @@
   position: fixed;
   inset: 0;
   z-index: 1;
-  background: rgba(6, 5, 14, 0.55);
+  background: rgba(var(--surface-0-rgb), 0.55);
   pointer-events: none;
 }
 
@@ -56,7 +56,7 @@
 
 .wl-subtitle {
   font-size: var(--fs-16);
-  color: rgba(229, 229, 245, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
   margin: 0;
 }
 
@@ -74,7 +74,7 @@
   border: none;
   padding: var(--space-3) var(--space-1) var(--space-3-5);
   cursor: pointer;
-  color: rgba(229, 229, 245, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   font-size: var(--fs-16);
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -113,7 +113,7 @@
 
 .wl-tab-count {
   font-size: var(--fs-12);
-  color: rgba(229, 229, 245, 0.4);
+  color: rgba(var(--ink-rgb), 0.4);
   font-variant-numeric: tabular-nums;
   transition: color 0.2s ease;
 }
@@ -140,7 +140,7 @@
   background: var(--white-04);
   border: 1px solid var(--white-08);
   border-radius: 10px;
-  color: rgba(229, 229, 245, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   transition:
     border-color 0.2s ease,
     background 0.2s ease;
@@ -163,7 +163,7 @@
 }
 
 .wl-search input::placeholder {
-  color: rgba(229, 229, 245, 0.4);
+  color: rgba(var(--ink-rgb), 0.4);
 }
 
 /* custom sort popup（自製，不用 native <select>）*/
@@ -216,7 +216,7 @@
   margin: 0;
   padding: var(--space-1-5);
   min-width: 160px;
-  background: rgba(20, 18, 38, 0.95);
+  background: rgba(var(--surface-3-rgb), 0.95);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(var(--purple-300-rgb), 0.2);
   border-radius: 10px;
@@ -236,7 +236,7 @@
   border: none;
   text-align: left;
   font-size: var(--fs-14);
-  color: rgba(229, 229, 245, 0.8);
+  color: rgba(var(--ink-rgb), 0.8);
   cursor: pointer;
   border-radius: 6px;
   transition:
@@ -324,7 +324,7 @@
   gap: var(--space-2);
   align-items: center;
   font-size: var(--fs-12);
-  color: rgba(229, 229, 245, 0.45);
+  color: rgba(var(--ink-rgb), 0.45);
   margin: 0;
   flex-wrap: wrap;
 }
@@ -338,7 +338,7 @@
 .wl-info {
   text-align: center;
   font-size: var(--fs-16);
-  color: rgba(229, 229, 245, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   padding: var(--space-16) 0;
 }
 

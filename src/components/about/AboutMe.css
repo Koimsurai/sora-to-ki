@@ -25,7 +25,7 @@
 
 .about-facts-label {
   margin-bottom: var(--space-5);
-  color: rgba(199, 184, 255, 0.55);
+  color: rgba(var(--lavender-rgb), 0.55);
 }
 
 .about-facts dl {

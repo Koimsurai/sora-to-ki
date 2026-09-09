@@ -67,7 +67,7 @@
   padding: 0 0 0 var(--space-0-5);
   border: 1px solid var(--white-25);
   border-radius: 50%;
-  background: rgba(18, 14, 30, 0.7);
+  background: rgba(var(--surface-1-rgb), 0.7);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: #fff;
@@ -88,7 +88,7 @@
   outline: none;
 }
 .vp-bigplay:focus:not(:focus-visible) {
-  background: rgba(18, 14, 30, 0.7);
+  background: rgba(var(--surface-1-rgb), 0.7);
   transform: translate(-50%, -50%);
 }
 
@@ -104,7 +104,7 @@
   gap: var(--space-2);
   padding: var(--space-1-5) var(--space-2-5);
   border-radius: 10px;
-  background: rgba(6, 5, 14, 0.7);
+  background: rgba(var(--surface-0-rgb), 0.7);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--white-08);

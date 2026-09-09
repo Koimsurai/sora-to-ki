@@ -7,7 +7,7 @@
 .nebula-dim-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 5, 14, 0.7);
+  background: rgba(var(--surface-0-rgb), 0.7);
   pointer-events: none;
   z-index: 0;
   opacity: 1;
@@ -51,7 +51,12 @@ body.intro-animation-active .nebula-dim-overlay {
   height: 520px;
   bottom: -6%;
   right: -8%;
-  background: radial-gradient(circle, rgba(200, 50, 140, 0.4) 0%, rgba(140, 30, 170, 0.2) 45%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(var(--magenta-deep-rgb), 0.4) 0%,
+    rgba(140, 30, 170, 0.2) 45%,
+    transparent 70%
+  );
   animation: nebula-anim2 36s ease-in-out infinite;
 }
 
@@ -78,7 +83,7 @@ body.intro-animation-active .nebula-dim-overlay {
     radial-gradient(1px 1px at 50% 10%, var(--white-08) 0%, transparent 100%),
     radial-gradient(1px 1px at 75% 50%, var(--white-06) 0%, transparent 100%),
     radial-gradient(1.2px 1.2px at 18% 85%, rgba(var(--brand-rgb), 0.1) 0%, transparent 100%),
-    radial-gradient(1.2px 1.2px at 90% 12%, rgba(200, 50, 140, 0.08) 0%, transparent 100%);
+    radial-gradient(1.2px 1.2px at 90% 12%, rgba(var(--magenta-deep-rgb), 0.08) 0%, transparent 100%);
 }
 
 @keyframes nebula-anim1 {

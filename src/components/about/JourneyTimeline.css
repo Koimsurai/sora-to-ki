@@ -74,7 +74,7 @@
 .jt-subtitle {
   margin: 0 0 var(--space-2-5);
   font-size: var(--fs-13);
-  color: rgba(199, 184, 255, 0.8);
+  color: rgba(var(--lavender-rgb), 0.8);
 }
 
 .jt-desc {
@@ -117,7 +117,7 @@
   text-align: center;
   font-size: var(--fs-14);
   letter-spacing: 1px;
-  color: rgba(199, 184, 255, 0.55);
+  color: rgba(var(--lavender-rgb), 0.55);
 }
 
 @media (max-width: 720px) {

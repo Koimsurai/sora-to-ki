@@ -45,7 +45,7 @@
 .blog-post-dim-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(6, 5, 14, 0.8);
+  background: rgba(var(--surface-0-rgb), 0.8);
   pointer-events: none;
   z-index: 0;
 }
@@ -413,7 +413,7 @@
   min-width: 220px;
   max-width: min(420px, 80vw);
   padding: var(--space-2-5) var(--space-3-5);
-  background: rgba(18, 14, 30, 0.95);
+  background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.35);
   border-radius: 10px;
   color: var(--white-80);

@@ -14,12 +14,12 @@
   padding: 0;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(199, 184, 255, 0.2);
-  background: rgba(20, 18, 38, 0.55);
+  border: 1px solid rgba(var(--lavender-rgb), 0.2);
+  background: rgba(var(--surface-3-rgb), 0.55);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 50%;
-  color: rgba(199, 184, 255, 0.9);
+  color: rgba(var(--lavender-rgb), 0.9);
   cursor: pointer;
   opacity: 0;
   visibility: hidden;
@@ -45,7 +45,7 @@
 
 .back-to-top:hover {
   background: rgba(var(--brand-rgb), 0.2);
-  border-color: rgba(199, 184, 255, 0.55);
+  border-color: rgba(var(--lavender-rgb), 0.55);
   color: #fff;
   box-shadow:
     0 6px 22px var(--black-35),
@@ -58,14 +58,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(229, 229, 245, 0.9);
+  color: rgba(var(--ink-rgb), 0.9);
   transition: filter 0.22s ease;
 }
 
 /* 把舊的 CSS launch 動畫拿掉，改交給 @animateicons/react Rocket 的內建動畫驅動。
    保留 hover 時的微弱發光感受。 */
 .back-to-top:hover .back-to-top-icon {
-  filter: drop-shadow(0 0 6px rgba(199, 184, 255, 0.7));
+  filter: drop-shadow(0 0 6px rgba(var(--lavender-rgb), 0.7));
 }
 
 /* SVG progress ring sitting just inside the pill border */
@@ -82,7 +82,7 @@
 }
 
 .back-to-top-ring-progress {
-  stroke: rgba(199, 184, 255, 0.8);
+  stroke: rgba(var(--lavender-rgb), 0.8);
   transition: stroke-dashoffset 120ms linear;
   filter: drop-shadow(0 0 4px rgba(var(--brand-rgb), 0.5));
 }

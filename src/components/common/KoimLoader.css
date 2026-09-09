@@ -55,7 +55,7 @@
     from 0deg,
     transparent 0deg,
     rgba(var(--brand-rgb), 0.6) 110deg,
-    rgba(220, 50, 120, 0.8) 200deg,
+    rgba(var(--magenta-rgb), 0.8) 200deg,
     transparent 240deg
   );
   -webkit-mask: radial-gradient(
@@ -80,7 +80,7 @@
   background: conic-gradient(
     from 180deg,
     transparent 0deg,
-    rgba(224, 195, 252, 0.8) 90deg,
+    rgba(var(--lavender-soft-rgb), 0.8) 90deg,
     rgba(var(--brand-rgb), 0.55) 180deg,
     transparent 220deg
   );
@@ -99,10 +99,10 @@
 .koim-loader-core {
   position: relative;
   border-radius: 50%;
-  background: linear-gradient(135deg, #e0c3fc 0%, var(--brand) 50%, #dc3278 100%);
+  background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 50%, var(--magenta) 100%);
   box-shadow:
     0 0 14px rgba(var(--brand-rgb), 0.7),
-    0 0 28px rgba(220, 50, 120, 0.35);
+    0 0 28px rgba(var(--magenta-rgb), 0.35);
   z-index: 2;
 }
 .koim-loader-shell--sm .koim-loader-core {
@@ -154,7 +154,12 @@
   margin: 0;
   font-size: var(--fs-14);
   letter-spacing: 0.08em;
-  background: linear-gradient(90deg, var(--white-45) 0%, rgba(224, 195, 252, 0.95) 50%, var(--white-45) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--white-45) 0%,
+    rgba(var(--lavender-soft-rgb), 0.95) 50%,
+    var(--white-45) 100%
+  );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -183,7 +188,7 @@
 .koim-loader-dots i {
   width: 4px;
   height: 4px;
-  background: linear-gradient(135deg, #e0c3fc, var(--brand));
+  background: linear-gradient(135deg, var(--lavender-soft), var(--brand));
   border-radius: 50%;
   display: inline-block;
   animation: koimDot 1.2s ease-in-out infinite;

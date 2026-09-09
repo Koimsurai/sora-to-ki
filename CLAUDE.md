@@ -185,6 +185,18 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 
 `margin` / `padding` / `gap` / `font-size` 不准再寫字面值。
 
+### 站點自己的品牌色：語意命名
+
+`index.css` 的 `:root` 有 `--surface-0..3`（近黑背景，**依明度排，0 最深**：0 是頁面底、
+1–3 是疊上去的面板與卡片）、`--ink`（主文字 `#e5e5f5`）、`--lavender` / `--lavender-soft`、
+`--magenta` / `--magenta-deep`，**九個都配了 `-rgb`**（九個都有帶 alpha 的用法）。
+
+跟下面那批 Tailwind 色票的差別：那批是「抄過來的」，可以用客觀的色票名；這批不在任何
+公開色票上，只能靠語意命名。值都是原本在用的 hex，零視覺變化。
+
+⚠️ `--surface-0..3` 那四個是 2026-09-08 把 56 個近黑併成 10 個之後，**真的有層次差別**
+的那幾層，不要再往下併。
+
 ### 調色盤：Tailwind v3 色票名，值是原本在用的 hex
 
 `index.css` 的 `:root` 有 `--zinc-100…900`、`--purple-300/500`、`--violet-300/400/500`、
@@ -335,6 +347,16 @@ CI 沒有這個問題（workflow 裡 build 是獨立的前置 job）。
 
 改完之後 stack 也要重起才會重新灌種子：`pkill -f tests/e2e/stack.mjs`
 （`playwright.config.ts` 本機是 `reuseExistingServer: true`，會沿用還開著的那個）。
+
+⚠️ **有些測試是有狀態的，同一個 stack 不能跑第二次 e2e。** `unsubscribe.spec.ts` 是
+`mode: 'serial'`，第三條會**真的把種子裡的 `reader@example.com` 退訂掉**，第四條靠那個
+狀態。所以在同一個 stack 上重跑 e2e，那條必定紅（頁面直接顯示「已退訂 ✓」而不是
+「確認退訂」）。要重跑就先重起 stack。
+
+⚠️ **不要把 `pnpm e2e` 跟 `pnpm test` 併行跑。** 本機 `workers` 是預設值（吃滿核心）而
+CI 刻意壓到 2——`playwright.config.ts` 那段註解量過 `workers=4` 會 3/8 輪崩潰。再疊一個
+vitest 上去比那個最壞情況更糟。實際踩過：併行那次冒出一條無法重現的失敗，乾淨環境重跑
+209 passed。要平行做事就挑不搶 CPU 的（tsc/oxlint/typos 那種）。
 
 ### 樣式回歸有守門：`tests/e2e/computed-style.spec.ts`
 
