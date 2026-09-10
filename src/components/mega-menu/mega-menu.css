@@ -25,7 +25,7 @@
   padding: 7px var(--space-3-5);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--r-full);
   color: rgba(var(--zinc-300-rgb), 0.7);
   font-size: var(--fs-14);
   font-weight: 500;
@@ -134,7 +134,7 @@
   backdrop-filter: blur(64px) saturate(180%);
   -webkit-backdrop-filter: blur(64px) saturate(180%);
   border: 1px solid var(--white-08);
-  border-radius: 14px;
+  border-radius: var(--r-12);
   box-shadow:
     0 24px 64px -16px var(--black-55),
     inset 0 1px 0 var(--white-06);
@@ -164,7 +164,7 @@
 }
 .mega-menu-column--accent {
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.08), rgba(var(--brand-rgb), 0.02));
-  border-radius: 12px;
+  border-radius: var(--r-12);
   padding: var(--space-4);
   margin: -4px;
 }
@@ -190,7 +190,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: 9px var(--space-3);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   text-decoration: none;
   color: rgba(var(--zinc-200-rgb), 0.8);
   font-size: var(--fs-14);
@@ -211,7 +211,7 @@
   height: 28px;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: rgba(var(--brand-rgb), 0.1);
   color: rgba(var(--violet-400-rgb), 0.95);
   font-size: var(--fs-14);
@@ -362,7 +362,7 @@
 .mega-menu-profile-avatar {
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: linear-gradient(135deg, var(--brand), #5096ff);
   display: flex;
   align-items: center;
@@ -395,7 +395,7 @@
   content: "";
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--green-400);
   box-shadow: 0 0 8px rgba(var(--green-400-rgb), 0.6);
 }
@@ -416,7 +416,7 @@
 .mega-menu-social {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -442,7 +442,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   text-decoration: none;
   color: rgba(var(--zinc-300-rgb), 0.8);
   cursor: pointer;
@@ -474,7 +474,7 @@
 .mega-menu-post {
   display: block;
   padding: var(--space-2) var(--space-2-5);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   text-decoration: none;
   color: inherit;
   transition: background 0.15s;

@@ -32,7 +32,7 @@
 
 .activity-nebula-bg .nebula-layer {
   position: absolute;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   filter: blur(110px);
   opacity: 0.18;
   will-change: transform;
@@ -141,7 +141,7 @@
   align-items: center;
   padding: var(--space-2-5) var(--space-5);
   border: 1px solid var(--white-06);
-  border-radius: 40px;
+  border-radius: var(--r-full);
   background: var(--white-02);
   font-size: var(--fs-12);
   color: var(--white-50);
@@ -159,7 +159,7 @@
 .status-dot-inline {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   flex-shrink: 0;
 }
 .status-dot-inline.online {
@@ -245,7 +245,7 @@
 .steam-profile-card {
   position: relative;
   display: block;
-  border-radius: 16px;
+  border-radius: var(--r-16);
   overflow: hidden;
   text-decoration: none;
   isolation: isolate;
@@ -311,7 +311,7 @@
   content: "";
   position: absolute;
   inset: 8px;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.25), rgba(var(--magenta-rgb), 0.2));
   filter: blur(12px);
   opacity: 0.7;
@@ -325,7 +325,7 @@
   left: 14px;
   width: 88px;
   height: 88px;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   object-fit: cover;
   z-index: 1;
 }
@@ -371,7 +371,7 @@
   padding: var(--space-0-5) 9px;
   background: linear-gradient(135deg, #ff8a4c 0%, #d54a26 100%);
   color: #fff;
-  border-radius: 5px;
+  border-radius: var(--r-6);
   font-size: var(--fs-12);
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -391,7 +391,7 @@
 .steam-profile-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: #74c0fc;
   box-shadow: 0 0 8px rgba(116, 192, 252, 0.7);
 }
@@ -420,7 +420,7 @@
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1-5);
   background: var(--black-30);
   border: 1px solid var(--white-10);
-  border-radius: 999px;
+  border-radius: var(--r-full);
   font-size: var(--fs-12);
   color: var(--white-80);
   width: fit-content;
@@ -429,7 +429,7 @@
 .steam-profile-featured img {
   width: 22px;
   height: 22px;
-  border-radius: 4px;
+  border-radius: var(--r-4);
 }
 
 /* steam-profile-cta-btn 套用 .koim-btn；hover 時跟隨整張卡 */
@@ -466,7 +466,7 @@
     left: 11px;
     width: 70px;
     height: 70px;
-    border-radius: 6px;
+    border-radius: var(--r-6);
   }
 }
 
@@ -511,7 +511,7 @@
 }
 .steam-recent-scroll::-webkit-scrollbar-thumb {
   background: rgba(var(--brand-rgb), 0.35);
-  border-radius: 3px;
+  border-radius: var(--r-full);
 }
 .steam-recent-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--brand-rgb), 0.55);
@@ -522,7 +522,7 @@
   scroll-snap-align: start;
   display: block;
   height: 130px;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   text-decoration: none;
   isolation: isolate;
@@ -631,7 +631,7 @@
   font-size: var(--fs-11);
   font-weight: 700;
   letter-spacing: 0.06em;
-  border-radius: 4px;
+  border-radius: var(--r-4);
   box-shadow: 0 0 12px rgba(144, 186, 60, 0.55);
   animation: steamPulse 2s ease-in-out infinite;
 }
@@ -720,13 +720,13 @@
 .lang-bar-track {
   height: 6px;
   background: var(--white-04);
-  border-radius: 3px;
+  border-radius: var(--r-full);
   overflow: hidden;
 }
 
 .lang-bar-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: var(--r-full);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -761,7 +761,7 @@
 .heatmap-avatar {
   width: 26px;
   height: 26px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
 }
 
@@ -825,7 +825,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(180deg, rgba(var(--surface-0-rgb), 0.25) 0%, rgba(var(--surface-0-rgb), 0.5) 100%);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   z-index: 5;
   pointer-events: none;
   animation: koimFadeIn 0.25s ease-out;
@@ -865,7 +865,7 @@
 .heatmap-day {
   width: 12px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: var(--r-2);
   cursor: pointer;
   transition: transform 0.15s;
   position: relative;
@@ -902,7 +902,7 @@
   background: rgba(var(--surface-0-rgb), 0.95);
   color: #fff;
   padding: var(--space-1) var(--space-2);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   font-size: var(--fs-11);
   white-space: nowrap;
   pointer-events: none;
@@ -946,7 +946,7 @@
 .legend-square {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
+  border-radius: var(--r-2);
 }
 .legend-square.level-0 {
   background: var(--white-04);
@@ -994,7 +994,7 @@
 .commit-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--brand);
   flex-shrink: 0;
 }
@@ -1027,7 +1027,7 @@
   text-decoration: none;
   color: inherit;
   padding: 3px 0;
-  border-radius: 4px;
+  border-radius: var(--r-4);
   transition: background 0.15s;
 }
 .commit-msg-row:hover {
@@ -1041,7 +1041,7 @@
   flex-shrink: 0;
   background: rgba(var(--brand-rgb), 0.08);
   padding: var(--space-px) var(--space-1-5);
-  border-radius: 4px;
+  border-radius: var(--r-4);
 }
 
 .commit-msg {
@@ -1099,14 +1099,14 @@
 .project-row-track {
   height: 5px;
   background: var(--white-04);
-  border-radius: 3px;
+  border-radius: var(--r-full);
   overflow: hidden;
 }
 
 .project-row-fill {
   height: 100%;
   background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.6), rgba(var(--magenta-deep-rgb), 0.5));
-  border-radius: 3px;
+  border-radius: var(--r-full);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1179,7 +1179,7 @@
 .game-gallery-item {
   flex-shrink: 0;
   width: 190px;
-  border-radius: 10px;
+  border-radius: var(--r-10);
   overflow: hidden;
   position: relative;
   display: block;
@@ -1288,7 +1288,7 @@
 .lang-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1416,7 +1416,7 @@
 .commit-skeleton .sk-box {
   display: inline-block;
   height: 0.85em;
-  border-radius: 4px;
+  border-radius: var(--r-4);
   background: linear-gradient(90deg, var(--white-04), var(--white-10), var(--white-04));
   background-size: 200% 100%;
   animation: activity-sk-shimmer 1.4s ease-in-out infinite;

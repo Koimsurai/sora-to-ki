@@ -15,7 +15,7 @@
     var(--white-90) 95% /* 接近頭部的部分更亮 */,
     rgb(255, 255, 255) 100% /* 頭部最亮 (白色) */
   );
-  border-radius: 2px; /* 稍微圓角 */
+  border-radius: var(--r-2); /* 稍微圓角 */
   /* 可以保留或調整呼吸動畫 */
   animation: comet-glow 2.5s ease-in-out infinite alternate;
   filter: drop-shadow(0 0 5px rgba(200, 200, 255, 0.6)); /* 添加柔和的光暈 */

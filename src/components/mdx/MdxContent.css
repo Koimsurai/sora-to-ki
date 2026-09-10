@@ -88,7 +88,7 @@
   max-width: 19rem;
   width: max-content;
   padding: var(--space-2-5) var(--space-3);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   background: rgba(36, 30, 20, 0.95);
   border: 1px solid rgba(var(--amber-300-rgb), 0.2);
   box-shadow: 0 10px 30px var(--black-45);
@@ -172,7 +172,7 @@
   border: none;
   text-align: inherit;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--r-4);
   padding: 0 3px;
   background: var(--white-06);
   filter: blur(6px);
@@ -198,7 +198,7 @@
 .mdx-chart {
   margin: var(--space-7) 0;
   padding: var(--space-4) var(--space-2-5) var(--space-2);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
   border: 1px solid var(--white-08);
 }
@@ -212,14 +212,14 @@
 .mdx-chart-loading {
   height: 300px;
   margin: var(--space-7) 0;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
   border: 1px solid var(--white-06);
 }
 .mdx-chart-empty {
   margin: var(--space-7) 0;
   padding: var(--space-5);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   border: 1px dashed rgba(var(--red-300-rgb), 0.35);
   color: rgba(var(--red-300-rgb), 0.8);
   font-size: var(--fs-14);
@@ -228,7 +228,7 @@
 /* hover tooltip */
 .mdx-chart-tip {
   padding: var(--space-2) var(--space-2-5);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid rgba(139, 124, 246, 0.3);
   box-shadow: 0 8px 24px var(--black-50);
@@ -254,7 +254,7 @@
 .mdx-chart-tip-swatch {
   width: 0.6rem;
   height: 0.6rem;
-  border-radius: 2px;
+  border-radius: var(--r-2);
   flex: 0 0 auto;
 }
 .mdx-chart-tip-name {
@@ -274,7 +274,7 @@
 .mdx-chart-interactive {
   margin: var(--space-7) 0;
   padding: var(--space-4) var(--space-2-5) var(--space-4-5);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
   border: 1px solid var(--white-08);
 }
@@ -326,7 +326,7 @@
   gap: 0.32em;
   padding: 0.05em 0.5em 0.05em 0.42em;
   margin: 0 0.06em;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   background: var(--white-06);
   border: 1px solid var(--white-08);
   color: var(--white-90);
@@ -371,7 +371,7 @@
    滾動條中性細緻。 ── */
 .mdx-codetabs {
   margin: var(--space-6) 0;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   background: var(--black-40);
 }
@@ -388,7 +388,7 @@
   flex: 0 0 auto;
   padding: var(--space-1-5) var(--space-3);
   border: none;
-  border-radius: 7px;
+  border-radius: var(--r-8);
   background: transparent;
   box-shadow: none;
   outline: none;
@@ -437,7 +437,7 @@
 }
 .mdx-codetabs ::-webkit-scrollbar-thumb {
   background: var(--white-15);
-  border-radius: 4px;
+  border-radius: var(--r-4);
 }
 .mdx-codetabs ::-webkit-scrollbar-thumb:hover {
   background: var(--white-20);
@@ -451,7 +451,7 @@
 .mdx-tabs {
   margin: var(--space-7) 0;
   border: 1px solid var(--white-10);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   background: var(--white-02);
 }
@@ -465,7 +465,7 @@
 }
 .mdx-tabs-pill {
   padding: var(--space-1-5) var(--space-4);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   border: 1px solid var(--white-10);
   background: transparent;
   box-shadow: none;
@@ -517,7 +517,7 @@
 .mdx-math-loading {
   height: 2.4rem;
   margin: var(--space-6) 0;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: var(--white-02);
 }
 .mdx-math-inline {
@@ -534,13 +534,13 @@
 }
 .mdx-sketch-canvas--loading {
   min-height: 180px;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
 }
 .mdx-sketch-loading {
   min-height: 220px;
   margin: var(--space-7) 0;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
   border: 1px solid var(--white-06);
 }
@@ -552,7 +552,7 @@
 .mdx-sketch-error {
   margin: var(--space-6) 0;
   padding: var(--space-4) var(--space-5);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   border: 1px dashed rgba(var(--red-300-rgb), 0.35);
   background: rgba(var(--red-300-rgb), 0.06);
   color: var(--red-300);
@@ -569,7 +569,7 @@
 .mdx-error {
   margin: var(--space-6) 0;
   padding: var(--space-4) var(--space-5);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   border: 1px solid rgba(var(--red-300-rgb), 0.4);
   background: rgba(var(--red-300-rgb), 0.06);
   color: var(--red-300);
@@ -626,7 +626,7 @@
 }
 .mdx-imgcompare-frame {
   position: relative;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   border: 1px solid var(--white-10);
 }
@@ -639,7 +639,7 @@
   z-index: 2; /* 蓋在 slider 兩張圖之上，否則會被內部堆疊吃掉（只有一側看得到） */
   top: 0.6rem;
   padding: var(--space-0-5) var(--space-2);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   font-size: var(--fs-12);
   color: #fff;
   background: var(--black-55);
@@ -655,7 +655,7 @@
 }
 .mdx-imgcompare-loading {
   height: 320px;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
 }
 .mdx-imgcompare figcaption {
@@ -677,7 +677,7 @@
   background: var(--white-06);
   border: 1px solid var(--white-15);
   border-bottom-width: 2px;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   box-shadow: 0 1px 0 var(--black-30);
 }
 
@@ -685,7 +685,7 @@
 .mdx-details {
   margin: var(--space-6) 0;
   border: 1px solid var(--white-10);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
   overflow: hidden;
 }
@@ -764,7 +764,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   font-size: var(--fs-14);
   font-weight: 600;
   color: #fff;
@@ -784,7 +784,7 @@
   margin: var(--space-6) 0;
   padding: var(--space-3-5) var(--space-4);
   border: 1px solid var(--white-10);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   font-size: var(--fs-14);
@@ -818,7 +818,7 @@
   flex: 1 1 130px;
   padding: var(--space-4) var(--space-4-5);
   border: 1px solid var(--white-10);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
 }
 .mdx-stat-value {
@@ -879,7 +879,7 @@
   position: relative;
   margin: var(--space-7) 0;
   aspect-ratio: 16 / 9;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   border: 1px solid var(--white-10);
   background: #000;
@@ -930,7 +930,7 @@
   justify-content: center;
   width: 4rem;
   height: 4rem;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: rgba(230, 33, 23, 0.9);
   color: #fff;
   font-size: var(--fs-20);
@@ -943,7 +943,7 @@
   margin: var(--space-7) 0;
   padding: var(--space-4) var(--space-5);
   border: 1px solid var(--white-10);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
 }
 .mdx-refs-title {
@@ -1009,7 +1009,7 @@
   margin: var(--space-7) 0;
   padding: var(--space-4) var(--space-4-5);
   border: 1px solid var(--white-08);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
 }
 .mdx-poll-q {
@@ -1036,7 +1036,7 @@
   min-height: 2.5rem;
   padding: var(--space-2) var(--space-3);
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: var(--white-04); /* 淡軌道取代描邊 */
   box-shadow: none;
   outline: none;
@@ -1087,7 +1087,7 @@
 .mdx-poll-check {
   width: 0.4rem;
   height: 0.4rem;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--violet-400);
   flex: 0 0 auto;
 }

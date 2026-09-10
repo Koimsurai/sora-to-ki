@@ -56,7 +56,7 @@
 }
 .blog-sidebar::-webkit-scrollbar-thumb {
   background: rgba(var(--brand-rgb), 0.3);
-  border-radius: 2px;
+  border-radius: var(--r-2);
 }
 
 /* ══════════════════════════
@@ -169,7 +169,7 @@
 
 .sort-pill {
   padding: var(--space-1-5) var(--space-4);
-  border-radius: 20px;
+  border-radius: var(--r-20);
   font-size: var(--fs-13);
   font-weight: 600;
   border: 1px solid var(--white-08);
@@ -209,7 +209,7 @@
   align-items: center;
   gap: var(--space-1-5);
   padding: 5px var(--space-3);
-  border-radius: 20px;
+  border-radius: var(--r-20);
   font-size: var(--fs-13);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
@@ -298,7 +298,7 @@
   min-width: 0;
   background: var(--white-02);
   border: 1px solid var(--white-08);
-  border-radius: 16px;
+  border-radius: var(--r-16);
   padding: var(--space-5-5) var(--space-6);
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(12px);
@@ -332,7 +332,7 @@
   font-size: var(--fs-12);
   font-weight: 600;
   padding: 3px var(--space-2-5);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   color: var(--brand-light);
@@ -381,7 +381,7 @@
   font-size: var(--fs-12);
   font-weight: 500;
   padding: 3px var(--space-2-5);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   background: var(--white-04);
   border: 1px solid var(--white-08);
   color: var(--white-50);
@@ -407,7 +407,7 @@
   align-items: center;
   gap: 5px;
   padding: var(--space-1-5) var(--space-3);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   font-size: var(--fs-13);
   color: var(--white-40);
   background: none;
@@ -453,7 +453,7 @@
   content: "";
   position: absolute;
   inset: -1px;
-  border-radius: 17px;
+  border-radius: var(--r-16);
   background: linear-gradient(
     135deg,
     rgba(var(--purple-500-rgb), 0.1) 0%,
@@ -490,7 +490,7 @@
 .column-icon-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: rgba(var(--purple-500-rgb), 0.6);
   box-shadow: 0 0 8px rgba(var(--purple-500-rgb), 0.35);
   animation: column-dot-pulse 3s ease-in-out infinite;
@@ -569,7 +569,7 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--space-1-5) var(--space-2);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   font-size: var(--fs-13);
   color: var(--white-50);
   background: none;
@@ -606,7 +606,7 @@
 
 .cloud-tag {
   padding: 3px 9px;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   font-size: var(--fs-12);
   font-weight: 500;
   color: var(--white-45);
@@ -638,7 +638,7 @@
   margin-top: var(--space-2);
   background: transparent;
   border: 1px solid var(--white-08);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   color: var(--white-35);
   cursor: pointer;
   font-size: var(--fs-12);
@@ -682,7 +682,7 @@
   align-items: center;
   gap: var(--space-2-5);
   padding: var(--space-1-5) var(--space-1);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   text-decoration: none;
   transition: color 0.2s ease;
 }
@@ -716,7 +716,7 @@
 
 .nav-pill {
   padding: var(--space-1) var(--space-2-5);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   font-size: var(--fs-13);
   color: var(--white-45);
   text-decoration: none;
@@ -782,7 +782,7 @@
 
 .empty-clear-btn {
   padding: var(--space-2) var(--space-5);
-  border-radius: 20px;
+  border-radius: var(--r-20);
   font-size: var(--fs-14);
   font-weight: 600;
   background: rgba(var(--brand-rgb), 0.15);
@@ -929,7 +929,7 @@
   flex-direction: column;
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: 16px;
+  border-radius: var(--r-16);
   box-shadow:
     0 24px 64px var(--black-50),
     0 0 0 1px rgba(var(--brand-rgb), 0.08);
@@ -964,7 +964,7 @@
   border: none;
   background: var(--white-06);
   color: var(--white-50);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   cursor: pointer;
   transition: all 0.15s;
   flex-shrink: 0;
@@ -1028,7 +1028,7 @@
 }
 .activity-heatmap .heatmap-cell {
   aspect-ratio: 1 / 1;
-  border-radius: 2px;
+  border-radius: var(--r-2);
   background: var(--white-06);
   transition:
     transform 0.18s ease,

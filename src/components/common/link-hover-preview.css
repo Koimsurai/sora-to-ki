@@ -6,7 +6,7 @@
   position: fixed;
   z-index: 9999;
   width: 300px;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   background: rgba(var(--surface-2-rgb), 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
@@ -42,7 +42,7 @@
 .lhp-favicon {
   width: 34px;
   height: 34px;
-  border-radius: 8px;
+  border-radius: var(--r-8);
 }
 
 .lhp-site {

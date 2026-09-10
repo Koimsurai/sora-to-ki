@@ -16,7 +16,7 @@
 .foreground-star {
   position: absolute;
   background-color: #add8e6; /* 淺藍色 */
-  border-radius: 50%;
+  border-radius: var(--r-round);
   box-shadow: 0 0 6px 2px rgba(173, 216, 230, 0.6); /* 淺藍色光暈 */
   /* 移動方向與滑鼠相反，幅度由該顆星自己的 --pf（parallaxFactor）決定。
      跟原本 JS 算的 -mouseX * parallaxFactor * 100 一致。 */

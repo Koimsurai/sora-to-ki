@@ -27,7 +27,7 @@
 .mm-sandbox {
   position: relative;
   margin: var(--space-6) 0;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   border: 1px solid var(--white-06);
   background: var(--black-40);
   overflow: hidden;
@@ -54,7 +54,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--white-08);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   opacity: 0;
   transition:
     transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -96,7 +96,7 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: var(--r-8);
   background: transparent;
   border: 1px solid transparent;
   color: var(--white-60);
@@ -138,7 +138,7 @@
   color: var(--white-80);
   font-size: var(--fs-10);
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -161,7 +161,7 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--white-08);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   padding: var(--space-1);
   box-shadow: 0 8px 32px var(--black-50);
   z-index: 50;
@@ -199,7 +199,7 @@
   color: var(--white-70);
   font-size: var(--fs-12);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   transition: background 0.12s;
   text-align: left;
 }
@@ -233,7 +233,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9px;
+  border-radius: var(--r-8);
   background: rgba(var(--surface-2-rgb), 0.9);
   backdrop-filter: blur(8px);
   border: 1px solid var(--white-10);
@@ -274,7 +274,7 @@
   color: var(--white-80);
   font-size: var(--fs-10);
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -318,7 +318,7 @@
   max-width: 1600px;
   display: flex;
   flex-direction: column;
-  border-radius: 16px;
+  border-radius: var(--r-16);
   overflow: hidden;
   background: var(--surface-1);
   border: 1px solid var(--white-06);
@@ -353,7 +353,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: var(--white-04);
   border: 1px solid var(--white-08);
   color: var(--white-50);
@@ -387,7 +387,7 @@
   padding: var(--space-4) var(--space-6);
   background: rgba(255, 71, 87, 0.06);
   border: 1px solid rgba(255, 71, 87, 0.2);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   font-size: var(--fs-14);
 }
 
@@ -414,7 +414,7 @@
     left: 8px;
     right: 8px;
     transform: translateX(0) translateY(-120%);
-    border-radius: 10px;
+    border-radius: var(--r-10);
   }
   .mm-toolbar--visible {
     transform: translateX(0) translateY(0);
@@ -443,7 +443,7 @@
   gap: var(--space-1);
   padding: var(--space-1-5);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: transparent;
   box-shadow: none;
   outline: none;

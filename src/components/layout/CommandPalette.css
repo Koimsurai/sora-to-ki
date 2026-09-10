@@ -25,7 +25,7 @@
   width: min(640px, 92vw);
   background: rgba(var(--surface-1-rgb), 0.9);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: 14px;
+  border-radius: var(--r-12);
   box-shadow:
     0 24px 64px var(--black-55),
     0 0 24px rgba(var(--brand-rgb), 0.1);
@@ -72,7 +72,7 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--fs-10);
   padding: var(--space-0-5) var(--space-1-5);
-  border-radius: 4px;
+  border-radius: var(--r-4);
   background: var(--white-06);
   border: 1px solid var(--white-10);
   color: var(--white-55);
@@ -90,7 +90,7 @@
 }
 .cmdk-list::-webkit-scrollbar-thumb {
   background: rgba(var(--brand-rgb), 0.25);
-  border-radius: 3px;
+  border-radius: var(--r-full);
 }
 
 .cmdk-wrap [cmdk-group-heading] {
@@ -107,7 +107,7 @@
   align-items: center;
   gap: var(--space-2-5);
   padding: var(--space-2) var(--space-2-5);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   color: var(--white-80);
   font-size: var(--fs-13);
   cursor: pointer;

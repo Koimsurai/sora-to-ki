@@ -136,7 +136,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-color: rgba(var(--zinc-800-rgb), 0.6);
-  border-radius: 16px;
+  border-radius: var(--r-16);
   box-shadow:
     0 4px 24px var(--black-25),
     inset 0 1px 0 var(--white-04);
@@ -171,7 +171,7 @@
      整個後台表單會變成淺色邊框配深色底。 */
   border-color: rgba(var(--zinc-800-rgb), 0.6) !important;
   color: var(--zinc-200);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   transition: all 0.2s ease;
 }
 
@@ -204,7 +204,7 @@
     0 20px 60px var(--black-50),
     0 0 0 1px var(--white-04),
     inset 0 1px 0 var(--white-06);
-  border-radius: 14px;
+  border-radius: var(--r-12);
 }
 
 /* ── Scrollbar ── */
@@ -219,7 +219,7 @@
 
 :is(.admin-layout, .admin-mode) ::-webkit-scrollbar-thumb {
   background: var(--zinc-800);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
 }
 
 :is(.admin-layout, .admin-mode) ::-webkit-scrollbar-thumb:hover {
@@ -240,14 +240,14 @@
   background: rgba(var(--zinc-200-rgb), 0.1);
   border: 1px solid rgba(var(--zinc-200-rgb), 0.2);
   color: var(--zinc-200);
-  border-radius: 8px;
+  border-radius: var(--r-8);
 }
 
 :is(.admin-layout, .admin-mode) [class*="badge"][class*="secondary"] {
   background: rgba(var(--zinc-800-rgb), 0.3);
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   color: var(--zinc-400);
-  border-radius: 8px;
+  border-radius: var(--r-8);
 }
 
 /* ── Links — Override global a { color: var(--clr-button) } for admin ── */

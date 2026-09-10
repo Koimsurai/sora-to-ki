@@ -122,7 +122,7 @@
 .app-footer-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--green-500);
   box-shadow: 0 0 8px rgba(var(--green-500-rgb), 0.7);
   animation: footer-pulse 2s ease-in-out infinite;

@@ -1,16 +1,19 @@
 /**
- * 擋住「又開始現編間距值與字級」。
+ * 擋住「又開始現編間距值、字級與圓角」。
  *
  * ## 補這道的理由
  *
- * 這個專案原本兩把尺都沒有：
+ * 這個專案原本三把尺都沒有：
  *   · margin/padding/gap  **87 種**長度值、1594 次、token 覆蓋 0
  *   · font-size           **57 種**值、584 次、token 覆蓋 0
+ *   · border-radius       **21 種**值、404 個角、token 覆蓋 0
  *
  * 沒有尺的後果不是「值很多」，是**需要一個值時沒有標準答案**——於是每次都現編一個。
  * 間距長出 `0.15rem` / `0.35rem` / `0.45rem` / `0.55rem`；字級更誇張，是有人拿著
  * 0.02rem 在肉眼微調（0.7 / 0.72 / 0.74 / 0.76 / 0.78 / 0.8 / 0.82 / 0.85 / 0.88 /
  * 0.9 / 0.92 / 0.95rem 全部同時存在），91% 的用量擠在 10–18px 之間。
+ * 圓角則是 2/3/4/5/6/7/8/9/10px **每一格都有人用**，而且「膠囊」有四種拼法
+ * （`9999px` / `999px` / `50px` / `40px`）。
  *
  * 收斂那 2040 處花了三支 PR。**沒有這道檢查，半年後會原封不動長回來**——
  * 這不是假設：CSS 的 git 歷史是寫了 51,785 行、刪掉 30,103 行（58%），
@@ -28,6 +31,10 @@
  *   2. 值不在尺上、也不在豁免名單  → 錯：不要現編新值
  *   3. 透明度不在 19 階的階梯上  → 錯（白／黑要用 --white-NN / --black-NN；
  *      品牌紫 rgba(var(--brand-rgb), a) 與其他底色的 a 都得在階梯上）
+ *
+ * 三把尺（間距 --space-*、字級 --fs-*、圓角 --r-*）走的都是第 1、2 條，
+ * 差別只在各自的合法值集合。圓角另外多一條：`border-radius: 50%` 是「圓」這個語意
+ * 而不是長度，要寫 `var(--r-round)`；`30% 70%` 那種刻意捏形狀的百分比不管。
  *
  * 第 3 條**連 `--xxx:` 定義行都查**。導入 alpha 階梯那次 codemod 跳過了定義行，
  * 結果 `--glass-bg` / `--glass-hover-bg` / `--post-card-bg` 三處還引用著被拿掉的階，
@@ -138,6 +145,18 @@ const FONT_SIZE_PX = new Set([10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36
  */
 const FONT_SIZE_GRANDFATHERED = new Set<string>([]);
 
+/**
+ * index.css 的 `--r-*`。名字就是 px 值，另外兩格是 `--r-full`（膠囊）與 `--r-round`（50%）。
+ *
+ * ⚠ **不要改成 `--radius-*`**：那是 Tailwind v4 生 `rounded-*` utility 的 namespace，
+ * 而且這個專案已經有 shadcn 的 `--radius` / `--radius-sm/md/lg` 掛在上面。
+ */
+const RADIUS_PX = new Set([2, 4, 6, 8, 10, 12, 16, 20]);
+
+/** 大於「短邊的一半」的值瀏覽器都會夾成膠囊，一律指向 `--r-full`。 */
+const RADIUS_FULL_HINT = 24;
+
+const RADIUS_PROP = /^border(-(top|bottom)-(left|right))?-radius$/;
 const SPACING_PROP = /^(margin|padding|gap|row-gap|column-gap)/;
 const LENGTH = /(?<![\w.-])(-?\d*\.?\d+)(px|rem)(?![\w-])/g;
 const EM = /(?<![\w.-])\d*\.?\d+em(?![\w-])/;
@@ -339,11 +358,25 @@ function check(file: string): Problem[] {
 
     const isSpacing = SPACING_PROP.test(prop);
     const isFontSize = prop === 'font-size';
-    if (!isSpacing && !isFontSize) continue;
+    const isRadius = RADIUS_PROP.test(prop);
+    if (!isSpacing && !isFontSize && !isRadius) continue;
     // calc() / clamp() 裡的數字是推導值或流體字級，不是尺上的一格
     if (value.includes('calc(') || value.includes('clamp(')) continue;
-    // 字級的 em 是相對父層的，換成固定 token 會改變語意
-    if (isFontSize && EM.test(value)) continue;
+    // 字級與圓角的 em 是相對自身／父層字級的，換成固定 token 會改變語意
+    if ((isFontSize || isRadius) && EM.test(value)) continue;
+
+    // 圓角的 `50%` 是「圓／橢圓」這個語意，不是長度，所以在 LENGTH 之外單獨看。
+    // 只擋剛好 50%——`30% 70%` 這種刻意捏形狀的百分比不在尺的管轄範圍。
+    if (isRadius && /(?<![\w.-])50%/.test(value)) {
+      problems.push({
+        file,
+        line,
+        prop,
+        raw: '50%',
+        why: '這就是 --r-round',
+        fix: '改用 var(--r-round)',
+      });
+    }
 
     for (const lm of value.matchAll(LENGTH)) {
       const raw = lm[1] + lm[2];
@@ -362,6 +395,25 @@ function check(file: string): Problem[] {
                 raw,
                 why: `${px}px 不在字級尺上`,
                 fix: `改用最接近的 var(--fs-*)，或把這個尺寸加進 index.css 的尺`,
+              },
+        );
+        continue;
+      }
+
+      if (isRadius) {
+        problems.push(
+          RADIUS_PX.has(px)
+            ? { file, line, prop, raw, why: `${px}px 尺上有這一格`, fix: `改用 var(--r-${px})` }
+            : {
+                file,
+                line,
+                prop,
+                raw,
+                why: `${px}px 不在圓角尺上`,
+                fix:
+                  px >= RADIUS_FULL_HINT
+                    ? '這個大小一定會被夾成膠囊，改用 var(--r-full)'
+                    : '改用最接近的 var(--r-*)；如果元素的短邊 ≤ 2×這個值，它其實是膠囊，用 var(--r-full)',
               },
         );
         continue;
@@ -390,7 +442,7 @@ const files = walk('src');
 const problems = files.flatMap(check);
 
 if (problems.length === 0) {
-  console.log(`✅ 間距、字級與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`);
+  console.log(`✅ 間距、字級、圓角與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`);
   process.exit(0);
 }
 

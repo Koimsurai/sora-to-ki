@@ -14,7 +14,7 @@
   color: rgba(var(--ink-rgb), 0.55);
   font-size: var(--fs-13);
   padding: var(--space-1) var(--space-2-5);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -47,7 +47,7 @@
   margin: 0;
   padding: var(--space-1-5);
   min-width: 160px;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: rgba(var(--surface-0-rgb), 0.9);
   border: 1px solid var(--white-10);
   backdrop-filter: blur(28px) saturate(180%);
@@ -75,7 +75,7 @@
   color: rgba(var(--ink-rgb), 0.8);
   font-size: var(--fs-14);
   padding: 7px 11px;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   cursor: pointer;
   display: flex;
   align-items: center;

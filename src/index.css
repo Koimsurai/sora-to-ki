@@ -135,6 +135,37 @@
   --fs-48: 3rem;
   --fs-56: 3.5rem;
 
+  /* ── 圓角尺 ────────────────────────────────────────────────────────────
+     在這之前 border-radius 用了 **21 種** px 值、404 個角、token 覆蓋 0，
+     而且 2/3/4/5/6/7/8/9/10px 每一格都有人用——那不是設計，是每次隨手打一個。
+     最明顯的癥狀是「膠囊」有四種拼法：`9999px`（20 次）、`999px`（16 次）、
+     `50px`、`40px`，全都是同一件事。
+
+     ⚠️ **名字不能用 `--radius-*`**：那是 Tailwind v4 生 `rounded-*` utility 的
+     namespace，而且這個專案已經有 shadcn 的 `--radius` / `--radius-sm/md/lg`
+     掛在上面（見上面 @theme 開頭那段）。佔用它會改變 `rounded-md` 產出什麼。
+     所以叫 `--r-*`，跟字級的 `--fs-*` 同一個理由。
+
+     數字就是 px（`--r-12` 就是 12px），值寫 rem 是為了跟 --space-* / --fs-*
+     一樣跟著使用者的基準字級縮放。
+
+     `0` 與 `inherit` 刻意不給 token：`border-radius: 0` 已經是最清楚的寫法，
+     包成 `var(--r-0)` 只會更難讀。 */
+  --r-2: 0.125rem;
+  --r-4: 0.25rem;
+  --r-6: 0.375rem;
+  --r-8: 0.5rem;
+  --r-10: 0.625rem;
+  --r-12: 0.75rem;
+  --r-16: 1rem;
+  --r-20: 1.25rem;
+  /* 膠囊：值大於「短邊的一半」時瀏覽器會夾住，所以 9999px 的效果就是「兩端全圓」。
+     細捲軸滑塊、進度條、標籤膠囊都屬於這一類——它們原本寫 1px/3px/5px/40px/50px，
+     但量過之後每一個的短邊都 ≤ 2×半徑，也就是**早就被夾成膠囊在畫了**。 */
+  --r-full: 9999px;
+  /* 圓（非正方形時是橢圓）：頭像、圓點、圓形按鈕。 */
+  --r-round: 50%;
+
   /* 把 text-* 的 line-height 從 v4 的「無單位比例」改回 v3 的絕對值。
      v4 預設是 `calc(1 / 0.75)` 這種比例，乘上元素自己的 font-size；只要字級沒被別的
      規則蓋掉，算出來就等於下面這些數字（比例本來就是這樣推導的），所以這一段對絕大多數
@@ -429,7 +460,7 @@
 
   /* 全域按鈕基礎樣式 (放在 @layer base 讓 Tailwind utilities 可以覆蓋) */
   button {
-    border-radius: 8px;
+    border-radius: var(--r-8);
     border: 1px solid transparent;
     padding: 0.6em 1.2em;
     font-size: 1em;
@@ -579,7 +610,7 @@ html {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--white-15);
-  border-radius: 999px;
+  border-radius: var(--r-full);
   border: 3px solid transparent;
   background-clip: padding-box;
   transition: background-color 0.2s;
@@ -727,7 +758,7 @@ body::after {
 .glass-card {
   background: var(--white-02);
   border: 1px solid var(--white-08);
-  border-radius: 18px;
+  border-radius: var(--r-20);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   /* 玻璃寫實感：頂緣一條受光高光 + 下方柔和落影（拉出與星空背景的層次） */

@@ -18,7 +18,7 @@
     var(--white-90) 80%,
     var(--white-95)
   ); /* 調整漸變，讓亮部更長更亮 */
-  border-radius: 2px; /* 配合高度調整 */
+  border-radius: var(--r-2); /* 配合高度調整 */
   transform: rotate(-45deg); /* 傾斜角度 */
   transform-origin: left top; /* 旋轉基點 */
   filter: drop-shadow(0 0 8px var(--white-80)); /* 增強發光效果 */

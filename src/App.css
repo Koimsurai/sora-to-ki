@@ -17,7 +17,7 @@ body {
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   font-size: var(--fs-14);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -113,7 +113,7 @@ body {
 .koim-btn--sm {
   padding: var(--space-2) var(--space-4);
   font-size: var(--fs-13);
-  border-radius: 9px;
+  border-radius: var(--r-8);
 }
 
 /* icon — 圓形純圖示按鈕（hover 才出現紫光暈 + 漸層描邊） */
@@ -121,7 +121,7 @@ body {
   width: 38px;
   height: 38px;
   padding: 0;
-  border-radius: 50%;
+  border-radius: var(--r-round);
 }
 .koim-btn--icon.koim-btn--sm {
   width: 32px;

@@ -11,7 +11,7 @@
   display: flex;
   align-items: stretch;
   border: 1px solid var(--white-08);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   text-decoration: none;
   margin: var(--space-5) 0;
@@ -89,7 +89,7 @@
 
 .link-card-spotify iframe {
   display: block;
-  border-radius: 12px;
+  border-radius: var(--r-12);
 }
 
 .link-card-bilibili:hover {

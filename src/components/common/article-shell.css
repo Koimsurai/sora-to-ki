@@ -14,7 +14,7 @@
 
 .blog-post-container ::-webkit-scrollbar-thumb {
   background: rgba(var(--brand-rgb), 0.25);
-  border-radius: 3px;
+  border-radius: var(--r-full);
 }
 
 .blog-post-container ::-webkit-scrollbar-thumb:hover {
@@ -128,7 +128,7 @@
   /* 讓 ::before 的 z-index:-1 收在這張卡內，不會掉到祖先背景後面 */
   isolation: isolate;
   border: 1px solid var(--post-card-border);
-  border-radius: 16px;
+  border-radius: var(--r-16);
   padding: var(--space-10);
 }
 /* 底色＋玻璃模糊移到 ::before：filter/backdrop-filter 會把子孫的絕對定位內容裁切到自身邊界，
@@ -312,7 +312,7 @@
   width: 5px;
   height: 5px;
   margin-top: var(--space-1-5);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--white-15);
   transition: all 0.2s ease;
 }
@@ -415,7 +415,7 @@
   padding: var(--space-2-5) var(--space-3-5);
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.35);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   color: var(--white-80);
   font-size: var(--fs-14);
   font-weight: 400;
@@ -492,7 +492,7 @@
   padding: var(--space-4) var(--space-6);
   border-left: 3px solid var(--post-accent);
   background: rgba(var(--brand-rgb), 0.06);
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 var(--r-8) var(--r-8) 0;
   color: var(--white-70);
 }
 
@@ -510,14 +510,14 @@
   background: var(--white-08);
   color: #e8e6ef;
   padding: var(--space-0-5) var(--space-2);
-  border-radius: 4px;
+  border-radius: var(--r-4);
   font-size: 0.9em;
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
 }
 
 .post-content img {
   max-width: 100%;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   margin: 0;
 }
 

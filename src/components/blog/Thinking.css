@@ -56,7 +56,7 @@
   position: relative;
   padding: var(--space-5) var(--space-5-5);
   margin-bottom: var(--space-4-5);
-  border-radius: 16px;
+  border-radius: var(--r-16);
   background: rgba(var(--surface-1-rgb), 0.5);
   border: 1px solid var(--white-06);
   backdrop-filter: blur(10px);
@@ -109,7 +109,7 @@
   transform: translateX(-50%);
   white-space: nowrap;
   padding: var(--space-1-5) var(--space-2-5);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: rgba(var(--surface-3-rgb), 0.95);
   border: 1px solid var(--white-08);
   color: rgba(var(--zinc-100-rgb), 0.9);
@@ -141,7 +141,7 @@
   margin-top: var(--space-3-5);
   padding: var(--space-3-5) var(--space-4);
   border: 1px solid var(--white-06);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--black-20);
   text-decoration: none;
   color: inherit;
@@ -184,7 +184,7 @@
   display: inline-block;
   padding: var(--space-0-5) var(--space-2);
   border: 1px solid var(--white-10);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   font-size: var(--fs-11);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -223,7 +223,7 @@
   width: 64px;
   height: 96px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   flex: 0 0 auto;
   box-shadow: 0 6px 16px var(--black-45);
 }
@@ -232,7 +232,7 @@
   width: 124px;
   height: 78px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   flex: 0 0 auto;
   box-shadow: 0 6px 16px var(--black-45);
 }
@@ -262,7 +262,7 @@
   gap: var(--space-1-5);
   padding: var(--space-1) 9px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: none;
   color: rgba(var(--ink-rgb), 0.4);
   font-size: var(--fs-13);
@@ -334,7 +334,7 @@
 .tk-compose {
   margin-bottom: var(--space-6);
   padding: var(--space-4);
-  border-radius: 14px;
+  border-radius: var(--r-12);
   background: rgba(var(--surface-1-rgb), 0.5);
   border: 1px solid var(--white-08);
   backdrop-filter: blur(10px);
@@ -346,7 +346,7 @@
   box-sizing: border-box;
   background: var(--black-25);
   border: 1px solid var(--white-08);
-  border-radius: 9px;
+  border-radius: var(--r-8);
   color: rgba(var(--zinc-100-rgb), 0.95);
   font: inherit;
   padding: var(--space-2-5) var(--space-3);
@@ -372,7 +372,7 @@
   gap: var(--space-2);
   margin-top: var(--space-2);
   padding: 5px var(--space-2-5);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: rgba(var(--purple-300-rgb), 0.1);
   border: 1px solid rgba(var(--purple-300-rgb), 0.2);
   color: rgba(var(--purple-300-rgb), 0.9);
@@ -407,7 +407,7 @@
 .tk-compose-send {
   padding: var(--space-2) var(--space-5);
   border: none;
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   background: var(--brand);
   color: #fff;
   font-weight: 600;
@@ -471,7 +471,7 @@
   box-sizing: border-box;
   background: var(--black-25);
   border: 1px solid var(--white-10);
-  border-radius: 9px;
+  border-radius: var(--r-8);
   color: rgba(var(--zinc-100-rgb), 0.95);
   font: inherit;
   line-height: 1.7;
@@ -490,7 +490,7 @@
 .tk-edit-save,
 .tk-edit-cancel {
   padding: var(--space-1-5) var(--space-4);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   border: none;
   font-size: var(--fs-13);
   cursor: pointer;
@@ -548,7 +548,7 @@
   max-width: 680px;
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid var(--white-08);
-  border-radius: 16px;
+  border-radius: var(--r-16);
   box-shadow: 0 30px 80px var(--black-60);
   animation: tk-modal-pop 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }

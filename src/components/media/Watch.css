@@ -139,7 +139,7 @@
   display: block;
   width: 100%;
   aspect-ratio: 3 / 2;
-  border-radius: 18px;
+  border-radius: var(--r-20);
   overflow: hidden;
   background: rgba(var(--surface-0-rgb), 0.6);
   text-decoration: none;
@@ -212,7 +212,7 @@
   color: rgba(var(--zinc-100-rgb), 0.95);
   background: var(--black-45);
   border: 1px solid var(--white-25);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   backdrop-filter: blur(8px);
   letter-spacing: 0.03em;
   transition:
@@ -266,7 +266,7 @@
   border: 1px solid rgba(var(--purple-300-rgb), 0.3);
   box-shadow: none;
   padding: var(--space-1) var(--space-3);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   font-size: var(--fs-13);
   color: rgba(var(--purple-300-rgb), 0.8);
   cursor: pointer;
@@ -315,7 +315,7 @@
   padding: var(--space-3-5) var(--space-3-5) var(--space-4);
   background: rgba(var(--surface-1-rgb), 0.55);
   border: 1px solid var(--white-06);
-  border-radius: 16px;
+  border-radius: var(--r-16);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition:
@@ -337,7 +337,7 @@
 .w-fav-poster {
   position: relative;
   aspect-ratio: 2 / 3;
-  border-radius: 10px;
+  border-radius: var(--r-10);
   overflow: hidden;
   box-shadow: 0 10px 24px var(--black-50);
 }
@@ -467,7 +467,7 @@
   width: 40px;
   height: 58px;
   object-fit: cover;
-  border-radius: 7px;
+  border-radius: var(--r-8);
 }
 
 .w-recent-title {
@@ -498,7 +498,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   padding: 3px 9px;
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   border: 1px solid currentColor;
   opacity: 0.75;
 }
@@ -557,7 +557,7 @@
     margin-bottom: var(--space-16);
   }
   .w-now-banner {
-    border-radius: 14px;
+    border-radius: var(--r-12);
     aspect-ratio: 4 / 3;
   }
   .w-now-overlay {

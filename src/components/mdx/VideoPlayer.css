@@ -66,7 +66,7 @@
   height: 3.4rem;
   padding: 0 0 0 var(--space-0-5);
   border: 1px solid var(--white-25);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: rgba(var(--surface-1-rgb), 0.7);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -103,7 +103,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-1-5) var(--space-2-5);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   background: rgba(var(--surface-0-rgb), 0.7);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -131,7 +131,7 @@
   height: 1.85rem;
   padding: 0;
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--r-8);
   background: transparent;
   box-shadow: none;
   outline: none;
@@ -203,7 +203,7 @@ a.vp-btn:focus-visible {
   position: absolute;
   left: 0;
   height: 3px;
-  border-radius: 999px;
+  border-radius: var(--r-full);
 }
 .vp-progress-track {
   right: 0;
@@ -216,7 +216,7 @@ a.vp-btn:focus-visible {
   position: absolute;
   width: 9px;
   height: 9px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: #fff;
   transform: translateX(-50%);
   box-shadow: 0 1px 4px var(--black-50);
@@ -251,7 +251,7 @@ a.vp-btn:focus-visible {
   max-height: 22rem;
   overflow: auto;
   border: 1px solid var(--white-15);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: var(--black-55);
   color: var(--white-80);
   font-size: var(--fs-11);
@@ -265,6 +265,6 @@ a.vp-btn:focus-visible {
   display: block;
   margin: var(--space-3) auto 0;
   padding: var(--space-1-5) var(--space-3-5);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   font-size: var(--fs-12);
 }

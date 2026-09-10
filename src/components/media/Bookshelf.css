@@ -71,7 +71,7 @@
   margin: 0 auto var(--space-9);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--r-12);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   padding: var(--space-3-5) 0;
@@ -148,7 +148,7 @@
   padding: var(--space-3) var(--space-10) var(--space-3) 2.75rem;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   color: var(--text-primary);
   font-size: var(--fs-14);
   transition: all 0.3s ease;
@@ -192,7 +192,7 @@
   padding: var(--space-3) var(--space-5);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   color: var(--brand-light);
   font-size: var(--fs-14);
   font-weight: 500;
@@ -226,7 +226,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--r-12);
   padding: var(--space-5);
   margin-bottom: var(--space-7);
   display: grid;
@@ -253,7 +253,7 @@
   padding: var(--space-2-5) var(--space-3);
   background: var(--white-04);
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   color: var(--text-primary);
   font-size: var(--fs-14);
   cursor: pointer;
@@ -270,7 +270,7 @@
   padding: var(--space-2-5) var(--space-4);
   background: rgba(var(--brand-rgb), 0.06);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   color: var(--brand-light);
   cursor: pointer;
   transition: all 0.3s ease;
@@ -305,7 +305,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--r-12);
   padding: var(--space-3);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
@@ -344,7 +344,7 @@
   width: 100%;
   aspect-ratio: 2 / 3;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--r-10);
   margin-bottom: var(--space-3);
   background: var(--white-02);
   z-index: 1;
@@ -356,7 +356,7 @@
   object-fit: cover;
   object-position: center;
   transition: transform 0.5s ease;
-  border-radius: 10px;
+  border-radius: var(--r-10);
 }
 
 .book-card:hover .book-cover {
@@ -372,7 +372,7 @@
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.08), rgba(var(--magenta-rgb), 0.06));
   color: rgba(var(--brand-rgb), 0.3);
   font-size: var(--fs-40);
-  border-radius: 10px;
+  border-radius: var(--r-10);
 }
 
 .status-badge {
@@ -381,7 +381,7 @@
   left: 50%;
   transform: translateX(-50%);
   padding: var(--space-1) var(--space-3);
-  border-radius: 20px;
+  border-radius: var(--r-20);
   font-size: var(--fs-10);
   font-weight: 600;
   color: white;
@@ -515,7 +515,7 @@
 .modal-content {
   background: rgba(var(--surface-0-rgb), 0.95);
   border: 1px solid var(--glass-border);
-  border-radius: 20px;
+  border-radius: var(--r-20);
   max-width: 860px;
   width: 100%;
   max-height: 90vh;
@@ -534,7 +534,7 @@
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -566,7 +566,7 @@
 
 .modal-cover img {
   width: 100%;
-  border-radius: 10px;
+  border-radius: var(--r-10);
   border: 1px solid var(--glass-border);
   box-shadow: 0 8px 30px var(--black-30);
 }
@@ -578,7 +578,7 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.08), rgba(var(--magenta-rgb), 0.06));
-  border-radius: 10px;
+  border-radius: var(--r-10);
   border: 1px solid var(--glass-border);
   color: rgba(var(--brand-rgb), 0.3);
   font-size: var(--fs-48);
@@ -602,7 +602,7 @@
 .modal-meta {
   background: var(--white-02);
   border: 1px solid var(--glass-border);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-5);
   display: grid;
@@ -628,7 +628,7 @@
 
 .modal-status-badge {
   padding: var(--space-1-5) var(--space-3-5);
-  border-radius: 20px;
+  border-radius: var(--r-20);
   font-size: var(--fs-13);
   font-weight: 600;
   color: white;
@@ -658,7 +658,7 @@
 .modal-dates {
   background: var(--white-02);
   border: 1px solid var(--glass-border);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   padding: var(--space-3) var(--space-4);
   margin-top: var(--space-4);
 }

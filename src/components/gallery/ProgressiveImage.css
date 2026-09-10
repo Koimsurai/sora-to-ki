@@ -52,7 +52,7 @@
   height: 50px;
   border: 3px solid var(--white-10);
   border-top-color: white;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 1s linear infinite;
 }
 

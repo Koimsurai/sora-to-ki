@@ -94,7 +94,7 @@
 
 /* ── Pagination ── */
 .admin-layout [class*="pagination"] button {
-  border-radius: 10px;
+  border-radius: var(--r-10);
 }
 .admin-layout [class*="pagination"] button[data-active="true"] {
   background: rgba(var(--zinc-800-rgb), 0.4);
@@ -134,15 +134,15 @@
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   box-shadow: 0 4px 16px var(--black-35);
-  border-radius: 10px;
+  border-radius: var(--r-10);
 }
 
 /* ── Progress Bar ── */
 .admin-layout [role="progressbar"] {
   background: rgba(var(--zinc-800-rgb), 0.4);
-  border-radius: 999px;
+  border-radius: var(--r-full);
 }
 .admin-layout [role="progressbar"] > div {
   background: var(--zinc-200);
-  border-radius: 999px;
+  border-radius: var(--r-full);
 }

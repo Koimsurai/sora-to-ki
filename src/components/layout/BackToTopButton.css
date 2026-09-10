@@ -18,7 +18,7 @@
   background: rgba(var(--surface-3-rgb), 0.55);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   color: rgba(var(--lavender-rgb), 0.9);
   cursor: pointer;
   opacity: 0;

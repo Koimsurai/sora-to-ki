@@ -27,7 +27,7 @@
 .club-icon-wrap {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
   display: grid;
@@ -100,7 +100,7 @@
   padding: 3px var(--space-2-5);
   background: rgba(var(--brand-rgb), 0.15);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
-  border-radius: 999px;
+  border-radius: var(--r-full);
   color: rgba(var(--purple-300-rgb), 0.95);
   font-weight: 500;
   flex-shrink: 0;
@@ -229,7 +229,7 @@
   top: 0.7em;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: rgba(var(--brand-rgb), 0.55);
 }
 

@@ -45,7 +45,7 @@
   right: -22px;
   width: 11px;
   height: 11px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--dot, var(--brand));
   box-shadow:
     0 0 0 4px rgba(var(--brand-rgb), 0.1),
@@ -94,7 +94,7 @@
 .jt-tag {
   font-size: var(--fs-11);
   padding: 3px var(--space-2-5);
-  border-radius: 999px;
+  border-radius: var(--r-full);
   background: var(--white-04);
   border: 1px solid var(--white-08);
   color: var(--white-60);

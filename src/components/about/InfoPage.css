@@ -93,7 +93,7 @@
 .info-page-content code {
   padding: var(--space-0-5) var(--space-1-5);
   background: rgba(var(--brand-rgb), 0.15);
-  border-radius: 4px;
+  border-radius: var(--r-4);
   font-family: "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.88em;
   color: var(--purple-300);
@@ -220,7 +220,7 @@
   padding: var(--space-3) var(--space-3-5);
   background: var(--white-02);
   border: 1px solid var(--white-06);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   text-decoration: none;
   border-bottom: none;
   transition:
@@ -234,7 +234,7 @@
   transform: translateY(-1px);
 }
 .friend-card-avatar {
-  border-radius: 50%;
+  border-radius: var(--r-round);
   flex-shrink: 0;
 }
 .friend-card-info {
@@ -265,7 +265,7 @@
   background: rgba(var(--brand-rgb), 0.15);
   color: rgba(var(--zinc-100-rgb), 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.45);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   font-size: var(--fs-14);
   font-weight: 500;
   cursor: pointer;
@@ -300,7 +300,7 @@
   max-width: 540px;
   background: rgba(var(--zinc-900-rgb), 0.95);
   border: 1px solid var(--white-08);
-  border-radius: 18px;
+  border-radius: var(--r-20);
   box-shadow:
     0 24px 64px -16px var(--black-60),
     inset 0 1px 0 var(--white-06);
@@ -331,7 +331,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   transition:
     background 0.2s ease,
     color 0.2s ease;
@@ -371,7 +371,7 @@
   padding: 9px var(--space-3);
   background: var(--white-04);
   border: 1px solid var(--white-08);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   color: rgba(var(--zinc-100-rgb), 0.95);
   font-size: var(--fs-14);
   font-family: inherit;
@@ -398,7 +398,7 @@
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.8), rgba(var(--brand-rgb), 0.6));
   color: #fff;
   border: 1px solid rgba(var(--brand-rgb), 0.5);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   font-size: var(--fs-14);
   font-weight: 500;
   cursor: pointer;
@@ -425,7 +425,7 @@
   font-size: var(--fs-14);
   background: rgba(var(--brand-rgb), 0.15);
   padding: var(--space-0-5) var(--space-1-5);
-  border-radius: 4px;
+  border-radius: var(--r-4);
   color: var(--purple-300);
 }
 

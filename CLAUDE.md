@@ -170,20 +170,36 @@ layer**：`index.css` 的 `@layer base`（含那條全站 `button { 紫底 }` �
 七個檔案各自寫了高特異性的繞過碼並留下註解解釋——**那些註解描述的是已經消失的問題**，
 不要拿它們當範例照抄。真的遇到蓋不過去的情況，先確認你的規則有沒有被包進某個 layer。
 
-### 間距與字級一律走 token，有一道檢查在擋
+### 間距、字級與圓角一律走 token，有一道檢查在擋
 
 ```bash
 pnpm check:css-tokens      # CI 與 pre-commit 都跑
 ```
 
-兩把尺都定義在 `src/index.css` 的 `@theme`：
+三把尺都定義在 `src/index.css` 的 `@theme`：
 
 | | token | 範圍 |
 |---|---|---|
 | 間距 | `--space-px` … `--space-24` | 2px 格線到 24px，之後 4px／8px 步進 |
 | 字級 | `--fs-10` … `--fs-56` | 16 格，10–14 是 1px 步進（91% 的用量在 10–18px） |
+| 圓角 | `--r-2` … `--r-20` + `--r-full` + `--r-round` | 2px 格線到 20px；`--r-full` 是膠囊、`--r-round` 是 50% |
 
-`margin` / `padding` / `gap` / `font-size` 不准再寫字面值。
+`margin` / `padding` / `gap` / `font-size` / `border-radius` 不准再寫字面值。
+
+⚠️ **圓角的 token 叫 `--r-*` 不是 `--radius-*`**，跟 `--fs-*` 同一個理由，而且更嚴重：
+`--radius-*` 是 Tailwind v4 生 `rounded-*` 的 namespace，**這個專案已經有 shadcn 的
+`--radius` / `--radius-sm/md/lg` 掛在上面**（`index.css` 的 `@theme inline` 開頭），
+佔用它會改變後台每一顆 `rounded-md` 按鈕。
+
+⚠️ **「膠囊」原本有四種拼法**：`9999px`（20 次）、`999px`（16 次）、`50px`、`40px`，
+外加 `1px` / `3px` / `5px` 這種「寫在細元素上、其實也是膠囊」的。判準是
+**短邊 ≤ 2×半徑時瀏覽器會夾住**——量過每一個站點才併的（捲軸滑塊寬 5–6px 寫 3px、
+`.hero-caret` 寬 2px 寫 1px、`.status-bar` 高 36–40px 寫 40px，`.status-bar` 連
+360px 視窗都不換行），所以那 50 個元素是**零像素變化**，只有計算值從 `3px` 變成 `9999px`。
+判斷這類「computed 變了但畫面沒變」要靠量元素尺寸，不要靠看基準 diff 的筆數。
+
+⚠️ **`border-radius: 0` 與 `inherit` 刻意沒有 token**，寫 `var(--r-0)` 只會更難讀。
+`30% 70%` 那種刻意捏形狀的百分比也不管，檢查只擋剛好 `50%`。
 
 ### 站點自己的品牌色：語意命名
 

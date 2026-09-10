@@ -50,7 +50,7 @@
 .koim-loader-orbit {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
@@ -98,7 +98,7 @@
 
 .koim-loader-core {
   position: relative;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 50%, var(--magenta) 100%);
   box-shadow:
     0 0 14px rgba(var(--brand-rgb), 0.7),
@@ -189,7 +189,7 @@
   width: 4px;
   height: 4px;
   background: linear-gradient(135deg, var(--lavender-soft), var(--brand));
-  border-radius: 50%;
+  border-radius: var(--r-round);
   display: inline-block;
   animation: koimDot 1.2s ease-in-out infinite;
 }

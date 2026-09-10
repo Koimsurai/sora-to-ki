@@ -134,7 +134,7 @@
   width: 42px;
   height: 42px;
   flex-shrink: 0;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
   border: 1px solid var(--white-08);
   cursor: help;

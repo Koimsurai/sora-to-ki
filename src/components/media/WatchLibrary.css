@@ -139,7 +139,7 @@
   padding: 0 var(--space-3-5);
   background: var(--white-04);
   border: 1px solid var(--white-08);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   color: rgba(var(--ink-rgb), 0.5);
   transition:
     border-color 0.2s ease,
@@ -178,7 +178,7 @@
   padding: var(--space-2-5) var(--space-3-5);
   background: var(--white-04);
   border: 1px solid var(--white-08);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   color: rgba(var(--zinc-100-rgb), 0.9);
   font-size: var(--fs-14);
   cursor: pointer;
@@ -219,7 +219,7 @@
   background: rgba(var(--surface-3-rgb), 0.95);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(var(--purple-300-rgb), 0.2);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   box-shadow: 0 12px 32px var(--black-55);
   transform-origin: top right;
 }
@@ -238,7 +238,7 @@
   font-size: var(--fs-14);
   color: rgba(var(--ink-rgb), 0.8);
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   transition:
     background 0.15s ease,
     color 0.15s ease;
@@ -275,7 +275,7 @@
 .wl-card-poster {
   position: relative;
   aspect-ratio: 2 / 3;
-  border-radius: 10px;
+  border-radius: var(--r-10);
   overflow: hidden;
   background: var(--white-04);
   box-shadow: 0 12px 28px var(--black-45);

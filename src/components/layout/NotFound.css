@@ -204,7 +204,7 @@
   gap: var(--space-2);
   padding: var(--space-3) var(--space-6);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-full);
   /* ⚠ 比站上主色 `#7f5af0` 深一階，這是被 a11y 守門逼出來的：
      `#7f5af0` 太亮，白字在它上面**連 alpha 1.0 都只有 4.54**，
      所以裡面那顆 `⌘K`（刻意做成次要層次）不管怎麼調都過不了 4.5。

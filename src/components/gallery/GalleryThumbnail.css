@@ -33,7 +33,7 @@
   position: relative;
   width: 90px;
   height: 90px;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;

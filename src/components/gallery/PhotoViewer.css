@@ -55,7 +55,7 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--black-50);
   backdrop-filter: blur(20px);
   border: 2px solid var(--white-20);
@@ -160,7 +160,7 @@
   height: 52px;
   background: var(--black-50);
   backdrop-filter: blur(20px);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: 2px solid var(--white-20);
   cursor: pointer;
   z-index: 20;
@@ -221,7 +221,7 @@
   height: 50px;
   border: 3px solid var(--white-10);
   border-top-color: white;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   animation: spin 1s linear infinite;
 }
 
@@ -355,7 +355,7 @@
   background-color: var(--black-60);
   color: white;
   padding: var(--space-1-5) var(--space-3);
-  border-radius: 18px;
+  border-radius: var(--r-20);
   font-size: var(--fs-14);
   font-weight: 600;
   backdrop-filter: blur(10px);

@@ -29,7 +29,7 @@
   flex-direction: column;
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid var(--white-10);
-  border-radius: 18px;
+  border-radius: var(--r-20);
   box-shadow: 0 30px 80px var(--black-55);
   animation: fe-pop 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
@@ -68,7 +68,7 @@
   font-size: var(--fs-16);
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   transition:
     color 0.2s,
     background 0.2s;
@@ -111,7 +111,7 @@
   height: 84px;
   flex-shrink: 0;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: var(--white-06);
 }
 .fe-item-poster--blank {
@@ -156,7 +156,7 @@
   color: var(--white-60);
   width: 26px;
   height: 26px;
-  border-radius: 7px;
+  border-radius: var(--r-8);
   font-size: var(--fs-12);
   cursor: pointer;
   transition: all 0.2s;
@@ -209,7 +209,7 @@
   resize: vertical;
   background: var(--white-02);
   border: 1px solid var(--white-08);
-  border-radius: 9px;
+  border-radius: var(--r-8);
   padding: 7px var(--space-2-5);
   font: inherit;
   font-size: var(--fs-13);
@@ -236,7 +236,7 @@
 .fe-kind {
   display: inline-flex;
   flex-shrink: 0;
-  border-radius: 9px;
+  border-radius: var(--r-8);
   overflow: hidden;
   border: 1px solid var(--white-10);
 }
@@ -262,7 +262,7 @@
   flex: 1;
   background: var(--white-02);
   border: 1px solid var(--white-10);
-  border-radius: 9px;
+  border-radius: var(--r-8);
   padding: 9px var(--space-3);
   font: inherit;
   font-size: var(--fs-14);
@@ -297,7 +297,7 @@
   padding: 7px var(--space-2-5);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--r-10);
   cursor: pointer;
   transition:
     background 0.2s,
@@ -313,13 +313,13 @@
   width: 36px;
   height: 54px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   flex-shrink: 0;
 }
 .fe-result-blank {
   width: 36px;
   height: 54px;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   background: var(--white-06);
   display: inline-flex;
   align-items: center;

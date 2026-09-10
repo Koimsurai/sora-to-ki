@@ -55,7 +55,7 @@
   align-items: baseline;
   padding: 13px var(--space-3);
   margin: 0 -12px;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   text-decoration: none;
   transition: background 0.25s ease;
 }
@@ -125,7 +125,7 @@
   display: block;
   padding: var(--space-2-5) var(--space-3);
   margin: 0 -12px;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   text-decoration: none;
   transition: background 0.25s ease;
 }
@@ -227,7 +227,7 @@
    外圈微光暈當大氣。色相由 --planet-hue 給（各月不同，固定值）。 */
 .orbit-month-dot {
   position: relative;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: radial-gradient(
     circle at 32% 28%,
     hsl(var(--planet-hue, 260) 100% 92%) 0%,
@@ -251,7 +251,7 @@
   width: 210%;
   height: 62%;
   transform: translate(-50%, -50%) rotate(-18deg);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   border: 1px solid hsl(var(--planet-hue, 260) 90% 82% / 0.55);
   box-shadow: 0 0 6px hsl(var(--planet-hue, 260) 90% 75% / 0.3);
   pointer-events: none;
@@ -295,7 +295,7 @@
   top: 8%;
   width: 32%;
   height: 32%;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: hsl(var(--planet-hue, 260) 25% 80%);
   box-shadow: 0 0 4px hsl(var(--planet-hue, 260) 40% 75% / 0.7);
 }
@@ -324,7 +324,7 @@
   min-width: 220px;
   max-width: min(340px, 80vw);
   padding: var(--space-2);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid var(--white-10);
   box-shadow: 0 12px 34px var(--black-50);
@@ -358,7 +358,7 @@
 .orbit-month-link {
   display: block;
   padding: 7px var(--space-2);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   font-size: var(--fs-13);
   line-height: 1.35;
   color: var(--white-80);
@@ -384,7 +384,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   padding: var(--space-1-5) var(--space-3);
-  border-radius: 9px;
+  border-radius: var(--r-8);
   font-size: var(--fs-12);
   color: var(--white-90);
   background: rgba(var(--surface-1-rgb), 0.9);
@@ -431,7 +431,7 @@
   min-width: 220px;
   max-width: min(340px, 80vw);
   padding: var(--space-2);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid var(--white-10);
   box-shadow: 0 12px 34px var(--black-50);
@@ -465,7 +465,7 @@
 .orbit-month-link {
   display: block;
   padding: 7px var(--space-2);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   font-size: var(--fs-13);
   line-height: 1.35;
   color: var(--white-80);
@@ -548,7 +548,7 @@
 .signal-dot {
   width: 7px;
   height: 7px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--green-500);
   margin-right: 9px;
   box-shadow: 0 0 8px rgba(var(--green-500-rgb), 0.6);

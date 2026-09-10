@@ -133,7 +133,7 @@
   font-size: var(--fs-12);
   font-weight: 400;
   padding: var(--space-1) var(--space-2-5);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
   white-space: nowrap;
   opacity: 0;
@@ -166,7 +166,7 @@
   font-size: inherit;
   font-family: inherit;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   transition:
     color 0.18s ease,
     background 0.18s ease;
@@ -205,7 +205,7 @@
   min-width: 180px;
   background: rgba(var(--surface-3-rgb), 0.8);
   border: 1px solid var(--white-08);
-  border-radius: 14px;
+  border-radius: var(--r-12);
   padding: var(--space-1-5);
   box-shadow:
     inset 0 1px 0 var(--white-06),
@@ -244,7 +244,7 @@
   font-family: inherit;
   text-align: left;
   padding: 9px var(--space-3);
-  border-radius: 9px;
+  border-radius: var(--r-8);
   cursor: pointer;
   transition:
     background 0.15s ease,
@@ -269,7 +269,7 @@
   top: 9px;
   bottom: 9px;
   width: 2px;
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 var(--r-2) var(--r-2) 0;
   background: rgba(var(--lavender-rgb), 0.55);
 }
 .lang-item.disabled {
@@ -285,7 +285,7 @@
   font-family: "JetBrains Mono", "Courier New", var(--cjk-font), monospace;
   letter-spacing: 0.04em;
   padding: var(--space-0-5) 7px;
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   background: var(--white-06);
   color: var(--white-70);
   border: 1px solid var(--white-08);
@@ -300,7 +300,7 @@
   background: rgba(var(--surface-1-rgb), 0.95);
   color: #fff;
   padding: var(--space-2-5) var(--space-4-5);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
   box-shadow: 0 12px 36px var(--black-50);
   font-size: var(--fs-14);
@@ -322,7 +322,7 @@
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   padding: var(--space-0-5) var(--space-2-5);
-  border-radius: 9999px;
+  border-radius: var(--r-full);
 }
 
 /* Posts navigation (left sidebar) */
@@ -388,7 +388,7 @@
   top: 15%;
   width: 3px;
   height: 70%;
-  border-radius: 2px;
+  border-radius: var(--r-2);
   background: var(--post-accent);
   box-shadow: 0 0 8px rgba(var(--brand-rgb), 0.3);
   animation: indicator-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
@@ -422,7 +422,7 @@
   flex-direction: column;
   gap: var(--space-1-5);
   padding: var(--space-3-5) var(--space-4-5);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   background: var(--white-02);
   border: 1px solid var(--white-06);
   text-decoration: none;
@@ -491,7 +491,7 @@
   padding: var(--space-1-5) var(--space-3);
   background: var(--white-04);
   border: 1px solid var(--white-08);
-  border-radius: 999px;
+  border-radius: var(--r-full);
   color: var(--white-80);
   font-size: var(--fs-14);
   cursor: pointer;
@@ -533,7 +533,7 @@
   padding: var(--space-5-5) var(--space-6);
   background: rgba(var(--brand-rgb), 0.06);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: 14px;
+  border-radius: var(--r-12);
   backdrop-filter: blur(8px);
 }
 .series-nav-header {
@@ -578,7 +578,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-1-5) var(--space-2);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   transition: background 0.18s ease;
 }
 .series-nav-item:hover {
@@ -590,7 +590,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--r-6);
   background: var(--white-06);
   color: var(--white-55);
   font-size: var(--fs-12);
@@ -643,7 +643,7 @@ a.series-nav-title:hover {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   box-shadow:
     0 8px 32px var(--black-50),
     0 0 16px rgba(var(--brand-rgb), 0.08);
@@ -700,7 +700,7 @@ a.series-nav-title:hover {
     rgba(var(--brand-rgb), 0.02) 60%,
     transparent 100%
   );
-  border-radius: 16px 16px 0 0;
+  border-radius: var(--r-16) var(--r-16) 0 0;
   border-bottom: none;
   overflow: hidden;
 }
@@ -722,7 +722,7 @@ a.series-nav-title:hover {
 .ai-badge {
   font-size: var(--fs-10);
   padding: var(--space-0-5) var(--space-2);
-  border-radius: 4px;
+  border-radius: var(--r-4);
   background: rgba(var(--brand-rgb), 0.15);
   color: var(--post-accent);
   font-weight: 600;
@@ -783,7 +783,7 @@ a.series-nav-title:hover {
   display: inline-block;
   padding: 0 var(--space-1);
   margin: 0 var(--space-px);
-  border-radius: 4px;
+  border-radius: var(--r-4);
   background: rgba(var(--brand-rgb), 0.1);
   color: var(--brand-light);
   text-decoration: none;
@@ -838,7 +838,7 @@ a.series-nav-title:hover {
   padding: var(--space-3) var(--space-4);
   margin: var(--space-6) 0;
   border-left: 3px solid var(--alert-accent, rgba(var(--brand-rgb), 0.6));
-  border-radius: 0 10px 10px 0;
+  border-radius: 0 var(--r-10) var(--r-10) 0;
   background: var(--alert-bg, rgba(var(--brand-rgb), 0.06));
   color: var(--white-80);
 }
@@ -932,7 +932,7 @@ a.series-nav-title:hover {
   padding: 7px var(--space-4);
   background: var(--black-80);
   backdrop-filter: blur(16px);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   font-size: var(--fs-12);
   color: var(--white-80);
   white-space: nowrap;
@@ -964,7 +964,7 @@ a.series-nav-title:hover {
    ═══════════════════════ */
 /* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .code-block-wrapper` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
 .code-block-wrapper {
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   background: var(--black-40);
   margin: var(--space-6) 0;
@@ -978,12 +978,12 @@ a.series-nav-title:hover {
 
 .code-block-wrapper ::-webkit-scrollbar-track {
   background: var(--white-02);
-  border-radius: 3px;
+  border-radius: var(--r-full);
 }
 
 .code-block-wrapper ::-webkit-scrollbar-thumb {
   background: var(--white-15);
-  border-radius: 3px;
+  border-radius: var(--r-full);
   transition: background 0.2s;
 }
 
@@ -1016,7 +1016,7 @@ a.series-nav-title:hover {
   border: 1px solid var(--white-10);
   color: var(--white-60);
   padding: var(--space-1) var(--space-2-5);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   font-size: var(--fs-12);
   cursor: pointer;
   transition:
@@ -1040,7 +1040,7 @@ a.series-nav-title:hover {
 /* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .terminal-block` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
 .terminal-block {
   margin: var(--space-6) 0;
-  border-radius: 12px;
+  border-radius: var(--r-12);
   overflow: hidden;
   background: var(--surface-0);
   border: 1px solid var(--white-08);
@@ -1112,7 +1112,7 @@ a.series-nav-title:hover {
 }
 .terminal-block ::-webkit-scrollbar-thumb {
   background: var(--white-15);
-  border-radius: 4px;
+  border-radius: var(--r-4);
 }
 /* 底部「下一個提示符 + 閃爍游標」——終端機等待輸入的感覺（唯讀，純視覺） */
 .terminal-cursor-line {
@@ -1260,7 +1260,7 @@ a.series-nav-title:hover {
   position: relative;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -1388,7 +1388,7 @@ a.series-nav-title:hover {
   transform: translateY(-50%);
   background: rgba(var(--surface-3-rgb), 0.8);
   border: 1px solid var(--white-08);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   padding: var(--space-1-5);
   display: flex;
   flex-direction: column;
@@ -1412,7 +1412,7 @@ a.series-nav-title:hover {
   color: var(--white-80);
   font-size: var(--fs-14);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   transition:
     background 0.18s ease,
     color 0.18s ease;
@@ -1448,7 +1448,7 @@ a.series-nav-title:hover {
   max-width: 400px;
   background: rgba(var(--surface-3-rgb), 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: 16px;
+  border-radius: var(--r-16);
   padding: var(--space-8);
   text-align: center;
   backdrop-filter: blur(16px);
@@ -1500,7 +1500,7 @@ a.series-nav-title:hover {
 
 .subscribe-form input {
   padding: var(--space-3) var(--space-4);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   border: 1px solid var(--white-10);
   background: var(--white-04);
   color: #fff;
@@ -1516,7 +1516,7 @@ a.series-nav-title:hover {
 .subscribe-form button {
   padding: var(--space-3);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: var(--post-accent);
   color: #fff;
   font-size: var(--fs-14);
@@ -1553,7 +1553,7 @@ a.series-nav-title:hover {
   padding: var(--space-px) var(--space-2);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
-  border-radius: 6px;
+  border-radius: var(--r-6);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.85em;
   color: rgba(var(--lavender-rgb), 0.95);
@@ -1592,7 +1592,7 @@ a.series-nav-title:hover {
 .font-switcher-btn {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   background: var(--white-06);
   border: 1px solid var(--white-10);
   color: var(--white-60);
@@ -1619,7 +1619,7 @@ a.series-nav-title:hover {
   right: 0;
   background: rgba(var(--surface-3-rgb), 0.95);
   border: 1px solid var(--white-10);
-  border-radius: 12px;
+  border-radius: var(--r-12);
   padding: var(--space-2);
   display: flex;
   flex-direction: column;
@@ -1636,7 +1636,7 @@ a.series-nav-title:hover {
   color: var(--white-60);
   font-size: var(--fs-14);
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--r-8);
   text-align: left;
   transition: all 0.2s;
 }
@@ -1658,7 +1658,7 @@ a.series-nav-title:hover {
   gap: var(--space-2);
   margin-top: var(--space-6);
   padding: var(--space-2-5) var(--space-6);
-  border-radius: 8px;
+  border-radius: var(--r-8);
   background: rgba(var(--brand-rgb), 0.15);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
   color: var(--post-accent);
@@ -1743,7 +1743,7 @@ a.series-nav-title:hover {
   }
 }
 .bp-skel {
-  border-radius: 4px;
+  border-radius: var(--r-4);
   background: linear-gradient(90deg, var(--white-04) 25%, var(--white-08) 37%, var(--white-04) 63%);
   background-size: 200% 100%;
   animation: bp-shimmer 1.5s ease-in-out infinite;
@@ -1813,7 +1813,7 @@ a.series-nav-title:hover {
   margin: 0 0 var(--space-6);
   padding: var(--space-3) var(--space-4);
   border: 1px solid rgba(var(--amber-300-rgb), 0.25);
-  border-radius: 10px;
+  border-radius: var(--r-10);
   background: rgba(var(--amber-300-rgb), 0.06);
   font-size: var(--fs-14);
   color: var(--white-70);

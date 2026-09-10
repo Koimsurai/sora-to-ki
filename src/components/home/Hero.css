@@ -133,7 +133,7 @@
   gap: 7px;
   margin: 0 0.3em;
   padding: 0.18em 0.7em 0.22em;
-  border-radius: 999px;
+  border-radius: var(--r-full);
   border: 1px solid rgba(var(--purple-300-rgb), 0.45);
   background: rgba(var(--brand-rgb), 0.1);
   box-shadow:
@@ -166,7 +166,7 @@
 .hero-caret {
   width: 2px;
   height: 1.05em;
-  border-radius: 1px;
+  border-radius: var(--r-full);
   background: var(--purple-300);
   box-shadow: 0 0 8px rgba(var(--purple-300-rgb), 0.8);
   animation: blink 0.85s steps(1) infinite;
@@ -525,7 +525,7 @@
   height: 38px;
   background: transparent;
   border: 1px solid var(--white-06);
-  border-radius: 50%;
+  border-radius: var(--r-round);
   color: rgba(var(--ink-rgb), 0.55);
   text-decoration: none;
   font-size: 1.05em;
@@ -685,7 +685,7 @@
   z-index: 2;
   width: 280px;
   height: 280px;
-  border-radius: 50%;
+  border-radius: var(--r-round);
   overflow: hidden;
   flex-shrink: 0;
   /* 兩層 border 效果：外面 1.5px 細白環，inset 用 box-shadow 模擬內側 vignette */
