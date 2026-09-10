@@ -360,7 +360,7 @@ vitest 上去比那個最壞情況更糟。實際踩過：併行那次冒出一�
 
 ### 樣式回歸有守門：`tests/e2e/computed-style.spec.ts`
 
-跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面共 4243 個元素的 34 個
+跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面共 4243 個元素的 38 個
 計算後屬性。改了樣式而它報紅是**正常的**：
 
 ```bash
@@ -375,7 +375,7 @@ UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
 1. **排除隨機裝飾背景**（`RandomComets` / `RandomShootingStars` / `RandomUFOs`）——
    它們產生的元素**數量本身是隨機的**，收進來首頁每跑必紅（實測 700 個）。
 2. **等 DOM 穩定，不是等固定秒數**。Hero 有 JS 打字機（`useTypingEffect`，延遲 900ms
-   開始、每字 80ms），而 **CSS 的 `animation:none` 停不掉 `setInterval`**。
+   開始、每字 80ms），而 **CSS 那條關動畫的規則停不掉 `setInterval`**。
    固定 sleep 500ms 會抓到打到一半的 DOM，間歇性報 34~688 個假變化。
 3. **不收這幾個屬性**，每一條都是實際害它在 CI 紅過的：
 
@@ -393,6 +393,17 @@ UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
    ⚠️ 要加新屬性之前先測它會不會被字體影響：把全站 `font-family` 換成另一個**比例**
    字體（不要用 monospace——瀏覽器對等寬字有不同的預設字級，會讓 `font-size` 跟著全變，
    em 推導的 padding 也跟著動，測出一堆假陽性）再比一次，只有 `font-family` 該變。
+
+   ⚠️ **然後還要做一次變異測試——「加進去、基準綠」不等於「抓得到東西」。**
+   2026-09-10 加 `transition-duration` / `-timing-function` / `animation-duration` 時，
+   基準更新完全綠、連跑三次確定性也沒問題，但它們其實**永遠抓不到任何變化**：
+   採樣前注入的那條 `transition:none!important; animation:none!important` 是**簡寫**，
+   會把 duration 與 timing-function 一起重設，於是 4243 個元素全是同一個 `0s` / `ease`。
+   改成 `transition-property:none` / `animation-name:none` 才對——一樣停得住
+   （實測首頁仍在跑動畫的元素 0 個），但只動 property/name 那一格，duration 保持作者
+   寫的值（首頁相異值從 1 種回到 25 種，跟完全不關動畫時一致）。
+   驗證方式是往 `index.css` 塞一條會動到該屬性的規則、**`pnpm build` 之後**再跑
+   （不重建的話變異根本沒進到跑起來的程式，見上面 e2e 那節）。
 
 4. **只比對兩邊都存在的 DOM 路徑。** 只出現在一邊的代表結構不同，而 **CSS 改不動 DOM**
    ——那種差異一定來自資料或時序（種子資料的時間戳是相對的，首頁「最近更新」的項目數

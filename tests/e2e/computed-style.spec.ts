@@ -13,7 +13,7 @@
  *
  * ## 基準檔為什麼存 hash 而不是原值
  *
- * 8560 個元素 × 34 個屬性直接存是好幾 MB，每次改樣式都會產生巨大 diff。
+ * 8560 個元素 × 38 個屬性直接存是好幾 MB，每次改樣式都會產生巨大 diff。
  * 存 hash 之後基準檔只有幾十 KB，而「哪個元素變了」照樣指得出來。
  *
  * ⚠ 代價是**報錯訊息本身不能只有 hash 與路徑**。只給
@@ -121,6 +121,20 @@ const ADMIN_ROUTES: { route: string; heading: string | RegExp }[] = [
  * 全站有 370 條 `gap` 宣告、58 種寫死的長度值，完全沒人守。它不吃字體度量
  * （`gap: 8px` 就是 8px），所以沒有上面那三類的問題。
  * 補它的當下正要做間距 token 化，而那次改動的一大半就落在 gap 上。
+ *
+ * z-index / letter-spacing / transition-* / animation-duration 是 2026-09-10 補的，
+ * 理由跟 gap 一樣：**它們原本完全沒人守**（z-index 28 種值、transition duration 71 種、
+ * letter-spacing 27 種），而接下來要收斂的正是這幾個維度。
+ *
+ * ⚠ 這五個不吃字體度量，跟上面排除的那三類不同：
+ *
+ *   z-index                          純整數，跟排版無關
+ *   letter-spacing                   em 只相對 font-size 解析，而 font-size 本身在 PROPS 裡且穩定
+ *   transition-duration / -timing-function
+ *   animation-duration               描述的是**規則的定義**，不是動畫當下那一幀的值
+ *                                    （這是它們跟 transform / opacity 的差別）
+ *
+ * 照這份檔案的規矩，加之前用另一個比例字體實測過一輪：只有 font-family 變。
  */
 const PROPS = [
   'background-color',
@@ -156,6 +170,11 @@ const PROPS = [
   'flex-direction',
   'justify-content',
   'align-items',
+  'z-index',
+  'letter-spacing',
+  'transition-duration',
+  'transition-timing-function',
+  'animation-duration',
 ];
 
 /**
@@ -282,7 +301,7 @@ const hash = (s: string) => BigInt(`0x${createHash('sha1').update(s).digest('hex
  * 每個屬性各兩位十進位數字，串成一條「指紋」。基準檔每筆存成 `<hash> <指紋>`。
  *
  * 為什麼要有它：只有整體 hash 的話，報錯只能講「這個元素變了」，講不出**哪個屬性**變了。
- * 而 PROPS 有 31 個，把 31 個值全印出來反而更難讀——真正變的那一個會被淹掉
+ * 而 PROPS 有 38 個，把 38 個值全印出來反而更難讀——真正變的那一個會被淹掉
  * （第一版就是這樣，footer 連結的 `color` 夾在 30 條 `0px` / `none` 中間）。
  *
  * ⚠ **比對用的仍然是前面那個完整 hash，不是這條指紋。**
@@ -306,9 +325,19 @@ const fingerprint = (values: string[]) =>
  * 但「到了之後怎麼比」完全相同——抄一份的下場是其中一份會慢慢跟另一份不一樣。
  */
 async function compareWithBaseline(page: Page, route: string) {
-  // 動畫關掉：不關的話 transition 中途的值會混進來
+  // 動畫關掉：不關的話 transition 中途的值會混進來。
+  //
+  // ⚠ 這裡刻意**不是** `transition:none` / `animation:none`——那兩個簡寫會把
+  // `transition-duration` / `-timing-function` / `animation-duration` 一起重設成
+  // 初始值，於是這三個屬性在基準裡變成 4243 個一模一樣的 `0s` / `ease`，**永遠抓不到
+  // 任何東西**（加進 PROPS 的當下就是這樣，變異測試才發現）。
+  //
+  // `transition-property:none` 讓過渡沒有可過渡的屬性、`animation-name:none` 讓動畫
+  // 沒有 keyframes 可跑，效果一樣是「停住」，但兩者都只動 property/name 這一格，
+  // duration 與 timing-function 保持作者寫的值。實測首頁：仍在跑動畫的元素 0 個，
+  // 而 transition-duration 從 1 種相異值回到 25 種（跟完全不關動畫時一致）。
   await page.addStyleTag({
-    content: '*,*::before,*::after{transition:none!important;animation:none!important}',
+    content: '*,*::before,*::after{transition-property:none!important;animation-name:none!important}',
   });
   await waitForDomStable(page);
 
