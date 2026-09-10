@@ -303,7 +303,7 @@
 .mm-fullscreen-overlay {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: var(--z-fullscreen);
   background: var(--black-80);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);

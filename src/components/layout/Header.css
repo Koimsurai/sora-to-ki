@@ -7,7 +7,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -170,7 +170,7 @@
     0 0 0 1px var(--white-06),
     inset 0 1px 0 var(--white-08);
   padding: var(--space-2);
-  z-index: 1001;
+  z-index: 2;
 }
 
 /* Arrow */
@@ -299,7 +299,7 @@
   border: 1px solid var(--white-10);
   border-radius: var(--r-12);
   padding: var(--space-2) 0;
-  z-index: 1001;
+  z-index: 2;
   box-shadow: 0 10px 40px var(--black-40);
 }
 
@@ -369,7 +369,7 @@
   inset: 0;
   background: var(--black-50);
   backdrop-filter: blur(4px);
-  z-index: 999;
+  z-index: 1;
 }
 
 /* ── Download Popover ── */
@@ -384,7 +384,7 @@
   border: 1px solid var(--white-10);
   border-radius: var(--r-16);
   padding: var(--space-6);
-  z-index: 1001;
+  z-index: 2;
   box-shadow: 0 20px 60px var(--black-50);
 }
 
@@ -448,7 +448,7 @@
   border: 1px solid var(--white-10);
   border-radius: var(--r-8);
   cursor: pointer;
-  z-index: 1002;
+  z-index: 3;
   transition: all 0.2s ease;
 }
 
@@ -548,12 +548,12 @@
 
   .resume-btn {
     position: relative;
-    z-index: 1002;
+    z-index: 3;
   }
 
   .user-area {
     position: relative;
-    z-index: 1002;
+    z-index: 3;
   }
 
   .user-avatar-btn {

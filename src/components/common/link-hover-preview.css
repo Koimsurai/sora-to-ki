@@ -4,7 +4,7 @@
 
 .lhp-card {
   position: fixed;
-  z-index: 9999;
+  z-index: var(--z-menu);
   width: 300px;
   border-radius: var(--r-12);
   overflow: hidden;

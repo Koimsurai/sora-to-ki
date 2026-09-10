@@ -32,7 +32,7 @@
     border-color 220ms ease,
     color 220ms ease,
     box-shadow 220ms ease;
-  z-index: 1000;
+  z-index: var(--z-float);
   outline: none;
   box-shadow: 0 6px 22px var(--black-35);
 }

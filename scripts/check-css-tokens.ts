@@ -1,12 +1,13 @@
 /**
- * 擋住「又開始現編間距值、字級與圓角」。
+ * 擋住「又開始現編間距值、字級、圓角與堆疊層」。
  *
  * ## 補這道的理由
  *
- * 這個專案原本三把尺都沒有：
+ * 這個專案原本四把尺都沒有：
  *   · margin/padding/gap  **87 種**長度值、1594 次、token 覆蓋 0
  *   · font-size           **57 種**值、584 次、token 覆蓋 0
  *   · border-radius       **21 種**值、404 個角、token 覆蓋 0
+ *   · z-index             **28 種**值、156 處、token 覆蓋 0
  *
  * 沒有尺的後果不是「值很多」，是**需要一個值時沒有標準答案**——於是每次都現編一個。
  * 間距長出 `0.15rem` / `0.35rem` / `0.45rem` / `0.55rem`；字級更誇張，是有人拿著
@@ -32,9 +33,14 @@
  *   3. 透明度不在 19 階的階梯上  → 錯（白／黑要用 --white-NN / --black-NN；
  *      品牌紫 rgba(var(--brand-rgb), a) 與其他底色的 a 都得在階梯上）
  *
- * 三把尺（間距 --space-*、字級 --fs-*、圓角 --r-*）走的都是第 1、2 條，
+ * 三把長度尺（間距 --space-*、字級 --fs-*、圓角 --r-*）走的都是第 1、2 條，
  * 差別只在各自的合法值集合。圓角另外多一條：`border-radius: 50%` 是「圓」這個語意
  * 而不是長度，要寫 `var(--r-round)`；`30% 70%` 那種刻意捏形狀的百分比不管。
+ *
+ * z-index（--z-*）是第 5 條，形狀不一樣，**門檻是 1000 而不是「全部都要走 token」**：
+ * 1000 以下留給元件內部的局部堆疊（`.mm-toolbar: 20`、`.floating-actions: 100`），
+ * 那些數字只跟自己的兄弟比，逼它們上尺是把局部問題硬講成全域問題。
+ * ≥1000 一定是「我要蓋過全世界」，那必須是一個有名字的決定。
  *
  * 第 3 條**連 `--xxx:` 定義行都查**。導入 alpha 階梯那次 codemod 跳過了定義行，
  * 結果 `--glass-bg` / `--glass-hover-bg` / `--post-card-bg` 三處還引用著被拿掉的階，
@@ -209,6 +215,20 @@ for (const m of blankComments(INDEX_CSS).matchAll(
     RGB_TOKEN.set(val.replace(/\s+/g, ''), name);
   }
 }
+/**
+ * z-index 的尺，同樣從 index.css 讀。值 → token 名。
+ *
+ * ⚠ 這條的門檻是 **1000**，不是「所有 z-index 都要走 token」。
+ * 1000 以下留給元件內部的局部堆疊（`.mm-toolbar: 20`、`.floating-actions: 100`）——
+ * 那些數字只跟自己的兄弟比，逼它們上尺是把局部問題硬講成全域問題。
+ * 四位數則一定是「我要蓋過全世界」，而那必須是一個有名字的決定。
+ */
+const Z_TOKEN = new Map<number, string>();
+for (const m of blankComments(INDEX_CSS).matchAll(/(--z-[\w-]+)\s*:\s*(-?\d+)\s*;/g)) {
+  Z_TOKEN.set(Number(m[2]), m[1]);
+}
+const Z_MIN = 1000;
+
 const HEX6 = /#([0-9a-fA-F]{6})\b(?![0-9a-fA-F])/g;
 const HEX3 = /#([0-9a-fA-F]{3})\b(?![0-9a-fA-F])/g;
 
@@ -356,6 +376,24 @@ function check(file: string): Problem[] {
         });
     }
 
+    // ── z-index：四位數一定要走尺 ──
+    if (prop === 'z-index' && /^-?\d+$/.test(value)) {
+      const n = Number(value);
+      const tok = Z_TOKEN.get(n);
+      if (tok) {
+        problems.push({ file, line, prop, raw: value, why: `這就是 ${tok}`, fix: `改用 var(${tok})` });
+      } else if (Math.abs(n) >= Z_MIN) {
+        problems.push({
+          file,
+          line,
+          prop,
+          raw: value,
+          why: `z-index ${n} ≥ ${Z_MIN} —— 那是「我要蓋過全世界」，必須是有名字的決定`,
+          fix: '改用 index.css 的 --z-* 其中一格；如果它其實只跟自己的兄弟比，改成 1/2/3 這種局部值',
+        });
+      }
+    }
+
     const isSpacing = SPACING_PROP.test(prop);
     const isFontSize = prop === 'font-size';
     const isRadius = RADIUS_PROP.test(prop);
@@ -442,7 +480,7 @@ const files = walk('src');
 const problems = files.flatMap(check);
 
 if (problems.length === 0) {
-  console.log(`✅ 間距、字級、圓角與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`);
+  console.log(`✅ 間距、字級、圓角、堆疊層與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`);
   process.exit(0);
 }
 

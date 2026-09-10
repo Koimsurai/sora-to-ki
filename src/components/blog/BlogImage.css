@@ -51,7 +51,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  z-index: 10000;
+  z-index: 2;
 }
 
 .image-lightbox-close:hover {

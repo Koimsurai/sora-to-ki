@@ -201,6 +201,41 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 ⚠️ **`border-radius: 0` 與 `inherit` 刻意沒有 token**，寫 `var(--r-0)` 只會更難讀。
 `30% 70%` 那種刻意捏形狀的百分比也不管，檢查只擋剛好 `50%`。
 
+### z-index：`--z-*` 十一格，門檻是 1000
+
+```
+--z-float 1000 → --z-header 1100 → --z-progress 1200 → --z-trail 1300 →
+--z-modal 1400 → --z-menu 1500 → --z-fullscreen 1600 → --z-palette 1700 →
+--z-toast 1800 → --z-ctx-menu 1900 → --z-intro 2000
+```
+
+⚠️ **`check:css-tokens` 只擋 ≥1000 的字面 z-index，不是全部。** 1000 以下留給元件
+內部的局部堆疊（`.mm-toolbar: 20`、`.floating-actions: 100`），那些數字只跟自己的
+兄弟比，逼它們上尺是把局部問題硬講成全域問題。
+
+⚠️ **最重要的一件事：這個站的 z-index 大部分沒有全域意義。** 全站內容都關在
+`.main-content-container` 裡（`AppShell.tsx` 給它 `position: relative; z-index: 10`），
+那本身就是一個堆疊脈絡。實測後果：`.cmdk-backdrop` 寫 `10000`，照樣被容器**外面**
+的 `.back-to-top`（`1000`）蓋住；`.mobile-toggle` 的 `1002` 是關在 `header.site-header`
+（`1000`）裡的局部值。**所以不要用數字大小去推跨脈絡的勝負**——任何 portal 到
+`document.body` 的東西（lightbox、mermaid 全螢幕、連結預覽卡、收藏編輯器、交友 modal）
+自動贏過整個容器，不管它寫幾。
+
+⚠️ **覆蓋層一定要 portal 到 `document.body`。** 寫在頁面內容裡的話，多大的 z-index
+都可能是假的——交友 modal 原本寫 `9999`，但它長在 `InfoPage` 的 `.post-body`
+（`z-index: 1`）裡面，於是那個 9999 只是「在 post-body 裡排第一」，對外仍然只有 1。
+症狀是遮罩明明是整個視窗大小，頂欄照樣浮在變暗的畫面上而且點得到。
+
+⚠️ **診斷這類問題不要讀 CSS 猜，用瀏覽器問。** 兩個工具：
+`document.elementFromPoint(x, y)` 回答「這個位置上最後畫的是誰」（那是瀏覽器自己
+算出來的結果）；往上走找「第一個建立堆疊脈絡的祖先」回答「這個數字跟誰比」。
+上面三個 bug 全是這樣抓到的，`grep z-index` 一個都看不出來。
+
+⚠️ **`body::before` / `body::after`（全站顆粒與邊緣暗角）不在這把尺上。** 它們在
+根脈絡、寫 49/50，所以實際上畫在**頂欄與所有 modal 之上**——跟它們原本的註解相反
+（那條註解已改成寫實話）。兩層都是 `pointer-events: none` 的極淡覆蓋所以沒人注意到。
+要改成「只蓋內容」得把它們搬進容器，那是視覺決定，不是排版 bug。
+
 ### 站點自己的品牌色：語意命名
 
 `index.css` 的 `:root` 有 `--surface-0..3`（近黑背景，**依明度排，0 最深**：0 是頁面底、

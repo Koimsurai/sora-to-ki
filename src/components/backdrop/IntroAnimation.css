@@ -19,7 +19,7 @@
   position: fixed;
   inset: 0;
   background: radial-gradient(ellipse at center, #050620 0%, #000000 70%);
-  z-index: 9999;
+  z-index: var(--z-intro);
   cursor: pointer;
   overflow: hidden;
   transition: opacity 300ms ease-out;

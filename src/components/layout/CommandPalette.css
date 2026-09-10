@@ -1,7 +1,7 @@
 .cmdk-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: var(--z-palette);
   background: rgba(var(--surface-0-rgb), 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);

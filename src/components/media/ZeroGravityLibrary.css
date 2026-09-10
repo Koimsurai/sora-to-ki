@@ -6,7 +6,7 @@
   position: fixed;
   inset: 0;
   background: #000000;
-  z-index: 9999;
+  z-index: var(--z-fullscreen);
   overflow: hidden;
 }
 
