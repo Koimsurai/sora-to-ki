@@ -253,9 +253,9 @@
   border: 1px solid var(--white-08);
   background: rgba(var(--surface-3-rgb), 0.55);
   transition:
-    transform 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.3s ease;
+    transform var(--dur-250) ease,
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-300) ease;
 }
 .steam-profile-card:hover {
   transform: translateY(-2px);
@@ -437,7 +437,7 @@
   flex-shrink: 0;
 }
 .steam-profile-cta-btn span {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--dur-250) var(--easing-standard);
 }
 .steam-profile-card:hover .steam-profile-cta-btn span {
   transform: translateX(3px);
@@ -528,9 +528,9 @@
   isolation: isolate;
   border: 1px solid var(--white-06);
   transition:
-    transform 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.3s ease;
+    transform var(--dur-250) ease,
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-300) ease;
 }
 .steam-recent-card:hover {
   transform: translateY(-2px);
@@ -563,7 +563,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.4s ease;
+  transition: transform var(--dur-400) ease;
 }
 .steam-recent-card:hover .steam-recent-cover img {
   transform: scale(1.05);
@@ -752,7 +752,7 @@
   color: var(--white-70);
   font-size: var(--fs-14);
   font-weight: 500;
-  transition: color 0.2s;
+  transition: color var(--dur-200);
 }
 .heatmap-profile:hover {
   color: var(--brand-light);
@@ -801,8 +801,8 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--brand-rgb), 0.25) transparent;
   transition:
-    opacity 0.3s ease,
-    filter 0.3s ease;
+    opacity var(--dur-300) ease,
+    filter var(--dur-300) ease;
 }
 .heatmap-grid {
   display: flex;
@@ -815,8 +815,8 @@
   filter: blur(2px) saturate(0.5);
   pointer-events: none;
   transition:
-    opacity 0.35s ease,
-    filter 0.35s ease;
+    opacity var(--dur-400) ease,
+    filter var(--dur-400) ease;
 }
 .heatmap-refresh-overlay {
   position: absolute;
@@ -867,7 +867,7 @@
   height: 12px;
   border-radius: var(--r-2);
   cursor: pointer;
-  transition: transform 0.15s;
+  transition: transform var(--dur-150);
   position: relative;
 }
 .heatmap-day:hover {
@@ -908,7 +908,7 @@
   pointer-events: none;
   z-index: 100;
   opacity: 0;
-  transition: all 0.12s;
+  transition: all var(--dur-100);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
 }
 .day-tooltip::before {
@@ -1028,7 +1028,7 @@
   color: inherit;
   padding: 3px 0;
   border-radius: var(--r-4);
-  transition: background 0.15s;
+  transition: background var(--dur-150);
 }
 .commit-msg-row:hover {
   background: rgba(var(--brand-rgb), 0.06);
@@ -1191,7 +1191,7 @@
   aspect-ratio: 460 / 215;
   object-fit: cover;
   display: block;
-  transition: transform 0.3s;
+  transition: transform var(--dur-300);
 }
 .game-gallery-item:hover img {
   transform: scale(1.06);
@@ -1206,7 +1206,7 @@
   justify-content: flex-end;
   padding: var(--space-2) var(--space-2-5);
   opacity: 0;
-  transition: opacity 0.25s;
+  transition: opacity var(--dur-250);
   font-size: var(--fs-12);
   color: var(--clr-headline);
   font-weight: 500;
@@ -1241,7 +1241,7 @@
   border-bottom: 1px solid var(--white-04);
   text-decoration: none;
   color: inherit;
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-200);
 }
 .repo-row:last-child {
   border-bottom: none;

@@ -62,8 +62,8 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   transition:
-    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.35s ease;
+    transform var(--dur-400) var(--easing-out),
+    border-color var(--dur-400) ease;
 }
 .tk-card:hover {
   transform: translateY(-1px);
@@ -116,7 +116,7 @@
   font-size: var(--fs-12);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--dur-200) ease;
   box-shadow: 0 8px 24px var(--black-45);
   z-index: 5;
 }
@@ -146,8 +146,8 @@
   text-decoration: none;
   color: inherit;
   transition:
-    border-color 0.3s ease,
-    background 0.3s ease;
+    border-color var(--dur-300) ease,
+    background var(--dur-300) ease;
 }
 /* hover 漸層 sheen — 掃過嵌入卡本身 */
 .tk-embed::before {
@@ -160,7 +160,7 @@
   background-size: 220% 100%;
   background-position: 120% 0;
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity var(--dur-400) ease;
 }
 .tk-embed:hover {
   border-color: rgba(var(--purple-300-rgb), 0.3);
@@ -269,13 +269,13 @@
   cursor: pointer;
   text-decoration: none;
   transition:
-    color 0.2s ease,
-    background 0.2s ease;
+    color var(--dur-200) ease,
+    background var(--dur-200) ease;
 }
 .tk-ic svg {
   transition:
-    transform 0.2s ease,
-    fill 0.2s ease;
+    transform var(--dur-200) ease,
+    fill var(--dur-200) ease;
 }
 /* 蓋掉全域 button 的紫底/光暈/外框，只留變色 + svg 放大 */
 .tk-ic:hover,
@@ -318,9 +318,9 @@
   opacity: 0;
   transform: translateX(-4px);
   transition:
-    opacity 0.25s ease,
-    transform 0.25s ease,
-    color 0.2s ease;
+    opacity var(--dur-250) ease,
+    transform var(--dur-250) ease,
+    color var(--dur-200) ease;
 }
 .tk-card:hover .tk-view {
   opacity: 1;
@@ -414,8 +414,8 @@
   font-size: var(--fs-14);
   cursor: pointer;
   transition:
-    background 0.2s ease,
-    opacity 0.2s ease;
+    background var(--dur-200) ease,
+    opacity var(--dur-200) ease;
 }
 .tk-compose-send:hover {
   background: #6c47e0;
@@ -441,8 +441,8 @@
   color: rgba(var(--ink-rgb), 0.5);
   opacity: 0;
   transition:
-    opacity 0.25s ease,
-    color 0.2s ease;
+    opacity var(--dur-250) ease,
+    color var(--dur-200) ease;
 }
 .tk-card:hover .tk-act {
   opacity: 1;
@@ -550,7 +550,7 @@
   border: 1px solid var(--white-08);
   border-radius: var(--r-16);
   box-shadow: 0 30px 80px var(--black-60);
-  animation: tk-modal-pop 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: tk-modal-pop 0.25s var(--easing-out);
 }
 @keyframes tk-modal-pop {
   from {
@@ -625,8 +625,8 @@
   display: inline-flex;
   color: rgba(var(--ink-rgb), 0.4);
   transition:
-    color 0.2s ease,
-    transform 0.2s ease;
+    color var(--dur-200) ease,
+    transform var(--dur-200) ease;
 }
 .tk-rss:hover {
   color: rgba(var(--purple-300-rgb), 0.95);
@@ -647,7 +647,7 @@
   color: rgba(var(--purple-300-rgb), 0.7);
   text-decoration: none;
   font-size: var(--fs-14);
-  transition: color 0.2s ease;
+  transition: color var(--dur-200) ease;
 }
 .tk-back:hover {
   color: var(--purple-300);

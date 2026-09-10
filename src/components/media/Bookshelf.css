@@ -76,7 +76,7 @@
   -webkit-backdrop-filter: blur(16px);
   padding: var(--space-3-5) 0;
   max-width: 620px;
-  transition: border-color 0.4s;
+  transition: border-color var(--dur-400);
 }
 
 .stats-strip:hover {
@@ -151,7 +151,7 @@
   border-radius: var(--r-12);
   color: var(--text-primary);
   font-size: var(--fs-14);
-  transition: all 0.3s ease;
+  transition: all var(--dur-300) ease;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -176,7 +176,7 @@
   cursor: pointer;
   padding: var(--space-1);
   opacity: 0.5;
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-200);
   z-index: 1;
   box-shadow: none;
 }
@@ -200,7 +200,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1-5);
-  transition: all 0.3s ease;
+  transition: all var(--dur-300) ease;
   white-space: nowrap;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -257,7 +257,7 @@
   color: var(--text-primary);
   font-size: var(--fs-14);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--dur-300) ease;
 }
 
 .filter-group select:focus {
@@ -273,7 +273,7 @@
   border-radius: var(--r-8);
   color: var(--brand-light);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--dur-300) ease;
   font-size: var(--fs-13);
   font-weight: 500;
   align-self: flex-end;
@@ -307,7 +307,7 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--r-12);
   padding: var(--space-3);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-400) var(--easing-standard);
   overflow: hidden;
 }
 
@@ -322,7 +322,7 @@
     transparent 60%
   );
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity var(--dur-500) ease;
   pointer-events: none;
   z-index: 0;
 }
@@ -355,7 +355,7 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: transform 0.5s ease;
+  transition: transform var(--dur-500) ease;
   border-radius: var(--r-10);
 }
 
@@ -539,7 +539,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--dur-200);
   z-index: 1;
   box-shadow: none;
 }

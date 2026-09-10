@@ -71,7 +71,7 @@
   background: var(--amber-300);
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--dur-300) var(--easing-standard);
 }
 .annot:hover .annot-text::after,
 .annot:focus-visible .annot-text::after,
@@ -102,8 +102,8 @@
   transform-origin: bottom left;
   pointer-events: none;
   transition:
-    opacity 0.2s ease,
-    transform 0.2s cubic-bezier(0.34, 1.3, 0.5, 1);
+    opacity var(--dur-200) ease,
+    transform var(--dur-200) var(--easing-back);
 }
 .annot:hover .annot-card,
 .annot:focus-within .annot-card,
@@ -177,8 +177,8 @@
   background: var(--white-06);
   filter: blur(6px);
   transition:
-    filter 0.35s ease,
-    background 0.35s ease;
+    filter var(--dur-400) ease,
+    background var(--dur-400) ease;
   user-select: none;
   -webkit-user-select: none;
   outline: none;
@@ -337,9 +337,9 @@
   white-space: nowrap;
   vertical-align: baseline;
   transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
 }
 .mdx-mention svg {
   flex: 0 0 auto;
@@ -398,8 +398,8 @@
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   cursor: pointer;
   transition:
-    background 0.18s ease,
-    color 0.18s ease;
+    background var(--dur-200) ease,
+    color var(--dur-200) ease;
 }
 .mdx-codetabs-tab-icon {
   flex: 0 0 auto;
@@ -476,9 +476,9 @@
   font-family: inherit;
   cursor: pointer;
   transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease;
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
 }
 /* 蓋掉全域 button{紫底}＋button:hover{紫底+光暈}（specificity 0,2,0 > 0,1,1） */
 .mdx-tabs-pill:hover,
@@ -708,7 +708,7 @@
   content: "▶";
   font-size: var(--fs-11);
   color: var(--white-40);
-  transition: transform 0.18s ease;
+  transition: transform var(--dur-200) ease;
 }
 .mdx-details[open] .mdx-details-summary::before {
   transform: rotate(90deg);
@@ -722,8 +722,8 @@
   block-size: 0;
   overflow: hidden;
   transition:
-    block-size 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    content-visibility 0.3s allow-discrete;
+    block-size var(--dur-300) var(--easing-standard),
+    content-visibility var(--dur-300) allow-discrete;
 }
 .mdx-details[open]::details-content {
   block-size: auto;
@@ -917,7 +917,7 @@
   position: absolute;
   inset: 0;
   background: var(--black-20);
-  transition: background 0.2s;
+  transition: background var(--dur-200);
 }
 .mdx-youtube-facade:hover::after {
   background: var(--black-06);
@@ -989,8 +989,8 @@
   text-decoration: none;
   border-bottom: 1px solid transparent;
   transition:
-    border-color 0.15s ease,
-    color 0.15s ease;
+    border-color var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 .mdx-refs-link:hover {
   color: #fff;
@@ -1047,8 +1047,8 @@
   cursor: pointer;
   overflow: hidden;
   transition:
-    background 0.15s ease,
-    color 0.15s ease;
+    background var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 .mdx-poll-opt:hover:not(:disabled),
 .mdx-poll-opt:focus-visible:not(:disabled) {
@@ -1070,7 +1070,7 @@
   top: 0;
   bottom: 0;
   background: rgba(var(--violet-400-rgb), 0.15);
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--dur-500) var(--easing-standard);
   pointer-events: none;
 }
 .mdx-poll-opt--mine .mdx-poll-bar {

@@ -35,7 +35,7 @@
 
 .progressive-image-full {
   z-index: 3;
-  transition: transform 0.1s ease-out;
+  transition: transform var(--dur-100) ease-out;
 }
 
 .progressive-image-loader {

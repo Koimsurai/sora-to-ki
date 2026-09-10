@@ -17,8 +17,8 @@
   box-shadow: none;
   /* 只動畫 transform / opacity；transition: all 會把 border 從 0 過渡到 initial（3px white）造成滑回頂部時白線閃過 */
   transition:
-    transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    transform var(--dur-500) var(--easing-standard),
+    opacity var(--dur-500) var(--easing-standard);
 }
 
 .site-header.hidden {
@@ -53,9 +53,9 @@
   -webkit-backdrop-filter: blur(12px);
   text-decoration: none;
   transition:
-    border-color 0.25s ease,
-    box-shadow 0.25s ease,
-    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-250) ease,
+    transform var(--dur-250) var(--easing-back);
 }
 .site-brand:hover {
   border-color: rgba(var(--purple-300-rgb), 0.55);
@@ -105,7 +105,7 @@
     transparent 40%
   );
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-300) ease;
   pointer-events: none;
 }
 
@@ -129,8 +129,8 @@
   background: transparent;
   cursor: pointer;
   transition:
-    color 0.25s ease,
-    background 0.25s ease;
+    color var(--dur-250) ease,
+    background var(--dur-250) ease;
   white-space: nowrap;
   z-index: 1;
 }
@@ -150,7 +150,7 @@
 
 .chevron {
   font-size: 0.65em;
-  transition: transform 0.3s ease;
+  transition: transform var(--dur-300) ease;
   opacity: 0.6;
 }
 
@@ -196,7 +196,7 @@
   border-radius: var(--r-10);
   text-decoration: none;
   color: var(--white-70);
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
 }
 
 .dropdown-item:hover {
@@ -222,7 +222,7 @@
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.8), rgba(var(--brand-rgb), 0.5));
   border: 1px solid rgba(var(--brand-rgb), 0.3);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--dur-300) ease;
   flex-shrink: 0;
   box-shadow: 0 4px 14px rgba(var(--brand-rgb), 0.2);
 }
@@ -235,7 +235,7 @@
 
 .resume-icon {
   font-size: 0.85em;
-  transition: transform 0.3s ease;
+  transition: transform var(--dur-300) ease;
 }
 
 .resume-btn:hover .resume-icon {
@@ -263,8 +263,8 @@
   justify-content: center;
   overflow: hidden;
   transition:
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-250) ease;
   padding: 0;
   box-shadow: none;
 }
@@ -340,8 +340,8 @@
   border-radius: 0;
   cursor: pointer;
   transition:
-    background 0.2s,
-    color 0.2s;
+    background var(--dur-200),
+    color var(--dur-200);
   text-align: left;
   box-shadow: none;
 }
@@ -405,7 +405,7 @@
   color: var(--white-80);
   background: rgba(var(--brand-rgb), 0.08);
   border: 1px solid rgba(var(--brand-rgb), 0.15);
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
   margin-bottom: var(--space-2);
   font-size: var(--fs-14);
 }
@@ -426,7 +426,7 @@
   color: var(--white-50);
   font-size: var(--fs-14);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
   margin-top: var(--space-1);
 }
 
@@ -449,7 +449,7 @@
   border-radius: var(--r-8);
   cursor: pointer;
   z-index: 3;
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
 }
 
 .mobile-toggle:hover {
@@ -462,7 +462,7 @@
   height: 2px;
   background: var(--white-80);
   border-radius: var(--r-2);
-  transition: all 0.3s ease;
+  transition: all var(--dur-300) ease;
 }
 
 .mobile-toggle.open span:nth-child(1) {

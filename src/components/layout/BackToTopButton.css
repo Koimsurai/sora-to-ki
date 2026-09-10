@@ -25,13 +25,13 @@
   visibility: hidden;
   transform: translateY(10px);
   transition:
-    opacity 280ms ease,
-    visibility 280ms ease,
-    transform 280ms ease,
-    background 220ms ease,
-    border-color 220ms ease,
-    color 220ms ease,
-    box-shadow 220ms ease;
+    opacity var(--dur-300) ease,
+    visibility var(--dur-300) ease,
+    transform var(--dur-300) ease,
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease,
+    box-shadow var(--dur-200) ease;
   z-index: var(--z-float);
   outline: none;
   box-shadow: 0 6px 22px var(--black-35);
@@ -59,7 +59,7 @@
   align-items: center;
   justify-content: center;
   color: rgba(var(--ink-rgb), 0.9);
-  transition: filter 0.22s ease;
+  transition: filter var(--dur-200) ease;
 }
 
 /* 把舊的 CSS launch 動畫拿掉，改交給 @animateicons/react Rocket 的內建動畫驅動。
@@ -83,7 +83,7 @@
 
 .back-to-top-ring-progress {
   stroke: rgba(var(--lavender-rgb), 0.8);
-  transition: stroke-dashoffset 120ms linear;
+  transition: stroke-dashoffset var(--dur-100) linear;
   filter: drop-shadow(0 0 4px rgba(var(--brand-rgb), 0.5));
 }
 

@@ -57,8 +57,8 @@
   border-radius: var(--r-full);
   opacity: 0;
   transition:
-    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform var(--dur-300) var(--easing-standard),
+    opacity var(--dur-300) var(--easing-standard);
   pointer-events: none;
   box-shadow: 0 4px 24px var(--black-40);
 }
@@ -102,9 +102,9 @@
   color: var(--white-60);
   cursor: pointer;
   transition:
-    background 0.15s,
-    border-color 0.15s,
-    color 0.15s;
+    background var(--dur-150),
+    border-color var(--dur-150),
+    color var(--dur-150);
 }
 
 .mm-menu-trigger:hover {
@@ -142,7 +142,7 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--dur-150) ease;
   z-index: 100;
   box-shadow: 0 2px 8px var(--black-30);
 }
@@ -200,7 +200,7 @@
   font-size: var(--fs-12);
   cursor: pointer;
   border-radius: var(--r-6);
-  transition: background 0.12s;
+  transition: background var(--dur-100);
   text-align: left;
 }
 
@@ -240,9 +240,9 @@
   color: var(--white-70);
   cursor: pointer;
   transition:
-    color 0.2s,
-    background 0.2s,
-    border-color 0.2s;
+    color var(--dur-200),
+    background var(--dur-200),
+    border-color var(--dur-200);
   box-shadow: none;
 }
 
@@ -278,7 +278,7 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--dur-150) ease;
   z-index: 100;
   box-shadow: 0 2px 8px var(--black-30);
 }
@@ -359,7 +359,7 @@
   color: var(--white-50);
   cursor: pointer;
   font-size: var(--fs-16);
-  transition: all 0.15s;
+  transition: all var(--dur-150);
   box-shadow: none;
 }
 
@@ -450,8 +450,8 @@
   color: var(--white-70);
   cursor: pointer;
   transition:
-    background 0.14s ease,
-    color 0.14s ease;
+    background var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 .mm-action-btn:hover,
 .mm-action-btn:focus,

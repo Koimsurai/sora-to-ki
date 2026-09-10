@@ -82,8 +82,8 @@
   text-decoration: none;
   border-bottom: 1px dashed rgba(var(--purple-300-rgb), 0.35);
   transition:
-    border-color 0.18s ease,
-    color 0.18s ease;
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
 }
 .info-page-content a:hover {
   color: var(--zinc-100);
@@ -176,8 +176,8 @@
   gap: var(--space-1);
   text-decoration: none;
   transition:
-    transform 0.2s ease,
-    color 0.2s ease;
+    transform var(--dur-200) ease,
+    color var(--dur-200) ease;
   /* 蓋掉 info-page-content 對 a 加的 dashed underline */
   border-bottom: none;
 }
@@ -224,9 +224,9 @@
   text-decoration: none;
   border-bottom: none;
   transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    transform var(--dur-200) ease;
 }
 .friend-card:hover {
   background: rgba(var(--brand-rgb), 0.08);
@@ -270,10 +270,10 @@
   font-weight: 500;
   cursor: pointer;
   transition:
-    background 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease,
-    transform 0.2s ease;
+    background var(--dur-250) ease,
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-250) ease,
+    transform var(--dur-200) ease;
 }
 .friends-apply-btn:hover {
   background: rgba(var(--brand-rgb), 0.3);
@@ -333,8 +333,8 @@
   justify-content: center;
   border-radius: var(--r-round);
   transition:
-    background 0.2s ease,
-    color 0.2s ease;
+    background var(--dur-200) ease,
+    color var(--dur-200) ease;
 }
 .friends-modal-close:hover {
   background: var(--white-08);
@@ -376,8 +376,8 @@
   font-size: var(--fs-14);
   font-family: inherit;
   transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
+    border-color var(--dur-200) ease,
+    background var(--dur-200) ease;
 }
 .friends-modal-field input:focus {
   outline: none;
@@ -403,9 +403,9 @@
   font-weight: 500;
   cursor: pointer;
   transition:
-    background 0.25s ease,
-    box-shadow 0.25s ease,
-    transform 0.2s ease;
+    background var(--dur-250) ease,
+    box-shadow var(--dur-250) ease,
+    transform var(--dur-200) ease;
 }
 .friends-modal-submit:hover {
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.95), rgba(var(--brand-rgb), 0.7));

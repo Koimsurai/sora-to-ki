@@ -16,7 +16,7 @@
   text-decoration: none;
   margin: var(--space-5) 0;
   background: var(--white-02);
-  transition: all 0.25s ease;
+  transition: all var(--dur-250) ease;
   max-width: 100%;
 }
 
@@ -122,7 +122,7 @@
   color: var(--white-60);
   text-decoration: none;
   border-top: 1px solid var(--white-06);
-  transition: color 0.2s;
+  transition: color var(--dur-200);
 }
 
 .link-card-embed-link:hover {

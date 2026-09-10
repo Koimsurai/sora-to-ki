@@ -22,6 +22,6 @@
      跟原本 JS 算的 -mouseX * parallaxFactor * 100 一致。 */
   transform: translate(calc(var(--mx) * var(--pf) * -100%), calc(var(--my) * var(--pf) * -100%));
   /* 平滑過渡，用於視差效果 */
-  transition: transform 0.1s linear; /* 調整過渡時間以獲得所需效果 */
+  transition: transform var(--dur-100) linear; /* 調整過渡時間以獲得所需效果 */
   will-change: transform; /* 提示瀏覽器優化 transform */
 }

@@ -36,10 +36,10 @@ body {
   isolation: isolate;
   overflow: hidden;
   transition:
-    color 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color var(--dur-250) ease,
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-300) var(--easing-standard),
+    transform var(--dur-250) var(--easing-standard);
 }
 /* 漸層邊框：靜態淡，hover 才浮現 */
 .koim-btn::before {
@@ -60,7 +60,7 @@ body {
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-300) ease;
   pointer-events: none;
   z-index: 1;
 }
@@ -71,7 +71,7 @@ body {
   inset: 0;
   background: radial-gradient(120% 80% at 50% 120%, rgba(var(--brand-rgb), 0.3), transparent 60%);
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity var(--dur-400) ease;
   pointer-events: none;
   z-index: 0;
 }
@@ -96,7 +96,7 @@ body {
 }
 .koim-btn:active {
   transform: translateY(0);
-  transition-duration: 0.1s;
+  transition-duration: var(--dur-100);
 }
 .koim-btn:focus-visible {
   outline: none;

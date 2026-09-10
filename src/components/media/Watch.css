@@ -125,7 +125,7 @@
   display: block;
   height: 100%;
   background: var(--clr-tertiary);
-  transition: width 0.6s ease;
+  transition: width var(--dur-700) ease;
 }
 
 /* ── 正在看（風格 C：3:2 橫幅、收在 .w-wrap 880px 內、不破出）── */
@@ -146,8 +146,8 @@
   color: inherit;
   box-shadow: 0 16px 44px var(--black-40);
   transition:
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.4s ease;
+    transform var(--dur-400) var(--easing-out),
+    box-shadow var(--dur-400) ease;
   /* 預先升成合成層 + 新 stacking context——否則 hover 時卡片(translateY)與海報(scale)
      各自 mid-transition 臨時升層互搶 z-order → 海報層閃爍 */
   will-change: transform;
@@ -164,7 +164,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.6s ease;
+  transition: transform var(--dur-700) ease;
   will-change: transform;
   backface-visibility: hidden;
 }
@@ -216,8 +216,8 @@
   backdrop-filter: blur(8px);
   letter-spacing: 0.03em;
   transition:
-    background 0.25s ease,
-    border-color 0.25s ease;
+    background var(--dur-250) ease,
+    border-color var(--dur-250) ease;
 }
 
 .w-now-banner:hover .w-now-cta {
@@ -272,9 +272,9 @@
   cursor: pointer;
   white-space: nowrap;
   transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
 }
 .w-share-btn:hover,
 .w-share-btn:focus {
@@ -293,8 +293,8 @@
   text-decoration: none;
   border-bottom: 1px dashed transparent;
   transition:
-    color 0.2s ease,
-    border-color 0.2s ease;
+    color var(--dur-200) ease,
+    border-color var(--dur-200) ease;
   white-space: nowrap;
 }
 .w-section-link:hover {
@@ -319,10 +319,10 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition:
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.3s ease,
-    background 0.3s ease,
-    box-shadow 0.4s ease;
+    transform var(--dur-400) var(--easing-out),
+    border-color var(--dur-300) ease,
+    background var(--dur-300) ease,
+    box-shadow var(--dur-400) ease;
 }
 
 .w-fav:hover {
@@ -348,8 +348,8 @@
   object-fit: cover;
   display: block;
   transition:
-    transform 0.5s ease,
-    filter 0.4s ease;
+    transform var(--dur-500) ease,
+    filter var(--dur-400) ease;
 }
 
 .w-fav:hover .w-fav-poster img {
@@ -370,8 +370,8 @@
   opacity: 0;
   transform: translateY(8px);
   transition:
-    opacity 0.4s ease,
-    transform 0.4s ease;
+    opacity var(--dur-400) ease,
+    transform var(--dur-400) ease;
 }
 
 .w-fav:hover .w-fav-quote {
@@ -440,7 +440,7 @@
   padding: var(--space-3) var(--space-1);
   text-decoration: none;
   color: inherit;
-  transition: transform 0.25s ease;
+  transition: transform var(--dur-250) ease;
 }
 .w-recent-link.is-link {
   cursor: pointer;
@@ -479,7 +479,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: color 0.2s ease;
+  transition: color var(--dur-200) ease;
 }
 .w-recent-link.is-link:hover .w-recent-title {
   color: rgba(var(--purple-300-rgb), 0.95);

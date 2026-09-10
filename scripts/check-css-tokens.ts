@@ -1,13 +1,14 @@
 /**
- * 擋住「又開始現編間距值、字級、圓角與堆疊層」。
+ * 擋住「又開始現編間距值、字級、圓角、堆疊層與過渡」。
  *
  * ## 補這道的理由
  *
- * 這個專案原本四把尺都沒有：
+ * 這個專案原本一把尺都沒有：
  *   · margin/padding/gap  **87 種**長度值、1594 次、token 覆蓋 0
  *   · font-size           **57 種**值、584 次、token 覆蓋 0
  *   · border-radius       **21 種**值、404 個角、token 覆蓋 0
  *   · z-index             **28 種**值、156 處、token 覆蓋 0
+ *   · transition          **35 種**時間值、454 次；緩動 15 種，9 條各只用一次
  *
  * 沒有尺的後果不是「值很多」，是**需要一個值時沒有標準答案**——於是每次都現編一個。
  * 間距長出 `0.15rem` / `0.35rem` / `0.45rem` / `0.55rem`；字級更誇張，是有人拿著
@@ -41,6 +42,11 @@
  * 1000 以下留給元件內部的局部堆疊（`.mm-toolbar: 20`、`.floating-actions: 100`），
  * 那些數字只跟自己的兄弟比，逼它們上尺是把局部問題硬講成全域問題。
  * ≥1000 一定是「我要蓋過全世界」，那必須是一個有名字的決定。
+ *
+ * 過渡（--dur-* / --easing-*）是第 6 條，也不對稱：時長**只查 `transition*`**，
+ * 因為 `animation` 的時間從 50ms 的閃爍到 200 秒的星空漂移都有，那是各自的節奏與
+ * 週期，不是「需要一個過渡時長」的問題。緩動則兩邊都查——曲線是設計決定，跟它是
+ * 過渡還是動畫無關。
  *
  * 第 3 條**連 `--xxx:` 定義行都查**。導入 alpha 階梯那次 codemod 跳過了定義行，
  * 結果 `--glass-bg` / `--glass-hover-bg` / `--post-card-bg` 三處還引用著被拿掉的階，
@@ -229,6 +235,31 @@ for (const m of blankComments(INDEX_CSS).matchAll(/(--z-[\w-]+)\s*:\s*(-?\d+)\s*
 }
 const Z_MIN = 1000;
 
+/**
+ * 過渡的時長尺（`--dur-*`，值就是 ms）與三條緩動曲線（`--easing-*`），一樣從 index.css 讀。
+ *
+ * ⚠ 時長**只查 `transition*`，不查 `animation*`**。兩者不是同一種東西：站上的
+ * animation 從 50ms 的閃爍到 **200 秒**的星空漂移都有，那是各自調出來的節奏與週期。
+ * 緩動則兩邊都查——曲線是設計決定，跟它是過渡還是動畫無關。
+ */
+const DUR_MS = new Set<number>();
+for (const m of blankComments(INDEX_CSS).matchAll(/--dur-(\d+)\s*:/g)) DUR_MS.add(Number(m[1]));
+const EASING_TOKEN = new Map<string, string>();
+for (const m of blankComments(INDEX_CSS).matchAll(/(--easing-[\w-]+)\s*:\s*(cubic-bezier\([^()]*\))\s*;/g)) {
+  EASING_TOKEN.set(m[2].replace(/\s+/g, ''), m[1]);
+}
+
+/**
+ * 時長的豁免。兩條，各有理由：
+ *   · `0.01ms` —— `prefers-reduced-motion` 的關閉開關，那不是一個時長
+ *   · `1.5s`   —— `.np-ambient-glow` 一處，離最近的一格 500ms，硬貼會走樣
+ */
+const DUR_GRANDFATHERED = new Set(['0.01ms', '1.5s']);
+
+const TRANSITION_PROP = /^transition(-duration|-delay)?$/;
+const TIME = /(?<![\w.-])(\d*\.?\d+)(m?s)(?![\w-])/g;
+const BEZIER = /cubic-bezier\([^()]*\)/g;
+
 const HEX6 = /#([0-9a-fA-F]{6})\b(?![0-9a-fA-F])/g;
 const HEX3 = /#([0-9a-fA-F]{3})\b(?![0-9a-fA-F])/g;
 
@@ -394,6 +425,46 @@ function check(file: string): Problem[] {
       }
     }
 
+    // ── 過渡的時長：只查 transition*，animation 的時間是節奏不是尺 ──
+    if (TRANSITION_PROP.test(prop)) {
+      for (const tm of value.matchAll(TIME)) {
+        const raw = tm[0];
+        if (DUR_GRANDFATHERED.has(raw)) continue;
+        const ms = Number(tm[1]) * (tm[2] === 's' ? 1000 : 1);
+        if (ms === 0) continue; // `0s` 就是「不過渡」，不需要 token
+        problems.push(
+          DUR_MS.has(ms)
+            ? { file, line, prop, raw, why: `${ms}ms 尺上有這一格`, fix: `改用 var(--dur-${ms})` }
+            : {
+                file,
+                line,
+                prop,
+                raw,
+                why: `${ms}ms 不在過渡時長尺上`,
+                fix: '改用最接近的 var(--dur-*)，或把這一格加進 index.css 的尺',
+              },
+        );
+      }
+    }
+
+    // ── 緩動曲線：transition 與 animation 都查 ──
+    if (prop.startsWith('transition') || prop.startsWith('animation')) {
+      for (const bm of value.matchAll(BEZIER)) {
+        const key = bm[0].replace(/\s+/g, '');
+        const tok = EASING_TOKEN.get(key);
+        problems.push({
+          file,
+          line,
+          prop,
+          raw: bm[0],
+          why: tok ? `這就是 ${tok}` : '又一條自己發明的曲線',
+          fix: tok
+            ? `改用 var(${tok})`
+            : `改用 ${[...EASING_TOKEN.values()].map((t) => `var(${t})`).join(' / ')} 其中一條；真的需要新曲線就加進 index.css`,
+        });
+      }
+    }
+
     const isSpacing = SPACING_PROP.test(prop);
     const isFontSize = prop === 'font-size';
     const isRadius = RADIUS_PROP.test(prop);
@@ -480,7 +551,7 @@ const files = walk('src');
 const problems = files.flatMap(check);
 
 if (problems.length === 0) {
-  console.log(`✅ 間距、字級、圓角、堆疊層與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`);
+  console.log(`✅ 間距、字級、圓角、堆疊層、過渡與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`);
   process.exit(0);
 }
 

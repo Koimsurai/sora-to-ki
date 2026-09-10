@@ -139,9 +139,9 @@
   border: 1px solid var(--white-08);
   cursor: help;
   transition:
-    background 220ms ease,
-    border-color 220ms ease,
-    transform 220ms ease;
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    transform var(--dur-200) ease;
 }
 
 .skill-chip:hover {

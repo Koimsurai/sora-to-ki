@@ -92,7 +92,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   overflow: hidden;
-  transition: border-color 0.4s ease;
+  transition: border-color var(--dur-400) ease;
 }
 
 .now-playing-hero:hover {
@@ -149,7 +149,7 @@
   background: var(--brand-light);
   height: 6px;
   opacity: 0.4;
-  transition: height 0.3s ease;
+  transition: height var(--dur-300) ease;
 }
 
 .np-visualizer.active .eq-bar {
@@ -286,7 +286,7 @@
   height: 100%;
   background: var(--brand);
   border-radius: var(--r-2);
-  transition: width 1s linear;
+  transition: width var(--dur-1000) linear;
 }
 
 .np-time {
@@ -317,7 +317,7 @@
   font-size: var(--fs-13);
   font-weight: 600;
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: all var(--dur-300) ease;
 }
 
 .np-spotify-link:hover {
@@ -346,7 +346,7 @@
   background: var(--glass-bg);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all var(--dur-250) ease;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   overflow: hidden;
@@ -404,7 +404,7 @@
   gap: var(--space-3-5);
   padding: var(--space-2-5) var(--space-3);
   border-radius: var(--r-8);
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
   text-decoration: none;
   color: inherit;
 }
@@ -582,7 +582,7 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   cursor: default;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-400) var(--easing-standard);
   animation: float 6s ease-in-out infinite;
   overflow: hidden;
 }
@@ -601,7 +601,7 @@
   border-radius: var(--r-round);
   background: radial-gradient(circle, rgba(var(--brand-rgb), 0.08) 0%, transparent 70%);
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-300) ease;
   opacity: 0.5;
 }
 
@@ -676,7 +676,7 @@
   background: var(--glass-bg);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all var(--dur-250) ease;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -774,7 +774,7 @@
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-400) var(--easing-standard);
 }
 
 .analytic-card:hover {

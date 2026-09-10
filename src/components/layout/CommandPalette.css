@@ -30,7 +30,7 @@
     0 24px 64px var(--black-55),
     0 0 24px rgba(var(--brand-rgb), 0.1);
   overflow: hidden;
-  animation: cmdk-pop 0.2s cubic-bezier(0.2, 0.8, 0.25, 1);
+  animation: cmdk-pop 0.2s var(--easing-out);
 }
 
 @keyframes cmdk-pop {
@@ -112,8 +112,8 @@
   font-size: var(--fs-13);
   cursor: pointer;
   transition:
-    background-color 0.12s,
-    color 0.12s;
+    background-color var(--dur-100),
+    color var(--dur-100);
 }
 .cmdk-wrap [cmdk-item][data-selected="true"] {
   background: rgba(var(--brand-rgb), 0.15);

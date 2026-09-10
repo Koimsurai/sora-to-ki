@@ -42,8 +42,8 @@
   color: var(--white-70);
   cursor: pointer;
   transition:
-    background 0.14s ease,
-    color 0.14s ease;
+    background var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 .ctx-nav-btn:hover,
 .ctx-nav-btn:focus,
@@ -72,8 +72,8 @@
   text-align: left;
   cursor: pointer;
   transition:
-    background 0.14s ease,
-    color 0.14s ease;
+    background var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 /* 蓋掉全域 button{紫底}＋button:hover{紫底+光暈} */
 .ctx-item:hover,

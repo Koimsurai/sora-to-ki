@@ -101,7 +101,7 @@
   letter-spacing: -0.015em;
   margin: 0 0 var(--space-3-5);
   color: var(--white-95);
-  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: hero-rise 0.7s var(--easing-out) both;
 }
 
 .hero-name {
@@ -117,7 +117,7 @@
   line-height: 1.55;
   margin: 0 0 var(--space-4);
   color: var(--white-80);
-  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+  animation: hero-rise 0.7s var(--easing-out) 0.18s both;
 }
 
 .hero-accent {
@@ -426,7 +426,7 @@
   letter-spacing: 1.8px;
   color: var(--white-45);
   opacity: 0;
-  transition: opacity 0.7s ease 0.15s;
+  transition: opacity var(--dur-700) ease var(--dur-150);
 }
 
 .hero-sub.fade-in {
@@ -491,7 +491,7 @@
 .hero-actions {
   opacity: 0;
   /* Start hidden */
-  transition: opacity 0.5s ease-in 0.2s;
+  transition: opacity var(--dur-500) ease-in var(--dur-200);
   /* Smooth fade-in transition with slight delay */
 }
 
@@ -530,10 +530,10 @@
   text-decoration: none;
   font-size: 1.05em;
   transition:
-    color 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease,
-    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color var(--dur-250) ease,
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-250) ease,
+    transform var(--dur-250) var(--easing-back);
 }
 
 .social-links a:hover {
@@ -608,7 +608,7 @@
   overflow: hidden;
   z-index: 2;
   opacity: 0;
-  transition: opacity 0.8s ease 0.4s;
+  transition: opacity var(--dur-700) ease var(--dur-400);
   pointer-events: none;
 }
 
@@ -623,7 +623,7 @@
   width: 1px;
   height: 14px;
   background: linear-gradient(180deg, transparent, rgba(var(--purple-300-rgb), 0.95));
-  animation: scroll-cue-drop 2.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation: scroll-cue-drop 2.2s ease-in-out infinite;
 }
 
 @keyframes scroll-cue-drop {
@@ -696,9 +696,9 @@
     0 8px 30px var(--black-25),
     /* 極淡的紫色環境光 — 頭像照片偏暗，把它從深色星空裡分離出來 */ 0 0 90px rgba(var(--brand-rgb), 0.15);
   transition:
-    border-color 0.4s ease,
-    box-shadow 0.4s ease,
-    transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    border-color var(--dur-400) ease,
+    box-shadow var(--dur-400) ease,
+    transform var(--dur-500) var(--easing-standard);
 }
 
 .hero-avatar-wrapper:hover {

@@ -200,6 +200,43 @@
   --z-ctx-menu: 1900; /* 右鍵選單：在任何東西上都要能開 */
   --z-intro: 2000; /* 開場動畫：蓋住一切 */
 
+  /* ── 過渡的時長與緩動 ──────────────────────────────────────────────────
+     在這之前 transition 用了 **35 種**時間值、454 次，長尾是手調出來的：
+     110 / 210 / 310 / 360 / 380 / 410 / 460 / 480ms 各只出現一次。
+     緩動則有 15 種，其中 **9 條 cubic-bezier 各只用一次**——每個人都在發明自己的曲線。
+
+     時長九格，密在 100–300ms（91% 的用量在那裡），之後放粗：
+     最大位移 50ms，而 200ms 的過渡差 20ms 是感覺不出來的。
+
+     ⚠️ **`animation` 的時間刻意不上這把尺。** 它跟過渡不是同一種東西——站上的
+     animation 從 50ms 的閃爍到 **200 秒**的星空漂移都有，那些是各自調出來的節奏與
+     週期，不是「需要一個過渡時長」的問題。硬貼會把 200s 的背景動畫變成一場災難。
+
+     ⚠️ 名字用 `--easing-*` 不是 `--ease-*`：後者是 Tailwind v4 生 `ease-*` utility 的
+     namespace，而 v4 會 tree-shake 掉沒被 utility 用到的 namespace 變數——那正是
+     `var(--text-3xl)` 會是未定義的原因。`--dur-*` / `--easing-*` 都不是 namespace，
+     只會變成單純的自訂屬性。 */
+  --dur-100: 100ms;
+  --dur-150: 150ms;
+  --dur-200: 200ms; /* 站上最常見的互動過渡：135 次 */
+  --dur-250: 250ms;
+  --dur-300: 300ms;
+  --dur-400: 400ms;
+  --dur-500: 500ms;
+  --dur-700: 700ms;
+  --dur-1000: 1000ms;
+
+  /* 三條曲線涵蓋全站。原本那 9 條各用一次的 bezier 依形狀併進來：
+     (0.33,0,0.4,1) 與 (0.25,0.46,0.45,0.94) → standard；
+     (0.16,1,0.3,1) 與 (0.2,0.8,0.25,1) → out；
+     (0.34,1.25,0.5,1) 與 (0.34,1.3,0.5,1) → back（都是同一條的不同回彈量）；
+     (0.45,0,0.55,1) 其實就是 `ease-in-out`，直接寫關鍵字。
+     `ease` / `linear` / `ease-in-out` / `ease-out` 這些關鍵字保持原樣——
+     它們是標準寫法，包成 token 只是多一層。 */
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1); /* 一般的進出 */
+  --easing-out: cubic-bezier(0.22, 1, 0.36, 1); /* 快速起步、緩緩停下 */
+  --easing-back: cubic-bezier(0.34, 1.56, 0.64, 1); /* 帶回彈 */
+
   /* 把 text-* 的 line-height 從 v4 的「無單位比例」改回 v3 的絕對值。
      v4 預設是 `calc(1 / 0.75)` 這種比例，乘上元素自己的 font-size；只要字級沒被別的
      規則蓋掉，算出來就等於下面這些數字（比例本來就是這樣推導的），所以這一段對絕大多數
@@ -504,9 +541,9 @@
     color: var(--clr-button-text);
     cursor: pointer;
     transition:
-      background-color 0.25s,
-      border-color 0.25s,
-      box-shadow 0.25s;
+      background-color var(--dur-250),
+      border-color var(--dur-250),
+      box-shadow var(--dur-250);
   }
   button:hover,
   button:focus {
@@ -647,7 +684,7 @@ html {
   border-radius: var(--r-full);
   border: 3px solid transparent;
   background-clip: padding-box;
-  transition: background-color 0.2s;
+  transition: background-color var(--dur-200);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--white-30);
@@ -682,7 +719,7 @@ html {
   a {
     color: var(--clr-button);
     text-decoration: none;
-    transition: color 0.2s ease-in-out;
+    transition: color var(--dur-200) ease-in-out;
   }
 
   a:hover,
@@ -701,7 +738,7 @@ body.intro-animation-active {
    __root 的 pre-paint inline script 符合條件時加 html.intro-pending → 先藏內容;
    SpaceBackdropShell 在 intro pre-reveal 時移除(內容在 bloom 下淡入)。inline script 內另有安全 timeout 兜底。 */
 .main-content-container {
-  transition: opacity 0.45s ease;
+  transition: opacity var(--dur-500) ease;
 }
 html.intro-pending .main-content-container {
   opacity: 0;

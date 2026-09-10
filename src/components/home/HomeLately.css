@@ -27,7 +27,7 @@
   font-size: var(--fs-13);
   color: rgba(var(--purple-300-rgb), 0.8);
   text-decoration: none;
-  transition: color 0.25s ease;
+  transition: color var(--dur-250) ease;
 }
 
 .lately-more:hover {
@@ -57,7 +57,7 @@
   margin: 0 -12px;
   border-radius: var(--r-12);
   text-decoration: none;
-  transition: background 0.25s ease;
+  transition: background var(--dur-250) ease;
 }
 
 .lately-post:hover {
@@ -85,7 +85,7 @@
   font-weight: 600;
   color: var(--white-90);
   line-height: 1.45;
-  transition: color 0.25s ease;
+  transition: color var(--dur-250) ease;
 }
 
 .lately-post:hover .lately-post-title {
@@ -127,7 +127,7 @@
   margin: 0 -12px;
   border-radius: var(--r-12);
   text-decoration: none;
-  transition: background 0.25s ease;
+  transition: background var(--dur-250) ease;
 }
 
 .lately-murmur:hover,
@@ -239,8 +239,8 @@
     0 0 9px hsl(var(--planet-hue, 260) 80% 65% / 0.55),
     inset -1.5px -1.5px 3px hsl(var(--planet-hue, 260) 60% 18% / 0.65);
   transition:
-    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.25s ease;
+    transform var(--dur-250) var(--easing-back),
+    box-shadow var(--dur-250) ease;
 }
 /* 土星環：::after 畫傾斜的細橢圓。 */
 .orbit-month-dot--ringed::after {
@@ -364,8 +364,8 @@
   color: var(--white-80);
   text-decoration: none;
   transition:
-    background 0.14s ease,
-    color 0.14s ease;
+    background var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 .orbit-month-link:hover {
   background: var(--white-06);
@@ -393,8 +393,8 @@
   opacity: 0;
   pointer-events: none;
   transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+    opacity var(--dur-200) ease,
+    transform var(--dur-200) ease;
   z-index: 5;
 }
 
@@ -471,8 +471,8 @@
   color: var(--white-80);
   text-decoration: none;
   transition:
-    background 0.14s ease,
-    color 0.14s ease;
+    background var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 .orbit-month-link:hover {
   background: var(--white-06);
@@ -568,7 +568,7 @@
 .signal-mail {
   color: rgba(var(--purple-300-rgb), 0.8);
   text-decoration: none;
-  transition: color 0.25s ease;
+  transition: color var(--dur-250) ease;
 }
 
 .signal-mail:hover {

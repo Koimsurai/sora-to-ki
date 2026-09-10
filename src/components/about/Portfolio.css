@@ -30,9 +30,9 @@
 .portfolio-feature,
 .portfolio-secondary {
   transition:
-    transform 240ms ease,
-    border-color 240ms ease,
-    box-shadow 240ms ease;
+    transform var(--dur-250) ease,
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-250) ease;
 }
 
 .portfolio-feature:hover,
@@ -62,7 +62,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 600ms ease;
+  transition: transform var(--dur-700) ease;
 }
 
 .portfolio-feature:hover .portfolio-feature-media img {
@@ -170,8 +170,8 @@
     inset 0 1px 0 var(--white-08),
     0 12px 32px -12px rgba(var(--brand-rgb), 0.4);
   transition:
-    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 260ms ease;
+    transform var(--dur-250) var(--easing-back),
+    box-shadow var(--dur-250) ease;
 }
 
 .portfolio-secondary:hover .portfolio-glyph-tile {
@@ -277,10 +277,10 @@
   text-decoration: none;
   letter-spacing: 0.02em;
   transition:
-    background 220ms ease,
-    border-color 220ms ease,
-    color 220ms ease,
-    box-shadow 220ms ease;
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease,
+    box-shadow var(--dur-200) ease;
 }
 
 .portfolio-link::after {
@@ -288,7 +288,7 @@
   display: inline-block;
   font-size: var(--fs-16);
   line-height: 1;
-  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--dur-200) var(--easing-back);
 }
 
 .portfolio-link:hover {

@@ -104,7 +104,7 @@
 .app-footer-copy a {
   color: rgba(var(--purple-300-rgb), 0.8);
   text-decoration: none;
-  transition: color 0.18s ease;
+  transition: color var(--dur-200) ease;
 }
 .app-footer-copy a:hover {
   color: var(--zinc-100);
@@ -160,8 +160,8 @@
   color: var(--white-50);
   text-decoration: none;
   transition:
-    color 0.18s ease,
-    transform 0.18s ease;
+    color var(--dur-200) ease,
+    transform var(--dur-200) ease;
   width: fit-content;
 }
 .app-footer-link:hover {
@@ -196,7 +196,7 @@
 .app-footer-bottom-link {
   color: var(--white-45);
   text-decoration: none;
-  transition: color 0.18s ease;
+  transition: color var(--dur-200) ease;
 }
 .app-footer-bottom-link:hover {
   color: rgba(var(--purple-300-rgb), 0.95);

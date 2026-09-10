@@ -91,10 +91,10 @@
   outline: none;
   border: 1px solid transparent;
   transition:
-    background 200ms ease,
-    border-color 200ms ease,
-    color 200ms ease,
-    transform 200ms ease;
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease,
+    transform var(--dur-200) ease;
 }
 
 .unsubscribe-btn--danger {

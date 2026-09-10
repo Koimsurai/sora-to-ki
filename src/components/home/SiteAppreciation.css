@@ -23,9 +23,9 @@
   text-decoration: none;
   cursor: pointer;
   transition:
-    color 0.16s ease,
-    border-color 0.16s ease,
-    background 0.16s ease;
+    color var(--dur-150) ease,
+    border-color var(--dur-150) ease,
+    background var(--dur-150) ease;
 }
 .site-appr-item:hover:not(:disabled),
 .site-appr-item:focus-visible:not(:disabled) {

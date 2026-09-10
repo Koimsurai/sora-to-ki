@@ -38,8 +38,8 @@
   border-bottom: 1px dashed transparent;
   margin-bottom: var(--space-4-5);
   transition:
-    color 0.2s ease,
-    border-color 0.2s ease;
+    color var(--dur-200) ease,
+    border-color var(--dur-200) ease;
 }
 .wl-back:hover {
   color: var(--purple-300);
@@ -81,7 +81,7 @@
   display: inline-flex;
   align-items: baseline;
   gap: var(--space-2);
-  transition: color 0.2s ease;
+  transition: color var(--dur-200) ease;
 }
 
 .wl-tab + .wl-tab {
@@ -115,7 +115,7 @@
   font-size: var(--fs-12);
   color: rgba(var(--ink-rgb), 0.4);
   font-variant-numeric: tabular-nums;
-  transition: color 0.2s ease;
+  transition: color var(--dur-200) ease;
 }
 
 .wl-tab.active .wl-tab-count {
@@ -142,8 +142,8 @@
   border-radius: var(--r-10);
   color: rgba(var(--ink-rgb), 0.5);
   transition:
-    border-color 0.2s ease,
-    background 0.2s ease;
+    border-color var(--dur-200) ease,
+    background var(--dur-200) ease;
 }
 
 .wl-search:focus-within {
@@ -184,9 +184,9 @@
   cursor: pointer;
   outline: none;
   transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    color 0.2s ease;
+    border-color var(--dur-200) ease,
+    background var(--dur-200) ease,
+    color var(--dur-200) ease;
   min-width: 140px;
   justify-content: space-between;
 }
@@ -201,7 +201,7 @@
 .wl-sort-chev {
   font-size: var(--fs-11);
   opacity: 0.6;
-  transition: transform 0.2s ease;
+  transition: transform var(--dur-200) ease;
 }
 .wl-sort-chev.is-open {
   transform: rotate(180deg);
@@ -240,8 +240,8 @@
   cursor: pointer;
   border-radius: var(--r-6);
   transition:
-    background 0.15s ease,
-    color 0.15s ease;
+    background var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 
 .wl-sort-item:hover {
@@ -265,7 +265,7 @@
   display: block;
   text-decoration: none;
   color: inherit;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform var(--dur-300) var(--easing-out);
 }
 
 .wl-card:hover {
@@ -280,7 +280,7 @@
   background: var(--white-04);
   box-shadow: 0 12px 28px var(--black-45);
   margin-bottom: var(--space-2-5);
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow var(--dur-300) ease;
 }
 
 .wl-card:hover .wl-card-poster {

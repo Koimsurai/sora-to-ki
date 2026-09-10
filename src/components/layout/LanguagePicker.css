@@ -20,9 +20,9 @@
   align-items: center;
   gap: var(--space-1-5);
   transition:
-    color 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease;
+    color var(--dur-200) ease,
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease;
 }
 
 .lang-picker-trigger:hover {
@@ -53,7 +53,7 @@
   backdrop-filter: blur(28px) saturate(180%);
   -webkit-backdrop-filter: blur(28px) saturate(180%);
   box-shadow: 0 18px 50px var(--black-45);
-  animation: lang-picker-fade-in 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: lang-picker-fade-in 0.16s var(--easing-out);
 }
 
 @keyframes lang-picker-fade-in {
@@ -82,8 +82,8 @@
   justify-content: space-between;
   gap: var(--space-2);
   transition:
-    background 0.18s ease,
-    color 0.18s ease;
+    background var(--dur-200) ease,
+    color var(--dur-200) ease;
   text-align: left;
 }
 

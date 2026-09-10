@@ -3,8 +3,8 @@
 .blog-image-clickable {
   cursor: zoom-in;
   transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
+    transform var(--dur-300) ease,
+    box-shadow var(--dur-300) ease;
   border-radius: var(--r-12);
   max-width: 100%;
 }
@@ -50,7 +50,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
   z-index: 2;
 }
 

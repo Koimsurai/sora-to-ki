@@ -216,9 +216,9 @@
   color: #fff;
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+    background-color var(--dur-200) ease,
+    box-shadow var(--dur-200) ease,
+    transform var(--dur-200) ease;
 }
 
 .nf-btn:hover,
@@ -244,7 +244,7 @@
   font-weight: 500;
   color: var(--white-70);
   text-decoration: none;
-  transition: color 0.18s ease;
+  transition: color var(--dur-200) ease;
 }
 
 .nf-link:hover,
@@ -253,7 +253,7 @@
 }
 
 .nf-arrow {
-  transition: transform 0.18s ease;
+  transition: transform var(--dur-200) ease;
 }
 
 .nf-link:hover .nf-arrow,

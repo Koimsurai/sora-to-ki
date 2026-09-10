@@ -75,8 +75,8 @@
   cursor: pointer;
   box-shadow: 0 6px 22px var(--black-45);
   transition:
-    background 0.16s ease,
-    transform 0.16s ease;
+    background var(--dur-150) ease,
+    transform var(--dur-150) ease;
 }
 .vp-bigplay:hover,
 .vp-bigplay:focus,
@@ -112,8 +112,8 @@
   opacity: 0;
   transform: translateY(4px);
   transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
+    opacity var(--dur-200) ease,
+    transform var(--dur-200) ease;
   pointer-events: none;
 }
 .vp-bar--show {
@@ -140,8 +140,8 @@
   cursor: pointer;
   text-decoration: none;
   transition:
-    background 0.14s ease,
-    color 0.14s ease;
+    background var(--dur-150) ease,
+    color var(--dur-150) ease;
 }
 /* ⚠ 下載鍵是 <a>（要 href + download 屬性才觸發下載），而影片是嵌在文章內容裡的，
    所以會吃到 BlogPost.css 的 `.post-content a { border-bottom: 1px solid rgba(127,90,240,.3) }`
@@ -221,7 +221,7 @@ a.vp-btn:focus-visible {
   transform: translateX(-50%);
   box-shadow: 0 1px 4px var(--black-50);
   opacity: 0;
-  transition: opacity 0.14s ease;
+  transition: opacity var(--dur-150) ease;
 }
 .vp-progress:hover .vp-progress-knob,
 .vp-progress:focus-visible .vp-progress-knob {

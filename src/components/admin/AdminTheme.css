@@ -140,7 +140,7 @@
   box-shadow:
     0 4px 24px var(--black-25),
     inset 0 1px 0 var(--white-04);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-300) var(--easing-standard);
 }
 
 /* ── Table ── */
@@ -154,7 +154,7 @@
 
 :is(.admin-layout, .admin-mode) tbody tr {
   border-color: rgba(var(--zinc-800-rgb), 0.4);
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
 }
 
 :is(.admin-layout, .admin-mode) tbody tr:hover {
@@ -172,7 +172,7 @@
   border-color: rgba(var(--zinc-800-rgb), 0.6) !important;
   color: var(--zinc-200);
   border-radius: var(--r-10);
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
 }
 
 :is(.admin-layout, .admin-mode) input:hover,

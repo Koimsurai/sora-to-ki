@@ -170,21 +170,25 @@ layer**：`index.css` 的 `@layer base`（含那條全站 `button { 紫底 }` �
 七個檔案各自寫了高特異性的繞過碼並留下註解解釋——**那些註解描述的是已經消失的問題**，
 不要拿它們當範例照抄。真的遇到蓋不過去的情況，先確認你的規則有沒有被包進某個 layer。
 
-### 間距、字級與圓角一律走 token，有一道檢查在擋
+### 間距、字級、圓角、堆疊層與過渡一律走 token，有一道檢查在擋
 
 ```bash
 pnpm check:css-tokens      # CI 與 pre-commit 都跑
 ```
 
-三把尺都定義在 `src/index.css` 的 `@theme`：
+六把尺都定義在 `src/index.css` 的 `@theme`：
 
 | | token | 範圍 |
 |---|---|---|
 | 間距 | `--space-px` … `--space-24` | 2px 格線到 24px，之後 4px／8px 步進 |
 | 字級 | `--fs-10` … `--fs-56` | 16 格，10–14 是 1px 步進（91% 的用量在 10–18px） |
 | 圓角 | `--r-2` … `--r-20` + `--r-full` + `--r-round` | 2px 格線到 20px；`--r-full` 是膠囊、`--r-round` 是 50% |
+| 堆疊層 | `--z-float` … `--z-intro` | 11 格，1000 起跳每格 100；門檻是 1000 |
+| 過渡時長 | `--dur-100` … `--dur-1000` | 9 格，密在 100–300ms |
+| 緩動 | `--easing-standard` / `-out` / `-back` | 三條曲線；`ease` 那批關鍵字保持原樣 |
 
-`margin` / `padding` / `gap` / `font-size` / `border-radius` 不准再寫字面值。
+`margin` / `padding` / `gap` / `font-size` / `border-radius` / `transition` 的時間與曲線
+不准再寫字面值；`z-index` 的門檻是 1000。透明度另有一把 19 階的階梯（見下面）。
 
 ⚠️ **圓角的 token 叫 `--r-*` 不是 `--radius-*`**，跟 `--fs-*` 同一個理由，而且更嚴重：
 `--radius-*` 是 Tailwind v4 生 `rounded-*` 的 namespace，**這個專案已經有 shadcn 的
@@ -230,6 +234,31 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 `document.elementFromPoint(x, y)` 回答「這個位置上最後畫的是誰」（那是瀏覽器自己
 算出來的結果）；往上走找「第一個建立堆疊脈絡的祖先」回答「這個數字跟誰比」。
 上面三個 bug 全是這樣抓到的，`grep z-index` 一個都看不出來。
+
+### 過渡：`--dur-*` 九格、`--easing-*` 三條
+
+```
+--dur-100 / 150 / 200 / 250 / 300 / 400 / 500 / 700 / 1000     （值就是 ms）
+--easing-standard  cubic-bezier(0.4, 0, 0.2, 1)      一般的進出
+--easing-out       cubic-bezier(0.22, 1, 0.36, 1)    快速起步、緩緩停下
+--easing-back      cubic-bezier(0.34, 1.56, 0.64, 1) 帶回彈
+```
+
+`ease` / `linear` / `ease-in-out` / `ease-out` 這些**關鍵字保持原樣**，它們是標準寫法，
+包成 token 只是多一層。
+
+⚠️ **時長只查 `transition*`，`animation*` 的時間刻意不上尺。** 兩者不是同一種東西：
+站上的 animation 從 **50ms 的閃爍**到 **200 秒的星空漂移**都有，那是各自調出來的節奏
+與週期，硬貼會把背景動畫變成災難。**緩動則兩邊都查**——曲線是設計決定，跟它是過渡
+還是動畫無關。
+
+⚠️ 兩個豁免，各有理由：`0.01ms` 是 `prefers-reduced-motion` 的關閉開關（那不是一個
+時長）；`1.5s` 在 `.np-ambient-glow` 一處，離最近的一格 500ms，硬貼會走樣。
+
+⚠️ **改過渡時長前先確認沒有 JS 計時器配著它。** 這次查過三個：`BlogPost` 的 1800ms
+（toast）、`HomeLately` 的 160ms（hover 離開延遲，跟 CSS 無關）、`PostEditor` 的 350ms
+（zen 模式切換後 dispatch resize 讓 monaco 重算）——後者所在的 admin/monaco CSS 只有
+0.3s / 0.2s / 0.15s，全在尺上原值沒動，所以沒失步。`grep setTimeout` 就查得完。
 
 ⚠️ **`body::before` / `body::after`（全站顆粒與邊緣暗角）不在這把尺上。** 它們在
 根脈絡、寫 49/50，所以實際上畫在**頂欄與所有 modal 之上**——跟它們原本的註解相反

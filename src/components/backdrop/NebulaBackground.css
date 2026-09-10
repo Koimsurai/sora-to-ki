@@ -11,7 +11,7 @@
   pointer-events: none;
   z-index: 0;
   opacity: 1;
-  transition: opacity 600ms ease-out;
+  transition: opacity var(--dur-700) ease-out;
 }
 
 body.intro-animation-active .nebula-dim-overlay {

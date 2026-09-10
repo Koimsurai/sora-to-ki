@@ -71,8 +71,8 @@
   font-family: inherit;
   cursor: pointer;
   transition:
-    background 0.18s ease,
-    color 0.18s ease;
+    background var(--dur-200) ease,
+    color var(--dur-200) ease;
 }
 .code-surface-toggle-chevron {
   font-size: 0.7em;

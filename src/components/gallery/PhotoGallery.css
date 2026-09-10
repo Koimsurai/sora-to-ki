@@ -24,7 +24,7 @@
 /* Photo Masonry Item */
 .photo-masonry-item {
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-400) var(--easing-standard);
   border-radius: var(--r-12);
   overflow: hidden;
   position: relative;
@@ -39,7 +39,7 @@
   height: 200%;
   background: radial-gradient(circle, rgba(var(--violet-500-rgb), 0.1) 0%, transparent 70%);
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity var(--dur-400) ease;
   pointer-events: none;
   z-index: 1;
 }
@@ -73,7 +73,7 @@
   box-shadow:
     0 10px 20px var(--black-15),
     0 6px 6px var(--black-10);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-400) var(--easing-standard);
   background: transparent;
 }
 
@@ -90,7 +90,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--dur-700) var(--easing-standard);
   display: block;
 }
 
@@ -109,7 +109,7 @@
      對 `var()` 敏感，看到這種 diff 先確認是不是只有方向與色停順序被翻過來。 */
   background: linear-gradient(to top, var(--black-80) 0%, var(--black-40) 50%, transparent 100%);
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity var(--dur-400) ease;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -211,7 +211,7 @@
   color: var(--white-60);
   font-size: var(--fs-14);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--dur-300) ease;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }

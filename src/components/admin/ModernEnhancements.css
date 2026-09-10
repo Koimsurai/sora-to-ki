@@ -9,7 +9,7 @@
     0 8px 28px var(--black-40),
     0 0 0 1px rgba(var(--zinc-700-rgb), 0.4),
     inset 0 1px 0 var(--white-04);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-300) var(--easing-standard);
 }
 
 /* Card Header */
@@ -20,7 +20,7 @@
 
 /* ── Links ── */
 .admin-layout a {
-  transition: color 0.2s ease;
+  transition: color var(--dur-200) ease;
 }
 .admin-layout a:hover {
   color: var(--zinc-200);
@@ -28,7 +28,7 @@
 
 /* ── Icons ── */
 .admin-layout svg {
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
 }
 .admin-layout button:hover svg {
   transform: scale(1.05);
@@ -109,7 +109,7 @@
 
 /* ── Sidebar Nav ── */
 .admin-layout aside a {
-  transition: all 0.2s ease;
+  transition: all var(--dur-200) ease;
 }
 
 /* ── Form Labels ── */

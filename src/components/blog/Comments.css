@@ -27,7 +27,7 @@
   background: var(--white-02);
   border: 1px solid rgba(var(--brand-rgb), 0.06);
   margin-bottom: var(--space-10);
-  transition: border-color 0.3s;
+  transition: border-color var(--dur-300);
 }
 
 .comment-form-card:focus-within {
@@ -50,7 +50,7 @@
   font-weight: 700;
   font-size: var(--fs-16);
   color: #fff;
-  transition: background 0.3s;
+  transition: background var(--dur-300);
 }
 
 /* ── Form ── */
@@ -80,7 +80,7 @@
   background: transparent;
   color: var(--white-40);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all var(--dur-250) ease;
   box-shadow: none;
 }
 
@@ -134,7 +134,7 @@
   color: var(--white-70);
   font-size: var(--fs-14);
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all var(--dur-250) ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -174,7 +174,7 @@
   border: none;
   cursor: pointer;
   padding: var(--space-0-5) var(--space-1-5);
-  transition: color 0.2s;
+  transition: color var(--dur-200);
   box-shadow: none;
 }
 
@@ -207,7 +207,7 @@
   color: var(--white-70);
   cursor: pointer;
   font-size: var(--fs-14);
-  transition: all 0.25s ease;
+  transition: all var(--dur-250) ease;
   box-shadow: none;
 }
 
@@ -238,7 +238,7 @@
   background: transparent;
   color: #e2e0ea;
   font-size: var(--fs-13);
-  transition: border-color 0.2s;
+  transition: border-color var(--dur-200);
   outline: none;
 }
 
@@ -294,7 +294,7 @@
   line-height: 1.65;
   resize: vertical;
   min-height: 90px;
-  transition: border-color 0.2s;
+  transition: border-color var(--dur-200);
   outline: none;
   font-family: inherit;
 }
@@ -336,7 +336,7 @@
   font-size: var(--fs-13);
   text-align: center;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color var(--dur-200);
   -moz-appearance: textfield;
 }
 
@@ -359,8 +359,8 @@
   font-weight: 600;
   cursor: pointer;
   transition:
-    opacity 0.15s,
-    transform 0.15s;
+    opacity var(--dur-150),
+    transform var(--dur-150);
   display: flex;
   align-items: center;
   gap: var(--space-1-5);
@@ -544,7 +544,7 @@
   display: flex;
   gap: var(--space-2);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-200);
 }
 
 .comment-card:hover .comment-actions {
@@ -563,8 +563,8 @@
   font-size: var(--fs-12);
   cursor: pointer;
   transition:
-    color 0.2s,
-    background 0.2s;
+    color var(--dur-200),
+    background var(--dur-200);
 }
 
 .action-btn:hover {
