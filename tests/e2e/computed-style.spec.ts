@@ -53,8 +53,39 @@ import type { Page } from '@playwright/test';
 // 共用一個檔案的話 afterAll 會互相覆蓋（第一版就是這樣，靠運氣才對）。
 // 順帶的好處是改樣式時 diff 只會動到真正受影響的那幾頁。
 const BASELINE_DIR = path.join(import.meta.dirname, 'computed-style.baseline');
-const fileFor = (route: string) => path.join(BASELINE_DIR, `${route.replace(/\//g, '_') || '_root'}.json`);
+const fileFor = (route: string, suffix = '') =>
+  path.join(BASELINE_DIR, `${route.replace(/\//g, '_') || '_root'}${suffix}.json`);
 const UPDATE = process.env.UPDATE_STYLE_BASELINE === '1';
+
+/**
+ * 量幾個寬度。
+ *
+ * ⚠ 在這之前這支測試**只跑 1280×720**（`playwright.config.ts` 的
+ * `devices['Desktop Chrome']`），而且從來不改視窗大小——也就是**所有 media query
+ * 裡的宣告一條都沒被守到**。實測：全站 11388 條宣告裡有 **617 條在 86 個 `@media`
+ * 區塊內**，其中 616 條在公開頁面的元件 CSS。
+ *
+ * 最極端的例子是 `MobileNav.css`：它有 **110 條**在 `@media` 裡，而整個手機選單在
+ * 1280px 是隱藏的，所以那 110 條**完全在守門的視野之外**。
+ *
+ * 三個寬度是照站上實際用到的 12 個斷點挑的
+ * （480 / 560 / 600 / 640 / 720 / 768 / 860 / 900 / 950 / 1024 / 1100 / 1300），
+ * 每個斷點至少被一個寬度踩到：
+ *
+ *   1280  →  ≤1300
+ *    768  →  ≤1100 / ≤1024 / ≤950 / ≤900 / ≤860
+ *    390  →  ≤768 / ≤720 / ≤640 / ≤600 / ≤560 / ≤480
+ *
+ * 1280 那一組**刻意不加後綴**，這樣既有的 15 個基準檔名不用全部改掉。
+ *
+ * 後台只跑桌機：617 條裡**只有 1 條**在 `admin/` 或 `monaco/`，多跑兩個寬度
+ * 換不到東西，只會讓基準檔多一倍。
+ */
+const VIEWPORTS = [
+  { width: 1280, height: 720, suffix: '' },
+  { width: 768, height: 1024, suffix: '@768' },
+  { width: 390, height: 844, suffix: '@390' },
+];
 
 const ROUTES = [
   '/',
@@ -358,7 +389,7 @@ const fingerprint = (values: string[]) =>
  * 收集並與基準比對。抽出來是因為後台路由的「怎麼到那一頁」不一樣（要先自簽 token），
  * 但「到了之後怎麼比」完全相同——抄一份的下場是其中一份會慢慢跟另一份不一樣。
  */
-async function compareWithBaseline(page: Page, route: string) {
+async function compareWithBaseline(page: Page, route: string, suffix = '') {
   // 動畫關掉：不關的話 transition 中途的值會混進來。
   //
   // ⚠ 這裡刻意**不是** `transition:none` / `animation:none`——那兩個簡寫會把
@@ -380,7 +411,7 @@ async function compareWithBaseline(page: Page, route: string) {
   const hashed: Record<string, string> = {};
   for (const [k, v] of Object.entries(raw)) hashed[k] = `${hash(v)} ${fingerprint(v.split('|'))}`;
 
-  const file = fileFor(route);
+  const file = fileFor(route, suffix);
   if (UPDATE) {
     fs.mkdirSync(BASELINE_DIR, { recursive: true });
     // 排序後輸出：元素順序不影響語意，但排過的檔案 diff 才讀得懂
@@ -461,10 +492,15 @@ async function compareWithBaseline(page: Page, route: string) {
 
 test.describe('計算後樣式沒有非預期的變化', () => {
   for (const route of ROUTES) {
-    test(`${route} 的計算後樣式與基準一致`, async ({ page }) => {
-      await page.goto(route, { waitUntil: 'networkidle' });
-      await compareWithBaseline(page, route);
-    });
+    for (const vp of VIEWPORTS) {
+      test(`${route} 在 ${vp.width}px 的計算後樣式與基準一致`, async ({ page }) => {
+        // 先改視窗再導覽：先導覽的話會先以預設寬度算一次版面，元件裡那些看
+        // `window.innerWidth` 的分支（MobileNav 的開合、圖庫的欄數）會照舊寬度先跑一輪。
+        await page.setViewportSize({ width: vp.width, height: vp.height });
+        await page.goto(route, { waitUntil: 'networkidle' });
+        await compareWithBaseline(page, route, vp.suffix);
+      });
+    }
   }
 });
 

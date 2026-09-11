@@ -489,8 +489,9 @@ vitest 上去比那個最壞情況更糟。實際踩過：併行那次冒出一�
 
 ### 樣式回歸有守門：`tests/e2e/computed-style.spec.ts`
 
-跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面共 4243 個元素的 41 個
-計算後屬性。改了樣式而它報紅是**正常的**：
+跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面 **× 三個寬度**
+（1280 / 768 / 390）加上 3 個後台頁面，共 39 組快照、41 個計算後屬性。
+改了樣式而它報紅是**正常的**：
 
 ```bash
 UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
@@ -498,6 +499,20 @@ UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
 
 更新後在 PR 說明「為什麼這些元素該變」。基準在 `tests/e2e/computed-style.baseline/`，
 一頁一個檔（共用一個檔的話多 worker 會互相覆蓋，而且 diff 會糊成一團）。
+
+⚠️ **三個寬度不是保險，是補一個真的盲區。** 在 2026-09-11 之前這支只跑
+1280×720（`playwright.config.ts` 的 `devices['Desktop Chrome']`）而且從不改視窗大小
+——也就是**所有 media query 裡的宣告一條都沒被守到**：全站 11388 條宣告裡有
+**617 條在 86 個 `@media` 區塊內**。最極端的是 `MobileNav.css` 的 **110 條**，
+而整個手機選單在 1280px 是隱藏的。
+
+三個寬度是照站上實際用到的 12 個斷點挑的，每個斷點至少被一個寬度踩到：
+`1280 → ≤1300`、`768 → ≤1100/1024/950/900/860`、`390 → ≤768/720/640/600/560/480`。
+**1280 那組刻意不加檔名後綴**，既有基準檔名才不用全部改掉。
+後台只跑桌機：617 條裡只有 1 條在 `admin/`。
+
+⚠️ **`setViewportSize` 要在 `goto` 之前。** 先導覽的話會先以預設寬度算一次版面，
+元件裡看 `window.innerWidth` 的分支（MobileNav 的開合、圖庫欄數）會照舊寬度先跑一輪。
 
 ⚠️ 三件讓它能穩定的事，改動時不要拆掉：
 
