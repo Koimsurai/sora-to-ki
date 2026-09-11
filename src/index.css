@@ -298,6 +298,33 @@
   --blur-60: 60px;
   --blur-110: 110px;
 
+  /* ── 高度（陰影）尺 ────────────────────────────────────────────────────
+     全站 162 個非 none 的 box-shadow 裡，**104 個是多層的**（玻璃高光 + 投影、
+     品牌色光暈）——那些是刻意的組合，不該被機械收斂，所以這把尺不管它們。
+
+     這把尺管的是另外那 48 個**單層中性投影**（`0 Ypx Bpx var(--black-NN)`），
+     它們卻有 **36 種**不同的 `(y, blur, alpha)`——幾乎每一個都是獨一無二的，
+     也就是「每個人自己發明一個陰影」。最明顯的是最上面那一層：`.modal-content`、
+     `.download-popover`、`.unsubscribe-card`、`.mm-fullscreen-container`、`.fe-modal`、
+     `.tk-modal` **六個都是 modal／popover，卻有五種不同的陰影**。
+
+     七格是算過的，不是拍的：把候選尺拿去跟 48 個站點對，比平均位移
+     （y 與 blur 用相對誤差，alpha 用絕對差）。這一組是 y 11% / blur 10% / alpha 0.043。
+     `--elev-0` 那一格是為了 `.vp-progress-knob`——12px 的拖曳鈕需要的是**貼合陰影**，
+     沒有它的話那一處會被迫放大一倍、alpha 掉 0.20，是所有候選裡最差的一筆。
+
+     ⚠️ 名字用 `--elev-*` 不是 `--shadow-*`：後者是 Tailwind v4 的 namespace，而站上
+     有 6 個 shadcn 的 `shadow-xs/sm/md/lg/xl/2xl` 正在用。（佔用 namespace 本身不會
+     弄壞預設值——實測 `--blur-*` 那批之後 `backdrop-blur-xs/md/2xl` 仍然正確生成、
+     仍然引用 Tailwind 自己的 `--blur-xs/md/2xl`。但沒必要去擠。） */
+  --elev-0: 0 1px 4px var(--black-50); /* 貼合：小控制項，例如進度條的拖曳鈕 */
+  --elev-1: 0 2px 8px var(--black-30); /* 貼著表面：小卡片、標籤 */
+  --elev-2: 0 4px 16px var(--black-40); /* 微抬 */
+  --elev-3: 0 8px 24px var(--black-45); /* 卡片 hover、浮動控制（最大群） */
+  --elev-4: 0 12px 32px var(--black-50); /* 下拉、面板 */
+  --elev-5: 0 18px 48px var(--black-50); /* 大面板、popover */
+  --elev-6: 0 26px 72px var(--black-55); /* modal */
+
   /* 把 text-* 的 line-height 從 v4 的「無單位比例」改回 v3 的絕對值。
      v4 預設是 `calc(1 / 0.75)` 這種比例，乘上元素自己的 font-size；只要字級沒被別的
      規則蓋掉，算出來就等於下面這些數字（比例本來就是這樣推導的），所以這一段對絕大多數

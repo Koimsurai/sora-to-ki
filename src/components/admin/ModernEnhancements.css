@@ -89,7 +89,7 @@
   backdrop-filter: blur(var(--blur-28));
   -webkit-backdrop-filter: blur(var(--blur-28));
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
-  box-shadow: 0 10px 40px var(--black-50);
+  box-shadow: var(--elev-4);
 }
 
 /* ── Pagination ── */
@@ -133,7 +133,7 @@
   backdrop-filter: blur(var(--blur-16));
   -webkit-backdrop-filter: blur(var(--blur-16));
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
-  box-shadow: 0 4px 16px var(--black-35);
+  box-shadow: var(--elev-2);
   border-radius: var(--r-10);
 }
 

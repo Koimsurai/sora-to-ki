@@ -91,7 +91,7 @@
   backdrop-filter: blur(var(--blur-16));
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   border-radius: var(--r-8);
-  box-shadow: 0 8px 32px var(--black-50);
+  box-shadow: var(--elev-4);
 }
 
 /* 建議框 */
@@ -100,7 +100,7 @@
   backdrop-filter: blur(var(--blur-16));
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   border-radius: var(--r-8);
-  box-shadow: 0 8px 32px var(--black-50);
+  box-shadow: var(--elev-4);
 }
 
 /* 響應式調整 */

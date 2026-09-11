@@ -220,7 +220,7 @@
   backdrop-filter: blur(var(--blur-12));
   border: 1px solid rgba(var(--purple-300-rgb), 0.2);
   border-radius: var(--r-10);
-  box-shadow: 0 12px 32px var(--black-55);
+  box-shadow: var(--elev-4);
   transform-origin: top right;
 }
 
@@ -278,7 +278,7 @@
   border-radius: var(--r-10);
   overflow: hidden;
   background: var(--white-04);
-  box-shadow: 0 12px 28px var(--black-45);
+  box-shadow: var(--elev-4);
   margin-bottom: var(--space-2-5);
   transition: box-shadow var(--dur-300) ease;
 }

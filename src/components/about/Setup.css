@@ -347,7 +347,7 @@
 .setup-card:hover {
   border-color: var(--white-10);
   transform: translateY(-3px);
-  box-shadow: 0 8px 32px var(--black-40);
+  box-shadow: var(--elev-3);
 }
 
 .setup-card-image-wrapper {

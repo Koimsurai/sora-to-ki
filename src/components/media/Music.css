@@ -129,7 +129,7 @@
   height: 160px;
   border-radius: var(--r-12);
   object-fit: cover;
-  box-shadow: 0 8px 24px var(--black-50);
+  box-shadow: var(--elev-3);
 }
 
 /* ── Audio Visualizer ── */
@@ -445,7 +445,7 @@
   border-radius: var(--r-6);
   object-fit: cover;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px var(--black-30);
+  box-shadow: var(--elev-1);
 }
 
 .tr-title-col {

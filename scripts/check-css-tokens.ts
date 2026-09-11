@@ -294,6 +294,23 @@ for (const m of blankComments(INDEX_CSS).matchAll(/--blur-(\d+)\s*:/g)) BLUR_PX.
 const FILTER_PROP = /^(-webkit-)?(backdrop-)?filter$/;
 const BLUR_CALL = /blur\((\d*\.?\d+)px\)/g;
 
+/**
+ * 高度（陰影）尺 `--elev-*`。
+ *
+ * ⚠ 這條**只擋單層中性投影**（`0 Ypx Bpx var(--black-NN)`），不是所有 box-shadow。
+ * 全站 162 個非 none 的陰影裡有 104 個是多層的（玻璃高光 + 投影、品牌色光暈），
+ * 那些是刻意的組合，硬收成一把尺只會把設計拆掉。尺管的是另外那 48 個——
+ * 它們卻有 36 種不同的 `(y, blur, alpha)`，也就是「每個人自己發明一個陰影」。
+ *
+ * ⚠ 名字是 `--elev-*` 不是 `--shadow-*`：後者是 Tailwind v4 的 namespace，而站上有
+ * 6 個 shadcn 的 `shadow-xs/sm/md/lg/xl/2xl` 正在用。
+ */
+const ELEV_VALUE = new Map<string, string>();
+for (const m of blankComments(INDEX_CSS).matchAll(/(--elev-\d+)\s*:\s*([^;]+);/g)) {
+  ELEV_VALUE.set(m[2].replace(/\s+/g, ' ').trim(), m[1]);
+}
+const NEUTRAL_SHADOW = /^0 \d+px \d+px var\(--black-\d+\)$/;
+
 const TRANSITION_PROP = /^transition(-duration|-delay)?$/;
 const TIME = /(?<![\w.-])(\d*\.?\d+)(m?s)(?![\w-])/g;
 const BEZIER = /cubic-bezier\([^()]*\)/g;
@@ -459,6 +476,22 @@ function check(file: string): Problem[] {
           raw: value,
           why: `z-index ${n} ≥ ${Z_MIN} —— 那是「我要蓋過全世界」，必須是有名字的決定`,
           fix: '改用 index.css 的 --z-* 其中一格；如果它其實只跟自己的兄弟比，改成 1/2/3 這種局部值',
+        });
+      }
+    }
+
+    // ── 單層中性投影要走高度尺；多層／帶顏色的不管 ──
+    if (prop === 'box-shadow') {
+      const v = value.replace(/\s+/g, ' ').trim();
+      if (NEUTRAL_SHADOW.test(v)) {
+        const tok = ELEV_VALUE.get(v);
+        problems.push({
+          file,
+          line,
+          prop,
+          raw: v,
+          why: tok ? `這就是 ${tok}` : '單層中性投影要走高度尺，不要再自己調一個',
+          fix: tok ? `改用 var(${tok})` : `改用最接近的 ${[...ELEV_VALUE.values()].join(' / ')}`,
         });
       }
     }
@@ -659,7 +692,7 @@ const problems = files.flatMap(check);
 
 if (problems.length === 0) {
   console.log(
-    `✅ 間距、字級、行高、字距、圓角、模糊、堆疊層、過渡與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`,
+    `✅ 間距、字級、行高、字距、圓角、模糊、陰影、堆疊層、過渡與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`,
   );
   process.exit(0);
 }

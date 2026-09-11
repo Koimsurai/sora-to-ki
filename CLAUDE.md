@@ -170,13 +170,13 @@ layer**：`index.css` 的 `@layer base`（含那條全站 `button { 紫底 }` �
 七個檔案各自寫了高特異性的繞過碼並留下註解解釋——**那些註解描述的是已經消失的問題**，
 不要拿它們當範例照抄。真的遇到蓋不過去的情況，先確認你的規則有沒有被包進某個 layer。
 
-### 間距、字級、行高、字距、圓角、模糊、堆疊層與過渡一律走 token，有一道檢查在擋
+### 間距、字級、行高、字距、圓角、模糊、陰影、堆疊層與過渡一律走 token，有一道檢查在擋
 
 ```bash
 pnpm check:css-tokens      # CI 與 pre-commit 都跑
 ```
 
-九把尺都定義在 `src/index.css` 的 `@theme`：
+十把尺都定義在 `src/index.css` 的 `@theme`：
 
 | | token | 範圍 |
 |---|---|---|
@@ -189,6 +189,7 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 | 過渡時長 | `--dur-100` … `--dur-1000` | 9 格，密在 100–300ms |
 | 緩動 | `--easing-standard` / `-out` / `-back` | 三條曲線；`ease` 那批關鍵字保持原樣 |
 | 模糊 | `--blur-2` … `--blur-110` | 9 格，三個層級：2 劇透／4–28 玻璃／60–110 氛圍 |
+| 陰影 | `--elev-0` … `--elev-6` | 7 格,**只管單層中性投影**；多層的不碰 |
 
 `margin` / `padding` / `gap` / `font-size` / `line-height` / `letter-spacing` /
 `border-radius` / `transition` 的時間與曲線不准再寫字面值；`z-index` 的門檻是 1000。
@@ -294,6 +295,39 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 根脈絡、寫 49/50，所以實際上畫在**頂欄與所有 modal 之上**——跟它們原本的註解相反
 （那條註解已改成寫實話）。兩層都是 `pointer-events: none` 的極淡覆蓋所以沒人注意到。
 要改成「只蓋內容」得把它們搬進容器，那是視覺決定，不是排版 bug。
+
+### 陰影：`--elev-*` 七格，**只管單層中性投影**
+
+```
+--elev-0  0 1px  4px  black-50    貼合：小控制項（進度條拖曳鈕）
+--elev-1  0 2px  8px  black-30    貼著表面：小卡片、標籤
+--elev-2  0 4px  16px black-40    微抬
+--elev-3  0 8px  24px black-45    卡片 hover、浮動控制（最大群，14 處）
+--elev-4  0 12px 32px black-50    下拉、面板
+--elev-5  0 18px 48px black-50    大面板、popover
+--elev-6  0 26px 72px black-55    modal
+```
+
+⚠️ **這把尺刻意不管多層陰影。** 全站 162 個非 none 的 `box-shadow` 裡 **104 個是多層的**
+（玻璃高光 + 投影、品牌色光暈），那些是刻意的組合，硬收成一把尺只會把設計拆掉。
+尺管的是另外那 48 個單層中性投影（`0 Ypx Bpx var(--black-NN)`）——它們卻有 **36 種**
+不同的 `(y, blur, alpha)`，最明顯的是 `.modal-content` / `.download-popover` /
+`.unsubscribe-card` / `.mm-fullscreen-container` / `.fe-modal` / `.tk-modal`
+**六個都是 modal／popover 卻有五種不同的陰影**。
+
+⚠️ **七格是算出來的不是拍的**：把候選尺跟 48 個站點對，比平均位移（y 與 blur 用相對
+誤差、alpha 用絕對差）。這一組是 y 11% / blur 10% / alpha 0.043。`--elev-0` 那格是為了
+`.vp-progress-knob`（12px 的拖曳鈕需要貼合陰影），少了它那一處會被迫放大一倍、
+alpha 掉 0.20，是所有候選裡最差的一筆。
+
+⚠️ **名字是 `--elev-*` 不是 `--shadow-*`**：後者是 Tailwind v4 的 namespace，而站上有
+6 個 shadcn 的 `shadow-xs/sm/md/lg/xl/2xl` 正在用。
+
+⚠️ **陰影有一半改在 hover／focus 上，靜態守門看不到。** 48 處裡只有 24 處會出現在
+computed-style 的快照裡，其餘是 `:hover` / `:focus-visible` / 條件渲染的覆蓋層。
+驗那一半要主動 hover（`.gallery-thumbnail-item` 還得先打開照片檢視器）。實測三個
+位移最大的並排比對：肉眼分辨不出來——陰影都落在深色背景上，±0.15 的 alpha 與
+±8px 的 blur 在那個對比下看不出差別。
 
 ### 模糊：`--blur-*` 九格，三個層級不要互相貼
 

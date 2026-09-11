@@ -52,7 +52,7 @@
   border: 1px solid var(--white-10);
   backdrop-filter: blur(var(--blur-28)) saturate(180%);
   -webkit-backdrop-filter: blur(var(--blur-28)) saturate(180%);
-  box-shadow: 0 18px 50px var(--black-45);
+  box-shadow: var(--elev-5);
   animation: lang-picker-fade-in 0.16s var(--easing-out);
 }
 

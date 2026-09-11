@@ -302,7 +302,7 @@
   padding: var(--space-2-5) var(--space-4-5);
   border-radius: var(--r-full);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
-  box-shadow: 0 12px 36px var(--black-50);
+  box-shadow: var(--elev-4);
   font-size: var(--fs-14);
   z-index: var(--z-toast);
   backdrop-filter: blur(var(--blur-12));

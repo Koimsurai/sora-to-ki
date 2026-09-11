@@ -389,7 +389,7 @@
   -webkit-backdrop-filter: blur(var(--blur-8));
   letter-spacing: var(--ls-6);
   z-index: 2;
-  box-shadow: 0 2px 8px var(--black-40);
+  box-shadow: var(--elev-1);
 }
 
 .book-info {
@@ -521,7 +521,7 @@
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 20px 60px var(--black-50);
+  box-shadow: var(--elev-5);
 }
 
 .modal-close {
@@ -568,7 +568,7 @@
   width: 100%;
   border-radius: var(--r-10);
   border: 1px solid var(--glass-border);
-  box-shadow: 0 8px 30px var(--black-30);
+  box-shadow: var(--elev-3);
 }
 
 .modal-cover-placeholder {

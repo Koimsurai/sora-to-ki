@@ -11,7 +11,7 @@
 
 .blog-image-clickable:hover {
   transform: scale(1.005);
-  box-shadow: 0 8px 30px var(--black-30);
+  box-shadow: var(--elev-3);
 }
 
 .blog-image-exif--visible {

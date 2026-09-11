@@ -49,7 +49,7 @@
 
 .gallery-thumbnail-item:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px var(--black-30);
+  box-shadow: var(--elev-3);
 }
 
 .gallery-thumbnail-item:hover img {
@@ -100,5 +100,5 @@
 }
 /* 原本就有的抬升效果要留著，只是不要全域那圈紫光暈 */
 .gallery-thumbnail-item:hover {
-  box-shadow: 0 8px 16px var(--black-30);
+  box-shadow: var(--elev-3);
 }

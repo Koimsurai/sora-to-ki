@@ -60,7 +60,7 @@
     transform var(--dur-300) var(--easing-standard),
     opacity var(--dur-300) var(--easing-standard);
   pointer-events: none;
-  box-shadow: 0 4px 24px var(--black-40);
+  box-shadow: var(--elev-2);
 }
 
 .mm-toolbar--visible {
@@ -144,7 +144,7 @@
   pointer-events: none;
   transition: opacity var(--dur-150) ease;
   z-index: 100;
-  box-shadow: 0 2px 8px var(--black-30);
+  box-shadow: var(--elev-1);
 }
 
 .mm-menu-trigger[data-tooltip]:not(.mm-menu-trigger--open):hover::after {
@@ -163,7 +163,7 @@
   border: 1px solid var(--white-08);
   border-radius: var(--r-10);
   padding: var(--space-1);
-  box-shadow: 0 8px 32px var(--black-50);
+  box-shadow: var(--elev-4);
   z-index: 50;
   animation: mmDropIn 0.15s ease-out;
 }
@@ -280,7 +280,7 @@
   pointer-events: none;
   transition: opacity var(--dur-150) ease;
   z-index: 100;
-  box-shadow: 0 2px 8px var(--black-30);
+  box-shadow: var(--elev-1);
 }
 
 .mm-expand-btn:hover[data-tooltip]::after {
@@ -322,7 +322,7 @@
   overflow: hidden;
   background: var(--surface-1);
   border: 1px solid var(--white-06);
-  box-shadow: 0 24px 80px var(--black-60);
+  box-shadow: var(--elev-6);
 }
 
 .mm-fullscreen-toolbar {

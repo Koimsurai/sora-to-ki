@@ -30,7 +30,7 @@
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid var(--white-10);
   border-radius: var(--r-20);
-  box-shadow: 0 30px 80px var(--black-55);
+  box-shadow: var(--elev-6);
   animation: fe-pop 0.24s var(--easing-back);
   overflow: hidden;
 }

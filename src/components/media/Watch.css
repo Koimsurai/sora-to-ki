@@ -144,7 +144,7 @@
   background: rgba(var(--surface-0-rgb), 0.6);
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 16px 44px var(--black-40);
+  box-shadow: var(--elev-5);
   transition:
     transform var(--dur-400) var(--easing-out),
     box-shadow var(--dur-400) ease;
@@ -339,7 +339,7 @@
   aspect-ratio: 2 / 3;
   border-radius: var(--r-10);
   overflow: hidden;
-  box-shadow: 0 10px 24px var(--black-50);
+  box-shadow: var(--elev-3);
 }
 
 .w-fav-poster img {

@@ -77,7 +77,7 @@
   background: var(--black-70);
   border-color: var(--white-40);
   transform: scale(1.08);
-  box-shadow: 0 4px 16px var(--black-40);
+  box-shadow: var(--elev-2);
 }
 
 .action-btn:active {
@@ -193,7 +193,7 @@
   border-color: var(--white-40);
   opacity: 1;
   transform: translateY(-50%) scale(1.05);
-  box-shadow: 0 4px 20px var(--black-40);
+  box-shadow: var(--elev-2);
 }
 
 .custom-swiper-button-prev:active,
@@ -360,5 +360,5 @@
   font-weight: 600;
   backdrop-filter: blur(var(--blur-12));
   border: 1px solid var(--white-20);
-  box-shadow: 0 2px 8px var(--black-30);
+  box-shadow: var(--elev-1);
 }

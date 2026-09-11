@@ -117,7 +117,7 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dur-200) ease;
-  box-shadow: 0 8px 24px var(--black-45);
+  box-shadow: var(--elev-3);
   z-index: 5;
 }
 .tk-edited:hover::after {
@@ -225,7 +225,7 @@
   object-fit: cover;
   border-radius: var(--r-8);
   flex: 0 0 auto;
-  box-shadow: 0 6px 16px var(--black-45);
+  box-shadow: var(--elev-2);
 }
 /* 連結 OG：橫式縮圖 */
 .tk-linkcard-img {
@@ -234,7 +234,7 @@
   object-fit: cover;
   border-radius: var(--r-8);
   flex: 0 0 auto;
-  box-shadow: 0 6px 16px var(--black-45);
+  box-shadow: var(--elev-2);
 }
 
 /* footer：互動數 + 查看（查看 hover 卡片才出現） */
@@ -549,7 +549,7 @@
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid var(--white-08);
   border-radius: var(--r-16);
-  box-shadow: 0 30px 80px var(--black-60);
+  box-shadow: var(--elev-6);
   animation: tk-modal-pop 0.25s var(--easing-out);
 }
 @keyframes tk-modal-pop {

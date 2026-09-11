@@ -73,7 +73,7 @@
   color: #fff;
   font-size: var(--fs-16);
   cursor: pointer;
-  box-shadow: 0 6px 22px var(--black-45);
+  box-shadow: var(--elev-3);
   transition:
     background var(--dur-150) ease,
     transform var(--dur-150) ease;
@@ -84,7 +84,7 @@
   background: rgba(139, 124, 246, 0.8);
   border-color: var(--white-25);
   transform: translate(-50%, -50%) scale(1.08);
-  box-shadow: 0 6px 22px var(--black-45);
+  box-shadow: var(--elev-3);
   outline: none;
 }
 .vp-bigplay:focus:not(:focus-visible) {
@@ -219,7 +219,7 @@ a.vp-btn:focus-visible {
   border-radius: var(--r-round);
   background: #fff;
   transform: translateX(-50%);
-  box-shadow: 0 1px 4px var(--black-50);
+  box-shadow: var(--elev-0);
   opacity: 0;
   transition: opacity var(--dur-150) ease;
 }

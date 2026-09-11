@@ -34,7 +34,7 @@
     box-shadow var(--dur-200) ease;
   z-index: var(--z-float);
   outline: none;
-  box-shadow: 0 6px 22px var(--black-35);
+  box-shadow: var(--elev-3);
 }
 
 .back-to-top.is-visible {

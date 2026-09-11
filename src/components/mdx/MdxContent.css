@@ -91,7 +91,7 @@
   border-radius: var(--r-10);
   background: rgba(36, 30, 20, 0.95);
   border: 1px solid rgba(var(--amber-300-rgb), 0.2);
-  box-shadow: 0 10px 30px var(--black-45);
+  box-shadow: var(--elev-4);
   color: var(--white-80);
   font-size: var(--fs-13);
   line-height: var(--lh-160);
@@ -231,7 +231,7 @@
   border-radius: var(--r-8);
   background: rgba(var(--surface-1-rgb), 0.95);
   border: 1px solid rgba(139, 124, 246, 0.3);
-  box-shadow: 0 8px 24px var(--black-50);
+  box-shadow: var(--elev-3);
 }
 .mdx-chart-tip-label {
   font-size: var(--fs-12);
@@ -935,7 +935,7 @@
   color: #fff;
   font-size: var(--fs-20);
   padding-left: var(--space-1);
-  box-shadow: 0 6px 24px var(--black-50);
+  box-shadow: var(--elev-3);
 }
 
 /* ── Refs 參考連結區（文末，標籤 + 品牌 icon 連結，不觸發 hover 卡）── */
