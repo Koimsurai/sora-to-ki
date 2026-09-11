@@ -33,14 +33,14 @@
 .tk-title {
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
   color: rgba(var(--zinc-100-rgb), 0.95);
   margin: 0 0 var(--space-2-5);
 }
 .tk-subtitle {
   font-size: var(--fs-16);
   color: rgba(var(--ink-rgb), 0.5);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-4);
   margin: 0;
 }
 
@@ -127,9 +127,9 @@
 .tk-text {
   margin: 0;
   font-size: var(--fs-16);
-  line-height: 1.85;
+  line-height: var(--lh-185);
   color: rgba(var(--zinc-100-rgb), 0.9);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
 }
 
 /* ── 內文嵌入卡（連結 OG / TMDb 媒體共用底）── */
@@ -187,7 +187,7 @@
   border-radius: var(--r-6);
   font-size: var(--fs-11);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-6);
   color: rgba(var(--ink-rgb), 0.7);
 }
 .tk-embed-title {
@@ -199,7 +199,7 @@
 .tk-embed-desc {
   margin: 0 0 var(--space-2);
   font-size: var(--fs-13);
-  line-height: 1.6;
+  line-height: var(--lh-160);
   color: rgba(var(--ink-rgb), 0.6);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -353,7 +353,7 @@
 }
 .tk-compose-text {
   min-height: 56px;
-  line-height: 1.7;
+  line-height: var(--lh-170);
   resize: vertical;
 }
 .tk-compose-url {
@@ -386,7 +386,7 @@
   cursor: pointer;
   padding: 0 var(--space-0-5);
   font-size: var(--fs-14);
-  line-height: 1;
+  line-height: var(--lh-100);
 }
 .tk-compose-chip button:hover,
 .tk-compose-chip button:focus {
@@ -474,7 +474,7 @@
   border-radius: var(--r-8);
   color: rgba(var(--zinc-100-rgb), 0.95);
   font: inherit;
-  line-height: 1.7;
+  line-height: var(--lh-170);
   padding: var(--space-2-5) var(--space-3);
   resize: vertical;
 }
@@ -579,7 +579,7 @@
   font-size: var(--fs-18);
   cursor: pointer;
   padding: var(--space-0-5) var(--space-2);
-  line-height: 1;
+  line-height: var(--lh-100);
 }
 .tk-modal-close:hover,
 .tk-modal-close:focus {
@@ -607,7 +607,7 @@
   font-size: var(--fs-16);
   color: rgba(var(--ink-rgb), 0.5);
   text-align: center;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-6);
   font-style: italic;
 }
 

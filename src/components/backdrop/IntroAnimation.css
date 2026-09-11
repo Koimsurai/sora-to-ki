@@ -119,7 +119,7 @@
   transform: translateX(-50%);
   font-family: ui-monospace, "SF Mono", Menlo, "Roboto Mono", monospace;
   font-size: var(--fs-10);
-  letter-spacing: 0.3em;
+  letter-spacing: var(--ls-30);
   text-transform: uppercase;
   color: rgba(207, 250, 254, 0.3);
   pointer-events: none;

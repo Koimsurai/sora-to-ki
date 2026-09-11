@@ -95,7 +95,7 @@
 .blog-hero-desc {
   font-size: var(--fs-16);
   color: var(--white-50);
-  line-height: 1.7;
+  line-height: var(--lh-170);
   max-width: 520px;
   margin: 0 auto;
 }
@@ -256,7 +256,7 @@
   font-size: var(--fs-14);
   font-weight: 700;
   color: var(--white-40);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-8);
   text-transform: uppercase;
   margin-bottom: var(--space-4);
   padding-bottom: var(--space-2-5);
@@ -284,7 +284,7 @@
   font-size: var(--fs-24);
   font-weight: 800;
   color: var(--white-80);
-  line-height: 1;
+  line-height: var(--lh-100);
 }
 
 .note-month {
@@ -348,7 +348,7 @@
   font-weight: 700;
   color: var(--clr-headline);
   margin: 0 0 var(--space-2-5) 0;
-  line-height: 1.4;
+  line-height: var(--lh-140);
   transition: color var(--dur-250) ease;
 }
 
@@ -359,7 +359,7 @@
 /* Excerpt */
 .note-excerpt {
   font-size: var(--fs-14);
-  line-height: 1.7;
+  line-height: var(--lh-170);
   color: var(--white-50);
   margin: 0 0 var(--space-3-5) 0;
   display: -webkit-box;
@@ -533,7 +533,7 @@
   margin: 0 0 var(--space-3) 0;
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--white-06);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 
 /* Stats — 單行純文字 */
@@ -1008,7 +1008,7 @@
   background-clip: text;
   font-size: var(--fs-22);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 .activity-heatmap .heatmap-total-label {
   color: var(--white-55);

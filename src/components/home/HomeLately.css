@@ -16,7 +16,7 @@
   font-weight: 700;
   color: var(--white-90);
   margin: 0 0 var(--space-4-5);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 
 .lately-h-more {
@@ -67,7 +67,7 @@
 .lately-post-no {
   font-size: var(--fs-12);
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: var(--ls-8);
   color: rgba(var(--brand-rgb), 0.8);
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
@@ -84,7 +84,7 @@
   font-size: var(--fs-16);
   font-weight: 600;
   color: var(--white-90);
-  line-height: 1.45;
+  line-height: var(--lh-150);
   transition: color var(--dur-250) ease;
 }
 
@@ -95,7 +95,7 @@
 .lately-post-meta {
   font-size: var(--fs-12);
   color: var(--white-40);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 
 /* ── 右欄 ── */
@@ -139,7 +139,7 @@
 .lately-echo-text {
   margin: 0 0 var(--space-1);
   font-size: var(--fs-14);
-  line-height: 1.6;
+  line-height: var(--lh-160);
   color: var(--white-70);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -346,7 +346,7 @@
 .orbit-month-pop-head {
   font-size: var(--fs-10);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-4);
   color: var(--white-40);
   padding: var(--space-0-5) var(--space-2) var(--space-1-5);
 }
@@ -360,7 +360,7 @@
   padding: 7px var(--space-2);
   border-radius: var(--r-8);
   font-size: var(--fs-13);
-  line-height: 1.35;
+  line-height: var(--lh-140);
   color: var(--white-80);
   text-decoration: none;
   transition:
@@ -453,7 +453,7 @@
 .orbit-month-pop-head {
   font-size: var(--fs-10);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-4);
   color: var(--white-40);
   padding: var(--space-0-5) var(--space-2) var(--space-1-5);
 }
@@ -467,7 +467,7 @@
   padding: 7px var(--space-2);
   border-radius: var(--r-8);
   font-size: var(--fs-13);
-  line-height: 1.35;
+  line-height: var(--lh-140);
   color: var(--white-80);
   text-decoration: none;
   transition:
@@ -518,14 +518,14 @@
 }
 
 .signal-label {
-  letter-spacing: 3.5px;
+  letter-spacing: var(--ls-30);
 }
 
 .signal-quote {
   margin: 0;
   font-size: clamp(1.1rem, 2vw, 1.45rem);
   font-weight: 500;
-  line-height: 1.7;
+  line-height: var(--lh-170);
   color: var(--white-80);
   max-width: 38em;
   /* 背景土星視差經過時保持可讀 */

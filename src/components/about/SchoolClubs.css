@@ -92,7 +92,7 @@
   font-size: var(--fs-16);
   font-weight: 600;
   color: var(--white-90);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
 }
 
 .club-role-badge {
@@ -109,7 +109,7 @@
 .club-period {
   font-size: var(--fs-12);
   color: var(--white-40);
-  letter-spacing: 0.5px;
+  letter-spacing: var(--ls-4);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -172,7 +172,7 @@
   position: relative;
   padding-left: var(--space-3-5);
   font-size: var(--fs-14);
-  line-height: 1.6;
+  line-height: var(--lh-160);
   color: var(--white-70);
 }
 

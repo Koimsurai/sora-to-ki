@@ -256,6 +256,31 @@ for (const m of blankComments(INDEX_CSS).matchAll(/(--easing-[\w-]+)\s*:\s*(cubi
  */
 const DUR_GRANDFATHERED = new Set(['0.01ms', '1.5s']);
 
+/**
+ * 行高與字距的尺，一樣從 index.css 讀。名字裡的數字是 ×100（`--lh-140` = 1.4、
+ * `--ls-12` = 0.12em），`ls-n` 開頭是負的。
+ *
+ * ⚠ 字距**只認 em**：px 字距不會跟著字級縮放，同一個 `1.5px` 放在 10px 與 16px 的
+ * 標籤上是完全不同的鬆緊。導入時 26 處 px 全部換算成 em（除以同區塊的 font-size），
+ * 所以規則直接把「字距寫 px」判成錯，而不是再去算它等於哪一格。
+ */
+const LH_VALUES = new Map<number, string>();
+for (const m of blankComments(INDEX_CSS).matchAll(/(--lh-\d+)\s*:\s*([\d.]+)\s*;/g)) {
+  LH_VALUES.set(Number(m[2]), m[1]);
+}
+const LS_VALUES = new Map<number, string>();
+for (const m of blankComments(INDEX_CSS).matchAll(/(--ls-n?\d+)\s*:\s*(-?[\d.]+)em\s*;/g)) {
+  LS_VALUES.set(Number(m[2]), m[1]);
+}
+
+/**
+ * 行高的豁免。三條都是刻意的排版手法，貼到尺上會壞：
+ *   · `0`    —— `.vp` 影片容器殺掉行內間隙，寫 0 最清楚（同 `border-radius: 0`）
+ *   · `0.8`  —— `.post-content.drop-cap-first` 的首字放大
+ *   · `0.95` —— `.expertise-hero-number` 的巨大數字
+ */
+const LH_GRANDFATHERED = new Set(['0', '0.8', '0.95']);
+
 const TRANSITION_PROP = /^transition(-duration|-delay)?$/;
 const TIME = /(?<![\w.-])(\d*\.?\d+)(m?s)(?![\w-])/g;
 const BEZIER = /cubic-bezier\([^()]*\)/g;
@@ -425,6 +450,56 @@ function check(file: string): Problem[] {
       }
     }
 
+    // ── 行高 ──
+    if (prop === 'line-height' && /^-?[\d.]+$/.test(value) && !LH_GRANDFATHERED.has(value)) {
+      const v = Number(value);
+      const tok = LH_VALUES.get(v);
+      problems.push(
+        tok
+          ? { file, line, prop, raw: value, why: `這就是 ${tok}`, fix: `改用 var(${tok})` }
+          : {
+              file,
+              line,
+              prop,
+              raw: value,
+              why: `${v} 不在行高尺上`,
+              fix: '改用最接近的 var(--lh-*)，或把這一格加進 index.css 的尺',
+            },
+      );
+    }
+
+    // ── 字距：只認 em ──
+    if (prop === 'letter-spacing') {
+      for (const lm of value.matchAll(/(?<![\w.-])(-?\d*\.?\d+)(px|rem|em)(?![\w-])/g)) {
+        if (lm[2] !== 'em') {
+          problems.push({
+            file,
+            line,
+            prop,
+            raw: lm[0],
+            why: '字距不要用 px —— 它不會跟著字級縮放，同一個值在 10px 與 16px 的標籤上鬆緊完全不同',
+            fix: '換算成 em（除以這個元素的 font-size）再貼到 var(--ls-*)',
+          });
+          continue;
+        }
+        const v = Number(lm[1]);
+        if (v === 0) continue;
+        const tok = LS_VALUES.get(v);
+        problems.push(
+          tok
+            ? { file, line, prop, raw: lm[0], why: `這就是 ${tok}`, fix: `改用 var(${tok})` }
+            : {
+                file,
+                line,
+                prop,
+                raw: lm[0],
+                why: `${v}em 不在字距尺上`,
+                fix: '改用最接近的 var(--ls-*)，或把這一格加進 index.css 的尺',
+              },
+        );
+      }
+    }
+
     // ── 過渡的時長：只查 transition*，animation 的時間是節奏不是尺 ──
     if (TRANSITION_PROP.test(prop)) {
       for (const tm of value.matchAll(TIME)) {
@@ -551,7 +626,9 @@ const files = walk('src');
 const problems = files.flatMap(check);
 
 if (problems.length === 0) {
-  console.log(`✅ 間距、字級、圓角、堆疊層、過渡與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`);
+  console.log(
+    `✅ 間距、字級、行高、字距、圓角、堆疊層、過渡與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`,
+  );
   process.exit(0);
 }
 

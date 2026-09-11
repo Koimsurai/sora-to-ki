@@ -30,15 +30,15 @@
   margin: 0 0 var(--space-2);
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
   color: rgba(var(--zinc-100-rgb), 0.95);
-  line-height: 1.2;
+  line-height: var(--lh-120);
 }
 .info-page-subtitle {
   margin: 0;
   font-size: var(--fs-16);
   color: rgba(var(--ink-rgb), 0.5);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-4);
 }
 
 /* ── Sidebar 左側留白（對稱） ──────────────── */
@@ -56,7 +56,7 @@
   margin: var(--space-12) 0 var(--space-5-5);
   font-size: var(--fs-24);
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
   color: rgba(var(--zinc-100-rgb), 0.95);
   scroll-margin-top: 100px;
 }
@@ -114,13 +114,13 @@
   gap: var(--space-4);
   align-items: baseline;
   font-size: var(--fs-16);
-  line-height: 1.7;
+  line-height: var(--lh-170);
 }
 .info-page-timeline-date {
   font-family: "SF Mono", Menlo, Consolas, monospace;
   font-size: var(--fs-14);
   color: rgba(var(--ink-rgb), 0.45);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 .info-page-timeline-text {
   color: rgba(var(--ink-rgb), 0.9);
@@ -189,7 +189,7 @@
 }
 .info-page-pager-label {
   font-size: var(--fs-12);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-8);
   color: rgba(var(--purple-300-rgb), 0.8);
 }
 .info-page-pager-title {
@@ -318,7 +318,7 @@
   margin: 0;
   font-size: var(--fs-16);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 .friends-modal-close {
   background: transparent;
@@ -361,7 +361,7 @@
 .friends-modal-field > span {
   font-size: var(--fs-12);
   color: rgba(var(--ink-rgb), 0.7);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-4);
 }
 .friends-modal-field .req {
   color: rgba(var(--purple-300-rgb), 0.8);

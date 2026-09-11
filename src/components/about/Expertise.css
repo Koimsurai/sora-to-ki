@@ -34,12 +34,12 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--ls-n4);
 }
 
 .expertise-hero-unit {
   font-size: var(--fs-16);
-  letter-spacing: 2px;
+  letter-spacing: var(--ls-12);
   text-transform: uppercase;
   color: var(--white-40);
   margin-top: var(--space-1);
@@ -49,7 +49,7 @@
 .expertise-hero-blurb {
   margin: var(--space-6) 0 0;
   font-size: var(--fs-16);
-  line-height: 1.7;
+  line-height: var(--lh-170);
   color: var(--white-55);
 }
 

@@ -188,7 +188,7 @@
   border: none;
   cursor: pointer;
   font-size: var(--fs-16);
-  line-height: 1;
+  line-height: var(--lh-100);
   padding: 0 var(--space-px);
   color: var(--white-20);
   transition: color var(--dur-150);
@@ -213,7 +213,7 @@
   padding: 7px var(--space-2-5);
   font: inherit;
   font-size: var(--fs-13);
-  line-height: 1.6;
+  line-height: var(--lh-160);
   color: var(--white-80);
 }
 .fe-quote:focus {

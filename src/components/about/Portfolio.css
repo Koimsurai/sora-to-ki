@@ -91,7 +91,7 @@
   border: 1px solid rgba(var(--clr-tertiary-rgb), 0.35);
   color: #6bd49f;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-6);
 }
 
 .portfolio-feature-title {
@@ -99,13 +99,13 @@
   font-weight: 700;
   margin: 0;
   color: var(--white-95);
-  line-height: 1.3;
+  line-height: var(--lh-130);
 }
 
 .portfolio-feature-desc {
   margin: 0;
   font-size: var(--fs-14);
-  line-height: 1.7;
+  line-height: var(--lh-170);
   color: var(--white-70);
 }
 
@@ -162,7 +162,7 @@
   border-radius: var(--r-20);
   font-size: var(--fs-32);
   font-weight: 300;
-  line-height: 1;
+  line-height: var(--lh-100);
   color: rgba(var(--purple-300-rgb), 0.95);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.3);
@@ -186,7 +186,7 @@
   left: 20px;
   bottom: 14px;
   font-size: var(--fs-11);
-  letter-spacing: 2.5px;
+  letter-spacing: var(--ls-24);
   text-transform: uppercase;
   color: var(--white-20);
   user-select: none;
@@ -236,7 +236,7 @@
 .portfolio-secondary-desc {
   margin: 0;
   font-size: var(--fs-14);
-  line-height: 1.65;
+  line-height: var(--lh-160);
   color: var(--white-60);
   flex: 1;
 }
@@ -256,7 +256,7 @@
   background: var(--white-04);
   border: 1px solid var(--white-08);
   color: var(--white-70);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 
 /* Ghost button: subtle bg with arrow that slides on hover.
@@ -275,7 +275,7 @@
   font-size: var(--fs-14);
   font-weight: 500;
   text-decoration: none;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
   transition:
     background var(--dur-200) ease,
     border-color var(--dur-200) ease,
@@ -287,7 +287,7 @@
   content: "→";
   display: inline-block;
   font-size: var(--fs-16);
-  line-height: 1;
+  line-height: var(--lh-100);
   transition: transform var(--dur-200) var(--easing-back);
 }
 

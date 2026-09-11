@@ -170,25 +170,28 @@ layer**：`index.css` 的 `@layer base`（含那條全站 `button { 紫底 }` �
 七個檔案各自寫了高特異性的繞過碼並留下註解解釋——**那些註解描述的是已經消失的問題**，
 不要拿它們當範例照抄。真的遇到蓋不過去的情況，先確認你的規則有沒有被包進某個 layer。
 
-### 間距、字級、圓角、堆疊層與過渡一律走 token，有一道檢查在擋
+### 間距、字級、行高、字距、圓角、堆疊層與過渡一律走 token，有一道檢查在擋
 
 ```bash
 pnpm check:css-tokens      # CI 與 pre-commit 都跑
 ```
 
-六把尺都定義在 `src/index.css` 的 `@theme`：
+八把尺都定義在 `src/index.css` 的 `@theme`：
 
 | | token | 範圍 |
 |---|---|---|
 | 間距 | `--space-px` … `--space-24` | 2px 格線到 24px，之後 4px／8px 步進 |
 | 字級 | `--fs-10` … `--fs-56` | 16 格，10–14 是 1px 步進（91% 的用量在 10–18px） |
+| 行高 | `--lh-100` … `--lh-185` | 9 格，0.1 格線；最後一格是 1.85（長文的閱讀節奏） |
+| 字距 | `--ls-n4` … `--ls-30` | 11 格，數字是 em×100，`n` 開頭是負的 |
 | 圓角 | `--r-2` … `--r-20` + `--r-full` + `--r-round` | 2px 格線到 20px；`--r-full` 是膠囊、`--r-round` 是 50% |
 | 堆疊層 | `--z-float` … `--z-intro` | 11 格，1000 起跳每格 100；門檻是 1000 |
 | 過渡時長 | `--dur-100` … `--dur-1000` | 9 格，密在 100–300ms |
 | 緩動 | `--easing-standard` / `-out` / `-back` | 三條曲線；`ease` 那批關鍵字保持原樣 |
 
-`margin` / `padding` / `gap` / `font-size` / `border-radius` / `transition` 的時間與曲線
-不准再寫字面值；`z-index` 的門檻是 1000。透明度另有一把 19 階的階梯（見下面）。
+`margin` / `padding` / `gap` / `font-size` / `line-height` / `letter-spacing` /
+`border-radius` / `transition` 的時間與曲線不准再寫字面值；`z-index` 的門檻是 1000。
+透明度另有一把 19 階的階梯（見下面）。
 
 ⚠️ **圓角的 token 叫 `--r-*` 不是 `--radius-*`**，跟 `--fs-*` 同一個理由，而且更嚴重：
 `--radius-*` 是 Tailwind v4 生 `rounded-*` 的 namespace，**這個專案已經有 shadcn 的
@@ -204,6 +207,32 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 
 ⚠️ **`border-radius: 0` 與 `inherit` 刻意沒有 token**，寫 `var(--r-0)` 只會更難讀。
 `30% 70%` 那種刻意捏形狀的百分比也不管，檢查只擋剛好 `50%`。
+
+### 行高與字距
+
+```
+--lh-100 / 110 / 120 / 130 / 140 / 150 / 160 / 170 / 185      （數字是 ×100）
+--ls-n4 / n2 / 1 / 2 / 4 / 6 / 8 / 12 / 18 / 24 / 30          （數字是 em×100，n 是負的）
+```
+
+⚠️ **行高最後一格是 1.85 而不是 1.9,那是刻意的。** `.post-content`、`.tk-text`、
+`.about-paragraph` 三個長文表面本來就都寫 1.85——**三個一致代表那是設計過的閱讀節奏**，
+不是隨手打的。尺保住它，所以那三處零變化。
+
+⚠️ **字距只認 `em`，寫 `px` 直接判錯。** px 字距不會跟著字級縮放，同一個 `1.5px` 放在
+10px 與 16px 的標籤上鬆緊完全不同——那才是收這批之前真正的問題（27 種值裡有 9 種是 px）。
+導入時 26 處 px 全部換算成 em（除以同區塊的 `font-size`，全站字級已 token 化所以
+`var(--fs-N)` 的 N 就是 px；兩處繼承來的用瀏覽器量）。
+
+⚠️ **行高有三條豁免**，都是刻意的排版手法：`0`（`.vp` 影片容器殺掉行內間隙，同
+`border-radius: 0` 的道理）、`0.8`（`.post-content.drop-cap-first` 的首字放大）、
+`0.95`（`.expertise-hero-number` 的巨大數字）。
+
+⚠️ **`line-height` 曾經被排除在 computed-style 之外，理由是「`normal` 取自字體度量」——
+那條已經不成立了。** Tailwind v4 遷移時補的那批 `--text-*--line-height` 絕對值把全站的
+`normal` 蓋光了，實測 7 個頁面 3326 個元素、`normal` 出現 **0 次**。2026-09-11 收回守門。
+（另外 Chrome 對 `line-height: normal` 回傳的是字串 `"normal"` 不是 px，所以就算真有
+`normal`，換字體也不會讓它變成不同的數字。）**過期的排除理由要回頭驗，不要當成永久事實。**
 
 ### z-index：`--z-*` 十一格，門檻是 1000
 
@@ -440,7 +469,7 @@ vitest 上去比那個最壞情況更糟。實際踩過：併行那次冒出一�
 
 ### 樣式回歸有守門：`tests/e2e/computed-style.spec.ts`
 
-跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面共 4243 個元素的 38 個
+跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面共 4243 個元素的 39 個
 計算後屬性。改了樣式而它報紅是**正常的**：
 
 ```bash
@@ -464,9 +493,8 @@ UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
    | `transform` `opacity` `box-shadow` `filter` | 動畫元素上逐幀不同 |
    | `width` `height` | `auto` 的解析值取決於文字寬度 |
    | `margin-left` `margin-right` | 同上（`margin: auto` 置中時解出的是「剩餘空間」） |
-   | `line-height` | `normal` 的解析值直接取自字體度量 |
 
-   後三類的共通點是**依賴字體度量**，而 CI runner 沒有這台機器上的 CJK 字體
+   後兩類的共通點是**依賴字體度量**，而 CI runner 沒有這台機器上的 CJK 字體
    （MiSans / Noto Sans TC / PingFang TC…），fallback 不同 → 文字寬度不同 → 數字就不同。
    實測 `/setup` 的 `.setup-category-subtitle` 本機 `margin-left` 是 687.906px、CI 不是。
 

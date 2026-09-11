@@ -100,5 +100,5 @@
   padding: var(--space-2) var(--space-3) var(--space-1);
   font-size: var(--fs-11);
   color: var(--white-30);
-  line-height: 1.4;
+  line-height: var(--lh-140);
 }

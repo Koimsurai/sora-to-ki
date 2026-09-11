@@ -171,7 +171,7 @@
 
 .mega-menu-column-title {
   font-size: var(--fs-12);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-8);
   text-transform: uppercase;
   color: rgba(var(--zinc-400-rgb), 0.7);
   font-weight: 600;
@@ -302,7 +302,7 @@
 .mega-menu-link-title {
   font-weight: 500;
   color: rgba(var(--zinc-100-rgb), 0.95);
-  line-height: 1.2;
+  line-height: var(--lh-120);
 }
 
 /* ───── Profile card (for 首頁 menu compact) ───── */
@@ -322,7 +322,7 @@
   margin: 0;
   font-size: var(--fs-12);
   color: var(--white-45);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
   font-variant-numeric: tabular-nums;
 }
 
@@ -382,7 +382,7 @@
   font-weight: 600;
   font-size: var(--fs-16);
   color: var(--zinc-100);
-  line-height: 1.2;
+  line-height: var(--lh-120);
 }
 .mega-menu-profile-status {
   display: inline-flex;
@@ -486,7 +486,7 @@
   font-size: var(--fs-14);
   color: rgba(var(--zinc-100-rgb), 0.95);
   font-weight: 500;
-  line-height: 1.4;
+  line-height: var(--lh-140);
   margin-bottom: var(--space-1);
   display: -webkit-box;
   -webkit-line-clamp: 2;

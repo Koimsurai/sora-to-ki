@@ -35,8 +35,8 @@
 .w-title {
   font-size: clamp(2rem, 3.5vw, 2.6rem);
   font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
+  letter-spacing: var(--ls-1);
+  line-height: var(--lh-120);
   color: rgba(var(--zinc-100-rgb), 0.95);
   margin: 0 0 var(--space-2-5);
 }
@@ -44,7 +44,7 @@
 .w-subtitle {
   font-size: var(--fs-16);
   color: rgba(var(--ink-rgb), 0.5);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-4);
   margin: 0 0 var(--space-4-5);
 }
 
@@ -73,14 +73,14 @@
   font-size: var(--fs-22);
   font-weight: 700;
   color: rgba(var(--zinc-100-rgb), 0.95);
-  line-height: 1.1;
-  letter-spacing: 0.01em;
+  line-height: var(--lh-110);
+  letter-spacing: var(--ls-1);
 }
 
 .w-stat-label {
   font-size: var(--fs-12);
   color: rgba(var(--ink-rgb), 0.5);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-6);
 }
 
 /* ── eyebrow ── */
@@ -88,7 +88,7 @@
   display: inline-block;
   font-size: var(--fs-12);
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: var(--ls-12);
   margin-bottom: var(--space-4);
 }
 .w-eyebrow--live {
@@ -189,7 +189,7 @@
 .w-now-title {
   font-size: clamp(1.6rem, 3vw, 2.2rem);
   font-weight: 700;
-  line-height: 1.15;
+  line-height: var(--lh-110);
   color: var(--zinc-100);
   margin: var(--space-2-5) 0 var(--space-2);
   text-shadow: 0 2px 18px var(--black-55);
@@ -198,7 +198,7 @@
 .w-now-meta {
   font-size: var(--fs-14);
   color: rgba(var(--zinc-100-rgb), 0.8);
-  letter-spacing: 0.03em;
+  letter-spacing: var(--ls-2);
   margin: 0;
   text-shadow: 0 1px 8px var(--black-55);
 }
@@ -214,7 +214,7 @@
   border: 1px solid var(--white-25);
   border-radius: var(--r-full);
   backdrop-filter: blur(8px);
-  letter-spacing: 0.03em;
+  letter-spacing: var(--ls-2);
   transition:
     background var(--dur-250) ease,
     border-color var(--dur-250) ease;
@@ -233,7 +233,7 @@
 .w-h2 {
   font-size: var(--fs-24);
   font-weight: 700;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
   color: rgba(var(--zinc-100-rgb), 0.95);
   margin: 0 0 var(--space-1-5);
 }
@@ -365,7 +365,7 @@
   align-items: center;
   padding: var(--space-4);
   font-size: var(--fs-13);
-  line-height: 1.6;
+  line-height: var(--lh-160);
   color: rgba(var(--zinc-100-rgb), 0.95);
   opacity: 0;
   transform: translateY(8px);
@@ -405,7 +405,7 @@
 .w-recent-group {
   font-size: var(--fs-12);
   font-weight: 600;
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-18);
   text-transform: uppercase;
   color: rgba(var(--purple-300-rgb), 0.7);
   margin: var(--space-7) 0 var(--space-2);
@@ -456,7 +456,7 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 .w-recent-link.has-anchor .w-recent-anchor {
   color: rgba(var(--purple-300-rgb), 0.8);
@@ -496,7 +496,7 @@
   display: inline-block;
   font-size: var(--fs-11);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-8);
   padding: 3px 9px;
   border-radius: var(--r-full);
   border: 1px solid currentColor;
@@ -529,7 +529,7 @@
   font-size: var(--fs-16);
   color: rgba(var(--ink-rgb), 0.55);
   text-align: center;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-6);
   font-style: italic;
 }
 
@@ -537,7 +537,7 @@
 .w-stars {
   color: #f5c518;
   font-size: var(--fs-13);
-  letter-spacing: 1px;
+  letter-spacing: var(--ls-8);
   white-space: nowrap;
 }
 .w-stars-dim {

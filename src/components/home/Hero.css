@@ -97,8 +97,8 @@
 .hero-line1 {
   font-size: clamp(2.3rem, 4vw, 3.4rem);
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  line-height: var(--lh-120);
+  letter-spacing: var(--ls-n2);
   margin: 0 0 var(--space-3-5);
   color: var(--white-95);
   animation: hero-rise 0.7s var(--easing-out) both;
@@ -114,7 +114,7 @@
 .hero-line2 {
   font-size: clamp(1.2rem, 2.1vw, 1.7rem);
   font-weight: 500;
-  line-height: 1.55;
+  line-height: var(--lh-160);
   margin: 0 0 var(--space-4);
   color: var(--white-80);
   animation: hero-rise 0.7s var(--easing-out) 0.18s both;
@@ -423,7 +423,7 @@
 .hero-sub {
   margin: 0 0 30px;
   font-size: var(--fs-13);
-  letter-spacing: 1.8px;
+  letter-spacing: var(--ls-12);
   color: var(--white-45);
   opacity: 0;
   transition: opacity var(--dur-700) ease var(--dur-150);
@@ -463,7 +463,7 @@
 .home-hero-content .description {
   font-family: "HarmonyOS Sans SC", sans-serif;
   font-size: 1.1em;
-  line-height: 1.6;
+  line-height: var(--lh-160);
   color: var(--white-60);
   max-width: 65ch;
   margin-bottom: var(--space-10);
@@ -779,7 +779,7 @@
   }
   .hero-sub {
     font-size: var(--fs-12);
-    letter-spacing: 1.2px;
+    letter-spacing: var(--ls-8);
     margin-bottom: var(--space-5-5);
   }
 

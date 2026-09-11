@@ -20,7 +20,7 @@ body {
   border-radius: var(--r-12);
   font-size: var(--fs-14);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
   color: var(--white-90);
   text-decoration: none;
   cursor: pointer;

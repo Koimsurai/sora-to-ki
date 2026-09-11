@@ -108,7 +108,7 @@
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--white-08);
-  line-height: 1;
+  line-height: var(--lh-100);
   opacity: 0;
   transform: translateY(4px);
   transition:
@@ -255,7 +255,7 @@ a.vp-btn:focus-visible {
   background: var(--black-55);
   color: var(--white-80);
   font-size: var(--fs-11);
-  line-height: 1.5;
+  line-height: var(--lh-150);
   white-space: pre-wrap;
   word-break: break-all;
   user-select: text;

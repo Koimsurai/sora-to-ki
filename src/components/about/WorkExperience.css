@@ -56,7 +56,7 @@
 
 .work-period {
   font-size: var(--fs-12);
-  letter-spacing: 1.5px;
+  letter-spacing: var(--ls-12);
   font-weight: 600;
   color: var(--white-50);
   font-variant-numeric: tabular-nums;
@@ -78,7 +78,7 @@
   font-weight: 600;
   margin: 0;
   color: var(--white-95);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
 }
 
 .work-card-role {
@@ -102,7 +102,7 @@
   color: rgba(var(--lavender-rgb), 0.8);
   border-radius: var(--r-full);
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 
 .work-groups {
@@ -116,7 +116,7 @@
   margin-bottom: var(--space-2);
   color: rgba(var(--lavender-rgb), 0.55);
   font-size: var(--fs-11);
-  letter-spacing: 2px;
+  letter-spacing: var(--ls-18);
 }
 
 .work-bullets {
@@ -132,7 +132,7 @@
   position: relative;
   padding-left: var(--space-4);
   font-size: var(--fs-14);
-  line-height: 1.65;
+  line-height: var(--lh-160);
   color: var(--white-70);
 }
 

@@ -82,7 +82,7 @@
   margin: 0;
   font-size: var(--fs-24);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
   background: linear-gradient(135deg, #fff 0%, rgba(var(--purple-300-rgb), 0.95) 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -93,13 +93,13 @@
   font-style: italic;
   font-size: var(--fs-16);
   color: var(--white-55);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 .app-footer-copy {
   margin: var(--space-2) 0 0;
   font-size: var(--fs-13);
   color: var(--white-45);
-  line-height: 1.6;
+  line-height: var(--lh-160);
 }
 .app-footer-copy a {
   color: rgba(var(--purple-300-rgb), 0.8);
@@ -150,7 +150,7 @@
   font-size: var(--fs-12);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ls-12);
   color: var(--white-90);
 }
 .app-footer-link {

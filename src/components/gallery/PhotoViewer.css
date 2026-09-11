@@ -35,7 +35,7 @@
   font-size: var(--fs-16);
   font-weight: 600;
   text-shadow: 0 2px 8px var(--black-50);
-  letter-spacing: 0.5px;
+  letter-spacing: var(--ls-4);
 }
 
 /* 右上角按鈕組 */

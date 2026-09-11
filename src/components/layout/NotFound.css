@@ -58,13 +58,13 @@
   align-items: center;
   justify-content: center;
   gap: clamp(var(--space-1), 1vw, var(--space-3));
-  line-height: 1;
+  line-height: var(--lh-100);
 }
 
 .nf-digit {
   font-size: clamp(5rem, 17vw, 11rem);
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--ls-n4);
   color: var(--white-95);
   /* 讓數字跟土星在同一個「發光」的世界裡，不然它會像貼上去的 */
   text-shadow: 0 0 60px rgba(var(--brand-rgb), 0.45);
@@ -139,7 +139,7 @@
   margin: var(--space-6) 0 0;
   font-size: clamp(1.35rem, 3vw, 1.9rem);
   font-weight: 700;
-  line-height: 1.45;
+  line-height: var(--lh-150);
   color: var(--white-95);
   /* 沒有這行標題會斷成「…星際之間」/「了。」，最後兩個字孤零零掉一行 */
   text-wrap: balance;
@@ -148,7 +148,7 @@
 .nf-sub {
   margin: var(--space-2-5) 0 0;
   font-size: clamp(0.9rem, 1.6vw, 1rem);
-  line-height: 1.8;
+  line-height: var(--lh-185);
   color: var(--white-60);
 }
 
@@ -166,7 +166,7 @@
   gap: var(--space-0-5) var(--space-2-5);
   margin: var(--space-6) 0 0;
   font-size: var(--fs-13);
-  line-height: 1.9;
+  line-height: var(--lh-185);
 }
 
 .nf-addr-label {

@@ -134,7 +134,7 @@
   font-weight: 600;
   color: #fff;
   margin: var(--space-1) 0;
-  line-height: 1.4;
+  line-height: var(--lh-140);
 }
 
 .link-card-internal .link-card-meta {

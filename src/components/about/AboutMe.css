@@ -7,10 +7,10 @@
 
 .about-bio .about-paragraph {
   font-size: var(--fs-16);
-  line-height: 1.85;
+  line-height: var(--lh-185);
   color: var(--white-70);
   margin: 0 0 var(--space-4-5);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 
 .about-bio .about-paragraph:last-child {
@@ -50,7 +50,7 @@
 
 .about-fact-row dt {
   font-size: var(--fs-11);
-  letter-spacing: 1.5px;
+  letter-spacing: var(--ls-12);
   text-transform: uppercase;
   color: var(--white-30);
   font-weight: 600;

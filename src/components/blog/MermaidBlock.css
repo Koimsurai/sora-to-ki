@@ -184,7 +184,7 @@
   color: var(--white-35);
   padding: var(--space-1) var(--space-2) var(--space-1);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-6);
   font-weight: 600;
 }
 
@@ -468,7 +468,7 @@
 .mm-action-ext {
   font-size: var(--fs-10);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 
 /* ══════════════════════════════════════

@@ -67,9 +67,9 @@
   max-width: 40rem;
   font-size: var(--fs-16);
   font-weight: 400;
-  line-height: 1.55;
+  line-height: var(--lh-160);
   color: var(--white-50);
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
   text-wrap: balance;
 }
 
@@ -178,11 +178,11 @@
 }
 .lang-icon {
   font-size: var(--fs-14);
-  line-height: 1;
+  line-height: var(--lh-100);
   opacity: 0.8;
 }
 .lang-code {
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
   font-weight: 500;
 }
 .lang-caret {
@@ -283,7 +283,7 @@
 .lang-badge {
   font-size: var(--fs-11);
   font-family: "JetBrains Mono", "Courier New", var(--cjk-font), monospace;
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-4);
   padding: var(--space-0-5) 7px;
   border-radius: var(--r-full);
   background: var(--white-06);
@@ -334,7 +334,7 @@
   font-size: var(--fs-12);
   color: var(--post-muted);
   margin-bottom: var(--space-2-5);
-  line-height: 1.5;
+  line-height: var(--lh-150);
 }
 
 .posts-nav-list {
@@ -350,7 +350,7 @@
   color: var(--white-50);
   text-decoration: none;
   transition: color var(--dur-200) ease;
-  line-height: 1.4;
+  line-height: var(--lh-140);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -449,7 +449,7 @@
 .prev-next-label {
   font-size: var(--fs-12);
   color: var(--white-40);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--ls-4);
 }
 .prev-next-card:hover .prev-next-label {
   color: var(--brand-light);
@@ -458,7 +458,7 @@
   font-size: var(--fs-16);
   color: var(--white-90);
   font-weight: 500;
-  line-height: 1.4;
+  line-height: var(--lh-140);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -515,7 +515,7 @@
 }
 .reaction-btn .reaction-emoji {
   font-size: var(--fs-16);
-  line-height: 1;
+  line-height: var(--lh-100);
 }
 .reaction-btn .reaction-count {
   font-size: var(--fs-12);
@@ -546,7 +546,7 @@
 }
 .series-nav-label {
   font-size: var(--fs-11);
-  letter-spacing: 0.18em;
+  letter-spacing: var(--ls-18);
   text-transform: uppercase;
   color: var(--brand-light);
 }
@@ -600,7 +600,7 @@
   color: var(--white-80);
   text-decoration: none;
   font-size: var(--fs-16);
-  line-height: 1.5;
+  line-height: var(--lh-150);
   transition: color var(--dur-200) ease;
 }
 a.series-nav-title:hover {
@@ -629,7 +629,7 @@ a.series-nav-title:hover {
   color: var(--white-90);
   font-weight: 500;
   margin: 0 0 var(--space-1-5) 0;
-  line-height: 1.4;
+  line-height: var(--lh-140);
 }
 
 .category-tooltip.category-tooltip-compact .category-tooltip-short {
@@ -668,7 +668,7 @@ a.series-nav-title:hover {
   font-size: var(--fs-12);
   color: var(--white-50);
   margin: 0 0 var(--space-2-5) 0;
-  line-height: 1.5;
+  line-height: var(--lh-150);
 }
 
 .category-tooltip-meta {
@@ -726,14 +726,14 @@ a.series-nav-title:hover {
   background: rgba(var(--brand-rgb), 0.15);
   color: var(--post-accent);
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-6);
 }
 
 .post-ai-summary-inline p {
   margin: 0;
   font-size: var(--fs-14);
   color: var(--white-55);
-  line-height: 1.7;
+  line-height: var(--lh-170);
 }
 
 .ai-summary-fade {
@@ -771,7 +771,7 @@ a.series-nav-title:hover {
 }
 .post-content .footnotes h2 {
   font-size: var(--fs-16);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-6);
   text-transform: uppercase;
   color: var(--white-50);
   margin-bottom: var(--space-3);
@@ -850,7 +850,7 @@ a.series-nav-title:hover {
   font-size: var(--fs-14);
   margin-bottom: var(--space-1);
   color: var(--alert-accent, var(--brand-light));
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 .post-content .markdown-alert-title svg,
 .post-content .markdown-alert-title svg path {
@@ -1008,7 +1008,7 @@ a.series-nav-title:hover {
   font-size: var(--fs-12);
   color: var(--post-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--ls-6);
 }
 
 .copy-button {
@@ -1059,11 +1059,11 @@ a.series-nav-title:hover {
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
   font-size: var(--fs-13);
   font-weight: 700;
-  letter-spacing: -0.05em;
+  letter-spacing: var(--ls-n4);
 }
 .terminal-title {
   font-size: var(--fs-12);
-  letter-spacing: 0.03em;
+  letter-spacing: var(--ls-2);
   color: var(--white-40);
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
 }
@@ -1085,7 +1085,7 @@ a.series-nav-title:hover {
      透明（背景由外層 .terminal-body 畫）。實測拿掉之後變成 rgb(18,18,18)。 */
   background: transparent !important;
   font-size: var(--fs-14);
-  line-height: 1.75;
+  line-height: var(--lh-170);
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   width: max-content;
   min-width: 100%;
@@ -1104,7 +1104,7 @@ a.series-nav-title:hover {
   color: var(--white-80);
   white-space: pre;
   font-size: var(--fs-14);
-  line-height: 1.75;
+  line-height: var(--lh-170);
   font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
 }
 .terminal-block ::-webkit-scrollbar {
@@ -1200,7 +1200,7 @@ a.series-nav-title:hover {
 }
 .language-emoji {
   font-size: 0.95em;
-  line-height: 1;
+  line-height: var(--lh-100);
 }
 
 /* ═══════════════════════
@@ -1325,7 +1325,7 @@ a.series-nav-title:hover {
 }
 .float-btn span {
   font-size: var(--fs-10);
-  line-height: 1;
+  line-height: var(--lh-100);
 }
 .float-btn:hover {
   color: #fff;
@@ -1817,7 +1817,7 @@ a.series-nav-title:hover {
   background: rgba(var(--amber-300-rgb), 0.06);
   font-size: var(--fs-14);
   color: var(--white-70);
-  line-height: 1.5;
+  line-height: var(--lh-150);
 }
 .ai-translation-icon {
   font-size: var(--fs-16);

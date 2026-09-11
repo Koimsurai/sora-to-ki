@@ -54,7 +54,7 @@
 
 .jt-year {
   font-size: var(--fs-12);
-  letter-spacing: 1.5px;
+  letter-spacing: var(--ls-12);
   font-weight: 600;
   color: var(--white-50);
   font-variant-numeric: tabular-nums;
@@ -80,7 +80,7 @@
 .jt-desc {
   margin: 0;
   font-size: var(--fs-14);
-  line-height: 1.75;
+  line-height: var(--lh-170);
   color: var(--white-70);
 }
 
@@ -116,7 +116,7 @@
   margin: var(--space-10) 0 0;
   text-align: center;
   font-size: var(--fs-14);
-  letter-spacing: 1px;
+  letter-spacing: var(--ls-8);
   color: rgba(var(--lavender-rgb), 0.55);
 }
 

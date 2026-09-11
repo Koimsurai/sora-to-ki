@@ -12,7 +12,7 @@
   gap: var(--space-1-5);
   font-size: var(--fs-12);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-8);
   text-transform: uppercase;
   color: rgba(var(--violet-300-rgb), 0.8);
   margin-bottom: var(--space-1-5);
@@ -20,14 +20,14 @@
 
 .mdx-note-quote {
   font-size: var(--fs-16);
-  line-height: 1;
+  line-height: var(--lh-100);
   color: rgba(var(--violet-300-rgb), 0.55);
 }
 
 .mdx-note-content {
   color: var(--white-70);
   font-size: var(--fs-16);
-  line-height: 1.7;
+  line-height: var(--lh-170);
 }
 
 .mdx-note-content > :first-child {
@@ -94,7 +94,7 @@
   box-shadow: 0 10px 30px var(--black-45);
   color: var(--white-80);
   font-size: var(--fs-13);
-  line-height: 1.55;
+  line-height: var(--lh-160);
   text-align: left;
   white-space: normal;
   opacity: 0;
@@ -125,7 +125,7 @@
   display: block;
   font-size: var(--fs-10);
   font-weight: 600;
-  letter-spacing: 0.09em;
+  letter-spacing: var(--ls-8);
   color: rgba(var(--amber-300-rgb), 0.9);
   margin-bottom: var(--space-1);
 }
@@ -206,7 +206,7 @@
   margin: 0 0 var(--space-2-5) var(--space-1-5);
   font-size: var(--fs-13);
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
   color: var(--white-60);
 }
 .mdx-chart-loading {
@@ -332,7 +332,7 @@
   color: var(--white-90);
   font-size: 0.88em;
   font-weight: 500;
-  line-height: 1.5;
+  line-height: var(--lh-150);
   text-decoration: none;
   white-space: nowrap;
   vertical-align: baseline;
@@ -672,7 +672,7 @@
   margin: 0 var(--space-0-5);
   font-family: inherit;
   font-size: 0.82em;
-  line-height: 1.4;
+  line-height: var(--lh-140);
   color: var(--white-80);
   background: var(--white-06);
   border: 1px solid var(--white-15);
@@ -788,7 +788,7 @@
   background: var(--white-02);
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   font-size: var(--fs-14);
-  line-height: 1.9;
+  line-height: var(--lh-185);
   overflow-x: auto;
 }
 .mdx-filetree-row {
@@ -825,7 +825,7 @@
   font-size: var(--fs-28);
   font-weight: 700;
   color: #fff;
-  line-height: 1.1;
+  line-height: var(--lh-110);
   font-variant-numeric: tabular-nums;
 }
 .mdx-stat-unit {
@@ -949,7 +949,7 @@
 .mdx-refs-title {
   font-size: var(--fs-12);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ls-6);
   text-transform: uppercase;
   color: var(--white-40);
   margin-bottom: var(--space-3);

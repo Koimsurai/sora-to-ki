@@ -23,7 +23,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-1);
 }
 
 .image-lightbox-img {

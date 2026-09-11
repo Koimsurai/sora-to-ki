@@ -13,7 +13,7 @@
  *
  * ## 基準檔為什麼存 hash 而不是原值
  *
- * 8560 個元素 × 38 個屬性直接存是好幾 MB，每次改樣式都會產生巨大 diff。
+ * 8560 個元素 × 39 個屬性直接存是好幾 MB，每次改樣式都會產生巨大 diff。
  * 存 hash 之後基準檔只有幾十 KB，而「哪個元素變了」照樣指得出來。
  *
  * ⚠ 代價是**報錯訊息本身不能只有 hash 與路徑**。只給
@@ -107,11 +107,10 @@ const ADMIN_ROUTES: { route: string; heading: string | RegExp }[] = [
  *
  *   width / height          —— `auto` 的解析值取決於文字寬度
  *   margin-left / -right    —— 同上（`margin: auto` 置中時解出來的是「剩餘空間」）
- *   line-height             —— `normal` 的解析值直接取自字體度量
  *   transform / opacity /
  *   box-shadow / filter     —— 動畫元素上逐幀不同
  *
- * 前三類的共通點是**依賴字體度量**，而 CI runner 沒有這台機器上的 CJK 字體
+ * 前兩類的共通點是**依賴字體度量**，而 CI runner 沒有這台機器上的 CJK 字體
  * （MiSans / Noto Sans TC / PingFang TC…），fallback 不同 → 文字寬度不同 → 數字就不同。
  * 實測 /setup 的 `.setup-category-subtitle` 本機 margin-left 是 687.906px，CI 不是。
  *
@@ -135,6 +134,13 @@ const ADMIN_ROUTES: { route: string; heading: string | RegExp }[] = [
  *                                    （這是它們跟 transform / opacity 的差別）
  *
  * 照這份檔案的規矩，加之前用另一個比例字體實測過一輪：只有 font-family 變。
+ *
+ * `line-height` 是 2026-09-10 **收回來**的。它原本被排除的理由是「`normal` 的解析值
+ * 直接取自字體度量」——那條對現在的專案**已經不成立**：Tailwind v4 遷移時補的那批
+ * `--text-*--line-height` 絕對值把全站的 `normal` 蓋光了，實測 7 個頁面 3326 個元素，
+ * **`normal` 出現 0 次**。換字體再測一次也只有 font-family 變。
+ * （順帶一提：Chrome 對 `line-height: normal` 回傳的是字串 `"normal"` 而不是 px，
+ *   所以就算真的有 `normal`，它也不會因為字體不同而變成不同的數字。）
  */
 const PROPS = [
   'background-color',
@@ -171,6 +177,7 @@ const PROPS = [
   'justify-content',
   'align-items',
   'z-index',
+  'line-height',
   'letter-spacing',
   'transition-duration',
   'transition-timing-function',
@@ -301,7 +308,7 @@ const hash = (s: string) => BigInt(`0x${createHash('sha1').update(s).digest('hex
  * 每個屬性各兩位十進位數字，串成一條「指紋」。基準檔每筆存成 `<hash> <指紋>`。
  *
  * 為什麼要有它：只有整體 hash 的話，報錯只能講「這個元素變了」，講不出**哪個屬性**變了。
- * 而 PROPS 有 38 個，把 38 個值全印出來反而更難讀——真正變的那一個會被淹掉
+ * 而 PROPS 有 39 個，把 39 個值全印出來反而更難讀——真正變的那一個會被淹掉
  * （第一版就是這樣，footer 連結的 `color` 夾在 30 條 `0px` / `none` 中間）。
  *
  * ⚠ **比對用的仍然是前面那個完整 hash，不是這條指紋。**

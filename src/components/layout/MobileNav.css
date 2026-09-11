@@ -48,7 +48,7 @@
   .mnav-brand {
     font-size: var(--fs-16);
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: var(--ls-4);
     color: var(--white-90);
   }
 
@@ -100,7 +100,7 @@
     font: inherit;
     font-size: var(--fs-18);
     font-weight: 500;
-    letter-spacing: 0.02em;
+    letter-spacing: var(--ls-2);
     padding: var(--space-4) 0;
     cursor: pointer;
     text-decoration: none;

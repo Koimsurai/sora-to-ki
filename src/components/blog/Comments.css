@@ -271,7 +271,7 @@
   font-size: var(--fs-12);
   padding: 0 var(--space-0-5);
   margin-left: auto;
-  line-height: 1;
+  line-height: var(--lh-100);
 }
 
 .reply-indicator button:hover {
@@ -291,7 +291,7 @@
   background: transparent;
   color: #e2e0ea;
   font-size: var(--fs-14);
-  line-height: 1.65;
+  line-height: var(--lh-160);
   resize: vertical;
   min-height: 90px;
   transition: border-color var(--dur-200);
@@ -421,7 +421,7 @@
   background: rgba(var(--brand-rgb), 0.15);
   color: var(--violet-400);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
-  letter-spacing: 0.03em;
+  letter-spacing: var(--ls-2);
 }
 
 .comment-avatar {
@@ -483,7 +483,7 @@
   margin: 0 0 var(--space-5);
   padding-bottom: var(--space-2-5);
   border-bottom: 1px solid var(--white-04);
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }
 
 /* ── Individual Comment ── */
@@ -534,7 +534,7 @@
 .comment-text {
   margin: 0 0 var(--space-2);
   font-size: var(--fs-14);
-  line-height: 1.7;
+  line-height: var(--lh-170);
   color: var(--white-60);
   word-break: break-word;
 }
@@ -647,5 +647,5 @@
   color: rgba(var(--ink-rgb), 0.55);
   font-size: var(--fs-14);
   text-align: center;
-  letter-spacing: 0.02em;
+  letter-spacing: var(--ls-2);
 }

@@ -96,7 +96,7 @@
 .cmdk-wrap [cmdk-group-heading] {
   font-size: var(--fs-10);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--ls-8);
   color: var(--white-35);
   padding: var(--space-2-5) var(--space-2-5) var(--space-1);
   user-select: none;

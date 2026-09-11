@@ -6,7 +6,7 @@
   /* ⚠ 同上：shiki 的主題背景要壓掉，背景由外層 .code-surface-body 畫 */
   background: transparent !important;
   font-size: var(--fs-14);
-  line-height: 1.7;
+  line-height: var(--lh-170);
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   width: max-content;
   min-width: 100%;
@@ -34,7 +34,7 @@
   color: var(--white-70);
   white-space: pre;
   font-size: var(--fs-14);
-  line-height: 1.7;
+  line-height: var(--lh-170);
   font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
   animation: shikiPulse 1.4s ease-in-out infinite;
 }
