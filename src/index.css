@@ -277,6 +277,27 @@
   --ls-24: 0.24em;
   --ls-30: 0.3em; /* 小型大寫標籤那種很鬆的字距 */
 
+  /* ── 模糊尺 ────────────────────────────────────────────────────────────
+     `blur()` 的半徑原本有 17 種、100 次，2/4/5/6/8/10/12/14/16/20/24/28/30 幾乎
+     每一格都有人用。三個層級，各自的尺度差一個數量級，不要互相貼：
+
+       2px           劇透遮罩（要讓人看得出「下面有字」但讀不出來）
+       4–28px        玻璃面板的 backdrop-filter
+       60 / 110px    大面積的氛圍模糊（背景光暈、模糊掉的封面圖）
+
+     ⚠️ `backdrop-filter` 的 `saturate()` 原本有**三種擺法**
+     （`saturate(180%) blur(28px)` / `blur(28px) saturate(180%)` / 只有 blur），
+     效果一樣但讀起來像三種東西。統一成 `blur() saturate()`。 */
+  --blur-2: 2px;
+  --blur-4: 4px;
+  --blur-8: 8px;
+  --blur-12: 12px;
+  --blur-16: 16px;
+  --blur-20: 20px;
+  --blur-28: 28px;
+  --blur-60: 60px;
+  --blur-110: 110px;
+
   /* 把 text-* 的 line-height 從 v4 的「無單位比例」改回 v3 的絕對值。
      v4 預設是 `calc(1 / 0.75)` 這種比例，乘上元素自己的 font-size；只要字級沒被別的
      規則蓋掉，算出來就等於下面這些數字（比例本來就是這樣推導的），所以這一段對絕大多數
@@ -875,8 +896,8 @@ body::after {
   background: var(--white-02);
   border: 1px solid var(--white-08);
   border-radius: var(--r-20);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
   /* 玻璃寫實感：頂緣一條受光高光 + 下方柔和落影（拉出與星空背景的層次） */
   box-shadow:
     inset 0 1px 0 var(--white-06),

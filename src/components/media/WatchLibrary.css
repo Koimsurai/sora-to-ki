@@ -217,7 +217,7 @@
   padding: var(--space-1-5);
   min-width: 160px;
   background: rgba(var(--surface-3-rgb), 0.95);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--blur-12));
   border: 1px solid rgba(var(--purple-300-rgb), 0.2);
   border-radius: var(--r-10);
   box-shadow: 0 12px 32px var(--black-55);

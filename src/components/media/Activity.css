@@ -33,7 +33,7 @@
 .activity-nebula-bg .nebula-layer {
   position: absolute;
   border-radius: var(--r-round);
-  filter: blur(110px);
+  filter: blur(var(--blur-110));
   opacity: 0.18;
   will-change: transform;
 }
@@ -313,7 +313,7 @@
   inset: 8px;
   border-radius: var(--r-8);
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.25), rgba(var(--magenta-rgb), 0.2));
-  filter: blur(12px);
+  filter: blur(var(--blur-12));
   opacity: 0.7;
   z-index: 0;
   pointer-events: none;
@@ -424,7 +424,7 @@
   font-size: var(--fs-12);
   color: var(--white-80);
   width: fit-content;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(var(--blur-4));
 }
 .steam-profile-featured img {
   width: 22px;
@@ -812,7 +812,7 @@
 /* 刷新中：熱度圖淡出並失焦，loader 從上方淡入 */
 .heatmap-grid-wrapper.is-refreshing > .heatmap-grid {
   opacity: 0.25;
-  filter: blur(2px) saturate(0.5);
+  filter: blur(var(--blur-2)) saturate(0.5);
   pointer-events: none;
   transition:
     opacity var(--dur-400) ease,

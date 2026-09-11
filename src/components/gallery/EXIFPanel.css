@@ -7,7 +7,7 @@
   bottom: 0;
   width: 400px;
   background: var(--black-95);
-  backdrop-filter: blur(30px);
+  backdrop-filter: blur(var(--blur-28));
   border-left: 1.5px solid var(--white-10);
   overflow-y: auto;
   overflow-x: hidden;

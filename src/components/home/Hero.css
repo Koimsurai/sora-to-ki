@@ -555,7 +555,7 @@
   0% {
     /* 模擬輕微向右下拖尾 */
     box-shadow: 2px 2px 25px 8px rgba(var(--clr-button-rgb), 0.75);
-    filter: blur(5px);
+    filter: blur(var(--blur-4));
     opacity: 0.9;
   }
 
@@ -563,7 +563,7 @@
     /* 模擬輕微向左上拖尾，顏色變換 */
     box-shadow: -2px -2px 45px 18px rgba(var(--clr-tertiary-rgb), 0.85);
     /* 增強並變色 */
-    filter: blur(8px);
+    filter: blur(var(--blur-8));
     /* 增加模糊 */
     opacity: 1;
   }
@@ -572,7 +572,7 @@
     /* 回到初始狀態附近，顏色再次變換 */
     box-shadow: 1px 1px 20px 6px rgba(var(--clr-accent-rgb), 0.7);
     /* 變回收斂的強調色 */
-    filter: blur(4px);
+    filter: blur(var(--blur-4));
     opacity: 0.95;
   }
 }

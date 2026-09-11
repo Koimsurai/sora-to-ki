@@ -59,8 +59,8 @@
   border-radius: var(--r-16);
   background: rgba(var(--surface-1-rgb), 0.5);
   border: 1px solid var(--white-06);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-12));
+  -webkit-backdrop-filter: blur(var(--blur-12));
   transition:
     transform var(--dur-400) var(--easing-out),
     border-color var(--dur-400) ease;
@@ -337,8 +337,8 @@
   border-radius: var(--r-12);
   background: rgba(var(--surface-1-rgb), 0.5);
   border: 1px solid var(--white-08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-12));
+  -webkit-backdrop-filter: blur(var(--blur-12));
 }
 .tk-compose-text,
 .tk-compose-url {
@@ -526,8 +526,8 @@
   inset: 0;
   z-index: var(--z-modal);
   background: rgba(var(--surface-0-rgb), 0.7);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(var(--blur-4));
+  -webkit-backdrop-filter: blur(var(--blur-4));
   display: flex;
   align-items: flex-start;
   justify-content: center;

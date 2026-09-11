@@ -211,8 +211,8 @@
     inset 0 1px 0 var(--white-06),
     0 18px 48px var(--black-55),
     0 0 0 1px rgba(var(--brand-rgb), 0.08);
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(var(--blur-20)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-20)) saturate(140%);
   z-index: var(--z-menu);
   display: flex;
   flex-direction: column;
@@ -305,7 +305,7 @@
   box-shadow: 0 12px 36px var(--black-50);
   font-size: var(--fs-14);
   z-index: var(--z-toast);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--blur-12));
 }
 
 .post-tags {
@@ -534,7 +534,7 @@
   background: rgba(var(--brand-rgb), 0.06);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: var(--r-12);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
 }
 .series-nav-header {
   display: flex;
@@ -640,8 +640,8 @@ a.series-nav-title:hover {
   width: 240px;
   padding: var(--space-3-5);
   background: rgba(var(--surface-1-rgb), 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(var(--blur-20));
+  -webkit-backdrop-filter: blur(var(--blur-20));
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   border-radius: var(--r-12);
   box-shadow:
@@ -931,7 +931,7 @@ a.series-nav-title:hover {
   gap: var(--space-3);
   padding: 7px var(--space-4);
   background: var(--black-80);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(var(--blur-16));
   border-radius: var(--r-10);
   font-size: var(--fs-12);
   color: var(--white-80);
@@ -955,7 +955,7 @@ a.series-nav-title:hover {
   align-items: center;
   justify-content: center;
   background: var(--black-90);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
   cursor: zoom-out;
 }
 
@@ -1277,8 +1277,8 @@ a.series-nav-title:hover {
   box-shadow:
     inset 0 1px 0 var(--white-08),
     0 4px 14px var(--black-20);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-12));
+  -webkit-backdrop-filter: blur(var(--blur-12));
   isolation: isolate;
   overflow: hidden;
   transition:
@@ -1394,8 +1394,8 @@ a.series-nav-title:hover {
   flex-direction: column;
   gap: var(--space-0-5);
   min-width: 168px;
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(var(--blur-20)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur-20)) saturate(140%);
   box-shadow:
     inset 0 1px 0 var(--white-06),
     0 14px 40px var(--black-50);
@@ -1438,8 +1438,8 @@ a.series-nav-title:hover {
   align-items: center;
   justify-content: center;
   z-index: var(--z-modal);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(var(--blur-4));
+  -webkit-backdrop-filter: blur(var(--blur-4));
 }
 
 .subscribe-modal {
@@ -1451,8 +1451,8 @@ a.series-nav-title:hover {
   border-radius: var(--r-16);
   padding: var(--space-8);
   text-align: center;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(var(--blur-16));
+  -webkit-backdrop-filter: blur(var(--blur-16));
 }
 
 .subscribe-close {
@@ -1603,8 +1603,8 @@ a.series-nav-title:hover {
   align-items: center;
   justify-content: center;
   transition: all var(--dur-200);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 .font-switcher-btn:hover {
@@ -1625,8 +1625,8 @@ a.series-nav-title:hover {
   flex-direction: column;
   gap: var(--space-1);
   min-width: 140px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(var(--blur-16));
+  -webkit-backdrop-filter: blur(var(--blur-16));
 }
 
 .font-option {

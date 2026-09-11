@@ -123,7 +123,7 @@
   inset: -20px;
   background: radial-gradient(circle, rgba(var(--brand-rgb), 0.2) 0%, transparent 65%);
   pointer-events: none;
-  filter: blur(4px);
+  filter: blur(var(--blur-4));
   animation: koimLoaderBreath 2.4s ease-in-out infinite reverse;
 }
 

@@ -213,7 +213,7 @@
   background: var(--black-45);
   border: 1px solid var(--white-25);
   border-radius: var(--r-full);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
   letter-spacing: var(--ls-2);
   transition:
     background var(--dur-250) ease,
@@ -316,8 +316,8 @@
   background: rgba(var(--surface-1-rgb), 0.55);
   border: 1px solid var(--white-06);
   border-radius: var(--r-16);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
   transition:
     transform var(--dur-400) var(--easing-out),
     border-color var(--dur-300) ease,

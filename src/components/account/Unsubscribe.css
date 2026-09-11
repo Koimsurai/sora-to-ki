@@ -14,8 +14,8 @@
   background: var(--white-02);
   border: 1px solid var(--white-08);
   border-radius: var(--r-20);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(var(--blur-12));
+  -webkit-backdrop-filter: blur(var(--blur-12));
   text-align: center;
   color: var(--white-90);
   box-shadow: 0 24px 60px var(--black-45);

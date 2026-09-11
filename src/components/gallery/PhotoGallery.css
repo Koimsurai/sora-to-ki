@@ -114,7 +114,7 @@
   flex-direction: column;
   justify-content: flex-end;
   padding: var(--space-6);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(var(--blur-4));
 }
 
 .group:hover .photo-info-overlay {
@@ -184,8 +184,8 @@
   border-radius: var(--r-full);
   color: var(--white-50);
   font-size: var(--fs-14);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 /* Category Tabs */
@@ -212,8 +212,8 @@
   font-size: var(--fs-14);
   cursor: pointer;
   transition: all var(--dur-300) ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 .category-tab:hover {

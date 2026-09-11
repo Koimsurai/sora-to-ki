@@ -177,8 +177,8 @@
   color: var(--white-55);
   cursor: pointer;
   transition: all var(--dur-250) ease;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 .sort-pill.active {
@@ -301,8 +301,8 @@
   border-radius: var(--r-16);
   padding: var(--space-5-5) var(--space-6);
   transition: all var(--dur-400) var(--easing-standard);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--blur-12));
+  -webkit-backdrop-filter: blur(var(--blur-12));
 }
 
 .note-body:hover {
@@ -461,7 +461,7 @@
     rgba(var(--purple-500-rgb), 0.1) 100%
   );
   z-index: -1;
-  filter: blur(8px);
+  filter: blur(var(--blur-8));
   opacity: 0.6;
   transition: opacity var(--dur-400) ease;
 }
@@ -917,8 +917,8 @@
   align-items: center;
   justify-content: center;
   background: var(--black-60);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 .floating-comments-panel {

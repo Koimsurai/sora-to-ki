@@ -281,6 +281,19 @@ for (const m of blankComments(INDEX_CSS).matchAll(/(--ls-n?\d+)\s*:\s*(-?[\d.]+)
  */
 const LH_GRANDFATHERED = new Set(['0', '0.8', '0.95']);
 
+/**
+ * `blur()` 的半徑尺（`--blur-*`，名字就是 px）。只查 `filter` / `backdrop-filter`
+ * 與它們的 `-webkit-` 前綴版——**前綴版必須跟沒前綴的同值**，不然 Safari 拿到的
+ * 模糊跟 Chrome 不一樣，而那是靜態檢查唯一抓得到的地方。
+ *
+ * ⚠ 只查 `blur()`，不查 `drop-shadow()` / `brightness()` / `saturate()`：
+ * 那些是陰影與亮度，不是模糊，各自的值域完全不同。
+ */
+const BLUR_PX = new Set<number>();
+for (const m of blankComments(INDEX_CSS).matchAll(/--blur-(\d+)\s*:/g)) BLUR_PX.add(Number(m[1]));
+const FILTER_PROP = /^(-webkit-)?(backdrop-)?filter$/;
+const BLUR_CALL = /blur\((\d*\.?\d+)px\)/g;
+
 const TRANSITION_PROP = /^transition(-duration|-delay)?$/;
 const TIME = /(?<![\w.-])(\d*\.?\d+)(m?s)(?![\w-])/g;
 const BEZIER = /cubic-bezier\([^()]*\)/g;
@@ -447,6 +460,25 @@ function check(file: string): Problem[] {
           why: `z-index ${n} ≥ ${Z_MIN} —— 那是「我要蓋過全世界」，必須是有名字的決定`,
           fix: '改用 index.css 的 --z-* 其中一格；如果它其實只跟自己的兄弟比，改成 1/2/3 這種局部值',
         });
+      }
+    }
+
+    // ── blur() 的半徑 ──
+    if (FILTER_PROP.test(prop)) {
+      for (const bm of value.matchAll(BLUR_CALL)) {
+        const px = Number(bm[1]);
+        problems.push(
+          BLUR_PX.has(px)
+            ? { file, line, prop, raw: bm[0], why: `${px}px 尺上有這一格`, fix: `改用 blur(var(--blur-${px}))` }
+            : {
+                file,
+                line,
+                prop,
+                raw: bm[0],
+                why: `${px}px 不在模糊尺上`,
+                fix: '改用最接近的 blur(var(--blur-*))，或把這一格加進 index.css 的尺',
+              },
+        );
       }
     }
 
@@ -627,7 +659,7 @@ const problems = files.flatMap(check);
 
 if (problems.length === 0) {
   console.log(
-    `✅ 間距、字級、行高、字距、圓角、堆疊層、過渡與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`,
+    `✅ 間距、字級、行高、字距、圓角、模糊、堆疊層、過渡與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`,
   );
   process.exit(0);
 }

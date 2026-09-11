@@ -51,7 +51,7 @@
     rgba(var(--brand-rgb), 0.02) 35%,
     transparent 70%
   );
-  filter: blur(50px);
+  filter: blur(var(--blur-60));
   pointer-events: none;
   z-index: 0;
 }

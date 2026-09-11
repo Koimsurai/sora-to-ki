@@ -15,8 +15,8 @@
     right: 0;
     z-index: 3; /* 蓋過 header(1000) 與其 z-1001 的漢堡/使用者鈕 */
     background: rgba(var(--surface-0-rgb), 0.95);
-    backdrop-filter: blur(28px) saturate(140%);
-    -webkit-backdrop-filter: blur(28px) saturate(140%);
+    backdrop-filter: blur(var(--blur-28)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--blur-28)) saturate(140%);
     border-bottom: 1px solid var(--white-08);
     box-shadow: 0 24px 60px -20px var(--black-70);
     border-radius: 0 0 var(--r-20) var(--r-20);

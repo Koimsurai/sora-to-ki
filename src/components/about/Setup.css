@@ -252,7 +252,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(var(--blur-8));
 }
 
 .setup-category-tab:hover {

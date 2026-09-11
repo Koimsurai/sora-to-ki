@@ -88,7 +88,7 @@
 /* 懸停提示 */
 .monaco-editor-glass .monaco-hover {
   background: rgba(var(--zinc-900-rgb), 0.95);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(var(--blur-16));
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   border-radius: var(--r-8);
   box-shadow: 0 8px 32px var(--black-50);
@@ -97,7 +97,7 @@
 /* 建議框 */
 .monaco-editor-glass .suggest-widget {
   background: rgba(var(--zinc-900-rgb), 0.95);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(var(--blur-16));
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   border-radius: var(--r-8);
   box-shadow: 0 8px 32px var(--black-50);
@@ -124,8 +124,8 @@
   top: 0;
   z-index: 10;
   background: rgba(var(--zinc-900-rgb), 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--blur-12));
+  -webkit-backdrop-filter: blur(var(--blur-12));
 }
 
 /* Vim 模式狀態列（C-1）— 顯示在編輯器底部，:command / current mode 提示 */

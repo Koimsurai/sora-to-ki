@@ -170,13 +170,13 @@ layer**：`index.css` 的 `@layer base`（含那條全站 `button { 紫底 }` �
 七個檔案各自寫了高特異性的繞過碼並留下註解解釋——**那些註解描述的是已經消失的問題**，
 不要拿它們當範例照抄。真的遇到蓋不過去的情況，先確認你的規則有沒有被包進某個 layer。
 
-### 間距、字級、行高、字距、圓角、堆疊層與過渡一律走 token，有一道檢查在擋
+### 間距、字級、行高、字距、圓角、模糊、堆疊層與過渡一律走 token，有一道檢查在擋
 
 ```bash
 pnpm check:css-tokens      # CI 與 pre-commit 都跑
 ```
 
-八把尺都定義在 `src/index.css` 的 `@theme`：
+九把尺都定義在 `src/index.css` 的 `@theme`：
 
 | | token | 範圍 |
 |---|---|---|
@@ -188,6 +188,7 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 | 堆疊層 | `--z-float` … `--z-intro` | 11 格，1000 起跳每格 100；門檻是 1000 |
 | 過渡時長 | `--dur-100` … `--dur-1000` | 9 格，密在 100–300ms |
 | 緩動 | `--easing-standard` / `-out` / `-back` | 三條曲線；`ease` 那批關鍵字保持原樣 |
+| 模糊 | `--blur-2` … `--blur-110` | 9 格，三個層級：2 劇透／4–28 玻璃／60–110 氛圍 |
 
 `margin` / `padding` / `gap` / `font-size` / `line-height` / `letter-spacing` /
 `border-radius` / `transition` 的時間與曲線不准再寫字面值；`z-index` 的門檻是 1000。
@@ -293,6 +294,25 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 根脈絡、寫 49/50，所以實際上畫在**頂欄與所有 modal 之上**——跟它們原本的註解相反
 （那條註解已改成寫實話）。兩層都是 `pointer-events: none` 的極淡覆蓋所以沒人注意到。
 要改成「只蓋內容」得把它們搬進容器，那是視覺決定，不是排版 bug。
+
+### 模糊：`--blur-*` 九格，三個層級不要互相貼
+
+```
+--blur-2                              劇透遮罩（看得出下面有字，但讀不出來）
+--blur-4 / 8 / 12 / 16 / 20 / 28      玻璃面板的 backdrop-filter
+--blur-60 / 110                       大面積氛圍模糊（背景光暈、模糊掉的封面圖）
+```
+
+⚠️ **`-webkit-backdrop-filter` 必須跟沒前綴的同值**，不然 Safari 的模糊跟 Chrome 不一樣。
+`check:css-tokens` 兩個都查——這是靜態檢查唯一抓得到這件事的地方（第一版 codemod 就是
+漏了前綴版，66 處沒換到）。
+
+⚠️ **`saturate()` 原本有三種擺法**（`saturate() blur()` / `blur() saturate()` / 只有 blur），
+效果一樣但讀起來像三種東西。統一成 `blur() saturate()`。
+
+⚠️ **改 blur 沒辦法用 computed-style 或截圖驗**，因為 `html.no-gpu` 在測試瀏覽器一定會掛、
+把 `backdrop-filter` 全部壓成 `none`。要驗就在瀏覽器裡 `classList.remove('no-gpu')` 之後
+再讀計算值——導入這把尺時就是這樣確認「所有 blur 半徑都落在尺上」的。
 
 ### 站點自己的品牌色：語意命名
 
@@ -427,8 +447,8 @@ warning 會出現在 CI 輸出但不擋——跟 knip 當初的處理一樣，�
 | 類別 | 數量 | 為什麼留 |
 |---|---|---|
 | `@media (prefers-reduced-motion)` | 8 | 要蓋過全站元件動畫；**測試瀏覽器不會觸發** |
-| `html.no-gpu *` | 6 | 無 GPU 機器的降級；同樣不會被觸發 |
-| `html.fs-active` | 1 | 全螢幕影片的 GPU 爭用修正；同上 |
+| `html.no-gpu *` | 6 | 無 GPU 機器的降級；⚠ **測試瀏覽器一定會觸發**（見下面） |
+| `html.fs-active` | 1 | 全螢幕影片的 GPU 爭用修正；不會被觸發 |
 | shiki 背景、`.toc-bottom-link` 邊框 | 4 | 壓 shiki 自己的主題／全域 button 規則 |
 | 後台表單邊框、monaco 捲軸與行號 | 6 | 壓 shadcn utility 與 monaco 注入的樣式 |
 | `.galaxy-bubble`（手機版） | 2 | 壓元件用 inline style 算出來的泡泡大小 |
@@ -469,7 +489,7 @@ vitest 上去比那個最壞情況更糟。實際踩過：併行那次冒出一�
 
 ### 樣式回歸有守門：`tests/e2e/computed-style.spec.ts`
 
-跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面共 4243 個元素的 39 個
+跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面共 4243 個元素的 41 個
 計算後屬性。改了樣式而它報紅是**正常的**：
 
 ```bash
@@ -490,7 +510,8 @@ UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
 
    | 排除 | 原因 |
    |---|---|
-   | `transform` `opacity` `box-shadow` `filter` | 動畫元素上逐幀不同 |
+   | `transform` `opacity` | 動畫元素上逐幀不同（framer-motion 用 rAF 寫 inline style，CSS 關不掉） |
+   | `filter` `backdrop-filter` | 被 `html.no-gpu` 壓成 `none`，而那個 class 在測試瀏覽器一定會掛 |
    | `width` `height` | `auto` 的解析值取決於文字寬度 |
    | `margin-left` `margin-right` | 同上（`margin: auto` 置中時解出的是「剩餘空間」） |
 
@@ -522,12 +543,22 @@ UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
 ⚠️ **像素比對測不準。** 實測噪音底線：`/blog/43` **7810 px**（mermaid 渲染時序）、
 `/history` 228 px，而 `/music` 的專輯圖來自 Spotify CDN 根本固定不了。真正的 CSS 變化
 會被這些淹掉。改用 **`getComputedStyle` 比對**：它是 cascade 的最終結果，跟圖片載到
-第幾張無關。噪音只剩動畫屬性（`transform`/`opacity`/`box-shadow`/`filter`），過濾掉就是
-確定性的。
+第幾張無關。噪音只剩動畫屬性（`transform`/`opacity`）與被 `html.no-gpu` 壓掉的
+`filter`/`backdrop-filter`，過濾掉就是確定性的。
 
-⚠️ **三類東西「量到 0 差異」不代表安全**，因為它們在測試環境根本不會套用：
-`prefers-reduced-motion`、`html.no-gpu`、`html.fs-active`。這三類要靠讀規則判斷，
-不要靠量測。
+⚠️ **`prefers-reduced-motion` 與 `html.fs-active` 在測試環境不會套用**，所以那兩類
+「量到 0 差異」不代表安全，要靠讀規則判斷。
+
+⚠️ **但 `html.no-gpu` 會套用，而且是反過來的問題。** 無頭 Chromium 就是軟體渲染，
+`SpaceBackdropShell` 的 `isSoftwareRenderer()` 一律為真 → 那個 class 一定掛上去
+（實測 12 條路由 × 3 次全部 no-gpu=Y）。後果是 `html.no-gpu *` 把**每一個元素**的
+`backdrop-filter` 壓成 `none !important`，光暈類的 `filter` 也一樣。所以：
+
+- 量 `backdrop-filter` / `filter` 時要先 `document.documentElement.classList.remove('no-gpu')`，
+  否則量到的是降級後的畫面，不是使用者看到的。
+- **這兩個屬性也因此不能收進 `computed-style` 的 PROPS**：基準會把「這台 runner
+  沒有 GPU」寫死進去，而且那個 class 是 lazy + ClientOnly **非同步**掛的，
+  快照拍到掛上前還是掛上後不保證。詳見那支 spec 裡 PROPS 上面的說明。
 
 ⚠️ **`:hover` / `:focus` 也要主動觸發。** 靜態截圖與靜態 computed style 都碰不到。
 做法是從 CSS 反推「哪些選擇器 × 哪些狀態」帶著 `!important`，再逐一 hover/focus。

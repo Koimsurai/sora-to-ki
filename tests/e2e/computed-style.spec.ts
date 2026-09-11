@@ -13,7 +13,7 @@
  *
  * ## 基準檔為什麼存 hash 而不是原值
  *
- * 8560 個元素 × 39 個屬性直接存是好幾 MB，每次改樣式都會產生巨大 diff。
+ * 8560 個元素 × 41 個屬性直接存是好幾 MB，每次改樣式都會產生巨大 diff。
  * 存 hash 之後基準檔只有幾十 KB，而「哪個元素變了」照樣指得出來。
  *
  * ⚠ 代價是**報錯訊息本身不能只有 hash 與路徑**。只給
@@ -29,8 +29,9 @@
  *
  * ## 動畫屬性為什麼排除
  *
- * transform / opacity / box-shadow / filter 在有動畫的元素上每一幀都不同，
- * 收進來就變成隨機紅。這幾個屬性的回歸靠人眼與 Lighthouse，不靠這支。
+ * transform / opacity 在有動畫的元素上每一幀都不同，收進來就變成隨機紅
+ * （framer-motion 用 rAF 直接寫 inline style，CSS 那條關動畫的規則停不掉它）。
+ * filter / backdrop-filter 則是被 `html.no-gpu` 壓成 `none`，詳見 PROPS 上面的說明。
  *
  * ## 更新基準
  *
@@ -107,8 +108,8 @@ const ADMIN_ROUTES: { route: string; heading: string | RegExp }[] = [
  *
  *   width / height          —— `auto` 的解析值取決於文字寬度
  *   margin-left / -right    —— 同上（`margin: auto` 置中時解出來的是「剩餘空間」）
- *   transform / opacity /
- *   box-shadow / filter     —— 動畫元素上逐幀不同
+ *   transform / opacity     —— 動畫元素上逐幀不同（transform 還實測會被字體影響：
+ *                              `translateX(-50%)` 解析成 px 時要看元素寬度）
  *
  * 前兩類的共通點是**依賴字體度量**，而 CI runner 沒有這台機器上的 CJK 字體
  * （MiSans / Noto Sans TC / PingFang TC…），fallback 不同 → 文字寬度不同 → 數字就不同。
@@ -141,6 +142,30 @@ const ADMIN_ROUTES: { route: string; heading: string | RegExp }[] = [
  * **`normal` 出現 0 次**。換字體再測一次也只有 font-family 變。
  * （順帶一提：Chrome 對 `line-height: normal` 回傳的是字串 `"normal"` 而不是 px，
  *   所以就算真的有 `normal`，它也不會因為字體不同而變成不同的數字。）
+ *
+ * `box-shadow` / `text-shadow` 是 2026-09-11 **收回來**的，理由跟 line-height 一樣：
+ * **原本那條排除理由已經過期**。它們當初跟 transform / opacity 一起被歸類成
+ * 「動畫元素上逐幀不同」，但那是 `transition:none` / `animation:none` 那個年代的事——
+ * 現在關動畫的寫法是 `animation-name:none`，它把動畫整個移除、元素退回沒有動畫時的值。
+ * 實測（8 個頁面 3696 個元素、同一份 build 連抓三次）：三次完全一致，換字體也不變。
+ *
+ * ⚠ **`filter` 與 `backdrop-filter` 試過之後決定不收**，這不是漏掉。三個理由：
+ *
+ *  1. `html.no-gpu *` 把 `backdrop-filter` 設成 `none !important`，而**這個 class 在測試
+ *     瀏覽器一定會掛**——無頭 Chromium 就是軟體渲染，`SpaceBackdropShell` 的
+ *     `isSoftwareRenderer()` 一律為真（實測 12 條路由 × 3 次全部 no-gpu=Y）。
+ *     於是絕大多數元素讀到的都是 `none`，收進來是又一個「永遠抓不到東西」的假守門。
+ *  2. 更糟的是那個 class 是 **lazy + ClientOnly 非同步掛上去的**，所以快照拍到的是
+ *     「掛上前」還是「掛上後」不保證——變異測試那次就抓到了非 none 的 backdrop-filter，
+ *     跟上面那個量測結果對不起來。基準等於把時序賭進去。
+ *  3. 而且基準會把「**這台 runner 沒有 GPU**」寫死進去。哪天 CI 換成有 GPU 的機器，
+ *     整批 backdrop-filter 與光暈類 filter 會一起翻掉，紅的卻不是 CSS。
+ *
+ * `filter` 另外還有 JS 驅動的來源（`ProgressiveImage` 的 `blur(10px)` 模糊漸入、
+ * `Watch.tsx` 的 framer-motion variants），那跟圖片載入時序綁在一起，CSS 關不掉。
+ *
+ * **要驗這兩個屬性得另外做**：在瀏覽器裡 `classList.remove('no-gpu')` 之後再讀，
+ * 那才是真實使用者看到的值（`--blur-*` 那批就是這樣驗的）。
  */
 const PROPS = [
   'background-color',
@@ -182,6 +207,8 @@ const PROPS = [
   'transition-duration',
   'transition-timing-function',
   'animation-duration',
+  'box-shadow',
+  'text-shadow',
 ];
 
 /**
@@ -308,7 +335,7 @@ const hash = (s: string) => BigInt(`0x${createHash('sha1').update(s).digest('hex
  * 每個屬性各兩位十進位數字，串成一條「指紋」。基準檔每筆存成 `<hash> <指紋>`。
  *
  * 為什麼要有它：只有整體 hash 的話，報錯只能講「這個元素變了」，講不出**哪個屬性**變了。
- * 而 PROPS 有 39 個，把 39 個值全印出來反而更難讀——真正變的那一個會被淹掉
+ * 而 PROPS 有 41 個，把 41 個值全印出來反而更難讀——真正變的那一個會被淹掉
  * （第一版就是這樣，footer 連結的 `color` 夾在 30 條 `0px` / `none` 中間）。
  *
  * ⚠ **比對用的仍然是前面那個完整 hash，不是這條指紋。**
