@@ -6,7 +6,7 @@
 :root {
   --post-accent: var(--brand);
   --post-accent-glow: rgba(var(--brand-rgb), 0.35);
-  --post-green: #2cb67d;
+  --post-green: var(--clr-tertiary);
   --post-muted: var(--white-45);
   --post-card-bg: var(--white-02);
   --post-card-border: var(--white-06);
@@ -868,24 +868,24 @@ a.series-nav-title:hover {
 }
 
 .post-content .markdown-alert-note {
-  --alert-accent: #7dd3fc;
-  --alert-bg: rgba(125, 211, 252, 0.06);
+  --alert-accent: var(--sky-300);
+  --alert-bg: rgba(var(--sky-300-rgb), 0.06);
 }
 .post-content .markdown-alert-tip {
-  --alert-accent: #86efac;
-  --alert-bg: rgba(134, 239, 172, 0.06);
+  --alert-accent: var(--green-300);
+  --alert-bg: rgba(var(--green-300-rgb), 0.06);
 }
 .post-content .markdown-alert-important {
   --alert-accent: var(--brand-light);
-  --alert-bg: rgba(196, 181, 253, 0.08);
+  --alert-bg: rgba(var(--violet-300-rgb), 0.08);
 }
 .post-content .markdown-alert-warning {
-  --alert-accent: #fcd34d;
-  --alert-bg: rgba(252, 211, 77, 0.08);
+  --alert-accent: var(--amber-300);
+  --alert-bg: rgba(var(--amber-300-rgb), 0.08);
 }
 .post-content .markdown-alert-caution {
-  --alert-accent: #fca5a5;
-  --alert-bg: rgba(252, 165, 165, 0.08);
+  --alert-accent: var(--red-300);
+  --alert-bg: rgba(var(--red-300-rgb), 0.08);
 }
 .heading-anchor {
   margin-left: 0.4em;
@@ -1214,7 +1214,7 @@ a.series-nav-title:hover {
 
 /* YouTube card styling */
 .link-card-youtube {
-  border-color: rgba(255, 0, 0, 0.15);
+  border-color: rgba(var(--svc-youtube-rgb), 0.15);
 }
 
 /* GitHub card styling */
@@ -1224,19 +1224,19 @@ a.series-nav-title:hover {
 
 /* Instagram card styling */
 .link-card-instagram {
-  border-color: rgba(228, 64, 95, 0.15);
+  border-color: rgba(var(--svc-instagram-rgb), 0.15);
 }
 
 /* Spotify card styling */
 .link-card-spotify {
-  border-color: rgba(29, 185, 84, 0.15);
+  border-color: rgba(var(--svc-spotify-rgb), 0.15);
   padding: 0;
   overflow: hidden;
 }
 
 /* Bilibili card styling */
 .link-card-bilibili {
-  border-color: rgba(0, 161, 214, 0.15);
+  border-color: rgba(var(--svc-bilibili-rgb), 0.15);
   flex-direction: column;
   overflow: hidden;
 }
@@ -1347,18 +1347,18 @@ a.series-nav-title:hover {
 .float-btn.active {
   color: #ffb3bd;
   background:
-    linear-gradient(135deg, rgba(255, 71, 87, 0.3) 0%, rgba(var(--magenta-rgb), 0.2) 100%),
+    linear-gradient(135deg, rgba(var(--coral-rgb), 0.3) 0%, rgba(var(--magenta-rgb), 0.2) 100%),
     rgba(var(--surface-3-rgb), 0.55);
   border-color: transparent;
   box-shadow:
     inset 0 1px 0 var(--white-20),
-    0 6px 20px rgba(255, 71, 87, 0.3);
+    0 6px 20px rgba(var(--coral-rgb), 0.3);
 }
 .float-btn.active::before {
   background: linear-gradient(
     135deg,
     rgba(255, 180, 200, 0.6),
-    rgba(255, 71, 87, 0.5) 45%,
+    rgba(var(--coral-rgb), 0.5) 45%,
     rgba(var(--magenta-rgb), 0.5)
   );
   opacity: 1;
@@ -1541,8 +1541,8 @@ a.series-nav-title:hover {
   border: 1px solid var(--white-10);
 }
 .subscribe-form button.subscribe-secondary:hover {
-  background: rgba(220, 50, 80, 0.1);
-  border-color: rgba(220, 50, 80, 0.35);
+  background: rgba(var(--crimson-rgb), 0.1);
+  border-color: rgba(var(--crimson-rgb), 0.35);
   color: rgba(255, 200, 210, 0.95);
   opacity: 1;
 }
@@ -1570,7 +1570,7 @@ a.series-nav-title:hover {
 }
 
 .subscribe-msg.error {
-  color: #ff4757;
+  color: var(--coral);
 }
 
 .subscribe-privacy {

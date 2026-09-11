@@ -69,8 +69,8 @@
 }
 
 .link-card-youtube:hover {
-  border-color: rgba(255, 0, 0, 0.35);
-  background: rgba(255, 0, 0, 0.04);
+  border-color: rgba(var(--svc-youtube-rgb), 0.35);
+  background: rgba(var(--svc-youtube-rgb), 0.04);
 }
 
 .link-card-github:hover {
@@ -78,13 +78,13 @@
 }
 
 .link-card-instagram:hover {
-  border-color: rgba(228, 64, 95, 0.35);
-  background: rgba(228, 64, 95, 0.04);
+  border-color: rgba(var(--svc-instagram-rgb), 0.35);
+  background: rgba(var(--svc-instagram-rgb), 0.04);
 }
 
 .link-card-spotify:hover {
-  border-color: rgba(29, 185, 84, 0.35);
-  background: rgba(29, 185, 84, 0.04);
+  border-color: rgba(var(--svc-spotify-rgb), 0.35);
+  background: rgba(var(--svc-spotify-rgb), 0.04);
 }
 
 .link-card-spotify iframe {
@@ -93,8 +93,8 @@
 }
 
 .link-card-bilibili:hover {
-  border-color: rgba(0, 161, 214, 0.35);
-  background: rgba(0, 161, 214, 0.04);
+  border-color: rgba(var(--svc-bilibili-rgb), 0.35);
+  background: rgba(var(--svc-bilibili-rgb), 0.04);
 }
 
 .link-card-embed-wrapper {

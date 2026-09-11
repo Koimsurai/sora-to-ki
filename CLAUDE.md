@@ -369,6 +369,11 @@ computed-style 的快照裡，其餘是 `:hover` / `:focus-visible` / 條件渲�
 為什麼用色票名：全站有 23 個底色、315 次是**一字不差**的 Tailwind v3 色票
 （`#d8b4fe` = purple-300 就用了 90 次），用它命名是客觀的，不用猜語意。
 
+2026-09-12 補了 `--sky-300` / `--blue-500` / `--blue-600` / `--red-600` / `--purple-200`
+五個（同樣是一字不差的 v3 色票）。**門檻是用了 3 次以上**——低於這個數，token 只是多
+一層間接，還會把調色盤撐肥。唯一的例外是 `--sky-300`（只有 2 次）：它是為了讓
+`markdown-alert-note` 跟另外四種 alert 一致，那一組本來就有 `important` 已經在用 token。
+
 ⚠️ **不要改成引用 Tailwind 自己的 `--color-purple-300`。** v4 的色票是 **oklch**，跟 v3 的
 hex 不相等，換過去就不是零視覺變化；而且哪些 shade 有輸出取決於 utility 用到誰——
 跟 `--text-3xl` 被 tree-shake 掉是同一個陷阱。
@@ -387,6 +392,41 @@ token 表是從 `index.css` 讀的，加新 token 不用改腳本。這條零誤
 Happy Hues 那組 `--clr-*` 原本 11 個，7 個引用 0 次（掃過 387 個 ts/tsx/css/js 檔）
 已退役。留下的 `--clr-headline` / `-paragraph` / `-button` / `-button-text` / `-tertiary`
 還有人用。`--brand-light` 現在指向 `var(--violet-300)`——它就是那個色票，不再另抄一份 hex。
+
+### 外部服務的品牌色：命名但**不能併值**
+
+`--svc-spotify` / `--svc-steam` / `--svc-youtube` / `--svc-instagram` / `--svc-bilibili`，
+各配 `-rgb`。另外 `--diff-add` / `--diff-del` 是 GitHub 的 diff 綠紅，同時用在程式碼
+diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github-*`。
+
+⚠️ **這些的值不能動也不能貼到調色盤**——Spotify 的綠就是 Spotify 的綠，貼到
+`--green-500` 就不是那個品牌了。收成 token 的理由不是收斂，是**同一個 hex 原本散在
+2–3 個檔案裡重複**（Spotify 13 次、Steam 9 次）。
+
+### 有四類顏色刻意留成字面值，不要「順手」收掉
+
+清到最後剩 274 次，分類如下——**其中三類是刻意的**：
+
+| | 次數 / 種類 | 為什麼留 |
+|---|---|---|
+| 不透明黑白 | 138 / 3 | `color: #fff` 是最慣用的寫法，包成 token 讀起來更遠 |
+| 自成一套的主題／漸層集合 | 36 / 33 | 見下面 |
+| 調色盤自己的定義行 | 19 / 19 | 那就是調色盤 |
+| 元件內的區域色定義 | 3 / 3 | 只有一個元件在用的裝飾色 |
+| **其餘字面值** | **78 / 64** | 全部用 ≤2 次，不值得 token |
+
+⚠️ **「自成一套」是一個判準，用過三次了**：`.mm-theme-deep/-zinc/-tokyo/-nord/-light`
+（五個結構一模一樣的 7 行圖表主題）、`Music.css` 的 `--feat-energy/-dance/-valence`
+（三條一組的漸層）。**只把其中一兩個改成 `var()` 會讓它們跟兄弟讀起來不一樣**，而那些
+區塊的價值就是「一眼看完整套配色」。`markdown-alert-*` 是反例：它**本來就不成套**
+（`important` 早就在用 `var(--brand-light)`，另外四個是字面值），所以那一組收掉是修
+不一致，不是破壞對稱。
+
+⚠️ **判斷「能不能併」要算 Lab 色差，不要看 hex 長得像不像。** 兩個實例：
+`#8b7cf6` vs `--violet-500` `#8b5cf6` 只差一個字元，**ΔE 22.3**；
+`#dc3250` vs `--magenta` `#dc3278` 前四碼相同，**ΔE 23.2**。兩個都不能併，
+各自給了名字（`--iris` / `--crimson`）。真正接近的是 `#e2e0ea` 對 `--ink`（ΔE 3.6），
+那個併掉了。
 
 ### 透明度也有一把尺：19 階，白／黑／品牌紫共用
 

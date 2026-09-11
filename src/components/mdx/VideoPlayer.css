@@ -81,7 +81,7 @@
 .vp-bigplay:hover,
 .vp-bigplay:focus,
 .vp-bigplay:focus-visible {
-  background: rgba(139, 124, 246, 0.8);
+  background: rgba(var(--iris-rgb), 0.8);
   border-color: var(--white-25);
   transform: translate(-50%, -50%) scale(1.08);
   box-shadow: var(--elev-3);

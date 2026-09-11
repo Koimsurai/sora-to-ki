@@ -98,13 +98,13 @@
 }
 
 .unsubscribe-btn--danger {
-  background: rgba(220, 50, 80, 0.15);
-  border-color: rgba(220, 50, 80, 0.35);
+  background: rgba(var(--crimson-rgb), 0.15);
+  border-color: rgba(var(--crimson-rgb), 0.35);
   color: rgba(255, 200, 210, 0.95);
 }
 .unsubscribe-btn--danger:hover {
-  background: rgba(220, 50, 80, 0.2);
-  border-color: rgba(220, 50, 80, 0.55);
+  background: rgba(var(--crimson-rgb), 0.2);
+  border-color: rgba(var(--crimson-rgb), 0.55);
   color: #fff;
 }
 

@@ -416,9 +416,12 @@
   height: 20px;
   transform: translate(-50%, -50%);
   background:
-    linear-gradient(90deg, transparent 0%, rgba(233, 213, 255, 0.95) 50%, transparent 100%) center / 100% 1px no-repeat,
-    linear-gradient(180deg, transparent 0%, rgba(233, 213, 255, 0.95) 50%, transparent 100%) center / 1px 100% no-repeat,
-    radial-gradient(circle, #fff 0%, #e9d5ff 30%, rgba(var(--purple-300-rgb), 0) 62%) center / 9px 9px no-repeat;
+    linear-gradient(90deg, transparent 0%, rgba(var(--purple-200-rgb), 0.95) 50%, transparent 100%) center / 100% 1px
+    no-repeat,
+    linear-gradient(180deg, transparent 0%, rgba(var(--purple-200-rgb), 0.95) 50%, transparent 100%) center / 1px 100%
+    no-repeat,
+    radial-gradient(circle, #fff 0%, var(--purple-200) 30%, rgba(var(--purple-300-rgb), 0) 62%) center / 9px 9px
+    no-repeat;
   animation: orbit-now-pulse 3.4s ease-in-out infinite;
 }
 
@@ -482,7 +485,7 @@
 @keyframes orbit-now-pulse {
   0%,
   100% {
-    filter: brightness(0.82) drop-shadow(0 0 3px rgba(233, 213, 255, 0.5));
+    filter: brightness(0.82) drop-shadow(0 0 3px rgba(var(--purple-200-rgb), 0.5));
   }
   50% {
     filter: brightness(1.4) drop-shadow(0 0 9px var(--white-90));

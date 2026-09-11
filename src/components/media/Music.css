@@ -224,19 +224,19 @@
 }
 
 .np-dot.live {
-  background: #1db954;
-  box-shadow: 0 0 8px rgba(29, 185, 84, 0.6);
+  background: var(--svc-spotify);
+  box-shadow: 0 0 8px rgba(var(--svc-spotify-rgb), 0.6);
   animation: np-pulse 2s ease-in-out infinite;
 }
 
 @keyframes np-pulse {
   0%,
   100% {
-    box-shadow: 0 0 4px rgba(29, 185, 84, 0.4);
+    box-shadow: 0 0 4px rgba(var(--svc-spotify-rgb), 0.4);
   }
 
   50% {
-    box-shadow: 0 0 12px rgba(29, 185, 84, 0.8);
+    box-shadow: 0 0 12px rgba(var(--svc-spotify-rgb), 0.8);
   }
 }
 
@@ -311,9 +311,9 @@
   margin-top: var(--space-2);
   padding: 7px var(--space-4);
   border-radius: var(--r-20);
-  border: 1px solid rgba(29, 185, 84, 0.3);
-  background: rgba(29, 185, 84, 0.1);
-  color: #1db954;
+  border: 1px solid rgba(var(--svc-spotify-rgb), 0.3);
+  background: rgba(var(--svc-spotify-rgb), 0.1);
+  color: var(--svc-spotify);
   font-size: var(--fs-13);
   font-weight: 600;
   text-decoration: none;
@@ -321,9 +321,9 @@
 }
 
 .np-spotify-link:hover {
-  background: rgba(29, 185, 84, 0.2);
-  border-color: rgba(29, 185, 84, 0.5);
-  box-shadow: 0 0 12px rgba(29, 185, 84, 0.2);
+  background: rgba(var(--svc-spotify-rgb), 0.2);
+  border-color: rgba(var(--svc-spotify-rgb), 0.5);
+  box-shadow: 0 0 12px rgba(var(--svc-spotify-rgb), 0.2);
 }
 
 /* ══════════════════════════════════════

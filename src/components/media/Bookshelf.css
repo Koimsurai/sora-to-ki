@@ -545,9 +545,9 @@
 }
 
 .modal-close:hover {
-  background: rgba(255, 71, 87, 0.1);
-  border-color: rgba(255, 71, 87, 0.3);
-  color: #ff4757;
+  background: rgba(var(--coral-rgb), 0.1);
+  border-color: rgba(var(--coral-rgb), 0.3);
+  color: var(--coral);
   box-shadow: none;
 }
 

@@ -194,7 +194,7 @@
   .mnav-subscribe {
     font-size: var(--fs-16);
     font-weight: 600;
-    color: #ec7dd6;
+    color: var(--orchid);
     text-decoration: none;
     transition: color var(--dur-200);
   }

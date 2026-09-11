@@ -89,7 +89,10 @@
   width: max-content;
   padding: var(--space-2-5) var(--space-3);
   border-radius: var(--r-10);
-  background: rgba(36, 30, 20, 0.95);
+  /* 註解卡的暖深褐底（配琥珀色邊框）。只有這張卡在用，所以定義在這裡而不是調色盤。
+     箭頭的 border-*-color 也要同一個值，三處寫死同一個 rgba 就是「改一處會漏兩處」。 */
+  --annot-bg-rgb: 36, 30, 20;
+  background: rgba(var(--annot-bg-rgb), 0.95);
   border: 1px solid rgba(var(--amber-300-rgb), 0.2);
   box-shadow: var(--elev-4);
   color: var(--white-80);
@@ -119,7 +122,7 @@
   top: 100%;
   left: 1.1rem;
   border: 6px solid transparent;
-  border-top-color: rgba(36, 30, 20, 0.95);
+  border-top-color: rgba(var(--annot-bg-rgb), 0.95);
 }
 .annot-card-label {
   display: block;
@@ -160,7 +163,7 @@
   top: auto;
   bottom: 100%;
   border-top-color: transparent;
-  border-bottom-color: rgba(36, 30, 20, 0.95);
+  border-bottom-color: rgba(var(--annot-bg-rgb), 0.95);
 }
 
 /* ── 防劇透 <Spoiler>：模糊，點擊揭開 ── */
@@ -230,7 +233,7 @@
   padding: var(--space-2) var(--space-2-5);
   border-radius: var(--r-8);
   background: rgba(var(--surface-1-rgb), 0.95);
-  border: 1px solid rgba(139, 124, 246, 0.3);
+  border: 1px solid rgba(var(--iris-rgb), 0.3);
   box-shadow: var(--elev-3);
 }
 .mdx-chart-tip-label {
@@ -595,12 +598,12 @@
   display: grid;
 }
 .mdx-diff .shiki-output .line.diff-line-add {
-  background: rgba(63, 185, 80, 0.15);
-  box-shadow: inset 3px 0 #3fb950;
+  background: rgba(var(--diff-add-rgb), 0.15);
+  box-shadow: inset 3px 0 var(--diff-add);
 }
 .mdx-diff .shiki-output .line.diff-line-del {
-  background: rgba(248, 81, 73, 0.15);
-  box-shadow: inset 3px 0 #f85149;
+  background: rgba(var(--diff-del-rgb), 0.15);
+  box-shadow: inset 3px 0 var(--diff-del);
 }
 .mdx-diff-stat {
   display: inline-flex;
@@ -609,10 +612,10 @@
   font-variant-numeric: tabular-nums;
 }
 .mdx-diff-stat-add {
-  color: #3fb950;
+  color: var(--diff-add);
 }
 .mdx-diff-stat-del {
-  color: #f85149;
+  color: var(--diff-del);
 }
 
 /* ── Install：外層留白（內部走 CodeTabs 樣式）── */
@@ -768,7 +771,7 @@
   font-size: var(--fs-14);
   font-weight: 600;
   color: #fff;
-  background: rgba(139, 124, 246, 0.9);
+  background: rgba(var(--iris-rgb), 0.9);
 }
 .mdx-step-title {
   font-weight: 600;
@@ -854,14 +857,14 @@
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 8px solid #3fb950;
+  border-bottom: 8px solid var(--diff-add);
 }
 .mdx-stat-trend--down {
   width: 0;
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 8px solid #f85149;
+  border-top: 8px solid var(--diff-del);
 }
 .mdx-stat-trend--flat {
   width: 10px;

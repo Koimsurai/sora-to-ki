@@ -510,6 +510,54 @@
     --green-500-rgb: 34, 197, 94;
     --pink-500: #ec4899;
     --pink-500-rgb: 236, 72, 153;
+    --sky-300: #7dd3fc;
+    --sky-300-rgb: 125, 211, 252;
+    --blue-500: #3b82f6;
+    --blue-500-rgb: 59, 130, 246;
+    --blue-600: #2563eb;
+    --blue-600-rgb: 37, 99, 235;
+    --red-600: #dc2626;
+    --red-600-rgb: 220, 38, 38;
+    --purple-200: #e9d5ff;
+    --purple-200-rgb: 233, 213, 255;
+
+    /* ── 站點自己的強調色（第二批）──────────────────────────────────────
+       跟 --lavender / --magenta 同一批，都不在任何公開色票上，值是原本在用的 hex。
+       收進來的門檻是**用了 3 次以上**：低於這個數，token 只是多一層間接。
+
+       ⚠️ 這四個看起來像既有 token 的親戚，實際上不是——hex 接近不代表顏色接近：
+         --iris    #8b7cf6  vs --violet-500 #8b5cf6   只差一個字元，但 **ΔE 22.3**
+         --crimson #dc3250  vs --magenta    #dc3278   前四碼相同，但 **ΔE 23.2**
+       判斷「能不能併」要算 Lab 色差，不要看 hex 長得像不像。 */
+    --coral: #ff4757; /* 浮動按鈕的 active、錯誤訊息、關閉鈕 hover */
+    --coral-rgb: 255, 71, 87;
+    --crimson: #dc3250; /* 破壞性動作：退訂按鈕 */
+    --crimson-rgb: 220, 50, 80;
+    --orchid: #ec7dd6; /* Hero 與技能區的漸層粉 */
+    --iris: #8b7cf6; /* 圖表提示框、步驟標記、播放鍵 focus */
+    --iris-rgb: 139, 124, 246;
+
+    /* ── 外部服務的品牌色 ────────────────────────────────────────────────
+       ⚠️ **這些的值不能動也不能併**——Spotify 的綠就是 Spotify 的綠，貼到
+       `--green-500` 就不是那個品牌了。收成 token 的理由不是收斂，是**同一個 hex
+       原本散在 2–3 個檔案裡重複**（Spotify 13 次、Steam 9 次）。
+
+       `--diff-add` / `--diff-del` 是 GitHub 的 diff 綠紅，同時用在程式碼 diff 與
+       數據趨勢的升降，所以用角色命名而不是 `--svc-github-*`。 */
+    --svc-spotify: #1db954;
+    --svc-spotify-rgb: 29, 185, 84;
+    --svc-steam: #90ba3c;
+    --svc-steam-rgb: 144, 186, 60;
+    --svc-youtube: #ff0000;
+    --svc-youtube-rgb: 255, 0, 0;
+    --svc-instagram: #e4405f;
+    --svc-instagram-rgb: 228, 64, 95;
+    --svc-bilibili: #00a1d6;
+    --svc-bilibili-rgb: 0, 161, 214;
+    --diff-add: #3fb950;
+    --diff-add-rgb: 63, 185, 80;
+    --diff-del: #f85149;
+    --diff-del-rgb: 248, 81, 73;
 
     /* Happy Hues 調色板的殘餘。原本 11 個，7 個引用 0 次（掃過 387 個 ts/tsx/css/js 檔）
        已退役：--clr-bg-primary / -bg-secondary / -stroke / -secondary / -white / -light-gray /
@@ -518,7 +566,7 @@
     --clr-paragraph: #94a1b2;
     --clr-paragraph-rgb: 148, 161, 178;
     --clr-button: var(--brand);
-    --clr-button-text: #fffffe;
+    --clr-button-text: var(--clr-headline);
     --clr-tertiary: #2cb67d;
     --clr-tertiary-rgb: 44, 182, 125;
 
@@ -589,7 +637,7 @@
     --glass-border: var(--white-08);
     --glass-hover-bg: var(--white-06);
     --glass-hover-border: rgba(var(--brand-rgb), 0.35);
-    --text-primary: #fffffe;
+    --text-primary: var(--clr-headline);
     --text-secondary: var(--white-50);
     --text-tertiary: var(--white-35);
   }

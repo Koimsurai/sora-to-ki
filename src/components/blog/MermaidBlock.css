@@ -365,9 +365,9 @@
 
 .mm-close-btn:hover,
 .mm-close-btn:focus {
-  background: rgba(255, 71, 87, 0.15);
-  border-color: rgba(255, 71, 87, 0.3);
-  color: #ff4757;
+  background: rgba(var(--coral-rgb), 0.15);
+  border-color: rgba(var(--coral-rgb), 0.3);
+  color: var(--coral);
   box-shadow: none;
 }
 
@@ -385,14 +385,14 @@
 .mermaid-error {
   margin: var(--space-6) 0;
   padding: var(--space-4) var(--space-6);
-  background: rgba(255, 71, 87, 0.06);
-  border: 1px solid rgba(255, 71, 87, 0.2);
+  background: rgba(var(--coral-rgb), 0.06);
+  border: 1px solid rgba(var(--coral-rgb), 0.2);
   border-radius: var(--r-12);
   font-size: var(--fs-14);
 }
 
 .mermaid-error span {
-  color: #ff4757;
+  color: var(--coral);
   font-weight: 500;
   display: block;
   margin-bottom: var(--space-2);

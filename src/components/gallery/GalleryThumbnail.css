@@ -57,8 +57,8 @@
 }
 
 .gallery-thumbnail-item.active {
-  border-color: #3b82f6;
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  border-color: var(--blue-500);
+  box-shadow: 0 0 20px rgba(var(--blue-500-rgb), 0.5);
 }
 
 .active-indicator {
@@ -67,7 +67,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #3b82f6, var(--violet-500));
+  background: linear-gradient(90deg, var(--blue-500), var(--violet-500));
 }
 
 /* 響應式設計 */

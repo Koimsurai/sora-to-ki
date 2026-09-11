@@ -369,7 +369,11 @@
   display: inline-flex;
   align-items: center;
   padding: var(--space-0-5) 9px;
-  background: linear-gradient(135deg, #ff8a4c 0%, #d54a26 100%);
+  /* 等級徽章的橘漸層。兩個停點是一組，只有這顆徽章在用。 */
+  --steam-level-from: #ff8a4c;
+  --steam-level-from-rgb: 255, 138, 76;
+  --steam-level-to: #d54a26;
+  background: linear-gradient(135deg, var(--steam-level-from) 0%, var(--steam-level-to) 100%);
   color: #fff;
   border-radius: var(--r-6);
   font-size: var(--fs-12);
@@ -377,8 +381,8 @@
   letter-spacing: var(--ls-2);
   font-variant-numeric: tabular-nums;
   box-shadow:
-    0 0 0 1px rgba(255, 138, 76, 0.45),
-    0 0 14px rgba(255, 138, 76, 0.3);
+    0 0 0 1px rgba(var(--steam-level-from-rgb), 0.45),
+    0 0 14px rgba(var(--steam-level-from-rgb), 0.3);
   text-shadow: none;
 }
 .steam-profile-status {
@@ -400,8 +404,8 @@
   box-shadow: 0 0 8px rgba(87, 203, 222, 0.7);
 }
 .steam-profile-card.is-in-game .steam-profile-dot {
-  background: #90ba3c;
-  box-shadow: 0 0 10px rgba(144, 186, 60, 0.8);
+  background: var(--svc-steam);
+  box-shadow: 0 0 10px rgba(var(--svc-steam-rgb), 0.8);
 }
 .steam-profile-card.is-offline .steam-profile-dot {
   background: #6c757d;
@@ -542,10 +546,10 @@
   border-color: rgba(var(--brand-rgb), 0.25);
 }
 .steam-recent-card.is-current {
-  border-color: rgba(144, 186, 60, 0.55);
+  border-color: rgba(var(--svc-steam-rgb), 0.55);
   box-shadow:
-    0 0 0 1px rgba(144, 186, 60, 0.3),
-    0 0 18px rgba(144, 186, 60, 0.2);
+    0 0 0 1px rgba(var(--svc-steam-rgb), 0.3),
+    0 0 18px rgba(var(--svc-steam-rgb), 0.2);
 }
 .steam-recent-cover {
   position: absolute;
@@ -626,22 +630,22 @@
   top: 0.7rem;
   right: 0.7rem;
   padding: 3px 9px;
-  background: linear-gradient(135deg, #90ba3c, #5e8c1a);
+  background: linear-gradient(135deg, var(--svc-steam), #5e8c1a);
   color: #fff;
   font-size: var(--fs-11);
   font-weight: 700;
   letter-spacing: var(--ls-6);
   border-radius: var(--r-4);
-  box-shadow: 0 0 12px rgba(144, 186, 60, 0.55);
+  box-shadow: 0 0 12px rgba(var(--svc-steam-rgb), 0.55);
   animation: steamPulse 2s ease-in-out infinite;
 }
 @keyframes steamPulse {
   0%,
   100% {
-    box-shadow: 0 0 12px rgba(144, 186, 60, 0.55);
+    box-shadow: 0 0 12px rgba(var(--svc-steam-rgb), 0.55);
   }
   50% {
-    box-shadow: 0 0 20px rgba(144, 186, 60, 0.8);
+    box-shadow: 0 0 20px rgba(var(--svc-steam-rgb), 0.8);
   }
 }
 @media (prefers-reduced-motion: reduce) {

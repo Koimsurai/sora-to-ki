@@ -105,7 +105,7 @@
 }
 
 .hero-name {
-  background: linear-gradient(120deg, var(--lavender) 0%, #ec7dd6 100%);
+  background: linear-gradient(120deg, var(--lavender) 0%, var(--orchid) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

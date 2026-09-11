@@ -2,6 +2,8 @@
 
 .comet {
   position: absolute;
+  /* 彗星的冷藍白。只有這個元件在用，理由同 RandomUFOs 的 --ufo-cyan。 */
+  --comet-tint-rgb: 200, 200, 255;
   /* 顯著增加寬度，使其更長 */
   width: 400px; /* 可以根據需要調整 */
   /* 可以稍微加粗一點 */
@@ -11,21 +13,21 @@
   background: linear-gradient(
     to right,
     rgba(220, 220, 255, 0) /* 尾巴末端完全透明 (淡藍色調) */,
-    rgba(200, 200, 255, 0.3) 60% /* 尾巴主體半透明 */,
+    rgba(var(--comet-tint-rgb), 0.3) 60% /* 尾巴主體半透明 */,
     var(--white-90) 95% /* 接近頭部的部分更亮 */,
     rgb(255, 255, 255) 100% /* 頭部最亮 (白色) */
   );
   border-radius: var(--r-2); /* 稍微圓角 */
   /* 可以保留或調整呼吸動畫 */
   animation: comet-glow 2.5s ease-in-out infinite alternate;
-  filter: drop-shadow(0 0 5px rgba(200, 200, 255, 0.6)); /* 添加柔和的光暈 */
+  filter: drop-shadow(0 0 5px rgba(var(--comet-tint-rgb), 0.6)); /* 添加柔和的光暈 */
 }
 
 /* 調整呼吸動畫以匹配彗星外觀 */
 @keyframes comet-glow {
   from {
     opacity: 0.7;
-    filter: drop-shadow(0 0 3px rgba(200, 200, 255, 0.4));
+    filter: drop-shadow(0 0 3px rgba(var(--comet-tint-rgb), 0.4));
   }
   to {
     opacity: 1;

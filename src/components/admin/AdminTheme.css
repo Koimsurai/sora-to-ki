@@ -28,7 +28,7 @@
 
   /* 中和全域 button 紫色變數 */
   --clr-button: transparent;
-  --clr-button-text: #e4e4e7;
+  --clr-button-text: var(--zinc-200);
 
   background: #000000;
   min-height: 100vh;
