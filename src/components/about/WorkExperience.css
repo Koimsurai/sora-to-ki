@@ -96,7 +96,7 @@
 
 .work-tag {
   font-size: var(--fs-12);
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2-5);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   color: rgba(var(--lavender-rgb), 0.8);

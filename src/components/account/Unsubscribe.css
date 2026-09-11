@@ -81,7 +81,7 @@
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  padding: 11px var(--space-4-5);
+  padding: var(--space-3) var(--space-4-5);
   border-radius: var(--r-10);
   font-size: var(--fs-14);
   font-weight: 500;

@@ -64,7 +64,7 @@
    ══════════════════════════ */
 .blog-hero {
   text-align: center;
-  margin-bottom: 42px;
+  margin-bottom: var(--space-10);
 }
 
 .blog-hero-title {
@@ -119,7 +119,7 @@
 
 .blog-search-input {
   width: 100%;
-  padding: var(--space-2-5) var(--space-8) var(--space-2-5) 26px;
+  padding: var(--space-2-5) var(--space-8) var(--space-2-5) var(--space-7);
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--white-10);
@@ -208,7 +208,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
-  padding: 5px var(--space-3);
+  padding: var(--space-1-5) var(--space-3);
   border-radius: var(--r-20);
   font-size: var(--fs-13);
   background: rgba(var(--brand-rgb), 0.1);
@@ -331,7 +331,7 @@
 .note-category {
   font-size: var(--fs-12);
   font-weight: 600;
-  padding: 3px var(--space-2-5);
+  padding: var(--space-1) var(--space-2-5);
   border-radius: var(--r-12);
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
@@ -380,7 +380,7 @@
 .note-tag {
   font-size: var(--fs-12);
   font-weight: 500;
-  padding: 3px var(--space-2-5);
+  padding: var(--space-1) var(--space-2-5);
   border-radius: var(--r-10);
   background: var(--white-04);
   border: 1px solid var(--white-08);
@@ -405,7 +405,7 @@
 .note-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1-5);
   padding: var(--space-1-5) var(--space-3);
   border-radius: var(--r-8);
   font-size: var(--fs-13);
@@ -429,7 +429,7 @@
 .note-views {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1-5);
   font-size: var(--fs-12);
   color: var(--white-25);
   margin-left: auto;
@@ -605,7 +605,7 @@
 }
 
 .cloud-tag {
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2-5);
   border-radius: var(--r-6);
   font-size: var(--fs-12);
   font-weight: 500;
@@ -643,7 +643,7 @@
   cursor: pointer;
   font-size: var(--fs-12);
   font-weight: 500;
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2-5);
   transition:
     color var(--dur-200) ease,
     border-color var(--dur-200) ease;
@@ -1018,13 +1018,13 @@
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  gap: 3px;
+  gap: var(--space-1);
   width: 100%;
 }
 .activity-heatmap .heatmap-col {
   display: grid;
   grid-template-rows: repeat(7, 1fr);
-  gap: 3px;
+  gap: var(--space-1);
 }
 .activity-heatmap .heatmap-cell {
   aspect-ratio: 1 / 1;

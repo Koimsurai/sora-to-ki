@@ -368,7 +368,7 @@
   margin-left: var(--space-0-5);
 }
 .friends-modal-field input {
-  padding: 9px var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   background: var(--white-04);
   border: 1px solid var(--white-08);
   border-radius: var(--r-8);
@@ -394,7 +394,7 @@
   margin-top: var(--space-4-5);
 }
 .friends-modal-submit {
-  padding: 9px var(--space-5-5);
+  padding: var(--space-2-5) var(--space-5-5);
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.8), rgba(var(--brand-rgb), 0.6));
   color: #fff;
   border: 1px solid rgba(var(--brand-rgb), 0.5);

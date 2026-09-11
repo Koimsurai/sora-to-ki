@@ -105,17 +105,12 @@ const SCALE_PX: Record<number, string> = {
  * 所以留著。要不要收進尺是設計判斷，不是這道檢查該替人決定的事。
  */
 const GRANDFATHERED = new Set([
-  '3px',
-  '5px',
-  '7px',
-  '9px',
-  '11px',
-  '13px',
-  '26px',
-  '42px',
-  '50px',
-  '55px',
-  '30px',
+  // 頁面外框的上下留白。⚠ **這 8 個值是同一個角色**：固定頂欄底下的頁面留白，
+  // 出現在 .info-page / .tk-page / .w-page / .wl-page / .setup-content /
+  // .blog- .bookshelf- .music- .activity-content-wrapper / .nf-page / .app-footer
+  // 共 24 條宣告——桌機卻有 90 / 100 / 120 三種值，窄視窗有 60 / 70 / 100 三種。
+  // 那是「每個頁面自己編一個」，不是版面必要的差異。統一它會讓 8 個頁面的內容
+  // 上下各移動最多 30px，是設計決定不是 codemod 的事，所以先留在這裡當待辦。
   '60px',
   '70px',
   '72px',
@@ -123,9 +118,9 @@ const GRANDFATHERED = new Set([
   '90px',
   '100px',
   '120px',
-  '2.75rem',
   '5.5rem',
   '8rem',
+  // 負值：沒有負的 token 形式（寫 `calc(-1 * var(--space-10))` 更難讀）
   '-1px',
   '-4px',
   '-6px',
@@ -135,6 +130,8 @@ const GRANDFATHERED = new Set([
   '-1.2rem',
   '-1.5rem',
   '-2.5rem',
+  // 一處 padding-left 的補償值，跟上面的頁面留白同一批待辦
+  '2.75rem',
 ]);
 
 /**

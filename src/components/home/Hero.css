@@ -130,7 +130,7 @@
 .hero-chip {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   margin: 0 0.3em;
   padding: 0.18em 0.7em 0.22em;
   border-radius: var(--r-full);
@@ -421,7 +421,7 @@
    也一起撐住了，那條規則已經沒有作用，移除。 */
 
 .hero-sub {
-  margin: 0 0 30px;
+  margin: 0 0 var(--space-8);
   font-size: var(--fs-13);
   letter-spacing: var(--ls-12);
   color: var(--white-45);
@@ -456,7 +456,7 @@
   font-weight: 500;
   color: var(--brand-light);
   margin-top: var(--space-2-5);
-  margin-bottom: 30px;
+  margin-bottom: var(--space-8);
   white-space: pre-wrap;
 }
 
@@ -505,7 +505,7 @@
 .hero-actions {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: var(--space-8);
   /* 連結和按鈕間距 */
   margin-top: var(--space-5);
   /* 與上方描述間距 */

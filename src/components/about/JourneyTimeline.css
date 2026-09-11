@@ -61,7 +61,7 @@
 }
 
 .jt-card {
-  padding: var(--space-5-5) 26px;
+  padding: var(--space-5-5) var(--space-7);
 }
 
 .jt-title {
@@ -93,7 +93,7 @@
 
 .jt-tag {
   font-size: var(--fs-11);
-  padding: 3px var(--space-2-5);
+  padding: var(--space-1) var(--space-2-5);
   border-radius: var(--r-full);
   background: var(--white-04);
   border: 1px solid var(--white-08);

@@ -368,7 +368,7 @@
 .steam-profile-level {
   display: inline-flex;
   align-items: center;
-  padding: var(--space-0-5) 9px;
+  padding: var(--space-0-5) var(--space-2-5);
   /* 等級徽章的橘漸層。兩個停點是一組，只有這顆徽章在用。 */
   --steam-level-from: #ff8a4c;
   --steam-level-from-rgb: 255, 138, 76;
@@ -629,7 +629,7 @@
   z-index: 3;
   top: 0.7rem;
   right: 0.7rem;
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2-5);
   background: linear-gradient(135deg, var(--svc-steam), #5e8c1a);
   color: #fff;
   font-size: var(--fs-11);
@@ -810,7 +810,7 @@
 }
 .heatmap-grid {
   display: flex;
-  gap: 3px;
+  gap: var(--space-1);
 }
 
 /* 刷新中：熱度圖淡出並失焦，loader 從上方淡入 */
@@ -862,7 +862,7 @@
 .heatmap-week {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
@@ -1030,7 +1030,7 @@
   gap: var(--space-2);
   text-decoration: none;
   color: inherit;
-  padding: 3px 0;
+  padding: var(--space-1) 0;
   border-radius: var(--r-4);
   transition: background var(--dur-150);
 }
@@ -1434,7 +1434,7 @@
 .commit-skeleton .sk-line {
   display: block;
   height: 1em;
-  margin: 5px 0;
+  margin: var(--space-1-5) 0;
 }
 .commit-skeleton .sk-line:nth-child(1) {
   width: 78%;

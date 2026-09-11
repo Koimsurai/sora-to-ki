@@ -198,7 +198,7 @@
 /* Header */
 .setup-header {
   text-align: center;
-  margin-bottom: 50px;
+  margin-bottom: var(--space-12);
 }
 
 .setup-title {
@@ -236,7 +236,7 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: 50px;
+  margin-bottom: var(--space-12);
 }
 
 .setup-category-tab {
@@ -251,7 +251,7 @@
   transition: all var(--dur-300) ease;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--space-2);
   backdrop-filter: blur(var(--blur-8));
 }
 
@@ -276,7 +276,7 @@
 .setup-category-tab .tab-count {
   font-size: var(--fs-11);
   background: var(--white-08);
-  padding: var(--space-px) 7px;
+  padding: var(--space-px) var(--space-2);
   border-radius: var(--r-10);
   min-width: 20px;
   text-align: center;
@@ -288,7 +288,7 @@
 
 /* Category Section */
 .setup-category-section {
-  margin-bottom: 55px;
+  margin-bottom: var(--space-14);
 }
 
 .setup-category-header {
@@ -416,7 +416,7 @@
 
 /* === Base II Section === */
 .setup-base-section {
-  margin-bottom: 55px;
+  margin-bottom: var(--space-14);
 }
 
 .setup-base-card {

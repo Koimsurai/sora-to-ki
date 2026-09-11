@@ -176,7 +176,7 @@
   text-align: inherit;
   cursor: pointer;
   border-radius: var(--r-4);
-  padding: 0 3px;
+  padding: 0 var(--space-1);
   background: var(--white-06);
   filter: blur(var(--blur-8));
   transition:

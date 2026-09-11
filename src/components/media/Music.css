@@ -136,7 +136,7 @@
 .np-visualizer {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
+  gap: var(--space-1);
   position: absolute;
   bottom: 8px;
   left: 8px;
@@ -309,7 +309,7 @@
   align-items: center;
   gap: var(--space-1-5);
   margin-top: var(--space-2);
-  padding: 7px var(--space-4);
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--r-20);
   border: 1px solid rgba(var(--svc-spotify-rgb), 0.3);
   background: rgba(var(--svc-spotify-rgb), 0.1);
@@ -338,7 +338,7 @@
 
 .music-tab-btn {
   position: relative;
-  padding: 7px var(--space-4-5);
+  padding: var(--space-2) var(--space-4-5);
   border-radius: var(--r-20);
   font-size: var(--fs-14);
   font-weight: 600;
@@ -944,7 +944,7 @@
 
 @media (max-width: 768px) {
   .music-content-wrapper {
-    padding: 60px var(--space-4) 30px;
+    padding: 60px var(--space-4) var(--space-8);
   }
 
   .music-hero-title {

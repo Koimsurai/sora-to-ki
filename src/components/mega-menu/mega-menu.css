@@ -22,7 +22,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
-  padding: 7px var(--space-3-5);
+  padding: var(--space-2) var(--space-3-5);
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--r-full);
@@ -189,7 +189,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 9px var(--space-3);
+  padding: var(--space-2-5) var(--space-3);
   border-radius: var(--r-10);
   text-decoration: none;
   color: rgba(var(--zinc-200-rgb), 0.8);
@@ -202,7 +202,7 @@
 
 /* compact 變體：只有圖示 + 標題，無描述行 */
 .mega-menu-link--compact {
-  padding: 7px var(--space-2-5);
+  padding: var(--space-2) var(--space-2-5);
 }
 .mega-menu-link-icon {
   display: inline-flex;

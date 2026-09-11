@@ -182,7 +182,7 @@
 .koim-loader-dots {
   display: inline-flex;
   align-items: flex-end;
-  gap: 3px;
+  gap: var(--space-1);
   margin-left: var(--space-0-5);
 }
 .koim-loader-dots i {

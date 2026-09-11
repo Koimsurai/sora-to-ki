@@ -22,7 +22,7 @@
 .blog-image-exif span {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-1-5);
   letter-spacing: var(--ls-1);
 }
 

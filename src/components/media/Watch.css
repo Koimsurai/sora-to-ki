@@ -177,7 +177,7 @@
 .w-now-overlay {
   position: absolute;
   inset: auto 0 0 0;
-  padding: var(--space-14) var(--space-9) 30px;
+  padding: var(--space-14) var(--space-9) var(--space-8);
   background: linear-gradient(
     180deg,
     rgba(var(--surface-0-rgb), 0) 0%,
@@ -497,7 +497,7 @@
   font-size: var(--fs-11);
   font-weight: 600;
   letter-spacing: var(--ls-8);
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2-5);
   border-radius: var(--r-full);
   border: 1px solid currentColor;
   opacity: 0.75;

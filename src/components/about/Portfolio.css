@@ -85,7 +85,7 @@
 
 .portfolio-status {
   font-size: var(--fs-11);
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2-5);
   border-radius: var(--r-full);
   background: rgba(var(--clr-tertiary-rgb), 0.1);
   border: 1px solid rgba(var(--clr-tertiary-rgb), 0.35);
@@ -251,7 +251,7 @@
 
 .portfolio-tag {
   font-size: var(--fs-11);
-  padding: 3px 9px;
+  padding: var(--space-1) var(--space-2-5);
   border-radius: var(--r-full);
   background: var(--white-04);
   border: 1px solid var(--white-08);
@@ -267,7 +267,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 9px var(--space-4-5) 9px var(--space-5);
+  padding: var(--space-2-5) var(--space-4-5) var(--space-2-5) var(--space-5);
   background: var(--white-04);
   border: 1px solid var(--white-10);
   color: var(--white-90);
