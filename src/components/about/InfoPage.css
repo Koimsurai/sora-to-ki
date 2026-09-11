@@ -6,7 +6,7 @@
   z-index: 2;
   min-height: 100vh;
   /* 跟 BlogPost 對齊：上面留導覽列空間、左右留邊 */
-  padding: 120px var(--space-6) 60px;
+  padding: var(--page-top) var(--space-6) var(--page-bottom);
 }
 /* BlogPost.css 對 .post-content 加了 user-select:none 做防複製，info page 應該可以選文字 */
 .info-page .post-content {
@@ -446,7 +446,7 @@
 }
 @media (max-width: 600px) {
   .info-page {
-    padding: 100px var(--space-4) var(--space-10);
+    padding: var(--page-top) var(--space-4) var(--page-bottom);
   }
   .info-page-timeline-item {
     grid-template-columns: 96px 1fr;

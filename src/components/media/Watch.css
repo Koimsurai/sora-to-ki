@@ -8,7 +8,7 @@
   z-index: 2;
   min-height: 100vh;
   background: transparent;
-  padding: 120px var(--space-6) 120px;
+  padding: var(--page-top) var(--space-6) var(--page-bottom);
 }
 
 /* dim scrim：壓暗亮星雲（.nebula-bg z-1），跟首頁一致 */
@@ -227,7 +227,7 @@
 
 /* ── section 通用 ── */
 .w-section {
-  margin-bottom: 5.5rem;
+  margin-bottom: var(--space-20);
 }
 
 .w-h2 {
@@ -547,7 +547,7 @@
 /* ════════ RWD ════════ */
 @media (max-width: 720px) {
   .w-page {
-    padding: 100px var(--space-5) 90px;
+    padding: var(--page-top) var(--space-5) var(--page-bottom);
   }
   .w-header {
     margin-bottom: var(--space-14);

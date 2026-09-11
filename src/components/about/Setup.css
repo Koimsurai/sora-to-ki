@@ -192,7 +192,7 @@
   z-index: 2;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 100px var(--space-10) 60px;
+  padding: var(--page-top) var(--space-10) var(--page-bottom);
 }
 
 /* Header */
@@ -506,7 +506,7 @@
 /* === Responsive === */
 @media (max-width: 768px) {
   .setup-content {
-    padding: var(--space-20) var(--space-5) var(--space-10);
+    padding: var(--page-top) var(--space-5) var(--page-bottom);
   }
 
   .setup-blackhole-bg {

@@ -38,7 +38,7 @@
   z-index: 2;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 90px var(--space-10) 60px;
+  padding: var(--page-top) var(--space-10) var(--page-bottom);
 }
 
 /* ── Hero Header (與 Blog 一致風格) ── */
@@ -944,7 +944,7 @@
 
 @media (max-width: 768px) {
   .music-content-wrapper {
-    padding: 60px var(--space-4) var(--space-8);
+    padding: var(--page-top) var(--space-4) var(--page-bottom);
   }
 
   .music-hero-title {

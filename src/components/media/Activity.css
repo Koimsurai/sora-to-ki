@@ -126,7 +126,7 @@
   z-index: 2;
   max-width: 960px;
   margin: 0 auto;
-  padding: var(--space-20) var(--space-8) var(--space-20);
+  padding: var(--page-top) var(--space-8) var(--page-bottom);
   display: flex;
   flex-direction: column;
   gap: var(--space-16);
@@ -1310,7 +1310,7 @@
    ═══════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .activity-content-wrapper {
-    padding: 70px var(--space-4) 60px;
+    padding: var(--page-top) var(--space-4) var(--page-bottom);
     gap: var(--space-12);
   }
 
@@ -1369,7 +1369,7 @@
 
 @media (max-width: 480px) {
   .activity-content-wrapper {
-    padding: 60px var(--space-3) var(--space-10);
+    padding: var(--page-top) var(--space-3) var(--page-bottom);
     gap: var(--space-10);
   }
 

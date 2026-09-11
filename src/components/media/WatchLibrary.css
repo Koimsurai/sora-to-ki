@@ -7,7 +7,7 @@
   z-index: 2;
   min-height: 100vh;
   background: transparent;
-  padding: 120px var(--space-6) 120px;
+  padding: var(--page-top) var(--space-6) var(--page-bottom);
 }
 
 .wl-scrim {
@@ -349,7 +349,7 @@
 /* ── RWD ── */
 @media (max-width: 720px) {
   .wl-page {
-    padding: 100px var(--space-4) 90px;
+    padding: var(--page-top) var(--space-4) var(--page-bottom);
   }
   .wl-grid {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));

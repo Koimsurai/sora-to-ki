@@ -154,7 +154,7 @@
 
 /* ── 年度軌跡 ── */
 .lately-orbit {
-  margin-top: 72px;
+  margin-top: var(--space-16);
 }
 
 /* 軌道線的 y 由這個變數決定；星球、月份刻度、「今天」都以它為基準，
@@ -511,7 +511,7 @@
 
 /* ── 今日訊號（收尾，承接 #contact 錨點）── */
 .lately-signal {
-  margin-top: 88px;
+  margin-top: var(--space-20);
   display: flex;
   flex-direction: column;
   align-items: center;

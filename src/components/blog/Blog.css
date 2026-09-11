@@ -20,7 +20,7 @@
   z-index: 2;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 90px var(--space-10) 60px;
+  padding: var(--page-top) var(--space-10) var(--page-bottom);
 }
 
 .blog-header-area {
@@ -802,7 +802,7 @@
    ══════════════════════════ */
 @media (max-width: 1024px) {
   .blog-content-wrapper {
-    padding: var(--space-20) var(--space-7) var(--space-10);
+    padding: var(--page-top) var(--space-7) var(--page-bottom);
   }
 
   .blog-layout {
@@ -828,7 +828,7 @@
 
 @media (max-width: 768px) {
   .blog-content-wrapper {
-    padding: 70px var(--space-4) var(--space-8);
+    padding: var(--page-top) var(--space-4) var(--page-bottom);
   }
 
   .blog-hero-title {
@@ -888,7 +888,7 @@
 
 @media (max-width: 480px) {
   .blog-content-wrapper {
-    padding: 60px var(--space-3) var(--space-6);
+    padding: var(--page-top) var(--space-3) var(--page-bottom);
   }
 
   .blog-sort-row {

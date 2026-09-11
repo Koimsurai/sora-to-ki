@@ -8,7 +8,7 @@
   z-index: 2;
   min-height: 100vh;
   background: transparent;
-  padding: 120px var(--space-6) 120px;
+  padding: var(--page-top) var(--space-6) var(--page-bottom);
 }
 
 .tk-scrim {
@@ -659,7 +659,7 @@
 /* ════════ RWD ════════ */
 @media (max-width: 640px) {
   .tk-page {
-    padding: 100px var(--space-4-5) 90px;
+    padding: var(--page-top) var(--space-4-5) var(--page-bottom);
   }
   .tk-header {
     margin-bottom: var(--space-8);
