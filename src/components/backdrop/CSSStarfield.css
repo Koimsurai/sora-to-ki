@@ -53,7 +53,7 @@
 @keyframes starfield-twinkle {
   0%,
   100% {
-    opacity: 0.85;
+    opacity: 0.9;
   }
   50% {
     opacity: 0.5;

@@ -34,7 +34,7 @@
   position: absolute;
   border-radius: var(--r-round);
   filter: blur(var(--blur-110));
-  opacity: 0.18;
+  opacity: 0.2;
   will-change: transform;
 }
 
@@ -188,7 +188,7 @@
 }
 
 .status-bar-time {
-  font-family: "Courier New", monospace;
+  font-family: var(--mono-font);
   color: var(--white-55);
   font-weight: 500;
 }
@@ -717,7 +717,7 @@
 
 .lang-bar-time {
   color: var(--white-35);
-  font-family: "Courier New", monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-12);
 }
 
@@ -1040,7 +1040,7 @@
 
 .commit-sha {
   font-size: var(--fs-12);
-  font-family: "Courier New", monospace;
+  font-family: var(--mono-font);
   color: var(--brand);
   flex-shrink: 0;
   background: rgba(var(--brand-rgb), 0.08);
@@ -1096,7 +1096,7 @@
 
 .project-row-time {
   color: var(--white-30);
-  font-family: "Courier New", monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-12);
 }
 

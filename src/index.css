@@ -726,6 +726,17 @@
 :root {
   /* CJK 字體棧 — 預設繁中：MiSans 主體 + 思源黑體 TC 局部疊（C 方案）+ 系統 fallback
      :lang(...) 規則會在 ja / ko / zh-CN 時覆寫成各自的 CJK 字體偏好 */
+  /* ── 等寬字 ────────────────────────────────────────────────────────────
+     在這之前同一個角色（程式碼、時間戳、SHA）有 **8 種不同的堆疊**散在 12 個檔案裡，
+     而且不只是寫法不同——站上**沒有 @font-face 也沒有從 CDN 載任何等寬字**，所以
+     `"Courier New", monospace` 會真的渲染成 Courier New（幾乎人人都裝），而
+     `"Fira Code", …` 在沒裝的機器上會往後 fallback。結果是同一頁的程式碼區塊與
+     時間戳長得不一樣。
+
+     ⚠️ `var(--cjk-font)` 放在 `monospace` 之前是刻意的：那是 sans-serif 鏈，
+     讓程式碼裡的中文走比例字體——CJK 等寬字很少而且不好看。 */
+  --mono-font: "Fira Code", "JetBrains Mono", "SF Mono", ui-monospace, Consolas, var(--cjk-font), monospace;
+
   --cjk-font:
     "MiSans", "Source Han Sans TC", "Noto Sans TC", "PingFang TC", "Hiragino Sans TC", "Microsoft JhengHei", sans-serif;
 

@@ -33,7 +33,7 @@ body.intro-animation-active .nebula-dim-overlay {
   position: absolute;
   border-radius: var(--r-round);
   filter: blur(var(--blur-110));
-  opacity: 0.18;
+  opacity: 0.2;
   will-change: transform;
 }
 

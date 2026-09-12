@@ -393,6 +393,31 @@ Happy Hues 那組 `--clr-*` 原本 11 個，7 個引用 0 次（掃過 387 個 t
 已退役。留下的 `--clr-headline` / `-paragraph` / `-button` / `-button-text` / `-tertiary`
 還有人用。`--brand-light` 現在指向 `var(--violet-300)`——它就是那個色票，不再另抄一份 hex。
 
+### 等寬字只有一套堆疊：`--mono-font`
+
+```
+--mono-font: "Fira Code", "JetBrains Mono", "SF Mono", ui-monospace, Consolas,
+             var(--cjk-font), monospace;
+```
+
+⚠️ 在這之前同一個角色（程式碼、時間戳、commit SHA）有 **12 種不同的堆疊**散在 13 個
+檔案裡。而且**不只是寫法不同**——站上**沒有 `@font-face` 也沒有從 CDN 載任何等寬字**，
+所以 `"Courier New", monospace` 會真的渲染成 Courier New（幾乎人人都裝），而
+`"Fira Code", …` 在沒裝的機器上往後 fallback。結果是 Activity 的時間戳用 Courier New、
+程式碼區塊用系統等寬字，**同一個站兩種等寬字**。
+
+⚠️ `var(--cjk-font)` 放在 `monospace` 之前是刻意的：那是 sans-serif 鏈，讓程式碼裡的
+中文走比例字體——CJK 等寬字很少而且不好看。
+
+### `opacity` 也走那把 19 階的階梯
+
+⚠️ 這條**不是**「要用 token」，是「值要在階梯上」——`--white-NN` 那些是顏色，不能拿來
+當 `opacity`。但兩者量的是同一件事（多透明），所以共用同一套詞彙。導入時 23 種值裡
+**已經有 19 種落在階梯上**，只有 `0.85` / `0.75` / `0.18` / `0.12` 四個例外（17 次）。
+
+⚠️ `opacity` **不在 computed-style 的 PROPS 裡**（動畫元素上逐幀不同），所以這一條
+只有 `check:css-tokens` 在守，改它的時候不會有第二道保險。
+
 ### 外部服務的品牌色：命名但**不能併值**
 
 `--svc-spotify` / `--svc-steam` / `--svc-youtube` / `--svc-instagram` / `--svc-bilibili`，

@@ -40,7 +40,7 @@
 }
 .site-appr-icon {
   font-size: 0.85em;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 /* 按過之後：心變粉紅、留著（表示這台瀏覽器已經按過） */
 .site-appr-item--liked {

@@ -323,7 +323,7 @@
 .captcha-q {
   font-size: var(--fs-13);
   color: var(--white-30);
-  font-family: "SF Mono", "Fira Code", monospace;
+  font-family: var(--mono-font);
 }
 
 .captcha-input {
@@ -367,7 +367,7 @@
 }
 
 .submit-btn:hover:not(:disabled) {
-  opacity: 0.85;
+  opacity: 0.9;
   transform: translateY(-1px);
 }
 

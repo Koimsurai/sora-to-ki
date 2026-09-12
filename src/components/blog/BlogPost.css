@@ -282,7 +282,7 @@
 }
 .lang-badge {
   font-size: var(--fs-11);
-  font-family: "JetBrains Mono", "Courier New", var(--cjk-font), monospace;
+  font-family: var(--mono-font);
   letter-spacing: var(--ls-4);
   padding: var(--space-0-5) var(--space-2);
   border-radius: var(--r-full);
@@ -1056,7 +1056,7 @@ a.series-nav-title:hover {
 /* 左側提示符（取代紅黃綠燈）：綠色 ❯_ ，乾淨的終端機味 */
 .terminal-glyph {
   color: var(--green-400);
-  font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-13);
   font-weight: 700;
   letter-spacing: var(--ls-n4);
@@ -1065,7 +1065,7 @@ a.series-nav-title:hover {
   font-size: var(--fs-12);
   letter-spacing: var(--ls-2);
   color: var(--white-40);
-  font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
+  font-family: var(--mono-font);
 }
 .terminal-block .copy-button {
   margin-left: auto;
@@ -1086,7 +1086,7 @@ a.series-nav-title:hover {
   background: transparent !important;
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
+  font-family: var(--mono-font);
   width: max-content;
   min-width: 100%;
   box-sizing: border-box;
@@ -1105,7 +1105,7 @@ a.series-nav-title:hover {
   white-space: pre;
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
+  font-family: var(--mono-font);
 }
 .terminal-block ::-webkit-scrollbar {
   height: 7px;
@@ -1123,7 +1123,7 @@ a.series-nav-title:hover {
 }
 .terminal-prompt-sym {
   color: var(--green-400);
-  font-family: "Fira Code", "JetBrains Mono", var(--cjk-font), monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-14);
   font-weight: 700;
 }
@@ -1170,7 +1170,7 @@ a.series-nav-title:hover {
     opacity: 0.55;
   }
   50% {
-    opacity: 0.85;
+    opacity: 0.9;
   }
 }
 
@@ -1554,7 +1554,7 @@ a.series-nav-title:hover {
   background: rgba(var(--brand-rgb), 0.1);
   border: 1px solid rgba(var(--brand-rgb), 0.25);
   border-radius: var(--r-6);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: var(--mono-font);
   font-size: 0.85em;
   color: rgba(var(--lavender-rgb), 0.95);
   margin: 0 var(--space-0-5);

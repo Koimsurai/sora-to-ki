@@ -479,6 +479,37 @@ function check(file: string): Problem[] {
       }
     }
 
+    // ── 元素的 opacity 也走那把 19 階的階梯 ──
+    //
+    // ⚠ 這條**不是**「要用 token」，是「值要在階梯上」——`--white-NN` 那些是顏色，
+    // 不能拿來當 opacity。但兩者量的是同一件事（多透明），所以共用同一套詞彙：
+    // 導入時 23 種值裡已經有 19 種落在階梯上，只有 0.85 / 0.75 / 0.18 / 0.12 例外。
+    if (prop === 'opacity' && /^[\d.]+$/.test(value)) {
+      const a = Number(value);
+      if (a !== 0 && a !== 1 && !onLadder(a)) {
+        problems.push({
+          file,
+          line,
+          prop,
+          raw: value,
+          why: `${a} 不在 19 階的透明度階梯上`,
+          fix: `改用 ${Number(nearestRung(a)) / 100}`,
+        });
+      }
+    }
+
+    // ── 等寬字只有一套堆疊 ──
+    if (prop === 'font-family' && /\bmonospace\b/.test(value) && !value.includes('var(--mono-font)')) {
+      problems.push({
+        file,
+        line,
+        prop,
+        raw: value.slice(0, 40),
+        why: '等寬字有一套統一的堆疊',
+        fix: '改用 var(--mono-font)',
+      });
+    }
+
     // ── blur() 的半徑 ──
     if (FILTER_PROP.test(prop)) {
       for (const bm of value.matchAll(BLUR_CALL)) {
@@ -675,7 +706,7 @@ const problems = files.flatMap(check);
 
 if (problems.length === 0) {
   console.log(
-    `✅ 間距、字級、行高、字距、圓角、模糊、陰影、堆疊層、過渡與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`,
+    `✅ 間距、字級、行高、字距、圓角、模糊、陰影、堆疊層、過渡、等寬字與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`,
   );
   process.exit(0);
 }

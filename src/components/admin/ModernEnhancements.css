@@ -103,7 +103,7 @@
 
 /* ── Empty State ── */
 .admin-layout [class*="empty"] svg {
-  opacity: 0.12;
+  opacity: 0.1;
   color: var(--zinc-200);
 }
 

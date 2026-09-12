@@ -69,7 +69,7 @@
 }
 .cmdk-kbd,
 .cmdk-wrap kbd {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-10);
   padding: var(--space-0-5) var(--space-1-5);
   border-radius: var(--r-4);

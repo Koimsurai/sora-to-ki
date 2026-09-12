@@ -94,7 +94,7 @@
   padding: var(--space-0-5) var(--space-1-5);
   background: rgba(var(--brand-rgb), 0.15);
   border-radius: var(--r-4);
-  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--mono-font);
   font-size: 0.88em;
   color: var(--purple-300);
 }
@@ -117,7 +117,7 @@
   line-height: var(--lh-170);
 }
 .info-page-timeline-date {
-  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-14);
   color: rgba(var(--ink-rgb), 0.45);
   letter-spacing: var(--ls-2);
@@ -145,7 +145,7 @@
   width: 30%;
   max-width: 220px;
   min-width: 140px;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .info-page-closing {

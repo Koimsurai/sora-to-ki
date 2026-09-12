@@ -500,7 +500,7 @@
   padding: var(--space-1) var(--space-2-5);
   border-radius: var(--r-full);
   border: 1px solid currentColor;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 .w-recent-badge--anime {
   color: rgba(var(--purple-300-rgb), 0.9);

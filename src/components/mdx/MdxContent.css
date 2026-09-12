@@ -347,7 +347,7 @@
 .mdx-mention svg {
   flex: 0 0 auto;
   font-size: 0.95em;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .mdx-mention:hover {
   background: var(--white-08);
@@ -398,7 +398,7 @@
   color: var(--white-50);
   font-size: var(--fs-13);
   font-weight: 500;
-  font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
+  font-family: var(--mono-font);
   cursor: pointer;
   transition:
     background var(--dur-200) ease,
@@ -566,7 +566,7 @@
   white-space: pre-wrap;
   word-break: break-word;
   font-size: var(--fs-13);
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .mdx-error {
@@ -584,7 +584,7 @@
   white-space: pre-wrap;
   word-break: break-word;
   font-size: var(--fs-13);
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -789,7 +789,7 @@
   border: 1px solid var(--white-10);
   border-radius: var(--r-12);
   background: var(--white-02);
-  font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-14);
   line-height: var(--lh-185);
   overflow-x: auto;

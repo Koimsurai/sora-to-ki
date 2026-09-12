@@ -117,7 +117,7 @@
   bottom: 32px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: ui-monospace, "SF Mono", Menlo, "Roboto Mono", monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-30);
   text-transform: uppercase;

@@ -7,7 +7,7 @@
   background: transparent !important;
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
+  font-family: var(--mono-font);
   width: max-content;
   min-width: 100%;
   box-sizing: border-box;
@@ -35,7 +35,7 @@
   white-space: pre;
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  font-family: "Fira Code", "JetBrains Mono", "SF Mono", Consolas, var(--cjk-font), monospace;
+  font-family: var(--mono-font);
   animation: shikiPulse 1.4s ease-in-out infinite;
 }
 .code-surface-body .shiki-fallback code {

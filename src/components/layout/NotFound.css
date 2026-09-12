@@ -176,7 +176,7 @@
 }
 
 .nf-addr-path {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono-font);
   color: var(--white-80);
   /* 有人會把一整串網址貼進來——換行，不要撐破版面 */
   overflow-wrap: anywhere;
@@ -230,7 +230,7 @@
 
 /* kbd 不再是「按鈕裡的小按鈕」——拿掉邊框與底色，只用透明度把它推到次要層次 */
 .nf-kbd {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--mono-font);
   font-size: var(--fs-12);
   font-weight: 500;
   color: var(--white-80);

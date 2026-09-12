@@ -307,7 +307,7 @@
     clip-path: inset(42% 0 34% 0);
   }
   85% {
-    opacity: 0.85;
+    opacity: 0.9;
     transform: translate(-4px, 0);
     clip-path: inset(0 0 55% 0);
   }
@@ -348,7 +348,7 @@
     clip-path: inset(46% 0 22% 0);
   }
   85% {
-    opacity: 0.85;
+    opacity: 0.9;
     transform: translate(4px, 0);
     clip-path: inset(58% 0 0 0);
   }
