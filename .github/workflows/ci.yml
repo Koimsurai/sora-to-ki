@@ -775,6 +775,8 @@ jobs:
           tags: local/web-frontend:ci
           cache-from: type=registry,ref=${{ env.CACHE_FE }}
           cache-to: ${{ github.event_name == 'push' && format('type=registry,ref={0},mode=max,image-manifest=true,oci-mediatypes=true', env.CACHE_FE) || '' }}
+          # 同下面 backend 的說明：runtime 層的 `apt-get upgrade` 不能吃快取。
+          no-cache-filters: runtime
       - name: build backend image
         if: steps.scope.outputs.backend == 'true'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7

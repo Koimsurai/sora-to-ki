@@ -100,11 +100,16 @@ RUN find .output/public/assets -name '*.map' -delete
 RUN node scripts/sync-nitro-asset-manifest.mjs
 
 # Stage 2: Production server
-FROM node:26.5.0-bookworm-slim
+FROM node:26.5.0-bookworm-slim AS runtime
 WORKDIR /app
 
 ENV TZ=Asia/Taipei
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 吃到 base image 快照之後才發的 Debian 安全更新，理由同 backend/Dockerfile 的 runtime 階段。
+# 實際發生過：libpcre2-8-0 卡在 10.42-1，而 10.42-1+deb12u1 已經修掉 3 個 HIGH。
+# ⚠️ 這層必須配 ci.yml 的 `no-cache-filters: runtime`，否則快取會把 upgrade 凍結在建層那天。
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
 # node 官方 image 內建的 npm 自己帶一包 node_modules，而那包目前有 5 個
 # HIGH/CRITICAL 且**都有修版**（tar 7.5.16、brace-expansion 5.0.6、undici 6.26.0）。
