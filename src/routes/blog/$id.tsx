@@ -37,9 +37,15 @@ export const Route = createFileRoute('/blog/$id')({
       // 網址正規化：文章的 canonical 是 slug。用數字 id 或改名前的舊 slug 進來時
       // 一律 301 到 canonical 網址——舊網址（含 GSC 已索引的 /blog/<id>）永遠有效，
       // 且權重會轉移到新網址。
+      //
+      // ⚠️ 一定要寫成 `to` + `params`，不能寫 `href`。client 端的 hover 預載追 redirect 時是用
+      // `buildLocation(redirect.options)` 重算目標，而 buildLocation 不認 `href`——算出來的
+      // 還是原本的 /blog/17，於是自己轉向自己。預載那個迴圈沒有上限、資料又已在快取裡，
+      // 每一輪都只是 microtask，整個主執行緒被餓死：頁面凍住、F5 與 F12 都沒反應，
+      // 只剩合成器還在動捲軸。滑鼠經過任何一個數字 id 的文章連結就會觸發。
       const ident = postIdent(post);
       if (ident !== params.id) {
-        throw redirect({ href: `/blog/${ident}`, statusCode: 301 });
+        throw redirect({ to: '/blog/$id', params: { id: ident }, statusCode: 301 });
       }
       return { post };
     } catch (e) {

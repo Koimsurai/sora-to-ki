@@ -23,9 +23,10 @@ export const Route = createFileRoute('/$locale/blog/$id')({
         context.queryClient.prefetchQuery(blogCategoriesDetailQueryOptions(locale)),
       ]);
       // 同 /blog/$id：非 canonical 的識別碼（數字 id / 舊 slug）一律 301 到 slug 網址。
+      // 必須用 `to` + `params` 而不是 `href`，理由見 /blog/$id（hover 預載會無窮迴圈卡死頁面）。
       const ident = postIdent(post);
       if (ident !== params.id) {
-        throw redirect({ href: `/${params.locale}/blog/${ident}`, statusCode: 301 });
+        throw redirect({ to: '/$locale/blog/$id', params: { locale: params.locale, id: ident }, statusCode: 301 });
       }
       return { post, locale };
     } catch (e) {

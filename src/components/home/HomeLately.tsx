@@ -254,7 +254,9 @@ export default function HomeLately() {
               {comments.map((c) => (
                 <li key={c.id}>
                   <LocaleLink
-                    to={c.thought_id ? `/thinking/${c.thought_id}` : `/blog/${c.post_id}`}
+                    to={
+                      c.thought_id ? `/thinking/${c.thought_id}` : postPath({ slug: c.post_slug, id: c.post_id ?? '' })
+                    }
                     className="lately-echo"
                   >
                     <p className="lately-echo-text">{c.content}</p>

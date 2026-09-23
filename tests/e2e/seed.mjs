@@ -13,7 +13,7 @@ import { DatabaseSync } from 'node:sqlite';
  * （id=4 就是為了 CLS 測試加的），而寫死的那一版每加一篇就會讓一個不相干的
  * API 契約測試變紅，讀的人還得回頭猜「這個 2 是哪來的」。
  */
-export const PUBLISHED_POSTS = 6;
+export const PUBLISHED_POSTS = 7;
 
 /**
  * 測試自己建立的文章一律用這個前綴命名。
@@ -279,6 +279,14 @@ export function seed(dbPath) {
     allBlocksArticle(),
     '把所有 MDX block 放在同一頁，用來確認沒有任何一個安靜地退回純文字',
     T(12),
+  );
+  // 第 8 篇是種子裡**唯一有 slug 的文章**，存在的理由是 `/blog/<id>` → `/blog/<slug>` 的 301。
+  // 其他篇都沒有 slug，canonical 就是 id 本身，那條 redirect 從來沒被走過——而它在 client 端
+  // 預載時曾經無窮迴圈、把整個頁面卡死（見 routes/blog/$id.tsx）。日期給得最舊，理由同第 5、6 篇。
+  run(
+    `INSERT INTO posts (id, slug, title, content, excerpt, category, status, author, created_at, allow_comments)
+     VALUES (8, 'slugged-post', '有 slug 的文章', '這篇的網址是 slug。', '有 slug', '生活', 'published', 'Koimsurai', ?, 1)`,
+    T(13),
   );
   run('INSERT INTO post_tags (post_id, tag_id) VALUES (1, 1), (1, 2), (2, 3)');
   run("INSERT INTO post_reactions (post_id, emoji, count) VALUES (1, '👍', 5)");

@@ -350,6 +350,11 @@ export type DigestComment = {
 	post_id: number | null,
 	thought_id: number | null,
 	post_title: string | null,
+	/**
+	 *  前端用來組 canonical 網址（`/blog/<slug>`）。少了它只能連到 `/blog/<id>`，
+	 *  那得多走一次 301。
+	 */
+	post_slug: string | null,
 };
 
 export type DigestPost = {

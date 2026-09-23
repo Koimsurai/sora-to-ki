@@ -60,6 +60,9 @@ pub struct DigestComment {
     #[specta(type = Option<specta_typescript::Number>)]
     pub thought_id: Option<i64>,
     pub post_title: Option<String>,
+    /// 前端用來組 canonical 網址（`/blog/<slug>`）。少了它只能連到 `/blog/<id>`，
+    /// 那得多走一次 301。
+    pub post_slug: Option<String>,
 }
 
 #[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
@@ -108,7 +111,7 @@ pub async fn home_digest(
 
     let comments = sqlx::query_as::<_, DigestComment>(sqlx::AssertSqlSafe(format!(
         "SELECT c.id, c.author, substr(c.content, 1, 80) AS content, c.created_at, \
-                c.post_id, c.thought_id, {p_title} AS post_title \
+                c.post_id, c.thought_id, {p_title} AS post_title, p.slug AS post_slug \
          FROM comments c LEFT JOIN posts p ON p.id = c.post_id \
          WHERE c.status = 'approved' AND c.is_admin = 0 \
          ORDER BY c.created_at DESC LIMIT 4"
