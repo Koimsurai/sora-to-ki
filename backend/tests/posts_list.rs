@@ -129,7 +129,7 @@ async fn 分類與標籤各自能單獨篩() {
 
     // 不存在的標籤要回空陣列而不是全部
     let (_, body) = get(&app, "/api/posts?tag=沒有這個標籤").await;
-    assert!(body["posts"].as_array().unwrap().is_empty());
+    assert_eq!(body["posts"], json!([]));
     assert_eq!(body["pagination"]["total"], 0);
 }
 
@@ -191,7 +191,7 @@ async fn 分頁的_total_pages_是無條件進位_而且非數字退回預設() 
     // 超出範圍是空陣列，不是 404 也不是回到第一頁
     let (status, body) = get(&app, "/api/posts?limit=3&page=99").await;
     assert_eq!(status, 200);
-    assert!(body["posts"].as_array().unwrap().is_empty());
+    assert_eq!(body["posts"], json!([]));
 
     // 非數字的 page/limit 退回預設（1 / 10），不是 0 也不是錯誤
     let (_, body) = get(&app, "/api/posts?limit=abc&page=xyz").await;

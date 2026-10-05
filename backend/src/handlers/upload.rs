@@ -326,7 +326,7 @@ mod tests {
     fn compute_image_meta_returns_url_safe_base64() {
         let m = compute_image_meta(&png(200, 120)).expect("合法 PNG 應該算得出 thumbhash");
         let th = m.hash;
-        assert!(!th.is_empty());
+        assert_ne!(th, "");
         assert!(!th.contains('='), "不該有 padding：{th}");
         assert!(!th.contains('+') && !th.contains('/'), "必須是 URL-safe 字母表：{th}");
         assert!(

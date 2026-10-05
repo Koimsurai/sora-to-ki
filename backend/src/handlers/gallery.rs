@@ -835,7 +835,7 @@ mod pure_tests {
         assert_eq!(out[1].id, "ok-2");
         // 選填欄位要有預設值而不是讓整張被丟掉
         assert_eq!(out[0].description, "");
-        assert!(out[0].tags.is_empty());
+        assert_eq!(out[0].tags, Vec::<String>::new());
         assert!(out[0].thumb_hash.is_none());
     }
 

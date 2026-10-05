@@ -332,7 +332,7 @@ mod tests {
             fallback_pool("en").iter().any(|(t, _)| *t == text),
             "應該取自 en 的 fallback pool，得到 {text}"
         );
-        assert!(!v["quote"]["from"].as_str().unwrap().is_empty());
+        assert_ne!(v["quote"]["from"].as_str().unwrap(), "");
     }
 
     #[tokio::test]

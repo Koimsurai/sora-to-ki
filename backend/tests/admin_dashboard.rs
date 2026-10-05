@@ -490,7 +490,7 @@ async fn 黑名單與關鍵字的刪除是冪等的() {
     let (status, _) = adm(&app, "DELETE", &format!("/api/admin/keyword-filters/{id}"), None).await;
     assert_eq!(status, 200);
     let (_, list) = adm(&app, "GET", "/api/admin/keyword-filters", None).await;
-    assert!(list["filters"].as_array().unwrap().is_empty());
+    assert_eq!(list["filters"], json!([]));
 }
 
 #[tokio::test]
