@@ -115,10 +115,16 @@ jobs:
       # 測試結果送 Codecov Test Analytics（不是覆蓋率——那邊看的是每一條測試的
       # 歷史失敗率與 flaky）。!cancelled() 而不是 always()：測試紅的時候才最需要
       # 這份資料，只在成功時上傳等於「壞掉時看不到」。
+      #
+      # ⚠ 用的是 codecov-action 加 `report_type: test_results`，不是 codecov/test-results-action。
+      #   後者已棄用，2026-10 起上傳時 TLS 握手直接失敗（SSL alert 40），而且是在讀
+      #   fail_ci_if_error 之前就崩潰——於是每一支 PR 的 Frontend / Backend / E2E 都紅，
+      #   測試本身卻全過。
       - name: Test Analytics（frontend）
         if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1.2.1
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           files: junit-frontend.xml
           flags: frontend
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -273,8 +279,9 @@ jobs:
       # 測試結果（跟上面的覆蓋率是兩回事）。target/ 在 workspace root，不是 backend/ 底下。
       - name: Test Analytics（backend）
         if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1.2.1
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           files: target/nextest/ci/junit.xml
           flags: backend
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -414,8 +421,9 @@ jobs:
       #   仍然算綠，那種訊號在 CI log 上只是一行 flaky 標記，跑完就沒了。
       - name: Test Analytics（e2e）
         if: ${{ !cancelled() && env.CODECOV_TOKEN != '' }}
-        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3 # v1.2.1
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
+          report_type: test_results
           files: junit-e2e.xml
           flags: e2e
           token: ${{ secrets.CODECOV_TOKEN }}
