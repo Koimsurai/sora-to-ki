@@ -214,6 +214,18 @@ test.describe('文章頁的互動', () => {
     expect((await counts()).a, '票數不該再變').toBe(before.a + 1);
   });
 
+  /**
+   * Tailwind 的 preflight 把 ul / ol 的 list-style 歸零，文章的清單因此**從來沒有符號、
+   * 有序清單沒有數字**，一直到 2026-10 才被發現——list-style 不在 computed-style 守的屬性裡，
+   * 截圖比對也不會有人特別去看項目符號。種子第 1 篇的內文有一個 markdown 清單。
+   */
+  test('文章裡的 markdown 清單有項目符號', async ({ page }) => {
+    await page.goto('/blog/1');
+    const ul = article(page).locator('ul:not([class])').first();
+    await expect(ul).toBeVisible();
+    expect(await ul.evaluate((el) => getComputedStyle(el).listStyleType)).toBe('disc');
+  });
+
   test('上一篇／下一篇走得到相鄰的文章', async ({ page }) => {
     await page.goto('/blog/2');
     const nav = page.getByRole('navigation', { name: '上一篇與下一篇' });

@@ -656,9 +656,15 @@ SignatureSVG 的金色漸層、ZeroGravityLibrary 的 3D 燈光色——全是�
 ⚠️ **`dark:` variant 在這個站是死碼。** `@custom-variant dark` 要 `.dark` 祖先，而全站沒有任何
 地方掛它。看到 `bg-gray-100 dark:bg-gray-800` 這種寫法，實際生效的是**淺色**那個。
 
-⚠️ **後台 AI 寫作助手的預覽沒有排版**（已知、未修）。那串 `prose-*` 一直寫著但
-`@tailwindcss/typography` 從沒裝過；補 plugin 會讓全域樣式表多約 2 KB gzip、每個公開頁都要
-下載，所以沒補。該做的是讓預覽套用文章頁的 `.post-content`。
+⚠️ **不要裝 `@tailwindcss/typography` 來做排版。** 後台的預覽一律用 `admin/PostPreview.tsx`
+（跟前台同一套渲染管線）。AI 寫作助手原本寫了一串 `prose-*`，但那個 plugin 從沒裝過，預覽一直
+是沒排版的純文字；補 plugin 會讓全域樣式表多約 2 KB gzip、每個公開頁都要下載。
+
+⚠️ **文章的 markdown 清單靠 `article-shell.css` 補回符號**（`.post-content ul:not([class])`）。
+Tailwind 的 preflight 把 `list-style` 歸零，這裡原本只設了內縮，於是正式站的清單**從來沒有符號、
+有序清單沒有數字**。`list-style` 不在 computed-style 的 PROPS 裡，守它的是
+`blog-post.spec.ts` 的「markdown 清單有項目符號」。只補沒有 class 的清單：MDX 區塊與 GFM 待辦
+清單都帶自己的 class。
 
 ### 剩下的 27 個 `!important` 都是查過的，不要再清一次
 

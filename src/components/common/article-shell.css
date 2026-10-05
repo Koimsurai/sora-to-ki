@@ -502,6 +502,21 @@
   margin: var(--space-4) 0;
 }
 
+/* 項目符號與編號。Tailwind 的 preflight 把 ul / ol 的 list-style 歸零，而這裡一直只設了
+   內縮（內縮本來就是給符號留的位置）——於是正式站的文章清單**從來沒有符號，有序清單也沒有數字**，
+   「步驟一、二、三」讀起來就是三行沒編號的字。是做後台 AI 預覽時順手量出來的。
+   只補給 markdown 產生的清單（沒有 class）：投票、延伸閱讀這些 MDX 區塊與 GFM 的待辦清單
+   （contains-task-list）都帶自己的 class，有自己的樣式，不能被這條蓋掉。 */
+.post-content ul:not([class]) {
+  list-style: disc;
+}
+.post-content ol:not([class]) {
+  list-style: decimal;
+}
+.post-content :is(ul, ol):not([class]) ul:not([class]) {
+  list-style: circle;
+}
+
 .post-content li {
   margin: var(--space-1-5) 0;
 }

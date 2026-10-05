@@ -1,7 +1,5 @@
 import { useState, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import { PostPreview } from './PostPreview';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -381,6 +379,15 @@ async function generateLongForm(
   return allParts.join('\n\n');
 }
 
+/**
+ * 第一個 `# 標題` 拆出來當文章標題，其餘是內文。
+ * 「匯入編輯器」與預覽共用同一個拆法——預覽原本把那行 H1 當成內文渲染，跟匯入後看到的不一樣。
+ */
+function splitTitle(md: string): { title: string | null; body: string } {
+  const m = /^#\s+(.+)$/m.exec(md);
+  return { title: m ? m[1].trim() : null, body: md.replace(/^#\s+.+$/m, '').trim() };
+}
+
 // ─── 元件 ───────────────────────────────────────────────
 export default function ArticleGenerator() {
   const navigate = useNavigate();
@@ -388,6 +395,7 @@ export default function ArticleGenerator() {
   const [articleType, setArticleType] = useState('tech');
   const [guide, setGuide] = useState('');
   const [generatedContent, setGeneratedContent] = useState('');
+  const preview = splitTitle(generatedContent);
   const [isGenerating, setIsGenerating] = useState(false);
   const [progressText, setProgressText] = useState('');
   const [viewMode, setViewMode] = useState('preview'); // 'preview' | 'source'
@@ -467,12 +475,9 @@ export default function ArticleGenerator() {
   const handleSendToEditor = async () => {
     if (!generatedContent.trim()) return;
 
-    // 從 Markdown 中提取標題
-    const titleMatch = /^#\s+(.+)$/m.exec(generatedContent);
-    const title = titleMatch ? titleMatch[1].trim() : '未命名文章';
-
-    // 移除標題行，剩餘作為正文
-    const content = generatedContent.replace(/^#\s+.+$/m, '').trim();
+    const split = splitTitle(generatedContent);
+    const title = split.title ?? '未命名文章';
+    const content = split.body;
 
     // 使用 AI 生成摘要與標籤（模仿 Jarvis 的 prompt）
     let summary = '';
@@ -700,15 +705,15 @@ export default function ArticleGenerator() {
                     </div>
                   </div>
                 ) : viewMode === 'preview' ? (
-                  <article className="max-w-none">
-                    {/* ⚠️ 這裡原本是一長串 `prose prose-invert prose-h1:…`，但 @tailwindcss/typography
-                        從來沒裝過，那些 class 一條 CSS 都沒產生，預覽一直是沒排版的純文字
-                        （preflight 把標題字級與清單符號都歸零了）。不補 plugin 是因為它會把約 2 KB gzip
-                        加進每個公開頁都要下載的全域樣式表；要修預覽，應該讓它套用文章頁的 `.post-content`。 */}
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                      {generatedContent}
-                    </ReactMarkdown>
-                  </article>
+                  // 跟文章編輯器同一個預覽元件（前台的渲染管線：.post-content 排版、shiki、mermaid）。
+                  // format 固定 markdown：「匯入編輯器」之後新文章預設就是 markdown，兩邊才會長得一樣。
+                  // 標題照匯入時的拆法另外顯示（.post-title 是文章頁的標題樣式）。
+                  // ⚠️ 這裡原本是 ReactMarkdown 配一長串 `prose-*`，但 @tailwindcss/typography 從來沒裝過，
+                  //    那些 class 一條 CSS 都沒產生，預覽一直是沒排版的純文字。
+                  <>
+                    {preview.title && <h1 className="post-title">{preview.title}</h1>}
+                    <PostPreview content={preview.body} format="markdown" />
+                  </>
                 ) : (
                   <pre className="text-sm leading-relaxed font-mono whitespace-pre-wrap text-muted-foreground bg-transparent overflow-auto max-h-[700px]">
                     {generatedContent}
