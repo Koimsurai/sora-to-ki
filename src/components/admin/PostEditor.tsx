@@ -873,12 +873,12 @@ export default function PostEditor() {
                     >
                       {t.label}
                       {isSource && (
-                        <span className="ml-1 rounded bg-violet-500/20 px-1 py-px text-[9px] text-violet-300">
+                        <span className="ml-1 rounded bg-violet-500/20 px-1 py-px text-fs-10 text-violet-300">
                           原文
                         </span>
                       )}
                       {!isSource && hasContent && (
-                        <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-green-400" />
                       )}
                     </button>
                   );
@@ -890,7 +890,7 @@ export default function PostEditor() {
                       void handleGenerateZhCN();
                     }}
                     disabled={isGeneratingZhCN}
-                    className="ml-auto inline-flex items-center gap-1 rounded-md border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[11px] text-violet-300 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="ml-auto inline-flex items-center gap-1 rounded-md border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-fs-11 text-violet-300 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                     title="OpenCC 繁→簡，純字詞轉換不丟 LLM"
                   >
                     {isGeneratingZhCN ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3" />}
@@ -900,7 +900,7 @@ export default function PostEditor() {
               </div>
 
               {/* i18n 多語系提示 */}
-              <p className="mb-3 text-[11px] text-muted-foreground/70">
+              <p className="mb-3 text-fs-11 text-muted-foreground/70">
                 目前編輯：
                 <span className="text-violet-300">{LOCALE_TABS.find((t) => t.code === activeLocale)?.label}</span>
                 <span className="mx-1.5 opacity-40">·</span>
@@ -942,10 +942,10 @@ export default function PostEditor() {
                   </button>
                   <div className="ml-auto flex items-center gap-2">
                     {autosaveStatus === 'saved' && (
-                      <span className="text-[10px] text-emerald-400/80 animate-in fade-in">已自動備份</span>
+                      <span className="text-fs-10 text-green-400/80 animate-in fade-in">已自動備份</span>
                     )}
                     {autosaveStatus === 'restoring' && (
-                      <span className="text-[10px] text-violet-300 animate-in fade-in">已還原草稿</span>
+                      <span className="text-fs-10 text-violet-300 animate-in fade-in">已還原草稿</span>
                     )}
                     <button
                       type="button"
@@ -992,7 +992,7 @@ export default function PostEditor() {
               <div className="p-4 space-y-5">
                 {/* Category & Tags */}
                 <div>
-                  <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                  <h3 className="text-fs-11 uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
                     <Folder className="h-3.5 w-3.5" />
                     分類與標籤
                   </h3>
@@ -1039,14 +1039,14 @@ export default function PostEditor() {
                               標籤
                               <span className="text-muted-foreground/50 ml-1">({tags.length} 個可用)</span>
                             </FormLabel>
-                            <div className="text-[11px] text-muted-foreground/60 mb-1">
+                            <div className="text-fs-11 text-muted-foreground/60 mb-1">
                               已選擇 {selectedTags.length} 項
                             </div>
                             <div className="flex flex-wrap gap-1.5 mb-2">
                               {selectedTags.map((tag) => (
                                 <span
                                   key={tag.value}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/60 text-foreground/70 text-[11px] border border-border/40"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/60 text-foreground/70 text-fs-11 border border-border/40"
                                 >
                                   {tag.label}
                                   <button
@@ -1072,7 +1072,7 @@ export default function PostEditor() {
 
                 {/* Series — 系列文 */}
                 <div>
-                  <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                  <h3 className="text-fs-11 uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
                     <FileText className="h-3.5 w-3.5" />
                     系列文（選填）
                   </h3>
@@ -1117,7 +1117,7 @@ export default function PostEditor() {
 
                 {/* Publishing Options */}
                 <div>
-                  <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                  <h3 className="text-fs-11 uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5" />
                     發佈設定
                   </h3>
@@ -1192,7 +1192,7 @@ export default function PostEditor() {
                           <FormControl>
                             <Input {...field} placeholder="blog-post-rendering-strategy" className="h-8 bg-accent/30" />
                           </FormControl>
-                          <p className="text-[10px] text-muted-foreground/60">
+                          <p className="text-fs-10 text-muted-foreground/60">
                             文章網址是 /blog/&lt;slug&gt;。留空會自動從英文標題產生；改了也不會斷——舊網址會自動 301
                             到新的。
                           </p>
@@ -1251,7 +1251,7 @@ export default function PostEditor() {
                         <FormItem className="flex items-center justify-between">
                           <div className="flex flex-col gap-0.5">
                             <FormLabel className="text-xs text-muted-foreground">發佈時推送 Newsletter</FormLabel>
-                            <span className="text-[10px] text-muted-foreground/60">文章狀態為「已發佈」時才會觸發</span>
+                            <span className="text-fs-10 text-muted-foreground/60">文章狀態為「已發佈」時才會觸發</span>
                           </div>
                           <FormControl>
                             <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -1264,7 +1264,7 @@ export default function PostEditor() {
                     {id && form.watch('status') === 'published' && (
                       <button
                         type="button"
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-md border border-violet-500/30 bg-violet-500/8 text-violet-200 hover:bg-violet-500/15 hover:border-violet-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full mt-1 px-3 py-2 text-xs rounded-md border border-violet-500/30 bg-violet-500/8 text-purple-200 hover:bg-violet-500/15 hover:border-violet-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isSavingDraft || isPublishing}
                         onClick={() => {
                           void handleSendNewsletter();
@@ -1278,7 +1278,7 @@ export default function PostEditor() {
 
                 {/* Cover Image */}
                 <div>
-                  <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                  <h3 className="text-fs-11 uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
                     <ImageIcon className="h-3.5 w-3.5" />
                     封面圖片
                   </h3>
@@ -1317,7 +1317,7 @@ export default function PostEditor() {
                             void handleGenerateSummary();
                           }}
                           disabled={isGeneratingSummary}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-fs-10 font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isGeneratingSummary ? (
                             <>

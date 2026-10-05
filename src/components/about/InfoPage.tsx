@@ -165,7 +165,7 @@ function InfoPage({ title, subtitle, slug, prev, next, closingNote, children }: 
                     <path
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       fill="none"
-                      stroke="rgba(255,255,255,0.08)"
+                      stroke="var(--white-08)"
                       strokeWidth="3"
                     />
                     <path

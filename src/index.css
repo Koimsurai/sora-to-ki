@@ -50,6 +50,49 @@
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
 
+  /* ── 站上的色票接到 Tailwind ──────────────────────────────────────────
+     在這之前站上有**兩個 green-400**：CSS 的 `var(--green-400)` 是 v3 的 #4ade80，
+     後台 TSX 的 `text-green-400` 是 Tailwind v4 內建的 oklch 色票，兩者不相等。
+     這裡讓 `text-green-400` 也指向 :root 那份色票，CSS 與 TSX 從此共用同一套顏色。
+     換過去的色差都是 ΔE2000 ≤ 3.9（zinc 系列 ≤ 0.9），並排細看才分得出來。
+     ⚠️ 不在這份清單裡的 Tailwind 色（rose / emerald / gray…）仍然會產生 utility，
+        擋它們的是 `@shadcn/lint` 的 `no-raw-colors`（見 .oxlintrc.json）。
+     ⚠️ 值引用 :root 的變數而不是抄 hex：:root 是普通 CSS 一定會輸出，不會被 tree-shake，
+        而且只有一份真相。加新色時兩邊都要加。 */
+  --color-zinc-100: var(--zinc-100);
+  --color-zinc-200: var(--zinc-200);
+  --color-zinc-300: var(--zinc-300);
+  --color-zinc-400: var(--zinc-400);
+  --color-zinc-500: var(--zinc-500);
+  --color-zinc-600: var(--zinc-600);
+  --color-zinc-700: var(--zinc-700);
+  --color-zinc-800: var(--zinc-800);
+  --color-zinc-900: var(--zinc-900);
+  --color-purple-200: var(--purple-200);
+  --color-purple-300: var(--purple-300);
+  --color-purple-400: var(--purple-400);
+  --color-purple-500: var(--purple-500);
+  --color-violet-300: var(--violet-300);
+  --color-violet-400: var(--violet-400);
+  --color-violet-500: var(--violet-500);
+  --color-amber-300: var(--amber-300);
+  --color-amber-400: var(--amber-400);
+  --color-red-300: var(--red-300);
+  --color-red-400: var(--red-400);
+  --color-red-500: var(--red-500);
+  --color-red-600: var(--red-600);
+  --color-green-300: var(--green-300);
+  --color-green-400: var(--green-400);
+  --color-green-500: var(--green-500);
+  --color-orange-300: var(--orange-300);
+  --color-orange-400: var(--orange-400);
+  --color-pink-500: var(--pink-500);
+  --color-sky-300: var(--sky-300);
+  --color-blue-300: var(--blue-300);
+  --color-blue-400: var(--blue-400);
+  --color-blue-500: var(--blue-500);
+  --color-blue-600: var(--blue-600);
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -134,6 +177,30 @@
   --fs-40: 2.5rem;
   --fs-48: 3rem;
   --fs-56: 3.5rem;
+
+  /* 同一把尺接到 Tailwind：`text-fs-11` 就是 `font-size: var(--fs-11)`。
+     在這之前後台寫 Tailwind 時沒有 11px 這一格可選，只好寫 `text-[11px]`（92 處），
+     等於 CSS 那邊收好的尺在 TSX 裡又長了一份。
+     ⚠️ `fs-` 這段前綴不能省：`--text-11` 會跟 `text-xs/sm` 的命名混在一起，而且
+        `cn()` 背後的 tailwind-merge 要靠它認出這是字級（見 src/lib/utils.ts）。
+     ⚠️ 刻意不配 `--text-fs-N--line-height`：`text-[11px]` 本來就只設 font-size，
+        配了就不是零變化。 */
+  --text-fs-10: var(--fs-10);
+  --text-fs-11: var(--fs-11);
+  --text-fs-12: var(--fs-12);
+  --text-fs-13: var(--fs-13);
+  --text-fs-14: var(--fs-14);
+  --text-fs-16: var(--fs-16);
+  --text-fs-18: var(--fs-18);
+  --text-fs-20: var(--fs-20);
+  --text-fs-22: var(--fs-22);
+  --text-fs-24: var(--fs-24);
+  --text-fs-28: var(--fs-28);
+  --text-fs-32: var(--fs-32);
+  --text-fs-36: var(--fs-36);
+  --text-fs-40: var(--fs-40);
+  --text-fs-48: var(--fs-48);
+  --text-fs-56: var(--fs-56);
 
   /* ── 圓角尺 ────────────────────────────────────────────────────────────
      在這之前 border-radius 用了 **21 種** px 值、404 個角、token 覆蓋 0，
@@ -539,6 +606,19 @@
     --red-600-rgb: 220, 38, 38;
     --purple-200: #e9d5ff;
     --purple-200-rgb: 233, 213, 255;
+    /* 2026-10 接上 @shadcn/lint 時補的，都是後台 TSX 裡原本寫 Tailwind 調色盤 class 的顏色。
+       orange / blue 是留言審核的動作色碼（封鎖、編輯），跟色票裡任何一格的 ΔE 都在 8 以上，
+       併不過去；purple-400 是「回覆」與文章側欄連結的 hover，剛好 3 次。 */
+    --purple-400: #c084fc;
+    --purple-400-rgb: 192, 132, 252;
+    --orange-300: #fdba74;
+    --orange-300-rgb: 253, 186, 116;
+    --orange-400: #fb923c;
+    --orange-400-rgb: 251, 146, 60;
+    --blue-300: #93c5fd;
+    --blue-300-rgb: 147, 197, 253;
+    --blue-400: #60a5fa;
+    --blue-400-rgb: 96, 165, 250;
 
     /* ── 站點自己的強調色（第二批）──────────────────────────────────────
        跟 --lavender / --magenta 同一批，都不在任何公開色票上，值是原本在用的 hex。

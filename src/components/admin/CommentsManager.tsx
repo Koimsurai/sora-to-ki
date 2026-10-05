@@ -47,7 +47,7 @@ import { lookupOr } from '../../lib/tableLookup';
 type Comment = AdminCommentRow;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  pending: { label: '待審核', color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
+  pending: { label: '待審核', color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20' },
   approved: { label: '已批准', color: 'text-green-400', bg: 'bg-green-400/10', border: 'border-green-400/20' },
   spam: { label: '垃圾訊息', color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20' },
   trash: { label: '垃圾桶', color: 'text-zinc-500', bg: 'bg-zinc-500/10', border: 'border-zinc-500/20' },
@@ -377,17 +377,17 @@ export default function CommentsManager() {
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-medium text-foreground/90 truncate">{c.author}</span>
                               {c.is_admin ? (
-                                <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                <span className="px-1.5 py-0.5 text-fs-10 font-semibold rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
                                   站長
                                 </span>
                               ) : null}
                               <span
-                                className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${cfg.bg} ${cfg.color} border ${cfg.border}`}
+                                className={`px-1.5 py-0.5 text-fs-10 font-medium rounded ${cfg.bg} ${cfg.color} border ${cfg.border}`}
                               >
                                 {cfg.label}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                            <div className="flex items-center gap-2 text-fs-11 text-muted-foreground mt-0.5">
                               <span>{formatDate(c.created_at)}</span>
                               {c.ip && <span>· IP {c.ip}</span>}
                               {c.email && <span>· {c.email}</span>}
@@ -399,7 +399,7 @@ export default function CommentsManager() {
                             href={`/blog/${c.post_id}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground/70 shrink-0 transition-colors"
+                            className="flex items-center gap-1 text-fs-11 text-muted-foreground hover:text-foreground/70 shrink-0 transition-colors"
                           >
                             <ExternalLink className="size-3" /> {c.post_title.substring(0, 20)}
                             {c.post_title.length > 20 ? '...' : ''}
@@ -557,7 +557,7 @@ export default function CommentsManager() {
                   <div>
                     <span className="text-sm font-mono text-foreground/80">{b.ip}</span>
                     {b.reason && <span className="text-xs text-muted-foreground ml-3">{b.reason}</span>}
-                    <span className="text-[11px] text-muted-foreground ml-3">{formatDate(b.created_at)}</span>
+                    <span className="text-fs-11 text-muted-foreground ml-3">{formatDate(b.created_at)}</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -614,7 +614,7 @@ export default function CommentsManager() {
                   className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs border ${
                     f.action === 'reject'
                       ? 'border-red-500/30 text-red-400 bg-red-500/10'
-                      : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10'
+                      : 'border-amber-400/30 text-amber-400 bg-amber-400/10'
                   }`}
                 >
                   <span>{f.keyword}</span>
@@ -714,7 +714,7 @@ export default function CommentsManager() {
               onClick={() => {
                 void handleDelete();
               }}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               永久刪除
             </AlertDialogAction>

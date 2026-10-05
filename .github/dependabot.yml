@@ -33,8 +33,6 @@ updates:
     ignore:
       # Excalidraw 的字型 subsetting 用 eval，撞全站 CSP（只有 e2e 看得到）
       - dependency-name: vite
-      # 1.80 預設開 React Compiler 診斷，25 個 warning 撞 --max-warnings 0；本專案沒跑 compiler
-      - dependency-name: oxlint
       # 5.7 移除 SiOpenai、SiCss3 改名；要先決定 /about 的 GPT 換什麼圖示
       - dependency-name: react-icons
       # 0.56 的 exports 收窄，monaco-vim 0.4.4 被擋

@@ -819,7 +819,7 @@ export default function MonacoEditor({
       {vimMode && <div ref={vimStatusRef} className="monaco-vim-status" />}
 
       {/* 狀態欄（C-4：加上閱讀時間） */}
-      <div className="monaco-statusbar-glass flex items-center justify-between px-3 py-1.5 text-[11px] text-muted-foreground/70">
+      <div className="monaco-statusbar-glass flex items-center justify-between px-3 py-1.5 text-fs-11 text-muted-foreground/70">
         <div>
           {totalWords} 字 · {totalChars} 字元 · {totalLines} 行{totalChars > 0 && <> · 約 {readingMinutes} 分鐘閱讀</>}
         </div>

@@ -118,7 +118,7 @@ export default function PostsList() {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`text-[12px] px-2.5 py-1 rounded-lg transition-colors ${
+              className={`text-fs-12 px-2.5 py-1 rounded-lg transition-colors ${
                 filter === f.key
                   ? 'bg-accent/60 text-foreground/80'
                   : 'text-muted-foreground/60 hover:text-foreground/60 hover:bg-accent/25'
@@ -144,7 +144,7 @@ export default function PostsList() {
         <div className="glass rounded-xl overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border/20 text-[11px] text-muted-foreground/50 uppercase tracking-wider">
+              <tr className="border-b border-border/20 text-fs-11 text-muted-foreground/50 uppercase tracking-wider">
                 <th className="text-left px-4 py-2.5 font-medium w-8">#</th>
                 <th className="text-left px-4 py-2.5 font-medium">標題</th>
                 <th className="text-left px-4 py-2.5 font-medium w-16">分類</th>
@@ -157,17 +157,17 @@ export default function PostsList() {
               {filtered.map((post) => (
                 <tr key={post.id} className="group hover:bg-accent/15 transition-colors">
                   <td className="px-4 py-2.5">
-                    <span className="text-[11px] text-muted-foreground/40 font-mono">{post.id}</span>
+                    <span className="text-fs-11 text-muted-foreground/40 font-mono">{post.id}</span>
                   </td>
                   <td className="px-4 py-2.5">
                     <div>
-                      <span className="text-[13px] text-foreground/80 group-hover:text-foreground/90 transition-colors">
+                      <span className="text-fs-13 text-foreground/80 group-hover:text-foreground/90 transition-colors">
                         {post.title}
                       </span>
                       {post.tags.length > 0 && (
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {post.tags.slice(0, 3).map((tag) => (
-                            <span key={tag} className="text-[10px] text-muted-foreground/35 font-mono">
+                            <span key={tag} className="text-fs-10 text-muted-foreground/35 font-mono">
                               #{tag}
                             </span>
                           ))}
@@ -176,17 +176,17 @@ export default function PostsList() {
                     </div>
                   </td>
                   <td className="px-4 py-2.5">
-                    <span className="text-[11px] text-muted-foreground/60">{post.category ?? '未分類'}</span>
+                    <span className="text-fs-11 text-muted-foreground/60">{post.category ?? '未分類'}</span>
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded ${statusStyle[post.status] || 'text-muted-foreground bg-accent/20'}`}
+                      className={`text-fs-10 px-1.5 py-0.5 rounded ${statusStyle[post.status] || 'text-muted-foreground bg-accent/20'}`}
                     >
                       {statusLabels[post.status] || post.status}
                     </span>
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <span className="text-[11px] text-muted-foreground/40">
+                    <span className="text-fs-11 text-muted-foreground/40">
                       {post.created_at ? format(new Date(post.created_at), 'yyyy-MM-dd') : ''}
                     </span>
                   </td>
@@ -239,7 +239,7 @@ export default function PostsList() {
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground/40">
+      <div className="flex items-center justify-between text-fs-11 text-muted-foreground/40">
         <span>
           顯示 {filtered.length} / {posts.length} 篇文章
         </span>

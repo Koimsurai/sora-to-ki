@@ -32,9 +32,9 @@ interface StatusConfigEntry {
 const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
   active: {
     label: '已訂閱',
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-400/10',
-    border: 'border-emerald-400/20',
+    color: 'text-green-400',
+    bg: 'bg-green-400/10',
+    border: 'border-green-400/20',
     icon: Mail,
   },
   unsubscribed: {
@@ -230,7 +230,7 @@ export default function SubscribersManager() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-rose-400 hover:text-rose-300 hover:bg-rose-400/10 h-7 gap-1.5"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-7 gap-1.5"
                           onClick={() => setDeleteDialog({ open: true, sub: s })}
                         >
                           <Trash2 className="h-3.5 w-3.5" /> 標記退訂
@@ -256,7 +256,7 @@ export default function SubscribersManager() {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-rose-500 hover:bg-rose-600"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (deleteDialog.sub) void handleUnsubscribe(deleteDialog.sub);
                 setDeleteDialog({ open: false, sub: null });

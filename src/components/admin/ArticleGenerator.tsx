@@ -621,9 +621,7 @@ export default function ArticleGenerator() {
               className="w-full bg-transparent text-foreground/80 text-sm leading-relaxed p-4 resize-none outline-hidden placeholder:text-muted-foreground/40 font-mono"
             />
             <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/20">
-              <span className="text-[11px] text-muted-foreground/40">
-                {conversationText.length.toLocaleString()} 字
-              </span>
+              <span className="text-fs-11 text-muted-foreground/40">{conversationText.length.toLocaleString()} 字</span>
               <Button
                 variant="outline"
                 size="sm"
@@ -652,7 +650,7 @@ export default function ArticleGenerator() {
           {(generatedContent || isGenerating) && (
             <div className="glass rounded-xl overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/20">
-                <span className="text-[12px] text-muted-foreground/60 flex items-center gap-1.5">
+                <span className="text-fs-12 text-muted-foreground/60 flex items-center gap-1.5">
                   <Sparkles className="size-3" />
                   AI 生成結果
                 </span>
@@ -661,13 +659,13 @@ export default function ArticleGenerator() {
                     <div className="flex items-center rounded-lg border border-border/40 p-0.5 mr-1">
                       <button
                         onClick={() => setViewMode('preview')}
-                        className={`text-[11px] px-2 py-0.5 rounded transition-colors ${viewMode === 'preview' ? 'bg-accent/60 text-foreground/80' : 'text-muted-foreground/50'}`}
+                        className={`text-fs-11 px-2 py-0.5 rounded transition-colors ${viewMode === 'preview' ? 'bg-accent/60 text-foreground/80' : 'text-muted-foreground/50'}`}
                       >
                         預覽
                       </button>
                       <button
                         onClick={() => setViewMode('source')}
-                        className={`text-[11px] px-2 py-0.5 rounded transition-colors ${viewMode === 'source' ? 'bg-accent/60 text-foreground/80' : 'text-muted-foreground/50'}`}
+                        className={`text-fs-11 px-2 py-0.5 rounded transition-colors ${viewMode === 'source' ? 'bg-accent/60 text-foreground/80' : 'text-muted-foreground/50'}`}
                       >
                         Markdown
                       </button>
@@ -699,14 +697,18 @@ export default function ArticleGenerator() {
                       <Sparkles className="size-4 text-foreground/40 absolute inset-0 m-auto" />
                     </div>
                     <div className="text-center">
-                      <p className="text-[13px] text-foreground/70">{progressText || '生成中...'}</p>
-                      <p className="text-[11px] text-muted-foreground/40 mt-1">
+                      <p className="text-fs-13 text-foreground/70">{progressText || '生成中...'}</p>
+                      <p className="text-fs-11 text-muted-foreground/40 mt-1">
                         {selectedType.emoji} {selectedType.label} 模式
                       </p>
                     </div>
                   </div>
                 ) : viewMode === 'preview' ? (
-                  <article className="prose prose-invert prose-sm max-w-none prose-headings:font-bold prose-h1:text-2xl prose-h1:mb-6 prose-h2:text-lg prose-h2:mt-8 prose-h2:mb-4 prose-p:leading-relaxed prose-p:text-muted-foreground prose-a:text-foreground/80 prose-a:underline prose-code:text-foreground/70 prose-pre:bg-background/80 prose-pre:border prose-pre:border-border/50 prose-blockquote:border-l-border prose-blockquote:text-muted-foreground/80">
+                  <article className="max-w-none">
+                    {/* ⚠️ 這裡原本是一長串 `prose prose-invert prose-h1:…`，但 @tailwindcss/typography
+                        從來沒裝過，那些 class 一條 CSS 都沒產生，預覽一直是沒排版的純文字
+                        （preflight 把標題字級與清單符號都歸零了）。不補 plugin 是因為它會把約 2 KB gzip
+                        加進每個公開頁都要下載的全域樣式表；要修預覽，應該讓它套用文章頁的 `.post-content`。 */}
                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                       {generatedContent}
                     </ReactMarkdown>
@@ -719,7 +721,7 @@ export default function ArticleGenerator() {
               </div>
               {generatedContent && (
                 <div className="flex items-center justify-between px-4 py-2 border-t border-border/20">
-                  <span className="text-[11px] text-muted-foreground/40">
+                  <span className="text-fs-11 text-muted-foreground/40">
                     約 {generatedContent.replace(/\s/g, '').length} 字
                   </span>
                   <Button
@@ -744,7 +746,7 @@ export default function ArticleGenerator() {
           {/* Quick prompts */}
           <div className="glass rounded-xl">
             <div className="px-4 py-3 border-b border-border/20">
-              <h2 className="text-[13px] font-medium text-foreground/80">快速指令</h2>
+              <h2 className="text-fs-13 font-medium text-foreground/80">快速指令</h2>
             </div>
             <div className="p-3 space-y-1.5">
               {[
@@ -757,7 +759,7 @@ export default function ArticleGenerator() {
                 <button
                   key={q}
                   onClick={() => setGuide(q)}
-                  className="w-full text-left text-[12px] text-muted-foreground/60 hover:text-foreground/70 hover:bg-accent/30 px-3 py-2 rounded-lg transition-colors"
+                  className="w-full text-left text-fs-12 text-muted-foreground/60 hover:text-foreground/70 hover:bg-accent/30 px-3 py-2 rounded-lg transition-colors"
                 >
                   {q}
                 </button>
@@ -768,7 +770,7 @@ export default function ArticleGenerator() {
           {/* Type descriptions */}
           <div className="glass rounded-xl">
             <div className="px-4 py-3 border-b border-border/20">
-              <h2 className="text-[13px] font-medium text-foreground/80">文章類型</h2>
+              <h2 className="text-fs-13 font-medium text-foreground/80">文章類型</h2>
             </div>
             <div className="divide-y divide-border/15">
               {Object.entries(ARTICLE_TYPES).map(([key, type]) => (
@@ -779,9 +781,9 @@ export default function ArticleGenerator() {
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm">{type.emoji}</span>
-                    <span className="text-[12px] text-foreground/70">{type.label}</span>
+                    <span className="text-fs-12 text-foreground/70">{type.label}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground/40 mt-0.5">{type.description}</p>
+                  <p className="text-fs-11 text-muted-foreground/40 mt-0.5">{type.description}</p>
                 </button>
               ))}
             </div>
@@ -791,13 +793,13 @@ export default function ArticleGenerator() {
           {logs.length > 0 && (
             <div className="glass rounded-xl">
               <div className="px-4 py-3 border-b border-border/20">
-                <h2 className="text-[13px] font-medium text-foreground/80">生成日誌</h2>
+                <h2 className="text-fs-13 font-medium text-foreground/80">生成日誌</h2>
               </div>
               <div className="p-3 max-h-48 overflow-y-auto">
                 {logs.map((log, i) => (
                   // log 只會往後追加、不會重排或插入，index 即穩定身分
                   // eslint-disable-next-line @eslint-react/no-array-index-key
-                  <div key={i} className="text-[10px] text-muted-foreground/40 font-mono py-0.5">
+                  <div key={i} className="text-fs-10 text-muted-foreground/40 font-mono py-0.5">
                     {log}
                   </div>
                 ))}

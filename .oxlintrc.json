@@ -4,7 +4,8 @@
     {
       "name": "@eslint-react",
       "specifier": "@eslint-react/eslint-plugin"
-    }
+    },
+    "@shadcn/lint"
   ],
   "plugins": [
     "typescript",
@@ -155,6 +156,17 @@
     ],
     "react/rules-of-hooks": "error",
     "react/exhaustive-deps": "off",
+    "react/purity": "off",
+    "react/refs": "off",
+    "react/immutability": "off",
+    "react/preserve-manual-memoization": "off",
+    "react/incompatible-library": "off",
+    "shadcn/no-raw-colors": "error",
+    "shadcn/no-arbitrary-values": ["error", { "allow": ["layout", "pt-[12vh]"] }],
+    "shadcn/no-restyle": "off",
+    "shadcn/no-inline-styles": "off",
+    "shadcn/no-unknown-classes": "off",
+    "shadcn/require-static-classes": "off",
     "react/only-export-components": [
       "warn",
       {
@@ -353,6 +365,17 @@
     "unicorn/no-useless-fallback-in-spread": "off"
   },
   "overrides": [
+    {
+      "files": [
+        "src/components/layout/NotFound.tsx",
+        "src/components/common/BrandIcons.tsx",
+        "src/components/common/SignatureSVG.tsx",
+        "src/components/media/ZeroGravityLibrary.tsx"
+      ],
+      "rules": {
+        "shadcn/no-raw-colors": "off"
+      }
+    },
     {
       "files": [
         "src/routes/**",

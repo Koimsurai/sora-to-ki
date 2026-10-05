@@ -200,7 +200,7 @@ export default function TagsManager() {
 
                 <div className="pt-2 border-t border-border/40">
                   <p className="text-xs text-muted-foreground mb-1">多語系顯示名（選填）</p>
-                  <p className="text-[11px] text-muted-foreground/60 mb-3">
+                  <p className="text-fs-11 text-muted-foreground/60 mb-3">
                     只影響各語系頁面上的顯示；「標籤名稱」仍是資料鍵（文章的標籤關聯與篩選都用它）。留空該語系就顯示原名。
                   </p>
                   <div className="grid grid-cols-2 gap-3">
@@ -273,11 +273,7 @@ export default function TagsManager() {
             {sortedTags.map((tag) => {
               const count = tag.post_count;
               const sizeClass =
-                count >= 10
-                  ? 'text-sm px-3 py-1.5'
-                  : count >= 5
-                    ? 'text-[13px] px-2.5 py-1'
-                    : 'text-[12px] px-2 py-0.5';
+                count >= 10 ? 'text-sm px-3 py-1.5' : count >= 5 ? 'text-fs-13 px-2.5 py-1' : 'text-fs-12 px-2 py-0.5';
 
               return (
                 <span
@@ -285,7 +281,7 @@ export default function TagsManager() {
                   className={`group inline-flex items-center gap-1.5 rounded-lg border border-border/40 text-foreground/60 hover:text-foreground/80 hover:border-border/60 transition-colors cursor-default ${sizeClass}`}
                 >
                   <span>{tag.name}</span>
-                  <span className="text-muted-foreground/40 text-[10px]">{count}</span>
+                  <span className="text-muted-foreground/40 text-fs-10">{count}</span>
                   <button
                     onClick={() => setDeleteId(tag.id)}
                     className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
@@ -303,11 +299,11 @@ export default function TagsManager() {
       {sortedTags.length > 0 ? (
         <div className="glass rounded-xl overflow-hidden">
           <div className="px-4 py-3 border-b border-border/30">
-            <h2 className="text-[13px] font-medium text-foreground/80">全部標籤</h2>
+            <h2 className="text-fs-13 font-medium text-foreground/80">全部標籤</h2>
           </div>
           <table className="w-full">
             <thead>
-              <tr className="border-b border-border/20 text-[11px] text-muted-foreground/60 uppercase tracking-wider">
+              <tr className="border-b border-border/20 text-fs-11 text-muted-foreground/60 uppercase tracking-wider">
                 <th className="text-left px-4 py-2 font-medium">名稱</th>
                 <th className="text-right px-4 py-2 font-medium">文章數</th>
                 <th className="text-right px-4 py-2 font-medium w-20">操作</th>
@@ -320,11 +316,11 @@ export default function TagsManager() {
                   {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
                   <td className="px-4 py-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] text-foreground/70 font-mono">{tag.name}</span>
+                      <span className="text-fs-13 text-foreground/70 font-mono">{tag.name}</span>
                     </div>
                   </td>
                   <td className="px-4 py-2 text-right">
-                    <span className="text-[12px] text-muted-foreground/60">{tag.post_count}</span>
+                    <span className="text-fs-12 text-muted-foreground/60">{tag.post_count}</span>
                   </td>
                   {/* 這格有可見文字（「編輯」「刪除」按鈕文字），但巢狀在第 3 層，超過規則預設只看 2 層的 depth → 誤報 */}
                   {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
@@ -332,13 +328,13 @@ export default function TagsManager() {
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         onClick={() => handleEdit(tag)}
-                        className="text-[11px] text-muted-foreground hover:text-foreground/70 transition-all px-1.5 py-0.5 rounded hover:bg-accent/40"
+                        className="text-fs-11 text-muted-foreground hover:text-foreground/70 transition-all px-1.5 py-0.5 rounded hover:bg-accent/40"
                       >
                         編輯
                       </button>
                       <button
                         onClick={() => setDeleteId(tag.id)}
-                        className="text-[11px] text-muted-foreground hover:text-destructive transition-all px-1.5 py-0.5 rounded hover:bg-destructive/10"
+                        className="text-fs-11 text-muted-foreground hover:text-destructive transition-all px-1.5 py-0.5 rounded hover:bg-destructive/10"
                       >
                         刪除
                       </button>

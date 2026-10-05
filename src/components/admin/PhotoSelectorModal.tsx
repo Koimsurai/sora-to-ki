@@ -99,7 +99,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="bg-[rgba(24,24,27,0.92)] backdrop-blur-2xl border border-border/50 w-full max-w-6xl h-[85vh] rounded-xl flex flex-col shadow-[0_20px_60px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)] overflow-hidden"
+          className="photo-selector-panel bg-zinc-900/90 backdrop-blur-2xl border border-border/50 w-full max-w-6xl h-[85vh] rounded-xl flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -109,7 +109,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
                 <FaImage className="size-3.5" />
               </span>
               選擇 NAS 照片
-              <span className="text-[11px] font-normal text-muted-foreground ml-1">{photos.length} 張</span>
+              <span className="text-fs-11 font-normal text-muted-foreground ml-1">{photos.length} 張</span>
             </h3>
             <div className="flex items-center gap-2">
               <button
@@ -117,7 +117,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
                   void handleSync();
                 }}
                 disabled={syncing || loading}
-                className="h-7 px-2.5 text-[11px] rounded-md border border-border/40 text-muted-foreground hover:text-foreground/90 hover:bg-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-7 px-2.5 text-fs-11 rounded-md border border-border/40 text-muted-foreground hover:text-foreground/90 hover:bg-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {syncing ? '同步中...' : '同步 NAS'}
               </button>
@@ -183,12 +183,12 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
                       {/* Overlay */}
                       <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-3 transform translate-y-2 group-hover:translate-y-0">
                         <p className="text-white text-xs font-medium truncate leading-tight">{photo.title}</p>
-                        {dateStr && <p className="text-white/60 text-[10px] mt-1 font-mono tracking-wide">{dateStr}</p>}
+                        {dateStr && <p className="text-white/60 text-fs-10 mt-1 font-mono tracking-wide">{dateStr}</p>}
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {photo.tags?.slice(0, 2).map((tag) => (
                             <span
                               key={tag}
-                              className="text-[9px] bg-white/15 px-1.5 py-0.5 rounded text-white/80 backdrop-blur-xs"
+                              className="text-fs-10 bg-white/15 px-1.5 py-0.5 rounded text-white/80 backdrop-blur-xs"
                             >
                               #{tag}
                             </span>
@@ -210,7 +210,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-2.5 border-t border-border/30 text-[11px] text-muted-foreground/50 flex justify-between">
+          <div className="px-5 py-2.5 border-t border-border/30 text-fs-11 text-muted-foreground/50 flex justify-between">
             <span>NAS Storage · {filteredPhotos.length} 張照片</span>
             <span>點擊照片以插入文章</span>
           </div>

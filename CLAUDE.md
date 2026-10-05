@@ -374,9 +374,13 @@ computed-style 的快照裡，其餘是 `:hover` / `:focus-visible` / 條件渲�
 一層間接，還會把調色盤撐肥。唯一的例外是 `--sky-300`（只有 2 次）：它是為了讓
 `markdown-alert-note` 跟另外四種 alert 一致，那一組本來就有 `important` 已經在用 token。
 
-⚠️ **不要改成引用 Tailwind 自己的 `--color-purple-300`。** v4 的色票是 **oklch**，跟 v3 的
-hex 不相等，換過去就不是零視覺變化；而且哪些 shade 有輸出取決於 utility 用到誰——
-跟 `--text-3xl` 被 tree-shake 掉是同一個陷阱。
+⚠️ **方向是「Tailwind 指向這份色票」，不是反過來。** `@theme` 裡的 `--color-green-400`
+等宣告成 `var(--green-400)`，所以 TSX 的 `text-green-400` 拿到的就是 :root 這份 v3 hex。
+在這之前站上有**兩個 green-400**（CSS 用 v3 hex、TSX 用 Tailwind v4 內建的 oklch），
+2026-10 統一，色差 ΔE2000 ≤ 3.9。反方向（CSS 寫 `var(--color-purple-300)`）不行：
+v4 的 oklch 不等於 v3 hex，而且 Tailwind 只輸出被 utility 用到的 shade——跟 `--text-3xl`
+被 tree-shake 掉是同一個陷阱。**加新色時 :root 與 `@theme` 兩邊都要加**，`check:css-tokens`
+的規則 4 會接著要求所有等值的字面色改用它（加 `--blue-400` 那次就揪出 EXIFPanel 一處）。
 
 ⚠️ **把 gradient 裡的字面色換成 `var()` 會讓 computed-style 報 `background-image` 變了，
 但那不是視覺變化。** 導入調色盤那次後台 3 頁各紅 1 個元素，逐字比對兩個 build 的計算值
@@ -604,6 +608,36 @@ warning 會出現在 CI 輸出但不擋——跟 knip 當初的處理一樣，�
 設到同一批屬性（例如 `.club-icon-wrap` 的 base 寫在 `.open` 狀態之後），但那是排版
 問題不是 bug。要清的話是把 base 規則搬到狀態變體前面，純搬移、零行為變化。
 
+### TSX 裡的 Tailwind class 由 `@shadcn/lint` 守（掛在 oxlint 上）
+
+`check:css-tokens` 只讀 `.css`，所以在這之前**TSX 的 className 完全沒有守門**——後台寫
+`text-[11px]` 寫了 92 次，正是 CSS 那邊字級尺收掉的同一種病。設定在 `.oxlintrc.json`
+（`jsPlugins` + `shadcn/*`），跟著 `pnpm exec oxlint … --max-warnings 0` 一起跑，不用另外接 CI。
+
+| 規則 | 狀態 | 理由 |
+|---|---|---|
+| `no-arbitrary-values` | **error**（`allow: layout`） | 寬高與 `85vh` 這類版面尺寸本來就沒有尺；字級／間距／顏色要走尺 |
+| `no-raw-colors` | **error** | 只准站上的色票（見調色盤那節）與 shadcn 語意色 |
+| `no-restyle` | off（下一步） | 後台 Button／Input 一律手動壓成緊湊版，290 處；要先補一個緊湊 size |
+| `no-unknown-classes` | off | 假設全站只用 Tailwind；公開頁用 CSS 檔的 class，1946 筆全是誤報 |
+| `no-inline-styles` | off | 那 278 處是 JS 算出來的動態位置（星星、軌道），inline style 是正確做法 |
+| `require-static-classes` | off | 同 `no-restyle`，跟著它一起開 |
+
+`no-raw-colors` 對四個檔案整檔關掉（`overrides`）：NotFound 的 SVG 插畫、BrandIcons、
+SignatureSVG 的金色漸層、ZeroGravityLibrary 的 3D 燈光色——全是「自成一套」或品牌色。
+
+⚠️ **字級在 Tailwind 裡叫 `text-fs-11`，而且 `cn()` 一定要認得它。** `--text-fs-*` 在
+`@theme` 把 `--fs-*` 接成 utility；**預設的 tailwind-merge 會把 `text-fs-11` 當成文字顏色**，
+`cn('text-fs-11 text-red-400')` 會靜靜刪掉字級。`src/lib/utils.ts` 擴充了清單，
+`utils.test.ts` 會檢查清單跟 `index.css` 同步。
+
+⚠️ **`dark:` variant 在這個站是死碼。** `@custom-variant dark` 要 `.dark` 祖先，而全站沒有任何
+地方掛它。看到 `bg-gray-100 dark:bg-gray-800` 這種寫法，實際生效的是**淺色**那個。
+
+⚠️ **後台 AI 寫作助手的預覽沒有排版**（已知、未修）。那串 `prose-*` 一直寫著但
+`@tailwindcss/typography` 從沒裝過；補 plugin 會讓全域樣式表多約 2 KB gzip、每個公開頁都要
+下載，所以沒補。該做的是讓預覽套用文章頁的 `.post-content`。
+
 ### 剩下的 27 個 `!important` 都是查過的，不要再清一次
 
 原本 190 個，清到 27。**剩下的每一個都有註解寫明理由**，看到 linter 報 warning 不要
@@ -655,7 +689,7 @@ vitest 上去比那個最壞情況更糟。實際踩過：併行那次冒出一�
 ### 樣式回歸有守門：`tests/e2e/computed-style.spec.ts`
 
 跟著 `pnpm e2e` 一起跑（CI 不用另外設），比對 11 個公開頁面 **× 三個寬度**
-（1280 / 768 / 390）加上 3 個後台頁面，共 39 組快照、41 個計算後屬性。
+（1280 / 768 / 390）加上 8 個後台頁面，共 41 組快照、41 個計算後屬性。
 改了樣式而它報紅是**正常的**：
 
 ```bash
@@ -675,6 +709,14 @@ UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
 `1280 → ≤1300`、`768 → ≤1100/1024/950/900/860`、`390 → ≤768/720/640/600/560/480`。
 **1280 那組刻意不加檔名後綴**，既有基準檔名才不用全部改掉。
 後台只跑桌機：617 條裡只有 1 條在 `admin/`。
+
+⚠️ **`/admin/comments` 與 `/admin/subscribers` 刻意不守**：別的 spec 會在同一輪裡新增／審核
+留言、真的退訂種子讀者，同一個 DOM 路徑上的按鈕這次是「批准」下次是「垃圾」。實測整套
+e2e 下來留言頁 31 個元素「變了」、78 個路徑只在一邊——全是資料，不是樣式。
+
+⚠️ **報錯訊息每頁只列前 8 個元素。** 大改顏色這類「一次動上百個元素」的時候，要確認
+沒有藏著非預期的屬性，就暫時把 spec 裡 `changed.slice(0, 8)` 拉大再跑一次、看完全部
+（接 shadcn/lint 那次就是這樣確認 125 個元素全是顏色屬性），看完記得改回來。
 
 ⚠️ **`setViewportSize` 要在 `goto` 之前。** 先導覽的話會先以預設寬度算一次版面，
 元件裡看 `window.innerWidth` 的分支（MobileNav 的開合、圖庫欄數）會照舊寬度先跑一輪。
@@ -793,12 +835,11 @@ console 冒出 `Skipped glyph subsetting EvalError`。抓到它的是
 `tsc` / `oxlint` / `build` 全部都是綠的，**只有 e2e 看得到**。
 真要升就得先確認 Excalidraw 那條路徑不再需要 `eval`，或改成不載字型 subsetting。
 
-⚠️ **`oxlint` 也釘在 lockfile 的 1.75.0。** 1.80 預設開了一組 React Compiler 診斷
-（`react(purity)` / `react(refs)` / `react(immutability)` /
-`react(preserve-manual-memoization)` / `react(incompatible-library)`），一次冒出 25 個
-warning，而 CI 是 `--max-warnings 0`。這個專案**沒有在跑 React Compiler**
+⚠️ **`.oxlintrc.json` 裡關掉的那五條 `react/*` 不要打開。** oxlint 1.80 起預設開一組
+React Compiler 診斷（`purity` / `refs` / `immutability` / `preserve-manual-memoization` /
+`incompatible-library`），1.86 時是 30 個 warning。這個專案**沒有在跑 React Compiler**
 （`babel-plugin-react-compiler` 在 devDependencies 但沒接進任何 build），所以那組診斷
-談的是一個不存在的最佳化器。要升 oxlint 就得先在 `.oxlintrc.json` 明確關掉它們。
+談的是一個不存在的最佳化器。oxlint 曾經為此釘在 1.75，2026-10 關掉這五條之後解除。
 
 ### 這幾個相依刻意釘死，Dependabot 開 PR 也不要合
 
@@ -813,7 +854,6 @@ warning，而 CI 是 `--max-warnings 0`。這個專案**沒有在跑 React Compi
 | 套件 | 釘在 | 升上去會怎樣 | 解除條件 |
 |---|---|---|---|
 | `vite` | 8.0.16 | Excalidraw 字型 subsetting 用 `eval`，撞 CSP | 該路徑不再需要 `eval` |
-| `oxlint` | 1.75.0（lockfile） | 25 個 React Compiler 診斷撞 `--max-warnings 0` | `.oxlintrc.json` 先關掉那五條 |
 | `react-icons` | 5.5.0 | 5.7 移除 `SiOpenai`、`SiCss3` 改名 → tsc 紅 | 先決定 `/about` 的 GPT 用什麼圖示 |
 | `monaco-editor` | 0.55.1 | 0.56 的 `exports` 收窄，`monaco-vim` 0.4.4 被擋 | `monaco-vim` 跟上，或換掉它 |
 | `@tanstack/react-router` `@tanstack/react-start` `@tanstack/react-query` | 各自現值 | 傳遞相依 `router-core` / `start-plugin-core` 跟著浮，SSR 的 query 串流壞掉（20 條 smoke 全紅） | 整組一起升並確認串流相容 |

@@ -558,7 +558,7 @@ export default function BooksManager() {
           <button
             key={s.key}
             onClick={() => setFilterStatus(s.key)}
-            className={`text-[12px] px-2.5 py-1 rounded-lg transition-colors ${
+            className={`text-fs-12 px-2.5 py-1 rounded-lg transition-colors ${
               filterStatus === s.key
                 ? 'bg-accent/60 text-foreground/80'
                 : 'text-muted-foreground/60 hover:text-foreground/60 hover:bg-accent/25'
@@ -595,23 +595,21 @@ export default function BooksManager() {
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[14px] font-medium text-foreground/80">{book.title}</span>
+                    <span className="text-fs-14 font-medium text-foreground/80">{book.title}</span>
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded ${statusConfig[book.reading_status ?? ''] || ''}`}
+                      className={`text-fs-10 px-1.5 py-0.5 rounded ${statusConfig[book.reading_status ?? ''] || ''}`}
                     >
                       {statusLabels[book.reading_status ?? ''] || book.reading_status}
                     </span>
                   </div>
-                  {book.authors && <div className="text-[12px] text-muted-foreground/50 mb-1.5">{book.authors}</div>}
+                  {book.authors && <div className="text-fs-12 text-muted-foreground/50 mb-1.5">{book.authors}</div>}
                   {(book.rating ?? 0) > 0 && <div className="mb-1.5">{renderStars(book.rating ?? null)}</div>}
                   {book.personal_notes && (
-                    <p className="text-[12px] text-muted-foreground/60 leading-relaxed line-clamp-2">
+                    <p className="text-fs-12 text-muted-foreground/60 leading-relaxed line-clamp-2">
                       {book.personal_notes}
                     </p>
                   )}
-                  {book.publisher && (
-                    <div className="text-[11px] text-muted-foreground/40 mt-1.5">{book.publisher}</div>
-                  )}
+                  {book.publisher && <div className="text-fs-11 text-muted-foreground/40 mt-1.5">{book.publisher}</div>}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button

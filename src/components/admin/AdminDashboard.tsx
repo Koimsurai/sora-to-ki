@@ -90,7 +90,7 @@ const AdminDashboard = () => {
           <div key={stat.label} className="glass rounded-xl p-4 group">
             <div className="flex items-center justify-between mb-3">
               <stat.icon className="size-4 text-muted-foreground" />
-              <span className="text-[11px] text-muted-foreground/60 flex items-center gap-0.5">
+              <span className="text-fs-11 text-muted-foreground/60 flex items-center gap-0.5">
                 {stat.change}
                 <ArrowUpRight className="size-3" />
               </span>
@@ -106,10 +106,10 @@ const AdminDashboard = () => {
         {/* Recent Posts */}
         <div className="lg:col-span-3 glass rounded-xl">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-            <h2 className="text-[13px] font-medium text-foreground/80">最近文章</h2>
+            <h2 className="text-fs-13 font-medium text-foreground/80">最近文章</h2>
             <Link
               to="/admin/posts"
-              className="text-[11px] text-muted-foreground hover:text-foreground/70 transition-colors"
+              className="text-fs-11 text-muted-foreground hover:text-foreground/70 transition-colors"
             >
               查看全部
             </Link>
@@ -119,18 +119,18 @@ const AdminDashboard = () => {
               {recentPosts.map((post) => (
                 <div key={post.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/20 transition-colors">
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] text-foreground/80 truncate">{post.title}</div>
+                    <div className="text-fs-13 text-foreground/80 truncate">{post.title}</div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[11px] text-muted-foreground/60">{post.category ?? '未分類'}</span>
+                      <span className="text-fs-11 text-muted-foreground/60">{post.category ?? '未分類'}</span>
                       <span className="text-border/50">/</span>
-                      <span className="text-[11px] text-muted-foreground/60">
+                      <span className="text-fs-11 text-muted-foreground/60">
                         {post.created_at ? format(new Date(post.created_at), 'yyyy-MM-dd') : ''}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <span
-                      className={`text-[11px] px-1.5 py-0.5 rounded ${post.status === 'published' ? 'text-foreground/60 bg-accent/40' : 'text-muted-foreground bg-accent/20'}`}
+                      className={`text-fs-11 px-1.5 py-0.5 rounded ${post.status === 'published' ? 'text-foreground/60 bg-accent/40' : 'text-muted-foreground bg-accent/20'}`}
                     >
                       {post.status === 'published' ? '已發佈' : '草稿'}
                     </span>
@@ -164,18 +164,18 @@ const AdminDashboard = () => {
           {/* Quick Stats */}
           <div className="glass rounded-xl">
             <div className="px-4 py-3 border-b border-border/30">
-              <h2 className="text-[13px] font-medium text-foreground/80">操作紀錄</h2>
+              <h2 className="text-fs-13 font-medium text-foreground/80">操作紀錄</h2>
             </div>
             <div className="p-4 space-y-3">
               <div className="flex items-start gap-2.5">
                 <div className="mt-1.5 size-1.5 rounded-full bg-muted-foreground/30 shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-[12px] text-foreground/70">
+                  <div className="text-fs-12 text-foreground/70">
                     <span className="font-medium">瀏覽統計</span>
                     {' - '}
                     <span className="text-muted-foreground">共 {stats.totalPosts} 篇文章</span>
                   </div>
-                  <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground/50">
+                  <div className="flex items-center gap-1 mt-0.5 text-fs-11 text-muted-foreground/50">
                     <Clock className="size-3" />
                     即時
                   </div>
@@ -184,12 +184,12 @@ const AdminDashboard = () => {
               <div className="flex items-start gap-2.5">
                 <div className="mt-1.5 size-1.5 rounded-full bg-muted-foreground/30 shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-[12px] text-foreground/70">
+                  <div className="text-fs-12 text-foreground/70">
                     <span className="font-medium">已發佈</span>
                     {' - '}
                     <span className="text-muted-foreground">{stats.publishedPosts || 0} 篇</span>
                   </div>
-                  <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground/50">
+                  <div className="flex items-center gap-1 mt-0.5 text-fs-11 text-muted-foreground/50">
                     <Clock className="size-3" />
                     即時
                   </div>
@@ -198,12 +198,12 @@ const AdminDashboard = () => {
               <div className="flex items-start gap-2.5">
                 <div className="mt-1.5 size-1.5 rounded-full bg-muted-foreground/30 shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-[12px] text-foreground/70">
+                  <div className="text-fs-12 text-foreground/70">
                     <span className="font-medium">草稿</span>
                     {' - '}
                     <span className="text-muted-foreground">{stats.draftPosts || 0} 篇待發佈</span>
                   </div>
-                  <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground/50">
+                  <div className="flex items-center gap-1 mt-0.5 text-fs-11 text-muted-foreground/50">
                     <Clock className="size-3" />
                     即時
                   </div>

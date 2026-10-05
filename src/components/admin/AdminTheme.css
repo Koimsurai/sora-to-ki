@@ -362,3 +362,11 @@ body.zen-mode-active .admin-layout > div > main form > main {
   margin: 0 auto;
   padding: var(--space-10) var(--space-8);
 }
+
+/* 選圖對話框的面板陰影。多層（投影 + 玻璃頂緣高光），跟全站其他多層陰影一樣刻意不上
+   --elev-* 尺；原本寫成 TSX 裡的 Tailwind 任意值，搬來這裡是因為設計值該待在 CSS。 */
+.photo-selector-panel {
+  box-shadow:
+    0 20px 60px var(--black-50),
+    inset 0 1px 0 var(--white-06);
+}

@@ -283,7 +283,7 @@ export default function CategoriesManager() {
 
                 <div className="pt-2 border-t border-border/40">
                   <p className="text-xs text-muted-foreground mb-1">多語系顯示名（選填）</p>
-                  <p className="text-[11px] text-muted-foreground/60 mb-3">
+                  <p className="text-fs-11 text-muted-foreground/60 mb-3">
                     只影響各語系頁面上的顯示；「分類名稱」仍是資料鍵（文章歸屬與篩選都用它）。留空該語系就顯示原名。
                   </p>
                   <div className="grid grid-cols-2 gap-3">
@@ -305,7 +305,7 @@ export default function CategoriesManager() {
 
                 <div className="pt-2 border-t border-border/40">
                   <p className="text-xs text-muted-foreground mb-1">多語系簡述／描述（選填）</p>
-                  <p className="text-[11px] text-muted-foreground/60 mb-3">
+                  <p className="text-fs-11 text-muted-foreground/60 mb-3">
                     對應上方的「簡述」與「描述」，會顯示在各語系文章頁的分類 tooltip。留空該語系就顯示原文。
                   </p>
                   <div className="space-y-3">
@@ -370,14 +370,14 @@ export default function CategoriesManager() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-medium text-foreground/80">{cat.name}</span>
-                  {cat.slug && <span className="text-[11px] text-muted-foreground/50 font-mono">/{cat.slug}</span>}
+                  <span className="text-fs-13 font-medium text-foreground/80">{cat.name}</span>
+                  {cat.slug && <span className="text-fs-11 text-muted-foreground/50 font-mono">/{cat.slug}</span>}
                 </div>
                 {cat.description && (
-                  <p className="text-[12px] text-muted-foreground/60 mt-0.5 truncate">{cat.description}</p>
+                  <p className="text-fs-12 text-muted-foreground/60 mt-0.5 truncate">{cat.description}</p>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50 shrink-0 mr-2">
+              <div className="flex items-center gap-1.5 text-fs-11 text-muted-foreground/50 shrink-0 mr-2">
                 <FileText className="size-3" />
                 {cat.post_count}
               </div>

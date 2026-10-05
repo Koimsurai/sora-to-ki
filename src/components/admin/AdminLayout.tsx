@@ -202,8 +202,8 @@ const AdminLayout = () => {
                     <span className="text-xs font-semibold text-foreground/80">K</span>
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[13px] font-medium text-foreground/90 truncate leading-tight">Koimsurai</span>
-                    <span className="text-[11px] text-muted-foreground truncate leading-tight">管理後台</span>
+                    <span className="text-fs-13 font-medium text-foreground/90 truncate leading-tight">Koimsurai</span>
+                    <span className="text-fs-11 text-muted-foreground truncate leading-tight">管理後台</span>
                   </div>
                 </div>
                 <button
@@ -236,7 +236,7 @@ const AdminLayout = () => {
                   key={item.id}
                   to={item.path}
                   className={cn(
-                    'flex items-center gap-2.5 w-full rounded-lg px-2.5 py-[7px] text-[13px] transition-colors',
+                    'flex items-center gap-2.5 w-full rounded-lg px-2.5 py-1.75 text-fs-13 transition-colors',
                     isActive
                       ? 'bg-accent/80 text-foreground'
                       : 'text-muted-foreground hover:text-foreground/80 hover:bg-accent/40',
@@ -262,16 +262,16 @@ const AdminLayout = () => {
                 >
                   <Avatar className="size-7 shrink-0">
                     {user?.avatar && <AvatarImage src={user.avatar} alt={user.displayName ?? '管理員'} />}
-                    <AvatarFallback className="bg-zinc-800 text-zinc-300 text-[11px] font-medium border border-zinc-700/60">
+                    <AvatarFallback className="bg-zinc-800 text-zinc-300 text-fs-11 font-medium border border-zinc-700/60">
                       {(user?.displayName ?? '管理員').slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   {sidebarOpen && (
                     <div className="flex flex-col min-w-0 text-left">
-                      <span className="text-[13px] font-medium text-foreground/80 truncate leading-tight">
+                      <span className="text-fs-13 font-medium text-foreground/80 truncate leading-tight">
                         {user?.displayName ?? '管理員'}
                       </span>
-                      <span className="text-[11px] text-muted-foreground truncate leading-tight">
+                      <span className="text-fs-11 text-muted-foreground truncate leading-tight">
                         {user?.email ?? ''}
                       </span>
                     </div>

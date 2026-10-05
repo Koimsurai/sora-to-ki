@@ -808,7 +808,7 @@ const PostsNav = React.memo(
                         'posts-nav-item side-item-in text-sm py-1 block transition-colors truncate ' +
                         (isCurrent
                           ? 'text-white font-semibold posts-nav-current-item'
-                          : 'text-gray-500 hover:text-gray-300')
+                          : 'text-zinc-500 hover:text-zinc-300')
                       }
                       style={{ '--i': i } as React.CSSProperties}
                     >
@@ -845,7 +845,7 @@ const PostsNav = React.memo(
               } as React.CSSProperties
             }
           >
-            <span className="text-xs text-gray-600 block mb-1">{t('blog.inColumn')}</span>
+            <span className="text-xs text-zinc-600 block mb-1">{t('blog.inColumn')}</span>
             <CategoryTooltipTrigger
               postCategory={postCategory}
               categoryInfo={categoryInfo}
@@ -860,7 +860,7 @@ const PostsNav = React.memo(
         {categoryPosts.length > 0 && (
           <div className="posts-nav-list mt-4">
             <span
-              className="text-xs text-gray-600 block mb-2 side-item-in"
+              className="text-xs text-zinc-600 block mb-2 side-item-in"
               style={{ '--i': catBase + 1 } as React.CSSProperties}
             >
               {t('blog.otherInColumn')}
@@ -878,7 +878,7 @@ const PostsNav = React.memo(
                   >
                     <PreviewablePostLink
                       post={p}
-                      className="posts-nav-item side-item-in text-sm text-gray-500 hover:text-gray-300 transition-colors py-0.5 block truncate"
+                      className="posts-nav-item side-item-in text-sm text-zinc-500 hover:text-zinc-300 transition-colors py-0.5 block truncate"
                       style={{ '--i': catBase + 2 + i } as React.CSSProperties}
                     >
                       {p.title}
@@ -927,7 +927,7 @@ const TableOfContents = React.memo(
               <path
                 d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 fill="none"
-                stroke="rgba(255,255,255,0.08)"
+                stroke="var(--white-08)"
                 strokeWidth="3"
               />
               <path

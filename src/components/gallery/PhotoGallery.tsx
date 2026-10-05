@@ -70,7 +70,7 @@ const PhotoItem = memo(
         onClick={() => onPhotoClick(data)}
       >
         <div
-          className="photo-card relative overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 cursor-pointer"
+          className="photo-card relative overflow-hidden rounded-lg cursor-pointer"
           style={{ height: calculatedHeight }}
         >
           {/* 實際圖片 */}
@@ -90,7 +90,7 @@ const PhotoItem = memo(
 
           {/* 錯誤狀態 */}
           {imageError && (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+            <div className="absolute inset-0 flex items-center justify-center text-zinc-400">
               <div className="text-center">
                 <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -228,7 +228,7 @@ function PhotoGallery() {
       <section className="photo-gallery-section min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="spinner mb-4 mx-auto"></div>
-          <p className="text-lg text-gray-600 dark:text-gray-400">載入照片中...</p>
+          <p className="text-lg text-zinc-600">載入照片中...</p>
         </div>
       </section>
     );
@@ -240,7 +240,7 @@ function PhotoGallery() {
       <section className="photo-gallery-section min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😕</div>
-          <p className="text-lg text-red-600 dark:text-red-400">{error}</p>
+          <p className="text-lg text-red-600">{error}</p>
         </div>
       </section>
     );

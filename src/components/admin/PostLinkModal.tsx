@@ -110,14 +110,14 @@ const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
                         <div className="text-sm text-zinc-100 truncate">{p.title}</div>
                         {p.excerpt && <div className="text-xs text-zinc-500 truncate mt-0.5">{p.excerpt}</div>}
                       </div>
-                      <code className="text-[10px] text-zinc-600 mt-1 shrink-0">/blog/{p.id}</code>
+                      <code className="text-fs-10 text-zinc-600 mt-1 shrink-0">/blog/{p.id}</code>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          <div className="px-4 py-2 text-[11px] text-zinc-600 border-t border-zinc-800 flex items-center justify-between">
+          <div className="px-4 py-2 text-fs-11 text-zinc-600 border-t border-zinc-800 flex items-center justify-between">
             <span>↑↓ 選擇 · Enter 選第一筆 · Esc 關閉</span>
             <span>
               {filtered.length} / {posts.length} 篇
