@@ -31,8 +31,6 @@ updates:
     #    （例如 monaco-vim 出新版時順手試一次 monaco-editor）。這是刻意的取捨：
     #    每週固定收到幾個「確認過不能合」的 PR，久了就沒有人會認真看任何一個。
     ignore:
-      # Excalidraw 的字型 subsetting 用 eval，撞全站 CSP（只有 e2e 看得到）
-      - dependency-name: vite
       # 5.7 移除 SiOpenai、SiCss3 改名；要先決定 /about 的 GPT 換什麼圖示
       - dependency-name: react-icons
       # 0.56 的 exports 收窄，monaco-vim 0.4.4 被擋

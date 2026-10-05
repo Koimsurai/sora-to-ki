@@ -53,7 +53,8 @@ function copyMonacoAssets(): Plugin {
         if (up === pkgDir) throw new Error('找不到 monaco-editor 的 package.json');
         pkgDir = up;
       }
-      const version = (JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8')) as { version: string }).version;
+      const version = (JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'), 'utf8')) as { version: string })
+        .version;
       const src = path.join(pkgDir, 'min/vs');
       const destRoot = path.resolve(import.meta.dirname, 'public/monaco');
       const stamp = path.join(destRoot, '.version');
@@ -94,9 +95,8 @@ function copyExcalidrawFonts(): Plugin {
       //   沒有開放 ./package.json（ERR_PACKAGE_PATH_NOT_EXPORTED）。從主入口反推。
       const entry = require.resolve('@excalidraw/excalidraw');
       const pkgRoot = entry.slice(0, entry.indexOf(`${path.sep}dist${path.sep}`));
-      const version = (
-        JSON.parse(fs.readFileSync(path.join(pkgRoot, 'package.json'), 'utf8')) as { version: string }
-      ).version;
+      const version = (JSON.parse(fs.readFileSync(path.join(pkgRoot, 'package.json'), 'utf8')) as { version: string })
+        .version;
       const src = path.join(pkgRoot, 'dist/prod/fonts');
       const destRoot = path.resolve(import.meta.dirname, 'public/excalidraw');
       const stamp = path.join(destRoot, '.version');
@@ -216,7 +216,24 @@ function pureAnnotateAnimateIcons(): Plugin {
 
 const LOCALE_PREFIXES = ['en', 'ja', 'ko', 'zh-cn'];
 // UI 頁(全 5 語都有)。加新頁只要加名字,ISR 規則會自動涵蓋 5 個語系路徑。
-const UI_PAGES = ['about', 'setup', 'bookshelf', 'activity', 'music', 'thinking', 'messages', 'portfolio', 'friends', 'watch/library', 'watch', 'blog', 'unsubscribe', 'about-site', 'history', 'photos'];
+const UI_PAGES = [
+  'about',
+  'setup',
+  'bookshelf',
+  'activity',
+  'music',
+  'thinking',
+  'messages',
+  'portfolio',
+  'friends',
+  'watch/library',
+  'watch',
+  'blog',
+  'unsubscribe',
+  'about-site',
+  'history',
+  'photos',
+];
 
 // ── ISR / SWR route rules ───────────────────────────────────────────────────
 // 一頁 → 該頁 5 個語系路徑(/x + /en/x …)。
@@ -232,8 +249,7 @@ const localeVariants = (page: string): string[] => [`/${page}`, ...LOCALE_PREFIX
 // 所以改在 nginx 處理（/etc/nginx/sites-available/koimsurai）：HTML 降到 max-age=60，
 // /assets/ 獨立一個 location 保住 immutable。改那邊時記得 nginx 的 add_header 不繼承，
 // 安全標頭要在該 block 內補齊。
-const swrRules = (paths: string[], seconds: number) =>
-  Object.fromEntries(paths.map((p) => [p, { swr: seconds }]));
+const swrRules = (paths: string[], seconds: number) => Object.fromEntries(paths.map((p) => [p, { swr: seconds }]));
 
 // 刻意採「白名單」而非 '/**' 全站包:全站包是 fail-open —— 日後新增任何讀 cookie/header 或
 // render 使用者資料的頁面,都會被預設公開快取且沒人會察覺。白名單則是新頁預設不快取,最壞只是少個快取。
@@ -248,7 +264,10 @@ const ISR_PAGES = UI_PAGES.filter((p) => p !== 'blog' && p !== 'unsubscribe');
 const ISR_ROUTE_RULES = {
   ...swrRules(ISR_PAGES.flatMap(localeVariants), 3600),
   ...swrRules(localeVariants('blog'), 300), // 列表頁:發新文要早點出現 → 5 分鐘
-  ...swrRules(localeVariants('blog').map((p) => `${p}/**`), 3600), // 文章頁:內容幾乎不動 → 1 小時
+  ...swrRules(
+    localeVariants('blog').map((p) => `${p}/**`),
+    3600,
+  ), // 文章頁:內容幾乎不動 → 1 小時
 };
 
 export default defineConfig({
@@ -283,6 +302,39 @@ export default defineConfig({
     //   真正把它擋掉的是 Dockerfile 最後那步 `find ... -delete`（上傳完就刪），
     //   加上 nginx 的 `location ~ \.map$ { return 404; }`。
     sourcemap: 'hidden',
+    rolldownOptions: {
+      output: {
+        // Excalidraw 預先切好的**葉節點** chunk（`dist/prod/chunk-*.js` 裡沒有任何 import 的那幾個）
+        // 各自維持成一個 chunk。
+        //
+        // ⚠️ 少了這段，vite 8.2 起（rolldown 1.2）會把那些小 chunk 併進 1.1 MB 的 Excalidraw 主程式
+        //    `prod-*.js`，而字型 subsetting 的 Web Worker（subset-worker.chunk.js）正好依賴它們——
+        //    於是 worker 得 import 整包主程式，在 Worker 環境裡載入失敗，Excalidraw 退回主執行緒做
+        //    subsetting，那段 wasm 膠水碼（emscripten embind）用 `new Function`，撞上頁面 CSP 沒有的
+        //    'unsafe-eval'：console 冒出 `Skipped glyph subsetting EvalError`。worker 本身不受頁面
+        //    CSP 管（它的腳本回應沒有 CSP header），所以在 worker 裡沒事。
+        //    vite 曾經為此釘在 8.0.16；抓得到它的只有 tests/e2e/mdx-blocks.spec.ts 的 CSP 斷言。
+        //
+        // ⚠️ **只能抓葉節點，不能把 Excalidraw 的 chunk 全部抓進群組。** 群組預設會連同被捕捉模組的
+        //    相依一起拉進來（includeDependenciesRecursively），而大的那幾個 chunk 會 import app 本身
+        //    也在用的套件——那些套件被吸進 Excalidraw 的 chunk 之後，首頁為了拿它們就得先載入 2.3 MB
+        //    的 Excalidraw。實際踩過：每一頁的 script 從 1.8 MB 變成 3.7 MB，是 Lighthouse 的
+        //    resource-summary 預算抓到的（e2e 全綠）。葉節點沒有相依，不會有這個問題。
+        codeSplitting: {
+          groups: [
+            {
+              name: (id) => {
+                const m = /@excalidraw[\\/]excalidraw[\\/]dist[\\/]prod[\\/](chunk-[A-Z0-9]+)\.js$/.exec(id);
+                return m ? `excalidraw-${m[1]}` : null;
+              },
+              test: (id) =>
+                /@excalidraw[\\/]excalidraw[\\/]dist[\\/]prod[\\/]chunk-[A-Z0-9]+\.js$/.test(id) &&
+                !/\bimport\b|\bfrom\s*["']/.test(fs.readFileSync(id, 'utf8')),
+            },
+          ],
+        },
+      },
+    },
   },
   resolve: {
     alias: [

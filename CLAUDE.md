@@ -850,12 +850,16 @@ pnpm build         # vite + nitro
 ⚠️ 導入 oxfmt 的那筆 218 檔格式化在 `.git-blame-ignore-revs` 裡。本機要生效得設一次
 `git config blame.ignoreRevsFile .git-blame-ignore-revs`（GitHub 會自動讀）。
 
-⚠️ **`vite` 釘死在 8.0.16，不要升。** 8.2.2 會讓 Excalidraw 的字型 subsetting 那條
-路徑進到 bundle，而它用 `eval` —— 全站 CSP 沒有 `'unsafe-eval'`，於是瀏覽器擋掉、
-console 冒出 `Skipped glyph subsetting EvalError`。抓到它的是
-`tests/e2e/mdx-blocks.spec.ts` 的「這些資源被 CSP 擋掉了」那條斷言；
-`tsc` / `oxlint` / `build` 全部都是綠的，**只有 e2e 看得到**。
-真要升就得先確認 Excalidraw 那條路徑不再需要 `eval`，或改成不載字型 subsetting。
+⚠️ **`vite.config.start.ts` 的 `codeSplitting` 那段不要拿掉。** vite 8.2 起（rolldown 1.2）
+會把 Excalidraw 預先切好的幾個小 chunk 併進它 1.1 MB 的主程式，而字型 subsetting 的
+Web Worker 正好依賴它們——worker 只好 import 整包主程式、在 Worker 環境載入失敗，
+Excalidraw 退回主執行緒做 subsetting，那段 wasm 膠水碼用 `new Function`，撞上 CSP 沒有的
+`'unsafe-eval'`：console 冒出 `Skipped glyph subsetting EvalError`。
+vite 曾經因此釘在 8.0.16，**原本以為是 Excalidraw 需要 eval，實際上是打包把 worker 弄壞了**
+——eval 一直都在，只是原本跑在不受頁面 CSP 管的 worker 裡。
+抓得到它的只有 `tests/e2e/mdx-blocks.spec.ts` 的「這些資源被 CSP 擋掉了」那條斷言；
+`tsc` / `oxlint` / `build` 全部都是綠的。看 worker 有沒有被弄壞：建置後
+`head -c 300 .output/public/assets/subset-worker.chunk-*.js`，開頭不該 import `prod-*.js`。
 
 ⚠️ **`.oxlintrc.json` 裡關掉的那五條 `react/*` 不要打開。** oxlint 1.80 起預設開一組
 React Compiler 診斷（`purity` / `refs` / `immutability` / `preserve-manual-memoization` /
@@ -875,7 +879,6 @@ React Compiler 診斷（`purity` / `refs` / `immutability` / `preserve-manual-me
 
 | 套件 | 釘在 | 升上去會怎樣 | 解除條件 |
 |---|---|---|---|
-| `vite` | 8.0.16 | Excalidraw 字型 subsetting 用 `eval`，撞 CSP | 該路徑不再需要 `eval` |
 | `react-icons` | 5.5.0 | 5.7 移除 `SiOpenai`、`SiCss3` 改名 → tsc 紅 | 先決定 `/about` 的 GPT 用什麼圖示 |
 | `monaco-editor` | 0.55.1 | 0.56 的 `exports` 收窄，`monaco-vim` 0.4.4 被擋 | `monaco-vim` 跟上，或換掉它 |
 | `@tanstack/react-router` `@tanstack/react-start` `@tanstack/react-query` | 各自現值 | 傳遞相依 `router-core` / `start-plugin-core` 跟著浮，SSR 的 query 串流壞掉（20 條 smoke 全紅） | 整組一起升並確認串流相容 |
