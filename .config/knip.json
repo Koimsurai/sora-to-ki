@@ -28,5 +28,9 @@
   ],
   "stryker": [
     ".config/stryker.config.json"
+  ],
+  "vite": [
+    "vite.config.start.ts",
+    "vite.config.ts"
   ]
 }

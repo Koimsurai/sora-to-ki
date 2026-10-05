@@ -1,6 +1,6 @@
 // start-i18n 純函式的單元測試：locale 解析／URL 建構／hreflang／Accept-Language
 // 協商／bot 偵測，以及「每 render 獨立 i18n instance」的隔離保證（SSR 不互踩的關鍵）。
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import {
   LOCALE_LABELS,

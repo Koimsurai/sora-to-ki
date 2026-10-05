@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { DEFAULT_LOCALE, LOCALE_PREFIX, localePathname, SUPPORTED_LOCALES } from './locales';
 
 // 這支同時被前端路由與 Nitro 的 sitemap.xml route 用。

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { postIdent, postPath } from './postPath';
 
 // 文章網址的唯一組法。這裡錯了就是站內連結大面積 404，

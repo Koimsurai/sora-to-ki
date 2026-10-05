@@ -611,8 +611,8 @@ warning 會出現在 CI 輸出但不擋——跟 knip 當初的處理一樣，�
 ### TSX 裡的 Tailwind class 由 `@shadcn/lint` 守（掛在 oxlint 上）
 
 `check:css-tokens` 只讀 `.css`，所以在這之前**TSX 的 className 完全沒有守門**——後台寫
-`text-[11px]` 寫了 92 次，正是 CSS 那邊字級尺收掉的同一種病。設定在 `.oxlintrc.json`
-（`jsPlugins` + `shadcn/*`），跟著 `pnpm exec oxlint … --max-warnings 0` 一起跑，不用另外接 CI。
+`text-[11px]` 寫了 92 次，正是 CSS 那邊字級尺收掉的同一種病。設定在 `vite.config.ts` 的
+`lint` 區塊（`jsPlugins` + `shadcn/*`），跟著 `pnpm exec vp lint … --max-warnings 0` 一起跑，不用另外接 CI。
 
 | 規則 | 狀態 | 理由 |
 |---|---|---|
@@ -826,16 +826,37 @@ pnpm exec tsc --noEmit
 pnpm --filter @koimsurai/mcp-server typecheck
 pnpm typecheck:server
 pnpm typecheck:scripts
-pnpm exec oxlint --type-aware --tsconfig=tsconfig.json src --max-warnings 0
-pnpm exec oxlint scripts server packages --max-warnings 0
+pnpm exec vp lint --type-aware --tsconfig=tsconfig.json src --max-warnings 0
+pnpm exec vp lint scripts server packages --max-warnings 0
 pnpm lint:css      # biome，只管 CSS
-pnpm check:format  # oxfmt，只管 JS/TS
-pnpm test          # vitest
-pnpm build         # vite + nitro
+pnpm check:format  # vp fmt（oxfmt），只管 JS/TS
+pnpm test          # vp test（vitest 5）
+pnpm build         # vp build（vite + nitro）
 ```
 
-⚠️ **`oxfmt` 排的不是只有 js/ts——它也會排 css / json / md**，所以 `.oxfmtrc.json`
-把這三類都列進 `ignorePatterns`。每一條都是實際撞到才加的，不要以為是保守而拿掉：
+### 工具鏈是 Vite+（`vp`）
+
+vite / vitest / oxlint / oxfmt 都由 `vite-plus` 一個相依提供（`pnpm-workspace.yaml` 的
+`catalog`，`vite` 被別名成 `@voidzero-dev/vite-plus-core`），**`node_modules/.bin` 裡沒有
+`vite`、`oxlint`、`oxfmt`**——直接跑那些指令會找不到，一律走 `pnpm exec vp …`。
+`vp lint` 的輸出開頭那句 `note: You are running vp lint as a Vite+ built-in command` 是雜訊。
+
+設定分三個檔，**不要合併**：
+
+| 檔案 | 管什麼 |
+|---|---|
+| `vite.config.ts` | **只有** lint（原 `.oxlintrc.json`）與 fmt（原 `.oxfmtrc.json`） |
+| `vite.config.start.ts` | 建置與 dev（TanStack Start + Nitro） |
+| `vitest.config.ts` | 單元測試 |
+
+⚠️ **`vp migrate` 會整批丟掉它不認識的 plugin 命名空間底下的規則**，含 overrides 裡的。
+導入那次 6 條 `shadcn/*` 全被吃掉，而 jsPlugins 的註冊還在，所以 lint 照樣 exit 0。
+是故意塞一個 `bg-[#333]` 的探針檔才發現的；之後再遷移／升級一律照樣驗：放一個必然違規的
+檔案，確認每一類規則都真的會報。它也會自己加上全域的 `typeAware` / `typeCheck`，
+那會讓 scripts / server / packages 也變成型別感知（行為不等價），已拿掉。
+
+⚠️ **`oxfmt` 排的不是只有 js/ts——它也會排 css / json / md**，所以 `vite.config.ts` 的
+`fmt.ignorePatterns` 把這三類都列進去。每一條都是實際撞到才加的，不要以為是保守而拿掉：
 
 | 排除 | 拿掉會怎樣 |
 |---|---|
@@ -861,7 +882,12 @@ vite 曾經因此釘在 8.0.16，**原本以為是 Excalidraw 需要 eval，實�
 `tsc` / `oxlint` / `build` 全部都是綠的。看 worker 有沒有被弄壞：建置後
 `head -c 300 .output/public/assets/subset-worker.chunk-*.js`，開頭不該 import `prod-*.js`。
 
-⚠️ **`.oxlintrc.json` 裡關掉的那五條 `react/*` 不要打開。** oxlint 1.80 起預設開一組
+⚠️ **那個群組只能抓葉節點**（沒有 import 的 chunk）。第一版把 Excalidraw 的 chunk 全部抓進去，
+群組預設連同相依一起拉進來，大 chunk 依賴的共用套件被吸進 Excalidraw 的 chunk，首頁為了拿
+它們得先載入 2.3 MB——每一頁的 script 從 1.8 MB 變成 3.7 MB。**e2e 全綠，只有 Lighthouse 的
+resource-summary 預算抓到。**
+
+⚠️ **`vite.config.ts` 的 lint 區塊裡關掉的那五條 `react/*` 不要打開。** oxlint 1.80 起預設開一組
 React Compiler 診斷（`purity` / `refs` / `immutability` / `preserve-manual-memoization` /
 `incompatible-library`），1.86 時是 30 個 warning。這個專案**沒有在跑 React Compiler**
 （`babel-plugin-react-compiler` 在 devDependencies 但沒接進任何 build），所以那組診斷

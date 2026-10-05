@@ -7,7 +7,7 @@
 // 這裡不碰真正的 grammar 解析（那是 shiki 的事，測它等於測別人的函式庫）。
 // 只 mock 掉 core，觀察「最後拿去高亮的語言是哪一個」——alias 有沒有對到、
 // 認不得的有沒有安全退回、載入失敗有沒有炸掉，都是從這個值看出來的。
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 /** codeToHtml 收到的參數：測試真正要看的東西 */
 let calls: { code: string; lang: string }[] = [];

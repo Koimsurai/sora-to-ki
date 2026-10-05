@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { exifDateTimeText, exifMonthDay, exifYear, exifYmd, parseExifWallClock } from './exifDate';
 
 // 三種格式：目標格式（帶相機時區）＋兩種歷史格式（見 exifDate.ts 的說明）。

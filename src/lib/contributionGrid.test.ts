@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { gridFromContributions, gridFromEvents, uptimeSince } from './contributionGrid';
 
 // Activity.tsx 是全站 e2e 覆蓋率最低的檔（754 statements @ 10%）。

@@ -7,7 +7,7 @@
 // runtime 行為。這條路真的有人走：PostEditor 的 slug 與封面圖欄位是
 // `<Input {...field} />`，react-hook-form 的 field.ref 就靠這條鏈到 <input>，
 // 斷掉的話驗證失敗不會 focus 到該欄位，而且沒有任何靜態檢查會抓到。
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { createRef } from 'react';
 import { render, cleanup } from '@testing-library/react';
 

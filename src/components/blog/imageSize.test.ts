@@ -10,7 +10,7 @@
 //   捲到 4000px 後重整   CLS 0.3362   ← 四個 <p> 從 0px 長到 432/216/186/101
 //
 // 而 Lighthouse 那種「載入一次量一次」的工具永遠測不到它（見 CLAUDE.md）。
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { BlogImage } from './BlogImage';
 

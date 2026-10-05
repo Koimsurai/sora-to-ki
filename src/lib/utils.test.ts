@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { cn } from './utils';
 
 describe('cn 認得字級尺的 text-fs-*', () => {

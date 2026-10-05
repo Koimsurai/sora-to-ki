@@ -51,17 +51,18 @@ jobs:
         run: pnpm typecheck:server
       - name: scripts typecheck
         run: pnpm typecheck:scripts
-      # oxlint 取代 eslint（設定見 .oxlintrc.json，182 條規則自 eslint --print-config 對映而來；
-      # @eslint-react 整包經 jsPlugins 載入，命名空間保持 @eslint-react 讓既有 eslint-disable 註解續效）。
+      # oxlint 取代 eslint，經 Vite+ 的 `vp lint` 執行（設定在 vite.config.ts 的 lint 區塊，
+      # 182 條規則自 eslint --print-config 對映而來；@eslint-react 與 @shadcn/lint 經 jsPlugins 載入，
+      # 命名空間保持 @eslint-react 讓既有 eslint-disable 註解續效）。
       # --max-warnings 0：存量已全數清完（379 → 0），從此新增任何警告都直接擋下。
       - name: oxlint (src, type-aware)
-        run: pnpm exec oxlint --type-aware --tsconfig=tsconfig.json src --max-warnings 0
+        run: pnpm exec vp lint --type-aware --tsconfig=tsconfig.json src --max-warnings 0
       # scripts/server/packages 過去完全沒被 lint（CI 只跑 eslint src）。
       # 不帶 --type-aware：它們不在根 tsconfig 的 include 裡，型別會全解析成 any，
       # 讓 no-unsafe-* 系列誤報 46 筆。型別由各自的 typecheck:* 步驟負責。
       # --max-warnings 0：這三個目錄目前乾淨，直接鎖死，不留讓它從 0 無聲長大的空間。
       - name: oxlint (scripts + server + packages)
-        run: pnpm exec oxlint scripts server packages --max-warnings 0
+        run: pnpm exec vp lint scripts server packages --max-warnings 0
       # CSS 的格式與 lint（設定見 .config/biome.json）。Biome 在這裡**只管 CSS**——
       # JS/TS 是 oxlint 的地盤，兩個 linter 管同一批檔案只會互相矛盾，而且 Biome
       # 沒有等價的型別感知檢查。
@@ -78,8 +79,8 @@ jobs:
       # 兩支 PR；沒有這道，CSS 的 git 歷史（寫 51,785 行刪 30,103 行）說明它會長回來。
       - name: 間距 token（不要現編新的間距值）
         run: pnpm check:css-tokens
-      # JS/TS 的格式。⚠️ oxfmt 不是只認 js/ts——它同時會排 css / json / md，所以
-      # .oxfmtrc.json 把這三類都明確排除掉，每一條都是實際撞到的：
+      # JS/TS 的格式（oxfmt，經 `vp fmt`）。⚠️ oxfmt 不是只認 js/ts——它同時會排 css / json / md，所以
+      # vite.config.ts 的 fmt.ignorePatterns 把這三類都明確排除掉，每一條都是實際撞到的：
       #   css  → biome 的地盤，兩邊 quoteStyle 相反（biome 雙引號、oxfmt 單引號），
       #          讓 oxfmt 碰它 lint:css 會一次冒出 32 個 error。
       #   json → 會重排 tests/e2e/computed-style.baseline/ 那 15 個機器產生的基準檔。

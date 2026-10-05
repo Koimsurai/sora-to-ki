@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { isBotUserAgent } from './bot';
 
 // 這個判斷有兩個都會安靜出錯的方向，所以兩邊都要測：

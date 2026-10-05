@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { renderWithProviders } from '@/test-utils/renderWithProviders';
 import KoimLoader from '@/components/common/KoimLoader';
 import Comments from '@/components/blog/Comments';

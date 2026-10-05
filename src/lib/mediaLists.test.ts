@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { dedupeWatchItems, filterAndSortBooks, filterAndSortWatchItems } from './mediaLists';
 
 // 書櫃 511 statements @ 19%、片庫 298 @ 16%。這兩支的失敗模式一樣：

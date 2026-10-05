@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { parseMermaidFrontmatter } from './mermaidFrontmatter';
 
 // 這支的失敗模式是「設定安靜地被忽略」：圖照樣畫得出來，只是主題／版面跟寫的不一樣。

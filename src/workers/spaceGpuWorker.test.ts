@@ -9,7 +9,7 @@
 // 跟影片搶 GPU——那正是當初加暫停要避免的事（見 SpaceBackdropShell 的長註解）。
 //
 // 這裡不碰 three：mock 掉 runner 之後剩下的就是純粹的轉接邏輯，而 bug 也正好都在轉接上。
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 /** mock 的 runner：每個方法都是 spy，順序與參數就是斷言對象 */
 function makeRunner() {

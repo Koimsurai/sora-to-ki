@@ -9,7 +9,7 @@
 //
 // 這裡蓋三件事：掉了會不會重建、重建幾次之後會不會放棄、以及分頁在背景時會不會白重建一次。
 // 外加一條「掛載當下就同步一次狀態」——lazy 元件掛好之前發生的全螢幕，事件早就發完了。
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { act, cleanup, render } from '@testing-library/react';
 
 function makeRunner() {

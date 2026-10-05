@@ -8,7 +8,7 @@
 // 最重要的是 MDX 那段：**編譯失敗是靜默退回 markdown**（CLAUDE.md 也特別標了這件事）。
 // 讀者看到的是一行裸的 `<Poll ... />`，而 API 照樣回 200、CI 照樣綠。
 // 這是整個前端最安靜的失敗之一。
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { keepPreviousData } from '@tanstack/react-query';
 
 // apiUrl 在 SSR 會加上 base，這裡不是要測它 —— 原樣回傳，斷言才看得懂

@@ -13,7 +13,7 @@
 //   少了這一層，測到的就只是 React 自己的 setState，跟元件的行為無關。
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import VideoPlayer from './VideoPlayer';
 
 const SRC = '/videos/demo.mp4';

@@ -12,7 +12,7 @@
 // 一個回後綴 `en`），彼此沒有任何關聯——只在其中一邊加語系是最可能發生的回歸。
 // 現在 fieldFor 由 suffixFor 推導，但測試維持測對外行為：那樣不管日後怎麼實作，
 // 「分類名翻了、tooltip 沒翻」這個症狀都跑不掉（見最後一條）。
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { renderHook } from '@testing-library/react';
 
 // 三個外部依賴全部換掉：這支要測的是純粹的對應邏輯，不是 react-query 或 i18next。

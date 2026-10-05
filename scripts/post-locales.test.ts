@@ -11,7 +11,7 @@
 //
 // 這種回歸是安靜的：改壞了不會有人立刻發現，要等排程 job 過幾天變紅，
 // 而錯誤訊息只會說「逾時」。所以值得釘住。
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { hostHasNoDot } from './check-links';
 import { localesOf, type PostWithLocales } from './post-locales';

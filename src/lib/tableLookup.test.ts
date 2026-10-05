@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { lookup, lookupOr } from './tableLookup';
 
 // 這兩個函式存在的理由是「key 是執行期字串，表不保證有」——

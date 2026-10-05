@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { thoughtTitle } from './thoughtData';
 
 // 碎念沒有標題欄位，這個函式的輸出會同時當成頁面 title、分享文字與列表項目標題。

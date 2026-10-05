@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { avatarColor, groupComments, relativeTime, validateCommentDraft } from './comments';
 
 // 留言區原本 546 statements 只走到 21%——登入後的路徑、驗證的每個分支、

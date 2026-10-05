@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { trackAnalytics } from './trackAnalytics';
 
 // Music.tsx 的統計聚合。這種東西壞掉的樣子是「數字看起來很合理但其實是錯的」——

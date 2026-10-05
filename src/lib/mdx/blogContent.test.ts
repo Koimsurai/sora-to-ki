@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { computeReadTime, extractHeadings, slugify } from './blogContent';
 
 // 這三個函式決定文章頁的 anchor id、右側 TOC 與閱讀時間。

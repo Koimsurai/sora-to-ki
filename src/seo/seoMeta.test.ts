@@ -6,7 +6,7 @@
 // 而且它是純函式，測起來的成本趨近於零：沒有 DOM、沒有網路、沒有時間相依。
 //
 // 下面每一組對應一種「改壞了不會有人發現」的情況，而不是為了把行數蓋滿。
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { articleJsonLd, articleMeta, blogListJsonLd, LOCALE_TO_OG, pageMeta, siteJsonLd } from './seoMeta';
 

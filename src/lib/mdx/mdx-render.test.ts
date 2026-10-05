@@ -12,7 +12,7 @@
  *   逐字相同），但舊路徑已經刪掉了，留著比對就得把 `runSync` 留在相依裡，
  *   等於為了測試留著要移除的東西。改成釘住**具體的輸出結構**。
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { compileMdxToHastJson, MdxUnsupportedError } from '@koimsurai/mdx-core';
 
 const compile = (src: string) => compileMdxToHastJson(src);

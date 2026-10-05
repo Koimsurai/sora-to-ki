@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 import { pickActiveHeading, readingProgressPct, splitTitle } from './blogReading';
 
 // 這三個原本埋在 BlogPost.tsx（2337 行、92 個 hook）裡，e2e 只走到 16%。

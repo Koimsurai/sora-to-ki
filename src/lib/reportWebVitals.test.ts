@@ -8,7 +8,7 @@
 // 量一次」的工具永遠測不到，所以這條上報是唯一的來源。它壞了等於那個問題從此看不見。
 //
 // 這裡蓋的每一條都對應原始碼註解裡記著的一次真實決定或事故，而那些註解是唯一的守衛。
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 /** web-vitals 的回呼在 init 時註冊，測試自己決定什麼時候「定稿」 */
 interface Cbs {

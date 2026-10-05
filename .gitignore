@@ -123,3 +123,4 @@ reports/
 # e2e 覆蓋率的中間產物（見 scripts/e2e-coverage-report.mjs）
 .e2e-coverage/
 lcov-e2e.info
+.vitest/

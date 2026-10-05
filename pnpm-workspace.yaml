@@ -66,6 +66,20 @@ overrides:
   # 所以不急；但留著就是安全頁上兩筆永遠不會處理的紅字，而雜訊一多，
   # 真的有事時就沒人看。鎖壞了不會沒人知道——lhci 在 CI 每次都跑。
   tmp: '^0.2.6'
+  vite@*: 'catalog:'
+  vitest@*: 'catalog:'
+catalog:
+  vite: npm:@voidzero-dev/vite-plus-core@1.0.0
+  vitest: 5.0.1
+  vite-plus: 1.0.0
+  '@vitest/coverage-v8': 5.0.1
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: '*'
+    vitest: '*'
 
 # patchedDependencies 已清空。原本這裡有一筆 '@types/three@0.185.1' —— 它把 Node.d.ts
 # 裡那組 20 層巢狀的 `TNodeType extends …` conditional type 攤平成 NodeExtras 查表，

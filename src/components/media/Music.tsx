@@ -244,15 +244,14 @@ const Music = () => {
                     </div>
                   </div>
                 )}
-                {!npData.isLive &&
-                  npData.played_at && (
-                    // 相對時間（formatDate 用 new Date()）server/client 算出來可能差一分鐘 →
-                    // hydration text mismatch（React #418）。suppressHydrationWarning：保留 SSR 文字
-                    // （SEO 看得到）、client 自行更新、不當成錯配。
-                    <p className="np-last-played" suppressHydrationWarning>
-                      {formatDate(npData.played_at)}
-                    </p>
-                  )}
+                {!npData.isLive && npData.played_at && (
+                  // 相對時間（formatDate 用 new Date()）server/client 算出來可能差一分鐘 →
+                  // hydration text mismatch（React #418）。suppressHydrationWarning：保留 SSR 文字
+                  // （SEO 看得到）、client 自行更新、不當成錯配。
+                  <p className="np-last-played" suppressHydrationWarning>
+                    {formatDate(npData.played_at)}
+                  </p>
+                )}
                 <a
                   href={npData.item?.external_urls.spotify}
                   target="_blank"

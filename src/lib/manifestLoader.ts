@@ -41,9 +41,14 @@ export async function loadPhotosManifest(): Promise<PhotoManifest[]> {
  * 回退方案: 使用 Vite 的 import.meta.glob 載入本地圖片
  */
 function loadLocalPhotos(): PhotoManifest[] {
+  // `import.meta.glob` 的兩個參數都必須是字面值，vite 在編譯期就展開它。Stryker 把它們換成
+  // `stryMutAct_…("657") ? … : …` 之後 vite 解析不了，**整個初始測試直接崩潰**（pnpm mutate 一筆都跑不了）。
+  // 呼叫跨好幾行，`disable next-line` 只蓋得到第一行，所以用 disable / restore 包住。
+  // Stryker disable all
   const imageModules = import.meta.glob('../assets/Portfolio/*.{webp,jpg,jpeg,png,gif,svg}', {
     eager: true,
   });
+  // Stryker restore all
 
   return Object.entries(imageModules).map(([path, module], index) => {
     // 用 at(-1) ?? '' 取代 pop()!：split 對非空字串必有元素，但那是人腦知道、

@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite-plus';
 
 // 前端單元測試（vitest）。與 vite.config.start.ts 分離：
 // 測試不需要 TanStack Start/Nitro 插件，獨立 config 啟動快且零副作用。

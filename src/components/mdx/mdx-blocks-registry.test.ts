@@ -1,4 +1,4 @@
-import { expect, test } from 'vitest';
+import { expect, test } from 'vite-plus/test';
 import { readRegisteredBlocks } from '@/../scripts/mdx-block-names';
 import { MDX_BLOCKS } from './mdx-blocks-registry';
 
