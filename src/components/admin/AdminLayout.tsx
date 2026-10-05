@@ -262,7 +262,7 @@ const AdminLayout = () => {
                 >
                   <Avatar className="size-7 shrink-0">
                     {user?.avatar && <AvatarImage src={user.avatar} alt={user.displayName ?? '管理員'} />}
-                    <AvatarFallback className="bg-zinc-800 text-zinc-300 text-fs-11 font-medium border border-zinc-700/60">
+                    <AvatarFallback className="text-fs-11">
                       {(user?.displayName ?? '管理員').slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -320,8 +320,8 @@ const AdminLayout = () => {
             <div className="ml-auto flex items-center gap-2">
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground/80 px-2.5"
+                size="xs"
+                tone="muted"
                 onClick={() => document.getElementById('save-draft-btn')?.click()}
               >
                 <Save className="size-3.5" />
@@ -329,19 +329,14 @@ const AdminLayout = () => {
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
-                className="h-7 text-xs gap-1.5 text-muted-foreground hover:text-foreground/80 px-2.5"
+                size="xs"
+                tone="muted"
                 onClick={() => document.getElementById('save-exit-btn')?.click()}
               >
                 <SaveAll className="size-3.5" />
                 存並回列表
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs gap-1.5 text-foreground/80 border-border/50 hover:bg-accent/50 px-3"
-                onClick={() => document.getElementById('publish-btn')?.click()}
-              >
+              <Button variant="subtle" size="xs" onClick={() => document.getElementById('publish-btn')?.click()}>
                 <Send className="size-3.5" />
                 發佈文章
               </Button>

@@ -94,12 +94,7 @@ export default function PostsList() {
           <h1 className="text-lg font-medium text-foreground/90">文章管理</h1>
           <p className="text-sm text-muted-foreground mt-1">共 {posts.length} 篇文章</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40"
-          asChild
-        >
+        <Button variant="subtle" size="compact" asChild>
           <Link to="/admin/posts/create">
             <Plus className="size-3.5" />
             新增文章
@@ -134,7 +129,9 @@ export default function PostsList() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="搜尋文章..."
-            className="bg-accent/20 border-border/40 text-foreground/80 text-sm h-8 pl-8 placeholder:text-muted-foreground/40"
+            variant="glass"
+            size="compact"
+            className="pl-8"
           />
         </div>
       </div>
@@ -224,12 +221,7 @@ export default function PostsList() {
         <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
           <Search className="size-12 opacity-20" />
           <p className="mt-4 text-sm">還沒有文章</p>
-          <Button
-            variant="outline"
-            className="mt-4 border-border/50 text-foreground/70 hover:bg-accent/40"
-            size="sm"
-            asChild
-          >
+          <Button variant="subtle" className="mt-4" size="sm" asChild>
             <Link to="/admin/posts/create">
               <Plus className="mr-2 size-3.5" />
               創建第一篇文章
@@ -258,7 +250,7 @@ export default function PostsList() {
               onClick={() => {
                 void handleDelete();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               刪除
             </AlertDialogAction>

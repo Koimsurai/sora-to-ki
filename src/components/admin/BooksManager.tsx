@@ -288,12 +288,7 @@ export default function BooksManager() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40"
-              onClick={resetForm}
-            >
+            <Button variant="subtle" size="compact" onClick={resetForm}>
               <Plus className="size-3.5" />
               新增書籍
             </Button>
@@ -316,7 +311,7 @@ export default function BooksManager() {
                 {/* ISBN/書名搜尋區塊 */}
                 {!editingBook && (
                   <div className="space-y-3 pb-4 border-b border-zinc-800/50">
-                    <Label className="text-sm font-medium">📚 快速搜尋 (Google Books + OpenLibrary)</Label>
+                    <Label>📚 快速搜尋 (Google Books + OpenLibrary)</Label>
                     <div className="flex gap-2">
                       <Input
                         value={searchQuery}
@@ -575,7 +570,8 @@ export default function BooksManager() {
         value={localSearchQuery}
         onChange={(e) => setLocalSearchQuery(e.target.value)}
         placeholder="搜尋書名或作者..."
-        className="bg-accent/20 border-border/40 text-foreground/80 text-sm h-9 placeholder:text-muted-foreground/40"
+        variant="glass"
+        size="sm"
       />
 
       {/* Book list */}
@@ -651,7 +647,7 @@ export default function BooksManager() {
               onClick={() => {
                 void handleDelete();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               刪除
             </AlertDialogAction>

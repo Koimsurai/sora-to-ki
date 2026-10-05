@@ -274,7 +274,6 @@ export default function CommentsManager() {
           onClick={() => {
             void invalidateComments();
           }}
-          className="gap-1.5"
         >
           <RefreshCw className="size-3.5" /> 重新整理
         </Button>
@@ -344,7 +343,8 @@ export default function CommentsManager() {
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-8 h-8 w-52 text-xs"
+                  size="compact"
+                  className="pl-8 w-52"
                 />
               </div>
             </div>
@@ -417,8 +417,8 @@ export default function CommentsManager() {
                         {c.status !== 'approved' && (
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs gap-1 text-green-400 hover:text-green-300 hover:bg-green-400/10"
+                            size="xs"
+                            tone="success"
                             onClick={() => {
                               void updateStatus(c.id, 'approved');
                             }}
@@ -429,8 +429,8 @@ export default function CommentsManager() {
                         {c.status !== 'spam' && (
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs gap-1 text-red-400 hover:text-red-300 hover:bg-red-400/10"
+                            size="xs"
+                            tone="danger"
                             onClick={() => {
                               void updateStatus(c.id, 'spam');
                             }}
@@ -441,8 +441,8 @@ export default function CommentsManager() {
                         {c.status !== 'trash' && (
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs gap-1 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-400/10"
+                            size="xs"
+                            tone="neutral"
                             onClick={() => {
                               void updateStatus(c.id, 'trash');
                             }}
@@ -452,8 +452,8 @@ export default function CommentsManager() {
                         )}
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs gap-1 text-purple-400 hover:text-purple-300 hover:bg-purple-400/10"
+                          size="xs"
+                          tone="accent"
                           onClick={() => {
                             setReplyDialog({ open: true, comment: c });
                             setReplyText('');
@@ -463,8 +463,8 @@ export default function CommentsManager() {
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs gap-1 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10"
+                          size="xs"
+                          tone="info"
                           onClick={() => {
                             setEditDialog({ open: true, comment: c });
                             setEditText(c.content);
@@ -475,8 +475,8 @@ export default function CommentsManager() {
                         {c.ip && (
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs gap-1 text-orange-400 hover:text-orange-300 hover:bg-orange-400/10"
+                            size="xs"
+                            tone="caution"
                             onClick={() => {
                               if (c.ip) void blockIp(c.ip);
                             }}
@@ -485,12 +485,7 @@ export default function CommentsManager() {
                           </Button>
                         )}
                         {c.status === 'trash' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs gap-1 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                            onClick={() => setDeleteId(c.id)}
-                          >
+                          <Button variant="ghost" size="xs" tone="destructive" onClick={() => setDeleteId(c.id)}>
                             <X className="size-3" /> 永久刪除
                           </Button>
                         )}
@@ -527,20 +522,21 @@ export default function CommentsManager() {
               placeholder="IP 位址"
               value={newBlacklistIp}
               onChange={(e) => setNewBlacklistIp(e.target.value)}
-              className="h-8 text-xs w-40"
+              size="compact"
+              className="w-40"
             />
             <Input
               placeholder="原因（選填）"
               value={newBlacklistReason}
               onChange={(e) => setNewBlacklistReason(e.target.value)}
-              className="h-8 text-xs flex-1"
+              size="compact"
+              className="flex-1"
             />
             <Button
-              size="sm"
+              size="compact"
               onClick={() => {
                 void addBlacklist();
               }}
-              className="h-8 text-xs gap-1"
             >
               <Ban className="size-3" /> 新增
             </Button>
@@ -561,8 +557,8 @@ export default function CommentsManager() {
                   </div>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-red-400 hover:text-red-300"
+                    size="xs"
+                    tone="danger"
                     onClick={() => {
                       void removeBlacklist(b.id);
                     }}
@@ -584,7 +580,8 @@ export default function CommentsManager() {
               placeholder="關鍵字"
               value={newKeyword}
               onChange={(e) => setNewKeyword(e.target.value)}
-              className="h-8 text-xs flex-1"
+              size="compact"
+              className="flex-1"
             />
             <select
               value={newKeywordAction}
@@ -595,11 +592,10 @@ export default function CommentsManager() {
               <option value="reject">直接拒絕</option>
             </select>
             <Button
-              size="sm"
+              size="compact"
               onClick={() => {
                 void addKeyword();
               }}
-              className="h-8 text-xs gap-1"
             >
               <Filter className="size-3" /> 新增
             </Button>
@@ -714,7 +710,7 @@ export default function CommentsManager() {
               onClick={() => {
                 void handleDelete();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               永久刪除
             </AlertDialogAction>

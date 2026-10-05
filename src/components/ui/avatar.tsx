@@ -18,7 +18,11 @@ function AvatarImage({ className, ...props }: React.ComponentProps<typeof Avatar
 function AvatarFallback({ className, ...props }: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
   return (
     <AvatarPrimitive.Fallback
-      className={cn('flex h-full w-full items-center justify-center rounded-full bg-muted', className)}
+      // 外觀是後台兩個呼叫點原本各自手寫的那組；字級留給呼叫端（跟著頭像大小走，見 .oxlintrc.json 的 contract）。
+      className={cn(
+        'flex h-full w-full items-center justify-center rounded-full border border-zinc-700/60 bg-zinc-800 text-xs font-medium text-zinc-300',
+        className,
+      )}
       {...props}
     />
   );

@@ -570,12 +570,7 @@ export default function ArticleGenerator() {
           <p className="text-sm text-muted-foreground mt-1">使用 AI 輔助你的寫作流程</p>
         </div>
         {generatedContent && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleReset}
-            className="gap-1.5 text-xs text-muted-foreground hover:text-foreground/80"
-          >
+          <Button variant="ghost" size="compact" tone="muted" onClick={handleReset}>
             <RotateCcw className="size-3.5" />
             重來
           </Button>
@@ -588,10 +583,10 @@ export default function ArticleGenerator() {
           {/* Config row */}
           <div className="flex items-center gap-3">
             <Select value={articleType} onValueChange={setArticleType}>
-              <SelectTrigger className="w-40 bg-accent/20 border-border/40 text-foreground/70 text-xs h-8">
+              <SelectTrigger variant="glass" size="compact" className="w-40">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-popover border-border/50">
+              <SelectContent>
                 {Object.entries(ARTICLE_TYPES).map(([key, type]) => (
                   <SelectItem key={key} value={key}>
                     <span className="flex items-center gap-2">
@@ -606,7 +601,9 @@ export default function ArticleGenerator() {
               placeholder="導演指令（選填）— 指定主題方向、語氣、禁忌詞等"
               value={guide}
               onChange={(e) => setGuide(e.target.value)}
-              className="bg-accent/20 border-border/40 text-foreground/70 text-xs h-8 flex-1 placeholder:text-muted-foreground/40"
+              variant="glass"
+              size="compact"
+              className="flex-1"
             />
           </div>
 
@@ -623,9 +620,8 @@ export default function ArticleGenerator() {
             <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/20">
               <span className="text-fs-11 text-muted-foreground/40">{conversationText.length.toLocaleString()} 字</span>
               <Button
-                variant="outline"
-                size="sm"
-                className="text-xs gap-1.5 h-7 px-3 border-border/50 text-foreground/70 hover:bg-accent/40"
+                variant="subtle"
+                size="xs"
                 onClick={() => {
                   void handleGenerate();
                 }}
@@ -726,8 +722,8 @@ export default function ArticleGenerator() {
                   </span>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="text-xs gap-1.5 h-7 text-muted-foreground/60 hover:text-foreground/70"
+                    size="xs"
+                    tone="muted"
                     onClick={() => {
                       void handleSendToEditor();
                     }}

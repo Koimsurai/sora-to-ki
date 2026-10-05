@@ -166,12 +166,7 @@ export default function TagsManager() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40"
-              onClick={resetForm}
-            >
+            <Button variant="subtle" size="compact" onClick={resetForm}>
               <Plus className="size-3.5" />
               新增標籤
             </Button>
@@ -206,7 +201,7 @@ export default function TagsManager() {
                   <div className="grid grid-cols-2 gap-3">
                     {LOCALE_NAME_FIELDS.map(({ key, label, placeholder }) => (
                       <div className="space-y-2" key={key}>
-                        <Label htmlFor={key} className="text-xs">
+                        <Label htmlFor={key} size="xs">
                           {label}
                         </Label>
                         <Input
@@ -263,7 +258,8 @@ export default function TagsManager() {
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         placeholder="搜尋標籤..."
-        className="bg-accent/20 border-border/40 text-foreground/80 text-sm h-9 placeholder:text-muted-foreground/40"
+        variant="glass"
+        size="sm"
       />
 
       {/* Tags cloud */}
@@ -365,7 +361,7 @@ export default function TagsManager() {
               onClick={() => {
                 void handleDelete();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
             >
               刪除
             </AlertDialogAction>

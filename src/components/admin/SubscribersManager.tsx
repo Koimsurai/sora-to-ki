@@ -134,7 +134,7 @@ export default function SubscribersManager() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={exportCSV} className="gap-2">
+          <Button variant="outline" size="sm" onClick={exportCSV}>
             <Download className="h-4 w-4" /> CSV
           </Button>
           <Button
@@ -144,7 +144,6 @@ export default function SubscribersManager() {
               void invalidateSubs();
             }}
             disabled={isLoading}
-            className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             重新整理
@@ -229,8 +228,8 @@ export default function SubscribersManager() {
                       {s.status === 'active' && (
                         <Button
                           variant="ghost"
-                          size="sm"
-                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-7 gap-1.5"
+                          size="xs"
+                          tone="danger"
                           onClick={() => setDeleteDialog({ open: true, sub: s })}
                         >
                           <Trash2 className="h-3.5 w-3.5" /> 標記退訂
@@ -256,7 +255,7 @@ export default function SubscribersManager() {
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
               onClick={() => {
                 if (deleteDialog.sub) void handleUnsubscribe(deleteDialog.sub);
                 setDeleteDialog({ open: false, sub: null });

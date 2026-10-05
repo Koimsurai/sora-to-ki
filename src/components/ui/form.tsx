@@ -78,7 +78,16 @@ function FormItem({ className, ...props }: React.ComponentProps<'div'>) {
 function FormLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
   const { error, formItemId } = useFormField();
 
-  return <Label className={cn(error && 'text-destructive', className)} htmlFor={formItemId} {...props} />;
+  // `text-xs text-muted-foreground` 是後台每個 FormLabel 都在手寫的樣式，收進預設值。
+  // ⚠️ 錯誤色要排在最後：原本是 `cn(error && 'text-destructive', className)`，呼叫點傳進來的
+  //    text-muted-foreground 排在後面，於是驗證失敗時 label 從來不會變紅。
+  return (
+    <Label
+      className={cn('text-xs text-muted-foreground', className, error && 'text-destructive')}
+      htmlFor={formItemId}
+      {...props}
+    />
+  );
 }
 
 function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {

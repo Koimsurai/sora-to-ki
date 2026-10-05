@@ -92,7 +92,8 @@ function TagSearchInput({
         placeholder="搜尋標籤..."
         value={tagSearch}
         onChange={(e) => setTagSearch(e.target.value)}
-        className="bg-accent/30 border-border/50 text-foreground/80 text-xs h-8 placeholder:text-muted-foreground/40"
+        variant="glass"
+        size="compact"
       />
       {tagSearch && filteredTags.length > 0 && (
         <div className="absolute left-0 right-0 mt-1.5 max-h-28 overflow-y-auto rounded-lg border border-border/40 bg-popover/95 backdrop-blur-xs p-1 z-50">
@@ -1002,7 +1003,7 @@ export default function PostEditor() {
                       name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">分類</FormLabel>
+                          <FormLabel>分類</FormLabel>
                           <Select
                             // hydrated + categories.length 進 key：載入完成或選項到齊時重新 mount，
                             // 讓觸發器顯示已載入的分類（Radix Select 不反映 mount 後才變的受控值）。
@@ -1011,7 +1012,7 @@ export default function PostEditor() {
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="h-8 bg-accent/30">
+                              <SelectTrigger variant="glass" size="compact">
                                 <SelectValue placeholder="選擇分類" />
                               </SelectTrigger>
                             </FormControl>
@@ -1035,7 +1036,7 @@ export default function PostEditor() {
                         const selectedTags = field.value ?? [];
                         return (
                           <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">
+                            <FormLabel>
                               標籤
                               <span className="text-muted-foreground/50 ml-1">({tags.length} 個可用)</span>
                             </FormLabel>
@@ -1082,7 +1083,7 @@ export default function PostEditor() {
                       name="series_name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">系列名稱</FormLabel>
+                          <FormLabel>系列名稱</FormLabel>
                           <FormControl>
                             <input
                               {...field}
@@ -1099,7 +1100,7 @@ export default function PostEditor() {
                       name="series_order"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">順序（數字越小越前面）</FormLabel>
+                          <FormLabel>順序（數字越小越前面）</FormLabel>
                           <FormControl>
                             <input
                               type="number"
@@ -1127,14 +1128,14 @@ export default function PostEditor() {
                       name="status"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">狀態</FormLabel>
+                          <FormLabel>狀態</FormLabel>
                           <Select
                             key={`status-${hydrated ? 'r' : 'i'}`}
                             onValueChange={field.onChange}
                             value={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="h-8 bg-accent/30">
+                              <SelectTrigger variant="glass" size="compact">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -1154,7 +1155,7 @@ export default function PostEditor() {
                       name="source_language"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <FormLabel className="flex items-center gap-1.5">
                             <Languages className="h-3 w-3" />
                             原文語言
                           </FormLabel>
@@ -1167,7 +1168,7 @@ export default function PostEditor() {
                             value={field.value ?? 'zh-TW'}
                           >
                             <FormControl>
-                              <SelectTrigger className="h-8 bg-accent/30">
+                              <SelectTrigger variant="glass" size="compact">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -1188,9 +1189,14 @@ export default function PostEditor() {
                       name="slug"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">網址 slug</FormLabel>
+                          <FormLabel>網址 slug</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="blog-post-rendering-strategy" className="h-8 bg-accent/30" />
+                            <Input
+                              {...field}
+                              placeholder="blog-post-rendering-strategy"
+                              variant="glass"
+                              size="compact"
+                            />
                           </FormControl>
                           <p className="text-fs-10 text-muted-foreground/60">
                             文章網址是 /blog/&lt;slug&gt;。留空會自動從英文標題產生；改了也不會斷——舊網址會自動 301
@@ -1206,7 +1212,7 @@ export default function PostEditor() {
                       name="layout_type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <FormLabel className="flex items-center gap-1.5">
                             <LayoutTemplate className="h-3 w-3" />
                             樣板類型
                           </FormLabel>
@@ -1216,7 +1222,7 @@ export default function PostEditor() {
                             value={field.value ?? 'record'}
                           >
                             <FormControl>
-                              <SelectTrigger className="h-8 bg-accent/30">
+                              <SelectTrigger variant="glass" size="compact">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -1235,7 +1241,7 @@ export default function PostEditor() {
                       name="allow_comments"
                       render={({ field }) => (
                         <FormItem className="flex items-center justify-between">
-                          <FormLabel className="text-xs text-muted-foreground">允許留言</FormLabel>
+                          <FormLabel>允許留言</FormLabel>
                           <FormControl>
                             <Switch checked={field.value} onCheckedChange={field.onChange} />
                           </FormControl>
@@ -1250,7 +1256,7 @@ export default function PostEditor() {
                       render={({ field }) => (
                         <FormItem className="flex items-center justify-between">
                           <div className="flex flex-col gap-0.5">
-                            <FormLabel className="text-xs text-muted-foreground">發佈時推送 Newsletter</FormLabel>
+                            <FormLabel>發佈時推送 Newsletter</FormLabel>
                             <span className="text-fs-10 text-muted-foreground/60">文章狀態為「已發佈」時才會觸發</span>
                           </div>
                           <FormControl>
@@ -1288,12 +1294,13 @@ export default function PostEditor() {
                       name="cover"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">圖片網址</FormLabel>
+                          <FormLabel>圖片網址</FormLabel>
                           <FormControl>
                             <Input
                               {...field}
                               placeholder="https://example.com/image.jpg"
-                              className="h-8 bg-accent/30"
+                              variant="glass"
+                              size="compact"
                             />
                           </FormControl>
                           {field.value && (

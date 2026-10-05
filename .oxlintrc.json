@@ -163,10 +163,21 @@
     "react/incompatible-library": "off",
     "shadcn/no-raw-colors": "error",
     "shadcn/no-arbitrary-values": ["error", { "allow": ["layout", "pt-[12vh]"] }],
-    "shadcn/no-restyle": "off",
+    "shadcn/no-restyle": [
+      "error",
+      {
+        "allow": ["layout"],
+        "contracts": [
+          { "pattern": "^Input$", "allow": ["layout", "pl-8", "pl-9"] },
+          { "pattern": "^AvatarFallback$", "allow": ["layout", "typography"] },
+          { "pattern": "^DialogTitle$", "allow": ["layout", "typography"] },
+          { "pattern": "^FormLabel$", "allow": ["layout", "gap-1.5"] }
+        ]
+      }
+    ],
     "shadcn/no-inline-styles": "off",
     "shadcn/no-unknown-classes": "off",
-    "shadcn/require-static-classes": "off",
+    "shadcn/require-static-classes": "error",
     "react/only-export-components": [
       "warn",
       {

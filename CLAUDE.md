@@ -618,10 +618,32 @@ warning 會出現在 CI 輸出但不擋——跟 knip 當初的處理一樣，�
 |---|---|---|
 | `no-arbitrary-values` | **error**（`allow: layout`） | 寬高與 `85vh` 這類版面尺寸本來就沒有尺；字級／間距／顏色要走尺 |
 | `no-raw-colors` | **error** | 只准站上的色票（見調色盤那節）與 shadcn 語意色 |
-| `no-restyle` | off（下一步） | 後台 Button／Input 一律手動壓成緊湊版，290 處；要先補一個緊湊 size |
+| `no-restyle` | **error**（`allow: layout` + contracts） | 外觀走元件的 variant／size，頁面只決定擺哪、多寬 |
+| `require-static-classes` | **error** | 開的時候就是 0 筆，純畫線 |
 | `no-unknown-classes` | off | 假設全站只用 Tailwind；公開頁用 CSS 檔的 class，1946 筆全是誤報 |
 | `no-inline-styles` | off | 那 278 處是 JS 算出來的動態位置（星星、軌道），inline style 是正確做法 |
-| `require-static-classes` | off | 同 `no-restyle`，跟著它一起開 |
+
+後台的設計在這之前**沒寫進元件裡**：Button 從不用 default（h-10），而是在每個呼叫點手動壓成
+`h-8`／`h-7 text-xs`，同一組 class 抄了二十幾次；6 個確認刪除各自手寫 `bg-destructive`；
+每個 FormLabel 都寫 `text-xs text-muted-foreground`。現在它們是：
+
+| 元件 | 加了什麼 |
+|---|---|
+| Button | `size="compact"`（h-8）／`"xs"`（h-7）、`variant="subtle"`（淡邊框）、`tone=`（審核動作的語意色：success／danger／destructive／neutral／accent／info／caution／muted） |
+| Input／SelectTrigger | `size="compact"`／`"sm"`、`variant="glass"`（後台面板的半透明框） |
+| AlertDialogAction | `variant`（跟 Button 同一組） |
+| Label | `size="xs"` |
+| FormLabel／AvatarFallback | 後台慣用的樣式直接成為預設值（只有後台在用這些元件） |
+
+contracts 放行的四個例外都有理由：Input 的 `pl-8`／`pl-9`（左側有搜尋圖示）、AvatarFallback
+與 DialogTitle 的字級（跟著頭像大小／對話框層級走）、FormLabel 的 `gap-1.5`（帶圖示的 label）。
+
+⚠️ **Input 的 `compact` 是 text-sm 不是 text-xs，那是照實際畫面定的。** 基底的 `md:text-sm` 是另一個
+variant，呼叫點寫的 `text-xs` 蓋不掉——所以那些「12px 的輸入框」在桌機上**一直是 14px**。
+要真的改成 12px 是設計決定，不是重構。
+
+⚠️ FormLabel 原本寫成 `cn(error && 'text-destructive', className)`，呼叫點傳進的
+`text-muted-foreground` 排在後面，**驗證失敗時 label 從來不會變紅**。錯誤色現在排在最後。
 
 `no-raw-colors` 對四個檔案整檔關掉（`overrides`）：NotFound 的 SVG 插畫、BrandIcons、
 SignatureSVG 的金色漸層、ZeroGravityLibrary 的 3D 燈光色——全是「自成一套」或品牌色。

@@ -71,12 +71,7 @@ const AdminDashboard = () => {
           <h1 className="text-lg font-medium text-foreground/90">儀表板</h1>
           <p className="text-sm text-muted-foreground mt-1">歡迎回來，這是你的部落格概覽。</p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-xs gap-1.5 h-8 border-border/50 text-foreground/70 hover:bg-accent/40"
-          asChild
-        >
+        <Button variant="subtle" size="compact" asChild>
           <Link to="/admin/posts/create">
             <Plus className="size-3.5" />
             新增文章

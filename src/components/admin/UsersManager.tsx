@@ -128,7 +128,6 @@ export default function UsersManager() {
             void queryClient.invalidateQueries({ queryKey: adminUsersQueryOptions.queryKey });
           }}
           disabled={isLoading}
-          className="gap-2"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           重新整理
@@ -210,9 +209,7 @@ export default function UsersManager() {
                         <div className="flex items-center gap-2.5">
                           <Avatar className="size-8 shrink-0">
                             {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.display_name ?? undefined} />}
-                            <AvatarFallback className="bg-zinc-800 text-zinc-300 text-xs font-medium border border-zinc-700/60">
-                              {(u.display_name ?? '?').slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
+                            <AvatarFallback>{(u.display_name ?? '?').slice(0, 2).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <span className="font-medium truncate max-w-[150px]">
                             {u.display_name ?? '-'}
@@ -259,7 +256,7 @@ export default function UsersManager() {
                                 }
                               }}
                             >
-                              <SelectTrigger className="w-[110px] h-8 text-xs">
+                              <SelectTrigger size="compact" className="w-[110px]">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
