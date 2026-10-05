@@ -425,7 +425,8 @@ function check(file: string): Problem[] {
       if (tok) problems.push({ file, line, prop, raw: r[0], why: `這就是 ${tok} 的值`, fix: `改用 var(${tok})` });
     }
     for (const r of value.matchAll(HEX3)) {
-      const full = `#${[...r[1]]
+      const full = `#${r[1]
+        .split('')
         .map((c) => c + c)
         .join('')
         .toLowerCase()}`;

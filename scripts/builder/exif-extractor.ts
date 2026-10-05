@@ -119,7 +119,7 @@ export async function extractExif(filePath: string): Promise<ExtractedExif> {
     }
 
     // GPS
-    if (tagData.gps?.Latitude && tagData.gps?.Longitude) {
+    if (tagData.gps?.Latitude && tagData.gps.Longitude) {
       exif.gps = {
         latitude: tagData.gps.Latitude as number,
         longitude: tagData.gps.Longitude as number,

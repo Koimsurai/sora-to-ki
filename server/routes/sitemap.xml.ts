@@ -13,8 +13,9 @@ import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, localePathname } from '
 //      內容相同、只有 lang 不同的頁面給 Google，會被判重複內容。逐篇用後端的 available_locales。
 //   2. **alternate 必須對稱**。每個語系版本各自出一筆 <url>，且都帶「完整且相同」的一組
 //      alternate（含指回自己）。少一邊 Google 就不採信整組宣告。
-const SITE_URL = process.env.SITE_URL || 'https://koimsurai.com';
-const BACKEND_URL = process.env.BACKEND_URL || 'http://backend-rs:3002';
+// `?? ''` 再 `||`：沒設與設成空字串都退回預設（跟 src/lib/postPath.ts 同一個寫法）。
+const SITE_URL = (process.env.SITE_URL ?? '') || 'https://koimsurai.com';
+const BACKEND_URL = (process.env.BACKEND_URL ?? '') || 'http://backend-rs:3002';
 
 // UI 頁五語都有翻譯（src/routes/$locale/ 底下每頁都在），所以直接展開全語系。
 const STATIC_PAGES: [string, string, string][] = [
@@ -93,7 +94,7 @@ export default defineEventHandler(async (event) => {
   }
   for (const p of posts) {
     const lastmod = (p.updated_at ?? p.created_at ?? '').slice(0, 10) || today;
-    xml += urlSet(`/blog/${p.slug || p.id}`, toLocales(p.available_locales), lastmod, 'monthly', '0.8');
+    xml += urlSet(`/blog/${(p.slug ?? '') || p.id}`, toLocales(p.available_locales), lastmod, 'monthly', '0.8');
   }
   xml += '</urlset>\n';
 

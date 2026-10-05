@@ -292,7 +292,9 @@ async function main(): Promise<void> {
 //
 // 沒有這道判斷的話，測試 `import` 進來就會立刻打正式站抓全部文章——
 // 而這支腳本被封鎖的原因正是請求量，測試不該是幫兇。
-const runDirectly = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+// `.at(1)` 而不是 `[1]`：型別才會包含 undefined（`node -e` 執行時 argv[1] 真的不存在）。
+const entryArg = process.argv.at(1);
+const runDirectly = entryArg !== undefined && import.meta.url === pathToFileURL(entryArg).href;
 
 if (runDirectly) {
   main().catch((e: unknown) => {

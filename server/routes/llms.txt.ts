@@ -3,8 +3,9 @@ import { defineEventHandler, setHeader } from 'nitro/h3';
 // /llms.txt —— 給 LLM / AI agent 的網站摘要（llmstxt.org 慣例：Markdown、單一 H1、blockquote 摘要、
 // 以 ## 分區列連結）。也是 Lighthouse「Agentic Browsing」稽核檢查的檔案。照 robots/sitemap 走 route
 // 而非 public/ 靜態檔：要吃 SITE_URL env、並即時列近期文章。
-const SITE_URL = process.env.SITE_URL || 'https://koimsurai.com';
-const BACKEND_URL = process.env.BACKEND_URL || 'http://backend-rs:3002';
+// `?? ''` 再 `||`：沒設與設成空字串都退回預設（跟 src/lib/postPath.ts 同一個寫法）。
+const SITE_URL = (process.env.SITE_URL ?? '') || 'https://koimsurai.com';
+const BACKEND_URL = (process.env.BACKEND_URL ?? '') || 'http://backend-rs:3002';
 
 interface Post {
   id: number | string;

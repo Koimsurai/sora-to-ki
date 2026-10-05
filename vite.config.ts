@@ -386,6 +386,21 @@ export default defineConfig({
           'typescript/no-require-imports': 'off',
         },
       },
+      {
+        // JS 檔沒有型別註記，這幾條看到的全是推斷或 any——實測 4 支 .mjs 冒出 98 筆，
+        // 沒有一筆是能照著修的真問題。其餘型別感知規則（no-floating-promises 等）照常生效。
+        files: ['**/*.mjs', '**/*.cjs', '**/*.js'],
+        rules: {
+          'typescript/no-unsafe-assignment': 'off',
+          'typescript/no-unsafe-member-access': 'off',
+          'typescript/no-unsafe-call': 'off',
+          'typescript/no-unsafe-return': 'off',
+          'typescript/no-unsafe-argument': 'off',
+          'typescript/restrict-template-expressions': 'off',
+          'typescript/no-unnecessary-condition': 'off',
+          'typescript/require-array-sort-compare': 'off',
+        },
+      },
     ],
     // ⚠️ 刻意不設 `options.typeAware` / `typeCheck`（`vp migrate` 會自己加上去）。
     //    型別感知只對 src 開，由 CI 那條指令的 `--type-aware` 決定；設成全域的話

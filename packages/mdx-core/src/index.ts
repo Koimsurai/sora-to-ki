@@ -138,7 +138,8 @@ export function assertRenderable(tree: HastNode, knownComponents?: ReadonlySet<s
         );
       case 'mdxFlowExpression':
       case 'mdxTextExpression': {
-        const v = String((node as { value?: unknown }).value ?? '').slice(0, 40);
+        const raw = (node as { value?: unknown }).value;
+        const v = (typeof raw === 'string' ? raw : '').slice(0, 40);
         throw new MdxUnsupportedError(
           `內文裡有運算式 {${v}}，前端不會執行它。把結果直接寫出來，或做成元件。`,
           line(node),
@@ -154,7 +155,8 @@ export function assertRenderable(tree: HastNode, knownComponents?: ReadonlySet<s
         if (el.name && /^[A-Z]/.test(el.name) && knownComponents && !knownComponents.has(el.name)) {
           throw new MdxUnsupportedError(`<${el.name}> 沒有註冊。可用的元件見 mdx-blocks-registry。`, line(node));
         }
-        for (const a of el.attributes ?? []) {
+        // mdx-jsx 節點一定有 attributes 陣列（沒屬性就是空陣列），所以不需要 `?? []`。
+        for (const a of el.attributes) {
           if (a.type === 'mdxJsxExpressionAttribute') {
             throw new MdxUnsupportedError(`<${tag}>：不支援展開屬性 {...x}，請把屬性寫開。`, line(node));
           }
@@ -189,7 +191,10 @@ export async function mdxToHast(source: string): Promise<HastNode> {
   const remarkGfm = (await import('remark-gfm')).default;
   const { remarkAlert } = await import('remark-github-blockquote-alert');
 
-  let captured: HastNode | null = null;
+  // 用物件屬性承載而不是 `let captured`：賦值發生在 plugin 的閉包裡，TS 的流程分析看不到，
+  // 會把 `let` 收窄成永遠是 null，於是底下的檢查被判成「永遠為真」。物件屬性不會被收窄
+  // （跟 SketchBlock 的 `alive.current` 同一個做法）。
+  const out: { tree: HastNode | null } = { tree: null };
   const processor = createProcessor({
     outputFormat: 'function-body',
     development: false,
@@ -198,14 +203,14 @@ export async function mdxToHast(source: string): Promise<HastNode> {
     //   在這裡才攔得到「即將被轉成 JS 之前」的 hast，也就是我們要的那棵樹。
     rehypePlugins: [
       () => (tree: HastNode) => {
-        captured = tree;
+        out.tree = tree;
       },
     ],
   });
   // run() 的型別宣告是 Program（管線終點是 recma），但我們在 rehype 階段就攔走了樹
   await processor.run(processor.parse(source) as never);
-  if (!captured) throw new Error('MDX 管線沒有產出 hast 樹');
-  return captured;
+  if (!out.tree) throw new Error('MDX 管線沒有產出 hast 樹');
+  return out.tree;
 }
 
 /**

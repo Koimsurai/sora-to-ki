@@ -827,7 +827,7 @@ pnpm --filter @koimsurai/mcp-server typecheck
 pnpm typecheck:server
 pnpm typecheck:scripts
 pnpm exec vp lint --type-aware --tsconfig=tsconfig.json src --max-warnings 0
-pnpm exec vp lint scripts server packages --max-warnings 0
+pnpm exec vp lint --type-aware scripts server packages --max-warnings 0
 pnpm lint:css      # biome，只管 CSS
 pnpm check:format  # vp fmt（oxfmt），只管 JS/TS
 pnpm test          # vp test（vitest 5）
@@ -852,8 +852,16 @@ vite / vitest / oxlint / oxfmt 都由 `vite-plus` 一個相依提供（`pnpm-wor
 ⚠️ **`vp migrate` 會整批丟掉它不認識的 plugin 命名空間底下的規則**，含 overrides 裡的。
 導入那次 6 條 `shadcn/*` 全被吃掉，而 jsPlugins 的註冊還在，所以 lint 照樣 exit 0。
 是故意塞一個 `bg-[#333]` 的探針檔才發現的；之後再遷移／升級一律照樣驗：放一個必然違規的
-檔案，確認每一類規則都真的會報。它也會自己加上全域的 `typeAware` / `typeCheck`，
-那會讓 scripts / server / packages 也變成型別感知（行為不等價），已拿掉。
+檔案，確認每一類規則都真的會報。它也會自己加上全域的 `typeAware` / `typeCheck`——
+不要留：型別感知由 CI 指令的 `--type-aware` 決定，`typeCheck` 等於再跑一次 tsc。
+
+⚠️ **scripts / server / packages 現在也是型別感知**（2026-10 起）。以前不開的理由是「不在根
+tsconfig 裡，型別全解析成 any」——換到 tsgolint 之後它會替每個檔案找最近的 tsconfig，那件事
+只剩 `.mjs` 成立，所以只對 JS 檔關掉 8 條依賴型別的規則（`vite.config.ts` 的 overrides），
+TS 檔全開。導入時清掉 51 筆，其中有真問題：MCP 工具漏傳 id 會打到 `/posts/undefined`、
+後端回物件錯誤時訊息變成 `[object Object]`。
+**`a || b` 被 `prefer-nullish-coalescing` 報、但 `||` 是刻意的（空字串也要退回預設）時**，
+寫成 `(a ?? '') || b`——跟 `src/lib/postPath.ts` 同一個寫法，不要為此放寬規則。
 
 ⚠️ **`oxfmt` 排的不是只有 js/ts——它也會排 css / json / md**，所以 `vite.config.ts` 的
 `fmt.ignorePatterns` 把這三類都列進去。每一條都是實際撞到才加的，不要以為是保守而拿掉：

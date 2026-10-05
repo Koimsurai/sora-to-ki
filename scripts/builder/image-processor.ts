@@ -119,7 +119,7 @@ export async function processImage(
     height: originalHeight,
     // 輸出 webp 的實際大小（原本誤填輸入原檔的 stats.size）
     size: highResInfo.size,
-    format: metadata.format || 'unknown',
+    format: metadata.format,
   };
 }
 

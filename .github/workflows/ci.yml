@@ -57,12 +57,13 @@ jobs:
       # --max-warnings 0：存量已全數清完（379 → 0），從此新增任何警告都直接擋下。
       - name: oxlint (src, type-aware)
         run: pnpm exec vp lint --type-aware --tsconfig=tsconfig.json src --max-warnings 0
-      # scripts/server/packages 過去完全沒被 lint（CI 只跑 eslint src）。
-      # 不帶 --type-aware：它們不在根 tsconfig 的 include 裡，型別會全解析成 any，
-      # 讓 no-unsafe-* 系列誤報 46 筆。型別由各自的 typecheck:* 步驟負責。
+      # scripts/server/packages 也是型別感知。這裡不帶 --tsconfig：tsgolint 會替每個檔案找最近的
+      # tsconfig（scripts/、server/、packages/*/ 各有一份）。在這之前它們只跑一般 lint，理由是
+      # 「型別會全解析成 any」——換到 tsgolint 之後那件事只剩 .mjs 成立，那幾條依賴型別的規則
+      # 在 vite.config.ts 對 JS 檔關掉了，TS 檔照常全開（導入時清掉 51 筆，含真 bug）。
       # --max-warnings 0：這三個目錄目前乾淨，直接鎖死，不留讓它從 0 無聲長大的空間。
-      - name: oxlint (scripts + server + packages)
-        run: pnpm exec vp lint scripts server packages --max-warnings 0
+      - name: oxlint (scripts + server + packages, type-aware)
+        run: pnpm exec vp lint --type-aware scripts server packages --max-warnings 0
       # CSS 的格式與 lint（設定見 .config/biome.json）。Biome 在這裡**只管 CSS**——
       # JS/TS 是 oxlint 的地盤，兩個 linter 管同一批檔案只會互相矛盾，而且 Biome
       # 沒有等價的型別感知檢查。

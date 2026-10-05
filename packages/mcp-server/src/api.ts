@@ -1,6 +1,14 @@
 // 後端 admin REST API 的薄客戶端：登入拿 JWT、快取、401 自動重登一次。
 // 憑證從環境變數來（見 index.ts），token 只存在記憶體、不落地。
 
+/**
+ * unknown → 可讀的文字。字串原樣、其餘 JSON.stringify。
+ * 原本寫 `String(v)`：後端的 error 欄位若是物件，錯誤訊息就變成一行 `[object Object]`。
+ */
+function toText(v: unknown): string {
+  return typeof v === 'string' ? v : JSON.stringify(v);
+}
+
 export interface ApiConfig {
   baseUrl: string;
   username?: string;
@@ -52,7 +60,7 @@ export class ApiClient {
     const url = new URL(`${this.cfg.baseUrl}${path}`);
     if (query) {
       for (const [k, v] of Object.entries(query)) {
-        if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+        if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, toText(v));
       }
     }
 
@@ -93,7 +101,7 @@ export class ApiClient {
         parsed && typeof parsed === 'object'
           ? ((parsed as Record<string, unknown>).error ?? (parsed as Record<string, unknown>).message ?? text)
           : text || res.statusText;
-      throw new Error(`${method} ${path} → ${res.status}: ${String(msg)}`);
+      throw new Error(`${method} ${path} → ${res.status}: ${toText(msg)}`);
     }
     return parsed as T;
   }
@@ -135,7 +143,7 @@ export class ApiClient {
         parsed && typeof parsed === 'object'
           ? ((parsed as Record<string, unknown>).error ?? (parsed as Record<string, unknown>).message ?? text)
           : text || res.statusText;
-      throw new Error(`POST ${path} → ${res.status}: ${String(msg)}`);
+      throw new Error(`POST ${path} → ${res.status}: ${toText(msg)}`);
     }
     return parsed as T;
   }

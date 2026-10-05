@@ -37,7 +37,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
     return { content: [{ type: 'text', text: `未知工具：${req.params.name}` }], isError: true };
   }
   try {
-    const result = await tool.handler((req.params.arguments ?? {}) as Record<string, unknown>);
+    const result = await tool.handler(req.params.arguments ?? {});
     const text = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
     return { content: [{ type: 'text', text }] };
   } catch (err) {

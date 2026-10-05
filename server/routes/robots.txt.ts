@@ -1,7 +1,8 @@
 import { defineEventHandler, setHeader } from 'nitro/h3';
 
 // serve.mjs 的 /robots.txt 移植。用 route 而非 public/ 靜態檔,因為 Sitemap 那行要吃 SITE_URL env。
-const SITE_URL = process.env.SITE_URL || 'https://koimsurai.com';
+// `?? ''` 再 `||`：沒設與設成空字串都退回預設（跟 src/lib/postPath.ts 同一個寫法）。
+const SITE_URL = (process.env.SITE_URL ?? '') || 'https://koimsurai.com';
 
 // ⚠ 不要加回 `Disallow: /api/`。
 // 那行的本意是「別索引這些 JSON」，實際效果卻是「別抓取」——Googlebot 連渲染頁面時要用都不行，

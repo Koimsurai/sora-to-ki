@@ -12,9 +12,10 @@ export interface Credentials {
 
 export function resolveCredentials(): Credentials {
   const fromEnv: Credentials = {
-    username: process.env.KOIMSURAI_ADMIN_USERNAME || undefined,
-    password: process.env.KOIMSURAI_ADMIN_PASSWORD || undefined,
-    token: process.env.KOIMSURAI_ADMIN_TOKEN || undefined,
+    // `?? ''` 再 `|| undefined`：空字串也當成沒設。
+    username: (process.env.KOIMSURAI_ADMIN_USERNAME ?? '') || undefined,
+    password: (process.env.KOIMSURAI_ADMIN_PASSWORD ?? '') || undefined,
+    token: (process.env.KOIMSURAI_ADMIN_TOKEN ?? '') || undefined,
   };
   // 環境變數已足夠 → 直接用（env 永遠優先）
   if (fromEnv.token || (fromEnv.username && fromEnv.password)) return fromEnv;

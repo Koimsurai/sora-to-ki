@@ -27,6 +27,18 @@ function pick(args: Record<string, unknown>, keys: string[]): Record<string, unk
   return out;
 }
 
+/**
+ * 從 args 取出要插進網址的 id。
+ *
+ * 原本直接寫 `${idOf(a)}`：args 的型別是 unknown，漏傳 id 時會安靜地打到 `/api/admin/posts/undefined`，
+ * 後端回的 404 讀起來像「文章不存在」而不是「呼叫少了參數」。
+ */
+function idOf(args: Record<string, unknown>): string {
+  const { id } = args;
+  if (typeof id === 'number' || (typeof id === 'string' && id !== '')) return encodeURIComponent(String(id));
+  throw new Error('缺少 id（必須是數字或非空字串）');
+}
+
 // i18n 欄位（4 語 × 3 欄）。zh-TW 是來源（存在 title/content/excerpt），這裡是譯文欄。
 const I18N_FIELDS = [
   'title_en',
@@ -239,8 +251,9 @@ async function resolveImage(a: {
     const res = await fetch(a.url);
     if (!res.ok) throw new Error(`下載圖片失敗 (${res.status})：${a.url}`);
     bytes = new Uint8Array(await res.arrayBuffer());
-    mime = res.headers.get('content-type')?.split(';')[0]?.trim() || undefined;
-    name ??= new URL(a.url).pathname.split('/').pop() || 'image';
+    // `?? ''` 再 `||`：空字串（沒有 content-type、網址以 / 結尾）也當成沒有。
+    mime = (res.headers.get('content-type')?.split(';')[0]?.trim() ?? '') || undefined;
+    name ??= (new URL(a.url).pathname.split('/').pop() ?? '') || 'image';
   } else if (a.data) {
     const m = /^data:([^;]+);base64,(.*)$/s.exec(a.data.trim());
     mime = m ? m[1] : mime;
@@ -252,7 +265,7 @@ async function resolveImage(a: {
 
   // 確保檔名有副檔名（後端靠它決定存檔 ext）；沒有就用 mimetype 推。
   if (!extOf(name)) {
-    const ext = (mime && MIME_EXT[mime.toLowerCase()]) || 'png';
+    const ext = (mime ? MIME_EXT[mime.toLowerCase()] : undefined) ?? 'png';
     name = `${name}.${ext}`;
   }
   // mimetype 沒拿到就用副檔名推（後端只看 starts_with('image/') 決定 thumbhash）。
@@ -294,9 +307,7 @@ export function makeTools(api: ApiClient): Tool[] {
         additionalProperties: false,
       },
       handler: async (a) => {
-        const { bytes, filename, mime } = await resolveImage(
-          a as { path?: string; url?: string; data?: string; filename?: string },
-        );
+        const { bytes, filename, mime } = await resolveImage(a);
         const result = await api.uploadFile<{
           url: string;
           filename: string;
@@ -340,7 +351,7 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('GET', `/api/admin/posts/${a.id}`),
+      handler: (a) => api.request('GET', `/api/admin/posts/${idOf(a)}`),
     },
     {
       name: 'koimsurai_list_blocks',
@@ -381,7 +392,11 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['content'],
         additionalProperties: false,
       },
-      handler: (a) => validateContent(String(a.content ?? ''), typeof a.format === 'string' ? a.format : 'mdx'),
+      handler: (a) =>
+        validateContent(
+          typeof a.content === 'string' ? a.content : '',
+          typeof a.format === 'string' ? a.format : 'mdx',
+        ),
     },
     {
       name: 'koimsurai_create_post',
@@ -411,7 +426,7 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('PUT', `/api/admin/posts/${a.id}`, { body: pick(a, [...POST_WRITE_FIELDS]) }),
+      handler: (a) => api.request('PUT', `/api/admin/posts/${idOf(a)}`, { body: pick(a, [...POST_WRITE_FIELDS]) }),
     },
     {
       name: 'koimsurai_set_post_status',
@@ -425,7 +440,7 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['id', 'status'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('PATCH', `/api/posts/${a.id}/status`, { body: { status: a.status } }),
+      handler: (a) => api.request('PATCH', `/api/posts/${idOf(a)}/status`, { body: { status: a.status } }),
     },
     {
       name: 'koimsurai_delete_post',
@@ -436,7 +451,7 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('DELETE', `/api/admin/posts/${a.id}`),
+      handler: (a) => api.request('DELETE', `/api/admin/posts/${idOf(a)}`),
     },
     {
       name: 'koimsurai_generate_post_zh_cn',
@@ -447,7 +462,7 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('POST', `/api/admin/posts/${a.id}/generate-zh-cn`),
+      handler: (a) => api.request('POST', `/api/admin/posts/${idOf(a)}/generate-zh-cn`),
     },
 
     // ── 統計與健康 ─────────────────────────────────────────────
@@ -557,7 +572,7 @@ export function makeTools(api: ApiClient): Tool[] {
         additionalProperties: false,
       },
       handler: (a) =>
-        api.request('PUT', `/api/admin/categories/${a.id}`, {
+        api.request('PUT', `/api/admin/categories/${idOf(a)}`, {
           body: pick(a, [
             'name',
             'description',
@@ -587,7 +602,7 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('DELETE', `/api/admin/categories/${a.id}`),
+      handler: (a) => api.request('DELETE', `/api/admin/categories/${idOf(a)}`),
     },
 
     // ── 標籤 ──────────────────────────────────────────────────
@@ -642,7 +657,7 @@ export function makeTools(api: ApiClient): Tool[] {
         additionalProperties: false,
       },
       handler: (a) =>
-        api.request('PUT', `/api/admin/tags/${a.id}`, {
+        api.request('PUT', `/api/admin/tags/${idOf(a)}`, {
           body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn']),
         }),
     },
@@ -655,7 +670,7 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('DELETE', `/api/admin/tags/${a.id}`),
+      handler: (a) => api.request('DELETE', `/api/admin/tags/${idOf(a)}`),
     },
 
     // ── 碎念 thoughts ─────────────────────────────────────────
@@ -688,7 +703,7 @@ export function makeTools(api: ApiClient): Tool[] {
         additionalProperties: false,
       },
       handler: (a) =>
-        api.request('PUT', `/api/admin/thoughts/${a.id}`, { body: pick(a, ['content', 'refUrl', 'clearRef']) }),
+        api.request('PUT', `/api/admin/thoughts/${idOf(a)}`, { body: pick(a, ['content', 'refUrl', 'clearRef']) }),
     },
     {
       name: 'koimsurai_delete_thought',
@@ -699,7 +714,7 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('DELETE', `/api/admin/thoughts/${a.id}`),
+      handler: (a) => api.request('DELETE', `/api/admin/thoughts/${idOf(a)}`),
     },
 
     // ── gallery ───────────────────────────────────────────────

@@ -34,7 +34,7 @@ async function scanPhotos(sourcePath: string, excludeRegex?: string): Promise<st
       const fullPath = path.join(dir, entry.name);
 
       // 檢查是否排除
-      if (excludePattern && excludePattern.test(fullPath)) {
+      if (excludePattern?.test(fullPath)) {
         continue;
       }
 
@@ -82,7 +82,7 @@ async function processPhoto(
     let title = fileName;
 
     // 嘗試從檔名提取日期 (YYYYMMDD 格式)
-    const dateMatch = fileName.match(/^(\d{4})(\d{2})(\d{2})/);
+    const dateMatch = /^(\d{4})(\d{2})(\d{2})/.exec(fileName);
     if (dateMatch) {
       const [, year, month, day] = dateMatch;
       shootTime = new Date(`${year}-${month}-${day}`).getTime();
@@ -97,7 +97,8 @@ async function processPhoto(
       id: photoId,
       title,
       // 舊的 description 非空就留著（可能是人手改過的）；沒有才退回機身型號
-      description: existing?.description || `${exifData.make || ''} ${exifData.model || ''}`.trim(),
+      // `?? ''` 再 `||`：既有描述是空字串時也改用相機型號。
+      description: (existing?.description ?? '') || `${exifData.make ?? ''} ${exifData.model ?? ''}`.trim(),
 
       urls: {
         full: processedImage.highResUrl,
@@ -179,9 +180,9 @@ export async function build() {
     const existingManifests = new Map<string, PhotoManifest>();
     try {
       const existingData = await fs.readFile(config.output.manifestPath, 'utf-8');
-      const parsed = JSON.parse(existingData);
+      const parsed = JSON.parse(existingData) as { photos?: unknown };
       if (Array.isArray(parsed.photos)) {
-        parsed.photos.forEach((p: PhotoManifest) => existingManifests.set(p.id, p));
+        (parsed.photos as PhotoManifest[]).forEach((p) => existingManifests.set(p.id, p));
         console.log(`  📚 讀取到 ${existingManifests.size} 筆現有資料，將進行增量構建`);
       }
     } catch {
@@ -271,5 +272,5 @@ export async function build() {
   }
 }
 
-// 自動執行構建
-build();
+// 自動執行構建。`void`：build() 的 rejection 照樣會變成未處理的 rejection、讓程序以錯誤結束。
+void build();
