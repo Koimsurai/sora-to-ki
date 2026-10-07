@@ -288,6 +288,19 @@ export default defineConfig({
     __RRWEB_EXCLUDE_CANVAS__: 'true',
     __RRWEB_EXCLUDE_IFRAME__: 'true',
     __RRWEB_EXCLUDE_SHADOW_DOM__: 'true',
+    // 打包進來的 UMD 套件一律不准碰頁面上的 AMD 載入器。
+    //
+    // ⚠️ 後台的 Monaco 是從 /monaco/vs 以 AMD 方式載入的，會在 window 掛一個帶 `amd` 的
+    //    `define`。這是單頁應用，切到前台之後它還在——於是 Excalidraw / mermaid-to-excalidraw
+    //    底下幾個 UMD 套件（判斷順序是「先看 AMD、才看 CommonJS」）改去呼叫那個 define，
+    //    匯出落空，AMD 載入器在第二次匿名呼叫時丟出
+    //    `Can only have one anonymous define call per script file`，Sketch 區塊直接顯示轉換失敗。
+    //    只有「先開過後台編輯器」加上「圖裡有會走到那幾個套件的內容」才會發生，
+    //    乾淨的瀏覽器直接開文章完全正常——所以 e2e 一直是綠的。
+    //    把裸識別字 `define` 換成 undefined，`typeof define` 就恆為 'undefined'，UMD 全走
+    //    CommonJS / ESM 分支。只影響打包的程式碼：Monaco 本身不在打包裡，而它內部的
+    //    `globalThis.define.amd` 是屬性存取，不是裸識別字，不會被換掉。
+    define: 'undefined',
   },
   build: {
     // 'hidden' = 產生 .map 檔，但**不在 bundle 結尾寫 sourceMappingURL**。

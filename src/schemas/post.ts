@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+// 關掉 zod 的 JIT。zod 4 第一次驗證時會用 `Function('')` 試探能不能 eval，能的話把 schema
+// 編譯成更快的函式。全站 CSP 沒有 'unsafe-eval'，試探一定失敗、zod 也會自己退回一般模式——
+// 功能沒差，但瀏覽器在擋下的那一刻就送出一筆 CSP 報告：GlitchTip 的「Blocked 'script' from ''」
+// （blocked_uri 是 eval）有一部分就是後台編輯器每開一次就冒一筆。jitless 就是那個退回模式本身。
+z.config({ jitless: true });
+
 export const postSchema = z.object({
   title: z.string().min(1, '標題不能為空'),
   content: z.string().min(1, '內容不能為空'),

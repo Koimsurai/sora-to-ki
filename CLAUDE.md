@@ -901,6 +901,14 @@ vite 曾經因此釘在 8.0.16，**原本以為是 Excalidraw 需要 eval，實�
 它們得先載入 2.3 MB——每一頁的 script 從 1.8 MB 變成 3.7 MB。**e2e 全綠，只有 Lighthouse 的
 resource-summary 預算抓到。**
 
+⚠️ **`vite.config.start.ts` 的 `define: { define: 'undefined' }` 不要拿掉。** 後台的 Monaco 用 AMD
+載入，會在 window 留一個帶 `amd` 的 `define`；切到前台之後，Excalidraw / mermaid-to-excalidraw 底下
+幾個「先看 AMD 才看 CommonJS」的 UMD 套件就去呼叫它，Sketch 區塊顯示
+`Can only have one anonymous define call per script file`。**只在「先開過後台」的分頁發生**——
+乾淨的瀏覽器、所有 e2e 都看不到，是站長自己撞到的。守它的是 `sketch-after-admin.spec.ts`，
+而且那條**必須用有虛線箭頭與標籤的圖**，`A --> B` 那種簡單圖走不到那幾個套件。
+SketchBlock 會接住例外改顯示錯誤框，所以這類錯誤**不會進 GlitchTip**。
+
 ⚠️ **`vite.config.ts` 的 lint 區塊裡關掉的那五條 `react/*` 不要打開。** oxlint 1.80 起預設開一組
 React Compiler 診斷（`purity` / `refs` / `immutability` / `preserve-manual-memoization` /
 `incompatible-library`），1.86 時是 30 個 warning。這個專案**沒有在跑 React Compiler**
@@ -1104,6 +1112,27 @@ issue 歸不到某次部署）。要帶就 `VITE_RELEASE=$(git rev-parse --short
 source map 是**在 build 裡**處理掉的（見 Dockerfile）：烙 debug id → 上傳到 GlitchTip →
 從映像刪掉 `.map`。三件事都綁在建置裡，所以不存在「忘記傳」或「順序錯」的問題。
 token 走 BuildKit secret（`.env.sourcemaps.token`，未提交）。
+
+### 查 GlitchTip 上的錯誤
+
+`.env.sourcemaps.token` **只能上傳、不能讀**（API 回 403）。GlitchTip 自架在這台機器上，
+直接對它的 postgres 做唯讀查詢最快：
+
+```bash
+docker exec glitchtip-postgres sh -c 'psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres} -Atc "
+  select i.id, x.count, x.last_seen, i.title from issue_events_issue i
+  join issue_events_issueindex x on x.issue_id = i.id
+  where i.project_id = 2 and not i.is_deleted order by x.last_seen desc limit 20"'
+```
+
+project_id：1 backend、2 frontend。事件內容在 `issue_events_issueevent.data`（jsonb），CSP 報告在
+`data->'csp'`（`document_uri`、`effective_directive`、`blocked_uri`）。
+
+⚠️ **CSP 報告幾乎不帶來源資訊**（沒有 UA、行號、片段），要分辨是不是自己的程式碼，得用
+`securitypolicyviolation` 事件在 Chromium / Firefox / WebKit 實際開那幾頁重現。
+2026-10 那次：「Blocked 'script' from ''」（`blocked_uri: eval`）在後台是 zod 4 的 JIT 試探
+（已用 `z.config({ jitless: true })` 關掉，見 `src/schemas/post.ts`）；前台各頁三種引擎都重現不了、
+前台也沒載入 zod，判斷是訪客的擴充套件。`at.alicdn.com` 的字型同理（站上沒用 iconfont）。
 
 ⚠️ **GlitchTip 掛著時 build 會失敗**，這是刻意的：靜靜跳過上傳等於錯誤追蹤白裝，
 而那不會有人發現。真的要在它掛掉時部署，把 `.env.sourcemaps.token` 清空即可（會改走

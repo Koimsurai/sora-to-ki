@@ -27,21 +27,6 @@ interface Violation {
   source: string;
 }
 
-/**
- * 已知且無害的違規：**Zod 的 eval 能力探測**。
- *
- * `zod/v4/core/util.js` 的 `allowsEval()` 會在 try/catch 裡跑一次 `new Function('')`，
- * 用來決定要不要編譯「快一點的驗證器」。CSP 擋下來之後它走直譯路徑——功能完全正常，
- * 只是留下一筆違規回報。後台的表單（react-hook-form + zod resolver）會觸發它。
- *
- * 為什麼不乾脆放行 `'unsafe-eval'`：那等於為了一個「探測失敗也沒差」的東西，
- * 把整站最值錢的一條 CSP 打開。這裡改成明確列為例外——**其餘任何 eval 仍然會紅**，
- * 而列出來也讓下一個人知道這筆不是漏掉沒處理。
- */
-function isKnownHarmless(v: Violation): boolean {
-  return v.directive === 'script-src' && v.blocked === 'eval' && /\/assets\/PostEditor-/.test(v.source);
-}
-
 /** 在任何內容載入前掛上監聽——違規多半發生在第一批資源，晚掛就漏了。 */
 async function watchViolations(page: Page): Promise<() => Promise<Violation[]>> {
   await page.addInitScript(() => {
@@ -133,12 +118,11 @@ test.describe('CSP', () => {
     await page.locator('.monaco-editor .view-lines').first().click();
     await page.keyboard.type('# 標題\n\n```rust\nfn main() {}\n```\n');
     await page.waitForTimeout(2500);
-    const all = await read();
-    const v = all.filter((x) => !isKnownHarmless(x));
+    // 一筆都不准有。這裡原本把 zod 4 的 eval 能力探測（`new Function('')`）列為「已知無害」的例外，
+    // 但它每開一次編輯器就往 GlitchTip 送一筆「Blocked 'script' from ''」，真正的 eval 違規會被
+    // 淹在裡面。2026-10 用 `z.config({ jitless: true })` 關掉了探測（見 src/schemas/post.ts），
+    // 例外清單也一起拿掉。
+    const v = await read();
     expect(v, v.length ? report('/admin/posts/create', v) : '').toEqual([]);
-
-    // 反面：Zod 那筆**應該**還在。哪天它不見了，代表要嘛 zod 換了做法、
-    // 要嘛政策被放寬了——兩種都值得回來看一眼，而不是靜靜地變成綠燈。
-    expect(all.length - v.length, 'Zod 的 eval 探測不見了，回頭確認是為什麼').toBe(1);
   });
 });

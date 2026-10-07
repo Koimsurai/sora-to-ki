@@ -57,8 +57,19 @@ const IMG = [
 /** 影片：Steam 商店頁的遊戲預告。 */
 const MEDIA = ['https://shared.akamai.steamstatic.com'];
 
-/** iframe：文章內嵌（MediaEmbed / LinkCard）與作品集。 */
-const FRAME = ['https://www.youtube-nocookie.com', 'https://www.youtube.com', 'https://player.bilibili.com'];
+/**
+ * iframe：文章內嵌（MediaEmbed / LinkCard）與作品集。
+ *
+ * ⚠ open.spotify.com 是 2026-10 補的：LinkCard 會把 Spotify 連結嵌成 `open.spotify.com/embed/…`，
+ *   但這裡原本沒列，播放器在正式站一直是空白（GlitchTip「Blocked 'frame' from open.spotify.com」，
+ *   夜鹿那篇）。e2e 的種子文章沒有 Spotify 連結，所以 CSP 那支 spec 踩不到。
+ */
+const FRAME = [
+  'https://www.youtube-nocookie.com',
+  'https://www.youtube.com',
+  'https://player.bilibili.com',
+  'https://open.spotify.com',
+];
 
 const DIRECTIVES = {
   // 沒有列出的資源類型一律只能同源
