@@ -1,28 +1,29 @@
-<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 宙と木：一彎新月，前面一棵樹 -->
   <defs>
-    <radialGradient id="bg" cx="0.5" cy="0.45" r="0.7">
-      <stop offset="0%" stop-color="#1a1340"/>
-      <stop offset="55%" stop-color="#0e0a26"/>
-      <stop offset="100%" stop-color="#06030f"/>
-    </radialGradient>
-    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#e0c3fc"/>
-      <stop offset="50%" stop-color="#7f5af0"/>
-      <stop offset="100%" stop-color="#dc3278"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#231a58"/>
+      <stop offset="1" stop-color="#0a0718"/>
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="8" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
+    <linearGradient id="moon" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3e8ff"/>
+      <stop offset="0.55" stop-color="#e0a3f0"/>
+      <stop offset="1" stop-color="#dc3278"/>
+    </linearGradient>
+    <mask id="cres">
+      <rect width="64" height="64" fill="#fff"/>
+      <circle cx="35" cy="17" r="15.5" fill="#000"/>
+    </mask>
   </defs>
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="140" fill="none" stroke="url(#brand)" stroke-width="3" opacity="0.35"/>
-  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#brand)" stroke-width="2" opacity="0.18"/>
-  <text x="256" y="304" text-anchor="middle"
-        font-family="'HarmonyOS Sans SC', 'Noto Sans TC', sans-serif"
-        font-size="240" font-weight="700"
-        fill="url(#brand)" filter="url(#glow)">K</text>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- 新月（比初版粗，16px 時才不會只剩一條線） -->
+  <circle cx="24" cy="26" r="18" fill="url(#moon)" mask="url(#cres)"/>
+  <!-- 小星 -->
+  <circle cx="49" cy="12" r="1.8" fill="#f3e8ff"/>
+  <circle cx="55" cy="22" r="1.2" fill="#f3e8ff" opacity="0.8"/>
+  <!-- 樹冠：深色描邊把它跟月亮切開 -->
+  <path d="M34 33 C 32.5 27 38 23 42.5 25.8 C 47 23 52.5 27 51 33 C 55 37.5 51.5 44 42.5 44 C 33.5 44 30 37.5 34 33 Z"
+        fill="#c4b5fd" stroke="#0a0718" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke"/>
+  <!-- 樹幹畫在樹冠之後、不描邊，才會接進樹冠裡（反過來會在兩者之間留一道深色縫） -->
+  <rect x="40.3" y="39" width="4.4" height="18" rx="1.8" fill="#c4b5fd"/>
 </svg>

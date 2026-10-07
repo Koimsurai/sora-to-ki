@@ -32,7 +32,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // feed 自動探索：瀏覽器擴充、聚合器、部分 AI 爬蟲都靠這一行才找得到。
       // 指向既有的 /rss（後端 handlers/rss.rs）——/rss.xml 只是 301 過去的別名。
       { rel: 'alternate', type: 'application/rss+xml', title: 'Koimsurai 手記', href: '/rss' },
-      { rel: 'apple-touch-icon', href: '/pwa-192.png' },
+      // 圖示由 scripts/gen-icons.mjs 從 scripts/icons/ 的 SVG 產生。
+      // 在這之前 favicon.ico 沒有宣告、全靠瀏覽器猜路徑；Google 搜尋優先採用這裡宣告、
+      // 尺寸是 48 倍數的那張，所以另外給一張 96px 的 PNG。
+      { rel: 'icon', href: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+      { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96.png' },
+      // 滿版無圓角：iOS 自己裁圓角，透明的角會被填成黑色。
+      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
     ],
   }),
   // 未知路由 → 站內 404 頁(在 AppShell 內,保留導覽列);localeWrap 提供 i18n + locale。
