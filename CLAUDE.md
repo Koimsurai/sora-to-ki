@@ -929,7 +929,12 @@ React Compiler 診斷（`purity` / `refs` / `immutability` / `preserve-manual-me
 |---|---|---|---|
 | `react-icons` | 5.5.0 | 5.7 移除 `SiOpenai`、`SiCss3` 改名 → tsc 紅 | 先決定 `/about` 的 GPT 用什麼圖示 |
 | `monaco-editor` | 0.55.1 | 0.56 的 `exports` 收窄，`monaco-vim` 0.4.4 被擋 | `monaco-vim` 跟上，或換掉它 |
-| `@tanstack/react-router` `@tanstack/react-start` `@tanstack/react-query` | 各自現值 | 傳遞相依 `router-core` / `start-plugin-core` 跟著浮，SSR 的 query 串流壞掉（20 條 smoke 全紅） | 整組一起升並確認串流相容 |
+| `@tanstack/react-router` `@tanstack/react-start` `@tanstack/react-query` `@tanstack/react-router-ssr-query` | 各自現值 | 傳遞相依 `router-core` / `start-plugin-core` 跟著浮，SSR 的 query 串流壞掉（20 條 smoke 全紅） | 整組一起升並確認串流相容 |
+
+⚠️ **TanStack 那組 2026-10-19 整組升過一次**（react-start 1.168.26 → 1.169.3，為了 critical 的
+server function reflected XSS，GHSA 見 Dependabot #240）。串流沒壞，但**CSS 排進 `<head>` 的順序變了**：
+兩個檔各寫一條同特異性的同名規則時，勝負跟著換。那次抓到的是 `.section-label`（Activity.css 與
+index.css 各一份），只有 computed-style 紅。**下次升這組一定要跑完整 e2e，不要只看 smoke。**
 | `@radix-ui/react-select` `-separator` `-slot` `-switch` | 各自現值 | **單獨升每一個都過，四個一起升就壞**：21 個共用 primitive 跟著浮，後台編輯器打字掉字 | 找出是哪個 primitive |
 
 ⚠️ **Radix 那條是這裡最值得記的一個形狀**：逐一驗證全綠、組合起來才壞。而且唯一抓得到
