@@ -99,17 +99,37 @@ const PLAIN_COVER = (
   <meshStandardMaterial attach="material-4" color="#2b2346" emissive="#7f5af0" emissiveIntensity={0.25} />
 );
 
+/**
+ * 一本書的軌道（可變物件：每幀改寫，不觸發重繪）。
+ * 書各自繞黑洞公轉，角速度照克卜勒定律 ω ∝ r^-1.5——內圈比外圈快，不是整圈剛體一起轉。
+ */
+interface Orbit {
+  r: number;
+  angle: number;
+  y: number;
+  /** 軌道面的傾斜：y 隨角度起伏的幅度（相對於半徑） */
+  tilt: number;
+}
+
+const KEPLER_K = 1.5;
+/** 放開時離中心比這近，書就會被吸進去 */
+const ABSORB_R = 3.6;
+const ABSORB_SECS = 1.4;
+const REAPPEAR_SECS = 0.8;
+const OUTER_R = 11.5;
+
 interface Book3DProps {
   book: Book;
-  home: THREE.Vector3Tuple;
+  orbit: Orbit;
   selected: boolean;
   reduced: boolean;
   onSelect: () => void;
   onDragChange: (dragging: boolean) => void;
 }
 
-function Book3D({ book, home, selected, reduced, onSelect, onDragChange }: Book3DProps) {
+function Book3D({ book, orbit, selected, reduced, onSelect, onDragChange }: Book3DProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const stretchRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const [dragging, setDragging] = useState(false);
   const { camera, raycaster } = useThree();
@@ -120,37 +140,70 @@ function Book3D({ book, home, selected, reduced, onSelect, onDragChange }: Book3
   const hitRef = useRef(new THREE.Vector3());
   const tmpRef = useRef(new THREE.Vector3());
   const movedRef = useRef(false);
+  /** 被吸進黑洞的動畫：null＝沒在被吸；否則是經過的秒數。之後接著「重新出現」。 */
+  const absorbRef = useRef<{ t: number; fromR: number; phase: 'in' | 'out' } | null>(null);
   const phase = useMemo(() => (Number(book.id) * 1.618) % (Math.PI * 2), [book.id]);
 
   useFrame((state, delta) => {
+    const dt = Math.min(delta, 0.05);
     const u = glowUniformsRef.current.uOpacity;
-    u.value += (glowTarget - u.value) * Math.min(1, delta * 10);
+    u.value += (glowTarget - u.value) * Math.min(1, dt * 10);
     const g = groupRef.current;
-    if (!g) return;
+    const st = stretchRef.current;
+    if (!g || !st) return;
+
     if (dragging) {
       if (raycaster.ray.intersectPlane(planeRef.current, hitRef.current)) {
-        // 交點是世界座標，書掛在會旋轉的軌道群組底下，要換回父層座標
-        tmpRef.current.copy(hitRef.current).sub(offsetRef.current);
-        g.parent?.worldToLocal(tmpRef.current);
-        g.position.copy(tmpRef.current);
+        g.position.copy(hitRef.current).sub(offsetRef.current);
         movedRef.current = true;
       }
       return;
     }
-    if (!reduced && !selected) {
-      g.position.y = home[1] + Math.sin(state.clock.elapsedTime * 0.6 + phase) * 0.12;
+
+    const ab = absorbRef.current;
+    if (ab) {
+      ab.t += dt;
+      if (ab.phase === 'in') {
+        // 越靠近越快地螺旋落入，同時被潮汐力拉長（麵條化），最後縮成一點消失
+        const p = Math.min(ab.t / ABSORB_SECS, 1);
+        const e = p * p;
+        orbit.r = ab.fromR * (1 - e) + 1.3 * e;
+        orbit.angle += dt * KEPLER_K * 6 * Math.pow(Math.max(orbit.r, 1.3), -1.5);
+        orbit.y *= 1 - dt * 3;
+        st.scale.set(Math.max(0.02, 1 - 0.9 * e), 1 + 3 * e, 1);
+        st.scale.multiplyScalar(1 - 0.85 * Math.pow(p, 4));
+        if (p >= 1) {
+          // 從外圈的另一側重新出現
+          orbit.r = OUTER_R;
+          orbit.angle += Math.PI;
+          orbit.y = -0.6;
+          absorbRef.current = { t: 0, fromR: OUTER_R, phase: 'out' };
+        }
+      } else {
+        const p = Math.min(ab.t / REAPPEAR_SECS, 1);
+        st.scale.setScalar(p * p * (3 - 2 * p));
+        if (p >= 1) absorbRef.current = null;
+      }
+    } else if (!reduced && !selected) {
+      orbit.angle += dt * KEPLER_K * Math.pow(orbit.r, -1.5);
     }
+
+    const float = reduced || selected ? 0 : Math.sin(state.clock.elapsedTime * 0.6 + phase) * 0.12;
+    g.position.set(
+      Math.cos(orbit.angle) * orbit.r,
+      orbit.y + Math.sin(orbit.angle) * orbit.r * orbit.tilt + float,
+      Math.sin(orbit.angle) * orbit.r,
+    );
   });
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     const g = groupRef.current;
-    if (!g) return;
-    g.getWorldPosition(tmpRef.current);
+    if (!g || absorbRef.current) return;
     camera.getWorldDirection(hitRef.current);
-    planeRef.current.setFromNormalAndCoplanarPoint(hitRef.current, tmpRef.current);
+    planeRef.current.setFromNormalAndCoplanarPoint(hitRef.current, g.position);
     if (raycaster.ray.intersectPlane(planeRef.current, hitRef.current))
-      offsetRef.current.copy(hitRef.current).sub(tmpRef.current);
+      offsetRef.current.copy(hitRef.current).sub(g.position);
     movedRef.current = false;
     setDragging(true);
     onDragChange(true);
@@ -161,9 +214,12 @@ function Book3D({ book, home, selected, reduced, onSelect, onDragChange }: Book3
     e.stopPropagation();
     const g = groupRef.current;
     if (g) {
-      home[0] = g.position.x;
-      home[1] = g.position.y;
-      home[2] = g.position.z;
+      // 放開的位置換回軌道參數：之後從這裡繼續公轉
+      const p = tmpRef.current.copy(g.position);
+      orbit.r = Math.max(Math.hypot(p.x, p.z), 0.5);
+      orbit.angle = Math.atan2(p.z, p.x);
+      orbit.y = p.y - Math.sin(orbit.angle) * orbit.r * orbit.tilt;
+      if (orbit.r < ABSORB_R && !reduced) absorbRef.current = { t: 0, fromR: orbit.r, phase: 'in' };
     }
     setDragging(false);
     onDragChange(false);
@@ -187,7 +243,6 @@ function Book3D({ book, home, selected, reduced, onSelect, onDragChange }: Book3
   return (
     <a.group
       ref={groupRef}
-      position={home}
       scale={scale}
       onClick={onClick}
       onPointerDown={onPointerDown}
@@ -202,40 +257,42 @@ function Book3D({ book, home, selected, reduced, onSelect, onDragChange }: Book3
         document.body.style.cursor = '';
       }}
     >
-      {/* 書永遠面向鏡頭：繞 Y 軸自轉的話大部分時間看到的是書背 */}
-      <Billboard>
-        {/* 光暈：書背後一片半透明的面，取代每本書一盞的 pointLight */}
-        <mesh position={[0, 0, -0.08]}>
-          <planeGeometry args={[BOOK_W * 2, BOOK_H * 1.7]} />
-          <shaderMaterial
-            vertexShader={GLOW_VERTEX}
-            fragmentShader={GLOW_FRAGMENT}
-            uniforms={glowUniformsRef.current}
-            transparent
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            toneMapped={false}
-          />
-        </mesh>
-        <mesh>
-          <boxGeometry args={[BOOK_W, BOOK_H, BOOK_D]} />
-          {/* box 的六個面：+x −x +y −y +z(封面) −z */}
-          <meshStandardMaterial attach="material-0" color="#e8e2f6" roughness={0.9} />
-          <meshStandardMaterial attach="material-1" color="#1d1730" roughness={0.9} />
-          <meshStandardMaterial attach="material-2" color="#e8e2f6" roughness={0.9} />
-          <meshStandardMaterial attach="material-3" color="#e8e2f6" roughness={0.9} />
-          {url ? (
-            <CoverBoundary fallback={PLAIN_COVER}>
-              <Suspense fallback={PLAIN_COVER}>
-                <CoverFace url={url} />
-              </Suspense>
-            </CoverBoundary>
-          ) : (
-            PLAIN_COVER
-          )}
-          <meshStandardMaterial attach="material-5" color="#1d1730" roughness={0.9} />
-        </mesh>
-      </Billboard>
+      {/* 書永遠面向鏡頭：繞 Y 軸自轉的話大部分時間看到的是書背。外層 group 給「被吸進黑洞」的拉長用 */}
+      <group ref={stretchRef}>
+        <Billboard>
+          {/* 光暈：書背後一片半透明的面，取代每本書一盞的 pointLight */}
+          <mesh position={[0, 0, -0.08]}>
+            <planeGeometry args={[BOOK_W * 2, BOOK_H * 1.7]} />
+            <shaderMaterial
+              vertexShader={GLOW_VERTEX}
+              fragmentShader={GLOW_FRAGMENT}
+              uniforms={glowUniformsRef.current}
+              transparent
+              depthWrite={false}
+              blending={THREE.AdditiveBlending}
+              toneMapped={false}
+            />
+          </mesh>
+          <mesh>
+            <boxGeometry args={[BOOK_W, BOOK_H, BOOK_D]} />
+            {/* box 的六個面：+x −x +y −y +z(封面) −z */}
+            <meshStandardMaterial attach="material-0" color="#e8e2f6" roughness={0.9} />
+            <meshStandardMaterial attach="material-1" color="#1d1730" roughness={0.9} />
+            <meshStandardMaterial attach="material-2" color="#e8e2f6" roughness={0.9} />
+            <meshStandardMaterial attach="material-3" color="#e8e2f6" roughness={0.9} />
+            {url ? (
+              <CoverBoundary fallback={PLAIN_COVER}>
+                <Suspense fallback={PLAIN_COVER}>
+                  <CoverFace url={url} />
+                </Suspense>
+              </CoverBoundary>
+            ) : (
+              PLAIN_COVER
+            )}
+            <meshStandardMaterial attach="material-5" color="#1d1730" roughness={0.9} />
+          </mesh>
+        </Billboard>
+      </group>
 
       {hovered && !selected && (
         <Html position={[0, BOOK_H / 2 + 0.35, 0]} center style={{ pointerEvents: 'none', userSelect: 'none' }}>
@@ -247,19 +304,26 @@ function Book3D({ book, home, selected, reduced, onSelect, onDragChange }: Book3
 }
 
 // ── 黑洞 ──────────────────────────────────────────────────────────────
+//
+// 三層：事件視界（純黑球）、吸積盤（高速差速旋轉＋都卜勒增亮）、重力透鏡（盤的背面被彎到黑洞上下方）。
+// 外加一群往內螺旋、在事件視界消失的光點——「光被吸進去」。全部在 shader 裡算，CPU 每幀只更新一個 uTime。
+
+const DISK_TILT = Math.PI / 2.15;
 
 const diskVertexShader = `
   varying vec3 vPos;
+  varying float vDop;
   void main() {
     vPos = position;
+    // 盤面上這一點的公轉方向（切線），換到視角座標：z 分量為正＝朝鏡頭過來
+    // 都卜勒增亮要用「相對鏡頭」的方向，鏡頭繞著轉時亮的那一側才會跟著換
+    vec3 tangent = normalize(vec3(-position.y, position.x, 0.0));
+    vDop = normalize((modelViewMatrix * vec4(tangent, 0.0)).xyz).z;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
 
-const diskFragmentShader = `
-  uniform float uTime;
-  varying vec3 vPos;
-
+const NOISE_GLSL = `
   float hash21(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
     p += dot(p, p + 45.32);
@@ -277,49 +341,182 @@ const diskFragmentShader = `
     for (int i = 0; i < 5; i++) { v += noise(p) * a; p *= 2.0; a *= 0.5; }
     return v;
   }
+  // 溫度配色：內圈偏白、外圈轉橙紅再到暗紅
+  vec3 diskColor(float nr) {
+    float temp = pow(1.0 - nr, 0.8);
+    vec3 c = mix(vec3(0.10, 0.02, 0.06), vec3(0.65, 0.14, 0.05), smoothstep(0.0, 0.3, temp));
+    c = mix(c, vec3(0.95, 0.45, 0.10), smoothstep(0.3, 0.65, temp));
+    return mix(c, vec3(1.0, 0.85, 0.65), smoothstep(0.65, 1.0, temp));
+  }
+`;
+
+const diskFragmentShader = `
+  uniform float uTime;
+  varying vec3 vPos;
+  varying float vDop;
+  ${NOISE_GLSL}
 
   void main() {
     float r = length(vPos.xy);
     float angle = atan(vPos.y, vPos.x);
     float nr = clamp((r - 1.8) / (5.0 - 1.8), 0.0, 1.0);
 
-    // 克卜勒差速：越內圈轉越快
-    float omega = 0.8 / pow(max(r, 0.5), 1.5);
-    float n = fbm(vec2((angle + uTime * omega) * 3.0, r * 4.0)) * 0.65
-            + fbm(vec2((angle + uTime * omega * 0.7) * 2.0 + 3.14, r * 2.5)) * 0.35;
-    float spiral = pow(0.5 + 0.5 * sin((angle + log(max(r, 0.1)) * 2.0 - uTime * 0.3) * 3.0), 2.0);
-    n *= 0.6 + 0.4 * spiral;
+    // 克卜勒差速：ω ∝ r^-1.5，內圈轉得比外圈快很多——看得出「高速旋轉」
+    float omega = 3.2 / pow(max(r, 0.5), 1.5);
+    float a1 = angle - uTime * omega;
+    float n = fbm(vec2(a1 * 3.0, r * 5.0)) * 0.6 + fbm(vec2(a1 * 7.0 + 1.7, r * 9.0)) * 0.4;
+    // 被拉長的條紋：角度方向的頻率高、徑向頻率低，就是高速剪切流的樣子
+    float streak = pow(noise(vec2(a1 * 22.0, r * 3.0)), 3.0);
+    n = n * 0.8 + streak * 0.5;
 
-    // 溫度配色：內圈偏白、外圈轉橙紅再到暗紅
-    float temp = pow(1.0 - nr, 0.8);
-    vec3 color = mix(vec3(0.10, 0.02, 0.06), vec3(0.65, 0.14, 0.05), smoothstep(0.0, 0.3, temp));
-    color = mix(color, vec3(0.95, 0.45, 0.10), smoothstep(0.3, 0.65, temp));
-    color = mix(color, vec3(1.0, 0.85, 0.65), smoothstep(0.65, 1.0, temp));
+    vec3 color = diskColor(nr);
+    float radial = smoothstep(0.0, 0.16, nr) * smoothstep(1.0, 0.62, nr);
 
-    float radial = smoothstep(0.0, 0.18, nr) * smoothstep(1.0, 0.65, nr);
-    float doppler = 1.0 + 0.45 * sin(angle - uTime * 0.2);
-    // ⚠ 亮度係數原本是 2.5，加上加法混合與 Bloom，內圈整片爆成白色（看不出紋理）。
-    float brightness = (n * 0.6 + 0.4) * radial * doppler * 1.15;
-    gl_FragColor = vec4(color * brightness, brightness * 0.9);
+    // 相對論性都卜勒增亮：朝鏡頭轉過來的那側更亮、偏藍白；遠離的那側變暗、偏紅
+    // 指數不能太大：3 次方時遠離的那側只剩 1.5%，整半邊的盤消失，看起來像只有半個盤
+    float beam = pow(clamp(1.0 + 0.45 * vDop, 0.5, 1.45), 2.2);
+    color = mix(color, color * vec3(0.8, 0.9, 1.25) + 0.08, clamp(vDop, 0.0, 1.0) * 0.6);
+    color = mix(color, color * vec3(1.15, 0.7, 0.55), clamp(-vDop, 0.0, 1.0) * 0.5);
+
+    float brightness = (n * 0.65 + 0.35) * radial * beam * 0.85;
+    gl_FragColor = vec4(color * brightness, min(brightness, 1.0) * 0.9);
   }
 `;
 
-// 光子環：事件視界外緣一圈細而亮的光，面向鏡頭。少了它，黑色球體看起來只是一顆黑球。
-const haloFragmentShader = `
+const billboardVertexShader = `
   varying vec3 vPos;
   void main() {
-    float r = length(vPos.xy);
-    float ring = exp(-pow((r - 1.52) / 0.06, 2.0));          // 細而亮的光子環
-    float glow = exp(-pow((r - 1.6) / 0.55, 2.0)) * 0.22;     // 外面一圈柔和的散光
-    float a = (ring * 0.9 + glow) * smoothstep(1.38, 1.46, r);
-    gl_FragColor = vec4(vec3(1.0, 0.78, 0.5) * a, a);
+    vPos = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
 
-function KnowledgeBlackHole({ reduced }: { reduced: boolean }) {
-  const uniformsRef = useRef({ uTime: { value: 0 } });
+// 重力透鏡：盤的背面被黑洞的重力彎過來，在事件視界上下方各形成一道弧（星際效應裡那個樣子）。
+// 用一張面向鏡頭的面畫一圈帶狀的盤面紋理，上下方強、左右兩側弱（左右正好是盤面本身的位置）。
+const lensFragmentShader = `
+  uniform float uTime;
+  varying vec3 vPos;
+  ${NOISE_GLSL}
+
+  void main() {
+    float r = length(vPos.xy);
+    float angle = atan(vPos.y, vPos.x);
+
+    // 光子環：事件視界外緣一圈細而亮的光
+    float ring = exp(-pow((r - 1.52) / 0.05, 2.0));
+    // 透鏡弧：r 在 1.55～2.6 之間的帶狀，越靠內越亮
+    float band = smoothstep(1.5, 1.62, r) * smoothstep(2.7, 1.75, r);
+    float vertical = pow(abs(sin(angle)), 1.4);
+    float n = fbm(vec2((angle - uTime * 0.9) * 4.0, r * 6.0));
+    float nr = clamp((r - 1.55) / 1.1, 0.0, 1.0);
+    vec3 lens = diskColor(nr) * band * vertical * (0.35 + 0.65 * n) * 1.2;
+
+    float glow = exp(-pow((r - 1.6) / 0.6, 2.0)) * 0.12;
+    float hole = smoothstep(1.38, 1.47, r);
+    vec3 c = (vec3(1.0, 0.82, 0.55) * (ring * 0.9 + glow) + lens) * hole;
+    float a = max(max(c.r, c.g), c.b);
+    gl_FragColor = vec4(c, a);
+  }
+`;
+
+// 被吸進去的光：每顆光點沿著越來越緊的螺旋往內掉，越靠近越快越亮，到事件視界就消失，接著從外圈重生
+const infallVertexShader = `
+  uniform float uTime;
+  uniform float uScale;
+  attribute float aSeed;   // 起始角度
+  attribute float aPhase;  // 起始的落下進度
+  attribute float aSpeed;
+  varying float vAlpha;
+  void main() {
+    float life = fract(uTime * aSpeed + aPhase);
+    float fall = pow(life, 1.8);                    // 前段慢、後段急
+    float r = mix(6.2, 1.38, fall);
+    float angle = aSeed * 6.2831 + uTime * 0.25 + 2.2 * log(6.2 / r) * 2.5; // 角度隨半徑縮小而累積：螺旋
+    float h = (aSeed - 0.5) * 0.5 * (r - 1.38) / 4.8;   // 外圈有點厚度，越內越貼平
+    vec3 p = vec3(cos(angle) * r, sin(angle) * r, h);
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mv;
+    // 淡入 → 越掉越亮 → 碰到事件視界前一刻熄滅（被吸收）
+    vAlpha = smoothstep(0.0, 0.15, life) * (0.2 + fall * 0.7) * smoothstep(1.38, 1.6, r);
+    gl_PointSize = (1.2 + fall * 2.2) * uScale / -mv.z;
+  }
+`;
+
+const infallFragmentShader = `
+  varying float vAlpha;
+  void main() {
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.0, d) * vAlpha;
+    gl_FragColor = vec4(vec3(1.0, 0.85, 0.65) * a, a);
+  }
+`;
+
+/** 有種子的 32-bit PRNG（mulberry32）：同一個種子永遠產生同一串數字。 */
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function InfallingLight({ count, reduced }: { count: number; reduced: boolean }) {
+  const { size, viewport } = useThree();
+  const uniformsRef = useRef({ uTime: { value: 0 }, uScale: { value: 1 } });
+  // 點的大小跟著畫面高度走（像素密度不同時大小一致）
+  uniformsRef.current.uScale.value = (size.height * viewport.dpr) / 22;
+
+  const geometry = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const seeds = new Float32Array(count);
+    const phases = new Float32Array(count);
+    const speeds = new Float32Array(count);
+    // ⚠ 角度、起始進度、速度要是**三個互相獨立**的亂數。第一版三個都從同一個 i 用線性序列
+    //   （i × 黃金比例）算，彼此相關，結果光點排成一圈圈的同心環與弧線，而不是散開的螺旋流。
+    //   用有種子的 PRNG：分佈自然、每次開起來又一樣。
+    const rand = mulberry32(0x6b6f696d);
+    for (let i = 0; i < count; i++) {
+      seeds[i] = rand();
+      phases[i] = rand();
+      speeds[i] = 0.05 + rand() * 0.08;
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+    g.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
+    g.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+    g.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
+    return g;
+  }, [count]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
   useFrame((state) => {
     if (!reduced) uniformsRef.current.uTime.value = state.clock.elapsedTime;
+  });
+
+  return (
+    // frustumCulled=false：position 屬性全是 0（真正的位置在 shader 裡算），包圍球是錯的
+    <points geometry={geometry} rotation={[DISK_TILT, 0, 0]} frustumCulled={false} renderOrder={7}>
+      <shaderMaterial
+        vertexShader={infallVertexShader}
+        fragmentShader={infallFragmentShader}
+        uniforms={uniformsRef.current}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+function KnowledgeBlackHole({ reduced, lowQuality }: { reduced: boolean; lowQuality: boolean }) {
+  const diskUniformsRef = useRef({ uTime: { value: 0 } });
+  const lensUniformsRef = useRef({ uTime: { value: 0 } });
+  useFrame((state) => {
+    if (reduced) return;
+    diskUniformsRef.current.uTime.value = state.clock.elapsedTime;
+    lensUniformsRef.current.uTime.value = state.clock.elapsedTime;
   });
 
   return (
@@ -330,12 +527,12 @@ function KnowledgeBlackHole({ reduced }: { reduced: boolean }) {
         <meshBasicMaterial color="#000000" toneMapped={false} />
       </mesh>
 
-      <mesh rotation={[Math.PI / 2.15, 0, 0]} renderOrder={5}>
+      <mesh rotation={[DISK_TILT, 0, 0]} renderOrder={5}>
         <ringGeometry args={[1.8, 5.0, 192, 24]} />
         <shaderMaterial
           vertexShader={diskVertexShader}
           fragmentShader={diskFragmentShader}
-          uniforms={uniformsRef.current}
+          uniforms={diskUniformsRef.current}
           transparent
           side={THREE.DoubleSide}
           blending={THREE.AdditiveBlending}
@@ -343,12 +540,15 @@ function KnowledgeBlackHole({ reduced }: { reduced: boolean }) {
         />
       </mesh>
 
+      <InfallingLight count={lowQuality ? 600 : 1200} reduced={reduced} />
+
       <Billboard>
         <mesh renderOrder={11}>
-          <planeGeometry args={[4.4, 4.4]} />
+          <planeGeometry args={[5.6, 5.6]} />
           <shaderMaterial
-            vertexShader={diskVertexShader}
-            fragmentShader={haloFragmentShader}
+            vertexShader={billboardVertexShader}
+            fragmentShader={lensFragmentShader}
+            uniforms={lensUniformsRef.current}
             transparent
             blending={THREE.AdditiveBlending}
             depthWrite={false}
@@ -371,20 +571,18 @@ interface SceneProps {
 }
 
 /** 兩圈傾斜的軌道，第二圈較大、反向傾斜，書才不會排成一條直線。 */
-function orbitPositions(n: number): THREE.Vector3Tuple[] {
+function initialOrbits(n: number): Orbit[] {
   const inner = Math.min(n, 11);
   return Array.from({ length: n }, (_, i) => {
     const ring = i < inner ? 0 : 1;
     const k = ring === 0 ? i : i - inner;
     const count = ring === 0 ? inner : n - inner;
-    const angle = (k / count) * Math.PI * 2 + ring * 0.3;
-    const radius = ring === 0 ? 8 : 11.5;
-    const tilt = ring === 0 ? 0.12 : -0.18;
-    return [
-      Math.cos(angle) * radius,
-      Math.sin(angle) * radius * tilt + (ring === 0 ? 0.6 : -0.6),
-      Math.sin(angle) * radius,
-    ];
+    return {
+      r: ring === 0 ? 8 : OUTER_R,
+      angle: (k / count) * Math.PI * 2 + ring * 0.3,
+      y: ring === 0 ? 0.6 : -0.6,
+      tilt: ring === 0 ? 0.12 : -0.18,
+    };
   });
 }
 
@@ -405,17 +603,9 @@ function CameraRig() {
 }
 
 function Scene({ books, selectedId, onSelect, reduced, lowQuality }: SceneProps) {
-  const orbitRef = useRef<THREE.Group>(null);
   const [dragCount, setDragCount] = useState(0);
-  // 每本書的「家」：拖曳放開後就停在新的位置（陣列在 Book3D 裡被直接改寫，不觸發重繪）
-  const homes = useMemo(() => orbitPositions(books.length), [books.length]);
-
-  useFrame((_, delta) => {
-    // 整圈軌道緩緩繞黑洞公轉；拖曳中或選取中停下來，不然書會從游標底下溜走
-    if (orbitRef.current && !reduced && dragCount === 0 && selectedId == null) {
-      orbitRef.current.rotation.y += Math.min(delta, 0.05) * 0.035;
-    }
-  });
+  // 每本書的軌道參數：Book3D 每幀直接改寫（公轉、拖曳後的新軌道、被吸進去再出現），不觸發重繪
+  const orbits = useMemo(() => initialOrbits(books.length), [books.length]);
 
   return (
     <>
@@ -435,14 +625,14 @@ function Scene({ books, selectedId, onSelect, reduced, lowQuality }: SceneProps)
       />
 
       <CameraRig />
-      <KnowledgeBlackHole reduced={reduced} />
+      <KnowledgeBlackHole reduced={reduced} lowQuality={lowQuality} />
 
-      <group ref={orbitRef}>
+      <group>
         {books.map((book, i) => (
           <Book3D
             key={book.id}
             book={book}
-            home={homes[i]}
+            orbit={orbits[i]}
             selected={selectedId === book.id}
             reduced={reduced}
             onSelect={() => onSelect(book)}
