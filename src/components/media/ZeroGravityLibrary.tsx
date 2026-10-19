@@ -369,11 +369,12 @@ const bhFragmentShader = `
     return v;
   }
 
-  // 黑體近似的溫度配色：t=1 最熱（偏白）、t=0 最冷（暗紅）
+  // 溫度配色：沿用前一版（站長說「材質跟光暈表現不錯」的那版）——內圈金白、外圈琥珀、最外緣暗紅。
+  // ⚠ 第一版光線追蹤換成「黑體」那種暗紅→橘→白的漸層，加上這個 shader 不走色調映射，整片變得很橘。
   vec3 heat(float t) {
-    vec3 c = mix(vec3(0.25, 0.03, 0.02), vec3(0.95, 0.35, 0.08), smoothstep(0.0, 0.45, t));
-    c = mix(c, vec3(1.0, 0.75, 0.45), smoothstep(0.45, 0.8, t));
-    return mix(c, vec3(1.0, 0.95, 0.88), smoothstep(0.8, 1.0, t));
+    vec3 c = mix(vec3(0.12, 0.04, 0.07), vec3(0.62, 0.24, 0.12), smoothstep(0.0, 0.3, t));
+    c = mix(c, vec3(1.0, 0.68, 0.38), smoothstep(0.3, 0.65, t));
+    return mix(c, vec3(1.0, 0.9, 0.78), smoothstep(0.65, 1.0, t));
   }
 
   // 光線在 p 穿過盤面（y=0）時盤發出的光；dir 是光線前進方向（從鏡頭出發），a 回傳不透明度
@@ -390,8 +391,9 @@ const bhFragmentShader = `
     float streak = pow(noise(vec2(rot * 18.0, lr * 4.0 + uTime * 0.5)), 3.0);
     n = n * 0.75 + streak * 0.45;
 
-    // 溫度 ∝ r^-3/4（薄盤）；再拉開一點對比：內圈白熱、外圈很快轉暗紅，不要整片均勻的橘
-    float t = clamp(pow(RIN / r, 1.1), 0.0, 1.0);
+    // 溫度：內圈最熱，往外遞減（跟前一版同一條曲線，用盤內的相對位置算）
+    float nr = clamp((r - RIN) / (ROUT - RIN), 0.0, 1.0);
+    float t = pow(1.0 - nr, 0.8);
     vec3 c = heat(t);
 
     // 盤的公轉速度（相對論 β）與光線方向決定都卜勒因子 D；光是往鏡頭跑的，方向是 -dir
@@ -459,6 +461,9 @@ const bhFragmentShader = `
       if (dot(pos, pos) > RB * RB * 1.02 && dot(pos, vel) > 0.0) break; // 逃出包圍球
       if (T < 0.01) break;
     }
+    // 曝光壓縮：這張面不走 renderer 的色調映射，亮處要自己壓——否則最亮的那圈停在飽和的橘，
+    // 不會像相機那樣往白色收。1 − e^(−x) 是最簡單的一條，低亮度幾乎不變。
+    col = 1.0 - exp(-col * 1.7);
     // 預乘 alpha：rgb 是發出的光，alpha 是擋住後面多少
     gl_FragColor = vec4(col, 1.0 - T);
   }
@@ -560,8 +565,8 @@ function Scene({ books, selectedId, onSelect, reduced, lowQuality }: SceneProps)
       <fog attach="fog" args={['#07050f', 20, 46]} />
       <ambientLight intensity={0.25} />
       <directionalLight position={[8, 10, 6]} intensity={0.35} />
-      {/* 吸積盤的光：照在書朝黑洞的那一側（越近越暖越亮） */}
-      <pointLight color="#ffa060" intensity={6} distance={24} decay={1.4} />
+      {/* 吸積盤的光：照在書朝黑洞的那一側（越近越亮）。偏淡的暖白，不要把整本書染成橘的 */}
+      <pointLight color="#ffd9b8" intensity={3} distance={24} decay={1.4} />
 
       <Stars
         radius={260}
