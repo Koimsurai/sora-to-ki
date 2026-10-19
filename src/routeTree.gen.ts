@@ -9,120 +9,65 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
-import { Route as SetupRouteImport } from './routes/setup'
-import { Route as PortfolioRouteImport } from './routes/portfolio'
-import { Route as PhotosRouteImport } from './routes/photos'
-import { Route as MusicRouteImport } from './routes/music'
-import { Route as MessagesRouteImport } from './routes/messages'
-import { Route as JourneyRouteImport } from './routes/journey'
-import { Route as HistoryRouteImport } from './routes/history'
-import { Route as FriendsRouteImport } from './routes/friends'
-import { Route as BookshelfRouteImport } from './routes/bookshelf'
-import { Route as ActivityRouteImport } from './routes/activity'
-import { Route as AboutSiteRouteImport } from './routes/about-site'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as WatchIndexRouteImport } from './routes/watch/index'
-import { Route as ThinkingIndexRouteImport } from './routes/thinking/index'
-import { Route as BlogIndexRouteImport } from './routes/blog/index'
-import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AboutSiteRouteImport } from './routes/about-site'
+import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as BookshelfRouteImport } from './routes/bookshelf'
+import { Route as FriendsRouteImport } from './routes/friends'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as JourneyRouteImport } from './routes/journey'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as MusicRouteImport } from './routes/music'
+import { Route as PhotosRouteImport } from './routes/photos'
+import { Route as PortfolioRouteImport } from './routes/portfolio'
+import { Route as SetupRouteImport } from './routes/setup'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
-import { Route as WatchLibraryRouteImport } from './routes/watch/library'
-import { Route as ThinkingIdRouteImport } from './routes/thinking/$id'
-import { Route as BlogIdRouteImport } from './routes/blog/$id'
-import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
-import { Route as AdminUsersRouteImport } from './routes/admin/users'
-import { Route as AdminTagsRouteImport } from './routes/admin/tags'
-import { Route as AdminSubscribersRouteImport } from './routes/admin/subscribers'
-import { Route as AdminNotesRouteImport } from './routes/admin/notes'
-import { Route as AdminLoginRouteImport } from './routes/admin/login'
-import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
-import { Route as AdminCommentsRouteImport } from './routes/admin/comments'
-import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
-import { Route as AdminBooksRouteImport } from './routes/admin/books'
-import { Route as AdminArticleGeneratorRouteImport } from './routes/admin/article-generator'
-import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscribe'
-import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
-import { Route as LocalePortfolioRouteImport } from './routes/$locale/portfolio'
-import { Route as LocalePhotosRouteImport } from './routes/$locale/photos'
-import { Route as LocaleMusicRouteImport } from './routes/$locale/music'
-import { Route as LocaleMessagesRouteImport } from './routes/$locale/messages'
-import { Route as LocaleHistoryRouteImport } from './routes/$locale/history'
-import { Route as LocaleFriendsRouteImport } from './routes/$locale/friends'
-import { Route as LocaleBookshelfRouteImport } from './routes/$locale/bookshelf'
-import { Route as LocaleActivityRouteImport } from './routes/$locale/activity'
-import { Route as LocaleAboutSiteRouteImport } from './routes/$locale/about-site'
 import { Route as LocaleAboutRouteImport } from './routes/$locale/about'
-import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
-import { Route as LocaleWatchIndexRouteImport } from './routes/$locale/watch/index'
-import { Route as LocaleThinkingIndexRouteImport } from './routes/$locale/thinking/index'
+import { Route as LocaleAboutSiteRouteImport } from './routes/$locale/about-site'
+import { Route as LocaleActivityRouteImport } from './routes/$locale/activity'
+import { Route as LocaleBookshelfRouteImport } from './routes/$locale/bookshelf'
+import { Route as LocaleFriendsRouteImport } from './routes/$locale/friends'
+import { Route as LocaleHistoryRouteImport } from './routes/$locale/history'
+import { Route as LocaleMessagesRouteImport } from './routes/$locale/messages'
+import { Route as LocaleMusicRouteImport } from './routes/$locale/music'
+import { Route as LocalePhotosRouteImport } from './routes/$locale/photos'
+import { Route as LocalePortfolioRouteImport } from './routes/$locale/portfolio'
+import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
+import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscribe'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminArticleGeneratorRouteImport } from './routes/admin/article-generator'
+import { Route as AdminBooksRouteImport } from './routes/admin/books'
+import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
+import { Route as AdminCommentsRouteImport } from './routes/admin/comments'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminNotesRouteImport } from './routes/admin/notes'
+import { Route as AdminSubscribersRouteImport } from './routes/admin/subscribers'
+import { Route as AdminTagsRouteImport } from './routes/admin/tags'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as BlogIndexRouteImport } from './routes/blog/index'
+import { Route as BlogIdRouteImport } from './routes/blog/$id'
+import { Route as ThinkingIndexRouteImport } from './routes/thinking/index'
+import { Route as ThinkingIdRouteImport } from './routes/thinking/$id'
+import { Route as WatchIndexRouteImport } from './routes/watch/index'
+import { Route as WatchLibraryRouteImport } from './routes/watch/library'
 import { Route as LocaleBlogIndexRouteImport } from './routes/$locale/blog/index'
-import { Route as AdminPostsCreateRouteImport } from './routes/admin/posts/create'
-import { Route as LocaleWatchLibraryRouteImport } from './routes/$locale/watch/library'
-import { Route as LocaleThinkingIdRouteImport } from './routes/$locale/thinking/$id'
 import { Route as LocaleBlogIdRouteImport } from './routes/$locale/blog/$id'
+import { Route as LocaleThinkingIndexRouteImport } from './routes/$locale/thinking/index'
+import { Route as LocaleThinkingIdRouteImport } from './routes/$locale/thinking/$id'
+import { Route as LocaleWatchIndexRouteImport } from './routes/$locale/watch/index'
+import { Route as LocaleWatchLibraryRouteImport } from './routes/$locale/watch/library'
+import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
+import { Route as AdminPostsCreateRouteImport } from './routes/admin/posts/create'
 import { Route as AdminPostsEditIdRouteImport } from './routes/admin/posts/edit.$id'
 
-const UnsubscribeRoute = UnsubscribeRouteImport.update({
-  id: '/unsubscribe',
-  path: '/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SetupRoute = SetupRouteImport.update({
-  id: '/setup',
-  path: '/setup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PortfolioRoute = PortfolioRouteImport.update({
-  id: '/portfolio',
-  path: '/portfolio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PhotosRoute = PhotosRouteImport.update({
-  id: '/photos',
-  path: '/photos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MusicRoute = MusicRouteImport.update({
-  id: '/music',
-  path: '/music',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MessagesRoute = MessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const JourneyRoute = JourneyRouteImport.update({
-  id: '/journey',
-  path: '/journey',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FriendsRoute = FriendsRouteImport.update({
-  id: '/friends',
-  path: '/friends',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BookshelfRoute = BookshelfRouteImport.update({
-  id: '/bookshelf',
-  path: '/bookshelf',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ActivityRoute = ActivityRouteImport.update({
-  id: '/activity',
-  path: '/activity',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutSiteRoute = AboutSiteRouteImport.update({
-  id: '/about-site',
-  path: '/about-site',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -130,164 +75,74 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutSiteRoute = AboutSiteRouteImport.update({
+  id: '/about-site',
+  path: '/about-site',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivityRoute = ActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const BookshelfRoute = BookshelfRouteImport.update({
+  id: '/bookshelf',
+  path: '/bookshelf',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WatchIndexRoute = WatchIndexRouteImport.update({
-  id: '/watch/',
-  path: '/watch/',
+const FriendsRoute = FriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ThinkingIndexRoute = ThinkingIndexRouteImport.update({
-  id: '/thinking/',
-  path: '/thinking/',
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogIndexRoute = BlogIndexRouteImport.update({
-  id: '/blog/',
-  path: '/blog/',
+const JourneyRoute = JourneyRouteImport.update({
+  id: '/journey',
+  path: '/journey',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRouteRoute,
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MusicRoute = MusicRouteImport.update({
+  id: '/music',
+  path: '/music',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PhotosRoute = PhotosRouteImport.update({
+  id: '/photos',
+  path: '/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortfolioRoute = PortfolioRouteImport.update({
+  id: '/portfolio',
+  path: '/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleIndexRoute = LocaleIndexRouteImport.update({
   id: '/$locale/',
   path: '/$locale/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WatchLibraryRoute = WatchLibraryRouteImport.update({
-  id: '/watch/library',
-  path: '/watch/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ThinkingIdRoute = ThinkingIdRouteImport.update({
-  id: '/thinking/$id',
-  path: '/thinking/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlogIdRoute = BlogIdRouteImport.update({
-  id: '/blog/$id',
-  path: '/blog/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminUsersRoute = AdminUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminTagsRoute = AdminTagsRouteImport.update({
-  id: '/tags',
-  path: '/tags',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
-  id: '/subscribers',
-  path: '/subscribers',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminNotesRoute = AdminNotesRouteImport.update({
-  id: '/notes',
-  path: '/notes',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminLoginRoute = AdminLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminDashboardRoute = AdminDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminCommentsRoute = AdminCommentsRouteImport.update({
-  id: '/comments',
-  path: '/comments',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
-  id: '/categories',
-  path: '/categories',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminBooksRoute = AdminBooksRouteImport.update({
-  id: '/books',
-  path: '/books',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const AdminArticleGeneratorRoute = AdminArticleGeneratorRouteImport.update({
-  id: '/article-generator',
-  path: '/article-generator',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const LocaleUnsubscribeRoute = LocaleUnsubscribeRouteImport.update({
-  id: '/$locale/unsubscribe',
-  path: '/$locale/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleSetupRoute = LocaleSetupRouteImport.update({
-  id: '/$locale/setup',
-  path: '/$locale/setup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocalePortfolioRoute = LocalePortfolioRouteImport.update({
-  id: '/$locale/portfolio',
-  path: '/$locale/portfolio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocalePhotosRoute = LocalePhotosRouteImport.update({
-  id: '/$locale/photos',
-  path: '/$locale/photos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleMusicRoute = LocaleMusicRouteImport.update({
-  id: '/$locale/music',
-  path: '/$locale/music',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleMessagesRoute = LocaleMessagesRouteImport.update({
-  id: '/$locale/messages',
-  path: '/$locale/messages',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleHistoryRoute = LocaleHistoryRouteImport.update({
-  id: '/$locale/history',
-  path: '/$locale/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleFriendsRoute = LocaleFriendsRouteImport.update({
-  id: '/$locale/friends',
-  path: '/$locale/friends',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleBookshelfRoute = LocaleBookshelfRouteImport.update({
-  id: '/$locale/bookshelf',
-  path: '/$locale/bookshelf',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleActivityRoute = LocaleActivityRouteImport.update({
-  id: '/$locale/activity',
-  path: '/$locale/activity',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LocaleAboutSiteRoute = LocaleAboutSiteRouteImport.update({
-  id: '/$locale/about-site',
-  path: '/$locale/about-site',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleAboutRoute = LocaleAboutRouteImport.update({
@@ -295,19 +150,149 @@ const LocaleAboutRoute = LocaleAboutRouteImport.update({
   path: '/$locale/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
-  id: '/posts/',
-  path: '/posts/',
-  getParentRoute: () => AdminRouteRoute,
-} as any)
-const LocaleWatchIndexRoute = LocaleWatchIndexRouteImport.update({
-  id: '/$locale/watch/',
-  path: '/$locale/watch/',
+const LocaleAboutSiteRoute = LocaleAboutSiteRouteImport.update({
+  id: '/$locale/about-site',
+  path: '/$locale/about-site',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LocaleThinkingIndexRoute = LocaleThinkingIndexRouteImport.update({
-  id: '/$locale/thinking/',
-  path: '/$locale/thinking/',
+const LocaleActivityRoute = LocaleActivityRouteImport.update({
+  id: '/$locale/activity',
+  path: '/$locale/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleBookshelfRoute = LocaleBookshelfRouteImport.update({
+  id: '/$locale/bookshelf',
+  path: '/$locale/bookshelf',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleFriendsRoute = LocaleFriendsRouteImport.update({
+  id: '/$locale/friends',
+  path: '/$locale/friends',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleHistoryRoute = LocaleHistoryRouteImport.update({
+  id: '/$locale/history',
+  path: '/$locale/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleMessagesRoute = LocaleMessagesRouteImport.update({
+  id: '/$locale/messages',
+  path: '/$locale/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleMusicRoute = LocaleMusicRouteImport.update({
+  id: '/$locale/music',
+  path: '/$locale/music',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocalePhotosRoute = LocalePhotosRouteImport.update({
+  id: '/$locale/photos',
+  path: '/$locale/photos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocalePortfolioRoute = LocalePortfolioRouteImport.update({
+  id: '/$locale/portfolio',
+  path: '/$locale/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleSetupRoute = LocaleSetupRouteImport.update({
+  id: '/$locale/setup',
+  path: '/$locale/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleUnsubscribeRoute = LocaleUnsubscribeRouteImport.update({
+  id: '/$locale/unsubscribe',
+  path: '/$locale/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminArticleGeneratorRoute = AdminArticleGeneratorRouteImport.update({
+  id: '/article-generator',
+  path: '/article-generator',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminBooksRoute = AdminBooksRouteImport.update({
+  id: '/books',
+  path: '/books',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
+  id: '/categories',
+  path: '/categories',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCommentsRoute = AdminCommentsRouteImport.update({
+  id: '/comments',
+  path: '/comments',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminNotesRoute = AdminNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
+  id: '/subscribers',
+  path: '/subscribers',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminTagsRoute = AdminTagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogIdRoute = BlogIdRouteImport.update({
+  id: '/blog/$id',
+  path: '/blog/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ThinkingIndexRoute = ThinkingIndexRouteImport.update({
+  id: '/thinking/',
+  path: '/thinking/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ThinkingIdRoute = ThinkingIdRouteImport.update({
+  id: '/thinking/$id',
+  path: '/thinking/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WatchIndexRoute = WatchIndexRouteImport.update({
+  id: '/watch/',
+  path: '/watch/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WatchLibraryRoute = WatchLibraryRouteImport.update({
+  id: '/watch/library',
+  path: '/watch/library',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleBlogIndexRoute = LocaleBlogIndexRouteImport.update({
@@ -315,14 +300,14 @@ const LocaleBlogIndexRoute = LocaleBlogIndexRouteImport.update({
   path: '/$locale/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminPostsCreateRoute = AdminPostsCreateRouteImport.update({
-  id: '/posts/create',
-  path: '/posts/create',
-  getParentRoute: () => AdminRouteRoute,
+const LocaleBlogIdRoute = LocaleBlogIdRouteImport.update({
+  id: '/$locale/blog/$id',
+  path: '/$locale/blog/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const LocaleWatchLibraryRoute = LocaleWatchLibraryRouteImport.update({
-  id: '/$locale/watch/library',
-  path: '/$locale/watch/library',
+const LocaleThinkingIndexRoute = LocaleThinkingIndexRouteImport.update({
+  id: '/$locale/thinking/',
+  path: '/$locale/thinking/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LocaleThinkingIdRoute = LocaleThinkingIdRouteImport.update({
@@ -330,10 +315,25 @@ const LocaleThinkingIdRoute = LocaleThinkingIdRouteImport.update({
   path: '/$locale/thinking/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LocaleBlogIdRoute = LocaleBlogIdRouteImport.update({
-  id: '/$locale/blog/$id',
-  path: '/$locale/blog/$id',
+const LocaleWatchIndexRoute = LocaleWatchIndexRouteImport.update({
+  id: '/$locale/watch/',
+  path: '/$locale/watch/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LocaleWatchLibraryRoute = LocaleWatchLibraryRouteImport.update({
+  id: '/$locale/watch/library',
+  path: '/$locale/watch/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
+  id: '/posts/',
+  path: '/posts/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPostsCreateRoute = AdminPostsCreateRouteImport.update({
+  id: '/posts/create',
+  path: '/posts/create',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminPostsEditIdRoute = AdminPostsEditIdRouteImport.update({
   id: '/posts/edit/$id',
@@ -731,88 +731,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/unsubscribe': {
-      id: '/unsubscribe'
-      path: '/unsubscribe'
-      fullPath: '/unsubscribe'
-      preLoaderRoute: typeof UnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/setup': {
-      id: '/setup'
-      path: '/setup'
-      fullPath: '/setup'
-      preLoaderRoute: typeof SetupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/portfolio': {
-      id: '/portfolio'
-      path: '/portfolio'
-      fullPath: '/portfolio'
-      preLoaderRoute: typeof PortfolioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/photos': {
-      id: '/photos'
-      path: '/photos'
-      fullPath: '/photos'
-      preLoaderRoute: typeof PhotosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/music': {
-      id: '/music'
-      path: '/music'
-      fullPath: '/music'
-      preLoaderRoute: typeof MusicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/messages': {
-      id: '/messages'
-      path: '/messages'
-      fullPath: '/messages'
-      preLoaderRoute: typeof MessagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/journey': {
-      id: '/journey'
-      path: '/journey'
-      fullPath: '/journey'
-      preLoaderRoute: typeof JourneyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/history': {
-      id: '/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/friends': {
-      id: '/friends'
-      path: '/friends'
-      fullPath: '/friends'
-      preLoaderRoute: typeof FriendsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bookshelf': {
-      id: '/bookshelf'
-      path: '/bookshelf'
-      fullPath: '/bookshelf'
-      preLoaderRoute: typeof BookshelfRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/activity': {
-      id: '/activity'
-      path: '/activity'
-      fullPath: '/activity'
-      preLoaderRoute: typeof ActivityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about-site': {
-      id: '/about-site'
-      path: '/about-site'
-      fullPath: '/about-site'
-      preLoaderRoute: typeof AboutSiteRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -822,6 +745,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about-site': {
+      id: '/about-site'
+      path: '/about-site'
+      fullPath: '/about-site'
+      preLoaderRoute: typeof AboutSiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activity': {
+      id: '/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -829,221 +766,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/bookshelf': {
+      id: '/bookshelf'
+      path: '/bookshelf'
+      fullPath: '/bookshelf'
+      preLoaderRoute: typeof BookshelfRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/watch/': {
-      id: '/watch/'
-      path: '/watch'
-      fullPath: '/watch/'
-      preLoaderRoute: typeof WatchIndexRouteImport
+    '/friends': {
+      id: '/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof FriendsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/thinking/': {
-      id: '/thinking/'
-      path: '/thinking'
-      fullPath: '/thinking/'
-      preLoaderRoute: typeof ThinkingIndexRouteImport
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blog/': {
-      id: '/blog/'
-      path: '/blog'
-      fullPath: '/blog/'
-      preLoaderRoute: typeof BlogIndexRouteImport
+    '/journey': {
+      id: '/journey'
+      path: '/journey'
+      fullPath: '/journey'
+      preLoaderRoute: typeof JourneyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/music': {
+      id: '/music'
+      path: '/music'
+      fullPath: '/music'
+      preLoaderRoute: typeof MusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/photos': {
+      id: '/photos'
+      path: '/photos'
+      fullPath: '/photos'
+      preLoaderRoute: typeof PhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portfolio': {
+      id: '/portfolio'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof PortfolioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/$locale/': {
       id: '/$locale/'
       path: '/$locale'
       fullPath: '/$locale/'
       preLoaderRoute: typeof LocaleIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/watch/library': {
-      id: '/watch/library'
-      path: '/watch/library'
-      fullPath: '/watch/library'
-      preLoaderRoute: typeof WatchLibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/thinking/$id': {
-      id: '/thinking/$id'
-      path: '/thinking/$id'
-      fullPath: '/thinking/$id'
-      preLoaderRoute: typeof ThinkingIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/blog/$id': {
-      id: '/blog/$id'
-      path: '/blog/$id'
-      fullPath: '/blog/$id'
-      preLoaderRoute: typeof BlogIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/users': {
-      id: '/admin/users'
-      path: '/users'
-      fullPath: '/admin/users'
-      preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/tags': {
-      id: '/admin/tags'
-      path: '/tags'
-      fullPath: '/admin/tags'
-      preLoaderRoute: typeof AdminTagsRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/subscribers': {
-      id: '/admin/subscribers'
-      path: '/subscribers'
-      fullPath: '/admin/subscribers'
-      preLoaderRoute: typeof AdminSubscribersRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/notes': {
-      id: '/admin/notes'
-      path: '/notes'
-      fullPath: '/admin/notes'
-      preLoaderRoute: typeof AdminNotesRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/login': {
-      id: '/admin/login'
-      path: '/login'
-      fullPath: '/admin/login'
-      preLoaderRoute: typeof AdminLoginRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/dashboard': {
-      id: '/admin/dashboard'
-      path: '/dashboard'
-      fullPath: '/admin/dashboard'
-      preLoaderRoute: typeof AdminDashboardRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/comments': {
-      id: '/admin/comments'
-      path: '/comments'
-      fullPath: '/admin/comments'
-      preLoaderRoute: typeof AdminCommentsRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/categories': {
-      id: '/admin/categories'
-      path: '/categories'
-      fullPath: '/admin/categories'
-      preLoaderRoute: typeof AdminCategoriesRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/books': {
-      id: '/admin/books'
-      path: '/books'
-      fullPath: '/admin/books'
-      preLoaderRoute: typeof AdminBooksRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/admin/article-generator': {
-      id: '/admin/article-generator'
-      path: '/article-generator'
-      fullPath: '/admin/article-generator'
-      preLoaderRoute: typeof AdminArticleGeneratorRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/$locale/unsubscribe': {
-      id: '/$locale/unsubscribe'
-      path: '/$locale/unsubscribe'
-      fullPath: '/$locale/unsubscribe'
-      preLoaderRoute: typeof LocaleUnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/setup': {
-      id: '/$locale/setup'
-      path: '/$locale/setup'
-      fullPath: '/$locale/setup'
-      preLoaderRoute: typeof LocaleSetupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/portfolio': {
-      id: '/$locale/portfolio'
-      path: '/$locale/portfolio'
-      fullPath: '/$locale/portfolio'
-      preLoaderRoute: typeof LocalePortfolioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/photos': {
-      id: '/$locale/photos'
-      path: '/$locale/photos'
-      fullPath: '/$locale/photos'
-      preLoaderRoute: typeof LocalePhotosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/music': {
-      id: '/$locale/music'
-      path: '/$locale/music'
-      fullPath: '/$locale/music'
-      preLoaderRoute: typeof LocaleMusicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/messages': {
-      id: '/$locale/messages'
-      path: '/$locale/messages'
-      fullPath: '/$locale/messages'
-      preLoaderRoute: typeof LocaleMessagesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/history': {
-      id: '/$locale/history'
-      path: '/$locale/history'
-      fullPath: '/$locale/history'
-      preLoaderRoute: typeof LocaleHistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/friends': {
-      id: '/$locale/friends'
-      path: '/$locale/friends'
-      fullPath: '/$locale/friends'
-      preLoaderRoute: typeof LocaleFriendsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/bookshelf': {
-      id: '/$locale/bookshelf'
-      path: '/$locale/bookshelf'
-      fullPath: '/$locale/bookshelf'
-      preLoaderRoute: typeof LocaleBookshelfRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/activity': {
-      id: '/$locale/activity'
-      path: '/$locale/activity'
-      fullPath: '/$locale/activity'
-      preLoaderRoute: typeof LocaleActivityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$locale/about-site': {
-      id: '/$locale/about-site'
-      path: '/$locale/about-site'
-      fullPath: '/$locale/about-site'
-      preLoaderRoute: typeof LocaleAboutSiteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/about': {
@@ -1053,25 +850,207 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/posts/': {
-      id: '/admin/posts/'
-      path: '/posts'
-      fullPath: '/admin/posts/'
-      preLoaderRoute: typeof AdminPostsIndexRouteImport
-      parentRoute: typeof AdminRouteRoute
-    }
-    '/$locale/watch/': {
-      id: '/$locale/watch/'
-      path: '/$locale/watch'
-      fullPath: '/$locale/watch/'
-      preLoaderRoute: typeof LocaleWatchIndexRouteImport
+    '/$locale/about-site': {
+      id: '/$locale/about-site'
+      path: '/$locale/about-site'
+      fullPath: '/$locale/about-site'
+      preLoaderRoute: typeof LocaleAboutSiteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$locale/thinking/': {
-      id: '/$locale/thinking/'
-      path: '/$locale/thinking'
-      fullPath: '/$locale/thinking/'
-      preLoaderRoute: typeof LocaleThinkingIndexRouteImport
+    '/$locale/activity': {
+      id: '/$locale/activity'
+      path: '/$locale/activity'
+      fullPath: '/$locale/activity'
+      preLoaderRoute: typeof LocaleActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/bookshelf': {
+      id: '/$locale/bookshelf'
+      path: '/$locale/bookshelf'
+      fullPath: '/$locale/bookshelf'
+      preLoaderRoute: typeof LocaleBookshelfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/friends': {
+      id: '/$locale/friends'
+      path: '/$locale/friends'
+      fullPath: '/$locale/friends'
+      preLoaderRoute: typeof LocaleFriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/history': {
+      id: '/$locale/history'
+      path: '/$locale/history'
+      fullPath: '/$locale/history'
+      preLoaderRoute: typeof LocaleHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/messages': {
+      id: '/$locale/messages'
+      path: '/$locale/messages'
+      fullPath: '/$locale/messages'
+      preLoaderRoute: typeof LocaleMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/music': {
+      id: '/$locale/music'
+      path: '/$locale/music'
+      fullPath: '/$locale/music'
+      preLoaderRoute: typeof LocaleMusicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/photos': {
+      id: '/$locale/photos'
+      path: '/$locale/photos'
+      fullPath: '/$locale/photos'
+      preLoaderRoute: typeof LocalePhotosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/portfolio': {
+      id: '/$locale/portfolio'
+      path: '/$locale/portfolio'
+      fullPath: '/$locale/portfolio'
+      preLoaderRoute: typeof LocalePortfolioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/setup': {
+      id: '/$locale/setup'
+      path: '/$locale/setup'
+      fullPath: '/$locale/setup'
+      preLoaderRoute: typeof LocaleSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$locale/unsubscribe': {
+      id: '/$locale/unsubscribe'
+      path: '/$locale/unsubscribe'
+      fullPath: '/$locale/unsubscribe'
+      preLoaderRoute: typeof LocaleUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/article-generator': {
+      id: '/admin/article-generator'
+      path: '/article-generator'
+      fullPath: '/admin/article-generator'
+      preLoaderRoute: typeof AdminArticleGeneratorRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/books': {
+      id: '/admin/books'
+      path: '/books'
+      fullPath: '/admin/books'
+      preLoaderRoute: typeof AdminBooksRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/categories': {
+      id: '/admin/categories'
+      path: '/categories'
+      fullPath: '/admin/categories'
+      preLoaderRoute: typeof AdminCategoriesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/comments': {
+      id: '/admin/comments'
+      path: '/comments'
+      fullPath: '/admin/comments'
+      preLoaderRoute: typeof AdminCommentsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/notes': {
+      id: '/admin/notes'
+      path: '/notes'
+      fullPath: '/admin/notes'
+      preLoaderRoute: typeof AdminNotesRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/subscribers': {
+      id: '/admin/subscribers'
+      path: '/subscribers'
+      fullPath: '/admin/subscribers'
+      preLoaderRoute: typeof AdminSubscribersRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/tags': {
+      id: '/admin/tags'
+      path: '/tags'
+      fullPath: '/admin/tags'
+      preLoaderRoute: typeof AdminTagsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$id': {
+      id: '/blog/$id'
+      path: '/blog/$id'
+      fullPath: '/blog/$id'
+      preLoaderRoute: typeof BlogIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/thinking/': {
+      id: '/thinking/'
+      path: '/thinking'
+      fullPath: '/thinking/'
+      preLoaderRoute: typeof ThinkingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/thinking/$id': {
+      id: '/thinking/$id'
+      path: '/thinking/$id'
+      fullPath: '/thinking/$id'
+      preLoaderRoute: typeof ThinkingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watch/': {
+      id: '/watch/'
+      path: '/watch'
+      fullPath: '/watch/'
+      preLoaderRoute: typeof WatchIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watch/library': {
+      id: '/watch/library'
+      path: '/watch/library'
+      fullPath: '/watch/library'
+      preLoaderRoute: typeof WatchLibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/blog/': {
@@ -1081,18 +1060,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleBlogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/posts/create': {
-      id: '/admin/posts/create'
-      path: '/posts/create'
-      fullPath: '/admin/posts/create'
-      preLoaderRoute: typeof AdminPostsCreateRouteImport
-      parentRoute: typeof AdminRouteRoute
+    '/$locale/blog/$id': {
+      id: '/$locale/blog/$id'
+      path: '/$locale/blog/$id'
+      fullPath: '/$locale/blog/$id'
+      preLoaderRoute: typeof LocaleBlogIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/$locale/watch/library': {
-      id: '/$locale/watch/library'
-      path: '/$locale/watch/library'
-      fullPath: '/$locale/watch/library'
-      preLoaderRoute: typeof LocaleWatchLibraryRouteImport
+    '/$locale/thinking/': {
+      id: '/$locale/thinking/'
+      path: '/$locale/thinking'
+      fullPath: '/$locale/thinking/'
+      preLoaderRoute: typeof LocaleThinkingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$locale/thinking/$id': {
@@ -1102,12 +1081,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleThinkingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$locale/blog/$id': {
-      id: '/$locale/blog/$id'
-      path: '/$locale/blog/$id'
-      fullPath: '/$locale/blog/$id'
-      preLoaderRoute: typeof LocaleBlogIdRouteImport
+    '/$locale/watch/': {
+      id: '/$locale/watch/'
+      path: '/$locale/watch'
+      fullPath: '/$locale/watch/'
+      preLoaderRoute: typeof LocaleWatchIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$locale/watch/library': {
+      id: '/$locale/watch/library'
+      path: '/$locale/watch/library'
+      fullPath: '/$locale/watch/library'
+      preLoaderRoute: typeof LocaleWatchLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/posts/': {
+      id: '/admin/posts/'
+      path: '/posts'
+      fullPath: '/admin/posts/'
+      preLoaderRoute: typeof AdminPostsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/posts/create': {
+      id: '/admin/posts/create'
+      path: '/posts/create'
+      fullPath: '/admin/posts/create'
+      preLoaderRoute: typeof AdminPostsCreateRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/admin/posts/edit/$id': {
       id: '/admin/posts/edit/$id'
