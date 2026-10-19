@@ -206,6 +206,36 @@ async fn 更新書籍時沒帶的欄位一律保留() {
     assert_eq!(one["book"]["publisher"], "甲出版", "COALESCE 底下 null 是保留不是清空");
 }
 
+/// 開始讀／讀完的日期：建書時就能帶；更新時空字串＝清掉（其他欄位沒有這條路，日期才需要）。
+#[tokio::test]
+async fn 閱讀日期建書時寫得進去_更新時空字串可以清掉() {
+    let (app, pool) = test_app().await;
+    seed_books(&pool).await;
+
+    let (st, v) = admin(
+        &app,
+        "POST",
+        "/api/books",
+        Some(json!({ "title": "有日期的書", "date_started": "2026-09-01", "date_finished": "" })),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "得到 {v}");
+    let id = v["book"]["id"].as_i64().unwrap();
+    let (_, one) = get(&app, &format!("/api/books/{id}")).await;
+    assert_eq!(one["book"]["date_started"], "2026-09-01", "建書時帶的日期沒寫進去");
+    assert_eq!(one["book"]["date_finished"], Value::Null, "空字串要存成 null，不是空字串");
+
+    // 沒帶日期的更新不能動到它
+    admin(&app, "PUT", &format!("/api/books/{id}"), Some(json!({ "rating": 4 }))).await;
+    let (_, one) = get(&app, &format!("/api/books/{id}")).await;
+    assert_eq!(one["book"]["date_started"], "2026-09-01");
+
+    // 傳空字串＝清掉
+    admin(&app, "PUT", &format!("/api/books/{id}"), Some(json!({ "date_started": "" }))).await;
+    let (_, one) = get(&app, &format!("/api/books/{id}")).await;
+    assert_eq!(one["book"]["date_started"], Value::Null, "日期清不掉");
+}
+
 #[tokio::test]
 async fn 讀取更新刪除不存在的書都是_404_且訊息一致() {
     let (app, _pool) = test_app().await;
