@@ -53,6 +53,8 @@ pub struct ExternalUrls {
     pub google_books: String,
     /// Open Library（ISBN 查詢與搜尋）
     pub openlibrary: String,
+    /// 國家圖書館全國新書資訊網——每月的開放資料 CSV（handlers/tw_isbn.rs 的 sync worker）
+    pub ncl_isbn: String,
     /// Spotify Web API（handlers/spotify.rs 全部走 `sp_get`）
     pub spotify_api: String,
     /// Spotify 帳號服務——只放 token 交換那條。
@@ -88,6 +90,7 @@ impl Default for ExternalUrls {
             wakatime: "https://wakatime.com".into(),
             google_books: "https://www.googleapis.com".into(),
             openlibrary: "https://openlibrary.org".into(),
+            ncl_isbn: "https://isbn.ncl.edu.tw".into(),
             spotify_api: "https://api.spotify.com".into(),
             spotify_accounts: "https://accounts.spotify.com".into(),
             hitokoto: "https://v1.hitokoto.cn".into(),
@@ -113,6 +116,7 @@ impl ExternalUrls {
             wakatime: format!("{base}/wakatime"),
             google_books: format!("{base}/google-books"),
             openlibrary: format!("{base}/openlibrary"),
+            ncl_isbn: format!("{base}/ncl"),
             spotify_api: format!("{base}/spotify-api"),
             spotify_accounts: format!("{base}/spotify-accounts"),
             hitokoto: format!("{base}/hitokoto"),

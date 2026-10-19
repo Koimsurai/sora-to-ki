@@ -132,6 +132,27 @@ table thoughts
 table tv_history
   CREATE TABLE tv_history ( id INTEGER PRIMARY KEY AUTOINCREMENT, series_name TEXT NOT NULL, episode_label TEXT, watched_date DATE, source TEXT, tmdb_id INTEGER, poster_url TEXT, genres TEXT, synced_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(series_name, episode_label, watched_date) )
 
+table tw_books
+  CREATE TABLE tw_books ( id INTEGER PRIMARY KEY, isbn TEXT NOT NULL UNIQUE, -- ISBN-13，去掉連字號 title TEXT NOT NULL, author TEXT, publisher TEXT, edition TEXT, pub_date TEXT, -- 國圖給的是「預訂出版日」，日可能是 00（2025-01-00） pages INTEGER, price TEXT, binding TEXT, language TEXT, category TEXT, -- 常用分類 subject TEXT, -- 圖書主題 audience TEXT, keywords TEXT, translated TEXT, ym TEXT NOT NULL, -- 出自哪個月份的檔（YYYYMM） updated_at TEXT NOT NULL DEFAULT (datetime('now')) )
+
+table tw_books_fts
+  CREATE VIRTUAL TABLE tw_books_fts USING fts5( title, author, publisher, content = 'tw_books', content_rowid = 'id', tokenize = 'trigram' )
+
+table tw_books_fts_config
+  CREATE TABLE 'tw_books_fts_config'(k PRIMARY KEY, v) WITHOUT ROWID
+
+table tw_books_fts_data
+  CREATE TABLE 'tw_books_fts_data'(id INTEGER PRIMARY KEY, block BLOB)
+
+table tw_books_fts_docsize
+  CREATE TABLE 'tw_books_fts_docsize'(id INTEGER PRIMARY KEY, sz BLOB)
+
+table tw_books_fts_idx
+  CREATE TABLE 'tw_books_fts_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID
+
+table tw_isbn_months
+  CREATE TABLE tw_isbn_months ( ym TEXT PRIMARY KEY, last_modified TEXT, rows INTEGER NOT NULL, fetched_at TEXT NOT NULL DEFAULT (datetime('now')) )
+
 table users
   CREATE TABLE users ( id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, role TEXT DEFAULT 'admin', created_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 
@@ -140,4 +161,13 @@ table watch_favorites
 
 table web_vitals
   CREATE TABLE web_vitals ( id INTEGER PRIMARY KEY AUTOINCREMENT, metric TEXT NOT NULL, value REAL NOT NULL, rating TEXT NOT NULL, path TEXT NOT NULL, is_mobile INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')) , target TEXT, load_state TEXT, shift_path TEXT)
+
+trigger tw_books_ad
+  CREATE TRIGGER tw_books_ad AFTER DELETE ON tw_books BEGIN INSERT INTO tw_books_fts(tw_books_fts, rowid, title, author, publisher) VALUES ('delete', old.id, old.title, old.author, old.publisher); END
+
+trigger tw_books_ai
+  CREATE TRIGGER tw_books_ai AFTER INSERT ON tw_books BEGIN INSERT INTO tw_books_fts(rowid, title, author, publisher) VALUES (new.id, new.title, new.author, new.publisher); END
+
+trigger tw_books_au
+  CREATE TRIGGER tw_books_au AFTER UPDATE ON tw_books BEGIN INSERT INTO tw_books_fts(tw_books_fts, rowid, title, author, publisher) VALUES ('delete', old.id, old.title, old.author, old.publisher); INSERT INTO tw_books_fts(rowid, title, author, publisher) VALUES (new.id, new.title, new.author, new.publisher); END
 

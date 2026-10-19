@@ -87,6 +87,7 @@ specta-typescript = "0.0.12"
 specta-serde = "0.0.12"
 utoipa = { version = "5.5.0", features = ["axum_extras"] }
 utoipa-scalar = { version = "0.3.0", features = ["axum"] }
+csv = "1"
 
 # jemalloc（tikv fork）：長跑 server 降 RSS/碎片化。MSVC 不支援 → target cfg 排除。
 [target.'cfg(not(target_env = "msvc"))'.dependencies]

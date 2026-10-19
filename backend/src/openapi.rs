@@ -121,6 +121,7 @@ impl Modify for SecurityAddon {
         handlers::stats::site_stats,
         handlers::tags::list_tags,
         handlers::thirdparty::books_search_external,
+        handlers::tw_isbn::tw_search,
         handlers::thirdparty::github_events,
         handlers::thirdparty::github_repos,
         handlers::thirdparty::github_contributions,

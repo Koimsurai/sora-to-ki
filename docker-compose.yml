@@ -95,6 +95,8 @@ services:
       # 優先於 `env_file`，而 `${VAR:-}` 讀的是 compose 自己的 .env（那裡沒有這些鍵），
       # 結果會用空字串蓋掉 env_file 裡的真值。踩過一次：worker 起來直接說「缺 CLIENT_ID」。
       - ENABLE_SIMKL_SYNC=1
+      # 國圖新書書目索引：每天用 If-Modified-Since 問一輪每月 CSV（handlers/tw_isbn.rs）
+      - ENABLE_TW_ISBN_SYNC=1
     volumes:
       - backend-db-data:/usr/src/app/db
       - /mnt/hdd16tb_01/Blog/uploads:/usr/src/app/storage/uploads
