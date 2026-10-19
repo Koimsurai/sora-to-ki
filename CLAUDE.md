@@ -935,6 +935,12 @@ React Compiler 診斷（`purity` / `refs` / `immutability` / `preserve-manual-me
 server function reflected XSS，GHSA 見 Dependabot #240）。串流沒壞，但**CSS 排進 `<head>` 的順序變了**：
 兩個檔各寫一條同特異性的同名規則時，勝負跟著換。那次抓到的是 `.section-label`（Activity.css 與
 index.css 各一份），只有 computed-style 紅。**下次升這組一定要跑完整 e2e，不要只看 smoke。**
+**而且 e2e 全綠也不夠——部署之後正式站整站白畫面。** server 產物的 minifier 開始把整千的數字寫成
+`19e3`，`scripts/sync-nitro-asset-manifest.mjs`（Dockerfile 在 sentry inject 之後跑）的正規式只認
+`\d+`，漏修那一支的 size，nitro 照舊大小切斷回應。e2e 與 CI 都不走 Dockerfile，抓不到。
+**升任何會動到 nitro / rolldown 產出的相依，部署前先在旁邊的 port 跑一次 image**：
+`docker compose build frontend` → `docker run -p 127.0.0.1:14557:13579 -e BACKEND_URL=https://koimsurai.com web-frontend:latest`
+→ 比對每支 `/assets/*` 的 `curl` 大小與檔案大小。
 | `@radix-ui/react-select` `-separator` `-slot` `-switch` | 各自現值 | **單獨升每一個都過，四個一起升就壞**：21 個共用 primitive 跟著浮，後台編輯器打字掉字 | 找出是哪個 primitive |
 
 ⚠️ **Radix 那條是這裡最值得記的一個形狀**：逐一驗證全綠、組合起來才壞。而且唯一抓得到
