@@ -35,7 +35,9 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [backend, setBackend] = useState('初始化中…');
   const [failed, setFailed] = useState(false);
-  const [perf, setPerf] = useState<{ fps: number; avgMs: number; quality?: number } | null>(null);
+  const [perf, setPerf] = useState<{ fps: number; avgMs: number; quality?: number; gpuMs?: number | null } | null>(
+    null,
+  );
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
   // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
   const controlRef = useRef<{ scroll(y: number): void; saturn(v: boolean, a: boolean): void } | null>(null);
@@ -136,12 +138,13 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
           fps?: number;
           avgMs?: number;
           quality?: number;
+          gpuMs?: number | null;
           message?: string;
         }>,
       ) => {
         if (e.data.type === 'ready') setBackend(`${e.data.backend} · worker`);
         else if (e.data.type === 'perf')
-          setPerf({ fps: e.data.fps ?? 0, avgMs: e.data.avgMs ?? 0, quality: e.data.quality });
+          setPerf({ fps: e.data.fps ?? 0, avgMs: e.data.avgMs ?? 0, quality: e.data.quality, gpuMs: e.data.gpuMs });
         else if (e.data.type === 'lost') recover(e.data.message ?? 'GPU device lost');
         else if (e.data.type === 'error') {
           // canvas 已 transfer、無法回收給主執行緒重用 → 本 session 放棄（外層有 DOM 特效兜底）
@@ -178,7 +181,7 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
           width,
           height,
           dpr: window.devicePixelRatio,
-          onPerf: (fps, avgMs, quality) => setPerf({ fps, avgMs, quality }),
+          onPerf: (fps, avgMs, quality, gpuMs) => setPerf({ fps, avgMs, quality, gpuMs }),
           onDeviceLost: (message) => {
             if (!disposed) recover(message);
           },
@@ -244,7 +247,7 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
         >
           StarfieldGpu · {backend} · TSL bloom
           {perf &&
-            ` · ${perf.fps.toFixed(0)} fps · ${perf.avgMs.toFixed(2)} ms${perf.quality ? ` · 品質降級 L${perf.quality}` : ''}`}
+            ` · ${perf.fps.toFixed(0)} fps · ${perf.avgMs.toFixed(2)} ms${perf.gpuMs != null ? ` · GPU ${perf.gpuMs.toFixed(2)} ms` : ''}${perf.quality ? ` · 品質降級 L${perf.quality}` : ''}`}
         </div>
       )}
     </>
