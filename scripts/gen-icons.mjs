@@ -1,14 +1,22 @@
 /**
- * 站台圖示（favicon / PWA / apple-touch-icon）全部從 scripts/icons/ 的兩張 SVG 產生。
+ * 站台圖示（favicon / PWA / apple-touch-icon）全部從 scripts/icons/ 的原稿產生。
  *
  *   node scripts/gen-icons.mjs
  *
- * 兩張原稿：
- *   icon.svg        完整版（新月 + 樹 + 星點），48px 以上都用它
- *   icon-small.svg  16 / 32px 專用：同一個構圖、去掉星點與細節。完整版縮到 16px 時月亮和樹會糊在一起
+ * 原稿：
+ *   icon.svg          新月 + 樹 + 星點。Google 搜尋、PWA、apple-touch-icon 用它
+ *   tab-planet.svg    瀏覽器分頁列用的：行星、環、K（站長偏好分頁列維持這個）。
+ *                     #183 之前那張點陣圖的向量重繪；顏色跟著瀏覽器的深淺主題
+ *
+ * ⚠ 分頁列與 Google 搜尋刻意用不同的圖：
+ *   · Google 只採用 Googlebot-Image 抓得到的圖示，所以 server/routes/robots.txt.ts 只對它擋掉
+ *     favicon.svg 與 favicon.ico，它能選的就只剩 favicon-96.png。favicon.ico 也不放 48（多一道保險）
+ *   · 分頁列：Chrome 有 SVG 就用 SVG；Firefox 取最後宣告的那支
+ *     → __root.tsx 裡 favicon.svg 要宣告在**最後**
  *
  * 產出（都寫進 public/）：
- *   favicon.ico            16 + 32（小尺寸版）與 48（完整版），PNG 內嵌的 ICO
+ *   favicon.svg            tab-planet.svg 的副本（Chrome / Edge / Firefox 的分頁列）
+ *   favicon.ico            16 + 32（行星，白線條），不吃 SVG 圖示的瀏覽器用。PNG 內嵌的 ICO
  *   favicon-96.png         給 Google 搜尋結果——它要 48 的倍數，而且優先取 <link rel="icon"> 宣告的那支
  *   apple-touch-icon.png   180，**滿版沒有圓角**：iOS 自己會裁圓角，透明的角會被填成黑色
  *   pwa-192.png / pwa-512.png      完整版
@@ -24,7 +32,11 @@ const src = (f) => readFileSync(path.join(root, 'scripts/icons', f), 'utf8');
 const out = (f) => path.join(root, 'public', f);
 
 const full = src('icon.svg');
-const small = src('icon-small.svg');
+const tab = src('tab-planet.svg');
+
+/** ico 沒辦法跟著主題變色，固定用白線條（原本那張點陣圖就是白的）。 */
+const tabWhite = tab.replace('.s { stroke: #2b2346; }', '.s { stroke: #ffffff; }');
+if (tabWhite === tab) throw new Error('tab-planet.svg 的預設顏色改了，favicon.ico 的換色沒有生效');
 
 /** 滿版：拿掉底板的圓角。 */
 const fullBleed = full.replace(/(<rect width="64" height="64") rx="14"/, '$1');
@@ -36,8 +48,9 @@ const maskable = fullBleed.replace(
 if (fullBleed === full || maskable === fullBleed)
   throw new Error('icon.svg 的底板格式變了，fullBleed / maskable 的替換沒有生效');
 
-const png = (svg, size) =>
-  sharp(Buffer.from(svg), { density: 72 * (size / 64) * 4 })
+/** density 照 viewBox 換算（icon.svg 是 64、tab-planet.svg 是 32），先放大四倍再縮，邊緣才不會鋸齒。 */
+const png = (svg, size, viewBox = 64) =>
+  sharp(Buffer.from(svg), { density: 72 * (size / viewBox) * 4 })
     .resize(size, size)
     .png()
     .toBuffer();
@@ -68,11 +81,11 @@ function ico(images) {
 writeFileSync(
   out('favicon.ico'),
   ico([
-    { size: 16, data: await png(small, 16) },
-    { size: 32, data: await png(small, 32) },
-    { size: 48, data: await png(full, 48) },
+    { size: 16, data: await png(tabWhite, 16, 32) },
+    { size: 32, data: await png(tabWhite, 32, 32) },
   ]),
 );
+copyFileSync(path.join(root, 'scripts/icons/tab-planet.svg'), out('favicon.svg'));
 writeFileSync(out('favicon-96.png'), await png(full, 96));
 writeFileSync(out('apple-touch-icon.png'), await png(fullBleed, 180));
 writeFileSync(out('pwa-192.png'), await png(full, 192));
