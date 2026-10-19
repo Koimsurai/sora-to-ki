@@ -43,8 +43,16 @@ const SERVER_ENTRY = '.output/server/index.mjs';
 //     "size": 1343311,
 //     "path": "../public/assets/index-XXXX.js"
 //   },
+//
+// ⚠ size 是 **JS 數字字面值，不一定是純數字**。2026-10 升 TanStack Start 1.169 之後，server 產物的
+//   minifier 會把整千的數字寫成指數：`"size": 19e3`。原本的 `\d+` 配不到那一筆，它的 size 就沒被修正，
+//   而它剛好是每頁都 modulepreload 的 CommandPalette —— 正式站整站白畫面（1331 筆裡只漏這 1 筆，
+//   底下「一筆都沒配到就停」的保險擋不到）。所以現在兩道：字面值照 JS 的規則解析，
+//   而且清單裡**每一筆**都必須配到。
 const ENTRY =
-  /"(?<key>\/[^"]*)":\s*\{\s*"type":\s*"(?<type>[^"]*)",\s*"etag":\s*"(?<etag>(?:[^"\\]|\\.)*)",\s*"mtime":\s*"(?<mtime>[^"]*)",\s*"size":\s*(?<size>\d+),\s*"path":\s*"(?<path>[^"]*)"\s*\}(?<comma>,?)/g;
+  /"(?<key>\/[^"]*)":\s*\{\s*"type":\s*"(?<type>[^"]*)",\s*"etag":\s*"(?<etag>(?:[^"\\]|\\.)*)",\s*"mtime":\s*"(?<mtime>[^"]*)",\s*"size":\s*(?<size>[0-9][0-9.eE+]*),\s*"path":\s*"(?<path>[^"]*)"\s*\}(?<comma>,?)/g;
+/** 清單裡每個條目都有一行指向 public 的 path——拿來數「總共有幾筆」，跟配到的筆數對帳。 */
+const ENTRY_PATH = /"path":\s*"\.\.\/public\//g;
 
 const entryPath = path.resolve(SERVER_ENTRY);
 if (!fs.existsSync(entryPath)) {
@@ -82,10 +90,11 @@ const patched = source.replace(ENTRY, (whole, ...args) => {
   );
 });
 
-if (matched === 0) {
+const total = source.match(ENTRY_PATH)?.length ?? 0;
+if (matched === 0 || matched !== total) {
   // 清單格式變了就當場停下來。靜靜跳過的話症狀是「部署後整站白畫面」，
-  // 而那跟這支腳本的關聯不會有人第一時間想到。
-  console.error('清單一個條目都沒配到 —— nitro 的產出格式可能變了，這支腳本該更新');
+  // 而那跟這支腳本的關聯不會有人第一時間想到。只漏一筆也一樣——漏的那支就是被切斷的那支。
+  console.error(`清單有 ${total} 筆，只配到 ${matched} 筆 —— nitro 的產出格式可能變了，這支腳本該更新`);
   process.exit(1);
 }
 
