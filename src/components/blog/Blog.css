@@ -113,6 +113,9 @@
   left: 0;
   top: 50%;
   transform: translateY(-50%);
+  /* 圖示在 DOM 裡排在輸入框前面，要壓在它上面。這條原本沒寫，是吃到舊版 Bookshelf.css 那條裸的
+     `.search-icon { z-index: 1 }`——書櫃翻新拿掉那批全域 class 時 computed-style 抓到的。 */
+  z-index: 1;
   color: var(--white-25);
   font-size: var(--fs-14);
 }

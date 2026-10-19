@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════
-   Zero Gravity Library — Minimal Overlay UI
+   Zero Gravity Library — 全螢幕覆蓋層
    ═══════════════════════════════════════════════════ */
 
 .zero-gravity-container {
   position: fixed;
   inset: 0;
-  background: #000000;
+  background: radial-gradient(ellipse at 50% 45%, var(--surface-1), #000 70%);
   z-index: var(--z-fullscreen);
   overflow: hidden;
 }
@@ -14,9 +14,21 @@
   width: 100%;
   height: 100%;
   cursor: grab;
+  touch-action: none;
 }
 .zero-gravity-canvas:active {
   cursor: grabbing;
+}
+
+/* WebGL 掛掉時的退路（CanvasBoundary） */
+.zg-fallback {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--white-60);
+  font-size: var(--fs-14);
 }
 
 /* ── Overlay ── */
@@ -38,8 +50,12 @@
   right: 0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: var(--space-5) var(--space-8);
+  align-items: flex-start;
+  padding: var(--space-6) var(--space-8);
+  pointer-events: none;
+}
+.zg-top-bar > * {
+  pointer-events: auto;
 }
 
 .zg-brand {
@@ -49,7 +65,7 @@
 }
 
 .zg-brand-title {
-  font-size: var(--fs-13);
+  font-size: var(--fs-16);
   font-weight: 700;
   letter-spacing: var(--ls-18);
   text-transform: uppercase;
@@ -60,8 +76,8 @@
 }
 
 .zg-brand-sub {
-  font-size: var(--fs-11);
-  color: var(--white-30);
+  font-size: var(--fs-12);
+  color: var(--white-45);
   letter-spacing: var(--ls-4);
 }
 
@@ -70,26 +86,38 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4-5);
-  background: var(--white-04);
-  border: 1px solid var(--white-10);
-  border-radius: var(--r-10);
-  color: var(--white-60);
+  background: var(--white-06);
+  border: 1px solid var(--white-15);
+  border-radius: var(--r-full);
+  color: var(--white-80);
   font-size: var(--fs-13);
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--dur-200);
+  box-shadow: none;
+  transition:
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
   backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
 }
-.zg-close-btn:hover {
-  background: rgba(var(--brand-rgb), 0.1);
-  border-color: rgba(var(--brand-rgb), 0.35);
-  color: var(--brand-light);
+.zg-close-btn:hover,
+.zg-close-btn:focus {
+  background: rgba(var(--brand-rgb), 0.15);
+  border-color: rgba(var(--brand-rgb), 0.45);
+  color: var(--ink);
+  box-shadow: none;
+}
+/* 打開時焦點會被程式移到這顆鈕：全站 button 的 focus 光暈太搶眼，換成細外框（同 BookDetailDrawer） */
+.zg-close-btn:focus-visible {
+  outline: 1px solid rgba(var(--lavender-rgb), 0.6);
+  outline-offset: 2px;
 }
 
 /* ── Hints ── */
 .zg-hints {
   position: absolute;
-  bottom: 1.5rem;
+  bottom: var(--space-6);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -98,18 +126,26 @@
   padding: var(--space-2) var(--space-5);
   background: rgba(var(--surface-0-rgb), 0.6);
   backdrop-filter: blur(var(--blur-12));
-  border: 1px solid var(--white-06);
-  border-radius: var(--r-20);
+  -webkit-backdrop-filter: blur(var(--blur-12));
+  border: 1px solid var(--white-10);
+  border-radius: var(--r-full);
   font-size: var(--fs-12);
-  color: var(--white-30);
+  color: var(--white-60);
   letter-spacing: var(--ls-2);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.zg-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .zg-hint-dot {
   width: 3px;
   height: 3px;
   border-radius: var(--r-round);
-  background: var(--white-15);
+  background: var(--white-30);
   flex-shrink: 0;
 }
 
@@ -117,27 +153,26 @@
 .zg-detail-panel {
   position: absolute;
   top: 50%;
-  right: 2rem;
+  right: var(--space-8);
   transform: translateY(-50%);
-  width: 340px;
-  max-height: 75vh;
-  background: rgba(var(--surface-0-rgb), 0.8);
-  backdrop-filter: blur(var(--blur-20));
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-16);
-  padding: var(--space-6);
+  width: 360px;
+  max-height: 78vh;
   overflow-y: auto;
-  animation: zg-slide-in 0.35s ease-out;
+  padding: var(--space-6);
+  background: rgba(var(--surface-1-rgb), 0.85);
+  backdrop-filter: blur(var(--blur-20));
+  -webkit-backdrop-filter: blur(var(--blur-20));
+  border: 1px solid var(--white-10);
+  border-radius: var(--r-16);
+  box-shadow: var(--elev-5);
+  color: var(--ink);
+  animation: zg-slide-in var(--dur-300) var(--easing-out);
 }
 
 @keyframes zg-slide-in {
   from {
     opacity: 0;
-    transform: translateY(-50%) translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
+    transform: translateY(-50%) translateX(var(--space-8));
   }
 }
 
@@ -151,66 +186,106 @@
 
 .zg-detail-close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  width: 28px;
-  height: 28px;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   background: var(--white-06);
-  border: 1px solid var(--white-08);
+  border: 1px solid var(--white-10);
   border-radius: var(--r-round);
-  color: var(--white-40);
+  color: var(--white-60);
   cursor: pointer;
-  transition: all var(--dur-200);
+  box-shadow: none;
+  transition:
+    background var(--dur-200) ease,
+    color var(--dur-200) ease;
 }
-.zg-detail-close:hover {
+.zg-detail-close:hover,
+.zg-detail-close:focus-visible {
   background: rgba(var(--brand-rgb), 0.15);
-  border-color: rgba(var(--brand-rgb), 0.35);
-  color: var(--brand-light);
+  color: var(--ink);
+  box-shadow: none;
 }
 
+.zg-detail-head {
+  display: flex;
+  gap: var(--space-4);
+  padding-right: var(--space-8);
+}
 .zg-detail-cover {
-  width: 100%;
-  max-height: 300px;
+  width: 84px;
+  aspect-ratio: 2 / 3;
+  flex-shrink: 0;
   object-fit: cover;
-  border-radius: var(--r-10);
-  border: 1px solid var(--white-06);
-  margin-bottom: var(--space-4);
+  border-radius: var(--r-6);
+  box-shadow: var(--elev-3);
+}
+.zg-detail-heading {
+  min-width: 0;
+}
+
+.zg-detail-status {
+  display: inline-flex;
+  gap: var(--space-2);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: var(--ls-4);
+  color: var(--white-50);
+}
+.zg-detail-status[data-status="read"] {
+  color: var(--lavender);
+}
+.zg-detail-status[data-status="reading"] {
+  color: var(--magenta);
+}
+.zg-detail-rating {
+  color: var(--amber-300);
 }
 
 .zg-detail-title {
+  margin: var(--space-2) 0 var(--space-1);
   font-size: var(--fs-18);
   font-weight: 700;
-  color: var(--clr-headline);
-  line-height: var(--lh-130);
-  margin-bottom: var(--space-1);
+  line-height: var(--lh-140);
 }
 
 .zg-detail-author {
-  font-size: var(--fs-14);
-  color: var(--brand-light);
-  font-weight: 500;
-  margin-bottom: var(--space-3);
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--white-55);
+}
+
+.zg-detail-notes {
+  margin: var(--space-5) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid var(--lavender);
+  border-radius: 0 var(--r-8) var(--r-8) 0;
+  background: rgba(var(--lavender-rgb), 0.06);
+  font-size: var(--fs-13);
+  line-height: var(--lh-185);
+  white-space: pre-wrap;
 }
 
 .zg-detail-desc {
+  margin: var(--space-4) 0 0;
   font-size: var(--fs-13);
-  color: var(--white-50);
   line-height: var(--lh-170);
-  max-height: 160px;
-  overflow-y: auto;
-  margin-bottom: var(--space-3);
+  color: var(--white-60);
+  white-space: pre-wrap;
 }
 
 .zg-detail-meta {
   display: flex;
   gap: var(--space-4);
+  margin-top: var(--space-4);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--white-06);
+  border-top: 1px solid var(--white-08);
   font-size: var(--fs-12);
-  color: var(--white-30);
+  color: var(--white-40);
 }
 
 /* ── Book hover label (inside 3D scene) ── */
@@ -219,7 +294,7 @@
   background: rgba(var(--surface-0-rgb), 0.9);
   border: 1px solid rgba(var(--brand-rgb), 0.35);
   border-radius: var(--r-8);
-  color: var(--brand-light);
+  color: var(--ink);
   font-size: var(--fs-13);
   font-weight: 500;
   white-space: nowrap;
@@ -227,6 +302,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   backdrop-filter: blur(var(--blur-8));
+  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 /* ── Responsive ── */
@@ -236,34 +312,34 @@
   }
 
   .zg-brand-title {
-    font-size: var(--fs-12);
+    font-size: var(--fs-13);
   }
 
   .zg-hints {
     gap: var(--space-2);
     padding: var(--space-1-5) var(--space-3-5);
-    font-size: var(--fs-10);
-    bottom: 1rem;
+    font-size: var(--fs-11);
+    bottom: var(--space-4);
+  }
+  .zg-hint {
+    gap: var(--space-2);
   }
 
+  /* 窄螢幕：詳情改成底部面板 */
   .zg-detail-panel {
-    right: 0.75rem;
-    left: 0.75rem;
-    width: auto;
-    max-height: 55vh;
     top: auto;
-    bottom: 4rem;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    left: var(--space-3);
+    width: auto;
+    max-height: 60vh;
     transform: none;
+    animation-name: zg-rise;
   }
-
-  @keyframes zg-slide-in {
+  @keyframes zg-rise {
     from {
       opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+      transform: translateY(var(--space-8));
     }
   }
 }

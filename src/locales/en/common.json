@@ -331,9 +331,40 @@
     "zeroGravity": "Zero-G mode",
     "zg": {
       "hint": "Drag to rotate · Scroll to zoom · Click a book",
-      "back": "Back to shelf"
+      "back": "Back to shelf",
+      "inOrbit": "{{count}} books in orbit",
+      "unavailable": "Zero-G mode needs a GPU, which this device doesn’t have",
+      "pages": "{{count}} pages"
     },
     "twoDView": "2D view",
+    "skyStats": "{{total}} stars · {{read}} lit · {{reading}} lighting up",
+    "avgRating": "avg {{rating}}★",
+    "groups": {
+      "fantasy": "FANTASY",
+      "literature": "LITERATURE",
+      "life": "LIFE & MIND",
+      "other": "OTHER"
+    },
+    "legend": {
+      "read": "Read: a lit star — brighter means higher rated",
+      "reading": "Reading: lighting up",
+      "toRead": "Want to read: not lit yet",
+      "notes": "Rays: has my notes"
+    },
+    "skyHint": "← swipe to explore the sky →",
+    "listTitle": "Books",
+    "noMatch": "No matching books",
+    "hasNotes": "Has notes",
+    "close": "Close",
+    "started": "Started",
+    "finished": "Finished",
+    "myNotes": "My notes",
+    "about": "About",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "publisher": "Publisher",
+    "publishedDate": "Published",
+    "pages": "Pages",
     "filterStatus": "Status",
     "filterRating": "Rating",
     "filterSort": "Sort",

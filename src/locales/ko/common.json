@@ -331,9 +331,40 @@
     "zeroGravity": "Zero-G 모드",
     "zg": {
       "hint": "드래그로 회전 · 스크롤로 줌 · 클릭하여 책 보기",
-      "back": "책장으로 돌아가기"
+      "back": "책장으로 돌아가기",
+      "inOrbit": "궤도 위의 책 {{count}}권",
+      "unavailable": "이 기기에는 GPU가 없어 Zero-G 모드를 사용할 수 없습니다",
+      "pages": "{{count}}쪽"
     },
     "twoDView": "2D 보기",
+    "skyStats": "별 {{total}}개 · 빛나는 별 {{read}} · 밝아지는 별 {{reading}}",
+    "avgRating": "평균 {{rating}}★",
+    "groups": {
+      "fantasy": "판타지",
+      "literature": "문학·소설",
+      "life": "삶과 마음",
+      "other": "기타"
+    },
+    "legend": {
+      "read": "다 읽음: 빛나는 별, 밝을수록 높은 평점",
+      "reading": "읽는 중: 밝아지는 중",
+      "toRead": "읽고 싶음: 아직 빛나지 않음",
+      "notes": "빛줄기: 메모 있음"
+    },
+    "skyHint": "← 좌우로 밀어 하늘 전체 보기 →",
+    "listTitle": "책 목록",
+    "noMatch": "조건에 맞는 책이 없습니다",
+    "hasNotes": "메모 있음",
+    "close": "닫기",
+    "started": "읽기 시작",
+    "finished": "다 읽음",
+    "myNotes": "나의 메모",
+    "about": "소개",
+    "showMore": "더 보기",
+    "showLess": "접기",
+    "publisher": "출판사",
+    "publishedDate": "출판일",
+    "pages": "페이지",
     "filterStatus": "상태",
     "filterRating": "평점",
     "filterSort": "정렬",

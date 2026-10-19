@@ -331,9 +331,40 @@
     "zeroGravity": "零重力模式",
     "zg": {
       "hint": "拖曳旋转 · 滚轮缩放 · 点击书籍查看",
-      "back": "返回书架"
+      "back": "返回书架",
+      "inOrbit": "{{count}} 本书在轨道上",
+      "unavailable": "这台设备没有可用的 GPU，零重力模式跑不动",
+      "pages": "{{count}} 页"
     },
     "twoDView": "2D 视图",
+    "skyStats": "{{total}} 颗星 · 已点亮 {{read}} 颗 · 正在点亮 {{reading}} 颗",
+    "avgRating": "平均 {{rating}}★",
+    "groups": {
+      "fantasy": "奇幻冒险",
+      "literature": "文学小说",
+      "life": "生活与心灵",
+      "other": "其他"
+    },
+    "legend": {
+      "read": "读完了：点亮的星，越亮评分越高",
+      "reading": "阅读中：正在点亮",
+      "toRead": "想读：还没点亮",
+      "notes": "有星芒：写了笔记"
+    },
+    "skyHint": "← 左右滑动看整片天空 →",
+    "listTitle": "书目",
+    "noMatch": "没有符合的书",
+    "hasNotes": "有笔记",
+    "close": "关闭",
+    "started": "开始读",
+    "finished": "读完",
+    "myNotes": "我的笔记",
+    "about": "简介",
+    "showMore": "展开",
+    "showLess": "收起",
+    "publisher": "出版社",
+    "publishedDate": "出版日期",
+    "pages": "页数",
     "filterStatus": "阅读状态",
     "filterRating": "评分",
     "filterSort": "排序",
