@@ -38,6 +38,14 @@ const PROPS: Record<string, Record<string, unknown>> = {
     onSwiper: vi.fn(),
   },
   'media/FavoritesEditor.tsx': { favorites: [], onClose: vi.fn(), onChanged: vi.fn() },
+  // 書櫃頁的子元件，書單由 Bookshelf 傳進來；給一本書讓它真的畫出一顆星
+  'media/BookConstellation.tsx': {
+    books: [{ id: 1, title: '測試書', reading_status: 'read', rating: 4, personal_notes: '筆記' }],
+    isDimmed: () => false,
+    selectedId: null,
+    onSelect: vi.fn(),
+    coverSrc: (url?: string | null) => url ?? '',
+  },
 };
 
 /**
