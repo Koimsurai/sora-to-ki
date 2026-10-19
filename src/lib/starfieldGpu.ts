@@ -42,8 +42,11 @@ export interface StarfieldInit {
   width: number;
   height: number;
   dpr: number;
-  /** 每秒回報一次渲染迴圈 fps / 平均幀時 / 目前品質等級（?debug=perf 用） */
-  onPerf?: (fps: number, avgMs: number, quality?: number) => void;
+  /**
+   * 每秒回報一次渲染迴圈 fps / 平均幀時 / 目前品質等級 / 每幀 GPU 時間（?debug=perf 用）。
+   * gpuMs 是 GPU 真的花在這一幀的時間（timestamp query）；瀏覽器不給 timestamp 時是 null。
+   */
+  onPerf?: (fps: number, avgMs: number, quality?: number, gpuMs?: number | null) => void;
   /**
    * GPU device / WebGL context 掉了。
    *
@@ -150,7 +153,8 @@ async function loadTexture(url: string): Promise<THREE.Texture> {
 
 interface SaturnRig {
   group: THREE.Group;
-  update(dt: number, scrollY: number, animate: boolean): void;
+  /** 回傳 true＝還在追趕目標（intro 縮放或捲動旋轉的 lerp 沒收斂），這段時間要用全速畫 */
+  update(dt: number, scrollY: number, animate: boolean): boolean;
 }
 
 /// 土星——對齊舊 Saturn3D：球(r1)+環(1.5-2.2, 傾 π/2.5)+群組傾 π/24+兩衛星，
@@ -199,15 +203,17 @@ async function buildSaturn(): Promise<SaturnRig> {
   });
 
   let autoRot = 0;
-  let currentRotY = 0;
+  // 捲動帶動的旋轉單獨 lerp：自轉是等速的，不需要 lerp；放進同一個 lerp 的話目標每幀都在前進，
+  // lerp 永遠收斂不了，「還在動」就永遠是真的——閒置降幀因此一直沒生效（實測卡在 60fps）。
+  let currentScrollRot = 0;
   let currentScale = 0.0001;
   return {
     group,
     update(dt, scrollY, animate) {
       autoRot += 0.05 * dt;
-      const targetRotY = scrollY * 0.001 + autoRot;
-      currentRotY = THREE.MathUtils.lerp(currentRotY, targetRotY, 0.05);
-      group.rotation.y = currentRotY;
+      const targetScrollRot = scrollY * 0.001;
+      currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, 0.05);
+      group.rotation.y = currentScrollRot + autoRot;
       // intro 縮放：未 animate 用極小 epsilon（非 0）讓管線先編譯好，explosion 時只是放大
       const targetScale = animate ? 1 : 0.0001;
       currentScale = THREE.MathUtils.lerp(currentScale, targetScale, 0.08);
@@ -216,6 +222,7 @@ async function buildSaturn(): Promise<SaturnRig> {
         s.cfg.angle += s.cfg.speed * dt;
         s.mesh.position.set(s.cfg.baseR * Math.cos(s.cfg.angle), s.cfg.y, s.cfg.baseR * Math.sin(s.cfg.angle));
       }
+      return Math.abs(targetScrollRot - currentScrollRot) > 0.002 || Math.abs(targetScale - currentScale) > 0.005;
     },
   };
 }
@@ -228,6 +235,8 @@ export async function createStarfieldRunner(
     canvas: init.canvas as HTMLCanvasElement,
     antialias: true,
     alpha: true,
+    // GPU 時間（timestamp query）：品質降級看這個，不看 fps。見下面渲染迴圈的說明。
+    trackTimestamp: true,
   });
   renderer.setPixelRatio(Math.min(init.dpr, 2));
   renderer.setSize(init.width, init.height, false);
@@ -271,7 +280,12 @@ export async function createStarfieldRunner(
   // selective bloom（BloomNode 官方 MRT 範例同款）：bloom 只吃 emissive 通道——
   // 星星（emissiveNode=顏色）有光暈；土星/衛星（Standard 材質、emissive≈0）不被星空 bloom 掃到，
   // 對齊舊架構「兩條 canvas 各自 bloom 參數」的觀感（舊土星 bloom 僅 0.15，趨近無）。
-  const scenePass = pass(scene, camera);
+  // ⚠ 場景 pass 的 MSAA 只在低像素密度開。這個 pass 是兩張半精度浮點的 MRT（output＋bloomIntensity），
+  //   開 4× MSAA 的代價很高：內顯（Radeon 780M）實測 DPR 2 時一幀 14.3ms → 關掉後 8.7ms（−40%），
+  //   DPR 1 時 8.65 → 7.3ms。星星本來就是柔光的 quad，MSAA 只影響土星的邊緣，而 DPR ≥ 1.5 時
+  //   像素已經夠細、看不出差別。
+  const dprUsed = Math.min(init.dpr, 2);
+  const scenePass = pass(scene, camera, { samples: dprUsed >= 1.5 ? 0 : 4 });
   scenePass.setMRT(mrt({ output, bloomIntensity: float(0) })); // 全域預設：不進 bloom
   const scenePassColor = scenePass.getTextureNode('output');
   const bloomMask = scenePass.getTextureNode('bloomIntensity');
@@ -281,19 +295,41 @@ export async function createStarfieldRunner(
   const combined = scenePassColor.add(bloomPass);
   const pipeline = new THREE.RenderPipeline(renderer, vec4(combined.rgb, scenePassColor.a));
 
-  // 渲染迴圈：delta 夾住（分頁切回不暴衝，同舊棧慣例）+ perf 累積
-  let last = -1;
+  // ── 渲染迴圈 ──────────────────────────────────────────────────
+  //
+  // 閒置時降到 30fps：星空的轉速是 0.01～0.02 rad/s、土星自轉 0.05 rad/s，30fps 跟 60fps 看不出差別，
+  // 但 GPU 的工作量減半（筆電的風扇與電池差很多）。
+  // 有「動作」的時候（捲動、改尺寸、intro、土星的 lerp 還沒收斂）照常全速，捲動跟著土星轉不會頓。
+  // rAF 還是每個 vsync 都會進來，只是閒置時隔一幀才畫——跳過的那一幀只花幾微秒。
+  const IDLE_AFTER_MS = 1500;
+  const IDLE_FRAME_MS = 1000 / 30;
+  let lastActive = 0;
+  const markActive = () => {
+    lastActive = performance.now();
+  };
+  markActive();
+  let lastRender = -1;
   let frames = 0;
   let acc = 0;
+
   // ── 效能自動降級 ──────────────────────────────────────────────
-  // 能力偵測（沒有 WebGPU/WebGL 就不掛 3D）之外，還要處理「有 GPU 但跑很慢」的機器：
-  // 例如關掉硬體加速 → 走軟體渲染，能力偵測會通過但幀率慘不忍睹。
-  // 連續數秒低於門檻就降一級（減少星數 → 再降就關土星）；**不自動升回**，避免在門檻附近抖動。
+  // 能力偵測（沒有 WebGPU/WebGL 就不掛 3D）之外，還要處理「有 GPU 但跑很慢」的機器。
+  // 連續 3 秒太慢就降一級（減少星數 → 再降就關土星）；**不自動升回**，避免在門檻附近抖動。
+  //
+  // ⚠ 「太慢」看 GPU 時間（timestamp query），不看 fps。fps 量的是「畫面多久交付一次」，
+  //   不是「這一幀多貴」——瀏覽器因為別的原因降低交付頻率時（省電模式、視窗被遮住、某些驅動與
+  //   合成器的組合），fps 會掉到 20 而 GPU 其實閒著。實測在 RTX 5060 Ti 的 WebGPU 路徑上就這樣：
+  //   每幀固定 50.00ms，3 秒後被判成太慢，土星**永久**被關掉。
+  //   瀏覽器不給 timestamp（WebGL2 沒有 EXT_disjoint_timer_query_webgl2）時才退回看 fps。
+  const SLOW_GPU_MS = 12;
   const LOW_FPS = 24;
   const LOW_SECONDS_TO_DEGRADE = 3;
   const QUALITY_FACTOR = [1, 0.5, 0.25];
   let quality = 0;
   let lowSeconds = 0;
+  let gpuMsPerFrame: number | null = null;
+  /** 每幀 GPU 時間的指數移動平均；瀏覽器不給 timestamp 時一直是 null */
+  let gpuEma: number | null = null;
   const applyQuality = () => {
     const factor = QUALITY_FACTOR[quality] ?? 1;
     for (const l of layers) l.points.count = Math.max(1, Math.round(l.cfg.count * factor));
@@ -302,20 +338,33 @@ export async function createStarfieldRunner(
   };
 
   const loop = (now: number) => {
-    const delta = last < 0 ? 0.016 : Math.min((now - last) / 1000, 0.05);
-    last = now;
+    const active = now - lastActive < IDLE_AFTER_MS;
+    if (!active && lastRender >= 0 && now - lastRender < IDLE_FRAME_MS - 2) return;
+    // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
+    const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
+    lastRender = now;
     for (const l of layers) {
       l.points.rotation.x += delta * l.cfg.rotX;
       l.points.rotation.y += delta * l.cfg.rotY;
     }
-    if (saturn && saturnVisible) saturn.update(delta, scrollY, saturnAnimate);
+    if (saturn && saturnVisible && saturn.update(delta, scrollY, saturnAnimate)) markActive();
     pipeline.render();
+    // ⚠ 每一幀都要取回：three 的 query pool 格數有限，一秒才取一次的話格子在幾分之一秒內就滿了，
+    //   之後的 pass 根本沒量到（實測量出 0.05ms 這種不可能的值）。取回是非同步的，結果晚一兩幀到。
+    void renderer
+      .resolveTimestampsAsync('render')
+      .then((ms) => {
+        if (typeof ms === 'number' && ms > 0) gpuEma = gpuEma === null ? ms : gpuEma * 0.9 + ms * 0.1;
+      })
+      .catch(() => undefined);
     frames += 1;
     acc += delta;
     if (acc >= 1) {
       const fps = frames / acc;
-      init.onPerf?.(fps, (acc / frames) * 1000, quality);
-      if (fps < LOW_FPS && quality < QUALITY_FACTOR.length - 1) {
+      init.onPerf?.(fps, (acc / frames) * 1000, quality, gpuMsPerFrame);
+      gpuMsPerFrame = gpuEma;
+      const tooSlow = gpuMsPerFrame !== null ? gpuMsPerFrame > SLOW_GPU_MS : fps < LOW_FPS && active;
+      if (tooSlow && quality < QUALITY_FACTOR.length - 1) {
         lowSeconds += 1;
         if (lowSeconds >= LOW_SECONDS_TO_DEGRADE) {
           quality += 1;
@@ -335,14 +384,17 @@ export async function createStarfieldRunner(
     backend,
     runner: {
       setSize(width, height) {
+        markActive();
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height, false);
       },
       setScroll(y) {
+        if (y !== scrollY) markActive();
         scrollY = y;
       },
       setSaturn(visible, animate) {
+        markActive();
         saturnVisible = visible;
         saturnAnimate = animate;
         // 最低品質下即使呼叫顯示也不開（土星最貴）
@@ -350,7 +402,8 @@ export async function createStarfieldRunner(
       },
       setRunning(running) {
         if (running) {
-          last = -1; // 暫停期間的時間不灌進 delta
+          lastRender = -1; // 暫停期間的時間不灌進 delta
+          markActive();
           void renderer.setAnimationLoop(loop);
         } else {
           void renderer.setAnimationLoop(null);
