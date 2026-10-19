@@ -197,7 +197,7 @@ const ADMIN_ROUTES: { route: string; heading?: string | RegExp; ready?: (p: Page
  *
  *  1. `html.no-gpu *` 把 `backdrop-filter` 設成 `none !important`，而**這個 class 在測試
  *     瀏覽器一定會掛**——無頭 Chromium 就是軟體渲染，`SpaceBackdropShell` 的
- *     `isSoftwareRenderer()` 一律為真（實測 12 條路由 × 3 次全部 no-gpu=Y）。
+ *     GPU 探測一律判成軟體渲染（實測 12 條路由 × 3 次全部 no-gpu=Y）。
  *     於是絕大多數元素讀到的都是 `none`，收進來是又一個「永遠抓不到東西」的假守門。
  *  2. 更糟的是那個 class 是 **lazy + ClientOnly 非同步掛上去的**，所以快照拍到的是
  *     「掛上前」還是「掛上後」不保證——變異測試那次就抓到了非 none 的 backdrop-filter，
