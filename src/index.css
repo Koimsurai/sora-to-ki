@@ -1060,11 +1060,19 @@ body::after {
   box-shadow: 0 0 8px rgba(var(--brand-rgb), 0.5);
 }
 
+/* ⚠ 全站只有這一份。Activity.css 原本也有一條裸的 `.section-label`，兩份的值不同，
+   哪份生效取決於那頁有沒有剛好載入 Activity 的 CSS、以及載入順序：/ 與 /about 一直吃的是
+   Activity 那份（這裡的值是死的），/portfolio 吃這份。TanStack Start 1.169 改了 CSS 的排入
+   順序後，Activity 那份還跑到 /about 的 .work-group-label 之後把它蓋掉。
+   現在的值是原本 / 與 /about 實際呈現的那組；各頁的微調寫在自己的 CSS（同特異性、
+   index.css 永遠最先載入，所以一定蓋得過）。margin-top 歸零是給 Activity 的 <h2> 用的。 */
 .section-label {
-  display: inline-block;
+  display: block;
+  margin-top: 0;
+  margin-bottom: var(--space-4);
   font-size: var(--fs-11);
-  letter-spacing: var(--ls-30);
-  color: var(--white-50);
+  letter-spacing: var(--ls-24);
+  color: var(--white-30);
   font-weight: 700;
   text-transform: uppercase;
 }
