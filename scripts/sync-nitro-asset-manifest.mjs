@@ -94,9 +94,7 @@ const total = source.match(ENTRY_PATH)?.length ?? 0;
 if (matched === 0 || matched !== total) {
   // 清單格式變了就當場停下來。靜靜跳過的話症狀是「部署後整站白畫面」，
   // 而那跟這支腳本的關聯不會有人第一時間想到。只漏一筆也一樣——漏的那支就是被切斷的那支。
-  console.error(
-    `清單有 ${total} 筆，只配到 ${matched} 筆 —— nitro 的產出格式可能變了，這支腳本該更新`,
-  );
+  console.error(`清單有 ${total} 筆，只配到 ${matched} 筆 —— nitro 的產出格式可能變了，這支腳本該更新`);
   process.exit(1);
 }
 
