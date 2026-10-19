@@ -348,8 +348,8 @@ const bhFragmentShader = `
   varying vec3 vWorld;
 
   const float RB = ${BH_BOUND.toFixed(1)};
-  const float RIN = ${DISK_IN.toFixed(1)};
-  const float ROUT = ${DISK_OUT.toFixed(1)};
+  const float R_INNER = ${DISK_IN.toFixed(1)};
+  const float R_OUTER = ${DISK_OUT.toFixed(1)};
 
   float hash21(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
@@ -392,7 +392,7 @@ const bhFragmentShader = `
     n = n * 0.75 + streak * 0.45;
 
     // 溫度：內圈最熱，往外遞減（跟前一版同一條曲線，用盤內的相對位置算）
-    float nr = clamp((r - RIN) / (ROUT - RIN), 0.0, 1.0);
+    float nr = clamp((r - R_INNER) / (R_OUTER - R_INNER), 0.0, 1.0);
     float t = pow(1.0 - nr, 0.8);
     vec3 c = heat(t);
 
@@ -407,8 +407,8 @@ const bhFragmentShader = `
     c = mix(c * vec3(1.2, 0.65, 0.45), c * vec3(0.8, 0.95, 1.3), smoothstep(0.6, 1.4, g));
 
     // ISCO 以內是「落入區」：物質不再穩定公轉，快速螺旋掉進事件視界——暗一點、條紋更緊
-    float plunge = smoothstep(1.05, RIN, r);
-    float edge = smoothstep(ROUT, ROUT * 0.45, r) * mix(0.35, 1.0, smoothstep(RIN * 0.9, RIN * 1.15, r));
+    float plunge = smoothstep(1.05, R_INNER, r);
+    float edge = smoothstep(R_OUTER, R_OUTER * 0.45, r) * mix(0.35, 1.0, smoothstep(R_INNER * 0.9, R_INNER * 1.15, r));
     float I = (0.2 + 0.8 * n) * edge * plunge;
     // 外圈亮度與不透明度都隨溫度下降：外緣是半透明的薄霧，後面的書看得到
     float heatI = 0.35 + 0.65 * t;
@@ -448,7 +448,7 @@ const bhFragmentShader = `
       if (pos.y * npos.y < 0.0) {
         vec3 hit = mix(pos, npos, pos.y / (pos.y - npos.y));
         float hr = length(hit.xz);
-        if (hr < ROUT && hr > 1.02) {
+        if (hr < R_OUTER && hr > 1.02) {
           float a;
           vec3 e = disk(hit, nvel, a);
           col += T * e;
