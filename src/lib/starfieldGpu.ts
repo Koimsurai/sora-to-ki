@@ -20,8 +20,21 @@ import {
   sin,
   mix,
   smoothstep,
+  vec2,
   vec3,
   vec4,
+  uniform,
+  texture,
+  dot,
+  length,
+  normalize,
+  clamp,
+  abs,
+  step,
+  positionLocal,
+  normalLocal,
+  normalView,
+  positionViewDirection,
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
@@ -158,37 +171,88 @@ interface SaturnRig {
   update(dt: number, scrollY: number, animate: boolean): boolean;
 }
 
+const RING_INNER = 1.5;
+const RING_OUTER = 2.2;
+const RING_TILT = Math.PI / 2.5;
+
 /// 土星——對齊舊 Saturn3D：球(r1)+環(1.5-2.2, 傾 π/2.5)+群組傾 π/24+兩衛星，
 /// 自轉 0.05 rad/s + 捲動旋轉 scrollY*0.001（lerp 0.05）+ intro 縮放（lerp 0.08）。
 /// 環 hover 效果不移植：舊 canvas pointerEvents:none，事件從未觸發過（死碼）。
-async function buildSaturn(): Promise<SaturnRig> {
+///
+/// 環與陰影都在「局部座標」裡解析計算，不開 shadow map（點光源的 shadow map 是六面 cube，
+/// 每幀多畫六次場景）。行星是局部原點上的單位球、環在環自己的 z=0 平面上，所以唯一要每幀
+/// 更新的是「太陽在這兩個局部座標裡的位置」——群組在轉、在縮放，太陽不動。
+async function buildSaturn(sunWorld: THREE.Vector3): Promise<SaturnRig> {
   const [planetMap, ringsMap] = await Promise.all([
     loadTexture('/textures/saturn_texture.webp'),
     loadTexture('/textures/saturn_rings_texture.webp'),
   ]);
+  ringsMap.wrapS = THREE.ClampToEdgeWrapping;
   const group = new THREE.Group();
   group.rotation.z = Math.PI / 24;
 
-  const planet = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 32, 32),
-    new THREE.MeshStandardMaterial({ map: planetMap, roughness: 0.6, metalness: 0.1 }),
-  );
+  const sunInPlanet = uniform(new THREE.Vector3());
+  const sunInRing = uniform(new THREE.Vector3());
+
+  // 環的貼圖是一條「由內到外」的橫向色帶。RingGeometry 的 UV 是平面投影，直接貼會變成
+  // 一排平行直條紋而不是同心圓——所以改用半徑當貼圖座標。
+  // 貼圖沒有 alpha，直接貼的話黑色的環縫會變成一圈黑帶蓋在行星上，所以用亮度推出透明度。
+  const ringAt = (r: ReturnType<typeof length>) => {
+    const tex = texture(ringsMap, vec2(r.sub(RING_INNER).div(RING_OUTER - RING_INNER), 0.5));
+    const alpha = smoothstep(0.03, 0.22, dot(tex.rgb, vec3(0.299, 0.587, 0.114)));
+    return { rgb: tex.rgb, alpha };
+  };
+
+  // 行星：被環擋住的地方有影子。從表面點朝太陽打一條射線，交到環的平面上、落在環的範圍內，
+  // 就按那一點環的不透明度遮掉陽光。
+  const planetMat = new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.1 });
+  {
+    const p = positionLocal;
+    const toSun = normalize(sunInPlanet.sub(p));
+    const ringN = vec3(0, -Math.sin(RING_TILT), Math.cos(RING_TILT));
+    const denom = dot(toSun, ringN);
+    const t = dot(p, ringN)
+      .negate()
+      .div(denom.add(denom.sign().mul(1e-4)));
+    const r = length(p.add(toSun.mul(t)));
+    const onRing = step(0, t).mul(step(RING_INNER, r)).mul(step(r, RING_OUTER));
+    const ringShadow = float(1).sub(onRing.mul(ringAt(r).alpha).mul(0.6));
+    planetMat.colorNode = texture(planetMap, uv()).rgb.mul(ringShadow);
+    // 大氣的邊緣光：只在受光的那半邊，背光面的邊緣不該亮
+    const fresnel = float(1)
+      .sub(clamp(dot(normalView, positionViewDirection), 0, 1))
+      .pow(3);
+    const litSide = smoothstep(-0.15, 0.45, dot(normalLocal, normalize(sunInPlanet)));
+    planetMat.emissiveNode = vec3(1.0, 0.86, 0.66).mul(fresnel.mul(litSide).mul(0.35));
+  }
+  const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), planetMat);
+
+  // 環：薄薄一層冰粒，亮度跟入射角的關係很弱——用 Standard 材質的話光從很斜的角度照過來，
+  // 整圈環暗到幾乎看不見。這裡自己算光：入射角只影響一半，加上行星投過來的影子。
+  const ringMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: false });
+  {
+    const p = positionLocal;
+    const ring = ringAt(length(p.xy));
+    const toSun = normalize(sunInRing.sub(p));
+    // 行星（單位球、在原點）有沒有擋在這一點與太陽之間
+    const b = dot(p.negate(), toSun);
+    const d2 = dot(p, p).sub(b.mul(b));
+    const planetShadow = mix(float(1), smoothstep(0.82, 1.0, d2), step(0, b));
+    const lit = mix(0.55, 1.0, abs(toSun.z));
+    ringMat.colorNode = ring.rgb.mul(vec3(1.0, 0.93, 0.82)).mul(lit.mul(planetShadow).mul(1.5));
+    ringMat.opacityNode = ring.alpha.mul(0.9);
+  }
   const ringHolder = new THREE.Group();
-  ringHolder.rotation.x = Math.PI / 2.5;
-  const rings = new THREE.Mesh(
-    new THREE.RingGeometry(1.5, 2.2, 64),
-    new THREE.MeshStandardMaterial({
-      map: ringsMap,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.8,
-      color: '#e7c8a0',
-      roughness: 0.9,
-      metalness: 0.1,
-    }),
-  );
+  ringHolder.rotation.x = RING_TILT;
+  const rings = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 128, 1), ringMat);
   ringHolder.add(rings);
   group.add(planet, ringHolder);
+
+  const syncSun = () => {
+    group.updateWorldMatrix(true, true);
+    planet.worldToLocal(sunInPlanet.value.copy(sunWorld));
+    rings.worldToLocal(sunInRing.value.copy(sunWorld));
+  };
 
   const satellites = [
     { baseR: 2.5, y: 0.1, speed: 0.3, size: 0.04, angle: Math.random() * Math.PI * 2 },
@@ -223,6 +287,7 @@ async function buildSaturn(): Promise<SaturnRig> {
         s.cfg.angle += s.cfg.speed * dt;
         s.mesh.position.set(s.cfg.baseR * Math.cos(s.cfg.angle), s.cfg.y, s.cfg.baseR * Math.sin(s.cfg.angle));
       }
+      syncSun();
       return Math.abs(targetScrollRot - currentScrollRot) > 0.002 || Math.abs(targetScale - currentScale) > 0.005;
     },
   };
@@ -271,7 +336,7 @@ export async function createStarfieldRunner(
   let saturnAnimate = true;
   let scrollY = 0;
   try {
-    saturn = await buildSaturn();
+    saturn = await buildSaturn(sun.position);
     saturn.group.visible = false; // 僅首頁顯示，等 setSaturn 訊息
     scene.add(saturn.group);
   } catch (e) {
