@@ -4,7 +4,7 @@ import { useRouterState } from '@tanstack/react-router';
 import IntroAnimation from './IntroAnimation';
 import BackdropErrorBoundary from './BackdropErrorBoundary';
 import DomSpaceEffects from './DomSpaceEffects';
-import { isSoftwareRenderer, isWebGLAvailable } from '@/lib/webglSupport';
+import { useHardwareGpu } from '@/hooks/useHardwareGpu';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 
 // WebGPU 太空背景（星空+土星單 canvas，three/webgpu 獨立 lazy chunk，不進主 bundle）。
@@ -29,16 +29,21 @@ export default function SpaceBackdropShell() {
       ),
     [],
   );
-  // 3D pre-flight：WebGPU（renderer 首選）或 WebGL（自動 fallback backend）任一可用才掛 3D；
-  // 都沒有（Chromium 137 移除 SwiftShader 後加速全壞的機器）→ 不下載 three chunk，降級純 DOM 特效。
+  // 3D pre-flight：有硬體加速的 WebGL 才掛 3D（renderer 首選 WebGPU，WebGL2 是它的 fallback
+  // backend）。拿不到 context（Chromium 137 移除 SwiftShader 後加速全壞的機器）→ 不下載 three chunk，
+  // 降級純 DOM 特效。
   //
   // 另一種必須擋掉的情況：使用者在瀏覽器設定關掉硬體加速。此時 WebGL context 建得起來（跑
-  // SwiftShader）、navigator.gpu 也還在，兩個檢查都會過，結果 3D 用 CPU 光柵化整站卡死——降低
-  // 星星數量救不了，得完全不掛 3D。偵測到軟體渲染就直接走 DOM 特效（WebGPU 的 Dawn 在這種機器
-  // 上同樣只會拿到 SwiftShader/WARP，所以一個檢查擋兩條路）。
-  // 本元件 client-only，可安全 probe。runtime 才炸的殘餘情況由 ErrorBoundary + worker error 通道接。
-  const softwareGpu = useMemo(() => isSoftwareRenderer(), []);
-  const gpu3dOk = useMemo(() => !softwareGpu && (isWebGLAvailable() || 'gpu' in navigator), [softwareGpu]);
+  // SwiftShader）、navigator.gpu 也還在，結果 3D 用 CPU 光柵化整站卡死——降低星星數量救不了，
+  // 得完全不掛 3D。偵測到軟體渲染就直接走 DOM 特效（WebGPU 的 Dawn 在這種機器上同樣只會拿到
+  // SwiftShader/WARP，所以一個檢查擋兩條路）。
+  //
+  // 探測是非同步的（在 worker 裡做，理由見 lib/webglSupport.ts），結果出來前 3D 與 DOM 特效
+  // 都先不掛——幾十毫秒的事，3D 本來就要約一秒才出來。
+  // runtime 才炸的殘餘情況由 ErrorBoundary + worker error 通道接。
+  const hardwareGpu = useHardwareGpu();
+  const softwareGpu = hardwareGpu === false;
+  const gpu3dOk = hardwareGpu === true;
 
   // 軟體渲染 → 在 <html> 掛 .no-gpu，讓 CSS 一次關掉整站最貴的那些效果（見 index.css）
   useEffect(() => {
@@ -155,7 +160,7 @@ export default function SpaceBackdropShell() {
       {/* DOM 特效（流星/UFO/游標尾跡，非 WebGL）：無論 3D 成敗都掛，頁面永遠有生命感。
           例外是「使用者關掉硬體加速」：整站合成、backdrop-filter、上百個 infinite 動畫全落在
           CPU，連純 DOM 特效都會拖垮捲動——這種機器只留靜態背景。 */}
-      {backdropReady && !softwareGpu && <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />}
+      {backdropReady && hardwareGpu === true && <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />}
     </>
   );
 }

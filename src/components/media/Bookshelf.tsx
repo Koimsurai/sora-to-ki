@@ -10,8 +10,7 @@ import { booksQueryOptions, bookStatsQueryOptions } from '@/data/bookshelfData';
 import NebulaBackground from '@/components/backdrop/NebulaBackground';
 import BookConstellation from './BookConstellation';
 import BookDetailDrawer from './BookDetailDrawer';
-import { useIsClient } from '@/hooks/useMediaQuery';
-import { isSoftwareRenderer } from '@/lib/webglSupport';
+import { useHardwareGpu } from '@/hooks/useHardwareGpu';
 import './Bookshelf.css';
 
 // 3D 圖書館用 lazy import:three.js/R3F 只在 client 切到 3D 模式時才動態載入,
@@ -59,9 +58,8 @@ const Bookshelf = () => {
   const [is3DMode, setIs3DMode] = useState(false);
   const closeZeroGravity = useCallback(() => setIs3DMode(false), []);
   // 軟體渲染（沒有 GPU）跑不動 3D 場景：按鈕留著但停用——藏起來的話 hydrate 後才出現，
-  // 窄螢幕上它自己佔一列，會造成版面位移。isSoftwareRenderer 有快取，只會探測一次。
-  const isClient = useIsClient();
-  const noGpu = isClient && isSoftwareRenderer();
+  // 窄螢幕上它自己佔一列，會造成版面位移。探測結果整個分頁共用，只會做一次。
+  const noGpu = useHardwareGpu() === false;
 
   // 符合條件的書。星圖上不符合的只是變暗、不會消失——天空不能因為篩選而重排。
   const matching = useMemo(

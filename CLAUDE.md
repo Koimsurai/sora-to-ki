@@ -800,7 +800,7 @@ e2e 下來留言頁 31 個元素「變了」、78 個路徑只在一邊——全
 「量到 0 差異」不代表安全，要靠讀規則判斷。
 
 ⚠️ **但 `html.no-gpu` 會套用，而且是反過來的問題。** 無頭 Chromium 就是軟體渲染，
-`SpaceBackdropShell` 的 `isSoftwareRenderer()` 一律為真 → 那個 class 一定掛上去
+`SpaceBackdropShell` 的 GPU 探測（`lib/webglSupport.ts`）一律判成軟體渲染 → 那個 class 一定掛上去
 （實測 12 條路由 × 3 次全部 no-gpu=Y）。後果是 `html.no-gpu *` 把**每一個元素**的
 `backdrop-filter` 壓成 `none !important`，光暈類的 `filter` 也一樣。所以：
 
