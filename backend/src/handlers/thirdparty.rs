@@ -1133,10 +1133,66 @@ pub async fn books_search_external(
             vec![]
         }
     };
+    // 國圖新書書目（本地索引，見 handlers/tw_isbn.rs）：台灣出版的書 Google 多半沒有或版本不對
+    let ncl: Vec<Value> = if is_isbn {
+        crate::handlers::tw_isbn::lookup_isbn(&state.pool, &clean_isbn)
+            .await
+            .iter()
+            .map(crate::handlers::tw_isbn::to_search_json)
+            .collect()
+    } else {
+        crate::handlers::tw_isbn::search(&state.pool, &input, 5)
+            .await
+            .iter()
+            .map(crate::handlers::tw_isbn::to_search_json)
+            .collect()
+    };
+    let ncl_first = is_isbn || input.chars().any(is_cjk);
+    books = merge_with_ncl(ncl, books, ncl_first);
     if books.is_empty() {
         books = search_open_library(&state.http, &state.external.openlibrary, &input, is_isbn).await;
     }
     Json(json!({ "message": "success", "books": books, "warnings": warnings })).into_response()
+}
+
+const fn is_cjk(c: char) -> bool {
+    matches!(c, '\u{3400}'..='\u{9fff}' | '\u{f900}'..='\u{faff}')
+}
+
+/// 把國圖的結果與 Google 的結果合在一起。
+///
+/// - 同一個 ISBN 兩邊都有：留國圖那筆（台灣版的書名、出版社、出版日才是對的），
+///   但國圖沒有封面與簡介——從 Google 那筆補上，Google 那筆就不再重複列出。
+/// - `ncl_first`：用 ISBN 查、或關鍵字有中文時，國圖的排前面；英文關鍵字多半是外文書，Google 在前。
+fn merge_with_ncl(mut ncl: Vec<Value>, google: Vec<Value>, ncl_first: bool) -> Vec<Value> {
+    let mut rest = Vec::with_capacity(google.len());
+    for g in google {
+        let gi = g.get("isbn").and_then(Value::as_str).unwrap_or("");
+        let twin = (!gi.is_empty())
+            .then(|| ncl.iter_mut().find(|n| n.get("isbn").and_then(Value::as_str) == Some(gi)))
+            .flatten();
+        match twin {
+            Some(n) => {
+                for key in ["cover_url", "description", "language"] {
+                    let empty = n.get(key).and_then(Value::as_str).is_none_or(str::is_empty);
+                    if empty && let Some(v) = g.get(key) {
+                        n[key] = v.clone();
+                    }
+                }
+                if n.get("page_count").is_none_or(Value::is_null) {
+                    n["page_count"] = g.get("page_count").cloned().unwrap_or(Value::Null);
+                }
+            }
+            None => rest.push(g),
+        }
+    }
+    if ncl_first {
+        ncl.extend(rest);
+        ncl
+    } else {
+        rest.extend(ncl);
+        rest
+    }
 }
 
 // ── steam/profile（SWR 快取 + miniprofile 客製解析）───────────────────────
@@ -2889,6 +2945,65 @@ mod tests {
         .await;
         assert_eq!(v["books"][0]["title"], "要找的那本");
         assert_eq!(v["books"].as_array().unwrap().len(), 2, "不吻合的也留著（可能是同一本的其他版本）");
+    }
+
+    #[test]
+    fn merge_with_ncl_同一本留國圖那筆並從_google_補封面() {
+        let ncl =
+            vec![json!({ "isbn": "9789864894253", "title": "午夜圖書館", "cover_url": "", "description": "",
+                               "language": "繁體中文", "page_count": null, "source": "ncl" })];
+        let google = vec![
+            json!({ "isbn": "9789864894253", "title": "The Midnight Library", "cover_url": "https://g/c.jpg",
+                    "description": "簡介", "language": "zh-TW", "page_count": 288, "source": "google" }),
+            json!({ "isbn": "9780000000000", "title": "別本", "source": "google" }),
+        ];
+        let out = merge_with_ncl(ncl.clone(), google.clone(), true);
+        assert_eq!(out.len(), 2, "同一個 ISBN 不能列兩次：{out:?}");
+        assert_eq!(out[0]["title"], "午夜圖書館", "書名要留台灣版的");
+        assert_eq!(out[0]["cover_url"], "https://g/c.jpg", "國圖沒有封面，要從 Google 補");
+        assert_eq!(out[0]["description"], "簡介");
+        assert_eq!(out[0]["page_count"], 288);
+        assert_eq!(out[0]["language"], "繁體中文", "國圖有的欄位不能被 Google 蓋掉");
+        assert_eq!(out[1]["title"], "別本");
+
+        // 英文關鍵字：Google 的排前面
+        let out = merge_with_ncl(ncl, google, false);
+        assert_eq!(out[0]["title"], "別本");
+    }
+
+    #[tokio::test]
+    async fn books_search_external_用_isbn_查時國圖的索引排第一() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/google-books/books/v1/volumes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "items": [] })))
+            .mount(&server)
+            .await;
+        let st = state_with_mock(&server).await;
+        sqlx::query("INSERT INTO tw_books (isbn, title, publisher, pub_date, ym) VALUES (?, ?, ?, ?, ?)")
+            .bind("9786267388990")
+            .bind("過於喧囂的孤獨")
+            .bind("大塊文化")
+            .bind("2024-05-00")
+            .bind("202404")
+            .execute(&st.pool)
+            .await
+            .unwrap();
+        let v = body_of(
+            books_search_external(
+                axum::extract::State(st),
+                axum::extract::Query(BookSearchQuery { query: None, isbn: Some("978-626-7388-99-0".into()) }),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(v["books"][0]["title"], "過於喧囂的孤獨", "{v}");
+        assert_eq!(v["books"][0]["source"], "ncl");
+        assert_eq!(v["books"][0]["published_date"], "2024-05");
+        // 國圖有結果就不必再打 OpenLibrary
+        let paths: Vec<String> =
+            server.received_requests().await.unwrap().iter().map(|r| r.url.path().to_string()).collect();
+        assert!(!paths.iter().any(|p| p.contains("openlibrary")));
     }
 
     #[tokio::test]
