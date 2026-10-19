@@ -149,6 +149,8 @@ async fn run() -> anyhow::Result<()> {
     handlers::simkl::spawn_sync(state.clone());
     // 動畫瘋同步 worker（ENABLE_BAHAMUT_SYNC=1 才啟動；見 handlers/bahamut.rs）
     handlers::bahamut::spawn_sync(state.clone());
+    // 國圖新書書目索引（ENABLE_TW_ISBN_SYNC=1 才啟動；見 handlers/tw_isbn.rs）
+    handlers::tw_isbn::spawn_sync(state.clone());
 
     let app = router::build_router(state);
 

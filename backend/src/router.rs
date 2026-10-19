@@ -215,6 +215,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/admin/bahamut/status", get(handlers::bahamut::status))
         .route("/api/admin/bahamut/cookie", post(handlers::bahamut::cookie))
         .route("/api/books/search/external", get(handlers::thirdparty::books_search_external))
+        .route("/api/books/tw", get(handlers::tw_isbn::tw_search))
         // OpenAPI 文件（utoipa，與前端 specta 型別同源）：spec 自架 + Scalar UI
         .route("/api/openapi.json", get(openapi::openapi_json))
         .merge(Scalar::with_url("/api/docs", openapi::ApiDoc::openapi()))

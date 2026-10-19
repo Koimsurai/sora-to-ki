@@ -25,6 +25,7 @@ pub mod stats;
 pub mod tags;
 pub mod thirdparty;
 pub mod thoughts;
+pub mod tw_isbn;
 pub mod upload;
 pub mod vitals;
 pub mod watch;

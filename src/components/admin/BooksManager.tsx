@@ -30,6 +30,8 @@ import { type FormEvent } from 'react';
 
 /** `GET /api/books` 的單本，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
 type Book = BookRow;
+/** 外部搜尋的一筆：同樣的欄位，多一個來源（國圖的書目沒有封面與簡介）。 */
+type SearchHit = Book & { source?: 'google' | 'openlibrary' | 'ncl' };
 
 interface BookFormData {
   isbn: string;
@@ -60,7 +62,7 @@ export default function BooksManager() {
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [deleteId, setDeleteId] = useState<number | string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Book[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchHit[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [formData, setFormData] = useState<BookFormData>({
     isbn: '',
@@ -116,7 +118,7 @@ export default function BooksManager() {
     setIsSearching(true);
     try {
       const response = await fetch(`/api/books/search/external?query=${encodeURIComponent(searchQuery)}`);
-      const data = (await response.json()) as { message?: string; books?: Book[]; warnings?: string[] };
+      const data = (await response.json()) as { message?: string; books?: SearchHit[]; warnings?: string[] };
 
       if (data.message === 'success' && data.books) {
         setSearchResults(data.books);
@@ -368,7 +370,8 @@ export default function BooksManager() {
                         {searchResults.map((book) => (
                           <button
                             type="button"
-                            key={book.isbn}
+                            // OpenLibrary 的結果可能沒有 ISBN；來源＋ISBN＋書名才夠分辨
+                            key={`${book.source ?? ''}-${book.isbn ?? ''}-${book.title}`}
                             className="w-full text-left flex gap-3 p-3 bg-background rounded-lg hover:bg-accent cursor-pointer transition-colors"
                             onClick={() => handleSelectFromSearch(book)}
                           >
@@ -376,7 +379,17 @@ export default function BooksManager() {
                               <img src={book.cover_url} alt={book.title} className="w-12 h-16 object-cover rounded" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm truncate">{book.title}</h4>
+                              <h4 className="font-medium text-sm truncate">
+                                {book.source === 'ncl' && (
+                                  <span
+                                    className="mr-1.5 rounded border border-border px-1 text-fs-10 text-muted-foreground"
+                                    title="國家圖書館新書書目：台灣版的書名與出版社是對的，但沒有封面與簡介"
+                                  >
+                                    國圖
+                                  </span>
+                                )}
+                                {book.title}
+                              </h4>
                               {book.authors && <p className="text-xs text-muted-foreground">{book.authors}</p>}
                               {book.isbn && <p className="text-xs text-muted-foreground">ISBN: {book.isbn}</p>}
                             </div>
