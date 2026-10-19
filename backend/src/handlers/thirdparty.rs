@@ -909,11 +909,37 @@ fn s_or_empty(v: Option<&Value>) -> String {
 }
 
 /// `base` 是 Google Books 的 base URL（`state.external.google_books`）。
-async fn search_google_books(http: &reqwest::Client, base: &str, q: &str) -> Vec<Value> {
-    let url = format!("{base}/books/v1/volumes?q={}&maxResults=10", encode_uri_component(q));
-    let Some(data) = fetch_json(http, &url).await else { return vec![] };
-    let Some(items) = data.get("items").and_then(|i| i.as_array()) else { return vec![] };
-    items
+///
+/// ⚠ 一定要帶 `GOOGLE_BOOKS_API_KEY`。沒帶 key 的請求吃的是**全世界共用的匿名額度**，
+/// 2026-10 實測書櫃裡 22 個 ISBN 全部 429 `rateLimitExceeded`——後台用 ISBN「常常查不到」
+/// 就是這個。而 429 的 body 也是合法 JSON（只是沒有 `items`），所以以前會被當成「查無此書」，
+/// 靜靜退回 OpenLibrary（台灣的書它 22 本只有 8 本）。現在非 2xx 一律回 Err，由呼叫端轉成
+/// 後台看得到的 warning。
+async fn search_google_books(http: &reqwest::Client, base: &str, q: &str) -> Result<Vec<Value>, String> {
+    let mut url = format!("{base}/books/v1/volumes?q={}&maxResults=10", encode_uri_component(q));
+    if let Some(key) = std::env::var("GOOGLE_BOOKS_API_KEY").ok().filter(|s| !s.is_empty()) {
+        url.push_str("&key=");
+        url.push_str(&encode_uri_component(&key));
+    }
+    let resp = http.get(&url).send().await.map_err(|e| format!("Google Books 連不上：{e}"))?;
+    let status = resp.status();
+    let body = resp.text().await.map_err(|e| format!("Google Books 回應讀取失敗：{e}"))?;
+    if !status.is_success() {
+        let reason = serde_json::from_str::<Value>(&body)
+            .ok()
+            .and_then(|v| v.pointer("/error/errors/0/reason").and_then(|r| r.as_str()).map(String::from))
+            .unwrap_or_default();
+        return Err(if status == StatusCode::TOO_MANY_REQUESTS {
+            format!("Google Books 額度用完（{status} {reason}）——檢查 GOOGLE_BOOKS_API_KEY")
+        } else {
+            format!("Google Books 回 {status} {reason}")
+        });
+    }
+    let mut data: Value =
+        serde_json::from_str(&body).map_err(|e| format!("Google Books 回應不是 JSON：{e}"))?;
+    crate::util::js_normalize_numbers(&mut data);
+    let Some(items) = data.get("items").and_then(|i| i.as_array()) else { return Ok(vec![]) };
+    Ok(items
         .iter()
         .map(|item| {
             let v = item.get("volumeInfo").cloned().unwrap_or_else(|| json!({}));
@@ -956,7 +982,7 @@ async fn search_google_books(http: &reqwest::Client, base: &str, q: &str) -> Vec
                 "source": "google",
             })
         })
-        .collect()
+        .collect())
 }
 
 async fn fetch_json(http: &reqwest::Client, url: &str) -> Option<Value> {
@@ -1090,11 +1116,21 @@ pub async fn books_search_external(
         input.clone()
     };
 
-    let mut books = search_google_books(&state.http, &state.external.google_books, &search_query).await;
+    // warnings：上游壞掉時告訴後台「是來源的問題」，而不是讓它看起來像「這本書不存在」。
+    let mut warnings: Vec<String> = Vec::new();
+    let mut books = match search_google_books(&state.http, &state.external.google_books, &search_query).await
+    {
+        Ok(b) => b,
+        Err(e) => {
+            tracing::warn!(error = %e, "books search: Google Books 失敗，改查 OpenLibrary");
+            warnings.push(e);
+            vec![]
+        }
+    };
     if books.is_empty() {
         books = search_open_library(&state.http, &state.external.openlibrary, &input, is_isbn).await;
     }
-    Json(json!({ "message": "success", "books": books })).into_response()
+    Json(json!({ "message": "success", "books": books, "warnings": warnings })).into_response()
 }
 
 // ── steam/profile（SWR 快取 + miniprofile 客製解析）───────────────────────
@@ -2820,6 +2856,72 @@ mod tests {
         let paths: Vec<String> =
             server.received_requests().await.unwrap().iter().map(|r| r.url.path().to_string()).collect();
         assert!(!paths.iter().any(|p| p.contains("openlibrary")), "Google 有結果就不必補位");
+        assert_eq!(v["warnings"], json!([]), "正常時不該有 warning");
+    }
+
+    #[tokio::test]
+    async fn books_search_external_google_429_要回報而不是當成查無此書() {
+        // 2026-10 的實況：沒帶 key 時 Google Books 對每個 ISBN 都回 429，body 是合法 JSON 但沒有 items。
+        // 以前那會被當成「查無結果」，後台只看到空清單。
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/google-books/books/v1/volumes"))
+            .respond_with(ResponseTemplate::new(429).set_body_json(json!({
+                "error": { "code": 429, "errors": [{ "reason": "rateLimitExceeded" }] }
+            })))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/openlibrary/api/books"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "ISBN:9789573267478": { "title": "補位找到的書" }
+            })))
+            .mount(&server)
+            .await;
+        let st = state_with_mock(&server).await;
+
+        let v = body_of(
+            books_search_external(
+                axum::extract::State(st),
+                axum::extract::Query(BookSearchQuery { query: None, isbn: Some("9789573267478".into()) }),
+            )
+            .await,
+        )
+        .await;
+        let w = v["warnings"].as_array().unwrap();
+        assert_eq!(w.len(), 1, "Google 失敗要留下一筆 warning：{v}");
+        let msg = w[0].as_str().unwrap();
+        assert!(msg.contains("額度") && msg.contains("rateLimitExceeded"), "訊息要講出原因：{msg}");
+        assert_eq!(v["books"][0]["title"], "補位找到的書", "Google 失敗仍要退回 OpenLibrary");
+    }
+
+    #[tokio::test]
+    async fn books_search_external_有設_key_就帶上() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/google-books/books/v1/volumes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "items": [] })))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/openlibrary/search.json"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "docs": [] })))
+            .mount(&server)
+            .await;
+        let st = state_with_mock(&server).await;
+        // SAFETY: nextest 一個測試一個行程，不會跟別的測試搶 env。
+        unsafe { std::env::set_var("GOOGLE_BOOKS_API_KEY", "test-key") };
+        let _ = books_search_external(
+            axum::extract::State(st),
+            axum::extract::Query(BookSearchQuery { query: Some("任何書".into()), isbn: None }),
+        )
+        .await;
+        // SAFETY: 同上。
+        unsafe { std::env::remove_var("GOOGLE_BOOKS_API_KEY") };
+        let reqs = server.received_requests().await.unwrap();
+        let google = reqs.iter().find(|r| r.url.path().contains("volumes")).expect("該打 Google Books");
+        let key = google.url.query_pairs().find(|(k, _)| k == "key").map(|(_, v)| v.into_owned());
+        assert_eq!(key.as_deref(), Some("test-key"));
     }
 
     // ── Steam miniprofile 的 HTML 爬取 ────────────────────────────────────

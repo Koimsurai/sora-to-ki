@@ -45,7 +45,12 @@ interface BookFormData {
   reading_status: string;
   rating: number | null;
   personal_notes: string;
+  /** YYYY-MM-DD；空字串＝沒有（送出時後端會存成 null，所以也能拿來清掉）。 */
+  date_started: string;
+  date_finished: string;
 }
+
+const today = () => new Date().toLocaleDateString('sv-SE'); // sv-SE 的格式剛好是 YYYY-MM-DD（本地時區）
 
 export default function BooksManager() {
   const queryClient = useQueryClient();
@@ -71,6 +76,8 @@ export default function BooksManager() {
     reading_status: 'to-read',
     rating: null,
     personal_notes: '',
+    date_started: '',
+    date_finished: '',
   });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState('');
@@ -109,12 +116,14 @@ export default function BooksManager() {
     setIsSearching(true);
     try {
       const response = await fetch(`/api/books/search/external?query=${encodeURIComponent(searchQuery)}`);
-      const data = (await response.json()) as { message?: string; books?: Book[] };
+      const data = (await response.json()) as { message?: string; books?: Book[]; warnings?: string[] };
 
       if (data.message === 'success' && data.books) {
         setSearchResults(data.books);
+        // 來源壞掉（例如 Google Books 額度用完）時要講出來，不然看起來就像「這本書不存在」
+        for (const w of data.warnings ?? []) toast.warning(w, { duration: 10000 });
         if (data.books.length === 0) {
-          toast.info('未找到相關書籍');
+          toast.info(data.warnings?.length ? '備用來源（OpenLibrary）也沒有這本' : '未找到相關書籍');
         } else {
           toast.success(`找到 ${data.books.length} 本書籍`);
         }
@@ -145,6 +154,8 @@ export default function BooksManager() {
       reading_status: 'to-read',
       rating: null,
       personal_notes: '',
+      date_started: '',
+      date_finished: '',
     });
     setSearchResults([]);
     setSearchQuery('');
@@ -198,6 +209,8 @@ export default function BooksManager() {
       reading_status: book.reading_status ?? 'to-read',
       rating: book.rating ?? null,
       personal_notes: book.personal_notes ?? '',
+      date_started: book.date_started?.slice(0, 10) ?? '',
+      date_finished: book.date_finished?.slice(0, 10) ?? '',
     });
     setDialogOpen(true);
   };
@@ -241,6 +254,8 @@ export default function BooksManager() {
       reading_status: 'to-read',
       rating: null,
       personal_notes: '',
+      date_started: '',
+      date_finished: '',
     });
     setEditingBook(null);
     setSearchResults([]);
@@ -491,7 +506,18 @@ export default function BooksManager() {
                       <select
                         id="reading_status"
                         value={formData.reading_status}
-                        onChange={(e) => setFormData({ ...formData, reading_status: e.target.value })}
+                        onChange={(e) => {
+                          // 切到「閱讀中／已完成」時順手補今天的日期（只補空的，已經填過的不動）
+                          const status = e.target.value;
+                          setFormData({
+                            ...formData,
+                            reading_status: status,
+                            date_started:
+                              status !== 'to-read' && !formData.date_started ? today() : formData.date_started,
+                            date_finished:
+                              status === 'read' && !formData.date_finished ? today() : formData.date_finished,
+                          });
+                        }}
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         <option value="to-read">想讀</option>
@@ -512,6 +538,27 @@ export default function BooksManager() {
                           setFormData({ ...formData, rating: e.target.value ? parseFloat(e.target.value) : null })
                         }
                         placeholder="5"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="date_started">開始讀</Label>
+                      <Input
+                        id="date_started"
+                        type="date"
+                        value={formData.date_started}
+                        onChange={(e) => setFormData({ ...formData, date_started: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="date_finished">讀完</Label>
+                      <Input
+                        id="date_finished"
+                        type="date"
+                        value={formData.date_finished}
+                        onChange={(e) => setFormData({ ...formData, date_finished: e.target.value })}
                       />
                     </div>
                   </div>
