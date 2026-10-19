@@ -194,7 +194,8 @@ pub async fn create_book(
     let mut q = sqlx::query(
         "INSERT INTO books (isbn, title, authors, publisher, published_date, description, \
          cover_url, page_count, language, categories, reading_status, rating, personal_notes, \
-         date_added, date_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+         date_started, date_finished, date_added, date_updated) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), datetime('now'), datetime('now'))",
     );
     for k in BOOK_FIELDS {
         // reading_status 缺 key → 'to-read'（destructure default，null 不觸發）
@@ -204,6 +205,8 @@ pub async fn create_book(
             q = bind_val(q, body.get(k));
         }
     }
+    q = bind_val(q, body.get("date_started"));
+    q = bind_val(q, body.get("date_finished"));
     match q.execute(&state.pool).await {
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(r) => {
@@ -220,6 +223,7 @@ pub async fn create_book(
 }
 
 /// `PUT /api/books/:id`（requireAdmin）—— 15 欄全 COALESCE（缺/null → 保留舊值）。
+/// 兩個日期另外包一層 `NULLIF(…, '')`：傳空字串＝清掉（只用 COALESCE 的話日期填了就清不回去）。
 #[utoipa::path(put, path = "/api/books/{id}", tag = "books", security(("bearer" = [])),
     params(("id" = String, Path)),
     responses((status = 200, description = "更新書籍（動態 JSON）"), (status = 401, description = "未授權")))]
@@ -237,7 +241,8 @@ pub async fn update_book(
          page_count = COALESCE(?, page_count), language = COALESCE(?, language), \
          categories = COALESCE(?, categories), reading_status = COALESCE(?, reading_status), \
          rating = COALESCE(?, rating), personal_notes = COALESCE(?, personal_notes), \
-         date_started = COALESCE(?, date_started), date_finished = COALESCE(?, date_finished), \
+         date_started = NULLIF(COALESCE(?, date_started), ''), \
+         date_finished = NULLIF(COALESCE(?, date_finished), ''), \
          date_updated = datetime('now') WHERE id = ?",
     );
     for k in BOOK_FIELDS {
