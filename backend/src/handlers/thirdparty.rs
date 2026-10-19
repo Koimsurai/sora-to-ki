@@ -1110,17 +1110,23 @@ pub async fn books_search_external(
     static ISBN_RE: std::sync::LazyLock<regex::Regex> =
         std::sync::LazyLock::new(|| regex::Regex::new(r"^[\d-]{10,17}$").expect("字面 regex"));
     let is_isbn = ISBN_RE.is_match(&no_space);
-    let search_query = if is_isbn {
-        format!("isbn:{}", input.chars().filter(|c| *c != '-' && !c.is_whitespace()).collect::<String>())
-    } else {
-        input.clone()
-    };
+    let clean_isbn: String = input.chars().filter(|c| *c != '-' && !c.is_whitespace()).collect();
+    // ⚠ 不要加 `isbn:` 前綴。2026-10 實測 Google Books 的 `isbn:` 運算子對任何書都回 0 筆
+    //   （連 Zero to One 的 9780804139298 都是），直接查數字反而找得到。代價是數字也可能出現在
+    //   別本書的內文裡，所以下面把 ISBN 完全吻合的那幾本排到最前面。
+    let search_query = if is_isbn { clean_isbn.clone() } else { input.clone() };
 
     // warnings：上游壞掉時告訴後台「是來源的問題」，而不是讓它看起來像「這本書不存在」。
     let mut warnings: Vec<String> = Vec::new();
     let mut books = match search_google_books(&state.http, &state.external.google_books, &search_query).await
     {
-        Ok(b) => b,
+        Ok(mut b) => {
+            if is_isbn {
+                // 穩定排序：吻合的在前，其餘維持 Google 的相關度順序
+                b.sort_by_key(|x| x.get("isbn").and_then(Value::as_str) != Some(clean_isbn.as_str()));
+            }
+            b
+        }
         Err(e) => {
             tracing::warn!(error = %e, "books search: Google Books 失敗，改查 OpenLibrary");
             warnings.push(e);
@@ -2787,7 +2793,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn books_search_external_認得出_isbn_並改用_isbn_查詢() {
+    async fn books_search_external_認得出_isbn_去掉連字號_不加_isbn_前綴() {
         let server = MockServer::start().await;
         Mock::given(method("GET"))
             .and(path("/google-books/books/v1/volumes"))
@@ -2801,7 +2807,8 @@ mod tests {
             .await;
         let st = state_with_mock(&server).await;
 
-        // 帶連字號的 ISBN：查詢字串要變成 isbn:<去掉連字號>
+        // 帶連字號的 ISBN：查詢字串要變成去掉連字號的純數字。
+        // 不加 `isbn:` 前綴——Google Books 的那個運算子現在對任何書都回 0 筆（見 books_search_external）。
         let _ = books_search_external(
             axum::extract::State(st),
             axum::extract::Query(BookSearchQuery { query: None, isbn: Some("978-1-234-56789-0".into()) }),
@@ -2810,7 +2817,7 @@ mod tests {
         let reqs = server.received_requests().await.unwrap();
         let google = reqs.iter().find(|r| r.url.path().contains("volumes")).expect("該打 Google Books");
         let q = google.url.query_pairs().find(|(k, _)| k == "q").unwrap().1.into_owned();
-        assert_eq!(q, "isbn:9781234567890", "連字號要去掉，而且加上 isbn: 前綴");
+        assert_eq!(q, "9781234567890", "連字號要去掉，而且不能加 isbn: 前綴");
     }
 
     #[tokio::test]
@@ -2857,6 +2864,31 @@ mod tests {
             server.received_requests().await.unwrap().iter().map(|r| r.url.path().to_string()).collect();
         assert!(!paths.iter().any(|p| p.contains("openlibrary")), "Google 有結果就不必補位");
         assert_eq!(v["warnings"], json!([]), "正常時不該有 warning");
+    }
+
+    #[tokio::test]
+    async fn books_search_external_用_isbn_查時_isbn_吻合的排第一() {
+        // 不加 isbn: 前綴之後，數字也可能出現在別本書的內容裡；吻合的那本要排在最前面
+        let server = MockServer::start().await;
+        let item = |isbn: &str, title: &str| json!({ "volumeInfo": { "title": title, "industryIdentifiers": [{ "type": "ISBN_13", "identifier": isbn }] } });
+        Mock::given(method("GET"))
+            .and(path("/google-books/books/v1/volumes"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "items": [item("9780000000001", "引用了這個數字的別本書"), item("9789573267478", "要找的那本")]
+            })))
+            .mount(&server)
+            .await;
+        let st = state_with_mock(&server).await;
+        let v = body_of(
+            books_search_external(
+                axum::extract::State(st),
+                axum::extract::Query(BookSearchQuery { query: None, isbn: Some("978-957-32-6747-8".into()) }),
+            )
+            .await,
+        )
+        .await;
+        assert_eq!(v["books"][0]["title"], "要找的那本");
+        assert_eq!(v["books"].as_array().unwrap().len(), 2, "不吻合的也留著（可能是同一本的其他版本）");
     }
 
     #[tokio::test]
