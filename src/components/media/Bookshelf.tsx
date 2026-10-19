@@ -10,6 +10,8 @@ import { booksQueryOptions, bookStatsQueryOptions } from '@/data/bookshelfData';
 import NebulaBackground from '@/components/backdrop/NebulaBackground';
 import BookConstellation from './BookConstellation';
 import BookDetailDrawer from './BookDetailDrawer';
+import { useIsClient } from '@/hooks/useMediaQuery';
+import { isSoftwareRenderer } from '@/lib/webglSupport';
 import './Bookshelf.css';
 
 // 3D 圖書館用 lazy import:three.js/R3F 只在 client 切到 3D 模式時才動態載入,
@@ -55,6 +57,11 @@ const Bookshelf = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [is3DMode, setIs3DMode] = useState(false);
+  const closeZeroGravity = useCallback(() => setIs3DMode(false), []);
+  // 軟體渲染（沒有 GPU）跑不動 3D 場景：按鈕留著但停用——藏起來的話 hydrate 後才出現，
+  // 窄螢幕上它自己佔一列，會造成版面位移。isSoftwareRenderer 有快取，只會探測一次。
+  const isClient = useIsClient();
+  const noGpu = isClient && isSoftwareRenderer();
 
   // 符合條件的書。星圖上不符合的只是變暗、不會消失——天空不能因為篩選而重排。
   const matching = useMemo(
@@ -152,7 +159,13 @@ const Bookshelf = () => {
               </button>
             )}
           </div>
-          <button type="button" className="view-mode-toggle" onClick={() => setIs3DMode(true)}>
+          <button
+            type="button"
+            className="view-mode-toggle"
+            disabled={noGpu}
+            title={noGpu ? t('bookshelf.zg.unavailable') : undefined}
+            onClick={() => setIs3DMode(true)}
+          >
             🌌 {t('bookshelf.zeroGravity')}
           </button>
         </div>
@@ -240,21 +253,7 @@ const Bookshelf = () => {
       {/* 3D 零重力圖書館(client-only,lazy)*/}
       {is3DMode && (
         <Suspense fallback={null}>
-          <ZeroGravityLibrary
-            books={books
-              .filter((b) => matching.has(b.id))
-              .map((book) => ({
-                id: book.id,
-                title: book.title,
-                authors: book.authors ? book.authors.split(',') : [],
-                // 生成型別是 `| null`（serde 語意）；ZGL 的介面用 optional，`?? undefined` 橋接。
-                coverUrl: book.cover_url ?? undefined,
-                description: book.description ?? undefined,
-                publishedDate: book.published_date ?? undefined,
-                pageCount: book.page_count ?? undefined,
-              }))}
-            onClose={() => setIs3DMode(false)}
-          />
+          <ZeroGravityLibrary books={books.filter((b) => matching.has(b.id))} onClose={closeZeroGravity} />
         </Suspense>
       )}
     </div>

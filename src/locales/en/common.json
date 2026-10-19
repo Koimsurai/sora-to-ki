@@ -331,7 +331,10 @@
     "zeroGravity": "Zero-G mode",
     "zg": {
       "hint": "Drag to rotate · Scroll to zoom · Click a book",
-      "back": "Back to shelf"
+      "back": "Back to shelf",
+      "inOrbit": "{{count}} books in orbit",
+      "unavailable": "Zero-G mode needs a GPU, which this device doesn’t have",
+      "pages": "{{count}} pages"
     },
     "twoDView": "2D view",
     "skyStats": "{{total}} stars · {{read}} lit · {{reading}} lighting up",

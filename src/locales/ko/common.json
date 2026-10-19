@@ -331,7 +331,10 @@
     "zeroGravity": "Zero-G 모드",
     "zg": {
       "hint": "드래그로 회전 · 스크롤로 줌 · 클릭하여 책 보기",
-      "back": "책장으로 돌아가기"
+      "back": "책장으로 돌아가기",
+      "inOrbit": "궤도 위의 책 {{count}}권",
+      "unavailable": "이 기기에는 GPU가 없어 Zero-G 모드를 사용할 수 없습니다",
+      "pages": "{{count}}쪽"
     },
     "twoDView": "2D 보기",
     "skyStats": "별 {{total}}개 · 빛나는 별 {{read}} · 밝아지는 별 {{reading}}",

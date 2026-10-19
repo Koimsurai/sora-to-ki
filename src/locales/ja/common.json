@@ -331,7 +331,10 @@
     "zeroGravity": "Zero-G モード",
     "zg": {
       "hint": "ドラッグで回転 · ホイールでズーム · クリックで本を開く",
-      "back": "本棚に戻る"
+      "back": "本棚に戻る",
+      "inOrbit": "{{count}} 冊が軌道上に",
+      "unavailable": "この端末には GPU がないため、Zero-G モードは使えません",
+      "pages": "{{count}} ページ"
     },
     "twoDView": "2D 表示",
     "skyStats": "{{total}} 個の星 · 灯った星 {{read}} · 灯りつつある星 {{reading}}",

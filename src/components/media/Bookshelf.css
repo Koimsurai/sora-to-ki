@@ -191,7 +191,11 @@
     background var(--dur-300) ease,
     color var(--dur-300) ease;
 }
-.view-mode-toggle:hover,
+.view-mode-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.view-mode-toggle:not(:disabled):hover,
 .view-mode-toggle:focus-visible {
   background: rgba(var(--brand-rgb), 0.15);
   color: var(--text-primary);

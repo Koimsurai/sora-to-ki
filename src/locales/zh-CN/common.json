@@ -331,7 +331,10 @@
     "zeroGravity": "零重力模式",
     "zg": {
       "hint": "拖曳旋转 · 滚轮缩放 · 点击书籍查看",
-      "back": "返回书架"
+      "back": "返回书架",
+      "inOrbit": "{{count}} 本书在轨道上",
+      "unavailable": "这台设备没有可用的 GPU，零重力模式跑不动",
+      "pages": "{{count}} 页"
     },
     "twoDView": "2D 视图",
     "skyStats": "{{total}} 颗星 · 已点亮 {{read}} 颗 · 正在点亮 {{reading}} 颗",
