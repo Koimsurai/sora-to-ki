@@ -68,7 +68,7 @@ export interface PlacedStar<B> {
   series: Series | null;
 }
 
-export interface ConstellationLine {
+interface ConstellationLine {
   series: string;
   from: { x: number; y: number };
   to: { x: number; y: number };
@@ -76,14 +76,14 @@ export interface ConstellationLine {
   ids: [number, number];
 }
 
-export interface Cluster {
+interface Cluster {
   key: GroupKey;
   x: number;
   y: number;
   count: number;
 }
 
-export interface SeriesLabel {
+interface SeriesLabel {
   name: string;
   x: number;
   y: number;
