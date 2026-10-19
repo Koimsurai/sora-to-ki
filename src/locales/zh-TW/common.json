@@ -331,9 +331,40 @@
     "zeroGravity": "零重力模式",
     "zg": {
       "hint": "拖曳旋轉 · 滾輪縮放 · 點擊書籍查看",
-      "back": "返回書架"
+      "back": "返回書架",
+      "inOrbit": "{{count}} 本書在軌道上",
+      "unavailable": "這台裝置沒有可用的 GPU，零重力模式跑不動",
+      "pages": "{{count}} 頁"
     },
     "twoDView": "2D 視圖",
+    "skyStats": "{{total}} 顆星 · 已點亮 {{read}} 顆 · 正在點亮 {{reading}} 顆",
+    "avgRating": "平均 {{rating}}★",
+    "groups": {
+      "fantasy": "奇幻冒險",
+      "literature": "文學小說",
+      "life": "生活與心靈",
+      "other": "其他"
+    },
+    "legend": {
+      "read": "讀完了：點亮的星，越亮評分越高",
+      "reading": "閱讀中：正在點亮",
+      "toRead": "想讀：還沒點亮",
+      "notes": "有星芒：寫了筆記"
+    },
+    "skyHint": "← 左右滑動看整片天空 →",
+    "listTitle": "書目",
+    "noMatch": "沒有符合的書",
+    "hasNotes": "有筆記",
+    "close": "關閉",
+    "started": "開始讀",
+    "finished": "讀完",
+    "myNotes": "我的筆記",
+    "about": "簡介",
+    "showMore": "展開",
+    "showLess": "收合",
+    "publisher": "出版社",
+    "publishedDate": "出版日期",
+    "pages": "頁數",
     "filterStatus": "閱讀狀態",
     "filterRating": "評分",
     "filterSort": "排序",
