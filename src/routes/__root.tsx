@@ -33,10 +33,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // 指向既有的 /rss（後端 handlers/rss.rs）——/rss.xml 只是 301 過去的別名。
       { rel: 'alternate', type: 'application/rss+xml', title: 'Koimsurai 手記', href: '/rss' },
       // 圖示由 scripts/gen-icons.mjs 從 scripts/icons/ 的 SVG 產生。
-      // 在這之前 favicon.ico 沒有宣告、全靠瀏覽器猜路徑；Google 搜尋優先採用這裡宣告、
-      // 尺寸是 48 倍數的那張，所以另外給一張 96px 的 PNG。
-      { rel: 'icon', href: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+      // 分頁列（行星）與 Google 搜尋（新月與樹）刻意是兩張圖，機制寫在 gen-icons.mjs 檔頭：
+      // Google 那邊靠 robots.txt 只對 Googlebot-Image 擋掉前兩者；分頁列這邊 **SVG 要排最後**
+      // （Firefox 取最後宣告的那支，Chrome 有 SVG 就用 SVG）。
       { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96.png' },
+      { rel: 'icon', href: '/favicon.ico', sizes: '16x16 32x32' },
+      { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
       // 滿版無圓角：iOS 自己裁圓角，透明的角會被填成黑色。
       { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
     ],
