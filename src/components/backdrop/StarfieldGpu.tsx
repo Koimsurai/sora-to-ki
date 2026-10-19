@@ -12,6 +12,9 @@ import type { StarfieldRunner } from '@/lib/starfieldGpu';
 const canOffscreen =
   typeof HTMLCanvasElement !== 'undefined' && 'transferControlToOffscreen' in HTMLCanvasElement.prototype;
 
+/** runner 還沒就緒時徽章顯示的字串，同時是 canvas 淡入的開關 */
+const BACKEND_PENDING = '初始化中…';
+
 const canvasStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
@@ -33,7 +36,7 @@ interface StarfieldGpuProps {
 
 export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = true, zIndex = 1 }: StarfieldGpuProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [backend, setBackend] = useState('初始化中…');
+  const [backend, setBackend] = useState(BACKEND_PENDING);
   const [failed, setFailed] = useState(false);
   const [perf, setPerf] = useState<{ fps: number; avgMs: number; quality?: number; gpuMs?: number | null } | null>(
     null,
@@ -228,7 +231,18 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
     <>
       {/* key=generation：transferControlToOffscreen 一張 canvas 只能做一次，
           device lost 之後必須換一個全新的 DOM 節點才重建得起來 */}
-      <canvas key={generation} ref={canvasRef} style={{ ...canvasStyle, zIndex }} />
+      {/* runner 就緒前透明、就緒後淡入：worker 建場景＋編 shader 要將近一秒，頁面早就畫好了，
+          星空直接冒出來會像閃一下。opacity 只走合成，不會讓這張 canvas 多畫任何東西。 */}
+      <canvas
+        key={generation}
+        ref={canvasRef}
+        style={{
+          ...canvasStyle,
+          zIndex,
+          opacity: backend === BACKEND_PENDING ? 0 : 1,
+          transition: 'opacity var(--dur-1000) ease',
+        }}
+      />
       {/* backend 徽章：?debug=perf 才顯示（正式訪客不看 debug 資訊） */}
       {perfDebug && (
         <div

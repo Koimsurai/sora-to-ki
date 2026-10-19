@@ -24,6 +24,7 @@ import {
   vec4,
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { createFramePacer } from './framePacer';
 
 export const STAR_COUNT = 26000; // 14k 主層 + 12k 星系層（≈舊棧全部點數 27.1k；WebGPU 下加星幾乎免費）
 
@@ -299,10 +300,15 @@ export async function createStarfieldRunner(
   //
   // 閒置時降到 30fps：星空的轉速是 0.01～0.02 rad/s、土星自轉 0.05 rad/s，30fps 跟 60fps 看不出差別，
   // 但 GPU 的工作量減半（筆電的風扇與電池差很多）。
-  // 有「動作」的時候（捲動、改尺寸、intro、土星的 lerp 還沒收斂）照常全速，捲動跟著土星轉不會頓。
+  // 有「動作」的時候（捲動、改尺寸、intro、土星的 lerp 還沒收斂）回到 60fps，捲動跟著土星轉不會頓。
   // rAF 還是每個 vsync 都會進來，只是閒置時隔一幀才畫——跳過的那一幀只花幾微秒。
+  //
+  // 有動作的時候也不超過約 60fps：rAF 跟著螢幕更新率走，144Hz 的螢幕上工作量是 60Hz 的 2.4 倍，
+  // 而背景轉得很慢，多出來的幀看不出差別。怎麼跳格見 framePacer.ts。
   const IDLE_AFTER_MS = 1500;
+  const ACTIVE_FRAME_MS = 1000 / 60;
   const IDLE_FRAME_MS = 1000 / 30;
+  const pacer = createFramePacer();
   let lastActive = 0;
   const markActive = () => {
     lastActive = performance.now();
@@ -339,7 +345,7 @@ export async function createStarfieldRunner(
 
   const loop = (now: number) => {
     const active = now - lastActive < IDLE_AFTER_MS;
-    if (!active && lastRender >= 0 && now - lastRender < IDLE_FRAME_MS - 2) return;
+    if (!pacer.shouldRender(now, active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS)) return;
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
     const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
     lastRender = now;
@@ -403,6 +409,7 @@ export async function createStarfieldRunner(
       setRunning(running) {
         if (running) {
           lastRender = -1; // 暫停期間的時間不灌進 delta
+          pacer.reset();
           markActive();
           void renderer.setAnimationLoop(loop);
         } else {
