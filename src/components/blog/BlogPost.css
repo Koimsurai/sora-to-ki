@@ -797,10 +797,12 @@ a.series-nav-title:hover {
   color: #fff;
 }
 
-/* ── View Transitions（路由切換時的淡入淡出 + 微動畫）── */
-@view-transition {
-  navigation: auto;
-}
+/* ── View Transitions（路由切換時的淡入淡出 + 微動畫）──
+   站內換頁是 TanStack Router 的同頁轉場（Link 的 viewTransition），下面的動畫就是給它的。
+   ⚠ 這裡不要加 `@view-transition { navigation: auto }`（跨頁轉場的開關）。它原本在這裡，
+   於是只有文章頁 opt-in：從文章整頁跳到別頁（頭像選單的「管理後台」是 location.assign）時，
+   舊頁開始轉場、新頁沒 opt-in，瀏覽器中止轉場，新頁冒出沒人接的 rejection
+  （GlitchTip「InvalidStateError: Transition was aborted … opt-in disabled」）。 */
 /* VT 只做「純 crossfade」不帶位移——位移進場由 post-enter / side-in 負責。
    否則整頁 y+8 淡入會跟元素自己的滑入疊加 → 使用者看到「動畫跑兩次 / 抽一下」
   （實測 animationstart：blogFadeIn 與 post-enter 在同次導航同時開跑）。 */
