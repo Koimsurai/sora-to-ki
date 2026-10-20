@@ -47,28 +47,37 @@
   }
 }
 
+/* 標題像古星圖角落的圖版標籤：襯線字（跟文章內文同一套）、一顆星、一條細線、字距拉開的英文。
+   刻意不用文章頁那種紫粉漸層——那是「筆記」的招牌，三頁都用就分不出來了。 */
 .bookshelf-title {
-  font-size: var(--fs-22);
-  font-weight: 800;
   display: flex;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-2);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-1);
   margin: 0 0 var(--space-1);
 }
-
-.bs-title-gradient {
-  background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 40%, var(--magenta) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.bs-title-main {
+  font-family: var(--blog-font-noto-serif);
+  font-size: var(--fs-22);
+  font-weight: 700;
+  letter-spacing: var(--ls-12);
+  color: var(--ink);
 }
-
+.bs-title-main::before {
+  content: "✦";
+  margin-right: var(--space-2);
+  font-size: var(--fs-14);
+  vertical-align: 0.2em;
+  color: var(--amber-300);
+}
 .bs-title-sub {
-  font-size: var(--fs-11);
-  color: var(--white-40);
-  font-weight: 400;
-  font-style: italic;
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--white-15);
+  font-size: var(--fs-10);
+  font-weight: 600;
+  letter-spacing: var(--ls-18);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--white-50);
 }
 
 .bookshelf-subtitle {
@@ -438,10 +447,6 @@
 }
 
 @media (max-width: 480px) {
-  .bookshelf-title {
-    flex-direction: column;
-    gap: var(--space-1);
-  }
   .bs-chips {
     width: 100%;
     justify-content: space-between;

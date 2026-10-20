@@ -587,7 +587,6 @@
     },
     "packages": "{{count}} (機材), {{iot}} (スマートホーム)",
     "term": {
-      "hint": "入力できるターミナルです：help、ls、cd server を試してみて",
       "inputLabel": "ターミナルのコマンド",
       "tryHelp": "help でコマンド一覧",
       "cdFirst": "先に cd でカテゴリに入ってから cat",

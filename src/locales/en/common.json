@@ -587,7 +587,6 @@
     },
     "packages": "{{count}} (gear), {{iot}} (smart home)",
     "term": {
-      "hint": "This terminal takes input — try help, ls, cd server",
       "inputLabel": "Terminal command",
       "tryHelp": "type help for the list of commands",
       "cdFirst": "cd into a category first, then cat a file inside",

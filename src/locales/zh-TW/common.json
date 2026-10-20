@@ -587,7 +587,6 @@
     },
     "packages": "{{count}} (設備), {{iot}} (智慧家庭)",
     "term": {
-      "hint": "這是可以打字的終端機：試試 help、ls、cd server",
       "inputLabel": "終端機指令",
       "tryHelp": "打 help 看看有哪些指令",
       "cdFirst": "先 cd 進去，再 cat 裡面的檔案",

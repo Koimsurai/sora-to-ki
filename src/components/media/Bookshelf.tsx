@@ -112,7 +112,7 @@ const Bookshelf = () => {
               那個角落由 layoutConstellation 讓出來（LEGEND_CORNER），星星不會被蓋到。 */}
           <header className="bs-sky-card">
             <h1 className="bookshelf-title">
-              <span className="bs-title-gradient">{t('bookshelf.heroTitle')}</span>
+              <span className="bs-title-main">{t('bookshelf.heroTitle')}</span>
               <span className="bs-title-sub">Knowledge Constellation</span>
             </h1>
             <p className="bookshelf-subtitle">{t('bookshelf.subtitle')}</p>

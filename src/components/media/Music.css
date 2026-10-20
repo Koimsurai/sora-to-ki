@@ -120,19 +120,54 @@
   gap: var(--space-1) var(--space-4);
   padding: var(--space-6) var(--space-8) 0;
 }
+/* 標題跟著封面變色：取封面主色、往白色拉一半，深色封面也讀得清楚 */
 .np-page-title {
+  --np-accent: color-mix(in srgb, rgb(var(--glow-r), var(--glow-g), var(--glow-b)) 50%, white);
   margin: 0;
   display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-2-5);
   font-size: var(--fs-18);
   font-weight: 800;
 }
+.np-page-name {
+  color: var(--np-accent);
+  letter-spacing: var(--ls-8);
+}
 .np-page-sub {
-  font-size: var(--fs-13);
-  font-weight: 400;
-  font-style: italic;
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: var(--ls-24);
+  text-transform: uppercase;
   color: var(--white-50);
+}
+/* 標題前的小等化器：有在播才跳，沒在播就是三根靜止的柱子 */
+.np-page-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: var(--space-0-5);
+  height: 16px;
+}
+.np-page-eq i {
+  width: 3px;
+  height: 40%;
+  border-radius: var(--r-2);
+  background: var(--np-accent);
+}
+.np-page-eq i:nth-child(2) {
+  height: 100%;
+}
+.np-page-eq i:nth-child(3) {
+  height: 65%;
+}
+.np-page-eq.is-live i {
+  animation: equalizer 1s ease-in-out infinite alternate;
+}
+.np-page-eq.is-live i:nth-child(2) {
+  animation-duration: 0.7s;
+}
+.np-page-eq.is-live i:nth-child(3) {
+  animation-duration: 1.2s;
 }
 .np-page-desc {
   margin: 0;

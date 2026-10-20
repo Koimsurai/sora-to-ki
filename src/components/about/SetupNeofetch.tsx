@@ -244,7 +244,6 @@ export default function SetupNeofetch({ total, iot, cwd, onCd }: Props) {
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="setup-term-body" ref={bodyRef} onClick={() => inputRef.current?.focus()}>
         <p className="setup-term-comment"># {t('setup.subtitle')}</p>
-        <p className="setup-term-comment"># {t('setup.term.hint')}</p>
         <div aria-live="polite">
           {entries.map((e) => (
             <div key={e.id} className="setup-term-entry">

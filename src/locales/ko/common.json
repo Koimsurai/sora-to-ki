@@ -587,7 +587,6 @@
     },
     "packages": "{{count}} (장비), {{iot}} (스마트홈)",
     "term": {
-      "hint": "입력할 수 있는 터미널입니다: help, ls, cd server 를 써 보세요",
       "inputLabel": "터미널 명령어",
       "tryHelp": "help 로 명령어 목록 보기",
       "cdFirst": "먼저 cd 로 분류에 들어간 뒤 cat",

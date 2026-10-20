@@ -201,8 +201,15 @@ const Music = () => {
             <img className="np-backdrop" src={npData.item?.album.images.at(0)?.url} alt="" aria-hidden="true" />
             <div className="np-ambient-glow" />
             <header className="np-eyebrow">
+              {/* 標題的顏色取自這張封面（--glow-*），前面一組小等化器：每次打開都跟著那首歌變。
+                  刻意不用文章頁那種紫粉漸層——那是「筆記」的招牌，三頁都用就分不出來了。 */}
               <h1 className="np-page-title">
-                <span className="music-title-gradient">{t('music.heroTitle')}</span>
+                <span className={`np-page-eq${npData.isLive ? ' is-live' : ''}`} aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="np-page-name">{t('music.heroTitle')}</span>
                 <span className="np-page-sub">Music Galaxy</span>
               </h1>
               <p className="np-page-desc">{t('music.heroDesc')}</p>

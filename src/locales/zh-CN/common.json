@@ -587,7 +587,6 @@
     },
     "packages": "{{count}} (设备), {{iot}} (智能家居)",
     "term": {
-      "hint": "这是可以打字的终端：试试 help、ls、cd server",
       "inputLabel": "终端命令",
       "tryHelp": "输入 help 看看有哪些命令",
       "cdFirst": "先 cd 进去，再 cat 里面的文件",
