@@ -506,7 +506,86 @@
   },
   "setup": {
     "title": "내 장비 · My Setup",
-    "description": "Koimsurai의 개인 장비 목록: 메인 PC, 홈 서버, 네트워크 장비, 주변기기 한눈에."
+    "description": "Koimsurai의 장비 목록: 메인 PC, 이 사이트를 돌리는 홈 서버, 네트워크와 스마트홈, 그리고 집 안 연결도.",
+    "heroTitle": "내 장비",
+    "subtitle": "2026년의 모든 장비: 책상 위 메인 PC, 이 사이트를 돌리는 서버, 에어컨과 조명을 제어하는 작은 기기들까지.",
+    "stats": "장비 {{count}}개 · 스마트홈 기기 {{iot}}개",
+    "filter": "분류",
+    "cat": {
+      "main-rig": {
+        "short": "메인 PC",
+        "desc": "올화이트 메인 PC"
+      },
+      "server": {
+        "short": "서버",
+        "desc": "이 사이트와 Home Assistant, 모든 셀프호스팅 서비스가 여기서 돌아간다"
+      },
+      "network": {
+        "short": "네트워크·모바일",
+        "desc": "디지털 라이프의 중심"
+      },
+      "smart-home": {
+        "short": "스마트홈",
+        "desc": "에어컨, 조명, 센서를 모두 Home Assistant로"
+      },
+      "peripherals": {
+        "short": "주변기기",
+        "desc": "입력과 출력"
+      },
+      "base-ii": {
+        "short": "본가",
+        "desc": "본가에 갈 때 쓰는 예비 기지"
+      }
+    },
+    "roles": {
+      "nanokvm": "원격 전원·BIOS 접속. 서버가 멈춰도 들어갈 수 있다",
+      "headless": "모니터 없는 서버가 디스플레이가 있다고 인식하게 해 GPU 출력을 정상화",
+      "googleTv": "집의 Matter 허브",
+      "hub3": "조도·온습도·재실 감지를 Matter로 보고. 야간 조명 자동 보정은 이 조도 값에 의존",
+      "rm4": "에어컨 적외선 코드를 학습해 Home Assistant로 제어",
+      "esp32": "보드 두 장으로 만든 433MHz 송신기. 천장등 순정 리모컨을 흉내 낸다",
+      "doorbell": "배터리 도어벨, H200 허브를 통해 연결"
+    },
+    "retired": "은퇴",
+    "retiredText": "가족 공용 PC — NVIDIA GTX 960 (현재 가족이 사용 중)",
+    "topo": {
+      "title": "집 안 연결도",
+      "hint": "노드를 누르면 해당 장비로 이동",
+      "internet": "인터넷",
+      "switch": "스위치",
+      "mobile": "휴대폰·노트북",
+      "sensors": "조도·온습도·재실",
+      "irBlaster": "적외선 리모컨",
+      "rfBlaster": "433MHz RF",
+      "rig": "메인 PC",
+      "ac": "에어컨",
+      "light": "천장등",
+      "legend": {
+        "wired": "유선",
+        "wifi": "Wi-Fi",
+        "matter": "Matter",
+        "air": "적외선 / RF"
+      },
+      "netWired": "유선",
+      "netMain": "메인",
+      "netIot": "IoT 전용",
+      "matterHub": "Matter 허브",
+      "doorbellHub": "도어벨 허브",
+      "doorbell": "도어벨",
+      "appliances": "스마트 가전",
+      "appliancesSub": "제습기 · 공기청정기 · 카메라…"
+    },
+    "appliances": {
+      "title": "그 밖의 스마트 가전",
+      "types": {
+        "dehumidifier": "제습기",
+        "airPurifier": "공기청정기",
+        "catTower": "반려동물 공기청정기 + 온열 캣타워",
+        "feeder": "자동 급식기",
+        "camera": "카메라",
+        "plug": "스마트 플러그"
+      }
+    }
   },
   "info": {
     "aboutSite": {

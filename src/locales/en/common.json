@@ -506,7 +506,86 @@
   },
   "setup": {
     "title": "My Setup",
-    "description": "Koimsurai's gear: main PC, home server, networking, and peripherals."
+    "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
+    "heroTitle": "My Setup",
+    "subtitle": "Everything I own in 2026: the rig on my desk, the server running this site, and the little boxes that run the AC and lights.",
+    "stats": "{{count}} items · {{iot}} smart home devices",
+    "filter": "Category",
+    "cat": {
+      "main-rig": {
+        "short": "Main rig",
+        "desc": "All-white main rig"
+      },
+      "server": {
+        "short": "Server",
+        "desc": "This site, Home Assistant and every self-hosted service live here"
+      },
+      "network": {
+        "short": "Network & mobile",
+        "desc": "My digital backbone"
+      },
+      "smart-home": {
+        "short": "Smart home",
+        "desc": "AC, lights and sensors, all wired into Home Assistant"
+      },
+      "peripherals": {
+        "short": "Peripherals",
+        "desc": "Input & output"
+      },
+      "base-ii": {
+        "short": "Hometown",
+        "desc": "Standby base for trips home"
+      }
+    },
+    "roles": {
+      "nanokvm": "Remote power and BIOS access — still reachable when the server hangs",
+      "headless": "Makes the monitor-less server think a display is attached so the GPU outputs properly",
+      "googleTv": "The Matter hub for the house",
+      "hub3": "Light, temperature/humidity and motion sensing over Matter; its light level drives the night-time lighting automation",
+      "rm4": "Learns the AC’s infrared codes so Home Assistant can control it",
+      "esp32": "A 433MHz transmitter built from two boards, mimicking the ceiling light’s stock remote",
+      "doorbell": "Battery doorbell, online through the H200 hub"
+    },
+    "retired": "Retired",
+    "retiredText": "Family shared PC — NVIDIA GTX 960 (still in use at home)",
+    "topo": {
+      "title": "How the house is wired",
+      "hint": "Tap a node to jump to that device",
+      "internet": "Internet",
+      "switch": "Switch",
+      "mobile": "Phone · laptop",
+      "sensors": "Light · temp · motion",
+      "irBlaster": "IR blaster",
+      "rfBlaster": "433MHz RF",
+      "rig": "Main rig",
+      "ac": "AC",
+      "light": "Ceiling light",
+      "legend": {
+        "wired": "Wired",
+        "wifi": "Wi-Fi",
+        "matter": "Matter",
+        "air": "IR / RF"
+      },
+      "netWired": "Wired",
+      "netMain": "Main network",
+      "netIot": "IoT only",
+      "matterHub": "Matter hub",
+      "doorbellHub": "Doorbell hub",
+      "doorbell": "Doorbell",
+      "appliances": "Appliances",
+      "appliancesSub": "Dehumidifier · purifier · cam…"
+    },
+    "appliances": {
+      "title": "Other connected appliances",
+      "types": {
+        "dehumidifier": "Dehumidifier",
+        "airPurifier": "Air purifier",
+        "catTower": "Pet air purifier + heated cat bed",
+        "feeder": "Auto feeder",
+        "camera": "Camera",
+        "plug": "Smart plug"
+      }
+    }
   },
   "info": {
     "aboutSite": {
