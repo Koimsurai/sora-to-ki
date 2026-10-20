@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FaHome, FaPlug } from 'react-icons/fa';
 import NebulaBackground from '@/components/backdrop/NebulaBackground';
@@ -64,9 +65,20 @@ function Setup() {
       <div className="setup-wrap">
         <SetupNeofetch total={total} iot={iot} cwd={filter} onCd={setFilter} />
 
-        <SetupTopology onNavigate={navigate} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+        >
+          <SetupTopology onNavigate={navigate} />
+        </motion.div>
 
-        <fieldset className="setup-chips">
+        <motion.fieldset
+          className="setup-chips"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
           <legend className="sr-only">{t('setup.filter')}</legend>
           {FILTERS.map((f) => (
             <button
@@ -79,14 +91,18 @@ function Setup() {
               {f === 'all' ? t('common.all') : t(`setup.cat.${f}.short`)}
             </button>
           ))}
-        </fieldset>
+        </motion.fieldset>
 
         {GEAR.filter((c) => shown(c.id)).map((cat) => (
-          <section
+          <motion.section
             key={cat.id}
             id={`gear-cat-${cat.id}`}
             className={`setup-section${flash === `gear-cat-${cat.id}` ? ' is-flash' : ''}`}
             aria-labelledby={`gear-cat-${cat.id}-title`}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.5 }}
           >
             <header className="setup-section-head">
               <span className="setup-section-no">{String(GEAR.indexOf(cat) + 1).padStart(2, '0')}</span>
@@ -114,11 +130,19 @@ function Setup() {
                 </ul>
               </div>
             )}
-          </section>
+          </motion.section>
         ))}
 
         {shown('base-ii') && (
-          <section id="gear-cat-base-ii" className="setup-section" aria-labelledby="gear-cat-base-ii-title">
+          <motion.section
+            id="gear-cat-base-ii"
+            className="setup-section"
+            aria-labelledby="gear-cat-base-ii-title"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.5 }}
+          >
             <header className="setup-section-head">
               <span className="setup-section-no">{String(GEAR.length + 1).padStart(2, '0')}</span>
               <h2 id="gear-cat-base-ii-title" className="setup-section-title">
@@ -145,7 +169,7 @@ function Setup() {
                 {t('setup.retiredText')}
               </p>
             </div>
-          </section>
+          </motion.section>
         )}
       </div>
     </div>

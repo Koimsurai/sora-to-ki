@@ -2,19 +2,44 @@
    Zero Gravity Library — 全螢幕覆蓋層
    ═══════════════════════════════════════════════════ */
 
+/* 進場淡入、離場淡出並微微放大（像往後退出黑洞）。鏡頭的飛入飛出在 CameraRig；
+   離場的長度要跟元件裡的 EXIT_MS（450ms）一致，播完元件才卸載。 */
 .zero-gravity-container {
   position: fixed;
   inset: 0;
   background: radial-gradient(ellipse at 50% 45%, var(--surface-1), #000 70%);
   z-index: var(--z-fullscreen);
   overflow: hidden;
+  animation: zg-enter 700ms var(--easing-out) both;
+}
+.zero-gravity-container.is-leaving {
+  pointer-events: none;
+  animation: zg-leave 450ms ease-in forwards;
+}
+@keyframes zg-enter {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+@keyframes zg-leave {
+  to {
+    opacity: 0;
+    transform: scale(1.03);
+  }
 }
 
+/* 畫布等第一幀畫出來（容器掛上 .is-ready）才淡入：在那之前是在編 shader，畫面是黑的 */
 .zero-gravity-canvas {
   width: 100%;
   height: 100%;
   cursor: grab;
   touch-action: none;
+  opacity: 0;
+  transition: opacity var(--dur-1000) var(--easing-out);
+}
+.zero-gravity-container.is-ready .zero-gravity-canvas {
+  opacity: 1;
 }
 .zero-gravity-canvas:active {
   cursor: grabbing;

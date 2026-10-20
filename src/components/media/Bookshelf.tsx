@@ -104,13 +104,18 @@ const Bookshelf = () => {
         <motion.section
           className="bs-sky"
           aria-label={t('bookshelf.heroTitle')}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.15 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
           {/* 頁面標題放進星圖左上角的圖例框：打開就是一整片天空，而不是「大標＋副標＋內容」。
               那個角落由 layoutConstellation 讓出來（LEGEND_CORNER），星星不會被蓋到。 */}
-          <header className="bs-sky-card">
+          <motion.header
+            className="bs-sky-card"
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
             <h1 className="bookshelf-title">
               <span className="bs-title-main">{t('bookshelf.heroTitle')}</span>
               <span className="bs-title-sub">Knowledge Constellation</span>
@@ -128,7 +133,7 @@ const Bookshelf = () => {
                 ) : null}
               </p>
             )}
-          </header>
+          </motion.header>
           <BookConstellation
             books={books}
             isDimmed={isDimmed}
@@ -136,7 +141,12 @@ const Bookshelf = () => {
             onSelect={setSelected}
             coverSrc={proxiedCover}
           />
-          <div className="bs-toolbar">
+          <motion.div
+            className="bs-toolbar"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             <fieldset className="bs-chips">
               <legend className="sr-only">{t('bookshelf.filterStatus')}</legend>
               {filters.map((f) => (
@@ -176,7 +186,7 @@ const Bookshelf = () => {
             >
               🌌 {t('bookshelf.zeroGravity')}
             </button>
-          </div>
+          </motion.div>
           <p className="bs-sky-hint" aria-hidden="true">
             {t('bookshelf.skyHint')}
           </p>
@@ -189,7 +199,14 @@ const Bookshelf = () => {
         </motion.section>
 
         {/* 書目：星圖是看全貌的，這裡是逐本掃的（手機、螢幕閱讀器、搜尋引擎也靠它） */}
-        <section className="bs-list" aria-labelledby="bs-list-title">
+        <motion.section
+          className="bs-list"
+          aria-labelledby="bs-list-title"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.5 }}
+        >
           <h2 id="bs-list-title" className="bs-list-title">
             {t('bookshelf.listTitle')}
           </h2>
@@ -238,7 +255,7 @@ const Bookshelf = () => {
               </div>
             );
           })}
-        </section>
+        </motion.section>
       </div>
 
       <BookDetailDrawer book={selected} onClose={() => setSelected(null)} coverSrc={proxiedCover} />

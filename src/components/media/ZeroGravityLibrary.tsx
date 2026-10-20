@@ -1,4 +1,14 @@
-import { Component, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import {
+  Component,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Billboard, Html, OrbitControls, PerformanceMonitor, Stars, useTexture } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -520,7 +530,14 @@ interface SceneProps {
   onSelect: (b: Book) => void;
   reduced: boolean;
   lowQuality: boolean;
+  /** 正在關閉：鏡頭往後拉，外框同時淡出 */
+  leaving: boolean;
+  /** 第一幀畫出來了 */
+  onReady: () => void;
 }
+
+/** 關閉動畫的長度：外框淡出與鏡頭後拉都用它，結束才真的卸載 */
+const EXIT_MS = 450;
 
 /** 兩圈傾斜的軌道，第二圈較大、反向傾斜，書才不會排成一條直線。 */
 function initialOrbits(n: number): Orbit[] {
@@ -542,19 +559,70 @@ function initialOrbits(n: number): Orbit[] {
  * 鏡頭距離跟著畫面比例走：直立的手機畫面水平視角很窄，用桌機的距離的話外圈的書全在畫面外。
  * 俯角維持約 15°（y / z ≈ 0.26）——再低吸積盤就變成一條線，再高黑洞會被盤面擋住。
  * 只在掛載與視窗改變比例時設定，使用者自己用 OrbitControls 拉近拉遠之後不會被蓋掉。
+ *
+ * 進場時鏡頭從遠處飛進來、離場時往後拉（配合外框的淡入淡出）。
+ * ⚠ 起點與終點都夾在 FLY_MAX 內：OrbitControls 的 maxDistance 是 60，超過的話它下一幀
+ *   就把鏡頭夾回 60，飛到一半會突然跳一下。
  */
-function CameraRig() {
+const FLY_MAX = 56;
+const ENTER_S = 1.4;
+const EXIT_S = EXIT_MS / 1000;
+
+function CameraRig({ leaving, reduced, onReady }: { leaving: boolean; reduced: boolean; onReady: () => void }) {
   const { camera, size } = useThree();
   const aspect = size.width / Math.max(size.height, 1);
+  const introDoneRef = useRef(false);
+  const readyRef = useRef(false);
+  const flyRef = useRef<{
+    t: number;
+    dur: number;
+    from: THREE.Vector3;
+    to: THREE.Vector3;
+    ease: (x: number) => number;
+  } | null>(null);
+
   useEffect(() => {
     const k = aspect >= 1.2 ? 1 : Math.min(1.8, 1.2 / aspect);
-    camera.position.set(0, 6.2 * k, 23.5 * k);
+    const target = new THREE.Vector3(0, 6.2 * k, 23.5 * k);
+    if (introDoneRef.current || reduced) {
+      camera.position.copy(target);
+      camera.lookAt(0, 0, 0);
+      return;
+    }
+    introDoneRef.current = true;
+    // 從更高、更遠的地方往下飛進來，看起來像接近一顆黑洞
+    const from = new THREE.Vector3(0, target.y * 3.2, target.z * 2).setLength(FLY_MAX);
+    camera.position.copy(from);
     camera.lookAt(0, 0, 0);
-  }, [camera, aspect]);
+    flyRef.current = { t: 0, dur: ENTER_S, from, to: target, ease: (x) => 1 - (1 - x) ** 3 };
+  }, [camera, aspect, reduced]);
+
+  useEffect(() => {
+    if (!leaving || reduced) return;
+    const from = camera.position.clone();
+    const to = from.clone().setLength(Math.min(FLY_MAX, from.length() * 2));
+    flyRef.current = { t: 0, dur: EXIT_S, from, to, ease: (x) => x * x };
+  }, [camera, leaving, reduced]);
+
+  useFrame((_, rawDt) => {
+    // 第一幀真的畫出來了才通知外框淡入畫布：前面那段是在編 shader，主執行緒卡住、畫面還是黑的
+    if (!readyRef.current) {
+      readyRef.current = true;
+      onReady();
+    }
+    const f = flyRef.current;
+    if (!f) return;
+    // 第一幀的 dt 包含編 shader 的那一秒，不夾住的話鏡頭一開始就飛完大半
+    const dt = Math.min(rawDt, 1 / 30);
+    f.t = Math.min(1, f.t + dt / f.dur);
+    camera.position.lerpVectors(f.from, f.to, f.ease(f.t));
+    camera.lookAt(0, 0, 0);
+    if (f.t >= 1) flyRef.current = null;
+  });
   return null;
 }
 
-function Scene({ books, selectedId, onSelect, reduced, lowQuality }: SceneProps) {
+function Scene({ books, selectedId, onSelect, reduced, lowQuality, leaving, onReady }: SceneProps) {
   const [dragCount, setDragCount] = useState(0);
   // 每本書的軌道參數：Book3D 每幀直接改寫（公轉、拖曳後的新軌道、被吸進去再出現），不觸發重繪
   const orbits = useMemo(() => initialOrbits(books.length), [books.length]);
@@ -578,7 +646,7 @@ function Scene({ books, selectedId, onSelect, reduced, lowQuality }: SceneProps)
         speed={reduced ? 0 : 0.6}
       />
 
-      <CameraRig />
+      <CameraRig leaving={leaving} reduced={reduced} onReady={onReady} />
       <KnowledgeBlackHole reduced={reduced} lowQuality={lowQuality} />
 
       <group>
@@ -636,12 +704,43 @@ export default function ZeroGravityLibrary({ books = [], onClose }: ZeroGravityL
   selectedRef.current = selected;
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+
+  // 關閉要先播完離場（淡出＋鏡頭後拉）才卸載；Esc 與關閉鈕都走這裡。減少動態時直接關。
+  const [leaving, setLeaving] = useState(false);
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const close = useCallback(() => {
+    if (leaveTimerRef.current) return;
+    if (reduced) {
+      onCloseRef.current();
+      return;
+    }
+    setLeaving(true);
+    leaveTimerRef.current = setTimeout(() => onCloseRef.current(), EXIT_MS);
+  }, [reduced]);
+  useEffect(
+    () => () => {
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    },
+    [],
+  );
+  const closeFnRef = useRef(close);
+  closeFnRef.current = close;
+
+  // 深色底立刻淡入（按下去有反應），3D 畫布等第一幀畫出來才淡入。
+  // 兩秒還沒畫出來（WebGL 建不起來、走降級提示）也照樣顯示，不能整片空白。
+  const [ready, setReady] = useState(false);
+  const markReady = useCallback(() => setReady(true), []);
+  useEffect(() => {
+    const timer = setTimeout(markReady, 2000);
+    return () => clearTimeout(timer);
+  }, [markReady]);
+
   useEffect(() => {
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       if (selectedRef.current) setSelected(null);
-      else onCloseRef.current();
+      else closeFnRef.current();
     };
     window.addEventListener('keydown', onKey);
     // 全螢幕覆蓋層開著的時候，底下的頁面不該還能捲
@@ -668,8 +767,13 @@ export default function ZeroGravityLibrary({ books = [], onClose }: ZeroGravityL
   );
 
   return (
-    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- 同 BookDetailDrawer：全螢幕覆蓋層，<dialog> 的 top-layer 生命週期跟 R3F 的畫布搶同一件事
-    <div className="zero-gravity-container" role="dialog" aria-modal="true" aria-label={t('bookshelf.zeroGravity')}>
+    <div
+      className={`zero-gravity-container${ready ? ' is-ready' : ''}${leaving ? ' is-leaving' : ''}`}
+      // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- 同 BookDetailDrawer：全螢幕覆蓋層，<dialog> 的 top-layer 生命週期跟 R3F 的畫布搶同一件事
+      role="dialog"
+      aria-modal="true"
+      aria-label={t('bookshelf.zeroGravity')}
+    >
       <CanvasBoundary fallback={fallback}>
         <Canvas
           className="zero-gravity-canvas"
@@ -693,6 +797,8 @@ export default function ZeroGravityLibrary({ books = [], onClose }: ZeroGravityL
                 onSelect={setSelected}
                 reduced={reduced}
                 lowQuality={lowQuality}
+                leaving={leaving}
+                onReady={markReady}
               />
             </Suspense>
           </PerformanceMonitor>
@@ -705,7 +811,7 @@ export default function ZeroGravityLibrary({ books = [], onClose }: ZeroGravityL
             <span className="zg-brand-title">Knowledge Black Hole</span>
             <span className="zg-brand-sub">{t('bookshelf.zg.inOrbit', { count: books.length })}</span>
           </div>
-          <button ref={closeRef} type="button" className="zg-close-btn" onClick={onClose}>
+          <button ref={closeRef} type="button" className="zg-close-btn" onClick={close}>
             <svg
               width="16"
               height="16"

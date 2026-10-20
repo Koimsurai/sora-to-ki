@@ -7,6 +7,7 @@
 // 欄位名照 neofetch 原樣用英文；值是這台伺服器的實際規格（2026-10 抄的），換硬體要回來改。
 // Packages 那行借來放設備數——neofetch 本來是數套件，這裡數的是「裝了多少東西」。
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { APPLIANCES, BASE_II_SPECS, GEAR, type GearFilter } from './setupGear';
 
@@ -228,17 +229,38 @@ export default function SetupNeofetch({ total, iot, cwd, onCd }: Props) {
   };
 
   return (
-    <header className="setup-term">
+    <motion.header
+      className="setup-term"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      {/* Windows Terminal 的樣子：分頁列＋右上角的視窗按鈕（站長用 Windows，不要 macOS 那三顆燈）。
+          除了分頁上的標題，其他都是裝飾、不能按。 */}
       <div className="setup-term-bar">
-        <span className="setup-term-dots" aria-hidden="true">
-          <i />
-          <i />
-          <i />
+        <div className="setup-term-tab">
+          <span className="setup-term-tab-icon" aria-hidden="true">
+            &gt;_
+          </span>
+          <h1 className="setup-term-title">
+            {t('setup.heroTitle')}
+            <span className="setup-term-title-sub">koimsurai@home-server: {pathOf(cwd)}</span>
+          </h1>
+          <span className="setup-term-tab-close" aria-hidden="true">
+            ✕
+          </span>
+        </div>
+        <span className="setup-term-bar-btn" aria-hidden="true">
+          ＋
         </span>
-        <h1 className="setup-term-title">
-          {t('setup.heroTitle')}
-          <span className="setup-term-title-sub">koimsurai@home-server: {pathOf(cwd)}</span>
-        </h1>
+        <span className="setup-term-bar-btn" aria-hidden="true">
+          ⌄
+        </span>
+        <span className="setup-term-winctl" aria-hidden="true">
+          <i>─</i>
+          <i>☐</i>
+          <i>✕</i>
+        </span>
       </div>
       {/* 點終端機任何地方都把焦點交給輸入列，跟真的終端機一樣。鍵盤使用者直接 Tab 到輸入列，這裡只是補滑鼠 */}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
@@ -293,6 +315,6 @@ export default function SetupNeofetch({ total, iot, cwd, onCd }: Props) {
           />
         </form>
       </div>
-    </header>
+    </motion.header>
   );
 }
