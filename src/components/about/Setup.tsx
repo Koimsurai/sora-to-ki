@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FaHome, FaPlug } from 'react-icons/fa';
+import NebulaBackground from '@/components/backdrop/NebulaBackground';
 import SetupNeofetch from './SetupNeofetch';
 import SetupTopology from './SetupTopology';
 import { GEAR, BASE_II_SPECS, APPLIANCES, type GearFilter, type GearItem } from './setupGear';
@@ -58,6 +59,8 @@ function Setup() {
 
   return (
     <div className="setup-page">
+      {/* 跟書櫃、音樂頁同一層深空暗幕：蓋在 3D 星空前面，字才讀得清楚 */}
+      <NebulaBackground />
       <div className="setup-wrap">
         <SetupNeofetch total={total} iot={iot} cwd={filter} onCd={setFilter} />
 
