@@ -41,6 +41,21 @@ import { createFramePacer } from './framePacer';
 
 export const STAR_COUNT = 26000; // 14k 主層 + 12k 星系層（≈舊棧全部點數 27.1k；WebGPU 下加星幾乎免費）
 
+export interface PerfReport {
+  fps: number;
+  avgMs: number;
+  /** 品質等級，0 是沒降級 */
+  quality: number;
+  /** GPU 真的花在這一幀的時間（timestamp query）；瀏覽器不給 timestamp 時是 null */
+  gpuMs: number | null;
+  /** 估到的 vsync 間隔：180Hz 應該是 5.6、60Hz 是 16.7 */
+  vsyncMs: number;
+  /** 這一刻是否判定為閒置（閒置時降到 30fps） */
+  idle: boolean;
+  /** rAF 時間戳減 performance.now()，正常是 −16～0。偏很多代表兩個時鐘不同步 */
+  clockSkewMs: number;
+}
+
 export interface StarfieldRunner {
   setSize(width: number, height: number): void;
   setRunning(running: boolean): void;
@@ -56,11 +71,8 @@ export interface StarfieldInit {
   width: number;
   height: number;
   dpr: number;
-  /**
-   * 每秒回報一次渲染迴圈 fps / 平均幀時 / 目前品質等級 / 每幀 GPU 時間（?debug=perf 用）。
-   * gpuMs 是 GPU 真的花在這一幀的時間（timestamp query）；瀏覽器不給 timestamp 時是 null。
-   */
-  onPerf?: (fps: number, avgMs: number, quality?: number, gpuMs?: number | null) => void;
+  /** 每秒回報一次渲染迴圈的狀態（?debug=perf 用） */
+  onPerf?: (report: PerfReport) => void;
   /**
    * GPU device / WebGL context 掉了。
    *
@@ -409,7 +421,11 @@ export async function createStarfieldRunner(
   };
 
   const loop = (now: number) => {
-    const active = now - lastActive < IDLE_AFTER_MS;
+    // ⚠ 跟 lastActive 比要用同一個時鐘：lastActive 是 performance.now()，而 rAF 的 now 是
+    //   這一幀的時間戳，規格沒保證兩者在 worker 裡同步。now 落後的話「距上次活動」永遠小於門檻，
+    //   就永遠不會進閒置。
+    const wall = performance.now();
+    const active = wall - lastActive < IDLE_AFTER_MS;
     if (!pacer.shouldRender(now, active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS)) return;
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
     const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
@@ -432,7 +448,15 @@ export async function createStarfieldRunner(
     acc += delta;
     if (acc >= 1) {
       const fps = frames / acc;
-      init.onPerf?.(fps, (acc / frames) * 1000, quality, gpuMsPerFrame);
+      init.onPerf?.({
+        fps,
+        avgMs: (acc / frames) * 1000,
+        quality,
+        gpuMs: gpuMsPerFrame,
+        vsyncMs: pacer.vsyncMs,
+        idle: !active,
+        clockSkewMs: now - wall,
+      });
       gpuMsPerFrame = gpuEma;
       const tooSlow = gpuMsPerFrame !== null ? gpuMsPerFrame > SLOW_GPU_MS : fps < LOW_FPS && active;
       if (tooSlow && quality < QUALITY_FACTOR.length - 1) {
