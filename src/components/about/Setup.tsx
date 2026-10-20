@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FaHome, FaPlug } from 'react-icons/fa';
+import SetupNeofetch from './SetupNeofetch';
 import SetupTopology from './SetupTopology';
-import { GEAR, BASE_II_SPECS, APPLIANCES, type CategoryId, type GearItem } from './setupGear';
+import { GEAR, BASE_II_SPECS, APPLIANCES, type GearFilter, type GearItem } from './setupGear';
 import './Setup.css';
 
-type Filter = 'all' | CategoryId | 'base-ii';
-
-const FILTERS: Filter[] = ['all', ...GEAR.map((c) => c.id), 'base-ii'];
+const FILTERS: GearFilter[] = ['all', ...GEAR.map((c) => c.id), 'base-ii'];
 
 /** 拓撲圖跳過來時卡片亮多久 */
 const FLASH_MS = 1600;
@@ -35,13 +33,13 @@ function GearCard({ item, flashing }: { item: GearItem; flashing: boolean }) {
 
 function Setup() {
   const { t } = useTranslation();
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<GearFilter>('all');
   const [flash, setFlash] = useState<string | null>(null);
 
   // 家電沒有卡片，但也算在設備數與智慧家庭裝置數裡
   const total = GEAR.reduce((sum, c) => sum + c.items.length, 0) + APPLIANCES.length;
   const iot = (GEAR.find((c) => c.id === 'smart-home')?.items.length ?? 0) + APPLIANCES.length;
-  const shown = (id: Filter) => filter === 'all' || filter === id;
+  const shown = (id: GearFilter) => filter === 'all' || filter === id;
 
   // 拓撲圖的節點：目標可能被目前的篩選藏起來，先切回「全部」，等它畫出來再捲過去
   const navigate = useCallback((anchor: string) => {
@@ -61,19 +59,7 @@ function Setup() {
   return (
     <div className="setup-page">
       <div className="setup-wrap">
-        <motion.header
-          className="setup-header"
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="setup-title">
-            <span className="setup-title-gradient">{t('setup.heroTitle')}</span>
-            <span className="setup-title-sub">Setup Inventory</span>
-          </h1>
-          <p className="setup-subtitle">{t('setup.subtitle')}</p>
-          <p className="setup-stats">{t('setup.stats', { count: total, iot })}</p>
-        </motion.header>
+        <SetupNeofetch total={total} iot={iot} cwd={filter} onCd={setFilter} />
 
         <SetupTopology onNavigate={navigate} />
 
