@@ -46,7 +46,10 @@ import imgRm4 from '@/assets/setup/broadlink-rm4pro.webp';
 import imgEsp32Cc1101 from '@/assets/setup/esp32-cc1101.webp';
 import imgTapoD230s1 from '@/assets/setup/tapo-d230s1.webp';
 
-export type CategoryId = 'main-rig' | 'server' | 'network' | 'smart-home' | 'peripherals';
+type CategoryId = 'main-rig' | 'server' | 'network' | 'smart-home' | 'peripherals';
+
+/** 頁面的分類篩選；終端機的 cd 也是改這個 */
+export type GearFilter = 'all' | CategoryId | 'base-ii';
 
 export interface GearItem {
   /** 卡片的錨點（#gear-<id>），拓撲圖的節點靠它捲過來 */

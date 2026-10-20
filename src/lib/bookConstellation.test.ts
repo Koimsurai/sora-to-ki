@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { groupOf, layoutConstellation, MIN_DIST_FOR_TEST, seriesOf, SKY_H, SKY_W } from './bookConstellation';
+import {
+  groupOf,
+  layoutConstellation,
+  LEGEND_CORNER,
+  MIN_DIST_FOR_TEST,
+  seriesOf,
+  SKY_H,
+  SKY_W,
+} from './bookConstellation';
 
 describe('seriesOf', () => {
   it.each([
@@ -96,6 +104,17 @@ describe('layoutConstellation', () => {
         const overlapY = s.y + 18 > c.y - 16 && s.y - 6 < c.y + 6;
         expect(overlapX && overlapY, `${s.book.title} 壓到 ${c.key}`).toBe(false);
       }
+    }
+  });
+
+  it('左上角留給圖例框：沒有星星或書名落在裡面', () => {
+    // 書少的時候星星本來就不會跑到角落，要用一片擠滿的天空才驗得到
+    const crowded = layoutConstellation(
+      Array.from({ length: 40 }, (_, i) => ({ id: 100 + i, title: `書 ${i}`, categories: 'Fiction' })),
+    );
+    for (const s of [...sky.stars, ...crowded.stars]) {
+      const inside = s.x - 32 <= LEGEND_CORNER.x1 && s.y - 10 <= LEGEND_CORNER.y1;
+      expect(inside, `${s.book.title} 在圖例框底下 (${s.x.toFixed(0)}, ${s.y.toFixed(0)})`).toBe(false);
     }
   });
 

@@ -509,7 +509,6 @@
     "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
     "heroTitle": "My Setup",
     "subtitle": "Everything I own in 2026: the rig on my desk, the server running this site, and the little boxes that run the AC and lights.",
-    "stats": "{{count}} items · {{iot}} smart home devices",
     "filter": "Category",
     "cat": {
       "main-rig": {
@@ -584,6 +583,23 @@
         "feeder": "Auto feeder",
         "camera": "Camera",
         "plug": "Smart plug"
+      }
+    },
+    "packages": "{{count}} (gear), {{iot}} (smart home)",
+    "term": {
+      "inputLabel": "Terminal command",
+      "tryHelp": "type help for the list of commands",
+      "cdFirst": "cd into a category first, then cat a file inside",
+      "sudo": "You are not in the sudoers file. This incident will be reported.",
+      "help": {
+        "help": "list commands",
+        "ls": "list categories, or the gear inside one",
+        "cd": "enter a category (the cards below filter along), cd .. to go back",
+        "cat": "show a device's spec and purpose",
+        "pwd": "where am I",
+        "whoami": "who am I",
+        "neofetch": "run it again",
+        "clear": "clear the screen"
       }
     }
   },

@@ -224,6 +224,7 @@ export function layoutConstellation<B extends ConstellationBook>(books: readonly
       }
     }
     for (const s of stars) {
+      pushOutOfCorner(s, LEGEND_CORNER);
       s.x = Math.min(SKY_W - MARGIN_X, Math.max(MARGIN_X, s.x));
       s.y = Math.min(SKY_H - MARGIN_Y, Math.max(MARGIN_Y, s.y));
     }
@@ -280,6 +281,27 @@ interface Rect {
 
 /** 星團名稱的寬度（4 個字、0.3em 字距的 13px）；高度固定。 */
 const CLUSTER_LABEL_W = 110;
+
+/**
+ * 左上角留給圖例框（頁面標題與統計疊在星圖上，見 Bookshelf 的 .bs-sky-card）。
+ * 換算成畫面：寬 25%、高 23%，CSS 那邊的框不能超過這個範圍。
+ */
+export const LEGEND_CORNER: Rect = { x0: 0, y0: 0, x1: 250, y1: 140 };
+
+/**
+ * 角落的障礙只能往下或往右推：往上、往左會撞到畫布邊緣、被夾回來，下一輪又被推，來回抖動。
+ * 判斷用的是星星連同書名的外框（同 pushOutOf）。
+ */
+function pushOutOfCorner(s: { x: number; y: number }, r: Rect) {
+  const HALF_W = 32;
+  const ABOVE = 10;
+  if (s.x - HALF_W > r.x1 || s.y - ABOVE > r.y1) return;
+  // 多推 2：剛好壓在邊界上也算重疊
+  const down = r.y1 - (s.y - ABOVE) + 2;
+  const right = r.x1 - (s.x - HALF_W) + 2;
+  if (down < right) s.y += down;
+  else s.x += right;
+}
 
 /** 以文字基線為中心的名稱外框（SVG text 的 y 是基線，字身在它上方約 12px）。 */
 function labelRect(x: number, y: number, w: number): Rect {
