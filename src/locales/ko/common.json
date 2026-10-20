@@ -585,7 +585,24 @@
         "plug": "스마트 플러그"
       }
     },
-    "packages": "{{count}} (장비), {{iot}} (스마트홈)"
+    "packages": "{{count}} (장비), {{iot}} (스마트홈)",
+    "term": {
+      "hint": "입력할 수 있는 터미널입니다: help, ls, cd server 를 써 보세요",
+      "inputLabel": "터미널 명령어",
+      "tryHelp": "help 로 명령어 목록 보기",
+      "cdFirst": "먼저 cd 로 분류에 들어간 뒤 cat",
+      "sudo": "당신은 sudoers 파일에 없습니다. 이 일은 보고됩니다.",
+      "help": {
+        "help": "명령어 목록",
+        "ls": "분류 또는 분류 안의 장비 보기",
+        "cd": "분류로 이동(아래 카드도 함께 필터), cd .. 로 위로",
+        "cat": "장비 사양과 용도 보기",
+        "pwd": "현재 위치",
+        "whoami": "나는 누구",
+        "neofetch": "다시 실행",
+        "clear": "화면 지우기"
+      }
+    }
   },
   "info": {
     "aboutSite": {

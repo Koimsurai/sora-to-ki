@@ -585,7 +585,24 @@
         "plug": "Smart plug"
       }
     },
-    "packages": "{{count}} (gear), {{iot}} (smart home)"
+    "packages": "{{count}} (gear), {{iot}} (smart home)",
+    "term": {
+      "hint": "This terminal takes input — try help, ls, cd server",
+      "inputLabel": "Terminal command",
+      "tryHelp": "type help for the list of commands",
+      "cdFirst": "cd into a category first, then cat a file inside",
+      "sudo": "You are not in the sudoers file. This incident will be reported.",
+      "help": {
+        "help": "list commands",
+        "ls": "list categories, or the gear inside one",
+        "cd": "enter a category (the cards below filter along), cd .. to go back",
+        "cat": "show a device's spec and purpose",
+        "pwd": "where am I",
+        "whoami": "who am I",
+        "neofetch": "run it again",
+        "clear": "clear the screen"
+      }
+    }
   },
   "info": {
     "aboutSite": {

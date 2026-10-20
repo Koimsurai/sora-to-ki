@@ -585,7 +585,24 @@
         "plug": "智慧插座"
       }
     },
-    "packages": "{{count}} (設備), {{iot}} (智慧家庭)"
+    "packages": "{{count}} (設備), {{iot}} (智慧家庭)",
+    "term": {
+      "hint": "這是可以打字的終端機：試試 help、ls、cd server",
+      "inputLabel": "終端機指令",
+      "tryHelp": "打 help 看看有哪些指令",
+      "cdFirst": "先 cd 進去，再 cat 裡面的檔案",
+      "sudo": "你不在 sudoers 名單裡。這件事會被回報。",
+      "help": {
+        "help": "列出指令",
+        "ls": "列出分類，或分類裡的設備",
+        "cd": "進入分類（下面的卡片會跟著篩選），cd .. 回上層",
+        "cat": "看一台設備的規格與用途",
+        "pwd": "目前在哪",
+        "whoami": "我是誰",
+        "neofetch": "再跑一次",
+        "clear": "清掉畫面"
+      }
+    }
   },
   "info": {
     "aboutSite": {
