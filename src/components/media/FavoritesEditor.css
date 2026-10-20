@@ -9,7 +9,6 @@
   padding: var(--space-6);
   background: rgba(var(--surface-0-rgb), 0.7);
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
   animation: fe-fade 0.2s ease;
 }
 

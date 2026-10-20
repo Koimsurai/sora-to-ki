@@ -1098,7 +1098,6 @@ body::after {
   border: 1px solid var(--white-08);
   border-radius: var(--r-20);
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
   /* 玻璃寫實感：頂緣一條受光高光 + 下方柔和落影（拉出與星空背景的層次） */
   box-shadow:
     inset 0 1px 0 var(--white-06),
@@ -1177,7 +1176,6 @@ html.no-gpu *,
 html.no-gpu *::before,
 html.no-gpu *::after {
   backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 /* 只停「無限循環」的裝飾動畫；一次性的進場動畫留著（跑完就結束，不會持續耗 CPU），
    loading spinner 也留著（使用者需要知道還在載）。 */

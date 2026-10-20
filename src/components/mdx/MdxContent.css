@@ -647,7 +647,6 @@
   color: #fff;
   background: var(--black-55);
   backdrop-filter: blur(var(--blur-4));
-  -webkit-backdrop-filter: blur(var(--blur-4));
   pointer-events: none;
 }
 .mdx-imgcompare-badge--before {

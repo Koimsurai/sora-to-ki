@@ -337,9 +337,15 @@ computed-style 的快照裡，其餘是 `:hover` / `:focus-visible` / 條件渲�
 --blur-60 / 110                       大面積氛圍模糊（背景光暈、模糊掉的封面圖）
 ```
 
-⚠️ **`-webkit-backdrop-filter` 必須跟沒前綴的同值**，不然 Safari 的模糊跟 Chrome 不一樣。
-`check:css-tokens` 兩個都查——這是靜態檢查唯一抓得到這件事的地方（第一版 codemod 就是
-漏了前綴版，66 處沒換到）。
+⚠️ **不准手寫 `-webkit-backdrop-filter`，只寫 `backdrop-filter`**，`check:css-tokens` 在擋。
+建置用的 lightningcss 會把同一區塊的前綴版與沒前綴版當成同一個屬性、**只留後寫的那個**，
+而慣例是前綴版寫在後面——於是 Chrome / Edge 拿到的只有它不認得的 `-webkit-`，計算值是 `none`。
+只寫沒前綴的，lightningcss 會依目標瀏覽器自己補前綴給 Safari（產物裡兩個都在）。
+
+這件事讓**全站毛玻璃失效了一段時間沒人發現**：頂欄、音樂頁、文章頁的面板都只是半透明，
+直到設備頁改成透明疊在星空上、字被星星干擾才被注意到。tsc、lint、e2e 全綠——
+`html.no-gpu` 在測試瀏覽器一定會掛、把 backdrop-filter 壓成 none，所以 e2e 本來就量不到它
+（見下面「要清 `!important` 的話」那節）。要驗得在有 GPU 的瀏覽器讀 `getComputedStyle(el).backdropFilter`。
 
 ⚠️ **`saturate()` 原本有三種擺法**（`saturate() blur()` / `blur() saturate()` / 只有 blur），
 效果一樣但讀起來像三種東西。統一成 `blur() saturate()`。

@@ -4,7 +4,6 @@
   z-index: var(--z-palette);
   background: rgba(var(--surface-0-rgb), 0.55);
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
   display: flex;
   align-items: flex-start;
   justify-content: center;

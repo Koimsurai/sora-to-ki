@@ -5,7 +5,6 @@
   z-index: var(--z-modal);
   background: var(--black-50);
   backdrop-filter: blur(var(--blur-4));
-  -webkit-backdrop-filter: blur(var(--blur-4));
 }
 
 .bd-panel {

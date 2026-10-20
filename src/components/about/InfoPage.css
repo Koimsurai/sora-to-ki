@@ -293,7 +293,6 @@
   padding: var(--space-5);
   background: rgba(var(--surface-0-rgb), 0.7);
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 .friends-modal {
   width: 100%;
