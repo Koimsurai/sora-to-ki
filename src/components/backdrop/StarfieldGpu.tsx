@@ -7,7 +7,7 @@
 // 場景/渲染全在 lib/starfieldGpu.ts；本元件只管 canvas 元素、訊息、徽章/量測 overlay。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
-import type { StarfieldRunner } from '@/lib/starfieldGpu';
+import type { PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
 
 const canOffscreen =
   typeof HTMLCanvasElement !== 'undefined' && 'transferControlToOffscreen' in HTMLCanvasElement.prototype;
@@ -38,9 +38,7 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [backend, setBackend] = useState(BACKEND_PENDING);
   const [failed, setFailed] = useState(false);
-  const [perf, setPerf] = useState<{ fps: number; avgMs: number; quality?: number; gpuMs?: number | null } | null>(
-    null,
-  );
+  const [perf, setPerf] = useState<PerfReport | null>(null);
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
   // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
   const controlRef = useRef<{ scroll(y: number): void; saturn(v: boolean, a: boolean): void } | null>(null);
@@ -138,16 +136,12 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
         e: MessageEvent<{
           type: string;
           backend?: string;
-          fps?: number;
-          avgMs?: number;
-          quality?: number;
-          gpuMs?: number | null;
+          report?: PerfReport;
           message?: string;
         }>,
       ) => {
         if (e.data.type === 'ready') setBackend(`${e.data.backend} · worker`);
-        else if (e.data.type === 'perf')
-          setPerf({ fps: e.data.fps ?? 0, avgMs: e.data.avgMs ?? 0, quality: e.data.quality, gpuMs: e.data.gpuMs });
+        else if (e.data.type === 'perf') setPerf(e.data.report ?? null);
         else if (e.data.type === 'lost') recover(e.data.message ?? 'GPU device lost');
         else if (e.data.type === 'error') {
           // canvas 已 transfer、無法回收給主執行緒重用 → 本 session 放棄（外層有 DOM 特效兜底）
@@ -184,7 +178,7 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
           width,
           height,
           dpr: window.devicePixelRatio,
-          onPerf: (fps, avgMs, quality, gpuMs) => setPerf({ fps, avgMs, quality, gpuMs }),
+          onPerf: setPerf,
           onDeviceLost: (message) => {
             if (!disposed) recover(message);
           },
@@ -261,7 +255,7 @@ export default function StarfieldGpu({ isOnHomePage = false, animateSaturn = tru
         >
           StarfieldGpu · {backend} · TSL bloom
           {perf &&
-            ` · ${perf.fps.toFixed(0)} fps · ${perf.avgMs.toFixed(2)} ms${perf.gpuMs != null ? ` · GPU ${perf.gpuMs.toFixed(2)} ms` : ''}${perf.quality ? ` · 品質降級 L${perf.quality}` : ''}`}
+            ` · ${perf.fps.toFixed(0)} fps · ${perf.avgMs.toFixed(2)} ms${perf.gpuMs != null ? ` · GPU ${perf.gpuMs.toFixed(2)} ms` : ''}${perf.quality ? ` · 品質降級 L${perf.quality}` : ''} · ${perf.idle ? '閒置' : '活動'} · vsync ${perf.vsyncMs.toFixed(1)} ms · 時鐘差 ${perf.clockSkewMs.toFixed(0)} ms`}
         </div>
       )}
     </>
