@@ -1,193 +1,18 @@
-/* ==================== Setup 頁面 - 深空黑洞主題 ==================== */
+/* ═══════════════════════════════════════════════════
+   我的配備 — 設備清單
+   跟書櫃、音樂頁同一套：透明疊在全站星空上、漸層中文標題配斜體英文小標、玻璃面板。
+   拓撲圖在 SetupTopology.tsx，樣式也在這個檔的後半。
+
+   ⚠ class 一律 setup- 開頭：裸的通用名（.card、.chip）會跟別頁撞名，
+     CSS 載入順序一變就互相污染（見 index.css 的 .section-label）。
+   ═══════════════════════════════════════════════════ */
 
 .setup-page {
   position: relative;
   min-height: 100vh;
-  background: #000000;
-  overflow: hidden;
 }
 
-/* === 深空背景層 === */
-.setup-deep-space-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 50% 50%, rgba(var(--surface-1-rgb), 0.8) 0%, #000000 70%),
-    radial-gradient(ellipse at 20% 80%, rgba(var(--surface-3-rgb), 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(5, 10, 25, 0.3) 0%, transparent 50%);
-}
-
-/* 微塵粒子 */
-.setup-deep-space-bg::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 200%;
-  height: 200%;
-  background-image:
-    radial-gradient(1px 1px at 10% 20%, var(--white-15) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 60%, var(--white-10) 0%, transparent 100%),
-    radial-gradient(1px 1px at 50% 10%, var(--white-10) 0%, transparent 100%),
-    radial-gradient(1px 1px at 70% 40%, var(--white-08) 0%, transparent 100%),
-    radial-gradient(1px 1px at 90% 80%, var(--white-10) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 15% 85%, rgba(var(--brand-rgb), 0.15) 0%, transparent 100%),
-    radial-gradient(1.5px 1.5px at 85% 15%, rgba(var(--clr-tertiary-rgb), 0.1) 0%, transparent 100%);
-  animation: dust-drift 60s linear infinite;
-}
-
-@keyframes dust-drift {
-  0% {
-    transform: translateY(0) translateX(0);
-  }
-  50% {
-    transform: translateY(-15px) translateX(10px);
-  }
-  100% {
-    transform: translateY(0) translateX(0);
-  }
-}
-
-/* === 黑洞背景 === */
-.setup-blackhole-bg {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600px;
-  height: 600px;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.35;
-}
-
-.setup-blackhole-core {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 120px;
-  height: 120px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(
-    circle at center,
-    #000 0%,
-    #000 40%,
-    var(--black-90) 55%,
-    var(--black-50) 70%,
-    transparent 85%
-  );
-  border-radius: var(--r-round);
-  box-shadow:
-    0 0 80px 30px var(--black-80),
-    0 0 120px 60px var(--black-40);
-  z-index: 3;
-  animation: core-pulse 8s ease-in-out infinite;
-}
-
-@keyframes core-pulse {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.08);
-  }
-}
-
-.setup-blackhole-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: var(--r-round);
-  transform: translate(-50%, -50%);
-}
-
-.setup-blackhole-ring-1 {
-  width: 100%;
-  height: 100%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(var(--brand-rgb), 0.25) 40deg,
-    rgba(90, 60, 200, 0.4) 80deg,
-    rgba(60, 40, 160, 0.3) 130deg,
-    rgba(var(--brand-rgb), 0.2) 180deg,
-    rgba(80, 50, 180, 0.35) 230deg,
-    rgba(100, 70, 210, 0.25) 290deg,
-    transparent 360deg
-  );
-  mask: radial-gradient(circle at center, transparent 18%, white 22%, white 45%, transparent 50%);
-  -webkit-mask: radial-gradient(circle at center, transparent 18%, white 22%, white 45%, transparent 50%);
-  animation: ring-rotate 20s linear infinite;
-  z-index: 2;
-}
-
-.setup-blackhole-ring-2 {
-  width: 130%;
-  height: 130%;
-  background: conic-gradient(
-    from 60deg,
-    transparent 0deg,
-    rgba(var(--clr-tertiary-rgb), 0.1) 60deg,
-    rgba(60, 150, 200, 0.2) 120deg,
-    rgba(var(--clr-tertiary-rgb), 0.1) 200deg,
-    rgba(70, 120, 180, 0.15) 280deg,
-    transparent 360deg
-  );
-  mask: radial-gradient(circle at center, transparent 14%, white 17%, white 38%, transparent 42%);
-  -webkit-mask: radial-gradient(circle at center, transparent 14%, white 17%, white 38%, transparent 42%);
-  animation: ring-rotate 30s linear infinite reverse;
-  z-index: 1;
-  opacity: 0.6;
-}
-
-.setup-blackhole-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 70%;
-  height: 70%;
-  transform: translate(-50%, -50%);
-  border-radius: var(--r-round);
-  background: radial-gradient(
-    circle at center,
-    transparent 60%,
-    rgba(var(--brand-rgb), 0.06) 70%,
-    rgba(var(--brand-rgb), 0.02) 80%,
-    transparent 90%
-  );
-  animation: glow-pulse 6s ease-in-out infinite;
-  z-index: 4;
-}
-
-@keyframes ring-rotate {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-@keyframes glow-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: translate(-50%, -50%) scale(1.15);
-  }
-}
-
-/* === 主內容區 === */
-.setup-content {
+.setup-wrap {
   position: relative;
   z-index: 2;
   max-width: 1100px;
@@ -195,381 +20,554 @@
   padding: var(--page-top) var(--space-10) var(--page-bottom);
 }
 
-/* Header */
+/* ── 標題 ── */
 .setup-header {
   text-align: center;
-  margin-bottom: var(--space-12);
+  margin-bottom: var(--space-10);
 }
-
 .setup-title {
-  font-size: clamp(2.2rem, 5vw, 3.5rem);
+  font-size: clamp(2rem, 5vw, 3.2rem);
   font-weight: 800;
-  margin-bottom: var(--space-2);
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
 }
-
-.setup-title .title-gradient {
-  background: linear-gradient(135deg, #c0a0ff 0%, var(--brand) 50%, var(--clr-tertiary) 100%);
+.setup-title-gradient {
+  background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 40%, var(--magenta) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
-.setup-title .title-emoji {
-  font-size: 0.8em;
-  -webkit-text-fill-color: initial;
+.setup-title-sub {
+  font-size: var(--fs-18);
+  color: var(--white-40);
+  font-weight: 400;
+  font-style: italic;
 }
-
 .setup-subtitle {
   font-size: var(--fs-16);
-  color: rgba(var(--clr-paragraph-rgb), 0.7);
-  font-weight: 300;
-  letter-spacing: var(--ls-12);
+  color: var(--text-secondary);
+  line-height: var(--lh-170);
+  max-width: 560px;
+  margin: 0 auto;
 }
-
-/* Category Filter Tabs */
-.setup-category-tabs {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-bottom: var(--space-12);
-}
-
-.setup-category-tab {
-  padding: var(--space-2) var(--space-4-5);
-  border-radius: var(--r-full);
-  border: 1px solid var(--white-08);
-  background: var(--white-02);
-  color: rgba(var(--clr-paragraph-rgb), 0.7);
-  cursor: pointer;
-  font-size: var(--fs-14);
-  font-weight: 500;
-  transition: all var(--dur-300) ease;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  backdrop-filter: blur(var(--blur-8));
-}
-
-.setup-category-tab:hover {
-  background: var(--white-06);
-  border-color: var(--white-15);
-  color: var(--white-90);
-}
-
-.setup-category-tab.active {
-  background: rgba(var(--brand-rgb), 0.15);
-  border-color: rgba(var(--brand-rgb), 0.4);
-  color: #fff;
-  box-shadow: 0 0 20px rgba(var(--brand-rgb), 0.1);
-}
-
-.setup-category-tab .tab-icon {
-  font-size: 1em;
-  opacity: 0.8;
-}
-
-.setup-category-tab .tab-count {
-  font-size: var(--fs-11);
-  background: var(--white-08);
-  padding: var(--space-px) var(--space-2);
-  border-radius: var(--r-10);
-  min-width: 20px;
-  text-align: center;
-}
-
-.setup-category-tab.active .tab-count {
-  background: rgba(var(--brand-rgb), 0.3);
-}
-
-/* Category Section */
-.setup-category-section {
-  margin-bottom: var(--space-14);
-}
-
-.setup-category-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3-5);
-  margin-bottom: var(--space-6);
-  padding-bottom: var(--space-3-5);
-  border-bottom: 1px solid var(--white-06);
-}
-
-.setup-category-number {
-  font-size: var(--fs-12);
-  font-weight: 700;
-  color: var(--clr-button, var(--brand));
-  background: rgba(var(--brand-rgb), 0.1);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--r-20);
-  border: 1px solid rgba(var(--brand-rgb), 0.2);
-  letter-spacing: var(--ls-8);
-}
-
-.setup-category-title {
-  font-size: var(--fs-24);
-  font-weight: 700;
-  color: #fff;
-  margin: 0;
-}
-
-.setup-category-subtitle {
+.setup-stats {
+  margin: var(--space-4) 0 0;
   font-size: var(--fs-13);
-  color: rgba(var(--clr-paragraph-rgb), 0.5);
-  margin-left: auto;
-  font-style: italic;
+  letter-spacing: var(--ls-4);
+  color: var(--white-50);
 }
 
-/* Equipment Grid */
+/* ── 分類膠囊 ── */
+/* fieldset：拿掉 UA 預設的邊距與 min-width（後者會讓它在窄螢幕撐破版面） */
+.setup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1);
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
+  margin: var(--space-12) auto var(--space-8);
+  padding: var(--space-1);
+  border-radius: var(--r-20);
+  background: var(--white-04);
+  border: 1px solid var(--white-08);
+}
+.setup-chip {
+  padding: var(--space-1-5) var(--space-4);
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--white-60);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    background var(--dur-200) ease,
+    color var(--dur-200) ease;
+}
+.setup-chip:hover,
+.setup-chip:focus-visible {
+  background: var(--white-06);
+  color: var(--ink);
+  box-shadow: none;
+}
+.setup-chip[aria-pressed="true"] {
+  background: rgba(var(--lavender-rgb), 0.15);
+  color: var(--ink);
+}
+
+/* ── 分類區塊 ── */
+.setup-section {
+  margin-bottom: var(--space-14);
+  scroll-margin-top: var(--space-24);
+}
+.setup-section-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--white-08);
+}
+.setup-section-no {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--lavender);
+  opacity: 0.7;
+}
+.setup-section-title {
+  margin: 0;
+  font-size: var(--fs-22);
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.setup-section-en {
+  font-size: var(--fs-13);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--white-40);
+}
+.setup-section-desc {
+  grid-column: 2;
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--white-50);
+}
+
+/* ── 設備卡 ── */
 .setup-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: var(--space-4);
 }
-
-/* === Equipment Card === */
 .setup-card {
-  position: relative;
-  background: rgba(var(--zinc-900-rgb), 0.8);
-  border: 1px solid var(--white-06);
-  border-radius: var(--r-12);
-  padding: var(--space-5);
-  cursor: default;
-  transition: all var(--dur-400) var(--easing-standard);
-  overflow: hidden;
-}
-
-.setup-card:hover {
-  border-color: var(--white-10);
-  transform: translateY(-3px);
-  box-shadow: var(--elev-3);
-}
-
-.setup-card-image-wrapper {
-  width: 100%;
-  height: 140px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-3-5);
-  padding: var(--space-2-5);
-  background: var(--white-02);
-  border-radius: var(--r-10);
-  transition: transform var(--dur-300) ease;
-}
-
-.setup-card:hover .setup-card-image-wrapper {
-  transform: scale(1.02);
-}
-
-.setup-card-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 8px var(--black-40));
-  transition: filter var(--dur-300) ease;
-}
-
-.setup-card:hover .setup-card-image {
-  filter: drop-shadow(0 4px 16px rgba(var(--brand-rgb), 0.15));
-}
-
-.setup-card-icon-wrapper {
-  width: 100%;
-  height: 140px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-3-5);
-  padding: var(--space-2-5);
-  background: rgba(var(--brand-rgb), 0.04);
-  border-radius: var(--r-10);
-  font-size: var(--fs-56);
-  color: rgba(var(--brand-rgb), 0.5);
-}
-
-.setup-card-title {
-  font-size: var(--fs-16);
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: var(--space-1);
-  line-height: var(--lh-130);
-}
-
-.setup-card-subtitle {
-  font-size: var(--fs-12);
-  /* alpha 0.6 → 0.8。疊在 #101014 上的實際顏色是 #5f6773，對比只有 **3.32:1**，
-     而 0.78rem 屬於「一般文字」，WCAG AA 要求 4.5:1（axe 判 serious）。
-     基色不動、只調 alpha：
-       0.60  #5f6773  3.32:1  ✗
-       0.75  #737d8b  4.54:1  剛好壓線
-       0.80  #7a8492  5.01:1  ← 取這個，留餘裕
-     這是設備清單的型號說明，看不清楚等於那一行不存在。 */
-  color: rgba(var(--clr-paragraph-rgb), 0.8);
-  line-height: var(--lh-140);
-}
-
-/* === Base II Section === */
-.setup-base-section {
-  margin-bottom: var(--space-14);
-}
-
-.setup-base-card {
-  position: relative;
-  background: rgba(var(--zinc-900-rgb), 0.7);
-  border: 1px solid var(--white-06);
+  flex-direction: column;
+  padding: var(--space-4);
   border-radius: var(--r-16);
-  padding: var(--space-10) var(--space-9);
-  overflow: hidden;
+  background: var(--white-04);
+  border: 1px solid var(--white-08);
+  scroll-margin-top: var(--space-24);
+  transition:
+    border-color var(--dur-250) ease,
+    background var(--dur-250) ease,
+    transform var(--dur-250) var(--easing-out);
 }
-
-.setup-base-card::before {
-  content: "";
+.setup-card:hover {
+  background: var(--white-06);
+  border-color: rgba(var(--lavender-rgb), 0.3);
+  transform: translateY(-3px);
+}
+/* 產品圖放在一圈很淡的光暈上：去背的 PNG 直接貼在深底上會像被剪下來的 */
+.setup-card-media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  margin-bottom: var(--space-3);
+  border-radius: var(--r-12);
+  background: radial-gradient(ellipse at 50% 60%, rgba(var(--lavender-rgb), 0.1), transparent 70%);
+}
+/* 絕對定位：用 max-height 的話直立的圖（手機、路由器）會把框撐高，同一列的標題就對不齊 */
+.setup-card-image {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.02) 0%, transparent 50%);
-  pointer-events: none;
+  inset: 9%;
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  transition: transform var(--dur-400) var(--easing-out);
 }
-
-.setup-base-quote {
-  font-size: var(--fs-16);
-  font-style: italic;
-  color: rgba(var(--brand-rgb), 0.7);
-  margin-bottom: var(--space-7);
-  text-align: center;
+.setup-card:hover .setup-card-image {
+  transform: scale(1.05);
+}
+.setup-card-placeholder {
+  font-size: var(--fs-32);
+  color: var(--white-30);
+}
+.setup-card-name {
+  margin: 0;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  line-height: var(--lh-140);
+  color: var(--ink);
+}
+.setup-card-spec {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-12);
+  line-height: var(--lh-150);
+  color: var(--white-50);
+}
+.setup-card-role {
+  margin: var(--space-2-5) 0 0;
+  padding-top: var(--space-2-5);
+  border-top: 1px dashed var(--white-10);
+  font-size: var(--fs-12);
   line-height: var(--lh-160);
+  color: var(--text-secondary);
 }
 
+/* 其他連網家電：沒有產品圖，只是一排「品牌＋類型」的小籤 */
+.setup-appliances {
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--r-16);
+  border: 1px dashed var(--white-10);
+  scroll-margin-top: var(--space-24);
+}
+.setup-appliances-title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--white-60);
+}
+.setup-appliances-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.setup-appliances-list li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1-5);
+  padding: var(--space-1-5) var(--space-3);
+  border-radius: var(--r-full);
+  background: var(--white-04);
+  border: 1px solid var(--white-08);
+  font-size: var(--fs-12);
+}
+.setup-appliances-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+.setup-appliances-type {
+  color: var(--white-50);
+}
+
+/* 從拓撲圖跳過來：外框亮一下，讓人知道是哪一張 */
+.setup-appliances.is-flash,
+.setup-card.is-flash,
+.setup-section.is-flash .setup-section-head {
+  animation: setup-flash 1.6s var(--easing-out);
+}
+@keyframes setup-flash {
+  0%,
+  35% {
+    border-color: var(--lavender);
+    box-shadow: 0 0 0 3px rgba(var(--lavender-rgb), 0.25);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* ── 老家 ── */
+.setup-base {
+  position: relative;
+  padding: var(--space-6);
+  border-radius: var(--r-16);
+  background: var(--white-04);
+  border: 1px solid var(--white-08);
+}
+.setup-base-icon {
+  position: absolute;
+  top: var(--space-6);
+  right: var(--space-6);
+  font-size: var(--fs-24);
+  color: var(--white-10);
+}
+.setup-base-quote {
+  margin: 0 0 var(--space-5);
+  padding-right: var(--space-10);
+  font-style: italic;
+  font-size: var(--fs-14);
+  color: var(--white-60);
+}
 .setup-base-specs {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-2-5);
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+}
+.setup-base-row {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--white-06);
+  font-size: var(--fs-13);
+}
+.setup-base-row dt {
+  flex: 0 0 64px;
+  font-family: var(--mono-font);
+  color: var(--lavender);
+}
+.setup-base-row dd {
+  margin: 0;
+  color: var(--text-secondary);
+}
+.setup-base-retired {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 0;
+  font-size: var(--fs-12);
+  color: var(--white-40);
+}
+.setup-base-retired-tag {
+  padding: var(--space-0-5) var(--space-2);
+  border-radius: var(--r-full);
+  border: 1px solid var(--white-10);
+  color: var(--white-50);
 }
 
-.setup-base-spec-item {
+/* ═══════════════ 拓撲圖 ═══════════════ */
+.setup-topo {
+  padding: var(--space-5) var(--space-6) var(--space-4);
+  border-radius: var(--r-20);
+  background: var(--white-02);
+  border: 1px solid var(--white-08);
+}
+.setup-topo-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.setup-topo-title {
+  margin: 0;
+  font-size: var(--fs-16);
+  font-weight: 700;
+  color: var(--ink);
+}
+.setup-topo-hint {
+  margin: 0;
+  font-size: var(--fs-12);
+  color: var(--white-40);
+}
+
+.setup-topo-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+/* 兩種版面都在 SSR 輸出，CSS 只留一張（見 SetupTopology.tsx 開頭的說明） */
+.setup-topo-tall {
+  display: none;
+}
+@media (max-width: 640px) {
+  .setup-topo-wide {
+    display: none;
+  }
+  .setup-topo-tall {
+    display: block;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+}
+
+/* 連線：四種顏色對應四種連接方式 */
+.setup-topo-link {
+  --link: var(--lavender);
+}
+.setup-topo-link.is-wifi {
+  --link: var(--sky-300);
+}
+.setup-topo-link.is-matter {
+  --link: var(--magenta);
+}
+.setup-topo-link.is-air {
+  --link: var(--amber-300);
+}
+.setup-topo-line {
+  fill: none;
+  stroke: var(--link);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  opacity: 0.35;
+  transition: opacity var(--dur-200) ease;
+}
+.setup-topo-link.is-wifi .setup-topo-line {
+  stroke-dasharray: 5 5;
+}
+.setup-topo-link.is-air .setup-topo-line {
+  stroke-dasharray: 1 5;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+/* 流動的光點：短虛線＋位移，看起來像封包在線上跑 */
+.setup-topo-flow {
+  fill: none;
+  stroke: var(--link);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.1 26;
+  opacity: 0.7;
+  animation: setup-topo-flow 2.4s linear infinite;
+}
+@keyframes setup-topo-flow {
+  to {
+    stroke-dashoffset: -26.1;
+  }
+}
+/* 描一圈跟面板同色的邊：標籤壓在別條線上時仍讀得出來 */
+.setup-topo-link-label {
+  font-size: var(--fs-11);
+  fill: var(--link);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgb(var(--surface-1-rgb));
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+/* 滑到節點上：相連的線亮起來，其他的退後 */
+.setup-topo-svg[data-hot] .setup-topo-link:not(.is-hot) {
+  opacity: 0.35;
+}
+.setup-topo-link.is-hot .setup-topo-line {
+  opacity: 0.9;
+}
+
+.setup-topo-node {
+  cursor: default;
+}
+a.setup-topo-node {
+  cursor: pointer;
+}
+a.setup-topo-node:focus {
+  outline: none;
+}
+.setup-topo-box {
+  fill: rgba(var(--surface-1-rgb), 0.85);
+  stroke: var(--white-15);
+  stroke-width: 1;
+  transition:
+    stroke var(--dur-200) ease,
+    fill var(--dur-200) ease;
+}
+.setup-topo-node.is-core .setup-topo-box {
+  stroke: rgba(var(--lavender-rgb), 0.45);
+}
+/* 網段標籤：底色淡一點、字小一點，看得出它是「一個網段」不是一台設備 */
+.setup-topo-node.is-net .setup-topo-box {
+  fill: rgba(var(--lavender-rgb), 0.08);
+  stroke: rgba(var(--lavender-rgb), 0.3);
+}
+/* 主幹是窄版共用的那條，不屬於任何一種連線 */
+.setup-topo-link.is-trunk .setup-topo-line {
+  stroke: var(--white-20);
+  opacity: 1;
+}
+.setup-topo-node.is-endpoint .setup-topo-box,
+.setup-topo-node.is-cloud .setup-topo-box {
+  stroke-dasharray: 3 3;
+}
+.setup-topo-node.is-hot .setup-topo-box,
+a.setup-topo-node:focus-visible .setup-topo-box {
+  stroke: var(--lavender);
+  fill: rgba(var(--lavender-rgb), 0.12);
+}
+.setup-topo-name {
+  font-size: var(--fs-13);
+  font-weight: 600;
+  fill: var(--ink);
+  text-anchor: middle;
+}
+.setup-topo-sub {
+  font-size: var(--fs-11);
+  fill: var(--white-50);
+  text-anchor: middle;
+}
+.setup-topo-node.is-endpoint .setup-topo-name,
+.setup-topo-node.is-cloud .setup-topo-name {
+  font-size: var(--fs-12);
+  font-weight: 500;
+  fill: var(--white-70);
+}
+.setup-topo-node.is-endpoint .setup-topo-sub,
+.setup-topo-node.is-net .setup-topo-sub {
+  font-size: var(--fs-10);
+}
+.setup-topo-node.is-net .setup-topo-name {
+  font-size: var(--fs-12);
+}
+
+.setup-topo-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2) var(--space-5);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-12);
+  color: var(--white-50);
+}
+.setup-topo-legend li {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2-5) var(--space-3-5);
-  background: var(--white-02);
-  border-radius: var(--r-8);
-  border: 1px solid var(--white-04);
-  transition: all var(--dur-300) ease;
+  gap: var(--space-2);
+  --link: var(--lavender);
+}
+.setup-topo-legend li.is-wifi {
+  --link: var(--sky-300);
+}
+.setup-topo-legend li.is-matter {
+  --link: var(--magenta);
+}
+.setup-topo-legend li.is-air {
+  --link: var(--amber-300);
+}
+.setup-topo-legend line {
+  stroke: var(--link);
+  stroke-width: 2;
+}
+.setup-topo-legend li.is-wifi line {
+  stroke-dasharray: 5 4;
+}
+.setup-topo-legend li.is-air line {
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
 }
 
-.setup-base-spec-item:hover {
-  background: rgba(var(--brand-rgb), 0.06);
-  border-color: rgba(var(--brand-rgb), 0.15);
-}
-
-.setup-base-spec-label {
-  font-size: var(--fs-12);
-  font-weight: 700;
-  color: var(--clr-button, var(--brand));
-  text-transform: uppercase;
-  letter-spacing: var(--ls-8);
-  min-width: 55px;
-}
-
-.setup-base-spec-value {
-  font-size: var(--fs-14);
-  color: var(--white-80);
-}
-
-/* Retired Section */
-.setup-retired-section {
-  margin-top: var(--space-6);
-  padding-top: var(--space-4-5);
-  border-top: 1px dashed var(--white-06);
-}
-
-.setup-retired-title {
-  font-size: var(--fs-14);
-  color: rgba(var(--clr-paragraph-rgb), 0.5);
-  margin-bottom: var(--space-2);
-}
-
-.setup-retired-text {
-  font-size: var(--fs-13);
-  color: rgba(var(--clr-paragraph-rgb), 0.35);
-  font-style: italic;
-}
-
-/* === Responsive === */
 @media (max-width: 768px) {
-  .setup-content {
-    padding: var(--page-top) var(--space-5) var(--page-bottom);
+  .setup-wrap {
+    padding-inline: var(--space-5);
   }
-
-  .setup-blackhole-bg {
-    width: 400px;
-    height: 400px;
-    opacity: 0.25;
+  .setup-topo {
+    padding: var(--space-4);
   }
-
+}
+@media (max-width: 480px) {
   .setup-title {
     flex-direction: column;
+    align-items: center;
     gap: var(--space-1);
   }
-
   .setup-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-3);
   }
-
   .setup-card {
-    padding: var(--space-3-5);
+    padding: var(--space-3);
   }
-
-  .setup-card-image-wrapper {
-    height: 110px;
-    padding: var(--space-2);
-  }
-
-  .setup-card-title {
-    font-size: var(--fs-14);
-  }
-
-  .setup-card-subtitle {
-    font-size: var(--fs-12);
-  }
-
-  .setup-base-card {
-    padding: var(--space-6) var(--space-4-5);
-  }
-
-  .setup-base-specs {
-    grid-template-columns: 1fr;
-  }
-
-  .setup-category-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-1-5);
-  }
-
-  .setup-category-subtitle {
-    margin-left: 0;
-  }
-}
-
-@media (max-width: 480px) {
-  .setup-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-2-5);
-  }
-
-  .setup-blackhole-bg {
-    width: 280px;
-    height: 280px;
-    opacity: 0.2;
+  .setup-section-desc {
+    grid-column: 1 / -1;
   }
 }

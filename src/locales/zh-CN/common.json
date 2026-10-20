@@ -506,7 +506,86 @@
   },
   "setup": {
     "title": "我的装备 · My Setup",
-    "description": "Koimsurai 的个人设备清单：主力 PC、家用服务器、网络设备、周边设备完整一览。"
+    "description": "Koimsurai 的设备清单：主力机、跑着这个网站的家用服务器、网络与智能家居，还有一张家里怎么连起来的拓扑图。",
+    "heroTitle": "我的配备",
+    "subtitle": "2026 年的全部家当：桌上的主力机、跑着这个网站的服务器，到控制空调和灯的那几个小装置。",
+    "stats": "{{count}} 件设备 · {{iot}} 个智能家居设备",
+    "filter": "分类",
+    "cat": {
+      "main-rig": {
+        "short": "主力机",
+        "desc": "全白美学主力机"
+      },
+      "server": {
+        "short": "服务器",
+        "desc": "这个网站、Home Assistant 与所有自托管服务都跑在这台"
+      },
+      "network": {
+        "short": "网络与移动",
+        "desc": "数字生活的骨干"
+      },
+      "smart-home": {
+        "short": "智能家居",
+        "desc": "空调、灯和传感器都接进 Home Assistant"
+      },
+      "peripherals": {
+        "short": "外设",
+        "desc": "输入与输出"
+      },
+      "base-ii": {
+        "short": "老家",
+        "desc": "回老家时的备用基地"
+      }
+    },
+    "roles": {
+      "nanokvm": "远程开机、进 BIOS，服务器死机时也连得进去",
+      "headless": "让没接显示器的服务器以为有显示器，GPU 才会正常输出",
+      "googleTv": "家里的 Matter 中枢",
+      "hub3": "光照、温湿度、人体感应，通过 Matter 上报；夜间灯光的自动校正靠它的光照度",
+      "rm4": "学习空调的红外遥控码，让空调接进 Home Assistant",
+      "esp32": "两块板子组成的 433MHz 发射器，模拟吸顶灯的原厂遥控器",
+      "doorbell": "电池门铃，通过 H200 网关联网"
+    },
+    "retired": "退役",
+    "retiredText": "家人共用电脑 — NVIDIA GTX 960（目前由家人使用）",
+    "topo": {
+      "title": "家里怎么连起来",
+      "hint": "点节点会跳到那台设备",
+      "internet": "互联网",
+      "switch": "交换机",
+      "mobile": "手机・笔记本",
+      "sensors": "光照・温湿度・人体",
+      "irBlaster": "红外遥控",
+      "rfBlaster": "433MHz 射频",
+      "rig": "主力机",
+      "ac": "空调",
+      "light": "吸顶灯",
+      "legend": {
+        "wired": "有线",
+        "wifi": "Wi-Fi",
+        "matter": "Matter",
+        "air": "红外／射频"
+      },
+      "netWired": "有线",
+      "netMain": "主网络",
+      "netIot": "IoT 专用",
+      "matterHub": "Matter 中枢",
+      "doorbellHub": "门铃网关",
+      "doorbell": "门铃",
+      "appliances": "联网家电",
+      "appliancesSub": "除湿机・空净・摄像头…"
+    },
+    "appliances": {
+      "title": "其他联网家电",
+      "types": {
+        "dehumidifier": "除湿机",
+        "airPurifier": "空气净化器",
+        "catTower": "喵太座：宠物空净＋加热猫窝",
+        "feeder": "自动喂食器",
+        "camera": "摄像头",
+        "plug": "智能插座"
+      }
+    }
   },
   "info": {
     "aboutSite": {
