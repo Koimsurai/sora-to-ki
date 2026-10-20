@@ -509,7 +509,6 @@
     "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
     "heroTitle": "My Setup",
     "subtitle": "Everything I own in 2026: the rig on my desk, the server running this site, and the little boxes that run the AC and lights.",
-    "stats": "{{count}} items · {{iot}} smart home devices",
     "filter": "Category",
     "cat": {
       "main-rig": {
@@ -585,7 +584,8 @@
         "camera": "Camera",
         "plug": "Smart plug"
       }
-    }
+    },
+    "packages": "{{count}} (gear), {{iot}} (smart home)"
   },
   "info": {
     "aboutSite": {

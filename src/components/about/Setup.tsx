@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FaHome, FaPlug } from 'react-icons/fa';
+import SetupNeofetch from './SetupNeofetch';
 import SetupTopology from './SetupTopology';
 import { GEAR, BASE_II_SPECS, APPLIANCES, type CategoryId, type GearItem } from './setupGear';
 import './Setup.css';
@@ -61,19 +61,7 @@ function Setup() {
   return (
     <div className="setup-page">
       <div className="setup-wrap">
-        <motion.header
-          className="setup-header"
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="setup-title">
-            <span className="setup-title-gradient">{t('setup.heroTitle')}</span>
-            <span className="setup-title-sub">Setup Inventory</span>
-          </h1>
-          <p className="setup-subtitle">{t('setup.subtitle')}</p>
-          <p className="setup-stats">{t('setup.stats', { count: total, iot })}</p>
-        </motion.header>
+        <SetupNeofetch total={total} iot={iot} />
 
         <SetupTopology onNavigate={navigate} />
 

@@ -509,7 +509,6 @@
     "description": "Koimsurai의 장비 목록: 메인 PC, 이 사이트를 돌리는 홈 서버, 네트워크와 스마트홈, 그리고 집 안 연결도.",
     "heroTitle": "내 장비",
     "subtitle": "2026년의 모든 장비: 책상 위 메인 PC, 이 사이트를 돌리는 서버, 에어컨과 조명을 제어하는 작은 기기들까지.",
-    "stats": "장비 {{count}}개 · 스마트홈 기기 {{iot}}개",
     "filter": "분류",
     "cat": {
       "main-rig": {
@@ -585,7 +584,8 @@
         "camera": "카메라",
         "plug": "스마트 플러그"
       }
-    }
+    },
+    "packages": "{{count}} (장비), {{iot}} (스마트홈)"
   },
   "info": {
     "aboutSite": {
