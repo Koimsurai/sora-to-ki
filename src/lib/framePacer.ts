@@ -12,6 +12,8 @@ export interface FramePacer {
   shouldRender(now: number, targetMs: number): boolean;
   /** 暫停後恢復時呼叫：下一次一定畫，暫停期間的空檔不算進 vsync 估計 */
   reset(): void;
+  /** 目前估到的 vsync 間隔（?debug=perf 用） */
+  readonly vsyncMs: number;
 }
 
 export function createFramePacer(): FramePacer {
@@ -39,6 +41,9 @@ export function createFramePacer(): FramePacer {
       lastTick = -1;
       ticksSinceRender = 0;
       pendingFirst = true;
+    },
+    get vsyncMs() {
+      return vsyncMs;
     },
   };
 }
