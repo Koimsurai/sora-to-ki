@@ -101,73 +101,6 @@ const Bookshelf = () => {
       <NebulaBackground />
 
       <div className="bookshelf-content-wrapper">
-        <motion.header
-          className="bookshelf-header"
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="bookshelf-title">
-            <span className="bs-title-gradient">{t('bookshelf.heroTitle')}</span>
-            <span className="bs-title-sub">Knowledge Constellation</span>
-          </h1>
-          <p className="bookshelf-subtitle">{t('bookshelf.subtitle')}</p>
-          {stats && (
-            <p className="bs-sky-stats">
-              {t('bookshelf.skyStats', {
-                total: stats.total_books,
-                read: stats.books_read,
-                reading: stats.books_reading,
-              })}
-              {stats.average_rating ? (
-                <span className="bs-sky-stats-avg">{t('bookshelf.avgRating', { rating: stats.average_rating })}</span>
-              ) : null}
-            </p>
-          )}
-        </motion.header>
-
-        <div className="bs-toolbar">
-          <fieldset className="bs-chips">
-            <legend className="sr-only">{t('bookshelf.filterStatus')}</legend>
-            {filters.map((f) => (
-              <button
-                key={f}
-                type="button"
-                className="bs-chip"
-                data-status={f}
-                aria-pressed={statusFilter === f}
-                onClick={() => setStatusFilter(f)}
-              >
-                {f === 'all' ? t('common.all') : statusLabel(f)}
-              </button>
-            ))}
-          </fieldset>
-          <div className="bs-search">
-            <FaSearch className="bs-search-icon" aria-hidden="true" />
-            <input
-              type="search"
-              placeholder={t('bookshelf.searchPlaceholder')}
-              aria-label={t('bookshelf.searchPlaceholder')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button type="button" className="bs-search-clear" aria-label="清除" onClick={() => setSearchTerm('')}>
-                <FaTimes />
-              </button>
-            )}
-          </div>
-          <button
-            type="button"
-            className="view-mode-toggle"
-            disabled={noGpu}
-            title={noGpu ? t('bookshelf.zg.unavailable') : undefined}
-            onClick={() => setIs3DMode(true)}
-          >
-            🌌 {t('bookshelf.zeroGravity')}
-          </button>
-        </div>
-
         <motion.section
           className="bs-sky"
           aria-label={t('bookshelf.heroTitle')}
@@ -175,6 +108,27 @@ const Bookshelf = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.15 }}
         >
+          {/* 頁面標題放進星圖左上角的圖例框：打開就是一整片天空，而不是「大標＋副標＋內容」。
+              那個角落由 layoutConstellation 讓出來（LEGEND_CORNER），星星不會被蓋到。 */}
+          <header className="bs-sky-card">
+            <h1 className="bookshelf-title">
+              <span className="bs-title-gradient">{t('bookshelf.heroTitle')}</span>
+              <span className="bs-title-sub">Knowledge Constellation</span>
+            </h1>
+            <p className="bookshelf-subtitle">{t('bookshelf.subtitle')}</p>
+            {stats && (
+              <p className="bs-sky-stats">
+                {t('bookshelf.skyStats', {
+                  total: stats.total_books,
+                  read: stats.books_read,
+                  reading: stats.books_reading,
+                })}
+                {stats.average_rating ? (
+                  <span className="bs-sky-stats-avg">{t('bookshelf.avgRating', { rating: stats.average_rating })}</span>
+                ) : null}
+              </p>
+            )}
+          </header>
           <BookConstellation
             books={books}
             isDimmed={isDimmed}
@@ -182,6 +136,47 @@ const Bookshelf = () => {
             onSelect={setSelected}
             coverSrc={proxiedCover}
           />
+          <div className="bs-toolbar">
+            <fieldset className="bs-chips">
+              <legend className="sr-only">{t('bookshelf.filterStatus')}</legend>
+              {filters.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  className="bs-chip"
+                  data-status={f}
+                  aria-pressed={statusFilter === f}
+                  onClick={() => setStatusFilter(f)}
+                >
+                  {f === 'all' ? t('common.all') : statusLabel(f)}
+                </button>
+              ))}
+            </fieldset>
+            <div className="bs-search">
+              <FaSearch className="bs-search-icon" aria-hidden="true" />
+              <input
+                type="search"
+                placeholder={t('bookshelf.searchPlaceholder')}
+                aria-label={t('bookshelf.searchPlaceholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button type="button" className="bs-search-clear" aria-label="清除" onClick={() => setSearchTerm('')}>
+                  <FaTimes />
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              className="view-mode-toggle"
+              disabled={noGpu}
+              title={noGpu ? t('bookshelf.zg.unavailable') : undefined}
+              onClick={() => setIs3DMode(true)}
+            >
+              🌌 {t('bookshelf.zeroGravity')}
+            </button>
+          </div>
           <p className="bs-sky-hint" aria-hidden="true">
             {t('bookshelf.skyHint')}
           </p>

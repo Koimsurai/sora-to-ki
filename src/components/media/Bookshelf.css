@@ -22,21 +22,39 @@
   padding: var(--page-top) var(--space-10) var(--page-bottom);
 }
 
-/* ── 標題 ── */
-.bookshelf-header {
-  text-align: center;
-  margin-bottom: var(--space-8);
+/* ── 標題：星圖左上角的圖例框 ──
+   ⚠ 這個角落是 layoutConstellation 讓出來的（LEGEND_CORNER：畫布寬 25%、高 23%），
+     框不能比那個範圍大，不然會蓋到星星。內容只放標題與統計，字級刻意小。 */
+.bs-sky-card {
+  position: absolute;
+  z-index: 1;
+  top: 2%;
+  left: 1.5%;
+  width: 23%;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--r-16);
+  background: rgba(var(--surface-0-rgb), 0.55);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--blur-12));
+}
+/* 1100 以下畫布跟著變窄，讓出來的角落（畫布的 25% × 23%）裝不下這張卡，
+   改成星圖上方一張普通的卡。實測 960px 時卡片高 121px、角落只剩 121px，會蓋到一顆星。 */
+@media (max-width: 1100px) {
+  .bs-sky-card {
+    position: static;
+    width: auto;
+    margin-bottom: var(--space-3);
+  }
 }
 
 .bookshelf-title {
-  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-size: var(--fs-22);
   font-weight: 800;
   display: flex;
   align-items: baseline;
-  justify-content: center;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-2);
   flex-wrap: wrap;
-  margin-bottom: var(--space-3);
+  margin: 0 0 var(--space-1);
 }
 
 .bs-title-gradient {
@@ -47,24 +65,29 @@
 }
 
 .bs-title-sub {
-  font-size: var(--fs-18);
+  font-size: var(--fs-11);
   color: var(--white-40);
   font-weight: 400;
   font-style: italic;
 }
 
 .bookshelf-subtitle {
-  font-size: var(--fs-16);
+  font-size: var(--fs-12);
   color: var(--text-secondary);
-  line-height: var(--lh-170);
-  max-width: 520px;
-  margin: 0 auto;
+  line-height: var(--lh-150);
+  margin: 0;
+}
+/* 疊在星圖上時只放標題與統計：副標兩行會讓框超出讓出來的角落、蓋到星星 */
+@media (min-width: 1101px) {
+  .bs-sky-card .bookshelf-subtitle {
+    display: none;
+  }
 }
 
 /* 統計寫成一句話，跟星星的比喻同一套語言 */
 .bs-sky-stats {
-  margin: var(--space-4) 0 0;
-  font-size: var(--fs-13);
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-11);
   letter-spacing: var(--ls-4);
   color: var(--white-50);
 }
@@ -79,7 +102,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  margin: var(--space-4) 0;
 }
 
 /* fieldset：拿掉 UA 預設的邊距與 min-width（後者會讓它在窄螢幕撐破版面） */
@@ -204,6 +227,7 @@
 
 /* ── 星空 ── */
 .bs-sky {
+  position: relative;
   margin-bottom: var(--space-12);
 }
 .bs-sky-hint {

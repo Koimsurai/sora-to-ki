@@ -187,29 +187,26 @@ const Music = () => {
       <NebulaBackground />
 
       <div className="music-content-wrapper">
-        {/* ═══ Header ═══ */}
-        <motion.div
-          className="music-hero"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="music-hero-title">
-            <span className="music-title-gradient">{t('music.heroTitle')}</span>
-            <span className="music-title-sub">Music Galaxy</span>
-          </h1>
-          <p className="music-hero-desc">{t('music.heroDesc')}</p>
-        </motion.div>
-
-        {/* ═══ Now Playing Hero ═══ */}
-        {npData && (
+        {/* ═══ 開頭：正在播放的那首就是整個開頭 ═══
+            頁面標題縮成左上角的一行，封面放大模糊鋪成背景——打開就像播放器的全螢幕畫面。
+            跟書櫃、配備頁刻意不同：三頁原本都是「置中大標＋副標＋內容」，重複到看不出是哪一頁。
+            沒有任何播放紀錄時退回單純的標題，頁面仍然有 h1。 */}
+        {npData ? (
           <motion.section
             className="now-playing-hero"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
+            transition={{ duration: 0.6 }}
           >
+            <img className="np-backdrop" src={npData.item?.album.images.at(0)?.url} alt="" aria-hidden="true" />
             <div className="np-ambient-glow" />
+            <header className="np-eyebrow">
+              <h1 className="np-page-title">
+                <span className="music-title-gradient">{t('music.heroTitle')}</span>
+                <span className="np-page-sub">Music Galaxy</span>
+              </h1>
+              <p className="np-page-desc">{t('music.heroDesc')}</p>
+            </header>
             <div className="np-content">
               <div className="np-cover-area">
                 <img src={npData.item?.album.images.at(0)?.url} alt={npData.item?.name} className="np-cover" />
@@ -266,6 +263,14 @@ const Music = () => {
               </div>
             </div>
           </motion.section>
+        ) : (
+          <header className="music-hero">
+            <h1 className="music-hero-title">
+              <span className="music-title-gradient">{t('music.heroTitle')}</span>
+              <span className="music-title-sub">Music Galaxy</span>
+            </h1>
+            <p className="music-hero-desc">{t('music.heroDesc')}</p>
+          </header>
         )}
 
         {/* ═══ Tabs ═══ */}
