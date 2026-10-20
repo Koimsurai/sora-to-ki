@@ -99,7 +99,6 @@
     border-color var(--dur-200) ease,
     color var(--dur-200) ease;
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 .zg-close-btn:hover,
 .zg-close-btn:focus {
@@ -126,7 +125,6 @@
   padding: var(--space-2) var(--space-5);
   background: rgba(var(--surface-0-rgb), 0.6);
   backdrop-filter: blur(var(--blur-12));
-  -webkit-backdrop-filter: blur(var(--blur-12));
   border: 1px solid var(--white-10);
   border-radius: var(--r-full);
   font-size: var(--fs-12);
@@ -161,7 +159,6 @@
   padding: var(--space-6);
   background: rgba(var(--surface-1-rgb), 0.85);
   backdrop-filter: blur(var(--blur-20));
-  -webkit-backdrop-filter: blur(var(--blur-20));
   border: 1px solid var(--white-10);
   border-radius: var(--r-16);
   box-shadow: var(--elev-5);
@@ -302,7 +299,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 /* ── Responsive ── */

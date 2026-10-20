@@ -8,7 +8,6 @@
   border: 1px solid var(--white-10);
   box-shadow: var(--elev-5);
   backdrop-filter: blur(var(--blur-16));
-  -webkit-backdrop-filter: blur(var(--blur-16));
   animation: ctx-in 0.13s ease;
   user-select: none;
   -webkit-user-select: none;

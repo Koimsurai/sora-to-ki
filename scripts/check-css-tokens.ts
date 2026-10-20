@@ -265,16 +265,19 @@ for (const m of blankComments(INDEX_CSS).matchAll(/(--ls-n?\d+)\s*:\s*(-?[\d.]+)
 const LH_GRANDFATHERED = new Set(['0', '0.8', '0.95']);
 
 /**
- * `blur()` 的半徑尺（`--blur-*`，名字就是 px）。只查 `filter` / `backdrop-filter`
- * 與它們的 `-webkit-` 前綴版——**前綴版必須跟沒前綴的同值**，不然 Safari 拿到的
- * 模糊跟 Chrome 不一樣，而那是靜態檢查唯一抓得到的地方。
+ * `blur()` 的半徑尺（`--blur-*`，名字就是 px）。只查 `filter` / `backdrop-filter`。
+ *
+ * ⚠ `-webkit-backdrop-filter` 一律不准手寫（見下面主迴圈那條規則）：建置用的 lightningcss
+ * 會把同一區塊裡的前綴版與沒前綴版當成同一個屬性、只留後寫的那個，而大家都照慣例把前綴版
+ * 寫在後面——於是 Chrome / Edge 只拿到它不認得的 `-webkit-`，全站毛玻璃靜靜失效。
+ * 只寫沒前綴的，lightningcss 會依目標瀏覽器自己補前綴給 Safari。
  *
  * ⚠ 只查 `blur()`，不查 `drop-shadow()` / `brightness()` / `saturate()`：
  * 那些是陰影與亮度，不是模糊，各自的值域完全不同。
  */
 const BLUR_PX = new Set<number>();
 for (const m of blankComments(INDEX_CSS).matchAll(/--blur-(\d+)\s*:/g)) BLUR_PX.add(Number(m[1]));
-const FILTER_PROP = /^(-webkit-)?(backdrop-)?filter$/;
+const FILTER_PROP = /^(backdrop-)?filter$/;
 const BLUR_CALL = /blur\((\d*\.?\d+)px\)/g;
 
 /**
@@ -508,6 +511,18 @@ function check(file: string): Problem[] {
         raw: value.slice(0, 40),
         why: '等寬字有一套統一的堆疊',
         fix: '改用 var(--mono-font)',
+      });
+    }
+
+    // ── 前綴交給建置補，手寫的會把沒前綴的那條吃掉 ──
+    if (prop === '-webkit-backdrop-filter') {
+      problems.push({
+        file,
+        line,
+        prop,
+        raw: value,
+        why: 'lightningcss 會只留後寫的那條：Chrome / Edge 拿到前綴版就沒有模糊',
+        fix: '刪掉這行，只寫 backdrop-filter（Safari 的前綴建置時會自動補上）',
       });
     }
 

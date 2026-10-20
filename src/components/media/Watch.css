@@ -317,7 +317,6 @@
   border: 1px solid var(--white-06);
   border-radius: var(--r-16);
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
   transition:
     transform var(--dur-400) var(--easing-out),
     border-color var(--dur-300) ease,

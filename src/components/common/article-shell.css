@@ -142,7 +142,6 @@
   border-radius: inherit;
   background: var(--post-card-bg);
   backdrop-filter: blur(var(--blur-12));
-  -webkit-backdrop-filter: blur(var(--blur-12));
 }
 
 /* ── Right sidebar: TOC ── */

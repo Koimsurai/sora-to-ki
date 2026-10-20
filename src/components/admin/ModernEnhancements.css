@@ -87,7 +87,6 @@
 .admin-layout [data-sonner-toast] {
   background: rgba(var(--zinc-900-rgb), 0.9);
   backdrop-filter: blur(var(--blur-28));
-  -webkit-backdrop-filter: blur(var(--blur-28));
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   box-shadow: var(--elev-4);
 }
@@ -124,14 +123,12 @@
 .admin-layout [class*="overlay"] {
   background: var(--black-80);
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 /* ── Tooltip ── */
 .admin-layout [role="tooltip"] {
   background: rgba(var(--zinc-900-rgb), 0.9);
   backdrop-filter: blur(var(--blur-16));
-  -webkit-backdrop-filter: blur(var(--blur-16));
   border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
   box-shadow: var(--elev-2);
   border-radius: var(--r-10);

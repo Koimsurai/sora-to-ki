@@ -52,7 +52,6 @@
   padding: var(--space-1-5) var(--space-2-5);
   background: rgba(var(--surface-2-rgb), 0.9);
   backdrop-filter: blur(var(--blur-16));
-  -webkit-backdrop-filter: blur(var(--blur-16));
   border: 1px solid var(--white-08);
   border-radius: var(--r-full);
   opacity: 0;
@@ -159,7 +158,6 @@
   min-width: 150px;
   background: rgba(var(--surface-1-rgb), 0.95);
   backdrop-filter: blur(var(--blur-20));
-  -webkit-backdrop-filter: blur(var(--blur-20));
   border: 1px solid var(--white-08);
   border-radius: var(--r-10);
   padding: var(--space-1);
@@ -306,7 +304,6 @@
   z-index: var(--z-fullscreen);
   background: var(--black-80);
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
   display: flex;
   align-items: center;
   justify-content: center;

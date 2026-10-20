@@ -337,9 +337,15 @@ computed-style 的快照裡，其餘是 `:hover` / `:focus-visible` / 條件渲�
 --blur-60 / 110                       大面積氛圍模糊（背景光暈、模糊掉的封面圖）
 ```
 
-⚠️ **`-webkit-backdrop-filter` 必須跟沒前綴的同值**，不然 Safari 的模糊跟 Chrome 不一樣。
-`check:css-tokens` 兩個都查——這是靜態檢查唯一抓得到這件事的地方（第一版 codemod 就是
-漏了前綴版，66 處沒換到）。
+⚠️ **不准手寫 `-webkit-backdrop-filter`，只寫 `backdrop-filter`**，`check:css-tokens` 在擋。
+建置用的 lightningcss 會把同一區塊的前綴版與沒前綴版當成同一個屬性、**只留後寫的那個**，
+而慣例是前綴版寫在後面——於是 Chrome / Edge 拿到的只有它不認得的 `-webkit-`，計算值是 `none`。
+只寫沒前綴的，lightningcss 會依目標瀏覽器自己補前綴給 Safari（產物裡兩個都在）。
+
+這件事讓**全站毛玻璃失效了一段時間沒人發現**：頂欄、音樂頁、文章頁的面板都只是半透明，
+直到設備頁改成透明疊在星空上、字被星星干擾才被注意到。tsc、lint、e2e 全綠——
+`html.no-gpu` 在測試瀏覽器一定會掛、把 backdrop-filter 壓成 none，所以 e2e 本來就量不到它
+（見下面「要清 `!important` 的話」那節）。要驗得在有 GPU 的瀏覽器讀 `getComputedStyle(el).backdropFilter`。
 
 ⚠️ **`saturate()` 原本有三種擺法**（`saturate() blur()` / `blur() saturate()` / 只有 blur），
 效果一樣但讀起來像三種東西。統一成 `blur() saturate()`。
@@ -596,7 +602,7 @@ pnpm format:css    # 自動修格式
 另外 v4 的 `@plugin` / `@custom-variant` 要開 `css.parser.tailwindDirectives`，
 否則會被當成語法錯誤。
 
-⚠️ **CI 刻意不加 `--error-on-warnings`**：目前 `pnpm lint:css` 是 **27 個 warning，全部是
+⚠️ **CI 刻意不加 `--error-on-warnings`**：目前 `pnpm lint:css` 是 **26 個 warning，全部是
 `noImportantStyles`**（`noDescendingSpecificity` 已清完，剩 5 處用 `biome-ignore` 標了理由）。
 warning 會出現在 CI 輸出但不擋——跟 knip 當初的處理一樣，用 ignore 藏起來就沒有人會回來清。
 **格式漂移不一樣，它是 error，會直接讓 CI 紅**（實測：故意塞一個沒排版的規則，
@@ -666,21 +672,21 @@ Tailwind 的 preflight 把 `list-style` 歸零，這裡原本只設了內縮，�
 `blog-post.spec.ts` 的「markdown 清單有項目符號」。只補沒有 class 的清單：MDX 區塊與 GFM 待辦
 清單都帶自己的 class。
 
-### 剩下的 27 個 `!important` 都是查過的，不要再清一次
+### 剩下的 26 個 `!important` 都是查過的，不要再清一次
 
-原本 190 個，清到 27。**剩下的每一個都有註解寫明理由**，看到 linter 報 warning 不要
+原本 190 個，清到 26。**剩下的每一個都有註解寫明理由**，看到 linter 報 warning 不要
 直接拿掉——先讀那條規則上面的註解。分佈（以 biome 實際回報的位置為準）：
 
 | 類別 | 數量 | 為什麼留 |
 |---|---|---|
 | `@media (prefers-reduced-motion)` | 8 | 要蓋過全站元件動畫；**測試瀏覽器不會觸發** |
-| `html.no-gpu *` | 6 | 無 GPU 機器的降級；⚠ **測試瀏覽器一定會觸發**（見下面） |
+| `html.no-gpu *` | 5 | 無 GPU 機器的降級；⚠ **測試瀏覽器一定會觸發**（見下面） |
 | `html.fs-active` | 1 | 全螢幕影片的 GPU 爭用修正；不會被觸發 |
 | shiki 背景、`.toc-bottom-link` 邊框 | 4 | 壓 shiki 自己的主題／全域 button 規則 |
 | 後台表單邊框、monaco 捲軸與行號 | 6 | 壓 shadcn utility 與 monaco 注入的樣式 |
 | `.galaxy-bubble`（手機版） | 2 | 壓元件用 inline style 算出來的泡泡大小 |
 
-⚠️ **不要用 `grep -c '!important'` 數它**——那會數到 42，多出來的 15 筆是**註解裡在
+⚠️ **不要用 `grep -c '!important'` 數它**——那會數到 41，多出來的 15 筆是**註解裡在
 討論** `!important` 的句子，不是宣告。要數就跑 `pnpm lint:css`，biome 認的是語法樹。
 同一個坑也會發生在數色彩字面值上。
 
