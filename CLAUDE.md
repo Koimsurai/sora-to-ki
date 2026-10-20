@@ -686,7 +686,7 @@ Tailwind 的 preflight 把 `list-style` 歸零，這裡原本只設了內縮，�
 | 後台表單邊框、monaco 捲軸與行號 | 6 | 壓 shadcn utility 與 monaco 注入的樣式 |
 | `.galaxy-bubble`（手機版） | 2 | 壓元件用 inline style 算出來的泡泡大小 |
 
-⚠️ **不要用 `grep -c '!important'` 數它**——那會數到 42，多出來的 15 筆是**註解裡在
+⚠️ **不要用 `grep -c '!important'` 數它**——那會數到 41，多出來的 15 筆是**註解裡在
 討論** `!important` 的句子，不是宣告。要數就跑 `pnpm lint:css`，biome 認的是語法樹。
 同一個坑也會發生在數色彩字面值上。
 
