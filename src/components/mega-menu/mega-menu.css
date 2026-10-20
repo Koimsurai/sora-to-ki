@@ -132,7 +132,6 @@
      完全模糊掉，但保留一點透明感讓 panel 不會像浮一塊純黑卡片 */
   background: rgba(var(--surface-0-rgb), 0.8);
   backdrop-filter: blur(var(--blur-60)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--blur-60)) saturate(180%);
   border: 1px solid var(--white-08);
   border-radius: var(--r-12);
   box-shadow:

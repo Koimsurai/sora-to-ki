@@ -11,7 +11,6 @@
   background: rgba(var(--surface-2-rgb), 0.95);
   border: 1px solid rgba(var(--brand-rgb), 0.2);
   box-shadow: var(--elev-4);
-  -webkit-backdrop-filter: blur(var(--blur-12));
   backdrop-filter: blur(var(--blur-12));
   pointer-events: auto;
 }

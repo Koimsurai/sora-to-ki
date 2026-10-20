@@ -181,7 +181,6 @@
   cursor: pointer;
   transition: all var(--dur-250) ease;
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 .sort-pill.active {
@@ -305,7 +304,6 @@
   padding: var(--space-5-5) var(--space-6);
   transition: all var(--dur-400) var(--easing-standard);
   backdrop-filter: blur(var(--blur-12));
-  -webkit-backdrop-filter: blur(var(--blur-12));
 }
 
 .note-body:hover {
@@ -921,7 +919,6 @@
   justify-content: center;
   background: var(--black-60);
   backdrop-filter: blur(var(--blur-8));
-  -webkit-backdrop-filter: blur(var(--blur-8));
 }
 
 .floating-comments-panel {
