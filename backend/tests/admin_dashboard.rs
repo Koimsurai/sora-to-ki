@@ -410,14 +410,14 @@ async fn series_order_照_js_的_number_語義() {
 }
 
 #[tokio::test]
-async fn 建文時_body_不是_json_物件回_400() {
+async fn 建文時_body_不是_json_物件回_422() {
     let (app, _pool) = test_app().await;
-    // 這支自己讀 body（不是用 JsonBody extractor），所以錯誤碼是自己判的。
-    // 陣列與純量都是合法 JSON 但不是物件，一樣要擋
+    // 陣列與純量都是合法 JSON 但不是物件，一樣要擋。走 JsonBody，所以跟其他端點同一套
+    // 語意：語法對、形狀不對是 422，錯誤訊息也是 JSON。
     for body in [json!([1, 2]), json!("字串"), json!(42)] {
         let (status, v) = adm(&app, "POST", "/api/admin/posts", Some(body.clone())).await;
-        assert_eq!(status, 400, "body={body} 應該被擋，得到 {v}");
-        assert_eq!(v["error"], "invalid JSON body");
+        assert_eq!(status, 422, "body={body} 應該被擋，得到 {v}");
+        assert!(v["error"].is_string(), "錯誤要是 JSON 的 error 字串：{v}");
     }
 }
 

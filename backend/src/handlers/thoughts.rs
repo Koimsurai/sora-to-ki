@@ -3,7 +3,7 @@ use std::fmt::Write as _;
 use axum::{
     Json,
     extract::{Path, Query, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize};
@@ -319,7 +319,6 @@ pub async fn thought_react(
 // ════════════════ admin thoughts CRUD（requireAdmin）════════════════
 use serde_json::Map;
 
-use crate::auth::require_admin;
 use crate::util::{js_interp, js_truthy};
 
 /// html entity decode，複製 Express `dec()`（同序替換；`&#0?39;` 兩型都處理）。
@@ -601,12 +600,9 @@ pub async fn admin_update_thought(
     responses((status = 200, description = "刪除碎念"), (status = 401, description = "未授權")))]
 pub async fn admin_delete_thought(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     Path(id): Path<String>,
-    headers: HeaderMap,
 ) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     if let Err(e) =
         sqlx::query("DELETE FROM comments WHERE thought_id = ?").bind(&id).execute(&state.pool).await
     {

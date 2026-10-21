@@ -469,12 +469,9 @@ pub struct TmdbSearchResponse {
     responses((status = 200, body = TmdbSearchResponse), (status = 401, description = "未授權")))]
 pub async fn tmdb_search(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
     Query(qq): Query<TmdbSearchQuery>,
 ) -> Response {
-    if let Err(e) = crate::auth::require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     let q = qq.q.unwrap_or_default().trim().to_string();
     let kind = if qq.kind.as_deref() == Some("tv") { "tv" } else { "movie" };
     if q.is_empty() {
@@ -662,12 +659,9 @@ pub async fn update_favorite(
     responses((status = 200, description = "刪除收藏（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn delete_favorite(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     Path(id): Path<String>,
-    headers: HeaderMap,
 ) -> Response {
-    if let Err(e) = crate::auth::require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     match sqlx::query("DELETE FROM watch_favorites WHERE id = ?").bind(&id).execute(&state.pool).await {
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(_) => Json(json!({ "message": "success" })).into_response(),
