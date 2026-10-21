@@ -569,6 +569,17 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # 跟 e2e job 共用同一份瀏覽器快取（key 一樣）。沒有這層的話每次都從
+      # playwright.download.prss.microsoft.com 下載，那個網域在 runner 上時常解析不到
+      # （2026-10-19、10-21 兩次 ENOTFOUND，無障礙巡檢因此紅）。
+      - name: 取 playwright 版本
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: playwright 瀏覽器快取
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
       - name: MDX 編譯 + 未註冊 block 檢查
         run: pnpm check:mdx
       # 安全標頭巡檢。放在這個排程 job 而不是 e2e/PR，理由有兩個：

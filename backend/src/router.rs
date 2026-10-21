@@ -14,6 +14,7 @@ use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
 use utoipa_scalar::{Scalar, Servable};
 
+use crate::upstream_cache::{self, CachePolicy, UpstreamCache};
 use crate::{handlers, openapi, revalidate, state::AppState};
 
 /// 全域 404（Express 退役後取代舊的 proxy fallback）：未知路徑回 404；
@@ -24,6 +25,14 @@ async fn not_found() -> (axum::http::StatusCode, &'static str) {
 
 /// 完整路由表 + middleware 疊層。全站 120 端點皆 Rust 原生（Express 已於 2026-07-14 退役）。
 pub fn build_router(state: AppState) -> Router {
+    // 第三方代理共用一份回應快取，TTL 依資料多常變（見 upstream_cache 的說明）
+    let upstream = std::sync::Arc::new(UpstreamCache::default());
+    let cached = |secs: u64| {
+        axum::middleware::from_fn_with_state(
+            CachePolicy { cache: upstream.clone(), ttl: std::time::Duration::from_secs(secs) },
+            upstream_cache::layer,
+        )
+    };
     Router::new()
         .route("/api/tags", get(handlers::tags::list_tags))
         .route("/api/categories", get(handlers::categories::list_categories))
@@ -177,27 +186,36 @@ pub fn build_router(state: AppState) -> Router {
                 .route_layer(DefaultBodyLimit::max(50 * 1024 * 1024)),
         )
         // 第三方代理（/steam/profile SWR 快取、spotify、github、wakatime）
-        .route("/api/github/user/{username}", get(handlers::thirdparty::github_user))
-        .route("/api/github/events/{username}", get(handlers::thirdparty::github_events))
+        .route("/api/github/user/{username}", get(handlers::thirdparty::github_user).layer(cached(600)))
+        .route("/api/github/events/{username}", get(handlers::thirdparty::github_events).layer(cached(300)))
         // repos / contributions 以前是瀏覽器直接打第三方（api.github.com 未認證、
         // jogruber 的爬蟲服務）；收進後端才吃得到 token 額度，型別也才有來源
-        .route("/api/github/repos/{username}", get(handlers::thirdparty::github_repos))
-        .route("/api/github/contributions/{username}", get(handlers::thirdparty::github_contributions))
-        .route("/api/wakatime/today", get(handlers::thirdparty::wakatime_today))
-        .route("/api/wakatime/week", get(handlers::thirdparty::wakatime_week))
-        .route("/api/wakatime/projects", get(handlers::thirdparty::wakatime_projects))
+        .route("/api/github/repos/{username}", get(handlers::thirdparty::github_repos).layer(cached(1800)))
+        .route(
+            "/api/github/contributions/{username}",
+            get(handlers::thirdparty::github_contributions).layer(cached(3600)),
+        )
+        .route("/api/wakatime/today", get(handlers::thirdparty::wakatime_today).layer(cached(300)))
+        .route("/api/wakatime/week", get(handlers::thirdparty::wakatime_week).layer(cached(1800)))
+        .route("/api/wakatime/projects", get(handlers::thirdparty::wakatime_projects).layer(cached(1800)))
+        // profile 自己有 SWR 快取（refresh_steam_profile），不再疊一層
         .route("/api/steam/profile", get(handlers::thirdparty::steam_profile))
         .route("/api/spotify/login", get(handlers::spotify::login))
-        .route("/api/spotify/recently-played", get(handlers::spotify::recently_played))
-        .route("/api/spotify/now-playing", get(handlers::spotify::now_playing))
+        .route("/api/spotify/recently-played", get(handlers::spotify::recently_played).layer(cached(60)))
+        // 每個分頁每 30 秒輪詢一次；10 秒內的請求共用同一份，Spotify 只被打一次
+        .route("/api/spotify/now-playing", get(handlers::spotify::now_playing).layer(cached(10)))
         .route("/api/spotify/top-genres", get(handlers::spotify::top_genres))
         .route("/api/spotify/top-tracks", get(handlers::spotify::top_tracks))
         .route("/api/spotify/audio-features", get(handlers::spotify::audio_features))
         .route("/api/spotify/me", get(handlers::spotify::me))
-        .route("/api/steam/player", get(handlers::thirdparty::steam_player))
-        .route("/api/steam/recent-games", get(handlers::thirdparty::steam_recent_games))
-        .route("/api/steam/owned-games", get(handlers::thirdparty::steam_owned_games))
-        .route("/api/steam/achievements/{appid}", get(handlers::thirdparty::steam_achievements))
+        // player 帶「線上／遊戲中」狀態，TTL 短；其餘幾小時才變一次
+        .route("/api/steam/player", get(handlers::thirdparty::steam_player).layer(cached(60)))
+        .route("/api/steam/recent-games", get(handlers::thirdparty::steam_recent_games).layer(cached(600)))
+        .route("/api/steam/owned-games", get(handlers::thirdparty::steam_owned_games).layer(cached(3600)))
+        .route(
+            "/api/steam/achievements/{appid}",
+            get(handlers::thirdparty::steam_achievements).layer(cached(3600)),
+        )
         // watch 域
         .route("/api/anime/history", get(handlers::watch::anime_history))
         .route("/api/films/recent", get(handlers::watch::films_recent))
