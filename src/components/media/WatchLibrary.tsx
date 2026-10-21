@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { FaSearch, FaChevronDown } from 'react-icons/fa';
 import type { AnimeRow, FilmRow, TvRow } from '@koimsurai/api-types';
 import { animeLibraryQueryOptions, filmsLibraryQueryOptions, tvLibraryQueryOptions } from '@/data/watchData';
+import { enterStyle } from '@/lib/enter';
 import './WatchLibrary.css';
 
 /* ──────────────────────────────────────────────────────────────
@@ -29,12 +30,6 @@ interface WatchItem {
   genres?: string;
   externalUrl?: string | null;
 }
-
-const reveal = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-};
 
 /* ── normalize 三條源到同一個 shape ────────────────────────── */
 function normalizeAnime(rows?: AnimeRow[]): WatchItem[] {
@@ -162,13 +157,13 @@ function WatchLibrary() {
       <div className="wl-scrim" />
 
       <div className="wl-wrap">
-        <motion.header className="wl-header" {...reveal}>
+        <header className="wl-header enter" style={enterStyle({ dur: 500 })}>
           <LocaleLink to="/watch" className="wl-back">
             {t('watch.library.viewWatch')}
           </LocaleLink>
           <h1 className="wl-title">{t('watch.library.title')}</h1>
           <p className="wl-subtitle">{t('watch.library.subtitle')}</p>
-        </motion.header>
+        </header>
 
         {/* tabs */}
         <div className="wl-tabs">

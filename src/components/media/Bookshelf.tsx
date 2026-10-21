@@ -7,6 +7,7 @@ import type { BookRow } from '@koimsurai/api-types';
 
 import { filterAndSortBooks } from '@/lib/mediaLists';
 import { proxiedImage } from '@/lib/api';
+import { enterStyle } from '@/lib/enter';
 import { booksQueryOptions, bookStatsQueryOptions } from '@/data/bookshelfData';
 import NebulaBackground from '@/components/backdrop/NebulaBackground';
 import BookConstellation from './BookConstellation';
@@ -98,21 +99,11 @@ const Bookshelf = () => {
       <NebulaBackground />
 
       <div className="bookshelf-content-wrapper">
-        <motion.section
-          className="bs-sky"
-          aria-label={t('bookshelf.heroTitle')}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
+        {/* 首屏進場用 CSS（.enter）：不等 JS，SSR 出來的星圖不會是 opacity:0 */}
+        <section className="bs-sky enter" aria-label={t('bookshelf.heroTitle')}>
           {/* 頁面標題放進星圖左上角的圖例框：打開就是一整片天空，而不是「大標＋副標＋內容」。
               那個角落由 layoutConstellation 讓出來（LEGEND_CORNER），星星不會被蓋到。 */}
-          <motion.header
-            className="bs-sky-card"
-            initial={{ opacity: 0, x: -16 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.35 }}
-          >
+          <header className="bs-sky-card enter" style={enterStyle({ delay: 350, x: -16, y: 0, dur: 500 })}>
             <h1 className="bookshelf-title">
               <span className="bs-title-main">{t('bookshelf.heroTitle')}</span>
               <span className="bs-title-sub">Knowledge Constellation</span>
@@ -130,7 +121,7 @@ const Bookshelf = () => {
                 ) : null}
               </p>
             )}
-          </motion.header>
+          </header>
           <BookConstellation
             books={books}
             isDimmed={isDimmed}
@@ -138,12 +129,7 @@ const Bookshelf = () => {
             onSelect={setSelected}
             coverSrc={proxiedCover}
           />
-          <motion.div
-            className="bs-toolbar"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
+          <div className="bs-toolbar enter" style={enterStyle({ delay: 300, y: 12, dur: 500 })}>
             <fieldset className="bs-chips">
               <legend className="sr-only">{t('bookshelf.filterStatus')}</legend>
               {filters.map((f) => (
@@ -183,7 +169,7 @@ const Bookshelf = () => {
             >
               🌌 {t('bookshelf.zeroGravity')}
             </button>
-          </motion.div>
+          </div>
           <p className="bs-sky-hint" aria-hidden="true">
             {t('bookshelf.skyHint')}
           </p>
@@ -193,7 +179,7 @@ const Bookshelf = () => {
             <li data-status="to-read">{t('bookshelf.legend.toRead')}</li>
             <li data-notes>{t('bookshelf.legend.notes')}</li>
           </ul>
-        </motion.section>
+        </section>
 
         {/* 書目：星圖是看全貌的，這裡是逐本掃的（手機、螢幕閱讀器、搜尋引擎也靠它） */}
         <motion.section

@@ -21,8 +21,13 @@ export function localeWrap(Comp: ComponentType): () => ReactElement {
   };
 }
 
-/** 預設語言(zh-TW)無前綴頁的 route options。basePath = 無前綴邏輯路徑(如 'bookshelf')。 */
-export function localePage(basePath: string, Comp: ComponentType) {
+/** 預設語言(zh-TW)無前綴頁的 route options（只有 head）。basePath = 無前綴邏輯路徑(如 'bookshelf')。
+ *
+ * ⚠️ `component` 刻意不在這裡給，要在路由檔自己寫 `component: localeWrap(Page)`。
+ * TanStack 的自動 code splitting 只認得路由物件上**直接寫出來**的 `component`：藏在
+ * `...localePage('music', Music)` 的展開裡它看不到，於是 14 個頁面全被打進入口 chunk
+ * （300 KB gzip，/setup 實測 62% 用不到）。 */
+export function localePage(basePath: string) {
   return {
     // meta 走 head() 而非元件內的 <SEOHead>：SEOHead 是 helmet，hydrate 後才掛，爬蟲看不到
     // → 過去每頁 SSR 的 <title> 全是同一個預設值、且無 description。詳見 pageSeo.ts。
@@ -32,7 +37,6 @@ export function localePage(basePath: string, Comp: ComponentType) {
       // 文章列表宣告成 Blog（CollectionPage 的專用型別），爬蟲才知道這頁是集合而非普通頁
       ...(basePath === 'blog' ? { scripts: [blogListJsonLd(DEFAULT_LOCALE)] } : {}),
     }),
-    component: localeWrap(Comp),
   };
 }
 
@@ -51,18 +55,18 @@ function clientOnlyComp(factory: () => Promise<{ default: ComponentType }>): Com
   };
 }
 
-/** 預設語言 client-only 頁。 */
+/** 預設語言 client-only 頁。元件本來就是動態 import，所以 component 可以在這裡給。 */
 export function localePageClient(basePath: string, factory: () => Promise<{ default: ComponentType }>) {
-  return localePage(basePath, clientOnlyComp(factory));
+  return { ...localePage(basePath), component: localeWrap(clientOnlyComp(factory)) };
 }
 
 /** 帶前綴 client-only 頁。 */
 export function localePageClientPrefixed(basePath: string, factory: () => Promise<{ default: ComponentType }>) {
-  return localePagePrefixed(basePath, clientOnlyComp(factory));
+  return { ...localePagePrefixed(basePath), component: localeWrap(clientOnlyComp(factory)) };
 }
 
-/** 帶前綴 /$locale/... 頁的 route options。 */
-export function localePagePrefixed(basePath: string, Comp: ComponentType) {
+/** 帶前綴 /$locale/... 頁的 route options（head + 前綴守門 loader）；component 同 localePage 的說明。 */
+export function localePagePrefixed(basePath: string) {
   return {
     head: ({ params }: { params: { locale: string } }) => {
       const locale = localeFromPrefix(params.locale) ?? DEFAULT_LOCALE;
@@ -76,6 +80,5 @@ export function localePagePrefixed(basePath: string, Comp: ComponentType) {
       const locale = localeFromPrefix(params.locale);
       if (!locale || locale === 'zh-TW') throw notFound();
     },
-    component: localeWrap(Comp),
   };
 }

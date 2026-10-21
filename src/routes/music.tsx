@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { localePage } from '@/i18n/localePage';
+import { localePage, localeWrap } from '@/i18n/localePage';
 import Music from '@/components/media/Music';
 import { recentlyPlayedQueryOptions, topGenresQueryOptions, topTracksQueryOptions } from '@/data/musicData';
 
 export const Route = createFileRoute('/music')({
-  ...localePage('music', Music),
+  ...localePage('music'),
+  component: localeWrap(Music),
   // 預取穩定資料（不含 now-playing 即時狀態）→ SSR baked。
   loader: async ({ context }) => {
     await Promise.all([
