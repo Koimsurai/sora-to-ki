@@ -200,25 +200,18 @@ pub async fn google_callback(
     let token_res = state
         .http
         .post(&token_url)
-        .header("Content-Type", "application/json")
-        .body(
-            json!({
-                "code": code,
-                "client_id": std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default(),
-                "client_secret": std::env::var("GOOGLE_CLIENT_SECRET").unwrap_or_default(),
-                "redirect_uri": redirect_uri,
-                "grant_type": "authorization_code",
-            })
-            .to_string(),
-        )
+        .json(&json!({
+            "code": code,
+            "client_id": std::env::var("GOOGLE_CLIENT_ID").unwrap_or_default(),
+            "client_secret": std::env::var("GOOGLE_CLIENT_SECRET").unwrap_or_default(),
+            "redirect_uri": redirect_uri,
+            "grant_type": "authorization_code",
+        }))
         .send()
         .await;
     let access_token = match token_res {
         Ok(r) if r.status().is_success() => {
-            let v: Value = match serde_json::from_str(&r.text().await.unwrap_or_default()) {
-                Ok(v) => v,
-                Err(_) => return err_500(),
-            };
+            let Ok(v) = r.json::<Value>().await else { return err_500() };
             v.get("access_token").and_then(|t| t.as_str()).map(String::from)
         }
         _ => return err_500(),
@@ -228,7 +221,7 @@ pub async fn google_callback(
     // 使用者資訊
     let user_res = state.http.get(&user_url).bearer_auth(&access_token).send().await;
     let info: Value = match user_res {
-        Ok(r) if r.status().is_success() => match serde_json::from_str(&r.text().await.unwrap_or_default()) {
+        Ok(r) if r.status().is_success() => match r.json().await {
             Ok(v) => v,
             Err(_) => return err_500(),
         },
@@ -264,25 +257,18 @@ pub async fn github_callback(
     let token_res = state
         .http
         .post(&token_url)
-        .header("Content-Type", "application/json")
         .header("Accept", "application/json")
-        .body(
-            json!({
-                "code": code,
-                "client_id": std::env::var("GITHUB_CLIENT_ID").unwrap_or_default(),
-                "client_secret": std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_default(),
-                "redirect_uri": redirect_uri,
-            })
-            .to_string(),
-        )
+        .json(&json!({
+            "code": code,
+            "client_id": std::env::var("GITHUB_CLIENT_ID").unwrap_or_default(),
+            "client_secret": std::env::var("GITHUB_CLIENT_SECRET").unwrap_or_default(),
+            "redirect_uri": redirect_uri,
+        }))
         .send()
         .await;
     let access_token = match token_res {
         Ok(r) if r.status().is_success() => {
-            let v: Value = match serde_json::from_str(&r.text().await.unwrap_or_default()) {
-                Ok(v) => v,
-                Err(_) => return err_500(),
-            };
+            let Ok(v) = r.json::<Value>().await else { return err_500() };
             v.get("access_token").and_then(|t| t.as_str()).map(String::from)
         }
         _ => return err_500(),
@@ -297,7 +283,7 @@ pub async fn github_callback(
         .send()
         .await;
     let info: Value = match user_res {
-        Ok(r) if r.status().is_success() => match serde_json::from_str(&r.text().await.unwrap_or_default()) {
+        Ok(r) if r.status().is_success() => match r.json().await {
             Ok(v) => v,
             Err(_) => return err_500(),
         },
@@ -320,7 +306,7 @@ pub async fn github_callback(
             .send()
             .await
         && r.status().is_success()
-        && let Ok(Value::Array(arr)) = serde_json::from_str::<Value>(&r.text().await.unwrap_or_default())
+        && let Ok(Value::Array(arr)) = r.json::<Value>().await
         && let Some(primary) =
             arr.iter().find(|e| e.get("primary").and_then(serde_json::Value::as_bool).unwrap_or(false))
         && let Some(em) = primary.get("email").and_then(|v| v.as_str())

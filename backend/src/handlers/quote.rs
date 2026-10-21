@@ -56,7 +56,7 @@ async fn fetch_json(state: &AppState, url: &str) -> Option<Value> {
     if !r.status().is_success() {
         return None;
     }
-    serde_json::from_str(&r.text().await.ok()?).ok()
+    r.json().await.ok()
 }
 
 /// 各語系抓取器 → {text, from}；任一步失敗回 None（落 fallback）。

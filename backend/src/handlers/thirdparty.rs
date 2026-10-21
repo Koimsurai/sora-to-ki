@@ -59,15 +59,11 @@ async fn fetch_json_lenient(
     Ok(v)
 }
 
-// ⚠️ `iso_from_millis` 與 `civil_from_days` 原本在這裡也有一份，跟 util.rs 那份
-// 逐字相同。手刻的曆法算式最怕兩份各自演化——錯了不會爆，只會讓某個日期差一天。
-// 已經合併到 util.rs，那邊有「逐日對照 chrono 走完 1900–2200」的測試罩著。
-use crate::util::{civil_from_days, iso_from_millis, now_ms};
+use crate::util::{iso_from_millis, now_ms};
 
 /// 今日 UTC 日期字串（`new Date().toISOString().split('T')[0]`）。
 fn today_utc() -> String {
-    let (y, m, d) = civil_from_days(now_ms().div_euclid(86_400_000));
-    format!("{y:04}-{m:02}-{d:02}")
+    chrono::Utc::now().format("%Y-%m-%d").to_string()
 }
 
 // ── GitHub ────────────────────────────────────────────────────────────────
@@ -83,8 +79,7 @@ async fn gh_fetch(http: &reqwest::Client, base: &str, path: &str, token: Option<
     if let Some(t) = token {
         req = req.header("Authorization", format!("Bearer {t}"));
     }
-    let body = req.send().await.ok()?.text().await.ok()?;
-    let mut v: Value = serde_json::from_str(&body).ok()?;
+    let mut v: Value = req.send().await.ok()?.json().await.ok()?;
     crate::util::js_normalize_numbers(&mut v);
     Some(v)
 }
@@ -275,15 +270,13 @@ pub async fn github_contributions(
              }}
            }}"
     );
-    let body = json!({ "query": query, "variables": { "login": username } }).to_string();
     let resp = state
         .http
         .post(format!("{}/graphql", state.external.github_api))
         .header("User-Agent", GH_UA)
         .bearer_auth(&token)
-        .header("Content-Type", "application/json")
         .timeout(std::time::Duration::from_secs(10))
-        .body(body)
+        .json(&json!({ "query": query, "variables": { "login": username } }))
         .send()
         .await;
     let Ok(resp) = resp else { return err(GH_FETCH_ERR.into()) };
@@ -1008,8 +1001,7 @@ async fn search_google_books(http: &reqwest::Client, base: &str, q: &str) -> Res
 }
 
 async fn fetch_json(http: &reqwest::Client, url: &str) -> Option<Value> {
-    let body = http.get(url).send().await.ok()?.text().await.ok()?;
-    let mut v: Value = serde_json::from_str(&body).ok()?;
+    let mut v: Value = http.get(url).send().await.ok()?.json().await.ok()?;
     crate::util::js_normalize_numbers(&mut v);
     Some(v)
 }
@@ -1935,8 +1927,7 @@ mod tests {
 
         // 查的日期必須真的是「今天」。這條看起來瑣碎，但 today_utc 回空字串或亂值時
         // WakaTime 會回一片空白，而畫面上就是「今天沒寫程式」——沒有任何錯誤。
-        let (y, m, d) = crate::util::civil_from_days(crate::util::now_ms() / 86_400_000);
-        let today = format!("{y:04}-{m:02}-{d:02}");
+        let today = crate::util::iso_from_millis(crate::util::now_ms())[..10].to_string();
         let reqs = server.received_requests().await.unwrap();
         let summ = reqs.iter().find(|r| r.url.path().ends_with("/summaries")).unwrap();
         let qp = |r: &wiremock::Request, k: &str| {

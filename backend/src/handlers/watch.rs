@@ -328,20 +328,10 @@ async fn tmdb_detail(state: &AppState, kind: &str, id: &Value, locale: &str) -> 
     if let Some(v) = state.watch.tmdb_detail.lock().get(&key) {
         return Some(v.clone());
     }
-    let token = std::env::var("TMDB_API_TOKEN").ok().filter(|s| !s.is_empty())?;
+    let token = crate::util::tmdb_token()?;
     let path = if kind == "tv" { "tv" } else { "movie" };
-    let resp = state
-        .http
-        .get(format!("{}/3/{path}/{id_s}?language={lang}", crate::util::tmdb_api()))
-        .bearer_auth(&token)
-        .header("accept", "application/json")
-        .send()
-        .await
-        .ok()?;
-    if !resp.status().is_success() {
-        return None;
-    }
-    let mut j: Value = serde_json::from_str(&resp.text().await.ok()?).ok()?;
+    let mut j =
+        crate::util::tmdb_get_json(&state.http, &token, &format!("/3/{path}/{id_s}?language={lang}")).await?;
     js_normalize_numbers(&mut j);
     let title = j
         .get("title")
@@ -490,24 +480,20 @@ pub async fn tmdb_search(
     if q.is_empty() {
         return Json(TmdbSearchResponse { message: "success", results: vec![] }).into_response();
     }
-    let Some(token) = std::env::var("TMDB_API_TOKEN").ok().filter(|s| !s.is_empty()) else {
+    let Some(token) = crate::util::tmdb_token() else {
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "TMDB_API_TOKEN 未設定" })))
             .into_response();
     };
     let r: Result<Value, String> = async {
-        let resp = state
-            .http
-            .get(format!(
-                "{}/3/search/{kind}?query={}&language=zh-TW&include_adult=false",
-                crate::util::tmdb_api(),
-                crate::util::encode_uri_component(&q)
-            ))
-            .bearer_auth(&token)
-            .header("accept", "application/json")
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-        // Express 不看狀態碼、直接 parse（parse 失敗 → catch）
+        let path = format!(
+            "/3/search/{kind}?query={}&language=zh-TW&include_adult=false",
+            crate::util::encode_uri_component(&q)
+        );
+        let resp =
+            crate::util::tmdb_request(&state.http, &token, &path).send().await.map_err(|e| e.to_string())?;
+        // 不看狀態碼、直接 parse：TMDb 的錯誤 body 沒有 results，結果就是空清單。
+        // 不用 `resp.json()`：它把讀 body 與 parse 的錯誤併成同一句 "error decoding
+        // response body"，而這裡的錯誤訊息會原樣回給前端。
         let mut v: Value = serde_json::from_str(&resp.text().await.map_err(|e| e.to_string())?)
             .map_err(|e| e.to_string())?;
         js_normalize_numbers(&mut v);
