@@ -57,6 +57,7 @@ pub fn build_state(database_url: &str, urls: &crate::state::ExternalUrls) -> Arc
         sync_lock: tokio::sync::Mutex::new(()),
         last_jwt_alert_at: AtomicI64::new(0),
         cookie_file,
+        last_login_at: AtomicI64::new(0),
     })
 }
 
@@ -315,8 +316,122 @@ async fn enrich_null_anime(state: &AppState) {
     tracing::info!("[Bahamut] anime TMDb enrich: {ok}/{} matched", rows.len());
 }
 
+// ── 自動重新登入 ──────────────────────────────────────────────────────────
+//
+// 帳號跟家人共用：別的裝置登入會讓伺服器手上的 session 失效——JWT 離到期還有十幾天，
+// 動畫瘋卻已經回 NO_LOGIN。2026-08 到 10 月 GlitchTip 累積 371 筆，成功的同步只出現在
+// 手推 cookie 之後的幾小時內，每推一次撐不過一個晚上。
+//
+// 設了 BAHAMUT_UID / BAHAMUT_PASSWORD 就在 session 死掉時自己登入一次。走的是手機 App 的
+// 登入 API：驗證碼是 cookie 自己帶的值（ckAPP_VCODE），不經過網頁登入的 reCAPTCHA。
+// 刻意寫在這裡而不是 anigamer SDK——SDK 的 README 承諾不做自動登入，那是給所有使用者的承諾；
+// 這裡是站長自己決定要這樣用自己的帳號。
+//
+// 能不登就不登：只在 NO_LOGIN／抓到 0 筆／缺 cookie 時登入，失敗後冷卻一小時。
+// 每登一次都可能反過來擠掉家人的 session，所以不做定期預防性登入。
+
+/// 驗證碼可以是任意值，只要 form 與 cookie 兩邊一致。
+const LOGIN_VCODE: &str = "9487";
+const LOGIN_COOLDOWN_MS: i64 = 60 * 60 * 1000;
+
+fn login_credentials() -> Option<(String, String)> {
+    let uid = std::env::var("BAHAMUT_UID").ok().filter(|s| !s.is_empty())?;
+    let pwd = std::env::var("BAHAMUT_PASSWORD").ok().filter(|s| !s.is_empty())?;
+    Some((uid, pwd))
+}
+
+/// 登入一次，成功就把新的 cookie 換上並寫檔。回傳錯誤訊息（給日誌與告警，不含帳密）。
+async fn relogin(state: &AppState) -> Result<(), String> {
+    let Some((uid, pwd)) = login_credentials() else {
+        return Err("沒有設定 BAHAMUT_UID / BAHAMUT_PASSWORD".into());
+    };
+    let now = now_ms();
+    let last = state.bahamut.last_login_at.load(Ordering::Relaxed);
+    if now - last < LOGIN_COOLDOWN_MS {
+        return Err("一小時內已經登入過，冷卻中".into());
+    }
+    state.bahamut.last_login_at.store(now, Ordering::Relaxed);
+
+    let enc = crate::util::encode_uri_component;
+    let resp = state
+        .http
+        .post(format!("{}/mobile_app/user/v3/do_login.php", state.external.bahamut_api))
+        .header("Cookie", format!("ckAPP_VCODE={LOGIN_VCODE}"))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(format!("uid={}&passwd={}&vcode={LOGIN_VCODE}", enc(&uid), enc(&pwd)))
+        .timeout(Duration::from_secs(15))
+        .send()
+        .await
+        .map_err(|e| format!("登入請求失敗：{e}"))?;
+
+    let set_cookies: Vec<String> = resp
+        .headers()
+        .get_all("set-cookie")
+        .iter()
+        .filter_map(|v| v.to_str().ok().map(String::from))
+        .collect();
+    let status = resp.status();
+    let body: Value = serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or(Value::Null);
+
+    // 先只看這次回應給了什麼：直接併進舊 jar 再檢查的話，舊的 BAHARUNE 本來就在，
+    // 登入失敗也會被當成成功（測試抓到的）
+    let mut issued = anigamer::CookieJar::new();
+    anigamer::merge_set_cookies(&mut issued, &set_cookies, now);
+    if !issued.get("BAHARUNE").is_some_and(|b| b.contains('.')) {
+        // 只記動畫瘋給的訊息，不記整個回應（成功時裡面是帳號資料）
+        let msg = body
+            .pointer("/error/message")
+            .or_else(|| body.get("message"))
+            .and_then(Value::as_str)
+            .unwrap_or("回應裡沒有 BAHARUNE");
+        return Err(format!("登入失敗（HTTP {status}）：{msg}"));
+    }
+    let names: Vec<&str> = issued.keys().map(String::as_str).collect();
+    tracing::info!("[Bahamut] 自動登入成功，拿到 {}", names.join(","));
+    // 合併進現有的 jar：登入只發 BAHAENUR / BAHARUNE 的話，BAHANICK、BAHALV 這些沿用舊的
+    let mut jar = state.bahamut.client.cookies();
+    anigamer::merge_set_cookies(&mut jar, &set_cookies, now);
+
+    if let Ok(json) = serde_json::to_string_pretty(&jar)
+        && let Err(e) = tokio::fs::write(&state.bahamut.cookie_file, json).await
+    {
+        tracing::error!("[Bahamut] persist cookie fail: {e}");
+    }
+    state.bahamut.client.set_cookies(jar);
+    state.bahamut.last_jwt_alert_at.store(0, Ordering::Relaxed);
+    Ok(())
+}
+
+/// 抓全部觀看紀錄；session 死了（NO_LOGIN 或 0 筆）而且能自動登入，就登入後重抓一次。
+async fn history_with_relogin(state: &AppState) -> anigamer::Result<Vec<anigamer::HistoryEntry>> {
+    let first = state.bahamut.client.history_all(None).await;
+    let dead = match &first {
+        Err(anigamer::Error::Api(a)) => a.is_auth_error(),
+        Ok(all) => all.is_empty(),
+        Err(_) => false,
+    };
+    if !dead || login_credentials().is_none() {
+        return first;
+    }
+    match relogin(state).await {
+        Ok(()) => state.bahamut.client.history_all(None).await,
+        Err(e) => {
+            tracing::warn!("[Bahamut] 自動登入沒成功：{e}");
+            maybe_alert_discord(state, &format!("⚠️ **動畫瘋 session 失效，自動登入也沒成功**：{e}")).await;
+            first
+        }
+    }
+}
+
 /// 動畫瘋歷史同步（移植 `syncBahamutHistory`）。回傳結果 JSON（對齊 Express 回應物件）。
 pub async fn sync_bahamut_history(state: &AppState) -> Value {
+    // 沒有 cookie（第一次部署、檔案被清掉）但能自動登入：先登入再往下走
+    if !state.bahamut.client.validate().0
+        && login_credentials().is_some()
+        && let Err(e) = relogin(state).await
+    {
+        tracing::warn!("[Bahamut] 缺 cookie，自動登入沒成功：{e}");
+    }
     let (ok, missing) = state.bahamut.client.validate();
     if !ok {
         tracing::info!("[Bahamut] cookie missing {} — skip sync", missing.join(","));
@@ -330,7 +445,7 @@ pub async fn sync_bahamut_history(state: &AppState) -> Value {
     tracing::info!("[Bahamut] sync start");
     check_bahamut_jwt_expiry(state).await;
 
-    let all = match state.bahamut.client.history_all(None).await {
+    let all = match history_with_relogin(state).await {
         Ok(h) => h,
         Err(e) => {
             tracing::error!("[Bahamut] sync error: {e}");
@@ -990,6 +1105,180 @@ mod sync_lock_tests {
         unsafe { std::env::remove_var("DISCORD_WEBHOOK_URL") };
         assert_eq!(out["deadSession"], json!(true));
         assert!(out["error"].is_string(), "要把上游訊息帶回來，得到 {out}");
+    }
+
+    // ── 自動重新登入 ──────────────────────────────────────────────────────
+
+    /// SAFETY: 呼叫端持有 COOKIE_ENV_LOCK。
+    unsafe fn set_login_env(on: bool) {
+        unsafe {
+            if on {
+                std::env::set_var("BAHAMUT_UID", "someone");
+                // 帶 & 與 = 的密碼：沒做 URL 編碼的話 form 會被拆成好幾個欄位
+                std::env::set_var("BAHAMUT_PASSWORD", "p&ss=w0rd");
+            } else {
+                std::env::remove_var("BAHAMUT_UID");
+                std::env::remove_var("BAHAMUT_PASSWORD");
+            }
+        }
+    }
+
+    async fn mount_login(server: &MockServer, set_cookies: &[&str]) {
+        let mut resp = ResponseTemplate::new(200).set_body_json(json!({ "success": true }));
+        for c in set_cookies {
+            resp = resp.append_header("set-cookie", *c);
+        }
+        Mock::given(wm_method("POST"))
+            .and(wm_path("/bahamut-api/mobile_app/user/v3/do_login.php"))
+            .respond_with(resp)
+            .mount(server)
+            .await;
+    }
+
+    async fn login_calls(server: &MockServer) -> Vec<wiremock::Request> {
+        server
+            .received_requests()
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|r| r.url.path().ends_with("/do_login.php"))
+            .collect()
+    }
+
+    #[tokio::test]
+    async fn no_login_時自動登入_換上新_cookie_再抓一次() {
+        let _env = COOKIE_ENV_LOCK.lock().await;
+        let server = MockServer::start().await;
+        // 第一次 NO_LOGIN（session 被家人擠掉），登入之後第二次才拿得到資料
+        Mock::given(wm_path("/bahamut-api/anime/v3/history.php"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(
+                json!({ "error": { "code": 100, "status": "NO_LOGIN", "message": "請先登入" } }),
+            ))
+            .up_to_n_times(1)
+            .with_priority(1)
+            .mount(&server)
+            .await;
+        mount_history(
+            &server,
+            json!([{ "animeSn": 100, "videoSn": 900, "title": "測試動畫", "watchTime": "2026-01-01 10:00:00" }]),
+        )
+        .await;
+        mount_cover(&server, 100, "https://p2.bahamut.com.tw/100.jpg").await;
+        mount_login(
+            &server,
+            &["BAHARUNE=new.jwt.value; path=/; domain=.gamer.com.tw", "BAHAENUR=fresh; path=/"],
+        )
+        .await;
+
+        // SAFETY: 靠 COOKIE_ENV_LOCK 串行化。
+        unsafe { set_login_env(true) };
+        let state = state_with_cookies_at(Some(ALL_REQUIRED), Some(&server.uri())).await;
+        let out = sync_bahamut_history(&state).await;
+        unsafe { set_login_env(false) };
+
+        assert_eq!(out["ok"], json!(true), "登入後重抓要成功，得到 {out}");
+        let jar = state.bahamut.client.cookies();
+        assert_eq!(jar.get("BAHARUNE").map(String::as_str), Some("new.jwt.value"));
+        assert_eq!(jar.get("BAHANICK").map(String::as_str), Some("n"), "登入沒發的 cookie 要沿用舊的");
+        let saved = std::fs::read_to_string(&state.bahamut.cookie_file).expect("要寫檔，重啟後才接得上");
+        assert!(saved.contains("new.jwt.value"));
+
+        let calls = login_calls(&server).await;
+        assert_eq!(calls.len(), 1);
+        let body = String::from_utf8_lossy(&calls[0].body).to_string();
+        assert!(body.contains("passwd=p%26ss%3Dw0rd"), "密碼要 URL 編碼，得到 {body}");
+        let vcode_cookie = calls[0].headers.get("cookie").and_then(|v| v.to_str().ok()).unwrap_or_default();
+        assert_eq!(vcode_cookie, format!("ckAPP_VCODE={LOGIN_VCODE}"));
+        assert!(body.contains(&format!("vcode={LOGIN_VCODE}")), "form 與 cookie 的驗證碼要一致");
+    }
+
+    #[tokio::test]
+    async fn 登入失敗時發告警並帶上動畫瘋的訊息() {
+        let _env = COOKIE_ENV_LOCK.lock().await;
+        let server = MockServer::start().await;
+        Mock::given(wm_path("/bahamut-api/anime/v3/history.php"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(
+                json!({ "error": { "code": 100, "status": "NO_LOGIN", "message": "請先登入" } }),
+            ))
+            .mount(&server)
+            .await;
+        Mock::given(wm_method("POST"))
+            .and(wm_path("/bahamut-api/mobile_app/user/v3/do_login.php"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "error": { "message": "帳號或密碼錯誤" } })),
+            )
+            .mount(&server)
+            .await;
+        Mock::given(wm_path("/discord"))
+            .and(wiremock::matchers::body_string_contains("帳號或密碼錯誤"))
+            .respond_with(ResponseTemplate::new(204))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        // SAFETY: 靠 COOKIE_ENV_LOCK 串行化。
+        unsafe {
+            set_login_env(true);
+            std::env::set_var("DISCORD_WEBHOOK_URL", format!("{}/discord", server.uri()));
+        }
+        let state = state_with_cookies_at(Some(ALL_REQUIRED), Some(&server.uri())).await;
+        let out = sync_bahamut_history(&state).await;
+        unsafe {
+            set_login_env(false);
+            std::env::remove_var("DISCORD_WEBHOOK_URL");
+        }
+
+        assert_eq!(out["deadSession"], json!(true), "登入沒成功就還是 session 失效，得到 {out}");
+        assert_eq!(
+            state.bahamut.client.cookies().get("BAHARUNE").map(String::as_str),
+            Some("a.b.c"),
+            "登入失敗不能動到原本的 cookie"
+        );
+    }
+
+    #[tokio::test]
+    async fn 一小時內不重複登入() {
+        let _env = COOKIE_ENV_LOCK.lock().await;
+        let server = MockServer::start().await;
+        Mock::given(wm_method("POST"))
+            .and(wm_path("/bahamut-api/mobile_app/user/v3/do_login.php"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(json!({ "error": { "message": "帳號或密碼錯誤" } })),
+            )
+            .mount(&server)
+            .await;
+
+        // SAFETY: 靠 COOKIE_ENV_LOCK 串行化。
+        unsafe { set_login_env(true) };
+        let state = state_with_cookies_at(Some(ALL_REQUIRED), Some(&server.uri())).await;
+        let first = relogin(&state).await;
+        let second = relogin(&state).await;
+        unsafe { set_login_env(false) };
+
+        assert!(first.is_err());
+        assert!(second.as_ref().is_err_and(|e| e.contains("冷卻")), "得到 {second:?}");
+        assert_eq!(login_calls(&server).await.len(), 1, "失敗之後要等一小時，不能每次同步都去撞登入 API");
+    }
+
+    #[tokio::test]
+    async fn 沒設帳密時照舊_不去打登入_api() {
+        let _env = COOKIE_ENV_LOCK.lock().await;
+        let server = MockServer::start().await;
+        Mock::given(wm_path("/bahamut-api/anime/v3/history.php"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(
+                json!({ "error": { "code": 100, "status": "NO_LOGIN", "message": "請先登入" } }),
+            ))
+            .mount(&server)
+            .await;
+        mount_login(&server, &["BAHARUNE=new.jwt.value"]).await;
+
+        // SAFETY: 靠 COOKIE_ENV_LOCK 串行化。
+        unsafe { set_login_env(false) };
+        let state = state_with_cookies_at(Some(ALL_REQUIRED), Some(&server.uri())).await;
+        let out = sync_bahamut_history(&state).await;
+
+        assert_eq!(out["deadSession"], json!(true));
+        assert!(login_calls(&server).await.is_empty());
     }
 
     #[tokio::test]
