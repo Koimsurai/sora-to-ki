@@ -12,14 +12,14 @@ use std::sync::Arc;
 use axum::{
     Json,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
 };
 use ferrous_opencc::{OpenCC, config::BuiltinConfig};
 use serde_json::json;
 use tokio::sync::OnceCell;
 
-use crate::{auth::require_admin, state::AppState};
+use crate::state::AppState;
 
 /// 進程級單例：`Tw2s` 轉換器建構（載入內建字典 → FST）較重，一次性建好共用。
 /// 首次使用才建（admin-only、罕用，不拖慢啟動），且在 blocking 池建避免卡 async worker。
@@ -117,12 +117,9 @@ fn convert_preserving_japanese(cc: &OpenCC, text: &str) -> String {
     responses((status = 200, description = "zh-CN 轉換結果（動態 JSON）"), (status = 400, description = "來源語言非 zh-TW 或缺 title/content"), (status = 401, description = "未授權"), (status = 404, description = "文章不存在"), (status = 500, description = "OpenCC 轉換或 DB 失敗")))]
 pub async fn generate_zh_cn(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     Path(id): Path<String>,
-    headers: HeaderMap,
 ) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     // 對齊 Express：SELECT * 後只讀這幾欄
     let row = sqlx::query_as::<_, (Option<String>, Option<String>, Option<String>, Option<String>)>(
         "SELECT source_language, title, content, excerpt FROM posts WHERE id = ?",
