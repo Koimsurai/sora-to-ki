@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { postIdent, postPath } from './postPath';
+import { postIdent, postPath, postShareUrl } from './postPath';
 
 // 文章網址的唯一組法。這裡錯了就是站內連結大面積 404，
 // 而且是那種「改了 slug 之後才炸、當下測不到」的錯。
@@ -33,5 +33,21 @@ describe('postPath', () => {
     for (const p of [{ slug: '', id: 39 }, { slug: null, id: '7' }, { id: 0 }]) {
       expect(postPath(p)).not.toBe('/blog/');
     }
+  });
+});
+
+describe('postShareUrl', () => {
+  const O = 'https://koimsurai.com';
+
+  it('用 slug 組 canonical 網址：別人點開不必先被 301 一次', () => {
+    expect(postShareUrl({ slug: 'why-i-switched-to-zed', id: 39 }, 'zh-TW', O)).toBe(
+      'https://koimsurai.com/blog/why-i-switched-to-zed',
+    );
+  });
+
+  it('帶目前語系的前綴：英文版分享出去還是英文版', () => {
+    expect(postShareUrl({ slug: 'why-i-switched-to-zed', id: 39 }, 'en', O)).toBe(
+      'https://koimsurai.com/en/blog/why-i-switched-to-zed',
+    );
   });
 });

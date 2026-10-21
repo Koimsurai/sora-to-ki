@@ -25,7 +25,7 @@ import type { PostListItem } from '@koimsurai/api-types';
 import { postsListQueryOptions, blogTagsQueryOptions, blogCategoriesQueryOptions } from '@/data/blogList';
 import './Blog.css';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
-import { postPath } from '@/lib/postPath';
+import { postPath, postShareUrl } from '@/lib/postPath';
 import { enterStyle } from '@/lib/enter';
 
 /** `GET /api/posts` 的單篇摘要，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
@@ -132,6 +132,7 @@ const NoteCard = React.memo(
     const categoryLabel = useCategoryLabel();
     const tagLabel = useTagLabel();
     const { t } = useTranslation();
+    const locale = useLocale();
     // 卡片上的愛心 = 文章頁反應列裡的 ❤️（post_reactions），不是舊的 posts.likes。
     // 兩者以前各算各的，同一篇文章在列表和內頁會顯示不同的數字。
     //
@@ -191,7 +192,7 @@ const NoteCard = React.memo(
     const handleShare = async (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      const shareUrl = `${window.location.origin}/blog/${post.id}`;
+      const shareUrl = postShareUrl(post, locale, window.location.origin);
       const shareData = { title: post.title, url: shareUrl };
       // lib.dom 把 Web Share API 宣告成必然存在，桌面 Firefox 實際沒有 → 收窄成可選型別，
       // 讓守衛在型別上也成立（否則 no-unnecessary-condition 會誤判它多餘）。

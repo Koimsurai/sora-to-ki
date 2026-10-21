@@ -1,6 +1,7 @@
 import React, { useState, useEffect, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { avatarColor, groupComments, relativeTime, validateCommentDraft } from '@/lib/comments';
+import { avatarColor, groupComments, validateCommentDraft } from '@/lib/comments';
+import { useTimeAgo } from '@/hooks/useTimeAgo';
 import KoimLoader from '@/components/common/KoimLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -164,15 +165,9 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }: Comments
     }
   };
 
-  // 分類邏輯（含 SQLite 的 UTC 補 `Z`）在 lib/comments.ts；這裡只把分類對應成文案。
-  const formatDate = (dateStr: string) => {
-    const r = relativeTime(dateStr, new Date());
-    if (r.kind === 'justNow') return t('common.justNow');
-    if (r.kind === 'minutes') return t('common.minutesAgo', { count: r.count });
-    if (r.kind === 'hours') return t('common.hoursAgo', { count: r.count });
-    if (r.kind === 'days') return t('common.daysAgo', { count: r.count });
-    return r.date.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short', day: 'numeric' });
-  };
+  const timeAgo = useTimeAgo();
+  const formatDate = (dateStr: string) =>
+    timeAgo(dateStr, { dateFormat: { year: 'numeric', month: 'short', day: 'numeric' } });
 
   // 巢狀分組是純邏輯（也是連接線那個 bug 的修正點），抽在 lib/comments.ts。
   const { roots, repliesOf } = groupComments(comments);

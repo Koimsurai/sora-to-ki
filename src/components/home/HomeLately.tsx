@@ -12,16 +12,7 @@ import './HomeLately.css';
 import SiteAppreciation from './SiteAppreciation';
 import { useCategoryLabel } from '@/lib/categoryLabel';
 import { postPath } from '@/lib/postPath';
-
-/** 相對時間（30 天內），更久就顯示日期 */
-function timeAgo(iso: string, t: TFunction) {
-  const d = new Date(String(iso).replace(' ', 'T') + (String(iso).includes('Z') ? '' : 'Z'));
-  const sec = Math.max(0, (Date.now() - d.getTime()) / 1000);
-  if (sec < 3600) return t('home.lately.justNow');
-  if (sec < 86400) return t('home.lately.hoursAgo', { n: Math.floor(sec / 3600) });
-  if (sec < 86400 * 30) return t('home.lately.daysAgo', { n: Math.floor(sec / 86400) });
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-}
+import { useTimeAgo } from '@/hooks/useTimeAgo';
 
 /** 年度軌跡：依「月份」分組。每月一個群組節點（大小 ∝ 篇數、點擊區 ≥24px → 過 a11y target-size），
  *  hover / 點擊 / focus 冒出當月文章標題清單（可點）。取代舊「每篇一個 7px 點」的做法。 */
@@ -174,6 +165,9 @@ function OrbitTimeline({ timeline, t, locale }: { timeline: DigestTimeline[]; t:
 
 export default function HomeLately() {
   const { t, i18n } = useTranslation();
+  const timeAgoRaw = useTimeAgo();
+  // 近況：一小時內都算「剛剛」、30 天後改寫日期
+  const timeAgo = (iso: string) => timeAgoRaw(iso, { justNowWithin: 'hour', absoluteAfterDays: 30 });
   const categoryLabel = useCategoryLabel();
   // 動態帶 / 每日名言改由 TanStack Query 讀（queryFn 內建 catch 降級，對齊舊 UX）。
   const { data: digest } = useQuery(homeDigestQueryOptions(i18n.resolvedLanguage ?? i18n.language));
@@ -214,7 +208,7 @@ export default function HomeLately() {
                     <span className="lately-post-title">{p.title}</span>
                     <span className="lately-post-meta">
                       {p.category ? `${categoryLabel(p.category)} · ` : ''}
-                      {timeAgo(p.created_at, t)}
+                      {timeAgo(p.created_at)}
                     </span>
                   </span>
                 </LocaleLink>
@@ -238,7 +232,7 @@ export default function HomeLately() {
                 <li key={th.id}>
                   <LocaleLink to={`/thinking/${th.id}`} className="lately-murmur">
                     <p className="lately-murmur-text">「{th.content}」</p>
-                    <span className="lately-post-meta">{timeAgo(th.created_at, t)}</span>
+                    <span className="lately-post-meta">{timeAgo(th.created_at)}</span>
                   </LocaleLink>
                 </li>
               ))}

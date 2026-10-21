@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, type CSSProperties } from 'react';
 // ⚠ 改名匯入：這個檔案裡本來就有一個叫 trackAnalytics 的區域變數（算好的結果）。
 import { trackAnalytics as computeTrackAnalytics } from '@/lib/trackAnalytics';
 import { enterStyle } from '@/lib/enter';
+import { useTimeAgo } from '@/hooks/useTimeAgo';
+import { proxiedImage } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import {
   recentlyPlayedQueryOptions,
@@ -87,13 +89,12 @@ const extractDominantColor = (imageUrl: string): Promise<RGB> => {
     };
     img.onerror = () => resolve({ r: 127, g: 90, b: 240 });
     // 使用代理避免 CORS
-    const apiUrl: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
-    img.src = `${apiUrl}/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+    img.src = proxiedImage(imageUrl);
   });
 };
 
 const Music = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('recent');
   const [timeRange, setTimeRange] = useState('medium_term');
   const [dominantColor, setDominantColor] = useState<RGB>({ r: 127, g: 90, b: 240 });
@@ -129,16 +130,10 @@ const Music = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    if (diffMins < 60) return t('common.minutesAgo', { count: diffMins });
-    if (diffHours < 24) return t('common.hoursAgo', { count: diffHours });
-    return date.toLocaleDateString(i18n.resolvedLanguage ?? 'zh-TW', { month: 'short', day: 'numeric' });
-  };
+  // 播放時間：一天內寫「N 小時前」，超過就直接寫日期（不顯示「N 天前」）
+  const timeAgo = useTimeAgo();
+  const formatDate = (dateString: string) =>
+    timeAgo(dateString, { absoluteAfterDays: 1, dateFormat: { month: 'short', day: 'numeric' } });
 
   // 以 topTracks 的 metadata 推導聆聽分析（Spotify 2024/11 已停用 audio-features）
   // 統計聚合抽在 lib/trackAnalytics.ts。

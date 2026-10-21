@@ -1,7 +1,6 @@
-import { useMemo, useCallback, useState, memo, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useMemo, useCallback, useState, memo, useEffect, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import { Masonry } from 'masonic';
-import { useInView } from 'react-intersection-observer';
 import { useSetAtom } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import { photosAtom, openViewerAtom } from '@/store/photoStore';
@@ -45,10 +44,10 @@ const PhotoItem = memo(
     onPhotoClick: (photo: PhotoManifest) => void;
   }) => {
     const shownTags = tagsFor(data, locale);
-    const { ref, inView } = useInView({
-      threshold: 0.1,
-      triggerOnce: true,
-    });
+    // framer 自己的 useInView（以前為了這一處另裝 react-intersection-observer）。
+    // 同時決定進場動畫與「進畫面才渲染 <img>」的延遲載入。
+    const ref = useRef<HTMLDivElement>(null);
+    const inView = useInView(ref, { amount: 0.1, once: true });
 
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
