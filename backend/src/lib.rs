@@ -26,3 +26,4 @@ pub mod router;
 pub mod state;
 pub mod upstream_cache;
 pub mod util;
+pub mod worker;

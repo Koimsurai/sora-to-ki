@@ -457,7 +457,7 @@ async fn malformed_items_are_skipped_without_aborting_the_batch() {
 ///
 /// 這條與下一條是 `cargo mutants` 逼出來的：`spawn_sync` 原本沒有回傳值，
 /// 而它 spawn 的 task 先睡 45 秒——從外面完全看不出有沒有啟動。於是把整個函式
-/// 換成 no-op、或把 `!sync_enabled(...)` 的驚嘆號刪掉，都沒有任何測試會紅。
+/// 換成 no-op、或把開關判斷（現在在 `worker::spawn_periodic`）顛倒，都沒有任何測試會紅。
 ///
 /// 後果分別是「同步永遠不跑」（在看什麼靜靜停止更新）與「沒設定卻自己開始
 /// 打上游」（而 Simkl 對未經同意的輪詢是直接停權）。

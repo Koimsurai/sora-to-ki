@@ -91,9 +91,7 @@ pub async fn get_github_stars(State(state): State<AppState>) -> Response {
             .send()
             .await
             .ok()?;
-        // reqwest 沒開 json feature（避免多拉依賴）→ 自己用 serde_json 解析
-        let text = res.text().await.ok()?;
-        let body: serde_json::Value = serde_json::from_str(&text).ok()?;
+        let body: serde_json::Value = res.json().await.ok()?;
         body.get("stargazers_count")?.as_i64()
     }
     .await;

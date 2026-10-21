@@ -1052,7 +1052,7 @@ cargo llvm-cov nextest --locked --fail-under-regions 78   # 門檻以 ci.yml 為
 | `books.rs` `serialize_rating` | `&Option<f64>` → `Option<&f64>` | 簽名是 serde `serialize_with` 的契約，改了編不過 |
 | `tests/schema.rs` 的 `r##` 字面值 | 減一層 hash | 內容本身含 `"#`，減了字串提早結束（實測 unclosed delimiter） |
 | `spotify_callback` 的 `HashMap` | 加 `S: BuildHasher` 泛型 | axum handler 帶泛型就推不出 `Handler` impl，註冊不進 router |
-| 幾何／演算法內部的 cast | 用 `try_from` | 值域是**證得出來**的（`civil_from_days`、只縮不放的 `fit_inside`、已 `clamp` 的百分比） |
+| 幾何／演算法內部的 cast | 用 `try_from` | 值域是**證得出來**的（exiftool 的旋轉角度、只縮不放的 `fit_inside`、已 `clamp` 的百分比） |
 
 ⚠️ 2026-07-11 遷移時那次 audit（`backend/STRANGLER.md`「統一 audit」）是**人工**照 20 條
 反模式表掃的，規則沒被固化，所以此後新寫的程式有將近一年沒有把關——2026-08-30 補設定時

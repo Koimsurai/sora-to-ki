@@ -103,17 +103,19 @@ async fn 草稿不進_feed() {
 }
 
 #[tokio::test]
-async fn 標題與摘要的_xml_轉義只做四個字元() {
+async fn 標題與摘要的_xml_轉義() {
     // `&` 或 `<` 沒轉的話整份 feed 變成 not well-formed，閱讀器會**整個丟掉**——
     // 一篇標題有 & 的文章可以毀掉所有訂閱者的更新。
     let (app, pool) = test_app().await;
     seed_rss(&pool).await;
     let xml = rss(&app, "").await;
 
-    assert!(xml.contains("A &amp; B &lt;tag&gt; &quot;quoted&quot; it's"), "得到的 XML 裡找不到轉義後的標題");
+    // 全站共用 util::escape_html（五個字元）；單引號用 &#39;，不是 HTML4 不認得的 &apos;
+    assert!(
+        xml.contains("A &amp; B &lt;tag&gt; &quot;quoted&quot; it&#39;s"),
+        "得到的 XML 裡找不到轉義後的標題"
+    );
     assert!(xml.contains("摘要 &amp; &lt;b&gt;粗體&lt;/b&gt;"));
-    // 單引號**不**轉義（照抄 Express 的 4 字元版；og 那支才是 5 字元版）
-    assert!(!xml.contains("&apos;"), "這支刻意不轉單引號，改了就跟 og 那支分岔了");
     // 整份必須是合法 XML：沒有落單的 & （轉義後的 &xxx; 不算）
     let stray = regex_lite_count_stray_amp(&xml);
     assert_eq!(stray, 0, "有 {stray} 個沒轉義的 &，feed 會被閱讀器丟掉");

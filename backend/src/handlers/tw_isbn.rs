@@ -236,28 +236,14 @@ fn current_ym() -> u32 {
     u32::try_from(now.year()).unwrap_or(2026) * 100 + now.month()
 }
 
-/// `ENABLE_TW_ISBN_SYNC` 的解讀，**預設關閉**（同 Simkl / 動畫瘋的 worker）。
-pub(crate) fn sync_enabled(raw: Option<&str>) -> bool {
-    raw.is_some_and(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-}
-
-/// 啟動匯入 worker：啟動後等一下先跑一輪，之後每天一輪（`TW_ISBN_SYNC_PERIOD_SECS` 可調）。
-/// 回傳 handle 是為了測得到「有沒有啟動」（理由同 simkl::spawn_sync）。
+/// 啟動匯入 worker（`ENABLE_TW_ISBN_SYNC=1` 才啟動）：啟動後等 90 秒先跑一輪，
+/// 之後每天一輪（`TW_ISBN_SYNC_PERIOD_SECS` 可調）。
 pub fn spawn_sync(state: AppState) -> Option<tokio::task::JoinHandle<()>> {
-    if !sync_enabled(std::env::var("ENABLE_TW_ISBN_SYNC").ok().as_deref()) {
-        tracing::info!("[tw-isbn] sync worker disabled (ENABLE_TW_ISBN_SYNC unset)");
-        return None;
-    }
-    let period =
-        std::env::var("TW_ISBN_SYNC_PERIOD_SECS").ok().and_then(|v| v.parse().ok()).unwrap_or(24 * 3600);
-    Some(tokio::spawn(async move {
-        tokio::time::sleep(std::time::Duration::from_secs(90)).await;
-        loop {
-            let (n, failed) = sync_once(&state, current_ym()).await;
-            tracing::info!("[tw-isbn] sync done: {n} rows imported, {failed} months failed");
-            tokio::time::sleep(std::time::Duration::from_secs(period)).await;
-        }
-    }))
+    let period = crate::worker::env_secs("TW_ISBN_SYNC_PERIOD_SECS", 24 * 3600);
+    crate::worker::spawn_periodic(state, "tw-isbn", "ENABLE_TW_ISBN_SYNC", 90, period, |s| async move {
+        let (n, failed) = sync_once(&s, current_ym()).await;
+        tracing::info!("[tw-isbn] sync done: {n} rows imported, {failed} months failed");
+    })
 }
 
 // ── 查詢 ──────────────────────────────────────────────────────────────
@@ -416,15 +402,6 @@ mod tests {
     fn normalize_pub_date_只拿掉代表未知的日() {
         assert_eq!(normalize_pub_date("2025-01-00"), "2025-01");
         assert_eq!(normalize_pub_date("2025-01-15"), "2025-01-15");
-    }
-
-    #[test]
-    fn sync_enabled_預設關閉() {
-        assert!(!sync_enabled(None));
-        assert!(!sync_enabled(Some("")));
-        assert!(!sync_enabled(Some("0")));
-        assert!(sync_enabled(Some("1")));
-        assert!(sync_enabled(Some("TRUE")));
     }
 
     async fn state_with_mock(server: &MockServer) -> AppState {

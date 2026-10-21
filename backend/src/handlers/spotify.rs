@@ -10,7 +10,6 @@ use axum::{
     http::{StatusCode, header},
     response::{IntoResponse, Response},
 };
-use base64::Engine;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
@@ -70,13 +69,11 @@ async fn access_token(state: &AppState) -> Result<String, SpErr> {
     if id.is_empty() || secret.is_empty() || refresh.is_empty() {
         return Err(SpErr::NotConfigured);
     }
-    let basic = base64::engine::general_purpose::STANDARD.encode(format!("{id}:{secret}"));
     let resp = state
         .http
         .post(format!("{}/api/token", state.external.spotify_accounts))
-        .header("Authorization", format!("Basic {basic}"))
-        .header("Content-Type", "application/x-www-form-urlencoded")
-        .body(format!("grant_type=refresh_token&refresh_token={refresh}"))
+        .basic_auth(&id, Some(&secret))
+        .form(&[("grant_type", "refresh_token"), ("refresh_token", refresh.as_str())])
         .send()
         .await
         .map_err(|e| SpErr::Net(e.to_string()))?;
@@ -574,7 +571,7 @@ pub async fn spotify_callback(
         .send()
         .await;
     let data: serde_json::Value = match resp {
-        Ok(r) if r.status().is_success() => match serde_json::from_str(&r.text().await.unwrap_or_default()) {
+        Ok(r) if r.status().is_success() => match r.json().await {
             Ok(v) => v,
             Err(_) => {
                 return (
