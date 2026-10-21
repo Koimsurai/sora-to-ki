@@ -3,8 +3,8 @@ interface QuickFact {
   value: string;
 }
 
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { enterStyle } from '@/lib/enter';
 import './AboutMe.css';
 import { lookupOr } from '@/lib/tableLookup';
 
@@ -93,13 +93,9 @@ const AboutMe = () => {
       </div>
 
       <div className="about-grid">
-        <motion.div
-          className="about-bio"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-        >
+        {/* /about 的第一段，在首屏裡：進場用 CSS（.enter），不用等 JS 跟 whileInView。
+            下面幾段（Expertise 之後）捲到才出現，維持 framer。 */}
+        <div className="about-bio enter" style={enterStyle({ y: 16 })}>
           <h2 className="section-hero-title">
             {t('home.aboutMe.titleLine1')}
             <br />
@@ -110,15 +106,9 @@ const AboutMe = () => {
               {p}
             </p>
           ))}
-        </motion.div>
+        </div>
 
-        <motion.aside
-          className="about-facts glass-card"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
-        >
+        <aside className="about-facts glass-card enter" style={enterStyle({ delay: 100, y: 16 })}>
           <span className="section-label about-facts-label">Quick Facts</span>
           <dl>
             {QUICK_FACTS.map((f) => (
@@ -128,7 +118,7 @@ const AboutMe = () => {
               </div>
             ))}
           </dl>
-        </motion.aside>
+        </aside>
       </div>
     </section>
   );

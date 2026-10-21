@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react';
 // ⚠ 改名匯入：這個檔案裡本來就有一個叫 trackAnalytics 的區域變數（算好的結果）。
 import { trackAnalytics as computeTrackAnalytics } from '@/lib/trackAnalytics';
+import { enterStyle } from '@/lib/enter';
 import { useQuery } from '@tanstack/react-query';
 import {
   recentlyPlayedQueryOptions,
@@ -192,12 +193,7 @@ const Music = () => {
             跟書櫃、配備頁刻意不同：三頁原本都是「置中大標＋副標＋內容」，重複到看不出是哪一頁。
             沒有任何播放紀錄時退回單純的標題，頁面仍然有 h1。 */}
         {npData ? (
-          <motion.section
-            className="now-playing-hero"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <section className="now-playing-hero enter">
             <img className="np-backdrop" src={npData.item?.album.images.at(0)?.url} alt="" aria-hidden="true" />
             <div className="np-ambient-glow" />
             <header className="np-eyebrow">
@@ -269,7 +265,7 @@ const Music = () => {
                 </a>
               </div>
             </div>
-          </motion.section>
+          </section>
         ) : (
           <header className="music-hero">
             <h1 className="music-hero-title">
@@ -281,12 +277,7 @@ const Music = () => {
         )}
 
         {/* ═══ Tabs ═══ */}
-        <motion.div
-          className="music-tabs"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
+        <div className="music-tabs enter" style={enterStyle({ delay: 400, y: 0, dur: 300 })}>
           {[
             { id: 'recent', label: t('music.tabs.recent') },
             { id: 'genres', label: t('music.tabs.genres') },
@@ -308,11 +299,13 @@ const Music = () => {
               )}
             </button>
           ))}
-        </motion.div>
+        </div>
 
         {/* ═══ Content ═══ */}
         <div className="music-main-content">
-          <AnimatePresence mode="wait">
+          {/* initial={false}：第一次載入直接顯示（不然 SSR 出來是 opacity:0，要等 JS 才看得到），
+              之後切分頁才播進出場 */}
+          <AnimatePresence mode="wait" initial={false}>
             {/* ── 最近播放 ── */}
             {activeTab === 'recent' && (
               <motion.div
@@ -368,10 +361,8 @@ const Music = () => {
                           href={item.track.external_urls.spotify}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="track-row"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.03 }}
+                          className="track-row enter"
+                          style={enterStyle({ delay: index * 30, x: -10, y: 0, dur: 300 })}
                           whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
                         >
                           <span className="tr-num">{index + 1}</span>
@@ -520,10 +511,8 @@ const Music = () => {
                           href={track.external_urls.spotify}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="track-row"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.02 }}
+                          className="track-row enter"
+                          style={enterStyle({ delay: index * 20, x: -10, y: 0, dur: 300 })}
                           whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
                         >
                           <span className="tr-num">{index + 1}</span>
@@ -630,11 +619,9 @@ const Music = () => {
                             <div key={decade} className="decade-row">
                               <span className="decade-label">{decade}</span>
                               <div className="decade-bar-track">
-                                <motion.div
-                                  className="decade-bar-fill"
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${(count / decadeMax) * 100}%` }}
-                                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                                <div
+                                  className="decade-bar-fill enter-grow"
+                                  style={{ width: `${(count / decadeMax) * 100}%` }}
                                 />
                               </div>
                               <span className="decade-count">{count}</span>
@@ -661,13 +648,7 @@ const FeatureBar = ({ label, value, color }: { label: string; value: number; col
   <div className="feat-bar-wrapper">
     <span className="feat-label">{label}</span>
     <div className="feat-bar-track">
-      <motion.div
-        className="feat-bar-fill"
-        style={{ background: color }}
-        initial={{ width: 0 }}
-        animate={{ width: `${Math.round(value * 100)}%` }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-      />
+      <div className="feat-bar-fill enter-grow" style={{ background: color, width: `${Math.round(value * 100)}%` }} />
     </div>
     <span className="feat-value">{Math.round(value * 100)}</span>
   </div>

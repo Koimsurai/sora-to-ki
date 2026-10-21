@@ -1,11 +1,12 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { localePagePrefixed } from '@/i18n/localePage';
+import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
 import Blog from '@/components/blog/Blog';
 import { blogCategoriesQueryOptions, blogTagsQueryOptions, postsListQueryOptions } from '@/data/blogList';
 import { localeFromPrefix } from '@/i18n/start-i18n';
 
 export const Route = createFileRoute('/$locale/blog/')({
-  ...localePagePrefixed('blog', Blog),
+  ...localePagePrefixed('blog'),
+  component: localeWrap(Blog),
   // 覆蓋 localePagePrefixed 的守門 loader:保留前綴驗證,再預取「該語系」的首屏資料
   // (三個 API 都吃 lang;不帶會 SSR 出 zh-TW 內容到 /en/blog 之類的頁面)
   //

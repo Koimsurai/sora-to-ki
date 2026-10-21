@@ -1,4 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { localePage } from '@/i18n/localePage';
+import { localePage, localeWrap } from '@/i18n/localePage';
 import Friends from '@/components/about/Friends';
-export const Route = createFileRoute('/friends')(localePage('friends', Friends));
+export const Route = createFileRoute('/friends')({
+  ...localePage('friends'),
+  component: localeWrap(Friends),
+});

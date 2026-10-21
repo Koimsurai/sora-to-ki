@@ -1,5 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { localePagePrefixed } from '@/i18n/localePage';
+import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
 import Activity from '@/components/media/Activity';
 
-export const Route = createFileRoute('/$locale/activity')(localePagePrefixed('activity', Activity));
+export const Route = createFileRoute('/$locale/activity')({
+  ...localePagePrefixed('activity'),
+  component: localeWrap(Activity),
+});

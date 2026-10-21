@@ -1130,6 +1130,59 @@ body::after {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   頁面進場動畫（取代首屏的 framer-motion initial/animate）
+
+   framer 的 initial 會在 SSR 輸出 style="opacity:0"，內容要等 JS 下載、hydrate 完才開始淡入。
+   手機節流下實測 FCP → LCP 被拖了 2–3 秒（/blog 2.1→5.0s、/setup 1.8→4.65s）。
+   CSS 動畫在樣式表一到就播，不用等 JS；client 端換頁時元件重新掛上也一樣會播。
+
+   用法：className="enter"，參數走 CSS 變數（都有預設值）：
+     --enter-y / --enter-x   位移起點（預設 20px / 0）
+     --enter-delay           延遲（列表逐項出現時用 index 算）
+     --enter-dur             長度（預設 600ms，同原本 framer 的 duration: 0.6）
+   .enter-pop 從縮小彈出（原本的 spring scale），.enter-grow 寬度從 0 長到元素自己的寬。
+
+   ⚠️ 會被 AnimatePresence 卸載的東西（modal、抽屜、分頁內容）不要改成這個——CSS 做不了
+      退場動畫。那些保留 framer，在 AnimatePresence 加 initial={false} 讓首次載入直接顯示。
+   ═══════════════════════════════════════════════════════════════════ */
+@keyframes enter-rise {
+  from {
+    opacity: 0;
+    transform: translate(var(--enter-x, 0), var(--enter-y, 20px));
+  }
+}
+@keyframes enter-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes enter-grow {
+  from {
+    width: 0;
+  }
+}
+/* backwards 而不是 both：延遲期間停在起點，播完就完全不再作用——元素自己的 transform
+   （或 framer 的 layout 動畫寫進來的）不會被一個已經結束的動畫蓋住。 */
+.enter {
+  animation: enter-rise var(--enter-dur, 600ms) var(--easing-out) var(--enter-delay, 0ms) backwards;
+}
+.enter-pop {
+  animation: enter-pop var(--enter-dur, 500ms) var(--easing-back) var(--enter-delay, 0ms) backwards;
+}
+.enter-grow {
+  animation: enter-grow var(--enter-dur, 800ms) ease-out var(--enter-delay, 0ms) backwards;
+}
+/* 減少動態：上面那條全域規則只把 duration 壓短，delay 還在，逐項出現的列表會空白一段時間 */
+@media (prefers-reduced-motion: reduce) {
+  .enter,
+  .enter-pop,
+  .enter-grow {
+    animation-name: none;
+  }
+}
+
 /* ──────────────────────────────────────────────────────────────
    Per-locale CJK 字體切換 — :lang() 跟著 <html lang> 走
    Phase 3 切語系時 React 會改 html lang → CSS 自動套對應字體

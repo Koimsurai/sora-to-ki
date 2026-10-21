@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { localePagePrefixed } from '@/i18n/localePage';
+import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
 import Watch from '@/components/media/Watch';
 import {
   animeHistoryQueryOptions,
@@ -10,7 +10,8 @@ import {
 import { localeFromPrefix } from '@/i18n/start-i18n';
 
 export const Route = createFileRoute('/$locale/watch/')({
-  ...localePagePrefixed('watch', Watch),
+  ...localePagePrefixed('watch'),
+  component: localeWrap(Watch),
   // 覆蓋守門 loader：保留前綴驗證，再預取觀看紀錄（紀錄本身不分語系）
   loader: async ({ context, params }) => {
     const locale = localeFromPrefix(params.locale);

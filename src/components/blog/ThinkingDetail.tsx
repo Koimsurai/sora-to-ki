@@ -1,7 +1,7 @@
 import { useParams } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LocaleLink } from '@/i18n/locale-link';
-import { motion } from 'framer-motion';
+import { enterStyle } from '@/lib/enter';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth';
 import KoimLoader from '@/components/common/KoimLoader';
@@ -51,11 +51,7 @@ function ThinkingDetail() {
         {thought === null && <p className="tk-empty">{t('thinking.notFound')}</p>}
 
         {thought && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          >
+          <div className="enter" style={enterStyle({ y: 16, dur: 500 })}>
             <ThoughtCard
               th={thought}
               isAdmin={isAdmin}
@@ -70,7 +66,7 @@ function ThinkingDetail() {
             <div className="tk-comments">
               <Comments postId={thought.id} basePath="thoughts" />
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
     </div>

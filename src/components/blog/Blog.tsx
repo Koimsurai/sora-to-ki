@@ -27,6 +27,7 @@ import { usePrefetchArticle } from '@/hooks/usePrefetchArticle';
 import './Blog.css';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath } from '@/lib/postPath';
+import { enterStyle } from '@/lib/enter';
 
 /** `GET /api/posts` 的單篇摘要，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
 export type Post = PostListItem;
@@ -113,11 +114,6 @@ const fadeUp: Variants = {
     y: 0,
     transition: { duration: 0.5, delay: i * 0.06, ease: 'easeOut' },
   }),
-};
-
-const stagger: Variants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
 };
 
 /* ════════════════════════════════════════════════
@@ -248,13 +244,11 @@ const NoteCard = React.memo(
     const fullDate = dateObj.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
 
     return (
+      // 進場用 CSS（見 index.css「頁面進場動畫」）：framer 的 initial 會讓 SSR 出來的卡片是 opacity:0，
+      // 要等 JS 才看得到。延遲到第 8 張封頂，捲到下面的卡片不必等。layout 留給篩選時的重排動畫。
       <motion.article
-        className={`note-card${isColumn ? ' note-card--column' : ''}`}
-        custom={index}
-        variants={fadeUp}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: '-40px' }}
+        className={`note-card enter${isColumn ? ' note-card--column' : ''}`}
+        style={enterStyle({ delay: Math.min(index, 8) * 60, y: 24, dur: 500 })}
         layout
       >
         {/* 日期指示器 or 專欄小點 */}
@@ -492,6 +486,12 @@ function Blog() {
     [posts, searchTerm, selectedTag, selectedCategory],
   );
   const groupedPosts = useMemo(() => groupPostsByMonth(filteredPosts), [filteredPosts]);
+  // 卡片在整條時間線上的順序（跨月份），進場延遲照這個排——用月份內的 index 的話，
+  // 每個月的第一張會同時出現
+  const cardOrder = useMemo(
+    () => new Map(groupedPosts.flatMap((g) => g.posts).map((p, i) => [p.id, i])),
+    [groupedPosts],
+  );
 
   const clearFilters = useCallback(() => {
     setSearchTerm('');
@@ -535,16 +535,16 @@ function Blog() {
         {/* ═══ 上方 Header 區 ═══ */}
         <div className="blog-header-area">
           {/* Hero 標題 */}
-          <motion.header className="blog-hero" initial="hidden" animate="visible" variants={fadeUp}>
+          <header className="blog-hero enter" style={enterStyle({ y: 24, dur: 500 })}>
             <h1 className="blog-hero-title">
               <span className="blog-title-gradient">{t('blog.heroTitle')}</span>
               <span className="blog-title-sub">· Notes</span>
             </h1>
             <p className="blog-hero-desc">記錄技術探索、開發心得與生活碎片。每一篇都是當下最真誠的思考。</p>
-          </motion.header>
+          </header>
 
           {/* 搜尋列 */}
-          <motion.div className="blog-search-bar" variants={fadeUp} initial="hidden" animate="visible" custom={1}>
+          <div className="blog-search-bar enter" style={enterStyle({ delay: 60, y: 24, dur: 500 })}>
             <FaSearch className="search-icon" />
             <input
               type="text"
@@ -558,10 +558,10 @@ function Blog() {
                 <FaTimes />
               </button>
             )}
-          </motion.div>
+          </div>
 
           {/* 排序控制 + 統計 */}
-          <motion.div className="blog-sort-row" variants={fadeUp} initial="hidden" animate="visible" custom={2}>
+          <div className="blog-sort-row enter" style={enterStyle({ delay: 120, y: 24, dur: 500 })}>
             <div className="sort-pills">
               {[
                 { value: 'newest', label: t('blog.sort.newest') },
@@ -590,7 +590,7 @@ function Blog() {
                 {t('blog.statReads')} <em>{filteredPosts.reduce((sum, p) => sum + p.view_count, 0)}</em>
               </span>
             </div>
-          </motion.div>
+          </div>
 
           {/* 活動篩選 */}
           {(selectedTag || selectedCategory || searchTerm) && (
@@ -652,16 +652,21 @@ function Blog() {
                 )}
               </motion.div>
             ) : (
-              <motion.div className="notes-timeline" variants={stagger} initial="hidden" animate="visible">
+              <div className="notes-timeline">
                 {groupedPosts.map((group) => (
                   <div key={`${group.year}-${group.month}`} className="timeline-group">
                     <div className="timeline-group-label">{group.label}</div>
-                    {group.posts.map((post, i) => (
-                      <NoteCard key={post.id} post={post} index={i} onOpenComments={handleOpenComments} />
+                    {group.posts.map((post) => (
+                      <NoteCard
+                        key={post.id}
+                        post={post}
+                        index={cardOrder.get(post.id) ?? 0}
+                        onOpenComments={handleOpenComments}
+                      />
                     ))}
                   </div>
                 ))}
-              </motion.div>
+              </div>
             )}
           </div>
 
