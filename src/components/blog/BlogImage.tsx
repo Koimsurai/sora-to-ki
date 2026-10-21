@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo, type ImgHTMLAttributes } from 'react';
-import ReactDOM from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { FaTimes } from 'react-icons/fa';
 import { thumbHashToDataURL, thumbHashToApproximateAspectRatio } from 'thumbhash';
+import { Modal, ModalTitle } from '@/components/common/Modal';
 import './BlogImage.css';
 
 /**
@@ -308,6 +309,7 @@ interface ImageLightboxProps {
 
 // Lightbox 主組件 — 使用 Portal 渲染到 body
 function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
+  const { t } = useTranslation();
   const closingRef = useRef(false);
 
   const handleClose = useCallback(() => {
@@ -321,32 +323,21 @@ function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
     const handleWheel = () => handleClose();
     const handleScroll = () => handleClose();
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
-    };
-
     window.addEventListener('wheel', handleWheel, { passive: true });
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleClose]);
 
-  // 用 Portal 渲染到 body，確保 fixed 定位在全頁面正中央
-  return ReactDOM.createPortal(
-    <AnimatePresence>
-      <motion.div
-        className="image-lightbox-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={handleClose}
-      >
+  // Esc、焦點交給 Modal；捲動不鎖——滾一下就關、頁面照常捲（上面的 wheel/scroll 監聽）
+  return (
+    <Modal onClose={handleClose} overlayClassName="image-lightbox-overlay" fade lockScroll={false}>
+      {/* display: contents——只是給 Radix 一個「對話框本體」的邊界，不參與版面 */}
+      <div className="image-lightbox-content">
+        <ModalTitle className="sr-only">{(alt ?? '') || t('common.imageViewer')}</ModalTitle>
         <motion.img
           src={src}
           alt={alt ?? ''}
@@ -355,13 +346,11 @@ function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.85, opacity: 0 }}
           transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-          onClick={(e) => e.stopPropagation()}
         />
-        <button className="image-lightbox-close" onClick={handleClose}>
+        <button type="button" className="image-lightbox-close" onClick={handleClose} aria-label={t('common.close')}>
           <FaTimes />
         </button>
-      </motion.div>
-    </AnimatePresence>,
-    document.body,
+      </div>
+    </Modal>
   );
 }

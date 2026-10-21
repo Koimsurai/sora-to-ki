@@ -8,7 +8,6 @@
  * 手繪風用 <Sketch>）。
  */
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
-import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 // beautiful-mermaid 是同步的、零 DOM 相依（內部自帶 ELK 並以 FakeWorker 同步跑），
 // 所以可以直接在 render 階段產生 SVG——SSR 就吐得出圖，不再有「先空白、載入後換入」
@@ -21,6 +20,7 @@ import { lookup } from '@/lib/tableLookup';
 // 圖表樣式跟著元件走（同名檔）。⚠ 這行會讓這份 CSS 排在 BlogPost.css **之前**——
 // BlogPost.tsx 的 import 清單裡 `./MermaidBlock` 在 `./BlogPost.css` 前面。
 // 理由與驗證方式見 MermaidBlock.css 的檔頭。
+import { Modal, ModalTitle } from '@/components/common/Modal';
 import './MermaidBlock.css';
 
 interface MermaidOption {
@@ -470,17 +470,12 @@ const MermaidFullscreen = ({
     document.body.style.paddingRight = `${scrollbarWidth}px`;
     // 強制保持原位置（防止 overflow:hidden 改變 scroll position）
     window.scrollTo(0, scrollY);
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', esc);
     return () => {
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
       // 恢復原位置
       window.scrollTo(0, scrollY);
-      window.removeEventListener('keydown', esc);
     };
     // 只在 mount/unmount 跑：onClose 由呼叫端 useCallback 固定住。
     // （原本寫 react-hooks/exhaustive-deps，那是舊 ESLint 的命名空間，
@@ -492,23 +487,17 @@ const MermaidFullscreen = ({
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const handleRendered = useCallback(() => scheduleFitMermaid(transformRef.current), []);
 
-  return ReactDOM.createPortal(
-    <motion.div
-      className="mm-fullscreen-overlay"
-      onClick={onClose}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-    >
+  // Esc 與焦點交給 Modal；捲動由上面的 useLayoutEffect 在 paint 前自己鎖
+  return (
+    <Modal onClose={onClose} overlayClassName="mm-fullscreen-overlay" fade lockScroll={false}>
       <motion.div
         className="mm-fullscreen-container"
-        onClick={(e) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.92, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.92, y: 20 }}
         transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
       >
+        <ModalTitle className="sr-only">圖表全螢幕檢視</ModalTitle>
         {/* Fullscreen toolbar */}
         <div className="mm-fullscreen-toolbar">
           <div className="mm-toolbar-group">
@@ -551,8 +540,7 @@ const MermaidFullscreen = ({
           </TransformWrapper>
         </div>
       </motion.div>
-    </motion.div>,
-    document.body,
+    </Modal>
   );
 };
 

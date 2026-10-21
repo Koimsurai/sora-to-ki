@@ -5,6 +5,7 @@
     "errorBackendApi": "백엔드 API에 연결할 수 없어요",
     "retry": "다시 시도",
     "close": "닫기",
+    "imageViewer": "이미지 보기",
     "cancel": "취소",
     "save": "저장",
     "submit": "제출",
