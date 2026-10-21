@@ -1,7 +1,7 @@
 use axum::{
     Json,
     extract::{Path, Query, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize};
@@ -9,10 +9,7 @@ use serde_json::{Map, Value, json};
 use sqlx::FromRow;
 
 use crate::state::AppState;
-use crate::{
-    auth::require_admin,
-    util::{bind_val, js_num_value, js_parse_int_opt, js_truthy},
-};
+use crate::util::{bind_val, js_num_value, js_parse_int_opt, js_truthy};
 
 /// books 一列（`SELECT *`）。欄位序 = books 表宣告序，對齊舊 `row_to_json` 的 key 序。
 #[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
@@ -135,12 +132,9 @@ pub async fn list_books(State(state): State<AppState>, Query(q): Query<BooksQuer
     responses((status = 200, body = Vec<BookRow>), (status = 401, description = "未授權")))]
 pub async fn admin_books(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
     Query(q): Query<BooksQuery>,
 ) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     match query_books(&state, &q).await {
         Ok(books) => Json(books).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
@@ -266,12 +260,9 @@ pub async fn update_book(
     responses((status = 200, description = "刪除書籍（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn delete_book(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     Path(id): Path<String>,
-    headers: HeaderMap,
 ) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     match sqlx::query("DELETE FROM books WHERE id = ?").bind(&id).execute(&state.pool).await {
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(r) if r.rows_affected() == 0 => {

@@ -18,7 +18,7 @@ use base64::Engine;
 use rand::RngExt;
 use serde_json::json;
 
-use crate::{auth::require_admin, state::AppState};
+use crate::state::AppState;
 
 fn uploads_base() -> std::path::PathBuf {
     std::env::var("UPLOAD_BASE_DIR").map_or_else(|_| "/usr/src/app/storage/uploads".into(), Into::into)
@@ -192,15 +192,11 @@ async fn normalize_video(path: &std::path::Path) {
 }
 
 /// `POST /api/admin/upload` —— requireAdmin + multer.single('file')。
-/// ⚠️ Multipart 不能當參數 extractor：body extractor 在 handler 前跑，
-/// 無 auth 的非 multipart 請求會先吃 400、requireAdmin 沒機會回 401（順序與 Express 反）。
-/// 故收 Request、先驗 auth 再手動抽 multipart。
+/// ⚠️ Multipart 不當參數 extractor：它拒絕時回 400，而這裡「沒有檔案」要回自己的 JSON 錯誤。
+/// 身分照樣由 `AdminAuth` 先驗（parts extractor 一定比吃 body 的 `Request` 先跑）。
 #[utoipa::path(post, path = "/api/admin/upload", tag = "admin", security(("bearer" = [])),
     responses((status = 200, description = "上傳結果（url/filename/thumbhash，動態 JSON）"), (status = 400, description = "未上傳檔案"), (status = 401, description = "未授權"), (status = 500, description = "寫檔失敗")))]
-pub async fn upload(State(state): State<AppState>, req: Request) -> Response {
-    if let Err(e) = require_admin(req.headers(), &state).await {
-        return e.into_response();
-    }
+pub async fn upload(State(state): State<AppState>, _auth: crate::auth::AdminAuth, req: Request) -> Response {
     // 非 multipart body：multer 情境下 req.file undefined → 400
     let Ok(mut multipart) = Multipart::from_request(req, &state).await else {
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "No file uploaded" }))).into_response();

@@ -11,13 +11,13 @@
 use axum::{
     Json,
     extract::{Path, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
 };
 use serde_json::{Map, Value, json};
 
+use crate::state::AppState;
 use crate::util::{encode_uri_component, escape_html};
-use crate::{auth::require_admin, state::AppState};
 
 const BATCH_SIZE: usize = 100;
 
@@ -270,12 +270,9 @@ pub(crate) async fn dispatch_newsletter(
     responses((status = 200, description = "電子報寄送結果（動態 JSON）"), (status = 400, description = "只有已發佈文章可寄送"), (status = 401, description = "未授權"), (status = 404, description = "文章不存在"), (status = 500, description = "RESEND_API_KEY 未設定或伺服器錯誤")))]
 pub async fn send_newsletter_route(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     Path(id): Path<String>,
-    headers: HeaderMap,
 ) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     // isMailerConfigured()
     if std::env::var("RESEND_API_KEY").ok().as_ref().is_none_or(String::is_empty) {
         return (

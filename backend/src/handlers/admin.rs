@@ -1,7 +1,7 @@
 use axum::{
     Json,
     extract::{Query, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
 };
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,6 @@ use serde_json::{Map, Value, json};
 use sqlx::FromRow;
 
 use crate::{
-    auth::{require_admin, require_owner},
     error::AppError,
     handlers::posts::{PostRow, available_locales_with_source},
     state::AppState,
@@ -133,10 +132,8 @@ pub struct AdminTagRow {
     ))]
 pub async fn admin_tags(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
 ) -> Result<Json<Vec<AdminTagRow>>, AppError> {
-    require_admin(&headers, &state).await?;
-
     let rows = sqlx::query_as::<_, AdminTagRow>(
         "SELECT t.id, t.name, t.created_at, COUNT(pt.post_id) as post_count, \
          t.name_en, t.name_ja, t.name_ko, t.name_zh_cn \
@@ -186,9 +183,8 @@ pub struct AdminCategoryRow {
     ))]
 pub async fn admin_categories(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
 ) -> Result<Json<Vec<AdminCategoryRow>>, AppError> {
-    require_admin(&headers, &state).await?;
     let rows = sqlx::query_as::<_, AdminCategoryRow>(
         "SELECT c.id, c.name, c.slug, c.description, c.short_description, c.created_at, c.updated_at, \
          c.name_en, c.name_ja, c.name_ko, c.name_zh_cn, \
@@ -235,9 +231,8 @@ pub struct AdminUsersResponse {
     ))]
 pub async fn admin_users(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::OwnerAuth,
 ) -> Result<Json<AdminUsersResponse>, AppError> {
-    require_owner(&headers, &state).await?;
     let users = sqlx::query_as::<_, AdminUserRow>(
         "SELECT id, provider, provider_id, display_name, email, avatar_url, role, linked_to, created_at, updated_at \
          FROM oauth_users ORDER BY created_at DESC",
@@ -269,9 +264,8 @@ pub struct BlacklistResponse {
     ))]
 pub async fn admin_blacklist(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
 ) -> Result<Json<BlacklistResponse>, AppError> {
-    require_admin(&headers, &state).await?;
     let blacklist = sqlx::query_as::<_, BlacklistRow>(
         "SELECT id, ip, reason, created_at FROM ip_blacklist ORDER BY created_at DESC",
     )
@@ -302,9 +296,8 @@ pub struct KeywordFiltersResponse {
     ))]
 pub async fn admin_keyword_filters(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
 ) -> Result<Json<KeywordFiltersResponse>, AppError> {
-    require_admin(&headers, &state).await?;
     let filters = sqlx::query_as::<_, KeywordFilterRow>(
         "SELECT id, keyword, action, created_at FROM keyword_filters ORDER BY created_at DESC",
     )
@@ -429,10 +422,9 @@ pub struct AdminPostsResponse {
     ))]
 pub async fn admin_posts(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
     Query(q): Query<AdminPostsQuery>,
 ) -> Result<Json<AdminPostsResponse>, AppError> {
-    require_admin(&headers, &state).await?;
     let page = parse_int(q.page.as_deref(), 1);
     let limit = parse_int(q.limit.as_deref(), 10);
     let offset = (page - 1) * limit;
@@ -573,10 +565,9 @@ pub struct AdminCommentsResponse {
     ))]
 pub async fn admin_comments(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
     Query(q): Query<AdminCommentsQuery>,
 ) -> Result<Json<AdminCommentsResponse>, AppError> {
-    require_admin(&headers, &state).await?;
     let page = parse_int(q.page.as_deref(), 1);
     let limit = parse_int(q.limit.as_deref(), 50);
     let offset = (page - 1) * limit;
@@ -649,16 +640,7 @@ pub async fn admin_comments(
     Ok(Json(AdminCommentsResponse { comments, total, page, limit, counts }))
 }
 
-// ════════════════════ Admin CRUD 寫入（requireAdmin）════════════════════
-// 每個 handler 先跑 require_admin；auth 失敗回其 401/403 response。
-
-macro_rules! auth_or_return {
-    ($headers:expr_2021, $state:expr_2021) => {
-        if let Err(e) = require_admin($headers, $state).await {
-            return e.into_response();
-        }
-    };
-}
+// ════════════════════ Admin CRUD 寫入（AdminAuth）════════════════════
 
 // ── tags ──
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
@@ -776,10 +758,9 @@ pub async fn update_tag(
     ))]
 pub async fn delete_tag(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
-    headers: HeaderMap,
 ) -> Response {
-    auth_or_return!(&headers, &state);
     if let Err(e) = sqlx::query("DELETE FROM post_tags WHERE tag_id = ?").bind(id).execute(&state.pool).await
     {
         return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
@@ -1023,10 +1004,9 @@ pub async fn update_category(
     ))]
 pub async fn delete_category(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
-    headers: HeaderMap,
 ) -> Response {
-    auth_or_return!(&headers, &state);
     let cat_name = match sqlx::query_scalar::<_, String>("SELECT name FROM categories WHERE id = ?")
         .bind(id)
         .fetch_optional(&state.pool)
@@ -1109,10 +1089,9 @@ pub async fn create_blacklist(
     ))]
 pub async fn delete_blacklist(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
-    headers: HeaderMap,
 ) -> Response {
-    auth_or_return!(&headers, &state);
     match sqlx::query("DELETE FROM ip_blacklist WHERE id = ?").bind(id).execute(&state.pool).await {
         Ok(_) => Json(MessageResponse { message: "success".into() }).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
@@ -1178,10 +1157,9 @@ pub async fn create_keyword_filter(
     ))]
 pub async fn delete_keyword_filter(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
-    headers: HeaderMap,
 ) -> Response {
-    auth_or_return!(&headers, &state);
     match sqlx::query("DELETE FROM keyword_filters WHERE id = ?").bind(id).execute(&state.pool).await {
         Ok(_) => Json(MessageResponse { message: "success".into() }).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
@@ -1283,10 +1261,9 @@ pub async fn update_comment(
     ))]
 pub async fn delete_comment(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
-    headers: HeaderMap,
 ) -> Response {
-    auth_or_return!(&headers, &state);
     match sqlx::query("DELETE FROM comments WHERE id = ?").bind(id).execute(&state.pool).await {
         Ok(r) if r.rows_affected() == 0 => {
             (StatusCode::NOT_FOUND, Json(json!({ "error": "Comment not found" }))).into_response()
@@ -1346,8 +1323,6 @@ pub async fn reply_comment(
 }
 
 // ════════════════ admin posts CRUD（requireAdmin）════════════════
-use axum::body::Body;
-use axum::extract::Request;
 
 use crate::handlers::posts::I18N_LOCALES;
 use crate::util::{js_interp, js_truthy};
@@ -1427,13 +1402,6 @@ fn tags_from(body: &Map<String, Value>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// 讀 body + 解析成 JSON object。非 JSON / 非 object → None（呼叫端回 400）。
-async fn read_json_body(body: Body) -> Option<Map<String, Value>> {
-    let bytes = axum::body::to_bytes(body, 10 * 1024 * 1024).await.ok()?;
-    let v: Value = serde_json::from_slice(&bytes).ok()?;
-    v.as_object().cloned()
-}
-
 /// 建/改文「發佈即推送」共用：呼叫 Rust mailer，回前端可讀結果（{sent,failed,errors} 或 {error}）。
 /// 寄信失敗不影響建/改文本身——文章已寫入，只把結果附在回應的 `data.newsletter`。
 async fn dispatch_newsletter_result(state: &AppState, post_id: i64) -> Value {
@@ -1450,15 +1418,11 @@ async fn dispatch_newsletter_result(state: &AppState, post_id: i64) -> Value {
         (status = 200, description = "建立文章（動態 JSON）"),
         (status = 401, description = "未授權"),
     ))]
-pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> Response {
-    let (parts, body) = req.into_parts();
-    if let Err(e) = require_admin(&parts.headers, &state).await {
-        return e.into_response();
-    }
-    let Some(b) = read_json_body(body).await else {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "invalid JSON body" }))).into_response();
-    };
-
+pub async fn admin_create_post(
+    State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
+    crate::error::JsonBody(b): crate::error::JsonBody<Map<String, Value>>,
+) -> Response {
     // 發佈時是否推送 Newsletter：先記旗標，建文成功後再寄（見下方）。
     let status_str = b.get("status").and_then(|v| v.as_str()).map(String::from);
     let want_newsletter = js_truthy(b.get("send_newsletter")) && status_str.as_deref() == Some("published");
@@ -1599,16 +1563,10 @@ pub async fn admin_create_post(State(state): State<AppState>, req: Request) -> R
     ))]
 pub async fn admin_update_post(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
-    req: Request,
+    crate::error::JsonBody(b): crate::error::JsonBody<Map<String, Value>>,
 ) -> Response {
-    let (parts, body) = req.into_parts();
-    if let Err(e) = require_admin(&parts.headers, &state).await {
-        return e.into_response();
-    }
-    let Some(b) = read_json_body(body).await else {
-        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "invalid JSON body" }))).into_response();
-    };
     let status_str = b.get("status").and_then(|v| v.as_str()).map(String::from);
     // 發佈時是否推送 Newsletter：先記旗標，更新成功後再寄（見下方）。
     let want_newsletter = js_truthy(b.get("send_newsletter")) && status_str.as_deref() == Some("published");
@@ -1791,12 +1749,9 @@ pub async fn admin_update_post(
     ))]
 pub async fn admin_delete_post(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
-    headers: HeaderMap,
 ) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     if let Err(e) = sqlx::query("DELETE FROM post_tags WHERE post_id = ?").bind(id).execute(&state.pool).await
     {
         return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
@@ -1830,12 +1785,9 @@ pub struct AdminPostDetailResponse {
     ))]
 pub async fn admin_get_post(
     State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
-    headers: HeaderMap,
 ) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     let row = sqlx::query_as::<_, PostRow>(
         "SELECT p.*, GROUP_CONCAT(t.name) as tags FROM posts p \
          LEFT JOIN post_tags pt ON p.id = pt.post_id \
@@ -1867,10 +1819,7 @@ pub async fn admin_get_post(
         (status = 200, description = "後台統計（動態 JSON）"),
         (status = 401, description = "未授權"),
     ))]
-pub async fn admin_stats(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
+pub async fn admin_stats(State(state): State<AppState>, _auth: crate::auth::AdminAuth) -> Response {
     let posts = sqlx::query_as::<_, (i64, i64, i64, i64)>(
         "SELECT COUNT(*), \
                 COUNT(CASE WHEN status = 'published' THEN 1 END), \

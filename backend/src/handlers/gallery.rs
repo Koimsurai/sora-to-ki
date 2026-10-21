@@ -386,7 +386,6 @@ pub async fn image_proxy(State(state): State<AppState>, Query(q): Query<ImagePro
 
 // ── gallery sync（sharp 硬骨頭本體：rotate + resize + lossy webp + EXIF + manifest）──
 
-use axum::http::HeaderMap;
 use serde_json::Map;
 
 fn gallery_source_path() -> std::path::PathBuf {
@@ -608,10 +607,7 @@ static GALLERY_SYNC_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new
 /// `POST /api/admin/gallery/sync` —— requireAdmin；同時只跑一個（409）。
 #[utoipa::path(post, path = "/api/admin/gallery/sync", tag = "admin", security(("bearer" = [])),
     responses((status = 200, description = "相簿同步結果（動態 JSON）"), (status = 401, description = "未授權"), (status = 409, description = "同步進行中")))]
-pub async fn gallery_sync(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    if let Err(e) = crate::auth::require_admin(&headers, &state).await {
-        return e.into_response();
-    }
+pub async fn gallery_sync(State(state): State<AppState>, _auth: crate::auth::AdminAuth) -> Response {
     let Ok(_guard) = GALLERY_SYNC_LOCK.try_lock() else {
         return (
             StatusCode::CONFLICT,
@@ -1052,6 +1048,16 @@ mod pure_tests {
 #[cfg(test)]
 mod sync_lock_tests {
     use super::*;
+    use tower::ServiceExt;
+
+    /// 走完整 router（含 `AdminAuth` extractor）打 `POST /api/admin/gallery/sync`。
+    async fn sync(state: AppState, headers: axum::http::HeaderMap) -> Response {
+        let mut req = axum::http::Request::post("/api/admin/gallery/sync")
+            .body(axum::body::Body::empty())
+            .expect("請求建得起來");
+        *req.headers_mut() = headers;
+        crate::router::build_router(state).oneshot(req).await.expect("router 不會回 Err")
+    }
 
     /// `GALLERY_SYNC_LOCK` 是模組私有的 static，整合測試（tests/api.rs 是另一個 crate）
     /// 摸不到它。而「同時只跑一個」這件事**只有**佔住鎖才驗得了確定——靠兩個並發請求
@@ -1064,10 +1070,9 @@ mod sync_lock_tests {
         let guard = GALLERY_SYNC_LOCK.lock().await;
         // 超時是斷言的一部分：try_lock 若被改成 lock().await，這裡會死等而不是回 409。
         // 沒有 timeout 的話那個退化會表現成「測試掛住」，在 CI 上只看得到一個沒有訊息的逾時。
-        let resp =
-            tokio::time::timeout(std::time::Duration::from_secs(5), gallery_sync(State(state), headers))
-                .await
-                .expect("已經有 sync 在跑時應該立刻回 409，不是排隊等它");
+        let resp = tokio::time::timeout(std::time::Duration::from_secs(5), sync(state, headers))
+            .await
+            .expect("已經有 sync 在跑時應該立刻回 409，不是排隊等它");
         assert_eq!(
             resp.status(),
             StatusCode::CONFLICT,
@@ -1084,7 +1089,7 @@ mod sync_lock_tests {
         let state = crate::state::test_state().await;
         let headers = crate::state::test_admin_headers();
 
-        let resp = gallery_sync(State(state), headers).await;
+        let resp = sync(state, headers).await;
         assert_ne!(resp.status(), StatusCode::CONFLICT, "沒人在跑卻回 409");
     }
 
@@ -1094,7 +1099,7 @@ mod sync_lock_tests {
         let state = crate::state::test_state().await;
 
         let guard = GALLERY_SYNC_LOCK.lock().await;
-        let resp = gallery_sync(State(state), HeaderMap::new()).await;
+        let resp = sync(state, axum::http::HeaderMap::new()).await;
         assert_eq!(
             resp.status(),
             StatusCode::UNAUTHORIZED,

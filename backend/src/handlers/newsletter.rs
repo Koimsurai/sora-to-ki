@@ -3,7 +3,7 @@ use std::fmt::Write as _;
 use axum::{
     Json,
     extract::{Path, Query, State},
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     response::{IntoResponse, Response},
 };
 // rand 0.10 把 trait 重切了：原本的 RngCore 改名為 Rng（fill_bytes 在這裡），
@@ -15,7 +15,7 @@ use sqlx::FromRow;
 
 use crate::handlers::posts::Pagination;
 use crate::state::AppState;
-use crate::{auth::require_admin, util::parse_int};
+use crate::util::parse_int;
 
 /// `newsletter_subscribers` 一列（`SELECT *`）。欄位序 = 表宣告序，對齊舊 `row_to_json`。
 #[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
@@ -195,12 +195,9 @@ pub struct SubscribersQuery {
     responses((status = 200, body = SubscribersResponse), (status = 401, description = "未授權")))]
 pub async fn subscribers(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    _auth: crate::auth::AdminAuth,
     Query(q): Query<SubscribersQuery>,
 ) -> Response {
-    if let Err(e) = require_admin(&headers, &state).await {
-        return e.into_response();
-    }
     let page = parse_int(q.page.as_deref(), 1);
     let limit = parse_int(q.limit.as_deref(), 50);
     let offset = (page - 1) * limit;
