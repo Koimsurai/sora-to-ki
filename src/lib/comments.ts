@@ -1,6 +1,4 @@
-import { parseServerDate } from '@/lib/serverDate';
-
-// 留言區的純邏輯：送出前的驗證、巢狀分組、頭像配色、相對時間。
+// 留言區的純邏輯：送出前的驗證、巢狀分組、頭像配色。（相對時間搬到 lib/relativeTime，全站共用。）
 //
 // 從 Comments.tsx 抽出來的理由跟 blogReading.ts 一樣：這些東西原本埋在元件裡，
 // e2e 只走到 21%，而它們的失敗模式全是「安靜地錯」——驗證放行了不該放行的、
@@ -83,35 +81,4 @@ export function avatarColor(name: string): string {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-}
-
-/** 相對時間的分類。實際文案由呼叫端對應 i18n key。 */
-export type RelativeTime =
-  | { kind: 'justNow' }
-  | { kind: 'minutes'; count: number }
-  | { kind: 'hours'; count: number }
-  | { kind: 'days'; count: number }
-  | { kind: 'absolute'; date: Date };
-
-/**
- * 把留言時間分類成「剛剛／N 分鐘前／N 小時前／N 天前／絕對日期」。
- *
- * ⚠ SQLite 的 `CURRENT_TIMESTAMP` 存的是 **UTC**，但字串長得像 `2026-08-05 12:00:00`
- * ——沒有時區標記。JS 的 `new Date()` 遇到這種格式會當成**本地時間**，於是在 UTC+8
- * 的機器上每一則留言都會早八小時，畫面上就是「8 小時前」起跳。所以要補 `Z`。
- * 已經有 `T` 或 `Z` 的（API 回的 ISO 格式）就不動。
- *
- * `now` 由呼叫端傳入而不是在函式裡取——這樣才測得動。
- */
-export function relativeTime(dateStr: string, now: Date): RelativeTime {
-  const date = parseServerDate(dateStr);
-  const diff = now.getTime() - date.getTime();
-  const mins = Math.floor(diff / 60_000);
-  const hrs = Math.floor(diff / 3_600_000);
-  const days = Math.floor(diff / 86_400_000);
-  if (mins < 1) return { kind: 'justNow' };
-  if (mins < 60) return { kind: 'minutes', count: mins };
-  if (hrs < 24) return { kind: 'hours', count: hrs };
-  if (days < 7) return { kind: 'days', count: days };
-  return { kind: 'absolute', date };
 }

@@ -5,10 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth';
+import { apiUrl } from '@/lib/api';
 import type { TmdbSearchResponse, TmdbSearchResult, WatchFavoriteRow } from '@koimsurai/api-types';
 import './FavoritesEditor.css';
-
-const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 // 與 Watch 共用同一份生成型別（backend handlers::watch::WatchFavoriteRow）——
 // 這裡原本另外手寫一份，欄位可選性跟 Watch 那份還互相打架（poster?: string
@@ -87,7 +86,9 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
     queryKey: ['watch', 'tmdb-search', debouncedQuery, kind],
     queryFn: async (): Promise<SearchResult[]> => {
       const r = (await fetch(
-        `${API}/watch/tmdb-search?q=${encodeURIComponent(debouncedQuery)}&kind=${kind === 'film' ? 'movie' : 'tv'}`,
+        apiUrl(
+          `/api/watch/tmdb-search?q=${encodeURIComponent(debouncedQuery)}&kind=${kind === 'film' ? 'movie' : 'tv'}`,
+        ),
         { headers: authHeaders() },
       ).then((x) => x.json())) as TmdbSearchResponse;
       return r.results;
@@ -99,7 +100,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
   const addFavorite = async (item: SearchResult) => {
     setBusy(true);
     try {
-      await fetch(`${API}/watch/favorites`, {
+      await fetch(apiUrl('/api/watch/favorites'), {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({ tmdbId: item.tmdbId, kind, rating: 5, quote: '' }),
@@ -113,7 +114,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
   };
 
   const patchFavorite = async (id: number, patch: Record<string, unknown>) => {
-    await fetch(`${API}/watch/favorites/${id}`, {
+    await fetch(apiUrl(`/api/watch/favorites/${id}`), {
       method: 'PUT',
       headers: authHeaders(),
       body: JSON.stringify(patch),
@@ -124,7 +125,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
   const removeFavorite = async (id: number) => {
     setBusy(true);
     try {
-      await fetch(`${API}/watch/favorites/${id}`, { method: 'DELETE', headers: authHeaders() });
+      await fetch(apiUrl(`/api/watch/favorites/${id}`), { method: 'DELETE', headers: authHeaders() });
       onChanged();
     } finally {
       setBusy(false);

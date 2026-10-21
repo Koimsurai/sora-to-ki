@@ -163,9 +163,6 @@
       "viewAll": "전체 보기",
       "more": "더 보기",
       "empty": "아직 조용해요",
-      "justNow": "방금",
-      "hoursAgo": "{{n}}시간 전",
-      "daysAgo": "{{n}}일 전",
       "today": "오늘",
       "seasons": {
         "spring": "봄",

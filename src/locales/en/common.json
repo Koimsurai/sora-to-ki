@@ -163,9 +163,6 @@
       "viewAll": "View all",
       "more": "More",
       "empty": "Quiet for now",
-      "justNow": "just now",
-      "hoursAgo": "{{n}}h ago",
-      "daysAgo": "{{n}}d ago",
       "today": "Today",
       "seasons": {
         "spring": "SPRING",

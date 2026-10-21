@@ -163,9 +163,6 @@
       "viewAll": "看全部",
       "more": "更多",
       "empty": "目前還很安靜",
-      "justNow": "剛剛",
-      "hoursAgo": "{{n}} 小時前",
-      "daysAgo": "{{n}} 天前",
       "today": "今天",
       "seasons": {
         "spring": "春",
