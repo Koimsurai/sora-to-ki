@@ -238,6 +238,46 @@ pub async fn gallery_photos() -> Response {
 #[derive(Deserialize)]
 pub struct ImageProxyQuery {
     url: Option<String>,
+    /// 縮圖寬度。只認 [`THUMB_WIDTHS`] 裡的值，其他的當沒帶（回原圖）。
+    w: Option<u32>,
+}
+
+/// 縮圖只開放這幾種寬度：w 來自公開網址，任意值都收的話每個數字都是一份新的快取。
+/// 對應前端的顯示尺寸 ×3（手機 DPR）：書目清單 36px、星圖提示 48px、零重力 84px、詳情抽屜 112px。
+const THUMB_WIDTHS: [u32; 4] = [128, 256, 384, 512];
+const THUMB_CACHE_MAX: usize = 512;
+/// 縮圖的 webp 品質，同 gallery 縮圖。
+const THUMB_QUALITY: f32 = 80.0;
+
+/// 縮好的圖。一張書封縮到 128–384px 只有幾 KB，全部放記憶體；重啟後第一次再縮一遍。
+static THUMB_CACHE: std::sync::LazyLock<
+    parking_lot::Mutex<std::collections::HashMap<String, axum::body::Bytes>>,
+> = std::sync::LazyLock::new(Default::default);
+
+/// 只縮不放，等比例縮到寬 `w`，輸出 webp。解不開的格式回 None（呼叫端退回原圖）。
+fn make_thumbnail(bytes: &[u8], w: u32) -> Option<Vec<u8>> {
+    let img = image::load_from_memory(bytes).ok()?;
+    let (tw, th) = fit_width(img.width(), img.height(), w);
+    let resized =
+        if tw == img.width() { img } else { img.resize_exact(tw, th, image::imageops::FilterType::Lanczos3) };
+    let rgba = image::DynamicImage::ImageRgba8(resized.to_rgba8());
+    let enc = webp::Encoder::from_image(&rgba).ok()?;
+    Some(enc.encode(THUMB_QUALITY).to_vec())
+}
+
+fn thumb_response(body: axum::body::Bytes) -> Response {
+    (
+        [
+            (header::CONTENT_TYPE, "image/webp".to_string()),
+            (header::ACCESS_CONTROL_ALLOW_ORIGIN, "*".to_string()),
+            // 書封換圖會換網址（url 參數本身就變了），同一個網址的內容不會變，可以放很久
+            (header::CACHE_CONTROL, "public, max-age=604800".to_string()),
+            (header::CONTENT_SECURITY_POLICY, "default-src 'none'".to_string()),
+            (header::X_CONTENT_TYPE_OPTIONS, "nosniff".to_string()),
+        ],
+        body,
+    )
+        .into_response()
 }
 
 /// 代理上限：書封/專輯封面都在幾百 KB 級，20MB 已極寬鬆（只在上游給 Content-Length 時驗）
@@ -260,6 +300,16 @@ pub async fn image_proxy(State(state): State<AppState>, Query(q): Query<ImagePro
     let Some((url, _host)) = crate::net_guard::validate_url(&url) else {
         return bad_request("Invalid image URL");
     };
+    // 書封原圖 350–700px 寬、單張 50–130KB，畫面上卻只有 36–112px。書櫃 23 本原圖共 872KB，
+    // 在手機上跟主程式搶頻寬（LCP 9.3s）。帶 w 就在這裡縮成 webp。
+    let thumb_w = q.w.filter(|w| THUMB_WIDTHS.contains(w));
+    let thumb_key = thumb_w.map(|w| format!("{w}|{url}"));
+    if let Some(key) = &thumb_key {
+        let hit = THUMB_CACHE.lock().get(key).cloned();
+        if let Some(body) = hit {
+            return thumb_response(body);
+        }
+    }
     let resp = state
         .http
         .get(&url)
@@ -287,6 +337,29 @@ pub async fn image_proxy(State(state): State<AppState>, Query(q): Query<ImagePro
             // octet-stream 給不標 CT 的圖片 CDN 留活口；缺 CT 沿用上面的 image/jpeg 預設
             if !(content_type.starts_with("image/") || content_type.starts_with("application/octet-stream")) {
                 return bad_request("Not an image");
+            }
+            if let (Some(w), Some(key)) = (thumb_w, thumb_key) {
+                let Ok(original) = r.bytes().await else {
+                    return (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch image").into_response();
+                };
+                // 上游沒給 Content-Length 的話上面那道擋不到，讀完再量一次
+                if original.len() as u64 > MAX_PROXY_BYTES {
+                    return bad_request("Image too large");
+                }
+                let src = original.clone();
+                let thumb = tokio::task::spawn_blocking(move || make_thumbnail(&src, w)).await.ok().flatten();
+                let Some(thumb) = thumb else {
+                    // 解不開（例如 SVG）：退回原圖，畫面至少還有東西
+                    return ([(header::CONTENT_TYPE, content_type)], original).into_response();
+                };
+                let body = axum::body::Bytes::from(thumb);
+                let mut cache = THUMB_CACHE.lock();
+                if cache.len() >= THUMB_CACHE_MAX {
+                    cache.clear(); // 滿了就整個重來；書封總共才幾十張
+                }
+                cache.insert(key, body.clone());
+                drop(cache);
+                return thumb_response(body);
             }
             let stream = r.bytes_stream();
             (
@@ -752,6 +825,37 @@ mod pure_tests {
         for no in ["+8:00", "08:00", "+0800", "Z", "", "+08:0", "+08:000", "＋08:00"] {
             assert!(!is_utc_offset(no), "{no:?} 不該被當成合法 offset");
         }
+    }
+
+    fn png(w: u32, h: u32) -> Vec<u8> {
+        let img = image::RgbImage::from_fn(w, h, |x, y| {
+            image::Rgb([u8::try_from(x % 256).unwrap_or(0), u8::try_from(y % 256).unwrap_or(0), 128])
+        });
+        let mut out = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::ImageRgb8(img).write_to(&mut out, image::ImageFormat::Png).expect("encode png");
+        out.into_inner()
+    }
+
+    #[test]
+    fn 書封縮圖_等比例縮到指定寬度並輸出_webp() {
+        let src = png(600, 900);
+        let thumb = make_thumbnail(&src, 128).expect("png 要縮得出來");
+        assert_eq!(image::guess_format(&thumb).ok(), Some(image::ImageFormat::WebP));
+        let out = image::load_from_memory(&thumb).expect("縮圖要解得開");
+        assert_eq!((out.width(), out.height()), (128, 192), "2:3 的書封縮完還是 2:3");
+        assert!(thumb.len() < src.len(), "縮圖要比原圖小");
+    }
+
+    #[test]
+    fn 書封縮圖_原圖比較小就不放大() {
+        let out = image::load_from_memory(&make_thumbnail(&png(100, 150), 384).expect("縮")).expect("解");
+        assert_eq!((out.width(), out.height()), (100, 150));
+    }
+
+    #[test]
+    fn 書封縮圖_解不開的資料回_none_讓呼叫端退回原圖() {
+        assert!(make_thumbnail(b"<svg xmlns='http://www.w3.org/2000/svg'/>", 128).is_none());
+        assert!(make_thumbnail(b"", 128).is_none());
     }
 
     #[test]

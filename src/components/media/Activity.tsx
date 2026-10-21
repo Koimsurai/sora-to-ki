@@ -68,6 +68,22 @@ export interface GithubData {
   error?: string;
 }
 
+/** 狀態列右邊每秒走的時鐘。抽成自己的元件：state 放在整頁的話，整頁（4500 個節點）
+ *  每秒重繪一次——手機 CPU 4x 節流下閒置時吃掉約 6.5% 主執行緒，也拉高 INP 風險。 */
+function LiveClock({ lang }: { lang: string }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    // server 與 client render 時間不同 → suppressHydrationWarning
+    <span className="status-bar-time" suppressHydrationWarning>
+      {now.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+    </span>
+  );
+}
+
 const Activity = () => {
   const { t, i18n } = useTranslation();
   const { isVisible } = usePageVisibility();
@@ -86,14 +102,6 @@ const Activity = () => {
     refetch: refetchContributions,
   } = useQuery(contributionsQueryOptions(contributionYear));
   const isRefreshing = contributionsFetching;
-  const [currentTime, setCurrentTime] = useState(() => new Date());
-
-  // 1 秒時鐘（非資料 → 維持 setInterval）。
-  useEffect(() => {
-    const id = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
   const getUptime = () => uptimeSince(new Date('2025-04-01T00:00:00+08:00'), new Date());
 
   // 熱力圖的格子計算抽在 lib/contributionGrid.ts（那裡也修掉了後備路徑兩軸反向的 bug）。
@@ -192,14 +200,7 @@ const Activity = () => {
             <span className="status-bar-meta" suppressHydrationWarning>
               Uptime {uptime.days}d {uptime.hours}h
             </span>
-            <span className="status-bar-time" suppressHydrationWarning>
-              {currentTime.toLocaleTimeString(i18n.resolvedLanguage ?? 'zh-TW', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-              })}
-            </span>
+            <LiveClock lang={i18n.resolvedLanguage ?? 'zh-TW'} />
           </div>
         </motion.div>
 

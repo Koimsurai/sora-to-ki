@@ -256,6 +256,13 @@
   border: none;
 }
 
+/* 原本在 BlogPost.css；InfoPage 的目錄也有三、四層標題，不載入 BlogPost.css 就沒有縮排 */
+.toc-item.level-3,
+.toc-item.level-4 {
+  padding-left: var(--space-4);
+  font-size: var(--fs-12);
+}
+
 .toc-item:focus,
 .toc-item:focus-visible {
   outline: none;

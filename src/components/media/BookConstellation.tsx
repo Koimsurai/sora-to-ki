@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { BookRow } from '@koimsurai/api-types';
 
 import { layoutConstellation, SKY_H, SKY_W, type PlacedStar } from '@/lib/bookConstellation';
+import type { ThumbWidth } from '@/lib/api';
 import './BookConstellation.css';
 
 /**
@@ -26,7 +27,7 @@ interface Props {
   isDimmed: (book: Book) => boolean;
   selectedId: number | null;
   onSelect: (book: Book) => void;
-  coverSrc: (url?: string | null) => string;
+  coverSrc: (url?: string | null, w?: ThumbWidth) => string;
 }
 
 /** 0～1 之間的穩定偽隨機數，讓每顆星的閃爍節奏錯開。 */
@@ -127,7 +128,9 @@ export default function BookConstellation({ books, isDimmed, selectedId, onSelec
             style={{ left: `${(hovered.x / SKY_W) * 100}%`, top: `${(hovered.y / SKY_H) * 100}%` }}
             aria-hidden="true"
           >
-            {hovered.book.cover_url && <img src={coverSrc(hovered.book.cover_url)} alt="" className="bc-tip-cover" />}
+            {hovered.book.cover_url && (
+              <img src={coverSrc(hovered.book.cover_url, 256)} alt="" className="bc-tip-cover" />
+            )}
             <div className="bc-tip-body">
               <div className="bc-tip-title">{hovered.book.title}</div>
               {hovered.book.authors && <div className="bc-tip-author">{hovered.book.authors}</div>}

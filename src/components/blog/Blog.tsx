@@ -23,7 +23,6 @@ import KoimLoader from '@/components/common/KoimLoader';
 import type { Variants } from 'framer-motion';
 import type { PostListItem } from '@koimsurai/api-types';
 import { postsListQueryOptions, blogTagsQueryOptions, blogCategoriesQueryOptions } from '@/data/blogList';
-import { usePrefetchArticle } from '@/hooks/usePrefetchArticle';
 import './Blog.css';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath } from '@/lib/postPath';
@@ -133,7 +132,6 @@ const NoteCard = React.memo(
     const categoryLabel = useCategoryLabel();
     const tagLabel = useTagLabel();
     const { t } = useTranslation();
-    const prefetchArticle = usePrefetchArticle();
     // 卡片上的愛心 = 文章頁反應列裡的 ❤️（post_reactions），不是舊的 posts.likes。
     // 兩者以前各算各的，同一篇文章在列表和內頁會顯示不同的數字。
     //
@@ -273,13 +271,9 @@ const NoteCard = React.memo(
           )}
 
           {/* 標題 */}
-          <LocaleLink
-            to={postPath(post)}
-            className="note-title-link"
-            viewTransition
-            onMouseEnter={() => prefetchArticle(post.id)}
-            onFocus={() => prefetchArticle(post.id)}
-          >
+          {/* hover／聚焦時的預載交給 router（defaultPreload: 'intent'）：它跑的是路由 loader，
+              key 跟點進去之後一致。以前另外手寫一套用 post.id 組 key，而路由用的是 slug，從沒命中過 */}
+          <LocaleLink to={postPath(post)} className="note-title-link" viewTransition>
             <h2 className="note-title">{post.title}</h2>
           </LocaleLink>
 
@@ -431,7 +425,6 @@ function Blog() {
   // (官方給共用元件的用法:忽略 from、型別放寬)。有值就當初始資料 → SSR 直接 render 出文章,
   // 而不是卡在下面的 `if (loading)` 骨架屏。
   const locale = useLocale();
-  const prefetchArticle = usePrefetchArticle();
   const categoryLabel = useCategoryLabel();
   const tagLabel = useTagLabel();
   const [searchTerm, setSearchTerm] = useState('');
@@ -741,12 +734,7 @@ function Blog() {
                 <ul className="featured-list">
                   {featuredPosts.map((p) => (
                     <li key={p.id}>
-                      <LocaleLink
-                        to={postPath(p)}
-                        className="featured-link"
-                        onMouseEnter={() => prefetchArticle(p.id)}
-                        onFocus={() => prefetchArticle(p.id)}
-                      >
+                      <LocaleLink to={postPath(p)} className="featured-link">
                         <span className="featured-text">{p.title}</span>
                         <span className="featured-date">
                           {new Date(p.created_at).toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}
