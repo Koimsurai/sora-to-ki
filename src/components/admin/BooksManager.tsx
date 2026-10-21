@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { BookRow } from '@koimsurai/api-types';
 import { adminBooksQueryOptions } from '@/data/adminData';
+import { proxiedImage } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -376,7 +377,11 @@ export default function BooksManager() {
                             onClick={() => handleSelectFromSearch(book)}
                           >
                             {book.cover_url && (
-                              <img src={book.cover_url} alt={book.title} className="w-12 h-16 object-cover rounded" />
+                              <img
+                                src={proxiedImage(book.cover_url)}
+                                alt={book.title}
+                                className="w-12 h-16 object-cover rounded"
+                              />
                             )}
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-sm truncate">
@@ -496,7 +501,7 @@ export default function BooksManager() {
                     />
                     {formData.cover_url && (
                       <div className="mt-2 rounded-lg overflow-hidden border max-w-[200px]">
-                        <img src={formData.cover_url} alt="封面預覽" className="w-full h-auto" />
+                        <img src={proxiedImage(formData.cover_url)} alt="封面預覽" className="w-full h-auto" />
                       </div>
                     )}
                   </div>
@@ -642,7 +647,7 @@ export default function BooksManager() {
               <div className="flex items-start gap-4">
                 {book.cover_url ? (
                   <div className="size-12 rounded-lg overflow-hidden shrink-0">
-                    <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover" />
+                    <img src={proxiedImage(book.cover_url)} alt={book.title} className="w-full h-full object-cover" />
                   </div>
                 ) : (
                   <div className="size-12 rounded-lg bg-accent/30 flex items-center justify-center shrink-0">

@@ -481,6 +481,53 @@ async fn 標籤帶空陣列是清空_不帶則不動() {
     assert_eq!(count(pool, id).await, 0, "帶空陣列應該清空關聯");
 }
 
+/// 同一個標籤送兩次不該讓儲存失敗。以前第二筆關聯撞 (post_id, tag_id) 主鍵回 500，
+/// 而且舊關聯已經先刪掉了——文章的其他標籤就這樣不見。
+#[tokio::test]
+async fn 重複的標籤只掛一次() {
+    let (app, pool) = test_app().await;
+    let id =
+        create_post(&app, json!({ "title": "文章", "content": "內文", "tags": ["rust", "rust", "web"] }))
+            .await;
+    let names: Vec<String> = sqlx::query_scalar(
+        "SELECT t.name FROM post_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.post_id = ? ORDER BY t.name",
+    )
+    .bind(id)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(names, ["rust", "web"]);
+}
+
+/// 換標籤中途失敗時，舊標籤要原封不動（整段在 transaction 裡），不能只刪不加。
+#[tokio::test]
+async fn 換標籤失敗時舊標籤還在() {
+    let (app, pool) = test_app().await;
+    let id = create_post(&app, json!({ "title": "文章", "content": "內文", "tags": ["rust", "web"] })).await;
+    // 讓「boom」這個標籤的關聯一寫就失敗，模擬換到一半出錯
+    sqlx::query(
+        "CREATE TRIGGER boom BEFORE INSERT ON post_tags \
+         WHEN NEW.tag_id = (SELECT id FROM tags WHERE name = 'boom') \
+         BEGIN SELECT RAISE(ABORT, 'boom'); END",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let (st, _) =
+        admin(&app, "PUT", &format!("/api/admin/posts/{id}"), Some(json!({ "tags": ["new", "boom"] }))).await;
+    assert!(st.is_server_error(), "寫入失敗要回 5xx，得到 {st}");
+
+    let names: Vec<String> = sqlx::query_scalar(
+        "SELECT t.name FROM post_tags pt JOIN tags t ON t.id = pt.tag_id WHERE pt.post_id = ? ORDER BY t.name",
+    )
+    .bind(id)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(names, ["rust", "web"], "失敗之後舊標籤被清掉了");
+}
+
 /// `source_language` 只接受五個語系。它會決定編輯器把內容寫進哪一組欄位，
 /// 收了亂值等於資料寫到不存在的語系去。
 #[tokio::test]

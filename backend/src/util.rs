@@ -177,6 +177,19 @@ pub fn is_unique_violation(e: &sqlx::Error) -> bool {
     matches!(e, sqlx::Error::Database(db) if db.message().contains("UNIQUE constraint failed"))
 }
 
+/// 比對密碼、token 這類秘密用：同長時逐位元組比完才回答，耗時不會洩漏比對到第幾個字元。
+/// 長度不同直接 false（長度本身不算秘密）。
+pub fn timing_safe_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut d = 0u8;
+    for (x, y) in a.iter().zip(b) {
+        d |= x ^ y;
+    }
+    d == 0
+}
+
 /// 生成 slug，逐字複製 Express：
 /// `name.toLowerCase().replace(/\s+/g,'-').replace(/[^\w\-一-龥]+/g,'')`。
 /// = 轉小寫 → 連續空白轉單一 '-' → 只留 [A-Za-z0-9_-] 與 CJK(U+4E00–U+9FA5)。
@@ -353,6 +366,15 @@ pub fn js_date_to_utc_string(created_at: Option<&str>) -> String {
 #[cfg(test)]
 mod value_tests {
     use super::*;
+
+    #[test]
+    fn timing_safe_eq_長度不同直接否_同長逐位元比() {
+        assert!(timing_safe_eq(b"secret", b"secret"));
+        assert!(!timing_safe_eq(b"secret", b"secrets"), "長度不同");
+        assert!(!timing_safe_eq(b"secret", b"secreT"), "同長但差一位元");
+        assert!(!timing_safe_eq(b"", b"x"));
+        assert!(timing_safe_eq(b"", b""));
+    }
 
     // 這三條都是 `cargo mutants` 指出來的：改掉之後測試全綠，因為既有的整合測試
     // 剛好都走在「兩種寫法結果相同」的輸入上。

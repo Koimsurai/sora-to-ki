@@ -392,8 +392,14 @@ pub struct TopTracksQuery {
 #[utoipa::path(get, path = "/api/spotify/top-tracks", tag = "integrations",
     responses((status = 200, description = "最常聽曲目 Top（動態 JSON，第三方 proxy）")))]
 pub async fn top_tracks(State(state): State<AppState>, Query(q): Query<TopTracksQuery>) -> Response {
-    let time_range = q.time_range.unwrap_or_else(|| "medium_term".into());
-    let limit = q.limit.unwrap_or_else(|| "20".into());
+    // 兩個參數都來自公開 query 又直接拿來當快取 key：先收斂成 Spotify 認得的值，
+    // map 最多 3×50 筆，亂填的也不會原樣轉給 Spotify。認不出來的當成沒帶。
+    let time_range = q
+        .time_range
+        .as_deref()
+        .filter(|r| matches!(*r, "short_term" | "medium_term" | "long_term"))
+        .unwrap_or("medium_term");
+    let limit = q.limit.as_deref().and_then(|s| s.parse::<i64>().ok()).unwrap_or(20).clamp(1, 50);
     let key = format!("{time_range}:{limit}");
     let now = now_ms();
     let cached = state.spotify.top_tracks.lock().get(&key).cloned();
@@ -411,11 +417,7 @@ pub async fn top_tracks(State(state): State<AppState>, Query(q): Query<TopTracks
     }
     let r: Result<Value, SpErr> = async {
         let token = access_token(&state).await?;
-        let url = format!(
-            "/v1/me/top/tracks?limit={}&time_range={}",
-            crate::util::encode_uri_component(&limit),
-            crate::util::encode_uri_component(&time_range)
-        );
+        let url = format!("/v1/me/top/tracks?limit={limit}&time_range={time_range}");
         let (_, v) = sp_get(&state, &url, &token, Some(10)).await?;
         Ok(v)
     }
@@ -755,6 +757,51 @@ mod tests {
         // 換 limit → 又是另一個 key
         let _ = top_tracks(AxState(st), axum::extract::Query(q("long_term", "5"))).await;
         assert!(server.received_requests().await.unwrap().len() > after_second, "換 limit 也要重新抓");
+        unsafe { set_creds(false) };
+    }
+
+    #[tokio::test]
+    async fn top_tracks_亂填的參數先收斂才當快取_key() {
+        // 兩個參數直接來自公開 query：不收斂的話每換一個值就多一筆快取、多打一次 Spotify
+        let _env = ENV_LOCK.lock().await;
+        unsafe { set_creds(true) };
+        let server = MockServer::start().await;
+        mount_token(&server).await;
+        Mock::given(method("GET"))
+            .and(mock_path("/spotify-api/v1/me/top/tracks"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "items": [] })))
+            .mount(&server)
+            .await;
+        let st = state_with_mock(&server).await;
+
+        for (tr, lim) in [("evil", "999"), ("", "50"), ("medium_term", "abc"), ("x", "-1")] {
+            let q = TopTracksQuery { time_range: Some(tr.into()), limit: Some(lim.into()) };
+            let _ = top_tracks(AxState(st.clone()), axum::extract::Query(q)).await;
+        }
+        let mut keys: Vec<String> = st.spotify.top_tracks.lock().keys().cloned().collect();
+        keys.sort();
+        assert_eq!(
+            keys,
+            ["medium_term:1", "medium_term:20", "medium_term:50"],
+            "認不出的 time_range 當 medium_term、limit 夾在 1–50、不是數字當 20"
+        );
+
+        let upstream: Vec<String> = server
+            .received_requests()
+            .await
+            .unwrap()
+            .iter()
+            .filter(|r| r.url.path().ends_with("/top/tracks"))
+            .map(|r| r.url.query().unwrap_or_default().to_string())
+            .collect();
+        assert_eq!(
+            upstream,
+            [
+                "limit=50&time_range=medium_term",
+                "limit=20&time_range=medium_term",
+                "limit=1&time_range=medium_term"
+            ]
+        );
         unsafe { set_creds(false) };
     }
 

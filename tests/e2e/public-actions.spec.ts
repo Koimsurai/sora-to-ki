@@ -119,6 +119,31 @@ test.describe('留言按讚', () => {
   });
 });
 
+// ── 碎念按讚 ──────────────────────────────────────────────────────────────
+
+/**
+ * 碎念按過的讚存在 localStorage，/thinking 又是 SSR 的。以前在 useState 初始化裡讀，
+ * server 繪的是「沒按過」，hydrate 時 React 不補正 className——按過的讚重整後不亮。
+ */
+test('碎念按過的讚，重新整理之後還亮著', async ({ page }) => {
+  await page.goto('/thinking');
+  const like = page.locator('.tk-card').first().getByRole('button', { name: '讚', exact: true });
+  await expect(like, '種子資料裡應該有碎念').toBeVisible({ timeout: 15_000 });
+
+  if (!(await like.getAttribute('class'))?.includes('is-like')) {
+    const posted = page.waitForResponse((r) => r.url().includes('/react') && r.request().method() === 'POST');
+    await like.click();
+    await posted;
+  }
+  await expect(like).toHaveClass(/is-like/);
+
+  await page.reload();
+  await expect(
+    page.locator('.tk-card').first().getByRole('button', { name: '讚', exact: true }),
+    '重整後仍該記得按過',
+  ).toHaveClass(/is-like/, { timeout: 15_000 });
+});
+
 // ── 行動裝置 ──────────────────────────────────────────────────────────────
 
 /**

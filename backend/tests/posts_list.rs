@@ -259,7 +259,7 @@ async fn 卡片的愛心讀的是_reactions_不是_posts_likes() {
 // ── ?lang= ────────────────────────────────────────────────────────────
 
 #[tokio::test]
-async fn 帶_lang_時_total_用過濾後的篇數重算() {
+async fn 帶_lang_時先濾語系再切頁() {
     let (app, pool) = test_app().await;
     sqlx::query("DELETE FROM posts").execute(&pool).await.unwrap();
     // 三篇，只有兩篇有日文譯文
@@ -281,7 +281,7 @@ async fn 帶_lang_時_total_用過濾後的篇數重算() {
         )
         .await;
     }
-    // 沒譯文的那篇是**最新的**——這樣才驗得到下面那條「整頁被濾空」的行為
+    // 沒譯文的那篇是**最新的**：先切頁再濾的話，第一頁抓到它、濾掉之後整頁是空的
     post_row(
         &pool,
         12,
@@ -289,18 +289,18 @@ async fn 帶_lang_時_total_用過濾後的篇數重算() {
     )
     .await;
 
-    let (_, body) = get(&app, "/api/posts?lang=ja&limit=1&page=2").await;
-    // total 若用 SQL 的 COUNT（3 篇）算，分頁器會開出第三頁而那頁永遠是空的
-    assert_eq!(body["pagination"]["total"], 1, "帶 lang 時 total 是這一頁實際留下的篇數");
-    assert_eq!(body["locale"], "ja");
-    assert_eq!(body["posts"][0]["title"], "日本語 A", "標題要換成該語系的");
-
-    // ⚠ 已知的取捨，不是 bug：分頁是**先切頁再濾語系**的。第一頁抓到的那篇剛好
-    //   沒有日文譯文，整頁就是空的——但列表其實還沒完（第二頁有兩篇）。
-    //   前端因此不能用「這頁空的」判斷「沒有更多了」，要看 total。
-    //   哪天有人把它改成先濾再切頁，這條會紅，那是好事；但要記得 total 的算法也得跟著改。
     let (_, body) = get(&app, "/api/posts?lang=ja&limit=1&page=1").await;
-    assert!(body["posts"].as_array().unwrap().is_empty(), "第一頁那篇沒有日文譯文，被濾掉之後整頁是空的");
+    assert_eq!(body["locale"], "ja");
+    assert_eq!(titles(&body), ["日本語 A"], "第一頁就是最新一篇有日文的，不是被濾空的頁");
+    assert_eq!(body["pagination"]["total"], 2, "total 只算有日文的");
+    assert_eq!(body["pagination"]["totalPages"], 2);
+
+    let (_, body) = get(&app, "/api/posts?lang=ja&limit=1&page=2").await;
+    assert_eq!(titles(&body), ["日本語 B"]);
+    assert_eq!(body["pagination"]["total"], 2, "翻到哪一頁 total 都一樣");
+
+    let (_, body) = get(&app, "/api/posts?lang=ja&limit=1&page=3").await;
+    assert!(body["posts"].as_array().unwrap().is_empty(), "total_pages 之後才是空頁");
 
     let (_, body) = get(&app, "/api/posts?lang=ja").await;
     assert_eq!(titles(&body).len(), 2, "沒有日文譯文的那篇要被濾掉");

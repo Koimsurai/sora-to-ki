@@ -96,7 +96,10 @@ pub fn basic_auth_check(headers: &HeaderMap) -> Option<axum::response::Response>
                 .into_response(),
         );
     }
-    if user == admin_user && pass == admin_pass { None } else { Some(unauthorized("Invalid credentials")) }
+    // 兩邊都比完才回答（不用 &&），帳號錯或密碼錯花的時間一樣
+    let user_ok = crate::util::timing_safe_eq(user.as_bytes(), admin_user.as_bytes());
+    let pass_ok = crate::util::timing_safe_eq(pass.as_bytes(), admin_pass.as_bytes());
+    if user_ok & pass_ok { None } else { Some(unauthorized("Invalid credentials")) }
 }
 
 /// requireAdmin：需要 ADMIN 或 OWNER。
