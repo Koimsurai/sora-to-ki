@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { enterStyle } from '@/lib/enter';
 import { Rss } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
+import { jsonAuthHeaders } from '@/lib/authToken';
 import ThoughtCard from './ThoughtCard';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { apiUrl } from '@/lib/api';
@@ -20,7 +21,7 @@ interface Prefill {
 
 function Thinking() {
   const { t } = useTranslation();
-  const { isAdmin, getToken } = useAuth();
+  const { isAdmin } = useAuth();
   const queryClient = useQueryClient();
   // 碎念列表改由 TanStack Query 管理：route loader 已 prefetch → SSR baked、
   // hydrate 後 useQuery 讀快取。發文／編輯／刪除用 useMutation，成功後 invalidate 重抓。
@@ -49,7 +50,7 @@ function Thinking() {
     mutationFn: async () => {
       const r = await fetch(apiUrl('/api/admin/thoughts'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({
           content: draft.trim(),
           refUrl: draftUrl.trim() || undefined,

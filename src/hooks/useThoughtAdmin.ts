@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/auth';
 import { apiUrl } from '@/lib/api';
+import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { thoughtDetailQueryOptions } from '@/data/thoughtData';
 
@@ -10,9 +10,7 @@ import { thoughtDetailQueryOptions } from '@/data/thoughtData';
  * 成功後列表與那一則的快取都失效，兩頁之間切換不會看到舊內容。
  */
 export function useThoughtAdmin() {
-  const { getToken } = useAuth();
   const queryClient = useQueryClient();
-  const auth = () => ({ Authorization: `Bearer ${getToken() ?? ''}` });
   const refresh = (id: number) => {
     void queryClient.invalidateQueries({ queryKey: thoughtsListQueryOptions.queryKey });
     void queryClient.invalidateQueries({ queryKey: thoughtDetailQueryOptions(String(id)).queryKey });
@@ -20,7 +18,7 @@ export function useThoughtAdmin() {
 
   const remove = useMutation({
     mutationFn: async (id: number) => {
-      const r = await fetch(apiUrl(`/api/admin/thoughts/${id}`), { method: 'DELETE', headers: auth() });
+      const r = await fetch(apiUrl(`/api/admin/thoughts/${id}`), { method: 'DELETE', headers: authHeaders() });
       if (!r.ok) throw new Error(`DELETE /admin/thoughts/${id} ${r.status}`);
     },
     onSuccess: (_, id) => refresh(id),
@@ -30,7 +28,7 @@ export function useThoughtAdmin() {
     mutationFn: async ({ id, content }: { id: number; content: string }) => {
       const r = await fetch(apiUrl(`/api/admin/thoughts/${id}`), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...auth() },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ content }),
       });
       if (!r.ok) throw new Error(`PUT /admin/thoughts/${id} ${r.status}`);

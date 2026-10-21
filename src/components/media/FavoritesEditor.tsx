@@ -1,11 +1,11 @@
 // /watch 一生推 admin 編輯浮窗：TMDb 搜尋選片 → 設星等 + 短評 → 存。
 // 標題/海報/年份由後端依語系即時帶，這裡只管策展資料（rating/quote/排序/增刪）。
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '@/contexts/auth';
 import { apiUrl } from '@/lib/api';
+import { jsonAuthHeaders } from '@/lib/authToken';
 import type { TmdbSearchResponse, TmdbSearchResult, WatchFavoriteRow } from '@koimsurai/api-types';
 import './FavoritesEditor.css';
 
@@ -49,21 +49,12 @@ interface FavoritesEditorProps {
 
 export default function FavoritesEditor({ favorites, onClose, onChanged }: FavoritesEditorProps) {
   const { t } = useTranslation();
-  const { getToken } = useAuth();
   const [busy, setBusy] = useState(false);
 
   // 新增區：TMDb 搜尋
   const [kind, setKind] = useState('film');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-
-  const authHeaders = useCallback(
-    () => ({
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken() ?? ''}`,
-    }),
-    [getToken],
-  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -89,7 +80,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
         apiUrl(
           `/api/watch/tmdb-search?q=${encodeURIComponent(debouncedQuery)}&kind=${kind === 'film' ? 'movie' : 'tv'}`,
         ),
-        { headers: authHeaders() },
+        { headers: jsonAuthHeaders() },
       ).then((x) => x.json())) as TmdbSearchResponse;
       return r.results;
     },
@@ -102,7 +93,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
     try {
       await fetch(apiUrl('/api/watch/favorites'), {
         method: 'POST',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ tmdbId: item.tmdbId, kind, rating: 5, quote: '' }),
       });
       setQuery('');
@@ -116,7 +107,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
   const patchFavorite = async (id: number, patch: Record<string, unknown>) => {
     await fetch(apiUrl(`/api/watch/favorites/${id}`), {
       method: 'PUT',
-      headers: authHeaders(),
+      headers: jsonAuthHeaders(),
       body: JSON.stringify(patch),
     });
     onChanged();
@@ -125,7 +116,7 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
   const removeFavorite = async (id: number) => {
     setBusy(true);
     try {
-      await fetch(apiUrl(`/api/watch/favorites/${id}`), { method: 'DELETE', headers: authHeaders() });
+      await fetch(apiUrl(`/api/watch/favorites/${id}`), { method: 'DELETE', headers: jsonAuthHeaders() });
       onChanged();
     } finally {
       setBusy(false);

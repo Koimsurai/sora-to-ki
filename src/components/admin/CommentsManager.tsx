@@ -42,6 +42,7 @@ import {
 import { toast } from 'sonner';
 import type { AdminCommentRow } from '@koimsurai/api-types';
 import { lookupOr } from '../../lib/tableLookup';
+import { jsonAuthHeaders } from '@/lib/authToken';
 
 /** 型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）；blacklist/keywords 由 query 推導。 */
 type Comment = AdminCommentRow;
@@ -79,14 +80,6 @@ export default function CommentsManager() {
   const [newKeyword, setNewKeyword] = useState('');
   const [newKeywordAction, setNewKeywordAction] = useState('spam');
 
-  // 呼叫時才讀 token，不在 render 期讀：localStorage 是外部可變狀態，render 必須是純的
-  //（react-hooks/purity）。順帶修掉一個實質問題——原本 token 在 render 當下就固定了，
-  // session 中途重新登入會繼續帶舊的。
-  const authHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem('koimsurai_user_token') ?? ''}`,
-    'Content-Type': 'application/json',
-  });
-
   // 留言列表改由 TanStack Query 讀（分頁/篩選進 queryKey），blacklist/keywords 依 activeTab 才抓。
   const commentsQuery = useMemo(() => {
     const params = new URLSearchParams({ page: String(page), limit: '50' });
@@ -115,7 +108,7 @@ export default function CommentsManager() {
     try {
       const res = await fetch(`/api/admin/comments/${id}/status`, {
         method: 'PATCH',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
@@ -132,7 +125,7 @@ export default function CommentsManager() {
     try {
       const res = await fetch(`/api/admin/comments/${replyDialog.comment?.id}/reply`, {
         method: 'POST',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ content: replyText }),
       });
       if (res.ok) {
@@ -151,7 +144,7 @@ export default function CommentsManager() {
     try {
       const res = await fetch(`/api/admin/comments/${editDialog.comment?.id}`, {
         method: 'PUT',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ content: editText }),
       });
       if (res.ok) {
@@ -166,7 +159,7 @@ export default function CommentsManager() {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`/api/admin/comments/${deleteId}`, { method: 'DELETE', headers: authHeaders() });
+      const res = await fetch(`/api/admin/comments/${deleteId}`, { method: 'DELETE', headers: jsonAuthHeaders() });
       if (res.ok) {
         toast.success('已永久刪除');
         setDeleteId(null);
@@ -181,7 +174,7 @@ export default function CommentsManager() {
     try {
       const res = await fetch('/api/admin/blacklist', {
         method: 'POST',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ ip, reason: '來自留言管理封鎖' }),
       });
       if (res.ok) {
@@ -197,7 +190,7 @@ export default function CommentsManager() {
     try {
       const res = await fetch('/api/admin/blacklist', {
         method: 'POST',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ ip: newBlacklistIp, reason: newBlacklistReason }),
       });
       if (res.ok) {
@@ -213,7 +206,7 @@ export default function CommentsManager() {
 
   const removeBlacklist = async (id: number | string) => {
     try {
-      const res = await fetch(`/api/admin/blacklist/${id}`, { method: 'DELETE', headers: authHeaders() });
+      const res = await fetch(`/api/admin/blacklist/${id}`, { method: 'DELETE', headers: jsonAuthHeaders() });
       if (res.ok) {
         toast.success('已移除');
         void invalidateBlacklist();
@@ -228,7 +221,7 @@ export default function CommentsManager() {
     try {
       const res = await fetch('/api/admin/keyword-filters', {
         method: 'POST',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ keyword: newKeyword, action: newKeywordAction }),
       });
       if (res.ok) {
@@ -243,7 +236,7 @@ export default function CommentsManager() {
 
   const removeKeyword = async (id: number | string) => {
     try {
-      const res = await fetch(`/api/admin/keyword-filters/${id}`, { method: 'DELETE', headers: authHeaders() });
+      const res = await fetch(`/api/admin/keyword-filters/${id}`, { method: 'DELETE', headers: jsonAuthHeaders() });
       if (res.ok) {
         toast.success('已移除');
         void invalidateKeywords();

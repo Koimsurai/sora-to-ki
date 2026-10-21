@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, X, Tag } from 'lucide-react';
 import { toast } from 'sonner';
+import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 
 interface TagForm {
   name: string;
@@ -74,16 +75,12 @@ export default function TagsManager() {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const url = editingTag ? `/api/admin/tags/${editingTag.id}` : '/api/admin/tags';
       const method = editingTag ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token ?? ''}`,
-        },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify(formData),
       });
 
@@ -120,10 +117,9 @@ export default function TagsManager() {
     if (!deleteId) return;
 
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/tags/${deleteId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token ?? ''}` },
+        headers: authHeaders(),
       });
 
       if (response.ok) {
