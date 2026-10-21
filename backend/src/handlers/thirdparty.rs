@@ -392,49 +392,71 @@ pub async fn github_events(State(state): State<AppState>, Path(username): Path<S
     };
 
     if let Some(t) = &token {
-        for ev in &mut events {
-            let is_push = ev.get("type").and_then(|v| v.as_str()) == Some("PushEvent");
-            if !is_push {
+        // 以前每個 push 依序 await 一次 compare：30 筆事件裡常有十幾筆 push 不帶 commits，
+        // 整支要 7–10 秒。改成一起發，而 commit 範圍（repo, before, head）抓過就不會變，記起來不再抓。
+        let mut jobs = tokio::task::JoinSet::new();
+        for (i, ev) in events.iter().enumerate() {
+            let Some(cmp_path) = compare_path_for(ev) else { continue };
+            let hit = COMPARE_CACHE.lock().get(&cmp_path).cloned();
+            if let Some(hit) = hit {
+                jobs.spawn(async move { (i, Some(hit)) });
                 continue;
             }
-            let p = ev.get("payload");
-            let commits_empty = p
-                .and_then(|p| p.get("commits"))
-                .and_then(|c| c.as_array())
-                .is_none_or(std::vec::Vec::is_empty);
-            let before = p.and_then(|p| p.get("before")).filter(|v| js_truthy(Some(v))).cloned();
-            let head = p.and_then(|p| p.get("head")).filter(|v| js_truthy(Some(v))).cloned();
-            let repo = ev.pointer("/repo/name").and_then(|v| v.as_str()).map(String::from);
-            if !(commits_empty && before.is_some() && head.is_some() && repo.is_some()) {
-                continue;
-            }
-            let cmp_path = format!(
-                "/repos/{}/compare/{}...{}",
-                repo.unwrap_or_default(),
-                before.and_then(|v| v.as_str().map(String::from)).unwrap_or_default(),
-                head.and_then(|v| v.as_str().map(String::from)).unwrap_or_default()
-            );
-            let cmp = gh_fetch(&state.http, &state.external.github_api, &cmp_path, Some(t)).await;
-            if let Some(commits) = cmp.as_ref().and_then(|c| c.get("commits")).and_then(|c| c.as_array()) {
-                let mapped: Vec<Value> = commits
-                    .iter()
-                    .map(|c| {
-                        json!({
-                            "sha": c.get("sha").cloned().unwrap_or(Value::Null),
-                            "message": c.pointer("/commit/message").cloned().unwrap_or(Value::Null),
-                            "author": c.pointer("/commit/author").cloned().unwrap_or(Value::Null),
-                        })
-                    })
-                    .collect();
-                if let Some(payload) = ev.get_mut("payload").and_then(|p| p.as_object_mut()) {
-                    payload.insert("size".into(), json!(mapped.len()));
-                    payload.insert("commits".into(), Value::Array(mapped));
+            let (http, base, t) = (state.http.clone(), state.external.github_api.clone(), t.clone());
+            jobs.spawn(async move {
+                let cmp = gh_fetch(&http, &base, &cmp_path, Some(&t)).await;
+                let mapped =
+                    cmp.as_ref().and_then(|c| c.get("commits")).and_then(|c| c.as_array()).map(|commits| {
+                        commits
+                            .iter()
+                            .map(|c| {
+                                json!({
+                                    "sha": c.get("sha").cloned().unwrap_or(Value::Null),
+                                    "message": c.pointer("/commit/message").cloned().unwrap_or(Value::Null),
+                                    "author": c.pointer("/commit/author").cloned().unwrap_or(Value::Null),
+                                })
+                            })
+                            .collect::<Vec<Value>>()
+                    });
+                if let Some(m) = &mapped {
+                    let mut cache = COMPARE_CACHE.lock();
+                    if cache.len() >= COMPARE_CACHE_MAX {
+                        cache.clear(); // 只是省 API 額度的快取，滿了整個重來就好
+                    }
+                    cache.insert(cmp_path, m.clone());
                 }
+                (i, mapped)
+            });
+        }
+        while let Some(Ok((i, mapped))) = jobs.join_next().await {
+            let Some(mapped) = mapped else { continue };
+            if let Some(payload) = events[i].get_mut("payload").and_then(|p| p.as_object_mut()) {
+                payload.insert("size".into(), json!(mapped.len()));
+                payload.insert("commits".into(), Value::Array(mapped));
             }
         }
     }
     Json(GithubEventsResponse { events: events.iter().filter_map(github_event_from).collect(), error: None })
         .into_response()
+}
+
+/// compare 結果的快取，key 是 compare 路徑（含 repo、before、head）。
+static COMPARE_CACHE: std::sync::LazyLock<parking_lot::Mutex<std::collections::HashMap<String, Vec<Value>>>> =
+    std::sync::LazyLock::new(Default::default);
+const COMPARE_CACHE_MAX: usize = 512;
+
+/// 不帶 commits 的 push（GitHub 對大 push 會省略）→ 要補抓的 compare 路徑；其他事件 → None。
+fn compare_path_for(ev: &Value) -> Option<String> {
+    if ev.get("type").and_then(|v| v.as_str()) != Some("PushEvent") {
+        return None;
+    }
+    let p = ev.get("payload");
+    let commits_empty =
+        p.and_then(|p| p.get("commits")).and_then(|c| c.as_array()).is_none_or(std::vec::Vec::is_empty);
+    let field = |k: &str| p.and_then(|p| p.get(k)).filter(|v| js_truthy(Some(v))).and_then(|v| v.as_str());
+    let repo = ev.pointer("/repo/name").and_then(|v| v.as_str())?;
+    let (before, head) = (field("before")?, field("head")?);
+    commits_empty.then(|| format!("/repos/{repo}/compare/{before}...{head}"))
 }
 
 /// GitHub 事件 → 我們的形狀。id / type / repo.name / created_at 任一缺就整筆不收：

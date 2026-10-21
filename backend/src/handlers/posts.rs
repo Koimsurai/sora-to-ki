@@ -290,29 +290,34 @@ pub async fn list_posts(
     let offset = (page - 1) * limit;
     let requested_locale = parse_locale(q.lang.as_deref());
 
-    // 動態 WHERE（與 Express 同序：status → search → tag → category）
-    let mut sql = String::from(
-        "SELECT p.*, GROUP_CONCAT(t.name) as tags \
-         FROM posts p \
-         LEFT JOIN post_tags pt ON p.id = pt.post_id \
-         LEFT JOIN tags t ON pt.tag_id = t.id \
-         WHERE p.status = ?",
-    );
+    // 動態 WHERE（status → search → tag → category → 語系），列表與 count 共用、bind 順序一致。
+    // 語系要在 SQL 裡先濾再切頁：在 Rust 裡濾的話，一頁抓到的文章剛好都沒譯文，那頁就是空的。
+    let mut filter = String::from(" WHERE p.status = ?");
     if q.search.is_some() {
-        sql.push_str(" AND (p.title LIKE ? OR p.content LIKE ?)");
+        filter.push_str(" AND (p.title LIKE ? OR p.content LIKE ?)");
     }
     if q.tag.is_some() {
-        sql.push_str(" AND t.name = ?");
+        filter.push_str(
+            " AND EXISTS (SELECT 1 FROM post_tags pt JOIN tags t ON t.id = pt.tag_id \
+             WHERE pt.post_id = p.id AND t.name = ?)",
+        );
     }
     if q.category.is_some() {
-        sql.push_str(" AND p.category = ?");
+        filter.push_str(" AND p.category = ?");
     }
-    // 語系要在 SQL 裡先濾再切頁：在 Rust 裡濾的話，一頁抓到的文章剛好都沒譯文，那頁就是空的。
     if let Some(loc) = requested_locale {
-        sql.push_str(" AND ");
-        sql.push_str(&locale_available_sql(loc, "p"));
+        filter.push_str(" AND ");
+        filter.push_str(&locale_available_sql(loc, "p"));
     }
-    sql.push_str(" GROUP BY p.id");
+
+    // 標籤用相關子查詢取，不 JOIN + GROUP BY：GROUP BY 會讓 SQLite 先把**每一篇**的整列
+    // （含五個語系的全文）放進暫存 B-tree 排序，排完才套 LIMIT——實測 33ms → 2.4ms。
+    // 帶 ?tag= 時 tags 也是那篇的全部標籤（以前 JOIN 過濾之後只剩被篩的那一個）。
+    let mut sql = String::from(
+        "SELECT p.*, (SELECT GROUP_CONCAT(t.name) FROM post_tags pt JOIN tags t ON t.id = pt.tag_id \
+         WHERE pt.post_id = p.id) AS tags FROM posts p",
+    );
+    sql.push_str(&filter);
     match q.sort_by.as_deref() {
         Some("oldest") => sql.push_str(" ORDER BY p.created_at ASC"),
         Some("popular") => sql.push_str(" ORDER BY p.view_count DESC, p.created_at DESC"),
@@ -333,28 +338,8 @@ pub async fn list_posts(
     }
     let rows = query.bind(limit).bind(offset).fetch_all(&state.pool).await?;
 
-    // count 查詢（同樣的 WHERE，無 GROUP BY/排序/分頁）
-    let mut count_sql = String::from(
-        "SELECT COUNT(DISTINCT p.id) as total \
-         FROM posts p \
-         LEFT JOIN post_tags pt ON p.id = pt.post_id \
-         LEFT JOIN tags t ON pt.tag_id = t.id \
-         WHERE p.status = ?",
-    );
-    if q.search.is_some() {
-        count_sql.push_str(" AND (p.title LIKE ? OR p.content LIKE ?)");
-    }
-    if q.tag.is_some() {
-        count_sql.push_str(" AND t.name = ?");
-    }
-    if q.category.is_some() {
-        count_sql.push_str(" AND p.category = ?");
-    }
-    // 跟列表同一個語系條件，total 才會等於翻完所有頁實際拿到的篇數。沒帶 lang＝取原文，不過濾。
-    if let Some(loc) = requested_locale {
-        count_sql.push_str(" AND ");
-        count_sql.push_str(&locale_available_sql(loc, "p"));
-    }
+    // count 跟列表同一組條件，total 才會等於翻完所有頁實際拿到的篇數
+    let count_sql = format!("SELECT COUNT(*) FROM posts p{filter}");
     let mut count_q = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(count_sql.as_str())).bind(status);
     if let Some(s) = &q.search {
         let like = format!("%{s}%");

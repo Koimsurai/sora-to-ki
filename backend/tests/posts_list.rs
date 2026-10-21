@@ -133,6 +133,28 @@ async fn 分類與標籤各自能單獨篩() {
     assert_eq!(body["pagination"]["total"], 0);
 }
 
+/// 用標籤篩的時候，每篇的 tags 仍是它的**全部**標籤。以前 JOIN 之後才 GROUP_CONCAT，
+/// 被 WHERE 濾掉的那幾個標籤就跟著不見，卡片上只剩被篩的那一個。
+#[tokio::test]
+async fn 用標籤篩時_tags_仍是那篇的全部標籤() {
+    let (app, pool) = test_app().await;
+    post_row(&pool, 10, P { title: "雙標籤", content: "x", ..P::default() }).await;
+    sqlx::query("INSERT INTO tags (id, name) VALUES (90, 'web')").execute(&pool).await.unwrap();
+    for tag_id in [1, 90] {
+        sqlx::query("INSERT INTO post_tags (post_id, tag_id) VALUES (10, ?)")
+            .bind(tag_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+    }
+
+    let (_, body) = get(&app, "/api/posts?tag=web").await;
+    assert_eq!(titles(&body), ["雙標籤"]);
+    let mut tags: Vec<String> = serde_json::from_value(body["posts"][0]["tags"].clone()).unwrap();
+    tags.sort();
+    assert_eq!(tags, ["rust", "web"]);
+}
+
 // ── 排序與分頁 ────────────────────────────────────────────────────────
 
 #[tokio::test]
