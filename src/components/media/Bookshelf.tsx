@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { BookRow } from '@koimsurai/api-types';
 
 import { filterAndSortBooks } from '@/lib/mediaLists';
+import { proxiedImage } from '@/lib/api';
 import { booksQueryOptions, bookStatsQueryOptions } from '@/data/bookshelfData';
 import NebulaBackground from '@/components/backdrop/NebulaBackground';
 import BookConstellation from './BookConstellation';
@@ -17,12 +18,8 @@ import './Bookshelf.css';
 // 完全不進 server bundle / SSR render(避免每個請求白跑 three.js 的伺服器負擔)。
 const ZeroGravityLibrary = lazy(() => import('./ZeroGravityLibrary'));
 
-const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
-
-// 書封走後端 image-proxy：① 把 http://books.google.com 升 https（去掉 mixed-content 警告）
-// ② 變成同源資源（Google Books 不送 CORS header）。
-const proxiedCover = (url?: string | null): string =>
-  url ? `${API_URL}/image-proxy?url=${encodeURIComponent(url)}` : '';
+// 書封走後端 image-proxy（Google Books 是 http、而且不送 CORS header）
+const proxiedCover = proxiedImage;
 
 /** `GET /api/books` 的單本，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
 type Book = BookRow;

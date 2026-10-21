@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import type { BookRow } from '@koimsurai/api-types';
 
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { proxiedImage } from '@/lib/api';
 import './ZeroGravityLibrary.css';
 
 /**
@@ -36,7 +37,7 @@ import './ZeroGravityLibrary.css';
 
 type Book = BookRow;
 
-const coverSrc = (url?: string | null) => (url ? `/api/image-proxy?url=${encodeURIComponent(url)}` : '');
+const coverSrc = proxiedImage;
 
 const BOOK_W = 0.8;
 const BOOK_H = 1.2;

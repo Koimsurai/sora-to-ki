@@ -1398,22 +1398,25 @@ pub(crate) fn bind_num(
     }
 }
 
-/// manageTags 等價：先刪舊關聯；tags 空→結束；否則逐一 INSERT OR IGNORE tags → 查 id → 建關聯。
+/// 換掉一篇文章的標籤：刪舊關聯，再逐一 INSERT OR IGNORE tags → 查 id → 建關聯。
+/// 整段包在 transaction 裡：中途失敗的話舊標籤原封不動，不會只刪不加、把文章的標籤清光。
 pub(crate) async fn manage_tags(state: &AppState, post_id: &str, tags: &[String]) -> Result<(), sqlx::Error> {
-    sqlx::query("DELETE FROM post_tags WHERE post_id = ?").bind(post_id).execute(&state.pool).await?;
+    let mut tx = state.pool.begin().await?;
+    sqlx::query("DELETE FROM post_tags WHERE post_id = ?").bind(post_id).execute(&mut *tx).await?;
     for name in tags {
-        sqlx::query("INSERT OR IGNORE INTO tags (name) VALUES (?)").bind(name).execute(&state.pool).await?;
+        sqlx::query("INSERT OR IGNORE INTO tags (name) VALUES (?)").bind(name).execute(&mut *tx).await?;
         let tag_id = sqlx::query_scalar::<_, i64>("SELECT id FROM tags WHERE name = ?")
             .bind(name)
-            .fetch_one(&state.pool)
+            .fetch_one(&mut *tx)
             .await?;
-        sqlx::query("INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)")
+        // OR IGNORE：同一個標籤送兩次（["a", "a"]）會撞 (post_id, tag_id) 主鍵，那不該讓整次儲存失敗
+        sqlx::query("INSERT OR IGNORE INTO post_tags (post_id, tag_id) VALUES (?, ?)")
             .bind(post_id)
             .bind(tag_id)
-            .execute(&state.pool)
+            .execute(&mut *tx)
             .await?;
     }
-    Ok(())
+    tx.commit().await
 }
 
 /// body.tags → Vec<String>（非陣列/缺 → 空）。

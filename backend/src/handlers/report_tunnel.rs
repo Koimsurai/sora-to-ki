@@ -100,11 +100,6 @@ fn expected_public_key(real: &Dsn) -> String {
         .unwrap_or_else(|| real.public_key.clone())
 }
 
-/// 兩邊等長才逐位元組比，避免用比較耗時洩漏 key 的前綴。
-fn key_matches(a: &str, b: &str) -> bool {
-    a.len() == b.len() && a.bytes().zip(b.bytes()).fold(0u8, |acc, (x, y)| acc | (x ^ y)) == 0
-}
-
 /// 把讀者的真實 IP 往上游帶。
 ///
 /// nginx 已經設了 `X-Forwarded-For` 與 `X-Real-IP`，這裡原樣轉過去，GlitchTip 才不會
@@ -164,7 +159,9 @@ pub async fn tunnel(State(state): State<AppState>, headers: HeaderMap, body: Byt
     // 只認自己那一把公開 key。不驗的話這裡就變成一個對外開放的 Sentry 轉發器，
     // 任何人都能拿它往**別人的**專案送東西（被當成濫用來源的那種）。
     match Dsn::parse(claimed) {
-        Some(d) if key_matches(&d.public_key, &expected_public_key(&dsn)) => {}
+        Some(d)
+            if crate::util::timing_safe_eq(d.public_key.as_bytes(), expected_public_key(&dsn).as_bytes()) => {
+        }
         _ => {
             tracing::warn!("envelope 的 DSN 不符，丟棄");
             return StatusCode::ACCEPTED;
@@ -233,17 +230,6 @@ mod tests {
         ] {
             assert!(Dsn::parse(bad).is_none(), "{bad} 應該被拒");
         }
-    }
-
-    #[test]
-    fn key_比對長度不同時直接不符() {
-        assert!(key_matches("abcdef", "abcdef"));
-        assert!(!key_matches("abcdef", "abcdeg"));
-        // 長度不同要先擋掉——zip 會在短的那邊停下來，
-        // 沒有這個檢查的話 "abc" 會被判定成 "abcdef" 的相符前綴
-        assert!(!key_matches("abc", "abcdef"));
-        assert!(!key_matches("abcdef", "abc"));
-        assert!(!key_matches("", "abc"));
     }
 
     use wiremock::matchers::{method, path, query_param};
