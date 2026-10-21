@@ -5,6 +5,7 @@
     "errorBackendApi": "无法连接到后端 API",
     "retry": "重试",
     "close": "关闭",
+    "imageViewer": "图片查看",
     "cancel": "取消",
     "save": "保存",
     "submit": "提交",

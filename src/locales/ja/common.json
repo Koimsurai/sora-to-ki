@@ -5,6 +5,7 @@
     "errorBackendApi": "バックエンド API に接続できません",
     "retry": "再試行",
     "close": "閉じる",
+    "imageViewer": "画像ビューア",
     "cancel": "キャンセル",
     "save": "保存",
     "submit": "送信",

@@ -5,6 +5,7 @@
     "errorBackendApi": "Can't reach the backend API",
     "retry": "Retry",
     "close": "Close",
+    "imageViewer": "Image viewer",
     "cancel": "Cancel",
     "save": "Save",
     "submit": "Submit",
