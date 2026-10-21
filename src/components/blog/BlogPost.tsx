@@ -743,8 +743,13 @@ const PostsNav = React.memo(
       [allCategories, postCategory],
     );
 
-    // 附近文章 + 同專欄文章：從 posts(limit 100) 依時間排序後開視窗，改由 Query + useMemo derive。
-    const { data: allPosts = [] } = useQuery(recentPostsQueryOptions(100, navLocale));
+    // 附近文章 + 同專欄文章：從最近 100 篇依時間排序後開視窗，改由 Query + useMemo derive。
+    // 用的是上下篇導覽那份 limit=200 的快取、select 只取前 100：另開一個 limit=100 的 query
+    // 會讓 SSR 把兩份幾乎一樣的清單都 dehydrate 進 HTML（文章頁的 HTML 因此多了好幾十 KB）。
+    const { data: allPosts = [] } = useQuery({
+      ...recentPostsQueryOptions(200, navLocale),
+      select: (posts: PostListItem[]) => posts.slice(0, 100),
+    });
     const { nearbyPosts, categoryPosts } = useMemo<{
       nearbyPosts: PostListItem[];
       categoryPosts: PostListItem[];
