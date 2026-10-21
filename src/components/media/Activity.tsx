@@ -3,6 +3,7 @@ import { gridFromContributions, gridFromEvents, uptimeSince, type ContributionCe
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
+import { useTimeAgo } from '@/hooks/useTimeAgo';
 import { usePageVisibility } from '@/contexts/pageVisibility';
 import {
   steamQueryOptions,
@@ -118,17 +119,8 @@ const Activity = () => {
     return h < 1 ? `${m} ${t('activity.units.min')}` : `${h} ${t('activity.units.hr')}`;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const diffMs = new Date().getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    if (diffMins < 60) return `${diffMins} 分鐘前`;
-    if (diffHours < 24) return `${diffHours} 小時前`;
-    if (diffDays < 7) return `${diffDays} 天前`;
-    return date.toLocaleDateString('zh-TW');
-  };
+  // 以前這裡把「分鐘前／小時前／天前」寫死成中文，切到英文、日文也照樣顯示中文
+  const formatDate = useTimeAgo();
 
   const uptime = getUptime();
 
@@ -585,7 +577,9 @@ const Activity = () => {
                       <div className="commit-event-header">
                         <div className="commit-dot" />
                         <span className="commit-repo">{event.repo.name.split('/')[1]}</span>
-                        <span className="commit-when">{formatDate(event.created_at)}</span>
+                        <span className="commit-when" suppressHydrationWarning>
+                          {formatDate(event.created_at)}
+                        </span>
                       </div>
                       <div className="commit-messages">
                         {event.payload.commits.length > 0 ? (

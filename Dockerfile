@@ -36,9 +36,6 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# client runtime 走相對 /api(經 nginx proxy 到 backend-rs)
-ENV VITE_API_URL=/api
-
 # 錯誤上報用的（假）DSN 與版本標記。兩個都是 build 時就會烤進 bundle 的。
 # compose 沒帶 build arg 時會是空的（SDK 就不帶 release、也不啟用上報）。
 ARG VITE_SENTRY_DSN=

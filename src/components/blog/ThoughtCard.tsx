@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { LocaleLink } from '@/i18n/locale-link';
 import { Heart, ThumbsDown, MessageCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useTimeAgo } from '@/hooks/useTimeAgo';
+import { parseServerDate } from '@/lib/serverDate';
+import { apiUrl } from '@/lib/api';
 import Comments from './Comments';
 
 /* 單則碎念卡片（feed 與詳情頁共用）。
@@ -9,7 +13,6 @@ import Comments from './Comments';
    - 留言：feed 模式點 icon 跳浮動視窗；detail 模式直接顯示在頁面
    - admin：inline 編輯 + 刪除（ghost 文字鈕） */
 
-const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 const AUTHOR = 'Koimsurai';
 
 // 改吃後端生成的型別（backend handlers::thoughts::ThoughtOut）。手寫版把 likes /
@@ -27,25 +30,9 @@ interface ThoughtCardProps {
   detail?: boolean;
 }
 
-const toDate = (at: string) => new Date(String(at).replace(' ', 'T') + (String(at).includes('Z') ? '' : 'Z'));
-const relTime = (at: string): string => {
-  const d = toDate(at);
-  if (Number.isNaN(d.getTime())) return at;
-  const sec = (Date.now() - d.getTime()) / 1000;
-  if (sec < 60) return '剛剛';
-  if (sec < 3600) return `${Math.floor(sec / 60)} 分鐘前`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)} 小時前`;
-  if (sec < 86400 * 30) return `${Math.floor(sec / 86400)} 天前`;
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
-};
-const WK = ['日', '一', '二', '三', '四', '五', '六'];
-const fullCh = (at: string): string => {
-  const d = toDate(at);
-  if (Number.isNaN(d.getTime())) return at;
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日星期${WK[d.getDay()]}`;
-};
-
 export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = false }: ThoughtCardProps) {
+  const timeAgo = useTimeAgo();
+  const lang = useTranslation().i18n.resolvedLanguage ?? 'zh-TW';
   // `?? 0` 拿掉了：後端這三個欄位是 i64 不是 Option，每次都有值
   const [likes, setLikes] = useState(th.likes);
   const [dislikes, setDislikes] = useState(th.dislikes);
@@ -81,7 +68,7 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
   const react = async (kind: string) => {
     const next = reacted === kind ? '' : kind; // 同一顆=取消；不同=切換
     try {
-      const r = await fetch(`${API}/thoughts/${th.id}/react`, {
+      const r = await fetch(apiUrl(`/api/thoughts/${th.id}/react`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prev: reacted, next }),
@@ -105,11 +92,15 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
     <div className="tk-card">
       <div className="tk-card-head">
         <span className="tk-author">{AUTHOR}</span>
-        <time className="tk-time" dateTime={th.created_at}>
-          {relTime(th.created_at)}
+        {/* 相對時間取決於「現在」，server 與 client 算出來可能差一分鐘 */}
+        <time className="tk-time" dateTime={th.created_at} suppressHydrationWarning>
+          {timeAgo(th.created_at, { absoluteAfterDays: 30 })}
         </time>
         {th.edited && th.updated_at && (
-          <span className="tk-edited" data-edited={`編輯於 ${fullCh(th.updated_at)}`}>
+          <span
+            className="tk-edited"
+            data-edited={`編輯於 ${parseServerDate(th.updated_at).toLocaleDateString(lang, { dateStyle: 'full' })}`}
+          >
             （已編輯）
           </span>
         )}

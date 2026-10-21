@@ -2,8 +2,8 @@
 //
 // 為什麼需要代理這一層：生產環境是 **nginx** 在分流（`/api` → 後端、其餘 → nitro），
 // 專案裡沒有任何地方複製那個行為——vite 沒設 proxy，nitro 只有 server/routes/ 那幾支。
-// 而前端取 API 位址有兩種寫法（`apiUrl()` 回相對 `/api`、部分元件讀 VITE_API_URL），
-// 只有「真的把兩個 server 併在同一個 origin 下」才能兩種都照生產的樣子跑到。
+// 而前端在瀏覽器裡一律打相對的 `/api`（`apiUrl()`），只有「真的把兩個 server 併在
+// 同一個 origin 下」才能照生產的樣子跑到。
 //
 // 起法：後端（跑 migrations、建空 DB）→ 等 health → 灌種子資料 → nitro → 代理。
 // Playwright 的 webServer 指向代理的 /api/health。

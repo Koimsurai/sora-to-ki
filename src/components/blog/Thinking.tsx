@@ -6,12 +6,12 @@ import { Rss } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import ThoughtCard from './ThoughtCard';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
+import { apiUrl } from '@/lib/api';
+import { useThoughtAdmin } from '@/hooks/useThoughtAdmin';
 import './Thinking.css';
 
 /* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。
    admin 可在頂端發文（content + 選填連結 → 後端 unfurl）。 */
-
-const API: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 interface Prefill {
   kind?: string;
@@ -47,7 +47,7 @@ function Thinking() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const r = await fetch(`${API}/admin/thoughts`, {
+      const r = await fetch(apiUrl('/api/admin/thoughts'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
         body: JSON.stringify({
@@ -67,28 +67,8 @@ function Thinking() {
   });
   const posting = createMutation.isPending;
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const r = await fetch(`${API}/admin/thoughts/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${getToken() ?? ''}` },
-      });
-      if (!r.ok) throw new Error(`DELETE /admin/thoughts/${id} ${r.status}`);
-    },
-    onSuccess: () => void refreshThoughts(),
-  });
-
-  const editMutation = useMutation({
-    mutationFn: async ({ id, content }: { id: number; content: string }) => {
-      const r = await fetch(`${API}/admin/thoughts/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken() ?? ''}` },
-        body: JSON.stringify({ content }),
-      });
-      if (!r.ok) throw new Error(`PUT /admin/thoughts/${id} ${r.status}`);
-    },
-    onSuccess: () => void refreshThoughts(),
-  });
+  // 刪除／編輯跟單則頁共用（hooks/useThoughtAdmin）
+  const admin = useThoughtAdmin();
 
   const submit = () => {
     if (!draft.trim() || posting) return;
@@ -96,9 +76,9 @@ function Thinking() {
   };
   const del = (id: number) => {
     if (!window.confirm('刪除這則碎念？')) return;
-    deleteMutation.mutate(id);
+    admin.remove.mutate(id);
   };
-  const edit = (id: number, content: string) => editMutation.mutate({ id, content });
+  const edit = (id: number, content: string) => admin.edit.mutate({ id, content });
 
   return (
     <div className="tk-page">
@@ -108,13 +88,7 @@ function Thinking() {
         <header className="tk-header enter" style={enterStyle({ y: 16, dur: 500 })}>
           <div className="tk-title-row">
             <h1 className="tk-title">{t('thinking.title')}</h1>
-            <a
-              className="tk-rss"
-              href={`${API}/thoughts/rss`}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="RSS"
-            >
+            <a className="tk-rss" href="/api/thoughts/rss" target="_blank" rel="noopener noreferrer" aria-label="RSS">
               <Rss size={18} />
             </a>
           </div>

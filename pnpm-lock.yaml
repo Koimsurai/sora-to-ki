@@ -276,9 +276,6 @@ importers:
       decimal.js-light:
         specifier: ^2.5.1
         version: 2.5.1
-      exifreader:
-        specifier: ^4.44.0
-        version: 4.44.0
       framer-motion:
         specifier: ^12.6.2
         version: 12.23.25(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -330,9 +327,6 @@ importers:
       react-icons:
         specifier: 5.5.0
         version: 5.5.0(react@19.2.1)
-      react-intersection-observer:
-        specifier: ^9.16.0
-        version: 9.16.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.7)(react@19.2.1)(supports-color@7.2.0)
@@ -372,9 +366,6 @@ importers:
       three:
         specifier: ^0.185.1
         version: 0.185.1
-      usehooks-ts:
-        specifier: ^3.1.1
-        version: 3.1.1(react@19.2.1)
       web-vitals:
         specifier: ^5.3.0
         version: 5.3.0
@@ -448,6 +439,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
+      exifreader:
+        specifier: ^4.50.0
+        version: 4.50.0
       fast-check:
         specifier: ^4.9.0
         version: 4.9.0
@@ -506,7 +500,7 @@ importers:
         version: 3.1.1(supports-color@7.2.0)
       '@modelcontextprotocol/sdk':
         specifier: ^1.19.1
-        version: 1.29.0(@cfworker/json-schema@4.1.1)(supports-color@7.2.0)(zod@4.4.3)
+        version: 1.29.0(@cfworker/json-schema@4.1.1)(supports-color@7.2.0)(zod@4.6.7)
 
   packages/mdx-core:
     dependencies:
@@ -5947,8 +5941,8 @@ packages:
     resolution: {integrity: sha512-9Be3ZoN4LmYR90tUoVu2te2BsbzHfhJyfEiAVfz7N5/zv+jduIfLrV2xdQXOHbaD6KgpGdO9PRPM1Y4Q9QkPkA==}
     engines: {node: ^18.19.0 || >=20.5.0}
 
-  exifreader@4.44.0:
-    resolution: {integrity: sha512-NviP4AQgrZHiNZT8IEsXtyaAKLkc0C55dfQ8fyaAXiL59EJLDdsvP/hZhAfTJpdVuHDGHU7GuUZ1qrJtINckvw==}
+  exifreader@4.50.0:
+    resolution: {integrity: sha512-RUtdkMPWJd2BdinNSO0JVw0QkMigxDTsuambp+jMlPM1b5k3xvXa4p9Wat+JhW4iVBOEfpBw66PS6oYHS1yFTg==}
     hasBin: true
 
   expect-type@1.4.0:
@@ -7687,15 +7681,6 @@ packages:
     peerDependencies:
       react: '*'
 
-  react-intersection-observer@9.16.0:
-    resolution: {integrity: sha512-w9nJSEp+DrW9KmQmeWHQyfaP6b03v+TdXynaoA964Wxt7mdR3An11z4NNCQgL4gKSK7y1ver2Fq+JKH6CWEzUA==}
-    peerDependencies:
-      react: ^17.0.0 || ^18.0.0 || ^19.0.0
-      react-dom: ^17.0.0 || ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      react-dom:
-        optional: true
-
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
 
@@ -8633,12 +8618,6 @@ packages:
     resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
-  usehooks-ts@3.1.1:
-    resolution: {integrity: sha512-I4diPp9Cq6ieSUH2wu+fDAVQO43xwtulo+fKEidHUwZPnYImbtkTjzIJYcDcJqxgmX31GVqNFURodvcgHcW0pA==}
-    engines: {node: '>=16.15.0'}
-    peerDependencies:
-      react: ^16.8.0  || ^17 || ^18 || ^19 || ^19.0.0-rc
 
   utility-types@3.11.0:
     resolution: {integrity: sha512-6Z7Ma2aVEWisaL6TvBCy7P8rm2LQoPv6dJ7ecIaIixHcwfbJ0x7mWdbcwlIM5IGQxPZSFYeqRCqlOOeKoJYMkw==}
@@ -10099,7 +10078,7 @@ snapshots:
     dependencies:
       '@chevrotain/types': 11.1.2
 
-  '@modelcontextprotocol/sdk@1.29.0(@cfworker/json-schema@4.1.1)(supports-color@7.2.0)(zod@4.4.3)':
+  '@modelcontextprotocol/sdk@1.29.0(@cfworker/json-schema@4.1.1)(supports-color@7.2.0)(zod@4.6.7)':
     dependencies:
       '@hono/node-server': 2.0.11(hono@4.13.4)
       ajv: 8.20.0
@@ -10116,8 +10095,8 @@ snapshots:
       json-schema-typed: 8.0.2
       pkce-challenge: 5.0.1
       raw-body: 3.0.2
-      zod: 4.4.3
-      zod-to-json-schema: 3.25.2(zod@4.4.3)
+      zod: 4.6.7
+      zod-to-json-schema: 3.25.2(zod@4.6.7)
     optionalDependencies:
       '@cfworker/json-schema': 4.1.1
     transitivePeerDependencies:
@@ -13988,7 +13967,7 @@ snapshots:
       strip-final-newline: 4.0.0
       yoctocolors: 2.2.0
 
-  exifreader@4.44.0:
+  exifreader@4.50.0:
     optionalDependencies:
       '@xmldom/xmldom': 0.9.12
 
@@ -16180,12 +16159,6 @@ snapshots:
     dependencies:
       react: 19.2.1
 
-  react-intersection-observer@9.16.0(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
-    dependencies:
-      react: 19.2.1
-    optionalDependencies:
-      react-dom: 19.2.1(react@19.2.1)
-
   react-is@17.0.2: {}
 
   react-markdown@10.1.0(@types/react@19.2.7)(react@19.2.1)(supports-color@7.2.0):
@@ -17183,11 +17156,6 @@ snapshots:
     dependencies:
       react: 19.2.1
 
-  usehooks-ts@3.1.1(react@19.2.1):
-    dependencies:
-      lodash.debounce: 4.0.8
-      react: 19.2.1
-
   utility-types@3.11.0: {}
 
   utils-merge@1.0.1: {}
@@ -17529,9 +17497,9 @@ snapshots:
       '@yuku-parser/binding-win32-arm64': 0.9.5
       '@yuku-parser/binding-win32-x64': 0.9.5
 
-  zod-to-json-schema@3.25.2(zod@4.4.3):
+  zod-to-json-schema@3.25.2(zod@4.6.7):
     dependencies:
-      zod: 4.4.3
+      zod: 4.6.7
 
   zod@3.25.76: {}
 

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useMediaQuery } from 'usehooks-ts';
 import { useRouterState } from '@tanstack/react-router';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { isBotUserAgent } from '@/lib/bot';
 import IntroAnimation from './IntroAnimation';
 import BackdropErrorBoundary from './BackdropErrorBoundary';
 import DomSpaceEffects from './DomSpaceEffects';
@@ -21,14 +22,8 @@ export default function SpaceBackdropShell() {
   // 爬蟲 / 稽核工具（Googlebot/Bingbot/Lighthouse…）：跟手機一樣完全不載 three。
   // 純裝飾背景、無內容 → 不算 cloaking；手機版本來就跳過故對 Google 一致；真人 UA 不含這些關鍵字，
   // 體驗不變。好處：桌機爬蟲/Rich Results/社群卡片抓取器不再卡在重的 WebGL render。
-  const isBot = useMemo(
-    () =>
-      typeof navigator !== 'undefined' &&
-      /bot|crawl|spider|lighthouse|headless|slurp|bingbot|googlebot|duckduckbot|baiduspider|yandex/i.test(
-        navigator.userAgent,
-      ),
-    [],
-  );
+  // 清單跟語系導向、Web Vitals 用同一份（lib/bot），以前這裡另寫了一條、兩邊認得的 bot 不一樣。
+  const isBot = useMemo(() => typeof navigator !== 'undefined' && isBotUserAgent(navigator.userAgent), []);
   // 3D pre-flight：有硬體加速的 WebGL 才掛 3D（renderer 首選 WebGPU，WebGL2 是它的 fallback
   // backend）。拿不到 context（Chromium 137 移除 SwiftShader 後加速全壞的機器）→ 不下載 three chunk，
   // 降級純 DOM 特效。

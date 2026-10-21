@@ -60,7 +60,7 @@ import { slugify, extractHeadings, computeReadTime } from '@/lib/mdx/blogContent
 // 標題拆解、閱讀進度、scroll-spy 的挑選邏輯——純函式，抽出去才測得到（見該檔說明）。
 import { pickActiveHeading, readingProgressPct, splitTitle } from '@/lib/blogReading';
 import { useCategoryLabel, useTagLabel, useLocalizedCategoryInfo } from '@/lib/categoryLabel';
-import { postPath } from '@/lib/postPath';
+import { postPath, postShareUrl } from '@/lib/postPath';
 import { lookup } from '@/lib/tableLookup';
 
 /// `GET /api/posts/:id` 的成功回應（型別由後端 Rust struct 生成），外加 client 端自己算的
@@ -1387,6 +1387,7 @@ function postPathForLocale(id: string | number | undefined, locale: string, sour
 function BlogPost() {
   const { t } = useTranslation();
   const tagLabel = useTagLabel();
+  const navLocale = useLocale();
   const [readingProgress, setReadingProgress] = useState(0);
   // headings 改為同步 useMemo（在 post 定義後、下方 Extract headings 處）→ 第一幀就有值
   const [activeHeading, setActiveHeading] = useState('');
@@ -1634,7 +1635,8 @@ function BlogPost() {
 
   /* ── Share handlers ── */
   // SSR-safe：server 無 window（只在 share 按鈕 handler 用到、不進 DOM，故 SSR 給空 origin 不影響 hydration）。
-  const shareUrl = (typeof window !== 'undefined' ? window.location.origin : '') + '/blog/' + id;
+  // 用 canonical slug ＋語系前綴（postShareUrl），不要用路由參數 id：那可能是數字 id 或舊 slug。
+  const shareUrl = postShareUrl(post ?? { id }, navLocale, typeof window !== 'undefined' ? window.location.origin : '');
   const shareTitle = post?.title ?? '';
 
   const handleCopyLink = () => {
