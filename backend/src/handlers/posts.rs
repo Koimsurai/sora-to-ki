@@ -307,6 +307,11 @@ pub async fn list_posts(
     if q.category.is_some() {
         sql.push_str(" AND p.category = ?");
     }
+    // 語系要在 SQL 裡先濾再切頁：在 Rust 裡濾的話，一頁抓到的文章剛好都沒譯文，那頁就是空的。
+    if let Some(loc) = requested_locale {
+        sql.push_str(" AND ");
+        sql.push_str(&locale_available_sql(loc, "p"));
+    }
     sql.push_str(" GROUP BY p.id");
     match q.sort_by.as_deref() {
         Some("oldest") => sql.push_str(" ORDER BY p.created_at ASC"),
@@ -345,8 +350,7 @@ pub async fn list_posts(
     if q.category.is_some() {
         count_sql.push_str(" AND p.category = ?");
     }
-    // 帶 ?lang= 時列表會把沒該語系譯文的文章 continue 掉（見下面的迴圈），total 也要跟著扣，
-    // 否則分頁器會依一個永遠填不滿的數字多開空白頁。沒帶 lang＝取原文，不過濾。
+    // 跟列表同一個語系條件，total 才會等於翻完所有頁實際拿到的篇數。沒帶 lang＝取原文，不過濾。
     if let Some(loc) = requested_locale {
         count_sql.push_str(" AND ");
         count_sql.push_str(&locale_available_sql(loc, "p"));
@@ -372,8 +376,9 @@ pub async fn list_posts(
             Some(loc) => locale_content(row, loc),
             None => Some((row.title.clone(), row.content.clone(), row.excerpt.clone().unwrap_or_default())),
         };
+        // SQL 已經濾過語系，這裡照理不會是 None；locale_available_sql 跟 locale_content 不同步時才會發生
         let Some((title, locale_content_str, excerpt)) = content else {
-            continue; // 該語言無翻譯 → 不出現在列表
+            continue;
         };
         posts.push(PostListItem {
             id: row.id,
@@ -397,18 +402,13 @@ pub async fn list_posts(
         });
     }
 
-    let (resp_total, total_pages) = if requested_locale.is_some() {
-        let n = i64::try_from(posts.len()).unwrap_or(i64::MAX);
-        (n, if limit > 0 { (n + limit - 1) / limit } else { 0 })
-    } else {
-        (total, if limit > 0 { (total + limit - 1) / limit } else { 0 })
-    };
+    let total_pages = if limit > 0 { (total + limit - 1) / limit } else { 0 };
 
     Ok(Json(PostsListResponse {
         message: "success".into(),
         posts,
         locale: requested_locale.map(String::from),
-        pagination: Pagination { page, limit, total: resp_total, total_pages },
+        pagination: Pagination { page, limit, total, total_pages },
     }))
 }
 

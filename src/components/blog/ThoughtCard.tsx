@@ -50,13 +50,17 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
   const [likes, setLikes] = useState(th.likes);
   const [dislikes, setDislikes] = useState(th.dislikes);
   const key = 'tk_react_' + th.id;
-  const [reacted, setReacted] = useState(() => {
+  // 按過的讚存在 localStorage，只有 client 讀得到：寫在 useState 初始化裡的話 server 繪 ''、
+  // client 繪儲存值，hydrate 時 React 不會補正屬性，按過的讚就不亮。所以等掛上之後才讀。
+  const [reacted, setReacted] = useState('');
+  useEffect(() => {
     try {
-      return localStorage.getItem(key) ?? '';
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
+      setReacted(localStorage.getItem(key) ?? '');
     } catch {
-      return '';
+      /* 隱私模式等讀不到的情況：當成沒按過 */
     }
-  });
+  }, [key]);
   const [showComments, setShowComments] = useState(false);
 
   // 評論 modal 少了 Escape 關閉——遮罩點擊只有滑鼠使用者用得到，鍵盤使用者

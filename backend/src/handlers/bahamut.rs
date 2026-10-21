@@ -84,14 +84,8 @@ async fn push_auth(headers: &HeaderMap, state: &AppState) -> Result<(), Box<Resp
         && !token.is_empty()
     {
         let got = headers.get("X-Bahamut-Token").and_then(|v| v.to_str().ok()).unwrap_or("");
-        if got.len() == token.len() {
-            let mut d = 0u8;
-            for (a, b) in got.bytes().zip(token.bytes()) {
-                d |= a ^ b;
-            }
-            if d == 0 {
-                return Ok(());
-            }
+        if crate::util::timing_safe_eq(got.as_bytes(), token.as_bytes()) {
+            return Ok(());
         }
     }
     crate::auth::require_admin(headers, state).await.map(|_| ()).map_err(|e| Box::new(e.into_response()))

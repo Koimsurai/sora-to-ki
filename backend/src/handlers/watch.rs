@@ -692,18 +692,6 @@ pub async fn delete_favorite(
 
 const NOW_WATCHING_TTL_MS: i64 = 90 * 1000;
 
-/// timingSafeEqual（長度不同直接 false，同 Express 先比長度）。
-fn timing_safe_eq(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() {
-        return false;
-    }
-    let mut d = 0u8;
-    for (x, y) in a.iter().zip(b) {
-        d |= x ^ y;
-    }
-    d == 0
-}
-
 /// bahamutPushAuth：X-Bahamut-Token（constant-time）或 admin JWT。
 ///
 /// ⚠️ `Err` 裝 `Box<Response>`，理由同 `handlers/bahamut.rs` 的 `push_auth`：
@@ -713,7 +701,7 @@ async fn bahamut_push_auth(headers: &HeaderMap, state: &AppState) -> Result<(), 
         && !token.is_empty()
     {
         let got = headers.get("X-Bahamut-Token").and_then(|v| v.to_str().ok()).unwrap_or("");
-        if timing_safe_eq(got.as_bytes(), token.as_bytes()) {
+        if crate::util::timing_safe_eq(got.as_bytes(), token.as_bytes()) {
             return Ok(());
         }
     }
@@ -932,15 +920,6 @@ mod tests {
         assert!(is_live(89_999, 90_000));
         assert!(!is_live(90_000, 90_000), "剛好到期那一刻算過期，不是還活著");
         assert!(!is_live(90_001, 90_000));
-    }
-
-    #[test]
-    fn timing_safe_eq_長度不同直接否_同長逐位元比() {
-        assert!(timing_safe_eq(b"secret", b"secret"));
-        assert!(!timing_safe_eq(b"secret", b"secrets"), "長度不同");
-        assert!(!timing_safe_eq(b"secret", b"secreT"), "同長但差一位元");
-        assert!(!timing_safe_eq(b"", b"x"));
-        assert!(timing_safe_eq(b"", b""));
     }
 
     #[test]
