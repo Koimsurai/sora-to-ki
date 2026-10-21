@@ -21,6 +21,7 @@ import { useAuth } from '@/contexts/auth';
 
 import type { AdminUserRow } from '@koimsurai/api-types';
 import { lookup, lookupOr } from '../../lib/tableLookup';
+import { jsonAuthHeaders } from '@/lib/authToken';
 
 // 型別來源＝Rust struct（specta 生成）；原手寫 interface 已與 API 漂移（avatar vs avatar_url、id 型別）
 type AdminUser = AdminUserRow;
@@ -57,14 +58,6 @@ export default function UsersManager() {
     newRole: '',
   });
 
-  // 呼叫時才讀 token，不在 render 期讀：localStorage 是外部可變狀態，render 必須是純的
-  //（react-hooks/purity）。順帶修掉一個實質問題——原本 token 在 render 當下就固定了，
-  // session 中途重新登入會繼續帶舊的。
-  const authHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem('koimsurai_user_token') ?? ''}`,
-    'Content-Type': 'application/json',
-  });
-
   const handleRoleChange = async () => {
     const { user: targetUser, newRole } = roleChangeDialog;
     if (!targetUser || !newRole) return;
@@ -72,7 +65,7 @@ export default function UsersManager() {
     try {
       const res = await fetch(`/api/admin/users/${targetUser.id}/role`, {
         method: 'PUT',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ role: newRole }),
       });
       if (res.ok) {

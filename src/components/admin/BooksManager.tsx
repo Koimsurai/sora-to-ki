@@ -28,6 +28,7 @@ import {
 import { Plus, Pencil, BookOpen, Search, Loader2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { type FormEvent } from 'react';
+import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 
 /** `GET /api/books` 的單本，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
 type Book = BookRow;
@@ -169,16 +170,12 @@ export default function BooksManager() {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const url = editingBook ? `/api/books/${editingBook.id}` : '/api/books';
       const method = editingBook ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify(formData),
       });
 
@@ -222,10 +219,9 @@ export default function BooksManager() {
     if (!deleteId) return;
 
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/books/${deleteId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(),
       });
 
       if (response.ok) {

@@ -32,7 +32,6 @@ export interface AuthContextValue {
   user: User | null;
   loading: boolean;
   providers: AuthProvidersResponse;
-  getToken: () => string | null;
   loginWithOAuth: (provider: string, code: string, redirectUri: string) => Promise<User>;
   logout: () => void;
   getGoogleAuthUrl: (redirectUri: string) => string;
@@ -43,8 +42,6 @@ export interface AuthContextValue {
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
-
-export const TOKEN_KEY = 'koimsurai_user_token';
 
 export function useAuth() {
   const ctx = use(AuthContext);

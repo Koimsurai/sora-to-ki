@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, FolderOpen, GripVertical, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 
 interface CategoryForm {
   name: string;
@@ -105,16 +106,12 @@ export default function CategoriesManager() {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const url = editingCategory ? `/api/admin/categories/${editingCategory.id}` : '/api/admin/categories';
       const method = editingCategory ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token ?? ''}`,
-        },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify(formData),
       });
 
@@ -159,10 +156,9 @@ export default function CategoriesManager() {
     if (!deleteId) return;
 
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/categories/${deleteId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token ?? ''}` },
+        headers: authHeaders(),
       });
 
       if (response.ok) {

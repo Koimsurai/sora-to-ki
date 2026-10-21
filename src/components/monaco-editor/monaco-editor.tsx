@@ -11,6 +11,7 @@ import { MonacoTextHelper } from './monaco-text-helper';
 import type { MonacoEditorProps } from './types';
 import { getActiveSnippets } from './monaco-snippets';
 import './monaco-glass.css';
+import { authHeaders } from '@/lib/authToken';
 
 const VIM_MODE_KEY = 'koimsurai_vim_mode';
 
@@ -169,10 +170,9 @@ export default function MonacoEditor({
       const formData = new FormData();
       formData.append('file', blob, filename);
 
-      const token = localStorage.getItem('koimsurai_user_token');
       const res = await fetch('/api/admin/upload', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(),
         body: formData,
       });
 
@@ -370,12 +370,9 @@ export default function MonacoEditor({
         const formData = new FormData();
         formData.append('file', blob, imageFile.name.replace(/\.[^/.]+$/, '') + '.webp');
 
-        const token = localStorage.getItem('koimsurai_user_token');
         const res = await fetch('/api/admin/upload', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: authHeaders(),
           body: formData,
         });
 
@@ -447,10 +444,9 @@ export default function MonacoEditor({
         }
         const formData = new FormData();
         formData.append('file', blob, filename);
-        const token = localStorage.getItem('koimsurai_user_token');
         const res = await fetch('/api/admin/upload', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          headers: authHeaders(),
           body: formData,
         });
         if (!res.ok) throw new Error('Upload failed');

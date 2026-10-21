@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, useParams } from '@tanstack/react-router';
+import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 
 interface TagOption {
   label: string;
@@ -493,10 +494,9 @@ export default function PostEditor() {
   const handleSendNewsletter = async () => {
     if (!confirm('要立即推送這篇文章給所有訂閱者嗎？')) return;
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const res = await fetch(`/api/admin/posts/${id}/send-newsletter`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(),
       });
       const data = (await res.json()) as { error?: string; sent?: number; failed?: number };
       if (!res.ok) {
@@ -566,17 +566,13 @@ export default function PostEditor() {
     submitLockRef.current = true;
     setIsSavingDraft(true);
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
       const payload = buildPayload(data, { status: 'draft' });
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify(payload),
       });
 
@@ -616,17 +612,13 @@ export default function PostEditor() {
     submitLockRef.current = true;
     setIsPublishing(true);
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
       const payload = buildPayload(data, { status: 'published' });
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify(payload),
       });
 
@@ -676,17 +668,16 @@ export default function PostEditor() {
 
     setIsGeneratingZhCN(true);
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       // 先把最新的 zh-TW 原文存一次，讓 OpenCC 以最新內容轉換
       await fetch(`/api/admin/posts/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: jsonAuthHeaders(),
         body: JSON.stringify(buildPayload(form.getValues())),
       });
 
       const res = await fetch(`/api/admin/posts/${id}/generate-zh-cn`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };

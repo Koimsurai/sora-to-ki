@@ -6,6 +6,7 @@ import { loadPhotosManifest } from '@/lib/manifestLoader';
 import { exifYmd } from '../../lib/exifDate';
 import type { PhotoManifest } from '../../types/photo';
 import { toast } from 'sonner';
+import { authHeaders, readToken } from '@/lib/authToken';
 
 interface PhotoSelectorModalProps {
   isOpen: boolean;
@@ -32,8 +33,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
   const handleSync = async () => {
     if (syncing) return;
 
-    const token = localStorage.getItem('koimsurai_user_token');
-    if (!token) {
+    if (!readToken()) {
       toast.error('請先登入後台再同步');
       return;
     }
@@ -42,9 +42,7 @@ const PhotoSelectorModal = ({ isOpen, onClose, onSelect }: PhotoSelectorModalPro
     try {
       const response = await fetch('/api/admin/gallery/sync', {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: authHeaders(),
       });
 
       const data = (await response.json().catch(() => ({}))) as {
