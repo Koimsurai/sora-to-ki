@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useCallback, useSyncExternalStore, type ReactNode } from 'react';
 import { subscribeScroll, scrollRatio } from '@/store/scrollStore';
 import { LocaleLink } from '@/i18n/locale-link';
-import { motion } from 'framer-motion';
 import { FaArrowUp } from 'react-icons/fa';
+import { enterStyle } from '@/lib/enter';
 import SignatureSVG from '@/components/common/SignatureSVG';
 import Comments from '@/components/blog/Comments';
 import '@/components/common/article-shell.css';
@@ -96,27 +96,17 @@ function InfoPage({ title, subtitle, slug, prev, next, closingNote, children }: 
       <div className="blog-post-dim-overlay" />
 
       {/* Header */}
-      <motion.header
-        className="post-header info-page-header"
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-      >
+      <header className="post-header info-page-header enter" style={enterStyle({ y: 18, dur: 350 })}>
         <h1 className="post-title info-page-title">{title}</h1>
         {subtitle && <p className="info-page-subtitle">{subtitle}</p>}
-      </motion.header>
+      </header>
 
       {/* 跟 BlogPost 一樣的三欄佈局：左留白 + 中內容 + 右 TOC */}
       <div className="post-body info-page-body">
         {/* 左 sidebar：空白用以對稱（不放 PostsNav，因為 info page 沒有「鄰近文章」概念） */}
         <aside className="post-sidebar-left info-page-sidebar-left" aria-hidden />
 
-        <motion.div
-          className="post-main-column info-page-main"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1], delay: 0.05 }}
-        >
+        <div className="post-main-column info-page-main enter" style={enterStyle({ delay: 50, y: 24, dur: 400 })}>
           {/* 不用 post-content-wrapper 那個 glass card，about/history 是字直接浮在背景上 */}
           <article className="post-content info-page-content" ref={contentRef}>
             {children}
@@ -152,7 +142,7 @@ function InfoPage({ title, subtitle, slug, prev, next, closingNote, children }: 
               <Comments postId={`meta-${slug}`} />
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* 右側 sticky TOC — 跟 BlogPost 一致的 class，承襲 BlogPost.css 樣式 */}
         {headings.length > 0 && (

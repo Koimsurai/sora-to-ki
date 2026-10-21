@@ -1001,7 +1001,13 @@
   gap: var(--space-1-5);
   margin-bottom: var(--space-1);
 }
+/* 版面那四條原本是從 Activity.css 的 .heatmap-total 借來的：頁面還沒拆 chunk 時所有 CSS 都在全域，
+   /blog 也吃得到。拆開之後 /activity 的 CSS 不再載入這頁，所以自己寫一份。 */
 .activity-heatmap .heatmap-total {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1-5);
   background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 60%, var(--magenta) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1061,6 +1067,7 @@
 .activity-heatmap .heatmap-legend {
   display: flex;
   align-items: center;
+  justify-content: flex-end; /* 同上，原本來自 Activity.css */
   gap: var(--space-1);
   margin-top: var(--space-1-5);
   font-size: var(--fs-11);

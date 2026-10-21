@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FaHome, FaPlug } from 'react-icons/fa';
 import NebulaBackground from '@/components/backdrop/NebulaBackground';
+import { enterStyle } from '@/lib/enter';
 import SetupNeofetch from './SetupNeofetch';
 import SetupTopology from './SetupTopology';
 import { GEAR, BASE_II_SPECS, APPLIANCES, type GearFilter, type GearItem } from './setupGear';
@@ -65,20 +66,12 @@ function Setup() {
       <div className="setup-wrap">
         <SetupNeofetch total={total} iot={iot} cwd={filter} onCd={setFilter} />
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-        >
+        {/* 首屏的進場用 CSS（.enter），不等 JS；下面各分類捲到才出現，仍用 framer 的 whileInView */}
+        <div className="enter" style={enterStyle({ delay: 150 })}>
           <SetupTopology onNavigate={navigate} />
-        </motion.div>
+        </div>
 
-        <motion.fieldset
-          className="setup-chips"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-        >
+        <fieldset className="setup-chips enter" style={enterStyle({ delay: 300, y: 12, dur: 500 })}>
           <legend className="sr-only">{t('setup.filter')}</legend>
           {FILTERS.map((f) => (
             <button
@@ -91,7 +84,7 @@ function Setup() {
               {f === 'all' ? t('common.all') : t(`setup.cat.${f}.short`)}
             </button>
           ))}
-        </motion.fieldset>
+        </fieldset>
 
         {GEAR.filter((c) => shown(c.id)).map((cat) => (
           <motion.section

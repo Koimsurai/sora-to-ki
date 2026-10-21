@@ -7,7 +7,6 @@
 // 欄位名照 neofetch 原樣用英文；值是這台伺服器的實際規格（2026-10 抄的），換硬體要回來改。
 // Packages 那行借來放設備數——neofetch 本來是數套件，這裡數的是「裝了多少東西」。
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { APPLIANCES, BASE_II_SPECS, GEAR, type GearFilter } from './setupGear';
 
@@ -229,12 +228,7 @@ export default function SetupNeofetch({ total, iot, cwd, onCd }: Props) {
   };
 
   return (
-    <motion.header
-      className="setup-term"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
+    <header className="setup-term enter">
       {/* Windows Terminal 的樣子：分頁列＋右上角的視窗按鈕（站長用 Windows，不要 macOS 那三顆燈）。
           除了分頁上的標題，其他都是裝飾、不能按。 */}
       <div className="setup-term-bar">
@@ -315,6 +309,6 @@ export default function SetupNeofetch({ total, iot, cwd, onCd }: Props) {
           />
         </form>
       </div>
-    </motion.header>
+    </header>
   );
 }

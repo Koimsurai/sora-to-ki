@@ -1,4 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { localePagePrefixed } from '@/i18n/localePage';
+import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
 import WatchLibrary from '@/components/media/WatchLibrary';
-export const Route = createFileRoute('/$locale/watch/library')(localePagePrefixed('watch/library', WatchLibrary));
+export const Route = createFileRoute('/$locale/watch/library')({
+  ...localePagePrefixed('watch/library'),
+  component: localeWrap(WatchLibrary),
+});

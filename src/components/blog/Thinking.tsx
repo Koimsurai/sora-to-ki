@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, type Variants } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { enterStyle } from '@/lib/enter';
 import { Rss } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import ThoughtCard from './ThoughtCard';
@@ -17,17 +17,6 @@ interface Prefill {
   kind?: string;
   title?: string;
 }
-
-const listV: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } } };
-const cardV: Variants = {
-  hidden: { opacity: 0, x: -48 },
-  show: { opacity: 1, x: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
-};
-const headReveal = {
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-};
 
 function Thinking() {
   const { t } = useTranslation();
@@ -116,7 +105,7 @@ function Thinking() {
       <div className="tk-scrim" />
 
       <div className="tk-wrap">
-        <motion.header className="tk-header" {...headReveal}>
+        <header className="tk-header enter" style={enterStyle({ y: 16, dur: 500 })}>
           <div className="tk-title-row">
             <h1 className="tk-title">{t('thinking.title')}</h1>
             <a
@@ -130,7 +119,7 @@ function Thinking() {
             </a>
           </div>
           <p className="tk-subtitle">{t('thinking.subtitle')}</p>
-        </motion.header>
+        </header>
 
         {isAdmin && (
           <div className="tk-compose">
@@ -174,12 +163,16 @@ function Thinking() {
 
         {thoughts?.length === 0 && <p className="tk-empty">{t('thinking.empty')}</p>}
 
-        {/* animate（非 whileInView+once）：whileInView 只觸發一次，發文後 load() 新掛載的
-            卡片會卡在 hidden（opacity:0）變空白佔位；animate 讓新卡掛載即播進場 */}
+        {/* 進場用 CSS（見 index.css「頁面進場動畫」）：掛載即播，SSR 出來的卡片不會是 opacity:0；
+            發文後新掛上的卡片也一樣會播。延遲到第 8 張封頂 */}
         {!!thoughts?.length && (
-          <motion.ul className="tk-feed" variants={listV} initial="hidden" animate="show">
-            {thoughts.map((th) => (
-              <motion.li className="tk-feed-item" key={th.id} variants={cardV}>
+          <ul className="tk-feed">
+            {thoughts.map((th, i) => (
+              <li
+                className="tk-feed-item enter"
+                key={th.id}
+                style={enterStyle({ delay: 50 + Math.min(i, 8) * 100, x: -48, y: 0, dur: 500 })}
+              >
                 <ThoughtCard
                   th={th}
                   isAdmin={isAdmin}
@@ -190,15 +183,15 @@ function Thinking() {
                     void edit(id, content);
                   }}
                 />
-              </motion.li>
+              </li>
             ))}
-          </motion.ul>
+          </ul>
         )}
 
         {!!thoughts?.length && (
-          <motion.p className="tk-ending" {...headReveal}>
+          <p className="tk-ending enter" style={enterStyle({ y: 16, dur: 500 })}>
             {t('thinking.ending')}
-          </motion.p>
+          </p>
         )}
       </div>
     </div>

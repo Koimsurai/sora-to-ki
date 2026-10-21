@@ -1,11 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { localePage } from '@/i18n/localePage';
+import { localePage, localeWrap } from '@/i18n/localePage';
 import Blog from '@/components/blog/Blog';
 import { blogCategoriesQueryOptions, blogTagsQueryOptions, postsListQueryOptions } from '@/data/blogList';
 import { DEFAULT_LOCALE } from '../../lib/locales';
 
 export const Route = createFileRoute('/blog/')({
-  ...localePage('blog', Blog),
+  ...localePage('blog'),
+  component: localeWrap(Blog),
   /* 預取首屏要用到的三份資料 → SSR baked。prefetchQuery 吞錯不擋頁。
    *
    * 標籤與分類原本沒預取，是本頁 CLS 的來源（實測 0.0326）。側欄那兩段是條件渲染在資料上
