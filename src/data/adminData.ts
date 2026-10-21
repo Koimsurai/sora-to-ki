@@ -17,17 +17,11 @@ import type {
   AdminPostDetailResponse,
 } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
+import { authHeaders } from '@/lib/authToken';
 
-// admin 管理頁的 TanStack Query 選項。全 behind auth（ClientOnly）——token 從 localStorage
-// 讀（AuthContext 存這把 key），queryFn 帶 Authorization。列表讀進 query 快取，CRUD mutation
+// admin 管理頁的 TanStack Query 選項。全 behind auth（ClientOnly）——queryFn 用
+// lib/authToken 的 authHeaders 帶 Authorization。列表讀進 query 快取，CRUD mutation
 // 由各 manager invalidateQueries 重抓，消掉 useEffect+fetch 混用。全吃 specta 生成型別。
-const TOKEN_KEY = 'koimsurai_user_token';
-
-function authHeaders(): Record<string, string> {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 async function adminGet<T>(path: string): Promise<T> {
   const res = await fetch(apiUrl(path), { headers: authHeaders() });
   if (!res.ok) throw new Error(`GET ${path} ${res.status}`);

@@ -6,6 +6,7 @@ import KoimLoader from '@/components/common/KoimLoader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth';
+import { jsonAuthHeaders } from '@/lib/authToken';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import type { CommentRow } from '@koimsurai/api-types';
 import { commentsQueryOptions } from '@/data/commentsData';
@@ -42,7 +43,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }: Comments
   const [useAnonymous, setUseAnonymous] = useState(false); // 是否使用匿名模式
   const [commentMode, setCommentMode] = useState('initial'); // 'initial' | 'login' | 'anonymous'
 
-  const { user, isLoggedIn, providers, getGoogleAuthUrl, getGitHubAuthUrl, getToken } = useAuth();
+  const { user, isLoggedIn, providers, getGoogleAuthUrl, getGitHubAuthUrl } = useAuth();
 
   // set-state-in-effect 在 SSR 站台無解，不是缺陷：localStorage 在 server 上不存在，
   // 改用 useState 的 lazy initializer 會炸；就算加 typeof window 守衛，也只會變成
@@ -105,11 +106,7 @@ function Comments({ postId, allowComments = true, basePath = 'posts' }: Comments
     const submitEmail = isUsingLogin ? (user?.email ?? '') : email;
     const expectedAnswer = captchaQuestion.num1 + captchaQuestion.num2;
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (isUsingLogin) {
-      const token = getToken();
-      if (token) headers.Authorization = `Bearer ${token}`;
-    }
+    const headers = isUsingLogin ? jsonAuthHeaders() : { 'Content-Type': 'application/json' };
 
     try {
       const response = await fetch('/api/' + basePath + '/' + postId + '/comments', {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import { AuthContext, TOKEN_KEY, shouldClearToken, type User, type AuthProvidersResponse } from './auth';
+import { TOKEN_KEY } from '@/lib/authToken';
+import { AuthContext, shouldClearToken, type User, type AuthProvidersResponse } from './auth';
 
 // 本檔只 export AuthProvider 元件；型別／context／useAuth 在 ./auth。
 
@@ -61,8 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const getToken = useCallback(() => localStorage.getItem(TOKEN_KEY), []);
-
   const loginWithOAuth = useCallback(async (provider: string, code: string, redirectUri: string) => {
     const res = await fetch(`/api/auth/${provider}/callback`, {
       method: 'POST',
@@ -118,7 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         providers,
-        getToken,
         loginWithOAuth,
         logout,
         getGoogleAuthUrl,

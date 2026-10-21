@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { authHeaders } from '@/lib/authToken';
 
 /** `GET /api/admin/posts` 的單列（型別由後端 Rust struct 生成）。 */
 type PostItem = AdminPostFull;
@@ -36,10 +37,9 @@ export default function PostsList() {
     if (!deleteId) return;
 
     try {
-      const token = localStorage.getItem('koimsurai_user_token');
       const response = await fetch(`/api/admin/posts/${deleteId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token ?? ''}` },
+        headers: authHeaders(),
       });
 
       if (response.ok) {

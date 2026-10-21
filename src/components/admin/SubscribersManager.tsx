@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { lookupOr } from '../../lib/tableLookup';
+import { jsonAuthHeaders } from '@/lib/authToken';
 
 /** `GET /api/newsletter/subscribers` 的單列，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
 type Subscriber = SubscriberRow;
@@ -63,13 +64,6 @@ export default function SubscribersManager() {
     sub: null,
   });
 
-  // 呼叫時才讀 token，不在 render 期讀：localStorage 是外部可變狀態，render 必須是純的
-  //（react-hooks/purity）。順帶修掉一個實質問題——原本 token 在 render 當下就固定了，
-  // session 中途重新登入會繼續帶舊的。
-  const authHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem('koimsurai_user_token') ?? ''}`,
-    'Content-Type': 'application/json',
-  });
   // 退訂/刪除等 mutation 後重抓兩把（prefix invalidate）
   const invalidateSubs = () => queryClient.invalidateQueries({ queryKey: ['admin', 'subscribers'] });
 
@@ -83,7 +77,7 @@ export default function SubscribersManager() {
     try {
       const res = await fetch('/api/newsletter/unsubscribe', {
         method: 'POST',
-        headers: authHeaders(),
+        headers: jsonAuthHeaders(),
         body: JSON.stringify({ email: sub.email }),
       });
       if (!res.ok) {
