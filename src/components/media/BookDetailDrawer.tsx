@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { BookRow } from '@koimsurai/api-types';
 
 import { useIsClient, useMediaQuery } from '@/hooks/useMediaQuery';
+import type { ThumbWidth } from '@/lib/api';
 import './BookDetailDrawer.css';
 
 /**
@@ -20,7 +21,7 @@ type Book = BookRow;
 interface Props {
   book: Book | null;
   onClose: () => void;
-  coverSrc: (url?: string | null) => string;
+  coverSrc: (url?: string | null, w?: ThumbWidth) => string;
 }
 
 const fmtDate = (d?: string | null) => (d ? new Date(d.slice(0, 10)).toLocaleDateString('zh-TW') : null);
@@ -105,7 +106,7 @@ export default function BookDetailDrawer({ book, onClose, coverSrc }: Props) {
 
             <div className="bd-hero">
               {book.cover_url ? (
-                <img className="bd-cover" src={coverSrc(book.cover_url)} alt="" />
+                <img className="bd-cover" src={coverSrc(book.cover_url, 384)} alt="" />
               ) : (
                 <div className="bd-cover bd-cover--empty" aria-hidden="true">
                   <FaBook />

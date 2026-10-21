@@ -13,6 +13,11 @@ describe('proxiedImage', () => {
     expect(proxiedImage('https://a.b/c.jpg').startsWith('/api/')).toBe(true);
   });
 
+  it('帶寬度就加上 w，讓後端縮圖', () => {
+    expect(proxiedImage('https://a.b/c.jpg', 128)).toBe('/api/image-proxy?url=https%3A%2F%2Fa.b%2Fc.jpg&w=128');
+    expect(proxiedImage(null, 128), '沒網址時不能變成只有 &w= 的半截網址').toBe('');
+  });
+
   it('沒有網址就回空字串', () => {
     expect(proxiedImage(null)).toBe('');
     expect(proxiedImage(undefined)).toBe('');

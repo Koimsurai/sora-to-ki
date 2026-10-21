@@ -215,7 +215,14 @@ const Bookshelf = () => {
                         onClick={() => setSelected(b)}
                       >
                         {b.cover_url ? (
-                          <img className="bs-row-cover" src={proxiedCover(b.cover_url)} alt="" loading="lazy" />
+                          <img
+                            className="bs-row-cover"
+                            src={proxiedCover(b.cover_url, 128)}
+                            alt=""
+                            width={36}
+                            height={54}
+                            loading="lazy"
+                          />
                         ) : (
                           <span className="bs-row-cover bs-row-cover--empty" aria-hidden="true">
                             <FaBook />

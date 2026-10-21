@@ -2,16 +2,7 @@
    BlogPost.css — 三欄佈局
    ═══════════════════════════════════════ */
 
-/* ── Variables ── */
-:root {
-  --post-accent: var(--brand);
-  --post-accent-glow: rgba(var(--brand-rgb), 0.35);
-  --post-green: var(--clr-tertiary);
-  --post-muted: var(--white-45);
-  --post-card-bg: var(--white-02);
-  --post-card-border: var(--white-06);
-  --post-page-bg: var(--surface-0);
-}
+/* --post-* 變數在 index.css 的 :root（InfoPage 與 LinkCard 也在用）。 */
 
 /* code block 與終端機視窗都要能被讀者選取複製（terminal-block 是 console/bash/sh 等語言
    的渲染路徑，先前漏了這條 override → 繼承上面 .post-content 的 none 而選不起來）。 */
@@ -679,12 +670,6 @@ a.series-nav-title:hover {
   padding-top: var(--space-2);
 }
 
-.toc-item.level-3,
-.toc-item.level-4 {
-  padding-left: var(--space-4);
-  font-size: var(--fs-12);
-}
-
 /* ═══════════════════════
    AI Summary — Inside card, gradient fade
    ═══════════════════════ */
@@ -1204,44 +1189,6 @@ a.series-nav-title:hover {
 }
 
 /* ═══════════════════════
-   Link Preview Cards
-   ═══════════════════════ */
-
-/* Link Card with text description above */
-.link-card-with-text {
-  margin: var(--space-2) 0;
-}
-
-/* YouTube card styling */
-.link-card-youtube {
-  border-color: rgba(var(--svc-youtube-rgb), 0.15);
-}
-
-/* GitHub card styling */
-.link-card-github {
-  border-color: var(--white-10);
-}
-
-/* Instagram card styling */
-.link-card-instagram {
-  border-color: rgba(var(--svc-instagram-rgb), 0.15);
-}
-
-/* Spotify card styling */
-.link-card-spotify {
-  border-color: rgba(var(--svc-spotify-rgb), 0.15);
-  padding: 0;
-  overflow: hidden;
-}
-
-/* Bilibili card styling */
-.link-card-bilibili {
-  border-color: rgba(var(--svc-bilibili-rgb), 0.15);
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* ═══════════════════════
    Floating Actions (right side)
    ═══════════════════════ */
 .floating-actions {
@@ -1722,27 +1669,6 @@ a.series-nav-title:hover {
    New Styles for Internal Links & TOC Fixes
    ═══════════════════════ */
 
-/* Internal Link Card */
-.link-card-internal {
-  border-color: rgba(var(--brand-rgb), 0.2);
-  background: rgba(var(--brand-rgb), 0.04);
-}
-/* ── SSR fallback 的 skeleton 載入（BlogPostPage 側欄/目錄用；FullBlogPost 載入後替換）── */
-@keyframes bp-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-.bp-skel {
-  border-radius: var(--r-4);
-  background: linear-gradient(90deg, var(--white-04) 25%, var(--white-08) 37%, var(--white-04) 63%);
-  background-size: 200% 100%;
-  animation: bp-shimmer 1.5s ease-in-out infinite;
-}
-
 /* ── 文章進場動畫（CSS 版，取代 LCP 關鍵路徑上的 JS 進場）──
    為什麼用 CSS 而不是 framer-motion：CSS 動畫在「第一幀 paint」就開始跑，不必等 JS hydrate；
    framer-motion 會把 initial 狀態（opacity:0）寫進 SSR HTML，內容要等 hydration 才顯示，
@@ -1788,14 +1714,6 @@ a.series-nav-title:hover {
 .posts-nav .side-item-in {
   animation: side-in-l 380ms var(--easing-out) backwards;
   animation-delay: calc(120ms + min(var(--i, 0) * 50ms, 600ms));
-}
-
-/* 站內連結卡的載入骨架：保留與真卡相近的高度 → 資料補上時不位移（主路徑已 SSR-real，
-   此骨架只在「連結指向 top-100 之外的文章」或非文章頁 reuse 時短暫出現）。 */
-.link-card-skeleton {
-  min-height: 110px; /* ≈ 真卡（padding + 3 行）高度 → 換成真卡時幾乎不位移 */
-  cursor: default;
-  pointer-events: none;
 }
 
 /* ── AI 翻譯提示 banner（非原文語系文章頂部）── */
