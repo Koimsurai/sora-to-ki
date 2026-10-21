@@ -192,6 +192,8 @@ pub struct BahamutState {
     pub last_jwt_alert_at: std::sync::atomic::AtomicI64,
     /// rotated cookie 持久化路徑（與 db 同目錄）。
     pub cookie_file: std::path::PathBuf,
+    /// 上一次嘗試自動登入的時間（ms）。冷卻用：登入失敗不要每次同步都去撞登入 API。
+    pub last_login_at: std::sync::atomic::AtomicI64,
 }
 
 // ── 測試支援 ──────────────────────────────────────────────────────────────
