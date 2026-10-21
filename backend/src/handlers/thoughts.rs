@@ -414,71 +414,53 @@ async fn enrich_media_ref(http: &reqwest::Client, json: &Map<String, Value>) -> 
             None => Value::Null,
         },
     );
-    let token = std::env::var("TMDB_API_TOKEN").unwrap_or_default();
-    if !token.is_empty()
+    if let Some(token) = crate::util::tmdb_token()
         && let Some(id) = &tmdb_id
+        && let Some(d) =
+            crate::util::tmdb_get_json(http, &token, &format!("/3/{mt}/{id}?language=zh-TW")).await
     {
-        let resp = http
-            .get(format!("{}/3/{mt}/{id}?language=zh-TW", crate::util::tmdb_api()))
-            .bearer_auth(&token)
-            .header("accept", "application/json")
-            .send()
-            .await;
-        if let Ok(r) = resp
-            && r.status().is_success()
-        {
-            // reqwest 未開 json feature，text + serde 解析
-            if let Ok(d) =
-                r.text().await.map_err(|_| ()).and_then(|t| serde_json::from_str::<Value>(&t).map_err(|_| ()))
-            {
-                let pick = |v: Option<&Value>| -> Option<String> {
-                    v.filter(|x| js_truthy(Some(x))).and_then(|x| x.as_str()).map(String::from)
-                };
-                let title = pick(json.get("title"))
-                    .or_else(|| pick(d.get("title")))
-                    .or_else(|| pick(d.get("name")))
-                    .unwrap_or_default();
-                out.insert("title".into(), Value::from(title));
-                out.insert("overview".into(), Value::from(pick(d.get("overview")).unwrap_or_default()));
-                let rating = d
-                    .get("vote_average")
-                    .and_then(serde_json::Value::as_f64)
-                    .filter(|&v| v != 0.0)
-                    .map(|v| format!("{v:.1}"));
-                out.insert("rating".into(), rating.map_or(Value::Null, Value::from));
-                let genres = d
-                    .get("genres")
-                    .and_then(|g| g.as_array())
-                    .map(|a| {
-                        a.iter()
-                            .filter_map(|g| g.get("name").and_then(|n| n.as_str()))
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    })
-                    .filter(|s| !s.is_empty());
-                out.insert("genres".into(), genres.map_or(Value::Null, Value::from));
-                // (release_date || first_air_date || '').slice(0,4) || json.year || null
-                let date =
-                    pick(d.get("release_date")).or_else(|| pick(d.get("first_air_date"))).unwrap_or_default();
-                let y: String = date.chars().take(4).collect();
-                let year = if !y.is_empty() {
-                    Value::from(y)
-                } else if js_truthy(json.get("year")) {
-                    json.get("year").cloned().unwrap_or(Value::Null)
-                } else {
-                    Value::Null
-                };
-                out.insert("year".into(), year);
-                let poster = if js_truthy(json.get("poster")) {
-                    json.get("poster").cloned().unwrap_or(Value::Null)
-                } else if let Some(p) = pick(d.get("poster_path")) {
-                    Value::from(format!("https://image.tmdb.org/t/p/w500{p}"))
-                } else {
-                    Value::Null
-                };
-                out.insert("poster".into(), poster);
-            }
-        }
+        let pick = |v: Option<&Value>| -> Option<String> {
+            v.filter(|x| js_truthy(Some(x))).and_then(|x| x.as_str()).map(String::from)
+        };
+        let title = pick(json.get("title"))
+            .or_else(|| pick(d.get("title")))
+            .or_else(|| pick(d.get("name")))
+            .unwrap_or_default();
+        out.insert("title".into(), Value::from(title));
+        out.insert("overview".into(), Value::from(pick(d.get("overview")).unwrap_or_default()));
+        let rating = d
+            .get("vote_average")
+            .and_then(serde_json::Value::as_f64)
+            .filter(|&v| v != 0.0)
+            .map(|v| format!("{v:.1}"));
+        out.insert("rating".into(), rating.map_or(Value::Null, Value::from));
+        let genres = d
+            .get("genres")
+            .and_then(|g| g.as_array())
+            .map(|a| {
+                a.iter().filter_map(|g| g.get("name").and_then(|n| n.as_str())).collect::<Vec<_>>().join(", ")
+            })
+            .filter(|s| !s.is_empty());
+        out.insert("genres".into(), genres.map_or(Value::Null, Value::from));
+        // (release_date || first_air_date || '').slice(0,4) || json.year || null
+        let date = pick(d.get("release_date")).or_else(|| pick(d.get("first_air_date"))).unwrap_or_default();
+        let y: String = date.chars().take(4).collect();
+        let year = if !y.is_empty() {
+            Value::from(y)
+        } else if js_truthy(json.get("year")) {
+            json.get("year").cloned().unwrap_or(Value::Null)
+        } else {
+            Value::Null
+        };
+        out.insert("year".into(), year);
+        let poster = if js_truthy(json.get("poster")) {
+            json.get("poster").cloned().unwrap_or(Value::Null)
+        } else if let Some(p) = pick(d.get("poster_path")) {
+            Value::from(format!("https://image.tmdb.org/t/p/w500{p}"))
+        } else {
+            Value::Null
+        };
+        out.insert("poster".into(), poster);
     }
     out
 }
@@ -640,7 +622,7 @@ pub async fn admin_delete_thought(
 #[utoipa::path(get, path = "/api/thoughts/rss", tag = "thoughts",
     responses((status = 200, description = "碎念 RSS feed（XML）")))]
 pub async fn thoughts_rss(State(state): State<AppState>) -> Response {
-    use crate::util::{js_date_to_utc_string, js_interp, js_substring_prefix, js_truthy, xml_esc};
+    use crate::util::{escape_html, js_date_to_utc_string, js_interp, js_substring_prefix, js_truthy};
     type Row = (i64, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>);
     let rows = sqlx::query_as::<_, Row>(
         "SELECT id, content, ref_type, ref_url, ref_json, created_at FROM thoughts \
@@ -685,12 +667,12 @@ pub async fn thoughts_rss(State(state): State<AppState>) -> Response {
             }
         }
         // title = esc((content||'').slice(0,60))
-        let title_esc = xml_esc(&js_substring_prefix(&content_str, 60));
+        let title_esc = escape_html(&js_substring_prefix(&content_str, 60));
         let pub_date = js_date_to_utc_string(created_at.as_deref());
         let _ = write!(
             items,
             "<item><title>{title_esc}</title><link>{link}</link><guid>{link}</guid><pubDate>{pub_date}</pubDate><description>{}</description></item>",
-            xml_esc(&desc)
+            escape_html(&desc)
         );
     }
     let xml = format!(

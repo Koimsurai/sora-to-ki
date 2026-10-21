@@ -12,16 +12,11 @@ use axum::{
 
 use crate::handlers::posts::{locale_suffix, parse_locale};
 use crate::state::AppState;
-use crate::util::{js_date_to_utc_string, js_substring_prefix};
+use crate::util::{escape_html, js_date_to_utc_string, js_substring_prefix};
 
 #[derive(serde::Deserialize)]
 pub struct RssQuery {
     lang: Option<String>,
-}
-
-/// escXml（/rss 版）：& < > "（**不含 '**，與 og 的 5-char 版不同，照抄）。
-fn esc_xml(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
 #[utoipa::path(get, path = "/rss", tag = "misc",
@@ -116,21 +111,21 @@ pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) 
                 .split(',')
                 .filter(|t| !t.trim().is_empty())
                 .fold(String::new(), |mut acc, t| {
-                    let _ = write!(acc, "<category>{}</category>", esc_xml(t.trim()));
+                    let _ = write!(acc, "<category>{}</category>", escape_html(t.trim()));
                     acc
                 });
             let cat_line = category
                 .as_deref()
                 .filter(|c| !c.is_empty())
-                .map(|c| format!("<category>{}</category>", esc_xml(c)))
+                .map(|c| format!("<category>{}</category>", escape_html(c)))
                 .unwrap_or_default();
             let ident = slug.as_deref().filter(|s| !s.is_empty()).map_or_else(|| id.to_string(), str::to_string);
             let link = format!("{site_url}{url_prefix}/blog/{ident}");
             format!(
                 "    <item>\n      <title>{}</title>\n      <link>{link}</link>\n      <guid isPermaLink=\"true\">{link}</guid>\n      <description>{}</description>\n      <author>{}</author>\n      <pubDate>{}</pubDate>\n      {}\n      {}\n    </item>",
-                esc_xml(title.as_deref().unwrap_or("")),
-                esc_xml(&desc),
-                esc_xml(author.as_deref().filter(|a| !a.is_empty()).unwrap_or("Koimsurai")),
+                escape_html(title.as_deref().unwrap_or("")),
+                escape_html(&desc),
+                escape_html(author.as_deref().filter(|a| !a.is_empty()).unwrap_or("Koimsurai")),
                 js_date_to_utc_string(created_at.as_deref()),
                 cat_line,
                 cats,

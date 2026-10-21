@@ -194,7 +194,10 @@ fn signed_image_expiry(url: &str) -> Option<i64> {
     None
 }
 
-/// `20260803T110407Z` → Unix 秒。這個格式是 SigV4 固定的，不必拉進日期函式庫。
+/// `20260803T110407Z` → Unix 秒。
+///
+/// 欄位自己切而不用 chrono 的 `parse_from_str`：後者會擋掉 2/31、把 `60` 秒當閏秒
+/// 折回 59，跟原本「日只驗 1..=31、秒數直接加」的語意不同。
 fn parse_sigv4_date(s: &str) -> Option<i64> {
     let b = s.as_bytes();
     if b.len() != 16 || b[8] != b'T' || b[15] != b'Z' {
@@ -206,13 +209,8 @@ fn parse_sigv4_date(s: &str) -> Option<i64> {
     if !(1..=12).contains(&mo) || !(1..=31).contains(&d) || h > 23 || mi > 59 || sec > 60 {
         return None;
     }
-    // civil date → 天數（Howard Hinnant 的 days_from_civil，UTC 無時區問題）
-    let y_adj = if mo <= 2 { y - 1 } else { y };
-    let era = if y_adj >= 0 { y_adj } else { y_adj - 399 } / 400;
-    let yoe = y_adj - era * 400;
-    let doy = (153 * (mo + if mo > 2 { -3 } else { 9 }) + 2) / 5 + d - 1;
-    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    let days = era * 146_097 + doe - 719_468;
+    // 範圍上一行已經驗過，轉 u32 不會失敗
+    let days = crate::util::days_from_civil(y, u32::try_from(mo).ok()?, u32::try_from(d).ok()?)?;
     Some(days * 86_400 + h * 3600 + mi * 60 + sec)
 }
 
@@ -662,17 +660,7 @@ mod tests {
 
     /// Unix 秒 → SigV4 的 `YYYYMMDDThhmmssZ`（`parse_sigv4_date` 的反函式，測試用）。
     fn sigv4_at(epoch: i64) -> String {
-        let (days, rem) = (epoch.div_euclid(86_400), epoch.rem_euclid(86_400));
-        let z = days + 719_468;
-        let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-        let doe = z - era * 146_097;
-        let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-        let mp = (5 * doy + 2) / 153;
-        let d = doy - (153 * mp + 2) / 5 + 1;
-        let m = if mp < 10 { mp + 3 } else { mp - 9 };
-        let y = yoe + era * 400 + i64::from(m <= 2);
-        format!("{y:04}{m:02}{d:02}T{:02}{:02}{:02}Z", rem / 3600, (rem % 3600) / 60, rem % 60)
+        chrono::DateTime::from_timestamp(epoch, 0).unwrap().format("%Y%m%dT%H%M%SZ").to_string()
     }
 
     #[test]

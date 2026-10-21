@@ -29,8 +29,9 @@ dotenvy = "0.15"
 jsonwebtoken = { version = "11.0", features = ["rust_crypto"] }
 # bcrypt 驗密碼，相容 Express 的 bcryptjs（$2a/$2b/$2y）
 bcrypt = "0.19"
-# proxy fallback 用：把未接管的請求原樣轉回 Express；stream 給 /image-proxy 串流代理
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+# 對外 HTTP 都走它。stream 給 /image-proxy 串流代理；json 只是 serde_json 的薄包裝
+# （serde_json 本來就是相依），換來 `resp.json()` / `.json(&body)`，不必每處自己 text→from_str。
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream", "json"] }
 # unfurl（og meta 抽取）用，複製 Express 的 regex
 regex = "1"
 # newsletter unsubscribe token（crypto.randomBytes(16).hex 等價）

@@ -14,6 +14,31 @@ pub fn tmdb_api() -> String {
         .unwrap_or_else(|| "https://api.themoviedb.org".into())
 }
 
+/// `TMDB_API_TOKEN`；空字串視同沒設。沒設時呼叫端一律不對外發請求（各自有退路）。
+pub fn tmdb_token() -> Option<String> {
+    std::env::var("TMDB_API_TOKEN").ok().filter(|s| !s.is_empty())
+}
+
+/// TMDb v3 的 GET（bearer + accept json）。`path_and_query` 以 `/3/` 開頭、query 由呼叫端編好。
+///
+/// 只回 builder 而不直接送：watch 的搜尋端點要把錯誤訊息原樣回給前端，跟
+/// [`tmdb_get_json`] 那種「失敗就當沒有」的語意不同。
+pub fn tmdb_request(http: &reqwest::Client, token: &str, path_and_query: &str) -> reqwest::RequestBuilder {
+    http.get(format!("{}{path_and_query}", tmdb_api()))
+        .bearer_auth(token)
+        .header("accept", "application/json")
+}
+
+/// 非 2xx、連不上、回應不是 JSON 一律 None——呼叫端（劇名搜尋、詳情補圖）都只是補資料，
+/// 拿不到就照沒有 TMDb 的版本走。數字**不**做 JS 正規化，需要的呼叫端自己做。
+pub async fn tmdb_get_json(http: &reqwest::Client, token: &str, path_and_query: &str) -> Option<Value> {
+    let resp = tmdb_request(http, token, path_and_query).send().await.ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    resp.json().await.ok()
+}
+
 /// Unix epoch 至今的毫秒數。
 ///
 /// 這裡刻意做成共用：`fn now_ms()` 原本在 gallery / spotify / bahamut / watch /
@@ -274,40 +299,45 @@ pub fn js_normalize_numbers(v: &mut Value) {
     }
 }
 
-/// Howard Hinnant 的 `civil_from_days`：距 1970-01-01 的天數 → (年, 月, 日)。
+/// (年, 月, 日) → 距 1970-01-01 的天數。年份超出 chrono 的範圍（約 ±26 萬年）回 None。
 ///
-/// 這份原本在 util.rs 與 handlers/thirdparty.rs 各有一份**逐字相同**的拷貝。
-/// 手刻的曆法算式最怕的就是這個：兩份會慢慢長得不一樣，而且錯了不會爆——
-/// 只會讓某個日期差一天。合併成一份之後，`date_tests` 那條「逐日對照 chrono
-/// 走完 1900–2200」同時罩得到兩邊的呼叫者。
-pub const fn civil_from_days(z: i64) -> (i64, u32, u32) {
-    let z = z + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    // Howard Hinnant 的 civil_from_days：doy ∈ 0..=365、mp ∈ 0..=11，所以 d ∈ 1..=31、
-    // m ∈ 1..=12——兩者都是演算法本身保證的值域，不是「應該不會超過」。
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "值域由演算法保證")]
-    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "值域由演算法保證")]
-    let m = (if mp < 10 { mp + 3 } else { mp - 9 }) as u32;
-    (if m <= 2 { y + 1 } else { y }, m, d)
+/// 日**不驗該月有幾天**：2/31 算成 3/3。兩個呼叫端（RSS 的 pubDate、SigV4 簽章時刻）
+/// 原本各自手刻的 days_from_civil 就是這個語意，所以這裡只拿 chrono 定位該月一號、
+/// 日數用加的；直接 `from_ymd_opt(y, mo, d)` 會把那些輸入變成 None。
+pub fn days_from_civil(y: i64, mo: u32, d: u32) -> Option<i64> {
+    let first = chrono::NaiveDate::from_ymd_opt(i32::try_from(y).ok()?, mo, 1)?;
+    Some(i64::from(first.to_epoch_days()) + i64::from(d) - 1)
 }
 
 /// epoch ms → `YYYY-MM-DDTHH:MM:SS.mmmZ`（JS `new Date(ms).toISOString()`）。
+///
+/// 年份寫 `{:04}` 而不是 chrono 的 `%Y`：後者在 0–9999 以外會自己加正負號。
+/// 超出 chrono 能表示的範圍回 `"Invalid Date"`（只有上游給了荒謬的時間戳才會走到）。
 pub fn iso_from_millis(ms: i64) -> String {
-    let rem = ms.rem_euclid(86_400_000);
-    let (year, m, d) = civil_from_days(ms.div_euclid(86_400_000));
-    let (h, mi, s, mil) = (rem / 3_600_000, rem % 3_600_000 / 60_000, rem % 60_000 / 1000, rem % 1000);
-    format!("{year:04}-{m:02}-{d:02}T{h:02}:{mi:02}:{s:02}.{mil:03}Z")
+    use chrono::Datelike;
+    let Some(dt) = chrono::DateTime::from_timestamp_millis(ms) else { return "Invalid Date".to_string() };
+    format!("{:04}{}", dt.year(), dt.format("-%m-%dT%H:%M:%S%.3fZ"))
 }
 
-/// XML/HTML escape 對齊 Express `/thoughts/rss` 的 `esc`：只轉 `& < >`（且 `&` 先，避免二次轉義）。
-pub fn xml_esc(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+/// 把字串安全地放進 HTML／XML 的文字節點或屬性值：`& < > " '` 五個都轉。
+///
+/// 全站只有這一支。原本 RSS（兩份，各轉 3 與 4 個字元）、電子報、OG 圖各有一份，
+/// 差別只在引號轉不轉——而少轉的那幾份只要有一天被拿去塞屬性值就是注入點。
+/// 多轉引號在文字節點裡完全無害（`&quot;`／`&#39;` 在 XML 與 HTML 都合法），
+/// 所以統一成最嚴的版本。單引號用 `&#39;` 而不是 `&apos;`：後者 HTML4 不認得。
+pub fn escape_html(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            '\'' => out.push_str("&#39;"),
+            _ => out.push(c),
+        }
+    }
+    out
 }
 
 /// `new Date(String(created_at).replace(' ','T')+'Z').toUTCString()` 等價。
@@ -335,32 +365,21 @@ pub fn js_date_to_utc_string(created_at: Option<&str>) -> String {
         }
         Some((y, mo, d, h, mi, se))
     };
+    use chrono::Datelike;
     let Some((y, mo, d, h, mi, se)) = parse() else {
         return "Invalid Date".to_string();
     };
-    // days_from_civil（Howard Hinnant）→ 距 1970-01-01 天數 → 星期
-    let yy = if mo <= 2 { y - 1 } else { y };
-    let era = if yy >= 0 { yy } else { yy - 399 } / 400;
-    let yoe = yy - era * 400;
-    let mp = if mo > 2 { i64::from(mo) - 3 } else { i64::from(mo) + 9 };
-    let doy = (153 * mp + 2) / 5 + i64::from(d) - 1;
-    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
-    let days = era * 146_097 + doe - 719_468;
-    // 1970-01-01 = Thu(4)；Sunday=0。
-    //
-    // ⚠️ `cargo mutants` 會回報這兩行有三個「存活」的變異（`era * 146_097` → `/`、
-    // 以及兩個 `%` → `+`）。那三個是**等價變異**，不是測試漏掉：
-    //   - 146_097 = 20871 × 7，格里曆 400 年週期剛好是整數週，所以 `era * 146_097`
-    //     對 dow 的貢獻恆為 0 mod 7；而 `days` 只被 dow 用到。
-    //   - `(days % 7 + 4) % 7` 與 `(days + 11) % 7` 同餘且正規化區間相同。
-    // 不必為了讓分數好看而去寫測試——寫不出能分辨的輸入。
-    // 三重取模後值域是 0..=6，索引 DOW 不會越界也不會是負的
-    #[allow(clippy::cast_sign_loss, reason = "((x%7+4)%7+7)%7 的值域是 0..=6")]
-    let dow = (((days % 7 + 4) % 7 + 7) % 7) as usize;
-    const DOW: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    // 星期取自「加完日數」的那一天，月份名與日則照輸入原樣印（2/31 印成 31 Feb）
+    let weekday = days_from_civil(y, mo, d)
+        .and_then(|n| i32::try_from(n).ok())
+        .and_then(chrono::NaiveDate::from_epoch_days)
+        .map(|date| date.weekday());
+    let Some(wd) = weekday else {
+        return "Invalid Date".to_string();
+    };
     const MON: [&str; 12] =
         ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    format!("{}, {:02} {} {:04} {:02}:{:02}:{:02} GMT", DOW[dow], d, MON[(mo - 1) as usize], y, h, mi, se)
+    format!("{wd}, {d:02} {} {y:04} {h:02}:{mi:02}:{se:02} GMT", MON[(mo - 1) as usize])
 }
 
 #[cfg(test)]
@@ -476,17 +495,13 @@ mod value_tests {
 mod date_tests {
     use super::*;
 
-    // `iso_from_millis` 與 `js_date_to_utc_string` 各自手刻了一份曆法換算
-    // （Howard Hinnant 的 days_from_civil / civil_from_days）。這種程式錯了不會爆，
+    // 曆法本身交給 chrono；這裡守的是我們疊在上面的那層：年份的 `{:04}`、
+    // 不驗月份天數的 days_from_civil、星期與月份名的拼接。這些錯了不會爆，
     // 只會讓 RSS 的 pubDate 差一天或星期寫錯——閱讀器多半照收，於是沒有人會發現。
-    //
-    // chrono 本來就是直接依賴，拿它當對照組比手挑案例可靠：下面兩條 property
-    // 掃的是「兩百年份 × 每一天 × 每一秒」的空間，閏年、閏世紀、月末都在裡面。
 
     #[test]
     fn iso_from_millis_的_epoch_與負數邊界() {
         assert_eq!(iso_from_millis(0), "1970-01-01T00:00:00.000Z");
-        // 這條是給 div_euclid 的：用一般的 `/` 與 `%`，-1 會算成 1970-01-01T00:00:00.-001Z
         assert_eq!(iso_from_millis(-1), "1969-12-31T23:59:59.999Z");
         assert_eq!(iso_from_millis(-86_400_000), "1969-12-31T00:00:00.000Z");
         assert_eq!(iso_from_millis(1_709_164_800_000), "2024-02-29T00:00:00.000Z", "閏日");
@@ -515,13 +530,9 @@ mod date_tests {
 
     #[test]
     fn js_date_to_utc_string_算得出西元零年附近的星期() {
-        // `era = if yy >= 0 { yy } else { yy - 399 } / 400` 的 else 分支只有 y <= 0 會走到
-        // （Rust 的整數除法向零截斷，負數要先減 399 才等同向下取整）。
-        // 正式資料不會有這種日期，但那個分支寫錯就是靜靜地算錯——留兩個定樁。
-        // 對照組一樣是 chrono，不手寫預期值——下面的 property test 掃不到這裡，
-        // 是因為它的年份範圍取 1900..2200（讓 uniform 取樣真的掃得到每一年）。
-        // 西元前的年份只能經由 y=0 且 mo<=2 走到那條分支——負年份的**字串**（"-001-06-15"）
-        // 解不出來是對的：開頭的 `-` 會被當成日期分隔符，回 Invalid Date。
+        // 下面的 property test 年份取 1900..2200，掃不到這裡，所以留幾個定樁。
+        // 負年份的**字串**（"-001-06-15"）解不出來是對的：開頭的 `-` 會被當成日期分隔符，
+        // 回 Invalid Date。
         for (y, mo, d) in [(0, 1, 1), (0, 2, 29), (0, 3, 1), (0, 12, 31), (1, 1, 1)] {
             let input = format!("{y:04}-{mo:02}-{d:02} 00:00:00");
             let want = chrono::NaiveDate::from_ymd_opt(y, mo, d)
@@ -546,39 +557,22 @@ mod date_tests {
     }
 
     #[test]
-    fn xml_esc_先換_and_才不會二次轉義() {
-        assert_eq!(xml_esc("a & b"), "a &amp; b");
-        assert_eq!(xml_esc("<b>x</b>"), "&lt;b&gt;x&lt;/b&gt;");
-        // 若順序反過來（先換 < 再換 &），這個結果會變成 &amp;lt;
-        assert_eq!(xml_esc("<"), "&lt;");
-        assert_eq!(xml_esc("&amp;"), "&amp;amp;", "輸入本來就是實體時照樣再轉一次（同 Express）");
-        // 引號與撇號不轉——這是 Express 的 esc 行為，寫下來免得有人「順手補齊」
-        assert_eq!(xml_esc("\"'"), "\"'");
+    fn escape_html_轉五個字元且不二次轉義() {
+        assert_eq!(escape_html(r#"a&b<c>d"e'f"#), "a&amp;b&lt;c&gt;d&quot;e&#39;f");
+        assert_eq!(escape_html("<b>x</b>"), "&lt;b&gt;x&lt;/b&gt;");
+        // 逐字元一次轉完，不會有「先換 < 再換 &」變成 &amp;lt; 的順序問題
+        assert_eq!(escape_html("<"), "&lt;");
+        assert_eq!(escape_html("&amp;"), "&amp;amp;", "輸入本來就是實體時照樣再轉一次");
+        assert_eq!(escape_html("中文不動"), "中文不動");
     }
 
-    /// 逐日走完 1900–2200，兩支換算都跟 chrono 對字。
-    ///
-    /// 為什麼不只靠下面的 proptest：`doe / 36_524`（世紀閏年修正）那一項改壞之後，
-    /// 絕大多數日子的結果**不變**——只有世紀交界前後那幾天會發散。256 次均勻取樣
-    /// 掃到的機率極低，實測 `cargo mutants` 就是這樣讓它活下來的。日期空間只有十萬個，
-    /// 與其想辦法引導取樣，不如整個走完。
+    /// 不驗月份天數是刻意保留的語意（見 [`days_from_civil`]）：2/31 等於 3/3，
+    /// 星期跟著 3/3 走，但印出來的仍是輸入的「31 Feb」。
     #[test]
-    fn 曆法換算逐日對齊_chrono() {
-        let end = chrono::NaiveDate::from_ymd_opt(2200, 1, 1).unwrap();
-        let mut day = chrono::NaiveDate::from_ymd_opt(1900, 1, 1).unwrap();
-        while day < end {
-            // 取一個非午夜的時間，順便讓時分秒的拆解也走過每一天
-            let dt = day.and_hms_opt(13, 45, 30).unwrap();
-            let ms = dt.and_utc().timestamp_millis();
-            assert_eq!(iso_from_millis(ms), dt.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(), "{day}");
-            let input = dt.format("%Y-%m-%d %H:%M:%S").to_string();
-            assert_eq!(
-                js_date_to_utc_string(Some(&input)),
-                dt.format("%a, %d %b %Y %H:%M:%S GMT").to_string(),
-                "{day}"
-            );
-            day = day.succ_opt().unwrap();
-        }
+    fn 月份天數溢出時順延到下個月() {
+        assert_eq!(days_from_civil(2026, 2, 31), days_from_civil(2026, 3, 3));
+        assert_eq!(days_from_civil(1970, 1, 1), Some(0));
+        assert_eq!(js_date_to_utc_string(Some("2026-02-31 00:00:00")), "Tue, 31 Feb 2026 00:00:00 GMT");
     }
 
     proptest::proptest! {

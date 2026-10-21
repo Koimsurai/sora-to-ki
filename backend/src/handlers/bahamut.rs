@@ -185,8 +185,7 @@ async fn notify_discord(state: &AppState, content: &str) {
     let _ = state
         .http
         .post(&url)
-        .header("content-type", "application/json")
-        .body(serde_json::to_string(&json!({ "content": content })).unwrap_or_default())
+        .json(&json!({ "content": content }))
         .timeout(Duration::from_secs(8))
         .send()
         .await;
@@ -261,21 +260,11 @@ async fn tmdb_search_tv_id(state: &AppState, token: &str, title: &str) -> Option
         let http = state.http.clone();
         let token = token.to_string();
         async move {
-            let resp = http
-                .get(format!(
-                    "{}/3/search/tv?query={}&language=zh-TW&include_adult=false",
-                    crate::util::tmdb_api(),
-                    crate::util::encode_uri_component(&query)
-                ))
-                .bearer_auth(&token)
-                .header("accept", "application/json")
-                .send()
-                .await
-                .ok()?;
-            if !resp.status().is_success() {
-                return None;
-            }
-            let j: Value = serde_json::from_str(&resp.text().await.ok()?).ok()?;
+            let path = format!(
+                "/3/search/tv?query={}&language=zh-TW&include_adult=false",
+                crate::util::encode_uri_component(&query)
+            );
+            let j = crate::util::tmdb_get_json(&http, &token, &path).await?;
             j.pointer("/results/0/id").and_then(serde_json::Value::as_i64)
         }
     };
@@ -290,7 +279,7 @@ async fn tmdb_search_tv_id(state: &AppState, token: &str, title: &str) -> Option
 }
 
 async fn enrich_null_anime(state: &AppState) {
-    let Some(token) = std::env::var("TMDB_API_TOKEN").ok().filter(|s| !s.is_empty()) else { return };
+    let Some(token) = crate::util::tmdb_token() else { return };
     let rows = sqlx::query_as::<_, (i64, Option<String>)>(
         "SELECT anime_sn, MAX(title) AS title FROM anime_history WHERE tmdb_id IS NULL GROUP BY anime_sn",
     )
@@ -371,7 +360,7 @@ async fn relogin(state: &AppState) -> Result<(), String> {
         .filter_map(|v| v.to_str().ok().map(String::from))
         .collect();
     let status = resp.status();
-    let body: Value = serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or(Value::Null);
+    let body: Value = resp.json().await.unwrap_or(Value::Null);
 
     // 先只看這次回應給了什麼：直接併進舊 jar 再檢查的話，舊的 BAHARUNE 本來就在，
     // 登入失敗也會被當成成功（測試抓到的）
@@ -582,21 +571,11 @@ pub async fn sync_bahamut_history(state: &AppState) -> Value {
 }
 
 /// 啟動 bahamut 同步 worker（`ENABLE_BAHAMUT_SYNC=1` 才啟動；30s 首跑 + 6h 週期）。
-pub fn spawn_sync(state: AppState) {
-    let enabled =
-        std::env::var("ENABLE_BAHAMUT_SYNC").is_ok_and(|v| v == "1" || v.eq_ignore_ascii_case("true"));
-    if !enabled {
-        tracing::info!("[Bahamut] sync worker disabled (ENABLE_BAHAMUT_SYNC unset) — Express cron 仍為寫者");
-        return;
-    }
-    let delay = std::env::var("BAHAMUT_SYNC_DELAY_SECS").ok().and_then(|v| v.parse().ok()).unwrap_or(30u64);
-    tokio::spawn(async move {
-        tokio::time::sleep(Duration::from_secs(delay)).await;
-        loop {
-            let _ = sync_bahamut_history(&state).await;
-            tokio::time::sleep(Duration::from_hours(6)).await;
-        }
-    });
+pub fn spawn_sync(state: AppState) -> Option<tokio::task::JoinHandle<()>> {
+    let delay = crate::worker::env_secs("BAHAMUT_SYNC_DELAY_SECS", 30);
+    crate::worker::spawn_periodic(state, "Bahamut", "ENABLE_BAHAMUT_SYNC", delay, 6 * 3600, |s| async move {
+        let _ = sync_bahamut_history(&s).await;
+    })
 }
 
 #[cfg(test)]

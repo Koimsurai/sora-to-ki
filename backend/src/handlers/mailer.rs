@@ -16,7 +16,7 @@ use axum::{
 };
 use serde_json::{Map, Value, json};
 
-use crate::util::encode_uri_component;
+use crate::util::{encode_uri_component, escape_html};
 use crate::{auth::require_admin, state::AppState};
 
 const BATCH_SIZE: usize = 100;
@@ -35,15 +35,6 @@ fn public_site_url() -> String {
 fn resend_base_url() -> String {
     // 對齊 SDK：process.env.RESEND_BASE_URL || 'https://api.resend.com'
     env_or("RESEND_BASE_URL", "https://api.resend.com")
-}
-
-/// escapeHtml：& < > " ' → 實體（& 先）。
-fn escape_html(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
-        .replace('"', "&quot;")
-        .replace('\'', "&#39;")
 }
 
 fn post_url(site: &str, post_id: &Value) -> String {
@@ -218,9 +209,8 @@ async fn send_newsletter(state: &AppState, post: &Post, subs: &[Sub]) -> (i64, i
             .http
             .post(format!("{base}/emails/batch"))
             .header("Authorization", format!("Bearer {key}"))
-            .header("Content-Type", "application/json")
             .header("x-batch-validation", "strict")
-            .body(serde_json::to_string(&Value::Array(payload)).unwrap_or_default())
+            .json(&payload)
             .send()
             .await;
         match resp {

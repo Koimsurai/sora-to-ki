@@ -583,8 +583,7 @@ async fn tag_photo(state: &AppState, tagger_path: &str) -> Option<(Vec<String>, 
     let resp = state
         .http
         .post(format!("{}/tag", photo_tagger_url()))
-        .header("Content-Type", "application/json")
-        .body(serde_json::json!({ "path": tagger_path }).to_string())
+        .json(&serde_json::json!({ "path": tagger_path }))
         .timeout(std::time::Duration::from_millis(timeout_ms))
         .send()
         .await
@@ -592,7 +591,7 @@ async fn tag_photo(state: &AppState, tagger_path: &str) -> Option<(Vec<String>, 
     if !resp.status().is_success() {
         return None;
     }
-    let data: Value = serde_json::from_str(&resp.text().await.ok()?).ok()?;
+    let data: Value = resp.json().await.ok()?;
     // 標籤一律當字串收：tagger 回非字串（理論上不會）就丟掉那一個，而不是讓
     // manifest 裡混進一個前端 renderer 處理不了的值。
     let arr = |k: &str| {

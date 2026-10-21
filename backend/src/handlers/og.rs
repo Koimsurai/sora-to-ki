@@ -35,28 +35,12 @@ use parking_lot::Mutex;
 use takumi::prelude::*;
 
 use crate::state::AppState;
+// 模板是字串組裝，所以標題仍然要轉義——這點跟 SVG 時代一樣。
+// （改用 node tree 就不需要，但那樣模板會變成一大串 builder 呼叫，比較難讀。）
+use crate::util::escape_html;
 
 const OG_WIDTH: u32 = 1200;
 const OG_HEIGHT: u32 = 630;
-
-/// HTML 屬性／文字節點的轉義。
-///
-/// 模板是字串組裝，所以標題仍然要轉義——這點跟 SVG 時代一樣。
-/// （改用 node tree 就不需要，但那樣模板會變成一大串 builder 呼叫，比較難讀。）
-fn esc_html(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for c in s.chars() {
-        match c {
-            '&' => out.push_str("&amp;"),
-            '<' => out.push_str("&lt;"),
-            '>' => out.push_str("&gt;"),
-            '"' => out.push_str("&quot;"),
-            '\'' => out.push_str("&#39;"),
-            _ => out.push(c),
-        }
-    }
-    out
-}
 
 /// OG 卡片的 HTML。
 ///
@@ -99,9 +83,9 @@ fn build_html(title: &str, category: Option<&str>, date: &str) -> String {
       background-clip:text; color:transparent;">Koimsurai</div>
   </div>
 </div>"#,
-        cat = esc_html(&cat.to_uppercase()),
-        title = esc_html(title.trim()),
-        date = esc_html(date),
+        cat = escape_html(&cat.to_uppercase()),
+        title = escape_html(title.trim()),
+        date = escape_html(date),
     )
 }
 
@@ -301,11 +285,6 @@ mod tests {
         assert_eq!(a, fnv1a("1::2026-08-03 20:00:00::公開文章"));
         // 空字串也要能算（沒有標題、沒有時間戳的文章）
         assert_ne!(fnv1a(""), fnv1a("1::::"));
-    }
-
-    #[test]
-    fn esc_html_轉義五個特殊字元() {
-        assert_eq!(esc_html(r#"a&b<c>d"e'f"#), "a&amp;b&lt;c&gt;d&quot;e&#39;f");
     }
 
     /// 標題直接來自使用者輸入，`</div>` 之類的東西不能把模板打斷。

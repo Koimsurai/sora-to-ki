@@ -34,45 +34,39 @@ const MAX_BODY: usize = 200 * 1024;
 /// CSP report 依規格很小（一個 JSON 物件）。給 16KB 綽綽有餘。
 const MAX_CSP_BODY: usize = 16 * 1024;
 
-/// 從 DSN 拆出轉發需要的三件事。
+/// DSN（`http://<public_key>@<host>:<port>/<project_id>`），解析交給 Sentry SDK 自己的型別。
 ///
-/// DSN 形狀：`http://<public_key>@<host>:<port>/<project_id>`
+/// SDK 的版本比我們要的寬：project id 收任意非空字串，也收 `/<前綴>/<id>` 這種帶路徑前綴的
+/// 形狀。這兩種在這裡都要拒絕——轉發網址是用它拼出來的，放行的話會拼成奇怪的路徑打到內網的別處。
 #[derive(Debug, Clone)]
-pub struct Dsn {
-    pub public_key: String,
-    /// 已含 scheme 與 host:port，例如 `http://glitchtip:8000`
-    pub origin: String,
-    pub project_id: String,
-}
+pub struct Dsn(sentry::types::Dsn);
 
 impl Dsn {
     pub fn parse(raw: &str) -> Option<Self> {
-        let url = reqwest::Url::parse(raw).ok()?;
-        let public_key = url.username().to_string();
-        if public_key.is_empty() {
+        let dsn: sentry::types::Dsn = raw.parse().ok()?;
+        let id = dsn.project_id().value();
+        if dsn.path() != "/" || !id.bytes().all(|b| b.is_ascii_digit()) {
             return None;
         }
-        let project_id = url.path().trim_matches('/').to_string();
-        if project_id.is_empty() || !project_id.bytes().all(|b| b.is_ascii_digit()) {
-            return None;
-        }
-        let host = url.host_str()?;
-        let origin = match url.port() {
-            Some(p) => format!("{}://{host}:{p}", url.scheme()),
-            None => format!("{}://{host}", url.scheme()),
-        };
-        Some(Self { public_key, origin, project_id })
+        Some(Self(dsn))
+    }
+
+    pub fn public_key(&self) -> &str {
+        self.0.public_key()
     }
 
     /// ⚠️ `?sentry_key=` **不能省**。轉發時我們不帶 `X-Sentry-Auth`，而 GlitchTip
     ///   找不到任何認證就回 `403 {"detail": "Denied"}`——而且那是「送出成功」的一次
     ///   HTTP 請求，沒有檢查狀態碼的話完全看不出來。
     fn envelope_url(&self) -> String {
-        format!("{}/api/{}/envelope/?sentry_key={}", self.origin, self.project_id, self.public_key)
+        format!("{}?sentry_key={}", self.0.envelope_api_url(), self.public_key())
     }
 
+    /// SDK 只給 store／envelope 兩個端點，security 跟 envelope 是同一層的兄弟路徑。
     fn security_url(&self) -> String {
-        format!("{}/api/{}/security/?sentry_key={}", self.origin, self.project_id, self.public_key)
+        let security =
+            self.0.envelope_api_url().join("../security/").expect("http(s) 網址一定能當 base 解析相對路徑");
+        format!("{security}?sentry_key={}", self.public_key())
     }
 }
 
@@ -97,7 +91,7 @@ fn expected_public_key(real: &Dsn) -> String {
     std::env::var("SENTRY_TUNNEL_PUBLIC_KEY")
         .ok()
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| real.public_key.clone())
+        .unwrap_or_else(|| real.public_key().to_string())
 }
 
 /// 把讀者的真實 IP 往上游帶。
@@ -160,8 +154,10 @@ pub async fn tunnel(State(state): State<AppState>, headers: HeaderMap, body: Byt
     // 任何人都能拿它往**別人的**專案送東西（被當成濫用來源的那種）。
     match Dsn::parse(claimed) {
         Some(d)
-            if crate::util::timing_safe_eq(d.public_key.as_bytes(), expected_public_key(&dsn).as_bytes()) => {
-        }
+            if crate::util::timing_safe_eq(
+                d.public_key().as_bytes(),
+                expected_public_key(&dsn).as_bytes(),
+            ) => {}
         _ => {
             tracing::warn!("envelope 的 DSN 不符，丟棄");
             return StatusCode::ACCEPTED;
@@ -204,17 +200,18 @@ mod tests {
     #[test]
     fn dsn_拆得出轉發需要的三件事() {
         let d = Dsn::parse("http://abc123@glitchtip:8000/2").expect("正常 DSN");
-        assert_eq!(d.public_key, "abc123");
-        assert_eq!(d.origin, "http://glitchtip:8000");
-        assert_eq!(d.project_id, "2");
+        assert_eq!(d.public_key(), "abc123");
         // ⚠️ sentry_key 一定要在查詢字串裡：轉發時沒有帶 X-Sentry-Auth 標頭（見 envelope 的
         // 送出處），認證完全靠這個參數。少了它 GlitchTip 會回 401 而事件只是安靜地不見。
         assert_eq!(d.envelope_url(), "http://glitchtip:8000/api/2/envelope/?sentry_key=abc123");
-        assert!(d.security_url().starts_with("http://glitchtip:8000/api/2/security/?sentry_key=abc123"));
+        assert_eq!(d.security_url(), "http://glitchtip:8000/api/2/security/?sentry_key=abc123");
 
-        // 沒有 port 時不要留下一個空的 ":"
-        let d = Dsn::parse("https://k@glitchtip.koimsurai.com/1").expect("無 port");
-        assert_eq!(d.origin, "https://glitchtip.koimsurai.com");
+        // 沒有 port 時不要留下一個空的 ":"；寫了預設 port 也一樣省略
+        for raw in ["https://k@glitchtip.koimsurai.com/1", "https://k@glitchtip.koimsurai.com:443/1"] {
+            let d = Dsn::parse(raw).expect("無 port");
+            assert_eq!(d.envelope_url(), "https://glitchtip.koimsurai.com/api/1/envelope/?sentry_key=k");
+            assert_eq!(d.security_url(), "https://glitchtip.koimsurai.com/api/1/security/?sentry_key=k");
+        }
     }
 
     #[test]
@@ -222,9 +219,10 @@ mod tests {
         // 少 key、少 project、project 不是數字、根本不是 URL —— 全部要回 None。
         // 這些如果放行，轉發的網址會拼成奇怪的東西打到內網的別處
         for bad in [
-            "http://glitchtip:8000/2",     // 沒有 key
-            "http://abc@glitchtip:8000/",  // 沒有 project id
-            "http://abc@glitchtip:8000/x", // project id 不是數字
+            "http://glitchtip:8000/2",            // 沒有 key
+            "http://abc@glitchtip:8000/",         // 沒有 project id
+            "http://abc@glitchtip:8000/x",        // project id 不是數字（SDK 的型別收這個，這裡要另外擋）
+            "http://abc@glitchtip:8000/prefix/2", // 帶路徑前綴（同上）
             "not-a-url",
             "",
         ] {

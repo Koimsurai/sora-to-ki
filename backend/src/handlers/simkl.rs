@@ -280,58 +280,31 @@ pub async fn sync_once(state: &AppState) -> (u32, u32) {
     (films, episodes)
 }
 
-/// 啟動 Simkl 同步 worker（`ENABLE_SIMKL_SYNC=1` 才啟動）。
-///
-/// 週期預設 6 小時，但每次只會打一個很輕的 /sync/activities；只有時間戳變了才拉資料。
-/// 這是官方 "Never run unconditional background polling timers" 那條規則的做法——
-/// 被禁止的是無條件全量輪詢，不是定期檢查有沒有變動。
-/// `ENABLE_SIMKL_SYNC` 的解讀。**預設關閉**——沒設定就不跑。
-///
-/// 抽成純函式是為了測得到：`spawn_sync` 本身會 spawn 一個先睡 45 秒的 task，
-/// 從外面觀察不到，但「有沒有啟用」判斷錯的後果很具體——同步靜靜地再也不跑，
-/// 而「在看什麼」只是停在最後一次的資料，沒有任何錯誤訊息。
-pub(crate) fn sync_enabled(raw: Option<&str>) -> bool {
-    match raw {
-        Some(v) => v == "1" || v.eq_ignore_ascii_case("true"),
-        None => false,
-    }
-}
-
 /// 輪詢週期（秒），預設 6 小時。
 ///
 /// 這個數字直接關係到會不會被停權：Simkl 明文禁止「無條件的背景輪詢」，
 /// 而我們的做法是「低頻檢查 activities、有變才拉」。把 6 小時算錯成一小時
 /// 就等於把頻率提高六倍，而**資料照樣是對的**——直到 client_id 被停用。
 pub(crate) fn period_secs(raw: Option<&str>) -> u64 {
-    raw.and_then(|v| v.parse().ok()).unwrap_or(6 * 3600)
+    crate::worker::secs_or(raw, 6 * 3600)
 }
 
 /// 啟動後第一次跑之前的延遲（秒），預設 45——讓伺服器先把啟動的事做完。
 pub(crate) fn delay_secs(raw: Option<&str>) -> u64 {
-    raw.and_then(|v| v.parse().ok()).unwrap_or(45)
+    crate::worker::secs_or(raw, 45)
 }
 
-/// 回傳 worker 的 handle；沒啟用時回 `None`。
+/// 啟動 Simkl 同步 worker（`ENABLE_SIMKL_SYNC=1` 才啟動）；沒啟用時回 `None`。
 ///
-/// 回傳值存在的理由是**可觀察**：`tokio::spawn` 之後這個 task 先睡 45 秒，
-/// 從外面完全看不出「到底有沒有啟動」。`cargo mutants` 因此可以把整個函式
-/// 換成 no-op、或把 `!sync_enabled(...)` 的驚嘆號刪掉（啟用與否顛倒），
-/// 兩種都沒有任何測試會紅——而後果分別是「同步永遠不跑」與
-/// 「沒設定卻自己開始打上游」。呼叫端（main.rs）照舊忽略回傳值。
+/// 週期預設 6 小時，但每次只會打一個很輕的 /sync/activities；只有時間戳變了才拉資料。
+/// 這是官方 "Never run unconditional background polling timers" 那條規則的做法——
+/// 被禁止的是無條件全量輪詢，不是定期檢查有沒有變動。
 pub fn spawn_sync(state: AppState) -> Option<tokio::task::JoinHandle<()>> {
-    if !sync_enabled(std::env::var("ENABLE_SIMKL_SYNC").ok().as_deref()) {
-        tracing::info!("[Simkl] sync worker disabled (ENABLE_SIMKL_SYNC unset)");
-        return None;
-    }
     let delay = delay_secs(std::env::var("SIMKL_SYNC_DELAY_SECS").ok().as_deref());
     let period = period_secs(std::env::var("SIMKL_SYNC_PERIOD_SECS").ok().as_deref());
-    Some(tokio::spawn(async move {
-        tokio::time::sleep(std::time::Duration::from_secs(delay)).await;
-        loop {
-            let _ = sync_once(&state).await;
-            tokio::time::sleep(std::time::Duration::from_secs(period)).await;
-        }
-    }))
+    crate::worker::spawn_periodic(state, "Simkl", "ENABLE_SIMKL_SYNC", delay, period, |s| async move {
+        let _ = sync_once(&s).await;
+    })
 }
 
 #[cfg(test)]
@@ -382,19 +355,6 @@ mod tests {
         // 兩邊都沒有就是沒有
         assert_eq!(poster_for(None, None), None);
         assert_eq!(poster_for(None, Some("")), None);
-    }
-
-    #[test]
-    fn 啟用判斷_預設關閉_只認_1_與_true() {
-        // 預設關閉是刻意的：忘了設 env 的後果應該是「不跑」而不是「偷偷開始打上游」
-        assert!(!sync_enabled(None));
-        assert!(!sync_enabled(Some("")));
-        assert!(!sync_enabled(Some("0")));
-        assert!(!sync_enabled(Some("yes")));
-        assert!(sync_enabled(Some("1")));
-        assert!(sync_enabled(Some("true")));
-        assert!(sync_enabled(Some("TRUE")), "大小寫不該影響");
-        assert!(sync_enabled(Some("True")));
     }
 
     #[test]
