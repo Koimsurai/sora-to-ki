@@ -218,12 +218,23 @@ function useUptime(lang: string) {
   return text;
 }
 
+/** 「本站已運行…」那行。每秒更新的 state 放在這裡，不放在 History：放在 History 的話，
+ *  它當成字串傳給 InfoPage，整篇文章每秒跟著重繪一次。 */
+function UptimeNote({ lang }: { lang: string }) {
+  const uptime = useUptime(lang);
+  const label = lookupOr(UPTIME_UNITS, lang, UPTIME_UNITS['zh-TW']).label;
+  return (
+    <>
+      {label}
+      {uptime}
+    </>
+  );
+}
+
 function History() {
   const { t, i18n } = useTranslation();
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const uptime = useUptime(lang);
   const extras = lookupOr(HISTORY_EXTRAS, lang, HISTORY_EXTRAS['zh-TW']);
-  const uptimeUnits = lookupOr(UPTIME_UNITS, lang, UPTIME_UNITS['zh-TW']);
   const texts = lookupOr(MILESTONE_TEXTS, lang, MILESTONE_TEXTS['zh-TW']);
   // ⚠ 同一天可以有兩個里程碑，所以 key 不能只用 date——
   //   React 會因為 key 重複而無法區分那兩項，重繪時可能重用到錯的節點。
@@ -237,7 +248,7 @@ function History() {
       slug="history"
       prev={{ to: '/about-site', title: `${t('info.aboutSite.title')} — ${t('info.aboutSite.subtitle')}` }}
       next={{ to: '/messages', title: `${t('info.messages.title')} — ${t('info.messages.subtitle')}` }}
-      closingNote={`${uptimeUnits.label}${uptime}`}
+      closingNote={<UptimeNote lang={lang} />}
     >
       <p>{extras.intro}</p>
 

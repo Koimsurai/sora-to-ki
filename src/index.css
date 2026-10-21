@@ -680,6 +680,17 @@
     /* 帶透明度的品牌紫寫 `rgba(var(--brand-rgb), 0.3)`，alpha 必須在上面那 19 階上。 */
     --brand-rgb: 127, 90, 240;
 
+    /* 文章版面（文章頁、InfoPage 系列、LinkCard）的語意色。原本寫在 BlogPost.css 的 :root，
+       可是 article-shell.css 與 LinkCard.css 也在用——/history、/about-site 這些頁面不載入
+       BlogPost.css，以前是靠每頁 idle 預載文章頁 chunk 才「事後」拿到，拆掉預載就變成未定義。 */
+    --post-accent: var(--brand);
+    --post-accent-glow: rgba(var(--brand-rgb), 0.35);
+    --post-green: var(--clr-tertiary);
+    --post-muted: var(--white-45);
+    --post-card-bg: var(--white-02);
+    --post-card-border: var(--white-06);
+    --post-page-bg: var(--surface-0);
+
     /* ── 透明度階梯（白／黑共用同一把尺，19 階）──────────────────────────
          0.02 0.04 0.06 0.08 0.10 · 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 · 0.70 0.80 0.90 0.95
        低端 0.02 步：髮絲線與分隔線，0.02 與 0.04 在感知上差兩倍，這裡不能粗。

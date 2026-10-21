@@ -260,7 +260,8 @@ function Book3D({ book, orbit, selected, reduced, onSelect, onDragChange }: Book
   const glowUniformsRef = useRef({ uOpacity: { value: 0 }, uColor: { value: new THREE.Color('#b8a4ff') } });
   const glowTarget = selected ? 0.9 : hovered || dragging ? 0.6 : 0;
 
-  const url = coverSrc(book.cover_url);
+  // 貼在 3D 書上的貼圖：256px 寬，拉近看也夠清楚
+  const url = coverSrc(book.cover_url, 256);
 
   return (
     <a.group
@@ -860,7 +861,7 @@ export default function ZeroGravityLibrary({ books = [], onClose }: ZeroGravityL
             <div className="zg-detail-head">
               {selected.cover_url && (
                 <img
-                  src={coverSrc(selected.cover_url)}
+                  src={coverSrc(selected.cover_url, 256)}
                   alt=""
                   className="zg-detail-cover"
                   onError={(e) => {

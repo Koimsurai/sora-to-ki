@@ -194,7 +194,13 @@ const Music = () => {
             沒有任何播放紀錄時退回單純的標題，頁面仍然有 h1。 */}
         {npData ? (
           <section className="now-playing-hero enter">
-            <img className="np-backdrop" src={npData.item?.album.images.at(0)?.url} alt="" aria-hidden="true" />
+            {/* 背景是放大再模糊的，300px 那張就夠（Spotify 給 640／300／64 三種）；也是這頁的 LCP */}
+            <img
+              className="np-backdrop"
+              src={(npData.item?.album.images[1] ?? npData.item?.album.images[0])?.url}
+              alt=""
+              aria-hidden="true"
+            />
             <div className="np-ambient-glow" />
             <header className="np-eyebrow">
               {/* 標題的顏色取自這張封面（--glow-*），前面一組小等化器：每次打開都跟著那首歌變。

@@ -30,11 +30,18 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
     void import('@/lib/errorReporting').then((m) => m.initErrorReporting());
   }, []);
 
-  // 文章內頁（BlogPost）是重 lazy chunk（BlogPost.css + shiki + mermaid）。頁面 idle 後
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const bare = stripLocalePrefix(pathname); // 去 locale 前綴(無前導斜線)
+
+  // 文章內頁（BlogPost）是重 lazy chunk（BlogPost.css + shiki + mermaid，134 KB gzip）。頁面 idle 後
   // 先暖起來——否則首次點進文章會先閃一下 BlogPostPage 極簡 fallback（純 sans-serif 無樣式）
   // 才換成完整版。暖過後 Suspense 立即解析、fallback 不再出現。import 路徑與路由的 lazy
   // 同一支 → Vite dedupe 同 chunk。requestIdleCallback 不搶首屏；Safari 無此 API 退 setTimeout。
+  // 只在有文章連結的頁面暖（首頁、文章列表、文章頁）：以前每一頁都下載，/music、/setup 這些
+  // 頁面根本點不到文章，手機上白白多吃 134 KB 加一個 64–79ms 的長影格。
+  const linksToPosts = bare === '' || bare === 'blog' || bare.startsWith('blog/');
   useEffect(() => {
+    if (!linksToPosts) return;
     const warm = () => {
       void import('@/components/blog/BlogPost');
     };
@@ -45,10 +52,7 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
     }
     const warmTimer = setTimeout(warm, 1500);
     return () => clearTimeout(warmTimer);
-  }, []);
-
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const bare = stripLocalePrefix(pathname); // 去 locale 前綴(無前導斜線)
+  }, [linksToPosts]);
   const isAdminPage = bare === 'admin' || bare.startsWith('admin/');
   const isPhotoPage = bare === 'photos';
   const isHomePage = bare === '';
