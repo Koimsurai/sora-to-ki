@@ -10,8 +10,23 @@ interface LangModule {
   default: LanguageRegistration[];
 }
 
-let highlighterPromise: Promise<HighlighterCore> | null = null;
-const loadedLangs = new Set<string>(['text']);
+/**
+ * 兩個 highlighter，各用一種 regex 引擎：
+ *
+ * - `js`（預設）：shiki 的 JavaScript RegExp 引擎，不需要 wasm。以前一律用 oniguruma，
+ *   每一篇有程式碼的文章都要下載 231 KB（gzip）的 wasm，再加一個 127ms 的長任務。
+ * - `onig`：只給 {@link ONIG_LANGS} 用，有那些語言的文章才會載 wasm。
+ *
+ * 怎麼決定哪些語言留給 oniguruma：拿正式站**所有已發布文章的每一段程式碼**（2026-10：
+ * 26 篇、214 段，含各語系譯文）兩種引擎各跑一次、逐段比對輸出的 HTML。213 段一字不差，
+ * 唯一不同的是一段 C++（`static thread_local ruy::Context` 整行沒上色）——儘管 shiki 官方的
+ * 相容性報告把 cpp 列為 OK（那是拿他們的範例碼測的）。C 家族共用同一批 pattern，一起留著。
+ * 白名單加新語言時照同樣的方法比一次。
+ */
+type Engine = 'js' | 'onig';
+const ONIG_LANGS = new Set(['cpp', 'c', 'objc']);
+const highlighters: Partial<Record<Engine, Promise<HighlighterCore>>> = {};
+const loadedLangs: Record<Engine, Set<string>> = { js: new Set(['text']), onig: new Set(['text']) };
 
 const THEME = 'vitesse-dark';
 const FALLBACK_LANG = 'text';
@@ -105,13 +120,20 @@ function resolveLang(input: string | undefined): string {
   return lookup(LANG_LOADERS, resolved) ? resolved : FALLBACK_LANG;
 }
 
-async function getHighlighter(): Promise<HighlighterCore> {
-  if (highlighterPromise) return highlighterPromise;
-  highlighterPromise = (async () => {
-    const [{ createHighlighterCore }, { createOnigurumaEngine }] = await Promise.all([
-      import('shiki/core'),
-      import('shiki/engine/oniguruma'),
-    ]);
+async function createEngine(engine: Engine) {
+  if (engine === 'js') {
+    const { createJavaScriptRegexEngine } = await import('shiki/engine/javascript');
+    return createJavaScriptRegexEngine();
+  }
+  const { createOnigurumaEngine } = await import('shiki/engine/oniguruma');
+  return createOnigurumaEngine(import('shiki/wasm'));
+}
+
+function getHighlighter(engine: Engine): Promise<HighlighterCore> {
+  const existing = highlighters[engine];
+  if (existing) return existing;
+  const created = (async () => {
+    const [{ createHighlighterCore }, regexEngine] = await Promise.all([import('shiki/core'), createEngine(engine)]);
     const h = await createHighlighterCore({
       themes: [import('@shikijs/themes/vitesse-dark')],
       // ⚠ 不預載任何語言。原本這裡是 `[javascript, typescript, tsx]`（註解寫「預載常用」），
@@ -126,20 +148,22 @@ async function getHighlighter(): Promise<HighlighterCore> {
       // 不再與 init 平行）。但那正是 bash / yaml / python 這些語言**今天已經在走**的路徑，
       // 也就是 56% 的頁面早就是這個行為，不是新的降級。
       langs: [],
-      engine: createOnigurumaEngine(import('shiki/wasm')),
+      engine: regexEngine,
     });
     return h;
   })();
-  return highlighterPromise;
+  highlighters[engine] = created;
+  return created;
 }
 
 export async function highlightCode(code: string, langInput?: string): Promise<string> {
   const lang = resolveLang(langInput);
-  const h = await getHighlighter();
-  if (lang !== 'text' && !loadedLangs.has(lang)) {
+  const engine: Engine = ONIG_LANGS.has(lang) ? 'onig' : 'js';
+  const h = await getHighlighter(engine);
+  if (lang !== 'text' && !loadedLangs[engine].has(lang)) {
     try {
       await h.loadLanguage(await LANG_LOADERS[lang]());
-      loadedLangs.add(lang);
+      loadedLangs[engine].add(lang);
     } catch {
       // 載入失敗就 fallback
       return h.codeToHtml(code, { lang: 'text', theme: THEME });

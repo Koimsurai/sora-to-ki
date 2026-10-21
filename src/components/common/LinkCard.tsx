@@ -156,9 +156,10 @@ const getLinkMeta = (url: string): LinkMeta | null => {
 const InternalLinkCard = ({ id }: { id: string }) => {
   // 卡片只需 title / created_at / category —— 這些 recentPosts 清單就有，而文章 loader 已把該
   // 清單預取進快取 → SSR 首幀就是真卡片（不必為每個連結各打一次 post detail）。
-  // 清單裡找不到（例如連到 top-100 之外）才退回骨架，且骨架保留高度 → 換上時不位移。
+  // 清單裡找不到（例如連到 top-200 之外）才退回骨架，且骨架保留高度 → 換上時不位移。
+  // 跟文章頁上下篇導覽共用 limit=200 那份（文章 loader 只預取這一份）。
   const navLocale = useLocale();
-  const { data: posts } = useQuery(recentPostsQueryOptions(100, navLocale));
+  const { data: posts } = useQuery(recentPostsQueryOptions(200, navLocale));
   // 文章內的站內連結可能寫成 /blog/<id> 或 /blog/<slug>，兩種都要認得。
   const post = posts?.find((p) => String(p.id) === id || p.slug === id);
 

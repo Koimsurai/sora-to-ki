@@ -91,7 +91,8 @@ test.describe('CSP', () => {
     //   注意不能寫成 `not.toContain('unsafe-eval')`：那會連 'wasm-unsafe-eval'
     //   一起誤判（後者是子字串），而 wasm 那條是刻意留著的。
     expect(csp, "script-src 不該有 'unsafe-eval'").not.toContain("'unsafe-eval'");
-    // wasm 那條是窄的、會一直留著（shiki 的 oniguruma 正則引擎）
+    // wasm 那條是窄的、會一直留著：shiki 平常走 JS 正則引擎，但 C 家族（cpp／c／objc）
+    // 仍用 oniguruma（JS 引擎實測有段 C++ 沒上色，見 shikiHighlight.ts），那幾篇文章需要它
     expect(csp).toContain("'wasm-unsafe-eval'");
   });
 
