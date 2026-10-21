@@ -23,7 +23,7 @@ async fn not_found() -> (axum::http::StatusCode, &'static str) {
     (axum::http::StatusCode::NOT_FOUND, "Not Found")
 }
 
-/// 完整路由表 + middleware 疊層。全站 120 端點皆 Rust 原生（Express 已於 2026-07-14 退役）。
+/// 完整路由表 + middleware 疊層。全站端點皆 Rust 原生（Express 已於 2026-07-14 退役）。
 pub fn build_router(state: AppState) -> Router {
     // 第三方代理共用一份回應快取，TTL 依資料多常變（見 upstream_cache 的說明）
     let upstream = std::sync::Arc::new(UpstreamCache::default());
@@ -64,15 +64,10 @@ pub fn build_router(state: AppState) -> Router {
         // home digest（純 DB 讀）
         .route("/api/home/digest", get(handlers::home::home_digest))
         // posts：列表 / 單篇 / 反應 / 留言
-        .route("/api/posts", get(handlers::posts::list_posts).post(handlers::posts::create_post_public))
-        .route(
-            "/api/posts/{id}",
-            get(handlers::posts::get_post)
-                .put(handlers::posts::update_post_public)
-                .delete(handlers::posts::delete_post_public),
-        )
+        .route("/api/posts", get(handlers::posts::list_posts))
+        .route("/api/posts/{id}", get(handlers::posts::get_post))
+        // MCP 的 set_post_status 在用；其餘寫入一律走 /api/admin/posts
         .route("/api/posts/{id}/status", patch(handlers::posts::patch_post_status))
-        .route("/api/posts/legacy", post(handlers::posts::create_post_legacy))
         .route(
             "/api/posts/{id}/reactions",
             get(handlers::posts::post_reactions).post(handlers::posts::post_reaction),

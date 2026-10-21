@@ -38,7 +38,7 @@ regex = "1"
 rand = "0.10"
 # in-process cache 的鎖（短臨界區、無 poison；不跨 await 持有）
 parking_lot = "0.12"
-# /posts/legacy 的 Basic auth 解碼
+# 上傳圖片的 thumbhash 編成 base64url
 base64 = "0.23"
 # 自家 bahamut SDK（https://crates.io/crates/anigamer；本地開發要改 SDK 時可暫換 path dep）
 anigamer = "0.1.1"   # 0.1.1 起有 ClientOptions::base_urls，sync worker 才測得到

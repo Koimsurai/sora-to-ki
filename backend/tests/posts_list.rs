@@ -500,16 +500,27 @@ async fn 留言按讚會加一_對不存在的留言回_404() {
     assert_eq!(body["message"], "Comment not found");
 }
 
+/// 公開的文章路徑只讀。Express 時代的 `POST/PUT/DELETE /api/posts` 與 `/api/posts/legacy`
+/// 已移除，寫入一律走 `/api/admin/posts`——就算帶著 OWNER token 也不該從這裡改到文章。
 #[tokio::test]
-async fn 刪文章要走管理員身分() {
-    let (app, _pool) = test_app().await;
-    let (status, _) = request(&app, "DELETE", "/api/posts/1", None, None).await;
-    assert_eq!(status, 401, "沒帶身分不能刪文");
-
-    let (status, _) = request(&app, "DELETE", "/api/posts/1", None, Some("Bearer 亂打的")).await;
-    assert_eq!(status, 401);
-
-    let (status, body) = request(&app, "DELETE", "/api/posts/1", None, Some(&owner_token(true))).await;
-    assert_eq!(status, 200, "得到 {body}");
-    assert_eq!(body["message"], "deleted");
+async fn 公開文章路徑不接受寫入() {
+    let (app, pool) = test_app().await;
+    let token = owner_token(true);
+    let body = Some(json!({ "title": "不該寫進去", "content": "內文" }));
+    for (method, path) in [
+        ("POST", "/api/posts"),
+        ("PUT", "/api/posts/1"),
+        ("DELETE", "/api/posts/1"),
+        ("POST", "/api/posts/legacy"),
+    ] {
+        let (status, _) = request(&app, method, path, body.clone(), Some(&token)).await;
+        assert!(status == 404 || status == 405, "{method} {path} 應該已經沒有這條路由，得到 {status}");
+    }
+    let n: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM posts WHERE title = '不該寫進去'")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(n, 0);
+    let (status, _) = request(&app, "GET", "/api/posts/1", None, None).await;
+    assert_eq!(status, 200, "第 1 篇不該被刪掉");
 }

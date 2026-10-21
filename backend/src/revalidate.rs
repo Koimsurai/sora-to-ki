@@ -17,7 +17,7 @@ fn is_content_mutation(path: &str) -> bool {
     if !path.starts_with("/api/posts") && !path.starts_with("/api/admin/posts") {
         return false;
     }
-    // 末段是高頻互動動作就跳過;其餘(/api/posts、/api/posts/:id、/api/posts/legacy、
+    // 末段是高頻互動動作就跳過;其餘(/api/posts/:id/status、/api/admin/posts/:id、
     // /api/admin/posts/:id/generate-zh-cn …)都算文章本體變更。
     let last = path.rsplit('/').next().unwrap_or("");
     !NON_CONTENT_ACTIONS.contains(&last)
@@ -133,7 +133,6 @@ mod tests {
         for p in [
             "/api/posts",
             "/api/posts/39",
-            "/api/posts/legacy",
             "/api/posts/39/status",
             "/api/admin/posts",
             "/api/admin/posts/39",
