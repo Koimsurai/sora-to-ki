@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { filterPosts, groupPostsByMonth } from '@/lib/blogFilter';
-import ReactDOM from 'react-dom';
 import { useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { LocaleLink } from '@/i18n/locale-link';
@@ -18,6 +17,7 @@ import {
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import Comments from './Comments';
+import { Modal, ModalTitle } from '@/components/common/Modal';
 import NebulaBackground from '@/components/backdrop/NebulaBackground';
 import KoimLoader from '@/components/common/KoimLoader';
 import type { Variants } from 'framer-motion';
@@ -53,53 +53,30 @@ const FloatingComments = ({
   allowComments?: boolean;
   onClose: () => void;
 }) => {
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    // 防止背景滾動
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.paddingRight = `${scrollbarWidth}px`;
-    return () => {
-      window.removeEventListener('keydown', handleEsc);
-      document.documentElement.style.overflow = '';
-      document.body.style.paddingRight = '';
-    };
-  }, [onClose]);
-
-  return ReactDOM.createPortal(
-    <AnimatePresence>
+  const { t } = useTranslation();
+  // Esc、捲動鎖定、焦點都交給 Modal（Radix Dialog）
+  return (
+    <Modal onClose={onClose} overlayClassName="floating-comments-overlay" fade>
       <motion.div
-        className="floating-comments-overlay"
-        onClick={onClose}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        className="floating-comments-panel"
+        initial={{ opacity: 0, y: 40, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 40, scale: 0.96 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
       >
-        <motion.div
-          className="floating-comments-panel"
-          onClick={(e) => e.stopPropagation()}
-          initial={{ opacity: 0, y: 40, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 40, scale: 0.96 }}
-          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-        >
-          <div className="floating-comments-header">
+        <div className="floating-comments-header">
+          <ModalTitle asChild>
             <h3>{postTitle}</h3>
-            <button className="floating-comments-close" onClick={onClose}>
-              <FaTimes />
-            </button>
-          </div>
-          <div className="floating-comments-body">
-            <Comments postId={postId} allowComments={allowComments} />
-          </div>
-        </motion.div>
+          </ModalTitle>
+          <button type="button" className="floating-comments-close" onClick={onClose} aria-label={t('common.close')}>
+            <FaTimes />
+          </button>
+        </div>
+        <div className="floating-comments-body">
+          <Comments postId={postId} allowComments={allowComments} />
+        </div>
       </motion.div>
-    </AnimatePresence>,
-    document.body,
+    </Modal>
   );
 };
 

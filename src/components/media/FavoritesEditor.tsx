@@ -2,11 +2,11 @@
 // 標題/海報/年份由後端依語系即時帶，這裡只管策展資料（rating/quote/排序/增刪）。
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '@/lib/api';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import type { TmdbSearchResponse, TmdbSearchResult, WatchFavoriteRow } from '@koimsurai/api-types';
+import { Modal, ModalTitle } from '@/components/common/Modal';
 import './FavoritesEditor.css';
 
 // 與 Watch 共用同一份生成型別（backend handlers::watch::WatchFavoriteRow）——
@@ -55,16 +55,6 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
   const [kind, setKind] = useState('film');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [onClose]);
 
   // 搜尋輸入 debounce 400ms → debouncedQuery
   useEffect(() => {
@@ -139,22 +129,15 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
     }
   };
 
-  return createPortal(
-    // 用 e.target === e.currentTarget 判斷「點在遮罩本身」，而不是靠內層 div
-    // stopPropagation 擋冒泡：後者等於在一個非互動元素上掛 onClick，只為了
-    // 攔事件。改掉之後內層那層純事件管線的 onClick 可以整個拿掉。
-    // 同上：本元件有 Escape 監聽與右上關閉鈕，遮罩點擊只是滑鼠便利
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
-    <div
-      className="fe-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+  // Esc、點遮罩關閉、焦點與捲動鎖交給 Modal
+  return (
+    <Modal onClose={onClose} overlayClassName="fe-overlay">
       <div className="fe-modal">
         <div className="fe-head">
-          <h3>{t('watch.favManage')}</h3>
-          <button className="fe-close" onClick={onClose} aria-label="close">
+          <ModalTitle asChild>
+            <h3>{t('watch.favManage')}</h3>
+          </ModalTitle>
+          <button type="button" className="fe-close" onClick={onClose} aria-label={t('common.close')}>
             ✕
           </button>
         </div>
@@ -275,7 +258,6 @@ export default function FavoritesEditor({ favorites, onClose, onChanged }: Favor
           )}
         </div>
       </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }

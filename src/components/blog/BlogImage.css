@@ -26,6 +26,11 @@
   letter-spacing: var(--ls-1);
 }
 
+/* 給 Radix Dialog 的對話框邊界，不參與版面：圖與關閉鈕照舊是遮罩的直接排版子項 */
+.image-lightbox-content {
+  display: contents;
+}
+
 .image-lightbox-img {
   max-width: 92vw;
   max-height: 92vh;

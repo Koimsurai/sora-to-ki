@@ -1,10 +1,10 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { createPortal } from 'react-dom';
 import { LocaleLink } from '@/i18n/locale-link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import InfoPage from './InfoPage';
+import { Modal, ModalTitle } from '@/components/common/Modal';
 import { lookupOr } from '@/lib/tableLookup';
 
 interface Friend {
@@ -298,30 +298,22 @@ function ApplicationForm({ onClose }: { onClose: () => void }) {
     }, 400);
   };
 
-  // ⚠ 一定要 portal 到 body。這個表單長在 InfoPage 的 `.post-body` 裡，而 `.post-body`
-  // 自己有 `z-index: 1`——那就是一個堆疊脈絡，於是遮罩寫 `z-index: 9999` 也只是「在
-  // post-body 裡面排第一」，對外仍然只有 1，蓋不過 `.site-header`。實測過：遮罩明明是
-  // 整個 1280×900 的視窗大小，頂欄照樣浮在變暗的畫面上而且點得到。
-  // 站上其他覆蓋層（lightbox、收藏編輯器、連結預覽卡）本來就是這樣寫的。
-  return createPortal(
-    <motion.div
-      className="friends-modal-backdrop"
-      onClick={onClose}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-    >
+  // ⚠ 一定要 portal 到 body（Modal 會做）。這個表單長在 InfoPage 的 `.post-body` 裡，而
+  // `.post-body` 自己有 `z-index: 1`——那就是一個堆疊脈絡，於是遮罩寫 `z-index: 9999` 也只是
+  // 「在 post-body 裡面排第一」，對外仍然只有 1，蓋不過 `.site-header`。
+  return (
+    <Modal onClose={onClose} overlayClassName="friends-modal-backdrop" fade>
       <motion.div
         className="friends-modal"
-        onClick={(e) => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
       >
         <div className="friends-modal-header">
-          <h3>{f.modalTitle}</h3>
+          <ModalTitle asChild>
+            <h3>{f.modalTitle}</h3>
+          </ModalTitle>
           <button type="button" className="friends-modal-close" onClick={onClose} aria-label={f.close}>
             <FaTimes />
           </button>
@@ -399,8 +391,7 @@ function ApplicationForm({ onClose }: { onClose: () => void }) {
           </form>
         )}
       </motion.div>
-    </motion.div>,
-    document.body,
+    </Modal>
   );
 }
 
