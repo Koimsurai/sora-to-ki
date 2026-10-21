@@ -444,6 +444,7 @@ diff <(curl -s :3001/api/tags) <(curl -s :3002/api/tags)   # 應無輸出
   `/posts`(分頁+多語) `/posts/:id`(多語) `/posts/:id/reactions` `/posts/:id/comments`
 - 互動（寫）：`POST /posts/:id/{view,like,unlike,reactions,comments}` `/comments/:id/like`
 - 公開寫（疑舊）：`POST/PUT/PATCH/DELETE /posts[/:id][/status]`、`POST /posts/legacy`
+  （2026-10 移除，只留 MCP 在用的 `PATCH /posts/:id/status`）
 - admin posts：`GET /admin/posts[/:id]` `/admin/stats`、`POST/PUT/DELETE /admin/posts[/:id]`、
   `POST /admin/posts/:id/generate-zh-cn`（✅ **opencc 已接管**：ferrous-opencc）、`/admin/posts/:id/send-newsletter`（✅ **resend 已接管** #111）
 - admin tags/categories：`GET/POST/PUT/DELETE /admin/{tags,categories}[/:id]`
