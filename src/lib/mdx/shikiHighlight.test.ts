@@ -32,7 +32,20 @@ vi.mock('shiki/core', () => ({
     });
   },
 }));
-vi.mock('shiki/engine/oniguruma', () => ({ createOnigurumaEngine: () => ({}) }));
+/** 建立過哪些 regex 引擎（看 wasm 有沒有被拉進來） */
+let enginesCreated: string[] = [];
+vi.mock('shiki/engine/oniguruma', () => ({
+  createOnigurumaEngine: () => {
+    enginesCreated.push('onig');
+    return {};
+  },
+}));
+vi.mock('shiki/engine/javascript', () => ({
+  createJavaScriptRegexEngine: () => {
+    enginesCreated.push('js');
+    return {};
+  },
+}));
 vi.mock('shiki/wasm', () => ({ default: {} }));
 
 async function load() {
@@ -41,6 +54,7 @@ async function load() {
   loadedByHighlighter = [];
   loadFails = false;
   createCount = 0;
+  enginesCreated = [];
   const { highlightCode } = await import('./shikiHighlight');
   return highlightCode;
 }
@@ -187,5 +201,24 @@ describe('highlighter 是單例', () => {
   it('同時發出的多次呼叫也只建立一個（併發不該各建一份）', async () => {
     await Promise.all(['rust', 'go', 'python', 'java'].map((l) => highlight('x', l)));
     expect(createCount).toBe(1);
+  });
+});
+
+describe('regex 引擎的選擇', () => {
+  // oniguruma 要下載 231 KB（gzip）的 wasm。只有 JS 引擎跑不對的那幾種語言才該用它，
+  // 一般文章（bash／yaml／ts…）連 wasm 都不該碰到。
+  it('一般語言只用 JS 引擎，不載入 wasm', async () => {
+    for (const l of ['bash', 'yaml', 'ts', 'python', 'rust', undefined]) await highlight('x', l);
+    expect(enginesCreated).toEqual(['js']);
+  });
+
+  it('C 家族才用 oniguruma（JS 引擎實測有段 C++ 沒上色）', async () => {
+    await highlight('x', 'c++');
+    expect(enginesCreated).toEqual(['onig']);
+    await highlight('x', 'bash');
+    expect(enginesCreated).toEqual(['onig', 'js']);
+    await highlight('x', 'c');
+    await highlight('x', 'objective-c');
+    expect(enginesCreated, '兩種引擎各建一次就好').toEqual(['onig', 'js']);
   });
 });

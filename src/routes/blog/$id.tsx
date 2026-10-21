@@ -19,18 +19,15 @@ export const Route = createFileRoute('/blog/$id')({
     // （prefetchQuery 吞錯不擋頁），dehydrate 帶到 client → SSR 首幀就是真側欄 / 真導覽，
     // 不再 client 才補上造成位移。
     //
-    // ⚠️ 參數必須跟元件端的 useQuery 一字不差，queryKey 是 ['posts','recent',limit,locale]：
-    //   PostsNav      → recentPostsQueryOptions(100, 'zh-TW')
-    //   PrevNextNav   → recentPostsQueryOptions(200, 'zh-TW')
-    // 原本這裡只預取 (100) —— 少了 locale，key 變 [...,100,'']，兩個元件**都沒命中**，
-    // 於是 hydration 後才各補一次 API。上下篇導覽因此從無到有撐出 96px，把下方的留言區
-    // 往下推 145px；平常這推移發生在視口外不計分，但「重新整理」時 scroll restoration 已把
-    // 讀者固定在深處 → 位移落在視口內 → 實測 CLS 0.3763。
-    // 兩個 limit 都要預取（同一支 API、不同 key），否則只解一半。
+    // ⚠️ 參數必須跟元件端的 useQuery 一字不差，queryKey 是 ['posts','recent',limit,locale]。
+    // PostsNav、PrevNextNav、站內連結卡三個都用 recentPostsQueryOptions(200, locale)
+    // （PostsNav 用 select 只取前 100）——只有一份，SSR 也只 dehydrate 一份進 HTML。
+    // 以前 PostsNav 自己開 limit=100，兩份幾乎一樣的清單都塞進文章頁的 HTML。
+    // key 對不上的代價：元件 hydration 後才補一次 API，上下篇導覽從無到有撐出 96px，
+    // 「重新整理」時 scroll restoration 已把讀者固定在深處 → 位移落在視口內 → 實測 CLS 0.3763。
     try {
       const [post] = await Promise.all([
         context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, 'zh-TW')),
-        context.queryClient.prefetchQuery(recentPostsQueryOptions(100, 'zh-TW')),
         context.queryClient.prefetchQuery(recentPostsQueryOptions(200, 'zh-TW')),
         context.queryClient.prefetchQuery(blogCategoriesDetailQueryOptions('zh-TW')),
       ]);

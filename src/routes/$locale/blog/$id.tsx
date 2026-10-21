@@ -18,7 +18,6 @@ export const Route = createFileRoute('/$locale/blog/$id')({
       // 上下篇導覽 hydration 後才補上造成 CLS（詳見 /blog/$id 的 loader 說明）。
       const [post] = await Promise.all([
         context.queryClient.ensureQueryData(postDetailQueryOptions(params.id, locale)),
-        context.queryClient.prefetchQuery(recentPostsQueryOptions(100, locale)),
         context.queryClient.prefetchQuery(recentPostsQueryOptions(200, locale)),
         context.queryClient.prefetchQuery(blogCategoriesDetailQueryOptions(locale)),
       ]);
