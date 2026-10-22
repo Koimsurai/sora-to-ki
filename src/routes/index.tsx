@@ -5,7 +5,7 @@ import { buildAlternateLinks, localeFromPrefix, pickLocaleFromAcceptLanguage } f
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { isBotUserAgent } from '../lib/bot';
 import { DEFAULT_LOCALE, LOCALE_PREFIX, type Locale } from '../lib/locales';
-import MainPage from '@/components/home/MainPage';
+import HomeSky from '@/components/home/HomeSky';
 import { siteJsonLd } from '@/seo/seoMeta';
 import { seoMetaFor } from '@/seo/pageSeo';
 
@@ -39,7 +39,7 @@ export const Route = createFileRoute('/')({
   },
   component: () => (
     <LocaleProvider locale={DEFAULT_LOCALE}>
-      <MainPage />
+      <HomeSky />
     </LocaleProvider>
   ),
 });

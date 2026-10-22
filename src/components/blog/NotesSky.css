@@ -1,7 +1,6 @@
 /* 手記（星軌天空版）：一欄、少量資訊、寬留白。
    大標題直接壓在夜空上；文章清單放在一塊毛玻璃上，星軌在後面但不跟字搶。 */
-.notes-page,
-.notes-ghost {
+.notes-page {
   --ink: #f1ece3;
   --amber: #e9c17a;
   --amber-rgb: 233, 193, 122;
@@ -323,15 +322,18 @@
 
 /* 面板前面的那片近地（NotesGround）：面板的下緣埋在裡面。
    在 .notes-page 這個堆疊脈絡裡排在面板之上，但仍然在頂欄與彈出層底下 */
-@keyframes notes-ground-in {
+@keyframes notes-ground-rise {
   from {
     opacity: 0;
+    transform: translateY(100%);
   }
   to {
     opacity: 1;
+    transform: none;
   }
 }
 
+/* 跟面板一起從下面升上來（早一點點），面板才像是被地面托上來的 */
 .notes-ground {
   position: fixed;
   left: 0;
@@ -341,22 +343,12 @@
   height: max(260px, 34vh);
   z-index: 1;
   pointer-events: none;
-  animation: notes-ground-in 900ms var(--easing-out) both;
+  animation: notes-ground-rise var(--dur-1000) var(--easing-out) both;
 }
 
-/* 退場：複製的那一份蓋在原地往下沉（新頁面的內容在它上面） */
-.notes-ghost {
-  position: fixed;
-  inset: 0;
-  z-index: 5;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-/* 複製出來的節點會把進場動畫從頭再播一次 */
-.notes-ghost .notes-head,
-.notes-ghost .notes-panel {
-  animation: none;
+.is-arriving .notes-ground {
+  animation-duration: 1300ms;
+  animation-delay: calc(var(--arrive-delay, 1100ms) - 200ms);
 }
 
 @media (prefers-reduced-motion: reduce) {

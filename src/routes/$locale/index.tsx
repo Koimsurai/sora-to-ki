@@ -2,7 +2,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { buildAlternateLinks, localeFromPrefix } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { DEFAULT_LOCALE } from '../../lib/locales';
-import MainPage from '@/components/home/MainPage';
+import HomeSky from '@/components/home/HomeSky';
 import { siteJsonLd } from '@/seo/seoMeta';
 import { seoMetaFor } from '@/seo/pageSeo';
 
@@ -28,7 +28,7 @@ function RouteComponent() {
   const locale = localeFromPrefix(Route.useParams().locale) ?? DEFAULT_LOCALE;
   return (
     <LocaleProvider locale={locale}>
-      <MainPage />
+      <HomeSky />
     </LocaleProvider>
   );
 }

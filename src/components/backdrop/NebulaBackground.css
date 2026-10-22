@@ -18,20 +18,19 @@ body.intro-animation-active .nebula-dim-overlay {
   opacity: 0;
 }
 
-/* 有自己天空的分區（手記的星軌、碎念的像素）：暗幕減半、紫色星雲收掉，天空才看得到。
-   data-sky 由 SpaceBackdropShell 掛在 <html> 上 */
-html[data-sky="notes"] .nebula-dim-overlay,
-html[data-sky="moments"] .nebula-dim-overlay {
-  opacity: 0.45;
-}
-
-.nebula-bg {
-  transition: opacity var(--dur-700) ease-out;
-}
-
-html[data-sky="notes"] .nebula-bg,
-html[data-sky="moments"] .nebula-bg {
+/* 首頁那一份常駐在 AppShell，換頁時整份淡出（土星跟著飛行慢慢亮起來，不是一瞬間）。
+   跟 3D canvas 同一個 z-index、DOM 在它後面，所以蓋在星空與土星上面 */
+.sky-nebula {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
   opacity: 0;
+  transition: opacity var(--dur-1000) var(--easing-standard);
+}
+
+.sky-nebula.is-shown {
+  opacity: 1;
 }
 
 /* ══════════════════════════

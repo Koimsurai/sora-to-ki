@@ -57,9 +57,15 @@ export default function SpaceBackdropShell() {
   const hardwareGpu = useHardwareGpu();
   const softwareGpu = hardwareGpu === false;
 
-  // 有自己天空的分區：把頁面上那層紫色星雲與暗幕收掉，天空才看得到（見 NebulaBackground.css）
-  // 上一頁的天空與換天空的時間也記下來：從首頁飛過來的頁面，內容要等鏡頭快抵達時才升上來，
-  // 而頁面可能在飛到一半才掛上（資料還在載），得知道已經飛了多久（見 NotesSky 的 flightElapsed）
+  // 這台機器換頁時有沒有 3D 的飛行：沒有的話頁面內容不用等鏡頭，直接出現
+  const flies = hardwareGpu === true && !isMobile && !isBot;
+  useEffect(() => {
+    document.documentElement.dataset.flight = flies ? '1' : '0';
+  }, [flies]);
+
+  // 每個分區的天空記在 <html data-sky> 上（CSS 與頁面的進退場都看它）。
+  // 上一頁的天空與換天空的時間也記下來：飛過來的頁面，內容要等鏡頭快抵達時才出現，
+  // 而頁面可能在飛到一半才掛上（資料還在載），得知道已經飛了多久（見 lib/skyFlight.ts）
   useEffect(() => {
     const root = document.documentElement;
     if (root.dataset.sky && root.dataset.sky !== sky) {

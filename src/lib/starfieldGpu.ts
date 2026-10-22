@@ -203,6 +203,9 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   const sprite = new THREE.Sprite(mat);
   sprite.count = cfg.count; // instanced 數量
   sprite.userData.positions = positions; // 土星散成的星塵要落在這些星上（見 buildSaturn）
+  // 手記的星軌從最亮的這些星長出來（見 lib/skyFx.ts）
+  sprite.userData.scales = scales;
+  sprite.userData.tints = tints;
   return sprite;
 }
 
@@ -721,6 +724,8 @@ export async function createStarfieldRunner(
   const skyFx = createSkyFx({
     renderer,
     skyGroup,
+    starLayers: layers.map((l) => l.points),
+    sceneDepth: scenePass.getTextureNode('depth'),
     width: init.width,
     height: init.height,
     dpr: dprUsed,
@@ -859,12 +864,29 @@ export async function createStarfieldRunner(
       .addScaledVector(PATH[2], 3 * q * p * p)
       .addScaledVector(PATH[3], p * p * p);
   };
+  /**
+   * 首頁的構圖：土星偏右，左邊留給文字。用鏡頭的 film offset（整個畫面平移）而不是挪鏡頭，
+   * 飛行路線不用改；離首頁越遠（p 越大）位移越小，飛出去時土星自然回到正中央再被穿過。
+   * 開場播放時不位移（開場的構圖以畫面中心為準），播完土星才往右讓開。
+   * 往下捲時鏡頭往下、往後退：土星升上天空、變遠，底下的內容接手畫面。
+   */
+  let viewAspect = init.width / init.height;
+  let viewH = Math.max(1, init.height);
+  let compose = 0;
+  let homeLift = 0;
+  const HOME_SHIFT = 0.4;
   /** 鏡頭在曲線上 p 處的位置與姿態：位置、朝向都只看 p，所以倒著飛就是正著飛的完整倒帶 */
   const placeCamera = (p: number) => {
     bez(p, camera.position);
+    const atHome = 1 - p;
+    camera.position.y -= homeLift * 1.6 * atHome;
+    camera.position.z += homeLift * 1.4 * atHome;
     // 轉彎時略往右偏、帶一點側傾，離開土星那一段最明顯
     const bend = Math.sin(Math.PI * p);
     camera.rotation.set(0.04 * bend, -0.16 * bend, -0.1 * bend);
+    const shift = viewAspect > 1.25 ? HOME_SHIFT : 0;
+    camera.filmOffset = -shift * (camera.getFilmWidth() / 2) * atHome * compose;
+    camera.updateProjectionMatrix();
   };
 
   // 近處的太空塵埃：只在飛行時看得到。背景的星都在一百單位外，鏡頭移動十幾個單位幾乎沒有視差，
@@ -908,14 +930,14 @@ export async function createStarfieldRunner(
     placeCamera(pathPos);
     // 速度（0–1）：拉成光線與塵埃都跟著速度走，起步與停下都是零，不會有突然的一閃
     const speed = Math.sin(Math.PI * travel.t);
-    skyFx.setWarp(speed * 0.55);
+    skyFx.setFlight(speed);
     travelDust.amount.value = speed;
     travelDust.sprite.visible = speed > 0.01;
     if (travel.t >= 1) {
       // 抵達外面：土星在鏡頭後方、看不到了，收起來省 GPU
       if (travel.to === 1 && saturn) saturn.shatter(true, true);
       travel = null;
-      skyFx.setWarp(0);
+      skyFx.setFlight(0);
       travelDust.sprite.visible = false;
     }
     markActive();
@@ -955,6 +977,17 @@ export async function createStarfieldRunner(
     }
 
     stepTravel(delta);
+    // 首頁構圖與捲動：開場播完才讓開；捲動的目標值平滑追上，不跟著滾輪一格一格跳
+    const composeTarget = hyperspace ? 0 : 1;
+    const liftTarget = Math.min(1, scrollY / viewH);
+    if (compose !== composeTarget || Math.abs(homeLift - liftTarget) > 1e-4) {
+      compose += (composeTarget - compose) * Math.min(1, delta * 2.5);
+      if (Math.abs(compose - composeTarget) < 1e-3) compose = composeTarget;
+      homeLift += (liftTarget - homeLift) * Math.min(1, delta * 5);
+      if (Math.abs(homeLift - liftTarget) < 1e-4) homeLift = liftTarget;
+      if (!travel) placeCamera(pathPos);
+      markActive();
+    }
     if (saturn && saturnOnScreen()) {
       const s = saturn.update(delta, scrollY, saturnAnimate && introAllowsZoom);
       saturnZooming = s.zooming;
@@ -1019,7 +1052,10 @@ export async function createStarfieldRunner(
       setSize(width, height) {
         markActive();
         camera.aspect = width / height;
-        camera.updateProjectionMatrix();
+        viewAspect = camera.aspect;
+        viewH = Math.max(1, height);
+        if (travel) camera.updateProjectionMatrix();
+        else placeCamera(pathPos);
         renderer.setSize(width, height, false);
         hyperspace?.setSize(width, height, dprUsed);
         skyFx.setSize(width, height);

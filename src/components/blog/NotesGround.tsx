@@ -2,57 +2,8 @@
 // 面板的下緣埋在這片地裡：進場時面板從地底升上來、退場時沉回去，延伸到底的面板因此有了著地的地方。
 // 面板正下方的地是平的、邊緣被面板的光照成琥珀色，往兩側才隆起成坡，坡上一棵樹——「宙と木」的木。
 import { useEffect, useRef } from 'react';
-import { flightElapsed, panelSpan, ridgeNoise, rng, smoothstep } from '@/lib/horizon';
-
-interface Seg {
-  x1: number;
-  y1: number;
-  cx: number;
-  cy: number;
-  x2: number;
-  y2: number;
-  w1: number;
-  w2: number;
-  depth: number;
-}
-
-/** 長一棵樹：枝幹（依長出來的先後排好、略帶彎曲、由粗到細）與葉叢 */
-function growTree(baseX: number, baseY: number, scale: number) {
-  const R = rng(21);
-  const segs: Seg[] = [];
-  const leaves: { x: number; y: number; r: number; depth: number }[] = [];
-  const grow = (x: number, y: number, ang: number, len: number, w: number, depth: number) => {
-    const bend = (R() - 0.5) * 0.5;
-    const x2 = x + Math.cos(ang) * len;
-    const y2 = y + Math.sin(ang) * len;
-    const cx = (x + x2) / 2 + Math.cos(ang + Math.PI / 2) * len * bend * 0.3;
-    const cy = (y + y2) / 2 + Math.sin(ang + Math.PI / 2) * len * bend * 0.3;
-    const w2 = Math.max(0.6 * scale, w * 0.68);
-    segs.push({ x1: x, y1: y, cx, cy, x2, y2, w1: w, w2, depth: 7 - depth });
-    // 葉子長在最後兩層：末梢一大叢、倒數第二層零星幾片
-    if (depth <= 1) {
-      const n = depth === 0 ? 7 : 2;
-      for (let i = 0; i < n; i++) {
-        leaves.push({
-          x: x2 + (R() - 0.5) * 9 * scale,
-          y: y2 + (R() - 0.6) * 7 * scale,
-          r: (1.1 + R() * 2.3) * scale,
-          depth: 7 - depth,
-        });
-      }
-    }
-    if (depth === 0) return;
-    const k = depth > 5 ? 2 : R() < 0.4 ? 3 : 2;
-    for (let i = 0; i < k; i++) {
-      const spread = (i - (k - 1) / 2) * (0.5 + R() * 0.3) + (R() - 0.5) * 0.35;
-      // 往上長的趨勢：越往外越往天空彎，也稍微往右（迎著光）
-      const lift = (-Math.PI / 2 + 0.08 - (ang + spread)) * 0.14;
-      grow(x2, y2, ang + spread + lift, len * (0.7 + R() * 0.14), w2, depth - 1);
-    }
-  };
-  grow(baseX, baseY, -Math.PI / 2 + 0.05, 34 * scale, 6 * scale, 7);
-  return { segs, leaves };
-}
+import { drawTree, growTree, panelSpan, ridgeNoise, rng, smoothstep } from '@/lib/horizon';
+import { flightElapsed } from '@/lib/skyFlight';
 
 const GROUND_TOP = '#070810';
 const GROUND_BOTTOM = '#020306';
@@ -66,11 +17,9 @@ export default function NotesGround() {
     const ctx = cv?.getContext('2d');
     if (!cv || !ctx) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // 從首頁飛過來的話，地面在鏡頭快抵達時才浮現（比面板早一點），樹再接著長
-    const elapsed = flightElapsed();
-    const groundDelay = elapsed === null ? 0 : Math.max(0, 900 - elapsed);
-    cv.style.animationDelay = `${groundDelay}ms`;
-    const delay = groundDelay + 500;
+    // 地面升上來的時間由 CSS 管（.is-arriving 的 --arrive-delay）；樹等地面快到位才開始長
+    const elapsed = flightElapsed('notes');
+    const delay = (elapsed === null ? 0 : Math.max(0, 900 - elapsed)) + 900;
     const groundN = ridgeNoise(37);
     const tuftR = rng(5);
     let raf = 0;
@@ -107,9 +56,13 @@ export default function NotesGround() {
       }
       // 樹長在右邊的坡上；視窗太窄、坡上沒位置就不長
       const room = W - right;
-      if (room >= 200) {
-        const x = right + room * 0.46;
-        tree = growTree(x, H - height(x) + 2, Math.min(1.25, Math.max(0.75, H / 300)) * Math.min(1, room / 320));
+      if (room >= 220) {
+        const scale = Math.min(1.1, Math.max(0.75, H / 290)) * Math.min(1, room / 300);
+        // 先在原點長一次量樹冠寬度，再把整棵樹擺到「樹冠左緣不碰到面板」的位置：它畫在面板前面
+        const probe = growTree(0, 0, scale);
+        const crownLeft = Math.min(...probe.leaves.map((l) => l.x - l.r));
+        const x = Math.max(right + room * 0.5, right + 16 - crownLeft);
+        tree = growTree(x, H - height(x) + 2, scale);
       } else tree = null;
     };
 
@@ -167,39 +120,8 @@ export default function NotesGround() {
       }
       ctx.stroke();
 
-      const t = tree;
-      if (t) {
-        // 樹：一層一層長枝。先用偏移一點的淡色畫一次、再用地面的顏色蓋上去，留下左上緣一道月光
-        const reach = p * 8.6;
-        const pass = (color: string, dx: number, dy: number) => {
-          ctx.fillStyle = color;
-          ctx.strokeStyle = color;
-          for (const s of t.segs) {
-            const k = Math.min(1, Math.max(0, reach - s.depth));
-            if (k <= 0) continue;
-            // 長到一半的枝沿著曲線取前段（de Casteljau 切開），不是直直地伸出去
-            const qx = (1 - k) * (1 - k) * s.x1 + 2 * (1 - k) * k * s.cx + k * k * s.x2;
-            const qy = (1 - k) * (1 - k) * s.y1 + 2 * (1 - k) * k * s.cy + k * k * s.y2;
-            const mx = s.x1 + (s.cx - s.x1) * k;
-            const my = s.y1 + (s.cy - s.y1) * k;
-            ctx.lineWidth = (s.w1 + s.w2) / 2;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(s.x1 + dx, s.y1 + dy);
-            ctx.quadraticCurveTo(mx + dx, my + dy, qx + dx, qy + dy);
-            ctx.stroke();
-          }
-          for (const l of t.leaves) {
-            const k = Math.min(1, Math.max(0, reach - l.depth - 0.4));
-            if (k <= 0) continue;
-            ctx.beginPath();
-            ctx.arc(l.x + dx, l.y + dy, l.r * k, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        };
-        pass(MOON, -0.8, -0.8);
-        pass(GROUND_TOP, 0, 0);
-      }
+      // 樹：一層一層長枝，左上緣一道月光
+      if (tree) drawTree(ctx, tree, p, GROUND_TOP, MOON);
       if (p < 1) raf = requestAnimationFrame(frame);
     };
 

@@ -2,7 +2,7 @@
 // 一欄、少量資訊、寬留白：大標題壓在夜空上，文章清單放在一塊毛玻璃上（字才讀得清楚），
 // 依年份分段，每篇只有標題、兩行摘要、日期與分類。最新一篇放大。
 // 資料與篩選沿用 Blog.tsx 那一套（queryOptions、lib/blogFilter）。
-import { useMemo, useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +16,7 @@ import { postsListQueryOptions, blogCategoriesQueryOptions } from '@/data/blogLi
 import { useCategoryLabel } from '@/lib/categoryLabel';
 import { postPath } from '@/lib/postPath';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
-import { flightElapsed } from '@/lib/horizon';
+import { useSkyPage } from '@/hooks/useSkyPage';
 import KoimLoader from '@/components/common/KoimLoader';
 import NotesGround from './NotesGround';
 import './NotesSky.css';
@@ -38,51 +38,15 @@ function plainExcerpt(post: Post): string {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/**
- * 進場與退場跟著土星的飛行走：
- *   進場：從首頁飛過來的話，等鏡頭快抵達，面板才從地裡升上來；直接打開這一頁就照常淡入
- *   退場：卸載的那一刻把整頁複製一份蓋在原地，沉回地底、淡掉——不然換頁時內容是瞬間消失的
- * ready：資料載完、頁面真的畫出來之後才有東西可以動
- */
-function useArrival(pageRef: React.RefObject<HTMLDivElement | null>, ready: boolean) {
-  useLayoutEffect(() => {
-    const el = pageRef.current;
-    if (!el || !ready) return;
-    const elapsed = flightElapsed();
-    if (elapsed !== null) {
-      el.classList.add('is-arriving');
-      el.style.setProperty('--arrive-delay', `${Math.max(0, 1100 - elapsed)}ms`);
-    }
-    return () => {
-      // 開發模式的 StrictMode 會在原地卸載再掛回來：路徑沒變就不是真的離開
-      if (stripLocalePrefix(window.location.pathname) === 'blog') return;
-      const r = el.getBoundingClientRect();
-      const ghost = document.createElement('div');
-      ghost.className = 'notes-ghost';
-      ghost.setAttribute('aria-hidden', 'true');
-      const clone = el.cloneNode(true) as HTMLElement;
-      clone.classList.remove('is-arriving');
-      // 地面不跟著沉（複製出來的 canvas 也是空的）
-      clone.querySelector('.notes-ground')?.remove();
-      clone.style.position = 'absolute';
-      clone.style.top = `${r.top}px`;
-      clone.style.left = `${r.left}px`;
-      clone.style.width = `${r.width}px`;
-      ghost.append(clone);
-      document.body.append(ghost);
-      // 下一頁的內容是立刻出現的，殘影要在前半段就淡掉，不然兩頁的字會疊在一起
-      const sink = ghost.animate(
-        [
-          { transform: 'translateY(0)', opacity: 1 },
-          { transform: 'translateY(10vh)', opacity: 0.25, offset: 0.45 },
-          { transform: 'translateY(30vh)', opacity: 0 },
-        ],
-        { duration: 700, easing: 'cubic-bezier(0.55, 0, 0.85, 0.35)', fill: 'forwards' },
-      );
-      sink.onfinish = () => ghost.remove();
-    };
-  }, [pageRef, ready]);
-}
+/** 退場：整頁連同地面沉回地底（新的一頁要等鏡頭飛回去才出現，不會跟它疊在一起） */
+const LEAVE = {
+  keyframes: [
+    { transform: 'translateY(0)', opacity: 1 },
+    { transform: 'translateY(34vh)', opacity: 0 },
+  ],
+  options: { duration: 1000, easing: 'cubic-bezier(0.5, 0, 0.75, 0.3)' },
+};
+const stillOnNotes = () => stripLocalePrefix(window.location.pathname) === 'blog';
 
 export default function NotesSky() {
   const { t } = useTranslation();
@@ -121,7 +85,8 @@ export default function NotesSky() {
     return out;
   }, [filtered]);
 
-  useArrival(pageRef, !isPending);
+  // 進場：從首頁飛過來時，鏡頭快抵達（第 1.1 秒）面板才從地裡升上來
+  useSkyPage(pageRef, { sky: 'notes', ready: !isPending, arriveAt: 1100, leave: LEAVE, stillHere: stillOnNotes });
 
   if (isPending) return <KoimLoader fullscreen text={t('blog.loading')} />;
 

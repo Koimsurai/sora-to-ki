@@ -5,6 +5,7 @@ import Header from './Header';
 import Footer from './Footer';
 import ScrollToTop from './ScrollToTop';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
+import NebulaBackground from '@/components/backdrop/NebulaBackground';
 import BackToTopButton from './BackToTopButton';
 
 // 桌面 WebGL 背景/開場 + 互動式 overlay → 純 client(three.js / portal 不進 SSR)
@@ -72,6 +73,11 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
           <SpaceBackdropShell />
         </Suspense>
       </ClientOnly>
+      {/* 首頁的暗幕與紫色星雲常駐在這裡、換頁時淡入淡出：掛在首頁元件裡的話，它跟著首頁一起卸載，
+          飛行途中的土星會瞬間變亮。DOM 順序在 3D canvas 之後（同一個 z-index，後畫的在上面） */}
+      <div className={`sky-nebula${isHomePage ? ' is-shown' : ''}`} aria-hidden="true">
+        <NebulaBackground />
+      </div>
 
       <div
         className="main-content-container"
@@ -79,8 +85,8 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
       >
         {!isAdminPage && <Header />}
         <main style={{ flex: '1 0 auto' }}>{children}</main>
-        {/* 手記列表的清單面板一路延伸到頁面底部，不放 footer（demo） */}
-        {!isAdminPage && !isPhotoPage && bare !== 'blog' && <Footer />}
+        {/* 手記的面板一路延伸到底、首頁以一句話收尾，這兩頁不放 footer（demo） */}
+        {!isAdminPage && !isPhotoPage && bare !== 'blog' && !isHomePage && <Footer />}
         {!isAdminPage && (
           <ClientOnly fallback={null}>
             <Suspense fallback={null}>

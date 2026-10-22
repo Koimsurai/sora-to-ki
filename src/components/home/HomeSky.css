@@ -1,0 +1,516 @@
+/* 首頁（新版 demo）：第一屏只有名字、一句話、土星與兩行「此刻」；往下是一扇一扇的天空之窗。 */
+.home-page {
+  --ink: #f1ece3;
+  --amber: #e9c17a;
+  --amber-rgb: 233, 193, 122;
+  --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+
+  position: relative;
+  z-index: 3;
+  color: var(--white-80);
+}
+
+/* ── 第一屏 ── */
+.home-hero {
+  position: relative;
+  min-height: 100svh;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--page-top) var(--space-12) 0;
+}
+
+.home-intro {
+  max-width: 540px;
+  padding-top: 16vh;
+}
+
+.home-intro > * {
+  animation: home-rise var(--dur-1000) var(--easing-out) both;
+}
+
+.home-intro > :nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.home-intro > :nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.home-intro > :nth-child(4) {
+  animation-delay: 220ms;
+}
+
+.home-intro > :nth-child(5) {
+  animation-delay: 280ms;
+}
+
+.home-kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-18);
+  text-transform: uppercase;
+  color: var(--white-55);
+}
+
+.home-kicker-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--amber);
+}
+
+.home-name {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(56px, 7.2vw, 108px);
+  font-weight: 700;
+  line-height: var(--lh-100);
+  letter-spacing: var(--ls-n2);
+  color: var(--ink);
+}
+
+.home-line {
+  margin: var(--space-6) 0 0;
+  font-size: var(--fs-20);
+  line-height: var(--lh-150);
+  color: var(--white-80);
+}
+
+.home-line em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+.home-sub {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-14);
+  color: var(--white-50);
+}
+
+.home-links {
+  display: flex;
+  gap: var(--space-5);
+  margin-top: var(--space-8);
+  font-size: var(--fs-18);
+}
+
+.home-links a {
+  color: var(--white-50);
+  transition: color var(--dur-200) ease;
+}
+
+.home-links a:hover {
+  color: var(--amber);
+}
+
+/* 此刻：儀表上的讀數 */
+.home-now {
+  position: absolute;
+  left: var(--space-12);
+  bottom: var(--space-20);
+  width: min(560px, calc(100% - var(--space-24)));
+  animation: home-rise var(--dur-1000) var(--easing-out) 400ms both;
+}
+
+.home-now-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--white-08);
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-now-key,
+.home-now-time {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-8);
+  color: var(--white-40);
+}
+
+.home-now-val {
+  overflow: hidden;
+  font-size: var(--fs-14);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--white-80);
+  transition: color var(--dur-200) ease;
+}
+
+.home-now-row:hover .home-now-val {
+  color: var(--amber);
+}
+
+.home-hint {
+  position: absolute;
+  right: var(--space-12);
+  bottom: var(--space-20);
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-12);
+  color: var(--white-40);
+  animation: home-rise var(--dur-1000) var(--easing-out) 600ms both;
+}
+
+.home-hint::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: var(--space-10);
+  margin: var(--space-3) auto 0;
+  background: linear-gradient(var(--white-40), transparent);
+  animation: home-drip 2.4s ease-in-out infinite;
+}
+
+/* 飛回首頁：土星回到畫面上時字才跟著出現 */
+.home-page.is-arriving .home-intro > * {
+  animation-delay: var(--arrive-delay, 1300ms);
+}
+
+.home-page.is-arriving .home-intro > :nth-child(n + 2) {
+  animation-delay: calc(var(--arrive-delay, 1300ms) + 120ms);
+}
+
+.home-page.is-arriving .home-now,
+.home-page.is-arriving .home-hint {
+  animation-delay: calc(var(--arrive-delay, 1300ms) + 400ms);
+}
+
+@keyframes home-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-5));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes home-drip {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+    transform-origin: top;
+    opacity: 0.3;
+  }
+  50% {
+    transform: scaleY(1);
+    transform-origin: top;
+    opacity: 1;
+  }
+}
+
+/* ── 天空之窗 ── */
+.home-windows {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--space-6);
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-24) var(--space-6) 0;
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(var(--space-12));
+  transition:
+    opacity var(--dur-1000) var(--easing-out),
+    transform var(--dur-1000) var(--easing-out);
+}
+
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* 同一排的第二扇晚一點，一扇一扇來 */
+.hw-moments,
+.hw-about {
+  transition-delay: var(--dur-150);
+}
+
+.hw {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 400px;
+  border: 1px solid var(--white-08);
+  border-radius: var(--r-16);
+  background: #05060c;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    opacity var(--dur-1000) var(--easing-out),
+    transform var(--dur-1000) var(--easing-out),
+    border-color var(--dur-300) ease,
+    box-shadow var(--dur-300) ease;
+}
+
+.hw-notes {
+  grid-column: 1 / 8;
+}
+
+.hw-moments {
+  grid-column: 8 / 13;
+}
+
+.hw-collection {
+  grid-column: 1 / 6;
+  min-height: 440px;
+}
+
+.hw-about {
+  grid-column: 6 / 13;
+  min-height: 440px;
+}
+
+a.hw:hover,
+.hw-collection:hover {
+  border-color: rgba(var(--amber-rgb), 0.35);
+  box-shadow:
+    0 0 0 1px rgba(var(--amber-rgb), 0.15),
+    0 30px 80px var(--black-50);
+}
+
+.hw-sky {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform var(--dur-1000) var(--easing-out);
+}
+
+.hw:hover .hw-sky {
+  transform: scale(1.04);
+}
+
+.hw-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 35%, rgba(2, 3, 6, 0.8));
+  pointer-events: none;
+}
+
+.hw-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  min-height: inherit;
+  padding: var(--space-8);
+}
+
+.hw-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.hw-label {
+  font-family: var(--display);
+  font-size: var(--fs-32);
+  font-weight: 700;
+  line-height: var(--lh-110);
+  color: var(--ink);
+}
+
+.hw-en {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-18);
+  text-transform: uppercase;
+  color: var(--white-45);
+}
+
+.hw-list {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hw-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-2-5) 0;
+  border-top: 1px solid var(--white-08);
+}
+
+.hw-list-title {
+  overflow: hidden;
+  font-size: var(--fs-14);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--white-80);
+}
+
+.hw-list time,
+.hw-meta {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--white-40);
+}
+
+.hw-quote {
+  display: -webkit-box;
+  margin: var(--space-4) 0 var(--space-2);
+  overflow: hidden;
+  font-family: var(--display);
+  font-size: var(--fs-24);
+  font-weight: 600;
+  line-height: var(--lh-140);
+  color: var(--ink);
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.hw-quote--small {
+  font-family: inherit;
+  font-size: var(--fs-16);
+  font-weight: 400;
+  color: var(--white-70);
+}
+
+/* 收藏的三顆主星：標籤疊在 canvas 畫的星上面 */
+.hw-collection .hw-content {
+  justify-content: flex-start;
+}
+
+.hw-star {
+  position: absolute;
+  padding: var(--space-1) var(--space-3);
+  transform: translate(-50%, calc(-100% - var(--space-5)));
+  border: 1px solid rgba(var(--amber-rgb), 0.3);
+  border-radius: var(--r-full);
+  background: rgba(5, 6, 12, 0.6);
+  backdrop-filter: blur(var(--blur-4));
+  font-size: var(--fs-13);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    background var(--dur-200) ease,
+    color var(--dur-200) ease;
+}
+
+.hw-star:hover {
+  background: var(--amber);
+  color: #05060c;
+}
+
+.home-more {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-8);
+  grid-column: 1 / -1;
+  padding: var(--space-12) 0 0;
+  font-size: var(--fs-14);
+}
+
+.home-more a {
+  color: var(--white-50);
+  text-decoration: none;
+  transition: color var(--dur-200) ease;
+}
+
+.home-more a:hover {
+  color: var(--amber);
+}
+
+/* ── 收尾：今天的一句話（沒有 footer） ── */
+.home-signoff {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: var(--space-24) var(--space-6);
+  text-align: center;
+}
+
+.home-signoff blockquote {
+  margin: 0;
+}
+
+.home-signoff blockquote p {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-20);
+  line-height: var(--lh-160);
+  color: var(--white-70);
+}
+
+.home-signoff cite {
+  display: block;
+  margin-top: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  font-style: normal;
+  color: var(--white-40);
+}
+
+.home-copy {
+  margin: var(--space-12) 0 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-8);
+  color: var(--white-30);
+}
+
+@media (max-width: 860px) {
+  .home-hero {
+    padding: var(--page-top) var(--space-6) var(--space-12);
+  }
+
+  .home-intro {
+    padding-top: 6vh;
+  }
+
+  .home-now,
+  .home-hint {
+    position: static;
+    width: auto;
+    margin-top: var(--space-12);
+  }
+
+  .home-hint {
+    display: none;
+  }
+
+  .home-windows {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: var(--space-12);
+  }
+
+  .hw-notes,
+  .hw-moments,
+  .hw-collection,
+  .hw-about {
+    grid-column: 1 / -1;
+    min-height: 340px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-intro > *,
+  .home-now,
+  .home-hint,
+  .home-hint::after {
+    animation: none;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+  }
+}

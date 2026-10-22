@@ -1030,6 +1030,16 @@ html.intro-pending .intro-veil {
   opacity: 1;
 }
 
+/* 換頁時離開的那一頁的複製（hooks/useSkyPage）：蓋在原地播退場動畫。
+   在根脈絡、內容容器（z-index 10）底下：新的一頁畫在它上面，背景的 3D 在它底下 */
+.sky-ghost {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 /* ═══════════════════════════════════════════════════
    Home section shared tokens — aligned with Activity /
    Notes pages. Each home section reuses these for

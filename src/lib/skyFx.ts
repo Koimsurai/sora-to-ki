@@ -38,8 +38,8 @@ export interface SkyFx {
   /** 把天空效果套到最後的輸出上 */
   output(sceneOut: V4): V4;
   setMode(mode: SkyMode): void;
-  /** 換頁飛行時畫面往中心拉成光線的強度，0–1 */
-  setWarp(amount: number): void;
+  /** 換頁飛行的速度，0–1：畫面往中心拉成光線、星星拖出動態的軌跡 */
+  setFlight(speed: number): void;
   /**
    * 推進一幀。回傳：
    *   busy：還在轉場（要跟著 60fps 畫）
@@ -65,10 +65,23 @@ const POLE_SPEED = 0.02;
  * 二三十度左右、尾巴淡得很慢
  */
 const TRAIL_KEEP_60 = 0.9985;
+/** 飛行全速時的每幀保留比例：尾巴只留幾十像素，是「速度」不是「時間」 */
+const FLIGHT_KEEP_60 = 0.9;
+/** 每一層背景星裡拖出軌跡的顆數（取最亮的） */
+const TRAIL_PER_LAYER = 500;
+
+const smoothstep01 = (x: number) => {
+  const t = Math.min(1, Math.max(0, x));
+  return t * t * (3 - 2 * t);
+};
 
 export function createSkyFx(opts: {
   renderer: THREE.WebGPURenderer;
   skyGroup: THREE.Object3D;
+  /** 背景星空的各層（skyGroup 的子節點），userData 帶 positions / scales / tints */
+  starLayers: THREE.Sprite[];
+  /** 場景 pass 的深度：星軌不能畫到土星前面 */
+  sceneDepth: TexNode;
   width: number;
   height: number;
   dpr: number;
@@ -81,44 +94,49 @@ export function createSkyFx(opts: {
   const { renderer, skyGroup } = opts;
 
   // ── 拖出軌跡的星 ──
-  // 只有這一千多顆留下軌跡，背景那兩萬多顆照常是點。全部拖出來的話整片天空糊成灰色、看了頭暈。
-  // 它們撒在整個天球上，視野裡只看得到一成左右；大多數刻意是暗的（像真的星軌照片：
-  // 少數亮弧、底下一層細密的暗弧），量多但不刺眼。
+  // 就是背景裡最亮的那一千多顆星本身（同樣的位置、大小、色溫），不是另外撒的一批：
+  // 軌跡從畫面上本來就在的星長出來，不會有「不知道從哪冒出來的線」。
+  // 其餘兩萬多顆照常是點，全部拖出來的話整片天空糊成灰色、看了頭暈。
   // 獨立一個場景、一般的材質：背景星的材質寫 MRT，畫不進單張 target。
-  const TRAIL_STARS = 1400;
+  // 每層一個 holder，畫之前抄那一層當下的自轉，軌跡星才跟背景星對得上。
   const trailScene = new THREE.Scene();
   const trailGroup = new THREE.Group();
   trailScene.add(trailGroup);
-  {
-    const pos = new Float32Array(TRAIL_STARS * 3);
-    const tint = new Float32Array(TRAIL_STARS);
-    const mag = new Float32Array(TRAIL_STARS);
-    for (let i = 0; i < TRAIL_STARS; i++) {
-      const r = 100 + Math.random() * 40;
-      const th0 = Math.random() * Math.PI * 2;
-      const ph = Math.acos(2 * Math.random() - 1);
-      pos.set([r * Math.sin(ph) * Math.cos(th0), r * Math.sin(ph) * Math.sin(th0), r * Math.cos(ph)], i * 3);
-      tint[i] = Math.random();
-      mag[i] = 0.2 + Math.pow(Math.random(), 2.5) * 0.8;
-    }
+  const holders = opts.starLayers.map((layer) => {
+    const all = layer.userData as { positions: Float32Array; scales: Float32Array; tints: Float32Array };
+    const order = Array.from(all.scales.keys()).sort((a, b) => all.scales[b] - all.scales[a]);
+    const pick = order.slice(0, TRAIL_PER_LAYER);
+    const pos = new Float32Array(pick.length * 3);
+    const scale = new Float32Array(pick.length);
+    const tint = new Float32Array(pick.length);
+    pick.forEach((src, i) => {
+      pos.set(all.positions.subarray(src * 3, src * 3 + 3), i * 3);
+      scale[i] = all.scales[src];
+      tint[i] = all.tints[src];
+    });
     const mat = new THREE.PointsNodeMaterial();
     mat.positionNode = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(pos, 3), 'vec3');
     const t = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(tint, 1), 'float');
-    const m = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(mag, 1), 'float');
-    // 真實星軌照片的顏色：大多偏白，少數偏藍或偏橘
-    mat.colorNode = mix(vec3(0.75, 0.85, 1.0), vec3(1.0, 0.82, 0.62), t).mul(m.mul(1.2));
+    // 色溫跟背景星同一條公式（見 starfieldGpu 的 buildStarLayer），亮度壓低：軌跡頭藏在星的光暈裡
+    mat.colorNode = mix(vec3(1, 1, 1), mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.9, 0.78), t), 0.35);
     const d = uv().sub(0.5).length().mul(2);
-    mat.opacityNode = smoothstep(1, 0.3, d).mul(m);
-    mat.size = 0.45;
+    mat.opacityNode = smoothstep(1, 0.3, d);
+    mat.scaleNode = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(scale, 1), 'float');
+    mat.size = (layer.material as THREE.PointsNodeMaterial).size * 0.8;
     mat.sizeAttenuation = true;
     mat.transparent = true;
     mat.depthWrite = false;
-    mat.blending = THREE.AdditiveBlending;
+    // 取最亮值而不是相加：飛行時同一幀會在幾個子步驟各畫一次，相加的話慢的地方會疊到爆白
+    mat.blending = THREE.CustomBlending;
+    mat.blendEquation = THREE.MaxEquation;
     const stars = new THREE.Sprite(mat);
-    stars.count = TRAIL_STARS;
+    stars.count = pick.length;
     stars.frustumCulled = false;
-    trailGroup.add(stars);
-  }
+    const holder = new THREE.Group();
+    holder.add(stars);
+    trailGroup.add(holder);
+    return { holder, layer };
+  });
   const dpr = opts.dpr;
   let mode: SkyMode = 'default';
   const trailMix = uniform(0);
@@ -126,6 +144,12 @@ export function createSkyFx(opts: {
   const cellPx = uniform(1);
   const keep = uniform(TRAIL_KEEP_60);
   const warp = uniform(0);
+  /** 軌跡疊上去的強度：手記的星軌，或飛行中的動態軌跡，取大的 */
+  const streakMix = uniform(0);
+  let flightSpeed = 0;
+  /** 剛飛完的那一小段（秒）：動態的線要在這段時間裡收乾淨，不然會殘留成一片跟星軌方向不同的斜線 */
+  let afterFlight = 0;
+  const FLUSH_SECONDS = 0.7;
 
   // ── 星軌：兩張輪流的累積 target ──
   // 以 CSS 像素的解析度存：星星本來就是柔光點，軌跡不需要裝置像素的精度，記憶體省 4 倍
@@ -165,15 +189,36 @@ export function createSkyFx(opts: {
     renderer.setClearColor(prevColor, prevAlpha);
   };
 
-  const accumulate = () => {
+  // 飛行時鏡頭一幀可以移動好幾個像素，每幀只畫一次的話軌跡是一串點（幀率低時更明顯）。
+  // 在上一幀與這一幀的鏡頭姿態之間插幾個子步驟各畫一次，線才是連續的
+  const cam = opts.camera as THREE.PerspectiveCamera;
+  const subCam = cam.clone();
+  const prevPos = cam.position.clone();
+  const prevQuat = cam.quaternion.clone();
+  const accumulate = (substeps: number) => {
     const prevColor = new THREE.Color();
     renderer.getClearColor(prevColor);
     const prevAlpha = renderer.getClearAlpha();
     renderer.setClearColor(0x000000, 0);
-    // 軌跡星跟著背景星空一起轉
+    // 軌跡星跟著背景星空一起轉：天極的旋轉（skyGroup）加上每層自己的慢速自轉
     trailGroup.quaternion.copy(skyGroup.quaternion);
+    for (const { holder, layer } of holders) holder.rotation.copy(layer.rotation);
     renderer.setRenderTarget(starsRT);
-    renderer.render(trailScene, opts.camera);
+    renderer.clear();
+    const autoClear = renderer.autoClear;
+    renderer.autoClear = false;
+    subCam.projectionMatrix.copy(cam.projectionMatrix);
+    subCam.projectionMatrixInverse.copy(cam.projectionMatrixInverse);
+    for (let s = 1; s <= substeps; s++) {
+      const t = s / substeps;
+      subCam.position.lerpVectors(prevPos, cam.position, t);
+      subCam.quaternion.slerpQuaternions(prevQuat, cam.quaternion, t);
+      subCam.updateMatrixWorld(true);
+      renderer.render(trailScene, subCam);
+    }
+    renderer.autoClear = autoClear;
+    prevPos.copy(cam.position);
+    prevQuat.copy(cam.quaternion);
     renderer.setRenderTarget(spare);
     renderer.render(accScene, quadCam);
     renderer.setRenderTarget(null);
@@ -199,7 +244,9 @@ export function createSkyFx(opts: {
       // 星軌疊在原本的畫面上（取亮的）
       // 軌跡比單顆星暗（拉長之後亮度攤開了），提一點才看得出長曝光
       // 壓暗：星軌是背景，不能跟文字搶
-      const trail = trailTex.mul(trailMix.mul(0.8));
+      // 土星（寫了深度的地方）前面不畫軌跡：飛過土星時星星的尾巴不能穿過星球
+      const open = step(0.9999, (opts.sceneDepth as unknown as Node<'float'>).x);
+      const trail = trailTex.mul(streakMix.mul(0.6).mul(open));
       let rgb = max(sceneOut.rgb, trail.rgb);
 
       // 換頁的飛行：從畫面中心往外的放射狀模糊，星星與土星拉成光線（跟首訪開場的超空間同一種語言）
@@ -248,8 +295,9 @@ export function createSkyFx(opts: {
       return vec4(rgb, alpha);
     },
 
-    setWarp(amount) {
-      warp.value = amount;
+    setFlight(speed) {
+      flightSpeed = speed;
+      warp.value = speed * 0.55;
     },
 
     setMode(m) {
@@ -266,16 +314,27 @@ export function createSkyFx(opts: {
       // 格子一級一級跳（1→2→3→4 個 CSS 像素），不是連續放大：吸附到格子上的感覺來自這個跳動
       cellPx.value = (1 + Math.round(pixelMix.value * 3)) * dpr;
 
-      if (trailMix.value > 0 && opts.canTrail()) {
-        skyGroup.rotateOnWorldAxis(POLE, dt * POLE_SPEED * trailMix.value);
-        keep.value = Math.pow(TRAIL_KEEP_60, dt * 60);
-        accumulate();
+      // 飛行中：同一批星、同一張累積 target，只是尾巴短（跟著速度）——鏡頭在動，星星就拖出線。
+      // 抵達手記時速度歸零、保留比例慢慢回到長曝光，動態的線直接接成星軌，中間沒有換手。
+      const rotating = trailMix.value > 0 && opts.canTrail();
+      const flying = flightSpeed > 0.001;
+      afterFlight = flying ? FLUSH_SECONDS : Math.max(0, afterFlight - dt);
+      streakMix.value = Math.max(rotating ? trailMix.value : 0, smoothstep01(flightSpeed / 0.15));
+      if (rotating || flying) {
+        if (rotating) skyGroup.rotateOnWorldAxis(POLE, dt * POLE_SPEED * trailMix.value);
+        const fast = Math.max(smoothstep01(flightSpeed / 0.3), flying ? 0 : afterFlight / FLUSH_SECONDS);
+        const keep60 = TRAIL_KEEP_60 + (FLIGHT_KEEP_60 - TRAIL_KEEP_60) * fast;
+        keep.value = Math.pow(keep60, dt * 60);
+        accumulate(flying ? 8 : 1);
         trailLive = true;
-      } else if (trailLive) {
-        clearTargets();
+      } else {
+        if (trailLive) clearTargets();
         trailLive = false;
+        // 沒在累積時也要跟上鏡頭，否則下一次起飛的第一幀會從很久以前的位置拉一條線過來
+        prevPos.copy(cam.position);
+        prevQuat.copy(cam.quaternion);
       }
-      const busy = trailMix.value !== trailTarget || pixelMix.value !== pixelTarget || trailMix.value > 0;
+      const busy = trailMix.value !== trailTarget || pixelMix.value !== pixelTarget || trailMix.value > 0 || flying;
       return { busy, frameMs: pixelMix.value > 0.5 ? 1000 / 12 : null };
     },
 
@@ -286,7 +345,7 @@ export function createSkyFx(opts: {
     },
 
     warm() {
-      accumulate();
+      accumulate(1);
       clearTargets();
     },
 

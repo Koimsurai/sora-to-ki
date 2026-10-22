@@ -48,23 +48,103 @@ export function panelSpan(width: number) {
   return { left, right: width - left };
 }
 
-/** 首頁飛到手記那段飛行的長度（starfieldGpu 的 TRAVEL_SECONDS） */
-export const FLIGHT_MS = 2200;
-
-/**
- * 這一頁是不是從首頁飛過來的、已經飛了多久（ms）；不是的話回 null。
- * 頁面可能在飛到一半才掛上（資料還在載），所以不能假設「掛上的那一刻就是起飛的那一刻」。
- * <html data-sky> 還是 home 代表 SpaceBackdropShell 的 effect 還沒跑，也就是剛起飛。
- */
-export function flightElapsed(): number | null {
-  const root = document.documentElement;
-  if (root.dataset.sky === 'home') return 0;
-  if (root.dataset.sky !== 'notes' || root.dataset.prevSky !== 'home') return null;
-  const ms = performance.now() - Number(root.dataset.skySince ?? Number.NEGATIVE_INFINITY);
-  return ms < FLIGHT_MS ? ms : null;
-}
-
 export function smoothstep(a: number, b: number, x: number) {
   const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
+}
+
+export interface Seg {
+  x1: number;
+  y1: number;
+  cx: number;
+  cy: number;
+  x2: number;
+  y2: number;
+  w1: number;
+  w2: number;
+  depth: number;
+}
+
+/** 枝的層數（第 0 層是樹幹） */
+export const TREE_DEPTH = 8;
+
+/** 長一棵樹：枝幹（依長出來的先後排好、略帶彎曲、由粗到細）與葉叢 */
+export function growTree(baseX: number, baseY: number, scale: number) {
+  const R = rng(21);
+  const segs: Seg[] = [];
+  const leaves: { x: number; y: number; r: number; depth: number }[] = [];
+  const grow = (x: number, y: number, ang: number, len: number, w: number, depth: number) => {
+    const bend = (R() - 0.5) * 0.5;
+    const x2 = x + Math.cos(ang) * len;
+    const y2 = y + Math.sin(ang) * len;
+    const cx = (x + x2) / 2 + Math.cos(ang + Math.PI / 2) * len * bend * 0.3;
+    const cy = (y + y2) / 2 + Math.sin(ang + Math.PI / 2) * len * bend * 0.3;
+    const w2 = Math.max(0.6 * scale, w * 0.68);
+    segs.push({ x1: x, y1: y, cx, cy, x2, y2, w1: w, w2, depth: TREE_DEPTH - depth });
+    // 葉子長在最後三層：末梢一大叢、往內越來越疏，樹冠才有厚度（只長在末梢的話像一圈花椰菜）
+    if (depth <= 2) {
+      const n = [14, 6, 3][depth];
+      const spread = [13, 10, 8][depth];
+      for (let i = 0; i < n; i++) {
+        leaves.push({
+          x: x2 + (R() - 0.5) * spread * scale,
+          y: y2 + (R() - 0.65) * spread * 0.75 * scale,
+          r: (1.3 + R() * 2.8) * scale,
+          depth: TREE_DEPTH - depth,
+        });
+      }
+    }
+    if (depth === 0) return;
+    const k = depth > TREE_DEPTH - 2 ? 2 : R() < 0.45 ? 3 : 2;
+    for (let i = 0; i < k; i++) {
+      const spread = (i - (k - 1) / 2) * (0.5 + R() * 0.3) + (R() - 0.5) * 0.35;
+      // 往上長的趨勢：越往外越往天空彎，也稍微往右（迎著光）
+      const lift = (-Math.PI / 2 + 0.08 - (ang + spread)) * 0.14;
+      grow(x2, y2, ang + spread + lift, len * (0.7 + R() * 0.14), w2, depth - 1);
+    }
+  };
+  grow(baseX, baseY, -Math.PI / 2 + 0.05, 46 * scale, 9 * scale, TREE_DEPTH);
+  return { segs, leaves };
+}
+
+/**
+ * 畫一棵樹（progress 0–1：從樹幹一層一層長到葉子）。
+ * 先用偏移一點的 rim 色畫一次、再用 color 蓋上去，剪影的左上緣留下一道月光。
+ */
+export function drawTree(
+  ctx: CanvasRenderingContext2D,
+  tree: ReturnType<typeof growTree>,
+  progress: number,
+  color: string,
+  rim: string,
+) {
+  const reach = progress * (TREE_DEPTH + 1.6);
+  const pass = (fill: string, dx: number, dy: number) => {
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = fill;
+    ctx.lineCap = 'round';
+    for (const s of tree.segs) {
+      const k = Math.min(1, Math.max(0, reach - s.depth));
+      if (k <= 0) continue;
+      // 長到一半的枝沿著曲線取前段（de Casteljau 切開），不是直直地伸出去
+      const qx = (1 - k) * (1 - k) * s.x1 + 2 * (1 - k) * k * s.cx + k * k * s.x2;
+      const qy = (1 - k) * (1 - k) * s.y1 + 2 * (1 - k) * k * s.cy + k * k * s.y2;
+      const mx = s.x1 + (s.cx - s.x1) * k;
+      const my = s.y1 + (s.cy - s.y1) * k;
+      ctx.lineWidth = (s.w1 + s.w2) / 2;
+      ctx.beginPath();
+      ctx.moveTo(s.x1 + dx, s.y1 + dy);
+      ctx.quadraticCurveTo(mx + dx, my + dy, qx + dx, qy + dy);
+      ctx.stroke();
+    }
+    for (const l of tree.leaves) {
+      const k = Math.min(1, Math.max(0, reach - l.depth - 0.4));
+      if (k <= 0) continue;
+      ctx.beginPath();
+      ctx.arc(l.x + dx, l.y + dy, l.r * k, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+  pass(rim, -0.8, -0.8);
+  pass(color, 0, 0);
 }
