@@ -15,9 +15,8 @@ const TIMINGS = {
   peakEnd: 1900,
   decelEnd: 2900,
   flashCss: 2200,
-  // Fire pre-reveal during stable hyperspace so Layout's heavy initial
-  // React render finishes well before flash starts (2200ms). Avoids
-  // any reconciliation cost coinciding with the Saturn reveal moment.
+  // 掛 3D 背景與 DOM 特效、解開內容。排在閃光（2200）之前，讓掛載的成本不要撞上
+  // 土星現身那一刻；內容本身則已在開場前畫好（見 index.css 的 html.intro-pending）。
   preReveal: 1800,
   explosion: 2900,
   endStart: 3200,
@@ -25,13 +24,18 @@ const TIMINGS = {
 };
 
 interface Star {
-  angle: number;
+  cos: number;
+  sin: number;
   r: number;
   baseSpeed: number;
   streakLen: number;
-  seed: number;
+  hueDrift: number;
   baseAlpha: number;
   spawnDelay: number;
+  // 以下由 baseSpeed 推出、一顆星的一生中不變，生成時算好，不用每幀重算
+  depthContrast: number;
+  sat: number;
+  thickness: number;
 }
 
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -58,15 +62,49 @@ const spawnStar = (): Star => {
   // act as the "very distant" layer that used to be the static bg, but
   // they still stream — physically consistent with being inside a tunnel.
   const baseSpeed = SPEED_MIN + Math.random() * (SPEED_MAX - SPEED_MIN);
+  const angle = Math.random() * Math.PI * 2;
+  const speedRatio = (baseSpeed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
   return {
-    angle: Math.random() * Math.PI * 2,
+    cos: Math.cos(angle),
+    sin: Math.sin(angle),
     r: 0,
     baseSpeed,
     streakLen: 25 + baseSpeed * 0.5,
-    seed: Math.random(),
+    hueDrift: (Math.random() - 0.5) * 36,
     baseAlpha: 0.4 + Math.random() * 0.55,
     spawnDelay: 0,
+    // Wide depth contrast so slow stars read as "distant background"
+    // rather than blending with the foreground streaks.
+    depthContrast: 0.12 + speedRatio * 0.93,
+    // Slow stars: low saturation (≈ grey-white pinpoints).
+    // Fast stars: higher saturation (≈ vivid blue/purple streaks).
+    // 取整數：漸層快取用 (色相, 飽和度) 當鍵，1% 的飽和度差肉眼分不出來
+    sat: Math.round(30 + speedRatio * 50),
+    thickness: 0.3 + speedRatio * 2.2,
   };
+};
+
+// 拖尾的兩層漸層畫在「單位長度、沿 x 軸」的座標系裡，每顆星再用 setTransform 旋轉、
+// 等比縮放、平移到自己的位置。這樣同一組 (色相, 飽和度) 的漸層可以一直重用，不必每顆星
+// 每幀各 new 一到兩個、再組十幾個 hsla() 字串（700 顆星下每秒是三萬多個漸層物件）。
+// 每顆星的亮度改乘在 globalAlpha 上：色標的 alpha 原本就是 intensity × 常數，兩種寫法畫出來一樣。
+// 等比縮放會連線寬一起放大，所以線寬要除回星芒長度。
+const glowStops = (hue: number, sat: number): [number, string][] => [
+  [0, `hsla(${hue}, ${sat}%, 70%, 0)`],
+  [0.7, `hsla(${hue}, ${sat}%, 72%, 0.08)`],
+  [0.96, `hsla(${hue}, ${sat}%, 72%, 0.32)`],
+  [1, `hsla(${hue}, ${sat}%, 72%, 0.22)`],
+];
+
+const coreStops = (hue: number, sat: number): [number, string][] => {
+  const coreSat = Math.max(20, sat - 15);
+  return [
+    [0, `hsla(${hue + 8}, ${coreSat}%, 92%, 0)`],
+    [0.55, `hsla(${hue + 8}, ${coreSat}%, 92%, 0.1)`],
+    [0.85, `hsla(${hue + 8}, ${coreSat}%, 95%, 0.45)`],
+    [0.97, `hsla(${hue + 12}, ${Math.max(15, coreSat - 10)}%, 98%, 1)`],
+    [1, `hsla(${hue + 12}, ${Math.max(15, coreSat - 15)}%, 99%, 0.85)`],
+  ];
 };
 
 interface IntroAnimationProps {
@@ -180,17 +218,37 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart, onPreReveal }: 
     let width = window.innerWidth;
     let height = window.innerHeight;
     let maxR = Math.hypot(width, height) * MAX_R_FACTOR;
+    let dpr = 1;
 
     const resize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
       maxR = Math.hypot(width, height) * MAX_R_FACTOR;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = width * dpr;
       canvas.height = height * dpr;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    // 鍵用數字不用字串：查表每幀上千次，組字串就又回到原本的配置量。sat < 128
+    const gradients = new Map<number, CanvasGradient>();
+    const gradient = (kind: 'glow' | 'core', hue: number, sat: number) => {
+      const key = ((hue << 7) | sat) * 2 + (kind === 'glow' ? 0 : 1);
+      let g = gradients.get(key);
+      if (!g) {
+        g = ctx.createLinearGradient(0, 0, 1, 0);
+        for (const [at, color] of (kind === 'glow' ? glowStops : coreStops)(hue, sat)) g.addColorStop(at, color);
+        gradients.set(key, g);
+      }
+      return g;
+    };
+    const streak = (lineWidth: number) => {
+      ctx.lineWidth = lineWidth;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(1, 0);
+      ctx.stroke();
     };
     resize();
     window.addEventListener('resize', resize);
@@ -220,6 +278,10 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart, onPreReveal }: 
       const elapsed = now - startTime;
       const dt = Math.min(now - lastFrame, 33);
       lastFrame = now;
+
+      // 上一幀最後一顆星留下的 transform / globalAlpha 要先歸位
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalAlpha = 1;
 
       if (elapsed >= TIMINGS.explosion) {
         ctx.globalCompositeOperation = 'source-over';
@@ -252,28 +314,14 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart, onPreReveal }: 
         s.r += s.baseSpeed * speedMult * (dt / 1000);
 
         if (s.r > maxR) {
-          const fresh = spawnStar();
-          s.angle = fresh.angle;
-          s.r = 0;
-          s.baseSpeed = fresh.baseSpeed;
-          s.streakLen = fresh.streakLen;
-          s.baseAlpha = fresh.baseAlpha;
-          s.seed = fresh.seed;
-          s.spawnDelay = 0;
+          Object.assign(s, spawnStar());
           continue;
         }
 
         if (s.r < 4) continue;
 
-        const cosA = Math.cos(s.angle);
-        const sinA = Math.sin(s.angle);
-
-        const sx = cx + cosA * s.r;
-        const sy = cy + sinA * s.r;
-
         const tailR = Math.max(0, s.r - s.streakLen);
-        const tx = cx + cosA * tailR;
-        const ty = cy + sinA * tailR;
+        const len = s.r - tailR;
 
         let radialAlpha;
         if (s.r < FADE_IN_PX) {
@@ -284,48 +332,30 @@ const IntroAnimation = ({ onAnimationComplete, onExplosionStart, onPreReveal }: 
           radialAlpha = 1;
         }
 
-        const speedRatio = (s.baseSpeed - SPEED_MIN) / (SPEED_MAX - SPEED_MIN);
-        // Wide depth contrast so slow stars read as "distant background"
-        // rather than blending with the foreground streaks.
-        const depthContrast = 0.12 + speedRatio * 0.93;
-        const intensity = radialAlpha * s.baseAlpha * depthContrast * (0.3 + speedMult * 0.7);
+        const intensity = radialAlpha * s.baseAlpha * s.depthContrast * (0.3 + speedMult * 0.7);
         if (intensity < 0.02) continue;
 
-        const hueDrift = (s.seed - 0.5) * 36;
-        const hue = 200 + speedMult * 30 + hueDrift;
+        const hue = Math.round(200 + speedMult * 30 + s.hueDrift);
 
-        // Slow stars: low saturation (≈ grey-white pinpoints).
-        // Fast stars: higher saturation (≈ vivid blue/purple streaks).
-        const sat = 30 + speedRatio * 50;
-        const thicknessBase = 0.3 + speedRatio * 2.2;
+        // 單位線段 (0,0)→(1,0) 對到星芒的尾端→頭端
+        const k = len * dpr;
+        ctx.setTransform(
+          s.cos * k,
+          s.sin * k,
+          -s.sin * k,
+          s.cos * k,
+          (cx + s.cos * tailR) * dpr,
+          (cy + s.sin * tailR) * dpr,
+        );
+        ctx.globalAlpha = intensity;
 
         if (intensity > 0.4) {
-          const glow = ctx.createLinearGradient(tx, ty, sx, sy);
-          glow.addColorStop(0, `hsla(${hue}, ${sat}%, 70%, 0)`);
-          glow.addColorStop(0.7, `hsla(${hue}, ${sat}%, 72%, ${intensity * 0.08})`);
-          glow.addColorStop(0.96, `hsla(${hue}, ${sat}%, 72%, ${intensity * 0.32})`);
-          glow.addColorStop(1, `hsla(${hue}, ${sat}%, 72%, ${intensity * 0.22})`);
-          ctx.strokeStyle = glow;
-          ctx.lineWidth = Math.max(2.2, intensity * 5.5);
-          ctx.beginPath();
-          ctx.moveTo(tx, ty);
-          ctx.lineTo(sx, sy);
-          ctx.stroke();
+          ctx.strokeStyle = gradient('glow', hue, s.sat);
+          streak(Math.max(2.2, intensity * 5.5) / len);
         }
 
-        const coreSat = Math.max(20, sat - 15);
-        const core = ctx.createLinearGradient(tx, ty, sx, sy);
-        core.addColorStop(0, `hsla(${hue + 8}, ${coreSat}%, 92%, 0)`);
-        core.addColorStop(0.55, `hsla(${hue + 8}, ${coreSat}%, 92%, ${intensity * 0.1})`);
-        core.addColorStop(0.85, `hsla(${hue + 8}, ${coreSat}%, 95%, ${intensity * 0.45})`);
-        core.addColorStop(0.97, `hsla(${hue + 12}, ${Math.max(15, coreSat - 10)}%, 98%, ${intensity})`);
-        core.addColorStop(1, `hsla(${hue + 12}, ${Math.max(15, coreSat - 15)}%, 99%, ${intensity * 0.85})`);
-        ctx.strokeStyle = core;
-        ctx.lineWidth = Math.max(0.5, intensity * thicknessBase);
-        ctx.beginPath();
-        ctx.moveTo(tx, ty);
-        ctx.lineTo(sx, sy);
-        ctx.stroke();
+        ctx.strokeStyle = gradient('core', hue, s.sat);
+        streak(Math.max(0.5, intensity * s.thickness) / len);
       }
 
       raf = requestAnimationFrame(tick);

@@ -1001,12 +1001,16 @@ body.intro-animation-active {
 
 /* 首訪桌面首頁:intro 是 client-only(SSR 不知道會不會播),內容卻已 SSR → 會「先閃首頁再跑 intro」。
    __root 的 pre-paint inline script 符合條件時加 html.intro-pending → 先藏內容;
-   SpaceBackdropShell 在 intro pre-reveal 時移除(內容在 bloom 下淡入)。inline script 內另有安全 timeout 兜底。 */
+   SpaceBackdropShell 在 intro pre-reveal 時移除(內容在 bloom 下淡入)。inline script 內另有安全 timeout 兜底。
+
+   ⚠ 是 0.001 不是 0:opacity 剛好 0 的圖層瀏覽器整層不光柵化,等 pre-reveal 拿掉 class 那一刻才一次
+   光柵化整頁,實測在開場進行中卡 270–440ms(正好在閃光前)。0.001 肉眼看不到(255 × 0.001 量化後是 0),
+   但內容會在開場掛上之前的首次繪製就畫好。will-change: opacity 沒有這個效果,試過。 */
 .main-content-container {
   transition: opacity var(--dur-500) ease;
 }
 html.intro-pending .main-content-container {
-  opacity: 0;
+  opacity: 0.001;
 }
 
 /* ═══════════════════════════════════════════════════
