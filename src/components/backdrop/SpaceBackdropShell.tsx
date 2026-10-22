@@ -6,7 +6,7 @@ import type { IntroPhase } from '@/lib/introTimeline';
 import IntroSkip from './IntroSkip';
 import BackdropErrorBoundary from './BackdropErrorBoundary';
 import DomSpaceEffects from './DomSpaceEffects';
-import NotesTree from './NotesTree';
+import NotesHorizon from './NotesHorizon';
 import type { SkyMode } from '@/lib/starfieldGpu';
 import { useHardwareGpu } from '@/hooks/useHardwareGpu';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
@@ -58,11 +58,15 @@ export default function SpaceBackdropShell() {
   const softwareGpu = hardwareGpu === false;
 
   // 有自己天空的分區：把頁面上那層紫色星雲與暗幕收掉，天空才看得到（見 NebulaBackground.css）
+  // 上一頁的天空與換天空的時間也記下來：從首頁飛過來的頁面，內容要等鏡頭快抵達時才升上來，
+  // 而頁面可能在飛到一半才掛上（資料還在載），得知道已經飛了多久（見 NotesSky 的 flightElapsed）
   useEffect(() => {
-    document.documentElement.dataset.sky = sky;
-    return () => {
-      delete document.documentElement.dataset.sky;
-    };
+    const root = document.documentElement;
+    if (root.dataset.sky && root.dataset.sky !== sky) {
+      root.dataset.prevSky = root.dataset.sky;
+      root.dataset.skySince = String(Math.round(performance.now()));
+    }
+    root.dataset.sky = sky;
   }, [sky]);
 
   // 軟體渲染 → 在 <html> 掛 .no-gpu，讓 CSS 一次關掉整站最貴的那些效果（見 index.css）
@@ -200,7 +204,7 @@ export default function SpaceBackdropShell() {
           </Suspense>
         </BackdropErrorBoundary>
       )}
-      {hardwareGpu === true && <NotesTree shown={sky === 'notes'} />}
+      {hardwareGpu === true && <NotesHorizon shown={sky === 'notes'} />}
       {/* DOM 特效（流星/UFO/游標尾跡，非 WebGL）：無論 3D 成敗都掛，頁面永遠有生命感。
           例外是「使用者關掉硬體加速」：整站合成、backdrop-filter、上百個 infinite 動畫全落在
           CPU，連純 DOM 特效都會拖垮捲動——這種機器只留靜態背景。 */}

@@ -1,0 +1,17 @@
+/* 手記天空底下的遠景：橫跨整個視窗底部，在手記面板後面（近地與樹在面板前面，見 NotesGround） */
+.notes-horizon {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: max(260px, 36vh);
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-700) ease;
+}
+
+.notes-horizon.is-shown {
+  opacity: 1;
+}

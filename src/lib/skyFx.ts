@@ -81,9 +81,11 @@ export function createSkyFx(opts: {
   const { renderer, skyGroup } = opts;
 
   // ── 拖出軌跡的星 ──
-  // 只有這四百多顆亮星留下軌跡，背景那兩萬多顆照常是點。全部拖出來的話整片天空糊成灰色、看了頭暈。
+  // 只有這一千多顆留下軌跡，背景那兩萬多顆照常是點。全部拖出來的話整片天空糊成灰色、看了頭暈。
+  // 它們撒在整個天球上，視野裡只看得到一成左右；大多數刻意是暗的（像真的星軌照片：
+  // 少數亮弧、底下一層細密的暗弧），量多但不刺眼。
   // 獨立一個場景、一般的材質：背景星的材質寫 MRT，畫不進單張 target。
-  const TRAIL_STARS = 320;
+  const TRAIL_STARS = 1400;
   const trailScene = new THREE.Scene();
   const trailGroup = new THREE.Group();
   trailScene.add(trailGroup);
@@ -97,7 +99,7 @@ export function createSkyFx(opts: {
       const ph = Math.acos(2 * Math.random() - 1);
       pos.set([r * Math.sin(ph) * Math.cos(th0), r * Math.sin(ph) * Math.sin(th0), r * Math.cos(ph)], i * 3);
       tint[i] = Math.random();
-      mag[i] = 0.35 + Math.pow(Math.random(), 2) * 0.65;
+      mag[i] = 0.2 + Math.pow(Math.random(), 2.5) * 0.8;
     }
     const mat = new THREE.PointsNodeMaterial();
     mat.positionNode = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(pos, 3), 'vec3');
@@ -197,21 +199,24 @@ export function createSkyFx(opts: {
       // 星軌疊在原本的畫面上（取亮的）
       // 軌跡比單顆星暗（拉長之後亮度攤開了），提一點才看得出長曝光
       // 壓暗：星軌是背景，不能跟文字搶
-      const trail = trailTex.mul(trailMix.mul(0.6));
+      const trail = trailTex.mul(trailMix.mul(0.8));
       let rgb = max(sceneOut.rgb, trail.rgb);
 
       // 換頁的飛行：從畫面中心往外的放射狀模糊，星星與土星拉成光線（跟首訪開場的超空間同一種語言）
       {
         const center = vec2(0.5, 0.5);
         const reach = warp.mul(0.32);
-        let sum: Node<'vec3'> = vec3(0, 0, 0);
+        // 沿著往中心的那條線取「最亮值」，越遠越淡——星星拉成同樣亮的線，大面積的亮處（土星）
+        // 不會因為累加而爆白（累加的版本移動時土星整顆過曝）
+        let streaked: Node<'vec3'> = vec3(0, 0, 0);
         const TAPS = 12;
         for (let i = 0; i < TAPS; i++) {
           const uv = center.add(screenUV.sub(center).mul(float(1).sub(reach.mul(i / (TAPS - 1)))));
-          sum = sum.add((opts.sceneColor.sample(uv) as unknown as V4).rgb).add((opts.bloomColor.sample(uv) as unknown as V4).rgb);
+          const c = (opts.sceneColor.sample(uv) as unknown as V4).rgb.add(
+            (opts.bloomColor.sample(uv) as unknown as V4).rgb,
+          );
+          streaked = max(streaked, c.mul(1 - (i / TAPS) * 0.7));
         }
-        // 不是平均：星星很小，平均下去就淡到看不見。累加才會拉出一條亮線
-        const streaked = sum.mul(0.3);
         rgb = mix(rgb, max(rgb, streaked), smoothstep(0, 0.08, warp));
       }
       let alpha = max(sceneOut.a, trail.a);

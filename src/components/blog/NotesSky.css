@@ -1,10 +1,14 @@
 /* 手記（星軌天空版）：一欄、少量資訊、寬留白。
    大標題直接壓在夜空上；文章清單放在一塊毛玻璃上，星軌在後面但不跟字搶。 */
-.notes-page {
+.notes-page,
+.notes-ghost {
   --ink: #f1ece3;
   --amber: #e9c17a;
   --amber-rgb: 233, 193, 122;
   --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+}
+
+.notes-page {
   position: relative;
   z-index: 3;
   display: flex;
@@ -271,5 +275,94 @@
 
   .notes-title {
     font-size: var(--fs-40);
+  }
+}
+
+/* ── 進場與退場（跟著土星的飛行，見 NotesSky.tsx 的 useArrival）── */
+@keyframes notes-rise {
+  from {
+    opacity: 0;
+    transform: translateY(42vh);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes notes-appear {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-4));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.notes-head {
+  animation: notes-appear var(--dur-700) var(--easing-out) both;
+}
+
+.notes-panel {
+  animation: notes-rise var(--dur-1000) var(--easing-out) 80ms both;
+}
+
+/* 從首頁飛過來：鏡頭快抵達時面板才從地裡升上來，標題最後浮現。
+   --arrive-delay 是「離鏡頭快抵達還有多久」，頁面晚掛上的話會比較短（見 useArrival） */
+.is-arriving .notes-panel {
+  animation-duration: 1300ms;
+  animation-delay: var(--arrive-delay, 1100ms);
+}
+
+.is-arriving .notes-head {
+  animation-duration: 900ms;
+  animation-delay: calc(var(--arrive-delay, 1100ms) + 600ms);
+}
+
+/* 面板前面的那片近地（NotesGround）：面板的下緣埋在裡面。
+   在 .notes-page 這個堆疊脈絡裡排在面板之上，但仍然在頂欄與彈出層底下 */
+@keyframes notes-ground-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.notes-ground {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: max(260px, 34vh);
+  z-index: 1;
+  pointer-events: none;
+  animation: notes-ground-in 900ms var(--easing-out) both;
+}
+
+/* 退場：複製的那一份蓋在原地往下沉（新頁面的內容在它上面） */
+.notes-ghost {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* 複製出來的節點會把進場動畫從頭再播一次 */
+.notes-ghost .notes-head,
+.notes-ghost .notes-panel {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notes-head,
+  .notes-panel,
+  .notes-ground {
+    animation: none;
   }
 }

@@ -344,7 +344,9 @@ async function buildSaturn(
   {
     const flash = smoothstep(0.08, 0.12, dissolve).mul(float(1).sub(smoothstep(0.12, 0.34, dissolve)));
     const d = uv().sub(0.5).length().mul(2);
-    const falloff = float(1).sub(smoothstep(0, 1, d)).pow(2.5);
+    const falloff = float(1)
+      .sub(smoothstep(0, 1, d))
+      .pow(2.5);
     flashMat.colorNode = vec3(0.82, 0.9, 1.0).mul(flash.mul(falloff).mul(1.1));
     flashMat.opacityNode = flash.mul(falloff).mul(0.6);
     flashMat.mrtNode = mrt({ bloomIntensity: float(1) });
@@ -396,16 +398,16 @@ async function buildSaturn(
   ) => {
     const mat = new THREE.PointsNodeMaterial();
     const k = dustProgress(t);
-    const starWorld = select(
-      layer.lessThan(0.5),
-      layerM[0].mul(vec4(star, 1)).xyz,
-      layerM[1].mul(vec4(star, 1)).xyz,
-    );
+    const starWorld = select(layer.lessThan(0.5), layerM[0].mul(vec4(star, 1)).xyz, layerM[1].mul(vec4(star, 1)).xyz);
     const target = inv.mul(vec4(starWorld, 1)).xyz;
     // 兩段：先往外飄散成一層星塵（看得到「散開」），再慢慢加速飛向各自的星
     const burst = mx_noise_float(origin.mul(7)).mul(0.5).add(0.5);
     const drift = origin.add(out.mul(burst.mul(1.6).add(0.7)));
-    const e1 = float(1).sub(float(1).sub(smoothstep(0, 0.28, k)).pow(3));
+    const e1 = float(1).sub(
+      float(1)
+        .sub(smoothstep(0, 0.28, k))
+        .pow(3),
+    );
     const e2 = smoothstep(0.24, 1, k).pow(1.7);
     mat.positionNode = mix(mix(origin, drift, e1), target, e2);
     // 一開始是那一格的顏色，飛著飛著變成星光
@@ -442,7 +444,9 @@ async function buildSaturn(
     const layer = dynamic(new Float32Array(PLANET_DUST), 1);
     const o = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(origin, 3), 'vec3');
     const tUv = instancedBufferAttribute<'vec2'>(new THREE.InstancedBufferAttribute(texUv, 2), 'vec2');
-    const light = clamp(dot(o, normalize(sunInPlanet)), 0, 1).mul(1.15).add(0.1);
+    const light = clamp(dot(o, normalize(sunInPlanet)), 0, 1)
+      .mul(1.15)
+      .add(0.1);
     const color = texture(planetMap, tUv).rgb.mul(light);
     const sprite = new THREE.Sprite(
       dustMaterial(
@@ -871,7 +875,10 @@ export async function createStarfieldRunner(
     const c = new THREE.Vector3();
     for (let i = 0; i < N; i++) {
       bez(Math.random() * 1.2 - 0.1, c);
-      pos.set([c.x + (Math.random() - 0.5) * 16, c.y + (Math.random() - 0.5) * 10, c.z + (Math.random() - 0.5) * 8], i * 3);
+      pos.set(
+        [c.x + (Math.random() - 0.5) * 16, c.y + (Math.random() - 0.5) * 10, c.z + (Math.random() - 0.5) * 8],
+        i * 3,
+      );
     }
     const amount = uniform(0);
     const mat = new THREE.PointsNodeMaterial();
