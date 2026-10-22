@@ -220,7 +220,7 @@ export default function AboutFall() {
               <p className="af-chapter-no">
                 {pad(i + 1)} / {pad(past.length)}
               </p>
-              <p className="af-chapter-year">
+              <p className={`af-chapter-year${from.length > 4 ? ' is-long' : ''}`}>
                 {from}
                 {to && <span>— {to}</span>}
               </p>
@@ -317,6 +317,7 @@ export default function AboutFall() {
               <div>
                 <h3 className="af-entry-title">{e.title}</h3>
                 <p className="af-entry-role">{e.role}</p>
+                {e.summary && <p className="af-entry-summary">{e.summary}</p>}
                 {e.groups?.map((g) => (
                   <div key={g.heading} className="af-entry-group">
                     <h4>{g.heading}</h4>

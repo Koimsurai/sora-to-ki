@@ -24,9 +24,48 @@ const MOON = 'rgba(176, 168, 220, 0.4)';
 export function createFallSky(count: number) {
   const R = rng(41);
   const motes = Array.from({ length: count }, () => ({ x: R(), y: R(), z: 0.25 + R() * 0.75 }));
-  // 樹在原點長一次，畫的時候平移到星球頂上（星球一直在動，不用每幀重長）
+  // 樹在原點長一次，畫的時候平移到星球頂上（星球一直在動，不用每幀重長）。
+  // 樹有好幾百根枝、上千片葉子，每幀重畫兩次（月光描邊＋本體）會讓落地那一段掉到 10fps 上下：
+  // 成長過程切成 GROW_STEPS 個階段，每個階段畫進一張離屏 canvas、之後直接貼圖
   let tree: ReturnType<typeof growTree> | null = null;
   let treeFor = 0;
+  let treeBox = { x: 0, y: 0, w: 1, h: 1 };
+  const treeFrames = new Map<number, HTMLCanvasElement>();
+  const GROW_STEPS = 24;
+  const treeFrame = (step: number, dpr: number) => {
+    let c = treeFrames.get(step);
+    if (c || !tree) return c;
+    c = document.createElement('canvas');
+    c.width = Math.ceil(treeBox.w * dpr);
+    c.height = Math.ceil(treeBox.h * dpr);
+    const x = c.getContext('2d');
+    if (x) {
+      x.setTransform(dpr, 0, 0, dpr, -treeBox.x * dpr, -treeBox.y * dpr);
+      drawTree(x, tree, step / GROW_STEPS, GROUND, MOON);
+    }
+    treeFrames.set(step, c);
+    return c;
+  };
+  // 快落地之前（還在下墜時）就用瀏覽器的空閒時間把每個階段先畫好，長樹的那一段就不會有第一次畫的停頓
+  let warming = false;
+  const warmTree = (dpr: number) => {
+    if (warming || !tree || treeFrames.size > GROW_STEPS) return;
+    warming = true;
+    const idle =
+      (window as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback ??
+      ((cb: () => void) => window.setTimeout(cb, 16));
+    let step = 0;
+    const next = () => {
+      while (step <= GROW_STEPS && treeFrames.has(step)) step++;
+      if (step > GROW_STEPS || !tree) {
+        warming = false;
+        return;
+      }
+      treeFrame(step, dpr);
+      idle(next);
+    };
+    idle(next);
+  };
 
   return function draw(ctx: CanvasRenderingContext2D, w: number, h: number, s: FallState) {
     ctx.clearRect(0, 0, w, h);
@@ -96,21 +135,41 @@ export function createFallSky(count: number) {
       ctx.arc(cx, cy, radius, Math.PI * 1.35, Math.PI * 1.65);
       ctx.stroke();
 
-      // 落地的那一刻，星球頂上那棵樹長出來
+      // 落地的那一刻，星球頂上那棵樹長出來（樹在星球一出現時就先長好、預先畫進快取）
       const grow = smoothstep(0.93, 1, s.p);
-      if (grow > 0) {
+      {
         const scale = Math.min(1.3, Math.max(0.7, h / 620));
         if (!tree || treeFor !== scale) {
           tree = growTree(0, 0, scale);
           treeFor = scale;
+          // 外框：所有枝與葉的範圍，留一點邊給線寬與月光描邊
+          let x0 = 0;
+          let y0 = 0;
+          let x1 = 0;
+          let y1 = 0;
+          for (const g of tree.segs) {
+            x0 = Math.min(x0, g.x1, g.x2, g.cx);
+            x1 = Math.max(x1, g.x1, g.x2, g.cx);
+            y0 = Math.min(y0, g.y1, g.y2, g.cy);
+            y1 = Math.max(y1, g.y1, g.y2, g.cy);
+          }
+          for (const l of tree.leaves) {
+            x0 = Math.min(x0, l.x - l.r);
+            x1 = Math.max(x1, l.x + l.r);
+            y0 = Math.min(y0, l.y - l.r);
+            y1 = Math.max(y1, l.y + l.r);
+          }
+          const pad = 12 * scale;
+          treeBox = { x: x0 - pad, y: y0 - pad, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 2 };
+          treeFrames.clear();
         }
         // 偏右：落地的那句話在畫面中間，樹不能壓在字上
         const tx = cx + w * 0.3;
         const ty = cy - Math.sqrt(radius * radius - (w * 0.3) ** 2) + 2;
-        ctx.save();
-        ctx.translate(tx, ty);
-        drawTree(ctx, tree, grow, GROUND, MOON);
-        ctx.restore();
+        const dpr = ctx.getTransform().a;
+        warmTree(dpr);
+        const frame = grow > 0 ? treeFrame(Math.round(grow * GROW_STEPS), dpr) : undefined;
+        if (frame) ctx.drawImage(frame, tx + treeBox.x, ty + treeBox.y, treeBox.w, treeBox.h);
       }
     }
 

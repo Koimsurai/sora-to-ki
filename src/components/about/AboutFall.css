@@ -272,6 +272,8 @@
 .af-chapter-year {
   display: flex;
   flex-direction: column;
+  /* 漸層是用 background-clip: text 畫的，只畫在元素自己的框裡：框要跟著字寬，不然超出欄寬的字會被吃掉 */
+  width: max-content;
   margin: var(--space-4) 0 0;
   font-family: var(--display);
   font-size: clamp(64px, 7.5vw, 120px);
@@ -282,6 +284,11 @@
   background: linear-gradient(0deg, var(--dot), var(--ink) 75%);
   -webkit-background-clip: text;
   background-clip: text;
+}
+
+/* 2024.07 這種比較長的年份縮一級 */
+.af-chapter-year.is-long {
+  font-size: clamp(48px, 5.4vw, 88px);
 }
 
 .af-chapter-year span {
@@ -640,6 +647,13 @@
   margin: var(--space-1) 0 0;
   font-size: var(--fs-14);
   color: var(--white-55);
+}
+
+.af-entry-summary {
+  margin: var(--space-4) 0 0;
+  font-size: var(--fs-16);
+  line-height: var(--lh-170);
+  color: var(--white-80);
 }
 
 .af-entry-group h4 {

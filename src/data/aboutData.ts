@@ -85,70 +85,49 @@ export interface ExpGroup {
 export interface Experience {
   title: string;
   role: string;
+  /** 一句話的概述（放在條列前面） */
+  summary?: string;
   groups?: ExpGroup[];
   bullets?: string[];
 }
 
 // 期間 + tags 穩定（技術名英文）, 其餘隨語系
-export const PERIODS = ['2025/7 — Now', '2024/9 — Now', '2024/10 — 2025/6'];
+export const PERIODS = ['2025/7 — Now', '2024/8 — Now', '2024/9 — 2025/6'];
 export const TAGS = [
-  ['Monorepo', 'Turborepo', 'TypeScript', 'ASP.NET', 'Python', 'GitLab CI/CD'],
+  ['Tauri', 'Rust', 'TypeScript', 'CI/CD', 'Python', 'ASP.NET'],
   ['Python', 'Scratch', 'MCE', 'App Inventor'],
-  ['Kotlin', 'Android', 'Premiere Pro'],
+  ['Kotlin', 'Java', 'Android', 'Premiere Pro'],
 ];
 
 export const EXPERIENCES_BY_LANG: Record<string, Experience[]> = {
   'zh-TW': [
     {
       title: '微星科技股份有限公司',
-      role: '軟體工程師',
-      groups: [
-        {
-          heading: '前端架構與標準化',
-          items: [
-            '主導導入 Monorepo 架構：用 Turborepo 整合內部多個前端專案，解決跨專案代碼共用與版控痛點',
-            '建立 ESLint / Prettier / TypeScript 嚴格規則，提升團隊代碼品質',
-            '封裝共用 UI Library 與 Utility Libraries，提供其他團隊（如 IT Team）復用',
-            '撰寫標準化開發文件與 README，協助團隊成員上手新架構',
-          ],
-        },
-        {
-          heading: '後端開發與維護',
-          items: [
-            '維護 ASP.NET (C#) 與 Legacy Web API，解決 .NET Framework 相容性與 .web.config 配置問題',
-            '處理 MS SQL 資料庫權限控管與 Stored Procedure 邏輯除錯',
-            '用 Python 撰寫網頁爬蟲與自動化腳本，協助資料收集與批次處理',
-          ],
-        },
-        {
-          heading: 'DevOps 與流程優化',
-          items: [
-            '參與 GitLab CI/CD Pipeline 建置與維護，確保 Monorepo 自動化建置部署流暢',
-            '熟悉 Git Flow，協助團隊解決版本衝突與 Merge Request Code Review',
-          ],
-        },
-        {
-          heading: '跨部門協作',
-          items: [
-            '與 AI Team / IT Team 緊密合作，作為前端技術窗口整合 AI 模型至 Web 介面',
-            '向主管與非技術人員 demo，將複雜架構概念轉化為具體效益',
-          ],
-        },
+      role: '軟體工程師・正職',
+      summary: '實質負責團隊產品線的前端架構標準。',
+      bullets: [
+        '主導把舊架構遷移到 Tauri + Rust，取代笨重的多行程系統；執行檔大小、記憶體用量與冷啟動時間都大幅下降。',
+        '從零建置跨環境的 CI/CD，dev / staging / production 自動部署、零停機上線。',
+        '設計雲地混合的 AI 部署架構：本地邊緣推論、雲端備援，模型分批上線。',
+        '處理跨環境編譯失敗、資安漏洞修補，以及各 repo 的基礎設施整理。',
+        '寫 Python 自動化腳本做內部工具，也串接 ASP.NET 後端。',
       ],
     },
     {
       title: '猿創力程式設計學校',
-      role: '儲備講師',
-      bullets: ['教導國中、國小學生程式，小班制 MCE、Python 為主', 'App Inventor 到府一對一比賽特訓班'],
+      role: '程式講師・約聘',
+      summary: '教 3 到 9 年級的學生 Python、Scratch 與 MCE（Minecraft 教育版）。',
+      bullets: [
+        '為程度不一的班級設計課程與進度。',
+        '把抽象的程式概念轉成適合年紀的練習。',
+        '整理學習進度，跟家長溝通。',
+      ],
     },
     {
       title: '私立高偉數學補習班',
-      role: '資訊助理 & 企劃部門',
-      bullets: [
-        '開發補習班 Android App 並上線維運',
-        '完成主管交辦的其他資訊事務',
-        '剪輯數十支 10 分鐘內宣傳影片、製作封面',
-      ],
+      role: 'Android 開發實習生',
+      summary: '第一份工程職：維護並上架正式運作中的 Android App。',
+      bullets: ['用 Kotlin / Java 原生開發 UI、網路與資料儲存。', '跑過一個功能從規格到上架的完整流程。'],
     },
   ],
   'zh-CN': [
