@@ -74,8 +74,10 @@ export default function AboutFall() {
   }));
   const past = milestones.filter((m) => m.year !== 'NOW' && m.year !== 'FUTURE');
   const now = milestones.find((m) => m.year === 'NOW');
-  const future = milestones.find((m) => m.year === 'FUTURE');
 
+  // 期間的資料寫成「2025/7 — Now」；這一頁不用破折號，中文介面也把 Now 換成「現在」
+  const zh = lang.startsWith('zh');
+  const period = (p: string) => p.replace(' — ', ' ～ ').replace('Now', zh ? '現在' : 'Now');
   const pageRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const landRef = useRef<HTMLElement | null>(null);
@@ -222,7 +224,7 @@ export default function AboutFall() {
               </p>
               <p className={`af-chapter-year${from.length > 4 ? ' is-long' : ''}`}>
                 {from}
-                {to && <span>— {to}</span>}
+                {to && <span>～ {to}</span>}
               </p>
               <h2 className="af-chapter-title">{m.title}</h2>
               <p className="af-chapter-sub">{m.subtitle}</p>
@@ -240,43 +242,25 @@ export default function AboutFall() {
         );
       })}
 
+      {/* 落地：一句話、現在在做的事，然後是一句話收尾。不放條列，不放說明 */}
       <section className="af-land" ref={landRef}>
         <div className="af-land-inner">
           <p className="af-land-pre">掠過無數個稚嫩與迷惘的昨日，</p>
           <h2 className="af-land-title">就此落下。</h2>
-          <p className="af-land-lede">這裡是{now?.label ?? '現在'}。</p>
           {now && (
-            <div className="af-now">
-              <p className="af-card-title">{now.title}</p>
-              <p className="af-card-sub">{now.subtitle}</p>
-              {now.beats.map((b) => (
-                <p key={b} className="af-card-desc">
-                  {b}
-                </p>
-              ))}
-              {now.allTags.length > 0 && (
-                <ul className="af-tags">
-                  {now.allTags.map((t) => (
-                    <li key={t}>{t}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-          <dl className="af-facts">
-            {facts.map((f) => (
-              <div key={f.label}>
-                <dt>{f.label}</dt>
-                <dd>{f.value}</dd>
-              </div>
-            ))}
-          </dl>
-          {future && (
-            <p className="af-future">
-              <span>抬頭，{future.label}還很遠。</span>
-              {future.beats.join('')}
+            <p className="af-land-now">
+              <span>{now.label}</span>
+              {now.title}
             </p>
           )}
+          <blockquote className="af-quote">
+            <p>
+              Stay hungry,
+              <br />
+              stay foolish.
+            </p>
+            <cite>Steve Jobs</cite>
+          </blockquote>
         </div>
       </section>
 
@@ -288,6 +272,14 @@ export default function AboutFall() {
             <h2>握在手裡的</h2>
             <p>一路帶著的東西。</p>
           </header>
+          <dl className="af-facts">
+            {facts.map((f) => (
+              <div key={f.label}>
+                <dt>{f.label}</dt>
+                <dd>{f.value}</dd>
+              </div>
+            ))}
+          </dl>
           <div className="af-skills">
             {CATEGORIES_BASE.map((c) => (
               <div key={c.label} className="af-skill">
@@ -313,7 +305,7 @@ export default function AboutFall() {
           </header>
           {work.map((e, i) => (
             <article key={e.title} className="af-entry">
-              <p className="af-entry-when">{PERIODS[i]}</p>
+              <p className="af-entry-when">{period(PERIODS[i])}</p>
               <div>
                 <h3 className="af-entry-title">{e.title}</h3>
                 <p className="af-entry-role">{e.role}</p>
@@ -353,7 +345,7 @@ export default function AboutFall() {
           </header>
           {clubs.map((c, i) => (
             <article key={c.name} className="af-entry">
-              <p className="af-entry-when">{CLUB_PERIODS[i]}</p>
+              <p className="af-entry-when">{period(CLUB_PERIODS[i])}</p>
               <div>
                 <h3 className="af-entry-title">{c.name}</h3>
                 <p className="af-entry-role">{c.role}</p>

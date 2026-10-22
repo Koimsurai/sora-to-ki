@@ -117,14 +117,12 @@
   }
 }
 
-/* 落地時的速覽 */
+/* 速覽（地表那一層的開頭） */
 .af-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: var(--space-4);
-  margin: var(--space-12) 0 0;
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--white-10);
+  margin: 0 0 var(--space-10);
   text-align: left;
 }
 
@@ -402,27 +400,6 @@
 }
 
 /* ── 落地 ── */
-.af-now .af-card-title {
-  margin: 0;
-  font-family: var(--display);
-  font-size: var(--fs-28);
-  font-weight: 700;
-  color: var(--ink);
-}
-
-.af-now .af-card-sub {
-  margin: var(--space-2) 0 0;
-  font-size: var(--fs-14);
-  color: var(--white-55);
-}
-
-.af-now .af-card-desc {
-  margin: var(--space-4) 0 0;
-  font-size: var(--fs-16);
-  line-height: var(--lh-185);
-  color: var(--white-70);
-}
-
 .af-land {
   display: flex;
   align-items: flex-start;
@@ -462,36 +439,51 @@
   color: var(--ink);
 }
 
-.af-land-lede {
-  margin: var(--space-5) 0 0;
+/* 現在：一行，標籤＋在做的事 */
+.af-land-now {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--space-4);
+  margin: var(--space-10) 0 0;
   font-family: var(--display);
-  font-size: var(--fs-20);
-  line-height: var(--lh-160);
-  color: var(--white-80);
+  font-size: var(--fs-24);
+  font-weight: 600;
+  color: var(--ink);
 }
 
-.af-now {
-  margin-top: var(--space-12);
-  text-align: left;
-}
-
-.af-now .af-tags {
-  justify-content: flex-start;
-}
-
-.af-future {
-  margin: var(--space-16) 0 0;
-  font-size: var(--fs-14);
-  line-height: var(--lh-185);
-  color: var(--white-50);
-}
-
-.af-future span {
-  display: block;
-  margin-bottom: var(--space-2);
-  font-family: var(--display);
-  font-size: var(--fs-18);
+.af-land-now span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  font-weight: 400;
+  letter-spacing: var(--ls-18);
   color: var(--amber);
+}
+
+/* 收尾那一句：整頁最大的字之一，前後留很多空白 */
+.af-quote {
+  margin: 22vh 0 0;
+}
+
+.af-quote p {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(44px, 6vw, 88px);
+  font-weight: 700;
+  line-height: var(--lh-110);
+  letter-spacing: var(--ls-n2);
+  color: var(--ink);
+}
+
+.af-quote cite {
+  display: block;
+  margin-top: var(--space-6);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  font-style: normal;
+  letter-spacing: var(--ls-24);
+  text-transform: uppercase;
+  color: var(--white-45);
 }
 
 /* ── 地底：一層一層往下 ── */
