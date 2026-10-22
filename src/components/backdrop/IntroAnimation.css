@@ -1,9 +1,8 @@
 /* ═══════════════════════════════════════════════════
    IntroAnimation — Hyperspace Jump
-   Canvas pre-warms 60 simulation steps before frame 1, so
-   the user never sees a sparse "ramp-up" — frame 1 is
-   already a fully-developed tunnel. Hard canvas clear at
-   the flash peak (2200ms) hands off cleanly to Saturn.
+   時間軸（ms，從開場掛上起算，定義在 IntroAnimation.tsx 的 TIMINGS）：
+   0–400 加速 → 1900 減速 → 2200 閃光開始（約 2600 最亮）
+   → 2900 畫布清空、土星接手 → 3200 整層淡出 → 3500 卸載。
    ═══════════════════════════════════════════════════ */
 
 /* 這是一顆佔滿視窗的 <button>（「跳過開場動畫」），要把瀏覽器預設樣式歸零 */
@@ -72,9 +71,8 @@
   }
 }
 
-/* Climax flash — peaks right when canvas hard-clears (2200ms),
-   so the transition from streaks → cleared canvas is invisible
-   under the bloom. */
+/* 高潮閃光：2200ms 開始、約 2600ms 最亮，畫布在 2900ms 清空時還罩在餘暉底下，
+   星芒消失的那一下看不出來。 */
 .intro-flash {
   position: absolute;
   inset: 0;
