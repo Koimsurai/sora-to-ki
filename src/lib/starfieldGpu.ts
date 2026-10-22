@@ -39,6 +39,7 @@ import {
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
 import { createHyperspace, type Hyperspace } from './hyperspace';
+import { inspectWebGL } from './webglRenderer';
 import { introFrame, phasesCrossed, phaseTimes, type IntroPhase } from './introTimeline';
 
 export const STAR_COUNT = 26000; // 14k 主層 + 12k 星系層（≈舊棧全部點數 27.1k；WebGPU 下加星幾乎免費）
@@ -331,9 +332,36 @@ async function buildSaturn(
   };
 }
 
+interface AdapterLike {
+  isFallbackAdapter?: boolean;
+  info?: { isFallbackAdapter?: boolean; architecture?: string; vendor?: string };
+}
+
+/**
+ * 這台機器的 3D 會不會落在 CPU 上（SwiftShader / WARP / llvmpipe）。
+ *
+ * 主執行緒另外有 GPU 探測（lib/webglSupport.ts），但 3D 不等它：開場要等這個 runner 把管線
+ * 全部編譯完才開始，等探測做完再建等於多等一輪。所以 runner 自己先查，是軟體渲染就在
+ * 編譯任何東西之前退出——不查的話，沒有 GPU 的機器會用 CPU 模擬的 GPU 編譯整套著色器，
+ * 把 CPU 吃滿到頁面都載不完（CI 的 e2e 實際逾時過）。
+ */
+async function softwareRendering(): Promise<boolean> {
+  const gpu = (globalThis.navigator as { gpu?: { requestAdapter(): Promise<AdapterLike | null> } }).gpu;
+  const adapter = await gpu?.requestAdapter().catch(() => null);
+  if (adapter) {
+    const fallback = adapter.info?.isFallbackAdapter ?? adapter.isFallbackAdapter ?? false;
+    const name = `${adapter.info?.architecture ?? ''} ${adapter.info?.vendor ?? ''}`;
+    if (!fallback && !/swiftshader/i.test(name)) return false;
+  }
+  // 沒有 WebGPU（或只有 CPU 版的）→ three 會走 WebGL2，看 WebGL 的 renderer 字串
+  const canvas = typeof OffscreenCanvas === 'undefined' ? document.createElement('canvas') : new OffscreenCanvas(1, 1);
+  return inspectWebGL(canvas) !== 'hardware';
+}
+
 export async function createStarfieldRunner(
   init: StarfieldInit,
 ): Promise<{ runner: StarfieldRunner; backend: 'WebGPU' | 'WebGL2' }> {
+  if (await softwareRendering()) throw new Error('沒有硬體加速（軟體渲染），不建 3D');
   // 土星貼圖跟下面建 GPU device 同時下載，不要等 init 完才開始（開場要等整個 runner 就緒）。
   // 先掛一個空的 catch：失敗要到 buildSaturn 那裡才處理，這段空檔不該冒出 unhandledrejection。
   const saturnTextures = Promise.all([
