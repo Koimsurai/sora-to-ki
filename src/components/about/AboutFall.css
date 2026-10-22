@@ -19,15 +19,15 @@
   pointer-events: none;
 }
 
-/* ── 起點 ── */
+/* ── 起點：只有一句話 ── */
 .af-top {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  max-width: 720px;
   min-height: 100svh;
-  margin: 0 auto;
   padding: var(--page-top) var(--space-6) var(--space-16);
+  text-align: center;
 }
 
 .af-top > * {
@@ -35,15 +35,11 @@
 }
 
 .af-top > :nth-child(2) {
-  animation-delay: 80ms;
+  animation-delay: 150ms;
 }
 
 .af-top > :nth-child(3) {
-  animation-delay: 180ms;
-}
-
-.af-top > :nth-child(n + 4) {
-  animation-delay: 300ms;
+  animation-delay: 600ms;
 }
 
 .about-fall.is-arriving .af-top > * {
@@ -51,7 +47,7 @@
 }
 
 .about-fall.is-arriving .af-top > :nth-child(n + 2) {
-  animation-delay: calc(var(--arrive-delay, 1300ms) + 150ms);
+  animation-delay: calc(var(--arrive-delay, 1300ms) + 200ms);
 }
 
 @keyframes af-rise {
@@ -66,65 +62,32 @@
 }
 
 .af-kicker {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-8);
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  letter-spacing: var(--ls-18);
+  letter-spacing: var(--ls-24);
   text-transform: uppercase;
-  color: var(--amber);
+  color: var(--white-45);
 }
 
-.af-name {
+.af-title {
   margin: 0;
   font-family: var(--display);
-  font-size: clamp(56px, 8vw, 112px);
+  font-size: clamp(44px, 6.4vw, 92px);
   font-weight: 700;
-  line-height: var(--lh-100);
-  letter-spacing: var(--ls-n2);
+  line-height: var(--lh-120);
+  letter-spacing: var(--ls-2);
   color: var(--ink);
 }
 
-.af-lede {
-  margin: var(--space-8) 0 0;
-  font-family: var(--display);
-  font-size: var(--fs-22);
-  line-height: var(--lh-160);
-  color: var(--white-90);
-}
-
-.af-bio {
-  margin: var(--space-6) 0 0;
-  font-size: var(--fs-16);
-  line-height: var(--lh-185);
-  color: var(--white-60);
-}
-
-.af-facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--space-4);
-  margin: var(--space-8) 0 0;
-}
-
-.af-facts dt {
-  font-family: var(--mono-font);
-  font-size: var(--fs-11);
-  letter-spacing: var(--ls-12);
-  text-transform: uppercase;
-  color: var(--white-40);
-}
-
-.af-facts dd {
-  margin: var(--space-1) 0 0;
-  font-size: var(--fs-14);
-  color: var(--white-80);
-}
-
 .af-hint {
-  margin: var(--space-16) 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: var(--space-20) 0 0;
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  letter-spacing: var(--ls-18);
+  letter-spacing: var(--ls-24);
   color: var(--white-45);
 }
 
@@ -152,6 +115,31 @@
     transform: scaleY(1);
     opacity: 0;
   }
+}
+
+/* 落地時的速覽 */
+.af-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-12) 0 0;
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--white-10);
+  text-align: left;
+}
+
+.af-facts dt {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-12);
+  text-transform: uppercase;
+  color: var(--white-40);
+}
+
+.af-facts dd {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--white-80);
 }
 
 /* ── 高度計 ── */
@@ -246,117 +234,180 @@
   box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
 }
 
-/* ── 經過的每一年 ── */
+/* ── 經過的每一年：每一年是一層 ── */
 .af-stage {
   position: relative;
   display: flex;
   align-items: center;
-  max-width: 1100px;
-  min-height: 115vh;
+  max-width: 1180px;
+  min-height: 105vh;
   margin: 0 auto;
-  padding: 0 var(--space-6);
-  overflow: clip;
+  /* 右邊留給固定在畫面上的高度計 */
+  padding: 0 calc(var(--space-24) * 2 + var(--space-16)) 0 var(--space-12);
 }
 
-.af-stage--right {
-  justify-content: flex-end;
-}
-
-/* 巨大的年份：比捲動更快地往上掠過——掉下去的時候，近的東西過得比較快 */
-.af-ghost {
+/* 橫在畫面上的那一層：穿過去的時候，琥珀色的光從左掃到右 */
+.af-stratum {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: -1;
-  transform: translate(-50%, -50%);
+  top: 16%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--white-10) 12%, var(--white-10) 88%, transparent);
+}
+
+.af-stratum::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--amber-rgb), 0.7) 30%,
+    rgba(var(--amber-rgb), 0.7) 70%,
+    transparent
+  );
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.af-stage.is-in .af-stratum::after {
+  animation: af-sweep 1.6s var(--easing-out) both;
+}
+
+@keyframes af-sweep {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.af-stratum span {
+  position: absolute;
+  top: calc(var(--space-6) * -1);
+  left: var(--space-12);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-8);
+  color: var(--white-40);
+}
+
+.af-stage-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 480px);
+  gap: var(--space-16);
+  align-items: center;
+  width: 100%;
+}
+
+/* 年份：描邊的空心字，穿過那一層時從底下被填滿（顏色是那一年的光點色） */
+.af-year {
+  margin: 0;
   font-family: var(--display);
-  font-size: clamp(120px, 22vw, 300px);
+  display: flex;
+  flex-direction: column;
+  font-size: clamp(72px, 9vw, 150px);
   font-weight: 700;
   line-height: var(--lh-100);
+  letter-spacing: var(--ls-n4);
   white-space: nowrap;
   color: transparent;
-  -webkit-text-stroke: 1px var(--white-15);
-  pointer-events: none;
+  -webkit-text-stroke: 1px var(--white-20);
+  background: linear-gradient(0deg, var(--dot), var(--ink));
+  background-position: bottom;
+  background-repeat: no-repeat;
+  background-size: 100% 0%;
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
-@supports (animation-timeline: view()) {
-  .af-ghost {
-    animation: af-ghost linear both;
-    animation-timeline: view();
-  }
+.af-year-to {
+  margin-top: var(--space-3);
+  font-size: 0.32em;
+  letter-spacing: var(--ls-2);
+}
 
-  @keyframes af-ghost {
-    from {
-      transform: translate(-50%, 10vh);
-    }
-    to {
-      transform: translate(-50%, -110vh);
-    }
+.af-stage.is-in .af-year {
+  animation: af-fill 1.8s var(--easing-out) 200ms both;
+}
+
+@keyframes af-fill {
+  from {
+    background-size: 100% 0%;
+  }
+  to {
+    background-size: 100% 100%;
   }
 }
 
-.af-card {
-  position: relative;
-  max-width: 480px;
-  padding: var(--space-8);
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-16);
-  background: linear-gradient(180deg, rgba(var(--surface-1-rgb), 0.55), rgba(var(--surface-0-rgb), 0.8));
-  backdrop-filter: blur(var(--blur-16)) saturate(1.2);
-  box-shadow: inset 0 1px 0 var(--white-08);
+/* 偶數層左右對調：年份在右、故事在左 */
+.af-stage--flip .af-year {
+  order: 2;
+  align-items: flex-end;
+}
+
+/* 故事：一行一行浮上來 */
+.af-story > * {
   opacity: 0;
-  transform: translateY(var(--space-16));
+  transform: translateY(var(--space-4));
   transition:
     opacity var(--dur-1000) var(--easing-out),
     transform var(--dur-1000) var(--easing-out);
 }
 
-.af-card.is-in {
+.af-stage.is-in .af-story > * {
   opacity: 1;
   transform: none;
 }
 
-.af-card-year {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2-5);
-  margin: 0 0 var(--space-4);
+.af-stage.is-in .af-story > :nth-child(2) {
+  transition-delay: var(--dur-100);
+}
+
+.af-stage.is-in .af-story > :nth-child(3) {
+  transition-delay: var(--dur-250);
+}
+
+.af-stage.is-in .af-story > :nth-child(4) {
+  transition-delay: var(--dur-400);
+}
+
+.af-story-sub {
+  margin: 0;
   font-family: var(--mono-font);
-  font-size: var(--fs-13);
-  letter-spacing: var(--ls-8);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-12);
   color: var(--amber);
 }
 
-.af-card-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: var(--r-full);
-  background: var(--dot);
-  box-shadow: 0 0 10px var(--dot);
-}
-
-.af-card-title {
-  margin: 0;
+.af-story-title {
+  margin: var(--space-3) 0 0;
   font-family: var(--display);
-  font-size: var(--fs-32);
+  font-size: var(--fs-40);
   font-weight: 700;
   line-height: var(--lh-120);
   color: var(--ink);
 }
 
-.af-card-sub {
-  margin: var(--space-2) 0 0;
-  font-size: var(--fs-14);
-  color: var(--white-55);
-}
-
-.af-card-desc {
+.af-story-desc {
   margin: var(--space-5) 0 0;
   font-size: var(--fs-16);
   line-height: var(--lh-185);
   color: var(--white-70);
+  text-wrap: pretty;
 }
 
+.af-story-tags {
+  margin: var(--space-5) 0 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  line-height: var(--lh-170);
+  color: var(--white-40);
+}
+
+/* 共用的標籤（落地的「現在」與地底的經歷） */
 .af-tags {
   display: flex;
   flex-wrap: wrap;
@@ -375,6 +426,27 @@
 }
 
 /* ── 落地 ── */
+.af-now .af-card-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-28);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.af-now .af-card-sub {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-14);
+  color: var(--white-55);
+}
+
+.af-now .af-card-desc {
+  margin: var(--space-4) 0 0;
+  font-size: var(--fs-16);
+  line-height: var(--lh-185);
+  color: var(--white-70);
+}
+
 .af-land {
   display: flex;
   align-items: flex-start;
@@ -526,12 +598,39 @@
   color: var(--ink);
 }
 
-.af-skill p {
+.af-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
   margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.af-skill-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
   font-family: var(--mono-font);
-  font-size: var(--fs-13);
-  line-height: var(--lh-170);
+  font-size: var(--fs-12);
   color: var(--white-55);
+  transition: color var(--dur-200) ease;
+}
+
+/* 圖示平常跟字同色，滑過去才亮出品牌色 */
+.af-skill-icon {
+  display: inline-flex;
+  font-size: var(--fs-14);
+  color: var(--white-45);
+  transition: color var(--dur-200) ease;
+}
+
+.af-skill-list li:hover {
+  color: var(--ink);
+}
+
+.af-skill-list li:hover .af-skill-icon {
+  color: var(--brand);
 }
 
 /* 經歷與社團：時間在左、內容在右 */
@@ -628,10 +727,26 @@
     display: none;
   }
 
-  .af-stage,
-  .af-stage--right {
-    justify-content: center;
+  .af-stage {
     min-height: 90vh;
+    padding: 0 var(--space-6);
+  }
+
+  .af-stage--flip .af-year {
+    align-items: flex-start;
+  }
+
+  .af-stage-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  .af-stage--flip .af-year {
+    order: 0;
+  }
+
+  .af-stratum span {
+    left: var(--space-6);
   }
 
   .af-skill,
@@ -639,20 +754,25 @@
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-2);
   }
-
-  .af-lede {
-    font-size: var(--fs-18);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .af-top > *,
-  .af-hint::after,
-  .af-ghost {
+  .af-hint::after {
     animation: none;
   }
 
-  .af-card,
+  .af-story > * {
+    opacity: 1;
+    transform: none;
+  }
+
+  .af-stage .af-year,
+  .af-stage.is-in .af-year {
+    animation: none;
+    background-size: 100% 100%;
+  }
+
   .af-land-inner,
   .af-layer,
   .af-core {

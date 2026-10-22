@@ -1,5 +1,5 @@
 // 關於（自由落體版 demo）。整頁是一段下墜：往下捲就是往下掉，經過的每一層是我的某一年。
-//   起點：很高的地方，名字與一段自介
+//   起點：很高的地方，只有一句話
 //   下墜：九個里程碑（journeyData）一層一層掠過；右邊的高度計從 36,000 公里歸零，標出經過的年份
 //   落地：「就此落下」——落在一顆只長了一棵樹的星球上，這裡是「現在」；抬頭是「未來」
 //   地底：落地之後繼續往下挖，一層一層是更深的生活——手上的東西、做過的事、一起走過的人，最底下是地心
@@ -9,7 +9,6 @@ import { useTranslation } from 'react-i18next';
 import { YEAR_LABELS, MILESTONE_STATIC, MILESTONES_BY_LANG } from '@/data/journeyData';
 import {
   QUICK_FACTS_BY_LANG,
-  PARAGRAPHS_BY_LANG,
   PERIODS,
   TAGS,
   EXPERIENCES_BY_LANG,
@@ -19,6 +18,7 @@ import {
   CATEGORIES_BASE,
 } from '@/data/aboutData';
 import { lookupOr } from '@/lib/tableLookup';
+import { ICON_MAP } from '@/data/skillIcons';
 import { createFallSky } from '@/lib/fallSky';
 import { smoothstep } from '@/lib/horizon';
 import { useSkyPage } from '@/hooks/useSkyPage';
@@ -41,13 +41,35 @@ const stillAbout = () => stripLocalePrefix(window.location.pathname) === 'about'
 const altitudeAt = (p: number) => Math.round(TOP_KM * Math.pow(1 - p, 1.7));
 const fmt = (km: number) => km.toLocaleString('en-US');
 
+/** 年份：區間（2019-2021）拆成兩行，起始年是大字、結束年接在下面，不然一行太寬會被切掉 */
+function YearMark({ label }: { label: string }) {
+  const [from, to] = label.split('-');
+  return (
+    <p className="af-year" aria-hidden="true">
+      <span className="af-year-main">{from}</span>
+      {to && <span className="af-year-to">— {to}</span>}
+    </p>
+  );
+}
+
+/** 技能的圖示：平常是跟字同色的單色，滑過去才亮出品牌色（一整片品牌色會蓋過地層的安靜） */
+function SkillMark({ name }: { name: string }) {
+  const entry = ICON_MAP[name];
+  if (!entry) return null;
+  const [Icon, color] = entry;
+  return (
+    <span className="af-skill-icon" style={{ '--brand': color } as CSSProperties}>
+      <Icon />
+    </span>
+  );
+}
+
 export default function AboutFall() {
   const { i18n } = useTranslation();
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const ylabels = lookupOr(YEAR_LABELS, lang, YEAR_LABELS['zh-TW']);
   const texts = lookupOr(MILESTONES_BY_LANG, lang, MILESTONES_BY_LANG['zh-TW']);
   const facts = lookupOr(QUICK_FACTS_BY_LANG, lang, QUICK_FACTS_BY_LANG['zh-TW']);
-  const bio = lookupOr(PARAGRAPHS_BY_LANG, lang, PARAGRAPHS_BY_LANG['zh-TW']);
   const work = lookupOr(EXPERIENCES_BY_LANG, lang, EXPERIENCES_BY_LANG['zh-TW']);
   const clubs = lookupOr(CLUBS_BY_LANG, lang, CLUBS_BY_LANG['zh-TW']);
   const skillNames = lookupOr(NAMES_BY_LANG, lang, NAMES_BY_LANG['zh-TW']);
@@ -153,7 +175,7 @@ export default function AboutFall() {
       },
       { rootMargin: '0px 0px -15% 0px' },
     );
-    page.querySelectorAll('.af-card, .af-land-inner, .af-layer, .af-core').forEach((el) => io.observe(el));
+    page.querySelectorAll('.af-stage, .af-land-inner, .af-layer, .af-core').forEach((el) => io.observe(el));
 
     return () => {
       cancelAnimationFrame(raf);
@@ -188,47 +210,40 @@ export default function AboutFall() {
         </div>
       </aside>
 
+      {/* 起點：只有一句話。其他的，往下掉的時候一層一層會經過 */}
       <header className="af-top">
-        <p className="af-kicker">關於 · About</p>
-        <h1 className="af-name">Koimsurai</h1>
-        <p className="af-lede">
-          這一頁是一段下墜。越往下，越靠近我。
+        <p className="af-kicker">Koimsurai · 關於</p>
+        <h1 className="af-title">
+          越往下，
           <br />
-          從很高很高的地方開始——經過的每一層雲，都是我的某一年。
-        </p>
-        <p className="af-bio">{bio[0]}</p>
-        <dl className="af-facts">
-          {facts.map((f) => (
-            <div key={f.label}>
-              <dt>{f.label}</dt>
-              <dd>{f.value}</dd>
-            </div>
-          ))}
-        </dl>
+          越靠近我。
+        </h1>
         <p className="af-hint">鬆手，往下</p>
       </header>
 
+      {/* 每一年是一層：穿過去的那一刻，橫在畫面上的那條線亮起來、年份從底下被填滿 */}
       {past.map((m, i) => (
-        <section key={m.id} className={`af-stage${i % 2 ? ' af-stage--right' : ''}`} data-stage={m.label}>
-          <span className="af-ghost" aria-hidden="true">
-            {m.label}
-          </span>
-          <article className="af-card" style={{ '--dot': m.color } as CSSProperties}>
-            <p className="af-card-year">
-              <span className="af-card-dot" aria-hidden="true" />
-              {m.label}
-            </p>
-            <h2 className="af-card-title">{m.title}</h2>
-            <p className="af-card-sub">{m.subtitle}</p>
-            <p className="af-card-desc">{m.description}</p>
-            {m.allTags.length > 0 && (
-              <ul className="af-tags">
-                {m.allTags.map((t) => (
-                  <li key={t}>{t}</li>
-                ))}
-              </ul>
-            )}
-          </article>
+        <section
+          key={m.id}
+          className={`af-stage${i % 2 ? ' af-stage--flip' : ''}`}
+          data-stage={m.label}
+          style={{ '--dot': m.color } as CSSProperties}
+        >
+          <div className="af-stratum" aria-hidden="true">
+            <span>{fmt(altitudeAt((i + 1) / (past.length + 1)))} km</span>
+          </div>
+          <div className="af-stage-body">
+            <YearMark label={m.label} />
+            <div className="af-story">
+              <p className="af-story-sub">
+                <span className="sr-only">{m.label} · </span>
+                {m.subtitle}
+              </p>
+              <h2 className="af-story-title">{m.title}</h2>
+              <p className="af-story-desc">{m.description}</p>
+              {m.allTags.length > 0 && <p className="af-story-tags">{m.allTags.join(' · ')}</p>}
+            </div>
+          </div>
         </section>
       ))}
 
@@ -253,6 +268,14 @@ export default function AboutFall() {
               )}
             </div>
           )}
+          <dl className="af-facts">
+            {facts.map((f) => (
+              <div key={f.label}>
+                <dt>{f.label}</dt>
+                <dd>{f.value}</dd>
+              </div>
+            ))}
+          </dl>
           {future && (
             <p className="af-future">
               <span>抬頭，{future.label}還很遠。</span>
@@ -274,7 +297,14 @@ export default function AboutFall() {
             {CATEGORIES_BASE.map((c) => (
               <div key={c.label} className="af-skill">
                 <h3>{skillNames[c.label] ?? c.label}</h3>
-                <p>{c.items.join(' · ')}</p>
+                <ul className="af-skill-list">
+                  {c.items.map((name) => (
+                    <li key={name}>
+                      <SkillMark name={name} />
+                      {name}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>

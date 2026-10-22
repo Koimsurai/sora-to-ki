@@ -352,26 +352,33 @@ export const aboutSky: WindowSky = {
   },
   over(ctx, w, h, t) {
     const f = fireball(w, h, t);
-    // 天空被照亮：整片蒙上一層青藍，火球附近最亮；星球表面也一起被照到
+    const after = f.local - FIREBALL_SECONDS;
+    // 天空被照亮的程度與中心：落下時跟著火球；沒入地平線之後不是一下子熄掉，
+    // 光從落點那裡繼續照著，好幾秒才慢慢退掉（落地那一刻的亮度就是 s = 1 時的亮度，接得上）
+    let lit = 0;
+    let center = f.end;
     if (f.s >= 0 && f.s <= 1) {
-      const head = f.at(f.s);
-      const lit = Math.min(1, f.glow * 0.6);
+      lit = Math.min(1, f.glow * 0.6);
+      center = f.at(f.s);
+    } else if (after > 0) {
+      lit = 0.6 * Math.exp(-after * 1.1);
+    }
+    if (lit > 0.005) {
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
       ctx.fillStyle = `rgba(30, 110, 200, ${(0.45 * lit).toFixed(3)})`;
       ctx.fillRect(0, 0, w, h);
-      const g = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, Math.max(w, h) * 0.8);
+      const g = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, Math.max(w, h) * 0.8);
       g.addColorStop(0, `rgba(150, 235, 255, ${(0.55 * lit).toFixed(3)})`);
       g.addColorStop(1, 'rgba(150, 235, 255, 0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
       ctx.restore();
     }
-    // 沒入地平線之後：光從地平線後面透出來（只亮在天空那一側），沿著地平線描一道，慢慢熄掉
-    const after = f.local - FIREBALL_SECONDS;
-    if (after > 0 && after < 1.8) {
-      const q = after / 1.8;
-      const fade = (1 - q) * (1 - q);
+    // 地平線後面透出來的光（只亮在天空那一側），沿著地平線描一道：淡入、再慢慢熄掉
+    if (after > 0 && after < 3) {
+      const q = after / 3;
+      const fade = Math.min(1, after / 0.35) * (1 - q) * (1 - q);
       const { cx, cy, r } = planet(w, h);
       ctx.save();
       ctx.beginPath();
@@ -379,13 +386,13 @@ export const aboutSky: WindowSky = {
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.clip('evenodd');
       ctx.globalCompositeOperation = 'screen';
-      const g = ctx.createRadialGradient(f.end.x, f.end.y, 0, f.end.x, f.end.y, 90 + q * 60);
+      const g = ctx.createRadialGradient(f.end.x, f.end.y, 0, f.end.x, f.end.y, 90 + q * 70);
       g.addColorStop(0, `rgba(160, 235, 255, ${(0.7 * fade).toFixed(3)})`);
       g.addColorStop(1, 'rgba(160, 235, 255, 0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
       ctx.restore();
-      const span = 0.12 + q * 0.1;
+      const span = 0.12 + q * 0.12;
       const mid = Math.atan2(f.end.y - cy, f.end.x - cx);
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
