@@ -217,6 +217,7 @@
   position: absolute;
   left: var(--space-3);
   transform: translateY(-50%);
+  transition: opacity var(--dur-300) ease;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   white-space: nowrap;
@@ -397,6 +398,13 @@
   transform: none;
 }
 
+.af-land-pre {
+  margin: 0 0 var(--space-4);
+  font-family: var(--display);
+  font-size: var(--fs-18);
+  color: var(--white-60);
+}
+
 .af-land-title {
   margin: 0;
   font-family: var(--display);
@@ -438,18 +446,172 @@
   color: var(--amber);
 }
 
-/* ── 地表 ── */
+/* ── 地底：一層一層往下 ── */
 .af-ground {
-  padding: var(--space-24) 0 var(--space-16);
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
 }
 
-.af-ground-head {
-  margin: 0 0 var(--space-8);
+.af-layer {
+  padding: 22vh 0 var(--space-16);
+  opacity: 0;
+  transform: translateY(var(--space-12));
+  transition:
+    opacity var(--dur-1000) var(--easing-out),
+    transform var(--dur-1000) var(--easing-out);
+}
+
+.af-layer.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+.af-layer-head {
+  margin-bottom: var(--space-12);
+}
+
+.af-layer-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2-5);
   font-family: var(--mono-font);
   font-size: var(--fs-12);
   letter-spacing: var(--ls-18);
-  text-align: center;
-  color: var(--white-45);
+  color: var(--amber);
+}
+
+/* 地層標籤前面一小段橫線，像剖面圖上的標示 */
+.af-layer-tag::before {
+  content: "";
+  width: var(--space-8);
+  height: 1px;
+  background: rgba(var(--amber-rgb), 0.6);
+}
+
+.af-layer-head h2 {
+  margin: var(--space-4) 0 0;
+  font-family: var(--display);
+  font-size: clamp(36px, 4.4vw, 56px);
+  font-weight: 700;
+  line-height: var(--lh-110);
+  color: var(--ink);
+}
+
+.af-layer-head p {
+  margin: var(--space-4) 0 0;
+  font-family: var(--display);
+  font-size: var(--fs-18);
+  line-height: var(--lh-160);
+  color: var(--white-60);
+}
+
+/* 技能：像一排礦物標本的標籤，領域在左、東西在右 */
+.af-skills {
+  border-top: 1px solid var(--white-10);
+}
+
+.af-skill {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--white-06);
+}
+
+.af-skill h3 {
+  margin: 0;
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.af-skill p {
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+  color: var(--white-55);
+}
+
+/* 經歷與社團：時間在左、內容在右 */
+.af-entry {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: var(--space-6);
+  padding: var(--space-8) 0;
+  border-top: 1px solid var(--white-10);
+}
+
+.af-entry-when {
+  margin: var(--space-1) 0 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-4);
+  color: var(--amber);
+}
+
+.af-entry-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-24);
+  font-weight: 700;
+  line-height: var(--lh-130);
+  color: var(--ink);
+}
+
+.af-entry-role {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--white-55);
+}
+
+.af-entry-group h4 {
+  margin: var(--space-6) 0 var(--space-2);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  letter-spacing: var(--ls-4);
+  color: var(--white-80);
+}
+
+.af-entry ul:not(.af-tags) {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-5);
+  font-size: var(--fs-14);
+  line-height: var(--lh-185);
+  color: var(--white-60);
+}
+
+.af-entry .af-tags {
+  margin-top: var(--space-5);
+}
+
+/* 地心 */
+.af-core {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 70vh;
+  padding-bottom: 18vh;
+  opacity: 0;
+  transition: opacity var(--dur-1000) var(--easing-out);
+}
+
+.af-core.is-in {
+  opacity: 1;
+}
+
+.af-core p {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-24);
+  color: #ffe2b8;
+  text-shadow: 0 0 24px rgba(var(--amber-rgb), 0.6);
+}
+
+/* 往地底挖時，高度計的年份刻度收起來，只留數字與目前那一層 */
+.af-meter.is-digging .af-meter-tick {
+  opacity: 0;
 }
 
 @media (max-width: 860px) {
@@ -472,6 +634,12 @@
     min-height: 90vh;
   }
 
+  .af-skill,
+  .af-entry {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
   .af-lede {
     font-size: var(--fs-18);
   }
@@ -485,7 +653,9 @@
   }
 
   .af-card,
-  .af-land-inner {
+  .af-land-inner,
+  .af-layer,
+  .af-core {
     opacity: 1;
     transform: none;
   }

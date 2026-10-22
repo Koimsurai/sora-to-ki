@@ -2,7 +2,7 @@
 //   手記：星軌繞著天極轉（hover 時轉快，像快轉的長曝光），地平線上一棵樹
 //   碎念：像素抖動的星雲與土星（琥珀色的點陣），星星明滅，偶爾一顆「閃過」
 //   收藏：三顆主星的星座線一筆一筆連起來，主星呼吸
-//   關於：一道光不斷往下掉，落進小星球的大氣層裡
+//   關於：一顆藍色火球劃過、把整片天空照亮，然後沒入小星球的地平線
 // 每扇窗分三層：back（靜態，畫一次）→ frame（每幀）→ front（靜態，畫一次）。
 // 靜態的部分快取在離屏 canvas，每幀只重畫會動的那一層。座標都是 CSS 像素。
 // 純 2D canvas——首頁已經有一個 3D 場景在跑，不再多開。
@@ -15,6 +15,8 @@ export interface WindowSky {
   /** t：窗出現後經過的秒數（hover 時走得比較快）；hover：滑鼠在窗上 */
   frame?: (ctx: Ctx, w: number, h: number, t: number, hover: boolean) => void;
   front?: (ctx: Ctx, w: number, h: number) => void;
+  /** 畫在 front 之上（每幀）：會照亮整個畫面的東西，例如關於窗那顆火球的閃光 */
+  over?: (ctx: Ctx, w: number, h: number, t: number, hover: boolean) => void;
   /** 動態層的幀率上限 */
   fps: number;
   /** hover 時時間走多快 */
@@ -266,12 +268,39 @@ export const collectionSky: WindowSky = {
   },
 };
 
-// ── 關於：往下掉 ──
-const FALL_EVERY = 3.2;
+// ── 關於：藍色火球 ──
+// 那段在網路上瘋傳的自拍影片：深夜裡，身後的天空突然被一道霓虹般的青藍色光照得像白天，
+// 一顆藍色火球拖著長尾巴劃過、落到地平線後面，前後大約七秒。這扇窗留住的就是那一瞬間：
+// 平常是安靜的夜空和小星球，每隔一陣子，一顆藍色火球從左上方斜斜落下，越掉越快、越燒越亮，
+// 最亮的那一刻整片天空和星球表面都被照成青藍色，然後沒入星球的地平線，留下一點餘光。
+const FIREBALL_EVERY = 9;
+const FIREBALL_START = 0.5;
+const FIREBALL_SECONDS = 3.4;
 
 function planet(w: number, h: number) {
   const r = Math.max(w, h) * 0.9;
   return { cx: w * 0.5, cy: h * 0.72 + r, r };
+}
+
+/** 這一刻火球在哪、多亮。s 是這一次落下的進度（0–1），不在落下的時候回 null */
+function fireball(w: number, h: number, t: number) {
+  const k = Math.floor(t / FIREBALL_EVERY);
+  const local = t - k * FIREBALL_EVERY - FIREBALL_START;
+  const s = local / FIREBALL_SECONDS;
+  const { cx, cy, r } = planet(w, h);
+  const R = rng(300 + k);
+  const sx = w * (0.05 + R() * 0.2);
+  const sy = -h * 0.08;
+  const ex = w * (0.6 + R() * 0.2);
+  const ey = cy - Math.sqrt(Math.max(0, r * r - (ex - cx) ** 2)) + 6; // 落點在地平線後面一點
+  const at = (q: number) => {
+    const e = q * q * (1.4 - 0.4 * q); // 越掉越快
+    return { x: sx + (ex - sx) * e, y: sy + (ey - sy) * e };
+  };
+  // 亮度：點燃、越燒越亮，在最後三分之一爆亮一次（影片裡把天空照成白天的那一下）
+  const burst = Math.exp(-(((s - 0.72) / 0.12) ** 2));
+  const glow = s < 0 || s > 1 ? 0 : Math.min(1, s * 4) * (0.45 + 0.55 * s) + burst * 1.2;
+  return { s, at, glow, end: { x: ex, y: ey }, local, seed: k };
 }
 
 export const aboutSky: WindowSky = {
@@ -282,37 +311,90 @@ export const aboutSky: WindowSky = {
     dust(ctx, w, h, Math.round((w * h) / 700), 29);
   },
   frame(ctx, w, h, t) {
-    // 一道光從右上方斜斜落下，碰到大氣層時閃一下；每一次落點都不一樣
-    const k = Math.floor(t / FALL_EVERY);
-    const p = (t - k * FALL_EVERY) / 1.6;
-    const R = rng(100 + k);
-    const sx = w * (0.55 + R() * 0.3);
-    const ex = w * (0.42 + R() * 0.2);
-    const { cx, cy, r } = planet(w, h);
-    const ey = cy - Math.sqrt(Math.max(0, r * r - (ex - cx) ** 2));
-    if (p < 1) {
-      const e = p * p;
-      const hx = sx + (ex - sx) * e;
-      const hy = -10 + (ey + 10) * e;
-      const back = Math.max(0, e - 0.25);
-      const tx = sx + (ex - sx) * back;
-      const ty = -10 + (ey + 10) * back;
-      const g = ctx.createLinearGradient(tx, ty, hx, hy);
-      g.addColorStop(0, 'rgba(233, 193, 122, 0)');
-      g.addColorStop(1, 'rgba(255, 226, 178, 0.9)');
-      ctx.strokeStyle = g;
-      ctx.lineWidth = 1.4;
+    const f = fireball(w, h, t);
+    if (f.s < 0 || f.s > 1) return;
+    const head = f.at(f.s);
+    // 尾巴：沿著來的路往回拉，越後面越細、越淡；外層青藍、裡面一條白芯
+    const TAIL = 18;
+    for (let i = TAIL; i > 0; i--) {
+      const a = f.at(Math.max(0, f.s - (i / TAIL) * 0.42));
+      const b = f.at(Math.max(0, f.s - ((i - 1) / TAIL) * 0.42));
+      const fade = 1 - i / TAIL;
+      ctx.strokeStyle = `rgba(90, 210, 255, ${(0.55 * fade * Math.min(1, f.glow)).toFixed(3)})`;
+      ctx.lineWidth = 1 + fade * 7;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(tx, ty);
-      ctx.lineTo(hx, hy);
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
       ctx.stroke();
-      ctx.fillStyle = 'rgba(255, 240, 214, 0.95)';
+      ctx.strokeStyle = `rgba(235, 252, 255, ${(0.8 * fade * fade * Math.min(1, f.glow)).toFixed(3)})`;
+      ctx.lineWidth = 0.6 + fade * 1.8;
+      ctx.stroke();
+    }
+    // 碎屑：從火球上剝落、落在後面
+    const R = rng(f.seed * 997 + Math.floor(f.local * 30));
+    for (let i = 0; i < 10; i++) {
+      const p = f.at(Math.max(0, f.s - R() * 0.25));
+      ctx.fillStyle = `rgba(160, 235, 255, ${(R() * 0.8 * Math.min(1, f.glow)).toFixed(3)})`;
+      ctx.fillRect(p.x + (R() - 0.5) * 14, p.y + (R() - 0.5) * 14, 1.5, 1.5);
+    }
+    // 火球本身
+    const r = 4 + f.glow * 6;
+    const g = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, r * 4);
+    g.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    g.addColorStop(0.15, 'rgba(190, 250, 255, 0.95)');
+    g.addColorStop(0.4, 'rgba(60, 190, 255, 0.5)');
+    g.addColorStop(1, 'rgba(40, 120, 255, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(head.x, head.y, r * 4, 0, Math.PI * 2);
+    ctx.fill();
+  },
+  over(ctx, w, h, t) {
+    const f = fireball(w, h, t);
+    // 天空被照亮：整片蒙上一層青藍，火球附近最亮；星球表面也一起被照到
+    if (f.s >= 0 && f.s <= 1) {
+      const head = f.at(f.s);
+      const lit = Math.min(1, f.glow * 0.6);
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = `rgba(30, 110, 200, ${(0.45 * lit).toFixed(3)})`;
+      ctx.fillRect(0, 0, w, h);
+      const g = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, Math.max(w, h) * 0.8);
+      g.addColorStop(0, `rgba(150, 235, 255, ${(0.55 * lit).toFixed(3)})`);
+      g.addColorStop(1, 'rgba(150, 235, 255, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+    // 沒入地平線之後：光從地平線後面透出來（只亮在天空那一側），沿著地平線描一道，慢慢熄掉
+    const after = f.local - FIREBALL_SECONDS;
+    if (after > 0 && after < 1.8) {
+      const q = after / 1.8;
+      const fade = (1 - q) * (1 - q);
+      const { cx, cy, r } = planet(w, h);
+      ctx.save();
       ctx.beginPath();
-      ctx.arc(hx, hy, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (p < 1.5) {
-      const q = (p - 1) / 0.5;
-      glow(ctx, ex, ey, 10 + q * 30, `rgba(255, 236, 200, ${(0.8 * (1 - q)).toFixed(3)})`);
+      ctx.rect(0, 0, w, h);
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.clip('evenodd');
+      ctx.globalCompositeOperation = 'screen';
+      const g = ctx.createRadialGradient(f.end.x, f.end.y, 0, f.end.x, f.end.y, 90 + q * 60);
+      g.addColorStop(0, `rgba(160, 235, 255, ${(0.7 * fade).toFixed(3)})`);
+      g.addColorStop(1, 'rgba(160, 235, 255, 0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+      const span = 0.12 + q * 0.1;
+      const mid = Math.atan2(f.end.y - cy, f.end.x - cx);
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      ctx.strokeStyle = `rgba(170, 240, 255, ${(0.8 * fade).toFixed(3)})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, mid - span, mid + span);
+      ctx.stroke();
+      ctx.restore();
     }
   },
   front(ctx, w, h) {

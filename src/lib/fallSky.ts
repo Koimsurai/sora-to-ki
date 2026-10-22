@@ -3,14 +3,19 @@
 //   ground（0–1）：落地之後繼續往下捲，星球的地表升上來佔滿畫面（站在地表上）
 //   speed（0–1）：捲動的速度。星塵往上掠過的速度與拉長的程度跟著它，停下來時只剩很慢的飄
 // 背景遠處的星是 3D 的那一片（換頁時同一片星空），這裡只加近景：
-//   星塵 → 接近地表時的大氣光、星塵被燒成琥珀色 → 從下方升起的星球、落地時長出來的樹。
-import { drawTree, growTree, rng, smoothstep } from './horizon';
+//   星塵 → 接近地表時的大氣光、星塵被燒成琥珀色 → 從下方升起的星球、落地時長出來的樹
+//   → 落地之後繼續往下：一層一層往上走的地層紋路，最底下是地心的琥珀色光。
+import { drawTree, growTree, ridgeNoise, rng, smoothstep } from './horizon';
 
 export interface FallState {
   p: number;
   ground: number;
   speed: number;
   dt: number;
+  /** 落地之後往地底挖了多深（0–1）：地層越來越暖，最底下是地心的光 */
+  depth: number;
+  /** 從地表開始往下捲了多少像素：地層紋路跟著內容一起往上走 */
+  dig: number;
 }
 
 const GROUND = '#04050a';
@@ -108,5 +113,44 @@ export function createFallSky(count: number) {
         ctx.restore();
       }
     }
+
+    // 地層：一條一條起伏的紋路，跟著捲動往上走；越深的地方越暖
+    if (s.ground > 0.5) {
+      const k = smoothstep(0.5, 1, s.ground);
+      const GAP = 120;
+      const off = s.dig * 0.85;
+      const first = Math.floor(off / GAP);
+      for (let i = 0; i <= Math.ceil(h / GAP) + 1; i++) {
+        const id = first + i;
+        const y = id * GAP - off;
+        const n = strata(id);
+        const warm = Math.min(1, s.depth * 1.2);
+        ctx.strokeStyle = `rgba(${Math.round(150 + 90 * warm)}, ${Math.round(140 + 40 * warm)}, ${Math.round(210 - 90 * warm)}, ${(0.12 * k).toFixed(3)})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 0; x <= w + 8; x += 8) ctx.lineTo(x, y + n(x / 380) * 16);
+        ctx.stroke();
+      }
+      // 地心
+      if (s.depth > 0) {
+        const core = ctx.createRadialGradient(w / 2, h * 1.15, 0, w / 2, h * 1.15, h * 0.9);
+        core.addColorStop(0, `rgba(255, 196, 120, ${(0.55 * s.depth * s.depth).toFixed(3)})`);
+        core.addColorStop(0.5, `rgba(233, 140, 70, ${(0.18 * s.depth * s.depth).toFixed(3)})`);
+        core.addColorStop(1, 'rgba(233, 140, 70, 0)');
+        ctx.fillStyle = core;
+        ctx.fillRect(0, 0, w, h);
+      }
+    }
   };
+}
+
+const strataCache = new Map<number, (x: number) => number>();
+/** 每一條地層有自己固定的起伏（捲回來時同一條長得一樣） */
+function strata(id: number) {
+  let n = strataCache.get(id);
+  if (!n) {
+    n = ridgeNoise(500 + id, 3);
+    strataCache.set(id, n);
+  }
+  return n;
 }

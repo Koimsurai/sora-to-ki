@@ -96,7 +96,7 @@ export default function NotesSky() {
     <div className="notes-page" ref={pageRef}>
       <header className="notes-head">
         <h1 className="notes-title">{t('blog.heroTitle')}</h1>
-        <p className="notes-desc">把走過的路、想通的事，一行一行寫進夜裡。</p>
+        <p className="notes-desc">日子一圈一圈地轉，寫下來的，才留成了軌跡。</p>
       </header>
 
       <div className="notes-panel">

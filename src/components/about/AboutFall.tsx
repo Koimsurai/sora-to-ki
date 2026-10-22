@@ -2,20 +2,27 @@
 //   起點：很高的地方，名字與一段自介
 //   下墜：九個里程碑（journeyData）一層一層掠過；右邊的高度計從 36,000 公里歸零，標出經過的年份
 //   落地：「就此落下」——落在一顆只長了一棵樹的星球上，這裡是「現在」；抬頭是「未來」
-//   地表：落地之後站在地表上，原本的技能、經歷、社團紀錄接在下面
+//   地底：落地之後繼續往下挖，一層一層是更深的生活——手上的東西、做過的事、一起走過的人，最底下是地心
 // 近景（星塵、大氣、星球、樹）畫在 lib/fallSky.ts；遠處的星是 3D 的那一片。
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { YEAR_LABELS, MILESTONE_STATIC, MILESTONES_BY_LANG } from '@/data/journeyData';
-import { QUICK_FACTS_BY_LANG, PARAGRAPHS_BY_LANG } from '@/data/aboutData';
+import {
+  QUICK_FACTS_BY_LANG,
+  PARAGRAPHS_BY_LANG,
+  PERIODS,
+  TAGS,
+  EXPERIENCES_BY_LANG,
+  CLUB_PERIODS,
+  CLUBS_BY_LANG,
+  NAMES_BY_LANG,
+  CATEGORIES_BASE,
+} from '@/data/aboutData';
 import { lookupOr } from '@/lib/tableLookup';
 import { createFallSky } from '@/lib/fallSky';
 import { smoothstep } from '@/lib/horizon';
 import { useSkyPage } from '@/hooks/useSkyPage';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
-import Expertise from './Expertise';
-import WorkExperience from './WorkExperience';
-import SchoolClubs from './SchoolClubs';
 import './AboutFall.css';
 
 /** 起點的高度（公里）：地球同步軌道那麼高 */
@@ -41,6 +48,9 @@ export default function AboutFall() {
   const texts = lookupOr(MILESTONES_BY_LANG, lang, MILESTONES_BY_LANG['zh-TW']);
   const facts = lookupOr(QUICK_FACTS_BY_LANG, lang, QUICK_FACTS_BY_LANG['zh-TW']);
   const bio = lookupOr(PARAGRAPHS_BY_LANG, lang, PARAGRAPHS_BY_LANG['zh-TW']);
+  const work = lookupOr(EXPERIENCES_BY_LANG, lang, EXPERIENCES_BY_LANG['zh-TW']);
+  const clubs = lookupOr(CLUBS_BY_LANG, lang, CLUBS_BY_LANG['zh-TW']);
+  const skillNames = lookupOr(NAMES_BY_LANG, lang, NAMES_BY_LANG['zh-TW']);
   const milestones = MILESTONE_STATIC.map((s, i) => ({
     ...s,
     label: s.year === 'NOW' ? ylabels.NOW : s.year === 'FUTURE' ? ylabels.FUTURE : s.year,
@@ -58,6 +68,9 @@ export default function AboutFall() {
   const yearRef = useRef<HTMLSpanElement | null>(null);
   const markRef = useRef<HTMLSpanElement | null>(null);
   const meterRef = useRef<HTMLElement | null>(null);
+  const keyRef = useRef<HTMLSpanElement | null>(null);
+  const unitRef = useRef<HTMLElement | null>(null);
+  const groundRef = useRef<HTMLDivElement | null>(null);
 
   // 從首頁飛過來：土星在身後、鏡頭快抵達時起點的字才出現
   useSkyPage(pageRef, { sky: 'default', ready: true, arriveAt: 1300, leave: LEAVE, stillHere: stillAbout });
@@ -101,12 +114,25 @@ export default function AboutFall() {
       velocity += ((y - lastY) / dt - velocity) * Math.min(1, dt * 8);
       lastY = y;
       const speed = reduce ? 0 : Math.min(1, Math.abs(velocity) / 2600);
-      draw(ctx, w, h, { p, ground, speed, dt: reduce ? 0 : dt });
+      // 地底：從地層區的頂端開始算往下挖了多少
+      const groundEl = groundRef.current;
+      const groundTop = groundEl ? groundEl.getBoundingClientRect().top + y : Infinity;
+      const groundLen = groundEl ? Math.max(1, groundEl.offsetHeight - h * 0.5) : 1;
+      const dig = Math.max(0, y + h * 0.5 - groundTop);
+      const depth = Math.min(1, dig / groundLen);
+      draw(ctx, w, h, { p, ground, speed, dt: reduce ? 0 : dt, depth, dig });
 
-      // 高度計：數字、目前經過的那一年、標記的位置；落地之後收起來
-      if (altRef.current) altRef.current.textContent = fmt(altitudeAt(p));
-      if (markRef.current) markRef.current.style.transform = `translateY(${(p * 100).toFixed(2)}cqh)`;
-      if (meterRef.current) meterRef.current.style.opacity = String(1 - smoothstep(0.96, 1, p));
+      // 高度計：下墜時是「距離地表」幾公里；落地時收起來；往地底挖時換成「地表以下」幾公尺
+      const digging = dig > 0;
+      meterRef.current?.classList.toggle('is-digging', digging);
+      if (keyRef.current) keyRef.current.textContent = digging ? '地表以下' : '距離地表';
+      if (unitRef.current) unitRef.current.textContent = digging ? 'm' : 'km';
+      if (altRef.current) altRef.current.textContent = fmt(digging ? Math.round(depth * 320) : altitudeAt(p));
+      const mark = digging ? depth : p;
+      if (markRef.current) markRef.current.style.transform = `translateY(${(mark * 100).toFixed(2)}cqh)`;
+      if (meterRef.current) {
+        meterRef.current.style.opacity = String(digging ? smoothstep(0, 120, dig) : 1 - smoothstep(0.96, 1, p));
+      }
       let current = '';
       for (const s of stages) if (s.getBoundingClientRect().top < h * 0.55) current = s.dataset.stage ?? '';
       if (current !== shownYear && yearRef.current) {
@@ -127,7 +153,7 @@ export default function AboutFall() {
       },
       { rootMargin: '0px 0px -15% 0px' },
     );
-    page.querySelectorAll('.af-card, .af-land-inner').forEach((el) => io.observe(el));
+    page.querySelectorAll('.af-card, .af-land-inner, .af-layer, .af-core').forEach((el) => io.observe(el));
 
     return () => {
       cancelAnimationFrame(raf);
@@ -143,10 +169,12 @@ export default function AboutFall() {
       {/* 高度計 */}
       <aside className="af-meter" ref={meterRef} aria-hidden="true">
         <div className="af-meter-read">
-          <span className="af-meter-key">距離地表</span>
+          <span className="af-meter-key" ref={keyRef}>
+            距離地表
+          </span>
           <span className="af-meter-num">
             <span ref={altRef}>{fmt(TOP_KM)}</span>
-            <small>km</small>
+            <small ref={unitRef}>km</small>
           </span>
           <span className="af-meter-year" ref={yearRef} />
         </div>
@@ -164,9 +192,9 @@ export default function AboutFall() {
         <p className="af-kicker">關於 · About</p>
         <h1 className="af-name">Koimsurai</h1>
         <p className="af-lede">
-          這一頁是一段下墜。
+          這一頁是一段下墜。越往下，越靠近我。
           <br />
-          從很高很高的地方開始——往下捲，就是往下掉；經過的每一層雲，都是我的某一年。
+          從很高很高的地方開始——經過的每一層雲，都是我的某一年。
         </p>
         <p className="af-bio">{bio[0]}</p>
         <dl className="af-facts">
@@ -206,8 +234,11 @@ export default function AboutFall() {
 
       <section className="af-land" ref={landRef}>
         <div className="af-land-inner">
+          <p className="af-land-pre">掠過無數個稚嫩與迷惘的昨日，</p>
           <h2 className="af-land-title">就此落下。</h2>
-          <p className="af-land-lede">落在一顆只長了一棵樹的星球上——這裡是{now?.label ?? '現在'}。</p>
+          <p className="af-land-lede">
+            落在一顆只長了一棵樹的星球上。這裡是{now?.label ?? '現在'}，是我此刻站著的地方。
+          </p>
           {now && (
             <div className="af-now">
               <p className="af-card-title">{now.title}</p>
@@ -231,12 +262,88 @@ export default function AboutFall() {
         </div>
       </section>
 
-      {/* 地表：站在星球上，原本那幾份完整的紀錄 */}
-      <div className="af-ground">
-        <p className="af-ground-head">地表上的紀錄</p>
-        <Expertise />
-        <WorkExperience />
-        <SchoolClubs />
+      {/* 地底：落地之後繼續往下挖。一層一層是更深的生活，最底下是地心 */}
+      <div className="af-ground" ref={groundRef}>
+        <section className="af-layer" data-stage="地表">
+          <header className="af-layer-head">
+            <span className="af-layer-tag">地表</span>
+            <h2>握在手裡的</h2>
+            <p>落地之後才發現，一路帶著的東西都還在。</p>
+          </header>
+          <div className="af-skills">
+            {CATEGORIES_BASE.map((c) => (
+              <div key={c.label} className="af-skill">
+                <h3>{skillNames[c.label] ?? c.label}</h3>
+                <p>{c.items.join(' · ')}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="af-layer" data-stage="第一層">
+          <header className="af-layer-head">
+            <span className="af-layer-tag">第一層</span>
+            <h2>做過的事</h2>
+            <p>再往下一點，是被時間壓實的日子。</p>
+          </header>
+          {work.map((e, i) => (
+            <article key={e.title} className="af-entry">
+              <p className="af-entry-when">{PERIODS[i]}</p>
+              <div>
+                <h3 className="af-entry-title">{e.title}</h3>
+                <p className="af-entry-role">{e.role}</p>
+                {e.groups?.map((g) => (
+                  <div key={g.heading} className="af-entry-group">
+                    <h4>{g.heading}</h4>
+                    <ul>
+                      {g.items.map((it) => (
+                        <li key={it}>{it}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                {e.bullets && (
+                  <ul>
+                    {e.bullets.map((it) => (
+                      <li key={it}>{it}</li>
+                    ))}
+                  </ul>
+                )}
+                <ul className="af-tags">
+                  {(TAGS[i] ?? []).map((t) => (
+                    <li key={t}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <section className="af-layer" data-stage="第二層">
+          <header className="af-layer-head">
+            <span className="af-layer-tag">第二層</span>
+            <h2>一起走過的人</h2>
+            <p>更深的地方，是那些熱鬧的、吵鬧的、一起熬過的夜。</p>
+          </header>
+          {clubs.map((c, i) => (
+            <article key={c.name} className="af-entry">
+              <p className="af-entry-when">{CLUB_PERIODS[i]}</p>
+              <div>
+                <h3 className="af-entry-title">{c.name}</h3>
+                <p className="af-entry-role">{c.role}</p>
+                <ul>
+                  {c.activities.map((a) => (
+                    <li key={a}>{a}</li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <section className="af-core" data-stage="地心">
+          <p>再往下，是還沒寫下的事。</p>
+        </section>
       </div>
     </div>
   );

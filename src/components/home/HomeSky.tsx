@@ -59,6 +59,10 @@ function SkyCanvas({ sky }: { sky: WindowSky }) {
       sky.frame?.(ctx, w, h, t, hover);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       if (front) ctx.drawImage(front, 0, 0);
+      if (sky.over) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        sky.over(ctx, w, h, t, hover);
+      }
     };
     const fit = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -85,7 +89,7 @@ function SkyCanvas({ sky }: { sky: WindowSky }) {
     const io = new IntersectionObserver(([e]) => {
       cancelAnimationFrame(raf);
       last = -1;
-      if (e.isIntersecting && !reduce && sky.frame) raf = requestAnimationFrame(loop);
+      if (e.isIntersecting && !reduce && (sky.frame || sky.over)) raf = requestAnimationFrame(loop);
     });
     io.observe(cv);
     const enter = () => (hover = true);
@@ -318,7 +322,7 @@ export default function HomeSky() {
         </Window>
 
         <Window className="hw-collection" sky={collectionSky} label="收藏" en="Collection">
-          <p className="hw-quote hw-quote--small hw-collection-line">聽過的、看過的、讀過的，後來都成了星。</p>
+          <p className="hw-quote hw-quote--small hw-collection-line">聽過的、看過的、讀過的，後來都連成了星座。</p>
           {COLLECTION_STARS.map((s) => {
             const [name, to] = COLLECTION_LABELS[s.key];
             return (
@@ -335,7 +339,7 @@ export default function HomeSky() {
         </Window>
 
         <Window to="/about" className="hw-about" sky={aboutSky} label="關於" en="About">
-          <p className="hw-quote hw-quote--small">就此落下——直到碰見那顆只長了一棵樹的星球。</p>
+          <p className="hw-quote hw-quote--small">掠過無數個稚嫩與迷惘的昨日，就此落下。</p>
         </Window>
 
         <nav className="home-more" data-reveal aria-label="其他地方">

@@ -97,6 +97,7 @@ import {
 import './Expertise.css';
 import type { ComponentType, CSSProperties } from 'react';
 import { lookupOr } from '@/lib/tableLookup';
+import { NAMES_BY_LANG, CATEGORIES_BASE } from '@/data/aboutData';
 
 type IconComp = ComponentType<{ className?: string; style?: CSSProperties }>;
 
@@ -210,69 +211,6 @@ const ICON_MAP: Partial<Record<string, [IconComp, string]>> = {
 };
 
 // 中文名稱 per locale。label 是英文鍵,items 是技術名（不翻）。
-const NAMES_BY_LANG: Record<string, Record<string, string>> = {
-  'zh-TW': {
-    Frontend: '前端開發',
-    Backend: '後端開發',
-    Mobile: '行動開發',
-    DevOps: '部署運維',
-    Design: '設計多媒體',
-    Data: '資料儲存',
-    Network: '網路通訊',
-    Productivity: '生產力',
-    'AI Tools': 'AI 開發',
-    Teaching: '教學工具',
-  },
-  'zh-CN': {
-    Frontend: '前端开发',
-    Backend: '后端开发',
-    Mobile: '移动开发',
-    DevOps: '部署运维',
-    Design: '设计多媒体',
-    Data: '数据存储',
-    Network: '网络通讯',
-    Productivity: '生产力',
-    'AI Tools': 'AI 开发',
-    Teaching: '教学工具',
-  },
-  en: {
-    Frontend: 'Frontend',
-    Backend: 'Backend',
-    Mobile: 'Mobile',
-    DevOps: 'DevOps',
-    Design: 'Design',
-    Data: 'Data',
-    Network: 'Network',
-    Productivity: 'Productivity',
-    'AI Tools': 'AI Tools',
-    Teaching: 'Teaching',
-  },
-  ja: {
-    Frontend: 'フロントエンド',
-    Backend: 'バックエンド',
-    Mobile: 'モバイル',
-    DevOps: 'DevOps',
-    Design: 'デザイン・メディア',
-    Data: 'データストア',
-    Network: 'ネットワーク',
-    Productivity: '生産性',
-    'AI Tools': 'AI 開発',
-    Teaching: '教育ツール',
-  },
-  ko: {
-    Frontend: '프런트엔드',
-    Backend: '백엔드',
-    Mobile: '모바일',
-    DevOps: '데브옵스',
-    Design: '디자인 · 미디어',
-    Data: '데이터 저장',
-    Network: '네트워크',
-    Productivity: '생산성',
-    'AI Tools': 'AI 개발',
-    Teaching: '교육 도구',
-  },
-};
-
 const HERO_BY_LANG: Record<string, { line1: string; line2: string }> = {
   'zh-TW': { line1: '從前端到部署、從設計到教學。', line2: '每一層都能自己接起來。' },
   'zh-CN': { line1: '从前端到部署、从设计到教学。', line2: '每一层都能自己接起来。' },
@@ -280,82 +218,6 @@ const HERO_BY_LANG: Record<string, { line1: string; line2: string }> = {
   ja: { line1: 'フロントエンドからデプロイまで、デザインから教育まで。', line2: 'どの層も自分で繋げられる。' },
   ko: { line1: '프런트엔드부터 배포까지, 디자인부터 교육까지.', line2: '모든 레이어를 직접 연결할 수 있어요.' },
 };
-
-const CATEGORIES_BASE: { label: string; items: string[] }[] = [
-  {
-    label: 'Frontend',
-    items: [
-      'Next.js',
-      'React',
-      'TypeScript',
-      'JavaScript',
-      'Vite',
-      'Framer Motion',
-      'Three.js',
-      'WebGL',
-      'Tauri',
-      'PWA',
-      'Tailwind CSS',
-      'Bootstrap',
-      'HTML5',
-      'CSS3',
-    ],
-  },
-  {
-    label: 'Backend',
-    items: [
-      'Rust',
-      'Express',
-      'Node.js',
-      'ASP.NET',
-      '.NET 8',
-      'Spring Boot',
-      'FastAPI',
-      'Pydantic',
-      'Jinja2',
-      'discord.py',
-      'Go',
-      'Java',
-      'Python',
-      'C++',
-      'C',
-    ],
-  },
-  { label: 'Mobile', items: ['Kotlin', 'Android', 'Jetpack Compose', 'Flutter', 'Dart'] },
-  {
-    label: 'DevOps',
-    items: [
-      'Docker',
-      'Cloudflare',
-      'Turborepo',
-      'pnpm',
-      'ESLint',
-      'Prettier',
-      'Vitest',
-      'Playwright',
-      'GitLab CI/CD',
-      'GitHub',
-      'n8n',
-      'Nginx',
-      'Traefik',
-      'Linux',
-      'Bash',
-      'PowerShell',
-    ],
-  },
-  { label: 'Design', items: ['Figma', 'Photoshop', 'Illustrator', 'Premiere Pro', 'Lightroom'] },
-  { label: 'Data', items: ['PostgreSQL', 'MS SQL Server', 'MongoDB', 'SQLite', 'Redis', 'Firebase', 'JSON'] },
-  { label: 'Network', items: ['HTTP/HTTPS', 'TCP/IP', 'DNS', 'SSL/TLS', 'OAuth', 'JWT', 'WebSocket', 'CDN'] },
-  {
-    label: 'Productivity',
-    items: ['VS Code', 'Postman', 'Notion', 'Obsidian', 'Markdown', 'Mermaid', 'Canva', 'Discord'],
-  },
-  {
-    label: 'AI Tools',
-    items: ['Claude', 'Cursor', 'GitHub Copilot', 'Antigravity', 'Gemini', 'GPT', 'Codex CLI', 'MCP'],
-  },
-  { label: 'Teaching', items: ['Scratch', 'pygame', 'MCE (Minecraft)', 'App Inventor'] },
-];
 
 const CATEGORIES = CATEGORIES_BASE; // 元件 render 時用 i18n 動態接 name
 
