@@ -488,9 +488,12 @@ function check(file: string): Problem[] {
     // ⚠ 這條**不是**「要用 token」，是「值要在階梯上」——`--white-NN` 那些是顏色，
     // 不能拿來當 opacity。但兩者量的是同一件事（多透明），所以共用同一套詞彙：
     // 導入時 23 種值裡已經有 19 種落在階梯上，只有 0.85 / 0.75 / 0.18 / 0.12 例外。
+    //
+    // 低於 0.01 的不管：那不是「多透明」，是「看不見但要繪製」（opacity 剛好 0 的圖層
+    // 瀏覽器不光柵化，見 index.css 的 html.intro-pending），跟階梯量的不是同一件事。
     if (prop === 'opacity' && /^[\d.]+$/.test(value)) {
       const a = Number(value);
-      if (a !== 0 && a !== 1 && !onLadder(a)) {
+      if (a >= 0.01 && a !== 1 && !onLadder(a)) {
         problems.push({
           file,
           line,
