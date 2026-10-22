@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useLocaleNavigate } from '@/hooks/useLocale';
@@ -10,7 +11,27 @@ import KoimLoader from '@/components/common/KoimLoader';
 import ThoughtCard from './ThoughtCard';
 import Comments from './Comments';
 import { thoughtDetailQueryOptions } from '@/data/thoughtData';
+import { parseServerDate } from '@/lib/serverDate';
+import { useSkyAnchor } from '@/hooks/useSkyAnchor';
+import { useSkyPage } from '@/hooks/useSkyPage';
+import { stripLocalePrefix } from '@/i18n/start-i18n';
 import './Thinking.css';
+
+const pad = (n: number) => String(n).padStart(2, '0');
+/** 2026.07.19 與 21:30 */
+const stamp = (iso: string) => {
+  const d = parseServerDate(iso);
+  return [
+    `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`,
+    `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+  ];
+};
+
+const LEAVE = {
+  keyframes: [{ opacity: 1 }, { opacity: 0 }],
+  options: { duration: 500, easing: 'ease-out' },
+};
+const stillOnMoment = () => stripLocalePrefix(window.location.pathname).startsWith('thinking/');
 
 function ThinkingDetail() {
   const { t } = useTranslation();
@@ -28,11 +49,17 @@ function ThinkingDetail() {
   };
   const edit = (tid: number, content: string) => admin.edit.mutate({ id: tid, content });
 
-  return (
-    <div className="tk-page">
-      <div className="tk-scrim" />
+  // 一則念頭單獨攤開：土星縮小停在右上角（從列表點進來時，從頁首那個位置滑過來）
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  const planetRef = useRef<HTMLDivElement | null>(null);
+  useSkyAnchor(planetRef);
+  useSkyPage(pageRef, { sky: 'moments', ready: true, arriveAt: 1600, leave: LEAVE, stillHere: stillOnMoment });
+  const [day, time] = thought ? stamp(thought.created_at) : ['', ''];
 
+  return (
+    <div className="tk-page tk-page--detail" ref={pageRef}>
       <div className="tk-wrap tk-wrap--detail">
+        <div className="tk-detail-planet" ref={planetRef} aria-hidden="true" />
         <LocaleLink to="/thinking" className="tk-back">
           ← {t('thinking.back')}
         </LocaleLink>
@@ -41,12 +68,16 @@ function ThinkingDetail() {
         {thought === null && <p className="tk-empty">{t('thinking.notFound')}</p>}
 
         {thought && (
-          <div className="enter" style={enterStyle({ y: 16, dur: 500 })}>
+          <article className="tk-detail enter" style={enterStyle({ y: 16, dur: 500 })}>
+            <p className="tk-detail-stamp">
+              <span>{day}</span>
+              <span>{time}</span>
+            </p>
             <ThoughtCard th={thought} isAdmin={isAdmin} onDelete={del} onEdit={edit} detail />
             <div className="tk-comments">
               <Comments postId={thought.id} basePath="thoughts" />
             </div>
-          </div>
+          </article>
         )}
       </div>
     </div>

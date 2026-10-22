@@ -689,6 +689,7 @@
    ══════════════════════════ */
 .tk-page {
   --tk-amber: #e9c17a;
+  --amber-rgb: 233, 193, 122;
 }
 
 .tk-scrim {
@@ -724,7 +725,8 @@
   display: flex;
   align-items: flex-end;
   max-width: 960px;
-  min-height: 70vh;
+  /* 碎念不多，頁首的天空佔掉第一個畫面：先看到那片天空，往下才是一則一則的念頭 */
+  min-height: calc(100vh - var(--page-top) - var(--space-12));
   margin: 0 auto var(--space-16);
 }
 
@@ -738,6 +740,11 @@
   height: calc(100% + var(--page-top));
   /* 邊緣淡進背景，不是一塊貼上去的圖 */
   mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+}
+
+/* 飛過來的話，等土星停在頁首、碎成像素之後字才出來（--arrive-delay 見 useSkyPage） */
+.tk-page.is-arriving .enter {
+  --enter-delay: var(--arrive-delay);
 }
 
 .tk-header {
@@ -836,6 +843,85 @@
   max-width: 560px;
 }
 
+/* 單則頁：一個念頭單獨攤開。土星縮小停在右上角（.tk-detail-planet 是它停的位置，見
+   hooks/useSkyAnchor），日期在上、字放大，留言在虛線下面 */
+.tk-page--detail .tk-wrap--detail {
+  position: relative;
+  max-width: 760px;
+  padding-top: 14vh;
+}
+
+.tk-detail-planet {
+  position: absolute;
+  top: calc(var(--space-16) * -1);
+  right: calc(var(--space-24) * -1.5);
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+}
+
+.tk-page--detail .tk-back {
+  margin-bottom: var(--space-10);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-12);
+  color: var(--white-45);
+}
+
+.tk-page--detail .tk-back:hover {
+  color: var(--tk-amber);
+}
+
+.tk-detail-stamp {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-12);
+  color: var(--white-45);
+}
+
+.tk-detail-stamp span:first-child {
+  color: var(--tk-amber);
+}
+
+.tk-page--detail .tk-card {
+  padding: 0;
+  margin-bottom: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.tk-page--detail .tk-card:hover {
+  transform: none;
+}
+
+.tk-page--detail .tk-card-head,
+.tk-page--detail .tk-divider {
+  display: none;
+}
+
+.tk-page--detail .tk-text {
+  font-family: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  font-size: var(--fs-40);
+  line-height: var(--lh-140);
+  color: #f1ece3;
+  text-wrap: pretty;
+}
+
+.tk-page--detail .tk-card-foot {
+  margin-top: var(--space-6);
+}
+
+.tk-page--detail .tk-comments {
+  margin-top: var(--space-16);
+  padding-top: var(--space-8);
+  border-top: 1px dashed var(--white-15);
+}
+
 /* 閃過：先過曝一下（亮、微微放大、琥珀色的光暈），再定住 */
 @keyframes tk-flash {
   0% {
@@ -858,18 +944,53 @@
   animation: tk-flash 900ms var(--easing-out) both;
 }
 
-/* 每一則捲到才閃（Thinking.tsx 加上 .is-lit） */
+/* 每一則捲到才閃（Thinking.tsx 加上 .is-lit）：字一個一個亮起來、從琥珀色冷卻成白色，
+   日期、像素點與底下的嵌入卡跟著淡進來 */
 .tk-feed .tk-feed-item {
   opacity: 0;
 }
 
 .tk-feed .tk-feed-item.is-lit {
-  animation: tk-flash 900ms var(--easing-out) both;
+  animation: tk-item-in 500ms var(--easing-out) both;
+}
+
+@keyframes tk-item-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tk-text--flash span {
+  animation: tk-char 900ms var(--easing-out) both;
+  animation-delay: calc(var(--i) * var(--step, 45ms) + 120ms);
+}
+
+.tk-feed .tk-feed-item:not(.is-lit) .tk-text--flash span {
+  animation-play-state: paused;
+}
+
+@keyframes tk-char {
+  0% {
+    opacity: 0;
+    color: #ffd8a0;
+    text-shadow: 0 0 14px rgba(var(--amber-rgb), 0.9);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    text-shadow: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .tk-flash,
-  .tk-feed .tk-feed-item.is-lit {
+  .tk-feed .tk-feed-item.is-lit,
+  .tk-text--flash span {
     animation: none;
   }
 
@@ -903,5 +1024,15 @@
 
   .tk-sky {
     left: -10%;
+  }
+
+  .tk-detail-planet {
+    right: calc(var(--space-6) * -1);
+    width: 150px;
+    height: 150px;
+  }
+
+  .tk-page--detail .tk-text {
+    font-size: var(--fs-28);
   }
 }

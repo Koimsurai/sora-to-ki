@@ -35,6 +35,11 @@ body.intro-animation-active .nebula-dim-overlay {
   opacity: 1;
 }
 
+/* 離開首頁時晚一點才拿掉：土星起飛之後才慢慢變亮，不是一按下去就先亮 */
+.sky-nebula:not(.is-shown) {
+  transition-delay: var(--dur-500);
+}
+
 /* ══════════════════════════
    星雲背景
    ══════════════════════════ */

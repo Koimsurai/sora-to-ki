@@ -100,13 +100,17 @@ function Thinking() {
 
   // 從首頁飛過來：鏡頭快抵達才出現
   const pageRef = useRef<HTMLDivElement | null>(null);
-  useSkyPage(pageRef, { sky: 'moments', ready: true, arriveAt: 1100, leave: LEAVE, stillHere: stillOnMoments });
+  useSkyPage(pageRef, { sky: 'moments', ready: true, arriveAt: 1600, leave: LEAVE, stillHere: stillOnMoments });
 
   // 每一則捲到才「閃」一下再定住，不是一進頁面全部同時閃完
   const count = thoughts?.length ?? 0;
   useEffect(() => {
     const page = pageRef.current;
     if (!page || !count) return;
+    // 飛過來的話，等土星停好、碎成像素之後才開始閃（--arrive-delay 見 useSkyPage）
+    const wait = page.classList.contains('is-arriving')
+      ? Number.parseFloat(page.style.getPropertyValue('--arrive-delay')) || 0
+      : 0;
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -117,14 +121,18 @@ function Thinking() {
       },
       { rootMargin: '0px 0px -18% 0px' },
     );
-    page.querySelectorAll('.tk-feed-item:not(.is-lit)').forEach((el) => io.observe(el));
-    return () => io.disconnect();
+    const start = window.setTimeout(() => {
+      page.querySelectorAll('.tk-feed-item:not(.is-lit)').forEach((el) => io.observe(el));
+    }, wait);
+    return () => {
+      window.clearTimeout(start);
+      io.disconnect();
+    };
   }, [count]);
 
   return (
+    // 不壓暗背景：停在頁首的土星與像素星空就是這一頁的畫面，蓋一層暗幕的話土星一到就變暗一截
     <div className="tk-page" ref={pageRef}>
-      <div className="tk-scrim" />
-
       {/* 頁首：右邊一大片點陣天空（星雲與琥珀色的土星），滑鼠劃過會激起火花 */}
       <section className="tk-hero">
         <MomentsSky />

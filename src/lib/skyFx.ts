@@ -46,6 +46,13 @@ export interface SkyFx {
   /** 關於頁往下捲的速度（0–1）：星空往上掠過時拖出的線，跟飛行同一套，只是沒有放射狀的光線 */
   setDrift(speed: number): void;
   /**
+   * 直接指定像素化的程度（0–1），null 交回給天空模式自己淡進淡出。碎念頁用：土星滑到頁首的位置，
+   * 停下來的那一刻才一格一格碎成像素，跟著土星的移動走，不是另外計時
+   */
+  setPixel(amount: number | null): void;
+  /** 像素格的原點（CSS 像素、視窗座標）：對齊頁首那張點陣畫布的格子 */
+  setGrid(x: number, y: number): void;
+  /**
    * 換頁飛行的速度，0–1：畫面拉成光線、星星拖出動態的軌跡。
    * dir：out 是往前飛（從畫面中央往外拉），up 是往下墜（光線從畫面下方往上拉成直線）
    */
@@ -163,6 +170,10 @@ export function createSkyFx(opts: {
   const trailMix = uniform(0);
   const pixelMix = uniform(0);
   const cellPx = uniform(1);
+  /** 像素格的原點（裝置像素）：對齊碎念頁頁首那張點陣畫布的格子，兩邊的點才落在同一格上 */
+  const gridOrigin = uniform(new THREE.Vector2(0, 0));
+  /** 外面直接指定的像素化程度（碎念頁跟著土星的移動走）；null 時照天空模式自己淡進淡出 */
+  let pixelDrive: number | null = null;
   const keep = uniform(TRAIL_KEEP_60);
   const warp = uniform(0);
   /** 光線的消失點（螢幕座標，左上是 0）與拉長的比例：往前飛是畫面中央，往下墜是畫面下方很遠的地方 */
@@ -298,9 +309,9 @@ export function createSkyFx(opts: {
       let alpha = max(sceneOut.a, trail.a);
 
       // 像素抖動：一格取四個點的最亮值，太小的星星才不會因為剛好沒取樣到而閃爍消失
-      const pix = screenUV.mul(screenSize);
+      const pix = screenUV.mul(screenSize).sub(gridOrigin);
       const cellIdx = floor(pix.div(cellPx));
-      const center = cellIdx.add(0.5).mul(cellPx).div(screenSize);
+      const center = cellIdx.add(0.5).mul(cellPx).add(gridOrigin).div(screenSize);
       const q = cellPx.mul(0.25).div(screenSize);
       const lumAt = (o: Node<'vec2'>) => {
         const uv = center.add(o);
@@ -311,12 +322,19 @@ export function createSkyFx(opts: {
       const lum = max(
         max(lumAt(vec2(q.x.negate(), q.y.negate())), lumAt(vec2(q.x, q.y.negate()))),
         max(lumAt(vec2(q.x.negate(), q.y)), lumAt(q)),
-      ).mul(2.2);
+      );
+      // 土星（與衛星）是不透明的，場景 alpha 是 1：那幾格用琥珀色，明暗照球面的光影走（背光那側疏）。
+      // 星星與環是冷白，亮的幾格更白。顏色跟頁首那張點陣畫布同一組（lib/ditherScene）
+      const solid = step(0.98, (opts.sceneColor.sample(center) as unknown as V4).a);
+      const level = clamp(mix(lum.mul(2.2), lum.mul(0.8), solid), 0, 1);
       const threshold = texture(bayer, mod(cellIdx, 4).add(0.5).div(4)).r;
-      const on = step(threshold, clamp(lum, 0, 1));
-      // 最亮的幾格用琥珀色，其他是冷白
-      // 只有最亮的少數格是琥珀色；多了整片都是金點，壓在文字後面很吵
-      const ink = mix(vec3(0.62, 0.68, 0.82), vec3(1.0, 0.62, 0.26), step(1.5, lum));
+      // 格子之間留一條 1 px 的縫（格子長到 3 px 以上才留），跟畫布那邊一樣是一顆一顆的點
+      const local = pix.sub(cellIdx.mul(cellPx));
+      const seam = step(cellPx.sub(dpr), max(local.x, local.y)).mul(step(dpr * 2.5, cellPx));
+      const on = step(threshold, level).mul(float(1).sub(seam));
+      const amber = vec3(0.815, 0.479, 0.127);
+      const cold = mix(vec3(0.342, 0.418, 0.637), vec3(0.768, 0.815, 1.0), step(0.9, lum.mul(2.2)));
+      const ink = mix(cold, amber, solid);
       const ground = vec3(0.0024, 0.0027, 0.0035);
       const dithered = mix(ground, ink, on);
       rgb = mix(rgb, dithered, pixelMix);
@@ -326,6 +344,14 @@ export function createSkyFx(opts: {
 
     setDrift(speed) {
       drift = speed;
+    },
+
+    setPixel(amount) {
+      pixelDrive = amount;
+    },
+
+    setGrid(x, y) {
+      gridOrigin.value.set(x * dpr, y * dpr);
     },
 
     setFlight(speed, dir = 'out') {
@@ -354,9 +380,10 @@ export function createSkyFx(opts: {
       const towards = (v: number, target: number, seconds: number) =>
         target > v ? Math.min(target, v + dt / seconds) : Math.max(target, v - dt / seconds);
       trailMix.value = towards(trailMix.value, trailTarget, 1.2);
-      pixelMix.value = towards(pixelMix.value, pixelTarget, 0.6);
-      // 格子一級一級跳（1→2→3→4 個 CSS 像素），不是連續放大：吸附到格子上的感覺來自這個跳動
-      cellPx.value = (1 + Math.round(pixelMix.value * 3)) * dpr;
+      pixelMix.value = pixelDrive ?? towards(pixelMix.value, pixelTarget, 0.6);
+      // 格子一級一級跳（1→2→3→4→5 個 CSS 像素），不是連續放大：吸附到格子上的感覺來自這個跳動。
+      // 最後是 5 px，跟碎念頁頁首的點陣畫布同一個大小
+      cellPx.value = (1 + Math.round(pixelMix.value * 4)) * dpr;
 
       // 飛行中：同一批星、同一張累積 target，只是尾巴短（跟著速度）——鏡頭在動，星星就拖出線。
       // 抵達手記時速度歸零、保留比例慢慢回到長曝光，動態的線直接接成星軌，中間沒有換手。
@@ -394,7 +421,7 @@ export function createSkyFx(opts: {
       }
       const busy =
         trailMix.value !== trailTarget ||
-        pixelMix.value !== pixelTarget ||
+        pixelMix.value !== (pixelDrive ?? pixelTarget) ||
         trailMix.value > 0 ||
         moving ||
         afterFlight > 0;

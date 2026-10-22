@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { PerfReport, SkyMode, StarfieldRunner } from '@/lib/starfieldGpu';
 import type { IntroPhase } from '@/lib/introTimeline';
+import { subscribeSkyAnchor, type SkyAnchor } from '@/store/skyAnchor';
 
 const canOffscreen =
   typeof HTMLCanvasElement !== 'undefined' && 'transferControlToOffscreen' in HTMLCanvasElement.prototype;
@@ -81,6 +82,7 @@ export default function StarfieldGpu({
     saturn(v: boolean, a: boolean): void;
     skip(): void;
     sky(mode: SkyMode): void;
+    anchor(a: SkyAnchor | null): void;
   } | null>(null);
 
   // 開場只在第一次建 runner 時播；之後的重建（device lost）一律不播
@@ -172,14 +174,19 @@ export default function StarfieldGpu({
     controlRef.current?.sky(sky);
   }, [sky, backend]);
 
-  // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態
+  // 碎念頁頁首要土星停在哪（頁首的點陣畫布量好之後送來）
+  useEffect(() => subscribeSkyAnchor((a) => controlRef.current?.anchor(a)), [backend]);
+
+  // 捲動轉發（worker 無 window）+ 土星顯示（首頁；碎念頁的土星停在頁首、碎成像素）
+  // ——控制介面就緒後立即同步當前狀態
+  const saturnShown = isOnHomePage || sky === 'moments';
   useEffect(() => {
     const onScroll = () => controlRef.current?.scroll(window.scrollY);
     window.addEventListener('scroll', onScroll, { passive: true });
-    controlRef.current?.saturn(isOnHomePage, animateSaturn);
+    controlRef.current?.saturn(saturnShown, animateSaturn);
     controlRef.current?.scroll(window.scrollY);
     return () => window.removeEventListener('scroll', onScroll);
-  }, [isOnHomePage, animateSaturn, backend]); // backend 變化 = runner 就緒的訊號，重新同步
+  }, [saturnShown, animateSaturn, backend]); // backend 變化 = runner 就緒的訊號，重新同步
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -241,6 +248,7 @@ export default function StarfieldGpu({
         saturn: (v, a) => worker.postMessage({ type: 'saturn', visible: v, animate: a }),
         skip: () => worker.postMessage({ type: 'skip' }),
         sky: (mode) => worker.postMessage({ type: 'sky', mode }),
+        anchor: (a) => worker.postMessage({ type: 'anchor', anchor: a }),
       };
       if (skipRef.current) controlRef.current.skip();
       const onMsg = (
@@ -316,6 +324,7 @@ export default function StarfieldGpu({
           saturn: (v, a) => runner.setSaturn(v, a),
           skip: () => runner.skipIntro(),
           sky: (mode) => runner.setSky(mode),
+          anchor: (a) => runner.setAnchor(a),
         };
         if (skipRef.current) runner.skipIntro();
         setBackend(`${be} · main`);

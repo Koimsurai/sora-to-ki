@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import { LocaleLink } from '@/i18n/locale-link';
 import { Heart, ThumbsDown, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,25 @@ import { Modal, ModalTitle } from '@/components/common/Modal';
    - admin：inline 編輯 + 刪除（ghost 文字鈕） */
 
 const AUTHOR = 'Koimsurai';
+
+/**
+ * 念頭閃過：一個字一個字浮現，剛出現時是琥珀色的光、再冷卻成白字（跟首頁碎念窗同一種語言）。
+ * 整段在 1.6 秒內出完，長的那則每個字的間隔就短一點，不會讓人等。
+ * 什麼時候開始播由外面決定（碎念頁是捲到那一則才播，見 Thinking.css 的 .is-lit）
+ */
+function FlashText({ text }: { text: string }) {
+  const chars = Array.from(text, (ch, pos) => ({ ch, pos }));
+  const step = Math.min(45, 1600 / Math.max(1, chars.length));
+  return (
+    <p className="tk-text tk-text--flash" aria-label={text} style={{ '--step': `${step}ms` } as CSSProperties}>
+      {chars.map((c) => (
+        <span key={c.pos} aria-hidden="true" style={{ '--i': c.pos } as CSSProperties}>
+          {c.ch}
+        </span>
+      ))}
+    </p>
+  );
+}
 
 // 改吃後端生成的型別（backend handlers::thoughts::ThoughtOut）。手寫版把 likes /
 // dislikes / comment_count / edited 都標成可選，實際上後端每次都給；ref 則反過來
@@ -107,7 +126,7 @@ export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = fa
           </div>
         </div>
       ) : (
-        <p className="tk-text">{th.content}</p>
+        <FlashText text={th.content} />
       )}
 
       {/* href 的 `?? undefined`：後端的 Option 是 null，React 對 null 與 undefined 都是

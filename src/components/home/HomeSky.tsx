@@ -185,7 +185,15 @@ const FALL_AWAY = {
   ],
   options: { duration: 900, easing: 'cubic-bezier(0.5, 0, 0.75, 0.3)' },
 };
-const LEAVE = (to: string) => (to === 'about' ? FALL_AWAY : FLY_THROUGH);
+/** 去碎念：鏡頭往後退、土星縮到頁首，字跟著退遠 */
+const PULL_BACK = {
+  keyframes: [
+    { transform: 'scale(1)', opacity: 1 },
+    { transform: 'scale(0.9)', opacity: 0 },
+  ],
+  options: { duration: 800, easing: 'cubic-bezier(0.4, 0, 0.7, 0.4)' },
+};
+const LEAVE = (to: string) => (to === 'about' ? FALL_AWAY : to === 'thinking' ? PULL_BACK : FLY_THROUGH);
 const stillHome = () => stripLocalePrefix(window.location.pathname) === '';
 
 function Window({

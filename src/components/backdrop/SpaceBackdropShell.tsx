@@ -33,7 +33,7 @@ export default function SpaceBackdropShell() {
     ? 'home'
     : bare === 'blog' || bare.startsWith('blog/')
       ? 'notes'
-      : bare === 'thinking'
+      : bare === 'thinking' || bare.startsWith('thinking/')
         ? 'moments'
         : bare === 'about'
           ? 'about'
@@ -60,10 +60,12 @@ export default function SpaceBackdropShell() {
   const softwareGpu = hardwareGpu === false;
 
   // 這台機器換頁時有沒有 3D 的飛行：沒有的話頁面內容不用等鏡頭，直接出現
+  // 探測還沒出結果時不寫：頁面（例如碎念頁頁首要不要自己畫土星）要分得出「還不知道」與「沒有」
   const flies = hardwareGpu === true && !isMobile && !isBot;
+  const flightKnown = hardwareGpu !== null || isMobile || isBot;
   useEffect(() => {
-    document.documentElement.dataset.flight = flies ? '1' : '0';
-  }, [flies]);
+    if (flightKnown) document.documentElement.dataset.flight = flies ? '1' : '0';
+  }, [flies, flightKnown]);
 
   // 每個分區的天空記在 <html data-sky> 上（CSS 與頁面的進退場都看它）。
   // 上一頁的天空與換天空的時間也記下來：飛過來的頁面，內容要等鏡頭快抵達時才出現，

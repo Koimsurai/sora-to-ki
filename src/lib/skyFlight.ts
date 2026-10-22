@@ -1,10 +1,13 @@
 // 換頁飛行的時間資訊（給頁面內容配合飛行進退場用）。
-// 飛行本身在 starfieldGpu：鏡頭只在「首頁（土星前面）」與「外面」兩點之間飛，
-// 所以只有首頁 ↔ 其他頁會飛，其他頁之間換來換去鏡頭不動。
+// 飛行本身在 starfieldGpu：鏡頭停的地方有三種——首頁（土星前面）、碎念（退後，土星停在頁首
+// 碎成像素）、外面（其他頁）。換到另一種才會飛，外面的頁面之間換來換去不算。
 // <html> 上的 data-sky / data-prev-sky / data-sky-since / data-flight 由 SpaceBackdropShell 維護。
 
 /** 單程飛行的長度（starfieldGpu 的 TRAVEL_SECONDS） */
 export const FLIGHT_MS = 2200;
+
+/** 鏡頭停在哪一種地方 */
+const stop = (sky: string) => (sky === 'home' || sky === 'moments' ? sky : 'out');
 
 /**
  * 進入 sky 這一頁的飛行已經飛了多久（ms）；這次換頁沒有飛行的話回 null。
@@ -18,7 +21,7 @@ export function flightElapsed(sky: string): number | null {
   if (!current) return null; // 第一次載入
   const from = current === sky ? root.dataset.prevSky : current;
   if (!from || from === sky) return null;
-  if ((from === 'home') === (sky === 'home')) return null; // 首頁以外的頁面之間不飛
+  if (stop(from) === stop(sky)) return null; // 外面的頁面之間不飛
   if (current !== sky) return 0;
   const ms = performance.now() - Number(root.dataset.skySince ?? Number.NEGATIVE_INFINITY);
   return ms < FLIGHT_MS ? ms : null;

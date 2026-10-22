@@ -5,9 +5,10 @@
 //   ‧ 它的協定走 structured clone，傳不了 WebGPURenderer 需要的 async factory
 //   ‧ handleProps 無 try/catch（init 失敗後任何 props 訊息都在 worker 內 uncaught throw）
 //   ‧ worker 內 shim self.document={} 干擾環境判定
-// 這裡協定極簡：init / resize / running / scroll / saturn / skip，錯誤一律回報主執行緒處理。
+// 這裡協定極簡：init / resize / running / scroll / saturn / skip / sky / anchor，錯誤一律回報主執行緒處理。
 // 回程：ready / perf / lost / error，以及開場的各個階段（intro）。
 import { createStarfieldRunner, type SkyMode, type StarfieldRunner } from '../lib/starfieldGpu';
+import type { SkyAnchor } from '../store/skyAnchor';
 
 interface InitMsg {
   type: 'init';
@@ -45,7 +46,11 @@ interface SkyMsg {
   type: 'sky';
   mode: SkyMode;
 }
-type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | SkipMsg | SkyMsg;
+interface AnchorMsg {
+  type: 'anchor';
+  anchor: SkyAnchor | null;
+}
+type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | SkipMsg | SkyMsg | AnchorMsg;
 
 let runner: StarfieldRunner | null = null;
 // init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
@@ -62,6 +67,7 @@ let lastRunning: boolean | null = null;
 // 開場還在初始化時使用者就按了跳過（或主執行緒等太久放棄）→ ready 之後直接不播
 let skipRequested = false;
 let lastSky: SkyMode | null = null;
+let lastAnchor: SkyAnchor | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
@@ -84,10 +90,12 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         });
         runner = r;
         runner.setScroll(lastScroll);
+        if (lastAnchor) runner.setAnchor(lastAnchor);
+        // 天空要比土星先補：土星第一次就定位時照天空選位置（例如直接打開碎念頁，土星就停在頁首）
+        if (lastSky) runner.setSky(lastSky);
         if (lastSaturn) runner.setSaturn(lastSaturn.visible, lastSaturn.animate);
         if (lastRunning !== null) runner.setRunning(lastRunning);
         if (skipRequested) runner.skipIntro();
-        if (lastSky) runner.setSky(lastSky);
         self.postMessage({ type: 'ready', backend });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
@@ -107,6 +115,9 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'sky') {
     lastSky = msg.mode;
     runner?.setSky(msg.mode);
+  } else if (msg.type === 'anchor') {
+    lastAnchor = msg.anchor;
+    runner?.setAnchor(msg.anchor);
   } else {
     // 到這裡 union 只剩 SaturnMsg，再比對一次 msg.type 是恆真。
     // 日後新增訊息型別時，下面存取 msg.visible/msg.animate 會編譯失敗——不會被靜默吞掉。

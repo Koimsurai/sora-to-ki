@@ -82,4 +82,13 @@ if (typeof window !== 'undefined') {
       },
     });
   }
+  // Web Animations API：jsdom 沒有。換頁時頁面的退場（hooks/useSkyPage）會在卸載時呼叫它
+  if (typeof Element !== 'undefined' && !('animate' in Element.prototype)) {
+    Object.defineProperty(Element.prototype, 'animate', {
+      configurable: true,
+      value() {
+        return { onfinish: null, cancel() {}, finish() {} };
+      },
+    });
+  }
 }

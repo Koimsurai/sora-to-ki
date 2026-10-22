@@ -18,8 +18,11 @@ const FLASH_EVERY = 2.6;
 export interface DitherLayout {
   /** 一格幾個 CSS 像素 */
   cell: number;
-  /** 土星的中心與半徑（相對畫面寬高；半徑是相對短邊） */
-  saturn: { x: number; y: number; r: number };
+  /**
+   * 土星的中心與半徑（相對畫面寬高；半徑是相對短邊）。null 是不畫：碎念頁有 3D 星空時，
+   * 土星是 3D 那顆停到這個位置、碎成像素（見 lib/starfieldGpu 的 perch），這裡只留星雲與星星
+   */
+  saturn: { x: number; y: number; r: number } | null;
   /** 星雲所在的範圍（相對座標） */
   nebula: { x: number; y: number; w: number; h: number };
   stars: number;
@@ -51,9 +54,9 @@ export function createDitherScene(w: number, h: number, layout: DitherLayout) {
     r: 0.08 + R() * 0.14,
     a: 0.25 + R() * 0.35,
   }));
-  const sx = layout.saturn.x * w;
-  const sy = layout.saturn.y * h;
-  const sr = Math.min(w, h) * layout.saturn.r;
+  const sx = (layout.saturn?.x ?? 0) * w;
+  const sy = (layout.saturn?.y ?? 0) * h;
+  const sr = layout.saturn ? Math.min(w, h) * layout.saturn.r : 0;
   const ct = Math.cos(-0.32);
   const st = Math.sin(-0.32);
   const light = [-0.8, -0.45, 0.4];
@@ -79,7 +82,7 @@ export function createDitherScene(w: number, h: number, layout: DitherLayout) {
       const uy = (-rx * st + ry * ct) / 0.3;
       const rho = Math.hypot(ux, uy) / sr;
       const inPlanet = rx * rx + ry * ry < sr * sr;
-      const ring = rho > 1.45 && rho < 1.95 && Math.abs(rho - 1.7) > 0.05;
+      const ring = sr > 0 && rho > 1.45 && rho < 1.95 && Math.abs(rho - 1.7) > 0.05;
       if (inPlanet && !(ring && uy > 0)) {
         // 亮度留在 0–1 之間：明暗靠點的疏密表現（從左上方打光，背光那側疏）
         const nx = rx / sr;
@@ -122,7 +125,11 @@ export function createDitherScene(w: number, h: number, layout: DitherLayout) {
       sparks.push({ x: x / cell, y: y / cell, born: t });
     },
 
-    draw(ctx: CanvasRenderingContext2D, t: number) {
+    /**
+     * reveal（0–1）：亮度先乘上它再跟 Bayer 門檻比，點是一顆一顆長出來的（點陣自己的淡入），
+     * 不是整張畫布調透明度
+     */
+    draw(ctx: CanvasRenderingContext2D, t: number, reveal = 1) {
       extra.fill(0);
       flare.fill(0);
       const k = Math.floor(t / FLASH_EVERY);
@@ -146,7 +153,7 @@ export function createDitherScene(w: number, h: number, layout: DitherLayout) {
       for (let y = 0; y < rows; y++) {
         for (let x = 0; x < cols; x++) {
           const i = y * cols + x;
-          const lum = base[i] + extra[i] + flare[i];
+          const lum = (base[i] + extra[i]) * reveal + flare[i];
           if (lum < (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16) continue;
           ctx.fillStyle = flare[i] > 1.1 ? SPARK : amber[i] ? AMBER : lum > 0.9 ? BRIGHT : DIM;
           ctx.fillRect(x * cell, y * cell, size, size);
