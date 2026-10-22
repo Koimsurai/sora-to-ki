@@ -1,5 +1,6 @@
 /* 手記天空底下的遠景：橫跨整個視窗底部，在手記面板後面（近地與樹在面板前面，見 NotesGround）。
-   飛進手記時從畫面下方升上來（像鏡頭往下看到地面），離開時沉下去；位移比近地小，兩層之間有視差 */
+   進手記時從畫面下方升上來（像鏡頭往下看到地面），離開時沉下去；位移比近地小，兩層之間有視差。
+   --rise-delay 由 NotesHorizon.tsx 給：飛過來時等鏡頭快抵達，直接打開就是 0 */
 .notes-horizon {
   position: fixed;
   left: 0;
@@ -20,8 +21,8 @@
   opacity: 1;
   transform: none;
   transition:
-    opacity var(--dur-1000) var(--easing-out) var(--dur-700),
-    transform var(--dur-1000) var(--easing-out) var(--dur-700);
+    opacity var(--dur-1000) var(--easing-out) var(--rise-delay, 0ms),
+    transform var(--dur-1000) var(--easing-out) var(--rise-delay, 0ms);
 }
 
 @media (prefers-reduced-motion: reduce) {

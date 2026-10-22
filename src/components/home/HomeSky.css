@@ -10,6 +10,20 @@
   color: var(--white-80);
 }
 
+/* 全站的 a:hover 是青色字＋光暈（index.css 的 base layer）；首頁的連結各自有 hover 樣式，
+   整扇窗也是一個連結，不關掉的話 hover 時窗裡的字全部變青色 */
+.home-page a:hover,
+.home-page a:focus {
+  text-shadow: none;
+}
+
+a.hw:hover,
+a.hw:focus,
+.home-now-row:hover,
+.home-now-row:focus {
+  color: inherit;
+}
+
 /* ── 第一屏 ── */
 .home-hero {
   position: relative;
@@ -384,6 +398,51 @@ a.hw:hover,
   color: var(--white-70);
 }
 
+/* 碎念窗：一則一則閃過。字一個一個浮現，出現時是琥珀色的光、再冷卻成白字 */
+.hw-moment {
+  margin-top: var(--space-4);
+}
+
+.hw-moment-text {
+  display: -webkit-box;
+  margin: 0 0 var(--space-2);
+  overflow: hidden;
+  font-family: var(--display);
+  font-size: var(--fs-24);
+  font-weight: 600;
+  line-height: var(--lh-140);
+  color: var(--ink);
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.hw-moment-text span {
+  animation: hw-char 900ms var(--easing-out) both;
+  animation-delay: calc(var(--i) * 45ms + 250ms);
+}
+
+/* 窗還沒捲到之前先停著，捲到了才開始閃 */
+.hw-moments:not(.is-in) .hw-moment-text span {
+  animation-play-state: paused;
+}
+
+@keyframes hw-char {
+  0% {
+    opacity: 0;
+    color: #ffd8a0;
+    text-shadow: 0 0 14px rgba(var(--amber-rgb), 0.9);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    color: var(--ink);
+    text-shadow: none;
+  }
+}
+
 /* 收藏的三顆主星：標籤疊在 canvas 畫的星上面 */
 .hw-collection .hw-content {
   justify-content: flex-start;
@@ -505,7 +564,8 @@ a.hw:hover,
   .home-intro > *,
   .home-now,
   .home-hint,
-  .home-hint::after {
+  .home-hint::after,
+  .hw-moment-text span {
     animation: none;
   }
 

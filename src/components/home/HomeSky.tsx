@@ -3,7 +3,8 @@
 // 左下角兩行「此刻」。往下捲，土星升上天空、變遠，底下一扇一扇浮現「天空之窗」：
 // 每一扇是那一區真正的天空縮影（手記的星軌與樹、碎念的像素、收藏的星座、關於的小星球），
 // 點進去就飛到那一片天空。沒有 footer，最後一行是今天的一句話。
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import type { DigestThought } from '@koimsurai/api-types';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { FaGithub, FaRss, FaEnvelope, FaInstagram } from 'react-icons/fa';
@@ -13,33 +14,123 @@ import { postPath } from '@/lib/postPath';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import { useSkyPage } from '@/hooks/useSkyPage';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
-import { COLLECTION_STARS, drawAboutSky, drawCollectionSky, drawMomentsSky, drawNotesSky } from '@/lib/windowSkies';
+import { COLLECTION_STARS, aboutSky, collectionSky, momentsSky, notesSky, type WindowSky } from '@/lib/windowSkies';
 import './HomeSky.css';
 
-type Draw = (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
-
-/** 一扇窗的天空：跟著窗的大小重畫（畫一次就停，不跑動畫迴圈） */
-function SkyCanvas({ draw }: { draw: Draw }) {
+/**
+ * 一扇窗的天空。三層：back / front 是靜態的，快取在離屏 canvas、尺寸變了才重畫；
+ * frame 每幀畫（限 sky.fps），只在窗出現在畫面上時才跑，滑出畫面就停。
+ * 時間從窗第一次出現時算起（收藏的星座線是「出現之後才連起來」），hover 時走得比較快。
+ */
+function SkyCanvas({ sky }: { sky: WindowSky }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const cv = ref.current;
     const ctx = cv?.getContext('2d');
-    if (!cv || !ctx) return;
+    const host = cv?.parentElement;
+    if (!cv || !ctx || !host) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let w = 0;
+    let h = 0;
+    let dpr = 1;
+    let back: HTMLCanvasElement | null = null;
+    let front: HTMLCanvasElement | null = null;
+    let t = 0;
+    let last = -1;
+    let raf = 0;
+    let hover = false;
+
+    const layer = (fn?: (c: CanvasRenderingContext2D, w: number, h: number) => void) => {
+      if (!fn) return null;
+      const c = document.createElement('canvas');
+      c.width = cv.width;
+      c.height = cv.height;
+      const x = c.getContext('2d');
+      if (!x) return null;
+      x.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fn(x, w, h);
+      return c;
+    };
     const paint = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const w = cv.clientWidth;
-      const h = cv.clientHeight;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      if (back) ctx.drawImage(back, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sky.frame?.(ctx, w, h, t, hover);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      if (front) ctx.drawImage(front, 0, 0);
+    };
+    const fit = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = cv.clientWidth;
+      h = cv.clientHeight;
       if (!w || !h) return;
       cv.width = Math.round(w * dpr);
       cv.height = Math.round(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      draw(ctx, w, h);
+      back = layer(sky.back);
+      front = layer(sky.front);
+      paint();
     };
-    const ro = new ResizeObserver(paint);
+    const loop = (now: number) => {
+      raf = requestAnimationFrame(loop);
+      if (last < 0) last = now;
+      const dt = (now - last) / 1000;
+      if (dt < 1 / sky.fps - 0.002) return;
+      last = now;
+      t += Math.min(dt, 0.1) * (hover ? sky.hoverSpeed : 1);
+      paint();
+    };
+    const ro = new ResizeObserver(fit);
     ro.observe(cv);
-    return () => ro.disconnect();
-  }, [draw]);
+    const io = new IntersectionObserver(([e]) => {
+      cancelAnimationFrame(raf);
+      last = -1;
+      if (e.isIntersecting && !reduce && sky.frame) raf = requestAnimationFrame(loop);
+    });
+    io.observe(cv);
+    const enter = () => (hover = true);
+    const leave = () => (hover = false);
+    host.addEventListener('pointerenter', enter);
+    host.addEventListener('pointerleave', leave);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      io.disconnect();
+      host.removeEventListener('pointerenter', enter);
+      host.removeEventListener('pointerleave', leave);
+    };
+  }, [sky]);
   return <canvas ref={ref} className="hw-sky" aria-hidden="true" />;
+}
+
+/**
+ * 碎念窗的字：一則一則「閃過」。整句先亮一下（跟碎念頁的 tk-flash 同一個語言），
+ * 字再一個一個浮現、從琥珀色冷卻成白色；過幾秒換下一則。
+ */
+function MomentFlash({ thoughts }: { thoughts: DigestThought[] }) {
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    if (thoughts.length < 2) return;
+    const id = setInterval(() => setIndex((v) => (v + 1) % thoughts.length), 7000);
+    return () => clearInterval(id);
+  }, [thoughts.length]);
+  const thought = thoughts.at(index % Math.max(1, thoughts.length));
+  if (!thought) return null;
+  const chars = Array.from(plain(thought.content).slice(0, 72), (ch, pos) => ({ ch, pos }));
+  return (
+    <div className="hw-moment" key={thought.id}>
+      <p className="hw-moment-text" aria-label={plain(thought.content)}>
+        {chars.map((c) => (
+          <span key={c.pos} aria-hidden="true" style={{ '--i': c.pos } as CSSProperties}>
+            {c.ch}
+          </span>
+        ))}
+      </p>
+      <time className="hw-meta" dateTime={thought.created_at} suppressHydrationWarning>
+        {thought.created_at.slice(0, 10).replaceAll('-', '.')}
+      </time>
+    </div>
+  );
 }
 
 /** 捲到才浮現：一次一扇，不要一進來就全部都在 */
@@ -85,14 +176,14 @@ const stillHome = () => stripLocalePrefix(window.location.pathname) === '';
 function Window({
   to,
   className,
-  draw,
+  sky,
   label,
   en,
   children,
 }: {
   to?: string;
   className: string;
-  draw: Draw;
+  sky: WindowSky;
   label: string;
   en: string;
   children: ReactNode;
@@ -105,7 +196,7 @@ function Window({
   );
   const body = (
     <>
-      <SkyCanvas draw={draw} />
+      <SkyCanvas sky={sky} />
       <div className="hw-shade" aria-hidden="true" />
       <div className="hw-content">
         {head}
@@ -209,7 +300,7 @@ export default function HomeSky() {
       </section>
 
       <section className="home-windows" id="lately" aria-label="各處的天空">
-        <Window to="/blog" className="hw-notes" draw={drawNotesSky} label="手記" en="Notes">
+        <Window to="/blog" className="hw-notes" sky={notesSky} label="手記" en="Notes">
           <ul className="hw-list">
             {posts.slice(0, 3).map((p) => (
               <li key={p.id}>
@@ -222,18 +313,11 @@ export default function HomeSky() {
           </ul>
         </Window>
 
-        <Window to="/thinking" className="hw-moments" draw={drawMomentsSky} label="碎念" en="Moments">
-          {thought && (
-            <>
-              <p className="hw-quote">{plain(thought.content)}</p>
-              <time className="hw-meta" dateTime={thought.created_at} suppressHydrationWarning>
-                {timeAgo(thought.created_at)}
-              </time>
-            </>
-          )}
+        <Window to="/thinking" className="hw-moments" sky={momentsSky} label="碎念" en="Moments">
+          <MomentFlash thoughts={digest?.thoughts.slice(0, 4) ?? []} />
         </Window>
 
-        <Window className="hw-collection" draw={drawCollectionSky} label="收藏" en="Collection">
+        <Window className="hw-collection" sky={collectionSky} label="收藏" en="Collection">
           {COLLECTION_STARS.map((s) => {
             const [name, to] = COLLECTION_LABELS[s.key];
             return (
@@ -249,7 +333,7 @@ export default function HomeSky() {
           })}
         </Window>
 
-        <Window to="/about" className="hw-about" draw={drawAboutSky} label="關於" en="About">
+        <Window to="/about" className="hw-about" sky={aboutSky} label="關於" en="About">
           <p className="hw-quote hw-quote--small">從這裡往下掉，落在一顆只有一棵樹的星球上。</p>
         </Window>
 

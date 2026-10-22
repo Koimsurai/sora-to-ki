@@ -127,6 +127,9 @@ export default function NotesGround() {
 
     layout();
     raf = requestAnimationFrame(frame);
+    // 畫好了才開始升起（CSS 的動畫掛在 .is-drawn 上）：在手記頁重新整理時，頁面先由伺服器畫出來、
+    // 這裡要等 hydration 才跑，動畫要是一掛上就播，等 canvas 有東西時早就播完了
+    cv.classList.add('is-drawn');
     // observe 一開始會立刻回呼一次，那次不算「尺寸變了」
     let first = true;
     const ro = new ResizeObserver(() => {

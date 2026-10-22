@@ -4,6 +4,7 @@
 // 純 2D canvas，畫完就停。
 import { useEffect, useRef } from 'react';
 import { panelSpan, ridgeNoise } from '@/lib/horizon';
+import { flightElapsed } from '@/lib/skyFlight';
 import './NotesHorizon.css';
 
 type Ridge = (x: number) => number;
@@ -126,5 +127,21 @@ export default function NotesHorizon({ shown }: { shown: boolean }) {
     };
   }, [shown]);
 
-  return <canvas ref={ref} className={`notes-horizon${shown ? ' is-shown' : ''}`} aria-hidden="true" />;
+  // 顯示與否由這裡切 class，不寫在 JSX：元件一掛上就是 shown 的話（在手記頁重新整理），
+  // transition 沒有起點、地景會直接出現。等下一幀才加上去，才有「升起來」的過程。
+  // 從首頁飛過來時再多等一下（鏡頭快抵達才看到地面）；直接打開就不等
+  useEffect(() => {
+    const cv = ref.current;
+    if (!cv) return;
+    if (!shown) {
+      cv.classList.remove('is-shown');
+      return;
+    }
+    const elapsed = flightElapsed('notes');
+    cv.style.setProperty('--rise-delay', `${elapsed === null ? 0 : Math.max(0, 700 - elapsed)}ms`);
+    const id = requestAnimationFrame(() => cv.classList.add('is-shown'));
+    return () => cancelAnimationFrame(id);
+  }, [shown]);
+
+  return <canvas ref={ref} className="notes-horizon" aria-hidden="true" />;
 }

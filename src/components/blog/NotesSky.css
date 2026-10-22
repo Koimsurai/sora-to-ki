@@ -343,10 +343,15 @@
   height: max(260px, 34vh);
   z-index: 1;
   pointer-events: none;
+  opacity: 0;
+}
+
+.notes-ground.is-drawn {
+  opacity: 1;
   animation: notes-ground-rise var(--dur-1000) var(--easing-out) both;
 }
 
-.is-arriving .notes-ground {
+.is-arriving .notes-ground.is-drawn {
   animation-duration: 1300ms;
   animation-delay: calc(var(--arrive-delay, 1100ms) - 200ms);
 }
@@ -354,7 +359,7 @@
 @media (prefers-reduced-motion: reduce) {
   .notes-head,
   .notes-panel,
-  .notes-ground {
+  .notes-ground.is-drawn {
     animation: none;
   }
 }

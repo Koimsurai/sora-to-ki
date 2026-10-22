@@ -548,17 +548,32 @@ async function buildSaturn(
     rings.worldToLocal(sunInRing.value.copy(sunWorld));
   };
 
+  // 衛星：繞在環的平面上（真的衛星繞赤道面轉，以前兩顆各自歪在不同高度，看起來像隨手擺的）。
+  // 三顆各有個性：大而偏橘、帶一圈霧狀大氣（像泰坦）、灰色的冰岩、很小很白的冰球。
+  // 不自發光：跟土星一樣被太陽照，背光的那一面是暗的，才不會像貼在畫面上的白點。
+  // 轉速照克卜勒定律（越外圈越慢）。軌道不能太大：首頁的土星偏右，外圈會繞進左邊的文字區。
+  const moonPlane = new THREE.Group(); // 跟環同一個平面（ringHolder 的局部 z=0）
+  ringHolder.add(moonPlane);
   const satellites = [
-    { baseR: 2.5, y: 0.1, speed: 0.3, size: 0.04, angle: Math.random() * Math.PI * 2 },
-    { baseR: 3, y: -0.15, speed: 0.2, size: 0.06, angle: Math.random() * Math.PI * 2 },
+    { r: 2.55, size: 0.075, color: [0.88, 0.6, 0.32], haze: 0.6, seed: 1 },
+    { r: 2.9, size: 0.045, color: [0.7, 0.7, 0.72], haze: 0, seed: 2 },
+    { r: 3.25, size: 0.03, color: [0.95, 0.96, 1.0], haze: 0, seed: 3 },
   ].map((cfg) => {
-    const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(cfg.size, 8, 8),
-      new THREE.MeshStandardMaterial({ color: '#cccccc', emissive: '#333333', roughness: 0.5, metalness: 0.5 }),
-    );
-    mesh.position.set(cfg.baseR, cfg.y, 0);
-    group.add(mesh);
-    return { mesh, cfg };
+    const mat = new THREE.MeshStandardNodeMaterial({ roughness: 0.92, metalness: 0 });
+    const base = vec3(cfg.color[0], cfg.color[1], cfg.color[2]);
+    // 表面的明暗斑：低頻雜訊，近看才有，遠看就是一顆有質感的球
+    const mottling = mx_noise_float(positionLocal.mul(6 / cfg.size).add(cfg.seed * 17))
+      .mul(0.5)
+      .add(0.5);
+    mat.colorNode = base.mul(mottling.mul(0.35).add(0.7));
+    if (cfg.haze > 0) {
+      // 大氣：邊緣一圈（菲涅耳），只在向光的那一側看得清楚就夠了
+      const rim = float(1).sub(clamp(dot(normalView, positionViewDirection), 0, 1));
+      mat.emissiveNode = vec3(0.85, 0.55, 0.25).mul(rim.mul(rim).mul(rim).mul(cfg.haze));
+    }
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(cfg.size, 32, 24), mat);
+    moonPlane.add(mesh);
+    return { mesh, angle: Math.random() * Math.PI * 2, speed: 0.55 * Math.pow(2.55 / cfg.r, 1.5), r: cfg.r };
   });
 
   let autoRot = 0;
@@ -594,8 +609,8 @@ async function buildSaturn(
       currentScale = THREE.MathUtils.lerp(currentScale, targetScale, lerpFactor(0.08, dt));
       group.scale.setScalar(currentScale);
       for (const s of satellites) {
-        s.cfg.angle += s.cfg.speed * dt;
-        s.mesh.position.set(s.cfg.baseR * Math.cos(s.cfg.angle), s.cfg.y, s.cfg.baseR * Math.sin(s.cfg.angle));
+        s.angle += s.speed * 0.25 * dt;
+        s.mesh.position.set(s.r * Math.cos(s.angle), s.r * Math.sin(s.angle), 0);
       }
       syncSun();
       if (dissolve.value > 0) {
@@ -725,7 +740,6 @@ export async function createStarfieldRunner(
     renderer,
     skyGroup,
     starLayers: layers.map((l) => l.points),
-    sceneDepth: scenePass.getTextureNode('depth'),
     width: init.width,
     height: init.height,
     dpr: dprUsed,

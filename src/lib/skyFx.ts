@@ -80,8 +80,6 @@ export function createSkyFx(opts: {
   skyGroup: THREE.Object3D;
   /** 背景星空的各層（skyGroup 的子節點），userData 帶 positions / scales / tints */
   starLayers: THREE.Sprite[];
-  /** 場景 pass 的深度：星軌不能畫到土星前面 */
-  sceneDepth: TexNode;
   width: number;
   height: number;
   dpr: number;
@@ -118,17 +116,26 @@ export function createSkyFx(opts: {
     mat.positionNode = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(pos, 3), 'vec3');
     const t = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(tint, 1), 'float');
     // 色溫跟背景星同一條公式（見 starfieldGpu 的 buildStarLayer），亮度壓低：軌跡頭藏在星的光暈裡
-    mat.colorNode = mix(vec3(1, 1, 1), mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.9, 0.78), t), 0.35);
+    // 柔光的邊緣直接乘進顏色（預乘）：下面的「取最大值」混合不會再拿 alpha 去乘
     const d = uv().sub(0.5).length().mul(2);
-    mat.opacityNode = smoothstep(1, 0.3, d);
+    const soft = smoothstep(1, 0.3, d);
+    mat.colorNode = mix(vec3(1, 1, 1), mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.9, 0.78), t), 0.35).mul(soft);
+    mat.opacityNode = soft;
     mat.scaleNode = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(scale, 1), 'float');
     mat.size = (layer.material as THREE.PointsNodeMaterial).size * 0.8;
     mat.sizeAttenuation = true;
     mat.transparent = true;
     mat.depthWrite = false;
     // 取最亮值而不是相加：飛行時同一幀會在幾個子步驟各畫一次，相加的話慢的地方會疊到爆白
+    // ⚠ WebGPU 規定 max 運算的兩個係數都必須是 one，否則整條 pipeline 建立失敗、一顆都畫不出來
+    //   （WebGL2 會忽略係數，所以只在 WebGL2 上測是測不到的）
     mat.blending = THREE.CustomBlending;
     mat.blendEquation = THREE.MaxEquation;
+    mat.blendEquationAlpha = THREE.MaxEquation;
+    mat.blendSrc = THREE.OneFactor;
+    mat.blendDst = THREE.OneFactor;
+    mat.blendSrcAlpha = THREE.OneFactor;
+    mat.blendDstAlpha = THREE.OneFactor;
     const stars = new THREE.Sprite(mat);
     stars.count = pick.length;
     stars.frustumCulled = false;
@@ -244,8 +251,9 @@ export function createSkyFx(opts: {
       // 星軌疊在原本的畫面上（取亮的）
       // 軌跡比單顆星暗（拉長之後亮度攤開了），提一點才看得出長曝光
       // 壓暗：星軌是背景，不能跟文字搶
-      // 土星（寫了深度的地方）前面不畫軌跡：飛過土星時星星的尾巴不能穿過星球
-      const open = step(0.9999, (opts.sceneDepth as unknown as Node<'float'>).x);
+      // 土星（不透明、場景 alpha 是 1 的地方）前面不畫軌跡：飛過土星時星星的尾巴不能穿過星球。
+      // 用 alpha 不用深度貼圖：深度在多重取樣的 pass 上各後端的行為不一，alpha 兩邊都一樣
+      const open = float(1).sub(step(0.98, sceneOut.a));
       const trail = trailTex.mul(streakMix.mul(0.6).mul(open));
       let rgb = max(sceneOut.rgb, trail.rgb);
 

@@ -1,44 +1,70 @@
-/* RandomUFOs.css - UFO 樣式 */
-
+/* 飛碟：很小的碟形剪影——碟身、上面一個半透明艙罩、底下一排依序閃的琥珀色燈。
+   顏色只有這個元件在用，所以定義在這裡而不是 index.css 的調色盤。 */
 .ufo {
+  --ufo-hull-hi: #d9dcea;
+  --ufo-hull-lo: #5d6178;
+  --ufo-dome-rgb: 170, 205, 255;
+  --ufo-light: #ffc56b;
+
   position: absolute;
-  /* UFO 的基礎大小 */
-  width: 15px;
-  height: 5px; /* 扁平的橢圓形 */
-  /* UFO 顏色和光暈。只有這個元件在用，所以定義在這裡而不是 index.css 的調色盤
-     ——調色盤是「需要一個顏色時的標準答案」，單一裝飾元件的自用色不屬於那一類。 */
-  --ufo-cyan: #a0e0ff;
-  --ufo-cyan-rgb: 160, 224, 255;
-  background-color: var(--ufo-cyan);
-  border-radius: var(--r-round); /* 使其成為橢圓 */
-  box-shadow:
-    0 0 8px 3px rgba(var(--ufo-cyan-rgb), 0.7),
-    /* 主光暈 */ inset 0 0 3px 1px var(--white-80); /* 內部亮點 */
-  /* 添加輕微的閃爍動畫 */
-  animation: ufo-pulse 3s infinite alternate ease-in-out;
+  width: 20px;
+  height: 5px;
+  border-radius: var(--r-round);
+  background: linear-gradient(180deg, var(--ufo-hull-hi), var(--ufo-hull-lo));
+  box-shadow: 0 0 10px rgba(var(--ufo-dome-rgb), 0.25);
 }
 
-/* UFO 閃爍/脈衝動畫 */
-@keyframes ufo-pulse {
+/* 艙罩 */
+.ufo::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: -3px;
+  width: 8px;
+  height: 4px;
+  border-radius: var(--r-8) var(--r-8) 0 0;
+  background: linear-gradient(180deg, rgba(var(--ufo-dome-rgb), 0.9), rgba(var(--ufo-dome-rgb), 0.3));
+}
+
+/* 底下的三顆燈，輪流亮 */
+.ufo::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  bottom: -1px;
+  width: 2px;
+  height: 2px;
+  border-radius: var(--r-round);
+  background: var(--ufo-light);
+  box-shadow:
+    5px 0 0 var(--ufo-light),
+    10px 0 0 var(--ufo-light);
+  animation: ufo-lights 1.2s steps(1, end) infinite;
+}
+
+@keyframes ufo-lights {
   0% {
-    transform: scale(1);
-    opacity: 0.6;
+    background: var(--ufo-light);
     box-shadow:
-      0 0 6px 2px rgba(var(--ufo-cyan-rgb), 0.6),
-      inset 0 0 2px 1px var(--white-70);
+      5px 0 0 transparent,
+      10px 0 0 transparent;
   }
-  50% {
-    transform: scale(1.1); /* 稍微放大 */
-    opacity: 0.9; /* 更亮 */
+  33% {
+    background: transparent;
     box-shadow:
-      0 0 10px 4px rgba(var(--ufo-cyan-rgb), 0.8),
-      inset 0 0 4px 1px var(--white-90);
+      5px 0 0 var(--ufo-light),
+      10px 0 0 transparent;
   }
-  100% {
-    transform: scale(1);
-    opacity: 0.6;
+  66% {
+    background: transparent;
     box-shadow:
-      0 0 6px 2px rgba(var(--ufo-cyan-rgb), 0.6),
-      inset 0 0 2px 1px var(--white-70);
+      5px 0 0 transparent,
+      10px 0 0 var(--ufo-light);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ufo::after {
+    animation: none;
   }
 }

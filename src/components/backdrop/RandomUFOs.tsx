@@ -16,39 +16,37 @@ interface UFO {
   scale: number;
 }
 
-// 創建 UFO 數據 - 加入更多隨機移動點
+/**
+ * 飛碟的動作：慢慢飄、停一下、再飄，最後突然加速竄走（像真的「不明飛行物」）。
+ * 前四段是緩慢的漂移，最後一段在很短的時間裡飛出好幾百像素。時間點見 UFO_TIMES。
+ */
 const createUFO = (): UFO => {
-  const duration = getRandomValue(20, 40); // 增加持續時間，更慢更飄
-  const startX = getRandomValue(10, 90);
-  const startY = getRandomValue(10, 90);
-  const scale = getRandomValue(0.6, 1.1);
-
-  // 生成多個隨機位移點，用於 keyframe 動畫
-  const keyframesX = [0]; // 初始相對位置 X
-  const keyframesY = [0]; // 初始相對位置 Y
-  const numKeyframes = 4; // 設定 4 個移動階段 (可以調整)
-  const maxMove = 80; // 每個階段最大移動距離
-
-  for (let i = 1; i <= numKeyframes; i++) {
-    // 累加隨機位移，讓它看起來更像漂浮
-    keyframesX.push(keyframesX[i - 1] + getRandomValue(-maxMove, maxMove));
-    keyframesY.push(keyframesY[i - 1] + getRandomValue(-maxMove / 2, maxMove / 2)); // 垂直移動幅度小一點
+  const duration = getRandomValue(18, 30);
+  const keyframesX = [0];
+  const keyframesY = [0];
+  for (let i = 1; i <= 3; i++) {
+    keyframesX.push(keyframesX[i - 1] + getRandomValue(-70, 70));
+    keyframesY.push(keyframesY[i - 1] + getRandomValue(-25, 25));
   }
-  // 最後回到起點附近，形成循環感 (可選)
-  // keyframesX.push(getRandomValue(-20, 20));
-  // keyframesY.push(getRandomValue(-10, 10));
+  const dart = getRandomValue(0, Math.PI * 2);
+  const reach = getRandomValue(500, 900);
+  keyframesX.push(keyframesX[3] + Math.cos(dart) * reach);
+  keyframesY.push(keyframesY[3] + Math.sin(dart) * reach * 0.5);
 
   return {
     id: Math.random(),
-    startX: `${startX}%`,
-    startY: `${startY}%`,
-    keyframesX: keyframesX,
-    keyframesY: keyframesY,
-    duration: duration,
+    startX: `${getRandomValue(10, 90)}%`,
+    startY: `${getRandomValue(8, 60)}%`,
+    keyframesX,
+    keyframesY,
+    duration,
     delay: getRandomValue(5, 25),
-    scale: scale,
+    scale: getRandomValue(0.7, 1.1),
   };
 };
+
+/** 前四段慢慢飄（中間有一段幾乎停著），最後 4% 的時間竄走 */
+const UFO_TIMES = [0, 0.35, 0.5, 0.96, 1];
 
 interface RandomUFOsProps {
   count?: number;
@@ -107,31 +105,25 @@ const RandomUFOs = ({ count = 1 }: RandomUFOsProps) => {
             }}
             initial={{
               opacity: 0,
-              scale: ufo.scale * 0.5, // 初始縮小一點
+              scale: ufo.scale,
               x: ufo.keyframesX[0], // 初始相對位置
               y: ufo.keyframesY[0],
             }}
             animate={
               isVisible
                 ? {
-                    x: ufo.keyframesX, // 使用 keyframes 陣列進行動畫
+                    x: ufo.keyframesX,
                     y: ufo.keyframesY,
-                    opacity: [0, 0.7, 0.7, 0.7, 0.7, 0], // 調整透明度變化以匹配 keyframes
-                    scale: ufo.scale, // 可以簡化 scale 動畫，或也用 keyframes
+                    opacity: [0, 0.85, 0.85, 0.85, 0],
+                    scale: ufo.scale,
                   }
                 : {}
             }
             transition={{
               delay: ufo.delay,
               duration: isVisible ? ufo.duration : 0,
-              ease: 'easeInOut',
-              // times 陣列需要與 keyframes 陣列長度匹配 (或省略讓 framer-motion 自動分配)
-              // opacity: { duration: ufo.duration, times: [0, 0.1, 0.4, 0.6, 0.9, 1] },
-              opacity: { duration: isVisible ? ufo.duration : 0, ease: 'linear' }, // 簡化 opacity 過渡
-              x: { duration: isVisible ? ufo.duration : 0, ease: 'easeInOut' }, // 確保位移動畫平滑
-              y: { duration: isVisible ? ufo.duration : 0, ease: 'easeInOut' },
-              // repeat: Infinity, // 可以讓它無限循環
-              // repeatType: "mirror", // 來回播放
+              times: UFO_TIMES,
+              ease: ['easeInOut', 'easeInOut', 'easeInOut', 'easeIn'],
             }}
             exit={{ opacity: 0, scale: 0, transition: { duration: 0.5, delay: 0 } }}
           />

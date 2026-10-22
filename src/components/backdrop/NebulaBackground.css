@@ -19,11 +19,13 @@ body.intro-animation-active .nebula-dim-overlay {
 }
 
 /* 首頁那一份常駐在 AppShell，換頁時整份淡出（土星跟著飛行慢慢亮起來，不是一瞬間）。
-   跟 3D canvas 同一個 z-index、DOM 在它後面，所以蓋在星空與土星上面 */
+   以前它長在內容容器（z-index 10）裡，所以蓋住整個背景層；搬出來之後要自己壓在背景的最上面：
+   3D canvas 是 1、飛碟 2、彗星 3、流星 4，它也寫 4、DOM 在流星後面，所以全部蓋得到
+   （不蓋的話流星與飛碟會亮得像突然變多） */
 .sky-nebula {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 4;
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--dur-1000) var(--easing-standard);
