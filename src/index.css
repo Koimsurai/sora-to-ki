@@ -1013,6 +1013,23 @@ html.intro-pending .main-content-container {
   opacity: 0.001;
 }
 
+/* 等開場就緒的那段（3D 要先把管線全部編譯完，首訪約半秒）直接顯示開場的底色，不要先露出底下的
+   CSS 星空、再被開場蓋過去。開場 canvas 的第一幀畫的就是同一個漸層（lib/hyperspace.ts 的底色），
+   它疊在這層上面（--z-intro + 1），接手時看不出交接；內容解開時這層跟著淡掉。
+   元素在 AppShell，SSR 就輸出，配上 pre-paint script 加的 class，首次繪製就是這個畫面。 */
+.intro-veil {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-intro);
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, #050620 0%, #000 70%);
+  opacity: 0;
+  transition: opacity var(--dur-300) ease-out;
+}
+html.intro-pending .intro-veil {
+  opacity: 1;
+}
+
 /* ═══════════════════════════════════════════════════
    Home section shared tokens — aligned with Activity /
    Notes pages. Each home section reuses these for
