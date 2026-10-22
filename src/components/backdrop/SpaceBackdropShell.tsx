@@ -95,7 +95,9 @@ export default function SpaceBackdropShell() {
   })();
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   // 開場只在「首次造訪 + 桌面 + 首頁」播；要求減少動態的就不播
-  const shouldSkipIntro = introCompleted || !isOnHomePage || isMobile || reducedMotion;
+  // 爬蟲也不播（下面整包 return null）——不列進來的話開場狀態會停在 waiting，內容要等 __root
+  // 的 4 秒保險逾時才放出來
+  const shouldSkipIntro = introCompleted || !isOnHomePage || isMobile || reducedMotion || isBot;
 
   // 開場畫在 3D 背景同一張 canvas 上（lib/hyperspace.ts），時間軸由那邊的渲染迴圈推進，
   // 這裡只照它送來的階段切 DOM：
