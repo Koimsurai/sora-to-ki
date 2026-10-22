@@ -6,7 +6,7 @@
 // 近景（星塵、大氣、星球、樹）畫在 lib/fallSky.ts；遠處的星是 3D 的那一片。
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { YEAR_LABELS, MILESTONE_STATIC, MILESTONES_BY_LANG } from '@/data/journeyData';
+import { YEAR_LABELS, MILESTONE_STATIC, MILESTONES_BY_LANG, MILESTONE_BEATS_BY_LANG } from '@/data/journeyData';
 import {
   QUICK_FACTS_BY_LANG,
   PERIODS,
@@ -40,6 +40,7 @@ const stillAbout = () => stripLocalePrefix(window.location.pathname) === 'about'
 
 const altitudeAt = (p: number) => Math.round(TOP_KM * Math.pow(1 - p, 1.7));
 const fmt = (km: number) => km.toLocaleString('en-US');
+const pad = (n: number) => String(n).padStart(2, '0');
 
 /** 技能的圖示：平常是跟字同色的單色，滑過去才亮出品牌色（一整片品牌色會蓋過地層的安靜） */
 function SkillMark({ name }: { name: string }) {
@@ -59,6 +60,7 @@ export default function AboutFall() {
   const ylabels = lookupOr(YEAR_LABELS, lang, YEAR_LABELS['zh-TW']);
   const texts = lookupOr(MILESTONES_BY_LANG, lang, MILESTONES_BY_LANG['zh-TW']);
   const facts = lookupOr(QUICK_FACTS_BY_LANG, lang, QUICK_FACTS_BY_LANG['zh-TW']);
+  const beatsByLang = lang in MILESTONE_BEATS_BY_LANG ? MILESTONE_BEATS_BY_LANG[lang] : undefined;
   const work = lookupOr(EXPERIENCES_BY_LANG, lang, EXPERIENCES_BY_LANG['zh-TW']);
   const clubs = lookupOr(CLUBS_BY_LANG, lang, CLUBS_BY_LANG['zh-TW']);
   const skillNames = lookupOr(NAMES_BY_LANG, lang, NAMES_BY_LANG['zh-TW']);
@@ -67,6 +69,8 @@ export default function AboutFall() {
     label: s.year === 'NOW' ? ylabels.NOW : s.year === 'FUTURE' ? ylabels.FUTURE : s.year,
     ...texts[i],
     allTags: [...s.tags, ...texts[i].extraTags],
+    // 短句片段；這個語系還沒寫的話，整段說明當成一個片段
+    beats: beatsByLang?.[i] ?? [texts[i].description],
   }));
   const past = milestones.filter((m) => m.year !== 'NOW' && m.year !== 'FUTURE');
   const now = milestones.find((m) => m.year === 'NOW');
@@ -164,7 +168,7 @@ export default function AboutFall() {
       },
       { rootMargin: '0px 0px -15% 0px' },
     );
-    page.querySelectorAll('.af-stage, .af-land-inner, .af-layer, .af-core').forEach((el) => io.observe(el));
+    page.querySelectorAll('.af-chapter, .af-beat, .af-land-inner, .af-layer, .af-core').forEach((el) => io.observe(el));
 
     return () => {
       cancelAnimationFrame(raf);
@@ -206,33 +210,35 @@ export default function AboutFall() {
         <p className="af-hint">往下</p>
       </header>
 
-      {/* 每一年是一層：標籤與大標題在中間，旁邊漂著一塊面板（四個角的小方塊像觀測儀器的準星），
-          左右錯落，像往下掉的時候從身邊經過的東西 */}
-      {past.map((m, i) => (
-        <section
-          key={m.id}
-          className={`af-stage${i % 2 ? ' af-stage--right' : ''}`}
-          data-stage={m.label}
-          style={{ '--dot': m.color } as CSSProperties}
-        >
-          <div className="af-stage-head">
-            <span className="af-pill">{m.label.replace('-', ' — ')}</span>
-            <h2 className="af-stage-title">{m.title}</h2>
-          </div>
-          <article className="af-panel">
-            <span className="af-panel-frame" aria-hidden="true" />
-            <div className="af-panel-plate">
-              <span className="af-panel-no">{String(i + 1).padStart(2, '0')}</span>
-              <span className="af-panel-label">{m.subtitle}</span>
+      {/* 每一年是一章：左邊固定「年份＋標題」（現在在哪一層），右邊的片段一段一段往上掠過；
+          換到下一年時，固定的那塊才被推走（position: sticky 在 grid 裡的接力） */}
+      {past.map((m, i) => {
+        const [from, to] = m.label.split('-');
+        return (
+          <section key={m.id} className="af-chapter" data-stage={m.label} style={{ '--dot': m.color } as CSSProperties}>
+            <aside className="af-chapter-panel">
+              <p className="af-chapter-no">
+                {pad(i + 1)} / {pad(past.length)}
+              </p>
+              <p className="af-chapter-year">
+                {from}
+                {to && <span>— {to}</span>}
+              </p>
+              <h2 className="af-chapter-title">{m.title}</h2>
+              <p className="af-chapter-sub">{m.subtitle}</p>
+              <p className="af-chapter-alt">{fmt(altitudeAt((i + 1) / (past.length + 1)))} km</p>
+            </aside>
+            <div className="af-beats">
+              {m.beats.map((b) => (
+                <p key={b} className="af-beat">
+                  {b}
+                </p>
+              ))}
+              {m.allTags.length > 0 && <p className="af-beat-tags">{m.allTags.join(' · ')}</p>}
             </div>
-            <div className="af-panel-body">
-              <p className="af-panel-desc">{m.description}</p>
-              {m.allTags.length > 0 && <p className="af-panel-tags">{m.allTags.join(' · ')}</p>}
-              <p className="af-panel-alt">{fmt(altitudeAt((i + 1) / (past.length + 1)))} km</p>
-            </div>
-          </article>
-        </section>
-      ))}
+          </section>
+        );
+      })}
 
       <section className="af-land" ref={landRef}>
         <div className="af-land-inner">
@@ -243,7 +249,11 @@ export default function AboutFall() {
             <div className="af-now">
               <p className="af-card-title">{now.title}</p>
               <p className="af-card-sub">{now.subtitle}</p>
-              <p className="af-card-desc">{now.description}</p>
+              {now.beats.map((b) => (
+                <p key={b} className="af-card-desc">
+                  {b}
+                </p>
+              ))}
               {now.allTags.length > 0 && (
                 <ul className="af-tags">
                   {now.allTags.map((t) => (
@@ -264,7 +274,7 @@ export default function AboutFall() {
           {future && (
             <p className="af-future">
               <span>抬頭，{future.label}還很遠。</span>
-              {future.description}
+              {future.beats.join('')}
             </p>
           )}
         </div>

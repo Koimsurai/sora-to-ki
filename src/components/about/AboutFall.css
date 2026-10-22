@@ -46,21 +46,6 @@
   animation-delay: var(--arrive-delay, 1300ms);
 }
 
-/* 高度計也等鏡頭抵達才出現。只填 backwards（等待期間是透明的）：動畫結束後要交還給
-   AboutFall 每幀寫的 inline opacity（落地時收起來、往地底挖時再出現） */
-.about-fall.is-arriving .af-meter {
-  animation: af-meter-in var(--dur-1000) var(--easing-out) var(--arrive-delay, 1300ms) backwards;
-}
-
-@keyframes af-meter-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 .about-fall.is-arriving .af-top > :nth-child(n + 2) {
   animation-delay: calc(var(--arrive-delay, 1300ms) + 200ms);
 }
@@ -249,177 +234,146 @@
   box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
 }
 
-/* ── 經過的每一年：每一年是一層 ── */
-.af-stage {
-  position: relative;
-  max-width: 1180px;
-  min-height: 120vh;
+/* ── 經過的每一年：每一年是一章 ── */
+.af-chapter {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: var(--space-12);
+  max-width: 1240px;
   margin: 0 auto;
   /* 右邊留給固定在畫面上的高度計 */
-  padding: 18vh calc(var(--space-24) * 2 + var(--space-16)) 0 var(--space-12);
+  padding: 0 calc(var(--space-24) * 2) 0 var(--space-12);
 }
 
-.af-stage-head {
-  text-align: center;
+/* 固定的那一塊：年份、標題、副標。sticky 在 grid 裡一定要 align-self: start，不然不會黏住 */
+.af-chapter-panel {
+  position: sticky;
+  /* 讓固定的那一塊大致在畫面中線上，跟正在讀的片段同一個高度 */
+  top: calc(50vh - 150px);
+  align-self: start;
+  margin-top: 20vh;
+  opacity: 0;
+  transition: opacity var(--dur-1000) var(--easing-out);
 }
 
-/* 小藥丸標籤 */
-.af-pill {
-  display: inline-block;
-  padding: var(--space-0-5) var(--space-3);
-  border: 1px solid var(--white-40);
-  border-radius: var(--r-full);
+.af-chapter.is-in .af-chapter-panel {
+  opacity: 1;
+}
+
+.af-chapter-no {
+  margin: 0;
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  letter-spacing: var(--ls-12);
-  color: var(--white-80);
+  letter-spacing: var(--ls-18);
+  color: var(--white-40);
 }
 
-.af-stage-title {
-  margin: var(--space-5) 0 0;
-  font-family: var(--display);
-  font-size: clamp(40px, 5.6vw, 84px);
-  font-weight: 700;
-  line-height: var(--lh-110);
-  letter-spacing: var(--ls-n2);
-  color: var(--ink);
-  text-shadow: 0 2px 40px var(--black-60);
-}
-
-/* 漂浮的面板：偶數層在左、奇數層在右，跟標題錯開 */
-.af-panel {
-  position: relative;
-  width: min(400px, 100%);
-  margin: 12vh 0 0 4%;
-  background: rgba(var(--surface-0-rgb), 0.55);
-  backdrop-filter: blur(var(--blur-12));
-}
-
-.af-stage--right .af-panel {
-  margin-left: auto;
-  margin-right: 4%;
-}
-
-/* 四個角的小方塊：一個元素、四張背景圖。進場時從面板中間展開成一個框 */
-.af-panel-frame {
-  --tick: 7px;
-
-  position: absolute;
-  inset: 45%;
-  background:
-    linear-gradient(var(--ink), var(--ink)) top left / var(--tick) var(--tick) no-repeat,
-    linear-gradient(var(--ink), var(--ink)) top right / var(--tick) var(--tick) no-repeat,
-    linear-gradient(var(--ink), var(--ink)) bottom left / var(--tick) var(--tick) no-repeat,
-    linear-gradient(var(--ink), var(--ink)) bottom right / var(--tick) var(--tick) no-repeat;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.af-stage.is-in .af-panel-frame {
-  animation: af-frame 1.1s var(--easing-out) both;
-}
-
-@keyframes af-frame {
-  0% {
-    inset: 45%;
-    opacity: 0;
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    inset: calc(var(--tick) * -0.5);
-    opacity: 1;
-  }
-}
-
-/* 上半：一塊帶著那一年顏色的底片，壓著編號與副標（「2  SATELLITES」那種排法） */
-.af-panel-plate {
-  position: relative;
+/* 年份：那一年的光點色往上漸成白色 */
+.af-chapter-year {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-8);
-  aspect-ratio: 16 / 9;
-  padding: var(--space-5);
-  overflow: hidden;
-  background:
-    radial-gradient(120% 90% at 80% 110%, var(--dot), transparent 60%),
-    radial-gradient(80% 60% at 10% 0%, var(--white-10), transparent 70%), linear-gradient(160deg, #1b1d2b, #07080f);
+  flex-direction: column;
+  margin: var(--space-4) 0 0;
+  font-family: var(--display);
+  font-size: clamp(64px, 7.5vw, 120px);
+  font-weight: 700;
+  line-height: var(--lh-100);
+  letter-spacing: var(--ls-n4);
+  color: transparent;
+  background: linear-gradient(0deg, var(--dot), var(--ink) 75%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
-/* 底片上的細紋：像衛星影像的掃描線 */
-.af-panel-plate::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(0deg, var(--white-04) 0 1px, transparent 1px 4px);
-  mix-blend-mode: overlay;
-  pointer-events: none;
+.af-chapter-year span {
+  margin-top: var(--space-2);
+  font-size: 0.3em;
+  letter-spacing: var(--ls-2);
 }
 
-.af-panel-no {
+.af-chapter-title {
+  margin: var(--space-6) 0 0;
   font-family: var(--display);
   font-size: var(--fs-32);
-  font-weight: 500;
-  line-height: var(--lh-100);
-  color: var(--ink);
-}
-
-.af-panel-label {
-  font-family: var(--display);
-  font-size: var(--fs-24);
-  font-weight: 500;
+  font-weight: 700;
   line-height: var(--lh-120);
   color: var(--ink);
 }
 
-.af-panel-body {
-  padding: var(--space-5) var(--space-5) var(--space-4);
-}
-
-.af-panel-desc {
-  margin: 0;
+.af-chapter-sub {
+  margin: var(--space-2) 0 0;
   font-size: var(--fs-14);
-  line-height: var(--lh-185);
-  color: var(--white-70);
-  text-wrap: pretty;
+  color: var(--white-55);
 }
 
-.af-panel-tags {
-  margin: var(--space-4) 0 0;
-  font-family: var(--mono-font);
-  font-size: var(--fs-11);
-  line-height: var(--lh-170);
-  color: var(--white-45);
-}
-
-.af-panel-alt {
-  margin: var(--space-4) 0 0;
+.af-chapter-alt {
+  margin: var(--space-8) 0 0;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  text-align: right;
   color: var(--white-30);
 }
 
-/* 進場：標題先浮上來、面板跟著 */
-.af-stage-head,
-.af-panel {
-  opacity: 0;
-  transform: translateY(var(--space-8));
-  transition:
-    opacity var(--dur-1000) var(--easing-out),
-    transform var(--dur-1000) var(--easing-out);
+/* 片段：一段佔大半個畫面高，一次只看一段；掠過的時候淡入、離開時淡出 */
+.af-beats {
+  padding: 30vh 0 26vh;
 }
 
-.af-stage.is-in .af-stage-head,
-.af-stage.is-in .af-panel {
+.af-beat {
+  display: flex;
+  align-items: center;
+  min-height: 60vh;
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-28);
+  line-height: var(--lh-170);
+  color: var(--ink);
+  text-wrap: pretty;
+  opacity: 0;
+  transform: translateY(var(--space-6));
+  transition:
+    opacity var(--dur-700) var(--easing-out),
+    transform var(--dur-700) var(--easing-out);
+}
+
+.af-beat.is-in {
   opacity: 1;
   transform: none;
 }
 
-.af-stage.is-in .af-panel {
-  transition-delay: var(--dur-300);
+/* 支援捲動驅動動畫的瀏覽器：片段跟著捲動的位置明暗，離開畫面上方時淡出 */
+@supports (animation-timeline: view()) {
+  .af-beat,
+  .af-beat.is-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+    animation: af-beat linear both;
+    animation-timeline: view();
+  }
+
+  @keyframes af-beat {
+    0% {
+      opacity: 0;
+      transform: translateY(6vh);
+    }
+    30%,
+    62% {
+      opacity: 1;
+      transform: none;
+    }
+    100% {
+      opacity: 0.1;
+      transform: translateY(-4vh);
+    }
+  }
+}
+
+.af-beat-tags {
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  line-height: var(--lh-170);
+  color: var(--white-45);
 }
 
 /* 共用的標籤（落地的「現在」與地底的經歷） */
@@ -731,12 +685,38 @@
   text-shadow: 0 0 24px rgba(var(--amber-rgb), 0.6);
 }
 
+/* 下墜時年份由左邊固定的那一塊顯示，高度計只留數字；往地底挖時才顯示目前在哪一層 */
+.af-meter:not(.is-digging) .af-meter-year {
+  display: none;
+}
+
 /* 往地底挖時，高度計的年份刻度收起來，只留數字與目前那一層 */
 .af-meter.is-digging .af-meter-tick {
   opacity: 0;
 }
 
 @media (max-width: 860px) {
+  .af-chapter {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 0 var(--space-6);
+  }
+
+  .af-chapter-panel {
+    position: static;
+    padding-top: 16vh;
+    opacity: 1;
+  }
+
+  .af-beats {
+    padding: 4vh 0 12vh;
+  }
+
+  .af-beat {
+    min-height: 40vh;
+    font-size: var(--fs-20);
+  }
+
   .af-meter {
     top: auto;
     right: var(--space-4);
@@ -748,16 +728,6 @@
   .af-meter-rail,
   .af-meter-year {
     display: none;
-  }
-
-  .af-stage {
-    min-height: 100vh;
-    padding: 14vh var(--space-6) 0;
-  }
-
-  .af-panel,
-  .af-stage--right .af-panel {
-    margin: 8vh auto 0;
   }
 
   .af-skill,
@@ -773,17 +743,11 @@
     animation: none;
   }
 
-  .af-stage-head,
-  .af-panel {
+  .af-chapter-panel,
+  .af-beat {
     opacity: 1;
     transform: none;
-  }
-
-  .af-panel-frame,
-  .af-stage.is-in .af-panel-frame {
     animation: none;
-    inset: calc(var(--tick) * -0.5);
-    opacity: 1;
   }
 
   .af-land-inner,
@@ -791,5 +755,20 @@
   .af-core {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* 高度計也等鏡頭抵達才出現。只填 backwards（等待期間是透明的）：動畫結束後要交還給
+   AboutFall 每幀寫的 inline opacity（落地時收起來、往地底挖時再出現） */
+.about-fall.is-arriving .af-meter {
+  animation: af-meter-in var(--dur-1000) var(--easing-out) var(--arrive-delay, 1300ms) backwards;
+}
+
+@keyframes af-meter-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

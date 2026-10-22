@@ -272,7 +272,7 @@ export const collectionSky: WindowSky = {
 // 那段在網路上瘋傳的自拍影片：深夜裡，身後的天空突然被一道霓虹般的青藍色光照得像白天，
 // 一顆藍色火球拖著長尾巴劃過、落到地平線後面，前後大約七秒。這扇窗留住的就是那一瞬間：
 // 平常是安靜的夜空和小星球，每隔一陣子，一顆藍色火球從左上方直直劃向地平線，一出現就亮，
-// 中間有一大段持續的強光，整片天空和星球表面都被照成青藍色；沒入地平線之後，光要好幾秒才退。
+// 一路越燒越亮、一次比一次大地爆亮，整片天空和星球表面都被照成青藍色；沒入地平線之後，光要好幾秒才退。
 const FIREBALL_EVERY = 13;
 const FIREBALL_START = 0.5;
 const FIREBALL_SECONDS = 5;
@@ -283,16 +283,25 @@ function planet(w: number, h: number) {
 }
 
 /**
- * 亮度曲線（s 是這一次落下的進度 0–1）：一出現就亮起來，接著是一大段持續的強光
- * （影片裡天空被照成白天的那幾秒），最後沉向地平線時才暗下去
+ * 亮度曲線（s 是這一次落下的進度 0–1）：不是維持同一個亮度，而是一路越燒越亮——
+ * 底下是一條往上爬的曲線，上面疊幾次一次比一次大的爆亮（一階一階往上），
+ * 最亮的那一下在沉入地平線之前，接著很快暗下去
  */
+const SURGES = [
+  { at: 0.3, size: 0.18 },
+  { at: 0.5, size: 0.32 },
+  { at: 0.66, size: 0.5 },
+  { at: 0.78, size: 0.8 },
+];
 function fireGlow(s: number) {
   if (s < 0 || s > 1) return 0;
-  const ignite = Math.min(1, s / 0.08);
   const ramp = (a: number, b: number, x: number) => Math.min(1, Math.max(0, (x - a) / (b - a)));
-  const flare = ramp(0.18, 0.32, s) * (1 - ramp(0.72, 0.86, s));
-  const sink = 1 - 0.6 * ramp(0.84, 1, s);
-  return (ignite * 0.75 + flare * 0.95) * sink;
+  const ignite = ramp(0, 0.06, s);
+  const climb = Math.pow(ramp(0.05, 0.8, s), 1.6);
+  let surges = 0;
+  for (const g of SURGES) surges += g.size * Math.exp(-(((s - g.at) / 0.035) ** 2));
+  const sink = 1 - 0.75 * ramp(0.82, 1, s);
+  return (ignite * 0.35 + climb * 1.05 + surges) * sink;
 }
 
 /** 這一刻火球在哪、多亮。s 是這一次落下的進度（0–1） */
@@ -369,10 +378,10 @@ export const aboutSky: WindowSky = {
     let lit = 0;
     let center = f.end;
     if (f.s >= 0 && f.s <= 1) {
-      lit = Math.min(1, f.glow * 0.6);
+      lit = Math.min(1.4, f.glow * 0.62);
       center = f.at(f.s);
     } else if (after > 0) {
-      lit = Math.min(1, fireGlow(1) * 0.6) * Math.exp(-after * 0.45);
+      lit = Math.min(1.4, fireGlow(1) * 0.62) * Math.exp(-after * 0.45);
     }
     if (lit > 0.005) {
       ctx.save();

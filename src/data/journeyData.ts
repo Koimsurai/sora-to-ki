@@ -92,7 +92,7 @@ const MILESTONE_STATIC: MilestoneStatic[] = [
     tags: ['Redis', 'FastAPI', 'Flutter', 'Docker', 'Nginx', 'Discord Bot'],
   },
   { id: 7, year: '2025', icon: '🏢', color: '#fbbf24', tags: ['Turborepo', 'Tauri', 'TypeScript', 'CI/CD'] },
-  { id: 8, year: 'NOW', icon: '🔭', color: '#f472b6', tags: ['React', 'Three.js', 'Rust', 'NAS', 'UI/UX'] },
+  { id: 8, year: 'NOW', icon: '🔭', color: '#f472b6', tags: ['Tauri', 'Vite', 'React', 'Rust', 'AI'] },
   { id: 9, year: 'FUTURE', icon: '🚀', color: '#ec4899', tags: [] },
 ];
 
@@ -148,10 +148,10 @@ const MILESTONES_BY_LANG: Record<string, MilestoneLang[]> = {
       extraTags: ['AI 整合'],
     },
     {
-      title: '個人專案與持續進化',
-      subtitle: '在網路世界保持上進心',
+      title: '把產品推向世界',
+      subtitle: '微星科技・軟體工程師',
       description:
-        '獨立使用 React 結合 Three.js 開發 3D 互動個人網站，展現不同於一般平面網頁的使用者體驗。因為對現有工具不滿意，主動自學 UI/UX 來優化專案；近期更開始研究 Rust 與 Home Lab (NAS) 領域，探索更底層的系統運作。',
+        '畢業，轉為微星正職。正在打造一個貼近日常生活的 AI 應用，準備推向全世界，同時改善部門內部的開發流程。技術是 Tauri、Vite、React，後端用 Rust——Rust 是這段時間真正練起來的。下班後還在弄這個網站、NAS 和自己的工具。',
       extraTags: [],
     },
     {
@@ -424,4 +424,45 @@ const MILESTONES_BY_LANG: Record<string, MilestoneLang[]> = {
   ],
 };
 
-export { YEAR_LABELS, JOURNEY_UI, MILESTONE_STATIC, MILESTONES_BY_LANG };
+// 關於頁（AboutFall）用的短句：每一年拆成幾個片段，往下捲時一段一段掠過。
+// 順序跟 MILESTONE_STATIC 平行。只有寫了的語系才有；沒有的話整段 description 當成一個片段。
+const MILESTONE_BEATS_BY_LANG: Record<string, string[][]> = {
+  'zh-TW': [
+    [
+      '2004 年，雲林。',
+      '一半理性，一半感性：寫程式的邏輯，和對好看的東西的執著。',
+      '後來做介面、做架構，兩邊都放不下。',
+    ],
+    ['高中第一份工作：日本料理店，內外場都做。', '備料有規矩，上菜有順序。', '忙起來就照 SOP 走——這個習慣留到現在。'],
+    [
+      '開始補技術：Python、Golang、Java。',
+      '當過系學會會長，也在吉他社管文書。',
+      '學到的是怎麼分工，怎麼跟不同的人把事情談完。',
+    ],
+    [
+      '大三在猿創力教 3 到 9 年級的小孩寫程式。',
+      'Python、Scratch、App Inventor。',
+      '把難懂的邏輯講成聽得懂的話，練的是表達。',
+    ],
+    ['在補習班當資訊助理：寫 Android App，也剪宣傳影片。', '第一次用 GitHub 跟別人協作。'],
+    [
+      '畢業專題：把各家充電樁平台整合成一個服務。',
+      'Redis 快取地圖、FastAPI 讀車載 CAN Log 換成減碳積分、Flutter 做成橫向捲軸的遊戲化介面。',
+      'Docker、Nginx、Cloudflare 自己架；Discord Bot 用來開 Issue、看伺服器狀態。',
+    ],
+    [
+      '進微星實習，負責前端。',
+      '導入 Turborepo 做 Monorepo，訂 ESLint、Prettier、TypeScript 的規範。',
+      '當前端窗口，跟 AI Team、IT Team 一起把模型接進產品；開始用 Tauri 把網頁做成桌面軟體。',
+    ],
+    [
+      '畢業，轉為微星正職。',
+      '在做一個貼近日常生活的 AI 應用，準備推向全世界；同時改善部門內部的開發流程。',
+      'Tauri、Vite、React，後端是 Rust——Rust 是這段時間真正練起來的。',
+      '下班後還在弄這個網站、NAS 和自己的工具。',
+    ],
+    ['不只寫出會動的程式，而是穩定、好用的服務。', '從前端到後端，從設計到部署，繼續往下挖。'],
+  ],
+};
+
+export { YEAR_LABELS, JOURNEY_UI, MILESTONE_STATIC, MILESTONES_BY_LANG, MILESTONE_BEATS_BY_LANG };
