@@ -1,6 +1,6 @@
 // 首頁「天空之窗」裡的天空：每一扇窗是那一區真正的天空縮影，而且是活的：
 //   手記：星軌繞著天極轉（hover 時轉快，像快轉的長曝光），地平線上一棵樹
-//   碎念：像素抖動的稀疏星空，星星各自明滅，偶爾一顆琥珀色的「閃過」
+//   碎念：像素抖動的星雲與土星（琥珀色的點陣），星星明滅，偶爾一顆「閃過」
 //   收藏：三顆主星的星座線一筆一筆連起來，主星呼吸
 //   關於：一道光不斷往下掉，落進小星球的大氣層裡
 // 每扇窗分三層：back（靜態，畫一次）→ frame（每幀）→ front（靜態，畫一次）。
@@ -112,24 +112,39 @@ export const notesSky: WindowSky = {
   },
 };
 
-// ── 碎念：像素抖動的星空 ──
-// 跟碎念頁的 3D 天空同一套（lib/skyFx.ts）：4×4 Bayer 矩陣、冷白的點、最亮的才是琥珀色。
-// 稀疏的星、大片的黑——不是一整片網格。每顆星各自慢慢明滅，偶爾有一顆「閃過」：
-// 一瞬間亮成琥珀色再暗回去，就是這一區的概念（腦海中閃過的瞬間）。
-const CELL = 3;
+// ── 碎念：像素抖動 ──
+// 跟畫布上 D 那張一樣：一團星雲、一顆土星，整個畫面用 4×4 Bayer 矩陣二值化成點陣。
+// 土星是琥珀色的點、星雲與環是冷白的點，大片的黑留著。星雲慢慢飄、星星各自明滅，
+// 偶爾有一顆「閃過」：一瞬間亮成琥珀色再暗回去，就是這一區的概念（腦海中閃過的瞬間）。
+const CELL = 4;
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const MOMENT_STARS = (() => {
   const R = rng(9);
-  return Array.from({ length: 90 }, () => ({
+  return Array.from({ length: 60 }, () => ({
     x: R(),
     y: R(),
-    peak: 0.35 + Math.pow(R(), 3) * 1.1,
+    peak: 0.4 + Math.pow(R(), 3) * 1.1,
     phase: R() * Math.PI * 2,
     speed: 0.4 + R() * 1.2,
   }));
 })();
+const NEBULA = (() => {
+  const R = rng(17);
+  return Array.from({ length: 14 }, () => ({
+    x: 0.08 + R() * 0.32,
+    y: 0.08 + R() * 0.4,
+    r: 0.08 + R() * 0.14,
+    a: 0.25 + R() * 0.35,
+    drift: (R() - 0.5) * 0.02,
+  }));
+})();
 /** 每隔幾秒閃一顆 */
-export const FLASH_EVERY = 2.6;
+const FLASH_EVERY = 2.6;
+const LIGHT = (() => {
+  const v = [-0.8, -0.45, 0.4];
+  const l = Math.hypot(...v);
+  return v.map((c) => c / l);
+})();
 
 export const momentsSky: WindowSky = {
   fps: 12,
@@ -141,25 +156,66 @@ export const momentsSky: WindowSky = {
   frame(ctx, w, h, t) {
     const cols = Math.ceil(w / CELL);
     const rows = Math.ceil(h / CELL);
+    // 土星：右上（下半部留給文字），環傾斜
+    const sx = 0.68 * w;
+    const sy = 0.38 * h;
+    const sr = Math.min(w, h) * 0.17;
+    const tilt = -0.32;
+    const ct = Math.cos(tilt);
+    const st = Math.sin(tilt);
     const k = Math.floor(t / FLASH_EVERY);
     const flashing = (k * 37) % MOMENT_STARS.length;
-    const ft = (t - k * FLASH_EVERY) / 0.9; // 閃的那 0.9 秒
+    const ft = (t - k * FLASH_EVERY) / 0.9;
     const flash = ft < 1 ? Math.sin(Math.PI * Math.min(1, ft * 1.6)) * (1 - ft) * 3 : 0;
-    for (let i = 0; i < MOMENT_STARS.length; i++) {
-      const s = MOMENT_STARS[i];
-      const tw = 0.75 + 0.25 * Math.sin(t * s.speed + s.phase);
-      const peak = s.peak * tw + (i === flashing ? flash : 0);
-      const cx = s.x * cols;
-      const cy = s.y * rows;
-      const rad = 0.7 + peak * 1.4;
-      const reach = Math.ceil(rad * 2.2);
-      for (let y = Math.max(0, Math.floor(cy - reach)); y < Math.min(rows, cy + reach); y++) {
-        for (let x = Math.max(0, Math.floor(cx - reach)); x < Math.min(cols, cx + reach); x++) {
-          const v = peak * Math.exp(-((x - cx) ** 2 + (y - cy) ** 2) / (rad * rad));
-          if (v < (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16) continue;
-          ctx.fillStyle = v > 1.2 ? '#ffa046' : '#9eadd1';
-          ctx.fillRect(x * CELL, y * CELL, CELL - 1, CELL - 1);
+    const stars = MOMENT_STARS.map((s, i) => ({
+      x: s.x * w,
+      y: s.y * h,
+      v: s.peak * (0.75 + 0.25 * Math.sin(t * s.speed + s.phase)) + (i === flashing ? flash : 0),
+    }));
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const px = (x + 0.5) * CELL;
+        const py = (y + 0.5) * CELL;
+        let amber = false;
+        // 星雲：幾團光暈疊起來之後用飽和曲線封頂（最亮 0.8），點陣才有疏密，核心不會整片填滿
+        let haze = 0;
+        for (const n of NEBULA) {
+          const dx = px / w - n.x - n.drift * t;
+          const dy = py / h - n.y;
+          haze += n.a * Math.exp(-(dx * dx + dy * dy) / (n.r * n.r));
         }
+        // 雲紋：兩組不同方向的波疊起來，星雲才有一絲一絲的結構
+        const wisp = 0.65 + 0.35 * Math.sin(px * 0.045 + py * 0.02 + t * 0.2) * Math.sin(py * 0.06 - px * 0.015);
+        let lum = 0.8 * (1 - Math.exp(-haze * 1.4)) * wisp;
+        // 環（局部座標：轉正、把扁的橢圓拉回圓）
+        const rx = px - sx;
+        const ry = py - sy;
+        const ux = rx * ct + ry * st;
+        const uy = (-rx * st + ry * ct) / 0.3;
+        const rho = Math.hypot(ux, uy) / sr;
+        const inPlanet = rx * rx + ry * ry < sr * sr;
+        const ring = rho > 1.45 && rho < 1.95 && Math.abs(rho - 1.7) > 0.05;
+        if (inPlanet && !(ring && uy > 0)) {
+          // 球面的明暗：從左上方打光
+          const nx = rx / sr;
+          const ny = ry / sr;
+          const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+          // 亮度留在 0–1 之間：明暗靠點的疏密表現（亮的那側密、背光那側疏），不是整片填滿
+          lum = 0.09 + 0.75 * Math.pow(Math.max(0, nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2]), 1.4);
+          amber = true;
+        } else if (ring) {
+          lum = Math.max(lum, 0.5 - Math.abs(rho - 1.7) * 0.6);
+        }
+        // 星：琥珀色只留給「閃過」的那一顆最亮的瞬間
+        let star = 0;
+        for (const s of stars) {
+          const d2 = (px - s.x) ** 2 + (py - s.y) ** 2;
+          if (d2 < 400) star += s.v * Math.exp(-d2 / (30 + s.v * 40));
+        }
+        lum += star;
+        if (lum < (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16) continue;
+        ctx.fillStyle = amber ? '#e9b864' : star > 1.3 ? '#ffa046' : lum > 0.9 ? '#e3e9ff' : '#9eadd1';
+        ctx.fillRect(x * CELL, y * CELL, CELL - 1, CELL - 1);
       }
     }
   },

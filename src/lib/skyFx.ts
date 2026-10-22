@@ -38,6 +38,11 @@ export interface SkyFx {
   /** 把天空效果套到最後的輸出上 */
   output(sceneOut: V4): V4;
   setMode(mode: SkyMode): void;
+  /**
+   * 星軌開了多少（0–1）。開著的時候背景星各層自己的慢速自轉要停下來：只能有「繞天極」這一個旋轉，
+   * 否則兩層各自拖出一組圓心不同的弧，整片星軌是歪的
+   */
+  trailing(): number;
   /** 換頁飛行的速度，0–1：畫面往中心拉成光線、星星拖出動態的軌跡 */
   setFlight(speed: number): void;
   /**
@@ -52,19 +57,23 @@ export interface SkyFx {
   dispose(): void;
 }
 
-/** 天極的方向（世界座標，相機在 +z 看向 -z）：畫面左上方、往畫面裡面 */
-const POLE = new THREE.Vector3(-0.45, 0.55, -1).normalize();
+/**
+ * 天極的方向（世界座標）。手記頁的鏡頭停在飛過土星之後的位置、看向 -z，這個方向投影在畫面右上
+ * （約 80%、18%）：面板右邊、樹的上方那塊沒有內容的夜空。天極要在畫面上看得到——星軌好看的
+ * 地方是天極附近一圈一圈的同心圓；天極在畫面外的話，看到的只是一片半徑很大、近乎直線的弧。
+ */
+const POLE = new THREE.Vector3(0.74, 0.49, -1).normalize();
 /**
  * 星空繞天極轉的速度（rad/s）。真實的是 7.3e-5，這裡快一些才看得到軌跡長出來，
  * 但要慢到「讀著讀著才發現弧線變長了」——快了會像流星雨，看了頭暈
  */
-const POLE_SPEED = 0.02;
+const POLE_SPEED = 0.04;
 /**
- * 以 60fps 為準的每幀保留比例：0.9985 的半衰期約 7.7 秒。
- * 不衰減的話待越久越密，最後整片蓋掉內容；衰減太快尾巴又短得像流星。這個值讓弧長停在
- * 二三十度左右、尾巴淡得很慢
+ * 以 60fps 為準的每幀保留比例：0.999 的半衰期約 11.5 秒。
+ * 不衰減的話待越久越密，最後整片蓋掉內容；衰減太快尾巴又短得像流星。配上面的轉速，
+ * 弧長停在四十度上下、尾巴淡得很慢
  */
-const TRAIL_KEEP_60 = 0.9985;
+const TRAIL_KEEP_60 = 0.999;
 /** 飛行全速時的每幀保留比例：尾巴只留幾十像素，是「速度」不是「時間」 */
 const FLIGHT_KEEP_60 = 0.9;
 /** 每一層背景星裡拖出軌跡的顆數（取最亮的） */
@@ -306,6 +315,10 @@ export function createSkyFx(opts: {
     setFlight(speed) {
       flightSpeed = speed;
       warp.value = speed * 0.55;
+    },
+
+    trailing() {
+      return trailMix.value;
     },
 
     setMode(m) {

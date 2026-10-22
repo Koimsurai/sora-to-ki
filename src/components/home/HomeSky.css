@@ -448,6 +448,11 @@ a.hw:hover,
   justify-content: flex-start;
 }
 
+/* 標題在上、星座在中間，這句話壓到最下面 */
+.hw-collection-line {
+  margin-top: auto;
+}
+
 .hw-star {
   position: absolute;
   padding: var(--space-1) var(--space-3);

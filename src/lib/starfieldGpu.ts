@@ -970,9 +970,11 @@ export async function createStarfieldRunner(
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
     const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
     lastRender = now;
+    // 星軌那一頁只留繞天極的旋轉（理由見 skyFx 的 trailing）
+    const spin = 1 - skyFx.trailing();
     for (const l of layers) {
-      l.points.rotation.x += delta * l.cfg.rotX;
-      l.points.rotation.y += delta * l.cfg.rotY;
+      l.points.rotation.x += delta * l.cfg.rotX * spin;
+      l.points.rotation.y += delta * l.cfg.rotY * spin;
     }
 
     // 開場：時間軸從第一幀算起

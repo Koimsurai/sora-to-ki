@@ -1,0 +1,492 @@
+/* 關於（自由落體版）。近景的 canvas 固定在視窗上，內容一層一層從它前面捲過去。 */
+.about-fall {
+  --ink: #f1ece3;
+  --amber: #e9c17a;
+  --amber-rgb: 233, 193, 122;
+  --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+
+  position: relative;
+  z-index: 3;
+  color: var(--white-80);
+}
+
+.af-sky {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ── 起點 ── */
+.af-top {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 720px;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: var(--page-top) var(--space-6) var(--space-16);
+}
+
+.af-top > * {
+  animation: af-rise var(--dur-1000) var(--easing-out) both;
+}
+
+.af-top > :nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.af-top > :nth-child(3) {
+  animation-delay: 180ms;
+}
+
+.af-top > :nth-child(n + 4) {
+  animation-delay: 300ms;
+}
+
+.about-fall.is-arriving .af-top > * {
+  animation-delay: var(--arrive-delay, 1300ms);
+}
+
+.about-fall.is-arriving .af-top > :nth-child(n + 2) {
+  animation-delay: calc(var(--arrive-delay, 1300ms) + 150ms);
+}
+
+@keyframes af-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-5));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.af-kicker {
+  margin: 0 0 var(--space-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-18);
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.af-name {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(56px, 8vw, 112px);
+  font-weight: 700;
+  line-height: var(--lh-100);
+  letter-spacing: var(--ls-n2);
+  color: var(--ink);
+}
+
+.af-lede {
+  margin: var(--space-8) 0 0;
+  font-family: var(--display);
+  font-size: var(--fs-22);
+  line-height: var(--lh-160);
+  color: var(--white-90);
+}
+
+.af-bio {
+  margin: var(--space-6) 0 0;
+  font-size: var(--fs-16);
+  line-height: var(--lh-185);
+  color: var(--white-60);
+}
+
+.af-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-8) 0 0;
+}
+
+.af-facts dt {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-12);
+  text-transform: uppercase;
+  color: var(--white-40);
+}
+
+.af-facts dd {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--white-80);
+}
+
+.af-hint {
+  margin: var(--space-16) 0 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-18);
+  color: var(--white-45);
+}
+
+.af-hint::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: var(--space-16);
+  margin-top: var(--space-3);
+  background: linear-gradient(var(--amber), transparent);
+  animation: af-drop 2.2s ease-in infinite;
+}
+
+@keyframes af-drop {
+  from {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  60% {
+    transform: scaleY(1);
+    transform-origin: top;
+    opacity: 1;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+}
+
+/* ── 高度計 ── */
+.af-meter {
+  position: fixed;
+  top: 50%;
+  right: var(--space-24);
+  z-index: 4;
+  display: flex;
+  gap: var(--space-5);
+  align-items: stretch;
+  height: 56vh;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: opacity var(--dur-300) ease;
+}
+
+.af-meter-read {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--space-1);
+  text-align: right;
+}
+
+.af-meter-key {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-12);
+  color: var(--white-40);
+}
+
+.af-meter-num {
+  font-family: var(--mono-font);
+  font-size: var(--fs-20);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.af-meter-num small {
+  margin-left: var(--space-1);
+  font-size: var(--fs-11);
+  color: var(--white-45);
+}
+
+.af-meter-year {
+  margin-top: var(--space-3);
+  font-family: var(--display);
+  font-size: var(--fs-28);
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.af-meter-rail {
+  position: relative;
+  width: 1px;
+  container-type: size;
+  background: linear-gradient(transparent, var(--white-20) 8%, var(--white-20) 92%, transparent);
+}
+
+.af-meter-tick {
+  position: absolute;
+  left: var(--space-3);
+  transform: translateY(-50%);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  white-space: nowrap;
+  color: var(--white-30);
+}
+
+.af-meter-tick::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(var(--space-3) * -1 - 3px);
+  width: 6px;
+  height: 1px;
+  background: var(--white-30);
+}
+
+.af-meter-mark {
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 9px;
+  height: 9px;
+  margin-top: -4px;
+  border-radius: var(--r-full);
+  background: var(--amber);
+  box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
+}
+
+/* ── 經過的每一年 ── */
+.af-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 1100px;
+  min-height: 115vh;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+  overflow: clip;
+}
+
+.af-stage--right {
+  justify-content: flex-end;
+}
+
+/* 巨大的年份：比捲動更快地往上掠過——掉下去的時候，近的東西過得比較快 */
+.af-ghost {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: -1;
+  transform: translate(-50%, -50%);
+  font-family: var(--display);
+  font-size: clamp(120px, 22vw, 300px);
+  font-weight: 700;
+  line-height: var(--lh-100);
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--white-15);
+  pointer-events: none;
+}
+
+@supports (animation-timeline: view()) {
+  .af-ghost {
+    animation: af-ghost linear both;
+    animation-timeline: view();
+  }
+
+  @keyframes af-ghost {
+    from {
+      transform: translate(-50%, 10vh);
+    }
+    to {
+      transform: translate(-50%, -110vh);
+    }
+  }
+}
+
+.af-card {
+  position: relative;
+  max-width: 480px;
+  padding: var(--space-8);
+  border: 1px solid var(--white-08);
+  border-radius: var(--r-16);
+  background: linear-gradient(180deg, rgba(var(--surface-1-rgb), 0.55), rgba(var(--surface-0-rgb), 0.8));
+  backdrop-filter: blur(var(--blur-16)) saturate(1.2);
+  box-shadow: inset 0 1px 0 var(--white-08);
+  opacity: 0;
+  transform: translateY(var(--space-16));
+  transition:
+    opacity var(--dur-1000) var(--easing-out),
+    transform var(--dur-1000) var(--easing-out);
+}
+
+.af-card.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+.af-card-year {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  margin: 0 0 var(--space-4);
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  letter-spacing: var(--ls-8);
+  color: var(--amber);
+}
+
+.af-card-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+  background: var(--dot);
+  box-shadow: 0 0 10px var(--dot);
+}
+
+.af-card-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-32);
+  font-weight: 700;
+  line-height: var(--lh-120);
+  color: var(--ink);
+}
+
+.af-card-sub {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-14);
+  color: var(--white-55);
+}
+
+.af-card-desc {
+  margin: var(--space-5) 0 0;
+  font-size: var(--fs-16);
+  line-height: var(--lh-185);
+  color: var(--white-70);
+}
+
+.af-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.af-tags li {
+  padding: var(--space-0-5) var(--space-2-5);
+  border: 1px solid var(--white-10);
+  border-radius: var(--r-full);
+  font-size: var(--fs-11);
+  color: var(--white-60);
+}
+
+/* ── 落地 ── */
+.af-land {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 130vh;
+  padding: 16vh var(--space-6) 0;
+}
+
+.af-land-inner {
+  max-width: 640px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(var(--space-10));
+  transition:
+    opacity var(--dur-1000) var(--easing-out),
+    transform var(--dur-1000) var(--easing-out);
+}
+
+.af-land-inner.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+.af-land-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(48px, 6vw, 80px);
+  font-weight: 700;
+  line-height: var(--lh-110);
+  color: var(--ink);
+}
+
+.af-land-lede {
+  margin: var(--space-5) 0 0;
+  font-family: var(--display);
+  font-size: var(--fs-20);
+  line-height: var(--lh-160);
+  color: var(--white-80);
+}
+
+.af-now {
+  margin-top: var(--space-12);
+  text-align: left;
+}
+
+.af-now .af-tags {
+  justify-content: flex-start;
+}
+
+.af-future {
+  margin: var(--space-16) 0 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-185);
+  color: var(--white-50);
+}
+
+.af-future span {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-family: var(--display);
+  font-size: var(--fs-18);
+  color: var(--amber);
+}
+
+/* ── 地表 ── */
+.af-ground {
+  padding: var(--space-24) 0 var(--space-16);
+}
+
+.af-ground-head {
+  margin: 0 0 var(--space-8);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-18);
+  text-align: center;
+  color: var(--white-45);
+}
+
+@media (max-width: 860px) {
+  .af-meter {
+    top: auto;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    height: auto;
+    transform: none;
+  }
+
+  .af-meter-rail,
+  .af-meter-year {
+    display: none;
+  }
+
+  .af-stage,
+  .af-stage--right {
+    justify-content: center;
+    min-height: 90vh;
+  }
+
+  .af-lede {
+    font-size: var(--fs-18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .af-top > *,
+  .af-hint::after,
+  .af-ghost {
+    animation: none;
+  }
+
+  .af-card,
+  .af-land-inner {
+    opacity: 1;
+    transform: none;
+  }
+}

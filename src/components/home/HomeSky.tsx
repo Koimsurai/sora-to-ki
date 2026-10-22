@@ -276,7 +276,7 @@ export default function HomeSky() {
         <div className="home-now">
           {latest && (
             <LocaleLink to={postPath(latest)} className="home-now-row">
-              <span className="home-now-key">最新手記</span>
+              <span className="home-now-key">新寫下的</span>
               <span className="home-now-val">{latest.title}</span>
               <time className="home-now-time" dateTime={latest.created_at} suppressHydrationWarning>
                 {timeAgo(latest.created_at)}
@@ -285,7 +285,7 @@ export default function HomeSky() {
           )}
           {thought && (
             <LocaleLink to="/thinking" className="home-now-row">
-              <span className="home-now-key">剛剛閃過</span>
+              <span className="home-now-key">剛閃過的</span>
               <span className="home-now-val">{plain(thought.content)}</span>
               <time className="home-now-time" dateTime={thought.created_at} suppressHydrationWarning>
                 {timeAgo(thought.created_at)}
@@ -295,7 +295,7 @@ export default function HomeSky() {
         </div>
 
         <p className="home-hint" aria-hidden="true">
-          往下，看看各處的天空
+          往下，是別處的夜空
         </p>
       </section>
 
@@ -318,6 +318,7 @@ export default function HomeSky() {
         </Window>
 
         <Window className="hw-collection" sky={collectionSky} label="收藏" en="Collection">
+          <p className="hw-quote hw-quote--small hw-collection-line">聽過的、看過的、讀過的，後來都成了星。</p>
           {COLLECTION_STARS.map((s) => {
             const [name, to] = COLLECTION_LABELS[s.key];
             return (
@@ -334,7 +335,7 @@ export default function HomeSky() {
         </Window>
 
         <Window to="/about" className="hw-about" sky={aboutSky} label="關於" en="About">
-          <p className="hw-quote hw-quote--small">從這裡往下掉，落在一顆只有一棵樹的星球上。</p>
+          <p className="hw-quote hw-quote--small">就此落下——直到碰見那顆只長了一棵樹的星球。</p>
         </Window>
 
         <nav className="home-more" data-reveal aria-label="其他地方">
