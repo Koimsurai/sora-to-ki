@@ -2,7 +2,8 @@
 name = "koimsurai-web-backend"
 version = "0.1.0"
 edition = "2024"
-description = "Rust (axum + sqlx) strangler 前置代理，逐端點接管 Express 後端"
+description = "koimsurai.com 的 API 後端（axum + sqlx + SQLite）"
+license = "AGPL-3.0-only"
 
 [dependencies]
 axum = { version = "0.8", features = ["multipart"] }  # multipart 給 /admin/upload
