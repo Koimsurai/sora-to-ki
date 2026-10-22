@@ -18,6 +18,7 @@ function makeRunner() {
     setScroll: vi.fn(),
     setSaturn: vi.fn(),
     setRunning: vi.fn(),
+    skipIntro: vi.fn(),
     dispose: vi.fn(),
   };
 }
@@ -27,15 +28,19 @@ let runner = makeRunner();
 let resolveInit: (() => void) | null = null;
 let rejectInit: ((e: unknown) => void) | null = null;
 let onDeviceLost: ((message: string) => void) | null = null;
+let lastInit: { intro?: boolean; introFreezeAt?: number; onIntroPhase?: (p: string) => void } | null = null;
 
 vi.mock('../lib/starfieldGpu', () => ({
-  createStarfieldRunner: vi.fn((init: { onDeviceLost?: (m: string) => void }) => {
-    onDeviceLost = init.onDeviceLost ?? null;
-    return new Promise((res, rej) => {
-      resolveInit = () => res({ runner, backend: 'WebGPU' });
-      rejectInit = rej;
-    });
-  }),
+  createStarfieldRunner: vi.fn(
+    (init: { onDeviceLost?: (m: string) => void; intro?: boolean; onIntroPhase?: (p: string) => void }) => {
+      onDeviceLost = init.onDeviceLost ?? null;
+      lastInit = init;
+      return new Promise((res, rej) => {
+        resolveInit = () => res({ runner, backend: 'WebGPU' });
+        rejectInit = rej;
+      });
+    },
+  ),
 }));
 
 const posted: { type: string; [k: string]: unknown }[] = [];
@@ -58,6 +63,7 @@ beforeEach(async () => {
   resolveInit = null;
   rejectInit = null;
   onDeviceLost = null;
+  lastInit = null;
   posted.length = 0;
   // worker 全域：模組在 import 時就掛 self.onmessage，postMessage 是它唯一的出口
   self.postMessage = vi.fn((m: unknown) => {
@@ -131,6 +137,40 @@ describe('init 之後的訊息直接轉給 runner', () => {
 
   it('ready 會帶著 backend 回報，主執行緒靠它顯示徽章並重新同步狀態', () => {
     expect(posted.find((m) => m.type === 'ready')).toEqual({ type: 'ready', backend: 'WebGPU' });
+  });
+});
+
+describe('開場', () => {
+  it('init 的 intro 與 introFreezeAt 原樣交給 runner', async () => {
+    send({ type: 'init', canvas: {}, width: 100, height: 100, dpr: 1, intro: true, introFreezeAt: 1200 });
+    resolveInit?.();
+    await vi.waitFor(() => expect(posted.some((m) => m.type === 'ready')).toBe(true));
+    expect(lastInit).toMatchObject({ intro: true, introFreezeAt: 1200 });
+  });
+
+  it('runner 回報的階段轉成 intro 訊息送回主執行緒', async () => {
+    await initAndSettle();
+    lastInit?.onIntroPhase?.('started');
+    lastInit?.onIntroPhase?.('done');
+    expect(posted.filter((m) => m.type === 'intro')).toEqual([
+      { type: 'intro', phase: 'started' },
+      { type: 'intro', phase: 'done' },
+    ]);
+  });
+
+  // 使用者在 3D 還在初始化時就點了跳過（或主執行緒等太久放棄）——
+  // 這則訊息掉了的話，runner 建好後開場照播，蓋在已經放出來的內容上。
+  it('init 完成前收到 skip → ready 之後補叫 skipIntro', async () => {
+    send({ type: 'skip' });
+    expect(runner.skipIntro).not.toHaveBeenCalled();
+    await initAndSettle();
+    expect(runner.skipIntro).toHaveBeenCalledTimes(1);
+  });
+
+  it('init 之後的 skip 直接打到 runner', async () => {
+    await initAndSettle();
+    send({ type: 'skip' });
+    expect(runner.skipIntro).toHaveBeenCalledTimes(1);
   });
 });
 
