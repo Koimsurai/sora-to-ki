@@ -159,10 +159,12 @@ export default function SpaceBackdropShell() {
       {/* 3D 背景（WebGPU/WebGL2 自動選 backend）。runtime 才炸由 ErrorBoundary 接；
           worker 內失敗則 StarfieldGpu 自行歸 null——兩種情況 DOM 特效都還在（下方獨立掛載）。
           開場期間整張 canvas 在開場層的高度（蓋住內容），結束後回到內容底下。
-          不等探測：開場要等 3D 管線全部編譯完才開始，跟探測同時進行才不會多等一輪。
+          要播開場時不等探測：開場要等 3D 管線全部編譯完才開始，跟探測同時進行才不會多等一輪。
           沒有硬體加速的機器由 runner 自己在編譯前查出來退出（見 lib/starfieldGpu.ts 的
-          softwareRendering），探測結果出來也會把這裡卸載。 */}
-      {!softwareGpu && (
+          softwareRendering），探測結果出來也會把這裡卸載。
+          其他時候（沒有開場）照舊等探測：早一點出現沒有差別，而沒有 GPU 的機器上多下載、解析
+          一次 three.js 是白花的 CPU——CI 的 e2e 每頁都付這筆，實際因此逾時過。 */}
+      {(hardwareGpu === true || introActive) && (
         <BackdropErrorBoundary fallback={null} onError={endIntro}>
           <Suspense fallback={null}>
             <LazyStarfieldGpu
