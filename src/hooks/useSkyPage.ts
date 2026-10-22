@@ -7,6 +7,12 @@
 //         不然換頁時內容是瞬間消失的，跟還在飛的鏡頭對不上。
 import { useLayoutEffect, type RefObject } from 'react';
 import { flightElapsed } from '@/lib/skyFlight';
+import { stripLocalePrefix } from '@/i18n/start-i18n';
+
+interface LeaveAnim {
+  keyframes: Keyframe[];
+  options: KeyframeAnimationOptions;
+}
 
 export interface SkyPageOptions {
   /** 這一頁的天空（lib/starfieldGpu 的 SkyMode） */
@@ -15,8 +21,12 @@ export interface SkyPageOptions {
   ready: boolean;
   /** 鏡頭飛到一半的哪個時間點，內容開始出現（ms） */
   arriveAt: number;
-  /** 退場的動畫（套在蓋在原地的那一份複製上）。跟 stillHere 一樣要傳穩定的值（模組層的常數） */
-  leave: { keyframes: Keyframe[]; options: KeyframeAnimationOptions };
+  /**
+   * 退場的動畫（套在蓋在原地的那一份複製上）。也可以是函式：依要去的頁面（去掉語系前綴的路徑）
+   * 決定，例如從首頁往下墜去關於頁時字要往上飛走，往前飛時則是朝鏡頭衝過來。
+   * 跟 stillHere 一樣要傳穩定的值（模組層的常數）
+   */
+  leave: LeaveAnim | ((to: string) => LeaveAnim);
   /** 現在的網址還是不是這一頁：開發模式的 StrictMode 會在原地卸載再掛回來，那不是真的離開 */
   stillHere: () => boolean;
 }
@@ -58,7 +68,8 @@ export function useSkyPage(pageRef: RefObject<HTMLElement | null>, opts: SkyPage
       });
       ghost.append(clone);
       document.body.append(ghost);
-      const anim = ghost.animate(leave.keyframes, { fill: 'forwards', ...leave.options });
+      const how = typeof leave === 'function' ? leave(stripLocalePrefix(window.location.pathname)) : leave;
+      const anim = ghost.animate(how.keyframes, { fill: 'forwards', ...how.options });
       anim.onfinish = () => ghost.remove();
     };
   }, [pageRef, ready, sky, arriveAt, leave, stillHere]);

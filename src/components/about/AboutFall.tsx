@@ -28,11 +28,11 @@ import './AboutFall.css';
 /** 起點的高度（公里）：地球同步軌道那麼高 */
 const TOP_KM = 36000;
 
-/** 離開：往上飄走、淡掉（鏡頭要飛回首頁了） */
+/** 離開：回首頁是倒著往上升，字往下沉走；去其他頁就淡掉 */
 const LEAVE = {
   keyframes: [
     { transform: 'translateY(0)', opacity: 1 },
-    { transform: 'translateY(-18vh)', opacity: 0 },
+    { transform: 'translateY(24vh)', opacity: 0 },
   ],
   options: { duration: 800, easing: 'cubic-bezier(0.5, 0, 0.75, 0.3)' },
 };
@@ -40,17 +40,6 @@ const stillAbout = () => stripLocalePrefix(window.location.pathname) === 'about'
 
 const altitudeAt = (p: number) => Math.round(TOP_KM * Math.pow(1 - p, 1.7));
 const fmt = (km: number) => km.toLocaleString('en-US');
-
-/** 年份：區間（2019-2021）拆成兩行，起始年是大字、結束年接在下面，不然一行太寬會被切掉 */
-function YearMark({ label }: { label: string }) {
-  const [from, to] = label.split('-');
-  return (
-    <p className="af-year" aria-hidden="true">
-      <span className="af-year-main">{from}</span>
-      {to && <span className="af-year-to">— {to}</span>}
-    </p>
-  );
-}
 
 /** 技能的圖示：平常是跟字同色的單色，滑過去才亮出品牌色（一整片品牌色會蓋過地層的安靜） */
 function SkillMark({ name }: { name: string }) {
@@ -95,7 +84,7 @@ export default function AboutFall() {
   const groundRef = useRef<HTMLDivElement | null>(null);
 
   // 從首頁飛過來：土星在身後、鏡頭快抵達時起點的字才出現
-  useSkyPage(pageRef, { sky: 'default', ready: true, arriveAt: 1300, leave: LEAVE, stillHere: stillAbout });
+  useSkyPage(pageRef, { sky: 'about', ready: true, arriveAt: 1300, leave: LEAVE, stillHere: stillAbout });
 
   // 下墜：每幀從捲動位置算出進度與速度，畫近景、更新高度計（直接寫 DOM，不經過 React）
   useEffect(() => {
@@ -214,36 +203,38 @@ export default function AboutFall() {
       <header className="af-top">
         <p className="af-kicker">Koimsurai · 關於</p>
         <h1 className="af-title">
-          越往下，
+          故事要從
           <br />
-          越靠近我。
+          很遠很遠的地方說起。
         </h1>
         <p className="af-hint">鬆手，往下</p>
       </header>
 
-      {/* 每一年是一層：穿過去的那一刻，橫在畫面上的那條線亮起來、年份從底下被填滿 */}
+      {/* 每一年是一層：標籤與大標題在中間，旁邊漂著一塊面板（四個角的小方塊像觀測儀器的準星），
+          左右錯落，像往下掉的時候從身邊經過的東西 */}
       {past.map((m, i) => (
         <section
           key={m.id}
-          className={`af-stage${i % 2 ? ' af-stage--flip' : ''}`}
+          className={`af-stage${i % 2 ? ' af-stage--right' : ''}`}
           data-stage={m.label}
           style={{ '--dot': m.color } as CSSProperties}
         >
-          <div className="af-stratum" aria-hidden="true">
-            <span>{fmt(altitudeAt((i + 1) / (past.length + 1)))} km</span>
+          <div className="af-stage-head">
+            <span className="af-pill">{m.label.replace('-', ' — ')}</span>
+            <h2 className="af-stage-title">{m.title}</h2>
           </div>
-          <div className="af-stage-body">
-            <YearMark label={m.label} />
-            <div className="af-story">
-              <p className="af-story-sub">
-                <span className="sr-only">{m.label} · </span>
-                {m.subtitle}
-              </p>
-              <h2 className="af-story-title">{m.title}</h2>
-              <p className="af-story-desc">{m.description}</p>
-              {m.allTags.length > 0 && <p className="af-story-tags">{m.allTags.join(' · ')}</p>}
+          <article className="af-panel">
+            <span className="af-panel-frame" aria-hidden="true" />
+            <div className="af-panel-plate">
+              <span className="af-panel-no">{String(i + 1).padStart(2, '0')}</span>
+              <span className="af-panel-label">{m.subtitle}</span>
             </div>
-          </div>
+            <div className="af-panel-body">
+              <p className="af-panel-desc">{m.description}</p>
+              {m.allTags.length > 0 && <p className="af-panel-tags">{m.allTags.join(' · ')}</p>}
+              <p className="af-panel-alt">{fmt(altitudeAt((i + 1) / (past.length + 1)))} km</p>
+            </div>
+          </article>
         </section>
       ))}
 

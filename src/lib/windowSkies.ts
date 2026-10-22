@@ -271,36 +271,52 @@ export const collectionSky: WindowSky = {
 // ── 關於：藍色火球 ──
 // 那段在網路上瘋傳的自拍影片：深夜裡，身後的天空突然被一道霓虹般的青藍色光照得像白天，
 // 一顆藍色火球拖著長尾巴劃過、落到地平線後面，前後大約七秒。這扇窗留住的就是那一瞬間：
-// 平常是安靜的夜空和小星球，每隔一陣子，一顆藍色火球從左上方斜斜落下，越掉越快、越燒越亮，
-// 最亮的那一刻整片天空和星球表面都被照成青藍色，然後沒入星球的地平線，留下一點餘光。
-const FIREBALL_EVERY = 9;
+// 平常是安靜的夜空和小星球，每隔一陣子，一顆藍色火球從左邊劃出一道弧、落向地平線，
+// 一出現就亮、中途爆亮一次，整片天空和星球表面都被照成青藍色；沒入地平線之後，光要好幾秒才退。
+const FIREBALL_EVERY = 13;
 const FIREBALL_START = 0.5;
-const FIREBALL_SECONDS = 3.4;
+const FIREBALL_SECONDS = 5;
 
 function planet(w: number, h: number) {
   const r = Math.max(w, h) * 0.9;
   return { cx: w * 0.5, cy: h * 0.72 + r, r };
 }
 
-/** 這一刻火球在哪、多亮。s 是這一次落下的進度（0–1），不在落下的時候回 null */
+/**
+ * 亮度曲線（s 是這一次落下的進度 0–1）：一出現就很快亮起來，維持很長一段（中途爆亮一次，
+ * 影片裡把天空照成白天的那一下），最後沉向地平線時才慢慢暗下去——暗→亮→暗，中間那段很長
+ */
+function fireGlow(s: number) {
+  if (s < 0 || s > 1) return 0;
+  const ignite = Math.min(1, s / 0.1);
+  const flare = Math.exp(-(((s - 0.55) / 0.16) ** 2));
+  const sink = 1 - 0.6 * Math.min(1, Math.max(0, (s - 0.82) / 0.18));
+  return (ignite * (0.75 + 0.25 * s) + flare * 0.9) * sink;
+}
+
+/** 這一刻火球在哪、多亮。s 是這一次落下的進度（0–1） */
 function fireball(w: number, h: number, t: number) {
   const k = Math.floor(t / FIREBALL_EVERY);
   const local = t - k * FIREBALL_EVERY - FIREBALL_START;
   const s = local / FIREBALL_SECONDS;
   const { cx, cy, r } = planet(w, h);
   const R = rng(300 + k);
-  const sx = w * (0.05 + R() * 0.2);
-  const sy = -h * 0.08;
-  const ex = w * (0.6 + R() * 0.2);
+  const sx = w * (-0.02 + R() * 0.1);
+  const sy = h * (0.04 + R() * 0.08);
+  const ex = w * (0.62 + R() * 0.16);
   const ey = cy - Math.sqrt(Math.max(0, r * r - (ex - cx) ** 2)) + 6; // 落點在地平線後面一點
+  // 從地面看，火球走的是一道弧：前段幾乎橫著劃過天空，後段才彎下去落向地平線
+  const kx = sx + (ex - sx) * 0.62;
+  const ky = sy - h * 0.04;
   const at = (q: number) => {
-    const e = q * q * (1.4 - 0.4 * q); // 越掉越快
-    return { x: sx + (ex - sx) * e, y: sy + (ey - sy) * e };
+    const e = q * (0.85 + 0.15 * q);
+    const u = 1 - e;
+    return {
+      x: u * u * sx + 2 * u * e * kx + e * e * ex,
+      y: u * u * sy + 2 * u * e * ky + e * e * ey,
+    };
   };
-  // 亮度：點燃、越燒越亮，在最後三分之一爆亮一次（影片裡把天空照成白天的那一下）
-  const burst = Math.exp(-(((s - 0.72) / 0.12) ** 2));
-  const glow = s < 0 || s > 1 ? 0 : Math.min(1, s * 4) * (0.45 + 0.55 * s) + burst * 1.2;
-  return { s, at, glow, end: { x: ex, y: ey }, local, seed: k };
+  return { s, at, glow: fireGlow(s), end: { x: ex, y: ey }, local, seed: k };
 }
 
 export const aboutSky: WindowSky = {
@@ -317,8 +333,8 @@ export const aboutSky: WindowSky = {
     // 尾巴：沿著來的路往回拉，越後面越細、越淡；外層青藍、裡面一條白芯
     const TAIL = 18;
     for (let i = TAIL; i > 0; i--) {
-      const a = f.at(Math.max(0, f.s - (i / TAIL) * 0.42));
-      const b = f.at(Math.max(0, f.s - ((i - 1) / TAIL) * 0.42));
+      const a = f.at(Math.max(0, f.s - (i / TAIL) * 0.3));
+      const b = f.at(Math.max(0, f.s - ((i - 1) / TAIL) * 0.3));
       const fade = 1 - i / TAIL;
       ctx.strokeStyle = `rgba(90, 210, 255, ${(0.55 * fade * Math.min(1, f.glow)).toFixed(3)})`;
       ctx.lineWidth = 1 + fade * 7;
@@ -361,7 +377,7 @@ export const aboutSky: WindowSky = {
       lit = Math.min(1, f.glow * 0.6);
       center = f.at(f.s);
     } else if (after > 0) {
-      lit = 0.6 * Math.exp(-after * 1.1);
+      lit = Math.min(1, fireGlow(1) * 0.6) * Math.exp(-after * 0.45);
     }
     if (lit > 0.005) {
       ctx.save();
@@ -376,9 +392,9 @@ export const aboutSky: WindowSky = {
       ctx.restore();
     }
     // 地平線後面透出來的光（只亮在天空那一側），沿著地平線描一道：淡入、再慢慢熄掉
-    if (after > 0 && after < 3) {
-      const q = after / 3;
-      const fade = Math.min(1, after / 0.35) * (1 - q) * (1 - q);
+    if (after > 0 && after < 6) {
+      const q = after / 6;
+      const fade = Math.min(1, after / 0.5) * (1 - q) * (1 - q);
       const { cx, cy, r } = planet(w, h);
       ctx.save();
       ctx.beginPath();

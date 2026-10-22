@@ -167,14 +167,25 @@ function plain(md: string) {
     .trim();
 }
 
-/** 離開首頁：鏡頭往前飛穿過土星，畫面上的字跟著往鏡頭衝過來、散掉 */
-const LEAVE = {
+/**
+ * 離開首頁：往前飛（穿過土星）時字朝鏡頭衝過來、散掉；
+ * 往下墜去關於頁時字往上飛走（我們在往下掉）
+ */
+const FLY_THROUGH = {
   keyframes: [
     { transform: 'scale(1)', opacity: 1, filter: 'blur(0px)' },
     { transform: 'scale(1.18)', opacity: 0, filter: 'blur(6px)' },
   ],
   options: { duration: 750, easing: 'cubic-bezier(0.55, 0, 0.9, 0.4)' },
 };
+const FALL_AWAY = {
+  keyframes: [
+    { transform: 'translateY(0)', opacity: 1 },
+    { transform: 'translateY(-45vh)', opacity: 0 },
+  ],
+  options: { duration: 900, easing: 'cubic-bezier(0.5, 0, 0.75, 0.3)' },
+};
+const LEAVE = (to: string) => (to === 'about' ? FALL_AWAY : FLY_THROUGH);
 const stillHome = () => stripLocalePrefix(window.location.pathname) === '';
 
 function Window({

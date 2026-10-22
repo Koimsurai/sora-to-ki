@@ -84,7 +84,7 @@ export interface StarfieldRunner {
  *   moments 像素抖動：星星吸附到像素格上，畫面掉成 1-bit、一格一格跳
  *   default 其他頁：一般星空
  */
-export type SkyMode = 'home' | 'notes' | 'moments' | 'default';
+export type SkyMode = 'home' | 'notes' | 'moments' | 'about' | 'default';
 
 export interface StarfieldInit {
   canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -853,30 +853,64 @@ export async function createStarfieldRunner(
   let saturnSettled = false;
   const transition = init.transition ?? 'travel';
   /**
-   * 換頁的飛行。鏡頭只在兩個地方之間移動：首頁（土星前面）與「外面」（飛過土星之後）。
-   * 離開首頁是沿著同一條曲線往前飛，回首頁是同一條曲線倒著飛——方向相反、路線連續，
-   * 中途沒有任何瞬移，土星回來時從它消失的那一側出現。
-   * pos 是鏡頭在曲線上的位置（0 首頁、1 外面），to 是要去的那一端。
+   * 換頁的飛行。鏡頭從首頁（土星前面）沿著一條曲線飛到「外面」，有兩條路線：
+   *   away：往前飛過土星（手記、碎念與其他頁）
+   *   fall：往下墜、低頭往下看，土星從畫面上方升走（關於頁——那一頁本身就是一段下墜）
+   * 離開首頁是沿著曲線往前，回首頁是同一條曲線倒著飛——方向相反、路線連續，中途沒有瞬移，
+   * 土星回來時從它消失的那一側出現。兩個「外面」之間（例如手記 → 關於）鏡頭直接從一個終點
+   * 移到另一個終點，不繞回首頁。
+   * pathPos 是鏡頭在目前路線上的位置（0 首頁、1 外面）。
    */
-  let travel: { from: number; to: number; t: number } | null = null;
+  type Route = 'away' | 'fall';
+  let travel:
+    | { kind: 'path'; from: number; to: number; t: number }
+    | { kind: 'cross'; from: Route; to: Route; t: number }
+    | null = null;
   let pathPos = 0;
+  let route: Route = 'away';
+  /** 最新的天空對應的路線（setSky 先到，setSaturn 起飛時照它選） */
+  let wantRoute: Route = 'away';
+  const routeFor = (mode: SkyMode): Route => (mode === 'about' ? 'fall' : 'away');
   /** 單程的時間（秒） */
   const TRAVEL_SECONDS = 2.2;
-  const PATH = [
-    new THREE.Vector3(0, 0, 5),
-    new THREE.Vector3(0.4, 0.25, 0.5),
-    new THREE.Vector3(5.5, 1.6, -4),
-    new THREE.Vector3(6.5, 1.8, -13),
-  ];
+  const PATHS: Record<Route, THREE.Vector3[]> = {
+    away: [
+      new THREE.Vector3(0, 0, 5),
+      new THREE.Vector3(0.4, 0.25, 0.5),
+      new THREE.Vector3(5.5, 1.6, -4),
+      new THREE.Vector3(6.5, 1.8, -13),
+    ],
+    fall: [
+      new THREE.Vector3(0, 0, 5),
+      new THREE.Vector3(0, -1.2, 5.3),
+      new THREE.Vector3(0.3, -6.5, 4.8),
+      new THREE.Vector3(0.5, -15, 3.5),
+    ],
+  };
   const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
-  const bez = (p: number, out: THREE.Vector3) => {
+  const bez = (p: number, out: THREE.Vector3, r: Route = route) => {
+    const P = PATHS[r];
     const q = 1 - p;
     return out
-      .copy(PATH[0])
+      .copy(P[0])
       .multiplyScalar(q * q * q)
-      .addScaledVector(PATH[1], 3 * q * q * p)
-      .addScaledVector(PATH[2], 3 * q * p * p)
-      .addScaledVector(PATH[3], p * p * p);
+      .addScaledVector(P[1], 3 * q * q * p)
+      .addScaledVector(P[2], 3 * q * p * p)
+      .addScaledVector(P[3], p * p * p);
+  };
+  /** 路線上 p 處的姿態：away 轉彎時略往右偏、帶一點側傾；fall 一路低頭，像往下掉時看著腳下 */
+  const routeRotation = (r: Route, p: number, out: THREE.Euler) => {
+    const bend = Math.sin(Math.PI * p);
+    if (r === 'away') return out.set(0.04 * bend, -0.16 * bend, -0.1 * bend);
+    const down = p * p * (3 - 2 * p);
+    return out.set(-0.55 * down, 0.03 * bend, 0.06 * bend);
+  };
+  const crossA = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
+  const crossB = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
+  const euler = new THREE.Euler();
+  const poseAtEnd = (r: Route, out: typeof crossA) => {
+    bez(1, out.pos, r);
+    out.quat.setFromEuler(routeRotation(r, 1, euler));
   };
   /**
    * 首頁的構圖：土星偏右，左邊留給文字。用鏡頭的 film offset（整個畫面平移）而不是挪鏡頭，
@@ -895,9 +929,7 @@ export async function createStarfieldRunner(
     const atHome = 1 - p;
     camera.position.y -= homeLift * 1.6 * atHome;
     camera.position.z += homeLift * 1.4 * atHome;
-    // 轉彎時略往右偏、帶一點側傾，離開土星那一段最明顯
-    const bend = Math.sin(Math.PI * p);
-    camera.rotation.set(0.04 * bend, -0.16 * bend, -0.1 * bend);
+    camera.rotation.copy(routeRotation(route, p, euler));
     const shift = viewAspect > 1.25 ? HOME_SHIFT : 0;
     camera.filmOffset = -shift * (camera.getFilmWidth() / 2) * atHome * compose;
     camera.updateProjectionMatrix();
@@ -910,7 +942,7 @@ export async function createStarfieldRunner(
     const pos = new Float32Array(N * 3);
     const c = new THREE.Vector3();
     for (let i = 0; i < N; i++) {
-      bez(Math.random() * 1.2 - 0.1, c);
+      bez(Math.random() * 1.2 - 0.1, c, i % 2 ? 'fall' : 'away');
       pos.set(
         [c.x + (Math.random() - 0.5) * 16, c.y + (Math.random() - 0.5) * 10, c.z + (Math.random() - 0.5) * 8],
         i * 3,
@@ -940,16 +972,27 @@ export async function createStarfieldRunner(
     if (!travel) return;
     travel.t = Math.min(1, travel.t + dt / TRAVEL_SECONDS);
     const k = easeInOut(travel.t);
-    pathPos = travel.from + (travel.to - travel.from) * k;
-    placeCamera(pathPos);
-    // 速度（0–1）：拉成光線與塵埃都跟著速度走，起步與停下都是零，不會有突然的一閃
+    if (travel.kind === 'path') {
+      pathPos = travel.from + (travel.to - travel.from) * k;
+      placeCamera(pathPos);
+    } else {
+      // 兩個「外面」之間：位置直線移過去、姿態球面內插
+      poseAtEnd(travel.from, crossA);
+      poseAtEnd(travel.to, crossB);
+      camera.position.lerpVectors(crossA.pos, crossB.pos, k);
+      camera.quaternion.slerpQuaternions(crossA.quat, crossB.quat, k);
+      if (travel.t >= 1) route = travel.to;
+    }
+    // 速度（0–1）：拉成光線與塵埃都跟著速度走，起步與停下都是零，不會有突然的一閃。
+    // 往下墜的路線，光線從畫面下方往上拉（星星往上掠過），不是從中央往外
     const speed = Math.sin(Math.PI * travel.t);
-    skyFx.setFlight(speed);
+    const falling = travel.kind === 'path' ? route === 'fall' : travel.to === 'fall';
+    skyFx.setFlight(speed, falling ? 'up' : 'out');
     travelDust.amount.value = speed;
     travelDust.sprite.visible = speed > 0.01;
     if (travel.t >= 1) {
       // 抵達外面：土星在鏡頭後方、看不到了，收起來省 GPU
-      if (travel.to === 1 && saturn) saturn.shatter(true, true);
+      if (travel.kind === 'path' && travel.to === 1 && saturn) saturn.shatter(true, true);
       travel = null;
       skyFx.setFlight(0);
       travelDust.sprite.visible = false;
@@ -1079,6 +1122,11 @@ export async function createStarfieldRunner(
       setSky(mode) {
         markActive();
         skyFx.setMode(mode);
+        wantRoute = routeFor(mode);
+        // 已經在外面、換到另一種「外面」（手記 ↔ 關於）：直接移到另一條路線的終點
+        if (transition === 'travel' && saturnSettled && mode !== 'home' && !travel && pathPos === 1) {
+          if (route !== wantRoute) travel = { kind: 'cross', from: route, to: wantRoute, t: 0 };
+        }
       },
       setScroll(y) {
         if (y !== scrollY) markActive();
@@ -1091,15 +1139,23 @@ export async function createStarfieldRunner(
         if (saturn) {
           if (transition === 'travel') {
             const to = visible ? 0 : 1;
+            // 兩個「外面」之間的移動做到一半就要回首頁：直接當作已經到了，從那條路線倒著飛回去
+            if (travel?.kind === 'cross') {
+              route = travel.to;
+              travel = null;
+            }
+            const target = travel ? travel.to : pathPos;
             if (!saturnSettled) {
               // 剛載入：直接放在對應的位置，不飛
+              route = wantRoute;
               pathPos = to;
               placeCamera(to);
               saturn.shatter(!visible, true);
-            } else if (to !== (travel?.to ?? pathPos)) {
-              // 從目前的位置（可能正飛到一半）出發，飛向另一端
+            } else if (to !== target) {
+              // 從目前的位置（可能正飛到一半）出發，飛向另一端；從首頁出發時照目的地選路線
               if (visible) saturn.shatter(false, true);
-              travel = { from: pathPos, to, t: 0 };
+              if (!visible && pathPos === 0) route = wantRoute;
+              travel = { kind: 'path', from: pathPos, to, t: 0 };
             }
           } else {
             // 爆炸版（?transition=burst）：離開首頁時散成星塵、回來時聚回去；第一次（剛載入）直接到位

@@ -35,7 +35,9 @@ export default function SpaceBackdropShell() {
       ? 'notes'
       : bare === 'thinking'
         ? 'moments'
-        : 'default';
+        : bare === 'about'
+          ? 'about'
+          : 'default';
   const isMobile = useMediaQuery('(max-width: 768px)');
   // 爬蟲 / 稽核工具（Googlebot/Bingbot/Lighthouse…）：跟手機一樣完全不載 three。
   // 純裝飾背景、無內容 → 不算 cloaking；手機版本來就跳過故對 Google 一致；真人 UA 不含這些關鍵字，

@@ -43,8 +43,11 @@ export interface SkyFx {
    * 否則兩層各自拖出一組圓心不同的弧，整片星軌是歪的
    */
   trailing(): number;
-  /** 換頁飛行的速度，0–1：畫面往中心拉成光線、星星拖出動態的軌跡 */
-  setFlight(speed: number): void;
+  /**
+   * 換頁飛行的速度，0–1：畫面拉成光線、星星拖出動態的軌跡。
+   * dir：out 是往前飛（從畫面中央往外拉），up 是往下墜（光線從畫面下方往上拉成直線）
+   */
+  setFlight(speed: number, dir?: 'out' | 'up'): void;
   /**
    * 推進一幀。回傳：
    *   busy：還在轉場（要跟著 60fps 畫）
@@ -160,6 +163,9 @@ export function createSkyFx(opts: {
   const cellPx = uniform(1);
   const keep = uniform(TRAIL_KEEP_60);
   const warp = uniform(0);
+  /** 光線的消失點（螢幕座標，左上是 0）與拉長的比例：往前飛是畫面中央，往下墜是畫面下方很遠的地方 */
+  const warpCenter = uniform(new THREE.Vector2(0.5, 0.5));
+  const warpReach = uniform(0.32);
   /** 軌跡疊上去的強度：手記的星軌，或飛行中的動態軌跡，取大的 */
   const streakMix = uniform(0);
   let flightSpeed = 0;
@@ -268,8 +274,8 @@ export function createSkyFx(opts: {
 
       // 換頁的飛行：從畫面中心往外的放射狀模糊，星星與土星拉成光線（跟首訪開場的超空間同一種語言）
       {
-        const center = vec2(0.5, 0.5);
-        const reach = warp.mul(0.32);
+        const center = warpCenter;
+        const reach = warp.mul(warpReach);
         // 沿著往中心的那條線取「最亮值」，越遠越淡——星星拉成同樣亮的線，大面積的亮處（土星）
         // 不會因為累加而爆白（累加的版本移動時土星整顆過曝）
         let streaked: Node<'vec3'> = vec3(0, 0, 0);
@@ -312,9 +318,16 @@ export function createSkyFx(opts: {
       return vec4(rgb, alpha);
     },
 
-    setFlight(speed) {
+    setFlight(speed, dir = 'out') {
       flightSpeed = speed;
       warp.value = speed * 0.55;
+      if (dir === 'up') {
+        warpCenter.value.set(0.5, 3);
+        warpReach.value = 0.12;
+      } else {
+        warpCenter.value.set(0.5, 0.5);
+        warpReach.value = 0.32;
+      }
     },
 
     trailing() {

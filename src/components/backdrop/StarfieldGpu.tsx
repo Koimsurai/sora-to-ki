@@ -166,6 +166,12 @@ export default function StarfieldGpu({
     [],
   );
 
+  // 天空要比土星先送：離開首頁時，runner 照「要去哪一片天空」選飛行路線（關於頁是往下墜）。
+  // effect 依宣告順序執行，所以這一段必須寫在土星那一段前面
+  useEffect(() => {
+    controlRef.current?.sky(sky);
+  }, [sky, backend]);
+
   // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態
   useEffect(() => {
     const onScroll = () => controlRef.current?.scroll(window.scrollY);
@@ -174,10 +180,6 @@ export default function StarfieldGpu({
     controlRef.current?.scroll(window.scrollY);
     return () => window.removeEventListener('scroll', onScroll);
   }, [isOnHomePage, animateSaturn, backend]); // backend 變化 = runner 就緒的訊號，重新同步
-
-  useEffect(() => {
-    controlRef.current?.sky(sky);
-  }, [sky, backend]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
