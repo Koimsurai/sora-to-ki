@@ -717,9 +717,34 @@
   color: var(--tk-amber);
 }
 
+/* 頁首：右邊一大片點陣天空（一路延伸到視窗右緣），標題壓在左下 */
+.tk-hero {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  max-width: 960px;
+  min-height: 70vh;
+  margin: 0 auto var(--space-16);
+}
+
+.tk-sky {
+  position: absolute;
+  top: calc(var(--page-top) * -1);
+  left: 26%;
+  /* 一路延伸到視窗右緣。canvas 是替換元素，只給 left/right 不會被撐開（寬度會用它自己的像素寬，
+     而像素寬又跟著顯示寬度設，會越長越寬），要明確給寬度 */
+  width: calc(24% + 50vw);
+  height: calc(100% + var(--page-top));
+  /* 邊緣淡進背景，不是一塊貼上去的圖 */
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+}
+
 .tk-header {
-  padding-top: var(--space-16);
-  margin-bottom: var(--space-12);
+  position: relative;
+  max-width: 460px;
+  padding-top: 0;
+  margin-bottom: 0;
 }
 
 .tk-feed .tk-feed-item {
@@ -833,9 +858,23 @@
   animation: tk-flash 900ms var(--easing-out) both;
 }
 
+/* 每一則捲到才閃（Thinking.tsx 加上 .is-lit） */
+.tk-feed .tk-feed-item {
+  opacity: 0;
+}
+
+.tk-feed .tk-feed-item.is-lit {
+  animation: tk-flash 900ms var(--easing-out) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .tk-flash {
+  .tk-flash,
+  .tk-feed .tk-feed-item.is-lit {
     animation: none;
+  }
+
+  .tk-feed .tk-feed-item {
+    opacity: 1;
   }
 }
 
@@ -856,5 +895,13 @@
 
   .tk-feed .tk-text {
     font-size: var(--fs-22);
+  }
+
+  .tk-hero {
+    min-height: 56vh;
+  }
+
+  .tk-sky {
+    left: -10%;
   }
 }

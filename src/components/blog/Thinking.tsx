@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { enterStyle } from '@/lib/enter';
@@ -10,6 +10,9 @@ import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { apiUrl } from '@/lib/api';
 import { useThoughtAdmin } from '@/hooks/useThoughtAdmin';
 import { parseServerDate } from '@/lib/serverDate';
+import { useSkyPage } from '@/hooks/useSkyPage';
+import { stripLocalePrefix } from '@/i18n/start-i18n';
+import MomentsSky from './MomentsSky';
 import './Thinking.css';
 
 const dayOf = (iso: string) => {
@@ -20,6 +23,13 @@ const yearOf = (iso: string) => String(parseServerDate(iso).getFullYear());
 
 /* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。
    admin 可在頂端發文（content + 選填連結 → 後端 unfurl）。 */
+
+/** 離開：淡掉（下一頁的天空接手） */
+const LEAVE = {
+  keyframes: [{ opacity: 1 }, { opacity: 0 }],
+  options: { duration: 500, easing: 'ease-out' },
+};
+const stillOnMoments = () => stripLocalePrefix(window.location.pathname) === 'thinking';
 
 interface Prefill {
   kind?: string;
@@ -88,11 +98,36 @@ function Thinking() {
   };
   const edit = (id: number, content: string) => admin.edit.mutate({ id, content });
 
+  // 從首頁飛過來：鏡頭快抵達才出現
+  const pageRef = useRef<HTMLDivElement | null>(null);
+  useSkyPage(pageRef, { sky: 'moments', ready: true, arriveAt: 1100, leave: LEAVE, stillHere: stillOnMoments });
+
+  // 每一則捲到才「閃」一下再定住，不是一進頁面全部同時閃完
+  const count = thoughts?.length ?? 0;
+  useEffect(() => {
+    const page = pageRef.current;
+    if (!page || !count) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          e.target.classList.add('is-lit');
+          io.unobserve(e.target);
+        }
+      },
+      { rootMargin: '0px 0px -18% 0px' },
+    );
+    page.querySelectorAll('.tk-feed-item:not(.is-lit)').forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [count]);
+
   return (
-    <div className="tk-page">
+    <div className="tk-page" ref={pageRef}>
       <div className="tk-scrim" />
 
-      <div className="tk-wrap">
+      {/* 頁首：右邊一大片點陣天空（星雲與琥珀色的土星），滑鼠劃過會激起火花 */}
+      <section className="tk-hero">
+        <MomentsSky />
         <header className="tk-header enter" style={enterStyle({ y: 16, dur: 500 })}>
           <div className="tk-title-row">
             <h1 className="tk-title">
@@ -105,7 +140,9 @@ function Thinking() {
           </div>
           <p className="tk-subtitle">{t('thinking.subtitle')}</p>
         </header>
+      </section>
 
+      <div className="tk-wrap">
         {isAdmin && (
           <div className="tk-compose">
             <textarea
@@ -148,18 +185,12 @@ function Thinking() {
 
         {thoughts?.length === 0 && <p className="tk-empty">{t('thinking.empty')}</p>}
 
-        {/* 進場用 CSS（見 index.css「頁面進場動畫」）：掛載即播，SSR 出來的卡片不會是 opacity:0；
-            發文後新掛上的卡片也一樣會播。延遲到第 8 張封頂 */}
         {/* 一則一則像念頭閃過：左邊日期、中間一條虛線上的像素點，右邊大字。
-            出現時閃一下再定住（tk-flash，見 Thinking.css），延遲到第 8 則封頂 */}
+            捲到時閃一下再定住（.is-lit，見 Thinking.css） */}
         {!!thoughts?.length && (
           <ul className="tk-feed">
-            {thoughts.map((th, i) => (
-              <li
-                className="tk-feed-item tk-flash"
-                key={th.id}
-                style={{ animationDelay: `${120 + Math.min(i, 8) * 140}ms` }}
-              >
+            {thoughts.map((th) => (
+              <li className="tk-feed-item" key={th.id}>
                 <div className="tk-log-date">
                   <span>{dayOf(th.created_at)}</span>
                   <span>{yearOf(th.created_at)}</span>

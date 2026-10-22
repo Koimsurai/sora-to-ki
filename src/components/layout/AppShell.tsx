@@ -85,8 +85,10 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
       >
         {!isAdminPage && <Header />}
         <main style={{ flex: '1 0 auto' }}>{children}</main>
-        {/* 手記的面板一路延伸到底、首頁以一句話收尾、關於頁停在地心，這幾頁不放 footer（demo） */}
-        {!isAdminPage && !isPhotoPage && bare !== 'blog' && bare !== 'about' && !isHomePage && <Footer />}
+        {/* 手記的面板一路延伸到底、首頁以一句話收尾、關於頁停在地心、碎念以一句話收尾，這幾頁不放 footer（demo） */}
+        {!isAdminPage && !isPhotoPage && bare !== 'blog' && bare !== 'about' && bare !== 'thinking' && !isHomePage && (
+          <Footer />
+        )}
         {!isAdminPage && (
           <ClientOnly fallback={null}>
             <Suspense fallback={null}>
