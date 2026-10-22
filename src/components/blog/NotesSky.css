@@ -1,5 +1,5 @@
-/* 手記（星軌天空版）：印在夜空照片上的字。
-   沒有卡片框、沒有紫色漸層，只有文字、細線與一個星光琥珀色。 */
+/* 手記（星軌天空版）：一欄、少量資訊、寬留白。
+   大標題直接壓在夜空上；文章清單放在一塊毛玻璃上，星軌在後面但不跟字搶。 */
 .notes-page {
   --ink: #f1ece3;
   --amber: #e9c17a;
@@ -7,25 +7,18 @@
   --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
   position: relative;
   z-index: 3;
-  max-width: 1200px;
+  max-width: 880px;
   margin: 0 auto;
   padding: var(--page-top) var(--space-6) var(--page-bottom);
   color: var(--white-80);
-  text-shadow: 0 1px 12px var(--black-60);
 }
 
-/* ── 頁首：靠左，大字直接壓在星空上 ── */
 .notes-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-16) 0 var(--space-10);
+  padding: var(--space-16) var(--space-12) var(--space-10);
+  text-shadow: 0 1px 16px var(--black-60);
 }
 
 .notes-title {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-4);
   margin: 0;
   font-family: var(--display);
   font-size: var(--fs-56);
@@ -35,80 +28,56 @@
   color: var(--ink);
 }
 
-.notes-title-en {
-  font-family: var(--mono-font);
-  font-size: var(--fs-13);
-  font-weight: 400;
-  letter-spacing: var(--ls-24);
-  text-transform: uppercase;
-  color: var(--amber);
-}
-
 .notes-desc {
-  margin: 0;
-  max-width: 520px;
+  margin: var(--space-4) 0 0;
   font-size: var(--fs-16);
-  line-height: var(--lh-170);
   color: var(--white-60);
 }
 
-.notes-stats {
-  display: flex;
-  gap: var(--space-5);
-  margin: 0;
-  font-family: var(--mono-font);
-  font-size: var(--fs-12);
-  color: var(--white-50);
+/* 毛玻璃：內容讀得清楚，又看得到後面的星軌在轉 */
+.notes-panel {
+  padding: var(--space-8) var(--space-12) var(--space-12);
+  border: 1px solid var(--white-08);
+  border-radius: var(--r-20);
+  background: rgba(var(--surface-0-rgb), 0.55);
+  backdrop-filter: blur(var(--blur-20)) saturate(1.2);
 }
 
-.notes-stats b {
-  font-weight: 500;
-  color: var(--ink);
-}
-
-/* ── 分類分頁＋搜尋／排序 ── */
 .notes-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  border-bottom: 1px solid var(--white-10);
+  padding-bottom: var(--space-6);
 }
 
-.notes-tabs {
+.notes-cats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: var(--space-5);
 }
 
-.notes-tab {
-  height: 44px;
-  padding: 0 var(--space-4);
+.notes-cat-btn {
+  padding: var(--space-1) 0;
   border: 0;
-  border-bottom: 2px solid transparent;
+  border-bottom: 1px solid transparent;
   border-radius: 0;
   background: transparent;
-  color: var(--white-55);
+  color: var(--white-50);
   font: inherit;
   font-size: var(--fs-14);
   cursor: pointer;
   box-shadow: none;
+  transition: color var(--dur-200) ease;
 }
 
-.notes-tab span {
-  margin-left: var(--space-1);
-  font-family: var(--mono-font);
-  font-size: var(--fs-11);
-  color: var(--white-40);
-}
-
-.notes-tab:hover {
+.notes-cat-btn:hover {
   color: var(--ink);
   background: transparent;
 }
 
-.notes-tab[aria-selected="true"] {
+.notes-cat-btn[aria-selected="true"] {
   color: var(--ink);
   border-bottom-color: var(--amber);
 }
@@ -116,348 +85,160 @@
 .notes-tools {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  color: var(--white-45);
+  font-size: var(--fs-13);
 }
 
 .notes-search {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  height: 32px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--white-15);
-  border-radius: var(--r-full);
-  color: var(--white-50);
-  font-size: var(--fs-13);
 }
 
 .notes-search input {
-  width: 160px;
+  width: 120px;
   border: 0;
+  border-bottom: 1px solid var(--white-10);
   outline: 0;
+  padding: var(--space-1) 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
+  transition: border-color var(--dur-200) ease;
+}
+
+.notes-search input:focus {
+  border-bottom-color: rgba(var(--amber-rgb), 0.6);
 }
 
 .notes-sort {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.notes-sort-btn {
-  height: 32px;
-  padding: 0 var(--space-3);
-  border: 1px solid transparent;
-  border-radius: var(--r-full);
+  border: 0;
   background: transparent;
-  color: var(--white-50);
+  color: var(--white-55);
   font: inherit;
-  font-size: var(--fs-13);
   cursor: pointer;
-  box-shadow: none;
 }
 
-.notes-sort-btn:hover {
+.notes-sort option {
+  background: var(--surface-1);
   color: var(--ink);
-  background: transparent;
 }
 
-.notes-sort-btn[aria-pressed="true"] {
-  border-color: rgba(var(--amber-rgb), 0.5);
-  color: var(--amber);
+/* 年份是段落的錨點：大、淡、不搶 */
+.notes-year {
+  padding-top: var(--space-6);
 }
 
-/* ── 主體：月份索引＋文章 ── */
-.notes-body {
+.notes-year-label {
+  margin: 0 0 var(--space-2);
+  font-family: var(--display);
+  font-size: var(--fs-14);
+  font-weight: 500;
+  letter-spacing: var(--ls-18);
+  color: var(--white-40);
+}
+
+.notes-entry {
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  gap: var(--space-14);
-  padding-top: var(--space-10);
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: var(--space-8);
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--white-06);
+  color: inherit;
+  text-decoration: none;
 }
 
-.notes-rail {
+.notes-entry-main {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  align-self: start;
-  position: sticky;
-  top: var(--space-24);
+  gap: var(--space-2-5);
+  min-width: 0;
 }
 
-.notes-rail-year {
-  margin: var(--space-4) 0 var(--space-2);
-  font-family: var(--display);
-  font-size: var(--fs-22);
+.notes-entry-title {
+  margin: 0;
+  font-size: var(--fs-20);
   font-weight: 600;
+  line-height: var(--lh-140);
   color: var(--ink);
+  text-wrap: pretty;
+  transition: color var(--dur-200) ease;
 }
 
-.notes-rail-month {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  padding: var(--space-2) 0;
-  border: 0;
-  border-bottom: 1px solid var(--white-06);
-  border-radius: 0;
-  background: transparent;
-  color: var(--white-60);
-  font: inherit;
+.notes-entry-excerpt {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
   font-size: var(--fs-14);
-  cursor: pointer;
-  box-shadow: none;
+  line-height: var(--lh-170);
+  color: var(--white-50);
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
-.notes-rail-month span:last-child {
-  font-family: var(--mono-font);
+.notes-entry-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1-5);
+  padding-top: var(--space-1);
   font-size: var(--fs-12);
   color: var(--white-40);
 }
 
-.notes-rail-month:hover {
-  color: var(--amber);
-  background: transparent;
+.notes-entry-side time {
+  font-family: var(--mono-font);
+  color: var(--white-55);
 }
 
-.notes-rail-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2-5);
-  margin-top: var(--space-4);
-}
-
-.notes-rail-tags .notes-rail-year {
-  width: 100%;
-  font-size: var(--fs-14);
-}
-
-.notes-rail-tag {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--white-45);
-  font: inherit;
-  font-size: var(--fs-12);
-  cursor: pointer;
-  box-shadow: none;
-}
-
-.notes-rail-tag:hover,
-.notes-rail-tag[aria-pressed="true"] {
-  color: var(--amber);
-  background: transparent;
-}
-
-.notes-main {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-12);
-  min-width: 0;
-}
-
-.notes-filter {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-size: var(--fs-14);
+.notes-entry:hover .notes-entry-title {
   color: var(--amber);
 }
 
-.notes-filter button {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-2-5);
-  border: 1px solid var(--white-15);
-  border-radius: var(--r-full);
-  background: transparent;
-  color: var(--white-60);
-  font: inherit;
-  font-size: var(--fs-12);
-  cursor: pointer;
-  box-shadow: none;
+/* 最新一篇放大 */
+.notes-entry.is-lead {
+  padding: var(--space-8) 0 var(--space-10);
+  border-top: 0;
+}
+
+.notes-entry.is-lead .notes-entry-title {
+  font-family: var(--display);
+  font-size: var(--fs-32);
+  font-weight: 700;
+  line-height: var(--lh-130);
+}
+
+.notes-entry.is-lead .notes-entry-excerpt {
+  font-size: var(--fs-16);
+  line-height: var(--lh-185);
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .notes-empty {
   color: var(--white-50);
 }
 
-.notes-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  font-family: var(--mono-font);
-  font-size: var(--fs-12);
-  color: var(--white-50);
-}
+@media (max-width: 760px) {
+  .notes-head {
+    padding: var(--space-10) var(--space-2) var(--space-8);
+  }
 
-.notes-cat {
-  color: var(--amber);
-}
+  .notes-panel {
+    padding: var(--space-6) var(--space-5) var(--space-8);
+  }
 
-/* 最新一篇：左字右星座 */
-.notes-feature {
-  display: grid;
-  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
-  gap: var(--space-8);
-  align-items: center;
-  padding-bottom: var(--space-12);
-  border-bottom: 1px solid var(--white-10);
-  color: inherit;
-  text-decoration: none;
-}
-
-.notes-feature-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.notes-feature-title {
-  margin: 0;
-  font-family: var(--display);
-  font-size: var(--fs-32);
-  font-weight: 700;
-  line-height: var(--lh-130);
-  color: var(--ink);
-  text-wrap: pretty;
-  transition: color var(--dur-250) ease;
-}
-
-.notes-feature:hover .notes-feature-title,
-.notes-card:hover .notes-card-title,
-.notes-row:hover .notes-row-title {
-  color: var(--amber);
-}
-
-.notes-feature-excerpt {
-  margin: 0;
-  font-size: var(--fs-16);
-  line-height: var(--lh-185);
-  color: var(--white-60);
-}
-
-.notes-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  font-size: var(--fs-12);
-  color: var(--white-45);
-}
-
-.notes-feature-glyph {
-  width: 100%;
-  aspect-ratio: 1;
-  max-height: 340px;
-  opacity: 0.95;
-}
-
-/* 兩欄 */
-.notes-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-10) var(--space-8);
-}
-
-.notes-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  color: inherit;
-  text-decoration: none;
-}
-
-.notes-card-glyph {
-  width: 100%;
-  height: 140px;
-  border-top: 1px solid var(--white-10);
-  border-bottom: 1px solid var(--white-10);
-}
-
-.notes-card-title {
-  margin: 0;
-  font-size: var(--fs-18);
-  font-weight: 600;
-  line-height: var(--lh-150);
-  color: var(--ink);
-  text-wrap: pretty;
-  transition: color var(--dur-250) ease;
-}
-
-/* 更早：緊湊的列表 */
-.notes-rows {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-}
-
-.notes-rows-label {
-  margin: 0 0 var(--space-2);
-  padding-bottom: var(--space-2-5);
-  border-bottom: 1px solid var(--white-15);
-  font-family: var(--mono-font);
-  font-size: var(--fs-12);
-  font-weight: 400;
-  letter-spacing: var(--ls-12);
-  color: var(--white-50);
-}
-
-.notes-row {
-  display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) 80px 48px;
-  gap: var(--space-4);
-  align-items: baseline;
-  padding: var(--space-3-5) 0;
-  border-bottom: 1px solid var(--white-06);
-  color: inherit;
-  text-decoration: none;
-}
-
-.notes-row-date,
-.notes-row-reads {
-  font-family: var(--mono-font);
-  font-size: var(--fs-12);
-  color: var(--white-45);
-}
-
-.notes-row-reads {
-  text-align: right;
-}
-
-.notes-row-title {
-  font-size: var(--fs-16);
-  line-height: var(--lh-150);
-  color: var(--white-80);
-  transition: color var(--dur-250) ease;
-}
-
-.notes-row-cat {
-  font-size: var(--fs-12);
-  color: var(--white-45);
-}
-
-@media (max-width: 900px) {
-  .notes-body {
+  .notes-entry {
     grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
   }
 
-  .notes-rail {
-    display: none;
-  }
-
-  .notes-feature,
-  .notes-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .notes-row {
-    grid-template-columns: 48px minmax(0, 1fr);
-  }
-
-  .notes-row-cat,
-  .notes-row-reads {
-    display: none;
+  .notes-entry-side {
+    flex-direction: row;
+    align-items: baseline;
+    order: -1;
   }
 
   .notes-title {

@@ -70,6 +70,11 @@ export default function StarfieldGpu({
     const v = Number(new URLSearchParams(window.location.search).get('intro-at') ?? Number.NaN);
     return Number.isFinite(v) ? v : undefined;
   }, []);
+  // ?transition=burst：換頁時土星迸成星塵（比較用）；預設是飛行
+  const transition = useMemo(
+    () => (new URLSearchParams(window.location.search).get('transition') === 'burst' ? 'burst' : 'travel'),
+    [],
+  );
   // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
   const controlRef = useRef<{
     scroll(y: number): void;
@@ -217,6 +222,7 @@ export default function StarfieldGpu({
           dpr: window.devicePixelRatio,
           intro: playIntro,
           introFreezeAt,
+          transition,
         },
         [offscreen],
       );
@@ -286,6 +292,7 @@ export default function StarfieldGpu({
           dpr: window.devicePixelRatio,
           intro: playIntro,
           introFreezeAt,
+          transition,
           onIntroPhase: handlePhase,
           onPerf: setPerf,
           onDeviceLost: (message) => {
@@ -329,7 +336,7 @@ export default function StarfieldGpu({
       returnIntro();
     };
     // generation 變化 = device lost 之後要整組重建（canvas 換了新的 DOM 節點，見上面的註解）
-  }, [generation, recover, handlePhase, introFreezeAt]);
+  }, [generation, recover, handlePhase, introFreezeAt, transition]);
 
   // 初始化失敗（無 WebGPU 也無 WebGL 的機器）→ 優雅消失，DOM 特效由 shell 兜底
   if (failed) return null;

@@ -38,6 +38,8 @@ export interface SkyFx {
   /** 把天空效果套到最後的輸出上 */
   output(sceneOut: V4): V4;
   setMode(mode: SkyMode): void;
+  /** 換頁飛行時畫面往中心拉成光線的強度，0–1 */
+  setWarp(amount: number): void;
   /**
    * 推進一幀。回傳：
    *   busy：還在轉場（要跟著 60fps 畫）
@@ -58,10 +60,11 @@ const POLE = new THREE.Vector3(-0.45, 0.55, -1).normalize();
  */
 const POLE_SPEED = 0.02;
 /**
- * 以 60fps 為準的每幀保留比例。1＝不衰減：真的長曝光照片裡，整條弧的亮度是均勻的；
- * 有衰減的話尾巴會淡掉，看起來像流星而不是星軌。離開這一頁時整張清掉
+ * 以 60fps 為準的每幀保留比例：0.9985 的半衰期約 7.7 秒。
+ * 不衰減的話待越久越密，最後整片蓋掉內容；衰減太快尾巴又短得像流星。這個值讓弧長停在
+ * 二三十度左右、尾巴淡得很慢
  */
-const TRAIL_KEEP_60 = 1;
+const TRAIL_KEEP_60 = 0.9985;
 
 export function createSkyFx(opts: {
   renderer: THREE.WebGPURenderer;
@@ -80,7 +83,7 @@ export function createSkyFx(opts: {
   // ── 拖出軌跡的星 ──
   // 只有這四百多顆亮星留下軌跡，背景那兩萬多顆照常是點。全部拖出來的話整片天空糊成灰色、看了頭暈。
   // 獨立一個場景、一般的材質：背景星的材質寫 MRT，畫不進單張 target。
-  const TRAIL_STARS = 450;
+  const TRAIL_STARS = 320;
   const trailScene = new THREE.Scene();
   const trailGroup = new THREE.Group();
   trailScene.add(trailGroup);
@@ -120,6 +123,7 @@ export function createSkyFx(opts: {
   const pixelMix = uniform(0);
   const cellPx = uniform(1);
   const keep = uniform(TRAIL_KEEP_60);
+  const warp = uniform(0);
 
   // ── 星軌：兩張輪流的累積 target ──
   // 以 CSS 像素的解析度存：星星本來就是柔光點，軌跡不需要裝置像素的精度，記憶體省 4 倍
@@ -192,8 +196,24 @@ export function createSkyFx(opts: {
     output(sceneOut) {
       // 星軌疊在原本的畫面上（取亮的）
       // 軌跡比單顆星暗（拉長之後亮度攤開了），提一點才看得出長曝光
-      const trail = trailTex.mul(trailMix);
+      // 壓暗：星軌是背景，不能跟文字搶
+      const trail = trailTex.mul(trailMix.mul(0.6));
       let rgb = max(sceneOut.rgb, trail.rgb);
+
+      // 換頁的飛行：從畫面中心往外的放射狀模糊，星星與土星拉成光線（跟首訪開場的超空間同一種語言）
+      {
+        const center = vec2(0.5, 0.5);
+        const reach = warp.mul(0.32);
+        let sum: Node<'vec3'> = vec3(0, 0, 0);
+        const TAPS = 12;
+        for (let i = 0; i < TAPS; i++) {
+          const uv = center.add(screenUV.sub(center).mul(float(1).sub(reach.mul(i / (TAPS - 1)))));
+          sum = sum.add((opts.sceneColor.sample(uv) as unknown as V4).rgb).add((opts.bloomColor.sample(uv) as unknown as V4).rgb);
+        }
+        // 不是平均：星星很小，平均下去就淡到看不見。累加才會拉出一條亮線
+        const streaked = sum.mul(0.55);
+        rgb = mix(rgb, max(rgb, streaked), smoothstep(0, 0.08, warp));
+      }
       let alpha = max(sceneOut.a, trail.a);
 
       // 像素抖動：一格取四個點的最亮值，太小的星星才不會因為剛好沒取樣到而閃爍消失
@@ -221,6 +241,10 @@ export function createSkyFx(opts: {
       rgb = mix(rgb, dithered, pixelMix);
       alpha = mix(alpha, float(1), pixelMix);
       return vec4(rgb, alpha);
+    },
+
+    setWarp(amount) {
+      warp.value = amount;
     },
 
     setMode(m) {

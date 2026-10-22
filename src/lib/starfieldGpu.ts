@@ -119,6 +119,12 @@ export interface StarfieldInit {
    * 而主執行緒收到階段訊息的時間會被它自己的忙碌拖慢，從外面計時對不準。
    */
   introFreezeAt?: number;
+  /**
+   * 離開／回到首頁時土星怎麼處理：
+   *   travel（預設）鏡頭飛過土星、畫面拉成光線，抵達下一片天空；回首頁時從遠處飛回來
+   *   burst          土星迸成星塵、落進背景的星（比較用，網址加 ?transition=burst）
+   */
+  transition?: 'travel' | 'burst';
 }
 
 interface StarLayerCfg {
@@ -822,6 +828,45 @@ export async function createStarfieldRunner(
   const saturnOnScreen = () => saturn !== null && (saturnVisible || saturn.dissolved < 1);
   // 第一次決定要不要顯示時直接到位：一進站就在首頁的話，土星不該從碎片聚合起來
   let saturnSettled = false;
+  const transition = init.transition ?? 'travel';
+  /** 換頁的飛行：t 從 0 到 1 */
+  let travel: { kind: 'leave' | 'arrive'; t: number } | null = null;
+  /** 換頁飛行的時間（秒）：前半段加速、中間畫面拉成光線、後半段減速抵達 */
+  const TRAVEL_SECONDS = 1.6;
+  const easeIn = (x: number) => Math.pow(x, 2.2);
+  const easeOut = (x: number) => 1 - Math.pow(1 - x, 3);
+  /**
+   * 推進一幀的飛行。土星的顯示在正中間切換：那一刻畫面拉成光線最強，看不出鏡頭被瞬移回原點。
+   *   離開首頁：往前加速、從土星右側掠過 → （切換）→ 在新的天空裡減速停下
+   *   回到首頁：往前加速 → （切換，鏡頭移到遠處）→ 減速，土星從遠處越來越大
+   */
+  const stepTravel = (dt: number) => {
+    if (!travel) return;
+    travel.t = Math.min(1, travel.t + dt / TRAVEL_SECONDS);
+    const T = travel.t;
+    if (T < 0.5) {
+      const u = easeIn(T / 0.5);
+      // 從土星右上方掠過，離得夠遠：太近的話環會被近裁切面切開，變成一條白色的帶子
+      if (travel.kind === 'leave') camera.position.set(6 * Math.pow(u, 1.2), 1.4 * u, 5 - 9 * u);
+      else camera.position.set(0, 0, 5 - 9 * u);
+    } else {
+      const v = easeOut((T - 0.5) / 0.5);
+      if (travel.kind === 'leave') {
+        if (saturn && saturn.dissolved < 1) saturn.shatter(true, true);
+        camera.position.set(0, 0, 5 + 10 * (1 - v));
+      } else {
+        if (saturn && saturn.dissolved > 0) saturn.shatter(false, true);
+        camera.position.set(-1.5 * (1 - v), 0.4 * (1 - v), 5 + 35 * (1 - v));
+      }
+    }
+    skyFx.setWarp(Math.pow(Math.sin(Math.PI * T), 1.5));
+    if (T >= 1) {
+      travel = null;
+      camera.position.set(0, 0, 5);
+      skyFx.setWarp(0);
+    }
+    markActive();
+  };
   let skyFrameMs: number | null = null;
 
   const loop = (now: number) => {
@@ -830,7 +875,7 @@ export async function createStarfieldRunner(
     //   就永遠不會進閒置。
     const wall = performance.now();
     const active = wall - lastActive < IDLE_AFTER_MS;
-    const fullRate = hyperspace !== null || saturnZooming;
+    const fullRate = hyperspace !== null || saturnZooming || travel !== null;
     const frameMs = fullRate ? 0 : (skyFrameMs ?? (active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS));
     if (!pacer.shouldRender(now, frameMs)) return;
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
@@ -856,6 +901,7 @@ export async function createStarfieldRunner(
       markActive();
     }
 
+    stepTravel(delta);
     if (saturn && saturnOnScreen()) {
       const s = saturn.update(delta, scrollY, saturnAnimate && introAllowsZoom);
       saturnZooming = s.zooming;
@@ -938,8 +984,13 @@ export async function createStarfieldRunner(
         saturnVisible = visible;
         saturnAnimate = animate;
         if (saturn) {
-          // 離開首頁時碎成星星、回來時聚回去；第一次（剛載入）直接到位
-          saturn.shatter(!visible, !saturnSettled);
+          if (transition === 'travel' && saturnSettled) {
+            // 換頁＝移動到另一片天空：鏡頭飛走／飛回來，土星在中途（畫面拉成光線的那一刻）切換
+            travel = { kind: visible ? 'arrive' : 'leave', t: 0 };
+          } else {
+            // 爆炸版（?transition=burst）：離開首頁時散成星塵、回來時聚回去；第一次（剛載入）直接到位
+            saturn.shatter(!visible, !saturnSettled);
+          }
           saturnSettled = true;
           // 最低品質下即使呼叫顯示也不開（土星最貴）
           saturn.group.visible = saturnOnScreen() && quality < 2;
