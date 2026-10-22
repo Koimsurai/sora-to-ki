@@ -224,7 +224,7 @@ interface SaturnRig {
 }
 
 /** 散成星塵的時間（秒）：從第一粒剝落到最後一粒落進星空 */
-const SHATTER_SECONDS = 3.6;
+const SHATTER_SECONDS = 3.2;
 const PLANET_DUST = 16000;
 const RING_DUST = 10000;
 
@@ -266,16 +266,22 @@ async function buildSaturn(
   // 一顆真的星星、在那裡淡掉——散完之後畫面就是原本的星空，不會多出一層貼上去的點。
   // 哪一粒飛向哪一顆星，每次開始散／聚的時候依「當下看得到的星」重新分配（見 assignTargets）。
   const dissolve = uniform(1); // 一開始是藏起來的（等 setSaturn）
-  /** 每一粒從剝落到落進星空，佔整段時間軸的多少 */
-  const FLIGHT = 0.9;
+  /** 每一粒從迸開到落進星空，佔整段時間軸的多少 */
+  const FLIGHT = 0.82;
   const cut = dissolve.mul(1 + FLIGHT);
   const rand = Math.random;
-  /** 每一點什麼時候化成星塵（0 最早）：亮面先散，噪聲讓邊緣不規則。表面與星塵用同一個函式 */
+  /**
+   * 每一點什麼時候迸開（0 最早）。整顆幾乎同時：只差 0.1 左右，一瞬間全散。
+   * 從亮面一路掃到暗面的話，看起來是薩諾斯彈指那種一層一層剝落，不是爆開。
+   * 表面與星塵用同一個函式，表面消失的地方剛好是星塵出發的地方。
+   */
   const dustTime = (p: Node<'vec3'>, sunLocal: Node<'vec3'>) => {
-    const sweep = float(0.5).sub(dot(normalize(p), normalize(sunLocal)).mul(0.5));
-    const n = mx_noise_float(p.mul(2.2));
-    return clamp(sweep.mul(0.6).add(n.mul(0.35)).add(0.05), 0, 1);
+    const lit = dot(normalize(p), normalize(sunLocal)).mul(0.5).add(0.5);
+    const n = mx_noise_float(p.mul(3.1)).mul(0.5).add(0.5);
+    return clamp(float(0.1).add(n.mul(0.07)).add(float(1).sub(lit).mul(0.03)), 0, 1);
   };
+  /** 迸開前的蓄光（冷白色，不是火）：整顆亮起來、微微鼓起 */
+  const charge = smoothstep(0, 0.1, dissolve).mul(float(1).sub(smoothstep(0.1, 0.16, dissolve)));
   const dustProgress = (t: Node<'float'>) => clamp(cut.sub(t).div(FLIGHT), 0, 1);
   /** 正在化開的那一圈邊緣：冷白色的微光（星塵，不是火） */
   const dustEdge = (t: Node<'float'>) =>
@@ -320,10 +326,26 @@ async function buildSaturn(
     const edge = dustEdge(at);
     planetMat.emissiveNode = vec3(1.0, 0.86, 0.66)
       .mul(fresnel.mul(litSide).mul(0.35))
-      .add(glint.mul(edge.mul(1.4)));
-    planetMat.mrtNode = mrt({ bloomIntensity: edge.mul(0.6) });
+      .add(glint.mul(edge.mul(1.4).add(charge.mul(0.35))));
+    planetMat.mrtNode = mrt({ bloomIntensity: clamp(edge.mul(0.6).add(charge.mul(0.4)), 0, 1) });
+    planetMat.positionNode = positionLocal.mul(float(1).add(charge.mul(0.02)));
   }
   const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), planetMat);
+
+  // 迸開那一瞬間的一團冷白色柔光（不是火球）：很快亮起、很快退掉
+  const flashMat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
+  flashMat.blending = THREE.AdditiveBlending;
+  {
+    const flash = smoothstep(0.08, 0.12, dissolve).mul(float(1).sub(smoothstep(0.12, 0.34, dissolve)));
+    const d = uv().sub(0.5).length().mul(2);
+    const falloff = float(1).sub(smoothstep(0, 1, d)).pow(2.5);
+    flashMat.colorNode = vec3(0.82, 0.9, 1.0).mul(flash.mul(falloff).mul(1.1));
+    flashMat.opacityNode = flash.mul(falloff).mul(0.6);
+    flashMat.mrtNode = mrt({ bloomIntensity: float(1) });
+    flashMat.scaleNode = float(1.6).add(flash.mul(2.4));
+  }
+  const burstFlash = new THREE.Sprite(flashMat);
+  burstFlash.frustumCulled = false;
 
   // 環：薄薄一層冰粒，亮度跟入射角的關係很弱——用 Standard 材質的話光從很斜的角度照過來，
   // 整圈環暗到幾乎看不見。這裡自己算光：入射角只影響一半，加上行星投過來的影子。
@@ -375,9 +397,10 @@ async function buildSaturn(
     );
     const target = inv.mul(vec4(starWorld, 1)).xyz;
     // 兩段：先往外飄散成一層星塵（看得到「散開」），再慢慢加速飛向各自的星
-    const drift = origin.add(out.mul(mx_noise_float(origin.mul(7)).mul(0.5).add(0.8)));
-    const e1 = smoothstep(0, 0.35, k);
-    const e2 = smoothstep(0.25, 1, k).pow(1.8);
+    const burst = mx_noise_float(origin.mul(7)).mul(0.5).add(0.5);
+    const drift = origin.add(out.mul(burst.mul(1.6).add(0.7)));
+    const e1 = float(1).sub(float(1).sub(smoothstep(0, 0.28, k)).pow(3));
+    const e2 = smoothstep(0.24, 1, k).pow(1.7);
     mat.positionNode = mix(mix(origin, drift, e1), target, e2);
     // 一開始是那一格的顏色，飛著飛著變成星光
     mat.colorNode = mix(color, vec3(0.92, 0.95, 1.0).mul(1.3), smoothstep(0.15, 0.7, k));
@@ -504,7 +527,7 @@ async function buildSaturn(
   ringHolder.rotation.x = RING_TILT;
   const rings = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 128, 1), ringMat);
   ringHolder.add(rings, ringDust.sprite);
-  group.add(planet, ringHolder, planetDust.sprite);
+  group.add(planet, burstFlash, ringHolder, planetDust.sprite);
 
   const syncSun = () => {
     group.updateWorldMatrix(true, true);

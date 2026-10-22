@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { localePage, localeWrap } from '@/i18n/localePage';
-import Blog from '@/components/blog/Blog';
+import Blog from '@/components/blog/NotesSky';
 import { blogCategoriesQueryOptions, blogTagsQueryOptions, postsListQueryOptions } from '@/data/blogList';
 import { DEFAULT_LOCALE } from '../../lib/locales';
 

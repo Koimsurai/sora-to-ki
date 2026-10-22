@@ -1,0 +1,466 @@
+/* 手記（星軌天空版）：印在夜空照片上的字。
+   沒有卡片框、沒有紫色漸層，只有文字、細線與一個星光琥珀色。 */
+.notes-page {
+  --ink: #f1ece3;
+  --amber: #e9c17a;
+  --amber-rgb: 233, 193, 122;
+  --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  position: relative;
+  z-index: 3;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--page-top) var(--space-6) var(--page-bottom);
+  color: var(--white-80);
+  text-shadow: 0 1px 12px var(--black-60);
+}
+
+/* ── 頁首：靠左，大字直接壓在星空上 ── */
+.notes-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-16) 0 var(--space-10);
+}
+
+.notes-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-56);
+  font-weight: 700;
+  line-height: var(--lh-100);
+  letter-spacing: var(--ls-2);
+  color: var(--ink);
+}
+
+.notes-title-en {
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  font-weight: 400;
+  letter-spacing: var(--ls-24);
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.notes-desc {
+  margin: 0;
+  max-width: 520px;
+  font-size: var(--fs-16);
+  line-height: var(--lh-170);
+  color: var(--white-60);
+}
+
+.notes-stats {
+  display: flex;
+  gap: var(--space-5);
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--white-50);
+}
+
+.notes-stats b {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ── 分類分頁＋搜尋／排序 ── */
+.notes-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--white-10);
+}
+
+.notes-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.notes-tab {
+  height: 44px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--white-55);
+  font: inherit;
+  font-size: var(--fs-14);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.notes-tab span {
+  margin-left: var(--space-1);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--white-40);
+}
+
+.notes-tab:hover {
+  color: var(--ink);
+  background: transparent;
+}
+
+.notes-tab[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--amber);
+}
+
+.notes-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.notes-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--white-15);
+  border-radius: var(--r-full);
+  color: var(--white-50);
+  font-size: var(--fs-13);
+}
+
+.notes-search input {
+  width: 160px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+
+.notes-sort {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.notes-sort-btn {
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--white-50);
+  font: inherit;
+  font-size: var(--fs-13);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.notes-sort-btn:hover {
+  color: var(--ink);
+  background: transparent;
+}
+
+.notes-sort-btn[aria-pressed="true"] {
+  border-color: rgba(var(--amber-rgb), 0.5);
+  color: var(--amber);
+}
+
+/* ── 主體：月份索引＋文章 ── */
+.notes-body {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: var(--space-14);
+  padding-top: var(--space-10);
+}
+
+.notes-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-self: start;
+  position: sticky;
+  top: var(--space-24);
+}
+
+.notes-rail-year {
+  margin: var(--space-4) 0 var(--space-2);
+  font-family: var(--display);
+  font-size: var(--fs-22);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.notes-rail-month {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--white-06);
+  border-radius: 0;
+  background: transparent;
+  color: var(--white-60);
+  font: inherit;
+  font-size: var(--fs-14);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.notes-rail-month span:last-child {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--white-40);
+}
+
+.notes-rail-month:hover {
+  color: var(--amber);
+  background: transparent;
+}
+
+.notes-rail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2-5);
+  margin-top: var(--space-4);
+}
+
+.notes-rail-tags .notes-rail-year {
+  width: 100%;
+  font-size: var(--fs-14);
+}
+
+.notes-rail-tag {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--white-45);
+  font: inherit;
+  font-size: var(--fs-12);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.notes-rail-tag:hover,
+.notes-rail-tag[aria-pressed="true"] {
+  color: var(--amber);
+  background: transparent;
+}
+
+.notes-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  min-width: 0;
+}
+
+.notes-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-14);
+  color: var(--amber);
+}
+
+.notes-filter button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2-5);
+  border: 1px solid var(--white-15);
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--white-60);
+  font: inherit;
+  font-size: var(--fs-12);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.notes-empty {
+  color: var(--white-50);
+}
+
+.notes-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--white-50);
+}
+
+.notes-cat {
+  color: var(--amber);
+}
+
+/* 最新一篇：左字右星座 */
+.notes-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: var(--space-8);
+  align-items: center;
+  padding-bottom: var(--space-12);
+  border-bottom: 1px solid var(--white-10);
+  color: inherit;
+  text-decoration: none;
+}
+
+.notes-feature-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.notes-feature-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--fs-32);
+  font-weight: 700;
+  line-height: var(--lh-130);
+  color: var(--ink);
+  text-wrap: pretty;
+  transition: color var(--dur-250) ease;
+}
+
+.notes-feature:hover .notes-feature-title,
+.notes-card:hover .notes-card-title,
+.notes-row:hover .notes-row-title {
+  color: var(--amber);
+}
+
+.notes-feature-excerpt {
+  margin: 0;
+  font-size: var(--fs-16);
+  line-height: var(--lh-185);
+  color: var(--white-60);
+}
+
+.notes-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--fs-12);
+  color: var(--white-45);
+}
+
+.notes-feature-glyph {
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 340px;
+  opacity: 0.95;
+}
+
+/* 兩欄 */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-10) var(--space-8);
+}
+
+.notes-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+.notes-card-glyph {
+  width: 100%;
+  height: 140px;
+  border-top: 1px solid var(--white-10);
+  border-bottom: 1px solid var(--white-10);
+}
+
+.notes-card-title {
+  margin: 0;
+  font-size: var(--fs-18);
+  font-weight: 600;
+  line-height: var(--lh-150);
+  color: var(--ink);
+  text-wrap: pretty;
+  transition: color var(--dur-250) ease;
+}
+
+/* 更早：緊湊的列表 */
+.notes-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.notes-rows-label {
+  margin: 0 0 var(--space-2);
+  padding-bottom: var(--space-2-5);
+  border-bottom: 1px solid var(--white-15);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  font-weight: 400;
+  letter-spacing: var(--ls-12);
+  color: var(--white-50);
+}
+
+.notes-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 80px 48px;
+  gap: var(--space-4);
+  align-items: baseline;
+  padding: var(--space-3-5) 0;
+  border-bottom: 1px solid var(--white-06);
+  color: inherit;
+  text-decoration: none;
+}
+
+.notes-row-date,
+.notes-row-reads {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--white-45);
+}
+
+.notes-row-reads {
+  text-align: right;
+}
+
+.notes-row-title {
+  font-size: var(--fs-16);
+  line-height: var(--lh-150);
+  color: var(--white-80);
+  transition: color var(--dur-250) ease;
+}
+
+.notes-row-cat {
+  font-size: var(--fs-12);
+  color: var(--white-45);
+}
+
+@media (max-width: 900px) {
+  .notes-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notes-rail {
+    display: none;
+  }
+
+  .notes-feature,
+  .notes-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .notes-row {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .notes-row-cat,
+  .notes-row-reads {
+    display: none;
+  }
+
+  .notes-title {
+    font-size: var(--fs-40);
+  }
+}

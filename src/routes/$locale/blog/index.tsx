@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
-import Blog from '@/components/blog/Blog';
+import Blog from '@/components/blog/NotesSky';
 import { blogCategoriesQueryOptions, blogTagsQueryOptions, postsListQueryOptions } from '@/data/blogList';
 import { localeFromPrefix } from '@/i18n/start-i18n';
 

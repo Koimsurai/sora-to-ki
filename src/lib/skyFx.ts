@@ -210,11 +210,12 @@ export function createSkyFx(opts: {
       const lum = max(
         max(lumAt(vec2(q.x.negate(), q.y.negate())), lumAt(vec2(q.x, q.y.negate()))),
         max(lumAt(vec2(q.x.negate(), q.y)), lumAt(q)),
-      ).mul(5);
+      ).mul(2.2);
       const threshold = texture(bayer, mod(cellIdx, 4).add(0.5).div(4)).r;
       const on = step(threshold, clamp(lum, 0, 1));
       // 最亮的幾格用琥珀色，其他是冷白
-      const ink = mix(vec3(0.62, 0.68, 0.82), vec3(1.0, 0.62, 0.26), step(0.85, lum));
+      // 只有最亮的少數格是琥珀色；多了整片都是金點，壓在文字後面很吵
+      const ink = mix(vec3(0.62, 0.68, 0.82), vec3(1.0, 0.62, 0.26), step(1.5, lum));
       const ground = vec3(0.0024, 0.0027, 0.0035);
       const dithered = mix(ground, ink, on);
       rgb = mix(rgb, dithered, pixelMix);

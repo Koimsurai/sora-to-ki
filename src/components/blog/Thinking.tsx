@@ -9,7 +9,14 @@ import ThoughtCard from './ThoughtCard';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { apiUrl } from '@/lib/api';
 import { useThoughtAdmin } from '@/hooks/useThoughtAdmin';
+import { parseServerDate } from '@/lib/serverDate';
 import './Thinking.css';
+
+const dayOf = (iso: string) => {
+  const d = parseServerDate(iso);
+  return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+};
+const yearOf = (iso: string) => String(parseServerDate(iso).getFullYear());
 
 /* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。
    admin 可在頂端發文（content + 選填連結 → 後端 unfurl）。 */
@@ -88,7 +95,10 @@ function Thinking() {
       <div className="tk-wrap">
         <header className="tk-header enter" style={enterStyle({ y: 16, dur: 500 })}>
           <div className="tk-title-row">
-            <h1 className="tk-title">{t('thinking.title')}</h1>
+            <h1 className="tk-title">
+              {t('thinking.title')}
+              <span className="tk-title-en">Moments</span>
+            </h1>
             <a className="tk-rss" href="/api/thoughts/rss" target="_blank" rel="noopener noreferrer" aria-label="RSS">
               <Rss size={18} />
             </a>
@@ -140,14 +150,23 @@ function Thinking() {
 
         {/* 進場用 CSS（見 index.css「頁面進場動畫」）：掛載即播，SSR 出來的卡片不會是 opacity:0；
             發文後新掛上的卡片也一樣會播。延遲到第 8 張封頂 */}
+        {/* 一則一則像念頭閃過：左邊日期、中間一條虛線上的像素點，右邊大字。
+            出現時閃一下再定住（tk-flash，見 Thinking.css），延遲到第 8 則封頂 */}
         {!!thoughts?.length && (
           <ul className="tk-feed">
             {thoughts.map((th, i) => (
               <li
-                className="tk-feed-item enter"
+                className="tk-feed-item tk-flash"
                 key={th.id}
-                style={enterStyle({ delay: 50 + Math.min(i, 8) * 100, x: -48, y: 0, dur: 500 })}
+                style={{ animationDelay: `${120 + Math.min(i, 8) * 140}ms` }}
               >
+                <div className="tk-log-date">
+                  <span>{dayOf(th.created_at)}</span>
+                  <span>{yearOf(th.created_at)}</span>
+                </div>
+                <div className="tk-log-gutter" aria-hidden="true">
+                  <span />
+                </div>
                 <ThoughtCard
                   th={th}
                   isAdmin={isAdmin}

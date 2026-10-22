@@ -681,3 +681,180 @@
     transform: none;
   }
 }
+
+/* ══════════════════════════
+   碎念（像素天空版）：腦海中閃過的瞬間。
+   不是一張張卡片，是一條紀錄：左邊日期、中間虛線上的像素點、右邊大字。
+   每一則出現時閃一下再定住。
+   ══════════════════════════ */
+.tk-page {
+  --tk-amber: #e9c17a;
+}
+
+.tk-scrim {
+  background: rgba(var(--surface-0-rgb), 0.25);
+}
+
+.tk-wrap {
+  max-width: 960px;
+}
+
+.tk-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  font-family: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  font-size: var(--fs-56);
+  line-height: var(--lh-100);
+}
+
+.tk-title-en {
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  font-weight: 400;
+  letter-spacing: var(--ls-24);
+  text-transform: uppercase;
+  color: var(--tk-amber);
+}
+
+.tk-header {
+  padding-top: var(--space-16);
+  margin-bottom: var(--space-12);
+}
+
+.tk-feed .tk-feed-item {
+  display: grid;
+  grid-template-columns: 96px 20px minmax(0, 1fr);
+  column-gap: var(--space-6);
+}
+
+.tk-log-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--white-45);
+}
+
+.tk-log-date span:first-child {
+  color: var(--white-80);
+}
+
+.tk-log-gutter {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* 虛線接到下一則；像素點是方的，跟背景的像素星空同一種語言 */
+.tk-log-gutter::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--white-15) 0 4px, transparent 4px 8px);
+}
+
+.tk-log-gutter span {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  margin-top: var(--space-3);
+  background: var(--tk-amber);
+}
+
+.tk-feed .tk-card {
+  margin-bottom: 0;
+  padding: 0 0 var(--space-12);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.tk-feed .tk-card:hover {
+  transform: none;
+}
+
+/* 日期已經在左邊了，作者與相對時間收起來 */
+.tk-feed .tk-card-head {
+  display: none;
+}
+
+.tk-feed .tk-text {
+  font-family: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  font-size: var(--fs-28);
+  line-height: var(--lh-150);
+  color: #f1ece3;
+  text-wrap: pretty;
+}
+
+.tk-feed .tk-divider {
+  display: none;
+}
+
+.tk-feed .tk-card-foot {
+  margin-top: var(--space-3);
+  opacity: 0.55;
+  transition: opacity var(--dur-200) ease;
+}
+
+.tk-feed .tk-card:hover .tk-card-foot {
+  opacity: 1;
+}
+
+.tk-feed .tk-embed {
+  max-width: 560px;
+}
+
+/* 閃過：先過曝一下（亮、微微放大、琥珀色的光暈），再定住 */
+@keyframes tk-flash {
+  0% {
+    opacity: 0;
+    filter: brightness(2.4);
+    text-shadow: 0 0 24px rgba(233, 193, 122, 0.8);
+  }
+  18% {
+    opacity: 1;
+    filter: brightness(1.8);
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+    text-shadow: none;
+  }
+}
+
+.tk-flash {
+  animation: tk-flash 900ms var(--easing-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-flash {
+    animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .tk-feed .tk-feed-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tk-log-gutter {
+    display: none;
+  }
+
+  .tk-log-date {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  .tk-feed .tk-text {
+    font-size: var(--fs-22);
+  }
+}
