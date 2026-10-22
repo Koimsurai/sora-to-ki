@@ -202,12 +202,8 @@ export default function AboutFall() {
       {/* 起點：只有一句話。其他的，往下掉的時候一層一層會經過 */}
       <header className="af-top">
         <p className="af-kicker">Koimsurai · 關於</p>
-        <h1 className="af-title">
-          故事要從
-          <br />
-          很遠很遠的地方說起。
-        </h1>
-        <p className="af-hint">鬆手，往下</p>
+        <h1 className="af-title">坐穩了。</h1>
+        <p className="af-hint">往下</p>
       </header>
 
       {/* 每一年是一層：標籤與大標題在中間，旁邊漂著一塊面板（四個角的小方塊像觀測儀器的準星），
@@ -242,9 +238,7 @@ export default function AboutFall() {
         <div className="af-land-inner">
           <p className="af-land-pre">掠過無數個稚嫩與迷惘的昨日，</p>
           <h2 className="af-land-title">就此落下。</h2>
-          <p className="af-land-lede">
-            落在一顆只長了一棵樹的星球上。這裡是{now?.label ?? '現在'}，是我此刻站著的地方。
-          </p>
+          <p className="af-land-lede">這裡是{now?.label ?? '現在'}。</p>
           {now && (
             <div className="af-now">
               <p className="af-card-title">{now.title}</p>
@@ -282,7 +276,7 @@ export default function AboutFall() {
           <header className="af-layer-head">
             <span className="af-layer-tag">地表</span>
             <h2>握在手裡的</h2>
-            <p>落地之後才發現，一路帶著的東西都還在。</p>
+            <p>一路帶著的東西。</p>
           </header>
           <div className="af-skills">
             {CATEGORIES_BASE.map((c) => (
@@ -305,7 +299,7 @@ export default function AboutFall() {
           <header className="af-layer-head">
             <span className="af-layer-tag">第一層</span>
             <h2>做過的事</h2>
-            <p>再往下一點，是被時間壓實的日子。</p>
+            <p>被時間壓實的日子。</p>
           </header>
           {work.map((e, i) => (
             <article key={e.title} className="af-entry">
@@ -344,7 +338,7 @@ export default function AboutFall() {
           <header className="af-layer-head">
             <span className="af-layer-tag">第二層</span>
             <h2>一起走過的人</h2>
-            <p>更深的地方，是那些熱鬧的、吵鬧的、一起熬過的夜。</p>
+            <p>一起熬過的夜。</p>
           </header>
           {clubs.map((c, i) => (
             <article key={c.name} className="af-entry">

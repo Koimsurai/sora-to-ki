@@ -43,6 +43,8 @@ export interface SkyFx {
    * 否則兩層各自拖出一組圓心不同的弧，整片星軌是歪的
    */
   trailing(): number;
+  /** 關於頁往下捲的速度（0–1）：星空往上掠過時拖出的線，跟飛行同一套，只是沒有放射狀的光線 */
+  setDrift(speed: number): void;
   /**
    * 換頁飛行的速度，0–1：畫面拉成光線、星星拖出動態的軌跡。
    * dir：out 是往前飛（從畫面中央往外拉），up 是往下墜（光線從畫面下方往上拉成直線）
@@ -171,6 +173,7 @@ export function createSkyFx(opts: {
   let flightSpeed = 0;
   /** 剛飛完的那一小段（秒）：動態的線要在這段時間裡收乾淨，不然會殘留成一片跟星軌方向不同的斜線 */
   let afterFlight = 0;
+  let drift = 0;
   const FLUSH_SECONDS = 0.7;
 
   // ── 星軌：兩張輪流的累積 target ──
@@ -217,13 +220,14 @@ export function createSkyFx(opts: {
   const subCam = cam.clone();
   const prevPos = cam.position.clone();
   const prevQuat = cam.quaternion.clone();
+  const prevSky = skyGroup.quaternion.clone();
   const accumulate = (substeps: number) => {
     const prevColor = new THREE.Color();
     renderer.getClearColor(prevColor);
     const prevAlpha = renderer.getClearAlpha();
     renderer.setClearColor(0x000000, 0);
-    // 軌跡星跟著背景星空一起轉：天極的旋轉（skyGroup）加上每層自己的慢速自轉
-    trailGroup.quaternion.copy(skyGroup.quaternion);
+    // 軌跡星跟著背景星空一起轉：天極的旋轉、關於頁的下墜（skyGroup，子步驟之間也插補）
+    // 加上每層自己的慢速自轉
     for (const { holder, layer } of holders) holder.rotation.copy(layer.rotation);
     renderer.setRenderTarget(starsRT);
     renderer.clear();
@@ -236,11 +240,13 @@ export function createSkyFx(opts: {
       subCam.position.lerpVectors(prevPos, cam.position, t);
       subCam.quaternion.slerpQuaternions(prevQuat, cam.quaternion, t);
       subCam.updateMatrixWorld(true);
+      trailGroup.quaternion.slerpQuaternions(prevSky, skyGroup.quaternion, t);
       renderer.render(trailScene, subCam);
     }
     renderer.autoClear = autoClear;
     prevPos.copy(cam.position);
     prevQuat.copy(cam.quaternion);
+    prevSky.copy(skyGroup.quaternion);
     renderer.setRenderTarget(spare);
     renderer.render(accScene, quadCam);
     renderer.setRenderTarget(null);
@@ -318,6 +324,10 @@ export function createSkyFx(opts: {
       return vec4(rgb, alpha);
     },
 
+    setDrift(speed) {
+      drift = speed;
+    },
+
     setFlight(speed, dir = 'out') {
       flightSpeed = speed;
       warp.value = speed * 0.55;
@@ -350,25 +360,44 @@ export function createSkyFx(opts: {
 
       // 飛行中：同一批星、同一張累積 target，只是尾巴短（跟著速度）——鏡頭在動，星星就拖出線。
       // 抵達手記時速度歸零、保留比例慢慢回到長曝光，動態的線直接接成星軌，中間沒有換手。
+      // 關於頁往下捲（drift）也是同一回事：星空在動，星星就拖出線；停下來時線不是瞬間消失，
+      // 而是在 FLUSH_SECONDS 內很快淡掉（保留比例拉低、疊上去的強度跟著退）
       const rotating = trailMix.value > 0 && opts.canTrail();
       const flying = flightSpeed > 0.001;
-      afterFlight = flying ? FLUSH_SECONDS : Math.max(0, afterFlight - dt);
-      streakMix.value = Math.max(rotating ? trailMix.value : 0, smoothstep01(flightSpeed / 0.15));
-      if (rotating || flying) {
+      const drifting = drift > 0.01;
+      const moving = flying || drifting;
+      afterFlight = moving ? FLUSH_SECONDS : Math.max(0, afterFlight - dt);
+      const streakTarget = Math.max(
+        rotating ? trailMix.value : 0,
+        smoothstep01(flightSpeed / 0.15),
+        smoothstep01(drift / 0.15) * 0.8,
+      );
+      streakMix.value = Math.max(streakTarget, streakMix.value - dt / FLUSH_SECONDS);
+      if (rotating || moving || afterFlight > 0) {
         if (rotating) skyGroup.rotateOnWorldAxis(POLE, dt * POLE_SPEED * trailMix.value);
-        const fast = Math.max(smoothstep01(flightSpeed / 0.3), flying ? 0 : afterFlight / FLUSH_SECONDS);
+        const fast = Math.max(
+          smoothstep01(flightSpeed / 0.3),
+          smoothstep01(drift / 0.3),
+          moving ? 0 : afterFlight / FLUSH_SECONDS,
+        );
         const keep60 = TRAIL_KEEP_60 + (FLIGHT_KEEP_60 - TRAIL_KEEP_60) * fast;
         keep.value = Math.pow(keep60, dt * 60);
-        accumulate(flying ? 8 : 1);
+        accumulate(flying ? 8 : drifting ? 6 : 1);
         trailLive = true;
       } else {
         if (trailLive) clearTargets();
         trailLive = false;
-        // 沒在累積時也要跟上鏡頭，否則下一次起飛的第一幀會從很久以前的位置拉一條線過來
+        // 沒在累積時也要跟上鏡頭與星空，否則下一次起飛的第一幀會從很久以前的位置拉一條線過來
         prevPos.copy(cam.position);
         prevQuat.copy(cam.quaternion);
+        prevSky.copy(skyGroup.quaternion);
       }
-      const busy = trailMix.value !== trailTarget || pixelMix.value !== pixelTarget || trailMix.value > 0 || flying;
+      const busy =
+        trailMix.value !== trailTarget ||
+        pixelMix.value !== pixelTarget ||
+        trailMix.value > 0 ||
+        moving ||
+        afterFlight > 0;
       return { busy, frameMs: pixelMix.value > 0.5 ? 1000 / 12 : null };
     },
 

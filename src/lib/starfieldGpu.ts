@@ -1000,6 +1000,30 @@ export async function createStarfieldRunner(
     markActive();
   };
   let skyFrameMs: number | null = null;
+  /**
+   * 關於頁：往下捲就是往下掉，整片星空跟著往上掠過（繞鏡頭的水平軸轉），捲得越快拖得越長。
+   * 不做的話，墜落轉場一結束星星就停住了，只剩前景的星塵在動
+   */
+  let skyMode: SkyMode = 'default';
+  let fallScroll: number | null = null;
+  let fallSpeed = 0;
+  const FALL_TURN = 0.00008; // 每捲一個像素，星空轉多少弧度
+  const X_AXIS = new THREE.Vector3(1, 0, 0);
+  const stepFall = (delta: number) => {
+    if (skyMode !== 'about' || travel) {
+      if (fallScroll !== null || fallSpeed > 0) skyFx.setDrift(0);
+      fallScroll = null;
+      fallSpeed = 0;
+      return;
+    }
+    fallScroll ??= scrollY;
+    const dy = scrollY - fallScroll;
+    fallScroll = scrollY;
+    if (dy !== 0) skyGroup.rotateOnWorldAxis(X_AXIS, dy * FALL_TURN);
+    fallSpeed += (Math.abs(dy) / Math.max(delta, 1e-3) - fallSpeed) * Math.min(1, delta * 8);
+    if (fallSpeed < 5) fallSpeed = 0;
+    skyFx.setDrift(Math.min(1, fallSpeed / 2500));
+  };
 
   const loop = (now: number) => {
     // ⚠ 跟 lastActive 比要用同一個時鐘：lastActive 是 performance.now()，而 rAF 的 now 是
@@ -1036,6 +1060,7 @@ export async function createStarfieldRunner(
     }
 
     stepTravel(delta);
+    stepFall(delta);
     // 首頁構圖與捲動：開場播完才讓開；捲動的目標值平滑追上，不跟著滾輪一格一格跳
     const composeTarget = hyperspace ? 0 : 1;
     const liftTarget = Math.min(1, scrollY / viewH);
@@ -1121,6 +1146,7 @@ export async function createStarfieldRunner(
       },
       setSky(mode) {
         markActive();
+        skyMode = mode;
         skyFx.setMode(mode);
         wantRoute = routeFor(mode);
         // 已經在外面、換到另一種「外面」（手記 ↔ 關於）：直接移到另一條路線的終點

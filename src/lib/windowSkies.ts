@@ -271,8 +271,8 @@ export const collectionSky: WindowSky = {
 // ── 關於：藍色火球 ──
 // 那段在網路上瘋傳的自拍影片：深夜裡，身後的天空突然被一道霓虹般的青藍色光照得像白天，
 // 一顆藍色火球拖著長尾巴劃過、落到地平線後面，前後大約七秒。這扇窗留住的就是那一瞬間：
-// 平常是安靜的夜空和小星球，每隔一陣子，一顆藍色火球從左邊劃出一道弧、落向地平線，
-// 一出現就亮、中途爆亮一次，整片天空和星球表面都被照成青藍色；沒入地平線之後，光要好幾秒才退。
+// 平常是安靜的夜空和小星球，每隔一陣子，一顆藍色火球從左上方直直劃向地平線，一出現就亮，
+// 中間有一大段持續的強光，整片天空和星球表面都被照成青藍色；沒入地平線之後，光要好幾秒才退。
 const FIREBALL_EVERY = 13;
 const FIREBALL_START = 0.5;
 const FIREBALL_SECONDS = 5;
@@ -283,15 +283,16 @@ function planet(w: number, h: number) {
 }
 
 /**
- * 亮度曲線（s 是這一次落下的進度 0–1）：一出現就很快亮起來，維持很長一段（中途爆亮一次，
- * 影片裡把天空照成白天的那一下），最後沉向地平線時才慢慢暗下去——暗→亮→暗，中間那段很長
+ * 亮度曲線（s 是這一次落下的進度 0–1）：一出現就亮起來，接著是一大段持續的強光
+ * （影片裡天空被照成白天的那幾秒），最後沉向地平線時才暗下去
  */
 function fireGlow(s: number) {
   if (s < 0 || s > 1) return 0;
-  const ignite = Math.min(1, s / 0.1);
-  const flare = Math.exp(-(((s - 0.55) / 0.16) ** 2));
-  const sink = 1 - 0.6 * Math.min(1, Math.max(0, (s - 0.82) / 0.18));
-  return (ignite * (0.75 + 0.25 * s) + flare * 0.9) * sink;
+  const ignite = Math.min(1, s / 0.08);
+  const ramp = (a: number, b: number, x: number) => Math.min(1, Math.max(0, (x - a) / (b - a)));
+  const flare = ramp(0.18, 0.32, s) * (1 - ramp(0.72, 0.86, s));
+  const sink = 1 - 0.6 * ramp(0.84, 1, s);
+  return (ignite * 0.75 + flare * 0.95) * sink;
 }
 
 /** 這一刻火球在哪、多亮。s 是這一次落下的進度（0–1） */
@@ -301,20 +302,14 @@ function fireball(w: number, h: number, t: number) {
   const s = local / FIREBALL_SECONDS;
   const { cx, cy, r } = planet(w, h);
   const R = rng(300 + k);
-  const sx = w * (-0.02 + R() * 0.1);
-  const sy = h * (0.04 + R() * 0.08);
+  const sx = w * (0.02 + R() * 0.12);
+  const sy = h * (0.02 + R() * 0.08);
   const ex = w * (0.62 + R() * 0.16);
   const ey = cy - Math.sqrt(Math.max(0, r * r - (ex - cx) ** 2)) + 6; // 落點在地平線後面一點
-  // 從地面看，火球走的是一道弧：前段幾乎橫著劃過天空，後段才彎下去落向地平線
-  const kx = sx + (ex - sx) * 0.62;
-  const ky = sy - h * 0.04;
+  // 幾乎是直線（大氣裡的流星走的是直線），只在最後稍微往下壓一點；速度大致等速
   const at = (q: number) => {
-    const e = q * (0.85 + 0.15 * q);
-    const u = 1 - e;
-    return {
-      x: u * u * sx + 2 * u * e * kx + e * e * ex,
-      y: u * u * sy + 2 * u * e * ky + e * e * ey,
-    };
+    const e = q * (0.9 + 0.1 * q);
+    return { x: sx + (ex - sx) * e, y: sy + (ey - sy) * (e * (0.92 + 0.08 * e)) };
   };
   return { s, at, glow: fireGlow(s), end: { x: ex, y: ey }, local, seed: k };
 }
