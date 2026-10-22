@@ -18,6 +18,7 @@ function makeRunner() {
     setScroll: vi.fn(),
     setSaturn: vi.fn(),
     setRunning: vi.fn(),
+    skipIntro: vi.fn(),
     dispose: vi.fn(),
   };
 }
@@ -240,5 +241,118 @@ describe('worker 路徑（正式環境的預設）', () => {
     expect(workers[0].terminated).toBe(true);
     expect(workers).toHaveLength(2);
     expect(canvases()[0]).not.toBe(before);
+  });
+});
+
+// 開場畫在這張 canvas 上，時間軸在 worker 裡；主執行緒靠階段訊息切 DOM（解開內容、收掉跳過鈕）。
+// 所以這裡的失效路徑比星空本身嚴重：開場卡住的話，內容就一直被藏著。
+describe('開場（worker 路徑）', () => {
+  const workers: FakeWorker[] = [];
+
+  class FakeWorker {
+    posted: { type: string; intro?: boolean }[] = [];
+    terminated = false;
+    listeners: ((e: { data: unknown }) => void)[] = [];
+    constructor() {
+      workers.push(this);
+    }
+    postMessage(m: { type: string; intro?: boolean }) {
+      this.posted.push(m);
+    }
+    addEventListener(t: string, fn: (e: { data: unknown }) => void) {
+      if (t === 'message') this.listeners.push(fn);
+    }
+    removeEventListener() {
+      /* 測試不需要 */
+    }
+    terminate() {
+      this.terminated = true;
+    }
+    emit(data: unknown) {
+      for (const fn of this.listeners) fn({ data });
+    }
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    workers.length = 0;
+    HTMLCanvasElement.prototype.transferControlToOffscreen = vi.fn(() => ({}) as OffscreenCanvas);
+    vi.stubGlobal('Worker', FakeWorker);
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete (HTMLCanvasElement.prototype as { transferControlToOffscreen?: unknown }).transferControlToOffscreen;
+    vi.unstubAllGlobals();
+  });
+
+  async function mount(props: Record<string, unknown> = {}) {
+    const { default: StarfieldGpu } = await import('./StarfieldGpu');
+    const view = render(<StarfieldGpu intro {...props} />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    return { view, StarfieldGpu };
+  }
+
+  it('init 帶著 intro，worker 送回的階段轉給 onIntroPhase', async () => {
+    const onIntroPhase = vi.fn();
+    await mount({ onIntroPhase });
+    expect(workers[0].posted[0]).toMatchObject({ type: 'init', intro: true });
+    act(() => {
+      workers[0].emit({ type: 'intro', phase: 'started' });
+      workers[0].emit({ type: 'intro', phase: 'preReveal' });
+    });
+    expect(onIntroPhase.mock.calls).toEqual([['started'], ['preReveal']]);
+  });
+
+  it('skipIntro 轉成 true → 送 skip 給 worker', async () => {
+    const { view, StarfieldGpu } = await mount();
+    expect(workers[0].posted.some((m) => m.type === 'skip')).toBe(false);
+    view.rerender(<StarfieldGpu intro skipIntro />);
+    expect(workers[0].posted.some((m) => m.type === 'skip')).toBe(true);
+  });
+
+  // 重建的 runner 不重播開場（使用者已經看到一半了），所以開場就停在半路——
+  // 不通知的話，呼叫端會一直等不到 done，內容永遠被藏著。
+  it('播到一半 GPU 掉了 → onIntroAbort，重建的 worker 不再播開場', async () => {
+    const onIntroAbort = vi.fn();
+    await mount({ onIntroAbort });
+    act(() => {
+      workers[0].emit({ type: 'intro', phase: 'started' });
+    });
+    await act(async () => {
+      workers[0].emit({ type: 'lost', message: 'device lost' });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(600);
+    });
+    expect(onIntroAbort).toHaveBeenCalledTimes(1);
+    expect(workers[1].posted[0]).toMatchObject({ type: 'init', intro: false });
+  });
+
+  it('開場已經播完才掉 → 不算中斷', async () => {
+    const onIntroAbort = vi.fn();
+    await mount({ onIntroAbort });
+    act(() => {
+      workers[0].emit({ type: 'intro', phase: 'started' });
+      workers[0].emit({ type: 'intro', phase: 'done' });
+    });
+    await act(async () => {
+      workers[0].emit({ type: 'lost', message: 'device lost' });
+      await Promise.resolve();
+    });
+    expect(onIntroAbort).not.toHaveBeenCalled();
+  });
+
+  it('worker 初始化失敗 → onIntroAbort（開場不會來了）', async () => {
+    const onIntroAbort = vi.fn();
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    await mount({ onIntroAbort });
+    act(() => {
+      workers[0].emit({ type: 'error', message: '沒有 WebGPU 也沒有 WebGL2' });
+    });
+    expect(onIntroAbort).toHaveBeenCalledTimes(1);
   });
 });

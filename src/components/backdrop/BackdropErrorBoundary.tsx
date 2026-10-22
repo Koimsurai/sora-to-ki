@@ -10,6 +10,8 @@ import { Component, type ReactNode } from 'react';
 interface Props {
   fallback: ReactNode;
   children: ReactNode;
+  /** 接到錯誤時通知外層（例如開場正在等這個 3D 背景，要改成直接放出內容） */
+  onError?: () => void;
 }
 
 interface State {
@@ -26,6 +28,7 @@ export default class BackdropErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: unknown) {
     // 背景失敗只記 log 不上報——功能無損，且這類機器通常也連不上第三方
     console.warn('[SpaceBackdrop] 3D 背景初始化失敗，降級為 DOM 特效:', error);
+    this.props.onError?.();
   }
 
   render() {
