@@ -1,171 +1,226 @@
-# 宙と木 (Koimsurai) — Personal Site & Blog
+<div align="center">
 
-[![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![TanStack Start](https://img.shields.io/badge/TanStack_Start-EF4444?style=for-the-badge&logo=react&logoColor=white)](https://tanstack.com/start)
-[![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/)
-[![Axum](https://img.shields.io/badge/axum-5A5A5A?style=for-the-badge&logo=rust&logoColor=white)](https://github.com/tokio-rs/axum)
-[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
-[![前端覆蓋率](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=frontend&label=frontend%20cov&style=for-the-badge&logo=codecov&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=frontend)
-[![後端覆蓋率](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=backend&label=backend%20cov&style=for-the-badge&logo=codecov&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=backend)
-[![e2e 覆蓋率](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=e2e&label=e2e%20cov&style=for-the-badge&logo=playwright&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=e2e)
+<img src="public/favicon.svg" width="72" alt="宙と木 logo" />
 
-Koimsurai 的個人網站原始碼。一個 full-stack blog + portfolio + 多平台 activity dashboard，從 2025 年 4 月持續開發到現在。
+# 宙と木 · Koimsurai
 
-> 2026-07：後端完成 **Express → Rust (axum)** strangler 遷移（120+ 端點逐一 byte-identical 對拍驗證），前端為 **TanStack Start SSG**。遷移全記錄見 [`backend/STRANGLER.md`](backend/STRANGLER.md)。
+**個人網站與部落格**：寫技術手記、放照片與書單，也把自己的遊戲、音樂、動畫和寫程式紀錄串在同一個地方。
 
-🌐 **Live**: <https://koimsurai.com>
+[**koimsurai.com**](https://koimsurai.com) · [手記](https://koimsurai.com/blog) · [RSS](https://koimsurai.com/rss) · [站點歷程](https://koimsurai.com/history)
 
----
+[![CI](https://img.shields.io/github/actions/workflow/status/timo9378/sora-to-ki/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/timo9378/sora-to-ki/actions/workflows/ci.yml)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+[![frontend cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=frontend&label=frontend%20cov&logo=codecov&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=frontend)
+[![e2e cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=e2e&label=e2e%20cov&logo=playwright&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=e2e)
+[![backend cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=backend&label=backend%20cov&logo=rust&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=backend)
 
-## ✨ Features
+[![React 19](https://img.shields.io/badge/React_19-20232A?logo=react&logoColor=61DAFB)](https://react.dev/)
+[![TanStack Start](https://img.shields.io/badge/TanStack_Start-EF4444?logo=react&logoColor=white)](https://tanstack.com/start)
+[![Rust](https://img.shields.io/badge/Rust_·_axum-000000?logo=rust&logoColor=white)](https://github.com/tokio-rs/axum)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
+[![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
-### Blog（手記）
-
-- **完整 CMS** — 自製管理後台、文章 / 分類 / 標籤 / 系列文 / 評論 / 訂閱者 / 圖片管理
-- **Markdown 編輯器** — Monaco Editor + Vim 模式 + 自訂 snippets + 斜線指令 + 拖放上傳
-- **語法高亮** — Shiki fine-grained core，白名單語言各自切 chunk、按需載入（不預載）
-- **Mermaid 圖表** — 即時渲染 + 多主題 + zoom/pan/fullscreen
-- **多語系 i18n** — 繁中 / 簡中 / English / 日本語，OpenCC 自動轉繁簡，每語系獨立 Monaco model
-- **AI 輔助** — AI 摘要生成、AI 標籤建議、文章自動生成
-- **Thumbhash** — 上傳圖片自動產 25-byte hash 作為模糊佔位圖防 CLS
-- **Newsletter** — Resend 整合，published 時自動推送，前端持久化訂閱狀態 + 一鍵退訂
-- **PWA** — vite-plugin-pwa autoUpdate，NetworkFirst posts API、CacheFirst 圖片
-
-### Home / Portfolio
-
-- **3D 互動** — Three.js + @react-three/fiber Saturn 場景，hyperspace canvas intro 動畫
-- **多平台 Activity Dashboard** — 即時抓 WakaTime / GitHub / Steam / Spotify 數據
-  - Steam 個人化卡片：動畫頭像 + 頭像框 + 等級徽章 + nameplate webm
-  - Spotify circuit breaker：audio-features API 廢棄後改抓 metadata + cache
-- **照片牆** — Masonry layout + EXIF 提取 + AI CLIP Tagger 自動標籤 + 全螢幕 PhotoViewer (zoom/pan/share)
-- **3D 書櫃** — Zero Gravity Library，可拖曳 3D 書本互動
-- **資訊頁** — 此站點 / 歷史 / 留言 / 友鏈，sticky TOC + scrollspy
-- **OAuth 登入** — GitHub / Google，RBAC 用戶分權
-
-### Infra
-
-- **API Gateway** — Rust (axum) 後端，串接外部 API 並保護 keys
-- **動態 Sitemap** — 每語系獨立 URL + hreflang alternates
-- **OG 圖自動生成** — 文章發布時自動產 1200×630 OG card
-- **Dependabot 緊跟** — 漏洞 < 24 小時內處理
+</div>
 
 ---
 
-## 🛠️ Tech Stack
+從 2025 年 4 月開始寫，一路改到現在。前端是 **React 19 + TanStack Start（SSR + ISR）**，後端是 **Rust（axum + sqlx + SQLite）**，全部跑在家裡的一台伺服器上，用 Docker Compose 部署。
 
-### Frontend
-- **React 19** + **TanStack Start**（SSG + SSR）+ **Vite**
-- **Tailwind CSS v4**（設定在 `src/index.css` 的 `@theme`，無 config 檔）+ 元件同名 scoped CSS
-- **Three.js / @react-three/fiber** for 3D scenes
-- **Framer Motion** + **React Spring** for animations
-- **Monaco Editor** with monaco-vim for blog editing
-- **Shiki** lazy-loaded code highlighting
-- **Mermaid** with ELK layout
-- **React-Markdown** + remark-gfm + remarkAlert + rehype-raw
+> 2026-07 後端從 Express 整套遷移到 Rust：120 多個端點逐一對拍、確認回應一模一樣才切換。過程記錄在 [`backend/STRANGLER.md`](backend/STRANGLER.md)。
 
-### Backend（Rust）
-- **axum** + **tokio** + **sqlx**（SQLite）
-- **JWT (HS256)** + **bcrypt** authentication（與舊 bcryptjs hash 相容）
-- **image / resvg / webp / thumbhash / kamadak-exif** — 圖片管線（取代 sharp）
-- **ferrous-opencc** — 繁簡轉換（純 Rust）
-- **[anigamer](https://github.com/timo9378/anigamer-rs)** — 自製巴哈動畫瘋 SDK（獨立 crate）
-- **Resend**（reqwest 直打 API）transactional email
-- **specta** — Rust struct → TS 型別（`packages/api-types`，前端型別單一來源）
+## 📸 畫面
 
-### DevOps
-- **Docker Compose**（`frontend` + `backend-rs` + 共用 volumes）
-- **Nginx** reverse proxy（靜態圖 alias 直 serve）
-- **pnpm workspace** + **Cargo workspace** monorepo
+| 首頁 | 手記列表 |
+|:---:|:---:|
+| [![首頁](.github/screenshots/home.jpg)](https://koimsurai.com) | [![手記列表](.github/screenshots/blog.jpg)](https://koimsurai.com/blog) |
+| **文章頁** | **書櫃（知識星圖）** |
+| [![文章頁](.github/screenshots/post.jpg)](https://koimsurai.com/blog) | [![書櫃](.github/screenshots/bookshelf.jpg)](https://koimsurai.com/bookshelf) |
+| **我的配備** | **動態** |
+| [![我的配備](.github/screenshots/setup.jpg)](https://koimsurai.com/setup) | [![動態](.github/screenshots/activity.jpg)](https://koimsurai.com/activity) |
 
----
+## ✨ 有什麼
 
-## ⚙️ Local Development
+### 手記（部落格）
 
-### Prerequisites
-- Node.js v20+
-- pnpm v10+
-- Docker + Docker Compose（推薦走 Docker 跑）
+- **MDX 文章**：除了 GFM，另有二十多個自訂區塊（程式碼分頁、Diff、檔案樹、圖表、投票、Excalidraw 手繪圖、日文振假名、劇透、站長註解…）
+- **五種語系**：繁中、簡中、English、日本語、한국어。簡中用 OpenCC 自動轉換，每篇文章可以各自翻譯
+- **程式碼高亮**：Shiki 走 JavaScript 正規式引擎（文章頁不用下載 wasm），只有 C 家族語言才載入 Oniguruma
+- **Mermaid 圖表**：可縮放、平移、全螢幕，跟著站點配色
+- **圖片不跳版**：上傳時算出 thumbhash 和原始尺寸，載入前先顯示模糊佔位圖
+- **留言、按讚、反應、系列文、目錄、閱讀進度**，以及 RSS、電子報（Resend）
+- **碎念**：短篇動態，可以附上影劇或連結卡片
 
-### Setup
+### 生活紀錄
+
+- **動態**：WakaTime 寫程式時數、GitHub 活動、Steam 個人檔案與遊戲時數
+- **音樂**：Spotify 正在播放、最近播放、最愛曲風
+- **在看什麼**：動畫瘋觀看紀錄自動同步（[anigamer](https://github.com/timo9378/anigamer-rs)，自己寫的 SDK），電影與影集透過 Simkl 和 TMDb 同步
+- **書櫃**：把書排成星圖；ISBN 查詢走國家圖書館的資料，另有可以拖曳的 3D 零重力模式
+- **照片**：瀑布流、EXIF 資訊、CLIP 自動標籤、可縮放的全螢幕檢視
+- **我的配備**：用終端機介面呈現 neofetch 風格的主機資訊，以及家裡的網路拓樸
+
+### 站台本身
+
+- **太空背景**：星空與土星由 three.js（WebGPU，不支援時退回 WebGL2）在 Web Worker 的 OffscreenCanvas 裡算；沒有 GPU 的裝置自動改成純 CSS
+- **自製後台**：Monaco 編輯器（含 Vim 模式、斜線指令、拖放上傳）、即時預覽、留言審核、訂閱者與使用者權限管理
+- **MCP server**：[`packages/mcp-server`](packages/mcp-server) 提供 26 個工具，讓 AI 助手透過後台 API 寫文章、上傳圖片、管理分類
+- **其他**：GitHub／Google 登入、命令面板（`Ctrl+K`）、PWA 離線頁、每語系各自的 sitemap 與 hreflang、文章自動產生 OG 圖、嚴格的 CSP、自架的錯誤追蹤（GlitchTip）與 Core Web Vitals 回報
+
+## 🏗️ 架構
+
+```mermaid
+flowchart LR
+  user([瀏覽器]) --> nginx[nginx<br/>TLS / gzip / 靜態圖]
+  nginx -->|頁面| fe[frontend<br/>TanStack Start · Nitro<br/>SSR + ISR]
+  nginx -->|/api| be[backend-rs<br/>axum · sqlx]
+  fe -->|SSR 取資料| be
+  be --> db[(SQLite)]
+  be -->|快取 + 失敗回舊資料| ext[第三方 API<br/>GitHub · Spotify · Steam<br/>WakaTime · TMDb · Simkl · 動畫瘋]
+  be -.文章更新後清 ISR 快取.-> fe
+  backup[db-backup<br/>每日備份 SQLite] --- db
+```
+
+- **型別只寫一次**：後端的 Rust struct 用 [specta](https://github.com/specta-rs/specta) 產生 TypeScript 型別（[`packages/api-types`](packages/api-types)），前端直接引用；CI 會檢查兩邊有沒有對上
+- **第三方 API 都經過後端**：金鑰不會進前端。回應會快取，上游出錯時改回舊資料，不會整區空白
+- **ISR**：頁面由 Nitro 快取，後端改到文章時主動通知前端清除快取
+
+## 🛠️ 技術
+
+| | |
+|---|---|
+| **前端** | React 19 · TanStack Start / Router / Query · Vite+（vite、vitest、oxlint、oxfmt）· Tailwind CSS v4 · Framer Motion · three.js · MDX · Shiki · beautiful-mermaid · Excalidraw · i18next · Radix UI / shadcn |
+| **後端** | Rust 2024 · axum · tokio · sqlx（SQLite）· JWT + bcrypt · image / resvg / thumbhash（圖片與 OG 圖）· ferrous-opencc · utoipa（OpenAPI，`/api/docs`）· Sentry SDK |
+| **基礎設施** | Docker Compose · nginx · GitHub Actions · Codecov · 自架 GlitchTip |
+
+## 🧪 品質把關
+
+每個 PR 都要通過下面這些才能合併（完整清單在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）：
+
+- **型別與 lint**：`tsc`、oxlint（含型別感知規則與 `@shadcn/lint`）、Biome（CSS）、一支自己寫的 CSS token 檢查（間距、字級、顏色…都必須用設計 token）
+- **測試**：vitest 單元測試、Playwright e2e（23 支 spec，含無障礙檢查與 11 頁 × 3 種寬度的計算後樣式比對）、後端 cargo-nextest 搭配覆蓋率門檻
+- **API**：用 OpenAPI 規格自動產生測試資料打後端（Schemathesis），並檢查回應符合宣告的 schema
+- **後端**：`cargo clippy`（pedantic）、`cargo audit`、`cargo shear`、`typos`
+- **效能**：Lighthouse CI 的效能預算
+- **另外**（不在 CI，手動跑）：變異測試（Stryker、cargo-mutants），找出「測試有跑到、但其實沒在檢查」的地方
+
+## ⚙️ 本機開發
+
+需要 **Node.js ≥ 26**、**pnpm 12**、**Rust stable**（edition 2024），或者只要 Docker。
 
 ```bash
 git clone https://github.com/timo9378/sora-to-ki.git
 cd sora-to-ki
-
-# 後端 .env
-cp backend/.env.example .env.backend
-# 編輯 .env.backend，填入 ADMIN_USERNAME / ADMIN_PASSWORD / JWT_SECRET /
-# WAKATIME_API_KEY / STEAM_API_KEY / STEAM_ID / SPOTIFY_* / RESEND_API_KEY 等
-
-# 安裝
 pnpm install
+```
 
-# 開發模式（frontend dev server 起在 :13998，API 打本機後端 :3009）
+### 用 Docker 跑整套（最簡單）
+
+```bash
+cp backend/.env.example .env.backend   # 填上 JWT_SECRET
+docker compose up -d --build
+# → http://localhost:13588
+```
+
+### 分開跑前後端（開發用）
+
+```bash
+# 後端：讀 backend/.env
+cp backend/.env.example backend/.env
+#   把 DATABASE_URL 改成本機路徑，例如 sqlite://./dev.sqlite
+#   把 BIND_ADDR 改成 127.0.0.1:3009（前端 dev server 預設連這個埠）
+cd backend && cargo run
+
+# 前端：http://localhost:13998
 pnpm dev
 ```
 
-### Docker (推薦)
+資料庫不存在時會自動建立，schema 由 [`backend/migrations/`](backend/migrations) 在啟動時套用。
+
+### 環境變數
+
+必填的只有 `DATABASE_URL` 和 `JWT_SECRET`（範例檔裡都有）。其他的沒設時，對應的功能會自動關閉，或顯示空狀態。
+
+| 用途 | 變數 |
+|---|---|
+| 基本 | `DATABASE_URL` `BIND_ADDR` `JWT_SECRET` `SITE_URL` |
+| 後台帳號 | `ADMIN_USERNAME` `ADMIN_PASSWORD` |
+| OAuth 登入 | `GITHUB_CLIENT_ID` `GITHUB_CLIENT_SECRET` `GOOGLE_CLIENT_ID` `GOOGLE_CLIENT_SECRET` |
+| 動態頁 | `GITHUB_TOKEN` `WAKATIME_API_KEY` `STEAM_API_KEY` `STEAM_ID` |
+| Spotify | `SPOTIFY_CLIENT_ID` `SPOTIFY_CLIENT_SECRET` `SPOTIFY_REFRESH_TOKEN` `SPOTIFY_REDIRECT_URI` |
+| 影劇 | `TMDB_API_TOKEN` `SIMKL_CLIENT_ID` `SIMKL_ACCESS_TOKEN` `BAHAMUT_UID` `BAHAMUT_PASSWORD` |
+| 書櫃 | `GOOGLE_BOOKS_API_KEY` `ENABLE_TW_ISBN_SYNC` |
+| 電子報 | `RESEND_API_KEY` |
+| 錯誤追蹤 | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
+| ISR 清快取 | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET` |
+
+## 📜 常用指令
 
 ```bash
-docker compose up -d --build
-# 站點：http://localhost:13588
-docker compose logs -f frontend backend-rs
+pnpm dev              # 前端 dev server
+pnpm build            # 正式建置
+pnpm test             # 單元測試
+pnpm e2e              # Playwright e2e（跑的是上一次 build 的產物，改完 src/ 要先 build）
+pnpm lint:css         # CSS lint（Biome）
+pnpm check:css-tokens # CSS token 檢查
+pnpm export:types     # 從 Rust 重新產生 TS 型別
+
+cd backend
+cargo nextest run --no-fail-fast   # 後端測試（請用 nextest，不要用 cargo test）
+cargo clippy --all-targets -- -D warnings
 ```
 
----
-
-## 📂 Project Structure
+## 📂 專案結構
 
 ```
-/
-├── backend/                 # Rust (axum) API — 全部業務邏輯
-│   ├── src/main.rs          # 路由總表（120+ 端點）
-│   ├── src/handlers/        # 按域拆分（posts/thoughts/watch/gallery/…）
-│   ├── src/bin/export_types.rs  # specta → packages/api-types
-│   └── STRANGLER.md         # Express→Rust 遷移全記錄
+.
+├── backend/                 # Rust API
+│   ├── src/router.rs        # 路由表
+│   ├── src/handlers/        # 依領域拆分（posts、thoughts、watch、gallery、spotify…）
+│   ├── migrations/          # SQLite schema
+│   └── STRANGLER.md         # Express → Rust 遷移紀錄
 ├── packages/
-│   ├── api-types/           # Rust struct 生成的 TS 型別（勿手改）
-│   ├── mdx-core/            # 前後端共用的 MDX 編譯核心
-│   └── mcp-server/          # 後台 admin API 的 MCP server（stdio）
+│   ├── api-types/           # 由 Rust 產生的 TS 型別（不要手改）
+│   ├── mdx-core/            # 前後端共用的 MDX 編譯設定
+│   └── mcp-server/          # 後台 API 的 MCP server
 ├── src/
-│   ├── components/          # 依「功能領域」分組，不是依元件型別（見 CLAUDE.md）
-│   │   ├── layout/          # AppShell、Header/MobileNav、Footer、命令面板
-│   │   ├── backdrop/        # 太空背景與轉場特效
-│   │   ├── home/ about/     # 首頁、關於／資訊頁
-│   │   ├── blog/ mdx/       # 文章頁與 MDX block 元件
-│   │   ├── gallery/ media/  # 照片牆、收藏庫（影劇／音樂／書）
-│   │   ├── admin/           # 後台（含 monaco-editor/）
-│   │   └── ui/ animate-ui/  # shadcn 產生的檔案，勿手動整理
-│   ├── data/ i18n/ seo/     # API 查詢、語系路由、meta / JSON-LD
-│   ├── hooks/ store/
-│   └── lib/                 # 純工具（含 lib/mdx/ 編譯鏈）
-├── public/
+│   ├── routes/              # TanStack Router 的檔案路由（含 $locale/ 語系前綴）
+│   ├── components/          # 依功能領域分組：layout、backdrop、blog、mdx、media、admin…
+│   ├── data/ i18n/ seo/     # API 查詢、語系路由、meta 與 JSON-LD
+│   ├── hooks/ store/ lib/
+│   └── locales/             # 五種語系的翻譯
+├── server/routes/           # Nitro 路由：sitemap、robots、rss、llms.txt
+├── tests/e2e/               # Playwright
 ├── Dockerfile
 └── docker-compose.yml
 ```
 
----
+給 AI 助手（Claude Code 等）看的工作守則在 [`CLAUDE.md`](CLAUDE.md)，裡面也記錄了很多踩過的坑和設計理由。
 
-## 📜 Scripts
+## 🍴 想參考或拿去改
 
-```bash
-pnpm dev           # frontend dev server
-pnpm build         # production build
-pnpm preview       # serve production build
-pnpm build:photos  # 處理照片牆圖片（EXIF + thumbhash + CLIP tagger）
+歡迎參考任何寫法，或直接 fork 來架自己的站。幾件事先說：
 
-# 後端
-cd backend && cargo run              # 本機跑（讀 .env）
-cd backend && cargo run --bin export_types  # 重生 TS 型別
-```
+- 程式碼採 **AGPL-3.0**：如果你改過之後**架成網站對外提供**，也要以相同授權公開修改後的原始碼
+- 站上的**文章、照片、碎念、頭像與 logo 都不在授權範圍內**（見下方），fork 之後請換成你自己的
+- 很多內容綁定我的帳號：動態頁的 Steam／GitHub／WakaTime、動畫瘋同步、首頁與關於頁的自我介紹、我的配備頁的硬體清單。這些都要改成你自己的，或者直接拿掉
+- 有問題或發現 bug 都歡迎開 [issue](https://github.com/timo9378/sora-to-ki/issues)
 
----
+## 📄 授權
 
-## 🌌 More
+- **程式碼**：[GNU Affero General Public License v3.0](LICENSE)
+- **內容**：文章、照片、碎念、書評、頭像與 logo 等站點內容 © Koimsurai，**保留所有權利**，未經同意請勿轉載或重製
 
-站點走過的路：<https://koimsurai.com/history>
-此站點 Q&A：<https://koimsurai.com/about-site>
+## 🙏 致謝
 
-歡迎友鏈：<https://koimsurai.com/friends>
+站上用到的開源專案很多，特別感謝
+[TanStack](https://tanstack.com/)、[axum](https://github.com/tokio-rs/axum)、[sqlx](https://github.com/launchbadge/sqlx)、
+[three.js](https://threejs.org/)、[Shiki](https://shiki.style/)、[MDX](https://mdxjs.com/)、
+[Excalidraw](https://excalidraw.com/)、[Radix UI](https://www.radix-ui.com/)、[shadcn/ui](https://ui.shadcn.com/)、
+[OpenCC](https://github.com/BYVoid/OpenCC)、[thumbhash](https://github.com/evanw/thumbhash)，
+以及 [Vite+](https://viteplus.dev/) 與 oxc 的工具鏈。
+
+## 🌌 更多
+
+- 站點走過的路：<https://koimsurai.com/history>
+- 關於這個網站：<https://koimsurai.com/about-site>
+- 交換友鏈：<https://koimsurai.com/friends>
