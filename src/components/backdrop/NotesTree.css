@@ -1,10 +1,11 @@
-/* 手記天空底下的樹：釘在視窗底部，內容從上面捲過去 */
+/* 手記天空底下的地平線：橫跨整個視窗底部，內容從上面捲過去 */
 .notes-tree {
   position: fixed;
+  left: 0;
   right: 0;
   bottom: 0;
-  width: min(760px, 60vw);
-  height: 420px;
+  width: 100%;
+  height: max(220px, 30vh);
   z-index: 2;
   pointer-events: none;
   opacity: 0;

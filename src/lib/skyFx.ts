@@ -56,7 +56,7 @@ const POLE = new THREE.Vector3(-0.45, 0.55, -1).normalize();
  * 星空繞天極轉的速度（rad/s）。真實的是 7.3e-5，這裡快一些才看得到軌跡長出來，
  * 但要慢到「讀著讀著才發現弧線變長了」——快了會像流星雨，看了頭暈
  */
-const POLE_SPEED = 0.012;
+const POLE_SPEED = 0.02;
 /**
  * 以 60fps 為準的每幀保留比例。1＝不衰減：真的長曝光照片裡，整條弧的亮度是均勻的；
  * 有衰減的話尾巴會淡掉，看起來像流星而不是星軌。離開這一頁時整張清掉
@@ -78,9 +78,9 @@ export function createSkyFx(opts: {
   const { renderer, skyGroup } = opts;
 
   // ── 拖出軌跡的星 ──
-  // 只有這三百顆亮星留下軌跡，背景那兩萬多顆照常是點。全部拖出來的話整片天空糊成灰色、看了頭暈。
+  // 只有這四百多顆亮星留下軌跡，背景那兩萬多顆照常是點。全部拖出來的話整片天空糊成灰色、看了頭暈。
   // 獨立一個場景、一般的材質：背景星的材質寫 MRT，畫不進單張 target。
-  const TRAIL_STARS = 300;
+  const TRAIL_STARS = 450;
   const trailScene = new THREE.Scene();
   const trailGroup = new THREE.Group();
   trailScene.add(trailGroup);

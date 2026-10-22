@@ -1,5 +1,5 @@
-// 手記那片天空（星軌）底下的那棵樹：從地平線一根一根長出枝幹。
-// 「宙と木」的木。純 2D canvas，一次畫完就停，不跑常駐迴圈。
+// 手記那片天空（星軌）底下的地平線：遠山、近處的坡，坡上一棵樹。「宙と木」的木。
+// 橫跨整個視窗底部，往上淡進天空——不是一塊貼在角落的圖。純 2D canvas，畫完就停。
 import { useEffect, useRef } from 'react';
 import './NotesTree.css';
 
@@ -27,23 +27,23 @@ function rng(seed: number) {
 function growTree(baseX: number, baseY: number, scale: number) {
   const R = rng(21);
   const segs: Seg[] = [];
-  const leaves: [number, number, number][] = [];
+  const leaves: [number, number][] = [];
   const grow = (x: number, y: number, ang: number, len: number, w: number, depth: number, maxDepth: number) => {
     const x2 = x + Math.cos(ang) * len;
     const y2 = y + Math.sin(ang) * len;
     segs.push({ x1: x, y1: y, x2, y2, w, depth: maxDepth - depth });
     if (depth === 0) {
-      leaves.push([x2, y2, maxDepth]);
+      leaves.push([x2, y2]);
       return;
     }
     const k = depth > 5 ? 2 : R() < 0.45 ? 3 : 2;
     for (let i = 0; i < k; i++) {
       const spread = (i - (k - 1) / 2) * (0.5 + R() * 0.3) + (R() - 0.5) * 0.35;
       const lift = (-Math.PI / 2 - (ang + spread)) * 0.12;
-      grow(x2, y2, ang + spread + lift, len * (0.72 + R() * 0.12), Math.max(0.6, w * 0.66), depth - 1, maxDepth);
+      grow(x2, y2, ang + spread + lift, len * (0.72 + R() * 0.12), Math.max(0.5, w * 0.66), depth - 1, maxDepth);
     }
   };
-  grow(baseX, baseY, -Math.PI / 2 + 0.04, 64 * scale, 9 * scale, 7, 7);
+  grow(baseX, baseY, -Math.PI / 2 + 0.04, 30 * scale, 4.5 * scale, 7, 7);
   return { segs, leaves, R };
 }
 
@@ -60,39 +60,56 @@ export default function NotesTree({ shown }: { shown: boolean }) {
     const H = cv.clientHeight;
     cv.width = Math.round(W * dpr);
     cv.height = Math.round(H * dpr);
-    const scale = H / 420;
-    const ground = (x: number) => H * 0.86 - Math.sin((x / W) * 3.1 + 0.6) * H * 0.04;
-    const baseX = W * 0.62;
-    const { segs, leaves, R } = growTree(baseX, ground(baseX) + 2, scale);
+    const R0 = rng(7);
+    const phase = [R0() * 6, R0() * 6, R0() * 6];
+    // 遠山：起伏大、顏色淺（被大氣蓋住）；近坡：平緩、最暗，樹長在上面
+    const far = (x: number) =>
+      H * 0.62 -
+      (Math.sin((x / W) * 5.1 + phase[0]) * 0.06 + Math.sin((x / W) * 11.3 + phase[1]) * 0.025) * H;
+    const near = (x: number) => H * 0.84 - Math.sin((x / W) * 2.2 + phase[2]) * H * 0.05;
+    const scale = H / 260;
+    const treeX = W * 0.8;
+    const { segs, leaves, R } = growTree(treeX, near(treeX) + 1, scale);
     const leafDots = leaves.flatMap(([x, y]) =>
-      Array.from({ length: 3 }, () => [x + (R() - 0.5) * 12 * scale, y + (R() - 0.5) * 9 * scale, (2 + R() * 4) * scale]),
+      Array.from({ length: 3 }, () => [x + (R() - 0.5) * 6 * scale, y + (R() - 0.5) * 5 * scale, (1 + R() * 2.2) * scale]),
     );
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const total = reduce ? 1 : 1800;
+    const total = reduce ? 1 : 2200;
     const t0 = performance.now();
     let raf = 0;
-    const ink = '#020306';
-    const draw = (now: number) => {
-      const p = Math.min(1, (now - t0) / total);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, W, H);
-      // 地平線後面一點暖光（城市的光害），黑色的樹才有東西襯著
-      const glow = ctx.createRadialGradient(W * 0.55, H * 1.02, 0, W * 0.55, H * 1.02, W * 0.75);
-      glow.addColorStop(0, `rgba(255,168,96,${0.2 * p})`);
-      glow.addColorStop(0.45, `rgba(255,140,80,${0.07 * p})`);
-      glow.addColorStop(1, 'rgba(255,140,80,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, W, H);
-      // 地平線先出現，再一層一層長枝
-      ctx.fillStyle = ink;
+    const ridge = (f: (x: number) => number) => {
       ctx.beginPath();
       ctx.moveTo(0, H);
-      for (let x = 0; x <= W; x += 4) ctx.lineTo(x, ground(x));
+      for (let x = 0; x <= W; x += 6) ctx.lineTo(x, f(x));
       ctx.lineTo(W, H);
+      ctx.closePath();
+    };
+    const draw = (now: number) => {
+      const p = Math.min(1, (now - t0) / total);
+      const ease = 1 - Math.pow(1 - Math.min(1, p * 1.6), 3);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      // 大氣：地平線附近最亮、往上淡到完全透明（canvas 的上緣是 0，看不出邊界）
+      const haze = ctx.createLinearGradient(0, 0, 0, H);
+      haze.addColorStop(0, 'rgba(70, 64, 96, 0)');
+      haze.addColorStop(0.55, `rgba(70, 64, 96, ${0.18 * ease})`);
+      haze.addColorStop(0.75, `rgba(96, 78, 92, ${0.28 * ease})`);
+      haze.addColorStop(1, `rgba(96, 78, 92, ${0.28 * ease})`);
+      ctx.fillStyle = haze;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = ease;
+      ctx.fillStyle = '#0d0e18';
+      ridge(far);
       ctx.fill();
-      ctx.strokeStyle = ink;
+      ctx.fillStyle = '#04050a';
+      ridge(near);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      // 樹：地形出來之後，一層一層長枝
+      ctx.strokeStyle = '#04050a';
+      ctx.fillStyle = '#04050a';
       ctx.lineCap = 'round';
-      const reach = p * 8.5;
+      const reach = Math.max(0, p - 0.25) / 0.75 * 8.5;
       for (const s of segs) {
         const k = Math.min(1, Math.max(0, reach - s.depth));
         if (k <= 0) continue;
@@ -103,7 +120,6 @@ export default function NotesTree({ shown }: { shown: boolean }) {
         ctx.stroke();
       }
       const leafK = Math.min(1, Math.max(0, reach - 7.5));
-      ctx.fillStyle = ink;
       for (const [x, y, r] of leafDots) {
         ctx.beginPath();
         ctx.arc(x, y, r * leafK, 0, Math.PI * 2);
