@@ -8,7 +8,12 @@ import CSSStarfield from '@/components/backdrop/CSSStarfield';
 import BackToTopButton from './BackToTopButton';
 
 // 桌面 WebGL 背景/開場 + 互動式 overlay → 純 client(three.js / portal 不進 SSR)
-const SpaceBackdropShell = lazy(() => import('@/components/backdrop/SpaceBackdropShell'));
+// GPU 探測跟這支 chunk 的下載同時起跑，不要等元件掛上才開始：開場要等探測做完才播
+// （理由見 SpaceBackdropShell 的 introReady），越早開始，開場前要等的時間越短。
+const SpaceBackdropShell = lazy(() => {
+  void import('@/lib/webglSupport').then((m) => m.probeHardwareGpu());
+  return import('@/components/backdrop/SpaceBackdropShell');
+});
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const ContextMenu = lazy(() => import('./ContextMenu'));
 
