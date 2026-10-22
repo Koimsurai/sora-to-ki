@@ -7,7 +7,7 @@
 // 場景/渲染全在 lib/starfieldGpu.ts；本元件只管 canvas 元素、訊息、徽章/量測 overlay。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
-import type { PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
+import type { PerfReport, SkyMode, StarfieldRunner } from '@/lib/starfieldGpu';
 import type { IntroPhase } from '@/lib/introTimeline';
 
 const canOffscreen =
@@ -46,6 +46,8 @@ interface StarfieldGpuProps {
   onIntroAbort?: () => void;
   /** 轉成 true＝跳過開場 */
   skipIntro?: boolean;
+  /** 這一頁的天空（見 lib/starfieldGpu.ts 的 SkyMode） */
+  sky?: SkyMode;
 }
 
 export default function StarfieldGpu({
@@ -56,6 +58,7 @@ export default function StarfieldGpu({
   onIntroPhase,
   onIntroAbort,
   skipIntro = false,
+  sky = 'default',
 }: StarfieldGpuProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [backend, setBackend] = useState(BACKEND_PENDING);
@@ -68,9 +71,12 @@ export default function StarfieldGpu({
     return Number.isFinite(v) ? v : undefined;
   }, []);
   // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
-  const controlRef = useRef<{ scroll(y: number): void; saturn(v: boolean, a: boolean): void; skip(): void } | null>(
-    null,
-  );
+  const controlRef = useRef<{
+    scroll(y: number): void;
+    saturn(v: boolean, a: boolean): void;
+    skip(): void;
+    sky(mode: SkyMode): void;
+  } | null>(null);
 
   // 開場只在第一次建 runner 時播；之後的重建（device lost）一律不播
   const [introMode] = useState(intro);
@@ -165,6 +171,10 @@ export default function StarfieldGpu({
   }, [isOnHomePage, animateSaturn, backend]); // backend 變化 = runner 就緒的訊號，重新同步
 
   useEffect(() => {
+    controlRef.current?.sky(sky);
+  }, [sky, backend]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -222,6 +232,7 @@ export default function StarfieldGpu({
         scroll: (y) => worker.postMessage({ type: 'scroll', y }),
         saturn: (v, a) => worker.postMessage({ type: 'saturn', visible: v, animate: a }),
         skip: () => worker.postMessage({ type: 'skip' }),
+        sky: (mode) => worker.postMessage({ type: 'sky', mode }),
       };
       if (skipRef.current) controlRef.current.skip();
       const onMsg = (
@@ -295,6 +306,7 @@ export default function StarfieldGpu({
           scroll: (y) => runner.setScroll(y),
           saturn: (v, a) => runner.setSaturn(v, a),
           skip: () => runner.skipIntro(),
+          sky: (mode) => runner.setSky(mode),
         };
         if (skipRef.current) runner.skipIntro();
         setBackend(`${be} · main`);

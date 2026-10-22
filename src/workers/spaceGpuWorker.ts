@@ -7,7 +7,7 @@
 //   ‧ worker 內 shim self.document={} 干擾環境判定
 // 這裡協定極簡：init / resize / running / scroll / saturn / skip，錯誤一律回報主執行緒處理。
 // 回程：ready / perf / lost / error，以及開場的各個階段（intro）。
-import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
+import { createStarfieldRunner, type SkyMode, type StarfieldRunner } from '../lib/starfieldGpu';
 
 interface InitMsg {
   type: 'init';
@@ -40,7 +40,11 @@ interface SaturnMsg {
 interface SkipMsg {
   type: 'skip';
 }
-type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | SkipMsg;
+interface SkyMsg {
+  type: 'sky';
+  mode: SkyMode;
+}
+type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | SkipMsg | SkyMsg;
 
 let runner: StarfieldRunner | null = null;
 // init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
@@ -56,6 +60,7 @@ let lastSaturn: { visible: boolean; animate: boolean } | null = null;
 let lastRunning: boolean | null = null;
 // 開場還在初始化時使用者就按了跳過（或主執行緒等太久放棄）→ ready 之後直接不播
 let skipRequested = false;
+let lastSky: SkyMode | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
@@ -80,6 +85,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         if (lastSaturn) runner.setSaturn(lastSaturn.visible, lastSaturn.animate);
         if (lastRunning !== null) runner.setRunning(lastRunning);
         if (skipRequested) runner.skipIntro();
+        if (lastSky) runner.setSky(lastSky);
         self.postMessage({ type: 'ready', backend });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
@@ -96,6 +102,9 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'scroll') {
     lastScroll = msg.y;
     runner?.setScroll(msg.y);
+  } else if (msg.type === 'sky') {
+    lastSky = msg.mode;
+    runner?.setSky(msg.mode);
   } else {
     // 到這裡 union 只剩 SaturnMsg，再比對一次 msg.type 是恆真。
     // 日後新增訊息型別時，下面存取 msg.visible/msg.animate 會編譯失敗——不會被靜默吞掉。

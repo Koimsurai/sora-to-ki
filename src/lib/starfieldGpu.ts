@@ -35,7 +35,11 @@ import {
   normalLocal,
   normalView,
   positionViewDirection,
+  mx_noise_float,
+  modelViewMatrix,
 } from 'three/tsl';
+import type { Node } from 'three/webgpu';
+import { createSkyFx } from './skyFx';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
 import { createHyperspace, type Hyperspace } from './hyperspace';
@@ -68,8 +72,19 @@ export interface StarfieldRunner {
   setSaturn(visible: boolean, animate: boolean): void;
   /** 跳過開場。開場還沒開始的話就直接不播 */
   skipIntro(): void;
+  /** 這一頁的天空（見 SkyMode）。換頁時星星會變成下一頁的樣子 */
+  setSky(mode: SkyMode): void;
   dispose(): void;
 }
+
+/**
+ * 每個分區一片天空，換頁時是同一批星星在變：
+ *   home    土星（離開首頁時碎成星星，回來時聚回去）
+ *   notes   星軌：星空繞著天極轉，長曝光的軌跡一點一點累積出來
+ *   moments 像素抖動：星星吸附到像素格上，畫面掉成 1-bit、一格一格跳
+ *   default 其他頁：一般星空
+ */
+export type SkyMode = 'home' | 'notes' | 'moments' | 'default';
 
 export interface StarfieldInit {
   canvas: HTMLCanvasElement | OffscreenCanvas;
@@ -201,7 +216,16 @@ interface SaturnRig {
    * zooming：intro 的放大還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
    */
   update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean };
+  /** 碎成星星（true）或聚回來（false）。instant＝不播動畫，直接到位 */
+  shatter(gone: boolean, instant: boolean): void;
+  /** 0 完整、1 全碎（全碎時整組可以藏起來） */
+  readonly dissolved: number;
 }
+
+/** 碎裂的時間（秒）：從第一塊剝落到最後一顆點飛到位 */
+const SHATTER_SECONDS = 3;
+const PLANET_SHARDS = 22000;
+const RING_SHARDS = 16000;
 
 /**
  * 「每幀往目標靠近 rate」換算成跟幀率無關的係數（rate 是以 60fps 為準的值）。
@@ -232,6 +256,23 @@ async function buildSaturn(
   const sunInPlanet = uniform(new THREE.Vector3());
   const sunInRing = uniform(new THREE.Vector3());
 
+  // ── 碎成星星 ──
+  // dissolve 0→1：表面一塊一塊剝落，剝下來的點帶著那一格的貼圖顏色飛出去、冷卻成星光。
+  // 每一點「什麼時候剝落」由 shardTime 決定，表面與碎片用同一個函式、同一個局部座標，
+  // 所以表面消失的那一刻，碎片剛好從那裡出發，邊界對得上。
+  const dissolve = uniform(1); // 一開始是藏起來的（等 setSaturn）
+  // 每片碎片從剝落到飛到位佔整段的多少（以 shardTime 的單位算）
+  const FLIGHT = 0.8;
+  const cut = dissolve.mul(1 + FLIGHT);
+  const shardTime = (p: Node<'vec3'>, sunLocal: Node<'vec3'>) => {
+    // 主軸是「從亮面掃到暗面」的一道剝落前緣（看得出方向），噪聲把邊緣弄碎
+    const sweep = float(0.5).sub(dot(normalize(p), normalize(sunLocal)).mul(0.5));
+    const n = mx_noise_float(p.mul(2.6));
+    return clamp(sweep.mul(0.75).add(n.mul(0.3)).add(0.08), 0, 1);
+  };
+  /** 碎片的進度：0 還黏在表面、1 飛到終點 */
+  const shardProgress = (t: Node<'float'>) => clamp(cut.sub(t).div(FLIGHT), 0, 1);
+
   // 環的貼圖是一條「由內到外」的橫向色帶。RingGeometry 的 UV 是平面投影，直接貼會變成
   // 一排平行直條紋而不是同心圓——所以改用半徑當貼圖座標。
   // 貼圖沒有 alpha，直接貼的話黑色的環縫會變成一圈黑帶蓋在行星上，所以用亮度推出透明度。
@@ -261,7 +302,16 @@ async function buildSaturn(
       .sub(clamp(dot(normalView, positionViewDirection), 0, 1))
       .pow(3);
     const litSide = smoothstep(-0.15, 0.45, dot(normalLocal, normalize(sunInPlanet)));
-    planetMat.emissiveNode = vec3(1.0, 0.86, 0.66).mul(fresnel.mul(litSide).mul(0.35));
+    // 碎裂：已經剝落的地方丟掉，剛剝落的那一圈燒亮
+    const shatterAt = shardTime(positionLocal, sunInPlanet);
+    planetMat.opacityNode = step(cut, shatterAt);
+    planetMat.alphaTest = 0.5;
+    const burning = float(1)
+      .sub(smoothstep(0, 0.05, shatterAt.sub(cut)))
+      .mul(step(0.001, dissolve));
+    planetMat.emissiveNode = vec3(1.0, 0.86, 0.66)
+      .mul(fresnel.mul(litSide).mul(0.35))
+      .add(vec3(1.0, 0.62, 0.3).mul(burning.mul(2.2)));
   }
   const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), planetMat);
 
@@ -278,13 +328,116 @@ async function buildSaturn(
     const planetShadow = mix(float(1), smoothstep(0.82, 1.0, d2), step(0, b));
     const lit = mix(0.55, 1.0, abs(toSun.z));
     ringMat.colorNode = ring.rgb.mul(vec3(1.0, 0.93, 0.82)).mul(lit.mul(planetShadow).mul(1.5));
-    ringMat.opacityNode = ring.alpha.mul(0.9);
+    ringMat.opacityNode = ring.alpha.mul(0.9).mul(step(cut, shardTime(p, sunInRing)));
   }
+
+  // ── 碎片 ──
+  // 每片碎片記住自己在表面上的位置與貼圖座標，顏色在 shader 裡直接從同一張貼圖取，
+  // 光照用同一個太陽方向——剝落的那一刻跟原本那一格看起來一樣。
+  const rand = Math.random;
+  const flightTarget = () => {
+    // 往四面八方飛遠、變小，成為星星；避開正對相機的方向（不然會從鏡頭前面糊過去）
+    const z = rand() * 1.3 - 1;
+    const a = rand() * Math.PI * 2;
+    const s = Math.sqrt(1 - z * z);
+    const r = 6 + Math.pow(rand(), 0.7) * 26;
+    return [Math.cos(a) * s * r, Math.sin(a) * s * r, z * r];
+  };
+  const shardMaterial = (
+    origin: Node<'vec3'>,
+    target: Node<'vec3'>,
+    keep: Node<'float'>,
+    t: Node<'float'>,
+    color: Node<'vec3'>,
+    alpha: Node<'float'>,
+    sphere: boolean,
+  ) => {
+    const mat = new THREE.PointsNodeMaterial();
+    const k = shardProgress(t);
+    // 兩段：先從表面鬆脫、往外散成一圈碎屑（看得到「碎」），再慢慢加速飛遠變成星星
+    const loose = origin.mul(float(1.12).add(mx_noise_float(origin.mul(9)).mul(0.22)));
+    const e1 = smoothstep(0, 0.3, k);
+    const e2 = smoothstep(0.22, 1, k).pow(2);
+    const e = k;
+    mat.positionNode = mix(mix(origin, loose, e1), target, e2);
+    // 背面的碎片剛剝落時還被行星擋著，飛出去之後才看得到
+    const facing = normalize(modelViewMatrix.mul(vec4(origin, 0)).xyz).z;
+    const behind = sphere ? mix(smoothstep(-0.15, 0.2, facing), float(1), smoothstep(0.15, 0.5, e)) : float(1);
+    const burning = float(1).sub(smoothstep(0, 0.12, k));
+    const hot = mix(color, vec3(1.0, 0.72, 0.42).mul(1.8), burning.mul(0.85));
+    mat.colorNode = mix(hot, vec3(0.92, 0.95, 1.0).mul(1.3), e);
+    const d = uv().sub(0.5).length().mul(2.0);
+    // 還黏在表面上的不畫（表面自己還在）；飛遠之後大部分淡掉，只留三成當星星
+    mat.opacityNode = smoothstep(1.0, 0.45, d)
+      .mul(step(0.0001, k))
+      .mul(mix(float(1), keep, e))
+      .mul(behind)
+      .mul(alpha);
+    mat.scaleNode = mix(float(1), float(2.2), e);
+    mat.mrtNode = mrt({ bloomIntensity: e });
+    mat.size = 0.026;
+    mat.sizeAttenuation = true;
+    mat.transparent = true;
+    mat.depthWrite = false;
+    return mat;
+  };
+
+  const planetShards = (() => {
+    const origin = new Float32Array(PLANET_SHARDS * 3);
+    const texUv = new Float32Array(PLANET_SHARDS * 2);
+    const target = new Float32Array(PLANET_SHARDS * 3);
+    const keep = new Float32Array(PLANET_SHARDS);
+    for (let i = 0; i < PLANET_SHARDS; i++) {
+      // 跟 SphereGeometry 同一套參數化：u 是經度、v 從北極往南；面積均勻取樣
+      const u = rand();
+      const v = Math.acos(1 - 2 * rand()) / Math.PI;
+      const phi = u * Math.PI * 2;
+      const theta = v * Math.PI;
+      origin.set([-Math.cos(phi) * Math.sin(theta), Math.cos(theta), Math.sin(phi) * Math.sin(theta)], i * 3);
+      texUv.set([u, 1 - v], i * 2);
+      target.set(flightTarget(), i * 3);
+      keep[i] = rand() < 0.3 ? 1 : 0;
+    }
+    const o = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(origin, 3), 'vec3');
+    const tUv = instancedBufferAttribute<'vec2'>(new THREE.InstancedBufferAttribute(texUv, 2), 'vec2');
+    const tg = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(target, 3), 'vec3');
+    const kp = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(keep, 1), 'float');
+    const light = clamp(dot(o, normalize(sunInPlanet)), 0, 1).mul(1.15).add(0.1);
+    const color = texture(planetMap, tUv).rgb.mul(light);
+    const sprite = new THREE.Sprite(shardMaterial(o, tg, kp, shardTime(o, sunInPlanet), color, float(1), true));
+    sprite.count = PLANET_SHARDS;
+    sprite.frustumCulled = false;
+    return sprite;
+  })();
+
+  const ringShards = (() => {
+    const origin = new Float32Array(RING_SHARDS * 3);
+    const target = new Float32Array(RING_SHARDS * 3);
+    const keep = new Float32Array(RING_SHARDS);
+    for (let i = 0; i < RING_SHARDS; i++) {
+      const r = Math.sqrt(rand() * (RING_OUTER ** 2 - RING_INNER ** 2) + RING_INNER ** 2);
+      const a = rand() * Math.PI * 2;
+      origin.set([Math.cos(a) * r, Math.sin(a) * r, 0], i * 3);
+      target.set(flightTarget(), i * 3);
+      keep[i] = rand() < 0.3 ? 1 : 0;
+    }
+    const o = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(origin, 3), 'vec3');
+    const tg = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(target, 3), 'vec3');
+    const kp = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(keep, 1), 'float');
+    const ring = ringAt(length(o.xy));
+    const lit = mix(0.55, 1.0, abs(normalize(sunInRing.sub(o)).z));
+    const color = ring.rgb.mul(vec3(1.0, 0.93, 0.82)).mul(lit.mul(1.5));
+    const sprite = new THREE.Sprite(shardMaterial(o, tg, kp, shardTime(o, sunInRing), color, ring.alpha.mul(0.9), false));
+    sprite.count = RING_SHARDS;
+    sprite.frustumCulled = false;
+    return sprite;
+  })();
+
   const ringHolder = new THREE.Group();
   ringHolder.rotation.x = RING_TILT;
   const rings = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 128, 1), ringMat);
-  ringHolder.add(rings);
-  group.add(planet, ringHolder);
+  ringHolder.add(rings, ringShards);
+  group.add(planet, ringHolder, planetShards);
 
   const syncSun = () => {
     group.updateWorldMatrix(true, true);
@@ -310,9 +463,24 @@ async function buildSaturn(
   // lerp 永遠收斂不了，「還在動」就永遠是真的——閒置降幀因此一直沒生效（實測卡在 60fps）。
   let currentScrollRot = 0;
   let currentScale = 0.0001;
+  let dissolveTarget = 1;
   return {
     group,
+    get dissolved() {
+      return dissolve.value;
+    },
+    shatter(gone, instant) {
+      dissolveTarget = gone ? 1 : 0;
+      if (instant) dissolve.value = dissolveTarget;
+    },
     update(dt, scrollY, animate) {
+      const step01 = dt / SHATTER_SECONDS;
+      dissolve.value =
+        dissolveTarget > dissolve.value
+          ? Math.min(dissolveTarget, dissolve.value + step01)
+          : Math.max(dissolveTarget, dissolve.value - step01);
+      const shattering = dissolve.value !== dissolveTarget;
+      for (const s of satellites) s.mesh.visible = dissolve.value < 0.25;
       autoRot += 0.05 * dt;
       const targetScrollRot = scrollY * 0.001;
       currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, lerpFactor(0.05, dt));
@@ -327,7 +495,10 @@ async function buildSaturn(
       }
       syncSun();
       const zooming = Math.abs(targetScale - currentScale) > 0.005;
-      return { moving: zooming || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
+      return {
+        moving: zooming || shattering || Math.abs(targetScrollRot - currentScrollRot) > 0.002,
+        zooming: zooming || shattering,
+      };
     },
   };
 }
@@ -395,7 +566,10 @@ export async function createStarfieldRunner(
   camera.position.set(0, 0, 5);
 
   const layers = LAYERS.map((cfg) => ({ points: buildStarLayer(cfg), cfg }));
-  for (const l of layers) scene.add(l.points);
+  // 星空包一層：星軌那一頁整片繞天極轉（見 lib/skyFx.ts），不動各層自己的慢速自轉
+  const skyGroup = new THREE.Group();
+  for (const l of layers) skyGroup.add(l.points);
+  scene.add(skyGroup);
 
   // 光源（對齊舊 Saturn canvas：環境光 + 太陽點光）
   scene.add(new THREE.AmbientLight(0xffffff, 0.15));
@@ -433,7 +607,19 @@ export async function createStarfieldRunner(
   // 頁面底色會被蓋成純黑（「顏色有差」的元兇）。rgb 疊 bloom、alpha 用場景原值。
   const combined = scenePassColor.add(bloomPass);
   const sceneOut = vec4(combined.rgb, scenePassColor.a);
-  const pipeline = new THREE.RenderPipeline(renderer, sceneOut);
+  const skyFx = createSkyFx({
+    renderer,
+    skyGroup,
+    width: init.width,
+    height: init.height,
+    dpr: dprUsed,
+    sceneColor: scenePassColor,
+    // @types/three 寫成 getTexture()，r186 實作的名字是 getTextureNode()
+    bloomColor: (bloomPass as unknown as { getTextureNode(): ReturnType<typeof texture> }).getTextureNode(),
+    sceneTexture: scenePass.getTexture('output'),
+    canTrail: () => !saturnOnScreen(),
+  });
+  const pipeline = new THREE.RenderPipeline(renderer, skyFx.output(sceneOut));
 
   // ── 開場 ──
   // 開場期間另外兩條 pipeline（見 lib/hyperspace.ts）：
@@ -473,6 +659,7 @@ export async function createStarfieldRunner(
   // （實測主 pipeline 第一次畫要 100–440ms，換成這個之後剩 70–170ms，剩下的是 bloom 的全螢幕 pass）。
   await scenePass.compileAsync(renderer);
   pipeline.render();
+  skyFx.warm();
   if (hyperspace && stagePipeline && introPipeline) {
     hyperspace.update(introFrame(0, null), 0, 0);
     introPipeline.render();
@@ -528,8 +715,13 @@ export async function createStarfieldRunner(
     const factor = QUALITY_FACTOR[quality] ?? 1;
     for (const l of layers) l.points.count = Math.max(1, Math.round(l.cfg.count * factor));
     // 最低等級連土星也收掉（它是最貴的一塊）
-    if (saturn) saturn.group.visible = saturnVisible && quality < 2;
+    if (saturn) saturn.group.visible = saturnOnScreen() && quality < 2;
   };
+  /** 土星在畫面上：要顯示，或還在碎裂／聚合的途中 */
+  const saturnOnScreen = () => saturn !== null && (saturnVisible || saturn.dissolved < 1);
+  // 第一次決定要不要顯示時直接到位：一進站就在首頁的話，土星不該從碎片聚合起來
+  let saturnSettled = false;
+  let skyFrameMs: number | null = null;
 
   const loop = (now: number) => {
     // ⚠ 跟 lastActive 比要用同一個時鐘：lastActive 是 performance.now()，而 rAF 的 now 是
@@ -538,7 +730,8 @@ export async function createStarfieldRunner(
     const wall = performance.now();
     const active = wall - lastActive < IDLE_AFTER_MS;
     const fullRate = hyperspace !== null || saturnZooming;
-    if (!pacer.shouldRender(now, fullRate ? 0 : active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS)) return;
+    const frameMs = fullRate ? 0 : (skyFrameMs ?? (active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS));
+    if (!pacer.shouldRender(now, frameMs)) return;
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
     const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
     lastRender = now;
@@ -562,11 +755,18 @@ export async function createStarfieldRunner(
       markActive();
     }
 
-    if (saturn && saturnVisible) {
+    if (saturn && saturnOnScreen()) {
       const s = saturn.update(delta, scrollY, saturnAnimate && introAllowsZoom);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
+      saturn.group.visible = saturnOnScreen() && quality < 2;
+    } else {
+      saturnZooming = false;
     }
+    // 天空效果要在畫主畫面之前推進：星軌的累積 pass 得先把這一幀的星星疊進去
+    const sky = skyFx.update(delta);
+    skyFrameMs = sky.frameMs;
+    if (sky.busy) markActive();
     if (stagePipeline && !sceneShown) stagePipeline.render();
     else if (introPipeline) introPipeline.render();
     else pipeline.render();
@@ -622,6 +822,11 @@ export async function createStarfieldRunner(
         camera.updateProjectionMatrix();
         renderer.setSize(width, height, false);
         hyperspace?.setSize(width, height, dprUsed);
+        skyFx.setSize(width, height);
+      },
+      setSky(mode) {
+        markActive();
+        skyFx.setMode(mode);
       },
       setScroll(y) {
         if (y !== scrollY) markActive();
@@ -631,8 +836,13 @@ export async function createStarfieldRunner(
         markActive();
         saturnVisible = visible;
         saturnAnimate = animate;
-        // 最低品質下即使呼叫顯示也不開（土星最貴）
-        if (saturn) saturn.group.visible = visible && quality < 2;
+        if (saturn) {
+          // 離開首頁時碎成星星、回來時聚回去；第一次（剛載入）直接到位
+          saturn.shatter(!visible, !saturnSettled);
+          saturnSettled = true;
+          // 最低品質下即使呼叫顯示也不開（土星最貴）
+          saturn.group.visible = saturnOnScreen() && quality < 2;
+        }
       },
       setRunning(running) {
         if (running) {
@@ -656,6 +866,7 @@ export async function createStarfieldRunner(
       dispose() {
         void renderer.setAnimationLoop(null);
         finishIntro();
+        skyFx.dispose();
         pipeline.dispose();
         for (const l of layers) {
           // Sprite 的 quad geometry 為 three 內部共享，不 dispose；材質是我們的

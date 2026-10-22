@@ -18,6 +18,22 @@ body.intro-animation-active .nebula-dim-overlay {
   opacity: 0;
 }
 
+/* 有自己天空的分區（手記的星軌、碎念的像素）：暗幕減半、紫色星雲收掉，天空才看得到。
+   data-sky 由 SpaceBackdropShell 掛在 <html> 上 */
+html[data-sky="notes"] .nebula-dim-overlay,
+html[data-sky="moments"] .nebula-dim-overlay {
+  opacity: 0.45;
+}
+
+.nebula-bg {
+  transition: opacity var(--dur-700) ease-out;
+}
+
+html[data-sky="notes"] .nebula-bg,
+html[data-sky="moments"] .nebula-bg {
+  opacity: 0;
+}
+
 /* ══════════════════════════
    星雲背景
    ══════════════════════════ */

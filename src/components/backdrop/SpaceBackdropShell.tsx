@@ -6,6 +6,8 @@ import type { IntroPhase } from '@/lib/introTimeline';
 import IntroSkip from './IntroSkip';
 import BackdropErrorBoundary from './BackdropErrorBoundary';
 import DomSpaceEffects from './DomSpaceEffects';
+import NotesTree from './NotesTree';
+import type { SkyMode } from '@/lib/starfieldGpu';
 import { useHardwareGpu } from '@/hooks/useHardwareGpu';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 
@@ -24,7 +26,16 @@ const INTRO_WAIT_LIMIT_MS = 3000;
 // 「不 gate 內容」:SSR 內容已先繪出,開場純粹疊在上層淡出。
 export default function SpaceBackdropShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const isOnHomePage = stripLocalePrefix(pathname) === '';
+  const bare = stripLocalePrefix(pathname);
+  const isOnHomePage = bare === '';
+  // 每個分區一片天空（換頁時是同一批星星在變，見 lib/starfieldGpu.ts 的 SkyMode）
+  const sky: SkyMode = isOnHomePage
+    ? 'home'
+    : bare === 'blog' || bare.startsWith('blog/')
+      ? 'notes'
+      : bare === 'thinking'
+        ? 'moments'
+        : 'default';
   const isMobile = useMediaQuery('(max-width: 768px)');
   // 爬蟲 / 稽核工具（Googlebot/Bingbot/Lighthouse…）：跟手機一樣完全不載 three。
   // 純裝飾背景、無內容 → 不算 cloaking；手機版本來就跳過故對 Google 一致；真人 UA 不含這些關鍵字，
@@ -45,6 +56,14 @@ export default function SpaceBackdropShell() {
   // runtime 才炸的殘餘情況由 ErrorBoundary + worker error 通道接。
   const hardwareGpu = useHardwareGpu();
   const softwareGpu = hardwareGpu === false;
+
+  // 有自己天空的分區：把頁面上那層紫色星雲與暗幕收掉，天空才看得到（見 NebulaBackground.css）
+  useEffect(() => {
+    document.documentElement.dataset.sky = sky;
+    return () => {
+      delete document.documentElement.dataset.sky;
+    };
+  }, [sky]);
 
   // 軟體渲染 → 在 <html> 掛 .no-gpu，讓 CSS 一次關掉整站最貴的那些效果（見 index.css）
   useEffect(() => {
@@ -176,10 +195,12 @@ export default function SpaceBackdropShell() {
               onIntroPhase={handleIntroPhase}
               onIntroAbort={endIntro}
               skipIntro={skip}
+              sky={sky}
             />
           </Suspense>
         </BackdropErrorBoundary>
       )}
+      {hardwareGpu === true && <NotesTree shown={sky === 'notes'} />}
       {/* DOM 特效（流星/UFO/游標尾跡，非 WebGL）：無論 3D 成敗都掛，頁面永遠有生命感。
           例外是「使用者關掉硬體加速」：整站合成、backdrop-filter、上百個 infinite 動畫全落在
           CPU，連純 DOM 特效都會拖垮捲動——這種機器只留靜態背景。 */}

@@ -1,0 +1,16 @@
+/* 手記天空底下的樹：釘在視窗底部，內容從上面捲過去 */
+.notes-tree {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: min(760px, 60vw);
+  height: 420px;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-700) ease;
+}
+
+.notes-tree.is-shown {
+  opacity: 1;
+}
