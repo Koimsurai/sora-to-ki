@@ -103,6 +103,10 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
           </Suspense>
         </ClientOnly>
       )}
+
+      {/* 首訪首頁等開場就緒時的底色（樣式與理由見 index.css 的 .intro-veil），平常完全透明。
+          fixed + z-index 決定疊層，放最後是為了不讓前面兄弟節點的 DOM 路徑位移（computed-style 基準靠路徑比對） */}
+      {isHomePage && <div className="intro-veil" aria-hidden />}
     </div>
   );
 }

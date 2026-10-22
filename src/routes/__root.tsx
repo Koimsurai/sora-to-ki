@@ -133,7 +133,8 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
           <meta key={l} property="og:locale:alternate" content={LOCALE_TO_OG[l]} />
         ))}
         {/* pre-paint,兩件事：
-            1. 首訪+桌面+首頁時先藏內容(避免 client-only intro 掛上前先閃首頁);
+            1. 首訪+桌面+首頁(且沒要求減少動態)時先藏內容、顯示開場底色(.intro-veil),
+               避免 client-only intro 掛上前先閃首頁;條件要跟 SpaceBackdropShell 的 shouldSkipIntro 一致。
                SpaceBackdropShell pre-reveal 移除,4s safety timeout 兜底(JS 失敗也不會卡住)。
             2. 套用文章閱讀字體偏好 → html[data-blog-font]。偏好在 localStorage、server 讀不到，
                原本是 BlogPost 掛載後才 setState，等於「首屏用預設 serif 畫完、再整篇換字體重排」——
@@ -155,7 +156,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
           // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var d=sessionStorage.getItem('introCompleted')==='true';var m=matchMedia('(max-width:768px)').matches;var p=location.pathname;var h=p==='/'||/^\\/(en|ja|ko|zh-cn)\\/?$/.test(p);if(!d&&!m&&h){document.documentElement.classList.add('intro-pending');setTimeout(function(){document.documentElement.classList.remove('intro-pending')},4000);}}catch(e){}try{var f=localStorage.getItem('blogFont');if(f&&/^[a-z-]{1,20}$/.test(f)){document.documentElement.setAttribute('data-blog-font',f);}}catch(e){}})()",
+              "(function(){try{var d=sessionStorage.getItem('introCompleted')==='true';var m=matchMedia('(max-width:768px)').matches;var r=matchMedia('(prefers-reduced-motion: reduce)').matches;var p=location.pathname;var h=p==='/'||/^\\/(en|ja|ko|zh-cn)\\/?$/.test(p);if(!d&&!m&&!r&&h){document.documentElement.classList.add('intro-pending');setTimeout(function(){document.documentElement.classList.remove('intro-pending')},4000);}}catch(e){}try{var f=localStorage.getItem('blogFont');if(f&&/^[a-z-]{1,20}$/.test(f)){document.documentElement.setAttribute('data-blog-font',f);}}catch(e){}})()",
           }}
         />
         {/* Plausible 分析。未設 VITE_PLAUSIBLE_SCRIPT 就整個不輸出 —— dev 與 e2e 都不設。
