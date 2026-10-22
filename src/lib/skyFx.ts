@@ -211,7 +211,7 @@ export function createSkyFx(opts: {
           sum = sum.add((opts.sceneColor.sample(uv) as unknown as V4).rgb).add((opts.bloomColor.sample(uv) as unknown as V4).rgb);
         }
         // 不是平均：星星很小，平均下去就淡到看不見。累加才會拉出一條亮線
-        const streaked = sum.mul(0.55);
+        const streaked = sum.mul(0.3);
         rgb = mix(rgb, max(rgb, streaked), smoothstep(0, 0.08, warp));
       }
       let alpha = max(sceneOut.a, trail.a);

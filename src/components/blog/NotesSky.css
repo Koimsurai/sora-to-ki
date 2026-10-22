@@ -7,9 +7,12 @@
   --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
   position: relative;
   z-index: 3;
+  display: flex;
+  flex-direction: column;
   max-width: 880px;
+  min-height: 100vh;
   margin: 0 auto;
-  padding: var(--page-top) var(--space-6) var(--page-bottom);
+  padding: var(--page-top) var(--space-6) 0;
   color: var(--white-80);
 }
 
@@ -34,13 +37,38 @@
   color: var(--white-60);
 }
 
-/* 毛玻璃：內容讀得清楚，又看得到後面的星軌在轉 */
+/* 從頁面中段一路延伸到底的一張面板（沒有 footer）：
+   上緣一道細細的星光琥珀色反光、往下越來越不透明——像一片從底部升起的深色玻璃，
+   上面還看得到星軌，越往下越安靜、字越清楚。 */
 .notes-panel {
-  padding: var(--space-8) var(--space-12) var(--space-12);
+  position: relative;
+  flex: 1;
+  padding: var(--space-8) var(--space-12) var(--space-24);
   border: 1px solid var(--white-08);
-  border-radius: var(--r-20);
-  background: rgba(var(--surface-0-rgb), 0.55);
-  backdrop-filter: blur(var(--blur-20)) saturate(1.2);
+  border-bottom: 0;
+  border-radius: var(--r-20) var(--r-20) 0 0;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--surface-1-rgb), 0.55) 0%,
+    rgba(var(--surface-0-rgb), 0.8) 320px,
+    rgba(var(--surface-0-rgb), 0.92) 100%
+  );
+  backdrop-filter: blur(var(--blur-28)) saturate(1.3);
+  box-shadow:
+    inset 0 1px 0 var(--white-10),
+    0 -24px 80px var(--black-35);
+}
+
+/* 上緣的反光：中間亮、往兩側淡掉 */
+.notes-panel::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--amber-rgb), 0.55), transparent);
+  pointer-events: none;
 }
 
 .notes-bar {

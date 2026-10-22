@@ -79,7 +79,8 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
       >
         {!isAdminPage && <Header />}
         <main style={{ flex: '1 0 auto' }}>{children}</main>
-        {!isAdminPage && !isPhotoPage && <Footer />}
+        {/* 手記列表的清單面板一路延伸到頁面底部，不放 footer（demo） */}
+        {!isAdminPage && !isPhotoPage && bare !== 'blog' && <Footer />}
         {!isAdminPage && (
           <ClientOnly fallback={null}>
             <Suspense fallback={null}>

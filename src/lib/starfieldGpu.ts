@@ -829,41 +829,87 @@ export async function createStarfieldRunner(
   // 第一次決定要不要顯示時直接到位：一進站就在首頁的話，土星不該從碎片聚合起來
   let saturnSettled = false;
   const transition = init.transition ?? 'travel';
-  /** 換頁的飛行：t 從 0 到 1 */
-  let travel: { kind: 'leave' | 'arrive'; t: number } | null = null;
-  /** 換頁飛行的時間（秒）：前半段加速、中間畫面拉成光線、後半段減速抵達 */
-  const TRAVEL_SECONDS = 1.6;
-  const easeIn = (x: number) => Math.pow(x, 2.2);
-  const easeOut = (x: number) => 1 - Math.pow(1 - x, 3);
   /**
-   * 推進一幀的飛行。土星的顯示在正中間切換：那一刻畫面拉成光線最強，看不出鏡頭被瞬移回原點。
-   *   離開首頁：往前加速、從土星右側掠過 → （切換）→ 在新的天空裡減速停下
-   *   回到首頁：往前加速 → （切換，鏡頭移到遠處）→ 減速，土星從遠處越來越大
+   * 換頁的飛行。鏡頭只在兩個地方之間移動：首頁（土星前面）與「外面」（飛過土星之後）。
+   * 離開首頁是沿著同一條曲線往前飛，回首頁是同一條曲線倒著飛——方向相反、路線連續，
+   * 中途沒有任何瞬移，土星回來時從它消失的那一側出現。
+   * pos 是鏡頭在曲線上的位置（0 首頁、1 外面），to 是要去的那一端。
    */
+  let travel: { from: number; to: number; t: number } | null = null;
+  let pathPos = 0;
+  /** 單程的時間（秒） */
+  const TRAVEL_SECONDS = 2.2;
+  const PATH = [
+    new THREE.Vector3(0, 0, 5),
+    new THREE.Vector3(0.4, 0.25, 0.5),
+    new THREE.Vector3(5.5, 1.6, -4),
+    new THREE.Vector3(6.5, 1.8, -13),
+  ];
+  const easeInOut = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+  const bez = (p: number, out: THREE.Vector3) => {
+    const q = 1 - p;
+    return out
+      .copy(PATH[0])
+      .multiplyScalar(q * q * q)
+      .addScaledVector(PATH[1], 3 * q * q * p)
+      .addScaledVector(PATH[2], 3 * q * p * p)
+      .addScaledVector(PATH[3], p * p * p);
+  };
+  /** 鏡頭在曲線上 p 處的位置與姿態：位置、朝向都只看 p，所以倒著飛就是正著飛的完整倒帶 */
+  const placeCamera = (p: number) => {
+    bez(p, camera.position);
+    // 轉彎時略往右偏、帶一點側傾，離開土星那一段最明顯
+    const bend = Math.sin(Math.PI * p);
+    camera.rotation.set(0.04 * bend, -0.16 * bend, -0.1 * bend);
+  };
+
+  // 近處的太空塵埃：只在飛行時看得到。背景的星都在一百單位外，鏡頭移動十幾個單位幾乎沒有視差，
+  // 飛起來會很「乾」；這層離路線很近，飛過時從身邊掠過，才有速度感
+  const travelDust = (() => {
+    const N = 2200;
+    const pos = new Float32Array(N * 3);
+    const c = new THREE.Vector3();
+    for (let i = 0; i < N; i++) {
+      bez(Math.random() * 1.2 - 0.1, c);
+      pos.set([c.x + (Math.random() - 0.5) * 16, c.y + (Math.random() - 0.5) * 10, c.z + (Math.random() - 0.5) * 8], i * 3);
+    }
+    const amount = uniform(0);
+    const mat = new THREE.PointsNodeMaterial();
+    mat.positionNode = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(pos, 3), 'vec3');
+    const d = uv().sub(0.5).length().mul(2.0);
+    mat.colorNode = vec3(0.85, 0.88, 1.0).mul(1.2);
+    mat.opacityNode = smoothstep(1, 0.3, d).mul(amount);
+    mat.mrtNode = mrt({ bloomIntensity: float(0.5) });
+    mat.size = 0.035;
+    mat.sizeAttenuation = true;
+    mat.transparent = true;
+    mat.depthWrite = false;
+    mat.blending = THREE.AdditiveBlending;
+    const sprite = new THREE.Sprite(mat);
+    sprite.count = N;
+    sprite.frustumCulled = false;
+    sprite.visible = false;
+    scene.add(sprite);
+    return { sprite, amount };
+  })();
+
   const stepTravel = (dt: number) => {
     if (!travel) return;
     travel.t = Math.min(1, travel.t + dt / TRAVEL_SECONDS);
-    const T = travel.t;
-    if (T < 0.5) {
-      const u = easeIn(T / 0.5);
-      // 從土星右上方掠過，離得夠遠：太近的話環會被近裁切面切開，變成一條白色的帶子
-      if (travel.kind === 'leave') camera.position.set(6 * Math.pow(u, 1.2), 1.4 * u, 5 - 9 * u);
-      else camera.position.set(0, 0, 5 - 9 * u);
-    } else {
-      const v = easeOut((T - 0.5) / 0.5);
-      if (travel.kind === 'leave') {
-        if (saturn && saturn.dissolved < 1) saturn.shatter(true, true);
-        camera.position.set(0, 0, 5 + 10 * (1 - v));
-      } else {
-        if (saturn && saturn.dissolved > 0) saturn.shatter(false, true);
-        camera.position.set(-1.5 * (1 - v), 0.4 * (1 - v), 5 + 35 * (1 - v));
-      }
-    }
-    skyFx.setWarp(Math.pow(Math.sin(Math.PI * T), 1.5));
-    if (T >= 1) {
+    const k = easeInOut(travel.t);
+    pathPos = travel.from + (travel.to - travel.from) * k;
+    placeCamera(pathPos);
+    // 速度（0–1）：拉成光線與塵埃都跟著速度走，起步與停下都是零，不會有突然的一閃
+    const speed = Math.sin(Math.PI * travel.t);
+    skyFx.setWarp(speed * 0.55);
+    travelDust.amount.value = speed;
+    travelDust.sprite.visible = speed > 0.01;
+    if (travel.t >= 1) {
+      // 抵達外面：土星在鏡頭後方、看不到了，收起來省 GPU
+      if (travel.to === 1 && saturn) saturn.shatter(true, true);
       travel = null;
-      camera.position.set(0, 0, 5);
       skyFx.setWarp(0);
+      travelDust.sprite.visible = false;
     }
     markActive();
   };
@@ -984,9 +1030,18 @@ export async function createStarfieldRunner(
         saturnVisible = visible;
         saturnAnimate = animate;
         if (saturn) {
-          if (transition === 'travel' && saturnSettled) {
-            // 換頁＝移動到另一片天空：鏡頭飛走／飛回來，土星在中途（畫面拉成光線的那一刻）切換
-            travel = { kind: visible ? 'arrive' : 'leave', t: 0 };
+          if (transition === 'travel') {
+            const to = visible ? 0 : 1;
+            if (!saturnSettled) {
+              // 剛載入：直接放在對應的位置，不飛
+              pathPos = to;
+              placeCamera(to);
+              saturn.shatter(!visible, true);
+            } else if (to !== (travel?.to ?? pathPos)) {
+              // 從目前的位置（可能正飛到一半）出發，飛向另一端
+              if (visible) saturn.shatter(false, true);
+              travel = { from: pathPos, to, t: 0 };
+            }
           } else {
             // 爆炸版（?transition=burst）：離開首頁時散成星塵、回來時聚回去；第一次（剛載入）直接到位
             saturn.shatter(!visible, !saturnSettled);
