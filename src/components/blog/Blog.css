@@ -1078,3 +1078,86 @@
   height: 10px;
   aspect-ratio: auto;
 }
+
+/* ══════════════════════════
+   手記的天空是星軌（長曝光的夜空照片）：版面跟著改成「印在照片上的字」——
+   拿掉紫色漸層、玻璃卡片與紫色標籤，只留文字、細線與一個星光琥珀色。
+   data-sky 由 SpaceBackdropShell 掛在 <html> 上（demo：之後要的話再整理成正式的樣式）
+   ══════════════════════════ */
+html[data-sky="notes"] .blog-page {
+  --sky-ink: #f1ece3;
+  --sky-amber: #e9c17a;
+  --sky-amber-rgb: 233, 193, 122;
+  text-shadow: 0 1px 12px var(--black-60);
+}
+
+html[data-sky="notes"] .blog-title-gradient {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--sky-ink);
+  font-weight: 700;
+  letter-spacing: var(--ls-4);
+}
+
+html[data-sky="notes"] .blog-title-sub {
+  font-family: var(--mono-font);
+  font-style: normal;
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-24);
+  text-transform: uppercase;
+  color: var(--sky-amber);
+}
+
+html[data-sky="notes"] .note-body {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--white-10);
+  border-radius: 0;
+  padding: var(--space-2) 0 var(--space-6);
+  backdrop-filter: none;
+}
+
+html[data-sky="notes"] .note-body:hover {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  border-color: rgba(var(--sky-amber-rgb), 0.45);
+}
+
+html[data-sky="notes"] .note-title {
+  color: var(--sky-ink);
+}
+
+html[data-sky="notes"] .note-title-link:hover .note-title,
+html[data-sky="notes"] .note-month {
+  color: var(--sky-amber);
+}
+
+html[data-sky="notes"] .note-excerpt {
+  color: var(--white-60);
+}
+
+html[data-sky="notes"] .note-category,
+html[data-sky="notes"] .note-tag,
+html[data-sky="notes"] .cloud-tag,
+html[data-sky="notes"] .sort-pill {
+  background: transparent;
+  backdrop-filter: none;
+  border: 1px solid var(--white-15);
+  color: var(--white-60);
+}
+
+html[data-sky="notes"] .stats-inline em,
+html[data-sky="notes"] .category-item.active {
+  color: var(--sky-amber);
+  background: transparent;
+}
+
+html[data-sky="notes"] .note-category,
+html[data-sky="notes"] .sort-pill.active,
+html[data-sky="notes"] .cloud-tag.active,
+html[data-sky="notes"] .note-tag:hover,
+html[data-sky="notes"] .cloud-tag:hover {
+  border-color: rgba(var(--sky-amber-rgb), 0.5);
+  color: var(--sky-amber);
+}

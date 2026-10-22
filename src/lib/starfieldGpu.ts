@@ -35,8 +35,16 @@ import {
   normalLocal,
   normalView,
   positionViewDirection,
-  mx_noise_float,
-  modelViewMatrix,
+  positionGeometry,
+  uniformArray,
+  Fn,
+  Loop,
+  If,
+  attribute,
+  cross,
+  cos,
+  frontFacing,
+  select,
 } from 'three/tsl';
 import type { Node } from 'three/webgpu';
 import { createSkyFx } from './skyFx';
@@ -222,9 +230,12 @@ interface SaturnRig {
   readonly dissolved: number;
 }
 
-/** 碎裂的時間（秒）：從第一塊剝落到最後一顆點飛到位 */
-const SHATTER_SECONDS = 3;
-const PLANET_SHARDS = 22000;
+/** 爆炸的時間（秒）：從裂縫亮起到碎片散成星星 */
+const SHATTER_SECONDS = 2.8;
+/** 地殼裂成幾塊 */
+const CHUNKS = 42;
+/** 爆炸噴出的火星，最後留一部分當星星 */
+const EMBERS = 14000;
 const RING_SHARDS = 16000;
 
 /**
@@ -256,22 +267,55 @@ async function buildSaturn(
   const sunInPlanet = uniform(new THREE.Vector3());
   const sunInRing = uniform(new THREE.Vector3());
 
-  // ── 碎成星星 ──
-  // dissolve 0→1：表面一塊一塊剝落，剝下來的點帶著那一格的貼圖顏色飛出去、冷卻成星光。
-  // 每一點「什麼時候剝落」由 shardTime 決定，表面與碎片用同一個函式、同一個局部座標，
-  // 所以表面消失的那一刻，碎片剛好從那裡出發，邊界對得上。
+  // ── 行星爆炸 ──
+  // dissolve 是整段爆炸的時間軸（0 完整、1 散成星星），倒著播就是聚回來：
+  //   裂縫  0–0.14   地殼沿著板塊邊界裂開、裂縫發亮，整顆微微鼓起
+  //   炸開  0.12–    核心閃光，板塊各自旋轉著往外飛，內側是熔岩色；衝擊波沿著環的平面擴散，
+  //                  掃過的地方環被吹成碎屑往外散
+  //   消散  0.55–1   板塊縮小消失，火星與碎屑冷卻成星星
   const dissolve = uniform(1); // 一開始是藏起來的（等 setSaturn）
-  // 每片碎片從剝落到飛到位佔整段的多少（以 shardTime 的單位算）
-  const FLIGHT = 0.8;
-  const cut = dissolve.mul(1 + FLIGHT);
-  const shardTime = (p: Node<'vec3'>, sunLocal: Node<'vec3'>) => {
-    // 主軸是「從亮面掃到暗面」的一道剝落前緣（看得出方向），噪聲把邊緣弄碎
-    const sweep = float(0.5).sub(dot(normalize(p), normalize(sunLocal)).mul(0.5));
-    const n = mx_noise_float(p.mul(2.6));
-    return clamp(sweep.mul(0.75).add(n.mul(0.3)).add(0.08), 0, 1);
-  };
-  /** 碎片的進度：0 還黏在表面、1 飛到終點 */
-  const shardProgress = (t: Node<'float'>) => clamp(cut.sub(t).div(FLIGHT), 0, 1);
+  const crack = smoothstep(0, 0.14, dissolve);
+  const blast = smoothstep(0.12, 1, dissolve);
+  const flash = smoothstep(0.1, 0.16, dissolve).mul(float(1).sub(smoothstep(0.16, 0.45, dissolve)));
+  /** 衝擊波的半徑（行星半徑為 1） */
+  const shockR = float(1).add(smoothstep(0.12, 0.9, dissolve).pow(0.6).mul(12));
+  const shockAlpha = step(0.12, dissolve).mul(float(1).sub(smoothstep(0.12, 0.9, dissolve)));
+  /** 板塊縮小消失 */
+  const fadeOut = float(1).sub(smoothstep(0.4, 0.85, dissolve));
+  const rand = Math.random;
+  const molten = vec3(1.0, 0.36, 0.08);
+
+  // 板塊：球面上撒 CHUNKS 個種子，每個三角形歸給離它最近的種子（球面上的 Voronoi）。
+  // 同一塊的三角形一起移動、一起轉，所以飛出去的是一整片地殼，不是一顆顆像素。
+  const seeds: THREE.Vector3[] = [];
+  for (let i = 0; i < CHUNKS; i++) {
+    // Fibonacci 球面＋一點抖動：板塊大小平均但不規則
+    const y = 1 - ((i + 0.5) / CHUNKS) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const a = i * Math.PI * (3 - Math.sqrt(5)) + (rand() - 0.5) * 0.6;
+    seeds.push(new THREE.Vector3(Math.cos(a) * r, y + (rand() - 0.5) * 0.15, Math.sin(a) * r).normalize());
+  }
+  const seedNodes = uniformArray(seeds, 'vec3');
+  /** 到板塊邊界的距離 → 裂縫的亮度（片段裡算，跟三角形的歸屬用同一組種子，裂縫就落在會斷開的地方） */
+  const crackLine = Fn(([p]: [Node<'vec3'>]) => {
+    const d1 = float(10).toVar();
+    const d2 = float(10).toVar();
+    Loop(CHUNKS, ({ i }: { i: Node<'int'> }) => {
+      const d = p.sub(seedNodes.element(i) as unknown as Node<'vec3'>).length();
+      If(d.lessThan(d1), () => {
+        d2.assign(d1);
+        d1.assign(d);
+      }).ElseIf(d.lessThan(d2), () => {
+        d2.assign(d);
+      });
+    });
+    return float(1).sub(smoothstep(0, 0.035, d2.sub(d1)));
+  });
+  const rotateAround = (v: Node<'vec3'>, k: Node<'vec3'>, ang: Node<'float'>) =>
+    v
+      .mul(cos(ang))
+      .add(cross(k, v).mul(sin(ang)))
+      .add(k.mul(dot(k, v).mul(float(1).sub(cos(ang)))));
 
   // 環的貼圖是一條「由內到外」的橫向色帶。RingGeometry 的 UV 是平面投影，直接貼會變成
   // 一排平行直條紋而不是同心圓——所以改用半徑當貼圖座標。
@@ -284,9 +328,10 @@ async function buildSaturn(
 
   // 行星：被環擋住的地方有影子。從表面點朝太陽打一條射線，交到環的平面上、落在環的範圍內，
   // 就按那一點環的不透明度遮掉陽光。
-  const planetMat = new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.1 });
+  const planetMat = new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.1, side: THREE.DoubleSide });
   {
-    const p = positionLocal;
+    // 爆炸時頂點會移動，光照與陰影一律用原本的位置算（不然板塊一飛，影子跟著亂跑）
+    const p = positionGeometry;
     const toSun = normalize(sunInPlanet.sub(p));
     const ringN = vec3(0, -Math.sin(RING_TILT), Math.cos(RING_TILT));
     const denom = dot(toSun, ringN);
@@ -296,24 +341,94 @@ async function buildSaturn(
     const r = length(p.add(toSun.mul(t)));
     const onRing = step(0, t).mul(step(RING_INNER, r)).mul(step(r, RING_OUTER));
     const ringShadow = float(1).sub(onRing.mul(ringAt(r).alpha).mul(0.6));
-    planetMat.colorNode = texture(planetMap, uv()).rgb.mul(ringShadow);
+    // 一炸開地殼就燒焦變暗：亮著原本貼圖顏色飛出去的板塊看起來像紙片
+    const charred = float(1).sub(smoothstep(0.1, 0.3, dissolve).mul(0.88));
+    planetMat.colorNode = texture(planetMap, uv()).rgb.mul(ringShadow).mul(charred);
     // 大氣的邊緣光：只在受光的那半邊，背光面的邊緣不該亮
     const fresnel = float(1)
       .sub(clamp(dot(normalView, positionViewDirection), 0, 1))
       .pow(3);
     const litSide = smoothstep(-0.15, 0.45, dot(normalLocal, normalize(sunInPlanet)));
-    // 碎裂：已經剝落的地方丟掉，剛剝落的那一圈燒亮
-    const shatterAt = shardTime(positionLocal, sunInPlanet);
-    planetMat.opacityNode = step(cut, shatterAt);
-    planetMat.alphaTest = 0.5;
-    const burning = float(1)
-      .sub(smoothstep(0, 0.05, shatterAt.sub(cut)))
-      .mul(step(0.001, dissolve));
+    // 裂縫：先亮起來，板塊飛遠之後邊緣還帶著餘燼
+    const cracks = crackLine(normalize(positionGeometry)).mul(crack).mul(fadeOut);
+    // 地殼的內側（背面）是熔岩：平常被正面擋著看不到，板塊一分開就露出來
+    const inside = select(frontFacing, float(0), float(1)).mul(step(0.001, dissolve));
+    // 板塊表面也帶一點餘熱，邊緣（裂縫）最亮
+    // 熔岩面露出來之後很快冷卻：一直亮著的話整塊會被 bloom 洗成米白色，看起來像紙片
+    const cooling = float(1).sub(smoothstep(0.18, 0.5, dissolve));
+    const heat = smoothstep(0.1, 0.25, dissolve).mul(cooling).mul(0.2);
+    const glow = cracks.mul(4).add(inside.mul(1.3).mul(cooling)).add(heat);
     planetMat.emissiveNode = vec3(1.0, 0.86, 0.66)
       .mul(fresnel.mul(litSide).mul(0.35))
-      .add(vec3(1.0, 0.62, 0.3).mul(burning.mul(2.2)));
+      .add(molten.mul(glow));
+    planetMat.mrtNode = mrt({ bloomIntensity: clamp(glow, 0, 1) });
+
+    // 板塊的位移：沿著板塊中心的方向飛出去、繞自己的軸轉、最後縮小消失
+    const center = attribute<'vec3'>('aCenter', 'vec3');
+    const axis = attribute<'vec3'>('aAxis', 'vec3');
+    const rnd = attribute<'vec3'>('aRand', 'vec3');
+    const local = positionGeometry.sub(center);
+    const spun = rotateAround(local, axis, blast.mul(rnd.y).mul(4.5)).mul(fadeOut);
+    const swell = center.mul(crack.mul(0.03));
+    const fly = normalize(center).mul(blast.pow(0.55).mul(rnd.x).mul(7));
+    planetMat.positionNode = center.add(spun).add(swell).add(fly);
   }
-  const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), planetMat);
+  const planetGeo = (() => {
+    const geo = new THREE.SphereGeometry(1, 96, 64).toNonIndexed();
+    const pos = geo.getAttribute('position');
+    const n = pos.count;
+    const owner = new Int32Array(n / 3);
+    const sum = seeds.map(() => new THREE.Vector3());
+    const tri = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+    const c = new THREE.Vector3();
+    for (let t = 0; t < n / 3; t++) {
+      for (let k = 0; k < 3; k++) tri[k].fromBufferAttribute(pos, t * 3 + k);
+      c.copy(tri[0]).add(tri[1]).add(tri[2]).normalize();
+      let best = 0;
+      let bestD = Infinity;
+      seeds.forEach((s, i) => {
+        const d = s.distanceToSquared(c);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      owner[t] = best;
+      sum[best].add(c);
+    }
+    const chunkCenter = sum.map((v) => v.normalize());
+    const chunkAxis = seeds.map(() => new THREE.Vector3(rand() - 0.5, rand() - 0.5, rand() - 0.5).normalize());
+    const chunkRand = seeds.map(() => new THREE.Vector3(0.6 + rand() * 0.9, 0.6 + rand() * 1.8, rand()));
+    const aCenter = new Float32Array(n * 3);
+    const aAxis = new Float32Array(n * 3);
+    const aRand = new Float32Array(n * 3);
+    for (let v = 0; v < n; v++) {
+      const o = owner[Math.floor(v / 3)];
+      chunkCenter[o].toArray(aCenter, v * 3);
+      chunkAxis[o].toArray(aAxis, v * 3);
+      chunkRand[o].toArray(aRand, v * 3);
+    }
+    geo.setAttribute('aCenter', new THREE.BufferAttribute(aCenter, 3));
+    geo.setAttribute('aAxis', new THREE.BufferAttribute(aAxis, 3));
+    geo.setAttribute('aRand', new THREE.BufferAttribute(aRand, 3));
+    return geo;
+  })();
+  const planet = new THREE.Mesh(planetGeo, planetMat);
+  planet.frustumCulled = false;
+
+  // 核心的閃光：一團柔光在行星中心，板塊還沒飛遠時只從裂縫之間透出來（有做深度測試）
+  const coreMat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
+  coreMat.blending = THREE.AdditiveBlending;
+  {
+    const d = uv().sub(0.5).length().mul(2);
+    const falloff = float(1).sub(smoothstep(0, 1, d)).pow(2.2);
+    coreMat.colorNode = vec3(1.0, 0.8, 0.5).mul(flash.mul(falloff).mul(5));
+    coreMat.opacityNode = flash.mul(falloff);
+    coreMat.mrtNode = mrt({ bloomIntensity: float(1) });
+    coreMat.scaleNode = float(1.4).add(flash.mul(2.6));
+  }
+  const core = new THREE.Sprite(coreMat);
+  core.frustumCulled = false;
 
   // 環：薄薄一層冰粒，亮度跟入射角的關係很弱——用 Standard 材質的話光從很斜的角度照過來，
   // 整圈環暗到幾乎看不見。這裡自己算光：入射角只影響一半，加上行星投過來的影子。
@@ -328,13 +443,27 @@ async function buildSaturn(
     const planetShadow = mix(float(1), smoothstep(0.82, 1.0, d2), step(0, b));
     const lit = mix(0.55, 1.0, abs(toSun.z));
     ringMat.colorNode = ring.rgb.mul(vec3(1.0, 0.93, 0.82)).mul(lit.mul(planetShadow).mul(1.5));
-    ringMat.opacityNode = ring.alpha.mul(0.9).mul(step(cut, shardTime(p, sunInRing)));
+    // 衝擊波掃過的地方，環變成碎屑（見下面的 ringShards）
+    ringMat.opacityNode = ring.alpha.mul(0.9).mul(step(shockR, length(p.xy)));
   }
 
-  // ── 碎片 ──
-  // 每片碎片記住自己在表面上的位置與貼圖座標，顏色在 shader 裡直接從同一張貼圖取，
-  // 光照用同一個太陽方向——剝落的那一刻跟原本那一格看起來一樣。
-  const rand = Math.random;
+  // 衝擊波：沿著環的平面擴散的一圈光
+  const shockMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  shockMat.blending = THREE.AdditiveBlending;
+  {
+    const r = length(positionGeometry.xy); // 0.8–1：內側淡、外緣亮
+    const edge = smoothstep(0.8, 1, r);
+    shockMat.colorNode = vec3(0.85, 0.9, 1.0).mul(edge.mul(shockAlpha).mul(2.4));
+    shockMat.opacityNode = edge.mul(shockAlpha);
+    shockMat.mrtNode = mrt({ bloomIntensity: float(1) });
+    shockMat.positionNode = vec3(positionGeometry.xy.mul(shockR), 0);
+  }
+  const shock = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 160, 1), shockMat);
+  shock.frustumCulled = false;
+
+  // ── 火星與環的碎屑 ──
+  // 火星從地殼表面噴出（顏色取自同一張貼圖、先燒成熔岩色），環的碎屑在衝擊波掃過時
+  // 沿著環的平面往外散。兩者最後都冷卻成白色的小點，留下三成當星星。
   const flightTarget = () => {
     // 往四面八方飛遠、變小，成為星星；避開正對相機的方向（不然會從鏡頭前面糊過去）
     const z = rand() * 1.3 - 1;
@@ -344,38 +473,26 @@ async function buildSaturn(
     return [Math.cos(a) * s * r, Math.sin(a) * s * r, z * r];
   };
   const shardMaterial = (
-    origin: Node<'vec3'>,
-    target: Node<'vec3'>,
+    k: Node<'float'>,
+    path: Node<'vec3'>,
     keep: Node<'float'>,
-    t: Node<'float'>,
     color: Node<'vec3'>,
     alpha: Node<'float'>,
-    sphere: boolean,
   ) => {
     const mat = new THREE.PointsNodeMaterial();
-    const k = shardProgress(t);
-    // 兩段：先從表面鬆脫、往外散成一圈碎屑（看得到「碎」），再慢慢加速飛遠變成星星
-    const loose = origin.mul(float(1.12).add(mx_noise_float(origin.mul(9)).mul(0.22)));
-    const e1 = smoothstep(0, 0.3, k);
-    const e2 = smoothstep(0.22, 1, k).pow(2);
-    const e = k;
-    mat.positionNode = mix(mix(origin, loose, e1), target, e2);
-    // 背面的碎片剛剝落時還被行星擋著，飛出去之後才看得到
-    const facing = normalize(modelViewMatrix.mul(vec4(origin, 0)).xyz).z;
-    const behind = sphere ? mix(smoothstep(-0.15, 0.2, facing), float(1), smoothstep(0.15, 0.5, e)) : float(1);
-    const burning = float(1).sub(smoothstep(0, 0.12, k));
-    const hot = mix(color, vec3(1.0, 0.72, 0.42).mul(1.8), burning.mul(0.85));
-    mat.colorNode = mix(hot, vec3(0.92, 0.95, 1.0).mul(1.3), e);
+    mat.positionNode = path;
+    // 剛噴出來是熔岩色，飛遠之後冷卻成星光
+    const hot = mix(color, molten.mul(2.2), float(1).sub(smoothstep(0, 0.35, k)).mul(0.8));
+    mat.colorNode = mix(hot, vec3(0.92, 0.95, 1.0).mul(1.3), smoothstep(0.3, 1, k));
     const d = uv().sub(0.5).length().mul(2.0);
-    // 還黏在表面上的不畫（表面自己還在）；飛遠之後大部分淡掉，只留三成當星星
+    // 還沒噴出來的不畫；飛遠之後大部分淡掉，只留三成當星星
     mat.opacityNode = smoothstep(1.0, 0.45, d)
       .mul(step(0.0001, k))
-      .mul(mix(float(1), keep, e))
-      .mul(behind)
+      .mul(mix(float(1), keep, smoothstep(0.5, 1, k)))
       .mul(alpha);
-    mat.scaleNode = mix(float(1), float(2.2), e);
-    mat.mrtNode = mrt({ bloomIntensity: e });
-    mat.size = 0.026;
+    mat.scaleNode = mix(float(1.4), float(2.2), k);
+    mat.mrtNode = mrt({ bloomIntensity: float(1) });
+    mat.size = 0.03;
     mat.sizeAttenuation = true;
     mat.transparent = true;
     mat.depthWrite = false;
@@ -383,11 +500,12 @@ async function buildSaturn(
   };
 
   const planetShards = (() => {
-    const origin = new Float32Array(PLANET_SHARDS * 3);
-    const texUv = new Float32Array(PLANET_SHARDS * 2);
-    const target = new Float32Array(PLANET_SHARDS * 3);
-    const keep = new Float32Array(PLANET_SHARDS);
-    for (let i = 0; i < PLANET_SHARDS; i++) {
+    const origin = new Float32Array(EMBERS * 3);
+    const texUv = new Float32Array(EMBERS * 2);
+    const target = new Float32Array(EMBERS * 3);
+    const keep = new Float32Array(EMBERS);
+    const delay = new Float32Array(EMBERS);
+    for (let i = 0; i < EMBERS; i++) {
       // 跟 SphereGeometry 同一套參數化：u 是經度、v 從北極往南；面積均勻取樣
       const u = rand();
       const v = Math.acos(1 - 2 * rand()) / Math.PI;
@@ -397,15 +515,20 @@ async function buildSaturn(
       texUv.set([u, 1 - v], i * 2);
       target.set(flightTarget(), i * 3);
       keep[i] = rand() < 0.3 ? 1 : 0;
+      delay[i] = rand() * 0.12;
     }
     const o = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(origin, 3), 'vec3');
     const tUv = instancedBufferAttribute<'vec2'>(new THREE.InstancedBufferAttribute(texUv, 2), 'vec2');
     const tg = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(target, 3), 'vec3');
     const kp = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(keep, 1), 'float');
+    const dl = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(delay, 1), 'float');
     const light = clamp(dot(o, normalize(sunInPlanet)), 0, 1).mul(1.15).add(0.1);
     const color = texture(planetMap, tUv).rgb.mul(light);
-    const sprite = new THREE.Sprite(shardMaterial(o, tg, kp, shardTime(o, sunInPlanet), color, float(1), true));
-    sprite.count = PLANET_SHARDS;
+    // 跟板塊同時炸開，先衝得很快（pow 0.5）再慢下來
+    const k = clamp(dissolve.sub(0.12).sub(dl).div(0.75), 0, 1);
+    const path = mix(o, tg, k.pow(0.5));
+    const sprite = new THREE.Sprite(shardMaterial(k, path, kp, color, float(1)));
+    sprite.count = EMBERS;
     sprite.frustumCulled = false;
     return sprite;
   })();
@@ -418,7 +541,9 @@ async function buildSaturn(
       const r = Math.sqrt(rand() * (RING_OUTER ** 2 - RING_INNER ** 2) + RING_INNER ** 2);
       const a = rand() * Math.PI * 2;
       origin.set([Math.cos(a) * r, Math.sin(a) * r, 0], i * 3);
-      target.set(flightTarget(), i * 3);
+      // 在環的平面上往外推，帶一點上下的厚度
+      const push = 3 + rand() * 9;
+      target.set([Math.cos(a) * r * push, Math.sin(a) * r * push, (rand() - 0.5) * 2.5], i * 3);
       keep[i] = rand() < 0.3 ? 1 : 0;
     }
     const o = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(origin, 3), 'vec3');
@@ -427,7 +552,10 @@ async function buildSaturn(
     const ring = ringAt(length(o.xy));
     const lit = mix(0.55, 1.0, abs(normalize(sunInRing.sub(o)).z));
     const color = ring.rgb.mul(vec3(1.0, 0.93, 0.82)).mul(lit.mul(1.5));
-    const sprite = new THREE.Sprite(shardMaterial(o, tg, kp, shardTime(o, sunInRing), color, ring.alpha.mul(0.9), false));
+    // 衝擊波掃到這一點的半徑時才出發
+    const k = clamp(shockR.sub(length(o.xy)).div(7), 0, 1);
+    const path = mix(o, tg, k.pow(0.6));
+    const sprite = new THREE.Sprite(shardMaterial(k, path, kp, color, ring.alpha.mul(0.9)));
     sprite.count = RING_SHARDS;
     sprite.frustumCulled = false;
     return sprite;
@@ -436,8 +564,8 @@ async function buildSaturn(
   const ringHolder = new THREE.Group();
   ringHolder.rotation.x = RING_TILT;
   const rings = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 128, 1), ringMat);
-  ringHolder.add(rings, ringShards);
-  group.add(planet, ringHolder, planetShards);
+  ringHolder.add(rings, ringShards, shock);
+  group.add(planet, core, ringHolder, planetShards);
 
   const syncSun = () => {
     group.updateWorldMatrix(true, true);
@@ -616,7 +744,7 @@ export async function createStarfieldRunner(
     sceneColor: scenePassColor,
     // @types/three 寫成 getTexture()，r186 實作的名字是 getTextureNode()
     bloomColor: (bloomPass as unknown as { getTextureNode(): ReturnType<typeof texture> }).getTextureNode(),
-    sceneTexture: scenePass.getTexture('output'),
+    camera,
     canTrail: () => !saturnOnScreen(),
   });
   const pipeline = new THREE.RenderPipeline(renderer, skyFx.output(sceneOut));

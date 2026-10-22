@@ -12,6 +12,7 @@ import {
   dot,
   float,
   floor,
+  instancedBufferAttribute,
   max,
   mix,
   mod,
@@ -22,6 +23,7 @@ import {
   step,
   texture,
   uniform,
+  uv,
   vec2,
   vec3,
   vec4,
@@ -50,10 +52,16 @@ export interface SkyFx {
 
 /** 天極的方向（世界座標，相機在 +z 看向 -z）：畫面左上方、往畫面裡面 */
 const POLE = new THREE.Vector3(-0.45, 0.55, -1).normalize();
-/** 星空繞天極轉的速度（rad/s）。真實的是 7.3e-5，這裡快很多才看得到軌跡長出來 */
-const POLE_SPEED = 0.035;
-/** 以 60fps 為準的每幀保留比例：0.995^(60×2.3) ≈ 0.5，半衰期約 2.3 秒 */
-const TRAIL_KEEP_60 = 0.995;
+/**
+ * 星空繞天極轉的速度（rad/s）。真實的是 7.3e-5，這裡快一些才看得到軌跡長出來，
+ * 但要慢到「讀著讀著才發現弧線變長了」——快了會像流星雨，看了頭暈
+ */
+const POLE_SPEED = 0.012;
+/**
+ * 以 60fps 為準的每幀保留比例。1＝不衰減：真的長曝光照片裡，整條弧的亮度是均勻的；
+ * 有衰減的話尾巴會淡掉，看起來像流星而不是星軌。離開這一頁時整張清掉
+ */
+const TRAIL_KEEP_60 = 1;
 
 export function createSkyFx(opts: {
   renderer: THREE.WebGPURenderer;
@@ -63,15 +71,49 @@ export function createSkyFx(opts: {
   dpr: number;
   sceneColor: TexNode;
   bloomColor: TexNode;
-  /**
-   * 場景 pass 的輸出貼圖（上一幀畫好的星空）。星軌直接拿它來疊，不另外再畫一次場景：
-   * 星星的材質寫的是 MRT（output＋bloomIntensity），畫進單張 target 的話整批畫不出來。
-   */
-  sceneTexture: THREE.Texture;
-  /** 現在能不能開始累積星軌：土星還在畫面上（碎裂途中）時不行，不然它會被曝成一團鬼影 */
+  camera: THREE.Camera;
+  /** 現在能不能開始累積星軌：土星還在畫面上（碎裂途中）時不行 */
   canTrail: () => boolean;
 }): SkyFx {
   const { renderer, skyGroup } = opts;
+
+  // ── 拖出軌跡的星 ──
+  // 只有這三百顆亮星留下軌跡，背景那兩萬多顆照常是點。全部拖出來的話整片天空糊成灰色、看了頭暈。
+  // 獨立一個場景、一般的材質：背景星的材質寫 MRT，畫不進單張 target。
+  const TRAIL_STARS = 300;
+  const trailScene = new THREE.Scene();
+  const trailGroup = new THREE.Group();
+  trailScene.add(trailGroup);
+  {
+    const pos = new Float32Array(TRAIL_STARS * 3);
+    const tint = new Float32Array(TRAIL_STARS);
+    const mag = new Float32Array(TRAIL_STARS);
+    for (let i = 0; i < TRAIL_STARS; i++) {
+      const r = 100 + Math.random() * 40;
+      const th0 = Math.random() * Math.PI * 2;
+      const ph = Math.acos(2 * Math.random() - 1);
+      pos.set([r * Math.sin(ph) * Math.cos(th0), r * Math.sin(ph) * Math.sin(th0), r * Math.cos(ph)], i * 3);
+      tint[i] = Math.random();
+      mag[i] = 0.35 + Math.pow(Math.random(), 2) * 0.65;
+    }
+    const mat = new THREE.PointsNodeMaterial();
+    mat.positionNode = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(pos, 3), 'vec3');
+    const t = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(tint, 1), 'float');
+    const m = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(mag, 1), 'float');
+    // 真實星軌照片的顏色：大多偏白，少數偏藍或偏橘
+    mat.colorNode = mix(vec3(0.75, 0.85, 1.0), vec3(1.0, 0.82, 0.62), t).mul(m.mul(1.2));
+    const d = uv().sub(0.5).length().mul(2);
+    mat.opacityNode = smoothstep(1, 0.3, d).mul(m);
+    mat.size = 0.45;
+    mat.sizeAttenuation = true;
+    mat.transparent = true;
+    mat.depthWrite = false;
+    mat.blending = THREE.AdditiveBlending;
+    const stars = new THREE.Sprite(mat);
+    stars.count = TRAIL_STARS;
+    stars.frustumCulled = false;
+    trailGroup.add(stars);
+  }
   const dpr = opts.dpr;
   let mode: SkyMode = 'default';
   const trailMix = uniform(0);
@@ -84,17 +126,16 @@ export function createSkyFx(opts: {
   const rtOpts = { depthBuffer: false, type: THREE.HalfFloatType };
   const size = (w: number, h: number) => [Math.max(1, Math.round(w)), Math.max(1, Math.round(h))] as const;
   let [tw, th] = size(opts.width, opts.height);
+  const starsRT = new THREE.RenderTarget(tw, th, rtOpts);
   let latest = new THREE.RenderTarget(tw, th, rtOpts);
   let spare = new THREE.RenderTarget(tw, th, rtOpts);
   const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const prevTex = texture(latest.texture, screenUV);
-  const starsTex = texture(opts.sceneTexture, screenUV);
+  const starsTex = texture(starsRT.texture, screenUV);
   const accMat = new THREE.MeshBasicNodeMaterial();
   accMat.vertexNode = vec4(positionGeometry.xy, 0, 1);
   // 取亮的那個，不是相加：相加的話同一顆星每幀疊一次，軌跡幾秒內就爆成白線
-  // 只有夠亮的星留下軌跡：兩萬多顆全拖出來的話整片天空會糊成灰色
-  const bright = smoothstep(0.12, 0.55, dot(starsTex.rgb, vec3(0.299, 0.587, 0.114)));
-  accMat.fragmentNode = max(prevTex.mul(keep), vec4(starsTex.rgb.mul(bright), starsTex.a.mul(bright)));
+  accMat.fragmentNode = max(prevTex.mul(keep), starsTex);
   accMat.depthTest = false;
   accMat.depthWrite = false;
   accMat.blending = THREE.NoBlending;
@@ -110,7 +151,7 @@ export function createSkyFx(opts: {
     renderer.getClearColor(prevColor);
     const prevAlpha = renderer.getClearAlpha();
     renderer.setClearColor(0x000000, 0);
-    for (const rt of [latest, spare]) {
+    for (const rt of [starsRT, latest, spare]) {
       renderer.setRenderTarget(rt);
       renderer.clear();
     }
@@ -119,9 +160,18 @@ export function createSkyFx(opts: {
   };
 
   const accumulate = () => {
+    const prevColor = new THREE.Color();
+    renderer.getClearColor(prevColor);
+    const prevAlpha = renderer.getClearAlpha();
+    renderer.setClearColor(0x000000, 0);
+    // 軌跡星跟著背景星空一起轉
+    trailGroup.quaternion.copy(skyGroup.quaternion);
+    renderer.setRenderTarget(starsRT);
+    renderer.render(trailScene, opts.camera);
     renderer.setRenderTarget(spare);
     renderer.render(accScene, quadCam);
     renderer.setRenderTarget(null);
+    renderer.setClearColor(prevColor, prevAlpha);
     [latest, spare] = [spare, latest];
     prevTex.value = latest.texture;
     trailTex.value = latest.texture;
@@ -142,7 +192,7 @@ export function createSkyFx(opts: {
     output(sceneOut) {
       // 星軌疊在原本的畫面上（取亮的）
       // 軌跡比單顆星暗（拉長之後亮度攤開了），提一點才看得出長曝光
-      const trail = trailTex.mul(trailMix.mul(1.1));
+      const trail = trailTex.mul(trailMix);
       let rgb = max(sceneOut.rgb, trail.rgb);
       let alpha = max(sceneOut.a, trail.a);
 
@@ -201,7 +251,7 @@ export function createSkyFx(opts: {
 
     setSize(width, height) {
       [tw, th] = size(width, height);
-      for (const rt of [latest, spare]) rt.setSize(tw, th);
+      for (const rt of [starsRT, latest, spare]) rt.setSize(tw, th);
       clearTargets();
     },
 
@@ -211,7 +261,7 @@ export function createSkyFx(opts: {
     },
 
     dispose() {
-      for (const rt of [latest, spare]) rt.dispose();
+      for (const rt of [starsRT, latest, spare]) rt.dispose();
       accQuad.geometry.dispose();
       accMat.dispose();
       bayer.dispose();
