@@ -127,16 +127,23 @@ export default function SpaceBackdropShell() {
     [],
   );
 
-  // intro 不會播(重訪/非首頁/手機 → introVisible 一開始就 false)→ 立即放行內容,別讓 pre-paint gate 卡住。
+  // 開場等 GPU 探測做完才開始。探測要建一個 WebGL context，那會把 GPU 行程佔住約 100ms
+  // （主執行緒是閒的，但畫面送不出去），以前探測是跟開場一起起跑，正好壓在開場頭幾幀。
+  // 等待期間內容還被 intro-pending 藏著，看起來只是背景多停了一下。
+  // 探測說沒有硬體加速 → 不播：700 道漸層星芒在 CPU 光柵化只會一路卡，跟 3D 不掛是同一個理由。
+  const introPending = introVisible && !softwareGpu; // 探測中也算：還要等它
+  const introReady = introVisible && gpu3dOk;
+
+  // intro 不會播(重訪/非首頁/手機/無硬體加速)→ 立即放行內容,別讓 pre-paint gate 卡住。
   useEffect(() => {
-    if (!introVisible) document.documentElement.classList.remove('intro-pending');
-  }, [introVisible]);
+    if (!introPending) document.documentElement.classList.remove('intro-pending');
+  }, [introPending]);
 
   if (isMobile || isBot) return null; // 手機 / 爬蟲：完全不載 three
 
   return (
     <>
-      {introVisible && (
+      {introReady && (
         <IntroAnimation
           onAnimationComplete={handleAnimationComplete}
           onExplosionStart={handleExplosionStart}
