@@ -106,7 +106,7 @@ const FLASH_FRAMES: readonly Frame[] = [
 ];
 
 /** 星芒速度倍率：從靜止加速 → 全速 → 減速到停 */
-export function speedMult(t: number): number {
+function speedMult(t: number): number {
   if (t < INTRO.rampEnd) return Math.pow(t / INTRO.rampEnd, 1.4);
   if (t < INTRO.peakEnd) return 1;
   if (t < INTRO.explosion) return 1 - easeOutCubic((t - INTRO.peakEnd) / (INTRO.explosion - INTRO.peakEnd));

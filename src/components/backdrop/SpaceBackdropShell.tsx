@@ -40,8 +40,8 @@ export default function SpaceBackdropShell() {
   // 得完全不掛 3D。偵測到軟體渲染就直接走 DOM 特效（WebGPU 的 Dawn 在這種機器上同樣只會拿到
   // SwiftShader/WARP，所以一個檢查擋兩條路）。
   //
-  // 探測是非同步的（在 worker 裡做，理由見 lib/webglSupport.ts）。3D 不等它（見下面掛載處），
-  // DOM 特效等它；說是軟體渲染就兩個都收掉。
+  // 探測是非同步的（在 worker 裡做，理由見 lib/webglSupport.ts），結果出來前 3D 與 DOM 特效
+  // 都先不掛。
   // runtime 才炸的殘餘情況由 ErrorBoundary + worker error 通道接。
   const hardwareGpu = useHardwareGpu();
   const softwareGpu = hardwareGpu === false;
@@ -159,10 +159,10 @@ export default function SpaceBackdropShell() {
       {/* 3D 背景（WebGPU/WebGL2 自動選 backend）。runtime 才炸由 ErrorBoundary 接；
           worker 內失敗則 StarfieldGpu 自行歸 null——兩種情況 DOM 特效都還在（下方獨立掛載）。
           開場期間整張 canvas 在開場層的高度（蓋住內容），結束後回到內容底下。
-          探測還沒出結果就先掛，跟探測同時建 3D：開場要等 3D 整個就緒（管線全部編譯完）才開始，
-          兩段重疊起來才不會讓開場晚太多。探測說沒有硬體加速就卸載——那種機器上多花的只是
-          探測那零點幾秒的 CPU。 */}
-      {!softwareGpu && (
+          ⚠ 一定要等探測說有硬體加速才掛，不要為了讓開場早一點開始而跟探測同時建：沒有 GPU 的機器上
+          那等於用 CPU 模擬的 GPU 編譯整套著色器，會把 CPU 吃滿到頁面都載不完（CI 的 e2e 就是這樣
+          逾時的——Playwright 的 Desktop Chrome UA 不算爬蟲，3D 會掛）。 */}
+      {hardwareGpu === true && (
         <BackdropErrorBoundary fallback={null} onError={endIntro}>
           <Suspense fallback={null}>
             <LazyStarfieldGpu

@@ -64,7 +64,7 @@ function spawnStar(): Star {
  *   b = (長度, 線寬, 亮度, 色相)
  *   c = (飽和度, 種類, 0, 0)              ——種類：STREAK_GLOW / STREAK_CORE
  */
-export interface StreakBuffers {
+interface StreakBuffers {
   a: Float32Array;
   b: Float32Array;
   c: Float32Array;

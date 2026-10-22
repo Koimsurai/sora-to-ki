@@ -440,7 +440,10 @@ export async function createStarfieldRunner(
   // three 預設在「第一次畫到」時才編譯，那會是開場頭幾幀、或土星出現的那一刻的一次停頓。
   // 土星此時還是隱藏的（等主執行緒的 setSaturn），暫時打開以極小縮放畫一次，管線就有了。
   if (saturn) saturn.group.visible = true;
-  await renderer.compileAsync(scene, camera);
+  // 用 PassNode 的 compileAsync，不是 renderer.compileAsync(scene, camera)：後者照「畫到 canvas」
+  // 的設定編，而場景 pass 是兩張半精度的 MRT，管線不一樣——第一次 render 時會整批同步重編
+  // （實測主 pipeline 第一次畫要 100–440ms，換成這個之後剩 70–170ms，剩下的是 bloom 的全螢幕 pass）。
+  await scenePass.compileAsync(renderer);
   pipeline.render();
   if (hyperspace && stagePipeline && introPipeline) {
     hyperspace.update(introFrame(0, null), 0, 0);
