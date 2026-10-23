@@ -14,6 +14,8 @@
   inset: -50%;
   background-repeat: repeat;
   will-change: transform;
+  /* 2026-10 翻新：星空退到底下當紙的紋理，讓各頁自己的星軌、彗星浮出來 */
+  opacity: 0.5;
 }
 
 /* 遠景：細密小星，慢漂 */

@@ -51,16 +51,37 @@
   align-items: center;
   gap: var(--space-6);
   font-size: var(--fs-14);
-  transition:
-    opacity var(--dur-250) ease,
-    translate var(--dur-300) var(--easing-out);
+  /* 收成點與展開都是這一條：從右邊（點的位置）往左揭開，像那個點拉出一條線 */
+  clip-path: inset(0 0 0 0);
+  transition: clip-path var(--dur-700) var(--easing-out);
 }
 
 .snav-row a,
 .snav-row button {
   padding-left: var(--space-3);
   color: var(--paper-2);
-  transition: color var(--dur-200) ease;
+  transition:
+    color var(--dur-200) ease,
+    opacity var(--dur-400) ease,
+    translate var(--dur-500) var(--easing-out);
+  /* 從右邊數來第 k 個晚 k × 50ms 出現：跟著揭開的方向一個一個浮出來 */
+  transition-delay: 0s, calc(var(--k, 0) * var(--dur-100) / 2), calc(var(--k, 0) * var(--dur-100) / 2);
+}
+
+.snav-row > :nth-last-child(2) {
+  --k: 1;
+}
+.snav-row > :nth-last-child(3) {
+  --k: 2;
+}
+.snav-row > :nth-last-child(4) {
+  --k: 3;
+}
+.snav-row > :nth-last-child(5) {
+  --k: 4;
+}
+.snav-row > :nth-last-child(6) {
+  --k: 5;
 }
 
 .snav-row a:hover,
@@ -90,7 +111,7 @@
   opacity: 1;
 }
 
-/* 收成一個點：桌機往下捲時、手機一直都是 */
+/* 收成的那個點：首頁平常、其他頁往下捲時、手機一直都是 */
 .snav-pin {
   position: absolute;
   top: 50%;
@@ -113,28 +134,29 @@
   pointer-events: none;
 }
 
-.snav.is-slim .snav-name {
-  transform: scale(0.85);
+/* 收著：那一行被裁到只剩右邊的點；收的時候一起收，不錯開 */
+.snav.is-folded .snav-row {
+  clip-path: inset(0 0 0 100%);
+  transition-duration: var(--dur-500);
 }
 
-.snav.is-slim .snav-row {
+.snav.is-folded .snav-row a,
+.snav.is-folded .snav-row button {
   opacity: 0;
-  translate: 0 -6px;
+  translate: var(--space-3) 0;
   pointer-events: none;
+  transition-delay: 0s;
 }
 
-.snav.is-slim .snav-row a,
-.snav.is-slim .snav-row button {
-  pointer-events: none;
-}
-
-.snav.is-slim .snav-pin {
+.snav.is-folded .snav-pin {
   opacity: 1;
   scale: 1;
+  pointer-events: auto;
 }
 
-.snav.is-slim .snav-pin {
-  pointer-events: auto;
+/* 其他頁往下捲收成點時，名字也縮小一點 */
+.snav.is-slim.is-folded .snav-name {
+  transform: scale(0.85);
 }
 
 /* ── 更多：其他頁一條一條畫出來，下面是搜尋、語言、帳號 ── */
@@ -274,7 +296,7 @@
   color: var(--paper-2);
 }
 
-/* ── 整頁目錄：手機一直用它，桌機只有首頁用（首頁沒有那一行字，五顆衛星就是導覽） ── */
+/* ── 手機的整頁目錄 ── */
 .snav-menu {
   position: fixed;
   inset: 0;
@@ -376,30 +398,14 @@
 }
 
 @media (min-width: 769px) {
-  .snav:not(.is-home) .snav-menu {
+  .snav-menu {
     display: none;
   }
-
-  .snav-menu {
-    justify-items: center;
-    padding-top: var(--space-24);
-  }
 }
 
-/* ── 首頁：只有名字與那個點，不鋪那層漸淡的紙色 ── */
+/* ── 首頁：不鋪那層漸淡的紙色，土星上方乾乾淨淨 ── */
 .snav.is-home .snav-bar {
   background: none;
-}
-
-.snav.is-home .snav-row,
-.snav.is-home .snav-more {
-  display: none;
-}
-
-.snav.is-home .snav-pin {
-  scale: 1;
-  opacity: 1;
-  pointer-events: auto;
 }
 
 /* ── 手機：名字＋一個點 ── */
