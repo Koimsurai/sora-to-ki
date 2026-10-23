@@ -186,6 +186,8 @@ pub fn build_router(state: AppState) -> Router {
         // repos / contributions 以前是瀏覽器直接打第三方（api.github.com 未認證、
         // jogruber 的爬蟲服務）；收進後端才吃得到 token 額度，型別也才有來源
         .route("/api/github/repos/{username}", get(handlers::thirdparty::github_repos).layer(cached(1800)))
+        // 作品頁的數據：一天變不了多少，快取六小時
+        .route("/api/github/works", get(handlers::thirdparty::github_works).layer(cached(21600)))
         .route(
             "/api/github/contributions/{username}",
             get(handlers::thirdparty::github_contributions).layer(cached(3600)),
