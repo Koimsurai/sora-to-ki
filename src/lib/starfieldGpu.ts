@@ -184,6 +184,8 @@ interface SaturnRig {
   setGlow(glow: number[]): void;
   /** 衛星在畫面上的位置（CSS 像素），首頁的字跟著它走 */
   project(camera: THREE.Camera, width: number, height: number): SatelliteScreen[];
+  /** 縮回一點：下一次顯示時就從這一點撐開 */
+  collapse(): void;
 }
 
 /**
@@ -373,6 +375,9 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     },
     setGlow(glow) {
       for (let i = 0; i < glowTarget.length; i++) glowTarget[i] = glow[i] ?? 0;
+    },
+    collapse() {
+      currentScale = 0.0001;
     },
     project(camera, width, height) {
       const toScreen = (p: THREE.Vector3) => {
@@ -643,6 +648,8 @@ export async function createStarfieldRunner(
       setSaturn(visible, animate) {
         markActive();
         if (saturnVisible && !visible) init.onSatellites?.([]);
+        // 每次重新出現都從一點撐開（換頁轉場的「長」）
+        if (!saturnVisible && visible) saturn.collapse();
         saturnVisible = visible;
         saturnAnimate = animate;
         // 最低品質下即使呼叫顯示也不開（土星最貴）

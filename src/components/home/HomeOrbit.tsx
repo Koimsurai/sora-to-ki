@@ -15,6 +15,7 @@ import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { setSatelliteGlow, subscribeSatellites, type SatelliteScreen } from '@/store/homeOrbit';
+import { usePageTransition } from '@/hooks/usePageTransition';
 import './HomeOrbit.css';
 
 /** 作品頁做好之前，衛星上先列這幾個（照提案的作品清單） */
@@ -44,6 +45,16 @@ export default function HomeOrbit() {
   const sectionRef = useRef<HTMLElement>(null);
   const labelsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const [flat, setFlat] = useState(false);
+
+  // 換頁轉場：首頁的錨點是土星的中心。換進來時點飛到這裡、土星從這一點撐開（3D 那邊自己長，
+  // 見 starfieldGpu 的 setSaturn），所以「長」由首頁接手。換出去時從點的那顆衛星出發（下面每幀寫進 data-tx）
+  usePageTransition({
+    anchor: () => ({
+      x: window.innerWidth / 2,
+      y: window.innerHeight * (window.innerHeight > window.innerWidth ? 0.46 : 0.5),
+    }),
+    onGrow: () => 'self',
+  });
 
   const post = digest?.posts[0];
   const thought = digest?.thoughts[0];
@@ -80,6 +91,7 @@ export default function HomeOrbit() {
     let pointer: [number, number] | null = null;
     let focused = -1;
     let tapped = -1;
+    let hovered = -1;
     let lastInput = performance.now();
     let hintIndex = 0;
     let hintStart = 0;
@@ -95,9 +107,13 @@ export default function HomeOrbit() {
       if (e.pointerType !== 'mouse') return;
       pointer = [e.clientX, e.clientY];
       lastInput = performance.now();
+      // 從衛星移到字上會離開「靠近」的範圍：指在字上的時候那顆要一直亮著，字才點得到
+      const label = (e.target as Element).closest<HTMLAnchorElement>('.horbit-label');
+      hovered = label ? labelsRef.current.indexOf(label) : -1;
     };
     const onLeave = () => {
       pointer = null;
+      hovered = -1;
     };
     // 觸控沒有「靠近」：點一下畫面就依序指到下一顆（點到字本身就照常進那一頁）
     const onTap = (e: PointerEvent) => {
@@ -128,7 +144,7 @@ export default function HomeOrbit() {
       }
       if (!live) return;
 
-      let near = focused >= 0 ? focused : tapped;
+      let near = focused >= 0 ? focused : hovered >= 0 ? hovered : tapped;
       if (near < 0 && pointer) {
         const [px, py] = pointer;
         let best = NEAR_PX;
@@ -170,6 +186,8 @@ export default function HomeOrbit() {
         x = Math.max(16, Math.min(window.innerWidth - w - 16, x));
         y = Math.max(72, Math.min(window.innerHeight - h - 16, y));
         el.style.transform = `translate(${x - box.left}px, ${y - box.top}px)`;
+        el.dataset.tx = p.x.toFixed(1);
+        el.dataset.ty = p.y.toFixed(1);
         const show = p.hidden ? 0 : (glow[i] ?? 0);
         el.style.opacity = String(show);
         el.classList.toggle('is-on', show > 0.6);
