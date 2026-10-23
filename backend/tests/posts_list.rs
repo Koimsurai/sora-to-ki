@@ -236,6 +236,8 @@ async fn 列表送的是內文前_260_字而不是整篇() {
     let preview = body["posts"][0]["content_preview"].as_str().unwrap();
     assert_eq!(preview.chars().count(), 260);
     assert!(body["posts"][0].get("content").is_none(), "列表不該帶整篇 content");
+    // 長度是整篇的字元數（不是 UTF-8 位元組數），手記列表拿它估閱讀時間
+    assert_eq!(body["posts"][0]["content_length"], 400);
 }
 
 #[tokio::test]
