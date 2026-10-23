@@ -127,21 +127,21 @@ test.describe('留言按讚', () => {
  */
 test('碎念按過的讚，重新整理之後還亮著', async ({ page }) => {
   await page.goto('/thinking');
-  const like = page.locator('.tk-card').first().getByRole('button', { name: '讚', exact: true });
+  const like = page.locator('.mo-post').first().getByRole('button', { name: '讚', exact: true });
   await expect(like, '種子資料裡應該有碎念').toBeVisible({ timeout: 15_000 });
 
-  if (!(await like.getAttribute('class'))?.includes('is-like')) {
+  if ((await like.getAttribute('aria-pressed')) !== 'true') {
     const posted = page.waitForResponse((r) => r.url().includes('/react') && r.request().method() === 'POST');
     await like.click();
     await posted;
   }
-  await expect(like).toHaveClass(/is-like/);
+  await expect(like).toHaveAttribute('aria-pressed', 'true');
 
   await page.reload();
   await expect(
-    page.locator('.tk-card').first().getByRole('button', { name: '讚', exact: true }),
+    page.locator('.mo-post').first().getByRole('button', { name: '讚', exact: true }),
     '重整後仍該記得按過',
-  ).toHaveClass(/is-like/, { timeout: 15_000 });
+  ).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 });
 });
 
 // ── 行動裝置 ──────────────────────────────────────────────────────────────

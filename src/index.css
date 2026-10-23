@@ -1271,13 +1271,6 @@ html.no-gpu [class*="nebula"] {
 html.no-gpu .post-content-wrapper::before {
   background: rgba(var(--surface-1-rgb), 0.9);
 }
-@media (prefers-reduced-motion: no-preference) {
-  html.no-gpu .comet,
-  html.no-gpu [class*="comet"],
-  html.no-gpu [class*="shooting-star"] {
-    display: none !important;
-  }
-}
 
 /* ═══════════════════════════════════════════════════════════════════
    .fs-active —— 有元素進入全螢幕時掛在 <html> 上（SpaceBackdropShell 監聽 fullscreenchange）。

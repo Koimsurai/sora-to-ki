@@ -473,7 +473,11 @@
     "ending": "たいていは、ただのひとりごと。",
     "empty": "まだ何もない。",
     "back": "戻る",
-    "notFound": "この投稿は見つかりません。"
+    "notFound": "この投稿は見つかりません。",
+    "label": "Moments",
+    "like": "いいね",
+    "comments": "コメント {{count}} 件",
+    "older": "もっと前のつぶやき"
   },
   "watch": {
     "title": "今みているもの",
