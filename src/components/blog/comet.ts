@@ -73,8 +73,10 @@ interface Dust {
   j: number;
 }
 interface Coma {
-  a: number;
-  r: number;
+  /** 在彗核後面多遠（0 是彗核，1 是彗髮的尾端） */
+  u: number;
+  /** 往兩側偏多少（-1 到 1，靠中間的多） */
+  s: number;
   j: number;
 }
 
@@ -89,10 +91,27 @@ const snap = (v: number) => Math.round(v / 3) * 3;
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/** 飛進來的那條線變成彗尾的第一筆：花這麼久從飛行路線彎成弧線 */
-export const MORPH_MS = 650;
+/** 飛進來的那條線散成塵埃的時間 */
+export const DISSOLVE_MS = 750;
 /** 彗尾從彗核往下長到畫面底的時間 */
 export const REVEAL_MS = 900;
+/** 換頁轉場的「收」：彗尾縮回彗核的時間 */
+export const RETRACT_MS = 380;
+/** 點飛進來時，最後沿著彗尾往上飛的那一段有多長 */
+export const APPROACH_PX = 240;
+
+/** 彗星往哪裡飛（版面座標的單位向量）：沿著弧線往上 */
+export function headDirection(L: ArcLayout): Pt {
+  const dx = arcX(L, L.y0 - 6) - arcX(L, L.y0);
+  const n = Math.hypot(dx, 6);
+  return { x: dx / n, y: -6 / n };
+}
+
+/** 決定性的亂數（同一個 k 每一幀都一樣），讓散開的塵埃不會每幀亂跳 */
+const hash = (k: number) => {
+  const v = Math.sin(k * 12.9898) * 43758.5453;
+  return v - Math.floor(v);
+};
 
 export interface CometFrame {
   /** 容器左上角的畫面座標 */
@@ -101,8 +120,10 @@ export interface CometFrame {
   hoverY: number | null;
   /** 彗尾目前長到哪裡（版面座標）；Infinity = 全部 */
   revealY: number;
-  /** 飛進來的那條線（畫面座標，已經反過來：第一個點是彗核），以及從開始彎過去多久了 */
-  morph: { trail: Pt[]; elapsed: number } | null;
+  /** 飛進來的那條線（版面座標）與它散開多久了：線斷成一粒一粒、往兩側散開，跟彗尾混在一起 */
+  dissolve: { trail: Pt[]; elapsed: number } | null;
+  /** 彗髮的大小（0 到 1）：換頁收的時候跟著縮回彗核 */
+  headScale: number;
 }
 
 export function createComet(tailLength: number, narrow: boolean) {
@@ -113,9 +134,9 @@ export function createComet(tailLength: number, narrow: boolean) {
     side: gauss(),
     j: Math.random(),
   }));
-  const coma: Coma[] = Array.from({ length: 280 }, () => ({
-    a: Math.random() * TAU,
-    r: Math.abs(gauss()) * 0.55,
+  const coma: Coma[] = Array.from({ length: 320 }, () => ({
+    u: Math.pow(Math.random(), 1.7),
+    s: Math.max(-1, Math.min(1, gauss() / 1.6)),
     j: Math.random(),
   }));
 
@@ -155,48 +176,64 @@ export function createComet(tailLength: number, narrow: boolean) {
       ctx.fillRect(snap(x) + ox, snap(y) + oy, 2, 2);
     }
 
-    // 彗核：外面一團亮的彗髮，往飛行方向（上方）偏一點
+    // 彗核：最新那一則的點（DOM 的 .mo-dot.is-new，轉場的點也落在這裡）。彗髮是一個往後張開的
+    // 拋物面，開口朝彗尾：前緣貼著彗核、越往後越寬越淡，直接接進彗尾的塵埃
     const hx = arcX(L, L.y0) + ox;
-    const hy = L.y0 + oy - 8;
-    if (hy > -60 && hy < h + 60) {
-      const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, 54);
-      glow.addColorStop(0, `rgba(${AMBER}, 0.24)`);
+    const hy = L.y0 + oy;
+    const k = f.headScale;
+    if (k > 0.01 && hy > -80 && hy < h + 80) {
+      const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, 30 * k);
+      glow.addColorStop(0, `rgba(${AMBER}, 0.3)`);
       glow.addColorStop(1, `rgba(${AMBER}, 0)`);
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(hx, hy, 54, 0, TAU);
+      ctx.arc(hx, hy, 30 * k, 0, TAU);
       ctx.fill();
+      const fwd = headDirection(L);
+      const side = { x: -fwd.y, y: fwd.x };
       for (const c of coma) {
-        const r = c.r * 38;
-        const a = (1 - c.r) * (0.35 + 0.5 * Math.sin(t * 2 + c.j * 9) ** 2);
-        if (a < 0.05) continue;
-        ctx.fillStyle = `rgba(${INK}, ${a})`;
-        ctx.fillRect(snap(hx + Math.cos(c.a) * r), snap(hy + Math.sin(c.a) * r * 0.85), 2, 2);
+        const back = (-4 + 52 * c.u) * k;
+        const spread = Math.sqrt(Math.max(0, (back + 4 * k) / (56 * k || 1))) * 20 * k;
+        const a = Math.pow(1 - c.u, 1.6) * (0.4 + 0.45 * Math.sin(t * 1.6 + c.j * 9) ** 2);
+        if (a < 0.04) continue;
+        ctx.fillStyle = `rgba(${INK}, ${a.toFixed(3)})`;
+        ctx.fillRect(
+          hx - fwd.x * back + side.x * c.s * spread - 0.75,
+          hy - fwd.y * back + side.y * c.s * spread - 0.75,
+          1.5,
+          1.5,
+        );
       }
     }
 
-    // 飛進來的那條線：從飛行路線彎成彗尾的弧線，邊彎邊散成塵埃
-    if (f.morph) {
-      const { trail, elapsed } = f.morph;
-      const e = easeOut(clamp01(elapsed / MORPH_MS));
-      const n = trail.length;
-      if (n > 1) {
-        let len = 0;
-        for (let i = 1; i < n; i++) len += Math.hypot(trail[i].x - trail[i - 1].x, trail[i].y - trail[i - 1].y);
-        const reach = Math.min(len, 520);
-        ctx.strokeStyle = `rgba(${INK}, ${0.7 * (1 - e * e)})`;
+    // 飛進來的那條線散成塵埃：線先淡掉，同一個位置冒出一粒一粒的塵埃往兩側散開、慢慢熄掉
+    if (f.dissolve) {
+      const { trail, elapsed } = f.dissolve;
+      const e = clamp01(elapsed / DISSOLVE_MS);
+      const lineAlpha = 0.75 * (1 - clamp01(e * 3));
+      if (lineAlpha > 0.01 && trail.length > 1) {
+        ctx.strokeStyle = `rgba(${INK}, ${lineAlpha.toFixed(3)})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        for (let i = 0; i < n; i++) {
-          const y = L.y0 + (i / (n - 1)) * reach;
-          const tx = arcX(L, y) + ox;
-          const ty = y + oy;
-          const x = trail[i].x + (tx - trail[i].x) * e;
-          const yy = trail[i].y + (ty - trail[i].y) * e;
-          if (i) ctx.lineTo(x, yy);
-          else ctx.moveTo(x, yy);
-        }
+        trail.forEach((p, i) => (i ? ctx.lineTo(p.x + ox, p.y + oy) : ctx.moveTo(p.x + ox, p.y + oy)));
         ctx.stroke();
+      }
+      const spread = easeOut(e);
+      for (let i = 1; i < trail.length; i += 2) {
+        const p = trail[i];
+        const q = trail[i - 1];
+        const seg = Math.hypot(p.x - q.x, p.y - q.y) || 1;
+        const nx = -(p.y - q.y) / seg;
+        const ny = (p.x - q.x) / seg;
+        for (let j = 0; j < 2; j++) {
+          const r1 = hash(i * 7.1 + j * 3.3);
+          const r2 = hash(i * 1.7 + j * 9.1);
+          const a = Math.pow(1 - e, 1.3) * (0.35 + 0.5 * r2) * Math.min(1, e * 6);
+          if (a < 0.03) continue;
+          const off = (r1 - 0.5) * 2 * (1 + 16 * spread);
+          ctx.fillStyle = `rgba(${INK}, ${a.toFixed(3)})`;
+          ctx.fillRect(p.x + ox + nx * off - 0.75, p.y + oy + ny * off + 10 * spread * r2 - 0.75, 1.5, 1.5);
+        }
       }
     }
   }

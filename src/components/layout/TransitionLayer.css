@@ -1,4 +1,4 @@
-/* 換頁轉場（layout/TransitionLayer）。兩層都在內容容器裡、導覽列底下：導覽列換頁時不動 */
+/* 換頁轉場（layout/TransitionLayer）。畫布在內容容器裡、導覽列底下：導覽列換頁時不動 */
 
 /* 畫那個點與它拉出的線 */
 .pt-canvas {
@@ -10,13 +10,10 @@
   pointer-events: none;
 }
 
-/* 舊一頁的快照：蓋在原地，往出發點收、淡掉 */
-.pt-ghost {
-  position: fixed;
-  inset: 0;
-  z-index: 900;
-  overflow: hidden;
-  pointer-events: none;
+/* 頁面在收的時候頁尾先退場：它不屬於任何一頁，不跟著收進點裡 */
+html[data-pt="leave"] .app-footer {
+  opacity: 0;
+  transition: opacity var(--dur-200) ease;
 }
 
 /* 新的一頁在「長」之前藏著，但照常排版（錨點才量得到）；頁尾跟著藏 */

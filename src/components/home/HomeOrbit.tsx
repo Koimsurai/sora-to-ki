@@ -14,7 +14,8 @@ import { MAIN_SECTIONS } from '@/data/siteSections';
 import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
-import { setSatelliteGlow, subscribeSatellites, type SatelliteScreen } from '@/store/homeOrbit';
+import { collapseSaturnTo, setSatelliteGlow, subscribeSatellites, type SatelliteScreen } from '@/store/homeOrbit';
+import { after, type Pt } from '@/store/pageTransition';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import './HomeOrbit.css';
 
@@ -28,6 +29,8 @@ const IDLE_HINT_MS = 2500;
 const HINT_MS = 4500;
 /** 多久沒收到 3D 送來的位置就當作沒有 3D */
 const FLAT_AFTER_MS = 2500;
+/** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
+const SATURN_COLLAPSE_MS = 380;
 
 // 照字素切：碎念裡的 emoji 是好幾個碼位組成的，照碼位切會切出半個
 const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
@@ -45,14 +48,33 @@ export default function HomeOrbit() {
   const sectionRef = useRef<HTMLElement>(null);
   const labelsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const [flat, setFlat] = useState(false);
+  /** 衛星在畫面上的位置與速度（px/ms），轉場的「收」要用 */
+  const positionsRef = useRef<SatelliteScreen[]>([]);
+  const velocityRef = useRef<Pt[]>([]);
 
   // 換頁轉場：首頁的錨點是土星的中心。換進來時點飛到這裡、土星從這一點撐開（3D 那邊自己長，
-  // 見 starfieldGpu 的 setSaturn），所以「長」由首頁接手。換出去時從點的那顆衛星出發（下面每幀寫進 data-tx）
+  // 見 StarfieldGpu），所以「長」由首頁接手。換出去時整組收進點下去的那顆衛星，點順著那顆衛星的
+  // 軌道方向飛出去；從導覽列或上一頁離開就收進土星中心
+  const center = (): Pt => ({
+    x: window.innerWidth / 2,
+    y: window.innerHeight * (window.innerHeight > window.innerWidth ? 0.46 : 0.5),
+  });
   usePageTransition({
-    anchor: () => ({
-      x: window.innerWidth / 2,
-      y: window.innerHeight * (window.innerHeight > window.innerWidth ? 0.46 : 0.5),
-    }),
+    anchor: center,
+    leave: ({ source }) => {
+      // 3D 沒跑起來（平面的備案）：沒有土星可以收，交給預設的遮罩
+      if (flat) return null;
+      const i = source === null ? -1 : Number(source);
+      const sat = positionsRef.current[i] as SatelliteScreen | undefined;
+      collapseSaturnTo(sat ? i : -1);
+      sectionRef.current?.classList.add('is-leaving');
+      // 收到最後一小段就放行：點在土星消失的那一刻已經在動了，不會停在原地等
+      const done = after(SATURN_COLLAPSE_MS * 0.8);
+      if (!sat) return { point: center(), done };
+      const v = velocityRef.current[i] ?? { x: 0, y: 0 };
+      const speed = Math.hypot(v.x, v.y) || 1;
+      return { point: { x: sat.x, y: sat.y }, velocity: { x: (v.x / speed) * 0.9, y: (v.y / speed) * 0.9 }, done };
+    },
     onGrow: () => 'self',
   });
 
@@ -99,8 +121,17 @@ export default function HomeOrbit() {
     let flatNow = false;
 
     const unsubscribe = subscribeSatellites((next) => {
+      const now = performance.now();
+      const prev = positionsRef.current;
+      if (next.length && prev.length === next.length && now > lastPositionsAt) {
+        velocityRef.current = next.map((p, i) => ({
+          x: (p.x - prev[i].x) / (now - lastPositionsAt),
+          y: (p.y - prev[i].y) / (now - lastPositionsAt),
+        }));
+      }
       positions = next;
-      if (next.length) lastPositionsAt = performance.now();
+      positionsRef.current = next;
+      if (next.length) lastPositionsAt = now;
     });
 
     const onMove = (e: PointerEvent) => {
@@ -188,7 +219,9 @@ export default function HomeOrbit() {
         el.style.transform = `translate(${x - box.left}px, ${y - box.top}px)`;
         el.dataset.tx = p.x.toFixed(1);
         el.dataset.ty = p.y.toFixed(1);
-        const show = p.hidden ? 0 : (glow[i] ?? 0);
+        el.dataset.ptSource = String(i);
+        // 換頁在收的時候字先退掉，只剩那一點
+        const show = p.hidden || section.classList.contains('is-leaving') ? 0 : (glow[i] ?? 0);
         el.style.opacity = String(show);
         el.classList.toggle('is-on', show > 0.6);
       });

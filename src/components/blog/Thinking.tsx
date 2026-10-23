@@ -10,8 +10,18 @@ import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { LocaleLink } from '@/i18n/locale-link';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { useThoughtReaction } from '@/hooks/useThoughtReaction';
-import type { Pt } from '@/store/pageTransition';
-import { arcX, createComet, layoutArc, MORPH_MS, REVEAL_MS, type ArcLayout } from './comet';
+import { after, type Pt } from '@/store/pageTransition';
+import {
+  APPROACH_PX,
+  arcX,
+  createComet,
+  DISSOLVE_MS,
+  headDirection,
+  layoutArc,
+  RETRACT_MS,
+  REVEAL_MS,
+  type ArcLayout,
+} from './comet';
 import type { Thought } from './ThoughtCard';
 import './Moments.css';
 
@@ -31,6 +41,7 @@ interface Prefill {
 }
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeIn = (t: number) => t * t * t;
 
 function Embed({ th }: { th: Thought }) {
   const ref = th.ref;
@@ -179,8 +190,13 @@ function Thinking() {
   const ghostsRef = useRef<(HTMLLIElement | null)[]>([]);
   const endRef = useRef<HTMLParagraphElement>(null);
   const layoutRef = useRef<ArcLayout | null>(null);
-  /** 轉場交過來的那條線（畫面座標，彗核在前）與開始彎的時間；以及彗尾從什麼時候開始長 */
-  const growRef = useRef<{ trail: Pt[] | null; at: number } | null>(null);
+  /**
+   * 彗尾從什麼時候開始長、從哪裡開始長（版面座標的高度），以及轉場交過來的那條線（版面座標）。
+   * 點是沿著彗尾最後一段飛進來的，那一段已經「畫過」了，彗尾從那裡接著往下長
+   */
+  const growRef = useRef<{ trail: Pt[] | null; at: number; from: number } | null>(null);
+  /** 換頁的「收」：從什麼時候、從哪裡開始縮回彗核 */
+  const leaveRef = useRef<{ at: number; from: number } | null>(null);
   const hoverRef = useRef<number | null>(null);
 
   const origin = (): Pt => {
@@ -188,15 +204,42 @@ function Thinking() {
     return { x: r?.left ?? 0, y: r?.top ?? 0 };
   };
 
+  /** 彗核在畫面上的位置；捲到看不到的時候夾在畫面邊上 */
+  const headOnScreen = (L: ArcLayout): Pt => {
+    const o = origin();
+    return { x: o.x + arcX(L, L.y0), y: Math.min(window.innerHeight - 24, Math.max(24, o.y + L.y0)) };
+  };
+
   usePageTransition({
-    anchor: () => {
+    anchor: () => (layoutRef.current ? headOnScreen(layoutRef.current) : null),
+    // 點從彗尾那一端沿著弧線往上飛進彗核，跟彗星飛的方向一樣
+    arrive: () => {
       const L = layoutRef.current;
       if (!L) return null;
       const o = origin();
-      return { x: o.x + arcX(L, L.y0), y: Math.min(window.innerHeight - 24, Math.max(24, o.y + L.y0)) };
+      const approach: Pt[] = [];
+      for (let d = APPROACH_PX; d >= 0; d -= 8) approach.push({ x: o.x + arcX(L, L.y0 + d), y: o.y + L.y0 + d });
+      return { approach };
+    },
+    // 收：彗尾縮回彗核、字跟著退掉，彗核帶著彗星飛的方向離開
+    leave: () => {
+      const L = layoutRef.current;
+      const page = pageRef.current;
+      if (!L || !page) return null;
+      const o = origin();
+      leaveRef.current = { at: performance.now(), from: Math.min(L.yEnd, window.innerHeight - o.y + 60) };
+      page.classList.add('is-leaving');
+      const dir = headDirection(L);
+      return { point: headOnScreen(L), velocity: { x: dir.x * 0.9, y: dir.y * 0.9 }, done: after(RETRACT_MS * 0.8) };
     },
     onGrow: ({ trail }) => {
-      growRef.current = { trail: trail.slice().reverse(), at: performance.now() };
+      const L = layoutRef.current;
+      const o = origin();
+      growRef.current = {
+        trail: trail.map((p) => ({ x: p.x - o.x, y: p.y - o.y })),
+        at: performance.now(),
+        from: L ? L.y0 + APPROACH_PX : 0,
+      };
       return 'trail';
     },
   });
@@ -263,7 +306,8 @@ function Thinking() {
     const root = document.documentElement;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // 轉場還在收上一頁、點還在飛：等它交棒（onGrow）。直接打開這一頁就現在開始長
-    if (!growRef.current && root.dataset.pt !== 'out') growRef.current = { trail: null, at: performance.now() };
+    if (!growRef.current && root.dataset.pt !== 'out')
+      growRef.current = { trail: null, at: performance.now(), from: 0 };
     const L0 = layoutRef.current;
     const comet = createComet(L0 ? L0.yEnd - L0.y0 : 1600, L0?.narrow ?? false);
     const shown: boolean[] = [];
@@ -305,10 +349,11 @@ function Thinking() {
       raf = requestAnimationFrame(frame);
       const L = layoutRef.current;
       const grow = growRef.current;
-      if (!grow && root.dataset.pt !== 'out') growRef.current = { trail: null, at: now };
+      if (!grow && root.dataset.pt !== 'out') growRef.current = { trail: null, at: now, from: 0 };
       if (!L) return;
       const since = grow ? now - grow.at : -1;
-      const busy = since >= 0 && since < Math.max(MORPH_MS, REVEAL_MS);
+      const leave = leaveRef.current;
+      const busy = (since >= 0 && since < Math.max(DISSOLVE_MS, REVEAL_MS)) || leave !== null;
       // 長完之後 30fps 就夠：塵埃流得很慢
       if (!busy && now - last < 33) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
@@ -320,9 +365,16 @@ function Thinking() {
       drawn = key;
       const [w, h] = fit();
       let revealY = -Infinity;
-      if (since >= 0) {
+      let headScale = 1;
+      if (leave) {
+        // 收：彗尾越縮越快地退回彗核，最後彗髮也收進那一點
+        const k = Math.min(1, (now - leave.at) / RETRACT_MS);
+        revealY = leave.from + (L.y0 - 10 - leave.from) * easeIn(k);
+        headScale = 1 - easeIn(k);
+      } else if (since >= 0 && grow) {
+        const start = Math.max(L.y0 - 10, grow.from);
         const bottom = h - o.y + 200;
-        revealY = since >= REVEAL_MS ? Infinity : L.y0 - 10 + easeOut(since / REVEAL_MS) * (bottom - L.y0);
+        revealY = since >= REVEAL_MS ? Infinity : start + easeOut(since / REVEAL_MS) * Math.max(0, bottom - start);
       }
       reveal(L, revealY);
       comet.draw(
@@ -334,7 +386,8 @@ function Thinking() {
           origin: o,
           hoverY: hoverRef.current,
           revealY,
-          morph: grow?.trail && since < MORPH_MS ? { trail: grow.trail, elapsed: Math.max(0, since) } : null,
+          headScale,
+          dissolve: grow?.trail && since < DISSOLVE_MS ? { trail: grow.trail, elapsed: Math.max(0, since) } : null,
         },
         still ? 0 : dt,
         now / 1000,
@@ -343,13 +396,21 @@ function Thinking() {
 
     if (reduce) {
       // 減少動態：不流動、不長，畫一張靜態的，捲動時重畫
-      growRef.current = { trail: null, at: -REVEAL_MS };
+      growRef.current = { trail: null, at: -REVEAL_MS, from: 0 };
       const still = () => {
         const L = layoutRef.current;
         if (!L) return;
         const [w, h] = fit();
         reveal(L, Infinity);
-        comet.draw(ctx, w, h, L, { origin: origin(), hoverY: null, revealY: Infinity, morph: null }, 0, 0);
+        comet.draw(
+          ctx,
+          w,
+          h,
+          L,
+          { origin: origin(), hoverY: null, revealY: Infinity, headScale: 1, dissolve: null },
+          0,
+          0,
+        );
       };
       still();
       window.addEventListener('scroll', still, { passive: true });

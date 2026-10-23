@@ -66,6 +66,8 @@ export interface StarfieldRunner {
   setSaturn(visible: boolean, animate: boolean): void;
   /** 首頁衛星的亮度（見 store/homeOrbit） */
   setSatelliteGlow(glow: number[]): void;
+  /** 換頁轉場的「收」：土星整組收進第 index 顆衛星，-1 是收進中心 */
+  collapseSaturnTo(index: number): void;
   dispose(): void;
 }
 
@@ -194,7 +196,18 @@ interface SaturnRig {
   project(camera: THREE.Camera, width: number, height: number): SatelliteScreen[];
   /** 縮回一點：下一次顯示時就從這一點撐開 */
   collapse(): void;
+  /**
+   * 換頁轉場的「收」：整組收進一顆衛星（index）或土星中心（-1）。收的過程衛星停住，
+   * 收進去的那一點在畫面上不動——轉場的點就從那裡接手飛出去
+   */
+  collapseTo(index: number): void;
 }
+
+/** 收：越收越快，像被吸進那一點；長：一下撐開、慢慢停穩 */
+const COLLAPSE_S = 0.38;
+const GROW_S = 0.7;
+const easeInCubic = (t: number) => t * t * t;
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
 /**
  * 「每幀往目標靠近 rate」換算成跟幀率無關的係數（rate 是以 60fps 為準的值）。
@@ -389,21 +402,48 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   let currentScrollRot = 0;
   let currentScale = 0.0001;
   let fullScale = BASE_SCALE;
+  /** 收與長都是一段有起訖的動畫（不是 lerp）：時間固定，轉場那邊才對得上拍子 */
+  let tween: { from: number; to: number; t: number; dur: number; ease: (t: number) => number } | null = null;
+  let tweenTarget = 0.0001;
+  /** 收進去的那一點（世界座標）；null 是收進中心 */
+  let pivot: THREE.Vector3 | null = null;
+  const base = new THREE.Vector3();
   const v = new THREE.Vector3();
   const center = new THREE.Vector3();
   const edge = new THREE.Vector3();
   return {
     group,
     update(dt, scrollY, animate) {
-      clock += dt;
       autoRot += 0.05 * dt;
       const targetScrollRot = scrollY * 0.001;
       currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, lerpFactor(0.05, dt));
       body.rotation.y = currentScrollRot + autoRot;
       // 收與長：收的時候縮到極小（非 0，管線才不會重編），長的時候撐回原尺寸
       const targetScale = animate ? fullScale : 0.0001;
-      currentScale = THREE.MathUtils.lerp(currentScale, targetScale, lerpFactor(0.08, dt));
+      if (targetScale !== tweenTarget) {
+        const grow = targetScale > currentScale;
+        if (grow) pivot = null;
+        tween = {
+          from: currentScale,
+          to: targetScale,
+          t: 0,
+          dur: grow ? GROW_S : COLLAPSE_S,
+          ease: grow ? easeOutCubic : easeInCubic,
+        };
+        tweenTarget = targetScale;
+      }
+      if (tween) {
+        tween.t += dt;
+        const k = Math.min(1, tween.t / tween.dur);
+        currentScale = THREE.MathUtils.lerp(tween.from, tween.to, tween.ease(k));
+        if (k >= 1) tween = null;
+      }
       group.scale.setScalar(currentScale);
+      // 收進一顆衛星：那顆衛星在世界座標裡不動，其他的都往它縮過去
+      if (pivot) group.position.copy(pivot).addScaledVector(v.copy(base).sub(pivot), currentScale / fullScale);
+      else group.position.copy(base);
+      // 往衛星收的時候衛星停住，不然收進去的那一點會跟著軌道跑掉
+      if (!pivot) clock += dt;
       let glowing = false;
       for (const [i, s] of satellites.entries()) {
         const a = s.phase + clock * (0.16 / Math.sqrt(s.r));
@@ -414,19 +454,30 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
         orbits[i].opacity = ORBIT_DIM + s.g.value * 0.32;
       }
       syncSun();
-      const zooming = Math.abs(targetScale - currentScale) > 0.005 * fullScale;
+      const zooming = tween !== null;
       return { moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
     },
     setAspect(aspect) {
       fullScale = fitScale(aspect);
       // 直的畫面把土星往上提一點（提案是在高度的 46%），下面留給手機的手指
-      group.position.y = aspect < 1 ? 0.31 : 0;
+      base.set(0, aspect < 1 ? 0.31 : 0, 0);
+      if (!tween) {
+        if (tweenTarget > 0.001) currentScale = tweenTarget = fullScale;
+        if (!pivot) group.position.copy(base);
+      }
     },
     setGlow(glow) {
       for (let i = 0; i < glowTarget.length; i++) glowTarget[i] = glow[i] ?? 0;
     },
     collapse() {
       currentScale = 0.0001;
+      tween = null;
+      pivot = null;
+    },
+    collapseTo(index) {
+      const sat = satellites[index] as (typeof satellites)[number] | undefined;
+      group.updateWorldMatrix(true, true);
+      pivot = sat ? sat.sprite.getWorldPosition(new THREE.Vector3()) : null;
     },
     project(camera, width, height) {
       const toScreen = (p: THREE.Vector3) => {
@@ -707,6 +758,11 @@ export async function createStarfieldRunner(
       setSatelliteGlow(glow) {
         markActive();
         saturn.setGlow(glow);
+      },
+      collapseSaturnTo(index) {
+        markActive();
+        saturn.collapseTo(index);
+        saturnAnimate = false;
       },
       setRunning(running) {
         if (running) {
