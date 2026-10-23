@@ -48,6 +48,8 @@ const TRAVEL = 0.42;
 const STILL_OVERLAP_MS = 300;
 /** 背景星空跟著鏡頭挪多少（遠的東西動得少） */
 const SKY_PARALLAX = 0.14;
+/** 一趟轉場最久跑多久：超過就當作出事了，直接收掉（不讓畫面卡在半路） */
+const RUN_LIMIT_MS = 8000;
 /** 彗尾的塵埃多久熄掉 */
 const DUST_LIFE_MS = 900;
 const AMBER = '233, 193, 122';
@@ -147,12 +149,16 @@ const circleAt = (main: HTMLElement, p: Pt, r: number) => {
   main.style.clipPath = `circle(${r.toFixed(1)}px at ${(p.x - box.left).toFixed(1)}px ${(p.y - box.top).toFixed(1)}px)`;
 };
 
-/** 預設的收：一圈遮罩把整頁收進 point，越收越快 */
-function defaultLeave(main: HTMLElement, point: Pt): Departure {
+/** 預設的收：一圈遮罩把整頁收進 point，越收越快。alive() 變 false（被新的一趟取代）就停手，不再動遮罩 */
+function defaultLeave(main: HTMLElement, point: Pt, alive: () => boolean): Departure {
   const reach = coverRadius(point);
   const t0 = performance.now();
   const done = new Promise<void>((resolve) => {
     const step = (now: number) => {
+      if (!alive()) {
+        resolve();
+        return;
+      }
       const k = clamp((now - t0) / LEAVE_MS);
       circleAt(main, point, reach * (1 - easeIn(k)));
       if (k < 1) requestAnimationFrame(step);
@@ -204,6 +210,8 @@ export default function TransitionLayer() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     let run: Run | null = null;
     let raf = 0;
+    /** 第幾趟：新的一趟開始時加一，舊的那趟的遮罩看到不是自己就停手 */
+    let epoch = 0;
     /** 之前每一趟鏡頭移動累積下來的星空位移 */
     let skyBase = { x: 0, y: 0 };
 
@@ -420,6 +428,18 @@ export default function TransitionLayer() {
       const r = run;
       if (!r) return;
       raf = requestAnimationFrame(frame);
+      try {
+        if (now - r.t0 > RUN_LIMIT_MS) throw new Error('換頁轉場跑太久');
+        step(r, now);
+      } catch (err) {
+        // 哪一頁的錨點、收的動畫出了錯：轉場直接收掉，頁面照常顯示，不會卡著一個點、整頁平移在半路
+        console.error('[TransitionLayer]', err);
+        cancelAnimationFrame(raf);
+        finish(r);
+      }
+    };
+
+    const step = (r: Run, now: number) => {
       fit();
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
@@ -582,10 +602,12 @@ export default function TransitionLayer() {
         void router
           .preloadRoute({ href: nextLocation.href } as Parameters<typeof router.preloadRoute>[0])
           .catch(() => undefined);
+        const mine = ++epoch;
+        const alive = () => epoch === mine;
         const departure = carry
-          ? defaultLeave(main, carry.point)
+          ? defaultLeave(main, carry.point, alive)
           : (page.handle?.leave?.({ from: mark?.pt ?? null, source: mark?.source ?? null, to: b }) ??
-            defaultLeave(main, mark?.pt ?? page.handle?.anchor?.() ?? defaultAnchor(main)));
+            defaultLeave(main, mark?.pt ?? page.handle?.anchor?.() ?? defaultAnchor(main), alive));
         const r: Run = {
           phase: 'leave',
           follow: departure.follow ?? null,
@@ -623,8 +645,9 @@ export default function TransitionLayer() {
         raf = requestAnimationFrame(frame);
         // 頁面的收最久等 0.8 秒：換頁不能被一個沒收完的動畫卡住
         await Promise.race([departure.done, after(800)]);
-        // 收到一半又換了一次頁：這一次的換頁作廢，交給新的那一趟
-        if (run !== r) return true;
+        // 收到一半又換了一次頁：畫面交給新的那一趟，這一次的換頁照常放行（不擋：上一頁、下一頁被擋的話
+        // 瀏覽器的歷史會被倒回去一格，網址跟畫面就對不上了）
+        if (run !== r) return false;
         // 先把舊的藏起來再拿掉遮罩，舊頁不會閃回來一幀
         root.dataset.pt = 'out';
         main.style.clipPath = '';
@@ -640,6 +663,18 @@ export default function TransitionLayer() {
     // 用路由「這次換頁處理完了」當作新的一頁已經畫好的訊號
     const unsubscribe = router.subscribe('onResolved', () => {
       if (run?.phase === 'fly') run.resolvedAt = performance.now();
+      // 沒有轉場在跑：確定畫面上沒有任何轉場留下的東西（平移、遮罩、半透明、畫布上的點）
+      if (!run) {
+        const main = mainOf();
+        if (main) {
+          main.style.clipPath = '';
+          main.style.transform = '';
+          main.style.opacity = '';
+          main.style.transition = '';
+        }
+        delete root.dataset.pt;
+        ctx.clearRect(0, 0, cv.width, cv.height);
+      }
     });
 
     return () => {
