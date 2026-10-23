@@ -2,14 +2,6 @@ interface YearLabel {
   NOW: string;
   FUTURE: string;
 }
-interface JourneyUIText {
-  title: string;
-  subtitle: string;
-  expand: string;
-  collapse: string;
-  endingTitle: string;
-  endingText: string;
-}
 interface MilestoneStatic {
   id: number;
   year: string;
@@ -33,49 +25,6 @@ const YEAR_LABELS: Record<string, YearLabel> = {
   en: { NOW: 'Now', FUTURE: 'Future' },
   ja: { NOW: '今', FUTURE: '未来' },
   ko: { NOW: '지금', FUTURE: '미래' },
-};
-
-const JOURNEY_UI: Record<string, JourneyUIText> = {
-  'zh-TW': {
-    title: '我的成長軌跡',
-    subtitle: '從第一行代碼到星辰大海，記錄每一個重要時刻',
-    expand: '查看詳情 ▼',
-    collapse: '收起 ▲',
-    endingTitle: '旅程未完待續...',
-    endingText: '每一次學習都是新的冒險，每一個專案都是新的挑戰。',
-  },
-  'zh-CN': {
-    title: '我的成长轨迹',
-    subtitle: '从第一行代码到星辰大海，记录每一个重要时刻',
-    expand: '查看详情 ▼',
-    collapse: '收起 ▲',
-    endingTitle: '旅程未完待续...',
-    endingText: '每一次学习都是新的冒险，每一个项目都是新的挑战。',
-  },
-  en: {
-    title: 'My Journey',
-    subtitle: 'From the first line of code to the stars — every moment that mattered.',
-    expand: 'Read more ▼',
-    collapse: 'Collapse ▲',
-    endingTitle: 'To be continued...',
-    endingText: 'Every new thing learned is a new adventure; every project is a new challenge.',
-  },
-  ja: {
-    title: '私の歩み',
-    subtitle: '最初の 1 行から星空まで、節目をすべて残しています',
-    expand: '詳しく見る ▼',
-    collapse: '閉じる ▲',
-    endingTitle: '旅はまだ続きます...',
-    endingText: '学ぶたびに新しい冒険、プロジェクトのたびに新しい挑戦です。',
-  },
-  ko: {
-    title: '나의 여정',
-    subtitle: '첫 줄의 코드에서 별바다까지, 모든 중요한 순간을 기록합니다',
-    expand: '자세히 보기 ▼',
-    collapse: '접기 ▲',
-    endingTitle: '여정은 계속됩니다...',
-    endingText: '배움은 곧 새로운 모험, 프로젝트는 곧 새로운 도전.',
-  },
 };
 
 const MILESTONE_STATIC: MilestoneStatic[] = [
@@ -466,4 +415,4 @@ const MILESTONE_BEATS_BY_LANG: Record<string, string[][]> = {
   ],
 };
 
-export { YEAR_LABELS, JOURNEY_UI, MILESTONE_STATIC, MILESTONES_BY_LANG, MILESTONE_BEATS_BY_LANG };
+export { YEAR_LABELS, MILESTONE_STATIC, MILESTONES_BY_LANG, MILESTONE_BEATS_BY_LANG };

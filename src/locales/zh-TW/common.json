@@ -721,5 +721,21 @@
   "gallery": {
     "allTags": "全部",
     "moreTags": "更多"
+  },
+  "aboutFall": {
+    "kick": "關於",
+    "title": "坐穩了。",
+    "hint": "往下捲",
+    "landPre": "掠過無數個稚嫩與迷惘的昨日，",
+    "land": "就此落下。",
+    "surface": "地表",
+    "surfaceTitle": "握在手裡的",
+    "surfaceSub": "一路帶著的東西。",
+    "layer1": "第一層",
+    "layer1Title": "做過的事",
+    "core": "地心",
+    "coreLine": "再往下，是還沒寫下的事。",
+    "fallMeter": "距離地表",
+    "digMeter": "地表以下"
   }
 }
