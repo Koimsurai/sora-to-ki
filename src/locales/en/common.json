@@ -737,5 +737,14 @@
     "coreLine": "Further down are the things not yet written.",
     "fallMeter": "Above ground",
     "digMeter": "Below ground"
+  },
+  "works": {
+    "title": "Works",
+    "subtitle": "A course spiralling out from where it began: the newer, the further out.",
+    "origin": "Origin",
+    "legendCore": "Center dot: amount of code",
+    "legendRings": "Each ring: one language",
+    "legendMoons": "Outer dots: GitHub stars",
+    "legendHover": "Hover: unfolds into the 3D body"
   }
 }

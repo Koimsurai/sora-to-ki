@@ -1,0 +1,172 @@
+/* 作品（about/Works）：螺旋畫在畫布上（about/worksSky），作品名是疊在上面的連結 */
+
+.wk {
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+:where(.wk) :where(a) {
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+}
+
+.wk a:focus-visible .wk-name {
+  text-decoration: underline;
+  text-decoration-color: var(--amber);
+  text-underline-offset: 4px;
+}
+
+.wk-head {
+  padding: var(--page-top) max(var(--space-6), calc(50% - 540px)) 0;
+}
+
+.wk-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.wk-title h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.wk-latin {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.wk-head p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+/* ── 螺旋 ── */
+.wk-spiral {
+  position: relative;
+  height: max(560px, calc(100vh - 180px));
+}
+
+.wk-spiral canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.wk-labels {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.wk-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: auto;
+  white-space: nowrap;
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
+  transition: opacity var(--dur-300) ease;
+}
+
+.wk-label > * {
+  display: grid;
+}
+
+.wk-label.is-left {
+  text-align: right;
+}
+
+/* 起點那顆的字放在正上方，置中 */
+.wk-label:first-child {
+  text-align: center;
+}
+
+.wk-name {
+  font-family: var(--latin-display);
+  font-size: var(--fs-20);
+  line-height: var(--lh-120);
+}
+
+.wk-name em {
+  margin-left: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  font-style: normal;
+  letter-spacing: var(--ls-18);
+  vertical-align: 0.35em;
+  color: var(--amber);
+}
+
+.wk-year {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+/* 介紹掛在名字底下、不佔版面：字的位置照名字與年份算，滑過才浮出來 */
+.wk-label > * {
+  position: relative;
+}
+
+.wk-what {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  margin-top: var(--space-1);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+  opacity: 0;
+  transition: opacity var(--dur-300) ease;
+}
+
+.wk-label.is-on .wk-what {
+  opacity: 1;
+}
+
+.wk-legend {
+  position: absolute;
+  bottom: var(--space-4);
+  left: max(var(--space-6), calc(50% - 540px));
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .wk-spiral {
+    height: max(520px, calc(100vh - 160px));
+  }
+
+  .wk-what {
+    width: max-content;
+    max-width: 60vw;
+    white-space: normal;
+  }
+
+  .wk-label.is-left .wk-what {
+    left: auto;
+  }
+}

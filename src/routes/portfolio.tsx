@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { localePage, localeWrap } from '@/i18n/localePage';
-import Portfolio from '@/components/about/Portfolio';
+import Works from '@/components/about/Works';
 export const Route = createFileRoute('/portfolio')({
   ...localePage('portfolio'),
-  component: localeWrap(Portfolio),
+  component: localeWrap(Works),
 });
