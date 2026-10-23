@@ -24,10 +24,10 @@ const yearOf = (iso: string) => String(parseServerDate(iso).getFullYear());
 /* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。
    admin 可在頂端發文（content + 選填連結 → 後端 unfurl）。 */
 
-/** 離開：淡掉（下一頁的天空接手） */
+/** 離開：很快淡掉，背景正碎成大方塊（下一頁的天空接手） */
 const LEAVE = {
   keyframes: [{ opacity: 1 }, { opacity: 0 }],
-  options: { duration: 500, easing: 'ease-out' },
+  options: { duration: 350, easing: 'ease-out' },
 };
 const stillOnMoments = () => stripLocalePrefix(window.location.pathname) === 'thinking';
 
@@ -100,7 +100,7 @@ function Thinking() {
 
   // 從首頁飛過來：鏡頭快抵達才出現
   const pageRef = useRef<HTMLDivElement | null>(null);
-  useSkyPage(pageRef, { sky: 'moments', ready: true, arriveAt: 1600, leave: LEAVE, stillHere: stillOnMoments });
+  useSkyPage(pageRef, { sky: 'moments', ready: true, arriveAt: 650, leave: LEAVE, stillHere: stillOnMoments });
 
   // 每一則捲到才「閃」一下再定住，不是一進頁面全部同時閃完
   const count = thoughts?.length ?? 0;
@@ -133,9 +133,9 @@ function Thinking() {
   return (
     // 不壓暗背景：停在頁首的土星與像素星空就是這一頁的畫面，蓋一層暗幕的話土星一到就變暗一截
     <div className="tk-page" ref={pageRef}>
-      {/* 頁首：右邊一大片點陣天空（星雲與琥珀色的土星），滑鼠劃過會激起火花 */}
+      {/* 點陣天空（星雲與琥珀色的土星）固定在視窗上當背景，滑鼠劃過會激起火花 */}
+      <MomentsSky />
       <section className="tk-hero">
-        <MomentsSky />
         <header className="tk-header enter" style={enterStyle({ y: 16, dur: 500 })}>
           <div className="tk-title-row">
             <h1 className="tk-title">

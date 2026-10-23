@@ -185,13 +185,13 @@ const FALL_AWAY = {
   ],
   options: { duration: 900, easing: 'cubic-bezier(0.5, 0, 0.75, 0.3)' },
 };
-/** 去碎念：鏡頭往後退、土星縮到頁首，字跟著退遠 */
+/** 去碎念：背景碎成大方塊的那半秒裡，字很快退遠、消失 */
 const PULL_BACK = {
   keyframes: [
     { transform: 'scale(1)', opacity: 1 },
-    { transform: 'scale(0.9)', opacity: 0 },
+    { transform: 'scale(0.94)', opacity: 0 },
   ],
-  options: { duration: 800, easing: 'cubic-bezier(0.4, 0, 0.7, 0.4)' },
+  options: { duration: 420, easing: 'cubic-bezier(0.5, 0, 0.75, 0)' },
 };
 const LEAVE = (to: string) => (to === 'about' ? FALL_AWAY : to === 'thinking' ? PULL_BACK : FLY_THROUGH);
 const stillHome = () => stripLocalePrefix(window.location.pathname) === '';

@@ -29,6 +29,11 @@ export interface DitherLayout {
   seed: number;
   /** 星雲的濃度（1 是窗裡的預設；大畫面要淡一點，不然像一整片灰毯子） */
   haze?: number;
+  /**
+   * 比這個還暗的就不畫。很淡的地方 Bayer 矩陣會排出一張規則的稀疏網格，大畫面上看起來像
+   * 一塊方形的灰網；切掉之後星雲只剩有形狀的那幾團
+   */
+  floor?: number;
 }
 
 interface Spark {
@@ -39,6 +44,7 @@ interface Spark {
 
 export function createDitherScene(w: number, h: number, layout: DitherLayout) {
   const { cell } = layout;
+  const floor = layout.floor ?? 0;
   const cols = Math.ceil(w / cell);
   const rows = Math.ceil(h / cell);
   const base = new Float32Array(cols * rows);
@@ -48,10 +54,12 @@ export function createDitherScene(w: number, h: number, layout: DitherLayout) {
 
   // ── 不會動的部分 ──
   const R = rng(layout.seed);
+  // 每一團的大小跟著星雲的範圍走（首頁碎念窗的範圍是 0.32，那是原本調好的大小）
+  const spread = Math.min(layout.nebula.w, layout.nebula.h) / 0.32;
   const blobs = Array.from({ length: 14 }, () => ({
     x: layout.nebula.x + R() * layout.nebula.w,
     y: layout.nebula.y + R() * layout.nebula.h,
-    r: 0.08 + R() * 0.14,
+    r: (0.08 + R() * 0.14) * spread,
     a: 0.25 + R() * 0.35,
   }));
   const sx = (layout.saturn?.x ?? 0) * w;
@@ -154,7 +162,7 @@ export function createDitherScene(w: number, h: number, layout: DitherLayout) {
         for (let x = 0; x < cols; x++) {
           const i = y * cols + x;
           const lum = (base[i] + extra[i]) * reveal + flare[i];
-          if (lum < (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16) continue;
+          if (lum < floor || lum < (BAYER[(y % 4) * 4 + (x % 4)] + 0.5) / 16) continue;
           ctx.fillStyle = flare[i] > 1.1 ? SPARK : amber[i] ? AMBER : lum > 0.9 ? BRIGHT : DIM;
           ctx.fillRect(x * cell, y * cell, size, size);
         }

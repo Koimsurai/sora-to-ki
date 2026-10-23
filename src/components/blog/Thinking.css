@@ -721,7 +721,7 @@
 /* 頁首：右邊一大片點陣天空（一路延伸到視窗右緣），標題壓在左下 */
 .tk-hero {
   position: relative;
-  z-index: 2;
+  z-index: 1;
   display: flex;
   align-items: flex-end;
   max-width: 960px;
@@ -730,16 +730,19 @@
   margin: 0 auto var(--space-16);
 }
 
+/* 點陣天空固定在視窗上當背景：往下捲時一直都在，只是退暗（見 MomentsSky） */
 .tk-sky {
-  position: absolute;
-  top: calc(var(--page-top) * -1);
-  left: 26%;
-  /* 一路延伸到視窗右緣。canvas 是替換元素，只給 left/right 不會被撐開（寬度會用它自己的像素寬，
-     而像素寬又跟著顯示寬度設，會越長越寬），要明確給寬度 */
-  width: calc(24% + 50vw);
-  height: calc(100% + var(--page-top));
-  /* 邊緣淡進背景，不是一塊貼上去的圖 */
-  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%);
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.tk-page > .tk-wrap {
+  position: relative;
+  z-index: 1;
 }
 
 /* 飛過來的話，等土星停在頁首、碎成像素之後字才出來（--arrive-delay 見 useSkyPage） */
@@ -843,21 +846,12 @@
   max-width: 560px;
 }
 
-/* 單則頁：一個念頭單獨攤開。土星縮小停在右上角（.tk-detail-planet 是它停的位置，見
-   hooks/useSkyAnchor），日期在上、字放大，留言在虛線下面 */
+/* 單則頁：一個念頭單獨攤開。土星縮小停在右上角（見 MomentsSky 的 detail），
+   日期在上、字放大，留言在虛線下面 */
 .tk-page--detail .tk-wrap--detail {
   position: relative;
   max-width: 760px;
   padding-top: 14vh;
-}
-
-.tk-detail-planet {
-  position: absolute;
-  top: calc(var(--space-16) * -1);
-  right: calc(var(--space-24) * -1.5);
-  width: 220px;
-  height: 220px;
-  pointer-events: none;
 }
 
 .tk-page--detail .tk-back {
@@ -1020,16 +1014,6 @@
 
   .tk-hero {
     min-height: 56vh;
-  }
-
-  .tk-sky {
-    left: -10%;
-  }
-
-  .tk-detail-planet {
-    right: calc(var(--space-6) * -1);
-    width: 150px;
-    height: 150px;
   }
 
   .tk-page--detail .tk-text {

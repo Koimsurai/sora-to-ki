@@ -929,34 +929,29 @@ export async function createStarfieldRunner(
   const TAN_HALF_FOV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
 
   /**
-   * 碎念頁：土星不被飛過，而是滑到頁首那張點陣畫布指定的位置（store/skyAnchor），停下來的那一刻
-   * 原地一格一格碎成像素——格子跟畫布的格子對齊、顏色是同一組，接手的不是另一顆畫好的土星。
-   * 鏡頭退到「星球半徑剛好是 anchor.r」的距離，再用 view offset 把整個畫面平移到位（純平移，
-   * 土星的樣子跟在畫面正中央時一樣）。往下捲時平移量跟著捲動走，土星跟頁首一起捲上去。
-   * perch 是 0（首頁或飛行路線上）到 1（停在頁首）之間的進度。
+   * 碎念頁：土星停在頁面那張點陣畫布指定的位置（store/skyAnchor），碎成跟畫布同一個格子、
+   * 同一組顏色的像素——接手的不是另一顆畫好的土星。鏡頭退到「星球半徑剛好是 anchor.r」的距離，
+   * 再用 view offset 把整個畫面平移到位（純平移，土星的樣子跟在畫面正中央時一樣）。
+   * 點陣天空是固定在視窗上的背景，往下捲時不跟著走，只是慢慢退暗。
    */
   let anchor: SkyAnchor | null = null;
-  let perch = 0;
-  let perchTarget = 0;
-  let perchK = 0;
+  let perched = false;
   let placedScroll = 0;
-  const perchPos = new THREE.Vector3();
-  const IDENTITY = new THREE.Quaternion();
   /**
-   * 停的位置換了（碎念列表 ↔ 單則頁、頁首晚一點才量好）：從原本在畫面上的位置滑過去，不是瞬移。
-   * 起點記成視窗座標，滑完之後才回到「跟著捲動走」
+   * 停的位置換了（碎念列表 ↔ 單則頁、畫布晚一點才量好）：從原本的位置滑過去，不是瞬移
    */
   let anchorFrom: SkyAnchor | null = null;
   let anchorT = 1;
   const ANCHOR_SECONDS = 1.2;
-  /** 現在土星該停在哪（視窗座標）。頁首還沒量好（資料還在載）時先停在右上方，跟頁首的版面差不多 */
+  /** 現在土星該停在哪（視窗座標）。畫布還沒量好（資料還在載）時先停在右上方 */
   const viewAnchor = (): SkyAnchor => {
-    let target: SkyAnchor;
-    if (!anchor) {
-      const w = viewAspect * viewH;
-      target = { x: w * 0.7, y: viewH * 0.42, r: viewH * 0.1, gx: 0, gy: 0, fixed: true };
-    } else if (anchor.fixed) target = anchor;
-    else target = { ...anchor, y: anchor.y - scrollY, gy: anchor.gy - scrollY, fixed: true };
+    const target = anchor ?? {
+      x: viewAspect * viewH * 0.74,
+      y: viewH * 0.34,
+      r: viewH * 0.12,
+      gx: 0,
+      gy: 0,
+    };
     if (!anchorFrom || anchorT >= 1) return target;
     const k = easeInOut(anchorT);
     const from = anchorFrom;
@@ -967,52 +962,98 @@ export async function createStarfieldRunner(
       r: at(from.r, target.r),
       gx: at(from.gx, target.gx),
       gy: at(from.gy, target.gy),
-      fixed: true,
     };
   };
 
   /** 鏡頭在曲線上 p 處的位置與姿態：位置、朝向都只看 p，所以倒著飛就是正著飛的完整倒帶 */
   const placeCamera = (p: number) => {
+    placedScroll = scrollY;
+    if (perched) {
+      const a = viewAnchor();
+      const w = viewAspect * viewH;
+      camera.position.set(0, 0, viewH / 2 / (Math.max(8, a.r) * TAN_HALF_FOV));
+      camera.quaternion.identity();
+      camera.filmOffset = 0;
+      // setViewOffset 自己會更新投影矩陣
+      camera.setViewOffset(w, viewH, w / 2 - a.x, viewH / 2 - a.y, w, viewH);
+      skyFx.setGrid(a.gx, a.gy);
+      // 往下捲時背景退暗：讀到下面的碎念時，點陣天空只剩底紋
+      skyFx.setInk(1 - 0.6 * Math.min(1, scrollY / (viewH * 0.8)));
+      return;
+    }
+    skyFx.setInk(1);
+    camera.clearViewOffset();
     bez(p, camera.position);
     const atHome = 1 - p;
-    const lift = homeLift * atHome * (1 - perchK);
-    camera.position.y -= lift * 1.6;
-    camera.position.z += lift * 1.4;
+    camera.position.y -= homeLift * 1.6 * atHome;
+    camera.position.z += homeLift * 1.4 * atHome;
     camera.rotation.copy(routeRotation(route, p, euler));
-    // 首頁的構圖（土星偏右）換算成畫面平移的像素：film offset 推動的是視野的左緣
     const shift = viewAspect > 1.25 ? HOME_SHIFT : 0;
-    const w = viewAspect * viewH;
-    let offX = -((shift * viewH) / (4 * TAN_HALF_FOV)) * atHome * compose;
-    let offY = 0;
-    if (perchK > 0) {
-      const a = viewAnchor();
-      perchPos.set(0, 0, viewH / 2 / (Math.max(8, a.r) * TAN_HALF_FOV));
-      camera.position.lerp(perchPos, perchK);
-      camera.quaternion.slerp(IDENTITY, perchK);
-      offX += (w / 2 - a.x - offX) * perchK;
-      offY += (viewH / 2 - a.y) * perchK;
-      skyFx.setGrid(a.gx, a.gy);
-    }
-    placedScroll = scrollY;
-    camera.filmOffset = 0;
-    if (offX !== 0 || offY !== 0) camera.setViewOffset(w, viewH, offX, offY, w, viewH);
-    else camera.clearViewOffset();
+    camera.filmOffset = -shift * (camera.getFilmWidth() / 2) * atHome * compose;
     camera.updateProjectionMatrix();
   };
-  /** 停到頁首／離開頁首，跟換頁的飛行同一個長度：從手記飛回碎念時兩段是同時進行的 */
-  const stepPerch = (dt: number) => {
-    if (anchorT < 1) {
-      anchorT = Math.min(1, anchorT + dt / ANCHOR_SECONDS);
-      if (!travel && perch === perchTarget) placeCamera(pathPos);
-      markActive();
+  const stepAnchor = (dt: number) => {
+    if (anchorT >= 1) return;
+    anchorT = Math.min(1, anchorT + dt / ANCHOR_SECONDS);
+    if (perched && !blink) placeCamera(pathPos);
+    markActive();
+  };
+
+  /**
+   * 進出碎念頁的轉場（跟手記的「飛過去」、關於頁的「往下墜」都不一樣）：整個畫面碎成越來越大的
+   * 方塊（格子一級一級跳到 48 px），最粗的那一刻鏡頭直接換到下一頁的位置，再從大方塊收回細格子。
+   * 一個動作做完，中間沒有一段慢慢滑過去的鏡頭——位置的改變藏在最粗的那一格裡。
+   */
+  type Stop = 'home' | 'moments' | 'out';
+  const BLINK_SECONDS = 1.1;
+  const MOSAIC = [1, 2, 3, 4, 5, 6, 8, 12, 16, 24, 32, 48];
+  let blink: { t: number; from: Stop; to: Stop; landed: boolean } | null = null;
+  const stopOf = (mode: SkyMode): Stop => (mode === 'home' ? 'home' : mode === 'moments' ? 'moments' : 'out');
+  /** 鏡頭現在停在（或正要去）哪一種地方 */
+  const stopNow = (): Stop => {
+    if (blink) return blink.landed ? blink.to : blink.from;
+    if (perched) return 'moments';
+    if (travel?.kind === 'path') return travel.to === 1 ? 'out' : 'home';
+    return pathPos === 1 ? 'out' : 'home';
+  };
+  /** 最粗的那一刻：直接換到下一頁的位置 */
+  const land = (to: Stop) => {
+    travel = null;
+    skyFx.setFlight(0);
+    travelDust.sprite.visible = false;
+    perched = to === 'moments';
+    pathPos = to === 'out' ? 1 : 0;
+    if (to === 'out') route = wantRoute;
+    homeLift = to === 'home' ? Math.min(1, scrollY / viewH) : 0;
+    saturnVisible = to !== 'out';
+    saturn?.shatter(to === 'out', true);
+    if (saturn) saturn.group.visible = saturnOnScreen() && quality < 2;
+    anchorFrom = null;
+    anchorT = 1;
+    placeCamera(pathPos);
+    skyFx.jump();
+  };
+  const stepBlink = (dt: number) => {
+    if (!blink) return;
+    blink.t = Math.min(1, blink.t + dt / BLINK_SECONDS);
+    if (!blink.landed && blink.t >= 0.5) {
+      land(blink.to);
+      blink.landed = true;
     }
-    if (perch === perchTarget) return;
-    const step = dt / TRAVEL_SECONDS;
-    perch = perchTarget > perch ? Math.min(perchTarget, perch + step) : Math.max(perchTarget, perch - step);
-    perchK = easeInOut(perch);
-    // 停下來前的最後一段才碎成像素：先是那顆土星滑過去，到位時格子一級一級長出來
-    skyFx.setPixel(Math.min(1, Math.max(0, (perch - 0.55) / 0.45)));
-    if (!travel) placeCamera(pathPos);
+    // 往最粗的那一刻是越來越快，收回來是越來越慢：最後幾級細格子停得久一點，像對焦
+    const x = blink.landed ? (1 - blink.t) / 0.5 : blink.t / 0.5;
+    const m = x * x;
+    const side = blink.landed ? blink.to : blink.from;
+    const base = side === 'moments' ? 5 : 1;
+    const want = base + (48 - base) * m;
+    skyFx.setMosaic(MOSAIC.filter((c) => c >= base && c <= want).at(-1) ?? base);
+    const pix = side === 'moments' ? 1 : 0;
+    skyFx.setPixel(pix + (1 - pix) * Math.min(1, m * 6));
+    if (blink.t >= 1) {
+      skyFx.setMosaic(null);
+      skyFx.setPixel(blink.to === 'moments' ? 1 : 0);
+      blink = null;
+    }
     markActive();
   };
 
@@ -1080,7 +1121,6 @@ export async function createStarfieldRunner(
     }
     markActive();
   };
-  let skyFrameMs: number | null = null;
   /**
    * 關於頁：往下捲就是往下掉，整片星空跟著往上掠過（繞鏡頭的水平軸轉），捲得越快拖得越長。
    * 不做的話，墜落轉場一結束星星就停住了，只剩前景的星塵在動
@@ -1113,11 +1153,11 @@ export async function createStarfieldRunner(
     //   就永遠不會進閒置。
     const wall = performance.now();
     const active = wall - lastActive < IDLE_AFTER_MS;
-    // 碎念頁平常是 12fps 一格一格跳，但捲動時土星要跟著頁首走，那段時間照螢幕更新率畫
-    const perchScrolling = perch > 0 && wall - lastScrollAt < 300;
+    // 碎念頁往下捲時背景跟著退暗，那段時間照螢幕更新率畫
+    const perchScrolling = perched && wall - lastScrollAt < 300;
     const fullRate =
-      hyperspace !== null || saturnZooming || travel !== null || perch !== perchTarget || anchorT < 1 || perchScrolling;
-    const frameMs = fullRate ? 0 : (skyFrameMs ?? (active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS));
+      hyperspace !== null || saturnZooming || travel !== null || blink !== null || anchorT < 1 || perchScrolling;
+    const frameMs = fullRate ? 0 : active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS;
     if (!pacer.shouldRender(now, frameMs)) return;
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
     const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
@@ -1144,10 +1184,11 @@ export async function createStarfieldRunner(
       markActive();
     }
 
-    stepPerch(delta);
+    stepBlink(delta);
+    stepAnchor(delta);
     stepTravel(delta);
     stepFall(delta);
-    if (perch > 0 && !travel && scrollY !== placedScroll) placeCamera(pathPos);
+    if (perched && scrollY !== placedScroll) placeCamera(pathPos);
     // 首頁構圖與捲動：開場播完才讓開；捲動的目標值平滑追上，不跟著滾輪一格一格跳
     const composeTarget = hyperspace ? 0 : 1;
     const liftTarget = Math.min(1, scrollY / viewH);
@@ -1169,7 +1210,6 @@ export async function createStarfieldRunner(
     }
     // 天空效果要在畫主畫面之前推進：星軌的累積 pass 得先把這一幀的星星疊進去
     const sky = skyFx.update(delta);
-    skyFrameMs = sky.frameMs;
     if (sky.busy) markActive();
     if (stagePipeline && !sceneShown) stagePipeline.render();
     else if (introPipeline) introPipeline.render();
@@ -1236,7 +1276,21 @@ export async function createStarfieldRunner(
         skyMode = mode;
         skyFx.setMode(mode);
         wantRoute = routeFor(mode);
-        perchTarget = mode === 'moments' && transition === 'travel' && saturn !== null ? 1 : 0;
+        // 進出碎念頁：碎成大方塊、換位置、再收回來（見 blink）。飛到一半就換目的地的話，
+        // 還沒換位置就直接改去新的地方；已經換過了就從現在的粗細再碎一次
+        const from = stopNow();
+        const to = stopOf(mode);
+        if (
+          transition === 'travel' &&
+          saturnSettled &&
+          saturn &&
+          from !== to &&
+          (from === 'moments' || to === 'moments')
+        ) {
+          if (blink && !blink.landed) blink.to = to;
+          else blink = { t: blink ? 1 - blink.t : 0, from, to, landed: false };
+          return;
+        }
         // 已經在外面、換到另一種「外面」（手記 ↔ 關於）：直接移到另一條路線的終點
         if (transition === 'travel' && saturnSettled && mode !== 'home' && !travel && pathPos === 1) {
           if (route !== wantRoute) travel = { kind: 'cross', from: route, to: wantRoute, t: 0 };
@@ -1250,22 +1304,23 @@ export async function createStarfieldRunner(
         scrollY = y;
       },
       setAnchor(a) {
-        if (a && perch > 0) {
+        if (a && perched && !blink) {
           const now = viewAnchor();
-          const next = a.fixed ? a : { ...a, y: a.y - scrollY };
-          if (Math.abs(now.x - next.x) + Math.abs(now.y - next.y) + Math.abs(now.r - next.r) > 2) {
+          if (Math.abs(now.x - a.x) + Math.abs(now.y - a.y) + Math.abs(now.r - a.r) > 2) {
             anchorFrom = now;
             anchorT = 0;
           }
         }
         anchor = a;
-        if (perch > 0 && !travel) placeCamera(pathPos);
+        if (perched && !blink) placeCamera(pathPos);
         markActive();
       },
       setSaturn(visible, animate) {
         markActive();
-        saturnVisible = visible;
         saturnAnimate = animate;
+        // 碎念頁的轉場自己決定土星在不在（換位置的那一刻一起換），這裡不另外飛
+        if (blink) return;
+        saturnVisible = visible;
         if (saturn) {
           if (transition === 'travel') {
             const to = visible ? 0 : 1;
@@ -1279,9 +1334,8 @@ export async function createStarfieldRunner(
               // 剛載入：直接放在對應的位置，不飛（直接打開碎念頁的話，土星已經停在頁首、碎成像素）
               route = wantRoute;
               pathPos = to;
-              perch = perchTarget;
-              perchK = perch;
-              skyFx.setPixel(perch);
+              perched = skyMode === 'moments';
+              skyFx.setPixel(perched ? 1 : 0);
               placeCamera(to);
               saturn.shatter(!visible, true);
             } else if (to !== target) {

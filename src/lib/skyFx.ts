@@ -3,7 +3,8 @@
 // 換頁時不是換一張背景，而是同一片星星在變：
 //   星軌（手記）：整片星空繞著天極轉，每幀把星星疊進一張常駐的 render target，舊的慢慢變暗
 //                 ——就是長曝光。軌跡會從零開始累積，所以「切進來的那幾秒」本身就是轉場。
-//   像素抖動（碎念）：最後的畫面按格子取樣、用 4×4 Bayer 矩陣二值化，格子從 1 px 一格一格長到 4 px。
+//   像素抖動（碎念）：最後的畫面按格子取樣、用 4×4 Bayer 矩陣二值化，格子一級一級長到 5 px。
+//                 進出碎念頁時格子先放大成大方塊、換好位置再收回來（見 starfieldGpu 的 blink）。
 //
 // 兩個效果都只動最後的輸出節點，場景本身（星星、土星）不變，所以跟土星的碎裂可以同時進行。
 import * as THREE from 'three/webgpu';
@@ -52,6 +53,12 @@ export interface SkyFx {
   setPixel(amount: number | null): void;
   /** 像素格的原點（CSS 像素、視窗座標）：對齊頁首那張點陣畫布的格子 */
   setGrid(x: number, y: number): void;
+  /** 直接指定格子大小（CSS 像素）：進出碎念頁時整個畫面碎成大方塊再收回來。null 交回給像素化程度決定 */
+  setMosaic(cell: number | null): void;
+  /** 像素點的亮度（0–1）：碎念頁往下捲時背景退暗，不搶內容 */
+  setInk(level: number): void;
+  /** 鏡頭瞬間換了位置（碎念頁的轉場）：軌跡從新的位置重新開始，不從舊位置拉一條線過來 */
+  jump(): void;
   /**
    * 換頁飛行的速度，0–1：畫面拉成光線、星星拖出動態的軌跡。
    * dir：out 是往前飛（從畫面中央往外拉），up 是往下墜（光線從畫面下方往上拉成直線）
@@ -60,9 +67,8 @@ export interface SkyFx {
   /**
    * 推進一幀。回傳：
    *   busy：還在轉場（要跟著 60fps 畫）
-   *   frameMs：這一頁要求的固定幀間隔（像素抖動是 12fps 一格一格跳），沒有要求是 null
    */
-  update(dt: number): { busy: boolean; frameMs: number | null };
+  update(dt: number): { busy: boolean };
   setSize(width: number, height: number): void;
   /** 暖機：星軌的累積 pass 先畫一次，第一次切進手記時不用現場編譯 */
   warm(): void;
@@ -172,8 +178,10 @@ export function createSkyFx(opts: {
   const cellPx = uniform(1);
   /** 像素格的原點（裝置像素）：對齊碎念頁頁首那張點陣畫布的格子，兩邊的點才落在同一格上 */
   const gridOrigin = uniform(new THREE.Vector2(0, 0));
-  /** 外面直接指定的像素化程度（碎念頁跟著土星的移動走）；null 時照天空模式自己淡進淡出 */
+  /** 外面直接指定的像素化程度（碎念頁的轉場）；null 時照天空模式自己淡進淡出 */
   let pixelDrive: number | null = null;
+  let mosaic: number | null = null;
+  const inkLevel = uniform(1);
   const keep = uniform(TRAIL_KEEP_60);
   const warp = uniform(0);
   /** 光線的消失點（螢幕座標，左上是 0）與拉長的比例：往前飛是畫面中央，往下墜是畫面下方很遠的地方 */
@@ -326,15 +334,16 @@ export function createSkyFx(opts: {
       // 土星（與衛星）是不透明的，場景 alpha 是 1：那幾格用琥珀色，明暗照球面的光影走（背光那側疏）。
       // 星星與環是冷白，亮的幾格更白。顏色跟頁首那張點陣畫布同一組（lib/ditherScene）
       const solid = step(0.98, (opts.sceneColor.sample(center) as unknown as V4).a);
-      const level = clamp(mix(lum.mul(2.2), lum.mul(0.8), solid), 0, 1);
+      // 星星的門檻刻意壓高：只有夠亮的星才變成點，整片撒滿的話字會看不清楚
+      const level = clamp(mix(lum.mul(1.3), lum.mul(0.8), solid), 0, 1);
       const threshold = texture(bayer, mod(cellIdx, 4).add(0.5).div(4)).r;
       // 格子之間留一條 1 px 的縫（格子長到 3 px 以上才留），跟畫布那邊一樣是一顆一顆的點
       const local = pix.sub(cellIdx.mul(cellPx));
       const seam = step(cellPx.sub(dpr), max(local.x, local.y)).mul(step(dpr * 2.5, cellPx));
       const on = step(threshold, level).mul(float(1).sub(seam));
       const amber = vec3(0.815, 0.479, 0.127);
-      const cold = mix(vec3(0.342, 0.418, 0.637), vec3(0.768, 0.815, 1.0), step(0.9, lum.mul(2.2)));
-      const ink = mix(cold, amber, solid);
+      const cold = mix(vec3(0.17, 0.21, 0.33), vec3(0.6, 0.65, 0.85), step(0.9, lum.mul(1.3)));
+      const ink = mix(cold, amber, solid).mul(inkLevel);
       const ground = vec3(0.0024, 0.0027, 0.0035);
       const dithered = mix(ground, ink, on);
       rgb = mix(rgb, dithered, pixelMix);
@@ -352,6 +361,21 @@ export function createSkyFx(opts: {
 
     setGrid(x, y) {
       gridOrigin.value.set(x * dpr, y * dpr);
+    },
+
+    setMosaic(cell) {
+      mosaic = cell;
+    },
+
+    setInk(level) {
+      inkLevel.value = level;
+    },
+
+    jump() {
+      prevPos.copy(cam.position);
+      prevQuat.copy(cam.quaternion);
+      prevSky.copy(skyGroup.quaternion);
+      clearTargets();
     },
 
     setFlight(speed, dir = 'out') {
@@ -383,7 +407,7 @@ export function createSkyFx(opts: {
       pixelMix.value = pixelDrive ?? towards(pixelMix.value, pixelTarget, 0.6);
       // 格子一級一級跳（1→2→3→4→5 個 CSS 像素），不是連續放大：吸附到格子上的感覺來自這個跳動。
       // 最後是 5 px，跟碎念頁頁首的點陣畫布同一個大小
-      cellPx.value = (1 + Math.round(pixelMix.value * 4)) * dpr;
+      cellPx.value = (mosaic ?? 1 + Math.round(pixelMix.value * 4)) * dpr;
 
       // 飛行中：同一批星、同一張累積 target，只是尾巴短（跟著速度）——鏡頭在動，星星就拖出線。
       // 抵達手記時速度歸零、保留比例慢慢回到長曝光，動態的線直接接成星軌，中間沒有換手。
@@ -422,10 +446,11 @@ export function createSkyFx(opts: {
       const busy =
         trailMix.value !== trailTarget ||
         pixelMix.value !== (pixelDrive ?? pixelTarget) ||
+        mosaic !== null ||
         trailMix.value > 0 ||
         moving ||
         afterFlight > 0;
-      return { busy, frameMs: pixelMix.value > 0.5 ? 1000 / 12 : null };
+      return { busy };
     },
 
     setSize(width, height) {
