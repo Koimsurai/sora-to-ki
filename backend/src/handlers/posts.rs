@@ -197,6 +197,9 @@ pub struct PostListItem {
     /// 列表卡片顯示的是內文截斷而非 AI 摘要（見 Blog.tsx NoteCard），但整篇 content
     /// 進列表要多 ~188KB，所以只送前端截斷所需的長度。
     pub content_preview: String,
+    /// 該語系內文的長度（字元數）。手記列表用它估閱讀時間、決定那篇文章的星軌拖多長。
+    #[specta(type = specta_typescript::Number)]
+    pub content_length: i64,
     pub category: Option<String>,
     pub status: String,
     pub author: Option<String>,
@@ -371,6 +374,7 @@ pub async fn list_posts(
             title,
             excerpt,
             content_preview: crate::util::js_substring_prefix(&locale_content_str, 260),
+            content_length: i64::try_from(locale_content_str.chars().count()).unwrap_or(i64::MAX),
             category: row.category.clone(),
             status: row.status.clone(),
             author: row.author.clone(),
