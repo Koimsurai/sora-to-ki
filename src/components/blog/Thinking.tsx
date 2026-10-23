@@ -195,6 +195,8 @@ function Thinking() {
    * 點是沿著彗尾最後一段飛進來的，那一段已經「畫過」了，彗尾從那裡接著往下長
    */
   const growRef = useRef<{ trail: Pt[] | null; at: number; from: number } | null>(null);
+  /** 點沿著彗尾飛進來的那一段有多長（版面座標） */
+  const approachRef = useRef(0);
   /** 換頁的「收」：從什麼時候、從哪裡開始縮回彗核 */
   const leaveRef = useRef<{ at: number; from: number } | null>(null);
   const hoverRef = useRef<number | null>(null);
@@ -212,14 +214,40 @@ function Thinking() {
 
   usePageTransition({
     anchor: () => (layoutRef.current ? headOnScreen(layoutRef.current) : null),
-    // 點從彗尾那一端沿著弧線往上飛進彗核，跟彗星飛的方向一樣
-    arrive: () => {
+    // 點從彗尾某一處切進來，沿著彗尾的中線往上飛進彗核，跟彗星飛的方向一樣。
+    // 切進來的位置挑「順路」的：從點現在的方向直直過去、到了那裡剛好就是彗尾往上的方向，
+    // 不會繞一個尖角掉頭。落地後散開的那條線就疊在彗尾上
+    arrive: ({ pos, vel }) => {
       const L = layoutRef.current;
       if (!L) return null;
       const o = origin();
+      const reach = Math.max(0, Math.min(APPROACH_PX, L.yEnd - L.y0, window.innerHeight - 40 - o.y - L.y0));
+      const at = (d: number): Pt => ({ x: o.x + arcX(L, L.y0 + d), y: o.y + L.y0 + d });
+      const speed = Math.hypot(vel.x, vel.y);
+      let best = Math.min(reach, 160);
+      let bestScore = -Infinity;
+      for (let d = 80; d <= reach; d += 20) {
+        const e = at(d);
+        const up = at(d - 6);
+        const tx = up.x - e.x;
+        const ty = up.y - e.y;
+        const tl = Math.hypot(tx, ty) || 1;
+        const gx = e.x - pos.x;
+        const gy = e.y - pos.y;
+        const gl = Math.hypot(gx, gy) || 1;
+        // 抵達的方向跟彗尾往上的方向一致、出發的方向跟點現在的速度一致；距離太近（要急轉）扣分
+        const along = (gx * tx + gy * ty) / (gl * tl);
+        const ahead = speed > 0.05 ? (gx * vel.x + gy * vel.y) / (gl * speed) : 0;
+        const score = along + 0.6 * ahead - (gl < 160 ? (160 - gl) / 160 : 0) + d / 2000;
+        if (score > bestScore) {
+          bestScore = score;
+          best = d;
+        }
+      }
+      approachRef.current = best;
       const approach: Pt[] = [];
-      for (let d = APPROACH_PX; d >= 0; d -= 8) approach.push({ x: o.x + arcX(L, L.y0 + d), y: o.y + L.y0 + d });
-      return { approach };
+      for (let d = best; d >= 0; d -= 6) approach.push(at(d));
+      return approach.length > 1 ? { approach } : null;
     },
     // 收：彗尾縮回彗核、字跟著退掉，彗核帶著彗星飛的方向離開
     leave: () => {
@@ -238,7 +266,7 @@ function Thinking() {
       growRef.current = {
         trail: trail.map((p) => ({ x: p.x - o.x, y: p.y - o.y })),
         at: performance.now(),
-        from: L ? L.y0 + APPROACH_PX : 0,
+        from: L ? L.y0 + approachRef.current : 0,
       };
       return 'trail';
     },

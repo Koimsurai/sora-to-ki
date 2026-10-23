@@ -12,6 +12,8 @@ import * as THREE from 'three/webgpu';
 import {
   Fn,
   abs,
+  asin,
+  exp,
   fract,
   fwidth,
   mx_noise_float,
@@ -222,9 +224,52 @@ const ROLL = -0.2;
 const INK = new THREE.Color('#f1ece3');
 /** 紙色（--ground #0a0a0c）：擋住背面那顆球的顏色，要跟頁面底色一樣才看不出它在那裡 */
 const GROUND = new THREE.Color('#0a0a0c');
-/** 環的內外緣（星球半徑是 1），跟提案的示意一樣；1.88 到 2.0 之間是卡西尼縫 */
-const RING_INNER = 1.32;
-const RING_OUTER = 2.2;
+/**
+ * 真實土星的雲帶（Cassini 的影像）：[緯度°, 寬度°, 亮度增減]。赤道帶最亮最寬，兩側的赤道帶狀雲（NEB/SEB）
+ * 最暗，往兩極一亮一暗越來越窄，極區整片暗下去；北緯 78° 那條是北極六角形的邊。
+ * 正緯度只寫北半球，南半球用 mirror 標記照抄（南北不完全對稱，所以有幾條只寫一邊）
+ */
+const SATURN_BANDS: [lat: number, width: number, delta: number, mirror: boolean][] = [
+  [0, 9, 0.26, false],
+  [17, 4, -0.3, true],
+  [22.5, 2.5, 0.08, true],
+  [28, 2, -0.14, true],
+  [33, 2.5, 0.06, true],
+  [38, 1.6, -0.12, true],
+  [43, 2.4, 0.05, true],
+  [48, 1.5, -0.13, true],
+  [53, 2, 0.03, true],
+  [58, 1.8, -0.1, true],
+  [-63, 2.5, -0.08, false],
+  [64, 2, -0.06, false],
+  [72, 5, -0.2, true],
+  [78, 0.9, 0.16, false],
+  [86, 6, -0.3, true],
+];
+
+/**
+ * 真實土星環的徑向結構（Cassini 的掩星量測，單位是土星赤道半徑）：[內緣, 外緣, 亮度]。
+ * 由內到外 D、C、B（分四段，B 環中段最亮最密）、卡西尼縫、A、F；A 環裡的恩克縫、基勒縫另外挖掉
+ */
+const RING_SEGMENTS: [inner: number, outer: number, tone: number][] = [
+  [1.11, 1.236, 0.08],
+  [1.239, 1.527, 0.26],
+  [1.527, 1.64, 0.62],
+  [1.64, 1.75, 0.88],
+  [1.75, 1.88, 1],
+  [1.88, 1.951, 0.8],
+  [1.951, 2.025, 0.1],
+  [2.025, 2.267, 0.62],
+  [2.322, 2.33, 0.4],
+];
+/** A 環裡的縫（恩克縫、基勒縫）與 C 環的麥斯威爾縫：[位置, 半寬] */
+const RING_GAPS: [at: number, half: number][] = [
+  [2.214, 0.006],
+  [2.265, 0.003],
+  [1.45, 0.006],
+];
+const RING_INNER = 1.11;
+const RING_OUTER = 2.34;
 
 /** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
 const SATURN_FOV = 8;
@@ -268,14 +313,31 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   const sunInPlane = uniform(new THREE.Vector3());
   const paper = vec3(INK.r, INK.g, INK.b);
   const ground = vec3(GROUND.r, GROUND.g, GROUND.b);
-  /** 一列一列的刷痕：row 是列的座標（每 1 是一列），ink 是 0 到 1 的濃度，回傳這個像素有沒有墨 */
+  /**
+   * 一列一列的刷痕：row 是列的座標（每 1 是一列），ink 是 0 到 1 的濃度，回傳這個像素有沒有墨。
+   * 最濃的地方線也只佔一列的 cover（星球 0.76、環 0.64）：線與線之間永遠留一道黑縫，線不會糊成一片
+   */
   type FloatNode = THREE.Node<'float'>;
-  const strokes = (row: FloatNode, ink: FloatNode) => {
+  const strokes = (row: FloatNode, ink: FloatNode, cover: number) => {
     const f = abs(fract(row).sub(0.5));
-    const half = ink.mul(0.5);
+    const half = ink.mul(cover / 2);
     const aa = fwidth(row).mul(0.75).max(0.001);
     // 線比一個像素還細的時候整條按比例淡掉；不然反鋸齒的那半個像素會在背光面留下一層灰
     return smoothstep(half.add(aa), half.sub(aa), f).mul(half.div(aa).clamp(0, 1));
+  };
+
+  /** 環在半徑 r 的亮度（RING_SEGMENTS、RING_GAPS） */
+  const ringTone = (r: FloatNode) => {
+    let tone: FloatNode = float(0);
+    for (const [inner, outer, value] of RING_SEGMENTS) {
+      tone = tone.add(
+        smoothstep(inner - 0.004, inner + 0.004, r)
+          .mul(smoothstep(outer + 0.004, outer - 0.004, r))
+          .mul(value),
+      );
+    }
+    for (const [at, half] of RING_GAPS) tone = tone.mul(smoothstep(half * 0.4, half, abs(r.sub(at))));
+    return tone;
   };
 
   const planetMat = new THREE.MeshBasicNodeMaterial();
@@ -284,38 +346,43 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     const sun = normalize(sunInPlanet);
     // 晨昏線切得乾脆：參考圖背光那一面幾乎全黑
     const lit = smoothstep(-0.12, 0.4, dot(n, sun));
-    // 雲帶：沿緯度的明暗，幾條寬的加幾條細的；兩極暗下去，不然頂上會看到一圈一圈的靶心
-    const tone = sin(n.y.mul(9).add(0.8))
-      .mul(0.2)
-      .add(sin(n.y.mul(23).add(1.3)).mul(0.12))
-      .add(0.75)
-      .mul(smoothstep(0.88, 0.62, abs(n.y)));
+    // 雲帶照真實土星的緯度排（SATURN_BANDS）
+    const lat = asin(n.y.clamp(-1, 1)).mul(180 / Math.PI);
+    let tone: FloatNode = float(0.52);
+    for (const [c, w, d] of SATURN_BANDS.flatMap(([c, w, d, m]) =>
+      m
+        ? [
+            [c, w, d],
+            [-c, w, d],
+          ]
+        : [[c, w, d]],
+    )) {
+      tone = tone.add(exp(lat.sub(c).div(w).pow(2).negate()).mul(d * 1.6));
+    }
+    // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
+    tone = tone.mul(smoothstep(80, 48, abs(lat)));
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
-    const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(5), n.z.mul(1.1)));
-    const row = n.y.mul(17).add(wave.mul(0.9));
-    const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(30), n.z.mul(2.2)))
-      .mul(0.35)
+    const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
+    const row = n.y.mul(22).add(wave.mul(0.8));
+    const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
+      .mul(0.45)
       .add(1);
-    const brush = smoothstep(-0.55, 0.05, mx_noise_float(vec3(n.x.mul(2.4), n.y.mul(40), n.z.mul(2.4))));
-    // 環落在星球上的影子：從這一點往太陽看，視線穿過環的平面時落在環上
+    const brush = smoothstep(-0.45, 0.15, mx_noise_float(vec3(n.x.mul(2.4), n.y.mul(48), n.z.mul(2.4))));
+    // 環落在星球上的影子：從這一點往太陽看，視線穿過環的平面時落在環上，越密的環影子越深
     const t = n.y.negate().div(sun.y);
     const hit = n.add(sun.mul(t));
     const rr = vec3(hit.x, 0, hit.z).length();
-    const shade = select(
-      t.greaterThan(0).and(rr.greaterThan(RING_INNER)).and(rr.lessThan(RING_OUTER)),
-      float(0.25),
-      float(1),
-    );
+    const shade = select(t.greaterThan(0), float(1).sub(ringTone(rr).mul(0.8)), float(1));
     const ink = pow(
       lit
         .mul(tone)
         .mul(swell)
-        .mul(mix(float(0.15), float(1), brush))
+        .mul(mix(float(0.05), float(1), brush))
         .mul(shade)
         .clamp(0, 1),
-      0.7,
+      0.8,
     );
-    return mix(ground, paper, strokes(row, ink));
+    return mix(ground, paper, strokes(row, ink, 0.76));
   })();
   const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), planetMat);
   body.add(planet);
@@ -324,35 +391,28 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   const plane = new THREE.Group();
   tilted.add(plane);
 
-  // 環：一圈一圈的同心刷痕，粗細照環的明暗（中間的 B 環最亮、卡西尼縫空著），星球的影子壓在背光那段
+  // 環：一圈一圈的同心刷痕，粗細照真實環的結構（RING_SEGMENTS），星球的影子壓在背光那段
   const ringMat = new THREE.MeshBasicNodeMaterial({ transparent: true, side: THREE.DoubleSide, depthWrite: false });
   const ringInk = Fn(() => {
     // RingGeometry 在自己的 xy 平面上；轉平之後 (x, y) 對到環平面的 (x, -z)
     const p = vec3(positionLocal.x, 0, positionLocal.y.negate());
     const r = p.length();
-    const body = smoothstep(RING_INNER, 1.46, r)
-      .mul(smoothstep(RING_OUTER, 2.08, r))
-      .mul(float(1).sub(smoothstep(1.86, 1.89, r).mul(smoothstep(2.02, 1.99, r))));
-    const bright = smoothstep(1.44, 1.62, r)
-      .mul(smoothstep(1.86, 1.72, r))
-      .mul(0.25)
-      .add(0.85);
-    const ringlets = mx_noise_float(vec3(r.mul(22), 0, 0))
-      .mul(0.3)
+    // 環裡面還有更細的小環：一點徑向的雜訊
+    const ringlets = mx_noise_float(vec3(r.mul(60), 0, 0))
+      .mul(0.22)
       .add(0.9);
-    const brush = smoothstep(-0.5, 0.15, mx_noise_float(vec3(p.x.mul(2.4), r.mul(36), p.z.mul(2.4))));
+    const brush = smoothstep(-0.55, 0.15, mx_noise_float(vec3(p.x.mul(2.4), r.mul(40), p.z.mul(2.4))));
     // 星球的影子：從環上這一點往太陽看會不會被星球擋住
     const sun = normalize(sunInPlane);
     const along = dot(p, sun).negate();
     const closest = p.add(sun.mul(along));
-    const shade = select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.15), float(1));
-    const ink = body
-      .mul(bright)
+    const shade = select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.12), float(1));
+    const ink = ringTone(r)
       .mul(ringlets)
-      .mul(mix(float(0.35), float(1), brush))
+      .mul(mix(float(0.4), float(1), brush))
       .mul(shade)
       .clamp(0, 1);
-    return strokes(r.mul(30), pow(ink, 0.7));
+    return strokes(r.mul(34), pow(ink, 0.75), 0.64);
   })();
   ringMat.colorNode = paper;
   ringMat.opacityNode = ringInk;
