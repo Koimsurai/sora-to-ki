@@ -12,7 +12,7 @@ export const INTRO = {
   rampEnd: 400,
   /** 全速結束、開始減速 */
   peakEnd: 1900,
-  /** 掛 DOM 特效、解開內容。內容在開場前已先畫好（見 index.css 的 html.intro-pending） */
+  /** 解開內容。內容在開場前已先畫好（見 index.css 的 html.intro-pending） */
   preReveal: 1800,
   flashStart: 2200,
   flashDuration: 1100,

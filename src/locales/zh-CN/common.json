@@ -200,6 +200,15 @@
       "like": "留下印记",
       "star": "给项目一颗星",
       "likeAria": "为这个站留下印记"
+    },
+    "orbit": {
+      "title": "Koimsurai 的个人网站：手记、碎念、作品与收藏",
+      "notesCount": "{{count}} 篇 · 最近 {{date}}",
+      "momentsCount": "最近 {{date}}",
+      "worksCount": "{{count}} 件",
+      "collectionLine": "在看 {{anime}} 部动画、{{films}} 部电影、{{series}} 部剧集",
+      "aboutLine": "从 2004 往下掉到现在",
+      "aboutCount": "2004 –"
     }
   },
   "comments": {

@@ -200,6 +200,15 @@
       "like": "Leave a mark",
       "star": "Star on GitHub",
       "likeAria": "Leave a mark on this site"
+    },
+    "orbit": {
+      "title": "Koimsurai: notes, murmurs, work and collections",
+      "notesCount": "{{count}} posts · latest {{date}}",
+      "momentsCount": "latest {{date}}",
+      "worksCount": "{{count}} projects",
+      "collectionLine": "{{anime}} anime, {{films}} films, {{series}} series watched",
+      "aboutLine": "Falling from 2004 to now",
+      "aboutCount": "2004 –"
     }
   },
   "comments": {

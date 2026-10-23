@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
 import type { IntroPhase } from '@/lib/introTimeline';
+import { publishSatellites, subscribeSatelliteGlow, type SatelliteScreen } from '@/store/homeOrbit';
 
 const canOffscreen =
   typeof HTMLCanvasElement !== 'undefined' && 'transferControlToOffscreen' in HTMLCanvasElement.prototype;
@@ -68,9 +69,12 @@ export default function StarfieldGpu({
     return Number.isFinite(v) ? v : undefined;
   }, []);
   // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
-  const controlRef = useRef<{ scroll(y: number): void; saturn(v: boolean, a: boolean): void; skip(): void } | null>(
-    null,
-  );
+  const controlRef = useRef<{
+    scroll(y: number): void;
+    saturn(v: boolean, a: boolean): void;
+    skip(): void;
+    glow(g: number[]): void;
+  } | null>(null);
 
   // 開場只在第一次建 runner 時播；之後的重建（device lost）一律不播
   const [introMode] = useState(intro);
@@ -110,7 +114,7 @@ export default function StarfieldGpu({
   const recoveriesRef = useRef(0);
   const recoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 上限存在的理由：device 一直掉的機器（驅動有問題）不該無限重建，那比不顯示更糟。
-  // 用完就收掉整個 3D，由 shell 的 DOM 特效兜底。
+  // 用完就收掉整個 3D，頁面留下黑紙與 CSS 星空。
   const MAX_RECOVERIES = 3;
 
   const recover = useCallback(
@@ -118,7 +122,7 @@ export default function StarfieldGpu({
       // 開場播到一半 GPU 掉了：重建的 runner 不會重播，所以開場就停在這裡，交給呼叫端收尾
       abortIntro();
       if (recoveriesRef.current >= MAX_RECOVERIES) {
-        console.warn(`[StarfieldGpu] ${reason}；已重建 ${MAX_RECOVERIES} 次仍失敗，放棄 3D（DOM 特效繼續）`);
+        console.warn(`[StarfieldGpu] ${reason}；已重建 ${MAX_RECOVERIES} 次仍失敗，放棄 3D（留下 CSS 星空）`);
         setFailed(true);
         return;
       }
@@ -147,6 +151,9 @@ export default function StarfieldGpu({
   useEffect(() => {
     if (skipIntro) controlRef.current?.skip();
   }, [skipIntro]);
+
+  // 首頁衛星的亮度：首頁送過來就轉給 runner。控制介面就緒（backend 變了）時也補送一次
+  useEffect(() => subscribeSatelliteGlow((g) => controlRef.current?.glow(g)), [backend]);
 
   useEffect(
     () => () => {
@@ -222,6 +229,7 @@ export default function StarfieldGpu({
         scroll: (y) => worker.postMessage({ type: 'scroll', y }),
         saturn: (v, a) => worker.postMessage({ type: 'saturn', visible: v, animate: a }),
         skip: () => worker.postMessage({ type: 'skip' }),
+        glow: (g) => worker.postMessage({ type: 'glow', glow: g }),
       };
       if (skipRef.current) controlRef.current.skip();
       const onMsg = (
@@ -231,14 +239,16 @@ export default function StarfieldGpu({
           report?: PerfReport;
           message?: string;
           phase?: IntroPhase;
+          positions?: SatelliteScreen[];
         }>,
       ) => {
-        if (e.data.type === 'intro' && e.data.phase) handlePhase(e.data.phase);
+        if (e.data.type === 'satellites') publishSatellites(e.data.positions ?? []);
+        else if (e.data.type === 'intro' && e.data.phase) handlePhase(e.data.phase);
         else if (e.data.type === 'ready') setBackend(`${e.data.backend} · worker`);
         else if (e.data.type === 'perf') setPerf(e.data.report ?? null);
         else if (e.data.type === 'lost') recover(e.data.message ?? 'GPU device lost');
         else if (e.data.type === 'error') {
-          // canvas 已 transfer、無法回收給主執行緒重用 → 本 session 放棄（外層有 DOM 特效兜底）
+          // canvas 已 transfer、無法回收給主執行緒重用 → 本 session 放棄（頁面留下 CSS 星空）
           console.warn('[StarfieldGpu] worker 初始化失敗:', e.data.message);
           setFailed(true);
           worker.terminate();
@@ -280,6 +290,7 @@ export default function StarfieldGpu({
           onDeviceLost: (message) => {
             if (!disposed) recover(message);
           },
+          onSatellites: publishSatellites,
         });
         if (disposed) {
           runner.dispose();
@@ -295,6 +306,7 @@ export default function StarfieldGpu({
           scroll: (y) => runner.setScroll(y),
           saturn: (v, a) => runner.setSaturn(v, a),
           skip: () => runner.skipIntro(),
+          glow: (g) => runner.setSatelliteGlow(g),
         };
         if (skipRef.current) runner.skipIntro();
         setBackend(`${be} · main`);
@@ -319,7 +331,7 @@ export default function StarfieldGpu({
     // generation 變化 = device lost 之後要整組重建（canvas 換了新的 DOM 節點，見上面的註解）
   }, [generation, recover, handlePhase, introFreezeAt]);
 
-  // 初始化失敗（無 WebGPU 也無 WebGL 的機器）→ 優雅消失，DOM 特效由 shell 兜底
+  // 初始化失敗（無 WebGPU 也無 WebGL 的機器）→ 優雅消失，頁面留下 CSS 星空
   if (failed) return null;
 
   return (
