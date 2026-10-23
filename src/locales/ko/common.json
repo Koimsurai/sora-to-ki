@@ -737,5 +737,14 @@
     "coreLine": "더 아래는 아직 쓰지 않은 이야기.",
     "fallMeter": "지표까지",
     "digMeter": "지표 아래"
+  },
+  "works": {
+    "title": "작품",
+    "subtitle": "출발점에서 바깥으로 뻗어 가는 항로: 새로울수록 바깥쪽.",
+    "origin": "출발점",
+    "legendCore": "가운데 점: 코드 양",
+    "legendRings": "한 바퀴: 언어 하나",
+    "legendMoons": "바깥 작은 점: GitHub 스타",
+    "legendHover": "마우스를 올리면: 입체 천체로 펼쳐짐"
   }
 }

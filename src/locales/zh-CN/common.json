@@ -737,5 +737,14 @@
     "coreLine": "再往下，是还没写下的事。",
     "fallMeter": "距离地表",
     "digMeter": "地表以下"
+  },
+  "works": {
+    "title": "作品",
+    "subtitle": "从起点往外长的一条航线：越新的越外圈。",
+    "origin": "起点",
+    "legendCore": "中间的点：代码量",
+    "legendRings": "一圈：一种语言",
+    "legendMoons": "外圈的小点：GitHub 星星",
+    "legendHover": "滑过：展开成立体的星"
   }
 }
