@@ -62,7 +62,10 @@ export type GrowTakeover = 'self' | 'trail';
 export interface PageTransitionHandle {
   /** 這一頁的錨點（視窗座標）：換進來時點落在這裡，上一頁、下一頁時從這裡出發 */
   anchor?: () => Pt | null;
-  /** 點要怎麼落進來（給的是點現在的位置與速度 px/ms，頁面可以挑一條順路的）；不給就由轉場自己挑 */
+  /**
+   * 點要怎麼落進來：給的是鏡頭停下那一刻點在畫面上的位置（正中間）與速度 px/ms，頁面從那裡挑一條順路的；
+   * 不給就由轉場自己挑
+   */
   arrive?: (dot: { pos: Pt; vel: Pt }) => Arrival | null;
   /** 這一頁自己收進一個點；不給的話轉場用一圈遮罩把整頁收進錨點 */
   leave?: (ctx: LeaveContext) => Departure | null;
