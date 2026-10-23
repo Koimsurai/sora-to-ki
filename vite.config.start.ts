@@ -116,6 +116,36 @@ function copyExcalidrawFonts(): Plugin {
 }
 
 /**
+ * dev server 的 /api：瀏覽器打的 /api 轉給 BACKEND_URL（正式環境是 nginx 在轉）。
+ * 不用 vite 的 server.proxy：Nitro 的開發中介層排在它前面，/api 會先被當成頁面回 404。
+ * 只放讀取：拿線上後端預覽時，按讚、留言這類寫入不會真的寫進去
+ */
+function devApiProxy(): Plugin {
+  const target = process.env.BACKEND_URL ?? 'http://127.0.0.1:3009';
+  return {
+    name: 'koimsurai:dev-api-proxy',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api', (req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          res.statusCode = 405;
+          res.end();
+          return;
+        }
+        fetch(`${target}/api${req.url ?? ''}`, { method: req.method, headers: { accept: req.headers.accept ?? '*/*' } })
+          .then(async (r) => {
+            res.statusCode = r.status;
+            const type = r.headers.get('content-type');
+            if (type) res.setHeader('content-type', type);
+            res.end(Buffer.from(await r.arrayBuffer()));
+          })
+          .catch(next);
+      });
+    },
+  };
+}
+
+/**
  * 讓 `@animateicons/react` 搖得動 —— 它的 barrel 沒有 `/*#__PURE__*\/` 註解。
  *
  * 症狀（實測，不是推測）：`dist/lucide.js` 一個檔裡有 **248 個 icon**，每個都寫成
@@ -364,6 +394,7 @@ export default defineConfig({
   // react-helmet-async 是 CJS,要 vite 轉譯才能在 SSR 用具名匯出(過渡 bridge,之後 SEOHead→head() 可移除)
   ssr: { noExternal: ['react-helmet-async'] },
   plugins: [
+    devApiProxy(),
     copyMonacoAssets(),
     copyExcalidrawFonts(),
     pureAnnotateAnimateIcons(),
