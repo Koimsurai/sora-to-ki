@@ -1238,3 +1238,29 @@ export type WatchStatsResponse = {
 	tvSeriesCount: number,
 	tvEpisodes: number,
 };
+
+/**  一件作品的一種語言：GitHub 算的程式碼量（bytes）。 */
+export type WorkLanguage = {
+	name: string,
+	bytes: number,
+};
+
+/**  `GET /api/github/works` 的一件作品。 */
+export type WorkRepo = {
+	/**  `owner/name` */
+	repo: string,
+	/**  私有 repo 沒有連結（讀者點過去只會看到 404） */
+	url: string | null,
+	created_at: string,
+	pushed_at: string,
+	stars: number,
+	/**  預設分支上的 commit 數 */
+	commits: number,
+	/**  由多到少 */
+	languages: WorkLanguage[],
+};
+
+export type WorksResponse = {
+	works: WorkRepo[],
+	error: string | null,
+};

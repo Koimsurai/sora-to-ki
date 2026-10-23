@@ -45,7 +45,7 @@ use koimsurai_web_backend::handlers::thirdparty::{
     GithubEventPayload, GithubEventRepo, GithubEventsResponse, GithubRepo, GithubReposResponse,
     GithubUserResponse, SteamCustomization, SteamFeaturedBadge, SteamGame, SteamGamesResponse, SteamPlayer,
     SteamPlayerResponse, SteamProfile, SteamProfileResponse, WakatimeActualCodingTime, WakatimeGrandTotal,
-    WakatimeStat, WakatimeStatsResponse, WakatimeTodayResponse,
+    WakatimeStat, WakatimeStatsResponse, WakatimeTodayResponse, WorkLanguage, WorkRepo, WorksResponse,
 };
 use koimsurai_web_backend::handlers::thoughts::{
     ThoughtDetailResponse, ThoughtOut, ThoughtReactResponse, ThoughtRef, ThoughtRefScalar,
@@ -167,6 +167,9 @@ fn main() {
         // 活動儀表板的第三方代理（github / steam / wakatime）：原本原樣轉發上游 JSON，
         // 型別只存在前端手寫的 Activity.tsx；改成回我們自己塑形過的欄位
         .register::<GithubUserResponse>()
+        .register::<WorkLanguage>()
+        .register::<WorkRepo>()
+        .register::<WorksResponse>()
         .register::<GithubCommitAuthor>()
         .register::<GithubCommit>()
         .register::<GithubEventRepo>()
