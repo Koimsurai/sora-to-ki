@@ -609,6 +609,8 @@ export interface SpiralFrame {
   grow: number;
   /** 0 到 1：收的時候從中心往外擦掉到哪裡（換頁時整條收進最新那一顆） */
   erase: number;
+  /** 0 到 1：筆尖落地之後，它的光暈與亮的那段線退掉到哪裡 */
+  settle: number;
 }
 
 const smooth = (a: number, b: number, x: number) => {
@@ -667,7 +669,7 @@ export function createSpiral(bodies: Body[]) {
 
   /** 畫一幀；回傳每一件的位置與符號外緣（字擺在外面） */
   function draw(ctx: CanvasRenderingContext2D, f: SpiralFrame) {
-    const { w, h, t, dt, near, grow, erase } = f;
+    const { w, h, t, dt, near, grow, erase, settle } = f;
     ctx.clearRect(0, 0, w, h);
     const P = placer(w, h, t);
     const reach = tLast * grow;
@@ -701,12 +703,14 @@ export function createSpiral(bodies: Body[]) {
       ctx.fillRect(x, y, 1.5, 1.5);
     }
     // 琥珀點是筆尖：從起點沿著航線往外畫，最後落在最新那一件，變成它的衛星
-    if (grow > 0 && grow < 1) {
+    // 落地之後光暈與亮線慢慢退掉，不是一到就不見
+    const pen = grow < 1 ? 1 : 1 - settle;
+    if (grow > 0 && pen > 0) {
       const tail = Math.max(0, reach - PEN_TAIL);
       for (let k = 1; k <= 30; k++) {
         const [x0, y0] = P(tail + ((k - 1) / 30) * (reach - tail));
         const [x1, y1] = P(tail + (k / 30) * (reach - tail));
-        ctx.strokeStyle = `rgba(${INK}, ${(0.26 + 0.6 * Math.pow(k / 30, 2)).toFixed(3)})`;
+        ctx.strokeStyle = `rgba(${INK}, ${(0.26 + 0.6 * Math.pow(k / 30, 2) * pen).toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(x0, y0);
         ctx.lineTo(x1, y1);
@@ -718,13 +722,13 @@ export function createSpiral(bodies: Body[]) {
       const px = sx + (mx - sx) * land;
       const py = sy + (my - sy) * land;
       const glow = ctx.createRadialGradient(px, py, 0, px, py, 12);
-      glow.addColorStop(0, `rgba(${AMBER}, 0.6)`);
+      glow.addColorStop(0, `rgba(${AMBER}, ${0.6 * pen})`);
       glow.addColorStop(1, `rgba(${AMBER}, 0)`);
       ctx.fillStyle = glow;
       ctx.beginPath();
       ctx.arc(px, py, 12, 0, TAU);
       ctx.fill();
-      ctx.fillStyle = `rgb(${AMBER})`;
+      ctx.fillStyle = `rgba(${AMBER}, ${pen})`;
       ctx.beginPath();
       ctx.arc(px, py, 2.6 - 0.6 * land, 0, TAU);
       ctx.fill();
@@ -733,8 +737,11 @@ export function createSpiral(bodies: Body[]) {
     return bodies.map((b, i) => {
       const [x, y] = P(i * STEP);
       // 筆尖還沒畫到的作品先不出現；收的時候被擦過的跟著退掉
+      // 最新那一顆在收的最後也淡掉，只剩轉場的琥珀點（不然換頁那一刻它會突然消失）
       const appear =
-        Math.min(1, Math.max(0, (reach - i * STEP) / 0.6 + 1)) * Math.min(1, Math.max(0, (i * STEP - from) / 0.6 + 1));
+        Math.min(1, Math.max(0, (reach - i * STEP) / 0.6 + 1)) *
+        Math.min(1, Math.max(0, (i * STEP - from) / 0.6 + 1)) *
+        (i === newest ? 1 - smooth(0.4, 1, erase) : 1);
       const on = i === near;
       const lit = on || (near < 0 && i === newest && grow >= 1);
       open[i] += ((on ? 1 : 0) - open[i]) * Math.min(1, dt * 7);

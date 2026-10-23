@@ -19,6 +19,8 @@ const NEAR_PX = 70;
 const GROW_S = 2.4;
 /** 收：航線擦掉的時間（毫秒） */
 const ERASE_MS = 520;
+/** 筆尖落地後光暈退掉的時間（秒） */
+const SETTLE_S = 0.9;
 /** 收完時點離開的速度（px/ms） */
 const LEAVE_SPEED = 0.8;
 
@@ -157,7 +159,8 @@ export default function Works() {
           }
         });
       }
-      const placed = spiral.draw(ctx, { w, h, t, dt: reduce ? 0 : dt, near, grow, erase });
+      const settle = reduce ? 1 : Math.min(1, Math.max(0, (t - GROW_S) / SETTLE_S));
+      const placed = spiral.draw(ctx, { w, h, t, dt: reduce ? 0 : dt, near, grow, erase, settle });
       const { cx, cy } = frameOf(w, h);
       placed.forEach((p, i) => {
         const el = labelsRef.current[i];
