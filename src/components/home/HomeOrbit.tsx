@@ -26,7 +26,9 @@ const NEAR_PX = 72;
 /** 閒置多久之後開始輪流提示 */
 const IDLE_HINT_MS = 2500;
 /** 每顆提示多久 */
-const HINT_MS = 4500;
+const HINT_MS = 6500;
+/** 衛星在土星中線兩側這麼遠的範圍內，字從一邊滑到另一邊 */
+const SIDE_PX = 70;
 /** 多久沒收到 3D 送來的位置就當作沒有 3D */
 const FLAT_AFTER_MS = 2500;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
@@ -195,7 +197,7 @@ export default function HomeOrbit() {
         const k = (now - hintStart) / HINT_MS;
         hintIndex = Math.floor(k) % count;
         hint = hintIndex;
-        hintLevel = Math.max(0, Math.sin(Math.min(1, (k % 1) / 0.55) * Math.PI)) * 0.5;
+        hintLevel = Math.max(0, Math.sin(Math.min(1, (k % 1) / 0.7) * Math.PI)) * 0.5;
       } else hintStart = 0;
 
       const glow = MAIN_SECTIONS.map((_, i) => (i === near ? 1 : i === hint ? hintLevel : 0));
@@ -207,13 +209,17 @@ export default function HomeOrbit() {
       positions.forEach((p, i) => {
         const el = labelsRef.current[i];
         if (!el) return;
-        // 字往「遠離土星」的那一側長，不壓在軌道與土星上
-        const right = p.x > cx;
-        el.classList.toggle('is-left', !right);
+        // 字往「遠離土星」的那一側長，不壓在軌道與土星上。衛星繞過中線時字不是一下跳到另一邊，
+        // 而是在中線兩側 SIDE_PX 的範圍裡滑過去（衛星轉得慢，這一段要好幾秒）
+        const sideX = Math.min(1, Math.max(0, (p.x - cx) / (2 * SIDE_PX) + 0.5));
+        const sideY = Math.min(1, Math.max(0, (p.y - cy) / (2 * SIDE_PX) + 0.5));
+        // 對齊方式只能二選一：過了中線一段才換，在中線附近來回不會一直跳
+        if (sideX > 0.75) el.classList.remove('is-left');
+        else if (sideX < 0.25) el.classList.add('is-left');
         const w = el.offsetWidth;
         const h = el.offsetHeight;
-        let x = right ? p.x + 18 : p.x - w - 18;
-        let y = p.y < cy ? p.y - h - 10 : p.y + 10;
+        let x = p.x - w - 18 + sideX * (w + 36);
+        let y = p.y - h - 10 + sideY * (h + 20);
         x = Math.max(16, Math.min(window.innerWidth - w - 16, x));
         y = Math.max(72, Math.min(window.innerHeight - h - 16, y));
         el.style.transform = `translate(${x - box.left}px, ${y - box.top}px)`;

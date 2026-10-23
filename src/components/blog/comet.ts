@@ -97,8 +97,8 @@ export const DISSOLVE_MS = 750;
 export const REVEAL_MS = 900;
 /** 換頁轉場的「收」：彗尾縮回彗核的時間 */
 export const RETRACT_MS = 380;
-/** 點飛進來時，最後沿著彗尾往上飛的那一段有多長 */
-export const APPROACH_PX = 240;
+/** 點飛進來時，最後沿著彗尾往上飛的那一段最長多長（實際是彗核到畫面底） */
+export const APPROACH_PX = 640;
 
 /** 彗星往哪裡飛（版面座標的單位向量）：沿著弧線往上 */
 export function headDirection(L: ArcLayout): Pt {
@@ -135,7 +135,7 @@ export function createComet(tailLength: number, narrow: boolean) {
     j: Math.random(),
   }));
   const coma: Coma[] = Array.from({ length: 320 }, () => ({
-    u: Math.pow(Math.random(), 1.7),
+    u: Math.pow(Math.random(), 2.2),
     s: Math.max(-1, Math.min(1, gauss() / 1.6)),
     j: Math.random(),
   }));
@@ -192,9 +192,10 @@ export function createComet(tailLength: number, narrow: boolean) {
       const fwd = headDirection(L);
       const side = { x: -fwd.y, y: fwd.x };
       for (const c of coma) {
-        const back = (-4 + 52 * c.u) * k;
-        const spread = Math.sqrt(Math.max(0, (back + 4 * k) / (56 * k || 1))) * 20 * k;
-        const a = Math.pow(1 - c.u, 1.6) * (0.4 + 0.45 * Math.sin(t * 1.6 + c.j * 9) ** 2);
+        // 彗髮包著彗核：前緣在彗核前面一點，最寬、最亮的地方就在彗核上，往後收窄接進彗尾
+        const back = (-9 + 58 * c.u) * k;
+        const spread = (7 + 12 * Math.sqrt(c.u)) * k;
+        const a = Math.pow(1 - c.u, 1.4) * (0.4 + 0.45 * Math.sin(t * 1.6 + c.j * 9) ** 2);
         if (a < 0.04) continue;
         ctx.fillStyle = `rgba(${INK}, ${a.toFixed(3)})`;
         ctx.fillRect(

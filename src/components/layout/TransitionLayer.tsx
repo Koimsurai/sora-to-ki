@@ -241,7 +241,7 @@ export default function TransitionLayer() {
       const page = currentPage();
       const fresh = page.generation !== r.oldGeneration ? page.handle : null;
       const anchor = fresh?.anchor?.() ?? defaultAnchor(r.main);
-      const arrival = fresh?.arrive?.() ?? null;
+      const arrival = fresh?.arrive?.({ pos: r.pos, vel: r.vel }) ?? null;
       const approach = arrival?.approach && arrival.approach.length > 1 ? arrival.approach : null;
       const target = approach ? approach[0] : anchor;
       const gap = { x: target.x - r.pos.x, y: target.y - r.pos.y };

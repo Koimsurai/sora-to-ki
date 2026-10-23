@@ -12,7 +12,7 @@ export function usePageTransition(handle: PageTransitionHandle) {
     () =>
       registerPage({
         anchor: () => ref.current.anchor?.() ?? null,
-        arrive: () => ref.current.arrive?.() ?? null,
+        arrive: (dot) => ref.current.arrive?.(dot) ?? null,
         leave: (ctx) => ref.current.leave?.(ctx) ?? null,
         onGrow: (ctx) => ref.current.onGrow?.(ctx),
       }),

@@ -109,7 +109,7 @@ export default function SiteNav() {
     };
   }, [moreOpen, menuOpen, unfolded]);
 
-  // 點開的那一行：滑鼠離開導覽列一會兒就收回去（首頁的主角是土星，不要一直擋在那裡）
+  // 展開的那一行：滑鼠離開導覽列一會兒就收回去（首頁的主角是土星，不要一直擋在那裡）
   const leaveTimerRef = useRef(0);
   const onNavEnter = () => window.clearTimeout(leaveTimerRef.current);
   const onNavLeave = () => {
@@ -247,6 +247,10 @@ export default function SiteNav() {
           className="snav-pin"
           aria-label={t('siteNav.menu')}
           aria-expanded={menuOpen || !folded}
+          // 桌機：滑到點上就展開，不用點（觸控沒有 hover，照舊點一下）
+          onPointerEnter={(e) => {
+            if (e.pointerType === 'mouse' && !window.matchMedia('(max-width: 768px)').matches) setUnfolded(true);
+          }}
           onClick={() => {
             // 手機：開關整頁目錄；桌機：那一行字從點的位置展開
             if (window.matchMedia('(max-width: 768px)').matches) setMenuOpen((v) => !v);
