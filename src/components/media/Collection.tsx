@@ -2,10 +2,11 @@
 // 那幾本配上自己寫的話（品味），最下面是一整面封面牆，全部都在。
 // 封面牆平常是點陣（灰階的封面蓋上一層點的遮罩），遠看像一片星雲；滑過哪一格它才顯出原本的顏色，
 // 閒著的時候偶爾也有一格自己亮一下。點陣是 CSS 做的：不用讀圖片的像素，外站的封面不必經過代理。
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/auth';
+import { usePageTransition } from '@/hooks/usePageTransition';
 import { booksQueryOptions } from '@/data/bookshelfData';
 import {
   nowPlayingQueryOptions,
@@ -37,6 +38,7 @@ import {
   type WatchKind,
 } from './collectionItems';
 import FavoritesEditor from './FavoritesEditor';
+import { reform, type Target } from './stardust';
 import './Collection.css';
 
 /** 閒著的時候多久亮一格、亮多久（毫秒） */
@@ -52,7 +54,7 @@ function Stats({ items }: { items: [string, number | undefined, string][] }) {
   return (
     <dl className="cx-stats">
       {items.map(([key, n, label]) => (
-        <div key={key}>
+        <div key={key} data-piece>
           <dt>{label}</dt>
           <dd>{fmt(n)}</dd>
         </div>
@@ -61,28 +63,11 @@ function Stats({ items }: { items: [string, number | undefined, string][] }) {
   );
 }
 
-function Head({
-  id,
-  title,
-  latin,
-  sub,
-  children,
-}: {
-  id: string;
-  title: string;
-  latin: string;
-  sub: string;
-  children?: React.ReactNode;
-}) {
+/** 一區的開頭：一句話與數字（這一區叫什麼由上面的切換列說） */
+function Head({ sub, children }: { sub: string; children?: React.ReactNode }) {
   return (
     <header className="cx-block-head">
-      <div className="cx-title">
-        <h2 id={`${id}-title`}>
-          {title}
-          <span>{latin}</span>
-        </h2>
-        <p>{sub}</p>
-      </div>
+      <p data-piece>{sub}</p>
       {children}
     </header>
   );
@@ -115,7 +100,7 @@ function Favs({ items, square }: { items: Fav[]; square?: boolean }) {
       {items.map((f) => {
         const cover = <Cover src={f.cover} />;
         return (
-          <li key={f.key} className="cx-fav">
+          <li key={f.key} className="cx-fav" data-piece>
             {f.href ? (
               <a href={f.href} target="_blank" rel="noopener noreferrer" aria-label={f.title}>
                 {cover}
@@ -180,7 +165,7 @@ function Wall({ cells, w, h, gap, label }: { cells: Cell[]; w: number; h: number
       cells.map((c, i) => {
         const name = `${c.title}${c.meta ? `，${c.meta}` : ''}`;
         return (
-          <li key={c.id}>
+          <li key={c.id} data-piece>
             {c.href ? (
               <a
                 className={c.cover ? 'cx-cell' : 'cx-cell is-empty'}
@@ -234,7 +219,7 @@ function Wall({ cells, w, h, gap, label }: { cells: Cell[]; w: number; h: number
 
 function Live({ on, label, title, tail }: { on: boolean; label: string; title: string; tail?: string }) {
   return (
-    <p className={on ? 'cx-live is-on' : 'cx-live'}>
+    <p className={on ? 'cx-live is-on' : 'cx-live'} data-piece>
       <i aria-hidden="true" />
       {label}
       <b>{title}</b>
@@ -262,8 +247,8 @@ function WatchBlock() {
   );
 
   return (
-    <section className="cx-block" id="watch" aria-labelledby="watch-title">
-      <Head id="watch" title={t('collection.watch.title')} latin="WATCH" sub={t('collection.watch.sub')}>
+    <section className="cx-block" aria-label={t('collection.watch.title')}>
+      <Head sub={t('collection.watch.sub')}>
         <Stats
           items={[
             ['anime', stats?.animeCount, t('collection.watch.anime')],
@@ -318,8 +303,8 @@ function BooksBlock() {
   const counts = bookCounts(books);
   const cells = useMemo(() => bookCells(books, (s) => t(`collection.status.${s}`)), [books, t]);
   return (
-    <section className="cx-block" id="books" aria-labelledby="books-title">
-      <Head id="books" title={t('collection.books.title')} latin="BOOKS" sub={t('collection.books.sub')}>
+    <section className="cx-block" aria-label={t('collection.books.title')}>
+      <Head sub={t('collection.books.sub')}>
         <Stats
           items={[
             ['total', counts.total, t('collection.books.total')],
@@ -357,8 +342,8 @@ function MusicBlock() {
   const last = recent?.tracks?.[0]?.track ?? null;
   const first = tracks.at(0);
   return (
-    <section className="cx-block" id="music" aria-labelledby="music-title">
-      <Head id="music" title={t('collection.music.title')} latin="MUSIC" sub={t('collection.music.sub')}>
+    <section className="cx-block" aria-label={t('collection.music.title')}>
+      <Head sub={t('collection.music.sub')}>
         <Stats
           items={[
             ['tracks', tracks.length > 0 ? tracks.length : undefined, t('collection.music.tracks')],
@@ -372,13 +357,15 @@ function MusicBlock() {
         last && <Live on={false} label={t('collection.music.last')} title={last.name} tail={artistsOf(last)} />
       )}
       {top?.error !== undefined && !tracks.length ? (
-        <p className="cx-empty">{t('collection.music.off')}</p>
+        <p className="cx-empty" data-piece>
+          {t('collection.music.off')}
+        </p>
       ) : (
         <>
           {topGenres.length > 0 && (
             <ul className="cx-genres" aria-label={t('collection.music.genres')}>
               {topGenres.map((g) => (
-                <li key={g.genre}>
+                <li key={g.genre} data-piece>
                   <span>{g.genre}</span>
                   <i style={{ '--w': `${(g.count / maxGenre) * 100}%` } as React.CSSProperties} />
                   <em>{g.count}</em>
@@ -407,8 +394,121 @@ function MusicBlock() {
   );
 }
 
+const TABS = ['watch', 'books', 'music'] as const;
+type Tab = (typeof TABS)[number];
+const LATIN: Record<Tab, string> = { watch: 'WATCH', books: 'BOOKS', music: 'MUSIC' };
+const isTab = (v: string): v is Tab => (TABS as readonly string[]).includes(v);
+/** 琥珀點從一個分頁滑到另一個的時間（毫秒），中間往上拱一點 */
+const DOT_MS = 560;
+
 export default function Collection() {
   const { t } = useTranslation();
+  const [active, setActive] = useState<Tab>('watch');
+  const stageRef = useRef<HTMLDivElement>(null);
+  const dustRef = useRef<HTMLCanvasElement>(null);
+  const dotRef = useRef<HTMLSpanElement>(null);
+  const tabsRef = useRef<Partial<Record<Tab, HTMLButtonElement | null>>>({});
+  const busyRef = useRef(false);
+  /** 換區時等新的那一區排好：React 換完、版面算好之後由下面的 layout effect 叫 */
+  const laidOutRef = useRef<(() => void) | null>(null);
+
+  // 三區的資料一起抓：換過去的時候已經在快取裡，星塵散出去就有地方落
+  useQuery(booksQueryOptions);
+  useQuery(topTracksQueryOptions(TRACK_RANGE));
+  useQuery(topGenresQueryOptions);
+  useQuery(animeLibraryQueryOptions);
+  useQuery(filmsLibraryQueryOptions);
+  useQuery(tvLibraryQueryOptions);
+
+  /** 琥珀點在切換列上的位置（相對切換列） */
+  const dotX = (tab: Tab) => {
+    const el = tabsRef.current[tab];
+    return el ? el.offsetLeft - 12 : 0;
+  };
+  const placeDot = (tab: Tab, animate: boolean) => {
+    const dot = dotRef.current;
+    if (!dot) return;
+    const to = dotX(tab);
+    if (!animate) {
+      dot.style.transform = `translate(${to}px, 0)`;
+      return;
+    }
+    const from = new DOMMatrixReadOnly(getComputedStyle(dot).transform).m41;
+    // 沿著一道弧滑過去：中間往上拱，跟站上其他地方的琥珀點一樣不走直線
+    dot.animate(
+      [
+        { transform: `translate(${from}px, 0)` },
+        { transform: `translate(${(from + to) / 2}px, -10px)` },
+        { transform: `translate(${to}px, 0)` },
+      ],
+      { duration: DOT_MS, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+    );
+    dot.style.transform = `translate(${to}px, 0)`;
+  };
+  const dotCenter = () => {
+    const r = dotRef.current?.getBoundingClientRect();
+    return r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: window.innerWidth / 2, y: 120 };
+  };
+
+  // 換頁轉場的琥珀點落在切換列的那一點上
+  usePageTransition({ anchor: () => (dotRef.current ? dotCenter() : null) });
+
+  // 從舊網址轉過來的（/bookshelf → #books）直接打開那一區
+  // （SSR 看不到 hash，所以第一幀一律是「在看」，hydrate 完下一幀再換過去）
+  useEffect(() => {
+    const tab = window.location.hash.slice(1);
+    if (!isTab(tab) || tab === 'watch') return;
+    const raf = requestAnimationFrame(() => setActive(tab));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // 換好區之後：琥珀點停在那個分頁上（換區時它已經沿著弧滑過去了，這裡只是把位置定住），
+  // 正在等新的那一區排好的星塵可以散出去了
+  useLayoutEffect(() => {
+    const dot = dotRef.current;
+    const el = tabsRef.current[active];
+    if (dot && el) dot.style.transform = `translate(${el.offsetLeft - 12}px, 0)`;
+    laidOutRef.current?.();
+    laidOutRef.current = null;
+  }, [active]);
+
+  const go = (tab: Tab) => {
+    if (tab === active || busyRef.current) return;
+    // 換網址的 hash 但保留路由自己放在 history.state 裡的東西（上一頁、下一頁要靠它）
+    window.history.replaceState(window.history.state, '', `#${tab}`);
+    const stage = stageRef.current;
+    const cv = dustRef.current;
+    placeDot(tab, true);
+    if (!stage || !cv || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setActive(tab);
+      return;
+    }
+    busyRef.current = true;
+    stage.style.minHeight = `${stage.offsetHeight}px`;
+    const sources = [...stage.querySelectorAll<HTMLElement>('[data-piece]')].map((el) => el.getBoundingClientRect());
+    stage.classList.add('is-out');
+    const swap = () =>
+      new Promise<Target[]>((resolve) => {
+        laidOutRef.current = () => {
+          stage.classList.remove('is-out');
+          stage.classList.add('is-in');
+          resolve(
+            [...stage.querySelectorAll<HTMLElement>('[data-piece]')].map((el) => ({
+              rect: el.getBoundingClientRect(),
+              reveal: () => el.classList.add('is-lit-in'),
+            })),
+          );
+        };
+        setActive(tab);
+      });
+    void reform(cv, sources, dotCenter, swap).then(() => {
+      stage.classList.remove('is-in');
+      stage.querySelectorAll('.is-lit-in').forEach((el) => el.classList.remove('is-lit-in'));
+      stage.style.minHeight = '';
+      busyRef.current = false;
+    });
+  };
+
   return (
     <div className="cx">
       <header className="cx-head">
@@ -417,15 +517,31 @@ export default function Collection() {
           <span>Collection</span>
         </div>
         <p>{t('collection.subtitle')}</p>
-        <nav className="cx-jump" aria-label={t('collection.title')}>
-          <a href="#watch">{t('collection.watch.title')}</a>
-          <a href="#books">{t('collection.books.title')}</a>
-          <a href="#music">{t('collection.music.title')}</a>
-        </nav>
       </header>
-      <WatchBlock />
-      <BooksBlock />
-      <MusicBlock />
+      <div className="cx-switch">
+        <span className="cx-switch-dot" ref={dotRef} aria-hidden="true" />
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            ref={(el) => {
+              tabsRef.current[tab] = el;
+            }}
+            className={tab === active ? 'is-on' : undefined}
+            aria-pressed={tab === active}
+            onClick={() => go(tab)}
+          >
+            {t(`collection.${tab}.title`)}
+            <span>{LATIN[tab]}</span>
+          </button>
+        ))}
+      </div>
+      <div className="cx-stage" ref={stageRef}>
+        {active === 'watch' && <WatchBlock />}
+        {active === 'books' && <BooksBlock />}
+        {active === 'music' && <MusicBlock />}
+      </div>
+      <canvas className="cx-dust" ref={dustRef} aria-hidden="true" />
     </div>
   );
 }
