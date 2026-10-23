@@ -1,0 +1,152 @@
+/* 文章頁的軌道目錄（blog/OrbitToc）：軌道畫在固定於視窗的畫布上，章節名是疊在刻度旁邊的按鈕 */
+
+.ot {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+.ot.is-off {
+  display: none;
+}
+
+.ot-cv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ot-hd,
+.ot-ft,
+.ot-list li {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.ot-hd {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  white-space: nowrap;
+  color: var(--paper-3);
+}
+
+.ot-hd b {
+  font-weight: 400;
+  color: var(--amber);
+}
+
+.ot-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ot-list li {
+  pointer-events: auto;
+  transition: opacity var(--dur-300) ease;
+}
+
+:where(.ot) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.ot button:focus-visible {
+  outline: 1px solid var(--paper-2);
+  outline-offset: 3px;
+}
+
+.ot-list button {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  max-width: 100%;
+  font-size: var(--fs-13);
+  line-height: var(--lh-140);
+  color: var(--paper-3);
+  text-shadow: 0 0 8px var(--ground);
+  transition: color var(--dur-200) ease;
+}
+
+.ot-list .is-deep button {
+  font-size: var(--fs-12);
+}
+
+.ot-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ot-min {
+  flex: none;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+  opacity: 0;
+  transition: opacity var(--dur-200) ease;
+}
+
+.ot-list .is-past button {
+  color: var(--paper-2);
+}
+
+.ot-list .is-on button,
+.ot-list button:hover {
+  color: var(--paper);
+}
+
+.ot-list button:hover .ot-min {
+  opacity: 1;
+}
+
+/* 還沒開始讀：只有刻度，章節名等開始讀（或滑到目錄上）才浮出來 */
+.ot.is-rest .ot-list li {
+  opacity: 0;
+}
+
+.ot.is-rest:has(.ot-list:hover) .ot-list li,
+.ot.is-rest .ot-list li:focus-within {
+  opacity: 1;
+}
+
+/* 捲動中只留所在的那一節，停下來（或滑到目錄上）才回來 */
+.ot.is-quiet .ot-list li:not(.is-on) {
+  opacity: 0.15;
+}
+
+.ot.is-quiet:has(.ot-list:hover) .ot-list li {
+  opacity: 1;
+}
+
+.ot-ft button {
+  pointer-events: auto;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+  white-space: nowrap;
+  transition: color var(--dur-200) ease;
+}
+
+.ot-ft button:hover {
+  color: var(--paper);
+}
+
+/* 換頁的「收」：字先退掉，只剩軌道在動 */
+.ot.is-leaving .ot-hd,
+.ot.is-leaving .ot-ft,
+.ot.is-leaving .ot-list {
+  opacity: 0;
+  transition: opacity var(--dur-200) ease;
+}

@@ -5,7 +5,7 @@
 //   ‧ 它的協定走 structured clone，傳不了 WebGPURenderer 需要的 async factory
 //   ‧ handleProps 無 try/catch（init 失敗後任何 props 訊息都在 worker 內 uncaught throw）
 //   ‧ worker 內 shim self.document={} 干擾環境判定
-// 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse，錯誤一律回報主執行緒處理。
+// 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse / stars，錯誤一律回報主執行緒處理。
 // 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）。
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
 
@@ -45,7 +45,12 @@ interface CollapseMsg {
   type: 'collapse';
   index: number;
 }
-type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg | CollapseMsg;
+/** 星星淡出／淡回：頁面自己畫背景時讓出來（補放：init 前就到的話 ready 後照著設） */
+interface StarsMsg {
+  type: 'stars';
+  visible: boolean;
+}
+type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg | CollapseMsg | StarsMsg;
 
 let runner: StarfieldRunner | null = null;
 // init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
@@ -60,6 +65,7 @@ let lastSaturn: { visible: boolean; animate: boolean } | null = null;
 // 冷啟動第一次進文章頁按全螢幕正好落在這個窗口裡。
 let lastRunning: boolean | null = null;
 let lastGlow: number[] | null = null;
+let lastStars: boolean | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
@@ -83,6 +89,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         if (lastSaturn) runner.setSaturn(lastSaturn.visible, lastSaturn.animate);
         if (lastRunning !== null) runner.setRunning(lastRunning);
         if (lastGlow) runner.setSatelliteGlow(lastGlow);
+        if (lastStars !== null) runner.setStars(lastStars);
         self.postMessage({ type: 'ready', backend });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
@@ -99,6 +106,9 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'glow') {
     lastGlow = msg.glow;
     runner?.setSatelliteGlow(msg.glow);
+  } else if (msg.type === 'stars') {
+    lastStars = msg.visible;
+    runner?.setStars(msg.visible);
   } else if (msg.type === 'collapse') {
     runner?.collapseSaturnTo(msg.index);
     lastSaturn = { visible: true, animate: false };

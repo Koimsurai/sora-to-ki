@@ -64,6 +64,7 @@ export default function StarfieldGpu({
     saturn(v: boolean, a: boolean): void;
     glow(g: number[]): void;
     collapse(index: number): void;
+    stars(visible: boolean): void;
   } | null>(null);
 
   const liteRef = useRef(lite);
@@ -109,6 +110,15 @@ export default function StarfieldGpu({
   useEffect(() => subscribeSatelliteGlow((g) => controlRef.current?.glow(g)), [backend]);
   // 換頁轉場的「收」：首頁要離開時，土星整組收進點下去的那顆衛星
   useEffect(() => subscribeSaturnCollapse((i) => controlRef.current?.collapse(i)), []);
+  // 頁面自己畫背景時（hooks/useBareSky）星星淡出讓位。控制介面就緒（backend 變了）時補送一次
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => controlRef.current?.stars(root.dataset.sky !== 'bare');
+    sync();
+    const mo = new MutationObserver(sync);
+    mo.observe(root, { attributes: true, attributeFilter: ['data-sky'] });
+    return () => mo.disconnect();
+  }, [backend]);
 
   useEffect(
     () => () => {
@@ -200,6 +210,7 @@ export default function StarfieldGpu({
         saturn: (v, a) => worker.postMessage({ type: 'saturn', visible: v, animate: a }),
         glow: (g) => worker.postMessage({ type: 'glow', glow: g }),
         collapse: (index) => worker.postMessage({ type: 'collapse', index }),
+        stars: (visible) => worker.postMessage({ type: 'stars', visible }),
       };
       const onMsg = (
         e: MessageEvent<{
@@ -271,6 +282,7 @@ export default function StarfieldGpu({
           saturn: (v, a) => runner.setSaturn(v, a),
           glow: (g) => runner.setSatelliteGlow(g),
           collapse: (index) => runner.collapseSaturnTo(index),
+          stars: (visible) => runner.setStars(visible),
         };
         setBackend(`${be} · main`);
       } catch (err) {

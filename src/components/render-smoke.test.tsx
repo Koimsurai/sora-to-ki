@@ -27,6 +27,7 @@ import { renderWithProviders } from '@/test-utils/renderWithProviders';
  * props 給最小可渲染的一組就好，這支測的是「掛得起來」，不是行為。
  */
 const PROPS: Record<string, Record<string, unknown>> = {
+  'blog/OrbitToc.tsx': { postId: 1, headings: [], contentRef: { current: null } },
   'blog/ThoughtCard.tsx': {
     th: { id: 1, content: '測試碎念', created_at: '2026-01-01 00:00:00', likes: 0, dislikes: 0 },
   },

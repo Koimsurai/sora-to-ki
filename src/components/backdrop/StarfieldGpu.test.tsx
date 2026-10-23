@@ -19,6 +19,8 @@ function makeRunner() {
     setSaturn: vi.fn(),
     setRunning: vi.fn(),
     setSatelliteGlow: vi.fn(),
+    collapseSaturnTo: vi.fn(),
+    setStars: vi.fn(),
     dispose: vi.fn(),
   };
 }

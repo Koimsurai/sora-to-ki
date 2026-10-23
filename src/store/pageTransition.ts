@@ -21,6 +21,13 @@ export interface Departure {
   velocity?: Pt;
   /** 收完的時候。換頁會等它 */
   done: Promise<void>;
+  /** 收的時候那一點自己在動（例如手記的星軌被拉成文章的軌道，那顆星跟著移）：點跟著它畫 */
+  follow?: () => Pt;
+  /**
+   * 收完之後留在畫面上的線（例如被拉成文章軌道的那道星軌）：舊的一頁藏起來之後由轉場接著畫，
+   * 下一頁長出來時才淡掉——兩頁之間那條線不會斷一下
+   */
+  residue?: (ctx: CanvasRenderingContext2D) => void;
 }
 
 export interface LeaveContext {
@@ -28,6 +35,8 @@ export interface LeaveContext {
   from: Pt | null;
   /** 點下去的東西自己報的名字（例如首頁衛星的序號） */
   source: string | null;
+  /** 要去哪一頁（去掉語系前綴、不含開頭的 /，例如 'blog'、'blog/frigate'） */
+  to: string;
 }
 
 /** 點要怎麼落進這一頁 */

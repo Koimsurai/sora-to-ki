@@ -406,6 +406,12 @@
     }
   },
   "blog": {
+    "views": "{{count}} 次阅读",
+    "summary": "摘要",
+    "aiGen": "AI 生成",
+    "readDone": "读完了",
+    "minutesLeft": "剩 {{count}} 分",
+    "sameCategory": "同在「{{name}}」",
     "title": "手记",
     "subtitle": "转过的日子，写下来的才留成轨迹。",
     "all": "全部",

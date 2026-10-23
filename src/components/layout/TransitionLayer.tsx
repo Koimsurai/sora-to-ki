@@ -58,6 +58,10 @@ interface Flight {
 
 interface Run {
   phase: 'leave' | 'fly' | 'grow';
+  /** 收的時候點跟著頁面給的那一點走 */
+  follow: (() => Pt) | null;
+  /** 舊頁收完留下的線，飛的時候接著畫，長的時候淡掉 */
+  residue: ((ctx: CanvasRenderingContext2D) => void) | null;
   t0: number;
   from: Pt;
   pos: Pt;
@@ -165,18 +169,17 @@ export default function TransitionLayer() {
       const a = (e.target as Element | null)?.closest('a[href]');
       if (!a) return;
       const tagged = a.closest<HTMLElement>('[data-tx]');
+      // 連結自己報的名字（首頁衛星的序號、手記列表的 post:id），頁面的「收」照它決定怎麼收
+      const source = a.closest<HTMLElement>('[data-pt-source]')?.dataset.ptSource ?? null;
       if (tagged?.dataset.tx) {
-        markTransitionFrom(
-          { x: Number(tagged.dataset.tx), y: Number(tagged.dataset.ty ?? 0) },
-          tagged.dataset.ptSource ?? null,
-        );
+        markTransitionFrom({ x: Number(tagged.dataset.tx), y: Number(tagged.dataset.ty ?? 0) }, source);
       } else if (!a.closest('.main-content-container > main')) {
-        markTransitionFrom(null);
+        markTransitionFrom(null, source);
       } else if (e.detail > 0) {
-        markTransitionFrom({ x: e.clientX, y: e.clientY });
+        markTransitionFrom({ x: e.clientX, y: e.clientY }, source);
       } else {
         const r = a.getBoundingClientRect();
-        markTransitionFrom({ x: r.left, y: r.top + r.height / 2 });
+        markTransitionFrom({ x: r.left, y: r.top + r.height / 2 }, source);
       }
     };
     document.addEventListener('click', onClick, true);
@@ -261,7 +264,8 @@ export default function TransitionLayer() {
       for (let i = 1; i < points.length; i++)
         cum.push(cum[i - 1] + len({ x: points[i].x - points[i - 1].x, y: points[i].y - points[i - 1].y }));
       const total = Math.max(1, cum.at(-1) ?? 1);
-      const dur = clamp(total / SPEED, 360, 820);
+      // 點已經在錨點上了（手記的星軌直接被拉成文章的軌道）：不用飛，直接長
+      const dur = total < 6 ? 1 : clamp(total / SPEED, 360, 820);
       const c = clamp((len(r.vel) * dur) / total, 0, 2.2);
       r.flight = { points, cum, total, at: now, dur, a: c - 2, b: 3 - 2 * c, c };
       r.to = points.at(-1) ?? anchor;
@@ -277,8 +281,19 @@ export default function TransitionLayer() {
       // 收：頁面往那一點收，點在那裡亮起來
       if (r.phase === 'leave') {
         const k = easeOut(clamp((now - r.t0) / LEAVE_MS));
-        dot(r.from, 1 + 2 * k, k);
+        dot(r.follow?.() ?? r.from, 1 + 2 * k, k);
         return;
+      }
+
+      // 舊頁留下的線：飛的時候接著畫，長的時候跟著新的一頁淡掉
+      if (r.residue) {
+        const fadeOut = r.phase === 'grow' ? 1 - clamp((now - r.growAt) / GROW_MS) : 1;
+        if (fadeOut > 0) {
+          ctx.save();
+          ctx.globalAlpha = fadeOut;
+          r.residue(ctx);
+          ctx.restore();
+        }
       }
 
       if (r.phase === 'fly') {
@@ -360,10 +375,12 @@ export default function TransitionLayer() {
           .preloadRoute({ href: nextLocation.href } as Parameters<typeof router.preloadRoute>[0])
           .catch(() => undefined);
         const departure =
-          page.handle?.leave?.({ from: mark?.pt ?? null, source: mark?.source ?? null }) ??
+          page.handle?.leave?.({ from: mark?.pt ?? null, source: mark?.source ?? null, to: b }) ??
           defaultLeave(main, mark?.pt ?? page.handle?.anchor?.() ?? defaultAnchor(main));
         const r: Run = {
           phase: 'leave',
+          follow: departure.follow ?? null,
+          residue: departure.residue ?? null,
           t0: performance.now(),
           from: departure.point,
           pos: departure.point,

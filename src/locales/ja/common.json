@@ -406,6 +406,12 @@
     }
   },
   "blog": {
+    "views": "{{count}} 回閲覧",
+    "summary": "要約",
+    "aiGen": "AI 生成",
+    "readDone": "読了",
+    "minutesLeft": "残り {{count}} 分",
+    "sameCategory": "同じ「{{name}}」から",
     "title": "ノート",
     "subtitle": "過ぎていく日々のうち、書き留めたものだけが軌跡になる。",
     "all": "すべて",
