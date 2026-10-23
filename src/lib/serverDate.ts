@@ -17,3 +17,14 @@ export function parseServerDate(value: string): Date {
   const hasZone = value.includes('T') || value.includes('Z');
   return new Date(hasZone ? value : `${value}Z`);
 }
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * 全站的日期寫法：2026.07.19（不分語系）。版面放不下年份的地方（列表的左欄）用 short，
+ * 只寫 07.19，年份另外放
+ */
+export function dotDate(d: Date, short = false): string {
+  const md = `${pad2(d.getMonth() + 1)}.${pad2(d.getDate())}`;
+  return short ? md : `${d.getFullYear()}.${md}`;
+}

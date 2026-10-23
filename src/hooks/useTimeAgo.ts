@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { relativeTime, type RelativeTimeOptions } from '@/lib/relativeTime';
+import { dotDate } from '@/lib/serverDate';
 
 interface TimeAgoOptions extends RelativeTimeOptions {
-  /** 超過門檻改顯示日期時的格式；沒給就是該語系的預設（zh-TW 是 2026/10/21）。 */
+  /** 超過門檻改顯示日期時的格式；沒給就是全站的寫法 2026.10.21（lib/serverDate 的 dotDate）。 */
   dateFormat?: Intl.DateTimeFormatOptions;
 }
 
@@ -30,7 +31,7 @@ export function useTimeAgo() {
         case 'days':
           return t('common.daysAgo', { count: r.count });
         case 'absolute':
-          return r.date.toLocaleDateString(lang, dateFormat);
+          return dateFormat ? r.date.toLocaleDateString(lang, dateFormat) : dotDate(r.date);
       }
     },
     [t, lang],
