@@ -1,7 +1,8 @@
 // 站台的導覽列（2026-10 翻新）：一行字。左邊是名字，右邊五個分區，所在的那一區前面亮著一個琥珀點；
 // 滑過別的分區，點會滑過去。往下捲收成右上角一個點，往回捲或點那個點就展開。
 // 「更多」往下畫出其他頁，連同搜尋、語言、帳號。手機上只有名字與那個點，點開是整頁的目錄。
-// 首頁也只有名字與那個點：五顆衛星就是導覽（home/HomeOrbit），點開同樣是整頁的目錄。
+// 首頁平常只有名字與那個點：五顆衛星就是導覽（home/HomeOrbit）。點那個點，那一行字從點的位置
+// 往左展開；滑鼠離開、按 Esc 或點別處就收回去。其他頁收成點之後，點它也是同樣地展開。
 // 沒有背景色塊、沒有毛玻璃：只有往下漸淡的一層紙色，讓捲上來的內容不會撞到字。
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
@@ -30,12 +31,15 @@ export default function SiteNav() {
   const { user, isLoggedIn, isAdmin, logout, providers, getGitHubAuthUrl, getGoogleAuthUrl } = useAuth();
 
   const [slim, setSlim] = useState(false);
+  /** 收成點之後被點開了（首頁平常就是收著的） */
+  const [unfolded, setUnfolded] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const linksRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLSpanElement>(null);
   const headerRef = useRef<HTMLElement>(null);
 
+  const folded = (isHome || slim) && !unfolded && !moreOpen;
   const activeMain = MAIN.findIndex((it) => it.match(bare));
   const inMore = MORE.some((it) => it.match(bare));
   // 琥珀點停在所在的分區；在「更多」裡的頁面、或「更多」展開時，停在「更多」上；首頁沒有點
@@ -63,6 +67,7 @@ export default function SiteNav() {
     setSeenPath(pathname);
     setMoreOpen(false);
     setMenuOpen(false);
+    setUnfolded(false);
   }
 
   // 往下捲收成點、往回捲展開
@@ -73,6 +78,7 @@ export default function SiteNav() {
       if (y <= SLIM_AFTER) setSlim(false);
       else if (y > last + 6) {
         setSlim(true);
+        setUnfolded(false);
         setMoreOpen(false);
       } else if (y < last - 6) setSlim(false);
       last = y;
@@ -81,16 +87,19 @@ export default function SiteNav() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Esc 關掉；「更多」點外面也關掉
+  // Esc 關掉；點外面也關掉（「更多」與點開的那一行）
   useEffect(() => {
-    if (!moreOpen && !menuOpen) return;
+    if (!moreOpen && !menuOpen && !unfolded) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       setMoreOpen(false);
       setMenuOpen(false);
+      setUnfolded(false);
     };
     const onDown = (e: MouseEvent) => {
-      if (moreOpen && headerRef.current && !headerRef.current.contains(e.target as Node)) setMoreOpen(false);
+      if (headerRef.current?.contains(e.target as Node)) return;
+      setMoreOpen(false);
+      setUnfolded(false);
     };
     document.addEventListener('keydown', onKey);
     document.addEventListener('mousedown', onDown);
@@ -98,7 +107,17 @@ export default function SiteNav() {
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onDown);
     };
-  }, [moreOpen, menuOpen]);
+  }, [moreOpen, menuOpen, unfolded]);
+
+  // 點開的那一行：滑鼠離開導覽列一會兒就收回去（首頁的主角是土星，不要一直擋在那裡）
+  const leaveTimerRef = useRef(0);
+  const onNavEnter = () => window.clearTimeout(leaveTimerRef.current);
+  const onNavLeave = () => {
+    if (!unfolded || moreOpen) return;
+    window.clearTimeout(leaveTimerRef.current);
+    leaveTimerRef.current = window.setTimeout(() => setUnfolded(false), 1200);
+  };
+  useEffect(() => () => window.clearTimeout(leaveTimerRef.current), []);
 
   // 手機的整頁目錄開著時，底下的頁面不要跟著捲
   useEffect(() => {
@@ -181,7 +200,9 @@ export default function SiteNav() {
   return (
     <header
       ref={headerRef}
-      className={`snav${isHome ? ' is-home' : ''}${slim && !moreOpen ? ' is-slim' : ''}${moreOpen ? ' is-more' : ''}${menuOpen ? ' is-menu' : ''}`}
+      className={`snav${isHome ? ' is-home' : ''}${slim ? ' is-slim' : ''}${folded ? ' is-folded' : ''}${moreOpen ? ' is-more' : ''}${menuOpen ? ' is-menu' : ''}`}
+      onPointerEnter={onNavEnter}
+      onPointerLeave={onNavLeave}
     >
       <div className="snav-bar">
         <LocaleLink to="/" className="snav-name" aria-label={t('siteNav.home')}>
@@ -225,11 +246,11 @@ export default function SiteNav() {
           type="button"
           className="snav-pin"
           aria-label={t('siteNav.menu')}
-          aria-expanded={menuOpen}
+          aria-expanded={menuOpen || !folded}
           onClick={() => {
-            // 手機與首頁：開關整頁目錄；其他頁的桌機：收成點時點它就展開
-            if (isHome || window.matchMedia('(max-width: 768px)').matches) setMenuOpen((v) => !v);
-            else setSlim(false);
+            // 手機：開關整頁目錄；桌機：那一行字從點的位置展開
+            if (window.matchMedia('(max-width: 768px)').matches) setMenuOpen((v) => !v);
+            else setUnfolded(true);
           }}
         />
       </div>
