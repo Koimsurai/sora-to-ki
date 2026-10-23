@@ -6,12 +6,27 @@ import { useTranslation } from 'react-i18next';
 import { MILESTONE_BEATS_BY_LANG, MILESTONE_STATIC, MILESTONES_BY_LANG, YEAR_LABELS } from '@/data/journeyData';
 import { SKILLS, WORK_BY_LANG, WORK_PERIODS } from '@/data/aboutData';
 import { lookupOr } from '@/lib/tableLookup';
-import { createFallSky } from './fallSky';
+import { usePageTransition } from '@/hooks/usePageTransition';
+import { useBareSky } from '@/hooks/useBareSky';
+import { after, type Pt } from '@/store/pageTransition';
+import { createFallSky, meterMark, phases, smooth } from './fallSky';
 import './AboutFall.css';
 
 /** 每一年留哪一句（MILESTONE_BEATS_BY_LANG 裡的第幾個片段）：一年只說一句話 */
 const KEY_BEAT = [0, 2, 2, 2, 1, 0, 3, 2];
 const CHUTE_SRC = '/illustrations/reentry-parachute.webp';
+
+/** 句號拆出來：琥珀點就是它（「坐穩了。」「就此落下。」） */
+const splitStop = (s: string) => (/[。.]$/.test(s) ? [s.slice(0, -1), s.slice(-1)] : [s, '']);
+/** 句號在畫面上的位置：全形句號的點在字框的左下 */
+const stopPoint = (el: HTMLElement | null): Pt | null => {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (!r.width) return null;
+  const full = el.textContent === '。';
+  return { x: r.left + r.width * (full ? 0.3 : 0.5), y: r.top + r.height * (full ? 0.72 : 0.78) };
+};
+const mix = (a: Pt, b: Pt, k: number): Pt => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
 
 export default function AboutFall() {
   const { t, i18n } = useTranslation();
@@ -47,6 +62,26 @@ export default function AboutFall() {
   const coreRef = useRef<HTMLElement>(null);
   const labelsRef = useRef({ fall: '', dig: '' });
   labelsRef.current = { fall: t('aboutFall.fallMeter'), dig: t('aboutFall.digMeter') };
+  const titleStopRef = useRef<HTMLSpanElement>(null);
+  const landStopRef = useRef<HTMLSpanElement>(null);
+  /** 琥珀點現在在哪（轉場的「收」從這裡出發） */
+  const dotRef = useRef<Pt | null>(null);
+  const [title, titleStop] = splitStop(t('aboutFall.title'));
+  const [land, landStop] = splitStop(t('aboutFall.land'));
+
+  // 背景的星星讓位：這一頁的星都畫成下墜的參照
+  useBareSky();
+  usePageTransition({
+    // 點飛進來，停成「坐穩了。」的句號
+    anchor: () => stopPoint(titleStopRef.current),
+    // 收：字退掉，琥珀點帶著往下掉的速度離開
+    leave: () => {
+      const point = dotRef.current;
+      if (!point) return null;
+      pageRef.current?.classList.add('is-leaving');
+      return { point, velocity: { x: 0, y: 0.8 }, done: after(300) };
+    },
+  });
 
   useEffect(() => {
     const cv = canvasRef.current;
@@ -91,6 +126,24 @@ export default function AboutFall() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const pageTop = page.getBoundingClientRect().top + window.scrollY;
+      const state = {
+        w,
+        h,
+        top: window.scrollY - pageTop,
+        landTop: land.offsetTop,
+        layerTop: layer.offsetTop,
+        maxScroll: page.offsetHeight - h,
+      };
+      // 琥珀點：開頭是「坐穩了。」的句號；往下捲它就跟著你往下掉，落到右邊的高度計上；
+      // 著地時停成「就此落下。」的句號；往下挖時又回到高度計上
+      const meter = meterMark(state);
+      const { landK, dig } = phases(state);
+      const startDot = stopPoint(titleStopRef.current) ?? meter;
+      const landDot = stopPoint(landStopRef.current) ?? meter;
+      let dot = mix(startDot, meter, smooth(0, h * 0.4, state.top));
+      dot = mix(dot, landDot, smooth(0.55, 1, landK));
+      dot = mix(dot, meter, smooth(0, h * 0.35, dig));
+      dotRef.current = dot;
       sky.draw(ctx, {
         w,
         h,
@@ -105,6 +158,8 @@ export default function AboutFall() {
         maxScroll: page.offsetHeight - h,
         labels: labelsRef.current,
         mono,
+        // 轉場還藏著這一頁時，點由轉場畫
+        dot: root.dataset.pt === 'out' ? null : dot,
       });
     };
     raf = requestAnimationFrame(frame);
@@ -123,7 +178,12 @@ export default function AboutFall() {
           {t('aboutFall.kick')}
           <span>About</span>
         </p>
-        <h1>{t('aboutFall.title')}</h1>
+        <h1>
+          {title}
+          <span className="af-stop" ref={titleStopRef}>
+            {titleStop}
+          </span>
+        </h1>
         <p className="af-hint">{t('aboutFall.hint')}</p>
       </header>
 
@@ -140,7 +200,12 @@ export default function AboutFall() {
 
       <section className="af-land" ref={landRef}>
         <p>{t('aboutFall.landPre')}</p>
-        <h2>{t('aboutFall.land')}</h2>
+        <h2>
+          {land}
+          <span className="af-stop" ref={landStopRef}>
+            {landStop}
+          </span>
+        </h2>
         {now && (
           <p className="af-now">
             <span>Now</span>

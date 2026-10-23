@@ -17,6 +17,17 @@
 .af > :not(canvas) {
   position: relative;
   z-index: 1;
+  transition: opacity var(--dur-250) ease;
+}
+
+/* 換頁的「收」：字退掉，只剩琥珀點往下掉 */
+.af.is-leaving > :not(canvas) {
+  opacity: 0;
+}
+
+/* 句號的位置留著，點由畫布畫（琥珀點就是它） */
+.af-stop {
+  color: transparent;
 }
 
 /* 章節與地層靠左（右邊留給高度計），開頭、落地、地心三段置中 */
