@@ -17,6 +17,7 @@ const SpaceBackdropShell = lazy(() => {
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const ContextMenu = lazy(() => import('./ContextMenu'));
 const SerifFontLoader = lazy(() => import('./SerifFontLoader'));
+const TransitionLayer = lazy(() => import('./TransitionLayer'));
 
 // 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):導覽列 / Footer / 背景 / chrome 包住路由內容(children = <Outlet/>)。
 // admin 隱藏導覽列/Footer/CommandPalette;photos 隱藏 Footer。
@@ -80,6 +81,14 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
       >
         {!isAdminPage && <SiteNav />}
         <main style={{ flex: '1 0 auto' }}>{children}</main>
+        {/* 換頁轉場：在內容容器裡、導覽列底下（見 TransitionLayer.css）。後台不演 */}
+        {!isAdminPage && (
+          <ClientOnly fallback={null}>
+            <Suspense fallback={null}>
+              <TransitionLayer />
+            </Suspense>
+          </ClientOnly>
+        )}
         {!isAdminPage && !isPhotoPage && <Footer />}
         {!isAdminPage && (
           <ClientOnly fallback={null}>

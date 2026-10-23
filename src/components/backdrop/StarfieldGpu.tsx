@@ -16,6 +16,9 @@ const canOffscreen =
 /** 已經 transfer 給 worker 的 canvas（transferControlToOffscreen 一張只能做一次） */
 const transferred = new WeakSet<HTMLCanvasElement>();
 
+/** 離開首頁時土星收成一點要多久（runner 的縮放 lerp 大約這麼久收斂） */
+const SATURN_COLLAPSE_MS = 450;
+
 /** runner 還沒就緒時徽章顯示的字串，同時是 canvas 淡入的開關 */
 const BACKEND_PENDING = '初始化中…';
 
@@ -106,13 +109,35 @@ export default function StarfieldGpu({
     [],
   );
 
-  // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態
+  // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態。
+  // 離開首頁時土星不是直接消失，而是先收成一點（換頁轉場的「收」），收完才藏起來。
+  // 換進首頁時轉場還在收上一頁、點還在飛（html[data-pt="out"]），土星要等點落地才長
+  const wasHomeRef = useRef(isOnHomePage);
   useEffect(() => {
     const onScroll = () => controlRef.current?.scroll(window.scrollY);
     window.addEventListener('scroll', onScroll, { passive: true });
-    controlRef.current?.saturn(isOnHomePage, animateSaturn);
+    let timer = 0;
+    let waitArrival: MutationObserver | null = null;
+    const root = document.documentElement;
+    if (wasHomeRef.current && !isOnHomePage) {
+      controlRef.current?.saturn(true, false);
+      timer = window.setTimeout(() => controlRef.current?.saturn(false, false), SATURN_COLLAPSE_MS);
+    } else if (isOnHomePage && root.dataset.pt === 'out') {
+      controlRef.current?.saturn(true, false);
+      waitArrival = new MutationObserver(() => {
+        if (root.dataset.pt === 'out') return;
+        waitArrival?.disconnect();
+        controlRef.current?.saturn(true, animateSaturn);
+      });
+      waitArrival.observe(root, { attributes: true, attributeFilter: ['data-pt'] });
+    } else controlRef.current?.saturn(isOnHomePage, animateSaturn);
+    wasHomeRef.current = isOnHomePage;
     controlRef.current?.scroll(window.scrollY);
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.clearTimeout(timer);
+      waitArrival?.disconnect();
+    };
   }, [isOnHomePage, animateSaturn, backend]); // backend 變化 = runner 就緒的訊號，重新同步
 
   useEffect(() => {

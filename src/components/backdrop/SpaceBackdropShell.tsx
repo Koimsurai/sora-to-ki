@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isBotUserAgent } from '@/lib/bot';
@@ -9,6 +9,9 @@ import { stripLocalePrefix } from '@/i18n/start-i18n';
 // WebGPU 太空背景（星空+土星單 canvas，three/webgpu 獨立 lazy chunk，不進主 bundle）。
 // 2026-07-19 翻預設：取代舊 pmndrs 雙 canvas 棧（strangler 完成）。
 const LazyStarfieldGpu = lazy(() => import('./StarfieldGpu'));
+
+/** 手機離開首頁後 3D 再留多久才卸載（等土星收成一點） */
+const LINGER_MS = 600;
 
 // 3D 背景（星空＋首頁的土星與衛星）的掛載殼。
 // 整包只在 client 跑（AppShell 以 ClientOnly + lazy 掛載）→ three.js 永不進 SSR。
@@ -76,8 +79,22 @@ export default function SpaceBackdropShell() {
     };
   }, []);
 
+  // 手機離開首頁時 3D 要收掉，但先留一下，讓土星收成一點（換頁轉場的「收」）再卸載。
+  // 在 render 裡比對上一次是不是首頁，不必多一輪 effect
+  const [prevHome, setPrevHome] = useState(isOnHomePage);
+  const [lingering, setLingering] = useState(false);
+  if (prevHome !== isOnHomePage) {
+    setPrevHome(isOnHomePage);
+    setLingering(prevHome && isMobile);
+  }
+  useEffect(() => {
+    if (!lingering) return;
+    const timer = setTimeout(() => setLingering(false), LINGER_MS);
+    return () => clearTimeout(timer);
+  }, [lingering]);
+
   // 爬蟲完全不載 three。手機只在首頁載：首頁的五顆衛星在 3D 裡，其他頁用不到，離開首頁就收掉
-  if (isBot || (isMobile && !isOnHomePage)) return null;
+  if (isBot || (isMobile && !isOnHomePage && !lingering)) return null;
 
   return (
     <>
