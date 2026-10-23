@@ -30,6 +30,7 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
 import { createHyperspace, type Hyperspace } from './hyperspace';
 import { inspectWebGL } from './webglRenderer';
+import type { SatelliteScreen } from '@/store/homeOrbit';
 import { introFrame, phasesCrossed, phaseTimes, type IntroPhase } from './introTimeline';
 
 export const STAR_COUNT = 26000; // 14k 主層 + 12k 星系層（≈舊棧全部點數 27.1k；WebGPU 下加星幾乎免費）
@@ -58,6 +59,8 @@ export interface StarfieldRunner {
   setSaturn(visible: boolean, animate: boolean): void;
   /** 跳過開場。開場還沒開始的話就直接不播 */
   skipIntro(): void;
+  /** 首頁衛星的亮度（見 store/homeOrbit） */
+  setSatelliteGlow(glow: number[]): void;
   dispose(): void;
 }
 
@@ -94,6 +97,11 @@ export interface StarfieldInit {
    * 而主執行緒收到階段訊息的時間會被它自己的忙碌拖慢，從外面計時對不準。
    */
   introFreezeAt?: number;
+  /**
+   * 土星顯示時，每畫一幀回報一次衛星在畫面上的位置（首頁的字跟著它走，見 store/homeOrbit）。
+   * 土星收起來時送一次空陣列。
+   */
+  onSatellites?: (positions: SatelliteScreen[]) => void;
 }
 
 interface StarLayerCfg {
@@ -178,10 +186,16 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
 interface SaturnRig {
   group: THREE.Group;
   /**
-   * moving：還在追趕目標（intro 縮放或捲動旋轉的 lerp 沒收斂），這段時間不進閒置降幀。
+   * moving：還在追趕目標（intro 縮放、捲動旋轉、衛星的亮度沒收斂），這段時間不進閒置降幀。
    * zooming：intro 的放大還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
    */
   update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean };
+  /** 視窗的長寬比：窄的視窗要把整組縮小，最外圈的軌道才放得下 */
+  setAspect(aspect: number): void;
+  /** 每顆衛星該有多亮（0 到 1），實際亮度會慢慢靠過去 */
+  setGlow(glow: number[]): void;
+  /** 衛星在畫面上的位置（CSS 像素），首頁的字跟著它走 */
+  project(camera: THREE.Camera, width: number, height: number): SatelliteScreen[];
 }
 
 /**
@@ -211,18 +225,35 @@ const RINGS: [number, number][] = [
   [2.2, 0.16],
 ];
 
-/// 土星（2026-10 翻新的 C 畫法）：點的星球、線的環。
+/** 琥珀（--amber）：靠近的那顆衛星 */
+const AMBER = new THREE.Color('#e9c17a');
+/** 五顆衛星的軌道半徑（星球半徑是 1），由內到外對應首頁的五個分區（data/siteSections） */
+const ORBITS = [2.9, 3.55, 4.25, 4.95, 5.7];
+/**
+ * 整組的大小：鏡頭在 z=5、視角 75°，畫面半高是 3.84 個單位。0.63 讓星球半徑約是畫面高度的 8%，
+ * 最外圈軌道半徑 5.7 × 0.63 ≈ 3.6，寬螢幕放得下；窄的視窗照長寬比再縮
+ */
+const BASE_SCALE = 0.63;
+const fitScale = (aspect: number) => Math.min(BASE_SCALE, 0.6 * aspect);
+
+/// 土星（2026-10 翻新的 C 畫法）：點的星球、線的環，外面五條軌道各有一顆衛星。
 ///
 /// 星球是球面上均勻鋪開的點（費波那契球面），亮暗跟著太陽：迎光的那一面亮、背光的暗。
-/// 背面的點用一顆略小、跟紙同色的實心球擋掉——不然整顆球像透明的網子，而且球後面的星星
-/// 與環的背段也會透出來。環是幾圈 1px 的線（WebGPU 的線本來就只有 1px，剛好是要的樣子）。
+/// 背面的點用一顆略小、跟紙同色的實心球擋掉——不然整顆球像透明的網子，而且球後面的星星、
+/// 環與軌道的背段、轉到後面的衛星都會透出來。環與軌道是 1px 的線（WebGPU 的線本來就只有 1px，
+/// 剛好是要的樣子）。
 ///
-/// 自轉 0.05 rad/s + 捲動旋轉 scrollY*0.001（lerp 0.05）+ intro 縮放（lerp 0.08），跟舊的一樣。
+/// 只有星球繞自己的軸自轉（0.05 rad/s，捲動再多轉一點）；環與軌道的平面固定不動，
+/// 不然衛星的軌道會跟著晃。intro 時整組從極小放大（lerp 0.08）。
 function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   const group = new THREE.Group();
   group.rotation.z = Math.PI / 24;
+  // 星球的自轉軸要垂直於環的平面：環的平面是 xy 平面繞 x 轉 RING_TILT，所以軸也繞 x 轉同一個角度再加 90°
+  const axis = new THREE.Group();
+  axis.rotation.x = RING_TILT + Math.PI / 2;
   const body = new THREE.Group();
-  group.add(body);
+  axis.add(body);
+  group.add(axis);
 
   // 星球的點：位置就是單位球面上的方向，亮度用它跟太陽方向的夾角算
   const sunInPlanet = uniform(new THREE.Vector3());
@@ -259,53 +290,112 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   const dots = new THREE.Sprite(dotMat);
   dots.count = PLANET_POINTS;
 
-  // 擋背面的球：比點略小，畫成紙色。不透明物件先畫，點與環的背段被它的深度擋掉
+  // 擋背面的球：比點略小，畫成紙色。不透明物件先畫，點、環、軌道的背段與後面的衛星被它的深度擋掉
   const occluder = new THREE.Mesh(
     new THREE.SphereGeometry(0.985, 48, 32),
     new THREE.MeshBasicNodeMaterial({ color: GROUND }),
   );
   body.add(occluder, dots);
 
-  const ringHolder = new THREE.Group();
-  ringHolder.rotation.x = RING_TILT;
-  for (const [radius, alpha] of RINGS) {
-    // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
-    const pts = Array.from({ length: 257 }, (_, k) => {
+  // 環與軌道在同一個平面上，這個平面不轉
+  const plane = new THREE.Group();
+  plane.rotation.x = RING_TILT;
+  // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
+  const circle = (radius: number, opacity: number) => {
+    const material = new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
+    const points = Array.from({ length: 257 }, (_, k) => {
       const a = (k / 256) * Math.PI * 2;
       return new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0);
     });
-    const ring = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity: alpha, depthWrite: false }),
-    );
-    ringHolder.add(ring);
-  }
-  group.add(ringHolder);
+    plane.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
+    return material;
+  };
+  for (const [radius, alpha] of RINGS) circle(radius, alpha);
+
+  // 軌道與衛星。衛星是一個實心的小點，亮起來時變琥珀色、外面多一圈光暈
+  const ORBIT_DIM = 0.09;
+  const orbits = ORBITS.map((r) => circle(r, ORBIT_DIM));
+  const glowTarget = ORBITS.map(() => 0);
+  const satellites = ORBITS.map((r, i) => {
+    const g = uniform(0);
+    const mat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
+    const d = uv().sub(0.5).length().mul(2.0);
+    const core = smoothstep(g.mul(0.1).add(0.26), g.mul(0.1).add(0.16), d);
+    const halo = float(1).sub(d).max(0).pow(2).mul(g).mul(0.55);
+    mat.colorNode = mix(vec3(INK.r, INK.g, INK.b), vec3(AMBER.r, AMBER.g, AMBER.b), g);
+    mat.opacityNode = core.mul(mix(float(0.75), float(1), g)).max(halo);
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.setScalar(0.24);
+    plane.add(sprite);
+    // 起始角度錯開，越外圈轉得越慢（克卜勒的味道就好，不必真的照比例）
+    return { sprite, g, r, phase: 0.7 + i * 1.37 };
+  });
+  group.add(plane);
 
   const syncSun = () => {
     group.updateWorldMatrix(true, true);
     body.worldToLocal(sunInPlanet.value.copy(sunWorld));
   };
 
+  let clock = 0;
   let autoRot = 0;
   // 捲動帶動的旋轉單獨 lerp：自轉是等速的，不需要 lerp；放進同一個 lerp 的話目標每幀都在前進，
   // lerp 永遠收斂不了，「還在動」就永遠是真的——閒置降幀因此一直沒生效（實測卡在 60fps）。
   let currentScrollRot = 0;
   let currentScale = 0.0001;
+  let fullScale = BASE_SCALE;
+  const v = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  const edge = new THREE.Vector3();
   return {
     group,
     update(dt, scrollY, animate) {
+      clock += dt;
       autoRot += 0.05 * dt;
       const targetScrollRot = scrollY * 0.001;
       currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, lerpFactor(0.05, dt));
-      group.rotation.y = currentScrollRot + autoRot;
+      body.rotation.y = currentScrollRot + autoRot;
       // intro 縮放：未 animate 用極小 epsilon（非 0）讓管線先編譯好，explosion 時只是放大
-      const targetScale = animate ? 1 : 0.0001;
+      const targetScale = animate ? fullScale : 0.0001;
       currentScale = THREE.MathUtils.lerp(currentScale, targetScale, lerpFactor(0.08, dt));
       group.scale.setScalar(currentScale);
+      let glowing = false;
+      for (const [i, s] of satellites.entries()) {
+        const a = s.phase + clock * (0.16 / Math.sqrt(s.r));
+        s.sprite.position.set(Math.cos(a) * s.r, Math.sin(a) * s.r, 0);
+        const target = glowTarget[i] ?? 0;
+        s.g.value += (target - s.g.value) * Math.min(1, dt * 8);
+        if (Math.abs(target - s.g.value) > 0.01) glowing = true;
+        orbits[i].opacity = ORBIT_DIM + s.g.value * 0.32;
+      }
       syncSun();
-      const zooming = Math.abs(targetScale - currentScale) > 0.005;
-      return { moving: zooming || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
+      const zooming = Math.abs(targetScale - currentScale) > 0.005 * fullScale;
+      return { moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
+    },
+    setAspect(aspect) {
+      fullScale = fitScale(aspect);
+    },
+    setGlow(glow) {
+      for (let i = 0; i < glowTarget.length; i++) glowTarget[i] = glow[i] ?? 0;
+    },
+    project(camera, width, height) {
+      const toScreen = (p: THREE.Vector3) => {
+        p.project(camera);
+        return [((p.x + 1) / 2) * width, ((1 - p.y) / 2) * height] as const;
+      };
+      group.getWorldPosition(center);
+      const camDist = camera.position.distanceTo(center);
+      // 星球在畫面上的半徑：中心與往上一個星球半徑的那一點，投影後的距離
+      edge.copy(center).add(new THREE.Vector3(0, currentScale, 0));
+      const [ex, ey] = toScreen(edge);
+      const [cx, cy] = toScreen(center.clone());
+      const radius = Math.hypot(ex - cx, ey - cy);
+      return satellites.map((s) => {
+        s.sprite.getWorldPosition(v);
+        const behind = camera.position.distanceTo(v) > camDist;
+        const [x, y] = toScreen(v);
+        return { x, y, hidden: currentScale < 0.05 * fullScale || (behind && Math.hypot(x - cx, y - cy) < radius) };
+      });
     },
   };
 }
@@ -376,6 +466,9 @@ export async function createStarfieldRunner(
 
   // 土星：點與線，不需要貼圖
   const saturn = buildSaturn(sun.position);
+  saturn.setAspect(init.width / init.height);
+  let viewW = init.width;
+  let viewH = init.height;
   let saturnVisible = false;
   let saturnAnimate = true;
   let scrollY = 0;
@@ -532,6 +625,7 @@ export async function createStarfieldRunner(
       const s = saturn.update(delta, scrollY, saturnAnimate && introAllowsZoom);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
+      init.onSatellites?.(saturn.project(camera, viewW, viewH));
     }
     if (stagePipeline && !sceneShown) stagePipeline.render();
     else if (introPipeline) introPipeline.render();
@@ -584,6 +678,9 @@ export async function createStarfieldRunner(
     runner: {
       setSize(width, height) {
         markActive();
+        viewW = width;
+        viewH = height;
+        saturn.setAspect(width / height);
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
         renderer.setSize(width, height, false);
@@ -595,10 +692,15 @@ export async function createStarfieldRunner(
       },
       setSaturn(visible, animate) {
         markActive();
+        if (saturnVisible && !visible) init.onSatellites?.([]);
         saturnVisible = visible;
         saturnAnimate = animate;
         // 最低品質下即使呼叫顯示也不開（土星最貴）
         saturn.group.visible = visible && quality < 2;
+      },
+      setSatelliteGlow(glow) {
+        markActive();
+        saturn.setGlow(glow);
       },
       setRunning(running) {
         if (running) {

@@ -1,6 +1,7 @@
 // 站台的導覽列（2026-10 翻新）：一行字。左邊是名字，右邊五個分區，所在的那一區前面亮著一個琥珀點；
 // 滑過別的分區，點會滑過去。往下捲收成右上角一個點，往回捲或點那個點就展開。
 // 「更多」往下畫出其他頁，連同搜尋、語言、帳號。手機上只有名字與那個點，點開是整頁的目錄。
+// 首頁也只有名字與那個點：五顆衛星就是導覽（home/HomeOrbit），點開同樣是整頁的目錄。
 // 沒有背景色塊、沒有毛玻璃：只有往下漸淡的一層紙色，讓捲上來的內容不會撞到字。
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
@@ -10,38 +11,12 @@ import { LOCALE_LABELS, stripLocalePrefix } from '@/i18n/start-i18n';
 import { SUPPORTED_LOCALES, LOCALE_PREFIX, type Locale } from '@/lib/locales';
 import { useAuth } from '@/contexts/auth';
 import { openCommandPalette } from '@/store/commandPaletteStore';
+import { MAIN_SECTIONS, MORE_SECTIONS, type SiteSection } from '@/data/siteSections';
 import './SiteNav.css';
 
-interface Item {
-  key: string;
-  to: string;
-  caps: string;
-  /** 去掉語系前綴、沒有開頭斜線的路徑，屬於這一區就回 true */
-  match: (bare: string) => boolean;
-}
-
-const under =
-  (...roots: string[]) =>
-  (bare: string) =>
-    roots.some((r) => bare === r || bare.startsWith(`${r}/`));
-
-const MAIN: Item[] = [
-  { key: 'notes', to: '/blog', caps: 'NOTES', match: under('blog') },
-  { key: 'moments', to: '/thinking', caps: 'MOMENTS', match: under('thinking') },
-  { key: 'works', to: '/portfolio', caps: 'WORK', match: under('portfolio') },
-  // 收藏頁（在看、書櫃、在聽合成一頁）做好之前先指到在看
-  { key: 'collection', to: '/watch', caps: 'COLLECTION', match: under('watch', 'bookshelf', 'music') },
-  { key: 'about', to: '/about', caps: 'ABOUT', match: under('about') },
-];
-
-const MORE: Item[] = [
-  { key: 'photos', to: '/photos', caps: 'PHOTOS', match: under('photos') },
-  { key: 'setup', to: '/setup', caps: 'SETUP', match: under('setup') },
-  { key: 'friends', to: '/friends', caps: 'FRIENDS', match: under('friends') },
-  { key: 'messages', to: '/messages', caps: 'MESSAGES', match: under('messages') },
-  { key: 'log', to: '/history', caps: 'LOG', match: under('history', 'activity') },
-  { key: 'colophon', to: '/about-site', caps: 'COLOPHON', match: under('about-site') },
-];
+const MAIN = MAIN_SECTIONS;
+const MORE = MORE_SECTIONS;
+type Item = SiteSection;
 
 /** 往下捲超過這個距離才收成點；回到這個距離以內一定展開 */
 const SLIM_AFTER = 80;
@@ -50,6 +25,7 @@ export default function SiteNav() {
   const { t, i18n } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const bare = stripLocalePrefix(pathname);
+  const isHome = bare === '';
   const navigate = useNavigate();
   const { user, isLoggedIn, isAdmin, logout, providers, getGitHubAuthUrl, getGoogleAuthUrl } = useAuth();
 
@@ -205,7 +181,7 @@ export default function SiteNav() {
   return (
     <header
       ref={headerRef}
-      className={`snav${slim && !moreOpen ? ' is-slim' : ''}${moreOpen ? ' is-more' : ''}${menuOpen ? ' is-menu' : ''}`}
+      className={`snav${isHome ? ' is-home' : ''}${slim && !moreOpen ? ' is-slim' : ''}${moreOpen ? ' is-more' : ''}${menuOpen ? ' is-menu' : ''}`}
     >
       <div className="snav-bar">
         <LocaleLink to="/" className="snav-name" aria-label={t('siteNav.home')}>
@@ -251,8 +227,8 @@ export default function SiteNav() {
           aria-label={t('siteNav.menu')}
           aria-expanded={menuOpen}
           onClick={() => {
-            // 桌機：收成點時點它就展開；手機：開關整頁目錄
-            if (window.matchMedia('(max-width: 768px)').matches) setMenuOpen((v) => !v);
+            // 手機與首頁：開關整頁目錄；其他頁的桌機：收成點時點它就展開
+            if (isHome || window.matchMedia('(max-width: 768px)').matches) setMenuOpen((v) => !v);
             else setSlim(false);
           }}
         />

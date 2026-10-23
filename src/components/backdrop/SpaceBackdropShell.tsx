@@ -5,7 +5,6 @@ import { isBotUserAgent } from '@/lib/bot';
 import type { IntroPhase } from '@/lib/introTimeline';
 import IntroSkip from './IntroSkip';
 import BackdropErrorBoundary from './BackdropErrorBoundary';
-import DomSpaceEffects from './DomSpaceEffects';
 import { useHardwareGpu } from '@/hooks/useHardwareGpu';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 
@@ -33,15 +32,14 @@ export default function SpaceBackdropShell() {
   const isBot = useMemo(() => typeof navigator !== 'undefined' && isBotUserAgent(navigator.userAgent), []);
   // 3D pre-flight：有硬體加速的 WebGL 才掛 3D（renderer 首選 WebGPU，WebGL2 是它的 fallback
   // backend）。拿不到 context（Chromium 137 移除 SwiftShader 後加速全壞的機器）→ 不下載 three chunk，
-  // 降級純 DOM 特效。
+  // 只留 CSS 星空。
   //
   // 另一種必須擋掉的情況：使用者在瀏覽器設定關掉硬體加速。此時 WebGL context 建得起來（跑
   // SwiftShader）、navigator.gpu 也還在，結果 3D 用 CPU 光柵化整站卡死——降低星星數量救不了，
-  // 得完全不掛 3D。偵測到軟體渲染就直接走 DOM 特效（WebGPU 的 Dawn 在這種機器上同樣只會拿到
+  // 得完全不掛 3D。偵測到軟體渲染就只留 CSS 星空（WebGPU 的 Dawn 在這種機器上同樣只會拿到
   // SwiftShader/WARP，所以一個檢查擋兩條路）。
   //
-  // 探測是非同步的（在 worker 裡做，理由見 lib/webglSupport.ts），結果出來前 DOM 特效先不掛；
-  // 3D 不等它（見下面掛載處）。
+  // 探測是非同步的（在 worker 裡做，理由見 lib/webglSupport.ts），3D 不等它（見下面掛載處）。
   // runtime 才炸的殘餘情況由 ErrorBoundary + worker error 通道接。
   const hardwareGpu = useHardwareGpu();
   const softwareGpu = hardwareGpu === false;
@@ -73,8 +71,8 @@ export default function SpaceBackdropShell() {
   //
   // 用 class 而不是卸載元件：卸載就得重掛，WebGPU context 重建是另一個會壞的地方，
   // 而且退出全螢幕時會看到星空重新淡入。掛 class 只是讓它們停下來，元件狀態原封不動。
-  // 兩個 JS 迴圈（StarfieldGpu 的 worker、CursorTrail 的 rAF）各自也讀這個狀態暫停，
-  // 因為 `display:none` 擋得住合成、擋不住它們繼續送 GPU 指令。
+  // StarfieldGpu 的 worker 也讀這個狀態暫停，因為 `display:none` 擋得住合成、擋不住它繼續送 GPU 指令。
+  // （當時一起搶 GPU 的游標尾巴與流星、UFO 已在 2026-10 翻新時拿掉。）
   useEffect(() => {
     const onFs = () => {
       document.documentElement.classList.toggle('fs-active', document.fullscreenElement !== null);
@@ -159,7 +157,7 @@ export default function SpaceBackdropShell() {
         <IntroSkip ending={intro === 'ending'} onSkip={() => setSkip(true)} />
       )}
       {/* 3D 背景（WebGPU/WebGL2 自動選 backend）。runtime 才炸由 ErrorBoundary 接；
-          worker 內失敗則 StarfieldGpu 自行歸 null——兩種情況 DOM 特效都還在（下方獨立掛載）。
+          worker 內失敗則 StarfieldGpu 自行歸 null，頁面留下黑紙與 CSS 星空。
           開場期間整張 canvas 在開場層的高度（蓋住內容），結束後回到內容底下。
           要播開場時不等探測：開場要等 3D 管線全部編譯完才開始，跟探測同時進行才不會多等一輪。
           沒有硬體加速的機器由 runner 自己在編譯前查出來退出（見 lib/starfieldGpu.ts 的
@@ -179,14 +177,6 @@ export default function SpaceBackdropShell() {
             />
           </Suspense>
         </BackdropErrorBoundary>
-      )}
-      {/* DOM 特效（流星/UFO/游標尾跡，非 WebGL）：無論 3D 成敗都掛，頁面永遠有生命感。
-          例外是「使用者關掉硬體加速」：整站合成、backdrop-filter、上百個 infinite 動畫全落在
-          CPU，連純 DOM 特效都會拖垮捲動——這種機器只留靜態背景。 */}
-      {/* 開場期間它們被開場層整個蓋住，但第一次掛上要光柵化四十幾個圖層——掛在開場第一幀
-          （星芒還幾乎沒動），不要等到 pre-reveal 全速那時才掛，那會頓一幀。 */}
-      {(intro !== 'waiting' || !introActive) && hardwareGpu === true && (
-        <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />
       )}
     </>
   );

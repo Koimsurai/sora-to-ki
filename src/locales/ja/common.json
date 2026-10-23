@@ -200,6 +200,15 @@
       "like": "あしあとを残す",
       "star": "GitHub でスターする",
       "likeAria": "このサイトにあしあとを残す"
+    },
+    "orbit": {
+      "title": "Koimsurai の個人サイト：ノート、つぶやき、作品、コレクション",
+      "notesCount": "{{count}} 本 · 最新 {{date}}",
+      "momentsCount": "最新 {{date}}",
+      "worksCount": "{{count}} 件",
+      "collectionLine": "アニメ {{anime}} 本、映画 {{films}} 本、ドラマ {{series}} 本を視聴",
+      "aboutLine": "2004 年から今まで落ちてきた",
+      "aboutCount": "2004 –"
     }
   },
   "comments": {

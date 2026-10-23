@@ -200,6 +200,15 @@
       "like": "흔적 남기기",
       "star": "GitHub 스타 주기",
       "likeAria": "이 사이트에 흔적 남기기"
+    },
+    "orbit": {
+      "title": "Koimsurai의 개인 사이트: 노트, 혼잣말, 작품, 컬렉션",
+      "notesCount": "{{count}}편 · 최근 {{date}}",
+      "momentsCount": "최근 {{date}}",
+      "worksCount": "{{count}}개",
+      "collectionLine": "애니메이션 {{anime}}편, 영화 {{films}}편, 시리즈 {{series}}편 시청",
+      "aboutLine": "2004년부터 지금까지 떨어져 온 길",
+      "aboutCount": "2004 –"
     }
   },
   "comments": {

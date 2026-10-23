@@ -19,6 +19,7 @@ function makeRunner() {
     setSaturn: vi.fn(),
     setRunning: vi.fn(),
     skipIntro: vi.fn(),
+    setSatelliteGlow: vi.fn(),
     dispose: vi.fn(),
   };
 }
@@ -118,7 +119,7 @@ describe('主執行緒路徑的 device lost 重建', () => {
     await loseDevice(); // 第 4 次：放棄
 
     expect(runners).toHaveLength(4); // 沒有再建
-    expect(canvases()).toHaveLength(0); // 元件回傳 null，由 DOM 特效兜底
+    expect(canvases()).toHaveLength(0); // 元件回傳 null，頁面留下 CSS 星空
   });
 
   // 分頁在背景時 GPU 資源正是被回收的當下，這時重建八成又立刻掉一次——

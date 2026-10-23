@@ -274,11 +274,135 @@
   color: var(--paper-2);
 }
 
-/* ── 手機：名字＋一個點，點開是整頁的目錄 ── */
+/* ── 整頁目錄：手機一直用它，桌機只有首頁用（首頁沒有那一行字，五顆衛星就是導覽） ── */
 .snav-menu {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  align-content: start;
+  padding: var(--space-20) var(--space-6) var(--space-6);
+  overflow-y: auto;
+  background: var(--ground);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-300) ease;
+}
+
+.snav.is-menu .snav-menu {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.snav-menu-main a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px dotted var(--rule);
+  font-size: var(--fs-22);
+  font-weight: 600;
+  color: var(--paper);
+  opacity: 0;
+  translate: 0 8px;
+  transition:
+    opacity var(--dur-300) ease,
+    translate var(--dur-400) var(--easing-out);
+}
+
+.snav-menu-main a.is-on::before {
+  content: "";
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  margin-right: var(--space-3);
+  border-radius: var(--r-full);
+  background: var(--amber);
+}
+
+.snav-menu-main a.is-on {
+  justify-content: flex-start;
+}
+
+.snav-menu-main a.is-on span {
+  margin-left: auto;
+}
+
+.snav.is-menu .snav-menu-main a {
+  opacity: 1;
+  translate: 0 0;
+}
+.snav-menu-main a:nth-child(2) {
+  --i: 1;
+}
+.snav-menu-main a:nth-child(3) {
+  --i: 2;
+}
+.snav-menu-main a:nth-child(4) {
+  --i: 3;
+}
+.snav-menu-main a:nth-child(5) {
+  --i: 4;
+}
+.snav.is-menu .snav-menu-main a {
+  transition-delay: calc(var(--i, 0) * var(--dur-100) / 2);
+}
+
+.snav-menu-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-6);
+  font-size: var(--fs-13);
+}
+
+.snav-menu-more a {
+  color: var(--paper-2);
+}
+
+.snav-menu-more a.is-on {
+  color: var(--paper);
+}
+
+.snav-menu .snav-util {
+  justify-content: flex-start;
+  margin: var(--space-8) 0 0;
+}
+
+.snav-menu-main,
+.snav-menu-more,
+.snav-menu .snav-util {
+  width: 100%;
+  max-width: 560px;
+}
+
+@media (min-width: 769px) {
+  .snav:not(.is-home) .snav-menu {
+    display: none;
+  }
+
+  .snav-menu {
+    justify-items: center;
+    padding-top: var(--space-24);
+  }
+}
+
+/* ── 首頁：只有名字與那個點，不鋪那層漸淡的紙色 ── */
+.snav.is-home .snav-bar {
+  background: none;
+}
+
+.snav.is-home .snav-row,
+.snav.is-home .snav-more {
   display: none;
 }
 
+.snav.is-home .snav-pin {
+  scale: 1;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── 手機：名字＋一個點 ── */
 @media (max-width: 768px) {
   .snav-bar {
     height: 56px;
@@ -299,99 +423,6 @@
     scale: 1;
     opacity: 1;
     pointer-events: auto;
-  }
-
-  .snav-menu {
-    position: fixed;
-    inset: 0;
-    display: grid;
-    align-content: start;
-    padding: var(--space-20) var(--space-6) var(--space-6);
-    overflow-y: auto;
-    background: var(--ground);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--dur-300) ease;
-  }
-
-  .snav.is-menu .snav-menu {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .snav-menu-main a {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding: var(--space-3) 0;
-    border-bottom: 1px dotted var(--rule);
-    font-size: var(--fs-22);
-    font-weight: 600;
-    color: var(--paper);
-    opacity: 0;
-    translate: 0 8px;
-    transition:
-      opacity var(--dur-300) ease,
-      translate var(--dur-400) var(--easing-out);
-  }
-
-  .snav-menu-main a.is-on::before {
-    content: "";
-    align-self: center;
-    width: 6px;
-    height: 6px;
-    margin-right: var(--space-3);
-    border-radius: var(--r-full);
-    background: var(--amber);
-  }
-
-  .snav-menu-main a.is-on {
-    justify-content: flex-start;
-  }
-
-  .snav-menu-main a.is-on span {
-    margin-left: auto;
-  }
-
-  .snav.is-menu .snav-menu-main a {
-    opacity: 1;
-    translate: 0 0;
-  }
-  .snav-menu-main a:nth-child(2) {
-    --i: 1;
-  }
-  .snav-menu-main a:nth-child(3) {
-    --i: 2;
-  }
-  .snav-menu-main a:nth-child(4) {
-    --i: 3;
-  }
-  .snav-menu-main a:nth-child(5) {
-    --i: 4;
-  }
-  .snav.is-menu .snav-menu-main a {
-    transition-delay: calc(var(--i, 0) * var(--dur-100) / 2);
-  }
-
-  .snav-menu-more {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    margin-top: var(--space-6);
-    font-size: var(--fs-13);
-  }
-
-  .snav-menu-more a {
-    color: var(--paper-2);
-  }
-
-  .snav-menu-more a.is-on {
-    color: var(--paper);
-  }
-
-  .snav-menu .snav-util {
-    justify-content: flex-start;
-    margin: var(--space-8) 0 0;
   }
 }
 
