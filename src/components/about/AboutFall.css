@@ -120,6 +120,52 @@
   line-height: var(--lh-170);
 }
 
+/* 每一年的排法輪著換（AboutFall 的 LAYOUTS） */
+.af-ch--right {
+  margin-left: auto;
+  text-align: right;
+}
+
+.af-ch--wide {
+  position: relative;
+  max-width: 640px;
+  min-height: 80vh;
+  margin-left: max(56px, calc(50% - 320px));
+}
+
+.af-ch--wide .af-year {
+  position: absolute;
+  top: 50%;
+  left: -0.06em;
+  font-size: clamp(96px, 14vw, 180px);
+  line-height: var(--lh-100);
+  color: var(--paper-3);
+  translate: 0 -62%;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.af-ch--wide :is(.af-title, .af-sub, .af-beat) {
+  position: relative;
+}
+
+.af-ch--split {
+  grid-template-columns: 220px minmax(0, 1fr);
+  column-gap: var(--space-8);
+  align-content: center;
+  max-width: 760px;
+  min-height: 60vh;
+}
+
+.af-ch--split .af-year {
+  grid-row: 1 / span 3;
+  align-self: start;
+}
+
+.af-ch--split .af-title {
+  margin-top: 0;
+}
+
 /* ── 落地 ── */
 .af-land {
   display: grid;
@@ -269,6 +315,18 @@
 
   .af-year {
     font-size: var(--fs-48);
+  }
+
+  .af-ch--split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .af-ch--split .af-year {
+    grid-row: auto;
+  }
+
+  .af-ch--wide {
+    margin-left: var(--space-5);
   }
 
   .af-land h2 {
