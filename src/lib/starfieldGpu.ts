@@ -72,6 +72,8 @@ export interface StarfieldRunner {
   collapseSaturnTo(index: number): void;
   /** 星星淡出／淡回（頁面自己畫背景的時候讓出來） */
   setStars(visible: boolean): void;
+  /** 換頁的鏡頭移動：星空要在畫面上挪多少（累積的像素），換成星空鏡頭轉的角度 */
+  setPan(x: number, y: number): void;
   dispose(): void;
 }
 
@@ -843,6 +845,12 @@ export async function createStarfieldRunner(
         markActive();
         starsOn = visible;
         darkDrawn = false;
+      },
+      setPan(x, y) {
+        // 一個像素是多少弧度：鏡頭的垂直視角攤在畫面高度上。星在球面上，怎麼轉都不會露出邊
+        const k = (camera.fov * Math.PI) / 180 / Math.max(1, viewH);
+        camera.rotation.set(y * k, x * k, 0);
+        markActive();
       },
       collapseSaturnTo(index) {
         markActive();

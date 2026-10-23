@@ -43,6 +43,10 @@ const ZOOM_MS = 900;
 /** 去別頁時整片縮回去的時間 */
 const RETRACT_MS = 380;
 /** 飛進來的那條線落地後淡掉的時間 */
+/** 點沿著星軌在畫面裡走多遠（弧度）；在那之前、畫面外還有多長一段是鏡頭跟著它繞的 */
+const ARC_RUN = (150 * Math.PI) / 180;
+const ARC_LEAD = (110 * Math.PI) / 180;
+const LEAD_STEPS = 44;
 /** 點沿著哪一道星軌飛進來（或從文章頁回到哪一篇），那一道亮多久才退回一般的亮度 */
 const KEEP_GLOW_MS = 2400;
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -134,14 +138,14 @@ function Notes() {
       // 點切進一道星軌、沿著它繞天極走一大段，停在那篇文章的那顆星上：它就是一顆在走的星。
       // 挑法：那顆星看得到、往回沿著圓在畫面裡走得夠遠，而且切進去的方向跟點飛來的方向順
       const speed = Math.hypot(vel.x, vel.y);
-      let best: { score: number; run: Pt[]; i: number } | null = null;
+      let best: { score: number; run: Pt[]; i: number; a: number; arc: ReturnType<typeof arcOf> } | null = null;
       for (let i = 0; i < skyRef.current.length; i++) {
         const arc = arcOf(i);
         if (!on(arcPoint(arc, arc.a1))) continue;
         const run: Pt[] = [];
         // 從那顆星往回走，最多繞 150°，出了畫面就停
         for (let k = 0; k <= 60; k++) {
-          const q = arcPoint(arc, arc.a1 - (k / 60) * ((150 * Math.PI) / 180));
+          const q = arcPoint(arc, arc.a1 - (k / 60) * ARC_RUN);
           if (!on(q)) break;
           run.unshift(q);
         }
@@ -157,11 +161,16 @@ function Notes() {
         const along = (gx * tx + gy * ty) / (gl * tl);
         const ahead = speed > 0.05 ? (gx * vel.x + gy * vel.y) / (gl * speed) : 0;
         const score = run.length / 60 + along * 0.6 + ahead * 0.3 - i * 0.02;
-        if (!best || score > best.score) best = { score, run, i };
+        if (!best || score > best.score) best = { score, run, i, a: arc.a1 - ((run.length - 1) / 60) * ARC_RUN, arc };
       }
       // 那一道一開始就是滿的、亮著：點的彗尾散掉之後，留下的就是它
       arrivedRef.current = best?.i ?? -1;
-      return best ? { approach: best.run } : null;
+      if (!best) return null;
+      // 往回再延伸一大段（在畫面外）：點是繞著天極飛進來的，鏡頭跟著它繞，進來的路就是一道弧
+      const { arc, a } = best;
+      const lead: Pt[] = [];
+      for (let k = LEAD_STEPS; k >= 1; k--) lead.push(arcPoint(arc, a - (k / LEAD_STEPS) * ARC_LEAD));
+      return { approach: [...lead, ...best.run], join: lead.length };
     },
     // 收：點進一篇文章時，那一篇的星軌被拉成文章頁右邊的軌道（lib/articleOrbit），它的那顆星變成
     // 讀者的琥珀點；去別的地方時整片縮回各自的那顆星

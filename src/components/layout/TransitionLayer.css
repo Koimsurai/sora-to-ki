@@ -24,8 +24,3 @@ html:not([data-pt="out"]) .main-content-container > main {
 html[data-pt] .main-content-container {
   overflow: clip;
 }
-
-/* 背景的星空跟著鏡頭挪一點（視差）：看起來是鏡頭在動，不是頁面在星空上滑 */
-:is(.css-starfield, .space-gpu) {
-  translate: var(--pt-sky-x, 0) var(--pt-sky-y, 0);
-}
