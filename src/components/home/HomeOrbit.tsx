@@ -212,7 +212,7 @@ export default function HomeOrbit() {
       <h1 id="horbit-title" className="sr-only">
         {t('home.orbit.title')}
       </h1>
-      <nav className="horbit-labels" aria-label={t('nav.menu')}>
+      <nav className="horbit-labels" aria-labelledby="horbit-title">
         {MAIN_SECTIONS.map((s, i) => {
           const info = lines[s.key];
           return (

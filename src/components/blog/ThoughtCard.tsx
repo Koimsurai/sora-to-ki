@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { LocaleLink } from '@/i18n/locale-link';
 import { Heart, ThumbsDown, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import { parseServerDate } from '@/lib/serverDate';
-import { apiUrl } from '@/lib/api';
+import { useThoughtReaction } from '@/hooks/useThoughtReaction';
 import Comments from './Comments';
 import { Modal, ModalTitle } from '@/components/common/Modal';
 
 /* 單則碎念卡片（feed 與詳情頁共用）。
-   - 讚/倒讚：可取消、可切換（localStorage 記 reaction，後端依差值調整）
+   - 讚/倒讚：hooks/useThoughtReaction
    - 留言：feed 模式點 icon 跳浮動視窗；detail 模式直接顯示在頁面
    - admin：inline 編輯 + 刪除（ghost 文字鈕） */
 
@@ -33,43 +33,11 @@ interface ThoughtCardProps {
 export default function ThoughtCard({ th, isAdmin, onDelete, onEdit, detail = false }: ThoughtCardProps) {
   const timeAgo = useTimeAgo();
   const lang = useTranslation().i18n.resolvedLanguage ?? 'zh-TW';
-  // `?? 0` 拿掉了：後端這三個欄位是 i64 不是 Option，每次都有值
-  const [likes, setLikes] = useState(th.likes);
-  const [dislikes, setDislikes] = useState(th.dislikes);
-  const key = 'tk_react_' + th.id;
-  // 按過的讚存在 localStorage，只有 client 讀得到：寫在 useState 初始化裡的話 server 繪 ''、
-  // client 繪儲存值，hydrate 時 React 不會補正屬性，按過的讚就不亮。所以等掛上之後才讀。
-  const [reacted, setReacted] = useState('');
-  useEffect(() => {
-    try {
-      // eslint-disable-next-line @eslint-react/set-state-in-effect
-      setReacted(localStorage.getItem(key) ?? '');
-    } catch {
-      /* 隱私模式等讀不到的情況：當成沒按過 */
-    }
-  }, [key]);
+  const { likes, dislikes, reacted, react } = useThoughtReaction(th);
   const [showComments, setShowComments] = useState(false);
 
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(th.content);
-
-  const react = async (kind: string) => {
-    const next = reacted === kind ? '' : kind; // 同一顆=取消；不同=切換
-    try {
-      const r = await fetch(apiUrl(`/api/thoughts/${th.id}/react`), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prev: reacted, next }),
-      });
-      const d = (await r.json().catch(() => ({}))) as { likes?: number; dislikes?: number };
-      if (typeof d.likes === 'number') setLikes(d.likes);
-      if (typeof d.dislikes === 'number') setDislikes(d.dislikes);
-      localStorage.setItem(key, next);
-      setReacted(next);
-    } catch {
-      /* ignore */
-    }
-  };
 
   const saveEdit = () => {
     if (editText.trim() && onEdit) onEdit(th.id, editText.trim());

@@ -473,7 +473,11 @@
     "ending": "更多時候，只是想說給空氣聽。",
     "empty": "還沒有碎念。",
     "back": "返回",
-    "notFound": "找不到這則碎念。"
+    "notFound": "找不到這則碎念。",
+    "label": "Moments",
+    "like": "讚",
+    "comments": "{{count}} 則留言",
+    "older": "更早的碎念"
   },
   "watch": {
     "title": "在看什麼",

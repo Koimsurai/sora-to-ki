@@ -473,7 +473,11 @@
     "ending": "Most of the time, just thinking out loud.",
     "empty": "Nothing here yet.",
     "back": "Back",
-    "notFound": "Thought not found."
+    "notFound": "Thought not found.",
+    "label": "",
+    "like": "Like",
+    "comments": "{{count}} comments",
+    "older": "Earlier"
   },
   "watch": {
     "title": "What I'm watching",

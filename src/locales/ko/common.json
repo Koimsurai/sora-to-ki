@@ -473,7 +473,11 @@
     "ending": "대개는 그냥 혼잣말.",
     "empty": "아직 아무것도 없어요.",
     "back": "뒤로",
-    "notFound": "찾을 수 없습니다."
+    "notFound": "찾을 수 없습니다.",
+    "label": "Moments",
+    "like": "좋아요",
+    "comments": "댓글 {{count}}개",
+    "older": "더 이전의 혼잣말"
   },
   "watch": {
     "title": "지금 보고 있는 것",

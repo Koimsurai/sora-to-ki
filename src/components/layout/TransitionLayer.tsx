@@ -80,6 +80,8 @@ function snapshot(main: HTMLElement): HTMLElement {
     } catch {
       /* 3D 的畫布讀不到像素，就讓它空著：它本來也在淡出 */
     }
+    // 固定在視窗上的畫布（碎念的彗尾）：複本被 transform 之後 fixed 改成相對複本定位，要把捲動補回來
+    if (getComputedStyle(src).position === 'fixed') c.style.translate = `0 ${window.scrollY}px`;
   });
   clone.style.transform = `translateY(${-window.scrollY}px)`;
   ghost.append(clone);
