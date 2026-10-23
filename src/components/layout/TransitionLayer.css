@@ -10,14 +10,7 @@
   pointer-events: none;
 }
 
-/* 頁面在收的時候頁尾先退場：它不屬於任何一頁，不跟著收進點裡 */
-html[data-pt="leave"] .app-footer {
-  opacity: 0;
-  transition: opacity var(--dur-200) ease;
-}
-
-/* 新的一頁在「長」之前藏著，但照常排版（錨點才量得到）；頁尾跟著藏 */
-html[data-pt="out"] .main-content-container > main,
-html[data-pt="out"] .app-footer {
+/* 新的一頁在「長」之前藏著，但照常排版（錨點才量得到） */
+html[data-pt="out"] .main-content-container > main {
   opacity: 0;
 }

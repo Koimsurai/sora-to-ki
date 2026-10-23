@@ -513,10 +513,6 @@
        header 的位置」）：桌機 96px（頂欄 60 + 淨空 36）、窄視窗 80px（+20，≤480px
        時頂欄 56 所以是 +24）。
 
-       ⚠️ 下緣刻意**縮小**而不是取中間值：`.app-footer` 自己有 `padding-top: 8rem`
-       的 fade zone（128px），所以原本 `.tk-page` / `.w-page` / `.wl-page` 的
-       `padding-bottom: 120px` 疊上去是 **248px 的空白**。改成 64px 之後總和 192px。
-
        斷點只有一個（768px）。各頁自己的 media query 保留，但只管**左右**留白——
        上下交給這兩個 token，不要再在頁面層覆寫。 */
     --page-top: var(--space-24); /* 96px */

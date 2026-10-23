@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { ClientOnly, useRouterState } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import SiteNav from './SiteNav';
-import Footer from './Footer';
 import ScrollToTop from './ScrollToTop';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
 import BackToTopButton from './BackToTopButton';
@@ -19,8 +18,8 @@ const ContextMenu = lazy(() => import('./ContextMenu'));
 const SerifFontLoader = lazy(() => import('./SerifFontLoader'));
 const TransitionLayer = lazy(() => import('./TransitionLayer'));
 
-// 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):導覽列 / Footer / 背景 / chrome 包住路由內容(children = <Outlet/>)。
-// admin 隱藏導覽列/Footer/CommandPalette;photos 隱藏 Footer。
+// 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):導覽列 / 背景 / chrome 包住路由內容(children = <Outlet/>)。
+// admin 隱藏導覽列/CommandPalette。
 export default function AppShell({ children }: Readonly<{ children: ReactNode }>) {
   // Core Web Vitals 上報（B4）：client-only、動態載入（web-vitals 不進關鍵 bundle）
   useEffect(() => {
@@ -61,7 +60,6 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
     return () => clearTimeout(warmTimer);
   }, [linksToPosts]);
   const isAdminPage = bare === 'admin' || bare.startsWith('admin/');
-  const isPhotoPage = bare === 'photos';
   const isHomePage = bare === '';
 
   return (
@@ -89,7 +87,6 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
             </Suspense>
           </ClientOnly>
         )}
-        {!isAdminPage && !isPhotoPage && <Footer />}
         {!isAdminPage && (
           <ClientOnly fallback={null}>
             <Suspense fallback={null}>
