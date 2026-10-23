@@ -10,6 +10,14 @@
 // 這裡的 pass 換成 setMRT(mrt({output, emissive})) 做 selective bloom（官方文件同款）。
 import * as THREE from 'three/webgpu';
 import {
+  Fn,
+  abs,
+  fract,
+  fwidth,
+  mx_noise_float,
+  positionLocal,
+  pow,
+  select,
   pass,
   mrt,
   output,
@@ -201,20 +209,9 @@ const ROLL = -0.2;
 const INK = new THREE.Color('#f1ece3');
 /** 紙色（--ground #0a0a0c）：擋住背面那顆球的顏色，要跟頁面底色一樣才看不出它在那裡 */
 const GROUND = new THREE.Color('#0a0a0c');
-const PLANET_POINTS = 2400;
-/** 環：一圈一條線，[半徑, 不透明度]，跟提案的示意一樣。1.88 到 2.02 之間空著，是卡西尼縫 */
-const RINGS: [number, number][] = [
-  [1.32, 0.18],
-  [1.4, 0.24],
-  [1.5, 0.34],
-  [1.6, 0.5],
-  [1.7, 0.62],
-  [1.8, 0.58],
-  [1.88, 0.42],
-  [2.02, 0.3],
-  [2.1, 0.26],
-  [2.2, 0.16],
-];
+/** 環的內外緣（星球半徑是 1），跟提案的示意一樣；1.88 到 2.0 之間是卡西尼縫 */
+const RING_INNER = 1.32;
+const RING_OUTER = 2.2;
 
 /** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
 const SATURN_FOV = 8;
@@ -251,53 +248,106 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   tilted.add(body);
   group.add(tilted);
 
-  // 星球的點：位置就是單位球面上的方向，亮度用它跟太陽方向的夾角算
+  // 星球與環都是刻線畫（使用者給的參考：黑底上一道一道白色的刷痕）：
+  // 沿緯度一列一列的橫線，每一條的粗細就是那裡的亮度——迎光又落在亮帶上的地方線粗到連成一片，
+  // 背光的那一面線細到消失，只剩黑。線不是直的：用拉長的雜訊讓它微微起伏、斷成一段一段的筆觸。
+  // 星球本身是不透明的黑球，背面的點、環與軌道的背段、轉到後面的衛星都被它的深度擋掉
   const sunInPlanet = uniform(new THREE.Vector3());
-  const positions = new Float32Array(PLANET_POINTS * 3);
-  const golden = Math.PI * (3 - Math.sqrt(5));
-  // 每個點在原位附近隨機挪一點：太規則的點陣跟螢幕的像素格子會疊出斜的摩爾紋
-  const jitter = 0.35 * Math.sqrt((4 * Math.PI) / PLANET_POINTS);
-  for (let i = 0; i < PLANET_POINTS; i++) {
-    const y = 1 - (i / (PLANET_POINTS - 1)) * 2;
-    const r = Math.sqrt(1 - y * y);
-    const v = new THREE.Vector3(Math.cos(golden * i) * r, y, Math.sin(golden * i) * r);
-    v.x += (Math.random() - 0.5) * jitter;
-    v.y += (Math.random() - 0.5) * jitter;
-    v.z += (Math.random() - 0.5) * jitter;
-    v.normalize();
-    positions.set([v.x, v.y, v.z], i * 3);
-  }
-  const dotMat = new THREE.PointsNodeMaterial();
-  const at = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(positions, 3), 'vec3');
-  dotMat.positionNode = at;
-  const lit = smoothstep(-0.25, 0.7, dot(normalize(at), normalize(sunInPlanet)));
-  dotMat.colorNode = vec3(INK.r, INK.g, INK.b);
-  const soft = smoothstep(1.0, 0.45, uv().sub(0.5).length().mul(2.0));
-  // 雲帶：沿緯度一圈一圈的明暗，很淡，只是讓它看得出是土星
-  const bands = sin(at.y.mul(13))
-    .mul(0.14)
-    .add(sin(at.y.mul(31)).mul(0.06))
-    .add(0.8);
-  dotMat.opacityNode = soft.mul(mix(float(0.14), float(1), lit)).mul(bands);
-  // 點的大小只除以離鏡頭的距離、不管視角：土星那層的鏡頭在 z ≈ 55（星空的鏡頭在 z = 5），
-  // 所以照距離比例放大回來（衛星用的 SpriteNodeMaterial 會算進視角，不用補）
-  dotMat.size = 0.026 * (SATURN_CAMERA_Z / 5);
-  dotMat.sizeAttenuation = true;
-  dotMat.transparent = true;
-  dotMat.depthWrite = false;
-  const dots = new THREE.Sprite(dotMat);
-  dots.count = PLANET_POINTS;
+  const sunInPlane = uniform(new THREE.Vector3());
+  const paper = vec3(INK.r, INK.g, INK.b);
+  const ground = vec3(GROUND.r, GROUND.g, GROUND.b);
+  /** 一列一列的刷痕：row 是列的座標（每 1 是一列），ink 是 0 到 1 的濃度，回傳這個像素有沒有墨 */
+  type FloatNode = THREE.Node<'float'>;
+  const strokes = (row: FloatNode, ink: FloatNode) => {
+    const f = abs(fract(row).sub(0.5));
+    const half = ink.mul(0.5);
+    const aa = fwidth(row).mul(0.75).max(0.001);
+    // 線比一個像素還細的時候整條按比例淡掉；不然反鋸齒的那半個像素會在背光面留下一層灰
+    return smoothstep(half.add(aa), half.sub(aa), f).mul(half.div(aa).clamp(0, 1));
+  };
 
-  // 擋背面的球：比點略小，畫成紙色。不透明物件先畫，點、環、軌道的背段與後面的衛星被它的深度擋掉
-  const occluder = new THREE.Mesh(
-    new THREE.SphereGeometry(0.985, 48, 32),
-    new THREE.MeshBasicNodeMaterial({ color: GROUND }),
-  );
-  body.add(occluder, dots);
+  const planetMat = new THREE.MeshBasicNodeMaterial();
+  planetMat.colorNode = Fn(() => {
+    const n = normalize(positionLocal);
+    const sun = normalize(sunInPlanet);
+    // 晨昏線切得乾脆：參考圖背光那一面幾乎全黑
+    const lit = smoothstep(-0.12, 0.4, dot(n, sun));
+    // 雲帶：沿緯度的明暗，幾條寬的加幾條細的；兩極暗下去，不然頂上會看到一圈一圈的靶心
+    const tone = sin(n.y.mul(9).add(0.8))
+      .mul(0.2)
+      .add(sin(n.y.mul(23).add(1.3)).mul(0.12))
+      .add(0.75)
+      .mul(smoothstep(0.88, 0.62, abs(n.y)));
+    // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
+    const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(5), n.z.mul(1.1)));
+    const row = n.y.mul(17).add(wave.mul(0.9));
+    const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(30), n.z.mul(2.2)))
+      .mul(0.35)
+      .add(1);
+    const brush = smoothstep(-0.55, 0.05, mx_noise_float(vec3(n.x.mul(2.4), n.y.mul(40), n.z.mul(2.4))));
+    // 環落在星球上的影子：從這一點往太陽看，視線穿過環的平面時落在環上
+    const t = n.y.negate().div(sun.y);
+    const hit = n.add(sun.mul(t));
+    const rr = vec3(hit.x, 0, hit.z).length();
+    const shade = select(
+      t.greaterThan(0).and(rr.greaterThan(RING_INNER)).and(rr.lessThan(RING_OUTER)),
+      float(0.25),
+      float(1),
+    );
+    const ink = pow(
+      lit
+        .mul(tone)
+        .mul(swell)
+        .mul(mix(float(0.15), float(1), brush))
+        .mul(shade)
+        .clamp(0, 1),
+      0.7,
+    );
+    return mix(ground, paper, strokes(row, ink));
+  })();
+  const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), planetMat);
+  body.add(planet);
 
   // 環與軌道在同一個平面上，這個平面不轉
   const plane = new THREE.Group();
   tilted.add(plane);
+
+  // 環：一圈一圈的同心刷痕，粗細照環的明暗（中間的 B 環最亮、卡西尼縫空著），星球的影子壓在背光那段
+  const ringMat = new THREE.MeshBasicNodeMaterial({ transparent: true, side: THREE.DoubleSide, depthWrite: false });
+  const ringInk = Fn(() => {
+    // RingGeometry 在自己的 xy 平面上；轉平之後 (x, y) 對到環平面的 (x, -z)
+    const p = vec3(positionLocal.x, 0, positionLocal.y.negate());
+    const r = p.length();
+    const body = smoothstep(RING_INNER, 1.46, r)
+      .mul(smoothstep(RING_OUTER, 2.08, r))
+      .mul(float(1).sub(smoothstep(1.86, 1.89, r).mul(smoothstep(2.02, 1.99, r))));
+    const bright = smoothstep(1.44, 1.62, r)
+      .mul(smoothstep(1.86, 1.72, r))
+      .mul(0.25)
+      .add(0.85);
+    const ringlets = mx_noise_float(vec3(r.mul(22), 0, 0))
+      .mul(0.3)
+      .add(0.9);
+    const brush = smoothstep(-0.5, 0.15, mx_noise_float(vec3(p.x.mul(2.4), r.mul(36), p.z.mul(2.4))));
+    // 星球的影子：從環上這一點往太陽看會不會被星球擋住
+    const sun = normalize(sunInPlane);
+    const along = dot(p, sun).negate();
+    const closest = p.add(sun.mul(along));
+    const shade = select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.15), float(1));
+    const ink = body
+      .mul(bright)
+      .mul(ringlets)
+      .mul(mix(float(0.35), float(1), brush))
+      .mul(shade)
+      .clamp(0, 1);
+    return strokes(r.mul(30), pow(ink, 0.7));
+  })();
+  ringMat.colorNode = paper;
+  ringMat.opacityNode = ringInk;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 256, 1), ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  plane.add(ring);
+
   // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
   const circle = (radius: number, opacity: number) => {
     const material = new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
@@ -308,7 +358,6 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     plane.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
     return material;
   };
-  for (const [radius, alpha] of RINGS) circle(radius, alpha);
 
   // 軌道與衛星。衛星是一個實心的小點，亮起來時變琥珀色、外面多一圈光暈
   const ORBIT_DIM = 0.09;
@@ -331,6 +380,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   const syncSun = () => {
     group.updateWorldMatrix(true, true);
     body.worldToLocal(sunInPlanet.value.copy(sunWorld));
+    plane.worldToLocal(sunInPlane.value.copy(sunWorld));
   };
 
   let clock = 0;
@@ -471,7 +521,7 @@ export async function createStarfieldRunner(
   const saturnCam = new THREE.PerspectiveCamera(SATURN_FOV, aspect0, 1, 200);
   saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
   // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
-  const saturn = buildSaturn(new THREE.Vector3(-0.55, 0.5, 0.67).multiplyScalar(10));
+  const saturn = buildSaturn(new THREE.Vector3(-0.75, 0.45, 0.5).multiplyScalar(10));
   saturn.setAspect(aspect0);
   let viewW = init.width;
   let viewH = init.height;
