@@ -149,7 +149,8 @@ export default function SpaceBackdropShell() {
     return () => document.body.classList.remove('intro-animation-active');
   }, [intro]);
 
-  if (isMobile || isBot) return null; // 手機 / 爬蟲：完全不載 three
+  // 爬蟲完全不載 three。手機只在首頁載：首頁的五顆衛星在 3D 裡，其他頁用不到，離開首頁就收掉
+  if (isBot || (isMobile && !isOnHomePage)) return null;
 
   return (
     <>
@@ -169,6 +170,7 @@ export default function SpaceBackdropShell() {
           <Suspense fallback={null}>
             <LazyStarfieldGpu
               isOnHomePage={isOnHomePage}
+              lite={isMobile}
               zIndex={introActive ? 'calc(var(--z-intro) + 1)' : 1}
               intro={introActive}
               onIntroPhase={handleIntroPhase}
