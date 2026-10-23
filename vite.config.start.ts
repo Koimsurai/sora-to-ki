@@ -373,6 +373,10 @@ export default defineConfig({
     nitro({
       config: {
         serverDir: './server', // 掃 server/routes/ 的檔案系統路由(預設不掃 → 404)
+        // 按頁裁字（server/routes/fonts/serif）在執行期才 require subset-font：它要用 require.resolve
+        // 找 HarfBuzz 的 wasm，打包進來就找不到。整包追蹤進 .output，連同它載入的 wasm 套件。
+        // 少了這行，本機從專案目錄跑產物照樣正常（借用了專案的 node_modules），進了映像才 500
+        traceDeps: ['subset-font*', 'harfbuzzjs*', 'fontverter*', 'wawoff2*', 'woff2sfnt-sfnt2woff*'],
         // ISR：node-server preset 內建 SWR（TTL 過期先回舊、背景重生，不需 CDN）
         routeRules: ISR_ROUTE_RULES,
       },

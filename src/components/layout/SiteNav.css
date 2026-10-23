@@ -1,0 +1,405 @@
+/* 導覽列（layout/SiteNav）：一行字、一個琥珀點。材料見 index.css 的 --ground / --paper / --amber */
+
+.snav {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: var(--z-header);
+  pointer-events: none;
+  font-family: var(--serif);
+}
+
+/* 清掉全站 button 的樣式。用 :where() 讓特異性是 0，下面每一條自己的規則才蓋得過它 */
+:where(.snav) :where(a, button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.snav a:focus-visible,
+.snav button:focus-visible {
+  outline: 1px solid var(--paper-2);
+  outline-offset: 4px;
+}
+
+/* ── 一行 ── */
+.snav-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 var(--space-10);
+  /* 往下漸淡的一層紙色：捲上來的內容不會撞到字，但看不出一條「欄」 */
+  background: linear-gradient(var(--ground) 30%, rgba(var(--ground-rgb), 0.8) 60%, rgba(var(--ground-rgb), 0));
+}
+
+.snav-name {
+  font-family: var(--latin-display);
+  font-size: var(--fs-22);
+  letter-spacing: var(--ls-2);
+  line-height: var(--lh-100);
+  color: var(--paper);
+  transform-origin: left center;
+  transition: transform var(--dur-300) var(--easing-out);
+}
+
+.snav-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  font-size: var(--fs-14);
+  transition:
+    opacity var(--dur-250) ease,
+    translate var(--dur-300) var(--easing-out);
+}
+
+.snav-row a,
+.snav-row button {
+  padding-left: var(--space-3);
+  color: var(--paper-2);
+  transition: color var(--dur-200) ease;
+}
+
+.snav-row a:hover,
+.snav-row button:hover,
+.snav-row .is-on {
+  color: var(--paper);
+}
+
+/* 琥珀點：所在的分區；滑過別的分區時滑過去 */
+.snav-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-full);
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
+  translate: var(--x, 0) -50%;
+  opacity: 0;
+  transition:
+    translate var(--dur-400) var(--easing-out),
+    opacity var(--dur-300) ease;
+}
+
+.snav-dot.is-on {
+  opacity: 1;
+}
+
+/* 收成一個點：桌機往下捲時、手機一直都是 */
+.snav-pin {
+  position: absolute;
+  top: 50%;
+  right: var(--space-10);
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--paper-2);
+  border-radius: var(--r-full);
+  background: radial-gradient(circle, var(--amber) 0 3px, transparent 3.5px);
+  translate: 0 -50%;
+  scale: 0.4;
+  opacity: 0;
+  transition:
+    opacity var(--dur-250) ease,
+    scale var(--dur-300) var(--easing-out);
+}
+
+/* 沒收成點時不能點到它 */
+.snav .snav-pin {
+  pointer-events: none;
+}
+
+.snav.is-slim .snav-name {
+  transform: scale(0.85);
+}
+
+.snav.is-slim .snav-row {
+  opacity: 0;
+  translate: 0 -6px;
+  pointer-events: none;
+}
+
+.snav.is-slim .snav-row a,
+.snav.is-slim .snav-row button {
+  pointer-events: none;
+}
+
+.snav.is-slim .snav-pin {
+  opacity: 1;
+  scale: 1;
+}
+
+.snav.is-slim .snav-pin {
+  pointer-events: auto;
+}
+
+/* ── 更多：其他頁一條一條畫出來，下面是搜尋、語言、帳號 ── */
+.snav-more {
+  position: absolute;
+  top: 64px;
+  right: 0;
+  left: 0;
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 var(--space-10);
+  background: linear-gradient(var(--ground) 85%, rgba(var(--ground-rgb), 0));
+  transition:
+    max-height var(--dur-500) var(--easing-out),
+    padding var(--dur-500) ease;
+}
+
+.snav.is-more .snav-more {
+  max-height: 320px;
+  padding-block: var(--space-2) var(--space-8);
+}
+
+.snav-more-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--space-8);
+  max-width: 720px;
+  margin-left: auto;
+}
+
+.snav-more-links a {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  font-size: var(--fs-14);
+  color: var(--paper);
+}
+
+.snav-more-links a span,
+.snav-menu-main a span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+}
+
+.snav-more-links a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--rule);
+  transition: width var(--dur-700) var(--easing-out);
+}
+
+.snav-more-links a.is-on::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(var(--space-3) * -1);
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-full);
+  background: var(--amber);
+  translate: 0 -50%;
+}
+
+.snav.is-more .snav-more-links a::after {
+  width: 100%;
+}
+
+/* 一條接一條畫出來：第 n 條晚 n × 60ms */
+.snav-more-links a:nth-child(2) {
+  --i: 1;
+}
+.snav-more-links a:nth-child(3) {
+  --i: 2;
+}
+.snav-more-links a:nth-child(4) {
+  --i: 3;
+}
+.snav-more-links a:nth-child(5) {
+  --i: 4;
+}
+.snav-more-links a:nth-child(6) {
+  --i: 5;
+}
+
+.snav.is-more .snav-more-links a::after {
+  transition-delay: calc(var(--i, 0) * var(--dur-100) * 0.6);
+}
+
+.snav-util {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-8);
+  max-width: 720px;
+  margin: var(--space-5) 0 0 auto;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+}
+
+.snav-util-group {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.snav-util button {
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.snav-util button:hover,
+.snav-util button.is-on {
+  color: var(--paper);
+}
+
+.snav-util kbd {
+  margin-left: var(--space-2);
+  font-family: inherit;
+  color: var(--paper-3);
+}
+
+.snav-user {
+  color: var(--paper-2);
+}
+
+/* ── 手機：名字＋一個點，點開是整頁的目錄 ── */
+.snav-menu {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .snav-bar {
+    height: 56px;
+    padding: 0 var(--space-5);
+  }
+
+  .snav-name {
+    font-size: var(--fs-20);
+  }
+
+  .snav-row,
+  .snav-more {
+    display: none;
+  }
+
+  .snav .snav-pin {
+    right: var(--space-5);
+    scale: 1;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .snav-menu {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    align-content: start;
+    padding: var(--space-20) var(--space-6) var(--space-6);
+    overflow-y: auto;
+    background: var(--ground);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--dur-300) ease;
+  }
+
+  .snav.is-menu .snav-menu {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .snav-menu-main a {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: var(--space-3) 0;
+    border-bottom: 1px dotted var(--rule);
+    font-size: var(--fs-22);
+    font-weight: 600;
+    color: var(--paper);
+    opacity: 0;
+    translate: 0 8px;
+    transition:
+      opacity var(--dur-300) ease,
+      translate var(--dur-400) var(--easing-out);
+  }
+
+  .snav-menu-main a.is-on::before {
+    content: "";
+    align-self: center;
+    width: 6px;
+    height: 6px;
+    margin-right: var(--space-3);
+    border-radius: var(--r-full);
+    background: var(--amber);
+  }
+
+  .snav-menu-main a.is-on {
+    justify-content: flex-start;
+  }
+
+  .snav-menu-main a.is-on span {
+    margin-left: auto;
+  }
+
+  .snav.is-menu .snav-menu-main a {
+    opacity: 1;
+    translate: 0 0;
+  }
+  .snav-menu-main a:nth-child(2) {
+    --i: 1;
+  }
+  .snav-menu-main a:nth-child(3) {
+    --i: 2;
+  }
+  .snav-menu-main a:nth-child(4) {
+    --i: 3;
+  }
+  .snav-menu-main a:nth-child(5) {
+    --i: 4;
+  }
+  .snav.is-menu .snav-menu-main a {
+    transition-delay: calc(var(--i, 0) * var(--dur-100) / 2);
+  }
+
+  .snav-menu-more {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    margin-top: var(--space-6);
+    font-size: var(--fs-13);
+  }
+
+  .snav-menu-more a {
+    color: var(--paper-2);
+  }
+
+  .snav-menu-more a.is-on {
+    color: var(--paper);
+  }
+
+  .snav-menu .snav-util {
+    justify-content: flex-start;
+    margin: var(--space-8) 0 0;
+  }
+}
+
+/* 減少動態：要蓋過上面每一條 transition，所以用 !important（同 index.css 的全站做法） */
+@media (prefers-reduced-motion: reduce) {
+  .snav *,
+  .snav *::before,
+  .snav *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

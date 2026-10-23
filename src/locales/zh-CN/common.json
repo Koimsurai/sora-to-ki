@@ -34,6 +34,26 @@
     "thinking": "碎念",
     "menu": "导航菜单"
   },
+  "siteNav": {
+    "notes": "手记",
+    "moments": "碎念",
+    "works": "作品",
+    "collection": "收藏",
+    "about": "关于",
+    "more": "更多",
+    "photos": "照片",
+    "setup": "设备",
+    "friends": "朋友",
+    "messages": "留言",
+    "log": "航行日志",
+    "colophon": "此站点",
+    "search": "搜索",
+    "language": "语言",
+    "account": "账号",
+    "menu": "菜单",
+    "close": "关闭",
+    "home": "回首页"
+  },
   "user": {
     "adminPanel": "进入后台",
     "logout": "登出",

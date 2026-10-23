@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { ClientOnly, useRouterState } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
-import Header from './Header';
+import SiteNav from './SiteNav';
 import Footer from './Footer';
 import ScrollToTop from './ScrollToTop';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
@@ -16,9 +16,10 @@ const SpaceBackdropShell = lazy(() => {
 });
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const ContextMenu = lazy(() => import('./ContextMenu'));
+const SerifFontLoader = lazy(() => import('./SerifFontLoader'));
 
-// 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):Header / Footer / 背景 / chrome 包住路由內容(children = <Outlet/>)。
-// admin 隱藏 Header/Footer/CommandPalette;photos 隱藏 Footer。
+// 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):導覽列 / Footer / 背景 / chrome 包住路由內容(children = <Outlet/>)。
+// admin 隱藏導覽列/Footer/CommandPalette;photos 隱藏 Footer。
 export default function AppShell({ children }: Readonly<{ children: ReactNode }>) {
   // Core Web Vitals 上報（B4）：client-only、動態載入（web-vitals 不進關鍵 bundle）
   useEffect(() => {
@@ -77,7 +78,7 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
         className="main-content-container"
         style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
       >
-        {!isAdminPage && <Header />}
+        {!isAdminPage && <SiteNav />}
         <main style={{ flex: '1 0 auto' }}>{children}</main>
         {!isAdminPage && !isPhotoPage && <Footer />}
         {!isAdminPage && (
@@ -95,11 +96,13 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
         <BackToTopButton isHomePage={isHomePage} />
       </div>
 
-      {/* 右鍵選單刻意留在容器外：它要能開在任何東西之上，包含全螢幕檢視。 */}
+      {/* 右鍵選單刻意留在容器外：它要能開在任何東西之上，包含全螢幕檢視。
+          思源宋體的按頁裁字也只在前台：後台不用它 */}
       {!isAdminPage && (
         <ClientOnly fallback={null}>
           <Suspense fallback={null}>
             <ContextMenu />
+            <SerifFontLoader />
           </Suspense>
         </ClientOnly>
       )}

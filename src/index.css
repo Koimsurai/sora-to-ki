@@ -826,7 +826,27 @@
 
      ⚠️ `var(--cjk-font)` 放在 `monospace` 之前是刻意的：那是 sans-serif 鏈，
      讓程式碼裡的中文走比例字體——CJK 等寬字很少而且不好看。 */
-  --mono-font: "Fira Code", "JetBrains Mono", "SF Mono", ui-monospace, Consolas, var(--cjk-font), monospace;
+  --mono-font:
+    "Fira Code Variable", "Fira Code", "JetBrains Mono", "SF Mono", ui-monospace, Consolas, var(--cjk-font), monospace;
+
+  /* ── 翻新的材料（2026-10 提案）────────────────────────────────────────
+     只有三樣：黑是紙、白是墨、琥珀是訊號。琥珀只出現在「一個點」上（你在哪裡、正在發生的事），
+     不拿來當大面積的強調色。墨的深淺用透明度分三階，落在下面那把 19 階的透明度梯子上。 */
+  --ground: #0a0a0c;
+  --ground-rgb: 10, 10, 12;
+  --paper: #f1ece3;
+  --paper-rgb: 241, 236, 227;
+  --paper-2: rgba(var(--paper-rgb), 0.7);
+  --paper-3: rgba(var(--paper-rgb), 0.4);
+  --rule: rgba(var(--paper-rgb), 0.15);
+  --amber: #e9c17a;
+  --amber-rgb: 233, 193, 122;
+
+  /* 字：中文與中英混排一律思源宋體；Instrument Serif 只給「整段都是英文的大字」（名字、Notes），
+     它只有一個字重，不要加粗。思源宋體是按頁裁字（layout/SerifFontLoader）：堆疊第一個
+     "Koim Serif" 是裁出來的字，本機裝了 "Noto Serif TC" 的訪客不會下載任何東西 */
+  --serif: "Koim Serif", "Noto Serif TC", "Source Han Serif TC", "Songti TC", "PMingLiU", serif;
+  --latin-display: "Instrument Serif", var(--serif);
 
   --cjk-font:
     "MiSans", "Source Han Sans TC", "Noto Sans TC", "PingFang TC", "Hiragino Sans TC", "Microsoft JhengHei", sans-serif;
@@ -1221,16 +1241,20 @@ body::after {
 ─────────────────────────────────────────────────────────────── */
 :lang(zh-CN) {
   --cjk-font: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "MiSans", sans-serif;
+  /* 按頁裁出來的 Koim Serif 是繁中字形，簡中不用它 */
+  --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
 }
 
 :lang(ja) {
   --cjk-font:
     "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Source Han Sans JP", "Noto Sans JP",
     sans-serif;
+  --serif: "Noto Serif JP", "Source Han Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
 }
 
 :lang(ko) {
   --cjk-font: "Apple SD Gothic Neo", "Malgun Gothic", "Source Han Sans KR", "Noto Sans KR", sans-serif;
+  --serif: "Noto Serif KR", "Source Han Serif KR", "AppleMyungjo", "Batang", serif;
 }
 
 :lang(en) {
