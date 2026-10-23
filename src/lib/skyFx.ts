@@ -344,10 +344,10 @@ export function createSkyFx(opts: {
       const amber = vec3(0.815, 0.479, 0.127);
       const cold = mix(vec3(0.17, 0.21, 0.33), vec3(0.6, 0.65, 0.85), step(0.9, lum.mul(1.3)));
       const ink = mix(cold, amber, solid).mul(inkLevel);
-      const ground = vec3(0.0024, 0.0027, 0.0035);
-      const dithered = mix(ground, ink, on);
+      // 沒亮的格子是透明的，底下是頁面本來的紫黑底色：碎念跟其他頁站在同一個底上，只是星星變成點
+      const dithered = ink.mul(on);
       rgb = mix(rgb, dithered, pixelMix);
-      alpha = mix(alpha, float(1), pixelMix);
+      alpha = mix(alpha, on, pixelMix);
       return vec4(rgb, alpha);
     },
 

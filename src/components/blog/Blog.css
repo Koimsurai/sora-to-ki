@@ -1085,16 +1085,13 @@
    data-sky 由 SpaceBackdropShell 掛在 <html> 上（demo：之後要的話再整理成正式的樣式）
    ══════════════════════════ */
 html[data-sky="notes"] .blog-page {
-  --sky-ink: #f1ece3;
-  --sky-amber: #e9c17a;
-  --sky-amber-rgb: 233, 193, 122;
   text-shadow: 0 1px 12px var(--black-60);
 }
 
 html[data-sky="notes"] .blog-title-gradient {
   background: none;
   -webkit-text-fill-color: currentColor;
-  color: var(--sky-ink);
+  color: var(--paper);
   font-weight: 700;
   letter-spacing: var(--ls-4);
 }
@@ -1105,7 +1102,7 @@ html[data-sky="notes"] .blog-title-sub {
   font-size: var(--fs-12);
   letter-spacing: var(--ls-24);
   text-transform: uppercase;
-  color: var(--sky-amber);
+  color: var(--amber);
 }
 
 html[data-sky="notes"] .note-body {
@@ -1121,16 +1118,16 @@ html[data-sky="notes"] .note-body:hover {
   background: transparent;
   box-shadow: none;
   transform: none;
-  border-color: rgba(var(--sky-amber-rgb), 0.45);
+  border-color: rgba(var(--amber-rgb), 0.45);
 }
 
 html[data-sky="notes"] .note-title {
-  color: var(--sky-ink);
+  color: var(--paper);
 }
 
 html[data-sky="notes"] .note-title-link:hover .note-title,
 html[data-sky="notes"] .note-month {
-  color: var(--sky-amber);
+  color: var(--amber);
 }
 
 html[data-sky="notes"] .note-excerpt {
@@ -1149,7 +1146,7 @@ html[data-sky="notes"] .sort-pill {
 
 html[data-sky="notes"] .stats-inline em,
 html[data-sky="notes"] .category-item.active {
-  color: var(--sky-amber);
+  color: var(--amber);
   background: transparent;
 }
 
@@ -1158,6 +1155,6 @@ html[data-sky="notes"] .sort-pill.active,
 html[data-sky="notes"] .cloud-tag.active,
 html[data-sky="notes"] .note-tag:hover,
 html[data-sky="notes"] .cloud-tag:hover {
-  border-color: rgba(var(--sky-amber-rgb), 0.5);
-  color: var(--sky-amber);
+  border-color: rgba(var(--amber-rgb), 0.5);
+  color: var(--amber);
 }

@@ -43,15 +43,16 @@
   color: var(--zinc-100);
 }
 .mega-menu-trigger--open {
-  background: rgba(var(--brand-rgb), 0.15);
+  background: rgba(var(--amber-rgb), 0.1);
   color: var(--zinc-100);
-  border-color: rgba(var(--brand-rgb), 0.3);
+  border-color: rgba(var(--amber-rgb), 0.3);
 }
+/* 所在的分區：琥珀色（全站唯一的強調色，見 index.css 的 --amber） */
 .mega-menu-trigger--active {
-  color: rgba(var(--violet-300-rgb), 0.95);
+  color: var(--amber);
 }
 .mega-menu-trigger--active:hover {
-  background: rgba(var(--brand-rgb), 0.1);
+  background: rgba(var(--amber-rgb), 0.1);
 }
 
 /* Icon hover 動畫：scale + 微微 wiggle + 紫色 tint

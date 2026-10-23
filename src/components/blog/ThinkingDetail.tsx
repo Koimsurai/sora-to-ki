@@ -12,7 +12,7 @@ import ThoughtCard from './ThoughtCard';
 import Comments from './Comments';
 import MomentsSky from './MomentsSky';
 import { thoughtDetailQueryOptions } from '@/data/thoughtData';
-import { parseServerDate } from '@/lib/serverDate';
+import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { useSkyPage } from '@/hooks/useSkyPage';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import './Thinking.css';
@@ -21,10 +21,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
 /** 2026.07.19 與 21:30 */
 const stamp = (iso: string) => {
   const d = parseServerDate(iso);
-  return [
-    `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`,
-    `${pad(d.getHours())}:${pad(d.getMinutes())}`,
-  ];
+  return [dotDate(d), `${pad(d.getHours())}:${pad(d.getMinutes())}`];
 };
 
 const LEAVE = {

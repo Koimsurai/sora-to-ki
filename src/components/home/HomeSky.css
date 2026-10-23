@@ -1,9 +1,6 @@
 /* 首頁（新版 demo）：第一屏只有名字、一句話、土星與兩行「此刻」；往下是一扇一扇的天空之窗。 */
 .home-page {
-  --ink: #f1ece3;
-  --amber: #e9c17a;
-  --amber-rgb: 233, 193, 122;
-  --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  --ink: var(--paper);
 
   position: relative;
   z-index: 3;

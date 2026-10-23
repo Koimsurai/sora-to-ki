@@ -687,11 +687,6 @@
    不是一張張卡片，是一條紀錄：左邊日期、中間虛線上的像素點、右邊大字。
    每一則出現時閃一下再定住。
    ══════════════════════════ */
-.tk-page {
-  --tk-amber: #e9c17a;
-  --amber-rgb: 233, 193, 122;
-}
-
 .tk-scrim {
   background: rgba(var(--surface-0-rgb), 0.25);
 }
@@ -704,7 +699,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-4);
-  font-family: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  font-family: var(--display);
   font-size: var(--fs-56);
   line-height: var(--lh-100);
 }
@@ -715,7 +710,7 @@
   font-weight: 400;
   letter-spacing: var(--ls-24);
   text-transform: uppercase;
-  color: var(--tk-amber);
+  color: var(--amber);
 }
 
 /* 頁首：右邊一大片點陣天空（一路延伸到視窗右緣），標題壓在左下 */
@@ -799,7 +794,7 @@
   width: 8px;
   height: 8px;
   margin-top: var(--space-3);
-  background: var(--tk-amber);
+  background: var(--amber);
 }
 
 .tk-feed .tk-card {
@@ -821,10 +816,10 @@
 }
 
 .tk-feed .tk-text {
-  font-family: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  font-family: var(--display);
   font-size: var(--fs-28);
   line-height: var(--lh-150);
-  color: #f1ece3;
+  color: var(--paper);
   text-wrap: pretty;
 }
 
@@ -863,7 +858,7 @@
 }
 
 .tk-page--detail .tk-back:hover {
-  color: var(--tk-amber);
+  color: var(--amber);
 }
 
 .tk-detail-stamp {
@@ -877,7 +872,7 @@
 }
 
 .tk-detail-stamp span:first-child {
-  color: var(--tk-amber);
+  color: var(--amber);
 }
 
 .tk-page--detail .tk-card {
@@ -899,10 +894,10 @@
 }
 
 .tk-page--detail .tk-text {
-  font-family: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  font-family: var(--display);
   font-size: var(--fs-40);
   line-height: var(--lh-140);
-  color: #f1ece3;
+  color: var(--paper);
   text-wrap: pretty;
 }
 
@@ -921,7 +916,7 @@
   0% {
     opacity: 0;
     filter: brightness(2.4);
-    text-shadow: 0 0 24px rgba(233, 193, 122, 0.8);
+    text-shadow: 0 0 24px rgba(var(--amber-rgb), 0.8);
   }
   18% {
     opacity: 1;

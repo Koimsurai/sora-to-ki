@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { FaGithub, FaRss, FaEnvelope, FaInstagram } from 'react-icons/fa';
 import { LocaleLink } from '@/i18n/locale-link';
 import { homeDigestQueryOptions, dailyQuoteQueryOptions } from '@/data/homeData';
+import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { postPath } from '@/lib/postPath';
 import { useTimeAgo } from '@/hooks/useTimeAgo';
 import { useSkyPage } from '@/hooks/useSkyPage';
@@ -131,7 +132,7 @@ function MomentFlash({ thoughts }: { thoughts: DigestThought[] }) {
         ))}
       </p>
       <time className="hw-meta" dateTime={thought.created_at} suppressHydrationWarning>
-        {thought.created_at.slice(0, 10).replaceAll('-', '.')}
+        {dotDate(parseServerDate(thought.created_at))}
       </time>
     </div>
   );

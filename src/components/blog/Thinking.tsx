@@ -9,16 +9,13 @@ import ThoughtCard from './ThoughtCard';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { apiUrl } from '@/lib/api';
 import { useThoughtAdmin } from '@/hooks/useThoughtAdmin';
-import { parseServerDate } from '@/lib/serverDate';
+import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { useSkyPage } from '@/hooks/useSkyPage';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import MomentsSky from './MomentsSky';
 import './Thinking.css';
 
-const dayOf = (iso: string) => {
-  const d = parseServerDate(iso);
-  return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
-};
+const dayOf = (iso: string) => dotDate(parseServerDate(iso), true);
 const yearOf = (iso: string) => String(parseServerDate(iso).getFullYear());
 
 /* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。

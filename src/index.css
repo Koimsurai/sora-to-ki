@@ -534,6 +534,13 @@
     --ink-rgb: 229, 229, 245;
     --lavender: #c7b8ff;
     --lavender-rgb: 199, 184, 255;
+    /* 翻新的那幾頁（首頁、手記、碎念、關於）共用的一層：琥珀是唯一的強調色、暖白是內文、
+       TASA 是標題字。各頁的畫風不一樣（星軌、下墜、點陣），這幾個是讓它們看得出是同一個站的東西 */
+    --amber: #e9c17a;
+    --amber-rgb: 233, 193, 122;
+    --paper: #f1ece3;
+    --paper-rgb: 241, 236, 227;
+    --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
     --lavender-soft: #e0c3fc;
     --lavender-soft-rgb: 224, 195, 252;
     --magenta: #dc3278;

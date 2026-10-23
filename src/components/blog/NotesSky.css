@@ -1,10 +1,7 @@
 /* 手記（星軌天空版）：一欄、少量資訊、寬留白。
    大標題直接壓在夜空上；文章清單放在一塊毛玻璃上，星軌在後面但不跟字搶。 */
 .notes-page {
-  --ink: #f1ece3;
-  --amber: #e9c17a;
-  --amber-rgb: 233, 193, 122;
-  --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  --ink: var(--paper);
 }
 
 .notes-page {

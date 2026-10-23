@@ -207,7 +207,9 @@ export default function AboutFall() {
 
       {/* 起點：只有一句話。其他的，往下掉的時候一層一層會經過 */}
       <header className="af-top">
-        <p className="af-kicker">Koimsurai · 關於</p>
+        <p className="af-kicker">
+          關於<span>About</span>
+        </p>
         <h1 className="af-title">坐穩了。</h1>
         <p className="af-hint">往下</p>
       </header>
@@ -217,7 +219,7 @@ export default function AboutFall() {
       {past.map((m, i) => {
         const [from, to] = m.label.split('-');
         return (
-          <section key={m.id} className="af-chapter" data-stage={m.label} style={{ '--dot': m.color } as CSSProperties}>
+          <section key={m.id} className="af-chapter" data-stage={m.label}>
             <aside className="af-chapter-panel">
               <p className="af-chapter-no">
                 {pad(i + 1)} / {pad(past.length)}

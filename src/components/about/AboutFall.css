@@ -1,9 +1,6 @@
 /* 關於（自由落體版）。近景的 canvas 固定在視窗上，內容一層一層從它前面捲過去。 */
 .about-fall {
-  --ink: #f1ece3;
-  --amber: #e9c17a;
-  --amber-rgb: 233, 193, 122;
-  --display: "TASA Explorer Variable", var(--cjk-font), sans-serif;
+  --ink: var(--paper);
 
   position: relative;
   z-index: 3;
@@ -63,11 +60,19 @@
 
 .af-kicker {
   margin: 0 0 var(--space-8);
+  font-family: var(--display);
+  font-size: var(--fs-16);
+  color: var(--white-55);
+}
+
+/* 跟手記、碎念的標題同一種寫法：中文、旁邊一個琥珀色的英文小標 */
+.af-kicker span {
+  margin-left: var(--space-3);
   font-family: var(--mono-font);
   font-size: var(--fs-12);
   letter-spacing: var(--ls-24);
   text-transform: uppercase;
-  color: var(--white-45);
+  color: var(--amber);
 }
 
 .af-title {
@@ -266,7 +271,7 @@
   color: var(--white-40);
 }
 
-/* 年份：那一年的光點色往上漸成白色 */
+/* 年份：底下一點琥珀色往上漸成白字（每一章都一樣：強調色全站只有琥珀一種） */
 .af-chapter-year {
   display: flex;
   flex-direction: column;
@@ -279,7 +284,7 @@
   line-height: var(--lh-100);
   letter-spacing: var(--ls-n4);
   color: transparent;
-  background: linear-gradient(0deg, var(--dot), var(--ink) 75%);
+  background: linear-gradient(0deg, var(--amber), var(--ink) 75%);
   -webkit-background-clip: text;
   background-clip: text;
 }
