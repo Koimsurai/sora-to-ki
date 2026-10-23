@@ -710,7 +710,8 @@ export function createSpiral(bodies: Body[]) {
       for (let k = 1; k <= 30; k++) {
         const [x0, y0] = P(tail + ((k - 1) / 30) * (reach - tail));
         const [x1, y1] = P(tail + (k / 30) * (reach - tail));
-        ctx.strokeStyle = `rgba(${INK}, ${(0.26 + 0.6 * Math.pow(k / 30, 2) * pen).toFixed(3)})`;
+        // 疊在本來那條線上，只疊「多亮的那一份」：退到 0 時剛好就是航線本來的亮度，不會跳一下
+        ctx.strokeStyle = `rgba(${INK}, ${(0.6 * Math.pow(k / 30, 2) * pen).toFixed(3)})`;
         ctx.beginPath();
         ctx.moveTo(x0, y0);
         ctx.lineTo(x1, y1);
