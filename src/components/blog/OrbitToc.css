@@ -1,6 +1,6 @@
 /* 文章頁的軌道目錄（blog/OrbitToc）：軌道畫在固定於視窗的畫布上，章節名是疊在刻度旁邊的按鈕 */
 
-.ot {
+.orbit-toc {
   position: fixed;
   inset: 0;
   z-index: 2;
@@ -9,26 +9,26 @@
   color: var(--paper);
 }
 
-.ot.is-off {
+.orbit-toc.is-off {
   display: none;
 }
 
-.ot-cv {
+.orbit-toc-cv {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
-.ot-hd,
-.ot-ft,
-.ot-list li {
+.orbit-toc-hd,
+.orbit-toc-ft,
+.orbit-toc-list li {
   position: absolute;
   top: 0;
   left: 0;
 }
 
-.ot-hd {
+.orbit-toc-hd {
   display: flex;
   gap: var(--space-3);
   align-items: baseline;
@@ -39,34 +39,34 @@
   color: var(--paper-3);
 }
 
-.ot-hd b {
+.orbit-toc-hd b {
   font-weight: 400;
   color: var(--amber);
 }
 
-.ot-list {
+.orbit-toc-list {
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
-.ot-list li {
+.orbit-toc-list li {
   pointer-events: auto;
   transition: opacity var(--dur-300) ease;
 }
 
-:where(.ot) :where(button) {
+:where(.orbit-toc) :where(button) {
   all: unset;
   box-sizing: border-box;
   cursor: pointer;
 }
 
-.ot button:focus-visible {
+.orbit-toc button:focus-visible {
   outline: 1px solid var(--paper-2);
   outline-offset: 3px;
 }
 
-.ot-list button {
+.orbit-toc-list button {
   display: flex;
   gap: var(--space-2);
   align-items: baseline;
@@ -78,17 +78,17 @@
   transition: color var(--dur-200) ease;
 }
 
-.ot-list .is-deep button {
+.orbit-toc-list .is-deep button {
   font-size: var(--fs-12);
 }
 
-.ot-t {
+.orbit-toc-t {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.ot-min {
+.orbit-toc-min {
   flex: none;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
@@ -97,39 +97,39 @@
   transition: opacity var(--dur-200) ease;
 }
 
-.ot-list .is-past button {
+.orbit-toc-list .is-past button {
   color: var(--paper-2);
 }
 
-.ot-list .is-on button,
-.ot-list button:hover {
+.orbit-toc-list .is-on button,
+.orbit-toc-list button:hover {
   color: var(--paper);
 }
 
-.ot-list button:hover .ot-min {
+.orbit-toc-list button:hover .orbit-toc-min {
   opacity: 1;
 }
 
 /* 還沒開始讀：只有刻度，章節名等開始讀（或滑到目錄上）才浮出來 */
-.ot.is-rest .ot-list li {
+.orbit-toc.is-rest .orbit-toc-list li {
   opacity: 0;
 }
 
-.ot.is-rest:has(.ot-list:hover) .ot-list li,
-.ot.is-rest .ot-list li:focus-within {
+.orbit-toc.is-rest:has(.orbit-toc-list:hover) .orbit-toc-list li,
+.orbit-toc.is-rest .orbit-toc-list li:focus-within {
   opacity: 1;
 }
 
 /* 捲動中只留所在的那一節，停下來（或滑到目錄上）才回來 */
-.ot.is-quiet .ot-list li:not(.is-on) {
+.orbit-toc.is-quiet .orbit-toc-list li:not(.is-on) {
   opacity: 0.15;
 }
 
-.ot.is-quiet:has(.ot-list:hover) .ot-list li {
+.orbit-toc.is-quiet:has(.orbit-toc-list:hover) .orbit-toc-list li {
   opacity: 1;
 }
 
-.ot-ft button {
+.orbit-toc-ft button {
   pointer-events: auto;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
@@ -139,14 +139,14 @@
   transition: color var(--dur-200) ease;
 }
 
-.ot-ft button:hover {
+.orbit-toc-ft button:hover {
   color: var(--paper);
 }
 
 /* 換頁的「收」：字先退掉，只剩軌道在動 */
-.ot.is-leaving .ot-hd,
-.ot.is-leaving .ot-ft,
-.ot.is-leaving .ot-list {
+.orbit-toc.is-leaving .orbit-toc-hd,
+.orbit-toc.is-leaving .orbit-toc-ft,
+.orbit-toc.is-leaving .orbit-toc-list {
   opacity: 0;
   transition: opacity var(--dur-200) ease;
 }

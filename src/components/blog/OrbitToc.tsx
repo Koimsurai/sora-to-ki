@@ -166,7 +166,7 @@ export default function OrbitToc({
       us = ys.map((y) => y / H);
       // 每節要讀幾分鐘：到下一個標題之前的字數
       itemsRef.current.forEach((li, i) => {
-        const m = li?.querySelector<HTMLElement>('.ot-min');
+        const m = li?.querySelector<HTMLElement>('.orbit-toc-min');
         if (!m) return;
         let n = 0;
         const stop = els[i + 1];
@@ -390,15 +390,15 @@ export default function OrbitToc({
   };
 
   return (
-    <div className="ot" ref={rootRef}>
-      <canvas className="ot-cv" ref={canvasRef} aria-hidden="true" />
-      <div className="ot-hd" ref={hdRef}>
+    <div className="orbit-toc" ref={rootRef}>
+      <canvas className="orbit-toc-cv" ref={canvasRef} aria-hidden="true" />
+      <div className="orbit-toc-hd" ref={hdRef}>
         <span>{t('blog.toc')}</span>
         <b ref={pctRef}>0%</b>
         <span ref={leftRef} />
       </div>
       <nav aria-label={t('blog.toc')}>
-        <ol className="ot-list">
+        <ol className="orbit-toc-list">
           {headings.map((h, i) => (
             <li
               key={h.id}
@@ -408,14 +408,14 @@ export default function OrbitToc({
               }}
             >
               <button type="button" onClick={() => go(h.id)} title={h.text}>
-                <span className="ot-t">{h.text}</span>
-                <span className="ot-min" />
+                <span className="orbit-toc-t">{h.text}</span>
+                <span className="orbit-toc-min" />
               </button>
             </li>
           ))}
         </ol>
       </nav>
-      <div className="ot-ft" ref={ftRef}>
+      <div className="orbit-toc-ft" ref={ftRef}>
         <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           ↑ {t('blog.backToArticleTop')}
         </button>
