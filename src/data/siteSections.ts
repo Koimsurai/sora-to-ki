@@ -19,7 +19,7 @@ export const MAIN_SECTIONS: SiteSection[] = [
   { key: 'notes', to: '/blog', caps: 'NOTES', match: under('blog') },
   { key: 'moments', to: '/thinking', caps: 'MOMENTS', match: under('thinking') },
   { key: 'works', to: '/portfolio', caps: 'WORK', match: under('portfolio') },
-  // 收藏頁（在看、書櫃、在聽合成一頁）做好之前先指到在看
+  // 收藏：在看、書櫃、在聽合成一頁，網址沿用 /watch（舊的 /bookshelf、/music 轉到那一區）
   { key: 'collection', to: '/watch', caps: 'COLLECTION', match: under('watch', 'bookshelf', 'music') },
   { key: 'about', to: '/about', caps: 'ABOUT', match: under('about') },
 ];

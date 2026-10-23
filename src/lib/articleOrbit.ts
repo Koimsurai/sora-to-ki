@@ -5,11 +5,11 @@
 // 位置只由視窗大小決定，換頁前後算出來的會一模一樣。
 
 /** 軌道半徑：大到看起來幾乎是直的 */
-export const ORBIT_RB = 1500;
+const ORBIT_RB = 1500;
 /** 窄於這個寬度沒有放軌道的空間（目錄改走別的地方） */
-export const ORBIT_MIN_W = 1100;
+const ORBIT_MIN_W = 1100;
 /** 內文欄寬與它離軌道多遠（跟 BlogPost.css 的 --ar-col / --ar-gap 一樣） */
-export const ARTICLE_COL = 680;
+const ARTICLE_COL = 680;
 const RAIL_GAP = 120;
 
 export interface OrbitGeom {
@@ -24,7 +24,7 @@ export interface OrbitGeom {
 }
 
 /** 內文欄的左緣（跟 CSS 的 max(56px, calc(50% - 560px)) 一樣） */
-export const articleLeft = (w: number) => Math.max(56, w / 2 - 560);
+const articleLeft = (w: number) => Math.max(56, w / 2 - 560);
 
 export function orbitGeometry(w: number, h: number): OrbitGeom | null {
   if (w < ORBIT_MIN_W) return null;

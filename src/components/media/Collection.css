@@ -1,0 +1,411 @@
+/* 收藏（media/Collection）：三區同一套排法，封面牆是點陣，滑過才顯出原色 */
+
+.cx {
+  display: grid;
+  gap: var(--space-24);
+  padding: var(--page-top) max(var(--space-6), calc(50% - 540px)) var(--page-bottom);
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+:where(.cx) :where(a, button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.cx :is(a, button):focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 3px;
+}
+
+/* ── 頁首 ── */
+.cx-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cx-head-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.cx-head h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.cx-head-title span {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.cx-head p {
+  margin: 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.cx-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-6);
+  margin-top: var(--space-4);
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.cx-jump a {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  transition: color var(--dur-200) ease;
+}
+
+.cx-jump a::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-full);
+}
+
+.cx-jump a:hover {
+  color: var(--paper);
+}
+
+/* ── 一區 ── */
+.cx-block {
+  display: grid;
+  gap: var(--space-7);
+  scroll-margin-top: var(--page-top);
+}
+
+.cx-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5) var(--space-10);
+}
+
+.cx-title h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--fs-28);
+  font-weight: 600;
+  line-height: var(--lh-130);
+}
+
+.cx-title h2 span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-24);
+  color: var(--amber);
+}
+
+.cx-title p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+/* 數字：大的英文字在上、小標籤在下 */
+.cx-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-8);
+  margin: 0;
+}
+
+.cx-stats div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.cx-stats dd {
+  margin: 0;
+  font-family: var(--latin-display);
+  font-size: var(--fs-48);
+  line-height: var(--lh-100);
+  font-variant-numeric: tabular-nums;
+}
+
+.cx-stats dt {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+/* 正在看／剛剛聽：在播的時候前面那一點是琥珀色、亮著 */
+.cx-live {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+  margin: calc(var(--space-3) * -1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.cx-live i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-full);
+  align-self: center;
+}
+
+.cx-live.is-on i {
+  border-color: var(--amber);
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
+}
+
+.cx-live b {
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.cx-live span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+.cx-edit {
+  justify-self: start;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.cx-edit:hover {
+  color: var(--amber);
+}
+
+.cx-empty {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-3);
+}
+
+/* ── 封面：灰階的圖蓋一層點的遮罩是點陣，彩色那張疊在上面，滑過才淡進來 ── */
+.cx-cover {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.cx-cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 對比拉高：暗的地方整片沒有點，只剩亮的地方留下點，遠看才像星雲而不是一片灰 */
+.cx-dot {
+  opacity: 0.8;
+  filter: grayscale(1) contrast(2.4) brightness(0.75);
+  mask-image: radial-gradient(circle, #000 0 38%, transparent 46%);
+  mask-size: 3px 3px;
+}
+
+.cx-col {
+  opacity: 0;
+  transition: opacity var(--dur-500) ease;
+}
+
+.cx-cover.is-empty {
+  border: 1px solid var(--rule);
+}
+
+/* ── 最喜歡的 ── */
+.cx-favs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-7);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.cx-fav {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  column-gap: var(--space-3);
+  align-items: start;
+}
+
+.cx-fav .cx-cover {
+  width: 76px;
+  height: 114px;
+}
+
+.cx-favs.is-square .cx-fav .cx-cover {
+  height: 76px;
+}
+
+.cx-fav:hover .cx-col,
+.cx-fav :focus-visible .cx-col {
+  opacity: 1;
+}
+
+.cx-fav b {
+  display: block;
+  font-size: var(--fs-16);
+  font-weight: 600;
+  line-height: var(--lh-140);
+}
+
+.cx-fav-meta {
+  display: block;
+  margin: var(--space-px) 0 var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+}
+
+.cx-fav q {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+  quotes: "「" "」";
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+/* ── 封面牆 ── */
+.cx-wall {
+  position: relative;
+}
+
+.cx-wall ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--cw));
+  gap: var(--cg);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.cx-cell {
+  display: block;
+}
+
+.cx-cell .cx-cover {
+  width: var(--cw);
+  height: var(--ch);
+}
+
+.cx-cell:is(:hover, :focus-visible, .is-lit) .cx-col {
+  opacity: 1;
+}
+
+.cx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: grid;
+  gap: var(--space-px);
+  width: 230px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--rule);
+  background: var(--ground);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-150) ease;
+}
+
+.cx-tip.is-left {
+  translate: -100% 0;
+}
+
+.cx-tip b {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  line-height: var(--lh-150);
+}
+
+.cx-tip span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+}
+
+/* ── 曲風：點排成的長條 ── */
+.cx-genres {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 520px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.cx-genres li {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 30px;
+  column-gap: var(--space-3);
+  align-items: center;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-2);
+}
+
+.cx-genres i {
+  width: var(--w);
+  height: 3px;
+  background: radial-gradient(circle at 1.5px 1.5px, var(--paper-2) 1px, transparent 1.4px) 0 0 / 5px 3px repeat-x;
+}
+
+.cx-genres em {
+  font-style: normal;
+  color: var(--paper-3);
+  text-align: right;
+}
+
+@media (max-width: 860px) {
+  .cx-favs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .cx-favs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cx-stats dd {
+    font-size: var(--fs-36);
+  }
+
+  .cx-tip {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-col {
+    transition: none;
+  }
+}

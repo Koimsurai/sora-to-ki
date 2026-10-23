@@ -95,7 +95,6 @@ const ROUTES = [
   '/setup',
   '/history',
   '/friends',
-  '/bookshelf',
   '/watch',
   '/messages',
   '/about-site',

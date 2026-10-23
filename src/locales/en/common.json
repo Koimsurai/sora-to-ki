@@ -283,128 +283,6 @@
       "lastYear": "Last year"
     }
   },
-  "music": {
-    "title": "Music",
-    "description": "Koimsurai's music taste and live Spotify listening.",
-    "loading": "Loading music",
-    "heroTitle": "Music Galaxy",
-    "heroDesc": "My music taste, library, and listening analysis",
-    "nowPlaying": "Now playing",
-    "lastPlayed": "Last played",
-    "tabs": {
-      "recent": "Recent",
-      "genres": "Top genres",
-      "yearly": "Top Tracks",
-      "analytics": "Insights"
-    },
-    "range": {
-      "short": "Last 4 weeks",
-      "medium": "Last 6 months",
-      "long": "All time"
-    },
-    "openInSpotify": "Open in Spotify",
-    "recentHeading": "Recently Played",
-    "genresHeading": "Top 5 Genres",
-    "yearlyHeading": "Top Tracks",
-    "analyticsHeading": "Insights",
-    "empty": {
-      "recent": "No recent plays yet",
-      "genres": "No genre data yet",
-      "yearly": "No top tracks data yet",
-      "analytics": "Loading... if there's still no data, switch to Top Tracks to load it first"
-    },
-    "cols": {
-      "track": "Track",
-      "features": "Audio Features",
-      "duration": "Duration",
-      "playedAt": "Played At",
-      "album": "Album"
-    },
-    "features": {
-      "energy": "Energy",
-      "dance": "Dance",
-      "valence": "Valence"
-    },
-    "bubbleCount": "{{count}} artists",
-    "analyticsSubtitle": "Derived from your top {{count}} tracks ({{range}})",
-    "analytics": {
-      "popularity": "Popularity",
-      "avgDuration": "Avg Duration",
-      "avgRelease": "Avg Release Year",
-      "explicit": "Explicit",
-      "decadeTitle": "By Decade"
-    }
-  },
-  "bookshelf": {
-    "title": "Bookshelf",
-    "description": "Koimsurai's reading list and notes.",
-    "loading": "Loading shelf...",
-    "heroTitle": "Knowledge Map",
-    "subtitle": "Marking every star I've read in the sea of books",
-    "stats": {
-      "total": "Books",
-      "read": "Read",
-      "reading": "Reading",
-      "avgRating": "Avg rating"
-    },
-    "statuses": {
-      "read": "Read",
-      "reading": "Reading",
-      "toRead": "To read"
-    },
-    "noRating": "Unrated",
-    "searchPlaceholder": "Search title or author...",
-    "filter": "Filter",
-    "zeroGravity": "Zero-G mode",
-    "zg": {
-      "hint": "Drag to rotate · Scroll to zoom · Click a book",
-      "back": "Back to shelf",
-      "inOrbit": "{{count}} books in orbit",
-      "unavailable": "Zero-G mode needs a GPU, which this device doesn’t have",
-      "pages": "{{count}} pages"
-    },
-    "twoDView": "2D view",
-    "skyStats": "{{total}} stars · {{read}} lit · {{reading}} lighting up",
-    "avgRating": "avg {{rating}}★",
-    "groups": {
-      "fantasy": "FANTASY",
-      "literature": "LITERATURE",
-      "life": "LIFE & MIND",
-      "other": "OTHER"
-    },
-    "legend": {
-      "read": "Read: a lit star — brighter means higher rated",
-      "reading": "Reading: lighting up",
-      "toRead": "Want to read: not lit yet",
-      "notes": "Rays: has my notes"
-    },
-    "skyHint": "← swipe to explore the sky →",
-    "listTitle": "Books",
-    "noMatch": "No matching books",
-    "hasNotes": "Has notes",
-    "close": "Close",
-    "started": "Started",
-    "finished": "Finished",
-    "myNotes": "My notes",
-    "about": "About",
-    "showMore": "Show more",
-    "showLess": "Show less",
-    "publisher": "Publisher",
-    "publishedDate": "Published",
-    "pages": "Pages",
-    "filterStatus": "Status",
-    "filterRating": "Rating",
-    "filterSort": "Sort",
-    "filterClear": "Clear filters",
-    "sortOpts": {
-      "dateAddedDesc": "Newest first",
-      "dateAddedAsc": "Oldest first",
-      "titleAsc": "Title A-Z",
-      "titleDesc": "Title Z-A",
-      "ratingDesc": "Highest rated",
-      "publishedDateDesc": "Published date"
-    }
-  },
   "blog": {
     "views": "{{count}} reads",
     "summary": "Summary",
@@ -490,53 +368,6 @@
     "older": "Earlier"
   },
   "watch": {
-    "title": "What I'm watching",
-    "metaDescription": "My anime and film taste — auto-synced from Bahamut Anime and Letterboxd",
-    "subtitle": "Anime and film taste, all in one page",
-    "eyebrowLive": "● Now",
-    "eyebrowLast": "Last watched",
-    "favoritesTitle": "All-time loves",
-    "favoritesSubtitle": "A purely subjective list — updated whenever something earns a spot.",
-    "recentTitle": "Recently watched",
-    "typeAnime": "Anime",
-    "typeFilm": "Film",
-    "stats": {
-      "animeLabel": "anime",
-      "filmLabel": "films",
-      "tvLabel": "TV series"
-    },
-    "recentGroups": {
-      "thisWeek": "This week",
-      "earlier": "Earlier"
-    },
-    "ending": "What's next? I'm curious too.",
-    "typeTv": "TV",
-    "library": {
-      "title": "Library",
-      "subtitle": "Everything I've watched — anime, film, TV, all in one place",
-      "tabs": {
-        "anime": "Anime",
-        "film": "Films",
-        "tv": "TV"
-      },
-      "search": "Search title…",
-      "sort": {
-        "newest": "Recently watched",
-        "oldest": "Earliest watched",
-        "titleAsc": "Title A→Z",
-        "titleDesc": "Title Z→A"
-      },
-      "empty": "No matches",
-      "epsSuffix": "ep",
-      "undated": "Date unknown",
-      "loading": "Loading…",
-      "openOnLetterboxd": "Open on Letterboxd",
-      "openOnTmdb": "Open on TMDb",
-      "openOnBahamut": "Open on Bahamut Anime",
-      "viewWatch": "← Back to What I'm watching"
-    },
-    "continueOn": "Continue on {{service}}",
-    "viewOnTmdb": "View on TMDb",
     "favManage": "Manage favorites",
     "favEmpty": "No favorites yet",
     "favSearchPlaceholder": "Search TMDb title…",
@@ -753,5 +584,49 @@
     "legendRings": "Rings: other languages",
     "legendMoons": "Moons: GitHub stars",
     "legendHover": "Hover: unfolds into the 3D body"
+  },
+  "collection": {
+    "title": "Collection",
+    "subtitle": "What I've watched, read, and kept on repeat.",
+    "kind": {
+      "anime": "Anime",
+      "film": "Film",
+      "tv": "Series"
+    },
+    "status": {
+      "read": "Read",
+      "reading": "Reading",
+      "to-read": "To read"
+    },
+    "watch": {
+      "title": "Watching",
+      "sub": "Everything I've watched, with a few words on the ones I love most.",
+      "anime": "anime",
+      "animeEp": "episodes",
+      "film": "films",
+      "tv": "series",
+      "tvEp": "episodes",
+      "live": "Watching now",
+      "last": "Last watched",
+      "episode": "Episode {{n}}",
+      "wall": "Everything watched"
+    },
+    "books": {
+      "title": "Bookshelf",
+      "sub": "Finished, in progress, and waiting in line.",
+      "total": "books",
+      "wall": "Every book on the shelf"
+    },
+    "music": {
+      "title": "Listening",
+      "sub": "The twenty tracks I played most in the last six months.",
+      "tracks": "top tracks",
+      "genres": "genres",
+      "live": "Playing now",
+      "last": "Just played",
+      "first": "Most played",
+      "off": "Spotify is unreachable right now.",
+      "wall": "Top twenty tracks"
+    }
   }
 }

@@ -27,13 +27,11 @@ const PAGE_SEO: Record<string, SeoEntry> = {
   '': { descKey: 'hero.description' },
   // 有 i18n 翻譯的
   blog: { titleKey: 'blog.metaTitle', descKey: 'blog.description' },
-  music: { titleKey: 'music.title', descKey: 'music.description' },
-  bookshelf: { titleKey: 'bookshelf.title', descKey: 'bookshelf.description' },
   activity: { titleKey: 'activity.title', descKey: 'activity.description' },
   setup: { titleKey: 'setup.title', descKey: 'setup.description' },
   thinking: { titleKey: 'thinking.title', descKey: 'thinking.subtitle' },
-  watch: { titleKey: 'watch.title', descKey: 'watch.metaDescription' },
-  'watch/library': { titleKey: 'watch.library.title', descKey: 'watch.library.subtitle' },
+  // 收藏（看過的、讀過的、常聽的）：網址沿用 /watch
+  watch: { titleKey: 'collection.title', descKey: 'collection.subtitle' },
   // 這三頁的各語系翻譯原本散在元件內（AboutPage.SEO / Portfolio.dict）或直接寫死中文，
   // 已搬進 locales/*/common.json → 標題現在會跟著語系走，不再各語系都出中文。
   about: { titleKey: 'about.title', descKey: 'about.description' },

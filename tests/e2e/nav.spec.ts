@@ -50,14 +50,14 @@ test.describe('指令面板', () => {
     await page.goto('/');
     await openPalette(page);
 
-    // 'bookshelf' 只出現在「書櫃」那一筆的 keywords 裡，不會撞到別的項目
-    await page.keyboard.type('bookshelf');
+    // 'spotify' 只出現在「收藏」那一筆的 keywords 裡，不會撞到別的項目
+    await page.keyboard.type('spotify');
     const items = page.locator('[cmdk-item]');
     await expect(items).toHaveCount(1, { timeout: 10_000 });
-    await expect(items.first()).toContainText('書櫃');
+    await expect(items.first()).toContainText('收藏');
 
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/bookshelf$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/watch$/, { timeout: 15_000 });
     await expect(palette(page), '走過去之後面板要自己關掉').toHaveCount(0);
   });
 

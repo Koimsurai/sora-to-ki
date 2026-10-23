@@ -47,7 +47,6 @@ const CONTENT: Record<string, RegExp> = {
   '/blog': /第一篇測試文章/,
   '/blog/1': /這是內文/,
   '/thinking': /純文字碎念/,
-  '/bookshelf': /測試書名/,
   '/watch': /測試電影|測試影集|測試動畫/,
   '/en/blog': /The first test post/,
 };

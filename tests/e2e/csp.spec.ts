@@ -64,10 +64,7 @@ const PUBLIC_PAGES = [
   '/blog/6', // format=mdx，內含 <Poll>
   '/thinking',
   '/photos',
-  '/bookshelf',
   '/watch',
-  '/watch/library',
-  '/music',
   '/activity',
   '/friends',
   '/messages',

@@ -6,8 +6,8 @@
 
 import type { Pt } from '@/store/pageTransition';
 
-export const AMBER = '233, 193, 122';
-export const INK = '241, 236, 227';
+const AMBER = '233, 193, 122';
+const INK = '241, 236, 227';
 
 /** 弧線一個來回的高度：大約一個半螢幕，捲著看會左右擺 */
 const PERIOD = 1300;
@@ -35,7 +35,7 @@ export const arcX = (L: Pick<ArcLayout, 'cx' | 'amp' | 'y0'>, y: number) =>
   L.cx + L.amp * Math.sin(((y - L.y0) / PERIOD) * TAU + 0.9);
 
 /** 窄於這個寬度就收成貼左的直線，字一律在右邊 */
-export const NARROW_PX = 760;
+const NARROW_PX = 760;
 const GAP = 230;
 const GAP_NARROW = 210;
 const GHOST_STEP = 30;
