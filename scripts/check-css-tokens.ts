@@ -115,9 +115,6 @@ const GRANDFATHERED = new Set([
   '-1.2rem',
   '-1.5rem',
   '-2.5rem',
-  // `.app-footer` 的 padding-top。那是刻意的 fade zone（內容與 footer 文字之間的過渡），
-  // 不是節奏間距——它跟 --page-bottom 是一組的：頁面下留白 64 + 這裡 128 = 192px。
-  '8rem',
 ]);
 
 /**
