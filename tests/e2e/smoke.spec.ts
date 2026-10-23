@@ -88,7 +88,7 @@ for (const route of discoverRoutes()) {
  * a11y 用 axe-core 掃，不自己刻規則。門檻只擋 critical——先把最嚴重的釘住不讓它回頭，
  * 之後再往下收到 serious（同 oxlint `--max-warnings 0` 的 ratchet 做法）。
  */
-const A11Y_PAGES = ['/blog', '/blog/1', '/thinking', '/bookshelf', '/photos'];
+const A11Y_PAGES = ['/blog', '/blog/1', '/thinking', '/watch', '/photos'];
 
 /**
  * 已知、目前修不掉的違規。**每一條都要寫清楚為什麼**，而且清單只能變短。

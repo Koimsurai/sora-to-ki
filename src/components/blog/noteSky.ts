@@ -13,10 +13,10 @@ const AMBER = '233, 193, 122';
 /** 背景的星（每一顆都拖著一道淡淡的軌跡） */
 const FIELD = 420;
 /** 每秒繞天極轉多少（弧度）：內圈也看得出在走 */
-export const SPIN = 0.035;
+const SPIN = 0.035;
 
 /** 字串 → 0 到 1 的固定亂數（同一篇文章每次都在同一個角度） */
-export function hash01(s: string): number {
+function hash01(s: string): number {
   let x = 2166136261;
   for (let i = 0; i < s.length; i++) x = Math.imul(x ^ s.charCodeAt(i), 16777619);
   return (x >>> 0) / 4294967296;

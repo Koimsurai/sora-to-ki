@@ -159,7 +159,7 @@ test('碎念按過的讚，重新整理之後還亮著', async ({ page }) => {
 test.describe('行動裝置版面', () => {
   test.use({ viewport: { width: 390, height: 844 } }); // iPhone 15 的邏輯解析度
 
-  for (const path of ['/', '/blog', '/blog/1', '/thinking', '/bookshelf', '/watch', '/portfolio']) {
+  for (const path of ['/', '/blog', '/blog/1', '/thinking', '/watch', '/portfolio']) {
     test(`${path} 在手機寬度下不會橫向溢出`, async ({ page }) => {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('main').first()).toContainText(/\S/, { timeout: 15_000 });

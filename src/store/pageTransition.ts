@@ -35,7 +35,7 @@ export interface Departure {
   residue?: (ctx: CanvasRenderingContext2D) => void;
 }
 
-export interface LeaveContext {
+interface LeaveContext {
   /** 點下去的位置；上一頁、下一頁、點導覽列時是 null */
   from: Pt | null;
   /** 點下去的東西自己報的名字（例如首頁衛星的序號） */
@@ -45,7 +45,7 @@ export interface LeaveContext {
 }
 
 /** 點要怎麼落進這一頁 */
-export interface Arrival {
+interface Arrival {
   /**
    * 最後一段要沿著走的路（視窗座標），終點是錨點。要是頁面自己的線的一段（碎念的彗尾、手記的星軌）：
    * 點順著它進來，落地時彗尾散掉，留下的就是頁面自己的線
@@ -64,7 +64,7 @@ export interface Arrival {
   still?: boolean;
 }
 
-export interface GrowContext {
+interface GrowContext {
   /** 出發的點、抵達的點（視窗座標） */
   from: Pt;
   to: Pt;

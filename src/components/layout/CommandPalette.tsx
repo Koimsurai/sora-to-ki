@@ -7,7 +7,6 @@ import {
   FileText,
   Hash,
   Folder,
-  Music,
   BookOpen,
   Activity,
   Home,
@@ -32,8 +31,12 @@ interface StaticPage {
 const STATIC_PAGES: StaticPage[] = [
   { label: '首頁', path: '/', icon: Home, keywords: 'home index 主頁' },
   { label: '手記', path: '/blog', icon: FileText, keywords: 'blog posts 文章 日記' },
-  { label: '書櫃', path: '/bookshelf', icon: BookOpen, keywords: 'books 閱讀 reading' },
-  { label: '音樂', path: '/music', icon: Music, keywords: 'music spotify 音樂' },
+  {
+    label: '收藏',
+    path: '/watch',
+    icon: BookOpen,
+    keywords: 'collection watch anime 動畫 電影 影集 books 書櫃 閱讀 music spotify 音樂',
+  },
   { label: '活動', path: '/activity', icon: Activity, keywords: 'activity 活動 動態' },
   { label: '軌跡', path: '/about#journey', icon: Compass, keywords: 'journey 旅程 時間線' },
   { label: '留言', path: '/messages', icon: Compass, keywords: 'messages 留言 guestbook contact' },

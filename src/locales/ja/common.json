@@ -283,128 +283,6 @@
       "lastYear": "過去 1 年"
     }
   },
-  "music": {
-    "title": "音楽",
-    "description": "Koimsurai の音楽の好みと Spotify のリアルタイム再生記録。",
-    "loading": "音楽データを読み込み中",
-    "heroTitle": "音楽の星域",
-    "heroDesc": "私の音楽の好み、コレクション、リスニング分析",
-    "nowPlaying": "再生中",
-    "lastPlayed": "最後に再生",
-    "tabs": {
-      "recent": "最近の再生",
-      "genres": "好きなジャンル",
-      "yearly": "年間トップ",
-      "analytics": "リスニング分析"
-    },
-    "range": {
-      "short": "直近 4 週間",
-      "medium": "直近 6 か月",
-      "long": "全期間"
-    },
-    "openInSpotify": "Spotify で聴く",
-    "recentHeading": "最近の再生",
-    "genresHeading": "好きなジャンル Top 5",
-    "yearlyHeading": "年間トップ",
-    "analyticsHeading": "リスニング分析",
-    "empty": {
-      "recent": "最近の再生記録はまだありません",
-      "genres": "ジャンルデータがまだありません",
-      "yearly": "年間トップのデータがまだありません",
-      "analytics": "読み込み中... データが出ない場合は、まず「年間トップ」タブを開いてデータを読み込んでください"
-    },
-    "cols": {
-      "track": "曲",
-      "features": "オーディオ特徴",
-      "duration": "長さ",
-      "playedAt": "再生日時",
-      "album": "アルバム"
-    },
-    "features": {
-      "energy": "エナジー",
-      "dance": "ダンス",
-      "valence": "ヴァレンス"
-    },
-    "bubbleCount": "{{count}} 名のアーティスト",
-    "analyticsSubtitle": "よく聴いたトップ {{count}} 曲（{{range}}）から算出",
-    "analytics": {
-      "popularity": "メジャー度",
-      "avgDuration": "平均長さ",
-      "avgRelease": "リリース年の傾向",
-      "explicit": "Explicit",
-      "decadeTitle": "年代別分布"
-    }
-  },
-  "bookshelf": {
-    "title": "本棚",
-    "description": "Koimsurai の読書リストと読書ノート。",
-    "loading": "本棚を読み込み中...",
-    "heroTitle": "知識の星図",
-    "subtitle": "広大な書海の中で、読んだ星の一つひとつに印を",
-    "stats": {
-      "total": "蔵書",
-      "read": "読了",
-      "reading": "読書中",
-      "avgRating": "平均評価"
-    },
-    "statuses": {
-      "read": "読了",
-      "reading": "読書中",
-      "toRead": "読みたい"
-    },
-    "noRating": "未評価",
-    "searchPlaceholder": "書名や著者を検索...",
-    "filter": "フィルター",
-    "zeroGravity": "Zero-G モード",
-    "zg": {
-      "hint": "ドラッグで回転 · ホイールでズーム · クリックで本を開く",
-      "back": "本棚に戻る",
-      "inOrbit": "{{count}} 冊が軌道上に",
-      "unavailable": "この端末には GPU がないため、Zero-G モードは使えません",
-      "pages": "{{count}} ページ"
-    },
-    "twoDView": "2D 表示",
-    "skyStats": "{{total}} 個の星 · 灯った星 {{read}} · 灯りつつある星 {{reading}}",
-    "avgRating": "平均 {{rating}}★",
-    "groups": {
-      "fantasy": "ファンタジー",
-      "literature": "文学・小説",
-      "life": "暮らしと心",
-      "other": "その他"
-    },
-    "legend": {
-      "read": "読了：灯った星、明るいほど高評価",
-      "reading": "読書中：灯りつつある",
-      "toRead": "読みたい：まだ灯っていない",
-      "notes": "光芒：メモあり"
-    },
-    "skyHint": "← 左右にスワイプして空を見渡す →",
-    "listTitle": "書目",
-    "noMatch": "該当する本はありません",
-    "hasNotes": "メモあり",
-    "close": "閉じる",
-    "started": "読み始め",
-    "finished": "読了",
-    "myNotes": "わたしのメモ",
-    "about": "あらすじ",
-    "showMore": "もっと見る",
-    "showLess": "閉じる",
-    "publisher": "出版社",
-    "publishedDate": "出版日",
-    "pages": "ページ数",
-    "filterStatus": "ステータス",
-    "filterRating": "評価",
-    "filterSort": "並び順",
-    "filterClear": "フィルター解除",
-    "sortOpts": {
-      "dateAddedDesc": "新しい順",
-      "dateAddedAsc": "古い順",
-      "titleAsc": "タイトル A-Z",
-      "titleDesc": "タイトル Z-A",
-      "ratingDesc": "評価の高い順",
-      "publishedDateDesc": "出版日付"
-    }
-  },
   "blog": {
     "views": "{{count}} 回閲覧",
     "summary": "要約",
@@ -490,53 +368,6 @@
     "older": "もっと前のつぶやき"
   },
   "watch": {
-    "title": "今みているもの",
-    "metaDescription": "アニメと映画の趣味 — Bahamut Anime と Letterboxd から自動同期",
-    "subtitle": "アニメと映画の趣味、まとめて一枚に",
-    "eyebrowLive": "● 視聴中",
-    "eyebrowLast": "最近見たもの",
-    "favoritesTitle": "一生推し",
-    "favoritesSubtitle": "完全に主観のリスト。気が向いたら更新します。",
-    "recentTitle": "最近みたもの",
-    "typeAnime": "アニメ",
-    "typeFilm": "映画",
-    "stats": {
-      "animeLabel": "アニメ",
-      "filmLabel": "映画",
-      "tvLabel": "ドラマ作品"
-    },
-    "recentGroups": {
-      "thisWeek": "今週",
-      "earlier": "それより前"
-    },
-    "ending": "次は何を観るかな。自分でも楽しみ。",
-    "typeTv": "ドラマ",
-    "library": {
-      "title": "視聴ライブラリ",
-      "subtitle": "観たアニメ・映画・ドラマをまとめて一枚に",
-      "tabs": {
-        "anime": "アニメ",
-        "film": "映画",
-        "tv": "ドラマ"
-      },
-      "search": "タイトルで検索…",
-      "sort": {
-        "newest": "最近観た順",
-        "oldest": "古い順",
-        "titleAsc": "タイトル A→Z",
-        "titleDesc": "タイトル Z→A"
-      },
-      "empty": "該当なし",
-      "epsSuffix": "話",
-      "undated": "日付不明",
-      "loading": "読み込み中…",
-      "openOnLetterboxd": "Letterboxd で開く",
-      "openOnTmdb": "TMDb で開く",
-      "openOnBahamut": "動畫瘋で開く",
-      "viewWatch": "← 「今みているもの」へ戻る"
-    },
-    "continueOn": "{{service}} で続きを見る",
-    "viewOnTmdb": "TMDb で見る",
     "favManage": "お気に入り管理",
     "favEmpty": "まだ登録がありません",
     "favSearchPlaceholder": "TMDb でタイトル検索…",
@@ -753,5 +584,49 @@
     "legendRings": "環：ほかの言語",
     "legendMoons": "衛星：GitHub のスター",
     "legendHover": "カーソルを重ねる：立体の星に開く"
+  },
+  "collection": {
+    "title": "コレクション",
+    "subtitle": "観たもの、読んだもの、よく聴くもの。",
+    "kind": {
+      "anime": "アニメ",
+      "film": "映画",
+      "tv": "ドラマ"
+    },
+    "status": {
+      "read": "読了",
+      "reading": "読書中",
+      "to-read": "積読"
+    },
+    "watch": {
+      "title": "観る",
+      "sub": "観たものはすべてここに。特に好きな作品にはひとこと添えて。",
+      "anime": "本のアニメ",
+      "animeEp": "話",
+      "film": "本の映画",
+      "tv": "本のドラマ",
+      "tvEp": "話",
+      "live": "視聴中",
+      "last": "最近観たのは",
+      "episode": "第 {{n}} 話",
+      "wall": "観たものすべて"
+    },
+    "books": {
+      "title": "本棚",
+      "sub": "読み終えた本、読んでいる本、これから読む本。",
+      "total": "冊",
+      "wall": "本棚のすべて"
+    },
+    "music": {
+      "title": "聴く",
+      "sub": "この半年でいちばん聴いた二十曲。",
+      "tracks": "曲",
+      "genres": "ジャンル",
+      "live": "再生中",
+      "last": "さっき聴いたのは",
+      "first": "いちばん聴いた曲",
+      "off": "Spotify に接続できません。",
+      "wall": "よく聴く二十曲"
+    }
   }
 }

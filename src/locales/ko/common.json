@@ -283,128 +283,6 @@
       "lastYear": "지난 1 년"
     }
   },
-  "music": {
-    "title": "음악",
-    "description": "Koimsurai의 음악 취향과 Spotify 실시간 청취 기록.",
-    "loading": "음악 데이터 불러오는 중",
-    "heroTitle": "음악 성역",
-    "heroDesc": "나의 음악 취향, 컬렉션, 청취 분석",
-    "nowPlaying": "재생 중",
-    "lastPlayed": "마지막 재생",
-    "tabs": {
-      "recent": "최근 재생",
-      "genres": "좋아하는 장르",
-      "yearly": "연간 톱",
-      "analytics": "리스닝 분석"
-    },
-    "range": {
-      "short": "최근 4 주",
-      "medium": "최근 6 개월",
-      "long": "전체 기간"
-    },
-    "openInSpotify": "Spotify에서 듣기",
-    "recentHeading": "최근 재생",
-    "genresHeading": "좋아하는 장르 Top 5",
-    "yearlyHeading": "연간 톱",
-    "analyticsHeading": "리스닝 분석",
-    "empty": {
-      "recent": "최근 재생 기록이 아직 없습니다",
-      "genres": "장르 데이터가 아직 없습니다",
-      "yearly": "연간 톱 데이터가 아직 없습니다",
-      "analytics": "로딩 중... 데이터가 계속 나오지 않으면 먼저 「연간 톱」 탭에서 데이터를 불러오세요"
-    },
-    "cols": {
-      "track": "곡",
-      "features": "오디오 특성",
-      "duration": "길이",
-      "playedAt": "재생 시각",
-      "album": "앨범"
-    },
-    "features": {
-      "energy": "에너지",
-      "dance": "댄스",
-      "valence": "발렌스"
-    },
-    "bubbleCount": "{{count}} 명의 아티스트",
-    "analyticsSubtitle": "가장 많이 들은 톱 {{count}} 곡({{range}}) 기반",
-    "analytics": {
-      "popularity": "대중성",
-      "avgDuration": "평균 길이",
-      "avgRelease": "발매 연도 경향",
-      "explicit": "Explicit",
-      "decadeTitle": "연대별 분포"
-    }
-  },
-  "bookshelf": {
-    "title": "책장",
-    "description": "Koimsurai의 독서 목록과 노트.",
-    "loading": "책장 불러오는 중...",
-    "heroTitle": "지식의 별지도",
-    "subtitle": "광활한 책의 바다에서, 읽은 별 하나하나에 표시를",
-    "stats": {
-      "total": "장서",
-      "read": "읽음",
-      "reading": "읽는 중",
-      "avgRating": "평균 평점"
-    },
-    "statuses": {
-      "read": "읽음",
-      "reading": "읽는 중",
-      "toRead": "읽고 싶음"
-    },
-    "noRating": "평점 없음",
-    "searchPlaceholder": "제목이나 저자 검색...",
-    "filter": "필터",
-    "zeroGravity": "Zero-G 모드",
-    "zg": {
-      "hint": "드래그로 회전 · 스크롤로 줌 · 클릭하여 책 보기",
-      "back": "책장으로 돌아가기",
-      "inOrbit": "궤도 위의 책 {{count}}권",
-      "unavailable": "이 기기에는 GPU가 없어 Zero-G 모드를 사용할 수 없습니다",
-      "pages": "{{count}}쪽"
-    },
-    "twoDView": "2D 보기",
-    "skyStats": "별 {{total}}개 · 빛나는 별 {{read}} · 밝아지는 별 {{reading}}",
-    "avgRating": "평균 {{rating}}★",
-    "groups": {
-      "fantasy": "판타지",
-      "literature": "문학·소설",
-      "life": "삶과 마음",
-      "other": "기타"
-    },
-    "legend": {
-      "read": "다 읽음: 빛나는 별, 밝을수록 높은 평점",
-      "reading": "읽는 중: 밝아지는 중",
-      "toRead": "읽고 싶음: 아직 빛나지 않음",
-      "notes": "빛줄기: 메모 있음"
-    },
-    "skyHint": "← 좌우로 밀어 하늘 전체 보기 →",
-    "listTitle": "책 목록",
-    "noMatch": "조건에 맞는 책이 없습니다",
-    "hasNotes": "메모 있음",
-    "close": "닫기",
-    "started": "읽기 시작",
-    "finished": "다 읽음",
-    "myNotes": "나의 메모",
-    "about": "소개",
-    "showMore": "더 보기",
-    "showLess": "접기",
-    "publisher": "출판사",
-    "publishedDate": "출판일",
-    "pages": "페이지",
-    "filterStatus": "상태",
-    "filterRating": "평점",
-    "filterSort": "정렬",
-    "filterClear": "필터 지우기",
-    "sortOpts": {
-      "dateAddedDesc": "최근 추가순",
-      "dateAddedAsc": "오래된 추가순",
-      "titleAsc": "제목 A-Z",
-      "titleDesc": "제목 Z-A",
-      "ratingDesc": "높은 평점순",
-      "publishedDateDesc": "출판일"
-    }
-  },
   "blog": {
     "views": "{{count}}회 읽음",
     "summary": "요약",
@@ -490,53 +368,6 @@
     "older": "더 이전의 혼잣말"
   },
   "watch": {
-    "title": "지금 보고 있는 것",
-    "metaDescription": "내가 좋아하는 애니메이션·영화 — Bahamut Anime, Letterboxd 자동 동기화",
-    "subtitle": "애니와 영화 취향, 한 페이지에 펼쳐 놓아요",
-    "eyebrowLive": "● 시청 중",
-    "eyebrowLast": "최근 시청",
-    "favoritesTitle": "인생작",
-    "favoritesSubtitle": "순전히 주관적인 리스트. 내킬 때마다 업데이트.",
-    "recentTitle": "최근에 본 것",
-    "typeAnime": "애니",
-    "typeFilm": "영화",
-    "stats": {
-      "animeLabel": "편 애니",
-      "filmLabel": "편 영화",
-      "tvLabel": "편 드라마"
-    },
-    "recentGroups": {
-      "thisWeek": "이번 주",
-      "earlier": "더 이전"
-    },
-    "ending": "다음은 뭘 볼까. 나도 궁금해요.",
-    "typeTv": "드라마",
-    "library": {
-      "title": "시청 라이브러리",
-      "subtitle": "본 애니·영화·드라마를 한 페이지에 모았어요",
-      "tabs": {
-        "anime": "애니",
-        "film": "영화",
-        "tv": "드라마"
-      },
-      "search": "제목 검색…",
-      "sort": {
-        "newest": "최근 본 순",
-        "oldest": "오래 전 본 순",
-        "titleAsc": "제목 A→Z",
-        "titleDesc": "제목 Z→A"
-      },
-      "empty": "결과 없음",
-      "epsSuffix": "화",
-      "undated": "날짜 불명",
-      "loading": "불러오는 중…",
-      "openOnLetterboxd": "Letterboxd에서 열기",
-      "openOnTmdb": "TMDb에서 열기",
-      "openOnBahamut": "動畫瘋에서 열기",
-      "viewWatch": "← 「지금 보고 있는 것」으로 돌아가기"
-    },
-    "continueOn": "{{service}}에서 이어보기",
-    "viewOnTmdb": "TMDb에서 보기",
     "favManage": "인생작 관리",
     "favEmpty": "아직 없습니다",
     "favSearchPlaceholder": "TMDb 제목 검색…",
@@ -753,5 +584,49 @@
     "legendRings": "고리: 다른 언어",
     "legendMoons": "위성: GitHub 스타",
     "legendHover": "마우스를 올리면: 입체 천체로 펼쳐짐"
+  },
+  "collection": {
+    "title": "컬렉션",
+    "subtitle": "본 것, 읽은 것, 자주 듣는 것.",
+    "kind": {
+      "anime": "애니",
+      "film": "영화",
+      "tv": "시리즈"
+    },
+    "status": {
+      "read": "완독",
+      "reading": "읽는 중",
+      "to-read": "읽을 책"
+    },
+    "watch": {
+      "title": "보기",
+      "sub": "본 것은 전부 여기에. 가장 좋아하는 몇 편에는 한마디를 적었다.",
+      "anime": "편의 애니",
+      "animeEp": "화",
+      "film": "편의 영화",
+      "tv": "편의 시리즈",
+      "tvEp": "화",
+      "live": "시청 중",
+      "last": "최근에 본 것",
+      "episode": "{{n}}화",
+      "wall": "본 것 전부"
+    },
+    "books": {
+      "title": "책장",
+      "sub": "다 읽은 책, 읽고 있는 책, 읽을 차례를 기다리는 책.",
+      "total": "권",
+      "wall": "책장의 모든 책"
+    },
+    "music": {
+      "title": "듣기",
+      "sub": "최근 반년 동안 가장 많이 들은 스무 곡.",
+      "tracks": "곡",
+      "genres": "장르",
+      "live": "재생 중",
+      "last": "방금 들은 곡",
+      "first": "가장 많이 들은 곡",
+      "off": "지금은 Spotify에 연결할 수 없습니다.",
+      "wall": "가장 많이 들은 스무 곡"
+    }
   }
 }

@@ -283,128 +283,6 @@
       "lastYear": "近一年"
     }
   },
-  "music": {
-    "title": "音樂",
-    "description": "Koimsurai 的音樂品味與 Spotify 即時收聽紀錄。",
-    "loading": "載入音樂資料",
-    "heroTitle": "音樂星域",
-    "heroDesc": "我的音樂品味、收藏紀錄與聆聽分析",
-    "nowPlaying": "正在播放",
-    "lastPlayed": "最後播放",
-    "tabs": {
-      "recent": "最近播放",
-      "genres": "最愛曲風",
-      "yearly": "年度歌單",
-      "analytics": "聆聽分析"
-    },
-    "range": {
-      "short": "最近 4 週",
-      "medium": "最近 6 個月",
-      "long": "全部時間"
-    },
-    "openInSpotify": "在 Spotify 收聽",
-    "recentHeading": "最近播放",
-    "genresHeading": "最愛的曲風 Top 5",
-    "yearlyHeading": "年度歌單",
-    "analyticsHeading": "聆聽分析",
-    "empty": {
-      "recent": "暫無最近播放記錄",
-      "genres": "暫無曲風資料",
-      "yearly": "暫無年度歌單資料",
-      "analytics": "載入中... 若持續無資料，請先切換到「年度歌單」分頁載入資料"
-    },
-    "cols": {
-      "track": "曲目",
-      "features": "音訊特性",
-      "duration": "時長",
-      "playedAt": "播放時間",
-      "album": "專輯"
-    },
-    "features": {
-      "energy": "活力",
-      "dance": "節奏",
-      "valence": "正度"
-    },
-    "bubbleCount": "{{count}} 位藝人",
-    "analyticsSubtitle": "依你最常聽的 {{count}} 首歌（{{range}}）推導",
-    "analytics": {
-      "popularity": "主流度",
-      "avgDuration": "平均長度",
-      "avgRelease": "時間偏好",
-      "explicit": "露骨內容",
-      "decadeTitle": "年代分佈"
-    }
-  },
-  "bookshelf": {
-    "title": "書架",
-    "description": "Koimsurai 的閱讀書單與讀書筆記。",
-    "loading": "載入書櫃中...",
-    "heroTitle": "知識星圖",
-    "subtitle": "在浩瀚書海中，標記每一顆閱讀過的星",
-    "stats": {
-      "total": "藏書",
-      "read": "已讀",
-      "reading": "閱讀中",
-      "avgRating": "平均評分"
-    },
-    "statuses": {
-      "read": "已讀",
-      "reading": "閱讀中",
-      "toRead": "想讀"
-    },
-    "noRating": "未評分",
-    "searchPlaceholder": "搜尋書名或作者...",
-    "filter": "篩選",
-    "zeroGravity": "零重力模式",
-    "zg": {
-      "hint": "拖曳旋轉 · 滾輪縮放 · 點擊書籍查看",
-      "back": "返回書架",
-      "inOrbit": "{{count}} 本書在軌道上",
-      "unavailable": "這台裝置沒有可用的 GPU，零重力模式跑不動",
-      "pages": "{{count}} 頁"
-    },
-    "twoDView": "2D 視圖",
-    "skyStats": "{{total}} 顆星 · 已點亮 {{read}} 顆 · 正在點亮 {{reading}} 顆",
-    "avgRating": "平均 {{rating}}★",
-    "groups": {
-      "fantasy": "奇幻冒險",
-      "literature": "文學小說",
-      "life": "生活與心靈",
-      "other": "其他"
-    },
-    "legend": {
-      "read": "讀完了：點亮的星，越亮評分越高",
-      "reading": "閱讀中：正在點亮",
-      "toRead": "想讀：還沒點亮",
-      "notes": "有星芒：寫了筆記"
-    },
-    "skyHint": "← 左右滑動看整片天空 →",
-    "listTitle": "書目",
-    "noMatch": "沒有符合的書",
-    "hasNotes": "有筆記",
-    "close": "關閉",
-    "started": "開始讀",
-    "finished": "讀完",
-    "myNotes": "我的筆記",
-    "about": "簡介",
-    "showMore": "展開",
-    "showLess": "收合",
-    "publisher": "出版社",
-    "publishedDate": "出版日期",
-    "pages": "頁數",
-    "filterStatus": "閱讀狀態",
-    "filterRating": "評分",
-    "filterSort": "排序",
-    "filterClear": "清除篩選",
-    "sortOpts": {
-      "dateAddedDesc": "最新加入",
-      "dateAddedAsc": "最早加入",
-      "titleAsc": "標題 A-Z",
-      "titleDesc": "標題 Z-A",
-      "ratingDesc": "評分高到低",
-      "publishedDateDesc": "出版日期"
-    }
-  },
   "blog": {
     "views": "{{count}} 次閱讀",
     "summary": "摘要",
@@ -490,53 +368,6 @@
     "older": "更早的碎念"
   },
   "watch": {
-    "title": "在看什麼",
-    "metaDescription": "我的動畫與電影品味 — 自動同步自動畫瘋與 Letterboxd",
-    "subtitle": "我的動畫與電影品味，一頁攤開給你看",
-    "eyebrowLive": "● 正在看",
-    "eyebrowLast": "最近看完",
-    "favoritesTitle": "一生推",
-    "favoritesSubtitle": "純主觀私心清單，想到就更新。",
-    "recentTitle": "最近在看",
-    "typeAnime": "動畫",
-    "typeFilm": "電影",
-    "stats": {
-      "animeLabel": "部動畫",
-      "filmLabel": "部電影",
-      "tvLabel": "部影集"
-    },
-    "recentGroups": {
-      "thisWeek": "本週",
-      "earlier": "更早"
-    },
-    "ending": "下一部會是什麼？我自己也很期待。",
-    "typeTv": "影集",
-    "library": {
-      "title": "看過的完整清單",
-      "subtitle": "所有看過的動畫、電影、影集，一頁攤開",
-      "tabs": {
-        "anime": "動畫",
-        "film": "電影",
-        "tv": "影集"
-      },
-      "search": "搜尋標題…",
-      "sort": {
-        "newest": "最近看的",
-        "oldest": "最早看的",
-        "titleAsc": "標題 A→Z",
-        "titleDesc": "標題 Z→A"
-      },
-      "empty": "沒有符合的結果",
-      "epsSuffix": "集",
-      "undated": "日期不明",
-      "loading": "載入中…",
-      "openOnLetterboxd": "在 Letterboxd 開啟",
-      "openOnTmdb": "在 TMDb 開啟",
-      "openOnBahamut": "在動畫瘋開啟",
-      "viewWatch": "← 回 「在看什麼」"
-    },
-    "continueOn": "在 {{service}} 繼續看",
-    "viewOnTmdb": "在 TMDb 查看",
     "favManage": "管理一生推",
     "favEmpty": "還沒有任何收藏",
     "favSearchPlaceholder": "搜尋 TMDb 片名…",
@@ -753,5 +584,49 @@
     "legendRings": "環：其他語言",
     "legendMoons": "衛星：GitHub 星星",
     "legendHover": "滑過：展開成立體的星"
+  },
+  "collection": {
+    "title": "收藏",
+    "subtitle": "看過的、讀過的、常聽的。",
+    "kind": {
+      "anime": "動畫",
+      "film": "電影",
+      "tv": "影集"
+    },
+    "status": {
+      "read": "讀完",
+      "reading": "在讀",
+      "to-read": "想讀"
+    },
+    "watch": {
+      "title": "在看",
+      "sub": "看過的都在這裡，最喜歡的那幾部寫了幾句話。",
+      "anime": "部動畫",
+      "animeEp": "集",
+      "film": "部電影",
+      "tv": "部影集",
+      "tvEp": "集",
+      "live": "正在看",
+      "last": "最近看的是",
+      "episode": "第 {{n}} 集",
+      "wall": "看過的全部"
+    },
+    "books": {
+      "title": "書櫃",
+      "sub": "讀完的、正在讀的、排著要讀的。",
+      "total": "本",
+      "wall": "書櫃裡的全部"
+    },
+    "music": {
+      "title": "在聽",
+      "sub": "最近半年最常聽的二十首。",
+      "tracks": "首最常聽",
+      "genres": "種曲風",
+      "live": "正在聽",
+      "last": "剛剛聽的是",
+      "first": "最常聽的第一首",
+      "off": "Spotify 暫時連不上。",
+      "wall": "最常聽的二十首"
+    }
   }
 }

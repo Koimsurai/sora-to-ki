@@ -17,8 +17,7 @@ interface Post {
 const PAGES: [string, string][] = [
   ['/blog', '技術文章：開發、除錯、自架服務、AI 應用的長篇實作紀錄'],
   ['/photos', '攝影作品'],
-  ['/bookshelf', '書櫃 / 閱讀紀錄'],
-  ['/music', '音樂'],
+  ['/watch', '收藏：看過的動畫、電影、影集，書櫃，最常聽的音樂'],
   ['/setup', '軟硬體配置'],
   ['/about', '關於作者'],
 ];

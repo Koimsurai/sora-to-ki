@@ -29,7 +29,7 @@ import { expect, test } from './fixtures';
  * 不把整個 a11y 門檻拉到 moderate 是刻意的——那會一次擋下 heading-order 等
  * 既有問題，變成大改動。這裡只釘住「main 唯一」這一條具體的不變量。
  */
-const LANDMARK_PAGES = ['/', '/blog', '/blog/1', '/thinking', '/bookshelf'];
+const LANDMARK_PAGES = ['/', '/blog', '/blog/1', '/thinking', '/watch'];
 
 test.describe('地標結構', () => {
   for (const path of LANDMARK_PAGES) {
@@ -67,12 +67,10 @@ const A11Y_STRICT = [
   '/blog',
   '/blog/1',
   '/thinking',
-  '/bookshelf',
   '/watch',
   '/activity',
   '/setup',
   '/portfolio',
-  '/music',
   '/about-site',
   '/en/blog',
   '/ja/blog/1',

@@ -33,12 +33,10 @@ const PAGES = [
   '/',
   '/blog',
   '/thinking',
-  '/bookshelf',
   '/watch',
   '/activity', // 第三方資料只有正式站才有 → 這頁是這支腳本存在的主因
   '/setup',
   '/portfolio',
-  '/music',
   '/about-site',
   '/photos',
 ];
