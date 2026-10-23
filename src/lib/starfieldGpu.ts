@@ -20,21 +20,11 @@ import {
   sin,
   mix,
   smoothstep,
-  vec2,
   vec3,
   vec4,
   uniform,
-  texture,
   dot,
-  length,
   normalize,
-  clamp,
-  abs,
-  step,
-  positionLocal,
-  normalLocal,
-  normalView,
-  positionViewDirection,
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
@@ -148,10 +138,11 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   // instanced 位置：官方模式 positionNode = instancedBufferAttribute(...)
   mat.positionNode = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(positions, 3), 'vec3');
 
-  // 色溫：白為主，冷暖微變（±35% 飽和）——貼近真實星野的色彩分佈
+  // 色溫：白為主，冷暖微變
   const tint = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(tints, 1), 'float');
   const starColor = mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.9, 0.78), tint);
-  const finalColor = mix(vec3(1, 1, 1), starColor, 0.35).mul(1.35); // >1 的 HDR 餘量餵 bloom（HalfFloat 管線）
+  // 冷暖只留一點點：翻新後整站是黑紙白墨，星星不該帶出藍或橘
+  const finalColor = mix(vec3(1, 1, 1), starColor, 0.12).mul(1.35); // >1 的 HDR 餘量餵 bloom（HalfFloat 管線）
   mat.colorNode = finalColor;
   // selective bloom：per-material mrtNode 覆寫（官方 selective FX 模式）——星星的
   // bloomIntensity 通道寫 1，其他材質（土星/衛星）走全域預設 0 → bloom 只暈星星
@@ -184,16 +175,6 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   return sprite;
 }
 
-/// 貼圖載入——worker 沒有 Image/TextureLoader，用 fetch + createImageBitmap（主執行緒也通用）。
-async function loadTexture(url: string): Promise<THREE.Texture> {
-  const resp = await fetch(url);
-  const bitmap = await createImageBitmap(await resp.blob(), { imageOrientation: 'flipY' });
-  const tex = new THREE.Texture(bitmap as unknown as HTMLImageElement);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
-}
-
 interface SaturnRig {
   group: THREE.Group;
   /**
@@ -209,101 +190,102 @@ interface SaturnRig {
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
 
-const RING_INNER = 1.5;
-const RING_OUTER = 2.2;
 const RING_TILT = Math.PI / 2.5;
+/** 墨色（--paper #f1ece3）。three 的 Color 會自己換成線性空間 */
+const INK = new THREE.Color('#f1ece3');
+/** 紙色（--ground #0a0a0c）：擋住背面那顆球的顏色，要跟頁面底色一樣才看不出它在那裡 */
+const GROUND = new THREE.Color('#0a0a0c');
+const PLANET_POINTS = 2400;
+/** 環：一圈一條線，[半徑, 不透明度]。1.80 到 1.86 之間空著，是卡西尼縫 */
+const RINGS: [number, number][] = [
+  [1.5, 0.22],
+  [1.56, 0.3],
+  [1.62, 0.42],
+  [1.68, 0.55],
+  [1.74, 0.62],
+  [1.79, 0.5],
+  [1.87, 0.34],
+  [1.94, 0.42],
+  [2.02, 0.36],
+  [2.1, 0.26],
+  [2.2, 0.16],
+];
 
-/// 土星——對齊舊 Saturn3D：球(r1)+環(1.5-2.2, 傾 π/2.5)+群組傾 π/24+兩衛星，
-/// 自轉 0.05 rad/s + 捲動旋轉 scrollY*0.001（lerp 0.05）+ intro 縮放（lerp 0.08）。
-/// 環 hover 效果不移植：舊 canvas pointerEvents:none，事件從未觸發過（死碼）。
+/// 土星（2026-10 翻新的 C 畫法）：點的星球、線的環。
 ///
-/// 環與陰影都在「局部座標」裡解析計算，不開 shadow map（點光源的 shadow map 是六面 cube，
-/// 每幀多畫六次場景）。行星是局部原點上的單位球、環在環自己的 z=0 平面上，所以唯一要每幀
-/// 更新的是「太陽在這兩個局部座標裡的位置」——群組在轉、在縮放，太陽不動。
-async function buildSaturn(
-  sunWorld: THREE.Vector3,
-  textures: Promise<[THREE.Texture, THREE.Texture]>,
-): Promise<SaturnRig> {
-  const [planetMap, ringsMap] = await textures;
-  ringsMap.wrapS = THREE.ClampToEdgeWrapping;
+/// 星球是球面上均勻鋪開的點（費波那契球面），亮暗跟著太陽：迎光的那一面亮、背光的暗。
+/// 背面的點用一顆略小、跟紙同色的實心球擋掉——不然整顆球像透明的網子，而且球後面的星星
+/// 與環的背段也會透出來。環是幾圈 1px 的線（WebGPU 的線本來就只有 1px，剛好是要的樣子）。
+///
+/// 自轉 0.05 rad/s + 捲動旋轉 scrollY*0.001（lerp 0.05）+ intro 縮放（lerp 0.08），跟舊的一樣。
+function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   const group = new THREE.Group();
   group.rotation.z = Math.PI / 24;
+  const body = new THREE.Group();
+  group.add(body);
 
+  // 星球的點：位置就是單位球面上的方向，亮度用它跟太陽方向的夾角算
   const sunInPlanet = uniform(new THREE.Vector3());
-  const sunInRing = uniform(new THREE.Vector3());
-
-  // 環的貼圖是一條「由內到外」的橫向色帶。RingGeometry 的 UV 是平面投影，直接貼會變成
-  // 一排平行直條紋而不是同心圓——所以改用半徑當貼圖座標。
-  // 貼圖沒有 alpha，直接貼的話黑色的環縫會變成一圈黑帶蓋在行星上，所以用亮度推出透明度。
-  const ringAt = (r: ReturnType<typeof length>) => {
-    const tex = texture(ringsMap, vec2(r.sub(RING_INNER).div(RING_OUTER - RING_INNER), 0.5));
-    const alpha = smoothstep(0.03, 0.22, dot(tex.rgb, vec3(0.299, 0.587, 0.114)));
-    return { rgb: tex.rgb, alpha };
-  };
-
-  // 行星：被環擋住的地方有影子。從表面點朝太陽打一條射線，交到環的平面上、落在環的範圍內，
-  // 就按那一點環的不透明度遮掉陽光。
-  const planetMat = new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.1 });
-  {
-    const p = positionLocal;
-    const toSun = normalize(sunInPlanet.sub(p));
-    const ringN = vec3(0, -Math.sin(RING_TILT), Math.cos(RING_TILT));
-    const denom = dot(toSun, ringN);
-    const t = dot(p, ringN)
-      .negate()
-      .div(denom.add(denom.sign().mul(1e-4)));
-    const r = length(p.add(toSun.mul(t)));
-    const onRing = step(0, t).mul(step(RING_INNER, r)).mul(step(r, RING_OUTER));
-    const ringShadow = float(1).sub(onRing.mul(ringAt(r).alpha).mul(0.6));
-    planetMat.colorNode = texture(planetMap, uv()).rgb.mul(ringShadow);
-    // 大氣的邊緣光：只在受光的那半邊，背光面的邊緣不該亮
-    const fresnel = float(1)
-      .sub(clamp(dot(normalView, positionViewDirection), 0, 1))
-      .pow(3);
-    const litSide = smoothstep(-0.15, 0.45, dot(normalLocal, normalize(sunInPlanet)));
-    planetMat.emissiveNode = vec3(1.0, 0.86, 0.66).mul(fresnel.mul(litSide).mul(0.35));
+  const positions = new Float32Array(PLANET_POINTS * 3);
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  // 每個點在原位附近隨機挪一點：太規則的點陣跟螢幕的像素格子會疊出斜的摩爾紋
+  const jitter = 0.35 * Math.sqrt((4 * Math.PI) / PLANET_POINTS);
+  for (let i = 0; i < PLANET_POINTS; i++) {
+    const y = 1 - (i / (PLANET_POINTS - 1)) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const v = new THREE.Vector3(Math.cos(golden * i) * r, y, Math.sin(golden * i) * r);
+    v.x += (Math.random() - 0.5) * jitter;
+    v.y += (Math.random() - 0.5) * jitter;
+    v.z += (Math.random() - 0.5) * jitter;
+    v.normalize();
+    positions.set([v.x, v.y, v.z], i * 3);
   }
-  const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), planetMat);
+  const dotMat = new THREE.PointsNodeMaterial();
+  const at = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(positions, 3), 'vec3');
+  dotMat.positionNode = at;
+  const lit = smoothstep(-0.25, 0.7, dot(normalize(at), normalize(sunInPlanet)));
+  dotMat.colorNode = vec3(INK.r, INK.g, INK.b);
+  const soft = smoothstep(1.0, 0.45, uv().sub(0.5).length().mul(2.0));
+  // 雲帶：沿緯度一圈一圈的明暗，很淡，只是讓它看得出是土星
+  const bands = sin(at.y.mul(13))
+    .mul(0.14)
+    .add(sin(at.y.mul(31)).mul(0.06))
+    .add(0.8);
+  dotMat.opacityNode = soft.mul(mix(float(0.14), float(1), lit)).mul(bands);
+  dotMat.size = 0.026;
+  dotMat.sizeAttenuation = true;
+  dotMat.transparent = true;
+  dotMat.depthWrite = false;
+  const dots = new THREE.Sprite(dotMat);
+  dots.count = PLANET_POINTS;
 
-  // 環：薄薄一層冰粒，亮度跟入射角的關係很弱——用 Standard 材質的話光從很斜的角度照過來，
-  // 整圈環暗到幾乎看不見。這裡自己算光：入射角只影響一半，加上行星投過來的影子。
-  const ringMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: false });
-  {
-    const p = positionLocal;
-    const ring = ringAt(length(p.xy));
-    const toSun = normalize(sunInRing.sub(p));
-    // 行星（單位球、在原點）有沒有擋在這一點與太陽之間
-    const b = dot(p.negate(), toSun);
-    const d2 = dot(p, p).sub(b.mul(b));
-    const planetShadow = mix(float(1), smoothstep(0.82, 1.0, d2), step(0, b));
-    const lit = mix(0.55, 1.0, abs(toSun.z));
-    ringMat.colorNode = ring.rgb.mul(vec3(1.0, 0.93, 0.82)).mul(lit.mul(planetShadow).mul(1.5));
-    ringMat.opacityNode = ring.alpha.mul(0.9);
-  }
+  // 擋背面的球：比點略小，畫成紙色。不透明物件先畫，點與環的背段被它的深度擋掉
+  const occluder = new THREE.Mesh(
+    new THREE.SphereGeometry(0.985, 48, 32),
+    new THREE.MeshBasicNodeMaterial({ color: GROUND }),
+  );
+  body.add(occluder, dots);
+
   const ringHolder = new THREE.Group();
   ringHolder.rotation.x = RING_TILT;
-  const rings = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 128, 1), ringMat);
-  ringHolder.add(rings);
-  group.add(planet, ringHolder);
+  for (const [radius, alpha] of RINGS) {
+    // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
+    const pts = Array.from({ length: 257 }, (_, k) => {
+      const a = (k / 256) * Math.PI * 2;
+      return new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0);
+    });
+    const ring = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity: alpha, depthWrite: false }),
+    );
+    ringHolder.add(ring);
+  }
+  group.add(ringHolder);
 
   const syncSun = () => {
     group.updateWorldMatrix(true, true);
-    planet.worldToLocal(sunInPlanet.value.copy(sunWorld));
-    rings.worldToLocal(sunInRing.value.copy(sunWorld));
+    body.worldToLocal(sunInPlanet.value.copy(sunWorld));
   };
-
-  const satellites = [
-    { baseR: 2.5, y: 0.1, speed: 0.3, size: 0.04, angle: Math.random() * Math.PI * 2 },
-    { baseR: 3, y: -0.15, speed: 0.2, size: 0.06, angle: Math.random() * Math.PI * 2 },
-  ].map((cfg) => {
-    const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(cfg.size, 8, 8),
-      new THREE.MeshStandardMaterial({ color: '#cccccc', emissive: '#333333', roughness: 0.5, metalness: 0.5 }),
-    );
-    mesh.position.set(cfg.baseR, cfg.y, 0);
-    group.add(mesh);
-    return { mesh, cfg };
-  });
 
   let autoRot = 0;
   // 捲動帶動的旋轉單獨 lerp：自轉是等速的，不需要 lerp；放進同一個 lerp 的話目標每幀都在前進，
@@ -321,10 +303,6 @@ async function buildSaturn(
       const targetScale = animate ? 1 : 0.0001;
       currentScale = THREE.MathUtils.lerp(currentScale, targetScale, lerpFactor(0.08, dt));
       group.scale.setScalar(currentScale);
-      for (const s of satellites) {
-        s.cfg.angle += s.cfg.speed * dt;
-        s.mesh.position.set(s.cfg.baseR * Math.cos(s.cfg.angle), s.cfg.y, s.cfg.baseR * Math.sin(s.cfg.angle));
-      }
       syncSun();
       const zooming = Math.abs(targetScale - currentScale) > 0.005;
       return { moving: zooming || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
@@ -362,13 +340,6 @@ export async function createStarfieldRunner(
   init: StarfieldInit,
 ): Promise<{ runner: StarfieldRunner; backend: 'WebGPU' | 'WebGL2' }> {
   if (await softwareRendering()) throw new Error('沒有硬體加速（軟體渲染），不建 3D');
-  // 土星貼圖跟下面建 GPU device 同時下載，不要等 init 完才開始（開場要等整個 runner 就緒）。
-  // 先掛一個空的 catch：失敗要到 buildSaturn 那裡才處理，這段空檔不該冒出 unhandledrejection。
-  const saturnTextures = Promise.all([
-    loadTexture('/textures/saturn_texture.webp'),
-    loadTexture('/textures/saturn_rings_texture.webp'),
-  ]);
-  saturnTextures.catch(() => undefined);
   const renderer = new THREE.WebGPURenderer({
     // 型別只收 HTMLCanvasElement；OffscreenCanvas 在 runtime 相容（官方 worker 範例同款用法）
     canvas: init.canvas as HTMLCanvasElement,
@@ -403,18 +374,13 @@ export async function createStarfieldRunner(
   sun.position.set(4.5, 3.5, 5.5);
   scene.add(sun);
 
-  // 土星（貼圖非同步；失敗不擋星空——例如離線快取缺圖）
-  let saturn: SaturnRig | null = null;
+  // 土星：點與線，不需要貼圖
+  const saturn = buildSaturn(sun.position);
   let saturnVisible = false;
   let saturnAnimate = true;
   let scrollY = 0;
-  try {
-    saturn = await buildSaturn(sun.position, saturnTextures);
-    saturn.group.visible = false; // 僅首頁顯示，等 setSaturn 訊息
-    scene.add(saturn.group);
-  } catch (e) {
-    console.warn('[starfieldGpu] 土星貼圖載入失敗，僅渲染星空:', e);
-  }
+  saturn.group.visible = false; // 僅首頁顯示，等 setSaturn 訊息
+  scene.add(saturn.group);
 
   // selective bloom（BloomNode 官方 MRT 範例同款）：bloom 只吃 emissive 通道——
   // 星星（emissiveNode=顏色）有光暈；土星/衛星（Standard 材質、emissive≈0）不被星空 bloom 掃到，
@@ -467,7 +433,7 @@ export async function createStarfieldRunner(
   // ── 暖機：所有會用到的管線都在 ready 之前編譯完 ──
   // three 預設在「第一次畫到」時才編譯，那會是開場頭幾幀、或土星出現的那一刻的一次停頓。
   // 土星此時還是隱藏的（等主執行緒的 setSaturn），暫時打開以極小縮放畫一次，管線就有了。
-  if (saturn) saturn.group.visible = true;
+  saturn.group.visible = true;
   // 用 PassNode 的 compileAsync，不是 renderer.compileAsync(scene, camera)：後者照「畫到 canvas」
   // 的設定編，而場景 pass 是兩張半精度的 MRT，管線不一樣——第一次 render 時會整批同步重編
   // （實測主 pipeline 第一次畫要 100–440ms，換成這個之後剩 70–170ms，剩下的是 bloom 的全螢幕 pass）。
@@ -478,7 +444,7 @@ export async function createStarfieldRunner(
     introPipeline.render();
     stagePipeline.render(); // 最後畫開場的第 0 幀：主執行緒一顯示 canvas，看到的就是開場的底色
   }
-  if (saturn) saturn.group.visible = false;
+  saturn.group.visible = false;
 
   // ── 渲染迴圈 ──────────────────────────────────────────────────
   //
@@ -528,7 +494,7 @@ export async function createStarfieldRunner(
     const factor = QUALITY_FACTOR[quality] ?? 1;
     for (const l of layers) l.points.count = Math.max(1, Math.round(l.cfg.count * factor));
     // 最低等級連土星也收掉（它是最貴的一塊）
-    if (saturn) saturn.group.visible = saturnVisible && quality < 2;
+    saturn.group.visible = saturnVisible && quality < 2;
   };
 
   const loop = (now: number) => {
@@ -562,7 +528,7 @@ export async function createStarfieldRunner(
       markActive();
     }
 
-    if (saturn && saturnVisible) {
+    if (saturnVisible) {
       const s = saturn.update(delta, scrollY, saturnAnimate && introAllowsZoom);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
@@ -632,7 +598,7 @@ export async function createStarfieldRunner(
         saturnVisible = visible;
         saturnAnimate = animate;
         // 最低品質下即使呼叫顯示也不開（土星最貴）
-        if (saturn) saturn.group.visible = visible && quality < 2;
+        saturn.group.visible = visible && quality < 2;
       },
       setRunning(running) {
         if (running) {
