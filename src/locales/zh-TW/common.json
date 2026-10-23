@@ -34,6 +34,26 @@
     "thinking": "碎念",
     "menu": "導覽選單"
   },
+  "siteNav": {
+    "notes": "手記",
+    "moments": "碎念",
+    "works": "作品",
+    "collection": "收藏",
+    "about": "關於",
+    "more": "更多",
+    "photos": "照片",
+    "setup": "設備",
+    "friends": "朋友",
+    "messages": "留言",
+    "log": "航行日誌",
+    "colophon": "此站點",
+    "search": "搜尋",
+    "language": "語言",
+    "account": "帳號",
+    "menu": "選單",
+    "close": "關閉",
+    "home": "回首頁"
+  },
   "user": {
     "adminPanel": "進入後台",
     "logout": "登出",

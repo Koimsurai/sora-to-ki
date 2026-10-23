@@ -34,6 +34,26 @@
     "thinking": "つぶやき",
     "menu": "ナビゲーション"
   },
+  "siteNav": {
+    "notes": "ノート",
+    "moments": "つぶやき",
+    "works": "作品",
+    "collection": "コレクション",
+    "about": "について",
+    "more": "もっと",
+    "photos": "写真",
+    "setup": "デバイス",
+    "friends": "友達",
+    "messages": "メッセージ",
+    "log": "航海日誌",
+    "colophon": "このサイト",
+    "search": "検索",
+    "language": "言語",
+    "account": "アカウント",
+    "menu": "メニュー",
+    "close": "閉じる",
+    "home": "ホーム"
+  },
   "user": {
     "adminPanel": "管理画面へ",
     "logout": "ログアウト",

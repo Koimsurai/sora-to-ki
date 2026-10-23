@@ -45,3 +45,6 @@ Thumbs.db
 privkey.pem
 fullchain.pem
 target
+
+# 按頁裁字的原檔：映像裡由 Dockerfile 的 serif-font 階段自己下載
+.cache

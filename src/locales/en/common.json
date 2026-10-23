@@ -34,6 +34,26 @@
     "thinking": "Murmurs",
     "menu": "Navigation menu"
   },
+  "siteNav": {
+    "notes": "Notes",
+    "moments": "Murmurs",
+    "works": "Work",
+    "collection": "Collection",
+    "about": "About",
+    "more": "More",
+    "photos": "Photos",
+    "setup": "Setup",
+    "friends": "Friends",
+    "messages": "Messages",
+    "log": "Log",
+    "colophon": "This site",
+    "search": "Search",
+    "language": "Language",
+    "account": "Account",
+    "menu": "Menu",
+    "close": "Close",
+    "home": "Home"
+  },
   "user": {
     "adminPanel": "Admin panel",
     "logout": "Sign out",

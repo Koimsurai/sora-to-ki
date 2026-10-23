@@ -34,6 +34,26 @@
     "thinking": "중얼거림",
     "menu": "내비게이션"
   },
+  "siteNav": {
+    "notes": "노트",
+    "moments": "혼잣말",
+    "works": "작품",
+    "collection": "컬렉션",
+    "about": "소개",
+    "more": "더 보기",
+    "photos": "사진",
+    "setup": "장비",
+    "friends": "친구들",
+    "messages": "메시지",
+    "log": "항해 일지",
+    "colophon": "이 사이트",
+    "search": "검색",
+    "language": "언어",
+    "account": "계정",
+    "menu": "메뉴",
+    "close": "닫기",
+    "home": "홈"
+  },
   "user": {
     "adminPanel": "관리자 페이지",
     "logout": "로그아웃",
