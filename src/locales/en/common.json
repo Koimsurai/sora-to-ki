@@ -721,5 +721,21 @@
   "gallery": {
     "allTags": "All",
     "moreTags": "More"
+  },
+  "aboutFall": {
+    "kick": "About",
+    "title": "Hold on.",
+    "hint": "Scroll down",
+    "landPre": "Past countless naive, uncertain yesterdays,",
+    "land": "touchdown.",
+    "surface": "Surface",
+    "surfaceTitle": "In hand",
+    "surfaceSub": "What I have carried along.",
+    "layer1": "Layer one",
+    "layer1Title": "What I have done",
+    "core": "Core",
+    "coreLine": "Further down are the things not yet written.",
+    "fallMeter": "Above ground",
+    "digMeter": "Below ground"
   }
 }

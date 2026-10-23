@@ -721,5 +721,21 @@
   "gallery": {
     "allTags": "전체",
     "moreTags": "더보기"
+  },
+  "aboutFall": {
+    "kick": "소개",
+    "title": "꽉 잡으세요.",
+    "hint": "아래로 스크롤",
+    "landPre": "서툴고 헤매던 수많은 어제를 지나,",
+    "land": "여기 내려앉다.",
+    "surface": "지표",
+    "surfaceTitle": "손에 쥔 것",
+    "surfaceSub": "줄곧 들고 다닌 것들.",
+    "layer1": "첫째 층",
+    "layer1Title": "해 온 일",
+    "core": "핵",
+    "coreLine": "더 아래는 아직 쓰지 않은 이야기.",
+    "fallMeter": "지표까지",
+    "digMeter": "지표 아래"
   }
 }

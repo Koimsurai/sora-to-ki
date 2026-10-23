@@ -721,5 +721,21 @@
   "gallery": {
     "allTags": "すべて",
     "moreTags": "その他"
+  },
+  "aboutFall": {
+    "kick": "について",
+    "title": "しっかりつかまって。",
+    "hint": "下へスクロール",
+    "landPre": "幼くて迷ってばかりの昨日をいくつも過ぎて、",
+    "land": "ここに降り立つ。",
+    "surface": "地表",
+    "surfaceTitle": "手にしているもの",
+    "surfaceSub": "ずっと持ち歩いてきたもの。",
+    "layer1": "第一層",
+    "layer1Title": "やってきたこと",
+    "core": "地核",
+    "coreLine": "その下は、まだ書いていないこと。",
+    "fallMeter": "地表まで",
+    "digMeter": "地表から"
   }
 }
