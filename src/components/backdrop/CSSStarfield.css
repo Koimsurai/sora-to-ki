@@ -67,3 +67,12 @@
     animation: none;
   }
 }
+
+/* 頁面自己畫背景時（hooks/useBareSky）讓位 */
+.css-starfield {
+  transition: opacity var(--dur-700) ease;
+}
+
+html[data-sky="bare"] .css-starfield {
+  opacity: 0;
+}

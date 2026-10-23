@@ -20,6 +20,7 @@ function makeRunner() {
     setRunning: vi.fn(),
     setSatelliteGlow: vi.fn(),
     collapseSaturnTo: vi.fn(),
+    setStars: vi.fn(),
     dispose: vi.fn(),
   };
 }
@@ -151,6 +152,12 @@ describe('首頁的衛星', () => {
     await initAndSettle();
     send({ type: 'collapse', index: 2 });
     expect(runner.collapseSaturnTo).toHaveBeenCalledWith(2);
+  });
+
+  it('星星的開關在 init 前到的話，ready 之後補放', async () => {
+    send({ type: 'stars', visible: false });
+    await initAndSettle();
+    expect(runner.setStars).toHaveBeenCalledWith(false);
   });
 
   it('init 完成前收到的亮度，ready 之後補給 runner', async () => {

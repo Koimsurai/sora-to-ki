@@ -14,3 +14,8 @@
 html[data-pt="out"] .main-content-container > main {
   opacity: 0;
 }
+
+/* 新的一頁露出來時淡入（藏起來那一下是立刻的：舊頁已經收完了） */
+html:not([data-pt="out"]) .main-content-container > main {
+  transition: opacity var(--dur-400) ease;
+}

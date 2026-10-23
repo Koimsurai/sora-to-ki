@@ -36,12 +36,18 @@
 
 .nt-in {
   position: relative;
+  transition: opacity var(--dur-250) ease;
   z-index: 1;
   display: grid;
   gap: var(--space-7);
   max-width: 680px;
   padding: var(--page-top) var(--space-4) var(--page-bottom);
   margin-left: max(0px, calc(50% - 560px));
+}
+
+/* 換頁的「收」：字先退掉，只剩星軌在動 */
+.nt.is-leaving .nt-in {
+  opacity: 0;
 }
 
 /* ── 標題 ── */

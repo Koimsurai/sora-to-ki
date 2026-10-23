@@ -11,7 +11,11 @@ import { splitTitle } from '@/lib/blogReading';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath } from '@/lib/postPath';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
-import { createNoteSky, hash01, type SkyPost } from './noteSky';
+import { usePageTransition } from '@/hooks/usePageTransition';
+import { useBareSky } from '@/hooks/useBareSky';
+import { orbitGeometry, orbitPoint, setOrbitHandoff, takeOrbitHandoff } from '@/lib/articleOrbit';
+import { after, type Pt } from '@/store/pageTransition';
+import { arcPoint, createNoteSky, poleOf, postArc, skyPostOf, type SkyPost } from './noteSky';
 import './Notes.css';
 
 /* 手記：一篇文章是一道星軌（畫在 noteSky），列表照目錄排、年份在左、一篇一行。
@@ -22,8 +26,15 @@ import './Notes.css';
 const FIRST = 20;
 /** 估閱讀時間：一分鐘讀幾個字（內文含程式碼與 markdown 記號，比純中文讀得快） */
 const CHARS_PER_MIN = 700;
-/** 星軌長出來的時間（秒） */
-const GROW_S = 2.4;
+/** 快門打開、星軌拖出來的時間（秒） */
+const EXPOSE_S = 1.8;
+/** 點進一篇文章時，它的星軌拉成文章頁軌道的時間 */
+const ZOOM_MS = 700;
+/** 去別頁時整片縮回去的時間 */
+const RETRACT_MS = 380;
+/** 飛進來的那條線落地後淡掉的時間 */
+const TRAIL_FADE_MS = 900;
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /** 舊版後端沒有 content_length（正式環境更新後端前）：當成沒有長度，弧長只看標題 */
 const lengthOf = (p: PostListItem) => (p as Partial<PostListItem>).content_length ?? 0;
@@ -62,10 +73,97 @@ function Notes() {
   const maxLen = Math.max(1, ...posts.map(lengthOf));
   const shownIds = new Set(shown.map((p) => p.id));
   skyRef.current = posts.map((p) => ({
-    length: lengthOf(p) ? lengthOf(p) / maxLen : 0.2 + 0.4 * hash01(`${p.title}#len`),
-    seed: hash01(p.title),
+    ...skyPostOf({ title: p.title, content_length: lengthOf(p) }, maxLen),
     dim: !shownIds.has(p.id),
   }));
+
+  // 背景的星星讓位：這一頁的星都畫成星軌
+  useBareSky();
+  const pageRef = useRef<HTMLDivElement>(null);
+  /** 快門什麼時候打開（星軌開始長）；-1 是還沒 */
+  const startRef = useRef(-1);
+  const zoomRef = useRef<{ i: number; at: number } | null>(null);
+  const retractRef = useRef(-1);
+  const trailRef = useRef<{ points: Pt[]; at: number } | null>(null);
+  /** 從文章頁回來：那一篇的星軌一開始就是滿的、亮著 */
+  const keepRef = useRef(-1);
+  const backFrom = posts.length ? takeOrbitHandoff('notes') : null;
+  if (backFrom !== null) keepRef.current = indexOf.get(backFrom) ?? -1;
+
+  const skyTime = () => (startRef.current < 0 ? 0 : (performance.now() - startRef.current) / 1000);
+  const arcOf = (i: number) =>
+    postArc(i, skyRef.current.length, skyRef.current[i], window.innerWidth, window.innerHeight, skyTime());
+
+  usePageTransition({
+    // 從文章頁回來：文章的軌道已經被拉回那一篇的星軌，點就停在它的那顆星上
+    anchor: () => {
+      if (keepRef.current < 0) return null;
+      const arc = arcOf(keepRef.current);
+      return arcPoint(arc, arc.a1);
+    },
+    // 點飛進來時沿著最新那一篇的星軌走，落在它的那顆星上：飛過的線就是那一篇的星軌
+    arrive: () => {
+      if (keepRef.current >= 0) return null;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const on = (q: Pt) => q.x > 16 && q.x < w - 16 && q.y > 72 && q.y < h - 16;
+      // 最新的那幾篇星軌很大，那顆星常在畫面外：往下找最新、而且看得到那顆星的一篇
+      for (let i = 0; i < skyRef.current.length; i++) {
+        const arc = arcOf(i);
+        if (!on(arcPoint(arc, arc.a1))) continue;
+        const run: Pt[] = [];
+        for (let k = 0; k <= 48; k++) {
+          const q = arcPoint(arc, arc.a0 + ((arc.a1 - arc.a0) * k) / 48);
+          if (on(q)) run.push(q);
+          else run.length = 0;
+        }
+        if (run.length > 6) return { approach: run };
+      }
+      return null;
+    },
+    onGrow: ({ trail }) => {
+      trailRef.current = { points: trail, at: performance.now() };
+      return 'trail';
+    },
+    // 收：點進一篇文章時，那一篇的星軌被拉成文章頁右邊的軌道（lib/articleOrbit），它的那顆星變成
+    // 讀者的琥珀點；去別的地方時整片縮回各自的那顆星
+    leave: ({ source }) => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      pageRef.current?.classList.add('is-leaving');
+      const id = Number(/^post:(\d+)$/.exec(source ?? '')?.[1] ?? NaN);
+      const i = indexOf.get(id);
+      const geom = orbitGeometry(w, h);
+      if (i !== undefined && geom) {
+        setOrbitHandoff('article', id);
+        const at = performance.now();
+        zoomRef.current = { i, at };
+        const from = (() => {
+          const arc = arcOf(i);
+          return arcPoint(arc, arc.a1);
+        })();
+        const to = orbitPoint(geom, 0);
+        return {
+          point: to,
+          follow: () => {
+            const k = easeInOut(Math.min(1, (performance.now() - at) / ZOOM_MS));
+            return { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
+          },
+          done: after(ZOOM_MS),
+          // 拉好的軌道留在畫面上，等文章頁的軌道接手
+          residue: (c) => {
+            c.strokeStyle = 'rgba(241, 236, 227, 0.78)';
+            c.lineWidth = 1;
+            c.beginPath();
+            c.arc(geom.cx, geom.cy, geom.RB, geom.aBot, geom.aTop);
+            c.stroke();
+          },
+        };
+      }
+      retractRef.current = performance.now();
+      return { point: poleOf(w, h), done: after(RETRACT_MS * 0.8) };
+    },
+  });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -77,19 +175,24 @@ function Notes() {
     const sky = createNoteSky();
     let raf = 0;
     let last = 0;
-    let start = -1;
     let drawn = '';
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      // 換頁轉場還在把這一頁藏著：等它露出來才開始長
+      // 換頁轉場還在把這一頁藏著：等它露出來才打開快門
       if (root.dataset.pt === 'out') return;
-      if (start < 0) start = now;
-      const t = (now - start) / 1000;
-      const grow = reduce ? 1 : Math.min(1, 1 - Math.pow(1 - t / GROW_S, 3));
-      const growing = grow < 1;
-      // 長完之後轉得很慢，20fps 就夠；沒有 GPU 的機器長完就不再轉，只在滑過時重畫
-      if (!growing && now - last < 50) return;
-      const still = !growing && (reduce || root.classList.contains('no-gpu'));
+      if (startRef.current < 0) startRef.current = now;
+      const t = (now - startRef.current) / 1000;
+      // 快門打開：所有的星一起拖出軌跡，越拖越慢
+      const grow = reduce ? 1 : Math.min(1, 1 - Math.pow(1 - t / EXPOSE_S, 3));
+      const zoom = zoomRef.current;
+      const zk = zoom ? Math.min(1, (now - zoom.at) / ZOOM_MS) : 0;
+      const retract = retractRef.current < 0 ? 0 : Math.min(1, (now - retractRef.current) / RETRACT_MS) ** 2;
+      const trail = trailRef.current;
+      const trailAlpha = trail ? Math.max(0, 1 - (now - trail.at) / TRAIL_FADE_MS) : 0;
+      const busy = grow < 1 || zoom !== null || retractRef.current >= 0 || trailAlpha > 0;
+      // 長完之後 30fps 就夠；沒有 GPU 的機器長完就不再轉，只在滑過時重畫
+      if (!busy && now - last < 33) return;
+      const still = !busy && (reduce || root.classList.contains('no-gpu'));
       const w = window.innerWidth;
       const h = window.innerHeight;
       const key = `${w},${h},${hoveredRef.current},${skyRef.current.length}`;
@@ -102,7 +205,16 @@ function Notes() {
         cv.height = Math.round(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      sky.draw(ctx, w, h, skyRef.current, { t: still ? 0 : t, grow, hovered: hoveredRef.current });
+      const geom = zoom ? orbitGeometry(w, h) : null;
+      sky.draw(ctx, w, h, skyRef.current, {
+        t: still ? 0 : t,
+        grow,
+        hovered: hoveredRef.current,
+        keep: keepRef.current,
+        zoom: zoom && geom ? { i: zoom.i, k: zk, geom } : null,
+        retract,
+        trail: trail && trailAlpha > 0 ? { points: trail.points, alpha: trailAlpha } : null,
+      });
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
@@ -116,7 +228,7 @@ function Notes() {
   };
 
   return (
-    <div className="nt">
+    <div className="nt" ref={pageRef}>
       <canvas className="nt-sky" ref={canvasRef} aria-hidden="true" />
       <div className="nt-in">
         <header className="nt-head nt-shadow">
@@ -181,6 +293,9 @@ function Notes() {
                     <LocaleLink
                       to={postPath(p)}
                       className="nt-shadow"
+                      data-pt-source={`post:${p.id}`}
+                      // 滑過就先載入：點下去時星軌拉成軌道的那 0.7 秒裡文章多半已經好了
+                      preload="intent"
                       onFocus={() => (hoveredRef.current = i)}
                       onBlur={() => (hoveredRef.current = -1)}
                     >

@@ -406,6 +406,12 @@
     }
   },
   "blog": {
+    "views": "{{count}} reads",
+    "summary": "Summary",
+    "aiGen": "AI-generated",
+    "readDone": "Finished",
+    "minutesLeft": "{{count}} min left",
+    "sameCategory": "Also in {{name}}",
     "title": "Notes",
     "subtitle": "Days turn; only what gets written down leaves a trail.",
     "all": "All",

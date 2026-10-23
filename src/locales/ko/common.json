@@ -406,6 +406,12 @@
     }
   },
   "blog": {
+    "views": "{{count}}회 읽음",
+    "summary": "요약",
+    "aiGen": "AI 생성",
+    "readDone": "다 읽음",
+    "minutesLeft": "{{count}}분 남음",
+    "sameCategory": "같은 「{{name}}」",
     "title": "노트",
     "subtitle": "지나간 날들 중 적어 둔 것만 궤적으로 남는다.",
     "all": "전체",

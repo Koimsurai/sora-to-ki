@@ -70,6 +70,8 @@ export interface StarfieldRunner {
   setSatelliteGlow(glow: number[]): void;
   /** 換頁轉場的「收」：土星整組收進第 index 顆衛星，-1 是收進中心 */
   collapseSaturnTo(index: number): void;
+  /** 星星淡出／淡回（頁面自己畫背景的時候讓出來） */
+  setStars(visible: boolean): void;
   dispose(): void;
 }
 
@@ -126,6 +128,9 @@ const LAYERS: StarLayerCfg[] = [
 /// 一開始用 Points 在 WebGPU 上就是「1px 閃爍細星」慘案（實測）。Sprite+instancing
 /// 兩個 backend 都走實例化 quad：size/scaleNode 生效、uv() 有值，單一路徑無分叉。
 /// per-star 尺寸/色溫/閃爍相位進 instanced attribute，閃爍與柔光全在 shader（TSL）。
+/** 星星整體的亮度（0 到 1）：有些頁面自己畫背景（手記的星軌、關於的下墜），星星要讓出來 */
+const starAlpha = uniform(1);
+
 function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   const positions = new Float32Array(cfg.count * 3);
   const scales = new Float32Array(cfg.count);
@@ -168,7 +173,7 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   const twinkle = sin(time.mul(speed).add(phase.mul(7.0)))
     .mul(amp)
     .add(amp.oneMinus());
-  mat.opacityNode = falloff.mul(twinkle);
+  mat.opacityNode = falloff.mul(twinkle).mul(starAlpha);
 
   // per-star 尺寸（scaleNode 乘在 sprite 縮放上）
   mat.scaleNode = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(scales, 1), 'float');
@@ -725,6 +730,9 @@ export async function createStarfieldRunner(
     saturn.group.visible = saturnVisible && quality < 2;
   };
 
+  let starsOn = true;
+  /** 全暗之後已經清過一幀了 */
+  let darkDrawn = false;
   const loop = (now: number) => {
     // ⚠ 跟 lastActive 比要用同一個時鐘：lastActive 是 performance.now()，而 rAF 的 now 是
     //   這一幀的時間戳，規格沒保證兩者在 worker 裡同步。now 落後的話「距上次活動」永遠小於門檻，
@@ -740,6 +748,17 @@ export async function createStarfieldRunner(
       l.points.rotation.x += delta * l.cfg.rotX;
       l.points.rotation.y += delta * l.cfg.rotY;
     }
+    // 星星淡出淡回；全暗而且沒有土星時畫完這一幀（清空）就不再畫，GPU 歇著
+    const starTarget = starsOn ? 1 : 0;
+    if (Math.abs(starAlpha.value - starTarget) > 0.001) {
+      starAlpha.value += (starTarget - starAlpha.value) * lerpFactor(0.08, delta);
+      if (Math.abs(starAlpha.value - starTarget) <= 0.001) starAlpha.value = starTarget;
+      markActive();
+    }
+    const dark = starAlpha.value === 0 && !saturnVisible;
+    for (const l of layers) l.points.visible = starAlpha.value > 0;
+    if (dark && darkDrawn) return;
+    darkDrawn = dark;
 
     if (saturnVisible) {
       const s = saturn.update(delta, scrollY, saturnAnimate);
@@ -811,6 +830,7 @@ export async function createStarfieldRunner(
         // 每次重新出現都從一點撐開（換頁轉場的「長」）
         if (!saturnVisible && visible) saturn.collapse();
         saturnVisible = visible;
+        darkDrawn = false;
         saturnAnimate = animate;
         // 最低品質下即使呼叫顯示也不開（土星最貴）
         saturn.group.visible = visible && quality < 2;
@@ -818,6 +838,11 @@ export async function createStarfieldRunner(
       setSatelliteGlow(glow) {
         markActive();
         saturn.setGlow(glow);
+      },
+      setStars(visible) {
+        markActive();
+        starsOn = visible;
+        darkDrawn = false;
       },
       collapseSaturnTo(index) {
         markActive();
