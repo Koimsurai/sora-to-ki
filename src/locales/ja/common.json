@@ -748,9 +748,10 @@
     "title": "作品",
     "subtitle": "起点から外へ伸びていく航路：新しいものほど外側に。",
     "origin": "起点",
-    "legendCore": "中心の点：コード量",
-    "legendRings": "一周：言語ひとつ",
-    "legendMoons": "外側の小さな点：GitHub のスター",
+    "legendCore": "大きさ：コード量",
+    "legendSurface": "地形：主な言語",
+    "legendRings": "環：ほかの言語",
+    "legendMoons": "衛星：GitHub のスター",
     "legendHover": "カーソルを重ねる：立体の星に開く"
   }
 }

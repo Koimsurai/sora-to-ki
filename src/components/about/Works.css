@@ -1,6 +1,11 @@
-/* 作品（about/Works）：螺旋畫在畫布上（about/worksSky），作品名是疊在上面的連結 */
+/* 作品（about/Works）：螺旋畫在畫布上（about/worksSky），作品名是疊在上面的連結。
+   畫布鋪滿整個視窗、螺旋在正中間（鏡頭對著它），標題疊在左上角 */
 
 .wk {
+  position: relative;
+  height: 100svh;
+  min-height: 560px;
+  overflow: hidden;
   font-family: var(--serif);
   color: var(--paper);
 }
@@ -18,7 +23,20 @@
 }
 
 .wk-head {
+  position: relative;
+  z-index: 1;
   padding: var(--page-top) max(var(--space-6), calc(50% - 540px)) 0;
+  pointer-events: none;
+}
+
+/* 收：字退掉，只剩航線收進最新那一顆 */
+.wk-head,
+.wk-legend {
+  transition: opacity var(--dur-300) ease;
+}
+
+.wk.is-leaving :is(.wk-head, .wk-legend) {
+  opacity: 0;
 }
 
 .wk-title {
@@ -49,8 +67,8 @@
 
 /* ── 螺旋 ── */
 .wk-spiral {
-  position: relative;
-  height: max(560px, calc(100vh - 180px));
+  position: absolute;
+  inset: 0;
 }
 
 .wk-spiral canvas {
@@ -156,10 +174,6 @@
 }
 
 @media (max-width: 760px) {
-  .wk-spiral {
-    height: max(520px, calc(100vh - 160px));
-  }
-
   .wk-what {
     width: max-content;
     max-width: 60vw;

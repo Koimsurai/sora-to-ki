@@ -1,21 +1,30 @@
 // 作品：一條從中心往外長的螺旋航線。最中心是起點，越新的作品越外圈；作品多了螺旋就再往外長一圈。
 // 每件作品的樣子由 GitHub 的數據長出來（about/worksSky），字是一般的連結，位置每幀跟著那顆星。
+// 換頁進來時琥珀點落在起點，接著當筆尖沿著航線往外畫，最後停在最新那一件，變成它的衛星；
+// 離開時航線從起點往外擦掉、收進那顆衛星，點順著航線往外飛走。
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { WORKS, worksQueryOptions } from '@/data/works';
+import { usePageTransition } from '@/hooks/usePageTransition';
 import { parseServerDate } from '@/lib/serverDate';
 import { lookupOr } from '@/lib/tableLookup';
-import { isArriving } from '@/store/pageTransition';
-import { bodyOf, createSpiral } from './worksSky';
+import { after, isArriving } from '@/store/pageTransition';
+import { bodyOf, createSpiral, familyOfWork, frameOf, type WorkStats } from './worksSky';
 import './Works.css';
 
 /** 滑鼠離一顆星多近才算滑到它（CSS 像素） */
 const NEAR_PX = 70;
-/** 螺旋從中心長出來的時間（秒） */
-const GROW_S = 1.6;
+/** 琥珀點從起點畫到最新那一件的時間（秒） */
+const GROW_S = 2.4;
+/** 收：航線擦掉的時間（毫秒） */
+const ERASE_MS = 520;
+/** 收完時點離開的速度（px/ms） */
+const LEAVE_SPEED = 0.8;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeIn = (t: number) => t * t;
 
 export default function Works() {
   const { t, i18n } = useTranslation();
@@ -24,28 +33,78 @@ export default function Works() {
   // 數據：後端有就用後端的，沒有（私有 repo 拿不到、後端還沒更新）就用量好的備用值
   const works = useMemo(() => {
     const now = Date.now();
+    const seen = new Map<string, number>();
     return WORKS.map((w) => {
       const stats = live.find((r) => r.repo.toLowerCase() === w.repo.toLowerCase()) ?? { repo: w.repo, ...w.fallback };
       const created = parseServerDate(stats.created_at);
+      const input: WorkStats = {
+        name: w.name,
+        commits: stats.commits,
+        stars: stats.stars,
+        pushedDaysAgo: Math.max(0, (now - parseServerDate(stats.pushed_at).getTime()) / 86400000),
+        languages: stats.languages,
+      };
+      // 同一族（主要語言同一類）的作品各拿不同的地貌
+      const family = familyOfWork(input);
+      const variant = seen.get(family) ?? 0;
+      seen.set(family, variant + 1);
       return {
         ...w,
         url: stats.url,
         year: `${created.getFullYear()}.${pad2(created.getMonth() + 1)}`,
-        body: bodyOf({
-          name: w.name,
-          commits: stats.commits,
-          stars: stats.stars,
-          pushedDaysAgo: Math.max(0, (now - parseServerDate(stats.pushed_at).getTime()) / 86400000),
-          languages: stats.languages,
-        }),
+        body: bodyOf(input, variant),
       };
     });
   }, [live]);
+  const spiral = useMemo(() => createSpiral(works.map((w) => w.body)), [works]);
 
+  const pageRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const labelsRef = useRef<(HTMLElement | null)[]>([]);
   const focusRef = useRef(-1);
+  /** 最近一幀的時間（秒）：錨點與收的位置要跟畫面上的一致 */
+  const clockRef = useRef(0);
+  const leaveRef = useRef<number | null>(null);
+
+  const boxSize = () => {
+    const box = boxRef.current;
+    return box ? { r: box.getBoundingClientRect(), w: box.clientWidth, h: box.clientHeight } : null;
+  };
+
+  usePageTransition({
+    // 錨點是起點：點落在這裡，接著變成筆尖
+    anchor: () => {
+      const b = boxSize();
+      if (!b) return null;
+      const [x, y] = spiral.point(b.w, b.h, clockRef.current, 0);
+      return { x: b.r.left + x, y: b.r.top + y };
+    },
+    // 抵達的方向就是航線從起點出發的方向：點落地後不轉彎，直接順著畫下去
+    arrive: () => {
+      const b = boxSize();
+      return b ? { tangent: spiral.tangent(b.w, b.h, clockRef.current, 0) } : null;
+    },
+    leave: () => {
+      const b = boxSize();
+      if (!b) return null;
+      leaveRef.current = performance.now();
+      pageRef.current?.classList.add('is-leaving');
+      const moon = () => {
+        const now = boxSize() ?? b;
+        const [x, y] = spiral.moonOf(spiral.newest, now.w, now.h, clockRef.current);
+        return { x: now.r.left + x, y: now.r.top + y };
+      };
+      const dir = spiral.tangent(b.w, b.h, clockRef.current, spiral.tLast);
+      return {
+        point: moon(),
+        velocity: { x: dir.x * LEAVE_SPEED, y: dir.y * LEAVE_SPEED },
+        follow: moon,
+        done: after(ERASE_MS),
+      };
+    },
+    onGrow: () => 'self',
+  });
 
   useEffect(() => {
     const box = boxRef.current;
@@ -53,7 +112,6 @@ export default function Works() {
     const ctx = cv?.getContext('2d');
     if (!box || !cv || !ctx) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const spiral = createSpiral(works.map((w) => w.body));
     let pointer: [number, number] | null = null;
     const onMove = (e: PointerEvent) => {
       const r = box.getBoundingClientRect();
@@ -69,14 +127,16 @@ export default function Works() {
     let start = -1;
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      // 換頁轉場還藏著這一頁：等露出來才開始長
+      // 換頁轉場的點還在飛：等它落在起點才開始畫
       if (isArriving()) return;
       if (start < 0) start = now;
-      if (now - last < 25) return;
+      if (now - last < 16) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       const t = reduce ? 0 : (now - start) / 1000;
-      const grow = reduce ? 1 : Math.min(1, 1 - Math.pow(1 - t / GROW_S, 3));
+      clockRef.current = t;
+      const grow = reduce ? 1 : Math.min(1, easeOut(Math.min(1, t / GROW_S)));
+      const erase = leaveRef.current === null ? 0 : easeIn(Math.min(1, (now - leaveRef.current) / ERASE_MS));
       const w = box.clientWidth;
       const h = box.clientHeight;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -86,7 +146,7 @@ export default function Works() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       let near = focusRef.current;
-      if (near < 0 && pointer) {
+      if (near < 0 && pointer && leaveRef.current === null) {
         const [px, py] = pointer;
         let best = NEAR_PX;
         spiral.positions(w, h, t).forEach(([x, y], i) => {
@@ -97,9 +157,8 @@ export default function Works() {
           }
         });
       }
-      const placed = spiral.draw(ctx, { w, h, t, dt: reduce ? 0 : dt, near, grow });
-      const cx = w / 2;
-      const cy = h / 2;
+      const placed = spiral.draw(ctx, { w, h, t, dt: reduce ? 0 : dt, near, grow, erase });
+      const { cx, cy } = frameOf(w, h);
       placed.forEach((p, i) => {
         const el = labelsRef.current[i];
         if (!el) return;
@@ -121,7 +180,8 @@ export default function Works() {
         lx = Math.max(12, Math.min(w - lw - 12, lx));
         ly = Math.max(12, Math.min(h - lh - 12, ly));
         el.style.transform = `translate(${lx}px, ${ly}px)`;
-        el.style.opacity = String(p.appear * (near < 0 || i === near ? 1 : 0.4));
+        // 收的時候字一起退掉（只剩航線收進最新那一顆）
+        el.style.opacity = leaveRef.current === null ? String(p.appear * (near < 0 || i === near ? 1 : 0.4)) : '0';
       });
     };
     raf = requestAnimationFrame(frame);
@@ -130,10 +190,10 @@ export default function Works() {
       box.removeEventListener('pointermove', onMove);
       box.removeEventListener('pointerleave', onLeave);
     };
-  }, [works]);
+  }, [spiral]);
 
   return (
-    <div className="wk">
+    <div className="wk" ref={pageRef}>
       <header className="wk-head">
         <div className="wk-title">
           <h1>{t('works.title')}</h1>
@@ -184,6 +244,7 @@ export default function Works() {
         </ol>
         <ul className="wk-legend">
           <li>{t('works.legendCore')}</li>
+          <li>{t('works.legendSurface')}</li>
           <li>{t('works.legendRings')}</li>
           <li>{t('works.legendMoons')}</li>
           <li>{t('works.legendHover')}</li>
