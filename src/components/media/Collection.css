@@ -1,14 +1,15 @@
-/* 收藏（media/Collection）：三區同一套排法，封面牆是點陣，滑過才顯出原色 */
+/* 收藏（media/Collection）：三團星雲。畫布貼在畫面上，往下捲就是鏡頭在三團之間飛；
+   頁面本身只是一段很長的捲動距離，標註、引言、望遠鏡都疊在畫布上 */
 
 .cx {
-  display: grid;
-  gap: var(--space-24);
-  padding: var(--page-top) max(var(--space-6), calc(50% - 540px)) var(--page-bottom);
+  position: relative;
+  /* 一個畫面 + 兩段飛行（跟 Collection.tsx 的 SEGMENT_VH 一樣：1.25 個畫面一段） */
+  height: calc(100vh + 2 * 125vh);
   font-family: var(--serif);
   color: var(--paper);
 }
 
-:where(.cx) :where(a, button) {
+:where(.cx) :where(button) {
   all: unset;
   box-sizing: border-box;
   cursor: pointer;
@@ -19,10 +20,29 @@
   outline-offset: 3px;
 }
 
-/* ── 頁首 ── */
+.cx-sky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.cx-sky canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── 頁首：疊在一開始那一團的左上角，往下捲就捲走 ── */
 .cx-head {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: grid;
   gap: var(--space-2);
+  padding: var(--page-top) max(var(--space-6), calc(50% - 540px)) 0;
+  pointer-events: none;
 }
 
 .cx-head-title {
@@ -51,142 +71,87 @@
   color: var(--paper-2);
 }
 
-/* ── 切換列：在看・書櫃・在聽。琥珀點標出現在這一區，換區時它沿著弧滑過去 ── */
-.cx-switch {
-  position: sticky;
-  top: 60px;
-  z-index: 3;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-10);
-  margin: calc(var(--space-12) * -1) 0 calc(var(--space-12) * -1);
-  padding: var(--space-4) 0 var(--space-4) var(--space-4);
-  background: linear-gradient(var(--ground) 70%, transparent);
-}
-
-.cx-switch button {
-  display: inline-flex;
-  gap: var(--space-3);
-  align-items: baseline;
-  font-size: var(--fs-24);
-  font-weight: 600;
+.cx-hint {
+  position: absolute;
+  top: calc(100vh - var(--space-16));
+  right: 0;
+  left: 0;
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-24);
+  text-align: center;
   color: var(--paper-3);
-  transition: color var(--dur-300) ease;
+  pointer-events: none;
 }
 
-.cx-switch button span {
+/* ── 星圖上的標註 ── */
+.cx-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  gap: var(--space-3);
+  width: max-content;
+  max-width: min(340px, calc(100vw - var(--space-10)));
+  opacity: 0;
+  text-shadow:
+    0 0 8px var(--ground),
+    0 0 16px var(--ground);
+}
+
+.cx-label h2 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--fs-28);
+  font-weight: 600;
+  line-height: var(--lh-130);
+}
+
+.cx-label h2 span {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   font-weight: 400;
   letter-spacing: var(--ls-24);
-  color: var(--paper-3);
-  transition: color var(--dur-300) ease;
-}
-
-.cx-switch button:hover {
-  color: var(--paper-2);
-}
-
-.cx-switch button.is-on {
-  color: var(--paper);
-}
-
-.cx-switch button.is-on span {
   color: var(--amber);
 }
 
-.cx-switch-dot {
-  position: absolute;
-  top: calc(50% - 3px);
-  left: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: var(--r-full);
-  background: var(--amber);
-  box-shadow: 0 0 10px rgba(var(--amber-rgb), 0.8);
-  pointer-events: none;
-}
-
-/* 換區：舊的一塊一塊淡掉（星塵接手），新的先藏著，星塵落到哪一塊才亮哪一塊 */
-.cx-stage [data-piece] {
-  transition: opacity var(--dur-150) ease;
-}
-
-.cx-stage.is-out [data-piece],
-.cx-stage.is-in [data-piece]:not(.is-lit-in) {
-  opacity: 0;
-}
-
-.cx-stage.is-in [data-piece].is-lit-in {
-  transition: opacity var(--dur-400) ease;
-}
-
-.cx-dust {
-  position: fixed;
-  inset: 0;
-  z-index: 4;
-  width: 100%;
-  height: 100vh;
-  pointer-events: none;
-}
-
-/* ── 一區 ── */
-.cx-block {
+/* 數字：大的英文字、旁邊一個小標籤，一行一個 */
+.cx-label dl {
   display: grid;
-  gap: var(--space-7);
-}
-
-.cx-block-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-5) var(--space-10);
-}
-
-.cx-block-head p {
-  margin: 0;
-  max-width: 28em;
-  font-size: var(--fs-14);
-  color: var(--paper-2);
-}
-
-/* 數字：大的英文字在上、小標籤在下 */
-.cx-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3) var(--space-8);
+  gap: var(--space-1);
   margin: 0;
 }
 
-.cx-stats div {
+.cx-label dl div {
   display: flex;
-  flex-direction: column-reverse;
+  align-items: baseline;
+  gap: var(--space-2);
 }
 
-.cx-stats dd {
+.cx-label dd {
   margin: 0;
   font-family: var(--latin-display);
-  font-size: var(--fs-48);
-  line-height: var(--lh-100);
+  font-size: var(--fs-28);
+  line-height: var(--lh-110);
   font-variant-numeric: tabular-nums;
 }
 
-.cx-stats dt {
-  font-family: var(--mono-font);
-  font-size: var(--fs-10);
-  letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+.cx-label dt {
+  font-size: var(--fs-12);
+  color: var(--paper-2);
 }
 
 /* 正在看／剛剛聽：在播的時候前面那一點是琥珀色、亮著 */
 .cx-live {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1) var(--space-3);
+  gap: var(--space-1) var(--space-2);
   align-items: baseline;
-  margin: calc(var(--space-3) * -1) 0 0;
-  font-size: var(--fs-14);
+  margin: 0;
+  font-size: var(--fs-13);
   color: var(--paper-2);
 }
 
@@ -228,168 +193,11 @@
   color: var(--amber);
 }
 
-.cx-empty {
-  margin: 0;
-  font-size: var(--fs-13);
-  color: var(--paper-3);
-}
-
-/* ── 封面：灰階的圖蓋一層點的遮罩是點陣，彩色那張疊在上面，滑過才淡進來 ── */
-.cx-cover {
-  position: relative;
-  display: block;
-  overflow: hidden;
-}
-
-.cx-cover img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* 對比拉高：暗的地方整片沒有點，只剩亮的地方留下點，遠看才像星雲而不是一片灰 */
-.cx-dot {
-  opacity: 0.8;
-  filter: grayscale(1) contrast(2.4) brightness(0.75);
-  mask-image: radial-gradient(circle, #000 0 38%, transparent 46%);
-  mask-size: 3px 3px;
-}
-
-.cx-col {
-  opacity: 0;
-  transition: opacity var(--dur-500) ease;
-}
-
-.cx-cover.is-empty {
-  border: 1px solid var(--rule);
-}
-
-/* ── 最喜歡的 ── */
-.cx-favs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-7);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.cx-fav {
-  display: grid;
-  grid-template-columns: 76px minmax(0, 1fr);
-  column-gap: var(--space-3);
-  align-items: start;
-}
-
-.cx-fav .cx-cover {
-  width: 76px;
-  height: 114px;
-}
-
-.cx-favs.is-square .cx-fav .cx-cover {
-  height: 76px;
-}
-
-.cx-fav:hover .cx-col,
-.cx-fav :focus-visible .cx-col {
-  opacity: 1;
-}
-
-.cx-fav b {
-  display: block;
-  font-size: var(--fs-16);
-  font-weight: 600;
-  line-height: var(--lh-140);
-}
-
-.cx-fav-meta {
-  display: block;
-  margin: var(--space-px) 0 var(--space-2);
-  font-family: var(--mono-font);
-  font-size: var(--fs-10);
-  letter-spacing: var(--ls-6);
-  color: var(--paper-3);
-}
-
-.cx-fav q {
-  display: -webkit-box;
-  overflow: hidden;
-  font-size: var(--fs-13);
-  line-height: var(--lh-170);
-  color: var(--paper-2);
-  quotes: "「" "」";
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
-  -webkit-box-orient: vertical;
-}
-
-/* ── 封面牆 ── */
-.cx-wall {
-  position: relative;
-}
-
-.cx-wall ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, var(--cw));
-  gap: var(--cg);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.cx-cell {
-  display: block;
-}
-
-.cx-cell .cx-cover {
-  width: var(--cw);
-  height: var(--ch);
-}
-
-.cx-cell:is(:hover, :focus-visible, .is-lit) .cx-col {
-  opacity: 1;
-}
-
-.cx-tip {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 2;
-  display: grid;
-  gap: var(--space-px);
-  width: 230px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--rule);
-  background: var(--ground);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--dur-150) ease;
-}
-
-.cx-tip.is-left {
-  translate: -100% 0;
-}
-
-.cx-tip b {
-  font-size: var(--fs-14);
-  font-weight: 600;
-  line-height: var(--lh-150);
-}
-
-.cx-tip span {
-  font-family: var(--mono-font);
-  font-size: var(--fs-10);
-  letter-spacing: var(--ls-6);
-  color: var(--paper-3);
-}
-
-/* ── 曲風：點排成的長條 ── */
+/* 曲風：點排成的長條 */
 .cx-genres {
   display: grid;
-  gap: var(--space-2);
-  max-width: 520px;
+  gap: var(--space-1);
+  width: 280px;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -397,11 +205,11 @@
 
 .cx-genres li {
   display: grid;
-  grid-template-columns: 130px minmax(0, 1fr) 30px;
-  column-gap: var(--space-3);
+  grid-template-columns: 110px minmax(0, 1fr) 24px;
+  column-gap: var(--space-2);
   align-items: center;
   font-family: var(--mono-font);
-  font-size: var(--fs-11);
+  font-size: var(--fs-10);
   color: var(--paper-2);
 }
 
@@ -417,28 +225,121 @@
   text-align: right;
 }
 
-@media (max-width: 860px) {
-  .cx-favs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+/* ── 最愛的那幾部：琥珀色的星旁邊標著名字（寫的那句話在望遠鏡裡） ── */
+.cx-quote {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: var(--fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--amber);
+  opacity: 0;
+  pointer-events: none;
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
+}
+
+/* ── 望遠鏡：滑過一顆星，旁邊開一個圓窗看它的封面 ── */
+.cx-scope {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-200) ease;
+}
+
+.cx-scope.is-on {
+  opacity: 1;
+}
+
+.cx-scope-lens {
+  position: relative;
+  flex: none;
+  width: 112px;
+  height: 112px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--amber-rgb), 0.6);
+  border-radius: var(--r-round);
+  background: var(--ground);
+  translate: var(--space-5) -50%;
+}
+
+.cx-scope-lens img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  animation: cx-focus 500ms var(--easing-out) both;
+}
+
+/* 對焦：先糊、再清楚 */
+@keyframes cx-focus {
+  from {
+    opacity: 0;
+    scale: 1.15;
+    filter: blur(var(--blur-8));
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+    filter: none;
   }
 }
 
-@media (max-width: 520px) {
-  .cx-favs {
-    grid-template-columns: minmax(0, 1fr);
+.cx-scope-text {
+  display: grid;
+  gap: var(--space-px);
+  max-width: 260px;
+  translate: var(--space-5) -50%;
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
+}
+
+.cx-scope-text b {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  line-height: var(--lh-140);
+}
+
+.cx-scope-text q {
+  margin-top: var(--space-1);
+  font-size: var(--fs-12);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+  quotes: "「" "」";
+}
+
+.cx-scope-text span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+}
+
+@media (max-width: 760px) {
+  .cx-quote {
+    font-size: var(--fs-11);
   }
 
-  .cx-stats dd {
-    font-size: var(--fs-36);
+  .cx-label dd {
+    font-size: var(--fs-22);
   }
 
-  .cx-tip {
-    display: none;
+  .cx-scope-lens {
+    width: 88px;
+    height: 88px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cx-col {
-    transition: none;
+  .cx-scope-lens img {
+    animation: none;
   }
 }

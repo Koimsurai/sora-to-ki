@@ -600,7 +600,6 @@
     },
     "watch": {
       "title": "Watching",
-      "sub": "Everything I've watched, with a few words on the ones I love most.",
       "anime": "anime",
       "animeEp": "episodes",
       "film": "films",
@@ -608,25 +607,19 @@
       "tvEp": "episodes",
       "live": "Watching now",
       "last": "Last watched",
-      "episode": "Episode {{n}}",
-      "wall": "Everything watched"
+      "episode": "Episode {{n}}"
     },
     "books": {
       "title": "Bookshelf",
-      "sub": "Finished, in progress, and waiting in line.",
-      "total": "books",
-      "wall": "Every book on the shelf"
+      "total": "books"
     },
     "music": {
       "title": "Listening",
-      "sub": "The twenty tracks I played most in the last six months.",
       "tracks": "top tracks",
       "genres": "genres",
       "live": "Playing now",
-      "last": "Just played",
-      "first": "Most played",
-      "off": "Spotify is unreachable right now.",
-      "wall": "Top twenty tracks"
-    }
+      "last": "Just played"
+    },
+    "hint": "SCROLL"
   }
 }

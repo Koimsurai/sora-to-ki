@@ -1,20 +1,11 @@
 // 收藏頁（media/Collection）的資料整理：三種來源（巴哈的動畫紀錄、TMDb 的電影與影集、書、Spotify）
-// 都換成封面牆上的一格。這裡只有資料，不碰 React。
-import type { AnimeRow, BookRow, FilmRow, SpotifyTrack, TvRow } from '@koimsurai/api-types';
+// 都換成星雲裡的一顆星（media/nebulaSky）。這裡只有資料，不碰 React。
+import type { AnimeRow, BookRow, FilmRow, SpotifyTrack, TvRow, WatchFavoriteRow } from '@koimsurai/api-types';
 import { dedupeWatchItems } from '@/lib/mediaLists';
+import type { Star } from './nebulaSky';
 
 export type WatchKind = 'anime' | 'film' | 'tv';
 export type BookStatus = 'read' | 'reading' | 'to-read';
-
-/** 封面牆上的一格 */
-export interface Cell {
-  id: string;
-  title: string;
-  cover: string | null;
-  href: string | null;
-  /** 滑過時標題底下那一行 */
-  meta: string;
-}
 
 interface WatchItem {
   id: string;
@@ -28,16 +19,15 @@ interface WatchItem {
 }
 
 /**
- * 封面牆的格子很小：TMDb 換成小尺寸、誠品換成矮一點的版本，不然幾百張原圖要抓幾十 MB。
+ * 望遠鏡裡的封面只有一百多像素寬：TMDb 換成小尺寸、誠品換成矮一點的版本。
  * 巴哈與 Google Books 的網址沒有尺寸參數，原樣用
  */
-export function thumb(url: string | null | undefined, size: 'wall' | 'fav'): string | null {
+function thumb(url: string | null | undefined): string | null {
   if (!url) return null;
-  const tmdb = size === 'wall' ? 'w154' : 'w185';
   return url
     .replace(/^http:\/\//, 'https://')
-    .replace(/(image\.tmdb\.org\/t\/p\/)w\d+\//, `$1${tmdb}/`)
-    .replace(/(eslite\.com\/unsafe\/fit-in\/)x\d+\//, `$1x${size === 'wall' ? 200 : 300}/`);
+    .replace(/(image\.tmdb\.org\/t\/p\/)w\d+\//, '$1w185/')
+    .replace(/(eslite\.com\/unsafe\/fit-in\/)x\d+\//, '$1x300/');
 }
 
 /** 動畫紀錄是一集一筆：同一部併成一格，取最近看的那一集 */
@@ -91,44 +81,81 @@ const tvItems = (rows: TvRow[]): WatchItem[] =>
 
 const dotDate = (iso: string) => iso.slice(0, 10).replaceAll('-', '.');
 
-/** 看過的全部：三種來源併在一起（同一部在動畫與影集兩邊都有的只留一格），最近看的在前面 */
-export function watchCells(
+const log01 = (v: number, max: number) => Math.log2(v + 1) / Math.log2(max + 1 || 2);
+
+/**
+ * 看過的全部：三種來源併在一起（同一部在動畫與影集兩邊都有的只留一顆星），由舊到新。
+ * 大小是集數、越近期看的越亮；最愛的那幾部是琥珀色，帶著寫的那句話（最愛不在紀錄裡的也補一顆）
+ */
+export function watchStars(
   anime: AnimeRow[],
   films: FilmRow[],
   tv: TvRow[],
+  favorites: WatchFavoriteRow[],
   kindLabel: (k: WatchKind) => string,
-): { cells: Cell[]; latest: { title: string; date: string } | null } {
+): { stars: Star[]; latest: { title: string; date: string } | null } {
   const deduped = dedupeWatchItems(animeItems(anime), tvItems(tv));
-  const all = [...deduped.anime, ...filmItems(films), ...deduped.tv].sort((a, b) => b.date.localeCompare(a.date));
-  const latest = all.find((it) => it.date);
-  return {
-    cells: all.map((it) => ({
+  const all = [...deduped.anime, ...filmItems(films), ...deduped.tv].sort((a, b) => a.date.localeCompare(b.date));
+  const n = Math.max(1, all.length);
+  const maxEp = Math.max(1, ...all.map((it) => it.epCount));
+  const fav = new Map(favorites.filter((f) => f.tmdbId != null).map((f) => [f.tmdbId, f]));
+  const used = new Set<number>();
+  const list: Star[] = all.map((it, i) => {
+    const f = it.tmdbId != null ? fav.get(it.tmdbId) : undefined;
+    if (f?.tmdbId != null) used.add(f.tmdbId);
+    return {
       id: it.id,
-      title: it.title,
-      cover: thumb(it.cover, 'wall'),
-      href: it.href,
-      meta: [kindLabel(it.kind), it.date ? dotDate(it.date) : ''].filter(Boolean).join(' · '),
-    })),
-    latest: latest ? { title: latest.title, date: dotDate(latest.date) } : null,
-  };
+      title: f?.title ?? it.title,
+      meta: [kindLabel(it.kind), it.date ? dotDate(it.date) : '', f ? stars(f.rating) : ''].filter(Boolean).join(' · '),
+      cover: thumb(f?.poster ?? it.cover),
+      href: f?.externalUrl ?? it.href,
+      size: log01(it.epCount, maxEp),
+      light: 0.3 + 0.7 * (i / n),
+      amber: Boolean(f),
+      quote: f?.quote,
+    };
+  });
+  for (const f of favorites) {
+    if (f.tmdbId != null && used.has(f.tmdbId)) continue;
+    list.push({
+      id: `fav${f.id}`,
+      title: f.title,
+      meta: [kindLabel(f.kind === 'film' ? 'film' : 'tv'), f.year, stars(f.rating)].filter(Boolean).join(' · '),
+      cover: thumb(f.poster),
+      href: f.externalUrl,
+      size: 0.5,
+      light: 1,
+      amber: true,
+      quote: f.quote,
+    });
+  }
+  const latest = all.at(-1);
+  return { stars: list, latest: latest?.date ? { title: latest.title, date: dotDate(latest.date) } : null };
 }
 
 const statusOf = (b: BookRow): BookStatus =>
   b.reading_status === 'read' || b.reading_status === 'reading' ? b.reading_status : 'to-read';
 
-export const stars = (n: number | null | undefined) => (n ? `★ ${n}` : '');
+const stars = (n: number | null | undefined) => (n ? `★ ${n}` : '');
 
-export function bookCells(books: BookRow[], statusLabel: (s: BookStatus) => string): Cell[] {
-  // 讀完的在前（評分高的先），接著在讀、想讀
-  const rank = { read: 0, reading: 1, 'to-read': 2 } as const;
+/** 書：照加進書櫃的時間由舊到新。大小是頁數、亮度是評分；在讀的會呼吸，想讀的是空心圈；寫了心得的是琥珀色 */
+export function bookStars(books: BookRow[], statusLabel: (s: BookStatus) => string): Star[] {
+  const fav = new Set(favoriteBooks(books).map((b) => b.id));
+  const maxPages = Math.max(1, ...books.map((b) => b.page_count ?? 0));
   return [...books]
-    .sort((a, b) => rank[statusOf(a)] - rank[statusOf(b)] || (b.rating ?? 0) - (a.rating ?? 0))
+    .sort((a, b) => (a.date_added ?? '').localeCompare(b.date_added ?? ''))
     .map((b) => ({
       id: `b${b.id}`,
       title: b.title,
-      cover: thumb(b.cover_url, 'wall'),
-      href: null,
       meta: [b.authors, statusLabel(statusOf(b)), stars(b.rating)].filter(Boolean).join(' · '),
+      cover: thumb(b.cover_url),
+      href: null,
+      size: b.page_count ? log01(b.page_count, maxPages) : 0.35,
+      light: b.rating ? 0.35 + 0.13 * b.rating : 0.4,
+      amber: fav.has(b.id),
+      quote: fav.has(b.id) ? b.personal_notes : null,
+      hollow: statusOf(b) === 'to-read',
+      pulse: statusOf(b) === 'reading',
     }));
 }
 
@@ -138,28 +165,27 @@ export function bookCounts(books: BookRow[]) {
 }
 
 /** 最喜歡的幾本：讀完、有寫心得的，評分高的在前 */
-export function favoriteBooks(books: BookRow[], max = 4) {
+function favoriteBooks(books: BookRow[], max = 4) {
   return books
     .filter((b) => statusOf(b) === 'read' && b.personal_notes?.trim())
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || (b.date_finished ?? '').localeCompare(a.date_finished ?? ''))
     .slice(0, max);
 }
 
-export { statusOf as bookStatus };
-
-/** Spotify 的封面有三種大小（640、300、64）：牆上那格小，用中間那張 */
-export function albumCover(t: SpotifyTrack, size: 'wall' | 'fav'): string | null {
-  const imgs = t.album.images;
-  return (size === 'wall' && imgs.length > 1 ? imgs[1] : imgs.at(0))?.url ?? null;
-}
-
 export const artistsOf = (t: SpotifyTrack) => t.artists.map((a) => a.name).join('、');
 
-export const trackCells = (tracks: SpotifyTrack[]): Cell[] =>
-  tracks.map((t) => ({
-    id: `s${t.id}`,
-    title: t.name,
-    cover: albumCover(t, 'wall'),
-    href: t.external_urls.spotify,
-    meta: `${artistsOf(t)} · ${t.album.name}`,
-  }));
+/** 最常聽的：排名越前越大越亮，排在越內圈（所以由後往前排）；第一名是琥珀色 */
+export const trackStars = (tracks: SpotifyTrack[]): Star[] =>
+  tracks
+    .map((t, rank) => ({
+      id: `s${t.id}`,
+      title: t.name,
+      meta: `${artistsOf(t)} · ${t.album.name}`,
+      // Spotify 的封面有三種大小（640、300、64）：望遠鏡裡用中間那張
+      cover: (t.album.images.length > 1 ? t.album.images[1] : t.album.images.at(0))?.url ?? null,
+      href: t.external_urls.spotify,
+      size: 1.2 - (0.7 * rank) / Math.max(1, tracks.length),
+      light: 1 - (0.35 * rank) / Math.max(1, tracks.length),
+      amber: rank === 0,
+    }))
+    .reverse();
