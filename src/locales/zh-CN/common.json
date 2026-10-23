@@ -407,6 +407,10 @@
   },
   "blog": {
     "title": "手记",
+    "subtitle": "转过的日子，写下来的才留成轨迹。",
+    "all": "全部",
+    "more": "还有 {{count}} 篇",
+    "minutes": "约 {{count}} 分",
     "metaTitle": "手记 · Notes",
     "description": "Koimsurai 的技术手记、学习笔记与生活随笔。涵盖前端架构、Rust、系统设计等主题。",
     "heroTitle": "手记",

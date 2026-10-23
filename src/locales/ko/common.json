@@ -407,6 +407,10 @@
   },
   "blog": {
     "title": "노트",
+    "subtitle": "지나간 날들 중 적어 둔 것만 궤적으로 남는다.",
+    "all": "전체",
+    "more": "{{count}}편 더",
+    "minutes": "약 {{count}}분",
     "metaTitle": "노트",
     "description": "Koimsurai의 기술 노트, 학습 기록, 생활 에세이. 프런트엔드 아키텍처, Rust, 시스템 설계 등.",
     "heroTitle": "노트",
