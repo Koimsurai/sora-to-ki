@@ -1014,42 +1014,6 @@ html {
   }
 }
 
-/* Prevent scrollbars during intro animation */
-body.intro-animation-active {
-  overflow: hidden;
-}
-
-/* 首訪桌面首頁:intro 是 client-only(SSR 不知道會不會播),內容卻已 SSR → 會「先閃首頁再跑 intro」。
-   __root 的 pre-paint inline script 符合條件時加 html.intro-pending → 先藏內容;
-   SpaceBackdropShell 在 intro pre-reveal 時移除(內容在 bloom 下淡入)。inline script 內另有安全 timeout 兜底。
-
-   ⚠ 是 0.001 不是 0:opacity 剛好 0 的圖層瀏覽器整層不光柵化,等 pre-reveal 拿掉 class 那一刻才一次
-   光柵化整頁,實測在開場進行中卡 270–440ms(正好在閃光前)。0.001 肉眼看不到(255 × 0.001 量化後是 0),
-   但內容會在開場掛上之前的首次繪製就畫好。will-change: opacity 沒有這個效果,試過。 */
-.main-content-container {
-  transition: opacity var(--dur-500) ease;
-}
-html.intro-pending .main-content-container {
-  opacity: 0.001;
-}
-
-/* 等開場就緒的那段（3D 要先把管線全部編譯完，首訪約半秒）直接顯示開場的底色，不要先露出底下的
-   CSS 星空、再被開場蓋過去。開場 canvas 的第一幀畫的就是同一個漸層（lib/hyperspace.ts 的底色），
-   它疊在這層上面（--z-intro + 1），接手時看不出交接；內容解開時這層跟著淡掉。
-   元素在 AppShell，SSR 就輸出，配上 pre-paint script 加的 class，首次繪製就是這個畫面。 */
-.intro-veil {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-intro);
-  pointer-events: none;
-  background: radial-gradient(ellipse at center, #050620 0%, #000 70%);
-  opacity: 0;
-  transition: opacity var(--dur-300) ease-out;
-}
-html.intro-pending .intro-veil {
-  opacity: 1;
-}
-
 /* ═══════════════════════════════════════════════════
    Home section shared tokens — aligned with Activity /
    Notes pages. Each home section reuses these for

@@ -9,7 +9,7 @@ import BackToTopButton from './BackToTopButton';
 
 // 桌面 WebGL 背景/開場 + 互動式 overlay → 純 client(three.js / portal 不進 SSR)
 // GPU 探測跟這支 chunk 的下載同時起跑，不要等元件掛上才開始：開場要等探測做完才播
-// （理由見 SpaceBackdropShell 的 introReady），越早開始，開場前要等的時間越短。
+// 越早開始，首頁的土星越早出現。
 const SpaceBackdropShell = lazy(() => {
   void import('@/lib/webglSupport').then((m) => m.probeHardwareGpu());
   return import('@/components/backdrop/SpaceBackdropShell');
@@ -106,10 +106,6 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
           </Suspense>
         </ClientOnly>
       )}
-
-      {/* 首訪首頁等開場就緒時的底色（樣式與理由見 index.css 的 .intro-veil），平常完全透明。
-          fixed + z-index 決定疊層，放最後是為了不讓前面兄弟節點的 DOM 路徑位移（computed-style 基準靠路徑比對） */}
-      {isHomePage && <div className="intro-veil" aria-hidden />}
     </div>
   );
 }

@@ -29,10 +29,8 @@ import {
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
-import { createHyperspace, type Hyperspace } from './hyperspace';
 import { inspectWebGL } from './webglRenderer';
 import type { SatelliteScreen } from '@/store/homeOrbit';
-import { introFrame, phasesCrossed, phaseTimes, type IntroPhase } from './introTimeline';
 
 export const STAR_COUNT = 13000; // 7k 主層 + 6k 星系層（2026-10 翻新減半，見 LAYERS）
 
@@ -56,10 +54,8 @@ export interface StarfieldRunner {
   setRunning(running: boolean): void;
   /** 捲動位置（土星的捲動旋轉；worker 無 window，由主執行緒轉發） */
   setScroll(y: number): void;
-  /** 土星顯示（僅首頁）與 intro 縮放動畫 */
+  /** 土星顯示（僅首頁）；animate 為 false 時收成一點，true 時從一點撐開（換頁的收與長） */
   setSaturn(visible: boolean, animate: boolean): void;
-  /** 跳過開場。開場還沒開始的話就直接不播 */
-  skipIntro(): void;
   /** 首頁衛星的亮度（見 store/homeOrbit） */
   setSatelliteGlow(glow: number[]): void;
   dispose(): void;
@@ -86,18 +82,6 @@ export interface StarfieldInit {
    * 呼叫端收到之後要整個重建（canvas 已 transfer 給 worker 的話得換一個新的 canvas 元素）。
    */
   onDeviceLost?: (message: string) => void;
-  /**
-   * 播首訪開場（超空間跳躍）。開場畫在同一張 canvas 上，runner 建好、所有管線都編譯過之後
-   * 第一幀就開始，時間軸由這條渲染迴圈推進（見 lib/introTimeline.ts）。
-   */
-  intro?: boolean;
-  /** 開場的各個階段，主執行緒靠它切 DOM（解開內容、掛特效、收掉跳過鈕） */
-  onIntroPhase?: (phase: IntroPhase) => void;
-  /**
-   * 除錯用（網址加 ?intro-at=毫秒）：開場照常跑到這個時間點就停住。截圖比對要對準同一刻，
-   * 而主執行緒收到階段訊息的時間會被它自己的忙碌拖慢，從外面計時對不準。
-   */
-  introFreezeAt?: number;
   /**
    * 土星顯示時，每畫一幀回報一次衛星在畫面上的位置（首頁的字跟著它走，見 store/homeOrbit）。
    * 土星收起來時送一次空陣列。
@@ -190,8 +174,8 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
 interface SaturnRig {
   group: THREE.Group;
   /**
-   * moving：還在追趕目標（intro 縮放、捲動旋轉、衛星的亮度沒收斂），這段時間不進閒置降幀。
-   * zooming：intro 的放大還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
+   * moving：還在追趕目標（收與長的縮放、捲動旋轉、衛星的亮度沒收斂），這段時間不進閒置降幀。
+   * zooming：收與長的縮放還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
    */
   update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean };
   /** 視窗的長寬比：窄的視窗要把整組縮小，最外圈的軌道才放得下 */
@@ -253,7 +237,7 @@ const fitScale = (aspect: number) => Math.min(BASE_SCALE, 0.6 * aspect);
 /// 剛好是要的樣子）。
 ///
 /// 只有星球繞自己的軸自轉（0.05 rad/s，捲動再多轉一點）；環與軌道的平面固定不動，
-/// 不然衛星的軌道會跟著晃。intro 時整組從極小放大（lerp 0.08）。
+/// 不然衛星的軌道會跟著晃。換頁時整組從一點撐開、或收回一點（lerp 0.08）。
 function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   // 外層側傾、內層俯角：跟提案的投影同一個順序（先自轉、再俯、再側傾）。
   // 環與軌道都在內層的水平面（y = 0）上，星球繞內層的 y 軸自轉，軸自然垂直於環
@@ -365,7 +349,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       const targetScrollRot = scrollY * 0.001;
       currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, lerpFactor(0.05, dt));
       body.rotation.y = currentScrollRot + autoRot;
-      // intro 縮放：未 animate 用極小 epsilon（非 0）讓管線先編譯好，explosion 時只是放大
+      // 收與長：收的時候縮到極小（非 0，管線才不會重編），長的時候撐回原尺寸
       const targetScale = animate ? fullScale : 0.0001;
       currentScale = THREE.MathUtils.lerp(currentScale, targetScale, lerpFactor(0.08, dt));
       group.scale.setScalar(currentScale);
@@ -420,7 +404,7 @@ interface AdapterLike {
 /**
  * 這台機器的 3D 會不會落在 CPU 上（SwiftShader / WARP / llvmpipe）。
  *
- * 主執行緒另外有 GPU 探測（lib/webglSupport.ts），但 3D 不等它：開場要等這個 runner 把管線
+ * 主執行緒另外有 GPU 探測（lib/webglSupport.ts），但 3D 不等它：首頁的土星要等這個 runner 把管線
  * 全部編譯完才開始，等探測做完再建等於多等一輪。所以 runner 自己先查，是軟體渲染就在
  * 編譯任何東西之前退出——不查的話，沒有 GPU 的機器會用 CPU 模擬的 GPU 編譯整套著色器，
  * 把 CPU 吃滿到頁面都載不完（CI 的 e2e 實際逾時過）。
@@ -513,37 +497,8 @@ export async function createStarfieldRunner(
   const sceneOut = vec4(combined.rgb.mul(float(1).sub(sat.a)).add(sat.rgb), max(scenePassColor.a, sat.a));
   const pipeline = new THREE.RenderPipeline(renderer, sceneOut);
 
-  // ── 開場 ──
-  // 開場期間另外兩條 pipeline（見 lib/hyperspace.ts）：
-  //   stagePipeline：爆炸前，只畫開場層——星空與土星整個被蓋住，場景 pass 與 bloom 都不跑
-  //   introPipeline：爆炸後，同一個場景 pass 疊在開場層上
-  // 三條都在下面的暖機裡先畫過一次，切換時不會再編譯任何東西。
-  let hyperspace: Hyperspace | null = null;
-  let stagePipeline: THREE.RenderPipeline | null = null;
-  let introPipeline: THREE.RenderPipeline | null = null;
-  if (init.intro) {
-    hyperspace = createHyperspace(renderer, init.width, init.height, dprUsed);
-    stagePipeline = new THREE.RenderPipeline(renderer, hyperspace.composite(null));
-    introPipeline = new THREE.RenderPipeline(renderer, hyperspace.composite(sceneOut));
-  }
-  let introStart = -1;
-  let introPrev = -1;
-  let skippedAt: number | null = null;
-  // 跳過的時間點取「下一幀」的時間：取上一幀的話，被提前到那一刻的階段剛好落在
-  // phasesCrossed 的 (prev, now] 左端外面，一個都不會送出去
-  let skipRequested = false;
-  let sceneShown = false;
-  const finishIntro = () => {
-    hyperspace?.dispose();
-    stagePipeline?.dispose();
-    introPipeline?.dispose();
-    hyperspace = null;
-    stagePipeline = null;
-    introPipeline = null;
-  };
-
   // ── 暖機：所有會用到的管線都在 ready 之前編譯完 ──
-  // three 預設在「第一次畫到」時才編譯，那會是開場頭幾幀、或土星出現的那一刻的一次停頓。
+  // three 預設在「第一次畫到」時才編譯，那會是土星出現的那一刻的一次停頓。
   // 土星此時還是隱藏的（等主執行緒的 setSaturn），暫時打開以極小縮放畫一次，管線就有了。
   saturn.group.visible = true;
   // 用 PassNode 的 compileAsync，不是 renderer.compileAsync(scene, camera)：後者照「畫到 canvas」
@@ -552,24 +507,19 @@ export async function createStarfieldRunner(
   await scenePass.compileAsync(renderer);
   await saturnPass.compileAsync(renderer);
   pipeline.render();
-  if (hyperspace && stagePipeline && introPipeline) {
-    hyperspace.update(introFrame(0, null), 0, 0);
-    introPipeline.render();
-    stagePipeline.render(); // 最後畫開場的第 0 幀：主執行緒一顯示 canvas，看到的就是開場的底色
-  }
   saturn.group.visible = false;
 
   // ── 渲染迴圈 ──────────────────────────────────────────────────
   //
   // 閒置時降到 30fps：星空的轉速是 0.01～0.02 rad/s、土星自轉 0.05 rad/s，30fps 跟 60fps 看不出差別，
   // 但 GPU 的工作量減半（筆電的風扇與電池差很多）。
-  // 有「動作」的時候（捲動、改尺寸、intro、土星的 lerp 還沒收斂）回到 60fps，捲動跟著土星轉不會頓。
+  // 有「動作」的時候（捲動、改尺寸、土星的 lerp 還沒收斂）回到 60fps，捲動跟著土星轉不會頓。
   // rAF 還是每個 vsync 都會進來，只是閒置時隔一幀才畫——跳過的那一幀只花幾微秒。
   //
   // 有動作的時候也不超過約 60fps：rAF 跟著螢幕更新率走，144Hz 的螢幕上工作量是 60Hz 的 2.4 倍，
   // 而背景轉得很慢，多出來的幀看不出差別。怎麼跳格見 framePacer.ts。
   //
-  // 例外是開場與土星放大：那是畫面上唯一的動作，而且跟 CSS 動畫同時在跑，鎖 60fps 的話
+  // 例外是土星的收與長：那是畫面上唯一的動作，而且跟 CSS 動畫同時在跑，鎖 60fps 的話
   // 180Hz 螢幕上就是「周圍很順、只有它在頓」。這段跟著螢幕更新率畫，放大收斂後回到上面的規則。
   const IDLE_AFTER_MS = 1500;
   const ACTIVE_FRAME_MS = 1000 / 60;
@@ -616,7 +566,7 @@ export async function createStarfieldRunner(
     //   就永遠不會進閒置。
     const wall = performance.now();
     const active = wall - lastActive < IDLE_AFTER_MS;
-    const fullRate = hyperspace !== null || saturnZooming;
+    const fullRate = saturnZooming;
     if (!pacer.shouldRender(now, fullRate ? 0 : active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS)) return;
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
     const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
@@ -626,32 +576,13 @@ export async function createStarfieldRunner(
       l.points.rotation.y += delta * l.cfg.rotY;
     }
 
-    // 開場：時間軸從第一幀算起
-    let introAllowsZoom = true;
-    if (hyperspace) {
-      if (introStart < 0) introStart = now;
-      const t = Math.min(now - introStart, init.introFreezeAt ?? Infinity);
-      if (skipRequested) skippedAt ??= t;
-      const frame = introFrame(t, skippedAt);
-      hyperspace.update(frame, t, introPrev < 0 ? 0 : t - introPrev);
-      introAllowsZoom = frame.saturnAnimate;
-      sceneShown = frame.sceneOpacity > 0;
-      for (const phase of phasesCrossed(introPrev, t, skippedAt)) init.onIntroPhase?.(phase);
-      introPrev = t;
-      markActive();
-    }
-
     if (saturnVisible) {
-      const s = saturn.update(delta, scrollY, saturnAnimate && introAllowsZoom);
+      const s = saturn.update(delta, scrollY, saturnAnimate);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
       init.onSatellites?.(saturn.project(saturnCam, viewW, viewH));
     }
-    if (stagePipeline && !sceneShown) stagePipeline.render();
-    else if (introPipeline) introPipeline.render();
-    else pipeline.render();
-    // 開場層已經完全淡出：換回主 pipeline（畫出來一模一樣），收掉開場的資源
-    if (hyperspace && introPrev >= phaseTimes(skippedAt).done) finishIntro();
+    pipeline.render();
     // ⚠ 每一幀都要取回：three 的 query pool 格數有限，一秒才取一次的話格子在幾分之一秒內就滿了，
     //   之後的 pass 根本沒量到（實測量出 0.05ms 這種不可能的值）。取回是非同步的，結果晚一兩幀到。
     void renderer
@@ -674,9 +605,7 @@ export async function createStarfieldRunner(
         clockSkewMs: now - wall,
       });
       gpuMsPerFrame = gpuEma;
-      // 開場期間不算：那幾秒多畫一層全螢幕的星芒，GPU 時間本來就高，而降級是永久的
-      const tooSlow =
-        hyperspace === null && (gpuMsPerFrame !== null ? gpuMsPerFrame > SLOW_GPU_MS : fps < LOW_FPS && active);
+      const tooSlow = gpuMsPerFrame !== null ? gpuMsPerFrame > SLOW_GPU_MS : fps < LOW_FPS && active;
       if (tooSlow && quality < QUALITY_FACTOR.length - 1) {
         lowSeconds += 1;
         if (lowSeconds >= LOW_SECONDS_TO_DEGRADE) {
@@ -706,7 +635,6 @@ export async function createStarfieldRunner(
         saturnCam.updateProjectionMatrix();
         camera.updateProjectionMatrix();
         renderer.setSize(width, height, false);
-        hyperspace?.setSize(width, height, dprUsed);
       },
       setScroll(y) {
         if (y !== scrollY) markActive();
@@ -734,18 +662,8 @@ export async function createStarfieldRunner(
           void renderer.setAnimationLoop(null);
         }
       },
-      skipIntro() {
-        if (!hyperspace) return;
-        if (introStart < 0) {
-          // 還沒開始：直接不播，一個階段都不送（呼叫端已經自己收尾）
-          finishIntro();
-          return;
-        }
-        skipRequested = true;
-      },
       dispose() {
         void renderer.setAnimationLoop(null);
-        finishIntro();
         pipeline.dispose();
         for (const l of layers) {
           // Sprite 的 quad geometry 為 three 內部共享，不 dispose；材質是我們的

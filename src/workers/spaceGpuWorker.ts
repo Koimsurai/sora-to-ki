@@ -5,8 +5,8 @@
 //   ‧ 它的協定走 structured clone，傳不了 WebGPURenderer 需要的 async factory
 //   ‧ handleProps 無 try/catch（init 失敗後任何 props 訊息都在 worker 內 uncaught throw）
 //   ‧ worker 內 shim self.document={} 干擾環境判定
-// 這裡協定極簡：init / resize / running / scroll / saturn / skip / glow，錯誤一律回報主執行緒處理。
-// 回程：ready / perf / lost / error，開場的各個階段（intro），以及首頁衛星的位置（satellites）。
+// 這裡協定極簡：init / resize / running / scroll / saturn / glow，錯誤一律回報主執行緒處理。
+// 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）。
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
 
 interface InitMsg {
@@ -15,9 +15,6 @@ interface InitMsg {
   width: number;
   height: number;
   dpr: number;
-  /** 播首訪開場（見 lib/starfieldGpu.ts 的 StarfieldInit.intro） */
-  intro: boolean;
-  introFreezeAt?: number;
   lite?: boolean;
 }
 interface ResizeMsg {
@@ -38,15 +35,12 @@ interface SaturnMsg {
   visible: boolean;
   animate: boolean;
 }
-interface SkipMsg {
-  type: 'skip';
-}
 /** 首頁衛星的亮度（見 store/homeOrbit） */
 interface GlowMsg {
   type: 'glow';
   glow: number[];
 }
-type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | SkipMsg | GlowMsg;
+type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg;
 
 let runner: StarfieldRunner | null = null;
 // init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
@@ -60,8 +54,6 @@ let lastSaturn: { visible: boolean; animate: boolean } | null = null;
 // 沒停掉時 Edge 上連續 seek 第 8~15 次就會把媒體管線卡死）。
 // 冷啟動第一次進文章頁按全螢幕正好落在這個窗口裡。
 let lastRunning: boolean | null = null;
-// 開場還在初始化時使用者就按了跳過（或主執行緒等太久放棄）→ ready 之後直接不播
-let skipRequested = false;
 let lastGlow: number[] | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
@@ -74,10 +66,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           width: msg.width,
           height: msg.height,
           dpr: msg.dpr,
-          intro: msg.intro,
-          introFreezeAt: msg.introFreezeAt,
           lite: msg.lite,
-          onIntroPhase: (phase) => self.postMessage({ type: 'intro', phase }),
           onPerf: (report) => self.postMessage({ type: 'perf', report }),
           // device lost：worker 裡的 console.error 不會出現在頁面 console，而且這個 renderer
           // 之後一幀都不會再畫。轉給主執行緒，由它換一張新 canvas 重建（見 StarfieldGpu）。
@@ -88,7 +77,6 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         runner.setScroll(lastScroll);
         if (lastSaturn) runner.setSaturn(lastSaturn.visible, lastSaturn.animate);
         if (lastRunning !== null) runner.setRunning(lastRunning);
-        if (skipRequested) runner.skipIntro();
         if (lastGlow) runner.setSatelliteGlow(lastGlow);
         self.postMessage({ type: 'ready', backend });
       } catch (err) {
@@ -100,9 +88,6 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'running') {
     lastRunning = msg.value;
     runner?.setRunning(msg.value);
-  } else if (msg.type === 'skip') {
-    skipRequested = true;
-    runner?.skipIntro();
   } else if (msg.type === 'scroll') {
     lastScroll = msg.y;
     runner?.setScroll(msg.y);
