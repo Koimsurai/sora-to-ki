@@ -571,7 +571,7 @@ export default function TransitionLayer() {
 
     const unblock = router.history.block({
       enableBeforeUnload: false,
-      blockerFn: async ({ currentLocation, nextLocation }) => {
+      blockerFn: async ({ currentLocation, nextLocation, action }) => {
         const a = stripLocalePrefix(currentLocation.pathname);
         const b = stripLocalePrefix(nextLocation.pathname);
         const main = mainOf();
@@ -645,9 +645,10 @@ export default function TransitionLayer() {
         raf = requestAnimationFrame(frame);
         // 頁面的收最久等 0.8 秒：換頁不能被一個沒收完的動畫卡住
         await Promise.race([departure.done, after(800)]);
-        // 收到一半又換了一次頁：畫面交給新的那一趟，這一次的換頁照常放行（不擋：上一頁、下一頁被擋的話
-        // 瀏覽器的歷史會被倒回去一格，網址跟畫面就對不上了）
-        if (run !== r) return false;
+        // 收到一半又換了一次頁：畫面交給新的那一趟，這一次的換頁要不要放行看是哪一種——
+        //   點連結（PUSH / REPLACE）：作廢。放行的話它會比新的那一次晚推進歷史，網址被蓋回這一頁
+        //   上一頁、下一頁：放行。瀏覽器已經先動了，擋下來的話歷史會被倒回去一格
+        if (run !== r) return action === 'PUSH' || action === 'REPLACE';
         // 先把舊的藏起來再拿掉遮罩，舊頁不會閃回來一幀
         root.dataset.pt = 'out';
         main.style.clipPath = '';
