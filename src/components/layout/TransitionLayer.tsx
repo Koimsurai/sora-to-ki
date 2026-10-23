@@ -2,9 +2,10 @@
 //
 //   收：換頁先被擋下來（history 的 blocker），舊的那一頁在原地收進一個點——頁面自己收
 //       （土星收進衛星、彗尾縮回彗核），或預設的一圈遮罩把整頁收進錨點。收的同時點在那裡亮起來
-//   飛：收完才放行換頁。點帶著收進去時的方向飛出去；新的一頁一報到就量出錨點，
-//       從點「現在的位置與速度」接一條三次曲線過去（速度連續，不會轉折），最後一段可以由頁面指定
-//   長：落地之後新的一頁從錨點長出來。頁面可以接手那條線，不接手的話線收回點裡、一圈遮罩擴開
+//   飛：收完才放行換頁。鏡頭跟著琥珀點走：點帶著收進去時的方向飛出去，新的一頁從它飛去的那一側
+//       跟著鏡頭滑進來，點身後拖著彗尾——一道漸淡的線加上一路散開的塵埃，塵埃留在原地（跟著鏡頭往後流），
+//       所以每一頁進來都是一顆彗星劃過，而不是點自己橫越畫面去找錨點。最後一段可以由頁面指定
+//   長：落地之後頁面接手自己的進場（星軌長出來、彗尾長出來…）；頁面可以接手那條線
 //
 // 上一頁、下一頁也走同一套（popstate 一樣會問 blocker）。只換語系、進出後台、要求減少動態的訪客不演。
 // 轉場中又換頁：舊的直接收尾，這一次不演。
@@ -31,12 +32,15 @@ const TRAIL_IN_MS = 360;
 const WAIT_LIMIT_MS = 1500;
 /** 點飛行的基準速度（px/ms）：決定一段路要飛多久 */
 const SPEED = 1.6;
+/** 彗尾的塵埃多久熄掉 */
+const DUST_LIFE_MS = 900;
 const AMBER = '233, 193, 122';
 const INK = '241, 236, 227';
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeIn = (t: number) => t * t * t;
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const len = (p: Pt) => Math.hypot(p.x, p.y);
 const unit = (p: Pt): Pt => {
   const l = len(p) || 1;
@@ -79,6 +83,11 @@ interface Run {
   oldGeneration: number;
   resolvedAt: number;
   reach: number;
+  /** 鏡頭這一趟總共要移多遠（新的一頁從這麼遠的地方滑進來）、現在移到哪 */
+  cameraMove: Pt;
+  camera: Pt;
+  /** 彗尾的塵埃（畫面座標，鏡頭移動時跟著往後流） */
+  dust: { x: number; y: number; vx: number; vy: number; life: number; size: number }[];
 }
 
 const mainOf = () => document.querySelector<HTMLElement>('.main-content-container > main');
@@ -197,6 +206,9 @@ export default function TransitionLayer() {
 
     const finish = (r: Run) => {
       r.main.style.clipPath = '';
+      r.main.style.transform = '';
+      r.main.style.opacity = '';
+      r.main.style.transition = '';
       delete root.dataset.pt;
       ctx.clearRect(0, 0, cv.width, cv.height);
       if (run === r) run = null;
@@ -269,6 +281,63 @@ export default function TransitionLayer() {
       const c = clamp((len(r.vel) * dur) / total, 0, 2.2);
       r.flight = { points, cum, total, at: now, dur, a: c - 2, b: 3 - 2 * c, c };
       r.to = points.at(-1) ?? anchor;
+      // 鏡頭跟著點：新的一頁在點要去的那一側，跟著鏡頭滑進來。方向是點從出發到抵達的方向
+      // （太近的話用它出發時的速度），距離跟這一趟的長度成正比
+      const travel = { x: r.to.x - r.from.x, y: r.to.y - r.from.y };
+      const dir = len(travel) > 40 ? unit(travel) : len(r.vel) > 0.01 ? unit(r.vel) : { x: 0, y: -1 };
+      const reach = Math.min(window.innerWidth, window.innerHeight) * 0.42;
+      const L = arrival?.still || total < 6 ? 0 : clamp(total * 0.6, 140, reach);
+      r.cameraMove = { x: dir.x * L, y: dir.y * L };
+      r.camera = { x: 0, y: 0 };
+      // 新的一頁在飛的時候就看得到（跟著鏡頭滑進來），不再藏著
+      root.dataset.pt = 'fly';
+      r.main.style.transition = 'none';
+      r.main.style.opacity = '0';
+      r.main.style.transform = `translate(${r.cameraMove.x}px, ${r.cameraMove.y}px)`;
+    };
+
+    /** 鏡頭移了 d：畫面上留在原地的東西（線、塵埃）都往反方向挪 */
+    const panWorld = (r: Run, d: Pt) => {
+      if (!d.x && !d.y) return;
+      for (const p of r.trail) {
+        p.x -= d.x;
+        p.y -= d.y;
+      }
+      for (const p of r.dust) {
+        p.x -= d.x;
+        p.y -= d.y;
+      }
+    };
+
+    /** 彗尾的塵埃：從點身上一路散出來，往後飄、慢慢熄 */
+    const emitDust = (r: Run, p: Pt, back: Pt, dt: number) => {
+      const n = Math.min(6, Math.ceil(dt / 6));
+      for (let k = 0; k < n; k++) {
+        const side = (Math.random() - 0.5) * 2;
+        r.dust.push({
+          x: p.x + (Math.random() - 0.5) * 3,
+          y: p.y + (Math.random() - 0.5) * 3,
+          vx: back.x * (0.02 + Math.random() * 0.05) - back.y * side * 0.03,
+          vy: back.y * (0.02 + Math.random() * 0.05) + back.x * side * 0.03,
+          life: 0,
+          size: 0.8 + Math.random() * 1.2,
+        });
+      }
+    };
+
+    const drawDust = (r: Run, dt: number, alpha: number) => {
+      const keep: Run['dust'] = [];
+      for (const p of r.dust) {
+        p.life += dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        const k = 1 - p.life / DUST_LIFE_MS;
+        if (k <= 0) continue;
+        keep.push(p);
+        ctx.fillStyle = `rgba(${INK}, ${(0.7 * k * k * alpha).toFixed(3)})`;
+        ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+      }
+      r.dust = keep;
     };
 
     const frame = (now: number) => {
@@ -313,18 +382,31 @@ export default function TransitionLayer() {
             r.vel = { x: r.vel.x * decay, y: r.vel.y * decay };
           }
         }
+        const prev = r.pos;
         if (r.flight) {
           const f = r.flight;
           const tau = clamp((now - f.at) / f.dur);
           const s = (f.a * tau * tau * tau + f.b * tau * tau + f.c * tau) * f.total;
           r.pos = pointAt(f, s);
+          // 鏡頭：前面慢慢跟上、最後輕輕停住；新的一頁跟著滑進來、一邊淡入
+          const e = easeInOut(tau);
+          const cam = { x: r.cameraMove.x * e, y: r.cameraMove.y * e };
+          panWorld(r, { x: cam.x - r.camera.x, y: cam.y - r.camera.y });
+          r.camera = cam;
+          r.main.style.transform = `translate(${(r.cameraMove.x - cam.x).toFixed(1)}px, ${(r.cameraMove.y - cam.y).toFixed(1)}px)`;
+          // 沒有鏡頭移動（點本來就在錨點上）：留到長的時候再淡入
+          const still = !r.cameraMove.x && !r.cameraMove.y;
+          r.main.style.opacity = still ? '0' : String(clamp(tau * 2.2));
           if (tau >= 1) {
             r.phase = 'grow';
             r.growAt = now;
           }
         }
+        const moved = { x: r.pos.x - prev.x, y: r.pos.y - prev.y };
         const lastPt = r.trail.at(-1);
-        if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push(r.pos);
+        if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos });
+        if (len(moved) > 0.2) emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
+        drawDust(r, dt, 1);
         line(r.trail, 0, 1);
         dot(r.pos, 3);
         if (r.phase === 'fly') return;
@@ -337,15 +419,18 @@ export default function TransitionLayer() {
         const page = currentPage();
         const fresh = page.generation !== r.oldGeneration ? page.handle : null;
         r.takeover = fresh?.onGrow?.({ from: r.from, to, trail: r.trail.slice() });
-        r.reach = coverRadius(to);
       }
       const g = clamp((now - r.growAt) / GROW_MS);
-      if (!r.takeover) circleAt(r.main, to, r.reach * easeOut(g));
+      // 頁面已經跟著鏡頭滑到位；沒飛的（點本來就在錨點上）這時才淡入
+      r.main.style.transform = '';
+      r.main.style.opacity = String(Math.max(Number(r.main.style.opacity || 0), easeOut(g)));
+      drawDust(r, Math.min(50, now - r.last), 1);
+      r.last = now;
       if (r.takeover !== 'trail') {
         line(r.trail, easeIn(clamp((now - r.growAt) / TRAIL_IN_MS)), 1);
         dot(to, 3 * (1 - easeOut(g)), 1 - g);
       }
-      if (g >= 1) {
+      if (g >= 1 && !r.dust.length) {
         cancelAnimationFrame(raf);
         finish(r);
       }
@@ -399,6 +484,9 @@ export default function TransitionLayer() {
           oldGeneration: 0,
           resolvedAt: 0,
           reach: 0,
+          cameraMove: { x: 0, y: 0 },
+          camera: { x: 0, y: 0 },
+          dust: [],
         };
         run = r;
         root.dataset.pt = 'leave';

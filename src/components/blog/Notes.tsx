@@ -14,8 +14,8 @@ import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { useBareSky } from '@/hooks/useBareSky';
 import { orbitGeometry, orbitPoint, setOrbitHandoff, takeOrbitHandoff } from '@/lib/articleOrbit';
-import { after, type Pt } from '@/store/pageTransition';
-import { arcPoint, createNoteSky, poleOf, postArc, skyPostOf, type SkyPost } from './noteSky';
+import { after, isArriving, type Pt } from '@/store/pageTransition';
+import { arcPoint, createNoteSky, poleOf, postArc, skyPostOf, zoomMap, zoomOf, type SkyPost } from './noteSky';
 import './Notes.css';
 
 /* 手記：一篇文章是一道星軌（畫在 noteSky），列表照目錄排、年份在左、一篇一行。
@@ -29,7 +29,7 @@ const CHARS_PER_MIN = 700;
 /** 快門打開、星軌拖出來的時間（秒） */
 const EXPOSE_S = 1.8;
 /** 點進一篇文章時，它的星軌拉成文章頁軌道的時間 */
-const ZOOM_MS = 700;
+const ZOOM_MS = 900;
 /** 去別頁時整片縮回去的時間 */
 const RETRACT_MS = 380;
 /** 飛進來的那條線落地後淡掉的時間 */
@@ -102,24 +102,40 @@ function Notes() {
       return arcPoint(arc, arc.a1);
     },
     // 點飛進來時沿著最新那一篇的星軌走，落在它的那顆星上：飛過的線就是那一篇的星軌
-    arrive: () => {
+    arrive: ({ pos, vel }) => {
       if (keepRef.current >= 0) return null;
       const w = window.innerWidth;
       const h = window.innerHeight;
       const on = (q: Pt) => q.x > 16 && q.x < w - 16 && q.y > 72 && q.y < h - 16;
-      // 最新的那幾篇星軌很大，那顆星常在畫面外：往下找最新、而且看得到那顆星的一篇
+      // 點切進一道星軌、沿著它繞天極走一大段，停在那篇文章的那顆星上：它就是一顆在走的星。
+      // 挑法：那顆星看得到、往回沿著圓在畫面裡走得夠遠，而且切進去的方向跟點飛來的方向順
+      const speed = Math.hypot(vel.x, vel.y);
+      let best: { score: number; run: Pt[] } | null = null;
       for (let i = 0; i < skyRef.current.length; i++) {
         const arc = arcOf(i);
         if (!on(arcPoint(arc, arc.a1))) continue;
         const run: Pt[] = [];
-        for (let k = 0; k <= 48; k++) {
-          const q = arcPoint(arc, arc.a0 + ((arc.a1 - arc.a0) * k) / 48);
-          if (on(q)) run.push(q);
-          else run.length = 0;
+        // 從那顆星往回走，最多繞 150°，出了畫面就停
+        for (let k = 0; k <= 60; k++) {
+          const q = arcPoint(arc, arc.a1 - (k / 60) * ((150 * Math.PI) / 180));
+          if (!on(q)) break;
+          run.unshift(q);
         }
-        if (run.length > 6) return { approach: run };
+        if (run.length < 16) continue;
+        const start = run[0];
+        const tx = run[1].x - start.x;
+        const ty = run[1].y - start.y;
+        const tl = Math.hypot(tx, ty) || 1;
+        const gx = start.x - pos.x;
+        const gy = start.y - pos.y;
+        const gl = Math.hypot(gx, gy) || 1;
+        // 走得越遠越好、越新的越好、切進去越順越好
+        const along = (gx * tx + gy * ty) / (gl * tl);
+        const ahead = speed > 0.05 ? (gx * vel.x + gy * vel.y) / (gl * speed) : 0;
+        const score = run.length / 60 + along * 0.6 + ahead * 0.3 - i * 0.02;
+        if (!best || score > best.score) best = { score, run };
       }
-      return null;
+      return best ? { approach: best.run } : null;
     },
     onGrow: ({ trail }) => {
       trailRef.current = { points: trail, at: performance.now() };
@@ -138,17 +154,12 @@ function Notes() {
         setOrbitHandoff('article', id);
         const at = performance.now();
         zoomRef.current = { i, at };
-        const from = (() => {
-          const arc = arcOf(i);
-          return arcPoint(arc, arc.a1);
-        })();
-        const to = orbitPoint(geom, 0);
+        // 那顆星跟著鏡頭推近移動，最後落在軌道頂端：轉場的琥珀點跟著它
+        const arc = arcOf(i);
+        const head = arcPoint(arc, arc.a1);
         return {
-          point: to,
-          follow: () => {
-            const k = easeInOut(Math.min(1, (performance.now() - at) / ZOOM_MS));
-            return { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k };
-          },
+          point: orbitPoint(geom, 0),
+          follow: () => zoomMap(zoomOf(arc, geom, easeInOut(Math.min(1, (performance.now() - at) / ZOOM_MS))), head),
           done: after(ZOOM_MS),
           // 拉好的軌道留在畫面上，等文章頁的軌道接手
           residue: (c) => {
@@ -179,8 +190,12 @@ function Notes() {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       // 換頁轉場還在把這一頁藏著：等它露出來才打開快門
-      if (root.dataset.pt === 'out') return;
-      if (startRef.current < 0) startRef.current = now;
+      if (isArriving()) return;
+      if (startRef.current < 0) {
+        startRef.current = now;
+        // 快門打開的同時，列表一行一行被畫出來（見 Notes.css 的 nt-row）
+        pageRef.current?.classList.add('is-in');
+      }
       const t = (now - startRef.current) / 1000;
       // 快門打開：所有的星一起拖出軌跡，越拖越慢
       const grow = reduce ? 1 : Math.min(1, 1 - Math.pow(1 - t / EXPOSE_S, 3));
@@ -271,7 +286,7 @@ function Notes() {
 
         {shown.length === 0 && <p className="nt-empty">{t('blog.emptyFiltered')}</p>}
 
-        {groups.map((g) => (
+        {groups.map((g, gi) => (
           <section key={g.year} className="nt-year" aria-label={String(g.year)}>
             <span className="nt-y nt-shadow" aria-hidden="true">
               {g.year}
@@ -281,9 +296,11 @@ function Notes() {
                 const i = indexOf.get(p.id) ?? -1;
                 const d = parseServerDate(p.created_at);
                 const title = splitTitle(p.title);
+                const row = visible.indexOf(p);
                 return (
                   <li
                     key={p.id}
+                    style={{ '--i': row + gi } as React.CSSProperties}
                     onPointerEnter={() => (hoveredRef.current = i)}
                     onPointerLeave={() => (hoveredRef.current = -1)}
                   >

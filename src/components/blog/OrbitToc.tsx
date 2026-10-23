@@ -22,8 +22,8 @@ import {
   takeOrbitHandoff,
   type OrbitGeom,
 } from '@/lib/articleOrbit';
-import { after, type Pt } from '@/store/pageTransition';
-import { arcPoint, postArc, skyPostOf, type Arc } from './noteSky';
+import { after, isArriving, type Pt } from '@/store/pageTransition';
+import { applyZoom, arcPoint, orbitSpan, postArc, skyPostOf, zoomMap, zoomOf, type Arc } from './noteSky';
 import './OrbitToc.css';
 
 export interface TocHeading {
@@ -38,7 +38,7 @@ const TAU = Math.PI * 2;
 /** 從頂端往下長出來的時間（秒） */
 const GROW_S = 1.4;
 /** 拉回手記那道星軌的時間 */
-const MORPH_MS = 650;
+const MORPH_MS = 900;
 /** 縮回琥珀點的時間 */
 const RETRACT_MS = 380;
 /** 一分鐘讀幾個字（跟手記列表一樣） */
@@ -109,14 +109,10 @@ export default function OrbitToc({
       if (arc) {
         setOrbitHandoff('notes', postId);
         leaveRef.current = { kind: 'morph', at, arc };
-        const from = orbitPoint(g, 0);
         const head = arcPoint(arc, arc.a1);
         return {
           point: head,
-          follow: () => {
-            const k = easeInOut(clamp((performance.now() - at) / MORPH_MS));
-            return { x: from.x + (head.x - from.x) * k, y: from.y + (head.y - from.y) * k };
-          },
+          follow: () => zoomMap(zoomOf(arc, g, 1 - easeInOut(clamp((performance.now() - at) / MORPH_MS))), head),
           done: after(MORPH_MS),
           // 拉回去的那道星軌留在畫面上，等手記頁接手
           residue: (c) => {
@@ -139,7 +135,6 @@ export default function OrbitToc({
     const content = contentRef.current;
     const root = rootRef.current;
     if (!cv || !ctx || !content || !root) return;
-    const html = document.documentElement;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const els = headings.map((h) => document.getElementById(h.id));
     const deep = headings.map((h) => h.level >= 3);
@@ -196,7 +191,7 @@ export default function OrbitToc({
       raf = requestAnimationFrame(frame);
       if (!g) return;
       // 轉場還藏著這一頁：等它露出來才開始長
-      if (html.dataset.pt === 'out') return;
+      if (isArriving()) return;
       if (bornRef.current < 0) bornRef.current = now;
       const tt = (now - bornRef.current) / 1000;
       const grow = fullRef.current || reduce ? 1 : clamp(tt / GROW_S) ** 0.7;
@@ -222,21 +217,18 @@ export default function OrbitToc({
       if (leave) {
         const k = clamp((now - leave.at) / (leave.kind === 'morph' ? MORPH_MS : RETRACT_MS));
         if (leave.kind === 'morph' && leave.arc) {
+          // 鏡頭拉遠：跟手記推近的那一下反過來（noteSky 的 zoomOf），軌道縮回那一篇的星軌
           const arc = leave.arc;
           const e = easeInOut(k);
-          ctx.strokeStyle = `rgba(${INK}, ${0.78 + 0.12 * e})`;
-          ctx.lineWidth = 1 + 0.4 * e;
+          const z = zoomOf(arc, geom, 1 - e);
+          ctx.save();
+          applyZoom(ctx, z);
+          ctx.strokeStyle = `rgba(${INK}, ${0.8 + 0.1 * e})`;
+          ctx.lineWidth = (1 + 0.4 * e) / z.scale;
           ctx.beginPath();
-          for (let i = 0; i <= 64; i++) {
-            const s = i / 64;
-            const o = at(s);
-            const a = arcPoint(arc, arc.a1 - s * (arc.a1 - arc.a0));
-            const x = o.x + (a.x - o.x) * e;
-            const y = o.y + (a.y - o.y) * e;
-            if (i) ctx.lineTo(x, y);
-            else ctx.moveTo(x, y);
-          }
+          ctx.arc(arc.cx, arc.cy, arc.r, arc.a1 - (orbitSpan(geom) * (1 - e) + (arc.a1 - arc.a0) * e), arc.a1);
           ctx.stroke();
+          ctx.restore();
           ctx.lineWidth = 1;
         } else {
           // 縮回琥珀點：前後兩段一起往讀者的位置收

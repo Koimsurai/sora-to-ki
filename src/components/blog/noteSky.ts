@@ -5,7 +5,6 @@
 // 換到某一篇文章時，那一篇的星軌被拉成文章頁右邊那道軌道（lib/articleOrbit）。
 // 這裡只有畫圖，不碰 React。
 import type { OrbitGeom } from '@/lib/articleOrbit';
-import { orbitPoint } from '@/lib/articleOrbit';
 import type { Pt } from '@/store/pageTransition';
 
 const TAU = Math.PI * 2;
@@ -78,6 +77,37 @@ export function postArc(i: number, n: number, p: SkyPost, w: number, h: number, 
 
 export const arcPoint = (a: Arc, ang: number): Pt => ({ x: a.cx + Math.cos(ang) * a.r, y: a.cy + Math.sin(ang) * a.r });
 
+/**
+ * 鏡頭推近：把手記的整片星空當成一張照片，平移、旋轉、放大，直到第 i 篇的那道星軌剛好疊在文章頁的軌道上
+ * （它的那顆星落在軌道頂端）。e 是推到哪裡（0 是原樣、1 是到位）；縮放在對數上內插，推起來是等速的
+ */
+export function zoomOf(arc: Arc, g: OrbitGeom, e: number) {
+  const S = g.RB / arc.r;
+  const scale = Math.exp(Math.log(S) * e);
+  const rot = (g.aTop - arc.a1) * e;
+  return { px: arc.cx, py: arc.cy, tx: arc.cx + (g.cx - arc.cx) * e, ty: arc.cy + (g.cy - arc.cy) * e, rot, scale };
+}
+
+export type Zoom = ReturnType<typeof zoomOf>;
+
+export function zoomMap(z: Zoom, p: Pt): Pt {
+  const dx = (p.x - z.px) * z.scale;
+  const dy = (p.y - z.py) * z.scale;
+  const c = Math.cos(z.rot);
+  const s = Math.sin(z.rot);
+  return { x: z.tx + dx * c - dy * s, y: z.ty + dx * s + dy * c };
+}
+
+export function applyZoom(ctx: CanvasRenderingContext2D, z: Zoom) {
+  ctx.translate(z.tx, z.ty);
+  ctx.rotate(z.rot);
+  ctx.scale(z.scale, z.scale);
+  ctx.translate(-z.px, -z.py);
+}
+
+/** 推到位之後，那道星軌只留下跟文章軌道一樣長的那一段（從那顆星往回量，弧度） */
+export const orbitSpan = (g: OrbitGeom) => g.H / g.RB;
+
 export interface SkyFrame {
   /** 秒，決定轉到哪裡 */
   t: number;
@@ -112,10 +142,18 @@ export function createNoteSky() {
     const { x: px, y: py } = poleOf(w, h);
     const reach = reachOf(w, h);
     const spin = f.t * SPIN;
+    const n = posts.length;
+    // 換到文章：整片星空當一張照片推近（zoomOf），推到那一篇的星軌疊上文章的軌道
     const zk = f.zoom ? easeInOut(f.zoom.k) : 0;
-    const fade = (1 - zk) * (1 - f.retract);
+    const zoom = f.zoom ? zoomOf(postArc(f.zoom.i, n, posts[f.zoom.i], w, h, f.t, 1), f.zoom.geom, zk) : null;
+    /** 放大之後線與點要維持原本的粗細 */
+    const px1 = zoom ? 1 / zoom.scale : 1;
+    // 其他的星軌與背景的星：推近時往畫面外飛出去、一邊淡掉
+    const fade = (1 - zk * 0.85) * (1 - f.retract);
     const len = (base: number) => base * f.grow * (1 - f.retract);
-    ctx.lineWidth = 1;
+    ctx.save();
+    if (zoom) applyZoom(ctx, zoom);
+    ctx.lineWidth = px1;
 
     // 背景的星：每一顆拖著一道軌跡，前端是星本身
     if (fade > 0.01) {
@@ -127,67 +165,53 @@ export function createNoteSky() {
         ctx.beginPath();
         ctx.arc(px, py, r, a0, a1);
         ctx.stroke();
+        const size = s.star * px1;
         ctx.fillStyle = `rgba(${INK}, ${Math.min(1, s.a * 4 * fade).toFixed(3)})`;
-        ctx.fillRect(px + Math.cos(a1) * r - s.star / 2, py + Math.sin(a1) * r - s.star / 2, s.star, s.star);
+        ctx.fillRect(px + Math.cos(a1) * r - size / 2, py + Math.sin(a1) * r - size / 2, size, size);
       }
       ctx.fillStyle = `rgba(${INK}, ${0.6 * fade})`;
       ctx.beginPath();
-      ctx.arc(px, py, 1.8, 0, TAU);
+      ctx.arc(px, py, 1.8 * px1, 0, TAU);
       ctx.fill();
     }
 
-    const n = posts.length;
     posts.forEach((p, i) => {
       const zooming = f.zoom?.i === i;
       const full = zooming || f.keep === i;
       const arc = postArc(i, n, p, w, h, f.t, full ? 1 : f.grow);
       if (!full) arc.a0 = arc.a1 - (arc.a1 - arc.a0) * (1 - f.retract);
-      const on = i === f.hovered || zooming || f.keep === i;
-      if (zooming && f.zoom) {
-        // 拉成文章頁的軌道：弧上每一點（從前端往尾端）移到軌道上對應的位置（從頂端往下）
-        const g = f.zoom.geom;
-        ctx.strokeStyle = `rgba(${INK}, ${0.9 - 0.12 * zk})`;
-        ctx.lineWidth = 1.4 - 0.4 * zk;
-        ctx.beginPath();
-        for (let k = 0; k <= 64; k++) {
-          const s = k / 64;
-          const a = arcPoint(arc, arc.a1 - s * (arc.a1 - arc.a0));
-          const o = orbitPoint(g, s);
-          const x = a.x + (o.x - a.x) * zk;
-          const y = a.y + (o.y - a.y) * zk;
-          if (k) ctx.lineTo(x, y);
-          else ctx.moveTo(x, y);
-        }
-        ctx.stroke();
-        ctx.lineWidth = 1;
-        return;
-      }
-      const alpha = (on ? 0.9 : p.dim ? 0.08 : 0.3) * fade;
+      // 推到位時只留下跟文章軌道一樣長的那一段
+      if (zooming && f.zoom) arc.a0 = arc.a1 - ((arc.a1 - arc.a0) * (1 - zk) + orbitSpan(f.zoom.geom) * zk);
+      const on = i === f.hovered || full;
+      const alpha = zooming ? 0.85 : (on ? 0.9 : p.dim ? 0.08 : 0.3) * fade;
       if (alpha < 0.01) return;
       ctx.strokeStyle = `rgba(${INK}, ${alpha})`;
-      ctx.lineWidth = on ? 1.4 : 1;
+      ctx.lineWidth = (on ? 1.4 : 1) * px1;
       ctx.beginPath();
       ctx.arc(arc.cx, arc.cy, arc.r, arc.a0, arc.a1);
       ctx.stroke();
-      ctx.lineWidth = 1;
+      ctx.lineWidth = px1;
+      if (zooming) return; // 那顆星由轉場畫（它變成讀者的琥珀點）
       const head = arcPoint(arc, arc.a1);
       if (on) {
-        const g = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 14);
+        const g = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 14 * px1);
         g.addColorStop(0, `rgba(${AMBER}, ${0.6 * fade})`);
         g.addColorStop(1, `rgba(${AMBER}, 0)`);
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(head.x, head.y, 14, 0, TAU);
+        ctx.arc(head.x, head.y, 14 * px1, 0, TAU);
         ctx.fill();
       }
       ctx.fillStyle = on ? `rgba(${AMBER}, ${fade})` : `rgba(${INK}, ${(p.dim ? 0.2 : 0.8) * fade})`;
       ctx.beginPath();
-      ctx.arc(head.x, head.y, on ? 2.6 : 1.5, 0, TAU);
+      ctx.arc(head.x, head.y, (on ? 2.6 : 1.5) * px1, 0, TAU);
       ctx.fill();
     });
+    ctx.restore();
 
-    // 飛進來的那條線：落在最新那一篇的星軌上，跟著淡掉
+    // 飛進來的那條線：落在星軌上，跟著淡掉
     if (f.trail && f.trail.alpha > 0.01 && f.trail.points.length > 1) {
+      ctx.lineWidth = 1;
       ctx.strokeStyle = `rgba(${INK}, ${(0.75 * f.trail.alpha).toFixed(3)})`;
       ctx.beginPath();
       f.trail.points.forEach((q, k) => (k ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
