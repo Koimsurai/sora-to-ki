@@ -18,6 +18,7 @@ interface InitMsg {
   /** 播首訪開場（見 lib/starfieldGpu.ts 的 StarfieldInit.intro） */
   intro: boolean;
   introFreezeAt?: number;
+  lite?: boolean;
 }
 interface ResizeMsg {
   type: 'resize';
@@ -75,6 +76,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           dpr: msg.dpr,
           intro: msg.intro,
           introFreezeAt: msg.introFreezeAt,
+          lite: msg.lite,
           onIntroPhase: (phase) => self.postMessage({ type: 'intro', phase }),
           onPerf: (report) => self.postMessage({ type: 'perf', report }),
           // device lost：worker 裡的 console.error 不會出現在頁面 console，而且這個 renderer

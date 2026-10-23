@@ -102,6 +102,8 @@ export interface StarfieldInit {
    * 土星收起來時送一次空陣列。
    */
   onSatellites?: (positions: SatelliteScreen[]) => void;
+  /** 手機：星星只畫三分之一左右（手機只在首頁跑 3D，主角是土星與衛星） */
+  lite?: boolean;
 }
 
 interface StarLayerCfg {
@@ -455,7 +457,10 @@ export async function createStarfieldRunner(
   const camera = new THREE.PerspectiveCamera(75, init.width / init.height, 0.1, 400);
   camera.position.set(0, 0, 5);
 
-  const layers = LAYERS.map((cfg) => ({ points: buildStarLayer(cfg), cfg }));
+  const layers = LAYERS.map((base) => {
+    const cfg = init.lite ? { ...base, count: Math.round(base.count * 0.35) } : base;
+    return { points: buildStarLayer(cfg), cfg };
+  });
   for (const l of layers) scene.add(l.points);
 
   // 光源（對齊舊 Saturn canvas：環境光 + 太陽點光）

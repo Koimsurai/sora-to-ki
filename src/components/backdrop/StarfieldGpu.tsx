@@ -35,6 +35,8 @@ interface StarfieldGpuProps {
   isOnHomePage?: boolean;
   /** false 時土星維持 epsilon 縮放（管線先編譯好）；true 放大到原尺寸 */
   animateSaturn?: boolean;
+  /** 手機：星星減量（只看掛載當下的值） */
+  lite?: boolean;
   zIndex?: number | string;
   /**
    * 播首訪開場（畫在這張 canvas 上，見 lib/hyperspace.ts）。只看掛載當下的值：
@@ -52,6 +54,7 @@ interface StarfieldGpuProps {
 export default function StarfieldGpu({
   isOnHomePage = false,
   animateSaturn = true,
+  lite = false,
   zIndex = 1,
   intro = false,
   onIntroPhase,
@@ -76,6 +79,7 @@ export default function StarfieldGpu({
     glow(g: number[]): void;
   } | null>(null);
 
+  const liteRef = useRef(lite);
   // 開場只在第一次建 runner 時播；之後的重建（device lost）一律不播
   const [introMode] = useState(intro);
   const introPendingRef = useRef(intro);
@@ -214,6 +218,7 @@ export default function StarfieldGpu({
           dpr: window.devicePixelRatio,
           intro: playIntro,
           introFreezeAt,
+          lite: liteRef.current,
         },
         [offscreen],
       );
@@ -285,6 +290,7 @@ export default function StarfieldGpu({
           dpr: window.devicePixelRatio,
           intro: playIntro,
           introFreezeAt,
+          lite: liteRef.current,
           onIntroPhase: handlePhase,
           onPerf: setPerf,
           onDeviceLost: (message) => {
