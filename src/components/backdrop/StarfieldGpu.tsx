@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
+import { isArriving } from '@/store/pageTransition';
 import {
   publishSatellites,
   subscribeSaturnCollapse,
@@ -129,7 +130,7 @@ export default function StarfieldGpu({
 
   // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態。
   // 離開首頁：走轉場的話土星已經收進那一點了（html[data-pt]），直接藏；沒走轉場就先收成一點再藏。
-  // 換進首頁時點還在飛（html[data-pt="out"]），土星要等點落地才從那一點長出來
+  // 換進首頁時點還在飛（store/pageTransition 的 isArriving），土星要等點落地才從那一點長出來
   const wasHomeRef = useRef(isOnHomePage);
   useEffect(() => {
     const onScroll = () => controlRef.current?.scroll(window.scrollY);
@@ -142,10 +143,10 @@ export default function StarfieldGpu({
     } else if (wasHomeRef.current && !isOnHomePage) {
       controlRef.current?.saturn(true, false);
       timer = window.setTimeout(() => controlRef.current?.saturn(false, false), SATURN_COLLAPSE_MS);
-    } else if (isOnHomePage && root.dataset.pt === 'out') {
+    } else if (isOnHomePage && isArriving()) {
       controlRef.current?.saturn(true, false);
       waitArrival = new MutationObserver(() => {
-        if (root.dataset.pt === 'out') return;
+        if (isArriving()) return;
         waitArrival?.disconnect();
         controlRef.current?.saturn(true, animateSaturn);
       });

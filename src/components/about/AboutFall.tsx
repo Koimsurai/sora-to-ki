@@ -8,7 +8,7 @@ import { SKILLS, WORK_BY_LANG, WORK_PERIODS } from '@/data/aboutData';
 import { lookupOr } from '@/lib/tableLookup';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { useBareSky } from '@/hooks/useBareSky';
-import { after, type Pt } from '@/store/pageTransition';
+import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { createFallSky, meterMark, phases, smooth } from './fallSky';
 import './AboutFall.css';
 
@@ -159,7 +159,7 @@ export default function AboutFall() {
         labels: labelsRef.current,
         mono,
         // 轉場還藏著這一頁時，點由轉場畫
-        dot: root.dataset.pt === 'out' ? null : dot,
+        dot: isArriving() ? null : dot,
       });
     };
     raf = requestAnimationFrame(frame);

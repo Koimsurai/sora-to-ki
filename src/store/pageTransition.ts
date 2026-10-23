@@ -45,6 +45,8 @@ export interface Arrival {
   approach?: Pt[];
   /** 沒有 approach 時，點抵達時的方向（單位向量） */
   tangent?: Pt;
+  /** 鏡頭不動、頁面不滑進來（點已經在錨點上，例如手記的星軌直接被拉成文章的軌道） */
+  still?: boolean;
 }
 
 export interface GrowContext {
@@ -111,3 +113,12 @@ export function takeTransitionFrom(): Mark | null {
 
 /** 頁面的「收」用的計時：時間到就算收完 */
 export const after = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+
+/**
+ * 新的一頁還在等點落地（html[data-pt] 是 out 或 fly）：頁面自己的進場（星軌長出來、土星撐開…）
+ * 要等點落地才開始。飛的時候頁面已經看得到、正跟著鏡頭滑進來，但還不該開始長
+ */
+export const isArriving = () => {
+  const pt = document.documentElement.dataset.pt;
+  return pt === 'out' || pt === 'fly';
+};

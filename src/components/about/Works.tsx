@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { WORKS, worksQueryOptions } from '@/data/works';
 import { parseServerDate } from '@/lib/serverDate';
 import { lookupOr } from '@/lib/tableLookup';
+import { isArriving } from '@/store/pageTransition';
 import { bodyOf, createSpiral } from './worksSky';
 import './Works.css';
 
@@ -51,7 +52,6 @@ export default function Works() {
     const cv = canvasRef.current;
     const ctx = cv?.getContext('2d');
     if (!box || !cv || !ctx) return;
-    const root = document.documentElement;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const spiral = createSpiral(works.map((w) => w.body));
     let pointer: [number, number] | null = null;
@@ -70,7 +70,7 @@ export default function Works() {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       // 換頁轉場還藏著這一頁：等露出來才開始長
-      if (root.dataset.pt === 'out') return;
+      if (isArriving()) return;
       if (start < 0) start = now;
       if (now - last < 25) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;

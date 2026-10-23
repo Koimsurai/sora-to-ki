@@ -10,7 +10,7 @@ import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { LocaleLink } from '@/i18n/locale-link';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { useThoughtReaction } from '@/hooks/useThoughtReaction';
-import { after, type Pt } from '@/store/pageTransition';
+import { after, isArriving, type Pt } from '@/store/pageTransition';
 import {
   APPROACH_PX,
   arcX,
@@ -334,8 +334,7 @@ function Thinking() {
     const root = document.documentElement;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // 轉場還在收上一頁、點還在飛：等它交棒（onGrow）。直接打開這一頁就現在開始長
-    if (!growRef.current && root.dataset.pt !== 'out')
-      growRef.current = { trail: null, at: performance.now(), from: 0 };
+    if (!growRef.current && !isArriving()) growRef.current = { trail: null, at: performance.now(), from: 0 };
     const L0 = layoutRef.current;
     const comet = createComet(L0 ? L0.yEnd - L0.y0 : 1600, L0?.narrow ?? false);
     const shown: boolean[] = [];
@@ -377,7 +376,7 @@ function Thinking() {
       raf = requestAnimationFrame(frame);
       const L = layoutRef.current;
       const grow = growRef.current;
-      if (!grow && root.dataset.pt !== 'out') growRef.current = { trail: null, at: now, from: 0 };
+      if (!grow && !isArriving()) growRef.current = { trail: null, at: now, from: 0 };
       if (!L) return;
       const since = grow ? now - grow.at : -1;
       const leave = leaveRef.current;
@@ -393,7 +392,8 @@ function Thinking() {
       drawn = key;
       const [w, h] = fit();
       let revealY = -Infinity;
-      let headScale = 1;
+      // 點還沒落地（頁面正跟著鏡頭滑進來）：彗核還不在，等點落進來才從那一點長出來
+      let headScale = since < 0 ? 0 : easeOut(Math.min(1, since / 400));
       if (leave) {
         // 收：彗尾越縮越快地退回彗核，最後彗髮也收進那一點
         const k = Math.min(1, (now - leave.at) / RETRACT_MS);

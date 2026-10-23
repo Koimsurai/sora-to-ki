@@ -252,3 +252,45 @@
     margin-left: 0;
   }
 }
+
+/* 進場：快門打開時列表一行一行被畫出來——像一道光從左往右掃過，每一行晚一點點。
+   JS 還沒接手前（SSR、沒有 JS）照常顯示 */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .nt:not(.is-in) :is(.nt-list li, .nt-y, .nt-cats, .nt-tag, .nt-more) {
+    opacity: 0;
+  }
+
+  .nt.is-in .nt-list li {
+    animation: nt-row var(--dur-700) var(--easing-out) both;
+    animation-delay: calc(var(--i, 0) * 38ms + 160ms);
+  }
+
+  .nt.is-in :is(.nt-y, .nt-cats, .nt-more) {
+    animation: nt-fade var(--dur-700) var(--easing-out) both;
+    animation-delay: 120ms;
+  }
+}
+
+@keyframes nt-row {
+  from {
+    opacity: 0.15;
+    clip-path: inset(0 100% 0 0);
+    translate: -8px 0;
+  }
+
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    translate: 0 0;
+  }
+}
+
+@keyframes nt-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
