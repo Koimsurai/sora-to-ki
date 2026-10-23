@@ -407,6 +407,10 @@
   },
   "blog": {
     "title": "Notes",
+    "subtitle": "Days turn; only what gets written down leaves a trail.",
+    "all": "All",
+    "more": "{{count}} more",
+    "minutes": "{{count}} min",
     "metaTitle": "Notes",
     "description": "Koimsurai's technical notes, learning logs, and life sketches. Frontend architecture, Rust, system design, and more.",
     "heroTitle": "Notes",

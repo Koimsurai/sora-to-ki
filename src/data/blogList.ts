@@ -15,7 +15,7 @@ import type {
 import { apiUrl } from '@/lib/api';
 import { compileMdx } from '@/lib/mdx/mdx-compile';
 import { renderMermaidSvgs } from '@/lib/mdx/mermaidRender';
-import type { Post } from '@/components/blog/Blog';
+type Post = PostListItem;
 
 // format='mdx' 的文章多帶一個 server 端編譯好的 function-body（前端用 runSync 執行）。
 export type PostDetail = PostDetailResponse & { compiledMdx?: string; mermaidSvgs?: Record<string, string> };

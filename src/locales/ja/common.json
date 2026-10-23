@@ -407,6 +407,10 @@
   },
   "blog": {
     "title": "ノート",
+    "subtitle": "過ぎていく日々のうち、書き留めたものだけが軌跡になる。",
+    "all": "すべて",
+    "more": "あと {{count}} 本",
+    "minutes": "約 {{count}} 分",
     "metaTitle": "ノート",
     "description": "Koimsurai の技術ノート、学習ノート、日々の随筆。フロントエンドアーキテクチャ、Rust、システム設計など。",
     "heroTitle": "ノート",
