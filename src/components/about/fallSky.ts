@@ -2,7 +2,7 @@
 //   - 星：平常是點，捲得越快往上拉成越長的線（關於頁收掉了一般的背景星空，見 hooks/useBareSky）
 //   - 地平線：落地時升上來的一顆星球的邊——近處有起伏、長著草，後面兩層更遠的山稜
 //   - 樹：長在地平線上，有粗細、有樹葉，跟著風輕輕晃
-//   - 返回艙：掛著降落傘一起降下，著地彈一下、揚起一陣土，傘慢慢塌下去躺在地上
+//   - 返回艙：掛著線畫的降落傘一起降下，著地彈一下、揚起一陣土，傘洩氣塌下去攤在地上
 //   - 地層：往下挖時一層一層越來越密的點線，地心一點琥珀光
 //   - 高度計：右邊的尺，下墜時是離地表幾公里，往下挖時換成地表以下幾公尺
 // 琥珀點（讀者）由頁面算位置（它會從標題的句號落到高度計上，著地時停在「就此落下。」的句號），
@@ -17,7 +17,8 @@ const TOP_KM = 36000;
 /** 地底的深度刻度（公尺）：挖到地心是這麼深 */
 const CORE_M = 320;
 
-/** 返回艙插圖（public/illustrations/reentry-parachute.webp）：原圖尺寸、傘與艙的分界、吊帶的位置、腳底 */
+/** 返回艙插圖（public/illustrations/reentry-parachute.webp）：原圖尺寸、傘與艙的分界、吊帶的位置、腳底。
+ *  插圖只用下面艙體那一段，傘用線畫（drawCanopy） */
 const CW = 483;
 const CH = 900;
 const SPLIT = 0.78;
@@ -86,13 +87,95 @@ export function meterMark(s: Pick<FallState, 'w' | 'h' | 'top' | 'landTop' | 'la
   return { x: s.w - (s.w < 760 ? 28 : 60), y: y0 + (y1 - y0) * mark };
 }
 
+/**
+ * 降落傘（線畫）：傘頂、一片一片的傘衣（從頂點拉到下緣的弧線）、下緣一段一段往上鼓的扇形、
+ * 吊繩收到吊帶上。(rx, ry) 是吊帶的位置、W 是傘張開時的寬度。
+ * c（0 到 1）是著地後過了多久：傘往順風那側倒、一邊洩氣塌扁，吊繩鬆掉，最後攤在地上
+ */
+function drawCanopy(
+  ctx: CanvasRenderingContext2D,
+  rx: number,
+  ry: number,
+  W: number,
+  swing: number,
+  t: number,
+  c: number,
+  groundY: number,
+  alpha: number,
+) {
+  const L = W * 1.15;
+  const breathe = 1 + Math.sin(t * 2.1) * 0.035 * (1 - c);
+  const H = W * (0.42 * breathe * (1 - c) + 0.06 * c);
+  const half = (W / 2) * (1 - 0.3 * c);
+  const reach = L * (1 - 0.12 * c);
+  const ang = swing + c * 1.45;
+  const cs = Math.cos(ang);
+  const sn = Math.sin(ang);
+  // 傘的座標（吊帶在原點、往上是負的）轉到畫面上；倒下時不會穿進地面
+  const P = (x: number, y: number) => ({ x: rx + x * cs - y * sn, y: Math.min(groundY - 0.5, ry + x * sn + y * cs) });
+  const n = 7;
+  const skirt = Array.from({ length: n + 1 }, (_, i) => -half + (i * 2 * half) / n);
+  const top = -reach;
+  const apex = P(0, top - H);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = `rgba(${INK}, ${(0.8 * alpha).toFixed(3)})`;
+  // 傘頂的外形
+  ctx.beginPath();
+  const l0 = P(-half, top);
+  ctx.moveTo(l0.x, l0.y);
+  const c1 = P(-half * 0.95, top - H * 1.25);
+  const c2 = P(half * 0.95, top - H * 1.25);
+  const r0 = P(half, top);
+  ctx.bezierCurveTo(c1.x, c1.y, c2.x, c2.y, r0.x, r0.y);
+  ctx.stroke();
+  // 傘衣的縫線：從頂點往下緣，越外側越彎
+  ctx.strokeStyle = `rgba(${INK}, ${(0.45 * alpha).toFixed(3)})`;
+  for (const x of skirt.slice(1, -1)) {
+    const q = P(x * 0.78, top - H * 0.92);
+    const e = P(x, top);
+    ctx.beginPath();
+    ctx.moveTo(apex.x, apex.y);
+    ctx.quadraticCurveTo(q.x, q.y, e.x, e.y);
+    ctx.stroke();
+  }
+  // 下緣：一段一段往上鼓的扇形
+  ctx.strokeStyle = `rgba(${INK}, ${(0.7 * alpha).toFixed(3)})`;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const a = P(skirt[i], top);
+    const b = P(skirt[i + 1], top);
+    const m = P((skirt[i] + skirt[i + 1]) / 2, top - H * 0.2);
+    if (i === 0) ctx.moveTo(a.x, a.y);
+    ctx.quadraticCurveTo(m.x, m.y, b.x, b.y);
+  }
+  ctx.stroke();
+  // 吊繩：繃直的；著地後鬆掉、往下垂
+  ctx.strokeStyle = `rgba(${INK}, ${(0.35 * alpha).toFixed(3)})`;
+  const root = P(0, 0);
+  for (const x of skirt) {
+    const e = P(x, top);
+    const sag = P(x * 0.5, top / 2 + W * 0.35 * c);
+    ctx.beginPath();
+    ctx.moveTo(e.x, e.y);
+    ctx.quadraticCurveTo(sag.x, sag.y, root.x, root.y);
+    ctx.stroke();
+  }
+}
+
 export function createFallSky(starCount: number, chute: HTMLImageElement) {
   const rnd = seeded(0.37);
-  // 星：大的近、小的遠，近的掠過得快、拉得長
+  // 星：釘在不同深度上，只跟著你的捲動往上掠過（近的快、遠的慢），捲得快就拉成線
   const stars = Array.from({ length: starCount }, () => {
-    const near = Math.pow(rnd(), 2);
-    return { x: rnd(), y: rnd(), size: 0.6 + near * 1.4, a: 0.18 + near * 0.55, depth: 0.35 + near };
+    const near = Math.pow(rnd(), 2.2);
+    return { x: rnd(), y: rnd(), size: 0.5 + near * 1.6, a: 0.16 + near * 0.6, depth: 0.12 + near * 1.1 };
   });
+  // 雲層：快到地面時穿過的兩層雲，點聚成橫向拉長的一團一團
+  const clouds = Array.from({ length: 2 }, (_, layer) =>
+    Array.from({ length: 900 }, () => {
+      const cx = rnd();
+      return { x: cx, y: (rnd() - 0.5) * (0.5 + rnd()) * 0.22, a: 0.08 + rnd() * 0.22, layer };
+    }),
+  );
   // 樹：遞迴分叉，越往上越細；最細的那幾層末端長一團葉子
   const branches: { x1: number; y1: number; x2: number; y2: number; d: number }[] = [];
   const leaves: { x: number; y: number; r: number }[] = [];
@@ -139,17 +222,15 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
     const { landAt, pFall, landK, dig } = phases(s);
     ctx.lineWidth = 1;
 
-    // 星：下墜時往上掠過，捲得越快拉得越長；著地之後慢慢停下來、淡掉
+    // 星：釘在各自的深度上，畫面往下捲多少它就往上掠過多少（越近越快）；捲得快就拉成線。
+    // 著地之後地面擋住了下半片天空，星慢慢淡掉
     const sky = 1 - landK * 0.85;
+    const fallTop = Math.min(top, landAt);
     for (const st of stars) {
-      st.y -= dt * (0.006 + s.speed * 1.6) * st.depth * (1 - landK);
-      if (st.y < -0.15) {
-        st.y = 1.05;
-        st.x = rnd();
-      }
-      const x = st.x * (w - 120) + 10;
-      const y = st.y * h;
-      const len = s.speed * 140 * st.depth;
+      const span = h + 40;
+      const y = ((((st.y * span - fallTop * st.depth * 0.6) % span) + span) % span) - 20;
+      const x = st.x * (w - 100) + 10;
+      const len = s.speed * 160 * st.depth;
       const a = st.a * sky;
       if (len > 1) {
         const g = ctx.createLinearGradient(x, y, x, y + len);
@@ -163,6 +244,22 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
       }
       ctx.fillStyle = `rgba(${INK}, ${a.toFixed(3)})`;
       ctx.fillRect(x - st.size / 2, y - st.size / 2, st.size, st.size);
+    }
+
+    // 雲層：快到地面時穿過去——從下面湧上來、蓋過畫面、再從上面離開
+    for (const [i, layer] of clouds.entries()) {
+      // 這一層在下墜進度的哪裡（0.72、0.86），穿過的時候 c 從 0 走到 1
+      const c = (pFall - (0.72 + i * 0.14)) / 0.12;
+      if (c < -0.6 || c > 1.6) continue;
+      const cy = h * (1.3 - c * 1.6);
+      for (const d of layer) {
+        const y = cy + d.y * h * (1.6 + i);
+        if (y < -10 || y > h + 10) continue;
+        const x = d.x * w;
+        const stretch = 2 + s.speed * 30;
+        ctx.fillStyle = `rgba(${INK}, ${(d.a * (1 - landK)).toFixed(3)})`;
+        ctx.fillRect(x, y, 1.4, Math.min(24, stretch));
+      }
     }
 
     // 地平線、樹、返回艙：落地時升上來，往下挖時跟著往上捲走
@@ -265,15 +362,9 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
         ctx.translate(-rx, -ry);
         ctx.drawImage(chute, 0, SPLIT * CH, CW, (1 - SPLIT) * CH, left, topY + SPLIT * dh, dw, (1 - SPLIT) * dh);
         ctx.restore();
-        // 傘：著地後失去支撐，往順風的一側倒、一邊塌扁，最後躺在地上
-        ctx.save();
-        ctx.globalAlpha = landK * (1 - 0.45 * c);
-        ctx.translate(rx, ry);
-        ctx.rotate(swing + c * 1.35);
-        ctx.scale(1, 1 - 0.6 * c);
-        ctx.translate(-rx + c * 10, -ry + c * 6);
-        ctx.drawImage(chute, 0, 0, CW, SPLIT * CH, left, topY, dw, SPLIT * dh);
-        ctx.restore();
+        // 傘：用線畫（傘頂、一片一片的傘衣、下緣的扇形、吊繩），著地後失去支撐，
+        // 往順風那側倒下、一邊洩氣塌扁，最後攤在地上
+        drawCanopy(ctx, rx, ry + 2, dw * 1.15, swing, t, c, gy, landK);
         ctx.restore();
         // 揚起的土：往兩側噴、落回地面、淡掉
         for (const d of dust) {

@@ -12,6 +12,13 @@ import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { createFallSky, meterMark, phases, smooth } from './fallSky';
 import './AboutFall.css';
 
+/**
+ * 每一年的排法輪著換，往下掉的時候不會一直看到同一種版面：
+ *   left  靠左（年份在上）      right 靠右、貼著高度計那一側
+ *   wide  年份很大很淡、字壓在上面  split 年份一欄、字一欄
+ */
+const LAYOUTS = ['left', 'split', 'right', 'wide', 'left', 'right', 'split', 'wide'] as const;
+
 /** 每一年留哪一句（MILESTONE_BEATS_BY_LANG 裡的第幾個片段）：一年只說一句話 */
 const KEY_BEAT = [0, 2, 2, 2, 1, 0, 3, 2];
 const CHUTE_SRC = '/illustrations/reentry-parachute.webp';
@@ -92,7 +99,7 @@ export default function AboutFall() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const chute = new Image();
     chute.src = CHUTE_SRC;
-    const sky = createFallSky(window.innerWidth < 760 ? 70 : 130, chute);
+    const sky = createFallSky(window.innerWidth < 760 ? 280 : 720, chute);
     const mono = getComputedStyle(root).getPropertyValue('--mono-font').trim() || 'monospace';
     const chapterEls = [...page.querySelectorAll<HTMLElement>('.af-ch')];
     let raf = 0;
@@ -188,8 +195,8 @@ export default function AboutFall() {
       </header>
 
       <div id="journey">
-        {chapters.map((c) => (
-          <section key={c.id} className="af-ch" aria-label={c.year}>
+        {chapters.map((c, i) => (
+          <section key={c.id} className={`af-ch af-ch--${LAYOUTS[i % LAYOUTS.length]}`} aria-label={c.year}>
             <div className={c.now ? 'af-year is-word' : 'af-year'}>{c.year}</div>
             <h2 className="af-title">{c.title}</h2>
             <div className="af-sub">{c.subtitle}</div>
