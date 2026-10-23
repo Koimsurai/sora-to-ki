@@ -11,7 +11,8 @@
   position: fixed;
   inset: 0;
   width: 100%;
-  height: 100%;
+  /* 高度寫成視窗高：換頁時整頁被平移，平移中的祖先會變成 fixed 的定位基準，寫 100% 會被拉成整頁那麼高 */
+  height: 100vh;
   pointer-events: none;
 }
 

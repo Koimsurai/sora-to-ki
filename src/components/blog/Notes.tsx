@@ -43,7 +43,8 @@ const ZOOM_MS = 900;
 /** 去別頁時整片縮回去的時間 */
 const RETRACT_MS = 380;
 /** 飛進來的那條線落地後淡掉的時間 */
-const TRAIL_FADE_MS = 900;
+/** 點沿著哪一道星軌飛進來（或從文章頁回到哪一篇），那一道亮多久才退回一般的亮度 */
+const KEEP_GLOW_MS = 2400;
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /** 舊版後端沒有 content_length（正式環境更新後端前）：當成沒有長度，弧長只看標題 */
@@ -68,6 +69,8 @@ function Notes() {
     setTag(search.tag ?? '');
   }
   const [showAll, setShowAll] = useState(false);
+  /** 星空（換頁推近的後半段由轉場拿它接著畫，所以放在元件這一層） */
+  const [sky] = useState(createNoteSky);
 
   const shown = useMemo(
     () => filterPosts(posts, { searchTerm: '', selectedTag: tag, selectedCategory: category }),
@@ -94,7 +97,8 @@ function Notes() {
   const startRef = useRef(-1);
   const zoomRef = useRef<{ i: number; at: number } | null>(null);
   const retractRef = useRef(-1);
-  const trailRef = useRef<{ points: Pt[]; at: number } | null>(null);
+  /** 點沿著飛進來的那一道星軌（plan 時挑的，落地時交棒） */
+  const arrivedRef = useRef(-1);
   /** 從文章頁回來：那一篇的星軌一開始就是滿的、亮著 */
   const keepRef = useRef(-1);
   /** 夜空從哪個時間開始轉：從文章頁回來時轉到那一篇的星看得到的地方（跟文章頁拉回去的位置一樣） */
@@ -130,7 +134,7 @@ function Notes() {
       // 點切進一道星軌、沿著它繞天極走一大段，停在那篇文章的那顆星上：它就是一顆在走的星。
       // 挑法：那顆星看得到、往回沿著圓在畫面裡走得夠遠，而且切進去的方向跟點飛來的方向順
       const speed = Math.hypot(vel.x, vel.y);
-      let best: { score: number; run: Pt[] } | null = null;
+      let best: { score: number; run: Pt[]; i: number } | null = null;
       for (let i = 0; i < skyRef.current.length; i++) {
         const arc = arcOf(i);
         if (!on(arcPoint(arc, arc.a1))) continue;
@@ -153,13 +157,11 @@ function Notes() {
         const along = (gx * tx + gy * ty) / (gl * tl);
         const ahead = speed > 0.05 ? (gx * vel.x + gy * vel.y) / (gl * speed) : 0;
         const score = run.length / 60 + along * 0.6 + ahead * 0.3 - i * 0.02;
-        if (!best || score > best.score) best = { score, run };
+        if (!best || score > best.score) best = { score, run, i };
       }
+      // 那一道一開始就是滿的、亮著：點的彗尾散掉之後，留下的就是它
+      arrivedRef.current = best?.i ?? -1;
       return best ? { approach: best.run } : null;
-    },
-    onGrow: ({ trail }) => {
-      trailRef.current = { points: trail, at: performance.now() };
-      return 'trail';
     },
     // 收：點進一篇文章時，那一篇的星軌被拉成文章頁右邊的軌道（lib/articleOrbit），它的那顆星變成
     // 讀者的琥珀點；去別的地方時整片縮回各自的那顆星
@@ -183,17 +185,29 @@ function Notes() {
         // 那顆星跟著鏡頭推近移動，最後落在軌道頂端：轉場的琥珀點跟著它
         const arc = arcOf(i);
         const head = arcPoint(arc, arc.a1);
+        // 推到一半就換頁（文章趁後半段載好），後半段由轉場接著畫：整片夜空照樣從鏡頭旁邊飛過去，
+        // 不會只剩一道弧、畫面空掉
+        const t = skyTime();
+        const grow = startRef.current < 0 ? 1 : Math.min(1, 1 - Math.pow(1 - Math.min(1, t / EXPOSE_S), 3));
+        const k = () => Math.min(1, (performance.now() - at) / ZOOM_MS);
         return {
           point: orbitPoint(geom, 0),
-          follow: () => zoomMap(zoomOf(arc, geom, easeInOut(Math.min(1, (performance.now() - at) / ZOOM_MS))), head),
-          done: after(ZOOM_MS),
-          // 拉好的軌道留在畫面上，等文章頁的軌道接手
+          follow: () => zoomMap(zoomOf(arc, geom, easeInOut(k())), head),
+          followMs: ZOOM_MS,
+          done: after(ZOOM_MS * 0.5),
           residue: (c) => {
-            c.strokeStyle = 'rgba(241, 236, 227, 0.78)';
-            c.lineWidth = 1;
-            c.beginPath();
-            c.arc(geom.cx, geom.cy, geom.RB, geom.aBot, geom.aTop);
-            c.stroke();
+            // 舊的一頁還在畫面上時是它自己在畫
+            if (document.documentElement.dataset.pt === 'leave') return;
+            sky.draw(c, w, h, skyRef.current, {
+              t,
+              grow,
+              hovered: -1,
+              keep: -1,
+              keepGlow: 0,
+              zoom: { i, k: k(), geom },
+              retract: 0,
+              overlay: true,
+            });
           },
         };
       }
@@ -209,7 +223,6 @@ function Notes() {
     if (!cv || !ctx) return;
     const root = document.documentElement;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const sky = createNoteSky();
     let raf = 0;
     let last = 0;
     let drawn = '';
@@ -228,9 +241,9 @@ function Notes() {
       const zoom = zoomRef.current;
       const zk = zoom ? Math.min(1, (now - zoom.at) / ZOOM_MS) : 0;
       const retract = retractRef.current < 0 ? 0 : Math.min(1, (now - retractRef.current) / RETRACT_MS) ** 2;
-      const trail = trailRef.current;
-      const trailAlpha = trail ? Math.max(0, 1 - (now - trail.at) / TRAIL_FADE_MS) : 0;
-      const busy = grow < 1 || zoom !== null || retractRef.current >= 0 || trailAlpha > 0;
+      const keep = keepRef.current >= 0 ? keepRef.current : arrivedRef.current;
+      const keepGlow = keep < 0 ? 0 : Math.max(0, 1 - (now - startRef.current) / KEEP_GLOW_MS);
+      const busy = grow < 1 || zoom !== null || retractRef.current >= 0 || keepGlow > 0;
       // 長完之後 30fps 就夠；沒有 GPU 的機器長完就不再轉，只在滑過時重畫
       if (!busy && now - last < 33) return;
       const still = !busy && (reduce || root.classList.contains('no-gpu'));
@@ -251,15 +264,15 @@ function Notes() {
         t: (still ? 0 : t) + shiftRef.current,
         grow,
         hovered: hoveredRef.current,
-        keep: keepRef.current,
+        keep,
+        keepGlow: keepGlow * keepGlow * (3 - 2 * keepGlow),
         zoom: zoom && geom ? { i: zoom.i, k: zk, geom } : null,
         retract,
-        trail: trail && trailAlpha > 0 ? { points: trail.points, alpha: trailAlpha } : null,
       });
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [sky]);
 
   const label = t('blog.title');
   const latin = 'Notes';

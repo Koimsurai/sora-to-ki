@@ -15,7 +15,6 @@ import {
   APPROACH_PX,
   arcX,
   createComet,
-  DISSOLVE_MS,
   headDirection,
   layoutArc,
   RETRACT_MS,
@@ -191,10 +190,10 @@ function Thinking() {
   const endRef = useRef<HTMLParagraphElement>(null);
   const layoutRef = useRef<ArcLayout | null>(null);
   /**
-   * 彗尾從什麼時候開始長、從哪裡開始長（版面座標的高度），以及轉場交過來的那條線（版面座標）。
+   * 彗尾從什麼時候開始長、從哪裡開始長（版面座標的高度）。
    * 點是沿著彗尾最後一段飛進來的，那一段已經「畫過」了，彗尾從那裡接著往下長
    */
-  const growRef = useRef<{ trail: Pt[] | null; at: number; from: number } | null>(null);
+  const growRef = useRef<{ at: number; from: number } | null>(null);
   /** 點沿著彗尾飛進來的那一段有多長（版面座標） */
   const approachRef = useRef(0);
   /** 換頁的「收」：從什麼時候、從哪裡開始縮回彗核 */
@@ -260,15 +259,9 @@ function Thinking() {
       const dir = headDirection(L);
       return { point: headOnScreen(L), velocity: { x: dir.x * 0.9, y: dir.y * 0.9 }, done: after(RETRACT_MS * 0.8) };
     },
-    onGrow: ({ trail }) => {
+    onGrow: () => {
       const L = layoutRef.current;
-      const o = origin();
-      growRef.current = {
-        trail: trail.map((p) => ({ x: p.x - o.x, y: p.y - o.y })),
-        at: performance.now(),
-        from: L ? L.y0 + approachRef.current : 0,
-      };
-      return 'trail';
+      growRef.current = { at: performance.now(), from: L ? L.y0 + approachRef.current : 0 };
     },
   });
 
@@ -334,7 +327,7 @@ function Thinking() {
     const root = document.documentElement;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // 轉場還在收上一頁、點還在飛：等它交棒（onGrow）。直接打開這一頁就現在開始長
-    if (!growRef.current && !isArriving()) growRef.current = { trail: null, at: performance.now(), from: 0 };
+    if (!growRef.current && !isArriving()) growRef.current = { at: performance.now(), from: 0 };
     const L0 = layoutRef.current;
     const comet = createComet(L0 ? L0.yEnd - L0.y0 : 1600, L0?.narrow ?? false);
     const shown: boolean[] = [];
@@ -376,11 +369,11 @@ function Thinking() {
       raf = requestAnimationFrame(frame);
       const L = layoutRef.current;
       const grow = growRef.current;
-      if (!grow && !isArriving()) growRef.current = { trail: null, at: now, from: 0 };
+      if (!grow && !isArriving()) growRef.current = { at: now, from: 0 };
       if (!L) return;
       const since = grow ? now - grow.at : -1;
       const leave = leaveRef.current;
-      const busy = (since >= 0 && since < Math.max(DISSOLVE_MS, REVEAL_MS)) || leave !== null;
+      const busy = (since >= 0 && since < REVEAL_MS) || leave !== null;
       // 長完之後 30fps 就夠：塵埃流得很慢
       if (!busy && now - last < 33) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
@@ -415,7 +408,6 @@ function Thinking() {
           hoverY: hoverRef.current,
           revealY,
           headScale,
-          dissolve: grow?.trail && since < DISSOLVE_MS ? { trail: grow.trail, elapsed: Math.max(0, since) } : null,
         },
         still ? 0 : dt,
         now / 1000,
@@ -424,21 +416,13 @@ function Thinking() {
 
     if (reduce) {
       // 減少動態：不流動、不長，畫一張靜態的，捲動時重畫
-      growRef.current = { trail: null, at: -REVEAL_MS, from: 0 };
+      growRef.current = { at: -REVEAL_MS, from: 0 };
       const still = () => {
         const L = layoutRef.current;
         if (!L) return;
         const [w, h] = fit();
         reveal(L, Infinity);
-        comet.draw(
-          ctx,
-          w,
-          h,
-          L,
-          { origin: origin(), hoverY: null, revealY: Infinity, headScale: 1, dissolve: null },
-          0,
-          0,
-        );
+        comet.draw(ctx, w, h, L, { origin: origin(), hoverY: null, revealY: Infinity, headScale: 1 }, 0, 0);
       };
       still();
       window.addEventListener('scroll', still, { passive: true });

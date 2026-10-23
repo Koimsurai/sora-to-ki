@@ -3,6 +3,8 @@
 .orbit-toc {
   position: fixed;
   inset: 0;
+  /* 高度寫成視窗高：換頁時整頁被平移，平移中的祖先會變成 fixed 的定位基準，寫 100% 會被拉成整頁那麼高 */
+  height: 100vh;
   z-index: 2;
   pointer-events: none;
   font-family: var(--serif);
@@ -22,6 +24,15 @@
 
 .orbit-toc-hd,
 .orbit-toc-ft,
+/* 換頁的時候目錄的字先藏著：位置是軌道畫起來之後才擺好的，不藏會在左上角閃一下 */
+.orbit-toc-list {
+  transition: opacity var(--dur-400) ease;
+}
+
+html[data-pt] .orbit-toc-list {
+  opacity: 0;
+}
+
 .orbit-toc-list li {
   position: absolute;
   top: 0;

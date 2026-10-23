@@ -105,7 +105,6 @@ export default function Works() {
         done: after(ERASE_MS),
       };
     },
-    onGrow: () => 'self',
   });
 
   useEffect(() => {

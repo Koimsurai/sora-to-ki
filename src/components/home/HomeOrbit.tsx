@@ -81,7 +81,6 @@ export default function HomeOrbit() {
       const speed = Math.hypot(v.x, v.y) || 1;
       return { point: { x: sat.x, y: sat.y }, velocity: { x: (v.x / speed) * 0.9, y: (v.y / speed) * 0.9 }, done };
     },
-    onGrow: () => 'self',
   });
 
   const post = digest?.posts[0];

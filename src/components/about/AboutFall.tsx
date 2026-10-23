@@ -34,6 +34,14 @@ const stopPoint = (el: HTMLElement | null): Pt | null => {
   return { x: r.left + r.width * (full ? 0.3 : 0.5), y: r.top + r.height * (full ? 0.72 : 0.78) };
 };
 const mix = (a: Pt, b: Pt, k: number): Pt => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
+/** 點從句號正上方多高的地方開始直直掉下來 */
+const FALL_IN_PX = 220;
+/** 頁面在文件裡的位置（offsetTop 一路加上去）：換頁時整頁被轉場平移，量 getBoundingClientRect 會把平移算進去 */
+const docTop = (el: HTMLElement) => {
+  let y = 0;
+  for (let node: HTMLElement | null = el; node; node = node.offsetParent as HTMLElement | null) y += node.offsetTop;
+  return y;
+};
 
 export default function AboutFall() {
   const { t, i18n } = useTranslation();
@@ -81,6 +89,14 @@ export default function AboutFall() {
   usePageTransition({
     // 點飛進來，停成「坐穩了。」的句號
     anchor: () => stopPoint(titleStopRef.current),
+    // 這一頁是往下掉：點最後是從正上方直直掉進句號的，鏡頭跟著它往下，頁面從下面升上來
+    arrive: () => {
+      const p = stopPoint(titleStopRef.current);
+      if (!p) return null;
+      const drop: Pt[] = [];
+      for (let d = FALL_IN_PX; d >= 0; d -= 6) drop.push({ x: p.x, y: p.y - d });
+      return { approach: drop };
+    },
     // 收：字退掉，琥珀點帶著往下掉的速度離開
     leave: () => {
       const point = dotRef.current;
@@ -108,7 +124,8 @@ export default function AboutFall() {
     let travelled = 0;
     let speed = 0;
     const onScroll = () => {
-      travelled += Math.abs(window.scrollY - lastY);
+      // 換頁時捲動位置被重設（從上一頁的捲動位置跳回頂端）不算往下掉：不然一進來星星全被拉成條紋
+      if (!root.dataset.pt) travelled += Math.abs(window.scrollY - lastY);
       lastY = window.scrollY;
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -132,11 +149,12 @@ export default function AboutFall() {
         cv.height = Math.round(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const pageTop = page.getBoundingClientRect().top + window.scrollY;
+      // 換頁的點還在飛：上一頁的捲動位置可能還沒重設，這時一律當作在最上面（不然雲層、高度計會先冒出來一下）
+      const top = isArriving() ? 0 : window.scrollY - docTop(page);
       const state = {
         w,
         h,
-        top: window.scrollY - pageTop,
+        top,
         landTop: land.offsetTop,
         layerTop: layer.offsetTop,
         maxScroll: page.offsetHeight - h,
@@ -156,7 +174,7 @@ export default function AboutFall() {
         h,
         t: now / 1000,
         dt: reduce ? 0 : dt,
-        top: window.scrollY - pageTop,
+        top,
         speed: reduce ? 0 : Math.min(1, speed / 2500),
         landTop: land.offsetTop,
         layerTop: layer.offsetTop,
