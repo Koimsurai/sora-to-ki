@@ -89,10 +89,7 @@ const gauss = () => {
 
 const snap = (v: number) => Math.round(v / 3) * 3;
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/** 飛進來的那條線散成塵埃的時間 */
-export const DISSOLVE_MS = 750;
 /** 彗尾從彗核往下長到畫面底的時間 */
 export const REVEAL_MS = 900;
 /** 換頁轉場的「收」：彗尾縮回彗核的時間 */
@@ -107,12 +104,6 @@ export function headDirection(L: ArcLayout): Pt {
   return { x: dx / n, y: -6 / n };
 }
 
-/** 決定性的亂數（同一個 k 每一幀都一樣），讓散開的塵埃不會每幀亂跳 */
-const hash = (k: number) => {
-  const v = Math.sin(k * 12.9898) * 43758.5453;
-  return v - Math.floor(v);
-};
-
 export interface CometFrame {
   /** 容器左上角的畫面座標 */
   origin: Pt;
@@ -120,8 +111,6 @@ export interface CometFrame {
   hoverY: number | null;
   /** 彗尾目前長到哪裡（版面座標）；Infinity = 全部 */
   revealY: number;
-  /** 飛進來的那條線（版面座標）與它散開多久了：線斷成一粒一粒、往兩側散開，跟彗尾混在一起 */
-  dissolve: { trail: Pt[]; elapsed: number } | null;
   /** 彗髮的大小（0 到 1）：換頁收的時候跟著縮回彗核 */
   headScale: number;
 }
@@ -204,37 +193,6 @@ export function createComet(tailLength: number, narrow: boolean) {
           1.5,
           1.5,
         );
-      }
-    }
-
-    // 飛進來的那條線散成塵埃：線先淡掉，同一個位置冒出一粒一粒的塵埃往兩側散開、慢慢熄掉
-    if (f.dissolve) {
-      const { trail, elapsed } = f.dissolve;
-      const e = clamp01(elapsed / DISSOLVE_MS);
-      const lineAlpha = 0.75 * (1 - clamp01(e * 3));
-      if (lineAlpha > 0.01 && trail.length > 1) {
-        ctx.strokeStyle = `rgba(${INK}, ${lineAlpha.toFixed(3)})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        trail.forEach((p, i) => (i ? ctx.lineTo(p.x + ox, p.y + oy) : ctx.moveTo(p.x + ox, p.y + oy)));
-        ctx.stroke();
-      }
-      const spread = easeOut(e);
-      for (let i = 1; i < trail.length; i += 2) {
-        const p = trail[i];
-        const q = trail[i - 1];
-        const seg = Math.hypot(p.x - q.x, p.y - q.y) || 1;
-        const nx = -(p.y - q.y) / seg;
-        const ny = (p.x - q.x) / seg;
-        for (let j = 0; j < 2; j++) {
-          const r1 = hash(i * 7.1 + j * 3.3);
-          const r2 = hash(i * 1.7 + j * 9.1);
-          const a = Math.pow(1 - e, 1.3) * (0.35 + 0.5 * r2) * Math.min(1, e * 6);
-          if (a < 0.03) continue;
-          const off = (r1 - 0.5) * 2 * (1 + 16 * spread);
-          ctx.fillStyle = `rgba(${INK}, ${a.toFixed(3)})`;
-          ctx.fillRect(p.x + ox + nx * off - 0.75, p.y + oy + ny * off + 10 * spread * r2 - 0.75, 1.5, 1.5);
-        }
       }
     }
   }

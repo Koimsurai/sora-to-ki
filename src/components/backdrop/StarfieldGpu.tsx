@@ -318,6 +318,7 @@ export default function StarfieldGpu({
       <canvas
         key={generation}
         ref={canvasRef}
+        className="space-gpu"
         style={{
           ...canvasStyle,
           zIndex,

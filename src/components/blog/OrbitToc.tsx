@@ -101,7 +101,8 @@ export default function OrbitToc({
       const g = orbitGeometry(window.innerWidth, window.innerHeight);
       return g ? orbitPoint(g, 0) : null;
     },
-    onGrow: () => (orbitGeometry(window.innerWidth, window.innerHeight) ? 'self' : undefined),
+    // 從手記推近過來的：點已經跟著那顆星到了軌道頂端，鏡頭不用再動
+    arrive: () => (fullRef.current && orbitGeometry(window.innerWidth, window.innerHeight) ? { still: true } : null),
     leave: ({ to }) => {
       const g = orbitGeometry(window.innerWidth, window.innerHeight);
       if (!g) return null;
@@ -131,6 +132,15 @@ export default function OrbitToc({
       return { point: readerRef.current ?? orbitPoint(g, 0), done: after(RETRACT_MS * 0.8) };
     },
   });
+
+  // 從手記推近過來：內文從軌道那一側攤開（ArticleFrame.css 的 is-unfold）
+  useEffect(() => {
+    if (!fullRef.current) return;
+    const page = rootRef.current?.closest('.ar-page');
+    page?.classList.add('is-unfold');
+    const timer = window.setTimeout(() => page?.classList.remove('is-unfold'), 4000);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const cv = canvasRef.current;
@@ -200,7 +210,7 @@ export default function OrbitToc({
       const grow = fullRef.current || reduce ? 1 : clamp(tt / GROW_S) ** 0.7;
       const leave = leaveRef.current;
       const line = window.scrollY + window.innerHeight * 0.3;
-      const key = `${window.scrollY}|${grow}|${leave ? now : ''}`;
+      const key = `${window.scrollY}|${grow}|${leave || (fullRef.current && tt < 2) ? now : ''}`;
       // 沒有在長、沒有在捲、沒有在換頁：不重畫（琥珀點的光暈是靜的）
       if (key === lastKey && now - last < 500) return;
       lastKey = key;
@@ -257,6 +267,14 @@ export default function OrbitToc({
       }
       // 這篇的軌道：走過的是細實線，前面是點線
       const aHead = ang(Math.min(uh, grow));
+      // 從手記推近過來的：那道星軌一開始是整條實線，慢慢退成點線（不是一到就變淡）
+      const handed = fullRef.current ? 1 - clamp((tt - 0.3) / 1.6) : 0;
+      if (handed > 0) {
+        ctx.strokeStyle = `rgba(${INK}, ${(0.78 * handed * handed * (3 - 2 * handed)).toFixed(3)})`;
+        ctx.beginPath();
+        ctx.arc(cx, cy, RB, ang(1), aTop);
+        ctx.stroke();
+      }
       ctx.lineWidth = 1;
       ctx.strokeStyle = `rgba(${INK}, 0.78)`;
       ctx.beginPath();

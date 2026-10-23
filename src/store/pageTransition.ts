@@ -3,9 +3,9 @@
 // 每一頁都從一個點出發、收回一個點，而且是一筆連下去的：
 //   收：舊的那一頁「本身」收進一個點（首頁的土星收進點下去的那顆衛星、碎念的彗尾縮回彗核），
 //       換頁要等它收完才真的發生
-//   飛：那個點帶著收進去時的方向飛出去，沿一條順的曲線落到下一頁的錨點，身後拉著線
-//   長：下一頁從錨點長出來；頁面可以接手，連那條線一起變成自己的第一筆
-// 這裡是兩邊交換資訊的地方：頁面報上自己的錨點、怎麼收、要點從哪個方向進來、長的時候接不接手；
+//   飛：鏡頭追著那個點；最後一段順著下一頁自己的線（星軌、彗尾…）落到錨點，身後的彗尾自己散掉
+//   長：下一頁從錨點長出來
+// 這裡是兩邊交換資訊的地方：頁面報上自己的錨點、怎麼收、點最後沿哪條線進來、長的時候要做什麼；
 // 連結報上「這次是從哪個點出發」（data-tx / data-ty / data-pt-source，或 markTransitionFrom）。
 
 export interface Pt {
@@ -24,6 +24,11 @@ export interface Departure {
   /** 收的時候那一點自己在動（例如手記的星軌被拉成文章的軌道，那顆星跟著移）：點跟著它畫 */
   follow?: () => Pt;
   /**
+   * follow 從收開始算還會動多久（ms）。比 done 長的話，換頁之後點照樣跟著它，
+   * 動完才落地（手記推近到一半就換頁，新的一頁跟後半段的推近疊在一起）
+   */
+  followMs?: number;
+  /**
    * 收完之後留在畫面上的線（例如被拉成文章軌道的那道星軌）：舊的一頁藏起來之後由轉場接著畫，
    * 下一頁長出來時才淡掉——兩頁之間那條線不會斷一下
    */
@@ -41,7 +46,10 @@ export interface LeaveContext {
 
 /** 點要怎麼落進這一頁 */
 export interface Arrival {
-  /** 最後一段要沿著走的路（視窗座標），終點是錨點：碎念是沿著彗尾往上飛進彗核 */
+  /**
+   * 最後一段要沿著走的路（視窗座標），終點是錨點。要是頁面自己的線的一段（碎念的彗尾、手記的星軌）：
+   * 點順著它進來，落地時彗尾散掉，留下的就是頁面自己的線
+   */
   approach?: Pt[];
   /** 沒有 approach 時，點抵達時的方向（單位向量） */
   tangent?: Pt;
@@ -53,11 +61,9 @@ export interface GrowContext {
   /** 出發的點、抵達的點（視窗座標） */
   from: Pt;
   to: Pt;
-  /** 點飛過的路線。頁面要接手的話，這條線就是它的第一筆 */
+  /** 點飛過的路線（彗尾由轉場自己散掉，頁面要拿來定位可以用） */
   trail: Pt[];
 }
-
-export type GrowTakeover = 'self' | 'trail';
 
 export interface PageTransitionHandle {
   /** 這一頁的錨點（視窗座標）：換進來時點落在這裡，上一頁、下一頁時從這裡出發 */
@@ -69,13 +75,8 @@ export interface PageTransitionHandle {
   arrive?: (dot: { pos: Pt; vel: Pt }) => Arrival | null;
   /** 這一頁自己收進一個點；不給的話轉場用一圈遮罩把整頁收進錨點 */
   leave?: (ctx: LeaveContext) => Departure | null;
-  /**
-   * 點抵達之後頁面自己長出來。回傳接手了什麼：
-   *   'self'  頁面自己長，那條線由轉場收回點裡
-   *   'trail' 頁面自己長，而且那條線由頁面接著畫（變成它的第一筆），轉場這邊直接收掉
-   *   不回傳  沒接手，走預設：從錨點擴開一圈遮罩把頁面揭開
-   */
-  onGrow?: (ctx: GrowContext) => GrowTakeover | undefined;
+  /** 點落地、頁面露出來的那一刻（頁面的進場本來就等 isArriving() 變 false，多數頁面用不到它） */
+  onGrow?: (ctx: GrowContext) => void;
 }
 
 let current: PageTransitionHandle | null = null;

@@ -215,6 +215,27 @@
   opacity: 0;
 }
 
+/* 從手記推近過來：點落在軌道頂端之後，內文從軌道那一側（右邊）往左攤開 */
+html:is([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold :is(.ar-col, .ar-side) {
+  clip-path: inset(0 0 0 100%);
+}
+
+html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
+  animation: ar-unfold 900ms var(--easing-out) both;
+}
+
+@keyframes ar-unfold {
+  from {
+    clip-path: inset(0 0 0 100%);
+    translate: var(--space-6) 0;
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+    translate: 0 0;
+  }
+}
+
 /* ── 左欄：附近的文章，平常是一排細線（長短照文章長度），滑過才展開成標題 ── */
 .ar-side {
   position: fixed;
