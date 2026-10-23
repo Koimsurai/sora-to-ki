@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
 import { isArriving } from '@/store/pageTransition';
+import { skyPan, subscribeSkyPan } from '@/store/skyPan';
 import {
   publishSatellites,
   subscribeSaturnCollapse,
@@ -66,6 +67,7 @@ export default function StarfieldGpu({
     glow(g: number[]): void;
     collapse(index: number): void;
     stars(visible: boolean): void;
+    pan(x: number, y: number): void;
   } | null>(null);
 
   const liteRef = useRef(lite);
@@ -111,6 +113,12 @@ export default function StarfieldGpu({
   useEffect(() => subscribeSatelliteGlow((g) => controlRef.current?.glow(g)), [backend]);
   // 換頁轉場的「收」：首頁要離開時，土星整組收進點下去的那顆衛星
   useEffect(() => subscribeSaturnCollapse((i) => controlRef.current?.collapse(i)), []);
+  // 換頁的鏡頭移動時星空跟著轉（store/skyPan）。控制介面就緒時補送一次目前的位移
+  useEffect(() => {
+    const send = (p: { x: number; y: number }) => controlRef.current?.pan(p.x, p.y);
+    send(skyPan());
+    return subscribeSkyPan(send);
+  }, [backend]);
   // 頁面自己畫背景時（hooks/useBareSky）星星淡出讓位。控制介面就緒（backend 變了）時補送一次
   useEffect(() => {
     const root = document.documentElement;
@@ -212,6 +220,7 @@ export default function StarfieldGpu({
         glow: (g) => worker.postMessage({ type: 'glow', glow: g }),
         collapse: (index) => worker.postMessage({ type: 'collapse', index }),
         stars: (visible) => worker.postMessage({ type: 'stars', visible }),
+        pan: (x, y) => worker.postMessage({ type: 'pan', x, y }),
       };
       const onMsg = (
         e: MessageEvent<{
@@ -284,6 +293,7 @@ export default function StarfieldGpu({
           glow: (g) => runner.setSatelliteGlow(g),
           collapse: (index) => runner.collapseSaturnTo(index),
           stars: (visible) => runner.setStars(visible),
+          pan: (x, y) => runner.setPan(x, y),
         };
         setBackend(`${be} · main`);
       } catch (err) {
@@ -318,7 +328,6 @@ export default function StarfieldGpu({
       <canvas
         key={generation}
         ref={canvasRef}
-        className="space-gpu"
         style={{
           ...canvasStyle,
           zIndex,

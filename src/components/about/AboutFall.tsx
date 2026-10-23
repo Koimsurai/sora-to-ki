@@ -34,8 +34,11 @@ const stopPoint = (el: HTMLElement | null): Pt | null => {
   return { x: r.left + r.width * (full ? 0.3 : 0.5), y: r.top + r.height * (full ? 0.72 : 0.78) };
 };
 const mix = (a: Pt, b: Pt, k: number): Pt => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
-/** 點從句號正上方多高的地方開始直直掉下來 */
-const FALL_IN_PX = 220;
+/** 點從句號正上方多高的地方開始直直掉下來；鏡頭跟著它掉，最後 FALL_SHOWN_PX 才停下來看它掉進句號 */
+const FALL_IN_PX = 1500;
+const FALL_SHOWN_PX = 260;
+/** 這一頁的轉場慢一點：自由落體要有掉了一陣子的感覺，太快會像平移過去 */
+const FALL_PACE = 0.5;
 /** 頁面在文件裡的位置（offsetTop 一路加上去）：換頁時整頁被轉場平移，量 getBoundingClientRect 會把平移算進去 */
 const docTop = (el: HTMLElement) => {
   let y = 0;
@@ -95,7 +98,7 @@ export default function AboutFall() {
       if (!p) return null;
       const drop: Pt[] = [];
       for (let d = FALL_IN_PX; d >= 0; d -= 6) drop.push({ x: p.x, y: p.y - d });
-      return { approach: drop };
+      return { approach: drop, join: Math.round((FALL_IN_PX - FALL_SHOWN_PX) / 6), pace: FALL_PACE };
     },
     // 收：字退掉，琥珀點帶著往下掉的速度離開
     leave: () => {

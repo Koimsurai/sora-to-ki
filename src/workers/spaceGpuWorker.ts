@@ -50,7 +50,13 @@ interface StarsMsg {
   type: 'stars';
   visible: boolean;
 }
-type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg | CollapseMsg | StarsMsg;
+/** 換頁的鏡頭移動時星空跟著轉：累積的位移（畫面像素，補放同上） */
+interface PanMsg {
+  type: 'pan';
+  x: number;
+  y: number;
+}
+type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg | CollapseMsg | StarsMsg | PanMsg;
 
 let runner: StarfieldRunner | null = null;
 // init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
@@ -66,6 +72,7 @@ let lastSaturn: { visible: boolean; animate: boolean } | null = null;
 let lastRunning: boolean | null = null;
 let lastGlow: number[] | null = null;
 let lastStars: boolean | null = null;
+let lastPan: { x: number; y: number } | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
@@ -90,6 +97,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         if (lastRunning !== null) runner.setRunning(lastRunning);
         if (lastGlow) runner.setSatelliteGlow(lastGlow);
         if (lastStars !== null) runner.setStars(lastStars);
+        if (lastPan) runner.setPan(lastPan.x, lastPan.y);
         self.postMessage({ type: 'ready', backend });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
@@ -109,6 +117,9 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'stars') {
     lastStars = msg.visible;
     runner?.setStars(msg.visible);
+  } else if (msg.type === 'pan') {
+    lastPan = { x: msg.x, y: msg.y };
+    runner?.setPan(msg.x, msg.y);
   } else if (msg.type === 'collapse') {
     runner?.collapseSaturnTo(msg.index);
     lastSaturn = { visible: true, animate: false };

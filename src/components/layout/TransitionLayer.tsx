@@ -24,6 +24,7 @@ import {
   type Departure,
   type Pt,
 } from '@/store/pageTransition';
+import { setSkyPan } from '@/store/skyPan';
 import './TransitionLayer.css';
 
 /** 預設的收：一圈遮罩收進錨點 */
@@ -112,6 +113,12 @@ interface Run {
   cam: Pt;
   /** 點不用飛（已經在錨點上）：鏡頭不動 */
   still: boolean;
+  /** 點現在畫在畫面上的哪裡、往哪裡動（px/ms）：轉場還沒跑完又換頁時，新的一趟從這裡接著飛 */
+  screen: Pt;
+  screenVel: Pt;
+  trackAt: number;
+  /** 這一趟是接著上一趟沒跑完的：點一開始就亮著 */
+  carried: boolean;
   /** 彗尾的塵埃（世界座標） */
   dust: { x: number; y: number; vx: number; vy: number; life: number; size: number }[];
 }
@@ -197,6 +204,8 @@ export default function TransitionLayer() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     let run: Run | null = null;
     let raf = 0;
+    /** 之前每一趟鏡頭移動累積下來的星空位移 */
+    let skyBase = { x: 0, y: 0 };
 
     // 出發點：點連結的那一刻記下來。連結自己標了點（首頁的衛星）就用那個點；
     // 內容裡的連結用點下去的位置（鍵盤是連結的左邊）；導覽列的連結不算，由頁面自己決定從哪裡收
@@ -236,10 +245,19 @@ export default function TransitionLayer() {
       r.main.style.opacity = '';
       r.main.style.transition = '';
       delete root.dataset.pt;
-      root.style.removeProperty('--pt-sky-x');
-      root.style.removeProperty('--pt-sky-y');
+      // 星空停在鏡頭最後的位置，不歸位（歸位那一下會像整片背景被拉回去）
+      skyBase = { x: skyBase.x - r.cam.x * SKY_PARALLAX, y: skyBase.y - r.cam.y * SKY_PARALLAX };
+      setSkyPan(skyBase.x, skyBase.y);
       ctx.clearRect(0, 0, cv.width, cv.height);
       if (run === r) run = null;
+    };
+
+    /** 記下點在畫面上的位置與速度 */
+    const track = (r: Run, p: Pt, now: number) => {
+      const dt = now - r.trackAt;
+      if (r.trackAt > 0 && dt > 0) r.screenVel = { x: (p.x - r.screen.x) / dt, y: (p.y - r.screen.y) / dt };
+      r.screen = { ...p };
+      r.trackAt = now;
     };
 
     const dot = (p: Pt, radius: number, alpha = 1) => {
@@ -323,9 +341,14 @@ export default function TransitionLayer() {
       const inDir = approach
         ? unit({ x: approach[1].x - approach[0].x, y: approach[1].y - approach[0].y })
         : (arrival?.tangent ?? (len(fromMid) > 20 ? unit(fromMid) : fallback));
-      // 煞停要多長：點要從畫面中間滑到那條線的起點，離得越遠煞得越久
-      const brake = clamp(len(fromMid) * 1.1 + 160, 200, Math.min(w, h));
-      const L = Math.max(Math.min(w, h) * TRAVEL, brake + 220);
+      // 鏡頭在 approach 的第 join 點停下（前面那段在畫面外，鏡頭跟著點沿著它走）
+      const join = approach ? clamp(Math.round(arrival?.join ?? 0), 0, approach.length - 1) : 0;
+      const stopAt = approach ? approach[join] : anchor;
+      const toStop = { x: stopAt.x - mid.x, y: stopAt.y - mid.y };
+      // 煞停要多長：點要從畫面中間滑到鏡頭停下的那一點，離得越遠煞得越久
+      const brake = clamp(len(toStop) * 1.1 + 160, 200, Math.min(w, h));
+      // 頁面給了畫面外的那段路，鏡頭就沿著它跟拍：起頭的直線只要短短一段，把點接上那條路
+      const L = join > 0 ? Math.min(w, h) * 0.2 : Math.max(Math.min(w, h) * TRAVEL, brake + 220);
       // 世界裡：從點現在的位置沿 inDir 直直飛 L，終點就是（挪過的）那條線的起點
       const end = { x: r.pos.x + inDir.x * L, y: r.pos.y + inDir.y * L };
       const O = { x: end.x - target.x, y: end.y - target.y };
@@ -339,14 +362,15 @@ export default function TransitionLayer() {
       for (let i = 1; i < points.length; i++)
         cum.push(cum[i - 1] + len({ x: points[i].x - points[i - 1].x, y: points[i].y - points[i - 1].y }));
       const total = Math.max(1, cum.at(-1) ?? 1);
-      const sJoin = cum[lead.length - 1] ?? total;
+      const sJoin = cum[lead.length - 1 + join] ?? total;
+      const pace = clamp(arrival?.pace ?? 1, 0.3, 1);
       const acquire = clamp(len({ x: r.pos.x - mid.x, y: r.pos.y - mid.y }) / 2.2, ACQUIRE_MIN_MS, ACQUIRE_MAX_MS);
       r.flight = {
         points,
         cum,
         total,
         at: now,
-        dur: clamp(total / SPEED, FLY_MIN_MS, FLY_MAX_MS),
+        dur: clamp(total / (SPEED * pace), FLY_MIN_MS, FLY_MAX_MS / pace),
         acquire,
         start: { ...r.pos },
         brakeFrom: Math.max(0, sJoin - Math.min(brake, sJoin * 0.8)),
@@ -401,8 +425,14 @@ export default function TransitionLayer() {
 
       // 收：頁面往那一點收，點在那裡亮起來
       if (r.phase === 'leave') {
-        const k = easeOut(clamp((now - r.t0) / LEAVE_MS));
-        dot(r.follow?.() ?? r.from, 1 + 2 * k, k);
+        const k = r.carried ? 1 : easeOut(clamp((now - r.t0) / LEAVE_MS));
+        const p = r.follow?.() ?? r.from;
+        track(r, p, now);
+        // 接著上一趟的：上一趟的彗尾與塵埃照樣散完
+        drawDust(r, Math.min(50, now - r.last), 1);
+        tail(r.trail, now);
+        r.last = now;
+        dot(p, 1 + 2 * k, k);
         return;
       }
 
@@ -470,8 +500,7 @@ export default function TransitionLayer() {
             r.main.style.opacity = String(smooth(0.15, 0.55, tau));
           }
           // 背景的星空跟著鏡頭挪一點：是鏡頭在動，不是頁面在滑
-          root.style.setProperty('--pt-sky-x', `${(-r.cam.x * SKY_PARALLAX).toFixed(1)}px`);
-          root.style.setProperty('--pt-sky-y', `${(-r.cam.y * SKY_PARALLAX).toFixed(1)}px`);
+          setSkyPan(skyBase.x - r.cam.x * SKY_PARALLAX, skyBase.y - r.cam.y * SKY_PARALLAX);
           if (tau >= 1) {
             r.phase = 'grow';
             r.growAt = now;
@@ -485,7 +514,9 @@ export default function TransitionLayer() {
           drawDust(r, dt, 1);
           tail(r.trail, now);
         });
-        dot({ x: r.pos.x - r.cam.x, y: r.pos.y - r.cam.y }, 3);
+        const onScreen = { x: r.pos.x - r.cam.x, y: r.pos.y - r.cam.y };
+        track(r, onScreen, now);
+        dot(onScreen, 3);
         if (r.phase === 'fly') return;
       }
 
@@ -509,7 +540,9 @@ export default function TransitionLayer() {
       const alive = tail(r.trail, now);
       ctx.restore();
       r.last = now;
-      dot(r.follow && now < r.followUntil ? r.follow() : to, 3 * (1 - easeOut(g)), 1 - g);
+      const landed = r.follow && now < r.followUntil ? r.follow() : to;
+      track(r, landed, now);
+      dot(landed, 3 * (1 - easeOut(g)), 1 - g);
       if (g >= 1 && !r.dust.length && !alive) {
         cancelAnimationFrame(raf);
         finish(r);
@@ -527,11 +560,21 @@ export default function TransitionLayer() {
           takeTransitionFrom();
           return false;
         }
+        // 轉場還沒跑完又換頁：不丟掉那個點，從它現在的位置、帶著它現在的速度接一趟新的；
+        // 這一頁（不管收到哪裡、長到哪裡）用遮罩收進那一點，上一趟的彗尾與塵埃帶過來照樣散完
+        let carry: { point: Pt; vel: Pt; trail: Run['trail']; dust: Run['dust'] } | null = null;
         if (run) {
+          const old = run;
+          const speed = len(old.screenVel);
+          carry = {
+            point: { ...old.screen },
+            vel:
+              speed > 1.2 ? { x: (old.screenVel.x / speed) * 1.2, y: (old.screenVel.y / speed) * 1.2 } : old.screenVel,
+            trail: old.trail.map((q) => ({ x: q.x - old.cam.x, y: q.y - old.cam.y, t: q.t })),
+            dust: old.dust.map((d) => ({ ...d, x: d.x - old.cam.x, y: d.y - old.cam.y })),
+          };
           cancelAnimationFrame(raf);
-          finish(run);
-          takeTransitionFrom();
-          return false;
+          finish(old);
         }
         const page = currentPage();
         const mark = takeTransitionFrom();
@@ -539,9 +582,10 @@ export default function TransitionLayer() {
         void router
           .preloadRoute({ href: nextLocation.href } as Parameters<typeof router.preloadRoute>[0])
           .catch(() => undefined);
-        const departure =
-          page.handle?.leave?.({ from: mark?.pt ?? null, source: mark?.source ?? null, to: b }) ??
-          defaultLeave(main, mark?.pt ?? page.handle?.anchor?.() ?? defaultAnchor(main));
+        const departure = carry
+          ? defaultLeave(main, carry.point)
+          : (page.handle?.leave?.({ from: mark?.pt ?? null, source: mark?.source ?? null, to: b }) ??
+            defaultLeave(main, mark?.pt ?? page.handle?.anchor?.() ?? defaultAnchor(main)));
         const r: Run = {
           phase: 'leave',
           follow: departure.follow ?? null,
@@ -552,11 +596,11 @@ export default function TransitionLayer() {
           pos: departure.point,
           // 頁面沒給方向（收進中心、預設的遮罩）：往左上慢慢滑出去——大部分頁面的錨點在左上的標題，
           // 新的一頁還沒好的時候點也不會停在原地等
-          vel: departure.velocity ?? { x: -0.24, y: -0.32 },
+          vel: carry?.vel ?? departure.velocity ?? { x: -0.24, y: -0.32 },
           launchAt: 0,
           last: 0,
           flight: null,
-          trail: [{ ...departure.point, t: performance.now() }],
+          trail: [...(carry?.trail ?? []), { ...departure.point, t: performance.now() }],
           to: null,
           growAt: 0,
           main,
@@ -567,7 +611,11 @@ export default function TransitionLayer() {
           offset: { x: 0, y: 0 },
           cam: { x: 0, y: 0 },
           still: false,
-          dust: [],
+          screen: { ...departure.point },
+          screenVel: { x: 0, y: 0 },
+          trackAt: 0,
+          carried: carry !== null,
+          dust: carry?.dust ?? [],
         };
         run = r;
         root.dataset.pt = 'leave';
@@ -575,7 +623,8 @@ export default function TransitionLayer() {
         raf = requestAnimationFrame(frame);
         // 頁面的收最久等 0.8 秒：換頁不能被一個沒收完的動畫卡住
         await Promise.race([departure.done, after(800)]);
-        if (run !== r) return false;
+        // 收到一半又換了一次頁：這一次的換頁作廢，交給新的那一趟
+        if (run !== r) return true;
         // 先把舊的藏起來再拿掉遮罩，舊頁不會閃回來一幀
         root.dataset.pt = 'out';
         main.style.clipPath = '';
