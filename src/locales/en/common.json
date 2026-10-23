@@ -748,9 +748,10 @@
     "title": "Works",
     "subtitle": "A course spiralling out from where it began: the newer, the further out.",
     "origin": "Origin",
-    "legendCore": "Center dot: amount of code",
-    "legendRings": "Each ring: one language",
-    "legendMoons": "Outer dots: GitHub stars",
+    "legendCore": "Size: amount of code",
+    "legendSurface": "Surface: main language",
+    "legendRings": "Rings: other languages",
+    "legendMoons": "Moons: GitHub stars",
     "legendHover": "Hover: unfolds into the 3D body"
   }
 }
