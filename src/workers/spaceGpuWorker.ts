@@ -5,7 +5,7 @@
 //   ‧ 它的協定走 structured clone，傳不了 WebGPURenderer 需要的 async factory
 //   ‧ handleProps 無 try/catch（init 失敗後任何 props 訊息都在 worker 內 uncaught throw）
 //   ‧ worker 內 shim self.document={} 干擾環境判定
-// 這裡協定極簡：init / resize / running / scroll / saturn / glow，錯誤一律回報主執行緒處理。
+// 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse，錯誤一律回報主執行緒處理。
 // 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）。
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
 
@@ -40,7 +40,12 @@ interface GlowMsg {
   type: 'glow';
   glow: number[];
 }
-type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg;
+/** 換頁轉場的「收」：土星收進第 index 顆衛星（-1 是中心）。只在跑著的時候有意義，不補放 */
+interface CollapseMsg {
+  type: 'collapse';
+  index: number;
+}
+type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg | CollapseMsg;
 
 let runner: StarfieldRunner | null = null;
 // init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
@@ -94,6 +99,9 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'glow') {
     lastGlow = msg.glow;
     runner?.setSatelliteGlow(msg.glow);
+  } else if (msg.type === 'collapse') {
+    runner?.collapseSaturnTo(msg.index);
+    lastSaturn = { visible: true, animate: false };
   } else {
     // 到這裡 union 只剩 SaturnMsg，再比對一次 msg.type 是恆真。
     // 日後新增訊息型別時，下面存取 msg.visible/msg.animate 會編譯失敗——不會被靜默吞掉。

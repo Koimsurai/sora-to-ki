@@ -318,8 +318,9 @@
 }
 
 .mo-dot.is-new {
-  width: 8px;
-  height: 8px;
+  /* 跟轉場的點一樣大（layout/TransitionLayer 半徑 3）：點落地時就是它 */
+  width: 6px;
+  height: 6px;
   background: var(--amber);
   box-shadow: 0 0 14px rgba(var(--amber-rgb), 0.8);
 }
@@ -390,6 +391,22 @@
 .mo.is-arc .mo-ghost a:hover .mo-ghost-card,
 .mo.is-arc .mo-ghost a:focus-visible .mo-ghost-card {
   opacity: 1;
+}
+
+/* 換頁的「收」：字跟著彗尾退得快一點，標題直接淡掉，只剩彗核那一點 */
+.mo.is-leaving .mo-post,
+.mo.is-leaving .mo-end,
+.mo.is-leaving .mo-ghost,
+.mo.is-leaving .mo-dot {
+  transition-duration: var(--dur-200);
+}
+
+.mo-head {
+  transition: opacity var(--dur-250) ease;
+}
+
+.mo.is-leaving .mo-head {
+  opacity: 0;
 }
 
 /* ── 管理者發文 ── */

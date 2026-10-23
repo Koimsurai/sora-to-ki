@@ -8,7 +8,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
-import { publishSatellites, subscribeSatelliteGlow, type SatelliteScreen } from '@/store/homeOrbit';
+import {
+  publishSatellites,
+  subscribeSaturnCollapse,
+  subscribeSatelliteGlow,
+  type SatelliteScreen,
+} from '@/store/homeOrbit';
 
 const canOffscreen =
   typeof HTMLCanvasElement !== 'undefined' && 'transferControlToOffscreen' in HTMLCanvasElement.prototype;
@@ -58,6 +63,7 @@ export default function StarfieldGpu({
     scroll(y: number): void;
     saturn(v: boolean, a: boolean): void;
     glow(g: number[]): void;
+    collapse(index: number): void;
   } | null>(null);
 
   const liteRef = useRef(lite);
@@ -101,6 +107,8 @@ export default function StarfieldGpu({
 
   // 首頁衛星的亮度：首頁送過來就轉給 runner。控制介面就緒（backend 變了）時也補送一次
   useEffect(() => subscribeSatelliteGlow((g) => controlRef.current?.glow(g)), [backend]);
+  // 換頁轉場的「收」：首頁要離開時，土星整組收進點下去的那顆衛星
+  useEffect(() => subscribeSaturnCollapse((i) => controlRef.current?.collapse(i)), []);
 
   useEffect(
     () => () => {
@@ -110,8 +118,8 @@ export default function StarfieldGpu({
   );
 
   // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態。
-  // 離開首頁時土星不是直接消失，而是先收成一點（換頁轉場的「收」），收完才藏起來。
-  // 換進首頁時轉場還在收上一頁、點還在飛（html[data-pt="out"]），土星要等點落地才長
+  // 離開首頁：走轉場的話土星已經收進那一點了（html[data-pt]），直接藏；沒走轉場就先收成一點再藏。
+  // 換進首頁時點還在飛（html[data-pt="out"]），土星要等點落地才從那一點長出來
   const wasHomeRef = useRef(isOnHomePage);
   useEffect(() => {
     const onScroll = () => controlRef.current?.scroll(window.scrollY);
@@ -119,7 +127,9 @@ export default function StarfieldGpu({
     let timer = 0;
     let waitArrival: MutationObserver | null = null;
     const root = document.documentElement;
-    if (wasHomeRef.current && !isOnHomePage) {
+    if (wasHomeRef.current && !isOnHomePage && root.dataset.pt) {
+      controlRef.current?.saturn(false, false);
+    } else if (wasHomeRef.current && !isOnHomePage) {
       controlRef.current?.saturn(true, false);
       timer = window.setTimeout(() => controlRef.current?.saturn(false, false), SATURN_COLLAPSE_MS);
     } else if (isOnHomePage && root.dataset.pt === 'out') {
@@ -189,6 +199,7 @@ export default function StarfieldGpu({
         scroll: (y) => worker.postMessage({ type: 'scroll', y }),
         saturn: (v, a) => worker.postMessage({ type: 'saturn', visible: v, animate: a }),
         glow: (g) => worker.postMessage({ type: 'glow', glow: g }),
+        collapse: (index) => worker.postMessage({ type: 'collapse', index }),
       };
       const onMsg = (
         e: MessageEvent<{
@@ -259,6 +270,7 @@ export default function StarfieldGpu({
           scroll: (y) => runner.setScroll(y),
           saturn: (v, a) => runner.setSaturn(v, a),
           glow: (g) => runner.setSatelliteGlow(g),
+          collapse: (index) => runner.collapseSaturnTo(index),
         };
         setBackend(`${be} · main`);
       } catch (err) {

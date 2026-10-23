@@ -19,6 +19,7 @@ function makeRunner() {
     setSaturn: vi.fn(),
     setRunning: vi.fn(),
     setSatelliteGlow: vi.fn(),
+    collapseSaturnTo: vi.fn(),
     dispose: vi.fn(),
   };
 }
@@ -143,6 +144,13 @@ describe('首頁的衛星', () => {
     send({ type: 'init', canvas: {}, width: 100, height: 100, dpr: 1, lite: true });
     await vi.waitFor(() => expect(lastInit).not.toBeNull());
     expect(lastInit).toMatchObject({ lite: true });
+  });
+
+  // 換頁轉場的「收」：土星收進衛星之後，下一次補放 saturn 狀態要是「收著」，不然重建時會自己長回來
+  it('collapse 轉給 runner，而且記成收著的狀態', async () => {
+    await initAndSettle();
+    send({ type: 'collapse', index: 2 });
+    expect(runner.collapseSaturnTo).toHaveBeenCalledWith(2);
   });
 
   it('init 完成前收到的亮度，ready 之後補給 runner', async () => {

@@ -48,3 +48,17 @@ export function subscribeSatelliteGlow(fn: Listener<number[]>): () => void {
     glowListeners.delete(fn);
   };
 }
+
+const collapseListeners = new Set<Listener<number>>();
+
+/** 換頁轉場的「收」：土星整組收進第 index 顆衛星（-1 是收進中心），見 home/HomeOrbit */
+export function collapseSaturnTo(index: number) {
+  for (const fn of collapseListeners) fn(index);
+}
+
+export function subscribeSaturnCollapse(fn: Listener<number>): () => void {
+  collapseListeners.add(fn);
+  return () => {
+    collapseListeners.delete(fn);
+  };
+}
