@@ -78,6 +78,26 @@ export function postArc(i: number, n: number, p: SkyPost, w: number, h: number, 
 export const arcPoint = (a: Arc, ang: number): Pt => ({ x: a.cx + Math.cos(ang) * a.r, y: a.cy + Math.sin(ang) * a.r });
 
 /**
+ * 從文章頁回到手記時，夜空要轉到哪個時間：那一篇的那顆星要在畫面裡（外圈的星常常轉在畫面外，
+ * 點會落到看不到的地方）。arc 是 t = 0 時的那道星軌；挑轉最少就看得到的角度。
+ * 文章頁（收的時候把軌道拉回這道星軌）與手記頁（接手）用同一個算法，兩邊對得上
+ */
+export function keepTimeOf(arc: Arc, w: number, h: number): number {
+  // 先找列表右邊空著的那片天（不壓在標題與列表上），找不到才退而求其次只要在畫面裡
+  const open = (q: Pt) => q.x > w / 2 + 180 && q.x < w - 60 && q.y > 110 && q.y < h - 60;
+  const on = (q: Pt) => q.x > 60 && q.x < w - 60 && q.y > 110 && q.y < h - 60;
+  for (const ok of [open, on]) {
+    for (let deg = 0; deg <= 180; deg += 3) {
+      for (const sign of deg ? [1, -1] : [1]) {
+        const da = (sign * deg * Math.PI) / 180;
+        if (ok(arcPoint(arc, arc.a1 + da))) return da / SPIN;
+      }
+    }
+  }
+  return 0;
+}
+
+/**
  * 鏡頭推近：把手記的整片星空當成一張照片，平移、旋轉、放大，直到第 i 篇的那道星軌剛好疊在文章頁的軌道上
  * （它的那顆星落在軌道頂端）。e 是推到哪裡（0 是原樣、1 是到位）；縮放在對數上內插，推起來是等速的
  */

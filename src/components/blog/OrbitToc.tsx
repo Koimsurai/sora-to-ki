@@ -23,7 +23,7 @@ import {
   type OrbitGeom,
 } from '@/lib/articleOrbit';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
-import { applyZoom, arcPoint, orbitSpan, postArc, skyPostOf, zoomMap, zoomOf, type Arc } from './noteSky';
+import { applyZoom, arcPoint, keepTimeOf, orbitSpan, postArc, skyPostOf, zoomMap, zoomOf, type Arc } from './noteSky';
 import './OrbitToc.css';
 
 export interface TocHeading {
@@ -38,7 +38,7 @@ const TAU = Math.PI * 2;
 /** 從頂端往下長出來的時間（秒） */
 const GROW_S = 1.4;
 /** 拉回手記那道星軌的時間 */
-const MORPH_MS = 900;
+const MORPH_MS = 650;
 /** 縮回琥珀點的時間 */
 const RETRACT_MS = 380;
 /** 一分鐘讀幾個字（跟手記列表一樣） */
@@ -90,7 +90,10 @@ export default function OrbitToc({
     if (i < 0) return null;
     const maxLen = Math.max(1, ...posts.map((p) => p.content_length));
     const sp = { ...skyPostOf(posts[i], maxLen), dim: false };
-    return postArc(i, posts.length, sp, window.innerWidth, window.innerHeight, 0, 1);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // 夜空轉到那顆星看得到的時候（手記頁接手時用同一個時間）
+    return postArc(i, posts.length, sp, w, h, keepTimeOf(postArc(i, posts.length, sp, w, h, 0, 1), w, h), 1);
   };
 
   usePageTransition({

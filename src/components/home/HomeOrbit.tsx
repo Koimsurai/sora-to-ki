@@ -63,10 +63,14 @@ export default function HomeOrbit() {
   });
   usePageTransition({
     anchor: center,
-    leave: ({ source }) => {
+    leave: ({ source, to }) => {
       // 3D 沒跑起來（平面的備案）：沒有土星可以收，交給預設的遮罩
       if (flat) return null;
-      const i = source === null ? -1 : Number(source);
+      // 點衛星時連結自己報了序號；上一頁、下一頁沒有，就照要去的那一頁找那顆衛星
+      const i =
+        source !== null
+          ? Number(source)
+          : MAIN_SECTIONS.findIndex((s) => to === s.to.slice(1) || to.startsWith(`${s.to.slice(1)}/`));
       const sat = positionsRef.current[i] as SatelliteScreen | undefined;
       collapseSaturnTo(sat ? i : -1);
       sectionRef.current?.classList.add('is-leaving');

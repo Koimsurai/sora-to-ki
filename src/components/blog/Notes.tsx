@@ -15,7 +15,17 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { useBareSky } from '@/hooks/useBareSky';
 import { orbitGeometry, orbitPoint, setOrbitHandoff, takeOrbitHandoff } from '@/lib/articleOrbit';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
-import { arcPoint, createNoteSky, poleOf, postArc, skyPostOf, zoomMap, zoomOf, type SkyPost } from './noteSky';
+import {
+  arcPoint,
+  createNoteSky,
+  keepTimeOf,
+  poleOf,
+  postArc,
+  skyPostOf,
+  zoomMap,
+  zoomOf,
+  type SkyPost,
+} from './noteSky';
 import './Notes.css';
 
 /* 手記：一篇文章是一道星軌（畫在 noteSky），列表照目錄排、年份在左、一篇一行。
@@ -87,10 +97,20 @@ function Notes() {
   const trailRef = useRef<{ points: Pt[]; at: number } | null>(null);
   /** 從文章頁回來：那一篇的星軌一開始就是滿的、亮著 */
   const keepRef = useRef(-1);
+  /** 夜空從哪個時間開始轉：從文章頁回來時轉到那一篇的星看得到的地方（跟文章頁拉回去的位置一樣） */
+  const shiftRef = useRef(0);
   const backFrom = posts.length ? takeOrbitHandoff('notes') : null;
-  if (backFrom !== null) keepRef.current = indexOf.get(backFrom) ?? -1;
+  if (backFrom !== null) {
+    keepRef.current = indexOf.get(backFrom) ?? -1;
+    if (keepRef.current >= 0) {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const i = keepRef.current;
+      shiftRef.current = keepTimeOf(postArc(i, skyRef.current.length, skyRef.current[i], w, h, 0), w, h);
+    }
+  }
 
-  const skyTime = () => (startRef.current < 0 ? 0 : (performance.now() - startRef.current) / 1000);
+  const skyTime = () => shiftRef.current + (startRef.current < 0 ? 0 : (performance.now() - startRef.current) / 1000);
   const arcOf = (i: number) =>
     postArc(i, skyRef.current.length, skyRef.current[i], window.innerWidth, window.innerHeight, skyTime());
 
@@ -143,11 +163,17 @@ function Notes() {
     },
     // 收：點進一篇文章時，那一篇的星軌被拉成文章頁右邊的軌道（lib/articleOrbit），它的那顆星變成
     // 讀者的琥珀點；去別的地方時整片縮回各自的那顆星
-    leave: ({ source }) => {
+    leave: ({ source, to }) => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       pageRef.current?.classList.add('is-leaving');
-      const id = Number(/^post:(\d+)$/.exec(source ?? '')?.[1] ?? NaN);
+      // 點文章時連結報了是哪一篇；上一頁、下一頁沒有，就照要去的網址找那一篇
+      const target = decodeURIComponent(to);
+      const id = Number(
+        /^post:(\d+)$/.exec(source ?? '')?.[1] ??
+          posts.find((p) => postPath(p).slice(1) === target || `blog/${p.id}` === target)?.id ??
+          NaN,
+      );
       const i = indexOf.get(id);
       const geom = orbitGeometry(w, h);
       if (i !== undefined && geom) {
@@ -222,7 +248,7 @@ function Notes() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const geom = zoom ? orbitGeometry(w, h) : null;
       sky.draw(ctx, w, h, skyRef.current, {
-        t: still ? 0 : t,
+        t: (still ? 0 : t) + shiftRef.current,
         grow,
         hovered: hoveredRef.current,
         keep: keepRef.current,
