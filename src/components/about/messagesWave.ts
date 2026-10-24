@@ -63,7 +63,7 @@ export function channelOf(w: number, h: number) {
   return { y: h / 2, end: d.x + d.dw * 0.2 };
 }
 
-export function dishOf(w: number, h: number) {
+function dishOf(w: number, h: number) {
   const dh = h - 8;
   const dw = dh * DISH.ratio;
   const x = w - dw;
