@@ -1320,3 +1320,90 @@ html.fs-active .cursor-trail-canvas {
   white-space: nowrap;
   border: 0;
 }
+
+/* ──────────────────────────────────────────────────────────────
+   開場：一切從一個點開始（layout/TransitionLayer 的 enter、__root.tsx 的 #boot）
+   一進站，畫面只有夜色與正中一顆琥珀點在呼吸，外圈一道細線照載入進度畫一圈（--boot-p，head 裡那段
+   同步 script 照載入的階段推）。載好了這顆點就是換頁轉場的那顆：飛向這一頁的錨點、由這一頁接手長出來。
+   html[data-boot] 是 head 的 script 一開始就掛上的（還沒 paint），所以頁面不會先閃出來
+─────────────────────────────────────────────────────────────── */
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-intro);
+  display: none;
+  background: var(--ground);
+  pointer-events: none;
+}
+
+html[data-boot] #boot {
+  display: block;
+}
+
+/* 交棒：黑幕淡掉、這顆點交給轉場畫布（畫布暫時升到黑幕之上，點才不會被壓暗） */
+html[data-boot="out"] #boot {
+  opacity: 0;
+  transition: opacity var(--dur-500) ease;
+}
+
+html[data-boot] .pt-canvas {
+  z-index: calc(var(--z-intro) + 1);
+}
+
+.boot-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  translate: -50% -50%;
+  border-radius: var(--r-full);
+  background: var(--amber);
+  box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
+  animation: boot-breathe 1.6s ease-in-out infinite;
+}
+
+.boot-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  translate: -50% -50%;
+  overflow: visible;
+  rotate: -90deg;
+}
+
+.boot-ring circle {
+  fill: none;
+  stroke: var(--paper-3);
+  stroke-width: 1;
+  /* 周長 2π·21 ≈ 132 */
+  stroke-dasharray: 132;
+  stroke-dashoffset: calc(132 * (1 - var(--boot-p, 0)));
+  transition: stroke-dashoffset var(--dur-400) var(--easing-out);
+}
+
+/* 夜色裡這顆點晚一點才藏：轉場的畫布要一兩幀才畫出它的那顆，兩顆疊著交棒、中間不會空一下 */
+html[data-boot="out"] .boot-dot {
+  visibility: hidden;
+  transition: visibility 0s linear var(--dur-100);
+}
+
+html[data-boot="out"] .boot-ring {
+  opacity: 0;
+  transition: opacity var(--dur-250) ease;
+}
+
+@keyframes boot-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

@@ -137,6 +137,19 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
               "(function(){try{var f=localStorage.getItem('blogFont');if(f&&/^[a-z-]{1,20}$/.test(f)){document.documentElement.setAttribute('data-blog-font',f);}}catch(e){}})()",
           }}
         />
+        {/* 開場（index.css 的 #boot、layout/TransitionLayer 的 enter）：在 paint 之前掛上 html[data-boot]，
+            頁面就先藏在夜色後面、不會先閃出來；外圈那道線照載入的階段推（--boot-p）。
+            轉場掛上之後接手：畫滿那一圈，點飛向這一頁的錨點，夜色淡掉。
+            不演的：後台、要求減少動態、自動化瀏覽器（e2e 與爬蟲不必等一段動畫）。
+            同一個分頁重新整理時是 quick（不再刻意停留）。6 秒後一定拿掉：轉場的程式沒載到也不會卡住 */}
+        <script
+          // 同上：必須在 paint 之前同步跑完。內容是寫死的字串常量，沒有變數插值也沒有使用者輸入
+          // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var d=document.documentElement;if(navigator.webdriver||/^\\/admin(\\/|$)/.test(location.pathname)||matchMedia('(prefers-reduced-motion: reduce)').matches)return;var q=sessionStorage.getItem('koim-boot');sessionStorage.setItem('koim-boot','1');d.setAttribute('data-boot',q?'quick':'');var set=function(v){if(d.hasAttribute('data-boot'))d.style.setProperty('--boot-p',String(v))};set(0.12);document.addEventListener('DOMContentLoaded',function(){set(0.45)});if(document.fonts)document.fonts.ready.then(function(){set(0.65)});addEventListener('load',function(){set(0.85)});setTimeout(function(){d.removeAttribute('data-boot');d.style.removeProperty('--boot-p')},6000)}catch(e){}})()",
+          }}
+        />
         {/* Plausible 分析。未設 VITE_PLAUSIBLE_SCRIPT 就整個不輸出 —— dev 與 e2e 都不設。
             （腳本本身也會忽略 localhost、127 開頭的位址與 file: 協定，但那是第二道防線。）
 
@@ -174,6 +187,13 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         ) : null}
       </head>
       <body>
+        {/* 開場的夜色與那顆點（只在 html[data-boot] 時顯示，見上面 head 裡那段） */}
+        <div id="boot" aria-hidden="true">
+          <svg className="boot-ring" viewBox="0 0 44 44">
+            <circle cx="22" cy="22" r="21" />
+          </svg>
+          <i className="boot-dot" />
+        </div>
         {/* 全域 providers(對齊舊 App.tsx 疊法)。SEOHead 已退休 → HelmetProvider/react-helmet-async 一併移除。 */}
         <AuthProvider>
           <ParallaxProvider>

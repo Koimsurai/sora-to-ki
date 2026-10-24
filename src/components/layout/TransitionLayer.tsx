@@ -45,6 +45,13 @@ const FLY_MIN_MS = 700;
 const FLY_MAX_MS = 1400;
 /** 對焦：鏡頭移到點上要多久（ms） */
 const ACQUIRE_MIN_MS = 140;
+/** 開場：第一次來最少停多久（從這次載入開始算）、同一個分頁重新整理時最少多久、最多等多久就飛 */
+const BOOT_MIN_MS = 1100;
+const BOOT_QUICK_MS = 300;
+const BOOT_WAIT_MS = 3500;
+/** 那一圈畫滿之後停一下再飛；夜色淡掉要多久（跟 index.css 的 #boot 一樣） */
+const BOOT_CLOSE_MS = 260;
+const BOOT_FADE_MS = 520;
 const ACQUIRE_MAX_MS = 360;
 /** 跟拍那段至少飛多遠（視窗短邊的倍數） */
 const TRAVEL = 0.42;
@@ -379,7 +386,7 @@ export default function TransitionLayer() {
         cum.push(cum[i - 1] + len({ x: points[i].x - points[i - 1].x, y: points[i].y - points[i - 1].y }));
       const total = Math.max(1, cum.at(-1) ?? 1);
       const sJoin = cum[lead.length - 1 + join] ?? total;
-      const pace = clamp(arrival?.pace ?? 1, 0.3, 1);
+      const pace = clamp(arrival?.pace ?? 1, 0.3, 2);
       const acquire = clamp(len({ x: r.pos.x - mid.x, y: r.pos.y - mid.y }) / 2.2, ACQUIRE_MIN_MS, ACQUIRE_MAX_MS);
       r.flight = {
         points,
@@ -577,6 +584,78 @@ export default function TransitionLayer() {
       }
     };
 
+    // 開場（html[data-boot]，見 __root.tsx 與 index.css 的 #boot）：等這一頁畫好、字與資源載完，
+    // 畫滿那一圈，夜色中間那顆點就是這一趟的點——從畫面正中間飛向這一頁的錨點，跟站內換頁同一個動作。
+    // 等太久（網路慢）也不卡：最多等 BOOT_WAIT_MS 就飛
+    const bootAbort = new AbortController();
+    let bootTimer = 0;
+    const enter = async () => {
+      if (!root.hasAttribute('data-boot')) return;
+      const quick = root.dataset.boot === 'quick';
+      const loaded = new Promise<void>((resolve) => {
+        if (document.readyState === 'complete') resolve();
+        else window.addEventListener('load', () => resolve(), { once: true, signal: bootAbort.signal });
+      });
+      // 兩幀：這一頁的元件掛上、量得到錨點
+      const painted = new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      await Promise.race([Promise.all([loaded, document.fonts.ready, painted]), after(BOOT_WAIT_MS)]);
+      // 第一次來的人多停一下，看得到那顆點在呼吸（performance.now() 從這次載入開始算）
+      await after(Math.max(0, (quick ? BOOT_QUICK_MS : BOOT_MIN_MS) - performance.now()));
+      root.style.setProperty('--boot-p', '1');
+      await after(BOOT_CLOSE_MS);
+      const main = mainOf();
+      if (bootAbort.signal.aborted) return;
+      if (!main || reduce.matches || run) {
+        root.removeAttribute('data-boot');
+        root.style.removeProperty('--boot-p');
+        return;
+      }
+      const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      const now = performance.now();
+      const r: Run = {
+        phase: 'fly',
+        follow: null,
+        followUntil: 0,
+        residue: null,
+        t0: now,
+        from: center,
+        pos: center,
+        vel: { x: 0, y: 0 },
+        launchAt: now,
+        last: now,
+        flight: null,
+        trail: [{ ...center, t: now }],
+        to: null,
+        growAt: 0,
+        main,
+        oldFirst: null,
+        // 這一頁早就報到了：當成「新的一頁已經在」，第一幀就排路線
+        oldGeneration: -1,
+        resolvedAt: 0,
+        reach: 0,
+        offset: { x: 0, y: 0 },
+        cam: { x: 0, y: 0 },
+        still: false,
+        screen: { ...center },
+        screenVel: { x: 0, y: 0 },
+        trackAt: 0,
+        carried: true,
+        dust: [],
+      };
+      run = r;
+      root.dataset.pt = 'fly';
+      root.dataset.boot = 'out';
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(frame);
+      bootTimer = window.setTimeout(() => {
+        root.removeAttribute('data-boot');
+        root.style.removeProperty('--boot-p');
+      }, BOOT_FADE_MS);
+    };
+    void enter();
+
     const unblock = router.history.block({
       enableBeforeUnload: false,
       blockerFn: async ({ currentLocation, nextLocation, action }) => {
@@ -694,6 +773,8 @@ export default function TransitionLayer() {
     });
 
     return () => {
+      bootAbort.abort();
+      window.clearTimeout(bootTimer);
       unblock();
       unsubscribe();
       document.removeEventListener('click', onClick, true);
