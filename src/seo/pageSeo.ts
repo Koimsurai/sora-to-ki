@@ -42,7 +42,7 @@ const PAGE_SEO: Record<string, SeoEntry> = {
   friends: { titleKey: 'friends.title', descKey: 'friends.subtitle' },
   messages: { titleKey: 'messages.title', descKey: 'messages.subtitle' },
   history: { titleKey: 'log.title', descKey: 'log.subtitle' },
-  'about-site': { titleKey: 'info.aboutSite.title', descKey: 'info.aboutSite.subtitle' },
+  'about-site': { titleKey: 'colophon.title', descKey: 'colophon.subtitle' },
 };
 
 // createI18n 每次呼叫都會建新實例；head() 每次 render 都會跑，所以以 locale 快取。

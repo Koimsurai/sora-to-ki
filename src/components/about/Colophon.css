@@ -1,0 +1,444 @@
+/* 此站點（about/Colophon）：第一屏是六分儀對著星空（畫布 about/colophonSky），星的名字是按鈕，
+   右下是目鏡（正在測的那顆星的說明與玩具）；往下捲是航海日誌（Q&A）。窄螢幕目鏡接在星空下面 */
+
+.cl {
+  font-family: var(--serif);
+  color: var(--paper);
+  --cl-edge: max(var(--space-10), calc(50% - 640px));
+}
+
+:where(.cl) :where(a) {
+  color: inherit;
+}
+
+:where(.cl) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+:where(.cl) :where(h2, h3) {
+  margin: 0;
+}
+
+/* ── 第一屏 ── */
+.cl-scene {
+  position: relative;
+  height: 100svh;
+  min-height: 720px;
+  overflow: hidden;
+}
+
+.cl-sky {
+  position: absolute;
+  inset: 0;
+}
+
+.cl-sky canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 星的名字：放在星點右邊 */
+.cl-star {
+  position: absolute;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-2);
+  white-space: nowrap;
+  transform: translate(var(--space-2), -50%);
+  transition: color var(--dur-200) ease;
+}
+
+/* 靠右邊的星：名字放左邊，免得超出畫面 */
+.cl-star.is-left {
+  transform: translate(calc(-100% - var(--space-2)), -50%);
+}
+
+.cl-star:hover,
+.cl-star:focus-visible,
+.cl-star.is-on {
+  color: var(--paper);
+}
+
+.cl-star:focus-visible {
+  outline: 1px solid var(--paper-3);
+}
+
+.cl-head {
+  position: absolute;
+  top: var(--page-top);
+  left: var(--cl-edge);
+  display: grid;
+  gap: var(--space-1);
+  max-width: 420px;
+  pointer-events: none;
+}
+
+.cl-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.cl-title h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.cl-latin {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.cl-head p {
+  margin: 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.cl-head .cl-hint {
+  margin-top: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+/* ── 目鏡 ── */
+.cl-eyepiece {
+  position: absolute;
+  right: var(--cl-edge);
+  bottom: var(--page-bottom);
+  display: grid;
+  gap: var(--space-2);
+  width: min(420px, 40vw);
+}
+
+.cl-k {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--amber);
+}
+
+.cl-eyepiece h2 {
+  font-size: var(--fs-22);
+  font-weight: 600;
+}
+
+.cl-eyepiece > p {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+.cl-content {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  animation: cl-in var(--dur-400) var(--easing-out);
+}
+
+@keyframes cl-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+}
+
+/* 玩具放在一個圓形的視野裡，四周有十字刻線 */
+.cl-scope {
+  position: relative;
+  width: min(280px, 100%);
+  aspect-ratio: 1;
+  justify-self: center;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-round);
+}
+
+.cl-scope::before,
+.cl-scope::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  background: var(--rule);
+  pointer-events: none;
+}
+
+.cl-scope::before {
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  mask-image: linear-gradient(90deg, #000 12%, transparent 12%, transparent 88%, #000 88%);
+}
+
+.cl-scope::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  mask-image: linear-gradient(#000 12%, transparent 12%, transparent 88%, #000 88%);
+}
+
+.cl-toy-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cl-toy-canvas.is-clickable {
+  cursor: crosshair;
+}
+
+.cl-controls {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.cl-range {
+  display: grid;
+  grid-template-columns: 10ch minmax(0, 1fr) 6ch;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+.cl-range input {
+  width: 100%;
+  accent-color: var(--paper-2);
+}
+
+.cl-range em {
+  font-style: normal;
+  text-align: right;
+  color: var(--paper-2);
+}
+
+.cl-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding: 0;
+  margin: var(--space-1) 0 0;
+  border: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+}
+
+.cl-seg button {
+  padding: var(--space-1) var(--space-2);
+  color: var(--paper-3);
+  border: 1px solid var(--rule);
+}
+
+.cl-seg button[aria-pressed="true"] {
+  color: var(--paper);
+  border-color: var(--paper-2);
+}
+
+.cl-swatches,
+.cl-fonts,
+.cl-pages {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.cl-swatches li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-14);
+}
+
+.cl-swatches i {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--rule);
+}
+
+.cl-swatches .is-ground {
+  background: var(--ground);
+}
+
+.cl-swatches .is-paper {
+  background: var(--paper);
+}
+
+.cl-swatches .is-amber {
+  background: var(--amber);
+}
+
+.cl-fonts li {
+  display: grid;
+  gap: var(--space-px);
+}
+
+.cl-fonts b {
+  font-size: var(--fs-28);
+  font-weight: 400;
+  line-height: var(--lh-120);
+}
+
+.cl-fonts .is-latin {
+  font-family: var(--latin-display);
+}
+
+.cl-fonts .is-mono {
+  font-family: var(--mono-font);
+  font-size: var(--fs-22);
+}
+
+.cl-fonts span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+.cl-pages li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-1);
+  font-size: var(--fs-13);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.cl-pages span {
+  color: var(--paper-2);
+}
+
+.cl-repo {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 4px;
+}
+
+/* ── 航海日誌 ── */
+.cl-log {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 760px;
+  padding: var(--space-12) var(--space-6) var(--page-bottom);
+  margin: 0 auto;
+}
+
+.cl-log > h2 {
+  font-size: var(--fs-28);
+  font-weight: 600;
+}
+
+.cl-log > h3 {
+  margin-top: var(--space-6);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+}
+
+.cl-log-intro {
+  margin: 0 0 var(--space-4);
+  font-size: var(--fs-16);
+  color: var(--paper-2);
+}
+
+.cl-log details {
+  border-bottom: 1px dotted var(--rule);
+}
+
+.cl-log summary {
+  padding: var(--space-3) 0;
+  font-size: var(--fs-16);
+  cursor: pointer;
+  list-style: none;
+}
+
+.cl-log summary::before {
+  content: "+";
+  display: inline-block;
+  width: 2ch;
+  font-family: var(--mono-font);
+  color: var(--paper-3);
+}
+
+.cl-log details[open] summary::before {
+  content: "−";
+}
+
+.cl-log details p {
+  margin: 0 0 var(--space-4) 2ch;
+  font-size: var(--fs-14);
+  line-height: var(--lh-185);
+  color: var(--paper-2);
+}
+
+.cl-log code {
+  font-family: var(--mono-font);
+  font-size: 0.9em;
+  color: var(--paper);
+}
+
+.cl-log details a {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+/* 收：字退掉，只剩點從那顆星飛走 */
+.cl-head,
+.cl-eyepiece,
+.cl-star,
+.cl-log {
+  transition: opacity var(--dur-300) ease;
+}
+
+.cl.is-leaving :is(.cl-head, .cl-eyepiece, .cl-star, .cl-log) {
+  opacity: 0;
+}
+
+@media (max-width: 760px) {
+  .cl {
+    --cl-edge: var(--space-4);
+  }
+
+  .cl-scene {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .cl-sky {
+    position: relative;
+    height: 70svh;
+    min-height: 480px;
+  }
+
+  .cl-eyepiece {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    padding: 0 var(--cl-edge);
+  }
+}
