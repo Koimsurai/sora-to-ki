@@ -295,7 +295,7 @@
     "minutesLeft": "{{count}} min left",
     "sameCategory": "Also in {{name}}",
     "title": "Notes",
-    "subtitle": "Days turn; only what gets written down leaves a trail.",
+    "subtitle": "As the stars wheel on, every flicker of curiosity leaves an arc.",
     "all": "All",
     "more": "{{count}} more",
     "minutes": "{{count}} min",
@@ -361,7 +361,7 @@
   },
   "thinking": {
     "title": "Murmurs",
-    "subtitle": "Short notes — whatever's on my mind, or what I just watched.",
+    "subtitle": "Catching a stray noise that cuts through the silence.",
     "ending": "Most of the time, just thinking out loud.",
     "empty": "Nothing here yet.",
     "back": "Back",
@@ -384,7 +384,7 @@
     "title": "My Setup",
     "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
     "heroTitle": "Setup",
-    "subtitle": "What sits on the desk and inside the case.",
+    "subtitle": "A ship pieced together part by part, carrying me farther out.",
     "cat": {
       "main-rig": {
         "short": "Main rig"
@@ -445,7 +445,6 @@
     },
     "sheet": {
       "tabs": "Sheets",
-      "p10cNote": "Solid side panel: hover a part to see where it sits, drawn in dashed lines",
       "memoryTitle": "The one back home",
       "memoryText": "The backup base when I'm back home. There are no photos of it; this is roughly how I remember it.",
       "fromMemory": "FROM MEMORY",
@@ -556,7 +555,7 @@
     "title": "Photography",
     "description": "Koimsurai's photography — light and shadow from the road.",
     "heading": "Photos",
-    "subtitle": "Light from far away, received one line at a time.",
+    "subtitle": "Light travels a long way, only to stop the instant the shutter falls.",
     "station": "DSN · GROUND STATION",
     "stationLabel": "A ground station dish receiving a signal from a distant probe",
     "passesLabel": "Frames received per month: most in {{month}}, {{count}} frames",
@@ -580,7 +579,7 @@
   },
   "works": {
     "title": "Works",
-    "subtitle": "A course spiralling out from where it began: the newer, the further out.",
+    "subtitle": "In the silent deep, carving out marks one inch at a time.",
     "origin": "Origin",
     "legendCore": "Size: amount of code",
     "legendSurface": "Surface: main language",
@@ -590,7 +589,7 @@
   },
   "collection": {
     "title": "Collection",
-    "subtitle": "Everything I've watched, read, and listened to is a signal sent from Earth. The farther out, the longer ago.",
+    "subtitle": "Wherever gravity reaches, fragments of light that once lit my way.",
     "kind": {
       "anime": "Anime",
       "film": "Film",
@@ -681,7 +680,7 @@
   },
   "friends": {
     "title": "Friends",
-    "subtitle": "A few stars circling the same center.",
+    "subtitle": "Each on our own orbit, crossing now and then, lighting one another.",
     "noSignal": "No signal yet",
     "noFeed": "No RSS",
     "legendCenter": "Center: this site",
@@ -715,7 +714,7 @@
   },
   "messages": {
     "title": "Messages",
-    "subtitle": "Every signal that arrives gets read to the end.",
+    "subtitle": "Across all that distance, signals still find their way here.",
     "rx": "RX · waiting for a signal",
     "rxCount_one": "RX · {{count}} signal received",
     "rxCount_other": "RX · {{count}} signals received",
@@ -756,7 +755,7 @@
   },
   "log": {
     "title": "Flight log",
-    "subtitle": "Where this site took off from, and how high it has climbed.",
+    "subtitle": "Lifting off from the ground, climbing a little higher every day.",
     "met": "MISSION ELAPSED TIME · since {{date}}",
     "metValue": "{{days}} d {{hms}}",
     "total_one": "{{count}} contribution so far",
@@ -779,7 +778,7 @@
   },
   "colophon": {
     "title": "Colophon",
-    "subtitle": "How this book was made, and you can try it yourself.",
+    "subtitle": "Fixing our position by the stars, calibrating every mark on this site.",
     "hint": "Click a star and the sextant turns to measure it.",
     "star": {
       "material": "Materials",

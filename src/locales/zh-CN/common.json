@@ -295,7 +295,7 @@
     "minutesLeft": "剩 {{count}} 分",
     "sameCategory": "同在「{{name}}」",
     "title": "手记",
-    "subtitle": "转过的日子，写下来的才留成轨迹。",
+    "subtitle": "群星在流转，给每一瞬的好奇留下一道弧线。",
     "all": "全部",
     "more": "还有 {{count}} 篇",
     "minutes": "约 {{count}} 分",
@@ -361,7 +361,7 @@
   },
   "thinking": {
     "title": "碎念",
-    "subtitle": "想到什么写什么，看完什么顺手丢上来。",
+    "subtitle": "捕获一道划破寂静的杂音。",
     "ending": "更多时候，只是想说给空气听。",
     "empty": "还没有碎念。",
     "back": "返回",
@@ -384,7 +384,7 @@
     "title": "我的装备 · My Setup",
     "description": "Koimsurai 的设备清单：主力机、跑着这个网站的家用服务器、网络与智能家居，还有一张家里怎么连起来的拓扑图。",
     "heroTitle": "设备",
-    "subtitle": "放在桌上、塞在机箱里的东西。",
+    "subtitle": "零件一块块拼成的船，载着我往更远处去。",
     "cat": {
       "main-rig": {
         "short": "主力机"
@@ -445,7 +445,6 @@
     },
     "sheet": {
       "tabs": "图纸",
-      "p10cNote": "侧板是实心的，滑过零件会用虚线透视出它的位置",
       "memoryTitle": "老家的那台",
       "memoryText": "回老家时的备用基地。没有照片，这是记忆里它大概的样子。",
       "fromMemory": "凭记忆",
@@ -556,7 +555,7 @@
     "title": "摄影作品集",
     "description": "Koimsurai 的摄影作品集，记录旅途中的光影故事。",
     "heading": "照片",
-    "subtitle": "从很远的地方，一行一行收回来的光。",
+    "subtitle": "光走了很远，才在快门落下的瞬间停住。",
     "station": "DSN · 地面站",
     "stationLabel": "地面站的碟形天线，接收远处探测器传来的信号",
     "passesLabel": "每个月收到几张：{{month}} 最多，{{count}} 张",
@@ -580,7 +579,7 @@
   },
   "works": {
     "title": "作品",
-    "subtitle": "从起点往外长的一条航线：越新的越外圈。",
+    "subtitle": "在无声的深空里，凿出一寸寸痕迹。",
     "origin": "起点",
     "legendCore": "星球大小：代码量",
     "legendSurface": "地貌：主要语言",
@@ -590,7 +589,7 @@
   },
   "collection": {
     "title": "收藏",
-    "subtitle": "每部看过、读过、听过的作品，都是从地球发出的一道信号。离地球越远，就是越早以前的。",
+    "subtitle": "引力所及之处，皆是照亮过我的碎光。",
     "kind": {
       "anime": "动画",
       "film": "电影",
@@ -681,7 +680,7 @@
   },
   "friends": {
     "title": "朋友",
-    "subtitle": "绕着同一个中心转的几颗星。",
+    "subtitle": "在各自的轨道上运行，偶尔交会，彼此照亮。",
     "noSignal": "还没有收到信号",
     "noFeed": "没有 RSS",
     "legendCenter": "中心：这个站",
@@ -715,7 +714,7 @@
   },
   "messages": {
     "title": "留言",
-    "subtitle": "收到的每一道信号，都会好好读完。",
+    "subtitle": "隔着遥远的距离，仍有信号抵达这里。",
     "rx": "RX · 等待信号",
     "rxCount_one": "RX · 收到 {{count}} 道信号",
     "rxCount_other": "RX · 收到 {{count}} 道信号",
@@ -756,7 +755,7 @@
   },
   "log": {
     "title": "航行日志",
-    "subtitle": "这个站从哪里出发，现在飞到多高。",
+    "subtitle": "从地表出发，每一天都再飞高一点点。",
     "met": "MISSION ELAPSED TIME · 自 {{date}}",
     "metValue": "{{days}} 天 {{hms}}",
     "total_one": "累积 {{count}} 次贡献",
@@ -779,7 +778,7 @@
   },
   "colophon": {
     "title": "此站点",
-    "subtitle": "这本书是怎么做出来的，你也可以动手试试。",
+    "subtitle": "以星辰定位，校准这座站的每一道刻度。",
     "hint": "点一颗星，六分仪会转过去测它。",
     "star": {
       "material": "材料",
