@@ -540,6 +540,18 @@
     "surface": "地表",
     "surfaceTitle": "手にしているもの",
     "surfaceSub": "ずっと持ち歩いてきたもの。",
+    "skill": {
+      "frontend": "フロントエンド",
+      "backend": "バックエンド",
+      "mobile": "モバイル",
+      "devops": "DevOps",
+      "design": "デザイン・メディア",
+      "data": "データストア",
+      "network": "ネットワーク",
+      "productivity": "生産性",
+      "ai": "AI 開発",
+      "teaching": "教育ツール"
+    },
     "layer1": "第一層",
     "layer1Title": "やってきたこと",
     "core": "地核",

@@ -540,6 +540,18 @@
     "surface": "Surface",
     "surfaceTitle": "In hand",
     "surfaceSub": "What I have carried along.",
+    "skill": {
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "mobile": "Mobile",
+      "devops": "DevOps",
+      "design": "Design",
+      "data": "Data",
+      "network": "Network",
+      "productivity": "Productivity",
+      "ai": "AI Tools",
+      "teaching": "Teaching"
+    },
     "layer1": "Layer one",
     "layer1Title": "What I have done",
     "core": "Core",

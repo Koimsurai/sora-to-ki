@@ -540,6 +540,18 @@
     "surface": "地表",
     "surfaceTitle": "握在手里的",
     "surfaceSub": "一路带着的东西。",
+    "skill": {
+      "frontend": "前端开发",
+      "backend": "后端开发",
+      "mobile": "移动开发",
+      "devops": "部署运维",
+      "design": "设计多媒体",
+      "data": "数据存储",
+      "network": "网络通讯",
+      "productivity": "生产力",
+      "ai": "AI 开发",
+      "teaching": "教学工具"
+    },
     "layer1": "第一层",
     "layer1Title": "做过的事",
     "core": "地心",
