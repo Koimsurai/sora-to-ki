@@ -16,13 +16,13 @@
   padding-top: var(--page-top);
 }
 
-:where(.ar-page) :where(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-side a, .ar-same a) {
+:where(.ar-page) :where(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-tags button, .ar-side a, .ar-same a) {
   all: unset;
   box-sizing: border-box;
   cursor: pointer;
 }
 
-.ar-page :is(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-side a, .ar-same a):focus-visible {
+.ar-page :is(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-tags button, .ar-side a, .ar-same a):focus-visible {
   outline: 1px solid var(--paper-2);
   outline-offset: 3px;
 }
@@ -93,12 +93,39 @@
   color: var(--paper-3);
 }
 
-.ar-tags a {
+.ar-tags button {
   transition: color var(--dur-200) ease;
 }
 
-.ar-tags a:hover {
+.ar-tags button:hover {
   color: var(--paper);
+}
+
+/* 展開著的那個標籤 */
+.ar-tags button[aria-expanded="true"] {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--amber);
+  text-underline-offset: 4px;
+}
+
+/* 同標籤的文章：標籤底下就地展開（跟文末「同在某專欄」同一個樣式） */
+.ar-tag-shelf {
+  margin-top: var(--space-4);
+  animation: ar-shelf var(--dur-400) var(--easing-out);
+}
+
+@keyframes ar-shelf {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--space-1)));
+  }
+}
+
+.ar-tag-none {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-3);
 }
 
 .ar-notice {

@@ -334,7 +334,9 @@
     "lastUpdated": "最近更新",
     "nearbyNav": "邻近文章",
     "font": "字体",
-    "originalText": "原文"
+    "originalText": "原文",
+    "sameTag": "同标 #{{name}}",
+    "sameTagNone": "这个标签只有这一篇。"
   },
   "thinking": {
     "title": "碎念",

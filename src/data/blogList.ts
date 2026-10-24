@@ -128,6 +128,23 @@ export const recentPostsQueryOptions = (limit: number, locale?: string) =>
     staleTime: STALE,
   });
 
+/** 同一個標籤的文章（文章頁點標籤時就地展開的那幾篇） */
+export const postsByTagQueryOptions = (tag: string, locale?: string) =>
+  queryOptions({
+    queryKey: ['posts', 'tag', tag, locale ?? ''],
+    queryFn: async (): Promise<PostListItem[]> => {
+      const res = await fetch(
+        apiUrl(
+          `/api/posts?limit=8&tag=${encodeURIComponent(tag)}${locale ? `&lang=${encodeURIComponent(locale)}` : ''}`,
+        ),
+      );
+      if (!res.ok) throw new Error(`GET /api/posts?tag ${res.status}`);
+      const data = (await res.json()) as PostsListResponse;
+      return data.posts;
+    },
+    staleTime: STALE,
+  });
+
 // 分類／標籤的 post_count 一定要帶跟 /api/posts 同一個 lang：文章清單會濾掉沒該語系譯文的
 // 文章，計數不濾就會出現「側欄寫 4 篇、點進去 0 篇」。locale 也必須進 queryKey，否則切語系
 // 會拿到上一個語系的快取計數。

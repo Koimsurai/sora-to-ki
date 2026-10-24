@@ -6,6 +6,7 @@ import { useLocale } from '@/hooks/useLocale';
 import {
   postDetailQueryOptions,
   recentPostsQueryOptions,
+  postsByTagQueryOptions,
   postReactionsQueryOptions,
   seriesQueryOptions,
 } from '@/data/blogList';
@@ -698,6 +699,64 @@ const SameCategory = ({ currentId, postCategory }: { currentId: string | number;
   );
 };
 
+/**
+ * 頁首的標籤：點一個標籤，底下就地展開「同標這個標籤的其他文章」（最多五篇），再點一次收起來。
+ * 不換頁、不去手記頁篩選（手記頁刻意不做標籤篩選，那會破壞星軌的版面）
+ */
+const TagShelf = ({
+  tags,
+  currentId,
+  label,
+}: {
+  tags: string[];
+  currentId: number;
+  label: (name: string) => string;
+}) => {
+  const { t } = useTranslation();
+  const locale = useLocale();
+  const [open, setOpen] = useState<string | null>(null);
+  const { data: posts = [], isFetching } = useQuery({
+    ...postsByTagQueryOptions(open ?? '', locale),
+    enabled: open !== null,
+  });
+  const others = posts.filter((p) => String(p.id) !== String(currentId)).slice(0, 5);
+  return (
+    <>
+      <div className="ar-tags">
+        {tags.map((name) => (
+          <button
+            key={name}
+            type="button"
+            aria-expanded={open === name}
+            onClick={() => setOpen(open === name ? null : name)}
+          >
+            #{label(name)}
+          </button>
+        ))}
+      </div>
+      {open !== null && (
+        <section className="ar-same ar-tag-shelf" key={open}>
+          <p className="ar-label">{t('blog.sameTag', { name: label(open) })}</p>
+          {others.length ? (
+            <ul>
+              {others.map((p) => (
+                <li key={p.id}>
+                  <time dateTime={p.created_at} suppressHydrationWarning>
+                    {dotDate(parseServerDate(p.created_at), true)}
+                  </time>
+                  <PreviewablePostLink post={p}>{splitTitle(p.title).main}</PreviewablePostLink>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            !isFetching && <p className="ar-tag-none">{t('blog.sameTagNone')}</p>
+          )}
+        </section>
+      )}
+    </>
+  );
+};
+
 /* ══════════════════════════
    SubscribeModal
    訂閱狀態存在 localStorage 的 KOIM_NEWSLETTER key 裡，
@@ -1291,15 +1350,7 @@ function BlogPost() {
               onUnavailable={(name) => setToastMsg(`「${name}」版本尚未提供`)}
             />
           </div>
-          {postTags.length > 0 && (
-            <div className="ar-tags">
-              {postTags.map((name) => (
-                <LocaleLink key={name} to="/blog" search={{ tag: name } as never}>
-                  #{tagLabel(name)}
-                </LocaleLink>
-              ))}
-            </div>
-          )}
+          {postTags.length > 0 && <TagShelf tags={postTags} currentId={post.id} label={tagLabel} />}
         </header>
 
         {/* 非原文語系 → AI 翻譯提示（連回原文） */}

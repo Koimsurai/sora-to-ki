@@ -334,7 +334,9 @@
     "lastUpdated": "최근 업데이트",
     "nearbyNav": "주변 글",
     "font": "글꼴",
-    "originalText": "원문"
+    "originalText": "원문",
+    "sameTag": "#{{name}} 태그의 글",
+    "sameTagNone": "이 태그는 이 글뿐이다."
   },
   "thinking": {
     "title": "혼잣말",
