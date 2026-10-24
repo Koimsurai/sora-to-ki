@@ -52,15 +52,15 @@
   color: var(--paper-2);
 }
 
-/* 收：字退掉，只剩軌道收回中心 */
+/* 收：字退掉，只剩軌道收回中心（星旁的字與中心的站名由畫布那一幀一起淡掉） */
 .fr-head,
 .fr-side,
 .fr-legend,
-.fr-center {
+.fr-list {
   transition: opacity var(--dur-300) ease;
 }
 
-.fr.is-leaving :is(.fr-head, .fr-side, .fr-legend, .fr-center) {
+.fr.is-leaving :is(.fr-head, .fr-side, .fr-legend, .fr-list, .fr-panel) {
   opacity: 0;
 }
 
@@ -77,6 +77,8 @@
   top: var(--page-top);
   height: min(640px, calc(100svh - var(--page-top) - var(--page-bottom)));
   min-height: 460px;
+  /* 預覽星從畫面外飛進來：它的名字不能把頁面撐寬 */
+  overflow: clip;
 }
 
 .fr-sky canvas {
@@ -84,6 +86,11 @@
   inset: 0;
   width: 100%;
   height: 100%;
+}
+
+/* 滑到星或刻點上：可以點 */
+.fr-sky.is-pointing canvas {
+  cursor: pointer;
 }
 
 .fr-center {
@@ -123,10 +130,12 @@
   text-align: right;
 }
 
+/* 名字是對接的按鈕 */
 .fr-name {
   justify-self: start;
   font-size: var(--fs-16);
   line-height: var(--lh-130);
+  color: var(--paper);
 }
 
 .fr-label.is-left .fr-name {
@@ -205,6 +214,138 @@
   opacity: 1;
 }
 
+/* 滑過刻點時那一篇的標題 */
+.fr-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: var(--space-2);
+  max-width: 280px;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-12);
+  color: var(--paper);
+  background: rgba(var(--ground-rgb), 0.8);
+  border: 1px solid var(--rule);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fr-tip time {
+  flex: none;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  line-height: var(--lh-170);
+  color: var(--paper-3);
+}
+
+/* 對接之後展開的面板：寬螢幕在右半邊、窄螢幕在軌道下半部 */
+.fr-panel {
+  position: absolute;
+  top: 10%;
+  right: 0;
+  left: 56%;
+  display: grid;
+  gap: var(--space-2);
+  max-height: 80%;
+  padding: var(--space-5);
+  overflow-y: auto;
+  background: rgba(var(--ground-rgb), 0.8);
+  border: 1px solid var(--rule);
+  outline: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(var(--space-2));
+  transition:
+    opacity var(--dur-300) ease,
+    transform var(--dur-300) var(--easing-out),
+    visibility 0s linear var(--dur-300);
+}
+
+.fr-panel.is-open {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-300) ease,
+    transform var(--dur-300) var(--easing-out);
+}
+
+.fr-panel-tag {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+}
+
+.fr-panel-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--fs-22);
+  font-weight: 600;
+}
+
+.fr-panel-desc {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.fr-panel h2 {
+  margin-top: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  font-weight: 400;
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+}
+
+.fr-panel-posts {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.fr-panel-posts a {
+  display: grid;
+  grid-template-columns: 5ch minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  font-size: var(--fs-13);
+  line-height: var(--lh-150);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.fr-panel-posts time {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  line-height: var(--lh-185);
+  color: var(--paper-3);
+}
+
+.fr-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  font-size: var(--fs-13);
+}
+
+.fr-panel-actions :is(a, button) {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur-200) ease;
+}
+
+.fr-panel-actions :is(a, button):hover,
+.fr-panel-actions :is(a, button):focus-visible {
+  border-color: var(--amber);
+}
+
 .fr-preview {
   position: absolute;
   top: 0;
@@ -230,6 +371,11 @@
   letter-spacing: var(--ls-4);
   color: var(--paper-3);
   pointer-events: none;
+}
+
+/* 對接中圖例讓開（窄螢幕上它跟面板疊在一起） */
+.fr-panel.is-open ~ .fr-legend {
+  opacity: 0;
 }
 
 /* 窄螢幕才出現的清單 */
@@ -459,5 +605,19 @@
 
   .fr-list {
     display: grid;
+  }
+}
+
+/* 跟畫布的窄螢幕門檻同一個（friendsSky 的 NARROW_PX）：對接的船在上方，面板接在下面 */
+@media (max-width: 600px) {
+  .fr-sky {
+    height: 440px;
+  }
+
+  .fr-panel {
+    top: 44%;
+    left: 0;
+    max-height: 56%;
+    padding: var(--space-4);
   }
 }
