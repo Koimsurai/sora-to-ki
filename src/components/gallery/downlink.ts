@@ -28,7 +28,7 @@ export function createStation() {
 
   /** 探測器在畫布上的位置、大小、轉角，以及它發送訊號的那一點 */
   const layout = (w: number, t: number) => {
-    const pw = Math.min(170, w * 0.32);
+    const pw = Math.min(200, w * 0.3);
     const cx = w - pw * 0.55;
     const cy = pw * 0.42 + Math.sin(t * 0.3) * 3;
     const rot = Math.PI + Math.sin(t * 0.12) * 0.06;
@@ -75,8 +75,10 @@ export function createStation() {
     const vx = fx - l.tx;
     const vy = fy - l.ty;
     const ang = Math.atan2(vy, vx);
-    for (let k = 0; k < 6; k++) {
-      const p = (t * 0.35 + k / 6) % 1;
+    // 波前的間距固定（大約 140px 一道），訊號走得越遠道數越多
+    const waves = Math.max(6, Math.round(Math.hypot(vx, vy) / 140));
+    for (let k = 0; k < waves; k++) {
+      const p = (t * 0.35 * (6 / waves) + k / waves) % 1;
       const cx = l.tx + vx * p;
       const cy = l.ty + vy * p;
       const r = 10 + p * 26;
@@ -177,6 +179,54 @@ export function rxStage(t: number): { stage: RxStage; scan: number; color: numbe
   return { stage, scan, color };
 }
 
+/** 0 與 1 的雜訊貼圖有幾張、多大（像素）：輪流換著貼，看起來就是一直在閃 */
+const NOISE_TILES = 4;
+const NOISE_W = 480;
+const NOISE_H = 264;
+/** 雜訊多久換一張（毫秒） */
+const NOISE_SWAP_MS = 70;
+let noise: { font: string; tiles: HTMLCanvasElement[] } | null = null;
+
+/**
+ * 雜訊貼圖：一排一排的 0 與 1，先畫好幾張。每一幀都重新排一整片字太貴
+ * （好幾張同時在收的時候會掉幀），貼現成的圖幾乎不花時間
+ */
+function noiseTiles(font: string) {
+  if (noise?.font === font) return noise.tiles;
+  const tiles = Array.from({ length: NOISE_TILES }, () => {
+    const cv = document.createElement('canvas');
+    cv.width = NOISE_W;
+    cv.height = NOISE_H;
+    const g = cv.getContext('2d');
+    if (!g) return cv;
+    g.font = font;
+    g.textAlign = 'left';
+    g.fillStyle = rgba(INK, 0.22);
+    const cols = Math.ceil(NOISE_W / 5.6);
+    for (let y = 9; y < NOISE_H; y += 11) {
+      let line = '';
+      for (let x = 0; x < cols; x++) line += Math.random() < 0.5 ? '0' : '1';
+      g.fillText(line, 2, y);
+    }
+    return cv;
+  });
+  noise = { font, tiles };
+  return tiles;
+}
+
+/** 一張照片的黑白版：只做一次（每一幀都套濾鏡畫一次也很貴） */
+export function grayscaleOf(img: HTMLImageElement, w: number, h: number, dpr: number) {
+  const cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(w * dpr));
+  cv.height = Math.max(1, Math.round(h * dpr));
+  const g = cv.getContext('2d');
+  if (g) {
+    g.filter = 'grayscale(1) contrast(1.05)';
+    g.drawImage(img, 0, 0, cv.width, cv.height);
+  }
+  return cv;
+}
+
 /**
  * 畫一張照片接收到第 t 秒的樣子：還沒收到的部分是一片閃動的 0 與 1，收到的部分是黑白，
  * 顏色從左往右映射回來；正在收的那一行、正在上色的那一列是一條琥珀色的線
@@ -184,6 +234,7 @@ export function rxStage(t: number): { stage: RxStage; scan: number; color: numbe
 export function drawReception(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
+  gray: HTMLCanvasElement,
   w: number,
   h: number,
   t: number,
@@ -192,30 +243,22 @@ export function drawReception(
   const { scan, color } = rxStage(t);
   ctx.clearRect(0, 0, w, h);
   const rows = Math.floor(scan * h);
-  ctx.font = font;
-  ctx.textAlign = 'left';
-  ctx.fillStyle = rgba(INK, 0.22);
-  const cols = Math.ceil(w / 5.6);
-  for (let y = rows + 9; y < h; y += 11) {
-    let line = '';
-    for (let x = 0; x < cols; x++) line += Math.random() < 0.5 ? '0' : '1';
-    ctx.fillText(line, 2, y);
+  if (rows < h) {
+    const tiles = noiseTiles(font);
+    const tile = tiles[Math.floor((Math.max(0, t) * 1000) / NOISE_SWAP_MS) % tiles.length];
+    for (let y = rows; y < h; y += NOISE_H) {
+      for (let x = 0; x < w; x += NOISE_W) {
+        const sh = Math.min(NOISE_H, h - y);
+        ctx.drawImage(tile, 0, 0, Math.min(NOISE_W, w - x), sh, x, y, Math.min(NOISE_W, w - x), sh);
+      }
+    }
   }
   if (rows > 0) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, w, rows);
-    ctx.clip();
-    ctx.filter = 'grayscale(1) contrast(1.05)';
-    ctx.drawImage(img, 0, 0, w, h);
-    ctx.filter = 'none';
+    ctx.drawImage(gray, 0, 0, gray.width, (rows / h) * gray.height, 0, 0, w, rows);
     if (color > 0) {
-      ctx.beginPath();
-      ctx.rect(0, 0, w * color, rows);
-      ctx.clip();
-      ctx.drawImage(img, 0, 0, w, h);
+      const cw = w * color;
+      ctx.drawImage(img, 0, 0, (cw / w) * img.naturalWidth, (rows / h) * img.naturalHeight, 0, 0, cw, rows);
     }
-    ctx.restore();
   }
   ctx.fillStyle = rgba(AMBER, 0.9);
   if (scan > 0 && scan < 1) ctx.fillRect(0, rows, w, 1);
