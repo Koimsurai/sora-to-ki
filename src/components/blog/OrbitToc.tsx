@@ -7,7 +7,7 @@
 // 換頁也由這裡負責（這一頁的「錨點」就是軌道頂端）：
 //   - 從手記點進來：那一篇的星軌已經被拉成這道軌道，直接畫滿；從別處來：從頂端往下長
 //   - 回手記：軌道被拉回那一篇的星軌；去別處：軌道縮回琥珀點
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { PostListItem } from '@koimsurai/api-types';
@@ -23,6 +23,7 @@ import {
   type OrbitGeom,
 } from '@/lib/articleOrbit';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
+import { peekRetune } from './useRetune';
 import { applyZoom, arcPoint, keepTimeOf, orbitSpan, postArc, skyPostOf, zoomMap, zoomOf, type Arc } from './noteSky';
 import './OrbitToc.css';
 
@@ -85,8 +86,12 @@ export default function OrbitToc({
 
   /** 軌道從什麼時候開始長；-1 是還沒（轉場還藏著這一頁） */
   const bornRef = useRef(-1);
-  /** 從手記拉過來的：一出來就是滿的 */
-  const fullRef = useRef(takeOrbitHandoff('article') === postId);
+  /** 這一頁是怎麼來的：從手記推近（notes）、切語系（retune），或其他 */
+  const [hand] = useState(() =>
+    takeOrbitHandoff('article') === postId ? 'notes' : peekRetune(postId) ? 'retune' : null,
+  );
+  /** 一出來就是滿的：從手記拉過來的，或切語系換過來的（同一篇，軌道不用重長） */
+  const fullRef = useRef(hand !== null);
   const readerRef = useRef<Pt | null>(null);
   /** 被摘要點名的那一章：刻度上一圈一圈往外擴的漣漪 */
   const pingIdRef = useRef<{ i: number; at: number }>({ i: -1, at: 0 });
@@ -165,12 +170,12 @@ export default function OrbitToc({
 
   // 從手記推近過來：內文從軌道那一側攤開（ArticleFrame.css 的 is-unfold）
   useEffect(() => {
-    if (!fullRef.current) return;
+    if (hand !== 'notes') return;
     const page = rootRef.current?.closest('.ar-page');
     page?.classList.add('is-unfold');
     const timer = window.setTimeout(() => page?.classList.remove('is-unfold'), 4000);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [hand]);
 
   useEffect(() => {
     const cv = canvasRef.current;
