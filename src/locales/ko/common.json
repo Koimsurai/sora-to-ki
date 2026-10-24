@@ -295,7 +295,7 @@
     "minutesLeft": "{{count}}분 남음",
     "sameCategory": "같은 「{{name}}」",
     "title": "노트",
-    "subtitle": "지나간 날들 중 적어 둔 것만 궤적으로 남는다.",
+    "subtitle": "별들이 흐르는 동안, 순간의 호기심마다 한 줄기 호를 남긴다.",
     "all": "전체",
     "more": "{{count}}편 더",
     "minutes": "약 {{count}}분",
@@ -361,7 +361,7 @@
   },
   "thinking": {
     "title": "혼잣말",
-    "subtitle": "떠오르는 생각이나 방금 본 것을 가볍게.",
+    "subtitle": "정적을 가르는 잡음 하나를 붙잡는다.",
     "ending": "대개는 그냥 혼잣말.",
     "empty": "아직 아무것도 없어요.",
     "back": "뒤로",
@@ -384,7 +384,7 @@
     "title": "내 장비 · My Setup",
     "description": "Koimsurai의 장비 목록: 메인 PC, 이 사이트를 돌리는 홈 서버, 네트워크와 스마트홈, 그리고 집 안 연결도.",
     "heroTitle": "장비",
-    "subtitle": "책상 위와 케이스 안에 있는 것들.",
+    "subtitle": "부품을 하나하나 맞춘 배가, 나를 더 먼 곳으로 데려간다.",
     "cat": {
       "main-rig": {
         "short": "메인 PC"
@@ -445,7 +445,6 @@
     },
     "sheet": {
       "tabs": "도면",
-      "p10cNote": "측면 패널이 막혀 있어, 부품에 마우스를 올리면 위치를 점선으로 투시합니다",
       "memoryTitle": "본가의 그 컴퓨터",
       "memoryText": "본가에 갔을 때 쓰는 예비 기지. 사진이 없어서, 기억 속 대략적인 모습입니다.",
       "fromMemory": "기억으로",
@@ -556,7 +555,7 @@
     "title": "사진 작품집",
     "description": "Koimsurai 의 사진 작품집. 여행길의 빛과 그림자 기록.",
     "heading": "사진",
-    "subtitle": "멀리서, 한 줄씩 받아 온 빛.",
+    "subtitle": "빛은 먼 길을 건너와, 셔터가 내려앉는 순간에야 멈춘다.",
     "station": "DSN · 지상국",
     "stationLabel": "멀리 있는 탐사선의 신호를 받는 지상국 접시 안테나",
     "passesLabel": "월별 수신 장수: {{month}}에 가장 많은 {{count}}장",
@@ -580,7 +579,7 @@
   },
   "works": {
     "title": "작품",
-    "subtitle": "출발점에서 바깥으로 뻗어 가는 항로: 새로울수록 바깥쪽.",
+    "subtitle": "소리 없는 심우주에, 한 치씩 흔적을 새긴다.",
     "origin": "출발점",
     "legendCore": "크기: 코드 양",
     "legendSurface": "지형: 주 언어",
@@ -590,7 +589,7 @@
   },
   "collection": {
     "title": "컬렉션",
-    "subtitle": "보고, 읽고, 들은 작품은 모두 지구에서 보낸 신호. 지구에서 멀수록 오래전의 것.",
+    "subtitle": "중력이 닿는 곳마다, 나를 비춰 주었던 빛의 조각들.",
     "kind": {
       "anime": "애니",
       "film": "영화",
@@ -681,7 +680,7 @@
   },
   "friends": {
     "title": "친구",
-    "subtitle": "같은 중심을 도는 몇 개의 별.",
+    "subtitle": "저마다의 궤도를 돌다, 가끔 마주치며 서로를 비춘다.",
     "noSignal": "아직 신호가 없습니다",
     "noFeed": "RSS 없음",
     "legendCenter": "중심: 이 사이트",
@@ -715,7 +714,7 @@
   },
   "messages": {
     "title": "방명록",
-    "subtitle": "도착한 신호는 하나도 빠짐없이 끝까지 읽습니다.",
+    "subtitle": "아득한 거리를 건너, 신호는 여전히 이곳에 닿는다.",
     "rx": "RX · 신호 대기",
     "rxCount_one": "RX · 신호 {{count}}개 수신",
     "rxCount_other": "RX · 신호 {{count}}개 수신",
@@ -756,7 +755,7 @@
   },
   "log": {
     "title": "항해 일지",
-    "subtitle": "이 사이트가 어디서 출발해 지금 얼마나 높이 올라왔는지.",
+    "subtitle": "지표를 떠나, 날마다 조금씩 더 높이.",
     "met": "MISSION ELAPSED TIME · {{date}}부터",
     "metValue": "{{days}}일 {{hms}}",
     "total_one": "누적 기여 {{count}}회",
@@ -779,7 +778,7 @@
   },
   "colophon": {
     "title": "이 사이트",
-    "subtitle": "이 책이 어떻게 만들어졌는지, 직접 만져 볼 수도 있습니다.",
+    "subtitle": "별로 위치를 재며, 이 사이트의 눈금을 하나하나 맞춘다.",
     "hint": "별을 누르면 육분의가 그쪽으로 돌아가 잽니다.",
     "star": {
       "material": "재료",
