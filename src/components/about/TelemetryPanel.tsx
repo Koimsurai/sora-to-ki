@@ -1,4 +1,4 @@
-// 設備頁 HOME SERVER 那張圖紙下方的遙測：這台伺服器（跑著這個網站的那台）回傳的幾個即時數字，
+// 設備頁 HOME SERVER 那張圖紙右邊的遙測：這台伺服器（跑著這個網站的那台）回傳的幾個即時數字，
 // 像太空船傳回地面的遙測一樣每 30 秒更新一次。刻意只有溫度、負載、記憶體、功耗（見 backend handlers::telemetry）。
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';

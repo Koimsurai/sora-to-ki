@@ -1,10 +1,11 @@
-// 設備頁（about/Setup）圖紙上用畫布畫的東西：底下的點格與四角的對位記號、滑過零件時機殼上亮起來的那一塊、
-// 拉到零件的引線、網路配線圖與智慧家庭流程圖的線、老家那台憑記憶畫的點狀草圖。只有畫圖，不碰 React。
-import type { Box, Poly, ShapeKind } from './setupSheets';
+// 設備頁（about/Setup）圖紙上用畫布畫的東西：底下的點格與四角的對位記號、工程概念設計圖的引線與尺寸線、
+// 滑過零件時亮起來的那一塊、網路配線圖與智慧家庭流程圖的線、老家那台憑記憶畫的點狀草圖。只有畫圖，不碰 React。
+import type { Box, Callout, Dim, ShapeKind } from './setupSheets';
 
 const TAU = Math.PI * 2;
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
+const GROUND = '10, 10, 12';
 const rgba = (c: string, a: number) => `rgba(${c}, ${a.toFixed(3)})`;
 
 export interface Rect {
@@ -101,9 +102,6 @@ function shape(ctx: CanvasRenderingContext2D, x: number, y: number, bw: number, 
   } else if (kind === 'board') {
     ctx.strokeRect(x + bw * 0.35, y + bh * 0.12, bw * 0.22, bh * 0.2);
     for (let k = 0; k < 3; k++) hline(y + bh * (0.55 + k * 0.12), x + bw * 0.08, x + bw * 0.75);
-  } else if (kind === 'tower') {
-    for (let k = 1; k < 7; k++) hline(y + (bh * k) / 7, x, x + bw);
-    fan(x + bw / 2, y + bh / 2, Math.min(bw, bh) * 0.32);
   } else if (kind === 'ram') {
     ctx.strokeRect(x + bw * 0.55, y, bw * 0.45, bh);
   } else if (kind === 'hdd') {
@@ -116,7 +114,7 @@ function shape(ctx: CanvasRenderingContext2D, x: number, y: number, bw: number, 
   ctx.restore();
 }
 
-/** 機殼線稿染成琥珀色的一份（玻璃側板那台用：滑過時只把多邊形裡的那一部分疊上去） */
+/** 底稿染成琥珀色的一份：滑過零件時只把它範圍裡的那一部分疊上去 */
 export function tintOf(img: HTMLImageElement) {
   const c = document.createElement('canvas');
   c.width = img.naturalWidth;
@@ -131,34 +129,137 @@ export function tintOf(img: HTMLImageElement) {
   return c;
 }
 
+/** 0–1 的進度裡，從 from 到 to 那一段走了多少（0–1） */
+const span = (k: number, from: number, to: number) => Math.max(0, Math.min(1, (k - from) / (to - from)));
+
+/** 尺寸線兩端的箭頭（實心小三角，尖端在 (x, y)，朝 ang 的方向） */
+function arrow(ctx: CanvasRenderingContext2D, x: number, y: number, ang: number) {
+  const s = 6;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - s * Math.cos(ang - 0.3), y - s * Math.sin(ang - 0.3));
+  ctx.lineTo(x - s * Math.cos(ang + 0.3), y - s * Math.sin(ang + 0.3));
+  ctx.closePath();
+  ctx.fill();
+}
+
 /**
- * 看得到裡面的機殼：零件本身的線沿著線稿亮起來（只在那個多邊形裡疊上琥珀色的線稿），
- * 再從零件拉一條引線過去
+ * 工程概念設計圖疊在底稿上的那一層：每個編號圈拉一條引線到它的零件、尺寸線；
+ * 滑過的零件（on）在它的範圍裡疊上琥珀色的底稿、引線換成琥珀色。
+ * k 是換到這張圖紙之後描出來的進度（0–1）：引線先從編號圈長出去，尺寸線再從中間往兩端拉開
  */
-export function drawGlassPart(
+export function drawDrawing(
   ctx: CanvasRenderingContext2D,
-  caseRect: Rect,
+  art: Rect,
   tint: HTMLCanvasElement | null,
-  poly: Poly,
-  from: { x: number; y: number },
+  parts: Callout[],
+  dims: Dim[],
+  on: string | null,
+  k: number,
+  balloonR: number,
 ) {
-  const { x: rx, y: ry, w: rw, h: rh } = caseRect;
-  const pts = poly.map(([u, v]) => [rx + u * rw, ry + v * rh] as const);
-  const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
-  const cy = pts.reduce((a, p) => a + p[1], 0) / pts.length;
-  halo(ctx, cx, cy, Math.max(rw, rh) * 0.22);
-  if (tint) {
-    ctx.save();
+  const at = (p: [number, number]) => ({ x: art.x + p[0] * art.w, y: art.y + p[1] * art.h });
+
+  const hit = parts.find((p) => p.id === on);
+  if (hit) {
+    const c = at(hit.at);
+    halo(ctx, c.x, c.y, art.w * 0.12);
+    if (tint) {
+      ctx.save();
+      ctx.beginPath();
+      for (const poly of hit.poly) {
+        poly.forEach(([u, v], i) => {
+          const q = at([u, v]);
+          if (i) ctx.lineTo(q.x, q.y);
+          else ctx.moveTo(q.x, q.y);
+        });
+        ctx.closePath();
+      }
+      ctx.clip();
+      ctx.shadowColor = rgba(AMBER, 0.9);
+      ctx.shadowBlur = 8;
+      ctx.drawImage(tint, art.x, art.y, art.w, art.h);
+      ctx.restore();
+    }
+  }
+
+  // 引線：從編號圈的邊緣拉到零件上的一個點
+  const grow = span(k, 0.3, 0.7);
+  for (const p of parts) {
+    const b = at(p.balloon);
+    const c = at(p.at);
+    const len = Math.hypot(c.x - b.x, c.y - b.y);
+    if (len <= balloonR || grow <= 0) continue;
+    const ux = (c.x - b.x) / len;
+    const uy = (c.y - b.y) / len;
+    const sx = b.x + ux * balloonR;
+    const sy = b.y + uy * balloonR;
+    const ex = sx + (c.x - sx) * grow;
+    const ey = sy + (c.y - sy) * grow;
+    const lit = p.id === on;
+    ctx.strokeStyle = rgba(lit ? AMBER : INK, lit ? 0.95 : 0.4);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-    ctx.closePath();
-    ctx.clip();
-    ctx.shadowColor = rgba(AMBER, 0.9);
-    ctx.shadowBlur = 8;
-    ctx.drawImage(tint, rx, ry, rw, rh);
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    if (grow >= 1) {
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, lit ? 3 : 2, 0, TAU);
+      ctx.fill();
+    }
+  }
+
+  // 尺寸線：延伸線先出來，尺寸線從中間往兩端拉開，到了兩端才有箭頭與數字
+  const pull = span(k, 0.55, 1);
+  if (pull <= 0) return;
+  ctx.font = '11px "Fira Code", "JetBrains Mono", ui-monospace, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  for (const d of dims) {
+    const a = at(d.a);
+    const b = at(d.b);
+    const ox = d.off[0] * art.w;
+    const oy = d.off[1] * art.h;
+    const a2 = { x: a.x + ox, y: a.y + oy };
+    const b2 = { x: b.x + ox, y: b.y + oy };
+    ctx.strokeStyle = rgba(INK, 0.55);
+    ctx.fillStyle = rgba(INK, 0.75);
+    ctx.lineWidth = 1;
+    if (ox || oy) {
+      // 延伸線：從量的那兩點往外拉，超過尺寸線一點點
+      const ext = 1 + 6 / Math.max(1, Math.hypot(ox, oy));
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(a.x + ox * 0.15, a.y + oy * 0.15);
+      ctx.lineTo(a.x + ox * ext, a.y + oy * ext);
+      ctx.moveTo(b.x + ox * 0.15, b.y + oy * 0.15);
+      ctx.lineTo(b.x + ox * ext, b.y + oy * ext);
+      ctx.stroke();
+    }
+    const mx = (a2.x + b2.x) / 2;
+    const my = (a2.y + b2.y) / 2;
+    const ang = Math.atan2(b2.y - a2.y, b2.x - a2.x);
+    ctx.beginPath();
+    ctx.moveTo(mx + (a2.x - mx) * pull, my + (a2.y - my) * pull);
+    ctx.lineTo(mx + (b2.x - mx) * pull, my + (b2.y - my) * pull);
+    ctx.stroke();
+    if (pull < 1) continue;
+    arrow(ctx, a2.x, a2.y, ang + Math.PI);
+    arrow(ctx, b2.x, b2.y, ang);
+    // 數字沿著尺寸線寫、永遠正著讀
+    const up = ang > Math.PI / 2 || ang < -Math.PI / 2 ? ang + Math.PI : ang;
+    ctx.save();
+    ctx.translate(mx, my);
+    ctx.rotate(up);
+    const tw = ctx.measureText(d.label).width;
+    ctx.fillStyle = rgba(GROUND, 0.9);
+    ctx.fillRect(-tw / 2 - 4, -18, tw + 8, 14);
+    ctx.fillStyle = rgba(INK, 0.9);
+    ctx.fillText(d.label, 0, -5);
     ctx.restore();
   }
-  leader(ctx, from.x, from.y, cx, cy);
 }
 
 /** 看不到裡面的機殼（或老家那台的草圖）：虛線透視出零件的形狀，再拉一條引線 */

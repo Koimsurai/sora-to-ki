@@ -155,62 +155,188 @@
   color: rgba(var(--amber-rgb), 0.8);
 }
 
-/* 零件與機殼：中心點放在 (left, top)；說明掛在線稿下面，不影響置中 */
-.su-part,
-.su-case,
+/* ── 工程概念設計圖：底稿（左上角放在 (left, top)），引線與尺寸線畫在 su-fx 上 ── */
+.su-art {
+  position: absolute;
+  margin: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-300) ease;
+}
+
+.su-art img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* 滑過一個零件時底稿退暗，只剩那個零件（su-fx 上疊的琥珀色）亮著 */
+.su-sheet.has-on .su-art {
+  opacity: 0.45;
+}
+
+/* 編號圈：中心點放在 (left, top)；墊一層紙色，壓在線上也讀得清楚 */
+.su-balloon {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper);
+  background: var(--ground);
+  border: 1px solid var(--paper-2);
+  border-radius: var(--r-round);
+  translate: -50% -50%;
+  transition:
+    color var(--dur-200) ease,
+    border-color var(--dur-200) ease;
+}
+
+.su-balloon[aria-pressed="true"],
+.su-balloon:hover {
+  color: var(--ground);
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.su-balloon:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 3px;
+}
+
+/* 零件表：圖紙右上，一列一個零件（編號、名字與規格、子系統） */
+.su-bom {
+  position: absolute;
+  top: 7%;
+  left: 71%;
+  width: 27%;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.su-bom-head,
+.su-bom-row {
+  display: grid;
+  grid-template-columns: 3ch minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.su-bom-head {
+  padding-bottom: var(--space-1);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.su-bom ol {
+  padding: 0;
+  margin: calc(-1 * var(--space-4)) 0 0;
+  list-style: none;
+}
+
+.su-bom-row {
+  width: 100%;
+  padding: var(--space-1-5) 0;
+  border-bottom: 1px dotted var(--rule);
+  transition: color var(--dur-200) ease;
+}
+
+.su-bom-no {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+.su-bom-part {
+  display: grid;
+  min-width: 0;
+}
+
+.su-bom-part b {
+  overflow: hidden;
+  font-size: var(--fs-13);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.su-bom-part span {
+  overflow: hidden;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.su-bom-tag {
+  display: grid;
+  justify-items: end;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+}
+
+.su-bom-tag em {
+  font-style: normal;
+  color: rgba(var(--amber-rgb), 0.8);
+}
+
+.su-bom-row[aria-pressed="true"] .su-bom-no,
+.su-bom-row[aria-pressed="true"] .su-bom-part b {
+  color: var(--amber);
+}
+
+.su-bom-row:hover .su-bom-part span,
+.su-bom-row[aria-pressed="true"] .su-bom-part span {
+  color: var(--paper-2);
+}
+
+.su-bom-row:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* 底稿上沒畫的其他周邊：零件表底下 */
+.su-others {
+  display: grid;
+  gap: var(--space-px);
+  font-size: var(--fs-12);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+.su-others b {
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.su-others .su-tag {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+}
+
+/* 網路與流程圖的節點：中心點放在 (left, top)；說明掛在線稿下面，不影響置中 */
 .su-node {
   position: absolute;
   margin: 0;
   translate: -50% -50%;
 }
 
-.su-case {
-  top: 42%;
-  left: 50%;
-}
-
-.su-part img,
-.su-case img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.su-part > figcaption,
-.su-case > figcaption,
 .su-node > figcaption {
   position: absolute;
   top: calc(100% + var(--space-2));
   left: 50%;
   text-align: center;
   translate: -50% 0;
-}
-
-/* 零件平常淡一點（線稿是背景的一部分），滑過的那一個亮起來 */
-.su-part {
-  cursor: default;
-  opacity: 0.55;
-  transition: opacity var(--dur-200) ease;
-}
-
-.su-part.is-on,
-.su-part:hover {
-  opacity: 1;
-}
-
-/* 接住滑過與點擊的那一層：蓋在線稿上 */
-.su-part-hit {
-  position: absolute;
-  inset: 0;
-}
-
-.su-part-hit:focus-visible {
-  outline: 1px solid var(--amber);
-  outline-offset: 4px;
-}
-
-.su-sheet.has-on .su-part:not(.is-on) {
-  opacity: 0.3;
 }
 
 /* 網路與流程圖的節點：線稿可有可無，沒有線稿的就只有一行字（中心點就是那行字） */
@@ -272,29 +398,34 @@
   line-height: var(--lh-170);
 }
 
-.su-others {
-  position: absolute;
-  top: 62%;
-  left: 3%;
-  max-width: 34%;
-  white-space: normal;
-  line-height: var(--lh-170);
-}
-
 /* ── 描出來：點落在左上角之後，線稿依離那個角的遠近一個一個由左往右描出來、說明跟著浮出來；
    換圖紙時（元素重新掛上）也照這樣描一次。點還沒落地前先藏著 ── */
-.su-sheet:not(.is-shown) :is(.su-part, .su-case, .su-node) > :is(img, figcaption) {
+.su-sheet:not(.is-shown) :is(.su-art, .su-node) > :is(img, figcaption),
+.su-sheet:not(.is-shown) :is(.su-balloon, .su-bom) {
   opacity: 0;
 }
 
-.su-sheet.is-shown :is(.su-part, .su-case, .su-node) > img {
+.su-sheet.is-shown .su-node > img {
   animation: su-plot 600ms var(--easing-out) both;
   animation-delay: var(--plot, 0ms);
 }
 
-.su-sheet.is-shown :is(.su-part, .su-case, .su-node) > figcaption {
+.su-sheet.is-shown .su-node > figcaption {
   animation: su-fade 400ms ease both;
   animation-delay: calc(var(--plot, 0ms) + 300ms);
+}
+
+/* 設計圖：底稿由左往右描出來，編號圈一個一個浮出來（延遲寫在元素上），零件表跟著淡入 */
+.su-sheet.is-shown .su-art > img {
+  animation: su-plot 900ms var(--easing-out) both;
+}
+
+.su-sheet.is-shown .su-balloon {
+  animation: su-fade 300ms ease both;
+}
+
+.su-sheet.is-shown .su-bom {
+  animation: su-fade 500ms ease 300ms both;
 }
 
 @keyframes su-plot {
@@ -312,67 +443,6 @@
 @keyframes su-fade {
   from {
     opacity: 0;
-  }
-}
-
-/* ── 零重力：兩台主機的零件從機殼裡它裝的位置散開漂出來，之後各自慢慢漂、慢慢轉 ── */
-.su-sheet.is-shown .su-part.is-float {
-  animation: su-burst 1.2s var(--easing-out) both;
-  animation-delay: calc(var(--i) * var(--dur-100) * 0.7);
-}
-
-.su-sheet.is-shown .su-part.is-float > img {
-  animation: su-drift var(--dur) ease-in-out var(--phase) infinite;
-}
-
-@keyframes su-burst {
-  from {
-    opacity: 0;
-    transform: translate(var(--sx), var(--sy)) scale(0.2);
-  }
-
-  30% {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes su-drift {
-  0%,
-  100% {
-    transform: translate(0, 0) rotate(calc(var(--rot) * -1));
-  }
-
-  50% {
-    transform: translate(var(--ax), var(--ay)) rotate(var(--rot));
-  }
-}
-
-/* 對接：滑過的零件，一個分身沿虛線飛回機殼裡它的位置、縮成那一塊的大小，接上之後淡掉 */
-.su-dock {
-  position: absolute;
-  pointer-events: none;
-  translate: -50% -50%;
-  animation: su-dock 700ms var(--easing-standard) forwards;
-}
-
-@keyframes su-dock {
-  from {
-    opacity: 0.9;
-    transform: none;
-  }
-
-  75% {
-    opacity: 0.8;
-  }
-
-  to {
-    opacity: 0;
-    transform: translate(var(--tx), var(--ty)) scale(var(--ts));
   }
 }
 
@@ -405,11 +475,11 @@
   margin: 0;
 }
 
-/* ── 遙測：HOME SERVER 那張的機殼下方 ── */
+/* ── 遙測：HOME SERVER 那張的零件表下面 ── */
 .su-telemetry {
   position: absolute;
-  top: 80%;
-  left: 50%;
+  top: 66%;
+  left: 84.5%;
   display: grid;
   gap: var(--space-2);
   justify-items: center;
@@ -663,7 +733,8 @@
 @media (prefers-reduced-motion: reduce) {
   .su-post-line,
   .su-post-foot,
-  .su-sheet:is(.is-shown, :not(.is-shown)) :is(.su-part, .su-case, .su-node) > :is(img, figcaption) {
+  .su-sheet:is(.is-shown, :not(.is-shown)) :is(.su-art, .su-node) > :is(img, figcaption),
+  .su-sheet:is(.is-shown, :not(.is-shown)) :is(.su-balloon, .su-bom) {
     opacity: 1;
     animation: none;
   }
