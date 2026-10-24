@@ -16,6 +16,21 @@
   padding-top: var(--page-top);
 }
 
+/* 字底下墊一層淡夜色：背景的星星不會落在字上。左右往外漸漸透明、看不出邊，
+   兩側留白的星空照舊；上下也收淡，頁首與文末不會切出一條水平線 */
+.ar-col::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(-1 * var(--space-12));
+  z-index: -1;
+  background: rgba(var(--ground-rgb), 0.85);
+  mask-image:
+    linear-gradient(to right, transparent, #000 var(--space-12), #000 calc(100% - var(--space-12)), transparent),
+    linear-gradient(to bottom, transparent, #000 var(--space-24), #000 calc(100% - var(--space-24)), transparent);
+  mask-composite: intersect;
+  pointer-events: none;
+}
+
 /* 切語系「重新收訊」（blog/useRetune）：掃描線以上是新語系的字，以下先藏著。
    --scan 是線在這一欄裡的位置（JS 逐幀寫） */
 .ar-col.is-retuning {
