@@ -153,10 +153,13 @@
   "notFound": {
     "pageTitle": "404 — Page not found",
     "seoDescription": "Looks like you're lost. This page doesn't exist.",
-    "lostMessage": "Looks like you're drifting between stars.",
-    "subMessage": "This page doesn't exist, or has been removed.",
+    "lostMessage": "Contact lost.",
+    "subMessage": "The last signal came from these coordinates. Nothing since.",
     "backHome": "Back to home",
-    "requested": "You were looking for",
+    "requested": "Last coordinates",
+    "lostFor": "Signal lost for",
+    "toNotes": "Go to notes",
+    "reconnect": "Re-establish contact (home)",
     "search": "Search the site",
     "pageTitleShort": "Page not found"
   },

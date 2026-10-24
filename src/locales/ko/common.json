@@ -153,10 +153,13 @@
   "notFound": {
     "pageTitle": "404 — 페이지를 찾을 수 없음",
     "seoDescription": "길을 잃으셨나요? 이 페이지는 존재하지 않습니다.",
-    "lostMessage": "별들 사이에서 길을 잃은 것 같아요.",
-    "subMessage": "이 페이지는 존재하지 않거나 삭제되었습니다.",
+    "lostMessage": "교신이 끊겼다.",
+    "subMessage": "마지막 신호는 이 좌표에서 왔다. 그 뒤로는 응답이 없다.",
     "backHome": "홈으로 돌아가기",
-    "requested": "찾으시던 위치",
+    "requested": "마지막 좌표",
+    "lostFor": "신호 끊김",
+    "toNotes": "노트로",
+    "reconnect": "교신 재개 (홈으로)",
     "search": "사이트 검색",
     "pageTitleShort": "페이지를 찾을 수 없음"
   },
