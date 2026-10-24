@@ -24,7 +24,7 @@ const STATIC_PAGES: [string, string, string][] = [
   ['/photos', '0.7', 'weekly'],
   ['/watch', '0.6', 'weekly'],
   ['/setup', '0.5', 'monthly'],
-  ['/activity', '0.5', 'daily'],
+  ['/history', '0.5', 'daily'],
   ['/about', '0.7', 'monthly'],
 ];
 

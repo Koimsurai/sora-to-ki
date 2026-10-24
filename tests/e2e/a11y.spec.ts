@@ -68,7 +68,7 @@ const A11Y_STRICT = [
   '/blog/1',
   '/thinking',
   '/watch',
-  '/activity',
+  '/history',
   '/setup',
   '/portfolio',
   '/about-site',

@@ -750,5 +750,28 @@
     "errName": "名前を入力してください",
     "errCaptcha": "答えが違います。問題を変えました",
     "errFailed": "送信できませんでした。少し時間をおいてもう一度"
+  },
+  "log": {
+    "title": "航行日誌",
+    "subtitle": "このサイトがどこから飛び立ち、今どこまで上ってきたか。",
+    "met": "MISSION ELAPSED TIME · {{date}} から",
+    "metValue": "{{days}} 日 {{hms}}",
+    "total_one": "累計 {{count}} コントリビューション",
+    "total_other": "累計 {{count}} コントリビューション",
+    "noContrib": "GitHub のデータが届いていません",
+    "now": "現在",
+    "contrib_one": "{{count}} コントリビューション",
+    "contrib_other": "{{count}} コントリビューション",
+    "legendHeight": "高さ：GitHub コントリビューションの累計",
+    "legendDots": "点：リニューアル（ホバーで内容）",
+    "legendHeat": "下：毎日のコントリビューション、1 列が 1 週間",
+    "statusLabel": "現在の様子",
+    "coding": "今日のコーディング",
+    "codingValue": "{{h}} 時間 {{m}} 分",
+    "codingVia": "WakaTime",
+    "languages": "今週の言語",
+    "playing": "最近遊んでいるもの",
+    "played2w": "直近 2 週間で {{hours}} 時間 · Steam ライブラリ {{owned}} 本",
+    "longest": "一番長く遊んだのは {{name}}、{{hours}} 時間"
   }
 }

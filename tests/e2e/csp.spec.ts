@@ -65,7 +65,7 @@ const PUBLIC_PAGES = [
   '/thinking',
   '/photos',
   '/watch',
-  '/activity',
+  '/history',
   '/friends',
   '/messages',
   '/portfolio',

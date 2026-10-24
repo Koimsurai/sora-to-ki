@@ -37,7 +37,7 @@ const STATIC_PAGES: StaticPage[] = [
     icon: BookOpen,
     keywords: 'collection watch anime 動畫 電影 影集 books 書櫃 閱讀 music spotify 音樂',
   },
-  { label: '活動', path: '/activity', icon: Activity, keywords: 'activity 活動 動態' },
+  { label: '航行日誌', path: '/history', icon: Activity, keywords: 'log history activity 航行日誌 歷史 動態' },
   { label: '軌跡', path: '/about#journey', icon: Compass, keywords: 'journey 旅程 時間線' },
   { label: '留言', path: '/messages', icon: Compass, keywords: 'messages 留言 guestbook contact' },
   { label: '相簿', path: '/photos', icon: Camera, keywords: 'photos 照片 相簿' },

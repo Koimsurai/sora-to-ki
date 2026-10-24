@@ -750,5 +750,28 @@
     "errName": "要填名字",
     "errCaptcha": "算式的答案不對，換了一題",
     "errFailed": "送不出去，稍後再試一次"
+  },
+  "log": {
+    "title": "航行日誌",
+    "subtitle": "這個站從哪裡出發，現在飛到多高。",
+    "met": "MISSION ELAPSED TIME · 自 {{date}}",
+    "metValue": "{{days}} 天 {{hms}}",
+    "total_one": "累積 {{count}} 次貢獻",
+    "total_other": "累積 {{count}} 次貢獻",
+    "noContrib": "沒有收到 GitHub 的資料",
+    "now": "現在",
+    "contrib_one": "{{count}} 次貢獻",
+    "contrib_other": "{{count}} 次貢獻",
+    "legendHeight": "高度：累積的 GitHub 貢獻",
+    "legendDots": "點：改版（滑過看是哪一次）",
+    "legendHeat": "底下：每天的貢獻，一週一行",
+    "statusLabel": "現在的狀態",
+    "coding": "今天寫程式",
+    "codingValue": "{{h}} 小時 {{m}} 分",
+    "codingVia": "WakaTime",
+    "languages": "這週的語言",
+    "playing": "最近在玩",
+    "played2w": "近兩週 {{hours}} 小時 · Steam 收藏 {{owned}} 款",
+    "longest": "玩最久的是 {{name}}，{{hours}} 小時"
   }
 }

@@ -8,12 +8,11 @@ import '@fontsource/instrument-serif/400.css';
 import '@fontsource-variable/fira-code';
 import '../index.css';
 import '../App.css';
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Outlet, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { AuthProvider } from '../contexts/AuthContext';
-import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
 import { localeFromPathname } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { SUPPORTED_LOCALES } from '../lib/locales';
@@ -51,27 +50,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   notFoundComponent: localeWrap(NotFound),
   component: RootComponent,
 });
-
-// 訂閱 + 快照 + SSR 預設值,正是 useSyncExternalStore 的職責。
-// 原本是 useState + effect 裡先 onChange() 再訂閱:那個「先呼叫一次」會在 mount 時
-// 多觸發一次 render(document.hidden 在 render/SSR 期讀不到,只能等 effect)。
-// 換成 useSyncExternalStore 後 client 首次 render 就拿得到真值,不再有補丁式的第二次 render。
-const subscribeVisibility = (cb: () => void) => {
-  document.addEventListener('visibilitychange', cb);
-  return () => {
-    document.removeEventListener('visibilitychange', cb);
-  };
-};
-
-// PageVisibilityProvider 是受控的(需 isVisible)。SSR 預設 visible,client 端追蹤 document.hidden。
-function PageVisibilityBridge({ children }: Readonly<{ children: ReactNode }>) {
-  const isVisible = useSyncExternalStore(
-    subscribeVisibility,
-    () => !document.hidden,
-    () => true, // SSR:沒有 document,一律當可見
-  );
-  return <PageVisibilityProvider isVisible={isVisible}>{children}</PageVisibilityProvider>;
-}
 
 function RootComponent() {
   useServiceWorker();
@@ -199,12 +177,10 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         {/* 全域 providers(對齊舊 App.tsx 疊法)。SEOHead 已退休 → HelmetProvider/react-helmet-async 一併移除。 */}
         <AuthProvider>
           <ParallaxProvider>
-            <PageVisibilityBridge>
-              {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
-                  否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
-                  prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
-              <LocaleProvider locale={locale}>{children}</LocaleProvider>
-            </PageVisibilityBridge>
+            {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
+                否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
+                prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
+            <LocaleProvider locale={locale}>{children}</LocaleProvider>
           </ParallaxProvider>
         </AuthProvider>
         <Scripts />

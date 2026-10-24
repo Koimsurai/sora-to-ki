@@ -34,7 +34,7 @@ const PAGES = [
   '/blog',
   '/thinking',
   '/watch',
-  '/activity', // 第三方資料只有正式站才有 → 這頁是這支腳本存在的主因
+  '/history', // 第三方資料（GitHub、WakaTime、Steam）只有正式站才有 → 這頁是這支腳本存在的主因
   '/setup',
   '/portfolio',
   '/about-site',
