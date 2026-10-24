@@ -1,9 +1,8 @@
 /**
- * 相簿頁 `/photos`。
+ * 照片頁 `/photos`（地面站）。
  *
- * 在這個檔之前，e2e 對相簿只有三件事：頁面 render 得出來（smoke）、
- * 沒有 critical a11y 問題、以及「標籤跟著語系換」。也就是說**沒有任何一條**
- * 走過使用者真正會做的兩個動作——用標籤篩選、以及點開來看大圖。
+ * smoke 與 a11y 只驗得到「render 得出來」，這裡走使用者真正會做的事：點開來看大圖、
+ * 在檢視器裡左右翻、關掉。
  *
  * 資料來自 `backend/tests/fixtures/gallery_manifest.json`（4 張，形狀取自線上 manifest），
  * 由 stack.mjs 用 `GALLERY_MANIFEST_PATH` 指過去。圖檔本身指向 `/nas-images/...`，
@@ -14,8 +13,8 @@
 import { expect, test } from './fixtures';
 import type { Page } from '@playwright/test';
 
-const gallery = (page: Page) => page.locator('.photo-gallery-section');
-const cards = (page: Page) => page.locator('.photo-masonry-item');
+const gallery = (page: Page) => page.locator('.ph');
+const cards = (page: Page) => page.locator('.ph-frame');
 
 /** 等相簿載完——載入中是另一顆 DOM（spinner），直接數卡片會數到 0 就往下跑。 */
 async function waitForGallery(page: Page): Promise<void> {
@@ -26,35 +25,6 @@ async function waitForGallery(page: Page): Promise<void> {
 }
 
 test.describe('相簿', () => {
-  test('標籤分頁篩得掉照片，「全部」按回去會還原', async ({ page }) => {
-    await page.goto('/photos');
-    await waitForGallery(page);
-
-    const total = await cards(page).count();
-    expect(total, 'fixture 是 4 張').toBe(4);
-
-    // 標籤列的第一顆固定是「全部」，後面才是實際標籤。
-    // 元件只把出現 ≥2 次的標籤放進篩選（RAM++ 會產一堆只出現一次的），
-    // fixture 裡符合的是「太陽」與「水」，各 2 張。
-    const tabs = page.locator('.category-tab');
-    await expect(tabs.first(), '第一顆應該是「全部」').toHaveClass(/active/);
-    expect(await tabs.count(), '全部 + 至少一個可篩的標籤').toBeGreaterThan(1);
-
-    const tag = tabs.nth(1);
-    const tagName = (await tag.innerText()).trim();
-    await tag.click();
-    await expect(tag).toHaveClass(/active/);
-
-    // 篩完一定要比全部少，否則這個篩選等於沒作用——而畫面上完全看不出差別
-    await expect
-      .poll(() => cards(page).count(), { message: `按了「${tagName}」之後張數沒有變少`, timeout: 10_000 })
-      .toBeLessThan(total);
-    expect(await cards(page).count(), '篩完不該一張都不剩').toBeGreaterThan(0);
-
-    await tabs.first().click();
-    await expect.poll(() => cards(page).count(), { timeout: 10_000 }).toBe(total);
-  });
-
   test('點照片開得了檢視器，Esc 與關閉鈕都關得掉', async ({ page }) => {
     await page.goto('/photos');
     await waitForGallery(page);

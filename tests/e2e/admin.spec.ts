@@ -68,24 +68,25 @@ test.describe('後台', () => {
 
     // ── 1. 讀者送出留言
     await page.goto('/blog/1');
+    // 面板是焦點進到表單才展開的；hydration 之前那一下會被吃掉，所以重試整段（同 interactions.spec.ts）
     await expect(async () => {
-      await page.locator('.mode-btn--anon').click();
-      await expect(page.locator('input[name="author"]')).toBeVisible({ timeout: 2_000 });
+      await page.locator('textarea[name="content"]').click();
+      await expect(page.locator('form.cf')).toHaveClass(/is-open/, { timeout: 2_000 });
     }).toPass({ timeout: 20_000 });
     await page.locator('input[name="author"]').fill('e2e 讀者');
     await page.locator('textarea[name="content"]').fill(content);
-    const q = (await page.locator('.captcha-q').innerText()).trim();
+    const q = (await page.locator('.cf-captcha span').innerText()).trim();
     const [a, b] = q.match(/\d+/g)!.map(Number);
-    await page.locator('.captcha-input').fill(String(a + b));
+    await page.locator('input[name="captcha"]').fill(String(a + b));
 
     const posted = page.waitForResponse((r) => r.url().includes('/comments') && r.request().method() === 'POST');
-    await page.locator('button.submit-btn').click();
+    await page.locator('button.cf-submit').click();
     expect((await posted).status()).toBeLessThan(400);
-    await expect(page.locator('.form-success')).toBeVisible();
+    await expect(page.locator('.cf-note')).toContainText('審核');
 
     // ── 2. 還沒審核 → 讀者看不到
     await page.reload();
-    await expect(page.locator('.comments-list, .comment-item').first()).not.toContainText(content);
+    await expect(page.locator('.ac')).not.toContainText(content);
 
     // ── 3. 站長登入後台，看得到那則待審核
     await signIn(page);
@@ -99,10 +100,9 @@ test.describe('後台', () => {
     // ── 5. 登出，以讀者的身分再看一次
     await signOut(page);
     await page.goto('/blog/1');
-    await expect(
-      page.locator('.comments-list, .comment-item').first(),
-      '批准之後讀者就該看得到——看不到的話留言等於石沉大海',
-    ).toContainText(content, { timeout: 15_000 });
+    await expect(page.locator('.ac'), '批准之後讀者就該看得到——看不到的話留言等於石沉大海').toContainText(content, {
+      timeout: 15_000,
+    });
   });
 
   /**

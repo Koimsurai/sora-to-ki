@@ -531,7 +531,7 @@ export default function OrbitToc({
                 itemsRef.current[i] = el;
               }}
             >
-              <button type="button" onClick={() => go(h.id)} title={h.text}>
+              <button type="button" data-heading-id={h.id} onClick={() => go(h.id)} title={h.text}>
                 <span className="orbit-toc-t">{h.text}</span>
                 <span className="orbit-toc-min" />
               </button>

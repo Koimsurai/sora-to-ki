@@ -255,44 +255,20 @@ const PROPS = [
 ];
 
 /**
- * 排除隨機產生的裝飾背景。
+ * 排除隨機產生的裝飾，以及每次載入都不一樣的東西。
  *
- * RandomComets / RandomShootingStars / RandomUFOs 產生的元素**數量本身是隨機的**，
- * 所以 DOM 路徑每次載入都不一樣——收進來的話首頁每跑必紅（實測 700 個元素）。
- * 這份清單跟 index.css 裡 `html.fs-active` 那條隱藏規則的對象一致。
+ * 星空與碎念的彗星是隨機產生的，DOM 路徑每次載入都不一樣——收進來的話每跑必紅。
+ * 照片頁的接收層（`.ph-rx`）是一片隨機排的 0 與 1（每次載入重畫一張貼圖、轉成 data URL 當背景），
+ * 而且收到哪裡取決於那一刻的動畫進度，同樣每次都不一樣；收完它就整個拿掉，留下的是一般的圖。
  */
-const DECORATIVE = [
-  '.css-starfield',
-  '.nebula-bg',
-  '.nebula-dust',
-  '.nebula-dim-overlay',
-  '.foreground-stars-container',
-  '.comet',
-  '.shooting-star',
-  '.ufo',
-  '.cursor-trail-canvas',
-  '.intro-overlay',
-  '.starfield-gpu',
-  // ⚠ 熱力圖是**跟著日曆走**的，不是樣式。格線錨在 `new Date()`（見 Blog.tsx 的 `cells`
-  //   與 Activity 的 gridFromEvents），所以每過一天就有一格從「未來」翻成「過去」
-  //   （`heatmap-level--1` → `heatmap-level-0`），背景色跟著變。
-  //
-  //   後果是**基準檔每天都會過期**：2026-08-05 產的基準，08-06 一跑就報「1 個元素變了」，
-  //   而那一格正是「今天」。追查過一輪才發現不是任何一次改動造成的——
-  //   guard 本身把一個時間相依的東西收進了快照。
-  //
-  //   排除它不會漏掉真回歸：格子的配色規則若真的改了，會是**整排**一起變，
-  //   而 CSS 檔的改動本來就會反映在別的元素上。
-  '.heatmap-cell',
-  '.heatmap-day',
-];
+const DECORATIVE = ['.css-starfield', '.comet', '.ph-rx'];
 
 /**
  * 等 DOM 不再變動。
  *
- * `networkidle` + 固定 sleep 不夠：首頁的 Hero 有 JS 打字機（useTypingEffect，
- * 延遲 900ms 開始、每字 80ms），而**CSS 的 `animation:none` 停不掉 setInterval**。
- * 早收的話會抓到打到一半的 DOM，元素路徑跟著位移——實測首頁因此間歇性報 34~688
+ * `networkidle` + 固定 sleep 不夠：有些頁面的 DOM 是 JS 計時器逐步長出來的
+ * （當年是首頁 Hero 的打字機），而**CSS 的 `animation:none` 停不掉 setInterval**。
+ * 早收的話會抓到長到一半的 DOM，元素路徑跟著位移——實測首頁因此間歇性報 34~688
  * 個「變化」，而那是純粹的假紅。
  *
  * 用「連續 N 次快照相同」而不是固定等待：慢的機器等久一點，快的機器不用白等。
