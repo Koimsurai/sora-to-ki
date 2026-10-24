@@ -1,5 +1,6 @@
 // 文末的回應：一小塊夜空，三種回應各聚成一團星座，每一個回應是裡面的一顆星。
 // 按一下，琥珀點從按鈕飛上去，落進那一團變成新的一顆；再按一下收回，那顆星淡掉。
+// 還沒有人按的位置是空心的小圈（預留的位置），一團至少畫出幾個，沒人按的時候也不會空一塊。
 // 資料沿用原本的 emoji 反應（post_reactions），六種歸成三團：喜歡 ❤️😂🎉、有幫助 👍🚀、想知道更多 🤔，
 // 按下去送的是那一團的第一個；舊的數字照樣算進各自那一團。數量與自己按過哪些由文章頁的 useReactions 傳進來。
 import { useEffect, useRef } from 'react';
@@ -18,6 +19,8 @@ const GROUPS: [string, string[]][] = [
 ];
 /** 一團最多畫幾顆（再多只是數字變大） */
 const MAX_STARS = 60;
+/** 一團至少畫出幾個位置：還沒亮的是空心的小圈，像星圖上預留的位置 */
+const SLOTS = 9;
 /** 琥珀點飛上去要多久（毫秒） */
 const FLIGHT_MS = 750;
 /** 收回時那顆星淡掉要多久（毫秒） */
@@ -116,11 +119,12 @@ export default function ReactionSky({ counts, mine, toggle }: Props) {
         const flying = flightsRef.current.filter((f) => f.g === g).length;
         const n = Math.min(MAX_STARS, Math.max(0, total - flying));
         const fading = fadesRef.current.find((f) => f.g === g);
-        const pts = Array.from({ length: n + (fading ? 1 : 0) }, (_, k) => starAt(k, g * 1.7));
-        // 星座的線：每一顆連到離它最近的、比它早的那一顆，長成一棵樹，線不會交叉成一團
-        ctx.strokeStyle = `rgba(${INK}, 0.14)`;
+        const lit = n + (fading ? 1 : 0);
+        // 還沒亮的預留位置也算進來：一團至少 SLOTS 個點，沒人按的時候也看得出那裡是一團星座
+        const pts = Array.from({ length: Math.max(lit, SLOTS) }, (_, k) => starAt(k, g * 1.7));
+        // 星座的線：每一顆連到離它最近的、比它早的那一顆，長成一棵樹，線不會交叉成一團；
+        // 連到還沒亮的位置的那幾條是很淡的點線
         ctx.lineWidth = 1;
-        ctx.beginPath();
         for (let k = 1; k < pts.length; k++) {
           let near = 0;
           let best = Infinity;
@@ -131,10 +135,22 @@ export default function ReactionSky({ counts, mine, toggle }: Props) {
               near = j;
             }
           }
+          const ghost = k >= lit;
+          ctx.setLineDash(ghost ? [1, 3] : []);
+          ctx.strokeStyle = `rgba(${INK}, ${ghost ? 0.2 : 0.16})`;
+          ctx.beginPath();
           ctx.moveTo(c.x + pts[near][0], c.y + pts[near][1]);
           ctx.lineTo(c.x + pts[k][0], c.y + pts[k][1]);
+          ctx.stroke();
         }
-        ctx.stroke();
+        ctx.setLineDash([]);
+        for (let k = lit; k < pts.length; k++) {
+          ctx.strokeStyle = `rgba(${INK}, 0.4)`;
+          ctx.beginPath();
+          ctx.arc(c.x + pts[k][0], c.y + pts[k][1], 2, 0, TAU);
+          ctx.stroke();
+        }
+        pts.length = lit;
         pts.forEach(([x, y], k) => {
           const fadeA = fading && k === pts.length - 1 ? 1 - (now - fading.at) / FADE_MS : 1;
           const tw = 0.65 + 0.35 * Math.sin(tt * 1.3 + k * 1.9 + g);
