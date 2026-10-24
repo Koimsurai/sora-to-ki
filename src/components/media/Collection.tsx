@@ -40,9 +40,16 @@ const TRACK_RANGE = 'medium_term';
 const DECADE_VH = 0.5;
 /** 滑鼠離一點多近才算滑到它（像素） */
 const NEAR_PX = 14;
-/** 進場：琥珀點落地後，鏡頭從深空俯衝回地球要多久（毫秒）；從多遠開始（比最遠的訊號再遠一點） */
-const DIVE_MS = 2100;
-const DIVE_FROM = 1.08;
+/**
+ * 進場分兩段，中間不停：
+ * 頁面一出現，鏡頭在比最遠的訊號再遠三個多數量級的地方（DIVE_FROM），整片訊號只是一個點；
+ * 琥珀點還在飛的時候，鏡頭已經慢慢往前推（DRIFT），那個點長成一小片，琥珀點落在它的中心。
+ * 落地之後接著俯衝回地球（DIVE_MS），起步的速度跟前一段接上
+ */
+const DIVE_FROM = 1.35;
+const DRIFT = 0.3;
+const DRIFT_MS = 700;
+const DIVE_MS = 2000;
 /** 俯衝到一半之後，地標名字、圖例才淡進來（毫秒） */
 const BLOOM_MS = 900;
 /** 退場：鏡頭收回地球要多久、波前從台灣擴出去要多久（毫秒）；點發射出去的速度（px/ms） */
@@ -186,6 +193,11 @@ export default function Collection() {
   const dotRef = useRef({ x: 0, y: 0 });
   /** 退場開始的時間與那時鏡頭在哪裡；null 是還沒要離開 */
   const exitRef = useRef<{ at: number; from: number } | null>(null);
+  /**
+   * 進場與捲動的狀態：頁面第一次畫的時候、點落地的時候、落地那一刻鏡頭在哪與往前推的速度（每毫秒）、
+   * 捲軸位置（帶一點慣性；鏡頭位置 sRef 是它再疊上進場、退場）
+   */
+  const motionRef = useRef({ mounted: -1, born: -1, landS: DIVE_FROM, landV: 0, scrolled: 0 });
   const [hovered, setHovered] = useState<Signal | null>(null);
   const hoverRef = useRef<string | null>(null);
 
@@ -253,9 +265,8 @@ export default function Collection() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let raf = 0;
     let last = 0;
-    let born = -1;
-    /** 捲軸位置（帶一點慣性）；鏡頭位置 sRef 是它再疊上進場、退場 */
-    let scrolled = 0;
+    // 進場的計時放在 ref：資料載到之後天空會重建、這個 effect 會重跑，進場不能因此重來一次
+    const m = motionRef.current;
     let pointer: { x: number; y: number } | null = null;
     // 每幀都會寫字的地方：字沒變就不動 DOM
     const texts = new Map<HTMLElement, string>();
@@ -309,9 +320,16 @@ export default function Collection() {
 
     const frame = (nowMs: number) => {
       raf = requestAnimationFrame(frame);
-      // 換頁轉場的點還在飛：鏡頭先停在深空，等它落地才俯衝回地球
+      // 換頁轉場的點還在飛：鏡頭從深空慢慢往前推，等它落地再接著俯衝回地球
       const arriving = isArriving();
-      if (!arriving && born < 0) born = nowMs;
+      if (m.mounted < 0) m.mounted = nowMs;
+      if (!arriving && m.born < 0) {
+        m.born = nowMs;
+        const k = Math.exp(-(nowMs - m.mounted) / DRIFT_MS);
+        m.landS = DIVE_FROM - DRIFT * (1 - k);
+        m.landV = (DRIFT / DRIFT_MS) * k;
+      }
+      const born = m.born;
       const dt = last ? nowMs - last : 16;
       if (dt < 16) return;
       last = nowMs;
@@ -325,10 +343,18 @@ export default function Collection() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const travel = Math.max(1, page.offsetHeight - h);
       const target = Math.min(1, Math.max(0, -page.getBoundingClientRect().top / travel));
-      scrolled = reduce ? target : scrolled + (target - scrolled) * (1 - Math.exp(-dt / FOLLOW_MS));
-      // 進場：從比最遠的訊號還遠的地方俯衝回捲軸的位置（對數尺度，中段最快）
-      const dive = reduce ? 0 : born < 0 ? 1 : 1 - easeInOut(clamp01((nowMs - born) / DIVE_MS));
-      let s = scrolled + dive * (DIVE_FROM - scrolled);
+      m.scrolled = reduce ? target : m.scrolled + (target - m.scrolled) * (1 - Math.exp(-dt / FOLLOW_MS));
+      const scrolled = m.scrolled;
+      let s: number;
+      if (reduce) s = scrolled;
+      else if (born < 0) s = DIVE_FROM - DRIFT * (1 - Math.exp(-(nowMs - m.mounted) / DRIFT_MS));
+      else {
+        // 落地後俯衝回捲軸的位置：Hermite 曲線，起點與起速接上漂移那一段，終點停穩
+        const p = clamp01((nowMs - born) / DIVE_MS);
+        const p2 = p * p;
+        const p3 = p2 * p;
+        s = (2 * p3 - 3 * p2 + 1) * m.landS - (p3 - 2 * p2 + p) * m.landV * DIVE_MS + (3 * p2 - 2 * p3) * scrolled;
+      }
       // 退場：鏡頭收回地球，快收完時波前從台灣發出去
       const exit = exitRef.current;
       let launch: number | undefined;
