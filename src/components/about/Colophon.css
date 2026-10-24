@@ -493,78 +493,107 @@
   text-underline-offset: 4px;
 }
 
-/* ── 問答：天上的一顆星，對準它目鏡裡就是這份清單（照提案：一題一行，點開展開）。
-   題目多、內容長：目鏡裡自己捲，整頁不用往下捲 ── */
+/* ── 問答：天上的一顆星，對準它目鏡裡就是問答。左邊題目、右邊答案，點題目換答案——
+   一題一題往下展開的話，打開一題目鏡就往上頂到星星，所以改成兩欄、高度固定。
+   樣式照提案：題目前一個空心小圓，看著的那一題變成琥珀實心點 ── */
+.cl-eyepiece.is-qa {
+  width: min(760px, 56vw);
+}
+
 .cl-qa {
   display: grid;
-  max-height: 46vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule) transparent;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  column-gap: var(--space-8);
+  align-items: start;
 }
 
-/* 展開與收起：內容區的高度從 0 滑到內容的高度（支援的瀏覽器才滑，不支援的照樣直接打開），字跟著浮出來 */
-.cl-qa {
-  interpolate-size: allow-keywords;
-}
-
-.cl-qa details {
-  border-bottom: 1px dotted var(--rule);
-}
-
-.cl-qa details::details-content {
-  block-size: 0;
-  overflow-y: clip;
-  transition:
-    block-size var(--dur-400) var(--easing-out),
-    content-visibility var(--dur-400) allow-discrete;
-}
-
-.cl-qa details[open]::details-content {
-  block-size: auto;
-}
-
-.cl-qa details[open] > :not(summary) {
-  animation: cl-in var(--dur-500) var(--easing-out) both;
-}
-
-.cl-qa summary {
-  padding: var(--space-2-5) 0;
-  font-size: var(--fs-14);
-  cursor: pointer;
+.cl-qa-list {
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
-.cl-qa summary::before {
-  content: "+";
-  display: inline-block;
-  width: 2ch;
-  font-family: var(--mono-font);
-  color: var(--paper-3);
+.cl-qa-list button {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) 0;
+  border-bottom: 1px dotted var(--rule);
+  font-size: var(--fs-14);
+  line-height: var(--lh-150);
+  color: var(--paper-2);
+  cursor: pointer;
+  transition: color var(--dur-200) ease;
 }
 
-.cl-qa details[open] summary::before {
-  content: "−";
+.cl-qa-list button::before {
+  content: "";
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-full);
+  translate: 0 -2px;
+  transition:
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease;
 }
 
-.cl-qa details p {
-  margin: 0 0 var(--space-3) 2ch;
-  font-size: var(--fs-13);
+.cl-qa-list button:hover,
+.cl-qa-list button:focus-visible,
+.cl-qa-list button[aria-selected="true"] {
+  color: var(--paper);
+}
+
+.cl-qa-list button[aria-selected="true"]::before {
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.cl-qa-list button:focus-visible {
+  outline: 1px solid var(--paper-3);
+  outline-offset: 2px;
+}
+
+/* 換一題：答案淡進來（key 換了，動畫重來） */
+.cl-qa-answer {
+  display: grid;
+  gap: var(--space-3);
+  animation: cl-in var(--dur-500) var(--easing-out) both;
+}
+
+.cl-qa-answer p {
+  margin: 0;
+  font-size: var(--fs-14);
   line-height: var(--lh-185);
   color: var(--paper-2);
 }
 
-.cl-qa code {
+.cl-qa-answer code {
   font-family: var(--mono-font);
   font-size: 0.9em;
   color: var(--paper);
 }
 
-.cl-qa details a {
+.cl-qa-answer a:not(.link-card) {
   text-decoration: underline;
   text-decoration-color: var(--rule);
   text-underline-offset: 3px;
+}
+
+/* 窄螢幕：題目在上、答案在下 */
+@media (max-width: 760px) {
+  .cl-eyepiece.is-qa {
+    width: auto;
+  }
+
+  .cl-qa {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-5);
+  }
 }
 
 /* 收：字退掉，只剩點從那顆星飛走 */
