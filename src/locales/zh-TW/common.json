@@ -674,5 +674,30 @@
         "scale-year": "1 光年 · 一年前"
       }
     }
+  },
+  "friends": {
+    "title": "朋友",
+    "subtitle": "繞著同一個中心轉的幾顆星。",
+    "noSignal": "還沒有收到訊號",
+    "noFeed": "沒有 RSS",
+    "legendCenter": "中心：這個站",
+    "legendSignal": "訊號線：{{days}} 天內有新文章",
+    "legendDim": "越暗：越久沒更新",
+    "dockLabel": "兩艘正要對接的船，中間有一道訊號",
+    "cardTitle": "本站資料",
+    "siteDesc": "一個工程師的個人空間",
+    "formTitle": "成為下一顆",
+    "fieldName": "名字",
+    "fieldNameHint": "你的網站名稱",
+    "fieldUrl": "網址",
+    "fieldRss": "RSS（選填）",
+    "fieldDesc": "一句話",
+    "submit": "送出申請",
+    "sent": "已打開郵件程式。沒有跳出來的話，寄到",
+    "rulesTitle": "入軌條件",
+    "rule1": "網站能正常瀏覽，有自己的網域與 HTTPS（免費子網域也可以）。",
+    "rule2": "有原創內容。轉貼站、純廣告、SEO 農場不交換。",
+    "rule3": "有 RSS 的話，你寫了新文章這裡會收到訊號。",
+    "rule4": "先在你的站掛上這裡的連結，我會更快回覆。"
   }
 }

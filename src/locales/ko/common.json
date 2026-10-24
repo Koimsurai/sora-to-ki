@@ -674,5 +674,30 @@
         "scale-year": "1광년 · 1년 전"
       }
     }
+  },
+  "friends": {
+    "title": "친구",
+    "subtitle": "같은 중심을 도는 몇 개의 별.",
+    "noSignal": "아직 신호가 없습니다",
+    "noFeed": "RSS 없음",
+    "legendCenter": "중심: 이 사이트",
+    "legendSignal": "신호선: {{days}}일 안에 새 글",
+    "legendDim": "어두울수록: 업데이트가 오래됨",
+    "dockLabel": "도킹 직전의 두 우주선, 그 사이를 오가는 신호",
+    "cardTitle": "이 사이트 정보",
+    "siteDesc": "한 엔지니어의 개인 공간",
+    "formTitle": "다음 별이 되기",
+    "fieldName": "이름",
+    "fieldNameHint": "사이트 이름",
+    "fieldUrl": "URL",
+    "fieldRss": "RSS (선택)",
+    "fieldDesc": "한 줄 소개",
+    "submit": "신청 보내기",
+    "sent": "메일 앱을 열었습니다. 열리지 않았다면 여기로 보내 주세요:",
+    "rulesTitle": "궤도 진입 조건",
+    "rule1": "사이트가 정상적으로 열리고, 자체 도메인과 HTTPS가 있을 것 (무료 서브도메인도 가능).",
+    "rule2": "직접 쓴 콘텐츠가 있을 것. 퍼온 글 사이트, 광고 사이트, SEO 농장은 교환하지 않습니다.",
+    "rule3": "RSS가 있으면 새 글을 올릴 때마다 여기에 신호가 도착합니다.",
+    "rule4": "먼저 당신의 사이트에 이곳 링크를 걸어 주시면 더 빨리 답장합니다."
   }
 }

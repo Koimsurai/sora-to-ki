@@ -674,5 +674,30 @@
         "scale-year": "1 light-year · a year ago"
       }
     }
+  },
+  "friends": {
+    "title": "Friends",
+    "subtitle": "A few stars circling the same center.",
+    "noSignal": "No signal yet",
+    "noFeed": "No RSS",
+    "legendCenter": "Center: this site",
+    "legendSignal": "Signal line: new post within {{days}} days",
+    "legendDim": "Dimmer: longer since the last update",
+    "dockLabel": "Two ships about to dock, a signal passing between them",
+    "cardTitle": "This site",
+    "siteDesc": "A developer's personal corner",
+    "formTitle": "Be the next one",
+    "fieldName": "Name",
+    "fieldNameHint": "Your site's name",
+    "fieldUrl": "URL",
+    "fieldRss": "RSS (optional)",
+    "fieldDesc": "One line",
+    "submit": "Send request",
+    "sent": "Your mail app should be open. If it didn't show up, write to",
+    "rulesTitle": "Before entering orbit",
+    "rule1": "The site loads, has its own domain and HTTPS (a free subdomain is fine).",
+    "rule2": "Original content. No repost sites, ad farms or SEO farms.",
+    "rule3": "If you have RSS, a signal shows up here whenever you post.",
+    "rule4": "Link here from your site first and I'll reply sooner."
   }
 }

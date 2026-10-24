@@ -674,5 +674,30 @@
         "scale-year": "1 光年 · 一年前"
       }
     }
+  },
+  "friends": {
+    "title": "朋友",
+    "subtitle": "绕着同一个中心转的几颗星。",
+    "noSignal": "还没有收到信号",
+    "noFeed": "没有 RSS",
+    "legendCenter": "中心：这个站",
+    "legendSignal": "信号线：{{days}} 天内有新文章",
+    "legendDim": "越暗：越久没更新",
+    "dockLabel": "两艘正要对接的船，中间有一道信号",
+    "cardTitle": "本站资料",
+    "siteDesc": "一个工程师的个人空间",
+    "formTitle": "成为下一颗",
+    "fieldName": "名字",
+    "fieldNameHint": "你的网站名称",
+    "fieldUrl": "网址",
+    "fieldRss": "RSS（选填）",
+    "fieldDesc": "一句话",
+    "submit": "送出申请",
+    "sent": "已打开邮件程序。没有弹出来的话，寄到",
+    "rulesTitle": "入轨条件",
+    "rule1": "网站能正常浏览，有自己的域名与 HTTPS（免费子域名也可以）。",
+    "rule2": "有原创内容。转帖站、纯广告、SEO 农场不交换。",
+    "rule3": "有 RSS 的话，你写了新文章这里会收到信号。",
+    "rule4": "先在你的站挂上这里的链接，我会更快回复。"
   }
 }

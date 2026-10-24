@@ -1,0 +1,463 @@
+/* 朋友（about/Friends）：左邊是軌道（畫布 about/friendsSky + 疊在上面的字），右邊一欄是對接插圖、
+   本站資料、申請表與入軌條件。窄螢幕上下疊，軌道在上 */
+
+.fr {
+  display: grid;
+  gap: var(--space-8);
+  max-width: 1280px;
+  padding: var(--page-top) var(--space-10) var(--page-bottom);
+  margin: 0 auto;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+:where(.fr) :where(a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+:where(.fr) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+:where(.fr) :where(h2) {
+  margin: 0;
+}
+
+.fr-head p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.fr-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.fr-title h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.fr-latin {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+/* 收：字退掉，只剩軌道收回中心 */
+.fr-head,
+.fr-side,
+.fr-legend,
+.fr-center {
+  transition: opacity var(--dur-300) ease;
+}
+
+.fr.is-leaving :is(.fr-head, .fr-side, .fr-legend, .fr-center) {
+  opacity: 0;
+}
+
+.fr-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--space-10);
+  align-items: start;
+}
+
+/* ── 軌道 ── */
+.fr-sky {
+  position: sticky;
+  top: var(--page-top);
+  height: min(640px, calc(100svh - var(--page-top) - var(--page-bottom)));
+  min-height: 460px;
+}
+
+.fr-sky canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.fr-center {
+  position: absolute;
+  top: calc(50% + var(--space-6));
+  left: 50%;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.fr-labels {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.fr-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 300px;
+  opacity: 0;
+  pointer-events: auto;
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
+}
+
+.fr-label.is-left {
+  text-align: right;
+}
+
+.fr-name {
+  justify-self: start;
+  font-size: var(--fs-16);
+  line-height: var(--lh-130);
+}
+
+.fr-label.is-left .fr-name {
+  justify-self: end;
+}
+
+.fr-host {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+.fr-latest {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+}
+
+.fr-label.is-left .fr-latest {
+  justify-content: flex-end;
+}
+
+.fr-latest time {
+  flex: none;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  line-height: var(--lh-170);
+  color: var(--paper-3);
+}
+
+.fr-latest span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fr-latest.is-quiet {
+  color: var(--paper-3);
+}
+
+.fr a:hover {
+  color: var(--paper);
+}
+
+.fr-name:focus-visible,
+.fr-latest:focus-visible {
+  outline: none;
+  text-decoration: underline;
+  text-decoration-color: var(--amber);
+  text-underline-offset: 4px;
+}
+
+/* 介紹掛在名字上方、不佔版面：滑過才浮出來 */
+.fr-desc {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  width: max-content;
+  max-width: 300px;
+  margin-bottom: var(--space-1);
+  font-size: var(--fs-12);
+  color: var(--paper);
+  opacity: 0;
+  transition: opacity var(--dur-300) ease;
+}
+
+.fr-label.is-left .fr-desc {
+  right: 0;
+  left: auto;
+}
+
+.fr-label.is-on .fr-desc {
+  opacity: 1;
+}
+
+.fr-preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: var(--fs-14);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fr-legend {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+  pointer-events: none;
+}
+
+/* 窄螢幕才出現的清單 */
+.fr-list {
+  display: none;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.fr-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.fr-list li > a:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.fr-list b {
+  font-size: var(--fs-16);
+  font-weight: 600;
+}
+
+.fr-list-desc {
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+}
+
+/* ── 右欄 ── */
+.fr-side {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.fr-dock {
+  position: relative;
+  height: 150px;
+}
+
+.fr-dock canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fr-side h2 {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  font-weight: 400;
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+}
+
+.fr-card {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.fr-card b {
+  font-size: var(--fs-18);
+  font-weight: 600;
+}
+
+.fr-card dl {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+}
+
+.fr-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.fr-card dt {
+  color: var(--paper-3);
+}
+
+.fr-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  color: var(--paper-2);
+  user-select: all;
+}
+
+.fr-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* 表單的標題是一句話，不是小標 */
+.fr-form h2 {
+  font-family: var(--serif);
+  font-size: var(--fs-18);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--paper);
+}
+
+.fr-input {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.fr-input span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.fr-input input {
+  padding: var(--space-1) 0;
+  font: inherit;
+  font-size: var(--fs-16);
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  outline: none;
+  appearance: none;
+}
+
+.fr-input input:focus {
+  border-bottom-color: var(--paper-2);
+}
+
+.fr-input input::placeholder {
+  color: var(--paper-3);
+}
+
+.fr-submit {
+  justify-self: start;
+  padding: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
+  font-size: var(--fs-14);
+  color: var(--paper);
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur-200) ease;
+}
+
+.fr-submit:hover,
+.fr-submit:focus-visible {
+  border-color: var(--amber);
+}
+
+.fr-sent {
+  display: block;
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+}
+
+.fr-sent a {
+  font-family: var(--mono-font);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+.fr-rules {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.fr-rules ol {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-6);
+  margin: 0;
+  list-style: decimal-leading-zero;
+  font-size: var(--fs-13);
+  line-height: var(--lh-160);
+  color: var(--paper-2);
+}
+
+.fr-rules li::marker {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+@media (max-width: 900px) {
+  .fr-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fr-sky {
+    position: relative;
+    top: auto;
+    height: 460px;
+  }
+}
+
+@media (max-width: 760px) {
+  .fr {
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
+  }
+
+  .fr-sky {
+    height: 400px;
+    min-height: 0;
+  }
+
+  /* 星旁邊只留名字，其餘列在底下的清單 */
+  .fr-label :is(.fr-host, .fr-latest, .fr-desc) {
+    display: none;
+  }
+
+  .fr-list {
+    display: grid;
+  }
+}
