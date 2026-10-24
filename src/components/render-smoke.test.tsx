@@ -28,9 +28,18 @@ import { renderWithProviders } from '@/test-utils/renderWithProviders';
  */
 const PROPS: Record<string, Record<string, unknown>> = {
   'blog/OrbitToc.tsx': { postId: 1, headings: [], contentRef: { current: null } },
-  'blog/ThoughtCard.tsx': {
+  'blog/MomentPost.tsx': {
     th: { id: 1, content: '測試碎念', created_at: '2026-01-01 00:00:00', likes: 0, dislikes: 0 },
   },
+  'blog/ArticleComments.tsx': { postId: 1 },
+  'blog/CommentForm.tsx': {
+    base: 'posts',
+    postId: 1,
+    replyTo: null,
+    onCancelReply: vi.fn(),
+    textRef: { current: null },
+  },
+  'blog/SignalLog.tsx': { comments: [], liked: [], onLike: vi.fn(), onReply: vi.fn() },
   'gallery/GalleryThumbnail.tsx': {
     photos: [],
     activeIndex: 0,

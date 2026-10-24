@@ -88,8 +88,8 @@ docH / scrollY 就追得到源頭。
 | `layout/` | 站台外框：AppShell、Header／MobileNav、Footer、命令面板、右鍵選單 |
 | `backdrop/` | 太空背景與轉場：SpaceBackdropShell 那條線底下的所有特效 |
 | `home/` | 首頁：MainPage、Hero、HomeLately |
-| `about/` | 關於／資訊頁：AboutPage 樹、以及四個共用 InfoPage 的頁面 |
-| `blog/` | 文章與想法：Blog、BlogPost、Comments、Thinking |
+| `about/` | 關於與資訊頁：關於、作品、設備、朋友、留言、航行日誌、此站點 |
+| `blog/` | 手記、文章與碎念：Notes、BlogPost、Thinking；留言共用件（CommentForm、SignalLog）也在這裡 |
 | `mdx/` | MDX 渲染與所有 block 元件（新增 block 要同時改 `mdx-blocks-registry.ts`） |
 | `gallery/` | 照片：PhotoGallery、PhotoViewer、EXIF、圖片檢視 |
 | `media/` | 收藏庫：Watch、Music、Bookshelf、Activity |

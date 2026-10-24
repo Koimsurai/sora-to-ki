@@ -450,6 +450,99 @@
   cursor: default;
 }
 
+/* ── 單則（blog/ThinkingDetail）：彗核是這一則（字大一點），留言是彗尾上的碎屑，彗尾末端是送出列 ── */
+.mo-back {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.mo-back:hover {
+  color: var(--paper);
+}
+
+.mo-post.is-core {
+  width: min(460px, calc(100% - 64px));
+}
+
+.mo-post.is-core .mo-text {
+  font-size: var(--fs-22);
+  line-height: var(--lh-160);
+}
+
+.mo-bit .mo-post-head {
+  font-size: var(--fs-12);
+}
+
+.mo-bit-author {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+.mo-bit-admin {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--amber);
+}
+
+.mo-bit .mo-bit-text {
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+/* 回覆：再淡一點、縮一點，像從碎屑上再剝下來的一小粒 */
+.mo-bit.is-reply .mo-post-head,
+.mo-bit.is-reply .mo-bit-text {
+  opacity: 0.8;
+}
+
+.mo-bit-act {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.mo-bit-act button {
+  display: inline-flex;
+  gap: var(--space-1);
+  transition: color var(--dur-200) ease;
+}
+
+.mo-bit-act button:hover,
+.mo-bit-act .is-on {
+  color: var(--paper);
+}
+
+.mo-post.is-left .mo-bit-act {
+  justify-content: flex-end;
+}
+
+.mo-dot.is-bit {
+  width: 4px;
+  height: 4px;
+  background: var(--paper-3);
+}
+
+/* 送出列：彗尾末端，字一律靠左（不管它在弧線哪一邊） */
+.mo-end.mo-tx {
+  width: min(520px, calc(100% - 64px));
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  letter-spacing: normal;
+  color: var(--paper);
+  text-align: left;
+}
+
 /* 窄螢幕：弧線收成貼左的直線（blog/comet 的 NARROW_PX），字一律在右邊，寬度扣掉線與點的那一段 */
 @media (max-width: 760px) {
   .mo-post {

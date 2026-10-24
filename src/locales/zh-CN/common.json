@@ -215,29 +215,6 @@
       "aboutCount": "2004 –"
     }
   },
-  "comments": {
-    "titleN": "{{count}} 条留言",
-    "titleEmpty": "还没有留言",
-    "loginLabel": "选择登录方式",
-    "anonymousLabel": "匿名留言",
-    "namePlaceholder": "昵称 *",
-    "emailPlaceholder": "邮箱（选填，用于通知）",
-    "websitePlaceholder": "网站（选填）",
-    "contentPlaceholder": "留下你的想法...",
-    "submit": "发送",
-    "submitted": "✨ 留言已发送",
-    "submittedAwaitReview": "✨ 留言已送出，经管理员审核后将会显示",
-    "authorBadge": "作者",
-    "reply": "回复",
-    "errorEmpty": "留言内容不能为空",
-    "errorNoName": "昵称不能为空",
-    "errorCaptcha": "验证码错误，请重新计算",
-    "errorFailed": "留言失败",
-    "errorFailedTryLater": "留言失败，请稍后再试",
-    "closedNotice": "作者已关闭这篇文章的留言。",
-    "back": "返回",
-    "beFirst": "✨ 成为第一个留言的人吧"
-  },
   "commandPalette": {
     "label": "全局命令面板",
     "placeholder": "输入页面、文章、分类或标签…",
@@ -364,7 +341,6 @@
     "subtitle": "捕获一道划破寂静的杂音。",
     "ending": "更多时候，只是想说给空气听。",
     "empty": "还没有碎念。",
-    "back": "返回",
     "notFound": "找不到这则碎念。",
     "label": "Moments",
     "like": "赞",
@@ -473,24 +449,6 @@
         "struct": "结构",
         "crew": "乘员界面"
       }
-    }
-  },
-  "info": {
-    "aboutSite": {
-      "title": "此站点",
-      "subtitle": "一个工程师的个人空间"
-    },
-    "history": {
-      "title": "历史",
-      "subtitle": "站点走过的长河"
-    },
-    "messages": {
-      "title": "留言",
-      "subtitle": "想说什么都可以"
-    },
-    "friends": {
-      "title": "朋友们",
-      "subtitle": "友链"
     }
   },
   "newsletter": {
@@ -723,12 +681,11 @@
     "logTitle": "收到的信号",
     "emptyTitle": "还没有收到信号。",
     "emptyText": "第一则留言会出现在这条线上。",
-    "rule1": "匿名的留言要先经过审核才会出现；用账号登录的直接出现",
-    "rule2": "可以用 GitHub 或 Google 登录，也可以匿名",
-    "rule3": "Email 不会公开；不收广告与推销",
     "privatePre": "不适合公开的话，寄信到",
     "privateMid": "；bug 反馈或功能建议比较适合开",
-    "privatePost": "。",
+    "privatePost": "。"
+  },
+  "signal": {
     "formTitle": "送出一道信号",
     "loginWith": "登录",
     "asUser": "以 {{name}} 的身份留言",
@@ -751,7 +708,15 @@
     "errEmpty": "还没写要说的话",
     "errName": "要填名字",
     "errCaptcha": "算式的答案不对，换了一题",
-    "errFailed": "送不出去，稍后再试一次"
+    "errFailed": "送不出去，稍后再试一次",
+    "rule1": "匿名的留言要先经过审核才会出现；用账号登录的直接出现",
+    "rule2": "可以用 GitHub 或 Google 登录，也可以匿名",
+    "rule3": "Email 不会公开；不收广告与推销",
+    "heading": "回应",
+    "rxCount_one": "RX · 收到 {{count}} 道信号",
+    "rxCount_other": "RX · 收到 {{count}} 道信号",
+    "empty": "还没有收到信号，第一道会出现在这里。",
+    "closed": "这篇关闭了回应，频道只收不发。"
   },
   "log": {
     "title": "航行日志",

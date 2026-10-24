@@ -28,3 +28,12 @@ export function dotDate(d: Date, short = false): string {
   const md = `${pad2(d.getMonth() + 1)}.${pad2(d.getDate())}`;
   return short ? md : `${d.getFullYear()}.${md}`;
 }
+
+/**
+ * 留言時間軸上的日期與時刻（07.19、14:02）：照後端的 UTC 原樣顯示、不換時區，
+ * 伺服器與瀏覽器算出來一樣，不會水合不一致（版面標著 UTC）
+ */
+export function utcStamp(value: string): { date: string; time: string } {
+  const m = /\d{4}-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(value);
+  return m ? { date: `${m[1]}.${m[2]}`, time: `${m[3]}:${m[4]}` } : { date: '', time: '' };
+}

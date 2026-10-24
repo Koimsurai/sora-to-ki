@@ -99,8 +99,8 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 自動贏過整個容器，不管它寫幾。
 
 **覆蓋層一定要 portal 到 `document.body`。** 寫在頁面內容裡的話，多大的 z-index
-都可能是假的：例如長在 `InfoPage` 的 `.post-body`（`z-index: 1`）裡的 `9999`，只是
-「在 post-body 裡排第一」，對外仍然只有 1——遮罩明明是整個視窗大小，頂欄照樣浮在上面而且點得到。
+都可能是假的：長在一個 `z-index: 1` 的容器裡的 `9999`，只是「在那個容器裡排第一」，
+對外仍然只有 1——遮罩明明是整個視窗大小，頂欄照樣浮在上面而且點得到。
 公開頁的 modal 用 `common/Modal`（Radix Dialog），它會自己 portal。
 
 **診斷這類問題不要讀 CSS 猜，用瀏覽器問。** 兩個工具：
@@ -351,7 +351,6 @@ diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github
 |---|---|
 | 1300 / 1100 / 950 | `article-shell` 三欄佈局的**三段崩解階梯**（先收左側欄，再收…） |
 | 860 | `HomeLately` 的 `.lately-grid` 收成單欄 |
-| 600 | `InfoPage` 的朋友清單收成單欄 |
 | 560 | `FavoritesEditor` 的 `.fe-add-row` 換行 |
 
 把左側欄從 1300 改成 1024 才消失，是為了數字好看而改變版面崩解的位置。

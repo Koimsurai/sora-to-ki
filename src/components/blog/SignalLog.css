@@ -1,0 +1,209 @@
+/* 收到的訊號（blog/SignalLog）：瀑布圖的三欄（時間軸、頻寬、內容），刻度列與每一列共用。
+   用容器查詢：放在窄的地方（文章欄、手機）時頻寬疊到內容上面 */
+
+.sl {
+  container-type: inline-size;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+:where(.sl) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+:where(.sl) :where(a) {
+  color: inherit;
+}
+
+.sl-scale,
+.sl-item {
+  display: grid;
+  grid-template-columns: 9ch minmax(0, 2fr) minmax(0, 3fr);
+}
+
+/* 刻度列：時間軸寫 UTC，頻寬寫 X 頻段的刻度 */
+.sl-scale {
+  gap: var(--space-6);
+  padding-bottom: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.sl-ticks {
+  display: flex;
+  justify-content: space-between;
+}
+
+.sl-ticks i,
+.sl-ticks em {
+  font-style: normal;
+}
+
+.sl-list {
+  display: grid;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.sl-item {
+  grid-template-areas: "stamp band body";
+  gap: 0 var(--space-6);
+  align-items: start;
+}
+
+/* 時間軸：一條點線貫穿每一列，日期換了才寫 */
+.sl-stamp {
+  grid-area: stamp;
+  display: grid;
+  align-content: start;
+  justify-items: end;
+  align-self: stretch;
+  padding: var(--space-4) var(--space-3) var(--space-4) 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+  border-right: 1px dotted var(--rule);
+}
+
+.sl-stamp b {
+  font-size: var(--fs-12);
+  font-weight: 400;
+  color: var(--paper-2);
+}
+
+.sl-band {
+  grid-area: band;
+  width: 100%;
+  height: 36px;
+  margin-top: var(--space-4);
+  overflow: visible;
+}
+
+.sl-band path {
+  fill: none;
+  stroke: var(--paper-2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  transition: stroke var(--dur-200) ease;
+}
+
+/* 底噪：整條頻寬上一條細點線 */
+.sl-floor {
+  stroke: var(--rule);
+  stroke-width: 1;
+  stroke-dasharray: 1 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.sl-item:hover .sl-band path {
+  stroke: var(--paper);
+}
+
+.sl-body {
+  grid-area: body;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4) 0;
+  border-bottom: 1px dotted var(--rule);
+}
+
+/* 回覆：波形窄一點，內容縮進去 */
+.is-reply .sl-band {
+  height: 24px;
+  margin-top: var(--space-3);
+}
+
+.is-reply .sl-body {
+  padding-top: var(--space-2);
+  padding-left: var(--space-5);
+}
+
+.sl-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.sl-author {
+  font-size: var(--fs-16);
+  font-weight: 600;
+}
+
+a.sl-author {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 4px;
+}
+
+.sl-admin {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--amber);
+}
+
+.sl-text {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sl-actions {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-1);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.sl-actions button {
+  display: inline-flex;
+  gap: var(--space-1);
+  transition: color var(--dur-200) ease;
+}
+
+.sl-actions button:hover,
+.sl-actions button:focus-visible,
+.sl-actions .is-liked {
+  color: var(--paper);
+}
+
+/* 窄的時候：時間軸留著，頻寬疊在內容上面 */
+@container (max-width: 760px) {
+  .sl-scale,
+  .sl-item {
+    grid-template-columns: 6ch minmax(0, 1fr);
+  }
+
+  .sl-scale {
+    gap: var(--space-3);
+  }
+
+  .sl-item {
+    grid-template-areas:
+      "stamp band"
+      "stamp body";
+    gap: 0 var(--space-3);
+  }
+
+  .sl-band {
+    height: 28px;
+  }
+
+  .sl-body {
+    padding-top: var(--space-1);
+  }
+}
