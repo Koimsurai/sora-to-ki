@@ -78,7 +78,13 @@ export default function Colophon() {
    * 換頁進來時點畫的星座（場景座標，最後一點是鏡筒前端）：飛的時候身後留下星座線，
    * 落地後從第一顆星沿著來的方向收掉，剩下最後那段（目標星到鏡筒）就是視線
    */
-  const constellationRef = useRef<{ path: { x: number; y: number }[]; cum: number[]; drawn: number } | null>(null);
+  const constellationRef = useRef<{
+    path: { x: number; y: number }[];
+    cum: number[];
+    drawn: number;
+    /** 曲線從起點到正在測的那顆星有多長：收的時候收到這裡為止 */
+    toTarget: number;
+  } | null>(null);
 
   const box = () => {
     const el = boxRef.current;
@@ -86,14 +92,14 @@ export default function Colophon() {
   };
 
   usePageTransition({
-    // 點飛進來時依序穿過幾顆星（每次飛到最近的下一顆，最後一顆是正在測的那顆），再接到鏡筒前端
-    arrive: ({ pos }) => {
+    // 點飛進來時從最右邊那顆星進來，由右往左把星一顆顆掃過去，最後一顆是正在測的那顆，再接到鏡筒前端
+    arrive: () => {
       const b = box();
       if (!b || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
-      const from = { x: pos.x - b.r.left, y: pos.y - b.r.top };
-      const stars = planConstellation(targetRef.current, from, b.w, b.h);
-      const path = [...stars, frontOf(b.w, b.h, turnFor(targetRef.current, b.w, b.h))];
-      constellationRef.current = { path, cum: cumulative(path), drawn: 0 };
+      const front = frontOf(b.w, b.h, turnFor(targetRef.current, b.w, b.h));
+      const { path, targetAt } = planConstellation(targetRef.current, front, b.w, b.h);
+      const cum = cumulative(path);
+      constellationRef.current = { path, cum, drawn: 0, toTarget: cum[targetAt] };
       // 星與星之間飛快一點；鏡頭在第一顆星停下
       return {
         approach: path.map((q) => ({ x: b.r.left + q.x, y: b.r.top + q.y })),
@@ -229,7 +235,7 @@ export default function Colophon() {
       // 星座從第一顆星沿著來的方向收掉，最後剩下目標星到鏡筒那段（跟視線疊在一起）
       if (con && landedAt >= 0) {
         const k = Math.min(1, (now - landedAt) / CONSTELLATION_FADE_MS);
-        const toTarget = con.cum[con.cum.length - 2];
+        const { toTarget } = con;
         const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
         ctx.strokeStyle = `rgba(${INK_RGB}, 0.55)`;
         // 畫在已經畫好的東西後面：跟視線一樣被六分儀的圖蓋住那一截，收到最後兩條才疊得剛好
