@@ -642,13 +642,12 @@
   justify-content: flex-end;
   margin-top: var(--space-4);
   margin-bottom: var(--space-4);
-  opacity: 0.9;
   width: 100%;
   margin-left: auto;
 }
 
 .blog-signature svg {
-  width: 9rem;
+  width: 10rem;
   max-width: 100%;
 }
 
