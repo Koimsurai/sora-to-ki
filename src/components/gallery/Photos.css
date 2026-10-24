@@ -9,6 +9,24 @@
   color: var(--paper);
 }
 
+/* 整頁的遮罩（進場一行一行收下來、退場收回去）：疊在內容上、點不到。
+   頁面在換頁時會被位移，fixed 會跟著頁面走，所以高度寫 100vh 不寫 100% */
+.ph-veil {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+/* 退場第一步：照片先退成黑白 */
+.ph.is-leaving .ph-shot {
+  filter: grayscale(1);
+  transition: filter var(--dur-200) ease;
+}
+
 :where(.ph) :where(button) {
   all: unset;
   box-sizing: border-box;

@@ -6,6 +6,8 @@
 const TAU = Math.PI * 2;
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
+/** 紙色（--ground）：整頁遮罩先鋪這一層，底下的內容才不會透出來 */
+const GROUND = '#0a0a0c';
 const rgba = (c: string, a: number) => `rgba(${c}, ${a.toFixed(3)})`;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -50,8 +52,18 @@ export function createStation() {
     return { x: l.tx, y: l.ty };
   };
 
-  /** 地面站：左下是碟形天線，右上很遠的地方是探測器，訊號一圈一圈從探測器傳到天線的饋源 */
-  function draw(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, dot: boolean) {
+  /** 天線的饋源（收訊號的那一點）在畫布上的位置：換頁轉場的點沿著訊號落進這裡 */
+  const receiver = (h: number) => {
+    const dh = h - 6;
+    return { x: dh * (669 / 865) * DISH.feed[0], y: dh * DISH.feed[1] };
+  };
+
+  /**
+   * 地面站：左下是碟形天線，右上很遠的地方是探測器，訊號一圈一圈從探測器傳到天線的饋源。
+   * dot：探測器上那個發送中的琥珀點畫不畫（換頁轉場的點還在飛、或正要發射出去時由轉場畫）；
+   * caught：0 到 1，饋源剛收到換頁轉場那一點時亮一下、慢慢退掉
+   */
+  function draw(ctx: CanvasRenderingContext2D, w: number, h: number, t: number, dot: boolean, caught = 0) {
     ctx.clearRect(0, 0, w, h);
     const dh = h - 6;
     const dw = dh * (669 / 865);
@@ -104,9 +116,61 @@ export function createStation() {
       ctx.arc(l.tx, l.ty, 2.2, 0, TAU);
       ctx.fill();
     }
+    if (caught > 0) {
+      const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, 26);
+      g.addColorStop(0, rgba(AMBER, 0.6 * caught));
+      g.addColorStop(1, rgba(AMBER, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(fx, fy, 26, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = rgba(AMBER, caught);
+      ctx.beginPath();
+      ctx.arc(fx, fy, 2.4, 0, TAU);
+      ctx.fill();
+    }
   }
 
-  return { draw, transmitter };
+  return { draw, transmitter, receiver };
+}
+
+/**
+ * 整頁的遮罩（進場、退場）：y 從 top 到 bottom 這一段是還沒收到（或已經收回去）的部分，
+ * 鋪紙色再貼一層 0 與 1；hole 是地面站的畫布，那一塊不蓋（點要沿著訊號從探測器飛到天線，得看得到它們）。
+ * edge 那一側畫一條琥珀色的掃描線
+ */
+export function drawVeil(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  top: number,
+  bottom: number,
+  edge: 'top' | 'bottom' | null,
+  hole: { x: number; y: number; w: number; h: number } | null,
+  t: number,
+  font: string,
+) {
+  ctx.clearRect(0, 0, w, h);
+  if (bottom <= top) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, top, w, bottom - top);
+  if (hole) {
+    // 反著畫一個洞（evenodd）：地面站那一塊不蓋
+    ctx.rect(hole.x + hole.w, hole.y, -hole.w, hole.h);
+  }
+  ctx.clip('evenodd');
+  ctx.fillStyle = GROUND;
+  ctx.fillRect(0, top, w, bottom - top);
+  const tiles = noiseTiles(font);
+  const tile = tiles[Math.floor((Math.max(0, t) * 1000) / NOISE_SWAP_MS) % tiles.length];
+  for (let y = top - (top % NOISE_H); y < bottom; y += NOISE_H) {
+    for (let x = 0; x < w; x += NOISE_W) ctx.drawImage(tile, x, y);
+  }
+  ctx.restore();
+  ctx.fillStyle = rgba(AMBER, 0.9);
+  if (edge === 'top') ctx.fillRect(0, top, w, 1);
+  if (edge === 'bottom') ctx.fillRect(0, bottom - 1, w, 1);
 }
 
 /** 接收紀錄：每個月收到幾張，一個月一個圈（圈越大收得越多），多的那幾個月標上數字 */
@@ -202,11 +266,12 @@ function noiseTiles(font: string) {
     g.font = font;
     g.textAlign = 'left';
     g.fillStyle = rgba(INK, 0.22);
-    const cols = Math.ceil(NOISE_W / 5.6);
+    // 一排字要排滿整張貼圖（多排一個字，超出的會被切掉），貼圖接在一起時才不會有一條直縫
+    const cols = Math.ceil(NOISE_W / g.measureText('0').width) + 1;
     for (let y = 9; y < NOISE_H; y += 11) {
       let line = '';
       for (let x = 0; x < cols; x++) line += Math.random() < 0.5 ? '0' : '1';
-      g.fillText(line, 2, y);
+      g.fillText(line, 0, y);
     }
     return cv;
   });

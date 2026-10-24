@@ -9,9 +9,9 @@ import { Masonry } from 'masonic';
 import { useTranslation } from 'react-i18next';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { loadPhotosManifest } from '@/lib/manifestLoader';
-import { isArriving } from '@/store/pageTransition';
+import { after, isArriving } from '@/store/pageTransition';
 import { openViewerAtom, photosAtom } from '@/store/photoStore';
-import { createStation, drawPasses, drawReception, grayscaleOf, RX_TOTAL, rxStage } from './downlink';
+import { createStation, drawPasses, drawReception, drawVeil, grayscaleOf, RX_TOTAL, rxStage } from './downlink';
 import { framesOf, overview, type Frame } from './frames';
 import PhotoViewer from './PhotoViewer';
 import './Photos.css';
@@ -33,6 +33,17 @@ const RX_SCROLL_REST_MS = 140;
 const RX_DPR = 1.5;
 /** 地面站的畫布多久畫一次（毫秒）：動得很慢，30fps 就夠 */
 const STATION_FRAME_MS = 33;
+/** 進場：琥珀點沿訊號路徑走的那一段分幾格；落進天線後饋源亮多久、整頁收下來要多久（毫秒） */
+const SIGNAL_STEPS = 16;
+const CAUGHT_MS = 1200;
+const REVEAL_MS = 1100;
+/** 退場：照片先退成黑白、再一行一行收回去（毫秒）；點發射出去的速度（px/ms） */
+const EXIT_GRAY_MS = 220;
+const EXIT_COVER_MS = 520;
+const EXIT_MS = EXIT_GRAY_MS + EXIT_COVER_MS + 60;
+const LAUNCH_SPEED = 1.1;
+
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 /** 這次瀏覽已經收過的：虛擬清單捲回來會重新掛上，收過的直接顯示，不再收一次 */
 const received = new Set<string>();
@@ -259,14 +270,50 @@ export default function Photos() {
   const passesRef = useRef<HTMLCanvasElement>(null);
   const station = useMemo(() => createStation(), []);
 
-  // 換頁轉場的琥珀點落在探測器的天線上：訊號就是從那裡發出來的
+  const pageRef = useRef<HTMLDivElement>(null);
+  const veilRef = useRef<HTMLCanvasElement>(null);
+  /** 換頁轉場的點落進天線的時候（直接打開這頁就是第一幀）、開始離開的時候；-1 是還沒 */
+  const phaseRef = useRef({ landedAt: -1, leavingAt: -1 });
+
+  /** 地面站畫布上的一點換成視窗座標 */
+  const onStation = (pick: (w: number, h: number, t: number) => { x: number; y: number }) => {
+    const cv = stationRef.current;
+    if (!cv) return null;
+    const r = cv.getBoundingClientRect();
+    const p = pick(r.width, r.height, performance.now() / 1000);
+    return { x: r.left + p.x, y: r.top + p.y };
+  };
+
+  // 進場：琥珀點就是那道訊號，最後一段沿著「探測器 → 天線」落進饋源；
+  // 退場：照片退成黑白、0 與 1 從底下一行一行收回去，點從探測器的天線發射出去
   usePageTransition({
-    anchor: () => {
-      const cv = stationRef.current;
-      if (!cv) return null;
-      const r = cv.getBoundingClientRect();
-      const p = station.transmitter(r.width, performance.now() / 1000);
-      return { x: r.left + p.x, y: r.top + p.y };
+    anchor: () => onStation((_w, h) => station.receiver(h)),
+    arrive: () => {
+      const from = onStation((w, _h, t) => station.transmitter(w, t));
+      const to = onStation((_w, h) => station.receiver(h));
+      if (!from || !to) return null;
+      return {
+        approach: Array.from({ length: SIGNAL_STEPS + 1 }, (_, i) => ({
+          x: from.x + ((to.x - from.x) * i) / SIGNAL_STEPS,
+          y: from.y + ((to.y - from.y) * i) / SIGNAL_STEPS,
+        })),
+      };
+    },
+    leave: () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+      const from = onStation((w, _h, t) => station.transmitter(w, t));
+      const to = onStation((_w, h) => station.receiver(h));
+      if (!from || !to) return null;
+      phaseRef.current.leavingAt = performance.now();
+      pageRef.current?.classList.add('is-leaving');
+      // 往探測器的外側飛出去（從天線看過去的方向）
+      const len = Math.hypot(from.x - to.x, from.y - to.y) || 1;
+      return {
+        point: from,
+        velocity: { x: ((from.x - to.x) / len) * LAUNCH_SPEED, y: ((from.y - to.y) / len) * LAUNCH_SPEED },
+        done: after(EXIT_MS),
+        follow: () => onStation((w, _h, t) => station.transmitter(w, t)) ?? from,
+      };
     },
   });
 
@@ -276,6 +323,7 @@ export default function Photos() {
     const ctx = cv?.getContext('2d');
     if (!cv || !ctx) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const phase = phaseRef.current;
     let raf = 0;
     let last = 0;
     let visible = true;
@@ -285,6 +333,7 @@ export default function Photos() {
     io.observe(cv);
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
+      if (phase.landedAt < 0 && !isArriving()) phase.landedAt = now;
       if (!visible || now - last < STATION_FRAME_MS) return;
       last = now;
       const w = cv.clientWidth;
@@ -295,7 +344,8 @@ export default function Photos() {
         cv.height = Math.round(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      station.draw(ctx, w, h, reduce ? 0 : now / 1000, !isArriving());
+      const caught = phase.landedAt < 0 || reduce ? 0 : Math.max(0, 1 - (now - phase.landedAt) / CAUGHT_MS);
+      station.draw(ctx, w, h, reduce ? 0 : now / 1000, phase.landedAt >= 0 && phase.leavingAt < 0, caught);
     };
     raf = requestAnimationFrame(frame);
     return () => {
@@ -303,6 +353,68 @@ export default function Photos() {
       io.disconnect();
     };
   }, [station]);
+
+  // 整頁的遮罩：點還在飛的時候除了地面站都還沒收到；落進天線後一道掃描線從上往下把整頁收下來；
+  // 離開時從底下一行一行收回去
+  useEffect(() => {
+    const cv = veilRef.current;
+    const ctx = cv?.getContext('2d');
+    if (!cv || !ctx) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const phase = phaseRef.current;
+    const font = monoFont(9);
+    let raf = 0;
+    let last = 0;
+    let shown = true;
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      if (now - last < RX_FRAME_MS) return;
+      last = now;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      let top = 0;
+      const bottom = h;
+      let edge: 'top' | null = null;
+      if (phase.leavingAt >= 0) {
+        const k = easeInOut(Math.min(1, Math.max(0, (now - phase.leavingAt - EXIT_GRAY_MS) / EXIT_COVER_MS)));
+        top = h * (1 - k);
+        edge = k > 0 && k < 1 ? 'top' : null;
+      } else if (phase.landedAt >= 0) {
+        const k = reduce ? 1 : easeInOut(Math.min(1, (now - phase.landedAt) / REVEAL_MS));
+        top = h * k;
+        edge = k < 1 ? 'top' : null;
+      }
+      if (top >= bottom) {
+        // 收完了：清掉一次就不再畫
+        if (shown) ctx.clearRect(0, 0, cv.width, cv.height);
+        shown = false;
+        return;
+      }
+      shown = true;
+      const dpr = Math.min(window.devicePixelRatio || 1, RX_DPR);
+      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+        cv.width = Math.round(w * dpr);
+        cv.height = Math.round(h * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // 換頁轉場時整頁在滑，遮罩跟著頁面走：地面站的位置要換成遮罩自己的座標
+      const r = stationRef.current?.getBoundingClientRect();
+      const o = cv.getBoundingClientRect();
+      drawVeil(
+        ctx,
+        w,
+        h,
+        top,
+        bottom,
+        edge,
+        r ? { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height } : null,
+        now / 1000,
+        font,
+      );
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // 接收紀錄：資料或寬度變了才重畫
   useEffect(() => {
@@ -326,7 +438,8 @@ export default function Photos() {
   const busiest = stats.passes.reduce<[string, number] | null>((a, b) => (!a || b[1] > a[1] ? b : a), null);
 
   return (
-    <div className="ph">
+    <div className="ph" ref={pageRef}>
+      <canvas ref={veilRef} className="ph-veil" aria-hidden="true" />
       <header className="ph-head">
         <div className="ph-head-title">
           <h1>{t('photos.heading')}</h1>
