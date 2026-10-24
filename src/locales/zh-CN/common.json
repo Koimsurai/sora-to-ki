@@ -408,7 +408,7 @@
       "hub3": "光照、温湿度、人体感应，通过 Matter 上报；夜间灯光的自动校正靠它的光照度",
       "rm4": "学习空调的红外遥控码，让空调接进 Home Assistant",
       "esp32": "两块板子组成的 433MHz 发射器，模拟吸顶灯的原厂遥控器",
-      "doorbell": "电池门铃，通过 H200 网关联网"
+      "doorbell": "电池门铃，通过网关联网"
     },
     "topo": {
       "internet": "互联网",
@@ -453,6 +453,22 @@
         "ac": "空调",
         "light": "吸顶灯",
         "door": "门口"
+      },
+      "subsystemTitle": "子系统",
+      "uplink": "上行：指令",
+      "downlink": "下行：回报",
+      "telemetry": "遥测",
+      "telemetryEvery": "这台服务器传回来的，每 30 秒更新一次",
+      "telemetryWait": "等待信号",
+      "subsystem": {
+        "cdh": "运算与数据处理",
+        "eps": "电力",
+        "tcs": "热控",
+        "data": "数据记录",
+        "comm": "通信",
+        "bus": "主体",
+        "struct": "结构",
+        "crew": "乘员界面"
       }
     }
   },

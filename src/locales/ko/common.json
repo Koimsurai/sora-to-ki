@@ -408,7 +408,7 @@
       "hub3": "조도·온습도·재실 감지를 Matter로 보고. 야간 조명 자동 보정은 이 조도 값에 의존",
       "rm4": "에어컨 적외선 코드를 학습해 Home Assistant로 제어",
       "esp32": "보드 두 장으로 만든 433MHz 송신기. 천장등 순정 리모컨을 흉내 낸다",
-      "doorbell": "배터리 도어벨, H200 허브를 통해 연결"
+      "doorbell": "배터리 도어벨, 허브를 통해 연결"
     },
     "topo": {
       "internet": "인터넷",
@@ -453,6 +453,22 @@
         "ac": "에어컨",
         "light": "천장등",
         "door": "현관"
+      },
+      "subsystemTitle": "서브시스템",
+      "uplink": "업링크: 명령",
+      "downlink": "다운링크: 보고",
+      "telemetry": "텔레메트리",
+      "telemetryEvery": "이 서버가 30초마다 보내오는 값",
+      "telemetryWait": "신호 대기 중",
+      "subsystem": {
+        "cdh": "연산·데이터 처리",
+        "eps": "전력",
+        "tcs": "열 제어",
+        "data": "데이터 기록",
+        "comm": "통신",
+        "bus": "버스",
+        "struct": "구조",
+        "crew": "승무원 인터페이스"
       }
     }
   },

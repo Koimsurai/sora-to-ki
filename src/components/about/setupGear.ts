@@ -49,7 +49,7 @@ export const GEAR: GearCategory[] = [
       { id: 'p10c', name: 'Antec P10C', spec: 'Silent Mid-Tower Case' },
       { id: 'gm7000', name: 'Predator GM7000', spec: '2TB Gen4 NVMe SSD' },
       { id: 'hc550', name: 'WD Ultrastar HC550', spec: '32TB (16TBx2) HDD Pool' },
-      { id: 'nanokvm-pcie', name: 'Sipeed NanoKVM PCIe', spec: 'IP-KVM Card', roleKey: 'nanokvm' },
+      { id: 'ip-kvm', name: 'IP-KVM', spec: 'PCIe Remote Management Card', roleKey: 'nanokvm' },
       { id: 'headless-adaptor', name: 'Headless Adaptor', spec: 'DisplayPort Dummy Plug', roleKey: 'headless' },
     ],
   },
@@ -57,7 +57,7 @@ export const GEAR: GearCategory[] = [
     id: 'network',
     name: 'Network & Mobile',
     items: [
-      { id: 'zenwifi-bd5', name: 'ASUS ZenWiFi BD5', spec: 'WiFi 7 BE5000 Mesh System' },
+      { id: 'router', name: 'Wi-Fi 7 Mesh Router', spec: 'BE5000' },
       { id: 'qg-u1050', name: 'ASUS QG-U1050', spec: '5-Port Switch' },
       { id: 'pixel-8-pro', name: 'Google Pixel 8 Pro', spec: '256GB / Bay Blue' },
       { id: 'blade-14', name: 'Razer Blade 14 (2021)', spec: 'Ryzen 5900HX / RTX 3070' },
@@ -87,9 +87,9 @@ export const GEAR: GearCategory[] = [
         roleKey: 'esp32',
       },
       {
-        id: 'tapo-d230s1',
-        name: 'Tapo D230S1',
-        spec: 'Battery Video Doorbell + H200 Hub',
+        id: 'doorbell',
+        name: 'Video Doorbell',
+        spec: 'Battery Doorbell + Hub',
         roleKey: 'doorbell',
       },
     ],
@@ -139,6 +139,6 @@ export const APPLIANCES: { name: string; typeKey: string }[] = [
   { name: 'Electrolux', typeKey: 'airPurifier' },
   { name: 'LG AeroCatTower', typeKey: 'catTower' },
   { name: 'Furspark', typeKey: 'feeder' },
-  { name: 'Tapo C210', typeKey: 'camera' },
+  { name: '', typeKey: 'camera' },
   { name: 'SwitchBot Plug Mini', typeKey: 'plug' },
 ];

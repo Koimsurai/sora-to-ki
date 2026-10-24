@@ -8,10 +8,12 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { isArriving } from '@/store/pageTransition';
 import {
   drawFlowLines,
+  drawFlowPulses,
   drawGlassPart,
   drawGrid,
   drawHiddenPart,
   drawNetLines,
+  drawNetPulses,
   drawSketch,
   sketchDots,
   tintOf,
@@ -28,9 +30,13 @@ import {
   partArt,
   POST_LINES,
   SHEETS,
+  slotOf,
   SMART,
+  SUBSYSTEMS,
   type Placed,
+  type Subsystem,
 } from './setupSheets';
+import TelemetryPanel from './TelemetryPanel';
 import './Setup.css';
 
 /** 換頁轉場的點落在圖紙左上角之後，點格從那個角鋪開要多久（毫秒） */
@@ -49,16 +55,51 @@ const PLOT_SPREAD_MS = 700;
 const plotDelay = (x: number, y: number) =>
   ({ '--plot': `${Math.round(Math.hypot(x, y * 0.75) * PLOT_SPREAD_MS)}ms` }) as React.CSSProperties;
 
+/** 子系統代號 → 翻譯檔的 key（setup.sheet.subsystem.*） */
+const SUBSYSTEM_KEY: Record<Subsystem, string> = {
+  'C&DH': 'cdh',
+  EPS: 'eps',
+  TCS: 'tcs',
+  DATA: 'data',
+  COMM: 'comm',
+  BUS: 'bus',
+  STRUCT: 'struct',
+  CREW: 'crew',
+};
+
 const ITEMS = new Map<string, GearItem>(GEAR.flatMap((c) => c.items.map((it) => [it.id, it] as const)));
 const itemOf = (id: string) => ITEMS.get(id);
 
 /** 一個零件：線稿＋下面一行說明，中心點放在圖紙的 (x, y) */
+/**
+ * 零重力：每個零件各自慢慢漂、慢慢轉（週期、幅度、起點都不一樣，看起來不會整齊地一起動）；
+ * slot 是它在機殼裡的位置：切到這張圖紙時，零件從那裡散開漂出來
+ */
+function floatStyle(i: number, x: number, y: number, slot: { x: number; y: number } | null) {
+  const seed = (i * 0.618034) % 1;
+  return {
+    '--dur': `${(7 + seed * 5).toFixed(2)}s`,
+    '--phase': `${(-seed * 12).toFixed(2)}s`,
+    '--ax': `${(seed > 0.5 ? 1 : -1) * (4 + seed * 6)}px`,
+    '--ay': `${6 + (1 - seed) * 6}px`,
+    '--rot': `${(seed - 0.5) * 6}deg`,
+    '--i': i,
+    // 從機殼裡那個位置散出來：位移用圖紙寬（cqw）換算，圖紙高是寬的 0.75
+    '--sx': slot ? `${((slot.x - x) * 100).toFixed(2)}cqw` : '0px',
+    '--sy': slot ? `${((slot.y - y) * 75).toFixed(2)}cqw` : '0px',
+  } as React.CSSProperties;
+}
+
 function Part({
   placed,
+  index,
+  slot,
   on,
   onHover,
 }: {
   placed: Placed;
+  index: number;
+  slot: { x: number; y: number } | null;
   on: boolean;
   onHover: (region: string | null, el: HTMLElement | null) => void;
 }) {
@@ -67,11 +108,18 @@ function Part({
   const ref = useRef<HTMLElement>(null);
   if (!it) return null;
   const hover = (v: boolean) => region && onHover(v ? region : null, v ? ref.current : null);
+  const tag = PART_TAG[id] as (typeof PART_TAG)[string] | undefined;
   return (
     <figure
       ref={ref}
-      className={on ? 'su-part is-on' : 'su-part'}
-      style={{ left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, ...plotDelay(x, y) }}
+      className={[on ? 'su-part is-on' : 'su-part', slot ? 'is-float' : ''].filter(Boolean).join(' ')}
+      style={{
+        left: `${x * 100}%`,
+        top: `${y * 100}%`,
+        width: `${w * 100}%`,
+        ...plotDelay(x, y),
+        ...floatStyle(index, x, y, slot),
+      }}
     >
       <img src={partArt(id)} alt="" decoding="async" />
       {/* 裝在機殼裡的零件：滑過（觸控是點一下、鍵盤是聚焦）機殼上那一塊就亮 */}
@@ -89,7 +137,11 @@ function Part({
         />
       )}
       <figcaption className="su-callout">
-        {PART_TAG[id] && <span className="su-tag">{PART_TAG[id]}</span>}
+        {tag && (
+          <span className="su-tag">
+            <em>{tag[0]}</em> · {tag[1]}
+          </span>
+        )}
         <b>{it.name}</b>
         <span>{it.spec}</span>
       </figcaption>
@@ -240,18 +292,20 @@ export default function Setup() {
           NET.nodes.filter((n) => n.end),
           NET.nodes.filter((n) => !n.id),
         );
+        drawNetPulses(ctx, w, h, NET.buses, now / 1000);
       }
       if (sheet.kind === 'smart') {
-        drawFlowLines(
-          ctx,
-          { x: w * 0.12 + 80, y: h * 0.5 },
-          SMART.hubs.map((hb) => ({
-            x: w * 0.42 - (hb.w * w) / 2 - 8,
-            y: hb.y * h,
-            out: w * 0.42 + (hb.w * w) / 2 + 170,
-            to: w * 0.8 - 56,
-          })),
-        );
+        const root = { x: w * 0.12 + 80, y: h * 0.5 };
+        const hubs = SMART.hubs.map((hb) => ({
+          x: w * 0.42 - (hb.w * w) / 2 - 8,
+          y: hb.y * h,
+          out: w * 0.42 + (hb.w * w) / 2 + 170,
+          to: w * 0.8 - 56,
+          // 會回報的：溫濕度感測與門鈴
+          reports: hb.id === 'switchbot-hub3' || hb.id === 'doorbell',
+        }));
+        drawFlowLines(ctx, root, hubs);
+        drawFlowPulses(ctx, root, hubs, now / 1000);
       }
       if (sheet.kind === 'memory') {
         drawSketch(ctx, dots, sketchRect, now / 1000);
@@ -260,7 +314,9 @@ export default function Setup() {
       }
     };
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (sheet.kind !== 'memory' || reduce) {
+    // 會動的三張：老家的草圖在晃、配線圖與流程圖的線上有訊號在跑
+    const moving = sheet.kind === 'memory' || sheet.kind === 'net' || sheet.kind === 'smart';
+    if (!moving || reduce) {
       paint(0);
       return;
     }
@@ -288,6 +344,14 @@ export default function Setup() {
     setCurrent(i);
   };
   const onHover = (region: string | null, el: HTMLElement | null) => setHover(region ? { region, el } : null);
+
+  // 滑過的那個零件要對接回機殼的哪裡（零重力那兩張）
+  const docking = useMemo(() => {
+    if (sheet.kind !== 'build' || !hover) return null;
+    const p = sheet.parts.find((q) => q[4] === hover.region);
+    const slot = p ? slotOf(sheet.case, hover.region) : null;
+    return p && slot ? { id: p[0], x: p[1], y: p[2], w: p[3], slot } : null;
+  }, [sheet, hover]);
 
   return (
     <div className="su">
@@ -320,7 +384,9 @@ export default function Setup() {
             <figure className="su-case" style={{ width: `${sheet.case.w * 100}%`, ...plotDelay(0.5, 0.42) }}>
               <img ref={caseRef} src={`/illustrations/setup/case-${sheet.case.key}.webp`} alt="" decoding="async" />
               <figcaption className="su-callout">
-                <span className="su-tag">CASE</span>
+                <span className="su-tag">
+                  <em>STRUCT</em> · CASE
+                </span>
                 <b>{itemOf(sheet.case.id)?.name}</b>
                 <span>{sheet.case.key === 'p10c' ? t('setup.sheet.p10cNote') : itemOf(sheet.case.id)?.spec}</span>
               </figcaption>
@@ -328,9 +394,52 @@ export default function Setup() {
           )}
 
           {(sheet.kind === 'build' || sheet.kind === 'free') &&
-            sheet.parts.map((p) => (
-              <Part key={p[0]} placed={p} on={!!p[4] && hover?.region === p[4]} onHover={onHover} />
+            sheet.parts.map((p, i) => (
+              <Part
+                key={p[0]}
+                placed={p}
+                index={i}
+                slot={sheet.kind === 'build' && p[4] ? slotOf(sheet.case, p[4]) : null}
+                on={!!p[4] && hover?.region === p[4]}
+                onHover={onHover}
+              />
             ))}
+
+          {/* 零重力對接：滑過的零件，一個分身沿虛線飛回機殼裡它的位置，縮成那一塊的大小 */}
+          {sheet.kind === 'build' && docking && (
+            <img
+              key={docking.id}
+              className="su-dock"
+              src={partArt(docking.id)}
+              alt=""
+              aria-hidden="true"
+              style={
+                {
+                  left: `${docking.x * 100}%`,
+                  top: `${docking.y * 100}%`,
+                  width: `${docking.w * 100}%`,
+                  '--tx': `${((docking.slot.x - docking.x) * 100).toFixed(2)}cqw`,
+                  '--ty': `${((docking.slot.y - docking.y) * 75).toFixed(2)}cqw`,
+                  '--ts': (docking.slot.w / docking.w).toFixed(3),
+                } as React.CSSProperties
+              }
+            />
+          )}
+
+          {sheet.kind === 'build' && (
+            <dl className="su-legend" aria-label={t('setup.sheet.subsystemTitle')}>
+              {SUBSYSTEMS.filter((s) => sheet.parts.some((p) => PART_TAG[p[0]]?.[0] === s) || s === 'STRUCT').map(
+                (s) => (
+                  <div key={s}>
+                    <dt>{s}</dt>
+                    <dd>{t(`setup.sheet.subsystem.${SUBSYSTEM_KEY[s]}`)}</dd>
+                  </div>
+                ),
+              )}
+            </dl>
+          )}
+
+          {sheet.kind === 'build' && sheet.case.key === 'p10c' && <TelemetryPanel />}
 
           {sheet.kind === 'free' && (
             <div className="su-callout su-others">
@@ -382,12 +491,14 @@ export default function Setup() {
                 <span>{topo('internet')}</span>
               </span>
               <figure className="su-node" style={{ left: '46%', top: '10%', width: '7%' }}>
-                <img src={partArt('zenwifi-bd5')} alt="" decoding="async" />
+                <img src={partArt('router')} alt="" decoding="async" />
               </figure>
               <span className="su-callout su-at is-right" style={{ left: '50.5%', top: '10%' }}>
-                <span className="su-tag">ROUTER</span>
-                <b>{itemOf('zenwifi-bd5')?.name}</b>
-                <span>WiFi 7 Mesh</span>
+                <span className="su-tag">
+                  <em>COMM</em> · ROUTER
+                </span>
+                <b>{itemOf('router')?.name}</b>
+                <span>{itemOf('router')?.spec}</span>
               </span>
               {NET.buses.map((b) => (
                 <span key={b.label} className="su-callout su-at is-above" style={{ left: `${b.x * 100}%`, top: '30%' }}>
@@ -422,10 +533,15 @@ export default function Setup() {
           {sheet.kind === 'smart' && (
             <>
               <span className="su-callout su-at" style={{ left: '12%', top: '50%' }}>
-                <span className="su-tag">HOME SERVER</span>
+                <span className="su-tag">MISSION CONTROL</span>
                 <b>Home Assistant</b>
                 <span>{t('setup.sheet.root')}</span>
               </span>
+              {/* 線上跑的兩種訊號：琥珀色往外的是指令（上行），白色往回的是感測器回報（下行） */}
+              <div className="su-links" aria-hidden="true">
+                <span className="is-up">{t('setup.sheet.uplink')}</span>
+                <span className="is-down">{t('setup.sheet.downlink')}</span>
+              </div>
               {SMART.hubs.map((hb) => (
                 <div key={hb.id}>
                   <figure
@@ -447,7 +563,7 @@ export default function Setup() {
                 <span className="su-tag">OTHERS</span>
                 <b>{t('setup.appliances.title')}</b>
                 <span>
-                  {APPLIANCES.map((a) => `${a.name} ${t(`setup.appliances.types.${a.typeKey}`)}`).join(' · ')}
+                  {APPLIANCES.map((a) => `${a.name} ${t(`setup.appliances.types.${a.typeKey}`)}`.trim()).join(' · ')}
                 </span>
               </div>
             </>

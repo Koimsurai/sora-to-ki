@@ -1020,6 +1020,18 @@ export type TagsResponse = {
 	tags: TagRow[],
 };
 
+/**  `GET /api/telemetry` 的回應。每個欄位讀不到就是 null（例如換了機器、沒有那顆感測器） */
+export type Telemetry = {
+	/**  CPU 溫度（°C）：k10temp 的 Tctl */
+	cpuTemp: number | null,
+	/**  一分鐘平均負載除以邏輯核心數（百分比，可能超過 100） */
+	load: number | null,
+	/**  記憶體用了幾成（百分比）：(總量 − 可用) / 總量 */
+	memory: number | null,
+	/**  APU 整顆的功耗（W）：amdgpu 的 power1_input（APU 回報的是整顆封裝） */
+	power: number | null,
+};
+
 export type ThoughtDetailResponse = {
 	message: string,
 	thought: ThoughtOut,

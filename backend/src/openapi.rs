@@ -82,6 +82,7 @@ impl Modify for SecurityAddon {
         handlers::gallery::gallery_sync,
         handlers::gallery::image_proxy,
         handlers::home::health,
+        handlers::telemetry::telemetry,
         handlers::home::home_digest,
         handlers::mailer::send_newsletter_route,
         handlers::newsletter::by_token,
@@ -156,6 +157,7 @@ impl Modify for SecurityAddon {
         handlers::watch::watch_stats,
     ),
     components(schemas(
+        handlers::telemetry::Telemetry,
         handlers::admin::AdminCategoryRow,
         handlers::admin::AdminCommentRow,
         handlers::admin::AdminCommentsResponse,
