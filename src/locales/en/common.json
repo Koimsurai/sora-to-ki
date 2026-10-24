@@ -379,33 +379,26 @@
   "setup": {
     "title": "My Setup",
     "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
-    "heroTitle": "My Setup",
-    "subtitle": "Everything I own in 2026: the rig on my desk, the server running this site, and the little boxes that run the AC and lights.",
-    "filter": "Category",
+    "heroTitle": "Setup",
+    "subtitle": "What sits on the desk and inside the case.",
     "cat": {
       "main-rig": {
-        "short": "Main rig",
-        "desc": "All-white main rig"
+        "short": "Main rig"
       },
       "server": {
-        "short": "Server",
-        "desc": "This site, Home Assistant and every self-hosted service live here"
+        "short": "Server"
       },
       "network": {
-        "short": "Network & mobile",
-        "desc": "My digital backbone"
+        "short": "Network & mobile"
       },
       "smart-home": {
-        "short": "Smart home",
-        "desc": "AC, lights and sensors, all wired into Home Assistant"
+        "short": "Smart home"
       },
       "peripherals": {
-        "short": "Peripherals",
-        "desc": "Input & output"
+        "short": "Peripherals"
       },
       "base-ii": {
-        "short": "Hometown",
-        "desc": "Standby base for trips home"
+        "short": "Hometown"
       }
     },
     "roles": {
@@ -417,26 +410,15 @@
       "esp32": "A 433MHz transmitter built from two boards, mimicking the ceiling light’s stock remote",
       "doorbell": "Battery doorbell, online through the H200 hub"
     },
-    "retired": "Retired",
-    "retiredText": "Family shared PC — NVIDIA GTX 960 (still in use at home)",
     "topo": {
-      "title": "How the house is wired",
-      "hint": "Tap a node to jump to that device",
       "internet": "Internet",
       "switch": "Switch",
-      "mobile": "Phone · laptop",
       "sensors": "Light · temp · motion",
       "irBlaster": "IR blaster",
       "rfBlaster": "433MHz RF",
       "rig": "Main rig",
       "ac": "AC",
       "light": "Ceiling light",
-      "legend": {
-        "wired": "Wired",
-        "wifi": "Wi-Fi",
-        "matter": "Matter",
-        "air": "IR / RF"
-      },
       "netWired": "Wired",
       "netMain": "Main network",
       "netIot": "IoT only",
@@ -457,21 +439,20 @@
         "plug": "Smart plug"
       }
     },
-    "packages": "{{count}} (gear), {{iot}} (smart home)",
-    "term": {
-      "inputLabel": "Terminal command",
-      "tryHelp": "type help for the list of commands",
-      "cdFirst": "cd into a category first, then cat a file inside",
-      "sudo": "You are not in the sudoers file. This incident will be reported.",
-      "help": {
-        "help": "list commands",
-        "ls": "list categories, or the gear inside one",
-        "cd": "enter a category (the cards below filter along), cd .. to go back",
-        "cat": "show a device's spec and purpose",
-        "pwd": "where am I",
-        "whoami": "who am I",
-        "neofetch": "run it again",
-        "clear": "clear the screen"
+    "sheet": {
+      "tabs": "Sheets",
+      "p10cNote": "Solid side panel: hover a part to see where it sits, drawn in dashed lines",
+      "memoryTitle": "The one back home",
+      "memoryText": "The backup base when I'm back home. There are no photos of it; this is roughly how I remember it.",
+      "fromMemory": "FROM MEMORY",
+      "root": "Every automation starts here",
+      "drag": "← drag sideways to see the whole sheet →",
+      "to": {
+        "voice": "Google Home voice",
+        "climate": "Temperature & humidity",
+        "ac": "Air conditioner",
+        "light": "Ceiling light",
+        "door": "Front door"
       }
     }
   },

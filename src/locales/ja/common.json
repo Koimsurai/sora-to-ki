@@ -379,33 +379,26 @@
   "setup": {
     "title": "私のセットアップ · My Setup",
     "description": "Koimsurai の機材一覧：メインマシン、このサイトを動かす自宅サーバー、ネットワークとスマートホーム、そして家の接続図。",
-    "heroTitle": "使っている機材",
-    "subtitle": "2026 年の手持ち機材すべて：机の上のメインマシン、このサイトを動かすサーバー、エアコンと照明を操る小さなデバイスまで。",
-    "filter": "カテゴリ",
+    "heroTitle": "機材",
+    "subtitle": "机の上と、ケースの中にあるもの。",
     "cat": {
       "main-rig": {
-        "short": "メイン機",
-        "desc": "真っ白なメインリグ"
+        "short": "メイン機"
       },
       "server": {
-        "short": "サーバー",
-        "desc": "このサイトも Home Assistant も、セルフホストはすべてここで動いている"
+        "short": "サーバー"
       },
       "network": {
-        "short": "ネットワーク・モバイル",
-        "desc": "デジタル生活の基盤"
+        "short": "ネットワーク・モバイル"
       },
       "smart-home": {
-        "short": "スマートホーム",
-        "desc": "エアコン・照明・センサーを Home Assistant に集約"
+        "short": "スマートホーム"
       },
       "peripherals": {
-        "short": "周辺機器",
-        "desc": "入力と出力"
+        "short": "周辺機器"
       },
       "base-ii": {
-        "short": "実家",
-        "desc": "帰省時の予備基地"
+        "short": "実家"
       }
     },
     "roles": {
@@ -417,26 +410,15 @@
       "esp32": "2 枚の基板で組んだ 433MHz 送信機。シーリングライトの純正リモコンを再現",
       "doorbell": "バッテリー式ドアベル。H200 ハブ経由でネットに接続"
     },
-    "retired": "引退",
-    "retiredText": "家族共用 PC — NVIDIA GTX 960（家族が現役で使用中）",
     "topo": {
-      "title": "家の中のつながり",
-      "hint": "ノードを押すとその機材へ移動",
       "internet": "インターネット",
       "switch": "スイッチ",
-      "mobile": "スマホ・ノート PC",
       "sensors": "照度・温湿度・人感",
       "irBlaster": "赤外線リモコン",
       "rfBlaster": "433MHz 無線",
       "rig": "メイン機",
       "ac": "エアコン",
       "light": "シーリングライト",
-      "legend": {
-        "wired": "有線",
-        "wifi": "Wi-Fi",
-        "matter": "Matter",
-        "air": "赤外線／無線"
-      },
       "netWired": "有線",
       "netMain": "メイン",
       "netIot": "IoT 専用",
@@ -457,21 +439,20 @@
         "plug": "スマートプラグ"
       }
     },
-    "packages": "{{count}} (機材), {{iot}} (スマートホーム)",
-    "term": {
-      "inputLabel": "ターミナルのコマンド",
-      "tryHelp": "help でコマンド一覧",
-      "cdFirst": "先に cd でカテゴリに入ってから cat",
-      "sudo": "あなたは sudoers ファイルに含まれていません。この件は報告されます。",
-      "help": {
-        "help": "コマンド一覧",
-        "ls": "カテゴリ、またはその中の機材を表示",
-        "cd": "カテゴリに入る（下のカードも絞り込み）、cd .. で戻る",
-        "cat": "機材のスペックと用途を表示",
-        "pwd": "現在地",
-        "whoami": "自分は誰",
-        "neofetch": "もう一度実行",
-        "clear": "画面をクリア"
+    "sheet": {
+      "tabs": "図面",
+      "p10cNote": "サイドパネルは不透明。パーツにカーソルを合わせると、位置を破線で透視します",
+      "memoryTitle": "実家のあの一台",
+      "memoryText": "実家に帰ったときの予備の拠点。写真はなく、これは記憶の中のだいたいの姿。",
+      "fromMemory": "記憶から",
+      "root": "すべての自動化はここから",
+      "drag": "← 左右にドラッグして図面全体を見る →",
+      "to": {
+        "voice": "Google Home 音声",
+        "climate": "温湿度センサー",
+        "ac": "エアコン",
+        "light": "シーリングライト",
+        "door": "玄関"
       }
     }
   },
