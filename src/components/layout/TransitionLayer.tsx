@@ -21,6 +21,7 @@ import {
   after,
   currentPage,
   markTransitionFrom,
+  setTransitionDot,
   takeTransitionFrom,
   type Departure,
   type Pt,
@@ -28,9 +29,9 @@ import {
 import { setSkyPan } from '@/store/skyPan';
 import './TransitionLayer.css';
 
-/** 預設的收：一圈遮罩收進錨點 */
 /** 單篇文章的路徑（語系前綴已剝掉）：`blog/<slug 或 id>` */
 const ARTICLE = /^blog\/[^/]+$/;
+/** 預設的收：一圈遮罩收進錨點 */
 const LEAVE_MS = 380;
 const GROW_MS = 480;
 /** 彗尾：一個點畫下去之後多久散掉（ms） */
@@ -260,7 +261,10 @@ export default function TransitionLayer() {
       skyBase = { x: skyBase.x - r.cam.x * SKY_PARALLAX, y: skyBase.y - r.cam.y * SKY_PARALLAX };
       setSkyPan(skyBase.x, skyBase.y);
       ctx.clearRect(0, 0, cv.width, cv.height);
-      if (run === r) run = null;
+      if (run === r) {
+        run = null;
+        setTransitionDot(null);
+      }
     };
 
     /** 記下點在畫面上的位置與速度 */
@@ -269,6 +273,7 @@ export default function TransitionLayer() {
       if (r.trackAt > 0 && dt > 0) r.screenVel = { x: (p.x - r.screen.x) / dt, y: (p.y - r.screen.y) / dt };
       r.screen = { ...p };
       r.trackAt = now;
+      setTransitionDot(p);
     };
 
     const dot = (p: Pt, radius: number, alpha = 1) => {

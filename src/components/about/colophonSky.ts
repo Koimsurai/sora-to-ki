@@ -58,6 +58,8 @@ export interface ColophonFrame {
   hover: StarKey | null;
   /** 換頁進來的淡入、離開的淡出（0–1） */
   appear: number;
+  /** 六分儀自己的淡入（不給就跟 appear 一樣）：點畫星座進來時星已經亮著，只有六分儀要淡進來 */
+  sextant?: number;
   img: HTMLImageElement | null;
 }
 
@@ -96,6 +98,78 @@ export function turnFor(key: StarKey, w: number, h: number) {
     turn = Math.atan2(s.y - f.y, s.x - f.x) - AXIS;
   }
   return Math.max(TURN_MIN, Math.min(TURN_MAX, turn));
+}
+
+/**
+ * 換頁進來時點畫的星座：從離點最近的那顆星開始，每次走到最近的下一顆，最後一顆是正在測的那顆，
+ * 再接到鏡筒前端——最後那一段就是視線，星座收掉之後留下的正好是它
+ */
+export function planConstellation(target: StarKey, from: { x: number; y: number }, w: number, h: number, count = 5) {
+  const others = STAR_KEYS.filter((k) => k !== target).map((k) => starAt(k, w, h));
+  const path: { x: number; y: number }[] = [];
+  let at = from;
+  while (path.length < count - 1 && others.length) {
+    let best = 0;
+    others.forEach((s, i) => {
+      if (Math.hypot(s.x - at.x, s.y - at.y) < Math.hypot(others[best].x - at.x, others[best].y - at.y)) best = i;
+    });
+    at = others.splice(best, 1)[0];
+    path.push(at);
+  }
+  path.push(starAt(target, w, h));
+  return path;
+}
+
+/** 折線上每一點到起點的累計長度 */
+export function cumulative(path: { x: number; y: number }[]) {
+  const out = [0];
+  for (let i = 1; i < path.length; i++)
+    out.push(out[i - 1] + Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y));
+  return out;
+}
+
+/** 點 p 落在折線上的哪裡（從起點量的長度）：找最近的那一段、投影上去 */
+export function progressOn(path: { x: number; y: number }[], cum: number[], p: { x: number; y: number }) {
+  let best = Infinity;
+  let at = 0;
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1];
+    const b = path[i];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy || 1;
+    const u = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2));
+    const d = Math.hypot(a.x + dx * u - p.x, a.y + dy * u - p.y);
+    if (d < best) {
+      best = d;
+      at = cum[i - 1] + (cum[i] - cum[i - 1]) * u;
+    }
+  }
+  return at;
+}
+
+/** 畫折線上 [d0, d1] 那一段（長度從起點量） */
+export function strokeSpan(
+  ctx: CanvasRenderingContext2D,
+  path: { x: number; y: number }[],
+  cum: number[],
+  d0: number,
+  d1: number,
+) {
+  const point = (d: number) => {
+    let i = 1;
+    while (i < path.length - 1 && cum[i] < d) i++;
+    const u = (d - cum[i - 1]) / Math.max(1e-6, cum[i] - cum[i - 1]);
+    return { x: path[i - 1].x + (path[i].x - path[i - 1].x) * u, y: path[i - 1].y + (path[i].y - path[i - 1].y) * u };
+  };
+  if (d1 <= d0) return;
+  ctx.beginPath();
+  const s = point(d0);
+  ctx.moveTo(s.x, s.y);
+  for (let i = 1; i < path.length; i++) if (cum[i] > d0 && cum[i] < d1) ctx.lineTo(path[i].x, path[i].y);
+  const e = point(d1);
+  ctx.lineTo(e.x, e.y);
+  ctx.stroke();
 }
 
 export function drawColophon(ctx: CanvasRenderingContext2D, f: ColophonFrame) {
@@ -148,7 +222,7 @@ export function drawColophon(ctx: CanvasRenderingContext2D, f: ColophonFrame) {
   if (img?.complete && img.naturalWidth) {
     const { cx, cy, size } = placeOf(w, h);
     ctx.save();
-    ctx.globalAlpha = 0.92 * appear;
+    ctx.globalAlpha = 0.92 * (f.sextant ?? appear);
     ctx.translate(cx, cy);
     ctx.rotate(turn);
     ctx.scale(-1, 1);

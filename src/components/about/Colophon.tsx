@@ -8,15 +8,33 @@ import { LinkCard } from '@/components/common/LinkCard';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { LocaleLink } from '@/i18n/locale-link';
 import { lookupOr } from '@/lib/tableLookup';
-import { after, isArriving } from '@/store/pageTransition';
+import { sameTitle } from '@/lib/pageTitle';
+import { after, isArriving, transitionDot } from '@/store/pageTransition';
 import { COLOPHON_QA } from './colophonQa';
-import { drawColophon, frontOf, SEXTANT_SRC, STAR_KEYS, starAt, turnFor, type StarKey } from './colophonSky';
+import {
+  cumulative,
+  drawColophon,
+  frontOf,
+  planConstellation,
+  progressOn,
+  SEXTANT_SRC,
+  STAR_KEYS,
+  starAt,
+  strokeSpan,
+  turnFor,
+  type StarKey,
+} from './colophonSky';
 import { PhotoToy, SaturnToy, WorkToy } from './colophonToys';
 import './Colophon.css';
-import { sameTitle } from '@/lib/pageTitle';
 
 /** 視線從望遠鏡拉到星要多久（秒） */
 const SIGHT_S = 0.7;
+/** 星座線的墨色（--paper） */
+const INK_RGB = '241, 236, 227';
+/** 點畫星座時飛的速度倍率（比一般換頁快一點） */
+const CONSTELLATION_PACE = 1.5;
+/** 落地後星座線收掉的時間 */
+const CONSTELLATION_FADE_MS = 900;
 /** 收：場景淡掉的時間（毫秒） */
 const ERASE_MS = 500;
 /** 收完時點從那顆星飛走的速度（px/ms） */
@@ -56,6 +74,11 @@ export default function Colophon() {
   hoverRef.current = hover;
   const turnRef = useRef(0);
   const leaveRef = useRef<number | null>(null);
+  /**
+   * 換頁進來時點畫的星座（場景座標，最後一點是鏡筒前端）：飛的時候身後留下星座線，
+   * 落地後從第一顆星沿著來的方向收掉，剩下最後那段（目標星到鏡筒）就是視線
+   */
+  const constellationRef = useRef<{ path: { x: number; y: number }[]; cum: number[]; drawn: number } | null>(null);
 
   const box = () => {
     const el = boxRef.current;
@@ -63,6 +86,21 @@ export default function Colophon() {
   };
 
   usePageTransition({
+    // 點飛進來時依序穿過幾顆星（每次飛到最近的下一顆，最後一顆是正在測的那顆），再接到鏡筒前端
+    arrive: ({ pos }) => {
+      const b = box();
+      if (!b || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+      const from = { x: pos.x - b.r.left, y: pos.y - b.r.top };
+      const stars = planConstellation(targetRef.current, from, b.w, b.h);
+      const path = [...stars, frontOf(b.w, b.h, turnFor(targetRef.current, b.w, b.h))];
+      constellationRef.current = { path, cum: cumulative(path), drawn: 0 };
+      // 星與星之間飛快一點；鏡頭在第一顆星停下
+      return {
+        approach: path.map((q) => ({ x: b.r.left + q.x, y: b.r.top + q.y })),
+        join: 0,
+        pace: CONSTELLATION_PACE,
+      };
+    },
     // 錨點是望遠鏡的鏡筒前端：點落在這裡，視線從這裡拉到第一顆星
     anchor: () => {
       const b = box();
@@ -109,10 +147,14 @@ export default function Colophon() {
     let start = -1;
     let aimed: StarKey | null = null;
     let sightFrom = 0;
+    /** 點畫星座進來的：落地那一刻，視線已經是畫好的（星座最後那一段），不用再從鏡筒拉一次 */
+    let sightDone = false;
+    let landedAt = -1;
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      if (isArriving()) return;
-      if (start < 0) start = now;
+      const con = constellationRef.current;
+      const arriving = isArriving();
+      if (arriving && !con) return;
       if (now - last < 16) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
@@ -124,17 +166,53 @@ export default function Colophon() {
         cv.height = Math.round(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const real = (now - start) / 1000;
       const goal = turnFor(targetRef.current, w, h);
+      ctx.lineWidth = 1;
+
+      // 點正在畫星座：星先亮著（六分儀還沒出來），點身後的線畫到點走到的地方
+      if (arriving && con) {
+        const d = transitionDot();
+        const r = el.getBoundingClientRect();
+        if (d) con.drawn = Math.max(con.drawn, progressOn(con.path, con.cum, { x: d.x - r.left, y: d.y - r.top }));
+        drawColophon(ctx, {
+          w,
+          h,
+          t: now / 1000,
+          turn: goal,
+          target: targetRef.current,
+          sight: 0,
+          hover: null,
+          appear: 1,
+          sextant: 0,
+          img,
+        });
+        ctx.strokeStyle = `rgba(${INK_RGB}, 0.55)`;
+        strokeSpan(ctx, con.path, con.cum, 0, con.drawn);
+        return;
+      }
+
+      if (start < 0) {
+        start = now;
+        if (con) {
+          // 落地：六分儀已經對準那顆星，視線就是星座最後那一段
+          landedAt = now;
+          turnRef.current = goal;
+          aimed = targetRef.current;
+          sightDone = true;
+        }
+      }
+      const real = (now - start) / 1000;
       // 換了一顆星：六分儀轉過去，轉得差不多了視線才重新拉出來
       if (aimed !== targetRef.current) {
         aimed = targetRef.current;
         sightFrom = -1;
+        sightDone = false;
       }
       turnRef.current = reduce ? goal : turnRef.current + (goal - turnRef.current) * Math.min(1, dt * 4);
       if (sightFrom < 0 && Math.abs(goal - turnRef.current) < 0.02) sightFrom = real;
-      const sight = reduce ? 1 : sightFrom < 0 ? 0 : Math.min(1, (real - sightFrom) / SIGHT_S);
+      const sight = reduce || sightDone ? 1 : sightFrom < 0 ? 0 : Math.min(1, (real - sightFrom) / SIGHT_S);
       const erase = leaveRef.current === null ? 0 : Math.min(1, (now - leaveRef.current) / ERASE_MS);
+      const fadeIn = Math.min(1, reduce ? 1 : real / 0.6);
       drawColophon(ctx, {
         w,
         h,
@@ -143,9 +221,23 @@ export default function Colophon() {
         target: targetRef.current,
         sight,
         hover: hoverRef.current,
-        appear: Math.min(1, reduce ? 1 : real / 0.6) * (1 - erase),
+        // 點畫星座進來的：星本來就亮著，只有六分儀淡進來
+        appear: (landedAt >= 0 ? 1 : fadeIn) * (1 - erase),
+        sextant: fadeIn * (1 - erase),
         img,
       });
+      // 星座從第一顆星沿著來的方向收掉，最後剩下目標星到鏡筒那段（跟視線疊在一起）
+      if (con && landedAt >= 0) {
+        const k = Math.min(1, (now - landedAt) / CONSTELLATION_FADE_MS);
+        const toTarget = con.cum[con.cum.length - 2];
+        const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+        ctx.strokeStyle = `rgba(${INK_RGB}, 0.55)`;
+        // 畫在已經畫好的東西後面：跟視線一樣被六分儀的圖蓋住那一截，收到最後兩條才疊得剛好
+        ctx.globalCompositeOperation = 'destination-over';
+        strokeSpan(ctx, con.path, con.cum, toTarget * e, con.cum[con.cum.length - 1]);
+        ctx.globalCompositeOperation = 'source-over';
+        if (k >= 1) constellationRef.current = null;
+      }
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);

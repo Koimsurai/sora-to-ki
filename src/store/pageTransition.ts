@@ -122,6 +122,16 @@ export function takeTransitionFrom(): Mark | null {
   return p && performance.now() - p.at < 1000 ? { pt: p.pt, source: p.source } : null;
 }
 
+/**
+ * 轉場的點此刻在畫面上的哪裡（視窗座標）；沒有在飛就是 null。轉場每一幀寫進來，
+ * 頁面要「跟著點畫線」時讀（例如此站點的點穿過幾顆星、身後留下星座線——彗尾會散，星座線不會）
+ */
+let dotNow: Pt | null = null;
+export const setTransitionDot = (p: Pt | null) => {
+  dotNow = p;
+};
+export const transitionDot = (): Pt | null => dotNow;
+
 /** 頁面的「收」用的計時：時間到就算收完 */
 export const after = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
