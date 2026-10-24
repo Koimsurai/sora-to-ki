@@ -303,7 +303,6 @@
     "shareTitle": "シェア",
     "commentTitle": "コメント",
     "subscribeTitle": "購読",
-    "fontSwitcherTitle": "フォント切替",
     "statPosts": "記事",
     "statTags": "タグ",
     "statReads": "閲覧",
@@ -333,7 +332,9 @@
     "prevPost": "前の記事",
     "nextPost": "次の記事",
     "lastUpdated": "最終更新",
-    "nearbyNav": "近くの記事"
+    "nearbyNav": "近くの記事",
+    "font": "書体",
+    "originalText": "原文"
   },
   "thinking": {
     "title": "つぶやき",

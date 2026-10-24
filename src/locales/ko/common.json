@@ -303,7 +303,6 @@
     "shareTitle": "공유",
     "commentTitle": "댓글",
     "subscribeTitle": "구독",
-    "fontSwitcherTitle": "폰트 전환",
     "statPosts": "글",
     "statTags": "태그",
     "statReads": "조회",
@@ -333,7 +332,9 @@
     "prevPost": "이전 글",
     "nextPost": "다음 글",
     "lastUpdated": "최근 업데이트",
-    "nearbyNav": "주변 글"
+    "nearbyNav": "주변 글",
+    "font": "글꼴",
+    "originalText": "원문"
   },
   "thinking": {
     "title": "혼잣말",
