@@ -10,7 +10,7 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { parseServerDate } from '@/lib/serverDate';
 import { lookupOr } from '@/lib/tableLookup';
 import { after, isArriving } from '@/store/pageTransition';
-import { bodyOf, createSpiral, familyOfWork, frameOf, type WorkStats } from './worksSky';
+import { bodiesOf, createSpiral, frameOf, workStatsOf } from './worksSky';
 import './Works.css';
 
 /** 滑鼠離一顆星多近才算滑到它（CSS 像素） */
@@ -35,26 +35,19 @@ export default function Works() {
   // 數據：後端有就用後端的，沒有（私有 repo 拿不到、後端還沒更新）就用量好的備用值
   const works = useMemo(() => {
     const now = Date.now();
-    const seen = new Map<string, number>();
-    return WORKS.map((w) => {
+    const rows = WORKS.map((w) => {
       const stats = live.find((r) => r.repo.toLowerCase() === w.repo.toLowerCase()) ?? { repo: w.repo, ...w.fallback };
+      return { w, stats, input: workStatsOf(w.name, stats, now) };
+    });
+    // 同一族（主要語言同一類）的作品各拿不同的地貌
+    const bodies = bodiesOf(rows.map((r) => r.input));
+    return rows.map(({ w, stats }, i) => {
       const created = parseServerDate(stats.created_at);
-      const input: WorkStats = {
-        name: w.name,
-        commits: stats.commits,
-        stars: stats.stars,
-        pushedDaysAgo: Math.max(0, (now - parseServerDate(stats.pushed_at).getTime()) / 86400000),
-        languages: stats.languages,
-      };
-      // 同一族（主要語言同一類）的作品各拿不同的地貌
-      const family = familyOfWork(input);
-      const variant = seen.get(family) ?? 0;
-      seen.set(family, variant + 1);
       return {
         ...w,
         url: stats.url,
         year: `${created.getFullYear()}.${pad2(created.getMonth() + 1)}`,
-        body: bodyOf(input, variant),
+        body: bodies[i],
       };
     });
   }, [live]);

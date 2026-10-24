@@ -384,7 +384,7 @@
     "title": "My Setup",
     "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
     "heroTitle": "Setup",
-    "subtitle": "A ship pieced together part by part, carrying me farther out.",
+    "subtitle": "Taking precision apart, giving obsession a place to rest.",
     "cat": {
       "main-rig": {
         "short": "Main rig"
@@ -555,7 +555,7 @@
     "title": "Photography",
     "description": "Koimsurai's photography — light and shadow from the road.",
     "heading": "Photos",
-    "subtitle": "Light travels a long way, only to stop the instant the shutter falls.",
+    "subtitle": "Faint signals that crossed the void, developed here line by line.",
     "station": "DSN · GROUND STATION",
     "stationLabel": "A ground station dish receiving a signal from a distant probe",
     "passesLabel": "Frames received per month: most in {{month}}, {{count}} frames",
@@ -680,7 +680,7 @@
   },
   "friends": {
     "title": "Friends",
-    "subtitle": "Each on our own orbit, crossing now and then, lighting one another.",
+    "subtitle": "Deep space is long and lonely, but look back and there is always starlight.",
     "noSignal": "No signal yet",
     "noFeed": "No RSS",
     "legendCenter": "Center: this site",
@@ -714,7 +714,7 @@
   },
   "messages": {
     "title": "Messages",
-    "subtitle": "Across all that distance, signals still find their way here.",
+    "subtitle": "The long night is silent, waiting for a pulse from far away.",
     "rx": "RX · waiting for a signal",
     "rxCount_one": "RX · {{count}} signal received",
     "rxCount_other": "RX · {{count}} signals received",
@@ -755,7 +755,7 @@
   },
   "log": {
     "title": "Flight log",
-    "subtitle": "Lifting off from the ground, climbing a little higher every day.",
+    "subtitle": "Breaking free of gravity, I become the open sky.",
     "met": "MISSION ELAPSED TIME · since {{date}}",
     "metValue": "{{days}} d {{hms}}",
     "total_one": "{{count}} contribution so far",
@@ -778,7 +778,7 @@
   },
   "colophon": {
     "title": "Colophon",
-    "subtitle": "Fixing our position by the stars, calibrating every mark on this site.",
+    "subtitle": "Nothing else here: only the night, white ink, and a faint light.",
     "hint": "Click a star and the sextant turns to measure it.",
     "star": {
       "material": "Materials",
@@ -796,11 +796,11 @@
     "title_sky": "One sky",
     "text_sky": "Every page is one kind of thing in this sky, all made from the dots and lines of the dotted Saturn on the home page.",
     "title_rule1": "One signal per screen",
-    "text_rule1": "Click anywhere in the frame and the amber dot moves there. There is only ever one.",
+    "text_rule1": "The Saturn on the home page was drawn one step at a time. Walk through them in order; at the satellites step you can pick one yourself.",
     "title_rule2": "Only dots and lines",
-    "text_rule2": "A photo from the gallery. Drag the slider to see it become dots; the larger the cells, the more it looks like a starfield.",
+    "text_rule2": "Every photo on the photos page is received like this. In the last step, see what happens with nothing but dots.",
     "title_rule3": "Grown from data",
-    "text_rule3": "Every star on the Works page grows like this. Tweak the numbers and make your own.",
+    "text_rule3": "Every star on the works spiral grows from the numbers of one repo. Adjust the numbers to make one, then watch it grow step by step.",
     "title_license": "License",
     "text_license": "Code is open source under AGPL-3.0; posts, photos and other content are all rights reserved.",
     "swatchGround": "Black is the paper",
@@ -823,9 +823,6 @@
       "log": "a launch from the ground",
       "about": "a free fall"
     },
-    "rule1Toy": "A field of white dots; click to move the amber dot",
-    "rule2Toy": "A photo turned into dots",
-    "rule3Toy": "A planet grown from the numbers below",
     "cell": "Cell",
     "genSize": "Code size",
     "genLangs": "Languages",
@@ -833,6 +830,86 @@
     "genCommits": "Commits",
     "genMain": "Main language",
     "genOther": "Other",
+    "saturnToy": "The home page Saturn, drawn up to the current step",
+    "photoToy": "A photo from the gallery, received up to the current step",
+    "workToy": "A body grown from the numbers below",
+    "stepsLabel": "Steps",
+    "stepNext": "Next →",
+    "stepAgain": "From the top ↺",
+    "genPushed": "Last push",
+    "daysAgo": "d ago",
+    "steps": {
+      "saturn": {
+        "light": {
+          "t": "A sphere and a light",
+          "d": "It starts as a sphere and a sun shining from the upper left. The lit side is bright, the far side is dark."
+        },
+        "strokes": {
+          "t": "Strokes instead of shading",
+          "d": "No fill: just rows of horizontal lines, thicker where it is brighter. On the dark side the lines thin out to nothing, leaving only black and white."
+        },
+        "bands": {
+          "t": "Real cloud bands",
+          "d": "Brightness follows the bands Cassini photographed: the equatorial zone is brightest, the belts beside it darkest, and the line at 78°N is the edge of the north polar hexagon. A little noise makes the lines waver and break into brush strokes."
+        },
+        "rings": {
+          "t": "Rings and shadows",
+          "d": "The rings are concentric strokes too, spaced like the real ones: the B ring is densest, the Cassini Division is empty, and the A ring has the Encke Gap. The planet casts its shadow on the rings, and the rings cast theirs on the planet."
+        },
+        "satellites": {
+          "t": "Only one lights up",
+          "d": "Five orbits outside, one satellite each, matching the five sections on the home page. Amber goes to only one at a time: try tapping another."
+        },
+        "trails": {
+          "t": "Long exposure",
+          "d": "Last comes the background: with the shutter held open, every star drags an arc around the pole. The notes page keeps this idea, where each post is one star trail."
+        }
+      },
+      "photo": {
+        "raw": {
+          "t": "The original",
+          "d": "One photo from the gallery. A picture taken in space never appears in front of you directly; it has to make the trip down first."
+        },
+        "bits": {
+          "t": "Into 0s and 1s",
+          "d": "The camera turns the image into 0s and 1s and sends them row by row. At first, all you see is this flickering field of digits."
+        },
+        "gray": {
+          "t": "Row by row, in grayscale",
+          "d": "The ground station decodes one row at a time. Brightness arrives first, so the photo surfaces from top to bottom. The amber line is the row being received."
+        },
+        "color": {
+          "t": "One sweep of color",
+          "d": "Once the brightness is in, a single sweep from left to right maps the color back. Every photo on the photos page is received this way when it scrolls into view."
+        },
+        "dots": {
+          "t": "Only dots",
+          "d": "The same photo with one dot per cell, sized by brightness. Make the cells bigger and the photo slowly turns into a field of stars."
+        }
+      },
+      "work": {
+        "numbers": {
+          "t": "A handful of numbers",
+          "d": "On GitHub, a repo is just a few numbers: how much code, which languages, how many stars and commits, how long since the last push. Try adjusting them."
+        },
+        "surface": {
+          "t": "Size and surface",
+          "d": "More code makes a bigger planet. The main language picks the surface: TypeScript gives gas bands, Rust cratered rock, Python ice, anything else meridians. More commits mean more bands and craters."
+        },
+        "rings": {
+          "t": "Rings and moons",
+          "d": "Each language beyond the main one adds a ring, with a line style per language: solid for TypeScript, dashed for Rust, dotted for Python. GitHub stars become moons, up to four."
+        },
+        "body": {
+          "t": "Unfolding into 3D",
+          "d": "The works page normally shows only the line symbol; hover and it unfolds into a dotted 3D star, dense on the lit side and sparse on the dark side. The more recent the last push, the faster it spins."
+        },
+        "spiral": {
+          "t": "Onto the spiral",
+          "d": "Finally it joins the spiral on the works page: the center is the start, and newer works sit farther out. The one you just made is the newest, so it goes on the outermost turn."
+        }
+      }
+    },
     "logTitle": "Ship's log"
   }
 }

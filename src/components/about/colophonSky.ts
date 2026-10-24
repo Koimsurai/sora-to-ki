@@ -30,7 +30,7 @@ const WIDE: Record<StarKey, [number, number]> = {
   sky: [0.69, 0.2],
   rule1: [0.82, 0.11],
   rule2: [0.5, 0.33],
-  rule3: [0.64, 0.3],
+  rule3: [0.57, 0.42],
   license: [0.9, 0.24],
 };
 const NARROW: Record<StarKey, [number, number]> = {

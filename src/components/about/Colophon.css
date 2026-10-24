@@ -145,7 +145,23 @@
   display: grid;
   gap: var(--space-3);
   margin-top: var(--space-2);
-  animation: cl-in var(--dur-400) var(--easing-out);
+}
+
+/* 換一顆星：目鏡重新對焦，字一行一行浮出來（目鏡整塊換掉，動畫每次重來） */
+.cl-eyepiece > * {
+  animation: cl-in var(--dur-500) var(--easing-out) both;
+}
+
+.cl-eyepiece > :nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.cl-eyepiece > :nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.cl-eyepiece > :nth-child(4) {
+  animation-delay: 180ms;
 }
 
 @keyframes cl-in {
@@ -155,15 +171,34 @@
   }
 }
 
-/* 玩具放在一個圓形的視野裡，四周有十字刻線 */
+/* 玩具放在一個圓形的視野裡，四周有十字刻線；換到這個玩具時視野從中間撐開 */
 .cl-scope {
   position: relative;
-  width: min(280px, 100%);
+  width: min(200px, 100%);
   aspect-ratio: 1;
   justify-self: center;
   overflow: hidden;
   border: 1px solid var(--rule);
   border-radius: var(--r-round);
+  animation: cl-iris 700ms var(--easing-out) 200ms both;
+}
+
+@keyframes cl-iris {
+  from {
+    clip-path: circle(0% at 50% 50%);
+  }
+
+  to {
+    clip-path: circle(50% at 50% 50%);
+  }
+}
+
+/* 換一步：畫面像重新對焦，從糊到清楚（畫布換一個，動畫重來） */
+@keyframes cl-focus {
+  from {
+    opacity: 0.3;
+    filter: blur(var(--blur-8));
+  }
 }
 
 .cl-scope::before,
@@ -197,15 +232,11 @@
   display: block;
   width: 100%;
   height: 100%;
+  animation: cl-focus 450ms var(--easing-out) both;
 }
 
 .cl-toy-canvas.is-clickable {
   cursor: crosshair;
-}
-
-.cl-controls {
-  display: grid;
-  gap: var(--space-1);
 }
 
 .cl-range {
@@ -218,9 +249,74 @@
   color: var(--paper-3);
 }
 
+/* 滑桿：只用點與線。拉過的那段是實線、還沒拉到的是點線，把手是一個小圓圈（--p 是拉到幾 %） */
 .cl-range input {
   width: 100%;
-  accent-color: var(--paper-2);
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  background: transparent;
+  appearance: none;
+}
+
+.cl-range input:focus-visible {
+  outline: none;
+}
+
+.cl-range input::-webkit-slider-runnable-track {
+  height: 1px;
+  background:
+    linear-gradient(90deg, var(--paper-2) var(--p, 0%), transparent var(--p, 0%)),
+    repeating-linear-gradient(90deg, var(--paper-3) 0 1px, transparent 1px 4px);
+}
+
+.cl-range input::-moz-range-track {
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--paper-3) 0 1px, transparent 1px 4px);
+}
+
+.cl-range input::-moz-range-progress {
+  height: 1px;
+  background: var(--paper-2);
+}
+
+.cl-range input::-webkit-slider-thumb {
+  width: 9px;
+  height: 9px;
+  margin-top: calc(-1 * var(--space-1));
+  background: var(--ground);
+  border: 1px solid var(--paper);
+  border-radius: var(--r-round);
+  appearance: none;
+  transition: background var(--dur-150) ease;
+}
+
+.cl-range input::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  box-sizing: border-box;
+  background: var(--ground);
+  border: 1px solid var(--paper);
+  border-radius: var(--r-round);
+  transition: background var(--dur-150) ease;
+}
+
+.cl-range input:hover::-webkit-slider-thumb,
+.cl-range input:active::-webkit-slider-thumb {
+  background: var(--paper);
+}
+
+.cl-range input:hover::-moz-range-thumb,
+.cl-range input:active::-moz-range-thumb {
+  background: var(--paper);
+}
+
+.cl-range input:focus-visible::-webkit-slider-thumb {
+  border-color: var(--amber);
+}
+
+.cl-range input:focus-visible::-moz-range-thumb {
+  border-color: var(--amber);
 }
 
 .cl-range em {
@@ -250,6 +346,69 @@
 .cl-seg button[aria-pressed="true"] {
   color: var(--paper);
   border-color: var(--paper-2);
+}
+
+/* 步驟條：01 02 03⋯ 與「下一步」，下面是這一步在想什麼 */
+.cl-steps {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cl-steps .cl-seg {
+  margin: 0;
+}
+
+.cl-seg .cl-next {
+  margin-left: auto;
+  color: var(--paper-2);
+  border-color: transparent;
+}
+
+.cl-seg .cl-next:hover,
+.cl-seg .cl-next:focus-visible {
+  color: var(--paper);
+}
+
+.cl-step {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-height: 5.6em;
+  animation: cl-in var(--dur-400) var(--easing-out);
+}
+
+.cl-step b {
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+
+.cl-step p {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+/* 作品那顆的數字：兩欄排，目鏡才不會太高 */
+.cl-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1) var(--space-4);
+}
+
+.cl-controls .cl-seg {
+  grid-column: 1 / -1;
+}
+
+/* 兩欄裡的滑桿：名字與數字一行，滑桿在下面一行 */
+.cl-controls .cl-range {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 var(--space-2);
+}
+
+.cl-controls .cl-range input {
+  grid-row: 2;
+  grid-column: 1 / -1;
 }
 
 .cl-swatches,
@@ -363,8 +522,29 @@
   color: var(--paper-2);
 }
 
+/* 展開與收起：內容區的高度從 0 滑到內容的高度（支援的瀏覽器才滑，不支援的照樣直接打開），字跟著浮出來 */
+.cl-log {
+  interpolate-size: allow-keywords;
+}
+
 .cl-log details {
   border-bottom: 1px dotted var(--rule);
+}
+
+.cl-log details::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  transition:
+    block-size var(--dur-400) var(--easing-out),
+    content-visibility var(--dur-400) allow-discrete;
+}
+
+.cl-log details[open]::details-content {
+  block-size: auto;
+}
+
+.cl-log details[open] > :not(summary) {
+  animation: cl-in var(--dur-500) var(--easing-out) both;
 }
 
 .cl-log summary {
