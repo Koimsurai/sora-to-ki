@@ -32,6 +32,18 @@ export const animeLibraryQueryOptions = queryOptions({
   staleTime: STALE,
 });
 
+/** 最近看的那一部（導覽列「收藏」選單沒在看的時候寫這一筆） */
+export const latestAnimeQueryOptions = queryOptions({
+  queryKey: ['watch', 'anime-latest'],
+  queryFn: async (): Promise<AnimeRow | null> => {
+    const res = await fetch(apiUrl('/api/anime/history?limit=1'));
+    if (!res.ok) throw new Error(`GET /api/anime/history ${res.status}`);
+    const data = (await res.json()) as { history?: AnimeRow[] };
+    return data.history?.[0] ?? null;
+  },
+  staleTime: STALE,
+});
+
 export const filmsLibraryQueryOptions = queryOptions({
   queryKey: ['watch', 'films-library'],
   queryFn: async (): Promise<FilmRow[]> => {

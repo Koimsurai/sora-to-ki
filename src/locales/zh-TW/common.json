@@ -53,7 +53,17 @@
     "account": "帳號",
     "menu": "選單",
     "close": "關閉",
-    "home": "回首頁"
+    "home": "回首頁",
+    "allPosts": "全部 {{count}} 篇",
+    "allMoments": "全部碎念",
+    "allWorks": "全部 {{count}} 件",
+    "watching": "在看",
+    "reading": "在讀",
+    "listening": "在聽",
+    "recently": "最近",
+    "episode": "第 {{ep}} 集",
+    "aboutLead": "Koimsurai，全端工程師。",
+    "aboutAll": "關於我"
   },
   "user": {
     "adminPanel": "進入後台",

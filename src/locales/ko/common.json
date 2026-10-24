@@ -53,7 +53,17 @@
     "account": "계정",
     "menu": "메뉴",
     "close": "닫기",
-    "home": "홈"
+    "home": "홈",
+    "allPosts": "전체 {{count}}편",
+    "allMoments": "혼잣말 전체",
+    "allWorks": "전체 {{count}}개",
+    "watching": "보는 중",
+    "reading": "읽는 중",
+    "listening": "듣는 중",
+    "recently": "최근",
+    "episode": "{{ep}}화",
+    "aboutLead": "Koimsurai, 풀스택 엔지니어.",
+    "aboutAll": "소개"
   },
   "user": {
     "adminPanel": "관리자 페이지",

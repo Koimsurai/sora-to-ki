@@ -182,9 +182,177 @@
 }
 
 .snav.is-more .snav-more {
-  max-height: 400px;
+  max-height: 560px;
   /* 上面讓出頂欄那一行的高度（.snav-bar 的 64px） */
   padding-block: calc(var(--space-16) + var(--space-2)) var(--space-12);
+}
+
+/* ── 選單的頁（layout/NavMenus）：全部疊在一起，高度跟著開著的那一頁（--deck-h，SiteNav 量的） ──
+   換頁：新的從滑過去的那一側淡入，舊的往反方向退出去；面板高度同時平滑地變 */
+.snav-deck {
+  position: relative;
+  max-width: 720px;
+  height: var(--deck-h, 0);
+  margin-left: auto;
+  transition: height var(--dur-400) var(--easing-out);
+}
+
+.snav-page {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
+  column-gap: var(--space-10);
+  opacity: 0;
+  translate: calc(var(--dir, 1) * var(--space-6)) 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-250) ease,
+    translate var(--dur-400) var(--easing-out);
+}
+
+.snav-page.is-was {
+  translate: calc(var(--dir, 1) * var(--space-6) * -1) 0;
+}
+
+.snav-page.is-open {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+  transition-delay: var(--dur-100), 0s;
+}
+
+/* 「更多」那一頁是原本的格子，不分左右 */
+.snav-page-more {
+  display: block;
+}
+
+.snav-page-lead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+}
+
+.snav-page-lead p {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-185);
+  color: var(--paper-2);
+}
+
+.snav-page-all,
+.snav-page-contact a {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.snav-page-all:hover,
+.snav-page-contact a:hover {
+  color: var(--paper);
+}
+
+.snav-page-contact {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.snav-page-contact a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.snav-page-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.snav-page-list a {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--space-4);
+  padding: var(--space-3) 0;
+}
+
+/* 底下那條細線：選單打開時一條接一條畫出來（跟「更多」的格子同一個動作） */
+.snav-page-list a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--rule);
+  transition: width var(--dur-700) var(--easing-out);
+}
+
+.snav.is-more .snav-page.is-open .snav-page-list a::after {
+  width: 100%;
+}
+
+.snav-page-list li:nth-child(2) a::after {
+  transition-delay: calc(var(--dur-100) * 0.6);
+}
+.snav-page-list li:nth-child(3) a::after {
+  transition-delay: calc(var(--dur-100) * 1.2);
+}
+.snav-page-list li:nth-child(4) a::after {
+  transition-delay: calc(var(--dur-100) * 1.8);
+}
+
+.snav-row-stamp {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+  white-space: nowrap;
+}
+
+.snav-row-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+  transition: color var(--dur-200) ease;
+}
+
+.snav-page-list a:hover .snav-row-title {
+  color: var(--paper);
+}
+
+.snav-row-note {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+/* 正在發生的那一件：標題前一顆琥珀點，跟導覽列那顆同一種 */
+.snav-page-list .is-live .snav-row-title::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 var(--space-2) 0.15em 0;
+  border-radius: var(--r-full);
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
+  vertical-align: middle;
 }
 
 .snav-more-links {
