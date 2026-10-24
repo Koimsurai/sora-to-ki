@@ -64,15 +64,14 @@ UPDATE_STYLE_BASELINE=1 pnpm exec playwright test computed-style
 看完記得改回來。
 
 **`setViewportSize` 要在 `goto` 之前。** 先導覽的話會先以預設寬度算一次版面，
-元件裡看 `window.innerWidth` 的分支（MobileNav 的開合、圖庫欄數）會照舊寬度先跑一輪。
+元件裡看 `window.innerWidth` 的分支（照片牆的欄數之類）會照舊寬度先跑一輪。
 
 四件讓它能穩定的事，改動時不要拆掉：
 
-1. **排除隨機裝飾背景**（`RandomComets` / `RandomShootingStars` / `RandomUFOs`）——
-   它們產生的元素**數量本身是隨機的**，收進來首頁每跑必紅。
-2. **等 DOM 穩定，不是等固定秒數**。Hero 有 JS 打字機（`useTypingEffect`，延遲 900ms
-   開始、每字 80ms），而 **CSS 那條關動畫的規則停不掉 `setInterval`**，固定 sleep 會抓到
-   打到一半的 DOM。
+1. **排除隨機的東西**（spec 的 `DECORATIVE`：星空、碎念的彗星、照片頁的接收層 `.ph-rx`）——
+   數量或內容每次載入都不一樣（接收層的 0 與 1 是每次重畫的貼圖），收進來每跑必紅。
+2. **等 DOM 穩定，不是等固定秒數**。JS 計時器逐步長出來的 DOM（**CSS 那條關動畫的規則
+   停不掉 `setInterval`**），固定 sleep 會抓到長到一半的樣子。
 3. **不收這幾個屬性**：
 
    | 排除 | 原因 |

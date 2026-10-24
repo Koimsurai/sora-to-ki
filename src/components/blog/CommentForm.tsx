@@ -275,6 +275,7 @@ export default function CommentForm({
                   <span>{t('signal.fieldName')}</span>
                   <input
                     ref={nameRef}
+                    name="author"
                     type="text"
                     maxLength={24}
                     autoComplete="name"
@@ -285,11 +286,18 @@ export default function CommentForm({
                 </label>
                 <label className="cf-input">
                   <span>{t('signal.fieldEmail')}</span>
-                  <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <input
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </label>
                 <label className="cf-input">
                   <span>{t('signal.fieldWebsite')}</span>
                   <input
+                    name="website"
                     type="url"
                     autoComplete="url"
                     placeholder="https://"
@@ -301,6 +309,7 @@ export default function CommentForm({
                   <span>{t('signal.captcha', { a: captcha.a, b: captcha.b })}</span>
                   <input
                     ref={captchaRef}
+                    name="captcha"
                     type="text"
                     inputMode="numeric"
                     autoComplete="off"
@@ -351,6 +360,7 @@ export default function CommentForm({
           )}
           <textarea
             ref={textRef}
+            name="content"
             rows={1}
             maxLength={MAX_CHARS}
             value={text}

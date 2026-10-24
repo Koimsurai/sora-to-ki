@@ -1,15 +1,12 @@
 import { expect, test } from './fixtures';
 
 /**
- * 文章頁的目錄（TOC）、scroll-spy 與閱讀進度。
+ * 文章頁的目錄（OrbitToc：右側那條軌道）、scroll-spy 與閱讀進度。
  *
- * 為什麼需要：`BlogPost.tsx` 有 2337 行，而 e2e 只走到 16%——這三件是讀者每次看文章
- * 都會用到、壞了卻**不會報錯**的功能（目錄空掉、點了不跳、高亮不動、進度條不前進）。
- *
- * 挑選邏輯本身（哪個標題算 active、進度百分比怎麼算）已經抽成純函式在
- * `src/lib/blogReading.ts`，由單元測試逐個邊界驗。這裡守的是**接線**：
- * 標題有沒有真的長出 id、TOC 有沒有拿到同一份、捲動事件有沒有接上去。
- * 兩邊分工不重疊——單元測試餵的是座標，這裡餵的是真的捲動。
+ * 為什麼需要：這三件是讀者每次看文章都會用到、壞了卻**不會報錯**的功能
+ * （目錄空掉、點了不跳、高亮不動、進度不前進）。軌道本身畫在畫布上，
+ * 但項目、高亮（`li.is-on`）與進度（標頭的百分比）都還是 DOM，這裡守的是**接線**：
+ * 標題有沒有真的長出 id、目錄有沒有拿到同一份、捲動事件有沒有接上去。
  *
  * 用 id=4（CLS 用的長文，36 節）是因為它是唯一夠長、捲得動、標題夠多的種子文章；
  * 短文章上 scroll-spy 沒有東西可以測。
@@ -21,7 +18,7 @@ const POST = '/blog/4';
 test.use({ viewport: { width: 1600, height: 900 } });
 
 const tocIds = (page: import('@playwright/test').Page) =>
-  page.$$eval('.toc-item', (els) => els.map((e) => e.getAttribute('data-heading-id') ?? ''));
+  page.$$eval('.orbit-toc-list button', (els) => els.map((e) => e.getAttribute('data-heading-id') ?? ''));
 
 const headingIds = (page: import('@playwright/test').Page) =>
   page.$$eval('.post-content h1[id], .post-content h2[id], .post-content h3[id], .post-content h4[id]', (els) =>
@@ -31,8 +28,8 @@ const headingIds = (page: import('@playwright/test').Page) =>
 test.describe('文章目錄', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(POST);
-    await page.locator('.toc-item').first().waitFor({ timeout: 20_000 });
-    // ⚠ 等 `.toc-item` 出現**不代表頁面已經可以捲**。TOC 是從文章內容字串同步算出來的
+    await page.locator('.orbit-toc-list button').first().waitFor({ timeout: 20_000 });
+    // ⚠ 等目錄出現**不代表頁面已經可以捲**。TOC 是從文章內容字串同步算出來的
     //   （useMemo + extractHeadings），比本文真正繪製完早得多。這中間去捲動的話，
     //   `scrollTo` 會被夾在當時的最大捲動量——文件還不夠高時那就是 0，
     //   下面每一條依賴捲動的斷言都會莫名其妙地失敗（負載大時特別容易中）。
@@ -62,7 +59,7 @@ test.describe('文章目錄', () => {
   test('點目錄會捲到對應的標題', async ({ page }) => {
     const ids = await headingIds(page);
     const target = ids[Math.floor(ids.length / 2)];
-    await page.locator(`[data-heading-id="${target}"]`).click();
+    await page.locator(`.orbit-toc-list [data-heading-id="${target}"]`).click();
     // ⚠ 用屬性選擇器而不是 `#id`：id 是中文/韓文的 slug，`#` 選擇器要 CSS.escape，
     //   而那是**瀏覽器**的全域——在 spec 的 Node 端呼叫會 ReferenceError。
     //   屬性選擇器沒有這個問題。
@@ -74,14 +71,23 @@ test.describe('文章目錄', () => {
       .toBeLessThan(250);
   });
 
-  test('捲動時高亮會跟著換，而且永遠有一個是亮的', async ({ page }) => {
-    const active = () => page.$$eval('.toc-item.active', (els) => els.map((e) => e.getAttribute('data-heading-id')));
-    // ⚠ 初始高亮是 effect 裡 `setTimeout(handleScroll, 500)` 設的，不是第一幀就有。
-    //   直接斷言會抓到還沒初始化的狀態。
-    await expect.poll(async () => (await active()).length, { timeout: 10_000 }).toBe(1);
+  // 文章最上面（還沒到第一個標題）一個都不亮是對的：還沒讀到任何一節
+  test('捲進本文後一直有一個是亮的，而且會跟著捲動換', async ({ page }) => {
+    const active = () =>
+      page.$$eval('.orbit-toc-list li.is-on button', (els) => els.map((e) => e.getAttribute('data-heading-id')));
+    // ⚠ 高亮是畫布那一幀的迴圈順手標上的，不是第一幀就有，所以用輪詢。
+    //   每次輪詢都重下捲動指令：hydration 與捲動還原會在載入後把 scrollY 重設回 0
+    await expect
+      .poll(
+        async () => {
+          await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight * 0.3));
+          return (await active()).length;
+        },
+        { timeout: 15_000 },
+      )
+      .toBe(1);
     const first = (await active())[0];
 
-    // 同上：重下捲動指令，避免被捲動還原重設
     await expect
       .poll(
         async () => {
@@ -96,8 +102,7 @@ test.describe('文章目錄', () => {
   });
 
   test('閱讀進度跟著捲動前進，捲到底接近 100%', async ({ page }) => {
-    const pct = () =>
-      page.locator('.reading-progress-fill').evaluate((el) => Number.parseFloat(getComputedStyle(el).width));
+    const pct = async () => Number.parseFloat(await page.locator('.orbit-toc-hd b').innerText());
     const atTop = await pct();
 
     await expect
@@ -109,7 +114,7 @@ test.describe('文章目錄', () => {
         { timeout: 15_000 },
       )
       .toBeGreaterThan(atTop);
-    await expect.poll(() => page.locator('.progress-text').innerText(), { timeout: 10_000 }).toMatch(/9\d|100/);
+    await expect.poll(pct, { timeout: 10_000 }).toBeGreaterThanOrEqual(90);
   });
 
   test('「回到頂端」真的回得去', async ({ page }) => {
@@ -131,7 +136,7 @@ test.describe('文章目錄', () => {
         { timeout: 15_000 },
       )
       .toBeGreaterThan(1000);
-    await page.locator('.toc-bottom-link').click();
+    await page.locator('.orbit-toc-ft button').first().click();
     await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 15_000 }).toBeLessThan(50);
   });
 });
