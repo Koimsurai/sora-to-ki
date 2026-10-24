@@ -11,10 +11,8 @@ import './LinkCard.css';
 // 卡片形狀的載入骨架（保留與真卡相同的高度/結構）→ 資料未到時佔位不塌、client 補上時不位移。
 const LinkCardSkeleton = () => (
   <span className="link-card link-card-internal link-card-skeleton" aria-hidden="true">
+    <span className="link-card-route" />
     <span className="link-card-body">
-      <span className="link-card-site">
-        <span className="bp-skel" style={{ width: 64, height: 12, display: 'inline-block' }} />
-      </span>
       <span className="link-card-title">
         <span className="bp-skel" style={{ width: '70%', height: 16, display: 'block' }} />
       </span>
@@ -167,21 +165,14 @@ const InternalLinkCard = ({ id }: { id: string }) => {
 
   return (
     <LocaleLink to={postPath(post)} className="link-card link-card-internal">
+      <span className="link-card-route" aria-hidden="true" />
       <div className="link-card-body">
-        <div className="link-card-site">
-          <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
-          <span>站內文章</span>
-        </div>
         <div className="link-card-title">{post.title}</div>
         <div className="link-card-meta">
-          {/* 年份直接取 ISO 字串前 4 碼（不經 Date/時區）→ SSR 與 client 一致，不 mismatch。 */}
-          <span>{post.created_at.slice(0, 4)}</span>
-          {post.category && (
-            <>
-              {' '}
-              · <span>{post.category}</span>
-            </>
-          )}
+          <span>手記</span>
+          {/* 年月直接取 ISO 字串前 7 碼（不經 Date/時區）→ SSR 與 client 一致，不 mismatch。 */}
+          <span>{post.created_at.slice(0, 7).replace('-', '.')}</span>
+          {post.category && <span>{post.category}</span>}
         </div>
       </div>
     </LocaleLink>
@@ -199,13 +190,13 @@ const ThoughtPreviewCard = ({ id }: { id: string }) => {
 
   return (
     <LocaleLink to={`/thinking/${id}`} className="link-card link-card-internal">
+      <span className="link-card-route" aria-hidden="true" />
       <div className="link-card-body">
-        <div className="link-card-site">
-          <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
-          <span>碎念</span>
-        </div>
         <div className="link-card-title" style={{ whiteSpace: 'normal', fontSize: '0.98rem' }}>
           {th.content.length > 80 ? th.content.slice(0, 80) + '…' : th.content}
+        </div>
+        <div className="link-card-meta">
+          <span>碎念</span>
         </div>
       </div>
     </LocaleLink>
@@ -280,12 +271,12 @@ export const LinkCard = ({ href }: { href: string }) => {
   if (meta.type === 'internal-page') {
     return (
       <LocaleLink to={meta.path ?? '/'} className="link-card link-card-internal">
+        <span className="link-card-route" aria-hidden="true" />
         <div className="link-card-body">
-          <div className="link-card-site">
-            <span style={{ fontSize: '1rem', color: 'var(--post-accent)' }}>✦</span>
-            <span>{meta.label}</span>
+          <div className="link-card-title">{meta.label}</div>
+          <div className="link-card-meta">
+            <span>{meta.path}</span>
           </div>
-          <div className="link-card-url">{meta.path}</div>
         </div>
       </LocaleLink>
     );

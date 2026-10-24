@@ -45,7 +45,7 @@
 /* 站內連結卡的載入骨架：保留與真卡相近的高度 → 資料補上時不位移（主路徑已 SSR-real，
    此骨架只在「連結指向 top-100 之外的文章」或非文章頁 reuse 時短暫出現）。 */
 .link-card-skeleton {
-  min-height: 110px; /* ≈ 真卡（padding + 3 行）高度 → 換成真卡時幾乎不位移 */
+  min-height: 64px; /* ≈ 真卡（標題 + 一行等寬小字）高度 → 換成真卡時幾乎不位移 */
   cursor: default;
   pointer-events: none;
 }
@@ -152,11 +152,55 @@
   transition: color var(--dur-200);
 }
 
+/* ── 站內連結（文章、碎念、站內頁面）：不是框，是一條虛線航線通往那裡 ──
+   四角框留給投票、數字、圖表這類「資料」；站內連結是「去別的地方」，畫成一段路：
+   虛線的盡頭一顆點，滑過時點亮成琥珀（那裡就是你要去的地方），標題跟著變亮 */
+.link-card-internal {
+  align-items: center;
+  gap: var(--space-3-5);
+  margin: var(--space-6) 0;
+  background: none;
+}
+
+.link-card-route {
+  position: relative;
+  flex: 0 0 var(--space-12);
+  align-self: flex-start;
+  margin-top: 0.85em;
+  height: 1px;
+  background: repeating-linear-gradient(to right, var(--paper-3) 0 4px, transparent 4px 8px);
+}
+
+.link-card-route::after {
+  content: "";
+  position: absolute;
+  right: calc(-1 * var(--space-1-5));
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-round);
+  background: var(--paper-3);
+  translate: 0 -50%;
+  transition:
+    background var(--dur-200) ease,
+    box-shadow var(--dur-200) ease;
+}
+
+.link-card-internal:hover .link-card-route::after,
+.link-card-internal:focus-visible .link-card-route::after {
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.7);
+}
+
+.link-card-internal .link-card-body {
+  padding: 0;
+  gap: var(--space-1);
+}
+
 .link-card-internal .link-card-title {
   font-size: var(--fs-18);
   font-weight: 400;
   color: var(--paper-2);
-  margin: var(--space-1) 0;
   line-height: var(--lh-140);
 }
 
@@ -169,7 +213,8 @@
   font-size: var(--fs-11);
   color: var(--paper-3);
   display: flex;
-  gap: var(--space-2);
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
 }
 .link-card-skeleton .link-card-body {
   width: 100%;

@@ -495,11 +495,12 @@
   text-decoration-color: var(--paper);
 }
 
-/* 引言：照提案，左邊一條細線、淡一階的字，沒有底色 */
+/* 引言（別人說的話）：左邊一條點線、淡一階的字，沒有底色。
+   旁白類三種線：引言＝點線、站長註與 NOTE/TIP＝實線、IMPORTANT/WARNING/CAUTION＝亮一階的實線加琥珀點 */
 .post-content blockquote {
   margin: var(--space-6) 0;
   padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
-  border-left: 1px solid var(--rule);
+  border-left: 1px dotted var(--paper-3);
   color: var(--paper-2);
 }
 
