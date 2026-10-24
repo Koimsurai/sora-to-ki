@@ -19,7 +19,7 @@ use ferrous_opencc::{OpenCC, config::BuiltinConfig};
 use serde_json::json;
 use tokio::sync::OnceCell;
 
-use crate::state::AppState;
+use crate::{handlers::excerpt_links, state::AppState};
 
 /// 進程級單例：`Tw2s` 轉換器建構（載入內建字典 → FST）較重，一次性建好共用。
 /// 首次使用才建（admin-only、罕用，不拖慢啟動），且在 blocking 池建避免卡 async worker。
@@ -121,13 +121,14 @@ pub async fn generate_zh_cn(
     Path(id): Path<String>,
 ) -> Response {
     // 對齊 Express：SELECT * 後只讀這幾欄
-    let row = sqlx::query_as::<_, (Option<String>, Option<String>, Option<String>, Option<String>)>(
-        "SELECT source_language, title, content, excerpt FROM posts WHERE id = ?",
-    )
+    let row = sqlx::query_as::<
+        _,
+        (Option<String>, Option<String>, Option<String>, Option<String>, Option<String>),
+    >("SELECT source_language, title, content, excerpt, excerpt_links FROM posts WHERE id = ?")
     .bind(&id)
     .fetch_optional(&state.pool)
     .await;
-    let (source_language, title, content, excerpt) = match row {
+    let (source_language, title, content, excerpt, links) = match row {
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => return err(StatusCode::NOT_FOUND, "文章不存在"),
         Ok(Some(r)) => r,
@@ -156,20 +157,30 @@ pub async fn generate_zh_cn(
         let title_zh_cn = convert_preserving_japanese(&cc, &title);
         let content_zh_cn = convert_preserving_japanese(&cc, &content);
         let excerpt_zh_cn = excerpt.map(|e| convert_preserving_japanese(&cc, &e));
-        (title_zh_cn, content_zh_cn, excerpt_zh_cn)
+        // 摘要裡連到章節的句子也跟著轉，轉完在簡體摘要裡找得到的才留
+        let links = excerpt_links::convert_locale(
+            links.as_deref(),
+            "zh-TW",
+            "zh-CN",
+            excerpt_zh_cn.as_deref(),
+            |s| convert_preserving_japanese(&cc, s),
+        );
+        (title_zh_cn, content_zh_cn, excerpt_zh_cn, links)
     })
     .await;
-    let (title_zh_cn, content_zh_cn, excerpt_zh_cn) = match converted {
+    let (title_zh_cn, content_zh_cn, excerpt_zh_cn, links) = match converted {
         Ok(v) => v,
         Err(e) => return err(StatusCode::INTERNAL_SERVER_ERROR, &format!("OpenCC 轉换失敗: {e}")),
     };
 
     let upd = sqlx::query(
-        "UPDATE posts SET title_zh_cn = ?, content_zh_cn = ?, excerpt_zh_cn = ?, updated_at = datetime('now') WHERE id = ?",
+        "UPDATE posts SET title_zh_cn = ?, content_zh_cn = ?, excerpt_zh_cn = ?, excerpt_links = ?, \
+         updated_at = datetime('now') WHERE id = ?",
     )
     .bind(&title_zh_cn)
     .bind(&content_zh_cn)
     .bind(&excerpt_zh_cn)
+    .bind(&links)
     .bind(&id)
     .execute(&state.pool)
     .await;
