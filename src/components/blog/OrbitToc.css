@@ -140,7 +140,14 @@ html[data-pt] .orbit-toc-list {
   opacity: 1;
 }
 
-.orbit-toc-ft button {
+/* 目錄底下一行：回到文章頂部，旁邊是字體（blog/ArticleControls 的 FontLine） */
+.orbit-toc-ft {
+  display: flex;
+  gap: var(--space-6);
+  align-items: baseline;
+}
+
+.orbit-toc-ft > button {
   pointer-events: auto;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
@@ -150,7 +157,7 @@ html[data-pt] .orbit-toc-list {
   transition: color var(--dur-200) ease;
 }
 
-.orbit-toc-ft button:hover {
+.orbit-toc-ft > button:hover {
   color: var(--paper);
 }
 

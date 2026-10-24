@@ -59,10 +59,13 @@ export default function OrbitToc({
   postId,
   headings,
   contentRef,
+  footer,
 }: {
   postId: number;
   headings: TocHeading[];
   contentRef: React.RefObject<HTMLElement | null>;
+  /** 目錄底下「回到文章頂部」旁邊多放的東西（文章頁的字體那一行） */
+  footer?: React.ReactNode;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -440,6 +443,7 @@ export default function OrbitToc({
         <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           ↑ {t('blog.backToArticleTop')}
         </button>
+        {footer}
       </div>
     </div>
   );

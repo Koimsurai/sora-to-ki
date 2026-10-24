@@ -303,7 +303,6 @@
     "shareTitle": "Share",
     "commentTitle": "Comments",
     "subscribeTitle": "Subscribe",
-    "fontSwitcherTitle": "Switch font",
     "statPosts": "Posts",
     "statTags": "Tags",
     "statReads": "Reads",
@@ -333,7 +332,9 @@
     "prevPost": "Previous",
     "nextPost": "Next",
     "lastUpdated": "Updated",
-    "nearbyNav": "Nearby posts"
+    "nearbyNav": "Nearby posts",
+    "font": "Font",
+    "originalText": "original"
   },
   "thinking": {
     "title": "Murmurs",

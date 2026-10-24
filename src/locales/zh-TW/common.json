@@ -303,7 +303,6 @@
     "shareTitle": "分享",
     "commentTitle": "留言",
     "subscribeTitle": "訂閱",
-    "fontSwitcherTitle": "切換字型",
     "statPosts": "文章",
     "statTags": "標籤",
     "statReads": "閱讀",
@@ -333,7 +332,9 @@
     "prevPost": "上一篇",
     "nextPost": "下一篇",
     "lastUpdated": "最近更新",
-    "nearbyNav": "鄰近文章"
+    "nearbyNav": "鄰近文章",
+    "font": "字體",
+    "originalText": "原文"
   },
   "thinking": {
     "title": "碎念",

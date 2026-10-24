@@ -25,11 +25,11 @@ import { CodeBody } from '@/components/mdx/CodeSurface';
 // 沒有圖的文章連 import 都不會觸發。
 import { MermaidBlock, MermaidStatic } from './MermaidBlock';
 import { MermaidSvgContext } from '@/contexts/mermaidSvgs';
-import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
 import { FaEnvelope, FaTimes } from 'react-icons/fa';
 import ArticleComments from './ArticleComments';
+import { FontLine, LangLine } from './ArticleControls';
 import ReactionSky from './ReactionSky';
 import { BlogImage } from '@/components/blog/BlogImage';
 // BlogPost.css：Tier-2 後本元件直接 SSR（不再靠 BlogPostPage fallback）→ CSS 由這裡匯入。
@@ -122,17 +122,11 @@ const nodeText = (node: React.ReactNode): string => {
   return '';
 };
 
-/* ── Font Options ── */
-/* 閱讀字體選項。字體棧本身在 index.css（--blog-font-<id>），這裡只留 id 與顯示名——
+/* ── 閱讀字體 ── */
+/* 選項（id 與顯示名）在 blog/ArticleControls 的 FONT_OPTIONS（不 export，只有字體那一行在用）；字體棧本身在 index.css（--blog-font-<id>）——
    偏好必須在 paint 之前套用（見 __root.tsx 的 pre-paint script），而那段只能碰 CSS。
-   新增字體：這裡加一列 + index.css 加兩行（--blog-font-<id> 與 html[data-blog-font=...]）。 */
+   新增字體：FONT_OPTIONS 加一列 + index.css 加兩行（--blog-font-<id> 與 html[data-blog-font=...]）。 */
 const DEFAULT_BLOG_FONT = 'noto-serif';
-const FONT_OPTIONS = [
-  { id: 'misans', name: 'MiSans' },
-  { id: 'lxgw', name: '霞鶩文楷' },
-  { id: 'noto-serif', name: 'Noto Serif' },
-  { id: 'source-han', name: '思源黑體' },
-];
 
 /* ══════════════════════════
    CodeBlock
@@ -897,48 +891,6 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-/* ══════════════════════════
-   FontSwitcher — bottom-right popup
-   ══════════════════════════ */
-const FontSwitcher = ({ currentFont, onFontChange }: { currentFont: string; onFontChange: (id: string) => void }) => {
-  const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="font-switcher">
-      <button className="font-switcher-btn" onClick={() => setIsOpen(!isOpen)} title={t('blog.fontSwitcherTitle')}>
-        <span>字</span>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="font-switcher-popup"
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-          >
-            {FONT_OPTIONS.map((f) => (
-              <button
-                key={f.id}
-                className={'font-option' + (currentFont === f.id ? ' active' : '')}
-                onClick={() => {
-                  onFontChange(f.id);
-                  setIsOpen(false);
-                }}
-                // 每個選項用自己的字體預覽 → 直接指向 index.css 的那份定義，不另存一份字體棧
-                style={{ fontFamily: `var(--blog-font-${f.id})` }}
-              >
-                {f.name}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
 /* ═══════════════════════════════════
    Toast — 短暫提示
    ═══════════════════════════════════ */
@@ -956,138 +908,6 @@ const Toast = ({ message, onDone }: { message: React.ReactNode; onDone: () => vo
     >
       {message}
     </motion.div>
-  );
-};
-
-/* ═══════════════════════════════════
-   LanguageSwitcher — 文章語言切換下拉
-   ═══════════════════════════════════ */
-const LANG_OPTIONS = [
-  { code: 'zh-TW', label: '繁體中文' },
-  { code: 'zh-CN', label: '简体中文' },
-  { code: 'en', label: 'English' },
-  { code: 'ja', label: '日本語' },
-  { code: 'ko', label: '한국어' },
-];
-
-const LanguageSwitcher = ({
-  open,
-  setOpen,
-  current,
-  source,
-  available,
-  onSelect,
-  onUnavailable,
-}: {
-  open: boolean;
-  setOpen: (v: boolean) => void;
-  current: string;
-  source: string;
-  available: string[];
-  onSelect: (code: string) => void;
-  onUnavailable: (label: string) => void;
-}) => {
-  const wrapRef = useRef<HTMLSpanElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, minWidth: 160 });
-
-  // 外點關閉 + ESC 關閉
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (wrapRef.current && e.target instanceof Node && wrapRef.current.contains(e.target)) return;
-      const menu = document.getElementById('blog-lang-menu');
-      if (menu && e.target instanceof Node && menu.contains(e.target)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, setOpen]);
-
-  // 計算菜單位置（以觸發按鈕為錨點，portal 到 body 避開父層 stacking context）
-  useEffect(() => {
-    if (!open || !triggerRef.current) return;
-    const compute = () => {
-      if (!triggerRef.current) return;
-      const rect = triggerRef.current.getBoundingClientRect();
-      // getBoundingClientRect 要等元素真的掛上才量得到，render 期無解 → 只能在 effect。
-      // eslint-disable-next-line @eslint-react/set-state-in-effect
-      setMenuPos({
-        top: rect.bottom + window.scrollY + 6,
-        left: rect.left + window.scrollX,
-        minWidth: Math.max(160, rect.width),
-      });
-    };
-    compute();
-    window.addEventListener('resize', compute);
-    window.addEventListener('scroll', compute, true);
-    return () => {
-      window.removeEventListener('resize', compute);
-      window.removeEventListener('scroll', compute, true);
-    };
-  }, [open]);
-
-  const currentLabel = LANG_OPTIONS.find((o) => o.code === current)?.label ?? current;
-
-  return (
-    <span className="meta-lang-switcher" ref={wrapRef}>
-      <button
-        ref={triggerRef}
-        type="button"
-        className="lang-trigger"
-        onClick={() => setOpen(!open)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="lang-icon">🌐</span>
-        <span className="lang-code">{currentLabel}</span>
-        <span className={`lang-caret ${open ? 'open' : ''}`}>▾</span>
-      </button>
-      {open &&
-        ReactDOM.createPortal(
-          <div
-            id="blog-lang-menu"
-            className="lang-menu"
-            // 同 LanguagePicker：不掛 role="listbox"/"option"。那組 role 承諾完整的 listbox
-            // 鍵盤語意（方向鍵 + aria-activedescendant），這裡沒實作；role="option" 蓋在
-            // button 上還會覆寫按鈕語意。一組按鈕本身就可存取，目前語言用 aria-current 標。
-            style={{ position: 'absolute', top: menuPos.top, left: menuPos.left, minWidth: menuPos.minWidth }}
-          >
-            {LANG_OPTIONS.map((opt) => {
-              const isSource = opt.code === source;
-              const isAvailable = available.includes(opt.code);
-              return (
-                <button
-                  key={opt.code}
-                  type="button"
-                  aria-current={opt.code === current ? 'true' : undefined}
-                  className={`lang-item ${isAvailable ? '' : 'disabled'} ${opt.code === current ? 'active' : ''}`}
-                  onClick={() => {
-                    setOpen(false);
-                    if (!isAvailable) {
-                      onUnavailable(opt.label);
-                      return;
-                    }
-                    if (opt.code === current) return;
-                    onSelect(opt.code);
-                  }}
-                >
-                  <span>{opt.label}</span>
-                  {isSource && <span className="lang-badge">原文</span>}
-                </button>
-              );
-            })}
-          </div>,
-          document.body,
-        )}
-    </span>
   );
 };
 
@@ -1125,7 +945,6 @@ function BlogPost() {
   const navLocale = useLocale();
   const [copied, setCopied] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   // SSR-safe：初始用預設（server 無 localStorage），掛載後才讀本地偏好 → 首次 client render 與 SSR 一致、不 mismatch。
   // 只驅動 FontSwitcher 的「目前選中」標記；實際字體由 html[data-blog-font] + CSS 變數決定。
@@ -1428,7 +1247,13 @@ function BlogPost() {
     <div className="blog-post-container ar-page" style={{ fontFamily: 'var(--blog-font)' }}>
       {toastMsg && <Toast key={toastMsg} message={toastMsg} onDone={() => setToastMsg('')} />}
 
-      <OrbitToc key={'orbit-' + id} postId={post.id} headings={headings} contentRef={contentRef} />
+      <OrbitToc
+        key={'orbit-' + id}
+        postId={post.id}
+        headings={headings}
+        contentRef={contentRef}
+        footer={<FontLine current={currentFont} onChange={handleFontChange} />}
+      />
       <PostsNav currentId={post.id} postCategory={post.category ?? undefined} />
 
       <div className="ar-col">
@@ -1454,9 +1279,7 @@ function BlogPost() {
             )}
             <span>{t('blog.minutes', { count: readTime })}</span>
             <span>{t('blog.views', { count: post.view_count })}</span>
-            <LanguageSwitcher
-              open={langMenuOpen}
-              setOpen={setLangMenuOpen}
+            <LangLine
               current={currentLocale}
               source={sourceLang}
               available={availableLocales}
@@ -1558,8 +1381,10 @@ function BlogPost() {
             <a href="/rss" target="_blank" rel="noopener noreferrer">
               RSS
             </a>
+            {/* 窄螢幕沒有目錄：字體那一行放在這裡（寬螢幕的在目錄底下） */}
+            <FontLine className="ar-font-narrow" current={currentFont} onChange={handleFontChange} />
           </div>
-          {/* 回應的狀態只能有一個持有者（文章頁）：「喜歡」鈕與星座吃同一份 counts／mine，各自呼叫 useReactions 的話 mine 會分岔 */}
+          {/* 回應的狀態只有一個持有者（文章頁）：傳給星座，各自呼叫 useReactions 的話 mine 會分岔 */}
           <ReactionSky counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />
           {post.series_name && <SeriesNav seriesName={post.series_name} currentId={post.id} />}
           <PrevNextNav currentId={post.id} />
@@ -1570,7 +1395,6 @@ function BlogPost() {
         </footer>
       </div>
 
-      <FontSwitcher currentFont={currentFont} onFontChange={handleFontChange} />
       <AnimatePresence>{showSubscribe && <SubscribeModal onClose={() => setShowSubscribe(false)} />}</AnimatePresence>
     </div>
   );
