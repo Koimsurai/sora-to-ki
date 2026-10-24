@@ -587,7 +587,7 @@
   },
   "collection": {
     "title": "收藏",
-    "subtitle": "看过的、读过的、常听的。",
+    "subtitle": "每部看过、读过、听过的作品，都是从地球发出的一道信号。离地球越远，就是越早以前的。",
     "kind": {
       "anime": "动画",
       "film": "电影",
@@ -616,10 +616,60 @@
     "music": {
       "title": "在听",
       "tracks": "首最常听",
-      "genres": "种曲风",
       "live": "正在听",
       "last": "刚刚听的是"
     },
-    "hint": "往下滚"
+    "hint": "往下滚，看得更远",
+    "sky": {
+      "unit": {
+        "s": "光秒",
+        "m": "光分",
+        "h": "光时",
+        "d": "光日",
+        "y": "光年"
+      },
+      "ago": {
+        "now": "刚刚",
+        "s": "{{n}} 秒前",
+        "m": "{{n}} 分钟前",
+        "h": "{{n}} 小时前"
+      },
+      "reach": "视野 {{n}} {{unit}}\n这个距离是 {{date}} 发出的信号",
+      "away": "{{n}} {{unit}}外 · {{date}} 发出",
+      "live": "正在发送",
+      "queued": "还没发出，在地球上",
+      "beyond": "比记录更早，在记录的外缘",
+      "records": "记录从 {{date}} 开始",
+      "mark": {
+        "earth": "地球",
+        "geo": "地球同步轨道",
+        "moon": "月球",
+        "jwst": "韦布空间望远镜",
+        "sun": "太阳",
+        "mercury": "水星",
+        "venus": "金星",
+        "mars": "火星",
+        "jupiter": "木星",
+        "saturn": "土星",
+        "uranus": "天王星",
+        "neptune": "海王星",
+        "voyager1": "旅行者1号",
+        "heliopause": "日球层顶",
+        "oort": "奥尔特云",
+        "proxima": "比邻星",
+        "barnard": "巴纳德星",
+        "wolf359": "沃尔夫 359",
+        "lalande": "拉兰德 21185",
+        "sirius": "天狼星",
+        "epsEri": "天苑四",
+        "procyon": "南河三",
+        "tauCeti": "天仓五",
+        "scale-sec": "1 光秒 · 一秒前",
+        "scale-min": "1 光分 · 一分钟前",
+        "scale-hour": "1 光时 · 一小时前",
+        "scale-day": "1 光日 · 一天前",
+        "scale-year": "1 光年 · 一年前"
+      }
+    }
   }
 }

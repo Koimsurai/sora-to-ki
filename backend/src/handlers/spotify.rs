@@ -276,7 +276,7 @@ pub async fn login() -> Response {
 pub async fn recently_played(State(state): State<AppState>) -> Response {
     let r: Result<Value, SpErr> = async {
         let token = access_token(&state).await?;
-        let (_, v) = sp_get(&state, "/v1/me/player/recently-played?limit=10", &token, None).await?;
+        let (_, v) = sp_get(&state, "/v1/me/player/recently-played?limit=50", &token, None).await?;
         Ok(v)
     }
     .await;

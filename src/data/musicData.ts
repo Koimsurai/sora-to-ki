@@ -1,17 +1,12 @@
 import { queryOptions } from '@tanstack/react-query';
 import { apiUrl } from '@/lib/api';
-import type { NowPlayingResponse, RecentPlayItem, SpotifyTrack, TopGenre } from '@koimsurai/api-types';
+import type { NowPlayingResponse, RecentPlayItem, SpotifyTrack } from '@koimsurai/api-types';
 
 // Spotify 的型別吃後端 specta 生成的（backend handlers::spotify）；configured / error 是前端自己的
 // 載入狀態，不是 API 的形狀
 export type NowPlaying = NowPlayingResponse;
 export interface RecentlyPlayedState {
   tracks?: RecentPlayItem[];
-  configured?: boolean;
-  error?: string;
-}
-export interface TopGenresState {
-  genres?: TopGenre[];
   configured?: boolean;
   error?: string;
 }
@@ -49,18 +44,6 @@ export const recentlyPlayedQueryOptions = queryOptions({
     getState<RecentlyPlayedState>(
       '/api/spotify/recently-played',
       (d) => ({ tracks: (d.items as RecentlyPlayedState['tracks']) ?? [], configured: true }),
-      (error) => ({ error, configured: false }),
-    ),
-  staleTime: STALE,
-  refetchInterval: DATA_REFRESH,
-});
-
-export const topGenresQueryOptions = queryOptions({
-  queryKey: ['spotify', 'top-genres'],
-  queryFn: () =>
-    getState<TopGenresState>(
-      '/api/spotify/top-genres',
-      (d) => ({ genres: (d.genres as TopGenresState['genres']) ?? [], configured: true }),
       (error) => ({ error, configured: false }),
     ),
   staleTime: STALE,
