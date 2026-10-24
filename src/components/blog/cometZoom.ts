@@ -22,3 +22,22 @@ export function peekCometZoom(id: string): ZoomSpec | null {
 export function clearCometZoom() {
   handoff = null;
 }
+
+/**
+ * 反過來：從單則頁回列表時，列表頁一開始停在放大的那一段（那一則在畫面上的 T），再拉遠回整條彗星。
+ * 單則頁收的時候留下「是哪一則、它停在畫面的哪裡」
+ */
+let back: { id: string; T: { x: number; y: number } } | null = null;
+
+export function setCometZoomOut(spec: { id: string; T: { x: number; y: number } }) {
+  back = spec;
+}
+
+/** 只讀不清（同上）；列表頁掛好之後用 clearCometZoomOut 清掉 */
+export function peekCometZoomOut() {
+  return back;
+}
+
+export function clearCometZoomOut() {
+  back = null;
+}

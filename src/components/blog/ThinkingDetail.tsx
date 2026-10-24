@@ -121,6 +121,8 @@ export default function ThinkingDetail() {
     zoom: COMET_ZOOM,
     focus: true,
     handedOver: handoff !== null,
+    // 回列表：列表頁從這一段拉遠
+    zoomOutTo: (to) => (to === 'thinking' ? id : null),
   });
 
   const del = (tid: number) => {
