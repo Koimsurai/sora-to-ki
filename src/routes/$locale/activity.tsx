@@ -1,8 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
-import Activity from '@/components/media/Activity';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+// 舊的動態頁已併進航行日誌（/history）
 export const Route = createFileRoute('/$locale/activity')({
-  ...localePagePrefixed('activity'),
-  component: localeWrap(Activity),
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: '/$locale/history', params: { locale: params.locale }, statusCode: 301 });
+  },
 });

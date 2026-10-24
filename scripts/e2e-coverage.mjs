@@ -60,7 +60,6 @@ const PUBLIC = [
   '/about-site',
   '/journey',
   '/portfolio',
-  '/activity',
 ];
 const ADMIN = ['/admin/dashboard', '/admin/posts', '/admin/tags', '/admin/categories', '/admin/comments'];
 

@@ -750,5 +750,28 @@
     "errName": "A name is required",
     "errCaptcha": "Wrong answer, here's a new one",
     "errFailed": "Couldn't send it, try again in a bit"
+  },
+  "log": {
+    "title": "Flight log",
+    "subtitle": "Where this site took off from, and how high it has climbed.",
+    "met": "MISSION ELAPSED TIME · since {{date}}",
+    "metValue": "{{days}} d {{hms}}",
+    "total_one": "{{count}} contribution so far",
+    "total_other": "{{count}} contributions so far",
+    "noContrib": "No data from GitHub",
+    "now": "Now",
+    "contrib_one": "{{count}} contribution",
+    "contrib_other": "{{count}} contributions",
+    "legendHeight": "Height: cumulative GitHub contributions",
+    "legendDots": "Dots: redesigns (hover for which)",
+    "legendHeat": "Below: contributions per day, a week per column",
+    "statusLabel": "Right now",
+    "coding": "Coding today",
+    "codingValue": "{{h}} h {{m}} min",
+    "codingVia": "WakaTime",
+    "languages": "Languages this week",
+    "playing": "Playing lately",
+    "played2w": "{{hours}} h in the last two weeks · {{owned}} games on Steam",
+    "longest": "Most played: {{name}}, {{hours}} h"
   }
 }

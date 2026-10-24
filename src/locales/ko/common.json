@@ -750,5 +750,28 @@
     "errName": "이름을 입력해 주세요",
     "errCaptcha": "답이 틀렸습니다. 문제를 바꿨습니다",
     "errFailed": "보내지 못했습니다. 잠시 후 다시 시도해 주세요"
+  },
+  "log": {
+    "title": "항해 일지",
+    "subtitle": "이 사이트가 어디서 출발해 지금 얼마나 높이 올라왔는지.",
+    "met": "MISSION ELAPSED TIME · {{date}}부터",
+    "metValue": "{{days}}일 {{hms}}",
+    "total_one": "누적 기여 {{count}}회",
+    "total_other": "누적 기여 {{count}}회",
+    "noContrib": "GitHub 데이터를 받지 못했습니다",
+    "now": "지금",
+    "contrib_one": "기여 {{count}}회",
+    "contrib_other": "기여 {{count}}회",
+    "legendHeight": "높이: 누적 GitHub 기여",
+    "legendDots": "점: 개편 (마우스를 올리면 내용)",
+    "legendHeat": "아래: 하루 기여, 한 열이 한 주",
+    "statusLabel": "지금 상태",
+    "coding": "오늘 코딩한 시간",
+    "codingValue": "{{h}}시간 {{m}}분",
+    "codingVia": "WakaTime",
+    "languages": "이번 주 언어",
+    "playing": "요즘 하는 게임",
+    "played2w": "최근 2주 {{hours}}시간 · Steam 라이브러리 {{owned}}개",
+    "longest": "가장 오래 한 게임은 {{name}}, {{hours}}시간"
   }
 }

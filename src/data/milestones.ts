@@ -1,0 +1,235 @@
+// 這個站的里程碑（航行日誌那條爬升軌跡上的點）。
+// level：0 一般、1 比較大的轉折、2 大轉折（軌跡上直接標字，其他的滑過才看得到）。
+// 同一天可以有兩筆，所以 key 不能只用 date（用陣列索引配，見 about/Log）。
+import type { Locale } from '@/lib/locales';
+
+export interface Milestone {
+  date: string;
+  level: 0 | 1 | 2;
+  text: Record<Locale, string>;
+}
+
+/** 站點誕生的那一刻（台灣時間） */
+export const SITE_BIRTH = '2025-04-01T00:00:00+08:00';
+
+export const MILESTONES: Milestone[] = [
+  {
+    date: '2025-04-01',
+    level: 2,
+    text: { 'zh-TW': '站點誕生', 'zh-CN': '站点诞生', en: 'Site born', ja: 'サイト誕生', ko: '사이트 탄생' },
+  },
+  {
+    date: '2025-04-05',
+    level: 0,
+    text: {
+      'zh-TW': 'Hero 與作品集上線',
+      'zh-CN': 'Hero 与作品集上线',
+      en: 'Hero and Portfolio live',
+      ja: 'Hero とポートフォリオ公開',
+      ko: 'Hero와 포트폴리오 공개',
+    },
+  },
+  {
+    date: '2025-08-25',
+    level: 2,
+    text: { 'zh-TW': '部落格上線', 'zh-CN': '部落格上线', en: 'Blog launched', ja: 'ブログ公開', ko: '블로그 오픈' },
+  },
+  {
+    date: '2025-09-24',
+    level: 0,
+    text: {
+      'zh-TW': '效能優化大改造',
+      'zh-CN': '效能优化大改造',
+      en: 'Performance overhaul',
+      ja: 'パフォーマンス大改造',
+      ko: '성능 대대적 개선',
+    },
+  },
+  {
+    date: '2025-10-07',
+    level: 0,
+    text: {
+      'zh-TW': 'Activity 動態頁面',
+      'zh-CN': 'Activity 动态页面',
+      en: 'Activity dashboard',
+      ja: 'Activity ダッシュボード',
+      ko: 'Activity 대시보드',
+    },
+  },
+  {
+    date: '2025-10-09',
+    level: 0,
+    text: {
+      'zh-TW': '0G Library 3D 書櫃',
+      'zh-CN': '0G Library 3D 书柜',
+      en: '0G Library 3D bookshelf',
+      ja: '0G Library 3D 本棚',
+      ko: '0G Library 3D 책장',
+    },
+  },
+  {
+    date: '2025-10-10',
+    level: 0,
+    text: {
+      'zh-TW': '星空相簿與 Music',
+      'zh-CN': '星空相簿与 Music',
+      en: 'Starry album and Music',
+      ja: '星空アルバムと Music',
+      ko: '별 사진첩과 Music',
+    },
+  },
+  {
+    date: '2025-10-14',
+    level: 2,
+    text: {
+      'zh-TW': '自訂網域',
+      'zh-CN': '自定义网域',
+      en: 'Custom domain',
+      ja: '独自ドメインへ',
+      ko: '커스텀 도메인',
+    },
+  },
+  {
+    date: '2026-01-08',
+    level: 0,
+    text: {
+      'zh-TW': '搬家到自家 HomeLab',
+      'zh-CN': '搬家到自家 HomeLab',
+      en: 'Moved to my own HomeLab',
+      ja: '自宅 HomeLab に引越し',
+      ko: '자체 HomeLab으로 이사',
+    },
+  },
+  {
+    date: '2026-02-19',
+    level: 0,
+    text: {
+      'zh-TW': '玻璃擬態風格導入',
+      'zh-CN': '玻璃拟态风格导入',
+      en: 'Glassmorphism rolled out',
+      ja: 'ガラスモーフィズム導入',
+      ko: '글래스모피즘 도입',
+    },
+  },
+  {
+    date: '2026-02-21',
+    level: 0,
+    text: {
+      'zh-TW': 'OAuth 登入與權限分級',
+      'zh-CN': 'OAuth 登入与权限分级',
+      en: 'OAuth login and RBAC',
+      ja: 'OAuth ログインと RBAC',
+      ko: 'OAuth 로그인과 RBAC',
+    },
+  },
+  {
+    date: '2026-04-20',
+    level: 1,
+    text: {
+      'zh-TW': '多語系 i18n 導入',
+      'zh-CN': '多语系 i18n 导入',
+      en: 'Multi-locale i18n',
+      ja: '多言語 i18n 導入',
+      ko: '다국어 i18n 도입',
+    },
+  },
+  {
+    date: '2026-04-26',
+    level: 2,
+    text: {
+      'zh-TW': '大規模設計重做',
+      'zh-CN': '大规模设计重做',
+      en: 'Major design redo',
+      ja: '大規模デザイン刷新',
+      ko: '대규모 디자인 재작업',
+    },
+  },
+  {
+    date: '2026-05-15',
+    level: 1,
+    text: {
+      'zh-TW': '首頁重做與 Newsletter',
+      'zh-CN': '首页重做与 Newsletter',
+      en: 'Home page redo and Newsletter',
+      ja: 'ホームページ刷新と Newsletter',
+      ko: '홈 페이지 재작업과 Newsletter',
+    },
+  },
+  {
+    date: '2026-05-25',
+    level: 1,
+    text: {
+      'zh-TW': '資訊頁與視覺重整',
+      'zh-CN': '信息页与视觉重整',
+      en: 'Info pages and visual refresh',
+      ja: '情報ページと視覚刷新',
+      ko: '정보 페이지와 비주얼 정비',
+    },
+  },
+  {
+    date: '2026-05-28',
+    level: 1,
+    text: {
+      'zh-TW': '全站 i18n 落地 5 語系',
+      'zh-CN': '全站 i18n 落地 5 语系',
+      en: 'Site-wide i18n in 5 locales',
+      ja: 'サイト全体 i18n 5 言語',
+      ko: '사이트 전체 i18n 5개 로케일',
+    },
+  },
+  {
+    date: '2026-06-24',
+    level: 1,
+    text: {
+      'zh-TW': '全站 JS → TS 遷移',
+      'zh-CN': '全站 JS → TS 迁移',
+      en: 'Whole codebase JS → TS',
+      ja: 'サイト全体 JS → TS 移行',
+      ko: '사이트 전체 JS → TS 전환',
+    },
+  },
+  {
+    date: '2026-06-26',
+    level: 1,
+    text: {
+      'zh-TW': '前端遷到 TanStack Start',
+      'zh-CN': '前端迁到 TanStack Start',
+      en: 'Frontend moved to TanStack Start',
+      ja: 'フロントエンドを TanStack Start へ',
+      ko: '프런트엔드를 TanStack Start로',
+    },
+  },
+  {
+    date: '2026-07-14',
+    level: 2,
+    text: {
+      'zh-TW': '後端 Express → Rust',
+      'zh-CN': '后端 Express → Rust',
+      en: 'Backend Express → Rust',
+      ja: 'バックエンド Express → Rust',
+      ko: '백엔드 Express → Rust',
+    },
+  },
+  {
+    date: '2026-07-19',
+    level: 2,
+    text: {
+      'zh-TW': 'WebGPU 太空背景轉正',
+      'zh-CN': 'WebGPU 太空背景转正',
+      en: 'WebGPU starfield by default',
+      ja: 'WebGPU 星空を既定に',
+      ko: 'WebGPU 별하늘 기본값',
+    },
+  },
+  {
+    date: '2026-07-21',
+    level: 1,
+    text: {
+      'zh-TW': 'MDX 內容管線',
+      'zh-CN': 'MDX 内容管线',
+      en: 'MDX content pipeline',
+      ja: 'MDX コンテンツパイプライン',
+      ko: 'MDX 콘텐츠 파이프라인',
+    },
+  },
+];

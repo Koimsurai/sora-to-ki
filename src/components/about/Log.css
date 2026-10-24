@@ -1,0 +1,241 @@
+/* 航行日誌（about/Log）：頁首左邊是標題、右邊是任務經過時間；下面是軌跡與熱力圖的畫布（about/logSky），
+   字疊在畫布上；最下面一排是現在的狀態。窄螢幕上畫布維持 760 寬、可以左右拖（點與字不縮到看不見） */
+
+.lg {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 1280px;
+  padding: var(--page-top) var(--space-10) var(--page-bottom);
+  margin: 0 auto;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+.lg-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.lg-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.lg-title h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.lg-latin {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.lg-head p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.lg-met {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: end;
+  font-family: var(--mono-font);
+}
+
+.lg-met span {
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+}
+
+.lg-met b {
+  font-size: var(--fs-20);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 收：字退掉，只剩火箭飛走（畫布上的字由那一幀一起淡掉） */
+.lg-top,
+.lg-legend,
+.lg-status {
+  transition: opacity var(--dur-300) ease;
+}
+
+.lg.is-leaving :is(.lg-top, .lg-legend, .lg-status) {
+  opacity: 0;
+}
+
+/* ── 軌跡 ── */
+.lg-scroll {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.lg-line {
+  position: relative;
+  min-width: 760px;
+  height: 470px;
+}
+
+.lg-line canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lg-total,
+.lg-label,
+.lg-now-label,
+.lg-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.lg-total {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+}
+
+.lg-label {
+  font-size: var(--fs-12);
+  color: var(--paper);
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
+}
+
+.lg-now-label {
+  font-size: var(--fs-13);
+  color: var(--paper);
+}
+
+.lg-tip {
+  display: grid;
+  font-size: var(--fs-14);
+  transition: opacity var(--dur-150) ease;
+}
+
+.lg-tip b {
+  font-weight: 400;
+}
+
+.lg-tip span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+.lg-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+}
+
+/* ── 現在 ── */
+.lg-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px dotted var(--rule);
+}
+
+.lg-status > div {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
+.lg-k {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+}
+
+.lg-v {
+  font-size: var(--fs-22);
+  font-weight: 600;
+  line-height: var(--lh-130);
+}
+
+.lg-s {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+.lg-bars {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.lg-bars li {
+  display: grid;
+  grid-template-columns: 10ch minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-2);
+}
+
+.lg-bars i {
+  height: 1px;
+  background: var(--paper-2);
+}
+
+.lg-bars em {
+  font-style: normal;
+  text-align: right;
+  color: var(--paper-3);
+}
+
+@media (max-width: 860px) {
+  .lg-status {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .lg {
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
+  }
+
+  .lg-met {
+    justify-items: start;
+  }
+
+  .lg-line {
+    height: 420px;
+  }
+}
