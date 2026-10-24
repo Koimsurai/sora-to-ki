@@ -153,10 +153,13 @@
   "notFound": {
     "pageTitle": "404 — ページが見つかりません",
     "seoDescription": "迷子になりましたか？このページは存在しません。",
-    "lostMessage": "宇宙のどこかで迷子になったみたい。",
-    "subMessage": "このページは存在しないか、削除されました。",
+    "lostMessage": "交信が途絶えた。",
+    "subMessage": "最後に信号を受けたのはこの座標。それきり応答がない。",
     "backHome": "ホームに戻る",
-    "requested": "お探しの場所",
+    "requested": "最後の座標",
+    "lostFor": "途絶えて",
+    "toNotes": "ノートへ",
+    "reconnect": "交信を再確立（ホームへ）",
     "search": "サイト内を検索",
     "pageTitleShort": "ページが見つかりません"
   },

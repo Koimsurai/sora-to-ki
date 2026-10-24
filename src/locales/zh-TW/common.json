@@ -153,10 +153,13 @@
   "notFound": {
     "pageTitle": "404 — 頁面找不到",
     "seoDescription": "你迷路了嗎？這個頁面不存在。",
-    "lostMessage": "看起來你迷失在星際之間了。",
-    "subMessage": "這個頁面不存在，或已被移除。",
+    "lostMessage": "失去聯繫。",
+    "subMessage": "最後一次收到訊號，是在這個座標。之後就沒有回應了。",
     "backHome": "返回首頁",
-    "requested": "你要找的位置",
+    "requested": "最後座標",
+    "lostFor": "訊號中斷",
+    "toNotes": "去手記",
+    "reconnect": "重新建立連線（回首頁）",
     "search": "搜尋站內",
     "pageTitleShort": "找不到頁面"
   },

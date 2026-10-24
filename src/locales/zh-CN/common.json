@@ -153,10 +153,13 @@
   "notFound": {
     "pageTitle": "404 — 页面找不到",
     "seoDescription": "你迷路了吗？这个页面不存在。",
-    "lostMessage": "看起来你迷失在星际之间了。",
-    "subMessage": "这个页面不存在，或已被移除。",
+    "lostMessage": "失去联系。",
+    "subMessage": "最后一次收到信号，是在这个坐标。之后就没有回应了。",
     "backHome": "返回首页",
-    "requested": "你要找的位置",
+    "requested": "最后坐标",
+    "lostFor": "信号中断",
+    "toNotes": "去手记",
+    "reconnect": "重新建立连线（回首页）",
     "search": "搜索站内",
     "pageTitleShort": "找不到页面"
   },
