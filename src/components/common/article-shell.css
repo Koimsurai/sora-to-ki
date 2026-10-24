@@ -52,11 +52,11 @@
 
 /* ── Copy protection ──
    ⚠ 這一組（含下面的 code block 與 video 豁免）刻意留在檔案開頭，而 `.post-content`、
-   `.code-block-wrapper`、`.terminal-block` 的 base 樣式在後面——biome 會為此報三筆
+   `.code-block-wrapper`、`.terminal-block` 的 base 樣式在後面——biome 可能為此報
    noDescendingSpecificity。那是誤判：這裡只設 user-select，base 只設版面與配色，
    **零屬性重疊**，不是覆蓋關係。
    不把這組往後搬的理由是它會翻轉與後面三處 user-select 的先後，而防複製是功能不是
-   樣式，不值得為了 lint 冒那個險。三個 base 規則各自帶了 biome-ignore 與說明。 */
+   樣式，不值得為了 lint 冒那個險。被報到的 base 規則各自帶了 biome-ignore 與說明。 */
 .blog-post-container .post-content {
   -webkit-user-select: none;
   user-select: none;
