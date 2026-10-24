@@ -493,45 +493,27 @@
   text-underline-offset: 4px;
 }
 
-/* ── 航海日誌 ── */
-.cl-log {
+/* ── 問答：天上的一顆星，對準它目鏡裡就是這份清單（照提案：一題一行，點開展開）。
+   題目多、內容長：目鏡裡自己捲，整頁不用往下捲 ── */
+.cl-qa {
   display: grid;
-  gap: var(--space-3);
-  max-width: 760px;
-  padding: var(--space-12) var(--space-6) var(--page-bottom);
-  margin: 0 auto;
-}
-
-.cl-log > h2 {
-  font-size: var(--fs-28);
-  font-weight: 600;
-}
-
-.cl-log > h3 {
-  margin-top: var(--space-6);
-  font-family: var(--mono-font);
-  font-size: var(--fs-11);
-  font-weight: 400;
-  letter-spacing: var(--ls-18);
-  color: var(--paper-3);
-}
-
-.cl-log-intro {
-  margin: 0 0 var(--space-4);
-  font-size: var(--fs-16);
-  color: var(--paper-2);
+  max-height: 46vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
 }
 
 /* 展開與收起：內容區的高度從 0 滑到內容的高度（支援的瀏覽器才滑，不支援的照樣直接打開），字跟著浮出來 */
-.cl-log {
+.cl-qa {
   interpolate-size: allow-keywords;
 }
 
-.cl-log details {
+.cl-qa details {
   border-bottom: 1px dotted var(--rule);
 }
 
-.cl-log details::details-content {
+.cl-qa details::details-content {
   block-size: 0;
   overflow-y: clip;
   transition:
@@ -539,22 +521,22 @@
     content-visibility var(--dur-400) allow-discrete;
 }
 
-.cl-log details[open]::details-content {
+.cl-qa details[open]::details-content {
   block-size: auto;
 }
 
-.cl-log details[open] > :not(summary) {
+.cl-qa details[open] > :not(summary) {
   animation: cl-in var(--dur-500) var(--easing-out) both;
 }
 
-.cl-log summary {
-  padding: var(--space-3) 0;
-  font-size: var(--fs-16);
+.cl-qa summary {
+  padding: var(--space-2-5) 0;
+  font-size: var(--fs-14);
   cursor: pointer;
   list-style: none;
 }
 
-.cl-log summary::before {
+.cl-qa summary::before {
   content: "+";
   display: inline-block;
   width: 2ch;
@@ -562,24 +544,24 @@
   color: var(--paper-3);
 }
 
-.cl-log details[open] summary::before {
+.cl-qa details[open] summary::before {
   content: "−";
 }
 
-.cl-log details p {
-  margin: 0 0 var(--space-4) 2ch;
-  font-size: var(--fs-14);
+.cl-qa details p {
+  margin: 0 0 var(--space-3) 2ch;
+  font-size: var(--fs-13);
   line-height: var(--lh-185);
   color: var(--paper-2);
 }
 
-.cl-log code {
+.cl-qa code {
   font-family: var(--mono-font);
   font-size: 0.9em;
   color: var(--paper);
 }
 
-.cl-log details a {
+.cl-qa details a {
   text-decoration: underline;
   text-decoration-color: var(--rule);
   text-underline-offset: 3px;
@@ -589,11 +571,11 @@
 .cl-head,
 .cl-eyepiece,
 .cl-star,
-.cl-log {
+.cl-qa {
   transition: opacity var(--dur-300) ease;
 }
 
-.cl.is-leaving :is(.cl-head, .cl-eyepiece, .cl-star, .cl-log) {
+.cl.is-leaving :is(.cl-head, .cl-eyepiece, .cl-star) {
   opacity: 0;
 }
 
