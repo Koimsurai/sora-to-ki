@@ -295,6 +295,68 @@ export default function Colophon() {
     rule1: <SaturnToy />,
     rule2: <PhotoToy />,
     rule3: <WorkToy />,
+    qa: (
+      <div className="cl-qa">
+        <details open>
+          <summary>{stripNumber(qa.q1)}</summary>
+          <p>{qa.a1}</p>
+        </details>
+        <details>
+          <summary>{stripNumber(qa.q2)}</summary>
+          <p>
+            {qa.a2_pre}
+            <code>React 19</code>
+            {qa.a2_mid1}
+            <code>TanStack Start</code>
+            {qa.a2_mid2}
+            <code>Vite</code>
+            {qa.a2_mid3}
+            <code>Tailwind CSS</code>
+            {qa.a2_mid4}
+            <code>Three.js</code>
+            {qa.a2_mid5}
+            <code>Rust</code>
+            {qa.a2_mid6}
+            <code>SQLite</code>
+            {qa.a2_mid7}
+            <code>Docker</code>
+            {qa.a2_tail}
+          </p>
+        </details>
+        <details>
+          <summary>{stripNumber(qa.q3)}</summary>
+          <p>
+            {qa.a3} <code>thumbhash</code> {qa.a3_mid}
+          </p>
+          <LinkCard href="https://koimsurai.com/blog/21" />
+        </details>
+        <details>
+          <summary>{stripNumber(qa.q4)}</summary>
+          <p>{qa.a4}</p>
+        </details>
+        <details>
+          <summary>{stripNumber(qa.q5)}</summary>
+          <p>{qa.a5_p1}</p>
+          <p>
+            {qa.a5_p2_pre}
+            <LocaleLink to="/messages">{qa.a5_p2_link}</LocaleLink>
+            {qa.a5_p2_post}
+          </p>
+        </details>
+        <details>
+          <summary>{stripNumber(qa.q6)}</summary>
+          <p>{qa.a6}</p>
+        </details>
+        <details>
+          <summary>{stripNumber(qa.q7)}</summary>
+          <p>{qa.a7}</p>
+        </details>
+        <details>
+          <summary>{stripNumber(qa.q8)}</summary>
+          <p>{qa.a8}</p>
+        </details>
+      </div>
+    ),
     license: (
       <a className="cl-repo" href="https://github.com/timo9378/sora-to-ki" target="_blank" rel="noopener noreferrer">
         github.com/timo9378/sora-to-ki
@@ -342,76 +404,11 @@ export default function Colophon() {
         {/* 換一顆星時目鏡重新對焦：字一行一行浮出來，視野從中間撐開（key 換了，動畫重來） */}
         <section className="cl-eyepiece" key={target} aria-live="polite" aria-labelledby="cl-eyepiece-title">
           <span className="cl-k">{t(`colophon.star.${target}`)}</span>
-          <h2 id="cl-eyepiece-title">{t(`colophon.title_${target}`)}</h2>
-          <p>{t(`colophon.text_${target}`)}</p>
+          <h2 id="cl-eyepiece-title">{target === 'qa' ? qa.qaHeading : t(`colophon.title_${target}`)}</h2>
+          <p>{target === 'qa' ? qa.intro : t(`colophon.text_${target}`)}</p>
           <div className="cl-content">{panel[target]}</div>
         </section>
       </div>
-
-      {/* 航海日誌：原本的 Q&A */}
-      <section className="cl-log" aria-labelledby="cl-log-title">
-        <h2 id="cl-log-title">{t('colophon.logTitle')}</h2>
-        <p className="cl-log-intro">{qa.intro}</p>
-        <details open>
-          <summary>{stripNumber(qa.q1)}</summary>
-          <p>{qa.a1}</p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q2)}</summary>
-          <p>
-            {qa.a2_pre}
-            <code>React 19</code>
-            {qa.a2_mid1}
-            <code>TanStack Start</code>
-            {qa.a2_mid2}
-            <code>Vite</code>
-            {qa.a2_mid3}
-            <code>Tailwind CSS</code>
-            {qa.a2_mid4}
-            <code>Three.js</code>
-            {qa.a2_mid5}
-            <code>Rust</code>
-            {qa.a2_mid6}
-            <code>SQLite</code>
-            {qa.a2_mid7}
-            <code>Docker</code>
-            {qa.a2_tail}
-          </p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q3)}</summary>
-          <p>
-            {qa.a3} <code>thumbhash</code> {qa.a3_mid}
-          </p>
-          <LinkCard href="https://koimsurai.com/blog/21" />
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q4)}</summary>
-          <p>{qa.a4}</p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q5)}</summary>
-          <p>{qa.a5_p1}</p>
-          <p>
-            {qa.a5_p2_pre}
-            <LocaleLink to="/messages">{qa.a5_p2_link}</LocaleLink>
-            {qa.a5_p2_post}
-          </p>
-        </details>
-        <h3>{qa.nameHeading}</h3>
-        <details>
-          <summary>{stripNumber(qa.q6)}</summary>
-          <p>{qa.a6}</p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q7)}</summary>
-          <p>{qa.a7}</p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q8)}</summary>
-          <p>{qa.a8}</p>
-        </details>
-      </section>
     </div>
   );
 }

@@ -22,7 +22,7 @@ const TURN_MIN = -0.55;
 const TURN_MAX = 0.4;
 
 /** 星的位置（場景寬高的比例）：寬螢幕在右上方散開，窄螢幕擠在上半部 */
-export const STAR_KEYS = ['material', 'type', 'sky', 'rule1', 'rule2', 'rule3', 'license'] as const;
+export const STAR_KEYS = ['material', 'type', 'sky', 'rule1', 'rule2', 'rule3', 'license', 'qa'] as const;
 export type StarKey = (typeof STAR_KEYS)[number];
 const WIDE: Record<StarKey, [number, number]> = {
   material: [0.42, 0.22],
@@ -32,6 +32,8 @@ const WIDE: Record<StarKey, [number, number]> = {
   rule2: [0.5, 0.33],
   rule3: [0.57, 0.42],
   license: [0.9, 0.24],
+  // 問答：原本在頁面最下面要往下捲，現在是天上的一顆星，對準它目鏡裡就是問答
+  qa: [0.68, 0.08],
 };
 const NARROW: Record<StarKey, [number, number]> = {
   material: [0.14, 0.37],
@@ -41,6 +43,7 @@ const NARROW: Record<StarKey, [number, number]> = {
   rule2: [0.6, 0.45],
   rule3: [0.88, 0.51],
   license: [0.46, 0.56],
+  qa: [0.16, 0.58],
 };
 const NARROW_PX = 760;
 

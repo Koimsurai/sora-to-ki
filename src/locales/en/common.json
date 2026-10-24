@@ -771,7 +771,8 @@
       "rule1": "Rule 01",
       "rule2": "Rule 02",
       "rule3": "Rule 03",
-      "license": "License"
+      "license": "License",
+      "qa": "Q&A"
     },
     "title_material": "Only three things",
     "text_material": "Amber only ever appears on a single point: where you are, or what is happening. It is never a fill color.",
@@ -893,7 +894,6 @@
           "d": "Finally it joins the spiral on the works page: the center is the start, and newer works sit farther out. The one you just made is the newest, so it goes on the outermost turn."
         }
       }
-    },
-    "logTitle": "Ship's log"
+    }
   }
 }
