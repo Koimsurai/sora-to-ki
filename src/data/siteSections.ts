@@ -26,7 +26,7 @@ export const MAIN_SECTIONS: SiteSection[] = [
     key: 'about',
     to: '/about',
     caps: 'ABOUT',
-    match: under('about', 'setup', 'friends', 'messages', 'history', 'activity'),
+    match: under('about', 'setup', 'messages', 'history', 'activity'),
   },
 ];
 
@@ -34,12 +34,12 @@ export const MAIN_SECTIONS: SiteSection[] = [
 export const ABOUT_SECTIONS: SiteSection[] = [
   { key: 'setup', to: '/setup', caps: 'SETUP', match: under('setup') },
   { key: 'log', to: '/history', caps: 'LOG', match: under('history', 'activity') },
-  { key: 'friends', to: '/friends', caps: 'FRIENDS', match: under('friends') },
   { key: 'messages', to: '/messages', caps: 'MESSAGES', match: under('messages') },
 ];
 
 /** 收在「更多」裡的頁面 */
 export const MORE_SECTIONS: SiteSection[] = [
   { key: 'photos', to: '/photos', caps: 'PHOTOS', match: under('photos') },
+  { key: 'friends', to: '/friends', caps: 'FRIENDS', match: under('friends') },
   { key: 'colophon', to: '/about-site', caps: 'COLOPHON', match: under('about-site') },
 ];
