@@ -66,7 +66,7 @@ interface ExcalidrawApi {
  * ## 為什麼是這個做法
  *
  * 只在「同時含自架路徑與 esm.sh」時才動手，其餘 FontFace 一律原樣放行——
- * 站上還有 TASA Orbiter/Explorer 兩個字型走正常路徑，不能被波及。
+ * 站上其他字型（TASA Orbiter、思源宋體…）走正常路徑，不能被波及。
  */
 function stripCdnFontFallback(): void {
   const w = window as unknown as { FontFace: typeof FontFace; __excalidrawFontPatched?: boolean };

@@ -68,63 +68,8 @@
   "user": {
     "adminPanel": "管理画面へ",
     "logout": "ログアウト",
-    "signInLabel": "ソーシャルアカウントでログイン",
     "signInWithGithub": "GitHub でログイン",
-    "signInWithGoogle": "Google でログイン",
-    "notConfigured": "サードパーティログインは未設定",
-    "menuLabel": "ユーザーメニュー"
-  },
-  "megaMenu": {
-    "online": "オンライン",
-    "stats": {
-      "posts": "記事",
-      "words": "字",
-      "days": "日"
-    },
-    "groups": {
-      "pages": "ページ",
-      "site": "サイト",
-      "categories": "カテゴリ",
-      "latestPosts": "最新の記事",
-      "categoryLatest": "{{cat}} · 最新",
-      "life": "ライフ",
-      "personal": "パーソナル",
-      "collection": "コレクション"
-    },
-    "items": {
-      "home": "ホーム",
-      "about": "について",
-      "expertise": "スキル",
-      "portfolio": "作品",
-      "contact": "連絡",
-      "aboutSite": "このサイト",
-      "aboutSiteDesc": "エンジニアの個人空間",
-      "history": "歴史",
-      "historyDesc": "サイトの歩み",
-      "messages": "メッセージ",
-      "messagesDesc": "何でもどうぞ",
-      "friends": "友達",
-      "friendsDesc": "ウェブリング",
-      "allPosts": "すべての記事",
-      "viewAllPosts": "すべての記事を見る →",
-      "emptyCategory": "このカテゴリの記事はまだありません",
-      "photos": "写真",
-      "photosDesc": "写真作品",
-      "activity": "アクティビティ",
-      "activityDesc": "最新の活動",
-      "bookshelf": "本棚",
-      "bookshelfDesc": "読書記録",
-      "music": "音楽",
-      "musicDesc": "好きな音楽",
-      "journey": "歩み",
-      "journeyDesc": "学習の軌跡",
-      "setup": "デバイス",
-      "setupDesc": "機材一覧",
-      "watch": "視聴中",
-      "watchDesc": "最近のアニメ / ドラマ / 映画",
-      "thinking": "つぶやき",
-      "thinkingDesc": "今この瞬間の短い思い"
-    }
+    "signInWithGoogle": "Google でログイン"
   },
   "hero": {
     "description": "宙と木 — Koimsurai の個人空間。エンジニアの読書ノート、作品記録、システム実験。"
@@ -156,10 +101,6 @@
       "status": "サービス状態"
     }
   },
-  "language": {
-    "switcher": "言語",
-    "current": "現在：{{label}}"
-  },
   "notFound": {
     "pageTitle": "404 — ページが見つかりません",
     "seoDescription": "迷子になりましたか？このページは存在しません。",
@@ -174,47 +115,6 @@
     "pageTitleShort": "ページが見つかりません"
   },
   "home": {
-    "aboutMe": {
-      "eyebrow": "Koimsurai · 木村盆栽",
-      "titleLine1": "複雑なことを、",
-      "titleLine2": "「使いやすく」仕上げる。"
-    },
-    "schoolClubs": {
-      "eyebrowSuffix": "サークル幹部",
-      "activitiesLabel": "イベント"
-    },
-    "contact": {
-      "titleLine1": "話しませんか？",
-      "titleLine2": "Let's build something.",
-      "blurb": "プロジェクトのご相談、技術交流、インターン機会、下記いずれからもお気軽にご連絡ください。"
-    },
-    "lately": {
-      "eyebrow": "最近の言葉と動き",
-      "postsTitle": "最近の執筆",
-      "murmursTitle": "つぶやき",
-      "echoesTitle": "こだま",
-      "orbitTitle": "今年の軌跡",
-      "orbitStat": "今年 {{count}} 本",
-      "viewAll": "すべて見る",
-      "more": "もっと",
-      "empty": "まだ静かです",
-      "today": "今日",
-      "seasons": {
-        "spring": "春",
-        "summer": "夏",
-        "autumn": "秋",
-        "winter": "冬"
-      }
-    },
-    "signal": {
-      "label": "今日のシグナル",
-      "open": "お仕事のご相談歓迎"
-    },
-    "appreciation": {
-      "like": "あしあとを残す",
-      "star": "GitHub でスターする",
-      "likeAria": "このサイトにあしあとを残す"
-    },
     "orbit": {
       "title": "Koimsurai の個人サイト：ノート、つぶやき、作品、コレクション",
       "notesCount": "{{count}} 本 · 最新 {{date}}",
@@ -498,7 +398,6 @@
     "errorTitle": "問題が発生しました",
     "missingToken": "リンクに token がありません。ニュースレター下部の購読解除リンクをご利用ください。",
     "invalidLink": "リンクが無効か期限切れです。",
-    "noServer": "サーバーに接続できません。",
     "unsubscribeFailed": "購読解除に失敗しました",
     "bodyConfirm": "<em>{{email}}</em> で Koimsurai ニュースレターを購読解除しようとしています。<br />解除後、新しい記事はメールで届きません。",
     "btnConfirm": "購読解除を確定",

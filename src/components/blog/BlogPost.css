@@ -84,24 +84,6 @@
   padding: var(--space-10) 0 var(--space-2) 0;
 }
 
-/* Highlighted current item in nearby posts list。
-   注意：它與其他列同樣是 <a>（見 PreviewablePostLink 的 current 註解——維持同型別，
-   換文章時 React 才會重用節點、不重播進場動畫）。這裡把「目前這篇」關成不可點。 */
-
-@keyframes indicator-slide-in {
-  from {
-    opacity: 0;
-    height: 0;
-    top: 50%;
-  }
-
-  to {
-    opacity: 1;
-    height: 70%;
-    top: 15%;
-  }
-}
-
 /* ═══════════════════════
    Prev / Next 導覽
    ═══════════════════════ */
@@ -258,20 +240,6 @@ a.series-nav-title:hover {
   font-weight: 600;
 }
 
-/* Category tooltip (rendered via Portal to body) */
-
-@keyframes tooltip-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* ═══════════════════════
    Drop Cap — first letter of article
    ═══════════════════════ */
@@ -329,9 +297,8 @@ a.series-nav-title:hover {
    於是只有文章頁 opt-in：從文章整頁跳到別頁（頭像選單的「管理後台」是 location.assign）時，
    舊頁開始轉場、新頁沒 opt-in，瀏覽器中止轉場，新頁冒出沒人接的 rejection
   （GlitchTip「InvalidStateError: Transition was aborted … opt-in disabled」）。 */
-/* VT 只做「純 crossfade」不帶位移——位移進場由 post-enter / side-in 負責。
-   否則整頁 y+8 淡入會跟元素自己的滑入疊加 → 使用者看到「動畫跑兩次 / 抽一下」
-  （實測 animationstart：blogFadeIn 與 post-enter 在同次導航同時開跑）。 */
+/* VT 只做「純 crossfade」不帶位移：文章裡的元素有自己的進場動畫，
+   整頁再帶 y+8 淡入會跟它疊加 → 使用者看到「動畫跑兩次 / 抽一下」。 */
 ::view-transition-old(root) {
   animation: blogFadeOut 0.2s ease-out both;
 }
@@ -892,16 +859,6 @@ a.series-nav-title:hover {
   background: rgba(var(--brand-rgb), 0.25);
 }
 
-/* ═══════════════════════
-   Loading Animation
-   ═══════════════════════ */
-
-@keyframes orbit-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Error page */
 .error-content {
   text-align: center;
@@ -939,32 +896,6 @@ a.series-nav-title:hover {
   }
   to {
     transform: translateY(0);
-  }
-}
-
-/* ── 側欄逐行進場（TOC 由右滑入、左欄由左滑入）──
-   每列以 --i（元件 inline style 給的索引）錯開 delay → 瀑布式一行行出現。
-   CSS 動畫 SSR 首幀就開跑（不等 JS）；key 綁 post id → 換文章視窗平移時，
-   只有「新露出的列」是新節點、只有它們重播（= 逐行塞入），舊列不動。
-   非 LCP 元素 → 用 opacity 安全。backwards：delay 期間先隱藏、輪到才進場。 */
-@keyframes side-in-r {
-  from {
-    opacity: 0;
-    transform: translateX(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-@keyframes side-in-l {
-  from {
-    opacity: 0;
-    transform: translateX(-14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
   }
 }
 

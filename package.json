@@ -40,7 +40,6 @@
     "@excalidraw/excalidraw": "^0.18.1",
     "@excalidraw/mermaid-to-excalidraw": "^2.2.2",
     "@fontsource-variable/fira-code": "5.3.0",
-    "@fontsource-variable/tasa-explorer": "^5.3.0",
     "@fontsource-variable/tasa-orbiter": "^5.3.0",
     "@fontsource/instrument-serif": "5.3.0",
     "@hookform/resolvers": "^5.9.1",
