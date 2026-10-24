@@ -41,6 +41,8 @@ const GROW_S = 1.4;
 const MORPH_MS = 650;
 /** 縮回琥珀點的時間 */
 const RETRACT_MS = 380;
+/** 被摘要點名的那一章，漣漪擴一圈的時間 */
+const PING_MS = 1100;
 /** 一分鐘讀幾個字（跟手記列表一樣） */
 const CHARS_PER_MIN = 700;
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -60,12 +62,15 @@ export default function OrbitToc({
   headings,
   contentRef,
   footer,
+  pingRef,
 }: {
   postId: number;
   headings: TocHeading[];
   contentRef: React.RefObject<HTMLElement | null>;
   /** 目錄底下「回到文章頂部」旁邊多放的東西（文章頁的字體那一行） */
   footer?: React.ReactNode;
+  /** 這裡把「讓某一章亮起來」的函式掛上去，給摘要裡連到章節的句子用（null = 熄掉） */
+  pingRef?: React.RefObject<((id: string | null) => void) | null>;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -83,6 +88,8 @@ export default function OrbitToc({
   /** 從手記拉過來的：一出來就是滿的 */
   const fullRef = useRef(takeOrbitHandoff('article') === postId);
   const readerRef = useRef<Pt | null>(null);
+  /** 被摘要點名的那一章：刻度上一圈一圈往外擴的漣漪 */
+  const pingIdRef = useRef<{ i: number; at: number }>({ i: -1, at: 0 });
   const leaveRef = useRef<{ kind: 'morph' | 'retract'; at: number; arc: Arc | null } | null>(null);
 
   /** 這篇在手記列表裡的那道星軌（列表的資料在快取裡才算得出來） */
@@ -135,6 +142,26 @@ export default function OrbitToc({
       return { point: readerRef.current ?? orbitPoint(g, 0), done: after(RETRACT_MS * 0.8) };
     },
   });
+
+  // 摘要裡的句子滑過時：那一章的名字浮出來、刻度上起漣漪
+  useEffect(() => {
+    if (!pingRef) return;
+    pingRef.current = (id) => {
+      const i = id ? headings.findIndex((h) => h.id === id) : -1;
+      pingIdRef.current = { i, at: performance.now() };
+      rootRef.current?.classList.toggle('is-pinging', i >= 0);
+      itemsRef.current.forEach((li, k) => li?.classList.toggle('is-ping', k === i));
+    };
+    return () => {
+      pingRef.current = null;
+    };
+  }, [pingRef, headings]);
+
+  // 從一篇點到另一篇（左欄、同標籤、同專欄）時頁面容器是沿用的：上一篇離場時掛上的 is-leaving 要拿掉，
+  // 不然新的這篇整片是隱形的
+  useEffect(() => {
+    rootRef.current?.closest('.ar-page')?.classList.remove('is-leaving');
+  }, []);
 
   // 從手記推近過來：內文從軌道那一側攤開（ArticleFrame.css 的 is-unfold）
   useEffect(() => {
@@ -213,7 +240,8 @@ export default function OrbitToc({
       const grow = fullRef.current || reduce ? 1 : clamp(tt / GROW_S) ** 0.7;
       const leave = leaveRef.current;
       const line = window.scrollY + window.innerHeight * 0.3;
-      const key = `${window.scrollY}|${grow}|${leave || (fullRef.current && tt < 2) ? now : ''}`;
+      const ping = pingIdRef.current;
+      const key = `${window.scrollY}|${grow}|${leave || ping.i >= 0 || (fullRef.current && tt < 2) ? now : ''}`;
       // 沒有在長、沒有在捲、沒有在換頁：不重畫（琥珀點的光暈是靜的）
       if (key === lastKey && now - last < 500) return;
       lastKey = key;
@@ -333,6 +361,13 @@ export default function OrbitToc({
         if (li) {
           li.style.transform = `translate(${q.x + (deep[i] ? 20 : 14)}px, ${q.y - 10}px)`;
           li.style.maxWidth = `${Math.max(60, W - q.x - 40)}px`;
+        }
+        if (i === ping.i) {
+          const k = ((now - ping.at) / PING_MS) % 1;
+          ctx.strokeStyle = `rgba(${INK}, ${0.7 * (1 - k)})`;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, 4 + k * 12, 0, TAU);
+          ctx.stroke();
         }
       });
 

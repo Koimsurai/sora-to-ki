@@ -28,6 +28,12 @@ import { renderWithProviders } from '@/test-utils/renderWithProviders';
  */
 const PROPS: Record<string, Record<string, unknown>> = {
   'blog/OrbitToc.tsx': { postId: 1, headings: [], contentRef: { current: null } },
+  'blog/ArticleSummary.tsx': {
+    excerpt: '先架起來，正確率只有 38%。',
+    links: [{ text: '正確率只有 38%', to: '01' }],
+    headings: [{ id: 'one', text: '一', level: 2 }],
+    pingRef: { current: null },
+  },
   'blog/MomentPost.tsx': {
     th: { id: 1, content: '測試碎念', created_at: '2026-01-01 00:00:00', likes: 0, dislikes: 0 },
   },

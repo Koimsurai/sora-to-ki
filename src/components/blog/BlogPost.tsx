@@ -12,7 +12,7 @@ import {
 } from '@/data/blogList';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
-import type { PostDetailResponse, PostListItem, ReactionRow } from '@koimsurai/api-types';
+import type { ExcerptLink, PostDetailResponse, PostListItem, ReactionRow } from '@koimsurai/api-types';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from '@/components/common/KoimLoader';
@@ -49,6 +49,7 @@ import { slugify, extractHeadings, computeReadTime } from '@/lib/mdx/blogContent
 // 標題拆解、閱讀進度、scroll-spy 的挑選邏輯——純函式，抽出去才測得到（見該檔說明）。
 import { splitTitle } from '@/lib/blogReading';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
+import ArticleSummary from './ArticleSummary';
 import OrbitToc from './OrbitToc';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath, postShareUrl } from '@/lib/postPath';
@@ -128,6 +129,8 @@ const nodeText = (node: React.ReactNode): string => {
    偏好必須在 paint 之前套用（見 __root.tsx 的 pre-paint script），而那段只能碰 CSS。
    新增字體：FONT_OPTIONS 加一列 + index.css 加兩行（--blog-font-<id> 與 html[data-blog-font=...]）。 */
 const DEFAULT_BLOG_FONT = 'noto-serif';
+/** 舊版後端沒有 excerpt_links 欄位時給的空陣列（固定一份，摘要才不會每次重切） */
+const NO_LINKS: readonly ExcerptLink[] = [];
 
 /* ══════════════════════════
    CodeBlock
@@ -1010,6 +1013,8 @@ function BlogPost() {
   // 只驅動 FontSwitcher 的「目前選中」標記；實際字體由 html[data-blog-font] + CSS 變數決定。
   const [currentFont, setCurrentFont] = useState(DEFAULT_BLOG_FONT);
   const contentRef = useRef<HTMLDivElement>(null);
+  /** OrbitToc 掛上來的「讓某一章亮起來」，摘要的關鍵句滑過時呼叫 */
+  const tocPingRef = useRef<((id: string | null) => void) | null>(null);
   const { id = '' } = useParams({ strict: false });
   const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
@@ -1313,6 +1318,7 @@ function BlogPost() {
         headings={headings}
         contentRef={contentRef}
         footer={<FontLine current={currentFont} onChange={handleFontChange} />}
+        pingRef={tocPingRef}
       />
       <PostsNav currentId={post.id} postCategory={post.category ?? undefined} />
 
@@ -1361,18 +1367,15 @@ function BlogPost() {
           </p>
         )}
 
-        {/* 摘要：編號 00、四個角框起來、字小一號，上面一行等寬小字標明 AI 生成——它是附件，不是內文 */}
         {post.excerpt && (
-          <aside className="ar-sum">
-            <span className="ar-gut" aria-hidden="true">
-              00
-            </span>
-            <div className="ar-sum-hd">
-              <span>{t('blog.summary')}</span>
-              <span className="ar-sum-ai">{t('blog.aiGen')}</span>
-            </div>
-            <p>{post.excerpt}</p>
-          </aside>
+          <ArticleSummary
+            // 換一篇或換語系就重新收一次：沿用的話上一篇畫好的底線與逐字的 class 會殘留
+            key={`${post.id}-${currentLocale}`}
+            excerpt={post.excerpt}
+            links={postData?.excerpt_links ?? NO_LINKS}
+            headings={headings}
+            pingRef={tocPingRef}
+          />
         )}
 
         <article className="post-content drop-cap-first" ref={contentRef}>
