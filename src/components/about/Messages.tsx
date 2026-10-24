@@ -1,180 +1,515 @@
+// 留言：收到的每一則是一道訊號。頁首那條線是收訊的頻道，右端是天線（about/messagesWave）；
+// 平常只有雜訊，打字時你打的字即時變成波形，送出時那一段往右飛進天線、天線亮一下。
+// 底下左邊是收到的訊號（每一則一小段由內容長出來的波形），右邊是發送台：登入或匿名、驗證碼、回覆。
+// 資料沿用文章留言那一套（post_id = meta-messages，匿名的要審核，登入的直接公開）。
+// 換頁進來時琥珀點落在頻道的左端，線從左往右畫出來；離開時線收進天線，點從天線往上發射出去。
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import InfoPage from './InfoPage';
-import { lookupOr } from '@/lib/tableLookup';
+import type { CommentRow } from '@koimsurai/api-types';
+import { useAuth } from '@/contexts/auth';
+import { commentsQueryOptions } from '@/data/commentsData';
+import { usePageTransition } from '@/hooks/usePageTransition';
+import { useTimeAgo } from '@/hooks/useTimeAgo';
+import { jsonAuthHeaders } from '@/lib/authToken';
+import { groupComments, validateCommentDraft, type CommentDraftError } from '@/lib/comments';
+import { after, isArriving } from '@/store/pageTransition';
+import { createStrip, DISH_SRC, dishOf, SEND_S, wavePath } from './messagesWave';
+import './Messages.css';
 
-const MESSAGES_BY_LANG: Record<string, Record<string, string>> = {
-  'zh-TW': {
-    intro: '這裡是留言板。不一定要跟文章相關，閒聊、技術問題、合作邀請、單純路過想留個記號都歡迎。',
-    rulesHeading: '幾個小規則',
-    rule1Title: '用真實一點的暱稱',
-    rule1Body: '不限定本名，但希望別是「123」「test」這種我會分不清是同一人還是不同人。',
-    rule2Title: '登入留言會自動帶頭像',
-    rule2Body: '用 GitHub / Google 登入後，頭像跟暱稱會自動填入。匿名也可以，只是需要手動輸入。',
-    rule3Title: '留言會經過審核',
-    rule3Body: '預設不會直接公開，避免廣告 / spam。一般留言通常 24 小時內會過。',
-    rule4Title: '支援 Markdown',
-    rule4Body_pre: '可以用',
-    rule4Body_mid1: '、',
-    rule4Body_mid2: '等基本語法。',
-    contactHeading: '想私下聊？',
-    contactPre: '如果是不適合公開的訊息，可以直接寄信給我：',
-    contactMid: '，或從',
-    contactLinkLabel: '聯絡區塊',
-    contactPost: '看其他聯絡方式。',
-    issuesPre: '若是 bug 回報或功能建議，建議去',
-    issuesPost: '開單，比較好追蹤。',
-  },
-  'zh-CN': {
-    intro: '这里是留言板。不一定要跟文章相关，闲聊、技术问题、合作邀请、单纯路过想留个记号都欢迎。',
-    rulesHeading: '几个小规则',
-    rule1Title: '用真实一点的昵称',
-    rule1Body: '不限定本名，但希望别是「123」「test」这种我会分不清是同一人还是不同人。',
-    rule2Title: '登入留言会自动带头像',
-    rule2Body: '用 GitHub / Google 登入后，头像跟昵称会自动填入。匿名也可以，只是需要手动输入。',
-    rule3Title: '留言会经过审核',
-    rule3Body: '预设不会直接公开，避免广告 / spam。一般留言通常 24 小时内会过。',
-    rule4Title: '支援 Markdown',
-    rule4Body_pre: '可以用',
-    rule4Body_mid1: '、',
-    rule4Body_mid2: '等基本语法。',
-    contactHeading: '想私下聊？',
-    contactPre: '如果是不适合公开的讯息，可以直接寄信给我：',
-    contactMid: '，或从',
-    contactLinkLabel: '联络区块',
-    contactPost: '查看其他联络方式。',
-    issuesPre: '若是 bug 回报或功能建议，建议去',
-    issuesPost: '开单，比较好追踪。',
-  },
-  en: {
-    intro:
-      'This is the message board. It does not have to be about the posts — chit-chat, tech questions, collab pitches, or just a "hi I was here" all welcome.',
-    rulesHeading: 'A few small rules',
-    rule1Title: 'Use a slightly real nickname',
-    rule1Body:
-      'No need for your real name, but please avoid things like "123" or "test" — I won\'t be able to tell whether it\'s one person or several.',
-    rule2Title: 'Logged-in comments auto-fill your avatar',
-    rule2Body:
-      'Sign in with GitHub or Google and your avatar and nickname auto-fill. Anonymous is fine too, just type them in.',
-    rule3Title: 'Comments are moderated',
-    rule3Body:
-      "They don't go public by default — keeps ads and spam out. Normal comments usually go through within 24h.",
-    rule4Title: 'Markdown supported',
-    rule4Body_pre: 'You can use',
-    rule4Body_mid1: ', ',
-    rule4Body_mid2: 'and other basic syntax.',
-    contactHeading: 'Want to chat privately?',
-    contactPre: "For things that don't belong in public, just email me:",
-    contactMid: ', or check the',
-    contactLinkLabel: 'contact section',
-    contactPost: 'for other ways to reach me.',
-    issuesPre: 'For bug reports or feature suggestions, file an issue on',
-    issuesPost: "so it's easier to track.",
-  },
-  ja: {
-    intro:
-      'ここはメッセージボードです。記事と関係なくても OK で、雑談・技術的な質問・コラボのお誘い・「通りすがりに足あと残したい」だけでも歓迎です。',
-    rulesHeading: 'ちょっとしたルール',
-    rule1Title: '本名っぽいニックネームで',
-    rule1Body:
-      '本名でなくて構いませんが、「123」「test」みたいに同じ人なのか別人なのか分からない名前は避けてください。',
-    rule2Title: 'ログインするとアバターが自動入力',
-    rule2Body:
-      'GitHub / Google でログインすると、アバターとニックネームが自動で入ります。匿名でも OK で、その場合は手入力で。',
-    rule3Title: 'コメントは審査します',
-    rule3Body: 'デフォルトでは公開されません（広告 / spam 対策）。普通のコメントなら通常 24 時間以内に通します。',
-    rule4Title: 'Markdown 対応',
-    rule4Body_pre: '次のような基本構文が使えます：',
-    rule4Body_mid1: '、',
-    rule4Body_mid2: 'など。',
-    contactHeading: '個別に話したい？',
-    contactPre: '公開向きでない内容は、直接メールしてください：',
-    contactMid: 'または',
-    contactLinkLabel: 'コンタクトセクション',
-    contactPost: 'から他の連絡手段も見られます。',
-    issuesPre: 'バグ報告や機能提案は、追跡しやすいので',
-    issuesPost: 'で issue を立ててもらえると助かります。',
-  },
-  ko: {
-    intro:
-      '여기는 메시지 보드입니다. 글 내용과 직접 관련 없어도 괜찮고, 잡담·기술 질문·협업 제안·그냥 발자국만 남기고 가는 것도 모두 환영입니다.',
-    rulesHeading: '작은 규칙 몇 가지',
-    rule1Title: '조금은 진짜 같은 닉네임으로',
-    rule1Body:
-      '본명일 필요는 없지만, 「123」「test」처럼 같은 사람인지 다른 사람인지 구분이 안 되는 닉네임은 피해 주세요.',
-    rule2Title: '로그인 댓글은 아바타가 자동 입력',
-    rule2Body:
-      'GitHub / Google 로 로그인하면 아바타와 닉네임이 자동으로 채워집니다. 익명도 가능하고, 그 경우 직접 입력하시면 됩니다.',
-    rule3Title: '댓글은 검토 후 공개',
-    rule3Body:
-      '기본적으로 바로 공개되지 않습니다 — 광고/스팸 방지용이에요. 일반 댓글이라면 보통 24시간 안에 통과시킵니다.',
-    rule4Title: 'Markdown 지원',
-    rule4Body_pre: '다음 같은 기본 문법을 쓸 수 있어요:',
-    rule4Body_mid1: ', ',
-    rule4Body_mid2: '등.',
-    contactHeading: '개인적으로 얘기하고 싶다면?',
-    contactPre: '공개에 적합하지 않은 내용이라면 메일로 직접 보내주세요:',
-    contactMid: ', 다른 연락 수단은',
-    contactLinkLabel: '연락 섹션',
-    contactPost: '에서 확인할 수 있습니다.',
-    issuesPre: '버그 제보나 기능 제안은 추적이 쉬운',
-    issuesPost: '에 issue 를 올려주시면 좋습니다.',
-  },
-};
+const BASE = 'posts';
+const POST_ID = 'meta-messages';
+const CONTACT = 'timo9378@gmail.com';
+/** 一則最多幾個字 */
+const MAX_CHARS = 500;
+/** 一個字是幾秒的訊號（只是顯示用的換算） */
+const SEC_PER_CHAR = 0.12;
+/** 線從左往右畫出來的時間（秒） */
+const GROW_S = 0.9;
+/** 收：線收進天線的時間（毫秒） */
+const ERASE_MS = 520;
+/** 收完時點從天線發射出去的速度（px/ms） */
+const LEAVE_SPEED = 0.8;
+/** 雜訊每秒換幾次就夠了 */
+const FRAME_MS = 33;
+const WAVE_W = 600;
+const WAVE_H = 36;
 
-function Messages() {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const c = lookupOr(MESSAGES_BY_LANG, lang, MESSAGES_BY_LANG['zh-TW']);
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeIn = (t: number) => t * t;
+
+type Sent = 'pending' | 'approved' | null;
+
+export default function Messages() {
+  const { t } = useTranslation();
+  const timeAgo = useTimeAgo();
+  const queryClient = useQueryClient();
+  const listKey = commentsQueryOptions(BASE, POST_ID).queryKey;
+  const { data: comments = [], isPending } = useQuery(commentsQueryOptions(BASE, POST_ID));
+  const { roots, repliesOf } = useMemo(() => groupComments(comments), [comments]);
+  const { user, isLoggedIn, providers, getGoogleAuthUrl, getGitHubAuthUrl } = useAuth();
+
+  const [text, setText] = useState('');
+  const [author, setAuthor] = useState('');
+  const [email, setEmail] = useState('');
+  const [website, setWebsite] = useState('');
+  const [anonymous, setAnonymous] = useState(false);
+  const [captcha, setCaptcha] = useState({ a: 0, b: 0 });
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [replyTo, setReplyTo] = useState<{ id: number; author: string } | null>(null);
+  const [error, setError] = useState<CommentDraftError | 'failed' | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState<Sent>(null);
+  const [liked, setLiked] = useState<number[]>([]);
+  const asUser = isLoggedIn && !anonymous;
+
+  const pageRef = useRef<HTMLDivElement>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const statusRef = useRef<HTMLSpanElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const captchaRef = useRef<HTMLInputElement>(null);
+  const typingRef = useRef('');
+  typingRef.current = text;
+  const sendingRef = useRef<{ text: string; start: number } | null>(null);
+  const leaveRef = useRef<number | null>(null);
+  const countRef = useRef(0);
+  countRef.current = comments.length;
+  const labelsRef = useRef({ rx: '', ready: '', sending: '', count: '' });
+  labelsRef.current = {
+    rx: t('messages.rx'),
+    ready: t('messages.txReady'),
+    sending: t('messages.txSending'),
+    count: t('messages.rxCount', { count: comments.length }),
+  };
+
+  // 讀 localStorage 與出驗證碼都只能在瀏覽器端（server 沒有 localStorage，Math.random 會讓兩邊不一致）
+  /* eslint-disable @eslint-react/set-state-in-effect */
+  useEffect(() => {
+    try {
+      setLiked(JSON.parse(localStorage.getItem(`liked_comments_${BASE}_${POST_ID}`) ?? '[]') as number[]);
+      setAuthor(localStorage.getItem('comment_author') ?? '');
+      setEmail(localStorage.getItem('comment_email') ?? '');
+      setWebsite(localStorage.getItem('comment_website') ?? '');
+    } catch {
+      // 私密視窗或封鎖了網站資料：沒有記住的東西就算了
+    }
+    setCaptcha(newCaptcha());
+  }, []);
+  /* eslint-enable @eslint-react/set-state-in-effect */
+
+  const strip = () => {
+    const el = stripRef.current;
+    return el ? { r: el.getBoundingClientRect(), w: el.clientWidth, h: el.clientHeight } : null;
+  };
+
+  usePageTransition({
+    // 錨點是頻道的左端：點落在這裡，線從它往右畫出來
+    anchor: () => {
+      const s = strip();
+      return s ? { x: s.r.left, y: s.r.top + s.h / 2 } : null;
+    },
+    arrive: () => ({ tangent: { x: 1, y: 0 } }),
+    leave: () => {
+      const s = strip();
+      if (!s) return null;
+      leaveRef.current = performance.now();
+      pageRef.current?.classList.add('is-leaving');
+      const feed = () => {
+        const now = strip() ?? s;
+        const d = dishOf(now.w, now.h);
+        return { x: now.r.left + d.fx, y: now.r.top + d.fy };
+      };
+      // 天線翻過來之後碟面朝左上：點往左上發射
+      return {
+        point: feed(),
+        velocity: { x: -0.45 * LEAVE_SPEED, y: -0.9 * LEAVE_SPEED },
+        follow: feed,
+        done: after(ERASE_MS),
+      };
+    },
+  });
+
+  // 頻道
+  useEffect(() => {
+    const box = stripRef.current;
+    const cv = canvasRef.current;
+    const ctx = cv?.getContext('2d');
+    if (!box || !cv || !ctx) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const dish = new Image();
+    dish.src = DISH_SRC;
+    const draw = createStrip();
+    let visible = true;
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+    });
+    io.observe(box);
+    let raf = 0;
+    let last = 0;
+    let start = -1;
+    let status = '';
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      if (isArriving() || !visible) return;
+      if (start < 0) start = now;
+      if (now - last < FRAME_MS) return;
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
+      const w = box.clientWidth;
+      const h = box.clientHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+        cv.width = Math.round(w * dpr);
+        cv.height = Math.round(h * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const real = (now - start) / 1000;
+      const snd = sendingRef.current;
+      const s = snd ? (now - snd.start) / 1000 : 0;
+      if (snd && s > SEND_S) sendingRef.current = null;
+      const sending = sendingRef.current ? { text: sendingRef.current.text, s } : null;
+      draw.draw(ctx, {
+        w,
+        h,
+        t: reduce ? 0 : real,
+        dt,
+        typing: typingRef.current,
+        sending: reduce ? null : sending,
+        grow: reduce ? 1 : easeOut(Math.min(1, real / GROW_S)),
+        erase: leaveRef.current === null ? 0 : easeIn(Math.min(1, (now - leaveRef.current) / ERASE_MS)),
+        dish,
+      });
+      const l = labelsRef.current;
+      const next = sending ? l.sending : typingRef.current ? l.ready : countRef.current ? l.count : l.rx;
+      if (next !== status && statusRef.current) {
+        status = next;
+        statusRef.current.textContent = next;
+      }
+    };
+    raf = requestAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
+  }, []);
+
+  const login = (provider: 'github' | 'google') => {
+    sessionStorage.setItem('oauth_return_to', window.location.pathname);
+    const back = `${window.location.origin}/auth/callback`;
+    window.location.href =
+      provider === 'github' ? `${getGitHubAuthUrl(back)}&state=github` : `${getGoogleAuthUrl(back)}&state=google`;
+  };
+
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (busy) return;
+    const invalid = validateCommentDraft({
+      content: text,
+      author,
+      captchaAnswer,
+      captchaSum: captcha.a + captcha.b,
+      requiresIdentity: !asUser,
+    });
+    setError(invalid);
+    setSent(null);
+    if (invalid) {
+      if (invalid === 'captcha') {
+        setCaptcha(newCaptcha());
+        setCaptchaAnswer('');
+      }
+      (invalid === 'empty' ? textRef : invalid === 'noName' ? nameRef : captchaRef).current?.focus();
+      return;
+    }
+    const content = text.trim();
+    sendingRef.current = { text: content, start: performance.now() };
+    setBusy(true);
+    if (!asUser) {
+      try {
+        localStorage.setItem('comment_author', author);
+        localStorage.setItem('comment_email', email);
+        localStorage.setItem('comment_website', website);
+      } catch {
+        // 記不住也沒關係
+      }
+    }
+    try {
+      const res = await fetch(`/api/${BASE}/${POST_ID}/comments`, {
+        method: 'POST',
+        headers: asUser ? jsonAuthHeaders() : { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          author: asUser ? (user?.displayName ?? '') : author.trim(),
+          content: replyTo ? `@${replyTo.author} ${content}` : content,
+          email: asUser ? (user?.email ?? '') : email.trim(),
+          website: asUser ? '' : website.trim(),
+          avatar_url: asUser ? (user?.avatar ?? '') : '',
+          provider: asUser ? (user?.provider ?? '') : '',
+          parent_id: replyTo?.id ?? null,
+          ...(!asUser && { captcha: Number.parseInt(captchaAnswer, 10), captchaAnswer: captcha.a + captcha.b }),
+        }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as { status?: string };
+      setText('');
+      setReplyTo(null);
+      setCaptcha(newCaptcha());
+      setCaptchaAnswer('');
+      setSent(data.status === 'approved' ? 'approved' : 'pending');
+      void queryClient.invalidateQueries({ queryKey: listKey });
+    } catch {
+      sendingRef.current = null;
+      setError('failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const like = async (id: number) => {
+    if (liked.includes(id)) return;
+    try {
+      const res = await fetch(`/api/comments/${id}/like`, { method: 'POST' });
+      if (!res.ok) return;
+      const data = (await res.json()) as { likes: number };
+      queryClient.setQueryData<CommentRow[]>(listKey, (old) =>
+        (old ?? []).map((c) => (c.id === id ? { ...c, likes: data.likes } : c)),
+      );
+      const next = [...liked, id];
+      setLiked(next);
+      try {
+        localStorage.setItem(`liked_comments_${BASE}_${POST_ID}`, JSON.stringify(next));
+      } catch {
+        // 記不住的話下次重新整理可以再按一次，無妨
+      }
+    } catch {
+      // 按讚失敗不打擾人
+    }
+  };
+
+  const reply = (c: CommentRow) => {
+    setReplyTo({ id: c.id, author: c.author });
+    textRef.current?.focus();
+  };
+
+  const chars = Array.from(text).length;
+  const errorText =
+    error === 'empty'
+      ? t('messages.errEmpty')
+      : error === 'noName'
+        ? t('messages.errName')
+        : error === 'captcha'
+          ? t('messages.errCaptcha')
+          : error === 'failed'
+            ? t('messages.errFailed')
+            : null;
+
+  const item = (c: CommentRow, isReply: boolean) => (
+    <li key={c.id} className={isReply ? 'msg-item is-reply' : 'msg-item'}>
+      <svg
+        className="msg-item-wave"
+        viewBox={`0 0 ${WAVE_W} ${WAVE_H}`}
+        preserveAspectRatio="xMinYMid meet"
+        aria-hidden="true"
+      >
+        <path d={wavePath(c.content, WAVE_W, WAVE_H)} />
+      </svg>
+      <div className="msg-item-head">
+        {c.website ? (
+          <a className="msg-author" href={c.website} target="_blank" rel="noopener noreferrer nofollow ugc">
+            {c.author}
+          </a>
+        ) : (
+          <span className="msg-author">{c.author}</span>
+        )}
+        {c.is_admin ? <span className="msg-admin">{t('messages.admin')}</span> : null}
+        <time dateTime={c.created_at} suppressHydrationWarning>
+          {timeAgo(c.created_at)}
+        </time>
+      </div>
+      <p className="msg-item-text">{c.content}</p>
+      <div className="msg-item-actions">
+        <button type="button" onClick={() => reply(c)}>
+          {t('messages.reply')}
+        </button>
+        <button
+          type="button"
+          className={liked.includes(c.id) ? 'is-liked' : undefined}
+          aria-pressed={liked.includes(c.id)}
+          onClick={() => void like(c.id)}
+        >
+          {t('messages.like')}
+          {c.likes > 0 && <span>{c.likes}</span>}
+        </button>
+      </div>
+      {!isReply && repliesOf.get(c.id) && (
+        <ol className="msg-replies">{repliesOf.get(c.id)?.map((r) => item(r, true))}</ol>
+      )}
+    </li>
+  );
 
   return (
-    <InfoPage
-      title={t('info.messages.title')}
-      subtitle={t('info.messages.subtitle')}
-      slug="messages"
-      prev={{ to: '/history', title: `${t('info.history.title')} — ${t('info.history.subtitle')}` }}
-      next={{ to: '/friends', title: `${t('info.friends.title')} — ${t('info.friends.subtitle')}` }}
-    >
-      <p>{c.intro}</p>
+    <div className="msg" ref={pageRef}>
+      <header className="msg-head">
+        <div className="msg-title">
+          <h1>{t('messages.title')}</h1>
+          <span className="msg-latin">Messages</span>
+        </div>
+        <p>{t('messages.subtitle')}</p>
+      </header>
 
-      <h2 id="rules">{c.rulesHeading}</h2>
+      <div className="msg-strip" ref={stripRef}>
+        <canvas ref={canvasRef} aria-hidden="true" />
+        <span className="msg-status" ref={statusRef} aria-hidden="true" />
+      </div>
 
-      <ol>
-        <li>
-          <strong>{c.rule1Title}</strong> — {c.rule1Body}
-        </li>
-        <li>
-          <strong>{c.rule2Title}</strong> — {c.rule2Body}
-        </li>
-        <li>
-          <strong>{c.rule3Title}</strong> — {c.rule3Body}
-        </li>
-        <li>
-          <strong>{c.rule4Title}</strong> — {c.rule4Body_pre} <code>**bold**</code>
-          {c.rule4Body_mid1}
-          <code>`code`</code>
-          {c.rule4Body_mid1}
-          <code>[link](url)</code> {c.rule4Body_mid2}
-        </li>
-      </ol>
+      <div className="msg-body">
+        <section className="msg-log" aria-labelledby="msg-log-title">
+          <h2 id="msg-log-title" className="sr-only">
+            {t('messages.logTitle')}
+          </h2>
+          {isPending ? null : roots.length ? (
+            <ol className="msg-list">{roots.map((c) => item(c, false))}</ol>
+          ) : (
+            <div className="msg-empty">
+              <b>{t('messages.emptyTitle')}</b>
+              <p>{t('messages.emptyText')}</p>
+            </div>
+          )}
+          <ul className="msg-rules">
+            <li>{t('messages.rule1')}</li>
+            <li>{t('messages.rule2')}</li>
+            <li>{t('messages.rule3')}</li>
+          </ul>
+          <p className="msg-private">
+            {t('messages.privatePre')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+            {t('messages.privateMid')}
+            <a href="https://github.com/timo9378/sora-to-ki/issues" target="_blank" rel="noopener noreferrer">
+              GitHub Issues
+            </a>
+            {t('messages.privatePost')}
+          </p>
+        </section>
 
-      <h2 id="contact">{c.contactHeading}</h2>
+        <form className="msg-form" onSubmit={(e) => void submit(e)} noValidate>
+          <h2>{t('messages.formTitle')}</h2>
 
-      <p>
-        {c.contactPre}
-        <a href="mailto:timo9378@gmail.com">timo9378@gmail.com</a>
-        {c.contactMid} <a href="/#contact">{c.contactLinkLabel}</a> {c.contactPost}
-      </p>
+          {asUser ? (
+            <p className="msg-as">
+              {t('messages.asUser', { name: user?.displayName ?? '' })}
+              <button type="button" onClick={() => setAnonymous(true)}>
+                {t('messages.useAnonymous')}
+              </button>
+            </p>
+          ) : (
+            <>
+              {(providers.github.enabled || providers.google.enabled) && (
+                <div className="msg-login">
+                  <span>{t('messages.loginWith')}</span>
+                  {providers.github.enabled && (
+                    <button type="button" onClick={() => login('github')}>
+                      GitHub
+                    </button>
+                  )}
+                  {providers.google.enabled && (
+                    <button type="button" onClick={() => login('google')}>
+                      Google
+                    </button>
+                  )}
+                  {isLoggedIn && (
+                    <button type="button" onClick={() => setAnonymous(false)}>
+                      {t('messages.useAccount')}
+                    </button>
+                  )}
+                </div>
+              )}
+              <label className="msg-input">
+                <span>{t('messages.fieldName')}</span>
+                <input
+                  ref={nameRef}
+                  type="text"
+                  maxLength={24}
+                  autoComplete="name"
+                  value={author}
+                  aria-invalid={error === 'noName' ? true : undefined}
+                  onChange={(e) => setAuthor(e.target.value)}
+                />
+              </label>
+              <div className="msg-row">
+                <label className="msg-input">
+                  <span>{t('messages.fieldEmail')}</span>
+                  <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </label>
+                <label className="msg-input">
+                  <span>{t('messages.fieldWebsite')}</span>
+                  <input
+                    type="url"
+                    autoComplete="url"
+                    placeholder="https://"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                  />
+                </label>
+              </div>
+            </>
+          )}
 
-      <p>
-        {c.issuesPre}
-        <a href="https://github.com/timo9378/web/issues" target="_blank" rel="noopener noreferrer">
-          {' '}
-          GitHub Issues{' '}
-        </a>
-        {c.issuesPost}
-      </p>
-    </InfoPage>
+          {replyTo && (
+            <p className="msg-replying">
+              {t('messages.replyingTo', { name: replyTo.author })}
+              <button type="button" onClick={() => setReplyTo(null)}>
+                {t('messages.cancelReply')}
+              </button>
+            </p>
+          )}
+          <label className="msg-input">
+            <span>{t('messages.fieldText')}</span>
+            <textarea
+              ref={textRef}
+              rows={4}
+              maxLength={MAX_CHARS}
+              value={text}
+              aria-invalid={error === 'empty' ? true : undefined}
+              onChange={(e) => {
+                setText(e.target.value);
+                if (sent) setSent(null);
+              }}
+            />
+          </label>
+          <span className="msg-meter" aria-hidden="true">
+            {t('messages.meter', { count: chars, seconds: (chars * SEC_PER_CHAR).toFixed(1) })}
+          </span>
+
+          {!asUser && (
+            <label className="msg-input msg-captcha">
+              <span>{t('messages.captcha', { a: captcha.a, b: captcha.b })}</span>
+              <input
+                ref={captchaRef}
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={captchaAnswer}
+                aria-invalid={error === 'captcha' ? true : undefined}
+                onChange={(e) => setCaptchaAnswer(e.target.value)}
+              />
+            </label>
+          )}
+
+          <button type="submit" className="msg-submit" disabled={busy}>
+            {t('messages.submit')}
+          </button>
+          <output className="msg-note">
+            {errorText ? (
+              <em>{errorText}</em>
+            ) : sent ? (
+              t(sent === 'approved' ? 'messages.sentApproved' : 'messages.sentPending')
+            ) : null}
+          </output>
+        </form>
+      </div>
+    </div>
   );
 }
 
-export default Messages;
+function newCaptcha() {
+  return { a: Math.floor(Math.random() * 10) + 1, b: Math.floor(Math.random() * 10) + 1 };
+}

@@ -1,0 +1,404 @@
+/* 留言（about/Messages）：頁首下面是收訊的頻道（畫布 about/messagesWave），
+   底下左邊是收到的訊號、右邊是發送台。窄螢幕上下疊，發送台在下面 */
+
+.msg {
+  display: grid;
+  gap: var(--space-8);
+  max-width: 1280px;
+  padding: var(--page-top) var(--space-10) var(--page-bottom);
+  margin: 0 auto;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+:where(.msg) :where(a) {
+  color: inherit;
+}
+
+:where(.msg) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+:where(.msg) :where(h2) {
+  margin: 0;
+}
+
+.msg-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.msg-title h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.msg-latin {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.msg-head p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+/* 收：字退掉，只剩頻道收進天線 */
+.msg-head,
+.msg-body,
+.msg-status {
+  transition: opacity var(--dur-300) ease;
+}
+
+.msg.is-leaving :is(.msg-head, .msg-body, .msg-status) {
+  opacity: 0;
+}
+
+/* ── 頻道 ── */
+.msg-strip {
+  position: relative;
+  height: 220px;
+}
+
+.msg-strip canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.msg-status {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.msg-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-12);
+  align-items: start;
+}
+
+/* ── 收到的訊號 ── */
+.msg-log {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.msg-empty {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.msg-empty b {
+  font-size: var(--fs-24);
+  font-weight: 600;
+}
+
+.msg-empty p {
+  margin: 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.msg-list,
+.msg-replies {
+  display: grid;
+  gap: var(--space-6);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.msg-replies {
+  gap: var(--space-4);
+  padding-left: var(--space-5);
+  margin-top: var(--space-4);
+  border-left: 1px dotted var(--rule);
+}
+
+.msg-item {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.msg-item-wave {
+  width: 100%;
+  max-width: 600px;
+  height: 36px;
+}
+
+.msg-item-wave path {
+  fill: none;
+  stroke: var(--paper-2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.is-reply .msg-item-wave {
+  height: 24px;
+}
+
+.msg-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.msg-author {
+  font-size: var(--fs-16);
+  font-weight: 600;
+}
+
+a.msg-author {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 4px;
+}
+
+.msg-admin {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--amber);
+}
+
+.msg-item-head time {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+.msg-item-text {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.msg-item-actions {
+  display: flex;
+  gap: var(--space-4);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.msg-item-actions button {
+  display: inline-flex;
+  gap: var(--space-1);
+  transition: color var(--dur-200) ease;
+}
+
+.msg-item-actions button:hover,
+.msg-item-actions button:focus-visible,
+.msg-item-actions .is-liked {
+  color: var(--paper);
+}
+
+.msg-rules {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.msg-rules li::before {
+  content: "·  ";
+  color: var(--paper-3);
+}
+
+.msg-private {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-3);
+}
+
+.msg-private a {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+/* ── 發送台 ── */
+.msg-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.msg-form h2 {
+  font-size: var(--fs-18);
+  font-weight: 600;
+}
+
+.msg-login,
+.msg-as,
+.msg-replying {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.msg-login span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.msg-login button,
+.msg-as button,
+.msg-replying button {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--fs-13);
+  color: var(--paper);
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur-200) ease;
+}
+
+.msg-login button:hover,
+.msg-login button:focus-visible,
+.msg-as button:hover,
+.msg-as button:focus-visible,
+.msg-replying button:hover,
+.msg-replying button:focus-visible {
+  border-color: var(--paper-2);
+}
+
+.msg-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.msg-input {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.msg-input span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.msg-input :is(input, textarea) {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  font: inherit;
+  font-size: var(--fs-16);
+  color: var(--paper);
+  resize: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  outline: none;
+  appearance: none;
+}
+
+.msg-input :is(input, textarea):focus {
+  border-bottom-color: var(--paper-2);
+}
+
+.msg-input :is(input, textarea)::placeholder {
+  color: var(--paper-3);
+}
+
+/* 驗證沒過：底線換成琥珀色，原因寫在送出鈕底下 */
+.msg-input :is(input, textarea)[aria-invalid="true"] {
+  border-bottom-color: var(--amber);
+}
+
+.msg-captcha {
+  max-width: 160px;
+}
+
+.msg-meter {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+}
+
+.msg-submit {
+  justify-self: start;
+  padding: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
+  font-size: var(--fs-14);
+  color: var(--paper);
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur-200) ease;
+}
+
+.msg-submit:hover,
+.msg-submit:focus-visible {
+  border-color: var(--amber);
+}
+
+.msg-submit:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.msg-note {
+  display: block;
+  min-height: 1.5em;
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.msg-note em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+@media (max-width: 900px) {
+  .msg-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .msg {
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
+  }
+
+  .msg-strip {
+    height: 160px;
+  }
+
+  .msg-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
