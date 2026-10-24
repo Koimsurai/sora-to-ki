@@ -297,6 +297,39 @@ function belt(seed: number, count: number, [inner, outer]: readonly [number, num
   });
 }
 
+/**
+ * 橢圓（圓心 cx、cy，半徑 rx、ry）落在畫面裡的那幾段弧，回傳 [起角, 迄角]。
+ * 整圈在畫面外、或畫面整個在橢圓裡面（圈比畫面大、繞在外面）都回空的。
+ * 沿圈取 96 個點看哪些在畫面裡（外擴一點），連續的併成一段，頭尾各多讓一格免得切到邊
+ */
+export function visibleArcs(cx: number, cy: number, rx: number, ry: number, w: number, h: number): [number, number][] {
+  const pad = 4;
+  if (cx - rx > w + pad || cx + rx < -pad || cy - ry > h + pad || cy + ry < -pad) return [];
+  const inside = (x: number, y: number) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < 1;
+  if (inside(-pad, -pad) && inside(w + pad, -pad) && inside(-pad, h + pad) && inside(w + pad, h + pad)) return [];
+  const N = 96;
+  const step = TAU / N;
+  const seen = Array.from({ length: N }, (_, i) => {
+    const x = cx + Math.cos(i * step) * rx;
+    const y = cy + Math.sin(i * step) * ry;
+    return x >= -pad && x <= w + pad && y >= -pad && y <= h + pad;
+  });
+  if (seen.every(Boolean)) return [[0, TAU]];
+  // 從一個看不到的點開始繞一圈，收集連續看得到的段
+  const start = seen.indexOf(false);
+  const arcs: [number, number][] = [];
+  let from = -1;
+  for (let k = 1; k <= N; k++) {
+    const i = (start + k) % N;
+    if (seen[i] && from < 0) from = start + k;
+    if (!seen[i] && from >= 0) {
+      arcs.push([(from - 1) * step, (start + k) * step]);
+      from = -1;
+    }
+  }
+  return arcs;
+}
+
 export function createSignalSky(signals: Signal[], now0: number) {
   const sent = signals.filter((s) => s.at !== null);
   const homes = signals.filter((s) => s.home);
@@ -502,6 +535,9 @@ export function createSignalSky(signals: Signal[], now0: number) {
       prev = p;
     }
   };
+
+  /** 訊號圈那一層的離屏快取（見 draw 裡訊號那段） */
+  const ringCache: { key: string; canvas: HTMLCanvasElement | null } = { key: '', canvas: null };
 
   function draw(ctx: CanvasRenderingContext2D, f: SkyFrame) {
     const { w, h, t } = f;
@@ -742,16 +778,43 @@ export function createSignalSky(signals: Signal[], now0: number) {
     }
 
     // ── 訊號：每一道是以地球為中心的一圈細點鏈，作品是圈上的一點 ──
-    // 圈很多：同一種、同一個亮度的併成一條路徑畫，不要一圈一次 stroke
+    // 拉遠時這一層是全頁最貴的：幾百圈點線橢圓，大半在畫面外，切虛線與反鋸齒都在 CPU 上做
+    // （GPU 閒著、幀數卻掉到十幾）。三件事讓它便宜：
+    //   1. 只畫畫面裡的那幾段弧；整圈在畫面外、或畫面整個在圈裡面的直接跳過
+    //   2. 同一種、同一個亮度的併成一條路徑；四捨五入後半徑一樣的只畫一次
+    //   3. 整層畫到離屏畫布上，只有圈真的會動超過半個像素（捲動、縮放、時間推進、換了滑過的那圈）才重畫，
+    //      其他幀直接貼上去。圈是以地球為圓心的圓，跟鏡頭慢慢轉的角度無關
+    const ry = (rx: number) => rx * v.sinE;
+    const ringKey = [
+      w,
+      h,
+      ctx.getTransform().a,
+      v.k.toPrecision(6),
+      v.ex,
+      v.ey,
+      v.sinE.toFixed(4),
+      Math.floor((f.now / 1000) * v.k * 2),
+      f.hovered ?? '',
+    ].join('|');
+    const reuse = ringKey === ringCache.key;
     const rings = new Map<string, Path2D>();
+    const drawn = new Set<string>();
     const ring = (key: string, rx: number) => {
+      if (reuse) return;
+      const id = `${key}:${Math.round(rx)}`;
+      if (drawn.has(id)) return;
+      drawn.add(id);
+      const arcs = visibleArcs(v.ex, v.ey, rx, ry(rx), w, h);
+      if (!arcs.length) return;
       let path = rings.get(key);
       if (!path) {
         path = new Path2D();
         rings.set(key, path);
       }
-      path.moveTo(v.ex + rx, v.ey);
-      path.ellipse(v.ex, v.ey, rx, rx * v.sinE, 0, 0, TAU);
+      for (const [a0, a1] of arcs) {
+        path.moveTo(v.ex + Math.cos(a0) * rx, v.ey + Math.sin(a0) * ry(rx));
+        path.ellipse(v.ex, v.ey, rx, ry(rx), 0, a0, a1);
+      }
     };
     const placed: { s: Signal; x: number; y: number; a: number; rx: number }[] = [];
     let hoverRing: { s: Signal; rx: number; a: number } | null = null;
@@ -770,14 +833,34 @@ export function createSignalSky(signals: Signal[], now0: number) {
       if (a > 0.3) inView[s.kind]++;
     }
     const RING_ALPHA = { watch: 0.16, book: 0.2, music: 0.24, a: 0.36 } as const;
-    ctx.setLineDash([1, 3]);
-    for (const [key, path] of rings) {
-      const [kind, level] = key.split(':');
-      const base = kind === 'a' ? RING_ALPHA.a : RING_ALPHA[kind as keyof typeof RING_ALPHA];
-      ctx.strokeStyle = rgba(kind === 'a' ? AMBER : INK, (base * Number(level)) / 4);
-      ctx.stroke(path);
+    if (!reuse) {
+      const layer = (ringCache.canvas ??= document.createElement('canvas'));
+      if (layer.width !== ctx.canvas.width || layer.height !== ctx.canvas.height) {
+        layer.width = ctx.canvas.width;
+        layer.height = ctx.canvas.height;
+      }
+      const lc = layer.getContext('2d');
+      if (lc) {
+        lc.setTransform(1, 0, 0, 1, 0, 0);
+        lc.clearRect(0, 0, layer.width, layer.height);
+        lc.setTransform(ctx.getTransform());
+        lc.lineWidth = 1;
+        lc.setLineDash([1, 3]);
+        for (const [key, path] of rings) {
+          const [kind, level] = key.split(':');
+          const base = kind === 'a' ? RING_ALPHA.a : RING_ALPHA[kind as keyof typeof RING_ALPHA];
+          lc.strokeStyle = rgba(kind === 'a' ? AMBER : INK, (base * Number(level)) / 4);
+          lc.stroke(path);
+        }
+        ringCache.key = ringKey;
+      }
     }
-    ctx.setLineDash([]);
+    if (ringCache.canvas && ringCache.key === ringKey) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(ringCache.canvas, 0, 0);
+      ctx.restore();
+    }
     // 滑過的那一圈：一道波前從地球往外跑，追上那一圈時整圈亮起來
     if (hoverRing) {
       const { s, rx, a } = hoverRing;

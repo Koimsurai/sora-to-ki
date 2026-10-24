@@ -31,6 +31,7 @@ import {
   type WatchKind,
 } from './collectionItems';
 import FavoritesEditor from './FavoritesEditor';
+import { createFramePacer } from '@/lib/framePacer';
 import { createSignalSky, drawLaunch, LIGHT_YEAR, type Projected, type Signal, type SkyFrame } from './signalSky';
 import './Collection.css';
 
@@ -265,6 +266,10 @@ export default function Collection() {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let raf = 0;
     let last = 0;
+    // 跟首頁同一個節拍器：鏡頭停住、沒在換頁時降到 30fps（閃爍的星與波前在 30fps 下看不出差別），
+    // 在動的時候 60fps。用「每 N 個 vsync 畫一次」，144Hz、165Hz 的螢幕間隔也是均勻的
+    const pacer = createFramePacer();
+    let settled = false;
     // 進場的計時放在 ref：資料載到之後天空會重建、這個 effect 會重跑，進場不能因此重來一次
     const m = motionRef.current;
     let pointer: { x: number; y: number } | null = null;
@@ -330,8 +335,8 @@ export default function Collection() {
         m.landV = (DRIFT / DRIFT_MS) * k;
       }
       const born = m.born;
-      const dt = last ? nowMs - last : 16;
-      if (dt < 16) return;
+      if (!pacer.shouldRender(nowMs, settled ? 1000 / 30 : 1000 / 60)) return;
+      const dt = last ? Math.min(nowMs - last, 100) : 16;
       last = nowMs;
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -363,6 +368,8 @@ export default function Collection() {
         launch = (nowMs - exit.at - EXIT_MS * 0.7) / LAUNCH_MS;
       }
       sRef.current = s;
+      settled =
+        !arriving && !exit && born >= 0 && nowMs - born > DIVE_MS + BLOOM_MS && Math.abs(target - m.scrolled) < 1e-4;
       // 名字、圖例：俯衝到一半之後淡進來，離開時先淡掉
       const bloom =
         (reduce ? 1 : born < 0 ? 0 : easeOut(clamp01((nowMs - born - DIVE_MS * 0.55) / BLOOM_MS))) *
