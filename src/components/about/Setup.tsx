@@ -19,6 +19,7 @@ import {
 } from './setupDraw';
 import { APPLIANCES, GEAR, type GearItem } from './setupGear';
 import {
+  isPoly,
   MEMORY_AT,
   MODEL5_AT,
   NET,
@@ -221,8 +222,10 @@ export default function Setup() {
         const from = center(hover.el);
         const rect = local(caseRef.current);
         if (from && sheet.case.key === 'model5') {
-          const poly = MODEL5_AT[hover.region] as (typeof MODEL5_AT)[string] | undefined;
-          if (poly) drawGlassPart(ctx, rect, tint, poly, from);
+          const at = MODEL5_AT[hover.region] as (typeof MODEL5_AT)[string] | undefined;
+          // 看得到的沿線稿亮起來，藏在背艙的（電源）用虛線透視
+          if (at && isPoly(at)) drawGlassPart(ctx, rect, tint, at, from);
+          else if (at) drawHiddenPart(ctx, rect, at, from);
         } else if (from) {
           const at = P10C_AT[hover.region] as (typeof P10C_AT)[string] | undefined;
           if (at) drawHiddenPart(ctx, rect, at, from);
