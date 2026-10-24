@@ -448,15 +448,15 @@
 }
 
 @layer utilities {
-  /* 全站文字選取（取代瀏覽器原生）— 柔和薰衣草，呼應整站色 */
+  /* 全站文字選取（取代瀏覽器原生）：一層淡淡的暖白，像用墨在紙上劃過；字本身維持暖白 */
   ::selection {
-    background: rgba(var(--purple-300-rgb), 0.3);
-    color: #fff;
+    background: rgba(var(--paper-rgb), 0.22);
+    color: var(--paper);
     text-shadow: none;
   }
   ::-moz-selection {
-    background: rgba(var(--purple-300-rgb), 0.3);
-    color: #fff;
+    background: rgba(var(--paper-rgb), 0.22);
+    color: var(--paper);
     text-shadow: none;
   }
 }
@@ -795,14 +795,10 @@
       border-color var(--dur-250),
       box-shadow var(--dur-250);
   }
-  button:hover,
-  button:focus {
-    background-color: #6a4acf;
-    border-color: #6a4acf;
-    box-shadow: 0 0 12px 2px var(--clr-button);
-  }
+  /* 翻新前這裡有一條 button:hover / :focus 換成紫底加光暈的規則，各元件得一個個寫例外去壓它；
+     拿掉了。滑過的回饋由各元件自己給，這裡只留鍵盤聚焦的框 */
   button:focus-visible {
-    outline: 2px solid var(--clr-button);
+    outline: 1px solid var(--paper-3);
     outline-offset: 2px;
   }
   button:focus:not(:focus-visible) {

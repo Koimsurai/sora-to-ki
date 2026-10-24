@@ -432,12 +432,12 @@ a.series-nav-title:hover {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  background: var(--black-80);
-  backdrop-filter: blur(var(--blur-16));
-  border-radius: var(--r-10);
-  font-size: var(--fs-12);
-  color: var(--white-80);
+  padding: var(--space-1-5) var(--space-3-5);
+  background: rgba(var(--ground-rgb), 0.85);
+  border: 1px solid var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-2);
   white-space: nowrap;
   pointer-events: none;
   z-index: 5;
@@ -449,16 +449,16 @@ a.series-nav-title:hover {
     transform var(--dur-400) var(--easing-standard);
 }
 
-/* Image Lightbox */
+/* Image Lightbox：夜色鋪滿，圖在中間、圖說在下面 */
 .image-lightbox-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-fullscreen);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--black-90);
-  backdrop-filter: blur(var(--blur-8));
+  background: rgba(var(--ground-rgb), 0.95);
   cursor: zoom-out;
 }
 

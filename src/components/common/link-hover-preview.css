@@ -1,17 +1,15 @@
 /* 內文連結 hover 預覽卡（LinkHoverPreview）。
    走 portal 掛在 body → 不受文章的 overflow/transform 夾住。
-   圖片卡與降級卡共用同一組尺寸，載入完成換內容時卡片不跳大小。 */
+   圖片卡與降級卡共用同一組尺寸，載入完成換內容時卡片不跳大小。
+   跟作者註的小卡（MdxContent.css 的 .annot-card）同一種：夜色底、一條細框、直角、不浮陰影。 */
 
 .lhp-card {
   position: fixed;
   z-index: var(--z-menu);
   width: 300px;
-  border-radius: var(--r-12);
   overflow: hidden;
-  background: rgba(var(--surface-2-rgb), 0.95);
-  border: 1px solid rgba(var(--paper-rgb), 0.2);
-  box-shadow: var(--elev-4);
-  backdrop-filter: blur(var(--blur-12));
+  background: rgba(var(--ground-rgb), 0.96);
+  border: 1px solid var(--rule);
   pointer-events: auto;
 }
 
@@ -26,32 +24,38 @@
 
 .lhp-img {
   object-fit: cover;
-  background: var(--white-04);
+  background: rgba(var(--paper-rgb), 0.03);
+  border-bottom: 1px solid var(--rule);
 }
 
+/* 沒有預覽圖：網站圖示壓成單色、網站名用等寬小字 */
 .lhp-fallback {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  background: linear-gradient(140deg, rgba(var(--paper-rgb), 0.15), var(--white-02));
+  gap: var(--space-2-5);
+  background: rgba(var(--paper-rgb), 0.03);
+  border-bottom: 1px solid var(--rule);
 }
 
 .lhp-favicon {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--r-8);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-2);
+  filter: grayscale(1);
+  opacity: 0.7;
 }
 
 .lhp-site {
-  font-size: var(--fs-13);
-  color: var(--white-60);
-  letter-spacing: var(--ls-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+  letter-spacing: var(--ls-6);
 }
 
 .lhp-skel {
-  background: linear-gradient(90deg, var(--white-04) 25%, var(--white-08) 37%, var(--white-04) 63%);
+  background: linear-gradient(90deg, var(--white-02) 25%, var(--white-06) 37%, var(--white-02) 63%);
   background-size: 200% 100%;
   animation: bp-shimmer 1.5s ease-in-out infinite;
 }
@@ -62,8 +66,8 @@
 
 .lhp-title {
   font-size: var(--fs-14);
-  font-weight: 600;
-  color: #fff;
+  font-weight: 400;
+  color: var(--paper);
   line-height: var(--lh-140);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -75,7 +79,7 @@
 .lhp-desc {
   margin-top: var(--space-1);
   font-size: var(--fs-13);
-  color: var(--white-55);
+  color: var(--paper-3);
   line-height: var(--lh-150);
   display: -webkit-box;
   -webkit-line-clamp: 2;
