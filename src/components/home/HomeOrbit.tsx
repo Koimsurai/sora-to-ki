@@ -27,8 +27,11 @@ const NEAR_PX = 72;
 const IDLE_HINT_MS = 2500;
 /** 每顆提示多久 */
 const HINT_MS = 6500;
-/** 衛星在土星中線兩側這麼遠的範圍內，字從一邊滑到另一邊 */
-const SIDE_PX = 70;
+/** 軌道在畫面上是扁的（寬約是高的 2.5 倍）：算「往外」的方向前先把縱向拉回圓的 */
+const ORBIT_FLAT = 2.5;
+/** 字離衛星多遠 */
+const GAP_X = 18;
+const GAP_Y = 12;
 /** 多久沒收到 3D 送來的位置就當作沒有 3D */
 const FLAT_AFTER_MS = 2500;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
@@ -212,17 +215,25 @@ export default function HomeOrbit() {
       positions.forEach((p, i) => {
         const el = labelsRef.current[i];
         if (!el) return;
-        // 字往「遠離土星」的那一側長，不壓在軌道與土星上。衛星繞過中線時字不是一下跳到另一邊，
-        // 而是在中線兩側 SIDE_PX 的範圍裡滑過去（衛星轉得慢，這一段要好幾秒）
-        const sideX = Math.min(1, Math.max(0, (p.x - cx) / (2 * SIDE_PX) + 0.5));
-        const sideY = Math.min(1, Math.max(0, (p.y - cy) / (2 * SIDE_PX) + 0.5));
-        // 對齊方式只能二選一：過了中線一段才換，在中線附近來回不會一直跳
-        if (sideX > 0.75) el.classList.remove('is-left');
-        else if (sideX < 0.25) el.classList.add('is-left');
+        // 字往「遠離土星」的方向長，不壓在軌道與土星上。錨點跟著衛星繞土星的角度連續地變：
+        // 在右邊時字從點的右側開始、在左邊時字結束在點的左側、在正下方時字置中在點下面——
+        // 衛星怎麼走字就怎麼跟，不會在某個位置突然被推到另一邊
+        const dx = p.x - cx;
+        const dy = (p.y - cy) * ORBIT_FLAT;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+        /** 字有幾成落在點的左邊（上面）：0 是整個在右（下），1 是整個在左（上） */
+        const fx = 0.5 - 0.5 * ux;
+        const fy = 0.5 - 0.5 * uy;
         const w = el.offsetWidth;
         const h = el.offsetHeight;
-        let x = p.x - w - 18 + sideX * (w + 36);
-        let y = p.y - h - 10 + sideY * (h + 20);
+        let x = p.x + ux * GAP_X - w * fx;
+        let y = p.y + uy * GAP_Y - h * fy;
+        // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在下面置中），一樣是連續變的
+        for (const line of el.children) {
+          if (line instanceof HTMLElement) line.style.translate = `${((w - line.offsetWidth) * fx).toFixed(1)}px 0`;
+        }
         x = Math.max(16, Math.min(window.innerWidth - w - 16, x));
         y = Math.max(72, Math.min(window.innerHeight - h - 16, y));
         el.style.transform = `translate(${x - box.left}px, ${y - box.top}px)`;

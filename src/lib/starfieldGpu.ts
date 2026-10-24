@@ -439,7 +439,8 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   return {
     group,
     update(dt, scrollY, animate) {
-      autoRot += 0.05 * dt;
+      // 約 50 秒一圈。雲帶是橫向的長條，轉的時候是沿著自己滑過去，太慢（原本 125 秒一圈）就看不出在轉
+      autoRot += 0.125 * dt;
       const targetScrollRot = scrollY * 0.001;
       currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, lerpFactor(0.05, dt));
       body.rotation.y = currentScrollRot + autoRot;

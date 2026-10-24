@@ -20,6 +20,8 @@
   top: 0;
   left: 0;
   display: grid;
+  /* 每一行只有自己的寬，對齊由 JS 照衛星的位置連續地推（HomeOrbit 的 frame） */
+  justify-items: start;
   gap: var(--space-1);
   width: max-content;
   max-width: 240px;
@@ -41,18 +43,10 @@
   opacity: 1;
 }
 
-.horbit-label.is-left {
-  text-align: right;
-}
-
 .horbit-label .l1 {
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
-}
-
-.horbit-label.is-left .l1 {
-  justify-content: flex-end;
 }
 
 .horbit-label .zh {
@@ -96,4 +90,8 @@
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto;
+}
+
+.horbit.is-flat .horbit-label > * {
+  translate: none !important;
 }
