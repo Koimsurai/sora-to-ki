@@ -412,6 +412,11 @@
   opacity: 0;
 }
 
+/* 從單則頁回來的第一幀：直接停在放大、字藏起來的樣子，不要從原樣淡過去（那一下會閃） */
+.mo.is-instant :is(.mo-post, .mo-end, .mo-ghost, .mo-dot, .mo-head) {
+  transition: none;
+}
+
 .mo-head {
   transition: opacity var(--dur-250) ease;
 }

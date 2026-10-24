@@ -8,6 +8,7 @@ import { apiUrl } from '@/lib/api';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { LocaleLink } from '@/i18n/locale-link';
 import MomentPost from './MomentPost';
+import { clearCometZoomOut, peekCometZoomOut } from './cometZoom';
 import { useCometSky } from './useCometSky';
 import './Moments.css';
 
@@ -113,12 +114,23 @@ function Thinking() {
   const dotsRef = useRef<(HTMLSpanElement | null)[]>([]);
   const ghostsRef = useRef<(HTMLLIElement | null)[]>([]);
   const endRef = useRef<HTMLParagraphElement>(null);
+  // 從單則頁回來：一開始停在那一則放大的那一段，再拉遠回整條彗星
+  const [back] = useState(() => {
+    const out = peekCometZoomOut();
+    if (!out) return null;
+    const post = full.findIndex((th) => String(th.id) === out.id);
+    const ghost = older.findIndex((th) => String(th.id) === out.id);
+    if (post < 0 && ghost < 0) return null;
+    return { post: post >= 0 ? post : null, ghost: ghost >= 0 ? ghost : null, T: out.T };
+  });
+  useEffect(() => clearCometZoomOut(), []);
   const hover = useCometSky(
     { pageRef, headRef, canvasRef, postsRef, dotsRef, ghostsRef, endRef },
     full.length,
     older.length,
     {
       headGap: HEAD_GAP,
+      zoomFrom: back,
       // 點進一則碎念：往它在彗尾上的那一段放大進去（單則頁接著看那一段）
       zoomTarget: (to) => {
         const id = /^thinking\/(\d+)$/.exec(to)?.[1];

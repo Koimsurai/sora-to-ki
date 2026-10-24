@@ -18,7 +18,7 @@ import {
   REVEAL_MS,
   type ArcLayout,
 } from './comet';
-import { COMET_ZOOM, setCometZoom, ZOOM_MS } from './cometZoom';
+import { COMET_ZOOM, setCometZoom, setCometZoomOut, ZOOM_MS } from './cometZoom';
 
 /** 頁面容器左上角的畫面座標（版面座標加上它就是畫面座標） */
 const originOf = (page: HTMLElement | null): Pt => {
@@ -32,6 +32,27 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 
 /** 第一則的高度：列表頁是彗核，單則頁是這一則（彗核在畫面外很上面） */
 const coreY = (L: ArcLayout) => L.posts[0]?.y ?? L.y0;
+
+/**
+ * 鏡頭推近到 k（0 是原樣、1 是放大到底）：以 P（版面座標，當下在畫面的 Ps）為中心放大，同時把它帶到畫面上的 T。
+ * 字與點那幾層（layers）直接套 transform，回傳畫布要用的 view
+ */
+function camera(layers: HTMLElement[], P: Pt, Ps: Pt, T: Pt, k: number) {
+  const s = 1 + (COMET_ZOOM - 1) * k;
+  for (const el of layers) {
+    el.style.transformOrigin = `${P.x}px ${P.y}px`;
+    el.style.transform = `translate(${(T.x - Ps.x) * k}px, ${(T.y - Ps.y) * k}px) scale(${s})`;
+  }
+  return { s, dx: Ps.x * (1 - s) + (T.x - Ps.x) * k, dy: Ps.y * (1 - s) + (T.y - Ps.y) * k };
+}
+
+/** 放大進去時跟著放大的那幾層（字、點、更舊的點） */
+const zoomLayers = (page: HTMLElement | null) =>
+  page ? [...page.querySelectorAll<HTMLElement>(':scope > .mo-list, :scope > .mo-dots, :scope > .mo-ghosts')] : [];
+
+/** 一則在列表上「它那一段」的下緣：下一則（更舊的那一則）的高度，最多往下 260 */
+const nextAfter = (L: ArcLayout, y: number) =>
+  Math.min(y + 260, ...[...L.posts.map((p) => p.y), ...L.ghosts].filter((v) => v > y + 1));
 
 interface Refs {
   pageRef: RefObject<HTMLDivElement | null>;
@@ -60,7 +81,20 @@ interface Options {
   handedOver?: boolean;
   /** 換頁要去的是哪一則碎念（列表頁）：它在 posts 或 ghosts 的第幾個，往那裡放大進去；不是就 null */
   zoomTarget?: (to: string) => { id: string; post: number | null; ghost: number | null } | null;
+  /** 換頁回列表（單則頁）：回傳這一則的 id，列表頁接著從這一段拉遠；不是回列表就 null */
+  zoomOutTo?: (to: string) => string | null;
+  /** 從單則頁回來（列表頁）：那一則在 posts 或 ghosts 的第幾個、在畫面上停在哪；一開始停在放大的那一段，再拉遠 */
+  zoomFrom?: { post: number | null; ghost: number | null; T: Pt } | null;
 }
+
+/** 回列表時拉遠要多久（毫秒） */
+const PULL_MS = 900;
+/** 回列表時單則頁的字退掉要多久（毫秒）：彗尾不動，換頁之後由列表頁拉遠 */
+const HOLD_MS = 260;
+/** 拉遠到這個進度時，其他碎念與標題浮回來 */
+const PULL_SHOW = 0.55;
+/** 轉場沒有交棒時，掛上多久之後自己開始拉遠（毫秒） */
+const PULL_FALLBACK_MS = 1200;
 
 export function useCometSky(refs: Refs, postCount: number, ghostCount: number, opts: Options) {
   const { pageRef, headRef, canvasRef, postsRef, dotsRef, ghostsRef, endRef } = refs;
@@ -79,6 +113,8 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
   const leaveRef = useRef<{ at: number; from: number } | null>(null);
   /** 換頁的「放大進去」：P 是那一則的版面座標、Ps 是它當時的畫面座標、T 是放大完它在畫面上的位置 */
   const zoomRef = useRef<{ at: number; P: Pt; Ps: Pt; T: Pt; from: number; to: number } | null>(null);
+  /** 從單則頁回來的拉遠：什麼時候開始（-1 是還在等點落地）、拉完了沒 */
+  const pullRef = useRef({ at: -1, done: !opts.zoomFrom });
   const hoverRef = useRef<number | null>(null);
 
   const origin = () => originOf(pageRef.current);
@@ -91,12 +127,18 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
   };
 
   usePageTransition({
-    anchor: () => (layoutRef.current ? coreOnScreen(layoutRef.current) : null),
+    anchor: () => {
+      // 從單則頁回來：點就停在那一則上（放大的那一段），拉遠從那裡開始
+      const from = optsRef.current.zoomFrom;
+      if (from && !pullRef.current.done)
+        return { x: from.T.x, y: Math.min(window.innerHeight - 24, Math.max(24, from.T.y)) };
+      return layoutRef.current ? coreOnScreen(layoutRef.current) : null;
+    },
     // 點從彗尾某一處切進來，沿著彗尾的中線往上飛進第一則，跟彗星飛的方向一樣。
     // 切進來的位置挑「順路」的：從點現在的方向直直過去、到了那裡剛好就是彗尾往上的方向，
     // 不會繞一個尖角掉頭。落地後散開的那條線就疊在彗尾上
     arrive: ({ pos, vel }) => {
-      if (handedOver) return { still: true };
+      if (handedOver || (optsRef.current.zoomFrom && !pullRef.current.done)) return { still: true };
       const L = layoutRef.current;
       if (!L) return null;
       const o = origin();
@@ -134,6 +176,15 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
       const page = pageRef.current;
       if (!L || !page) return null;
       const o = origin();
+      // 回列表（單則頁）：彗尾維持放大的樣子，只有字退掉；列表頁接著從這一段拉遠
+      const outId = optsRef.current.zoomOutTo?.(ctx.to);
+      if (outId) {
+        const c = coreY(L);
+        const T = { x: o.x + arcX(L, c), y: o.y + c };
+        setCometZoomOut({ id: outId, T });
+        page.classList.add('is-leaving');
+        return { point: coreOnScreen(L), velocity: { x: 0, y: 0 }, done: after(HOLD_MS) };
+      }
       // 點進一則碎念：往那一則放大進去，那一段亮著、其他的退暗；單則頁接著同一個鏡頭
       const target = optsRef.current.zoomTarget?.(ctx.to);
       const y =
@@ -142,9 +193,7 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
         const P = { x: arcX(L, y), y };
         const Ps = { x: o.x + P.x, y: o.y + P.y };
         const T = { x: Ps.x, y: window.innerHeight * 0.3 };
-        // 亮的那一段：這一則到下一則（更舊的那一則）之前
-        const next = Math.min(y + 260, ...[...L.posts.map((p) => p.y), ...L.ghosts].filter((v) => v > y + 1));
-        zoomRef.current = { at: performance.now(), P, Ps, T, from: y - 40, to: next - 40 };
+        zoomRef.current = { at: performance.now(), P, Ps, T, from: y - 40, to: nextAfter(L, y) - 40 };
         setCometZoom({
           id: target.id,
           zoom: COMET_ZOOM,
@@ -172,6 +221,8 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
     onGrow: () => {
       const L = layoutRef.current;
       growRef.current = { at: performance.now(), from: L ? coreY(L) + approachRef.current : 0 };
+      // 從單則頁回來：這一頁露出來了，開始拉遠
+      if (optsRef.current.zoomFrom && pullRef.current.at < 0) pullRef.current.at = performance.now();
     },
   });
 
@@ -215,6 +266,19 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
       if (endRef.current) at(endRef.current, arcX(L, L.end.y), L.end.y, L.end.left);
       page.style.height = `${L.height}px`;
       page.classList.add('is-arc');
+      // 從單則頁回來、還沒開始拉遠：第一次畫出來之前就先停在放大的那一段，字先藏著（不然會先閃一下原樣）
+      const from = optsRef.current.zoomFrom;
+      if (from && pullRef.current.at < 0 && !pullRef.current.done) {
+        const y = from.post != null ? L.posts[from.post]?.y : from.ghost != null ? L.ghosts[from.ghost] : undefined;
+        if (y !== undefined) {
+          const o = originOf(page);
+          const P = { x: arcX(L, y), y };
+          page.classList.add('is-zooming', 'is-instant');
+          camera(zoomLayers(page), P, { x: o.x + P.x, y: o.y + P.y }, from.T, 1);
+          // 藏好之後下一幀才把過渡還回來（拉到一半字浮回來時要有過渡）
+          requestAnimationFrame(() => requestAnimationFrame(() => page.classList.remove('is-instant')));
+        }
+      }
     };
     place();
     const ro = new ResizeObserver(place);
@@ -243,10 +307,8 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
     let last = 0;
     /** 上一張畫的時候的狀態：沒有 GPU 時長完就不再流動，只在捲動、換大小、滑過時重畫 */
     let drawn = '';
-    /** 放大進去時跟著放大的那幾層（字、點、更舊的點） */
-    const layers = page
-      ? [...page.querySelectorAll<HTMLElement>(':scope > .mo-list, :scope > .mo-dots, :scope > .mo-ghosts')]
-      : [];
+    const mountedAt = performance.now();
+    const layers = zoomLayers(page);
 
     const fit = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -289,7 +351,20 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
       const since = grow ? now - grow.at : -1;
       const leave = leaveRef.current;
       const zoomIn = zoomRef.current;
-      const busy = (since >= 0 && since < REVEAL_MS) || leave !== null || zoomIn !== null;
+      // 從單則頁回來的拉遠：那一則在列表上的高度（找不到就不拉，照一般的長法）
+      const from = optsRef.current.zoomFrom;
+      const pull = pullRef.current;
+      const pullY =
+        from && !pull.done
+          ? from.post != null
+            ? L.posts[from.post]?.y
+            : from.ghost != null
+              ? L.ghosts[from.ghost]
+              : undefined
+          : undefined;
+      if (from && !pull.done && pullY === undefined) pull.done = true;
+      const pulling = pullY !== undefined && !pull.done;
+      const busy = (since >= 0 && since < REVEAL_MS) || leave !== null || zoomIn !== null || pulling;
       // 長完之後 30fps 就夠：塵埃流得很慢
       if (!busy && now - last < 33) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
@@ -306,21 +381,36 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
       let view: { s: number; dx: number; dy: number } | null = null;
       let band = focusOf(L);
       let bandAmount = 1;
-      if (zoomIn) {
+      if (pulling && from) {
+        // 從單則頁回來：一開始停在放大的那一段（那一則在畫面上的 T），轉場把這一頁露出來之後（onGrow）
+        // 慢慢拉遠回整條彗星，那一則落回它在列表上的位置；拉到一半，其他碎念與標題浮回來。
+        // 萬一轉場沒有交棒（onGrow 沒來），轉場結束一陣子之後自己開始
+        if (pull.at < 0 && !isArriving() && now - mountedAt > PULL_FALLBACK_MS) pull.at = now;
+        const raw = pull.at < 0 ? 0 : Math.min(1, (now - pull.at) / PULL_MS);
+        const k = 1 - easeInOut(raw);
+        const P = { x: arcX(L, pullY), y: pullY };
+        view = camera(layers, P, { x: o.x + P.x, y: o.y + P.y }, from.T, k);
+        band = { from: pullY - 40, to: nextAfter(L, pullY) - 40 };
+        bandAmount = k;
+        revealY = raw >= PULL_SHOW ? Infinity : -Infinity;
+        headScale = 1;
+        pageRef.current?.classList.toggle('is-zooming', raw < PULL_SHOW);
+        if (raw >= 1) {
+          pull.done = true;
+          for (const el of layers) {
+            el.style.transform = '';
+            el.style.transformOrigin = '';
+          }
+          growRef.current = { at: now - REVEAL_MS, from: 0 };
+        }
+      } else if (zoomIn) {
         // 放大進去：以那一則為中心放大，同時把它帶到畫面上方三成的地方；那一段亮著、其他慢慢退暗
         const k = easeInOut(Math.min(1, (now - zoomIn.at) / ZOOM_MS));
-        const s = 1 + (COMET_ZOOM - 1) * k;
-        const dx = zoomIn.Ps.x * (1 - s) + (zoomIn.T.x - zoomIn.Ps.x) * k;
-        const dy = zoomIn.Ps.y * (1 - s) + (zoomIn.T.y - zoomIn.Ps.y) * k;
-        view = { s, dx, dy };
+        view = camera(layers, zoomIn.P, zoomIn.Ps, zoomIn.T, k);
         band = { from: zoomIn.from, to: zoomIn.to };
         bandAmount = k;
         revealY = Infinity;
         headScale = 1;
-        for (const el of layers) {
-          el.style.transformOrigin = `${zoomIn.P.x}px ${zoomIn.P.y}px`;
-          el.style.transform = `translate(${(zoomIn.T.x - zoomIn.Ps.x) * k}px, ${(zoomIn.T.y - zoomIn.Ps.y) * k}px) scale(${s})`;
-        }
       } else if (leave) {
         // 收：彗尾越縮越快地退回第一則，最後彗髮也收進那一點
         const k = Math.min(1, (now - leave.at) / RETRACT_MS);
@@ -342,7 +432,8 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
           origin: o,
           hoverY: hoverRef.current,
           // 從列表放大進來的：塵埃一開始就在（列表放大到最後就是這個樣子），只有留言一則一則浮出來
-          revealY: handedOver && !leave ? Infinity : revealY,
+          // 從單則頁回來拉遠的時候也是：整條彗尾都在，字等拉到一半才浮回來
+          revealY: (handedOver && !leave) || pulling ? Infinity : revealY,
           headScale,
           focus: band,
           focusAmount: bandAmount,
