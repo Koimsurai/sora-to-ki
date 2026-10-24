@@ -21,12 +21,6 @@
   pointer-events: none;
 }
 
-/* 退場第一步：照片先退成黑白 */
-.ph.is-leaving .ph-shot {
-  filter: grayscale(1);
-  transition: filter var(--dur-200) ease;
-}
-
 :where(.ph) :where(button) {
   all: unset;
   box-sizing: border-box;
@@ -171,6 +165,12 @@
   position: relative;
   display: block;
   overflow: hidden;
+}
+
+/* 退場第一步：照片先退成黑白 */
+.ph.is-leaving .ph-shot {
+  filter: grayscale(1);
+  transition: filter var(--dur-200) ease;
 }
 
 .ph-shot img,
