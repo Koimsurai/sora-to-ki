@@ -21,8 +21,8 @@
 }
 
 .link-card:hover {
-  border-color: rgba(var(--brand-rgb), 0.3);
-  background: rgba(var(--brand-rgb), 0.06);
+  border-color: rgba(var(--paper-rgb), 0.3);
+  background: rgba(var(--paper-rgb), 0.06);
   transform: translateY(-1px);
   box-shadow: var(--elev-2);
 }
@@ -59,8 +59,8 @@
 }
 
 .link-card-internal {
-  border-color: rgba(var(--brand-rgb), 0.2);
-  background: rgba(var(--brand-rgb), 0.04);
+  border-color: rgba(var(--paper-rgb), 0.2);
+  background: rgba(var(--paper-rgb), 0.04);
 }
 
 /* 站內連結卡的載入骨架：保留與真卡相近的高度 → 資料補上時不位移（主路徑已 SSR-real，

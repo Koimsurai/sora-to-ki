@@ -679,10 +679,11 @@
     /* 文章版面（文章頁、InfoPage 系列、LinkCard）的語意色。原本寫在 BlogPost.css 的 :root，
        可是 article-shell.css 與 LinkCard.css 也在用——/history、/about-site 這些頁面不載入
        BlogPost.css，以前是靠每頁 idle 預載文章頁 chunk 才「事後」拿到，拆掉預載就變成未定義。 */
-    --post-accent: var(--brand);
-    --post-accent-glow: rgba(var(--brand-rgb), 0.35);
-    --post-green: var(--clr-tertiary);
-    --post-muted: var(--white-45);
+    /* 2026-10 翻新：紫與綠全部收回暖白，琥珀只留給「你在哪裡」那一點（後台不用這一組） */
+    --post-accent: var(--paper);
+    --post-accent-glow: rgba(var(--paper-rgb), 0.2);
+    --post-green: var(--paper);
+    --post-muted: var(--paper-3);
     --post-card-bg: var(--white-02);
     --post-card-border: var(--white-06);
     --post-page-bg: var(--surface-0);
@@ -873,7 +874,7 @@
  * 正確字體。字體棧因此必須是 CSS 認得的東西 → 放這裡，同時也讓 TSX 那邊不必再存一份。
  *
  * ⚠️ 新增字體時要三處一起：這裡的 --blog-font-<id>、下面的 html[data-blog-font="<id>"]、
- * 以及 BlogPost 的 FONT_OPTIONS（只放 id + 顯示名）。__root.tsx 的 script 不必動——它只
+ * 以及 blog/ArticleControls 的 FONT_OPTIONS（只放 id + 顯示名）。__root.tsx 的 script 不必動——它只
  * 驗證 id 格式後原樣寫進 attribute，不認識任何字體。 */
 :root {
   --blog-font-misans: MiSans, system-ui, -apple-system, sans-serif;
