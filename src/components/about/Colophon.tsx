@@ -61,6 +61,8 @@ export default function Colophon() {
   const { t, i18n } = useTranslation();
   const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const qa = lookupOr(COLOPHON_QA, lang, COLOPHON_QA['zh-TW']);
+  /** 問答目前看的是第幾題 */
+  const [qaAt, setQaAt] = useState(0);
   const [target, setTarget] = useState<StarKey>('material');
   const [hover, setHover] = useState<StarKey | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -249,6 +251,62 @@ export default function Colophon() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  const qaItems: { q: string; a: ReactNode }[] = [
+    { q: stripNumber(qa.q1), a: <p>{qa.a1}</p> },
+    {
+      q: stripNumber(qa.q2),
+      a: (
+        <p>
+          {qa.a2_pre}
+          <code>React 19</code>
+          {qa.a2_mid1}
+          <code>TanStack Start</code>
+          {qa.a2_mid2}
+          <code>Vite</code>
+          {qa.a2_mid3}
+          <code>Tailwind CSS</code>
+          {qa.a2_mid4}
+          <code>Three.js</code>
+          {qa.a2_mid5}
+          <code>Rust</code>
+          {qa.a2_mid6}
+          <code>SQLite</code>
+          {qa.a2_mid7}
+          <code>Docker</code>
+          {qa.a2_tail}
+        </p>
+      ),
+    },
+    {
+      q: stripNumber(qa.q3),
+      a: (
+        <>
+          <p>
+            {qa.a3} <code>thumbhash</code> {qa.a3_mid}
+          </p>
+          <LinkCard href="https://koimsurai.com/blog/21" />
+        </>
+      ),
+    },
+    { q: stripNumber(qa.q4), a: <p>{qa.a4}</p> },
+    {
+      q: stripNumber(qa.q5),
+      a: (
+        <>
+          <p>{qa.a5_p1}</p>
+          <p>
+            {qa.a5_p2_pre}
+            <LocaleLink to="/messages">{qa.a5_p2_link}</LocaleLink>
+            {qa.a5_p2_post}
+          </p>
+        </>
+      ),
+    },
+    { q: stripNumber(qa.q6), a: <p>{qa.a6}</p> },
+    { q: stripNumber(qa.q7), a: <p>{qa.a7}</p> },
+    { q: stripNumber(qa.q8), a: <p>{qa.a8}</p> },
+  ];
+
   const panel: Record<StarKey, ReactNode> = {
     material: (
       <ul className="cl-swatches">
@@ -297,64 +355,26 @@ export default function Colophon() {
     rule3: <WorkToy />,
     qa: (
       <div className="cl-qa">
-        <details open>
-          <summary>{stripNumber(qa.q1)}</summary>
-          <p>{qa.a1}</p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q2)}</summary>
-          <p>
-            {qa.a2_pre}
-            <code>React 19</code>
-            {qa.a2_mid1}
-            <code>TanStack Start</code>
-            {qa.a2_mid2}
-            <code>Vite</code>
-            {qa.a2_mid3}
-            <code>Tailwind CSS</code>
-            {qa.a2_mid4}
-            <code>Three.js</code>
-            {qa.a2_mid5}
-            <code>Rust</code>
-            {qa.a2_mid6}
-            <code>SQLite</code>
-            {qa.a2_mid7}
-            <code>Docker</code>
-            {qa.a2_tail}
-          </p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q3)}</summary>
-          <p>
-            {qa.a3} <code>thumbhash</code> {qa.a3_mid}
-          </p>
-          <LinkCard href="https://koimsurai.com/blog/21" />
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q4)}</summary>
-          <p>{qa.a4}</p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q5)}</summary>
-          <p>{qa.a5_p1}</p>
-          <p>
-            {qa.a5_p2_pre}
-            <LocaleLink to="/messages">{qa.a5_p2_link}</LocaleLink>
-            {qa.a5_p2_post}
-          </p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q6)}</summary>
-          <p>{qa.a6}</p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q7)}</summary>
-          <p>{qa.a7}</p>
-        </details>
-        <details>
-          <summary>{stripNumber(qa.q8)}</summary>
-          <p>{qa.a8}</p>
-        </details>
+        {/* 左邊題目、右邊答案：點題目換答案，目鏡的高度固定，不會因為打開一題就往上頂 */}
+        <ul className="cl-qa-list" role="tablist" aria-label={qa.qaHeading}>
+          {qaItems.map((it, i) => (
+            <li key={it.q}>
+              <button
+                type="button"
+                role="tab"
+                id={`cl-qa-q${i}`}
+                aria-selected={i === qaAt}
+                aria-controls="cl-qa-answer"
+                onClick={() => setQaAt(i)}
+              >
+                {it.q}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="cl-qa-answer" id="cl-qa-answer" role="tabpanel" aria-labelledby={`cl-qa-q${qaAt}`} key={qaAt}>
+          {qaItems[qaAt]?.a}
+        </div>
       </div>
     ),
     license: (
@@ -402,7 +422,12 @@ export default function Colophon() {
 
         {/* 目鏡：正在測的那顆星的說明 */}
         {/* 換一顆星時目鏡重新對焦：字一行一行浮出來，視野從中間撐開（key 換了，動畫重來） */}
-        <section className="cl-eyepiece" key={target} aria-live="polite" aria-labelledby="cl-eyepiece-title">
+        <section
+          className={`cl-eyepiece${target === 'qa' ? ' is-qa' : ''}`}
+          key={target}
+          aria-live="polite"
+          aria-labelledby="cl-eyepiece-title"
+        >
           <span className="cl-k">{t(`colophon.star.${target}`)}</span>
           <h2 id="cl-eyepiece-title">{target === 'qa' ? qa.qaHeading : t(`colophon.title_${target}`)}</h2>
           <p>{target === 'qa' ? qa.intro : t(`colophon.text_${target}`)}</p>

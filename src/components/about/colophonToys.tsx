@@ -201,6 +201,8 @@ export function SaturnToy() {
 }
 
 const PHOTO_STEPS = ['raw', 'bits', 'gray', 'color', 'dots'] as const;
+/** 規則 02 拿來示範的那張照片 */
+const TOY_PHOTO = 'IMG_2635';
 /** 照片頁一張照片收黑白、上色各要幾秒（跟照片頁一樣） */
 const SCAN_S = RX_PHASES.scan[1] - RX_PHASES.scan[0];
 const COLOR_S = RX_PHASES.color[1] - RX_PHASES.color[0];
@@ -218,8 +220,9 @@ export function PhotoToy() {
     queryFn: loadPhotosManifest,
     staleTime: 10 * 60 * 1000,
   });
-  // 挑一張橫的：圓形目鏡裡放得比較滿
-  const src = photos.find((p) => p.aspectRatio > 1.2)?.thumbnailUrl ?? photos.at(0)?.thumbnailUrl;
+  // 用 IMG_2635（作者挑的）；照片庫裡找不到就挑一張橫的，圓形目鏡裡放得比較滿
+  const src = (photos.find((p) => p.id === TOY_PHOTO) ?? photos.find((p) => p.aspectRatio > 1.2) ?? photos.at(0))
+    ?.thumbnailUrl;
   const key = PHOTO_STEPS[step];
 
   useEffect(() => {
