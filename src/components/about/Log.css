@@ -1,5 +1,5 @@
-/* 航行日誌（about/Log）：頁首左邊是標題、右邊是任務經過時間；下面是軌跡與熱力圖的畫布（about/logSky），
-   字疊在畫布上；最下面一排是現在的狀態。窄螢幕上畫布維持 760 寬、可以左右拖（點與字不縮到看不見） */
+/* 航行日誌（about/Log）：頁首左邊是標題、右邊是任務經過時間；下面是升空的畫布（about/logSky），
+   字疊在畫布上；最下面一排是現在的狀態。畫布是透視投影，窄螢幕一樣放得下整段 */
 
 .lg {
   display: grid;
@@ -75,16 +75,14 @@
   opacity: 0;
 }
 
-/* ── 軌跡 ── */
+/* ── 升空 ── */
 .lg-scroll {
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: hidden;
 }
 
 .lg-line {
   position: relative;
-  min-width: 760px;
-  height: 470px;
+  height: 520px;
 }
 
 .lg-line canvas {
@@ -94,7 +92,7 @@
   height: 100%;
 }
 
-.lg-total,
+.lg-hud,
 .lg-label,
 .lg-now-label,
 .lg-tip {
@@ -106,10 +104,27 @@
   opacity: 0;
 }
 
-.lg-total {
+/* 遙測讀數：跟著火箭走 */
+.lg-hud {
+  display: grid;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-8);
+  color: var(--paper-2);
+}
+
+.lg-hud b {
+  font-weight: 400;
+  color: var(--amber);
+}
+
+.lg-nodata {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
   color: var(--paper-3);
 }
 
@@ -126,9 +141,15 @@
   color: var(--paper);
 }
 
+/* 提示：有底、有框，蓋在名字與燈上面也讀得清楚 */
 .lg-tip {
+  z-index: 1;
   display: grid;
-  font-size: var(--fs-14);
+  gap: var(--space-px);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-13);
+  background: rgba(var(--ground-rgb), 0.9);
+  border: 1px solid var(--rule);
   transition: opacity var(--dur-150) ease;
 }
 
