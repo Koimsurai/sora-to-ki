@@ -1059,6 +1059,8 @@ export function createSignalSky(signals: Signal[], now0: number) {
       const v = view(f);
       return { x: v.ex, y: v.ey };
     },
+    /** 訊號圈的扁度（縱向半徑是橫向的幾倍）：換頁的點沿著訊號圈繞進來時照它畫 */
+    ringAspect: (f: SkyFrame) => view(f).sinE,
     /** 現在畫面邊上是多遠（光秒） */
     reach: (f: SkyFrame) => view(f).D,
     /** 從地球捲到最遠跨了幾個數量級（頁面要多長） */
