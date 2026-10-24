@@ -32,10 +32,6 @@ const SPAN = 0.16;
 const ALT_MAX = 320;
 /** 地上的燈一排隔多寬（一週七排，往鏡頭這邊排開） */
 const LANE = 22;
-/** 重力轉向：飛行路徑角最低壓到幾度、最高幾度、離地多少天之內從垂直轉過來 */
-const GAMMA_MIN = (24 * Math.PI) / 180;
-const GAMMA_MAX = (65 * Math.PI) / 180;
-const PITCH_DAYS = 70;
 /** 軌道的平滑程度（天）：越大越順 */
 const SMOOTH_DAYS = 14;
 /** 大氣層頂在多高：火箭穿過去之後星空才浮出來 */
@@ -216,14 +212,13 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
     return [p[0], p[1], 40 + dow * LANE];
   };
 
-  /** 飛行路徑角：平滑後軌道的切線，夾在重力轉向的範圍裡；離地那段從垂直慢慢壓下來 */
+  /** 飛行路徑角：就是畫出來那條軌跡的切線，火箭永遠順著自己拖出來的線飛 */
   const gammaAt = (i: number) => {
     const a = Math.max(0, i - 4);
     const b = Math.min(N - 1, i + 4);
     const climb = altOf(b) - altOf(a);
     const run = ((b - a) / (N - 1)) * SPAN * R || 1;
-    const path = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, Math.atan2(climb, run)));
-    return Math.PI / 2 + (path - Math.PI / 2) * smooth(Math.min(1, i / PITCH_DAYS));
+    return Math.atan2(climb, run);
   };
 
   const camera = (w: number, h: number, look: number) => {
