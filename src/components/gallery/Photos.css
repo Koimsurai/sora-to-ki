@@ -10,15 +10,48 @@
 }
 
 /* 整頁的遮罩（進場一行一行收下來、退場收回去）：疊在內容上、點不到。
-   頁面在換頁時會被位移，fixed 會跟著頁面走，所以高度寫 100vh 不寫 100% */
+   頁面在換頁時會被位移，fixed 會跟著頁面走：換頁時整頁從上面滑下來，遮罩只有一個視窗高的話
+   視窗下半截會先露出內容，所以往下多蓋一個視窗高（高度寫 vh 不寫 %，% 會是頁面的高度）。
+   收與蓋是 sheet 往下／往上滑（JS 的 transform 動畫），裡面的雜訊反方向推回來，0 與 1 對齊視窗不跟著滑 */
 .ph-veil {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 5;
   width: 100vw;
-  height: 100vh;
+  height: 200vh;
+  overflow: hidden;
   pointer-events: none;
+}
+
+.ph-veil-sheet,
+.ph-veil-noise,
+.ph-veil-noise > .is-b {
+  position: absolute;
+  inset: 0;
+}
+
+.ph-veil-noise {
+  /* 顏色與貼圖分開寫：貼圖還沒編好時 var() 未定義，寫在同一條簡寫裡會讓整條失效、連紙色都沒有 */
+  background-color: var(--ground);
+  background-image: var(--ph-noise-a);
+}
+
+.ph-veil-noise > .is-b {
+  background-image: var(--ph-noise-b);
+  opacity: 0;
+  animation: ph-noise-flip 140ms steps(1) infinite;
+}
+
+/* 掃描線：sheet 的上緣，只在動的那一段亮著 */
+.ph-veil-edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: rgba(var(--amber-rgb), 0.9);
+  opacity: 0;
 }
 
 :where(.ph) :where(button) {
@@ -202,7 +235,9 @@
 }
 
 .ph-rx-noise {
-  background: var(--ph-noise-a) 0 0 repeat var(--ground);
+  /* 顏色與貼圖分開寫：貼圖還沒編好時 var() 未定義，寫在同一條簡寫裡會讓整條失效、連紙色都沒有 */
+  background-color: var(--ground);
+  background-image: var(--ph-noise-a);
 }
 
 /* 第二張雜訊一亮一暗地蓋在第一張上，兩張交替就是在閃；只有正在收的那幾張在閃
