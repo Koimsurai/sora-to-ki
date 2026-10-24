@@ -587,7 +587,7 @@
   },
   "collection": {
     "title": "컬렉션",
-    "subtitle": "본 것, 읽은 것, 자주 듣는 것.",
+    "subtitle": "보고, 읽고, 들은 작품은 모두 지구에서 보낸 신호. 지구에서 멀수록 오래전의 것.",
     "kind": {
       "anime": "애니",
       "film": "영화",
@@ -616,10 +616,60 @@
     "music": {
       "title": "듣기",
       "tracks": "곡",
-      "genres": "장르",
       "live": "재생 중",
       "last": "방금 들은 곡"
     },
-    "hint": "아래로 스크롤"
+    "hint": "스크롤하면 더 멀리",
+    "sky": {
+      "unit": {
+        "s": "광초",
+        "m": "광분",
+        "h": "광시",
+        "d": "광일",
+        "y": "광년"
+      },
+      "ago": {
+        "now": "방금",
+        "s": "{{n}}초 전",
+        "m": "{{n}}분 전",
+        "h": "{{n}}시간 전"
+      },
+      "reach": "시야 {{n}} {{unit}}\n이 거리의 신호는 {{date}}에 보낸 것",
+      "away": "{{n}} {{unit}} 밖 · {{date}} 발신",
+      "live": "송신 중",
+      "queued": "아직 보내지 않음, 지구에",
+      "beyond": "기록 이전, 기록의 바깥 가장자리",
+      "records": "기록은 {{date}}부터",
+      "mark": {
+        "earth": "지구",
+        "geo": "정지궤도",
+        "moon": "달",
+        "jwst": "제임스 웹 우주 망원경",
+        "sun": "태양",
+        "mercury": "수성",
+        "venus": "금성",
+        "mars": "화성",
+        "jupiter": "목성",
+        "saturn": "토성",
+        "uranus": "천왕성",
+        "neptune": "해왕성",
+        "voyager1": "보이저 1호",
+        "heliopause": "태양권계면",
+        "oort": "오르트 구름",
+        "proxima": "프록시마 센타우리",
+        "barnard": "바너드별",
+        "wolf359": "울프 359",
+        "lalande": "랄랑드 21185",
+        "sirius": "시리우스",
+        "epsEri": "에리다누스자리 엡실론",
+        "procyon": "프로키온",
+        "tauCeti": "고래자리 타우",
+        "scale-sec": "1광초 · 1초 전",
+        "scale-min": "1광분 · 1분 전",
+        "scale-hour": "1광시 · 1시간 전",
+        "scale-day": "1광일 · 1일 전",
+        "scale-year": "1광년 · 1년 전"
+      }
+    }
   }
 }

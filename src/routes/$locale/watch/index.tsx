@@ -2,7 +2,7 @@ import { createFileRoute, notFound } from '@tanstack/react-router';
 import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
 import Collection from '@/components/media/Collection';
 import { booksQueryOptions } from '@/data/bookshelfData';
-import { topGenresQueryOptions, topTracksQueryOptions } from '@/data/musicData';
+import { topTracksQueryOptions } from '@/data/musicData';
 import { watchStatsQueryOptions } from '@/data/watchData';
 import { localeFromPrefix } from '@/i18n/start-i18n';
 
@@ -17,7 +17,6 @@ export const Route = createFileRoute('/$locale/watch/')({
       context.queryClient.prefetchQuery(watchStatsQueryOptions),
       context.queryClient.prefetchQuery(booksQueryOptions),
       context.queryClient.prefetchQuery(topTracksQueryOptions('medium_term')),
-      context.queryClient.prefetchQuery(topGenresQueryOptions),
     ]);
   },
 });

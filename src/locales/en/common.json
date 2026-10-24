@@ -587,7 +587,7 @@
   },
   "collection": {
     "title": "Collection",
-    "subtitle": "What I've watched, read, and kept on repeat.",
+    "subtitle": "Everything I've watched, read, and listened to is a signal sent from Earth. The farther out, the longer ago.",
     "kind": {
       "anime": "Anime",
       "film": "Film",
@@ -616,10 +616,60 @@
     "music": {
       "title": "Listening",
       "tracks": "top tracks",
-      "genres": "genres",
       "live": "Playing now",
       "last": "Just played"
     },
-    "hint": "SCROLL"
+    "hint": "SCROLL TO SEE FARTHER",
+    "sky": {
+      "unit": {
+        "s": "light-sec",
+        "m": "light-min",
+        "h": "light-hr",
+        "d": "light-days",
+        "y": "light-years"
+      },
+      "ago": {
+        "now": "just now",
+        "s": "{{n}}s ago",
+        "m": "{{n}} min ago",
+        "h": "{{n}} hr ago"
+      },
+      "reach": "View {{n}} {{unit}}\nSignals here were sent {{date}}",
+      "away": "{{n}} {{unit}} away · sent {{date}}",
+      "live": "Transmitting now",
+      "queued": "Not sent yet, still on Earth",
+      "beyond": "Older than the records, at their outer edge",
+      "records": "Records begin {{date}}",
+      "mark": {
+        "earth": "Earth",
+        "geo": "Geostationary orbit",
+        "moon": "Moon",
+        "jwst": "James Webb Space Telescope",
+        "sun": "Sun",
+        "mercury": "Mercury",
+        "venus": "Venus",
+        "mars": "Mars",
+        "jupiter": "Jupiter",
+        "saturn": "Saturn",
+        "uranus": "Uranus",
+        "neptune": "Neptune",
+        "voyager1": "Voyager 1",
+        "heliopause": "Heliopause",
+        "oort": "Oort Cloud",
+        "proxima": "Proxima Centauri",
+        "barnard": "Barnard's Star",
+        "wolf359": "Wolf 359",
+        "lalande": "Lalande 21185",
+        "sirius": "Sirius",
+        "epsEri": "Epsilon Eridani",
+        "procyon": "Procyon",
+        "tauCeti": "Tau Ceti",
+        "scale-sec": "1 light-second · a second ago",
+        "scale-min": "1 light-minute · a minute ago",
+        "scale-hour": "1 light-hour · an hour ago",
+        "scale-day": "1 light-day · a day ago",
+        "scale-year": "1 light-year · a year ago"
+      }
+    }
   }
 }
