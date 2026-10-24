@@ -505,6 +505,43 @@
   background: var(--mm-export-bg);
 }
 
+/* ── 作者標的顏色不照原色畫，歸成四種角色（lib/mdx/mermaidSvg.ts 的 nodeRoles）──
+   跟站上其他地方同一套語言：墨的深淺、實線與點線、琥珀只標一個點。顏色取自主題變數，夜與紙都適用。
+     成立（綠）：最亮的框，很淡的底
+     重點（黃）：同上，左上角一顆琥珀點；一張圖只有一個
+     次要（藍紫）：框與字都退一階
+     排除（紅）：點線框、沒有底，字再退一階——像星軌上還沒走、也不會走的那段 */
+.mm-role-ok :is(rect, path, polygon, ellipse),
+.mm-role-mark :is(rect, path, polygon, ellipse) {
+  fill: var(--pele-surface-alt);
+  stroke: var(--pele-fg);
+}
+
+.mm-role-alt :is(rect, path, polygon, ellipse) {
+  fill: transparent;
+  stroke: var(--pele-muted);
+}
+
+.mm-role-alt .pele-label {
+  fill: var(--pele-muted);
+}
+
+.mm-role-bad :is(rect, path, polygon, ellipse) {
+  fill: transparent;
+  stroke: var(--pele-muted);
+  stroke-dasharray: 2 3;
+}
+
+.mm-role-bad .pele-label {
+  fill: var(--pele-muted);
+  opacity: 0.8;
+}
+
+.mm-mark-dot {
+  fill: var(--amber);
+  filter: drop-shadow(0 0 4px rgba(var(--amber-rgb), 0.7));
+}
+
 /* SSR 的靜態圖：沒有 zoom 容器，讓 SVG 自己縮進固定高的沙盒裡置中。
    hydration 後互動層接手，盒子高度不變 → 版面不動。 */
 .mm-sandbox--static {

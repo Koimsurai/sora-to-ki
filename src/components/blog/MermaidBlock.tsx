@@ -57,6 +57,15 @@ function standaloneSvg(svg: SVGSVGElement): SVGSVGElement {
     const value = cs.getPropertyValue(name).trim();
     if (value) clone.style.setProperty(name, value);
   }
+  // 作者標色歸成的角色（.mm-role-*）與琥珀點也是外部 CSS 畫的：逐個寫進去（原圖與複本的結構一樣，照順序對）
+  const pick = '[class*="mm-role-"] :is(rect, path, polygon, ellipse, text), .mm-mark-dot';
+  const from = svg.querySelectorAll<SVGElement>(pick);
+  const to = clone.querySelectorAll<SVGElement>(pick);
+  from.forEach((el, i) => {
+    const s = getComputedStyle(el);
+    for (const prop of ['fill', 'stroke', 'stroke-dasharray', 'opacity'])
+      to[i]?.style.setProperty(prop, s.getPropertyValue(prop));
+  });
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   return clone;
 }
