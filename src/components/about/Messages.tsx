@@ -1,6 +1,8 @@
 // 留言：收到的每一則是一道訊號。頁首那條線是收訊的頻道，右端是天線（about/messagesWave）；
 // 平常只有雜訊，打字時你打的字即時變成波形，送出時那一段往右飛進天線、天線亮一下。
-// 底下左邊是收到的訊號（每一則一小段由內容長出來的波形），右邊是發送台：登入或匿名、驗證碼、回覆。
+// 底下照無線電的瀑布圖排：頻道是「現在」，收到的訊號從它底下往下流，最新的在最上面；
+// 左邊是時間軸（UTC），中間是頻寬，每個人落在自己的頻率上（名字決定），右邊是內容。
+// 發送台是黏在視窗底部的一條：只有一行字和送出鈕，點進去才往上展開身分、驗證碼與規則。
 // 資料沿用文章留言那一套（post_id = meta-messages，匿名的要審核，登入的直接公開）。
 // 換頁進來時琥珀點落在頻道的左端，起點振一下（像超聲波探頭），一道琥珀色的光沿頻道跑進天線（線跟著它長出來）；
 // 離開時倒過來：那道光從天線倒著跑回起點（線跟著收掉），起點振一下，點從那裡往左飛走。
@@ -12,11 +14,10 @@ import type { CommentRow } from '@koimsurai/api-types';
 import { useAuth } from '@/contexts/auth';
 import { commentsQueryOptions } from '@/data/commentsData';
 import { usePageTransition } from '@/hooks/usePageTransition';
-import { useTimeAgo } from '@/hooks/useTimeAgo';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { groupComments, validateCommentDraft, type CommentDraftError } from '@/lib/comments';
 import { after, isArriving } from '@/store/pageTransition';
-import { channelOf, createStrip, DISH_SRC, SEND_S, wavePath } from './messagesWave';
+import { bandPath, channelOf, createStrip, DISH_SRC, freqOf, SEND_S } from './messagesWave';
 import './Messages.css';
 
 const BASE = 'posts';
@@ -38,19 +39,39 @@ const EXIT_MS = PULSE_BACK_MS + 280;
 const LEAVE_SPEED = 0.8;
 /** 雜訊每秒換幾次就夠了 */
 const FRAME_MS = 33;
-const WAVE_W = 600;
-const WAVE_H = 36;
+/** 瀑布圖一列的頻寬與高（SVG viewBox；畫面上橫向拉滿那一欄） */
+const BAND_W = 600;
+const BAND_H = 36;
+/** 頻寬的刻度：深空網路收 X 頻段的那一段 */
+const BAND_TICKS = [8400, 8410, 8420, 8430, 8440, 8450];
+/** 發送台上緣那條線的高 */
+const TX_WAVE_H = 14;
+/** 送出時那條線飛走要多久（毫秒，跟 Messages.css 的 msg-fly 一樣） */
+const FLY_MS = 1200;
+/** 打字時輸入框最高長到多高（px），再多就捲動 */
+const TEXT_MAX_H = 160;
 
 const easeOutQuad = (t: number) => 1 - (1 - t) * (1 - t);
 const easeIn = (t: number) => t * t;
 /** 離場的那道光前緣在哪（0–1，1 是天線那端）：一開始慢、越跑越快 */
 const exitHead = (since: number) => 1 - easeIn(Math.min(1, (performance.now() - since) / PULSE_BACK_MS));
 
+/** 時間軸上的日期與時刻：資料庫存的是 UTC，原樣顯示（不換時區，伺服器與瀏覽器也就一致） */
+function stampOf(s: string) {
+  const m = /\d{4}-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(s);
+  return m ? { date: `${m[1]}.${m[2]}`, time: `${m[3]}:${m[4]}` } : { date: '', time: '' };
+}
+
+/** 輸入框跟著字長高 */
+function grow(el: HTMLTextAreaElement) {
+  el.style.height = 'auto';
+  el.style.height = `${Math.min(el.scrollHeight, TEXT_MAX_H)}px`;
+}
+
 type Sent = 'pending' | 'approved' | null;
 
 export default function Messages() {
   const { t } = useTranslation();
-  const timeAgo = useTimeAgo();
   const queryClient = useQueryClient();
   const listKey = commentsQueryOptions(BASE, POST_ID).queryKey;
   const { data: comments = [], isPending } = useQuery(commentsQueryOptions(BASE, POST_ID));
@@ -69,12 +90,23 @@ export default function Messages() {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<Sent>(null);
   const [liked, setLiked] = useState<number[]>([]);
+  /** 焦點在發送台裡（展開身分與驗證碼） */
+  const [focused, setFocused] = useState(false);
+  /** 剛送出的那段字：發送台上緣的波形往右飛走，飛完清掉 */
+  const [flying, setFlying] = useState<string | null>(null);
   const asUser = isLoggedIn && !anonymous;
+  const open = focused || text !== '' || replyTo !== null || error !== null;
+  // 瀑布圖：最新的在最上面，回覆照時間接在它回的那則底下
+  const rows = useMemo(
+    () => [...roots].reverse().flatMap((c) => [c, ...(repliesOf.get(c.id) ?? [])]),
+    [roots, repliesOf],
+  );
 
   const pageRef = useRef<HTMLDivElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const statusRef = useRef<HTMLSpanElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const captchaRef = useRef<HTMLInputElement>(null);
@@ -106,6 +138,22 @@ export default function Messages() {
     setCaptcha(newCaptcha());
   }, []);
   /* eslint-enable @eslint-react/set-state-in-effect */
+
+  // 焦點進出發送台：進來就展開，移到發送台外面才收（在裡面換欄位不算離開）
+  useEffect(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const onIn = () => setFocused(true);
+    const onOut = (e: FocusEvent) => {
+      if (!(e.relatedTarget instanceof Node && form.contains(e.relatedTarget))) setFocused(false);
+    };
+    form.addEventListener('focusin', onIn);
+    form.addEventListener('focusout', onOut);
+    return () => {
+      form.removeEventListener('focusin', onIn);
+      form.removeEventListener('focusout', onOut);
+    };
+  }, []);
 
   const strip = () => {
     const el = stripRef.current;
@@ -254,6 +302,9 @@ export default function Messages() {
     }
     const content = text.trim();
     sendingRef.current = { text: content, start: performance.now() };
+    setFlying(content);
+    // 跟 CSS 的 msg-fly 一樣長
+    window.setTimeout(() => setFlying(null), FLY_MS);
     setBusy(true);
     if (!asUser) {
       try {
@@ -282,6 +333,7 @@ export default function Messages() {
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as { status?: string };
       setText('');
+      if (textRef.current) textRef.current.style.height = '';
       setReplyTo(null);
       setCaptcha(newCaptcha());
       setCaptchaAnswer('');
@@ -289,6 +341,7 @@ export default function Messages() {
       void queryClient.invalidateQueries({ queryKey: listKey });
     } catch {
       sendingRef.current = null;
+      setFlying(null);
       setError('failed');
     } finally {
       setBusy(false);
@@ -333,49 +386,53 @@ export default function Messages() {
             ? t('messages.errFailed')
             : null;
 
-  const item = (c: CommentRow, isReply: boolean) => (
-    <li key={c.id} className={isReply ? 'msg-item is-reply' : 'msg-item'}>
-      <svg
-        className="msg-item-wave"
-        viewBox={`0 0 ${WAVE_W} ${WAVE_H}`}
-        preserveAspectRatio="xMinYMid meet"
-        aria-hidden="true"
-      >
-        <path d={wavePath(c.content, WAVE_W, WAVE_H)} />
-      </svg>
-      <div className="msg-item-head">
-        {c.website ? (
-          <a className="msg-author" href={c.website} target="_blank" rel="noopener noreferrer nofollow ugc">
-            {c.author}
-          </a>
-        ) : (
-          <span className="msg-author">{c.author}</span>
-        )}
-        {c.is_admin ? <span className="msg-admin">{t('messages.admin')}</span> : null}
-        <time dateTime={c.created_at} suppressHydrationWarning>
-          {timeAgo(c.created_at)}
+  const row = (c: CommentRow, showDate: boolean) => {
+    const isReply = c.parent_id != null;
+    const stamp = stampOf(c.created_at);
+    return (
+      <li key={c.id} className={isReply ? 'msg-item is-reply' : 'msg-item'}>
+        <time className="msg-stamp" dateTime={c.created_at}>
+          {showDate && <b>{stamp.date}</b>}
+          <span>{stamp.time}</span>
         </time>
-      </div>
-      <p className="msg-item-text">{c.content}</p>
-      <div className="msg-item-actions">
-        <button type="button" onClick={() => reply(c)}>
-          {t('messages.reply')}
-        </button>
-        <button
-          type="button"
-          className={liked.includes(c.id) ? 'is-liked' : undefined}
-          aria-pressed={liked.includes(c.id)}
-          onClick={() => void like(c.id)}
-        >
-          {t('messages.like')}
-          {c.likes > 0 && <span>{c.likes}</span>}
-        </button>
-      </div>
-      {!isReply && repliesOf.get(c.id) && (
-        <ol className="msg-replies">{repliesOf.get(c.id)?.map((r) => item(r, true))}</ol>
-      )}
-    </li>
-  );
+        <svg className="msg-band" viewBox={`0 0 ${BAND_W} ${BAND_H}`} preserveAspectRatio="none" aria-hidden="true">
+          <line className="msg-floor" x1={0} y1={BAND_H / 2} x2={BAND_W} y2={BAND_H / 2} />
+          <path d={bandPath(c.content, freqOf(c.author), BAND_W, BAND_H, isReply ? 0.4 : 0.6)} />
+        </svg>
+        <div className="msg-item-body">
+          <div className="msg-item-head">
+            {c.website ? (
+              <a className="msg-author" href={c.website} target="_blank" rel="noopener noreferrer nofollow ugc">
+                {c.author}
+              </a>
+            ) : (
+              <span className="msg-author">{c.author}</span>
+            )}
+            {c.is_admin ? <span className="msg-admin">{t('messages.admin')}</span> : null}
+          </div>
+          <p className="msg-item-text">{c.content}</p>
+          <div className="msg-item-actions">
+            {!isReply && (
+              <button type="button" onClick={() => reply(c)}>
+                {t('messages.reply')}
+              </button>
+            )}
+            <button
+              type="button"
+              className={liked.includes(c.id) ? 'is-liked' : undefined}
+              aria-pressed={liked.includes(c.id)}
+              onClick={() => void like(c.id)}
+            >
+              {t('messages.like')}
+              {c.likes > 0 && <span>{c.likes}</span>}
+            </button>
+          </div>
+        </div>
+      </li>
+    );
+  };
+
+  const wave = flying ?? text;
 
   return (
     <div className="msg" ref={pageRef}>
@@ -392,127 +449,174 @@ export default function Messages() {
         <span className="msg-status" ref={statusRef} aria-hidden="true" />
       </div>
 
-      <div className="msg-body">
-        <section className="msg-log" aria-labelledby="msg-log-title">
-          <h2 id="msg-log-title" className="sr-only">
-            {t('messages.logTitle')}
-          </h2>
-          {isPending ? null : roots.length ? (
-            <ol className="msg-list">{roots.map((c) => item(c, false))}</ol>
-          ) : (
-            <div className="msg-empty">
-              <b>{t('messages.emptyTitle')}</b>
-              <p>{t('messages.emptyText')}</p>
+      <section className="msg-fall" aria-labelledby="msg-log-title">
+        <h2 id="msg-log-title" className="sr-only">
+          {t('messages.logTitle')}
+        </h2>
+        {isPending ? null : rows.length ? (
+          <>
+            <div className="msg-scale" aria-hidden="true">
+              <span>UTC</span>
+              <span className="msg-ticks">
+                {BAND_TICKS.map((f, i) => (
+                  <i key={f}>
+                    {f}
+                    {i === BAND_TICKS.length - 1 && <em> MHz</em>}
+                  </i>
+                ))}
+              </span>
             </div>
-          )}
-          <ul className="msg-rules">
-            <li>{t('messages.rule1')}</li>
-            <li>{t('messages.rule2')}</li>
-            <li>{t('messages.rule3')}</li>
-          </ul>
-          <p className="msg-private">
-            {t('messages.privatePre')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
-            {t('messages.privateMid')}
-            <a href="https://github.com/timo9378/sora-to-ki/issues" target="_blank" rel="noopener noreferrer">
-              GitHub Issues
-            </a>
-            {t('messages.privatePost')}
-          </p>
-        </section>
-
-        <form className="msg-form" onSubmit={(e) => void submit(e)} noValidate>
-          <h2>{t('messages.formTitle')}</h2>
-
-          {asUser ? (
-            <p className="msg-as">
-              {t('messages.asUser', { name: user?.displayName ?? '' })}
-              <button type="button" onClick={() => setAnonymous(true)}>
-                {t('messages.useAnonymous')}
-              </button>
-            </p>
-          ) : (
-            <>
-              {(providers.github.enabled || providers.google.enabled) && (
-                <div className="msg-login">
-                  <span>{t('messages.loginWith')}</span>
-                  {providers.github.enabled && (
-                    <button
-                      type="button"
-                      className="msg-provider"
-                      aria-label="GitHub"
-                      title="GitHub"
-                      onClick={() => login('github')}
-                    >
-                      <FaGithub aria-hidden="true" />
-                    </button>
-                  )}
-                  {providers.google.enabled && (
-                    <button
-                      type="button"
-                      className="msg-provider"
-                      aria-label="Google"
-                      title="Google"
-                      onClick={() => login('google')}
-                    >
-                      <FaGoogle aria-hidden="true" />
-                    </button>
-                  )}
-                  {isLoggedIn && (
-                    <button type="button" onClick={() => setAnonymous(false)}>
-                      {t('messages.useAccount')}
-                    </button>
-                  )}
-                </div>
+            <ol className="msg-list">
+              {rows.map((c, i) =>
+                row(c, i === 0 || stampOf(rows[i - 1].created_at).date !== stampOf(c.created_at).date),
               )}
-              <label className="msg-input">
-                <span>{t('messages.fieldName')}</span>
-                <input
-                  ref={nameRef}
-                  type="text"
-                  maxLength={24}
-                  autoComplete="name"
-                  value={author}
-                  aria-invalid={error === 'noName' ? true : undefined}
-                  onChange={(e) => setAuthor(e.target.value)}
-                />
-              </label>
-              <div className="msg-row">
-                <label className="msg-input">
-                  <span>{t('messages.fieldEmail')}</span>
-                  <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                </label>
-                <label className="msg-input">
-                  <span>{t('messages.fieldWebsite')}</span>
-                  <input
-                    type="url"
-                    autoComplete="url"
-                    placeholder="https://"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                  />
-                </label>
-              </div>
-            </>
-          )}
+            </ol>
+          </>
+        ) : (
+          <div className="msg-empty">
+            <b>{t('messages.emptyTitle')}</b>
+            <p>{t('messages.emptyText')}</p>
+          </div>
+        )}
+      </section>
 
-          {replyTo && (
-            <p className="msg-replying">
-              {t('messages.replyingTo', { name: replyTo.author })}
-              <button type="button" onClick={() => setReplyTo(null)}>
-                {t('messages.cancelReply')}
-              </button>
-            </p>
-          )}
-          <label className="msg-input">
-            <span>{t('messages.fieldText')}</span>
+      <form className={open ? 'msg-tx is-open' : 'msg-tx'} ref={formRef} onSubmit={(e) => void submit(e)} noValidate>
+        <h2 className="sr-only">{t('messages.formTitle')}</h2>
+        {/* 點進來才展開；收起來時仍在版面裡（高度 0），驗證沒過時才能把焦點移進去 */}
+        <div className="msg-tx-panel">
+          <div className="msg-tx-fields">
+            {asUser ? (
+              <p className="msg-as">
+                {t('messages.asUser', { name: user?.displayName ?? '' })}
+                <button type="button" onClick={() => setAnonymous(true)}>
+                  {t('messages.useAnonymous')}
+                </button>
+              </p>
+            ) : (
+              <>
+                {(providers.github.enabled || providers.google.enabled) && (
+                  <div className="msg-login">
+                    <span>{t('messages.loginWith')}</span>
+                    {providers.github.enabled && (
+                      <button
+                        type="button"
+                        className="msg-provider"
+                        aria-label="GitHub"
+                        title="GitHub"
+                        onClick={() => login('github')}
+                      >
+                        <FaGithub aria-hidden="true" />
+                      </button>
+                    )}
+                    {providers.google.enabled && (
+                      <button
+                        type="button"
+                        className="msg-provider"
+                        aria-label="Google"
+                        title="Google"
+                        onClick={() => login('google')}
+                      >
+                        <FaGoogle aria-hidden="true" />
+                      </button>
+                    )}
+                    {isLoggedIn && (
+                      <button type="button" onClick={() => setAnonymous(false)}>
+                        {t('messages.useAccount')}
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="msg-row">
+                  <label className="msg-input">
+                    <span>{t('messages.fieldName')}</span>
+                    <input
+                      ref={nameRef}
+                      type="text"
+                      maxLength={24}
+                      autoComplete="name"
+                      value={author}
+                      aria-invalid={error === 'noName' ? true : undefined}
+                      onChange={(e) => setAuthor(e.target.value)}
+                    />
+                  </label>
+                  <label className="msg-input">
+                    <span>{t('messages.fieldEmail')}</span>
+                    <input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  </label>
+                  <label className="msg-input">
+                    <span>{t('messages.fieldWebsite')}</span>
+                    <input
+                      type="url"
+                      autoComplete="url"
+                      placeholder="https://"
+                      value={website}
+                      onChange={(e) => setWebsite(e.target.value)}
+                    />
+                  </label>
+                  <label className="msg-input msg-captcha">
+                    <span>{t('messages.captcha', { a: captcha.a, b: captcha.b })}</span>
+                    <input
+                      ref={captchaRef}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      value={captchaAnswer}
+                      aria-invalid={error === 'captcha' ? true : undefined}
+                      onChange={(e) => setCaptchaAnswer(e.target.value)}
+                    />
+                  </label>
+                </div>
+              </>
+            )}
+            {replyTo && (
+              <p className="msg-replying">
+                {t('messages.replyingTo', { name: replyTo.author })}
+                <button type="button" onClick={() => setReplyTo(null)}>
+                  {t('messages.cancelReply')}
+                </button>
+              </p>
+            )}
+            <ul className="msg-rules">
+              <li>{t('messages.rule1')}</li>
+              <li>{t('messages.rule2')}</li>
+              <li>{t('messages.rule3')}</li>
+              <li>
+                {t('messages.privatePre')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+                {t('messages.privateMid')}
+                <a href="https://github.com/timo9378/sora-to-ki/issues" target="_blank" rel="noopener noreferrer">
+                  GitHub Issues
+                </a>
+                {t('messages.privatePost')}
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="msg-tx-bar">
+          {/* 上緣那條線：打的字即時變成波形，送出時往右飛走 */}
+          <svg
+            className={flying ? 'msg-tx-wave is-flying' : 'msg-tx-wave'}
+            viewBox={`0 0 ${BAND_W} ${TX_WAVE_H}`}
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path d={bandPath(wave, 0.5, BAND_W, TX_WAVE_H, 0.7)} />
+          </svg>
+          <span className="msg-tx-k" aria-hidden="true">
+            TX
+          </span>
+          <label className="msg-tx-text">
+            <span className="sr-only">{t('messages.fieldText')}</span>
             <textarea
               ref={textRef}
-              rows={4}
+              rows={1}
               maxLength={MAX_CHARS}
               value={text}
+              placeholder={t('messages.fieldText')}
               aria-invalid={error === 'empty' ? true : undefined}
               onChange={(e) => {
                 setText(e.target.value);
+                grow(e.target);
                 if (sent) setSent(null);
               }}
             />
@@ -520,34 +624,18 @@ export default function Messages() {
           <span className="msg-meter" aria-hidden="true">
             {t('messages.meter', { count: chars, seconds: (chars * SEC_PER_CHAR).toFixed(1) })}
           </span>
-
-          {!asUser && (
-            <label className="msg-input msg-captcha">
-              <span>{t('messages.captcha', { a: captcha.a, b: captcha.b })}</span>
-              <input
-                ref={captchaRef}
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                value={captchaAnswer}
-                aria-invalid={error === 'captcha' ? true : undefined}
-                onChange={(e) => setCaptchaAnswer(e.target.value)}
-              />
-            </label>
-          )}
-
           <button type="submit" className="msg-submit" disabled={busy}>
             {t('messages.submit')}
           </button>
-          <output className="msg-note">
-            {errorText ? (
-              <em>{errorText}</em>
-            ) : sent ? (
-              t(sent === 'approved' ? 'messages.sentApproved' : 'messages.sentPending')
-            ) : null}
-          </output>
-        </form>
-      </div>
+        </div>
+        <output className="msg-note">
+          {errorText ? (
+            <em>{errorText}</em>
+          ) : sent ? (
+            t(sent === 'approved' ? 'messages.sentApproved' : 'messages.sentPending')
+          ) : null}
+        </output>
+      </form>
     </div>
   );
 }
