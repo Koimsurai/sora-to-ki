@@ -1,7 +1,8 @@
-// 一則碎念：跟列表頁同一顆彗星（blog/useCometSky），彗核就是這一則，停在頁首；
-// 留言是跟在彗尾後面的碎屑，照時間往下排，越晚留的離彗核越遠；彗尾末端是送出列（blog/CommentForm）。
-// 從列表點進來時，點沿著彗尾飛進彗核；回列表時彗尾縮回彗核、帶著彗星飛走。
-import { useRef, useState } from 'react';
+// 一則碎念：列表頁那顆彗星往這一則放大進去看（blog/useCometSky、blog/cometZoom）。
+// 像用望遠鏡把彗尾的這一段拉近：塵埃變成看得清的顆粒，這一段亮著、上下其他的退暗；
+// 留言是這一段彗尾上的碎屑，照時間往下排，越晚留的越遠；這一段的末端是送出列（blog/CommentForm）。
+// 從列表點進來時是同一個鏡頭繼續放大，不用再飛；直接打開時照這一則在列表上大概的位置算一段。
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +16,10 @@ import { useThoughtAdmin } from '@/hooks/useThoughtAdmin';
 import { LocaleLink } from '@/i18n/locale-link';
 import { groupComments } from '@/lib/comments';
 import { utcStamp } from '@/lib/serverDate';
+import { thoughtsListQueryOptions } from '@/data/thinkingData';
+import type { Pt } from '@/store/pageTransition';
+import { estimateZoom, layoutSegment, zoomArc, type ZoomSpec } from './comet';
+import { clearCometZoom, COMET_ZOOM, peekCometZoom } from './cometZoom';
 import CommentForm, { type ReplyTarget } from './CommentForm';
 import MomentPost from './MomentPost';
 import { useCometSky } from './useCometSky';
@@ -94,7 +99,29 @@ export default function ThinkingDetail() {
   const ghostsRef = useRef<(HTMLLIElement | null)[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const count = thought ? 1 + bits.length : 0;
-  const hover = useCometSky({ pageRef, headRef, canvasRef, postsRef, dotsRef, ghostsRef, endRef }, count, 0, HEAD_GAP);
+
+  // 從列表放大進來的：拿列表留下的鏡頭；直接打開的：照這一則在列表上大概的位置算一個
+  const [handoff] = useState(() => peekCometZoom(id));
+  useEffect(() => clearCometZoom(), []);
+  const { data: list = [] } = useQuery(thoughtsListQueryOptions);
+  const listIndex = Math.max(
+    0,
+    list.findIndex((th) => String(th.id) === id),
+  );
+  const layout = (width: number, top: number, heights: number[], o: Pt) => {
+    // 列表放大完，這一則停在畫面上的 T：換成這一頁的版面座標（不能壓到返回連結）
+    const spec: ZoomSpec = handoff
+      ? { ...handoff, T: { x: handoff.T.x - o.x, y: Math.max(top, handoff.T.y - o.y) } }
+      : estimateZoom(width, listIndex, top, COMET_ZOOM);
+    return layoutSegment(zoomArc(spec), spec.span * spec.zoom, spec.narrow, spec.T.y, heights);
+  };
+  const hover = useCometSky({ pageRef, headRef, canvasRef, postsRef, dotsRef, ghostsRef, endRef }, count, 0, {
+    headGap: HEAD_GAP,
+    layout,
+    zoom: COMET_ZOOM,
+    focus: true,
+    handedOver: handoff !== null,
+  });
 
   const del = (tid: number) => {
     if (!window.confirm('刪除這則碎念？')) return;
