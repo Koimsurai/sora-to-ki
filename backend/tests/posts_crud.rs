@@ -129,7 +129,8 @@ async fn 摘要連結依語系寫入_公開只回摘要裡找得到的() {
 
     for bad in [json!({ "fr": [] }), json!({ "en": [{ "text": "x", "to": "#ar-h05" }] }), json!("x")] {
         let (st, _) =
-            admin(&app, "PUT", &format!("/api/admin/posts/{id}"), Some(json!({ "excerpt_links": bad }))).await;
+            admin(&app, "PUT", &format!("/api/admin/posts/{id}"), Some(json!({ "excerpt_links": bad })))
+                .await;
         assert_eq!(st, StatusCode::BAD_REQUEST, "excerpt_links={bad} 應該被擋");
     }
 

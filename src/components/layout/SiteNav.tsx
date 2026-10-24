@@ -132,6 +132,8 @@ export default function SiteNav() {
     if (!moreOpen && !menuOpen && !unfolded) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
+      // 滑鼠還停在某一區上時，「停一下就展開」的計時還在跑；不清掉的話 Esc 關了它又自己打開
+      window.clearTimeout(intentRef.current);
       setMoreOpen(false);
       setMenuOpen(false);
       setUnfolded(false);
@@ -186,7 +188,8 @@ export default function SiteNav() {
   const current = i18n.resolvedLanguage ?? i18n.language;
   const switchLocale = (code: Locale) => {
     void i18n.changeLanguage(code);
-    // 同一個路徑換語系前綴（見 LanguagePicker 的說明：一定要換網址，只換語言內容不會跟著換）
+    // 同一個路徑換語系前綴：一定要換網址。頁面內容由 LocaleProvider 依「網址」建的 i18n instance 驅動，
+    // 只呼叫 changeLanguage 只會換到外殼，內容不會跟著換
     const prefix = LOCALE_PREFIX[code];
     const target = `/${[prefix, bare].filter(Boolean).join('/')}`;
     if (target !== pathname) void navigate({ href: target });
@@ -317,7 +320,12 @@ export default function SiteNav() {
                 hoverMenu('more');
               }}
               onFocus={() => moveDotTo(MAIN.length)}
-              onClick={() => (open === 'more' ? setOpen(null) : openMenu('more'))}
+              onClick={() => {
+                // 點了就以點的為準：滑進來時排的「停一下就展開」不要在之後又把它打開
+                cancelIntent();
+                if (open === 'more') setOpen(null);
+                else openMenu('more');
+              }}
             >
               {t('siteNav.more')}
             </button>

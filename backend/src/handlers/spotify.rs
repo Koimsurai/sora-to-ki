@@ -286,6 +286,9 @@ pub async fn recently_played(State(state): State<AppState>) -> Response {
         Ok(v) => {
             Json(serde_json::from_value::<RecentlyPlayedResponse>(v).unwrap_or_default()).into_response()
         }
+        // 沒接 Spotify 的環境（CI、新部署）：空清單，不是 500——收藏頁與頂欄選單都會打這支，
+        // 回 500 的話瀏覽器每次都在 console 記一筆錯誤
+        Err(SpErr::NotConfigured) => Json(RecentlyPlayedResponse::default()).into_response(),
         Err(e) => err_json("Failed to fetch Spotify recently played", &e),
     }
 }
@@ -1036,6 +1039,19 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK, "未配置不該變成錯誤狀態碼");
         let v = body_of(resp).await;
         assert_eq!(v["is_playing"], false);
+    }
+
+    /// 最近播放也一樣：沒接 Spotify 時是空清單（200），收藏頁與頂欄選單照常畫得出來
+    #[tokio::test]
+    async fn recently_played_without_credentials_is_empty() {
+        let _env = ENV_LOCK.lock().await;
+        unsafe { set_creds(false) };
+        let server = MockServer::start().await;
+        let st = state_with_mock(&server).await;
+        let resp = recently_played(AxState(st)).await;
+        assert_eq!(resp.status(), StatusCode::OK, "未配置不該變成錯誤狀態碼");
+        let v = body_of(resp).await;
+        assert_eq!(v["items"].as_array().map(Vec::len), Some(0));
     }
 
     /// login() 只組字串回 302，全程沒有網路——所以不需要注入也測得了。

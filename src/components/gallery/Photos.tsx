@@ -549,6 +549,12 @@ export default function Photos() {
         <Masonry
           items={frames}
           itemKey={(f: Frame) => f.photo.id}
+          // 預設是 div[role=grid]＋gridcell，中間少了 row，對輔助技術是壞掉的結構；照片牆就是一串清單。
+          // role 還是要寫：masonic 的 role 預設是 "grid"，不寫的話 ul 會被蓋成 grid（它也照 role 決定項目是不是 listitem）
+          as="ul"
+          itemAs="li"
+          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- 標籤已經是 ul，這是在蓋掉函式庫的預設 role
+          role="list"
           columnWidth={COLUMN_PX}
           maxColumnCount={6}
           columnGutter={28}
