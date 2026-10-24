@@ -11,7 +11,7 @@ const TAU = Math.PI * 2;
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
 /** 背景的星（每一顆都拖著一道淡淡的軌跡） */
-const FIELD = 420;
+const FIELD = 640;
 /** 每秒繞天極轉多少（弧度）：內圈也看得出在走 */
 const SPIN = 0.035;
 
