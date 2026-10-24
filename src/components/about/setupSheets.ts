@@ -1,93 +1,16 @@
 // 設備頁（about/Setup）的六張工程圖：每一個分類一張。零件的名字與規格在 setupGear，
-// 這裡只放「畫在圖紙的哪裡」：位置都是圖紙寬高的比例（中心點），大小是圖紙寬的比例。
-// 機殼上零件裝在哪裡（滑過零件時那一塊亮起來）也是示意，不是實際尺寸。這裡只有資料，不碰 React。
+// 這裡只放「畫在圖紙的哪裡」：圖紙上的位置是圖紙寬高的比例，底稿上的位置是底稿寬高的比例。
+// 這裡只有資料，不碰 React。
 import { APPLIANCES, BASE_II_SPECS } from './setupGear';
 
-/** 零件線稿（public/illustrations/setup/<零件 id>.webp）；機殼另外放大一張 */
+/** 零件線稿（public/illustrations/setup/<零件 id>.webp）：網路與智慧家庭那兩張的節點 */
 export const partArt = (id: string) => `/illustrations/setup/${id}.webp`;
 
-/**
- * 機殼上零件的範圍（相對機殼線稿的比例）。
- * 看得到的零件用多邊形（Poly）框住，滑過時把範圍裡的線稿本身染成琥珀色；
- * 看不到的（實心側板的 P10C、老家那台、Model 5 藏在背艙的電源）用方框（Box），在那個位置用虛線畫出形狀（透視）
- */
-export type Poly = [number, number][];
-/** [中心 x, 中心 y, 寬, 高, 畫成什麼形狀] */
+/** 多邊形（[x, y] 的陣列） */
+type Poly = [number, number][];
+/** [中心 x, 中心 y, 寬, 高, 畫成什麼形狀]：老家那台的草圖上，用虛線畫出零件的形狀（透視） */
 export type Box = [number, number, number, number, ShapeKind];
-export type ShapeKind = 'tower' | 'chip' | 'ram' | 'board' | 'gpu' | 'stick' | 'card' | 'psu' | 'hdd' | 'case';
-
-export const isPoly = (at: Poly | Box): at is Poly => Array.isArray(at[0]);
-
-/**
- * Model 5 的線稿是照官方產品照描的（玻璃側板朝左前方）：上面一排三顆風扇是水冷排，
- * 中間那個公仔站在置物板上，置物板底下橫著的是顯卡，置物板左上方亮著的方塊是水冷頭（CPU 在它底下），
- * 水冷管旁邊幾條是記憶體，主機板貼在後面那面牆、擴充槽在左下。電源在主機板後面的背艙，這個角度看不到
- */
-export const MODEL5_AT: Record<string, Poly | Box> = {
-  radiator: [
-    [0.1, 0.41],
-    [0.33, 0.22],
-    [0.47, 0.17],
-    [0.73, 0.18],
-    [0.73, 0.27],
-    [0.5, 0.35],
-    [0.33, 0.44],
-    [0.12, 0.46],
-  ],
-  cpu: [
-    [0.33, 0.49],
-    [0.44, 0.48],
-    [0.45, 0.6],
-    [0.33, 0.61],
-  ],
-  ram: [
-    [0.425, 0.41],
-    [0.48, 0.41],
-    [0.48, 0.5],
-    [0.425, 0.5],
-  ],
-  board: [
-    [0.3, 0.38],
-    [0.62, 0.36],
-    [0.62, 0.88],
-    [0.15, 0.88],
-    [0.15, 0.77],
-    [0.3, 0.62],
-  ],
-  gpu: [
-    [0.19, 0.65],
-    [0.29, 0.6],
-    [0.6, 0.6],
-    [0.6, 0.74],
-    [0.3, 0.76],
-    [0.19, 0.76],
-  ],
-  m2a: [
-    [0.44, 0.785],
-    [0.58, 0.785],
-    [0.58, 0.83],
-    [0.44, 0.83],
-  ],
-  m2b: [
-    [0.44, 0.835],
-    [0.58, 0.835],
-    [0.58, 0.88],
-    [0.44, 0.88],
-  ],
-  psu: [0.42, 0.84, 0.3, 0.09, 'psu'],
-};
-
-export const P10C_AT: Record<string, Box> = {
-  tower: [0.8, 0.3, 0.16, 0.18, 'tower'],
-  cpu: [0.8, 0.3, 0.07, 0.06, 'chip'],
-  ram: [0.89, 0.3, 0.04, 0.14, 'ram'],
-  board: [0.8, 0.42, 0.3, 0.38, 'board'],
-  gpu: [0.8, 0.56, 0.3, 0.08, 'gpu'],
-  m2a: [0.8, 0.47, 0.14, 0.025, 'stick'],
-  pcie2: [0.78, 0.64, 0.22, 0.035, 'card'],
-  psu: [0.8, 0.88, 0.3, 0.1, 'psu'],
-  cage: [0.72, 0.74, 0.14, 0.12, 'hdd'],
-};
+export type ShapeKind = 'chip' | 'ram' | 'board' | 'gpu' | 'psu' | 'hdd' | 'case';
 
 /** 老家那台的草圖上（相對插圖的比例） */
 export const MEMORY_AT: Record<string, Box> = {
@@ -100,77 +23,249 @@ export const MEMORY_AT: Record<string, Box> = {
   case: [0.33, 0.35, 0.44, 0.66, 'case'],
 };
 
-/** 圖紙上的一個零件：[零件 id, 中心 x, 中心 y, 寬, 機殼上的哪一塊] */
-export type Placed = [string, number, number, number, string?];
-
-export interface CaseArt {
-  /** MODEL5_AT 或 P10C_AT */
-  key: 'model5' | 'p10c';
-  /** setupGear 裡機殼那一項的 id（名字與規格從那裡拿） */
+/** 底稿上的一個零件：範圍（滑過時範圍裡的線染成琥珀色）、引線落在哪、編號圈擺在哪 */
+export interface Callout {
+  /** setupGear 的零件 id（名字與規格從那裡拿） */
   id: string;
-  /** 機殼線稿的寬（圖紙寬的比例） */
-  w: number;
+  poly: Poly[];
+  at: [number, number];
+  balloon: [number, number];
 }
+
+/** 一條尺寸線：量 a 到 b，整條往 off 的方向平移出去（兩端拉延伸線）；off 是 0 就直接畫在 a、b 之間（直徑） */
+export interface Dim {
+  a: [number, number];
+  b: [number, number];
+  off: [number, number];
+  label: string;
+}
+
+/**
+ * 一張工程概念設計圖：AI 生的爆炸軸測線稿當底稿（白底黑線轉成暖白透明），
+ * 編號、引線、尺寸線、零件表都是程式疊上去的
+ */
+export interface Drawing {
+  src: string;
+  /** 底稿的高寬比 */
+  ratio: number;
+  /** 底稿在圖紙上的左上角與寬（圖紙寬高的比例） */
+  x: number;
+  y: number;
+  w: number;
+  parts: Callout[];
+  dims: Dim[];
+}
+
+/** 百分比寫的平面座標（x1, y1, x2, y2⋯）→ 多邊形（0–1） */
+const pct = (...v: number[]): Poly => {
+  const out: Poly = [];
+  for (let i = 0; i + 1 < v.length; i += 2) out.push([v[i] / 100, v[i + 1] / 100]);
+  return out;
+};
+const pt = (x: number, y: number): [number, number] => [x / 100, y / 100];
+
+const WHITE_BUILD: Drawing = {
+  src: '/illustrations/setup/sheet-white-build.webp',
+  ratio: 1251 / 1500,
+  x: 0.02,
+  y: 0.07,
+  w: 0.66,
+  parts: [
+    {
+      id: 'rtx-4070ti-super',
+      poly: [pct(18, 69, 22.5, 66, 44.5, 77, 44.5, 91, 43, 92.5, 21, 84.5, 18, 80)],
+      at: pt(31, 80),
+      balloon: pt(9, 90),
+    },
+    {
+      id: 'ryzen-9900x',
+      poly: [pct(47, 44.6, 50.3, 42.6, 53.6, 44.6, 50.3, 46.8)],
+      at: pt(50.3, 44.7),
+      balloon: pt(59, 36),
+    },
+    {
+      id: 'eskimo-360',
+      poly: [
+        pct(36.5, 6.5, 44.5, 1.5, 70, 17.5, 69.5, 23, 60.5, 26.5, 36.5, 10.5),
+        pct(36.5, 10, 41, 11, 46.5, 33, 53.5, 33.5, 53.5, 41.5, 46, 41.5, 44.5, 35, 36.5, 16),
+      ],
+      at: pt(53, 13),
+      balloon: pt(78, 7),
+    },
+    {
+      id: 'xpg-lancer',
+      poly: [pct(53.5, 44.5, 56.5, 42, 65.5, 47.5, 65.5, 53, 62, 54.5, 53.5, 48)],
+      at: pt(60, 48),
+      balloon: pt(81, 35),
+    },
+    {
+      id: 'b650-a',
+      poly: [pct(31, 60.5, 39, 50.5, 49.5, 47, 60, 54, 57, 60, 45, 71.5, 31, 61.5)],
+      at: pt(37, 60),
+      balloon: pt(27, 50),
+    },
+    {
+      id: 'crucial-t500',
+      poly: [pct(48.5, 73, 50, 72, 57.5, 76.5, 56, 78.5)],
+      at: pt(53, 75.2),
+      balloon: pt(63, 70),
+    },
+    {
+      id: 'kioxia-exceria',
+      poly: [pct(45, 77, 46.5, 76, 54, 80.5, 52.5, 82.5)],
+      at: pt(49.5, 79.3),
+      balloon: pt(52, 90),
+    },
+    {
+      id: 'leadex-vii',
+      poly: [pct(73.5, 70, 84, 70, 87.5, 69.5, 95, 74, 95, 90, 86, 95, 79, 90.5, 79, 76)],
+      at: pt(87, 82),
+      balloon: pt(97, 63),
+    },
+    {
+      id: 'model-5',
+      poly: [
+        pct(1.5, 27, 23.5, 11.5, 24.5, 13, 24.5, 47, 13, 55, 13, 73.5, 1.5, 66),
+        pct(28.5, 33, 46.5, 20, 78, 40.5, 77.5, 86, 59.5, 98.5, 55, 98, 28.5, 82),
+      ],
+      at: pt(72, 62),
+      balloon: pt(67, 99),
+    },
+  ],
+  dims: [{ a: pt(44, 1.5), b: pt(69.8, 17.5), off: pt(2.2, -3.4), label: '360' }],
+};
+
+const HOME_SERVER: Drawing = {
+  src: '/illustrations/setup/sheet-server.webp',
+  ratio: 1274 / 1500,
+  x: 0.02,
+  y: 0.07,
+  w: 0.66,
+  parts: [
+    {
+      id: 'phantom-spirit',
+      poly: [pct(37.5, 7, 43, 1.5, 60, 9.5, 60, 22.5, 50, 30.5, 44.5, 29.5, 37.5, 20)],
+      at: pt(44, 15),
+      balloon: pt(29, 6),
+    },
+    { id: 'ryzen-8700g', poly: [pct(46, 55, 49, 52.5, 52, 55, 49, 58)], at: pt(49, 55.2), balloon: pt(60, 36) },
+    {
+      id: 'fury-beast',
+      poly: [pct(53.5, 43, 57, 40.5, 65, 45, 65, 50, 62, 52, 53.5, 47)],
+      at: pt(59, 46),
+      balloon: pt(81, 34),
+    },
+    {
+      id: 'x870e-tomahawk',
+      poly: [pct(31, 58.5, 38.5, 52, 38.5, 49, 50, 45, 59, 51, 59, 53.5, 50, 61, 46, 68.5, 31, 60)],
+      at: pt(37, 58),
+      balloon: pt(27, 48),
+    },
+    {
+      id: 'rtx-5060ti',
+      poly: [pct(18, 67, 22, 64, 44.5, 74.5, 44.5, 89, 43, 91, 18.5, 80)],
+      at: pt(31, 76),
+      balloon: pt(8, 76),
+    },
+    {
+      id: 'ip-kvm',
+      poly: [pct(17.5, 83.5, 19.5, 82.5, 29, 87, 29, 95.5, 25, 95.5, 18.5, 93)],
+      at: pt(23.5, 89),
+      balloon: pt(10, 94),
+    },
+    { id: 'gm7000', poly: [pct(48.5, 70, 50, 69, 57.5, 73.5, 56, 75.5)], at: pt(53, 72.3), balloon: pt(62, 66) },
+    {
+      id: 'hc550',
+      poly: [pct(64.5, 90, 67, 87.5, 81.5, 94, 81.5, 96, 73.5, 98.5, 64.5, 92.5)],
+      at: pt(73, 93),
+      balloon: pt(90, 99),
+    },
+    {
+      id: 'prime-tx',
+      poly: [pct(78, 68, 84, 67, 87.5, 66.5, 95, 71, 95, 87, 86, 92, 79, 88, 79, 73)],
+      at: pt(87, 79),
+      balloon: pt(97, 60),
+    },
+    {
+      id: 'p10c',
+      poly: [
+        pct(1.5, 25, 23.5, 10, 24.5, 11, 24.5, 52, 13, 58, 13, 71.5, 1.5, 64),
+        pct(28.5, 31, 42.5, 22.5, 78, 39, 78, 82, 68, 88, 59, 95, 28.5, 77),
+      ],
+      at: pt(71, 60),
+      balloon: pt(63, 99),
+    },
+  ],
+  dims: [{ a: pt(51, 11), b: pt(58.5, 22), off: [0, 0], label: 'Ø120' }],
+};
+
+const DESK: Drawing = {
+  src: '/illustrations/setup/sheet-desk.webp',
+  ratio: 1066 / 1500,
+  x: 0.02,
+  y: 0.12,
+  w: 0.68,
+  parts: [
+    {
+      id: 'xg27acs',
+      poly: [
+        pct(32.5, 1.5, 69, 26, 69, 59.5, 32.5, 34),
+        pct(41, 60, 51.5, 51.5, 64, 62, 55, 71.5),
+        pct(52.5, 21, 57.5, 21, 57.5, 60.5, 52.5, 60.5),
+      ],
+      at: pt(44, 20),
+      balloon: pt(22, 10),
+    },
+    {
+      id: 'mx-board-31s',
+      poly: [pct(20, 69, 29, 61, 26, 55, 28.5, 54.5, 31, 56.5, 49, 70, 55, 79.5, 55, 83, 51, 91, 20, 72)],
+      at: pt(33, 74),
+      balloon: pt(10, 48),
+    },
+    {
+      id: 'g502-x',
+      poly: [pct(57.5, 87, 61, 85, 68, 86.5, 70, 91, 66, 96, 58.5, 94)],
+      at: pt(63, 91),
+      balloon: pt(80, 92),
+    },
+    {
+      id: 'mv7-plus',
+      poly: [pct(65.5, 63.5, 71, 59.5, 73.5, 52, 76, 48, 77.5, 50, 77, 60, 79, 66, 79, 73, 73.5, 74.5, 65.5, 69.5)],
+      at: pt(72, 67),
+      balloon: pt(82, 55),
+    },
+  ],
+  dims: [{ a: pt(33.8, 4), b: pt(67.8, 57.5), off: [0, 0], label: '27"' }],
+};
 
 export type Sheet =
   | { no: number; key: string; title: string; kind: 'memory' }
-  | { no: number; key: string; title: string; kind: 'build'; case: CaseArt; parts: Placed[] }
+  | {
+      no: number;
+      key: string;
+      title: string;
+      kind: 'drawing';
+      drawing: Drawing;
+      telemetry?: boolean;
+      others?: string[];
+    }
   | { no: number; key: string; title: string; kind: 'net' }
-  | { no: number; key: string; title: string; kind: 'smart' }
-  | { no: number; key: string; title: string; kind: 'free'; parts: Placed[]; others: string[] };
+  | { no: number; key: string; title: string; kind: 'smart' };
 
 /** 老家那張放最前面，編號是 0：跟作品頁的 VoltiCar 一樣，是起點 */
 export const SHEETS: Sheet[] = [
   { no: 0, key: 'base-ii', title: 'BASE II', kind: 'memory' },
-  {
-    no: 1,
-    key: 'main-rig',
-    title: 'THE WHITE BUILD',
-    kind: 'build',
-    case: { key: 'model5', id: 'model-5', w: 0.3 },
-    parts: [
-      ['rtx-4070ti-super', 0.12, 0.12, 0.15, 'gpu'],
-      ['ryzen-9900x', 0.1, 0.36, 0.08, 'cpu'],
-      ['crucial-t500', 0.12, 0.56, 0.12, 'm2a'],
-      ['kioxia-exceria', 0.12, 0.72, 0.12, 'm2b'],
-      ['eskimo-360', 0.88, 0.1, 0.15, 'radiator'],
-      ['xpg-lancer', 0.89, 0.3, 0.12, 'ram'],
-      ['b650-a', 0.89, 0.48, 0.08, 'board'],
-      ['leadex-vii', 0.88, 0.68, 0.09, 'psu'],
-    ],
-  },
-  {
-    no: 2,
-    key: 'server',
-    title: 'HOME SERVER',
-    kind: 'build',
-    case: { key: 'p10c', id: 'p10c', w: 0.24 },
-    parts: [
-      ['rtx-5060ti', 0.12, 0.08, 0.14, 'gpu'],
-      ['ryzen-8700g', 0.1, 0.27, 0.08, 'cpu'],
-      ['gm7000', 0.12, 0.44, 0.12, 'm2a'],
-      ['ip-kvm', 0.12, 0.6, 0.1, 'pcie2'],
-      ['prime-tx', 0.12, 0.77, 0.08, 'psu'],
-      ['phantom-spirit', 0.88, 0.09, 0.1, 'tower'],
-      ['fury-beast', 0.89, 0.3, 0.12, 'ram'],
-      ['x870e-tomahawk', 0.89, 0.48, 0.08, 'board'],
-      ['hc550', 0.88, 0.67, 0.07, 'cage'],
-    ],
-  },
+  { no: 1, key: 'main-rig', title: 'THE WHITE BUILD', kind: 'drawing', drawing: WHITE_BUILD },
+  { no: 2, key: 'server', title: 'HOME SERVER', kind: 'drawing', drawing: HOME_SERVER, telemetry: true },
   { no: 3, key: 'network', title: 'NETWORK', kind: 'net' },
   { no: 4, key: 'smart-home', title: 'SMART HOME', kind: 'smart' },
   {
     no: 5,
     key: 'peripherals',
     title: 'PERIPHERALS',
-    kind: 'free',
-    parts: [
-      ['xg27acs', 0.27, 0.36, 0.27],
-      ['mv7-plus', 0.56, 0.26, 0.08],
-      ['mx-board-31s', 0.6, 0.7, 0.31],
-      ['g502-x', 0.84, 0.36, 0.08],
-    ],
-    // 沒畫成線稿的其他周邊：列在圖紙角落
+    kind: 'drawing',
+    drawing: DESK,
+    // 底稿上沒畫的其他周邊：列在零件表底下
     others: [
       'g502-hero',
       'mx-board-20s',
@@ -242,7 +337,6 @@ export const NET: { buses: { label: string; sub: string; x: number; dashed: bool
   ],
 };
 
-/** 零件線稿旁邊的小標（GPU、CPU⋯）：型號的類別，不翻 */
 /**
  * 太空船的子系統：把主機當成一艘太空船來畫系統圖。
  * C&DH 指令與資料處理（運算）、EPS 電力、TCS 熱控、DATA 資料記錄、COMM 通訊、
@@ -279,36 +373,6 @@ export const PART_TAG: Record<string, [Subsystem, string]> = {
   router: ['COMM', 'ROUTER'],
   'qg-u1050': ['COMM', 'SWITCH'],
 };
-
-/** 機殼線稿的高寬比（原圖），算零件在機殼裡的位置要用 */
-const CASE_RATIO = { model5: 520 / 443, p10c: 520 / 360 } as const;
-/** 機殼在圖紙上的中心（圖紙寬高的比例）；圖紙是 4:3 */
-const CASE_AT = { x: 0.5, y: 0.42 } as const;
-const SHEET_RATIO = 3 / 4;
-
-/**
- * 一個零件在機殼裡的位置（對接口）：圖紙寬高的比例的中心點，以及寬（圖紙寬的比例）。
- * 零重力組裝時零件從這裡散出去、滑過時沿虛線飛回這裡
- */
-export function slotOf(c: CaseArt, region: string): { x: number; y: number; w: number } | null {
-  const at = c.key === 'model5' ? MODEL5_AT[region] : P10C_AT[region];
-  if (!(at as Poly | Box | undefined)) return null;
-  let u: number;
-  let v: number;
-  let bw: number;
-  if (isPoly(at)) {
-    const xs = at.map((p) => p[0]);
-    const ys = at.map((p) => p[1]);
-    u = (Math.min(...xs) + Math.max(...xs)) / 2;
-    v = (Math.min(...ys) + Math.max(...ys)) / 2;
-    bw = Math.max(...xs) - Math.min(...xs);
-  } else {
-    [u, v, bw] = at;
-  }
-  // 機殼的高（圖紙高的比例）：寬 × 高寬比，再換成圖紙高的單位
-  const ch = (c.w * CASE_RATIO[c.key]) / SHEET_RATIO;
-  return { x: CASE_AT.x + (u - 0.5) * c.w, y: CASE_AT.y + (v - 0.5) * ch, w: bw * c.w };
-}
 
 /** 智慧家庭的訊號流程：Home Assistant 發出去，經過各個中樞，最後到家裡的哪一樣東西 */
 export const SMART = {

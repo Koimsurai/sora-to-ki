@@ -1,15 +1,16 @@
-// 設備：六張工程圖，每一個分類一張（about/setupSheets）。兩台主機是「真的機殼線稿」放中間，
-// 滑過兩側的零件，機殼上它裝的位置就亮起來；伺服器的側板是實心的，就用虛線把藏在後面的零件透視出來。
+// 設備：六張工程圖，每一個分類一張（about/setupSheets）。兩台主機與桌面是工程概念設計圖：
+// 爆炸軸測的線稿當底稿，編號圈、引線、尺寸線、零件表與標題欄是程式疊上去的；
+// 滑過編號或零件表的一列，底稿上那個零件就染成琥珀色。
 // SHEET 0 是老家那台：沒有照片，機殼是憑記憶畫的點狀草圖（點會微微晃），規格像開機自檢一行一行打出來。
-// 網路是配線圖，智慧家庭是訊號流程圖，周邊是單純的線稿。
+// 網路是配線圖，智慧家庭是訊號流程圖。
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { isArriving } from '@/store/pageTransition';
 import {
+  drawDrawing,
   drawFlowLines,
   drawFlowPulses,
-  drawGlassPart,
   drawGrid,
   drawHiddenPart,
   drawNetLines,
@@ -21,19 +22,15 @@ import {
 } from './setupDraw';
 import { APPLIANCES, GEAR, type GearItem } from './setupGear';
 import {
-  isPoly,
   MEMORY_AT,
-  MODEL5_AT,
   NET,
-  P10C_AT,
   PART_TAG,
   partArt,
   POST_LINES,
   SHEETS,
-  slotOf,
   SMART,
   SUBSYSTEMS,
-  type Placed,
+  type Drawing,
   type Subsystem,
 } from './setupSheets';
 import TelemetryPanel from './TelemetryPanel';
@@ -47,6 +44,10 @@ const SKETCH_FRAME_MS = 33;
 const POST_STEP_MS = 380;
 /** 老家那台的插圖（約 2012 年的桌機），原圖的寬高比 */
 const HOME_PC = { src: '/illustrations/home-pc-2012.webp', ratio: 886 / 713 };
+/** 工程概念設計圖描出來要多久（毫秒）：底稿先描、引線再長出去、尺寸線最後拉開 */
+const DRAWING_MS = 1600;
+/** 編號圈的半徑（像素，跟 Setup.css 的 .su-balloon 一樣） */
+const BALLOON_R = 11;
 
 /** 圖紙描出來時，離左上角（點落下的對位記號）每遠一個圖紙寬，晚多久才描（毫秒） */
 const PLOT_SPREAD_MS = 700;
@@ -70,94 +71,25 @@ const SUBSYSTEM_KEY: Record<Subsystem, string> = {
 const ITEMS = new Map<string, GearItem>(GEAR.flatMap((c) => c.items.map((it) => [it.id, it] as const)));
 const itemOf = (id: string) => ITEMS.get(id);
 
-/** 一個零件：線稿＋下面一行說明，中心點放在圖紙的 (x, y) */
-/**
- * 零重力：每個零件各自慢慢漂、慢慢轉（週期、幅度、起點都不一樣，看起來不會整齊地一起動）；
- * slot 是它在機殼裡的位置：切到這張圖紙時，零件從那裡散開漂出來
- */
-function floatStyle(i: number, x: number, y: number, slot: { x: number; y: number } | null) {
-  const seed = (i * 0.618034) % 1;
-  return {
-    '--dur': `${(7 + seed * 5).toFixed(2)}s`,
-    '--phase': `${(-seed * 12).toFixed(2)}s`,
-    '--ax': `${(seed > 0.5 ? 1 : -1) * (4 + seed * 6)}px`,
-    '--ay': `${6 + (1 - seed) * 6}px`,
-    '--rot': `${(seed - 0.5) * 6}deg`,
-    '--i': i,
-    // 從機殼裡那個位置散出來：位移用圖紙寬（cqw）換算，圖紙高是寬的 0.75
-    '--sx': slot ? `${((slot.x - x) * 100).toFixed(2)}cqw` : '0px',
-    '--sy': slot ? `${((slot.y - y) * 75).toFixed(2)}cqw` : '0px',
-  } as React.CSSProperties;
-}
-
-function Part({
-  placed,
-  index,
-  slot,
-  on,
-  onHover,
-}: {
-  placed: Placed;
-  index: number;
-  slot: { x: number; y: number } | null;
-  on: boolean;
-  onHover: (region: string | null, el: HTMLElement | null) => void;
-}) {
-  const [id, x, y, w, region] = placed;
-  const it = itemOf(id);
-  const ref = useRef<HTMLElement>(null);
-  if (!it) return null;
-  const hover = (v: boolean) => region && onHover(v ? region : null, v ? ref.current : null);
-  const tag = PART_TAG[id] as (typeof PART_TAG)[string] | undefined;
-  return (
-    <figure
-      ref={ref}
-      className={[on ? 'su-part is-on' : 'su-part', slot ? 'is-float' : ''].filter(Boolean).join(' ')}
-      style={{
-        left: `${x * 100}%`,
-        top: `${y * 100}%`,
-        width: `${w * 100}%`,
-        ...plotDelay(x, y),
-        ...floatStyle(index, x, y, slot),
-      }}
-    >
-      <img src={partArt(id)} alt="" decoding="async" />
-      {/* 裝在機殼裡的零件：滑過（觸控是點一下、鍵盤是聚焦）機殼上那一塊就亮 */}
-      {region && (
-        <button
-          type="button"
-          className="su-part-hit"
-          aria-label={it.name}
-          aria-pressed={on}
-          onPointerEnter={(e) => e.pointerType === 'mouse' && hover(true)}
-          onPointerLeave={(e) => e.pointerType === 'mouse' && hover(false)}
-          onFocus={() => hover(true)}
-          onBlur={() => hover(false)}
-          onClick={() => hover(!on)}
-        />
-      )}
-      <figcaption className="su-callout">
-        {tag && (
-          <span className="su-tag">
-            <em>{tag[0]}</em> · {tag[1]}
-          </span>
-        )}
-        <b>{it.name}</b>
-        <span>{it.spec}</span>
-      </figcaption>
-    </figure>
-  );
-}
+/** 底稿在圖紙上的範圍（像素） */
+const artRect = (d: Drawing, w: number, h: number): Rect => ({
+  x: d.x * w,
+  y: d.y * h,
+  w: d.w * w,
+  h: d.w * w * d.ratio,
+});
 
 export default function Setup() {
   const { t, i18n } = useTranslation();
   const [current, setCurrent] = useState(1);
   const sheet = SHEETS[current];
-  const [hover, setHover] = useState<{ region: string; el: HTMLElement | null } | null>(null);
+  const drawing = sheet.kind === 'drawing' ? sheet.drawing : null;
+  /** 滑過的零件（工程概念設計圖是零件 id，老家那張是草圖上的一塊） */
+  const [hover, setHover] = useState<string | null>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLCanvasElement>(null);
   const fxRef = useRef<HTMLCanvasElement>(null);
-  const caseRef = useRef<HTMLImageElement>(null);
+  const artRef = useRef<HTMLImageElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   /** 換頁轉場的點落地的時候（直接打開這頁就是第一幀） */
   const landedRef = useRef(-1);
@@ -208,21 +140,27 @@ export default function Setup() {
     return () => cancelAnimationFrame(raf);
   }, [size]);
 
-  // 機殼線稿的琥珀色版本（玻璃側板那台滑過零件時用）：記著是哪一台的，換了圖紙就不算數
-  const [tinted, setTinted] = useState<{ key: string; canvas: HTMLCanvasElement } | null>(null);
-  const caseKey = sheet.kind === 'build' ? sheet.case.key : null;
-  const tint = tinted?.key === caseKey ? tinted.canvas : null;
+  // 底稿的琥珀色版本（滑過零件時疊上去）：記著是哪一張的，換了圖紙就不算數
+  const [tinted, setTinted] = useState<{ src: string; canvas: HTMLCanvasElement } | null>(null);
+  const artSrc = drawing?.src ?? null;
+  const tint = tinted?.src === artSrc ? tinted.canvas : null;
   useEffect(() => {
-    const img = caseRef.current;
-    if (!img || caseKey !== 'model5') return;
-    const ready = () => setTinted({ key: caseKey, canvas: tintOf(img) });
+    const img = artRef.current;
+    if (!img || !artSrc) return;
+    const ready = () => setTinted({ src: artSrc, canvas: tintOf(img) });
     if (img.complete && img.naturalWidth > 0) {
       const raf = requestAnimationFrame(ready);
       return () => cancelAnimationFrame(raf);
     }
     img.addEventListener('load', ready, { once: true });
     return () => img.removeEventListener('load', ready);
-  }, [caseKey]);
+  }, [artSrc]);
+
+  // 工程概念設計圖描出來的起點：點落地之後、或換到這張圖紙的時候
+  const introRef = useRef(-1);
+  useEffect(() => {
+    if (shown) introRef.current = performance.now();
+  }, [shown, current]);
 
   // 老家那台的草圖：插圖取樣成點（大小變了才重取）
   const [homePc, setHomePc] = useState<HTMLImageElement | null>(null);
@@ -244,44 +182,25 @@ export default function Setup() {
     [homePc, sketchRect],
   );
 
-  // 圖紙上的線：滑過零件時亮起來的那一塊、配線圖與流程圖的線、老家的草圖（會微微晃，所以一直畫）
+  // 圖紙上的線：設計圖的引線與尺寸線、滑過時亮起來的那一塊、配線圖與流程圖的線、老家的草圖（會微微晃，所以一直畫）
   useEffect(() => {
     const cv = fxRef.current;
     const ctx = cv?.getContext('2d');
-    const box = sheetRef.current;
-    if (!cv || !ctx || !box || size.w === 0) return;
+    if (!cv || !ctx || size.w === 0) return;
     const { w, h } = size;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.round(w * dpr);
     cv.height = Math.round(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const local = (el: Element): Rect => {
-      const r = el.getBoundingClientRect();
-      const o = box.getBoundingClientRect();
-      // 窄螢幕的圖紙是縮放過的：換回圖紙自己的座標
-      const s = o.width / w;
-      return { x: (r.left - o.left) / s, y: (r.top - o.top) / s, w: r.width / s, h: r.height / s };
-    };
-    const center = (el: HTMLElement | null) => {
-      const img = el?.querySelector('img');
-      if (!img) return null;
-      const r = local(img);
-      return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
-    };
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    /** 設計圖描到哪裡（0–1）；點還沒落地是 0 */
+    const intro = (now: number) =>
+      reduce ? 1 : introRef.current < 0 ? 0 : Math.min(1, (now - introRef.current) / DRAWING_MS);
     const paint = (now: number) => {
       ctx.clearRect(0, 0, w, h);
-      if (sheet.kind === 'build' && hover && caseRef.current) {
-        const from = center(hover.el);
-        const rect = local(caseRef.current);
-        if (from && sheet.case.key === 'model5') {
-          const at = MODEL5_AT[hover.region] as (typeof MODEL5_AT)[string] | undefined;
-          // 看得到的沿線稿亮起來，藏在背艙的（電源）用虛線透視
-          if (at && isPoly(at)) drawGlassPart(ctx, rect, tint, at, from);
-          else if (at) drawHiddenPart(ctx, rect, at, from);
-        } else if (from) {
-          const at = P10C_AT[hover.region] as (typeof P10C_AT)[string] | undefined;
-          if (at) drawHiddenPart(ctx, rect, at, from);
-        }
+      if (sheet.kind === 'drawing') {
+        const d = sheet.drawing;
+        drawDrawing(ctx, artRect(d, w, h), tint, d.parts, d.dims, hover, intro(now), BALLOON_R);
       }
       if (sheet.kind === 'net') {
         drawNetLines(
@@ -309,28 +228,29 @@ export default function Setup() {
       }
       if (sheet.kind === 'memory') {
         drawSketch(ctx, dots, sketchRect, now / 1000);
-        const at = hover ? (MEMORY_AT[hover.region] as (typeof MEMORY_AT)[string] | undefined) : undefined;
+        const at = hover ? (MEMORY_AT[hover] as (typeof MEMORY_AT)[string] | undefined) : undefined;
         if (at) drawHiddenPart(ctx, sketchRect, at, null);
       }
     };
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // 會動的三張：老家的草圖在晃、配線圖與流程圖的線上有訊號在跑
+    // 一直在動的三張：老家的草圖在晃、配線圖與流程圖的線上有訊號在跑；設計圖只在描出來的那段動
     const moving = sheet.kind === 'memory' || sheet.kind === 'net' || sheet.kind === 'smart';
-    if (!moving || reduce) {
-      paint(0);
-      return;
-    }
     let raf = 0;
     let last = 0;
     const frame = (now: number) => {
-      raf = requestAnimationFrame(frame);
-      if (now - last < SKETCH_FRAME_MS) return;
+      const drawingIn = sheet.kind === 'drawing' && intro(now) < 1;
+      if (moving || drawingIn) raf = requestAnimationFrame(frame);
+      // 設計圖描完的那一幀一定要畫（尺寸線的數字到最後才出來）
+      if (!drawingIn && moving && now - last < SKETCH_FRAME_MS) return;
       last = now;
       paint(now);
     };
+    if (reduce) {
+      paint(performance.now());
+      return;
+    }
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [sheet, hover, size, tint, dots, sketchRect]);
+  }, [sheet, hover, size, tint, dots, sketchRect, shown]);
 
   // 窄螢幕的圖紙比畫面寬：換到一張圖紙時先捲到中間（機殼、配線圖的主幹都在中間）
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -343,15 +263,16 @@ export default function Setup() {
     setHover(null);
     setCurrent(i);
   };
-  const onHover = (region: string | null, el: HTMLElement | null) => setHover(region ? { region, el } : null);
 
-  // 滑過的那個零件要對接回機殼的哪裡（零重力那兩張）
-  const docking = useMemo(() => {
-    if (sheet.kind !== 'build' || !hover) return null;
-    const p = sheet.parts.find((q) => q[4] === hover.region);
-    const slot = p ? slotOf(sheet.case, hover.region) : null;
-    return p && slot ? { id: p[0], x: p[1], y: p[2], w: p[3], slot } : null;
-  }, [sheet, hover]);
+  /** 編號圈與零件表的一列共用：滑過（觸控是點一下、鍵盤是聚焦）就把那個零件亮起來 */
+  const hoverProps = (id: string) => ({
+    'aria-pressed': hover === id,
+    onPointerEnter: (e: React.PointerEvent) => e.pointerType === 'mouse' && setHover(id),
+    onPointerLeave: (e: React.PointerEvent) => e.pointerType === 'mouse' && setHover(null),
+    onFocus: () => setHover(id),
+    onBlur: () => setHover(null),
+    onClick: () => setHover(hover === id ? null : id),
+  });
 
   return (
     <div className="su">
@@ -380,79 +301,94 @@ export default function Setup() {
         >
           <canvas ref={gridRef} className="su-grid" aria-hidden="true" />
 
-          {sheet.kind === 'build' && (
-            <figure className="su-case" style={{ width: `${sheet.case.w * 100}%`, ...plotDelay(0.5, 0.42) }}>
-              <img ref={caseRef} src={`/illustrations/setup/case-${sheet.case.key}.webp`} alt="" decoding="async" />
-              <figcaption className="su-callout">
-                <span className="su-tag">
-                  <em>STRUCT</em> · CASE
-                </span>
-                <b>{itemOf(sheet.case.id)?.name}</b>
-                <span>{sheet.case.key === 'p10c' ? t('setup.sheet.p10cNote') : itemOf(sheet.case.id)?.spec}</span>
-              </figcaption>
-            </figure>
-          )}
+          {sheet.kind === 'drawing' && (
+            <>
+              <figure
+                key={sheet.key}
+                className="su-art"
+                style={{
+                  left: `${sheet.drawing.x * 100}%`,
+                  top: `${sheet.drawing.y * 100}%`,
+                  width: `${sheet.drawing.w * 100}%`,
+                }}
+              >
+                <img ref={artRef} src={sheet.drawing.src} alt="" decoding="async" />
+              </figure>
 
-          {(sheet.kind === 'build' || sheet.kind === 'free') &&
-            sheet.parts.map((p, i) => (
-              <Part
-                key={p[0]}
-                placed={p}
-                index={i}
-                slot={sheet.kind === 'build' && p[4] ? slotOf(sheet.case, p[4]) : null}
-                on={!!p[4] && hover?.region === p[4]}
-                onHover={onHover}
-              />
-            ))}
+              {/* 編號圈：位置是底稿寬高的比例，換成圖紙的比例（圖紙高是寬的 0.75） */}
+              {sheet.drawing.parts.map((p, i) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="su-balloon"
+                  aria-label={itemOf(p.id)?.name}
+                  style={{
+                    left: `${(sheet.drawing.x + p.balloon[0] * sheet.drawing.w) * 100}%`,
+                    top: `${(sheet.drawing.y + (p.balloon[1] * sheet.drawing.w * sheet.drawing.ratio) / 0.75) * 100}%`,
+                    animationDelay: `${(i * 60 + 500).toFixed(0)}ms`,
+                  }}
+                  {...hoverProps(p.id)}
+                >
+                  {i + 1}
+                </button>
+              ))}
 
-          {/* 零重力對接：滑過的零件，一個分身沿虛線飛回機殼裡它的位置，縮成那一塊的大小 */}
-          {sheet.kind === 'build' && docking && (
-            <img
-              key={docking.id}
-              className="su-dock"
-              src={partArt(docking.id)}
-              alt=""
-              aria-hidden="true"
-              style={
-                {
-                  left: `${docking.x * 100}%`,
-                  top: `${docking.y * 100}%`,
-                  width: `${docking.w * 100}%`,
-                  '--tx': `${((docking.slot.x - docking.x) * 100).toFixed(2)}cqw`,
-                  '--ty': `${((docking.slot.y - docking.y) * 75).toFixed(2)}cqw`,
-                  '--ts': (docking.slot.w / docking.w).toFixed(3),
-                } as React.CSSProperties
-              }
-            />
-          )}
+              {/* 零件表：圖紙右上；滑過一列，底稿上那個零件亮起來 */}
+              <div key={`bom-${sheet.key}`} className="su-bom">
+                <div className="su-bom-head" aria-hidden="true">
+                  <span>NO</span>
+                  <span>PART</span>
+                  <span>SUBSYS</span>
+                </div>
+                <ol>
+                  {sheet.drawing.parts.map((p, i) => {
+                    const it = itemOf(p.id);
+                    const tag = PART_TAG[p.id] as (typeof PART_TAG)[string] | undefined;
+                    return it ? (
+                      <li key={p.id}>
+                        <button type="button" className="su-bom-row" {...hoverProps(p.id)}>
+                          <span className="su-bom-no">{String(i + 1).padStart(2, '0')}</span>
+                          <span className="su-bom-part">
+                            <b>{it.name}</b>
+                            <span>{it.spec}</span>
+                          </span>
+                          {tag && (
+                            <span className="su-bom-tag">
+                              <em>{tag[0]}</em>
+                              {tag[1]}
+                            </span>
+                          )}
+                        </button>
+                      </li>
+                    ) : null;
+                  })}
+                </ol>
+                {sheet.others && (
+                  <div className="su-others">
+                    <span className="su-tag">OTHERS</span>
+                    {sheet.others.map((id) => {
+                      const it = itemOf(id);
+                      return it ? (
+                        <span key={id}>
+                          <b>{it.name}</b> · {it.spec}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+              </div>
 
-          {sheet.kind === 'build' && (
-            <dl className="su-legend" aria-label={t('setup.sheet.subsystemTitle')}>
-              {SUBSYSTEMS.filter((s) => sheet.parts.some((p) => PART_TAG[p[0]]?.[0] === s) || s === 'STRUCT').map(
-                (s) => (
+              <dl className="su-legend" aria-label={t('setup.sheet.subsystemTitle')}>
+                {SUBSYSTEMS.filter((s) => sheet.drawing.parts.some((p) => PART_TAG[p.id]?.[0] === s)).map((s) => (
                   <div key={s}>
                     <dt>{s}</dt>
                     <dd>{t(`setup.sheet.subsystem.${SUBSYSTEM_KEY[s]}`)}</dd>
                   </div>
-                ),
-              )}
-            </dl>
-          )}
+                ))}
+              </dl>
 
-          {sheet.kind === 'build' && sheet.case.key === 'p10c' && <TelemetryPanel />}
-
-          {sheet.kind === 'free' && (
-            <div className="su-callout su-others">
-              <span className="su-tag">OTHERS</span>
-              {sheet.others.map((id) => {
-                const it = itemOf(id);
-                return it ? (
-                  <span key={id}>
-                    <b>{it.name}</b> · {it.spec}
-                  </span>
-                ) : null;
-              })}
-            </div>
+              {sheet.telemetry && <TelemetryPanel />}
+            </>
           )}
 
           {sheet.kind === 'memory' && (
@@ -468,10 +404,10 @@ export default function Setup() {
                 {POST_LINES.map((ln, i) => (
                   <div
                     key={ln.label}
-                    className={hover?.region === ln.region ? 'su-post-line is-on' : 'su-post-line'}
+                    className={hover === ln.region ? 'su-post-line is-on' : 'su-post-line'}
                     style={{ '--i': i } as React.CSSProperties}
-                    onPointerEnter={() => onHover(ln.region, null)}
-                    onPointerLeave={() => onHover(null, null)}
+                    onPointerEnter={() => setHover(ln.region)}
+                    onPointerLeave={() => setHover(null)}
                   >
                     <span>{ln.label}</span>
                     <b>{ln.value}</b>
@@ -578,8 +514,8 @@ export default function Setup() {
             <span>{sheet.title}</span>
             <span>DRAWN</span>
             <span>{sheet.kind === 'memory' ? t('setup.sheet.fromMemory') : '2026.10'}</span>
-            <span>SCALE</span>
-            <span>NTS</span>
+            <span>{sheet.kind === 'drawing' ? 'UNIT' : 'SCALE'}</span>
+            <span>{sheet.kind === 'drawing' ? 'mm · NTS' : 'NTS'}</span>
           </div>
         </div>
       </div>
