@@ -662,7 +662,6 @@
     --clr-paragraph-rgb: 148, 161, 178;
     --clr-button: var(--brand);
     --clr-button-text: var(--clr-headline);
-    --clr-tertiary: #2cb67d;
     --clr-tertiary-rgb: 44, 182, 125;
 
     /* 深空玻璃質感的共用 token。元件 CSS 用這裡的名字，不要各自複製一份。
@@ -1002,12 +1001,6 @@ html {
     color: var(--clr-button);
     text-decoration: none;
     transition: color var(--dur-200) ease-in-out;
-  }
-
-  a:hover,
-  a:focus {
-    color: var(--clr-tertiary);
-    text-shadow: 0 0 8px var(--clr-tertiary);
   }
 }
 

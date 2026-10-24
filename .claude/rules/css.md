@@ -220,8 +220,8 @@ v4 的 oklch 不等於 v3 hex，而且 Tailwind 只輸出被 utility 用到的 s
 token 表是從 `index.css` 讀的，加新 token 不用改腳本。這條零誤判：值都相等了，
 寫字面值只剩「不知道有 token」一種原因。
 
-Happy Hues 那組只剩 `--clr-headline` / `-paragraph` / `-button` / `-button-text` / `-tertiary`
-還在用。`--brand-light` 指向 `var(--violet-300)`——它就是那個色票，不要另抄一份 hex。
+Happy Hues 那組只剩 `--clr-headline` / `-paragraph` / `-button` / `-button-text` / `-tertiary-rgb`
+還在用（全站連結滑過變綠發光那條在 2026-10 翻新拔掉了，`--clr-tertiary` 本身跟著刪）。`--brand-light` 指向 `var(--violet-300)`——它就是那個色票，不要另抄一份 hex。
 
 ## 等寬字只有一套堆疊：`--mono-font`
 
