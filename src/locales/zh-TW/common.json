@@ -700,6 +700,8 @@
     "fieldRss": "RSS（選填）",
     "fieldDesc": "一句話",
     "submit": "送出申請",
+    "errRequired": "這一欄要填",
+    "errUrl": "要是 http:// 或 https:// 開頭的網址",
     "sent": "已打開郵件程式。沒有跳出來的話，寄到",
     "rulesTitle": "入軌條件",
     "rule1": "網站能正常瀏覽，有自己的網域與 HTTPS（免費子網域也可以）。",

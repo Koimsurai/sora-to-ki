@@ -525,6 +525,17 @@
   color: var(--paper-3);
 }
 
+/* 驗證沒過：底線換成琥珀色，原因寫在底下 */
+.fr-input input[aria-invalid="true"] {
+  border-bottom-color: var(--amber);
+}
+
+.fr-error {
+  font-size: var(--fs-12);
+  font-style: normal;
+  color: var(--amber);
+}
+
 .fr-submit {
   justify-self: start;
   padding: var(--space-2) var(--space-4);
