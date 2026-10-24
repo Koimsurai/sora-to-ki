@@ -293,7 +293,10 @@ export type CommentCounts = {
 	trash: number,
 };
 
-/**  comments 一列。欄位順序對齊 live 表實際 `SELECT *` 展開順序。 */
+/**
+ *  公開的留言一列（文章與碎念共用）。**不含留言者的 email 與 IP**：這是公開端點，
+ *  那兩欄只給後台（`admin::AdminCommentRow`）。欄位順序對齊 live 表 `SELECT *` 的展開順序（少了那兩欄）。
+ */
 export type CommentRow = {
 	id: number,
 	post_id: number | null,
@@ -302,10 +305,8 @@ export type CommentRow = {
 	likes: number,
 	created_at: string,
 	is_admin: number,
-	email: string | null,
 	website: string | null,
 	status: string | null,
-	ip: string | null,
 	parent_id: number | null,
 	avatar_url: string | null,
 	thought_id: number | null,

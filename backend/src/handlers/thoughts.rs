@@ -237,7 +237,7 @@ pub async fn get_thought(
 }
 
 /// `GET /api/thoughts/:id/comments` —— 與 blog 留言共用同一張 comments 表，
-/// 只是 key 在 thought_id。重用 `posts::CommentRow`（其 14 欄 row 解碼已由 post 留言驗過）。
+/// 只是 key 在 thought_id。重用 `posts::CommentRow`（公開欄位，不含 email 與 IP）。
 #[utoipa::path(get, path = "/api/thoughts/{id}/comments", tag = "thoughts",
     params(("id" = String, Path)),
     responses((status = 200, body = CommentsResponse)))]
@@ -246,7 +246,7 @@ pub async fn list_thought_comments(
     Path(id): Path<String>,
 ) -> Result<Json<CommentsResponse>, AppError> {
     let comments = sqlx::query_as::<_, CommentRow>(
-        "SELECT id, post_id, author, content, likes, created_at, is_admin, email, website, status, ip, parent_id, avatar_url, thought_id \
+        "SELECT id, post_id, author, content, likes, created_at, is_admin, website, status, parent_id, avatar_url, thought_id \
          FROM comments WHERE thought_id = ? AND status = 'approved' ORDER BY created_at ASC",
     )
     .bind(&id)
