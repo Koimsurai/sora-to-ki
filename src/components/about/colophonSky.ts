@@ -101,23 +101,35 @@ export function turnFor(key: StarKey, w: number, h: number) {
 }
 
 /**
- * 換頁進來時點畫的星座：從離點最近的那顆星開始，每次走到最近的下一顆，最後一顆是正在測的那顆，
- * 再接到鏡筒前端——最後那一段就是視線，星座收掉之後留下的正好是它
+ * 換頁進來時點畫的星座：從畫面最右邊那顆星進來，由右往左把天上的星一顆顆掃過去，最後一顆是正在測的那顆，
+ * 再接到鏡筒前端——最後那一段就是視線，星座收掉之後留下的正好是它。
+ * 星與星之間用平滑的曲線（Catmull–Rom）接，點飛起來有一點弧度、不是硬折。
+ * 回傳取好點的曲線，與正在測的那顆星在曲線上的第幾點
  */
-export function planConstellation(target: StarKey, from: { x: number; y: number }, w: number, h: number, count = 5) {
-  const others = STAR_KEYS.filter((k) => k !== target).map((k) => starAt(k, w, h));
-  const path: { x: number; y: number }[] = [];
-  let at = from;
-  while (path.length < count - 1 && others.length) {
-    let best = 0;
-    others.forEach((s, i) => {
-      if (Math.hypot(s.x - at.x, s.y - at.y) < Math.hypot(others[best].x - at.x, others[best].y - at.y)) best = i;
-    });
-    at = others.splice(best, 1)[0];
-    path.push(at);
+export function planConstellation(target: StarKey, front: { x: number; y: number }, w: number, h: number) {
+  const others = STAR_KEYS.filter((k) => k !== target)
+    .map((k) => starAt(k, w, h))
+    .sort((a, b) => b.x - a.x);
+  const knots = [...others, starAt(target, w, h), front];
+  const STEPS = 14;
+  const path: { x: number; y: number }[] = [knots[0]];
+  let targetAt = 0;
+  for (let i = 0; i < knots.length - 1; i++) {
+    const p0 = knots[Math.max(0, i - 1)];
+    const p1 = knots[i];
+    const p2 = knots[i + 1];
+    const p3 = knots[Math.min(knots.length - 1, i + 2)];
+    for (let k = 1; k <= STEPS; k++) {
+      const t = k / STEPS;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const at = (a: number, b: number, c: number, d: number) =>
+        0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+      path.push({ x: at(p0.x, p1.x, p2.x, p3.x), y: at(p0.y, p1.y, p2.y, p3.y) });
+    }
+    if (i + 1 === knots.length - 2) targetAt = path.length - 1;
   }
-  path.push(starAt(target, w, h));
-  return path;
+  return { path, targetAt };
 }
 
 /** 折線上每一點到起點的累計長度 */
