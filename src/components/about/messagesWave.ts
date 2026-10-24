@@ -1,4 +1,5 @@
-// 留言頁的訊號：每一則留言是一段波形，字越多訊號越長，字本身決定起伏。
+// 留言頁的訊號：每一則留言是一段波形，字越多訊號越長，字本身決定起伏；
+// 排在瀑布圖上時，每個人落在自己的頻率（名字決定）。
 // 頁首那條線是收訊的頻道：平常只有雜訊；打字時你打的字即時變成波形，送出時那一段往右飛進天線。
 // 換頁時頻道起點振一下（像超聲波探頭），一道琥珀色的光沿頻道跑：進場跑進天線、離場從天線倒著跑回起點，
 // 頻道跟著它長出來、收回去。
@@ -30,18 +31,29 @@ function sampleOf(chars: string[], u: number, x: number, t: number) {
   return Math.sin(x * (0.12 + (c % 13) * 0.02) + t * 6) * amp * env;
 }
 
-/** 留言清單裡那一小段靜止的波形（SVG path，viewBox 寬 `width`、高 `height`） */
-export function wavePath(text: string, width: number, height: number) {
+/**
+ * 瀑布圖上一則訊號的波形（SVG path，viewBox 寬 `width`、高 `height`）：
+ * 擺在頻寬上的 `freq`（0–1）那個位置，字越多越寬，最多佔頻寬的 `maxShare`
+ */
+export function bandPath(text: string, freq: number, width: number, height: number, maxShare = 0.6) {
   const chars = Array.from(text);
   if (!chars.length) return '';
-  const len = Math.min(width, 24 + chars.length * 4);
+  const len = Math.min(width * maxShare, 24 + chars.length * 3);
+  const x0 = freq * (width - len);
   const y = height / 2;
   let d = '';
   for (let x = 0; x <= len; x += 1.5) {
     const v = sampleOf(chars, x / len, x, 0) * height * 0.42;
-    d += `${x === 0 ? 'M' : 'L'}${x.toFixed(1)} ${(y + v).toFixed(1)}`;
+    d += `${x === 0 ? 'M' : 'L'}${(x0 + x).toFixed(1)} ${(y + v).toFixed(1)}`;
   }
   return d;
+}
+
+/** 一個人永遠在同一個頻率上（名字決定，0–1） */
+export function freqOf(name: string) {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + (ch.codePointAt(0) ?? 0)) >>> 0;
+  return (h % 1000) / 999;
 }
 
 export interface Strip {

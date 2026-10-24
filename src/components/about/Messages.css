@@ -1,14 +1,17 @@
 /* 留言（about/Messages）：頁首下面是收訊的頻道（畫布 about/messagesWave），
-   底下左邊是收到的訊號、右邊是發送台。窄螢幕上下疊，發送台在下面 */
+   底下照無線電的瀑布圖排：時間軸（UTC）｜頻寬（每個人在自己的頻率上）｜內容，最新的在最上面。
+   發送台黏在視窗底部，點進去才往上展開身分、驗證碼與規則 */
 
 .msg {
   display: grid;
   gap: var(--space-8);
   max-width: 1280px;
-  padding: var(--page-top) var(--space-10) var(--page-bottom);
+  padding: var(--page-top) var(--space-10) 0;
   margin: 0 auto;
   font-family: var(--serif);
   color: var(--paper);
+  /* 瀑布圖的三欄：時間軸、頻寬、內容；刻度列與每一列共用 */
+  --msg-cols: 9ch minmax(0, 2fr) minmax(0, 3fr);
 }
 
 :where(.msg) :where(a) {
@@ -53,19 +56,20 @@
 
 /* 收：字退掉，只剩頻道收進天線 */
 .msg-head,
-.msg-body,
+.msg-fall,
+.msg-tx,
 .msg-status {
   transition: opacity var(--dur-300) ease;
 }
 
-.msg.is-leaving :is(.msg-head, .msg-body, .msg-status) {
+.msg.is-leaving :is(.msg-head, .msg-fall, .msg-tx, .msg-status) {
   opacity: 0;
 }
 
 /* ── 頻道 ── */
 .msg-strip {
   position: relative;
-  height: 220px;
+  height: 180px;
 }
 
 .msg-strip canvas {
@@ -85,17 +89,10 @@
   color: var(--paper-3);
 }
 
-.msg-body {
+/* ── 瀑布圖 ── */
+.msg-fall {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: var(--space-12);
-  align-items: start;
-}
-
-/* ── 收到的訊號 ── */
-.msg-log {
-  display: grid;
-  gap: var(--space-6);
+  margin-top: calc(-1 * var(--space-6));
 }
 
 .msg-empty {
@@ -114,42 +111,110 @@
   color: var(--paper-2);
 }
 
-.msg-list,
-.msg-replies {
+/* 刻度列：時間軸寫 UTC，頻寬寫 X 頻段的刻度 */
+.msg-scale {
   display: grid;
+  grid-template-columns: var(--msg-cols);
   gap: var(--space-6);
+  padding-bottom: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.msg-ticks {
+  display: flex;
+  justify-content: space-between;
+}
+
+.msg-ticks i,
+.msg-ticks em {
+  font-style: normal;
+}
+
+.msg-list {
+  display: grid;
   padding: 0;
   margin: 0;
   list-style: none;
 }
 
-.msg-replies {
-  gap: var(--space-4);
-  padding-left: var(--space-5);
-  margin-top: var(--space-4);
-  border-left: 1px dotted var(--rule);
-}
-
 .msg-item {
   display: grid;
-  gap: var(--space-2);
+  grid-template-columns: var(--msg-cols);
+  grid-template-areas: "stamp band body";
+  gap: 0 var(--space-6);
+  align-items: start;
 }
 
-.msg-item-wave {
+/* 時間軸：一條點線貫穿每一列，日期換了才寫 */
+.msg-stamp {
+  grid-area: stamp;
+  display: grid;
+  align-content: start;
+  justify-items: end;
+  align-self: stretch;
+  padding: var(--space-4) var(--space-3) var(--space-4) 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+  border-right: 1px dotted var(--rule);
+}
+
+.msg-stamp b {
+  font-size: var(--fs-12);
+  font-weight: 400;
+  color: var(--paper-2);
+}
+
+.msg-band {
+  grid-area: band;
   width: 100%;
-  max-width: 600px;
   height: 36px;
+  margin-top: var(--space-4);
+  overflow: visible;
 }
 
-.msg-item-wave path {
+.msg-band path {
   fill: none;
   stroke: var(--paper-2);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
+  transition: stroke var(--dur-200) ease;
 }
 
-.is-reply .msg-item-wave {
+/* 底噪：整條頻寬上一條細點線 */
+.msg-floor {
+  stroke: var(--rule);
+  stroke-width: 1;
+  stroke-dasharray: 1 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.msg-item:hover .msg-band path {
+  stroke: var(--paper);
+}
+
+.msg-item-body {
+  grid-area: body;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-4) 0;
+  border-bottom: 1px dotted var(--rule);
+}
+
+/* 回覆：波形窄一點，內容縮進去 */
+.is-reply .msg-band {
   height: 24px;
+  margin-top: var(--space-3);
+}
+
+.is-reply .msg-item-body {
+  padding-top: var(--space-2);
+  padding-left: var(--space-5);
 }
 
 .msg-item-head {
@@ -177,12 +242,6 @@ a.msg-author {
   color: var(--amber);
 }
 
-.msg-item-head time {
-  font-family: var(--mono-font);
-  font-size: var(--fs-10);
-  color: var(--paper-3);
-}
-
 .msg-item-text {
   margin: 0;
   font-size: var(--fs-14);
@@ -195,6 +254,7 @@ a.msg-author {
 .msg-item-actions {
   display: flex;
   gap: var(--space-4);
+  margin-top: var(--space-1);
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
@@ -213,45 +273,41 @@ a.msg-author {
   color: var(--paper);
 }
 
-.msg-rules {
-  display: grid;
-  gap: var(--space-1);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-  font-size: var(--fs-13);
-  color: var(--paper-2);
-}
-
-.msg-rules li::before {
-  content: "·  ";
-  color: var(--paper-3);
-}
-
-.msg-private {
-  margin: 0;
-  font-size: var(--fs-13);
-  color: var(--paper-3);
-}
-
-.msg-private a {
-  font-family: var(--mono-font);
-  font-size: var(--fs-12);
-  color: var(--paper-2);
-  text-decoration: underline;
-  text-decoration-color: var(--rule);
-  text-underline-offset: 3px;
-}
-
 /* ── 發送台 ── */
-.msg-form {
+.msg-tx {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  padding: 0 var(--space-10) var(--space-3);
+  margin: var(--space-8) calc(-1 * var(--space-10)) 0;
+  background: rgba(var(--ground-rgb), 0.9);
+  backdrop-filter: blur(var(--blur-12));
+}
+
+/* 展開的那一塊：收起來時高度 0（仍在版面裡，焦點可以移進去） */
+.msg-tx-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-300) var(--easing-out);
+}
+
+.msg-tx.is-open .msg-tx-panel {
+  grid-template-rows: 1fr;
+  border-top: 1px solid var(--rule);
+}
+
+.msg-tx-fields {
   display: grid;
   gap: var(--space-3);
+  min-height: 0;
+  max-height: 55svh;
+  overflow: hidden;
 }
 
-.msg-form h2 {
-  font-size: var(--fs-18);
-  font-weight: 600;
+.msg-tx.is-open .msg-tx-fields {
+  padding-top: var(--space-4);
+  overflow-y: auto;
 }
 
 .msg-login,
@@ -314,7 +370,7 @@ a.msg-author {
 
 .msg-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.4fr) 120px;
   gap: var(--space-4);
 }
 
@@ -330,14 +386,14 @@ a.msg-author {
   color: var(--paper-3);
 }
 
-.msg-input :is(input, textarea) {
+.msg-input input,
+.msg-tx-text textarea {
   width: 100%;
   min-width: 0;
   padding: var(--space-1) 0;
   font: inherit;
   font-size: var(--fs-16);
   color: var(--paper);
-  resize: none;
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--rule);
@@ -346,36 +402,119 @@ a.msg-author {
   appearance: none;
 }
 
-.msg-input :is(input, textarea):focus {
+.msg-input input:focus {
   border-bottom-color: var(--paper-2);
 }
 
-.msg-input :is(input, textarea)::placeholder {
+:is(.msg-input input, .msg-tx-text textarea)::placeholder {
   color: var(--paper-3);
 }
 
-/* 驗證沒過：底線換成琥珀色，原因寫在送出鈕底下 */
-.msg-input :is(input, textarea)[aria-invalid="true"] {
+/* 驗證沒過：底線換成琥珀色，原因寫在發送列底下 */
+.msg-input input[aria-invalid="true"],
+.msg-tx-text textarea[aria-invalid="true"] {
   border-bottom-color: var(--amber);
 }
 
-.msg-captcha {
-  max-width: 160px;
+.msg-rules {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: var(--fs-12);
+  color: var(--paper-3);
+}
+
+.msg-rules li::before {
+  content: "·  ";
+}
+
+.msg-rules a {
+  font-family: var(--mono-font);
+  color: var(--paper-2);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+/* 發送列：TX｜想說的話｜字數｜送出 */
+.msg-tx-bar {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+}
+
+/* 上緣那條線：打的字即時變成波形，送出時往右飛走 */
+.msg-tx-wave {
+  position: absolute;
+  top: calc(-1 * var(--space-2));
+  left: 0;
+  width: 100%;
+  height: 14px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.msg-tx-wave path {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.msg-tx-wave.is-flying {
+  animation: msg-fly 1.2s var(--easing-standard) forwards;
+}
+
+@keyframes msg-fly {
+  to {
+    opacity: 0;
+    transform: translateX(60%);
+  }
+}
+
+.msg-tx-k {
+  padding-bottom: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--amber);
+}
+
+.msg-tx-text {
+  display: grid;
+}
+
+.msg-tx-text textarea {
+  display: block;
+  resize: none;
+  scrollbar-width: thin;
+}
+
+.msg-tx-text textarea:focus {
+  border-bottom-color: var(--paper-2);
 }
 
 .msg-meter {
+  padding-bottom: var(--space-2);
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-8);
   color: var(--paper-3);
+  white-space: nowrap;
 }
 
 .msg-submit {
-  justify-self: start;
   padding: var(--space-2) var(--space-4);
-  margin-top: var(--space-2);
   font-size: var(--fs-14);
   color: var(--paper);
+  white-space: nowrap;
   border: 1px solid var(--rule);
   transition: border-color var(--dur-200) ease;
 }
@@ -393,7 +532,8 @@ a.msg-author {
 .msg-note {
   display: block;
   min-height: 1.5em;
-  font-size: var(--fs-13);
+  margin-top: var(--space-1);
+  font-size: var(--fs-12);
   color: var(--paper-2);
 }
 
@@ -403,22 +543,55 @@ a.msg-author {
 }
 
 @media (max-width: 900px) {
-  .msg-body {
-    grid-template-columns: minmax(0, 1fr);
+  .msg-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
+/* 窄螢幕：時間軸留著，頻寬疊在內容上面 */
 @media (max-width: 760px) {
   .msg {
     padding-right: var(--space-4);
     padding-left: var(--space-4);
+    --msg-cols: 6ch minmax(0, 1fr);
   }
 
   .msg-strip {
-    height: 160px;
+    height: 140px;
   }
 
-  .msg-row {
-    grid-template-columns: minmax(0, 1fr);
+  .msg-scale {
+    gap: var(--space-3);
+  }
+
+  .msg-item {
+    grid-template-areas:
+      "stamp band"
+      "stamp body";
+    gap: 0 var(--space-3);
+  }
+
+  .msg-band {
+    height: 28px;
+  }
+
+  .msg-item-body {
+    padding-top: var(--space-1);
+  }
+
+  .msg-tx {
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
+    margin-right: calc(-1 * var(--space-4));
+    margin-left: calc(-1 * var(--space-4));
+  }
+
+  .msg-tx-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .msg-tx-k,
+  .msg-meter {
+    display: none;
   }
 }
