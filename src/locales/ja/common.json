@@ -553,11 +553,13 @@
   },
   "photos": {
     "title": "写真作品集",
-    "description": "Koimsurai の写真作品集。旅先の光と影の記録。"
-  },
-  "gallery": {
-    "allTags": "すべて",
-    "moreTags": "その他"
+    "description": "Koimsurai の写真作品集。旅先の光と影の記録。",
+    "heading": "写真",
+    "subtitle": "遠くから、一行ずつ受け取った光。",
+    "station": "DSN · 地上局",
+    "stationLabel": "遠くの探査機からの信号を受ける地上局のパラボラアンテナ",
+    "passesLabel": "月ごとの受信枚数：最多は {{month}}、{{count}} 枚",
+    "frame": "写真 {{date}}"
   },
   "aboutFall": {
     "kick": "について",

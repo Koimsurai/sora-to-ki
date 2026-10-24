@@ -1,0 +1,193 @@
+/* 照片（gallery/Photos）：地面站。頁首左邊是標題與地面站的畫布，右邊是接收紀錄；
+   下面一條是每個月收到幾張，再下面是一格一格收下來的照片 */
+
+.ph {
+  display: grid;
+  gap: var(--space-10);
+  max-width: 1080px;
+  padding: var(--page-top) var(--space-6) var(--page-bottom);
+  margin: 0 auto;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+:where(.ph) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.ph-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-10);
+  align-items: end;
+}
+
+.ph-left {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.ph-head {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.ph-head-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.ph-head h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.ph-head-title span {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.ph-head p {
+  margin: 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+/* 地面站：左下的碟形天線、右上遠處的探測器 */
+.ph-station {
+  position: relative;
+  height: 220px;
+}
+
+.ph-station canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ph-station-name {
+  position: absolute;
+  bottom: var(--space-2);
+  left: 180px;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+}
+
+/* 接收紀錄：一共收到幾格、各鏡頭幾張 */
+.ph-log {
+  display: grid;
+  gap: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+}
+
+.ph-log b {
+  font-family: var(--latin-display);
+  font-size: var(--fs-56);
+  font-weight: 400;
+  line-height: var(--lh-100);
+  color: var(--paper);
+}
+
+.ph-log-row {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+  padding-bottom: var(--space-1);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.ph-log-row span:last-child {
+  color: var(--paper-2);
+}
+
+/* 每個月收到幾張 */
+.ph-passes {
+  position: relative;
+  height: 70px;
+}
+
+.ph-passes canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ph-wait {
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-12);
+  color: var(--amber);
+}
+
+/* 一格畫面：圖（或接收中的畫布）＋下面三行遙測 */
+.ph-frame {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.ph-frame:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 4px;
+}
+
+.ph-shot {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.ph-shot img,
+.ph-shot canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ph-shot img {
+  object-fit: cover;
+  transition: opacity var(--dur-300) ease;
+}
+
+.ph-frame:hover .ph-shot img {
+  opacity: 0.8;
+}
+
+.ph-tel {
+  display: grid;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  line-height: var(--lh-170);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+}
+
+.ph-tel b {
+  font-weight: 500;
+  color: var(--paper-2);
+}
+
+.ph-tel .is-live {
+  color: var(--amber);
+}
+
+@media (max-width: 860px) {
+  .ph-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

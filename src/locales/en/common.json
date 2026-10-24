@@ -553,11 +553,13 @@
   },
   "photos": {
     "title": "Photography",
-    "description": "Koimsurai's photography — light and shadow from the road."
-  },
-  "gallery": {
-    "allTags": "All",
-    "moreTags": "More"
+    "description": "Koimsurai's photography — light and shadow from the road.",
+    "heading": "Photos",
+    "subtitle": "Light from far away, received one line at a time.",
+    "station": "DSN · GROUND STATION",
+    "stationLabel": "A ground station dish receiving a signal from a distant probe",
+    "passesLabel": "Frames received per month: most in {{month}}, {{count}} frames",
+    "frame": "Photo {{date}}"
   },
   "aboutFall": {
     "kick": "About",
