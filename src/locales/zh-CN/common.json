@@ -53,7 +53,17 @@
     "account": "账号",
     "menu": "菜单",
     "close": "关闭",
-    "home": "回首页"
+    "home": "回首页",
+    "allPosts": "全部 {{count}} 篇",
+    "allMoments": "全部碎念",
+    "allWorks": "全部 {{count}} 件",
+    "watching": "在看",
+    "reading": "在读",
+    "listening": "在听",
+    "recently": "最近",
+    "episode": "第 {{ep}} 集",
+    "aboutLead": "Koimsurai，全栈工程师。",
+    "aboutAll": "关于我"
   },
   "user": {
     "adminPanel": "进入后台",

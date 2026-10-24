@@ -53,7 +53,17 @@
     "account": "アカウント",
     "menu": "メニュー",
     "close": "閉じる",
-    "home": "ホーム"
+    "home": "ホーム",
+    "allPosts": "全 {{count}} 本",
+    "allMoments": "つぶやきをすべて",
+    "allWorks": "全 {{count}} 件",
+    "watching": "観ている",
+    "reading": "読んでいる",
+    "listening": "聴いている",
+    "recently": "最近",
+    "episode": "第 {{ep}} 話",
+    "aboutLead": "Koimsurai、フルスタックエンジニア。",
+    "aboutAll": "自己紹介"
   },
   "user": {
     "adminPanel": "管理画面へ",

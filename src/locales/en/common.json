@@ -53,7 +53,17 @@
     "account": "Account",
     "menu": "Menu",
     "close": "Close",
-    "home": "Home"
+    "home": "Home",
+    "allPosts": "All {{count}} notes",
+    "allMoments": "All murmurs",
+    "allWorks": "All {{count}} works",
+    "watching": "Watching",
+    "reading": "Reading",
+    "listening": "Listening",
+    "recently": "Lately",
+    "episode": "Ep. {{ep}}",
+    "aboutLead": "Koimsurai, a full-stack engineer.",
+    "aboutAll": "About me"
   },
   "user": {
     "adminPanel": "Admin panel",
