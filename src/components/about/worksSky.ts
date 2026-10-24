@@ -408,7 +408,7 @@ const moonAt = (m: Moon, t: number, pace: number): Vec3 => {
 const GLYPH_PACE = 2.5;
 
 /** 立體的那顆星：點的星球（亮面密、暗面疏，地貌決定哪裡的點多）、線的環、點的衛星 */
-function drawBody(
+export function drawBody(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,

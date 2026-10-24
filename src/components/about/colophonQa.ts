@@ -1,10 +1,7 @@
-import { LocaleLink } from '@/i18n/locale-link';
-import { useTranslation } from 'react-i18next';
-import InfoPage from './InfoPage';
-import { LinkCard } from '@/components/common/LinkCard';
-import { lookupOr } from '@/lib/tableLookup';
+// 此站點的 Q&A（航海日誌那一段）：五個語系各一份，原本寫在舊的 AboutSite 元件裡，原封不動搬過來。
+// a2_* 是技術棧那一題被技術名稱切開的片段，畫面上技術名稱用 <code> 包起來。
 
-const ABOUT_SITE_BY_LANG = {
+export const COLOPHON_QA = {
   'zh-TW': {
     intro: '此站點是我用來記錄技術與生活的個人網站，從 2025 年 4 月起持續寫到現在。',
     qaHeading: '常見問題 Q&A',
@@ -182,86 +179,3 @@ const ABOUT_SITE_BY_LANG = {
     a8: '키무라 타쿠야를 좋아해서 성씨를 빌리고, 「盆栽」을 붙였더니 발음이 좋아서 그대로 쓰게 됐습니다.',
   },
 };
-
-function AboutSite() {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const c = lookupOr(ABOUT_SITE_BY_LANG, lang, ABOUT_SITE_BY_LANG['zh-TW']);
-
-  return (
-    <InfoPage
-      title={t('info.aboutSite.title')}
-      subtitle={t('info.aboutSite.subtitle')}
-      slug="about-site"
-      prev={null}
-      next={{ to: '/history', title: `${t('info.history.title')} — ${t('info.history.subtitle')}` }}
-    >
-      <p>{c.intro}</p>
-
-      <h2 id="qa">{c.qaHeading}</h2>
-
-      <h3 id="q1">{c.q1}</h3>
-      <p>{c.a1}</p>
-
-      <h3 id="q2">{c.q2}</h3>
-      <p>
-        {c.a2_pre}
-        <code>React 19</code>
-        {c.a2_mid1}
-        <code>TanStack Start</code>
-        {c.a2_mid2}
-        <code>Vite</code>
-        {c.a2_mid3}
-        <code>Tailwind CSS</code>
-        {c.a2_mid4}
-        <code>Three.js</code>
-        {c.a2_mid5}
-        <code>Rust</code>
-        {c.a2_mid6}
-        <code>SQLite</code>
-        {c.a2_mid7}
-        <code>Docker</code>
-        {c.a2_tail}
-      </p>
-
-      <h3 id="q3">{c.q3}</h3>
-      <p>
-        {c.a3} <code>thumbhash</code> {c.a3_mid}
-      </p>
-      <LinkCard href="https://koimsurai.com/blog/21" />
-
-      <h3 id="q4">{c.q4}</h3>
-      <p>{c.a4}</p>
-
-      <h3 id="q5">{c.q5}</h3>
-      <p>{c.a5_p1}</p>
-      <p>
-        {c.a5_p2_pre}
-        <LocaleLink
-          to="/messages"
-          style={{
-            color: 'rgba(216, 180, 254, 0.95)',
-            borderBottom: '1px dashed rgba(216, 180, 254, 0.35)',
-            textDecoration: 'none',
-          }}
-        >
-          {c.a5_p2_link}
-        </LocaleLink>
-        {c.a5_p2_post}
-      </p>
-
-      <h2 id="name">{c.nameHeading}</h2>
-
-      <h3 id="q6">{c.q6}</h3>
-      <p>{c.a6}</p>
-
-      <h3 id="q7">{c.q7}</h3>
-      <p>{c.a7}</p>
-
-      <h3 id="q8">{c.q8}</h3>
-      <p>{c.a8}</p>
-    </InfoPage>
-  );
-}
-
-export default AboutSite;
