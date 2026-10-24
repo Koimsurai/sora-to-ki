@@ -334,7 +334,9 @@
     "lastUpdated": "Updated",
     "nearbyNav": "Nearby posts",
     "font": "Font",
-    "originalText": "original"
+    "originalText": "original",
+    "sameTag": "Also tagged #{{name}}",
+    "sameTagNone": "This is the only post with this tag."
   },
   "thinking": {
     "title": "Murmurs",

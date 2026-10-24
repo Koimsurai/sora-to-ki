@@ -334,7 +334,9 @@
     "lastUpdated": "最終更新",
     "nearbyNav": "近くの記事",
     "font": "書体",
-    "originalText": "原文"
+    "originalText": "原文",
+    "sameTag": "#{{name}} の記事",
+    "sameTagNone": "このタグはこの記事だけ。"
   },
   "thinking": {
     "title": "つぶやき",
