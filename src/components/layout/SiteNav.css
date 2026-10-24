@@ -160,10 +160,12 @@
 }
 
 /* ── 更多：其他頁一條一條畫出來，下面是搜尋、語言、帳號 ── */
-/* 只在右邊內容後面墊一塊紙色，左緣與下緣淡掉：不要整條橫過頁面變成一大塊黑 */
+/* 只在右邊內容後面墊一塊紙色，不要整條橫過頁面變成一大塊黑。
+   這塊從最上緣就開始、墊在那一行字後面（行在 z-index 1），跟頂欄連成同一塊往下長；
+   左緣與下緣只留一小段淡出，太長的漸層壓在照片上會變成一片髒污 */
 .snav-more {
   position: absolute;
-  top: 64px;
+  top: 0;
   right: 0;
   width: min(100%, 960px);
   max-height: 0;
@@ -171,7 +173,8 @@
   padding: 0 var(--space-10) 0 calc(var(--space-24) * 2);
   background: var(--ground);
   mask-image:
-    linear-gradient(to left, #000 calc(100% - var(--space-24) * 2), transparent), linear-gradient(#000 70%, transparent);
+    linear-gradient(to left, #000 calc(100% - var(--space-16)), transparent),
+    linear-gradient(#000 calc(100% - var(--space-12)), transparent);
   mask-composite: intersect;
   transition:
     max-height var(--dur-500) var(--easing-out),
@@ -179,8 +182,9 @@
 }
 
 .snav.is-more .snav-more {
-  max-height: 320px;
-  padding-block: var(--space-2) var(--space-8);
+  max-height: 400px;
+  /* 上面讓出頂欄那一行的高度（.snav-bar 的 64px） */
+  padding-block: calc(var(--space-16) + var(--space-2)) var(--space-12);
 }
 
 .snav-more-links {
@@ -288,6 +292,13 @@
 .snav-util button:hover,
 .snav-util button.is-on {
   color: var(--paper);
+}
+
+/* 登入只放圖示：跟旁邊的字同一個墨色，滑過變亮 */
+.snav-util .snav-provider {
+  display: inline-grid;
+  place-items: center;
+  font-size: var(--fs-14);
 }
 
 .snav-util kbd {

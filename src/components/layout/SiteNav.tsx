@@ -7,6 +7,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { FaGithub, FaGoogle } from 'react-icons/fa';
 import { LocaleLink } from '@/i18n/locale-link';
 import { LOCALE_LABELS, stripLocalePrefix } from '@/i18n/start-i18n';
 import { SUPPORTED_LOCALES, LOCALE_PREFIX, type Locale } from '@/lib/locales';
@@ -179,14 +180,29 @@ export default function SiteNav() {
           </>
         ) : (
           <>
+            {(providers.github.enabled || providers.google.enabled) && (
+              <span aria-hidden="true">{t('siteNav.signIn')}</span>
+            )}
             {providers.github.enabled && (
-              <button type="button" onClick={() => signIn(getGitHubAuthUrl, 'github')}>
-                {t('user.signInWithGithub')}
+              <button
+                type="button"
+                className="snav-provider"
+                aria-label={t('user.signInWithGithub')}
+                title={t('user.signInWithGithub')}
+                onClick={() => signIn(getGitHubAuthUrl, 'github')}
+              >
+                <FaGithub aria-hidden="true" />
               </button>
             )}
             {providers.google.enabled && (
-              <button type="button" onClick={() => signIn(getGoogleAuthUrl, 'google')}>
-                {t('user.signInWithGoogle')}
+              <button
+                type="button"
+                className="snav-provider"
+                aria-label={t('user.signInWithGoogle')}
+                title={t('user.signInWithGoogle')}
+                onClick={() => signIn(getGoogleAuthUrl, 'google')}
+              >
+                <FaGoogle aria-hidden="true" />
               </button>
             )}
           </>

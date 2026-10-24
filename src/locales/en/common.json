@@ -35,6 +35,7 @@
     "menu": "Navigation menu"
   },
   "siteNav": {
+    "signIn": "Sign in",
     "notes": "Notes",
     "moments": "Murmurs",
     "works": "Work",

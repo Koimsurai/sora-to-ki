@@ -1,6 +1,7 @@
 // 留言頁的訊號：每一則留言是一段波形，字越多訊號越長，字本身決定起伏。
 // 頁首那條線是收訊的頻道：平常只有雜訊；打字時你打的字即時變成波形，送出時那一段往右飛進天線。
-// 換頁時有一段載波沿頻道跑（進場跑進天線、離場從天線倒著跑回左端），頻道跟著它長出來、收回去。
+// 換頁時頻道起點振一下（像超聲波探頭），一道琥珀色的光沿頻道跑：進場跑進天線、離場從天線倒著跑回起點，
+// 頻道跟著它長出來、收回去。
 // 這裡只畫線與天線，狀態文字（RX／TX）是疊在上面的 DOM。
 
 const INK = '241, 236, 227';
@@ -16,6 +17,10 @@ export const DISH_SRC = DISH.src;
 const PX_PER_CHAR = 9;
 /** 送出的那段飛到天線要多久（秒，之後再淡掉） */
 export const SEND_S = 1.6;
+/** 起點振鈴佔多寬（CSS 像素） */
+const PING_W = 72;
+/** 那道光身後拖多長（CSS 像素） */
+const PULSE_TAIL = 160;
 
 /** 一段文字 → 每個取樣點的高度（-1–1）。同一段字永遠同一個形狀 */
 function sampleOf(chars: string[], u: number, x: number, t: number) {
@@ -50,8 +55,10 @@ export interface Strip {
   sending: { text: string; s: number } | null;
   /** 頻道從左端畫到哪裡（0–1，相對整條線）：換頁時跟著電波的前緣走 */
   reveal: number;
-  /** 換頁時沿頻道跑的那段電波：前緣在哪（0–1）、往哪個方向（1 往天線、-1 從天線倒回來） */
-  carrier: { head: number; dir: 1 | -1 } | null;
+  /** 換頁時沿頻道跑的那道琥珀色的光：前緣在哪（0–1）、往哪個方向（1 往天線、-1 從天線倒回來） */
+  pulse: { head: number; dir: 1 | -1 } | null;
+  /** 頻道起點那一小段振鈴（像超聲波探頭打出去的那一下）的進度（0–1，沒有是 null） */
+  ping: number | null;
   /** 天線的亮度倍率（0–1）：換頁時淡入淡出 */
   dishAlpha: number;
   dish: HTMLImageElement | null;
@@ -75,24 +82,24 @@ function dishOf(w: number, h: number) {
 export function createStrip() {
   let flash = 0;
   let arrived = false;
-  /** 換頁那段電波碰過天線了沒（進場是前緣跑到天線、離場是一開始從天線出發，各亮一下） */
-  let carrierHit = false;
+  /** 換頁那道光碰過天線了沒（進場是前緣跑到天線、離場是一開始從天線出發，各亮一下） */
+  let pulseHit = false;
   return {
     /** 畫一幀；送出的那段飛進天線時天線亮一下 */
     draw(ctx: CanvasRenderingContext2D, f: Strip) {
-      const { w, h, t, dt, typing, sending, reveal, carrier, dishAlpha, dish } = f;
+      const { w, h, t, dt, typing, sending, reveal, pulse, ping, dishAlpha, dish } = f;
       ctx.clearRect(0, 0, w, h);
       const y = h / 2;
       const d = dishOf(w, h);
       const lineEnd = d.x + d.dw * 0.2;
       flash = Math.max(0, flash - dt * 1.4);
-      if (carrier) {
-        const headX = carrier.head * lineEnd;
-        if (!carrierHit && (carrier.dir === -1 || headX > d.x)) {
-          carrierHit = true;
+      if (pulse) {
+        const headX = pulse.head * lineEnd;
+        if (!pulseHit && (pulse.dir === -1 || headX > d.x)) {
+          pulseHit = true;
           flash = 1;
         }
-      } else carrierHit = false;
+      } else pulseHit = false;
 
       if (dish?.complete && dish.naturalWidth) {
         ctx.save();
@@ -112,21 +119,34 @@ export function createStrip() {
         ctx.fill();
       }
 
-      // 換頁的那段電波：一小段載波，前緣是琥珀色的點（離場時從天線倒著跑回左端）
-      if (carrier) {
-        const head = carrier.head * lineEnd;
-        const len = Math.min(180, lineEnd * 0.3);
-        ctx.strokeStyle = `rgba(${INK}, 0.9)`;
+      // 起點的振鈴：頻道最左邊一小段，越往右越小，整段隨時間衰減掉
+      if (ping !== null && ping < 1) {
+        const decay = (1 - ping) ** 2;
+        ctx.strokeStyle = `rgba(${INK}, ${0.9 * (1 - ping * 0.5)})`;
         ctx.beginPath();
-        for (let s = 0; s <= len; s += 1.5) {
-          // s 是離前緣多遠；包絡在中段最大、兩端收掉
-          const x = head - carrier.dir * s;
-          const env = Math.sin(Math.PI * (s / len)) ** 0.8;
-          const v = Math.sin(x * 0.22 - carrier.dir * t * 18) * env * h * 0.3;
-          if (s === 0) ctx.moveTo(x, y + v);
+        for (let x = 0; x <= PING_W; x += 1) {
+          const env = (1 - x / PING_W) ** 1.5;
+          const v = Math.sin(x * 0.45 - t * 40) * env * decay * h * 0.3;
+          if (x === 0) ctx.moveTo(x, y + v);
           else ctx.lineTo(x, y + v);
         }
         ctx.stroke();
+      }
+
+      // 沿頻道跑的那道光：一條琥珀色的直線，前緣最亮、身後拖一段漸淡
+      if (pulse) {
+        const head = pulse.head * lineEnd;
+        const tail = head - pulse.dir * Math.min(PULSE_TAIL, lineEnd * 0.25);
+        const line = ctx.createLinearGradient(tail, y, head, y);
+        line.addColorStop(0, `rgba(${AMBER}, 0)`);
+        line.addColorStop(1, `rgba(${AMBER}, 0.95)`);
+        ctx.strokeStyle = line;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(tail, y);
+        ctx.lineTo(head, y);
+        ctx.stroke();
+        ctx.lineWidth = 1;
         const g = ctx.createRadialGradient(head, y, 0, head, y, 14);
         g.addColorStop(0, `rgba(${AMBER}, 0.6)`);
         g.addColorStop(1, `rgba(${AMBER}, 0)`);
