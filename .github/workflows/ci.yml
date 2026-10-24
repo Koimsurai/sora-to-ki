@@ -368,6 +368,16 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      # 按頁裁字的思源宋體原檔（四套約 79 MB，不進 git；Docker 建置時在 builder 階段下載）。
+      # 少了它 /fonts/serif/… 全是 404，每一頁都在 console 記錯（smoke 的請求失敗、Lighthouse 的
+      # errors-in-console）。網址釘在 google/fonts 的某個提交，所以快取鍵綁下載腳本本身就夠。
+      - name: 思源宋體原檔快取
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/fonts
+          key: serif-fonts-${{ hashFiles('scripts/fetch-serif-font.mjs') }}
+      - name: 下載思源宋體原檔（快取命中時只校驗 sha256）
+        run: node scripts/fetch-serif-font.mjs
       # 三件事互相獨立，卻本來排成序列（17s + 19s + 12s = 48s）。
       # chromium 那步是 apt（IO-bound），兩個建置是 CPU-bound，重疊起來剛好互補。
       # 只裝 chromium：三家瀏覽器各裝一次要 3 分鐘，而這裡測的是資料流不是渲染差異。
@@ -527,6 +537,16 @@ jobs:
         with:
           chrome-version: stable
       - run: pnpm install --frozen-lockfile
+      # 按頁裁字的思源宋體原檔（四套約 79 MB，不進 git；Docker 建置時在 builder 階段下載）。
+      # 少了它 /fonts/serif/… 全是 404，每一頁都在 console 記錯（smoke 的請求失敗、Lighthouse 的
+      # errors-in-console）。網址釘在 google/fonts 的某個提交，所以快取鍵綁下載腳本本身就夠。
+      - name: 思源宋體原檔快取
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/fonts
+          key: serif-fonts-${{ hashFiles('scripts/fetch-serif-font.mjs') }}
+      - name: 下載思源宋體原檔（快取命中時只校驗 sha256）
+        run: node scripts/fetch-serif-font.mjs
       - name: 建置前後端
         run: |
           set -euo pipefail
