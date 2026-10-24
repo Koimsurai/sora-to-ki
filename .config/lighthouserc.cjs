@@ -88,9 +88,11 @@ module.exports = {
             //   這條留著只為了擋「掉到 0.5 以下」這種數量級的退步。
             'categories:performance': ['warn', { minScore: 0.5 }],
 
-            // 字型：實測各頁 31~63 KB。加一個新字重大約 +20 KB，所以 100 KB
-            // 容得下一次正常的增加，但擋得住「不小心把整套 variable font 打包進來」。
-            'resource-summary:font:size': ['error', { maxNumericValue: 100_000 }],
+            // 字型：實測各頁 124~142 KB——三套拉丁字（TASA Orbiter、Instrument Serif、Fira Code，
+            // 共 90 KB）加上思源宋體按這一頁用到的字裁出來的 400／600 兩個字重（每頁 35~50 KB）。
+            // 加一個新字重大約 +20 KB，所以 170 KB 容得下一次正常的增加，但擋得住
+            // 「不小心把整套字型打包進來」（一套思源宋體原檔就是 20 MB）。
+            'resource-summary:font:size': ['error', { maxNumericValue: 170_000 }],
 
             // ── 一定是 bug 的稽核 ─────────────────────────────────
             // 圖片沒寫尺寸 → 版面在圖載入時跳動。CLS 最常見也最好修的成因。
