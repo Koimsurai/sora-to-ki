@@ -1,17 +1,12 @@
 /**
- * Mermaid 圖表區塊：渲染 + 縮放平移 + 全螢幕 + 下載 SVG/PNG。
+ * Mermaid 圖表區塊：縮放平移 + 全螢幕 + 下載 SVG/PNG。
  *
- * 渲染走 beautiful-mermaid（同步、零 DOM 相依），所以 SVG 在 render 階段就產好，
- * SSR 也吐得出來。換掉 mermaid 本體之後一併消失的東西：lazy-load singleton、
- * 為了 ELK 序列化撞到 React fiber 而寫的 JSON.stringify 護欄、以及工具列的
- * look / layout / direction 三個下拉（beautiful-mermaid 只有 ELK、方向由語法決定，
- * 手繪風用 <Sketch>）。
+ * 圖在伺服器端就渲染好了（pele，見 lib/mdx/mermaidSvg.ts），這裡只查表拿 SVG 字串，
+ * 所以 SSR 就吐得出圖，client 端不背渲染器。工具列沒有 look / layout / direction 的下拉：
+ * 方向由語法決定，手繪風用 <Sketch>。
  */
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-// beautiful-mermaid 是同步的、零 DOM 相依（內部自帶 ELK 並以 FakeWorker 同步跑），
-// 所以可以直接在 render 階段產生 SVG——SSR 就吐得出圖，不再有「先空白、載入後換入」
-// 的位移，也不需要為了 lazy-load 維護一個 singleton。
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import { parseMermaidFrontmatter } from '@/lib/mdx/mermaidFrontmatter';
 import { mermaidKey } from '@/lib/mdx/mermaidFences';
@@ -30,20 +25,41 @@ interface MermaidOption {
 }
 
 /* ── 主題 ──
-   配色不進渲染器：SVG 內部用 `var(--fg)` / `var(--surface, …)` 上色，值由外層
-   `.mm-theme-*` 的 CSS 提供（見 MermaidBlock.css）。所以換主題只是換 class，
-   不重新渲染，client 端也不必背渲染器。
-
-   ⚠ 舊版預設把節點填色設成 `rgba(127,90,240,0.12)` 疊在透明背景上，沒有被 classDef
-   標色的節點幾乎與深空背景同色——讀者得自己切主題才看得見。那不是「需要一個切換器」，
-   是對比不足。現在預設的 `deep` 給實心填色，不管底下是什麼都分得開。 */
+   配色不進渲染器：SVG 內部用 `var(--pele-fg)` / `var(--pele-surface)` 這類變數上色，值由外層
+   `.mm-theme-*` 的 CSS 提供（見 MermaidBlock.css）。所以換主題只是換 class，不重新渲染。
+   只有兩個：夜（站上的配色，黑底暖白墨）與紙（淺色，下載成圖片貼到別處時用）。
+   舊文章的 frontmatter 寫了別的主題名（deep、nord…）一律當成夜。 */
 const MERMAID_THEMES = [
-  { value: 'deep', label: 'Deep Space', icon: '🌌' },
-  { value: 'zinc', label: 'Zinc', icon: '⚪' },
-  { value: 'tokyo', label: 'Tokyo Night', icon: '🌃' },
-  { value: 'nord', label: 'Nord', icon: '❄️' },
-  { value: 'light', label: 'Light', icon: '☀️' },
+  { value: 'ink', label: '夜' },
+  { value: 'light', label: '紙' },
 ];
+const themeOf = (name: string | null) => (name === 'light' ? 'light' : 'ink');
+
+/* 下載時 SVG 會離開頁面：外層給的配色變數跟不過去，pele 會退回它自己的預設（白底黑字）。
+   所以把當下算好的值寫進 SVG 自己的 style。 */
+const PELE_VARS = [
+  '--pele-bg',
+  '--pele-fg',
+  '--pele-muted',
+  '--pele-line',
+  '--pele-surface',
+  '--pele-surface-alt',
+  '--pele-border',
+  '--pele-accent',
+  '--pele-font',
+  '--pele-font-mono',
+  '--pele-radius',
+];
+function standaloneSvg(svg: SVGSVGElement): SVGSVGElement {
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  const cs = getComputedStyle(svg);
+  for (const name of PELE_VARS) {
+    const value = cs.getPropertyValue(name).trim();
+    if (value) clone.style.setProperty(name, value);
+  }
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  return clone;
+}
 
 /* ── Toolbar SVG Icons ── */
 const IconPalette = (
@@ -222,15 +238,13 @@ function triggerDownload(url: string, filename: string): void {
 function downloadMermaidSvg(ref: ReactZoomPanPinchRef | null): void {
   const svg = mermaidSvgEl(ref);
   if (!svg) return;
-  const clone = svg.cloneNode(true) as SVGSVGElement;
-  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  const data = new XMLSerializer().serializeToString(clone);
+  const data = new XMLSerializer().serializeToString(standaloneSvg(svg));
   const url = URL.createObjectURL(new Blob([data], { type: 'image/svg+xml;charset=utf-8' }));
   triggerDownload(url, 'mermaid-diagram.svg');
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** 下載當前圖為 PNG（2× 點陣、深色底）。 */
+/** 下載當前圖為 PNG（2× 點陣，底色跟著主題：夜是站上的黑、紙是白）。 */
 function downloadMermaidPng(ref: ReactZoomPanPinchRef | null): void {
   const svg = mermaidSvgEl(ref);
   if (!svg) return;
@@ -238,7 +252,8 @@ function downloadMermaidPng(ref: ReactZoomPanPinchRef | null): void {
   const w = vb.width || svg.getBoundingClientRect().width || 800;
   const h = vb.height || svg.getBoundingClientRect().height || 600;
   const scale = 2;
-  const data = new XMLSerializer().serializeToString(svg);
+  const background = getComputedStyle(svg).getPropertyValue('--mm-export-bg').trim() || '#0a0a0c';
+  const data = new XMLSerializer().serializeToString(standaloneSvg(svg));
   const img = new Image();
   img.onload = () => {
     const canvas = document.createElement('canvas');
@@ -246,7 +261,7 @@ function downloadMermaidPng(ref: ReactZoomPanPinchRef | null): void {
     canvas.height = Math.round(h * scale);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.fillStyle = '#0d1017';
+    ctx.fillStyle = background;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     canvas.toBlob((blob) => {
@@ -273,7 +288,7 @@ const MermaidDiagram = ({
 }) => {
   const parsed = useMemo(() => parseMermaidFrontmatter(code), [code]);
   /* SVG 由伺服器預先渲染好（見 lib/mdx/mermaidRender.ts），這裡只查表。
-     渲染器約 1.5 MB，讓它留在伺服器端，client 一個 byte 都不必背。 */
+     渲染器留在伺服器端，client 一個 byte 都不必背。 */
   const svgs = useMermaidSvgs();
   const svg = svgs[mermaidKey(parsed.body)] ?? '';
 
@@ -288,7 +303,7 @@ const MermaidDiagram = ({
   }, [svg]);
 
   if (!svg) return null;
-  /* SVG 由 beautiful-mermaid 從語法樹產生（無 <script>、無 foreignObject），來源是自家 CMS
+  /* SVG 由 pele 從語法樹產生（無 <script>、無對外請求），來源是自家 CMS
      的文章內容——與換掉之前 mermaid 走 `container.innerHTML = svg` 的信任邊界相同。 */
   // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
   return <div className={`mermaid-render mm-theme-${theme}`} dangerouslySetInnerHTML={{ __html: svg }} />;
@@ -306,7 +321,7 @@ export const MermaidStatic = ({ code }: { code: string }) => {
   return (
     <div className="mm-sandbox mm-sandbox--static">
       {/* eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml */}
-      <div className="mermaid-render mm-theme-deep" dangerouslySetInnerHTML={{ __html: svg }} />
+      <div className="mermaid-render mm-theme-ink" dangerouslySetInnerHTML={{ __html: svg }} />
     </div>
   );
 };
@@ -501,7 +516,7 @@ const MermaidFullscreen = ({
         {/* Fullscreen toolbar */}
         <div className="mm-fullscreen-toolbar">
           <div className="mm-toolbar-group">
-            <ToolbarMenu icon={IconPalette} label="Theme" value={theme} options={MERMAID_THEMES} onChange={onTheme} />
+            <ToolbarMenu icon={IconPalette} label="配色" value={theme} options={MERMAID_THEMES} onChange={onTheme} />
           </div>
           <MermaidActions transformRef={transformRef} code={code} />
           <div className="mm-toolbar-right">
@@ -557,7 +572,7 @@ export const MermaidBlock = ({ code }: { code: string }) => {
     typeof initCfg === 'object' && typeof initCfg[key] === 'string' ? initCfg[key] : null;
   // frontmatter 仍可指定 theme；layout / look / direction 已無對應物（見檔頭調色盤那段），
   // 舊文章寫了也只是被忽略，不會壞。
-  const initTheme = cfgStr('theme') ?? 'deep';
+  const initTheme = themeOf(cfgStr('theme'));
 
   const [theme, setTheme] = useState(initTheme);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
@@ -588,7 +603,7 @@ export const MermaidBlock = ({ code }: { code: string }) => {
         {/* Toolbar bar */}
         <div className={`mm-toolbar ${hovered ? 'mm-toolbar--visible' : ''}`}>
           <div className="mm-toolbar-group">
-            <ToolbarMenu icon={IconPalette} label="Theme" value={theme} options={MERMAID_THEMES} onChange={setTheme} />
+            <ToolbarMenu icon={IconPalette} label="配色" value={theme} options={MERMAID_THEMES} onChange={setTheme} />
           </div>
           <MermaidActions transformRef={transformRef} code={code} />
         </div>
