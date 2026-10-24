@@ -540,6 +540,18 @@
     "surface": "지표",
     "surfaceTitle": "손에 쥔 것",
     "surfaceSub": "줄곧 들고 다닌 것들.",
+    "skill": {
+      "frontend": "프런트엔드",
+      "backend": "백엔드",
+      "mobile": "모바일",
+      "devops": "데브옵스",
+      "design": "디자인 · 미디어",
+      "data": "데이터 저장",
+      "network": "네트워크",
+      "productivity": "생산성",
+      "ai": "AI 개발",
+      "teaching": "교육 도구"
+    },
     "layer1": "첫째 층",
     "layer1Title": "해 온 일",
     "core": "핵",

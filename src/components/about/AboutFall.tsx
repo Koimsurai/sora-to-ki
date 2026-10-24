@@ -1,10 +1,10 @@
 // 關於：整頁是一段下墜。往下捲就是往下掉，經過的每一層是我的某一年；落地時只留「就此落下」，
 // 之後繼續往地底挖：地表是手上的東西，第一層是做過的事，最深的地心才是「Stay hungry, stay foolish.」。
 // 近景（掠過的細線、地平線與樹、返回艙、地層、高度計）畫在 fallSky。
-import { useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MILESTONE_BEATS_BY_LANG, MILESTONE_STATIC, MILESTONES_BY_LANG, YEAR_LABELS } from '@/data/journeyData';
-import { SKILLS, WORK_BY_LANG, WORK_PERIODS } from '@/data/aboutData';
+import { SKILL_GROUPS, WORK_BY_LANG, WORK_PERIODS } from '@/data/aboutData';
 import { lookupOr } from '@/lib/tableLookup';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { useBareSky } from '@/hooks/useBareSky';
@@ -250,8 +250,17 @@ export default function AboutFall() {
           <small>{t('aboutFall.surfaceSub')}</small>
         </h2>
         <ul className="af-skills">
-          {SKILLS.map((s) => (
-            <li key={s}>{s}</li>
+          {SKILL_GROUPS.map((g) => (
+            <li key={g.key}>
+              <span>{t(`aboutFall.skill.${g.key}`)}</span>
+              <p>
+                {g.items.map((s) => (
+                  <Fragment key={s}>
+                    <span>{s}</span>{' '}
+                  </Fragment>
+                ))}
+              </p>
+            </li>
           ))}
         </ul>
       </section>
