@@ -619,7 +619,8 @@ function useNearbyPosts(currentId: string | number, postCategory?: string) {
       sameCategory: postCategory
         ? sorted.filter((p) => p.category === postCategory && String(p.id) !== String(currentId)).slice(0, 5)
         : [],
-      maxLen: Math.max(1, ...sorted.map((p) => p.content_length)),
+      // 舊版後端的列表沒有字數：當成 0，左欄那排線就一樣長（不然長度會算成 NaN、整排線看不見）
+      maxLen: Math.max(1, ...sorted.map((p) => Number(p.content_length) || 0)),
     };
   }, [allPosts, currentId, postCategory]);
 }
@@ -639,7 +640,7 @@ const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | 
         <AnimatePresence initial={false}>
           {nearby.map((p) => {
             const isCurrent = String(p.id) === String(currentId);
-            const len = 10 + 26 * Math.sqrt((p.content_length || maxLen * 0.3) / maxLen);
+            const len = 10 + 26 * Math.sqrt(Math.min(1, (Number(p.content_length) || maxLen * 0.3) / maxLen));
             return (
               <motion.li
                 key={p.id}
