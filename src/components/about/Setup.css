@@ -99,9 +99,9 @@
 }
 
 /* ── 圖紙 ── */
+/* 只有窄螢幕（圖紙比畫面寬）才左右拖；寬螢幕不開捲動，免得哪個說明稍微超出圖紙就冒出捲軸 */
 .su-scroll {
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
+  overflow: visible;
 }
 
 .su-sheet {
@@ -268,7 +268,7 @@
 
 .su-others {
   position: absolute;
-  top: 74%;
+  top: 62%;
   left: 3%;
   max-width: 34%;
   white-space: normal;
@@ -443,6 +443,11 @@
 
   .su-drag {
     display: block;
+  }
+
+  .su-scroll {
+    overflow: auto hidden;
+    overscroll-behavior-x: contain;
   }
 }
 
