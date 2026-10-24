@@ -9,6 +9,7 @@
 //   衛星      GitHub 星星
 //   自轉      最後一次推送越近轉得越快
 // 這裡只有幾何與畫圖，不碰 React。
+import { parseServerDate } from '@/lib/serverDate';
 
 const TAU = Math.PI * 2;
 const INK = '241, 236, 227';
@@ -153,7 +154,7 @@ const familyOf = (lang: string): Family => {
 };
 
 /** 主要語言是哪一族（同一族的作品要各拿不同的地貌，見 bodyOf 的 variant） */
-export const familyOfWork = (w: WorkStats) =>
+const familyOfWork = (w: WorkStats) =>
   familyOf(w.languages.reduce((top, l) => (l.bytes > top.bytes ? l : top), { name: 'Other', bytes: 0 }).name);
 
 interface Surface {
@@ -316,7 +317,7 @@ function surfaceOf(family: Family, variant: number, commits: number, rnd: () => 
  * variant：同一族的作品裡這是第幾件（0 起算）。同一族的作品各拿一種不同的地貌，
  * 不然三件 Python 的作品會是三顆一樣的冰
  */
-export function bodyOf(w: WorkStats, variant = 0): Body {
+function bodyOf(w: WorkStats, variant = 0): Body {
   const total = w.languages.reduce((a, l) => a + l.bytes, 0) || 1;
   const list = w.languages
     .map((l) => [l.name, l.bytes / total] as [string, number])
@@ -371,6 +372,32 @@ export function bodyOf(w: WorkStats, variant = 0): Body {
     moons,
     spinSpeed: 0.04 + 0.22 * Math.exp(-w.pushedDaysAgo / 60),
   };
+}
+
+/** 後端（或量好的備用值）的一筆 repo 數字 → 長星體要的那幾個數 */
+export function workStatsOf(
+  name: string,
+  s: { commits: number; stars: number; pushed_at: string; languages: WorkStats['languages'] },
+  now: number,
+): WorkStats {
+  return {
+    name,
+    commits: s.commits,
+    stars: s.stars,
+    pushedDaysAgo: Math.max(0, (now - parseServerDate(s.pushed_at).getTime()) / 86400000),
+    languages: s.languages,
+  };
+}
+
+/** 一串作品 → 星體：同一族（主要語言同一類）的作品照順序各拿不同的地貌 */
+export function bodiesOf(works: WorkStats[]): Body[] {
+  const seen = new Map<Family, number>();
+  return works.map((w) => {
+    const family = familyOfWork(w);
+    const variant = seen.get(family) ?? 0;
+    seen.set(family, variant + 1);
+    return bodyOf(w, variant);
+  });
 }
 
 const rotWith =
@@ -501,7 +528,7 @@ const glyphRadius = (b: Body, unit: number) => (7 + 12 * (b.size - 0.42)) * Math
  * 星圖上的天體符號：一顆線畫的小星球。輪廓、地貌線（跟著自轉）、每種語言一圈環、衛星是點。
  * 環與衛星的後半被星球擋住。回傳最外緣的半徑（字擺在它外面）
  */
-function drawGlyph(
+export function drawGlyph(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,

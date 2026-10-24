@@ -39,6 +39,23 @@ import {
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
+import {
+  ORBITS,
+  PLANET_COVER,
+  PLANET_ROWS,
+  RING_COVER,
+  RING_GAPS,
+  RING_INNER,
+  RING_OUTER,
+  RING_ROWS,
+  RING_SEGMENTS,
+  ROLL,
+  SATURN_BANDS_FULL,
+  satellitePhase,
+  satelliteSpeed,
+  SUN,
+  TILT,
+} from './saturnSpec';
 import { inspectWebGL } from './webglRenderer';
 import type { SatelliteScreen } from '@/store/homeOrbit';
 
@@ -224,68 +241,16 @@ const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
 
-/** 俯角與側傾，跟提案的示意一樣：從上方 24° 往下看，整組往右下斜 11° */
-const TILT = 0.42;
-const ROLL = -0.2;
 /** 墨色（--paper #f1ece3）。three 的 Color 會自己換成線性空間 */
 const INK = new THREE.Color('#f1ece3');
 /** 紙色（--ground #0a0a0c）：擋住背面那顆球的顏色，要跟頁面底色一樣才看不出它在那裡 */
 const GROUND = new THREE.Color('#0a0a0c');
-/**
- * 真實土星的雲帶（Cassini 的影像）：[緯度°, 寬度°, 亮度增減]。赤道帶最亮最寬，兩側的赤道帶狀雲（NEB/SEB）
- * 最暗，往兩極一亮一暗越來越窄，極區整片暗下去；北緯 78° 那條是北極六角形的邊。
- * 正緯度只寫北半球，南半球用 mirror 標記照抄（南北不完全對稱，所以有幾條只寫一邊）
- */
-const SATURN_BANDS: [lat: number, width: number, delta: number, mirror: boolean][] = [
-  [0, 9, 0.26, false],
-  [17, 4, -0.3, true],
-  [22.5, 2.5, 0.08, true],
-  [28, 2, -0.14, true],
-  [33, 2.5, 0.06, true],
-  [38, 1.6, -0.12, true],
-  [43, 2.4, 0.05, true],
-  [48, 1.5, -0.13, true],
-  [53, 2, 0.03, true],
-  [58, 1.8, -0.1, true],
-  [-63, 2.5, -0.08, false],
-  [64, 2, -0.06, false],
-  [72, 5, -0.2, true],
-  [78, 0.9, 0.16, false],
-  [86, 6, -0.3, true],
-];
-
-/**
- * 真實土星環的徑向結構（Cassini 的掩星量測，單位是土星赤道半徑）：[內緣, 外緣, 亮度]。
- * 由內到外 D、C、B（分四段，B 環中段最亮最密）、卡西尼縫、A、F；A 環裡的恩克縫、基勒縫另外挖掉
- */
-const RING_SEGMENTS: [inner: number, outer: number, tone: number][] = [
-  [1.11, 1.236, 0.08],
-  [1.239, 1.527, 0.26],
-  [1.527, 1.64, 0.62],
-  [1.64, 1.75, 0.88],
-  [1.75, 1.88, 1],
-  [1.88, 1.951, 0.8],
-  [1.951, 2.025, 0.1],
-  [2.025, 2.267, 0.62],
-  [2.322, 2.33, 0.4],
-];
-/** A 環裡的縫（恩克縫、基勒縫）與 C 環的麥斯威爾縫：[位置, 半寬] */
-const RING_GAPS: [at: number, half: number][] = [
-  [2.214, 0.006],
-  [2.265, 0.003],
-  [1.45, 0.006],
-];
-const RING_INNER = 1.11;
-const RING_OUTER = 2.34;
-
 /** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
 const SATURN_FOV = 8;
 const SATURN_VIEW_HALF = 3.84;
 const SATURN_CAMERA_Z = SATURN_VIEW_HALF / Math.tan(THREE.MathUtils.degToRad(SATURN_FOV / 2));
 /** 琥珀（--amber）：靠近的那顆衛星 */
 const AMBER = new THREE.Color('#e9c17a');
-/** 五顆衛星的軌道半徑（星球半徑是 1），由內到外對應首頁的五個分區（data/siteSections） */
-const ORBITS = [2.9, 3.55, 4.25, 4.95, 5.7];
 /**
  * 整組的大小：鏡頭在 z=5、視角 75°，畫面半高是 3.84 個單位。0.63 讓星球半徑約是畫面高度的 8%，
  * 最外圈軌道半徑 5.7 × 0.63 ≈ 3.6，寬螢幕放得下；窄的視窗照長寬比再縮
@@ -356,21 +321,14 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     // 雲帶照真實土星的緯度排（SATURN_BANDS）
     const lat = asin(n.y.clamp(-1, 1)).mul(180 / Math.PI);
     let tone: FloatNode = float(0.52);
-    for (const [c, w, d] of SATURN_BANDS.flatMap(([c, w, d, m]) =>
-      m
-        ? [
-            [c, w, d],
-            [-c, w, d],
-          ]
-        : [[c, w, d]],
-    )) {
+    for (const [c, w, d] of SATURN_BANDS_FULL) {
       tone = tone.add(exp(lat.sub(c).div(w).pow(2).negate()).mul(d * 1.6));
     }
     // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
     tone = tone.mul(smoothstep(80, 48, abs(lat)));
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
     const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
-    const row = n.y.mul(22).add(wave.mul(0.8));
+    const row = n.y.mul(PLANET_ROWS).add(wave.mul(0.8));
     const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
       .mul(0.45)
       .add(1);
@@ -389,7 +347,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
         .clamp(0, 1),
       0.8,
     );
-    return mix(ground, paper, strokes(row, ink, 0.76));
+    return mix(ground, paper, strokes(row, ink, PLANET_COVER));
   })();
   const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), planetMat);
   body.add(planet);
@@ -419,7 +377,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       .mul(mix(float(0.4), float(1), brush))
       .mul(shade)
       .clamp(0, 1);
-    return strokes(r.mul(34), pow(ink, 0.75), 0.64);
+    return strokes(r.mul(RING_ROWS), pow(ink, 0.75), RING_COVER);
   })();
   ringMat.colorNode = paper;
   ringMat.opacityNode = ringInk;
@@ -454,7 +412,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     sprite.scale.setScalar(0.24);
     plane.add(sprite);
     // 起始角度錯開，越外圈轉得越慢（克卜勒的味道就好，不必真的照比例）
-    return { sprite, g, r, phase: 0.7 + i * 1.37 };
+    return { sprite, g, r, phase: satellitePhase(i) };
   });
   const syncSun = () => {
     group.updateWorldMatrix(true, true);
@@ -513,7 +471,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       if (!pivot) clock += dt;
       let glowing = false;
       for (const [i, s] of satellites.entries()) {
-        const a = s.phase + clock * (0.16 / Math.sqrt(s.r));
+        const a = s.phase + clock * satelliteSpeed(s.r);
         s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
         const target = glowTarget[i] ?? 0;
         s.g.value += (target - s.g.value) * Math.min(1, dt * 8);
@@ -638,7 +596,7 @@ export async function createStarfieldRunner(
   const saturnCam = new THREE.PerspectiveCamera(SATURN_FOV, aspect0, 1, 200);
   saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
   // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
-  const saturn = buildSaturn(new THREE.Vector3(-0.75, 0.45, 0.5).multiplyScalar(10));
+  const saturn = buildSaturn(new THREE.Vector3(...SUN).multiplyScalar(10));
   saturn.setAspect(aspect0);
   let viewW = init.width;
   let viewH = init.height;

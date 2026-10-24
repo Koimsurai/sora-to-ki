@@ -1,6 +1,6 @@
 // 此站點：一具六分儀對著星空（about/colophonSky）。這個站的材料、字、天空、三條規則與授權各是一顆星；
 // 點一顆星，六分儀轉過去對準它、望遠鏡拉出一條視線，目鏡裡就是那一條的說明，規則的那三顆是可以動手玩的玩具
-// （about/colophonToys）。往下捲是航海日誌：原本的 Q&A（about/colophonQa）。
+// （about/colophonToys：首頁的土星、照片的接收、作品的星，都一步一步拆開）。往下捲是航海日誌：原本的 Q&A（about/colophonQa）。
 // 換頁進來時琥珀點落在望遠鏡的鏡筒前端，視線從那裡拉到第一顆星；離開時點從正在測的那顆星飛走。
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,7 @@ import { lookupOr } from '@/lib/tableLookup';
 import { after, isArriving } from '@/store/pageTransition';
 import { COLOPHON_QA } from './colophonQa';
 import { drawColophon, frontOf, SEXTANT_SRC, STAR_KEYS, starAt, turnFor, type StarKey } from './colophonSky';
-import { AmberToy, BodyToy, DitherToy } from './colophonToys';
+import { PhotoToy, SaturnToy, WorkToy } from './colophonToys';
 import './Colophon.css';
 
 /** 視線從望遠鏡拉到星要多久（秒） */
@@ -193,9 +193,9 @@ export default function Colophon() {
         ))}
       </ul>
     ),
-    rule1: <AmberToy />,
-    rule2: <DitherToy />,
-    rule3: <BodyToy />,
+    rule1: <SaturnToy />,
+    rule2: <PhotoToy />,
+    rule3: <WorkToy />,
     license: (
       <a className="cl-repo" href="https://github.com/timo9378/sora-to-ki" target="_blank" rel="noopener noreferrer">
         github.com/timo9378/sora-to-ki
@@ -240,13 +240,12 @@ export default function Colophon() {
         </header>
 
         {/* 目鏡：正在測的那顆星的說明 */}
-        <section className="cl-eyepiece" aria-live="polite" aria-labelledby="cl-eyepiece-title">
+        {/* 換一顆星時目鏡重新對焦：字一行一行浮出來，視野從中間撐開（key 換了，動畫重來） */}
+        <section className="cl-eyepiece" key={target} aria-live="polite" aria-labelledby="cl-eyepiece-title">
           <span className="cl-k">{t(`colophon.star.${target}`)}</span>
           <h2 id="cl-eyepiece-title">{t(`colophon.title_${target}`)}</h2>
           <p>{t(`colophon.text_${target}`)}</p>
-          <div className="cl-content" key={target}>
-            {panel[target]}
-          </div>
+          <div className="cl-content">{panel[target]}</div>
         </section>
       </div>
 
