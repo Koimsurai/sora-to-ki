@@ -47,7 +47,11 @@ const SignatureSVG = ({ className }: SignatureSVGProps) => {
     const pen = svg.querySelector<SVGGElement>('.signature-pen');
     if (!pen) return;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    // 減少動態，或環境量不出路徑長度（沒有 SVG 幾何的測試環境）：直接顯示寫好的樣子
+    if (
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      strokes.some((p) => typeof p.getTotalLength !== 'function')
+    ) {
       svg.classList.add('is-written');
       return;
     }

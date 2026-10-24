@@ -69,6 +69,28 @@ export function extractHeadings(content: string): TocHeading[] {
   return out;
 }
 
+/**
+ * 章節編號 → 標題 id。編號跟文章頁左邊留白印的一樣：第幾個 `##` 寫兩位數（`05`），
+ * 它底下第幾個 `###` 再接 `.N`（`05.4`）。摘要裡連到章節的句子（`excerpt_links`）用這個編號，
+ * 因為各語系的章節結構相同、標題文字不同。
+ */
+export function chapterIds(headings: readonly TocHeading[]): Map<string, string> {
+  const out = new Map<string, string>();
+  let major = 0;
+  let minor = 0;
+  for (const h of headings) {
+    if (h.level === 2) {
+      major += 1;
+      minor = 0;
+      out.set(String(major).padStart(2, '0'), h.id);
+    } else if (h.level === 3 && major > 0) {
+      minor += 1;
+      out.set(`${String(major).padStart(2, '0')}.${minor}`, h.id);
+    }
+  }
+  return out;
+}
+
 /// 估算閱讀時間（分鐘）：去標籤/markdown 符號後 ≈500 字/分。
 export function computeReadTime(content: string): number {
   const len = content.replace(/<[^>]+>/g, '').replace(/[#*`>\-[\]()]/g, '').length;

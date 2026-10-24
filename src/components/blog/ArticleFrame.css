@@ -140,20 +140,82 @@
 }
 
 /* ── 摘要：編號 00、四個角框起來、字小一號——它是附件，不是內文 ── */
+/* 角的長度可以過渡：捲進畫面時四個角從 0 長到 12px（blog/ArticleSummary） */
+@property --cl {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 .ar-sum {
+  --cl: 0px;
   position: relative;
   margin: 0 0 var(--space-12);
   padding: var(--space-5) var(--space-6);
   /* 四個角：八段短線 */
   background:
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 12px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px 12px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 12px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px 12px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 12px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px 12px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 12px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px 12px no-repeat;
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / var(--cl) 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px var(--cl) no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / var(--cl) 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px var(--cl) no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / var(--cl) 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px var(--cl) no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / var(--cl) 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px var(--cl) no-repeat;
+  transition: --cl var(--dur-700) ease;
+}
+
+.ar-sum.is-on {
+  --cl: 12px;
+}
+
+/* 一字一字浮現：剛出來時亮一點，再退回摘要的顏色 */
+.ar-sum .c {
+  opacity: 0;
+  color: var(--paper);
+  transition:
+    opacity var(--dur-500) ease,
+    color var(--dur-1000) ease;
+}
+
+.ar-sum .c.in,
+.ar-sum.is-plain .c {
+  opacity: 1;
+  color: inherit;
+}
+
+.ar-sum.is-plain .c {
+  transition: none;
+}
+
+/* 「AI 生成」等字都出來了才標上 */
+.ar-sum-ai {
+  opacity: 0;
+  transition: opacity var(--dur-500) ease;
+}
+
+.ar-sum.is-done .ar-sum-ai {
+  opacity: 1;
+}
+
+/* 關鍵句：連到它所在的章節。字出完才從左往右畫出底線；滑過時變亮，右邊目錄那一章跟著亮 */
+.ar-sum .ar-link {
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(var(--paper-3), var(--paper-3)) 0 100% / 0 1px no-repeat;
+  transition:
+    background-size var(--dur-700) var(--easing-out),
+    color var(--dur-200) ease;
+}
+
+.ar-sum.is-done .ar-link {
+  background-size: 100% 1px;
+}
+
+.ar-sum .ar-link:hover,
+.ar-sum .ar-link:focus-visible {
+  color: var(--paper);
+  background-image: linear-gradient(var(--paper), var(--paper));
 }
 
 .ar-gut {

@@ -113,6 +113,7 @@ html[data-pt] .orbit-toc-list {
 }
 
 .orbit-toc-list .is-on button,
+.orbit-toc-list .is-ping button,
 .orbit-toc-list button:hover {
   color: var(--paper);
 }
@@ -127,12 +128,13 @@ html[data-pt] .orbit-toc-list {
 }
 
 .orbit-toc.is-rest:has(.orbit-toc-list:hover) .orbit-toc-list li,
+.orbit-toc.is-rest.is-pinging .orbit-toc-list li,
 .orbit-toc.is-rest .orbit-toc-list li:focus-within {
   opacity: 1;
 }
 
 /* 捲動中只留所在的那一節，停下來（或滑到目錄上）才回來 */
-.orbit-toc.is-quiet .orbit-toc-list li:not(.is-on) {
+.orbit-toc.is-quiet .orbit-toc-list li:not(.is-on, .is-ping) {
   opacity: 0.15;
 }
 
