@@ -452,7 +452,6 @@ a.series-nav-title:hover {
 /* ═══════════════════════
    Code Block
    ═══════════════════════ */
-/* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .code-block-wrapper` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
 /* 照提案：細線框、小圓角、很淡的暖白底；語言與「複製」是等寬小字 */
 .code-block-wrapper {
   border: 1px solid var(--rule);
