@@ -700,6 +700,8 @@
     "fieldRss": "RSS（任意）",
     "fieldDesc": "ひとこと",
     "submit": "申請を送る",
+    "errRequired": "この欄は必須です",
+    "errUrl": "http:// か https:// で始まる URL を入力してください",
     "sent": "メールアプリを開きました。開かない場合はこちらへ：",
     "rulesTitle": "軌道に入る条件",
     "rule1": "サイトが正常に閲覧でき、独自ドメインと HTTPS があること（無料サブドメインも可）。",

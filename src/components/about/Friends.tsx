@@ -3,7 +3,7 @@
 // 點一顆星就跟他對接：鏡頭拉近、兩艘船接上，旁邊展開他最近的文章。
 // 右邊是交換用的本站資料與申請表：打名字時一顆預覽星從畫面外飛來等著，送出時點火切進空軌道。
 // 換頁進來時琥珀點落在中心，軌道從內往外一條接一條長出來；離開時軌道收回中心，點從中心飛走。
-import { useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes, type MouseEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { friendsQueryOptions } from '@/data/friendsData';
@@ -41,6 +41,29 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 /
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 const hostOf = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
+type FieldKey = 'name' | 'url' | 'rss' | 'desc';
+type FormErrors = Partial<Record<FieldKey, 'required' | 'url'>>;
+const FIELD_ORDER: FieldKey[] = ['name', 'url', 'rss', 'desc'];
+
+const isWebUrl = (s: string) => {
+  try {
+    const u = new URL(s);
+    return u.protocol === 'https:' || u.protocol === 'http:';
+  } catch {
+    return false;
+  }
+};
+
+/** 申請表要填的：名字、網址（http/https）；RSS 選填，有填也要是網址 */
+function checkForm(form: Record<FieldKey, string>): FormErrors {
+  const found: FormErrors = {};
+  if (!form.name.trim()) found.name = 'required';
+  if (!form.url.trim()) found.url = 'required';
+  else if (!isWebUrl(form.url.trim())) found.url = 'url';
+  if (form.rss.trim() && !isWebUrl(form.rss.trim())) found.rss = 'url';
+  return found;
+}
+
 /** feed 上的日期 → 距今幾天與顯示用的日期（今年的只寫月日） */
 function dateOf(raw: string | null | undefined, now: number) {
   if (!raw) return null;
@@ -76,7 +99,9 @@ export default function Friends() {
     [friends],
   );
 
-  const [form, setForm] = useState({ name: '', url: '', rss: '', desc: '' });
+  const [form, setForm] = useState<Record<FieldKey, string>>({ name: '', url: '', rss: '', desc: '' });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const inputsRef = useRef<Partial<Record<FieldKey, HTMLInputElement | null>>>({});
   const [sent, setSent] = useState(false);
   const [docked, setDocked] = useState<number | null>(null);
   const previewName = form.name.trim();
@@ -411,13 +436,45 @@ export default function Friends() {
     else undock();
   };
 
-  const field = (key: keyof typeof form) => ({
-    value: form[key],
-    onChange: (e: { target: { value: string } }) => setForm((s) => ({ ...s, [key]: e.target.value })),
-  });
+  // 表單自己驗證（noValidate）：瀏覽器原生的提示框跟這個站的樣子不搭，錯誤改寫在欄位底下
+  const fieldRow = (key: FieldKey, label: string, props: InputHTMLAttributes<HTMLInputElement>) => {
+    const err = errors[key];
+    return (
+      <label className="fr-input">
+        <span>{label}</span>
+        <input
+          {...props}
+          ref={(el) => {
+            inputsRef.current[key] = el;
+          }}
+          autoComplete="off"
+          value={form[key]}
+          aria-invalid={err ? true : undefined}
+          aria-describedby={err ? `fr-err-${key}` : undefined}
+          onChange={(e) => {
+            const value = e.target.value;
+            setForm((s) => ({ ...s, [key]: value }));
+            if (err) setErrors((s) => ({ ...s, [key]: undefined }));
+          }}
+        />
+        {err && (
+          <em className="fr-error" id={`fr-err-${key}`}>
+            {t(err === 'required' ? 'friends.errRequired' : 'friends.errUrl')}
+          </em>
+        )}
+      </label>
+    );
+  };
 
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const found = checkForm(form);
+    setErrors(found);
+    const first = FIELD_ORDER.find((k) => found[k]);
+    if (first) {
+      inputsRef.current[first]?.focus();
+      return;
+    }
     const subject = `[Friend-link] ${form.name.trim()}`;
     const body = [`Name: ${form.name}`, `URL: ${form.url}`, `RSS: ${form.rss}`, `Intro: ${form.desc}`].join('\n');
     sentRef.current = true;
@@ -605,31 +662,17 @@ export default function Friends() {
             </dl>
           </section>
 
-          <form className="fr-form" onSubmit={submit}>
+          <form className="fr-form" onSubmit={submit} noValidate>
             <h2>{t('friends.formTitle')}</h2>
-            <label className="fr-input">
-              <span>{t('friends.fieldName')}</span>
-              <input
-                type="text"
-                maxLength={24}
-                required
-                autoComplete="off"
-                placeholder={t('friends.fieldNameHint')}
-                {...field('name')}
-              />
-            </label>
-            <label className="fr-input">
-              <span>{t('friends.fieldUrl')}</span>
-              <input type="url" required autoComplete="off" placeholder="https://" {...field('url')} />
-            </label>
-            <label className="fr-input">
-              <span>{t('friends.fieldRss')}</span>
-              <input type="url" autoComplete="off" placeholder="https://" {...field('rss')} />
-            </label>
-            <label className="fr-input">
-              <span>{t('friends.fieldDesc')}</span>
-              <input type="text" maxLength={40} autoComplete="off" {...field('desc')} />
-            </label>
+            {fieldRow('name', t('friends.fieldName'), {
+              type: 'text',
+              maxLength: 24,
+              required: true,
+              placeholder: t('friends.fieldNameHint'),
+            })}
+            {fieldRow('url', t('friends.fieldUrl'), { type: 'url', required: true, placeholder: 'https://' })}
+            {fieldRow('rss', t('friends.fieldRss'), { type: 'url', placeholder: 'https://' })}
+            {fieldRow('desc', t('friends.fieldDesc'), { type: 'text', maxLength: 40 })}
             <button type="submit" className="fr-submit">
               {t('friends.submit')}
             </button>

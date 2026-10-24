@@ -700,6 +700,8 @@
     "fieldRss": "RSS (optional)",
     "fieldDesc": "One line",
     "submit": "Send request",
+    "errRequired": "This one is required",
+    "errUrl": "Needs to be a URL starting with http:// or https://",
     "sent": "Your mail app should be open. If it didn't show up, write to",
     "rulesTitle": "Before entering orbit",
     "rule1": "The site loads, has its own domain and HTTPS (a free subdomain is fine).",

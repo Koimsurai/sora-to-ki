@@ -700,6 +700,8 @@
     "fieldRss": "RSS（选填）",
     "fieldDesc": "一句话",
     "submit": "送出申请",
+    "errRequired": "这一栏要填",
+    "errUrl": "要是 http:// 或 https:// 开头的网址",
     "sent": "已打开邮件程序。没有弹出来的话，寄到",
     "rulesTitle": "入轨条件",
     "rule1": "网站能正常浏览，有自己的域名与 HTTPS（免费子域名也可以）。",
