@@ -16,6 +16,22 @@
   padding-top: var(--page-top);
 }
 
+/* 切語系「重新收訊」（blog/useRetune）：掃描線以上是新語系的字，以下先藏著。
+   --scan 是線在這一欄裡的位置（JS 逐幀寫） */
+.ar-col.is-retuning {
+  mask-image: linear-gradient(to bottom, #000 calc(var(--scan, 0px) - 2px), transparent calc(var(--scan, 0px) + 24px));
+}
+
+.ar-retune-line {
+  position: fixed;
+  top: 0;
+  z-index: var(--z-float);
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--paper-2) 12%, var(--paper-2) 88%, transparent);
+  box-shadow: 0 0 10px rgba(var(--paper-rgb), 0.35);
+  pointer-events: none;
+}
+
 :where(.ar-page) :where(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-tags button, .ar-side a, .ar-same a) {
   all: unset;
   box-sizing: border-box;

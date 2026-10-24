@@ -8,6 +8,7 @@
 
 /* 語言：一排字，現在的那一個底下一個琥珀小點 */
 .ac-lang {
+  position: relative;
   display: inline-flex;
   gap: var(--space-3);
 }
@@ -27,16 +28,18 @@
   color: var(--paper);
 }
 
-.ac-lang button[aria-current="true"]::after {
-  content: "";
+/* 琥珀點是獨立的一顆（不是按鈕的 ::after），切語系時才能從舊的那個滑到新的那個 */
+.ac-lang-dot {
   position: absolute;
   bottom: calc(-1 * var(--space-2));
-  left: 50%;
+  left: 0;
   width: 3px;
   height: 3px;
   background: var(--amber);
   border-radius: var(--r-round);
   translate: -50% 0;
+  pointer-events: none;
+  transition: left var(--dur-500) var(--easing-out);
 }
 
 /* 還沒翻成這個語言的：再淡一點 */

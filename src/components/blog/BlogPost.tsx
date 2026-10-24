@@ -51,6 +51,7 @@ import { splitTitle } from '@/lib/blogReading';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
 import ArticleSummary from './ArticleSummary';
 import OrbitToc from './OrbitToc';
+import { peekRetune, setRetune, useRetune } from './useRetune';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath, postShareUrl } from '@/lib/postPath';
 import { lookup } from '@/lib/tableLookup';
@@ -1015,6 +1016,7 @@ function BlogPost() {
   const contentRef = useRef<HTMLDivElement>(null);
   /** OrbitToc 掛上來的「讓某一章亮起來」，摘要的關鍵句滑過時呼叫 */
   const tocPingRef = useRef<((id: string | null) => void) | null>(null);
+  const colRef = useRef<HTMLDivElement>(null);
   const { id = '' } = useParams({ strict: false });
   const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
@@ -1130,14 +1132,16 @@ function BlogPost() {
   /* ── 換文章才捲頂（初次掛載/重整不搶捲動，交給 scrollRestoration 還原）──
      否則 reload 時序會變成：首幀頂端 → scrollRestoration 還原到原位 → 這裡又 smooth 捲頂，
      使用者看到「上→下→上」。用 ref 記前一個 key，只有真的換文章（key 變）才捲頂。 */
+  // 切語系（帶 keepScroll）不捲：blog/useRetune 會放回讀者原本那一章
+  const keepScroll = location.state.keepScroll === true;
   const prevScrollKeyRef = useRef<string | null>(null);
   useEffect(() => {
     const key = `${id}:${pathLocale}`;
-    if (prevScrollKeyRef.current !== null && prevScrollKeyRef.current !== key) {
+    if (prevScrollKeyRef.current !== null && prevScrollKeyRef.current !== key && !keepScroll) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     prevScrollKeyRef.current = key;
-  }, [id, pathLocale]);
+  }, [id, pathLocale, keepScroll]);
 
   /* ── 成功載入一篇：增加瀏覽數（每次載入新文章打一次）── */
   useEffect(() => {
@@ -1254,6 +1258,9 @@ function BlogPost() {
         scroll-spy 也能更早啟動；與 fallback 共用 extractHeadings，anchor id 逐字一致 ── */
   const headings = useMemo<Heading[]>(() => extractHeadings(post?.content ?? ''), [post?.content]);
 
+  // 切語系換過來的：放回讀者原本那一章，再從畫面頂端往下掃一次（blog/useRetune）
+  useRetune(post?.id ?? -1, colRef, contentRef, headings);
+
   /* ════════ Loading ════════ */
   if (loading) {
     return (
@@ -1322,7 +1329,7 @@ function BlogPost() {
       />
       <PostsNav currentId={post.id} postCategory={post.category ?? undefined} />
 
-      <div className="ar-col">
+      <div className="ar-col" ref={colRef}>
         <header className="ar-head">
           <p className="ar-kick">
             <LocaleLink to="/blog">{t('blog.title')}</LocaleLink>
@@ -1347,11 +1354,19 @@ function BlogPost() {
             <span>{t('blog.views', { count: post.view_count })}</span>
             <LangLine
               current={currentLocale}
+              from={peekRetune(post.id)?.from}
               source={sourceLang}
               available={availableLocales}
               onSelect={(loc) => {
                 const target = postPathForLocale(id, loc, sourceLang); // 已是絕對 locale 路徑,用 href 不再加前綴
-                void navigate({ href: target });
+                // 記下讀者在哪一章，新語系那頁放回同一個地方（捲動由那邊負責，這裡不要先跳回頂端）
+                setRetune(
+                  post.id,
+                  currentLocale,
+                  contentRef.current,
+                  headings.map((h) => h.id),
+                );
+                void navigate({ href: target, resetScroll: false, state: { keepScroll: true } });
               }}
               onUnavailable={(name) => setToastMsg(`「${name}」版本尚未提供`)}
             />

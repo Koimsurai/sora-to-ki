@@ -2,7 +2,7 @@
 //   語言  頁首日期旁邊一排字「繁 简 EN 日 한」，現在的那一個底下一個琥珀小點；還沒翻的淡一點，點了跳提示
 //   字體  目錄底下一行字「字體　思源宋體」，點開往上長出四個字體名（各用自己的字體寫），選了就收
 // 沒有下拉選單、沒有浮動圓鈕。
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './ArticleControls.css';
 
@@ -16,20 +16,56 @@ const LANGS = [
 
 export function LangLine({
   current,
+  from,
   source,
   available,
   onSelect,
   onUnavailable,
 }: {
   current: string;
+  /** 剛從哪個語系切過來（blog/useRetune 的交接）：琥珀點從那裡滑過來 */
+  from?: string;
   source: string;
   available: string[];
   onSelect: (code: string) => void;
   onUnavailable: (label: string) => void;
 }) {
   const { t } = useTranslation();
+  const boxRef = useRef<HTMLSpanElement>(null);
+  const dotRef = useRef<HTMLSpanElement>(null);
+  const fromRef = useRef(from);
+
+  // 琥珀點跟著現在的語言；換頁剛切過來的，先放在舊語言底下再滑過去
+  useLayoutEffect(() => {
+    const box = boxRef.current;
+    const dot = dotRef.current;
+    if (!box || !dot) return;
+    const xOf = (code: string) => {
+      const b = box.querySelector<HTMLElement>(`button[lang="${code}"]`);
+      return b ? b.offsetLeft + b.offsetWidth / 2 : null;
+    };
+    const place = () => {
+      const x = xOf(current);
+      if (x !== null) dot.style.left = `${x}px`;
+    };
+    const start = fromRef.current ? xOf(fromRef.current) : null;
+    fromRef.current = undefined;
+    if (start !== null) {
+      dot.style.transition = 'none';
+      dot.style.left = `${start}px`;
+      dot.getBoundingClientRect();
+      dot.style.transition = '';
+    }
+    place();
+    // 字體載入後字寬會變
+    const ro = new ResizeObserver(place);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [current]);
+
   return (
-    <span className="ac-lang">
+    <span className="ac-lang" ref={boxRef}>
+      <span className="ac-lang-dot" ref={dotRef} aria-hidden="true" />
       {LANGS.map((o) => {
         const on = o.code === current;
         const ok = available.includes(o.code);
