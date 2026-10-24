@@ -117,7 +117,18 @@ function Thinking() {
     { pageRef, headRef, canvasRef, postsRef, dotsRef, ghostsRef, endRef },
     full.length,
     older.length,
-    HEAD_GAP,
+    {
+      headGap: HEAD_GAP,
+      // 點進一則碎念：往它在彗尾上的那一段放大進去（單則頁接著看那一段）
+      zoomTarget: (to) => {
+        const id = /^thinking\/(\d+)$/.exec(to)?.[1];
+        if (!id) return null;
+        const post = full.findIndex((th) => String(th.id) === id);
+        const ghost = older.findIndex((th) => String(th.id) === id);
+        if (post < 0 && ghost < 0) return null;
+        return { id, post: post >= 0 ? post : null, ghost: ghost >= 0 ? ghost : null };
+      },
+    },
   );
 
   return (

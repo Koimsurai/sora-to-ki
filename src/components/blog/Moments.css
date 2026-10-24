@@ -402,6 +402,16 @@
   transition-duration: var(--dur-200);
 }
 
+/* 點進一則碎念：彗星往那一則放大進去，字與點跟著放大、同時退掉，只剩彗尾那一段亮著 */
+.mo.is-zooming :is(.mo-post, .mo-end, .mo-ghost, .mo-dot) {
+  opacity: 0;
+  transition-duration: var(--dur-400);
+}
+
+.mo.is-zooming .mo-head {
+  opacity: 0;
+}
+
 .mo-head {
   transition: opacity var(--dur-250) ease;
 }
