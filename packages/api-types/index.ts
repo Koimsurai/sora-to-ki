@@ -105,6 +105,8 @@ export type AdminPostFull = {
 	excerpt_ko: string | null,
 	/**  內容格式：'markdown'（預設）| 'mdx'。 */
 	format: string | null,
+	/**  摘要裡連到章節的句子，依語系分開（沒有就是空物件）。 */
+	excerpt_links: { [key in string]: ExcerptLink[] },
 	tags: string[],
 };
 
@@ -391,6 +393,12 @@ export type DigestTimeline = {
 /**  4xx 的統一形狀。 */
 export type ErrorResponse = {
 	error: string,
+};
+
+/**  摘要裡的一句話，連到 `to` 那一章（`05` 是第五個大節，`05.4` 是它底下第四個小節）。 */
+export type ExcerptLink = {
+	text: string,
+	to: string,
 };
 
 /**
@@ -741,6 +749,8 @@ export type PostDetailResponse = {
 	title: string,
 	content: string,
 	excerpt: string,
+	/**  摘要裡連到章節的句子（這個語系的；摘要裡找不到的已濾掉）。 */
+	excerpt_links: ExcerptLink[],
 	category: string | null,
 	status: string,
 	author: string | null,

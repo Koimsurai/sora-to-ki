@@ -88,3 +88,56 @@ async fn 狀態只收_published_與_draft() {
     let (st, _) = admin(&app, "PATCH", "/api/posts/999999/status", Some(json!({ "status": "draft" }))).await;
     assert_eq!(st, StatusCode::NOT_FOUND, "改不存在的文章要 404");
 }
+
+/// 摘要裡連到章節的句子：後台寫入時逐語系併、公開單篇只回該語系且摘要裡找得到的。
+/// 寫壞的格式要 400，不能存進去之後在前台畫出一條指向空氣的底線。
+#[tokio::test]
+async fn 摘要連結依語系寫入_公開只回摘要裡找得到的() {
+    let (app, _pool) = test_app().await;
+    let id = create_post(
+        &app,
+        json!({
+            "title": "有摘要", "content": "## 一\n\n內文", "status": "published",
+            "excerpt": "先架起來,正確率只有 38%。",
+            "title_en": "With summary", "content_en": "## One\n\nBody", "excerpt_en": "Accuracy was only 38%.",
+            "excerpt_links": { "zh-TW": [{ "text": "正確率只有 38%", "to": "05.4" }] },
+        }),
+    )
+    .await;
+
+    // 只帶 en：zh-TW 那組要留著；另外塞一句摘要裡沒有的，公開時要被濾掉
+    let (st, v) = admin(
+        &app,
+        "PUT",
+        &format!("/api/admin/posts/{id}"),
+        Some(json!({ "excerpt_links": { "en": [
+            { "text": "only 38%", "to": "05" },
+            { "text": "not in the summary", "to": "01" },
+        ] } })),
+    )
+    .await;
+    assert!(st.is_success(), "得到 {st} {v}");
+
+    let (_, zh) = request(&app, "GET", &format!("/api/posts/{id}"), None, None).await;
+    assert_eq!(zh["excerpt_links"], json!([{ "text": "正確率只有 38%", "to": "05.4" }]));
+    let (_, en) = request(&app, "GET", &format!("/api/posts/{id}?lang=en"), None, None).await;
+    assert_eq!(en["excerpt_links"], json!([{ "text": "only 38%", "to": "05" }]));
+
+    let (_, full) = admin(&app, "GET", &format!("/api/admin/posts/{id}"), None).await;
+    let post = if full["post"].is_object() { &full["post"] } else { &full };
+    assert_eq!(post["excerpt_links"]["en"].as_array().map(Vec::len), Some(2), "後台看得到原樣存的");
+
+    for bad in [json!({ "fr": [] }), json!({ "en": [{ "text": "x", "to": "#ar-h05" }] }), json!("x")] {
+        let (st, _) =
+            admin(&app, "PUT", &format!("/api/admin/posts/{id}"), Some(json!({ "excerpt_links": bad }))).await;
+        assert_eq!(st, StatusCode::BAD_REQUEST, "excerpt_links={bad} 應該被擋");
+    }
+
+    // 沒帶 excerpt_links 的更新不動它；帶 null 整欄清掉
+    admin(&app, "PUT", &format!("/api/admin/posts/{id}"), Some(json!({ "title": "改標題" }))).await;
+    let (_, zh) = request(&app, "GET", &format!("/api/posts/{id}"), None, None).await;
+    assert_eq!(zh["excerpt_links"].as_array().map(Vec::len), Some(1));
+    admin(&app, "PUT", &format!("/api/admin/posts/{id}"), Some(json!({ "excerpt_links": null }))).await;
+    let (_, zh) = request(&app, "GET", &format!("/api/posts/{id}"), None, None).await;
+    assert_eq!(zh["excerpt_links"], json!([]));
+}

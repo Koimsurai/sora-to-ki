@@ -70,6 +70,7 @@ const POST_WRITE_FIELDS = [
   'send_newsletter',
   'source_language',
   'slug',
+  'excerpt_links',
   ...I18N_FIELDS,
 ] as const;
 
@@ -77,6 +78,22 @@ const postWriteProps = {
   title: { type: 'string', description: '標題' },
   content: { type: 'string', description: '內文（Markdown）' },
   excerpt: { type: 'string', description: '摘要；省略=NULL' },
+  excerpt_links: {
+    type: 'object',
+    description:
+      '摘要裡連到章節的句子，依語系分開：{"zh-TW": [{"text": "正確率只有 38%", "to": "05.4"}], "en": [...]}。' +
+      'text 要逐字出現在該語系的摘要裡（找不到的不會顯示）；to 是章節編號：第幾個 ## 寫兩位數（05），' +
+      '它底下第幾個 ### 再接 .N（05.4）。更新時只換有帶到的語系，帶 [] 刪掉那個語系、整個帶 null 全清。' +
+      '簡體那組由 generate_post_zh_cn 從繁體自動轉出來，不必手填。',
+    additionalProperties: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { text: { type: 'string' }, to: { type: 'string', pattern: '^\\d{2}(\\.\\d{1,2})?$' } },
+        required: ['text', 'to'],
+      },
+    },
+  },
   category: { type: 'string', description: '分類名（需已存在於 categories）' },
   status: { type: 'string', enum: ['draft', 'published'], description: '狀態；建立時預設 draft' },
   format: {
@@ -140,7 +157,9 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 ## 2. 文章欄位（create_post 參數）
 - **title**：想要副標就用全形冒號分隔「主標：副標」，前端自動把冒號後段渲染成副標。
   例：關掉翻譯器，程式卻關不掉：一個躺了兩年的 thread_local 死鎖
-- **excerpt**：會渲染成文章開頭的「🔑 關鍵洞察」框 → 寫 2~4 句**真正的重點摘要**，不是複製第一段。
+- **excerpt**：會渲染成文章開頭的「00 摘要」框 → 寫 2~4 句**真正的重點摘要**，不是複製第一段。
+- **excerpt_links**：摘要裡幾句關鍵的話連到它所在的章節（讀者滑過時右邊目錄那一章會亮、點了跳過去）。
+  一篇挑 4~9 句就好，每個語系各一組；格式見 create_post 的參數說明。
 - **category**：必須是已存在的分類名。
 - **tags**：3~5 個；不存在的會自動建立。
 - **format**：用到下面「自訂 block / 圖表 / 行內 JS」→ 'mdx'；純文字 → 'markdown'（預設）。
@@ -202,7 +221,7 @@ CJK 的 \`『』《》「」（）\` 全都算標點，所以夾在中日韓文�
 - 只想單發繁體 → 這段整段略過。
 
 ## 7. 一次寫好的檢查清單
-1) 分類存在　2) title 決定要不要副標（冒號）　3) excerpt 是真的關鍵洞察
+1) 分類存在　2) title 決定要不要副標（冒號）　3) excerpt 是真的重點摘要
 4) 內文穿插彩色 alert / 程式碼 / 圖表，別通篇純引用　5) format='mdx' 的話正文 \`<\`/\`{\` 都跳脫了
 6) tags 3~5　7) status='draft' 交站長審　8) 要多語？zh-CN 用 generate 工具、en/ja/ko 填譯文欄
 9) **跑過 koimsurai_validate_mdx 且 errors 為空**（多語系的話每個 content_* 都要驗）`;
@@ -402,9 +421,9 @@ export function makeTools(api: ApiClient): Tool[] {
       name: 'koimsurai_create_post',
       description:
         '建立文章。title/content 必填，其餘可選。預設 status=draft（不會直接公開）。' +
-        '⭐ 寫「完整文章」前先呼叫 koimsurai_authoring_guide（副標/關鍵洞察/彩色 alert/自訂 block/MDX 坑/檢查清單）。' +
+        '⭐ 寫「完整文章」前先呼叫 koimsurai_authoring_guide（副標/摘要/彩色 alert/自訂 block/MDX 坑/檢查清單）。' +
         '⭐ format=mdx 時，送出前先用 koimsurai_validate_mdx 驗過（編譯失敗會靜默退回 markdown，這裡仍會回 success）。' +
-        'title 用「主標：副標」冒號分隔會自動出副標；excerpt 會變成開頭的「關鍵洞察」框。' +
+        'title 用「主標：副標」冒號分隔會自動出副標；excerpt 會變成開頭的「00 摘要」框，excerpt_links 讓其中幾句連到章節。' +
         "用到 <Note>/<Annot>/<Spoiler>/<BarChart> 或行內 JS → format='mdx'。" +
         '多語系：zh-CN 用 generate_post_zh_cn 自動轉；en/ja/ko 填 title_en/content_en…等譯文欄（見指南第 6 點）。' +
         '注意 send_newsletter=true 且 published 會寄電子報。',
