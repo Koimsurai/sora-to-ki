@@ -16,13 +16,13 @@
   padding-top: var(--page-top);
 }
 
-:where(.ar-page) :where(.ar-act button, .ar-kick a, .ar-tags a, .ar-side a, .ar-same a) {
+:where(.ar-page) :where(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-side a, .ar-same a) {
   all: unset;
   box-sizing: border-box;
   cursor: pointer;
 }
 
-.ar-page :is(.ar-act button, .ar-kick a, .ar-tags a, .ar-side a, .ar-same a):focus-visible {
+.ar-page :is(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-side a, .ar-same a):focus-visible {
   outline: 1px solid var(--paper-2);
   outline-offset: 3px;
 }
