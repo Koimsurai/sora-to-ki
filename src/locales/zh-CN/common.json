@@ -764,7 +764,7 @@
     "contrib_other": "{{count}} 次贡献",
     "legendHeight": "高度：累积的 GitHub 贡献",
     "legendDots": "点：改版（滑过看是哪一次）",
-    "legendHeat": "底下：每天的贡献，一周一行",
+    "legendHeat": "地上的灯：每天的贡献，一周七排",
     "statusLabel": "现在的状态",
     "coding": "今天写程序",
     "codingValue": "{{h}} 小时 {{m}} 分",

@@ -764,7 +764,7 @@
     "contrib_other": "기여 {{count}}회",
     "legendHeight": "높이: 누적 GitHub 기여",
     "legendDots": "점: 개편 (마우스를 올리면 내용)",
-    "legendHeat": "아래: 하루 기여, 한 열이 한 주",
+    "legendHeat": "땅 위의 불빛: 하루 기여, 한 주에 일곱 줄",
     "statusLabel": "지금 상태",
     "coding": "오늘 코딩한 시간",
     "codingValue": "{{h}}시간 {{m}}분",

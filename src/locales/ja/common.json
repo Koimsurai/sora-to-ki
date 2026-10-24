@@ -764,7 +764,7 @@
     "contrib_other": "{{count}} コントリビューション",
     "legendHeight": "高さ：GitHub コントリビューションの累計",
     "legendDots": "点：リニューアル（ホバーで内容）",
-    "legendHeat": "下：毎日のコントリビューション、1 列が 1 週間",
+    "legendHeat": "地上の灯り：毎日のコントリビューション、1 週間で 7 列",
     "statusLabel": "現在の様子",
     "coding": "今日のコーディング",
     "codingValue": "{{h}} 時間 {{m}} 分",

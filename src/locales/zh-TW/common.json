@@ -764,7 +764,7 @@
     "contrib_other": "{{count}} 次貢獻",
     "legendHeight": "高度：累積的 GitHub 貢獻",
     "legendDots": "點：改版（滑過看是哪一次）",
-    "legendHeat": "底下：每天的貢獻，一週一行",
+    "legendHeat": "地上的燈：每天的貢獻，一週七排",
     "statusLabel": "現在的狀態",
     "coding": "今天寫程式",
     "codingValue": "{{h}} 小時 {{m}} 分",

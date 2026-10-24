@@ -764,7 +764,7 @@
     "contrib_other": "{{count}} contributions",
     "legendHeight": "Height: cumulative GitHub contributions",
     "legendDots": "Dots: redesigns (hover for which)",
-    "legendHeat": "Below: contributions per day, a week per column",
+    "legendHeat": "Lights on the ground: contributions per day, seven rows a week",
     "statusLabel": "Right now",
     "coding": "Coding today",
     "codingValue": "{{h}} h {{m}} min",

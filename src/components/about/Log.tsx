@@ -25,6 +25,8 @@ const CLIMB_S = 2.4;
 const ERASE_MS = 600;
 /** 收完時點跟著火箭飛走的速度（px/ms） */
 const LEAVE_SPEED = 0.9;
+/** 比這窄就不標大轉折的名字（放不下） */
+const NARROW_PX = 600;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const dotDate = (d: string) => d.replaceAll('-', '.');
@@ -63,11 +65,13 @@ export default function Log() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const metRef = useRef<HTMLElement>(null);
   const labelsRef = useRef<(HTMLElement | null)[]>([]);
-  const totalRef = useRef<HTMLSpanElement>(null);
+  const hudRef = useRef<HTMLDivElement>(null);
   const nowRef = useRef<HTMLSpanElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
   const leaveRef = useRef<number | null>(null);
   const eraseRef = useRef(0);
+  /** 鏡頭跟著滑鼠轉的量（-1–1，平滑過的） */
+  const lookRef = useRef(0);
   const textRef = useRef({ milestones, dayDates, contrib: (n: number) => t('log.contrib', { count: n }) });
   textRef.current = { milestones, dayDates, contrib: (n: number) => t('log.contrib', { count: n }) };
 
@@ -77,28 +81,27 @@ export default function Log() {
   };
 
   usePageTransition({
-    // 錨點是起點（發射台）：點落在這裡，火箭從這裡沿軌跡爬上去
+    // 錨點是發射台：點從正上方落在這裡，火箭從這裡垂直離地
     anchor: () => {
       const b = box();
-      if (!b) return null;
-      const g = log.geometry(b.w, b.h);
-      return { x: b.r.left + g.x0, y: b.r.top + g.base };
+      const p = b && log.pad(b.w, b.h);
+      return b && p ? { x: b.r.left + p.x, y: b.r.top + p.y } : null;
     },
-    arrive: () => ({ tangent: { x: 1, y: 0 } }),
+    arrive: () => ({ tangent: { x: 0, y: 1 } }),
     leave: () => {
       const b = box();
-      if (!b) return null;
+      const start = b && log.rocketNose(b.w, b.h, lookRef.current, 0);
+      if (!b || !start) return null;
       leaveRef.current = performance.now();
       pageRef.current?.classList.add('is-leaving');
       const nose = () => {
         const now = box() ?? b;
-        const p = log.rocketNose(now.w, now.h, eraseRef.current);
+        const p = log.rocketNose(now.w, now.h, lookRef.current, eraseRef.current) ?? start;
         return { x: now.r.left + p.x, y: now.r.top + p.y };
       };
-      const dir = log.now(b.w, b.h).dir;
       return {
         point: nose(),
-        velocity: { x: Math.cos(dir) * LEAVE_SPEED, y: Math.sin(dir) * LEAVE_SPEED },
+        velocity: { x: Math.cos(start.angle) * LEAVE_SPEED, y: Math.sin(start.angle) * LEAVE_SPEED },
         follow: nose,
         done: after(ERASE_MS),
       };
@@ -132,10 +135,12 @@ export default function Log() {
       const r = el.getBoundingClientRect();
       pointer = [e.clientX - r.left, e.clientY - r.top];
     };
-    const onLeave = () => {
-      pointer = null;
+    // 觸控：點一下就停在那裡（手指離開時不清掉，提示才看得到）
+    const onLeave = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') pointer = null;
     };
     el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerdown', onMove);
     el.addEventListener('pointerleave', onLeave);
     let visible = true;
     const io = new IntersectionObserver(([e]) => {
@@ -164,7 +169,12 @@ export default function Log() {
       const grow = reduce ? 1 : easeInOut(Math.min(1, real / CLIMB_S));
       const erase = leaveRef.current === null ? 0 : easeIn(Math.min(1, (now - leaveRef.current) / ERASE_MS));
       eraseRef.current = erase;
-      const hit = pointer && grow >= 1 && leaveRef.current === null ? log.hit(w, h, pointer[0], pointer[1]) : null;
+      // 鏡頭跟著滑鼠的水平位置轉一點點（平滑地跟）
+      const want = pointer && !reduce ? (pointer[0] / w) * 2 - 1 : 0;
+      lookRef.current += (want - lookRef.current) * Math.min(1, dt * 2);
+      const look = lookRef.current;
+      const hit =
+        pointer && grow >= 1 && leaveRef.current === null ? log.hit(w, h, look, pointer[0], pointer[1]) : null;
       const drawn = log.draw(ctx, {
         w,
         h,
@@ -172,43 +182,49 @@ export default function Log() {
         dt: reduce ? 0 : dt,
         grow,
         erase,
+        look,
         milestone: hit?.milestone ?? -1,
         day: hit?.day ?? -1,
         rocket,
       });
 
-      // 字跟著軌跡：大轉折的名字一左上一右下交錯（右下會壓到底下的月份刻度時改放右上），軌跡畫過去才出現
-      const g = log.geometry(w, h);
-      const at = log.milestonesAt(w, h);
+      // 字跟著軌跡：大轉折的名字在點的上方左右交錯（下方是地上的刻度），火箭飛過去才出現；靠太近的往上讓開
+      const at = log.milestonesAt(w, h, look);
       let flip = false;
       const taken: { x: number; y: number; w: number; h: number }[] = [];
       const { milestones: ms, dayDates: dates, contrib } = textRef.current;
       ms.forEach((m, k) => {
         if (m.level !== 2) return;
         const label = labelsRef.current[k];
-        if (!label) return;
         const p = at[k];
+        if (!label || !p) return;
         const lw = label.offsetWidth;
-        const x = flip ? p.x + 8 : p.x - 8 - lw;
-        const below = p.y + 6;
         const lh = label.offsetHeight;
-        let y = flip ? (below + lh > g.base - 2 ? p.y - 8 - lh : below) : p.y - 8 - lh;
+        const x = flip ? p.x + 8 : p.x - 8 - lw;
+        let y = p.y - 8 - lh;
         flip = !flip;
-        // 兩個點靠太近時，後放的字往上讓開
         for (const o of taken) {
           if (x < o.x + o.w && x + lw > o.x && y < o.y + o.h && y + lh > o.y) y = o.y - lh - 2;
         }
         taken.push({ x, y, w: lw, h: lh });
         label.style.transform = `translate(${Math.max(0, x)}px, ${y}px)`;
-        label.style.opacity = String((log.milestoneIndex[k] <= drawn.tip ? 1 : 0) * (1 - erase));
+        // 窄螢幕放不下名字：只留點，點一下看提示（完整清單另外給報讀器）
+        label.style.opacity = String((w >= NARROW_PX && log.milestoneIndex[k] <= drawn.tip ? 1 : 0) * (1 - erase));
       });
-      if (totalRef.current) {
-        totalRef.current.style.transform = `translate(${g.x0}px, ${g.top - 22}px)`;
-        totalRef.current.style.opacity = String(grow * (1 - erase));
+      // 火箭旁邊的遙測讀數：高度（累積貢獻）與飛了幾天，跟著火箭爬
+      const here = drawn.now;
+      if (hudRef.current && here) {
+        const alt = hudRef.current.querySelector('b');
+        const met = hudRef.current.querySelector('span');
+        if (alt) alt.textContent = `ALT ${log.cumAt(drawn.tip).toLocaleString('en-US')}`;
+        if (met) met.textContent = `T+${drawn.tip + 1}d`;
+        const hw = hudRef.current.offsetWidth;
+        hudRef.current.style.transform = `translate(${Math.min(w - hw - 4, here.x + 18)}px, ${here.y + 10}px)`;
+        hudRef.current.style.opacity = String(Math.min(1, grow * 4) * (1 - erase));
       }
-      if (nowRef.current) {
+      if (nowRef.current && here) {
         const nw = nowRef.current.offsetWidth;
-        nowRef.current.style.transform = `translate(${drawn.now.x - nw - 14}px, ${drawn.now.y - 8}px)`;
+        nowRef.current.style.transform = `translate(${here.x - nw - 14}px, ${here.y - 8}px)`;
         nowRef.current.style.opacity = String((grow >= 1 ? 1 : 0) * (1 - erase));
       }
 
@@ -226,7 +242,7 @@ export default function Log() {
         } else if (hit && hit.day >= 0 && dates[hit.day]) {
           text = contrib(log.counts[hit.day] ?? 0);
           date = dotDate(dates[hit.day]);
-          p = g.heat(hit.day);
+          p = log.lightOnScreen(w, h, look, hit.day);
         }
         if (p) {
           const key = `${date}|${text}`;
@@ -248,6 +264,7 @@ export default function Log() {
       cancelAnimationFrame(raf);
       io.disconnect();
       el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerdown', onMove);
       el.removeEventListener('pointerleave', onLeave);
     };
   }, [log]);
@@ -275,9 +292,14 @@ export default function Log() {
       <div className="lg-scroll">
         <div className="lg-line" ref={boxRef}>
           <canvas ref={canvasRef} aria-hidden="true" />
-          <span className="lg-total" ref={totalRef} aria-hidden="true">
+          {/* 遙測讀數：跟著火箭走的高度（累積貢獻）與飛了幾天 */}
+          <div className="lg-hud" ref={hudRef} aria-hidden="true">
+            <b />
+            <span />
+          </div>
+          <p className={days ? 'sr-only' : 'lg-nodata'}>
             {days ? t('log.total', { count: log.total }) : t('log.noContrib')}
-          </span>
+          </p>
           <div className="lg-labels" aria-hidden="true">
             {milestones.map((m, k) =>
               m.level === 2 ? (
