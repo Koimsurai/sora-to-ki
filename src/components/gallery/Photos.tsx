@@ -1,6 +1,6 @@
 // 照片：一座地面站。在太空拍的照片要經過一趟傳輸才看得到——相機把畫面轉成 0 和 1，天線把訊號送回地球，
 // 深空網路的巨型天線接住，再解碼、上色（gallery/downlink）。每一張照片第一次進到畫面時，先是一片 0 與 1，
-// 接著一行一行收成黑白，最後一道掃過去把顏色映射回來；收完就換成一般的圖。
+// 接著一行一行收成黑白，最後一道掃過去把顏色映射回來；收完就只剩一般的圖。
 // 頁首是地面站與遠處的探測器、收到幾格、各鏡頭幾張，下面一條是每個月收到幾張。點一張打開檢視器。
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +11,7 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { loadPhotosManifest } from '@/lib/manifestLoader';
 import { after, isArriving } from '@/store/pageTransition';
 import { openViewerAtom, photosAtom } from '@/store/photoStore';
-import { createStation, drawPasses, drawReception, drawVeil, grayscaleOf, RX_TOTAL, rxStage } from './downlink';
+import { createStation, drawPasses, drawVeil, noiseDataUrl, RX_PHASES, RX_TOTAL, rxStage } from './downlink';
 import { framesOf, overview, type Frame } from './frames';
 import PhotoViewer from './PhotoViewer';
 import './Photos.css';
@@ -20,19 +20,19 @@ import './Photos.css';
 const COLUMN_PX = 320;
 /** 照片進畫面多少才開始接收 */
 const RX_THRESHOLD = 0.35;
-/** 同時最多收幾張：其他的排隊（一次收太多張，每一張都會變卡） */
-const RX_MAX = 8;
+/** 同時最多收幾張：其他的排隊（一整排同時開始太吵，也像一格一格在下傳） */
+const RX_MAX = 6;
 /** 排隊的超過這麼多張時，每一張收快一點（最快幾倍），不然一整個畫面要等很久才收完 */
 const RX_RUSH_AT = 4;
 const RX_RUSH_MAX = 2;
-/** 接收動畫多久畫一次（毫秒）：0 與 1 閃得太快會晃眼，30fps 剛好 */
-const RX_FRAME_MS = 33;
-/** 捲動停下來多久之後才接著收（毫秒）：捲的時候先停住，捲動本身才會順 */
-const RX_SCROLL_REST_MS = 140;
-/** 接收畫布最多幾倍解析度：0 與 1 的小字 1.5 倍就清楚，2 倍的畫布要多畫將近一倍的像素 */
-const RX_DPR = 1.5;
+/** 遙測那一行（RX 42%）多久更新一次（毫秒）：動畫本身交給 CSS，這裡只換字 */
+const RX_STATUS_MS = 100;
+/** 一次最多讓幾張開始收：同一刻開始的太多，看起來像一整片一起閃 */
+const RX_BEGIN_PER_TICK = 2;
 /** 地面站的畫布多久畫一次（毫秒）：動得很慢，30fps 就夠 */
 const STATION_FRAME_MS = 33;
+/** 整頁的遮罩多久畫一次（毫秒） */
+const VEIL_FRAME_MS = 33;
 /** 進場：琥珀點沿訊號路徑走的那一段分幾格；落進天線後饋源亮多久、整頁收下來要多久（毫秒） */
 const SIGNAL_STEPS = 16;
 const CAUGHT_MS = 1200;
@@ -47,6 +47,8 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 
 /** 這次瀏覽已經收過的：虛擬清單捲回來會重新掛上，收過的直接顯示，不再收一次 */
 const received = new Set<string>();
+/** 收到一半的收到哪裡（秒）：卡片被虛擬清單卸下又掛回來時接著收，不從頭再來一次 */
+const progress = new Map<string, number>();
 
 /** 畫布上的等寬字：讀一次 CSS 變數就記住（每張卡片都去讀的話，捲動時會一直重算樣式） */
 let monoFamily: string | null = null;
@@ -55,68 +57,85 @@ const monoFont = (px: number) => {
   return `${px}px ${monoFamily}`;
 };
 
-/** 一張正在收（或排隊等著收）的照片：每一幀往前收 dt 毫秒，回傳 true 表示收完了 */
+/** 一張正在收（或排隊等著收）的照片 */
 interface RxJob {
-  /** speed：這一張收得比平常快幾倍 */
+  /** 開始收；speed 是這一張收得比平常快幾倍 */
   begin: (speed: number) => void;
-  step: (dt: number) => boolean;
+  /** 換一次遙測的字；回傳 true 表示收完了 */
+  step: () => boolean;
 }
 
 /**
- * 接收的排程：全部共用一個動畫迴圈，同時最多收 RX_MAX 張，照進畫面的先後排隊。
- * 每一張各跑一個 requestAnimationFrame 的話，捲快一點就有十幾個迴圈同時在畫。
- * 正在捲的時候整個停住（時間也不算），停下來才接著收
+ * 接收的排程：同時最多收 RX_MAX 張，照進畫面的先後排隊。接收本身是 CSS 動畫（只動 transform 與
+ * opacity，交給合成器，捲動時也不卡主執行緒），這裡只管誰先誰後、以及每隔一下換遙測的字
  */
 const rx = (() => {
   const waiting: RxJob[] = [];
   const active = new Set<RxJob>();
-  let raf = 0;
-  let last = 0;
-  let scrolledAt = -Infinity;
-  if (typeof window !== 'undefined') {
-    window.addEventListener(
-      'scroll',
-      () => {
-        scrolledAt = performance.now();
-      },
-      { passive: true },
-    );
-  }
-  const pump = () => {
-    while (active.size < RX_MAX && waiting.length > 0) {
+  let timer = 0;
+  const tick = () => {
+    timer = 0;
+    for (const job of active) if (job.step()) active.delete(job);
+    let begun = 0;
+    while (active.size < RX_MAX && waiting.length > 0 && begun < RX_BEGIN_PER_TICK) {
       const job = waiting.shift();
       if (!job) break;
       job.begin(Math.min(RX_RUSH_MAX, 1 + Math.max(0, waiting.length - RX_RUSH_AT) / RX_RUSH_AT));
       active.add(job);
+      begun++;
     }
-    if (active.size > 0 && raf === 0) raf = requestAnimationFrame(tick);
+    if ((active.size > 0 || waiting.length > 0) && timer === 0) timer = window.setTimeout(tick, RX_STATUS_MS);
   };
-  const tick = (now: number) => {
-    raf = 0;
-    if (now - scrolledAt < RX_SCROLL_REST_MS) {
-      last = 0;
-    } else if (now - last >= RX_FRAME_MS) {
-      // 剛從捲動停下來（或第一幀）：從一格的時間接著算，停住的那段不算
-      const dt = last === 0 ? RX_FRAME_MS : Math.min(100, now - last);
-      last = now;
-      for (const job of active) if (job.step(dt)) active.delete(job);
-      pump();
-    }
-    if (active.size > 0 && raf === 0) raf = requestAnimationFrame(tick);
+  const kick = () => {
+    if (timer === 0) timer = window.setTimeout(tick, 0);
   };
   return {
-    add(job: RxJob) {
-      waiting.push(job);
-      pump();
+    /** first：收到一半被卸下又掛回來的，插到隊伍最前面 */
+    add(job: RxJob, first = false) {
+      if (first) waiting.unshift(job);
+      else waiting.push(job);
+      kick();
     },
     remove(job: RxJob) {
       const i = waiting.indexOf(job);
       if (i >= 0) waiting.splice(i, 1);
       active.delete(job);
-      pump();
     },
   };
 })();
+
+/** 接收動畫的時間點（0 到 1）：第 sec 秒在整段裡的位置 */
+const at = (sec: number) => sec / RX_TOTAL;
+
+/**
+ * 一層從某一邊一點一點露出來：外層往反方向推出去、內層推回來（內容就不會跟著滑），
+ * 兩層只動 transform。from 與 to 是開始與露完的秒數
+ */
+function reveal(outer: HTMLElement, inner: HTMLElement, axis: 'X' | 'Y', from: number, to: number) {
+  const timing: KeyframeAnimationOptions = { duration: RX_TOTAL * 1000, fill: 'both', easing: 'linear' };
+  const frames = (sign: 1 | -1) => [
+    { transform: `translate${axis}(${sign * 100}%)`, offset: 0 },
+    { transform: `translate${axis}(${sign * 100}%)`, offset: at(from) },
+    { transform: `translate${axis}(0)`, offset: at(to) },
+    { transform: `translate${axis}(0)`, offset: 1 },
+  ];
+  return [outer.animate(frames(-1), timing), inner.animate(frames(1), timing)];
+}
+
+/** 掃描線：那一段的時候亮著，其他時候不見 */
+function line(el: HTMLElement, from: number, to: number) {
+  return el.animate(
+    [
+      { opacity: 0, offset: 0 },
+      { opacity: 0, offset: at(from) },
+      { opacity: 1, offset: Math.min(1, at(from) + 0.01) },
+      { opacity: 1, offset: Math.max(0, at(to) - 0.01) },
+      { opacity: 0, offset: at(to) },
+      { opacity: 0, offset: 1 },
+    ],
+    { duration: RX_TOTAL * 1000, fill: 'both' },
+  );
+}
 
 /** 一格畫面：還沒收過的，進畫面時排隊收一次；收完（或收過）就是一般的圖 */
 function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen: (f: Frame) => void }) {
@@ -124,47 +143,61 @@ function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen
   const { photo } = data;
   const [done, setDone] = useState(() => received.has(photo.id));
   const boxRef = useRef<HTMLButtonElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const rxRef = useRef<HTMLSpanElement>(null);
   const statusRef = useRef<HTMLSpanElement>(null);
   const height = Math.round(width / photo.aspectRatio);
 
   useEffect(() => {
     const box = boxRef.current;
-    const cv = canvasRef.current;
-    const ctx = cv?.getContext('2d');
-    if (done || !box || !cv || !ctx) return;
+    const img = imgRef.current;
+    const layer = rxRef.current;
+    if (done || !box || !img || !layer) return;
     let raf = 0;
     const finish = () => {
       received.add(photo.id);
+      progress.delete(photo.id);
       raf = requestAnimationFrame(() => setDone(true));
     };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       finish();
       return () => cancelAnimationFrame(raf);
     }
-    const img = new Image();
-    img.decoding = 'async';
-    img.src = photo.thumbnailUrl;
-    const font = monoFont(9);
+    const part = (name: string) => layer.querySelector<HTMLElement>(`.ph-rx-${name}`);
+    const gray = part('gray');
+    const grayIn = part('gray > span');
+    const color = part('color');
+    const colorIn = part('color > span');
+    const scanLine = part('scan');
+    const sweepLine = part('sweep');
+    if (!gray || !grayIn || !color || !colorIn || !scanLine || !sweepLine) return;
     const status = statusRef.current;
-    let sec = 0;
-    let pace = 1;
-    let gray: HTMLCanvasElement | null = null;
-    let w = 0;
-    let h = 0;
-    const dpr = Math.min(window.devicePixelRatio || 1, RX_DPR);
+    let anims: Animation[] = [];
     const job: RxJob = {
       begin: (speed) => {
-        pace = speed;
-        gray = grayscaleOf(img, w, h, dpr);
+        layer.classList.add('is-on');
+        anims = [
+          ...reveal(gray, grayIn, 'Y', RX_PHASES.scan[0], RX_PHASES.scan[1]),
+          ...reveal(color, colorIn, 'X', RX_PHASES.color[0], RX_PHASES.color[1]),
+          line(scanLine, RX_PHASES.scan[0], RX_PHASES.scan[1]),
+          line(sweepLine, RX_PHASES.color[0], RX_PHASES.color[1]),
+        ];
+        const resume = (progress.get(photo.id) ?? 0) * 1000;
+        for (const a of anims) {
+          a.playbackRate = speed;
+          a.currentTime = resume;
+        }
       },
-      step: (dt) => {
-        sec += (dt / 1000) * pace;
-        if (sec >= RX_TOTAL || !gray) {
+      step: () => {
+        const first = anims.at(0);
+        if (!first) return false;
+        const ms = Number(first.currentTime ?? 0);
+        const sec = ms / 1000;
+        progress.set(photo.id, sec);
+        if (first.playState === 'finished' || sec >= RX_TOTAL) {
           finish();
           return true;
         }
-        drawReception(ctx, img, gray, w, h, sec, font);
         if (status) {
           const { stage, scan } = rxStage(sec);
           const kbps = (2 + Math.sin(sec * 7) * 0.6).toFixed(1);
@@ -178,20 +211,10 @@ function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen
         return false;
       },
     };
-    // 圖要先載好才排隊；載不到就不收了，直接換成一般的 <img>（它自己會顯示載不到的樣子）
+    // 圖要先載好才排隊；載不到就不收了，直接顯示一般的 <img>（它自己會顯示載不到的樣子）
     const queue = () => {
-      if (img.naturalWidth === 0) {
-        finish();
-        return;
-      }
-      // 排隊的時候先鋪一片 0 與 1（還在找訊號），不要是一格空白
-      w = cv.clientWidth;
-      h = cv.clientHeight;
-      cv.width = Math.round(w * dpr);
-      cv.height = Math.round(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawReception(ctx, img, cv, w, h, 0, font);
-      rx.add(job);
+      if (img.naturalWidth === 0) finish();
+      else rx.add(job, progress.has(photo.id));
     };
     const io = new IntersectionObserver(
       ([e]) => {
@@ -209,11 +232,15 @@ function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen
     return () => {
       io.disconnect();
       rx.remove(job);
+      // 收到一半被卸下：記住收到哪裡（掛回來時接著收）
+      const first = anims.at(0);
+      if (first && first.playState !== 'finished') progress.set(photo.id, Number(first.currentTime ?? 0) / 1000);
+      for (const a of anims) a.cancel();
       cancelAnimationFrame(raf);
       img.removeEventListener('load', queue);
       img.removeEventListener('error', finish);
     };
-  }, [done, photo.id, photo.thumbnailUrl]);
+  }, [done, photo.id]);
 
   return (
     <button
@@ -223,9 +250,10 @@ function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen
       onClick={() => onOpen(data)}
       aria-label={t('photos.frame', { date: data.date || data.no })}
     >
-      {/* 圖一開始就在（先藏著、先解碼），收完時畫布拿掉、圖直接露出來，換的那一下不會閃 */}
+      {/* 圖一開始就在（先藏著、先解碼）；接收是疊在上面的幾層，收完拿掉、圖直接露出來 */}
       <span className="ph-shot" style={{ height }}>
         <img
+          ref={imgRef}
           className={done ? undefined : 'is-pending'}
           src={photo.thumbnailUrl}
           alt=""
@@ -233,7 +261,25 @@ function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen
           height={height}
           decoding="async"
         />
-        {!done && <canvas ref={canvasRef} aria-hidden="true" />}
+        {!done && (
+          <span ref={rxRef} className="ph-rx" aria-hidden="true">
+            <span className="ph-rx-noise" />
+            <span className="ph-rx-noise is-b" />
+            {/* 掃描線放在那一層裡面、貼著它露出來的那一邊，跟著一起走 */}
+            <span className="ph-rx-gray">
+              <span>
+                <img src={photo.thumbnailUrl} alt="" decoding="async" />
+              </span>
+              <i className="ph-rx-scan" />
+            </span>
+            <span className="ph-rx-color">
+              <span>
+                <img src={photo.thumbnailUrl} alt="" decoding="async" />
+              </span>
+              <i className="ph-rx-sweep" />
+            </span>
+          </span>
+        )}
       </span>
       <span className="ph-tel" aria-hidden="true">
         <span>
@@ -274,6 +320,15 @@ export default function Photos() {
   const veilRef = useRef<HTMLCanvasElement>(null);
   /** 換頁轉場的點落進天線的時候（直接打開這頁就是第一幀）、開始離開的時候；-1 是還沒 */
   const phaseRef = useRef({ landedAt: -1, leavingAt: -1 });
+
+  // 0 與 1 的雜訊貼圖：畫一次轉成圖，接收中的每一格拿它當背景（CSS 變數），兩張交替就是在閃
+  useEffect(() => {
+    const page = pageRef.current;
+    if (!page) return;
+    const font = monoFont(9);
+    page.style.setProperty('--ph-noise-a', `url("${noiseDataUrl(font, 0)}")`);
+    page.style.setProperty('--ph-noise-b', `url("${noiseDataUrl(font, 1)}")`);
+  }, []);
 
   /** 地面站畫布上的一點換成視窗座標 */
   const onStation = (pick: (w: number, h: number, t: number) => { x: number; y: number }) => {
@@ -368,7 +423,7 @@ export default function Photos() {
     let shown = true;
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
-      if (now - last < RX_FRAME_MS) return;
+      if (now - last < VEIL_FRAME_MS) return;
       last = now;
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -391,12 +446,11 @@ export default function Photos() {
         return;
       }
       shown = true;
-      const dpr = Math.min(window.devicePixelRatio || 1, RX_DPR);
-      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
-        cv.width = Math.round(w * dpr);
-        cv.height = Math.round(h * dpr);
+      // 整頁的遮罩只有 0 與 1 的小字，1 倍就夠（它每一幀都要整張重畫）
+      if (cv.width !== w || cv.height !== h) {
+        cv.width = w;
+        cv.height = h;
       }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       // 換頁轉場時整頁在滑，遮罩跟著頁面走：地面站的位置要換成遮罩自己的座標
       const r = stationRef.current?.getBoundingClientRect();
       const o = cv.getBoundingClientRect();
@@ -407,7 +461,7 @@ export default function Photos() {
         top,
         bottom,
         edge,
-        r ? { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height } : null,
+        r ? { top: r.top - o.top, bottom: r.bottom - o.top } : null,
         now / 1000,
         font,
       );

@@ -136,7 +136,8 @@ export function createStation() {
 
 /**
  * 整頁的遮罩（進場、退場）：y 從 top 到 bottom 這一段是還沒收到（或已經收回去）的部分，
- * 鋪紙色再貼一層 0 與 1；hole 是地面站的畫布，那一塊不蓋（點要沿著訊號從探測器飛到天線，得看得到它們）。
+ * 鋪紙色再貼一層 0 與 1；band 是地面站那一條（整頁寬），那一段不蓋（點要沿著訊號從探測器飛到天線，
+ * 得看得到它們）。不用裁切路徑挖洞，直接畫上下兩塊，省一次整張畫布的裁切。
  * edge 那一側畫一條琥珀色的掃描線
  */
 export function drawVeil(
@@ -146,28 +147,31 @@ export function drawVeil(
   top: number,
   bottom: number,
   edge: 'top' | 'bottom' | null,
-  hole: { x: number; y: number; w: number; h: number } | null,
+  band: { top: number; bottom: number } | null,
   t: number,
   font: string,
 ) {
   ctx.clearRect(0, 0, w, h);
   if (bottom <= top) return;
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, top, w, bottom - top);
-  if (hole) {
-    // 反著畫一個洞（evenodd）：地面站那一塊不蓋
-    ctx.rect(hole.x + hole.w, hole.y, -hole.w, hole.h);
-  }
-  ctx.clip('evenodd');
-  ctx.fillStyle = GROUND;
-  ctx.fillRect(0, top, w, bottom - top);
   const tiles = noiseTiles(font);
   const tile = tiles[Math.floor((Math.max(0, t) * 1000) / NOISE_SWAP_MS) % tiles.length];
-  for (let y = top - (top % NOISE_H); y < bottom; y += NOISE_H) {
-    for (let x = 0; x < w; x += NOISE_W) ctx.drawImage(tile, x, y);
+  const block = (y0: number, y1: number) => {
+    if (y1 <= y0) return;
+    ctx.fillStyle = GROUND;
+    ctx.fillRect(0, y0, w, y1 - y0);
+    // 貼圖對齊整個視窗的格線（不跟著 y0 走），收的時候 0 與 1 不會跟著掃描線滑
+    for (let y = y0 - (y0 % NOISE_H); y < y1; y += NOISE_H) {
+      const sy = Math.max(y, y0);
+      const sh = Math.min(y + NOISE_H, y1) - sy;
+      for (let x = 0; x < w; x += NOISE_W) ctx.drawImage(tile, 0, sy - y, NOISE_W, sh, x, sy, NOISE_W, sh);
+    }
+  };
+  if (band) {
+    block(top, Math.min(bottom, band.top));
+    block(Math.max(top, band.bottom), bottom);
+  } else {
+    block(top, bottom);
   }
-  ctx.restore();
   ctx.fillStyle = rgba(AMBER, 0.9);
   if (edge === 'top') ctx.fillRect(0, top, w, 1);
   if (edge === 'bottom') ctx.fillRect(0, bottom - 1, w, 1);
@@ -229,17 +233,21 @@ export function drawPasses(
 
 /** 一張照片收多久（秒）：先找訊號，再一行一行收成黑白，最後一道掃過去把顏色映射回來 */
 export const RX_TOTAL = 3.6;
-const ACQUIRE = 0.4;
-const SCAN = [0.4, 2.2] as const;
-const COLOR = [2.4, 3.4] as const;
+/** 各段的起訖（秒）：找訊號、一行一行收成黑白、一道掃過去上色 */
+export const RX_PHASES = {
+  acquire: 0.4,
+  scan: [0.4, 2.2],
+  color: [2.4, 3.4],
+} as const;
 
-export type RxStage = 'acquire' | 'rx' | 'color' | 'done';
+type RxStage = 'acquire' | 'rx' | 'color' | 'done';
 
 /** 接收到第 t 秒是哪一段、收了多少 */
 export function rxStage(t: number): { stage: RxStage; scan: number; color: number } {
-  const scan = clamp01((t - SCAN[0]) / (SCAN[1] - SCAN[0]));
-  const color = clamp01((t - COLOR[0]) / (COLOR[1] - COLOR[0]));
-  const stage: RxStage = t < ACQUIRE ? 'acquire' : scan < 1 ? 'rx' : color < 1 ? 'color' : 'done';
+  const { acquire, scan: s, color: c } = RX_PHASES;
+  const scan = clamp01((t - s[0]) / (s[1] - s[0]));
+  const color = clamp01((t - c[0]) / (c[1] - c[0]));
+  const stage: RxStage = t < acquire ? 'acquire' : scan < 1 ? 'rx' : color < 1 ? 'color' : 'done';
   return { stage, scan, color };
 }
 
@@ -279,53 +287,10 @@ function noiseTiles(font: string) {
   return tiles;
 }
 
-/** 一張照片的黑白版：只做一次（每一幀都套濾鏡畫一次也很貴） */
-export function grayscaleOf(img: HTMLImageElement, w: number, h: number, dpr: number) {
-  const cv = document.createElement('canvas');
-  cv.width = Math.max(1, Math.round(w * dpr));
-  cv.height = Math.max(1, Math.round(h * dpr));
-  const g = cv.getContext('2d');
-  if (g) {
-    g.filter = 'grayscale(1) contrast(1.05)';
-    g.drawImage(img, 0, 0, cv.width, cv.height);
-  }
-  return cv;
-}
-
 /**
- * 畫一張照片接收到第 t 秒的樣子：還沒收到的部分是一片閃動的 0 與 1，收到的部分是黑白，
- * 顏色從左往右映射回來；正在收的那一行、正在上色的那一列是一條琥珀色的線
+ * 第 i 張雜訊貼圖轉成圖片網址：每一格照片接收時拿它當 CSS 背景（只畫一次，之後全部交給瀏覽器貼）
  */
-export function drawReception(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  gray: HTMLCanvasElement,
-  w: number,
-  h: number,
-  t: number,
-  font: string,
-) {
-  const { scan, color } = rxStage(t);
-  ctx.clearRect(0, 0, w, h);
-  const rows = Math.floor(scan * h);
-  if (rows < h) {
-    const tiles = noiseTiles(font);
-    const tile = tiles[Math.floor((Math.max(0, t) * 1000) / NOISE_SWAP_MS) % tiles.length];
-    for (let y = rows; y < h; y += NOISE_H) {
-      for (let x = 0; x < w; x += NOISE_W) {
-        const sh = Math.min(NOISE_H, h - y);
-        ctx.drawImage(tile, 0, 0, Math.min(NOISE_W, w - x), sh, x, y, Math.min(NOISE_W, w - x), sh);
-      }
-    }
-  }
-  if (rows > 0) {
-    ctx.drawImage(gray, 0, 0, gray.width, (rows / h) * gray.height, 0, 0, w, rows);
-    if (color > 0) {
-      const cw = w * color;
-      ctx.drawImage(img, 0, 0, (cw / w) * img.naturalWidth, (rows / h) * img.naturalHeight, 0, 0, cw, rows);
-    }
-  }
-  ctx.fillStyle = rgba(AMBER, 0.9);
-  if (scan > 0 && scan < 1) ctx.fillRect(0, rows, w, 1);
-  if (color > 0 && color < 1) ctx.fillRect(w * color, 0, 1, h);
+export function noiseDataUrl(font: string, i: number) {
+  const tiles = noiseTiles(font);
+  return tiles[i % tiles.length].toDataURL('image/png');
 }
