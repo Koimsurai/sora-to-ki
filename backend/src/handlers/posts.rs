@@ -578,7 +578,8 @@ pub async fn post_reactions(
 }
 
 // ── GET /api/posts/:id/comments ──────────────────────────────────────────
-/// comments 一列。欄位順序對齊 live 表實際 `SELECT *` 展開順序。
+/// 公開的留言一列（文章與碎念共用）。**不含留言者的 email 與 IP**：這是公開端點，
+/// 那兩欄只給後台（`admin::AdminCommentRow`）。欄位順序對齊 live 表 `SELECT *` 的展開順序（少了那兩欄）。
 #[derive(Debug, Serialize, FromRow, specta::Type, utoipa::ToSchema)]
 pub struct CommentRow {
     #[specta(type = specta_typescript::Number)]
@@ -594,10 +595,8 @@ pub struct CommentRow {
     pub created_at: String,
     #[specta(type = specta_typescript::Number)]
     pub is_admin: i64,
-    pub email: Option<String>,
     pub website: Option<String>,
     pub status: Option<String>,
-    pub ip: Option<String>,
     #[specta(type = Option<specta_typescript::Number>)]
     pub parent_id: Option<i64>,
     pub avatar_url: Option<String>,
@@ -628,7 +627,7 @@ pub async fn post_comments(
     Path(id): Path<String>,
 ) -> Result<Json<CommentsResponse>, AppError> {
     let comments = sqlx::query_as::<_, CommentRow>(
-        "SELECT id, post_id, author, content, likes, created_at, is_admin, email, website, status, ip, parent_id, avatar_url, thought_id \
+        "SELECT id, post_id, author, content, likes, created_at, is_admin, website, status, parent_id, avatar_url, thought_id \
          FROM comments WHERE post_id = ? AND status = 'approved' ORDER BY created_at ASC",
     )
     .bind(&id)
