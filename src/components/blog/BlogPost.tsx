@@ -29,7 +29,7 @@ import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
 import { FaEnvelope, FaTimes } from 'react-icons/fa';
-import Comments from './Comments';
+import ArticleComments from './ArticleComments';
 import { BlogImage } from '@/components/blog/BlogImage';
 // BlogPost.css：Tier-2 後本元件直接 SSR（不再靠 BlogPostPage fallback）→ CSS 由這裡匯入。
 // 本元件是路由 eager import（進 /blog/$id 路由 chunk），故 CSS 進「文章路由 chunk」而非全域
@@ -1622,7 +1622,7 @@ function BlogPost() {
           <PrevNextNav currentId={post.id} />
           <SameCategory currentId={post.id} postCategory={post.category ?? undefined} />
           <div className="post-extras" id="comments">
-            <Comments postId={post.id} allowComments={post.allow_comments} />
+            <ArticleComments postId={post.id} allowComments={post.allow_comments} />
           </div>
         </footer>
       </div>

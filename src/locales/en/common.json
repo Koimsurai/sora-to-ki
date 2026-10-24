@@ -215,29 +215,6 @@
       "aboutCount": "2004 –"
     }
   },
-  "comments": {
-    "titleN": "{{count}} comments",
-    "titleEmpty": "No comments yet",
-    "loginLabel": "Sign in to comment",
-    "anonymousLabel": "Comment anonymously",
-    "namePlaceholder": "Name *",
-    "emailPlaceholder": "Email (optional, for replies)",
-    "websitePlaceholder": "Website (optional)",
-    "contentPlaceholder": "Leave a thought...",
-    "submit": "Send",
-    "submitted": "✨ Comment sent",
-    "submittedAwaitReview": "✨ Sent — visible after admin review",
-    "authorBadge": "author",
-    "reply": "Reply",
-    "errorEmpty": "Comment can't be empty",
-    "errorNoName": "Name can't be empty",
-    "errorCaptcha": "Captcha incorrect, please recalculate",
-    "errorFailed": "Comment failed",
-    "errorFailedTryLater": "Comment failed, please try again later",
-    "closedNotice": "Comments are closed for this post.",
-    "back": "Back",
-    "beFirst": "✨ Be the first to comment"
-  },
   "commandPalette": {
     "label": "Global command palette",
     "placeholder": "Search pages, posts, categories, tags…",
@@ -364,7 +341,6 @@
     "subtitle": "Catching a stray noise that cuts through the silence.",
     "ending": "Most of the time, just thinking out loud.",
     "empty": "Nothing here yet.",
-    "back": "Back",
     "notFound": "Thought not found.",
     "label": "",
     "like": "Like",
@@ -473,24 +449,6 @@
         "struct": "Structure",
         "crew": "Crew interface"
       }
-    }
-  },
-  "info": {
-    "aboutSite": {
-      "title": "This site",
-      "subtitle": "A developer's personal space"
-    },
-    "history": {
-      "title": "History",
-      "subtitle": "Where this site has been"
-    },
-    "messages": {
-      "title": "Messages",
-      "subtitle": "Say whatever you want"
-    },
-    "friends": {
-      "title": "Friends",
-      "subtitle": "Webring"
     }
   },
   "newsletter": {
@@ -723,12 +681,11 @@
     "logTitle": "Received signals",
     "emptyTitle": "No signal yet.",
     "emptyText": "The first message will show up on this line.",
-    "rule1": "Anonymous messages appear after review; signed-in ones appear right away",
-    "rule2": "Sign in with GitHub or Google, or stay anonymous",
-    "rule3": "Your email is never shown; no ads or sales pitches",
     "privatePre": "For something private, write to",
     "privateMid": ". Bug reports and feature ideas fit better in",
-    "privatePost": ".",
+    "privatePost": "."
+  },
+  "signal": {
     "formTitle": "Send a signal",
     "loginWith": "Sign in",
     "asUser": "Writing as {{name}}",
@@ -751,7 +708,15 @@
     "errEmpty": "Nothing written yet",
     "errName": "A name is required",
     "errCaptcha": "Wrong answer, here's a new one",
-    "errFailed": "Couldn't send it, try again in a bit"
+    "errFailed": "Couldn't send it, try again in a bit",
+    "rule1": "Anonymous messages appear after review; signed-in ones appear right away",
+    "rule2": "Sign in with GitHub or Google, or stay anonymous",
+    "rule3": "Your email is never shown; no ads or sales pitches",
+    "heading": "Responses",
+    "rxCount_one": "RX · {{count}} signal received",
+    "rxCount_other": "RX · {{count}} signals received",
+    "empty": "No signals yet. The first one will show up here.",
+    "closed": "Responses are closed for this post; the channel is receive-only."
   },
   "log": {
     "title": "Flight log",

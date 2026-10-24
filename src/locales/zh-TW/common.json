@@ -215,29 +215,6 @@
       "aboutCount": "2004 –"
     }
   },
-  "comments": {
-    "titleN": "{{count}} 條留言",
-    "titleEmpty": "還沒有留言",
-    "loginLabel": "選擇登入方式",
-    "anonymousLabel": "匿名留言",
-    "namePlaceholder": "暱稱 *",
-    "emailPlaceholder": "郵箱（選填，用於通知）",
-    "websitePlaceholder": "網站（選填）",
-    "contentPlaceholder": "留下你的想法...",
-    "submit": "發送",
-    "submitted": "✨ 留言已發送",
-    "submittedAwaitReview": "✨ 留言已送出，經管理員審核後將會顯示",
-    "authorBadge": "作者",
-    "reply": "回覆",
-    "errorEmpty": "留言內容不能為空",
-    "errorNoName": "暱稱不能為空",
-    "errorCaptcha": "驗證碼錯誤，請重新計算",
-    "errorFailed": "留言失敗",
-    "errorFailedTryLater": "留言失敗，請稍後再試",
-    "closedNotice": "作者已關閉這篇文章的留言。",
-    "back": "返回",
-    "beFirst": "✨ 成為第一個留言的人吧"
-  },
   "commandPalette": {
     "label": "全域指令面板",
     "placeholder": "輸入頁面、文章、分類或標籤…",
@@ -364,7 +341,6 @@
     "subtitle": "捕獲一道劃破寂靜的雜音。",
     "ending": "更多時候，只是想說給空氣聽。",
     "empty": "還沒有碎念。",
-    "back": "返回",
     "notFound": "找不到這則碎念。",
     "label": "Moments",
     "like": "讚",
@@ -473,24 +449,6 @@
         "struct": "結構",
         "crew": "乘員介面"
       }
-    }
-  },
-  "info": {
-    "aboutSite": {
-      "title": "此站點",
-      "subtitle": "一個工程師的個人空間"
-    },
-    "history": {
-      "title": "歷史",
-      "subtitle": "站點走過的長河"
-    },
-    "messages": {
-      "title": "留言",
-      "subtitle": "想說什麼都可以"
-    },
-    "friends": {
-      "title": "朋友們",
-      "subtitle": "友鏈"
     }
   },
   "newsletter": {
@@ -723,12 +681,11 @@
     "logTitle": "收到的訊號",
     "emptyTitle": "還沒有收到訊號。",
     "emptyText": "第一則留言會出現在這條線上。",
-    "rule1": "匿名的留言要先經過審核才會出現；用帳號登入的直接出現",
-    "rule2": "可以用 GitHub 或 Google 登入，也可以匿名",
-    "rule3": "Email 不會公開；不收廣告與推銷",
     "privatePre": "不適合公開的話，寄信到",
     "privateMid": "；bug 回報或功能建議比較適合開",
-    "privatePost": "。",
+    "privatePost": "。"
+  },
+  "signal": {
     "formTitle": "送出一道訊號",
     "loginWith": "登入",
     "asUser": "以 {{name}} 的身分留言",
@@ -751,7 +708,15 @@
     "errEmpty": "還沒寫要說的話",
     "errName": "要填名字",
     "errCaptcha": "算式的答案不對，換了一題",
-    "errFailed": "送不出去，稍後再試一次"
+    "errFailed": "送不出去，稍後再試一次",
+    "rule1": "匿名的留言要先經過審核才會出現；用帳號登入的直接出現",
+    "rule2": "可以用 GitHub 或 Google 登入，也可以匿名",
+    "rule3": "Email 不會公開；不收廣告與推銷",
+    "heading": "回應",
+    "rxCount_one": "RX · 收到 {{count}} 道訊號",
+    "rxCount_other": "RX · 收到 {{count}} 道訊號",
+    "empty": "還沒有收到訊號，第一道會出現在這裡。",
+    "closed": "這篇關閉了回應，頻道只收不發。"
   },
   "log": {
     "title": "航行日誌",

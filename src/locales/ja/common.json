@@ -215,29 +215,6 @@
       "aboutCount": "2004 –"
     }
   },
-  "comments": {
-    "titleN": "{{count}} 件のコメント",
-    "titleEmpty": "まだコメントがありません",
-    "loginLabel": "ログイン方法を選択",
-    "anonymousLabel": "匿名コメント",
-    "namePlaceholder": "ニックネーム *",
-    "emailPlaceholder": "メール（任意、通知用）",
-    "websitePlaceholder": "ウェブサイト（任意）",
-    "contentPlaceholder": "感想を残してください...",
-    "submit": "送信",
-    "submitted": "✨ コメントを送信しました",
-    "submittedAwaitReview": "✨ 送信完了 — 管理者承認後に表示されます",
-    "authorBadge": "著者",
-    "reply": "返信",
-    "errorEmpty": "コメントを入力してください",
-    "errorNoName": "ニックネームを入力してください",
-    "errorCaptcha": "認証コードが正しくありません",
-    "errorFailed": "コメントに失敗しました",
-    "errorFailedTryLater": "コメントに失敗しました。後でお試しください",
-    "closedNotice": "このページのコメントは閉じられています。",
-    "back": "戻る",
-    "beFirst": "✨ 最初のコメントを残しませんか"
-  },
   "commandPalette": {
     "label": "グローバルコマンドパレット",
     "placeholder": "ページ、記事、カテゴリ、タグを検索…",
@@ -364,7 +341,6 @@
     "subtitle": "静寂を裂いたひとすじの雑音を捕まえる。",
     "ending": "たいていは、ただのひとりごと。",
     "empty": "まだ何もない。",
-    "back": "戻る",
     "notFound": "この投稿は見つかりません。",
     "label": "Moments",
     "like": "いいね",
@@ -473,24 +449,6 @@
         "struct": "構造",
         "crew": "乗員インターフェース"
       }
-    }
-  },
-  "info": {
-    "aboutSite": {
-      "title": "このサイト",
-      "subtitle": "エンジニアの個人空間"
-    },
-    "history": {
-      "title": "歴史",
-      "subtitle": "サイトの歩み"
-    },
-    "messages": {
-      "title": "メッセージ",
-      "subtitle": "何でもどうぞ"
-    },
-    "friends": {
-      "title": "友達",
-      "subtitle": "ウェブリング"
     }
   },
   "newsletter": {
@@ -723,12 +681,11 @@
     "logTitle": "受信した信号",
     "emptyTitle": "まだ信号は届いていません。",
     "emptyText": "最初のメッセージはこの線の上に現れます。",
-    "rule1": "匿名のメッセージは確認後に表示されます。ログインした場合はすぐに表示されます",
-    "rule2": "GitHub か Google でログインできます。匿名でも大丈夫です",
-    "rule3": "メールアドレスは公開されません。広告や売り込みはお断りします",
     "privatePre": "公開に向かない内容はメールで：",
     "privateMid": "。バグ報告や機能の提案は",
-    "privatePost": " へどうぞ。",
+    "privatePost": " へどうぞ。"
+  },
+  "signal": {
     "formTitle": "信号を送る",
     "loginWith": "ログイン",
     "asUser": "{{name}} として書き込み",
@@ -751,7 +708,15 @@
     "errEmpty": "まだ何も書かれていません",
     "errName": "名前を入力してください",
     "errCaptcha": "答えが違います。問題を変えました",
-    "errFailed": "送信できませんでした。少し時間をおいてもう一度"
+    "errFailed": "送信できませんでした。少し時間をおいてもう一度",
+    "rule1": "匿名のメッセージは確認後に表示されます。ログインした場合はすぐに表示されます",
+    "rule2": "GitHub か Google でログインできます。匿名でも大丈夫です",
+    "rule3": "メールアドレスは公開されません。広告や売り込みはお断りします",
+    "heading": "応答",
+    "rxCount_one": "RX · {{count}} 件の信号を受信",
+    "rxCount_other": "RX · {{count}} 件の信号を受信",
+    "empty": "まだ信号は届いていない。最初のひとつはここに現れる。",
+    "closed": "この記事は応答を閉じている。チャンネルは受信のみ。"
   },
   "log": {
     "title": "航行日誌",
