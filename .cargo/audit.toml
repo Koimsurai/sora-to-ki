@@ -7,4 +7,14 @@ ignore = [
   # （auth.rs 一律 Validation::new(Algorithm::HS256)，HMAC-SHA256 不觸及 RSA 運算）。
   # 若日後啟用 RS256／任何 RSA 簽章，必須移除這條 ignore 並重新評估。
   "RUSTSEC-2023-0071",
+  # RUSTSEC-2026-0387 — crypto-bigint 0.5.5 的常數時間運算有時序差異。
+  # 修補只在 0.7.6，而 0.5 線是 jsonwebtoken 11 → p256／p384 → elliptic-curve 0.13 帶進來的，
+  # 只有 ECDSA（ES256／ES384）會用到；理由同上一條，我們只用 HS256，走不到。
+  # 若日後啟用 ES256／ES384，必須移除這條 ignore 並升級 jsonwebtoken。
+  "RUSTSEC-2026-0387",
+  # RUSTSEC-2026-0385 — ctutils 0.4.2 的遮罩產生與 u128 比較不是常數時間。
+  # 它只出現在 Cargo.lock：路徑是 sqlx-mysql → digest 0.11，而 sqlx 只開了 sqlite，
+  # `cargo tree -i ctutils --target all -e all` 印不出任何東西，根本沒編進後端。
+  # 修補版 0.4.4 發佈於 2026-10-23，滿兩週（2026-11-06）後跟著一般更新升上去再拿掉這條。
+  "RUSTSEC-2026-0385",
 ]

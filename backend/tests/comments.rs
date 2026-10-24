@@ -239,6 +239,41 @@ async fn ip_取的是_x_forwarded_for_最左邊那個() {
 }
 
 #[tokio::test]
+async fn 公開的留言列表不帶留言者的_email_與_ip() {
+    let (app, pool) = test_app().await;
+    let token = format!("Bearer {}", oauth_token(Some(9), Some("github")));
+    // 登入者免審核，送出就是 approved、會出現在公開列表
+    let (status, _) = post_with(
+        &app,
+        "/api/posts/1/comments",
+        json!({ "author": "登入者", "content": "內容", "email": "someone@example.com" }),
+        &[(header::AUTHORIZATION.as_str(), &token), ("x-forwarded-for", "5.6.7.8")],
+    )
+    .await;
+    assert_eq!(status, 201);
+    sqlx::query(
+        "INSERT INTO comments (thought_id, author, content, email, ip, status) VALUES (42, '路人', '內容', 'a@b.c', '9.9.9.9', 'approved')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+    for path in ["/api/posts/1/comments", "/api/thoughts/42/comments"] {
+        let (status, body) = common::get(&app, path).await;
+        assert_eq!(status, 200, "{path}");
+        let comments = body["comments"].as_array().unwrap();
+        assert_eq!(comments.len(), 1, "{path}");
+        let row = comments[0].as_object().unwrap();
+        // 這兩欄只給後台；公開端點帶出去就是把每個留言者的信箱與位置公開
+        assert!(!row.contains_key("email"), "{path} 帶了 email");
+        assert!(!row.contains_key("ip"), "{path} 帶了 ip");
+        // 整份回應裡也不該出現那兩個值
+        let raw = body.to_string();
+        assert!(!raw.contains("someone@example.com") && !raw.contains("a@b.c"), "{path}");
+        assert!(!raw.contains("5.6.7.8") && !raw.contains("9.9.9.9"), "{path}");
+    }
+}
+
+#[tokio::test]
 async fn 留言會記下來源_ip() {
     let (app, pool) = test_app().await;
     let (_, resp) = post_with(
