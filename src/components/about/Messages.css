@@ -292,6 +292,26 @@ a.msg-author {
   border-color: var(--paper-2);
 }
 
+/* 登入鈕只放圖示：細線框的方塊、墨色圖示，滑過時框換成琥珀色 */
+.msg-login .msg-provider {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: var(--fs-16);
+  color: var(--paper-2);
+  transition:
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
+}
+
+.msg-login .msg-provider:hover,
+.msg-login .msg-provider:focus-visible {
+  color: var(--paper);
+  border-color: var(--amber);
+}
+
 .msg-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
