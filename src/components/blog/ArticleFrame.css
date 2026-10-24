@@ -320,6 +320,28 @@
   opacity: 0;
 }
 
+/* 文章換文章（不走全站轉場，見 BlogPost）：新的那篇還在路上時舊的先退到一半，
+   到了之後整欄重掛、淡入並往上浮一點；左欄不動，清單自己滑 */
+.ar-page.is-fetching .ar-col {
+  opacity: 0.35;
+}
+
+.ar-page.is-swapped .ar-col {
+  animation: ar-swap 600ms var(--easing-out) both;
+}
+
+@keyframes ar-swap {
+  from {
+    opacity: 0;
+    translate: 0 var(--space-4);
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
 /* 從手記推近過來：點落在軌道頂端之後，內文從軌道那一側（右邊）往左攤開 */
 html:is([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold :is(.ar-col, .ar-side) {
   clip-path: inset(0 0 0 100%);
