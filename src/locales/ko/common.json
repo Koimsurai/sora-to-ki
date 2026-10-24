@@ -287,7 +287,6 @@
       "popular": "인기"
     },
     "comment": "댓글",
-    "like": "좋아요",
     "unlike": "좋아요 취소",
     "share": "공유",
     "shareCopied": "복사됨!",
@@ -716,7 +715,14 @@
     "rxCount_one": "RX · 신호 {{count}}개 수신",
     "rxCount_other": "RX · 신호 {{count}}개 수신",
     "empty": "아직 받은 신호가 없다. 첫 신호는 여기에 나타난다.",
-    "closed": "이 글은 응답을 닫았다. 채널은 수신만 한다."
+    "closed": "이 글은 응답을 닫았다. 채널은 수신만 한다.",
+    "react": {
+      "title": "반응",
+      "like": "좋아요",
+      "helpful": "도움이 됐어요",
+      "more": "더 알고 싶어요"
+    },
+    "writeSomething": "뭔가 적어 보세요"
   },
   "log": {
     "title": "항해 일지",

@@ -52,6 +52,11 @@ interface Props {
   onTyping?: (text: string) => void;
   /** 確定送出的那一刻（留言頁的頻道讓那段飛進天線）；送失敗時再叫一次，帶 null */
   onSend?: (text: string | null) => void;
+  /**
+   * 發送列前面的字：留言頁是 TX（發射台）；文章與碎念照提案是終端機的提示字元「>」，
+   * 沒在打字時後面接「寫點什麼」和一個閃爍的琥珀游標
+   */
+  prompt?: 'tx' | 'shell';
   className?: string;
 }
 
@@ -66,6 +71,7 @@ export default function CommentForm({
   extraNote,
   onTyping,
   onSend,
+  prompt = 'tx',
   className,
 }: Props) {
   const { t } = useTranslation();
@@ -333,17 +339,22 @@ export default function CommentForm({
         >
           <path d={bandPath(flying ?? text, 0.5, WAVE_W, WAVE_H, 0.7)} />
         </svg>
-        <span className="cf-k" aria-hidden="true">
-          TX
+        <span className={prompt === 'shell' ? 'cf-k is-shell' : 'cf-k'} aria-hidden="true">
+          {prompt === 'shell' ? '>' : 'TX'}
         </span>
         <label className="cf-text">
           <span className="sr-only">{t('signal.fieldText')}</span>
+          {prompt === 'shell' && !text && !focused && (
+            <span className="cf-ph" aria-hidden="true">
+              {t('signal.writeSomething')}
+            </span>
+          )}
           <textarea
             ref={textRef}
             rows={1}
             maxLength={MAX_CHARS}
             value={text}
-            placeholder={t('signal.fieldText')}
+            placeholder={prompt === 'shell' ? '' : t('signal.fieldText')}
             aria-invalid={error === 'empty' ? true : undefined}
             onChange={(e) => {
               type(e.target.value);

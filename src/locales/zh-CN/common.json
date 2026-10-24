@@ -287,7 +287,6 @@
       "popular": "热门"
     },
     "comment": "留言",
-    "like": "喜欢",
     "unlike": "取消喜欢",
     "share": "分享",
     "shareCopied": "已复制!",
@@ -716,7 +715,14 @@
     "rxCount_one": "RX · 收到 {{count}} 道信号",
     "rxCount_other": "RX · 收到 {{count}} 道信号",
     "empty": "还没有收到信号，第一道会出现在这里。",
-    "closed": "这篇关闭了回应，频道只收不发。"
+    "closed": "这篇关闭了回应，频道只收不发。",
+    "react": {
+      "title": "回应",
+      "like": "喜欢",
+      "helpful": "有帮助",
+      "more": "想知道更多"
+    },
+    "writeSomething": "写点什么"
   },
   "log": {
     "title": "航行日志",

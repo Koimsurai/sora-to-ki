@@ -30,6 +30,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
 import { FaEnvelope, FaTimes } from 'react-icons/fa';
 import ArticleComments from './ArticleComments';
+import ReactionSky from './ReactionSky';
 import { BlogImage } from '@/components/blog/BlogImage';
 // BlogPost.css：Tier-2 後本元件直接 SSR（不再靠 BlogPostPage fallback）→ CSS 由這裡匯入。
 // 本元件是路由 eager import（進 /blog/$id 路由 chunk），故 CSS 進「文章路由 chunk」而非全域
@@ -423,25 +424,16 @@ export const CustomParagraph = ({
 };
 
 /* ══════════════════════════
-   ReactionBar — Emoji 反應列
+   回應（文末的星座，blog/ReactionSky）的資料
    ══════════════════════════ */
 
-const REACTIONS = ['👍', '❤️', '🎉', '🚀', '🤔', '😂'];
-/** 文章頁 meta 與浮動按鈕上那顆愛心 = 反應列裡的這一個，不是舊的 `posts.likes`。 */
-const HEART = '❤️';
-
 /**
- * 反應狀態（數量 + 自己按過哪些 + toggle），給反應列和愛心按鈕共用。
+ * 回應的狀態（各 emoji 的數量 + 自己按過哪些 + toggle），存在 `post_reactions`。
+ * 文章頁持有一份、傳給文末的星座（blog/ReactionSky）；同一個狀態只能有一個持有者，
+ * 各自呼叫的話 `mine`（各自的 useState）會分岔。
  *
- * 抽出來是因為同一顆愛心原本有兩套來源：文章頁 meta 的 `❤️ {likeCount}` 和右下浮動
- * 按鈕走 `posts.likes`（`/api/posts/:id/like`），而下方反應列的 ❤️ 走 `post_reactions`。
- * 兩個數字各自增減，同一篇文章因此顯示兩個不一樣的值。
- *
- * 現在三處都吃這個 hook，共用同一份 Query 快取與同一個 localStorage key，所以在任何
- * 一處按下去，另外兩處會同步——它們本來就是同一個狀態，不是三份需要互相通知的副本。
- *
- * 不 export：列表卡片（Blog.tsx）刻意不用它，否則一頁十幾張卡片會各發一個 /reactions
- * 請求；那邊的初始值走 `PostListItem.heart_count`。而 export 非元件的東西會破壞這個
+ * 不 export：手記列表刻意不用它，否則一頁十幾篇會各發一個 /reactions 請求；
+ * 那邊的數字走 `PostListItem.heart_count`。而 export 非元件的東西會破壞這個
  * 檔案的 fast refresh（oxlint react/only-export-components）。
  */
 function useReactions(postId: string | number) {
@@ -521,41 +513,6 @@ function useReactions(postId: string | number) {
 
   return { counts, mine, toggle };
 }
-
-/**
- * 反應狀態由 BlogPost 持有並傳進來，這裡不自己呼叫 useReactions。
- *
- * 一開始兩邊各呼叫一次，結果 `counts` 會同步（同一份 Query 快取）但 `mine` 不會——那是
- * 各自的 useState。症狀是在反應列取消 ❤️ 之後，浮動按鈕還是亮的，再按一次送出的 delta
- * 是 -1（它以為自己還按著），數字卡在 0 動不了。同一個狀態就只能有一個持有者。
- */
-const Reactions = React.memo(({ counts, mine, toggle }: ReturnType<typeof useReactions>) => {
-  return (
-    // role="group" + aria-label 把一排 emoji 按鈕歸成一組；建議的 fieldset/optgroup
-    // 都帶有表單語意，用在這裡反而錯
-    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
-    <div className="reaction-bar" role="group" aria-label="Emoji 反應">
-      {REACTIONS.map((e) => {
-        const n = counts[e] || 0;
-        const active = mine.has(e);
-        return (
-          <button
-            key={e}
-            type="button"
-            className={`reaction-btn${active ? ' is-active' : ''}${n > 0 ? ' has-count' : ''}`}
-            onClick={() => toggle(e)}
-            aria-pressed={active}
-            aria-label={`${e}（${n}）`}
-          >
-            <span className="reaction-emoji">{e}</span>
-            {n > 0 && <span className="reaction-count">{n}</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-});
-Reactions.displayName = 'Reactions';
 
 /* ══════════════════════════
    SeriesNav — 系列文導覽（若文章屬於某系列）
@@ -1301,8 +1258,6 @@ function BlogPost() {
   /* ── 成功載入一篇：增加瀏覽數（每次載入新文章打一次）── */
   useEffect(() => {
     if (!postData?.id) return;
-    // 以前這裡要手動 setLiked(false) 把讚的狀態歸零。現在 liked 是從 useReactions 推導
-    // 的（key 帶 postId），換文章時自然就換成新文章的狀態，不必重置。
     // 刻意不用 AbortController：瀏覽數是 fire-and-forget，使用者讀完隨即跳頁正是常態，
     // 中止等於把要記的那一筆丟掉。sendBeacon 就是為這種卸載期送出設計的，
     // 後端 post_view 只吃 Path(id)、不讀 body，空 POST 即可。
@@ -1323,13 +1278,8 @@ function BlogPost() {
     }
   }, []);
 
-  /* ── Like state ──
-     愛心 = 反應列裡的 ❤️。以前這裡另外維護 liked/likeCount 兩個 state（來源是
-     `posts.likes`），跟下方反應列的 ❤️ 是兩個獨立的數字，同一篇文章會顯示不一致的
-     值。現在共用 useReactions，三處是同一份狀態，不需要同步。 */
+  /* ── 回應（文末的星座）── */
   const { counts: reactionCounts, mine: myReactions, toggle: toggleReaction } = useReactions(post?.id ?? id);
-  const likeCount = reactionCounts[HEART] ?? 0;
-  const liked = myReactions.has(HEART);
 
   /* ── 排版優化：CJK-Latin 自動加空格 + 腳註 hover 浮窗 ── */
   useEffect(() => {
@@ -1387,11 +1337,6 @@ function BlogPost() {
       document.removeEventListener('copy', preventCopy);
     };
   }, []);
-
-  /* ── Like handler ── 就是切換 ❤️ 反應；optimistic 與校正都在 useReactions 裡 */
-  const handleLike = () => {
-    toggleReaction(HEART);
-  };
 
   /* ── Share handlers ── */
   // SSR-safe：server 無 window（只在 share 按鈕 handler 用到、不進 DOM，故 SSR 給空 origin 不影響 hydration）。
@@ -1602,11 +1547,8 @@ function BlogPost() {
 
         {/* 文末：原本右邊的五顆浮動圓鈕收成一行字，接著是反應、系列、上下篇、同分類、留言 */}
         <footer className="ar-end">
+          {/* 「喜歡」在下面的星座裡（blog/ReactionSky），這一行只剩分享、訂閱、RSS */}
           <div className="ar-act">
-            <button type="button" className={liked ? 'is-on' : undefined} aria-pressed={liked} onClick={handleLike}>
-              {liked ? '♥' : '♡'} {t('blog.like')}
-              {likeCount > 0 && <em>{likeCount}</em>}
-            </button>
             <button type="button" onClick={handleNativeShare}>
               {copied ? t('blog.shareCopied') : t('blog.share')}
             </button>
@@ -1617,7 +1559,8 @@ function BlogPost() {
               RSS
             </a>
           </div>
-          <Reactions counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />
+          {/* 回應的狀態只能有一個持有者（文章頁）：「喜歡」鈕與星座吃同一份 counts／mine，各自呼叫 useReactions 的話 mine 會分岔 */}
+          <ReactionSky counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />
           {post.series_name && <SeriesNav seriesName={post.series_name} currentId={post.id} />}
           <PrevNextNav currentId={post.id} />
           <SameCategory currentId={post.id} postCategory={post.category ?? undefined} />

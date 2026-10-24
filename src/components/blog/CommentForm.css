@@ -220,7 +220,45 @@
 }
 
 .cf-text {
+  position: relative;
   display: grid;
+}
+
+/* 終端機那一版：提示字元是墨色，沒在打字時「寫點什麼」後面一個閃爍的琥珀游標 */
+.cf-k.is-shell {
+  font-size: var(--fs-14);
+  letter-spacing: normal;
+  color: var(--paper-2);
+}
+
+.cf-ph {
+  position: absolute;
+  top: var(--space-1);
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--fs-16);
+  color: var(--paper-3);
+  pointer-events: none;
+}
+
+.cf-ph::after {
+  content: "";
+  width: 1px;
+  height: 1.1em;
+  background: var(--amber);
+  animation: cf-caret 1.1s steps(1) infinite;
+}
+
+@keyframes cf-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.cf-text textarea {
+  caret-color: var(--amber);
 }
 
 .cf-text textarea {
