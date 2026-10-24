@@ -1,12 +1,10 @@
-/* 照片（gallery/Photos）：地面站。頁首左邊是標題與地面站的畫布，右邊是接收紀錄；
-   下面一條是每個月收到幾張，再下面是一格一格收下來的照片 */
+/* 照片（gallery/Photos）：地面站。照片牆鋪滿整頁寬：最上面置中的大標，下面一整條是地面站
+   （天線在最左、探測器在最右，訊號橫越整頁，中間下方是接收紀錄），再下面是每個月收到幾張與一格一格的照片 */
 
 .ph {
   display: grid;
   gap: var(--space-10);
-  max-width: 1080px;
-  padding: var(--page-top) var(--space-6) var(--page-bottom);
-  margin: 0 auto;
+  padding: var(--page-top) var(--space-10) var(--page-bottom);
   font-family: var(--serif);
   color: var(--paper);
 }
@@ -17,27 +15,19 @@
   cursor: pointer;
 }
 
-.ph-top {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: var(--space-10);
-  align-items: end;
-}
-
-.ph-left {
-  display: grid;
-  gap: var(--space-6);
-}
-
+/* 大標置中：左上角已經有站名，不要兩個字擠在同一個角 */
 .ph-head {
   display: grid;
   gap: var(--space-2);
+  justify-items: center;
+  text-align: center;
 }
 
 .ph-head-title {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
+  justify-content: center;
   gap: var(--space-3);
 }
 
@@ -60,10 +50,10 @@
   color: var(--paper-2);
 }
 
-/* 地面站：左下的碟形天線、右上遠處的探測器 */
+/* 地面站：左邊的碟形天線、右邊遠處的探測器，接收紀錄在兩者之間的下方 */
 .ph-station {
   position: relative;
-  height: 220px;
+  height: 260px;
 }
 
 .ph-station canvas {
@@ -76,7 +66,7 @@
 .ph-station-name {
   position: absolute;
   bottom: var(--space-2);
-  left: 180px;
+  left: 210px;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-6);
@@ -85,12 +75,21 @@
 
 /* 接收紀錄：一共收到幾格、各鏡頭幾張 */
 .ph-log {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
   display: grid;
   gap: var(--space-2);
+  justify-items: center;
+  width: min(560px, 100%);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-4);
   color: var(--paper-3);
+  translate: -50% 0;
+  text-shadow:
+    0 0 8px var(--ground),
+    0 0 16px var(--ground);
 }
 
 .ph-log b {
@@ -101,12 +100,16 @@
   color: var(--paper);
 }
 
+.ph-log-rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-6);
+  justify-content: center;
+}
+
 .ph-log-row {
   display: flex;
-  gap: var(--space-3);
-  justify-content: space-between;
-  padding-bottom: var(--space-1);
-  border-bottom: 1px dotted var(--rule);
+  gap: var(--space-2);
 }
 
 .ph-log-row span:last-child {
@@ -154,6 +157,8 @@
 
 .ph-shot img,
 .ph-shot canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -164,7 +169,13 @@
   transition: opacity var(--dur-300) ease;
 }
 
-.ph-frame:hover .ph-shot img {
+/* 還在收：圖先藏在畫布底下解碼，收完畫布拿掉就直接露出來 */
+.ph-shot img.is-pending {
+  opacity: 0;
+  transition: none;
+}
+
+.ph-frame:hover .ph-shot img:not(.is-pending) {
   opacity: 0.8;
 }
 
@@ -186,8 +197,32 @@
   color: var(--amber);
 }
 
-@media (max-width: 860px) {
-  .ph-top {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 760px) {
+  .ph {
+    padding-inline: var(--space-5);
+  }
+
+  /* 窄螢幕：接收紀錄排在地面站下面，不疊在畫布上（畫布只佔上面 200px） */
+  .ph-station {
+    height: auto;
+    padding-top: calc(var(--space-20) * 2.5);
+  }
+
+  .ph-station canvas {
+    bottom: auto;
+    height: 200px;
+  }
+
+  .ph-station-name {
+    top: 180px;
+    bottom: auto;
+    left: 150px;
+  }
+
+  .ph-log {
+    position: static;
+    width: 100%;
+    margin-top: var(--space-6);
+    translate: none;
   }
 }
