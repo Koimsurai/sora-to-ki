@@ -463,60 +463,6 @@
   }
 }
 
-/* ── Emoji 反應列：清爽、無背景、置中 ── */
-.reaction-bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-1-5);
-  margin: var(--space-12) auto var(--space-5);
-  padding: 0;
-  background: transparent;
-  border: none;
-}
-.reaction-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  padding: var(--space-1-5) var(--space-3);
-  background: var(--white-04);
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-full);
-  color: var(--white-80);
-  font-size: var(--fs-14);
-  cursor: pointer;
-  transition:
-    transform var(--dur-150) ease,
-    background var(--dur-200) ease,
-    border-color var(--dur-200) ease,
-    color var(--dur-200) ease;
-}
-.reaction-btn:hover {
-  background: rgba(var(--brand-rgb), 0.15);
-  border-color: rgba(var(--brand-rgb), 0.3);
-  color: #fff;
-  transform: translateY(-1px);
-}
-.reaction-btn.is-active {
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.2), rgba(var(--magenta-rgb), 0.2));
-  border-color: rgba(var(--brand-rgb), 0.55);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(var(--brand-rgb), 0.25);
-}
-.reaction-btn .reaction-emoji {
-  font-size: var(--fs-16);
-  line-height: var(--lh-100);
-}
-.reaction-btn .reaction-count {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  color: var(--white-70);
-  font-variant-numeric: tabular-nums;
-}
-.reaction-btn.is-active .reaction-count {
-  color: #fff;
-}
-
 /* ── Series 系列文導覽（文末，文章區塊外） ── */
 .series-nav {
   margin: var(--space-10) 0 var(--space-6);

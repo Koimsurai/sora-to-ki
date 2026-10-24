@@ -45,6 +45,7 @@ export default function ArticleComments({ postId, allowComments = true }: { post
           replyTo={replyTo}
           onCancelReply={() => setReplyTo(null)}
           textRef={textRef}
+          prompt="shell"
         />
       ) : (
         <p className="ac-closed">{t('signal.closed')}</p>

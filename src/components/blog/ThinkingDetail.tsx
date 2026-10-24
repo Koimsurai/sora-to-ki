@@ -183,6 +183,7 @@ export default function ThinkingDetail() {
               replyTo={replyTo}
               onCancelReply={() => setReplyTo(null)}
               textRef={textRef}
+              prompt="shell"
             />
           </div>
         </>

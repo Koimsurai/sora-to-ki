@@ -287,7 +287,6 @@
       "popular": "人気"
     },
     "comment": "コメント",
-    "like": "いいね",
     "unlike": "いいねを取り消す",
     "share": "シェア",
     "shareCopied": "コピー済み!",
@@ -716,7 +715,14 @@
     "rxCount_one": "RX · {{count}} 件の信号を受信",
     "rxCount_other": "RX · {{count}} 件の信号を受信",
     "empty": "まだ信号は届いていない。最初のひとつはここに現れる。",
-    "closed": "この記事は応答を閉じている。チャンネルは受信のみ。"
+    "closed": "この記事は応答を閉じている。チャンネルは受信のみ。",
+    "react": {
+      "title": "応答",
+      "like": "好き",
+      "helpful": "役に立った",
+      "more": "もっと知りたい"
+    },
+    "writeSomething": "何か書く"
   },
   "log": {
     "title": "航行日誌",

@@ -287,7 +287,6 @@
       "popular": "熱門"
     },
     "comment": "留言",
-    "like": "喜歡",
     "unlike": "取消喜歡",
     "share": "分享",
     "shareCopied": "已複製!",
@@ -716,7 +715,14 @@
     "rxCount_one": "RX · 收到 {{count}} 道訊號",
     "rxCount_other": "RX · 收到 {{count}} 道訊號",
     "empty": "還沒有收到訊號，第一道會出現在這裡。",
-    "closed": "這篇關閉了回應，頻道只收不發。"
+    "closed": "這篇關閉了回應，頻道只收不發。",
+    "react": {
+      "title": "回應",
+      "like": "喜歡",
+      "helpful": "有幫助",
+      "more": "想知道更多"
+    },
+    "writeSomething": "寫點什麼"
   },
   "log": {
     "title": "航行日誌",

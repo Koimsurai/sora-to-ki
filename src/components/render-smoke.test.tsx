@@ -40,6 +40,7 @@ const PROPS: Record<string, Record<string, unknown>> = {
     textRef: { current: null },
   },
   'blog/SignalLog.tsx': { comments: [], liked: [], onLike: vi.fn(), onReply: vi.fn() },
+  'blog/ReactionSky.tsx': { counts: { '❤️': 2 }, mine: new Set<string>(), toggle: vi.fn() },
   'gallery/GalleryThumbnail.tsx': {
     photos: [],
     activeIndex: 0,

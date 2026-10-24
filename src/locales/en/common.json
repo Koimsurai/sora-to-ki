@@ -287,7 +287,6 @@
       "popular": "Popular"
     },
     "comment": "Comment",
-    "like": "Like",
     "unlike": "Unlike",
     "share": "Share",
     "shareCopied": "Copied!",
@@ -716,7 +715,14 @@
     "rxCount_one": "RX · {{count}} signal received",
     "rxCount_other": "RX · {{count}} signals received",
     "empty": "No signals yet. The first one will show up here.",
-    "closed": "Responses are closed for this post; the channel is receive-only."
+    "closed": "Responses are closed for this post; the channel is receive-only.",
+    "react": {
+      "title": "Responses",
+      "like": "Like",
+      "helpful": "Helpful",
+      "more": "Want more"
+    },
+    "writeSomething": "Write something"
   },
   "log": {
     "title": "Flight log",
