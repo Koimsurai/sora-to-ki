@@ -19,7 +19,7 @@ import {
 } from '@/data/watchData';
 import { useBareSky } from '@/hooks/useBareSky';
 import { usePageTransition } from '@/hooks/usePageTransition';
-import { isArriving } from '@/store/pageTransition';
+import { after, isArriving } from '@/store/pageTransition';
 import {
   artistsOf,
   bookCounts,
@@ -31,7 +31,7 @@ import {
   type WatchKind,
 } from './collectionItems';
 import FavoritesEditor from './FavoritesEditor';
-import { createSignalSky, LIGHT_YEAR, type Projected, type Signal, type SkyFrame } from './signalSky';
+import { createSignalSky, drawLaunch, LIGHT_YEAR, type Projected, type Signal, type SkyFrame } from './signalSky';
 import './Collection.css';
 
 /** 最常聽的取哪一段時間（Spotify 的「最近半年」） */
@@ -40,8 +40,15 @@ const TRACK_RANGE = 'medium_term';
 const DECADE_VH = 0.5;
 /** 滑鼠離一點多近才算滑到它（像素） */
 const NEAR_PX = 14;
-/** 琥珀點落地後，第一道波前掃過整個畫面的時間（毫秒） */
-const BLOOM_MS = 1400;
+/** 進場：琥珀點落地後，鏡頭從深空俯衝回地球要多久（毫秒）；從多遠開始（比最遠的訊號再遠一點） */
+const DIVE_MS = 2100;
+const DIVE_FROM = 1.08;
+/** 俯衝到一半之後，地標名字、圖例才淡進來（毫秒） */
+const BLOOM_MS = 900;
+/** 退場：鏡頭收回地球要多久、波前從台灣擴出去要多久（毫秒）；點發射出去的速度（px/ms） */
+const EXIT_MS = 620;
+const LAUNCH_MS = 900;
+const LAUNCH_SPEED = 1.1;
 /** 窄螢幕的接收畫面固定開在哪裡（離視窗頂端，像素）：頂欄下面 */
 const PIN_TOP = 76;
 /** 捲動的慣性：鏡頭追上捲軸位置的時間常數（毫秒） */
@@ -50,16 +57,20 @@ const FOLLOW_MS = 110;
 const MARK_KEYS = [
   'earth',
   'geo',
+  'iss',
   'moon',
   'jwst',
   'sun',
   'mercury',
   'venus',
   'mars',
+  'asteroids',
   'jupiter',
   'saturn',
   'uranus',
   'neptune',
+  'kuiper',
+  'newHorizons',
   'voyager1',
   'heliopause',
   'oort',
@@ -81,6 +92,8 @@ const MARK_KEYS = [
 
 const fmt = (n: number | undefined) => (n === undefined ? '—' : n.toLocaleString('en-US'));
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
 /** 距離（光秒）換成最順口的單位：光秒、光分、光時、光日、光年 */
 function distance(t: TFunction, ls: number): { n: string; unit: string } {
@@ -167,15 +180,52 @@ export default function Collection() {
   const footRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLElement>(null);
   const hintRef = useRef<HTMLParagraphElement>(null);
+  /** 鏡頭現在退到哪裡（含進場俯衝、退場收回）；捲軸那份另外記在 effect 裡 */
   const sRef = useRef(0);
+  /** 琥珀點現在在畫面上的哪裡（視窗座標）：退場時轉場的點跟著它 */
+  const dotRef = useRef({ x: 0, y: 0 });
+  /** 退場開始的時間與那時鏡頭在哪裡；null 是還沒要離開 */
+  const exitRef = useRef<{ at: number; from: number } | null>(null);
   const [hovered, setHovered] = useState<Signal | null>(null);
   const hoverRef = useRef<string | null>(null);
 
   // 背景的星星讓位：這一頁的天空自己畫（有真的行星、恆星，跟著鏡頭轉）
   useBareSky();
 
-  // 換頁轉場的琥珀點落在地球上
+  // 換頁轉場的琥珀點落在台灣；離開時鏡頭收回地球，點從台灣帶著一道波前發射出去
   usePageTransition({
+    leave: () => {
+      const cv = canvasRef.current;
+      if (!cv || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+      const r = cv.getBoundingClientRect();
+      const at = performance.now();
+      exitRef.current = { at, from: sRef.current };
+      // 收完那一刻（鏡頭回到地球旁邊）琥珀點在哪、往哪飛：從地心往台灣指出去
+      const end: SkyFrame = {
+        w: window.innerWidth,
+        h: window.innerHeight,
+        now: Date.now() + EXIT_MS,
+        t: (at + EXIT_MS) / 1000,
+        s: 0,
+        hovered: null,
+        bloom: 1,
+      };
+      const e = sky.earth(end);
+      const c = sky.center(end);
+      const len = Math.hypot(e.x - c.x, e.y - c.y);
+      const dir = len > 3 ? { x: (e.x - c.x) / len, y: (e.y - c.y) / len } : { x: 0, y: -1 };
+      const point = { x: r.left + e.x, y: r.top + e.y };
+      const diag = Math.hypot(window.innerWidth, window.innerHeight);
+      return {
+        point,
+        velocity: { x: dir.x * LAUNCH_SPEED, y: dir.y * LAUNCH_SPEED },
+        done: after(EXIT_MS),
+        follow: () => dotRef.current,
+        // 這一頁藏起來之後，波前由轉場接著畫完
+        residue: (g: CanvasRenderingContext2D) =>
+          drawLaunch(g, point.x, point.y, (performance.now() - at - EXIT_MS * 0.7) / LAUNCH_MS, diag),
+      };
+    },
     anchor: () => {
       const cv = canvasRef.current;
       if (!cv) return null;
@@ -204,6 +254,8 @@ export default function Collection() {
     let raf = 0;
     let last = 0;
     let born = -1;
+    /** 捲軸位置（帶一點慣性）；鏡頭位置 sRef 是它再疊上進場、退場 */
+    let scrolled = 0;
     let pointer: { x: number; y: number } | null = null;
     // 每幀都會寫字的地方：字沒變就不動 DOM
     const texts = new Map<HTMLElement, string>();
@@ -257,7 +309,7 @@ export default function Collection() {
 
     const frame = (nowMs: number) => {
       raf = requestAnimationFrame(frame);
-      // 換頁轉場的點還在飛：等它落在地球上，第一道波前才出發
+      // 換頁轉場的點還在飛：鏡頭先停在深空，等它落地才俯衝回地球
       const arriving = isArriving();
       if (!arriving && born < 0) born = nowMs;
       const dt = last ? nowMs - last : 16;
@@ -273,9 +325,22 @@ export default function Collection() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const travel = Math.max(1, page.offsetHeight - h);
       const target = Math.min(1, Math.max(0, -page.getBoundingClientRect().top / travel));
-      sRef.current = reduce ? target : sRef.current + (target - sRef.current) * (1 - Math.exp(-dt / FOLLOW_MS));
-      const s = sRef.current;
-      const bloom = reduce ? 1 : born < 0 ? 0 : easeOut(Math.min(1, (nowMs - born) / BLOOM_MS));
+      scrolled = reduce ? target : scrolled + (target - scrolled) * (1 - Math.exp(-dt / FOLLOW_MS));
+      // 進場：從比最遠的訊號還遠的地方俯衝回捲軸的位置（對數尺度，中段最快）
+      const dive = reduce ? 0 : born < 0 ? 1 : 1 - easeInOut(clamp01((nowMs - born) / DIVE_MS));
+      let s = scrolled + dive * (DIVE_FROM - scrolled);
+      // 退場：鏡頭收回地球，快收完時波前從台灣發出去
+      const exit = exitRef.current;
+      let launch: number | undefined;
+      if (exit) {
+        s = exit.from * (1 - easeInOut(clamp01((nowMs - exit.at) / EXIT_MS)));
+        launch = (nowMs - exit.at - EXIT_MS * 0.7) / LAUNCH_MS;
+      }
+      sRef.current = s;
+      // 名字、圖例：俯衝到一半之後淡進來，離開時先淡掉
+      const bloom =
+        (reduce ? 1 : born < 0 ? 0 : easeOut(clamp01((nowMs - born - DIVE_MS * 0.55) / BLOOM_MS))) *
+        (exit ? 1 - clamp01((nowMs - exit.at) / (EXIT_MS * 0.5)) : 1);
       const clock = Date.now();
       const f: SkyFrame = {
         w,
@@ -283,11 +348,15 @@ export default function Collection() {
         now: clock,
         t: reduce ? 0 : nowMs / 1000,
         s,
-        hovered: hoverRef.current,
+        hovered: exit ? null : hoverRef.current,
         bloom,
-        dot: !arriving,
+        dot: !arriving && !exit,
+        launch,
       };
       const { points, marks, inView } = sky.draw(ctx, f);
+      const cr = cv.getBoundingClientRect();
+      const e = sky.earth(f);
+      dotRef.current = { x: cr.left + e.x, y: cr.top + e.y };
       lastPoints = points;
 
       // 滑到哪一點：最近的那一點，夠近、也夠清楚才算
@@ -336,7 +405,7 @@ export default function Collection() {
         el.style.opacity = String(Math.min(1, m.a) * bloom);
         if (m.key === 'records') {
           setText(el, t('collection.sky.records', { date: sentAt(t, m.dist, clock) }));
-        } else if (m.key === 'earth' || m.key.startsWith('scale-')) {
+        } else if (m.key === 'earth' || m.key === 'iss' || m.key.startsWith('scale-')) {
           setText(el, t(`collection.sky.mark.${m.key}`));
         } else {
           const d = distance(t, m.dist);
@@ -381,6 +450,9 @@ export default function Collection() {
         const n = inView[kind as keyof typeof inView];
         el.style.opacity = String(0.45 + 0.55 * Math.min(1, n / 3));
       });
+
+      // 底欄（圖例、讀數）跟名字一起：俯衝到一半才淡進來，離開時先淡掉
+      if (footRef.current) footRef.current.style.opacity = String(bloom);
 
       // 讀數：現在看到多遠，這個距離的訊號是什麼時候發出的
       const reach = reachRef.current;

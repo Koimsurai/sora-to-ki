@@ -1,6 +1,7 @@
 // 收藏頁（media/Collection）的天空：每部作品是看完、讀完、聽完的那一刻從地球發出的一道訊號，
 // 到現在以光速往外飛了一段距離，所以距離就是離現在多久。往下捲是鏡頭從地球往外退（對數尺度），
-// 一路經過月球、行星、航海家一號、太陽圈邊界、歐特雲，到附近的恆星。
+// 一路經過國際太空站、月球、韋伯望遠鏡、行星、小行星帶、柯伊伯帶、新視野號、航海家一號、
+// 太陽圈邊界、歐特雲，到附近的恆星；最後面是照真實方向畫的銀河。
 // 行星與月球用平均軌道算今天的位置，恆星用真的赤經、赤緯與距離。這裡只有幾何與畫圖，不碰 React。
 
 const TAU = Math.PI * 2;
@@ -12,6 +13,7 @@ const AMBER = '233, 193, 122';
 export const LIGHT_YEAR = 31_557_600;
 const AU = 499.005;
 const DAY_MS = 86_400_000;
+const YEAR_MS = 365.25 * DAY_MS;
 const J2000 = Date.UTC(2000, 0, 1, 12);
 const OBLIQUITY = 23.44 * DEG;
 /** 鏡頭從多近開始（光秒）：地球佔畫面一小塊，月球還在畫面外 */
@@ -25,6 +27,8 @@ const HOME_LON = 121;
 const GLOBE_DOTS = 640;
 /** 最遠至少看到哪裡（光年）：天狼星在畫面邊上 */
 const FARTHEST_LY = 9.2;
+/** 滑過一圈訊號時，波前從地球跑到那一圈要多久（秒） */
+const HOVER_WAVE_S = 0.55;
 
 type SignalKind = 'watch' | 'book' | 'music';
 
@@ -58,13 +62,15 @@ export interface SkyFrame {
   now: number;
   /** 動畫時間（秒） */
   t: number;
-  /** 0 到 1：捲到哪裡（0 在地球旁邊，1 在最遠的訊號外面） */
+  /** 鏡頭退到哪裡：0 在地球旁邊，1 在最遠的訊號外面（進場俯衝時會比 1 還遠） */
   s: number;
   hovered: string | null;
-  /** 0 到 1：落地之後第一道波前擴散到哪裡 */
+  /** 0 到 1：頁面自己的東西（繞著地球的書、地標的名字）淡入到哪裡 */
   bloom: number;
-  /** 畫不畫地球那一點（換頁轉場的點還在飛時由轉場畫） */
+  /** 畫不畫琥珀點（換頁轉場的點還在飛、或正要發射出去時由轉場畫） */
   dot?: boolean;
+  /** 離開這頁時從台灣發出去的那道波前：0 到 1 */
+  launch?: number;
 }
 
 export interface Projected {
@@ -109,13 +115,22 @@ const PLANETS: Body[] = [
   { key: 'uranus', a: 19.19, L0: 313.23, n: 0.01173 },
   { key: 'neptune', a: 30.07, L0: 304.88, n: 0.00598 },
 ];
+/** 行星身後拖的那段亮軌跡有多長（度） */
+const TRAIL_DEG = 42;
 
 /** 月球離地球多遠（光秒） */
 const MOON_LS = 1.282;
 /** 地球同步軌道（光秒）：離地心 42,164 公里 */
 const GEO_LS = 0.1406;
+/** 國際太空站：離地 420 公里、傾角 51.6°、92.9 分鐘繞一圈（相位是示意，不是即時位置） */
+const ISS_LS = EARTH_LS * 1.066;
+const ISS_INC = 51.6 * DEG;
+const ISS_PERIOD_S = 5574;
 /** 韋伯太空望遠鏡在日地 L2：離地球 150 萬公里，在太陽的正後方 */
 const L2_LS = 5.0;
+/** 小行星帶、柯伊伯帶的內外緣（天文單位） */
+const ASTEROID_AU = [2.1, 3.3] as const;
+const KUIPER_AU = [30, 50] as const;
 /** 太陽圈邊界（天文單位）：航海家一號在 121 AU 穿過 */
 const HELIOPAUSE_AU = 120;
 /** 歐特雲的內外緣（天文單位） */
@@ -134,7 +149,7 @@ const STARS = [
   { key: 'tauCeti', ra: 1.734, dec: -15.94, ly: 11.91, mag: 0.5, label: true },
 ] as const;
 
-/** 刻度圈：一光分、一光時、一光日、一光年（離地球這麼遠的訊號，就是這麼久以前發出的） */
+/** 刻度圈：一光秒、一光分、一光時、一光日、一光年（離地球這麼遠的訊號，就是這麼久以前發出的） */
 const SCALES = [
   { key: 'scale-sec', r: 1 },
   { key: 'scale-min', r: 60 },
@@ -153,20 +168,35 @@ const SECTOR = {
 /** 航海家一號：往蛇夫座方向飛，2026 年 11 月中離地球一光日，每年再遠 3.57 AU */
 const VOYAGER_DIR = direction(17.22, 12.1);
 const VOYAGER_AT = Date.UTC(2026, 10, 15);
-const voyagerAu = (now: number) => 173.1 + (3.57 * (now - VOYAGER_AT)) / (365.25 * DAY_MS);
+const voyagerAu = (now: number) => 173.1 + (3.57 * (now - VOYAGER_AT)) / YEAR_MS;
+/** 新視野號：往人馬座方向飛，2021 年 4 月到 50 AU，每年再遠 2.9 AU */
+const HORIZONS_DIR = direction(19.4, -20.2);
+const HORIZONS_AT = Date.UTC(2021, 3, 17);
+const horizonsAu = (now: number) => 50 + (2.9 * (now - HORIZONS_AT)) / YEAR_MS;
+
+/** 線稿插圖（public/illustrations）：畫在那個東西的位置上，寬度是像素 */
+const ART = {
+  iss: { src: '/illustrations/iss.webp', w: 44 },
+  jwst: { src: '/illustrations/jwst.webp', w: 50 },
+  horizons: { src: '/illustrations/new-horizons.webp', w: 48 },
+  voyager: { src: '/illustrations/voyager1.webp', w: 62 },
+} as const;
+type ArtKey = keyof typeof ART;
+
+/** 赤道座標的方向換成黃道座標 */
+function eqToEcl(v: Vec): Vec {
+  return {
+    x: v.x,
+    y: v.y * Math.cos(OBLIQUITY) + v.z * Math.sin(OBLIQUITY),
+    z: -v.y * Math.sin(OBLIQUITY) + v.z * Math.cos(OBLIQUITY),
+  };
+}
 
 /** 赤經（小時）、赤緯（度）換成黃道座標裡的方向 */
 function direction(raH: number, decD: number): Vec {
   const ra = raH * 15 * DEG;
   const dec = decD * DEG;
-  const x = Math.cos(dec) * Math.cos(ra);
-  const y = Math.cos(dec) * Math.sin(ra);
-  const z = Math.sin(dec);
-  return {
-    x,
-    y: y * Math.cos(OBLIQUITY) + z * Math.sin(OBLIQUITY),
-    z: -y * Math.sin(OBLIQUITY) + z * Math.cos(OBLIQUITY),
-  };
+  return eqToEcl({ x: Math.cos(dec) * Math.cos(ra), y: Math.cos(dec) * Math.sin(ra), z: Math.sin(dec) });
 }
 
 /** 地球上的一點（緯度、經度）現在朝哪個方向：照恆星時跟著地球轉，再換成黃道座標 */
@@ -198,9 +228,74 @@ function rng(seed: number) {
   };
 }
 
+/** 常態分布（Box–Muller） */
+const gauss = (rand: () => number) => Math.sqrt(-2 * Math.log(rand() || 1e-9)) * Math.cos(TAU * rand());
+
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const ease = (x: number) => x * x * (3 - 2 * x);
 const rgba = (c: string, a: number) => `rgba(${c}, ${a.toFixed(3)})`;
+
+/** 背景（無限遠）的點：方向、亮度分成幾階一起畫，少換幾次 fillStyle */
+interface SkyDot {
+  d: Vec;
+  size: number;
+}
+const LEVELS = 8;
+
+/** 銀河：照銀道面的真實方向撒點，越靠銀心越密 */
+function milkyWay(count: number): SkyDot[][] {
+  const pole = direction(12.857, 27.128);
+  const center = direction(17.76, -28.936);
+  const side = {
+    x: pole.y * center.z - pole.z * center.y,
+    y: pole.z * center.x - pole.x * center.z,
+    z: pole.x * center.y - pole.y * center.x,
+  };
+  const rand = rng(23);
+  const levels: SkyDot[][] = Array.from({ length: LEVELS }, () => []);
+  for (let i = 0; i < count; i++) {
+    const nearCore = rand() < 0.45;
+    const l = nearCore ? gauss(rand) * 0.7 : rand() * TAU;
+    const b = gauss(rand) * (nearCore ? 0.09 : 0.06);
+    const cl = Math.cos(l);
+    const sl = Math.sin(l);
+    const cb = Math.cos(b);
+    const sb = Math.sin(b);
+    const d = {
+      x: cb * (cl * center.x + sl * side.x) + sb * pole.x,
+      y: cb * (cl * center.y + sl * side.y) + sb * pole.y,
+      z: cb * (cl * center.z + sl * side.z) + sb * pole.z,
+    };
+    const level = Math.min(LEVELS - 1, Math.floor(rand() ** 1.6 * LEVELS * (nearCore ? 1.25 : 1)));
+    levels[level].push({ d, size: rand() < 0.08 ? 1.4 : 1 });
+  }
+  return levels;
+}
+
+/** 背景的星：四面八方，大多很暗、少數亮 */
+function fieldStars(count: number): SkyDot[][] {
+  const rand = rng(11);
+  const levels: SkyDot[][] = Array.from({ length: LEVELS }, () => []);
+  for (let i = 0; i < count; i++) {
+    const z = rand() * 2 - 1;
+    const phi = rand() * TAU;
+    const c = Math.sqrt(1 - z * z);
+    const u = rand();
+    const level = Math.min(LEVELS - 1, Math.floor(u * u * u * LEVELS));
+    levels[level].push({ d: { x: Math.cos(phi) * c, y: Math.sin(phi) * c, z }, size: 0.8 + (level / LEVELS) * 1.1 });
+  }
+  return levels;
+}
+
+/** 一圈帶（小行星帶、柯伊伯帶）：繞太陽的碎點 */
+function belt(seed: number, count: number, [inner, outer]: readonly [number, number], thick: number) {
+  const rand = rng(seed);
+  return Array.from({ length: count }, () => {
+    const r = (inner + (outer - inner) * Math.sqrt(rand())) * AU;
+    const a = rand() * TAU;
+    return { x: Math.cos(a) * r, y: Math.sin(a) * r, z: gauss(rand) * thick * r, a: 0.08 + rand() * 0.22 };
+  });
+}
 
 export function createSignalSky(signals: Signal[], now0: number) {
   const sent = signals.filter((s) => s.at !== null);
@@ -239,18 +334,18 @@ export function createSignalSky(signals: Signal[], now0: number) {
     const c = Math.sqrt(1 - z * z);
     return { p: { x: Math.cos(phi) * c * r, y: Math.sin(phi) * c * r, z: z * r }, r, a: 0.06 + orand() * 0.18 };
   });
-
-  // 背景的星：無限遠，只跟著鏡頭轉（遠的挪得少、近的挪得多）
-  const frand = rng(11);
-  const field = Array.from({ length: 460 }, () => ({
-    x: frand(),
-    y: frand(),
-    depth: 0.15 + frand() * 0.85,
-    a: 0.1 + frand() * frand() * 0.5,
-    size: 0.6 + frand() * 0.9,
-    tw: 0.4 + frand() * 1.6,
-    ph: frand() * TAU,
-  }));
+  const asteroids = belt(31, 700, ASTEROID_AU, 0.04);
+  const kuiper = belt(37, 1000, KUIPER_AU, 0.08);
+  const galaxy = milkyWay(7000);
+  const field = fieldStars(2400);
+  // 少數幾顆會閃的星（其他的亮度固定，才能一階一起畫）
+  const trand = rng(5);
+  const twinklers = Array.from({ length: 60 }, () => {
+    const z = trand() * 2 - 1;
+    const phi = trand() * TAU;
+    const c = Math.sqrt(1 - z * z);
+    return { d: { x: Math.cos(phi) * c, y: Math.sin(phi) * c, z }, tw: 0.5 + trand() * 1.5, ph: trand() * TAU };
+  });
 
   const stars = STARS.map((s) => {
     const d = direction(s.ra, s.dec);
@@ -258,13 +353,31 @@ export function createSignalSky(signals: Signal[], now0: number) {
     return { ...s, p: { x: d.x * r, y: d.y * r, z: d.z * r }, r };
   });
 
+  // 插圖：第一次畫的時候才載（伺服器端也會建這個天空，那裡沒有 Image）
+  let art: Record<ArtKey, HTMLImageElement> | null = null;
+  const loadArt = () => {
+    if (art || typeof Image === 'undefined') return;
+    const out = {} as Record<ArtKey, HTMLImageElement>;
+    for (const key of Object.keys(ART) as ArtKey[]) {
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = ART[key].src;
+      out[key] = img;
+    }
+    art = out;
+  };
+
+  // 滑過的那一圈：記下什麼時候開始滑過，波前從地球跑過去
+  let lastHover: string | null = null;
+  let hoverAt = 0;
+
   /** 鏡頭：多遠的東西剛好在畫面邊上（D）、從多高往下看（E）、轉到哪個方向（psi） */
   const view = (f: SkyFrame) => {
     const narrow = f.w < 760;
     const R = narrow ? Math.min(f.w * 0.46, f.h * 0.42) : Math.min(f.w * 0.38, f.h * 0.8);
     const D = 10 ** (L0 + (L1 - L0) * f.s);
     // 一開始幾乎是從上面往下看地球與月球，退得越遠越斜，最後像從側面看一片圓盤
-    const e = 1.12 - 0.66 * ease(f.s);
+    const e = 1.12 - 0.66 * ease(clamp01(f.s));
     const psi = psi0 + f.s * 1.6 + f.t * 0.01;
     return {
       R,
@@ -286,6 +399,22 @@ export function createSignalSky(signals: Signal[], now0: number) {
     const x = p.x * v.cosP - p.y * v.sinP;
     const y = p.x * v.sinP + p.y * v.cosP;
     return { x: v.ex + v.k * x, y: v.ey + v.k * (y * v.sinE - p.z * v.cosE) };
+  };
+
+  /** 朝鏡頭那一邊有多少（正的在前面、負的在後面）：判斷東西有沒有被地球擋住、背景天空畫哪半邊 */
+  const depthOf = (v: View, p: Vec) => (p.x * v.sinP + p.y * v.cosP) * v.cosE + p.z * v.sinE;
+
+  /**
+   * 無限遠的方向畫在畫面上的哪裡：照透視畫（視野約 130 度），看得到的是畫面深處那一大片天；
+   * 鏡頭轉的時候整片天一起轉。null 是在鏡頭背後或太偏的
+   */
+  const skyAt = (v: View, d: Vec) => {
+    const into = -depthOf(v, d);
+    if (into < 0.08) return null;
+    const F = v.diag * 0.36;
+    const x = d.x * v.cosP - d.y * v.sinP;
+    const y = d.x * v.sinP + d.y * v.cosP;
+    return { x: v.ex + (F * x) / into, y: v.ey + (F * (y * v.sinE - d.z * v.cosE)) / into };
   };
 
   /** 琥珀點：台灣在畫面上的位置（地球縮成一點時就是地球） */
@@ -316,34 +445,106 @@ export function createSignalSky(signals: Signal[], now0: number) {
     ctx.fill();
   };
 
+  const drawArt = (ctx: CanvasRenderingContext2D, key: ArtKey, x: number, y: number, a: number) => {
+    const img = art?.[key];
+    if (!img?.complete || img.naturalWidth === 0) return false;
+    const w = ART[key].w;
+    const h = (w * img.naturalHeight) / img.naturalWidth;
+    ctx.globalAlpha = a;
+    ctx.drawImage(img, x - w / 2, y - h / 2, w, h);
+    ctx.globalAlpha = 1;
+    return true;
+  };
+
+  /**
+   * 一條繞著 c 的軌道：整圈很淡、帶細刻度；at 有給的話（行星現在的黃經），身後拖一段漸亮的軌跡到它那裡
+   */
+  const orbit = (ctx: CanvasRenderingContext2D, v: View, c: Vec, r: number, a: number, at: number | null) => {
+    const o = project(v, c);
+    const rx = v.k * r;
+    ctx.strokeStyle = rgba(INK, 0.1 * a);
+    ctx.beginPath();
+    ellipse(ctx, o.x, o.y, rx, rx * v.sinE);
+    ctx.stroke();
+    // 刻度：每 15 度一根、每 90 度長一點，往外伸
+    if (rx > 60) {
+      ctx.strokeStyle = rgba(INK, 0.16 * a);
+      ctx.beginPath();
+      for (let i = 0; i < 24; i++) {
+        const th = (i / 24) * TAU;
+        const len = i % 6 === 0 ? 6 : 3;
+        const p1 = project(v, { x: c.x + Math.cos(th) * r, y: c.y + Math.sin(th) * r, z: c.z });
+        const p2 = project(v, {
+          x: c.x + Math.cos(th) * r * (1 + len / rx),
+          y: c.y + Math.sin(th) * r * (1 + len / rx),
+          z: c.z,
+        });
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+      }
+      ctx.stroke();
+    }
+    if (at === null) return;
+    const steps = 28;
+    let prev = project(v, {
+      x: c.x + Math.cos(at - TRAIL_DEG * DEG) * r,
+      y: c.y + Math.sin(at - TRAIL_DEG * DEG) * r,
+      z: c.z,
+    });
+    for (let i = 1; i <= steps; i++) {
+      const th = at - TRAIL_DEG * DEG * (1 - i / steps);
+      const p = project(v, { x: c.x + Math.cos(th) * r, y: c.y + Math.sin(th) * r, z: c.z });
+      ctx.strokeStyle = rgba(INK, 0.55 * a * (i / steps) ** 1.6);
+      ctx.beginPath();
+      ctx.moveTo(prev.x, prev.y);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      prev = p;
+    }
+  };
+
   function draw(ctx: CanvasRenderingContext2D, f: SkyFrame) {
     const { w, h, t } = f;
+    loadArt();
     ctx.clearRect(0, 0, w, h);
+    ctx.lineWidth = 1;
     const v = view(f);
     const days = (f.now - J2000) / DAY_MS;
     const points: Projected[] = [];
     const marks: Mark[] = [];
     const inView = { watch: 0, book: 0, music: 0 };
-    // 落地之後的第一道波前：還沒掃到的地方先不亮
-    const reveal = f.bloom >= 1 ? Infinity : f.bloom * v.diag * 1.2;
-    const lit = (r: number) => clamp01((reveal - r) / 60 + 1);
+    if (f.hovered !== lastHover) {
+      lastHover = f.hovered;
+      hoverAt = t;
+    }
 
-    // ── 背景的星 ──
-    for (const st of field) {
-      const x = ((((st.x + v.psi * 0.05 * st.depth) % 1) + 1) % 1) * w;
-      const y = ((((st.y - ease(f.s) * 0.12 * st.depth) % 1) + 1) % 1) * h;
-      ctx.fillStyle = rgba(INK, st.a * (0.75 + 0.25 * Math.sin(t * st.tw + st.ph)) * (0.3 + 0.7 * f.bloom));
-      ctx.fillRect(x, y, st.size, st.size);
+    // ── 背景：銀河與遠方的星（無限遠，跟著鏡頭轉） ──
+    const backdrop = (levels: SkyDot[][], max: number) => {
+      levels.forEach((list, level) => {
+        ctx.fillStyle = rgba(INK, (max * (level + 1)) / LEVELS);
+        for (const s of list) {
+          const p = skyAt(v, s.d);
+          if (!p || p.x < 0 || p.x > w || p.y < 0 || p.y > h) continue;
+          ctx.fillRect(p.x, p.y, s.size, s.size);
+        }
+      });
+    };
+    backdrop(galaxy, 0.42);
+    backdrop(field, 0.55);
+    for (const s of twinklers) {
+      const p = skyAt(v, s.d);
+      if (!p) continue;
+      ctx.fillStyle = rgba(INK, 0.5 + 0.4 * Math.sin(t * s.tw + s.ph));
+      ctx.fillRect(p.x, p.y, 1.5, 1.5);
     }
 
     // ── 刻度圈 ──
-    ctx.lineWidth = 1;
     ctx.setLineDash([2, 6]);
     for (const sc of SCALES) {
       const rx = v.k * sc.r;
-      const a = fade(v, rx) * lit(rx);
+      const a = fade(v, rx);
       if (a <= 0.01) continue;
-      ctx.strokeStyle = rgba(INK, 0.24 * a);
+      ctx.strokeStyle = rgba(INK, 0.22 * a);
       ctx.beginPath();
       ellipse(ctx, v.ex, v.ey, rx, rx * v.sinE);
       ctx.stroke();
@@ -352,9 +553,10 @@ export function createSignalSky(signals: Signal[], now0: number) {
 
     // ── 太陽圈邊界、紀錄的外緣 ──
     const helioR = v.k * HELIOPAUSE_AU * AU;
-    const helioA = fade(v, helioR) * lit(helioR);
+    const helioA = fade(v, helioR);
     if (helioA > 0.01) {
-      ctx.strokeStyle = rgba(INK, 0.2 * helioA);
+      ctx.setLineDash([]);
+      ctx.strokeStyle = rgba(INK, 0.18 * helioA);
       ctx.beginPath();
       ellipse(ctx, v.ex, v.ey, helioR, helioR * v.sinE);
       ctx.stroke();
@@ -362,7 +564,7 @@ export function createSignalSky(signals: Signal[], now0: number) {
     }
     const edge = (f.now - edgeAt) / 1000;
     const edgeR = v.k * edge;
-    const edgeA = fade(v, edgeR) * lit(edgeR);
+    const edgeA = fade(v, edgeR);
     if (sent.length > 0 && edgeA > 0.01) {
       ctx.setLineDash([1, 4]);
       ctx.strokeStyle = rgba(AMBER, 0.22 * edgeA);
@@ -378,7 +580,7 @@ export function createSignalSky(signals: Signal[], now0: number) {
     for (const o of oort) {
       const r = v.k * o.r;
       if (r < 3 || r > v.diag * 1.2) continue;
-      const a = o.a * fade(v, r) * lit(r);
+      const a = o.a * fade(v, r);
       if (a < 0.01) continue;
       oortA = Math.max(oortA, fade(v, r));
       const p = project(v, o.p);
@@ -388,26 +590,48 @@ export function createSignalSky(signals: Signal[], now0: number) {
     if (oortA > 0.05) {
       const r = OORT_AU[0] * AU * 4;
       const p = project(v, { x: -r * 0.7, y: r * 0.7, z: r * 0.1 });
-      marks.push({ key: 'oort', x: p.x, y: p.y, a: oortA * fade(v, v.k * r) * lit(v.k * r), dist: OORT_AU[0] * AU });
+      marks.push({ key: 'oort', x: p.x, y: p.y, a: oortA * fade(v, v.k * r), dist: OORT_AU[0] * AU });
     }
 
     // ── 太陽系：軌道繞著太陽（地球在一號軌道上，所以太陽不在正中間） ──
     const earth = helio(EARTH, days);
-    const sun = project(v, { x: -earth.x, y: -earth.y, z: 0 });
+    const sunC = { x: -earth.x, y: -earth.y, z: 0 };
+    const sun = project(v, sunC);
+    const beltDots = (list: typeof asteroids, key: string, [inner, outer]: readonly [number, number]) => {
+      const rx = v.k * outer * AU;
+      const a = fade(v, v.k * inner * AU) * fade(v, rx);
+      if (a <= 0.01) return;
+      for (const d of list) {
+        const p = project(v, { x: d.x + sunC.x, y: d.y + sunC.y, z: d.z });
+        ctx.fillStyle = rgba(INK, d.a * a);
+        ctx.fillRect(p.x, p.y, 1, 1);
+      }
+      const r = ((inner + outer) / 2) * AU;
+      const p = project(v, { x: sunC.x - r * 0.72, y: sunC.y - r * 0.69, z: 0 });
+      marks.push({
+        key,
+        x: p.x,
+        y: p.y,
+        a: a * clamp01((rx - 60) / 60),
+        dist: Math.hypot(sunC.x - r * 0.72, sunC.y - r * 0.69),
+      });
+    };
+    beltDots(asteroids, 'asteroids', ASTEROID_AU);
+    beltDots(kuiper, 'kuiper', KUIPER_AU);
     for (const b of [EARTH, ...PLANETS]) {
       const rx = v.k * b.a * AU;
-      const a = fade(v, rx) * lit(rx);
+      const a = fade(v, rx);
       if (a <= 0.01) continue;
-      ctx.strokeStyle = rgba(INK, 0.17 * a);
-      ctx.beginPath();
-      ellipse(ctx, sun.x, sun.y, rx, rx * v.sinE);
-      ctx.stroke();
+      const L = (b.L0 + b.n * days) * DEG;
+      orbit(ctx, v, sunC, b.a * AU, a, L);
       if (b === EARTH) continue;
       const hp = helio(b, days);
       const p = project(v, { x: hp.x - earth.x, y: hp.y - earth.y, z: 0 });
-      ctx.fillStyle = rgba(INK, 0.85 * a);
+      const big = b.key === 'jupiter' || b.key === 'saturn';
+      glow(ctx, p.x, p.y, big ? 9 : 6, INK, 0.25 * a);
+      ctx.fillStyle = rgba(INK, 0.9 * a);
       ctx.beginPath();
-      ctx.arc(p.x, p.y, b.key === 'jupiter' || b.key === 'saturn' ? 2.2 : 1.6, 0, TAU);
+      ctx.arc(p.x, p.y, big ? 2.2 : 1.6, 0, TAU);
       ctx.fill();
       if (b.key === 'saturn') {
         // 土星：點的星球、線的環
@@ -425,9 +649,9 @@ export function createSignalSky(signals: Signal[], now0: number) {
       });
     }
     const sunR = v.k * AU;
-    const sunA = fade(v, sunR) * lit(sunR);
+    const sunA = fade(v, sunR);
     if (sunA > 0.01) {
-      glow(ctx, sun.x, sun.y, 14, INK, 0.3 * sunA);
+      glow(ctx, sun.x, sun.y, 22, INK, 0.28 * sunA);
       ctx.fillStyle = rgba(INK, sunA);
       ctx.beginPath();
       ctx.arc(sun.x, sun.y, 2.6, 0, TAU);
@@ -437,14 +661,12 @@ export function createSignalSky(signals: Signal[], now0: number) {
 
     // ── 月球 ──
     const moonR = v.k * MOON_LS;
-    const moonA = fade(v, moonR) * lit(moonR);
+    const moonA = fade(v, moonR);
     if (moonA > 0.01) {
-      ctx.strokeStyle = rgba(INK, 0.2 * moonA);
-      ctx.beginPath();
-      ellipse(ctx, v.ex, v.ey, moonR, moonR * v.sinE);
-      ctx.stroke();
       const L = (218.316 + 13.176396 * days) * DEG;
+      orbit(ctx, v, { x: 0, y: 0, z: 0 }, MOON_LS, moonA, L);
       const p = project(v, { x: Math.cos(L) * MOON_LS, y: Math.sin(L) * MOON_LS, z: 0 });
+      glow(ctx, p.x, p.y, 7, INK, 0.25 * moonA);
       ctx.fillStyle = rgba(INK, 0.9 * moonA);
       ctx.beginPath();
       ctx.arc(p.x, p.y, 1.8, 0, TAU);
@@ -454,7 +676,7 @@ export function createSignalSky(signals: Signal[], now0: number) {
 
     // ── 地球同步軌道：一圈虛線 ──
     const geoR = v.k * GEO_LS;
-    const geoA = fade(v, geoR) * lit(geoR) * clamp01((geoR - 30) / 40);
+    const geoA = fade(v, geoR) * clamp01((geoR - 30) / 40);
     if (geoA > 0.01) {
       ctx.setLineDash([2, 5]);
       ctx.strokeStyle = rgba(INK, 0.22 * geoA);
@@ -467,45 +689,51 @@ export function createSignalSky(signals: Signal[], now0: number) {
 
     // ── 韋伯太空望遠鏡：太陽的正後方 ──
     const l2R = v.k * L2_LS;
-    const l2A = fade(v, l2R) * lit(l2R) * clamp01((l2R - 24) / 30);
+    const l2A = fade(v, l2R) * clamp01((l2R - 24) / 30);
     if (l2A > 0.01) {
       const len = Math.hypot(earth.x, earth.y) || 1;
       const p = project(v, { x: (earth.x / len) * L2_LS, y: (earth.y / len) * L2_LS, z: 0 });
-      ctx.strokeStyle = rgba(INK, 0.9 * l2A);
-      ctx.strokeRect(p.x - 2, p.y - 2, 4, 4);
-      marks.push({ key: 'jwst', x: p.x, y: p.y, a: l2A, dist: L2_LS });
+      if (!drawArt(ctx, 'jwst', p.x, p.y, 0.9 * l2A)) {
+        ctx.strokeStyle = rgba(INK, 0.9 * l2A);
+        ctx.strokeRect(p.x - 2, p.y - 2, 4, 4);
+      }
+      marks.push({ key: 'jwst', x: p.x + ART.jwst.w / 2, y: p.y, a: l2A, dist: L2_LS });
     }
 
-    // ── 航海家一號：從太陽拉出來的一條虛線就是它走過的路 ──
-    const vd = voyagerAu(f.now) * AU;
-    const vr = v.k * vd;
-    const va = fade(v, vr) * lit(vr);
-    if (va > 0.01) {
-      const p = project(v, { x: VOYAGER_DIR.x * vd, y: VOYAGER_DIR.y * vd, z: VOYAGER_DIR.z * vd });
+    // ── 新視野號、航海家一號：從太陽拉出來的一條虛線就是它走過的路 ──
+    const probe = (key: 'horizons' | 'voyager', mark: string, dir: Vec, dist: number) => {
+      const r = v.k * dist;
+      const a = fade(v, r);
+      if (a <= 0.01) return;
+      const p = project(v, { x: dir.x * dist, y: dir.y * dist, z: dir.z * dist });
       ctx.setLineDash([1, 3]);
-      ctx.strokeStyle = rgba(INK, 0.2 * va);
+      ctx.strokeStyle = rgba(INK, 0.2 * a);
       ctx.beginPath();
       ctx.moveTo(sun.x, sun.y);
       ctx.lineTo(p.x, p.y);
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.strokeStyle = rgba(INK, 0.9 * va);
-      ctx.beginPath();
-      ctx.moveTo(p.x - 3, p.y);
-      ctx.lineTo(p.x + 3, p.y);
-      ctx.moveTo(p.x, p.y - 3);
-      ctx.lineTo(p.x, p.y + 3);
-      ctx.stroke();
-      marks.push({ key: 'voyager1', x: p.x, y: p.y, a: va, dist: vd });
-    }
+      if (!drawArt(ctx, key, p.x, p.y, 0.92 * a)) {
+        ctx.strokeStyle = rgba(INK, 0.9 * a);
+        ctx.beginPath();
+        ctx.moveTo(p.x - 3, p.y);
+        ctx.lineTo(p.x + 3, p.y);
+        ctx.moveTo(p.x, p.y - 3);
+        ctx.lineTo(p.x, p.y + 3);
+        ctx.stroke();
+      }
+      marks.push({ key: mark, x: p.x + ART[key].w / 2, y: p.y, a, dist });
+    };
+    probe('horizons', 'newHorizons', HORIZONS_DIR, horizonsAu(f.now) * AU);
+    probe('voyager', 'voyager1', VOYAGER_DIR, voyagerAu(f.now) * AU);
 
     // ── 附近的恆星 ──
     for (const s of stars) {
       const r = v.k * s.r;
-      const a = fade(v, r) * lit(r);
+      const a = fade(v, r);
       if (a <= 0.01) continue;
       const p = project(v, s.p);
-      if (s.mag > 0.8) glow(ctx, p.x, p.y, 10 + s.mag * 6, INK, 0.22 * a);
+      glow(ctx, p.x, p.y, 8 + s.mag * 10, INK, 0.2 * a);
       ctx.fillStyle = rgba(INK, a);
       ctx.beginPath();
       ctx.arc(p.x, p.y, 1 + s.mag * 1.3, 0, TAU);
@@ -513,7 +741,7 @@ export function createSignalSky(signals: Signal[], now0: number) {
       if (s.label) marks.push({ key: s.key, x: p.x, y: p.y, a, dist: s.r });
     }
 
-    // ── 訊號：每一道是以地球為中心的一圈，作品是圈上的一點 ──
+    // ── 訊號：每一道是以地球為中心的一圈細點鏈，作品是圈上的一點 ──
     // 圈很多：同一種、同一個亮度的併成一條路徑畫，不要一圈一次 stroke
     const rings = new Map<string, Path2D>();
     const ring = (key: string, rx: number) => {
@@ -526,40 +754,52 @@ export function createSignalSky(signals: Signal[], now0: number) {
       path.ellipse(v.ex, v.ey, rx, rx * v.sinE, 0, 0, TAU);
     };
     const placed: { s: Signal; x: number; y: number; a: number; rx: number }[] = [];
+    let hoverRing: { s: Signal; rx: number; a: number } | null = null;
     for (const s of signals) {
       if (s.home) continue;
       const dist = distOf(s, f.now);
       const rx = v.k * dist;
-      const a = fade(v, rx) * lit(rx);
+      const a = fade(v, rx);
       if (a <= 0.02) continue;
       const th = angle.get(s.id) ?? 0;
       const p = project(v, { x: Math.cos(th) * dist, y: Math.sin(th) * dist, z: 0 });
-      const on = s.id === f.hovered;
-      if (on) {
-        ctx.strokeStyle = rgba(s.amber ? AMBER : INK, 0.5 * a);
-        ctx.beginPath();
-        ellipse(ctx, v.ex, v.ey, rx, rx * v.sinE);
-        ctx.stroke();
-      } else {
-        const level = Math.ceil(a * 4);
-        ring(`${s.amber ? 'a' : s.kind}:${level}`, rx);
-      }
+      if (s.id === f.hovered) hoverRing = { s, rx, a };
+      else ring(`${s.amber ? 'a' : s.kind}:${Math.ceil(a * 4)}`, rx);
       if (p.x < -20 || p.x > w + 20 || p.y < -20 || p.y > h + 20) continue;
       placed.push({ s, x: p.x, y: p.y, a, rx });
       if (a > 0.3) inView[s.kind]++;
     }
-    const RING_ALPHA = { watch: 0.07, book: 0.1, music: 0.12, a: 0.2 } as const;
+    const RING_ALPHA = { watch: 0.16, book: 0.2, music: 0.24, a: 0.36 } as const;
+    ctx.setLineDash([1, 3]);
     for (const [key, path] of rings) {
       const [kind, level] = key.split(':');
       const base = kind === 'a' ? RING_ALPHA.a : RING_ALPHA[kind as keyof typeof RING_ALPHA];
       ctx.strokeStyle = rgba(kind === 'a' ? AMBER : INK, (base * Number(level)) / 4);
       ctx.stroke(path);
     }
+    ctx.setLineDash([]);
+    // 滑過的那一圈：一道波前從地球往外跑，追上那一圈時整圈亮起來
+    if (hoverRing) {
+      const { s, rx, a } = hoverRing;
+      const color = s.amber ? AMBER : INK;
+      const k = f.t === 0 ? 1 : clamp01((t - hoverAt) / HOVER_WAVE_S);
+      const r = rx * (1 - (1 - k) ** 3);
+      if (k < 1) {
+        ctx.strokeStyle = rgba(AMBER, 0.6 * (1 - k * 0.5));
+        ctx.beginPath();
+        ellipse(ctx, v.ex, v.ey, r, r * v.sinE);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = rgba(color, 0.55 * a * k);
+      ctx.beginPath();
+      ellipse(ctx, v.ex, v.ey, rx, rx * v.sinE);
+      ctx.stroke();
+    }
     for (const { s, x, y, a } of placed) {
       const on = s.id === f.hovered;
       const color = s.amber ? AMBER : INK;
       const alpha = Math.min(1, (0.5 + 0.45 * s.size) * a + (on ? 0.3 : 0));
-      if (s.amber || on) glow(ctx, x, y, on ? 16 : 11, color, 0.35 * alpha);
+      if (s.amber || on) glow(ctx, x, y, on ? 18 : 11, color, 0.35 * alpha);
       drawGlyph(ctx, s, x, y, alpha, on ? 1.5 : 1);
       points.push({ id: s.id, x, y, a });
     }
@@ -567,32 +807,54 @@ export function createSignalSky(signals: Signal[], now0: number) {
     // ── 地球：點的星球，向著太陽的那半邊亮 ──
     const fadeIn = clamp01(f.bloom * 3);
     const rE = v.k * EARTH_LS;
-    if (rE > 2.5) {
-      const ga = clamp01((rE - 2.5) / 12) * fadeIn;
+    const ga = clamp01((rE - 2.5) / 12);
+    if (ga > 0) {
       const sunLen = Math.hypot(earth.x, earth.y) || 1;
       const sx = -earth.x / sunLen;
       const sy = -earth.y / sunLen;
+      glow(ctx, v.ex, v.ey, rE * 1.25, INK, 0.08 * ga);
       ctx.strokeStyle = rgba(INK, 0.3 * ga);
       ctx.beginPath();
       ctx.arc(v.ex, v.ey, rE, 0, TAU);
       ctx.stroke();
       for (const g of globe) {
         const n = surface(g.lat, g.lon, days);
+        const depth = depthOf(v, n);
+        if (depth < 0) continue;
         const xr = n.x * v.cosP - n.y * v.sinP;
         const yr = n.x * v.sinP + n.y * v.cosP;
-        const depth = yr * v.cosE + n.z * v.sinE;
-        if (depth < 0) continue;
         const day = n.x * sx + n.y * sy > 0;
         ctx.fillStyle = rgba(INK, ga * (0.2 + 0.65 * depth) * (day ? 1 : 0.28));
         ctx.fillRect(v.ex + rE * xr, v.ey + rE * (yr * v.sinE - n.z * v.cosE), 1.3, 1.3);
       }
     }
 
+    // ── 國際太空站：貼著地球繞，轉到地球後面就被擋住 ──
+    const issA = clamp01((rE - 12) / 24);
+    if (issA > 0.01) {
+      const u = (TAU * (f.now / 1000)) / ISS_PERIOD_S;
+      const d = eqToEcl({ x: Math.cos(u), y: Math.sin(u) * Math.cos(ISS_INC), z: Math.sin(u) * Math.sin(ISS_INC) });
+      const pos = { x: d.x * ISS_LS, y: d.y * ISS_LS, z: d.z * ISS_LS };
+      const p = project(v, pos);
+      const hidden = depthOf(v, d) < 0 && Math.hypot(p.x - v.ex, p.y - v.ey) < rE;
+      if (!hidden && !drawArt(ctx, 'iss', p.x, p.y, 0.95 * issA)) {
+        ctx.fillStyle = rgba(INK, issA);
+        ctx.fillRect(p.x - 1, p.y - 1, 2, 2);
+      }
+      marks.push({
+        key: 'iss',
+        x: p.x + ART.iss.w / 2,
+        y: p.y,
+        a: hidden ? 0 : issA * fadeIn,
+        dist: ISS_LS - EARTH_LS,
+      });
+    }
+
     // ── 還在地球上的：繞著地球轉，地球縮成一點之後就看不到了 ──
     const homeA = fadeIn * clamp01((rE - 2) / 8);
     homes.forEach((s) => {
       if (homeA <= 0.01) return;
-      const r = rE + (s.home === 'live' ? 12 : 22);
+      const r = rE + (s.home === 'live' ? 26 : 38);
       const th = (homeAngle.get(s.id) ?? 0) + t * (s.home === 'live' ? 0.22 : 0.12);
       const x = v.ex + Math.cos(th) * r;
       const y = v.ey + Math.sin(th) * r * v.sinE;
@@ -611,7 +873,6 @@ export function createSignalSky(signals: Signal[], now0: number) {
 
     // ── 正在播：地球一直往外發著波 ──
     if (broadcasting) {
-      ctx.lineWidth = 1;
       for (let i = 0; i < 3; i++) {
         const ph = (t * 0.45 + i / 3) % 1;
         const r = rE + 8 + ph * 110;
@@ -633,27 +894,48 @@ export function createSignalSky(signals: Signal[], now0: number) {
     }
     marks.push({ key: 'earth', x: v.ex + rE * 0.8, y: v.ey - rE * 0.8, a: clamp01(1 - f.s * 10) * fadeIn, dist: 0 });
 
-    // ── 第一道波前 ──
-    if (reveal !== Infinity) {
-      ctx.strokeStyle = rgba(AMBER, 0.45 * (1 - f.bloom));
-      ctx.beginPath();
-      ellipse(ctx, v.ex, v.ey, reveal, reveal * v.sinE);
-      ctx.stroke();
-    }
+    // ── 離開：從台灣發出去的一道波前 ──
+    if (f.launch !== undefined) drawLaunch(ctx, dot.x, dot.y, f.launch, v.diag);
 
     return { points, marks, inView };
   }
 
   return {
     draw,
-    /** 地球在畫面上的位置（換頁轉場的琥珀點落在這裡） */
+    /** 琥珀點在畫面上的位置（換頁轉場的點落在這裡、離開時從這裡發射） */
     earth: (f: SkyFrame) => homeDot(view(f), f.now),
+    /** 地球中心在畫面上的位置（發射的方向從這裡往台灣指出去） */
+    center: (f: SkyFrame) => {
+      const v = view(f);
+      return { x: v.ex, y: v.ey };
+    },
     /** 現在畫面邊上是多遠（光秒） */
     reach: (f: SkyFrame) => view(f).D,
     /** 從地球捲到最遠跨了幾個數量級（頁面要多長） */
     decades: L1 - L0,
     distOf,
   };
+}
+
+/** 退場時鏡頭停在地球旁邊的那個斜度：波前畫成這個扁度的圈，頁面藏起來之後轉場接著畫也一樣 */
+const LAUNCH_SQUASH = Math.sin(1.12);
+
+/**
+ * 離開這頁時從台灣發出去的波前：三圈，一圈比一圈晚一點。k 是 0 到 1 的進度；
+ * 頁面自己畫前半段，頁面藏起來之後由轉場（Departure.residue）接著畫完
+ */
+export function drawLaunch(ctx: CanvasRenderingContext2D, x: number, y: number, k: number, diag: number) {
+  if (k <= 0) return;
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    const p = clamp01(k * 1.4 - i * 0.2);
+    if (p <= 0 || p >= 1) continue;
+    const r = 6 + (1 - (1 - p) ** 2) * diag * 0.5;
+    ctx.strokeStyle = rgba(AMBER, 0.55 * (1 - p));
+    ctx.beginPath();
+    ctx.ellipse(x, y, r, r * LAUNCH_SQUASH, 0, 0, TAU);
+    ctx.stroke();
+  }
 }
 
 /** 一道訊號在圈上的那一點：在看是圓點、書是菱形、歌是十字；想讀的書是空心 */
