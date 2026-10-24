@@ -153,127 +153,6 @@ const surfaceAt = (a: number, z: number): V3 => {
   return [r[0] * (R - bend), r[1] * (R - bend), z];
 };
 
-/**
- * 把一個環裁到看得到的那一塊地表（Sutherland–Hodgman，裁切邊界用二分法找）：
- * 在地平線前面、不比鏡頭近、也不超出畫面兩側太遠。地平線後面的陸地就不畫，不會被投影到正面來
- */
-const clipToVisible = (ring: [number, number][], seen: (a: number, z: number) => boolean) => {
-  const out: [number, number][] = [];
-  const cross = (p: [number, number], q: [number, number]): [number, number] => {
-    // p 看得到、q 看不到：在 p 到 q 之間找邊界
-    let lo = 0;
-    let hi = 1;
-    for (let k = 0; k < 12; k++) {
-      const mid = (lo + hi) / 2;
-      if (seen(p[0] + (q[0] - p[0]) * mid, p[1] + (q[1] - p[1]) * mid)) lo = mid;
-      else hi = mid;
-    }
-    return [p[0] + (q[0] - p[0]) * lo, p[1] + (q[1] - p[1]) * lo];
-  };
-  for (let i = 0; i < ring.length; i++) {
-    const p = ring[(i + ring.length - 1) % ring.length];
-    const q = ring[i];
-    const sp = seen(p[0], p[1]);
-    const sq = seen(q[0], q[1]);
-    if (sq) {
-      if (!sp) out.push(cross(q, p));
-      out.push(q);
-    } else if (sp) out.push(cross(p, q));
-  }
-  return out;
-};
-
-/** 一維的值雜訊（0–1）：刷痕用來斷筆、起伏 */
-const hash1 = (n: number) => {
-  const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
-  return s - Math.floor(s);
-};
-const noise1 = (x: number) => {
-  const i = Math.floor(x);
-  const f = x - i;
-  const u = f * f * (3 - 2 * f);
-  return hash1(i) * (1 - u) + hash1(i + 1) * u;
-};
-
-/** 陸地的刻線（跟首頁土星同一個手法）：沿緯度一列一列（固定橫向位置），
- *  用拉長的雜訊斷成一段一段的筆觸、微微起伏；只有落在陸地裡的會留下（畫的時候用陸地的形狀裁） */
-const HATCH = (() => {
-  const rows: { z: number; segs: [number, number][][] }[] = [];
-  let row = 0;
-  for (let z = -2200; z <= NEAR_Z; z += 12, row++) {
-    const segs: [number, number][][] = [];
-    let seg: [number, number][] = [];
-    for (let a = THETA0 - 0.18; a <= THETA0 + SPAN + 0.18; a += 0.004) {
-      const x = (a * R) / 46 + row * 7.31;
-      if (noise1(x) < 0.22) {
-        if (seg.length > 1) segs.push(seg);
-        seg = [];
-        continue;
-      }
-      seg.push([a, z + (noise1(x * 0.6 + 40) - 0.5) * 4]);
-    }
-    if (seg.length > 1) segs.push(seg);
-    rows.push({ z, segs });
-  }
-  return rows;
-})();
-
-/**
- * 只留落在陸地上（外擴一點）的刷痕：海上的那些反正會被裁掉，每幀投影它們是白花力氣。
- * 第一次畫的時候在地表座標裡把陸地畫到一張小的離屏畫布上，照它濾一次（瀏覽器端才有畫布，所以延後到這時候）
- */
-let landHatch: typeof HATCH | null = null;
-const hatchOnLand = () => {
-  if (landHatch) return landHatch;
-  const W = 640;
-  const H = 640;
-  const a0 = THETA0 - 0.18;
-  const a1 = THETA0 + SPAN + 0.18;
-  const z0 = -2200;
-  const z1 = NEAR_Z;
-  const toX = (a: number) => ((a - a0) / (a1 - a0)) * W;
-  const toY = (z: number) => ((z - z0) / (z1 - z0)) * H;
-  const cv = document.createElement('canvas');
-  cv.width = W;
-  cv.height = H;
-  const g = cv.getContext('2d', { willReadFrequently: true });
-  if (!g) return HATCH;
-  g.fillStyle = '#fff';
-  g.strokeStyle = '#fff';
-  g.lineWidth = 6;
-  for (const poly of LAND) {
-    g.beginPath();
-    for (const ring of poly) {
-      ring.forEach(([a, z], n) => (n ? g.lineTo(toX(a), toY(z)) : g.moveTo(toX(a), toY(z))));
-      g.closePath();
-    }
-    g.fill('evenodd');
-    g.stroke();
-  }
-  const px = g.getImageData(0, 0, W, H).data;
-  const onLand = (a: number, z: number) => {
-    const x = Math.floor(toX(a));
-    const y = Math.floor(toY(z));
-    return x >= 0 && x < W && y >= 0 && y < H && (px[(y * W + x) * 4] ?? 0) > 0;
-  };
-  landHatch = HATCH.map(({ z, segs }) => {
-    const kept: [number, number][][] = [];
-    for (const seg of segs) {
-      let run: [number, number][] = [];
-      for (const p of seg) {
-        if (onLand(p[0], p[1])) run.push(p);
-        else {
-          if (run.length > 1) kept.push(run);
-          run = [];
-        }
-      }
-      if (run.length > 1) kept.push(run);
-    }
-    return { z, segs: kept };
-  }).filter((r) => r.segs.length);
-  return landHatch;
-};
-
 /** 海面的點：一片稀疏的經緯點，固定一組 */
 const SURFACE = (() => {
   const out: [number, number][] = [];
@@ -477,10 +356,10 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
         ctx.fillRect(s.x, s.y, 1.2, 1.2);
       }
 
-      // 陸地：用跟首頁土星一樣的刻線畫（一列一列的白色刷痕），越遠越淡；台灣在發射台底下。
-      // 地平線後面的那一段壓到地平線上（不然背面的陸地會投影到正面來），整塊再裁在地球的輪廓裡
+      // 陸地：只描海岸線（線稿），細、淡一階，不壓住上面的字與每天的燈。
+      // 照原本的點一段一段連，看不到的那段（地平線後面、比鏡頭近、超出畫面兩側）就提筆——
+      // 不裁成封閉的形狀，才不會在地平線上多出一條裁切出來的直邊。整塊裁在地球的輪廓裡
       if (earth.length > 1) {
-        const top = Math.min(...earth.map((p) => p.y));
         ctx.save();
         ctx.beginPath();
         earth.forEach((p, n) => (n ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -488,38 +367,19 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
         ctx.lineTo(earth[0].x, h * 4);
         ctx.closePath();
         ctx.clip();
-        // 陸地的形狀當作裁切範圍（外圈加湖用 evenodd 挖空；各塊陸地互不重疊，放同一個路徑沒關係）
-        ctx.beginPath();
         const seen = (a: number, z: number) =>
           z <= NEAR_Z && a >= THETA0 - 0.18 && a <= THETA0 + SPAN + 0.18 && cam.facing(surfaceAt(a, z));
+        ctx.strokeStyle = `rgba(${INK}, ${0.42 * fade})`;
+        ctx.lineWidth = 1;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
         for (const poly of LAND) {
           for (const ring of poly) {
-            const visible = clipToVisible(ring, seen);
-            if (visible.length < 3) continue;
-            visible.forEach(([a, z], n) => {
-              const s = cam.project(surfaceAt(a, z));
-              if (!s) return;
-              if (n) ctx.lineTo(s.x, s.y);
-              else ctx.moveTo(s.x, s.y);
-            });
-            ctx.closePath();
-          }
-        }
-        ctx.clip('evenodd');
-        // 刷痕：近的線粗、遠的細（越遠越像一層薄霧），線與線之間留黑縫
-        ctx.strokeStyle = `rgba(${INK}, ${0.9 * fade})`;
-        ctx.lineCap = 'round';
-        for (const { z, segs } of hatchOnLand()) {
-          const mid = cam.project(surfaceAt(THETA0 + SPAN * 0.5, z));
-          if (!mid || mid.y < top - 2) continue;
-          ctx.lineWidth = Math.min(2.2, Math.max(0.25, mid.s * 1.6));
-          ctx.globalAlpha = Math.min(1, 0.35 + mid.s * 0.6);
-          ctx.beginPath();
-          for (const seg of segs) {
             let pen = false;
-            for (const [a, zz] of seg) {
-              const q = surfaceAt(a, zz);
-              const s = cam.facing(q) ? cam.project(q) : null;
+            // 環是首尾相接的：多走一個點回到起點，最後一段海岸也畫上
+            for (let n = 0; n <= ring.length; n++) {
+              const [a, z] = ring[n % ring.length];
+              const s = seen(a, z) ? cam.project(surfaceAt(a, z)) : null;
               if (!s) {
                 pen = false;
                 continue;
@@ -529,11 +389,9 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
               pen = true;
             }
           }
-          ctx.stroke();
         }
-        ctx.globalAlpha = 1;
-        ctx.lineCap = 'butt';
-        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.lineJoin = 'miter';
         ctx.restore();
       }
 
