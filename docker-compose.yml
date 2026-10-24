@@ -57,6 +57,31 @@ services:
       backend-rs:
         condition: service_healthy
 
+  # 舊站（2026-10 翻新前的最後一版），掛在 archive.koimsurai.com。
+  # 映像是翻新前凍結的 web-frontend:v1-final（git tag v1-final，要重建就 checkout 那個 tag 再 build）；
+  # 沒有 build 區塊，`docker compose up -d --build` 不會重建它。
+  # 唯讀由 nginx 那層做（API 只放 GET、擋登入、後台導回主站），這裡只是把舊的前端跑起來。
+  # SITE_URL 刻意寫主站：canonical 指回主站，搜尋引擎不會把舊站當成重複內容。
+  frontend-archive:
+    image: web-frontend:v1-final
+    container_name: personal-website-archive
+    environment:
+      - TZ=Asia/Taipei
+      - BACKEND_URL=http://backend-rs:3002
+      - SITE_URL=https://koimsurai.com
+    ports:
+      - "127.0.0.1:13589:13579"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:13579/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      backend-rs:
+        condition: service_healthy
+
   backend-rs:
     build:
       context: .
