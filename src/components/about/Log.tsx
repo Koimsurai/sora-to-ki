@@ -1,8 +1,9 @@
 // 航行日誌：把原本的「歷史」與「動態」合成一頁（/history；/activity 轉到這裡）。
-// 上面是一條往上爬的軌跡（about/logSky）：高度是從站點誕生起累積的 GitHub 貢獻，改版是軌跡上的點，
-// 最前端是「現在」；正下方是同一條時間軸的熱力圖。右上角是任務經過時間（MET），
-// 底下接著現在的狀態：今天寫了多久程式、這週的語言、最近在玩什麼。
-// 換頁進來時琥珀點落在起點（發射台），火箭沿著軌跡一路爬到現在；離開時火箭沿最後的方向飛走，點跟著它。
+// 整個視窗是一個升空的場景（about/logSky）：火箭從發射台離地，往遠方是時間、離地高度是累積的 GitHub 貢獻，
+// 改版是軌道上的節點，每天的貢獻是地上的燈。標題疊在左上、任務經過時間（MET）疊在右上，
+// 底部一條遙測列：高度與飛了幾天、今天寫了多久程式、這週的語言、最近在玩什麼。
+// 換頁進來時琥珀點從正上方落在發射台，火箭垂直離地、一路爬到現在，穿過大氣層之後星空才浮出來；
+// 離開時火箭沿機身方向飛走，點跟著機鼻。
 import { useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -65,7 +66,8 @@ export default function Log() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const metRef = useRef<HTMLElement>(null);
   const labelsRef = useRef<(HTMLElement | null)[]>([]);
-  const hudRef = useRef<HTMLDivElement>(null);
+  const altRef = useRef<HTMLElement>(null);
+  const elapsedRef = useRef<HTMLElement>(null);
   const nowRef = useRef<HTMLSpanElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
   const leaveRef = useRef<number | null>(null);
@@ -211,17 +213,12 @@ export default function Log() {
         // 窄螢幕放不下名字：只留點，點一下看提示（完整清單另外給報讀器）
         label.style.opacity = String((w >= NARROW_PX && log.milestoneIndex[k] <= drawn.tip ? 1 : 0) * (1 - erase));
       });
-      // 火箭旁邊的遙測讀數：高度（累積貢獻）與飛了幾天，跟著火箭爬
+      // 遙測列的高度（累積貢獻）與飛了幾天：跟著火箭爬升一起跳
       const here = drawn.now;
-      if (hudRef.current && here) {
-        const alt = hudRef.current.querySelector('b');
-        const met = hudRef.current.querySelector('span');
-        if (alt) alt.textContent = `ALT ${log.cumAt(drawn.tip).toLocaleString('en-US')}`;
-        if (met) met.textContent = `T+${drawn.tip + 1}d`;
-        const hw = hudRef.current.offsetWidth;
-        hudRef.current.style.transform = `translate(${Math.min(w - hw - 4, here.x + 18)}px, ${here.y + 10}px)`;
-        hudRef.current.style.opacity = String(Math.min(1, grow * 4) * (1 - erase));
-      }
+      const altText = log.cumAt(drawn.tip).toLocaleString('en-US');
+      if (altRef.current && altRef.current.textContent !== altText) altRef.current.textContent = altText;
+      const dayText = `${drawn.tip + 1}d`;
+      if (elapsedRef.current && elapsedRef.current.textContent !== dayText) elapsedRef.current.textContent = dayText;
       if (nowRef.current && here) {
         const nw = nowRef.current.offsetWidth;
         nowRef.current.style.transform = `translate(${here.x - nw - 14}px, ${here.y - 8}px)`;
@@ -275,6 +272,33 @@ export default function Log() {
 
   return (
     <div className="lg" ref={pageRef}>
+      {/* 升空場景鋪滿整個視窗，標題、遙測列都疊在上面 */}
+      <div className="lg-line" ref={boxRef}>
+        <canvas ref={canvasRef} aria-hidden="true" />
+        <div className="lg-labels" aria-hidden="true">
+          {milestones.map((m, k) =>
+            m.level === 2 ? (
+              <span
+                key={m.key}
+                className="lg-label"
+                ref={(el) => {
+                  labelsRef.current[k] = el;
+                }}
+              >
+                {m.label}
+              </span>
+            ) : null,
+          )}
+        </div>
+        <span className="lg-now-label" ref={nowRef} aria-hidden="true">
+          {t('log.now')}
+        </span>
+        <div className="lg-tip" ref={tipRef} aria-hidden="true">
+          <b />
+          <span />
+        </div>
+      </div>
+
       <header className="lg-top">
         <div className="lg-head">
           <div className="lg-title">
@@ -289,42 +313,6 @@ export default function Log() {
         </div>
       </header>
 
-      <div className="lg-scroll">
-        <div className="lg-line" ref={boxRef}>
-          <canvas ref={canvasRef} aria-hidden="true" />
-          {/* 遙測讀數：跟著火箭走的高度（累積貢獻）與飛了幾天 */}
-          <div className="lg-hud" ref={hudRef} aria-hidden="true">
-            <b />
-            <span />
-          </div>
-          <p className={days ? 'sr-only' : 'lg-nodata'}>
-            {days ? t('log.total', { count: log.total }) : t('log.noContrib')}
-          </p>
-          <div className="lg-labels" aria-hidden="true">
-            {milestones.map((m, k) =>
-              m.level === 2 ? (
-                <span
-                  key={m.key}
-                  className="lg-label"
-                  ref={(el) => {
-                    labelsRef.current[k] = el;
-                  }}
-                >
-                  {m.label}
-                </span>
-              ) : null,
-            )}
-          </div>
-          <span className="lg-now-label" ref={nowRef} aria-hidden="true">
-            {t('log.now')}
-          </span>
-          <div className="lg-tip" ref={tipRef} aria-hidden="true">
-            <b />
-            <span />
-          </div>
-        </div>
-      </div>
-
       {/* 里程碑的完整清單給報讀器（畫面上只標大轉折，其他的滑過才看得到） */}
       <ol className="sr-only">
         {milestones.map((m) => (
@@ -334,52 +322,68 @@ export default function Log() {
         ))}
       </ol>
 
-      <ul className="lg-legend">
-        <li>{t('log.legendHeight')}</li>
-        <li>{t('log.legendDots')}</li>
-        <li>{t('log.legendHeat')}</li>
-      </ul>
-
-      <section className="lg-status" aria-label={t('log.statusLabel')}>
-        <div>
-          <span className="lg-k">{t('log.coding')}</span>
-          <span className="lg-v">
-            {coded === null ? '—' : t('log.codingValue', { h: Math.floor(coded / 60), m: coded % 60 })}
-          </span>
-          <span className="lg-s">{t('log.codingVia')}</span>
+      {/* 遙測列：像發射直播畫面底下那排讀數 */}
+      <footer className="lg-strip" aria-label={t('log.statusLabel')}>
+        <ul className="lg-legend">
+          <li>{t('log.legendHeight')}</li>
+          <li>{t('log.legendDots')}</li>
+          <li>{t('log.legendHeat')}</li>
+        </ul>
+        <div className="lg-strip-row">
+          <div className="lg-cell lg-cell-flight">
+            <div>
+              <span className="lg-k">ALT</span>
+              <b className="lg-v" ref={altRef} />
+              <span className="sr-only">{days ? t('log.total', { count: log.total }) : t('log.noContrib')}</span>
+            </div>
+            <div>
+              <span className="lg-k">T+</span>
+              <b className="lg-v" ref={elapsedRef} />
+            </div>
+          </div>
+          <div className="lg-cell">
+            <span className="lg-k">{t('log.coding')}</span>
+            <b className="lg-v">
+              {coded === null ? '—' : t('log.codingValue', { h: Math.floor(coded / 60), m: coded % 60 })}
+            </b>
+            <span className="lg-s">{t('log.codingVia')}</span>
+          </div>
+          <div className="lg-cell lg-cell-langs">
+            <span className="lg-k">{t('log.languages')}</span>
+            {coding?.languages.length ? (
+              <ul className="lg-bars">
+                {coding.languages.map((l) => (
+                  <li key={l.name}>
+                    <span>{l.name}</span>
+                    <i style={{ width: `${(l.percent / maxPct) * 100}%` }} />
+                    <em>{l.text}</em>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <b className="lg-v">—</b>
+            )}
+          </div>
+          <div className="lg-cell">
+            <span className="lg-k">{t('log.playing')}</span>
+            <b className="lg-v">{playing?.recent?.name ?? '—'}</b>
+            {playing && (
+              <span className="lg-s">
+                {playing.recent && t('log.played2w', { hours: hours(playing.recent.minutes2w), owned: playing.owned })}
+                {playing.longest && (
+                  <>
+                    <br />
+                    {t('log.longest', {
+                      name: playing.longest.name,
+                      hours: Math.round(playing.longest.minutes / 60),
+                    })}
+                  </>
+                )}
+              </span>
+            )}
+          </div>
         </div>
-        <div>
-          <span className="lg-k">{t('log.languages')}</span>
-          {coding?.languages.length ? (
-            <ul className="lg-bars">
-              {coding.languages.map((l) => (
-                <li key={l.name}>
-                  <span>{l.name}</span>
-                  <i style={{ width: `${(l.percent / maxPct) * 100}%` }} />
-                  <em>{l.text}</em>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <span className="lg-v">—</span>
-          )}
-        </div>
-        <div>
-          <span className="lg-k">{t('log.playing')}</span>
-          <span className="lg-v">{playing?.recent?.name ?? '—'}</span>
-          {playing && (
-            <span className="lg-s">
-              {playing.recent && t('log.played2w', { hours: hours(playing.recent.minutes2w), owned: playing.owned })}
-              {playing.longest && (
-                <>
-                  <br />
-                  {t('log.longest', { name: playing.longest.name, hours: Math.round(playing.longest.minutes / 60) })}
-                </>
-              )}
-            </span>
-          )}
-        </div>
-      </section>
+      </footer>
     </div>
   );
 }

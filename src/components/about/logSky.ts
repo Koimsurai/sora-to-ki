@@ -6,6 +6,7 @@
 
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
+const GROUND = '10, 10, 12';
 const TAU = Math.PI * 2;
 const DAY_MS = 86400000;
 /** 字型：地上的月份刻度是數字，用等寬字畫在畫布上（數字不需要裁字） */
@@ -32,6 +33,10 @@ const LANE = 22;
 const GAMMA_MIN = (24 * Math.PI) / 180;
 const GAMMA_MAX = (65 * Math.PI) / 180;
 const PITCH_DAYS = 70;
+/** 軌道的平滑程度（天）：越大越順 */
+const SMOOTH_DAYS = 14;
+/** 大氣層頂在多高：火箭穿過去之後星空才浮出來 */
+const ATMOSPHERE = 40;
 
 type V3 = [number, number, number];
 const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -78,6 +83,43 @@ const smooth = (t: number) => t * t * (3 - 2 * t);
 const rocketLen = (w: number, s: number) =>
   ROCKET_LEN * Math.min(1.3, Math.max(0.6, s)) * Math.min(1, Math.max(0.55, w / 1100));
 
+interface Camera {
+  eye: V3;
+  project: (p: V3) => ScreenPoint | null;
+}
+
+/** 半徑 radius 的球從鏡頭看過去的輪廓（畫面上那一段連續的弧，照順序） */
+function silhouette(cam: Camera, radius: number, w: number, h: number) {
+  const eyeLen = Math.hypot(cam.eye[0], cam.eye[1], cam.eye[2]);
+  const k = (radius * radius) / (eyeLen * eyeLen);
+  const center = mul(cam.eye, k);
+  const rad = radius * Math.sqrt(1 - k);
+  const nrm = norm(cam.eye);
+  const u = norm(cross(nrm, [0, 0, 1]));
+  const v = cross(nrm, u);
+  const n = 360;
+  const pts: (ScreenPoint | null)[] = [];
+  for (let s = 0; s < n; s++) {
+    const ang = (s / n) * TAU;
+    const p = cam.project(add(center, add(mul(u, Math.cos(ang) * rad), mul(v, Math.sin(ang) * rad))));
+    pts.push(p && p.x > -3 * w && p.x < 4 * w && p.y > -3 * h && p.y < 4 * h ? p : null);
+  }
+  // 取最長的一段連續可見的點（繞圈的，所以從一個空缺後面開始數）
+  const gap = pts.findIndex((p) => !p);
+  if (gap < 0) return pts.filter((p): p is ScreenPoint => p !== null);
+  let best: ScreenPoint[] = [];
+  let run: ScreenPoint[] = [];
+  for (let s = 1; s <= n; s++) {
+    const p = pts[(gap + s) % n];
+    if (p) run.push(p);
+    else {
+      if (run.length > best.length) best = run;
+      run = [];
+    }
+  }
+  return run.length > best.length ? run : best;
+}
+
 /** 地表的點：一片經緯點，固定一組（θ、橫向位置），畫的時候投影 */
 const SURFACE = (() => {
   const out: [number, number][] = [];
@@ -105,8 +147,33 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
   }
   const flame: { x: number; y: number; vx: number; vy: number; life: number }[] = [];
 
+  // 火箭走自己的軌道：累積貢獻先做高斯平滑（σ = SMOOTH_DAYS），畫出來是一條順的升空曲線，
+  // 每天的起伏留給地上的燈。高度可以取小數天，爬升時火箭連續地動，不會一天跳一格
+  const alt = (() => {
+    const out: number[] = [];
+    const k = Math.ceil(SMOOTH_DAYS * 3);
+    for (let i = 0; i < N; i++) {
+      let sum = 0;
+      let wsum = 0;
+      for (let j = -k; j <= k; j++) {
+        const c = cum[Math.max(0, Math.min(N - 1, i + j))] ?? 0;
+        const wt = Math.exp(-(j * j) / (2 * SMOOTH_DAYS * SMOOTH_DAYS));
+        sum += c * wt;
+        wsum += wt;
+      }
+      out.push((sum / wsum / total) * ALT_MAX);
+    }
+    // 起點貼地：平滑會把第一天抬起來一點，整條往下扣回去
+    const lift = out[0] ?? 0;
+    return out.map((a, idx) => Math.max(0, a - lift * (1 - idx / (N - 1))));
+  })();
   const thetaOf = (i: number) => THETA0 + (i / (N - 1)) * SPAN;
-  const altOf = (i: number) => ((cum[Math.max(0, Math.min(N - 1, Math.floor(i)))] ?? 0) / total) * ALT_MAX;
+  const altOf = (i: number) => {
+    const c = Math.max(0, Math.min(N - 1, i));
+    const a = Math.floor(c);
+    const b = Math.min(N - 1, a + 1);
+    return (alt[a] ?? 0) + ((alt[b] ?? 0) - (alt[a] ?? 0)) * (c - a);
+  };
   /** 軌跡上第 i 天的位置（世界座標） */
   const pathAt = (i: number): V3 => mul(radial(thetaOf(i)), R + altOf(i));
   /** 第 i 天的燈在地上的位置：沿地面軌跡，一週七排往鏡頭這邊排開 */
@@ -116,13 +183,13 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
     return [p[0], p[1], 40 + dow * LANE];
   };
 
-  /** 飛行路徑角：看前 30 天的爬升，夾在重力轉向的範圍裡；離地那段從垂直慢慢壓下來 */
+  /** 飛行路徑角：平滑後軌道的切線，夾在重力轉向的範圍裡；離地那段從垂直慢慢壓下來 */
   const gammaAt = (i: number) => {
-    const a = Math.max(0, i - 30);
-    const b = Math.min(N - 1, i + 1);
+    const a = Math.max(0, i - 4);
+    const b = Math.min(N - 1, i + 4);
     const climb = altOf(b) - altOf(a);
-    const run = ((b - a) / (N - 1)) * SPAN * R;
-    const path = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, Math.atan2(climb * 6, run)));
+    const run = ((b - a) / (N - 1)) * SPAN * R || 1;
+    const path = Math.max(GAMMA_MIN, Math.min(GAMMA_MAX, Math.atan2(climb, run)));
     return Math.PI / 2 + (path - Math.PI / 2) * smooth(Math.min(1, i / PITCH_DAYS));
   };
 
@@ -137,7 +204,7 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
     const f = norm(sub(target, eye));
     const right = norm(cross(f, up0));
     const up = cross(right, f);
-    const fl = Math.min(w * 1.1, h * 2.2);
+    const fl = Math.min(w * 1.1, h * 1.5);
     const cx = w * 0.5;
     const cy = h * 0.52;
     const project = (p: V3): ScreenPoint | null => {
@@ -221,7 +288,30 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
       ctx.clearRect(0, 0, w, h);
       const cam = camera(w, h, look);
       const fade = 1 - erase;
-      const tip = Math.floor(Math.max(0, Math.min(N - 1, grow * (N - 1))));
+      // 火箭飛到哪一天（可以是小數：連續地動）
+      const upto = Math.max(0, Math.min(N - 1, grow * (N - 1)));
+      const tip = Math.floor(upto);
+
+      // 天空：火箭還在大氣層裡時蓋一層暗幕，穿過大氣層頂之後星空才浮出來
+      const through = smooth(Math.max(0, Math.min(1, (altOf(upto) - ATMOSPHERE * 0.6) / (ATMOSPHERE * 0.8))));
+      if (through < 1) {
+        ctx.fillStyle = `rgba(${GROUND}, ${0.92 * (1 - through) * fade})`;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      // 地球：從鏡頭看過去的輪廓塗成不透明，把背後的星星擋掉（星空只在大氣層外）
+      const earth = silhouette(cam, R, w, h);
+      if (earth.length > 1) {
+        ctx.fillStyle = `rgba(${GROUND}, ${fade})`;
+        ctx.beginPath();
+        earth.forEach((p, n) => (n ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        const first = earth[0];
+        const last = earth[earth.length - 1];
+        ctx.lineTo(last.x, h * 4);
+        ctx.lineTo(first.x, h * 4);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       // 地表：一片經緯點，朝鏡頭的那一面，越遠越淡；橫向也照著地球的弧度往下彎
       for (const [a, z] of SURFACE) {
@@ -235,21 +325,9 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
         ctx.fillRect(s.x, s.y, 1.2, 1.2);
       }
 
-      // 地平線：從鏡頭看過去地球的邊緣，外面一層很薄的大氣光
-      const eyeLen = Math.hypot(cam.eye[0], cam.eye[1], cam.eye[2]);
-      const k = (R * R) / (eyeLen * eyeLen);
-      const center = mul(cam.eye, k);
-      const rad = R * Math.sqrt(1 - k);
-      const nrm = norm(cam.eye);
-      const u = norm(cross(nrm, [0, 0, 1]));
-      const v = cross(nrm, u);
-      const limb: (ScreenPoint | null)[] = [];
-      for (let s = 0; s <= 240; s++) {
-        const ang = (s / 240) * TAU;
-        const p = cam.project(add(center, add(mul(u, Math.cos(ang) * rad), mul(v, Math.sin(ang) * rad))));
-        limb.push(p && p.x > -40 && p.x < w + 40 && p.y > -40 && p.y < h + 40 ? p : null);
-      }
+      // 地平線：地球的邊緣，外面一層很薄的大氣光；再往上一層虛線是大氣層頂
       for (const [width, alpha] of [
+        [18, 0.02],
         [6, 0.04],
         [3, 0.08],
         [1, 0.4],
@@ -257,19 +335,17 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
         ctx.strokeStyle = `rgba(${INK}, ${alpha * fade})`;
         ctx.lineWidth = width;
         ctx.beginPath();
-        let pen = false;
-        for (const p of limb) {
-          if (!p) {
-            pen = false;
-            continue;
-          }
-          if (pen) ctx.lineTo(p.x, p.y);
-          else ctx.moveTo(p.x, p.y);
-          pen = true;
-        }
+        earth.forEach((p, n) => (n ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
         ctx.stroke();
       }
       ctx.lineWidth = 1;
+      const shell = silhouette(cam, R + ATMOSPHERE, w, h);
+      ctx.setLineDash([2, 6]);
+      ctx.strokeStyle = `rgba(${INK}, ${0.14 * fade})`;
+      ctx.beginPath();
+      shell.forEach((p, n) => (n ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      ctx.stroke();
+      ctx.setLineDash([]);
 
       // 地面軌跡：發射台到今天正下方的一條點線，月份刻度標在上面
       ctx.setLineDash([2, 5]);
@@ -323,6 +399,8 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
         else ctx.moveTo(p.x, p.y);
         pen = true;
       }
+      const end = cam.project(pathAt(upto));
+      if (end && pen) ctx.lineTo(end.x, end.y);
       ctx.stroke();
       ctx.lineWidth = 1;
       ctx.strokeStyle = `rgba(${INK}, ${0.06 * fade})`;
@@ -367,8 +445,8 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
       }
 
       // 現在：軌跡最前端的琥珀點與火箭
-      const here = cam.project(pathAt(tip));
-      const rk = rocketAt(cam, tip, erase * erase * 900);
+      const here = cam.project(pathAt(upto));
+      const rk = rocketAt(cam, upto, erase * erase * 900);
       if (here) {
         const pulse = 0.5 + 0.5 * Math.sin(t * 3);
         const glow = ctx.createRadialGradient(here.x, here.y, 0, here.x, here.y, 16 + pulse * 8);
@@ -416,7 +494,7 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
           ctx.restore();
         }
       }
-      return { tip, now: here };
+      return { tip, upto, now: here };
     },
   };
 }

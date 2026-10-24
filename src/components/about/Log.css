@@ -1,22 +1,88 @@
-/* 航行日誌（about/Log）：頁首左邊是標題、右邊是任務經過時間；下面是升空的畫布（about/logSky），
-   字疊在畫布上；最下面一排是現在的狀態。畫布是透視投影，窄螢幕一樣放得下整段 */
+/* 航行日誌（about/Log）：升空的畫布（about/logSky）鋪滿整個視窗；
+   標題疊在左上、任務經過時間疊在右上，底部一條遙測列壓在地球的暗處，像發射直播畫面底下那排讀數 */
 
 .lg {
-  display: grid;
-  gap: var(--space-6);
-  max-width: 1280px;
-  padding: var(--page-top) var(--space-10) var(--page-bottom);
-  margin: 0 auto;
+  position: relative;
+  height: 100svh;
+  min-height: 640px;
+  overflow: hidden;
   font-family: var(--serif);
+  color: var(--paper);
+  /* 標題與遙測列的左右邊界：跟其他頁的內容欄同寬 */
+  --lg-edge: max(var(--space-10), calc(50% - 640px));
+}
+
+/* ── 升空 ── */
+.lg-line {
+  position: absolute;
+  inset: 0;
+}
+
+.lg-line canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lg-label,
+.lg-now-label,
+.lg-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.lg-label {
+  font-size: var(--fs-12);
+  color: var(--paper);
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
+}
+
+.lg-now-label {
+  font-size: var(--fs-13);
   color: var(--paper);
 }
 
+/* 提示：有底、有框，蓋在名字與燈上面也讀得清楚 */
+.lg-tip {
+  z-index: 1;
+  display: grid;
+  gap: var(--space-px);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-13);
+  background: rgba(var(--ground-rgb), 0.9);
+  border: 1px solid var(--rule);
+  transition: opacity var(--dur-150) ease;
+}
+
+.lg-tip b {
+  font-weight: 400;
+}
+
+.lg-tip span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+/* ── 標題與任務經過時間 ── */
 .lg-top {
+  position: absolute;
+  top: var(--page-top);
+  right: var(--lg-edge);
+  left: var(--lg-edge);
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-6);
+  pointer-events: none;
 }
 
 .lg-title {
@@ -64,103 +130,16 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 收：字退掉，只剩火箭飛走（畫布上的字由那一幀一起淡掉） */
-.lg-top,
-.lg-legend,
-.lg-status {
-  transition: opacity var(--dur-300) ease;
-}
-
-.lg.is-leaving :is(.lg-top, .lg-legend, .lg-status) {
-  opacity: 0;
-}
-
-/* ── 升空 ── */
-.lg-scroll {
-  overflow: hidden;
-}
-
-.lg-line {
-  position: relative;
-  height: 520px;
-}
-
-.lg-line canvas {
+/* ── 遙測列 ── */
+.lg-strip {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.lg-hud,
-.lg-label,
-.lg-now-label,
-.lg-tip {
-  position: absolute;
-  top: 0;
+  right: 0;
+  bottom: 0;
   left: 0;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-}
-
-/* 遙測讀數：跟著火箭走 */
-.lg-hud {
   display: grid;
-  font-family: var(--mono-font);
-  font-size: var(--fs-10);
-  letter-spacing: var(--ls-8);
-  color: var(--paper-2);
-}
-
-.lg-hud b {
-  font-weight: 400;
-  color: var(--amber);
-}
-
-.lg-nodata {
-  position: absolute;
-  top: 0;
-  left: 0;
-  margin: 0;
-  font-family: var(--mono-font);
-  font-size: var(--fs-10);
-  color: var(--paper-3);
-}
-
-.lg-label {
-  font-size: var(--fs-12);
-  color: var(--paper);
-  text-shadow:
-    0 0 6px var(--ground),
-    0 0 12px var(--ground);
-}
-
-.lg-now-label {
-  font-size: var(--fs-13);
-  color: var(--paper);
-}
-
-/* 提示：有底、有框，蓋在名字與燈上面也讀得清楚 */
-.lg-tip {
-  z-index: 1;
-  display: grid;
-  gap: var(--space-px);
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--fs-13);
-  background: rgba(var(--ground-rgb), 0.9);
-  border: 1px solid var(--rule);
-  transition: opacity var(--dur-150) ease;
-}
-
-.lg-tip b {
-  font-weight: 400;
-}
-
-.lg-tip span {
-  font-family: var(--mono-font);
-  font-size: var(--fs-10);
-  color: var(--paper-3);
+  gap: var(--space-3);
+  padding: var(--space-6) var(--lg-edge) var(--space-6);
+  background: linear-gradient(rgba(var(--ground-rgb), 0), var(--ground) 40%);
 }
 
 .lg-legend {
@@ -176,19 +155,28 @@
   color: var(--paper-3);
 }
 
-/* ── 現在 ── */
-.lg-status {
+.lg-strip-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   gap: var(--space-8);
-  padding-top: var(--space-6);
+  padding-top: var(--space-4);
   border-top: 1px dotted var(--rule);
 }
 
-.lg-status > div {
+.lg-cell {
   display: grid;
   align-content: start;
-  gap: var(--space-2);
+  gap: var(--space-1);
+}
+
+.lg-cell-flight {
+  grid-auto-flow: column;
+  gap: var(--space-8);
+}
+
+.lg-cell-flight > div {
+  display: grid;
+  gap: var(--space-1);
 }
 
 .lg-k {
@@ -199,7 +187,7 @@
 }
 
 .lg-v {
-  font-size: var(--fs-22);
+  font-size: var(--fs-20);
   font-weight: 600;
   line-height: var(--lh-130);
 }
@@ -211,9 +199,18 @@
   color: var(--paper-2);
 }
 
+/* 高度與飛了幾天是儀表讀數：等寬數字、琥珀色 */
+.lg-cell-flight .lg-v {
+  font-family: var(--mono-font);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+}
+
 .lg-bars {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  max-width: 420px;
   padding: 0;
   margin: 0;
   list-style: none;
@@ -240,23 +237,49 @@
   color: var(--paper-3);
 }
 
-@media (max-width: 860px) {
-  .lg-status {
-    grid-template-columns: minmax(0, 1fr);
+/* 收：字退掉，只剩火箭飛走（畫布上的字由那一幀一起淡掉） */
+.lg-top,
+.lg-strip {
+  transition: opacity var(--dur-300) ease;
+}
+
+.lg.is-leaving :is(.lg-top, .lg-strip) {
+  opacity: 0;
+}
+
+@media (max-width: 1100px) {
+  .lg-strip-row {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .lg-cell-langs {
+    display: none;
   }
 }
 
 @media (max-width: 760px) {
   .lg {
-    padding-right: var(--space-4);
-    padding-left: var(--space-4);
+    --lg-edge: var(--space-4);
   }
 
   .lg-met {
     justify-items: start;
   }
 
-  .lg-line {
-    height: 420px;
+  .lg-legend {
+    display: none;
+  }
+
+  .lg-strip-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .lg-cell-flight {
+    grid-column: 1 / -1;
+  }
+
+  .lg-strip .lg-v {
+    font-size: var(--fs-16);
   }
 }
