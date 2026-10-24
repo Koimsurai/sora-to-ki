@@ -35,6 +35,7 @@
     "menu": "내비게이션"
   },
   "siteNav": {
+    "signIn": "로그인",
     "notes": "노트",
     "moments": "혼잣말",
     "works": "작품",

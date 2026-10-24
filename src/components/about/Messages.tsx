@@ -2,8 +2,8 @@
 // 平常只有雜訊，打字時你打的字即時變成波形，送出時那一段往右飛進天線、天線亮一下。
 // 底下左邊是收到的訊號（每一則一小段由內容長出來的波形），右邊是發送台：登入或匿名、驗證碼、回覆。
 // 資料沿用文章留言那一套（post_id = meta-messages，匿名的要審核，登入的直接公開）。
-// 換頁進來時琥珀點落在頻道的左端，變成一段電波沿頻道跑進天線（線跟著它長出來）；
-// 離開時倒過來：天線送出一段電波，倒著跑回左端（線跟著收掉），點從那裡往左飛走。
+// 換頁進來時琥珀點落在頻道的左端，起點振一下（像超聲波探頭），一道琥珀色的光沿頻道跑進天線（線跟著它長出來）；
+// 離開時倒過來：那道光從天線倒著跑回起點（線跟著收掉），起點振一下，點從那裡往左飛走。
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -26,10 +26,14 @@ const CONTACT = 'timo9378@gmail.com';
 const MAX_CHARS = 500;
 /** 一個字是幾秒的訊號（只是顯示用的換算） */
 const SEC_PER_CHAR = 0.12;
-/** 進場：點落地變成電波，沿頻道跑進天線要幾秒 */
-const ARRIVE_S = 1.4;
-/** 離場：電波從天線倒著跑回左端要幾毫秒 */
-const EXIT_MS = 900;
+/** 進場：點落地、起點振一下，那道光沿頻道跑進天線要幾秒 */
+const ARRIVE_S = 1.1;
+/** 起點振鈴衰減完要幾秒 */
+const PING_S = 0.7;
+/** 離場：那道光從天線倒著跑回起點要幾毫秒；跑到之後起點再振一下，點才飛走 */
+const PULSE_BACK_MS = 500;
+// 合起來要在 0.8 秒內：轉場最多等頁面收 0.8 秒（layout/TransitionLayer）
+const EXIT_MS = PULSE_BACK_MS + 280;
 /** 跑回左端之後點往左飛走的速度（px/ms） */
 const LEAVE_SPEED = 0.8;
 /** 雜訊每秒換幾次就夠了 */
@@ -39,8 +43,8 @@ const WAVE_H = 36;
 
 const easeOutQuad = (t: number) => 1 - (1 - t) * (1 - t);
 const easeIn = (t: number) => t * t;
-/** 離場的電波前緣在哪（0–1，1 是天線那端）：一開始慢、越跑越快 */
-const exitHead = (since: number) => 1 - easeIn(Math.min(1, (performance.now() - since) / EXIT_MS));
+/** 離場的那道光前緣在哪（0–1，1 是天線那端）：一開始慢、越跑越快 */
+const exitHead = (since: number) => 1 - easeIn(Math.min(1, (performance.now() - since) / PULSE_BACK_MS));
 
 type Sent = 'pending' | 'approved' | null;
 
@@ -109,13 +113,13 @@ export default function Messages() {
   };
 
   usePageTransition({
-    // 錨點是頻道的左端：點落在這裡變成一段電波，沿頻道跑進天線
+    // 錨點是頻道的左端：點落在這裡，起點振一下，變成一道光沿頻道跑進天線
     anchor: () => {
       const s = strip();
       return s ? { x: s.r.left, y: s.r.top + s.h / 2 } : null;
     },
     arrive: () => ({ tangent: { x: 1, y: 0 } }),
-    // 離場是倒過來：天線送出一段電波，倒著沿頻道跑回左端，點從那裡往左飛走
+    // 離場是倒過來：天線送出那道光，倒著沿頻道跑回起點，起點振一下，點從那裡往左飛走
     leave: () => {
       const s = strip();
       if (!s) return null;
@@ -162,8 +166,9 @@ export default function Messages() {
       const real = (now - start) / 1000;
       // 換頁那段電波跑得快，跑的時候每幀都畫；平常只有雜訊，30fps 就夠
       const arriving = !reduce && real < ARRIVE_S;
+      const ringing = !reduce && real < PING_S;
       const leaving = leaveRef.current !== null;
-      if (!arriving && !leaving && now - last < FRAME_MS) return;
+      if (!arriving && !ringing && !leaving && now - last < FRAME_MS) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       const w = box.clientWidth;
@@ -178,15 +183,20 @@ export default function Messages() {
       const s = snd ? (now - snd.start) / 1000 : 0;
       if (snd && s > SEND_S) sendingRef.current = null;
       const sending = sendingRef.current ? { text: sendingRef.current.text, s } : null;
-      // 換頁的電波：進場從左端跑向天線（先快後慢，像被天線接住），離場從天線倒著跑回來
+      // 換頁：進場起點振一下、那道光跑向天線（先快後慢，像被天線接住）；
+      // 離場那道光從天線倒著跑回起點，到了起點再振一下
       let head = 1;
-      let carrier: { head: number; dir: 1 | -1 } | null = null;
+      let pulse: { head: number; dir: 1 | -1 } | null = null;
+      let ping: number | null = null;
       if (leaving && leaveRef.current !== null) {
         head = exitHead(leaveRef.current);
-        carrier = head > 0 ? { head, dir: -1 } : null;
-      } else if (arriving) {
-        head = easeOutQuad(real / ARRIVE_S);
-        carrier = { head, dir: 1 };
+        pulse = head > 0 ? { head, dir: -1 } : null;
+        const ringT = (now - leaveRef.current - PULSE_BACK_MS) / (EXIT_MS - PULSE_BACK_MS);
+        ping = ringT >= 0 ? Math.min(1, ringT) : null;
+      } else if (arriving || ringing) {
+        head = easeOutQuad(Math.min(1, real / ARRIVE_S));
+        pulse = arriving ? { head, dir: 1 } : null;
+        ping = real / PING_S;
       }
       draw.draw(ctx, {
         w,
@@ -196,7 +206,8 @@ export default function Messages() {
         typing: typingRef.current,
         sending: reduce ? null : sending,
         reveal: head,
-        carrier,
+        pulse,
+        ping,
         dishAlpha: leaveRef.current !== null ? 1 - 0.6 * (1 - head) : Math.min(1, 0.3 + head),
         dish,
       });
