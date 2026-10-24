@@ -382,6 +382,26 @@ a.series-nav-title:hover {
 .post-content .markdown-alert-title svg {
   display: none;
 }
+/* 要讀者停下來的三種：線亮一階、標籤前一顆琥珀點（「這裡」） */
+.post-content :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution) {
+  border-left-color: var(--paper);
+}
+.post-content :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution) .markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--paper-2);
+}
+.post-content
+  :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution)
+  .markdown-alert-title::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: var(--r-round);
+  background: var(--amber);
+  box-shadow: 0 0 6px rgba(var(--amber-rgb), 0.7);
+}
 .post-content .markdown-alert p {
   margin: var(--space-1) 0;
   color: inherit;
