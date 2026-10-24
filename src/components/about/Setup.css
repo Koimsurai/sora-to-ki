@@ -149,6 +149,12 @@
   color: var(--paper-3);
 }
 
+/* 小標前面的子系統代號（C&DH、EPS⋯）：琥珀色 */
+.su-tag em {
+  font-style: normal;
+  color: rgba(var(--amber-rgb), 0.8);
+}
+
 /* 零件與機殼：中心點放在 (left, top)；說明掛在線稿下面，不影響置中 */
 .su-part,
 .su-case,
@@ -307,6 +313,209 @@
   from {
     opacity: 0;
   }
+}
+
+/* ── 零重力：兩台主機的零件從機殼裡它裝的位置散開漂出來，之後各自慢慢漂、慢慢轉 ── */
+.su-sheet.is-shown .su-part.is-float {
+  animation: su-burst 1.2s var(--easing-out) both;
+  animation-delay: calc(var(--i) * var(--dur-100) * 0.7);
+}
+
+.su-sheet.is-shown .su-part.is-float > img {
+  animation: su-drift var(--dur) ease-in-out var(--phase) infinite;
+}
+
+@keyframes su-burst {
+  from {
+    opacity: 0;
+    transform: translate(var(--sx), var(--sy)) scale(0.2);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes su-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(calc(var(--rot) * -1));
+  }
+
+  50% {
+    transform: translate(var(--ax), var(--ay)) rotate(var(--rot));
+  }
+}
+
+/* 對接：滑過的零件，一個分身沿虛線飛回機殼裡它的位置、縮成那一塊的大小，接上之後淡掉 */
+.su-dock {
+  position: absolute;
+  pointer-events: none;
+  translate: -50% -50%;
+  animation: su-dock 700ms var(--easing-standard) forwards;
+}
+
+@keyframes su-dock {
+  from {
+    opacity: 0.9;
+    transform: none;
+  }
+
+  75% {
+    opacity: 0.8;
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(var(--tx), var(--ty)) scale(var(--ts));
+  }
+}
+
+/* ── 子系統對照：圖紙左下角 ── */
+.su-legend {
+  position: absolute;
+  bottom: 1%;
+  left: 1.5%;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: var(--space-px) var(--space-6);
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+.su-legend div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.su-legend dt {
+  min-width: 48px;
+  letter-spacing: var(--ls-12);
+  color: rgba(var(--amber-rgb), 0.8);
+}
+
+.su-legend dd {
+  margin: 0;
+}
+
+/* ── 遙測：HOME SERVER 那張的機殼下方 ── */
+.su-telemetry {
+  position: absolute;
+  top: 80%;
+  left: 50%;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+  translate: -50% 0;
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 14px var(--ground);
+}
+
+.su-telemetry header {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+}
+
+.su-telemetry i {
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-full);
+}
+
+/* 收到一次就亮一下再退成常亮的小點 */
+.su-telemetry i.is-live {
+  border-color: var(--amber);
+  background: var(--amber);
+  animation: su-ping 1.2s ease-out both;
+}
+
+@keyframes su-ping {
+  from {
+    box-shadow: 0 0 0 0 rgba(var(--amber-rgb), 0.8);
+  }
+
+  to {
+    box-shadow: 0 0 0 10px rgba(var(--amber-rgb), 0);
+  }
+}
+
+.su-telemetry dl {
+  display: flex;
+  gap: var(--space-6);
+  margin: 0;
+}
+
+.su-telemetry dl div {
+  display: grid;
+  justify-items: center;
+}
+
+.su-telemetry dt {
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+}
+
+.su-telemetry dd {
+  margin: 0;
+  font-family: var(--latin-display);
+  font-size: var(--fs-28);
+  line-height: var(--lh-110);
+  color: var(--paper);
+}
+
+.su-telemetry p {
+  margin: 0;
+  font-size: var(--fs-10);
+}
+
+/* ── 上行、下行的圖例：任務控制中心下面 ── */
+.su-links {
+  position: absolute;
+  top: 58%;
+  left: 12%;
+  display: grid;
+  gap: var(--space-1);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-2);
+  translate: -50% 0;
+}
+
+.su-links span {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.su-links span::before {
+  width: 5px;
+  height: 5px;
+  content: "";
+  border-radius: var(--r-full);
+}
+
+.su-links .is-up::before {
+  background: var(--amber);
+}
+
+.su-links .is-down::before {
+  background: var(--paper);
 }
 
 /* ── 老家：自我介紹與開機自檢 ── */

@@ -103,7 +103,7 @@ export const MEMORY_AT: Record<string, Box> = {
 /** 圖紙上的一個零件：[零件 id, 中心 x, 中心 y, 寬, 機殼上的哪一塊] */
 export type Placed = [string, number, number, number, string?];
 
-interface CaseArt {
+export interface CaseArt {
   /** MODEL5_AT 或 P10C_AT */
   key: 'model5' | 'p10c';
   /** setupGear 裡機殼那一項的 id（名字與規格從那裡拿） */
@@ -149,7 +149,7 @@ export const SHEETS: Sheet[] = [
       ['rtx-5060ti', 0.12, 0.08, 0.14, 'gpu'],
       ['ryzen-8700g', 0.1, 0.27, 0.08, 'cpu'],
       ['gm7000', 0.12, 0.44, 0.12, 'm2a'],
-      ['nanokvm-pcie', 0.12, 0.6, 0.1, 'pcie2'],
+      ['ip-kvm', 0.12, 0.6, 0.1, 'pcie2'],
       ['prime-tx', 0.12, 0.77, 0.08, 'psu'],
       ['phantom-spirit', 0.88, 0.09, 0.1, 'tower'],
       ['fury-beast', 0.89, 0.3, 0.12, 'ram'],
@@ -221,12 +221,12 @@ export const NET: { buses: { label: string; sub: string; x: number; dashed: bool
   nodes: [
     { id: 'qg-u1050', x: 0.12, y: 0.46, w: 0.07, sub: 'switch' },
     { name: 'Home Server', x: 0.12, y: 0.63, sub: 'Home Assistant' },
-    { id: 'nanokvm-pcie', x: 0.12, y: 0.8, w: 0.07, name: 'NanoKVM', sub: 'PCIe IP-KVM' },
+    { id: 'ip-kvm', x: 0.12, y: 0.8, w: 0.07, sub: 'PCIe' },
     { name: 'The White Build', x: 0.36, y: 0.48, sub: 'rig' },
     { id: 'pixel-8-pro', x: 0.33, y: 0.72, w: 0.03, name: 'Pixel 8 Pro' },
     { id: 'blade-14', x: 0.41, y: 0.72, w: 0.07, name: 'Blade 14' },
     { id: 'google-tv-streamer', x: 0.58, y: 0.46, w: 0.07, sub: 'matterHub' },
-    { id: 'tapo-d230s1', x: 0.58, y: 0.74, w: 0.06, name: 'Tapo H200', sub: 'doorbellHub', end: ['doorbell', 'Wi-Fi'] },
+    { id: 'doorbell', x: 0.58, y: 0.74, w: 0.06, name: 'doorbellHub', end: ['doorbell', 'Wi-Fi'] },
     { id: 'switchbot-hub3', x: 0.8, y: 0.42, w: 0.05, sub: 'sensors' },
     { id: 'rm4-pro', x: 0.8, y: 0.58, w: 0.05, sub: 'irBlaster', end: ['ac', 'IR'] },
     {
@@ -243,33 +243,72 @@ export const NET: { buses: { label: string; sub: string; x: number; dashed: bool
 };
 
 /** 零件線稿旁邊的小標（GPU、CPU⋯）：型號的類別，不翻 */
-export const PART_TAG: Record<string, string> = {
-  'rtx-4070ti-super': 'GPU',
-  'ryzen-9900x': 'CPU',
-  'model-5': 'CASE',
-  'eskimo-360': 'COOLER',
-  'xpg-lancer': 'MEMORY',
-  xg27acs: 'DISPLAY',
-  'mx-board-31s': 'KEYBOARD',
-  'g502-x': 'MOUSE',
-  'mv7-plus': 'MIC',
-  'b650-a': 'BOARD',
-  'leadex-vii': 'PSU',
-  'crucial-t500': 'SSD',
-  'kioxia-exceria': 'SSD',
-  'rtx-5060ti': 'GPU',
-  'ryzen-8700g': 'CPU',
-  'x870e-tomahawk': 'BOARD',
-  'fury-beast': 'MEMORY',
-  'phantom-spirit': 'COOLER',
-  'prime-tx': 'PSU',
-  p10c: 'CASE',
-  gm7000: 'SSD',
-  hc550: 'HDD',
-  'nanokvm-pcie': 'KVM',
-  'zenwifi-bd5': 'ROUTER',
-  'qg-u1050': 'SWITCH',
+/**
+ * 太空船的子系統：把主機當成一艘太空船來畫系統圖。
+ * C&DH 指令與資料處理（運算）、EPS 電力、TCS 熱控、DATA 資料記錄、COMM 通訊、
+ * BUS 主體（太空船的「本體」就叫 bus，零件都掛在上面）、STRUCT 結構、CREW 乘員介面
+ */
+export const SUBSYSTEMS = ['C&DH', 'EPS', 'TCS', 'DATA', 'COMM', 'BUS', 'STRUCT', 'CREW'] as const;
+export type Subsystem = (typeof SUBSYSTEMS)[number];
+
+/** 零件線稿旁邊的小標：[子系統, 零件類別]（型號的類別，不翻） */
+export const PART_TAG: Record<string, [Subsystem, string]> = {
+  'rtx-4070ti-super': ['C&DH', 'GPU'],
+  'ryzen-9900x': ['C&DH', 'CPU'],
+  'model-5': ['STRUCT', 'CASE'],
+  'eskimo-360': ['TCS', 'COOLER'],
+  'xpg-lancer': ['C&DH', 'MEMORY'],
+  xg27acs: ['CREW', 'DISPLAY'],
+  'mx-board-31s': ['CREW', 'KEYBOARD'],
+  'g502-x': ['CREW', 'MOUSE'],
+  'mv7-plus': ['CREW', 'MIC'],
+  'b650-a': ['BUS', 'BOARD'],
+  'leadex-vii': ['EPS', 'PSU'],
+  'crucial-t500': ['DATA', 'SSD'],
+  'kioxia-exceria': ['DATA', 'SSD'],
+  'rtx-5060ti': ['C&DH', 'GPU'],
+  'ryzen-8700g': ['C&DH', 'CPU'],
+  'x870e-tomahawk': ['BUS', 'BOARD'],
+  'fury-beast': ['C&DH', 'MEMORY'],
+  'phantom-spirit': ['TCS', 'COOLER'],
+  'prime-tx': ['EPS', 'PSU'],
+  p10c: ['STRUCT', 'CASE'],
+  gm7000: ['DATA', 'SSD'],
+  hc550: ['DATA', 'HDD'],
+  'ip-kvm': ['COMM', 'KVM'],
+  router: ['COMM', 'ROUTER'],
+  'qg-u1050': ['COMM', 'SWITCH'],
 };
+
+/** 機殼線稿的高寬比（原圖），算零件在機殼裡的位置要用 */
+const CASE_RATIO = { model5: 520 / 443, p10c: 520 / 360 } as const;
+/** 機殼在圖紙上的中心（圖紙寬高的比例）；圖紙是 4:3 */
+const CASE_AT = { x: 0.5, y: 0.42 } as const;
+const SHEET_RATIO = 3 / 4;
+
+/**
+ * 一個零件在機殼裡的位置（對接口）：圖紙寬高的比例的中心點，以及寬（圖紙寬的比例）。
+ * 零重力組裝時零件從這裡散出去、滑過時沿虛線飛回這裡
+ */
+export function slotOf(c: CaseArt, region: string): { x: number; y: number; w: number } | null {
+  const at = c.key === 'model5' ? MODEL5_AT[region] : P10C_AT[region];
+  if (!(at as Poly | Box | undefined)) return null;
+  let u: number;
+  let v: number;
+  let bw: number;
+  if (isPoly(at)) {
+    const xs = at.map((p) => p[0]);
+    const ys = at.map((p) => p[1]);
+    u = (Math.min(...xs) + Math.max(...xs)) / 2;
+    v = (Math.min(...ys) + Math.max(...ys)) / 2;
+    bw = Math.max(...xs) - Math.min(...xs);
+  } else {
+    [u, v, bw] = at;
+  }
+  // 機殼的高（圖紙高的比例）：寬 × 高寬比，再換成圖紙高的單位
+  const ch = (c.w * CASE_RATIO[c.key]) / SHEET_RATIO;
+  return { x: CASE_AT.x + (u - 0.5) * c.w, y: CASE_AT.y + (v - 0.5) * ch, w: bw * c.w };
+}
 
 /** 智慧家庭的訊號流程：Home Assistant 發出去，經過各個中樞，最後到家裡的哪一樣東西 */
 export const SMART = {
@@ -278,7 +317,7 @@ export const SMART = {
     { id: 'switchbot-hub3', y: 0.35, w: 0.05, via: 'Matter', to: 'climate' },
     { id: 'rm4-pro', y: 0.54, w: 0.05, via: 'IR', to: 'ac' },
     { id: 'esp32-cc1101', y: 0.72, w: 0.06, via: '433MHz', to: 'light' },
-    { id: 'tapo-d230s1', y: 0.9, w: 0.05, via: 'Wi-Fi', to: 'door' },
+    { id: 'doorbell', y: 0.9, w: 0.05, via: 'Wi-Fi', to: 'door' },
   ],
   others: APPLIANCES,
 } as const;

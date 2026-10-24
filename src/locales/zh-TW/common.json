@@ -408,7 +408,7 @@
       "hub3": "光照、溫濕度、人體感測，透過 Matter 回報；夜間燈光的自動校正靠它的光照度",
       "rm4": "學習冷氣的紅外線遙控碼，讓冷氣接進 Home Assistant",
       "esp32": "兩塊板子組成的 433MHz 發射器，模擬吸頂燈的原廠遙控器",
-      "doorbell": "電池門鈴，透過 H200 網關連上網路"
+      "doorbell": "電池門鈴，透過網關連上網路"
     },
     "topo": {
       "internet": "網際網路",
@@ -453,6 +453,22 @@
         "ac": "冷氣",
         "light": "吸頂燈",
         "door": "門口"
+      },
+      "subsystemTitle": "子系統",
+      "uplink": "上行：指令",
+      "downlink": "下行：回報",
+      "telemetry": "遙測",
+      "telemetryEvery": "這台伺服器傳回來的，每 30 秒更新一次",
+      "telemetryWait": "等待訊號",
+      "subsystem": {
+        "cdh": "運算與資料處理",
+        "eps": "電力",
+        "tcs": "熱控",
+        "data": "資料記錄",
+        "comm": "通訊",
+        "bus": "主體",
+        "struct": "結構",
+        "crew": "乘員介面"
       }
     }
   },

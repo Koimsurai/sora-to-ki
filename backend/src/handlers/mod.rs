@@ -23,6 +23,7 @@ pub mod site;
 pub mod spotify;
 pub mod stats;
 pub mod tags;
+pub mod telemetry;
 pub mod thirdparty;
 pub mod thoughts;
 pub mod tw_isbn;

@@ -40,6 +40,7 @@ use koimsurai_web_backend::handlers::spotify::{
 };
 use koimsurai_web_backend::handlers::stats::StatsResponse;
 use koimsurai_web_backend::handlers::tags::{TagRow, TagsResponse};
+use koimsurai_web_backend::handlers::telemetry::Telemetry;
 use koimsurai_web_backend::handlers::thirdparty::{
     GithubCommit, GithubCommitAuthor, GithubContributionDay, GithubContributionsResponse, GithubEvent,
     GithubEventPayload, GithubEventRepo, GithubEventsResponse, GithubRepo, GithubReposResponse,
@@ -110,6 +111,7 @@ fn main() {
         .register::<PollOptionRow>()
         .register::<PollResponse>()
         .register::<CountResponse>()
+        .register::<Telemetry>()
         // posts（admin）
         .register::<AdminPostFull>()
         .register::<AdminPostsResponse>()

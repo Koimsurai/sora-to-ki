@@ -242,6 +242,106 @@ export function drawFlowLines(
   ctx.fill();
 }
 
+interface Pt {
+  x: number;
+  y: number;
+}
+
+/** 一道訊號：一個亮點拖一小段尾巴。上行（指令）是琥珀色、下行（回報）是白的 */
+function pulse(ctx: CanvasRenderingContext2D, at: (p: number) => Pt, p: number, up: boolean) {
+  const color = up ? AMBER : INK;
+  for (let k = 4; k >= 0; k--) {
+    const q = p - k * 0.012 * (up ? 1 : -1);
+    if (q < 0 || q > 1) continue;
+    const { x, y } = at(q);
+    ctx.fillStyle = rgba(color, k === 0 ? 0.95 : 0.35 * (1 - k / 5));
+    ctx.beginPath();
+    ctx.arc(x, y, k === 0 ? 2.2 : 1.4, 0, TAU);
+    ctx.fill();
+  }
+}
+
+/** 沿著一串折線走到 p（0 到 1，照長度算） */
+function along(pts: Pt[]) {
+  const lens = pts.slice(1).map((b, i) => Math.hypot(b.x - pts[i].x, b.y - pts[i].y));
+  const total = lens.reduce((a, b) => a + b, 0) || 1;
+  return (p: number): Pt => {
+    let d = Math.min(1, Math.max(0, p)) * total;
+    for (let i = 0; i < lens.length; i++) {
+      if (d <= lens[i] || i === lens.length - 1) {
+        const k = lens[i] ? Math.min(1, d / lens[i]) : 0;
+        return { x: pts[i].x + (pts[i + 1].x - pts[i].x) * k, y: pts[i].y + (pts[i + 1].y - pts[i].y) * k };
+      }
+      d -= lens[i];
+    }
+    return pts[pts.length - 1];
+  };
+}
+
+/** 三次貝茲曲線上的點（流程圖那幾條從 Home Assistant 拉出去的曲線） */
+function bezier(a: Pt, b: Pt, c: Pt, d: Pt) {
+  return (p: number): Pt => {
+    const u = 1 - p;
+    return {
+      x: u * u * u * a.x + 3 * u * u * p * b.x + 3 * u * p * p * c.x + p * p * p * d.x,
+      y: u * u * u * a.y + 3 * u * u * p * b.y + 3 * u * p * p * c.y + p * p * p * d.y,
+    };
+  };
+}
+
+/**
+ * 網路配線圖上跑的訊號：從網際網路進來，經過路由器、匯流排，沿每一路往下送（上行）；
+ * 每一路也有東西往回傳（下行）。有線跑得快、無線慢一點
+ */
+export function drawNetPulses(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  buses: { x: number; dashed: boolean }[],
+  t: number,
+) {
+  buses.forEach((b, i) => {
+    const path = along([
+      { x: w * 0.46, y: h * 0.05 },
+      { x: w * 0.46, y: h * 0.19 },
+      { x: b.x * w, y: h * 0.19 },
+      { x: b.x * w, y: h * 0.92 },
+    ]);
+    const period = b.dashed ? 4.2 : 2.6;
+    const up = (t / period + i * 0.27) % 1;
+    pulse(ctx, path, up, true);
+    const down = 1 - ((t / (period * 1.3) + i * 0.41 + 0.5) % 1);
+    pulse(ctx, path, down, false);
+  });
+}
+
+/**
+ * 智慧家庭流程圖上跑的訊號：Home Assistant（任務控制中心）的指令沿曲線送到中樞、再送到家電（上行）；
+ * 有感測器的中樞（溫濕度、門鈴）把回報沿原路傳回來（下行）
+ */
+export function drawFlowPulses(
+  ctx: CanvasRenderingContext2D,
+  root: Pt,
+  hubs: { x: number; y: number; out: number; to: number; reports: boolean }[],
+  t: number,
+) {
+  hubs.forEach((hb, i) => {
+    const curve = bezier(root, { x: root.x + 80, y: root.y }, { x: hb.x - 80, y: hb.y }, hb);
+    const link = along([
+      { x: hb.out, y: hb.y },
+      { x: hb.to, y: hb.y },
+    ]);
+    // 一輪 3.6 秒：前一半沿曲線到中樞，後面沿虛線到家電
+    const k = (t / 3.6 + i * 0.19) % 1;
+    if (k < 0.55) pulse(ctx, curve, k / 0.55, true);
+    else if (k > 0.6 && k < 0.92) pulse(ctx, link, (k - 0.6) / 0.32, true);
+    if (hb.reports) {
+      const r = (t / 5.2 + i * 0.37) % 1;
+      if (r < 0.6) pulse(ctx, curve, 1 - r / 0.6, false);
+    }
+  });
+}
+
 /** 憑記憶畫的草圖：插圖取樣成一顆一顆的點（每隔 step 像素一顆，線越濃點越亮） */
 export function sketchDots(img: HTMLImageElement, w: number, h: number, step = 3) {
   const c = document.createElement('canvas');

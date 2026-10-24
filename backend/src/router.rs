@@ -57,6 +57,8 @@ pub fn build_router(state: AppState) -> Router {
             get(handlers::thoughts::list_thought_comments).post(handlers::comments::thought_comment),
         )
         .route("/api/health", get(handlers::home::health))
+        // 設備頁的遙測：只有溫度、負載、記憶體、功耗（見 handlers::telemetry），快取 30 秒
+        .route("/api/telemetry", get(handlers::telemetry::telemetry).layer(cached(30)))
         // 每日名言（opencc cn→tw + 當日快取）
         .route("/api/quote/daily", get(handlers::quote::quote_daily))
         // 全站 RSS（app-level 非 /api；nginx `location = /rss` 指過來）
