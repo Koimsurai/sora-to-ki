@@ -379,33 +379,26 @@
   "setup": {
     "title": "我的配備 · My Setup",
     "description": "Koimsurai 的設備清單：主力機、跑著這個網站的家用伺服器、網路與智慧家庭，還有一張家裡怎麼連起來的拓撲圖。",
-    "heroTitle": "我的配備",
-    "subtitle": "2026 年的全部家當：桌上的主力機、跑著這個網站的伺服器，到控制冷氣和燈的那幾個小裝置。",
-    "filter": "分類",
+    "heroTitle": "設備",
+    "subtitle": "放在桌上、塞在機殼裡的東西。",
     "cat": {
       "main-rig": {
-        "short": "主力機",
-        "desc": "全白美學主力機"
+        "short": "主力機"
       },
       "server": {
-        "short": "伺服器",
-        "desc": "這個網站、Home Assistant 與所有自架服務都跑在這台"
+        "short": "伺服器"
       },
       "network": {
-        "short": "網路與行動",
-        "desc": "數位生活的骨幹"
+        "short": "網路與行動"
       },
       "smart-home": {
-        "short": "智慧家庭",
-        "desc": "冷氣、燈和感測器都接進 Home Assistant"
+        "short": "智慧家庭"
       },
       "peripherals": {
-        "short": "周邊",
-        "desc": "輸入與輸出"
+        "short": "周邊"
       },
       "base-ii": {
-        "short": "老家",
-        "desc": "回老家時的備用基地"
+        "short": "老家"
       }
     },
     "roles": {
@@ -417,26 +410,15 @@
       "esp32": "兩塊板子組成的 433MHz 發射器，模擬吸頂燈的原廠遙控器",
       "doorbell": "電池門鈴，透過 H200 網關連上網路"
     },
-    "retired": "退役",
-    "retiredText": "家人共用電腦 — NVIDIA GTX 960（目前由家人使用）",
     "topo": {
-      "title": "家裡怎麼連起來",
-      "hint": "點節點會跳到那台設備",
       "internet": "網際網路",
       "switch": "交換器",
-      "mobile": "手機・筆電",
       "sensors": "光照・溫濕度・人體",
       "irBlaster": "紅外線遙控",
       "rfBlaster": "433MHz 射頻",
       "rig": "主力機",
       "ac": "冷氣",
       "light": "吸頂燈",
-      "legend": {
-        "wired": "有線",
-        "wifi": "Wi-Fi",
-        "matter": "Matter",
-        "air": "紅外線／射頻"
-      },
       "netWired": "有線",
       "netMain": "主網路",
       "netIot": "IoT 專用",
@@ -457,21 +439,20 @@
         "plug": "智慧插座"
       }
     },
-    "packages": "{{count}} (設備), {{iot}} (智慧家庭)",
-    "term": {
-      "inputLabel": "終端機指令",
-      "tryHelp": "打 help 看看有哪些指令",
-      "cdFirst": "先 cd 進去，再 cat 裡面的檔案",
-      "sudo": "你不在 sudoers 名單裡。這件事會被回報。",
-      "help": {
-        "help": "列出指令",
-        "ls": "列出分類，或分類裡的設備",
-        "cd": "進入分類（下面的卡片會跟著篩選），cd .. 回上層",
-        "cat": "看一台設備的規格與用途",
-        "pwd": "目前在哪",
-        "whoami": "我是誰",
-        "neofetch": "再跑一次",
-        "clear": "清掉畫面"
+    "sheet": {
+      "tabs": "圖紙",
+      "p10cNote": "側板是實心的，滑過零件會用虛線透視出它的位置",
+      "memoryTitle": "老家的那台",
+      "memoryText": "回老家時的備用基地。沒有照片，這是記憶裡它大概的樣子。",
+      "fromMemory": "憑記憶",
+      "root": "所有自動化從這裡發出",
+      "drag": "← 左右拖動看整張圖 →",
+      "to": {
+        "voice": "Google Home 語音",
+        "climate": "溫濕度感測",
+        "ac": "冷氣",
+        "light": "吸頂燈",
+        "door": "門口"
       }
     }
   },
