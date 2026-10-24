@@ -1,6 +1,6 @@
 //! `GET /api/friends`：朋友頁的星。朋友清單寫死在這裡（不收外部傳來的網址，免得變成可以被濫用的代理），
-//! 每個朋友順手去抓他的 RSS／Atom，只取最新一篇的標題、連結、日期。
-//! 回應由路由層快取一小時；抓不到（對方站掛了、還沒有 feed）就是沒有最新一篇，不算錯。
+//! 每個朋友順手去抓他的 RSS／Atom，取最近幾篇的標題、連結、日期（朋友頁把每篇畫成他軌道上的一個信標）。
+//! 回應由路由層快取一小時；抓不到（對方站掛了、還沒有 feed）就是沒有文章，不算錯。
 
 use std::time::Duration;
 
@@ -39,7 +39,7 @@ pub const FRIENDS: &[Friend] = &[
     },
 ];
 
-/// 最新一篇
+/// 一篇文章
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct FriendPost {
     pub title: String,
@@ -57,13 +57,16 @@ pub struct FriendStar {
     pub desc: String,
     /// 有沒有 feed（沒有的是一顆安靜的星）
     pub has_feed: bool,
-    pub latest: Option<FriendPost>,
+    /// 最近幾篇，照 feed 上的順序（新的在前）；最多 `POSTS_MAX` 篇
+    pub posts: Vec<FriendPost>,
 }
 
 /// 抓 feed 的逾時：對方站慢不能拖住整頁
 const FEED_TIMEOUT: Duration = Duration::from_secs(8);
-/// feed 最多讀多少（位元組）：只要第一篇，讀太多是浪費
+/// feed 最多讀多少（位元組）：只要前幾篇，讀太多是浪費
 const FEED_MAX_BYTES: usize = 512 * 1024;
+/// 每位朋友最多回幾篇
+pub const POSTS_MAX: usize = 8;
 
 fn unescape(s: &str) -> String {
     let s = s.trim();
@@ -78,11 +81,19 @@ fn unescape(s: &str) -> String {
         .to_string()
 }
 
-/// 從 RSS（`<item>`）或 Atom（`<entry>`）抓第一篇的標題、連結、日期
-pub fn first_post(xml: &str) -> Option<FriendPost> {
+/// 從 RSS（`<item>`）或 Atom（`<entry>`）抓前 `POSTS_MAX` 篇的標題、連結、日期（沒有標題的那篇跳過）
+pub fn recent_posts(xml: &str) -> Vec<FriendPost> {
     static ITEM: std::sync::LazyLock<Regex> = std::sync::LazyLock::new(|| {
         Regex::new(r"(?s)<(item|entry)\b[^>]*>(.*?)</(?:item|entry)>").expect("固定的正規式")
     });
+    ITEM.captures_iter(xml)
+        .filter_map(|c| c.get(2).and_then(|m| post_of(m.as_str())))
+        .take(POSTS_MAX)
+        .collect()
+}
+
+/// 一個 `<item>`／`<entry>` 的內容 → 一篇
+fn post_of(item: &str) -> Option<FriendPost> {
     static TITLE: std::sync::LazyLock<Regex> =
         std::sync::LazyLock::new(|| Regex::new(r"(?s)<title\b[^>]*>(.*?)</title>").expect("固定的正規式"));
     static LINK_TEXT: std::sync::LazyLock<Regex> =
@@ -94,7 +105,6 @@ pub fn first_post(xml: &str) -> Option<FriendPost> {
         Regex::new(r"(?s)<(pubDate|published|updated)\b[^>]*>(.*?)</(?:pubDate|published|updated)>")
             .expect("固定的正規式")
     });
-    let item = ITEM.captures(xml)?.get(2)?.as_str();
     let title = unescape(TITLE.captures(item)?.get(1)?.as_str());
     if title.is_empty() {
         return None;
@@ -111,14 +121,18 @@ pub fn first_post(xml: &str) -> Option<FriendPost> {
     Some(FriendPost { title, url, date })
 }
 
-async fn fetch_latest(http: &reqwest::Client, feed: &str) -> Option<FriendPost> {
-    let res = http.get(feed).timeout(FEED_TIMEOUT).send().await.ok()?;
+async fn fetch_posts(http: &reqwest::Client, feed: &str) -> Vec<FriendPost> {
+    let Ok(res) = http.get(feed).timeout(FEED_TIMEOUT).send().await else {
+        return Vec::new();
+    };
     if !res.status().is_success() {
-        return None;
+        return Vec::new();
     }
-    let bytes = res.bytes().await.ok()?;
+    let Ok(bytes) = res.bytes().await else {
+        return Vec::new();
+    };
     let head = &bytes[..bytes.len().min(FEED_MAX_BYTES)];
-    first_post(&String::from_utf8_lossy(head))
+    recent_posts(&String::from_utf8_lossy(head))
 }
 
 /// 每個朋友各抓一次 feed（同時抓，一個站慢不會拖住其他人），清單照原本的順序
@@ -127,38 +141,38 @@ pub async fn collect(http: &reqwest::Client, friends: &'static [Friend]) -> Vec<
     for (i, f) in friends.iter().enumerate() {
         let http = http.clone();
         set.spawn(async move {
-            let latest = match f.feed {
-                Some(feed) => fetch_latest(&http, feed).await,
-                None => None,
+            let posts = match f.feed {
+                Some(feed) => fetch_posts(&http, feed).await,
+                None => Vec::new(),
             };
-            (i, latest)
+            (i, posts)
         });
     }
-    let mut latest: Vec<Option<FriendPost>> = vec![None; friends.len()];
+    let mut posts: Vec<Vec<FriendPost>> = vec![Vec::new(); friends.len()];
     while let Some(done) = set.join_next().await {
-        if let Ok((i, post)) = done
-            && let Some(slot) = latest.get_mut(i)
+        if let Ok((i, got)) = done
+            && let Some(slot) = posts.get_mut(i)
         {
-            *slot = post;
+            *slot = got;
         }
     }
     friends
         .iter()
-        .zip(latest)
-        .map(|(f, latest)| FriendStar {
+        .zip(posts)
+        .map(|(f, posts)| FriendStar {
             id: f.id.to_string(),
             name: f.name.to_string(),
             url: f.url.to_string(),
             desc: f.desc.to_string(),
             has_feed: f.feed.is_some(),
-            latest,
+            posts,
         })
         .collect()
 }
 
 /// `GET /api/friends`
 #[utoipa::path(get, path = "/api/friends", tag = "home",
-    responses((status = 200, description = "朋友頁的星：每位朋友與他最新一篇（從他的 RSS 抓），快取一小時", body = Vec<FriendStar>)))]
+    responses((status = 200, description = "朋友頁的星：每位朋友與他最近幾篇（從他的 RSS 抓），快取一小時", body = Vec<FriendStar>)))]
 pub async fn friends(State(state): State<AppState>) -> Json<Vec<FriendStar>> {
     Json(collect(&state.http, FRIENDS).await)
 }
@@ -178,31 +192,44 @@ mod tests {
         <link rel="alternate" href="https://blog.example/b"/><updated>2026-10-22T07:38:44Z</updated></entry></feed>"#;
 
     #[test]
-    fn reads_the_first_rss_item() {
-        let p = first_post(RSS).unwrap();
-        assert_eq!(p.title, "手機滑文章會卡？兇手是紙紋");
-        assert_eq!(p.url.as_deref(), Some("https://blog.example/a"));
-        assert_eq!(p.date.as_deref(), Some("Fri, 23 Oct 2026 08:47:38 GMT"));
+    fn reads_rss_items_in_feed_order() {
+        let posts = recent_posts(RSS);
+        assert_eq!(posts.len(), 2);
+        assert_eq!(posts[0].title, "手機滑文章會卡？兇手是紙紋");
+        assert_eq!(posts[0].url.as_deref(), Some("https://blog.example/a"));
+        assert_eq!(posts[0].date.as_deref(), Some("Fri, 23 Oct 2026 08:47:38 GMT"));
+        assert_eq!(posts[1].title, "舊的");
+        assert_eq!(posts[1].url, None);
     }
 
     #[test]
-    fn reads_the_first_atom_entry() {
-        let p = first_post(ATOM).unwrap();
-        assert_eq!(p.title, "A & B");
-        assert_eq!(p.url.as_deref(), Some("https://blog.example/b"));
-        assert_eq!(p.date.as_deref(), Some("2026-10-22T07:38:44Z"));
+    fn reads_atom_entries() {
+        let posts = recent_posts(ATOM);
+        assert_eq!(posts.len(), 1);
+        assert_eq!(posts[0].title, "A & B");
+        assert_eq!(posts[0].url.as_deref(), Some("https://blog.example/b"));
+        assert_eq!(posts[0].date.as_deref(), Some("2026-10-22T07:38:44Z"));
     }
 
     #[test]
-    fn rejects_feeds_without_a_usable_first_item() {
-        assert_eq!(first_post("<rss><channel><title>x</title></channel></rss>"), None);
-        assert_eq!(first_post("<rss><item><title>  </title></item></rss>"), None);
-        assert_eq!(first_post("<rss><item><link>https://x</link></item></rss>"), None);
+    fn keeps_at_most_posts_max() {
+        let xml = "<item><title>0</title></item>".repeat(20);
+        let posts = recent_posts(&xml);
+        assert_eq!(posts.len(), POSTS_MAX);
+        assert_eq!(posts[0].title, "0");
+    }
+
+    #[test]
+    fn skips_items_without_a_usable_title() {
+        let none: Vec<FriendPost> = Vec::new();
+        assert_eq!(recent_posts("<rss><channel><title>x</title></channel></rss>"), none);
+        assert_eq!(recent_posts("<rss><item><link>https://x</link></item></rss>"), none);
+        let posts = recent_posts("<rss><item><title>  </title></item><item><title>ok</title></item></rss>");
+        assert_eq!(posts.iter().map(|p| p.title.as_str()).collect::<Vec<_>>(), ["ok"]);
         // 連結不是 http(s) 的不給（例如 javascript:）
-        let p =
-            first_post("<rss><item><title>t</title><link>javascript:alert(1)</link></item></rss>").unwrap();
-        assert_eq!(p.url, None);
-        assert_eq!(p.date, None);
+        let posts = recent_posts("<rss><item><title>t</title><link>javascript:alert(1)</link></item></rss>");
+        assert_eq!(posts[0].url, None);
+        assert_eq!(posts[0].date, None);
     }
 
     #[test]
@@ -252,11 +279,14 @@ mod tests {
             .await;
         let stars = collect(&reqwest::Client::new(), friends_at(&server.uri())).await;
         assert_eq!(stars.iter().map(|s| s.id.as_str()).collect::<Vec<_>>(), ["a", "b", "c"]);
-        assert_eq!(stars[0].latest.as_ref().map(|p| p.title.as_str()), Some("手機滑文章會卡？兇手是紙紋"));
+        assert_eq!(
+            stars[0].posts.iter().map(|p| p.title.as_str()).collect::<Vec<_>>(),
+            ["手機滑文章會卡？兇手是紙紋", "舊的"]
+        );
         assert!(stars[0].has_feed);
-        assert_eq!(stars[1].latest, None);
+        assert_eq!(stars[1].posts.len(), 0);
         assert!(stars[1].has_feed);
-        assert_eq!(stars[2].latest, None);
+        assert_eq!(stars[2].posts.len(), 0);
         assert!(!stars[2].has_feed);
     }
 }

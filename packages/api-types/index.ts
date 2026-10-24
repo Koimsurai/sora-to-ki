@@ -419,7 +419,7 @@ export type FilmsResponse = {
 	films: FilmRow[],
 };
 
-/**  最新一篇 */
+/**  一篇文章 */
 export type FriendPost = {
 	title: string,
 	url: string | null,
@@ -435,7 +435,8 @@ export type FriendStar = {
 	desc: string,
 	/**  有沒有 feed（沒有的是一顆安靜的星） */
 	has_feed: boolean,
-	latest: FriendPost | null,
+	/**  最近幾篇，照 feed 上的順序（新的在前）；最多 `POSTS_MAX` 篇 */
+	posts: FriendPost[],
 };
 
 /**  manifest 裡的一張照片。 */
