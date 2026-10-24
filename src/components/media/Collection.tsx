@@ -49,6 +49,11 @@ const NEAR_PX = 14;
  * 落地之後接著俯衝回地球（DIVE_MS），起步的速度跟前一段接上
  */
 const DIVE_FROM = 1.35;
+/** 換頁的點繞進地球：沿外圈訊號圈的前導段多長（弧度）、取幾點；往內收的螺旋繞幾圈、取幾點 */
+const SPIRAL_LEAD_ARC = 0.9;
+const SPIRAL_LEAD = 18;
+const SPIRAL_TURNS = 1.1;
+const SPIRAL_STEPS = 90;
 const DRIFT = 0.3;
 const DRIFT_MS = 700;
 const DIVE_MS = 2000;
@@ -189,8 +194,9 @@ export default function Collection() {
   const footRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLElement>(null);
   const hintRef = useRef<HTMLParagraphElement>(null);
-  /** 鏡頭現在退到哪裡（含進場俯衝、退場收回）；捲軸那份另外記在 effect 裡 */
-  const sRef = useRef(0);
+  /** 鏡頭現在退到哪裡（含進場俯衝、退場收回）；捲軸那份另外記在 effect 裡。
+   *  一開始是深空（DIVE_FROM）：換頁的點在這一頁還沒畫第一幀時就會來問錨點，那時鏡頭在深空、地球只是一點 */
+  const sRef = useRef(DIVE_FROM);
   /** 琥珀點現在在畫面上的哪裡（視窗座標）：退場時轉場的點跟著它 */
   const dotRef = useRef({ x: 0, y: 0 });
   /** 退場開始的時間與那時鏡頭在哪裡；null 是還沒要離開 */
@@ -205,6 +211,17 @@ export default function Collection() {
 
   // 背景的星星讓位：這一頁的天空自己畫（有真的行星、恆星，跟著鏡頭轉）
   useBareSky();
+
+  /** 鏡頭在 s 時、此刻的一幀（換頁算錨點與進來的路時用） */
+  const frameAt = (s: number): SkyFrame => ({
+    w: window.innerWidth,
+    h: window.innerHeight,
+    now: Date.now(),
+    t: performance.now() / 1000,
+    s,
+    hovered: null,
+    bloom: 1,
+  });
 
   // 換頁轉場的琥珀點落在台灣；離開時鏡頭收回地球，點從台灣帶著一道波前發射出去
   usePageTransition({
@@ -244,16 +261,35 @@ export default function Collection() {
       const cv = canvasRef.current;
       if (!cv) return null;
       const r = cv.getBoundingClientRect();
-      const e = sky.earth({
-        w: window.innerWidth,
-        h: window.innerHeight,
-        now: Date.now(),
-        t: 0,
-        s: sRef.current,
-        hovered: null,
-        bloom: 1,
-      });
+      const e = sky.earth(frameAt(sRef.current));
       return { x: r.left + e.x, y: r.top + e.y };
+    },
+    // 點飛進來時切進外圈一道訊號圈（以地球為圓心的扁圓），沿著它繞、一路往內收，落在地球上；
+    // 鏡頭接著俯衝回地球，台灣那顆琥珀點就從落地的那一點長出來。飛過的路就是一道訊號
+    arrive: ({ pos, vel }) => {
+      const cv = canvasRef.current;
+      if (!cv) return null;
+      const r = cv.getBoundingClientRect();
+      const f = frameAt(sRef.current);
+      const c = sky.center(f);
+      const cx = r.left + c.x;
+      const cy = r.top + c.y;
+      const k = sky.ringAspect(f);
+      const R0 = Math.min(window.innerWidth, window.innerHeight) * 0.42;
+      // 從點現在所在的方向切進那一圈；繞的方向挑跟點飛來的方向順的那一邊
+      const th0 = Math.atan2((pos.y - cy) / k, pos.x - cx);
+      const tangent = { x: -Math.sin(th0), y: Math.cos(th0) * k };
+      const turn = tangent.x * vel.x + tangent.y * vel.y >= 0 ? 1 : -1;
+      const at = (th: number, rr: number) => ({ x: cx + Math.cos(th) * rr, y: cy + Math.sin(th) * rr * k });
+      // 圈上的前導段（可以在畫面外）：點沿著圈進來，鏡頭在第 join 點停下
+      const lead = Array.from({ length: SPIRAL_LEAD }, (_, i) =>
+        at(th0 - turn * SPIRAL_LEAD_ARC * (1 - i / SPIRAL_LEAD), R0),
+      );
+      const spiral = Array.from({ length: SPIRAL_STEPS + 1 }, (_, i) => {
+        const u = i / SPIRAL_STEPS;
+        return at(th0 + turn * SPIRAL_TURNS * Math.PI * 2 * u, R0 * (1 - u) ** 1.4);
+      });
+      return { approach: [...lead, ...spiral], join: lead.length };
     },
   });
 
