@@ -2,7 +2,10 @@
 // 沿著一個垂直於地面的平面爬升：往遠方是時間（從站點誕生到今天），離地高度是累積的 GitHub 貢獻。
 // 改版是軌跡上的節點；每天的貢獻是地上沿著地面軌跡排開的燈（一天一盞、一週七排），近大遠小。
 // 火箭的角度照重力轉向：離地時垂直，之後慢慢往下壓，平滑地變，不跟著每天的資料抖。
+// 地表照真實的地理畫：發射台在台灣，往右是東、往遠方是北；陸地用首頁土星那種刻線畫，看得出台灣、福建沿海、九州與琉球。
 // 這裡只畫點、線與插圖，字（里程碑的名字、遙測讀數、提示）是疊在上面的 DOM。
+
+import LAND_DATA from '@/data/landAroundTaiwan.json';
 
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
@@ -120,7 +123,158 @@ function silhouette(cam: Camera, radius: number, w: number, h: number) {
   return run.length > best.length ? run : best;
 }
 
-/** 地表的點：一片經緯點，固定一組（θ、橫向位置），畫的時候投影 */
+/** 發射台在台灣（跟收藏頁地球上的琥珀點同一個地方）；往右是東、往遠方是北 */
+const PAD_LAT = 23.7;
+const PAD_LON = 121;
+/** 地表一個世界單位是幾度：放大到台灣周邊，發射台底下是看得清楚的一整座島 */
+const DEG_PER_UNIT = 0.008;
+/** 地表最近畫到哪（橫向位置）：再近就到鏡頭底下了 */
+const NEAR_Z = 900;
+
+/** 台灣周邊的陸地（data/landAroundTaiwan.json）：Natural Earth 50m land（公有領域）的多邊形，
+ *  用 Sutherland–Hodgman 裁到畫面看得到的這一塊（北緯 14–43、東經 113–134），再以 0.03° 做 Douglas–Peucker 簡化。
+ *  一塊陸地是幾個環（第一個是外圈，其餘是湖），每個環是一串 [經度×100, 緯度×100, …]。這裡換成地表座標（θ、橫向位置） */
+const LAND: [number, number][][][] = LAND_DATA.map((poly) =>
+  poly.map((ring) => {
+    const pts: [number, number][] = [];
+    for (let i = 0; i + 1 < ring.length; i += 2) {
+      const lon = ring[i] / 100;
+      const lat = ring[i + 1] / 100;
+      pts.push([THETA0 + (lon - PAD_LON) / (R * DEG_PER_UNIT), (PAD_LAT - lat) / DEG_PER_UNIT]);
+    }
+    return pts;
+  }),
+);
+
+/** 地表上 θ、橫向位置的那一點（橫向也照著地球的弧度往下彎） */
+const surfaceAt = (a: number, z: number): V3 => {
+  const r = radial(a);
+  const bend = (z * z) / (2 * R);
+  return [r[0] * (R - bend), r[1] * (R - bend), z];
+};
+
+/**
+ * 把一個環裁到看得到的那一塊地表（Sutherland–Hodgman，裁切邊界用二分法找）：
+ * 在地平線前面、不比鏡頭近、也不超出畫面兩側太遠。地平線後面的陸地就不畫，不會被投影到正面來
+ */
+const clipToVisible = (ring: [number, number][], seen: (a: number, z: number) => boolean) => {
+  const out: [number, number][] = [];
+  const cross = (p: [number, number], q: [number, number]): [number, number] => {
+    // p 看得到、q 看不到：在 p 到 q 之間找邊界
+    let lo = 0;
+    let hi = 1;
+    for (let k = 0; k < 12; k++) {
+      const mid = (lo + hi) / 2;
+      if (seen(p[0] + (q[0] - p[0]) * mid, p[1] + (q[1] - p[1]) * mid)) lo = mid;
+      else hi = mid;
+    }
+    return [p[0] + (q[0] - p[0]) * lo, p[1] + (q[1] - p[1]) * lo];
+  };
+  for (let i = 0; i < ring.length; i++) {
+    const p = ring[(i + ring.length - 1) % ring.length];
+    const q = ring[i];
+    const sp = seen(p[0], p[1]);
+    const sq = seen(q[0], q[1]);
+    if (sq) {
+      if (!sp) out.push(cross(q, p));
+      out.push(q);
+    } else if (sp) out.push(cross(p, q));
+  }
+  return out;
+};
+
+/** 一維的值雜訊（0–1）：刷痕用來斷筆、起伏 */
+const hash1 = (n: number) => {
+  const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return s - Math.floor(s);
+};
+const noise1 = (x: number) => {
+  const i = Math.floor(x);
+  const f = x - i;
+  const u = f * f * (3 - 2 * f);
+  return hash1(i) * (1 - u) + hash1(i + 1) * u;
+};
+
+/** 陸地的刻線（跟首頁土星同一個手法）：沿緯度一列一列（固定橫向位置），
+ *  用拉長的雜訊斷成一段一段的筆觸、微微起伏；只有落在陸地裡的會留下（畫的時候用陸地的形狀裁） */
+const HATCH = (() => {
+  const rows: { z: number; segs: [number, number][][] }[] = [];
+  let row = 0;
+  for (let z = -2200; z <= NEAR_Z; z += 12, row++) {
+    const segs: [number, number][][] = [];
+    let seg: [number, number][] = [];
+    for (let a = THETA0 - 0.18; a <= THETA0 + SPAN + 0.18; a += 0.004) {
+      const x = (a * R) / 46 + row * 7.31;
+      if (noise1(x) < 0.22) {
+        if (seg.length > 1) segs.push(seg);
+        seg = [];
+        continue;
+      }
+      seg.push([a, z + (noise1(x * 0.6 + 40) - 0.5) * 4]);
+    }
+    if (seg.length > 1) segs.push(seg);
+    rows.push({ z, segs });
+  }
+  return rows;
+})();
+
+/**
+ * 只留落在陸地上（外擴一點）的刷痕：海上的那些反正會被裁掉，每幀投影它們是白花力氣。
+ * 第一次畫的時候在地表座標裡把陸地畫到一張小的離屏畫布上，照它濾一次（瀏覽器端才有畫布，所以延後到這時候）
+ */
+let landHatch: typeof HATCH | null = null;
+const hatchOnLand = () => {
+  if (landHatch) return landHatch;
+  const W = 640;
+  const H = 640;
+  const a0 = THETA0 - 0.18;
+  const a1 = THETA0 + SPAN + 0.18;
+  const z0 = -2200;
+  const z1 = NEAR_Z;
+  const toX = (a: number) => ((a - a0) / (a1 - a0)) * W;
+  const toY = (z: number) => ((z - z0) / (z1 - z0)) * H;
+  const cv = document.createElement('canvas');
+  cv.width = W;
+  cv.height = H;
+  const g = cv.getContext('2d', { willReadFrequently: true });
+  if (!g) return HATCH;
+  g.fillStyle = '#fff';
+  g.strokeStyle = '#fff';
+  g.lineWidth = 6;
+  for (const poly of LAND) {
+    g.beginPath();
+    for (const ring of poly) {
+      ring.forEach(([a, z], n) => (n ? g.lineTo(toX(a), toY(z)) : g.moveTo(toX(a), toY(z))));
+      g.closePath();
+    }
+    g.fill('evenodd');
+    g.stroke();
+  }
+  const px = g.getImageData(0, 0, W, H).data;
+  const onLand = (a: number, z: number) => {
+    const x = Math.floor(toX(a));
+    const y = Math.floor(toY(z));
+    return x >= 0 && x < W && y >= 0 && y < H && (px[(y * W + x) * 4] ?? 0) > 0;
+  };
+  landHatch = HATCH.map(({ z, segs }) => {
+    const kept: [number, number][][] = [];
+    for (const seg of segs) {
+      let run: [number, number][] = [];
+      for (const p of seg) {
+        if (onLand(p[0], p[1])) run.push(p);
+        else {
+          if (run.length > 1) kept.push(run);
+          run = [];
+        }
+      }
+      if (run.length > 1) kept.push(run);
+    }
+    return { z, segs: kept };
+  }).filter((r) => r.segs.length);
+  return landHatch;
+};
+
+/** 海面的點：一片稀疏的經緯點，固定一組 */
 const SURFACE = (() => {
   const out: [number, number][] = [];
   for (let a = THETA0 - 0.2; a <= THETA0 + SPAN + 0.2; a += 0.012) {
@@ -313,16 +467,74 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
         ctx.fill();
       }
 
-      // 地表：一片經緯點，朝鏡頭的那一面，越遠越淡；橫向也照著地球的弧度往下彎
+      // 地表：一片稀疏的經緯點，朝鏡頭的那一面，越遠越淡
       for (const [a, z] of SURFACE) {
-        const r = radial(a);
-        const bend = (z * z) / (2 * R);
-        const q: V3 = [r[0] * (R - bend), r[1] * (R - bend), z];
+        const q = surfaceAt(a, z);
         if (!cam.facing(q)) continue;
         const s = cam.project(q);
         if (!s || s.x < -10 || s.x > w + 10 || s.y < -10 || s.y > h + 10) continue;
-        ctx.fillStyle = `rgba(${INK}, ${Math.min(0.22, 0.05 + 0.1 * s.s) * fade})`;
+        ctx.fillStyle = `rgba(${INK}, ${Math.min(0.16, 0.04 + 0.08 * s.s) * fade})`;
         ctx.fillRect(s.x, s.y, 1.2, 1.2);
+      }
+
+      // 陸地：用跟首頁土星一樣的刻線畫（一列一列的白色刷痕），越遠越淡；台灣在發射台底下。
+      // 地平線後面的那一段壓到地平線上（不然背面的陸地會投影到正面來），整塊再裁在地球的輪廓裡
+      if (earth.length > 1) {
+        const top = Math.min(...earth.map((p) => p.y));
+        ctx.save();
+        ctx.beginPath();
+        earth.forEach((p, n) => (n ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.lineTo(earth[earth.length - 1].x, h * 4);
+        ctx.lineTo(earth[0].x, h * 4);
+        ctx.closePath();
+        ctx.clip();
+        // 陸地的形狀當作裁切範圍（外圈加湖用 evenodd 挖空；各塊陸地互不重疊，放同一個路徑沒關係）
+        ctx.beginPath();
+        const seen = (a: number, z: number) =>
+          z <= NEAR_Z && a >= THETA0 - 0.18 && a <= THETA0 + SPAN + 0.18 && cam.facing(surfaceAt(a, z));
+        for (const poly of LAND) {
+          for (const ring of poly) {
+            const visible = clipToVisible(ring, seen);
+            if (visible.length < 3) continue;
+            visible.forEach(([a, z], n) => {
+              const s = cam.project(surfaceAt(a, z));
+              if (!s) return;
+              if (n) ctx.lineTo(s.x, s.y);
+              else ctx.moveTo(s.x, s.y);
+            });
+            ctx.closePath();
+          }
+        }
+        ctx.clip('evenodd');
+        // 刷痕：近的線粗、遠的細（越遠越像一層薄霧），線與線之間留黑縫
+        ctx.strokeStyle = `rgba(${INK}, ${0.9 * fade})`;
+        ctx.lineCap = 'round';
+        for (const { z, segs } of hatchOnLand()) {
+          const mid = cam.project(surfaceAt(THETA0 + SPAN * 0.5, z));
+          if (!mid || mid.y < top - 2) continue;
+          ctx.lineWidth = Math.min(2.2, Math.max(0.25, mid.s * 1.6));
+          ctx.globalAlpha = Math.min(1, 0.35 + mid.s * 0.6);
+          ctx.beginPath();
+          for (const seg of segs) {
+            let pen = false;
+            for (const [a, zz] of seg) {
+              const q = surfaceAt(a, zz);
+              const s = cam.facing(q) ? cam.project(q) : null;
+              if (!s) {
+                pen = false;
+                continue;
+              }
+              if (pen) ctx.lineTo(s.x, s.y);
+              else ctx.moveTo(s.x, s.y);
+              pen = true;
+            }
+          }
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        ctx.lineCap = 'butt';
+        ctx.lineWidth = 1;
+        ctx.restore();
       }
 
       // 地平線：地球的邊緣，外面一層很薄的大氣光；再往上一層虛線是大氣層頂
