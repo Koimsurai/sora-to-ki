@@ -1017,6 +1017,7 @@ function BlogPost() {
   /** OrbitToc 掛上來的「讓某一章亮起來」，摘要的關鍵句滑過時呼叫 */
   const tocPingRef = useRef<((id: string | null) => void) | null>(null);
   const colRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
   const { id = '' } = useParams({ strict: false });
   const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
@@ -1028,6 +1029,7 @@ function BlogPost() {
   const {
     data: postData,
     isPending,
+    isPlaceholderData,
     error: queryError,
   } = useQuery({
     ...postDetailQueryOptions(id, pathLocale),
@@ -1137,8 +1139,9 @@ function BlogPost() {
   const prevScrollKeyRef = useRef<string | null>(null);
   useEffect(() => {
     const key = `${id}:${pathLocale}`;
+    // 整欄是原地換掉的（見下面的 is-swapped），直接回到頂端；慢慢捲會從新文章的中段一路刷上去
     if (prevScrollKeyRef.current !== null && prevScrollKeyRef.current !== key && !keepScroll) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
     prevScrollKeyRef.current = key;
   }, [id, pathLocale, keepScroll]);
@@ -1261,6 +1264,21 @@ function BlogPost() {
   // 切語系換過來的：放回讀者原本那一章，再從畫面頂端往下掃一次（blog/useRetune）
   useRetune(post?.id ?? -1, colRef, contentRef, headings);
 
+  // 從一篇換到另一篇（左欄、同標籤、同專欄、內文裡的站內連結）：不走全站轉場（TransitionLayer 放行），
+  // 這裡原地換——新的那一欄淡入、往上浮一點。第一次載入不演，那時有換頁轉場在接
+  const shownIdRef = useRef<number | null>(null);
+  const shownId = post?.id ?? null;
+  useEffect(() => {
+    if (shownId === null) return;
+    const before = shownIdRef.current;
+    shownIdRef.current = shownId;
+    const page = pageRef.current;
+    if (before === null || before === shownId || !page) return;
+    page.classList.add('is-swapped');
+    const timer = window.setTimeout(() => page.classList.remove('is-swapped'), 900);
+    return () => window.clearTimeout(timer);
+  }, [shownId]);
+
   /* ════════ Loading ════════ */
   if (loading) {
     return (
@@ -1316,11 +1334,15 @@ function BlogPost() {
   // 外框（2026-10 翻新）：內文不動，包在外面的只有一條線——這篇文章自己的星軌（OrbitToc），
   // 它同時是目錄；左邊是附近文章的細線；右側的浮動圓鈕收成文末一行字。
   return (
-    <div className="blog-post-container ar-page" style={{ fontFamily: 'var(--blog-font)' }}>
+    <div
+      className={`blog-post-container ar-page${isPlaceholderData ? ' is-fetching' : ''}`}
+      style={{ fontFamily: 'var(--blog-font)' }}
+      ref={pageRef}
+    >
       {toastMsg && <Toast key={toastMsg} message={toastMsg} onDone={() => setToastMsg('')} />}
 
       <OrbitToc
-        key={'orbit-' + id}
+        key={'orbit-' + post.id}
         postId={post.id}
         headings={headings}
         contentRef={contentRef}
@@ -1329,7 +1351,8 @@ function BlogPost() {
       />
       <PostsNav currentId={post.id} postCategory={post.category ?? undefined} />
 
-      <div className="ar-col" ref={colRef}>
+      {/* 換一篇就整欄重掛（標題、摘要、內文、文末）；左欄不重掛，清單自己滑 */}
+      <div className="ar-col" ref={colRef} key={post.id}>
         <header className="ar-head">
           <p className="ar-kick">
             <LocaleLink to="/blog">{t('blog.title')}</LocaleLink>

@@ -198,10 +198,17 @@ export default function OrbitToc({
       g = orbitGeometry(window.innerWidth, window.innerHeight);
       root.classList.toggle('is-off', !g);
       if (!g) return;
+      // 畫布只在視窗大小變了才重設（重設會清空畫面）；內文長高、上面多展開一塊這類只要重量位置
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      cv.width = Math.round(window.innerWidth * dpr);
-      cv.height = Math.round(window.innerHeight * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const w = Math.round(window.innerWidth * dpr);
+      const h = Math.round(window.innerHeight * dpr);
+      if (cv.width !== w || cv.height !== h) {
+        cv.width = w;
+        cv.height = h;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      // 位置變了：下一幀一定要重畫，不等捲動
+      lastKey = '';
       start = docTop(content);
       end = start + content.offsetHeight;
       marks = els.map((el) => (el ? docTop(el) : start));
@@ -429,8 +436,11 @@ export default function OrbitToc({
       quiet = window.setTimeout(() => root.classList.remove('is-quiet'), 900);
     };
     window.addEventListener('scroll', onScroll, { passive: true });
+    // 整欄也要看：內文上面展開一塊（同標籤的文章、摘要）時內文只是被往下推、自己的大小沒變
     const ro = new ResizeObserver(measure);
     ro.observe(content);
+    const col = content.closest('.ar-col');
+    if (col) ro.observe(col);
     window.addEventListener('resize', measure);
     measure();
     raf = requestAnimationFrame(frame);

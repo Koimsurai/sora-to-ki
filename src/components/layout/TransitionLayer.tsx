@@ -11,7 +11,8 @@
 //   （畫面 = 世界 − cam），一開始是 0、停下時剛好是 offset，新的一頁就回到原位
 //   長：落地之後頁面接手自己的進場（星軌長出來、彗尾長出來…）；頁面可以接手那條線
 //
-// 上一頁、下一頁也走同一套（popstate 一樣會問 blocker）。只換語系、進出後台、要求減少動態的訪客不演。
+// 上一頁、下一頁也走同一套（popstate 一樣會問 blocker）。只換語系、進出後台、要求減少動態的訪客不演；
+// 從一篇文章換到另一篇也不演——文章頁自己原地換（左欄留著滑、標題內文目錄換掉，見 blog/BlogPost）。
 // 轉場中又換頁：舊的直接收尾，這一次不演。
 import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
@@ -28,6 +29,8 @@ import { setSkyPan } from '@/store/skyPan';
 import './TransitionLayer.css';
 
 /** 預設的收：一圈遮罩收進錨點 */
+/** 單篇文章的路徑（語系前綴已剝掉）：`blog/<slug 或 id>` */
+const ARTICLE = /^blog\/[^/]+$/;
 const LEAVE_MS = 380;
 const GROW_MS = 480;
 /** 彗尾：一個點畫下去之後多久散掉（ms） */
@@ -575,8 +578,15 @@ export default function TransitionLayer() {
         const a = stripLocalePrefix(currentLocation.pathname);
         const b = stripLocalePrefix(nextLocation.pathname);
         const main = mainOf();
-        // 只換語系、進出後台、要求減少動態：不演
-        if (a === b || a.startsWith('admin') || b.startsWith('admin') || reduce.matches || !main) {
+        // 只換語系、進出後台、文章換文章、要求減少動態：不演
+        if (
+          a === b ||
+          a.startsWith('admin') ||
+          b.startsWith('admin') ||
+          (ARTICLE.test(a) && ARTICLE.test(b)) ||
+          reduce.matches ||
+          !main
+        ) {
           takeTransitionFrom();
           return false;
         }
