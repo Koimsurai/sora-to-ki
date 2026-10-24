@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { decodeCodepoints, isSerifCodepoint, keyOf, MAX_CODEPOINTS, subsetUrl, unicodeRangeOf } from './serifSubset';
+import {
+  decodeCodepoints,
+  isSerifCodepoint,
+  isSerifFace,
+  keyOf,
+  MAX_CODEPOINTS,
+  serifFaceOf,
+  subsetUrl,
+  unicodeRangeOf,
+} from './serifSubset';
 
 // 按碼位拆字是刻意的：伺服器要的就是碼位，不是使用者看到的字素
 const cps = (s: string) => Array.from(s, (c) => c.codePointAt(0) ?? 0);
@@ -45,8 +54,25 @@ describe('其他', () => {
     expect(unicodeRangeOf([0x4e03, 0x4e00, 0x4e01, 0x4e02, 0x41])).toBe('U+41,U+4E00-4E03');
   });
 
-  it('英數、標點、漢字、假名要裁；emoji 與控制字元不裁', () => {
-    for (const ch of 'aZ0，。「永ア') expect(isSerifCodepoint(ch.codePointAt(0) ?? 0)).toBe(true);
+  it('英數、標點、漢字、假名、韓文要裁；emoji 與控制字元不裁', () => {
+    for (const ch of 'aZ0，。「永ア한글') expect(isSerifCodepoint(ch.codePointAt(0) ?? 0)).toBe(true);
     for (const cp of [0x0a, 0x1f600]) expect(isSerifCodepoint(cp)).toBe(false);
+  });
+});
+
+describe('四套字形', () => {
+  it('語系對到哪一套：簡中、日文、韓文各自一套，繁中與其他語系用繁中那套', () => {
+    expect(serifFaceOf('zh-TW')).toBe('tc');
+    expect(serifFaceOf('en')).toBe('tc');
+    expect(serifFaceOf('zh-CN')).toBe('sc');
+    expect(serifFaceOf('ja')).toBe('jp');
+    expect(serifFaceOf('ko')).toBe('kr');
+  });
+
+  it('繁中的網址跟以前一樣（不帶 f），其他套帶 f；伺服器只收認得的那幾套', () => {
+    expect(subsetUrl(400, cps('永'))).not.toContain('&f=');
+    expect(new URL(subsetUrl(400, cps('永'), 'jp'), 'https://x').searchParams.get('f')).toBe('jp');
+    expect(['tc', 'sc', 'jp', 'kr'].every(isSerifFace)).toBe(true);
+    for (const v of ['', 'TC', 'zh', undefined, 1]) expect(isSerifFace(v)).toBe(false);
   });
 });

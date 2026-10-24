@@ -848,7 +848,7 @@
   /* 字：中文與中英混排一律思源宋體；Instrument Serif 只給「整段都是英文的大字」（名字、Notes），
      它只有一個字重，不要加粗。思源宋體是按頁裁字（layout/SerifFontLoader）：堆疊第一個
      "Koim Serif" 是裁出來的字，本機裝了 "Noto Serif TC" 的訪客不會下載任何東西 */
-  --serif: "Koim Serif", "Noto Serif TC", "Source Han Serif TC", "Songti TC", "PMingLiU", serif;
+  --serif: "Koim Serif", "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC", "PMingLiU", serif;
   --latin-display: "Instrument Serif", var(--serif);
 
   --cjk-font:
@@ -1202,20 +1202,23 @@ body::after {
 ─────────────────────────────────────────────────────────────── */
 :lang(zh-CN) {
   --cjk-font: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "MiSans", sans-serif;
-  /* 按頁裁出來的 Koim Serif 是繁中字形，簡中不用它 */
-  --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  /* 按頁裁的思源宋體各語系一套（layout/SerifFontLoader）：這裡放簡中那套，本機有裝就用本機的 */
+  --serif: "Koim Serif SC", "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
 }
 
 :lang(ja) {
   --cjk-font:
     "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Source Han Sans JP", "Noto Sans JP",
     sans-serif;
-  --serif: "Noto Serif JP", "Source Han Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --serif:
+    "Koim Serif JP", "Noto Serif JP", "Noto Serif CJK JP", "Source Han Serif JP", "Hiragino Mincho ProN", "Yu Mincho",
+    serif;
 }
 
 :lang(ko) {
   --cjk-font: "Apple SD Gothic Neo", "Malgun Gothic", "Source Han Sans KR", "Noto Sans KR", sans-serif;
-  --serif: "Noto Serif KR", "Source Han Serif KR", "AppleMyungjo", "Batang", serif;
+  --serif:
+    "Koim Serif KR", "Noto Serif KR", "Noto Serif CJK KR", "Source Han Serif KR", "AppleMyungjo", "Batang", serif;
 }
 
 :lang(en) {

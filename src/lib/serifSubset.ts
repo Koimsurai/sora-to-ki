@@ -10,17 +10,43 @@
  */
 
 export const SERIF_FAMILY = 'Koim Serif';
+
+/** 哪一套思源宋體：繁中、簡中、日文、韓文的字形各依各地的寫法（同一個漢字在四套裡長得不一樣） */
+const SERIF_FACES = ['tc', 'sc', 'jp', 'kr'] as const;
+export type SerifFace = (typeof SERIF_FACES)[number];
+
+export function isSerifFace(v: unknown): v is SerifFace {
+  return typeof v === 'string' && (SERIF_FACES as readonly string[]).includes(v);
+}
+
+/** 每一套各自一個字族名（CSS 的 :lang() 堆疊裡放對應的那個）。站內切語系時兩套不會搶同一個名字 */
+export const SERIF_FACE_FAMILY: Record<SerifFace, string> = {
+  tc: SERIF_FAMILY,
+  sc: `${SERIF_FAMILY} SC`,
+  jp: `${SERIF_FAMILY} JP`,
+  kr: `${SERIF_FAMILY} KR`,
+};
+
+/** 頁面的語系 → 裁哪一套。英文頁也用繁中那套（拉丁字形四套一樣，繁中那套快取最熱） */
+export function serifFaceOf(lang: string): SerifFace {
+  if (/^zh-(CN|Hans|SG)/i.test(lang)) return 'sc';
+  if (/^ja/i.test(lang)) return 'jp';
+  if (/^ko/i.test(lang)) return 'kr';
+  return 'tc';
+}
 const SERIF_WEIGHTS = [400, 600] as const;
 export type SerifWeight = (typeof SERIF_WEIGHTS)[number];
 
 /** 一次最多裁幾個字。正常的長文約一千個，上限只是擋住惡意的超大請求 */
 export const MAX_CODEPOINTS = 4000;
 
-/** 交給思源宋體的字：英數與拉丁補充（混排時用它自己配好的字形）、標點、注音、假名、中日韓漢字 */
+/** 交給思源宋體的字：英數與拉丁補充（混排時用它自己配好的字形）、標點、注音、假名、中日韓漢字、韓文 */
 export function isSerifCodepoint(cp: number): boolean {
   return (
     (cp >= 0x20 && cp <= 0x7e) ||
     (cp >= 0xa0 && cp <= 0x24f) ||
+    (cp >= 0x1100 && cp <= 0x11ff) ||
+    (cp >= 0xac00 && cp <= 0xd7af) ||
     (cp >= 0x2000 && cp <= 0x206f) ||
     (cp >= 0x2e80 && cp <= 0x2fdf) ||
     (cp >= 0x3000 && cp <= 0x31ff) ||
@@ -76,9 +102,10 @@ export function keyOf(c: string): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-export function subsetUrl(weight: SerifWeight, cps: Iterable<number>): string {
+export function subsetUrl(weight: SerifWeight, cps: Iterable<number>, face: SerifFace = 'tc'): string {
   const c = encodeCodepoints(cps);
-  return `/fonts/serif/${weight}/${keyOf(c)}.woff2?c=${c}`;
+  // 繁中不帶 f：網址跟以前一樣，已經在瀏覽器與伺服器快取裡的字型照用
+  return `/fonts/serif/${weight}/${keyOf(c)}.woff2?c=${c}${face === 'tc' ? '' : `&f=${face}`}`;
 }
 
 /** FontFace 的 unicode-range：連續的碼位併成一段 */
