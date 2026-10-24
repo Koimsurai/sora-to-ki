@@ -124,3 +124,6 @@ reports/
 .e2e-coverage/
 lcov-e2e.info
 .vitest/
+
+# 按頁裁字用的思源宋體原檔（17 MB，scripts/fetch-serif-font.mjs 下載）
+/.cache/fonts/

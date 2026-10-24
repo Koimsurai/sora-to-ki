@@ -12,15 +12,13 @@ import type { Page } from '@playwright/test';
 // ── 電子報訂閱 ────────────────────────────────────────────────────────────
 
 /**
- * 打開右下角浮動按鈕裡的訂閱視窗。
+ * 打開文末那一行（分享／訂閱／RSS）的訂閱視窗。
  *
- * 用 `title` 選而不是位置（`.float-btn` 那一排有六顆：按讚／分享／留言／訂閱／RSS…，
- * 第一版用 `.last()` 選到的是 RSS）。title 同時是它的可及名稱，選它等於順便驗
- * 「這顆按鈕有沒有名字」——沒有的話報讀器只會念「按鈕」。
+ * 用字選而不是位置：那一行還有分享與 RSS，第一版用位置選到的是 RSS。
  */
 async function openSubscribe(page: Page) {
   await expect(async () => {
-    await page.locator('.float-btn[title="訂閱"]').click();
+    await page.locator('.ar-act button').filter({ hasText: '訂閱' }).click();
     await expect(page.locator('.subscribe-modal')).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 20_000 }); // hydration 之前那一下會被吃掉，理由同 interactions.spec.ts
 }
@@ -77,45 +75,66 @@ test.describe('留言按讚', () => {
   // 會改共用的讚數，跟 emoji 反應同樣的理由要序列執行
   test.describe.configure({ mode: 'serial' });
 
+  /** 留言底下的「收到」（按讚）鈕；回覆鈕沒有 aria-pressed */
+  const likeBtn = (page: Page) => page.locator('.sl-actions button[aria-pressed]').first();
+  /** 讚數：0 的時候不顯示數字 */
+  const countOf = async (page: Page) => {
+    const n = likeBtn(page).locator('span');
+    return (await n.count()) === 0 ? 0 : Number((await n.innerText()).trim());
+  };
+
   /**
    * 按讚 +1，而且**同一個人不能連按**。
    *
-   * `handleLike` 開頭就 `if (likedComments.includes(id)) return`，按鈕也會 disabled。
+   * `useCommentLikes` 的 like 開頭就 `if (liked.includes(id)) return`。
    * 少了那道守衛的話一個人可以把數字灌到任意高——而讚數是公開顯示的。
    */
   test('按一次 +1，而且不能重複按', async ({ page }) => {
     await page.goto('/blog/1');
 
-    const like = page.locator('.action-btn.like').first();
+    const like = likeBtn(page);
     await expect(like, '種子資料裡應該有已審核的留言').toBeVisible({ timeout: 15_000 });
-    const countOf = async () => Number((await like.locator('span').innerText()).trim());
-    const before = await countOf();
+    await expect(like).toHaveAttribute('aria-pressed', 'false');
+    const before = await countOf(page);
 
-    const posted = page.waitForResponse((r) => r.url().includes('/like') && r.request().method() === 'POST');
+    // 已經按過的就不會再送 POST：hydration 之前那一下會被吃掉，重試到真的送出去為止
+    await expect(async () => {
+      const posted = page.waitForResponse((r) => r.url().includes('/like') && r.request().method() === 'POST', {
+        timeout: 2_000,
+      });
+      await like.click();
+      await posted;
+    }).toPass({ timeout: 20_000 });
+
+    await expect.poll(() => countOf(page), { message: '按讚應該 +1' }).toBe(before + 1);
+    await expect(like, '按過之後要標成按過的').toHaveAttribute('aria-pressed', 'true');
+
+    let again = false;
+    page.on('request', (r) => {
+      if (r.url().includes('/like') && r.method() === 'POST') again = true;
+    });
     await like.click();
-    await posted;
-
-    await expect.poll(countOf, { message: '按讚應該 +1' }).toBe(before + 1);
-    await expect(like, '按過之後要 disabled，不然可以一直按').toBeDisabled();
-    await expect(like).toHaveClass(/liked/);
+    await expect.poll(() => countOf(page)).toBe(before + 1);
+    expect(again, '按過的再按一次不該再送').toBe(false);
   });
 
   /** 重新整理之後仍然記得按過（存在 localStorage）。 */
   test('重新整理之後還記得按過', async ({ page }) => {
     await page.goto('/blog/1');
-    const like = page.locator('.action-btn.like').first();
-    await expect(like).toBeVisible({ timeout: 15_000 });
+    await expect(likeBtn(page)).toBeVisible({ timeout: 15_000 });
 
-    if (!(await like.isDisabled())) {
-      const posted = page.waitForResponse((r) => r.url().includes('/like') && r.request().method() === 'POST');
-      await like.click();
-      await posted;
+    if ((await likeBtn(page).getAttribute('aria-pressed')) !== 'true') {
+      await expect(async () => {
+        const posted = page.waitForResponse((r) => r.url().includes('/like') && r.request().method() === 'POST', {
+          timeout: 2_000,
+        });
+        await likeBtn(page).click();
+        await posted;
+      }).toPass({ timeout: 20_000 });
     }
 
     await page.reload();
-    await expect(page.locator('.action-btn.like').first(), '重載後仍該記得按過').toBeDisabled({
-      timeout: 15_000,
-    });
+    await expect(likeBtn(page), '重載後仍該記得按過').toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 });
   });
 });
 
@@ -127,21 +146,21 @@ test.describe('留言按讚', () => {
  */
 test('碎念按過的讚，重新整理之後還亮著', async ({ page }) => {
   await page.goto('/thinking');
-  const like = page.locator('.tk-card').first().getByRole('button', { name: '讚', exact: true });
+  const like = page.locator('.mo-post').first().getByRole('button', { name: '讚', exact: true });
   await expect(like, '種子資料裡應該有碎念').toBeVisible({ timeout: 15_000 });
 
-  if (!(await like.getAttribute('class'))?.includes('is-like')) {
+  if ((await like.getAttribute('aria-pressed')) !== 'true') {
     const posted = page.waitForResponse((r) => r.url().includes('/react') && r.request().method() === 'POST');
     await like.click();
     await posted;
   }
-  await expect(like).toHaveClass(/is-like/);
+  await expect(like).toHaveAttribute('aria-pressed', 'true');
 
   await page.reload();
   await expect(
-    page.locator('.tk-card').first().getByRole('button', { name: '讚', exact: true }),
+    page.locator('.mo-post').first().getByRole('button', { name: '讚', exact: true }),
     '重整後仍該記得按過',
-  ).toHaveClass(/is-like/, { timeout: 15_000 });
+  ).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 });
 });
 
 // ── 行動裝置 ──────────────────────────────────────────────────────────────
@@ -159,7 +178,7 @@ test('碎念按過的讚，重新整理之後還亮著', async ({ page }) => {
 test.describe('行動裝置版面', () => {
   test.use({ viewport: { width: 390, height: 844 } }); // iPhone 15 的邏輯解析度
 
-  for (const path of ['/', '/blog', '/blog/1', '/thinking', '/bookshelf', '/watch', '/portfolio']) {
+  for (const path of ['/', '/blog', '/blog/1', '/thinking', '/watch', '/portfolio']) {
     test(`${path} 在手機寬度下不會橫向溢出`, async ({ page }) => {
       await page.goto(path, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('main').first()).toContainText(/\S/, { timeout: 15_000 });

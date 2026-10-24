@@ -17,7 +17,7 @@ import ko from '@/locales/ko/common.json';
 // 在 lib/locales.ts——純資料、無 React 相依，所以 Nitro 的 sitemap route 也能 import。
 // 這裡刻意「不」re-export：多一組 re-export 只會讓 react-refresh 多噴警告，消費端直接指過去更清楚。
 
-// 語言切換器（footer LanguagePicker）顯示用的原生語名。
+// 語言切換（頂欄 SiteNav 的工具列）顯示用的原生語名。
 // key 放寬成 string：呼叫端拿到的 current language 是 i18next 的 string 型別。
 export const LOCALE_LABELS: Record<string, string> = {
   'zh-TW': '繁體中文',

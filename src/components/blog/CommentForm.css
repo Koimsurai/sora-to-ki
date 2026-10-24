@@ -1,0 +1,330 @@
+/* 送出一道訊號（blog/CommentForm）：平常一行「TX｜想說的話｜字數｜送出」，焦點移進來才往上展開身分、驗證碼與規則。
+   留言頁把它黏在視窗底部（Messages.css），文章頁與碎念放在原地 */
+
+.cf {
+  display: grid;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+:where(.cf) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+:where(.cf) :where(a) {
+  color: inherit;
+}
+
+/* 展開的那一塊：收起來時高度 0（仍在版面裡，焦點可以移進去） */
+.cf-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-300) var(--easing-out);
+}
+
+.cf.is-open .cf-panel {
+  grid-template-rows: 1fr;
+  border-top: 1px solid var(--rule);
+}
+
+.cf-fields {
+  display: grid;
+  gap: var(--space-3);
+  min-height: 0;
+  max-height: 55svh;
+  overflow: hidden;
+}
+
+.cf.is-open .cf-fields {
+  padding-top: var(--space-4);
+  overflow-y: auto;
+}
+
+.cf-login,
+.cf-as,
+.cf-replying {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.cf-login span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.cf-login button,
+.cf-as button,
+.cf-replying button {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--fs-13);
+  color: var(--paper);
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur-200) ease;
+}
+
+.cf-login button:hover,
+.cf-login button:focus-visible,
+.cf-as button:hover,
+.cf-as button:focus-visible,
+.cf-replying button:hover,
+.cf-replying button:focus-visible {
+  border-color: var(--paper-2);
+}
+
+/* 登入鈕只放圖示：細線框的方塊、墨色圖示，滑過時框換成琥珀色 */
+.cf-login .cf-provider {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: var(--fs-16);
+  color: var(--paper-2);
+  transition:
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
+}
+
+.cf-login .cf-provider:hover,
+.cf-login .cf-provider:focus-visible {
+  color: var(--paper);
+  border-color: var(--amber);
+}
+
+.cf-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.4fr) 120px;
+  gap: var(--space-4);
+}
+
+.cf-input {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.cf-input span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.cf-input input,
+.cf-text textarea {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-1) 0;
+  font: inherit;
+  font-size: var(--fs-16);
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  outline: none;
+  appearance: none;
+}
+
+.cf-input input:focus {
+  border-bottom-color: var(--paper-2);
+}
+
+:is(.cf-input input, .cf-text textarea)::placeholder {
+  color: var(--paper-3);
+}
+
+/* 驗證沒過：底線換成琥珀色，原因寫在發送列底下 */
+.cf-input input[aria-invalid="true"],
+.cf-text textarea[aria-invalid="true"] {
+  border-bottom-color: var(--amber);
+}
+
+.cf-rules {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: var(--fs-12);
+  color: var(--paper-3);
+}
+
+.cf-rules li::before {
+  content: "·  ";
+}
+
+.cf-rules a {
+  font-family: var(--mono-font);
+  color: var(--paper-2);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+/* 發送列：TX｜想說的話｜字數｜送出 */
+.cf-bar {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+}
+
+/* 上緣那條線：打的字即時變成波形，送出時往右飛走 */
+.cf-wave {
+  position: absolute;
+  top: calc(-1 * var(--space-2));
+  left: 0;
+  width: 100%;
+  height: 14px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.cf-wave path {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.cf-wave.is-flying {
+  animation: cf-fly 1.2s var(--easing-standard) forwards;
+}
+
+@keyframes cf-fly {
+  to {
+    opacity: 0;
+    transform: translateX(60%);
+  }
+}
+
+.cf-k {
+  padding-bottom: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--amber);
+}
+
+.cf-text {
+  position: relative;
+  display: grid;
+}
+
+/* 終端機那一版：提示字元是墨色，沒在打字時「寫點什麼」後面一個閃爍的琥珀游標 */
+.cf-k.is-shell {
+  font-size: var(--fs-14);
+  letter-spacing: normal;
+  color: var(--paper-2);
+}
+
+.cf-ph {
+  position: absolute;
+  top: var(--space-1);
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--fs-16);
+  color: var(--paper-3);
+  pointer-events: none;
+}
+
+.cf-ph::after {
+  content: "";
+  width: 1px;
+  height: 1.1em;
+  background: var(--amber);
+  animation: cf-caret 1.1s steps(1) infinite;
+}
+
+@keyframes cf-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.cf-text textarea {
+  caret-color: var(--amber);
+}
+
+.cf-text textarea {
+  display: block;
+  resize: none;
+  scrollbar-width: thin;
+}
+
+.cf-text textarea:focus {
+  border-bottom-color: var(--paper-2);
+}
+
+.cf-meter {
+  padding-bottom: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+  white-space: nowrap;
+}
+
+.cf-submit {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--fs-14);
+  color: var(--paper);
+  white-space: nowrap;
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur-200) ease;
+}
+
+.cf-submit:hover,
+.cf-submit:focus-visible {
+  border-color: var(--amber);
+}
+
+.cf-submit:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.cf-note {
+  display: block;
+  min-height: 1.5em;
+  margin-top: var(--space-1);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+}
+
+.cf-note em {
+  font-style: normal;
+  color: var(--amber);
+}
+
+@media (max-width: 900px) {
+  .cf-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .cf-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .cf-k,
+  .cf-meter {
+    display: none;
+  }
+}

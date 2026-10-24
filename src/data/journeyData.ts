@@ -2,14 +2,6 @@ interface YearLabel {
   NOW: string;
   FUTURE: string;
 }
-interface JourneyUIText {
-  title: string;
-  subtitle: string;
-  expand: string;
-  collapse: string;
-  endingTitle: string;
-  endingText: string;
-}
 interface MilestoneStatic {
   id: number;
   year: string;
@@ -35,54 +27,11 @@ const YEAR_LABELS: Record<string, YearLabel> = {
   ko: { NOW: '지금', FUTURE: '미래' },
 };
 
-const JOURNEY_UI: Record<string, JourneyUIText> = {
-  'zh-TW': {
-    title: '我的成長軌跡',
-    subtitle: '從第一行代碼到星辰大海，記錄每一個重要時刻',
-    expand: '查看詳情 ▼',
-    collapse: '收起 ▲',
-    endingTitle: '旅程未完待續...',
-    endingText: '每一次學習都是新的冒險，每一個專案都是新的挑戰。',
-  },
-  'zh-CN': {
-    title: '我的成长轨迹',
-    subtitle: '从第一行代码到星辰大海，记录每一个重要时刻',
-    expand: '查看详情 ▼',
-    collapse: '收起 ▲',
-    endingTitle: '旅程未完待续...',
-    endingText: '每一次学习都是新的冒险，每一个项目都是新的挑战。',
-  },
-  en: {
-    title: 'My Journey',
-    subtitle: 'From the first line of code to the stars — every moment that mattered.',
-    expand: 'Read more ▼',
-    collapse: 'Collapse ▲',
-    endingTitle: 'To be continued...',
-    endingText: 'Every new thing learned is a new adventure; every project is a new challenge.',
-  },
-  ja: {
-    title: '私の歩み',
-    subtitle: '最初の 1 行から星空まで、節目をすべて残しています',
-    expand: '詳しく見る ▼',
-    collapse: '閉じる ▲',
-    endingTitle: '旅はまだ続きます...',
-    endingText: '学ぶたびに新しい冒険、プロジェクトのたびに新しい挑戦です。',
-  },
-  ko: {
-    title: '나의 여정',
-    subtitle: '첫 줄의 코드에서 별바다까지, 모든 중요한 순간을 기록합니다',
-    expand: '자세히 보기 ▼',
-    collapse: '접기 ▲',
-    endingTitle: '여정은 계속됩니다...',
-    endingText: '배움은 곧 새로운 모험, 프로젝트는 곧 새로운 도전.',
-  },
-};
-
 const MILESTONE_STATIC: MilestoneStatic[] = [
   { id: 1, year: '2004', icon: '🌟', color: '#c084fc', tags: ['Full-Stack', 'Photography', 'Design'] },
   { id: 2, year: '2019-2021', icon: '🍱', color: '#4ade80', tags: [] },
   { id: 3, year: '2022-2023', icon: '👥', color: '#60a5fa', tags: ['Python', 'Golang', 'Java'] },
-  { id: 4, year: '2024.07', icon: '🎓', color: '#fb923c', tags: ['Python'] },
+  { id: 4, year: '2024.08', icon: '🎓', color: '#fb923c', tags: ['Python'] },
   { id: 5, year: '2024.09', icon: '📱', color: '#34d399', tags: ['Kotlin', 'Android', 'Premiere', 'GitHub'] },
   {
     id: 6,
@@ -92,7 +41,7 @@ const MILESTONE_STATIC: MilestoneStatic[] = [
     tags: ['Redis', 'FastAPI', 'Flutter', 'Docker', 'Nginx', 'Discord Bot'],
   },
   { id: 7, year: '2025', icon: '🏢', color: '#fbbf24', tags: ['Turborepo', 'Tauri', 'TypeScript', 'CI/CD'] },
-  { id: 8, year: 'NOW', icon: '🔭', color: '#f472b6', tags: ['React', 'Three.js', 'Rust', 'NAS', 'UI/UX'] },
+  { id: 8, year: 'NOW', icon: '🔭', color: '#f472b6', tags: ['Tauri', 'Vite', 'React', 'Rust', 'AI'] },
   { id: 9, year: 'FUTURE', icon: '🚀', color: '#ec4899', tags: [] },
 ];
 
@@ -102,7 +51,7 @@ const MILESTONES_BY_LANG: Record<string, MilestoneLang[]> = {
       title: '出生',
       subtitle: '水瓶座 A 型',
       description:
-        '出生於 2004 年。理性的程式邏輯與感性的美學設計——這兩種看似衝突的特質，讓我在開發前端介面與規劃系統架構時，能同時兼顧使用者的視覺體驗與程式碼的運作效率。',
+        '出生於 2004 年。理性的程式邏輯與感性的美學設計，這兩種看似衝突的特質，讓我在開發前端介面與規劃系統架構時，能同時兼顧使用者的視覺體驗與程式碼的運作效率。',
       extraTags: ['全端工程師', '攝影', '設計'],
     },
     {
@@ -135,9 +84,9 @@ const MILESTONES_BY_LANG: Record<string, MilestoneLang[]> = {
     },
     {
       title: '大學專題',
-      subtitle: 'EV 充電整合平台與遊戲化 ESG',
+      subtitle: 'VoltiCar：EV 充電整合與碳權遊戲化',
       description:
-        '畢業專題目標是解決電動車車主需下載多個 APP 的痛點，打造整合各大充電樁平台的聚合服務。後端導入 Redis 快取優化地圖效能；使用 FastAPI 讀取車載 CAN Log 將行車歷程轉化為減碳積分；Flutter APP 首創「橫向捲軸遊戲化」介面傳遞 ESG 永續觀念。同時具備完整 Infra 能力——Docker 容器化、Nginx 反向代理、Cloudflare 防護、hMailServer 郵件服務。還開發了 Discord Bot 實現 ChatOps，團隊成員可直接下指令自動新增 Issue、即時監控 Server 狀態與 Log。',
+        '畢業專題目標是解決電動車車主需下載多個 APP 的痛點，打造整合各大充電樁平台的聚合服務。後端導入 Redis 快取優化地圖效能；使用 FastAPI 讀取車載 CAN Log 將行車歷程轉化為減碳積分；Flutter APP 首創「橫向捲軸遊戲化」介面傳遞 ESG 永續觀念。同時具備完整 Infra 能力：Docker 容器化、Nginx 反向代理、Cloudflare 防護、hMailServer 郵件服務。還開發了 Discord Bot 實現 ChatOps，團隊成員可直接下指令自動新增 Issue、即時監控 Server 狀態與 Log。',
       extraTags: [],
     },
     {
@@ -148,10 +97,10 @@ const MILESTONES_BY_LANG: Record<string, MilestoneLang[]> = {
       extraTags: ['AI 整合'],
     },
     {
-      title: '個人專案與持續進化',
-      subtitle: '在網路世界保持上進心',
+      title: '把產品推向世界',
+      subtitle: '微星科技・軟體工程師',
       description:
-        '獨立使用 React 結合 Three.js 開發 3D 互動個人網站，展現不同於一般平面網頁的使用者體驗。因為對現有工具不滿意，主動自學 UI/UX 來優化專案；近期更開始研究 Rust 與 Home Lab (NAS) 領域，探索更底層的系統運作。',
+        '畢業，轉為微星正職。正在打造一個貼近日常生活的 AI 應用，準備推向全世界，同時改善部門內部的開發流程。技術是 Tauri、Vite、React，後端用 Rust。Rust 是這段時間真正練起來的。下班後還在弄這個網站、NAS 和自己的工具。',
       extraTags: [],
     },
     {
@@ -424,4 +373,46 @@ const MILESTONES_BY_LANG: Record<string, MilestoneLang[]> = {
   ],
 };
 
-export { YEAR_LABELS, JOURNEY_UI, MILESTONE_STATIC, MILESTONES_BY_LANG };
+// 關於頁（AboutFall）用的短句：每一年拆成幾個片段，往下捲時一段一段掠過。
+// 順序跟 MILESTONE_STATIC 平行。只有寫了的語系才有；沒有的話整段 description 當成一個片段。
+const MILESTONE_BEATS_BY_LANG: Record<string, string[][]> = {
+  'zh-TW': [
+    [
+      '2004 年，雲林。',
+      '一半理性，一半感性：寫程式的邏輯，和對好看的東西的執著。',
+      '後來做介面、做架構，兩邊都放不下。',
+    ],
+    ['高中第一份工作：日本料理店，內外場都做。', '備料有規矩，上菜有順序。', '忙起來就照 SOP 走，這個習慣留到現在。'],
+    [
+      '開始補技術：Python、Golang、Java。',
+      '當過系學會會長，也在吉他社管文書。',
+      '學到的是怎麼分工，怎麼跟不同的人把事情談完。',
+    ],
+    [
+      '大三在猿創力教 3 到 9 年級的小孩寫程式。',
+      'Python、Scratch、App Inventor。',
+      '把難懂的邏輯講成聽得懂的話，練的是表達。',
+    ],
+    ['在補習班當資訊助理：寫 Android App，也剪宣傳影片。', '第一次用 GitHub 跟別人協作。'],
+    [
+      '畢業專題 VoltiCar：把各家充電樁平台整合成一個服務。',
+      'Redis 快取地圖；FastAPI 讀車載 CAN Log，換成碳權積分；Flutter 做成橫向捲軸的遊戲。',
+      'Docker、Nginx、Cloudflare 自己架；Discord Bot 用來開 Issue、看伺服器狀態。',
+    ],
+    [
+      '進微星實習，負責前端。',
+      '導入 Turborepo 做 Monorepo，訂 ESLint、Prettier、TypeScript 的規範。',
+      '當前端窗口，跟 AI 與 IT 團隊把模型接進產品。',
+      '開始用 Tauri 把網頁做成桌面軟體。',
+    ],
+    [
+      '畢業，轉為微星正職。',
+      '在做一個貼近日常生活的 AI 應用，準備推向全世界；同時改善部門內部的開發流程。',
+      'Tauri、Vite、React，後端是 Rust。Rust 是這段時間真正練起來的。',
+      '下班後還在弄這個網站、NAS 和自己的工具。',
+    ],
+    ['不只寫出會動的程式，而是穩定、好用的服務。', '從前端到後端，從設計到部署，繼續往下挖。'],
+  ],
+};
+
+export { YEAR_LABELS, MILESTONE_STATIC, MILESTONES_BY_LANG, MILESTONE_BEATS_BY_LANG };

@@ -1,11 +1,8 @@
-import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isBotUserAgent } from '@/lib/bot';
-import type { IntroPhase } from '@/lib/introTimeline';
-import IntroSkip from './IntroSkip';
 import BackdropErrorBoundary from './BackdropErrorBoundary';
-import DomSpaceEffects from './DomSpaceEffects';
 import { useHardwareGpu } from '@/hooks/useHardwareGpu';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 
@@ -13,15 +10,12 @@ import { stripLocalePrefix } from '@/i18n/start-i18n';
 // 2026-07-19 翻預設：取代舊 pmndrs 雙 canvas 棧（strangler 完成）。
 const LazyStarfieldGpu = lazy(() => import('./StarfieldGpu'));
 
-/**
- * 開場最多等 3D 初始化多久。__root 的 pre-paint gate 在 4 秒時無條件放出內容，
- * 這裡要比它早放棄，否則會變成「內容先出現、開場才蓋上來」。
- */
-const INTRO_WAIT_LIMIT_MS = 3000;
+/** 手機離開首頁後 3D 再留多久才卸載（等土星收成一點） */
+const LINGER_MS = 600;
 
-// 桌面 WebGL 背景 + 首訪首頁開場動畫的編排殼。
-// 整包只在 client 跑(由 __root 以 ClientOnly + lazy 掛載)→ three.js 永不進 SSR。
-// 「不 gate 內容」:SSR 內容已先繪出,開場純粹疊在上層淡出。
+// 3D 背景（星空＋首頁的土星與衛星）的掛載殼。
+// 整包只在 client 跑（AppShell 以 ClientOnly + lazy 掛載）→ three.js 永不進 SSR。
+// 2026-10 翻新拿掉了首訪的高速穿越開場：第一次進首頁時，土星就是從一個點撐開（換頁的「長」）。
 export default function SpaceBackdropShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isOnHomePage = stripLocalePrefix(pathname) === '';
@@ -33,15 +27,14 @@ export default function SpaceBackdropShell() {
   const isBot = useMemo(() => typeof navigator !== 'undefined' && isBotUserAgent(navigator.userAgent), []);
   // 3D pre-flight：有硬體加速的 WebGL 才掛 3D（renderer 首選 WebGPU，WebGL2 是它的 fallback
   // backend）。拿不到 context（Chromium 137 移除 SwiftShader 後加速全壞的機器）→ 不下載 three chunk，
-  // 降級純 DOM 特效。
+  // 只留 CSS 星空。
   //
   // 另一種必須擋掉的情況：使用者在瀏覽器設定關掉硬體加速。此時 WebGL context 建得起來（跑
   // SwiftShader）、navigator.gpu 也還在，結果 3D 用 CPU 光柵化整站卡死——降低星星數量救不了，
-  // 得完全不掛 3D。偵測到軟體渲染就直接走 DOM 特效（WebGPU 的 Dawn 在這種機器上同樣只會拿到
+  // 得完全不掛 3D。偵測到軟體渲染就只留 CSS 星空（WebGPU 的 Dawn 在這種機器上同樣只會拿到
   // SwiftShader/WARP，所以一個檢查擋兩條路）。
   //
-  // 探測是非同步的（在 worker 裡做，理由見 lib/webglSupport.ts），結果出來前 DOM 特效先不掛；
-  // 3D 不等它（見下面掛載處）。
+  // 探測是非同步的（在 worker 裡做，理由見 lib/webglSupport.ts），3D 不等它（見下面掛載處）。
   // runtime 才炸的殘餘情況由 ErrorBoundary + worker error 通道接。
   const hardwareGpu = useHardwareGpu();
   const softwareGpu = hardwareGpu === false;
@@ -73,8 +66,8 @@ export default function SpaceBackdropShell() {
   //
   // 用 class 而不是卸載元件：卸載就得重掛，WebGPU context 重建是另一個會壞的地方，
   // 而且退出全螢幕時會看到星空重新淡入。掛 class 只是讓它們停下來，元件狀態原封不動。
-  // 兩個 JS 迴圈（StarfieldGpu 的 worker、CursorTrail 的 rAF）各自也讀這個狀態暫停，
-  // 因為 `display:none` 擋得住合成、擋不住它們繼續送 GPU 指令。
+  // StarfieldGpu 的 worker 也讀這個狀態暫停，因為 `display:none` 擋得住合成、擋不住它繼續送 GPU 指令。
+  // （當時一起搶 GPU 的游標尾巴與流星、UFO 已在 2026-10 翻新時拿掉。）
   useEffect(() => {
     const onFs = () => {
       document.documentElement.classList.toggle('fs-active', document.fullscreenElement !== null);
@@ -86,107 +79,35 @@ export default function SpaceBackdropShell() {
     };
   }, []);
 
-  const introCompleted = (() => {
-    try {
-      return sessionStorage.getItem('introCompleted') === 'true';
-    } catch {
-      return false;
-    }
-  })();
-  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
-  // 開場只在「首次造訪 + 桌面 + 首頁」播；要求減少動態的就不播
-  // 爬蟲也不播（下面整包 return null）——不列進來的話開場狀態會停在 waiting，內容要等 __root
-  // 的 4 秒保險逾時才放出來
-  const shouldSkipIntro = introCompleted || !isOnHomePage || isMobile || reducedMotion || isBot;
-
-  // 開場畫在 3D 背景同一張 canvas 上（lib/hyperspace.ts），時間軸由那邊的渲染迴圈推進，
-  // 這裡只照它送來的階段切 DOM：
-  //   waiting：等 GPU 探測與 3D 初始化（管線全部編譯完才開始，開場進行中不會有初始化）
-  //   playing：第一幀已經畫出來 → ending：開場層淡出中 → done
-  const [intro, setIntro] = useState<'waiting' | 'playing' | 'ending' | 'done'>(shouldSkipIntro ? 'done' : 'waiting');
-  const [skip, setSkip] = useState(false);
-  // 探測說沒有硬體加速 → 不播：開場跟 3D 背景是同一條管線，沒有 3D 就沒有開場
-  const introActive = intro !== 'done' && !softwareGpu;
-
-  const markIntroSeen = () => {
-    try {
-      sessionStorage.setItem('introCompleted', 'true');
-    } catch {
-      /* sessionStorage 不可用就略過 */
-    }
-  };
-  const endIntro = useCallback(() => {
-    markIntroSeen();
-    setIntro('done');
-  }, []);
-  const handleIntroPhase = useCallback((phase: IntroPhase) => {
-    if (phase === 'started') setIntro('playing');
-    // 內容在開場層底下解開（開場前已先畫好，見 index.css 的 html.intro-pending）
-    else if (phase === 'preReveal') document.documentElement.classList.remove('intro-pending');
-    else if (phase === 'ending') {
-      markIntroSeen();
-      setIntro('ending');
-    } else if (phase === 'done') setIntro('done');
-  }, []);
-
-  // 3D 一直沒就緒（網路很慢、驅動卡住）就不等了：內容放出來，runner 之後就算好了也不播
+  // 手機離開首頁時 3D 要收掉，但先留一下，讓土星收成一點（換頁轉場的「收」）再卸載。
+  // 在 render 裡比對上一次是不是首頁，不必多一輪 effect
+  const [prevHome, setPrevHome] = useState(isOnHomePage);
+  const [lingering, setLingering] = useState(false);
+  if (prevHome !== isOnHomePage) {
+    setPrevHome(isOnHomePage);
+    setLingering(prevHome && isMobile);
+  }
   useEffect(() => {
-    if (intro !== 'waiting') return;
-    const timer = setTimeout(() => {
-      setSkip(true);
-      endIntro();
-    }, INTRO_WAIT_LIMIT_MS);
+    if (!lingering) return;
+    const timer = setTimeout(() => setLingering(false), LINGER_MS);
     return () => clearTimeout(timer);
-  }, [intro, endIntro]);
+  }, [lingering]);
 
-  // 開場不會播或已經結束 → 放行內容，別讓 pre-paint gate 卡住
-  useEffect(() => {
-    if (!introActive) document.documentElement.classList.remove('intro-pending');
-  }, [introActive]);
-
-  // 開場期間鎖捲動、星雲壓暗層延後（NebulaBackground.css）；開始淡出就拿掉，讓兩邊交叉淡入
-  useEffect(() => {
-    if (intro !== 'playing') return;
-    document.body.classList.add('intro-animation-active');
-    return () => document.body.classList.remove('intro-animation-active');
-  }, [intro]);
-
-  if (isMobile || isBot) return null; // 手機 / 爬蟲：完全不載 three
+  // 爬蟲完全不載 three。手機只在首頁載：首頁的五顆衛星在 3D 裡，其他頁用不到，離開首頁就收掉
+  if (isBot || (isMobile && !isOnHomePage && !lingering)) return null;
 
   return (
     <>
-      {introActive && (intro === 'playing' || intro === 'ending') && (
-        <IntroSkip ending={intro === 'ending'} onSkip={() => setSkip(true)} />
-      )}
       {/* 3D 背景（WebGPU/WebGL2 自動選 backend）。runtime 才炸由 ErrorBoundary 接；
-          worker 內失敗則 StarfieldGpu 自行歸 null——兩種情況 DOM 特效都還在（下方獨立掛載）。
-          開場期間整張 canvas 在開場層的高度（蓋住內容），結束後回到內容底下。
-          要播開場時不等探測：開場要等 3D 管線全部編譯完才開始，跟探測同時進行才不會多等一輪。
-          沒有硬體加速的機器由 runner 自己在編譯前查出來退出（見 lib/starfieldGpu.ts 的
-          softwareRendering），探測結果出來也會把這裡卸載。
-          其他時候（沒有開場）照舊等探測：早一點出現沒有差別，而沒有 GPU 的機器上多下載、解析
-          一次 three.js 是白花的 CPU——CI 的 e2e 每頁都付這筆，實際因此逾時過。 */}
-      {(hardwareGpu === true || introActive) && (
-        <BackdropErrorBoundary fallback={null} onError={endIntro}>
+          worker 內失敗則 StarfieldGpu 自行歸 null，頁面留下黑紙與 CSS 星空。
+          等 GPU 探測有結果才掛：沒有 GPU 的機器上多下載、解析一次 three.js 是白花的 CPU——
+          CI 的 e2e 每頁都付這筆，實際因此逾時過。 */}
+      {hardwareGpu === true && (
+        <BackdropErrorBoundary fallback={null}>
           <Suspense fallback={null}>
-            <LazyStarfieldGpu
-              isOnHomePage={isOnHomePage}
-              zIndex={introActive ? 'calc(var(--z-intro) + 1)' : 1}
-              intro={introActive}
-              onIntroPhase={handleIntroPhase}
-              onIntroAbort={endIntro}
-              skipIntro={skip}
-            />
+            <LazyStarfieldGpu isOnHomePage={isOnHomePage} lite={isMobile} />
           </Suspense>
         </BackdropErrorBoundary>
-      )}
-      {/* DOM 特效（流星/UFO/游標尾跡，非 WebGL）：無論 3D 成敗都掛，頁面永遠有生命感。
-          例外是「使用者關掉硬體加速」：整站合成、backdrop-filter、上百個 infinite 動畫全落在
-          CPU，連純 DOM 特效都會拖垮捲動——這種機器只留靜態背景。 */}
-      {/* 開場期間它們被開場層整個蓋住，但第一次掛上要光柵化四十幾個圖層——掛在開場第一幀
-          （星芒還幾乎沒動），不要等到 pre-reveal 全速那時才掛，那會頓一幀。 */}
-      {(intro !== 'waiting' || !introActive) && hardwareGpu === true && (
-        <DomSpaceEffects isMobile={isMobile} isOnHomePage={isOnHomePage} />
       )}
     </>
   );

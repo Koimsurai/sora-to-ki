@@ -105,6 +105,8 @@ export type AdminPostFull = {
 	excerpt_ko: string | null,
 	/**  內容格式：'markdown'（預設）| 'mdx'。 */
 	format: string | null,
+	/**  摘要裡連到章節的句子，依語系分開（沒有就是空物件）。 */
+	excerpt_links: { [key in string]: ExcerptLink[] },
 	tags: string[],
 };
 
@@ -393,6 +395,12 @@ export type ErrorResponse = {
 	error: string,
 };
 
+/**  摘要裡的一句話，連到 `to` 那一章（`05` 是第五個大節，`05.4` 是它底下第四個小節）。 */
+export type ExcerptLink = {
+	text: string,
+	to: string,
+};
+
 /**
  *  EXIF 的數值欄位在同一份 manifest 裡真的有兩種形狀：舊的 Node builder
  *  （`scripts/builder`）寫 exiftool 的格式化字串（`"f/1.4"`、`"1/640"`、`"32 mm"`），
@@ -418,6 +426,26 @@ export type FilmRow = {
 export type FilmsResponse = {
 	message: string,
 	films: FilmRow[],
+};
+
+/**  一篇文章 */
+export type FriendPost = {
+	title: string,
+	url: string | null,
+	/**  feed 上寫的日期，原樣（RSS 是 RFC 2822、Atom 是 ISO 8601，前端的 Date 兩種都吃） */
+	date: string | null,
+};
+
+/**  `GET /api/friends` 的一筆 */
+export type FriendStar = {
+	id: string,
+	name: string,
+	url: string,
+	desc: string,
+	/**  有沒有 feed（沒有的是一顆安靜的星） */
+	has_feed: boolean,
+	/**  最近幾篇，照 feed 上的順序（新的在前）；最多 `POSTS_MAX` 篇 */
+	posts: FriendPost[],
 };
 
 /**  manifest 裡的一張照片。 */
@@ -721,6 +749,8 @@ export type PostDetailResponse = {
 	title: string,
 	content: string,
 	excerpt: string,
+	/**  摘要裡連到章節的句子（這個語系的；摘要裡找不到的已濾掉）。 */
+	excerpt_links: ExcerptLink[],
 	category: string | null,
 	status: string,
 	author: string | null,
@@ -753,6 +783,8 @@ export type PostListItem = {
 	 *  進列表要多 ~188KB，所以只送前端截斷所需的長度。
 	 */
 	content_preview: string,
+	/**  該語系內文的長度（字元數）。手記列表用它估閱讀時間、決定那篇文章的星軌拖多長。 */
+	content_length: number,
 	category: string | null,
 	status: string,
 	author: string | null,
@@ -1019,6 +1051,18 @@ export type TagsResponse = {
 	tags: TagRow[],
 };
 
+/**  `GET /api/telemetry` 的回應。每個欄位讀不到就是 null（例如換了機器、沒有那顆感測器） */
+export type Telemetry = {
+	/**  CPU 溫度（°C）：k10temp 的 Tctl */
+	cpuTemp: number | null,
+	/**  一分鐘平均負載除以邏輯核心數（百分比，可能超過 100） */
+	load: number | null,
+	/**  記憶體用了幾成（百分比）：(總量 − 可用) / 總量 */
+	memory: number | null,
+	/**  APU 整顆的功耗（W）：amdgpu 的 power1_input（APU 回報的是整顆封裝） */
+	power: number | null,
+};
+
 export type ThoughtDetailResponse = {
 	message: string,
 	thought: ThoughtOut,
@@ -1236,4 +1280,30 @@ export type WatchStatsResponse = {
 	filmCount: number,
 	tvSeriesCount: number,
 	tvEpisodes: number,
+};
+
+/**  一件作品的一種語言：GitHub 算的程式碼量（bytes）。 */
+export type WorkLanguage = {
+	name: string,
+	bytes: number,
+};
+
+/**  `GET /api/github/works` 的一件作品。 */
+export type WorkRepo = {
+	/**  `owner/name` */
+	repo: string,
+	/**  私有 repo 沒有連結（讀者點過去只會看到 404） */
+	url: string | null,
+	created_at: string,
+	pushed_at: string,
+	stars: number,
+	/**  預設分支上的 commit 數 */
+	commits: number,
+	/**  由多到少 */
+	languages: WorkLanguage[],
+};
+
+export type WorksResponse = {
+	works: WorkRepo[],
+	error: string | null,
 };

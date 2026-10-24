@@ -24,12 +24,11 @@
    ═══════════════════════ */
 
 /* ─── Inline sandbox ─── */
+/* 四角框（index.css 的 --corner-frame），跟文章裡其他互動區塊一樣；沒有底色 */
 .mm-sandbox {
   position: relative;
   margin: var(--space-6) 0;
-  border-radius: var(--r-12);
-  border: 1px solid var(--white-06);
-  background: var(--black-40);
+  background: var(--corner-frame);
   overflow: hidden;
   height: 420px;
   cursor: grab;
@@ -49,11 +48,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1-5) var(--space-2-5);
-  background: rgba(var(--surface-2-rgb), 0.9);
-  backdrop-filter: blur(var(--blur-16));
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-full);
+  padding: var(--space-1) var(--space-2);
+  background: rgba(var(--ground-rgb), 0.92);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
   opacity: 0;
   transition:
     transform var(--dur-300) var(--easing-standard),
@@ -75,11 +73,12 @@
 }
 
 .mm-toolbar-hint {
+  font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--white-30);
+  color: var(--paper-3);
   white-space: nowrap;
   padding-left: var(--space-1-5);
-  border-left: 1px solid var(--white-08);
+  border-left: 1px solid var(--rule);
   margin-left: var(--space-1);
 }
 
@@ -95,27 +94,30 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: var(--r-8);
+  border-radius: var(--r-2);
   background: transparent;
   border: 1px solid transparent;
-  color: var(--white-60);
+  color: var(--paper-3);
   cursor: pointer;
   transition:
-    background var(--dur-150),
     border-color var(--dur-150),
     color var(--dur-150);
 }
 
-.mm-menu-trigger:hover {
-  background: var(--white-08);
-  border-color: var(--white-10);
-  color: var(--white-90);
+/* 全站的 button:hover / :focus 會鋪紫底加光暈（index.css，specificity 0,1,1），這裡要明寫壓掉 */
+.mm-menu-trigger:hover,
+.mm-menu-trigger:focus,
+.mm-menu-trigger:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  color: var(--paper);
 }
 
 .mm-menu-trigger--open {
-  background: rgba(var(--brand-rgb), 0.1);
-  border-color: rgba(var(--brand-rgb), 0.25);
-  color: var(--brand-light);
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--paper);
 }
 
 .mm-menu-trigger svg {
@@ -132,18 +134,18 @@
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  padding: var(--space-1) var(--space-2-5);
-  background: rgba(var(--surface-0-rgb), 0.95);
-  color: var(--white-80);
+  padding: var(--space-1) var(--space-2);
+  background: rgba(var(--ground-rgb), 0.96);
+  border: 1px solid var(--rule);
+  color: var(--paper-2);
+  font-family: var(--mono-font);
   font-size: var(--fs-10);
-  font-weight: 500;
-  border-radius: var(--r-6);
+  font-weight: 400;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dur-150) ease;
   z-index: 100;
-  box-shadow: var(--elev-1);
 }
 
 .mm-menu-trigger[data-tooltip]:not(.mm-menu-trigger--open):hover::after {
@@ -156,12 +158,10 @@
   top: calc(100% + 6px);
   left: 0;
   min-width: 150px;
-  background: rgba(var(--surface-1-rgb), 0.95);
-  backdrop-filter: blur(var(--blur-20));
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-10);
+  background: rgba(var(--ground-rgb), 0.96);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
   padding: var(--space-1);
-  box-shadow: var(--elev-4);
   z-index: 50;
   animation: mmDropIn 0.15s ease-out;
 }
@@ -178,12 +178,11 @@
 }
 
 .mm-menu-label {
+  font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--white-35);
+  color: var(--paper-3);
   padding: var(--space-1) var(--space-2) var(--space-1);
-  text-transform: uppercase;
-  letter-spacing: var(--ls-6);
-  font-weight: 600;
+  letter-spacing: var(--ls-12);
 }
 
 .mm-menu-item {
@@ -194,22 +193,24 @@
   padding: var(--space-1-5) var(--space-2);
   border: none;
   background: transparent;
-  color: var(--white-70);
+  color: var(--paper-2);
   font-size: var(--fs-12);
   cursor: pointer;
-  border-radius: var(--r-6);
-  transition: background var(--dur-100);
+  border-radius: 0;
+  transition: color var(--dur-100);
   text-align: left;
 }
 
 .mm-menu-item:hover {
-  background: rgba(var(--brand-rgb), 0.15);
-  color: #fff;
+  background: transparent;
+  color: var(--paper);
 }
 
 .mm-menu-item--active {
-  background: rgba(var(--brand-rgb), 0.2);
-  color: var(--brand-light);
+  background: transparent;
+  color: var(--paper);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .mm-menu-item-icon {
@@ -231,24 +232,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-8);
-  background: rgba(var(--surface-2-rgb), 0.9);
-  backdrop-filter: blur(var(--blur-8));
-  border: 1px solid var(--white-10);
-  color: var(--white-70);
+  border-radius: var(--r-2);
+  background: rgba(var(--ground-rgb), 0.92);
+  border: 1px solid var(--rule);
+  color: var(--paper-2);
   cursor: pointer;
   transition:
     color var(--dur-200),
-    background var(--dur-200),
     border-color var(--dur-200);
   box-shadow: none;
 }
 
 .mm-expand-btn:hover,
 .mm-expand-btn:focus {
-  color: var(--brand-light);
-  background: rgba(var(--brand-rgb), 0.15);
-  border-color: rgba(var(--brand-rgb), 0.3);
+  color: var(--paper);
+  background: rgba(var(--ground-rgb), 0.92);
+  border-color: var(--paper-3);
   box-shadow: none;
 }
 
@@ -267,18 +266,18 @@
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  padding: var(--space-1) var(--space-2-5);
-  background: rgba(var(--surface-0-rgb), 0.95);
-  color: var(--white-80);
+  padding: var(--space-1) var(--space-2);
+  background: rgba(var(--ground-rgb), 0.96);
+  border: 1px solid var(--rule);
+  color: var(--paper-2);
+  font-family: var(--mono-font);
   font-size: var(--fs-10);
-  font-weight: 500;
-  border-radius: var(--r-6);
+  font-weight: 400;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dur-150) ease;
   z-index: 100;
-  box-shadow: var(--elev-1);
 }
 
 .mm-expand-btn:hover[data-tooltip]::after {
@@ -297,13 +296,12 @@
   height: auto;
 }
 
-/* ─── Fullscreen overlay ─── */
+/* ─── Fullscreen overlay：跟圖片放大同一種——夜色鋪滿，圖在四角框裡 ─── */
 .mm-fullscreen-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-fullscreen);
-  background: var(--black-80);
-  backdrop-filter: blur(var(--blur-8));
+  background: rgba(var(--ground-rgb), 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -315,11 +313,8 @@
   max-width: 1600px;
   display: flex;
   flex-direction: column;
-  border-radius: var(--r-16);
   overflow: hidden;
-  background: var(--surface-1);
-  border: 1px solid var(--white-06);
-  box-shadow: var(--elev-6);
+  background: var(--corner-frame);
 }
 
 .mm-fullscreen-toolbar {
@@ -327,8 +322,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-2) var(--space-4);
-  background: rgba(var(--surface-2-rgb), 0.95);
-  border-bottom: 1px solid var(--white-06);
+  border-bottom: 1px solid var(--rule);
   flex-shrink: 0;
 }
 
@@ -343,6 +337,7 @@
   gap: var(--space-3);
 }
 
+/* 關閉：跟圖片放大的關閉鈕同一種細線圓圈 */
 .mm-close-btn {
   width: 30px;
   height: 30px;
@@ -350,21 +345,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-8);
-  background: var(--white-04);
-  border: 1px solid var(--white-08);
-  color: var(--white-50);
+  border-radius: var(--r-round);
+  background: none;
+  border: 1px solid var(--paper-3);
+  color: var(--paper-2);
   cursor: pointer;
-  font-size: var(--fs-16);
-  transition: all var(--dur-150);
+  font-size: var(--fs-14);
+  transition:
+    border-color var(--dur-150),
+    color var(--dur-150);
   box-shadow: none;
 }
 
 .mm-close-btn:hover,
 .mm-close-btn:focus {
-  background: rgba(var(--coral-rgb), 0.15);
-  border-color: rgba(var(--coral-rgb), 0.3);
-  color: var(--coral);
+  background: none;
+  border-color: var(--paper);
+  color: var(--paper);
   box-shadow: none;
 }
 
@@ -378,25 +375,24 @@
   cursor: grabbing;
 }
 
-/* ─── Error ─── */
+/* ─── Error：跟提示區塊同一種，左邊一條線、上面一行等寬小字 ─── */
 .mermaid-error {
   margin: var(--space-6) 0;
-  padding: var(--space-4) var(--space-6);
-  background: rgba(var(--coral-rgb), 0.06);
-  border: 1px solid rgba(var(--coral-rgb), 0.2);
-  border-radius: var(--r-12);
+  padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
+  border-left: 1px solid var(--paper-3);
   font-size: var(--fs-14);
 }
 
 .mermaid-error span {
-  color: var(--coral);
-  font-weight: 500;
+  color: var(--paper-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
   display: block;
   margin-bottom: var(--space-2);
 }
 
 .mermaid-error pre {
-  color: var(--white-50);
+  color: var(--paper-2);
   font-size: var(--fs-13);
   white-space: pre-wrap;
   margin: 0;
@@ -440,21 +436,19 @@
   gap: var(--space-1);
   padding: var(--space-1-5);
   border: none;
-  border-radius: var(--r-8);
+  border-radius: var(--r-2);
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--white-70);
+  color: var(--paper-3);
   cursor: pointer;
-  transition:
-    background var(--dur-150) ease,
-    color var(--dur-150) ease;
+  transition: color var(--dur-150) ease;
 }
 .mm-action-btn:hover,
 .mm-action-btn:focus,
 .mm-action-btn:focus-visible {
-  background: var(--white-08);
-  color: #fff;
+  background: transparent;
+  color: var(--paper);
   box-shadow: none;
   border-color: transparent;
   outline: none;
@@ -463,64 +457,89 @@
   padding: var(--space-1-5) var(--space-2);
 }
 .mm-action-ext {
+  font-family: var(--mono-font);
   font-size: var(--fs-10);
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: var(--ls-2);
 }
 
 /* ══════════════════════════════════════
-   圖表配色 —— SVG 內部用 var(--fg) / var(--surface, …) 上色，值在這裡給。
-   ⚠ 渲染器產出的 SVG 已把根元素的 inline style 剝掉（見 lib/mdx/mermaidSvg.ts），
-   否則 inline style 會贏過這裡。換主題＝換 class，不重新渲染。
+   圖表配色 —— pele 的 SVG 用 var(--pele-*) 上色，值在這裡給（見 lib/mdx/mermaidSvg.ts）。
+   換主題＝換 class，不重新渲染。作者在圖裡用 classDef / style 自己標的顏色照舊。
+   --mm-export-bg 是下載成 PNG 時鋪的底色（SVG 本身是透明的）。
    ══════════════════════════════════════ */
-.mm-theme-deep {
-  --fg: #e5e5f5;
-  --bg: transparent;
-  --surface: #1c1830;
-  --border: #7f5af0;
-  --line: #7f5af0;
-  --accent: #c4b5fd;
-  --muted: #9a93b8;
+/* 夜：站上的配色。節點是很淡的暖白底加一條細框，線與字是墨的深淺 */
+.mm-theme-ink {
+  --pele-bg: transparent;
+  --pele-fg: var(--paper);
+  --pele-muted: var(--paper-3);
+  --pele-line: var(--paper-2);
+  --pele-surface: rgba(var(--paper-rgb), 0.05);
+  --pele-surface-alt: rgba(var(--paper-rgb), 0.1);
+  --pele-border: var(--paper-3);
+  --pele-accent: var(--amber);
+  --pele-font: var(--cjk-font);
+  --pele-font-mono: var(--mono-font);
+  --pele-radius: 2px;
+  --mm-export-bg: var(--ground);
 }
 
-.mm-theme-zinc {
-  --fg: #e4e4e7;
-  --bg: transparent;
-  --surface: #27272a;
-  --border: #52525b;
-  --line: #a1a1aa;
-  --accent: #d4d4d8;
-  --muted: #a1a1aa;
-}
-
-.mm-theme-tokyo {
-  --fg: #a9b1d6;
-  --bg: transparent;
-  --surface: #292e42;
-  --border: #3d59a1;
-  --line: #3d59a1;
-  --accent: #7aa2f7;
-  --muted: #565f89;
-}
-
-.mm-theme-nord {
-  --fg: #d8dee9;
-  --bg: transparent;
-  --surface: #3b4252;
-  --border: #5e81ac;
-  --line: #81a1c1;
-  --accent: #88c0d0;
-  --muted: #7b88a1;
-}
-
+/* 紙：淺色，下載成圖片貼到別處用 */
 .mm-theme-light {
-  --fg: #24292f;
-  --bg: #ffffff;
-  --surface: #f6f8fa;
-  --border: #d0d7de;
-  --line: #57606a;
-  --accent: #0969da;
-  --muted: #6e7781;
+  --pele-bg: transparent;
+  --pele-fg: #1f1d1a;
+  --pele-muted: #6f6b64;
+  --pele-line: #3a3732;
+  --pele-surface: #f4f1ea;
+  --pele-surface-alt: #e8e4da;
+  --pele-border: #a8a39a;
+  --pele-accent: #9a6b1f;
+  --pele-font: var(--cjk-font);
+  --pele-font-mono: var(--mono-font);
+  --pele-radius: 2px;
+  --mm-export-bg: #fbf9f4;
+}
+
+/* 紙鋪在夜空上：圖自己墊一張紙，不然深色的線會跟背景混在一起 */
+.mermaid-render.mm-theme-light svg {
+  background: var(--mm-export-bg);
+}
+
+/* ── 作者標的顏色不照原色畫，歸成四種角色（lib/mdx/mermaidSvg.ts 的 nodeRoles）──
+   跟站上其他地方同一套語言：墨的深淺、實線與點線、琥珀只標一個點。顏色取自主題變數，夜與紙都適用。
+     成立（綠）：最亮的框，很淡的底
+     重點（黃）：同上，左上角一顆琥珀點；一張圖只有一個
+     次要（藍紫）：框與字都退一階
+     排除（紅）：點線框、沒有底，字再退一階——像星軌上還沒走、也不會走的那段 */
+.mm-role-ok :is(rect, path, polygon, ellipse),
+.mm-role-mark :is(rect, path, polygon, ellipse) {
+  fill: var(--pele-surface-alt);
+  stroke: var(--pele-fg);
+}
+
+.mm-role-alt :is(rect, path, polygon, ellipse) {
+  fill: transparent;
+  stroke: var(--pele-muted);
+}
+
+.mm-role-alt .pele-label {
+  fill: var(--pele-muted);
+}
+
+.mm-role-bad :is(rect, path, polygon, ellipse) {
+  fill: transparent;
+  stroke: var(--pele-muted);
+  stroke-dasharray: 2 3;
+}
+
+.mm-role-bad .pele-label {
+  fill: var(--pele-muted);
+  opacity: 0.8;
+}
+
+.mm-mark-dot {
+  fill: var(--amber);
+  filter: drop-shadow(0 0 4px rgba(var(--amber-rgb), 0.7));
 }
 
 /* SSR 的靜態圖：沒有 zoom 容器，讓 SVG 自己縮進固定高的沙盒裡置中。

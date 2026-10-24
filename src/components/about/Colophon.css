@@ -1,0 +1,635 @@
+/* 此站點（about/Colophon）：第一屏是六分儀對著星空（畫布 about/colophonSky），星的名字是按鈕，
+   右下是目鏡（正在測的那顆星的說明與玩具）；往下捲是航海日誌（Q&A）。窄螢幕目鏡接在星空下面 */
+
+.cl {
+  font-family: var(--serif);
+  color: var(--paper);
+  --cl-edge: max(var(--space-10), calc(50% - 640px));
+}
+
+:where(.cl) :where(a) {
+  color: inherit;
+}
+
+:where(.cl) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+:where(.cl) :where(h2, h3) {
+  margin: 0;
+}
+
+/* ── 第一屏 ── */
+.cl-scene {
+  position: relative;
+  height: 100svh;
+  min-height: 720px;
+  overflow: hidden;
+}
+
+.cl-sky {
+  position: absolute;
+  inset: 0;
+}
+
+.cl-sky canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 星的名字：放在星點右邊 */
+.cl-star {
+  position: absolute;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-2);
+  white-space: nowrap;
+  transform: translate(var(--space-2), -50%);
+  transition: color var(--dur-200) ease;
+}
+
+/* 靠右邊的星：名字放左邊，免得超出畫面 */
+.cl-star.is-left {
+  transform: translate(calc(-100% - var(--space-2)), -50%);
+}
+
+.cl-star:hover,
+.cl-star:focus-visible,
+.cl-star.is-on {
+  color: var(--paper);
+}
+
+.cl-star:focus-visible {
+  outline: 1px solid var(--paper-3);
+}
+
+.cl-head {
+  position: absolute;
+  top: var(--page-top);
+  left: var(--cl-edge);
+  display: grid;
+  gap: var(--space-1);
+  max-width: 420px;
+  pointer-events: none;
+}
+
+.cl-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.cl-title h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.cl-latin {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.cl-head p {
+  margin: 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.cl-head .cl-hint {
+  margin-top: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+/* ── 目鏡 ── */
+.cl-eyepiece {
+  position: absolute;
+  right: var(--cl-edge);
+  bottom: var(--page-bottom);
+  display: grid;
+  gap: var(--space-2);
+  width: min(420px, 40vw);
+}
+
+.cl-k {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--amber);
+}
+
+.cl-eyepiece h2 {
+  font-size: var(--fs-22);
+  font-weight: 600;
+}
+
+.cl-eyepiece > p {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+.cl-content {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* 換一顆星：目鏡重新對焦，字一行一行浮出來（目鏡整塊換掉，動畫每次重來） */
+.cl-eyepiece > * {
+  animation: cl-in var(--dur-500) var(--easing-out) both;
+}
+
+.cl-eyepiece > :nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.cl-eyepiece > :nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.cl-eyepiece > :nth-child(4) {
+  animation-delay: 180ms;
+}
+
+@keyframes cl-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-2));
+  }
+}
+
+/* 玩具放在一個圓形的視野裡，四周有十字刻線；換到這個玩具時視野從中間撐開 */
+.cl-scope {
+  position: relative;
+  width: min(200px, 100%);
+  aspect-ratio: 1;
+  justify-self: center;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-round);
+  animation: cl-iris 700ms var(--easing-out) 200ms both;
+}
+
+@keyframes cl-iris {
+  from {
+    clip-path: circle(0% at 50% 50%);
+  }
+
+  to {
+    clip-path: circle(50% at 50% 50%);
+  }
+}
+
+/* 換一步：畫面像重新對焦，從糊到清楚（畫布換一個，動畫重來） */
+@keyframes cl-focus {
+  from {
+    opacity: 0.3;
+    filter: blur(var(--blur-8));
+  }
+}
+
+.cl-scope::before,
+.cl-scope::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  background: var(--rule);
+  pointer-events: none;
+}
+
+.cl-scope::before {
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  mask-image: linear-gradient(90deg, #000 12%, transparent 12%, transparent 88%, #000 88%);
+}
+
+.cl-scope::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  mask-image: linear-gradient(#000 12%, transparent 12%, transparent 88%, #000 88%);
+}
+
+.cl-toy-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: cl-focus 450ms var(--easing-out) both;
+}
+
+.cl-toy-canvas.is-clickable {
+  cursor: crosshair;
+}
+
+.cl-range {
+  display: grid;
+  grid-template-columns: 10ch minmax(0, 1fr) 6ch;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+/* 滑桿：只用點與線。拉過的那段是實線、還沒拉到的是點線，把手是一個小圓圈（--p 是拉到幾 %） */
+.cl-range input {
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  background: transparent;
+  appearance: none;
+}
+
+.cl-range input:focus-visible {
+  outline: none;
+}
+
+.cl-range input::-webkit-slider-runnable-track {
+  height: 1px;
+  background:
+    linear-gradient(90deg, var(--paper-2) var(--p, 0%), transparent var(--p, 0%)),
+    repeating-linear-gradient(90deg, var(--paper-3) 0 1px, transparent 1px 4px);
+}
+
+.cl-range input::-moz-range-track {
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--paper-3) 0 1px, transparent 1px 4px);
+}
+
+.cl-range input::-moz-range-progress {
+  height: 1px;
+  background: var(--paper-2);
+}
+
+.cl-range input::-webkit-slider-thumb {
+  width: 9px;
+  height: 9px;
+  margin-top: calc(-1 * var(--space-1));
+  background: var(--ground);
+  border: 1px solid var(--paper);
+  border-radius: var(--r-round);
+  appearance: none;
+  transition: background var(--dur-150) ease;
+}
+
+.cl-range input::-moz-range-thumb {
+  width: 9px;
+  height: 9px;
+  box-sizing: border-box;
+  background: var(--ground);
+  border: 1px solid var(--paper);
+  border-radius: var(--r-round);
+  transition: background var(--dur-150) ease;
+}
+
+.cl-range input:hover::-webkit-slider-thumb,
+.cl-range input:active::-webkit-slider-thumb {
+  background: var(--paper);
+}
+
+.cl-range input:hover::-moz-range-thumb,
+.cl-range input:active::-moz-range-thumb {
+  background: var(--paper);
+}
+
+.cl-range input:focus-visible::-webkit-slider-thumb {
+  border-color: var(--amber);
+}
+
+.cl-range input:focus-visible::-moz-range-thumb {
+  border-color: var(--amber);
+}
+
+.cl-range em {
+  font-style: normal;
+  text-align: right;
+  color: var(--paper-2);
+}
+
+.cl-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding: 0;
+  margin: var(--space-1) 0 0;
+  border: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+}
+
+.cl-seg button {
+  padding: var(--space-1) var(--space-2);
+  color: var(--paper-3);
+  border: 1px solid var(--rule);
+}
+
+.cl-seg button[aria-pressed="true"] {
+  color: var(--paper);
+  border-color: var(--paper-2);
+}
+
+/* 步驟條：01 02 03⋯ 與「下一步」，下面是這一步在想什麼 */
+.cl-steps {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.cl-steps .cl-seg {
+  margin: 0;
+}
+
+.cl-seg .cl-next {
+  margin-left: auto;
+  color: var(--paper-2);
+  border-color: transparent;
+}
+
+.cl-seg .cl-next:hover,
+.cl-seg .cl-next:focus-visible {
+  color: var(--paper);
+}
+
+.cl-step {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-height: 5.6em;
+  animation: cl-in var(--dur-400) var(--easing-out);
+}
+
+.cl-step b {
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+
+.cl-step p {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+/* 作品那顆的數字：兩欄排，目鏡才不會太高 */
+.cl-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-1) var(--space-4);
+}
+
+.cl-controls .cl-seg {
+  grid-column: 1 / -1;
+}
+
+/* 兩欄裡的滑桿：名字與數字一行，滑桿在下面一行 */
+.cl-controls .cl-range {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 var(--space-2);
+}
+
+.cl-controls .cl-range input {
+  grid-row: 2;
+  grid-column: 1 / -1;
+}
+
+.cl-swatches,
+.cl-fonts,
+.cl-pages {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.cl-swatches li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-14);
+}
+
+.cl-swatches i {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--rule);
+}
+
+.cl-swatches .is-ground {
+  background: var(--ground);
+}
+
+.cl-swatches .is-paper {
+  background: var(--paper);
+}
+
+.cl-swatches .is-amber {
+  background: var(--amber);
+}
+
+.cl-fonts li {
+  display: grid;
+  gap: var(--space-px);
+}
+
+.cl-fonts b {
+  font-size: var(--fs-28);
+  font-weight: 400;
+  line-height: var(--lh-120);
+}
+
+.cl-fonts .is-latin {
+  font-family: var(--latin-display);
+}
+
+.cl-fonts .is-mono {
+  font-family: var(--mono-font);
+  font-size: var(--fs-22);
+}
+
+.cl-fonts span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+.cl-pages li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-1);
+  font-size: var(--fs-13);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.cl-pages span {
+  color: var(--paper-2);
+}
+
+.cl-repo {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 4px;
+}
+
+/* ── 問答：天上的一顆星，對準它目鏡裡就是問答。左邊題目、右邊答案，點題目換答案——
+   一題一題往下展開的話，打開一題目鏡就往上頂到星星，所以改成兩欄、高度固定。
+   樣式照提案：題目前一個空心小圓，看著的那一題變成琥珀實心點 ── */
+.cl-eyepiece.is-qa {
+  width: min(760px, 56vw);
+}
+
+.cl-qa {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  column-gap: var(--space-8);
+  align-items: start;
+}
+
+.cl-qa-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cl-qa-list button {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) 0;
+  border-bottom: 1px dotted var(--rule);
+  font-size: var(--fs-14);
+  line-height: var(--lh-150);
+  color: var(--paper-2);
+  cursor: pointer;
+  transition: color var(--dur-200) ease;
+}
+
+.cl-qa-list button::before {
+  content: "";
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-full);
+  translate: 0 -2px;
+  transition:
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease;
+}
+
+.cl-qa-list button:hover,
+.cl-qa-list button:focus-visible,
+.cl-qa-list button[aria-selected="true"] {
+  color: var(--paper);
+}
+
+.cl-qa-list button[aria-selected="true"]::before {
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.cl-qa-list button:focus-visible {
+  outline: 1px solid var(--paper-3);
+  outline-offset: 2px;
+}
+
+/* 換一題：答案淡進來（key 換了，動畫重來） */
+.cl-qa-answer {
+  display: grid;
+  gap: var(--space-3);
+  animation: cl-in var(--dur-500) var(--easing-out) both;
+}
+
+.cl-qa-answer p {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-185);
+  color: var(--paper-2);
+}
+
+.cl-qa-answer code {
+  font-family: var(--mono-font);
+  font-size: 0.9em;
+  color: var(--paper);
+}
+
+.cl-qa-answer a:not(.link-card) {
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+/* 窄螢幕：題目在上、答案在下 */
+@media (max-width: 760px) {
+  .cl-eyepiece.is-qa {
+    width: auto;
+  }
+
+  .cl-qa {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-5);
+  }
+}
+
+/* 收：字退掉，只剩點從那顆星飛走 */
+.cl-head,
+.cl-eyepiece,
+.cl-star,
+.cl-qa {
+  transition: opacity var(--dur-300) ease;
+}
+
+.cl.is-leaving :is(.cl-head, .cl-eyepiece, .cl-star) {
+  opacity: 0;
+}
+
+@media (max-width: 760px) {
+  .cl {
+    --cl-edge: var(--space-4);
+  }
+
+  .cl-scene {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .cl-sky {
+    position: relative;
+    height: 70svh;
+    min-height: 480px;
+  }
+
+  .cl-eyepiece {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    padding: 0 var(--cl-edge);
+  }
+}

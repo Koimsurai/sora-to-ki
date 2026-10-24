@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { apiUrl } from '@/lib/api';
-import type { Thought } from '@/components/blog/ThoughtCard';
+import type { Thought } from '@/types/thought';
 
 // 單則碎念改由 TanStack Query 管理。route loader 用 ensureQueryData 預取（同時拿到資料給 head()），
 // 元件用 useQuery 讀同一份快取。queryFn 找不到回 null（route 據此 throw notFound）。

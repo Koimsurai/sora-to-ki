@@ -34,66 +34,42 @@
     "thinking": "つぶやき",
     "menu": "ナビゲーション"
   },
+  "siteNav": {
+    "signIn": "ログイン",
+    "notes": "ノート",
+    "moments": "つぶやき",
+    "works": "作品",
+    "collection": "コレクション",
+    "about": "について",
+    "more": "もっと",
+    "photos": "写真",
+    "setup": "デバイス",
+    "friends": "友達",
+    "messages": "メッセージ",
+    "log": "航海日誌",
+    "colophon": "このサイト",
+    "search": "検索",
+    "language": "言語",
+    "account": "アカウント",
+    "menu": "メニュー",
+    "close": "閉じる",
+    "home": "ホーム",
+    "allPosts": "全 {{count}} 本",
+    "allMoments": "つぶやきをすべて",
+    "allWorks": "全 {{count}} 件",
+    "watching": "観ている",
+    "reading": "読んでいる",
+    "listening": "聴いている",
+    "recently": "最近",
+    "episode": "第 {{ep}} 話",
+    "aboutLead": "Koimsurai、コードを書く人。",
+    "aboutAll": "自己紹介"
+  },
   "user": {
     "adminPanel": "管理画面へ",
     "logout": "ログアウト",
-    "signInLabel": "ソーシャルアカウントでログイン",
     "signInWithGithub": "GitHub でログイン",
-    "signInWithGoogle": "Google でログイン",
-    "notConfigured": "サードパーティログインは未設定",
-    "menuLabel": "ユーザーメニュー"
-  },
-  "megaMenu": {
-    "online": "オンライン",
-    "stats": {
-      "posts": "記事",
-      "words": "字",
-      "days": "日"
-    },
-    "groups": {
-      "pages": "ページ",
-      "site": "サイト",
-      "categories": "カテゴリ",
-      "latestPosts": "最新の記事",
-      "categoryLatest": "{{cat}} · 最新",
-      "life": "ライフ",
-      "personal": "パーソナル",
-      "collection": "コレクション"
-    },
-    "items": {
-      "home": "ホーム",
-      "about": "について",
-      "expertise": "スキル",
-      "portfolio": "作品",
-      "contact": "連絡",
-      "aboutSite": "このサイト",
-      "aboutSiteDesc": "エンジニアの個人空間",
-      "history": "歴史",
-      "historyDesc": "サイトの歩み",
-      "messages": "メッセージ",
-      "messagesDesc": "何でもどうぞ",
-      "friends": "友達",
-      "friendsDesc": "ウェブリング",
-      "allPosts": "すべての記事",
-      "viewAllPosts": "すべての記事を見る →",
-      "emptyCategory": "このカテゴリの記事はまだありません",
-      "photos": "写真",
-      "photosDesc": "写真作品",
-      "activity": "アクティビティ",
-      "activityDesc": "最新の活動",
-      "bookshelf": "本棚",
-      "bookshelfDesc": "読書記録",
-      "music": "音楽",
-      "musicDesc": "好きな音楽",
-      "journey": "歩み",
-      "journeyDesc": "学習の軌跡",
-      "setup": "デバイス",
-      "setupDesc": "機材一覧",
-      "watch": "視聴中",
-      "watchDesc": "最近のアニメ / ドラマ / 映画",
-      "thinking": "つぶやき",
-      "thinkingDesc": "今この瞬間の短い思い"
-    }
+    "signInWithGoogle": "Google でログイン"
   },
   "hero": {
     "description": "宙と木 — Koimsurai の個人空間。エンジニアの読書ノート、作品記録、システム実験。"
@@ -125,85 +101,29 @@
       "status": "サービス状態"
     }
   },
-  "language": {
-    "switcher": "言語",
-    "current": "現在：{{label}}"
-  },
   "notFound": {
     "pageTitle": "404 — ページが見つかりません",
     "seoDescription": "迷子になりましたか？このページは存在しません。",
-    "lostMessage": "宇宙のどこかで迷子になったみたい。",
-    "subMessage": "このページは存在しないか、削除されました。",
+    "lostMessage": "交信が途絶えた。",
+    "subMessage": "最後に信号を受けたのはこの座標。それきり応答がない。",
     "backHome": "ホームに戻る",
-    "requested": "お探しの場所",
+    "requested": "最後の座標",
+    "lostFor": "途絶えて",
+    "toNotes": "ノートへ",
+    "reconnect": "交信を再確立（ホームへ）",
     "search": "サイト内を検索",
     "pageTitleShort": "ページが見つかりません"
   },
   "home": {
-    "aboutMe": {
-      "eyebrow": "Koimsurai · 木村盆栽",
-      "titleLine1": "複雑なことを、",
-      "titleLine2": "「使いやすく」仕上げる。"
-    },
-    "schoolClubs": {
-      "eyebrowSuffix": "サークル幹部",
-      "activitiesLabel": "イベント"
-    },
-    "contact": {
-      "titleLine1": "話しませんか？",
-      "titleLine2": "Let's build something.",
-      "blurb": "プロジェクトのご相談、技術交流、インターン機会、下記いずれからもお気軽にご連絡ください。"
-    },
-    "lately": {
-      "eyebrow": "最近の言葉と動き",
-      "postsTitle": "最近の執筆",
-      "murmursTitle": "つぶやき",
-      "echoesTitle": "こだま",
-      "orbitTitle": "今年の軌跡",
-      "orbitStat": "今年 {{count}} 本",
-      "viewAll": "すべて見る",
-      "more": "もっと",
-      "empty": "まだ静かです",
-      "today": "今日",
-      "seasons": {
-        "spring": "春",
-        "summer": "夏",
-        "autumn": "秋",
-        "winter": "冬"
-      }
-    },
-    "signal": {
-      "label": "今日のシグナル",
-      "open": "お仕事のご相談歓迎"
-    },
-    "appreciation": {
-      "like": "あしあとを残す",
-      "star": "GitHub でスターする",
-      "likeAria": "このサイトにあしあとを残す"
+    "orbit": {
+      "title": "Koimsurai の個人サイト：ノート、つぶやき、作品、コレクション",
+      "notesCount": "{{count}} 本 · 最新 {{date}}",
+      "momentsCount": "最新 {{date}}",
+      "worksCount": "{{count}} 件",
+      "collectionLine": "アニメ {{anime}} 本、映画 {{films}} 本、ドラマ {{series}} 本を視聴",
+      "aboutLine": "2004 年から今まで落ちてきた",
+      "aboutCount": "2004 –"
     }
-  },
-  "comments": {
-    "titleN": "{{count}} 件のコメント",
-    "titleEmpty": "まだコメントがありません",
-    "loginLabel": "ログイン方法を選択",
-    "anonymousLabel": "匿名コメント",
-    "namePlaceholder": "ニックネーム *",
-    "emailPlaceholder": "メール（任意、通知用）",
-    "websitePlaceholder": "ウェブサイト（任意）",
-    "contentPlaceholder": "感想を残してください...",
-    "submit": "送信",
-    "submitted": "✨ コメントを送信しました",
-    "submittedAwaitReview": "✨ 送信完了 — 管理者承認後に表示されます",
-    "authorBadge": "著者",
-    "reply": "返信",
-    "errorEmpty": "コメントを入力してください",
-    "errorNoName": "ニックネームを入力してください",
-    "errorCaptcha": "認証コードが正しくありません",
-    "errorFailed": "コメントに失敗しました",
-    "errorFailedTryLater": "コメントに失敗しました。後でお試しください",
-    "closedNotice": "このページのコメントは閉じられています。",
-    "back": "戻る",
-    "beFirst": "✨ 最初のコメントを残しませんか"
   },
   "commandPalette": {
     "label": "グローバルコマンドパレット",
@@ -254,130 +174,18 @@
       "lastYear": "過去 1 年"
     }
   },
-  "music": {
-    "title": "音楽",
-    "description": "Koimsurai の音楽の好みと Spotify のリアルタイム再生記録。",
-    "loading": "音楽データを読み込み中",
-    "heroTitle": "音楽の星域",
-    "heroDesc": "私の音楽の好み、コレクション、リスニング分析",
-    "nowPlaying": "再生中",
-    "lastPlayed": "最後に再生",
-    "tabs": {
-      "recent": "最近の再生",
-      "genres": "好きなジャンル",
-      "yearly": "年間トップ",
-      "analytics": "リスニング分析"
-    },
-    "range": {
-      "short": "直近 4 週間",
-      "medium": "直近 6 か月",
-      "long": "全期間"
-    },
-    "openInSpotify": "Spotify で聴く",
-    "recentHeading": "最近の再生",
-    "genresHeading": "好きなジャンル Top 5",
-    "yearlyHeading": "年間トップ",
-    "analyticsHeading": "リスニング分析",
-    "empty": {
-      "recent": "最近の再生記録はまだありません",
-      "genres": "ジャンルデータがまだありません",
-      "yearly": "年間トップのデータがまだありません",
-      "analytics": "読み込み中... データが出ない場合は、まず「年間トップ」タブを開いてデータを読み込んでください"
-    },
-    "cols": {
-      "track": "曲",
-      "features": "オーディオ特徴",
-      "duration": "長さ",
-      "playedAt": "再生日時",
-      "album": "アルバム"
-    },
-    "features": {
-      "energy": "エナジー",
-      "dance": "ダンス",
-      "valence": "ヴァレンス"
-    },
-    "bubbleCount": "{{count}} 名のアーティスト",
-    "analyticsSubtitle": "よく聴いたトップ {{count}} 曲（{{range}}）から算出",
-    "analytics": {
-      "popularity": "メジャー度",
-      "avgDuration": "平均長さ",
-      "avgRelease": "リリース年の傾向",
-      "explicit": "Explicit",
-      "decadeTitle": "年代別分布"
-    }
-  },
-  "bookshelf": {
-    "title": "本棚",
-    "description": "Koimsurai の読書リストと読書ノート。",
-    "loading": "本棚を読み込み中...",
-    "heroTitle": "知識の星図",
-    "subtitle": "広大な書海の中で、読んだ星の一つひとつに印を",
-    "stats": {
-      "total": "蔵書",
-      "read": "読了",
-      "reading": "読書中",
-      "avgRating": "平均評価"
-    },
-    "statuses": {
-      "read": "読了",
-      "reading": "読書中",
-      "toRead": "読みたい"
-    },
-    "noRating": "未評価",
-    "searchPlaceholder": "書名や著者を検索...",
-    "filter": "フィルター",
-    "zeroGravity": "Zero-G モード",
-    "zg": {
-      "hint": "ドラッグで回転 · ホイールでズーム · クリックで本を開く",
-      "back": "本棚に戻る",
-      "inOrbit": "{{count}} 冊が軌道上に",
-      "unavailable": "この端末には GPU がないため、Zero-G モードは使えません",
-      "pages": "{{count}} ページ"
-    },
-    "twoDView": "2D 表示",
-    "skyStats": "{{total}} 個の星 · 灯った星 {{read}} · 灯りつつある星 {{reading}}",
-    "avgRating": "平均 {{rating}}★",
-    "groups": {
-      "fantasy": "ファンタジー",
-      "literature": "文学・小説",
-      "life": "暮らしと心",
-      "other": "その他"
-    },
-    "legend": {
-      "read": "読了：灯った星、明るいほど高評価",
-      "reading": "読書中：灯りつつある",
-      "toRead": "読みたい：まだ灯っていない",
-      "notes": "光芒：メモあり"
-    },
-    "skyHint": "← 左右にスワイプして空を見渡す →",
-    "listTitle": "書目",
-    "noMatch": "該当する本はありません",
-    "hasNotes": "メモあり",
-    "close": "閉じる",
-    "started": "読み始め",
-    "finished": "読了",
-    "myNotes": "わたしのメモ",
-    "about": "あらすじ",
-    "showMore": "もっと見る",
-    "showLess": "閉じる",
-    "publisher": "出版社",
-    "publishedDate": "出版日",
-    "pages": "ページ数",
-    "filterStatus": "ステータス",
-    "filterRating": "評価",
-    "filterSort": "並び順",
-    "filterClear": "フィルター解除",
-    "sortOpts": {
-      "dateAddedDesc": "新しい順",
-      "dateAddedAsc": "古い順",
-      "titleAsc": "タイトル A-Z",
-      "titleDesc": "タイトル Z-A",
-      "ratingDesc": "評価の高い順",
-      "publishedDateDesc": "出版日付"
-    }
-  },
   "blog": {
+    "views": "{{count}} 回閲覧",
+    "summary": "要約",
+    "aiGen": "AI 生成",
+    "readDone": "読了",
+    "minutesLeft": "残り {{count}} 分",
+    "sameCategory": "同じ「{{name}}」から",
     "title": "ノート",
+    "subtitle": "星々がめぐるなか、ひとときの好奇心に一筋の弧を残す。",
+    "all": "すべて",
+    "more": "あと {{count}} 本",
+    "minutes": "約 {{count}} 分",
     "metaTitle": "ノート",
     "description": "Koimsurai の技術ノート、学習ノート、日々の随筆。フロントエンドアーキテクチャ、Rust、システム設計など。",
     "heroTitle": "ノート",
@@ -389,7 +197,6 @@
       "popular": "人気"
     },
     "comment": "コメント",
-    "like": "いいね",
     "unlike": "いいねを取り消す",
     "share": "シェア",
     "shareCopied": "コピー済み!",
@@ -406,7 +213,6 @@
     "shareTitle": "シェア",
     "commentTitle": "コメント",
     "subscribeTitle": "購読",
-    "fontSwitcherTitle": "フォント切替",
     "statPosts": "記事",
     "statTags": "タグ",
     "statReads": "閲覧",
@@ -436,64 +242,24 @@
     "prevPost": "前の記事",
     "nextPost": "次の記事",
     "lastUpdated": "最終更新",
-    "nearbyNav": "近くの記事"
+    "nearbyNav": "近くの記事",
+    "font": "書体",
+    "originalText": "原文",
+    "sameTag": "#{{name}} の記事",
+    "sameTagNone": "このタグはこの記事だけ。"
   },
   "thinking": {
     "title": "つぶやき",
-    "subtitle": "思いついたこと、観たもの、ふと書き留める。",
+    "subtitle": "静寂を裂いたひとすじの雑音を捕まえる。",
     "ending": "たいていは、ただのひとりごと。",
     "empty": "まだ何もない。",
-    "back": "戻る",
-    "notFound": "この投稿は見つかりません。"
+    "notFound": "この投稿は見つかりません。",
+    "label": "Moments",
+    "like": "いいね",
+    "comments": "コメント {{count}} 件",
+    "older": "もっと前のつぶやき"
   },
   "watch": {
-    "title": "今みているもの",
-    "metaDescription": "アニメと映画の趣味 — Bahamut Anime と Letterboxd から自動同期",
-    "subtitle": "アニメと映画の趣味、まとめて一枚に",
-    "eyebrowLive": "● 視聴中",
-    "eyebrowLast": "最近見たもの",
-    "favoritesTitle": "一生推し",
-    "favoritesSubtitle": "完全に主観のリスト。気が向いたら更新します。",
-    "recentTitle": "最近みたもの",
-    "typeAnime": "アニメ",
-    "typeFilm": "映画",
-    "stats": {
-      "animeLabel": "アニメ",
-      "filmLabel": "映画",
-      "tvLabel": "ドラマ作品"
-    },
-    "recentGroups": {
-      "thisWeek": "今週",
-      "earlier": "それより前"
-    },
-    "ending": "次は何を観るかな。自分でも楽しみ。",
-    "typeTv": "ドラマ",
-    "library": {
-      "title": "視聴ライブラリ",
-      "subtitle": "観たアニメ・映画・ドラマをまとめて一枚に",
-      "tabs": {
-        "anime": "アニメ",
-        "film": "映画",
-        "tv": "ドラマ"
-      },
-      "search": "タイトルで検索…",
-      "sort": {
-        "newest": "最近観た順",
-        "oldest": "古い順",
-        "titleAsc": "タイトル A→Z",
-        "titleDesc": "タイトル Z→A"
-      },
-      "empty": "該当なし",
-      "epsSuffix": "話",
-      "undated": "日付不明",
-      "loading": "読み込み中…",
-      "openOnLetterboxd": "Letterboxd で開く",
-      "openOnTmdb": "TMDb で開く",
-      "openOnBahamut": "動畫瘋で開く",
-      "viewWatch": "← 「今みているもの」へ戻る"
-    },
-    "continueOn": "{{service}} で続きを見る",
-    "viewOnTmdb": "TMDb で見る",
     "favManage": "お気に入り管理",
     "favEmpty": "まだ登録がありません",
     "favSearchPlaceholder": "TMDb でタイトル検索…",
@@ -505,33 +271,26 @@
   "setup": {
     "title": "私のセットアップ · My Setup",
     "description": "Koimsurai の機材一覧：メインマシン、このサイトを動かす自宅サーバー、ネットワークとスマートホーム、そして家の接続図。",
-    "heroTitle": "使っている機材",
-    "subtitle": "2026 年の手持ち機材すべて：机の上のメインマシン、このサイトを動かすサーバー、エアコンと照明を操る小さなデバイスまで。",
-    "filter": "カテゴリ",
+    "heroTitle": "機材",
+    "subtitle": "精密を解きほぐし、こだわりを据える。",
     "cat": {
       "main-rig": {
-        "short": "メイン機",
-        "desc": "真っ白なメインリグ"
+        "short": "メイン機"
       },
       "server": {
-        "short": "サーバー",
-        "desc": "このサイトも Home Assistant も、セルフホストはすべてここで動いている"
+        "short": "サーバー"
       },
       "network": {
-        "short": "ネットワーク・モバイル",
-        "desc": "デジタル生活の基盤"
+        "short": "ネットワーク・モバイル"
       },
       "smart-home": {
-        "short": "スマートホーム",
-        "desc": "エアコン・照明・センサーを Home Assistant に集約"
+        "short": "スマートホーム"
       },
       "peripherals": {
-        "short": "周辺機器",
-        "desc": "入力と出力"
+        "short": "周辺機器"
       },
       "base-ii": {
-        "short": "実家",
-        "desc": "帰省時の予備基地"
+        "short": "実家"
       }
     },
     "roles": {
@@ -541,28 +300,17 @@
       "hub3": "照度・温湿度・人感を Matter で報告。夜間の照明自動補正はこの照度が頼り",
       "rm4": "エアコンの赤外線コードを学習して Home Assistant から操作",
       "esp32": "2 枚の基板で組んだ 433MHz 送信機。シーリングライトの純正リモコンを再現",
-      "doorbell": "バッテリー式ドアベル。H200 ハブ経由でネットに接続"
+      "doorbell": "バッテリー式ドアベル。ハブ経由でネットに接続"
     },
-    "retired": "引退",
-    "retiredText": "家族共用 PC — NVIDIA GTX 960（家族が現役で使用中）",
     "topo": {
-      "title": "家の中のつながり",
-      "hint": "ノードを押すとその機材へ移動",
       "internet": "インターネット",
       "switch": "スイッチ",
-      "mobile": "スマホ・ノート PC",
       "sensors": "照度・温湿度・人感",
       "irBlaster": "赤外線リモコン",
       "rfBlaster": "433MHz 無線",
       "rig": "メイン機",
       "ac": "エアコン",
       "light": "シーリングライト",
-      "legend": {
-        "wired": "有線",
-        "wifi": "Wi-Fi",
-        "matter": "Matter",
-        "air": "赤外線／無線"
-      },
       "netWired": "有線",
       "netMain": "メイン",
       "netIot": "IoT 専用",
@@ -583,40 +331,36 @@
         "plug": "スマートプラグ"
       }
     },
-    "packages": "{{count}} (機材), {{iot}} (スマートホーム)",
-    "term": {
-      "inputLabel": "ターミナルのコマンド",
-      "tryHelp": "help でコマンド一覧",
-      "cdFirst": "先に cd でカテゴリに入ってから cat",
-      "sudo": "あなたは sudoers ファイルに含まれていません。この件は報告されます。",
-      "help": {
-        "help": "コマンド一覧",
-        "ls": "カテゴリ、またはその中の機材を表示",
-        "cd": "カテゴリに入る（下のカードも絞り込み）、cd .. で戻る",
-        "cat": "機材のスペックと用途を表示",
-        "pwd": "現在地",
-        "whoami": "自分は誰",
-        "neofetch": "もう一度実行",
-        "clear": "画面をクリア"
+    "sheet": {
+      "tabs": "図面",
+      "memoryTitle": "実家のあの一台",
+      "memoryText": "実家に帰ったときの予備の拠点。写真はなく、これは記憶の中のだいたいの姿。",
+      "fromMemory": "記憶から",
+      "root": "すべての自動化はここから",
+      "drag": "← 左右にドラッグして図面全体を見る →",
+      "to": {
+        "voice": "Google Home 音声",
+        "climate": "温湿度センサー",
+        "ac": "エアコン",
+        "light": "シーリングライト",
+        "door": "玄関"
+      },
+      "subsystemTitle": "サブシステム",
+      "uplink": "アップリンク：指令",
+      "downlink": "ダウンリンク：報告",
+      "telemetry": "テレメトリ",
+      "telemetryEvery": "このサーバーから 30 秒ごとに届く値",
+      "telemetryWait": "信号待ち",
+      "subsystem": {
+        "cdh": "計算とデータ処理",
+        "eps": "電力",
+        "tcs": "熱制御",
+        "data": "データ記録",
+        "comm": "通信",
+        "bus": "バス",
+        "struct": "構造",
+        "crew": "乗員インターフェース"
       }
-    }
-  },
-  "info": {
-    "aboutSite": {
-      "title": "このサイト",
-      "subtitle": "エンジニアの個人空間"
-    },
-    "history": {
-      "title": "歴史",
-      "subtitle": "サイトの歩み"
-    },
-    "messages": {
-      "title": "メッセージ",
-      "subtitle": "何でもどうぞ"
-    },
-    "friends": {
-      "title": "友達",
-      "subtitle": "ウェブリング"
     }
   },
   "newsletter": {
@@ -654,7 +398,6 @@
     "errorTitle": "問題が発生しました",
     "missingToken": "リンクに token がありません。ニュースレター下部の購読解除リンクをご利用ください。",
     "invalidLink": "リンクが無効か期限切れです。",
-    "noServer": "サーバーに接続できません。",
     "unsubscribeFailed": "購読解除に失敗しました",
     "bodyConfirm": "<em>{{email}}</em> で Koimsurai ニュースレターを購読解除しようとしています。<br />解除後、新しい記事はメールで届きません。",
     "btnConfirm": "購読解除を確定",
@@ -679,10 +422,389 @@
   },
   "photos": {
     "title": "写真作品集",
-    "description": "Koimsurai の写真作品集。旅先の光と影の記録。"
+    "description": "Koimsurai の写真作品集。旅先の光と影の記録。",
+    "heading": "写真",
+    "subtitle": "虚空を越えてきた微かな信号を、ここで一行ずつ現像する。",
+    "station": "DSN · 地上局",
+    "stationLabel": "遠くの探査機からの信号を受ける地上局のパラボラアンテナ",
+    "passesLabel": "月ごとの受信枚数：最多は {{month}}、{{count}} 枚",
+    "frame": "写真 {{date}}"
   },
-  "gallery": {
-    "allTags": "すべて",
-    "moreTags": "その他"
+  "aboutFall": {
+    "kick": "について",
+    "title": "しっかりつかまって。",
+    "hint": "下へスクロール",
+    "landPre": "幼くて迷ってばかりの昨日をいくつも過ぎて、",
+    "land": "ここに降り立つ。",
+    "surface": "地表",
+    "surfaceTitle": "手にしているもの",
+    "surfaceSub": "ずっと持ち歩いてきたもの。",
+    "skill": {
+      "frontend": "フロントエンド",
+      "backend": "バックエンド",
+      "mobile": "モバイル",
+      "devops": "DevOps",
+      "design": "デザイン・メディア",
+      "data": "データストア",
+      "network": "ネットワーク",
+      "productivity": "生産性",
+      "ai": "AI 開発",
+      "teaching": "教育ツール"
+    },
+    "layer1": "第一層",
+    "layer1Title": "やってきたこと",
+    "core": "地核",
+    "coreLine": "その下は、まだ書いていないこと。",
+    "fallMeter": "地表まで",
+    "digMeter": "地表から"
+  },
+  "works": {
+    "title": "作品",
+    "subtitle": "音のない深宇宙に、一寸ずつ痕を刻む。",
+    "origin": "起点",
+    "legendCore": "大きさ：コード量",
+    "legendSurface": "地形：主な言語",
+    "legendRings": "環：ほかの言語",
+    "legendMoons": "衛星：GitHub のスター",
+    "legendHover": "カーソルを重ねる：立体の星に開く"
+  },
+  "collection": {
+    "title": "コレクション",
+    "subtitle": "引力の届くところすべてに、かつて私を照らした光のかけら。",
+    "kind": {
+      "anime": "アニメ",
+      "film": "映画",
+      "tv": "ドラマ"
+    },
+    "status": {
+      "read": "読了",
+      "reading": "読書中",
+      "to-read": "積読"
+    },
+    "watch": {
+      "title": "観る",
+      "anime": "本のアニメ",
+      "animeEp": "話",
+      "film": "本の映画",
+      "tv": "本のドラマ",
+      "tvEp": "話",
+      "live": "視聴中",
+      "last": "最近観たのは",
+      "episode": "第 {{n}} 話"
+    },
+    "books": {
+      "title": "本棚",
+      "total": "冊"
+    },
+    "music": {
+      "title": "聴く",
+      "tracks": "曲",
+      "live": "再生中",
+      "last": "さっき聴いたのは"
+    },
+    "hint": "スクロールで、もっと遠くへ",
+    "sky": {
+      "unit": {
+        "s": "光秒",
+        "m": "光分",
+        "h": "光時",
+        "d": "光日",
+        "y": "光年"
+      },
+      "ago": {
+        "now": "たった今",
+        "s": "{{n}} 秒前",
+        "m": "{{n}} 分前",
+        "h": "{{n}} 時間前"
+      },
+      "reach": "視野 {{n}} {{unit}}\nこの距離にあるのは {{date}} の信号",
+      "away": "{{n}} {{unit}}先 · {{date}} の信号",
+      "live": "送信中",
+      "queued": "まだ送っていない、地球の上",
+      "beyond": "記録より前、記録の外縁に",
+      "records": "記録は {{date}} から",
+      "mark": {
+        "earth": "地球",
+        "geo": "静止軌道",
+        "iss": "国際宇宙ステーション",
+        "moon": "月",
+        "jwst": "ジェイムズ・ウェッブ宇宙望遠鏡",
+        "sun": "太陽",
+        "mercury": "水星",
+        "venus": "金星",
+        "mars": "火星",
+        "asteroids": "小惑星帯",
+        "jupiter": "木星",
+        "saturn": "土星",
+        "uranus": "天王星",
+        "neptune": "海王星",
+        "kuiper": "カイパーベルト",
+        "newHorizons": "ニュー・ホライズンズ",
+        "voyager1": "ボイジャー1号",
+        "heliopause": "ヘリオポーズ",
+        "oort": "オールトの雲",
+        "proxima": "プロキシマ・ケンタウリ",
+        "barnard": "バーナード星",
+        "wolf359": "ウォルフ 359",
+        "lalande": "ラランド 21185",
+        "sirius": "シリウス",
+        "epsEri": "エリダヌス座ε星",
+        "procyon": "プロキオン",
+        "tauCeti": "くじら座τ星",
+        "scale-sec": "1 光秒 · 1 秒前",
+        "scale-min": "1 光分 · 1 分前",
+        "scale-hour": "1 光時 · 1 時間前",
+        "scale-day": "1 光日 · 1 日前",
+        "scale-year": "1 光年 · 1 年前"
+      }
+    }
+  },
+  "friends": {
+    "title": "友だち",
+    "subtitle": "深宇宙は長く孤独だけれど、振り返ればいつも星の光がある。",
+    "noSignal": "まだ信号は届いていません",
+    "noFeed": "RSS なし",
+    "legendCenter": "中心：このサイト",
+    "legendBeacon": "目盛り：最近の記事、古いほど星から遠い",
+    "legendSignal": "信号の輪：{{days}} 日以内に新しい記事",
+    "legendDock": "星をクリック：ドッキング",
+    "dockWith": "{{name}} とドッキング",
+    "docked": "ドッキング完了",
+    "recent": "最近の記事",
+    "visit": "サイトへ",
+    "undock": "ドッキング解除",
+    "legendDim": "暗いほど：更新から時間が経っている",
+    "dockLabel": "ドッキング直前の二隻の船、その間を信号が行き来している",
+    "cardTitle": "このサイトの情報",
+    "siteDesc": "あるエンジニアの個人スペース",
+    "formTitle": "次の星になる",
+    "fieldName": "名前",
+    "fieldNameHint": "サイト名",
+    "fieldUrl": "URL",
+    "fieldRss": "RSS（任意）",
+    "fieldDesc": "ひとこと",
+    "submit": "申請を送る",
+    "errRequired": "この欄は必須です",
+    "errUrl": "http:// か https:// で始まる URL を入力してください",
+    "sent": "メールアプリを開きました。開かない場合はこちらへ：",
+    "rulesTitle": "軌道に入る条件",
+    "rule1": "サイトが正常に閲覧でき、独自ドメインと HTTPS があること（無料サブドメインも可）。",
+    "rule2": "オリジナルの内容があること。転載サイト、広告だけのサイト、SEO ファームは不可。",
+    "rule3": "RSS があれば、新しい記事を書いたときにここへ信号が届きます。",
+    "rule4": "先にあなたのサイトにリンクを貼ってもらえると、返信が早くなります。"
+  },
+  "messages": {
+    "title": "メッセージ",
+    "subtitle": "音のない長い夜に、遠くからのパルスを静かに待つ。",
+    "rx": "RX · 信号待ち",
+    "rxCount_one": "RX · {{count}} 件の信号を受信",
+    "rxCount_other": "RX · {{count}} 件の信号を受信",
+    "txReady": "TX · 送信待ち",
+    "txSending": "TX · 送信中",
+    "logTitle": "受信した信号",
+    "emptyTitle": "まだ信号は届いていません。",
+    "emptyText": "最初のメッセージはこの線の上に現れます。",
+    "privatePre": "公開に向かない内容はメールで：",
+    "privateMid": "。バグ報告や機能の提案は",
+    "privatePost": " へどうぞ。"
+  },
+  "signal": {
+    "formTitle": "信号を送る",
+    "loginWith": "ログイン",
+    "asUser": "{{name}} として書き込み",
+    "useAnonymous": "匿名にする",
+    "useAccount": "アカウントを使う",
+    "fieldName": "名前",
+    "fieldEmail": "メール（任意・非公開）",
+    "fieldWebsite": "サイト（任意）",
+    "fieldText": "メッセージ",
+    "meter": "{{count}} 文字 · 信号の長さ {{seconds}} 秒",
+    "captcha": "{{a}} + {{b}} = ?",
+    "replyingTo": "{{name}} への返信",
+    "cancelReply": "やめる",
+    "reply": "返信",
+    "like": "受信",
+    "admin": "管理人",
+    "submit": "信号を送る",
+    "sentPending": "送信しました。確認後にここに表示されます。",
+    "sentApproved": "送信しました。",
+    "errEmpty": "まだ何も書かれていません",
+    "errName": "名前を入力してください",
+    "errCaptcha": "答えが違います。問題を変えました",
+    "errFailed": "送信できませんでした。少し時間をおいてもう一度",
+    "rule1": "匿名のメッセージは確認後に表示されます。ログインした場合はすぐに表示されます",
+    "rule2": "GitHub か Google でログインできます。匿名でも大丈夫です",
+    "rule3": "メールアドレスは公開されません。広告や売り込みはお断りします",
+    "heading": "応答",
+    "rxCount_one": "RX · {{count}} 件の信号を受信",
+    "rxCount_other": "RX · {{count}} 件の信号を受信",
+    "empty": "まだ信号は届いていない。最初のひとつはここに現れる。",
+    "closed": "この記事は応答を閉じている。チャンネルは受信のみ。",
+    "react": {
+      "title": "応答",
+      "like": "好き",
+      "helpful": "役に立った",
+      "more": "もっと知りたい"
+    },
+    "writeSomething": "何か書く"
+  },
+  "log": {
+    "title": "航行日誌",
+    "subtitle": "引力を振りほどけば、この身がそのまま大空になる。",
+    "met": "MISSION ELAPSED TIME · {{date}} から",
+    "metValue": "{{days}} 日 {{hms}}",
+    "total_one": "累計 {{count}} コントリビューション",
+    "total_other": "累計 {{count}} コントリビューション",
+    "noContrib": "GitHub のデータが届いていません",
+    "now": "現在",
+    "contrib_one": "{{count}} コントリビューション",
+    "contrib_other": "{{count}} コントリビューション",
+    "legendHeight": "高さ：GitHub コントリビューションの累計",
+    "legendDots": "点：リニューアル（ホバーで内容）",
+    "legendHeat": "地上の灯り：毎日のコントリビューション、1 週間で 7 列",
+    "statusLabel": "現在の様子",
+    "coding": "今日のコーディング",
+    "codingValue": "{{h}} 時間 {{m}} 分",
+    "codingVia": "WakaTime",
+    "languages": "今週の言語",
+    "playing": "最近遊んでいるもの",
+    "played2w": "直近 2 週間で {{hours}} 時間 · Steam ライブラリ {{owned}} 本",
+    "longest": "一番長く遊んだのは {{name}}、{{hours}} 時間"
+  },
+  "colophon": {
+    "title": "このサイト",
+    "subtitle": "ここには何もない。夜と、白い墨と、かすかな光だけ。",
+    "hint": "星をクリックすると、六分儀がそちらを向いて測ります。",
+    "star": {
+      "material": "素材",
+      "type": "文字",
+      "sky": "空",
+      "rule1": "ルール 01",
+      "rule2": "ルール 02",
+      "rule3": "ルール 03",
+      "license": "ライセンス",
+      "qa": "Q&A"
+    },
+    "title_material": "三つだけ",
+    "text_material": "琥珀色は一つの点にしか現れません。今いる場所、今起きていること。広い面の強調色には使いません。",
+    "title_type": "三つの書体",
+    "text_type": "中国語と混在する文章に一つ、英語だけの大きな文字に一つ、日付と数字に一つ。",
+    "title_sky": "同じ空",
+    "text_sky": "どのページもこの空にある何か。どれもホームの点と線の土星から生まれています。",
+    "title_rule1": "一つの画面に信号は一つ",
+    "text_rule1": "トップページの土星は一歩ずつ描かれている。順に見ていくと、衛星のステップで自分でひとつ選べる。",
+    "title_rule2": "点と線だけ",
+    "text_rule2": "写真ページの写真はどれもこうして受信される。最後のステップでは、点だけにするとどうなるかを見てみる。",
+    "title_rule3": "データから育つ",
+    "text_rule3": "作品ページの螺旋にある星は、どれもひとつのリポジトリの数字から育っている。数字を変えてひとつ作り、育つ過程を一歩ずつ見てみる。",
+    "title_license": "ライセンス",
+    "text_license": "コードは AGPL-3.0 で公開。記事・写真・その他のコンテンツは著作権を保有します。",
+    "swatchGround": "黒は紙",
+    "swatchPaper": "白はインク",
+    "swatchAmber": "琥珀は信号",
+    "fontSerif": "源ノ明朝：中国語と混在する文章",
+    "fontLatin": "Instrument Serif：英語だけの大きな文字、太字にしない",
+    "fontMono": "等幅：日付と数字",
+    "homePage": "ホーム",
+    "skyIs": {
+      "home": "土星を回る衛星",
+      "notes": "幾重もの星の軌跡",
+      "moments": "横切る彗星",
+      "works": "外へ伸びる螺旋の航路",
+      "collection": "地球から送った信号",
+      "photos": "深宇宙から届いた写真",
+      "setup": "宇宙船の設計図",
+      "friends": "同じ中心を回る星",
+      "messages": "受信した電波",
+      "log": "地表からの打ち上げ",
+      "about": "一度の落下"
+    },
+    "cell": "マス",
+    "genSize": "コード量",
+    "genLangs": "言語数",
+    "genStars": "GitHub スター",
+    "genCommits": "コミット",
+    "genMain": "主な言語",
+    "genOther": "その他",
+    "saturnToy": "トップページの土星、いまのステップまで描いたもの",
+    "photoToy": "ギャラリーの写真一枚、いまのステップまで受信したもの",
+    "workToy": "下の数字から育った天体",
+    "stepsLabel": "ステップ",
+    "stepNext": "次へ →",
+    "stepAgain": "最初から ↺",
+    "genPushed": "最終プッシュ",
+    "daysAgo": " 日前",
+    "steps": {
+      "saturn": {
+        "light": {
+          "t": "球と光",
+          "d": "はじめは球がひとつと、左上から照らす太陽だけ。光の当たる面は明るく、裏側は暗い。"
+        },
+        "strokes": {
+          "t": "陰影の代わりに筆致",
+          "d": "色は塗らず、横線を一列ずつ引く。明るいほど線が太い。裏側の線は消えるほど細くなり、画面には黒と白だけが残る。"
+        },
+        "bands": {
+          "t": "本物の雲の帯",
+          "d": "明暗はカッシーニが撮った帯の並びに合わせる。赤道帯がいちばん明るく、その両側がいちばん暗い。北緯 78° の線は北極の六角形の縁。少しノイズを足して、線を揺らし、途切れた筆致にする。"
+        },
+        "rings": {
+          "t": "環と影",
+          "d": "環も同心円の筆致で、疎密は本物の環に合わせる。B 環がいちばん密で、カッシーニの間隙は空っぽ、A 環にはエンケの間隙もある。惑星の影は環に落ち、環の影も惑星に落ちる。"
+        },
+        "satellites": {
+          "t": "灯るのはひとつだけ",
+          "d": "外側の五本の軌道に衛星がひとつずつあり、トップページの五つのセクションに対応する。琥珀色は一度にひとつだけ。別の衛星を押してみて。"
+        },
+        "trails": {
+          "t": "長時間露光",
+          "d": "最後は背景。シャッターを開けたままにすると、星はどれも天の極のまわりに弧を描く。手記のページはこれを残していて、記事ひとつが星の軌跡ひとつ。"
+        }
+      },
+      "photo": {
+        "raw": {
+          "t": "元の写真",
+          "d": "ギャラリーの一枚。宇宙で撮った写真はそのまま目の前に現れない。まず送信の旅を経る。"
+        },
+        "bits": {
+          "t": "0 と 1 になる",
+          "d": "カメラは画像を 0 と 1 に変え、一列ずつ送り出す。受信したばかりのときは、このちらつく数字しか見えない。"
+        },
+        "gray": {
+          "t": "一行ずつモノクロで",
+          "d": "地上局が一行ずつ復号する。先に届くのは明るさで、写真は上から下へ浮かび上がる。琥珀色の線が、いま受信している行。"
+        },
+        "color": {
+          "t": "ひと掃きで色を戻す",
+          "d": "明るさを受け終えたら、左から右へひと掃きして色を戻す。写真ページの写真は、画面に入るたびにこうして受信される。"
+        },
+        "dots": {
+          "t": "点だけにすると",
+          "d": "同じ写真を、一マスに点ひとつだけにする。点の大きさが明るさ。マスを大きくすると、写真は少しずつ星空になる。"
+        }
+      },
+      "work": {
+        "numbers": {
+          "t": "いくつかの数字",
+          "d": "GitHub の上では、リポジトリはいくつかの数字にすぎない。コード量、使った言語、スターの数、commit の数、最後のプッシュからの日数。まず動かしてみて。"
+        },
+        "surface": {
+          "t": "大きさと地形",
+          "d": "コードが多いほど惑星は大きい。主な言語が地形を決める。TypeScript はガスの帯、Rust は穴だらけの岩、Python は氷、それ以外は経線。commit が多いほど帯やクレーターが増える。"
+        },
+        "rings": {
+          "t": "環と衛星",
+          "d": "主な言語のほかに言語がひとつ増えるごとに環がひとつ増え、線の種類は言語ごと。実線は TypeScript、破線は Rust、点線は Python。GitHub のスターは衛星になり、最大四つ。"
+        },
+        "body": {
+          "t": "立体に開く",
+          "d": "作品ページはふだん線の記号だけを描き、ホバーすると点で描いた立体の星に開く。明るい面は点が密で、暗い面はまばら。最後のプッシュが新しいほど速く回る。"
+        },
+        "spiral": {
+          "t": "螺旋に載せる",
+          "d": "最後に作品ページの螺旋に載せる。中心が出発点で、新しいものほど外側。いま作ったこの星がいちばん新しいので、いちばん外に並ぶ。"
+        }
+      }
+    }
   }
 }

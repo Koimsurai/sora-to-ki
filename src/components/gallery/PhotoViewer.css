@@ -1,102 +1,93 @@
-/* PhotoViewer - 全螢幕照片查看器樣式 (Afilmory 風格) */
+/* PhotoViewer：全螢幕照片檢視（2026-10 翻新）。版面照舊（主圖、右邊 EXIF、底下縮圖），外觀照站上的語言：
+   夜色鋪滿、按鈕是細線圓圈、字是暖白的深淺與等寬小字，沒有毛玻璃、陰影與藍紫 */
 
 .photo-viewer-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-fullscreen);
-  background: #000000;
+  background: var(--ground);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* 模糊背景 */
+/* 照片模糊放大當底：翻新後不用（整片鋪滿的顏色會蓋過照片本身），留著元素只是不顯示 */
 .photo-viewer-background {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  filter: blur(var(--blur-60)) brightness(0.4);
-  transform: scale(1.2);
-  z-index: 0;
+  display: none;
 }
 
-/* 頂部照片資訊 */
+/* 左上：照片的日期 */
 .photo-viewer-info {
   position: absolute;
-  top: 20px;
+  top: 22px;
   left: 24px;
   z-index: 20;
   pointer-events: none;
 }
 
 .photo-title {
-  color: var(--white-95);
-  font-size: var(--fs-16);
-  font-weight: 600;
-  text-shadow: 0 2px 8px var(--black-50);
-  letter-spacing: var(--ls-4);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
 }
 
-/* 右上角按鈕組 */
+/* 右上：分享、關閉 */
 .viewer-top-right-buttons {
   position: absolute;
-  top: 20px;
-  right: 430px; /* 留給 EXIF 面板空間 (400px) + 邊距 (30px) */
+  top: 16px;
+  right: 424px; /* 留給 EXIF 面板（400px）＋邊距 */
   display: flex;
   gap: var(--space-2-5);
   z-index: 25;
   pointer-events: auto;
 }
 
-.action-btn {
+/* 按鈕：跟文章圖片放大、影片播放鈕同一種細線圓圈。底下墊一層很淡的夜色，亮的照片上才看得到 */
+.action-btn,
+.custom-swiper-button-prev,
+.custom-swiper-button-next {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--r-round);
-  background: var(--black-50);
-  backdrop-filter: blur(var(--blur-20));
-  border: 2px solid var(--white-20);
-  color: white;
-  cursor: pointer;
-  transition: all var(--dur-250) var(--easing-standard);
   padding: 0;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-round);
+  background: rgba(var(--ground-rgb), 0.35);
+  color: var(--paper-2);
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease,
+    background var(--dur-200) ease,
+    opacity var(--dur-200) ease;
+}
+
+.action-btn {
+  width: 40px;
+  height: 40px;
 }
 
 .action-btn svg {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   stroke: currentColor;
-  stroke-width: 2.5;
+  stroke-width: 1.6;
   fill: none;
 }
 
-.action-btn:hover {
-  background: var(--black-70);
-  border-color: var(--white-40);
-  transform: scale(1.08);
-  box-shadow: var(--elev-2);
+/* 蓋掉全域 button:hover 的底色與光暈（specificity 0,2,0 > 0,1,1） */
+.action-btn:hover,
+.action-btn:focus-visible {
+  border-color: var(--paper);
+  background: rgba(var(--ground-rgb), 0.55);
+  color: var(--paper);
+  box-shadow: none;
 }
 
-.action-btn:active {
-  transform: scale(0.95);
-}
-
-.action-btn-close:hover {
-  background: rgba(var(--red-600-rgb), 0.9);
-  border-color: var(--red-600);
-  box-shadow: 0 4px 16px rgba(var(--red-600-rgb), 0.5);
-}
-
-.action-btn-share:hover {
-  background: rgba(var(--blue-600-rgb), 0.9);
-  border-color: var(--blue-600);
-  box-shadow: 0 4px 16px rgba(var(--blue-600-rgb), 0.5);
-}
-
-/* 主圖輪播區域 */
+/* 主圖 */
 .photo-viewer-main {
   position: absolute;
   top: 0;
@@ -127,7 +118,6 @@
   align-items: center;
   justify-content: center;
   cursor: default;
-  transition: cursor var(--dur-200) ease;
 }
 
 .swiper-zoom-container img {
@@ -135,7 +125,6 @@
   transform-origin: center center;
 }
 
-/* 當圖片放大時的游標 */
 .swiper-slide-zoomed .swiper-zoom-container {
   cursor: grab;
 }
@@ -144,61 +133,47 @@
   cursor: grabbing;
 }
 
-/* 隱藏 Swiper 預設導航按鈕 */
+/* Swiper 自己的導航鈕不用 */
 .main-swiper .swiper-button-prev,
 .main-swiper .swiper-button-next {
   display: none;
 }
 
-/* 自定義導航按鈕 */
+/* 上一張、下一張 */
 .custom-swiper-button-prev,
 .custom-swiper-button-next {
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  width: 52px;
-  height: 52px;
-  background: var(--black-50);
-  backdrop-filter: blur(var(--blur-20));
-  border-radius: var(--r-round);
-  border: 2px solid var(--white-20);
-  cursor: pointer;
+  translate: 0 -50%;
+  width: 44px;
+  height: 44px;
   z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--dur-250) var(--easing-standard);
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .custom-swiper-button-prev {
-  left: 30px;
+  left: 24px;
 }
 
 .custom-swiper-button-next {
-  right: 30px;
+  right: 24px;
 }
 
 .custom-swiper-button-prev svg,
 .custom-swiper-button-next svg {
-  width: 24px;
-  height: 24px;
-  stroke: white;
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 1.6;
   fill: none;
 }
 
 .custom-swiper-button-prev:hover,
 .custom-swiper-button-next:hover {
-  background: var(--black-70);
-  border-color: var(--white-40);
+  border-color: var(--paper);
+  background: rgba(var(--ground-rgb), 0.55);
+  color: var(--paper);
   opacity: 1;
-  transform: translateY(-50%) scale(1.05);
-  box-shadow: var(--elev-2);
-}
-
-.custom-swiper-button-prev:active,
-.custom-swiper-button-next:active {
-  transform: translateY(-50%) scale(0.95);
 }
 
 .custom-swiper-button-prev.swiper-button-disabled,
@@ -208,19 +183,12 @@
   pointer-events: none;
 }
 
-.custom-swiper-button-prev.swiper-button-disabled:hover,
-.custom-swiper-button-next.swiper-button-disabled:hover {
-  transform: translateY(-50%);
-  background: var(--black-50);
-  border-color: var(--white-20);
-}
-
-/* Spinner 動畫 */
+/* 載入中：一圈細線 */
 .spinner {
-  width: 50px;
-  height: 50px;
-  border: 3px solid var(--white-10);
-  border-top-color: white;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--rule);
+  border-top-color: var(--paper-2);
   border-radius: var(--r-round);
   animation: spin 1s linear infinite;
 }
@@ -231,58 +199,60 @@
   }
 }
 
-/* 響應式設計 */
+/* 放大倍率：左下一行等寬小字 */
+.zoom-indicator {
+  position: absolute;
+  bottom: 130px;
+  left: 24px;
+  z-index: 20;
+  padding: var(--space-1) var(--space-2-5);
+  border: 1px solid var(--rule);
+  background: rgba(var(--ground-rgb), 0.7);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-4);
+  color: var(--paper-2);
+}
+
+/* 響應式 */
 @media (max-width: 1024px) {
   .photo-viewer-main {
-    right: 0; /* 移除 EXIF 面板空間 */
+    right: 0;
   }
 
   .viewer-top-right-buttons {
-    right: 24px; /* 調整按鈕位置 */
+    right: 24px;
   }
 
   .gallery-thumbnail-container {
     right: 0;
   }
 
-  /* 在平板上隱藏 EXIF 面板 */
+  /* 平板以下不放 EXIF 面板 */
   .exif-panel {
     display: none;
   }
 
   .custom-swiper-button-prev {
-    left: 20px;
+    left: 16px;
   }
 
   .custom-swiper-button-next {
-    right: 20px;
+    right: 16px;
   }
 }
 
 @media (max-width: 768px) {
   .photo-viewer-info {
-    top: 16px;
+    top: 18px;
     left: 16px;
   }
 
-  .photo-title {
-    font-size: var(--fs-14);
-  }
-
   .viewer-top-right-buttons {
-    top: 16px;
+    top: 12px;
     right: 16px;
     gap: var(--space-2);
-  }
-
-  .action-btn {
-    width: 44px;
-    height: 44px;
-  }
-
-  .action-btn svg {
-    width: 20px;
-    height: 20px;
   }
 
   .photo-viewer-main {
@@ -291,44 +261,8 @@
 
   .custom-swiper-button-prev,
   .custom-swiper-button-next {
-    width: 46px;
-    height: 46px;
-  }
-
-  .custom-swiper-button-prev {
-    left: 16px;
-  }
-
-  .custom-swiper-button-next {
-    right: 16px;
-  }
-
-  .custom-swiper-button-prev svg,
-  .custom-swiper-button-next svg {
-    width: 22px;
-    height: 22px;
-  }
-}
-
-@media (max-width: 640px) {
-  .photo-title {
-    font-size: var(--fs-12);
-  }
-
-  .action-btn {
-    width: 42px;
-    height: 42px;
-  }
-
-  .action-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .custom-swiper-button-prev,
-  .custom-swiper-button-next {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
   }
 
   .custom-swiper-button-prev {
@@ -338,27 +272,4 @@
   .custom-swiper-button-next {
     right: 12px;
   }
-
-  .custom-swiper-button-prev svg,
-  .custom-swiper-button-next svg {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-/* Zoom Indicator */
-.zoom-indicator {
-  position: absolute;
-  bottom: 130px; /* Adjust to be above the thumbnails */
-  left: 24px;
-  z-index: 20;
-  background-color: var(--black-60);
-  color: white;
-  padding: var(--space-1-5) var(--space-3);
-  border-radius: var(--r-20);
-  font-size: var(--fs-14);
-  font-weight: 600;
-  backdrop-filter: blur(var(--blur-12));
-  border: 1px solid var(--white-20);
-  box-shadow: var(--elev-1);
 }

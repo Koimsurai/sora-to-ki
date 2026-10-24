@@ -10,7 +10,10 @@ use sqlx::FromRow;
 
 use crate::{
     error::AppError,
-    handlers::posts::{PostRow, available_locales_with_source},
+    handlers::{
+        excerpt_links,
+        posts::{PostRow, available_locales_with_source},
+    },
     state::AppState,
     util::{gen_slug, is_unique_violation, js_substring_prefix, parse_int, split_tags},
 };
@@ -358,6 +361,8 @@ pub struct AdminPostFull {
     pub excerpt_ko: Option<String>,
     /// 內容格式：'markdown'（預設）| 'mdx'。
     pub format: Option<String>,
+    /// 摘要裡連到章節的句子，依語系分開（沒有就是空物件）。
+    pub excerpt_links: excerpt_links::LinkMap,
     pub tags: Vec<String>,
 }
 
@@ -395,6 +400,7 @@ impl AdminPostFull {
             allow_comments: r.allow_comments(),
             excerpt_ko: r.excerpt_ko.clone(),
             format: r.format.clone(),
+            excerpt_links: excerpt_links::parse_stored(r.excerpt_links.as_deref()),
             tags: split_tags(r.tags.as_deref()),
         }
     }
@@ -1472,6 +1478,11 @@ pub async fn admin_create_post(
     let series_order = js_number(b.get("series_order")).filter(|f| f.is_finite());
     let allow_comments: i64 =
         if b.contains_key("allow_comments") { i64::from(js_truthy(b.get("allow_comments"))) } else { 1 };
+    let excerpt_links = match b.get("excerpt_links").map(|v| excerpt_links::merge_input(None, v)) {
+        None => None,
+        Some(Ok(v)) => v,
+        Some(Err(e)) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+    };
 
     // 網址 slug：呼叫端沒給就由英文標題（或原標題）自動產生，並確保唯一。
     let slug = unique_post_slug(
@@ -1487,8 +1498,8 @@ pub async fn admin_create_post(
         "INSERT INTO posts (slug, title, content, excerpt, category, status, author, layout_type, format, source_language, \
          title_en, content_en, excerpt_en, title_zh_cn, content_zh_cn, excerpt_zh_cn, \
          title_ja, content_ja, excerpt_ja, title_ko, content_ko, excerpt_ko, \
-         series_name, series_order, allow_comments, created_at, updated_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+         series_name, series_order, allow_comments, excerpt_links, created_at, updated_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
     )
     .bind(&slug)
     .bind(&title)
@@ -1518,7 +1529,7 @@ pub async fn admin_create_post(
     }
     q = q.bind(&series_name);
     q = bind_num(q, series_order);
-    q = q.bind(allow_comments);
+    q = q.bind(allow_comments).bind(&excerpt_links);
 
     let post_id = match q.execute(&state.pool).await {
         Ok(r) => r.last_insert_rowid(),
@@ -1617,6 +1628,25 @@ pub async fn admin_update_post(
         None => (0, None),
         Some(v) => (1, Some(i64::from(js_truthy(Some(v))))),
     };
+    // excerpt_links：有帶到的語系整組換掉、沒帶到的不動，所以要先讀出現有的值再併
+    let excerpt_links: (i64, Option<String>) = match b.get("excerpt_links") {
+        None => (0, None),
+        Some(v) => {
+            let stored =
+                match sqlx::query_scalar::<_, Option<String>>("SELECT excerpt_links FROM posts WHERE id = ?")
+                    .bind(id)
+                    .fetch_optional(&state.pool)
+                    .await
+                {
+                    Ok(s) => s.flatten(),
+                    Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
+                };
+            match excerpt_links::merge_input(stored.as_deref(), v) {
+                Ok(next) => (1, next),
+                Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+            }
+        }
+    };
 
     // slug：只有呼叫端明確帶 slug 才動。改名時把舊 slug 存進 post_slug_history，
     // 舊網址就永遠不會斷（get_post 會查這張表，前端再 301 到新網址）。
@@ -1673,6 +1703,7 @@ pub async fn admin_update_post(
          series_name = CASE WHEN ? = 1 THEN ? ELSE series_name END, \
          series_order = CASE WHEN ? = 1 THEN ? ELSE series_order END, \
          allow_comments = CASE WHEN ? = 1 THEN ? ELSE allow_comments END, \
+         excerpt_links = CASE WHEN ? = 1 THEN ? ELSE excerpt_links END, \
          updated_at = datetime('now') WHERE id = ?",
     )
     .bind(b.get("title").and_then(to_s))
@@ -1705,6 +1736,7 @@ pub async fn admin_update_post(
     q = q.bind(series_order.0);
     q = bind_num(q, series_order.1);
     q = q.bind(allow_comments.0).bind(allow_comments.1);
+    q = q.bind(excerpt_links.0).bind(excerpt_links.1);
     q = q.bind(id);
 
     match q.execute(&state.pool).await {

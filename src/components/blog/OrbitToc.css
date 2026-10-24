@@ -1,0 +1,172 @@
+/* 文章頁的軌道目錄（blog/OrbitToc）：軌道畫在固定於視窗的畫布上，章節名是疊在刻度旁邊的按鈕 */
+
+.orbit-toc {
+  position: fixed;
+  inset: 0;
+  /* 高度寫成視窗高：換頁時整頁被平移，平移中的祖先會變成 fixed 的定位基準，寫 100% 會被拉成整頁那麼高 */
+  height: 100vh;
+  z-index: 2;
+  pointer-events: none;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+.orbit-toc.is-off {
+  display: none;
+}
+
+.orbit-toc-cv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.orbit-toc-hd,
+.orbit-toc-ft,
+/* 換頁的時候目錄的字先藏著：位置是軌道畫起來之後才擺好的，不藏會在左上角閃一下 */
+.orbit-toc-list {
+  transition: opacity var(--dur-400) ease;
+}
+
+html[data-pt] .orbit-toc-list {
+  opacity: 0;
+}
+
+.orbit-toc-list li {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.orbit-toc-hd {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  white-space: nowrap;
+  color: var(--paper-3);
+}
+
+.orbit-toc-hd b {
+  font-weight: 400;
+  color: var(--amber);
+}
+
+.orbit-toc-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.orbit-toc-list li {
+  pointer-events: auto;
+  transition: opacity var(--dur-300) ease;
+}
+
+:where(.orbit-toc) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.orbit-toc button:focus-visible {
+  outline: 1px solid var(--paper-2);
+  outline-offset: 3px;
+}
+
+.orbit-toc-list button {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  max-width: 100%;
+  font-size: var(--fs-13);
+  line-height: var(--lh-140);
+  color: var(--paper-3);
+  text-shadow: 0 0 8px var(--ground);
+  transition: color var(--dur-200) ease;
+}
+
+.orbit-toc-list .is-deep button {
+  font-size: var(--fs-12);
+}
+
+.orbit-toc-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.orbit-toc-min {
+  flex: none;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+  opacity: 0;
+  transition: opacity var(--dur-200) ease;
+}
+
+.orbit-toc-list .is-past button {
+  color: var(--paper-2);
+}
+
+.orbit-toc-list .is-on button,
+.orbit-toc-list .is-ping button,
+.orbit-toc-list button:hover {
+  color: var(--paper);
+}
+
+.orbit-toc-list button:hover .orbit-toc-min {
+  opacity: 1;
+}
+
+/* 還沒開始讀：只有刻度，章節名等開始讀（或滑到目錄上）才浮出來 */
+.orbit-toc.is-rest .orbit-toc-list li {
+  opacity: 0;
+}
+
+.orbit-toc.is-rest:has(.orbit-toc-list:hover) .orbit-toc-list li,
+.orbit-toc.is-rest.is-pinging .orbit-toc-list li,
+.orbit-toc.is-rest .orbit-toc-list li:focus-within {
+  opacity: 1;
+}
+
+/* 捲動中只留所在的那一節，停下來（或滑到目錄上）才回來 */
+.orbit-toc.is-quiet .orbit-toc-list li:not(.is-on, .is-ping) {
+  opacity: 0.15;
+}
+
+.orbit-toc.is-quiet:has(.orbit-toc-list:hover) .orbit-toc-list li {
+  opacity: 1;
+}
+
+/* 目錄底下一行：回到文章頂部，旁邊是字體（blog/ArticleControls 的 FontLine） */
+.orbit-toc-ft {
+  display: flex;
+  gap: var(--space-6);
+  align-items: baseline;
+}
+
+.orbit-toc-ft > button {
+  pointer-events: auto;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+  white-space: nowrap;
+  transition: color var(--dur-200) ease;
+}
+
+.orbit-toc-ft > button:hover {
+  color: var(--paper);
+}
+
+/* 換頁的「收」：字先退掉，只剩軌道在動 */
+.orbit-toc.is-leaving .orbit-toc-hd,
+.orbit-toc.is-leaving .orbit-toc-ft,
+.orbit-toc.is-leaving .orbit-toc-list {
+  opacity: 0;
+  transition: opacity var(--dur-200) ease;
+}

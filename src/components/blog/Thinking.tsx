@@ -1,31 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { enterStyle } from '@/lib/enter';
-import { Rss } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { jsonAuthHeaders } from '@/lib/authToken';
-import ThoughtCard from './ThoughtCard';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { apiUrl } from '@/lib/api';
-import { useThoughtAdmin } from '@/hooks/useThoughtAdmin';
-import './Thinking.css';
+import { dotDate, parseServerDate } from '@/lib/serverDate';
+import { LocaleLink } from '@/i18n/locale-link';
+import MomentPost from './MomentPost';
+import { clearCometZoomOut, peekCometZoomOut } from './cometZoom';
+import { useCometSky } from './useCometSky';
+import './Moments.css';
 
-/* 碎念 / 思考 feed（接 /api/thoughts）— 路由未公開。
+/* 碎念：彗星沿一條大弧線往上飛，碎念跟在彗尾後面、沿著弧線左右排開（blog/useCometSky）。
+   最新那一則是彗核，越往下越舊、塵埃越稀；比 FULL 更舊的只剩彗尾上的一個點，滑過才浮出那一則。
+   換頁轉場飛進來的那條線，就是彗尾的第一筆（見 store/pageTransition 的 'trail'）。
    admin 可在頂端發文（content + 選填連結 → 後端 unfurl）。 */
+
+const FULL = 12;
+/** 彗核在標題下面多遠 */
+const HEAD_GAP = 110;
 
 interface Prefill {
   kind?: string;
   title?: string;
 }
 
-function Thinking() {
-  const { t } = useTranslation();
-  const { isAdmin } = useAuth();
+function Compose() {
   const queryClient = useQueryClient();
-  // 碎念列表改由 TanStack Query 管理：route loader 已 prefetch → SSR baked、
-  // hydrate 後 useQuery 讀快取。發文／編輯／刪除用 useMutation，成功後 invalidate 重抓。
-  const { data: thoughts } = useQuery(thoughtsListQueryOptions);
   const [draft, setDraft] = useState('');
   const [draftUrl, setDraftUrl] = useState('');
   const [prefill, setPrefill] = useState<Prefill | null>(null); // 從 /watch 一鍵發帶來的 media
@@ -44,9 +46,7 @@ function Thinking() {
     }
   }, []);
 
-  const refreshThoughts = () => queryClient.invalidateQueries({ queryKey: thoughtsListQueryOptions.queryKey });
-
-  const createMutation = useMutation({
+  const create = useMutation({
     mutationFn: async () => {
       const r = await fetch(apiUrl('/api/admin/thoughts'), {
         method: 'POST',
@@ -63,112 +63,156 @@ function Thinking() {
       setDraft('');
       setDraftUrl('');
       setPrefill(null);
-      void refreshThoughts();
+      void queryClient.invalidateQueries({ queryKey: thoughtsListQueryOptions.queryKey });
     },
   });
-  const posting = createMutation.isPending;
-
-  // 刪除／編輯跟單則頁共用（hooks/useThoughtAdmin）
-  const admin = useThoughtAdmin();
-
-  const submit = () => {
-    if (!draft.trim() || posting) return;
-    createMutation.mutate();
-  };
-  const del = (id: number) => {
-    if (!window.confirm('刪除這則碎念？')) return;
-    admin.remove.mutate(id);
-  };
-  const edit = (id: number, content: string) => admin.edit.mutate({ id, content });
 
   return (
-    <div className="tk-page">
-      <div className="tk-scrim" />
+    <form
+      className="mo-compose"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (draft.trim() && !create.isPending) create.mutate();
+      }}
+    >
+      <textarea placeholder="想到什麼，寫一句…" value={draft} onChange={(e) => setDraft(e.target.value)} rows={2} />
+      <input
+        type="text"
+        placeholder="貼個連結（選填，自動抓預覽）"
+        value={draftUrl}
+        onChange={(e) => setDraftUrl(e.target.value)}
+      />
+      {prefill && (
+        <div className="mo-compose-chip">
+          <span>
+            {prefill.kind} · {prefill.title}
+          </span>
+          <button type="button" onClick={() => setPrefill(null)} aria-label="移除附加">
+            ✕
+          </button>
+        </div>
+      )}
+      <button type="submit" disabled={create.isPending || !draft.trim()}>
+        {create.isPending ? '發送中…' : '發送'}
+      </button>
+    </form>
+  );
+}
 
-      <div className="tk-wrap">
-        <header className="tk-header enter" style={enterStyle({ y: 16, dur: 500 })}>
-          <div className="tk-title-row">
-            <h1 className="tk-title">{t('thinking.title')}</h1>
-            <a className="tk-rss" href="/api/thoughts/rss" target="_blank" rel="noopener noreferrer" aria-label="RSS">
-              <Rss size={18} />
-            </a>
-          </div>
-          <p className="tk-subtitle">{t('thinking.subtitle')}</p>
-        </header>
+function Thinking() {
+  const { t } = useTranslation();
+  const { isAdmin } = useAuth();
+  // route loader 已 prefetch → SSR baked、hydrate 後 useQuery 讀快取
+  const { data: thoughts = [] } = useQuery(thoughtsListQueryOptions);
+  const full = thoughts.slice(0, FULL);
+  const older = thoughts.slice(FULL);
 
-        {isAdmin && (
-          <div className="tk-compose">
-            <textarea
-              className="tk-compose-text"
-              placeholder="想到什麼，寫一句…"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              rows={2}
-            />
-            <input
-              className="tk-compose-url"
-              type="text"
-              placeholder="貼個連結（選填，自動抓預覽）"
-              value={draftUrl}
-              onChange={(e) => setDraftUrl(e.target.value)}
-            />
-            {prefill && (
-              <div className="tk-compose-chip">
-                <span>
-                  🎬 {prefill.kind} · {prefill.title}
-                </span>
-                <button onClick={() => setPrefill(null)} aria-label="移除附加">
-                  ✕
-                </button>
-              </div>
-            )}
-            <div className="tk-compose-row">
-              <button
-                className="tk-compose-send"
-                onClick={() => {
-                  void submit();
-                }}
-                disabled={posting || !draft.trim()}
-              >
-                {posting ? '發送中…' : '發送'}
-              </button>
-            </div>
-          </div>
-        )}
+  const pageRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const postsRef = useRef<(HTMLLIElement | null)[]>([]);
+  const dotsRef = useRef<(HTMLSpanElement | null)[]>([]);
+  const ghostsRef = useRef<(HTMLLIElement | null)[]>([]);
+  const endRef = useRef<HTMLParagraphElement>(null);
+  // 從單則頁回來：一開始停在那一則放大的那一段，再拉遠回整條彗星
+  const [back] = useState(() => {
+    const out = peekCometZoomOut();
+    if (!out) return null;
+    const post = full.findIndex((th) => String(th.id) === out.id);
+    const ghost = older.findIndex((th) => String(th.id) === out.id);
+    if (post < 0 && ghost < 0) return null;
+    return { post: post >= 0 ? post : null, ghost: ghost >= 0 ? ghost : null, T: out.T };
+  });
+  useEffect(() => clearCometZoomOut(), []);
+  const hover = useCometSky(
+    { pageRef, headRef, canvasRef, postsRef, dotsRef, ghostsRef, endRef },
+    full.length,
+    older.length,
+    {
+      headGap: HEAD_GAP,
+      zoomFrom: back,
+      // 點進一則碎念：往它在彗尾上的那一段放大進去（單則頁接著看那一段）
+      zoomTarget: (to) => {
+        const id = /^thinking\/(\d+)$/.exec(to)?.[1];
+        if (!id) return null;
+        const post = full.findIndex((th) => String(th.id) === id);
+        const ghost = older.findIndex((th) => String(th.id) === id);
+        if (post < 0 && ghost < 0) return null;
+        return { id, post: post >= 0 ? post : null, ghost: ghost >= 0 ? ghost : null };
+      },
+    },
+  );
 
-        {thoughts?.length === 0 && <p className="tk-empty">{t('thinking.empty')}</p>}
+  return (
+    <div className="mo" ref={pageRef}>
+      <canvas className="mo-comet" ref={canvasRef} aria-hidden="true" />
 
-        {/* 進場用 CSS（見 index.css「頁面進場動畫」）：掛載即播，SSR 出來的卡片不會是 opacity:0；
-            發文後新掛上的卡片也一樣會播。延遲到第 8 張封頂 */}
-        {!!thoughts?.length && (
-          <ul className="tk-feed">
-            {thoughts.map((th, i) => (
-              <li
-                className="tk-feed-item enter"
-                key={th.id}
-                style={enterStyle({ delay: 50 + Math.min(i, 8) * 100, x: -48, y: 0, dur: 500 })}
-              >
-                <ThoughtCard
-                  th={th}
-                  isAdmin={isAdmin}
-                  onDelete={(id) => {
-                    void del(id);
-                  }}
-                  onEdit={(id, content) => {
-                    void edit(id, content);
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+      <header className="mo-head" ref={headRef}>
+        <div className="mo-title">
+          <h1>{t('thinking.title')}</h1>
+          {t('thinking.label') && <span className="mo-label">{t('thinking.label')}</span>}
+          <a className="mo-rss" href="/api/thoughts/rss" target="_blank" rel="noopener noreferrer">
+            RSS
+          </a>
+        </div>
+        <p>{t('thinking.subtitle')}</p>
+        {isAdmin && <Compose />}
+      </header>
 
-        {!!thoughts?.length && (
-          <p className="tk-ending enter" style={enterStyle({ y: 16, dur: 500 })}>
-            {t('thinking.ending')}
-          </p>
-        )}
+      <div className="mo-dots" aria-hidden="true">
+        {full.map((th, i) => (
+          <span
+            key={th.id}
+            className={i === 0 ? 'mo-dot is-new' : 'mo-dot'}
+            ref={(el) => {
+              dotsRef.current[i] = el;
+            }}
+          />
+        ))}
       </div>
+
+      <ol className="mo-list">
+        {full.map((th, i) => (
+          <li
+            key={th.id}
+            className="mo-post"
+            ref={(el) => {
+              postsRef.current[i] = el;
+            }}
+            onPointerEnter={() => hover(i, true)}
+            onPointerLeave={() => hover(i, false)}
+          >
+            <MomentPost th={th} />
+          </li>
+        ))}
+      </ol>
+
+      {older.length > 0 && (
+        <ol className="mo-ghosts" aria-label={t('thinking.older')}>
+          {older.map((th, k) => (
+            <li
+              key={th.id}
+              className="mo-ghost"
+              ref={(el) => {
+                ghostsRef.current[k] = el;
+              }}
+            >
+              <LocaleLink to={`/thinking/${th.id}`}>
+                <span className="mo-ghost-card">
+                  <time dateTime={th.created_at} suppressHydrationWarning>
+                    {dotDate(parseServerDate(th.created_at))}
+                  </time>
+                  <span>{th.content}</span>
+                </span>
+              </LocaleLink>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <p className="mo-end" ref={endRef}>
+        {thoughts.length ? t('thinking.ending') : t('thinking.empty')}
+      </p>
     </div>
   );
 }

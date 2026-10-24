@@ -1,4 +1,5 @@
-/* GalleryThumbnail - 底部縮圖導覽列樣式 */
+/* GalleryThumbnail：照片檢視底下的縮圖列（2026-10 翻新）。直角、不浮起來；
+   沒選到的淡一點，現在這張全亮、底下一顆琥珀點（「你在這裡」） */
 
 .gallery-thumbnail-container {
   position: absolute;
@@ -6,9 +7,9 @@
   left: 0;
   right: 400px; /* 為右側 EXIF 面板留空間 */
   height: 120px;
-  background: linear-gradient(0deg, var(--black-80) 0%, var(--black-40) 100%);
-  backdrop-filter: blur(var(--blur-20));
-  padding: var(--space-3) var(--space-6);
+  padding: var(--space-3) var(--space-6) var(--space-5);
+  border-top: 1px solid var(--rule);
+  background: var(--ground);
   z-index: 10;
 }
 
@@ -31,46 +32,49 @@
   color: inherit;
   display: block;
   position: relative;
-  width: 90px;
-  height: 90px;
-  border-radius: var(--r-8);
-  overflow: hidden;
+  width: 80px;
+  height: 80px;
+  border: 0;
+  border-radius: var(--r-2);
+  overflow: visible;
   cursor: pointer;
-  transition: all var(--dur-300) ease;
-  border: 2px solid transparent;
+  opacity: 0.35;
+  transition: opacity var(--dur-200) ease;
 }
 
 .gallery-thumbnail-item img {
   width: 100%;
   height: 100%;
+  border-radius: var(--r-2);
   object-fit: cover;
-  transition: transform var(--dur-300) ease;
 }
 
-.gallery-thumbnail-item:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--elev-3);
-}
-
-.gallery-thumbnail-item:hover img {
-  transform: scale(1.1);
+/* 蓋掉全域 button:hover / :focus（specificity 0,2,0 > 0,1,1） */
+.gallery-thumbnail-item:hover,
+.gallery-thumbnail-item:focus,
+.gallery-thumbnail-item:focus-visible {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  opacity: 0.8;
 }
 
 .gallery-thumbnail-item.active {
-  border-color: var(--blue-500);
-  box-shadow: 0 0 20px rgba(var(--blue-500-rgb), 0.5);
+  opacity: 1;
 }
 
 .active-indicator {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--blue-500), var(--violet-500));
+  bottom: calc(-1 * var(--space-2-5));
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-round);
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
+  translate: -50% 0;
 }
 
-/* 響應式設計 */
 @media (max-width: 1024px) {
   .gallery-thumbnail-container {
     right: 0;
@@ -80,25 +84,11 @@
 @media (max-width: 768px) {
   .gallery-thumbnail-container {
     height: 100px;
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-4) var(--space-4);
   }
 
   .gallery-thumbnail-item {
-    width: 75px;
-    height: 75px;
+    width: 66px;
+    height: 66px;
   }
-}
-
-/* ⚠ index.css 的 @layer base 有全站 `button:hover, button:focus { background:#6a4acf;
-   border-color:#6a4acf; box-shadow:0 0 12px 2px }`（specificity 0,1,1）。本檔這顆是
-   <button>，光靠 .class（0,1,0）壓不過互動態 → 必須用 .class:hover/:focus（0,2,0）。 */
-.gallery-thumbnail-item:hover,
-.gallery-thumbnail-item:focus,
-.gallery-thumbnail-item:focus-visible {
-  background: none;
-  border-color: transparent;
-}
-/* 原本就有的抬升效果要留著，只是不要全域那圈紫光暈 */
-.gallery-thumbnail-item:hover {
-  box-shadow: var(--elev-3);
 }

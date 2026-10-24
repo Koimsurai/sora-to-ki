@@ -1,298 +1,168 @@
-/**
- * 404 頁。
- *
- * 置中的大字 404，中間那個 0 是**土星**——首頁 3D 場景的主角就是土星，
- * 拿它當 0 這一頁才長得像這個站的東西。旁邊一位飄走的太空人拖著虛線軌跡。
- *
- * ⚠ **不畫星星。** 全站的太空背景就在後面跑，再鋪一層密度會變兩倍、視差也對不上。
- *   這裡只加近景（土星、太空人、軌跡）。
- *
- * ⚠ 數字用 HTML 文字而不是畫進 SVG：這樣它跟著站上的字體與 `clamp()` 縮放，
- *   土星只要用 flex 夾在兩個 `4` 中間就好，不必自己排字。
- */
+/* 404（layout/NotFound）：整個視窗是黑裡的太空人（畫布 layout/lostSky），字在左邊。
+   ⚠ 不畫星星：全站的太空背景就在後面跑 */
 
 .nf-page {
   position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 84vh;
-  padding: var(--page-top) var(--space-6) var(--page-bottom);
-  overflow: hidden; /* 軌跡刻意溢出，不要讓它撐出橫向捲軸 */
+  height: 100svh;
+  min-height: 560px;
+  overflow: hidden;
+  font-family: var(--serif);
+  color: var(--paper);
+  --nf-edge: max(var(--space-10), calc(50% - 640px));
 }
 
-/* 前景濾鏡：壓暗亮星空。
-   ⚠ 數值與 z-index 要跟 .about-scrim / .w-scrim / .wl-scrim 一致——
-   那幾頁各自抄了一份同樣的規則，改這裡的話那邊也要一起改。 */
-.nf-scrim {
-  position: fixed;
+.nf-sky {
+  position: absolute;
   inset: 0;
-  z-index: -1;
-  background: rgba(var(--surface-0-rgb), 0.55);
+}
+
+.nf-sky canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 前景濾鏡：左半邊壓暗一點，字不會壓在最亮的星空上 */
+.nf-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(var(--ground-rgb), 0.6), rgba(var(--ground-rgb), 0) 55%);
   pointer-events: none;
 }
 
 .nf-inner {
-  position: relative;
-  width: 100%;
-  max-width: 44rem;
-  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: var(--nf-edge);
+  display: grid;
+  gap: var(--space-3);
+  max-width: 520px;
+  transform: translateY(-50%);
 }
 
-/* 只給輔助技術：大字 404 整組 aria-hidden（數字被拆成兩個 span 夾一個 SVG，
-   唸起來會是「四、四」），狀態碼靠這一段補回來。 */
 .nf-sr {
   position: absolute;
   width: 1px;
   height: 1px;
-  padding: 0;
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
 }
 
-/* ── 大字 404 ── */
 .nf-code {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(var(--space-1), 1vw, var(--space-3));
+  font-family: var(--latin-display);
+  font-size: var(--fs-56);
   line-height: var(--lh-100);
+  color: var(--paper-2);
 }
 
-.nf-digit {
-  font-size: clamp(5rem, 17vw, 11rem);
-  font-weight: 800;
-  letter-spacing: var(--ls-n4);
-  color: var(--white-95);
-  /* 讓數字跟土星在同一個「發光」的世界裡，不然它會像貼上去的 */
-  text-shadow: 0 0 60px rgba(var(--brand-rgb), 0.45);
-  user-select: none;
-}
-
-/* 土星當中間那個 0。寬度略大於字高，環才有地方伸出去。
- *
- * ⚠ **不要讓整個 SVG 自轉。** 第一版加了 `animation: nf-spin 48s linear`，
- *   結果環被一起轉——土星環轉到垂直看起來就是壞掉，因為真實的環是繞著
- *   自轉軸的固定平面，不會跟著畫面翻。想加動態就動星球表面的紋理，
- *   或像這裡一樣只做很小的上下浮動。
- */
-.nf-saturn {
-  width: clamp(6rem, 20vw, 13rem);
-  height: auto;
-  overflow: visible;
-  filter: drop-shadow(0 0 40px rgba(var(--brand-rgb), 0.5));
-  animation: nf-bob 11s ease-in-out infinite;
-}
-
-@keyframes nf-bob {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-/* ── 太空人 ──
-   絕對定位疊在數字上，所以他不影響版面高度，也能壓過 404 的右上角。 */
-.nf-astro {
-  position: absolute;
-  top: -18%;
-  left: 50%;
-  width: clamp(15rem, 42vw, 26rem);
-  height: auto;
-  overflow: visible;
-  pointer-events: none;
-  /* 往右上推：第一版壓在第二個 4 的正上方，人跟數字糊成一團 */
-  transform: translateX(4%);
-}
-
-.nf-astro-body {
-  animation: nf-float 7s ease-in-out infinite;
-}
-
-.nf-trail {
-  animation: nf-dash 2.6s linear infinite;
-}
-
-@keyframes nf-float {
-  0%,
-  100% {
-    transform: translate(178px, 46px) rotate(14deg);
-  }
-  50% {
-    transform: translate(184px, 34px) rotate(9deg);
-  }
-}
-
-@keyframes nf-dash {
-  to {
-    stroke-dashoffset: -20;
-  }
-}
-
-/* ── 文字 ── */
 .nf-title {
-  margin: var(--space-6) 0 0;
-  font-size: clamp(1.35rem, 3vw, 1.9rem);
-  font-weight: 700;
-  line-height: var(--lh-150);
-  color: var(--white-95);
-  /* 沒有這行標題會斷成「…星際之間」/「了。」，最後兩個字孤零零掉一行 */
-  text-wrap: balance;
+  margin: 0;
+  font-size: var(--fs-32);
+  font-weight: 600;
+  line-height: var(--lh-130);
 }
 
 .nf-sub {
-  margin: var(--space-2-5) 0 0;
-  font-size: clamp(0.9rem, 1.6vw, 1rem);
-  line-height: var(--lh-185);
-  color: var(--white-60);
+  margin: 0;
+  font-size: var(--fs-16);
+  color: var(--paper-2);
 }
 
-/* ── 你要找的位置 ──
- *
- * ⚠ 這裡**不要加框、不要加底色**。前一版是「左邊一條紫色粗邊 + 紫底圓角盒」，
- *   那是 callout／程式碼區塊的語彙，跟這一頁其他東西沒有任何關係，看起來像
- *   從別的頁面剪下來貼上的。這只是一行補充資訊，用字級與灰階分層就夠了。
- */
 .nf-addr {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: center;
-  gap: var(--space-0-5) var(--space-2-5);
-  margin: var(--space-6) 0 0;
-  font-size: var(--fs-13);
-  line-height: var(--lh-185);
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-4);
 }
 
 .nf-addr-label {
-  /* ⚠ 不要再壓低這個灰階。曾經設 .32，axe 判定 serious:color-contrast——
-     白字在這個底色上大約要 alpha 0.45 才過 4.5:1。要更安靜請改字級或間距。 */
-  color: var(--white-50);
+  color: var(--paper-3);
 }
 
-.nf-addr-path {
-  font-family: var(--mono-font);
-  color: var(--white-80);
-  /* 有人會把一整串網址貼進來——換行，不要撐破版面 */
+.nf-addr-path,
+.nf-addr b {
+  font-family: inherit;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
   overflow-wrap: anywhere;
 }
 
-/* ── 動作 ── */
 .nf-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
   gap: var(--space-3) var(--space-6);
-  margin-top: var(--space-8);
-}
-
-/* ⚠ 這是 <button>，而 index.css 的 `@layer base` 有一條全站的
-   `button { 紫底 + hover 光暈 }`。元件 CSS 是**未分層**的，未分層恆勝過分層，
-   所以直接寫就會贏，不需要 !important——理由見 CLAUDE.md 的 CSS 那節。 */
-/* ⚠ 只用**一種**視覺手法。前一版同時堆了漸層底、實線邊框、外光暈，
- *   再往裡面塞一顆有自己邊框的 kbd——四件事互相打架，所以看起來很吵。
- *   這一版：單色實心、無邊框、hover 才有微微的位移與陰影。 */
-.nf-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-6);
-  border: 0;
-  border-radius: var(--r-full);
-  /* ⚠ 比站上主色 `#7f5af0` 深一階，這是被 a11y 守門逼出來的：
-     `#7f5af0` 太亮，白字在它上面**連 alpha 1.0 都只有 4.54**，
-     所以裡面那顆 `⌘K`（刻意做成次要層次）不管怎麼調都過不了 4.5。
-     壓到 `#5b3fc0` 之後純白是 7.2、0.8 的白是 4.9，兩層都有餘裕。 */
-  background: #5b3fc0;
-  box-shadow: none;
-  font-size: var(--fs-14);
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  transition:
-    background-color var(--dur-200) ease,
-    box-shadow var(--dur-200) ease,
-    transform var(--dur-200) ease;
-}
-
-.nf-btn:hover,
-.nf-btn:focus-visible {
-  transform: translateY(-1px);
-  background: #6d4bd6;
-  box-shadow: 0 8px 24px rgba(var(--brand-rgb), 0.4);
-}
-
-/* kbd 不再是「按鈕裡的小按鈕」——拿掉邊框與底色，只用透明度把它推到次要層次 */
-.nf-kbd {
+  margin-top: var(--space-4);
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  font-weight: 500;
-  color: var(--white-80);
+  letter-spacing: var(--ls-6);
 }
 
-.nf-link {
+:where(.nf-actions) :where(a, button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.nf-link,
+.nf-btn {
   display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  font-size: var(--fs-14);
-  font-weight: 500;
-  color: var(--white-70);
-  text-decoration: none;
-  transition: color var(--dur-200) ease;
+  gap: var(--space-2);
+  align-items: baseline;
+  padding-bottom: var(--space-px);
+  color: var(--paper-2);
+  border-bottom: 1px dotted var(--paper-3);
+  transition:
+    color var(--dur-200) ease,
+    border-color var(--dur-200) ease;
 }
 
 .nf-link:hover,
-.nf-link:focus-visible {
-  color: #fff;
+.nf-link:focus-visible,
+.nf-btn:hover,
+.nf-btn:focus-visible {
+  color: var(--paper);
+  border-bottom-color: var(--amber);
 }
 
-.nf-arrow {
-  transition: transform var(--dur-200) ease;
+.nf-kbd {
+  font-family: inherit;
+  color: var(--paper-3);
 }
 
-.nf-link:hover .nf-arrow,
-.nf-link:focus-visible .nf-arrow {
-  transform: translateX(3px);
+/* 收：字退掉，只剩太空人淡掉、點從斷端飛走 */
+.nf-inner,
+.nf-scrim {
+  transition: opacity var(--dur-300) ease;
 }
 
-@media (max-width: 640px) {
+.nf-page.is-leaving :is(.nf-inner, .nf-scrim) {
+  opacity: 0;
+}
+
+@media (max-width: 760px) {
   .nf-page {
-    min-height: 76vh;
+    --nf-edge: var(--space-4);
   }
 
-  /* 手機上他會同時「壓到數字」與「被右緣切掉」（.nf-page 是 overflow:hidden）。
-     縮小 + 往上挪 + 往左收，兩件事一起解決。 */
-  .nf-astro {
-    top: -26%;
-    width: 12.5rem;
-    transform: translateX(-8%);
+  .nf-scrim {
+    background: linear-gradient(0deg, rgba(var(--ground-rgb), 0.7), rgba(var(--ground-rgb), 0) 60%);
   }
 
-  /* ⌘K 在手機上按不到，藏起來——按鈕本身留著（它打開同一個面板）。
-     這就是把面板開關搬進 store 的理由。 */
-  .nf-kbd {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* ⚠ 同層同特異性的覆蓋，所以要 !important；跟 cascade layer 無關。
-     測試瀏覽器預設不觸發這個 media query（見 CLAUDE.md），量不到，只能讀規則確認。 */
-  .nf-saturn,
-  .nf-astro-body,
-  .nf-trail {
-    animation: none !important;
+  .nf-inner {
+    top: auto;
+    right: var(--nf-edge);
+    bottom: var(--page-bottom);
+    transform: none;
   }
 
-  .nf-btn,
-  .nf-link,
-  .nf-arrow {
-    transition: none !important;
+  .nf-title {
+    font-size: var(--fs-24);
   }
 }

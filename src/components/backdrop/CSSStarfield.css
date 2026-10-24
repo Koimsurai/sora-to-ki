@@ -6,7 +6,7 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 30%, var(--surface-1) 0%, var(--surface-0) 70%);
+  background: var(--ground);
 }
 
 .css-stars {
@@ -14,6 +14,8 @@
   inset: -50%;
   background-repeat: repeat;
   will-change: transform;
+  /* 2026-10 翻新：星空退到底下當紙的紋理，讓各頁自己的星軌、彗星浮出來 */
+  opacity: 0.5;
 }
 
 /* 遠景：細密小星，慢漂 */
@@ -64,4 +66,13 @@
   .css-stars {
     animation: none;
   }
+}
+
+/* 頁面自己畫背景時（hooks/useBareSky）讓位 */
+.css-starfield {
+  transition: opacity var(--dur-700) ease;
+}
+
+html[data-sky="bare"] .css-starfield {
+  opacity: 0;
 }

@@ -57,6 +57,10 @@ pub fn build_router(state: AppState) -> Router {
             get(handlers::thoughts::list_thought_comments).post(handlers::comments::thought_comment),
         )
         .route("/api/health", get(handlers::home::health))
+        // 設備頁的遙測：只有溫度、負載、記憶體、功耗（見 handlers::telemetry），快取 30 秒
+        .route("/api/telemetry", get(handlers::telemetry::telemetry).layer(cached(30)))
+        // 朋友頁：朋友清單寫死在後端，順手抓每個人的 RSS 最新一篇，快取一小時
+        .route("/api/friends", get(handlers::friends::friends).layer(cached(3600)))
         // 每日名言（opencc cn→tw + 當日快取）
         .route("/api/quote/daily", get(handlers::quote::quote_daily))
         // 全站 RSS（app-level 非 /api；nginx `location = /rss` 指過來）
@@ -186,6 +190,8 @@ pub fn build_router(state: AppState) -> Router {
         // repos / contributions 以前是瀏覽器直接打第三方（api.github.com 未認證、
         // jogruber 的爬蟲服務）；收進後端才吃得到 token 額度，型別也才有來源
         .route("/api/github/repos/{username}", get(handlers::thirdparty::github_repos).layer(cached(1800)))
+        // 作品頁的數據：一天變不了多少，快取六小時
+        .route("/api/github/works", get(handlers::thirdparty::github_works).layer(cached(21600)))
         .route(
             "/api/github/contributions/{username}",
             get(handlers::thirdparty::github_contributions).layer(cached(3600)),

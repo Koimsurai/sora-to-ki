@@ -27,7 +27,7 @@ export default class BackdropErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: unknown) {
     // 背景失敗只記 log 不上報——功能無損，且這類機器通常也連不上第三方
-    console.warn('[SpaceBackdrop] 3D 背景初始化失敗，降級為 DOM 特效:', error);
+    console.warn('[SpaceBackdrop] 3D 背景初始化失敗，只留 CSS 星空:', error);
     this.props.onError?.();
   }
 

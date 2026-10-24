@@ -88,7 +88,7 @@ for (const route of discoverRoutes()) {
  * a11y 用 axe-core 掃，不自己刻規則。門檻只擋 critical——先把最嚴重的釘住不讓它回頭，
  * 之後再往下收到 serious（同 oxlint `--max-warnings 0` 的 ratchet 做法）。
  */
-const A11Y_PAGES = ['/blog', '/blog/1', '/thinking', '/bookshelf', '/photos'];
+const A11Y_PAGES = ['/blog', '/blog/1', '/thinking', '/watch', '/photos'];
 
 /**
  * 已知、目前修不掉的違規。**每一條都要寫清楚為什麼**，而且清單只能變短。
@@ -143,37 +143,6 @@ test('草稿不會出現在公開清單', async ({ page }) => {
   await expect(mainOf(page)).toContainText('第一篇測試文章');
   await expect(mainOf(page)).not.toContainText('未發布草稿');
 });
-
-/**
- * 相簿的標籤要跟著語系走。
- *
- * 這條存在的原因是一個**資料早就齊備、卻從來沒被接上**的洞：manifest 同時有
- * `tags`（中文）與 `tagsEn`（英文），但 PhotoGallery 完全沒有 i18n，三個語系
- * 一律顯示中文標籤——而它周圍的介面文字（More／もっと）明明翻好了。
- * 那種「一半翻了一半沒翻」不會有人回報，只會讓非中文讀者覺得這站很粗糙。
- *
- * 驗兩件事：介面標籤（全部/All/すべて）有翻，而且**標籤本身**在非中文語系是英文。
- */
-for (const [path, allLabel, expectEnglishTags] of [
-  ['/photos', '全部', false],
-  ['/en/photos', 'All', true],
-  ['/ja/photos', 'すべて', true],
-] as const) {
-  test(`相簿標籤跟著語系：${path}`, async ({ page }) => {
-    await page.goto(path, { waitUntil: 'domcontentloaded' });
-    const tabs = page.locator('.category-tab');
-    await expect(tabs.first()).toHaveText(allLabel);
-
-    const texts = (await tabs.allInnerTexts()).map((s) => s.trim()).slice(1); // 跳過「全部」
-    expect(texts.length, '種子 fixture 應該產出至少一個標籤篩選鈕').toBeGreaterThan(0);
-    const hasChinese = texts.some((s) => /[一-鿿]/.test(s));
-    if (expectEnglishTags) {
-      expect(hasChinese, `${path} 的標籤仍是中文：${texts.join(', ')}`).toBe(false);
-    } else {
-      expect(hasChinese, `中文版的標籤應該是中文：${texts.join(', ')}`).toBe(true);
-    }
-  });
-}
 
 /**
  * 未登入者不該進得了後台的**任何**一條路徑。

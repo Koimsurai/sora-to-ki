@@ -1,7 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
-import WatchLibrary from '@/components/media/WatchLibrary';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+
+// 舊的片庫頁：看過的全部現在是收藏頁「在看」那一區的封面牆
 export const Route = createFileRoute('/$locale/watch/library')({
-  ...localePagePrefixed('watch/library'),
-  component: localeWrap(WatchLibrary),
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: '/$locale/watch', params: { locale: params.locale }, hash: 'watch', statusCode: 301 });
+  },
 });

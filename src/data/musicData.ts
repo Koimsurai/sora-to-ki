@@ -1,15 +1,22 @@
 import { queryOptions } from '@tanstack/react-query';
 import { apiUrl } from '@/lib/api';
-import type {
-  RecentlyPlayedState,
-  TopGenresState,
-  TopTracksState,
-  NowPlaying,
-  AudioFeature,
-} from '@/components/media/Music';
-import type { AudioFeaturesResponse } from '@koimsurai/api-types';
+import type { NowPlayingResponse, RecentPlayItem, SpotifyTrack } from '@koimsurai/api-types';
 
-// 音樂頁資料改由 TanStack Query 管理（取代 loader + 元件內 fetch + 兩個 setInterval）。
+// Spotify 的型別吃後端 specta 生成的（backend handlers::spotify）；configured / error 是前端自己的
+// 載入狀態，不是 API 的形狀
+export type NowPlaying = NowPlayingResponse;
+export interface RecentlyPlayedState {
+  tracks?: RecentPlayItem[];
+  configured?: boolean;
+  error?: string;
+}
+export interface TopTracksState {
+  tracks?: SpotifyTrack[];
+  configured?: boolean;
+  error?: string;
+}
+
+// 收藏頁「在聽」那一區的資料（TanStack Query）。
 //
 // Spotify 端點的 queryFn **不 throw**：{error, configured:false} 是合法的回應狀態
 // （例如「未設定 Spotify」），元件會 render 它，所以當作資料回傳、不是失敗。
@@ -37,18 +44,6 @@ export const recentlyPlayedQueryOptions = queryOptions({
     getState<RecentlyPlayedState>(
       '/api/spotify/recently-played',
       (d) => ({ tracks: (d.items as RecentlyPlayedState['tracks']) ?? [], configured: true }),
-      (error) => ({ error, configured: false }),
-    ),
-  staleTime: STALE,
-  refetchInterval: DATA_REFRESH,
-});
-
-export const topGenresQueryOptions = queryOptions({
-  queryKey: ['spotify', 'top-genres'],
-  queryFn: () =>
-    getState<TopGenresState>(
-      '/api/spotify/top-genres',
-      (d) => ({ genres: (d.genres as TopGenresState['genres']) ?? [], configured: true }),
       (error) => ({ error, configured: false }),
     ),
   staleTime: STALE,
@@ -83,23 +78,3 @@ export const nowPlayingQueryOptions = queryOptions({
   staleTime: 0,
   refetchInterval: NOW_PLAYING_REFRESH,
 });
-
-// audio-features：依當前分頁的可見曲目 id 抓（Spotify 2024/11 已停用，通常回 null）。
-export const audioFeaturesQueryOptions = (ids: string[]) =>
-  queryOptions({
-    queryKey: ['spotify', 'audio-features', [...ids].sort()],
-    // Partial 不是保守寫法而是事實：Spotify 2024/11 起 audio-features 多半回 null，
-    // 這張表本來就不保證每個 id 都查得到。標成 Record<string, T> 會讓消費端的
-    // `feat ? ... : ...` 看起來多餘，實際上非有不可。
-    queryFn: async (): Promise<Partial<Record<string, AudioFeature>>> => {
-      const res = await fetch(apiUrl(`/api/spotify/audio-features?ids=${ids.join(',')}`));
-      const data = (await res.json()) as AudioFeaturesResponse;
-      const map: Partial<Record<string, AudioFeature>> = {};
-      data.audio_features.forEach((f) => {
-        if (f) map[f.id] = f;
-      });
-      return map;
-    },
-    enabled: ids.length > 0,
-    staleTime: Infinity,
-  });

@@ -1,0 +1,441 @@
+/* 收藏（media/Collection）：從地球發出的訊號。畫布貼在畫面上，往下捲就是鏡頭往外退；
+   頁面本身只是一段很長的捲動距離（長度由 JS 照跨了幾個數量級算），其他東西都疊在畫布上 */
+
+.cx {
+  position: relative;
+  /* 預設長度（約九個數量級）；JS 會照實際跨的距離改掉 */
+  height: calc(100vh + 450vh);
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+:where(.cx) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.cx :is(a, button):focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 3px;
+}
+
+.cx-sky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.cx-sky canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── 頁首：疊在一開始的地球旁邊，往下捲就捲走 ── */
+.cx-head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--page-top) max(var(--space-6), calc(50% - 540px)) 0;
+  pointer-events: none;
+}
+
+.cx-head-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.cx-head h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.cx-head-title span {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.cx-head p {
+  max-width: 26em;
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+.cx-hint {
+  position: absolute;
+  top: calc(100vh - var(--space-24));
+  right: 0;
+  left: 0;
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-24);
+  text-align: center;
+  color: var(--paper-3);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── 地標的名字：點的右邊一行小字 ── */
+.cx-mark,
+.cx-name {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
+}
+
+.cx-mark {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-2);
+  translate: var(--space-3) -50%;
+}
+
+/* 刻度圈的名字在圈的正下方（紀錄外緣的在正上方） */
+.cx-mark.is-scale {
+  translate: -50% var(--space-1);
+}
+
+.cx-mark.is-edge {
+  color: rgba(var(--amber-rgb), 0.7);
+  translate: -50% calc(-100% - var(--space-1));
+}
+
+/* 最愛的那幾部：琥珀色的點旁邊標著名字（寫的那句話在接收畫面裡） */
+.cx-name {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--amber);
+}
+
+/* ── 接收畫面：滑過一點，旁邊開一個框顯示它的封面 ── */
+.cx-scope {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-200) ease;
+}
+
+.cx-scope.is-on {
+  opacity: 1;
+}
+
+.cx-scope > * {
+  translate: var(--space-5) -50%;
+}
+
+/* 點在畫面右邊時框開在左邊 */
+.cx-scope.is-left {
+  flex-direction: row-reverse;
+  translate: -100% 0;
+}
+
+.cx-scope.is-left > * {
+  translate: calc(-1 * var(--space-5)) -50%;
+}
+
+/* 窄螢幕：固定在頂欄下面，左右留白跟頁面一樣，底下墊一層讓字讀得清楚 */
+.cx-scope.is-pinned {
+  right: 0;
+  padding: var(--space-3) var(--space-6);
+  background: linear-gradient(var(--ground) 70%, transparent);
+}
+
+.cx-scope.is-pinned > * {
+  translate: none;
+}
+
+.cx-scope-frame {
+  position: relative;
+  flex: none;
+  height: 140px;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border: 1px solid rgba(var(--amber-rgb), 0.6);
+  background: var(--ground);
+}
+
+.cx-scope-frame.is-square {
+  aspect-ratio: 1;
+}
+
+.cx-scope-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  animation: cx-focus 500ms var(--easing-out) both;
+}
+
+/* 收到訊號：先糊、再清楚 */
+@keyframes cx-focus {
+  from {
+    opacity: 0;
+    scale: 1.08;
+    filter: blur(var(--blur-8));
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+    filter: none;
+  }
+}
+
+.cx-scope-text {
+  display: grid;
+  gap: var(--space-px);
+  width: max-content;
+  max-width: 260px;
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
+}
+
+.cx-scope-text b {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  line-height: var(--lh-140);
+}
+
+.cx-scope-text q {
+  margin-top: var(--space-1);
+  font-size: var(--fs-12);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+  quotes: "「" "」";
+}
+
+.cx-scope-text span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+}
+
+.cx-scope-text .cx-scope-dist {
+  color: rgba(var(--amber-rgb), 0.8);
+}
+
+.cx-scope.is-left .cx-scope-text {
+  text-align: right;
+}
+
+/* ── 底欄：左邊圖例（三種訊號各一行）、右邊讀數 ── */
+.cx-foot {
+  position: absolute;
+  right: 0;
+  bottom: var(--space-10);
+  left: 0;
+  display: flex;
+  gap: var(--space-6);
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 max(var(--space-6), calc(50% - 540px));
+  pointer-events: none;
+  text-shadow:
+    0 0 8px var(--ground),
+    0 0 16px var(--ground);
+}
+
+.cx-legend {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 440px;
+  margin: 0;
+  pointer-events: auto;
+}
+
+.cx-legend-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: var(--space-3);
+  row-gap: var(--space-px);
+  transition: opacity var(--dur-400) ease;
+}
+
+.cx-legend dt {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--fs-13);
+  font-weight: 600;
+}
+
+.cx-legend dd {
+  grid-column: 2;
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+.cx-legend-row > dd:first-of-type {
+  grid-row: 1;
+}
+
+/* 圖例的記號：跟畫布上一樣，在看是圓點、書是菱形、歌是十字 */
+.cx-glyph {
+  position: relative;
+  flex: none;
+  width: 9px;
+  height: 9px;
+}
+
+.cx-glyph::before,
+.cx-glyph::after {
+  position: absolute;
+  content: "";
+  background: var(--paper);
+}
+
+.cx-glyph.is-watch::before {
+  inset: 2px;
+  border-radius: var(--r-round);
+}
+
+.cx-glyph.is-book::before {
+  inset: 2px;
+  rotate: 45deg;
+}
+
+.cx-glyph.is-music::before {
+  top: 4px;
+  right: 0;
+  left: 0;
+  height: 1px;
+}
+
+.cx-glyph.is-music::after {
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+}
+
+.cx-edit {
+  margin-left: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.cx-edit:hover {
+  color: var(--amber);
+}
+
+/* 正在看／剛剛聽：在播的時候前面那一點是琥珀色、亮著 */
+.cx-live {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  align-items: baseline;
+}
+
+.cx-live i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-full);
+  align-self: center;
+}
+
+.cx-live.is-on i {
+  border-color: var(--amber);
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
+}
+
+.cx-live b {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.cx-live span {
+  color: var(--paper-3);
+}
+
+/* ── 讀數：現在看到多遠、這個距離的訊號是什麼時候發出的 ── */
+.cx-reach {
+  flex: none;
+  margin: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  line-height: var(--lh-170);
+  letter-spacing: var(--ls-8);
+  text-align: right;
+  white-space: pre-line;
+  color: var(--paper-2);
+  opacity: 0;
+}
+
+@media (max-width: 760px) {
+  /* 窄螢幕的底欄已經佔滿下緣，讀數本身就說了往下捲會看得更遠 */
+  .cx-hint {
+    display: none;
+  }
+
+  .cx-name {
+    font-size: var(--fs-11);
+  }
+
+  .cx-foot {
+    bottom: var(--space-6);
+    flex-direction: column-reverse;
+    gap: var(--space-3);
+    align-items: stretch;
+  }
+
+  .cx-legend {
+    gap: var(--space-2);
+  }
+
+  .cx-legend-row {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .cx-legend dd {
+    font-size: var(--fs-10);
+  }
+
+  .cx-reach {
+    text-align: left;
+  }
+
+  .cx-scope-frame {
+    height: 104px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cx-scope-frame img {
+    animation: none;
+  }
+}

@@ -55,14 +55,11 @@ const PUBLIC = [
   '/setup',
   '/history',
   '/friends',
-  '/bookshelf',
   '/watch',
-  '/music',
   '/messages',
   '/about-site',
   '/journey',
   '/portfolio',
-  '/activity',
 ];
 const ADMIN = ['/admin/dashboard', '/admin/posts', '/admin/tags', '/admin/categories', '/admin/comments'];
 

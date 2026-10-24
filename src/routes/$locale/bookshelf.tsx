@@ -1,19 +1,8 @@
-import { createFileRoute, notFound } from '@tanstack/react-router';
-import { localePagePrefixed, localeWrap } from '@/i18n/localePage';
-import Bookshelf from '@/components/media/Bookshelf';
-import { booksQueryOptions, bookStatsQueryOptions } from '@/data/bookshelfData';
-import { localeFromPrefix } from '@/i18n/start-i18n';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+// 舊的書櫃頁已併進收藏（/watch）的「書櫃」那一區
 export const Route = createFileRoute('/$locale/bookshelf')({
-  ...localePagePrefixed('bookshelf'),
-  component: localeWrap(Bookshelf),
-  // 覆蓋 localePagePrefixed 的守門 loader：保留前綴驗證，再預取書單（書目本身不分語系）。
-  loader: async ({ context, params }) => {
-    const locale = localeFromPrefix(params.locale);
-    if (!locale || locale === 'zh-TW') throw notFound();
-    await Promise.all([
-      context.queryClient.prefetchQuery(booksQueryOptions),
-      context.queryClient.prefetchQuery(bookStatsQueryOptions),
-    ]);
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: '/$locale/watch', params: { locale: params.locale }, hash: 'books', statusCode: 301 });
   },
 });

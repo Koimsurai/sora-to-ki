@@ -1,6 +1,6 @@
 import { parseServerDate } from '@/lib/serverDate';
 
-/** 相對時間的分類。實際文案由呼叫端（通常是 useTimeAgo）對應 i18n key。 */
+/** 相對時間的分類。實際文案由呼叫端對應 i18n key。 */
 export type RelativeTime =
   | { kind: 'justNow' }
   | { kind: 'minutes'; count: number }

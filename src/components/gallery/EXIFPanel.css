@@ -1,4 +1,5 @@
-/* EXIFPanel - EXIF 資訊面板樣式 (Afilmory 風格 - 常駐顯示) */
+/* EXIFPanel：照片右邊的資訊欄（2026-10 翻新）。夜色底、左邊一條細線；
+   每一段的標題是等寬小字（跟文章裡的標籤同一種），每一列左邊淡一階的名稱、右邊等寬的數值，列與列之間點線 */
 
 .exif-panel {
   position: absolute;
@@ -6,82 +7,62 @@
   right: 0;
   bottom: 0;
   width: 400px;
-  background: var(--black-95);
-  backdrop-filter: blur(var(--blur-28));
-  border-left: 1.5px solid var(--white-10);
+  background: var(--ground);
+  border-left: 1px solid var(--rule);
   overflow-y: auto;
   overflow-x: hidden;
   z-index: 30;
-  box-shadow: -20px 0 60px var(--black-60);
-}
-
-/* 自定義滾動條 */
-.exif-panel::-webkit-scrollbar {
-  width: 6px;
-}
-
-.exif-panel::-webkit-scrollbar-track {
-  background: var(--white-02);
-}
-
-.exif-panel::-webkit-scrollbar-thumb {
-  background: var(--white-20);
-  border-radius: var(--r-full);
-}
-
-.exif-panel::-webkit-scrollbar-thumb:hover {
-  background: var(--white-30);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
 }
 
 .exif-panel-content {
-  padding: var(--space-6);
+  padding: var(--space-8) var(--space-6);
 }
 
-/* 分段 */
 .exif-section {
   margin-bottom: var(--space-8);
-  padding-bottom: var(--space-6);
-  border-bottom: 1px solid var(--white-10);
 }
 
 .exif-section:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .exif-section-title {
-  color: white;
-  font-size: var(--fs-18);
-  font-weight: 600;
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-2);
-  border-bottom: 2px solid rgba(var(--blue-500-rgb), 0.5);
+  margin: 0 0 var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
 }
 
-/* 資訊行 */
 .exif-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: var(--space-3);
+  align-items: baseline;
   gap: var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px dotted var(--rule);
 }
 
 .exif-label {
-  color: var(--white-60);
-  font-size: var(--fs-14);
-  font-weight: 500;
   flex-shrink: 0;
   min-width: 80px;
+  font-size: var(--fs-13);
+  font-weight: 400;
+  color: var(--paper-3);
 }
 
 .exif-value {
-  color: white;
-  font-size: var(--fs-14);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
   text-align: right;
   word-break: break-word;
 }
 
-/* 標籤 */
+/* 標籤：細線框、不填色 */
 .exif-tags {
   display: flex;
   flex-wrap: wrap;
@@ -91,34 +72,14 @@
 
 .exif-tag {
   display: inline-block;
-  padding: var(--space-1) var(--space-3);
-  background: rgba(var(--blue-500-rgb), 0.2);
-  color: var(--blue-400);
-  font-size: var(--fs-13);
-  font-weight: 500;
-  border-radius: var(--r-full);
-  border: 1px solid rgba(var(--blue-500-rgb), 0.3);
+  padding: var(--space-0-5) var(--space-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-2);
 }
 
-/* 滾動條樣式 */
-.exif-panel::-webkit-scrollbar {
-  width: 6px;
-}
-
-.exif-panel::-webkit-scrollbar-track {
-  background: var(--white-06);
-}
-
-.exif-panel::-webkit-scrollbar-thumb {
-  background: var(--white-20);
-  border-radius: var(--r-full);
-}
-
-.exif-panel::-webkit-scrollbar-thumb:hover {
-  background: var(--white-30);
-}
-
-/* 響應式設計 */
 @media (max-width: 1024px) {
   .exif-panel {
     width: 320px;
@@ -132,16 +93,7 @@
   }
 
   .exif-panel-content {
-    padding: var(--space-4);
-  }
-
-  .exif-section-title {
-    font-size: var(--fs-16);
-  }
-
-  .exif-label,
-  .exif-value {
-    font-size: var(--fs-13);
+    padding: var(--space-5) var(--space-4);
   }
 }
 

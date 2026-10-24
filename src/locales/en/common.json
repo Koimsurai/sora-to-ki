@@ -34,66 +34,42 @@
     "thinking": "Murmurs",
     "menu": "Navigation menu"
   },
+  "siteNav": {
+    "signIn": "Sign in",
+    "notes": "Notes",
+    "moments": "Murmurs",
+    "works": "Work",
+    "collection": "Collection",
+    "about": "About",
+    "more": "More",
+    "photos": "Photos",
+    "setup": "Setup",
+    "friends": "Friends",
+    "messages": "Messages",
+    "log": "Log",
+    "colophon": "This site",
+    "search": "Search",
+    "language": "Language",
+    "account": "Account",
+    "menu": "Menu",
+    "close": "Close",
+    "home": "Home",
+    "allPosts": "All {{count}} notes",
+    "allMoments": "All murmurs",
+    "allWorks": "All {{count}} works",
+    "watching": "Watching",
+    "reading": "Reading",
+    "listening": "Listening",
+    "recently": "Lately",
+    "episode": "Ep. {{ep}}",
+    "aboutLead": "Koimsurai, someone who writes code.",
+    "aboutAll": "About me"
+  },
   "user": {
     "adminPanel": "Admin panel",
     "logout": "Sign out",
-    "signInLabel": "Sign in with social",
     "signInWithGithub": "Sign in with GitHub",
-    "signInWithGoogle": "Sign in with Google",
-    "notConfigured": "Third-party login not configured",
-    "menuLabel": "User menu"
-  },
-  "megaMenu": {
-    "online": "Online",
-    "stats": {
-      "posts": "Posts",
-      "words": "Words",
-      "days": "Days"
-    },
-    "groups": {
-      "pages": "Pages",
-      "site": "Site",
-      "categories": "Categories",
-      "latestPosts": "Latest posts",
-      "categoryLatest": "{{cat}} · Latest",
-      "life": "Life",
-      "personal": "Personal",
-      "collection": "Collection"
-    },
-    "items": {
-      "home": "Home",
-      "about": "About",
-      "expertise": "Skills",
-      "portfolio": "Work",
-      "contact": "Contact",
-      "aboutSite": "This site",
-      "aboutSiteDesc": "A developer's personal space",
-      "history": "History",
-      "historyDesc": "Where this site has been",
-      "messages": "Messages",
-      "messagesDesc": "Say whatever you want",
-      "friends": "Friends",
-      "friendsDesc": "Webring",
-      "allPosts": "All posts",
-      "viewAllPosts": "View all posts →",
-      "emptyCategory": "No posts in this category yet",
-      "photos": "Photos",
-      "photosDesc": "Photography",
-      "activity": "Activity",
-      "activityDesc": "What's happening",
-      "bookshelf": "Bookshelf",
-      "bookshelfDesc": "Reading log",
-      "music": "Music",
-      "musicDesc": "What I'm listening to",
-      "journey": "Journey",
-      "journeyDesc": "Where I've been",
-      "setup": "Setup",
-      "setupDesc": "My gear",
-      "watch": "Watching",
-      "watchDesc": "Recent anime / shows / films",
-      "thinking": "Murmurs",
-      "thinkingDesc": "Fleeting short thoughts"
-    }
+    "signInWithGoogle": "Sign in with Google"
   },
   "hero": {
     "description": "Sora to Ki (宙と木) — Koimsurai's personal space. A developer's reading notes, portfolio, and system experiments."
@@ -125,85 +101,29 @@
       "status": "Status"
     }
   },
-  "language": {
-    "switcher": "Language",
-    "current": "Current: {{label}}"
-  },
   "notFound": {
     "pageTitle": "404 — Page not found",
     "seoDescription": "Looks like you're lost. This page doesn't exist.",
-    "lostMessage": "Looks like you're drifting between stars.",
-    "subMessage": "This page doesn't exist, or has been removed.",
+    "lostMessage": "Contact lost.",
+    "subMessage": "The last signal came from these coordinates. Nothing since.",
     "backHome": "Back to home",
-    "requested": "You were looking for",
+    "requested": "Last coordinates",
+    "lostFor": "Signal lost for",
+    "toNotes": "Go to notes",
+    "reconnect": "Re-establish contact (home)",
     "search": "Search the site",
     "pageTitleShort": "Page not found"
   },
   "home": {
-    "aboutMe": {
-      "eyebrow": "Koimsurai · Bonsai of code",
-      "titleLine1": "Take the complex,",
-      "titleLine2": "and make it feel effortless."
-    },
-    "schoolClubs": {
-      "eyebrowSuffix": "club roles",
-      "activitiesLabel": "events"
-    },
-    "contact": {
-      "titleLine1": "Want to chat?",
-      "titleLine2": "Let's build something.",
-      "blurb": "Project collaborations, tech chats, internships — reach out via any of the channels below."
-    },
-    "lately": {
-      "eyebrow": "words & happenings",
-      "postsTitle": "Recent writing",
-      "murmursTitle": "Murmurs",
-      "echoesTitle": "Echoes",
-      "orbitTitle": "This year in orbit",
-      "orbitStat": "{{count}} posts this year",
-      "viewAll": "View all",
-      "more": "More",
-      "empty": "Quiet for now",
-      "today": "Today",
-      "seasons": {
-        "spring": "SPRING",
-        "summer": "SUMMER",
-        "autumn": "AUTUMN",
-        "winter": "WINTER"
-      }
-    },
-    "signal": {
-      "label": "Signal of the day",
-      "open": "Open for opportunities"
-    },
-    "appreciation": {
-      "like": "Leave a mark",
-      "star": "Star on GitHub",
-      "likeAria": "Leave a mark on this site"
+    "orbit": {
+      "title": "Koimsurai: notes, murmurs, work and collections",
+      "notesCount": "{{count}} posts · latest {{date}}",
+      "momentsCount": "latest {{date}}",
+      "worksCount": "{{count}} projects",
+      "collectionLine": "{{anime}} anime, {{films}} films, {{series}} series watched",
+      "aboutLine": "Falling from 2004 to now",
+      "aboutCount": "2004 –"
     }
-  },
-  "comments": {
-    "titleN": "{{count}} comments",
-    "titleEmpty": "No comments yet",
-    "loginLabel": "Sign in to comment",
-    "anonymousLabel": "Comment anonymously",
-    "namePlaceholder": "Name *",
-    "emailPlaceholder": "Email (optional, for replies)",
-    "websitePlaceholder": "Website (optional)",
-    "contentPlaceholder": "Leave a thought...",
-    "submit": "Send",
-    "submitted": "✨ Comment sent",
-    "submittedAwaitReview": "✨ Sent — visible after admin review",
-    "authorBadge": "author",
-    "reply": "Reply",
-    "errorEmpty": "Comment can't be empty",
-    "errorNoName": "Name can't be empty",
-    "errorCaptcha": "Captcha incorrect, please recalculate",
-    "errorFailed": "Comment failed",
-    "errorFailedTryLater": "Comment failed, please try again later",
-    "closedNotice": "Comments are closed for this post.",
-    "back": "Back",
-    "beFirst": "✨ Be the first to comment"
   },
   "commandPalette": {
     "label": "Global command palette",
@@ -254,130 +174,18 @@
       "lastYear": "Last year"
     }
   },
-  "music": {
-    "title": "Music",
-    "description": "Koimsurai's music taste and live Spotify listening.",
-    "loading": "Loading music",
-    "heroTitle": "Music Galaxy",
-    "heroDesc": "My music taste, library, and listening analysis",
-    "nowPlaying": "Now playing",
-    "lastPlayed": "Last played",
-    "tabs": {
-      "recent": "Recent",
-      "genres": "Top genres",
-      "yearly": "Top Tracks",
-      "analytics": "Insights"
-    },
-    "range": {
-      "short": "Last 4 weeks",
-      "medium": "Last 6 months",
-      "long": "All time"
-    },
-    "openInSpotify": "Open in Spotify",
-    "recentHeading": "Recently Played",
-    "genresHeading": "Top 5 Genres",
-    "yearlyHeading": "Top Tracks",
-    "analyticsHeading": "Insights",
-    "empty": {
-      "recent": "No recent plays yet",
-      "genres": "No genre data yet",
-      "yearly": "No top tracks data yet",
-      "analytics": "Loading... if there's still no data, switch to Top Tracks to load it first"
-    },
-    "cols": {
-      "track": "Track",
-      "features": "Audio Features",
-      "duration": "Duration",
-      "playedAt": "Played At",
-      "album": "Album"
-    },
-    "features": {
-      "energy": "Energy",
-      "dance": "Dance",
-      "valence": "Valence"
-    },
-    "bubbleCount": "{{count}} artists",
-    "analyticsSubtitle": "Derived from your top {{count}} tracks ({{range}})",
-    "analytics": {
-      "popularity": "Popularity",
-      "avgDuration": "Avg Duration",
-      "avgRelease": "Avg Release Year",
-      "explicit": "Explicit",
-      "decadeTitle": "By Decade"
-    }
-  },
-  "bookshelf": {
-    "title": "Bookshelf",
-    "description": "Koimsurai's reading list and notes.",
-    "loading": "Loading shelf...",
-    "heroTitle": "Knowledge Map",
-    "subtitle": "Marking every star I've read in the sea of books",
-    "stats": {
-      "total": "Books",
-      "read": "Read",
-      "reading": "Reading",
-      "avgRating": "Avg rating"
-    },
-    "statuses": {
-      "read": "Read",
-      "reading": "Reading",
-      "toRead": "To read"
-    },
-    "noRating": "Unrated",
-    "searchPlaceholder": "Search title or author...",
-    "filter": "Filter",
-    "zeroGravity": "Zero-G mode",
-    "zg": {
-      "hint": "Drag to rotate · Scroll to zoom · Click a book",
-      "back": "Back to shelf",
-      "inOrbit": "{{count}} books in orbit",
-      "unavailable": "Zero-G mode needs a GPU, which this device doesn’t have",
-      "pages": "{{count}} pages"
-    },
-    "twoDView": "2D view",
-    "skyStats": "{{total}} stars · {{read}} lit · {{reading}} lighting up",
-    "avgRating": "avg {{rating}}★",
-    "groups": {
-      "fantasy": "FANTASY",
-      "literature": "LITERATURE",
-      "life": "LIFE & MIND",
-      "other": "OTHER"
-    },
-    "legend": {
-      "read": "Read: a lit star — brighter means higher rated",
-      "reading": "Reading: lighting up",
-      "toRead": "Want to read: not lit yet",
-      "notes": "Rays: has my notes"
-    },
-    "skyHint": "← swipe to explore the sky →",
-    "listTitle": "Books",
-    "noMatch": "No matching books",
-    "hasNotes": "Has notes",
-    "close": "Close",
-    "started": "Started",
-    "finished": "Finished",
-    "myNotes": "My notes",
-    "about": "About",
-    "showMore": "Show more",
-    "showLess": "Show less",
-    "publisher": "Publisher",
-    "publishedDate": "Published",
-    "pages": "Pages",
-    "filterStatus": "Status",
-    "filterRating": "Rating",
-    "filterSort": "Sort",
-    "filterClear": "Clear filters",
-    "sortOpts": {
-      "dateAddedDesc": "Newest first",
-      "dateAddedAsc": "Oldest first",
-      "titleAsc": "Title A-Z",
-      "titleDesc": "Title Z-A",
-      "ratingDesc": "Highest rated",
-      "publishedDateDesc": "Published date"
-    }
-  },
   "blog": {
+    "views": "{{count}} reads",
+    "summary": "Summary",
+    "aiGen": "AI-generated",
+    "readDone": "Finished",
+    "minutesLeft": "{{count}} min left",
+    "sameCategory": "Also in {{name}}",
     "title": "Notes",
+    "subtitle": "As the stars wheel on, every flicker of curiosity leaves an arc.",
+    "all": "All",
+    "more": "{{count}} more",
+    "minutes": "{{count}} min",
     "metaTitle": "Notes",
     "description": "Koimsurai's technical notes, learning logs, and life sketches. Frontend architecture, Rust, system design, and more.",
     "heroTitle": "Notes",
@@ -389,7 +197,6 @@
       "popular": "Popular"
     },
     "comment": "Comment",
-    "like": "Like",
     "unlike": "Unlike",
     "share": "Share",
     "shareCopied": "Copied!",
@@ -406,7 +213,6 @@
     "shareTitle": "Share",
     "commentTitle": "Comments",
     "subscribeTitle": "Subscribe",
-    "fontSwitcherTitle": "Switch font",
     "statPosts": "Posts",
     "statTags": "Tags",
     "statReads": "Reads",
@@ -436,64 +242,24 @@
     "prevPost": "Previous",
     "nextPost": "Next",
     "lastUpdated": "Updated",
-    "nearbyNav": "Nearby posts"
+    "nearbyNav": "Nearby posts",
+    "font": "Font",
+    "originalText": "original",
+    "sameTag": "Also tagged #{{name}}",
+    "sameTagNone": "This is the only post with this tag."
   },
   "thinking": {
     "title": "Murmurs",
-    "subtitle": "Short notes — whatever's on my mind, or what I just watched.",
+    "subtitle": "Catching a stray noise that cuts through the silence.",
     "ending": "Most of the time, just thinking out loud.",
     "empty": "Nothing here yet.",
-    "back": "Back",
-    "notFound": "Thought not found."
+    "notFound": "Thought not found.",
+    "label": "",
+    "like": "Like",
+    "comments": "{{count}} comments",
+    "older": "Earlier"
   },
   "watch": {
-    "title": "What I'm watching",
-    "metaDescription": "My anime and film taste — auto-synced from Bahamut Anime and Letterboxd",
-    "subtitle": "Anime and film taste, all in one page",
-    "eyebrowLive": "● Now",
-    "eyebrowLast": "Last watched",
-    "favoritesTitle": "All-time loves",
-    "favoritesSubtitle": "A purely subjective list — updated whenever something earns a spot.",
-    "recentTitle": "Recently watched",
-    "typeAnime": "Anime",
-    "typeFilm": "Film",
-    "stats": {
-      "animeLabel": "anime",
-      "filmLabel": "films",
-      "tvLabel": "TV series"
-    },
-    "recentGroups": {
-      "thisWeek": "This week",
-      "earlier": "Earlier"
-    },
-    "ending": "What's next? I'm curious too.",
-    "typeTv": "TV",
-    "library": {
-      "title": "Library",
-      "subtitle": "Everything I've watched — anime, film, TV, all in one place",
-      "tabs": {
-        "anime": "Anime",
-        "film": "Films",
-        "tv": "TV"
-      },
-      "search": "Search title…",
-      "sort": {
-        "newest": "Recently watched",
-        "oldest": "Earliest watched",
-        "titleAsc": "Title A→Z",
-        "titleDesc": "Title Z→A"
-      },
-      "empty": "No matches",
-      "epsSuffix": "ep",
-      "undated": "Date unknown",
-      "loading": "Loading…",
-      "openOnLetterboxd": "Open on Letterboxd",
-      "openOnTmdb": "Open on TMDb",
-      "openOnBahamut": "Open on Bahamut Anime",
-      "viewWatch": "← Back to What I'm watching"
-    },
-    "continueOn": "Continue on {{service}}",
-    "viewOnTmdb": "View on TMDb",
     "favManage": "Manage favorites",
     "favEmpty": "No favorites yet",
     "favSearchPlaceholder": "Search TMDb title…",
@@ -505,33 +271,26 @@
   "setup": {
     "title": "My Setup",
     "description": "Koimsurai's gear: the main rig, the home server running this site, networking and smart home — plus a map of how it all connects.",
-    "heroTitle": "My Setup",
-    "subtitle": "Everything I own in 2026: the rig on my desk, the server running this site, and the little boxes that run the AC and lights.",
-    "filter": "Category",
+    "heroTitle": "Setup",
+    "subtitle": "Taking precision apart, giving obsession a place to rest.",
     "cat": {
       "main-rig": {
-        "short": "Main rig",
-        "desc": "All-white main rig"
+        "short": "Main rig"
       },
       "server": {
-        "short": "Server",
-        "desc": "This site, Home Assistant and every self-hosted service live here"
+        "short": "Server"
       },
       "network": {
-        "short": "Network & mobile",
-        "desc": "My digital backbone"
+        "short": "Network & mobile"
       },
       "smart-home": {
-        "short": "Smart home",
-        "desc": "AC, lights and sensors, all wired into Home Assistant"
+        "short": "Smart home"
       },
       "peripherals": {
-        "short": "Peripherals",
-        "desc": "Input & output"
+        "short": "Peripherals"
       },
       "base-ii": {
-        "short": "Hometown",
-        "desc": "Standby base for trips home"
+        "short": "Hometown"
       }
     },
     "roles": {
@@ -541,28 +300,17 @@
       "hub3": "Light, temperature/humidity and motion sensing over Matter; its light level drives the night-time lighting automation",
       "rm4": "Learns the AC’s infrared codes so Home Assistant can control it",
       "esp32": "A 433MHz transmitter built from two boards, mimicking the ceiling light’s stock remote",
-      "doorbell": "Battery doorbell, online through the H200 hub"
+      "doorbell": "Battery doorbell, online through its hub"
     },
-    "retired": "Retired",
-    "retiredText": "Family shared PC — NVIDIA GTX 960 (still in use at home)",
     "topo": {
-      "title": "How the house is wired",
-      "hint": "Tap a node to jump to that device",
       "internet": "Internet",
       "switch": "Switch",
-      "mobile": "Phone · laptop",
       "sensors": "Light · temp · motion",
       "irBlaster": "IR blaster",
       "rfBlaster": "433MHz RF",
       "rig": "Main rig",
       "ac": "AC",
       "light": "Ceiling light",
-      "legend": {
-        "wired": "Wired",
-        "wifi": "Wi-Fi",
-        "matter": "Matter",
-        "air": "IR / RF"
-      },
       "netWired": "Wired",
       "netMain": "Main network",
       "netIot": "IoT only",
@@ -583,40 +331,36 @@
         "plug": "Smart plug"
       }
     },
-    "packages": "{{count}} (gear), {{iot}} (smart home)",
-    "term": {
-      "inputLabel": "Terminal command",
-      "tryHelp": "type help for the list of commands",
-      "cdFirst": "cd into a category first, then cat a file inside",
-      "sudo": "You are not in the sudoers file. This incident will be reported.",
-      "help": {
-        "help": "list commands",
-        "ls": "list categories, or the gear inside one",
-        "cd": "enter a category (the cards below filter along), cd .. to go back",
-        "cat": "show a device's spec and purpose",
-        "pwd": "where am I",
-        "whoami": "who am I",
-        "neofetch": "run it again",
-        "clear": "clear the screen"
+    "sheet": {
+      "tabs": "Sheets",
+      "memoryTitle": "The one back home",
+      "memoryText": "The backup base when I'm back home. There are no photos of it; this is roughly how I remember it.",
+      "fromMemory": "FROM MEMORY",
+      "root": "Every automation starts here",
+      "drag": "← drag sideways to see the whole sheet →",
+      "to": {
+        "voice": "Google Home voice",
+        "climate": "Temperature & humidity",
+        "ac": "Air conditioner",
+        "light": "Ceiling light",
+        "door": "Front door"
+      },
+      "subsystemTitle": "Subsystems",
+      "uplink": "Uplink: commands",
+      "downlink": "Downlink: reports",
+      "telemetry": "Telemetry",
+      "telemetryEvery": "Sent back by this server, every 30 seconds",
+      "telemetryWait": "Waiting for signal",
+      "subsystem": {
+        "cdh": "Command & data handling",
+        "eps": "Electrical power",
+        "tcs": "Thermal control",
+        "data": "Data recording",
+        "comm": "Communications",
+        "bus": "Bus",
+        "struct": "Structure",
+        "crew": "Crew interface"
       }
-    }
-  },
-  "info": {
-    "aboutSite": {
-      "title": "This site",
-      "subtitle": "A developer's personal space"
-    },
-    "history": {
-      "title": "History",
-      "subtitle": "Where this site has been"
-    },
-    "messages": {
-      "title": "Messages",
-      "subtitle": "Say whatever you want"
-    },
-    "friends": {
-      "title": "Friends",
-      "subtitle": "Webring"
     }
   },
   "newsletter": {
@@ -654,7 +398,6 @@
     "errorTitle": "Something went wrong",
     "missingToken": "Link is missing a token. Use the unsubscribe link at the bottom of an email.",
     "invalidLink": "Link is invalid or expired.",
-    "noServer": "Can't reach the server.",
     "unsubscribeFailed": "Unsubscribe failed",
     "bodyConfirm": "You're about to unsubscribe <em>{{email}}</em> from the Koimsurai newsletter.<br />Once unsubscribed, future posts won't reach your inbox.",
     "btnConfirm": "Confirm unsubscribe",
@@ -679,10 +422,389 @@
   },
   "photos": {
     "title": "Photography",
-    "description": "Koimsurai's photography — light and shadow from the road."
+    "description": "Koimsurai's photography — light and shadow from the road.",
+    "heading": "Photos",
+    "subtitle": "Faint signals that crossed the void, developed here line by line.",
+    "station": "DSN · GROUND STATION",
+    "stationLabel": "A ground station dish receiving a signal from a distant probe",
+    "passesLabel": "Frames received per month: most in {{month}}, {{count}} frames",
+    "frame": "Photo {{date}}"
   },
-  "gallery": {
-    "allTags": "All",
-    "moreTags": "More"
+  "aboutFall": {
+    "kick": "About",
+    "title": "Hold on.",
+    "hint": "Scroll down",
+    "landPre": "Past countless naive, uncertain yesterdays,",
+    "land": "touchdown.",
+    "surface": "Surface",
+    "surfaceTitle": "In hand",
+    "surfaceSub": "What I have carried along.",
+    "skill": {
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "mobile": "Mobile",
+      "devops": "DevOps",
+      "design": "Design",
+      "data": "Data",
+      "network": "Network",
+      "productivity": "Productivity",
+      "ai": "AI Tools",
+      "teaching": "Teaching"
+    },
+    "layer1": "Layer one",
+    "layer1Title": "What I have done",
+    "core": "Core",
+    "coreLine": "Further down are the things not yet written.",
+    "fallMeter": "Above ground",
+    "digMeter": "Below ground"
+  },
+  "works": {
+    "title": "Works",
+    "subtitle": "In the silent deep, carving out marks one inch at a time.",
+    "origin": "Origin",
+    "legendCore": "Size: amount of code",
+    "legendSurface": "Surface: main language",
+    "legendRings": "Rings: other languages",
+    "legendMoons": "Moons: GitHub stars",
+    "legendHover": "Hover: unfolds into the 3D body"
+  },
+  "collection": {
+    "title": "Collection",
+    "subtitle": "Wherever gravity reaches, fragments of light that once lit my way.",
+    "kind": {
+      "anime": "Anime",
+      "film": "Film",
+      "tv": "Series"
+    },
+    "status": {
+      "read": "Read",
+      "reading": "Reading",
+      "to-read": "To read"
+    },
+    "watch": {
+      "title": "Watching",
+      "anime": "anime",
+      "animeEp": "episodes",
+      "film": "films",
+      "tv": "series",
+      "tvEp": "episodes",
+      "live": "Watching now",
+      "last": "Last watched",
+      "episode": "Episode {{n}}"
+    },
+    "books": {
+      "title": "Bookshelf",
+      "total": "books"
+    },
+    "music": {
+      "title": "Listening",
+      "tracks": "top tracks",
+      "live": "Playing now",
+      "last": "Just played"
+    },
+    "hint": "SCROLL TO SEE FARTHER",
+    "sky": {
+      "unit": {
+        "s": "light-sec",
+        "m": "light-min",
+        "h": "light-hr",
+        "d": "light-days",
+        "y": "light-years"
+      },
+      "ago": {
+        "now": "just now",
+        "s": "{{n}}s ago",
+        "m": "{{n}} min ago",
+        "h": "{{n}} hr ago"
+      },
+      "reach": "View {{n}} {{unit}}\nSignals here were sent {{date}}",
+      "away": "{{n}} {{unit}} away · sent {{date}}",
+      "live": "Transmitting now",
+      "queued": "Not sent yet, still on Earth",
+      "beyond": "Older than the records, at their outer edge",
+      "records": "Records begin {{date}}",
+      "mark": {
+        "earth": "Earth",
+        "geo": "Geostationary orbit",
+        "iss": "ISS",
+        "moon": "Moon",
+        "jwst": "James Webb Space Telescope",
+        "sun": "Sun",
+        "mercury": "Mercury",
+        "venus": "Venus",
+        "mars": "Mars",
+        "asteroids": "Asteroid belt",
+        "jupiter": "Jupiter",
+        "saturn": "Saturn",
+        "uranus": "Uranus",
+        "neptune": "Neptune",
+        "kuiper": "Kuiper belt",
+        "newHorizons": "New Horizons",
+        "voyager1": "Voyager 1",
+        "heliopause": "Heliopause",
+        "oort": "Oort Cloud",
+        "proxima": "Proxima Centauri",
+        "barnard": "Barnard's Star",
+        "wolf359": "Wolf 359",
+        "lalande": "Lalande 21185",
+        "sirius": "Sirius",
+        "epsEri": "Epsilon Eridani",
+        "procyon": "Procyon",
+        "tauCeti": "Tau Ceti",
+        "scale-sec": "1 light-second · a second ago",
+        "scale-min": "1 light-minute · a minute ago",
+        "scale-hour": "1 light-hour · an hour ago",
+        "scale-day": "1 light-day · a day ago",
+        "scale-year": "1 light-year · a year ago"
+      }
+    }
+  },
+  "friends": {
+    "title": "Friends",
+    "subtitle": "Deep space is long and lonely, but look back and there is always starlight.",
+    "noSignal": "No signal yet",
+    "noFeed": "No RSS",
+    "legendCenter": "Center: this site",
+    "legendBeacon": "Ticks: recent posts, older ones further behind",
+    "legendSignal": "Rings: new post within {{days}} days",
+    "legendDock": "Click a star: dock",
+    "dockWith": "Dock with {{name}}",
+    "docked": "Docked",
+    "recent": "Recent posts",
+    "visit": "Visit the site",
+    "undock": "Undock",
+    "legendDim": "Dimmer: longer since the last update",
+    "dockLabel": "Two ships about to dock, a signal passing between them",
+    "cardTitle": "This site",
+    "siteDesc": "A developer's personal corner",
+    "formTitle": "Be the next one",
+    "fieldName": "Name",
+    "fieldNameHint": "Your site's name",
+    "fieldUrl": "URL",
+    "fieldRss": "RSS (optional)",
+    "fieldDesc": "One line",
+    "submit": "Send request",
+    "errRequired": "This one is required",
+    "errUrl": "Needs to be a URL starting with http:// or https://",
+    "sent": "Your mail app should be open. If it didn't show up, write to",
+    "rulesTitle": "Before entering orbit",
+    "rule1": "The site loads, has its own domain and HTTPS (a free subdomain is fine).",
+    "rule2": "Original content. No repost sites, ad farms or SEO farms.",
+    "rule3": "If you have RSS, a signal shows up here whenever you post.",
+    "rule4": "Link here from your site first and I'll reply sooner."
+  },
+  "messages": {
+    "title": "Messages",
+    "subtitle": "The long night is silent, waiting for a pulse from far away.",
+    "rx": "RX · waiting for a signal",
+    "rxCount_one": "RX · {{count}} signal received",
+    "rxCount_other": "RX · {{count}} signals received",
+    "txReady": "TX · ready",
+    "txSending": "TX · sending",
+    "logTitle": "Received signals",
+    "emptyTitle": "No signal yet.",
+    "emptyText": "The first message will show up on this line.",
+    "privatePre": "For something private, write to",
+    "privateMid": ". Bug reports and feature ideas fit better in",
+    "privatePost": "."
+  },
+  "signal": {
+    "formTitle": "Send a signal",
+    "loginWith": "Sign in",
+    "asUser": "Writing as {{name}}",
+    "useAnonymous": "Go anonymous",
+    "useAccount": "Use my account",
+    "fieldName": "Name",
+    "fieldEmail": "Email (optional, never shown)",
+    "fieldWebsite": "Website (optional)",
+    "fieldText": "Your message",
+    "meter": "{{count}} chars · {{seconds}} s of signal",
+    "captcha": "{{a}} + {{b}} = ?",
+    "replyingTo": "Replying to {{name}}",
+    "cancelReply": "Cancel",
+    "reply": "Reply",
+    "like": "Received",
+    "admin": "Owner",
+    "submit": "Send signal",
+    "sentPending": "Signal sent. It will show up here after review.",
+    "sentApproved": "Signal sent.",
+    "errEmpty": "Nothing written yet",
+    "errName": "A name is required",
+    "errCaptcha": "Wrong answer, here's a new one",
+    "errFailed": "Couldn't send it, try again in a bit",
+    "rule1": "Anonymous messages appear after review; signed-in ones appear right away",
+    "rule2": "Sign in with GitHub or Google, or stay anonymous",
+    "rule3": "Your email is never shown; no ads or sales pitches",
+    "heading": "Responses",
+    "rxCount_one": "RX · {{count}} signal received",
+    "rxCount_other": "RX · {{count}} signals received",
+    "empty": "No signals yet. The first one will show up here.",
+    "closed": "Responses are closed for this post; the channel is receive-only.",
+    "react": {
+      "title": "Responses",
+      "like": "Like",
+      "helpful": "Helpful",
+      "more": "Want more"
+    },
+    "writeSomething": "Write something"
+  },
+  "log": {
+    "title": "Flight log",
+    "subtitle": "Breaking free of gravity, I become the open sky.",
+    "met": "MISSION ELAPSED TIME · since {{date}}",
+    "metValue": "{{days}} d {{hms}}",
+    "total_one": "{{count}} contribution so far",
+    "total_other": "{{count}} contributions so far",
+    "noContrib": "No data from GitHub",
+    "now": "Now",
+    "contrib_one": "{{count}} contribution",
+    "contrib_other": "{{count}} contributions",
+    "legendHeight": "Height: cumulative GitHub contributions",
+    "legendDots": "Dots: redesigns (hover for which)",
+    "legendHeat": "Lights on the ground: contributions per day, seven rows a week",
+    "statusLabel": "Right now",
+    "coding": "Coding today",
+    "codingValue": "{{h}} h {{m}} min",
+    "codingVia": "WakaTime",
+    "languages": "Languages this week",
+    "playing": "Playing lately",
+    "played2w": "{{hours}} h in the last two weeks · {{owned}} games on Steam",
+    "longest": "Most played: {{name}}, {{hours}} h"
+  },
+  "colophon": {
+    "title": "Colophon",
+    "subtitle": "Nothing else here: only the night, white ink, and a faint light.",
+    "hint": "Click a star and the sextant turns to measure it.",
+    "star": {
+      "material": "Materials",
+      "type": "Type",
+      "sky": "Sky",
+      "rule1": "Rule 01",
+      "rule2": "Rule 02",
+      "rule3": "Rule 03",
+      "license": "License",
+      "qa": "Q&A"
+    },
+    "title_material": "Only three things",
+    "text_material": "Amber only ever appears on a single point: where you are, or what is happening. It is never a fill color.",
+    "title_type": "Three typefaces",
+    "text_type": "One for Chinese and every mixed sentence, one for large all-English display text, one for dates and numbers.",
+    "title_sky": "One sky",
+    "text_sky": "Every page is one kind of thing in this sky, all made from the dots and lines of the dotted Saturn on the home page.",
+    "title_rule1": "One signal per screen",
+    "text_rule1": "The Saturn on the home page was drawn one step at a time. Walk through them in order; at the satellites step you can pick one yourself.",
+    "title_rule2": "Only dots and lines",
+    "text_rule2": "Every photo on the photos page is received like this. In the last step, see what happens with nothing but dots.",
+    "title_rule3": "Grown from data",
+    "text_rule3": "Every star on the works spiral grows from the numbers of one repo. Adjust the numbers to make one, then watch it grow step by step.",
+    "title_license": "License",
+    "text_license": "Code is open source under AGPL-3.0; posts, photos and other content are all rights reserved.",
+    "swatchGround": "Black is the paper",
+    "swatchPaper": "White is the ink",
+    "swatchAmber": "Amber is the signal",
+    "fontSerif": "Source Han Serif: Chinese and every mixed sentence",
+    "fontLatin": "Instrument Serif: only large all-English text, never bold",
+    "fontMono": "Monospace: dates and numbers",
+    "homePage": "Home",
+    "skyIs": {
+      "home": "moons around Saturn",
+      "notes": "rings of star trails",
+      "moments": "passing comets",
+      "works": "a spiral course outward",
+      "collection": "signals sent from Earth",
+      "photos": "pictures downlinked from deep space",
+      "setup": "a spacecraft's blueprints",
+      "friends": "stars around one center",
+      "messages": "radio waves received",
+      "log": "a launch from the ground",
+      "about": "a free fall"
+    },
+    "cell": "Cell",
+    "genSize": "Code size",
+    "genLangs": "Languages",
+    "genStars": "GitHub stars",
+    "genCommits": "Commits",
+    "genMain": "Main language",
+    "genOther": "Other",
+    "saturnToy": "The home page Saturn, drawn up to the current step",
+    "photoToy": "A photo from the gallery, received up to the current step",
+    "workToy": "A body grown from the numbers below",
+    "stepsLabel": "Steps",
+    "stepNext": "Next →",
+    "stepAgain": "From the top ↺",
+    "genPushed": "Last push",
+    "daysAgo": "d ago",
+    "steps": {
+      "saturn": {
+        "light": {
+          "t": "A sphere and a light",
+          "d": "It starts as a sphere and a sun shining from the upper left. The lit side is bright, the far side is dark."
+        },
+        "strokes": {
+          "t": "Strokes instead of shading",
+          "d": "No fill: just rows of horizontal lines, thicker where it is brighter. On the dark side the lines thin out to nothing, leaving only black and white."
+        },
+        "bands": {
+          "t": "Real cloud bands",
+          "d": "Brightness follows the bands Cassini photographed: the equatorial zone is brightest, the belts beside it darkest, and the line at 78°N is the edge of the north polar hexagon. A little noise makes the lines waver and break into brush strokes."
+        },
+        "rings": {
+          "t": "Rings and shadows",
+          "d": "The rings are concentric strokes too, spaced like the real ones: the B ring is densest, the Cassini Division is empty, and the A ring has the Encke Gap. The planet casts its shadow on the rings, and the rings cast theirs on the planet."
+        },
+        "satellites": {
+          "t": "Only one lights up",
+          "d": "Five orbits outside, one satellite each, matching the five sections on the home page. Amber goes to only one at a time: try tapping another."
+        },
+        "trails": {
+          "t": "Long exposure",
+          "d": "Last comes the background: with the shutter held open, every star drags an arc around the pole. The notes page keeps this idea, where each post is one star trail."
+        }
+      },
+      "photo": {
+        "raw": {
+          "t": "The original",
+          "d": "One photo from the gallery. A picture taken in space never appears in front of you directly; it has to make the trip down first."
+        },
+        "bits": {
+          "t": "Into 0s and 1s",
+          "d": "The camera turns the image into 0s and 1s and sends them row by row. At first, all you see is this flickering field of digits."
+        },
+        "gray": {
+          "t": "Row by row, in grayscale",
+          "d": "The ground station decodes one row at a time. Brightness arrives first, so the photo surfaces from top to bottom. The amber line is the row being received."
+        },
+        "color": {
+          "t": "One sweep of color",
+          "d": "Once the brightness is in, a single sweep from left to right maps the color back. Every photo on the photos page is received this way when it scrolls into view."
+        },
+        "dots": {
+          "t": "Only dots",
+          "d": "The same photo with one dot per cell, sized by brightness. Make the cells bigger and the photo slowly turns into a field of stars."
+        }
+      },
+      "work": {
+        "numbers": {
+          "t": "A handful of numbers",
+          "d": "On GitHub, a repo is just a few numbers: how much code, which languages, how many stars and commits, how long since the last push. Try adjusting them."
+        },
+        "surface": {
+          "t": "Size and surface",
+          "d": "More code makes a bigger planet. The main language picks the surface: TypeScript gives gas bands, Rust cratered rock, Python ice, anything else meridians. More commits mean more bands and craters."
+        },
+        "rings": {
+          "t": "Rings and moons",
+          "d": "Each language beyond the main one adds a ring, with a line style per language: solid for TypeScript, dashed for Rust, dotted for Python. GitHub stars become moons, up to four."
+        },
+        "body": {
+          "t": "Unfolding into 3D",
+          "d": "The works page normally shows only the line symbol; hover and it unfolds into a dotted 3D star, dense on the lit side and sparse on the dark side. The more recent the last push, the faster it spins."
+        },
+        "spiral": {
+          "t": "Onto the spiral",
+          "d": "Finally it joins the spiral on the works page: the center is the start, and newer works sit farther out. The one you just made is the newest, so it goes on the outermost turn."
+        }
+      }
+    }
   }
 }
