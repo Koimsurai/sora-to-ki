@@ -361,30 +361,26 @@ a.series-nav-title:hover {
 /* ═══════════════════════
    GitHub-style Callouts (> [!NOTE] / [!TIP] / [!WARNING] / [!IMPORTANT] / [!CAUTION])
    由 remark-github-blockquote-alert 轉出 <div class="markdown-alert markdown-alert-{type}">
+   照提案：左邊一條細線，上面一行等寬小字標出類型，沒有底色、沒有圖示、不分顏色——
+   五種的差別交給那一行字，琥珀留給「一個點」，不拿來當警告色。
    ═══════════════════════ */
 .post-content .markdown-alert {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
   margin: var(--space-6) 0;
-  border-left: 3px solid var(--alert-accent, rgba(var(--brand-rgb), 0.6));
-  border-radius: 0 var(--r-10) var(--r-10) 0;
-  background: var(--alert-bg, rgba(var(--brand-rgb), 0.06));
-  color: var(--white-80);
+  border-left: 1px solid var(--paper-3);
+  color: var(--paper-2);
 }
 .post-content .markdown-alert-title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  font-weight: 600;
-  font-size: var(--fs-14);
-  margin-bottom: var(--space-1);
-  color: var(--alert-accent, var(--brand-light));
-  letter-spacing: var(--ls-2);
+  display: block;
+  margin-bottom: var(--space-1-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
 }
-.post-content .markdown-alert-title svg,
-.post-content .markdown-alert-title svg path {
-  flex-shrink: 0;
-  /* icon 之前沒設 fill → 用預設黑色；強制跟著該類型的 accent 色（藍/綠/紫/琥珀/紅） */
-  fill: var(--alert-accent, var(--brand-light));
+.post-content .markdown-alert-title svg {
+  display: none;
 }
 .post-content .markdown-alert p {
   margin: var(--space-1) 0;
@@ -393,27 +389,6 @@ a.series-nav-title:hover {
 }
 .post-content .markdown-alert p:last-child {
   margin-bottom: 0;
-}
-
-.post-content .markdown-alert-note {
-  --alert-accent: var(--sky-300);
-  --alert-bg: rgba(var(--sky-300-rgb), 0.06);
-}
-.post-content .markdown-alert-tip {
-  --alert-accent: var(--green-300);
-  --alert-bg: rgba(var(--green-300-rgb), 0.06);
-}
-.post-content .markdown-alert-important {
-  --alert-accent: var(--brand-light);
-  --alert-bg: rgba(var(--violet-300-rgb), 0.08);
-}
-.post-content .markdown-alert-warning {
-  --alert-accent: var(--amber-300);
-  --alert-bg: rgba(var(--amber-300-rgb), 0.08);
-}
-.post-content .markdown-alert-caution {
-  --alert-accent: var(--red-300);
-  --alert-bg: rgba(var(--red-300-rgb), 0.08);
 }
 .heading-anchor {
   margin-left: 0.4em;
@@ -491,10 +466,12 @@ a.series-nav-title:hover {
    Code Block
    ═══════════════════════ */
 /* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .code-block-wrapper` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
+/* 照提案：細線框、小圓角、很淡的暖白底；語言與「複製」是等寬小字 */
 .code-block-wrapper {
-  border-radius: var(--r-12);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-6);
   overflow: hidden;
-  background: var(--black-40);
+  background: rgba(var(--paper-rgb), 0.03);
   margin: var(--space-6) 0;
 }
 
@@ -528,71 +505,67 @@ a.series-nav-title:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-2-5) var(--space-4) var(--space-1-5);
+  padding: var(--space-2) var(--space-4) 0;
   background: transparent;
 }
 
 .language-name {
-  font-size: var(--fs-12);
-  color: var(--post-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--ls-6);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+  letter-spacing: var(--ls-12);
 }
 
 .copy-button {
-  background: var(--white-06);
-  border: 1px solid var(--white-10);
-  color: var(--white-60);
-  padding: var(--space-1) var(--space-2-5);
-  border-radius: var(--r-6);
-  font-size: var(--fs-12);
+  background: none;
+  border: 0;
+  color: var(--paper-3);
+  padding: var(--space-1) 0;
+  border-radius: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
   cursor: pointer;
-  transition:
-    background var(--dur-200),
-    color var(--dur-200),
-    border-color var(--dur-200);
+  transition: color var(--dur-200);
 }
 
-/* 蓋掉全域 button:hover 的紫底＋光暈（specificity 0,2,0 > 0,1,1） */
+/* 蓋掉全域 button:hover 的底色＋光暈（specificity 0,2,0 > 0,1,1） */
 .copy-button:hover,
 .copy-button:focus,
 .copy-button:focus-visible {
-  background: var(--white-10);
-  border-color: var(--white-20);
-  color: #fff;
+  background: none;
+  border-color: transparent;
+  color: var(--paper);
   box-shadow: none;
   outline: none;
 }
 
-/* ── 終端機渲染（bash/shell 類）：macOS 風視窗，紅黃綠燈 + 標題列，無行號，唯讀 ── */
+/* ── 終端機渲染（bash/shell 類）：外框跟一般程式碼一樣，標題列是一行等寬小字，無行號，唯讀 ── */
 /* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .terminal-block` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
 .terminal-block {
   margin: var(--space-6) 0;
-  border-radius: var(--r-12);
+  border-radius: var(--r-6);
   overflow: hidden;
-  background: var(--surface-0);
-  border: 1px solid var(--white-08);
+  background: rgba(var(--paper-rgb), 0.03);
+  border: 1px solid var(--rule);
 }
 .terminal-bar {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3-5);
-  background: var(--white-04);
-  border-bottom: 1px solid var(--white-06);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--rule);
 }
-/* 左側提示符（取代紅黃綠燈）：綠色 ❯_ ，乾淨的終端機味 */
 .terminal-glyph {
-  color: var(--green-400);
+  color: var(--paper-3);
   font-family: var(--mono-font);
-  font-size: var(--fs-13);
-  font-weight: 700;
+  font-size: var(--fs-11);
   letter-spacing: var(--ls-n4);
 }
 .terminal-title {
-  font-size: var(--fs-12);
-  letter-spacing: var(--ls-2);
-  color: var(--white-40);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
   font-family: var(--mono-font);
 }
 .terminal-block .copy-button {
@@ -650,16 +623,16 @@ a.series-nav-title:hover {
   padding: var(--space-1) var(--space-4-5) 0;
 }
 .terminal-prompt-sym {
-  color: var(--green-400);
+  color: var(--paper-3);
   font-family: var(--mono-font);
   font-size: var(--fs-14);
-  font-weight: 700;
 }
+/* 等著輸入的游標：琥珀，跟留言框的游標同一個 */
 .terminal-cursor {
   display: inline-block;
   width: 0.4rem;
   height: 1rem;
-  background: var(--white-80);
+  background: var(--amber);
   animation: terminal-blink 1.05s steps(1) infinite;
 }
 @keyframes terminal-blink {
@@ -709,26 +682,24 @@ a.series-nav-title:hover {
   overflow: hidden;
   transition: max-height var(--dur-400) var(--easing-standard);
 }
-/* 蓋掉全域 button{紫底}＋button:hover{紫底+光暈}（specificity 0,2,0 > 0,1,1） */
+/* 蓋掉全域 button:hover 的底色＋光暈（specificity 0,2,0 > 0,1,1） */
 .code-surface-toggle:hover,
 .code-surface-toggle:focus,
 .code-surface-toggle:focus-visible {
-  background: var(--white-06);
-  color: #fff;
+  background: none;
+  color: var(--paper);
   box-shadow: none;
   border-color: transparent;
   outline: none;
 }
-/* emoji 語言標頭（小寫，跟參考一致；覆蓋原本的 uppercase） */
+/* 語言標頭：只有字，舊版前面那顆語言圖示不放 */
 .language-name {
   display: inline-flex;
   align-items: center;
-  gap: 0.4em;
   text-transform: none;
 }
 .language-emoji {
-  font-size: 0.95em;
-  line-height: var(--lh-100);
+  display: none;
 }
 
 /* ═══════════════════════

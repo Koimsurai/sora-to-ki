@@ -482,24 +482,25 @@
   margin: 0 0 var(--space-5);
 }
 
+/* 內文連結：照提案，暖白字、點線底線，滑過時底線變實 */
 .post-content a {
-  color: var(--post-accent);
-  text-decoration: none;
-  border-bottom: 1px solid rgba(var(--brand-rgb), 0.3);
-  transition: border-color var(--dur-200);
+  color: var(--paper);
+  text-decoration: underline dotted;
+  text-decoration-color: var(--paper-3);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--dur-200);
 }
 
 .post-content a:hover {
-  border-bottom-color: var(--post-accent);
+  text-decoration-color: var(--paper);
 }
 
+/* 引言：照提案，左邊一條細線、淡一階的字，沒有底色 */
 .post-content blockquote {
   margin: var(--space-6) 0;
-  padding: var(--space-4) var(--space-6);
-  border-left: 3px solid var(--post-accent);
-  background: rgba(var(--brand-rgb), 0.06);
-  border-radius: 0 var(--r-8) var(--r-8) 0;
-  color: var(--white-70);
+  padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
+  border-left: 1px solid var(--rule);
+  color: var(--paper-2);
 }
 
 .post-content ul,
@@ -528,44 +529,55 @@
 }
 
 .post-content code {
-  background: var(--white-08);
-  color: #e8e6ef;
-  padding: var(--space-0-5) var(--space-2);
-  border-radius: var(--r-4);
-  font-size: 0.9em;
+  background: rgba(var(--paper-rgb), 0.07);
+  color: var(--paper);
+  padding: 0.1em 0.38em;
+  border-radius: var(--r-2);
+  font-size: 0.86em;
   font-family: var(--mono-font);
 }
 
 .post-content img {
   max-width: 100%;
-  border-radius: var(--r-12);
+  border-radius: var(--r-2);
   margin: 0;
 }
 
 .post-content hr {
   border: none;
-  border-top: 1px solid var(--white-06);
+  border-top: 1px solid var(--rule);
   margin: var(--space-8) 0;
 }
 
+/* 表格：照提案，表頭是等寬小字、底下一條細線，列與列之間是點線，沒有直線也沒有底色 */
 .post-content table {
   width: 100%;
   border-collapse: collapse;
   margin: var(--space-6) 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-160);
 }
 
 .post-content th,
 .post-content td {
-  padding: var(--space-2-5) var(--space-4);
-  border: 1px solid var(--white-08);
+  padding: var(--space-2-5) var(--space-3-5) var(--space-2-5) 0;
+  border: 0;
   text-align: left;
-  font-size: var(--fs-14);
+  vertical-align: top;
 }
 
 .post-content th {
-  background: rgba(var(--brand-rgb), 0.08);
-  color: var(--white-80);
-  font-weight: 600;
+  padding-top: 0;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+}
+
+.post-content td {
+  border-bottom: 1px dotted var(--rule);
 }
 
 /* ═══════════════════════
