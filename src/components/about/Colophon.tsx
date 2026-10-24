@@ -35,6 +35,7 @@ const INK_RGB = '241, 236, 227';
 const CONSTELLATION_PACE = 1.5;
 /** 落地後星座線收掉的時間 */
 const CONSTELLATION_FADE_MS = 900;
+const MELT_MS = 1200;
 /** 收：場景淡掉的時間（毫秒） */
 const ERASE_MS = 500;
 /** 收完時點從那顆星飛走的速度（px/ms） */
@@ -237,14 +238,16 @@ export default function Colophon() {
       // 星座從第一顆星沿著來的方向收掉，最後剩下目標星到鏡筒那段（跟視線疊在一起）
       if (con && landedAt >= 0) {
         const k = Math.min(1, (now - landedAt) / CONSTELLATION_FADE_MS);
+        // 收完之後剩下的那段實線慢慢淡成底下的點線視線，不是一幀就拿掉
+        const melt = Math.min(1, Math.max(0, (now - landedAt - CONSTELLATION_FADE_MS) / MELT_MS));
         const { toTarget } = con;
         const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
-        ctx.strokeStyle = `rgba(${INK_RGB}, 0.55)`;
+        ctx.strokeStyle = `rgba(${INK_RGB}, ${0.55 * (1 - melt)})`;
         // 畫在已經畫好的東西後面：跟視線一樣被六分儀的圖蓋住那一截，收到最後兩條才疊得剛好
         ctx.globalCompositeOperation = 'destination-over';
         strokeSpan(ctx, con.path, con.cum, toTarget * e, con.cum[con.cum.length - 1]);
         ctx.globalCompositeOperation = 'source-over';
-        if (k >= 1) constellationRef.current = null;
+        if (melt >= 1) constellationRef.current = null;
       }
     };
     raf = requestAnimationFrame(frame);
