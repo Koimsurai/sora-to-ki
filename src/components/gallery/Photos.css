@@ -173,28 +173,112 @@
   transition: filter var(--dur-200) ease;
 }
 
-.ph-shot img,
-.ph-shot canvas {
+.ph-shot img {
   position: absolute;
   inset: 0;
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.ph-shot img {
   object-fit: cover;
   transition: opacity var(--dur-300) ease;
 }
 
-/* 還在收：圖先藏在畫布底下解碼，收完畫布拿掉就直接露出來 */
-.ph-shot img.is-pending {
+/* 還在收：圖先藏在接收的那幾層底下解碼，收完拿掉就直接露出來 */
+.ph-shot > img.is-pending {
   opacity: 0;
   transition: none;
 }
 
-.ph-frame:hover .ph-shot img:not(.is-pending) {
+.ph-frame:hover .ph-shot > img:not(.is-pending) {
   opacity: 0.8;
+}
+
+/* ── 接收：幾層疊在一起，JS 只動 transform 與 opacity（交給合成器，捲動時也不卡） ──
+   最底下是閃動的 0 與 1，上面是一行一行露出來的黑白，再上面是一道掃過去的顏色 */
+.ph-rx,
+.ph-rx > span {
+  position: absolute;
+  inset: 0;
+}
+
+.ph-rx-noise {
+  background: var(--ph-noise-a) 0 0 repeat var(--ground);
+}
+
+/* 第二張雜訊一亮一暗地蓋在第一張上，兩張交替就是在閃；只有正在收的那幾張在閃
+   （排隊中的也一起閃的話，畫面上幾十張都是動畫圖層，捲動會變卡） */
+.ph-rx-noise.is-b {
+  background-image: var(--ph-noise-b);
+  opacity: 0;
+}
+
+.ph-rx.is-on .ph-rx-noise.is-b {
+  animation: ph-noise-flip 140ms steps(1) infinite;
+}
+
+@keyframes ph-noise-flip {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 一層從一邊露出來：外層推出去、內層推回來（內容不跟著滑）；一開始整層在外面 */
+.ph-rx-gray,
+.ph-rx-color {
+  overflow: hidden;
+}
+
+.ph-rx-gray {
+  transform: translateY(-100%);
+}
+
+.ph-rx-color {
+  transform: translateX(-100%);
+}
+
+.ph-rx-gray > span,
+.ph-rx-color > span {
+  position: absolute;
+  inset: 0;
+}
+
+.ph-rx-gray > span {
+  transform: translateY(100%);
+}
+
+.ph-rx-color > span {
+  transform: translateX(100%);
+}
+
+.ph-rx-gray img {
+  filter: grayscale(1) contrast(1.05);
+}
+
+/* 掃描線貼著那一層露出來的那一邊：收黑白時是底邊的一條橫線、上色時是右邊的一條直線 */
+.ph-rx-scan,
+.ph-rx-sweep {
+  position: absolute;
+  background: rgba(var(--amber-rgb), 0.9);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ph-rx-scan {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+}
+
+.ph-rx-sweep {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
 }
 
 .ph-tel {
