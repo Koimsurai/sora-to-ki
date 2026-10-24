@@ -42,6 +42,13 @@ const GROW_S = 1.4;
 const MORPH_MS = 650;
 /** 縮回琥珀點的時間 */
 const RETRACT_MS = 380;
+/** 筆尖畫完軌道之後滑回讀者那裡的時間（秒） */
+const PEN_BACK_S = 0.7;
+/** 內文比筆尖多露出一點（px）：字的上半截先出來，不會被切在半行 */
+const PEN_LEAD_PX = 40;
+/** 這一頁的內文那一欄 */
+const colOf = (root: Element) => root.closest('.ar-page')?.querySelector<HTMLElement>('.ar-col') ?? null;
+
 /** 被摘要點名的那一章，漣漪擴一圈的時間 */
 const PING_MS = 1100;
 /** 一分鐘讀幾個字（跟手記列表一樣） */
@@ -168,6 +175,27 @@ export default function OrbitToc({
     rootRef.current?.closest('.ar-page')?.classList.remove('is-leaving');
   }, []);
 
+  // 不是從手記、也不是切語系換過來的：筆尖畫軌道之前內文先藏著（一開始就藏，不然點落地那一下會先閃出整篇）。
+  // 畫的過程由 frame 推 --scan；量不到軌道（窄螢幕）就不藏，保險起見幾秒後一定拿掉
+  useEffect(() => {
+    if (hand !== null || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!orbitGeometry(window.innerWidth, window.innerHeight)) return;
+    const root = rootRef.current;
+    const col = root ? colOf(root) : null;
+    if (!col) return;
+    col.classList.add('is-drawing');
+    col.style.setProperty('--scan', '0px');
+    const clear = () => {
+      col.classList.remove('is-drawing');
+      col.style.removeProperty('--scan');
+    };
+    const safety = window.setTimeout(clear, 6000);
+    return () => {
+      window.clearTimeout(safety);
+      clear();
+    };
+  }, [hand]);
+
   // 從手記推近過來：內文從軌道那一側攤開（ArticleFrame.css 的 is-unfold）
   useEffect(() => {
     if (hand !== 'notes') return;
@@ -250,10 +278,13 @@ export default function OrbitToc({
       if (bornRef.current < 0) bornRef.current = now;
       const tt = (now - bornRef.current) / 1000;
       const grow = fullRef.current || reduce ? 1 : clamp(tt / GROW_S) ** 0.7;
+      // 不是從手記（或切語系）換過來的：點是筆尖，從頂端往下畫出這道軌道、刻上章節，畫完沿軌道回到讀者的位置
+      const drawing = !fullRef.current && !reduce;
+      const backing = drawing && tt >= GROW_S && tt < GROW_S + PEN_BACK_S;
       const leave = leaveRef.current;
       const line = window.scrollY + window.innerHeight * 0.3;
       const ping = pingIdRef.current;
-      const key = `${window.scrollY}|${grow}|${leave || ping.i >= 0 || (fullRef.current && tt < 2) ? now : ''}`;
+      const key = `${window.scrollY}|${grow}|${leave || ping.i >= 0 || backing || (fullRef.current && tt < 2) ? now : ''}`;
       // 沒有在長、沒有在捲、沒有在換頁：不重畫（琥珀點的光暈是靜的）
       if (key === lastKey && now - last < 500) return;
       lastKey = key;
@@ -383,11 +414,30 @@ export default function OrbitToc({
         }
       });
 
-      // 讀者：琥珀點，後面拖一小段漸淡的尾巴
-      const hd = at(Math.min(uh, grow));
+      // 讀者：琥珀點，後面拖一小段漸淡的尾巴。畫軌道的時候它是筆尖（在長到的地方），畫完沿軌道滑回讀者那裡
+      const reader = Math.min(uh, grow);
+      const headU =
+        drawing && tt < GROW_S
+          ? grow
+          : backing
+            ? 1 + (reader - 1) * easeInOut(clamp((tt - GROW_S) / PEN_BACK_S))
+            : reader;
+      const hd = at(headU);
       readerRef.current = hd;
+      // 內文跟著筆尖往下顯現：筆尖以上是寫好的，以下先藏著（遮罩見 ArticleFrame.css 的 is-drawing）
+      const col = colOf(root);
+      if (col) {
+        if (drawing && tt < GROW_S) {
+          col.classList.add('is-drawing');
+          col.style.setProperty('--scan', `${hd.y - col.getBoundingClientRect().top + PEN_LEAD_PX}px`);
+        } else if (col.classList.contains('is-drawing')) {
+          col.classList.remove('is-drawing');
+          col.style.removeProperty('--scan');
+        }
+      }
+      const aPen = ang(headU);
       for (let k = 0; k < 7; k++) {
-        const a0 = aHead + (k * 2.4) / RB;
+        const a0 = aPen + (k * 2.4) / RB;
         const a1 = aHead + ((k + 1) * 2.4) / RB;
         if (a1 > aTop) break;
         ctx.strokeStyle = `rgba(${AMBER}, ${0.6 * (1 - k / 7)})`;

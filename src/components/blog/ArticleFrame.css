@@ -33,7 +33,9 @@
 
 /* 切語系「重新收訊」（blog/useRetune）：掃描線以上是新語系的字，以下先藏著。
    --scan 是線在這一欄裡的位置（JS 逐幀寫） */
-.ar-col.is-retuning {
+/* 不是從手記換過來的：目錄的點當筆尖往下畫軌道，內文跟著筆尖往下顯現（blog/OrbitToc），同一個遮罩 */
+.ar-col.is-retuning,
+.ar-col.is-drawing {
   mask-image: linear-gradient(to bottom, #000 calc(var(--scan, 0px) - 2px), transparent calc(var(--scan, 0px) + 24px));
 }
 
