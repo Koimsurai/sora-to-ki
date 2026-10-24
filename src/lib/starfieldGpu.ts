@@ -28,6 +28,7 @@ import {
   uv,
   time,
   sin,
+  cos,
   mix,
   smoothstep,
   vec3,
@@ -58,6 +59,9 @@ import {
 } from './saturnSpec';
 import { inspectWebGL } from './webglRenderer';
 import type { SatelliteScreen } from '@/store/homeOrbit';
+
+/** 環在半徑 1（土星赤道半徑）處的角速度（rad/s）；實際照半徑的 -1.5 次方遞減 */
+const RING_SPIN = 0.3;
 
 export const STAR_COUNT = 13000; // 7k 主層 + 6k 星系層（2026-10 翻新減半，見 LAYERS）
 
@@ -283,6 +287,8 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   // 星球本身是不透明的黑球，背面的點、環與軌道的背段、轉到後面的衛星都被它的深度擋掉
   const sunInPlanet = uniform(new THREE.Vector3());
   const sunInPlane = uniform(new THREE.Vector3());
+  /** 環轉了多久（秒）：跟著每一幀的 dt 走，閒置降幀、收起來時一起停 */
+  const ringClock = uniform(0);
   const paper = vec3(INK.r, INK.g, INK.b);
   const ground = vec3(GROUND.r, GROUND.g, GROUND.b);
   /**
@@ -362,11 +368,15 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     // RingGeometry 在自己的 xy 平面上；轉平之後 (x, y) 對到環平面的 (x, -z)
     const p = vec3(positionLocal.x, 0, positionLocal.y.negate());
     const r = p.length();
+    // 環在轉，而且內圈比外圈快（克卜勒：角速度照半徑的 -1.5 次方，內緣約是外緣的 2.6 倍）。
+    // 只轉筆觸（刷痕的斷點），影子跟太陽走、不跟著轉，所以影子那段用原本的 p
+    const spin = ringClock.mul(RING_SPIN).mul(r.pow(-1.5));
+    const q = vec3(p.x.mul(cos(spin)).sub(p.z.mul(sin(spin))), 0, p.x.mul(sin(spin)).add(p.z.mul(cos(spin))));
     // 環裡面還有更細的小環：一點徑向的雜訊
     const ringlets = mx_noise_float(vec3(r.mul(60), 0, 0))
       .mul(0.22)
       .add(0.9);
-    const brush = smoothstep(-0.55, 0.15, mx_noise_float(vec3(p.x.mul(2.4), r.mul(40), p.z.mul(2.4))));
+    const brush = smoothstep(-0.55, 0.15, mx_noise_float(vec3(q.x.mul(2.4), r.mul(40), q.z.mul(2.4))));
     // 星球的影子：從環上這一點往太陽看會不會被星球擋住
     const sun = normalize(sunInPlane);
     const along = dot(p, sun).negate();
@@ -441,6 +451,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     update(dt, scrollY, animate) {
       // 約 50 秒一圈。雲帶是橫向的長條，轉的時候是沿著自己滑過去，太慢（原本 125 秒一圈）就看不出在轉
       autoRot += 0.125 * dt;
+      ringClock.value += dt;
       const targetScrollRot = scrollY * 0.001;
       currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, lerpFactor(0.05, dt));
       body.rotation.y = currentScrollRot + autoRot;
