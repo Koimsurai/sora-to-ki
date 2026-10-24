@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { filterPosts, groupPostsByMonth } from './blogFilter';
+import { filterPosts, groupPostsByYear } from './blogFilter';
 import { parseServerDate } from './serverDate';
 
 // Blog.tsx 的篩選與分組。壞掉的樣子是「這篇好像不見了」或「怎麼分到上個月」，
@@ -64,65 +64,35 @@ describe('filterPosts', () => {
   });
 });
 
-describe('groupPostsByMonth', () => {
-  it('同一個月的收在一組，新的月份在前', () => {
-    const groups = groupPostsByMonth([
-      post({ title: 'a', created_at: '2026-06-10 12:00:00' }),
+describe('groupPostsByYear', () => {
+  it('同一年的收在一組，新的年份在前', () => {
+    const groups = groupPostsByYear([
+      post({ title: 'a', created_at: '2025-06-10 12:00:00' }),
       post({ title: 'b', created_at: '2026-08-01 12:00:00' }),
-      post({ title: 'c', created_at: '2026-06-20 12:00:00' }),
+      post({ title: 'c', created_at: '2025-02-20 12:00:00' }),
     ]);
-    expect(groups.map((g) => [g.year, g.month])).toEqual([
-      [2026, 7],
-      [2026, 5],
-    ]);
+    expect(groups.map((g) => g.year)).toEqual([2026, 2025]);
     expect(groups[1].posts.map((p) => p.title)).toEqual(['a', 'c']);
   });
 
-  it('跨年時也是新的在前', () => {
-    const groups = groupPostsByMonth([
-      post({ title: '舊', created_at: '2025-12-01 12:00:00' }),
-      post({ title: '新', created_at: '2026-01-01 12:00:00' }),
-    ]);
-    expect(groups.map((g) => g.year)).toEqual([2026, 2025]);
-  });
-
   it('同一組內保持原本的先後順序', () => {
-    const groups = groupPostsByMonth([
+    const groups = groupPostsByYear([
       post({ title: '第一', created_at: '2026-08-20 12:00:00' }),
       post({ title: '第二', created_at: '2026-08-02 12:00:00' }),
     ]);
     expect(groups[0].posts.map((p) => p.title)).toEqual(['第一', '第二']);
   });
 
-  // 這條是實際修掉的 bug：後端的時間戳是 UTC 但沒有時區標記，
-  // 直接 new Date() 會當成本地時間、整整早八小時 → 當地時間每月 1 號凌晨 0~8 點
-  // 發的文章會被分到**上個月**，而且看起來像「我明明這個月發的」。
-  it('時間戳當成 UTC 解析，月初凌晨發的文章不會被分到上個月', () => {
-    // 2026-08-31 21:00 UTC = 台北時間 9/1 清晨 5 點
-    const groups = groupPostsByMonth([post({ title: '九月初', created_at: '2026-08-31 21:00:00' })]);
-    const d = parseServerDate('2026-08-31 21:00:00');
-    // 分組用的是解析後的**本地**年月，跟讀者看到的時間一致
-    expect(groups[0].month).toBe(d.getMonth());
-    expect(groups[0].year).toBe(d.getFullYear());
-  });
-
-  it('已經帶時區標記的時間戳不會被重複加工', () => {
-    const withZ = groupPostsByMonth([post({ title: 'z', created_at: '2026-08-04T09:00:00Z' })]);
-    const without = groupPostsByMonth([post({ title: 'n', created_at: '2026-08-04 09:00:00' })]);
-    expect(withZ[0].month).toBe(without[0].month);
-    expect(withZ[0].year).toBe(without[0].year);
-  });
-
-  it('label 用得出來，而且跟著 locale 走', () => {
-    const zh = groupPostsByMonth([post({ title: 'a', created_at: '2026-08-04 09:00:00' })], 'zh-TW');
-    const en = groupPostsByMonth([post({ title: 'a', created_at: '2026-08-04 09:00:00' })], 'en-US');
-    expect(zh[0].label).toBeTruthy();
-    expect(en[0].label).toBeTruthy();
-    expect(en[0].label).not.toBe(zh[0].label);
+  // 後端的時間戳是 UTC 但沒有時區標記，直接 new Date() 會當成本地時間、整整早八小時
+  // → 當地時間元旦凌晨 0~8 點發的文章會被分到**去年**
+  it('時間戳當成 UTC 解析，元旦凌晨發的文章不會被分到去年', () => {
+    // 2025-12-31 21:00 UTC = 台北時間 2026/1/1 清晨 5 點
+    const groups = groupPostsByYear([post({ title: '新年', created_at: '2025-12-31 21:00:00' })]);
+    expect(groups[0].year).toBe(parseServerDate('2025-12-31 21:00:00').getFullYear());
   });
 
   it('空清單回空陣列', () => {
-    expect(groupPostsByMonth([])).toEqual([]);
+    expect(groupPostsByYear([])).toEqual([]);
   });
 });
 

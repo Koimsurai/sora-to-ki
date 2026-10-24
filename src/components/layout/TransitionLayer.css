@@ -1,0 +1,26 @@
+/* 換頁轉場（layout/TransitionLayer）。畫布在內容容器裡、導覽列底下：導覽列換頁時不動 */
+
+/* 畫那個點與它拉出的線 */
+.pt-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* 新的一頁在「長」之前藏著，但照常排版（錨點才量得到） */
+html[data-pt="out"] .main-content-container > main {
+  opacity: 0;
+}
+
+/* 新的一頁露出來時淡入（藏起來那一下是立刻的：舊頁已經收完了） */
+html:not([data-pt="out"]) .main-content-container > main {
+  transition: opacity var(--dur-400) ease;
+}
+
+/* 鏡頭移動時整頁被平移：超出視窗的部分裁掉，不要長出橫的、直的捲軸 */
+html[data-pt] .main-content-container {
+  overflow: clip;
+}

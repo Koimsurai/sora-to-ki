@@ -71,22 +71,35 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
     // to keep already loaded images in high-res when swiping back.
   }, [src, onLoad, isCurrentImage, loaded]);
 
+  /** 平移夾在圖的邊緣以內：放大後超出框的那一截才能拖，沒超出的那一邊保持置中 */
+  const clampPan = useCallback((x: number, y: number, s: number) => {
+    const container = containerRef.current;
+    const image = imageRef.current;
+    if (!container || !image) return { x, y };
+    // offsetWidth 是畫面上（transform 之前）的大小，不是原圖的像素
+    const excessX = Math.max(0, (image.offsetWidth * s - container.clientWidth) / 2);
+    const excessY = Math.max(0, (image.offsetHeight * s - container.clientHeight) / 2);
+    return { x: Math.max(-excessX, Math.min(x, excessX)), y: Math.max(-excessY, Math.min(y, excessY)) };
+  }, []);
+
   const handleWheel = useCallback(
     (e: WheelEvent) => {
-      if (!enableZoom || !isCurrentImage) return;
+      const container = containerRef.current;
+      if (!enableZoom || !isCurrentImage || !container) return;
       e.preventDefault();
       e.stopPropagation();
 
-      const delta = e.deltaY > 0 ? -0.2 : 0.2;
-      setScale((prevScale) => {
-        const newScale = Math.max(1, Math.min(prevScale + delta, 5));
-        if (newScale === 1) {
-          setPosition({ x: 0, y: 0 });
-        }
-        return newScale;
-      });
+      const next = Math.max(1, Math.min(scale + (e.deltaY > 0 ? -0.2 : 0.2), 5));
+      if (next === scale) return;
+      // 往游標那一點放大：游標底下那一點縮放前後都留在游標底下（座標從框的中心算，跟 transform-origin 一樣）
+      const r = container.getBoundingClientRect();
+      const cx = e.clientX - r.left - r.width / 2;
+      const cy = e.clientY - r.top - r.height / 2;
+      const k = next / scale;
+      setScale(next);
+      setPosition(next === 1 ? { x: 0, y: 0 } : clampPan(cx - (cx - position.x) * k, cy - (cy - position.y) * k, next));
     },
-    [enableZoom, isCurrentImage],
+    [enableZoom, isCurrentImage, scale, position, clampPan],
   );
 
   const handleMouseDown = useCallback(
@@ -104,35 +117,10 @@ const ProgressiveImage: React.FC<ProgressiveImageProps> = ({
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
-      if (!isPanning || !containerRef.current) return;
-
-      const newX = e.clientX - startPos.x;
-      const newY = e.clientY - startPos.y;
-
-      // Boundary checks to prevent panning too far
-      // container 在函式開頭的 `if (!isPanning || !containerRef.current) return` 已經確定非 null
-      const container = containerRef.current;
-      const image = imageRef.current;
-      if (image) {
-        const containerRect = container.getBoundingClientRect();
-        const imageWidth = image.naturalWidth * scale;
-        const imageHeight = image.naturalHeight * scale;
-
-        // Calculate how much the image exceeds the container
-        const excessWidth = Math.max(0, (imageWidth - containerRect.width) / 2);
-        const excessHeight = Math.max(0, (imageHeight - containerRect.height) / 2);
-
-        // Only clamp if the image is larger than the container in that dimension
-        const clampedX = excessWidth > 0 ? Math.max(-excessWidth, Math.min(newX, excessWidth)) : 0; // Keep centered if image is smaller
-
-        const clampedY = excessHeight > 0 ? Math.max(-excessHeight, Math.min(newY, excessHeight)) : 0; // Keep centered if image is smaller
-
-        setPosition({ x: clampedX, y: clampedY });
-      } else {
-        setPosition({ x: newX, y: newY });
-      }
+      if (!isPanning) return;
+      setPosition(clampPan(e.clientX - startPos.x, e.clientY - startPos.y, scale));
     },
-    [isPanning, startPos, scale],
+    [isPanning, startPos, scale, clampPan],
   );
 
   const handleMouseUp = useCallback(() => {

@@ -2,16 +2,8 @@
 
 .blog-image-clickable {
   cursor: zoom-in;
-  transition:
-    transform var(--dur-300) ease,
-    box-shadow var(--dur-300) ease;
-  border-radius: var(--r-12);
+  border-radius: var(--r-2);
   max-width: 100%;
-}
-
-.blog-image-clickable:hover {
-  transform: scale(1.005);
-  box-shadow: var(--elev-3);
 }
 
 .blog-image-exif--visible {
@@ -33,14 +25,26 @@
 
 .image-lightbox-img {
   max-width: 92vw;
-  max-height: 92vh;
+  max-height: 86vh;
   object-fit: contain;
-  border-radius: var(--r-8);
+  border-radius: var(--r-2);
   cursor: default;
   user-select: none;
   -webkit-user-drag: none;
 }
 
+/* 圖說：跟文章裡的圖說同一種（小一號、淡一階） */
+.image-lightbox-cap {
+  max-width: min(92vw, 720px);
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+  color: var(--paper-3);
+  text-align: center;
+  cursor: default;
+}
+
+/* 關閉：跟影片播放鈕同一種細線圓圈 */
 .image-lightbox-close {
   position: fixed;
   top: 1.5rem;
@@ -48,18 +52,25 @@
   width: 40px;
   height: 40px;
   border-radius: var(--r-round);
-  background: var(--white-10);
-  border: 1px solid var(--white-15);
-  color: var(--white-80);
+  background: none;
+  border: 1px solid var(--paper-3);
+  color: var(--paper-2);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all var(--dur-200) ease;
+  transition:
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
   z-index: 2;
 }
 
-.image-lightbox-close:hover {
-  background: var(--white-20);
-  color: #fff;
+/* 蓋掉全域 button:hover 的底色與光暈（specificity 0,2,0 > 0,1,1） */
+.image-lightbox-close:hover,
+.image-lightbox-close:focus,
+.image-lightbox-close:focus-visible {
+  background: none;
+  border-color: var(--paper);
+  box-shadow: none;
+  color: var(--paper);
 }

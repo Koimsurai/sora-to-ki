@@ -1,0 +1,97 @@
+/* 首頁門面（home/HomeOrbit）：一整個畫面，土星與衛星在 3D 背景裡，這裡只有浮在衛星旁邊的字 */
+
+.horbit {
+  position: relative;
+  height: 100svh;
+  min-height: 560px;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+.horbit-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 位置每幀由 JS 寫進 transform；透明度也是 JS 給，這裡只負責淡入淡出的速度 */
+.horbit-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  /* 每一行只有自己的寬，對齊由 JS 照衛星的位置連續地推（HomeOrbit 的 frame） */
+  justify-items: start;
+  gap: var(--space-1);
+  width: max-content;
+  max-width: 240px;
+  font-family: var(--serif);
+  color: var(--paper);
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-300) ease;
+}
+
+.horbit-label.is-on {
+  pointer-events: auto;
+}
+
+.horbit-label:focus-visible {
+  outline: 1px solid var(--paper-2);
+  outline-offset: 6px;
+  opacity: 1;
+}
+
+.horbit-label .l1 {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.horbit-label .zh {
+  font-size: var(--fs-20);
+  font-weight: 600;
+  line-height: var(--lh-120);
+}
+
+.horbit-label .en {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--amber);
+}
+
+.horbit-label .line {
+  font-size: var(--fs-13);
+  line-height: var(--lh-150);
+  color: var(--paper-2);
+}
+
+.horbit-label .n {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+}
+
+/* 沒有 3D（手機、沒有硬體加速）：五個連結直接排成一欄。
+   位置與透明度原本是 JS 寫在 style 上的，只有 !important 蓋得過 inline style */
+.horbit.is-flat .horbit-labels {
+  display: grid;
+  align-content: center;
+  justify-content: center;
+  gap: var(--space-8);
+  padding: var(--space-20) var(--space-6);
+}
+
+.horbit.is-flat .horbit-label {
+  position: static;
+  transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto;
+}
+
+.horbit.is-flat .horbit-label > * {
+  translate: none !important;
+}

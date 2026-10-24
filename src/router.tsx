@@ -21,4 +21,8 @@ declare module '@tanstack/react-router' {
   interface Register {
     router: ReturnType<typeof getRouter>;
   }
+  interface HistoryState {
+    /** 換了路徑但捲動由目的頁自己負責，不要捲回頂端（文章頁切語系，見 blog/useRetune） */
+    keepScroll?: boolean;
+  }
 }

@@ -347,6 +347,7 @@ function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
           exit={{ scale: 0.85, opacity: 0 }}
           transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
         />
+        {alt && <p className="image-lightbox-cap">{alt}</p>}
         <button type="button" className="image-lightbox-close" onClick={handleClose} aria-label={t('common.close')}>
           <FaTimes />
         </button>

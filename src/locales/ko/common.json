@@ -34,66 +34,42 @@
     "thinking": "중얼거림",
     "menu": "내비게이션"
   },
+  "siteNav": {
+    "signIn": "로그인",
+    "notes": "노트",
+    "moments": "혼잣말",
+    "works": "작품",
+    "collection": "컬렉션",
+    "about": "소개",
+    "more": "더 보기",
+    "photos": "사진",
+    "setup": "장비",
+    "friends": "친구들",
+    "messages": "메시지",
+    "log": "항해 일지",
+    "colophon": "이 사이트",
+    "search": "검색",
+    "language": "언어",
+    "account": "계정",
+    "menu": "메뉴",
+    "close": "닫기",
+    "home": "홈",
+    "allPosts": "전체 {{count}}편",
+    "allMoments": "혼잣말 전체",
+    "allWorks": "전체 {{count}}개",
+    "watching": "보는 중",
+    "reading": "읽는 중",
+    "listening": "듣는 중",
+    "recently": "최근",
+    "episode": "{{ep}}화",
+    "aboutLead": "Koimsurai, 코드를 쓰는 사람.",
+    "aboutAll": "소개"
+  },
   "user": {
     "adminPanel": "관리자 페이지",
     "logout": "로그아웃",
-    "signInLabel": "소셜 계정으로 로그인",
     "signInWithGithub": "GitHub로 로그인",
-    "signInWithGoogle": "Google로 로그인",
-    "notConfigured": "타사 로그인이 설정되지 않았어요",
-    "menuLabel": "사용자 메뉴"
-  },
-  "megaMenu": {
-    "online": "온라인",
-    "stats": {
-      "posts": "글",
-      "words": "자",
-      "days": "일"
-    },
-    "groups": {
-      "pages": "페이지",
-      "site": "사이트",
-      "categories": "카테고리",
-      "latestPosts": "최신 글",
-      "categoryLatest": "{{cat}} · 최신",
-      "life": "라이프",
-      "personal": "퍼스널",
-      "collection": "컬렉션"
-    },
-    "items": {
-      "home": "홈",
-      "about": "소개",
-      "expertise": "기술",
-      "portfolio": "작품",
-      "contact": "연락",
-      "aboutSite": "이 사이트",
-      "aboutSiteDesc": "엔지니어의 개인 공간",
-      "history": "역사",
-      "historyDesc": "사이트의 발자취",
-      "messages": "메시지",
-      "messagesDesc": "무엇이든 남겨주세요",
-      "friends": "친구들",
-      "friendsDesc": "웹링",
-      "allPosts": "모든 글",
-      "viewAllPosts": "모든 글 보기 →",
-      "emptyCategory": "이 카테고리에는 아직 글이 없어요",
-      "photos": "사진",
-      "photosDesc": "사진 작품",
-      "activity": "활동",
-      "activityDesc": "최신 활동",
-      "bookshelf": "책장",
-      "bookshelfDesc": "독서 기록",
-      "music": "음악",
-      "musicDesc": "좋아하는 음악",
-      "journey": "여정",
-      "journeyDesc": "학습의 자취",
-      "setup": "장비",
-      "setupDesc": "기기 목록",
-      "watch": "시청 중",
-      "watchDesc": "최근 본 애니 / 드라마 / 영화",
-      "thinking": "중얼거림",
-      "thinkingDesc": "지금 떠오른 짧은 생각"
-    }
+    "signInWithGoogle": "Google로 로그인"
   },
   "hero": {
     "description": "Sora to Ki (宙と木) — Koimsurai의 개인 공간. 엔지니어의 독서 노트, 작품 기록, 시스템 실험."
@@ -125,85 +101,29 @@
       "status": "서비스 상태"
     }
   },
-  "language": {
-    "switcher": "언어",
-    "current": "현재: {{label}}"
-  },
   "notFound": {
     "pageTitle": "404 — 페이지를 찾을 수 없음",
     "seoDescription": "길을 잃으셨나요? 이 페이지는 존재하지 않습니다.",
-    "lostMessage": "별들 사이에서 길을 잃은 것 같아요.",
-    "subMessage": "이 페이지는 존재하지 않거나 삭제되었습니다.",
+    "lostMessage": "교신이 끊겼다.",
+    "subMessage": "마지막 신호는 이 좌표에서 왔다. 그 뒤로는 응답이 없다.",
     "backHome": "홈으로 돌아가기",
-    "requested": "찾으시던 위치",
+    "requested": "마지막 좌표",
+    "lostFor": "신호 끊김",
+    "toNotes": "노트로",
+    "reconnect": "교신 재개 (홈으로)",
     "search": "사이트 검색",
     "pageTitleShort": "페이지를 찾을 수 없음"
   },
   "home": {
-    "aboutMe": {
-      "eyebrow": "Koimsurai · 코드의 분재",
-      "titleLine1": "복잡한 일을,",
-      "titleLine2": "「자연스럽게」 다루기."
-    },
-    "schoolClubs": {
-      "eyebrowSuffix": "동아리 임원",
-      "activitiesLabel": "활동"
-    },
-    "contact": {
-      "titleLine1": "이야기 나누고 싶다면?",
-      "titleLine2": "Let's build something.",
-      "blurb": "프로젝트 협업, 기술 교류, 인턴십 기회 — 아래 어느 채널로든 편하게 연락 주세요."
-    },
-    "lately": {
-      "eyebrow": "최근의 글과 소식",
-      "postsTitle": "최근 쓴 글",
-      "murmursTitle": "중얼거림",
-      "echoesTitle": "메아리",
-      "orbitTitle": "올해의 궤적",
-      "orbitStat": "올해 {{count}}편",
-      "viewAll": "전체 보기",
-      "more": "더 보기",
-      "empty": "아직 조용해요",
-      "today": "오늘",
-      "seasons": {
-        "spring": "봄",
-        "summer": "여름",
-        "autumn": "가을",
-        "winter": "겨울"
-      }
-    },
-    "signal": {
-      "label": "오늘의 시그널",
-      "open": "협업 제안 환영"
-    },
-    "appreciation": {
-      "like": "흔적 남기기",
-      "star": "GitHub 스타 주기",
-      "likeAria": "이 사이트에 흔적 남기기"
+    "orbit": {
+      "title": "Koimsurai의 개인 사이트: 노트, 혼잣말, 작품, 컬렉션",
+      "notesCount": "{{count}}편 · 최근 {{date}}",
+      "momentsCount": "최근 {{date}}",
+      "worksCount": "{{count}}개",
+      "collectionLine": "애니메이션 {{anime}}편, 영화 {{films}}편, 시리즈 {{series}}편 시청",
+      "aboutLine": "2004년부터 지금까지 떨어져 온 길",
+      "aboutCount": "2004 –"
     }
-  },
-  "comments": {
-    "titleN": "{{count}}개의 댓글",
-    "titleEmpty": "아직 댓글이 없어요",
-    "loginLabel": "로그인 방법 선택",
-    "anonymousLabel": "익명으로 댓글",
-    "namePlaceholder": "닉네임 *",
-    "emailPlaceholder": "이메일 (선택, 알림용)",
-    "websitePlaceholder": "웹사이트 (선택)",
-    "contentPlaceholder": "생각을 남겨주세요...",
-    "submit": "보내기",
-    "submitted": "✨ 댓글이 전송됐어요",
-    "submittedAwaitReview": "✨ 전송됨 — 관리자 승인 후 표시됩니다",
-    "authorBadge": "작성자",
-    "reply": "답글",
-    "errorEmpty": "댓글 내용을 입력해주세요",
-    "errorNoName": "닉네임을 입력해주세요",
-    "errorCaptcha": "인증 코드가 틀렸어요. 다시 계산해주세요",
-    "errorFailed": "댓글 전송 실패",
-    "errorFailedTryLater": "댓글 전송 실패. 나중에 다시 시도해주세요",
-    "closedNotice": "이 글의 댓글이 닫혔어요.",
-    "back": "돌아가기",
-    "beFirst": "✨ 첫 댓글을 남겨보세요"
   },
   "commandPalette": {
     "label": "글로벌 명령 팔레트",
@@ -254,130 +174,18 @@
       "lastYear": "지난 1 년"
     }
   },
-  "music": {
-    "title": "음악",
-    "description": "Koimsurai의 음악 취향과 Spotify 실시간 청취 기록.",
-    "loading": "음악 데이터 불러오는 중",
-    "heroTitle": "음악 성역",
-    "heroDesc": "나의 음악 취향, 컬렉션, 청취 분석",
-    "nowPlaying": "재생 중",
-    "lastPlayed": "마지막 재생",
-    "tabs": {
-      "recent": "최근 재생",
-      "genres": "좋아하는 장르",
-      "yearly": "연간 톱",
-      "analytics": "리스닝 분석"
-    },
-    "range": {
-      "short": "최근 4 주",
-      "medium": "최근 6 개월",
-      "long": "전체 기간"
-    },
-    "openInSpotify": "Spotify에서 듣기",
-    "recentHeading": "최근 재생",
-    "genresHeading": "좋아하는 장르 Top 5",
-    "yearlyHeading": "연간 톱",
-    "analyticsHeading": "리스닝 분석",
-    "empty": {
-      "recent": "최근 재생 기록이 아직 없습니다",
-      "genres": "장르 데이터가 아직 없습니다",
-      "yearly": "연간 톱 데이터가 아직 없습니다",
-      "analytics": "로딩 중... 데이터가 계속 나오지 않으면 먼저 「연간 톱」 탭에서 데이터를 불러오세요"
-    },
-    "cols": {
-      "track": "곡",
-      "features": "오디오 특성",
-      "duration": "길이",
-      "playedAt": "재생 시각",
-      "album": "앨범"
-    },
-    "features": {
-      "energy": "에너지",
-      "dance": "댄스",
-      "valence": "발렌스"
-    },
-    "bubbleCount": "{{count}} 명의 아티스트",
-    "analyticsSubtitle": "가장 많이 들은 톱 {{count}} 곡({{range}}) 기반",
-    "analytics": {
-      "popularity": "대중성",
-      "avgDuration": "평균 길이",
-      "avgRelease": "발매 연도 경향",
-      "explicit": "Explicit",
-      "decadeTitle": "연대별 분포"
-    }
-  },
-  "bookshelf": {
-    "title": "책장",
-    "description": "Koimsurai의 독서 목록과 노트.",
-    "loading": "책장 불러오는 중...",
-    "heroTitle": "지식의 별지도",
-    "subtitle": "광활한 책의 바다에서, 읽은 별 하나하나에 표시를",
-    "stats": {
-      "total": "장서",
-      "read": "읽음",
-      "reading": "읽는 중",
-      "avgRating": "평균 평점"
-    },
-    "statuses": {
-      "read": "읽음",
-      "reading": "읽는 중",
-      "toRead": "읽고 싶음"
-    },
-    "noRating": "평점 없음",
-    "searchPlaceholder": "제목이나 저자 검색...",
-    "filter": "필터",
-    "zeroGravity": "Zero-G 모드",
-    "zg": {
-      "hint": "드래그로 회전 · 스크롤로 줌 · 클릭하여 책 보기",
-      "back": "책장으로 돌아가기",
-      "inOrbit": "궤도 위의 책 {{count}}권",
-      "unavailable": "이 기기에는 GPU가 없어 Zero-G 모드를 사용할 수 없습니다",
-      "pages": "{{count}}쪽"
-    },
-    "twoDView": "2D 보기",
-    "skyStats": "별 {{total}}개 · 빛나는 별 {{read}} · 밝아지는 별 {{reading}}",
-    "avgRating": "평균 {{rating}}★",
-    "groups": {
-      "fantasy": "판타지",
-      "literature": "문학·소설",
-      "life": "삶과 마음",
-      "other": "기타"
-    },
-    "legend": {
-      "read": "다 읽음: 빛나는 별, 밝을수록 높은 평점",
-      "reading": "읽는 중: 밝아지는 중",
-      "toRead": "읽고 싶음: 아직 빛나지 않음",
-      "notes": "빛줄기: 메모 있음"
-    },
-    "skyHint": "← 좌우로 밀어 하늘 전체 보기 →",
-    "listTitle": "책 목록",
-    "noMatch": "조건에 맞는 책이 없습니다",
-    "hasNotes": "메모 있음",
-    "close": "닫기",
-    "started": "읽기 시작",
-    "finished": "다 읽음",
-    "myNotes": "나의 메모",
-    "about": "소개",
-    "showMore": "더 보기",
-    "showLess": "접기",
-    "publisher": "출판사",
-    "publishedDate": "출판일",
-    "pages": "페이지",
-    "filterStatus": "상태",
-    "filterRating": "평점",
-    "filterSort": "정렬",
-    "filterClear": "필터 지우기",
-    "sortOpts": {
-      "dateAddedDesc": "최근 추가순",
-      "dateAddedAsc": "오래된 추가순",
-      "titleAsc": "제목 A-Z",
-      "titleDesc": "제목 Z-A",
-      "ratingDesc": "높은 평점순",
-      "publishedDateDesc": "출판일"
-    }
-  },
   "blog": {
+    "views": "{{count}}회 읽음",
+    "summary": "요약",
+    "aiGen": "AI 생성",
+    "readDone": "다 읽음",
+    "minutesLeft": "{{count}}분 남음",
+    "sameCategory": "같은 「{{name}}」",
     "title": "노트",
+    "subtitle": "별들이 흐르는 동안, 순간의 호기심마다 한 줄기 호를 남긴다.",
+    "all": "전체",
+    "more": "{{count}}편 더",
+    "minutes": "약 {{count}}분",
     "metaTitle": "노트",
     "description": "Koimsurai의 기술 노트, 학습 기록, 생활 에세이. 프런트엔드 아키텍처, Rust, 시스템 설계 등.",
     "heroTitle": "노트",
@@ -389,7 +197,6 @@
       "popular": "인기"
     },
     "comment": "댓글",
-    "like": "좋아요",
     "unlike": "좋아요 취소",
     "share": "공유",
     "shareCopied": "복사됨!",
@@ -406,7 +213,6 @@
     "shareTitle": "공유",
     "commentTitle": "댓글",
     "subscribeTitle": "구독",
-    "fontSwitcherTitle": "폰트 전환",
     "statPosts": "글",
     "statTags": "태그",
     "statReads": "조회",
@@ -436,64 +242,24 @@
     "prevPost": "이전 글",
     "nextPost": "다음 글",
     "lastUpdated": "최근 업데이트",
-    "nearbyNav": "주변 글"
+    "nearbyNav": "주변 글",
+    "font": "글꼴",
+    "originalText": "원문",
+    "sameTag": "#{{name}} 태그의 글",
+    "sameTagNone": "이 태그는 이 글뿐이다."
   },
   "thinking": {
     "title": "혼잣말",
-    "subtitle": "떠오르는 생각이나 방금 본 것을 가볍게.",
+    "subtitle": "정적을 가르는 잡음 하나를 붙잡는다.",
     "ending": "대개는 그냥 혼잣말.",
     "empty": "아직 아무것도 없어요.",
-    "back": "뒤로",
-    "notFound": "찾을 수 없습니다."
+    "notFound": "찾을 수 없습니다.",
+    "label": "Moments",
+    "like": "좋아요",
+    "comments": "댓글 {{count}}개",
+    "older": "더 이전의 혼잣말"
   },
   "watch": {
-    "title": "지금 보고 있는 것",
-    "metaDescription": "내가 좋아하는 애니메이션·영화 — Bahamut Anime, Letterboxd 자동 동기화",
-    "subtitle": "애니와 영화 취향, 한 페이지에 펼쳐 놓아요",
-    "eyebrowLive": "● 시청 중",
-    "eyebrowLast": "최근 시청",
-    "favoritesTitle": "인생작",
-    "favoritesSubtitle": "순전히 주관적인 리스트. 내킬 때마다 업데이트.",
-    "recentTitle": "최근에 본 것",
-    "typeAnime": "애니",
-    "typeFilm": "영화",
-    "stats": {
-      "animeLabel": "편 애니",
-      "filmLabel": "편 영화",
-      "tvLabel": "편 드라마"
-    },
-    "recentGroups": {
-      "thisWeek": "이번 주",
-      "earlier": "더 이전"
-    },
-    "ending": "다음은 뭘 볼까. 나도 궁금해요.",
-    "typeTv": "드라마",
-    "library": {
-      "title": "시청 라이브러리",
-      "subtitle": "본 애니·영화·드라마를 한 페이지에 모았어요",
-      "tabs": {
-        "anime": "애니",
-        "film": "영화",
-        "tv": "드라마"
-      },
-      "search": "제목 검색…",
-      "sort": {
-        "newest": "최근 본 순",
-        "oldest": "오래 전 본 순",
-        "titleAsc": "제목 A→Z",
-        "titleDesc": "제목 Z→A"
-      },
-      "empty": "결과 없음",
-      "epsSuffix": "화",
-      "undated": "날짜 불명",
-      "loading": "불러오는 중…",
-      "openOnLetterboxd": "Letterboxd에서 열기",
-      "openOnTmdb": "TMDb에서 열기",
-      "openOnBahamut": "動畫瘋에서 열기",
-      "viewWatch": "← 「지금 보고 있는 것」으로 돌아가기"
-    },
-    "continueOn": "{{service}}에서 이어보기",
-    "viewOnTmdb": "TMDb에서 보기",
     "favManage": "인생작 관리",
     "favEmpty": "아직 없습니다",
     "favSearchPlaceholder": "TMDb 제목 검색…",
@@ -505,33 +271,26 @@
   "setup": {
     "title": "내 장비 · My Setup",
     "description": "Koimsurai의 장비 목록: 메인 PC, 이 사이트를 돌리는 홈 서버, 네트워크와 스마트홈, 그리고 집 안 연결도.",
-    "heroTitle": "내 장비",
-    "subtitle": "2026년의 모든 장비: 책상 위 메인 PC, 이 사이트를 돌리는 서버, 에어컨과 조명을 제어하는 작은 기기들까지.",
-    "filter": "분류",
+    "heroTitle": "장비",
+    "subtitle": "정밀함을 해체하고, 집착을 내려놓을 자리를 만든다.",
     "cat": {
       "main-rig": {
-        "short": "메인 PC",
-        "desc": "올화이트 메인 PC"
+        "short": "메인 PC"
       },
       "server": {
-        "short": "서버",
-        "desc": "이 사이트와 Home Assistant, 모든 셀프호스팅 서비스가 여기서 돌아간다"
+        "short": "서버"
       },
       "network": {
-        "short": "네트워크·모바일",
-        "desc": "디지털 라이프의 중심"
+        "short": "네트워크·모바일"
       },
       "smart-home": {
-        "short": "스마트홈",
-        "desc": "에어컨, 조명, 센서를 모두 Home Assistant로"
+        "short": "스마트홈"
       },
       "peripherals": {
-        "short": "주변기기",
-        "desc": "입력과 출력"
+        "short": "주변기기"
       },
       "base-ii": {
-        "short": "본가",
-        "desc": "본가에 갈 때 쓰는 예비 기지"
+        "short": "본가"
       }
     },
     "roles": {
@@ -541,28 +300,17 @@
       "hub3": "조도·온습도·재실 감지를 Matter로 보고. 야간 조명 자동 보정은 이 조도 값에 의존",
       "rm4": "에어컨 적외선 코드를 학습해 Home Assistant로 제어",
       "esp32": "보드 두 장으로 만든 433MHz 송신기. 천장등 순정 리모컨을 흉내 낸다",
-      "doorbell": "배터리 도어벨, H200 허브를 통해 연결"
+      "doorbell": "배터리 도어벨, 허브를 통해 연결"
     },
-    "retired": "은퇴",
-    "retiredText": "가족 공용 PC — NVIDIA GTX 960 (현재 가족이 사용 중)",
     "topo": {
-      "title": "집 안 연결도",
-      "hint": "노드를 누르면 해당 장비로 이동",
       "internet": "인터넷",
       "switch": "스위치",
-      "mobile": "휴대폰·노트북",
       "sensors": "조도·온습도·재실",
       "irBlaster": "적외선 리모컨",
       "rfBlaster": "433MHz RF",
       "rig": "메인 PC",
       "ac": "에어컨",
       "light": "천장등",
-      "legend": {
-        "wired": "유선",
-        "wifi": "Wi-Fi",
-        "matter": "Matter",
-        "air": "적외선 / RF"
-      },
       "netWired": "유선",
       "netMain": "메인",
       "netIot": "IoT 전용",
@@ -583,40 +331,36 @@
         "plug": "스마트 플러그"
       }
     },
-    "packages": "{{count}} (장비), {{iot}} (스마트홈)",
-    "term": {
-      "inputLabel": "터미널 명령어",
-      "tryHelp": "help 로 명령어 목록 보기",
-      "cdFirst": "먼저 cd 로 분류에 들어간 뒤 cat",
-      "sudo": "당신은 sudoers 파일에 없습니다. 이 일은 보고됩니다.",
-      "help": {
-        "help": "명령어 목록",
-        "ls": "분류 또는 분류 안의 장비 보기",
-        "cd": "분류로 이동(아래 카드도 함께 필터), cd .. 로 위로",
-        "cat": "장비 사양과 용도 보기",
-        "pwd": "현재 위치",
-        "whoami": "나는 누구",
-        "neofetch": "다시 실행",
-        "clear": "화면 지우기"
+    "sheet": {
+      "tabs": "도면",
+      "memoryTitle": "본가의 그 컴퓨터",
+      "memoryText": "본가에 갔을 때 쓰는 예비 기지. 사진이 없어서, 기억 속 대략적인 모습입니다.",
+      "fromMemory": "기억으로",
+      "root": "모든 자동화는 여기서 시작",
+      "drag": "← 좌우로 드래그해서 도면 전체 보기 →",
+      "to": {
+        "voice": "Google Home 음성",
+        "climate": "온습도 센서",
+        "ac": "에어컨",
+        "light": "천장등",
+        "door": "현관"
+      },
+      "subsystemTitle": "서브시스템",
+      "uplink": "업링크: 명령",
+      "downlink": "다운링크: 보고",
+      "telemetry": "텔레메트리",
+      "telemetryEvery": "이 서버가 30초마다 보내오는 값",
+      "telemetryWait": "신호 대기 중",
+      "subsystem": {
+        "cdh": "연산·데이터 처리",
+        "eps": "전력",
+        "tcs": "열 제어",
+        "data": "데이터 기록",
+        "comm": "통신",
+        "bus": "버스",
+        "struct": "구조",
+        "crew": "승무원 인터페이스"
       }
-    }
-  },
-  "info": {
-    "aboutSite": {
-      "title": "이 사이트",
-      "subtitle": "엔지니어의 개인 공간"
-    },
-    "history": {
-      "title": "역사",
-      "subtitle": "사이트의 발자취"
-    },
-    "messages": {
-      "title": "메시지",
-      "subtitle": "무엇이든 남겨주세요"
-    },
-    "friends": {
-      "title": "친구들",
-      "subtitle": "웹링"
     }
   },
   "newsletter": {
@@ -654,7 +398,6 @@
     "errorTitle": "문제가 발생했어요",
     "missingToken": "링크에 token이 없어요. 뉴스레터 하단의 구독 취소 링크를 이용해주세요.",
     "invalidLink": "링크가 유효하지 않거나 만료됐어요.",
-    "noServer": "서버에 연결할 수 없어요.",
     "unsubscribeFailed": "구독 취소 실패",
     "bodyConfirm": "<em>{{email}}</em>로 Koimsurai 뉴스레터를 구독 취소하려고 합니다.<br />취소 후 새 글은 받지 못해요.",
     "btnConfirm": "구독 취소 확정",
@@ -679,10 +422,389 @@
   },
   "photos": {
     "title": "사진 작품집",
-    "description": "Koimsurai 의 사진 작품집. 여행길의 빛과 그림자 기록."
+    "description": "Koimsurai 의 사진 작품집. 여행길의 빛과 그림자 기록.",
+    "heading": "사진",
+    "subtitle": "허공을 건너온 희미한 신호가, 이곳에서 한 줄씩 현상된다.",
+    "station": "DSN · 지상국",
+    "stationLabel": "멀리 있는 탐사선의 신호를 받는 지상국 접시 안테나",
+    "passesLabel": "월별 수신 장수: {{month}}에 가장 많은 {{count}}장",
+    "frame": "사진 {{date}}"
   },
-  "gallery": {
-    "allTags": "전체",
-    "moreTags": "더보기"
+  "aboutFall": {
+    "kick": "소개",
+    "title": "꽉 잡으세요.",
+    "hint": "아래로 스크롤",
+    "landPre": "서툴고 헤매던 수많은 어제를 지나,",
+    "land": "여기 내려앉다.",
+    "surface": "지표",
+    "surfaceTitle": "손에 쥔 것",
+    "surfaceSub": "줄곧 들고 다닌 것들.",
+    "skill": {
+      "frontend": "프런트엔드",
+      "backend": "백엔드",
+      "mobile": "모바일",
+      "devops": "데브옵스",
+      "design": "디자인 · 미디어",
+      "data": "데이터 저장",
+      "network": "네트워크",
+      "productivity": "생산성",
+      "ai": "AI 개발",
+      "teaching": "교육 도구"
+    },
+    "layer1": "첫째 층",
+    "layer1Title": "해 온 일",
+    "core": "핵",
+    "coreLine": "더 아래는 아직 쓰지 않은 이야기.",
+    "fallMeter": "지표까지",
+    "digMeter": "지표 아래"
+  },
+  "works": {
+    "title": "작품",
+    "subtitle": "소리 없는 심우주에, 한 치씩 흔적을 새긴다.",
+    "origin": "출발점",
+    "legendCore": "크기: 코드 양",
+    "legendSurface": "지형: 주 언어",
+    "legendRings": "고리: 다른 언어",
+    "legendMoons": "위성: GitHub 스타",
+    "legendHover": "마우스를 올리면: 입체 천체로 펼쳐짐"
+  },
+  "collection": {
+    "title": "컬렉션",
+    "subtitle": "중력이 닿는 곳마다, 나를 비춰 주었던 빛의 조각들.",
+    "kind": {
+      "anime": "애니",
+      "film": "영화",
+      "tv": "시리즈"
+    },
+    "status": {
+      "read": "완독",
+      "reading": "읽는 중",
+      "to-read": "읽을 책"
+    },
+    "watch": {
+      "title": "보기",
+      "anime": "편의 애니",
+      "animeEp": "화",
+      "film": "편의 영화",
+      "tv": "편의 시리즈",
+      "tvEp": "화",
+      "live": "시청 중",
+      "last": "최근에 본 것",
+      "episode": "{{n}}화"
+    },
+    "books": {
+      "title": "책장",
+      "total": "권"
+    },
+    "music": {
+      "title": "듣기",
+      "tracks": "곡",
+      "live": "재생 중",
+      "last": "방금 들은 곡"
+    },
+    "hint": "스크롤하면 더 멀리",
+    "sky": {
+      "unit": {
+        "s": "광초",
+        "m": "광분",
+        "h": "광시",
+        "d": "광일",
+        "y": "광년"
+      },
+      "ago": {
+        "now": "방금",
+        "s": "{{n}}초 전",
+        "m": "{{n}}분 전",
+        "h": "{{n}}시간 전"
+      },
+      "reach": "시야 {{n}} {{unit}}\n이 거리의 신호는 {{date}}에 보낸 것",
+      "away": "{{n}} {{unit}} 밖 · {{date}} 발신",
+      "live": "송신 중",
+      "queued": "아직 보내지 않음, 지구에",
+      "beyond": "기록 이전, 기록의 바깥 가장자리",
+      "records": "기록은 {{date}}부터",
+      "mark": {
+        "earth": "지구",
+        "geo": "정지궤도",
+        "iss": "국제우주정거장",
+        "moon": "달",
+        "jwst": "제임스 웹 우주 망원경",
+        "sun": "태양",
+        "mercury": "수성",
+        "venus": "금성",
+        "mars": "화성",
+        "asteroids": "소행성대",
+        "jupiter": "목성",
+        "saturn": "토성",
+        "uranus": "천왕성",
+        "neptune": "해왕성",
+        "kuiper": "카이퍼 벨트",
+        "newHorizons": "뉴호라이즌스",
+        "voyager1": "보이저 1호",
+        "heliopause": "태양권계면",
+        "oort": "오르트 구름",
+        "proxima": "프록시마 센타우리",
+        "barnard": "바너드별",
+        "wolf359": "울프 359",
+        "lalande": "랄랑드 21185",
+        "sirius": "시리우스",
+        "epsEri": "에리다누스자리 엡실론",
+        "procyon": "프로키온",
+        "tauCeti": "고래자리 타우",
+        "scale-sec": "1광초 · 1초 전",
+        "scale-min": "1광분 · 1분 전",
+        "scale-hour": "1광시 · 1시간 전",
+        "scale-day": "1광일 · 1일 전",
+        "scale-year": "1광년 · 1년 전"
+      }
+    }
+  },
+  "friends": {
+    "title": "친구",
+    "subtitle": "심우주는 길고 쓸쓸하지만, 돌아보면 언제나 별빛이 있다.",
+    "noSignal": "아직 신호가 없습니다",
+    "noFeed": "RSS 없음",
+    "legendCenter": "중심: 이 사이트",
+    "legendBeacon": "눈금: 최근 글, 오래될수록 별에서 멀리",
+    "legendSignal": "신호 고리: {{days}}일 안에 새 글",
+    "legendDock": "별 클릭: 도킹",
+    "dockWith": "{{name}}와 도킹",
+    "docked": "도킹 완료",
+    "recent": "최근 글",
+    "visit": "사이트로 가기",
+    "undock": "도킹 해제",
+    "legendDim": "어두울수록: 업데이트가 오래됨",
+    "dockLabel": "도킹 직전의 두 우주선, 그 사이를 오가는 신호",
+    "cardTitle": "이 사이트 정보",
+    "siteDesc": "한 엔지니어의 개인 공간",
+    "formTitle": "다음 별이 되기",
+    "fieldName": "이름",
+    "fieldNameHint": "사이트 이름",
+    "fieldUrl": "URL",
+    "fieldRss": "RSS (선택)",
+    "fieldDesc": "한 줄 소개",
+    "submit": "신청 보내기",
+    "errRequired": "필수 항목입니다",
+    "errUrl": "http:// 또는 https:// 로 시작하는 주소여야 합니다",
+    "sent": "메일 앱을 열었습니다. 열리지 않았다면 여기로 보내 주세요:",
+    "rulesTitle": "궤도 진입 조건",
+    "rule1": "사이트가 정상적으로 열리고, 자체 도메인과 HTTPS가 있을 것 (무료 서브도메인도 가능).",
+    "rule2": "직접 쓴 콘텐츠가 있을 것. 퍼온 글 사이트, 광고 사이트, SEO 농장은 교환하지 않습니다.",
+    "rule3": "RSS가 있으면 새 글을 올릴 때마다 여기에 신호가 도착합니다.",
+    "rule4": "먼저 당신의 사이트에 이곳 링크를 걸어 주시면 더 빨리 답장합니다."
+  },
+  "messages": {
+    "title": "방명록",
+    "subtitle": "소리 없는 긴 밤, 먼 곳에서 올 펄스를 고요히 기다린다.",
+    "rx": "RX · 신호 대기",
+    "rxCount_one": "RX · 신호 {{count}}개 수신",
+    "rxCount_other": "RX · 신호 {{count}}개 수신",
+    "txReady": "TX · 송신 대기",
+    "txSending": "TX · 송신 중",
+    "logTitle": "수신한 신호",
+    "emptyTitle": "아직 신호가 없습니다.",
+    "emptyText": "첫 메시지는 이 선 위에 나타납니다.",
+    "privatePre": "공개하기 어려운 내용은 메일로:",
+    "privateMid": ". 버그 제보나 기능 제안은",
+    "privatePost": "에 남겨 주세요."
+  },
+  "signal": {
+    "formTitle": "신호 보내기",
+    "loginWith": "로그인",
+    "asUser": "{{name}}(으)로 작성",
+    "useAnonymous": "익명으로",
+    "useAccount": "계정으로",
+    "fieldName": "이름",
+    "fieldEmail": "이메일 (선택, 비공개)",
+    "fieldWebsite": "웹사이트 (선택)",
+    "fieldText": "남길 말",
+    "meter": "{{count}}자 · 신호 길이 {{seconds}}초",
+    "captcha": "{{a}} + {{b}} = ?",
+    "replyingTo": "{{name}}에게 답장",
+    "cancelReply": "취소",
+    "reply": "답장",
+    "like": "수신",
+    "admin": "운영자",
+    "submit": "신호 보내기",
+    "sentPending": "신호를 보냈습니다. 검토 후 여기에 표시됩니다.",
+    "sentApproved": "신호를 보냈습니다.",
+    "errEmpty": "아직 아무것도 쓰지 않았습니다",
+    "errName": "이름을 입력해 주세요",
+    "errCaptcha": "답이 틀렸습니다. 문제를 바꿨습니다",
+    "errFailed": "보내지 못했습니다. 잠시 후 다시 시도해 주세요",
+    "rule1": "익명 메시지는 검토 후에 표시되고, 로그인하면 바로 표시됩니다",
+    "rule2": "GitHub나 Google로 로그인할 수 있고, 익명도 괜찮습니다",
+    "rule3": "이메일은 공개되지 않습니다. 광고와 영업은 받지 않습니다",
+    "heading": "응답",
+    "rxCount_one": "RX · 신호 {{count}}개 수신",
+    "rxCount_other": "RX · 신호 {{count}}개 수신",
+    "empty": "아직 받은 신호가 없다. 첫 신호는 여기에 나타난다.",
+    "closed": "이 글은 응답을 닫았다. 채널은 수신만 한다.",
+    "react": {
+      "title": "반응",
+      "like": "좋아요",
+      "helpful": "도움이 됐어요",
+      "more": "더 알고 싶어요"
+    },
+    "writeSomething": "뭔가 적어 보세요"
+  },
+  "log": {
+    "title": "항해 일지",
+    "subtitle": "중력을 벗어나면, 이 몸이 곧 드넓은 하늘이 된다.",
+    "met": "MISSION ELAPSED TIME · {{date}}부터",
+    "metValue": "{{days}}일 {{hms}}",
+    "total_one": "누적 기여 {{count}}회",
+    "total_other": "누적 기여 {{count}}회",
+    "noContrib": "GitHub 데이터를 받지 못했습니다",
+    "now": "지금",
+    "contrib_one": "기여 {{count}}회",
+    "contrib_other": "기여 {{count}}회",
+    "legendHeight": "높이: 누적 GitHub 기여",
+    "legendDots": "점: 개편 (마우스를 올리면 내용)",
+    "legendHeat": "땅 위의 불빛: 하루 기여, 한 주에 일곱 줄",
+    "statusLabel": "지금 상태",
+    "coding": "오늘 코딩한 시간",
+    "codingValue": "{{h}}시간 {{m}}분",
+    "codingVia": "WakaTime",
+    "languages": "이번 주 언어",
+    "playing": "요즘 하는 게임",
+    "played2w": "최근 2주 {{hours}}시간 · Steam 라이브러리 {{owned}}개",
+    "longest": "가장 오래 한 게임은 {{name}}, {{hours}}시간"
+  },
+  "colophon": {
+    "title": "이 사이트",
+    "subtitle": "여기엔 다른 것이 없다. 밤과 흰 먹, 그리고 희미한 빛뿐.",
+    "hint": "별을 누르면 육분의가 그쪽으로 돌아가 잽니다.",
+    "star": {
+      "material": "재료",
+      "type": "글자",
+      "sky": "하늘",
+      "rule1": "규칙 01",
+      "rule2": "규칙 02",
+      "rule3": "규칙 03",
+      "license": "라이선스",
+      "qa": "Q&A"
+    },
+    "title_material": "딱 세 가지",
+    "text_material": "호박색은 한 점에만 나타납니다. 지금 있는 곳, 지금 일어나는 일. 넓은 면의 강조색으로는 쓰지 않습니다.",
+    "title_type": "세 가지 서체",
+    "text_type": "중국어와 섞인 문장에 하나, 영어로만 된 큰 글자에 하나, 날짜와 숫자에 하나.",
+    "title_sky": "같은 하늘",
+    "text_sky": "모든 페이지는 이 하늘 속의 무언가이고, 모두 홈의 점과 선으로 된 토성에서 나왔습니다.",
+    "title_rule1": "한 화면에 신호는 하나",
+    "text_rule1": "첫 페이지의 토성은 한 단계씩 그려졌다. 순서대로 따라가다 위성 단계에서 직접 하나를 골라 보자.",
+    "title_rule2": "점과 선만",
+    "text_rule2": "사진 페이지의 사진은 모두 이렇게 수신된다. 마지막 단계에서는 점만 남기면 어떻게 되는지 본다.",
+    "title_rule3": "데이터에서 자란다",
+    "text_rule3": "작품 페이지 나선 위의 별은 모두 한 저장소의 숫자로부터 자라났다. 숫자를 바꿔 하나를 만들고, 자라는 과정을 한 단계씩 보자.",
+    "title_license": "라이선스",
+    "text_license": "코드는 AGPL-3.0으로 공개합니다. 글, 사진과 그 밖의 콘텐츠는 모든 권리를 보유합니다.",
+    "swatchGround": "검정은 종이",
+    "swatchPaper": "흰색은 잉크",
+    "swatchAmber": "호박색은 신호",
+    "fontSerif": "본명조: 중국어와 섞인 문장",
+    "fontLatin": "Instrument Serif: 영어로만 된 큰 글자, 굵게 쓰지 않음",
+    "fontMono": "고정폭: 날짜와 숫자",
+    "homePage": "홈",
+    "skyIs": {
+      "home": "토성을 도는 위성",
+      "notes": "겹겹의 별 궤적",
+      "moments": "스쳐 가는 혜성",
+      "works": "바깥으로 뻗는 나선 항로",
+      "collection": "지구에서 보낸 신호",
+      "photos": "심우주에서 내려받은 사진",
+      "setup": "우주선 설계도",
+      "friends": "같은 중심을 도는 별",
+      "messages": "수신한 전파",
+      "log": "지표에서의 발사",
+      "about": "한 번의 낙하"
+    },
+    "cell": "칸",
+    "genSize": "코드 양",
+    "genLangs": "언어 수",
+    "genStars": "GitHub 스타",
+    "genCommits": "커밋",
+    "genMain": "주 언어",
+    "genOther": "기타",
+    "saturnToy": "첫 페이지의 토성, 현재 단계까지 그린 모습",
+    "photoToy": "갤러리의 사진 한 장, 현재 단계까지 수신한 모습",
+    "workToy": "아래 숫자로 자라난 천체",
+    "stepsLabel": "단계",
+    "stepNext": "다음 →",
+    "stepAgain": "처음부터 ↺",
+    "genPushed": "마지막 푸시",
+    "daysAgo": "일 전",
+    "steps": {
+      "saturn": {
+        "light": {
+          "t": "구와 빛",
+          "d": "처음에는 구 하나와 왼쪽 위에서 비추는 태양뿐이다. 빛을 받는 면은 밝고, 뒷면은 어둡다."
+        },
+        "strokes": {
+          "t": "음영 대신 붓질",
+          "d": "색을 칠하지 않고 가로선을 한 줄씩 긋는다. 밝을수록 선이 굵다. 뒷면의 선은 사라질 만큼 가늘어져, 화면에는 검정과 흰색만 남는다."
+        },
+        "bands": {
+          "t": "실제 구름 띠",
+          "d": "밝기는 카시니가 찍은 띠의 배열을 따른다. 적도대가 가장 밝고 양옆이 가장 어둡다. 북위 78°의 선은 북극 육각형의 가장자리다. 노이즈를 조금 더해 선이 흔들리고 끊어진 붓질이 되게 한다."
+        },
+        "rings": {
+          "t": "고리와 그림자",
+          "d": "고리도 동심원 붓질이고, 촘촘함은 실제 고리를 따른다. B 고리가 가장 촘촘하고, 카시니 간극은 비어 있으며, A 고리 안에는 엥케 간극도 있다. 행성의 그림자가 고리에 드리우고, 고리의 그림자도 행성에 드리운다."
+        },
+        "satellites": {
+          "t": "한 번에 하나만",
+          "d": "바깥의 다섯 궤도에 위성이 하나씩 있고, 첫 페이지의 다섯 구역에 대응한다. 호박색은 한 번에 하나에만 준다. 다른 위성을 눌러 보자."
+        },
+        "trails": {
+          "t": "장노출",
+          "d": "마지막은 배경이다. 셔터를 열어 두면 모든 별이 천구의 극을 돌며 호를 그린다. 수기 페이지는 이것을 남겨, 글 한 편이 별의 궤적 하나가 된다."
+        }
+      },
+      "photo": {
+        "raw": {
+          "t": "원래 사진",
+          "d": "갤러리의 한 장. 우주에서 찍은 사진은 바로 눈앞에 나타나지 않고, 먼저 전송을 거친다."
+        },
+        "bits": {
+          "t": "0과 1이 되다",
+          "d": "카메라가 이미지를 0과 1로 바꿔 한 줄씩 보낸다. 막 받았을 때는 깜박이는 숫자들만 보인다."
+        },
+        "gray": {
+          "t": "한 줄씩 흑백으로",
+          "d": "지상국이 한 줄씩 복호화한다. 먼저 도착하는 건 밝기라서, 사진이 위에서 아래로 떠오른다. 호박색 선이 지금 수신 중인 줄이다."
+        },
+        "color": {
+          "t": "한 번 쓸어 색을 입히다",
+          "d": "밝기를 다 받으면, 왼쪽에서 오른쪽으로 한 번 쓸어 색을 되돌린다. 사진 페이지의 사진은 화면에 들어올 때마다 이렇게 수신된다."
+        },
+        "dots": {
+          "t": "점만 남기면",
+          "d": "같은 사진을 한 칸에 점 하나씩만 남긴다. 점의 크기가 곧 밝기다. 칸을 키우면 사진이 서서히 별밭이 된다."
+        }
+      },
+      "work": {
+        "numbers": {
+          "t": "숫자 몇 개",
+          "d": "GitHub에서 저장소는 숫자 몇 개일 뿐이다. 코드 양, 쓴 언어, 별 개수, commit 수, 마지막 푸시 이후 날짜. 먼저 조절해 보자."
+        },
+        "surface": {
+          "t": "크기와 지형",
+          "d": "코드가 많을수록 행성이 크다. 주 언어가 지형을 정한다. TypeScript는 가스 띠, Rust는 구멍투성이 바위, Python은 얼음, 나머지는 경선이다. commit이 많을수록 띠와 구덩이가 늘어난다."
+        },
+        "rings": {
+          "t": "고리와 위성",
+          "d": "주 언어 외에 언어가 하나 늘 때마다 고리가 하나 늘고, 선 모양은 언어마다 다르다. 실선은 TypeScript, 파선은 Rust, 점선은 Python. GitHub 별은 위성이 되고, 최대 네 개다."
+        },
+        "body": {
+          "t": "입체로 펼치기",
+          "d": "작품 페이지는 평소 선으로 된 기호만 그리고, 마우스를 올리면 점으로 그린 입체 별로 펼쳐진다. 밝은 면은 점이 촘촘하고 어두운 면은 성기다. 마지막 푸시가 최근일수록 빨리 돈다."
+        },
+        "spiral": {
+          "t": "나선에 올리기",
+          "d": "마지막으로 작품 페이지의 나선에 올린다. 중심이 출발점이고, 새것일수록 바깥쪽이다. 방금 만든 이 별이 가장 새것이라 가장 바깥에 놓인다."
+        }
+      }
+    }
   }
 }

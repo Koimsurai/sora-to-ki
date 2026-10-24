@@ -8,7 +8,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::FromRow;
 
-use crate::{error::AppError, state::AppState};
+use crate::{
+    error::AppError,
+    handlers::excerpt_links::{self, ExcerptLink},
+    state::AppState,
+};
 
 // ── 多語系（對齊 Express index.js 的常數與 helper）─────────────────────────
 pub(crate) const I18N_LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
@@ -77,6 +81,9 @@ pub struct PostRow {
     // 內容格式：'markdown'（預設）| 'mdx'。舊列/未設 → NULL → 前端當 markdown。
     #[sqlx(default)]
     pub(crate) format: Option<String>,
+    /// 摘要裡連到章節的句子（JSON，依語系分開；見 `excerpt_links` 模組）。
+    #[sqlx(default)]
+    pub(crate) excerpt_links: Option<String>,
     // GROUP_CONCAT(t.name)；無 tag 時為 NULL
     pub(crate) tags: Option<String>,
 }
@@ -197,6 +204,9 @@ pub struct PostListItem {
     /// 列表卡片顯示的是內文截斷而非 AI 摘要（見 Blog.tsx NoteCard），但整篇 content
     /// 進列表要多 ~188KB，所以只送前端截斷所需的長度。
     pub content_preview: String,
+    /// 該語系內文的長度（字元數）。手記列表用它估閱讀時間、決定那篇文章的星軌拖多長。
+    #[specta(type = specta_typescript::Number)]
+    pub content_length: i64,
     pub category: Option<String>,
     pub status: String,
     pub author: Option<String>,
@@ -371,6 +381,7 @@ pub async fn list_posts(
             title,
             excerpt,
             content_preview: crate::util::js_substring_prefix(&locale_content_str, 260),
+            content_length: i64::try_from(locale_content_str.chars().count()).unwrap_or(i64::MAX),
             category: row.category.clone(),
             status: row.status.clone(),
             author: row.author.clone(),
@@ -415,6 +426,8 @@ pub struct PostDetailResponse {
     pub title: String,
     pub content: String,
     pub excerpt: String,
+    /// 摘要裡連到章節的句子（這個語系的；摘要裡找不到的已濾掉）。
+    pub excerpt_links: Vec<ExcerptLink>,
     pub category: Option<String>,
     pub status: String,
     pub author: Option<String>,
@@ -517,6 +530,7 @@ pub async fn get_post(
     };
 
     let is_source = requested == source;
+    let excerpt_links = excerpt_links::for_locale(row.excerpt_links.as_deref(), requested, &excerpt);
     Ok(Json(PostDetailResponse {
         message: "success".into(),
         slug: row.slug.clone(),
@@ -524,6 +538,7 @@ pub async fn get_post(
         title,
         content,
         excerpt,
+        excerpt_links,
         category: row.category.clone(),
         status: row.status.clone(),
         author: row.author.clone(),

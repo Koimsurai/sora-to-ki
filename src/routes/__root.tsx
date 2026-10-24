@@ -1,15 +1,17 @@
 // 全域樣式/字型 —— 對齊舊 main.tsx 的 entry import(P2 之前漏掉導致全站無 Tailwind/CSS 變數/字型 → 全破版)。
 // index.css 先載(@tailwind base + :root 變數 + body/grain/:lang 字型切換),component CSS 才能覆蓋。
 import '@fontsource-variable/tasa-orbiter';
-import '@fontsource-variable/tasa-explorer';
+// 翻新用的兩套拉丁字：Instrument Serif（整段英文的大字，只有 400）與 Fira Code（日期、數字、標籤）。
+// 中文的思源宋體不在這裡，它是按頁裁字（layout/SerifFontLoader）
+import '@fontsource/instrument-serif/400.css';
+import '@fontsource-variable/fira-code';
 import '../index.css';
 import '../App.css';
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { Outlet, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { AuthProvider } from '../contexts/AuthContext';
-import { PageVisibilityProvider } from '../contexts/PageVisibilityContext';
 import { localeFromPathname } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { SUPPORTED_LOCALES } from '../lib/locales';
@@ -47,27 +49,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   notFoundComponent: localeWrap(NotFound),
   component: RootComponent,
 });
-
-// 訂閱 + 快照 + SSR 預設值,正是 useSyncExternalStore 的職責。
-// 原本是 useState + effect 裡先 onChange() 再訂閱:那個「先呼叫一次」會在 mount 時
-// 多觸發一次 render(document.hidden 在 render/SSR 期讀不到,只能等 effect)。
-// 換成 useSyncExternalStore 後 client 首次 render 就拿得到真值,不再有補丁式的第二次 render。
-const subscribeVisibility = (cb: () => void) => {
-  document.addEventListener('visibilitychange', cb);
-  return () => {
-    document.removeEventListener('visibilitychange', cb);
-  };
-};
-
-// PageVisibilityProvider 是受控的(需 isVisible)。SSR 預設 visible,client 端追蹤 document.hidden。
-function PageVisibilityBridge({ children }: Readonly<{ children: ReactNode }>) {
-  const isVisible = useSyncExternalStore(
-    subscribeVisibility,
-    () => !document.hidden,
-    () => true, // SSR:沒有 document,一律當可見
-  );
-  return <PageVisibilityProvider isVisible={isVisible}>{children}</PageVisibilityProvider>;
-}
 
 function RootComponent() {
   useServiceWorker();
@@ -132,11 +113,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         {SUPPORTED_LOCALES.filter((l) => l !== locale).map((l) => (
           <meta key={l} property="og:locale:alternate" content={LOCALE_TO_OG[l]} />
         ))}
-        {/* pre-paint,兩件事：
-            1. 首訪+桌面+首頁(且沒要求減少動態)時先藏內容、顯示開場底色(.intro-veil),
-               避免 client-only intro 掛上前先閃首頁;條件要跟 SpaceBackdropShell 的 shouldSkipIntro 一致。
-               SpaceBackdropShell pre-reveal 移除,4s safety timeout 兜底(JS 失敗也不會卡住)。
-            2. 套用文章閱讀字體偏好 → html[data-blog-font]。偏好在 localStorage、server 讀不到，
+        {/* pre-paint：套用文章閱讀字體偏好 → html[data-blog-font]。偏好在 localStorage、server 讀不到，
                原本是 BlogPost 掛載後才 setState，等於「首屏用預設 serif 畫完、再整篇換字體重排」——
                回訪讀者每次進文章都吃一次。字體棧定義在 index.css 的 --blog-font-<id>。
                只收 /^[a-z-]{1,20}$/：localStorage 是使用者可改的，不驗就等於把任意字串寫進 attribute。
@@ -150,13 +127,26 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             或 router 還原時機下手，不是這一行。 */}
         <script
           // 這裡是唯一選項：這段必須在 paint 之前「同步」跑完（<script src> 或 useEffect
-          // 都太晚，首頁會先閃一下、文章會先用錯字體排一次）。內容是原始碼寫死的字串常量，
+          // 都太晚，文章會先用錯字體排一次）。內容是原始碼寫死的字串常量，
           // 沒有變數插值、沒有使用者輸入直接落地（localStorage 那個值有白名單格式驗證），
           // 不存在注入面。
           // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var d=sessionStorage.getItem('introCompleted')==='true';var m=matchMedia('(max-width:768px)').matches;var r=matchMedia('(prefers-reduced-motion: reduce)').matches;var p=location.pathname;var h=p==='/'||/^\\/(en|ja|ko|zh-cn)\\/?$/.test(p);if(!d&&!m&&!r&&h){document.documentElement.classList.add('intro-pending');setTimeout(function(){document.documentElement.classList.remove('intro-pending')},4000);}}catch(e){}try{var f=localStorage.getItem('blogFont');if(f&&/^[a-z-]{1,20}$/.test(f)){document.documentElement.setAttribute('data-blog-font',f);}}catch(e){}})()",
+              "(function(){try{var f=localStorage.getItem('blogFont');if(f&&/^[a-z-]{1,20}$/.test(f)){document.documentElement.setAttribute('data-blog-font',f);}}catch(e){}})()",
+          }}
+        />
+        {/* 開場（index.css 的 #boot、layout/TransitionLayer 的 enter）：在 paint 之前掛上 html[data-boot]，
+            頁面就先藏在夜色後面、不會先閃出來；外圈那道線照載入的階段推（--boot-p）。
+            轉場掛上之後接手：畫滿那一圈，點飛向這一頁的錨點，夜色淡掉。
+            不演的：後台、要求減少動態、自動化瀏覽器（e2e 與爬蟲不必等一段動畫）。
+            同一個分頁重新整理時是 quick（不再刻意停留）。6 秒後一定拿掉：轉場的程式沒載到也不會卡住 */}
+        <script
+          // 同上：必須在 paint 之前同步跑完。內容是寫死的字串常量，沒有變數插值也沒有使用者輸入
+          // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var d=document.documentElement;if(navigator.webdriver||/^\\/admin(\\/|$)/.test(location.pathname)||matchMedia('(prefers-reduced-motion: reduce)').matches)return;var q=sessionStorage.getItem('koim-boot');sessionStorage.setItem('koim-boot','1');d.setAttribute('data-boot',q?'quick':'');var set=function(v){if(d.hasAttribute('data-boot'))d.style.setProperty('--boot-p',String(v))};set(0.12);document.addEventListener('DOMContentLoaded',function(){set(0.45)});if(document.fonts)document.fonts.ready.then(function(){set(0.65)});addEventListener('load',function(){set(0.85)});setTimeout(function(){d.removeAttribute('data-boot');d.style.removeProperty('--boot-p')},6000)}catch(e){}})()",
           }}
         />
         {/* Plausible 分析。未設 VITE_PLAUSIBLE_SCRIPT 就整個不輸出 —— dev 與 e2e 都不設。
@@ -196,15 +186,20 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         ) : null}
       </head>
       <body>
+        {/* 開場的夜色與那顆點（只在 html[data-boot] 時顯示，見上面 head 裡那段） */}
+        <div id="boot" aria-hidden="true">
+          <svg className="boot-ring" viewBox="0 0 44 44">
+            <circle cx="22" cy="22" r="21" />
+          </svg>
+          <i className="boot-dot" />
+        </div>
         {/* 全域 providers(對齊舊 App.tsx 疊法)。SEOHead 已退休 → HelmetProvider/react-helmet-async 一併移除。 */}
         <AuthProvider>
           <ParallaxProvider>
-            <PageVisibilityBridge>
-              {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
-                  否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
-                  prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
-              <LocaleProvider locale={locale}>{children}</LocaleProvider>
-            </PageVisibilityBridge>
+            {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
+                否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
+                prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
+            <LocaleProvider locale={locale}>{children}</LocaleProvider>
           </ParallaxProvider>
         </AuthProvider>
         <Scripts />

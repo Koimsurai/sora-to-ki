@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import { apiUrl } from '@/lib/api';
-import type { Thought } from '@/components/blog/ThoughtCard';
+import type { Thought } from '@/types/thought';
 
 // 碎念列表改由 TanStack Query 管理。loader 用 prefetchQuery 預取 → SSR baked。
 // 發文／編輯／刪除後用 queryClient.invalidateQueries(['thoughts','list']) 重抓。

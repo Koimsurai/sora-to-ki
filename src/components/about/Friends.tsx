@@ -1,517 +1,700 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { LocaleLink } from '@/i18n/locale-link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes } from 'react-icons/fa';
+// 朋友：這個站是中心的琥珀點，朋友是繞著它轉的星，各在自己的橢圓軌道上（about/friendsSky）。
+// 朋友最近的每一篇是他軌道上的一個刻點（後端從他的 RSS 抓），滑過看標題、點了開文章；
+// 點一顆星就跟他對接：鏡頭拉近、兩艘船接上，旁邊展開他最近的文章。
+// 右邊是交換用的本站資料與申請表：打名字時一顆預覽星從畫面外飛來等著，送出時點火切進空軌道。
+// 換頁進來時琥珀點落在中心，軌道從內往外一條接一條長出來；離開時軌道收回中心，點從中心飛走。
+import { useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes, type MouseEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import InfoPage from './InfoPage';
-import { Modal, ModalTitle } from '@/components/common/Modal';
-import { lookupOr } from '@/lib/tableLookup';
+import { friendsQueryOptions } from '@/data/friendsData';
+import { usePageTransition } from '@/hooks/usePageTransition';
+import { after, isArriving } from '@/store/pageTransition';
+import { createSky, drawDockIllustration, frameOf, FRESH_DAYS, INSERT_S, type Drawn, type Preview } from './friendsSky';
+import './Friends.css';
+import { sameTitle } from '@/lib/pageTitle';
 
-interface Friend {
-  name: string;
-  url: string;
-  avatar?: string;
-  tagline?: string;
-}
-interface FailedSite {
-  name: string;
-  url: string;
-}
-interface BlacklistSite {
-  name: string;
-  reason?: string;
-}
-interface FriendForm {
-  name: string;
-  site: string;
-  url: string;
-  avatar: string;
-  email: string;
-  tagline: string;
-}
+const CONTACT = 'timo9378@gmail.com';
+const SITE = { name: '宙と木', url: 'https://koimsurai.com', rss: 'https://koimsurai.com/rss.xml' };
+const ART = '/illustrations/docking.webp';
 
-/**
- * 友鏈列表 — 之後手動加，格式：{ name, url, avatar, tagline }
- * 還沒人就讓它空著，頁面會顯示「歡迎成為第一個」。
- */
-const FRIENDS: Friend[] = [];
+/** 滑鼠離一顆星多近才算滑到它（CSS 像素） */
+const NEAR_PX = 40;
+/** 離一個刻點多近才算滑到它 */
+const BEACON_PX = 9;
+/** 軌道全部長出來的時間（秒） */
+const GROW_S = 1.6;
+/** 收：軌道收回中心的時間（毫秒） */
+const ERASE_MS = 480;
+/** 收完時點離開的速度（px/ms） */
+const LEAVE_SPEED = 0.7;
+/** 對接：鏡頭拉近、兩艘船接上各要幾秒；解除時倒著走 */
+const ZOOM_S = 0.8;
+const JOIN_S = 0.9;
+/** 預覽星從畫面外飛到外圈要幾秒 */
+const HOLD_S = 1.4;
+/** 對接插圖只是慢慢晃，30fps 就夠 */
+const DOCK_FRAME_MS = 33;
 
-const FAILED: FailedSite[] = []; // 失聯的（網站掛了/換域名等）
-const BLACKLIST: BlacklistSite[] = []; // 黑名單（違規/變廣告農場）
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeIn = (t: number) => t * t;
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
+const hostOf = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-// 本站訊息卡 — 給對方寫進他們的友鏈頁
-const SITE_INFO = {
-  name: '宙と木',
-  url: 'https://koimsurai.com',
-  desc_zhTW: '一個工程師的個人空間',
-  desc_zhCN: '一个工程师的个人空间',
-  desc_en: "A developer's personal corner",
-  desc_ja: 'あるエンジニアの個人スペース',
-  desc_ko: '한 엔지니어의 개인 공간',
-  // 永久分享連結（自製 NAS）— 如果 NAS 掛了/重開後失效，把這個換掉
-  avatar: 'https://nas.koimsurai.com/s/99881e40-51d4-4ea2-8dbd-47692f6343ff',
+type FieldKey = 'name' | 'url' | 'rss' | 'desc';
+type FormErrors = Partial<Record<FieldKey, 'required' | 'url'>>;
+const FIELD_ORDER: FieldKey[] = ['name', 'url', 'rss', 'desc'];
+
+const isWebUrl = (s: string) => {
+  try {
+    const u = new URL(s);
+    return u.protocol === 'https:' || u.protocol === 'http:';
+  } catch {
+    return false;
+  }
 };
 
-const FRIENDS_BY_LANG: Record<string, Record<string, string>> = {
-  'zh-TW': {
-    intro:
-      '友鏈的中文圈起源像是古早 SEO 時代「我貼你、你貼我」的互助文化。對我來說更像「我在這片網海裡看見了你，幫你掛個牌子」。',
-    listHeading: '目前的朋友',
-    emptyList: '── 還沒有人，這裡空著。歡迎成為第一個。 ──',
-    failedHeading: '以下站點無法訪問，已失聯',
-    blacklistHeading: '以下站點不合規，已被禁止',
-    applyHeading: '想交換友鏈？',
-    applyIntro: '幾個小前提：',
-    rule1: '站點目前能正常瀏覽（沒過期 / 沒掛掉）。',
-    rule2: '有原創內容（轉貼站、純廣告、SEO 農場恕不交換）。',
-    rule3: 'HTTPS、有自己的域名（不限 .com / .tw / .moe，免費 subdomain 也可）。',
-    rule4: '如果你願意先在你站上掛我的連結，我會更快回覆。',
-    siteCardLabel: '本站的訊息卡：',
-    cardName: '站點名稱：',
-    cardUrl: '站點地址：',
-    cardDesc: '站點描述：',
-    cardAvatar: '頭像：',
-    cardAvatarLink: '連結',
-    contactPre: '想申請的話，可以點下方按鈕填表（會幫你開信件用戶端寄出），或直接到 ',
-    contactLink: '留言頁',
-    contactPost1: ' 留言、寄信到 ',
-    contactPost2: '。',
-    applyBtn: '來交個朋友',
-    desc: SITE_INFO.desc_zhTW,
-  },
-  'zh-CN': {
-    intro:
-      '友链的中文圈起源像是古早 SEO 时代「我贴你、你贴我」的互助文化。对我来说更像「我在这片网海里看见了你，帮你挂个牌子」。',
-    listHeading: '目前的朋友',
-    emptyList: '── 还没有人，这里空着。欢迎成为第一个。 ──',
-    failedHeading: '以下站点无法访问，已失联',
-    blacklistHeading: '以下站点不合规，已被禁止',
-    applyHeading: '想交换友链？',
-    applyIntro: '几个小前提：',
-    rule1: '站点目前能正常浏览（没过期 / 没挂掉）。',
-    rule2: '有原创内容（转贴站、纯广告、SEO 农场恕不交换）。',
-    rule3: 'HTTPS、有自己的域名（不限 .com / .tw / .moe，免费 subdomain 也可）。',
-    rule4: '如果你愿意先在你站上挂我的连结，我会更快回复。',
-    siteCardLabel: '本站的讯息卡：',
-    cardName: '站点名称：',
-    cardUrl: '站点地址：',
-    cardDesc: '站点描述：',
-    cardAvatar: '头像：',
-    cardAvatarLink: '链接',
-    contactPre: '想申请的话，可以点下方按钮填表（会帮你开邮件客户端寄出），或直接到 ',
-    contactLink: '留言页',
-    contactPost1: ' 留言、寄信到 ',
-    contactPost2: '。',
-    applyBtn: '来交个朋友',
-    desc: SITE_INFO.desc_zhCN,
-  },
-  en: {
-    intro:
-      'The Chinese-web tradition of "friend links" comes from the old SEO days — "I link you, you link me". To me it feels more like "I saw you in this big sea, here\'s a little name plate".',
-    listHeading: 'Current friends',
-    emptyList: '── No one yet — this space is empty. Be the first. ──',
-    failedHeading: 'Sites below are no longer reachable',
-    blacklistHeading: 'Sites below violated the rules and are blocked',
-    applyHeading: 'Want to swap links?',
-    applyIntro: 'A few small prerequisites:',
-    rule1: 'The site is reachable right now (not expired or dead).',
-    rule2: 'It has original content (no scrapers, pure ads, or SEO farms).',
-    rule3: 'HTTPS and your own domain (any TLD is fine, free subdomains too).',
-    rule4: "If you're willing to put my link on your site first, I'll reply faster.",
-    siteCardLabel: "This site's info card:",
-    cardName: 'Site name: ',
-    cardUrl: 'Site URL: ',
-    cardDesc: 'Description: ',
-    cardAvatar: 'Avatar: ',
-    cardAvatarLink: 'link',
-    contactPre: 'To apply, click the button below to fill the form (it opens your mail client), or jump to ',
-    contactLink: 'the messages page',
-    contactPost1: ', or just email ',
-    contactPost2: '.',
-    applyBtn: "Let's be friends",
-    desc: SITE_INFO.desc_en,
-  },
-  ja: {
-    intro:
-      '中国語圏のフレンドリンクは、SEO 黎明期の「お互いリンクし合う」文化から来ています。私にとっては「このネットの海で君を見かけたから、看板を一枚立てておくよ」という感覚に近いです。',
-    listHeading: '現在のともだち',
-    emptyList: '── まだ誰もいません。最初のひとりになりませんか。 ──',
-    failedHeading: '以下のサイトはアクセスできず、リンク切れになっています',
-    blacklistHeading: '以下のサイトはルール違反のためブロック中',
-    applyHeading: 'フレンドリンクを交換したい？',
-    applyIntro: '小さな前提：',
-    rule1: 'サイトが今アクセス可能（期限切れ / ダウンしていない）。',
-    rule2: 'オリジナルのコンテンツがある（転載サイト・純広告・SEO ファームはご遠慮ください）。',
-    rule3: 'HTTPS で、自分のドメインがある（.com / .tw / .moe など何でも OK、無料サブドメインも可）。',
-    rule4: '先にそちらのサイトに私のリンクを掛けていただけると、返信が早くなります。',
-    siteCardLabel: '当サイトの情報カード：',
-    cardName: 'サイト名：',
-    cardUrl: 'サイト URL：',
-    cardDesc: 'サイト紹介：',
-    cardAvatar: 'アバター：',
-    cardAvatarLink: 'リンク',
-    contactPre: '申請するには、下のボタンからフォームを送ってください（メールクライアントを開きます）。または ',
-    contactLink: 'メッセージページ',
-    contactPost1: ' にコメント、もしくは ',
-    contactPost2: ' へメールでも OK です。',
-    applyBtn: 'ともだちになろう',
-    desc: SITE_INFO.desc_ja,
-  },
-  ko: {
-    intro:
-      '중화권의 「프렌드 링크」 문화는 옛 SEO 시대의 「내가 너 걸고, 너도 나 걸어주기」에서 왔어요. 저에겐 「이 네트의 바다에서 당신을 봤어요, 작은 명패 하나 걸어둘게요」에 가깝습니다.',
-    listHeading: '현재의 친구들',
-    emptyList: '── 아직 아무도 없어요. 비어 있는 이 자리, 첫 번째가 되어 주세요. ──',
-    failedHeading: '아래 사이트들은 접속할 수 없어 연결이 끊겼습니다',
-    blacklistHeading: '아래 사이트들은 규정 위반으로 차단되었습니다',
-    applyHeading: '프렌드 링크 교환을 원하세요?',
-    applyIntro: '작은 전제 몇 가지:',
-    rule1: '사이트가 현재 접근 가능할 것 (만료/다운 상태 아님).',
-    rule2: '오리지널 콘텐츠가 있을 것 (퍼옴 사이트·순수 광고·SEO 농장은 사양합니다).',
-    rule3: 'HTTPS, 본인 도메인 보유 (.com / .tw / .moe 모두 OK, 무료 서브도메인도 가능).',
-    rule4: '먼저 본인 사이트에 제 링크를 걸어 주시면 답장이 더 빠릅니다.',
-    siteCardLabel: '본 사이트의 정보 카드:',
-    cardName: '사이트명: ',
-    cardUrl: '사이트 주소: ',
-    cardDesc: '사이트 소개: ',
-    cardAvatar: '아바타: ',
-    cardAvatarLink: '링크',
-    contactPre: '신청하려면 아래 버튼을 눌러 폼을 보내주세요(메일 클라이언트가 열립니다). 또는 ',
-    contactLink: '메시지 페이지',
-    contactPost1: ' 에 댓글, 혹은 ',
-    contactPost2: ' 로 메일도 환영합니다.',
-    applyBtn: '친구해요',
-    desc: SITE_INFO.desc_ko,
-  },
-};
+/** 申請表要填的：名字、網址（http/https）；RSS 選填，有填也要是網址 */
+function checkForm(form: Record<FieldKey, string>): FormErrors {
+  const found: FormErrors = {};
+  if (!form.name.trim()) found.name = 'required';
+  if (!form.url.trim()) found.url = 'required';
+  else if (!isWebUrl(form.url.trim())) found.url = 'url';
+  if (form.rss.trim() && !isWebUrl(form.rss.trim())) found.rss = 'url';
+  return found;
+}
 
-const FORM_BY_LANG: Record<string, Record<string, string>> = {
-  'zh-TW': {
-    modalTitle: '來自網海的問候',
-    close: '關閉',
-    success1: '已準備好你的訊息，正在開啟信件用戶端…',
-    success2_pre: '如果沒有自動開啟，可以直接寄到',
-    successBtn: '關閉',
-    name: '你的名字',
-    site: '站點名稱',
-    url: '網站連結',
-    avatar: '頭像連結',
-    email: 'Email',
-    tagline: '一句自介',
-    taglinePlaceholder: '想說什麼都可以，30 字以內',
-    submit: '送出',
-  },
-  'zh-CN': {
-    modalTitle: '来自网海的问候',
-    close: '关闭',
-    success1: '已准备好你的讯息，正在开启邮件客户端…',
-    success2_pre: '如果没有自动开启，可以直接寄到',
-    successBtn: '关闭',
-    name: '你的名字',
-    site: '站点名称',
-    url: '网站链接',
-    avatar: '头像链接',
-    email: 'Email',
-    tagline: '一句自介',
-    taglinePlaceholder: '想说什么都可以，30 字以内',
-    submit: '送出',
-  },
-  en: {
-    modalTitle: 'A hi from the sea of net',
-    close: 'Close',
-    success1: 'Your message is ready — opening your mail client…',
-    success2_pre: "If it doesn't open automatically, just email",
-    successBtn: 'Close',
-    name: 'Your name',
-    site: 'Site name',
-    url: 'Site URL',
-    avatar: 'Avatar URL',
-    email: 'Email',
-    tagline: 'One-liner intro',
-    taglinePlaceholder: 'Anything, within 50 chars',
-    submit: 'Send',
-  },
-  ja: {
-    modalTitle: 'ネットの海からのご挨拶',
-    close: '閉じる',
-    success1: 'メッセージの準備ができました。メールクライアントを開きます…',
-    success2_pre: '自動で開かない場合は、直接こちらまで：',
-    successBtn: '閉じる',
-    name: 'お名前',
-    site: 'サイト名',
-    url: 'サイト URL',
-    avatar: 'アバター URL',
-    email: 'Email',
-    tagline: 'ひとこと自己紹介',
-    taglinePlaceholder: '何でも OK、50 文字以内',
-    submit: '送信',
-  },
-  ko: {
-    modalTitle: '네트워크 바다에서 보내는 인사',
-    close: '닫기',
-    success1: '메시지가 준비됐어요. 메일 클라이언트를 여는 중…',
-    success2_pre: '자동으로 열리지 않으면, 직접 보내주세요:',
-    successBtn: '닫기',
-    name: '이름',
-    site: '사이트명',
-    url: '사이트 URL',
-    avatar: '아바타 URL',
-    email: 'Email',
-    tagline: '한 줄 자기소개',
-    taglinePlaceholder: '뭐든 OK, 50자 이내',
-    submit: '보내기',
-  },
-};
+/** feed 上的日期 → 距今幾天與顯示用的日期（今年的只寫月日） */
+function dateOf(raw: string | null | undefined, now: number) {
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  const md = `${pad2(d.getMonth() + 1)}.${pad2(d.getDate())}`;
+  return {
+    days: Math.max(0, (now - d.getTime()) / 86400000),
+    label: d.getFullYear() === new Date(now).getFullYear() ? md : `${d.getFullYear()}.${md}`,
+  };
+}
 
-function ApplicationForm({ onClose }: { onClose: () => void }) {
-  const { i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const f = lookupOr(FORM_BY_LANG, lang, FORM_BY_LANG['zh-TW']);
-  const [form, setForm] = useState<FriendForm>({
-    name: '',
-    site: '',
-    url: '',
-    avatar: '',
-    email: '',
-    tagline: '',
-  });
-  const [submitted, setSubmitted] = useState(false);
+export default function Friends() {
+  const { t } = useTranslation();
+  const { data: live = [] } = useQuery(friendsQueryOptions);
+  const friends = useMemo(() => {
+    const now = Date.now();
+    return live.map((f) => ({
+      ...f,
+      posts: f.posts.map((p) => ({ ...p, when: dateOf(p.date, now) })),
+    }));
+  }, [live]);
+  const sky = useMemo(
+    () =>
+      createSky(
+        friends.map((f) => ({
+          id: f.id,
+          days: f.posts.at(0)?.when?.days ?? null,
+          // 沒有日期的那篇當成很久以前
+          posts: f.posts.map((p) => p.when?.days ?? 365),
+        })),
+      ),
+    [friends],
+  );
 
-  const update = (key: keyof FriendForm) => (e: ChangeEvent<HTMLInputElement>) =>
-    setForm((s) => ({ ...s, [key]: e.target.value }));
+  const [form, setForm] = useState<Record<FieldKey, string>>({ name: '', url: '', rss: '', desc: '' });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const inputsRef = useRef<Partial<Record<FieldKey, HTMLInputElement | null>>>({});
+  const [sent, setSent] = useState(false);
+  const [docked, setDocked] = useState<number | null>(null);
+  const previewName = form.name.trim();
+  const nameRef = useRef(previewName);
+  nameRef.current = previewName;
+  const sentRef = useRef(false);
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const subject = `[Friend-link] ${form.site || form.name}`;
-    const body = [
-      `Name: ${form.name}`,
-      `Site: ${form.site}`,
-      `URL: ${form.url}`,
-      `Avatar: ${form.avatar}`,
-      `Email: ${form.email}`,
-      `Intro: ${form.tagline}`,
-    ].join('\n');
-    const mailto = `mailto:timo9378@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSubmitted(true);
-    setTimeout(() => {
-      window.location.href = mailto;
-    }, 400);
+  const pageRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sideArtRef = useRef<HTMLCanvasElement>(null);
+  const labelsRef = useRef<(HTMLElement | null)[]>([]);
+  const buttonsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const centerRef = useRef<HTMLSpanElement>(null);
+  const previewLabelRef = useRef<HTMLSpanElement>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const focusRef = useRef(-1);
+  const leaveRef = useRef<number | null>(null);
+  /** 對接的動畫狀態：d 從 0 走到 2（0–1 鏡頭拉近、1–2 兩艘船接上）；換一顆要先退回 0 */
+  const dockRef = useRef({ i: -1, want: false, d: 0, pending: -1 });
+  /** 上一幀畫在哪裡（滑鼠判斷用） */
+  const drawnRef = useRef<Drawn | null>(null);
+  const hoverRef = useRef<{ star: number; beacon: [number, number] | null }>({ star: -1, beacon: null });
+  const friendsRef = useRef(friends);
+  friendsRef.current = friends;
+
+  const dock = (i: number) => {
+    const s = dockRef.current;
+    if (s.want && s.i === i) return;
+    if (s.d > 0 && s.i !== i) {
+      s.pending = i;
+      s.want = false;
+    } else {
+      s.i = i;
+      s.want = true;
+    }
+    setDocked(i);
+  };
+  const undock = () => {
+    const s = dockRef.current;
+    if (!s.want && s.pending < 0) return;
+    s.want = false;
+    s.pending = -1;
+    buttonsRef.current[s.i]?.focus({ preventScroll: true });
   };
 
-  // ⚠ 一定要 portal 到 body（Modal 會做）。這個表單長在 InfoPage 的 `.post-body` 裡，而
-  // `.post-body` 自己有 `z-index: 1`——那就是一個堆疊脈絡，於是遮罩寫 `z-index: 9999` 也只是
-  // 「在 post-body 裡面排第一」，對外仍然只有 1，蓋不過 `.site-header`。
-  return (
-    <Modal onClose={onClose} overlayClassName="friends-modal-backdrop" fade>
-      <motion.div
-        className="friends-modal"
-        initial={{ opacity: 0, scale: 0.95, y: 16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 16 }}
-        transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-      >
-        <div className="friends-modal-header">
-          <ModalTitle asChild>
-            <h3>{f.modalTitle}</h3>
-          </ModalTitle>
-          <button type="button" className="friends-modal-close" onClick={onClose} aria-label={f.close}>
-            <FaTimes />
-          </button>
-        </div>
+  const center = () => {
+    const box = boxRef.current;
+    if (!box) return null;
+    const r = box.getBoundingClientRect();
+    const { cx, cy } = frameOf(box.clientWidth, box.clientHeight);
+    return { x: r.left + cx, y: r.top + cy };
+  };
 
-        {submitted ? (
-          <div className="friends-modal-success">
-            <p>{f.success1}</p>
-            <p style={{ fontSize: '0.85rem', opacity: 0.6 }}>
-              {f.success2_pre} <code>timo9378@gmail.com</code>.
-            </p>
-            <button type="button" className="friends-modal-submit" onClick={onClose}>
-              {f.successBtn}
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="friends-modal-form">
-            <div className="friends-modal-grid">
-              <label className="friends-modal-field">
-                <span>
-                  {f.name} <span className="req">*</span>
-                </span>
-                <input type="text" required value={form.name} onChange={update('name')} placeholder="Koimsurai" />
-              </label>
-              <label className="friends-modal-field">
-                <span>
-                  {f.site} <span className="req">*</span>
-                </span>
-                <input type="text" required value={form.site} onChange={update('site')} placeholder="宙と木" />
-              </label>
-              <label className="friends-modal-field">
-                <span>
-                  {f.url} <span className="req">*</span>
-                </span>
-                <input type="url" required value={form.url} onChange={update('url')} placeholder="https://" />
-              </label>
-              <label className="friends-modal-field">
-                <span>
-                  {f.avatar} <span className="req">*</span>
-                </span>
-                <input type="url" required value={form.avatar} onChange={update('avatar')} placeholder="https://" />
-              </label>
-              <label className="friends-modal-field friends-modal-field--full">
-                <span>
-                  {f.email} <span className="req">*</span>
-                </span>
-                <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={update('email')}
-                  placeholder="me@example.com"
-                />
-              </label>
-              <label className="friends-modal-field friends-modal-field--full">
-                <span>
-                  {f.tagline} <span className="req">*</span>
-                </span>
-                <input
-                  type="text"
-                  required
-                  value={form.tagline}
-                  onChange={update('tagline')}
-                  placeholder={f.taglinePlaceholder}
-                  maxLength={50}
-                />
-              </label>
-            </div>
+  usePageTransition({
+    // 錨點是中心那顆（這個站）：點落在這裡，軌道從它往外長
+    anchor: center,
+    leave: () => {
+      const point = center();
+      if (!point) return null;
+      leaveRef.current = performance.now();
+      pageRef.current?.classList.add('is-leaving');
+      return {
+        point,
+        velocity: { x: 0.45 * LEAVE_SPEED, y: -0.9 * LEAVE_SPEED },
+        follow: () => center() ?? point,
+        done: after(ERASE_MS),
+      };
+    },
+  });
 
-            <div className="friends-modal-actions">
-              <button type="submit" className="friends-modal-submit">
-                {f.submit}
-              </button>
-            </div>
-          </form>
+  // Esc 解除對接
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') undock();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // 軌道
+  useEffect(() => {
+    const box = boxRef.current;
+    const cv = canvasRef.current;
+    const ctx = cv?.getContext('2d');
+    if (!box || !cv || !ctx) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const art = new Image();
+    art.src = ART;
+    let pointer: [number, number] | null = null;
+    const onMove = (e: PointerEvent) => {
+      const r = box.getBoundingClientRect();
+      pointer = [e.clientX - r.left, e.clientY - r.top];
+    };
+    const onLeave = () => {
+      pointer = null;
+    };
+    box.addEventListener('pointermove', onMove);
+    box.addEventListener('pointerleave', onLeave);
+    // 捲出畫面就不畫
+    let visible = true;
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+    });
+    io.observe(box);
+    let raf = 0;
+    let last = 0;
+    let start = -1;
+    let skyT = 0;
+    const pv = { mode: 'hold' as Preview['mode'], since: -1, alpha: 0 };
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      // 換頁轉場的點還在飛：等它落在中心才開始長
+      if (isArriving() || !visible) return;
+      if (start < 0) start = now;
+      if (now - last < 16) return;
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
+      const real = (now - start) / 1000;
+      const w = box.clientWidth;
+      const h = box.clientHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+        cv.width = Math.round(w * dpr);
+        cv.height = Math.round(h * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // 對接：先拉近再接上，解除時倒著走；換一顆要等退回 0 才換
+      const ds = dockRef.current;
+      if (reduce) ds.d = ds.want ? 2 : 0;
+      else if (ds.want) ds.d = Math.min(2, ds.d + (ds.d < 1 ? dt / ZOOM_S : dt / JOIN_S));
+      else ds.d = Math.max(0, ds.d - (ds.d > 1 ? dt / (JOIN_S * 0.6) : dt / (ZOOM_S * 0.8)));
+      if (ds.d === 0 && ds.pending >= 0) {
+        ds.i = ds.pending;
+        ds.pending = -1;
+        ds.want = true;
+      }
+      const zoom = easeInOut(clamp01(ds.d));
+      const join = clamp01(ds.d - 1);
+      panelRef.current?.classList.toggle('is-open', ds.want && ds.d > 1.6);
+      // 對接時軌道停下來（相對靜止才接得上）
+      if (!reduce) skyT += dt * (1 - zoom);
+
+      const grow = reduce ? 1 : easeOut(Math.min(1, real / GROW_S));
+      const erase = leaveRef.current === null ? 0 : easeIn(Math.min(1, (now - leaveRef.current) / ERASE_MS));
+
+      // 預覽星：打了名字就從畫面外飛來等著；送出後點火入軌
+      const name = nameRef.current;
+      if (sentRef.current && pv.mode === 'hold') {
+        pv.mode = 'insert';
+        pv.since = real;
+      }
+      if (pv.mode === 'insert' && real - pv.since >= INSERT_S) pv.mode = 'orbit';
+      if (pv.mode === 'hold') {
+        if (name && pv.since < 0) pv.since = real;
+        if (!name && pv.alpha < 0.02) pv.since = -1;
+      }
+      const want = name || pv.mode !== 'hold' ? 1 : 0;
+      pv.alpha = reduce ? want : pv.alpha + (want - pv.alpha) * Math.min(1, dt * 4);
+      const preview: Preview | null =
+        pv.since < 0 && pv.mode === 'hold'
+          ? null
+          : {
+              alpha: pv.alpha,
+              mode: pv.mode,
+              u: reduce ? 1 : clamp01((real - pv.since) / (pv.mode === 'insert' ? INSERT_S : HOLD_S)),
+            };
+
+      // 滑到哪一個刻點、哪一顆星（看上一幀畫的位置）；對接中只認那一位的刻點
+      const prev = drawnRef.current;
+      let star = focusRef.current;
+      let beacon: [number, number] | null = null;
+      const settled = ds.d === 0 || (ds.want && ds.d === 2);
+      if (pointer && prev && leaveRef.current === null && settled) {
+        const [px, py] = pointer;
+        let best = BEACON_PX;
+        for (const b of prev.beacons) {
+          const d = Math.hypot(px - b.x, py - b.y);
+          if (d < best && (ds.d === 0 || b.i === ds.i)) {
+            best = d;
+            beacon = [b.i, b.j];
+          }
+        }
+        if (!beacon && star < 0 && ds.d === 0) {
+          let bestStar = NEAR_PX;
+          prev.stars.forEach((s, i) => {
+            const d = Math.hypot(px - s.x, py - s.y);
+            if (d < bestStar) {
+              bestStar = d;
+              star = i;
+            }
+          });
+        }
+      }
+      hoverRef.current = { star, beacon };
+      box.classList.toggle('is-pointing', beacon !== null || (star >= 0 && ds.d === 0));
+
+      const drawn = sky.draw(ctx, {
+        w,
+        h,
+        t: skyT,
+        real: reduce ? 0 : real,
+        grow,
+        erase,
+        near: star,
+        beacon,
+        dock: ds.d > 0 ? { i: ds.i, zoom, join } : null,
+        preview,
+        art,
+      });
+      drawnRef.current = drawn;
+
+      const { cx } = frameOf(w, h);
+      // 已經放好的字（兩顆星靠近時，後放的那塊讓到上面或下面）
+      const taken: { x: number; y: number; w: number; h: number }[] = [];
+      drawn.stars.forEach((p, i) => {
+        const el = labelsRef.current[i];
+        if (!el) return;
+        // 字放在星的外側：星在中心左邊，字往左長
+        const right = p.x >= cx;
+        const lw = el.offsetWidth;
+        const lh = el.offsetHeight;
+        let lx = right ? p.x + 14 : p.x - 14 - lw;
+        let ly = p.y - 12;
+        lx = Math.max(8, Math.min(w - lw - 8, lx));
+        for (const o of taken) {
+          if (lx < o.x + o.w && lx + lw > o.x && ly < o.y + o.h && ly + lh > o.y) {
+            const below = o.y + o.h + 6;
+            const above = o.y - lh - 6;
+            ly = Math.abs(below - ly) < Math.abs(above - ly) && below + lh < h - 8 ? below : above;
+          }
+        }
+        ly = Math.max(8, Math.min(h - lh - 8, ly));
+        taken.push({ x: lx, y: ly, w: lw, h: lh });
+        el.classList.toggle('is-left', !right);
+        el.classList.toggle('is-on', i === star);
+        el.style.transform = `translate(${lx}px, ${ly}px)`;
+        el.style.opacity = String(p.appear * (star < 0 || i === star ? 1 : 0.5) * (1 - zoom));
+        el.style.visibility = zoom > 0.95 ? 'hidden' : '';
+      });
+      if (centerRef.current) centerRef.current.style.opacity = String((1 - zoom) * (1 - erase));
+
+      const pl = previewLabelRef.current;
+      if (pl) {
+        if (drawn.preview) {
+          pl.style.transform = `translate(${drawn.preview.x - pl.offsetWidth / 2}px, ${drawn.preview.y + 10}px)`;
+          pl.style.opacity = String(drawn.preview.alpha);
+        } else pl.style.opacity = '0';
+      }
+
+      // 刻點的標題
+      const tip = tipRef.current;
+      if (tip) {
+        const b = beacon && drawn.beacons.find((x) => x.i === beacon[0] && x.j === beacon[1]);
+        const post = b ? friendsRef.current[b.i]?.posts[b.j] : null;
+        if (b && post) {
+          const key = `${b.i}:${b.j}`;
+          if (tip.dataset.key !== key) {
+            tip.dataset.key = key;
+            const time = tip.querySelector('time');
+            const title = tip.querySelector('span');
+            if (time) time.textContent = post.when?.label ?? '';
+            if (title) title.textContent = post.title;
+          }
+          const tw = tip.offsetWidth;
+          const tx = Math.max(8, Math.min(w - tw - 8, b.x - tw / 2));
+          const ty = b.y - tip.offsetHeight - 12;
+          tip.style.transform = `translate(${tx}px, ${ty < 8 ? b.y + 14 : ty}px)`;
+          tip.style.opacity = '1';
+        } else tip.style.opacity = '0';
+      }
+    };
+    raf = requestAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(raf);
+      io.disconnect();
+      box.removeEventListener('pointermove', onMove);
+      box.removeEventListener('pointerleave', onLeave);
+    };
+  }, [sky]);
+
+  // 右欄的對接插圖：兩艘船慢慢靠近又退開，中間的點是 RSS 訊號
+  useEffect(() => {
+    const cv = sideArtRef.current;
+    const ctx = cv?.getContext('2d');
+    if (!cv || !ctx) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const img = new Image();
+    img.src = ART;
+    let raf = 0;
+    let last = 0;
+    let start = -1;
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      if (start < 0) start = now;
+      if (now - last < DOCK_FRAME_MS) return;
+      last = now;
+      const w = cv.clientWidth;
+      const h = cv.clientHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+        cv.width = Math.round(w * dpr);
+        cv.height = Math.round(h * dpr);
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawDockIllustration(ctx, img, w, h, reduce ? 0 : (now - start) / 1000);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // 對接的面板一打開就把焦點移過去
+  useEffect(() => {
+    if (docked === null) return;
+    const id = window.setTimeout(() => panelRef.current?.focus({ preventScroll: true }), (ZOOM_S + JOIN_S) * 1000);
+    return () => window.clearTimeout(id);
+  }, [docked]);
+
+  // 點畫布：刻點開文章、星對接、空的地方解除對接
+  const onSkyClick = (e: MouseEvent<HTMLCanvasElement>) => {
+    e.stopPropagation();
+    const { star, beacon } = hoverRef.current;
+    if (beacon) {
+      const f = friends.at(beacon[0]);
+      const post = f?.posts.at(beacon[1]);
+      if (f && post) window.open(post.url ?? f.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (star >= 0 && dockRef.current.d === 0) dock(star);
+    else undock();
+  };
+
+  // 表單自己驗證（noValidate）：瀏覽器原生的提示框跟這個站的樣子不搭，錯誤改寫在欄位底下
+  const fieldRow = (key: FieldKey, label: string, props: InputHTMLAttributes<HTMLInputElement>) => {
+    const err = errors[key];
+    return (
+      <label className="fr-input">
+        <span>{label}</span>
+        <input
+          {...props}
+          ref={(el) => {
+            inputsRef.current[key] = el;
+          }}
+          autoComplete="off"
+          value={form[key]}
+          aria-invalid={err ? true : undefined}
+          aria-describedby={err ? `fr-err-${key}` : undefined}
+          onChange={(e) => {
+            const value = e.target.value;
+            setForm((s) => ({ ...s, [key]: value }));
+            if (err) setErrors((s) => ({ ...s, [key]: undefined }));
+          }}
+        />
+        {err && (
+          <em className="fr-error" id={`fr-err-${key}`}>
+            {t(err === 'required' ? 'friends.errRequired' : 'friends.errUrl')}
+          </em>
         )}
-      </motion.div>
-    </Modal>
-  );
-}
+      </label>
+    );
+  };
 
-function Friends() {
-  const { t, i18n } = useTranslation();
-  const lang = i18n.resolvedLanguage ?? 'zh-TW';
-  const c = lookupOr(FRIENDS_BY_LANG, lang, FRIENDS_BY_LANG['zh-TW']);
-  const [showForm, setShowForm] = useState(false);
+  const submit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const found = checkForm(form);
+    setErrors(found);
+    const first = FIELD_ORDER.find((k) => found[k]);
+    if (first) {
+      inputsRef.current[first]?.focus();
+      return;
+    }
+    const subject = `[Friend-link] ${form.name.trim()}`;
+    const body = [`Name: ${form.name}`, `URL: ${form.url}`, `RSS: ${form.rss}`, `Intro: ${form.desc}`].join('\n');
+    sentRef.current = true;
+    setSent(true);
+    window.location.href = `mailto:${CONTACT}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
+  const open = docked === null ? null : friends[docked];
 
   return (
-    <InfoPage
-      title={t('info.friends.title')}
-      subtitle={t('info.friends.subtitle')}
-      slug="friends"
-      prev={null}
-      next={null}
-    >
-      <p>{c.intro}</p>
-
-      <h2 id="list">{c.listHeading}</h2>
-
-      {FRIENDS.length === 0 ? (
-        <p style={{ color: 'rgba(229,229,245,0.5)', fontStyle: 'italic' }}>{c.emptyList}</p>
-      ) : (
-        <div className="friends-grid">
-          {FRIENDS.map((fr) => (
-            <a
-              key={fr.url}
-              href={fr.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="friend-card"
-              // 卡片文字在巢狀第 3 層，規則的 depth 只看 2 層；補上 aria-label 之後
-              // 報讀器念的是朋友名稱，而不是「名稱＋一句標語」黏成一串
-              aria-label={fr.name}
-            >
-              <img src={fr.avatar} alt="" width="40" height="40" className="friend-card-avatar" loading="lazy" />
-              <div className="friend-card-info">
-                <div className="friend-card-name">{fr.name}</div>
-                <div className="friend-card-tagline">{fr.tagline}</div>
-              </div>
-            </a>
-          ))}
+    <div className="fr" ref={pageRef}>
+      <header className="fr-head">
+        <div className="fr-title">
+          <h1>{t('friends.title')}</h1>
+          {!sameTitle(t('friends.title'), 'Friends') && <span className="fr-latin">Friends</span>}
         </div>
-      )}
+        <p>{t('friends.subtitle')}</p>
+      </header>
 
-      {FAILED.length > 0 && (
-        <>
-          <h3 id="failed">{c.failedHeading}</h3>
-          <ul>
-            {FAILED.map((fr) => (
-              <li key={fr.name}>
-                {fr.name} — {fr.url}
-              </li>
-            ))}
+      <div className="fr-body">
+        <div className="fr-sky" ref={boxRef}>
+          <canvas ref={canvasRef} aria-hidden="true" onClick={onSkyClick} />
+          <span className="fr-center" ref={centerRef}>
+            {SITE.name}
+          </span>
+          <ul className="fr-labels">
+            {friends.map((f, i) => {
+              const latest = f.posts.at(0);
+              return (
+                <li
+                  key={f.id}
+                  className="fr-label"
+                  ref={(el) => {
+                    labelsRef.current[i] = el;
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="fr-name"
+                    aria-label={t('friends.dockWith', { name: f.name })}
+                    ref={(el) => {
+                      buttonsRef.current[i] = el;
+                    }}
+                    onClick={() => dock(i)}
+                    onFocus={() => (focusRef.current = i)}
+                    onBlur={() => (focusRef.current = -1)}
+                  >
+                    {f.name}
+                  </button>
+                  <span className="fr-host">{hostOf(f.url)}</span>
+                  {latest ? (
+                    <a
+                      className="fr-latest"
+                      href={latest.url ?? f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onFocus={() => (focusRef.current = i)}
+                      onBlur={() => (focusRef.current = -1)}
+                    >
+                      {latest.when && <time>{latest.when.label}</time>}
+                      <span>{latest.title}</span>
+                    </a>
+                  ) : (
+                    <span className="fr-latest is-quiet">{t(f.has_feed ? 'friends.noSignal' : 'friends.noFeed')}</span>
+                  )}
+                  <span className="fr-desc">{f.desc}</span>
+                </li>
+              );
+            })}
           </ul>
-        </>
-      )}
+          <span className="fr-preview" ref={previewLabelRef} aria-hidden="true">
+            {previewName}
+          </span>
+          <div className="fr-tip" ref={tipRef} aria-hidden="true">
+            <time />
+            <span />
+          </div>
 
-      {BLACKLIST.length > 0 && (
-        <>
-          <h3 id="blacklist">{c.blacklistHeading}</h3>
-          <ul>
-            {BLACKLIST.map((fr) => (
-              <li key={fr.name}>
-                {fr.name} — {fr.reason}
-              </li>
-            ))}
+          {/* 對接之後展開的面板：他是誰、最近的文章 */}
+          <section
+            className="fr-panel"
+            ref={panelRef}
+            tabIndex={-1}
+            aria-label={open ? t('friends.dockWith', { name: open.name }) : undefined}
+          >
+            {open && (
+              <>
+                <span className="fr-panel-tag">{t('friends.docked')}</span>
+                <a className="fr-panel-name" href={open.url} target="_blank" rel="noopener noreferrer">
+                  {open.name}
+                  <span className="fr-host">{hostOf(open.url)}</span>
+                </a>
+                <p className="fr-panel-desc">{open.desc}</p>
+                <h2>{t('friends.recent')}</h2>
+                {open.posts.length ? (
+                  <ol className="fr-panel-posts">
+                    {open.posts.map((p) => (
+                      <li key={`${p.title}-${p.date ?? ''}`}>
+                        <a href={p.url ?? open.url} target="_blank" rel="noopener noreferrer">
+                          <time>{p.when?.label ?? ''}</time>
+                          <span>{p.title}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="fr-panel-desc">{t(open.has_feed ? 'friends.noSignal' : 'friends.noFeed')}</p>
+                )}
+                <div className="fr-panel-actions">
+                  <a href={open.url} target="_blank" rel="noopener noreferrer">
+                    {t('friends.visit')}
+                  </a>
+                  <button type="button" onClick={undock}>
+                    {t('friends.undock')}
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+
+          <ul className="fr-legend">
+            <li>{t('friends.legendCenter')}</li>
+            <li>{t('friends.legendBeacon')}</li>
+            <li>{t('friends.legendSignal', { days: FRESH_DAYS })}</li>
+            <li>{t('friends.legendDim')}</li>
+            <li>{t('friends.legendDock')}</li>
           </ul>
-        </>
-      )}
+        </div>
 
-      <h2 id="apply">{c.applyHeading}</h2>
-      <p>{c.applyIntro}</p>
-      <ol>
-        <li>{c.rule1}</li>
-        <li>{c.rule2}</li>
-        <li>{c.rule3}</li>
-        <li>{c.rule4}</li>
-      </ol>
+        {/* 窄螢幕：星旁邊只放得下名字，網址與最近的文章改列在軌道底下（寬螢幕不顯示，字已經在星旁邊） */}
+        <ul className="fr-list">
+          {friends.map((f) => (
+            <li key={f.id}>
+              <a href={f.url} target="_blank" rel="noopener noreferrer">
+                <b>{f.name}</b>
+                <span className="fr-host">{hostOf(f.url)}</span>
+              </a>
+              <span className="fr-list-desc">{f.desc}</span>
+              {f.posts.length ? (
+                f.posts.slice(0, 3).map((p) => (
+                  <a
+                    key={`${p.title}-${p.date ?? ''}`}
+                    className="fr-latest"
+                    href={p.url ?? f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {p.when && <time>{p.when.label}</time>}
+                    <span>{p.title}</span>
+                  </a>
+                ))
+              ) : (
+                <span className="fr-latest is-quiet">{t(f.has_feed ? 'friends.noSignal' : 'friends.noFeed')}</span>
+              )}
+            </li>
+          ))}
+        </ul>
 
-      <p>{c.siteCardLabel}</p>
-      <ul>
-        <li>
-          {c.cardName}
-          <code>{SITE_INFO.name}</code>
-        </li>
-        <li>
-          {c.cardUrl}
-          <code>{SITE_INFO.url}</code>
-        </li>
-        <li>
-          {c.cardDesc}
-          {c.desc}
-        </li>
-        <li>
-          {c.cardAvatar}
-          <a href={SITE_INFO.avatar} target="_blank" rel="noopener noreferrer">
-            <code>{c.cardAvatarLink}</code>
-          </a>
-        </li>
-      </ul>
+        <aside className="fr-side">
+          <div className="fr-dock">
+            <canvas ref={sideArtRef} aria-hidden="true" />
+            <span className="sr-only">{t('friends.dockLabel')}</span>
+          </div>
 
-      <p>
-        {c.contactPre}
-        <LocaleLink to="/messages">{c.contactLink}</LocaleLink>
-        {c.contactPost1}
-        <a href="mailto:timo9378@gmail.com">timo9378@gmail.com</a>
-        {c.contactPost2}
-      </p>
+          <section className="fr-card" aria-labelledby="fr-card-title">
+            <h2 id="fr-card-title">{t('friends.cardTitle')}</h2>
+            <b>{SITE.name}</b>
+            <dl>
+              <div>
+                <dt>URL</dt>
+                <dd>{SITE.url}</dd>
+              </div>
+              <div>
+                <dt>DESC</dt>
+                <dd>{t('friends.siteDesc')}</dd>
+              </div>
+              <div>
+                <dt>RSS</dt>
+                <dd>{SITE.rss}</dd>
+              </div>
+              <div>
+                <dt>ICON</dt>
+                <dd>{`${SITE.url}/favicon.svg`}</dd>
+              </div>
+            </dl>
+          </section>
 
-      <div style={{ marginTop: '1.5rem' }}>
-        <button type="button" className="friends-apply-btn" onClick={() => setShowForm(true)}>
-          {c.applyBtn}
-        </button>
+          <form className="fr-form" onSubmit={submit} noValidate>
+            <h2>{t('friends.formTitle')}</h2>
+            {fieldRow('name', t('friends.fieldName'), {
+              type: 'text',
+              maxLength: 24,
+              required: true,
+              placeholder: t('friends.fieldNameHint'),
+            })}
+            {fieldRow('url', t('friends.fieldUrl'), { type: 'url', required: true, placeholder: 'https://' })}
+            {fieldRow('rss', t('friends.fieldRss'), { type: 'url', placeholder: 'https://' })}
+            {fieldRow('desc', t('friends.fieldDesc'), { type: 'text', maxLength: 40 })}
+            <button type="submit" className="fr-submit">
+              {t('friends.submit')}
+            </button>
+            {sent && (
+              <output className="fr-sent">
+                {t('friends.sent')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+              </output>
+            )}
+          </form>
+
+          <section className="fr-rules" aria-labelledby="fr-rules-title">
+            <h2 id="fr-rules-title">{t('friends.rulesTitle')}</h2>
+            <ol>
+              <li>{t('friends.rule1')}</li>
+              <li>{t('friends.rule2')}</li>
+              <li>{t('friends.rule3')}</li>
+              <li>{t('friends.rule4')}</li>
+            </ol>
+          </section>
+        </aside>
       </div>
-
-      <AnimatePresence>{showForm && <ApplicationForm onClose={() => setShowForm(false)} />}</AnimatePresence>
-    </InfoPage>
+    </div>
   );
 }
-
-export default Friends;

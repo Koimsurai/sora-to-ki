@@ -1,24 +1,25 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { ClientOnly, useRouterState } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
-import Header from './Header';
-import Footer from './Footer';
+import SiteNav from './SiteNav';
 import ScrollToTop from './ScrollToTop';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
 import BackToTopButton from './BackToTopButton';
 
 // 桌面 WebGL 背景/開場 + 互動式 overlay → 純 client(three.js / portal 不進 SSR)
 // GPU 探測跟這支 chunk 的下載同時起跑，不要等元件掛上才開始：開場要等探測做完才播
-// （理由見 SpaceBackdropShell 的 introReady），越早開始，開場前要等的時間越短。
+// 越早開始，首頁的土星越早出現。
 const SpaceBackdropShell = lazy(() => {
   void import('@/lib/webglSupport').then((m) => m.probeHardwareGpu());
   return import('@/components/backdrop/SpaceBackdropShell');
 });
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const ContextMenu = lazy(() => import('./ContextMenu'));
+const SerifFontLoader = lazy(() => import('./SerifFontLoader'));
+const TransitionLayer = lazy(() => import('./TransitionLayer'));
 
-// 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):Header / Footer / 背景 / chrome 包住路由內容(children = <Outlet/>)。
-// admin 隱藏 Header/Footer/CommandPalette;photos 隱藏 Footer。
+// 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):導覽列 / 背景 / chrome 包住路由內容(children = <Outlet/>)。
+// admin 隱藏導覽列/CommandPalette。
 export default function AppShell({ children }: Readonly<{ children: ReactNode }>) {
   // Core Web Vitals 上報（B4）：client-only、動態載入（web-vitals 不進關鍵 bundle）
   useEffect(() => {
@@ -59,7 +60,6 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
     return () => clearTimeout(warmTimer);
   }, [linksToPosts]);
   const isAdminPage = bare === 'admin' || bare.startsWith('admin/');
-  const isPhotoPage = bare === 'photos';
   const isHomePage = bare === '';
 
   return (
@@ -77,9 +77,16 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
         className="main-content-container"
         style={{ position: 'relative', zIndex: 10, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
       >
-        {!isAdminPage && <Header />}
+        {!isAdminPage && <SiteNav />}
         <main style={{ flex: '1 0 auto' }}>{children}</main>
-        {!isAdminPage && !isPhotoPage && <Footer />}
+        {/* 換頁轉場：在內容容器裡、導覽列底下（見 TransitionLayer.css）。後台不演 */}
+        {!isAdminPage && (
+          <ClientOnly fallback={null}>
+            <Suspense fallback={null}>
+              <TransitionLayer />
+            </Suspense>
+          </ClientOnly>
+        )}
         {!isAdminPage && (
           <ClientOnly fallback={null}>
             <Suspense fallback={null}>
@@ -95,18 +102,16 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
         <BackToTopButton isHomePage={isHomePage} />
       </div>
 
-      {/* 右鍵選單刻意留在容器外：它要能開在任何東西之上，包含全螢幕檢視。 */}
+      {/* 右鍵選單刻意留在容器外：它要能開在任何東西之上，包含全螢幕檢視。
+          思源宋體的按頁裁字也只在前台：後台不用它 */}
       {!isAdminPage && (
         <ClientOnly fallback={null}>
           <Suspense fallback={null}>
             <ContextMenu />
+            <SerifFontLoader />
           </Suspense>
         </ClientOnly>
       )}
-
-      {/* 首訪首頁等開場就緒時的底色（樣式與理由見 index.css 的 .intro-veil），平常完全透明。
-          fixed + z-index 決定疊層，放最後是為了不讓前面兄弟節點的 DOM 路徑位移（computed-style 基準靠路徑比對） */}
-      {isHomePage && <div className="intro-veil" aria-hidden />}
     </div>
   );
 }

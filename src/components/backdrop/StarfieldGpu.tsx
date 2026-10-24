@@ -8,13 +8,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
-import type { IntroPhase } from '@/lib/introTimeline';
+import { isArriving } from '@/store/pageTransition';
+import { skyPan, subscribeSkyPan } from '@/store/skyPan';
+import {
+  publishSatellites,
+  subscribeSaturnCollapse,
+  subscribeSatelliteGlow,
+  type SatelliteScreen,
+} from '@/store/homeOrbit';
 
 const canOffscreen =
   typeof HTMLCanvasElement !== 'undefined' && 'transferControlToOffscreen' in HTMLCanvasElement.prototype;
 
 /** 已經 transfer 給 worker 的 canvas（transferControlToOffscreen 一張只能做一次） */
 const transferred = new WeakSet<HTMLCanvasElement>();
+
+/** 離開首頁時土星收成一點要多久（runner 的縮放 lerp 大約這麼久收斂） */
+const SATURN_COLLAPSE_MS = 450;
 
 /** runner 還沒就緒時徽章顯示的字串，同時是 canvas 淡入的開關 */
 const BACKEND_PENDING = '初始化中…';
@@ -34,68 +44,33 @@ interface StarfieldGpuProps {
   isOnHomePage?: boolean;
   /** false 時土星維持 epsilon 縮放（管線先編譯好）；true 放大到原尺寸 */
   animateSaturn?: boolean;
+  /** 手機：星星減量（只看掛載當下的值） */
+  lite?: boolean;
   zIndex?: number | string;
-  /**
-   * 播首訪開場（畫在這張 canvas 上，見 lib/hyperspace.ts）。只看掛載當下的值：
-   * device lost 之後重建不會重播。
-   */
-  intro?: boolean;
-  /** 開場的各個階段 */
-  onIntroPhase?: (phase: IntroPhase) => void;
-  /** 開場播不下去了（初始化失敗、或播到一半 GPU 掉了）——呼叫端要自己收尾、把內容放出來 */
-  onIntroAbort?: () => void;
-  /** 轉成 true＝跳過開場 */
-  skipIntro?: boolean;
 }
 
 export default function StarfieldGpu({
   isOnHomePage = false,
   animateSaturn = true,
+  lite = false,
   zIndex = 1,
-  intro = false,
-  onIntroPhase,
-  onIntroAbort,
-  skipIntro = false,
 }: StarfieldGpuProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [backend, setBackend] = useState(BACKEND_PENDING);
   const [failed, setFailed] = useState(false);
   const [perf, setPerf] = useState<PerfReport | null>(null);
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
-  // ?intro-at=毫秒：開場停在那一刻（見 StarfieldInit.introFreezeAt）
-  const introFreezeAt = useMemo(() => {
-    const v = Number(new URLSearchParams(window.location.search).get('intro-at') ?? Number.NaN);
-    return Number.isFinite(v) ? v : undefined;
-  }, []);
   // 統一控制介面：worker 路徑=postMessage、主執行緒路徑=直呼 runner（見下兩個 effect）
-  const controlRef = useRef<{ scroll(y: number): void; saturn(v: boolean, a: boolean): void; skip(): void } | null>(
-    null,
-  );
+  const controlRef = useRef<{
+    scroll(y: number): void;
+    saturn(v: boolean, a: boolean): void;
+    glow(g: number[]): void;
+    collapse(index: number): void;
+    stars(visible: boolean): void;
+    pan(x: number, y: number): void;
+  } | null>(null);
 
-  // 開場只在第一次建 runner 時播；之後的重建（device lost）一律不播
-  const [introMode] = useState(intro);
-  const introPendingRef = useRef(intro);
-  const introRunningRef = useRef(false);
-  const skipRef = useRef(skipIntro);
-  skipRef.current = skipIntro;
-  const phaseRef = useRef(onIntroPhase);
-  phaseRef.current = onIntroPhase;
-  const abortRef = useRef(onIntroAbort);
-  abortRef.current = onIntroAbort;
-  const handlePhase = useCallback((phase: IntroPhase) => {
-    introPendingRef.current = false;
-    introRunningRef.current = phase !== 'done';
-    phaseRef.current?.(phase);
-  }, []);
-  /** 建 runner 時要不要播開場：第一次建完就清掉 */
-  const introOfferedRef = useRef(intro);
-  const abortIntro = useCallback(() => {
-    if (!introPendingRef.current && !introRunningRef.current) return;
-    introPendingRef.current = false;
-    introRunningRef.current = false;
-    abortRef.current?.();
-  }, []);
-
+  const liteRef = useRef(lite);
   // ── GPU device / WebGL context 掉了之後的重建 ────────────────────────────
   //
   // 為什麼需要：device 掉了是永久的，three 只會 console.error 一行（在 worker 裡連那行都
@@ -110,43 +85,49 @@ export default function StarfieldGpu({
   const recoveriesRef = useRef(0);
   const recoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // 上限存在的理由：device 一直掉的機器（驅動有問題）不該無限重建，那比不顯示更糟。
-  // 用完就收掉整個 3D，由 shell 的 DOM 特效兜底。
+  // 用完就收掉整個 3D，頁面留下黑紙與 CSS 星空。
   const MAX_RECOVERIES = 3;
 
-  const recover = useCallback(
-    (reason: string) => {
-      // 開場播到一半 GPU 掉了：重建的 runner 不會重播，所以開場就停在這裡，交給呼叫端收尾
-      abortIntro();
-      if (recoveriesRef.current >= MAX_RECOVERIES) {
-        console.warn(`[StarfieldGpu] ${reason}；已重建 ${MAX_RECOVERIES} 次仍失敗，放棄 3D（DOM 特效繼續）`);
-        setFailed(true);
-        return;
-      }
-      recoveriesRef.current += 1;
-      console.warn(`[StarfieldGpu] ${reason}；第 ${recoveriesRef.current} 次重建`);
-      // 分頁還在背景時重建沒有意義（GPU 資源正是那時候被回收的），等切回來再做。
-      if (document.hidden) {
-        const once = () => {
-          if (document.hidden) return;
-          document.removeEventListener('visibilitychange', once);
-          setGeneration((g) => g + 1);
-        };
-        document.addEventListener('visibilitychange', once);
-        return;
-      }
-      recoverTimerRef.current = setTimeout(() => setGeneration((g) => g + 1), 500);
-    },
-    [abortIntro],
-  );
+  const recover = useCallback((reason: string) => {
+    if (recoveriesRef.current >= MAX_RECOVERIES) {
+      console.warn(`[StarfieldGpu] ${reason}；已重建 ${MAX_RECOVERIES} 次仍失敗，放棄 3D（留下 CSS 星空）`);
+      setFailed(true);
+      return;
+    }
+    recoveriesRef.current += 1;
+    console.warn(`[StarfieldGpu] ${reason}；第 ${recoveriesRef.current} 次重建`);
+    // 分頁還在背景時重建沒有意義（GPU 資源正是那時候被回收的），等切回來再做。
+    if (document.hidden) {
+      const once = () => {
+        if (document.hidden) return;
+        document.removeEventListener('visibilitychange', once);
+        setGeneration((g) => g + 1);
+      };
+      document.addEventListener('visibilitychange', once);
+      return;
+    }
+    recoverTimerRef.current = setTimeout(() => setGeneration((g) => g + 1), 500);
+  }, []);
 
-  // 初始化失敗或放棄 3D：開場不會來了
+  // 首頁衛星的亮度：首頁送過來就轉給 runner。控制介面就緒（backend 變了）時也補送一次
+  useEffect(() => subscribeSatelliteGlow((g) => controlRef.current?.glow(g)), [backend]);
+  // 換頁轉場的「收」：首頁要離開時，土星整組收進點下去的那顆衛星
+  useEffect(() => subscribeSaturnCollapse((i) => controlRef.current?.collapse(i)), []);
+  // 換頁的鏡頭移動時星空跟著轉（store/skyPan）。控制介面就緒時補送一次目前的位移
   useEffect(() => {
-    if (failed) abortIntro();
-  }, [failed, abortIntro]);
-
+    const send = (p: { x: number; y: number }) => controlRef.current?.pan(p.x, p.y);
+    send(skyPan());
+    return subscribeSkyPan(send);
+  }, [backend]);
+  // 頁面自己畫背景時（hooks/useBareSky）星星淡出讓位。控制介面就緒（backend 變了）時補送一次
   useEffect(() => {
-    if (skipIntro) controlRef.current?.skip();
-  }, [skipIntro]);
+    const root = document.documentElement;
+    const sync = () => controlRef.current?.stars(root.dataset.sky !== 'bare');
+    sync();
+    const mo = new MutationObserver(sync);
+    mo.observe(root, { attributes: true, attributeFilter: ['data-sky'] });
+    return () => mo.disconnect();
+  }, [backend]);
 
   useEffect(
     () => () => {
@@ -155,13 +136,37 @@ export default function StarfieldGpu({
     [],
   );
 
-  // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態
+  // 捲動轉發（worker 無 window）+ 土星顯示（僅首頁）——控制介面就緒後立即同步當前狀態。
+  // 離開首頁：走轉場的話土星已經收進那一點了（html[data-pt]），直接藏；沒走轉場就先收成一點再藏。
+  // 換進首頁時點還在飛（store/pageTransition 的 isArriving），土星要等點落地才從那一點長出來
+  const wasHomeRef = useRef(isOnHomePage);
   useEffect(() => {
     const onScroll = () => controlRef.current?.scroll(window.scrollY);
     window.addEventListener('scroll', onScroll, { passive: true });
-    controlRef.current?.saturn(isOnHomePage, animateSaturn);
+    let timer = 0;
+    let waitArrival: MutationObserver | null = null;
+    const root = document.documentElement;
+    if (wasHomeRef.current && !isOnHomePage && root.dataset.pt) {
+      controlRef.current?.saturn(false, false);
+    } else if (wasHomeRef.current && !isOnHomePage) {
+      controlRef.current?.saturn(true, false);
+      timer = window.setTimeout(() => controlRef.current?.saturn(false, false), SATURN_COLLAPSE_MS);
+    } else if (isOnHomePage && isArriving()) {
+      controlRef.current?.saturn(true, false);
+      waitArrival = new MutationObserver(() => {
+        if (isArriving()) return;
+        waitArrival?.disconnect();
+        controlRef.current?.saturn(true, animateSaturn);
+      });
+      waitArrival.observe(root, { attributes: true, attributeFilter: ['data-pt'] });
+    } else controlRef.current?.saturn(isOnHomePage, animateSaturn);
+    wasHomeRef.current = isOnHomePage;
     controlRef.current?.scroll(window.scrollY);
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.clearTimeout(timer);
+      waitArrival?.disconnect();
+    };
   }, [isOnHomePage, animateSaturn, backend]); // backend 變化 = runner 就緒的訊號，重新同步
 
   useEffect(() => {
@@ -177,19 +182,12 @@ export default function StarfieldGpu({
     //
     // 全螢幕時這張 canvas 被 top layer 完全蓋住，停掉不影響任何看得到的東西。
     const shouldRun = () => !document.hidden && document.fullscreenElement === null;
-    const playIntro = introOfferedRef.current;
-    introOfferedRef.current = false;
-    // 開場還沒開始就被收掉（effect 重跑、或掛載後馬上卸載）→ 把「要播」還回去給下一次
-    const returnIntro = () => {
-      if (playIntro && introPendingRef.current) introOfferedRef.current = true;
-    };
 
     if (canOffscreen) {
       // ── worker 主路徑 ──
       // 一張 canvas 只能 transfer 一次。effect 在同一張 canvas 上重跑（React 開發模式會故意
       // 把 effect 跑兩次）就得換一張新的，跟 device lost 重建是同一個做法。
       if (transferred.has(canvas)) {
-        returnIntro();
         setGeneration((g) => g + 1);
         return;
       }
@@ -205,15 +203,13 @@ export default function StarfieldGpu({
           width: canvas.clientWidth,
           height: canvas.clientHeight,
           dpr: window.devicePixelRatio,
-          intro: playIntro,
-          introFreezeAt,
+          lite: liteRef.current,
         },
         [offscreen],
       );
       // ⚠ 明送一次當下的狀態，不能只靠下面的 visibilitychange / fullscreenchange。
       //
-      // 那兩個事件只在「狀態改變」時觸發，而這個元件是 lazy 的（intro 播完才掛、
-      // three chunk 還要下載）——在它掛好之前就進全螢幕的話，事件早就發完了，
+      // 那兩個事件只在「狀態改變」時觸發，而這個元件是 lazy 的（three chunk 還要下載）——在它掛好之前就進全螢幕的話，事件早就發完了，
       // 監聽器接不到任何東西，runner 於是用預設值「跑」起來，整個全螢幕期間都在跟影片搶 GPU。
       // 實測：domcontentloaded 後 600ms 進全螢幕，一則 running 訊息都沒送出。
       // worker 端會把這個值存進 lastRunning，等 async init 完成後補套。
@@ -221,24 +217,26 @@ export default function StarfieldGpu({
       controlRef.current = {
         scroll: (y) => worker.postMessage({ type: 'scroll', y }),
         saturn: (v, a) => worker.postMessage({ type: 'saturn', visible: v, animate: a }),
-        skip: () => worker.postMessage({ type: 'skip' }),
+        glow: (g) => worker.postMessage({ type: 'glow', glow: g }),
+        collapse: (index) => worker.postMessage({ type: 'collapse', index }),
+        stars: (visible) => worker.postMessage({ type: 'stars', visible }),
+        pan: (x, y) => worker.postMessage({ type: 'pan', x, y }),
       };
-      if (skipRef.current) controlRef.current.skip();
       const onMsg = (
         e: MessageEvent<{
           type: string;
           backend?: string;
           report?: PerfReport;
           message?: string;
-          phase?: IntroPhase;
+          positions?: SatelliteScreen[];
         }>,
       ) => {
-        if (e.data.type === 'intro' && e.data.phase) handlePhase(e.data.phase);
+        if (e.data.type === 'satellites') publishSatellites(e.data.positions ?? []);
         else if (e.data.type === 'ready') setBackend(`${e.data.backend} · worker`);
         else if (e.data.type === 'perf') setPerf(e.data.report ?? null);
         else if (e.data.type === 'lost') recover(e.data.message ?? 'GPU device lost');
         else if (e.data.type === 'error') {
-          // canvas 已 transfer、無法回收給主執行緒重用 → 本 session 放棄（外層有 DOM 特效兜底）
+          // canvas 已 transfer、無法回收給主執行緒重用 → 本 session 放棄（頁面留下 CSS 星空）
           console.warn('[StarfieldGpu] worker 初始化失敗:', e.data.message);
           setFailed(true);
           worker.terminate();
@@ -259,7 +257,6 @@ export default function StarfieldGpu({
         // 讀者去推敲 addEventListener 的對應在哪。
         worker.removeEventListener('message', onMsg);
         worker.terminate();
-        returnIntro();
       };
     }
 
@@ -273,13 +270,12 @@ export default function StarfieldGpu({
           width: canvas.clientWidth,
           height: canvas.clientHeight,
           dpr: window.devicePixelRatio,
-          intro: playIntro,
-          introFreezeAt,
-          onIntroPhase: handlePhase,
+          lite: liteRef.current,
           onPerf: setPerf,
           onDeviceLost: (message) => {
             if (!disposed) recover(message);
           },
+          onSatellites: publishSatellites,
         });
         if (disposed) {
           runner.dispose();
@@ -294,9 +290,11 @@ export default function StarfieldGpu({
         controlRef.current = {
           scroll: (y) => runner.setScroll(y),
           saturn: (v, a) => runner.setSaturn(v, a),
-          skip: () => runner.skipIntro(),
+          glow: (g) => runner.setSatelliteGlow(g),
+          collapse: (index) => runner.collapseSaturnTo(index),
+          stars: (visible) => runner.setStars(visible),
+          pan: (x, y) => runner.setPan(x, y),
         };
-        if (skipRef.current) runner.skipIntro();
         setBackend(`${be} · main`);
       } catch (err) {
         console.warn('[StarfieldGpu] 主執行緒初始化失敗:', err);
@@ -314,12 +312,11 @@ export default function StarfieldGpu({
       document.removeEventListener('visibilitychange', onVis);
       document.removeEventListener('fullscreenchange', onVis);
       runnerHandle?.dispose();
-      returnIntro();
     };
     // generation 變化 = device lost 之後要整組重建（canvas 換了新的 DOM 節點，見上面的註解）
-  }, [generation, recover, handlePhase, introFreezeAt]);
+  }, [generation, recover]);
 
-  // 初始化失敗（無 WebGPU 也無 WebGL 的機器）→ 優雅消失，DOM 特效由 shell 兜底
+  // 初始化失敗（無 WebGPU 也無 WebGL 的機器）→ 優雅消失，頁面留下 CSS 星空
   if (failed) return null;
 
   return (
@@ -327,8 +324,7 @@ export default function StarfieldGpu({
       {/* key=generation：transferControlToOffscreen 一張 canvas 只能做一次，
           device lost 之後必須換一個全新的 DOM 節點才重建得起來 */}
       {/* runner 就緒前透明、就緒後淡入：worker 建場景＋編 shader 要將近一秒，頁面早就畫好了，
-          星空直接冒出來會像閃一下。opacity 只走合成，不會讓這張 canvas 多畫任何東西。
-          播開場時不淡入：第一幀就是開場不透明的底色，要直接出現（以前開場層也是直接蓋上來的）。 */}
+          星空直接冒出來會像閃一下。opacity 只走合成，不會讓這張 canvas 多畫任何東西。 */}
       <canvas
         key={generation}
         ref={canvasRef}
@@ -336,7 +332,7 @@ export default function StarfieldGpu({
           ...canvasStyle,
           zIndex,
           opacity: backend === BACKEND_PENDING ? 0 : 1,
-          transition: introMode ? undefined : 'opacity var(--dur-1000) ease',
+          transition: 'opacity var(--dur-1000) ease',
         }}
       />
       {/* backend 徽章：?debug=perf 才顯示（正式訪客不看 debug 資訊） */}

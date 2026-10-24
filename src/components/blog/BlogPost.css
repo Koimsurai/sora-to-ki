@@ -2,7 +2,34 @@
    BlogPost.css — 三欄佈局
    ═══════════════════════════════════════ */
 
-/* --post-* 變數在 index.css 的 :root（InfoPage 與 LinkCard 也在用）。 */
+/* --post-* 變數在 index.css 的 :root（LinkCard 也在用）。 */
+
+/* 2026-10 翻新（提案 v14）：內文結構不動，紫色全部收回暖白。文章頁、MDX 區塊與程式碼框裡用到的品牌紫、
+   洋紅、薰衣草、紫羅蘭與 Happy Hues 的綠，在文章範圍裡一律指到暖白（--paper），面板底色指到頁面的紙色；
+   後台還在用同一組變數，所以只在這裡改，不動 :root。琥珀只留給「你在哪裡」那一點（目錄、語言） */
+.ar-page {
+  --brand: var(--paper);
+  --brand-rgb: var(--paper-rgb);
+  --brand-light: var(--paper);
+  --magenta: var(--paper);
+  --magenta-rgb: var(--paper-rgb);
+  --lavender-rgb: var(--paper-rgb);
+  --lavender-soft: var(--paper);
+  --lavender-soft-rgb: var(--paper-rgb);
+  --violet-300-rgb: var(--paper-rgb);
+  --violet-400: var(--paper);
+  --violet-400-rgb: var(--paper-rgb);
+  --iris-rgb: var(--paper-rgb);
+  --clr-tertiary-rgb: var(--paper-rgb);
+  --surface-0: var(--ground);
+  --surface-0-rgb: var(--ground-rgb);
+  --surface-1: var(--ground);
+  --surface-1-rgb: var(--ground-rgb);
+  --surface-2: var(--ground);
+  --surface-2-rgb: var(--ground-rgb);
+  --surface-3: var(--ground);
+  --surface-3-rgb: var(--ground-rgb);
+}
 
 /* code block 與終端機視窗都要能被讀者選取複製（terminal-block 是 console/bash/sh 等語言
    的渲染路徑，先前漏了這條 override → 繼承上面 .post-content 的 none 而選不起來）。 */
@@ -33,253 +60,7 @@
   min-height: 100vh;
 }
 
-/* ═══════════════════════
-   Reading Progress Bar
-   ═══════════════════════ */
-.reading-progress-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  z-index: var(--z-progress);
-  background: var(--white-04);
-}
-
-.reading-progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--post-accent), var(--post-green));
-  transition: width var(--dur-150) ease-out;
-}
-
-/* 副標（標題「主標：副標」的冒號後段）：明顯次於主標——較小、較淡、常規字重。 */
-.post-subtitle {
-  margin: var(--space-3) auto 0;
-  max-width: 40rem;
-  font-size: var(--fs-16);
-  font-weight: 400;
-  line-height: var(--lh-160);
-  color: var(--white-50);
-  letter-spacing: var(--ls-1);
-  text-wrap: balance;
-}
-
-.post-meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-1-5) var(--space-2-5);
-  margin-top: var(--space-4);
-  font-size: var(--fs-13);
-  color: var(--post-muted);
-}
-
-.meta-sep {
-  opacity: 0.3;
-}
-
-.meta-category {
-  color: var(--white-80);
-  font-weight: 500;
-}
-
-/* meta-row category — 文字風格與 meta-row 其他項目一致（白色），只用底線提示可點 */
-.meta-category-wrap {
-  display: inline-flex;
-  align-items: center;
-  position: relative;
-}
-.meta-category-link {
-  color: var(--white-80);
-  font-weight: 500;
-  text-decoration: none;
-  background-image: linear-gradient(90deg, rgba(var(--brand-rgb), 0.6), rgba(var(--magenta-rgb), 0.6));
-  background-size: 100% 1px;
-  background-position: 0 100%;
-  background-repeat: no-repeat;
-  padding-bottom: var(--space-px);
-  transition:
-    color var(--dur-200) ease,
-    background-size var(--dur-200) ease;
-  cursor: pointer;
-}
-.meta-category-link:hover {
-  color: #fff;
-  background-size: 100% 2px;
-}
-
 /* hover tooltip on meta items */
-.meta-tip {
-  position: relative;
-  cursor: help;
-}
-.meta-tip::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%) translateY(-2px);
-  background: rgba(var(--surface-1-rgb), 0.95);
-  color: #fff;
-  font-size: var(--fs-12);
-  font-weight: 400;
-  padding: var(--space-1) var(--space-2-5);
-  border-radius: var(--r-6);
-  border: 1px solid rgba(var(--brand-rgb), 0.25);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity var(--dur-200) ease,
-    transform var(--dur-200) ease;
-  z-index: 50;
-}
-.meta-tip:hover::after,
-.meta-tip:focus-visible::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* ── 語系切換 ── */
-.meta-lang-switcher {
-  position: relative;
-  display: inline-flex;
-}
-/* 觸發器：低調的 inline 文字 + 地球圖示 + caret，與 meta row 其他文字一致 */
-.lang-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  background: transparent;
-  border: none;
-  padding: var(--space-0-5) var(--space-1);
-  color: var(--white-80);
-  font-size: inherit;
-  font-family: inherit;
-  cursor: pointer;
-  border-radius: var(--r-6);
-  transition:
-    color var(--dur-200) ease,
-    background var(--dur-200) ease;
-}
-.lang-trigger:hover,
-.lang-trigger[aria-expanded="true"] {
-  color: #fff;
-  background: var(--white-06);
-}
-.lang-icon {
-  font-size: var(--fs-14);
-  line-height: var(--lh-100);
-  opacity: 0.8;
-}
-.lang-code {
-  letter-spacing: var(--ls-2);
-  font-weight: 500;
-}
-.lang-caret {
-  transition:
-    transform var(--dur-200) ease,
-    opacity var(--dur-200) ease;
-  font-size: var(--fs-11);
-  opacity: 0.55;
-  margin-left: var(--space-px);
-}
-.lang-trigger:hover .lang-caret {
-  opacity: 0.9;
-}
-.lang-caret.open {
-  transform: rotate(180deg);
-}
-
-/* 下拉選單：玻璃卡 + 漸層描邊 */
-.lang-menu {
-  min-width: 180px;
-  background: rgba(var(--surface-3-rgb), 0.8);
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-12);
-  padding: var(--space-1-5);
-  box-shadow:
-    inset 0 1px 0 var(--white-06),
-    0 18px 48px var(--black-55),
-    0 0 0 1px rgba(var(--brand-rgb), 0.08);
-  backdrop-filter: blur(var(--blur-20)) saturate(140%);
-  z-index: var(--z-menu);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-px);
-  /* 浮現動畫 */
-  animation: koimMenuPop 0.18s var(--easing-standard);
-  transform-origin: top left;
-}
-@keyframes koimMenuPop {
-  from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.lang-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2-5);
-  background: transparent;
-  border: none;
-  color: var(--white-80);
-  font-size: var(--fs-14);
-  font-family: inherit;
-  text-align: left;
-  padding: var(--space-2-5) var(--space-3);
-  border-radius: var(--r-8);
-  cursor: pointer;
-  transition:
-    background var(--dur-150) ease,
-    color var(--dur-150) ease;
-  position: relative;
-}
-.lang-item:hover {
-  /* Neutral white tint — no gradient block, just a subtle hover hint */
-  background: var(--white-04);
-  color: #fff;
-}
-.lang-item.active {
-  /* Active = very low-alpha purple wash, no multi-stop gradient */
-  background: rgba(var(--brand-rgb), 0.08);
-  color: #fff;
-}
-/* active 左側細線提示 — 2px 單色淡紫，不再三色漸層 */
-.lang-item.active::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 9px;
-  bottom: 9px;
-  width: 2px;
-  border-radius: 0 var(--r-2) var(--r-2) 0;
-  background: rgba(var(--lavender-rgb), 0.55);
-}
-.lang-item.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.lang-item.disabled:hover {
-  background: transparent;
-  color: var(--white-50);
-}
-.lang-badge {
-  font-size: var(--fs-11);
-  font-family: var(--mono-font);
-  letter-spacing: var(--ls-4);
-  padding: var(--space-0-5) var(--space-2);
-  border-radius: var(--r-full);
-  background: var(--white-06);
-  color: var(--white-70);
-  border: 1px solid var(--white-08);
-}
 
 /* toast */
 .blog-toast {
@@ -298,104 +79,9 @@
   backdrop-filter: blur(var(--blur-12));
 }
 
-.post-tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-
-.post-tags .tag {
-  font-size: var(--fs-12);
-  color: var(--post-accent);
-  background: rgba(var(--brand-rgb), 0.1);
-  border: 1px solid rgba(var(--brand-rgb), 0.2);
-  padding: var(--space-0-5) var(--space-2-5);
-  border-radius: var(--r-full);
-}
-
 /* Posts navigation (left sidebar) */
 .posts-nav {
   padding: var(--space-10) 0 var(--space-2) 0;
-}
-
-.posts-nav-category {
-  font-size: var(--fs-12);
-  color: var(--post-muted);
-  margin-bottom: var(--space-2-5);
-  line-height: var(--lh-150);
-}
-
-.posts-nav-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.posts-nav-item {
-  display: block;
-  padding: var(--space-1) 0;
-  font-size: var(--fs-13);
-  color: var(--white-50);
-  text-decoration: none;
-  transition: color var(--dur-200) ease;
-  line-height: var(--lh-140);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.posts-nav-item:hover {
-  color: #fff;
-}
-
-.posts-nav-item.current {
-  color: var(--post-accent);
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-/* Highlighted current item in nearby posts list。
-   注意：它與其他列同樣是 <a>（見 PreviewablePostLink 的 current 註解——維持同型別，
-   換文章時 React 才會重用節點、不重播進場動畫）。這裡把「目前這篇」關成不可點。 */
-.posts-nav-current-item {
-  color: #fff;
-  position: relative;
-  padding-left: var(--space-3);
-  cursor: default;
-  pointer-events: none;
-}
-
-.posts-nav-current-item::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 15%;
-  width: 3px;
-  height: 70%;
-  border-radius: var(--r-2);
-  background: var(--post-accent);
-  box-shadow: 0 0 8px rgba(var(--brand-rgb), 0.3);
-  animation: indicator-slide-in 0.3s var(--easing-standard) both;
-}
-
-@keyframes indicator-slide-in {
-  from {
-    opacity: 0;
-    height: 0;
-    top: 50%;
-  }
-
-  to {
-    opacity: 1;
-    height: 70%;
-    top: 15%;
-  }
 }
 
 /* ═══════════════════════
@@ -461,60 +147,6 @@
   .prev-next-nav {
     grid-template-columns: 1fr;
   }
-}
-
-/* ── Emoji 反應列：清爽、無背景、置中 ── */
-.reaction-bar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-1-5);
-  margin: var(--space-12) auto var(--space-5);
-  padding: 0;
-  background: transparent;
-  border: none;
-}
-.reaction-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  padding: var(--space-1-5) var(--space-3);
-  background: var(--white-04);
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-full);
-  color: var(--white-80);
-  font-size: var(--fs-14);
-  cursor: pointer;
-  transition:
-    transform var(--dur-150) ease,
-    background var(--dur-200) ease,
-    border-color var(--dur-200) ease,
-    color var(--dur-200) ease;
-}
-.reaction-btn:hover {
-  background: rgba(var(--brand-rgb), 0.15);
-  border-color: rgba(var(--brand-rgb), 0.3);
-  color: #fff;
-  transform: translateY(-1px);
-}
-.reaction-btn.is-active {
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.2), rgba(var(--magenta-rgb), 0.2));
-  border-color: rgba(var(--brand-rgb), 0.55);
-  color: #fff;
-  box-shadow: 0 0 12px rgba(var(--brand-rgb), 0.25);
-}
-.reaction-btn .reaction-emoji {
-  font-size: var(--fs-16);
-  line-height: var(--lh-100);
-}
-.reaction-btn .reaction-count {
-  font-size: var(--fs-12);
-  font-weight: 600;
-  color: var(--white-70);
-  font-variant-numeric: tabular-nums;
-}
-.reaction-btn.is-active .reaction-count {
-  color: #fff;
 }
 
 /* ── Series 系列文導覽（文末，文章區塊外） ── */
@@ -608,127 +240,6 @@ a.series-nav-title:hover {
   font-weight: 600;
 }
 
-/* Category tooltip (rendered via Portal to body) */
-.category-tooltip.category-tooltip-compact {
-  width: auto;
-  max-width: 280px;
-  padding: var(--space-2-5) var(--space-3);
-}
-.category-tooltip-short {
-  font-size: var(--fs-13);
-  color: var(--white-90);
-  font-weight: 500;
-  margin: 0 0 var(--space-1-5) 0;
-  line-height: var(--lh-140);
-}
-
-.category-tooltip.category-tooltip-compact .category-tooltip-short {
-  margin: 0;
-}
-
-.category-tooltip {
-  width: 240px;
-  padding: var(--space-3-5);
-  background: rgba(var(--surface-1-rgb), 0.95);
-  backdrop-filter: blur(var(--blur-20));
-  border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: var(--r-12);
-  box-shadow:
-    0 8px 32px var(--black-50),
-    0 0 16px rgba(var(--brand-rgb), 0.08);
-  z-index: var(--z-menu);
-  animation: tooltip-in 0.2s ease;
-  pointer-events: auto;
-}
-
-@keyframes tooltip-in {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.category-tooltip-desc {
-  font-size: var(--fs-12);
-  color: var(--white-50);
-  margin: 0 0 var(--space-2-5) 0;
-  line-height: var(--lh-150);
-}
-
-.category-tooltip-meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-size: var(--fs-11);
-  color: var(--white-35);
-  border-top: 1px solid var(--white-06);
-  padding-top: var(--space-2);
-}
-
-/* ═══════════════════════
-   AI Summary — Inside card, gradient fade
-   ═══════════════════════ */
-.post-ai-summary-inline {
-  position: relative;
-  margin: -2.5rem -2.5rem var(--space-8) -2.5rem;
-  padding: var(--space-8) var(--space-10) var(--space-10);
-  background: linear-gradient(
-    180deg,
-    rgba(var(--brand-rgb), 0.08) 0%,
-    rgba(var(--brand-rgb), 0.02) 60%,
-    transparent 100%
-  );
-  border-radius: var(--r-16) var(--r-16) 0 0;
-  border-bottom: none;
-  overflow: hidden;
-}
-
-.ai-summary-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-2-5);
-}
-
-.ai-summary-top-row h2 {
-  margin: 0;
-  font-size: var(--fs-14);
-  color: var(--white-70);
-  font-weight: 600;
-}
-
-.ai-badge {
-  font-size: var(--fs-10);
-  padding: var(--space-0-5) var(--space-2);
-  border-radius: var(--r-4);
-  background: rgba(var(--brand-rgb), 0.15);
-  color: var(--post-accent);
-  font-weight: 600;
-  letter-spacing: var(--ls-6);
-}
-
-.post-ai-summary-inline p {
-  margin: 0;
-  font-size: var(--fs-14);
-  color: var(--white-55);
-  line-height: var(--lh-170);
-}
-
-.ai-summary-fade {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
-  background: linear-gradient(to bottom, transparent, var(--post-card-bg));
-  pointer-events: none;
-}
-
 /* ═══════════════════════
    Drop Cap — first letter of article
    ═══════════════════════ */
@@ -786,9 +297,8 @@ a.series-nav-title:hover {
    於是只有文章頁 opt-in：從文章整頁跳到別頁（頭像選單的「管理後台」是 location.assign）時，
    舊頁開始轉場、新頁沒 opt-in，瀏覽器中止轉場，新頁冒出沒人接的 rejection
   （GlitchTip「InvalidStateError: Transition was aborted … opt-in disabled」）。 */
-/* VT 只做「純 crossfade」不帶位移——位移進場由 post-enter / side-in 負責。
-   否則整頁 y+8 淡入會跟元素自己的滑入疊加 → 使用者看到「動畫跑兩次 / 抽一下」
-  （實測 animationstart：blogFadeIn 與 post-enter 在同次導航同時開跑）。 */
+/* VT 只做「純 crossfade」不帶位移：文章裡的元素有自己的進場動畫，
+   整頁再帶 y+8 淡入會跟它疊加 → 使用者看到「動畫跑兩次 / 抽一下」。 */
 ::view-transition-old(root) {
   animation: blogFadeOut 0.2s ease-out both;
 }
@@ -818,30 +328,46 @@ a.series-nav-title:hover {
 /* ═══════════════════════
    GitHub-style Callouts (> [!NOTE] / [!TIP] / [!WARNING] / [!IMPORTANT] / [!CAUTION])
    由 remark-github-blockquote-alert 轉出 <div class="markdown-alert markdown-alert-{type}">
+   照提案：左邊一條細線，上面一行等寬小字標出類型，沒有底色、沒有圖示、不分顏色——
+   五種的差別交給那一行字，琥珀留給「一個點」，不拿來當警告色。
    ═══════════════════════ */
 .post-content .markdown-alert {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
   margin: var(--space-6) 0;
-  border-left: 3px solid var(--alert-accent, rgba(var(--brand-rgb), 0.6));
-  border-radius: 0 var(--r-10) var(--r-10) 0;
-  background: var(--alert-bg, rgba(var(--brand-rgb), 0.06));
-  color: var(--white-80);
+  border-left: 1px solid var(--paper-3);
+  color: var(--paper-2);
 }
 .post-content .markdown-alert-title {
+  display: block;
+  margin-bottom: var(--space-1-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+.post-content .markdown-alert-title svg {
+  display: none;
+}
+/* 要讀者停下來的三種：線亮一階、標籤前一顆琥珀點（「這裡」） */
+.post-content :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution) {
+  border-left-color: var(--paper);
+}
+.post-content :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution) .markdown-alert-title {
   display: flex;
   align-items: center;
-  gap: var(--space-1-5);
-  font-weight: 600;
-  font-size: var(--fs-14);
-  margin-bottom: var(--space-1);
-  color: var(--alert-accent, var(--brand-light));
-  letter-spacing: var(--ls-2);
+  gap: var(--space-2);
+  color: var(--paper-2);
 }
-.post-content .markdown-alert-title svg,
-.post-content .markdown-alert-title svg path {
-  flex-shrink: 0;
-  /* icon 之前沒設 fill → 用預設黑色；強制跟著該類型的 accent 色（藍/綠/紫/琥珀/紅） */
-  fill: var(--alert-accent, var(--brand-light));
+.post-content
+  :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution)
+  .markdown-alert-title::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: var(--r-round);
+  background: var(--amber);
+  box-shadow: 0 0 6px rgba(var(--amber-rgb), 0.7);
 }
 .post-content .markdown-alert p {
   margin: var(--space-1) 0;
@@ -850,27 +376,6 @@ a.series-nav-title:hover {
 }
 .post-content .markdown-alert p:last-child {
   margin-bottom: 0;
-}
-
-.post-content .markdown-alert-note {
-  --alert-accent: var(--sky-300);
-  --alert-bg: rgba(var(--sky-300-rgb), 0.06);
-}
-.post-content .markdown-alert-tip {
-  --alert-accent: var(--green-300);
-  --alert-bg: rgba(var(--green-300-rgb), 0.06);
-}
-.post-content .markdown-alert-important {
-  --alert-accent: var(--brand-light);
-  --alert-bg: rgba(var(--violet-300-rgb), 0.08);
-}
-.post-content .markdown-alert-warning {
-  --alert-accent: var(--amber-300);
-  --alert-bg: rgba(var(--amber-300-rgb), 0.08);
-}
-.post-content .markdown-alert-caution {
-  --alert-accent: var(--red-300);
-  --alert-bg: rgba(var(--red-300-rgb), 0.08);
 }
 .heading-anchor {
   margin-left: 0.4em;
@@ -914,12 +419,12 @@ a.series-nav-title:hover {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  background: var(--black-80);
-  backdrop-filter: blur(var(--blur-16));
-  border-radius: var(--r-10);
-  font-size: var(--fs-12);
-  color: var(--white-80);
+  padding: var(--space-1-5) var(--space-3-5);
+  background: rgba(var(--ground-rgb), 0.85);
+  border: 1px solid var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-2);
   white-space: nowrap;
   pointer-events: none;
   z-index: 5;
@@ -931,27 +436,28 @@ a.series-nav-title:hover {
     transform var(--dur-400) var(--easing-standard);
 }
 
-/* Image Lightbox */
+/* Image Lightbox：夜色鋪滿，圖在中間、圖說在下面 */
 .image-lightbox-overlay {
   position: fixed;
   inset: 0;
   z-index: var(--z-fullscreen);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--black-90);
-  backdrop-filter: blur(var(--blur-8));
+  background: rgba(var(--ground-rgb), 0.95);
   cursor: zoom-out;
 }
 
 /* ═══════════════════════
    Code Block
    ═══════════════════════ */
-/* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .code-block-wrapper` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
+/* 照提案：細線框、小圓角、很淡的暖白底；語言與「複製」是等寬小字 */
 .code-block-wrapper {
-  border-radius: var(--r-12);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-6);
   overflow: hidden;
-  background: var(--black-40);
+  background: rgba(var(--paper-rgb), 0.03);
   margin: var(--space-6) 0;
 }
 
@@ -985,71 +491,67 @@ a.series-nav-title:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-2-5) var(--space-4) var(--space-1-5);
+  padding: var(--space-2) var(--space-4) 0;
   background: transparent;
 }
 
 .language-name {
-  font-size: var(--fs-12);
-  color: var(--post-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--ls-6);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+  letter-spacing: var(--ls-12);
 }
 
 .copy-button {
-  background: var(--white-06);
-  border: 1px solid var(--white-10);
-  color: var(--white-60);
-  padding: var(--space-1) var(--space-2-5);
-  border-radius: var(--r-6);
-  font-size: var(--fs-12);
+  background: none;
+  border: 0;
+  color: var(--paper-3);
+  padding: var(--space-1) 0;
+  border-radius: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
   cursor: pointer;
-  transition:
-    background var(--dur-200),
-    color var(--dur-200),
-    border-color var(--dur-200);
+  transition: color var(--dur-200);
 }
 
-/* 蓋掉全域 button:hover 的紫底＋光暈（specificity 0,2,0 > 0,1,1） */
+/* 蓋掉全域 button:hover 的底色＋光暈（specificity 0,2,0 > 0,1,1） */
 .copy-button:hover,
 .copy-button:focus,
 .copy-button:focus-visible {
-  background: var(--white-10);
-  border-color: var(--white-20);
-  color: #fff;
+  background: none;
+  border-color: transparent;
+  color: var(--paper);
   box-shadow: none;
   outline: none;
 }
 
-/* ── 終端機渲染（bash/shell 類）：macOS 風視窗，紅黃綠燈 + 標題列，無行號，唯讀 ── */
+/* ── 終端機渲染（bash/shell 類）：外框跟一般程式碼一樣，標題列是一行等寬小字，無行號，唯讀 ── */
 /* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .terminal-block` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
 .terminal-block {
   margin: var(--space-6) 0;
-  border-radius: var(--r-12);
+  border-radius: var(--r-6);
   overflow: hidden;
-  background: var(--surface-0);
-  border: 1px solid var(--white-08);
+  background: rgba(var(--paper-rgb), 0.03);
+  border: 1px solid var(--rule);
 }
 .terminal-bar {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3-5);
-  background: var(--white-04);
-  border-bottom: 1px solid var(--white-06);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--rule);
 }
-/* 左側提示符（取代紅黃綠燈）：綠色 ❯_ ，乾淨的終端機味 */
 .terminal-glyph {
-  color: var(--green-400);
+  color: var(--paper-3);
   font-family: var(--mono-font);
-  font-size: var(--fs-13);
-  font-weight: 700;
+  font-size: var(--fs-11);
   letter-spacing: var(--ls-n4);
 }
 .terminal-title {
-  font-size: var(--fs-12);
-  letter-spacing: var(--ls-2);
-  color: var(--white-40);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
   font-family: var(--mono-font);
 }
 .terminal-block .copy-button {
@@ -1107,16 +609,16 @@ a.series-nav-title:hover {
   padding: var(--space-1) var(--space-4-5) 0;
 }
 .terminal-prompt-sym {
-  color: var(--green-400);
+  color: var(--paper-3);
   font-family: var(--mono-font);
   font-size: var(--fs-14);
-  font-weight: 700;
 }
+/* 等著輸入的游標：琥珀，跟留言框的游標同一個 */
 .terminal-cursor {
   display: inline-block;
   width: 0.4rem;
   height: 1rem;
-  background: var(--white-80);
+  background: var(--amber);
   animation: terminal-blink 1.05s steps(1) infinite;
 }
 @keyframes terminal-blink {
@@ -1166,210 +668,24 @@ a.series-nav-title:hover {
   overflow: hidden;
   transition: max-height var(--dur-400) var(--easing-standard);
 }
-/* 蓋掉全域 button{紫底}＋button:hover{紫底+光暈}（specificity 0,2,0 > 0,1,1） */
+/* 蓋掉全域 button:hover 的底色＋光暈（specificity 0,2,0 > 0,1,1） */
 .code-surface-toggle:hover,
 .code-surface-toggle:focus,
 .code-surface-toggle:focus-visible {
-  background: var(--white-06);
-  color: #fff;
+  background: none;
+  color: var(--paper);
   box-shadow: none;
   border-color: transparent;
   outline: none;
 }
-/* emoji 語言標頭（小寫，跟參考一致；覆蓋原本的 uppercase） */
+/* 語言標頭：只有字，舊版前面那顆語言圖示不放 */
 .language-name {
   display: inline-flex;
   align-items: center;
-  gap: 0.4em;
   text-transform: none;
 }
 .language-emoji {
-  font-size: 0.95em;
-  line-height: var(--lh-100);
-}
-
-/* ═══════════════════════
-   Floating Actions (right side)
-   ═══════════════════════ */
-.floating-actions {
-  position: fixed;
-  right: 2rem;
-  bottom: 50%;
-  transform: translateY(50%);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  z-index: 100;
-}
-
-/* 浮動 FAB — 套用 koim 風格 */
-.float-btn {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--r-round);
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  cursor: pointer;
-  text-decoration: none;
-  font-size: var(--fs-14);
-  color: var(--white-70);
-  background:
-    linear-gradient(135deg, rgba(var(--brand-rgb), 0.1) 0%, rgba(var(--magenta-rgb), 0.08) 100%),
-    rgba(var(--surface-3-rgb), 0.55);
-  border: 1px solid var(--white-08);
-  box-shadow:
-    inset 0 1px 0 var(--white-08),
-    0 4px 14px var(--black-20);
-  backdrop-filter: blur(var(--blur-12));
-  isolation: isolate;
-  overflow: hidden;
-  transition:
-    color var(--dur-250) ease,
-    border-color var(--dur-250) ease,
-    box-shadow var(--dur-300) var(--easing-standard),
-    transform var(--dur-250) var(--easing-standard);
-}
-.float-btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: var(--space-px);
-  background: linear-gradient(
-    135deg,
-    rgba(var(--lavender-soft-rgb), 0.55),
-    rgba(var(--brand-rgb), 0.45) 45%,
-    rgba(var(--magenta-rgb), 0.35)
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity var(--dur-300) ease;
-  pointer-events: none;
-}
-.float-btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(120% 90% at 50% 120%, rgba(var(--brand-rgb), 0.35), transparent 60%);
-  opacity: 0;
-  transition: opacity var(--dur-400) ease;
-  pointer-events: none;
-}
-/* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.float-btn::after` 是按鈕自己的光暈偽元素，這裡是按鈕**裡面**的圖示與文字，不同節點、零屬性重疊。 */
-.float-btn > svg,
-.float-btn > span {
-  position: relative;
-  z-index: 2;
-}
-.float-btn span {
-  font-size: var(--fs-10);
-  line-height: var(--lh-100);
-}
-.float-btn:hover {
-  color: #fff;
-  border-color: transparent;
-  transform: translateX(-2px);
-  box-shadow:
-    inset 0 1px 0 var(--white-15),
-    0 6px 20px rgba(var(--brand-rgb), 0.3),
-    0 0 28px rgba(var(--magenta-rgb), 0.1);
-}
-.float-btn:hover::before {
-  opacity: 1;
-}
-.float-btn:hover::after {
-  opacity: 1;
-}
-
-/* 紅色喜歡狀態 — 維持紅色情感色但用 koim 質感 */
-.float-btn.active {
-  color: #ffb3bd;
-  background:
-    linear-gradient(135deg, rgba(var(--coral-rgb), 0.3) 0%, rgba(var(--magenta-rgb), 0.2) 100%),
-    rgba(var(--surface-3-rgb), 0.55);
-  border-color: transparent;
-  box-shadow:
-    inset 0 1px 0 var(--white-20),
-    0 6px 20px rgba(var(--coral-rgb), 0.3);
-}
-.float-btn.active::before {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 180, 200, 0.6),
-    rgba(var(--coral-rgb), 0.5) 45%,
-    rgba(var(--magenta-rgb), 0.5)
-  );
-  opacity: 1;
-}
-
-/* 已分享 — 綠色資訊狀態（轉貼成功提示） */
-.float-btn.shared {
-  color: #b3e8c8;
-  background:
-    linear-gradient(135deg, rgba(var(--clr-tertiary-rgb), 0.25) 0%, rgba(64, 200, 144, 0.15) 100%),
-    rgba(var(--surface-3-rgb), 0.55);
-  border-color: transparent;
-  box-shadow:
-    inset 0 1px 0 var(--white-20),
-    0 6px 20px rgba(var(--clr-tertiary-rgb), 0.3);
-}
-
-.float-btn-wrapper {
-  position: relative;
-}
-
-/* Share menu — 玻璃卡 */
-.share-menu {
-  position: absolute;
-  right: 52px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(var(--surface-3-rgb), 0.8);
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-12);
-  padding: var(--space-1-5);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-0-5);
-  min-width: 168px;
-  backdrop-filter: blur(var(--blur-20)) saturate(140%);
-  box-shadow:
-    inset 0 1px 0 var(--white-06),
-    0 14px 40px var(--black-50);
-  z-index: 110;
-}
-
-.share-menu button {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2-5);
-  padding: var(--space-2) var(--space-3);
-  border: none;
-  background: transparent;
-  color: var(--white-80);
-  font-size: var(--fs-14);
-  cursor: pointer;
-  border-radius: var(--r-8);
-  transition:
-    background var(--dur-200) ease,
-    color var(--dur-200) ease;
-  white-space: nowrap;
-}
-.share-menu button:hover {
-  background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.2), rgba(var(--magenta-rgb), 0.1));
-  color: #fff;
-}
-/* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.share-menu button:hover` 設按鈕自己的底色與字色，這裡設的是按鈕裡面的 svg，不同節點。 */
-.share-menu button svg {
-  color: var(--brand-light);
+  display: none;
 }
 
 /* ═══════════════════════
@@ -1429,6 +745,7 @@ a.series-nav-title:hover {
   margin: var(--space-2) 0 var(--space-1);
 }
 
+/* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.post-content .markdown-alert p` 是文章裡提示框的段落，這裡是訂閱視窗的說明，不同節點、不會同時命中。 */
 .subscribe-header p {
   font-size: var(--fs-14);
   color: var(--post-muted);
@@ -1521,77 +838,6 @@ a.series-nav-title:hover {
   font-size: var(--fs-12);
   color: var(--white-25);
 }
-
-/* ═══════════════════════
-   Font Switcher
-   ═══════════════════════ */
-.font-switcher {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  z-index: 200;
-}
-
-.font-switcher-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--r-round);
-  background: var(--white-06);
-  border: 1px solid var(--white-10);
-  color: var(--white-60);
-  font-size: var(--fs-14);
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--dur-200);
-  backdrop-filter: blur(var(--blur-8));
-}
-
-.font-switcher-btn:hover {
-  background: rgba(var(--brand-rgb), 0.15);
-  border-color: rgba(var(--brand-rgb), 0.3);
-  color: var(--post-accent);
-}
-
-.font-switcher-popup {
-  position: absolute;
-  bottom: 48px;
-  right: 0;
-  background: rgba(var(--surface-3-rgb), 0.95);
-  border: 1px solid var(--white-10);
-  border-radius: var(--r-12);
-  padding: var(--space-2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 140px;
-  backdrop-filter: blur(var(--blur-16));
-}
-
-.font-option {
-  padding: var(--space-2) var(--space-3);
-  border: none;
-  background: none;
-  color: var(--white-60);
-  font-size: var(--fs-14);
-  cursor: pointer;
-  border-radius: var(--r-8);
-  text-align: left;
-  transition: all var(--dur-200);
-}
-
-.font-option:hover {
-  background: var(--white-06);
-  color: #fff;
-}
-
-.font-option.active {
-  color: var(--post-accent);
-  background: rgba(var(--brand-rgb), 0.1);
-}
-
 /* Back to blog link (error page) */
 .back-to-blog-link {
   display: inline-flex;
@@ -1612,16 +858,6 @@ a.series-nav-title:hover {
   background: rgba(var(--brand-rgb), 0.25);
 }
 
-/* ═══════════════════════
-   Loading Animation
-   ═══════════════════════ */
-
-@keyframes orbit-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Error page */
 .error-content {
   text-align: center;
@@ -1639,35 +875,11 @@ a.series-nav-title:hover {
   margin-bottom: var(--space-2);
 }
 
+/* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.post-content .markdown-alert p` 是文章裡提示框的段落，這裡是找不到文章時的說明，不同節點、不會同時命中。 */
 .error-content p {
   color: var(--post-muted);
   margin-bottom: var(--space-4);
 }
-
-@media (max-width: 950px) {
-  .post-ai-summary-inline {
-    margin: -1.5rem -1.5rem var(--space-6) -1.5rem;
-    padding: var(--space-6) var(--space-6) var(--space-8);
-  }
-
-  .floating-actions {
-    display: none;
-  }
-
-  .font-switcher {
-    bottom: 1rem;
-    right: 1rem;
-  }
-
-  .post-subtitle {
-    font-size: var(--fs-16);
-    margin-top: var(--space-2);
-  }
-}
-
-/* ═══════════════════════
-   New Styles for Internal Links & TOC Fixes
-   ═══════════════════════ */
 
 /* ── 文章進場動畫（CSS 版，取代 LCP 關鍵路徑上的 JS 進場）──
    為什麼用 CSS 而不是 framer-motion：CSS 動畫在「第一幀 paint」就開始跑，不必等 JS hydrate；
@@ -1684,72 +896,6 @@ a.series-nav-title:hover {
   to {
     transform: translateY(0);
   }
-}
-
-/* ── 側欄逐行進場（TOC 由右滑入、左欄由左滑入）──
-   每列以 --i（元件 inline style 給的索引）錯開 delay → 瀑布式一行行出現。
-   CSS 動畫 SSR 首幀就開跑（不等 JS）；key 綁 post id → 換文章視窗平移時，
-   只有「新露出的列」是新節點、只有它們重播（= 逐行塞入），舊列不動。
-   非 LCP 元素 → 用 opacity 安全。backwards：delay 期間先隱藏、輪到才進場。 */
-@keyframes side-in-r {
-  from {
-    opacity: 0;
-    transform: translateX(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-@keyframes side-in-l {
-  from {
-    opacity: 0;
-    transform: translateX(-14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-.posts-nav .side-item-in {
-  animation: side-in-l 380ms var(--easing-out) backwards;
-  animation-delay: calc(120ms + min(var(--i, 0) * 50ms, 600ms));
-}
-
-/* ── AI 翻譯提示 banner（非原文語系文章頂部）── */
-.ai-translation-notice {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2-5);
-  flex-wrap: wrap;
-  margin: 0 0 var(--space-6);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid rgba(var(--amber-300-rgb), 0.25);
-  border-radius: var(--r-10);
-  background: rgba(var(--amber-300-rgb), 0.06);
-  font-size: var(--fs-14);
-  color: var(--white-70);
-  line-height: var(--lh-150);
-}
-.ai-translation-icon {
-  font-size: var(--fs-16);
-  flex: 0 0 auto;
-}
-.ai-translation-text {
-  flex: 1 1 auto;
-  min-width: 12rem;
-}
-.ai-translation-original {
-  flex: 0 0 auto;
-  color: rgba(var(--amber-300-rgb), 0.9);
-  font-weight: 500;
-  white-space: nowrap;
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color var(--dur-150) ease;
-}
-.ai-translation-original:hover {
-  border-bottom-color: rgba(var(--amber-300-rgb), 0.6);
 }
 
 /* 圖片的放大按鈕外殼：只提供焦點與鍵盤語意，外觀完全交給裡面的 <img>

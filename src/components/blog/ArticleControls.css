@@ -1,0 +1,130 @@
+/* 文章頁的語言與字體（blog/ArticleControls）：都是一行字，沒有框 */
+
+:where(.ac-lang, .ac-font) :where(button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+/* 語言：一排字，現在的那一個底下一個琥珀小點 */
+.ac-lang {
+  position: relative;
+  display: inline-flex;
+  gap: var(--space-3);
+}
+
+.ac-lang button {
+  position: relative;
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.ac-lang button:hover,
+.ac-lang button:focus-visible {
+  color: var(--paper-2);
+}
+
+.ac-lang button[aria-current="true"] {
+  color: var(--paper);
+}
+
+/* 琥珀點是獨立的一顆（不是按鈕的 ::after），切語系時才能從舊的那個滑到新的那個 */
+.ac-lang-dot {
+  position: absolute;
+  bottom: calc(-1 * var(--space-2));
+  left: 0;
+  width: 3px;
+  height: 3px;
+  background: var(--amber);
+  border-radius: var(--r-round);
+  translate: -50% 0;
+  pointer-events: none;
+  transition: left var(--dur-500) var(--easing-out);
+}
+
+/* 還沒翻成這個語言的：再淡一點 */
+.ac-lang .is-na {
+  opacity: 0.45;
+}
+
+/* 文末那一行的字體：只在沒有目錄的窄螢幕出現（目錄在 1100px 以下收起來，見 lib/articleOrbit） */
+.ar-font-narrow {
+  display: none;
+}
+
+@media (max-width: 1099px) {
+  .ar-font-narrow {
+    display: inline-block;
+  }
+}
+
+/* 字體：一行字，點開往上長出四個字體名 */
+.ac-font {
+  position: relative;
+  display: inline-block;
+  pointer-events: auto;
+}
+
+.ac-font-btn {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+  white-space: nowrap;
+  transition: color var(--dur-200) ease;
+}
+
+.ac-font-btn:hover,
+.ac-font-btn:focus-visible,
+.ac-font-btn[aria-expanded="true"] {
+  color: var(--paper);
+}
+
+.ac-font-list {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 0;
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  white-space: nowrap;
+  animation: ac-up var(--dur-300) var(--easing-out);
+}
+
+@keyframes ac-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-1));
+  }
+}
+
+.ac-font-list button {
+  position: relative;
+  padding-left: var(--space-3);
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+  transition: color var(--dur-200) ease;
+}
+
+.ac-font-list button:hover,
+.ac-font-list button:focus-visible {
+  color: var(--paper);
+}
+
+.ac-font-list button[aria-pressed="true"] {
+  color: var(--paper);
+}
+
+.ac-font-list button[aria-pressed="true"]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 3px;
+  height: 3px;
+  background: var(--amber);
+  border-radius: var(--r-round);
+  translate: 0 -50%;
+}

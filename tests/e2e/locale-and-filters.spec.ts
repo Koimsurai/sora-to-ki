@@ -5,30 +5,32 @@ import { E2E_POST_PREFIX } from './seed.mjs';
 /**
  * 語言切換與文章篩選——兩批「使用者最常按、但一條測試都沒有」的互動。
  *
- * 語言切換那批特別要緊：`LanguagePicker.tsx` 的檔頭註解自己留了一張字條——
+ * 語言切換那批特別要緊：`SiteNav.tsx` 的 switchLocale 留了一張字條——
  *
- *   ⚠ 一定要「導航到帶前綴的網址」而不是只 changeLanguage：頁面內容由 LocaleProvider
- *     依 **URL** 建的獨立 i18n instance 驅動，只呼叫 changeLanguage 只會換到外殼
- *     那顆 instance → 內容（含今日訊號）不會跟著換。
+ *   一定要換網址：頁面內容由 LocaleProvider 依「網址」建的 i18n instance 驅動，
+ *   只呼叫 changeLanguage 只會換到外殼，內容不會跟著換。
  *
  * 也就是說這裡壞過一次，而且壞的樣子是「網址對、外殼的字換了、內文沒換」。
  * 所以下面每一條都**斷言內容真的變了**，不是只看網址——只看網址的測試在那個
  * bug 重演時會全綠。
  */
 
-const PICKER = '.lang-picker-trigger';
-const ITEM = '.lang-picker-item';
+/** 頂欄的「更多」：語言在它展開後的工具列裡 */
+const MORE = '.snav-row button[aria-controls="snav-more"]';
+const LANG = '#snav-more .snav-util-group button[lang]';
 
-/** 打開語言選單並選一個。 */
-async function pickLanguage(page: import('@playwright/test').Page, label: string) {
-  // footer 在頁面底部，先捲下去（不捲的話 Playwright 會自己捲，但捲動本身也是一次
-  // 使用者行為，明確寫出來比較好讀）
-  await page.locator(PICKER).scrollIntoViewIfNeeded();
+/** 打開「更多」。 */
+async function openMore(page: import('@playwright/test').Page) {
   await expect(async () => {
-    await page.locator(PICKER).click();
-    await expect(page.locator('.lang-picker-popup')).toBeVisible({ timeout: 2_000 });
+    await page.locator(MORE).click();
+    await expect(page.locator(MORE)).toHaveAttribute('aria-expanded', 'true', { timeout: 2_000 });
   }).toPass({ timeout: 20_000 }); // hydration 之前那一下會被吃掉，理由同 interactions.spec.ts
-  await page.locator(ITEM).filter({ hasText: label }).click();
+}
+
+/** 打開「更多」並選一個語言（code 是 lang 屬性：en、zh-TW…）。 */
+async function pickLanguage(page: import('@playwright/test').Page, code: string) {
+  await openMore(page);
+  await page.locator(`${LANG}[lang="${code}"]`).click();
 }
 
 test.describe('語言切換', () => {
@@ -42,7 +44,7 @@ test.describe('語言切換', () => {
     await page.goto('/blog');
     await expect(page.locator('main').first()).toContainText('第一篇測試文章');
 
-    await pickLanguage(page, 'English');
+    await pickLanguage(page, 'en');
 
     await expect(page).toHaveURL(/\/en\/blog\/?$/);
     await expect(page.locator('main').first(), '內文必須跟著換——只換外殼就是那個舊 bug').toContainText(
@@ -54,7 +56,7 @@ test.describe('語言切換', () => {
   /** 切語言要留在同一頁，不是跳回首頁。 */
   test('切語言保留當前路徑（含帶參數的）', async ({ page }) => {
     await page.goto('/blog/1');
-    await pickLanguage(page, 'English');
+    await pickLanguage(page, 'en');
     await expect(page, '應該是 /en/blog/1 而不是 /en').toHaveURL(/\/en\/blog\/1$/);
   });
 
@@ -66,7 +68,7 @@ test.describe('語言切換', () => {
    */
   test('切回預設語系不會多出前綴', async ({ page }) => {
     await page.goto('/en/blog');
-    await pickLanguage(page, '繁體中文');
+    await pickLanguage(page, 'zh-TW');
     await expect(page).toHaveURL(/\/blog\/?$/);
     await expect(page).not.toHaveURL(/zh-tw/i);
     await expect(page.locator('main').first()).toContainText('第一篇測試文章');
@@ -75,29 +77,21 @@ test.describe('語言切換', () => {
   /** 目前語系要標 `aria-current`——沒有它，用報讀器的人不知道現在是哪一個。 */
   test('目前語系有標記出來', async ({ page }) => {
     await page.goto('/en/blog');
-    await page.locator(PICKER).scrollIntoViewIfNeeded();
-    await expect(async () => {
-      await page.locator(PICKER).click();
-      await expect(page.locator('.lang-picker-popup')).toBeVisible({ timeout: 2_000 });
-    }).toPass({ timeout: 20_000 });
+    await openMore(page);
 
-    const current = page.locator(`${ITEM}[aria-current="true"]`);
+    const current = page.locator(`${LANG}[aria-current="true"]`);
     await expect(current, '應該只有一個被標成目前語系').toHaveCount(1);
-    await expect(current).toContainText('English');
+    await expect(current).toHaveAttribute('lang', 'en');
   });
 
-  /** Esc 關掉選單（元件有掛 keydown，但沒有人測過）。 */
-  test('Esc 關得掉語言選單', async ({ page }) => {
+  /** Esc 收起「更多」。 */
+  test('Esc 關得掉「更多」', async ({ page }) => {
     await page.goto('/blog');
-    await page.locator(PICKER).scrollIntoViewIfNeeded();
-    await expect(async () => {
-      await page.locator(PICKER).click();
-      await expect(page.locator('.lang-picker-popup')).toBeVisible({ timeout: 2_000 });
-    }).toPass({ timeout: 20_000 });
+    await openMore(page);
 
     await page.keyboard.press('Escape');
-    await expect(page.locator('.lang-picker-popup')).toBeHidden();
-    await expect(page.locator(PICKER)).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator(MORE)).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('#snav-more')).toHaveAttribute('inert', '');
   });
 });
 
@@ -167,129 +161,63 @@ test.describe('首頁的語言自動導向', () => {
 });
 
 test.describe('文章篩選', () => {
-  const SEARCH = '.blog-search-input';
-  // ⚠ 必須是 `.note-card`，不能用 `main a[href^="/blog/"]`——側邊欄的「精選」與
-  // 「導航」也是指向 /blog/ 的連結，用寬選擇器會把它們算成文章，於是
-  // 「搜尋不到時應該是 0 筆」永遠不成立（第一版就是這樣紅的）。
+  // 手記一篇一列（`.nt-list > li`）。全文搜尋在命令面板（⌘K，見 nav.spec.ts），這頁只有分類與標籤。
   //
   // 排掉測試自己建的文章：post-editor.spec.ts 有一條會真的發佈一篇，而跨檔是平行跑的。
   // 下面幾條都是「先數一次 before，做點事，再數一次」——中間插進來一篇就會紅，
   // 而且是那種跑十次紅一次、最難查的紅。改成從來源就不看它們，比縮短競爭窗口可靠。
-  const cards = (page: import('@playwright/test').Page) =>
-    page.locator('.note-card').filter({ hasNotText: E2E_POST_PREFIX });
+  const rows = (page: import('@playwright/test').Page) =>
+    page.locator('.nt-list > li').filter({ hasNotText: E2E_POST_PREFIX });
+  /** 分類按鈕（第一顆是「全部」，沒有 aria-pressed） */
+  const category = (page: import('@playwright/test').Page, name: string) =>
+    page.locator('.nt-cats button[aria-pressed]').filter({ hasText: name });
 
-  /**
-   * 切換排序不該把整頁換掉。
-   *
-   * `sortBy` 是 queryKey 的一部分，換排序＝一個全新的 query。少了
-   * `placeholderData: keepPreviousData`，新 key 沒有快取 → `isPending` 為 true →
-   * Blog.tsx 的 `if (loading)` 直接回全螢幕載入畫面 → 整頁閃一下。
-   *
-   * ⚠ 這個 bug 只有**第一次**按某個排序會出現（之後那個 key 有 5 分鐘快取），
-   *   很容易被當成偶發或錯覺——所以這條測試每次都用乾淨的 page，且刻意把請求拖慢，
-   *   否則本機 fetch 太快，閃爍的窗口小到抓不到。
-   *
-   * 用 MutationObserver 而不是輪詢：輪詢的取樣間隔可能整個錯過那一幀。
-   */
-  test('切換排序不會整頁閃一下', async ({ page }) => {
+  /** 點分類 → 只剩該分類，按鈕標成按下；再點一次回到全部。 */
+  test('點分類會篩選，再點一次還原', async ({ page }) => {
     await page.goto('/blog');
-    await expect(page.locator('.sort-pill').first()).toBeVisible();
-
-    await page.route('**/api/posts?sortBy=*', async (route) => {
-      await new Promise((r) => setTimeout(r, 1200));
-      await route.continue();
-    });
-    await page.evaluate(() => {
-      (window as unknown as { __sawLoader?: boolean }).__sawLoader = false;
-      new MutationObserver(() => {
-        if (document.querySelector('.koim-loader')) {
-          (window as unknown as { __sawLoader?: boolean }).__sawLoader = true;
-        }
-      }).observe(document.body, { childList: true, subtree: true });
-    });
-
-    const before = await cards(page).count();
-    const firstBefore = await cards(page).first().innerText();
-    await page.locator('.sort-pill').filter({ hasText: '最舊' }).first().click();
-    // 請求還在路上的期間，舊清單必須還在畫面上
-    await expect(cards(page)).toHaveCount(before);
-    await expect
-      .poll(() => page.evaluate(() => (window as unknown as { __sawLoader?: boolean }).__sawLoader), { timeout: 5000 })
-      .toBe(false);
-
-    // 資料回來之後排序真的變了（否則這條只證明了「沒閃」，沒證明「有換」）。
-    // ⚠ 比對「第一張卡有沒有換」而不是寫死某篇標題——種子文章增減時後者會誤紅，
-    //   而那跟這條要守的東西無關。
-    await expect.poll(() => cards(page).first().innerText(), { timeout: 15_000 }).not.toBe(firstBefore);
-  });
-
-  /** 搜尋只留下符合的文章。 */
-  test('搜尋會縮小清單', async ({ page }) => {
-    await page.goto('/blog');
-    const before = await cards(page).count();
+    const before = await rows(page).count();
     expect(before, '種子資料應該有多篇文章，否則這條測不出東西').toBeGreaterThan(1);
 
-    await page.locator(SEARCH).fill('第一篇');
-    await expect.poll(() => cards(page).count(), { message: '搜尋後應該變少' }).toBeLessThan(before);
-    await expect(page.locator('.notes-timeline')).toContainText('第一篇測試文章');
-    await expect(page.locator('.notes-timeline')).not.toContainText('第二篇測試文章');
+    const life = category(page, '生活');
+    await life.click();
+    await expect(life).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => rows(page).count(), { message: '篩選後應該變少' }).toBeLessThan(before);
+    for (const meta of await rows(page).locator('.nt-meta').all()) await expect(meta).toContainText('生活');
+
+    await life.click();
+    await expect(life).toHaveAttribute('aria-pressed', 'false');
+    await expect.poll(() => rows(page).count(), { message: '取消後應該全部回來' }).toBe(before);
   });
 
-  /** 清掉搜尋 → 全部回來（`.search-clear` 那顆按鈕只有有輸入時才出現）。 */
-  test('清除搜尋會把清單還原', async ({ page }) => {
+  /** 從文章的標籤點進來（`?tag=`）：清單只剩那個標籤，而且有一顆清得掉的標籤條件。 */
+  test('標籤條件看得到，也清得掉', async ({ page }) => {
     await page.goto('/blog');
-    const before = await cards(page).count();
+    const before = await rows(page).count();
 
-    await page.locator(SEARCH).fill('第一篇');
-    await expect.poll(() => cards(page).count()).toBeLessThan(before);
+    await page.goto('/blog?tag=rust');
+    const chip = page.locator('.nt-tag');
+    await expect(chip, '要讓使用者看得出來清單被篩過').toContainText('rust');
+    await expect(rows(page)).toHaveCount(1);
+    await expect(rows(page).first()).toContainText('第一篇測試文章');
 
-    await page.locator('.search-clear').click();
-    await expect(page.locator(SEARCH)).toHaveValue('');
-    await expect.poll(() => cards(page).count(), { message: '清除後應該全部回來' }).toBe(before);
-  });
-
-  /** 搜尋不到 → 顯示空狀態，而不是一片空白讓人以為壞了。 */
-  test('搜尋不到會顯示空狀態', async ({ page }) => {
-    await page.goto('/blog');
-    await page.locator(SEARCH).fill('這串字不可能存在於任何一篇文章裡');
-    await expect(page.locator('.blog-empty')).toBeVisible();
-    await expect.poll(() => cards(page).count()).toBe(0);
-  });
-
-  /** 點分類 → 只剩該分類，而且會出現「已套用的篩選」讓人知道現在被篩過。 */
-  test('點分類會篩選，而且看得出來正在篩選', async ({ page }) => {
-    await page.goto('/blog');
-    const before = await cards(page).count();
-
-    // 第一個是「全部」，取第二個才是真的分類
-    const cat = page.locator('.category-item').nth(1);
-    await expect(cat).toBeVisible();
-    const name = (await cat.innerText()).trim();
-    await cat.click();
-
-    await expect(cat).toHaveClass(/active/);
-    await expect(page.locator('.active-filters'), '要讓使用者看得出來清單被篩過').toBeVisible();
-    await expect(page.locator('.active-filter-chip').first()).toContainText(name.split('\n')[0]);
-    expect(await cards(page).count(), '篩選後不該比原本多').toBeLessThanOrEqual(before);
+    await chip.click();
+    await expect(chip).toBeHidden();
+    await expect.poll(() => rows(page).count()).toBe(before);
   });
 
   /**
-   * 搜尋與分類是**交集**不是聯集。
+   * 分類與標籤是**交集**不是聯集，篩到沒有東西時顯示空狀態，而不是一片空白讓人以為壞了。
    *
-   * 三個 state（searchTerm / selectedTag / selectedCategory）在同一個 `filter` 裡
-   * 用 `&&` 串起來。改成 `||` 的話畫面看起來「有東西」所以不容易察覺，
-   * 但使用者篩了兩個條件卻拿到更多結果。
+   * 兩個條件在同一個 `filterPosts` 裡用 `&&` 串起來。改成 `||` 的話畫面看起來「有東西」
+   * 所以不容易察覺，但使用者篩了兩個條件卻拿到更多結果。
+   * rust 只掛在「技術」的第一篇上，所以「生活」＋rust 必定是空的。
    */
-  test('搜尋與分類同時套用時取交集', async ({ page }) => {
-    await page.goto('/blog');
+  test('分類與標籤同時套用時取交集，沒有結果時顯示空狀態', async ({ page }) => {
+    await page.goto('/blog?tag=rust');
+    await expect(rows(page)).toHaveCount(1);
 
-    const cat = page.locator('.category-item').nth(1);
-    await cat.click();
-    const afterCat = await cards(page).count();
-
-    await page.locator(SEARCH).fill('第一篇');
-    await expect
-      .poll(() => cards(page).count(), { message: '再加搜尋條件不該讓結果變多（那是 || 不是 &&）' })
-      .toBeLessThanOrEqual(afterCat);
+    await category(page, '生活').click();
+    await expect(page.locator('.nt-empty')).toBeVisible();
+    await expect(rows(page)).toHaveCount(0);
   });
 });

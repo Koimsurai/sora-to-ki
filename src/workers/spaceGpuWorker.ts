@@ -5,8 +5,8 @@
 //   ‧ 它的協定走 structured clone，傳不了 WebGPURenderer 需要的 async factory
 //   ‧ handleProps 無 try/catch（init 失敗後任何 props 訊息都在 worker 內 uncaught throw）
 //   ‧ worker 內 shim self.document={} 干擾環境判定
-// 這裡協定極簡：init / resize / running / scroll / saturn / skip，錯誤一律回報主執行緒處理。
-// 回程：ready / perf / lost / error，以及開場的各個階段（intro）。
+// 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse / stars，錯誤一律回報主執行緒處理。
+// 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）。
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
 
 interface InitMsg {
@@ -15,9 +15,7 @@ interface InitMsg {
   width: number;
   height: number;
   dpr: number;
-  /** 播首訪開場（見 lib/starfieldGpu.ts 的 StarfieldInit.intro） */
-  intro: boolean;
-  introFreezeAt?: number;
+  lite?: boolean;
 }
 interface ResizeMsg {
   type: 'resize';
@@ -37,10 +35,28 @@ interface SaturnMsg {
   visible: boolean;
   animate: boolean;
 }
-interface SkipMsg {
-  type: 'skip';
+/** 首頁衛星的亮度（見 store/homeOrbit） */
+interface GlowMsg {
+  type: 'glow';
+  glow: number[];
 }
-type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | SkipMsg;
+/** 換頁轉場的「收」：土星收進第 index 顆衛星（-1 是中心）。只在跑著的時候有意義，不補放 */
+interface CollapseMsg {
+  type: 'collapse';
+  index: number;
+}
+/** 星星淡出／淡回：頁面自己畫背景時讓出來（補放：init 前就到的話 ready 後照著設） */
+interface StarsMsg {
+  type: 'stars';
+  visible: boolean;
+}
+/** 換頁的鏡頭移動時星空跟著轉：累積的位移（畫面像素，補放同上） */
+interface PanMsg {
+  type: 'pan';
+  x: number;
+  y: number;
+}
+type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg | CollapseMsg | StarsMsg | PanMsg;
 
 let runner: StarfieldRunner | null = null;
 // init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
@@ -54,8 +70,9 @@ let lastSaturn: { visible: boolean; animate: boolean } | null = null;
 // 沒停掉時 Edge 上連續 seek 第 8~15 次就會把媒體管線卡死）。
 // 冷啟動第一次進文章頁按全螢幕正好落在這個窗口裡。
 let lastRunning: boolean | null = null;
-// 開場還在初始化時使用者就按了跳過（或主執行緒等太久放棄）→ ready 之後直接不播
-let skipRequested = false;
+let lastGlow: number[] | null = null;
+let lastStars: boolean | null = null;
+let lastPan: { x: number; y: number } | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
@@ -67,19 +84,20 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           width: msg.width,
           height: msg.height,
           dpr: msg.dpr,
-          intro: msg.intro,
-          introFreezeAt: msg.introFreezeAt,
-          onIntroPhase: (phase) => self.postMessage({ type: 'intro', phase }),
+          lite: msg.lite,
           onPerf: (report) => self.postMessage({ type: 'perf', report }),
           // device lost：worker 裡的 console.error 不會出現在頁面 console，而且這個 renderer
           // 之後一幀都不會再畫。轉給主執行緒，由它換一張新 canvas 重建（見 StarfieldGpu）。
           onDeviceLost: (message) => self.postMessage({ type: 'lost', message }),
+          onSatellites: (positions) => self.postMessage({ type: 'satellites', positions }),
         });
         runner = r;
         runner.setScroll(lastScroll);
         if (lastSaturn) runner.setSaturn(lastSaturn.visible, lastSaturn.animate);
         if (lastRunning !== null) runner.setRunning(lastRunning);
-        if (skipRequested) runner.skipIntro();
+        if (lastGlow) runner.setSatelliteGlow(lastGlow);
+        if (lastStars !== null) runner.setStars(lastStars);
+        if (lastPan) runner.setPan(lastPan.x, lastPan.y);
         self.postMessage({ type: 'ready', backend });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
@@ -90,12 +108,21 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'running') {
     lastRunning = msg.value;
     runner?.setRunning(msg.value);
-  } else if (msg.type === 'skip') {
-    skipRequested = true;
-    runner?.skipIntro();
   } else if (msg.type === 'scroll') {
     lastScroll = msg.y;
     runner?.setScroll(msg.y);
+  } else if (msg.type === 'glow') {
+    lastGlow = msg.glow;
+    runner?.setSatelliteGlow(msg.glow);
+  } else if (msg.type === 'stars') {
+    lastStars = msg.visible;
+    runner?.setStars(msg.visible);
+  } else if (msg.type === 'pan') {
+    lastPan = { x: msg.x, y: msg.y };
+    runner?.setPan(msg.x, msg.y);
+  } else if (msg.type === 'collapse') {
+    runner?.collapseSaturnTo(msg.index);
+    lastSaturn = { visible: true, animate: false };
   } else {
     // 到這裡 union 只剩 SaturnMsg，再比對一次 msg.type 是恆真。
     // 日後新增訊息型別時，下面存取 msg.visible/msg.animate 會編譯失敗——不會被靜默吞掉。

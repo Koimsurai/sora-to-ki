@@ -50,7 +50,7 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 佔用它會改變後台每一顆 `rounded-md` 按鈕。
 
 **膠囊一律用 `--r-full`。** 判準是**短邊 ≤ 2×半徑時瀏覽器會夾住**，所以寫在細元素上的小半徑
-（捲軸滑塊、`.hero-caret`）其實也是膠囊。把它們換成 `--r-full` 是零像素變化，只有計算值會變——
+（捲軸滑塊之類）其實也是膠囊。把它們換成 `--r-full` 是零像素變化，只有計算值會變——
 判斷這類「computed 變了但畫面沒變」要靠量元素尺寸，不要靠看基準 diff 的筆數。
 
 **`border-radius: 0` 與 `inherit` 刻意沒有 token**，寫 `var(--r-0)` 只會更難讀。
@@ -70,9 +70,8 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 10px 與 16px 的標籤上鬆緊完全不同。換算時除以同區塊的 `font-size`（`var(--fs-N)` 的 N 就是 px；
 繼承來的字級用瀏覽器量）。
 
-**行高有三條豁免**，都是刻意的排版手法：`0`（`.vp` 影片容器殺掉行內間隙，同
-`border-radius: 0` 的道理）、`0.8`（`.post-content.drop-cap-first` 的首字放大）、
-`0.95`（`.expertise-hero-number` 的巨大數字）。
+**行高有兩條豁免**，都是刻意的排版手法：`0`（`.vp` 影片容器殺掉行內間隙，同
+`border-radius: 0` 的道理）、`0.8`（`.post-content.drop-cap-first` 的首字放大）。
 
 **computed-style 有守 `line-height`。** 全站沒有 `line-height: normal`（`@theme` 的
 `--text-*--line-height` 都是絕對值），而 Chrome 對 `normal` 回傳的是字串不是 px，換字體也不會讓它
@@ -99,8 +98,8 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 自動贏過整個容器，不管它寫幾。
 
 **覆蓋層一定要 portal 到 `document.body`。** 寫在頁面內容裡的話，多大的 z-index
-都可能是假的：例如長在 `InfoPage` 的 `.post-body`（`z-index: 1`）裡的 `9999`，只是
-「在 post-body 裡排第一」，對外仍然只有 1——遮罩明明是整個視窗大小，頂欄照樣浮在上面而且點得到。
+都可能是假的：長在一個 `z-index: 1` 的容器裡的 `9999`，只是「在那個容器裡排第一」，
+對外仍然只有 1——遮罩明明是整個視窗大小，頂欄照樣浮在上面而且點得到。
 公開頁的 modal 用 `common/Modal`（Radix Dialog），它會自己 portal。
 
 **診斷這類問題不要讀 CSS 猜，用瀏覽器問。** 兩個工具：
@@ -125,8 +124,7 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 與週期，硬貼會把背景動畫變成災難。**緩動則兩邊都查**——曲線是設計決定，跟它是過渡
 還是動畫無關。
 
-兩個豁免，各有理由：`0.01ms` 是 `prefers-reduced-motion` 的關閉開關（那不是一個
-時長）；`1.5s` 在 `.np-ambient-glow` 一處，離最近的一格 500ms，硬貼會走樣。
+一個豁免：`0.01ms` 是 `prefers-reduced-motion` 的關閉開關（那不是一個時長）。
 
 **改過渡時長前先確認沒有 JS 計時器配著它**（例如 `PostEditor` 的 350ms：zen 模式切換後
 dispatch resize 讓 monaco 重算）。`grep setTimeout` 就查得完。
@@ -220,8 +218,8 @@ v4 的 oklch 不等於 v3 hex，而且 Tailwind 只輸出被 utility 用到的 s
 token 表是從 `index.css` 讀的，加新 token 不用改腳本。這條零誤判：值都相等了，
 寫字面值只剩「不知道有 token」一種原因。
 
-Happy Hues 那組只剩 `--clr-headline` / `-paragraph` / `-button` / `-button-text` / `-tertiary`
-還在用。`--brand-light` 指向 `var(--violet-300)`——它就是那個色票，不要另抄一份 hex。
+Happy Hues 那組只剩 `--clr-headline` / `-paragraph` / `-button` / `-button-text` / `-tertiary-rgb`
+還在用（全站連結滑過變綠發光那條在 2026-10 翻新拔掉了，`--clr-tertiary` 本身跟著刪）。`--brand-light` 指向 `var(--violet-300)`——它就是那個色票，不要另抄一份 hex。
 
 ## 等寬字只有一套堆疊：`--mono-font`
 
@@ -264,9 +262,8 @@ diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github
 | 元件內的區域色定義 | 只有一個元件在用的裝飾色 |
 | 其餘只用 ≤2 次的字面值 | 不值得 token |
 
-**「自成一套」是一個判準**：`.mm-theme-deep/-zinc/-tokyo/-nord/-light`
-（五個結構一模一樣的 7 行圖表主題）、`Music.css` 的 `--feat-energy/-dance/-valence`
-（三條一組的漸層）。**只把其中一兩個改成 `var()` 會讓它們跟兄弟讀起來不一樣**，而那些
+**「自成一套」是一個判準**：`AdminTheme.css` 開頭把 shadcn 變數整組重定義的區塊、
+圖表的 `--pele-*` 那組。**只把其中一兩個改成 `var()` 會讓它們跟兄弟讀起來不一樣**，而那些
 區塊的價值就是「一眼看完整套配色」。`markdown-alert-*` 是反例：它**本來就不成套**
 （`important` 早就在用 `var(--brand-light)`，另外四個是字面值），所以那一組收掉是修
 不一致，不是破壞對稱。
@@ -293,7 +290,6 @@ diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github
 
 **底色／alpha 這類改動，截圖的像素差數字沒有判斷力**：全頁 gradient 的 stop alpha 動 0.05，
 每個像素都會超過一般的差異門檻。要把門檻拉到 >40 只看結構性變化，再對剩下的區塊逐一裁圖。
-首頁 Hero 有時會在打字機揭露前被拍到——看到 Hero 整塊空白先重拍一次，別急著當成回歸。
 
 **字級的 token 叫 `--fs-*` 不是 `--text-*`**，兩個理由都會咬人：
 `--text-*` 是 Tailwind v4 生 utility 的 namespace（佔用它會改變 `text-sm` 產出什麼），
@@ -311,8 +307,7 @@ diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github
 
 真的需要新尺寸有兩條路，兩條都會在 review 裡被看見：加進 `index.css` 的尺（比較好），
 或加進 `scripts/check-css-tokens.ts` 的 `GRANDFATHERED` 並寫明理由。那份名單是**存量
-不是許可**：只放負值（沒有負的 token 形式）與 `.app-footer` 的 `8rem`（刻意的 fade zone，
-跟 `--page-bottom` 是一組：頁面下留白 64 + 這裡 128 = 192px）這類真的貼不上尺的。
+不是許可**：只放負值（沒有負的 token 形式）這類真的貼不上尺的。
 
 **判斷一個值能不能貼到尺上：間距用絕對差，alpha 用相對差。** `3px → 4px` 的相對誤差 33%
 看起來很大，但絕對誤差只有 1px，看不出來；alpha 那把尺的低端刻意細步，正是因為 0.02 與 0.04
@@ -331,8 +326,8 @@ diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github
 --page-bottom: var(--space-12)  48px
 ```
 
-**下緣刻意比上緣小。** `.app-footer` 自己有 `padding-top: 8rem`（128px）的 fade zone，
-頁面下留白 64 + 這裡 128 = 192px；頁面層再加大下留白會疊出一大片空白。
+**下緣刻意比上緣小。** 頁面底下沒有頁尾（2026-10 翻新拿掉了），64px 就是捲到底時最後一行字
+離視窗底邊的距離。
 
 **斷點只有一個（768px）。** 各頁自己的 media query 保留，但**只管左右留白**——
 上下交給這兩個 token，不要在頁面層覆寫。
@@ -350,15 +345,12 @@ diff 與數據趨勢的升降，所以用**角色**命名而不是 `--svc-github
 
 | 斷點 | 在做什麼 |
 |---|---|
-| 1300 / 1100 / 950 | `article-shell` 三欄佈局的**三段崩解階梯**（先收左側欄，再收…） |
-| 860 | `HomeLately` 的 `.lately-grid` 收成單欄 |
-| 600 | `InfoPage` 的朋友清單收成單欄 |
 | 560 | `FavoritesEditor` 的 `.fe-add-row` 換行 |
 
-把左側欄從 1300 改成 1024 才消失，是為了數字好看而改變版面崩解的位置。
+把這種斷點改成「好看的整數」，是為了數字好看而改變版面崩解的位置。
 
-同一個選擇器出現在多個斷點（`.blog-content-wrapper` 1024→768→480、`.exif-panel`
-1024→768→640…）是**同一個元件的漸進崩解**，不是不一致。
+同一個選擇器出現在多個斷點（`.exif-panel` 1024→768→640…）是**同一個元件的漸進崩解**，
+不是不一致。
 
 而且 `computed-style` **蓋不到斷點改動**：它只跑 1280 / 768 / 390 三個寬度，
 把某條規則從 900 改到 1024，變的是 901–1024 那一段，三個寬度一個都沒踩到。
@@ -425,8 +417,8 @@ variant，呼叫點寫的 `text-xs` 蓋不掉——所以那些「12px 的輸入
 FormLabel 的錯誤色要排在 `className` **之後**：反過來的話，呼叫點傳進的 `text-muted-foreground`
 會蓋掉它，驗證失敗時 label 不會變紅。
 
-`no-raw-colors` 對四個檔案整檔關掉（`overrides`）：NotFound 的 SVG 插畫、BrandIcons、
-SignatureSVG 的金色漸層、ZeroGravityLibrary 的 3D 燈光色——全是「自成一套」或品牌色。
+`no-raw-colors` 對兩個檔案整檔關掉（`overrides`）：NotFound 的 SVG 插畫、SignatureSVG 的
+金色漸層——都是「自成一套」的配色。
 
 **字級在 Tailwind 裡叫 `text-fs-11`，而且 `cn()` 一定要認得它。** `--text-fs-*` 在
 `@theme` 把 `--fs-*` 接成 utility；**預設的 tailwind-merge 會把 `text-fs-11` 當成文字顏色**，
@@ -455,15 +447,14 @@ Tailwind 的 preflight 把 `list-style` 歸零，不補的話清單沒有符號�
 | `@media (prefers-reduced-motion)` | 要蓋過全站元件動畫；**測試瀏覽器不會觸發** |
 | `html.no-gpu *` | 無 GPU 機器的降級；**測試瀏覽器一定會觸發**（見下面） |
 | `html.fs-active` | 全螢幕影片的 GPU 爭用修正；不會被觸發 |
-| shiki 背景、`.toc-bottom-link` 邊框 | 壓 shiki 自己的主題／全域 button 規則 |
+| shiki 背景 | 壓 shiki 自己的主題 |
 | 後台表單邊框、monaco 捲軸與行號 | 壓 shadcn utility 與 monaco 注入的樣式 |
-| `.galaxy-bubble`（手機版） | 壓元件用 inline style 算出來的泡泡大小 |
 
 **不要用 `grep -c '!important'` 數它**——會把**註解裡在討論** `!important` 的句子也算進去。
 要數就跑 `pnpm lint:css`，biome 認的是語法樹。
 同一個坑也會發生在數色彩字面值上。
 
-**壓 inline style 是最常見的正當理由**（shiki、monaco、galaxy-bubble 都是這類）——
+**壓 inline style 是最常見的正當理由**（shiki、monaco 都是這類）——
 inline style 只有 `!important` 蓋得過，這種情況不管 cascade layer 怎麼排都一樣。
 判斷「這個 `!important` 是不是多餘」時，先看它要蓋的對象是不是 JS 寫進 `style=""` 的。
 

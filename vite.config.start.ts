@@ -116,6 +116,49 @@ function copyExcalidrawFonts(): Plugin {
 }
 
 /**
+ * dev server 的 /api：瀏覽器打的 /api 轉給 BACKEND_URL（正式環境是 nginx 在轉）。
+ * 不用 vite 的 server.proxy：Nitro 的開發中介層排在它前面，/api 會先被當成頁面回 404。
+ * 只放讀取：拿線上後端預覽時，按讚、留言這類寫入不會真的寫進去
+ */
+function devApiProxy(): Plugin {
+  const target = process.env.BACKEND_URL ?? 'http://127.0.0.1:3009';
+  return {
+    name: 'koimsurai:dev-api-proxy',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api', (req, res, next) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          res.statusCode = 405;
+          res.end();
+          return;
+        }
+        fetch(`${target}/api${req.url ?? ''}`, { method: req.method, headers: { accept: req.headers.accept ?? '*/*' } })
+          .then(async (r) => {
+            res.statusCode = r.status;
+            const type = r.headers.get('content-type');
+            if (type) res.setHeader('content-type', type);
+            res.end(Buffer.from(await r.arrayBuffer()));
+          })
+          .catch(next);
+      });
+      // 相簿的圖：正式環境是 nginx 直接從這個目錄給（location /nas-images/），dev 照做一份唯讀的
+      const gallery = path.resolve(process.env.NAS_GALLERY_DIR ?? '/mnt/hdd16tb_01/nas-storage/gallery');
+      server.middlewares.use('/nas-images', (req, res, next) => {
+        const file = path.resolve(gallery, `.${decodeURIComponent((req.url ?? '').split('?')[0])}`);
+        if (!file.startsWith(`${gallery}${path.sep}`) || !fs.existsSync(file)) {
+          next();
+          return;
+        }
+        const ext = path.extname(file).toLowerCase();
+        const type = { '.webp': 'image/webp', '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg', '.png': 'image/png' }[ext];
+        if (type) res.setHeader('content-type', type);
+        fs.createReadStream(file).pipe(res);
+      });
+    },
+  };
+}
+
+/**
  * 讓 `@animateicons/react` 搖得動 —— 它的 barrel 沒有 `/*#__PURE__*\/` 註解。
  *
  * 症狀（實測，不是推測）：`dist/lucide.js` 一個檔裡有 **248 個 icon**，每個都寫成
@@ -364,6 +407,7 @@ export default defineConfig({
   // react-helmet-async 是 CJS,要 vite 轉譯才能在 SSR 用具名匯出(過渡 bridge,之後 SEOHead→head() 可移除)
   ssr: { noExternal: ['react-helmet-async'] },
   plugins: [
+    devApiProxy(),
     copyMonacoAssets(),
     copyExcalidrawFonts(),
     pureAnnotateAnimateIcons(),
@@ -373,6 +417,10 @@ export default defineConfig({
     nitro({
       config: {
         serverDir: './server', // 掃 server/routes/ 的檔案系統路由(預設不掃 → 404)
+        // 按頁裁字（server/routes/fonts/serif）在執行期才 require subset-font：它要用 require.resolve
+        // 找 HarfBuzz 的 wasm，打包進來就找不到。整包追蹤進 .output，連同它載入的 wasm 套件。
+        // 少了這行，本機從專案目錄跑產物照樣正常（借用了專案的 node_modules），進了映像才 500
+        traceDeps: ['subset-font*', 'harfbuzzjs*', 'fontverter*', 'wawoff2*', 'woff2sfnt-sfnt2woff*'],
         // ISR：node-server preset 內建 SWR（TTL 過期先回舊、背景重生，不需 CDN）
         routeRules: ISR_ROUTE_RULES,
       },

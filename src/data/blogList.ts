@@ -15,7 +15,7 @@ import type {
 import { apiUrl } from '@/lib/api';
 import { compileMdx } from '@/lib/mdx/mdx-compile';
 import { renderMermaidSvgs } from '@/lib/mdx/mermaidRender';
-import type { Post } from '@/components/blog/Blog';
+type Post = PostListItem;
 
 // format='mdx' 的文章多帶一個 server 端編譯好的 function-body（前端用 runSync 執行）。
 export type PostDetail = PostDetailResponse & { compiledMdx?: string; mermaidSvgs?: Record<string, string> };
@@ -122,6 +122,23 @@ export const recentPostsQueryOptions = (limit: number, locale?: string) =>
         apiUrl(`/api/posts?limit=${limit}${locale ? `&lang=${encodeURIComponent(locale)}` : ''}`),
       );
       if (!res.ok) throw new Error(`GET /api/posts ${res.status}`);
+      const data = (await res.json()) as PostsListResponse;
+      return data.posts;
+    },
+    staleTime: STALE,
+  });
+
+/** 同一個標籤的文章（文章頁點標籤時就地展開的那幾篇） */
+export const postsByTagQueryOptions = (tag: string, locale?: string) =>
+  queryOptions({
+    queryKey: ['posts', 'tag', tag, locale ?? ''],
+    queryFn: async (): Promise<PostListItem[]> => {
+      const res = await fetch(
+        apiUrl(
+          `/api/posts?limit=8&tag=${encodeURIComponent(tag)}${locale ? `&lang=${encodeURIComponent(locale)}` : ''}`,
+        ),
+      );
+      if (!res.ok) throw new Error(`GET /api/posts?tag ${res.status}`);
       const data = (await res.json()) as PostsListResponse;
       return data.posts;
     },

@@ -10,6 +10,16 @@
 // 這裡的 pass 換成 setMRT(mrt({output, emissive})) 做 selective bloom（官方文件同款）。
 import * as THREE from 'three/webgpu';
 import {
+  Fn,
+  abs,
+  asin,
+  exp,
+  fract,
+  fwidth,
+  mx_noise_float,
+  positionLocal,
+  pow,
+  select,
   pass,
   mrt,
   output,
@@ -18,31 +28,42 @@ import {
   uv,
   time,
   sin,
+  cos,
   mix,
   smoothstep,
-  vec2,
   vec3,
   vec4,
   uniform,
-  texture,
   dot,
-  length,
   normalize,
-  clamp,
-  abs,
-  step,
-  positionLocal,
-  normalLocal,
-  normalView,
-  positionViewDirection,
+  max,
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
-import { createHyperspace, type Hyperspace } from './hyperspace';
+import {
+  ORBITS,
+  PLANET_COVER,
+  PLANET_ROWS,
+  RING_COVER,
+  RING_GAPS,
+  RING_INNER,
+  RING_OUTER,
+  RING_ROWS,
+  RING_SEGMENTS,
+  ROLL,
+  SATURN_BANDS_FULL,
+  satellitePhase,
+  satelliteSpeed,
+  SUN,
+  TILT,
+} from './saturnSpec';
 import { inspectWebGL } from './webglRenderer';
-import { introFrame, phasesCrossed, phaseTimes, type IntroPhase } from './introTimeline';
+import type { SatelliteScreen } from '@/store/homeOrbit';
 
-export const STAR_COUNT = 26000; // 14k 主層 + 12k 星系層（≈舊棧全部點數 27.1k；WebGPU 下加星幾乎免費）
+/** 環在半徑 1（土星赤道半徑）處的角速度（rad/s）；實際照半徑的 -1.5 次方遞減 */
+const RING_SPIN = 0.3;
+
+export const STAR_COUNT = 13000; // 7k 主層 + 6k 星系層（2026-10 翻新減半，見 LAYERS）
 
 export interface PerfReport {
   fps: number;
@@ -64,10 +85,16 @@ export interface StarfieldRunner {
   setRunning(running: boolean): void;
   /** 捲動位置（土星的捲動旋轉；worker 無 window，由主執行緒轉發） */
   setScroll(y: number): void;
-  /** 土星顯示（僅首頁）與 intro 縮放動畫 */
+  /** 土星顯示（僅首頁）；animate 為 false 時收成一點，true 時從一點撐開（換頁的收與長） */
   setSaturn(visible: boolean, animate: boolean): void;
-  /** 跳過開場。開場還沒開始的話就直接不播 */
-  skipIntro(): void;
+  /** 首頁衛星的亮度（見 store/homeOrbit） */
+  setSatelliteGlow(glow: number[]): void;
+  /** 換頁轉場的「收」：土星整組收進第 index 顆衛星，-1 是收進中心 */
+  collapseSaturnTo(index: number): void;
+  /** 星星淡出／淡回（頁面自己畫背景的時候讓出來） */
+  setStars(visible: boolean): void;
+  /** 換頁的鏡頭移動：星空要在畫面上挪多少（累積的像素），換成星空鏡頭轉的角度 */
+  setPan(x: number, y: number): void;
   dispose(): void;
 }
 
@@ -93,17 +120,12 @@ export interface StarfieldInit {
    */
   onDeviceLost?: (message: string) => void;
   /**
-   * 播首訪開場（超空間跳躍）。開場畫在同一張 canvas 上，runner 建好、所有管線都編譯過之後
-   * 第一幀就開始，時間軸由這條渲染迴圈推進（見 lib/introTimeline.ts）。
+   * 土星顯示時，每畫一幀回報一次衛星在畫面上的位置（首頁的字跟著它走，見 store/homeOrbit）。
+   * 土星收起來時送一次空陣列。
    */
-  intro?: boolean;
-  /** 開場的各個階段，主執行緒靠它切 DOM（解開內容、掛特效、收掉跳過鈕） */
-  onIntroPhase?: (phase: IntroPhase) => void;
-  /**
-   * 除錯用（網址加 ?intro-at=毫秒）：開場照常跑到這個時間點就停住。截圖比對要對準同一刻，
-   * 而主執行緒收到階段訊息的時間會被它自己的忙碌拖慢，從外面計時對不準。
-   */
-  introFreezeAt?: number;
+  onSatellites?: (positions: SatelliteScreen[]) => void;
+  /** 手機：星星只畫三分之一左右（手機只在首頁跑 3D，主角是土星與衛星） */
+  lite?: boolean;
 }
 
 interface StarLayerCfg {
@@ -118,9 +140,10 @@ interface StarLayerCfg {
 }
 
 // 對齊舊視覺：主層（radius 100 depth 50、細、快轉）+ 星系層（radius 90 depth 20、大、慢轉）
+// 2026-10 翻新：數量減半、亮度調低。星空退到底下當紙的紋理，讓土星的軌道與各頁的星軌浮出來
 const LAYERS: StarLayerCfg[] = [
-  { count: 14000, rMin: 100, rMax: 150, size: 0.2, rotX: 0.01, rotY: 0.02 },
-  { count: 12000, rMin: 90, rMax: 110, size: 0.28, rotX: 0.008, rotY: 0.015 },
+  { count: 7000, rMin: 100, rMax: 150, size: 0.2, rotX: 0.01, rotY: 0.02 },
+  { count: 6000, rMin: 90, rMax: 110, size: 0.28, rotX: 0.008, rotY: 0.015 },
 ];
 
 /// 單層星——官方 WebGPU 點雲模式：THREE.Sprite + instancing（PointsNodeMaterial 文件指定）。
@@ -128,6 +151,9 @@ const LAYERS: StarLayerCfg[] = [
 /// 一開始用 Points 在 WebGPU 上就是「1px 閃爍細星」慘案（實測）。Sprite+instancing
 /// 兩個 backend 都走實例化 quad：size/scaleNode 生效、uv() 有值，單一路徑無分叉。
 /// per-star 尺寸/色溫/閃爍相位進 instanced attribute，閃爍與柔光全在 shader（TSL）。
+/** 星星整體的亮度（0 到 1）：有些頁面自己畫背景（手記的星軌、關於的下墜），星星要讓出來 */
+const starAlpha = uniform(1);
+
 function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   const positions = new Float32Array(cfg.count * 3);
   const scales = new Float32Array(cfg.count);
@@ -148,10 +174,11 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   // instanced 位置：官方模式 positionNode = instancedBufferAttribute(...)
   mat.positionNode = instancedBufferAttribute<'vec3'>(new THREE.InstancedBufferAttribute(positions, 3), 'vec3');
 
-  // 色溫：白為主，冷暖微變（±35% 飽和）——貼近真實星野的色彩分佈
+  // 色溫：白為主，冷暖微變
   const tint = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(tints, 1), 'float');
   const starColor = mix(vec3(0.72, 0.82, 1.0), vec3(1.0, 0.9, 0.78), tint);
-  const finalColor = mix(vec3(1, 1, 1), starColor, 0.35).mul(1.35); // >1 的 HDR 餘量餵 bloom（HalfFloat 管線）
+  // 冷暖只留一點點：翻新後整站是黑紙白墨，星星不該帶出藍或橘
+  const finalColor = mix(vec3(1, 1, 1), starColor, 0.12).mul(0.7);
   mat.colorNode = finalColor;
   // selective bloom：per-material mrtNode 覆寫（官方 selective FX 模式）——星星的
   // bloomIntensity 通道寫 1，其他材質（土星/衛星）走全域預設 0 → bloom 只暈星星
@@ -169,7 +196,7 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   const twinkle = sin(time.mul(speed).add(phase.mul(7.0)))
     .mul(amp)
     .add(amp.oneMinus());
-  mat.opacityNode = falloff.mul(twinkle);
+  mat.opacityNode = falloff.mul(twinkle).mul(starAlpha);
 
   // per-star 尺寸（scaleNode 乘在 sprite 縮放上）
   mat.scaleNode = instancedBufferAttribute<'float'>(new THREE.InstancedBufferAttribute(scales, 1), 'float');
@@ -184,24 +211,33 @@ function buildStarLayer(cfg: StarLayerCfg): THREE.Sprite {
   return sprite;
 }
 
-/// 貼圖載入——worker 沒有 Image/TextureLoader，用 fetch + createImageBitmap（主執行緒也通用）。
-async function loadTexture(url: string): Promise<THREE.Texture> {
-  const resp = await fetch(url);
-  const bitmap = await createImageBitmap(await resp.blob(), { imageOrientation: 'flipY' });
-  const tex = new THREE.Texture(bitmap as unknown as HTMLImageElement);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.needsUpdate = true;
-  return tex;
-}
-
 interface SaturnRig {
   group: THREE.Group;
   /**
-   * moving：還在追趕目標（intro 縮放或捲動旋轉的 lerp 沒收斂），這段時間不進閒置降幀。
-   * zooming：intro 的放大還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
+   * moving：還在追趕目標（收與長的縮放、捲動旋轉、衛星的亮度沒收斂），這段時間不進閒置降幀。
+   * zooming：收與長的縮放還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
    */
   update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean };
+  /** 視窗的長寬比：窄的視窗要把整組縮小，最外圈的軌道才放得下 */
+  setAspect(aspect: number): void;
+  /** 每顆衛星該有多亮（0 到 1），實際亮度會慢慢靠過去 */
+  setGlow(glow: number[]): void;
+  /** 衛星在畫面上的位置（CSS 像素），首頁的字跟著它走 */
+  project(camera: THREE.Camera, width: number, height: number): SatelliteScreen[];
+  /** 縮回一點：下一次顯示時就從這一點撐開 */
+  collapse(): void;
+  /**
+   * 換頁轉場的「收」：整組收進一顆衛星（index）或土星中心（-1）。收的過程衛星停住，
+   * 收進去的那一點在畫面上不動——轉場的點就從那裡接手飛出去
+   */
+  collapseTo(index: number): void;
 }
+
+/** 收：越收越快，像被吸進那一點；長：一下撐開、慢慢停穩 */
+const COLLAPSE_S = 0.38;
+const GROW_S = 0.7;
+const easeInCubic = (t: number) => t * t * t;
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
 /**
  * 「每幀往目標靠近 rate」換算成跟幀率無關的係數（rate 是以 60fps 為準的值）。
@@ -209,125 +245,295 @@ interface SaturnRig {
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
 
-const RING_INNER = 1.5;
-const RING_OUTER = 2.2;
-const RING_TILT = Math.PI / 2.5;
+/** 墨色（--paper #f1ece3）。three 的 Color 會自己換成線性空間 */
+const INK = new THREE.Color('#f1ece3');
+/** 紙色（--ground #0a0a0c）：擋住背面那顆球的顏色，要跟頁面底色一樣才看不出它在那裡 */
+const GROUND = new THREE.Color('#0a0a0c');
+/** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
+const SATURN_FOV = 8;
+const SATURN_VIEW_HALF = 3.84;
+const SATURN_CAMERA_Z = SATURN_VIEW_HALF / Math.tan(THREE.MathUtils.degToRad(SATURN_FOV / 2));
+/** 琥珀（--amber）：靠近的那顆衛星 */
+const AMBER = new THREE.Color('#e9c17a');
+/**
+ * 整組的大小：鏡頭在 z=5、視角 75°，畫面半高是 3.84 個單位。0.63 讓星球半徑約是畫面高度的 8%，
+ * 最外圈軌道半徑 5.7 × 0.63 ≈ 3.6，寬螢幕放得下；窄的視窗照長寬比再縮
+ */
+const BASE_SCALE = 0.63;
+const fitScale = (aspect: number) => Math.min(BASE_SCALE, 0.6 * aspect);
 
-/// 土星——對齊舊 Saturn3D：球(r1)+環(1.5-2.2, 傾 π/2.5)+群組傾 π/24+兩衛星，
-/// 自轉 0.05 rad/s + 捲動旋轉 scrollY*0.001（lerp 0.05）+ intro 縮放（lerp 0.08）。
-/// 環 hover 效果不移植：舊 canvas pointerEvents:none，事件從未觸發過（死碼）。
+/// 土星（2026-10 翻新）：刻線畫的星球與環，外面五條軌道各有一顆衛星。
 ///
-/// 環與陰影都在「局部座標」裡解析計算，不開 shadow map（點光源的 shadow map 是六面 cube，
-/// 每幀多畫六次場景）。行星是局部原點上的單位球、環在環自己的 z=0 平面上，所以唯一要每幀
-/// 更新的是「太陽在這兩個局部座標裡的位置」——群組在轉、在縮放，太陽不動。
-async function buildSaturn(
-  sunWorld: THREE.Vector3,
-  textures: Promise<[THREE.Texture, THREE.Texture]>,
-): Promise<SaturnRig> {
-  const [planetMap, ringsMap] = await textures;
-  ringsMap.wrapS = THREE.ClampToEdgeWrapping;
+/// 星球與環都在著色器裡畫成一道一道的刷痕（見下面 strokes），亮暗跟著太陽。
+/// 星球是不透明的黑球，球後面的星星、環與軌道的背段、轉到後面的衛星都被它擋掉。
+/// 軌道是 1px 的線（WebGPU 的線本來就只有 1px）。
+///
+/// 只有星球繞自己的軸自轉（0.05 rad/s，捲動再多轉一點）；環與軌道的平面固定不動，
+/// 不然衛星的軌道會跟著晃。換頁時整組從一點撐開、或收回一點。
+function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
+  // 外層側傾、內層俯角：跟提案的投影同一個順序（先自轉、再俯、再側傾）。
+  // 環與軌道都在內層的水平面（y = 0）上，星球繞內層的 y 軸自轉，軸自然垂直於環
   const group = new THREE.Group();
-  group.rotation.z = Math.PI / 24;
+  group.rotation.z = ROLL;
+  const tilted = new THREE.Group();
+  tilted.rotation.x = TILT;
+  const body = new THREE.Group();
+  tilted.add(body);
+  group.add(tilted);
 
+  // 星球與環都是刻線畫（使用者給的參考：黑底上一道一道白色的刷痕）：
+  // 沿緯度一列一列的橫線，每一條的粗細就是那裡的亮度——迎光又落在亮帶上的地方線粗到連成一片，
+  // 背光的那一面線細到消失，只剩黑。線不是直的：用拉長的雜訊讓它微微起伏、斷成一段一段的筆觸。
+  // 星球本身是不透明的黑球，背面的點、環與軌道的背段、轉到後面的衛星都被它的深度擋掉
   const sunInPlanet = uniform(new THREE.Vector3());
-  const sunInRing = uniform(new THREE.Vector3());
-
-  // 環的貼圖是一條「由內到外」的橫向色帶。RingGeometry 的 UV 是平面投影，直接貼會變成
-  // 一排平行直條紋而不是同心圓——所以改用半徑當貼圖座標。
-  // 貼圖沒有 alpha，直接貼的話黑色的環縫會變成一圈黑帶蓋在行星上，所以用亮度推出透明度。
-  const ringAt = (r: ReturnType<typeof length>) => {
-    const tex = texture(ringsMap, vec2(r.sub(RING_INNER).div(RING_OUTER - RING_INNER), 0.5));
-    const alpha = smoothstep(0.03, 0.22, dot(tex.rgb, vec3(0.299, 0.587, 0.114)));
-    return { rgb: tex.rgb, alpha };
+  const sunInPlane = uniform(new THREE.Vector3());
+  /** 環轉了多久（秒）：跟著每一幀的 dt 走，閒置降幀、收起來時一起停 */
+  const ringClock = uniform(0);
+  const paper = vec3(INK.r, INK.g, INK.b);
+  const ground = vec3(GROUND.r, GROUND.g, GROUND.b);
+  /**
+   * 一列一列的刷痕：row 是列的座標（每 1 是一列），ink 是 0 到 1 的濃度，回傳這個像素有沒有墨。
+   * 最濃的地方線也只佔一列的 cover（星球 0.76、環 0.64）：線與線之間永遠留一道黑縫，線不會糊成一片
+   */
+  type FloatNode = THREE.Node<'float'>;
+  const strokes = (row: FloatNode, ink: FloatNode, cover: number) => {
+    const f = abs(fract(row).sub(0.5));
+    const half = ink.mul(cover / 2);
+    const aa = fwidth(row).mul(0.75).max(0.001);
+    // 線比一個像素還細的時候整條按比例淡掉；不然反鋸齒的那半個像素會在背光面留下一層灰
+    return smoothstep(half.add(aa), half.sub(aa), f).mul(half.div(aa).clamp(0, 1));
   };
 
-  // 行星：被環擋住的地方有影子。從表面點朝太陽打一條射線，交到環的平面上、落在環的範圍內，
-  // 就按那一點環的不透明度遮掉陽光。
-  const planetMat = new THREE.MeshStandardMaterial({ roughness: 0.6, metalness: 0.1 });
-  {
-    const p = positionLocal;
-    const toSun = normalize(sunInPlanet.sub(p));
-    const ringN = vec3(0, -Math.sin(RING_TILT), Math.cos(RING_TILT));
-    const denom = dot(toSun, ringN);
-    const t = dot(p, ringN)
-      .negate()
-      .div(denom.add(denom.sign().mul(1e-4)));
-    const r = length(p.add(toSun.mul(t)));
-    const onRing = step(0, t).mul(step(RING_INNER, r)).mul(step(r, RING_OUTER));
-    const ringShadow = float(1).sub(onRing.mul(ringAt(r).alpha).mul(0.6));
-    planetMat.colorNode = texture(planetMap, uv()).rgb.mul(ringShadow);
-    // 大氣的邊緣光：只在受光的那半邊，背光面的邊緣不該亮
-    const fresnel = float(1)
-      .sub(clamp(dot(normalView, positionViewDirection), 0, 1))
-      .pow(3);
-    const litSide = smoothstep(-0.15, 0.45, dot(normalLocal, normalize(sunInPlanet)));
-    planetMat.emissiveNode = vec3(1.0, 0.86, 0.66).mul(fresnel.mul(litSide).mul(0.35));
-  }
-  const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 48), planetMat);
+  /** 環在半徑 r 的亮度（RING_SEGMENTS、RING_GAPS） */
+  const ringTone = (r: FloatNode) => {
+    let tone: FloatNode = float(0);
+    for (const [inner, outer, value] of RING_SEGMENTS) {
+      tone = tone.add(
+        smoothstep(inner - 0.004, inner + 0.004, r)
+          .mul(smoothstep(outer + 0.004, outer - 0.004, r))
+          .mul(value),
+      );
+    }
+    for (const [at, half] of RING_GAPS) tone = tone.mul(smoothstep(half * 0.4, half, abs(r.sub(at))));
+    return tone;
+  };
 
-  // 環：薄薄一層冰粒，亮度跟入射角的關係很弱——用 Standard 材質的話光從很斜的角度照過來，
-  // 整圈環暗到幾乎看不見。這裡自己算光：入射角只影響一半，加上行星投過來的影子。
-  const ringMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, depthWrite: false });
-  {
-    const p = positionLocal;
-    const ring = ringAt(length(p.xy));
-    const toSun = normalize(sunInRing.sub(p));
-    // 行星（單位球、在原點）有沒有擋在這一點與太陽之間
-    const b = dot(p.negate(), toSun);
-    const d2 = dot(p, p).sub(b.mul(b));
-    const planetShadow = mix(float(1), smoothstep(0.82, 1.0, d2), step(0, b));
-    const lit = mix(0.55, 1.0, abs(toSun.z));
-    ringMat.colorNode = ring.rgb.mul(vec3(1.0, 0.93, 0.82)).mul(lit.mul(planetShadow).mul(1.5));
-    ringMat.opacityNode = ring.alpha.mul(0.9);
-  }
-  const ringHolder = new THREE.Group();
-  ringHolder.rotation.x = RING_TILT;
-  const rings = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 128, 1), ringMat);
-  ringHolder.add(rings);
-  group.add(planet, ringHolder);
+  const planetMat = new THREE.MeshBasicNodeMaterial();
+  planetMat.colorNode = Fn(() => {
+    const n = normalize(positionLocal);
+    const sun = normalize(sunInPlanet);
+    // 晨昏線切得乾脆：參考圖背光那一面幾乎全黑
+    const lit = smoothstep(-0.12, 0.4, dot(n, sun));
+    // 雲帶照真實土星的緯度排（SATURN_BANDS）
+    const lat = asin(n.y.clamp(-1, 1)).mul(180 / Math.PI);
+    let tone: FloatNode = float(0.52);
+    for (const [c, w, d] of SATURN_BANDS_FULL) {
+      tone = tone.add(exp(lat.sub(c).div(w).pow(2).negate()).mul(d * 1.6));
+    }
+    // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
+    tone = tone.mul(smoothstep(80, 48, abs(lat)));
+    // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
+    const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
+    const row = n.y.mul(PLANET_ROWS).add(wave.mul(0.8));
+    const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
+      .mul(0.45)
+      .add(1);
+    const brush = smoothstep(-0.45, 0.15, mx_noise_float(vec3(n.x.mul(2.4), n.y.mul(48), n.z.mul(2.4))));
+    // 環落在星球上的影子：從這一點往太陽看，視線穿過環的平面時落在環上，越密的環影子越深
+    const t = n.y.negate().div(sun.y);
+    const hit = n.add(sun.mul(t));
+    const rr = vec3(hit.x, 0, hit.z).length();
+    const shade = select(t.greaterThan(0), float(1).sub(ringTone(rr).mul(0.8)), float(1));
+    const ink = pow(
+      lit
+        .mul(tone)
+        .mul(swell)
+        .mul(mix(float(0.05), float(1), brush))
+        .mul(shade)
+        .clamp(0, 1),
+      0.8,
+    );
+    return mix(ground, paper, strokes(row, ink, PLANET_COVER));
+  })();
+  const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), planetMat);
+  body.add(planet);
 
+  // 環與軌道在同一個平面上，這個平面不轉
+  const plane = new THREE.Group();
+  tilted.add(plane);
+
+  // 環：一圈一圈的同心刷痕，粗細照真實環的結構（RING_SEGMENTS），星球的影子壓在背光那段
+  const ringMat = new THREE.MeshBasicNodeMaterial({ transparent: true, side: THREE.DoubleSide, depthWrite: false });
+  const ringInk = Fn(() => {
+    // RingGeometry 在自己的 xy 平面上；轉平之後 (x, y) 對到環平面的 (x, -z)
+    const p = vec3(positionLocal.x, 0, positionLocal.y.negate());
+    const r = p.length();
+    // 環在轉，而且內圈比外圈快（克卜勒：角速度照半徑的 -1.5 次方，內緣約是外緣的 2.6 倍）。
+    // 只轉筆觸（刷痕的斷點），影子跟太陽走、不跟著轉，所以影子那段用原本的 p
+    const spin = ringClock.mul(RING_SPIN).mul(r.pow(-1.5));
+    const q = vec3(p.x.mul(cos(spin)).sub(p.z.mul(sin(spin))), 0, p.x.mul(sin(spin)).add(p.z.mul(cos(spin))));
+    // 環裡面還有更細的小環：一點徑向的雜訊
+    const ringlets = mx_noise_float(vec3(r.mul(60), 0, 0))
+      .mul(0.22)
+      .add(0.9);
+    const brush = smoothstep(-0.55, 0.15, mx_noise_float(vec3(q.x.mul(2.4), r.mul(40), q.z.mul(2.4))));
+    // 星球的影子：從環上這一點往太陽看會不會被星球擋住
+    const sun = normalize(sunInPlane);
+    const along = dot(p, sun).negate();
+    const closest = p.add(sun.mul(along));
+    const shade = select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.12), float(1));
+    const ink = ringTone(r)
+      .mul(ringlets)
+      .mul(mix(float(0.4), float(1), brush))
+      .mul(shade)
+      .clamp(0, 1);
+    return strokes(r.mul(RING_ROWS), pow(ink, 0.75), RING_COVER);
+  })();
+  ringMat.colorNode = paper;
+  ringMat.opacityNode = ringInk;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 256, 1), ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  plane.add(ring);
+
+  // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
+  const circle = (radius: number, opacity: number) => {
+    const material = new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
+    const points = Array.from({ length: 257 }, (_, k) => {
+      const a = (k / 256) * Math.PI * 2;
+      return new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius);
+    });
+    plane.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
+    return material;
+  };
+
+  // 軌道與衛星。衛星是一個實心的小點，亮起來時變琥珀色、外面多一圈光暈
+  const ORBIT_DIM = 0.09;
+  const orbits = ORBITS.map((r) => circle(r, ORBIT_DIM));
+  const glowTarget = ORBITS.map(() => 0);
+  const satellites = ORBITS.map((r, i) => {
+    const g = uniform(0);
+    const mat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
+    const d = uv().sub(0.5).length().mul(2.0);
+    const core = smoothstep(g.mul(0.1).add(0.26), g.mul(0.1).add(0.16), d);
+    const halo = float(1).sub(d).max(0).pow(2).mul(g).mul(0.55);
+    mat.colorNode = mix(vec3(INK.r, INK.g, INK.b), vec3(AMBER.r, AMBER.g, AMBER.b), g);
+    mat.opacityNode = core.mul(mix(float(0.75), float(1), g)).max(halo);
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.setScalar(0.24);
+    plane.add(sprite);
+    // 起始角度錯開，越外圈轉得越慢（克卜勒的味道就好，不必真的照比例）
+    return { sprite, g, r, phase: satellitePhase(i) };
+  });
   const syncSun = () => {
     group.updateWorldMatrix(true, true);
-    planet.worldToLocal(sunInPlanet.value.copy(sunWorld));
-    rings.worldToLocal(sunInRing.value.copy(sunWorld));
+    body.worldToLocal(sunInPlanet.value.copy(sunWorld));
+    plane.worldToLocal(sunInPlane.value.copy(sunWorld));
   };
 
-  const satellites = [
-    { baseR: 2.5, y: 0.1, speed: 0.3, size: 0.04, angle: Math.random() * Math.PI * 2 },
-    { baseR: 3, y: -0.15, speed: 0.2, size: 0.06, angle: Math.random() * Math.PI * 2 },
-  ].map((cfg) => {
-    const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(cfg.size, 8, 8),
-      new THREE.MeshStandardMaterial({ color: '#cccccc', emissive: '#333333', roughness: 0.5, metalness: 0.5 }),
-    );
-    mesh.position.set(cfg.baseR, cfg.y, 0);
-    group.add(mesh);
-    return { mesh, cfg };
-  });
-
+  let clock = 0;
   let autoRot = 0;
   // 捲動帶動的旋轉單獨 lerp：自轉是等速的，不需要 lerp；放進同一個 lerp 的話目標每幀都在前進，
   // lerp 永遠收斂不了，「還在動」就永遠是真的——閒置降幀因此一直沒生效（實測卡在 60fps）。
   let currentScrollRot = 0;
   let currentScale = 0.0001;
+  let fullScale = BASE_SCALE;
+  /** 收與長都是一段有起訖的動畫（不是 lerp）：時間固定，轉場那邊才對得上拍子 */
+  let tween: { from: number; to: number; t: number; dur: number; ease: (t: number) => number } | null = null;
+  let tweenTarget = 0.0001;
+  /** 收進去的那一點（世界座標）；null 是收進中心 */
+  let pivot: THREE.Vector3 | null = null;
+  const base = new THREE.Vector3();
+  const v = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  const edge = new THREE.Vector3();
   return {
     group,
     update(dt, scrollY, animate) {
-      autoRot += 0.05 * dt;
+      // 約 50 秒一圈。雲帶是橫向的長條，轉的時候是沿著自己滑過去，太慢（原本 125 秒一圈）就看不出在轉
+      autoRot += 0.125 * dt;
+      ringClock.value += dt;
       const targetScrollRot = scrollY * 0.001;
       currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, lerpFactor(0.05, dt));
-      group.rotation.y = currentScrollRot + autoRot;
-      // intro 縮放：未 animate 用極小 epsilon（非 0）讓管線先編譯好，explosion 時只是放大
-      const targetScale = animate ? 1 : 0.0001;
-      currentScale = THREE.MathUtils.lerp(currentScale, targetScale, lerpFactor(0.08, dt));
+      body.rotation.y = currentScrollRot + autoRot;
+      // 收與長：收的時候縮到極小（非 0，管線才不會重編），長的時候撐回原尺寸
+      const targetScale = animate ? fullScale : 0.0001;
+      if (targetScale !== tweenTarget) {
+        const grow = targetScale > currentScale;
+        if (grow) pivot = null;
+        tween = {
+          from: currentScale,
+          to: targetScale,
+          t: 0,
+          dur: grow ? GROW_S : COLLAPSE_S,
+          ease: grow ? easeOutCubic : easeInCubic,
+        };
+        tweenTarget = targetScale;
+      }
+      if (tween) {
+        tween.t += dt;
+        const k = Math.min(1, tween.t / tween.dur);
+        currentScale = THREE.MathUtils.lerp(tween.from, tween.to, tween.ease(k));
+        if (k >= 1) tween = null;
+      }
       group.scale.setScalar(currentScale);
-      for (const s of satellites) {
-        s.cfg.angle += s.cfg.speed * dt;
-        s.mesh.position.set(s.cfg.baseR * Math.cos(s.cfg.angle), s.cfg.y, s.cfg.baseR * Math.sin(s.cfg.angle));
+      // 收進一顆衛星：那顆衛星在世界座標裡不動，其他的都往它縮過去
+      if (pivot) group.position.copy(pivot).addScaledVector(v.copy(base).sub(pivot), currentScale / fullScale);
+      else group.position.copy(base);
+      // 往衛星收的時候衛星停住，不然收進去的那一點會跟著軌道跑掉
+      if (!pivot) clock += dt;
+      let glowing = false;
+      for (const [i, s] of satellites.entries()) {
+        const a = s.phase + clock * satelliteSpeed(s.r);
+        s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
+        const target = glowTarget[i] ?? 0;
+        s.g.value += (target - s.g.value) * Math.min(1, dt * 8);
+        if (Math.abs(target - s.g.value) > 0.01) glowing = true;
+        orbits[i].opacity = ORBIT_DIM + s.g.value * 0.32;
       }
       syncSun();
-      const zooming = Math.abs(targetScale - currentScale) > 0.005;
-      return { moving: zooming || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
+      const zooming = tween !== null;
+      return { moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
+    },
+    setAspect(aspect) {
+      fullScale = fitScale(aspect);
+      // 直的畫面把土星往上提一點（提案是在高度的 46%），下面留給手機的手指
+      base.set(0, aspect < 1 ? 0.31 : 0, 0);
+      if (!tween) {
+        if (tweenTarget > 0.001) currentScale = tweenTarget = fullScale;
+        if (!pivot) group.position.copy(base);
+      }
+    },
+    setGlow(glow) {
+      for (let i = 0; i < glowTarget.length; i++) glowTarget[i] = glow[i] ?? 0;
+    },
+    collapse() {
+      currentScale = 0.0001;
+      tween = null;
+      pivot = null;
+    },
+    collapseTo(index) {
+      const sat = satellites[index] as (typeof satellites)[number] | undefined;
+      group.updateWorldMatrix(true, true);
+      pivot = sat ? sat.sprite.getWorldPosition(new THREE.Vector3()) : null;
+    },
+    project(camera, width, height) {
+      const toScreen = (p: THREE.Vector3) => {
+        p.project(camera);
+        return [((p.x + 1) / 2) * width, ((1 - p.y) / 2) * height] as const;
+      };
+      group.getWorldPosition(center);
+      const camDist = camera.position.distanceTo(center);
+      // 星球在畫面上的半徑：中心與往上一個星球半徑的那一點，投影後的距離
+      edge.copy(center).add(new THREE.Vector3(0, currentScale, 0));
+      const [ex, ey] = toScreen(edge);
+      const [cx, cy] = toScreen(center.clone());
+      const radius = Math.hypot(ex - cx, ey - cy);
+      return satellites.map((s) => {
+        s.sprite.getWorldPosition(v);
+        const behind = camera.position.distanceTo(v) > camDist;
+        const [x, y] = toScreen(v);
+        return { x, y, hidden: currentScale < 0.05 * fullScale || (behind && Math.hypot(x - cx, y - cy) < radius) };
+      });
     },
   };
 }
@@ -340,7 +546,7 @@ interface AdapterLike {
 /**
  * 這台機器的 3D 會不會落在 CPU 上（SwiftShader / WARP / llvmpipe）。
  *
- * 主執行緒另外有 GPU 探測（lib/webglSupport.ts），但 3D 不等它：開場要等這個 runner 把管線
+ * 主執行緒另外有 GPU 探測（lib/webglSupport.ts），但 3D 不等它：首頁的土星要等這個 runner 把管線
  * 全部編譯完才開始，等探測做完再建等於多等一輪。所以 runner 自己先查，是軟體渲染就在
  * 編譯任何東西之前退出——不查的話，沒有 GPU 的機器會用 CPU 模擬的 GPU 編譯整套著色器，
  * 把 CPU 吃滿到頁面都載不完（CI 的 e2e 實際逾時過）。
@@ -362,13 +568,6 @@ export async function createStarfieldRunner(
   init: StarfieldInit,
 ): Promise<{ runner: StarfieldRunner; backend: 'WebGPU' | 'WebGL2' }> {
   if (await softwareRendering()) throw new Error('沒有硬體加速（軟體渲染），不建 3D');
-  // 土星貼圖跟下面建 GPU device 同時下載，不要等 init 完才開始（開場要等整個 runner 就緒）。
-  // 先掛一個空的 catch：失敗要到 buildSaturn 那裡才處理，這段空檔不該冒出 unhandledrejection。
-  const saturnTextures = Promise.all([
-    loadTexture('/textures/saturn_texture.webp'),
-    loadTexture('/textures/saturn_rings_texture.webp'),
-  ]);
-  saturnTextures.catch(() => undefined);
   const renderer = new THREE.WebGPURenderer({
     // 型別只收 HTMLCanvasElement；OffscreenCanvas 在 runtime 相容（官方 worker 範例同款用法）
     canvas: init.canvas as HTMLCanvasElement,
@@ -394,103 +593,75 @@ export async function createStarfieldRunner(
   const camera = new THREE.PerspectiveCamera(75, init.width / init.height, 0.1, 400);
   camera.position.set(0, 0, 5);
 
-  const layers = LAYERS.map((cfg) => ({ points: buildStarLayer(cfg), cfg }));
+  const layers = LAYERS.map((base) => {
+    const cfg = init.lite ? { ...base, count: Math.round(base.count * 0.35) } : base;
+    return { points: buildStarLayer(cfg), cfg };
+  });
   for (const l of layers) scene.add(l.points);
 
-  // 光源（對齊舊 Saturn canvas：環境光 + 太陽點光）
-  scene.add(new THREE.AmbientLight(0xffffff, 0.15));
-  const sun = new THREE.PointLight(0xffffff, 400);
-  sun.position.set(4.5, 3.5, 5.5);
-  scene.add(sun);
-
-  // 土星（貼圖非同步；失敗不擋星空——例如離線快取缺圖）
-  let saturn: SaturnRig | null = null;
+  // 土星另外一個場景、用視角很窄的鏡頭從很遠的地方看：提案的土星與軌道幾乎沒有透視（前後的軌道一樣寬），
+  // 跟星空同一個鏡頭（z=5、視角 75°）的話，最外圈軌道離鏡頭太近，近的那半圈被放大、遠的縮小，形狀就走樣了。
+  // 視角 8°、距離讓畫面半高在 z=0 仍是 3.84 個單位：「一個單位幾個像素」跟原本一樣，前後大小只差約 6%。
+  // 不用正交鏡頭：點精靈的大小是照透視算的，正交鏡頭下整顆星球的點都縮到看不見。
+  const saturnScene = new THREE.Scene();
+  const aspect0 = init.width / init.height;
+  const saturnCam = new THREE.PerspectiveCamera(SATURN_FOV, aspect0, 1, 200);
+  saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
+  // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
+  const saturn = buildSaturn(new THREE.Vector3(...SUN).multiplyScalar(10));
+  saturn.setAspect(aspect0);
+  let viewW = init.width;
+  let viewH = init.height;
   let saturnVisible = false;
   let saturnAnimate = true;
   let scrollY = 0;
-  try {
-    saturn = await buildSaturn(sun.position, saturnTextures);
-    saturn.group.visible = false; // 僅首頁顯示，等 setSaturn 訊息
-    scene.add(saturn.group);
-  } catch (e) {
-    console.warn('[starfieldGpu] 土星貼圖載入失敗，僅渲染星空:', e);
-  }
+  saturn.group.visible = false; // 僅首頁顯示，等 setSaturn 訊息
+  saturnScene.add(saturn.group);
 
-  // selective bloom（BloomNode 官方 MRT 範例同款）：bloom 只吃 emissive 通道——
-  // 星星（emissiveNode=顏色）有光暈；土星/衛星（Standard 材質、emissive≈0）不被星空 bloom 掃到，
-  // 對齊舊架構「兩條 canvas 各自 bloom 參數」的觀感（舊土星 bloom 僅 0.15，趨近無）。
+  // selective bloom（BloomNode 官方 MRT 範例同款）：bloom 只吃星星（emissive 通道），土星那層另外畫、不進 bloom。
   // ⚠ 場景 pass 的 MSAA 只在低像素密度開。這個 pass 是兩張半精度浮點的 MRT（output＋bloomIntensity），
   //   開 4× MSAA 的代價很高：內顯（Radeon 780M）實測 DPR 2 時一幀 14.3ms → 關掉後 8.7ms（−40%），
-  //   DPR 1 時 8.65 → 7.3ms。星星本來就是柔光的 quad，MSAA 只影響土星的邊緣，而 DPR ≥ 1.5 時
+  //   DPR 1 時 8.65 → 7.3ms。星星本來就是柔光的 quad，MSAA 只影響邊緣，而 DPR ≥ 1.5 時
   //   像素已經夠細、看不出差別。
   const dprUsed = Math.min(init.dpr, 2);
-  const scenePass = pass(scene, camera, { samples: dprUsed >= 1.5 ? 0 : 4 });
+  const msaa = dprUsed >= 1.5 ? 0 : 4;
+  const scenePass = pass(scene, camera, { samples: msaa });
   scenePass.setMRT(mrt({ output, bloomIntensity: float(0) })); // 全域預設：不進 bloom
   const scenePassColor = scenePass.getTextureNode('output');
   const bloomMask = scenePass.getTextureNode('bloomIntensity');
-  const bloomPass = bloom(scenePassColor.mul(bloomMask), 0.55, 0.35, 0.5); // strength / radius / threshold（與 pmndrs 參數不對齊，獨立配平值）
-  // 輸出保留場景 alpha：canvas 是透明疊在頁面深紫底上的——bloom 疊加若讓 alpha 全變 1，
-  // 頁面底色會被蓋成純黑（「顏色有差」的元兇）。rgb 疊 bloom、alpha 用場景原值。
+  const bloomPass = bloom(scenePassColor.mul(bloomMask), 0.35, 0.35, 0.5); // strength / radius / threshold
   const combined = scenePassColor.add(bloomPass);
-  const sceneOut = vec4(combined.rgb, scenePassColor.a);
+  // 土星那層疊在星空上：它的顏色已經乘過自己的透明度（一般混合畫在透明底上就是這樣），
+  // 所以是「星空 × (1 − 土星的 alpha) + 土星」。擋背面的那顆紙色球 alpha 是 1，球後面的星星就被蓋掉。
+  // 輸出保留 alpha：canvas 透明疊在頁面的黑紙上，alpha 全變 1 的話底色會被蓋成純黑
+  const saturnPass = pass(saturnScene, saturnCam, { samples: msaa });
+  const sat = saturnPass.getTextureNode('output');
+  const sceneOut = vec4(combined.rgb.mul(float(1).sub(sat.a)).add(sat.rgb), max(scenePassColor.a, sat.a));
   const pipeline = new THREE.RenderPipeline(renderer, sceneOut);
 
-  // ── 開場 ──
-  // 開場期間另外兩條 pipeline（見 lib/hyperspace.ts）：
-  //   stagePipeline：爆炸前，只畫開場層——星空與土星整個被蓋住，場景 pass 與 bloom 都不跑
-  //   introPipeline：爆炸後，同一個場景 pass 疊在開場層上
-  // 三條都在下面的暖機裡先畫過一次，切換時不會再編譯任何東西。
-  let hyperspace: Hyperspace | null = null;
-  let stagePipeline: THREE.RenderPipeline | null = null;
-  let introPipeline: THREE.RenderPipeline | null = null;
-  if (init.intro) {
-    hyperspace = createHyperspace(renderer, init.width, init.height, dprUsed);
-    stagePipeline = new THREE.RenderPipeline(renderer, hyperspace.composite(null));
-    introPipeline = new THREE.RenderPipeline(renderer, hyperspace.composite(sceneOut));
-  }
-  let introStart = -1;
-  let introPrev = -1;
-  let skippedAt: number | null = null;
-  // 跳過的時間點取「下一幀」的時間：取上一幀的話，被提前到那一刻的階段剛好落在
-  // phasesCrossed 的 (prev, now] 左端外面，一個都不會送出去
-  let skipRequested = false;
-  let sceneShown = false;
-  const finishIntro = () => {
-    hyperspace?.dispose();
-    stagePipeline?.dispose();
-    introPipeline?.dispose();
-    hyperspace = null;
-    stagePipeline = null;
-    introPipeline = null;
-  };
-
   // ── 暖機：所有會用到的管線都在 ready 之前編譯完 ──
-  // three 預設在「第一次畫到」時才編譯，那會是開場頭幾幀、或土星出現的那一刻的一次停頓。
+  // three 預設在「第一次畫到」時才編譯，那會是土星出現的那一刻的一次停頓。
   // 土星此時還是隱藏的（等主執行緒的 setSaturn），暫時打開以極小縮放畫一次，管線就有了。
-  if (saturn) saturn.group.visible = true;
+  saturn.group.visible = true;
   // 用 PassNode 的 compileAsync，不是 renderer.compileAsync(scene, camera)：後者照「畫到 canvas」
   // 的設定編，而場景 pass 是兩張半精度的 MRT，管線不一樣——第一次 render 時會整批同步重編
   // （實測主 pipeline 第一次畫要 100–440ms，換成這個之後剩 70–170ms，剩下的是 bloom 的全螢幕 pass）。
   await scenePass.compileAsync(renderer);
+  await saturnPass.compileAsync(renderer);
   pipeline.render();
-  if (hyperspace && stagePipeline && introPipeline) {
-    hyperspace.update(introFrame(0, null), 0, 0);
-    introPipeline.render();
-    stagePipeline.render(); // 最後畫開場的第 0 幀：主執行緒一顯示 canvas，看到的就是開場的底色
-  }
-  if (saturn) saturn.group.visible = false;
+  saturn.group.visible = false;
 
   // ── 渲染迴圈 ──────────────────────────────────────────────────
   //
   // 閒置時降到 30fps：星空的轉速是 0.01～0.02 rad/s、土星自轉 0.05 rad/s，30fps 跟 60fps 看不出差別，
   // 但 GPU 的工作量減半（筆電的風扇與電池差很多）。
-  // 有「動作」的時候（捲動、改尺寸、intro、土星的 lerp 還沒收斂）回到 60fps，捲動跟著土星轉不會頓。
+  // 有「動作」的時候（捲動、改尺寸、土星的 lerp 還沒收斂）回到 60fps，捲動跟著土星轉不會頓。
   // rAF 還是每個 vsync 都會進來，只是閒置時隔一幀才畫——跳過的那一幀只花幾微秒。
   //
   // 有動作的時候也不超過約 60fps：rAF 跟著螢幕更新率走，144Hz 的螢幕上工作量是 60Hz 的 2.4 倍，
   // 而背景轉得很慢，多出來的幀看不出差別。怎麼跳格見 framePacer.ts。
   //
-  // 例外是開場與土星放大：那是畫面上唯一的動作，而且跟 CSS 動畫同時在跑，鎖 60fps 的話
+  // 例外是土星的收與長：那是畫面上唯一的動作，而且跟 CSS 動畫同時在跑，鎖 60fps 的話
   // 180Hz 螢幕上就是「周圍很順、只有它在頓」。這段跟著螢幕更新率畫，放大收斂後回到上面的規則。
   const IDLE_AFTER_MS = 1500;
   const ACTIVE_FRAME_MS = 1000 / 60;
@@ -528,16 +699,19 @@ export async function createStarfieldRunner(
     const factor = QUALITY_FACTOR[quality] ?? 1;
     for (const l of layers) l.points.count = Math.max(1, Math.round(l.cfg.count * factor));
     // 最低等級連土星也收掉（它是最貴的一塊）
-    if (saturn) saturn.group.visible = saturnVisible && quality < 2;
+    saturn.group.visible = saturnVisible && quality < 2;
   };
 
+  let starsOn = true;
+  /** 全暗之後已經清過一幀了 */
+  let darkDrawn = false;
   const loop = (now: number) => {
     // ⚠ 跟 lastActive 比要用同一個時鐘：lastActive 是 performance.now()，而 rAF 的 now 是
     //   這一幀的時間戳，規格沒保證兩者在 worker 裡同步。now 落後的話「距上次活動」永遠小於門檻，
     //   就永遠不會進閒置。
     const wall = performance.now();
     const active = wall - lastActive < IDLE_AFTER_MS;
-    const fullRate = hyperspace !== null || saturnZooming;
+    const fullRate = saturnZooming;
     if (!pacer.shouldRender(now, fullRate ? 0 : active ? ACTIVE_FRAME_MS : IDLE_FRAME_MS)) return;
     // delta 是距離上一次「真的畫」的時間：跳幀不會讓動畫變慢；夾住是為了分頁切回時不暴衝
     const delta = lastRender < 0 ? 0.016 : Math.min((now - lastRender) / 1000, 0.05);
@@ -546,32 +720,25 @@ export async function createStarfieldRunner(
       l.points.rotation.x += delta * l.cfg.rotX;
       l.points.rotation.y += delta * l.cfg.rotY;
     }
-
-    // 開場：時間軸從第一幀算起
-    let introAllowsZoom = true;
-    if (hyperspace) {
-      if (introStart < 0) introStart = now;
-      const t = Math.min(now - introStart, init.introFreezeAt ?? Infinity);
-      if (skipRequested) skippedAt ??= t;
-      const frame = introFrame(t, skippedAt);
-      hyperspace.update(frame, t, introPrev < 0 ? 0 : t - introPrev);
-      introAllowsZoom = frame.saturnAnimate;
-      sceneShown = frame.sceneOpacity > 0;
-      for (const phase of phasesCrossed(introPrev, t, skippedAt)) init.onIntroPhase?.(phase);
-      introPrev = t;
+    // 星星淡出淡回；全暗而且沒有土星時畫完這一幀（清空）就不再畫，GPU 歇著
+    const starTarget = starsOn ? 1 : 0;
+    if (Math.abs(starAlpha.value - starTarget) > 0.001) {
+      starAlpha.value += (starTarget - starAlpha.value) * lerpFactor(0.08, delta);
+      if (Math.abs(starAlpha.value - starTarget) <= 0.001) starAlpha.value = starTarget;
       markActive();
     }
+    const dark = starAlpha.value === 0 && !saturnVisible;
+    for (const l of layers) l.points.visible = starAlpha.value > 0;
+    if (dark && darkDrawn) return;
+    darkDrawn = dark;
 
-    if (saturn && saturnVisible) {
-      const s = saturn.update(delta, scrollY, saturnAnimate && introAllowsZoom);
+    if (saturnVisible) {
+      const s = saturn.update(delta, scrollY, saturnAnimate);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
+      init.onSatellites?.(saturn.project(saturnCam, viewW, viewH));
     }
-    if (stagePipeline && !sceneShown) stagePipeline.render();
-    else if (introPipeline) introPipeline.render();
-    else pipeline.render();
-    // 開場層已經完全淡出：換回主 pipeline（畫出來一模一樣），收掉開場的資源
-    if (hyperspace && introPrev >= phaseTimes(skippedAt).done) finishIntro();
+    pipeline.render();
     // ⚠ 每一幀都要取回：three 的 query pool 格數有限，一秒才取一次的話格子在幾分之一秒內就滿了，
     //   之後的 pass 根本沒量到（實測量出 0.05ms 這種不可能的值）。取回是非同步的，結果晚一兩幀到。
     void renderer
@@ -594,9 +761,7 @@ export async function createStarfieldRunner(
         clockSkewMs: now - wall,
       });
       gpuMsPerFrame = gpuEma;
-      // 開場期間不算：那幾秒多畫一層全螢幕的星芒，GPU 時間本來就高，而降級是永久的
-      const tooSlow =
-        hyperspace === null && (gpuMsPerFrame !== null ? gpuMsPerFrame > SLOW_GPU_MS : fps < LOW_FPS && active);
+      const tooSlow = gpuMsPerFrame !== null ? gpuMsPerFrame > SLOW_GPU_MS : fps < LOW_FPS && active;
       if (tooSlow && quality < QUALITY_FACTOR.length - 1) {
         lowSeconds += 1;
         if (lowSeconds >= LOW_SECONDS_TO_DEGRADE) {
@@ -618,10 +783,14 @@ export async function createStarfieldRunner(
     runner: {
       setSize(width, height) {
         markActive();
+        viewW = width;
+        viewH = height;
+        saturn.setAspect(width / height);
         camera.aspect = width / height;
+        saturnCam.aspect = camera.aspect;
+        saturnCam.updateProjectionMatrix();
         camera.updateProjectionMatrix();
         renderer.setSize(width, height, false);
-        hyperspace?.setSize(width, height, dprUsed);
       },
       setScroll(y) {
         if (y !== scrollY) markActive();
@@ -629,10 +798,34 @@ export async function createStarfieldRunner(
       },
       setSaturn(visible, animate) {
         markActive();
+        if (saturnVisible && !visible) init.onSatellites?.([]);
+        // 每次重新出現都從一點撐開（換頁轉場的「長」）
+        if (!saturnVisible && visible) saturn.collapse();
         saturnVisible = visible;
+        darkDrawn = false;
         saturnAnimate = animate;
         // 最低品質下即使呼叫顯示也不開（土星最貴）
-        if (saturn) saturn.group.visible = visible && quality < 2;
+        saturn.group.visible = visible && quality < 2;
+      },
+      setSatelliteGlow(glow) {
+        markActive();
+        saturn.setGlow(glow);
+      },
+      setStars(visible) {
+        markActive();
+        starsOn = visible;
+        darkDrawn = false;
+      },
+      setPan(x, y) {
+        // 一個像素是多少弧度：鏡頭的垂直視角攤在畫面高度上。星在球面上，怎麼轉都不會露出邊
+        const k = (camera.fov * Math.PI) / 180 / Math.max(1, viewH);
+        camera.rotation.set(y * k, x * k, 0);
+        markActive();
+      },
+      collapseSaturnTo(index) {
+        markActive();
+        saturn.collapseTo(index);
+        saturnAnimate = false;
       },
       setRunning(running) {
         if (running) {
@@ -644,18 +837,8 @@ export async function createStarfieldRunner(
           void renderer.setAnimationLoop(null);
         }
       },
-      skipIntro() {
-        if (!hyperspace) return;
-        if (introStart < 0) {
-          // 還沒開始：直接不播，一個階段都不送（呼叫端已經自己收尾）
-          finishIntro();
-          return;
-        }
-        skipRequested = true;
-      },
       dispose() {
         void renderer.setAnimationLoop(null);
-        finishIntro();
         pipeline.dispose();
         for (const l of layers) {
           // Sprite 的 quad geometry 為 three 內部共享，不 dispose；材質是我們的

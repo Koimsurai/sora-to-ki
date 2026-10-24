@@ -18,7 +18,10 @@ function makeRunner() {
     setScroll: vi.fn(),
     setSaturn: vi.fn(),
     setRunning: vi.fn(),
-    skipIntro: vi.fn(),
+    setSatelliteGlow: vi.fn(),
+    collapseSaturnTo: vi.fn(),
+    setStars: vi.fn(),
+    setPan: vi.fn(),
     dispose: vi.fn(),
   };
 }
@@ -28,19 +31,17 @@ let runner = makeRunner();
 let resolveInit: (() => void) | null = null;
 let rejectInit: ((e: unknown) => void) | null = null;
 let onDeviceLost: ((message: string) => void) | null = null;
-let lastInit: { intro?: boolean; introFreezeAt?: number; onIntroPhase?: (p: string) => void } | null = null;
+let lastInit: { lite?: boolean } | null = null;
 
 vi.mock('../lib/starfieldGpu', () => ({
-  createStarfieldRunner: vi.fn(
-    (init: { onDeviceLost?: (m: string) => void; intro?: boolean; onIntroPhase?: (p: string) => void }) => {
-      onDeviceLost = init.onDeviceLost ?? null;
-      lastInit = init;
-      return new Promise((res, rej) => {
-        resolveInit = () => res({ runner, backend: 'WebGPU' });
-        rejectInit = rej;
-      });
-    },
-  ),
+  createStarfieldRunner: vi.fn((init: { onDeviceLost?: (m: string) => void; lite?: boolean }) => {
+    onDeviceLost = init.onDeviceLost ?? null;
+    lastInit = init;
+    return new Promise((res, rej) => {
+      resolveInit = () => res({ runner, backend: 'WebGPU' });
+      rejectInit = rej;
+    });
+  }),
 }));
 
 const posted: { type: string; [k: string]: unknown }[] = [];
@@ -140,37 +141,30 @@ describe('init 之後的訊息直接轉給 runner', () => {
   });
 });
 
-describe('開場', () => {
-  it('init 的 intro 與 introFreezeAt 原樣交給 runner', async () => {
-    send({ type: 'init', canvas: {}, width: 100, height: 100, dpr: 1, intro: true, introFreezeAt: 1200 });
-    resolveInit?.();
-    await vi.waitFor(() => expect(posted.some((m) => m.type === 'ready')).toBe(true));
-    expect(lastInit).toMatchObject({ intro: true, introFreezeAt: 1200 });
+describe('首頁的衛星', () => {
+  it('init 的 lite（手機減量）原樣交給 runner', async () => {
+    send({ type: 'init', canvas: {}, width: 100, height: 100, dpr: 1, lite: true });
+    await vi.waitFor(() => expect(lastInit).not.toBeNull());
+    expect(lastInit).toMatchObject({ lite: true });
   });
 
-  it('runner 回報的階段轉成 intro 訊息送回主執行緒', async () => {
+  // 換頁轉場的「收」：土星收進衛星之後，下一次補放 saturn 狀態要是「收著」，不然重建時會自己長回來
+  it('collapse 轉給 runner，而且記成收著的狀態', async () => {
     await initAndSettle();
-    lastInit?.onIntroPhase?.('started');
-    lastInit?.onIntroPhase?.('done');
-    expect(posted.filter((m) => m.type === 'intro')).toEqual([
-      { type: 'intro', phase: 'started' },
-      { type: 'intro', phase: 'done' },
-    ]);
+    send({ type: 'collapse', index: 2 });
+    expect(runner.collapseSaturnTo).toHaveBeenCalledWith(2);
   });
 
-  // 使用者在 3D 還在初始化時就點了跳過（或主執行緒等太久放棄）——
-  // 這則訊息掉了的話，runner 建好後開場照播，蓋在已經放出來的內容上。
-  it('init 完成前收到 skip → ready 之後補叫 skipIntro', async () => {
-    send({ type: 'skip' });
-    expect(runner.skipIntro).not.toHaveBeenCalled();
+  it('星星的開關在 init 前到的話，ready 之後補放', async () => {
+    send({ type: 'stars', visible: false });
     await initAndSettle();
-    expect(runner.skipIntro).toHaveBeenCalledTimes(1);
+    expect(runner.setStars).toHaveBeenCalledWith(false);
   });
 
-  it('init 之後的 skip 直接打到 runner', async () => {
+  it('init 完成前收到的亮度，ready 之後補給 runner', async () => {
+    send({ type: 'glow', glow: [1, 0, 0, 0, 0] });
     await initAndSettle();
-    send({ type: 'skip' });
-    expect(runner.skipIntro).toHaveBeenCalledTimes(1);
+    expect(runner.setSatelliteGlow).toHaveBeenCalledWith([1, 0, 0, 0, 0]);
   });
 });
 

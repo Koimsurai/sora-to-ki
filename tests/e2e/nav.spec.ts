@@ -50,14 +50,14 @@ test.describe('指令面板', () => {
     await page.goto('/');
     await openPalette(page);
 
-    // 'bookshelf' 只出現在「書櫃」那一筆的 keywords 裡，不會撞到別的項目
-    await page.keyboard.type('bookshelf');
+    // 'spotify' 只出現在「收藏」那一筆的 keywords 裡，不會撞到別的項目
+    await page.keyboard.type('spotify');
     const items = page.locator('[cmdk-item]');
     await expect(items).toHaveCount(1, { timeout: 10_000 });
-    await expect(items.first()).toContainText('書櫃');
+    await expect(items.first()).toContainText('收藏');
 
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/bookshelf$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/watch$/, { timeout: 15_000 });
     await expect(palette(page), '走過去之後面板要自己關掉').toHaveCount(0);
   });
 
@@ -84,76 +84,58 @@ test.describe('指令面板', () => {
 });
 
 /**
- * 行動版選單。
+ * 行動版的整頁目錄：頂欄那顆點（`.snav-pin`）點一下打開，再點一下或 Esc 收起來，
+ * 點了連結走過去之後自己收起來。
  *
- * ⚠ 這裡**不能**用 `toBeVisible()` / `toBeHidden()` 判斷開關，兩層都不行：
- *
- *   · 外層 `.mnav` 收起來時是 `max-height: 0` + `opacity: 0`，但 `max-height`
- *     不裁 padding —— 底部 10px 的 safe-area padding 加 1px 邊框讓它還有 11px 高，
- *     Playwright 因此判定「可見」。使用者當然看不到（opacity 0、pointer-events none、
- *     整塊 inert），但那個 11px 讓可見性斷言永遠是真。
- *   · 內層 `.mnav-sub-wrap` 用 `grid-template-rows: 0fr` 收合，容器高度是 0，
- *     可是裡面的 `<a>` 自己仍有 48px 的 box —— Playwright 看的是元素自身，
- *     於是收合中的子連結也被判定為「可見」。
- *
- * 所以改成斷言真正的契約：外層看 `inert`（它才是「這塊不能互動」的來源），
- * 內層看收合容器自己的高度（那正是使用者看到的東西）。
+ * ⚠ 這裡**不用** `toBeVisible()` / `toBeHidden()` 判斷開關：收起來的目錄是透明＋點不到，
+ * 但元素自己的 box 還在，Playwright 會判定「可見」。改成斷言真正的契約——`inert`，
+ * 它才是「這塊不能互動」的來源。
  */
 test.describe('行動版選單', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  const menu = (page: Page) => page.locator('.mnav');
+  const menu = (page: Page) => page.locator('.snav-menu');
+  const toggle = (page: Page) => page.locator('.snav-pin');
   // ⚠ 一定要跟 null 比。`inert` 是布林屬性，存在時 getAttribute 回的是**空字串**，
-  //   而 `!''` 是 true —— 寫成 `!(await getAttribute('inert'))` 會把「收起來」讀成
-  //   「打開了」，於是底下的重試迴圈一次都不會按，最後錯誤訊息卻是
-  //   「header intercepts pointer events」（因為選單根本沒展開，按鈕還在 header 底下）。
+  //   而 `!''` 是 true —— 寫成 `!(await getAttribute('inert'))` 會把「收起來」讀成「打開了」。
   const isOpen = async (page: Page) => (await menu(page).getAttribute('inert')) === null;
 
-  /** 漢堡鈕在 hydrate 之前按下去不會有反應（理由見 blog-post.spec.ts 的 clickUntil）。 */
+  /** 那顆點在 hydrate 之前按下去不會有反應（理由見 blog-post.spec.ts 的 clickUntil）。 */
   async function openMenu(page: Page): Promise<void> {
-    const toggle = page.getByRole('button', { name: 'Toggle navigation' });
-    await expect(toggle, '手機寬度下才會出現漢堡鈕').toBeVisible({ timeout: 15_000 });
+    await expect(toggle(page), '手機寬度下要有打開目錄的那顆點').toBeVisible({ timeout: 15_000 });
     await expect(async () => {
       if (!(await isOpen(page))) {
-        await toggle.click();
+        await toggle(page).click();
         // 這顆是 toggle，重試時再按一次會把剛開的關回去。等一次 commit 再判定，
         // 讓「按了但還沒反映到 DOM」不要被誤判成「按了沒用」。
         await page.waitForTimeout(300);
       }
-      expect(await isOpen(page), '按了漢堡鈕但選單沒有打開').toBe(true);
+      expect(await isOpen(page), '按了但目錄沒有打開').toBe(true);
     }).toPass({ timeout: 20_000, intervals: [200, 400, 800, 1500] });
-    await expect(menu(page)).toHaveClass(/mnav--open/);
   }
 
-  test('漢堡鈕開得了選單，關閉鈕關得掉', async ({ page }) => {
+  test('點開得了目錄，再點一下或 Esc 都收得回去', async ({ page }) => {
     await page.goto('/');
     await expect(menu(page), '一開始應該是收起來的（inert = 整塊不能互動）').toHaveAttribute('inert', '');
 
     await openMenu(page);
-    await expect(menu(page)).toHaveClass(/mnav--open/);
-    await expect(page.locator('.mnav-close')).toBeVisible();
+    await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+    await toggle(page).click();
+    await expect(menu(page), '再點一下沒有把目錄收回去').toHaveAttribute('inert', '', { timeout: 10_000 });
 
-    await page.locator('.mnav-close').click();
-    await expect(menu(page), '關閉鈕沒有把選單收回去').toHaveAttribute('inert', '', { timeout: 10_000 });
+    await openMenu(page);
+    await page.keyboard.press('Escape');
+    await expect(menu(page), 'Esc 沒有把目錄收回去').toHaveAttribute('inert', '', { timeout: 10_000 });
   });
 
-  test('展開次選單，點連結會走過去而且選單自己收起來', async ({ page }) => {
+  test('「更多」那幾頁也在目錄裡，點連結會走過去而且目錄自己收起來', async ({ page }) => {
     await page.goto('/');
     await openMenu(page);
 
-    // 「更多」底下那幾頁在桌機版是 mega menu，在手機只有這一條路進得去
-    const group = page.locator('.mnav-group').filter({ has: page.getByRole('button', { name: '更多' }) });
-    const subWrap = group.locator('.mnav-sub-wrap');
-    const wrapHeight = async () => (await subWrap.boundingBox())?.height ?? -1;
-
-    expect(await wrapHeight(), '展開之前收合層的高度該是 0').toBe(0);
-    await group.getByRole('button', { name: '更多' }).first().click();
-    await expect.poll(wrapHeight, { message: '按了展開但收合層沒有長出高度', timeout: 10_000 }).toBeGreaterThan(0);
-
-    const photos = group.getByRole('link', { name: '照片' });
-    await photos.click();
+    // 桌機版收在「更多」裡的頁，在手機只有這一條路進得去
+    await menu(page).locator('.snav-menu-more').getByRole('link', { name: '照片' }).click();
     await expect(page).toHaveURL(/\/photos$/, { timeout: 15_000 });
-    // 走過去之後選單要收——不收的話讀者到了新頁面還被選單蓋著
-    await expect(menu(page), '導覽之後選單沒有自己關掉').toHaveAttribute('inert', '', { timeout: 10_000 });
+    // 走過去之後目錄要收——不收的話讀者到了新頁面還被目錄蓋著
+    await expect(menu(page), '導覽之後目錄沒有自己關掉').toHaveAttribute('inert', '', { timeout: 10_000 });
   });
 });

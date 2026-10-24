@@ -1,9 +1,8 @@
 import { queryOptions } from '@tanstack/react-query';
 import type { BookRow, BooksListResponse } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
-import type { BookStats } from '@/components/media/Bookshelf';
 
-// 書櫃資料改由 TanStack Query 管理（取代原本的 loader + 元件內 fetch + setInterval 輪詢）。
+// 收藏頁「書櫃」那一區的資料（TanStack Query）。
 // - loader 用 context.queryClient.prefetchQuery 預取 → SSR 首屏 baked 進 HTML（SEO）。
 //   用 prefetchQuery（非 ensureQueryData）：後端不通時吞掉錯誤、不擋整頁（對齊舊 loadBookshelf
 //   的「任一失敗都不擋頁面」）。
@@ -20,18 +19,6 @@ export const booksQueryOptions = queryOptions({
     if (!res.ok) throw new Error(`GET /api/books ${res.status}`);
     const data = (await res.json()) as BooksListResponse;
     return data.books;
-  },
-  staleTime: STALE,
-  refetchInterval: REFRESH,
-});
-
-export const bookStatsQueryOptions = queryOptions({
-  queryKey: ['books', 'stats'],
-  queryFn: async (): Promise<BookStats | null> => {
-    const res = await fetch(apiUrl('/api/books/stats/summary'));
-    if (!res.ok) throw new Error(`GET /api/books/stats/summary ${res.status}`);
-    const data = (await res.json()) as { message?: string; stats?: BookStats };
-    return data.message === 'success' ? (data.stats ?? null) : null;
   },
   staleTime: STALE,
   refetchInterval: REFRESH,

@@ -1,0 +1,616 @@
+/* 文章頁的外框（2026-10 翻新）：內文的排版（article-shell.css 的 .post-content）不動，換掉的是
+   包在外面的那一圈——頁首靠左、章節號放在左邊留白、摘要是附件、左邊附近文章收成細線、
+   右邊浮動圓鈕收成文末一行字。軌道目錄在 OrbitToc.css。
+   內文欄寬與位置要跟 lib/articleOrbit 的 ARTICLE_COL / articleLeft 一致（軌道照它擺）。 */
+
+.ar-page {
+  --ar-col: 680px;
+  color: var(--paper);
+}
+
+.ar-col {
+  position: relative;
+  z-index: 1;
+  width: min(var(--ar-col), calc(100% - var(--space-8)));
+  margin-left: max(56px, calc(50% - 560px));
+  padding-top: var(--page-top);
+}
+
+/* 字底下墊一層淡夜色：背景的星星不會落在字上。左右往外漸漸透明、看不出邊，
+   兩側留白的星空照舊；上下也收淡，頁首與文末不會切出一條水平線 */
+.ar-col::before {
+  content: "";
+  position: absolute;
+  inset: 0 calc(-1 * var(--space-12));
+  z-index: -1;
+  background: rgba(var(--ground-rgb), 0.85);
+  mask-image:
+    linear-gradient(to right, transparent, #000 var(--space-12), #000 calc(100% - var(--space-12)), transparent),
+    linear-gradient(to bottom, transparent, #000 var(--space-24), #000 calc(100% - var(--space-24)), transparent);
+  mask-composite: intersect;
+  pointer-events: none;
+}
+
+/* 切語系「重新收訊」（blog/useRetune）：掃描線以上是新語系的字，以下先藏著。
+   --scan 是線在這一欄裡的位置（JS 逐幀寫） */
+/* 不是從手記換過來的：目錄的點當筆尖往下畫軌道，內文跟著筆尖往下顯現（blog/OrbitToc），同一個遮罩 */
+.ar-col.is-retuning,
+.ar-col.is-drawing {
+  mask-image: linear-gradient(to bottom, #000 calc(var(--scan, 0px) - 2px), transparent calc(var(--scan, 0px) + 24px));
+}
+
+.ar-retune-line {
+  position: fixed;
+  top: 0;
+  z-index: var(--z-float);
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--paper-2) 12%, var(--paper-2) 88%, transparent);
+  box-shadow: 0 0 10px rgba(var(--paper-rgb), 0.35);
+  pointer-events: none;
+}
+
+:where(.ar-page) :where(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-tags button, .ar-side a, .ar-same a) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.ar-page :is(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-tags button, .ar-side a, .ar-same a):focus-visible {
+  outline: 1px solid var(--paper-2);
+  outline-offset: 3px;
+}
+
+.ar-label {
+  margin: 0 0 var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  text-transform: uppercase;
+  color: var(--paper-3);
+}
+
+/* ── 頁首：靠左，跟內文同一條邊 ── */
+.ar-head {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-12);
+}
+
+.ar-kick {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.ar-kick a {
+  transition: color var(--dur-200) ease;
+}
+
+.ar-kick a:hover {
+  color: var(--paper);
+}
+
+.ar-head h1 {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-36);
+  font-weight: 600;
+  line-height: var(--lh-130);
+  text-wrap: balance;
+}
+
+.ar-sub {
+  margin: 0;
+  font-size: var(--fs-18);
+  line-height: var(--lh-150);
+  color: var(--paper-2);
+}
+
+.ar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  align-items: baseline;
+  margin-top: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+.ar-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  font-size: var(--fs-12);
+  color: var(--paper-3);
+}
+
+.ar-tags button {
+  transition: color var(--dur-200) ease;
+}
+
+.ar-tags button:hover {
+  color: var(--paper);
+}
+
+/* 展開著的那個標籤 */
+.ar-tags button[aria-expanded="true"] {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--amber);
+  text-underline-offset: 4px;
+}
+
+/* 同標籤的文章：標籤底下就地展開（跟文末「同在某專欄」同一個樣式） */
+.ar-tag-shelf {
+  margin-top: var(--space-4);
+  animation: ar-shelf var(--dur-400) var(--easing-out);
+}
+
+@keyframes ar-shelf {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--space-1)));
+  }
+}
+
+.ar-tag-none {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-3);
+}
+
+.ar-notice {
+  margin: 0 0 var(--space-6);
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.ar-notice a {
+  margin-left: var(--space-2);
+  color: var(--paper);
+}
+
+/* ── 摘要：編號 00、四個角框起來、字小一號——它是附件，不是內文 ── */
+/* 角的長度可以過渡：捲進畫面時四個角從 0 長到 12px（blog/ArticleSummary） */
+@property --cl {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+.ar-sum {
+  --cl: 0px;
+  position: relative;
+  margin: 0 0 var(--space-12);
+  padding: var(--space-5) var(--space-6);
+  /* 四個角：八段短線 */
+  background:
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / var(--cl) 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px var(--cl) no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / var(--cl) 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px var(--cl) no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / var(--cl) 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px var(--cl) no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / var(--cl) 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px var(--cl) no-repeat;
+  transition: --cl var(--dur-700) ease;
+}
+
+.ar-sum.is-on {
+  --cl: 12px;
+}
+
+/* 一字一字浮現：剛出來時亮一點，再退回摘要的顏色 */
+.ar-sum .c {
+  opacity: 0;
+  color: var(--paper);
+  transition:
+    opacity var(--dur-500) ease,
+    color var(--dur-1000) ease;
+}
+
+.ar-sum .c.in,
+.ar-sum.is-plain .c {
+  opacity: 1;
+  color: inherit;
+}
+
+.ar-sum.is-plain .c {
+  transition: none;
+}
+
+/* 「AI 生成」等字都出來了才標上 */
+.ar-sum-ai {
+  opacity: 0;
+  transition: opacity var(--dur-500) ease;
+}
+
+.ar-sum.is-done .ar-sum-ai {
+  opacity: 1;
+}
+
+/* 關鍵句：連到它所在的章節。字出完才從左往右畫出底線；滑過時變亮，右邊目錄那一章跟著亮 */
+.ar-sum .ar-link {
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(var(--paper-3), var(--paper-3)) 0 100% / 0 1px no-repeat;
+  transition:
+    background-size var(--dur-700) var(--easing-out),
+    color var(--dur-200) ease;
+}
+
+.ar-sum.is-done .ar-link {
+  background-size: 100% 1px;
+}
+
+.ar-sum .ar-link:hover,
+.ar-sum .ar-link:focus-visible {
+  color: var(--paper);
+  background-image: linear-gradient(var(--paper), var(--paper));
+}
+
+.ar-gut {
+  position: absolute;
+  top: var(--space-5);
+  left: -56px;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+.ar-sum-hd {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.ar-sum p {
+  margin: 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-185);
+  color: var(--paper-2);
+}
+
+/* ── 內文：紫色收回暖白，章節號放在左邊留白 ── */
+.ar-page .post-content {
+  counter-reset: ch;
+  color: rgba(var(--paper-rgb), 0.9);
+}
+
+.ar-page .post-content h2 {
+  position: relative;
+  counter-increment: ch;
+  padding-bottom: 0;
+  border-bottom: 0;
+  color: var(--paper);
+}
+
+.ar-page .post-content h2::before {
+  content: counter(ch, decimal-leading-zero);
+  position: absolute;
+  top: 0.55em;
+  left: -56px;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-weight: 400;
+  color: var(--paper-3);
+}
+
+.ar-page .post-content :is(h3, h4) {
+  color: var(--paper);
+}
+
+.ar-page .post-content a {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--paper-3);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--dur-200) ease;
+}
+
+.ar-page .post-content a:hover {
+  color: var(--paper);
+  text-decoration-color: var(--amber);
+}
+
+/* 首字放大：紫色收回暖白 */
+.ar-page .post-content.drop-cap-first > p:first-of-type::first-letter {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--paper);
+  text-shadow: none;
+}
+
+/* 換頁的「收」：字退掉，只剩軌道在動（OrbitToc 的 leave 掛上） */
+.ar-col,
+.ar-side {
+  transition: opacity var(--dur-300) ease;
+}
+
+.ar-page.is-leaving :is(.ar-col, .ar-side) {
+  opacity: 0;
+}
+
+/* 文章換文章（不走全站轉場，見 BlogPost）：新的那篇還在路上時舊的先退到一半，
+   到了之後整欄重掛、淡入並往上浮一點；左欄不動，清單自己滑 */
+.ar-page.is-fetching .ar-col {
+  opacity: 0.35;
+}
+
+.ar-page.is-swapped .ar-col {
+  animation: ar-swap 600ms var(--easing-out) both;
+}
+
+@keyframes ar-swap {
+  from {
+    opacity: 0;
+    translate: 0 var(--space-4);
+  }
+
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* 從手記推近過來：點落在軌道頂端之後，內文從軌道那一側（右邊）往左攤開 */
+html:is([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold :is(.ar-col, .ar-side) {
+  clip-path: inset(0 0 0 100%);
+}
+
+html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
+  animation: ar-unfold 900ms var(--easing-out) both;
+}
+
+@keyframes ar-unfold {
+  from {
+    clip-path: inset(0 0 0 100%);
+    translate: var(--space-6) 0;
+  }
+
+  to {
+    clip-path: inset(0 0 0 0);
+    translate: 0 0;
+  }
+}
+
+/* ── 左欄：附近的文章，平常是一排細線（長短照文章長度），滑過才展開成標題 ── */
+.ar-side {
+  position: fixed;
+  top: 50%;
+  left: var(--space-4);
+  z-index: 2;
+  translate: 0 -50%;
+}
+
+.ar-side ol {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ar-side-a {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  height: 14px;
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+  transition: color var(--dur-200) ease;
+}
+
+.ar-side-a i {
+  flex: none;
+  width: var(--len);
+  height: 1px;
+  background: var(--paper-3);
+  transition: background var(--dur-200) ease;
+}
+
+.ar-side-a span {
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 8px var(--ground);
+  opacity: 0;
+  transition:
+    max-width var(--dur-300) var(--easing-out),
+    opacity var(--dur-200) ease;
+}
+
+.ar-side:is(:hover, :focus-within) .ar-side-a span {
+  max-width: 260px;
+  opacity: 1;
+}
+
+/* 展開的時候後面墊一層紙色，往右漸漸透明：標題浮在內文上面也讀得清楚，不會跟內文的字疊在一起 */
+.ar-side::before {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--space-6)) calc(-1 * var(--space-24)) calc(-1 * var(--space-6)) calc(-1 * var(--space-4));
+  z-index: -1;
+  background: linear-gradient(90deg, var(--ground) 70%, rgba(var(--ground-rgb), 0));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-300) ease;
+}
+
+.ar-side:is(:hover, :focus-within)::before {
+  opacity: 1;
+}
+
+.ar-side-a:hover {
+  color: var(--paper);
+}
+
+.ar-side .is-on i {
+  background: var(--amber);
+}
+
+.ar-side .is-on .ar-side-a {
+  color: var(--paper);
+}
+
+.ar-side-cat {
+  display: grid;
+  gap: var(--space-px);
+  margin: var(--space-5) 0 0;
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+  opacity: 0;
+  transition: opacity var(--dur-200) ease;
+}
+
+.ar-side-cat span {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+.ar-side:is(:hover, :focus-within) .ar-side-cat {
+  opacity: 1;
+}
+
+/* ── 文末 ── */
+.ar-end {
+  display: grid;
+  gap: var(--space-12);
+  margin-top: var(--space-12);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--rule);
+}
+
+.ar-act {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.ar-act > * {
+  transition: color var(--dur-200) ease;
+}
+
+.ar-act > *:hover {
+  color: var(--paper);
+}
+
+.ar-act .is-on {
+  color: var(--amber);
+}
+
+.ar-act em {
+  margin-left: var(--space-1);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-style: normal;
+}
+
+.ar-same ul {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ar-same li {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: baseline;
+}
+
+.ar-same time {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+}
+
+.ar-same a {
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+  transition: color var(--dur-200) ease;
+}
+
+.ar-same a:hover {
+  color: var(--paper);
+}
+
+/* 上一篇／下一篇：兩欄字，不是卡片 */
+.ar-page .prev-next-nav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-6);
+  margin: 0;
+}
+
+.ar-page .prev-next-card {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--paper-2);
+  text-decoration: none;
+  transition: color var(--dur-200) ease;
+}
+
+.ar-page .prev-next-card:hover {
+  color: var(--paper);
+  background: none;
+  transform: none;
+}
+
+.ar-page .prev-next-next {
+  text-align: right;
+}
+
+.ar-page .prev-next-label {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.ar-page .prev-next-title {
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: inherit;
+}
+
+/* 窄螢幕：沒有軌道、沒有左欄，章節號收掉（左邊沒有留白放它） */
+@media (max-width: 1099px) {
+  .ar-col {
+    margin: 0 auto;
+  }
+
+  .ar-side {
+    display: none;
+  }
+
+  .ar-gut,
+  .ar-page .post-content h2::before {
+    display: none;
+  }
+
+  .ar-head h1 {
+    font-size: var(--fs-28);
+  }
+}
+
+@media (max-width: 1279px) {
+  .ar-side {
+    display: none;
+  }
+}

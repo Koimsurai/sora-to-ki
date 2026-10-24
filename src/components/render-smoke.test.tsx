@@ -27,9 +27,34 @@ import { renderWithProviders } from '@/test-utils/renderWithProviders';
  * props 給最小可渲染的一組就好，這支測的是「掛得起來」，不是行為。
  */
 const PROPS: Record<string, Record<string, unknown>> = {
-  'blog/ThoughtCard.tsx': {
+  'blog/OrbitToc.tsx': { postId: 1, headings: [], contentRef: { current: null } },
+  'layout/NavMenus.tsx': {
+    open: 'about',
+    was: null,
+    dir: 1,
+    armed: false,
+    more: null,
+    label: (it: { key: string }) => it.key,
+  },
+  'blog/ArticleSummary.tsx': {
+    excerpt: '先架起來，正確率只有 38%。',
+    links: [{ text: '正確率只有 38%', to: '01' }],
+    headings: [{ id: 'one', text: '一', level: 2 }],
+    pingRef: { current: null },
+  },
+  'blog/MomentPost.tsx': {
     th: { id: 1, content: '測試碎念', created_at: '2026-01-01 00:00:00', likes: 0, dislikes: 0 },
   },
+  'blog/ArticleComments.tsx': { postId: 1 },
+  'blog/CommentForm.tsx': {
+    base: 'posts',
+    postId: 1,
+    replyTo: null,
+    onCancelReply: vi.fn(),
+    textRef: { current: null },
+  },
+  'blog/SignalLog.tsx': { comments: [], liked: [], onLike: vi.fn(), onReply: vi.fn() },
+  'blog/ReactionSky.tsx': { counts: { '❤️': 2 }, mine: new Set<string>(), toggle: vi.fn() },
   'gallery/GalleryThumbnail.tsx': {
     photos: [],
     activeIndex: 0,

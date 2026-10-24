@@ -448,15 +448,15 @@
 }
 
 @layer utilities {
-  /* 全站文字選取（取代瀏覽器原生）— 柔和薰衣草，呼應整站色 */
+  /* 全站文字選取（取代瀏覽器原生）：一層淡淡的暖白，像用墨在紙上劃過；字本身維持暖白 */
   ::selection {
-    background: rgba(var(--purple-300-rgb), 0.3);
-    color: #fff;
+    background: rgba(var(--paper-rgb), 0.22);
+    color: var(--paper);
     text-shadow: none;
   }
   ::-moz-selection {
-    background: rgba(var(--purple-300-rgb), 0.3);
-    color: #fff;
+    background: rgba(var(--paper-rgb), 0.22);
+    color: var(--paper);
     text-shadow: none;
   }
 }
@@ -512,10 +512,6 @@
        值不是折衷出來的，是 `.nf-page` 本來就在用的那組（它的註解寫著「上方留 fixed
        header 的位置」）：桌機 96px（頂欄 60 + 淨空 36）、窄視窗 80px（+20，≤480px
        時頂欄 56 所以是 +24）。
-
-       ⚠️ 下緣刻意**縮小**而不是取中間值：`.app-footer` 自己有 `padding-top: 8rem`
-       的 fade zone（128px），所以原本 `.tk-page` / `.w-page` / `.wl-page` 的
-       `padding-bottom: 120px` 疊上去是 **248px 的空白**。改成 64px 之後總和 192px。
 
        斷點只有一個（768px）。各頁自己的 media query 保留，但只管**左右**留白——
        上下交給這兩個 token，不要再在頁面層覆寫。 */
@@ -666,7 +662,6 @@
     --clr-paragraph-rgb: 148, 161, 178;
     --clr-button: var(--brand);
     --clr-button-text: var(--clr-headline);
-    --clr-tertiary: #2cb67d;
     --clr-tertiary-rgb: 44, 182, 125;
 
     /* 深空玻璃質感的共用 token。元件 CSS 用這裡的名字，不要各自複製一份。
@@ -683,10 +678,11 @@
     /* 文章版面（文章頁、InfoPage 系列、LinkCard）的語意色。原本寫在 BlogPost.css 的 :root，
        可是 article-shell.css 與 LinkCard.css 也在用——/history、/about-site 這些頁面不載入
        BlogPost.css，以前是靠每頁 idle 預載文章頁 chunk 才「事後」拿到，拆掉預載就變成未定義。 */
-    --post-accent: var(--brand);
-    --post-accent-glow: rgba(var(--brand-rgb), 0.35);
-    --post-green: var(--clr-tertiary);
-    --post-muted: var(--white-45);
+    /* 2026-10 翻新：紫與綠全部收回暖白，琥珀只留給「你在哪裡」那一點（後台不用這一組） */
+    --post-accent: var(--paper);
+    --post-accent-glow: rgba(var(--paper-rgb), 0.2);
+    --post-green: var(--paper);
+    --post-muted: var(--paper-3);
     --post-card-bg: var(--white-02);
     --post-card-border: var(--white-06);
     --post-page-bg: var(--surface-0);
@@ -799,14 +795,10 @@
       border-color var(--dur-250),
       box-shadow var(--dur-250);
   }
-  button:hover,
-  button:focus {
-    background-color: #6a4acf;
-    border-color: #6a4acf;
-    box-shadow: 0 0 12px 2px var(--clr-button);
-  }
+  /* 翻新前這裡有一條 button:hover / :focus 換成紫底加光暈的規則，各元件得一個個寫例外去壓它；
+     拿掉了。滑過的回饋由各元件自己給，這裡只留鍵盤聚焦的框 */
   button:focus-visible {
-    outline: 2px solid var(--clr-button);
+    outline: 1px solid var(--paper-3);
     outline-offset: 2px;
   }
   button:focus:not(:focus-visible) {
@@ -826,7 +818,38 @@
 
      ⚠️ `var(--cjk-font)` 放在 `monospace` 之前是刻意的：那是 sans-serif 鏈，
      讓程式碼裡的中文走比例字體——CJK 等寬字很少而且不好看。 */
-  --mono-font: "Fira Code", "JetBrains Mono", "SF Mono", ui-monospace, Consolas, var(--cjk-font), monospace;
+  --mono-font:
+    "Fira Code Variable", "Fira Code", "JetBrains Mono", "SF Mono", ui-monospace, Consolas, var(--cjk-font), monospace;
+
+  /* ── 翻新的材料（2026-10 提案）────────────────────────────────────────
+     只有三樣：黑是紙、白是墨、琥珀是訊號。琥珀只出現在「一個點」上（你在哪裡、正在發生的事），
+     不拿來當大面積的強調色。墨的深淺用透明度分三階，落在下面那把 19 階的透明度梯子上。 */
+  --ground: #0a0a0c;
+  --ground-rgb: 10, 10, 12;
+  --paper: #f1ece3;
+  --paper-rgb: 241, 236, 227;
+  --paper-2: rgba(var(--paper-rgb), 0.7);
+  --paper-3: rgba(var(--paper-rgb), 0.4);
+  --rule: rgba(var(--paper-rgb), 0.15);
+  --amber: #e9c17a;
+  --amber-rgb: 233, 193, 122;
+  /* 四角框：只有四個角的短線，沒有底色、外框、圓角。文章摘要用的就是這個框，
+     文章裡的互動區塊（投票、數字、圖表、分頁、站內文章卡…）跟著用：`background: var(--corner-frame)` */
+  --corner-frame:
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px 10px no-repeat;
+
+  /* 字：中文與中英混排一律思源宋體；Instrument Serif 只給「整段都是英文的大字」（名字、Notes），
+     它只有一個字重，不要加粗。思源宋體是按頁裁字（layout/SerifFontLoader）：堆疊第一個
+     "Koim Serif" 是裁出來的字，本機裝了 "Noto Serif TC" 的訪客不會下載任何東西 */
+  --serif: "Koim Serif", "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC", "PMingLiU", serif;
+  --latin-display: "Instrument Serif", var(--serif);
 
   --cjk-font:
     "MiSans", "Source Han Sans TC", "Noto Sans TC", "PingFang TC", "Hiragino Sans TC", "Microsoft JhengHei", sans-serif;
@@ -857,7 +880,7 @@
  * 正確字體。字體棧因此必須是 CSS 認得的東西 → 放這裡，同時也讓 TSX 那邊不必再存一份。
  *
  * ⚠️ 新增字體時要三處一起：這裡的 --blog-font-<id>、下面的 html[data-blog-font="<id>"]、
- * 以及 BlogPost 的 FONT_OPTIONS（只放 id + 顯示名）。__root.tsx 的 script 不必動——它只
+ * 以及 blog/ArticleControls 的 FONT_OPTIONS（只放 id + 顯示名）。__root.tsx 的 script 不必動——它只
  * 驗證 id 格式後原樣寫進 attribute，不認識任何字體。 */
 :root {
   --blog-font-misans: MiSans, system-ui, -apple-system, sans-serif;
@@ -918,10 +941,10 @@ body,
  * 那個空檔就是使用者回報的「3D 背景恢復時整頁白閃一下」。
  *
  * 給 `html` 一個底色之後，同樣的空檔露出來的是深色，看不出來。
- * 這不改變任何正常狀態下的外觀——`.App` 照樣蓋在上面，顏色也刻意取一樣的值。
+ * 這不改變任何正常狀態下的外觀：`.App` 照樣蓋在上面，顏色也刻意取一樣的值（都是 --ground）。
  */
 html {
-  background-color: var(--surface-0);
+  background-color: var(--ground);
 }
 
 *,
@@ -986,48 +1009,6 @@ html {
     text-decoration: none;
     transition: color var(--dur-200) ease-in-out;
   }
-
-  a:hover,
-  a:focus {
-    color: var(--clr-tertiary);
-    text-shadow: 0 0 8px var(--clr-tertiary);
-  }
-}
-
-/* Prevent scrollbars during intro animation */
-body.intro-animation-active {
-  overflow: hidden;
-}
-
-/* 首訪桌面首頁:intro 是 client-only(SSR 不知道會不會播),內容卻已 SSR → 會「先閃首頁再跑 intro」。
-   __root 的 pre-paint inline script 符合條件時加 html.intro-pending → 先藏內容;
-   SpaceBackdropShell 在 intro pre-reveal 時移除(內容在 bloom 下淡入)。inline script 內另有安全 timeout 兜底。
-
-   ⚠ 是 0.001 不是 0:opacity 剛好 0 的圖層瀏覽器整層不光柵化,等 pre-reveal 拿掉 class 那一刻才一次
-   光柵化整頁,實測在開場進行中卡 270–440ms(正好在閃光前)。0.001 肉眼看不到(255 × 0.001 量化後是 0),
-   但內容會在開場掛上之前的首次繪製就畫好。will-change: opacity 沒有這個效果,試過。 */
-.main-content-container {
-  transition: opacity var(--dur-500) ease;
-}
-html.intro-pending .main-content-container {
-  opacity: 0.001;
-}
-
-/* 等開場就緒的那段（3D 要先把管線全部編譯完，首訪約半秒）直接顯示開場的底色，不要先露出底下的
-   CSS 星空、再被開場蓋過去。開場 canvas 的第一幀畫的就是同一個漸層（lib/hyperspace.ts 的底色），
-   它疊在這層上面（--z-intro + 1），接手時看不出交接；內容解開時這層跟著淡掉。
-   元素在 AppShell，SSR 就輸出，配上 pre-paint script 加的 class，首次繪製就是這個畫面。 */
-.intro-veil {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-intro);
-  pointer-events: none;
-  background: radial-gradient(ellipse at center, #050620 0%, #000 70%);
-  opacity: 0;
-  transition: opacity var(--dur-300) ease-out;
-}
-html.intro-pending .intro-veil {
-  opacity: 1;
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1063,86 +1044,6 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 180px 180px;
   opacity: 0.04;
-}
-
-.home-section {
-  position: relative;
-  width: 100%;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: var(--space-24) var(--space-8);
-  color: var(--white-80);
-}
-
-.home-section-eyebrow {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  margin-bottom: var(--space-10);
-}
-
-/* eyebrow 前的紫色 accent 短線 — 增加 wayfinding 與精緻度 */
-.home-section-eyebrow::before {
-  content: "";
-  width: 18px;
-  height: 1px;
-  align-self: center;
-  flex-shrink: 0;
-  background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.9), rgba(var(--purple-300-rgb), 0.25));
-  box-shadow: 0 0 8px rgba(var(--brand-rgb), 0.5);
-}
-
-/* ⚠ 全站只有這一份。Activity.css 原本也有一條裸的 `.section-label`，兩份的值不同，
-   哪份生效取決於那頁有沒有剛好載入 Activity 的 CSS、以及載入順序：/ 與 /about 一直吃的是
-   Activity 那份（這裡的值是死的），/portfolio 吃這份。TanStack Start 1.169 改了 CSS 的排入
-   順序後，Activity 那份還跑到 /about 的 .work-group-label 之後把它蓋掉。
-   現在的值是原本 / 與 /about 實際呈現的那組；各頁的微調寫在自己的 CSS（同特異性、
-   index.css 永遠最先載入，所以一定蓋得過）。margin-top 歸零是給 Activity 的 <h2> 用的。 */
-.section-label {
-  display: block;
-  margin-top: 0;
-  margin-bottom: var(--space-4);
-  font-size: var(--fs-11);
-  letter-spacing: var(--ls-24);
-  color: var(--white-30);
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.section-eyebrow-count {
-  font-size: var(--fs-12);
-  color: var(--white-40);
-}
-
-.section-hero-title {
-  font-size: clamp(1.85rem, 3.4vw, 2.8rem);
-  font-weight: 700;
-  line-height: var(--lh-120);
-  margin: 0 0 var(--space-6);
-  background: linear-gradient(135deg, #fff 0%, var(--lavender) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.glass-card {
-  background: var(--white-02);
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-20);
-  backdrop-filter: blur(var(--blur-8));
-  /* 玻璃寫實感：頂緣一條受光高光 + 下方柔和落影（拉出與星空背景的層次） */
-  box-shadow:
-    inset 0 1px 0 var(--white-06),
-    0 18px 50px -22px var(--black-60);
-}
-
-@media (max-width: 640px) {
-  .home-section {
-    padding: var(--space-16) var(--space-5);
-  }
-  .home-section-eyebrow {
-    margin-bottom: var(--space-7);
-  }
 }
 
 /* 使用者在系統設定要求「減少動態」時把全站動畫壓到近乎靜止。
@@ -1221,31 +1122,28 @@ body::after {
 ─────────────────────────────────────────────────────────────── */
 :lang(zh-CN) {
   --cjk-font: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "MiSans", sans-serif;
+  /* 按頁裁的思源宋體各語系一套（layout/SerifFontLoader）：這裡放簡中那套，本機有裝就用本機的 */
+  --serif: "Koim Serif SC", "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
 }
 
 :lang(ja) {
   --cjk-font:
     "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "Source Han Sans JP", "Noto Sans JP",
     sans-serif;
+  --serif:
+    "Koim Serif JP", "Noto Serif JP", "Noto Serif CJK JP", "Source Han Serif JP", "Hiragino Mincho ProN", "Yu Mincho",
+    serif;
 }
 
 :lang(ko) {
   --cjk-font: "Apple SD Gothic Neo", "Malgun Gothic", "Source Han Sans KR", "Noto Sans KR", sans-serif;
+  --serif:
+    "Koim Serif KR", "Noto Serif KR", "Noto Serif CJK KR", "Source Han Serif KR", "AppleMyungjo", "Batang", serif;
 }
 
 :lang(en) {
   /* 英文不需 CJK：把鏈設空，Latin 全走 TASA，沒 CJK 字符所以不影響 */
   --cjk-font: inherit;
-}
-
-/* ──────────────────────────────────────────────────────────────
-   Brand / display wordmark — TASA Explorer（geometric、鋒利）
-   給「Koimsurai」logo、英文 hero 大標、希望「電影感」的標題用
-─────────────────────────────────────────────────────────────── */
-.brand-wordmark,
-.tasa-display {
-  font-family: "TASA Explorer Variable", "TASA Orbiter Variable", var(--cjk-font), sans-serif;
-  letter-spacing: var(--ls-1);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1279,18 +1177,6 @@ html.no-gpu [class*="aurora"],
 html.no-gpu [class*="nebula"] {
   filter: none !important;
 }
-/* 玻璃卡片沒了模糊會變太透 → 補一點不透明度，維持可讀性 */
-html.no-gpu .post-content-wrapper::before {
-  background: rgba(var(--surface-1-rgb), 0.9);
-}
-@media (prefers-reduced-motion: no-preference) {
-  html.no-gpu .comet,
-  html.no-gpu [class*="comet"],
-  html.no-gpu [class*="shooting-star"] {
-    display: none !important;
-  }
-}
-
 /* ═══════════════════════════════════════════════════════════════════
    .fs-active —— 有元素進入全螢幕時掛在 <html> 上（SpaceBackdropShell 監聽 fullscreenchange）。
 
@@ -1310,14 +1196,7 @@ html.no-gpu .post-content-wrapper::before {
       一般閱讀完全不受影響。
    ═══════════════════════════════════════════════════════════════════ */
 html.fs-active .css-starfield,
-html.fs-active .nebula-bg,
-html.fs-active .nebula-dust,
-html.fs-active .nebula-dim-overlay,
-html.fs-active .foreground-stars-container,
-html.fs-active .comet,
-html.fs-active .shooting-star,
-html.fs-active .ufo,
-html.fs-active .cursor-trail-canvas {
+html.fs-active .comet {
   display: none !important;
 }
 
@@ -1338,4 +1217,91 @@ html.fs-active .cursor-trail-canvas {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   開場：一切從一個點開始（layout/TransitionLayer 的 enter、__root.tsx 的 #boot）
+   一進站，畫面只有夜色與正中一顆琥珀點在呼吸，外圈一道細線照載入進度畫一圈（--boot-p，head 裡那段
+   同步 script 照載入的階段推）。載好了這顆點就是換頁轉場的那顆：飛向這一頁的錨點、由這一頁接手長出來。
+   html[data-boot] 是 head 的 script 一開始就掛上的（還沒 paint），所以頁面不會先閃出來
+─────────────────────────────────────────────────────────────── */
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-intro);
+  display: none;
+  background: var(--ground);
+  pointer-events: none;
+}
+
+html[data-boot] #boot {
+  display: block;
+}
+
+/* 交棒：黑幕淡掉、這顆點交給轉場畫布（畫布暫時升到黑幕之上，點才不會被壓暗） */
+html[data-boot="out"] #boot {
+  opacity: 0;
+  transition: opacity var(--dur-500) ease;
+}
+
+html[data-boot] .pt-canvas {
+  z-index: calc(var(--z-intro) + 1);
+}
+
+.boot-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  translate: -50% -50%;
+  border-radius: var(--r-full);
+  background: var(--amber);
+  box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
+  animation: boot-breathe 1.6s ease-in-out infinite;
+}
+
+.boot-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  translate: -50% -50%;
+  overflow: visible;
+  rotate: -90deg;
+}
+
+.boot-ring circle {
+  fill: none;
+  stroke: var(--paper-3);
+  stroke-width: 1;
+  /* 周長 2π·21 ≈ 132 */
+  stroke-dasharray: 132;
+  stroke-dashoffset: calc(132 * (1 - var(--boot-p, 0)));
+  transition: stroke-dashoffset var(--dur-400) var(--easing-out);
+}
+
+/* 夜色裡這顆點晚一點才藏：轉場的畫布要一兩幀才畫出它的那顆，兩顆疊著交棒、中間不會空一下 */
+html[data-boot="out"] .boot-dot {
+  visibility: hidden;
+  transition: visibility 0s linear var(--dur-100);
+}
+
+html[data-boot="out"] .boot-ring {
+  opacity: 0;
+  transition: opacity var(--dur-250) ease;
+}
+
+@keyframes boot-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

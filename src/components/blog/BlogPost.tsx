@@ -5,15 +5,14 @@ import { LocaleLink } from '@/i18n/locale-link';
 import { useLocale } from '@/hooks/useLocale';
 import {
   postDetailQueryOptions,
-  blogCategoriesDetailQueryOptions,
   recentPostsQueryOptions,
+  postsByTagQueryOptions,
   postReactionsQueryOptions,
   seriesQueryOptions,
-  type CategoryInfo,
 } from '@/data/blogList';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
-import type { PostDetailResponse, PostListItem, ReactionRow } from '@koimsurai/api-types';
+import type { ExcerptLink, PostDetailResponse, PostListItem, ReactionRow } from '@koimsurai/api-types';
 import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from '@/components/common/KoimLoader';
@@ -27,29 +26,19 @@ import { CodeBody } from '@/components/mdx/CodeSurface';
 // 沒有圖的文章連 import 都不會觸發。
 import { MermaidBlock, MermaidStatic } from './MermaidBlock';
 import { MermaidSvgContext } from '@/contexts/mermaidSvgs';
-import ReactDOM from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
-import {
-  FaRegHeart,
-  FaHeart,
-  FaLink,
-  FaRegComment,
-  FaArrowUp,
-  FaEnvelope,
-  FaShareAlt,
-  FaRss,
-  FaTimes,
-  FaTwitter,
-  FaFacebook,
-} from 'react-icons/fa';
-import Comments from './Comments';
+import { FaEnvelope, FaTimes } from 'react-icons/fa';
+import ArticleComments from './ArticleComments';
+import { FontLine, LangLine } from './ArticleControls';
+import ReactionSky from './ReactionSky';
 import { BlogImage } from '@/components/blog/BlogImage';
 // BlogPost.css：Tier-2 後本元件直接 SSR（不再靠 BlogPostPage fallback）→ CSS 由這裡匯入。
 // 本元件是路由 eager import（進 /blog/$id 路由 chunk），故 CSS 進「文章路由 chunk」而非全域
 // index.css（首頁等非文章頁不會白背這 2600+ 行）。
 import '@/components/common/article-shell.css';
 import './BlogPost.css';
+import './ArticleFrame.css';
 import SignatureSVG from '@/components/common/SignatureSVG';
 import { LinkCard } from '@/components/common/LinkCard';
 import { LinkHoverPreview } from '@/components/common/LinkHoverPreview';
@@ -58,8 +47,12 @@ import { MdxContent } from '@/components/mdx/MdxContent';
 // 確保 heading anchor id / TOC / 閱讀時間兩邊逐字一致。
 import { slugify, extractHeadings, computeReadTime } from '@/lib/mdx/blogContent';
 // 標題拆解、閱讀進度、scroll-spy 的挑選邏輯——純函式，抽出去才測得到（見該檔說明）。
-import { pickActiveHeading, readingProgressPct, splitTitle } from '@/lib/blogReading';
-import { useCategoryLabel, useTagLabel, useLocalizedCategoryInfo } from '@/lib/categoryLabel';
+import { splitTitle } from '@/lib/blogReading';
+import { dotDate, parseServerDate } from '@/lib/serverDate';
+import ArticleSummary from './ArticleSummary';
+import OrbitToc from './OrbitToc';
+import { peekRetune, setRetune, useRetune } from './useRetune';
+import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath, postShareUrl } from '@/lib/postPath';
 import { lookup } from '@/lib/tableLookup';
 
@@ -132,17 +125,13 @@ const nodeText = (node: React.ReactNode): string => {
   return '';
 };
 
-/* ── Font Options ── */
-/* 閱讀字體選項。字體棧本身在 index.css（--blog-font-<id>），這裡只留 id 與顯示名——
+/* ── 閱讀字體 ── */
+/* 選項（id 與顯示名）在 blog/ArticleControls 的 FONT_OPTIONS（不 export，只有字體那一行在用）；字體棧本身在 index.css（--blog-font-<id>）——
    偏好必須在 paint 之前套用（見 __root.tsx 的 pre-paint script），而那段只能碰 CSS。
-   新增字體：這裡加一列 + index.css 加兩行（--blog-font-<id> 與 html[data-blog-font=...]）。 */
+   新增字體：FONT_OPTIONS 加一列 + index.css 加兩行（--blog-font-<id> 與 html[data-blog-font=...]）。 */
 const DEFAULT_BLOG_FONT = 'noto-serif';
-const FONT_OPTIONS = [
-  { id: 'misans', name: 'MiSans' },
-  { id: 'lxgw', name: '霞鶩文楷' },
-  { id: 'noto-serif', name: 'Noto Serif' },
-  { id: 'source-han', name: '思源黑體' },
-];
+/** 舊版後端沒有 excerpt_links 欄位時給的空陣列（固定一份，摘要才不會每次重切） */
+const NO_LINKS: readonly ExcerptLink[] = [];
 
 /* ══════════════════════════
    CodeBlock
@@ -434,99 +423,16 @@ export const CustomParagraph = ({
 };
 
 /* ══════════════════════════
-   CategoryTooltipTrigger — hover 顯示分類 tooltip (Portal 到 body)
+   回應（文末的星座，blog/ReactionSky）的資料
    ══════════════════════════ */
-const CategoryTooltipTrigger = ({
-  postCategory,
-  categoryInfo,
-  showTooltip,
-  onEnter,
-  onLeave,
-  linkClassName,
-  compact = false,
-}: {
-  postCategory: string;
-  categoryInfo: CategoryInfo | null;
-  showTooltip: boolean;
-  onEnter: () => void;
-  onLeave: () => void;
-  linkClassName?: string;
-  compact?: boolean;
-}) => {
-  const categoryLabel = useCategoryLabel();
-  // tooltip 的簡述/描述也依語系取譯文（沒填就退回原文）
-  const { t, i18n } = useTranslation();
-  const localizeCategory = useLocalizedCategoryInfo();
-  const info = localizeCategory(categoryInfo);
-  const triggerRef = useRef<HTMLSpanElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (showTooltip && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPos({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.left + window.scrollX,
-      });
-    }
-  }, [showTooltip]);
-
-  return (
-    <span ref={triggerRef} onMouseEnter={onEnter} onMouseLeave={onLeave} style={{ display: 'inline-block' }}>
-      <LocaleLink
-        to={'/blog?category=' + encodeURIComponent(postCategory)}
-        className={linkClassName ?? 'text-sm text-white hover:text-purple-400 transition-colors font-semibold'}
-      >
-        {categoryLabel(postCategory)}
-      </LocaleLink>
-      {showTooltip &&
-        info &&
-        ReactDOM.createPortal(
-          <div
-            className={compact ? 'category-tooltip category-tooltip-compact' : 'category-tooltip'}
-            style={{ position: 'absolute', top: pos.top, left: pos.left }}
-            onMouseEnter={onEnter}
-            onMouseLeave={onLeave}
-          >
-            {info.short_description && <p className="category-tooltip-short">{info.short_description}</p>}
-            {!compact && info.description && <p className="category-tooltip-desc">{info.description}</p>}
-            {!compact && (
-              <div className="category-tooltip-meta">
-                <span>{t('blog.postCount', { count: info.post_count })}</span>
-                {info.updated_at && (
-                  <span>
-                    {t('blog.lastUpdated')}{' '}
-                    {new Date(info.updated_at).toLocaleDateString(i18n.resolvedLanguage ?? i18n.language)}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>,
-          document.body,
-        )}
-    </span>
-  );
-};
-
-/* ══════════════════════════
-   ReactionBar — Emoji 反應列
-   ══════════════════════════ */
-const REACTIONS = ['👍', '❤️', '🎉', '🚀', '🤔', '😂'];
-/** 文章頁 meta 與浮動按鈕上那顆愛心 = 反應列裡的這一個，不是舊的 `posts.likes`。 */
-const HEART = '❤️';
 
 /**
- * 反應狀態（數量 + 自己按過哪些 + toggle），給反應列和愛心按鈕共用。
+ * 回應的狀態（各 emoji 的數量 + 自己按過哪些 + toggle），存在 `post_reactions`。
+ * 文章頁持有一份、傳給文末的星座（blog/ReactionSky）；同一個狀態只能有一個持有者，
+ * 各自呼叫的話 `mine`（各自的 useState）會分岔。
  *
- * 抽出來是因為同一顆愛心原本有兩套來源：文章頁 meta 的 `❤️ {likeCount}` 和右下浮動
- * 按鈕走 `posts.likes`（`/api/posts/:id/like`），而下方反應列的 ❤️ 走 `post_reactions`。
- * 兩個數字各自增減，同一篇文章因此顯示兩個不一樣的值。
- *
- * 現在三處都吃這個 hook，共用同一份 Query 快取與同一個 localStorage key，所以在任何
- * 一處按下去，另外兩處會同步——它們本來就是同一個狀態，不是三份需要互相通知的副本。
- *
- * 不 export：列表卡片（Blog.tsx）刻意不用它，否則一頁十幾張卡片會各發一個 /reactions
- * 請求；那邊的初始值走 `PostListItem.heart_count`。而 export 非元件的東西會破壞這個
+ * 不 export：手記列表刻意不用它，否則一頁十幾篇會各發一個 /reactions 請求；
+ * 那邊的數字走 `PostListItem.heart_count`。而 export 非元件的東西會破壞這個
  * 檔案的 fast refresh（oxlint react/only-export-components）。
  */
 function useReactions(postId: string | number) {
@@ -606,41 +512,6 @@ function useReactions(postId: string | number) {
 
   return { counts, mine, toggle };
 }
-
-/**
- * 反應狀態由 BlogPost 持有並傳進來，這裡不自己呼叫 useReactions。
- *
- * 一開始兩邊各呼叫一次，結果 `counts` 會同步（同一份 Query 快取）但 `mine` 不會——那是
- * 各自的 useState。症狀是在反應列取消 ❤️ 之後，浮動按鈕還是亮的，再按一次送出的 delta
- * 是 -1（它以為自己還按著），數字卡在 0 動不了。同一個狀態就只能有一個持有者。
- */
-const Reactions = React.memo(({ counts, mine, toggle }: ReturnType<typeof useReactions>) => {
-  return (
-    // role="group" + aria-label 把一排 emoji 按鈕歸成一組；建議的 fieldset/optgroup
-    // 都帶有表單語意，用在這裡反而錯
-    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
-    <div className="reaction-bar" role="group" aria-label="Emoji 反應">
-      {REACTIONS.map((e) => {
-        const n = counts[e] || 0;
-        const active = mine.has(e);
-        return (
-          <button
-            key={e}
-            type="button"
-            className={`reaction-btn${active ? ' is-active' : ''}${n > 0 ? ' has-count' : ''}`}
-            onClick={() => toggle(e)}
-            aria-pressed={active}
-            aria-label={`${e}（${n}）`}
-          >
-            <span className="reaction-emoji">{e}</span>
-            {n > 0 && <span className="reaction-count">{n}</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-});
-Reactions.displayName = 'Reactions';
 
 /* ══════════════════════════
    SeriesNav — 系列文導覽（若文章屬於某系列）
@@ -724,250 +595,171 @@ const PrevNextNav = React.memo(({ currentId }: { currentId: string | number }) =
   );
 });
 
-/* ══════════════════════════
-   PostsNav — Left sidebar showing OTHER article titles
-   ══════════════════════════ */
-const PostsNav = React.memo(
-  ({ currentId, postCategory }: { currentId: string | number; postTitle?: string; postCategory?: string }) => {
-    const { t } = useTranslation();
-    const [showCategoryTooltip, setShowCategoryTooltip] = useState(false);
-    const navLocale = useLocale();
-
-    // 分類詳情改由 Query 讀（有 postCategory 才抓）。
-    const { data: allCategories = [] } = useQuery({
-      ...blogCategoriesDetailQueryOptions(navLocale),
-      enabled: !!postCategory,
-    });
-    const categoryInfo = useMemo<CategoryInfo | null>(
-      () => (postCategory ? (allCategories.find((c) => c.name === postCategory) ?? null) : null),
-      [allCategories, postCategory],
-    );
-
-    // 附近文章 + 同專欄文章：從最近 100 篇依時間排序後開視窗，改由 Query + useMemo derive。
-    // 用的是上下篇導覽那份 limit=200 的快取、select 只取前 100：另開一個 limit=100 的 query
-    // 會讓 SSR 把兩份幾乎一樣的清單都 dehydrate 進 HTML（文章頁的 HTML 因此多了好幾十 KB）。
-    const { data: allPosts = [] } = useQuery({
-      ...recentPostsQueryOptions(200, navLocale),
-      select: (posts: PostListItem[]) => posts.slice(0, 100),
-    });
-    const { nearbyPosts, categoryPosts } = useMemo<{
-      nearbyPosts: PostListItem[];
-      categoryPosts: PostListItem[];
-    }>(() => {
-      if (!allPosts.length) return { nearbyPosts: [], categoryPosts: [] };
-      // 按時間排序（最新在前）
-      const sorted = [...allPosts].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      const currentIndex = sorted.findIndex((p) => String(p.id) === String(currentId));
-      if (currentIndex === -1) return { nearbyPosts: [], categoryPosts: [] };
-
-      // 顯示範圍：最新→往前6、第2新→7、其後→以當前為中心前後各4（不滿則另一側補）
-      let start, end;
-      if (currentIndex === 0) {
-        start = 0;
-        end = Math.min(sorted.length, 6);
-      } else if (currentIndex === 1) {
-        start = 0;
-        end = Math.min(sorted.length, 7);
-      } else {
-        const half = 4;
-        start = Math.max(0, currentIndex - half);
-        end = Math.min(sorted.length, currentIndex + half + 1);
-        if (currentIndex - start < half) end = Math.min(sorted.length, end + (half - (currentIndex - start)));
-        if (end - currentIndex - 1 < half) start = Math.max(0, start - (half - (end - currentIndex - 1)));
-      }
-      const nearby = sorted.slice(start, end);
-      const cat = postCategory
+/** 附近的文章與同分類的文章：從最近 200 篇（上下篇導覽那份快取）依時間排序後開視窗 */
+function useNearbyPosts(currentId: string | number, postCategory?: string) {
+  const navLocale = useLocale();
+  const { data: allPosts = [] } = useQuery(recentPostsQueryOptions(200, navLocale));
+  return useMemo(() => {
+    const sorted = [...allPosts].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const currentIndex = sorted.findIndex((p) => String(p.id) === String(currentId));
+    if (currentIndex === -1) return { nearby: [] as PostListItem[], sameCategory: [] as PostListItem[], maxLen: 1 };
+    // 顯示範圍：最新→往前6、第2新→7、其後→以當前為中心前後各4（不滿則另一側補）
+    let start;
+    let end;
+    if (currentIndex === 0) {
+      start = 0;
+      end = Math.min(sorted.length, 6);
+    } else if (currentIndex === 1) {
+      start = 0;
+      end = Math.min(sorted.length, 7);
+    } else {
+      const half = 4;
+      start = Math.max(0, currentIndex - half);
+      end = Math.min(sorted.length, currentIndex + half + 1);
+      if (currentIndex - start < half) end = Math.min(sorted.length, end + (half - (currentIndex - start)));
+      if (end - currentIndex - 1 < half) start = Math.max(0, start - (half - (end - currentIndex - 1)));
+    }
+    return {
+      nearby: sorted.slice(start, end),
+      sameCategory: postCategory
         ? sorted.filter((p) => p.category === postCategory && String(p.id) !== String(currentId)).slice(0, 5)
-        : [];
-      return { nearbyPosts: nearby, categoryPosts: cat };
-    }, [allPosts, currentId, postCategory]);
-
-    // 逐行進場的瀑布索引：附近清單 0..n-1，分類標頭 / 專欄其他文章接續往下 → 整條側欄
-    // 一路 cascade。key 綁 post id（穩定）→ 換文章時只有「新露出的列」是新 DOM 節點，
-    // 只有它們會重播 side-item-in（逐行塞入）；還在窗內的列不動。
-    const catBase = nearbyPosts.length;
-    return (
-      <nav className="posts-nav" aria-label={t('blog.nearbyNav')}>
-        {/* 附近文章列表（清單未到時先出骨架佔位，不是空白 → 不 raw pop）*/}
-        {nearbyPosts.length > 0 ? (
-          <div className="posts-nav-nearby">
-            {/* 進場＝CSS（第一幀就跑、不等 JS）；退場＝framer AnimatePresence（CSS 動不了
-              「正在被移除的節點」）。initial={false} → framer 不插手進場，避免跟 CSS 搶。
-              layout → 有列收合時，其餘列平順上移而不是瞬間跳。 */}
-            <AnimatePresence initial={false}>
-              {nearbyPosts.map((p, i) => {
-                const isCurrent = String(p.id) === String(currentId);
-                return (
-                  <motion.div
-                    key={p.id}
-                    layout
-                    initial={false}
-                    exit={{ opacity: 0, x: -14, height: 0, marginTop: 0, marginBottom: 0 }}
-                    transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
-                    style={{ overflow: 'hidden' }}
-                  >
-                    <PreviewablePostLink
-                      post={p}
-                      current={isCurrent}
-                      className={
-                        'posts-nav-item side-item-in text-sm py-1 block transition-colors truncate ' +
-                        (isCurrent
-                          ? 'text-white font-semibold posts-nav-current-item'
-                          : 'text-zinc-500 hover:text-zinc-300')
-                      }
-                      style={{ '--i': i } as React.CSSProperties}
-                    >
-                      {p.title}
-                    </PreviewablePostLink>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-        ) : allPosts.length === 0 ? (
-          <div className="posts-nav-nearby" aria-hidden="true">
-            {[88, 72, 94, 63, 80].map((w, i) => (
-              // 骨架屏佔位，載入完就整批換掉，不存在重排問題
-              <div
-                // eslint-disable-next-line @eslint-react/no-array-index-key
-                key={`skel-${w}-${i}`}
-                className="bp-skel"
-                style={{ height: 13, width: `${w}%`, margin: '0 0 12px' }}
-              />
-            ))}
-          </div>
-        ) : null}
-
-        {/* 此文章收錄於分類（接續瀑布索引） */}
-        {postCategory && (
-          <div
-            className="posts-nav-category side-item-in mt-6 pt-4"
-            style={
-              {
-                borderTop: '1px solid rgba(255,255,255,0.06)',
-                position: 'relative',
-                '--i': catBase,
-              } as React.CSSProperties
-            }
-          >
-            <span className="text-xs text-zinc-600 block mb-1">{t('blog.inColumn')}</span>
-            <CategoryTooltipTrigger
-              postCategory={postCategory}
-              categoryInfo={categoryInfo}
-              showTooltip={showCategoryTooltip}
-              onEnter={() => setShowCategoryTooltip(true)}
-              onLeave={() => setShowCategoryTooltip(false)}
-            />
-          </div>
-        )}
-
-        {/* 此專欄其他文章（逐行，索引接在分類區塊後；同樣有退場動畫） */}
-        {categoryPosts.length > 0 && (
-          <div className="posts-nav-list mt-4">
-            <span
-              className="text-xs text-zinc-600 block mb-2 side-item-in"
-              style={{ '--i': catBase + 1 } as React.CSSProperties}
-            >
-              {t('blog.otherInColumn')}
-            </span>
-            <div className="flex flex-col gap-1">
-              <AnimatePresence initial={false}>
-                {categoryPosts.map((p, i) => (
-                  <motion.div
-                    key={p.id}
-                    layout
-                    initial={false}
-                    exit={{ opacity: 0, x: -14, height: 0, marginTop: 0, marginBottom: 0 }}
-                    transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
-                    style={{ overflow: 'hidden' }}
-                  >
-                    <PreviewablePostLink
-                      post={p}
-                      className="posts-nav-item side-item-in text-sm text-zinc-500 hover:text-zinc-300 transition-colors py-0.5 block truncate"
-                      style={{ '--i': catBase + 2 + i } as React.CSSProperties}
-                    >
-                      {p.title}
-                    </PreviewablePostLink>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
-        )}
-      </nav>
-    );
-  },
-);
+        : [],
+      // 舊版後端的列表沒有字數：當成 0，左欄那排線就一樣長（不然長度會算成 NaN、整排線看不見）
+      maxLen: Math.max(1, ...sorted.map((p) => Number(p.content_length) || 0)),
+    };
+  }, [allPosts, currentId, postCategory]);
+}
 
 /* ══════════════════════════
-   TableOfContents — Right sidebar (TOC with reading progress)
+   PostsNav — 左欄：附近的文章。平常收成一排細線（每篇一條，長短照文章長度），滑過才展開成標題；
+   換文章時清單照原本的方式滑動（新露出的列才進場）
    ══════════════════════════ */
-const TableOfContents = React.memo(
-  ({
-    headings,
-    activeHeading,
-    readingProgress,
-    tocRef,
-  }: {
-    headings: Heading[];
-    activeHeading: string;
-    readingProgress: number;
-    tocRef: React.RefObject<HTMLElement | null>;
-  }) => {
-    const { t } = useTranslation();
-    const scrollToHeading = useCallback((headingId: string) => {
-      setTimeout(() => {
-        const el = document.getElementById(headingId) ?? document.querySelector('[id="' + headingId + '"]');
-        if (!el) return;
-        window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
-      }, 50);
-    }, []);
+const PostsNav = React.memo(({ currentId, postCategory }: { currentId: string | number; postCategory?: string }) => {
+  const { t } = useTranslation();
+  const categoryLabel = useCategoryLabel();
+  const { nearby, maxLen } = useNearbyPosts(currentId, postCategory);
+  if (!nearby.length) return null;
+  return (
+    <nav className="ar-side" aria-label={t('blog.nearbyNav')}>
+      <ol>
+        <AnimatePresence initial={false}>
+          {nearby.map((p) => {
+            const isCurrent = String(p.id) === String(currentId);
+            const len = 10 + 26 * Math.sqrt(Math.min(1, (Number(p.content_length) || maxLen * 0.3) / maxLen));
+            return (
+              <motion.li
+                key={p.id}
+                layout
+                initial={false}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+                className={isCurrent ? 'is-on' : undefined}
+              >
+                <PreviewablePostLink
+                  post={p}
+                  current={isCurrent}
+                  className="ar-side-a"
+                  style={{ '--len': `${len.toFixed(1)}px` } as React.CSSProperties}
+                >
+                  <i aria-hidden="true" />
+                  <span>{splitTitle(p.title).main}</span>
+                </PreviewablePostLink>
+              </motion.li>
+            );
+          })}
+        </AnimatePresence>
+      </ol>
+      {postCategory && (
+        <p className="ar-side-cat">
+          <span>{t('blog.inColumn')}</span>
+          {categoryLabel(postCategory)}
+        </p>
+      )}
+    </nav>
+  );
+});
+PostsNav.displayName = 'PostsNav';
 
-    return (
-      <div className="table-of-contents">
-        <div className="toc-header">
-          <h3>{t('blog.toc')}</h3>
-          <div className="reading-progress-circle">
-            <svg viewBox="0 0 36 36">
-              <path
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--white-08)"
-                strokeWidth="3"
-              />
-              <path
-                d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                fill="none"
-                stroke="var(--post-accent)"
-                strokeWidth="3"
-                strokeDasharray={readingProgress + ', 100'}
-              />
-            </svg>
-            <span className="progress-text">{Math.round(readingProgress)}%</span>
-          </div>
-        </div>
-        <nav className="toc-nav" aria-label={t('blog.toc')} ref={tocRef}>
-          {headings.map((h, i) => (
-            <button
-              key={h.id}
-              data-heading-id={h.id}
-              className={'toc-item level-' + h.level + (activeHeading === h.id ? ' active' : '')}
-              style={{ '--i': i } as React.CSSProperties}
-              onClick={() => scrollToHeading(h.id)}
-              title={h.text}
-            >
-              <span className="toc-bullet" />
-              <span className="toc-text">{h.text}</span>
-            </button>
-          ))}
-        </nav>
-        <button className="toc-bottom-link" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <FaArrowUp /> {t('blog.backToArticleTop')}
-        </button>
+/** 文末：同一個分類的其他文章 */
+const SameCategory = ({ currentId, postCategory }: { currentId: string | number; postCategory?: string }) => {
+  const { t } = useTranslation();
+  const categoryLabel = useCategoryLabel();
+  const { sameCategory } = useNearbyPosts(currentId, postCategory);
+  if (!postCategory || !sameCategory.length) return null;
+  return (
+    <section className="ar-same">
+      <p className="ar-label">{t('blog.sameCategory', { name: categoryLabel(postCategory) })}</p>
+      <ul>
+        {sameCategory.map((p) => (
+          <li key={p.id}>
+            <time dateTime={p.created_at} suppressHydrationWarning>
+              {dotDate(parseServerDate(p.created_at), true)}
+            </time>
+            <PreviewablePostLink post={p}>{splitTitle(p.title).main}</PreviewablePostLink>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
+/**
+ * 頁首的標籤：點一個標籤，底下就地展開「同標這個標籤的其他文章」（最多五篇），再點一次收起來。
+ * 不換頁、不去手記頁篩選（手記頁刻意不做標籤篩選，那會破壞星軌的版面）
+ */
+const TagShelf = ({
+  tags,
+  currentId,
+  label,
+}: {
+  tags: string[];
+  currentId: number;
+  label: (name: string) => string;
+}) => {
+  const { t } = useTranslation();
+  const locale = useLocale();
+  const [open, setOpen] = useState<string | null>(null);
+  const { data: posts = [], isFetching } = useQuery({
+    ...postsByTagQueryOptions(open ?? '', locale),
+    enabled: open !== null,
+  });
+  const others = posts.filter((p) => String(p.id) !== String(currentId)).slice(0, 5);
+  return (
+    <>
+      <div className="ar-tags">
+        {tags.map((name) => (
+          <button
+            key={name}
+            type="button"
+            aria-expanded={open === name}
+            onClick={() => setOpen(open === name ? null : name)}
+          >
+            #{label(name)}
+          </button>
+        ))}
       </div>
-    );
-  },
-);
+      {open !== null && (
+        <section className="ar-same ar-tag-shelf" key={open}>
+          <p className="ar-label">{t('blog.sameTag', { name: label(open) })}</p>
+          {others.length ? (
+            <ul>
+              {others.map((p) => (
+                <li key={p.id}>
+                  <time dateTime={p.created_at} suppressHydrationWarning>
+                    {dotDate(parseServerDate(p.created_at), true)}
+                  </time>
+                  <PreviewablePostLink post={p}>{splitTitle(p.title).main}</PreviewablePostLink>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            !isFetching && <p className="ar-tag-none">{t('blog.sameTagNone')}</p>
+          )}
+        </section>
+      )}
+    </>
+  );
+};
 
 /* ══════════════════════════
    SubscribeModal
@@ -1163,48 +955,6 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-/* ══════════════════════════
-   FontSwitcher — bottom-right popup
-   ══════════════════════════ */
-const FontSwitcher = ({ currentFont, onFontChange }: { currentFont: string; onFontChange: (id: string) => void }) => {
-  const { t } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="font-switcher">
-      <button className="font-switcher-btn" onClick={() => setIsOpen(!isOpen)} title={t('blog.fontSwitcherTitle')}>
-        <span>字</span>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            className="font-switcher-popup"
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-          >
-            {FONT_OPTIONS.map((f) => (
-              <button
-                key={f.id}
-                className={'font-option' + (currentFont === f.id ? ' active' : '')}
-                onClick={() => {
-                  onFontChange(f.id);
-                  setIsOpen(false);
-                }}
-                // 每個選項用自己的字體預覽 → 直接指向 index.css 的那份定義，不另存一份字體棧
-                style={{ fontFamily: `var(--blog-font-${f.id})` }}
-              >
-                {f.name}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
 /* ═══════════════════════════════════
    Toast — 短暫提示
    ═══════════════════════════════════ */
@@ -1222,138 +972,6 @@ const Toast = ({ message, onDone }: { message: React.ReactNode; onDone: () => vo
     >
       {message}
     </motion.div>
-  );
-};
-
-/* ═══════════════════════════════════
-   LanguageSwitcher — 文章語言切換下拉
-   ═══════════════════════════════════ */
-const LANG_OPTIONS = [
-  { code: 'zh-TW', label: '繁體中文' },
-  { code: 'zh-CN', label: '简体中文' },
-  { code: 'en', label: 'English' },
-  { code: 'ja', label: '日本語' },
-  { code: 'ko', label: '한국어' },
-];
-
-const LanguageSwitcher = ({
-  open,
-  setOpen,
-  current,
-  source,
-  available,
-  onSelect,
-  onUnavailable,
-}: {
-  open: boolean;
-  setOpen: (v: boolean) => void;
-  current: string;
-  source: string;
-  available: string[];
-  onSelect: (code: string) => void;
-  onUnavailable: (label: string) => void;
-}) => {
-  const wrapRef = useRef<HTMLSpanElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, minWidth: 160 });
-
-  // 外點關閉 + ESC 關閉
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (wrapRef.current && e.target instanceof Node && wrapRef.current.contains(e.target)) return;
-      const menu = document.getElementById('blog-lang-menu');
-      if (menu && e.target instanceof Node && menu.contains(e.target)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, setOpen]);
-
-  // 計算菜單位置（以觸發按鈕為錨點，portal 到 body 避開父層 stacking context）
-  useEffect(() => {
-    if (!open || !triggerRef.current) return;
-    const compute = () => {
-      if (!triggerRef.current) return;
-      const rect = triggerRef.current.getBoundingClientRect();
-      // getBoundingClientRect 要等元素真的掛上才量得到，render 期無解 → 只能在 effect。
-      // eslint-disable-next-line @eslint-react/set-state-in-effect
-      setMenuPos({
-        top: rect.bottom + window.scrollY + 6,
-        left: rect.left + window.scrollX,
-        minWidth: Math.max(160, rect.width),
-      });
-    };
-    compute();
-    window.addEventListener('resize', compute);
-    window.addEventListener('scroll', compute, true);
-    return () => {
-      window.removeEventListener('resize', compute);
-      window.removeEventListener('scroll', compute, true);
-    };
-  }, [open]);
-
-  const currentLabel = LANG_OPTIONS.find((o) => o.code === current)?.label ?? current;
-
-  return (
-    <span className="meta-lang-switcher" ref={wrapRef}>
-      <button
-        ref={triggerRef}
-        type="button"
-        className="lang-trigger"
-        onClick={() => setOpen(!open)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-      >
-        <span className="lang-icon">🌐</span>
-        <span className="lang-code">{currentLabel}</span>
-        <span className={`lang-caret ${open ? 'open' : ''}`}>▾</span>
-      </button>
-      {open &&
-        ReactDOM.createPortal(
-          <div
-            id="blog-lang-menu"
-            className="lang-menu"
-            // 同 LanguagePicker：不掛 role="listbox"/"option"。那組 role 承諾完整的 listbox
-            // 鍵盤語意（方向鍵 + aria-activedescendant），這裡沒實作；role="option" 蓋在
-            // button 上還會覆寫按鈕語意。一組按鈕本身就可存取，目前語言用 aria-current 標。
-            style={{ position: 'absolute', top: menuPos.top, left: menuPos.left, minWidth: menuPos.minWidth }}
-          >
-            {LANG_OPTIONS.map((opt) => {
-              const isSource = opt.code === source;
-              const isAvailable = available.includes(opt.code);
-              return (
-                <button
-                  key={opt.code}
-                  type="button"
-                  aria-current={opt.code === current ? 'true' : undefined}
-                  className={`lang-item ${isAvailable ? '' : 'disabled'} ${opt.code === current ? 'active' : ''}`}
-                  onClick={() => {
-                    setOpen(false);
-                    if (!isAvailable) {
-                      onUnavailable(opt.label);
-                      return;
-                    }
-                    if (opt.code === current) return;
-                    onSelect(opt.code);
-                  }}
-                >
-                  <span>{opt.label}</span>
-                  {isSource && <span className="lang-badge">原文</span>}
-                </button>
-              );
-            })}
-          </div>,
-          document.body,
-        )}
-    </span>
   );
 };
 
@@ -1387,21 +1005,19 @@ function postPathForLocale(id: string | number | undefined, locale: string, sour
 function BlogPost() {
   const { t } = useTranslation();
   const tagLabel = useTagLabel();
+  const categoryLabel = useCategoryLabel();
   const navLocale = useLocale();
-  const [readingProgress, setReadingProgress] = useState(0);
-  // headings 改為同步 useMemo（在 post 定義後、下方 Extract headings 處）→ 第一幀就有值
-  const [activeHeading, setActiveHeading] = useState('');
-  const lastActiveRef = useRef('');
   const [copied, setCopied] = useState(false);
   const [showSubscribe, setShowSubscribe] = useState(false);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
-  const [showMetaCatTooltip, setShowMetaCatTooltip] = useState(false);
   // SSR-safe：初始用預設（server 無 localStorage），掛載後才讀本地偏好 → 首次 client render 與 SSR 一致、不 mismatch。
   // 只驅動 FontSwitcher 的「目前選中」標記；實際字體由 html[data-blog-font] + CSS 變數決定。
   const [currentFont, setCurrentFont] = useState(DEFAULT_BLOG_FONT);
   const contentRef = useRef<HTMLDivElement>(null);
-  const tocRef = useRef<HTMLElement>(null);
+  /** OrbitToc 掛上來的「讓某一章亮起來」，摘要的關鍵句滑過時呼叫 */
+  const tocPingRef = useRef<((id: string | null) => void) | null>(null);
+  const colRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
   const { id = '' } = useParams({ strict: false });
   const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
@@ -1413,6 +1029,7 @@ function BlogPost() {
   const {
     data: postData,
     isPending,
+    isPlaceholderData,
     error: queryError,
   } = useQuery({
     ...postDetailQueryOptions(id, pathLocale),
@@ -1435,16 +1052,6 @@ function BlogPost() {
   }, [postData]);
   const loading = isPending;
   const error = queryError ? (queryError instanceof Error ? queryError.message : 'Post not found') : null;
-
-  // 專欄 tooltip 的分類詳情：與 PostsNav 共用同一份 categories detail 快取（單抓）。
-  const { data: metaCats = [] } = useQuery({
-    ...blogCategoriesDetailQueryOptions(pathLocale),
-    enabled: !!postData?.category,
-  });
-  const metaCategoryInfo = useMemo<CategoryInfo | null>(
-    () => (postData?.category ? (metaCats.find((c) => c.name === postData.category) ?? null) : null),
-    [metaCats, postData?.category],
-  );
 
   const handleFontChange = useCallback((fontId: string) => {
     setCurrentFont(fontId);
@@ -1527,20 +1134,21 @@ function BlogPost() {
   /* ── 換文章才捲頂（初次掛載/重整不搶捲動，交給 scrollRestoration 還原）──
      否則 reload 時序會變成：首幀頂端 → scrollRestoration 還原到原位 → 這裡又 smooth 捲頂，
      使用者看到「上→下→上」。用 ref 記前一個 key，只有真的換文章（key 變）才捲頂。 */
+  // 切語系（帶 keepScroll）不捲：blog/useRetune 會放回讀者原本那一章
+  const keepScroll = location.state.keepScroll === true;
   const prevScrollKeyRef = useRef<string | null>(null);
   useEffect(() => {
     const key = `${id}:${pathLocale}`;
-    if (prevScrollKeyRef.current !== null && prevScrollKeyRef.current !== key) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 整欄是原地換掉的（見下面的 is-swapped），直接回到頂端；慢慢捲會從新文章的中段一路刷上去
+    if (prevScrollKeyRef.current !== null && prevScrollKeyRef.current !== key && !keepScroll) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
     prevScrollKeyRef.current = key;
-  }, [id, pathLocale]);
+  }, [id, pathLocale, keepScroll]);
 
   /* ── 成功載入一篇：增加瀏覽數（每次載入新文章打一次）── */
   useEffect(() => {
     if (!postData?.id) return;
-    // 以前這裡要手動 setLiked(false) 把讚的狀態歸零。現在 liked 是從 useReactions 推導
-    // 的（key 帶 postId），換文章時自然就換成新文章的狀態，不必重置。
     // 刻意不用 AbortController：瀏覽數是 fire-and-forget，使用者讀完隨即跳頁正是常態，
     // 中止等於把要記的那一筆丟掉。sendBeacon 就是為這種卸載期送出設計的，
     // 後端 post_view 只吃 Path(id)、不讀 body，空 POST 即可。
@@ -1561,13 +1169,8 @@ function BlogPost() {
     }
   }, []);
 
-  /* ── Like state ──
-     愛心 = 反應列裡的 ❤️。以前這裡另外維護 liked/likeCount 兩個 state（來源是
-     `posts.likes`），跟下方反應列的 ❤️ 是兩個獨立的數字，同一篇文章會顯示不一致的
-     值。現在共用 useReactions，三處是同一份狀態，不需要同步。 */
+  /* ── 回應（文末的星座）── */
   const { counts: reactionCounts, mine: myReactions, toggle: toggleReaction } = useReactions(post?.id ?? id);
-  const likeCount = reactionCounts[HEART] ?? 0;
-  const liked = myReactions.has(HEART);
 
   /* ── 排版優化：CJK-Latin 自動加空格 + 腳註 hover 浮窗 ── */
   useEffect(() => {
@@ -1626,13 +1229,6 @@ function BlogPost() {
     };
   }, []);
 
-  /* ── Like handler ── 就是切換 ❤️ 反應；optimistic 與校正都在 useReactions 裡 */
-  const handleLike = () => {
-    toggleReaction(HEART);
-  };
-
-  const [showShareMenu, setShowShareMenu] = useState(false);
-
   /* ── Share handlers ── */
   // SSR-safe：server 無 window（只在 share 按鈕 handler 用到、不進 DOM，故 SSR 給空 origin 不影響 hydration）。
   // 用 canonical slug ＋語系前綴（postShareUrl），不要用路由參數 id：那可能是數字 id 或舊 slug。
@@ -1642,27 +1238,8 @@ function BlogPost() {
   const handleCopyLink = () => {
     void navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
-      setShowShareMenu(false);
       setTimeout(() => setCopied(false), 2000);
     });
-  };
-
-  const handleShareTwitter = () => {
-    window.open(
-      `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`,
-      '_blank',
-      'noopener,noreferrer,width=550,height=420',
-    );
-    setShowShareMenu(false);
-  };
-
-  const handleShareFacebook = () => {
-    window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-      '_blank',
-      'noopener,noreferrer,width=550,height=420',
-    );
-    setShowShareMenu(false);
   };
 
   const handleNativeShare = () => {
@@ -1675,7 +1252,6 @@ function BlogPost() {
     } else {
       handleCopyLink();
     }
-    setShowShareMenu(false);
   };
 
   /* ── Read time（與 fallback 共用同一算法）── */
@@ -1685,56 +1261,23 @@ function BlogPost() {
         scroll-spy 也能更早啟動；與 fallback 共用 extractHeadings，anchor id 逐字一致 ── */
   const headings = useMemo<Heading[]>(() => extractHeadings(post?.content ?? ''), [post?.content]);
 
-  /* ── Scroll / progress / active heading ── */
+  // 切語系換過來的：放回讀者原本那一章，再從畫面頂端往下掃一次（blog/useRetune）
+  useRetune(post?.id ?? -1, colRef, contentRef, headings);
+
+  // 從一篇換到另一篇（左欄、同標籤、同專欄、內文裡的站內連結）：不走全站轉場（TransitionLayer 放行），
+  // 這裡原地換——新的那一欄淡入、往上浮一點。第一次載入不演，那時有換頁轉場在接
+  const shownIdRef = useRef<number | null>(null);
+  const shownId = post?.id ?? null;
   useEffect(() => {
-    if (!post) return;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    // 用 ref 而非 state 當「上一個 active」：讀 activeHeading 會讓它成為 effect 依賴，
-    // 每次高亮變動就重掛一次 scroll listener——正好抵銷這個 debounce 的用意。
-
-    const handleScroll = () => {
-      const wh = window.innerHeight;
-      setReadingProgress(readingProgressPct(window.scrollY, wh, document.documentElement.scrollHeight));
-
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        if (!contentRef.current || !headings.length) return;
-        // 只看「TOC 有列到的標題」——抓所有 [id]（含腳註/alert 的 id）的話會被非標題元素
-        // 劫持 active 狀態、害 TOC 高亮消失。以 heading id 集合過濾。
-        const headingIds = new Set(headings.map((h) => h.id));
-        const rects = Array.from(contentRef.current.querySelectorAll('[id]'))
-          .filter((el) => headingIds.has(el.id))
-          .map((el) => ({ id: el.id, top: el.getBoundingClientRect().top }));
-        const cur = pickActiveHeading(rects, wh);
-        if (cur && cur !== lastActiveRef.current) {
-          lastActiveRef.current = cur;
-          setActiveHeading(cur);
-          if (tocRef.current) {
-            const item = tocRef.current.querySelector('[data-heading-id="' + cur + '"]');
-            if (item) item.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-          }
-        }
-      }, 150);
-    };
-
-    let ticking = false;
-    const listener = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener('scroll', listener, { passive: true });
-    const init = setTimeout(handleScroll, 500);
-    return () => {
-      window.removeEventListener('scroll', listener);
-      if (timer) clearTimeout(timer);
-      clearTimeout(init);
-    };
-  }, [post, headings]);
+    if (shownId === null) return;
+    const before = shownIdRef.current;
+    shownIdRef.current = shownId;
+    const page = pageRef.current;
+    if (before === null || before === shownId || !page) return;
+    page.classList.add('is-swapped');
+    const timer = window.setTimeout(() => page.classList.remove('is-swapped'), 900);
+    return () => window.clearTimeout(timer);
+  }, [shownId]);
 
   /* ════════ Loading ════════ */
   if (loading) {
@@ -1787,295 +1330,164 @@ function BlogPost() {
 
   // 字體吃 CSS 變數而非 state：值由 __root.tsx 的 pre-paint script 從 localStorage 決定，
   // 首屏就是正確字體，不會再有「先用預設 serif 排一次、掛載後整篇重排」的位移。
+  //
+  // 外框（2026-10 翻新）：內文不動，包在外面的只有一條線——這篇文章自己的星軌（OrbitToc），
+  // 它同時是目錄；左邊是附近文章的細線；右側的浮動圓鈕收成文末一行字。
   return (
-    <div className="blog-post-container" style={{ fontFamily: 'var(--blog-font)' }}>
-      {/* Dim overlay over global starfield */}
-      <div className="blog-post-dim-overlay" />
-
-      {/* Reading Progress */}
-      <div className="reading-progress-bar">
-        <div className="reading-progress-fill" style={{ width: readingProgress + '%' }} />
-      </div>
-
-      {/* Toast */}
+    <div
+      className={`blog-post-container ar-page${isPlaceholderData ? ' is-fetching' : ''}`}
+      style={{ fontFamily: 'var(--blog-font)' }}
+      ref={pageRef}
+    >
       {toastMsg && <Toast key={toastMsg} message={toastMsg} onDone={() => setToastMsg('')} />}
 
-      {/* ── Header ── */}
-      <AnimatePresence mode="wait">
-        <motion.header
-          key={'header-' + id}
-          className="post-header"
-          // 進場動畫改由 CSS（BlogPost.css 的 post-enter）負責：它在第一幀 paint 就跑，
-          // 不必等 hydration，LCP 不被綁住。這裡維持 initial={false}，避免 JS 在 hydrate 後
-          // 又把已顯示的內容重設一次（那會變成「重播」而不是進場）。exit 仍交給 framer-motion。
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-        >
-          <h1 className="post-title">{titleParts.main}</h1>
-          {titleParts.sub && <p className="post-subtitle">{titleParts.sub}</p>}
+      <OrbitToc
+        key={'orbit-' + post.id}
+        postId={post.id}
+        headings={headings}
+        contentRef={contentRef}
+        footer={<FontLine current={currentFont} onChange={handleFontChange} />}
+        pingRef={tocPingRef}
+      />
+      <PostsNav currentId={post.id} postCategory={post.category ?? undefined} />
 
-          <div className="post-meta-row">
-            {post.layout_type !== 'column' && (
-              <>
-                <span className="meta-tip" data-tooltip="發布日期">
-                  ⏱ {post.date}
-                </span>
-                <span className="meta-sep">·</span>
-              </>
-            )}
-            <span className="meta-tip meta-author" data-tooltip="作者">
-              ✦ {post.author}
-            </span>
-            <span className="meta-sep">·</span>
-            <span className="meta-tip" data-tooltip="累計閱讀次數">
-              📖 {post.view_count}
-            </span>
-            <span className="meta-sep">·</span>
-            <span className="meta-tip" data-tooltip="讀者喜歡數">
-              ❤️ {likeCount}
-            </span>
-            <span className="meta-sep">·</span>
-            <span className="meta-tip" data-tooltip="預估閱讀時間">
-              ☕ 約 {readTime} 分鐘
-            </span>
+      {/* 換一篇就整欄重掛（標題、摘要、內文、文末）；左欄不重掛，清單自己滑 */}
+      <div className="ar-col" ref={colRef} key={post.id}>
+        <header className="ar-head">
+          <p className="ar-kick">
+            <LocaleLink to="/blog">{t('blog.title')}</LocaleLink>
             {post.category && (
               <>
-                <span className="meta-sep">·</span>
-                <span
-                  className="meta-category-wrap"
-                  onMouseEnter={() => setShowMetaCatTooltip(true)}
-                  onMouseLeave={() => setShowMetaCatTooltip(false)}
-                >
-                  <CategoryTooltipTrigger
-                    postCategory={post.category}
-                    categoryInfo={metaCategoryInfo}
-                    showTooltip={showMetaCatTooltip}
-                    onEnter={() => setShowMetaCatTooltip(true)}
-                    onLeave={() => setShowMetaCatTooltip(false)}
-                    linkClassName="meta-category meta-category-link"
-                    compact
-                  />
-                </span>
+                <span aria-hidden="true">/</span>
+                <LocaleLink to="/blog" search={{ category: post.category } as never}>
+                  {categoryLabel(post.category)}
+                </LocaleLink>
               </>
             )}
-            <span className="meta-sep">·</span>
-            <LanguageSwitcher
-              open={langMenuOpen}
-              setOpen={setLangMenuOpen}
+          </p>
+          <h1>{titleParts.main}</h1>
+          {titleParts.sub && <p className="ar-sub">{titleParts.sub}</p>}
+          <div className="ar-meta">
+            {post.layout_type !== 'column' && (
+              <time dateTime={post.created_at} suppressHydrationWarning>
+                {dotDate(parseServerDate(post.created_at))}
+              </time>
+            )}
+            <span>{t('blog.minutes', { count: readTime })}</span>
+            <span>{t('blog.views', { count: post.view_count })}</span>
+            <LangLine
               current={currentLocale}
+              from={peekRetune(post.id)?.from}
               source={sourceLang}
               available={availableLocales}
               onSelect={(loc) => {
                 const target = postPathForLocale(id, loc, sourceLang); // 已是絕對 locale 路徑,用 href 不再加前綴
-                void navigate({ href: target });
+                // 記下讀者在哪一章，新語系那頁放回同一個地方（捲動由那邊負責，這裡不要先跳回頂端）
+                setRetune(
+                  post.id,
+                  currentLocale,
+                  contentRef.current,
+                  headings.map((h) => h.id),
+                );
+                void navigate({ href: target, resetScroll: false, state: { keepScroll: true } });
               }}
               onUnavailable={(name) => setToastMsg(`「${name}」版本尚未提供`)}
             />
           </div>
+          {postTags.length > 0 && <TagShelf tags={postTags} currentId={post.id} label={tagLabel} />}
+        </header>
 
-          {postTags.length > 0 && (
-            <div className="post-tags">
-              {postTags.map((name) => (
-                <span key={name} className="tag">
-                  #{tagLabel(name)}
-                </span>
-              ))}
-            </div>
-          )}
-        </motion.header>
-      </AnimatePresence>
-
-      {/* ── Content body: left sidebar + center + right sidebar ── */}
-      <div className="post-body">
-        {/* Left sidebar — other article titles */}
-        <aside className="post-sidebar-left">
-          <PostsNav currentId={post.id} postTitle={post.title} postCategory={post.category ?? undefined} />
-        </aside>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={'content-' + id}
-            className="post-main-column"
-            // 進場動畫由 CSS 負責，但作用在「內層」的 .post-content-wrapper（見 BlogPost.css
-            // 的 post-enter）→ 與這層 framer-motion 是不同元素，兩者不會搶同一個 transform。
-            // 這層維持 initial={false}（不讓 JS 在 hydrate 後重設已顯示的內容），只保留 exit。
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-          >
-            {/* 非原文語系 → AI 翻譯提示（連回原文）。放卡片「外」：.post-ai-summary-inline 用負 margin
-                貼齊卡片頂邊、圓角只在上方，必須是卡片第一個子元素，banner 插進去會壓壞它。 */}
-            {currentLocale !== sourceLang && translationNotice && (
-              <div className="ai-translation-notice">
-                <span className="ai-translation-icon" aria-hidden>
-                  🌐
-                </span>
-                <span className="ai-translation-text">{translationNotice.text}</span>
-                <a className="ai-translation-original" href={`/blog/${id}`}>
-                  {translationNotice.original} →
-                </a>
-              </div>
-            )}
-            <div className="post-content-wrapper">
-              {/* AI Summary — inside card top with gradient fade */}
-              {post.excerpt && (
-                <div className="post-ai-summary-inline">
-                  <div className="ai-summary-top-row">
-                    {/* h2 而非 h4：它緊接在文章 h1 之後，跳級到 h4 會讓輔助科技讀到
-                        「缺了兩層」的結構（Lighthouse heading-order 稽核會判定失敗）。
-                        字級由 .ai-summary-top-row h2 控制，外觀不變。 */}
-                    <h2>🔑 {t('blog.keyInsights')}</h2>
-                    <span className="ai-badge">✦ AI·GEN</span>
-                  </div>
-                  <p>{post.excerpt}</p>
-                  <div className="ai-summary-fade" />
-                </div>
-              )}
-
-              <article className="post-content drop-cap-first" ref={contentRef}>
-                {/* 伺服器預渲染的 mermaid SVG 對照表。CodeBlock 是頂層 export（後台預覽也重用），
-                    中間又隔著 ReactMarkdown 的內部結構，所以只能走 context。 */}
-                <MermaidSvgContext value={postData?.mermaidSvgs ?? {}}>
-                  {postData?.compiledMdx ? (
-                    // format='mdx'：server 端已編譯，這裡 runSync 執行成 React 元件（自訂 block +
-                    // 與 markdown 共用的 code/link/img/heading override）。
-                    <MdxContent compiled={postData.compiledMdx} baseComponents={mdxBaseComponents} />
-                  ) : (
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkAlert]}
-                      rehypePlugins={[rehypeRaw]}
-                      components={
-                        {
-                          code: CodeBlock,
-                          p: CustomParagraph,
-                          img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
-                          // 行內連結 → hover 預覽卡（資料來自自家 /api/link-preview，不外送給第三方）。
-                          // 「整段只有一個連結」那種會先被 CustomParagraph 攔去做 LinkCard 區塊卡，
-                          // 所以這裡拿到的都是真正的行內連結。錨點（#foo）不預覽。
-                          a: ({ href, children, ...rest }) => {
-                            const h = typeof href === 'string' ? href : '';
-                            if (!h || h.startsWith('#'))
-                              return (
-                                <a href={h} {...rest}>
-                                  {children}
-                                </a>
-                              );
-                            return (
-                              <LinkHoverPreview href={h} className={(rest as { className?: string }).className}>
-                                {children}
-                              </LinkHoverPreview>
-                            );
-                          },
-                          ...headingComponents,
-                        } as Components
-                      }
-                    >
-                      {post.content}
-                    </ReactMarkdown>
-                  )}
-                </MermaidSvgContext>
-              </article>
-              <SignatureSVG className="blog-signature" />
-            </div>
-
-            {/* ── Emoji 反應 ── */}
-            <Reactions counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />
-
-            {/* ── Series 系列文導覽 ── */}
-            {post.series_name && <SeriesNav seriesName={post.series_name} currentId={post.id} />}
-
-            {/* ── Prev / Next ── */}
-            <PrevNextNav currentId={post.id} />
-
-            {/* ── Comments ── */}
-            <div className="post-extras" id="comments">
-              <Comments postId={post.id} allowComments={post.allow_comments} />
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Right sidebar — TOC。
-            不用 framer/AnimatePresence：實測（線上量測）mode="wait" + initial 會在導航時把
-            進場重播（opacity 0→1→重設 0→1）、文章切文章時舊 TOC 卡在 opacity 0 數秒。
-            進場改由 CSS 逐行 stagger（.toc-item 的 side-item-in，SSR 首幀就開跑）；
-            key 綁文章 id → 換文章時整個 aside 重掛、逐行動畫重新演一次。 */}
-        {headings.length > 0 && (
-          <aside key={'toc-' + id} className="post-sidebar-right">
-            <TableOfContents
-              headings={headings}
-              activeHeading={activeHeading}
-              readingProgress={readingProgress}
-              tocRef={tocRef}
-            />
-          </aside>
+        {/* 非原文語系 → AI 翻譯提示（連回原文） */}
+        {currentLocale !== sourceLang && translationNotice && (
+          <p className="ar-notice">
+            {translationNotice.text}
+            <a href={`/blog/${id}`}>{translationNotice.original} →</a>
+          </p>
         )}
-      </div>
 
-      {/* ── Floating side actions (right) ── */}
-      <div className="floating-actions">
-        <button
-          className={'float-btn' + (liked ? ' active' : '')}
-          onClick={() => {
-            void handleLike();
-          }}
-          title={t('blog.like') || 'Like'}
-        >
-          {liked ? <FaHeart /> : <FaRegHeart />}
-          {likeCount > 0 && <span>{likeCount}</span>}
-        </button>
-        <div className="float-btn-wrapper">
-          <button
-            className={'float-btn' + (copied ? ' shared' : '')}
-            onClick={() => setShowShareMenu(!showShareMenu)}
-            title={t('blog.shareTitle')}
-          >
-            <FaShareAlt />
-          </button>
-          <AnimatePresence>
-            {showShareMenu && (
-              <motion.div
-                className="share-menu"
-                initial={{ opacity: 0, x: 10, scale: 0.95 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: 10, scale: 0.95 }}
-                transition={{ duration: 0.15 }}
+        {post.excerpt && (
+          <ArticleSummary
+            // 換一篇或換語系就重新收一次：沿用的話上一篇畫好的底線與逐字的 class 會殘留
+            key={`${post.id}-${currentLocale}`}
+            excerpt={post.excerpt}
+            links={postData?.excerpt_links ?? NO_LINKS}
+            headings={headings}
+            pingRef={tocPingRef}
+          />
+        )}
+
+        <article className="post-content drop-cap-first" ref={contentRef}>
+          {/* 伺服器預渲染的 mermaid SVG 對照表。CodeBlock 是頂層 export（後台預覽也重用），
+              中間又隔著 ReactMarkdown 的內部結構，所以只能走 context。 */}
+          <MermaidSvgContext value={postData?.mermaidSvgs ?? {}}>
+            {postData?.compiledMdx ? (
+              // format='mdx'：server 端已編譯，這裡 runSync 執行成 React 元件（自訂 block +
+              // 與 markdown 共用的 code/link/img/heading override）。
+              <MdxContent compiled={postData.compiledMdx} baseComponents={mdxBaseComponents} />
+            ) : (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkAlert]}
+                rehypePlugins={[rehypeRaw]}
+                components={
+                  {
+                    code: CodeBlock,
+                    p: CustomParagraph,
+                    img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
+                    // 行內連結 → hover 預覽卡（資料來自自家 /api/link-preview，不外送給第三方）。
+                    // 「整段只有一個連結」那種會先被 CustomParagraph 攔去做 LinkCard 區塊卡，
+                    // 所以這裡拿到的都是真正的行內連結。錨點（#foo）不預覽。
+                    a: ({ href, children, ...rest }) => {
+                      const h = typeof href === 'string' ? href : '';
+                      if (!h || h.startsWith('#'))
+                        return (
+                          <a href={h} {...rest}>
+                            {children}
+                          </a>
+                        );
+                      return (
+                        <LinkHoverPreview href={h} className={(rest as { className?: string }).className}>
+                          {children}
+                        </LinkHoverPreview>
+                      );
+                    },
+                    ...headingComponents,
+                  } as Components
+                }
               >
-                <button onClick={handleShareTwitter}>
-                  <FaTwitter /> Twitter
-                </button>
-                <button onClick={handleShareFacebook}>
-                  <FaFacebook /> Facebook
-                </button>
-                <button onClick={handleCopyLink}>
-                  <FaLink /> {copied ? t('blog.codeCopied') : t('blog.shareCopyLink')}
-                </button>
-                {typeof navigator.share === 'function' && (
-                  <button onClick={handleNativeShare}>
-                    <FaShareAlt /> {t('blog.shareMore')}
-                  </button>
-                )}
-              </motion.div>
+                {post.content}
+              </ReactMarkdown>
             )}
-          </AnimatePresence>
-        </div>
-        <a href="#comments" className="float-btn" title={t('blog.commentTitle')}>
-          <FaRegComment />
-        </a>
-        <button className="float-btn" onClick={() => setShowSubscribe(true)} title={t('blog.subscribeTitle')}>
-          <FaEnvelope />
-        </button>
-        <a href="/rss" className="float-btn" title="RSS" target="_blank" rel="noopener noreferrer">
-          <FaRss />
-        </a>
+          </MermaidSvgContext>
+        </article>
+        <SignatureSVG className="blog-signature" />
+
+        {/* 文末：原本右邊的五顆浮動圓鈕收成一行字，接著是反應、系列、上下篇、同分類、留言 */}
+        <footer className="ar-end">
+          {/* 「喜歡」在下面的星座裡（blog/ReactionSky），這一行只剩分享、訂閱、RSS */}
+          <div className="ar-act">
+            <button type="button" onClick={handleNativeShare}>
+              {copied ? t('blog.shareCopied') : t('blog.share')}
+            </button>
+            <button type="button" onClick={() => setShowSubscribe(true)}>
+              {t('blog.subscribeTitle')}
+            </button>
+            <a href="/rss" target="_blank" rel="noopener noreferrer">
+              RSS
+            </a>
+            {/* 窄螢幕沒有目錄：字體那一行放在這裡（寬螢幕的在目錄底下） */}
+            <FontLine className="ar-font-narrow" current={currentFont} onChange={handleFontChange} />
+          </div>
+          {/* 回應的狀態只有一個持有者（文章頁）：傳給星座，各自呼叫 useReactions 的話 mine 會分岔 */}
+          <ReactionSky counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />
+          {post.series_name && <SeriesNav seriesName={post.series_name} currentId={post.id} />}
+          <PrevNextNav currentId={post.id} />
+          <SameCategory currentId={post.id} postCategory={post.category ?? undefined} />
+          <div className="post-extras" id="comments">
+            <ArticleComments postId={post.id} allowComments={post.allow_comments} />
+          </div>
+        </footer>
       </div>
 
-      {/* ── Font Switcher (bottom-right) ── */}
-      <FontSwitcher currentFont={currentFont} onFontChange={handleFontChange} />
-
-      {/* ── Subscribe Modal ── */}
       <AnimatePresence>{showSubscribe && <SubscribeModal onClose={() => setShowSubscribe(false)} />}</AnimatePresence>
     </div>
   );

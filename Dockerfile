@@ -16,6 +16,12 @@
 # ─────────────────────────────────────────────────────────────
 
 # Stage 1: Build
+# 按頁裁字用的思源宋體原檔（繁中、簡中、日文、韓文四套，約 79 MB，見 server/routes/fonts/serif）。獨立一個階段：
+# 只有這支腳本改了才會重新下載，跟程式碼的建置快取分開。腳本會比對 sha256。
+FROM node:26.5.0-bookworm-slim AS serif-font
+COPY scripts/fetch-serif-font.mjs /tmp/fetch-serif-font.mjs
+RUN node /tmp/fetch-serif-font.mjs /fonts
+
 FROM node:26.5.0-bookworm AS builder
 WORKDIR /app
 # pnpm 釘版:對齊 host/CI(packageManager 欄位 = pnpm@12.1.0)。
@@ -120,6 +126,9 @@ RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack 
  && node --version
 
 COPY --from=builder /app/.output ./.output
+# 原檔不在就是 404，瀏覽器退回系統明體，頁面照常——所以少了它不會壞，只是字醜
+COPY --from=serif-font /fonts ./fonts
+ENV SERIF_FONT_DIR=/app/fonts
 
 EXPOSE 13579
 ENV PORT=13579

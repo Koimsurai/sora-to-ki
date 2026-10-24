@@ -1,0 +1,297 @@
+/* 手記（blog/Notes）：星軌畫在固定於視窗的畫布上（blog/noteSky），列表是一欄照目錄排的字 */
+
+.nt {
+  position: relative;
+  min-height: 100vh;
+  font-family: var(--serif);
+  color: var(--paper);
+}
+
+.nt-sky {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  /* 高度寫成視窗高：換頁時整頁被平移，平移中的祖先會變成 fixed 的定位基準，寫 100% 會被拉成整頁那麼高 */
+  height: 100vh;
+  pointer-events: none;
+}
+
+:where(.nt) :where(a, button) {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.nt a:focus-visible,
+.nt button:focus-visible {
+  outline: 1px solid var(--paper-2);
+  outline-offset: 3px;
+}
+
+/* 字底下襯一圈底色：星軌從後面穿過也讀得清楚 */
+.nt-shadow {
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 14px var(--ground);
+}
+
+.nt-in {
+  position: relative;
+  transition: opacity var(--dur-250) ease;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-7);
+  max-width: 680px;
+  padding: var(--page-top) var(--space-4) var(--page-bottom);
+  margin-left: max(0px, calc(50% - 560px));
+}
+
+/* 換頁的「收」：字先退掉，只剩星軌在動 */
+.nt.is-leaving .nt-in {
+  opacity: 0;
+}
+
+/* ── 標題 ── */
+.nt-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.nt-title h1 {
+  margin: 0;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  line-height: var(--lh-110);
+}
+
+.nt-latin {
+  font-family: var(--latin-display);
+  font-size: var(--fs-24);
+  color: var(--paper-2);
+}
+
+.nt-head p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+/* ── 分類 ── */
+.nt-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+}
+
+.nt-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.nt-cats button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: color var(--dur-200) ease;
+}
+
+.nt-cats button::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-round);
+  transition:
+    background var(--dur-200) ease,
+    border-color var(--dur-200) ease;
+}
+
+.nt-cats button:hover,
+.nt-cats .is-on {
+  color: var(--paper);
+}
+
+.nt-cats .is-on::before {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+
+.nt-cats em,
+.nt-tag {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-style: normal;
+  color: var(--paper-3);
+}
+
+.nt-tag {
+  display: inline-flex;
+  gap: var(--space-2);
+  color: var(--paper-2);
+  transition: color var(--dur-200) ease;
+}
+
+.nt-tag:hover {
+  color: var(--paper);
+}
+
+.nt-empty {
+  margin: 0;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+/* ── 一年一欄：年份在左，一篇一行 ── */
+.nt-year {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  column-gap: var(--space-5);
+}
+
+.nt-y {
+  font-family: var(--latin-display);
+  font-size: var(--fs-40);
+  line-height: var(--lh-100);
+  color: var(--paper-2);
+}
+
+.nt-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.nt-list li {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  column-gap: var(--space-4);
+  align-items: baseline;
+  padding: var(--space-2) 0;
+}
+
+.nt-list time {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-variant-numeric: tabular-nums;
+  color: var(--paper-3);
+}
+
+.nt-list a {
+  display: grid;
+  gap: var(--space-px);
+  line-height: var(--lh-150);
+}
+
+.nt-list b {
+  font-size: var(--fs-16);
+  font-weight: 600;
+  transition: color var(--dur-200) ease;
+}
+
+/* 副標（標題冒號後面那段）小一號、淡一階，主標一眼掃得完 */
+.nt-sub {
+  font-size: var(--fs-13);
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.nt-list li:hover b,
+.nt-list a:focus-visible b {
+  color: var(--amber);
+}
+
+.nt-list li:hover .nt-sub {
+  color: var(--paper-2);
+}
+
+.nt-meta {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  white-space: nowrap;
+  color: var(--paper-3);
+}
+
+.nt-more {
+  justify-self: start;
+  margin-left: calc(110px + var(--space-5));
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.nt-more:hover {
+  color: var(--paper);
+}
+
+/* 窄螢幕：年份疊在上面，分類與時間換到標題下一行 */
+@media (max-width: 760px) {
+  .nt-year {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+
+  .nt-list li {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .nt-meta {
+    grid-column: 2;
+  }
+
+  .nt-more {
+    margin-left: 0;
+  }
+}
+
+/* 進場：快門打開時列表一行一行被畫出來——像一道光從左往右掃過，每一行晚一點點。
+   JS 還沒接手前（SSR、沒有 JS）照常顯示 */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .nt:not(.is-in) :is(.nt-list li, .nt-y, .nt-cats, .nt-tag, .nt-more) {
+    opacity: 0;
+  }
+
+  .nt.is-in .nt-list li {
+    animation: nt-row var(--dur-700) var(--easing-out) both;
+    animation-delay: calc(var(--i, 0) * 38ms + 160ms);
+  }
+
+  .nt.is-in :is(.nt-y, .nt-cats, .nt-more) {
+    animation: nt-fade var(--dur-700) var(--easing-out) both;
+    animation-delay: 120ms;
+  }
+}
+
+@keyframes nt-row {
+  from {
+    opacity: 0.15;
+    clip-path: inset(0 100% 0 0);
+    translate: -8px 0;
+  }
+
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+    translate: 0 0;
+  }
+}
+
+@keyframes nt-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
