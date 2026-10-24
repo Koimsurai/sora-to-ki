@@ -68,63 +68,8 @@
   "user": {
     "adminPanel": "进入后台",
     "logout": "登出",
-    "signInLabel": "社交账号登录",
     "signInWithGithub": "GitHub 登录",
-    "signInWithGoogle": "Google 登录",
-    "notConfigured": "第三方登录尚未配置",
-    "menuLabel": "用户菜单"
-  },
-  "megaMenu": {
-    "online": "在线",
-    "stats": {
-      "posts": "文",
-      "words": "字",
-      "days": "日"
-    },
-    "groups": {
-      "pages": "页面",
-      "site": "站点",
-      "categories": "分类",
-      "latestPosts": "最新文章",
-      "categoryLatest": "{{cat}} · 最新",
-      "life": "生活",
-      "personal": "个人",
-      "collection": "收藏"
-    },
-    "items": {
-      "home": "首页",
-      "about": "关于",
-      "expertise": "技能",
-      "portfolio": "作品",
-      "contact": "联系",
-      "aboutSite": "此站点",
-      "aboutSiteDesc": "一个工程师的个人空间",
-      "history": "历史",
-      "historyDesc": "站点走过的路",
-      "messages": "留言",
-      "messagesDesc": "想说什么都可以",
-      "friends": "朋友们",
-      "friendsDesc": "友链",
-      "allPosts": "全部文章",
-      "viewAllPosts": "查看全部文章 →",
-      "emptyCategory": "这个分类还没有文章",
-      "photos": "照片",
-      "photosDesc": "摄影作品集",
-      "activity": "动态",
-      "activityDesc": "最新活动",
-      "bookshelf": "书架",
-      "bookshelfDesc": "阅读记录",
-      "music": "音乐",
-      "musicDesc": "喜爱的音乐",
-      "journey": "成长轨迹",
-      "journeyDesc": "学习历程",
-      "setup": "装备",
-      "setupDesc": "设备清单",
-      "watch": "在看",
-      "watchDesc": "最近追的动画 / 剧集 / 电影",
-      "thinking": "碎念",
-      "thinkingDesc": "一些当下的短想法"
-    }
+    "signInWithGoogle": "Google 登录"
   },
   "hero": {
     "description": "宙与木 — Koimsurai 的个人空间。一个工程师的阅读笔记、作品记录与系统实验。"
@@ -156,10 +101,6 @@
       "status": "服务状态"
     }
   },
-  "language": {
-    "switcher": "语言",
-    "current": "当前：{{label}}"
-  },
   "notFound": {
     "pageTitle": "404 — 页面找不到",
     "seoDescription": "你迷路了吗？这个页面不存在。",
@@ -174,47 +115,6 @@
     "pageTitleShort": "找不到页面"
   },
   "home": {
-    "aboutMe": {
-      "eyebrow": "Koimsurai · 木村盆栽",
-      "titleLine1": "把复杂的事情",
-      "titleLine2": "做得让人「顺手」。"
-    },
-    "schoolClubs": {
-      "eyebrowSuffix": "社团干部",
-      "activitiesLabel": "活动"
-    },
-    "contact": {
-      "titleLine1": "想聊聊？",
-      "titleLine2": "Let's build something.",
-      "blurb": "项目合作、技术交流、实习机会，都欢迎透过下列任一方式联系。"
-    },
-    "lately": {
-      "eyebrow": "最近的文字与动静",
-      "postsTitle": "最近写了",
-      "murmursTitle": "碎念",
-      "echoesTitle": "回声",
-      "orbitTitle": "今年轨迹",
-      "orbitStat": "今年 {{count}} 篇",
-      "viewAll": "看全部",
-      "more": "更多",
-      "empty": "目前还很安静",
-      "today": "今天",
-      "seasons": {
-        "spring": "春",
-        "summer": "夏",
-        "autumn": "秋",
-        "winter": "冬"
-      }
-    },
-    "signal": {
-      "label": "今日信号",
-      "open": "开放合作与聊聊"
-    },
-    "appreciation": {
-      "like": "留下印记",
-      "star": "给项目一颗星",
-      "likeAria": "为这个站留下印记"
-    },
     "orbit": {
       "title": "Koimsurai 的个人网站：手记、碎念、作品与收藏",
       "notesCount": "{{count}} 篇 · 最近 {{date}}",
@@ -498,7 +398,6 @@
     "errorTitle": "出了一点问题",
     "missingToken": "链接缺少 token，请点电子报底部的退订链接。",
     "invalidLink": "链接无效或已过期。",
-    "noServer": "无法连接到服务器。",
     "unsubscribeFailed": "退订失败",
     "bodyConfirm": "你正在用 <em>{{email}}</em> 退订 Koimsurai 电子报。<br />退订后，未来新文章不会再寄到你的信箱。",
     "btnConfirm": "确认退订",

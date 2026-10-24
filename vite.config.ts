@@ -368,9 +368,7 @@ export default defineConfig({
       {
         files: [
           'src/components/layout/NotFound.tsx',
-          'src/components/common/BrandIcons.tsx',
           'src/components/common/SignatureSVG.tsx',
-          'src/components/media/ZeroGravityLibrary.tsx',
         ],
         rules: { 'shadcn/no-raw-colors': 'off' },
       },

@@ -85,18 +85,18 @@ docH / scrollY 就追得到源頭。
 
 | 資料夾 | 放什麼 |
 |---|---|
-| `layout/` | 站台外框：AppShell、Header／MobileNav、Footer、命令面板、右鍵選單 |
-| `backdrop/` | 太空背景與轉場：SpaceBackdropShell 那條線底下的所有特效 |
-| `home/` | 首頁：MainPage、Hero、HomeLately |
-| `about/` | 關於與資訊頁：關於、作品、設備、朋友、留言、航行日誌、此站點 |
-| `blog/` | 手記、文章與碎念：Notes、BlogPost、Thinking；留言共用件（CommentForm、SignalLog）也在這裡 |
+| `layout/` | 站台外框：AppShell、SiteNav（頂欄＋懸停選單 NavMenus）、TransitionLayer（換頁轉場與開場）、命令面板、右鍵選單、404 |
+| `backdrop/` | 星空背景：SpaceBackdropShell 那條線底下（StarfieldGpu、CSS 星空、星雲） |
+| `home/` | 首頁：MainPage、HomeOrbit（土星與近況） |
+| `about/` | 關於與資訊頁：關於（AboutFall）、作品、設備、朋友、留言、航行日誌、此站點（Colophon）；各頁的畫布在同名的 `*Sky.ts` |
+| `blog/` | 手記、文章與碎念：Notes、BlogPost（＋OrbitToc、ArticleFrame）、Thinking；留言共用件（CommentForm、SignalLog）也在這裡 |
 | `mdx/` | MDX 渲染與所有 block 元件（新增 block 要同時改 `mdx-blocks-registry.ts`） |
-| `gallery/` | 照片：PhotoGallery、PhotoViewer、EXIF、圖片檢視 |
-| `media/` | 收藏庫：Watch、Music、Bookshelf、Activity |
+| `gallery/` | 照片：Photos（地面站）、PhotoViewer、EXIF、圖片檢視 |
+| `media/` | 收藏：Collection（在看、在讀、在聽）、FavoritesEditor |
 | `account/` | 登入回呼、電子報退訂 |
 | `common/` | 跨領域共用：KoimLoader、LinkCard、SignatureSVG |
 | `ui/`、`animate-ui/` | shadcn 與 animate-ui 產生的檔案，**不要手動整理**（oxlint 與 knip 都有針對這兩個路徑的設定） |
-| `admin/`、`monaco-editor/`、`mega-menu/` | 原本就分好的，維持原樣 |
+| `admin/`、`monaco-editor/` | 原本就分好的，維持原樣 |
 
 CSS 跟同名元件放在一起。**跨資料夾的 import 一律走 `@/` alias**，同資料夾才用 `./`。
 這樣下次再搬檔只會動到被搬的那幾個檔案，不會牽動一堆 `../../`。

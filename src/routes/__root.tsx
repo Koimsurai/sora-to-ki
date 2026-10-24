@@ -1,7 +1,6 @@
 // 全域樣式/字型 —— 對齊舊 main.tsx 的 entry import(P2 之前漏掉導致全站無 Tailwind/CSS 變數/字型 → 全破版)。
 // index.css 先載(@tailwind base + :root 變數 + body/grain/:lang 字型切換),component CSS 才能覆蓋。
 import '@fontsource-variable/tasa-orbiter';
-import '@fontsource-variable/tasa-explorer';
 // 翻新用的兩套拉丁字：Instrument Serif（整段英文的大字，只有 400）與 Fira Code（日期、數字、標籤）。
 // 中文的思源宋體不在這裡，它是按頁裁字（layout/SerifFontLoader）
 import '@fontsource/instrument-serif/400.css';

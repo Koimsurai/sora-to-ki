@@ -68,63 +68,8 @@
   "user": {
     "adminPanel": "Admin panel",
     "logout": "Sign out",
-    "signInLabel": "Sign in with social",
     "signInWithGithub": "Sign in with GitHub",
-    "signInWithGoogle": "Sign in with Google",
-    "notConfigured": "Third-party login not configured",
-    "menuLabel": "User menu"
-  },
-  "megaMenu": {
-    "online": "Online",
-    "stats": {
-      "posts": "Posts",
-      "words": "Words",
-      "days": "Days"
-    },
-    "groups": {
-      "pages": "Pages",
-      "site": "Site",
-      "categories": "Categories",
-      "latestPosts": "Latest posts",
-      "categoryLatest": "{{cat}} · Latest",
-      "life": "Life",
-      "personal": "Personal",
-      "collection": "Collection"
-    },
-    "items": {
-      "home": "Home",
-      "about": "About",
-      "expertise": "Skills",
-      "portfolio": "Work",
-      "contact": "Contact",
-      "aboutSite": "This site",
-      "aboutSiteDesc": "A developer's personal space",
-      "history": "History",
-      "historyDesc": "Where this site has been",
-      "messages": "Messages",
-      "messagesDesc": "Say whatever you want",
-      "friends": "Friends",
-      "friendsDesc": "Webring",
-      "allPosts": "All posts",
-      "viewAllPosts": "View all posts →",
-      "emptyCategory": "No posts in this category yet",
-      "photos": "Photos",
-      "photosDesc": "Photography",
-      "activity": "Activity",
-      "activityDesc": "What's happening",
-      "bookshelf": "Bookshelf",
-      "bookshelfDesc": "Reading log",
-      "music": "Music",
-      "musicDesc": "What I'm listening to",
-      "journey": "Journey",
-      "journeyDesc": "Where I've been",
-      "setup": "Setup",
-      "setupDesc": "My gear",
-      "watch": "Watching",
-      "watchDesc": "Recent anime / shows / films",
-      "thinking": "Murmurs",
-      "thinkingDesc": "Fleeting short thoughts"
-    }
+    "signInWithGoogle": "Sign in with Google"
   },
   "hero": {
     "description": "Sora to Ki (宙と木) — Koimsurai's personal space. A developer's reading notes, portfolio, and system experiments."
@@ -156,10 +101,6 @@
       "status": "Status"
     }
   },
-  "language": {
-    "switcher": "Language",
-    "current": "Current: {{label}}"
-  },
   "notFound": {
     "pageTitle": "404 — Page not found",
     "seoDescription": "Looks like you're lost. This page doesn't exist.",
@@ -174,47 +115,6 @@
     "pageTitleShort": "Page not found"
   },
   "home": {
-    "aboutMe": {
-      "eyebrow": "Koimsurai · Bonsai of code",
-      "titleLine1": "Take the complex,",
-      "titleLine2": "and make it feel effortless."
-    },
-    "schoolClubs": {
-      "eyebrowSuffix": "club roles",
-      "activitiesLabel": "events"
-    },
-    "contact": {
-      "titleLine1": "Want to chat?",
-      "titleLine2": "Let's build something.",
-      "blurb": "Project collaborations, tech chats, internships — reach out via any of the channels below."
-    },
-    "lately": {
-      "eyebrow": "words & happenings",
-      "postsTitle": "Recent writing",
-      "murmursTitle": "Murmurs",
-      "echoesTitle": "Echoes",
-      "orbitTitle": "This year in orbit",
-      "orbitStat": "{{count}} posts this year",
-      "viewAll": "View all",
-      "more": "More",
-      "empty": "Quiet for now",
-      "today": "Today",
-      "seasons": {
-        "spring": "SPRING",
-        "summer": "SUMMER",
-        "autumn": "AUTUMN",
-        "winter": "WINTER"
-      }
-    },
-    "signal": {
-      "label": "Signal of the day",
-      "open": "Open for opportunities"
-    },
-    "appreciation": {
-      "like": "Leave a mark",
-      "star": "Star on GitHub",
-      "likeAria": "Leave a mark on this site"
-    },
     "orbit": {
       "title": "Koimsurai: notes, murmurs, work and collections",
       "notesCount": "{{count}} posts · latest {{date}}",
@@ -498,7 +398,6 @@
     "errorTitle": "Something went wrong",
     "missingToken": "Link is missing a token. Use the unsubscribe link at the bottom of an email.",
     "invalidLink": "Link is invalid or expired.",
-    "noServer": "Can't reach the server.",
     "unsubscribeFailed": "Unsubscribe failed",
     "bodyConfirm": "You're about to unsubscribe <em>{{email}}</em> from the Koimsurai newsletter.<br />Once unsubscribed, future posts won't reach your inbox.",
     "btnConfirm": "Confirm unsubscribe",

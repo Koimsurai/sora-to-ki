@@ -54,10 +54,9 @@
  *
  * ⚠ 第 4 條**刻意不查定義行**，這不是漏掉。兩條的形狀不一樣：
  * 合法的 alpha 階梯只有一處（index.css），所以任何別的定義行引用階梯外的 alpha 都是錯；
- * 顏色沒有這個性質——**主題區塊本來就該自帶一整套字面色**。實際查過的五個站點：
- * `.mm-theme-zinc/-deep/-tokyo/-nord/-light`（五個各自完整的圖表主題）與
- * `AdminTheme.css` 開頭那個把 shadcn 變數整組重定義的區塊。把它們指向 `--zinc-*`
- * 會讓 zinc 那個主題跟它四個兄弟長得不一樣，讀的人反而要跳兩層才看得出主題長怎樣。
+ * 顏色沒有這個性質——**主題區塊本來就該自帶一整套字面色**，例如 `AdminTheme.css` 開頭
+ * 那個把 shadcn 變數整組重定義的區塊。只把其中幾個指向 `--zinc-*` 會讓它跟同一組的兄弟
+ * 長得不一樣，讀的人反而要跳兩層才看得出主題長怎樣。
  * 要改的是「語意別名指向調色盤」，而那件事沒辦法用「值相等」自動判斷，只能人看。
  *
  * 真的需要新尺寸時有兩條路，兩條都會在 review 裡被看見：把它加進 index.css 的尺
@@ -107,14 +106,6 @@ const SCALE_PX: Record<number, string> = {
 const GRANDFATHERED = new Set([
   // 負值：沒有負的 token 形式（寫 `calc(-1 * var(--space-10))` 更難讀）
   '-1px',
-  '-4px',
-  '-6px',
-  '-12px',
-  '-120px',
-  '-0.5rem',
-  '-1.2rem',
-  '-1.5rem',
-  '-2.5rem',
 ]);
 
 /**
@@ -229,12 +220,8 @@ for (const m of blankComments(INDEX_CSS).matchAll(/(--easing-[\w-]+)\s*:\s*(cubi
   EASING_TOKEN.set(m[2].replace(/\s+/g, ''), m[1]);
 }
 
-/**
- * 時長的豁免。兩條，各有理由：
- *   · `0.01ms` —— `prefers-reduced-motion` 的關閉開關，那不是一個時長
- *   · `1.5s`   —— `.np-ambient-glow` 一處，離最近的一格 500ms，硬貼會走樣
- */
-const DUR_GRANDFATHERED = new Set(['0.01ms', '1.5s']);
+/** 時長的豁免：`0.01ms` 是 `prefers-reduced-motion` 的關閉開關，那不是一個時長 */
+const DUR_GRANDFATHERED = new Set(['0.01ms']);
 
 /**
  * 行高與字距的尺，一樣從 index.css 讀。名字裡的數字是 ×100（`--lh-140` = 1.4、
@@ -254,12 +241,11 @@ for (const m of blankComments(INDEX_CSS).matchAll(/(--ls-n?\d+)\s*:\s*(-?[\d.]+)
 }
 
 /**
- * 行高的豁免。三條都是刻意的排版手法，貼到尺上會壞：
+ * 行高的豁免。兩條都是刻意的排版手法，貼到尺上會壞：
  *   · `0`    —— `.vp` 影片容器殺掉行內間隙，寫 0 最清楚（同 `border-radius: 0`）
  *   · `0.8`  —— `.post-content.drop-cap-first` 的首字放大
- *   · `0.95` —— `.expertise-hero-number` 的巨大數字
  */
-const LH_GRANDFATHERED = new Set(['0', '0.8', '0.95']);
+const LH_GRANDFATHERED = new Set(['0', '0.8']);
 
 /**
  * `blur()` 的半徑尺（`--blur-*`，名字就是 px）。只查 `filter` / `backdrop-filter`。
