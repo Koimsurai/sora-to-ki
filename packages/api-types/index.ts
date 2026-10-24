@@ -419,6 +419,25 @@ export type FilmsResponse = {
 	films: FilmRow[],
 };
 
+/**  最新一篇 */
+export type FriendPost = {
+	title: string,
+	url: string | null,
+	/**  feed 上寫的日期，原樣（RSS 是 RFC 2822、Atom 是 ISO 8601，前端的 Date 兩種都吃） */
+	date: string | null,
+};
+
+/**  `GET /api/friends` 的一筆 */
+export type FriendStar = {
+	id: string,
+	name: string,
+	url: string,
+	desc: string,
+	/**  有沒有 feed（沒有的是一顆安靜的星） */
+	has_feed: boolean,
+	latest: FriendPost | null,
+};
+
 /**  manifest 裡的一張照片。 */
 export type GalleryPhoto = {
 	id: string,

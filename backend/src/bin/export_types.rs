@@ -15,6 +15,7 @@ use koimsurai_web_backend::handlers::admin::{
 use koimsurai_web_backend::handlers::auth::{AuthProvidersResponse, OAuthProviderInfo};
 use koimsurai_web_backend::handlers::books::{BookDetailResponse, BookRow, BooksListResponse};
 use koimsurai_web_backend::handlers::categories::{CategoriesResponse, CategoryRow};
+use koimsurai_web_backend::handlers::friends::{FriendPost, FriendStar};
 use koimsurai_web_backend::handlers::gallery::{
     ExifValue, GalleryPhoto, PhotoExif, PhotoGps, PhotoUrls, PhotosManifest,
 };
@@ -112,6 +113,8 @@ fn main() {
         .register::<PollResponse>()
         .register::<CountResponse>()
         .register::<Telemetry>()
+        .register::<FriendPost>()
+        .register::<FriendStar>()
         // posts（admin）
         .register::<AdminPostFull>()
         .register::<AdminPostsResponse>()

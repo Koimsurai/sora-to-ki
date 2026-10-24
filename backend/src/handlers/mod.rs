@@ -4,6 +4,7 @@ pub mod bahamut;
 pub mod books;
 pub mod categories;
 pub mod comments;
+pub mod friends;
 pub mod gallery;
 pub mod home;
 pub mod link_preview;
