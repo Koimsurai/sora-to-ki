@@ -119,10 +119,10 @@ export function createStrip() {
         ctx.fill();
       }
 
-      // 起點的振鈴：頻道最左邊一小段，越往右越小，整段隨時間衰減掉
+      // 起點的振鈴：頻道最左邊一小段，越往右越小，整段隨時間衰減掉；跟那道光同一個琥珀色
       if (ping !== null && ping < 1) {
         const decay = (1 - ping) ** 2;
-        ctx.strokeStyle = `rgba(${INK}, ${0.9 * (1 - ping * 0.5)})`;
+        ctx.strokeStyle = `rgba(${AMBER}, ${0.95 * (1 - ping * 0.5)})`;
         ctx.beginPath();
         for (let x = 0; x <= PING_W; x += 1) {
           const env = (1 - x / PING_W) ** 1.5;
