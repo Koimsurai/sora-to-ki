@@ -553,11 +553,13 @@
   },
   "photos": {
     "title": "攝影作品集",
-    "description": "Koimsurai 的攝影作品集，記錄旅途中的光影故事。"
-  },
-  "gallery": {
-    "allTags": "全部",
-    "moreTags": "更多"
+    "description": "Koimsurai 的攝影作品集，記錄旅途中的光影故事。",
+    "heading": "照片",
+    "subtitle": "從很遠的地方，一行一行收回來的光。",
+    "station": "DSN · 地面站",
+    "stationLabel": "地面站的碟形天線，接收遠處探測器傳來的訊號",
+    "passesLabel": "每個月收到幾張：{{month}} 最多，{{count}} 張",
+    "frame": "照片 {{date}}"
   },
   "aboutFall": {
     "kick": "關於",

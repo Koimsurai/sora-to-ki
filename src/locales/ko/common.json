@@ -553,11 +553,13 @@
   },
   "photos": {
     "title": "사진 작품집",
-    "description": "Koimsurai 의 사진 작품집. 여행길의 빛과 그림자 기록."
-  },
-  "gallery": {
-    "allTags": "전체",
-    "moreTags": "더보기"
+    "description": "Koimsurai 의 사진 작품집. 여행길의 빛과 그림자 기록.",
+    "heading": "사진",
+    "subtitle": "멀리서, 한 줄씩 받아 온 빛.",
+    "station": "DSN · 지상국",
+    "stationLabel": "멀리 있는 탐사선의 신호를 받는 지상국 접시 안테나",
+    "passesLabel": "월별 수신 장수: {{month}}에 가장 많은 {{count}}장",
+    "frame": "사진 {{date}}"
   },
   "aboutFall": {
     "kick": "소개",
