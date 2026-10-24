@@ -281,13 +281,14 @@
   width: 1px;
 }
 
+/* 10px 的字要到 4.5:1：--paper-3（0.4）只有 3.4，0.5 是剛好過的那一階 */
 .ph-tel {
   display: grid;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   line-height: var(--lh-170);
   letter-spacing: var(--ls-4);
-  color: var(--paper-3);
+  color: rgba(var(--paper-rgb), 0.5);
 }
 
 .ph-tel b {
