@@ -6,8 +6,6 @@
 const TAU = Math.PI * 2;
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
-/** 紙色（--ground）：整頁遮罩先鋪這一層，底下的內容才不會透出來 */
-const GROUND = '#0a0a0c';
 const rgba = (c: string, a: number) => `rgba(${c}, ${a.toFixed(3)})`;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -134,49 +132,6 @@ export function createStation() {
   return { draw, transmitter, receiver };
 }
 
-/**
- * 整頁的遮罩（進場、退場）：y 從 top 到 bottom 這一段是還沒收到（或已經收回去）的部分，
- * 鋪紙色再貼一層 0 與 1；band 是地面站那一條（整頁寬），那一段不蓋（點要沿著訊號從探測器飛到天線，
- * 得看得到它們）。不用裁切路徑挖洞，直接畫上下兩塊，省一次整張畫布的裁切。
- * edge 那一側畫一條琥珀色的掃描線
- */
-export function drawVeil(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  top: number,
-  bottom: number,
-  edge: 'top' | 'bottom' | null,
-  band: { top: number; bottom: number } | null,
-  t: number,
-  font: string,
-) {
-  ctx.clearRect(0, 0, w, h);
-  if (bottom <= top) return;
-  const tiles = noiseTiles(font);
-  const tile = tiles[Math.floor((Math.max(0, t) * 1000) / NOISE_SWAP_MS) % tiles.length];
-  const block = (y0: number, y1: number) => {
-    if (y1 <= y0) return;
-    ctx.fillStyle = GROUND;
-    ctx.fillRect(0, y0, w, y1 - y0);
-    // 貼圖對齊整個視窗的格線（不跟著 y0 走），收的時候 0 與 1 不會跟著掃描線滑
-    for (let y = y0 - (y0 % NOISE_H); y < y1; y += NOISE_H) {
-      const sy = Math.max(y, y0);
-      const sh = Math.min(y + NOISE_H, y1) - sy;
-      for (let x = 0; x < w; x += NOISE_W) ctx.drawImage(tile, 0, sy - y, NOISE_W, sh, x, sy, NOISE_W, sh);
-    }
-  };
-  if (band) {
-    block(top, Math.min(bottom, band.top));
-    block(Math.max(top, band.bottom), bottom);
-  } else {
-    block(top, bottom);
-  }
-  ctx.fillStyle = rgba(AMBER, 0.9);
-  if (edge === 'top') ctx.fillRect(0, top, w, 1);
-  if (edge === 'bottom') ctx.fillRect(0, bottom - 1, w, 1);
-}
-
 /** 接收紀錄：每個月收到幾張，一個月一個圈（圈越大收得越多），多的那幾個月標上數字 */
 export function drawPasses(
   ctx: CanvasRenderingContext2D,
@@ -251,46 +206,49 @@ export function rxStage(t: number): { stage: RxStage; scan: number; color: numbe
   return { stage, scan, color };
 }
 
-/** 0 與 1 的雜訊貼圖有幾張、多大（像素）：輪流換著貼，看起來就是一直在閃 */
-const NOISE_TILES = 4;
+/** 0 與 1 的雜訊貼圖有幾張、多大（像素）：兩張交替貼，看起來就是一直在閃 */
+const NOISE_TILES = 2;
 const NOISE_W = 480;
 const NOISE_H = 264;
-/** 雜訊多久換一張（毫秒） */
-const NOISE_SWAP_MS = 70;
-let noise: { font: string; tiles: HTMLCanvasElement[] } | null = null;
+let noise: { font: string; urls: Promise<string[]> } | null = null;
 
-/**
- * 雜訊貼圖：一排一排的 0 與 1，先畫好幾張。每一幀都重新排一整片字太貴
- * （好幾張同時在收的時候會掉幀），貼現成的圖幾乎不花時間
- */
-function noiseTiles(font: string) {
-  if (noise?.font === font) return noise.tiles;
-  const tiles = Array.from({ length: NOISE_TILES }, () => {
-    const cv = document.createElement('canvas');
-    cv.width = NOISE_W;
-    cv.height = NOISE_H;
-    const g = cv.getContext('2d');
-    if (!g) return cv;
-    g.font = font;
-    g.textAlign = 'left';
-    g.fillStyle = rgba(INK, 0.22);
-    // 一排字要排滿整張貼圖（多排一個字，超出的會被切掉），貼圖接在一起時才不會有一條直縫
-    const cols = Math.ceil(NOISE_W / g.measureText('0').width) + 1;
-    for (let y = 9; y < NOISE_H; y += 11) {
-      let line = '';
-      for (let x = 0; x < cols; x++) line += Math.random() < 0.5 ? '0' : '1';
-      g.fillText(line, 0, y);
-    }
-    return cv;
-  });
-  noise = { font, tiles };
-  return tiles;
+/** 一張雜訊貼圖：一排一排的 0 與 1 */
+function noiseTile(font: string) {
+  const cv = document.createElement('canvas');
+  cv.width = NOISE_W;
+  cv.height = NOISE_H;
+  // 放在 CPU 上畫（willReadFrequently）：這張只畫一次就要編成 PNG，GPU 上的畫布編碼前得先同步讀回來，會卡主執行緒
+  const g = cv.getContext('2d', { willReadFrequently: true });
+  if (!g) return cv;
+  g.font = font;
+  g.textAlign = 'left';
+  g.fillStyle = rgba(INK, 0.22);
+  // 一排字要排滿整張貼圖（多排一個字，超出的會被切掉），貼圖接在一起時才不會有一條直縫
+  const cols = Math.ceil(NOISE_W / g.measureText('0').width) + 1;
+  for (let y = 9; y < NOISE_H; y += 11) {
+    let line = '';
+    for (let x = 0; x < cols; x++) line += Math.random() < 0.5 ? '0' : '1';
+    g.fillText(line, 0, y);
+  }
+  return cv;
 }
 
 /**
- * 第 i 張雜訊貼圖轉成圖片網址：每一格照片接收時拿它當 CSS 背景（只畫一次，之後全部交給瀏覽器貼）
+ * 雜訊貼圖的圖片網址：整頁遮罩與每一格照片接收時拿它當 CSS 背景（之後全部交給瀏覽器貼）。
+ * 用 toBlob 不用 toDataURL：PNG 編碼不卡主執行緒（同步的話兩張就是一個 50ms 的長幀，正好卡在換頁飛進來的時候）。
+ * 這次瀏覽只編一次，再進來直接拿
  */
-export function noiseDataUrl(font: string, i: number) {
-  const tiles = noiseTiles(font);
-  return tiles[i % tiles.length].toDataURL('image/png');
+export function noiseUrls(font: string): Promise<string[]> {
+  if (noise?.font === font) return noise.urls;
+  const urls = Promise.all(
+    Array.from(
+      { length: NOISE_TILES },
+      () =>
+        new Promise<string>((resolve) => {
+          noiseTile(font).toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : ''), 'image/png');
+        }),
+    ),
+  );
+  noise = { font, urls };
+  return urls;
 }

@@ -11,7 +11,7 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { loadPhotosManifest } from '@/lib/manifestLoader';
 import { after, isArriving } from '@/store/pageTransition';
 import { openViewerAtom, photosAtom } from '@/store/photoStore';
-import { createStation, drawPasses, drawVeil, noiseDataUrl, RX_PHASES, RX_TOTAL, rxStage } from './downlink';
+import { createStation, drawPasses, noiseUrls, RX_PHASES, RX_TOTAL, rxStage } from './downlink';
 import { framesOf, overview, type Frame } from './frames';
 import PhotoViewer from './PhotoViewer';
 import './Photos.css';
@@ -32,8 +32,6 @@ const RX_STATUS_MS = 100;
 const RX_BEGIN_PER_TICK = 2;
 /** 地面站的畫布多久畫一次（毫秒）：動得很慢，30fps 就夠 */
 const STATION_FRAME_MS = 33;
-/** 整頁的遮罩多久畫一次（毫秒） */
-const VEIL_FRAME_MS = 33;
 /** 進場：琥珀點沿訊號路徑走的那一段分幾格；落進天線後饋源亮多久、整頁收下來要多久（毫秒） */
 const SIGNAL_STEPS = 16;
 const CAUGHT_MS = 1200;
@@ -44,7 +42,10 @@ const EXIT_COVER_MS = 520;
 const EXIT_MS = EXIT_GRAY_MS + EXIT_COVER_MS + 60;
 const LAUNCH_SPEED = 1.1;
 
-const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+/** 整頁遮罩收與蓋的緩動（ease-in-out 的三次方那條） */
+const EASE_IN_OUT = 'cubic-bezier(0.65, 0, 0.35, 1)';
+/** masonic 捲動時會在整個格子上掛 will-change: contents，正在收的那幾格會被重新分層、閃一下；固定成 auto */
+const MASONRY_STYLE = { willChange: 'auto' } as const;
 
 /** 這次瀏覽已經收過的：虛擬清單捲回來會重新掛上，收過的直接顯示，不再收一次 */
 const received = new Set<string>();
@@ -57,6 +58,10 @@ const monoFont = (px: number) => {
   monoFamily ??= getComputedStyle(document.documentElement).getPropertyValue('--mono-font').trim() || 'monospace';
   return `${px}px ${monoFamily}`;
 };
+
+/** 雜訊貼圖的字級；這支模組一載進來就先開始編，換頁飛進來時遮罩上已經有 0 與 1 */
+const NOISE_FONT_PX = 9;
+if (typeof document !== 'undefined') void noiseUrls(monoFont(NOISE_FONT_PX));
 
 /** 一張正在收（或排隊等著收）的照片 */
 interface RxJob {
@@ -212,10 +217,18 @@ function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen
         return false;
       },
     };
-    // 圖要先載好才排隊；載不到就不收了，直接顯示一般的 <img>（它自己會顯示載不到的樣子）
+    // 圖要先載好、接收那幾層的圖也先解碼完才排隊：沒解碼完的圖，捲動中瀏覽器會先畫一幀空的（那幾層滑進來時閃一下）。
+    // 載不到就不收了，直接顯示一般的 <img>（它自己會顯示載不到的樣子）
+    let alive = true;
     const queue = () => {
-      if (img.naturalWidth === 0) finish();
-      else rx.add(job, progress.has(photo.id));
+      if (img.naturalWidth === 0) {
+        finish();
+        return;
+      }
+      const decoding = [img, ...layer.querySelectorAll('img')].map((i) => i.decode().catch(() => undefined));
+      void Promise.all(decoding).then(() => {
+        if (alive) rx.add(job, progress.has(photo.id));
+      });
     };
     const io = new IntersectionObserver(
       ([e]) => {
@@ -231,6 +244,7 @@ function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen
     );
     io.observe(box);
     return () => {
+      alive = false;
       io.disconnect();
       rx.remove(job);
       // 收到一半被卸下：記住收到哪裡（掛回來時接著收）
@@ -266,16 +280,16 @@ function FrameCard({ data, width, onOpen }: { data: Frame; width: number; onOpen
           <span ref={rxRef} className="ph-rx" aria-hidden="true">
             <span className="ph-rx-noise" />
             <span className="ph-rx-noise is-b" />
-            {/* 掃描線放在那一層裡面、貼著它露出來的那一邊，跟著一起走 */}
+            {/* 掃描線放在那一層裡面、貼著它露出來的那一邊，跟著一起走。這兩張圖 decoding="sync"：滑進來的那一幀一定要畫得出來 */}
             <span className="ph-rx-gray">
               <span>
-                <img src={photo.thumbnailUrl} alt="" decoding="async" />
+                <img src={photo.thumbnailUrl} alt="" decoding="sync" />
               </span>
               <i className="ph-rx-scan" />
             </span>
             <span className="ph-rx-color">
               <span>
-                <img src={photo.thumbnailUrl} alt="" decoding="async" />
+                <img src={photo.thumbnailUrl} alt="" decoding="sync" />
               </span>
               <i className="ph-rx-sweep" />
             </span>
@@ -318,17 +332,24 @@ export default function Photos() {
   const station = useMemo(() => createStation(), []);
 
   const pageRef = useRef<HTMLDivElement>(null);
-  const veilRef = useRef<HTMLCanvasElement>(null);
+  const veilRef = useRef<HTMLDivElement>(null);
   /** 換頁轉場的點落進天線的時候（直接打開這頁就是第一幀）、開始離開的時候；-1 是還沒 */
   const phaseRef = useRef({ landedAt: -1, leavingAt: -1 });
 
-  // 0 與 1 的雜訊貼圖：畫一次轉成圖，接收中的每一格拿它當背景（CSS 變數），兩張交替就是在閃
+  // 0 與 1 的雜訊貼圖：整頁遮罩與接收中的每一格拿它當背景（CSS 變數），兩張交替就是在閃。
+  // 編好之前只有紙色，一樣蓋得住底下
   useEffect(() => {
     const page = pageRef.current;
     if (!page) return;
-    const font = monoFont(9);
-    page.style.setProperty('--ph-noise-a', `url("${noiseDataUrl(font, 0)}")`);
-    page.style.setProperty('--ph-noise-b', `url("${noiseDataUrl(font, 1)}")`);
+    let live = true;
+    void noiseUrls(monoFont(NOISE_FONT_PX)).then(([a, b]) => {
+      if (!live) return;
+      page.style.setProperty('--ph-noise-a', `url("${a}")`);
+      page.style.setProperty('--ph-noise-b', `url("${b}")`);
+    });
+    return () => {
+      live = false;
+    };
   }, []);
 
   /** 地面站畫布上的一點換成視窗座標 */
@@ -411,64 +432,80 @@ export default function Photos() {
   }, [station]);
 
   // 整頁的遮罩：點還在飛的時候除了地面站都還沒收到；落進天線後一道掃描線從上往下把整頁收下來；
-  // 離開時從底下一行一行收回去
+  // 離開時從底下一行一行收回去。收與蓋都是 transform 動畫（交給合成器，跟螢幕同一個更新率），
+  // 這裡每一幀只看「落地了沒、要走了沒」，以及遮罩還在的時候地面站那一條要挖掉多少
   useEffect(() => {
-    const cv = veilRef.current;
-    const ctx = cv?.getContext('2d');
-    if (!cv || !ctx) return;
+    const veil = veilRef.current;
+    const sheet = veil?.querySelector<HTMLElement>('.ph-veil-sheet');
+    const noise = veil?.querySelector<HTMLElement>('.ph-veil-noise');
+    const edge = veil?.querySelector<HTMLElement>('.ph-veil-edge');
+    if (!veil || !sheet || !noise || !edge) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const phase = phaseRef.current;
-    const font = monoFont(9);
+    let state: 'cover' | 'reveal' | 'gone' | 'leave' = 'cover';
+    let anims: Animation[] = [];
+    let band = '';
+    /**
+     * 遮罩那一層往下（k 從 0 到 1）或往上滑；裡面的雜訊反方向推回來，0 與 1 對齊視窗不跟著掃描線滑。
+     * 掃描線只在動的那一段亮著
+     */
+    const slide = (from: number, to: number, duration: number, delay: number) => {
+      for (const a of anims) a.cancel();
+      const timing: KeyframeAnimationOptions = { duration, delay, easing: EASE_IN_OUT, fill: 'both' };
+      anims = [
+        sheet.animate(
+          [{ transform: `translateY(${from * 100}vh)` }, { transform: `translateY(${to * 100}vh)` }],
+          timing,
+        ),
+        noise.animate(
+          [{ transform: `translateY(${-from * 100}vh)` }, { transform: `translateY(${-to * 100}vh)` }],
+          timing,
+        ),
+        edge.animate([{ opacity: 1 }, { opacity: 1 }], { duration, delay }),
+      ];
+      return anims[0];
+    };
     let raf = 0;
-    let last = 0;
-    let shown = true;
-    const frame = (now: number) => {
+    const frame = () => {
       raf = requestAnimationFrame(frame);
-      if (now - last < VEIL_FRAME_MS) return;
-      last = now;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      let top = 0;
-      const bottom = h;
-      let edge: 'top' | null = null;
-      if (phase.leavingAt >= 0) {
-        const k = easeInOut(Math.min(1, Math.max(0, (now - phase.leavingAt - EXIT_GRAY_MS) / EXIT_COVER_MS)));
-        top = h * (1 - k);
-        edge = k > 0 && k < 1 ? 'top' : null;
-      } else if (phase.landedAt >= 0) {
-        const k = reduce ? 1 : easeInOut(Math.min(1, (now - phase.landedAt) / REVEAL_MS));
-        top = h * k;
-        edge = k < 1 ? 'top' : null;
+      if (phase.leavingAt >= 0 && state !== 'leave') {
+        state = 'leave';
+        veil.hidden = false;
+        slide(1, 0, EXIT_COVER_MS, EXIT_GRAY_MS);
+      } else if (phase.landedAt >= 0 && state === 'cover') {
+        state = 'reveal';
+        if (reduce) {
+          state = 'gone';
+          veil.hidden = true;
+        } else {
+          // 收完就整個藏起來（不留著一層全螢幕的圖層）；被取消的話（還沒收完就要走）finished 會 reject，不用管
+          void slide(0, 1, REVEAL_MS, 0)
+            .finished.then(() => {
+              if (state !== 'reveal') return;
+              state = 'gone';
+              veil.hidden = true;
+            })
+            .catch(() => undefined);
+        }
       }
-      if (top >= bottom) {
-        // 收完了：清掉一次就不再畫
-        if (shown) ctx.clearRect(0, 0, cv.width, cv.height);
-        shown = false;
-        return;
-      }
-      shown = true;
-      // 整頁的遮罩只有 0 與 1 的小字，1 倍就夠（它每一幀都要整張重畫）
-      if (cv.width !== w || cv.height !== h) {
-        cv.width = w;
-        cv.height = h;
-      }
-      // 換頁轉場時整頁在滑，遮罩跟著頁面走：地面站的位置要換成遮罩自己的座標
+      if (state === 'gone') return;
+      // 地面站那一條（整頁寬）不蓋：點要沿著訊號從探測器飛到天線，得看得到它們。
+      // 換頁轉場時整頁在滑，遮罩跟著頁面走，所以換成遮罩自己的座標；位置變了才換遮色片
       const r = stationRef.current?.getBoundingClientRect();
-      const o = cv.getBoundingClientRect();
-      drawVeil(
-        ctx,
-        w,
-        h,
-        top,
-        bottom,
-        edge,
-        r ? { top: r.top - o.top, bottom: r.bottom - o.top } : null,
-        now / 1000,
-        font,
-      );
+      const o = veil.getBoundingClientRect();
+      const next = r
+        ? `linear-gradient(#000 ${Math.round(r.top - o.top)}px, transparent 0 ${Math.round(r.bottom - o.top)}px, #000 0)`
+        : '';
+      if (next !== band) {
+        band = next;
+        veil.style.maskImage = next;
+      }
     };
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      for (const a of anims) a.cancel();
+    };
   }, []);
 
   // 接收紀錄：資料或寬度變了才重畫
@@ -494,7 +531,14 @@ export default function Photos() {
 
   return (
     <div className="ph" ref={pageRef}>
-      <canvas ref={veilRef} className="ph-veil" aria-hidden="true" />
+      <div ref={veilRef} className="ph-veil" aria-hidden="true">
+        <div className="ph-veil-sheet">
+          <div className="ph-veil-noise">
+            <div className="is-b" />
+          </div>
+          <i className="ph-veil-edge" />
+        </div>
+      </div>
       <header className="ph-head">
         <div className="ph-head-title">
           <h1>{t('photos.heading')}</h1>
@@ -538,6 +582,7 @@ export default function Photos() {
           itemKey={(f: Frame) => f.photo.id}
           columnWidth={COLUMN_PX}
           maxColumnCount={6}
+          style={MASONRY_STYLE}
           columnGutter={28}
           rowGutter={40}
           overscanBy={2}
