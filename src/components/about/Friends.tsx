@@ -11,6 +11,7 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { after, isArriving } from '@/store/pageTransition';
 import { createSky, drawDockIllustration, frameOf, FRESH_DAYS, INSERT_S, type Drawn, type Preview } from './friendsSky';
 import './Friends.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 const CONTACT = 'timo9378@gmail.com';
 const SITE = { name: '宙と木', url: 'https://koimsurai.com', rss: 'https://koimsurai.com/rss.xml' };
@@ -489,7 +490,7 @@ export default function Friends() {
       <header className="fr-head">
         <div className="fr-title">
           <h1>{t('friends.title')}</h1>
-          <span className="fr-latin">Friends</span>
+          {!sameTitle(t('friends.title'), 'Friends') && <span className="fr-latin">Friends</span>}
         </div>
         <p>{t('friends.subtitle')}</p>
       </header>

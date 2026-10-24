@@ -16,6 +16,7 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { after, isArriving } from '@/store/pageTransition';
 import { channelOf, createStrip, DISH_SRC, SEND_S } from './messagesWave';
 import './Messages.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 const BASE = 'posts';
 const POST_ID = 'meta-messages';
@@ -185,7 +186,7 @@ export default function Messages() {
       <header className="msg-head">
         <div className="msg-title">
           <h1>{t('messages.title')}</h1>
-          <span className="msg-latin">Messages</span>
+          {!sameTitle(t('messages.title'), 'Messages') && <span className="msg-latin">Messages</span>}
         </div>
         <p>{t('messages.subtitle')}</p>
       </header>

@@ -11,6 +11,7 @@ import { useBareSky } from '@/hooks/useBareSky';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { createFallSky, meterMark, phases, smooth } from './fallSky';
 import './AboutFall.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 /**
  * 每一年的排法輪著換，往下掉的時候不會一直看到同一種版面：
@@ -204,7 +205,7 @@ export default function AboutFall() {
       <header className="af-top">
         <p className="af-kick">
           {t('aboutFall.kick')}
-          <span>About</span>
+          {!sameTitle(t('aboutFall.kick'), 'About') && <span>About</span>}
         </p>
         <h1>
           {title}
