@@ -1,5 +1,6 @@
 // 留言頁的訊號：每一則留言是一段波形，字越多訊號越長，字本身決定起伏。
 // 頁首那條線是收訊的頻道：平常只有雜訊；打字時你打的字即時變成波形，送出時那一段往右飛進天線。
+// 換頁時有一段載波沿頻道跑（進場跑進天線、離場從天線倒著跑回左端），頻道跟著它長出來、收回去。
 // 這裡只畫線與天線，狀態文字（RX／TX）是疊在上面的 DOM。
 
 const INK = '241, 236, 227';
@@ -47,11 +48,19 @@ export interface Strip {
   typing: string;
   /** 送出中的那段字與經過的秒數（沒有是 null） */
   sending: { text: string; s: number } | null;
-  /** 換頁進來時線從左往右畫出來的進度（0–1） */
-  grow: number;
-  /** 換頁離開時線從左往右收進天線的進度（0–1） */
-  erase: number;
+  /** 頻道從左端畫到哪裡（0–1，相對整條線）：換頁時跟著電波的前緣走 */
+  reveal: number;
+  /** 換頁時沿頻道跑的那段電波：前緣在哪（0–1）、往哪個方向（1 往天線、-1 從天線倒回來） */
+  carrier: { head: number; dir: 1 | -1 } | null;
+  /** 天線的亮度倍率（0–1）：換頁時淡入淡出 */
+  dishAlpha: number;
   dish: HTMLImageElement | null;
+}
+
+/** 頻道的中線與右端（天線底下）的位置 */
+export function channelOf(w: number, h: number) {
+  const d = dishOf(w, h);
+  return { y: h / 2, end: d.x + d.dw * 0.2 };
 }
 
 export function dishOf(w: number, h: number) {
@@ -66,19 +75,28 @@ export function dishOf(w: number, h: number) {
 export function createStrip() {
   let flash = 0;
   let arrived = false;
+  /** 換頁那段電波碰過天線了沒（進場是前緣跑到天線、離場是一開始從天線出發，各亮一下） */
+  let carrierHit = false;
   return {
     /** 畫一幀；送出的那段飛進天線時天線亮一下 */
     draw(ctx: CanvasRenderingContext2D, f: Strip) {
-      const { w, h, t, dt, typing, sending, grow, erase, dish } = f;
+      const { w, h, t, dt, typing, sending, reveal, carrier, dishAlpha, dish } = f;
       ctx.clearRect(0, 0, w, h);
       const y = h / 2;
       const d = dishOf(w, h);
       const lineEnd = d.x + d.dw * 0.2;
       flash = Math.max(0, flash - dt * 1.4);
+      if (carrier) {
+        const headX = carrier.head * lineEnd;
+        if (!carrierHit && (carrier.dir === -1 || headX > d.x)) {
+          carrierHit = true;
+          flash = 1;
+        }
+      } else carrierHit = false;
 
       if (dish?.complete && dish.naturalWidth) {
         ctx.save();
-        ctx.globalAlpha = (0.45 + 0.5 * flash) * Math.min(1, grow * 1.5) * (1 - erase * 0.6);
+        ctx.globalAlpha = (0.45 + 0.5 * flash) * dishAlpha;
         ctx.translate(d.x + d.dw, d.y);
         ctx.scale(-1, 1);
         ctx.drawImage(dish, 0, 0, d.dw, d.dh);
@@ -94,13 +112,40 @@ export function createStrip() {
         ctx.fill();
       }
 
-      // 頻道：從左邊畫到天線，離開時從左邊收掉
-      const from = lineEnd * erase;
-      const to = lineEnd * grow;
-      if (to <= from) return;
+      // 換頁的那段電波：一小段載波，前緣是琥珀色的點（離場時從天線倒著跑回左端）
+      if (carrier) {
+        const head = carrier.head * lineEnd;
+        const len = Math.min(180, lineEnd * 0.3);
+        ctx.strokeStyle = `rgba(${INK}, 0.9)`;
+        ctx.beginPath();
+        for (let s = 0; s <= len; s += 1.5) {
+          // s 是離前緣多遠；包絡在中段最大、兩端收掉
+          const x = head - carrier.dir * s;
+          const env = Math.sin(Math.PI * (s / len)) ** 0.8;
+          const v = Math.sin(x * 0.22 - carrier.dir * t * 18) * env * h * 0.3;
+          if (s === 0) ctx.moveTo(x, y + v);
+          else ctx.lineTo(x, y + v);
+        }
+        ctx.stroke();
+        const g = ctx.createRadialGradient(head, y, 0, head, y, 14);
+        g.addColorStop(0, `rgba(${AMBER}, 0.6)`);
+        g.addColorStop(1, `rgba(${AMBER}, 0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(head, y, 14, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = `rgb(${AMBER})`;
+        ctx.beginPath();
+        ctx.arc(head, y, 3, 0, TAU);
+        ctx.fill();
+      }
+
+      // 頻道：從左端畫到 reveal（換頁時跟著電波的前緣長出來、收回去）
+      const to = lineEnd * reveal;
+      if (to <= 0) return;
       ctx.save();
       ctx.beginPath();
-      ctx.rect(from, 0, to - from, h);
+      ctx.rect(0, 0, to, h);
       ctx.clip();
 
       // 背景的雜訊：沒有訊號時就只有這個

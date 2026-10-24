@@ -2,10 +2,12 @@
 // 平常只有雜訊，打字時你打的字即時變成波形，送出時那一段往右飛進天線、天線亮一下。
 // 底下左邊是收到的訊號（每一則一小段由內容長出來的波形），右邊是發送台：登入或匿名、驗證碼、回覆。
 // 資料沿用文章留言那一套（post_id = meta-messages，匿名的要審核，登入的直接公開）。
-// 換頁進來時琥珀點落在頻道的左端，線從左往右畫出來；離開時線收進天線，點從天線往上發射出去。
+// 換頁進來時琥珀點落在頻道的左端，變成一段電波沿頻道跑進天線（線跟著它長出來）；
+// 離開時倒過來：天線送出一段電波，倒著跑回左端（線跟著收掉），點從那裡往左飛走。
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { FaGithub, FaGoogle } from 'react-icons/fa';
 import type { CommentRow } from '@koimsurai/api-types';
 import { useAuth } from '@/contexts/auth';
 import { commentsQueryOptions } from '@/data/commentsData';
@@ -14,7 +16,7 @@ import { useTimeAgo } from '@/hooks/useTimeAgo';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { groupComments, validateCommentDraft, type CommentDraftError } from '@/lib/comments';
 import { after, isArriving } from '@/store/pageTransition';
-import { createStrip, DISH_SRC, dishOf, SEND_S, wavePath } from './messagesWave';
+import { channelOf, createStrip, DISH_SRC, SEND_S, wavePath } from './messagesWave';
 import './Messages.css';
 
 const BASE = 'posts';
@@ -24,19 +26,21 @@ const CONTACT = 'timo9378@gmail.com';
 const MAX_CHARS = 500;
 /** 一個字是幾秒的訊號（只是顯示用的換算） */
 const SEC_PER_CHAR = 0.12;
-/** 線從左往右畫出來的時間（秒） */
-const GROW_S = 0.9;
-/** 收：線收進天線的時間（毫秒） */
-const ERASE_MS = 520;
-/** 收完時點從天線發射出去的速度（px/ms） */
+/** 進場：點落地變成電波，沿頻道跑進天線要幾秒 */
+const ARRIVE_S = 1.4;
+/** 離場：電波從天線倒著跑回左端要幾毫秒 */
+const EXIT_MS = 900;
+/** 跑回左端之後點往左飛走的速度（px/ms） */
 const LEAVE_SPEED = 0.8;
 /** 雜訊每秒換幾次就夠了 */
 const FRAME_MS = 33;
 const WAVE_W = 600;
 const WAVE_H = 36;
 
-const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeOutQuad = (t: number) => 1 - (1 - t) * (1 - t);
 const easeIn = (t: number) => t * t;
+/** 離場的電波前緣在哪（0–1，1 是天線那端）：一開始慢、越跑越快 */
+const exitHead = (since: number) => 1 - easeIn(Math.min(1, (performance.now() - since) / EXIT_MS));
 
 type Sent = 'pending' | 'approved' | null;
 
@@ -105,28 +109,29 @@ export default function Messages() {
   };
 
   usePageTransition({
-    // 錨點是頻道的左端：點落在這裡，線從它往右畫出來
+    // 錨點是頻道的左端：點落在這裡變成一段電波，沿頻道跑進天線
     anchor: () => {
       const s = strip();
       return s ? { x: s.r.left, y: s.r.top + s.h / 2 } : null;
     },
     arrive: () => ({ tangent: { x: 1, y: 0 } }),
+    // 離場是倒過來：天線送出一段電波，倒著沿頻道跑回左端，點從那裡往左飛走
     leave: () => {
       const s = strip();
       if (!s) return null;
-      leaveRef.current = performance.now();
+      const since = performance.now();
+      leaveRef.current = since;
       pageRef.current?.classList.add('is-leaving');
-      const feed = () => {
+      const head = () => {
         const now = strip() ?? s;
-        const d = dishOf(now.w, now.h);
-        return { x: now.r.left + d.fx, y: now.r.top + d.fy };
+        const c = channelOf(now.w, now.h);
+        return { x: now.r.left + c.end * exitHead(since), y: now.r.top + c.y };
       };
-      // 天線翻過來之後碟面朝左上：點往左上發射
       return {
-        point: feed(),
-        velocity: { x: -0.45 * LEAVE_SPEED, y: -0.9 * LEAVE_SPEED },
-        follow: feed,
-        done: after(ERASE_MS),
+        point: head(),
+        velocity: { x: -LEAVE_SPEED, y: 0 },
+        follow: head,
+        done: after(EXIT_MS),
       };
     },
   });
@@ -154,7 +159,11 @@ export default function Messages() {
       raf = requestAnimationFrame(frame);
       if (isArriving() || !visible) return;
       if (start < 0) start = now;
-      if (now - last < FRAME_MS) return;
+      const real = (now - start) / 1000;
+      // 換頁那段電波跑得快，跑的時候每幀都畫；平常只有雜訊，30fps 就夠
+      const arriving = !reduce && real < ARRIVE_S;
+      const leaving = leaveRef.current !== null;
+      if (!arriving && !leaving && now - last < FRAME_MS) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
       last = now;
       const w = box.clientWidth;
@@ -165,11 +174,20 @@ export default function Messages() {
         cv.height = Math.round(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const real = (now - start) / 1000;
       const snd = sendingRef.current;
       const s = snd ? (now - snd.start) / 1000 : 0;
       if (snd && s > SEND_S) sendingRef.current = null;
       const sending = sendingRef.current ? { text: sendingRef.current.text, s } : null;
+      // 換頁的電波：進場從左端跑向天線（先快後慢，像被天線接住），離場從天線倒著跑回來
+      let head = 1;
+      let carrier: { head: number; dir: 1 | -1 } | null = null;
+      if (leaving && leaveRef.current !== null) {
+        head = exitHead(leaveRef.current);
+        carrier = head > 0 ? { head, dir: -1 } : null;
+      } else if (arriving) {
+        head = easeOutQuad(real / ARRIVE_S);
+        carrier = { head, dir: 1 };
+      }
       draw.draw(ctx, {
         w,
         h,
@@ -177,8 +195,9 @@ export default function Messages() {
         dt,
         typing: typingRef.current,
         sending: reduce ? null : sending,
-        grow: reduce ? 1 : easeOut(Math.min(1, real / GROW_S)),
-        erase: leaveRef.current === null ? 0 : easeIn(Math.min(1, (now - leaveRef.current) / ERASE_MS)),
+        reveal: head,
+        carrier,
+        dishAlpha: leaveRef.current !== null ? 1 - 0.6 * (1 - head) : Math.min(1, 0.3 + head),
         dish,
       });
       const l = labelsRef.current;
@@ -406,13 +425,25 @@ export default function Messages() {
                 <div className="msg-login">
                   <span>{t('messages.loginWith')}</span>
                   {providers.github.enabled && (
-                    <button type="button" onClick={() => login('github')}>
-                      GitHub
+                    <button
+                      type="button"
+                      className="msg-provider"
+                      aria-label="GitHub"
+                      title="GitHub"
+                      onClick={() => login('github')}
+                    >
+                      <FaGithub aria-hidden="true" />
                     </button>
                   )}
                   {providers.google.enabled && (
-                    <button type="button" onClick={() => login('google')}>
-                      Google
+                    <button
+                      type="button"
+                      className="msg-provider"
+                      aria-label="Google"
+                      title="Google"
+                      onClick={() => login('google')}
+                    >
+                      <FaGoogle aria-hidden="true" />
                     </button>
                   )}
                   {isLoggedIn && (
