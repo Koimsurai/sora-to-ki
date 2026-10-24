@@ -12,6 +12,7 @@ import { lookupOr } from '@/lib/tableLookup';
 import { after, isArriving } from '@/store/pageTransition';
 import { bodiesOf, createSpiral, frameOf, workStatsOf } from './worksSky';
 import './Works.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 /** 滑鼠離一顆星多近才算滑到它（CSS 像素） */
 const NEAR_PX = 70;
@@ -192,7 +193,7 @@ export default function Works() {
       <header className="wk-head">
         <div className="wk-title">
           <h1>{t('works.title')}</h1>
-          <span className="wk-latin">Works</span>
+          {!sameTitle(t('works.title'), 'Works') && <span className="wk-latin">Works</span>}
         </div>
         <p>{t('works.subtitle')}</p>
       </header>

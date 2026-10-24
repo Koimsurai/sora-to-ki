@@ -13,6 +13,7 @@ import { COLOPHON_QA } from './colophonQa';
 import { drawColophon, frontOf, SEXTANT_SRC, STAR_KEYS, starAt, turnFor, type StarKey } from './colophonSky';
 import { PhotoToy, SaturnToy, WorkToy } from './colophonToys';
 import './Colophon.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 /** 視線從望遠鏡拉到星要多久（秒） */
 const SIGHT_S = 0.7;
@@ -233,7 +234,7 @@ export default function Colophon() {
         <header className="cl-head">
           <div className="cl-title">
             <h1>{t('colophon.title')}</h1>
-            <span className="cl-latin">Colophon</span>
+            {!sameTitle(t('colophon.title'), 'Colophon') && <span className="cl-latin">Colophon</span>}
           </div>
           <p>{t('colophon.subtitle')}</p>
           <p className="cl-hint">{t('colophon.hint')}</p>

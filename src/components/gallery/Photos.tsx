@@ -15,6 +15,7 @@ import { createStation, drawPasses, drawVeil, noiseDataUrl, RX_PHASES, RX_TOTAL,
 import { framesOf, overview, type Frame } from './frames';
 import PhotoViewer from './PhotoViewer';
 import './Photos.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 /** 一欄至少多寬（像素）：照片牆鋪滿整頁，寬螢幕五欄左右、手機一欄 */
 const COLUMN_PX = 320;
@@ -497,7 +498,7 @@ export default function Photos() {
       <header className="ph-head">
         <div className="ph-head-title">
           <h1>{t('photos.heading')}</h1>
-          <span>Photos</span>
+          {!sameTitle(t('photos.heading'), 'Photos') && <span>Photos</span>}
         </div>
         <p>{t('photos.subtitle')}</p>
       </header>

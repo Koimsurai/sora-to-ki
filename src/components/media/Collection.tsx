@@ -34,6 +34,7 @@ import FavoritesEditor from './FavoritesEditor';
 import { createFramePacer } from '@/lib/framePacer';
 import { createSignalSky, drawLaunch, LIGHT_YEAR, type Projected, type Signal, type SkyFrame } from './signalSky';
 import './Collection.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 /** 最常聽的取哪一段時間（Spotify 的「最近半年」） */
 const TRACK_RANGE = 'medium_term';
@@ -662,7 +663,7 @@ export default function Collection() {
       <header className="cx-head" ref={headRef}>
         <div className="cx-head-title">
           <h1>{t('collection.title')}</h1>
-          <span>Collection</span>
+          {!sameTitle(t('collection.title'), 'Collection') && <span>Collection</span>}
         </div>
         <p>{t('collection.subtitle')}</p>
       </header>

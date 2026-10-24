@@ -35,6 +35,7 @@ import {
 } from './setupSheets';
 import TelemetryPanel from './TelemetryPanel';
 import './Setup.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 /** 換頁轉場的點落在圖紙左上角之後，點格從那個角鋪開要多久（毫秒） */
 const REVEAL_MS = 900;
@@ -279,7 +280,7 @@ export default function Setup() {
       <header className="su-head">
         <div className="su-head-title">
           <h1>{t('setup.heroTitle')}</h1>
-          <span>Setup</span>
+          {!sameTitle(t('setup.heroTitle'), 'Setup') && <span>Setup</span>}
         </div>
         <p>{t('setup.subtitle')}</p>
       </header>

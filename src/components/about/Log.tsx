@@ -19,6 +19,7 @@ import { lookupOr } from '@/lib/tableLookup';
 import { after, isArriving } from '@/store/pageTransition';
 import { createLog, ROCKET_SRC } from './logSky';
 import './Log.css';
+import { sameTitle } from '@/lib/pageTitle';
 
 /** 火箭從發射台爬到現在要幾秒 */
 const CLIMB_S = 2.4;
@@ -303,7 +304,7 @@ export default function Log() {
         <div className="lg-head">
           <div className="lg-title">
             <h1>{t('log.title')}</h1>
-            <span className="lg-latin">Log</span>
+            {!sameTitle(t('log.title'), 'Log') && <span className="lg-latin">Log</span>}
           </div>
           <p>{t('log.subtitle')}</p>
         </div>
