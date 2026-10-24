@@ -272,6 +272,60 @@ function milkyWay(count: number): SkyDot[][] {
   return levels;
 }
 
+/**
+ * 銀河的光霧：只有點的話連不成一條「白帶」。沿著同一個銀道面放幾百團柔光（畫的時候貼同一張預先畫好的
+ * 柔光圖，不是每幀算模糊），越靠銀心越濃、越寬
+ */
+function milkyHaze(count: number): { d: Vec; weight: number; size: number }[] {
+  const pole = direction(12.857, 27.128);
+  const center = direction(17.76, -28.936);
+  const side = {
+    x: pole.y * center.z - pole.z * center.y,
+    y: pole.z * center.x - pole.x * center.z,
+    z: pole.x * center.y - pole.y * center.x,
+  };
+  const rand = rng(29);
+  return Array.from({ length: count }, () => {
+    const nearCore = rand() < 0.5;
+    const l = nearCore ? gauss(rand) * 0.8 : rand() * TAU;
+    const b = gauss(rand) * (nearCore ? 0.07 : 0.045);
+    const cl = Math.cos(l);
+    const sl = Math.sin(l);
+    const cb = Math.cos(b);
+    const sb = Math.sin(b);
+    return {
+      d: {
+        x: cb * (cl * center.x + sl * side.x) + sb * pole.x,
+        y: cb * (cl * center.y + sl * side.y) + sb * pole.y,
+        z: cb * (cl * center.z + sl * side.z) + sb * pole.z,
+      },
+      // 靠銀心的那幾團比較濃、比較大
+      weight: nearCore ? 0.7 + rand() * 0.3 : 0.35 + rand() * 0.35,
+      size: (nearCore ? 1.2 : 0.8) * (0.6 + rand() * 0.8),
+    };
+  });
+}
+
+/** 柔光圖：中間白、往外漸透明的一團（光霧每一團都貼它） */
+let hazeSprite: HTMLCanvasElement | null = null;
+function hazeImage(): HTMLCanvasElement {
+  if (hazeSprite) return hazeSprite;
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext('2d');
+  if (g) {
+    const grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, `rgba(${INK}, 1)`);
+    grad.addColorStop(0.4, `rgba(${INK}, 0.45)`);
+    grad.addColorStop(1, `rgba(${INK}, 0)`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+  }
+  hazeSprite = c;
+  return c;
+}
+
 /** 背景的星：四面八方，大多很暗、少數亮 */
 function fieldStars(count: number): SkyDot[][] {
   const rand = rng(11);
@@ -370,6 +424,7 @@ export function createSignalSky(signals: Signal[], now0: number) {
   const asteroids = belt(31, 700, ASTEROID_AU, 0.04);
   const kuiper = belt(37, 1000, KUIPER_AU, 0.08);
   const galaxy = milkyWay(7000);
+  const haze = milkyHaze(360);
   const field = fieldStars(2400);
   // 少數幾顆會閃的星（其他的亮度固定，才能一階一起畫）
   const trand = rng(5);
@@ -565,6 +620,18 @@ export function createSignalSky(signals: Signal[], now0: number) {
         }
       });
     };
+    // 銀河的白帶：先鋪光霧，點再疊上去
+    const sprite = hazeImage();
+    const blob = v.diag * 0.055;
+    for (const c of haze) {
+      const p = skyAt(v, c.d);
+      if (!p) continue;
+      const r = blob * c.size;
+      if (p.x < -r || p.x > w + r || p.y < -r || p.y > h + r) continue;
+      ctx.globalAlpha = 0.03 * c.weight;
+      ctx.drawImage(sprite, p.x - r, p.y - r, r * 2, r * 2);
+    }
+    ctx.globalAlpha = 1;
     backdrop(galaxy, 0.42);
     backdrop(field, 0.55);
     for (const s of twinklers) {
