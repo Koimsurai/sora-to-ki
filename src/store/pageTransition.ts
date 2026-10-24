@@ -140,6 +140,8 @@ export const after = (ms: number) => new Promise<void>((resolve) => window.setTi
  * 要等點落地才開始。飛的時候頁面已經看得到、正跟著鏡頭滑進來，但還不該開始長
  */
 export const isArriving = () => {
-  const pt = document.documentElement.dataset.pt;
-  return pt === 'out' || pt === 'fly';
+  const root = document.documentElement;
+  const pt = root.dataset.pt;
+  // 開場時（html[data-boot]，見 __root.tsx）頁面藏在夜色後面，也還不該開始長：等那顆點飛進來
+  return pt === 'out' || pt === 'fly' || root.hasAttribute('data-boot');
 };
