@@ -65,33 +65,32 @@
   width: 3.4rem;
   height: 3.4rem;
   padding: 0 0 0 var(--space-0-5);
-  border: 1px solid var(--white-25);
+  /* 照提案：一個細線圓圈，底下墊一層很淡的夜色，亮的畫面上才看得到 */
+  border: 1px solid var(--paper-2);
   border-radius: var(--r-round);
-  background: rgba(var(--surface-1-rgb), 0.7);
-  backdrop-filter: blur(var(--blur-8));
-  color: #fff;
+  background: rgba(var(--ground-rgb), 0.35);
+  color: var(--paper);
   font-size: var(--fs-16);
   cursor: pointer;
-  box-shadow: var(--elev-3);
+  box-shadow: none;
   transition:
-    background var(--dur-150) ease,
-    transform var(--dur-150) ease;
+    border-color var(--dur-150) ease,
+    background var(--dur-150) ease;
 }
 .vp-bigplay:hover,
 .vp-bigplay:focus,
 .vp-bigplay:focus-visible {
-  background: rgba(var(--iris-rgb), 0.8);
-  border-color: var(--white-25);
-  transform: translate(-50%, -50%) scale(1.08);
-  box-shadow: var(--elev-3);
+  background: rgba(var(--ground-rgb), 0.55);
+  border-color: var(--paper);
+  box-shadow: none;
   outline: none;
 }
 .vp-bigplay:focus:not(:focus-visible) {
-  background: rgba(var(--surface-1-rgb), 0.7);
-  transform: translate(-50%, -50%);
+  background: rgba(var(--ground-rgb), 0.35);
+  border-color: var(--paper-2);
 }
 
-/* 控制列：浮在影片底部的玻璃藥丸；播放中滑鼠離開會淡出 */
+/* 控制列：浮在影片底部的一條夜色細框；播放中滑鼠離開會淡出 */
 .vp-bar {
   position: absolute;
   z-index: 2;
@@ -101,11 +100,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1-5) var(--space-2-5);
-  border-radius: var(--r-10);
-  background: rgba(var(--surface-0-rgb), 0.7);
-  backdrop-filter: blur(var(--blur-16));
-  border: 1px solid var(--white-08);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--r-2);
+  background: rgba(var(--ground-rgb), 0.78);
+  border: 1px solid var(--rule);
   line-height: var(--lh-100);
   opacity: 0;
   transform: translateY(4px);
@@ -129,11 +127,11 @@
   height: 1.85rem;
   padding: 0;
   border: 0;
-  border-radius: var(--r-8);
+  border-radius: var(--r-2);
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--white-80);
+  color: var(--paper-2);
   font-size: var(--fs-13);
   cursor: pointer;
   text-decoration: none;
@@ -156,18 +154,18 @@
 .vp-btn:focus,
 .vp-btn:active,
 .vp-btn:focus-visible {
-  background: var(--white-10);
+  background: transparent;
   border-color: transparent;
-  color: #fff;
+  color: var(--paper);
   box-shadow: none;
   outline: none;
 }
 .vp-btn:focus:not(:focus-visible) {
   background: transparent;
-  color: var(--white-80);
+  color: var(--paper-2);
 }
 .vp-btn:focus-visible {
-  outline: 1px solid var(--white-50);
+  outline: 1px solid var(--paper-3);
   outline-offset: -1px;
 }
 /* 下載鍵是 <a>：全站 `a { color: var(--clr-button) }` 跟 `a:hover,a:focus { text-shadow: … }`
@@ -176,13 +174,13 @@ a.vp-btn,
 a.vp-btn:hover,
 a.vp-btn:focus,
 a.vp-btn:active {
-  color: var(--white-80);
+  color: var(--paper-2);
   text-shadow: none;
   text-decoration: none;
 }
 a.vp-btn:hover,
 a.vp-btn:focus-visible {
-  color: #fff;
+  color: var(--paper);
 }
 
 /* 進度條 */
@@ -200,40 +198,41 @@ a.vp-btn:focus-visible {
 .vp-progress-fill {
   position: absolute;
   left: 0;
-  height: 3px;
-  border-radius: var(--r-full);
+  height: 1px;
 }
 .vp-progress-track {
   right: 0;
-  background: var(--white-20);
+  background: var(--paper-3);
 }
 .vp-progress-fill {
-  background: var(--brand-light);
+  height: 2px;
+  background: var(--paper);
 }
+/* 播到哪裡：琥珀小點（「你在這裡」），一直都在 */
 .vp-progress-knob {
   position: absolute;
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
   border-radius: var(--r-round);
-  background: #fff;
+  background: var(--amber);
   transform: translateX(-50%);
-  box-shadow: var(--elev-0);
-  opacity: 0;
-  transition: opacity var(--dur-150) ease;
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.6);
+  transition: transform var(--dur-150) ease;
 }
 .vp-progress:hover .vp-progress-knob,
 .vp-progress:focus-visible .vp-progress-knob {
-  opacity: 1;
+  transform: translateX(-50%) scale(1.3);
 }
 .vp-progress:focus-visible .vp-progress-track {
-  background: rgba(var(--violet-300-rgb), 0.5);
+  background: var(--paper-2);
 }
 
 .vp-time {
   flex: 0 0 auto;
-  font-size: var(--fs-11);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
   font-variant-numeric: tabular-nums;
-  color: var(--white-60);
+  color: var(--paper-3);
   white-space: nowrap;
 }
 @media (max-width: 480px) {

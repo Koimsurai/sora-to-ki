@@ -837,6 +837,17 @@
   --rule: rgba(var(--paper-rgb), 0.15);
   --amber: #e9c17a;
   --amber-rgb: 233, 193, 122;
+  /* 四角框：只有四個角的短線，沒有底色、外框、圓角。文章摘要用的就是這個框，
+     文章裡的互動區塊（投票、數字、圖表、分頁、站內文章卡…）跟著用：`background: var(--corner-frame)` */
+  --corner-frame:
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px 10px no-repeat;
 
   /* 字：中文與中英混排一律思源宋體；Instrument Serif 只給「整段都是英文的大字」（名字、Notes），
      它只有一個字重，不要加粗。思源宋體是按頁裁字（layout/SerifFontLoader）：堆疊第一個

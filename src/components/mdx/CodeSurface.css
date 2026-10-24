@@ -5,7 +5,7 @@
   padding: 0;
   /* ⚠ 同上：shiki 的主題背景要壓掉，背景由外層 .code-surface-body 畫 */
   background: transparent !important;
-  font-size: var(--fs-14);
+  font-size: var(--fs-13);
   line-height: var(--lh-170);
   font-family: var(--mono-font);
   width: max-content;
@@ -26,14 +26,14 @@
   width: 1.6rem;
   margin-right: var(--space-5);
   text-align: right;
-  color: var(--white-20);
+  color: rgba(var(--paper-rgb), 0.2);
   user-select: none;
   -webkit-user-select: none;
 }
 .code-surface-body .shiki-fallback {
-  color: var(--white-70);
+  color: var(--paper-2);
   white-space: pre;
-  font-size: var(--fs-14);
+  font-size: var(--fs-13);
   line-height: var(--lh-170);
   font-family: var(--mono-font);
   animation: shikiPulse 1.4s ease-in-out infinite;
@@ -62,17 +62,17 @@
   width: 100%;
   padding: var(--space-2);
   border: none;
+  border-top: 1px solid var(--rule);
   border-radius: 0;
-  background: var(--white-02);
+  background: none;
   box-shadow: none;
   outline: none;
-  color: var(--white-55);
-  font-size: var(--fs-12);
-  font-family: inherit;
+  color: var(--paper-3);
+  font-size: var(--fs-11);
+  font-family: var(--mono-font);
+  letter-spacing: var(--ls-12);
   cursor: pointer;
-  transition:
-    background var(--dur-200) ease,
-    color var(--dur-200) ease;
+  transition: color var(--dur-200) ease;
 }
 .code-surface-toggle-chevron {
   font-size: 0.7em;
@@ -85,6 +85,6 @@
   right: 0;
   bottom: 100%;
   height: 3.5rem;
-  background: linear-gradient(to top, var(--black-50), transparent);
+  background: linear-gradient(to top, rgba(var(--ground-rgb), 0.85), transparent);
   pointer-events: none;
 }
