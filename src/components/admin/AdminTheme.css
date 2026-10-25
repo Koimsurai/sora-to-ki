@@ -77,6 +77,12 @@
   border-color: var(--rule);
 }
 
+/* 舊表格的欄寬寫死成 w-16 這類，換成宋體（比黑體寬）之後「已發佈」「未分類」會折成兩行。
+   表頭與儲存格裡直接放的短字（分類、狀態、日期、信箱）不換行；標題那種長字包在更深一層，照常換行 */
+:is(.admin-layout, .admin-mode) :is(th, td > span) {
+  white-space: nowrap;
+}
+
 :is(.admin-layout, .admin-mode) tbody tr {
   border-bottom: 1px dotted var(--rule);
   transition: background-color var(--dur-150) ease;
