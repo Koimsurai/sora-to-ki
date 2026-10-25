@@ -3,12 +3,11 @@
  *
  *   node scripts/gen-icons.mjs
  *
- * 原稿：
- *   icon.svg          新月 + 樹 + 星點。Google 搜尋、PWA、apple-touch-icon 用它
- *   tab-planet.svg    瀏覽器分頁列用的：行星、環、K（站長偏好分頁列維持這個）。
- *                     #183 之前那張點陣圖的向量重繪；顏色跟著瀏覽器的深淺主題
+ * 原稿（2026-10 翻新後是同一個圖案：刷痕星球＋琥珀衛星，滿版，16px 時靠外形認）：
+ *   icon.svg          放在站上底色上的版本。Google 搜尋、PWA、apple-touch-icon 用它
+ *   tab-planet.svg    瀏覽器分頁列用的：不放底板，顏色跟著瀏覽器的深淺主題
  *
- * ⚠ 分頁列與 Google 搜尋刻意用不同的圖：
+ * ⚠ 分頁列與 Google 搜尋是兩支檔案（圖案一樣，一支有底板、一支沒有）：
  *   · Google 只採用 Googlebot-Image 抓得到的圖示，所以 server/routes/robots.txt.ts 只對它擋掉
  *     favicon.svg 與 favicon.ico，它能選的就只剩 favicon-96.png。favicon.ico 也不放 48（多一道保險）
  *   · 分頁列：Chrome 有 SVG 就用 SVG；Firefox 取最後宣告的那支
@@ -34,15 +33,15 @@ const out = (f) => path.join(root, 'public', f);
 const full = src('icon.svg');
 const tab = src('tab-planet.svg');
 
-/** ico 沒辦法跟著主題變色，固定用白線條（原本那張點陣圖就是白的）。 */
-const tabWhite = tab.replace('.s { stroke: #2b2346; }', '.s { stroke: #ffffff; }');
+/** ico 沒辦法跟著主題變色，固定用暖白（多數分頁列是深色，淺色分頁列會比較淡）。 */
+const tabWhite = tab.replace('.s { fill: #0a0a0c; }', '.s { fill: #f1ece3; }');
 if (tabWhite === tab) throw new Error('tab-planet.svg 的預設顏色改了，favicon.ico 的換色沒有生效');
 
 /** 滿版：拿掉底板的圓角。 */
 const fullBleed = full.replace(/(<rect width="64" height="64") rx="14"/, '$1');
 /** 可遮罩：滿版底板，圖案縮到 78% 置中。 */
 const maskable = fullBleed.replace(
-  /(<rect width="64" height="64" fill="url\(#bg\)"\/>)([\s\S]*)(<\/svg>)/,
+  /(<rect width="64" height="64" fill="#0a0a0c"\/>)([\s\S]*)(<\/svg>)/,
   '$1<g transform="translate(32 32) scale(0.78) translate(-32 -32)">$2</g>$3',
 );
 if (fullBleed === full || maskable === fullBleed)

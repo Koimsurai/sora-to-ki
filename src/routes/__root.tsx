@@ -35,7 +35,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // 指向既有的 /rss（後端 handlers/rss.rs）——/rss.xml 只是 301 過去的別名。
       { rel: 'alternate', type: 'application/rss+xml', title: 'Koimsurai 手記', href: '/rss' },
       // 圖示由 scripts/gen-icons.mjs 從 scripts/icons/ 的 SVG 產生。
-      // 分頁列（行星）與 Google 搜尋（新月與樹）刻意是兩張圖，機制寫在 gen-icons.mjs 檔頭：
+      // 分頁列（沒有底板、跟著主題換色）與 Google 搜尋（有底板）是兩支檔案，圖案一樣，機制寫在 gen-icons.mjs 檔頭：
       // Google 那邊靠 robots.txt 只對 Googlebot-Image 擋掉前兩者；分頁列這邊 **SVG 要排最後**
       // （Firefox 取最後宣告的那支，Chrome 有 SVG 就用 SVG）。
       { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicon-96.png' },
