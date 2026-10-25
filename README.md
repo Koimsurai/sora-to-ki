@@ -6,6 +6,8 @@
 
 **個人網站與部落格**：寫技術手記、放照片與書單，也把自己的遊戲、音樂、動畫和寫程式紀錄串在同一個地方。
 
+**繁體中文** · [English](README.en.md)
+
 [**koimsurai.com**](https://koimsurai.com) · [手記](https://koimsurai.com/blog) · [RSS](https://koimsurai.com/rss) · [站點歷程](https://koimsurai.com/history)
 
 [![CI](https://img.shields.io/github/actions/workflow/status/timo9378/sora-to-ki/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/timo9378/sora-to-ki/actions/workflows/ci.yml)
@@ -48,7 +50,7 @@
 - **Mermaid 圖表**：可縮放、平移、全螢幕，跟著站點配色
 - **圖片不跳版**：上傳時算出 thumbhash 和原始尺寸，載入前先顯示模糊佔位圖
 - **留言、按讚、反應、系列文、目錄、閱讀進度**，以及 RSS、電子報（Resend）
-- **碎念**：短篇動態，可以附上影劇或連結卡片
+- **碎念**：短篇動態，可以附上連結卡片，或從同步進來的紀錄帶入一部片、一本書、一首歌，前台寫成「看了／讀了／聽了」（五種語系各自翻）
 
 ### 生活紀錄
 
@@ -56,14 +58,19 @@
 - **音樂**：Spotify 正在播放、最近播放、最愛曲風
 - **在看什麼**：動畫瘋觀看紀錄自動同步（[anigamer](https://github.com/timo9378/anigamer-rs)，自己寫的 SDK），電影與影集透過 Simkl 和 TMDb 同步
 - **書櫃**：把書排成星圖；ISBN 查詢走國家圖書館的資料，另有可以拖曳的 3D 零重力模式
-- **照片**：瀑布流、EXIF 資訊、CLIP 自動標籤、可縮放的全螢幕檢視
+- **照片**：瀑布流、EXIF 資訊、CLIP 自動標籤、可縮放的全螢幕檢視；標題、標籤、精選與隱藏在後台改，NAS 重新同步不會蓋掉
 - **我的配備**：用終端機介面呈現 neofetch 風格的主機資訊，以及家裡的網路拓樸
 
 ### 站台本身
 
 - **太空背景**：星空與土星由 three.js（WebGPU，不支援時退回 WebGL2）在 Web Worker 的 OffscreenCanvas 裡算；沒有 GPU 的裝置自動改成純 CSS
-- **自製後台**：Monaco 編輯器（含 Vim 模式、斜線指令、拖放上傳）、即時預覽、留言審核、訂閱者與使用者權限管理
-- **MCP server**：[`packages/mcp-server`](packages/mcp-server) 提供 26 個工具，讓 AI 助手透過後台 API 寫文章、上傳圖片、管理分類
+- **自製後台**：跟前台同一套材料（黑是紙、白是墨、琥珀是訊號），側欄照前台的分區分成「此刻、寫、收、回、站」
+  - **寫**：Monaco 編輯器（夜色主題、Vim 模式、斜線指令、拖放上傳）與即時預覽；**排程發佈**（到時間自動發，電子報也那時才寄）；刪掉的文章先進**回收桶**，30 天內可以還原
+  - **碎念**：右邊列出巴哈、Simkl、Spotify、書架同步進來的紀錄，按「寫」帶進撰寫框，附了作品可以不寫字
+  - **收**：觀看紀錄與聽的歌可以設成不公開、排收藏頁的最愛；書架；照片的標題、標籤、精選
+  - **回**：留言審核（鍵盤 j／k／a／s／r 操作）、**友鏈申請**（朋友頁的表單直接送進來，一鍵檢查對方的站連得到、有沒有回連、有沒有 RSS）、電子報訂閱者
+  - **此刻**：總覽列出等你處理的事、近 28 天的 Web Vitals
+- **MCP server**：[`packages/mcp-server`](packages/mcp-server) 提供 27 個工具，讓 AI 助手透過後台 API 寫文章（含排程與回收桶）、發碎念、上傳圖片、管理分類
 - **其他**：GitHub／Google 登入、命令面板（`Ctrl+K`）、PWA 離線頁、每語系各自的 sitemap 與 hreflang、文章自動產生 OG 圖、嚴格的 CSP、自架的錯誤追蹤（GlitchTip）與 Core Web Vitals 回報
 
 ## 🏗️ 架構
@@ -97,7 +104,7 @@ flowchart LR
 每個 PR 都要通過下面這些才能合併（完整清單在 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)）：
 
 - **型別與 lint**：`tsc`、oxlint（含型別感知規則與 `@shadcn/lint`）、Biome（CSS）、一支自己寫的 CSS token 檢查（間距、字級、顏色…都必須用設計 token）
-- **測試**：vitest 單元測試、Playwright e2e（23 支 spec，含無障礙檢查與 11 頁 × 3 種寬度的計算後樣式比對）、後端 cargo-nextest 搭配覆蓋率門檻
+- **測試**：vitest 單元測試、Playwright e2e（21 支 spec，含無障礙檢查、後台的往返操作，以及公開頁 11 條 × 3 種寬度加上後台頁的計算後樣式比對）、後端 cargo-nextest 搭配覆蓋率門檻
 - **API**：用 OpenAPI 規格自動產生測試資料打後端（Schemathesis），並檢查回應符合宣告的 schema
 - **後端**：`cargo clippy`（pedantic）、`cargo audit`、`cargo shear`、`typos`
 - **效能**：Lighthouse CI 的效能預算
@@ -223,4 +230,4 @@ cargo clippy --all-targets -- -D warnings
 
 - 站點走過的路：<https://koimsurai.com/history>
 - 關於這個網站：<https://koimsurai.com/about-site>
-- 交換友鏈：<https://koimsurai.com/friends>
+- 交換友鏈（頁面上的表單直接申請）：<https://koimsurai.com/friends>
