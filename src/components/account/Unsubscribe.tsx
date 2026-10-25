@@ -81,10 +81,6 @@ function Unsubscribe() {
   return (
     <div className="unsubscribe-shell">
       <div className="unsubscribe-card">
-        <LocaleLink to="/" className="unsubscribe-brand">
-          ✦ Koimsurai
-        </LocaleLink>
-
         {phase === PHASE.loading && <p className="unsubscribe-status">{t('unsubscribe.verifying')}</p>}
 
         {phase === PHASE.confirm && subscriber && (

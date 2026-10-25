@@ -1,119 +1,101 @@
+/* 電子報退訂頁（從信裡點過來）：跟 404、離線頁同一套（2026-10 翻新）——
+   字靠左、紙色的宋體、Email 用琥珀色的等寬字、按鈕是等寬字加點線底線的連結。
+   .unsubscribe-card 只是一欄字（沒有卡片外框了），名字留著是 e2e 拿它找元素 */
+
 .unsubscribe-shell {
   position: relative;
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: var(--space-8) var(--space-5);
   z-index: 2;
+  display: flex;
+  align-items: center;
+  min-height: 100svh;
+  padding: var(--page-top) max(var(--space-10), calc(50% - 640px)) var(--page-bottom);
+  font-family: var(--serif);
+  color: var(--paper);
 }
 
 .unsubscribe-card {
+  display: grid;
+  gap: var(--space-3);
   width: 100%;
-  max-width: 460px;
-  padding: var(--space-10) var(--space-9);
-  background: var(--white-02);
-  border: 1px solid var(--white-08);
-  border-radius: var(--r-20);
-  backdrop-filter: blur(var(--blur-12));
-  text-align: center;
-  color: var(--white-90);
-  box-shadow: var(--elev-6);
-}
-
-.unsubscribe-brand {
-  display: inline-block;
-  font-size: var(--fs-12);
-  letter-spacing: var(--ls-24);
-  text-transform: uppercase;
-  font-weight: 700;
-  color: rgba(var(--lavender-rgb), 0.7);
-  text-decoration: none;
-  margin-bottom: var(--space-6);
+  max-width: 520px;
 }
 
 .unsubscribe-title {
-  font-size: var(--fs-24);
-  font-weight: 700;
-  margin: 0 0 var(--space-4);
-  color: #fff;
-  letter-spacing: var(--ls-1);
+  margin: 0;
+  font-size: var(--fs-32);
+  font-weight: 600;
+  line-height: var(--lh-130);
+  color: var(--paper);
 }
 
 .unsubscribe-body {
-  margin: 0 0 var(--space-6);
+  margin: 0;
   font-size: var(--fs-16);
   line-height: var(--lh-170);
-  color: var(--white-70);
+  color: var(--paper-2);
 }
 
 .unsubscribe-email {
-  display: inline-block;
-  padding: var(--space-0-5) var(--space-2);
-  background: rgba(var(--brand-rgb), 0.1);
-  border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: var(--r-6);
   font-family: var(--mono-font);
-  font-size: 0.85em;
-  color: rgba(var(--lavender-rgb), 0.95);
-  margin: 0 var(--space-0-5);
+  font-size: 0.9em;
+  color: var(--amber);
+  overflow-wrap: anywhere;
 }
 
 .unsubscribe-status {
   margin: 0;
-  font-size: var(--fs-16);
-  color: var(--white-55);
-  font-style: italic;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
 }
 
 .unsubscribe-actions {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2-5);
-  align-items: stretch;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin-top: var(--space-4);
 }
 
-.unsubscribe-btn,
-.unsubscribe-btn:hover,
-.unsubscribe-btn:focus,
-.unsubscribe-btn:focus-visible,
-.unsubscribe-btn:active {
+.unsubscribe-btn {
+  all: unset;
+  box-sizing: border-box;
   display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  padding: var(--space-3) var(--space-4-5);
-  border-radius: var(--r-10);
-  font-size: var(--fs-14);
-  font-weight: 500;
-  letter-spacing: var(--ls-2);
-  text-decoration: none;
+  padding-bottom: var(--space-px);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-2);
+  border-bottom: 1px dotted var(--paper-3);
   cursor: pointer;
-  outline: none;
-  border: 1px solid transparent;
   transition:
-    background var(--dur-200) ease,
-    border-color var(--dur-200) ease,
     color var(--dur-200) ease,
-    transform var(--dur-200) ease;
+    border-color var(--dur-200) ease;
 }
 
+/* 確認退訂：這一頁唯一要做的事，用琥珀 */
 .unsubscribe-btn--danger {
-  background: rgba(var(--crimson-rgb), 0.15);
-  border-color: rgba(var(--crimson-rgb), 0.35);
-  color: rgba(255, 200, 210, 0.95);
-}
-.unsubscribe-btn--danger:hover {
-  background: rgba(var(--crimson-rgb), 0.2);
-  border-color: rgba(var(--crimson-rgb), 0.55);
-  color: #fff;
+  color: var(--amber);
+  border-bottom-color: var(--amber);
 }
 
-.unsubscribe-btn--ghost {
-  background: var(--white-04);
-  border-color: var(--white-10);
-  color: var(--white-80);
+.unsubscribe-btn:hover,
+.unsubscribe-btn:focus-visible {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
 }
-.unsubscribe-btn--ghost:hover {
-  background: rgba(var(--lavender-rgb), 0.08);
-  border-color: rgba(var(--lavender-rgb), 0.35);
-  color: #fff;
+
+.unsubscribe-btn:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: var(--space-1);
+}
+
+@media (max-width: 768px) {
+  .unsubscribe-shell {
+    padding-inline: var(--space-5);
+  }
+
+  .unsubscribe-title {
+    font-size: var(--fs-24);
+  }
 }

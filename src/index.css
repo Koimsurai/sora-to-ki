@@ -1333,3 +1333,39 @@ html[data-boot="out"] .boot-ring {
     transform: scale(1);
   }
 }
+
+/* 2026-10 翻新（提案 v14）：品牌紫、洋紅、薰衣草、紫羅蘭與 Happy Hues 的綠，在公開頁面上一律指到暖白（--paper），
+   面板底色指到頁面的紙色。後台還在用同一組變數（:root 那份是紫的），所以只在這些範圍裡改。
+   琥珀只留給「你在哪裡」那一點（目錄、語言）。
+     .ar-page             文章頁、MDX 區塊與程式碼框
+     .koim-loader-shell   載入中（站內換頁等語系資源、文章還沒到、登入回呼）
+     .back-to-top         回到頂端
+     .css-starfield       沒有硬體加速時的 CSS 星空 */
+.ar-page,
+.koim-loader-shell,
+.back-to-top,
+.css-starfield {
+  --brand: var(--paper);
+  --lavender: var(--paper);
+  --purple-300-rgb: var(--paper-rgb);
+  --brand-rgb: var(--paper-rgb);
+  --brand-light: var(--paper);
+  --magenta: var(--paper);
+  --magenta-rgb: var(--paper-rgb);
+  --lavender-rgb: var(--paper-rgb);
+  --lavender-soft: var(--paper);
+  --lavender-soft-rgb: var(--paper-rgb);
+  --violet-300-rgb: var(--paper-rgb);
+  --violet-400: var(--paper);
+  --violet-400-rgb: var(--paper-rgb);
+  --iris-rgb: var(--paper-rgb);
+  --clr-tertiary-rgb: var(--paper-rgb);
+  --surface-0: var(--ground);
+  --surface-0-rgb: var(--ground-rgb);
+  --surface-1: var(--ground);
+  --surface-1-rgb: var(--ground-rgb);
+  --surface-2: var(--ground);
+  --surface-2-rgb: var(--ground-rgb);
+  --surface-3: var(--ground);
+  --surface-3-rgb: var(--ground-rgb);
+}

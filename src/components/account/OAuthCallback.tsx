@@ -53,9 +53,9 @@ function OAuthCallback() {
             style={{
               padding: '8px 20px',
               borderRadius: '8px',
-              background: 'rgba(127,90,240,0.2)',
-              border: '1px solid rgba(127,90,240,0.4)',
-              color: '#c4b5fd',
+              background: 'rgba(var(--paper-rgb), 0.06)',
+              border: '1px solid rgba(var(--paper-rgb), 0.2)',
+              color: 'var(--paper)',
               cursor: 'pointer',
             }}
           >
