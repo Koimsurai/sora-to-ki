@@ -34,19 +34,6 @@ interface TagOption {
   label: string;
   value: string;
 }
-interface N8NData {
-  title?: string;
-  content?: string;
-  tags?: unknown;
-  slug?: string;
-  summary?: string;
-  category?: string;
-  cover?: string;
-  status?: 'draft' | 'published' | 'archived';
-  layout_type?: 'record' | 'column';
-  allowComments?: boolean;
-  allow_comments?: boolean;
-}
 type LocalizedField =
   | 'title'
   | 'content'
@@ -396,62 +383,6 @@ export default function PostEditor() {
     // eslint-disable-next-line @eslint-react/exhaustive-deps
   }, [postData]);
 
-  // 從 URL 參數載入 N8N 自動匯入的資料
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const n8nData = urlParams.get('n8n_data');
-
-    if (n8nData && !id) {
-      try {
-        const parsedData = JSON.parse(decodeURIComponent(n8nData)) as N8NData;
-        handleN8NImport(parsedData);
-      } catch (error) {
-        console.error('解析 N8N 資料失敗:', error);
-        toast.error('匯入資料格式錯誤');
-      }
-    }
-    // 刻意只跑一次：n8n_data 是開啟編輯器當下網址帶進來的一次性匯入資料，
-    // 重跑會把使用者後續的編輯整個蓋掉。
-    // eslint-disable-next-line @eslint-react/exhaustive-deps
-  }, []);
-
-  /**
-   * 處理 N8N 自動匯入的資料
-   */
-  const handleN8NImport = (n8nData: N8NData) => {
-    // 驗證必填欄位
-    if (!n8nData.title || !n8nData.content) {
-      toast.error('N8N 資料缺少必填欄位 (title 或 content)');
-      return;
-    }
-
-    // 轉換標籤格式
-    const formattedTags = formatTags(n8nData.tags);
-
-    // 自動生成 slug（如果沒有）
-    const slug = n8nData.slug ?? generateSlugFromTitle(n8nData.title);
-
-    // 提取摘要（如果沒有）
-    const summary = n8nData.summary ?? extractSummary(n8nData.content);
-
-    // 填充表單
-    form.reset({
-      title: n8nData.title,
-      content: n8nData.content,
-      tags: formattedTags,
-      category: n8nData.category ?? '',
-      slug: slug,
-      summary: summary,
-      cover: n8nData.cover ?? '',
-      status: n8nData.status ?? 'draft',
-      layout_type: n8nData.layout_type ?? 'record',
-      allow_comments: n8nData.allowComments !== false && n8nData.allow_comments !== false,
-      send_newsletter: false,
-    });
-
-    toast.success('已成功匯入 N8N 資料');
-  };
-
   /**
    * 格式化標籤數據
    * 支援多種輸入格式：
@@ -507,37 +438,6 @@ export default function PostEditor() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : '推送失敗');
     }
-  };
-
-  const generateSlugFromTitle = (title: string) => {
-    if (!title) return '';
-
-    return title
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s\u4e00-\u9fa5-]/g, '')
-      .replace(/[\s_]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-  };
-
-  /**
-   * 從內容提取摘要
-   */
-  const extractSummary = (content: string, maxLength = 150) => {
-    if (!content) return '';
-
-    const plainText = content
-      .replace(/#{1,6}\s/g, '')
-      .replace(/\*\*|\*|__|_/g, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
-      .replace(/`{1,3}[^`]*`{1,3}/g, '')
-      .replace(/>\s/g, '')
-      .replace(/[-*+]\s/g, '')
-      .replace(/\n+/g, ' ')
-      .trim();
-
-    return plainText.length > maxLength ? plainText.substring(0, maxLength) + '...' : plainText;
   };
 
   // 將表單 data 轉成送往 API 的 payload（包含 i18n 欄位，並把 summary* 對應到 excerpt*）

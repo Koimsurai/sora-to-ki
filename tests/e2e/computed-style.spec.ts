@@ -139,7 +139,6 @@ const ADMIN_ROUTES: { route: string; heading?: string | RegExp; ready?: (p: Page
   { route: '/admin/categories', heading: '分類管理' },
   { route: '/admin/books', heading: '書籍管理' },
   { route: '/admin/users', heading: '用戶管理' },
-  { route: '/admin/article-generator', heading: 'AI 寫作助手' },
   // 編輯器沒有 <h1>（標題那格是 input），等 monaco 掛上。
   { route: '/admin/posts/create', ready: (p) => p.locator('.monaco-editor').first() },
 ];
