@@ -389,22 +389,24 @@
     "errorNetwork": "网络错误，请稍后再试",
     "description": "获取最新文章更新与技术分享，直接送到您的信箱。",
     "privacyNote": "我们重视您的隐私，不会分享您的信息。",
-    "confirmedTitle": "已订阅 √",
+    "confirmedTitle": "已订阅",
     "alreadyBody": "你已用 <em>{{email}}</em> 订阅了电子报。",
-    "nextNotice": "下次有新文章我们会寄到你信箱。",
+    "nextNotice": "下一篇写好时会寄给你。",
     "okBtn": "好的",
     "unsubBtn": "退订",
-    "subscribeIntro": "获取最新文章通知，不错过任何精彩内容。",
+    "subscribeIntro": "有新文章时，寄一封信给你。",
     "namePlaceholderShort": "名字（选填）",
     "emailPlaceholderShort": "电子邮件 *",
-    "processing": "处理中...",
+    "processing": "提交中…",
     "subscribe": "订阅",
     "unsubProcessing": "处理中…",
     "unsubConfirmJs": "确定要退订 {{email}}?",
     "unsubFailed": "退订失败",
-    "unsubDone": "已退订。随时欢迎再回来订阅。",
-    "privacy": "我们重视您的隐私，不会分享您的信息。",
-    "successWithEmoji": "订阅成功！感谢您的订阅 ✨"
+    "unsubDone": "已退订。",
+    "privacy": "邮箱只用来寄新文章，每一封信底下都能退订。",
+    "successWithEmoji": "订好了，下一篇写好时会寄到你的邮箱。",
+    "fieldName": "名字（选填）",
+    "fieldEmail": "Email"
   },
   "unsubscribe": {
     "verifying": "验证链接中…",
@@ -858,5 +860,8 @@
         }
       }
     }
+  },
+  "og": {
+    "tagline": "代码、系统，与生活碎片。"
   }
 }
