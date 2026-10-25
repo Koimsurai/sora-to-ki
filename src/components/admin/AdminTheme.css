@@ -94,7 +94,8 @@
 }
 
 /* ── 輸入框：透明底、一條細框，滑過深一階、聚焦再深一階，沒有光暈 ── */
-:is(.admin-layout, .admin-mode) input:not(.monaco-toolbar-glass *),
+/* 編輯器的標題框（.pe-title）只有一條點線、不是方框，排除在外，由 PostEditor.css 自己畫 */
+:is(.admin-layout, .admin-mode) input:not(.monaco-toolbar-glass *, .pe-title),
 :is(.admin-layout, .admin-mode) select:not(.monaco-toolbar-glass *),
 :is(.admin-layout, .admin-mode) textarea:not(.monaco-toolbar-glass *) {
   background: transparent;
@@ -256,6 +257,30 @@
 :is(.admin-layout, .admin-mode) [class*="bg-primary"]:hover {
   background: transparent;
   border-color: var(--amber);
+}
+
+/* ── 開關（Radix Switch）：細線框裡一顆小圓點，關著是淡墨靠左，開著是實墨靠右、框深一階。
+   它的 class 裡也有 `data-[state=checked]:bg-primary`，上面那條會把底色改成透明；而原本的圓鈕是
+   夜色（bg-background），兩個疊起來就什麼都看不到——所以這裡把圓鈕改成墨色 ── */
+:is(.admin-layout, .admin-mode) button[role="switch"] {
+  background: transparent;
+  border: 1px solid var(--rule);
+}
+
+:is(.admin-layout, .admin-mode) button[role="switch"][data-state="checked"] {
+  border-color: var(--paper-2);
+}
+
+:is(.admin-layout, .admin-mode) button[role="switch"] > span {
+  width: 14px;
+  height: 14px;
+  margin-left: var(--space-1);
+  background: var(--paper-3);
+  box-shadow: none;
+}
+
+:is(.admin-layout, .admin-mode) button[role="switch"][data-state="checked"] > span {
+  background: var(--paper);
 }
 
 :is(.admin-layout, .admin-mode) .text-primary {

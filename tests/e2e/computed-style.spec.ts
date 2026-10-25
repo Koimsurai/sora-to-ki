@@ -126,8 +126,8 @@ const ROUTES = [
  * 每個路由要等的東西不一樣，用標題（編輯器那種沒有 <h1> 的頁面才需要另外處理）。
  */
 const ADMIN_ROUTES: { route: string; heading?: string | RegExp; ready?: (p: Page) => ReturnType<Page['locator']> }[] = [
-  { route: '/admin/dashboard', heading: /儀表板|Dashboard/ },
-  { route: '/admin/posts', heading: /文章/ },
+  { route: '/admin/dashboard', heading: /此刻/ },
+  { route: '/admin/posts', heading: /手記/ },
   { route: '/admin/tags', heading: '標籤管理' },
   // 下面這批是 2026-10 接上 @shadcn/lint 時補的：那次要把後台 TSX 裡的 `text-[11px]`
   // 與手動壓小的 Button 收回尺上，動到的檔案散在這些頁面，而原本只守上面三頁。

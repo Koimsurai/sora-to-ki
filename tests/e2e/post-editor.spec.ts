@@ -38,7 +38,8 @@ import type { Page } from '@playwright/test';
 import { gotoAdminUntil, signIn } from './admin-session';
 import { E2E_POST_PREFIX } from './seed.mjs';
 
-const titleInput = (p: Page) => p.getByPlaceholder('輸入文章標題...');
+// 用標籤找而不是 placeholder：提示文字是文案，改了不該讓測試壞
+const titleInput = (p: Page) => p.getByLabel('標題', { exact: true });
 const viewLines = (p: Page) => p.locator('.monaco-editor .view-lines').first();
 
 /** 進編輯器並等 Monaco 真的掛好（它是 lazy chunk，比其他後台頁慢）。 */

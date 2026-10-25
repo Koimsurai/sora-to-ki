@@ -22,13 +22,14 @@ import {
   Loader2,
   LayoutTemplate,
   Languages,
-  Wand2,
   Maximize2,
   Minimize2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import './AdminPage.css';
+import './PostEditor.css';
 
 interface TagOption {
   label: string;
@@ -746,8 +747,8 @@ export default function PostEditor() {
             {/* Left Column - Editor */}
             <main className="flex-1 overflow-y-auto p-6 min-w-0 space-y-0">
               {/* Locale tabs */}
-              <div className="mb-4 flex items-center gap-1 rounded-lg border border-border/40 bg-accent/10 p-1">
-                <Languages className="mx-2 h-3.5 w-3.5 text-muted-foreground/70" />
+              {/* 語系分頁：正在編的是琥珀點、已經有內容的是墨點、還沒寫的是空心 */}
+              <div className="pe-locales">
                 {LOCALE_TABS.map((t) => {
                   const isSource = t.code === sourceLanguage;
                   const titleVal = form.watch(fieldNameFor('title', t.code, sourceLanguage));
@@ -757,21 +758,13 @@ export default function PostEditor() {
                       key={t.code}
                       type="button"
                       onClick={() => setActiveLocale(t.code)}
-                      className={`relative rounded px-2.5 py-1 text-xs transition-colors ${
-                        activeLocale === t.code
-                          ? 'bg-accent/70 text-foreground'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'
-                      }`}
+                      className="adm-tab pe-locale"
+                      aria-pressed={activeLocale === t.code}
+                      data-has={hasContent || undefined}
                     >
+                      <span className="adm-tab-dot" aria-hidden="true" />
                       {t.label}
-                      {isSource && (
-                        <span className="ml-1 rounded bg-violet-500/20 px-1 py-px text-fs-10 text-violet-300">
-                          原文
-                        </span>
-                      )}
-                      {!isSource && hasContent && (
-                        <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-green-400" />
-                      )}
+                      {isSource && <span className="adm-meta">原稿</span>}
                     </button>
                   );
                 })}
@@ -782,21 +775,18 @@ export default function PostEditor() {
                       void handleGenerateZhCN();
                     }}
                     disabled={isGeneratingZhCN}
-                    className="ml-auto inline-flex items-center gap-1 rounded-md border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-fs-11 text-violet-300 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="adm-btn adm-btn-small pe-locale-action"
                     title="OpenCC 繁→簡，純字詞轉換不丟 LLM"
                   >
-                    {isGeneratingZhCN ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3" />}
-                    自動產生简中
+                    {isGeneratingZhCN && <Loader2 className="size-3 animate-spin" />}
+                    從繁中產生简中
                   </button>
                 )}
               </div>
 
               {/* i18n 多語系提示 */}
-              <p className="mb-3 text-fs-11 text-muted-foreground/70">
-                目前編輯：
-                <span className="text-violet-300">{LOCALE_TABS.find((t) => t.code === activeLocale)?.label}</span>
-                <span className="mx-1.5 opacity-40">·</span>
-                所有已填語系會一起儲存／發佈，不需分別操作
+              <p className="adm-meta pe-hint">
+                正在編 {LOCALE_TABS.find((t) => t.code === activeLocale)?.label} · 所有已填語系會一起儲存／發佈
               </p>
 
               {/* Title (per-locale) — 直接用 form.watch/setValue，避免 FormField 動態 name 的 bug */}
@@ -804,46 +794,47 @@ export default function PostEditor() {
                 key={`title-${activeLocale}`}
                 value={titleValue}
                 onChange={(e) => form.setValue(titleName, e.target.value, { shouldDirty: true })}
-                placeholder="輸入文章標題..."
-                className="w-full bg-transparent text-foreground/90 text-lg font-medium mb-5 pb-3 border-b border-border/30 outline-hidden focus:border-border transition-colors"
+                placeholder="這篇的標題"
+                aria-label="標題"
+                className="pe-title"
               />
 
-              {/* Content (per-locale) - 玻璃擬態編輯器 */}
-              <div className="glass rounded-xl overflow-hidden border border-border/50">
-                <div className="flex items-center gap-1 border-b border-border/40 bg-accent/20 px-2 py-1.5">
+              {/* Content (per-locale)：原稿與預覽 */}
+              <div className="pe-frame">
+                <div className="pe-frame-bar">
                   <button
                     type="button"
-                    className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'edit' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                    className="adm-tab pe-view"
+                    aria-pressed={editorView === 'edit'}
                     onClick={() => setEditorView('edit')}
                   >
                     編輯
                   </button>
                   <button
                     type="button"
-                    className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'split' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                    className="adm-tab pe-view"
+                    aria-pressed={editorView === 'split'}
                     onClick={() => setEditorView('split')}
                   >
                     分割
                   </button>
                   <button
                     type="button"
-                    className={`rounded px-2 py-1 text-xs transition-colors ${editorView === 'preview' ? 'bg-accent/70 text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-accent/40'}`}
+                    className="adm-tab pe-view"
+                    aria-pressed={editorView === 'preview'}
                     onClick={() => setEditorView('preview')}
                   >
                     預覽
                   </button>
-                  <div className="ml-auto flex items-center gap-2">
-                    {autosaveStatus === 'saved' && (
-                      <span className="text-fs-10 text-green-400/80 animate-in fade-in">已自動備份</span>
-                    )}
-                    {autosaveStatus === 'restoring' && (
-                      <span className="text-fs-10 text-violet-300 animate-in fade-in">已還原草稿</span>
-                    )}
+                  <div className="pe-frame-status">
+                    {autosaveStatus === 'saved' && <span className="adm-meta">已自動備份</span>}
+                    {autosaveStatus === 'restoring' && <span className="adm-meta">已還原草稿</span>}
                     <button
                       type="button"
                       title={zenMode ? '退出 Zen（Esc）' : 'Zen 模式（F11）'}
+                      aria-label={zenMode ? '退出專注模式' : '專注模式'}
                       onClick={() => setZenMode((z) => !z)}
-                      className="rounded px-1.5 py-1 text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+                      className="adm-icon-btn"
                     >
                       {zenMode ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
                     </button>
@@ -869,9 +860,7 @@ export default function PostEditor() {
                 )}
 
                 {editorView !== 'edit' && (
-                  <div
-                    className={`${editorView === 'split' ? 'max-h-[340px]' : 'max-h-[700px]'} overflow-y-auto border-t border-border/40 bg-background/70 p-4`}
-                  >
+                  <div className={`${editorView === 'split' ? 'max-h-[340px]' : 'max-h-[700px]'} pe-preview`}>
                     {/* 跟前台同一套渲染（MDX blocks / shiki / alert / 連結卡）→ 所見即所得 */}
                     <PostPreview content={contentValue} format={format} />
                   </div>
@@ -880,11 +869,11 @@ export default function PostEditor() {
             </main>
 
             {/* Right Column - Settings */}
-            <aside className="w-[280px] border-l border-border/30 glass-subtle shrink-0 hidden lg:block overflow-y-auto">
+            <aside className="w-[300px] shrink-0 hidden lg:block pe-side">
               <div className="p-4 space-y-5">
                 {/* Category & Tags */}
                 <div>
-                  <h3 className="text-fs-11 uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                  <h3 className="pe-side-head">
                     <Folder className="h-3.5 w-3.5" />
                     分類與標籤
                   </h3>
@@ -964,7 +953,7 @@ export default function PostEditor() {
 
                 {/* Series — 系列文 */}
                 <div>
-                  <h3 className="text-fs-11 uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                  <h3 className="pe-side-head">
                     <FileText className="h-3.5 w-3.5" />
                     系列文（選填）
                   </h3>
@@ -1009,7 +998,7 @@ export default function PostEditor() {
 
                 {/* Publishing Options */}
                 <div>
-                  <h3 className="text-fs-11 uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                  <h3 className="pe-side-head">
                     <Clock className="h-3.5 w-3.5" />
                     發佈設定
                   </h3>
@@ -1161,7 +1150,7 @@ export default function PostEditor() {
                     {id && form.watch('status') === 'published' && (
                       <button
                         type="button"
-                        className="w-full mt-1 px-3 py-2 text-xs rounded-md border border-violet-500/30 bg-violet-500/8 text-purple-200 hover:bg-violet-500/15 hover:border-violet-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="adm-btn pe-wide"
                         disabled={isSavingDraft || isPublishing}
                         onClick={() => {
                           void handleSendNewsletter();
@@ -1175,7 +1164,7 @@ export default function PostEditor() {
 
                 {/* Cover Image */}
                 <div>
-                  <h3 className="text-fs-11 uppercase tracking-wider text-muted-foreground/70 font-medium mb-3 flex items-center gap-2">
+                  <h3 className="pe-side-head">
                     <ImageIcon className="h-3.5 w-3.5" />
                     封面圖片
                   </h3>
@@ -1215,7 +1204,7 @@ export default function PostEditor() {
                             void handleGenerateSummary();
                           }}
                           disabled={isGeneratingSummary}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-fs-10 font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="adm-btn adm-btn-small"
                         >
                           {isGeneratingSummary ? (
                             <>

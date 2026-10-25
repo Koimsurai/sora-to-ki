@@ -91,11 +91,15 @@ test.describe('後台', () => {
     // ── 3. 站長登入後台，看得到那則待審核
     await signIn(page);
     await gotoAdmin(page, '/admin/comments', /留言/);
-    const row = page.locator('div', { hasText: content }).last();
-    await expect(row, '後台應該看得到剛送出的留言').toBeVisible({ timeout: 15_000 });
+    // 審核頁是「左邊清單、右邊選中那一則」：先在清單裡點它，右邊才是它的全文與動作
+    const item = page.getByRole('listitem').filter({ hasText: content });
+    await expect(item, '後台應該看得到剛送出的留言').toBeVisible({ timeout: 15_000 });
+    await item.getByRole('button').click();
+    const detail = page.getByRole('region', { name: '這則留言' });
+    await expect(detail).toContainText(content);
 
     // ── 4. 批准
-    await row.getByRole('button', { name: '批准' }).click();
+    await detail.getByRole('button', { name: /批准/ }).click();
 
     // ── 5. 登出，以讀者的身分再看一次
     await signOut(page);

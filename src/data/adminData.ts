@@ -15,6 +15,7 @@ import type {
   AdminPostsResponse,
   AdminCommentsResponse,
   AdminPostDetailResponse,
+  MetricStat,
 } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
 import { authHeaders } from '@/lib/authToken';
@@ -105,6 +106,32 @@ export const adminStatsQueryOptions = queryOptions({
   queryFn: () => adminGet<AdminStats>('/api/admin/stats'),
   staleTime: STALE,
 });
+
+// 巴哈姆特動畫瘋的 cookie／JWT 狀態（收藏頁「在看」的來源）。非 specta 端點 → 型別手寫。
+export interface BahamutStatus {
+  ok: boolean;
+  missing: string[];
+  jwtExpiresAt: string | null;
+  daysLeft: number | null;
+}
+export const adminBahamutStatusQueryOptions = queryOptions({
+  queryKey: ['admin', 'bahamut-status'],
+  queryFn: () => adminGet<BahamutStatus>('/api/admin/bahamut/status'),
+  staleTime: STALE,
+});
+
+// Web Vitals 的聚合（p75 與好／待改善／差的分佈）。端點是公開的，SQL 本身就排除了 /admin，
+// 所以不用再自己過濾後台的資料。
+export interface VitalsStats {
+  days: number;
+  metrics: MetricStat[];
+}
+export const vitalsStatsQueryOptions = (days: number) =>
+  queryOptions({
+    queryKey: ['admin', 'vitals', days],
+    queryFn: () => adminGet<VitalsStats>(`/api/vitals/stats?days=${days}`),
+    staleTime: 5 * 60 * 1000,
+  });
 
 export const adminPostDetailQueryOptions = (id: string | number) =>
   queryOptions({

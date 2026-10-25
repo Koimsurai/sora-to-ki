@@ -166,6 +166,12 @@
   border-color: var(--paper-2);
 }
 
+/* 長得像按鈕的連結（「新寫一篇」這種）：蓋過後台 a 的墨 70% 與底線 */
+.admin-layout a.adm-btn {
+  color: var(--paper);
+  text-decoration: none;
+}
+
 .adm-btn-small {
   min-height: 32px;
   padding: 0 var(--space-2-5);
