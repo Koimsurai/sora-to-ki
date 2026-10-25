@@ -14,7 +14,7 @@
  * 瀏覽器會抓到這份新的取代它 —— 自毀版已完成任務,可以退休。
  */
 
-const CACHE = 'koimsurai-v2'; // 改版就換名 → activate 時會清掉舊快取
+const CACHE = 'koimsurai-v3'; // 改版就換名 → activate 時會清掉舊快取（v3：離線頁換成翻新後的樣子）
 // 純靜態 HTML,不是 TanStack 路由 —— SPA 文件當 fallback 會被 client router 依網址重新導向而失效。
 const OFFLINE_URL = '/offline.html';
 
