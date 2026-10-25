@@ -7,19 +7,28 @@
 use tiny_skia::Pixmap;
 
 pub mod about;
+pub mod collection;
 pub mod colophon;
+pub mod friends;
 pub mod log;
 pub mod messages;
+pub mod moments;
 pub mod notes;
+pub mod photos;
 pub mod saturn;
 pub mod setup;
+mod starfield;
 pub mod works;
 
 pub use about::About;
+pub use collection::Collection;
 pub use colophon::Colophon;
+pub use friends::Friends;
 pub use log::Log;
 pub use messages::Messages;
+pub use moments::Moments;
 pub use notes::{Notes, SkyPost};
+pub use photos::Photos;
 pub use saturn::Saturn;
 pub use setup::Setup;
 pub use works::Works;

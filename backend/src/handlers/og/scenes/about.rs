@@ -24,7 +24,7 @@ use std::f32::consts::TAU;
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink, load_image, scale_image};
+use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink, load_image, resize_image};
 use super::notes::seeded;
 
 /// 一圈 15 秒、每格 100ms
@@ -201,10 +201,10 @@ impl About {
         }
 
         // 返回艙：掛在傘下，停在擺到一半的樣子（見檔頭）。插圖先縮到要貼的大小再貼
-        // （見 `canvas::scale_image`），只貼下面艙體那一段
+        // （見 `canvas::resize_image`），只貼下面艙體那一段
         let dh = DH;
         let dw = CW * (dh / CH);
-        let chute = scale_image(&load_image(CHUTE), dw.round() as u32, dh.round() as u32);
+        let chute = resize_image(&load_image(CHUTE), dw.round() as u32, dh.round() as u32);
         let (iw, ih) = (chute.width() as f32, chute.height() as f32);
         let left = GX - dw / 2.0;
         let top_y = FOOT_Y - FOOT * dh;

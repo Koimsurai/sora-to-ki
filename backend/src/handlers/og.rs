@@ -39,7 +39,10 @@ use crate::state::AppState;
 // 模板是字串組裝，所以標題要轉義（改用 node tree 就不需要，但模板會變成一大串 builder 呼叫）
 use crate::util::escape_html;
 
-use scenes::{About, Colophon, Log, Messages, Notes, Saturn, Scene, Setup, SkyPost, Works};
+use scenes::{
+    About, Collection, Colophon, Friends, Log, Messages, Moments, Notes, Photos, Saturn, Scene, Setup,
+    SkyPost, Works,
+};
 
 /// 主標與副標：跟前端 `lib/blogReading.ts` 的 `splitTitle` 同一套規則——全形冒號，
 /// 或半形冒號後面接空白（`Rust 1.85:2024` 那種不拆）。兩邊任一段是空的就不拆
@@ -308,7 +311,11 @@ fn page_scene(key: &str, sky: &[SkyPost]) -> Box<dyn Scene> {
         "colophon" => Box::new(Colophon::new()),
         "setup" => Box::new(Setup::new()),
         "messages" => Box::new(Messages::new()),
-        // 其他頁的背景移植完之前，先用首頁的土星
+        "moments" => Box::new(Moments::new()),
+        "friends" => Box::new(Friends::new()),
+        "collection" => Box::new(Collection::new()),
+        "photos" => Box::new(Photos::new()),
+        // 首頁（PAGES 以外的名字進不到這裡）
         _ => Box::new(SaturnRef),
     }
 }
@@ -618,7 +625,7 @@ mod tests {
     #[test]
     fn 背景會動而且首尾接得起來() {
         let sky: Vec<SkyPost> = (0..12).map(|i| SkyPost::of(&format!("p{i}"), 500 * (i + 1), 6000)).collect();
-        let scenes: [Box<dyn Scene>; 8] = [
+        let scenes: [Box<dyn Scene>; 12] = [
             Box::new(Saturn::new()),
             Box::new(Notes::new(&sky, 0)),
             Box::new(About::new()),
@@ -627,6 +634,10 @@ mod tests {
             Box::new(Colophon::new()),
             Box::new(Setup::new()),
             Box::new(Messages::new()),
+            Box::new(Moments::new()),
+            Box::new(Friends::new()),
+            Box::new(Collection::new()),
+            Box::new(Photos::new()),
         ];
         for scene in scenes {
             let n = scene.frames();

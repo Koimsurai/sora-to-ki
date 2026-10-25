@@ -34,7 +34,7 @@ use chrono::{Datelike, NaiveDate};
 use tiny_skia::Pixmap;
 
 use super::super::apng::{H, W};
-use super::super::canvas::{Ctx, GROUND, Gradient, Rgba, amber, ink, load_image, scale_image};
+use super::super::canvas::{Ctx, GROUND, Gradient, Rgba, amber, ink, load_image, resize_image};
 use super::saturn::rng;
 
 /// 一圈 12 秒、每格 100ms。火焰與脈動每一格都在變（一格約 4 KB），一圈越長檔案越大：
@@ -584,7 +584,7 @@ impl Log {
         // 火箭畫多長：跟著遠近縮放，窄螢幕再小一點（`rocketLen`）
         let len = ROCKET_LEN * scale_s.clamp(0.6, 1.3) * (w / 1100.0).clamp(0.55, 1.0);
         let sc = len / ax.hypot(ay);
-        let rocket = scale_image(&img, (rw * sc).round() as u32, (rh * sc).round() as u32);
+        let rocket = resize_image(&img, (rw * sc).round() as u32, (rh * sc).round() as u32);
         // 縮完取整數像素，實際的比例照縮出來的大小算，噴嘴才對得準
         let (sx, sy) = (f64::from(rocket.width()) / rw, f64::from(rocket.height()) / rh);
 

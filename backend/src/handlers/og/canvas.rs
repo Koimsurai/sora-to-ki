@@ -448,27 +448,6 @@ impl Ctx {
     }
 }
 
-/// 把一張圖縮放到 w×h（預乘的資料直接平均，濾波照 Lanczos3）。
-///
-/// 為什麼不直接交給 `draw_image_sized`：瀏覽器把大圖縮很小時會先做 mipmap 式的平均，
-/// tiny-skia 只做雙線性取樣——縮到三分之一以下時，插圖裡幾像素寬的線會被跳著取樣，
-/// 斷成一點一點的。插圖要貼得比原圖小很多時，先用這個縮到要的大小，再 1:1 貼上去
-pub fn scale_image(img: &Pixmap, w: u32, h: u32) -> Pixmap {
-    let src =
-        image::RgbaImage::from_raw(img.width(), img.height(), img.data().to_vec()).expect("長度剛好是 w×h×4");
-    let out = image::imageops::resize(&src, w.max(1), h.max(1), image::imageops::FilterType::Lanczos3);
-    let (w, h) = out.dimensions();
-    let mut data = out.into_raw();
-    // Lanczos 會過衝：預乘的色值不能超過 alpha
-    for px in data.as_chunks_mut::<4>().0 {
-        let a = px[3];
-        for c in &mut px[..3] {
-            *c = (*c).min(a);
-        }
-    }
-    Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(w, h).expect("不會是 0×0")).expect("長度剛好是 w×h×4")
-}
-
 /// 陰影那一層：`layer` 的 alpha 做高斯模糊（canvas 規定 sigma 是 `shadowBlur / 2`），
 /// 染成 `c`。高斯用三次方框模糊逼近（SVG `feGaussianBlur` 規格建議的做法）
 fn shadow_of(layer: &Pixmap, c: Rgba, blur: f32) -> Pixmap {
@@ -528,14 +507,23 @@ fn box_line(src: &[f32], dst: &mut [f32], start: usize, stride: usize, n: usize,
     }
 }
 
-/// 把圖縮到 `w`×`h`（預乘 alpha 上做三角濾波）。瀏覽器的 `drawImage`／`<img>` 縮小時會做
-/// 高品質的重新取樣；tiny-skia 的貼圖只有雙線性、不會先降解析度，大圖縮成一半以下時細線會斷掉。
-/// 縮得多的插圖先用這個縮到要貼的大小，再用 `draw_image` 原尺寸貼上
+/// 把圖縮到 `w`×`h`。大幅縮小的線稿要先過這個再原尺寸貼：tiny-skia 的貼圖只有雙線性取樣，
+/// 縮到三分之一以下時細線會被跳著取樣、斷成一節一節（瀏覽器的 `drawImage` 縮圖有先做 mipmap，不會這樣）。
+/// 用三角濾波（範圍跟著縮放比例放大，等於把每個新像素蓋到的舊像素平均起來），而且是在預乘的值上縮——
+/// 不然透明像素的顏色會滲進線的邊緣，線變暗變細
 pub fn resize_image(img: &Pixmap, w: u32, h: u32) -> Pixmap {
     let src =
         image::RgbaImage::from_raw(img.width(), img.height(), img.data().to_vec()).expect("長度剛好是 w×h×4");
-    let out = image::imageops::resize(&src, w.max(1), h.max(1), image::imageops::FilterType::Triangle);
-    Pixmap::from_vec(out.into_raw(), tiny_skia::IntSize::from_wh(w.max(1), h.max(1)).expect("至少 1×1"))
+    let mut data =
+        image::imageops::resize(&src, w.max(1), h.max(1), image::imageops::FilterType::Triangle).into_raw();
+    // 權重都是正的，縮完仍然是合法的預乘值；各通道分開四捨五入，保險起見把色值夾在 alpha 以內
+    for px in data.as_chunks_mut::<4>().0 {
+        let a = px[3];
+        for c in &mut px[..3] {
+            *c = (*c).min(a);
+        }
+    }
+    Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(w.max(1), h.max(1)).expect("至少 1×1"))
         .expect("長度剛好是 w×h×4")
 }
 
@@ -560,25 +548,7 @@ fn premultiply(data: &mut [u8]) {
     }
 }
 
-/// 同 `load_image`，但先縮成 `w × h`。大幅縮小的線稿要用這個：`draw_image_sized` 是雙線性取樣，
-/// 縮到三分之一以下時細線會斷成一節一節（瀏覽器的 `drawImage` 縮圖有先做 mipmap，不會這樣）。
-/// 這裡用三角濾波（範圍跟著縮放比例放大，等於把每個新像素蓋到的舊像素平均起來），
-/// 而且是在預乘之後縮——不然透明像素的顏色會滲進線的邊緣，線變暗變細
+/// `load_image` 再 `resize_image`：插圖要畫得比原圖小很多時用這個
 pub fn load_image_sized(bytes: &[u8], w: u32, h: u32) -> Pixmap {
-    let img = image::load_from_memory(bytes).expect("插圖是編進執行檔的常數，解不開代表檔案壞了").to_rgba8();
-    let (iw, ih) = img.dimensions();
-    let mut data = img.into_raw();
-    premultiply(&mut data);
-    let img = image::RgbaImage::from_raw(iw, ih, data).expect("長度沒變");
-    let mut data =
-        image::imageops::resize(&img, w.max(1), h.max(1), image::imageops::FilterType::Triangle).into_raw();
-    // 權重都是正的，縮完仍然是合法的預乘值；各通道分開四捨五入，保險起見把色值夾在 alpha 以內
-    for px in data.as_chunks_mut::<4>().0 {
-        let a = px[3];
-        for c in &mut px[..3] {
-            *c = (*c).min(a);
-        }
-    }
-    Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(w.max(1), h.max(1)).expect("不是 0×0"))
-        .expect("長度剛好是 w×h×4")
+    resize_image(&load_image(bytes), w, h)
 }
