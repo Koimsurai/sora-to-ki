@@ -125,9 +125,11 @@ const nodeText = (node: React.ReactNode): string => {
 };
 
 /* ── 閱讀字體 ── */
-/* 選項（id 與顯示名）在 blog/ArticleControls 的 FONT_OPTIONS（不 export，只有字體那一行在用）；字體棧本身在 index.css（--blog-font-<id>）——
+/* 選項的 id 在 blog/ArticleControls 的 FONT_OPTIONS、顯示名在語系檔的 blog.fontNames（各語系配的字不同）；
+   字體棧在 index.css（--blog-font-<id> 指向 --serif／--sans／--kai／--modern，各語系各一支，全是按頁裁字）——
    偏好必須在 paint 之前套用（見 __root.tsx 的 pre-paint script），而那段只能碰 CSS。
-   新增字體：FONT_OPTIONS 加一列 + index.css 加兩行（--blog-font-<id> 與 html[data-blog-font=...]）。 */
+   新增字體：FONT_OPTIONS 加 id、語系檔加名字、index.css 加 --blog-font-<id> 與 html[data-blog-font=...]；
+   要是新的一種字，還要在 lib/serifSubset 的 FontStyle 與伺服器的 FONTS 表、scripts/fetch-serif-font.mjs 各加一份 */
 const DEFAULT_BLOG_FONT = 'noto-serif';
 /** 舊版後端沒有 excerpt_links 欄位時給的空陣列（固定一份，摘要才不會每次重切） */
 const NO_LINKS: readonly ExcerptLink[] = [];
