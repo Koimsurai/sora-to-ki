@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from 'react';
 import { useParams, useRouterState, useNavigate, ClientOnly } from '@tanstack/react-router';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { LocaleLink } from '@/i18n/locale-link';
@@ -50,7 +50,8 @@ import { splitTitle } from '@/lib/blogReading';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
 import ArticleSummary from './ArticleSummary';
 import OrbitToc from './OrbitToc';
-import { peekRetune, setRetune, useRetune } from './useRetune';
+import { peekRetune, retunePending, setRetune, useRetune } from './useRetune';
+import { isArriving } from '@/store/pageTransition';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath, postShareUrl } from '@/lib/postPath';
 import { lookup } from '@/lib/tableLookup';
@@ -984,6 +985,10 @@ const LOCALE_TO_DATE_LOCALE: Record<string, string> = {
   ko: 'ko-KR',
 };
 
+const noSubscribe = () => () => undefined;
+const isClient = () => true;
+const notClient = () => false;
+
 function parseLocaleFromPath(pathname: string) {
   // 不分大小寫：站上的網址是 /zh-CN/，這裡原本只認小寫的 /zh-cn/——直接打開（或從分享的連結進來）
   // 簡中文章時抓的是繁中原文，也沒有 AI 翻譯的提示；只有在頁面上切語系時才對
@@ -1021,6 +1026,13 @@ function BlogPost() {
   const colRef = useRef<HTMLDivElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
   const { id = '' } = useParams({ strict: false });
+  // 內文要不要分批掛（見 mdx/MdxContent 的 progressive）：只在「站內換頁、點還在飛」時。
+  // SSR 與 hydration 一律整篇（useSyncExternalStore 在 hydration 那一輪拿的是 server 的 false）；
+  // 切語系（retune 要捲回同一章）與網址帶 #章節 的也整篇，那兩種要一進來就找得到章節
+  const clientMount = useSyncExternalStore(noSubscribe, isClient, notClient);
+  const [progressive] = useState(() => clientMount && isArriving() && !window.location.hash && !retunePending());
+  const [bodyDone, setBodyDone] = useState(!progressive);
+  const onBodyDone = useCallback(() => setBodyDone(true), []);
   const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
   const pathLocale = useMemo(() => parseLocaleFromPath(location.pathname), [location.pathname]);
@@ -1216,7 +1228,8 @@ function BlogPost() {
         /* 腳註處理失敗就忽略 */
       }
     });
-  }, [post?.content]);
+    // 分批掛的時候等最後一批（註腳在文末）
+  }, [post?.content, bodyDone]);
 
   /* ── Copy protection ── */
   useEffect(() => {
@@ -1441,7 +1454,12 @@ function BlogPost() {
             {postData?.compiledMdx ? (
               // format='mdx'：server 端已編譯，這裡 runSync 執行成 React 元件（自訂 block +
               // 與 markdown 共用的 code/link/img/heading override）。
-              <MdxContent compiled={postData.compiledMdx} baseComponents={mdxBaseComponents} />
+              <MdxContent
+                compiled={postData.compiledMdx}
+                baseComponents={mdxBaseComponents}
+                progressive={progressive}
+                onDone={onBodyDone}
+              />
             ) : (
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkAlert]}
@@ -1477,33 +1495,37 @@ function BlogPost() {
             )}
           </MermaidSvgContext>
         </article>
-        <SignatureSVG className="blog-signature" />
+        {/* 簽名與文末那一整塊在畫面外很遠：內文分批掛的時候等內文掛完才掛（簽名要量 SVG 路徑長度、
+            留言與回應各自要排版），不跟內文的第一批擠在轉場飛行的同一幀 */}
+        {bodyDone && <SignatureSVG className="blog-signature" />}
 
         {/* 文末：原本右邊的五顆浮動圓鈕收成一行字，接著是反應、系列、上下篇、同分類、留言 */}
-        <footer className="ar-end">
-          {/* 「喜歡」在下面的星座裡（blog/ReactionSky），這一行只剩分享、訂閱、RSS */}
-          <div className="ar-act">
-            <button type="button" onClick={handleNativeShare}>
-              {copied ? t('blog.shareCopied') : t('blog.share')}
-            </button>
-            <button type="button" onClick={() => setShowSubscribe(true)}>
-              {t('blog.subscribeTitle')}
-            </button>
-            <a href="/rss" target="_blank" rel="noopener noreferrer">
-              RSS
-            </a>
-            {/* 窄螢幕沒有目錄：字體那一行放在這裡（寬螢幕的在目錄底下） */}
-            <FontLine className="ar-font-narrow" current={currentFont} onChange={handleFontChange} />
-          </div>
-          {/* 回應的狀態只有一個持有者（文章頁）：傳給星座，各自呼叫 useReactions 的話 mine 會分岔 */}
-          <ReactionSky counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />
-          {post.series_name && <SeriesNav seriesName={post.series_name} currentId={post.id} />}
-          <PrevNextNav currentId={post.id} />
-          <SameCategory currentId={post.id} postCategory={post.category ?? undefined} />
-          <div className="post-extras" id="comments">
-            <ArticleComments postId={post.id} allowComments={post.allow_comments} />
-          </div>
-        </footer>
+        {bodyDone && (
+          <footer className="ar-end">
+            {/* 「喜歡」在下面的星座裡（blog/ReactionSky），這一行只剩分享、訂閱、RSS */}
+            <div className="ar-act">
+              <button type="button" onClick={handleNativeShare}>
+                {copied ? t('blog.shareCopied') : t('blog.share')}
+              </button>
+              <button type="button" onClick={() => setShowSubscribe(true)}>
+                {t('blog.subscribeTitle')}
+              </button>
+              <a href="/rss" target="_blank" rel="noopener noreferrer">
+                RSS
+              </a>
+              {/* 窄螢幕沒有目錄：字體那一行放在這裡（寬螢幕的在目錄底下） */}
+              <FontLine className="ar-font-narrow" current={currentFont} onChange={handleFontChange} />
+            </div>
+            {/* 回應的狀態只有一個持有者（文章頁）：傳給星座，各自呼叫 useReactions 的話 mine 會分岔 */}
+            <ReactionSky counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />
+            {post.series_name && <SeriesNav seriesName={post.series_name} currentId={post.id} />}
+            <PrevNextNav currentId={post.id} />
+            <SameCategory currentId={post.id} postCategory={post.category ?? undefined} />
+            <div className="post-extras" id="comments">
+              <ArticleComments postId={post.id} allowComments={post.allow_comments} />
+            </div>
+          </footer>
+        )}
       </div>
 
       <AnimatePresence>{showSubscribe && <SubscribeModal onClose={() => setShowSubscribe(false)} />}</AnimatePresence>

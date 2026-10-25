@@ -223,6 +223,10 @@ export default function OrbitToc({
 
     // 量：章節在頁面上的位置 → 軌道上的位置（照實際距離，太擠的地方往下推開）
     const measure = () => {
+      // 內文分批掛上時（站內換頁進來，見 mdx/MdxContent），後面幾章一開始還不在：每次量都補找一次
+      headings.forEach((h, i) => {
+        els[i] ??= document.getElementById(h.id);
+      });
       g = orbitGeometry(window.innerWidth, window.innerHeight);
       root.classList.toggle('is-off', !g);
       if (!g) return;

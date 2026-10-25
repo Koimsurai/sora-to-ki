@@ -151,10 +151,15 @@ export default function SerifFontLoader() {
   useEffect(() => {
     if (typeof FontFace === 'undefined') return;
     const pending: Pending = new Map();
+    // 新加進來的節點先記著，計時器到了才掃：掃的時候要讀每個元素的計算樣式，當場掃等於在 React 剛掛上一批內容
+    // 的那一幀裡多算一次樣式（站內換頁進文章時，內文一幀一批地掛，每批都會多這一下）
+    let roots: Node[] = [];
     let pendingFace = faceNow();
     let timer = 0;
     const flush = () => {
       timer = 0;
+      for (const node of roots) collect(node, pendingFace, pending);
+      roots = [];
       for (const [key, set] of pending) {
         const [style, w] = key.split(':') as [FontStyle, string];
         if (!hasLocal(style, pendingFace)) load(style, pendingFace, Number(w) as SerifWeight, set);
@@ -171,7 +176,9 @@ export default function SerifFontLoader() {
         }
         pendingFace = face;
       }
-      collect(node, face, pending);
+      // 整頁重掃已經排著的話，底下的節點不用另外掃
+      if (node === document.body) roots = [node];
+      else if (roots[0] !== document.body) roots.push(node);
       if (!timer) timer = window.setTimeout(flush, 120);
     };
     queue(document.body);
