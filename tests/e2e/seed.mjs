@@ -133,7 +133,7 @@ function allBlocksArticle() {
     '',
     '<Sketch title="流程" chart={"graph TD\\n  A[開始] --> B[結束]"} />',
     '',
-    '<ImageCompare before="/og-default-v3.png" after="/pwa-512.png" beforeLabel="修之前" afterLabel="修之後" alt="對照圖" caption="拉桿可以左右拖" />',
+    '<ImageCompare before="/pwa-maskable-512.png" after="/pwa-512.png" beforeLabel="修之前" afterLabel="修之後" alt="對照圖" caption="拉桿可以左右拖" />',
     '',
     '<CodeTabs files={[{name:"a.ts",lang:"ts",code:"export const a = 1;"},{name:"b.rs",lang:"rust",code:"fn main() {}"}]} />',
     '',
@@ -252,7 +252,7 @@ export function seed(dbPath) {
     // 不是 mermaid 自己的排版能力（那是它的測試該做的事）。
     '# 互動元素\n\n```rust\nfn main() {\n    println!("hello");\n}\n```\n\n' +
       '```mermaid\ngraph TD\n  A[開始] --> B[結束]\n```\n\n' +
-      '![一張測試圖片](/og-default-v3.png)\n',
+      '![一張測試圖片](/pwa-512.png)\n',
     '有程式碼區塊、圖表與圖片',
     T(10),
   );

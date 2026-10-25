@@ -97,7 +97,7 @@ describe('pageMeta', () => {
   // 尺寸標錯的話 Facebook 會裁切或整個不顯示預覽圖
   it('og:image 帶著與實際圖一致的尺寸', () => {
     const m = pageMeta('t', 'd', '/', 'zh-TW');
-    expect(pick(m, 'og:image')).toBe('https://koimsurai.com/og-default-v3.png');
+    expect(pick(m, 'og:image')).toBe('https://koimsurai.com/api/og/home.png');
     expect(pick(m, 'og:image:width')).toBe('1200');
     expect(pick(m, 'og:image:height')).toBe('630');
   });
@@ -112,6 +112,17 @@ describe('articleMeta', () => {
 
   it('og:image 指向後端產的那張，網址帶文章 id', () => {
     expect(pick(articleMeta(post(), '/blog/42', 'zh-TW'), 'og:image')).toBe('https://koimsurai.com/api/og/42.png');
+  });
+
+  // 圖上的字照語系：繁中不帶參數，其他語系帶 ?l=，否則英文讀者分享出去的卡片是中文字
+  it('og:image 跟著語系', () => {
+    expect(pick(articleMeta(post(), '/en/blog/42', 'en'), 'og:image')).toBe('https://koimsurai.com/api/og/42.png?l=en');
+    expect(pick(pageMeta('t', 'd', '/ja/blog', 'ja', 'notes'), 'og:image')).toBe(
+      'https://koimsurai.com/api/og/notes.png?l=ja',
+    );
+    expect(pick(pageMeta('t', 'd', '/zh-CN/watch', 'zh-CN', 'collection'), 'twitter:image')).toBe(
+      'https://koimsurai.com/api/og/collection.png?l=zh-CN',
+    );
   });
 
   it('og:type 是 article，不是首頁那種 website', () => {
