@@ -375,19 +375,32 @@ function ImageLightbox({ src, alt, origin, naturalWidth, onClose }: ImageLightbo
     closingRef.current = true;
     setClosing(true);
     const img = imgRef.current;
-    const o = origin.current?.getBoundingClientRect();
+    const onScreen = (o?: DOMRect) => o && o.bottom > 0 && o.top < window.innerHeight && o.width > 0;
     // 原圖不在畫面上（捲很遠、或被拿掉了）就不飛回去，淡掉就好
-    const visible = o && o.bottom > 0 && o.top < window.innerHeight && o.width > 0;
-    if (!img || !visible || reduce()) {
+    if (!img || !onScreen(origin.current?.getBoundingClientRect()) || reduce()) {
       window.setTimeout(onClose, reduce() ? 0 : CLOSE_MS);
       return;
     }
-    const anim = img.animate([{ transform: 'none' }, { transform: flip(o, img.getBoundingClientRect()) }], {
-      duration: CLOSE_MS,
-      easing: EASE,
-      fill: 'forwards',
-    });
-    void anim.finished.then(onClose, onClose);
+    // 每一幀重新量原圖的位置再飛過去：收的時候讀者常常還在捲（滾輪與平滑捲動都有慣性），
+    // 終點只在一開始量一次的話，飛到的是舊位置，燈箱一拿掉原圖就在別處，看起來閃一下
+    img.getAnimations().forEach((a) => a.cancel());
+    const target = img.getBoundingClientRect();
+    const t0 = performance.now();
+    const ease = (k: number) => 1 - (1 - k) ** 3;
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / CLOSE_MS);
+      const o = origin.current?.getBoundingClientRect();
+      if (o) {
+        const e = ease(k);
+        const dx = (o.left + o.width / 2 - (target.left + target.width / 2)) * e;
+        const dy = (o.top + o.height / 2 - (target.top + target.height / 2)) * e;
+        const s = 1 + (o.width / target.width - 1) * e;
+        img.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
+      }
+      if (k < 1) requestAnimationFrame(step);
+      else onClose();
+    };
+    requestAnimationFrame(step);
   }, [origin, onClose]);
 
   // 捲動：累計捲了多少（含頁面已經到底、捲不動時的滾輪），超過一小段才收

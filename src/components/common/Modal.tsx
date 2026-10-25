@@ -49,7 +49,9 @@ export function Modal({ onClose, overlayClassName, fade = false, lockScroll = tr
         }}
         onCloseAutoFocus={(e) => {
           e.preventDefault();
-          openerRef.current?.focus();
+          // preventScroll：開著時頁面可能捲動過了（燈箱就是捲一段才收），focus 預設會把開啟它的按鈕
+          // 捲回畫面裡，等於把讀者拉回原處
+          openerRef.current?.focus({ preventScroll: true });
         }}
       >
         {children}
