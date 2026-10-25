@@ -645,7 +645,8 @@
     "rule1": "The site loads, has its own domain and HTTPS (a free subdomain is fine).",
     "rule2": "Original content. No repost sites, ad farms or SEO farms.",
     "rule3": "If you have RSS, a signal shows up here whenever you post.",
-    "rule4": "Link here from your site first and I'll reply sooner."
+    "rule4": "Link here from your site first and I'll reply sooner.",
+    "drawer": "Exchange links"
   },
   "messages": {
     "title": "Messages",
