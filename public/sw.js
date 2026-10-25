@@ -8,21 +8,23 @@
  *
  * 只做兩件事:
  *   1. /assets/* 走 cache-first —— 那些檔名帶內容雜湊,檔名沒變就是同一份,快取永遠安全。
- *   2. 斷網時導覽請求回 /offline.html。
+ *   2. 斷網時導覽請求回 /offline.html（它用到的圖也先存好，斷網時從快取回）。
  *
  * 前一版的 /sw.js 是「自毀 SW」(清快取 + unregister,用來清掉更早的 SPA PWA 殘留)。回訪者的
  * 瀏覽器會抓到這份新的取代它 —— 自毀版已完成任務,可以退休。
  */
 
-const CACHE = 'koimsurai-v3'; // 改版就換名 → activate 時會清掉舊快取（v3：離線頁換成翻新後的樣子）
+const CACHE = 'koimsurai-v3'; // 改版就換名 → activate 時會清掉舊快取（v3：離線頁換成翻新後的樣子、多存一張圖）
 // 純靜態 HTML,不是 TanStack 路由 —— SPA 文件當 fallback 會被 client router 依網址重新導向而失效。
 const OFFLINE_URL = '/offline.html';
+// 離線頁自己用到的圖：跟離線頁一起先存好，斷網時才拿得到
+const OFFLINE_ASSETS = ['/illustrations/offline-satellite.webp'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
-      await cache.add(new Request(OFFLINE_URL, { cache: 'reload' }));
+      await cache.addAll([OFFLINE_URL, ...OFFLINE_ASSETS].map((u) => new Request(u, { cache: 'reload' })));
       await self.skipWaiting();
     })(),
   );
@@ -55,6 +57,12 @@ self.addEventListener('fetch', (event) => {
         return cached ?? new Response('離線中', { status: 503, headers: { 'content-type': 'text/plain; charset=utf-8' } });
       }),
     );
+    return;
+  }
+
+  // 離線頁的圖:先走網路(有網路時照常更新),斷網才回先存好的那份
+  if (OFFLINE_ASSETS.includes(url.pathname)) {
+    event.respondWith(fetch(req).catch(async () => (await caches.match(url.pathname)) ?? Response.error()));
     return;
   }
 

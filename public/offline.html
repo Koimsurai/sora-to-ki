@@ -16,9 +16,8 @@
       離線時拿不到站上的 CSS 與字型，顏色直接寫值（同 index.css 的 --ground、--paper、--amber），
       字型只用本機有的。改了這一頁要一起換 sw.js 的 CACHE，回訪的人才會拿到新版
 
-      圖：衛星繞到地球背面就跟地面失聯（太空任務說的 LOS），繞回來才又收得到。
-      全部是 SVG 自己的動畫（animateMotion），不靠 JS、不另外抓檔案。
-      衛星畫兩份：一份在地球底下（繞到背面時被地球蓋住），一份在地球上面但只露出前半圈
+      圖：一顆衛星，天線發出去的訊號一圈一圈斷掉。線稿跟 404 的太空人同一種處理（紙色、濃淡在透明度），
+      慢慢漂著。斷網時拿得到它，是因為 sw.js 安裝時就先存好了（OFFLINE_ASSETS）
     -->
     <style>
       html, body { margin: 0; height: 100%; }
@@ -55,18 +54,20 @@
         transition: color 0.2s ease, border-color 0.2s ease;
       }
       button:hover, button:focus-visible { color: #e9c17a; border-bottom-color: #e9c17a; }
-      .sky { flex: 1; min-width: 0; max-width: 620px; margin-left: auto; }
-      .sky svg { display: block; width: 100%; height: auto; overflow: visible; }
-      .still { display: none; }
+      .sky { flex: 1; min-width: 0; max-width: 560px; margin-left: auto; }
+      .sky img { display: block; width: 100%; height: auto; animation: drift 14s ease-in-out infinite; }
+      /* 慢慢漂：上下一點、轉一點，跟 404 的太空人一樣不搶字的注意 */
+      @keyframes drift {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        50% { transform: translate(-6px, 10px) rotate(-2deg); }
+      }
       @media (max-width: 900px) {
         body { flex-direction: column-reverse; justify-content: center; align-items: stretch; gap: 24px; padding: 24px 20px; }
-        .sky { margin: 0 auto; width: 100%; max-width: 420px; flex: none; }
+        .sky { margin: 0 auto; width: 70%; max-width: 320px; flex: none; }
         h1 { font-size: 26px; } .code { font-size: 44px; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .dot { animation: none; }
-        .moving { display: none; }
-        .still { display: inline; }
+        .dot, .sky img { animation: none; }
       }
     </style>
   </head>
@@ -79,72 +80,7 @@
       <button class="mono" type="button" onclick="location.reload()">重新整理 ↻</button>
     </main>
     <div class="sky" aria-hidden="true">
-      <svg viewBox="0 0 420 240" fill="none">
-        <defs>
-          <!-- 軌道：從最右邊往下繞前半圈、再從上面繞到地球背面。前半圈 0–50%、背面約 67–83% 被地球擋住 -->
-          <path id="orbit" d="M380 120 A170 42 0 0 1 40 120 A170 42 0 0 1 380 120" />
-          <!-- 地球的下半部前面：前半圈的軌道與衛星畫在地球上面，只露出這一塊 -->
-          <clipPath id="front"><rect x="0" y="120" width="420" height="120" /></clipPath>
-          <clipPath id="back"><rect x="0" y="-40" width="420" height="160" /></clipPath>
-          <radialGradient id="lit" cx="0.32" cy="0.3" r="0.8">
-            <stop offset="0" stop-color="#f1ece3" stop-opacity="0.1" />
-            <stop offset="1" stop-color="#f1ece3" stop-opacity="0" />
-          </radialGradient>
-          <!-- 衛星：機身加兩片太陽能板 -->
-          <g id="sat" stroke="#f1ece3" stroke-width="1.2">
-            <rect x="-2.2" y="-2.2" width="4.4" height="4.4" fill="#f1ece3" stroke="none" />
-            <path d="M-9 0H-3.5M3.5 0H9" />
-          </g>
-          <!-- 訊號：一圈一圈往外擴散。繞到背面前淡掉，繞出來後再亮 -->
-          <g id="signal">
-            <animate attributeName="opacity" dur="14s" repeatCount="indefinite"
-              values="1;1;0;0;1;1" keyTimes="0;0.6;0.64;0.85;0.89;1" />
-            <circle r="4" stroke="#e9c17a" stroke-width="1">
-              <animate attributeName="r" values="4;22" dur="1.8s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.7;0" dur="1.8s" repeatCount="indefinite" />
-            </circle>
-            <circle r="4" stroke="#e9c17a" stroke-width="1">
-              <animate attributeName="r" values="4;22" dur="1.8s" begin="0.9s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.7;0" dur="1.8s" begin="0.9s" repeatCount="indefinite" />
-            </circle>
-          </g>
-        </defs>
-
-        <!-- 軌道（整圈，背面那段之後會被地球蓋住） -->
-        <use href="#orbit" stroke="#f1ece3" stroke-opacity="0.25" stroke-dasharray="1 4" />
-
-        <!-- 衛星在地球底下的那一份：只露出上半（背面那一側），前半圈交給上面那一份，兩份不重疊 -->
-        <!-- （裁切掛在外面這層不動的 g：掛在帶 animateMotion 的那層上，裁切框會跟著衛星走） -->
-        <g clip-path="url(#back)">
-          <g class="moving">
-            <animateMotion dur="14s" repeatCount="indefinite"><mpath href="#orbit" /></animateMotion>
-            <use href="#signal" />
-            <use href="#sat" />
-          </g>
-        </g>
-
-        <!-- 地球：跟頁面同色的實心圓，蓋住背面的軌道與衛星；左上迎光 -->
-        <circle cx="210" cy="120" r="58" fill="#0a0a0c" />
-        <circle cx="210" cy="120" r="58" fill="url(#lit)" stroke="#f1ece3" stroke-opacity="0.45" />
-        <!-- 台灣：地面站 -->
-        <circle cx="236" cy="98" r="2.2" fill="#e9c17a" />
-
-        <!-- 前半圈：軌道與衛星畫在地球前面 -->
-        <g clip-path="url(#front)">
-          <use href="#orbit" stroke="#f1ece3" stroke-opacity="0.25" stroke-dasharray="1 4" />
-          <g class="moving">
-            <animateMotion dur="14s" repeatCount="indefinite"><mpath href="#orbit" /></animateMotion>
-            <use href="#signal" />
-            <use href="#sat" />
-          </g>
-        </g>
-
-        <!-- 減少動態效果：停在前半圈、正在發訊號的那一刻 -->
-        <g class="still" transform="translate(300 152)">
-          <circle r="10" stroke="#e9c17a" stroke-opacity="0.5" />
-          <use href="#sat" />
-        </g>
-      </svg>
+      <img src="/illustrations/offline-satellite.webp" width="760" height="705" alt="" />
     </div>
   </body>
 </html>
