@@ -7,7 +7,8 @@
 //!
 //! 只做到那些頁面用得到的部分：路徑（直線、弧、橢圓、二次與三次曲線）、填色與描邊、
 //! 線寬、線的接頭、虛線（含 `lineDashOffset`）、全域透明度、`lighter` 疊加、兩種漸層、變換的 save／restore、
-//! 裁切（`clip`）、貼圖（含只貼原圖其中一塊的 `drawImage` 九個參數版）。
+//! 裁切（`clip`）、貼圖（含只貼原圖其中一塊的 `drawImage` 九個參數版）、貼圖的陰影（`shadowColor`／`shadowBlur`，
+//! 目前只有 `draw_image` 會畫）。
 #![allow(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
@@ -102,9 +103,10 @@ struct State {
     dash_offset: f32,
     alpha: f32,
     lighter: bool,
-    /// `clip()` 留下的裁切範圍（畫布座標的遮罩）；`None` 是沒有裁切。跟 canvas 一樣存在狀態裡，
-    /// `restore()` 就回到 `save()` 時的範圍
+    /// `clip()` 累積下來的裁切範圍（`None` 是整張）；跟著 save／restore 走，跟 canvas 一樣
     clip: Option<Mask>,
+    /// `shadowColor` 與 `shadowBlur`（`None` 是不畫陰影）
+    shadow: Option<(Rgba, f32)>,
 }
 
 pub struct Ctx {
@@ -133,6 +135,7 @@ impl Ctx {
                 alpha: 1.0,
                 lighter: false,
                 clip: None,
+                shadow: None,
             },
             stack: Vec::new(),
             path: PathBuilder::new(),
@@ -192,6 +195,11 @@ impl Ctx {
     /// `globalCompositeOperation = 'lighter'`（true）或 `'source-over'`（false）
     pub const fn set_lighter(&mut self, on: bool) {
         self.state.lighter = on;
+    }
+    /// `shadowColor = c; shadowBlur = blur`（位移固定是 0）。跟 canvas 一樣，顏色全透明或
+    /// blur 是 0 就不畫陰影。⚠ 目前只有 `draw_image` 會畫陰影，填色與描邊不會
+    pub fn set_shadow(&mut self, c: Rgba, blur: f32) {
+        self.state.shadow = (c.1 > 0.0 && blur > 0.0).then_some((c, blur));
     }
 
     // ── 變換 ────────────────────────────────────────────
@@ -290,16 +298,19 @@ impl Ctx {
         }
     }
 
-    /// `clip()`：之後畫的東西只留在目前這條路徑裡面（非零環繞、反鋸齒）。
-    /// 已經有裁切時取交集，跟 canvas 一樣
+    /// `clip()`：目前的路徑（nonzero）跟已有的裁切範圍取交集，之後畫的東西都只留在裡面，
+    /// 直到 `restore()` 回到 `save()` 之前的範圍
     pub fn clip(&mut self) {
-        let Some(path) = self.path.clone().finish() else { return };
-        let transform = self.state.transform;
+        let Some(path) = self.path.clone().finish() else {
+            // 空路徑的裁切範圍是空的：什麼都畫不出來
+            self.state.clip = Mask::new(self.pixmap.width(), self.pixmap.height());
+            return;
+        };
+        let t = self.state.transform;
         if let Some(mask) = &mut self.state.clip {
-            mask.intersect_path(&path, FillRule::Winding, true, transform);
-        } else {
-            let Some(mut mask) = Mask::new(self.pixmap.width(), self.pixmap.height()) else { return };
-            mask.fill_path(&path, FillRule::Winding, true, transform);
+            mask.intersect_path(&path, FillRule::Winding, true, t);
+        } else if let Some(mut mask) = Mask::new(self.pixmap.width(), self.pixmap.height()) {
+            mask.fill_path(&path, FillRule::Winding, true, t);
             self.state.clip = Some(mask);
         }
     }
@@ -381,7 +392,7 @@ impl Ctx {
         self.fill();
     }
 
-    /// `drawImage(img, x, y)`（目前的變換、透明度與疊加方式照用）
+    /// `drawImage(img, x, y)`（目前的變換、透明度、疊加方式、裁切與陰影照用）
     pub fn draw_image(&mut self, img: &Pixmap, x: f32, y: f32) {
         let paint = PixmapPaint {
             opacity: self.state.alpha,
@@ -389,6 +400,21 @@ impl Ctx {
             quality: tiny_skia::FilterQuality::Bilinear,
         };
         let t = self.state.transform.pre_translate(x, y);
+        if let Some((c, blur)) = self.state.shadow {
+            // canvas 的順序：先畫陰影（圖的 alpha 模糊之後染成 shadowColor），再把圖畫在上面
+            let mut layer =
+                Pixmap::new(self.pixmap.width(), self.pixmap.height()).expect("跟畫布同樣大小，不會是 0");
+            layer.draw_pixmap(0, 0, img.as_ref(), &PixmapPaint { opacity: 1.0, ..paint }, t, None);
+            let shadow = shadow_of(&layer, c, blur);
+            self.pixmap.draw_pixmap(
+                0,
+                0,
+                shadow.as_ref(),
+                &paint,
+                Transform::identity(),
+                self.state.clip.as_ref(),
+            );
+        }
         self.pixmap.draw_pixmap(0, 0, img.as_ref(), &paint, t, self.state.clip.as_ref());
     }
 
@@ -441,6 +467,76 @@ pub fn scale_image(img: &Pixmap, w: u32, h: u32) -> Pixmap {
         }
     }
     Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(w, h).expect("不會是 0×0")).expect("長度剛好是 w×h×4")
+}
+
+/// 陰影那一層：`layer` 的 alpha 做高斯模糊（canvas 規定 sigma 是 `shadowBlur / 2`），
+/// 染成 `c`。高斯用三次方框模糊逼近（SVG `feGaussianBlur` 規格建議的做法）
+fn shadow_of(layer: &Pixmap, c: Rgba, blur: f32) -> Pixmap {
+    let (w, h) = (layer.width() as usize, layer.height() as usize);
+    let mut a: Vec<f32> = layer.data().as_chunks::<4>().0.iter().map(|p| f32::from(p[3]) / 255.0).collect();
+    let mut tmp = vec![0.0; a.len()];
+    for r in box_radii(blur / 2.0) {
+        // 先橫再直：每一行（stride 1）、每一欄（stride w）各跑一次滑動平均
+        for y in 0..h {
+            box_line(&a, &mut tmp, y * w, 1, w, r);
+        }
+        for x in 0..w {
+            box_line(&tmp, &mut a, x, w, h, r);
+        }
+    }
+    let [cr, cg, cb] = c.0;
+    let mut out = Pixmap::new(w as u32, h as u32).expect("跟畫布同樣大小，不會是 0");
+    for (px, v) in out.data_mut().as_chunks_mut::<4>().0.iter_mut().zip(&a) {
+        let alpha = (v * c.1).clamp(0.0, 1.0);
+        px[0] = (f32::from(cr) * alpha).round() as u8;
+        px[1] = (f32::from(cg) * alpha).round() as u8;
+        px[2] = (f32::from(cb) * alpha).round() as u8;
+        px[3] = (alpha * 255.0).round() as u8;
+    }
+    out
+}
+
+/// 三次方框模糊逼近 sigma 的高斯，各次的半徑（Kovesi 的算法）
+fn box_radii(sigma: f32) -> [usize; 3] {
+    let ideal = (12.0 * sigma * sigma / 3.0 + 1.0).sqrt();
+    let mut lo = ideal.floor() as i32;
+    if lo % 2 == 0 {
+        lo -= 1;
+    }
+    let lo = lo.max(1);
+    let hi = lo + 2;
+    let m = ((12.0 * sigma * sigma - 3.0 * (lo * lo) as f32 - 12.0 * lo as f32 - 9.0)
+        / (-4.0 * lo as f32 - 4.0))
+        .round() as i32;
+    let radius = |i: i32| ((if i < m { lo } else { hi }) / 2) as usize;
+    [radius(0), radius(1), radius(2)]
+}
+
+/// 一條線（從 `start` 起、間隔 `stride`、共 `n` 個）的滑動平均，寬 2r+1，界外當成透明
+fn box_line(src: &[f32], dst: &mut [f32], start: usize, stride: usize, n: usize, r: usize) {
+    let at = |i: usize| src[start + i * stride];
+    let width = (2 * r + 1) as f32;
+    let mut sum: f32 = (0..=r.min(n - 1)).map(at).sum();
+    for i in 0..n {
+        dst[start + i * stride] = sum / width;
+        if i + r + 1 < n {
+            sum += at(i + r + 1);
+        }
+        if i >= r {
+            sum -= at(i - r);
+        }
+    }
+}
+
+/// 把圖縮到 `w`×`h`（預乘 alpha 上做三角濾波）。瀏覽器的 `drawImage`／`<img>` 縮小時會做
+/// 高品質的重新取樣；tiny-skia 的貼圖只有雙線性、不會先降解析度，大圖縮成一半以下時細線會斷掉。
+/// 縮得多的插圖先用這個縮到要貼的大小，再用 `draw_image` 原尺寸貼上
+pub fn resize_image(img: &Pixmap, w: u32, h: u32) -> Pixmap {
+    let src =
+        image::RgbaImage::from_raw(img.width(), img.height(), img.data().to_vec()).expect("長度剛好是 w×h×4");
+    let out = image::imageops::resize(&src, w.max(1), h.max(1), image::imageops::FilterType::Triangle);
+    Pixmap::from_vec(out.into_raw(), tiny_skia::IntSize::from_wh(w.max(1), h.max(1)).expect("至少 1×1"))
+        .expect("長度剛好是 w×h×4")
 }
 
 /// 解一張編進執行檔的插圖（`public/illustrations/*.webp` 之類）成畫布能貼的圖（預乘 alpha）。

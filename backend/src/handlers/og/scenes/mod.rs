@@ -7,17 +7,21 @@
 use tiny_skia::Pixmap;
 
 pub mod about;
-pub mod log;
 pub mod colophon;
+pub mod log;
+pub mod messages;
 pub mod notes;
 pub mod saturn;
+pub mod setup;
 pub mod works;
 
 pub use about::About;
-pub use log::Log;
 pub use colophon::Colophon;
+pub use log::Log;
+pub use messages::Messages;
 pub use notes::{Notes, SkyPost};
 pub use saturn::Saturn;
+pub use setup::Setup;
 pub use works::Works;
 
 pub trait Scene: Send + Sync {
