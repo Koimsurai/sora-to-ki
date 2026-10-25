@@ -85,6 +85,8 @@ export interface SkyFrame {
   preview: Preview | null;
   /** 對接線稿（還沒載好是 null） */
   art: HTMLImageElement | null;
+  /** 被面板佔掉的地方（見 frameOf）；動畫中的值，由頁面逐幀推 */
+  inset: Inset;
 }
 
 export interface Drawn {
@@ -113,16 +115,29 @@ const eccentric = (M: number, e: number) => {
   return E;
 };
 
-export function frameOf(w: number, h: number) {
+/**
+ * 軌道系統放在哪、多大。inset 是被佔掉的地方（右邊的寬、底下的高、上面的高，CSS 像素）：
+ * 面板打開時整個系統移到剩下的那塊天的正中間、跟著縮小，不會被蓋住（鏡頭讓位，不是面板疊上去）
+ */
+export function frameOf(w: number, h: number, inset: Inset = NO_INSET) {
   const narrow = w < NARROW_PX;
+  const vw = w - inset.right;
+  const vh = h - inset.bottom - inset.top;
   return {
-    cx: w * 0.5,
-    cy: h * 0.5,
-    R: narrow ? Math.min(w * 0.4, h * 0.42) : Math.min(w * 0.42, h * 0.7),
+    cx: vw * 0.5,
+    cy: inset.top + vh * 0.5,
+    R: narrow ? Math.min(vw * 0.4, vh * 0.42) : Math.min(vw * 0.42, vh * 0.7),
     squash: narrow ? 0.85 : 0.6,
     narrow,
   };
 }
+
+export interface Inset {
+  right: number;
+  bottom: number;
+  top: number;
+}
+const NO_INSET: Inset = { right: 0, bottom: 0, top: 0 };
 
 interface Orbit {
   k: number;
@@ -167,8 +182,8 @@ export function createSky(stars: SkyStar[]) {
 
   return {
     draw(ctx: CanvasRenderingContext2D, f: SkyFrame): Drawn {
-      const { w, h, t, real, grow, erase, near, beacon, dock, preview, art } = f;
-      const { cx, cy, R, squash, narrow } = frameOf(w, h);
+      const { w, h, t, real, grow, erase, near, beacon, dock, preview, art, inset } = f;
+      const { cx, cy, R, squash, narrow } = frameOf(w, h, inset);
       const fade = 1 - erase;
       // 離開時軌道往中心收
       const shrink = 1 - 0.7 * erase;
