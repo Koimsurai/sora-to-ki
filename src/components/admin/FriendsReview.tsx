@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import AdminLoading, { BusyDot } from './AdminLoading';
-import { PageHead, SectionHead } from './AdminPage';
+import { PageHead, SectionHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
 import './AdminReview.css';
 import './FriendsReview.css';
@@ -219,263 +219,267 @@ export default function FriendsReview() {
           </div>
         </div>
 
-        {isPending ? (
-          <AdminLoading />
-        ) : view === 'queue' ? (
-          queue.length === 0 || !selected ? (
-            <p className="adm-empty">沒有待看的申請。朋友頁的「成為下一顆」送來的會出現在這裡。</p>
-          ) : (
-            <div className="adm-review">
-              <ul className="adm-review-list" aria-label="申請">
-                {queue.map((f) => {
-                  const sum = checkSummary(f);
-                  return (
-                    <li key={f.id}>
-                      <button
-                        type="button"
-                        className="adm-review-item"
-                        aria-pressed={selected.id === f.id}
-                        // 鈕裡全是資料，沒有固定的字；報讀器念名字、網域與檢查結果
-                        aria-label={`${f.name}，${hostOf(f.url)}，${sum.text}`}
-                        onClick={() => {
-                          setSelectedId(f.id);
-                          setReply('');
-                        }}
-                      >
-                        <span className="adm-tab-dot" aria-hidden="true" />
-                        <span className="adm-review-item-main">
-                          <span className="adm-review-item-top">
-                            <span className="adm-review-who">{f.name}</span>
-                            <span className="adm-meta">{formatWhen(f.created_at)}</span>
+        <TabPanel tab={view}>
+          {isPending ? (
+            <AdminLoading />
+          ) : view === 'queue' ? (
+            queue.length === 0 || !selected ? (
+              <p className="adm-empty">沒有待看的申請。朋友頁的「成為下一顆」送來的會出現在這裡。</p>
+            ) : (
+              <div className="adm-review">
+                <ul className="adm-review-list" aria-label="申請">
+                  {queue.map((f) => {
+                    const sum = checkSummary(f);
+                    return (
+                      <li key={f.id}>
+                        <button
+                          type="button"
+                          className="adm-review-item"
+                          aria-pressed={selected.id === f.id}
+                          // 鈕裡全是資料，沒有固定的字；報讀器念名字、網域與檢查結果
+                          aria-label={`${f.name}，${hostOf(f.url)}，${sum.text}`}
+                          onClick={() => {
+                            setSelectedId(f.id);
+                            setReply('');
+                          }}
+                        >
+                          <span className="adm-tab-dot" aria-hidden="true" />
+                          <span className="adm-review-item-main">
+                            <span className="adm-review-item-top">
+                              <span className="adm-review-who">{f.name}</span>
+                              <span className="adm-meta">{formatWhen(f.created_at)}</span>
+                            </span>
+                            <span className="adm-meta">{hostOf(f.url)}</span>
+                            <span className="adm-meta adm-fr-sum" data-bad={sum.bad || undefined}>
+                              {f.status === 'waiting' ? '等對方加回來 · ' : ''}
+                              {sum.text}
+                            </span>
                           </span>
-                          <span className="adm-meta">{hostOf(f.url)}</span>
-                          <span className="adm-meta adm-fr-sum" data-bad={sum.bad || undefined}>
-                            {f.status === 'waiting' ? '等對方加回來 · ' : ''}
-                            {sum.text}
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
 
-              <section className="adm-review-detail" aria-label="這份申請">
-                <div className="adm-review-head">
-                  <div className="adm-head-text">
-                    <span className="adm-review-name">{selected.name}</span>
-                    <a href={selected.url} target="_blank" rel="noreferrer" className="adm-meta">
-                      {selected.url} ↗
-                    </a>
+                <section className="adm-review-detail" aria-label="這份申請">
+                  <div className="adm-review-head">
+                    <div className="adm-head-text">
+                      <span className="adm-review-name">{selected.name}</span>
+                      <a href={selected.url} target="_blank" rel="noreferrer" className="adm-meta">
+                        {selected.url} ↗
+                      </a>
+                    </div>
+                    <span className="adm-meta">
+                      {formatWhen(selected.created_at, 'MM.dd HH:mm')} 送出 · {selected.email ? '有留信箱' : '沒留信箱'}
+                    </span>
                   </div>
-                  <span className="adm-meta">
-                    {formatWhen(selected.created_at, 'MM.dd HH:mm')} 送出 · {selected.email ? '有留信箱' : '沒留信箱'}
-                  </span>
-                </div>
 
-                {selected.description && <p className="adm-review-body">{selected.description}</p>}
-                {selected.message && (
-                  <blockquote className="adm-fr-message">
-                    <span className="adm-caps">想說的話</span>
-                    {selected.message}
-                  </blockquote>
-                )}
-
-                <div className="adm-fr-checks">
-                  <SectionHead
-                    id="fr-checks-h"
-                    action={
-                      <button
-                        type="button"
-                        className="adm-btn adm-btn-small"
-                        disabled={busy !== null}
-                        onClick={() => void runCheck(selected)}
-                      >
-                        {busy === 'check' ? (
-                          <>
-                            <BusyDot />
-                            檢查中
-                          </>
-                        ) : selected.checks.length ? (
-                          '重新檢查'
-                        ) : (
-                          '檢查'
-                        )}
-                      </button>
-                    }
-                  >
-                    自動檢查{selected.checked_at ? ` · ${formatWhen(selected.checked_at)}` : ''}
-                  </SectionHead>
-                  {selected.checks.length === 0 ? (
-                    <p className="adm-meta">還沒檢查。按下去會連到對方的站，看連不連得到、有沒有 RSS、有沒有連回來。</p>
-                  ) : (
-                    <ul className="adm-fr-check-list">
-                      {selected.checks.map((c) => (
-                        <li key={c.key} data-ok={c.ok || undefined}>
-                          <span className="adm-fr-mark" aria-hidden="true">
-                            {c.ok ? '✓' : '×'}
-                          </span>
-                          <span>
-                            {c.label}
-                            <span className="sr-only">{c.ok ? '：通過' : '：沒過'}</span>
-                          </span>
-                          <span className="adm-meta">{c.detail}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  {selected.description && <p className="adm-review-body">{selected.description}</p>}
+                  {selected.message && (
+                    <blockquote className="adm-fr-message">
+                      <span className="adm-caps">想說的話</span>
+                      {selected.message}
+                    </blockquote>
                   )}
-                </div>
 
-                <div className="adm-fr-preview">
-                  <span className="adm-caps">在朋友頁會是</span>
-                  <div className="adm-fr-card">
-                    <span className="adm-fr-star" aria-hidden="true" />
-                    <span className="adm-fr-card-text">
-                      <b>{selected.name}</b>
-                      <span className="adm-meta">{hostOf(selected.url)}</span>
-                      {selected.description && <span>{selected.description}</span>}
-                    </span>
+                  <div className="adm-fr-checks">
+                    <SectionHead
+                      id="fr-checks-h"
+                      action={
+                        <button
+                          type="button"
+                          className="adm-btn adm-btn-small"
+                          disabled={busy !== null}
+                          onClick={() => void runCheck(selected)}
+                        >
+                          {busy === 'check' ? (
+                            <>
+                              <BusyDot />
+                              檢查中
+                            </>
+                          ) : selected.checks.length ? (
+                            '重新檢查'
+                          ) : (
+                            '檢查'
+                          )}
+                        </button>
+                      }
+                    >
+                      自動檢查{selected.checked_at ? ` · ${formatWhen(selected.checked_at)}` : ''}
+                    </SectionHead>
+                    {selected.checks.length === 0 ? (
+                      <p className="adm-meta">
+                        還沒檢查。按下去會連到對方的站，看連不連得到、有沒有 RSS、有沒有連回來。
+                      </p>
+                    ) : (
+                      <ul className="adm-fr-check-list">
+                        {selected.checks.map((c) => (
+                          <li key={c.key} data-ok={c.ok || undefined}>
+                            <span className="adm-fr-mark" aria-hidden="true">
+                              {c.ok ? '✓' : '×'}
+                            </span>
+                            <span>
+                              {c.label}
+                              <span className="sr-only">{c.ok ? '：通過' : '：沒過'}</span>
+                            </span>
+                            <span className="adm-meta">{c.detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                </div>
 
-                <div className="adm-review-reply">
-                  <label className="adm-caps" htmlFor="fr-reply">
-                    回信 · 選填，寄到對方留的信箱
-                  </label>
-                  <div className="adm-prompt adm-prompt-multi">
-                    <span className="adm-prompt-mark" aria-hidden="true">
-                      &gt;
-                    </span>
-                    <textarea
-                      id="fr-reply"
-                      rows={2}
-                      value={reply}
-                      disabled={!selected.email}
-                      placeholder={selected.email ? '例如：已經收下，也請記得把這邊加回去' : '對方沒有留信箱'}
-                      onChange={(e) => setReply(e.target.value)}
-                    />
+                  <div className="adm-fr-preview">
+                    <span className="adm-caps">在朋友頁會是</span>
+                    <div className="adm-fr-card">
+                      <span className="adm-fr-star" aria-hidden="true" />
+                      <span className="adm-fr-card-text">
+                        <b>{selected.name}</b>
+                        <span className="adm-meta">{hostOf(selected.url)}</span>
+                        {selected.description && <span>{selected.description}</span>}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="adm-review-actions">
-                  <button
-                    type="button"
-                    className="adm-btn adm-btn-primary"
-                    disabled={busy !== null}
-                    onClick={() => void decide(selected, 'approved')}
-                  >
-                    收下
-                  </button>
-                  {selected.status === 'pending' && (
+                  <div className="adm-review-reply">
+                    <label className="adm-caps" htmlFor="fr-reply">
+                      回信 · 選填，寄到對方留的信箱
+                    </label>
+                    <div className="adm-prompt adm-prompt-multi">
+                      <span className="adm-prompt-mark" aria-hidden="true">
+                        &gt;
+                      </span>
+                      <textarea
+                        id="fr-reply"
+                        rows={2}
+                        value={reply}
+                        disabled={!selected.email}
+                        placeholder={selected.email ? '例如：已經收下，也請記得把這邊加回去' : '對方沒有留信箱'}
+                        onChange={(e) => setReply(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="adm-review-actions">
                     <button
                       type="button"
-                      className="adm-btn"
+                      className="adm-btn adm-btn-primary"
                       disabled={busy !== null}
-                      onClick={() => void decide(selected, 'waiting')}
+                      onClick={() => void decide(selected, 'approved')}
                     >
-                      等對方加回來再說
+                      收下
                     </button>
-                  )}
-                  <span className="adm-review-gap" />
-                  <button
-                    type="button"
-                    className="adm-icon-btn adm-icon-btn-flare"
-                    disabled={busy !== null}
-                    onClick={() => void decide(selected, 'rejected')}
-                  >
-                    退回
-                  </button>
-                </div>
-              </section>
-            </div>
-          )
-        ) : shown.length === 0 ? (
-          <p className="adm-empty">{view === 'approved' ? '還沒有朋友。' : '沒有退回的申請。'}</p>
-        ) : (
-          <div className="adm-table-wrap">
-            <table className="adm-table">
-              <thead>
-                <tr>
-                  <th scope="col">站名</th>
-                  <th scope="col">網址</th>
-                  <th scope="col">檢查</th>
-                  <th scope="col">{view === 'approved' ? '收下' : '退回'}</th>
-                  <th scope="col">
-                    <span className="sr-only">動作</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {shown.map((f) => {
-                  const sum = checkSummary(f);
-                  return (
-                    <tr key={f.id}>
-                      <td className="adm-cell-title">
-                        <span className="adm-title-link">{f.name}</span>
-                        {f.description && <span className="adm-meta adm-tags">{f.description}</span>}
-                      </td>
-                      <td>
-                        <a href={f.url} target="_blank" rel="noreferrer" className="adm-meta">
-                          {hostOf(f.url)} ↗
-                        </a>
-                      </td>
-                      <td>
-                        <span className="adm-meta adm-fr-sum" data-bad={sum.bad || undefined}>
-                          {sum.text}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="adm-meta">{formatWhen(f.reviewed_at, 'yyyy.MM.dd')}</span>
-                      </td>
-                      <td>
-                        <div className="adm-row-actions">
-                          {view === 'approved' ? (
-                            <>
+                    {selected.status === 'pending' && (
+                      <button
+                        type="button"
+                        className="adm-btn"
+                        disabled={busy !== null}
+                        onClick={() => void decide(selected, 'waiting')}
+                      >
+                        等對方加回來再說
+                      </button>
+                    )}
+                    <span className="adm-review-gap" />
+                    <button
+                      type="button"
+                      className="adm-icon-btn adm-icon-btn-flare"
+                      disabled={busy !== null}
+                      onClick={() => void decide(selected, 'rejected')}
+                    >
+                      退回
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )
+          ) : shown.length === 0 ? (
+            <p className="adm-empty">{view === 'approved' ? '還沒有朋友。' : '沒有退回的申請。'}</p>
+          ) : (
+            <div className="adm-table-wrap">
+              <table className="adm-table">
+                <thead>
+                  <tr>
+                    <th scope="col">站名</th>
+                    <th scope="col">網址</th>
+                    <th scope="col">檢查</th>
+                    <th scope="col">{view === 'approved' ? '收下' : '退回'}</th>
+                    <th scope="col">
+                      <span className="sr-only">動作</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shown.map((f) => {
+                    const sum = checkSummary(f);
+                    return (
+                      <tr key={f.id}>
+                        <td className="adm-cell-title">
+                          <span className="adm-title-link">{f.name}</span>
+                          {f.description && <span className="adm-meta adm-tags">{f.description}</span>}
+                        </td>
+                        <td>
+                          <a href={f.url} target="_blank" rel="noreferrer" className="adm-meta">
+                            {hostOf(f.url)} ↗
+                          </a>
+                        </td>
+                        <td>
+                          <span className="adm-meta adm-fr-sum" data-bad={sum.bad || undefined}>
+                            {sum.text}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="adm-meta">{formatWhen(f.reviewed_at, 'yyyy.MM.dd')}</span>
+                        </td>
+                        <td>
+                          <div className="adm-row-actions">
+                            {view === 'approved' ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="adm-icon-btn"
+                                  aria-label={`檢查 ${f.name}`}
+                                  disabled={busy !== null}
+                                  onClick={() => void runCheck(f)}
+                                >
+                                  檢查
+                                </button>
+                                <button
+                                  type="button"
+                                  className="adm-icon-btn"
+                                  aria-label={`編輯 ${f.name}`}
+                                  onClick={() => openEdit(f)}
+                                >
+                                  編輯
+                                </button>
+                              </>
+                            ) : (
                               <button
                                 type="button"
                                 className="adm-icon-btn"
-                                aria-label={`檢查 ${f.name}`}
-                                disabled={busy !== null}
-                                onClick={() => void runCheck(f)}
+                                aria-label={`把 ${f.name} 放回待看`}
+                                onClick={() => void decide(f, 'pending')}
                               >
-                                檢查
+                                放回待看
                               </button>
-                              <button
-                                type="button"
-                                className="adm-icon-btn"
-                                aria-label={`編輯 ${f.name}`}
-                                onClick={() => openEdit(f)}
-                              >
-                                編輯
-                              </button>
-                            </>
-                          ) : (
+                            )}
                             <button
                               type="button"
-                              className="adm-icon-btn"
-                              aria-label={`把 ${f.name} 放回待看`}
-                              onClick={() => void decide(f, 'pending')}
+                              className="adm-icon-btn adm-icon-btn-flare"
+                              aria-label={`刪除 ${f.name}`}
+                              onClick={() => setRemoveTarget(f)}
                             >
-                              放回待看
+                              刪除
                             </button>
-                          )}
-                          <button
-                            type="button"
-                            className="adm-icon-btn adm-icon-btn-flare"
-                            aria-label={`刪除 ${f.name}`}
-                            onClick={() => setRemoveTarget(f)}
-                          >
-                            刪除
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabPanel>
       </section>
 
       <Dialog open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>

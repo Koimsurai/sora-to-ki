@@ -7,6 +7,18 @@ import './AdminPage.css';
 // 版面的外框在 AdminLayout，這裡只管「一頁裡面」反覆出現的東西，讓每一頁長得一樣。
 // 純函式（日期、狀態名、語系判斷）在 adminFormat.ts。
 
+/**
+ * 分頁的內容：`tab` 一換就整塊重掛，重播一次進場（淡入、往上浮一點）。
+ * 換分頁時內容本來就是整個換掉的，重掛不會丟掉什麼狀態。
+ */
+export function TabPanel({ tab, children }: { tab: string; children: ReactNode }) {
+  return (
+    <div key={tab} className="adm-tabpanel">
+      {children}
+    </div>
+  );
+}
+
 /** 頁首：一行等寬小字、頁名（宋體）旁邊一個英文名（Instrument Serif），右邊放這頁的動作 */
 export function PageHead({
   title,
