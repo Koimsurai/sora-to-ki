@@ -19,7 +19,6 @@ import {
   ImageIcon,
   X,
   Sparkles,
-  Loader2,
   LayoutTemplate,
   Languages,
   Maximize2,
@@ -28,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import AdminLoading, { BusyDot } from './AdminLoading';
 import './AdminPage.css';
 import './PostEditor.css';
 
@@ -85,13 +85,13 @@ function TagSearchInput({
         size="compact"
       />
       {tagSearch && filteredTags.length > 0 && (
-        <div className="absolute left-0 right-0 mt-1.5 max-h-28 overflow-y-auto rounded-lg border border-border/40 bg-popover/95 backdrop-blur-xs p-1 z-50">
+        <div className="absolute left-0 right-0 mt-1.5 max-h-28 overflow-y-auto border border-border bg-popover p-1 z-50">
           {filteredTags.map((tag) => (
             <button
               key={tag.value}
               type="button"
               onClick={() => addTag(tag)}
-              className="w-full text-left text-xs px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              className="w-full text-left text-xs px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
             >
               {tag.label}
             </button>
@@ -99,7 +99,7 @@ function TagSearchInput({
         </div>
       )}
       {tagSearch && filteredTags.length === 0 && (
-        <div className="absolute left-0 right-0 mt-1.5 rounded-lg border border-border/40 bg-popover/95 backdrop-blur-xs p-3 z-50">
+        <div className="absolute left-0 right-0 mt-1.5 border border-border bg-popover p-3 z-50">
           <p className="text-center text-xs text-muted-foreground/60">沒有找到相關標籤</p>
         </div>
       )}
@@ -687,16 +687,7 @@ export default function PostEditor() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-600 border-t-transparent"></div>
-          <p className="mt-4 text-muted-foreground">載入中...</p>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <AdminLoading label="打開這篇" page />;
 
   return (
     <>
@@ -778,7 +769,7 @@ export default function PostEditor() {
                     className="adm-btn adm-btn-small pe-locale-action"
                     title="OpenCC 繁→簡，純字詞轉換不丟 LLM"
                   >
-                    {isGeneratingZhCN && <Loader2 className="size-3 animate-spin" />}
+                    {isGeneratingZhCN && <BusyDot />}
                     從繁中產生简中
                   </button>
                 )}
@@ -849,7 +840,6 @@ export default function PostEditor() {
                     onChange={(v) => form.setValue(contentName, v ?? '', { shouldDirty: true })}
                     language="markdown"
                     height={editorView === 'split' ? '360px' : '700px'}
-                    theme="vs-dark"
                     onSave={() => {
                       void form.handleSubmit(
                         (d) => onSaveDraft(d),
@@ -927,7 +917,7 @@ export default function PostEditor() {
                               {selectedTags.map((tag) => (
                                 <span
                                   key={tag.value}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-accent/60 text-foreground/70 text-fs-11 border border-border/40"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 text-foreground/70 text-fs-11 border border-border"
                                 >
                                   {tag.label}
                                   <button
@@ -968,7 +958,7 @@ export default function PostEditor() {
                             <input
                               {...field}
                               placeholder="如：Rust 學習筆記"
-                              className="h-8 w-full rounded-md bg-accent/30 px-2 text-sm outline-hidden focus:bg-accent/50 transition-colors"
+                              className="h-8 w-full border px-2 text-sm outline-hidden"
                             />
                           </FormControl>
                           <FormMessage />
@@ -986,7 +976,7 @@ export default function PostEditor() {
                               type="number"
                               {...field}
                               placeholder="例：1"
-                              className="h-8 w-full rounded-md bg-accent/30 px-2 text-sm outline-hidden focus:bg-accent/50 transition-colors"
+                              className="h-8 w-full border px-2 text-sm outline-hidden"
                             />
                           </FormControl>
                           <FormMessage />
@@ -1184,7 +1174,7 @@ export default function PostEditor() {
                             />
                           </FormControl>
                           {field.value && (
-                            <div className="mt-2 rounded-lg overflow-hidden border">
+                            <div className="mt-2 overflow-hidden border">
                               <img src={field.value} alt="封面預覽" className="w-full h-auto" />
                             </div>
                           )}
@@ -1208,8 +1198,8 @@ export default function PostEditor() {
                         >
                           {isGeneratingSummary ? (
                             <>
-                              <Loader2 className="size-3 animate-spin" />
-                              生成中...
+                              <BusyDot />
+                              生成中
                             </>
                           ) : (
                             <>
@@ -1225,7 +1215,7 @@ export default function PostEditor() {
                         onChange={(e) => form.setValue(summaryName, e.target.value, { shouldDirty: true })}
                         placeholder="文章摘要（點擊右上角 AI 生成或手動輸入）..."
                         rows={4}
-                        className="w-full bg-accent/30 border border-border/40 rounded-lg px-3 py-2 text-sm text-foreground/90 placeholder:text-muted-foreground/50 resize-none focus:outline-hidden focus:border-border/60 transition-colors mt-1"
+                        className="w-full border px-3 py-2 text-sm resize-none focus:outline-hidden mt-1"
                       />
                     </div>
                   </div>

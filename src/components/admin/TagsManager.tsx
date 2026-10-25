@@ -1,19 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AdminTagRow } from '@koimsurai/api-types';
+import { toast } from 'sonner';
+
 import { adminTagsQueryOptions } from '@/data/adminData';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,14 +15,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, X, Tag } from 'lucide-react';
-import { toast } from 'sonner';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import AdminLoading from './AdminLoading';
+import { NameDots, PageHead } from './AdminPage';
+import { LOCALE_NAME_FIELDS } from './adminFormat';
+
+// 標籤（2026-10 後台提案）：一張表，照用量排；每個標籤後面五顆語系點，看各語系的譯名填了沒。
+// 舊表單的「URL 別名」「顏色」兩欄後端根本不存（create_tag 只寫名稱與譯名、列表也不回傳），拿掉了。
 
 interface TagForm {
   name: string;
-  slug: string;
-  color: string;
   // 顯示用譯名（name 仍是資料鍵：文章的標籤關聯與前台篩選都比對它）
   name_en: string;
   name_ja: string;
@@ -39,55 +32,55 @@ interface TagForm {
   name_zh_cn: string;
 }
 
-/** 譯名欄位表：新增語系時只要改這裡（表單自動長出欄位）。 */
-const LOCALE_NAME_FIELDS = [
-  { key: 'name_en', label: 'English', placeholder: 'React' },
-  { key: 'name_ja', label: '日本語', placeholder: 'リアクト' },
-  { key: 'name_ko', label: '한국어', placeholder: '리액트' },
-  { key: 'name_zh_cn', label: '简体中文', placeholder: 'React' },
-] as const;
+const EMPTY: TagForm = { name: '', name_en: '', name_ja: '', name_ko: '', name_zh_cn: '' };
 
 export default function TagsManager() {
   const queryClient = useQueryClient();
-  // 標籤列表改由 TanStack Query 讀（生成 AdminTagRow）；CRUD 後 invalidate 重抓。
-  const { data: tags = [], isPending: isLoading } = useQuery(adminTagsQueryOptions);
+  const { data: tags = [], isPending } = useQuery(adminTagsQueryOptions);
   const invalidateTags = () => queryClient.invalidateQueries({ queryKey: adminTagsQueryOptions.queryKey });
-  const [editingTag, setEditingTag] = useState<AdminTagRow | null>(null);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  // slug/color 是舊表單殘留欄位（後端 create_tag 只寫 name、列表也不回傳）→ 保留輸入但實為 inert。
-  const [formData, setFormData] = useState<TagForm>({
-    name: '',
-    slug: '',
-    color: '#7f5af0',
-    name_en: '',
-    name_ja: '',
-    name_ko: '',
-    name_zh_cn: '',
-  });
+  const [editing, setEditing] = useState<AdminTagRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [form, setForm] = useState<TagForm>(EMPTY);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
 
-  const filteredTags = tags.filter((t) => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const q = search.trim().toLowerCase();
+  const shown = tags
+    .filter(
+      (t) => !q || [t.name, t.name_en, t.name_ja, t.name_ko, t.name_zh_cn].some((s) => s?.toLowerCase().includes(q)),
+    )
+    .sort((a, b) => b.post_count - a.post_count);
+  const unused = tags.filter((t) => t.post_count === 0).length;
 
-  const sortedTags = [...filteredTags].sort((a, b) => b.post_count - a.post_count);
+  const openCreate = () => {
+    setEditing(null);
+    setForm(EMPTY);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (tag: AdminTagRow) => {
+    setEditing(tag);
+    setForm({
+      name: tag.name,
+      name_en: tag.name_en ?? '',
+      name_ja: tag.name_ja ?? '',
+      name_ko: tag.name_ko ?? '',
+      name_zh_cn: tag.name_zh_cn ?? '',
+    });
+    setDialogOpen(true);
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     try {
-      const url = editingTag ? `/api/admin/tags/${editingTag.id}` : '/api/admin/tags';
-      const method = editingTag ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(editing ? `/api/admin/tags/${editing.id}` : '/api/admin/tags', {
+        method: editing ? 'PUT' : 'POST',
         headers: jsonAuthHeaders(),
-        body: JSON.stringify(formData),
+        body: JSON.stringify(form),
       });
-
       if (response.ok) {
-        toast.success(editingTag ? '標籤已更新' : '標籤已創建');
+        toast.success(editing ? '標籤已更新' : '標籤已建立');
         setDialogOpen(false);
-        resetForm();
         void invalidateTags();
       } else {
         toast.error('操作失敗');
@@ -98,30 +91,10 @@ export default function TagsManager() {
     }
   };
 
-  const handleEdit = (tag: AdminTagRow) => {
-    setEditingTag(tag);
-    // AdminTagRow 無 slug/color（後端不存不回）→ 編輯時走預設，與舊行為一致
-    setFormData({
-      name: tag.name,
-      name_en: tag.name_en ?? '',
-      name_ja: tag.name_ja ?? '',
-      name_ko: tag.name_ko ?? '',
-      name_zh_cn: tag.name_zh_cn ?? '',
-      slug: '',
-      color: '#7f5af0',
-    });
-    setDialogOpen(true);
-  };
-
   const handleDelete = async () => {
     if (!deleteId) return;
-
     try {
-      const response = await fetch(`/api/admin/tags/${deleteId}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-
+      const response = await fetch(`/api/admin/tags/${deleteId}`, { method: 'DELETE', headers: authHeaders() });
       if (response.ok) {
         toast.success('標籤已刪除');
         void invalidateTags();
@@ -136,229 +109,133 @@ export default function TagsManager() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({ name: '', slug: '', color: '#7f5af0', name_en: '', name_ja: '', name_ko: '', name_zh_cn: '' });
-    setEditingTag(null);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-600 border-t-transparent"></div>
-          <p className="mt-4 text-muted-foreground">載入中...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-medium text-foreground/90">標籤管理</h1>
-          <p className="text-sm text-muted-foreground mt-1">共 {tags.length} 個標籤</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="subtle" size="compact" onClick={resetForm}>
-              <Plus className="size-3.5" />
-              新增標籤
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingTag ? '編輯標籤' : '新增標籤'}</DialogTitle>
-              <DialogDescription>{editingTag ? '修改標籤資訊' : '創建新的文章標籤'}</DialogDescription>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                void handleSubmit(e);
-              }}
-            >
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">標籤名稱</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="React"
-                    required
-                  />
-                </div>
-
-                <div className="pt-2 border-t border-border/40">
-                  <p className="text-xs text-muted-foreground mb-1">多語系顯示名（選填）</p>
-                  <p className="text-fs-11 text-muted-foreground/60 mb-3">
-                    只影響各語系頁面上的顯示；「標籤名稱」仍是資料鍵（文章的標籤關聯與篩選都用它）。留空該語系就顯示原名。
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {LOCALE_NAME_FIELDS.map(({ key, label, placeholder }) => (
-                      <div className="space-y-2" key={key}>
-                        <Label htmlFor={key} size="xs">
-                          {label}
-                        </Label>
-                        <Input
-                          id={key}
-                          value={formData[key]}
-                          onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                          placeholder={placeholder}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="slug">URL 別名</Label>
-                  <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="react"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="color">顏色</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="color"
-                      type="color"
-                      value={formData.color}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      className="w-20 h-10"
-                    />
-                    <Input
-                      value={formData.color}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      placeholder="#7f5af0"
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  取消
-                </Button>
-                <Button type="submit">{editingTag ? '更新' : '創建'}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Search */}
-      <Input
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="搜尋標籤..."
-        variant="glass"
-        size="sm"
+    <div className="adm-page">
+      <PageHead
+        title="標籤"
+        latin="Tags"
+        meta={isPending ? '載入中' : `${tags.length} 個 · 沒用到的 ${unused}`}
+        actions={
+          <button type="button" className="adm-btn adm-btn-primary" onClick={openCreate}>
+            新增標籤
+          </button>
+        }
       />
 
-      {/* Tags cloud */}
-      {sortedTags.length > 0 && (
-        <div className="glass rounded-xl p-5">
-          <div className="flex flex-wrap gap-2">
-            {sortedTags.map((tag) => {
-              const count = tag.post_count;
-              const sizeClass =
-                count >= 10 ? 'text-sm px-3 py-1.5' : count >= 5 ? 'text-fs-13 px-2.5 py-1' : 'text-fs-12 px-2 py-0.5';
-
-              return (
-                <span
-                  key={tag.id}
-                  className={`group inline-flex items-center gap-1.5 rounded-lg border border-border/40 text-foreground/60 hover:text-foreground/80 hover:border-border/60 transition-colors cursor-default ${sizeClass}`}
-                >
-                  <span>{tag.name}</span>
-                  <span className="text-muted-foreground/40 text-fs-10">{count}</span>
-                  <button
-                    onClick={() => setDeleteId(tag.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="size-3" />
-                  </button>
-                </span>
-              );
-            })}
-          </div>
+      <section className="adm-stack" aria-label="標籤清單">
+        <div className="adm-toolbar">
+          <span className="adm-meta">照用到的篇數排</span>
+          <label className="adm-prompt">
+            <span className="adm-prompt-mark" aria-hidden="true">
+              &gt;
+            </span>
+            <span className="sr-only">搜尋標籤</span>
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="名稱或譯名" />
+          </label>
         </div>
-      )}
 
-      {/* Tags table */}
-      {sortedTags.length > 0 ? (
-        <div className="glass rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-border/30">
-            <h2 className="text-fs-13 font-medium text-foreground/80">全部標籤</h2>
-          </div>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border/20 text-fs-11 text-muted-foreground/60 uppercase tracking-wider">
-                <th className="text-left px-4 py-2 font-medium">名稱</th>
-                <th className="text-right px-4 py-2 font-medium">文章數</th>
-                <th className="text-right px-4 py-2 font-medium w-20">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/15">
-              {sortedTags.map((tag) => (
-                <tr key={tag.id} className="group hover:bg-accent/15 transition-colors">
-                  {/* 這格有可見文字（標籤名稱），但巢狀在第 3 層，超過規則預設只看 2 層的 depth → 誤報 */}
-                  {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                  <td className="px-4 py-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-fs-13 text-foreground/70 font-mono">{tag.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <span className="text-fs-12 text-muted-foreground/60">{tag.post_count}</span>
-                  </td>
-                  {/* 這格有可見文字（「編輯」「刪除」按鈕文字），但巢狀在第 3 層，超過規則預設只看 2 層的 depth → 誤報 */}
-                  {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                  <td className="px-4 py-2 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => handleEdit(tag)}
-                        className="text-fs-11 text-muted-foreground hover:text-foreground/70 transition-all px-1.5 py-0.5 rounded hover:bg-accent/40"
-                      >
-                        編輯
-                      </button>
-                      <button
-                        onClick={() => setDeleteId(tag.id)}
-                        className="text-fs-11 text-muted-foreground hover:text-destructive transition-all px-1.5 py-0.5 rounded hover:bg-destructive/10"
-                      >
-                        刪除
-                      </button>
-                    </div>
-                  </td>
+        {isPending ? (
+          <AdminLoading />
+        ) : shown.length === 0 ? (
+          <p className="adm-empty">{tags.length === 0 ? '還沒有標籤。' : '沒有符合的標籤。'}</p>
+        ) : (
+          <div className="adm-table-wrap">
+            <table className="adm-table">
+              <thead>
+                <tr>
+                  <th scope="col">名稱</th>
+                  <th scope="col">譯名</th>
+                  <th scope="col">篇數</th>
+                  <th scope="col">
+                    <span className="sr-only">動作</span>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
-          <Tag className="size-12 opacity-20" />
-          <p className="mt-4 text-sm">還沒有標籤</p>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {shown.map((tag) => (
+                  <tr key={tag.id}>
+                    <td className="adm-cell-title">
+                      <span className="adm-cell-name">{tag.name}</span>
+                    </td>
+                    <td>
+                      <NameDots row={tag} />
+                    </td>
+                    <td>
+                      <span className="adm-meta">{tag.post_count}</span>
+                    </td>
+                    <td>
+                      <div className="adm-row-actions">
+                        <button
+                          type="button"
+                          className="adm-icon-btn"
+                          aria-label={`編輯 ${tag.name}`}
+                          onClick={() => openEdit(tag)}
+                        >
+                          編輯
+                        </button>
+                        <button
+                          type="button"
+                          className="adm-icon-btn adm-icon-btn-flare"
+                          aria-label={`刪除 ${tag.name}`}
+                          onClick={() => setDeleteId(tag.id)}
+                        >
+                          刪除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-      {/* Delete Confirmation */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? '編輯標籤' : '新增標籤'}</DialogTitle>
+            <DialogDescription>
+              「標籤名稱」是資料鍵：文章的標籤關聯與前台篩選都比對它。譯名只影響各語系頁面上的顯示，留空就顯示原名。
+            </DialogDescription>
+          </DialogHeader>
+          <form className="adm-form" onSubmit={(e) => void handleSubmit(e)}>
+            <label className="adm-field">
+              <span className="adm-caps">標籤名稱</span>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            </label>
+            <div className="adm-form-section">
+              <span className="adm-caps">各語系的譯名 · 選填</span>
+              <div className="adm-form-grid">
+                {LOCALE_NAME_FIELDS.map(({ key, label }) => (
+                  <label key={key} className="adm-field">
+                    <span className="adm-caps">{label}</span>
+                    <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="adm-form-actions">
+              <button type="button" className="adm-btn" onClick={() => setDialogOpen(false)}>
+                取消
+              </button>
+              <button type="submit" className="adm-btn adm-btn-primary">
+                {editing ? '更新' : '建立'}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>確定要刪除這個標籤嗎？</AlertDialogTitle>
-            <AlertDialogDescription>此操作無法復原。標籤將被永久刪除，但不會影響已標記的文章。</AlertDialogDescription>
+            <AlertDialogDescription>刪掉就拿不回來；已經標上它的文章不受影響。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                void handleDelete();
-              }}
-              variant="destructive"
-            >
+            <AlertDialogAction onClick={() => void handleDelete()} variant="destructive">
               刪除
             </AlertDialogAction>
           </AlertDialogFooter>

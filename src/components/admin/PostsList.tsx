@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { postPath } from '../../lib/postPath';
+import AdminLoading from './AdminLoading';
 import { LocaleDots, PageHead } from './AdminPage';
 import { STATUS_LABEL, formatWhen, missingTranslations } from './adminFormat';
 
@@ -146,7 +147,7 @@ export default function PostsList() {
         </div>
 
         {isPending ? (
-          <p className="adm-empty">載入中……</p>
+          <AdminLoading />
         ) : filtered.length === 0 ? (
           <div className="adm-empty">
             {posts.length === 0 ? (

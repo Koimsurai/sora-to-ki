@@ -10,6 +10,7 @@ import {
   adminStatsQueryOptions,
   vitalsStatsQueryOptions,
 } from '@/data/adminData';
+import AdminLoading from './AdminLoading';
 import { LocaleDots, PageHead, SectionHead } from './AdminPage';
 import { STATUS_LABEL, formatWhen, missingTranslations } from './adminFormat';
 
@@ -163,7 +164,7 @@ export default function AdminDashboard() {
       <section aria-labelledby="todo-h">
         <SectionHead id="todo-h">等你處理{loadingTodos ? '' : ` · ${todos.length} 件`}</SectionHead>
         {loadingTodos ? (
-          <p className="adm-empty">看看有什麼事……</p>
+          <AdminLoading label="看看有什麼事" />
         ) : todos.length > 0 ? (
           <ul className="adm-list">{todos}</ul>
         ) : (
@@ -207,7 +208,7 @@ export default function AdminDashboard() {
             最近動過
           </SectionHead>
           {posts.isPending ? (
-            <p className="adm-empty">載入中……</p>
+            <AdminLoading />
           ) : recent.length === 0 ? (
             <p className="adm-empty">還沒有手記。</p>
           ) : (

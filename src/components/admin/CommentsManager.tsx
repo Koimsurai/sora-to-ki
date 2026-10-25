@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { jsonAuthHeaders } from '@/lib/authToken';
+import AdminLoading from './AdminLoading';
 import { PageHead } from './AdminPage';
 import { formatWhen } from './adminFormat';
 import './CommentsManager.css';
@@ -357,7 +358,7 @@ export default function CommentsManager() {
 
         {isList &&
           (isPending ? (
-            <p className="adm-empty">載入中……</p>
+            <AdminLoading />
           ) : comments.length === 0 ? (
             <p className="adm-empty">
               {searchQuery ? '找不到符合的留言。' : `${statusLabel(view === 'all' ? null : view)}沒有留言。`}

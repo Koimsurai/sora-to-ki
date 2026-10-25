@@ -20,7 +20,7 @@ test.describe('後台', () => {
 
   test('帶著 OWNER 的 session 進得了後台', async ({ page }) => {
     await signIn(page);
-    await gotoAdmin(page, '/admin/tags', '標籤管理');
+    await gotoAdmin(page, '/admin/tags', '標籤');
     // 沒有被踢回首頁
     await expect(page).toHaveURL(/\/admin\/tags$/);
   });
@@ -35,11 +35,11 @@ test.describe('後台', () => {
   test('標籤：新增之後出現在列表，刪除之後消失', async ({ page }) => {
     const name = `e2e-tag-${Date.now()}`;
     await signIn(page);
-    await gotoAdmin(page, '/admin/tags', '標籤管理');
+    await gotoAdmin(page, '/admin/tags', '標籤');
 
     await page.getByRole('button', { name: '新增標籤' }).click();
     await page.getByLabel('標籤名稱').fill(name);
-    await page.getByRole('button', { name: '創建' }).click();
+    await page.getByRole('button', { name: '建立' }).click();
 
     const row = page.locator('tr', { hasText: name });
     await expect(row, '新增之後列表要立刻看得到（快取沒 invalidate 就會看不到）').toBeVisible({
@@ -118,7 +118,7 @@ test.describe('後台', () => {
    */
   test('session 失效之後會被請出後台', async ({ page }) => {
     await signIn(page);
-    await gotoAdmin(page, '/admin/tags', '標籤管理');
+    await gotoAdmin(page, '/admin/tags', '標籤');
 
     await signOut(page);
     await page.reload();

@@ -1,0 +1,119 @@
+/* Monaco 編輯器的外框、工具列與狀態列（2026-10 後台提案）。
+   編輯區本身的顏色（夜色底、墨色字、琥珀游標、行號、捲軸）在 monaco-theme.ts 的主題裡，
+   不在這裡跟 Monaco 注入的樣式搶——原本那三個 !important 就是為了搶才在的。
+   外框由用它的地方畫（編輯器頁的 .pe-frame），這裡不再自己包一層框。 */
+
+.monaco-frame {
+  overflow: hidden;
+  background: var(--ground);
+}
+
+/* 工具列：一排細線圖示鈕，滑過變實墨。捲動時黏在上面 */
+.monaco-toolbar-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--ground);
+}
+
+.monaco-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  padding: var(--space-1-5) var(--space-2);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.monaco-tool {
+  box-sizing: border-box;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--paper-2);
+  cursor: pointer;
+  transition:
+    color var(--dur-150) ease,
+    border-color var(--dur-150) ease;
+}
+
+.monaco-tool:hover:not(:disabled),
+.monaco-tool:focus-visible {
+  color: var(--paper);
+}
+
+/* 開著的開關（Vim 模式）：底下一條墨線 */
+.monaco-tool[aria-pressed="true"] {
+  color: var(--paper);
+  border-bottom-color: var(--paper);
+}
+
+.monaco-tool:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* 工具列裡的分隔線 */
+.monaco-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 var(--space-1-5);
+  background: var(--rule);
+}
+
+/* 狀態列：等寬小字，左邊字數、右邊選取 */
+.monaco-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1-5) var(--space-3);
+  border-top: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+/* 懸停提示、建議框：跟後台其他浮層一樣，夜色底、細框、直角、不浮陰影 */
+.monaco-frame :is(.monaco-hover, .suggest-widget) {
+  background: rgba(var(--ground-rgb), 0.95);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* 拖圖片進來時的提示：點線框（domNode 是 monaco 內部容器，加 class 切換） */
+.monaco-drop-active {
+  outline: 1px dashed var(--amber);
+  outline-offset: -4px;
+  background: rgba(var(--amber-rgb), 0.06);
+  transition: background-color var(--dur-150) ease;
+}
+
+/* Vim 模式狀態列：monaco-vim 把 :command 與目前的模式寫在這裡 */
+.monaco-vim-status {
+  min-height: 18px;
+  overflow: hidden;
+  padding: var(--space-0-5) var(--space-2-5);
+  border-top: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-2);
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+
+.monaco-vim-status:empty::before {
+  content: "-- 一般模式 (Esc) --";
+  color: var(--paper-meta);
+}
+
+@media (max-width: 768px) {
+  .monaco-toolbar {
+    padding: var(--space-2);
+  }
+}

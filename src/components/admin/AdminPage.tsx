@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { localeCoverage, type LocalePost } from './adminFormat';
+import { localeCoverage, nameCoverage, type LocaleCoverage, type LocaleNamed, type LocalePost } from './adminFormat';
 import './AdminPage.css';
 
 // 後台各頁共用的小零件（2026-10 後台提案）：頁首、分段標題、語系點。
@@ -47,9 +47,18 @@ export function SectionHead({ id, children, action }: { id: string; children: Re
   );
 }
 
-/** 五顆小點：有那個語系的是實心，缺的是空心。報讀器念的是「語系：繁、EN」這種一句話 */
+/** 文章的五顆語系點：看各語系的標題有沒有寫 */
 export function LocaleDots({ post }: { post: LocalePost }) {
-  const coverage = localeCoverage(post);
+  return <CoverageDots coverage={localeCoverage(post)} />;
+}
+
+/** 分類、標籤的五顆語系點：看各語系的譯名有沒有填 */
+export function NameDots({ row }: { row: LocaleNamed }) {
+  return <CoverageDots coverage={nameCoverage(row)} />;
+}
+
+/** 五顆小點：有那個語系的是實心，缺的是空心。報讀器念的是「語系：繁、EN」這種一句話 */
+function CoverageDots({ coverage }: { coverage: LocaleCoverage[] }) {
   const has = coverage.filter((l) => l.has).map((l) => l.label);
   return (
     <span className="adm-locs">

@@ -2,8 +2,9 @@
    後台的材料（2026-10 後台提案）
    跟前台同一套：黑是紙、白是墨、琥珀是訊號。直角、細線、不浮陰影、不用毛玻璃。
    版面（側欄、編輯器頂列）在 AdminLayout.css，捲軸在 AdminScrollbars.css；
-   這裡管的是「還沒重做的頁面也先換上新材料」——shadcn 的變數整組換掉，
-   舊頁面用到的共用 class 跟著改。
+   這裡管的是 shadcn 元件與原生表單元素的材料：變數整組換掉，元件內建的
+   utility（框色、浮層、按鈕 variant）跟著改。各頁自己的版面在 AdminPage.css。
+   直角靠 --radius: 0 讓 shadcn 的 rounded-sm／md／lg 歸零；頁面裡不寫 rounded-*。
    ══════════════════════════════════════════ */
 
 /* shadcn 的變數整組重定義（自成一套，維持字面值，一眼看完整套配色）。
@@ -43,31 +44,6 @@
   position: relative;
 }
 
-/* 直角：後台一律不圓，只留圓點與膠囊（rounded-full）。
-   舊頁面的 rounded-md／rounded-xl 散在各處，在這裡一次收掉，逐頁重做時再拿掉 class */
-:is(.admin-layout, .admin-mode) [class*="rounded"]:not([class*="rounded-full"]) {
-  border-radius: 0;
-}
-
-/* 舊頁面的「玻璃卡片」：玻璃拿掉，剩一條細框 */
-.glass,
-.glass-subtle {
-  background: transparent;
-  border: 1px solid var(--rule);
-}
-
-:is(.admin-layout, .admin-mode) .bg-card,
-:is(.admin-layout, .admin-mode) [class*="Card"] {
-  background: transparent;
-  border-color: var(--rule);
-  box-shadow: none;
-}
-
-:is(.admin-layout, .admin-mode) [class*="CardHeader"] {
-  border-bottom: 1px dotted var(--rule);
-  padding-bottom: var(--space-3);
-}
-
 /* ── 表格：列與列之間是點線，滑過墊一層很淡的墨 ── */
 :is(.admin-layout, .admin-mode) table {
   background: transparent;
@@ -75,12 +51,6 @@
 
 :is(.admin-layout, .admin-mode) thead tr {
   border-color: var(--rule);
-}
-
-/* 舊表格的欄寬寫死成 w-16 這類，換成宋體（比黑體寬）之後「已發佈」「未分類」會折成兩行。
-   表頭與儲存格裡直接放的短字（分類、狀態、日期、信箱）不換行；標題那種長字包在更深一層，照常換行 */
-:is(.admin-layout, .admin-mode) :is(th, td > span) {
-  white-space: nowrap;
 }
 
 :is(.admin-layout, .admin-mode) tbody tr {
@@ -95,9 +65,9 @@
 
 /* ── 輸入框：透明底、一條細框，滑過深一階、聚焦再深一階，沒有光暈 ── */
 /* 編輯器的標題框（.pe-title）只有一條點線、不是方框，排除在外，由 PostEditor.css 自己畫 */
-:is(.admin-layout, .admin-mode) input:not(.monaco-toolbar-glass *, .pe-title),
-:is(.admin-layout, .admin-mode) select:not(.monaco-toolbar-glass *),
-:is(.admin-layout, .admin-mode) textarea:not(.monaco-toolbar-glass *) {
+:is(.admin-layout, .admin-mode) input:not(.monaco-toolbar *, .pe-title),
+:is(.admin-layout, .admin-mode) select:not(.monaco-toolbar *),
+:is(.admin-layout, .admin-mode) textarea:not(.monaco-toolbar *) {
   background: transparent;
   /* ⚠ !important 不能拿掉：shadcn 的 <Input>/<Select> 用 border-input 這類 utility，
      實測拿掉之後邊框從細線變成 rgb(228,228,231)（zinc-200 的亮色），
@@ -145,6 +115,7 @@
 /* ── 浮層（選單、對話框、下拉清單、提示、toast）：跟前台 ⌘K 同一種——夜色底、一條細框、直角、不浮陰影 ── */
 :is(.admin-layout, .admin-mode) [role="menu"],
 :is(.admin-layout, .admin-mode) [role="dialog"],
+:is(.admin-layout, .admin-mode) [role="alertdialog"],
 :is(.admin-layout, .admin-mode) [role="tooltip"],
 :is(.admin-layout, .admin-mode) [data-radix-popper-content-wrapper] [role="listbox"],
 :is(.admin-layout, .admin-mode) [data-sonner-toast] {
@@ -170,14 +141,6 @@
 :is(.admin-layout, .admin-mode) [data-orientation="vertical"] {
   border-color: var(--rule);
   background: var(--rule);
-}
-
-/* ── 標籤（badge）：細線框，不填色 ── */
-:is(.admin-layout, .admin-mode) [class*="badge"][class*="default"],
-:is(.admin-layout, .admin-mode) [class*="badge"][class*="secondary"] {
-  background: transparent;
-  border: 1px solid var(--rule);
-  color: var(--paper-2);
 }
 
 /* ── 分頁籤：選中的是墨色底線，不是一塊底色 ── */
@@ -328,12 +291,4 @@ body.zen-mode-active .adm-main form > main {
   max-width: 920px;
   margin: 0 auto;
   padding: var(--space-10) var(--space-8);
-}
-
-/* 選圖對話框的面板陰影。多層（投影 + 玻璃頂緣高光），跟全站其他多層陰影一樣刻意不上
-   --elev-* 尺；原本寫成 TSX 裡的 Tailwind 任意值，搬來這裡是因為設計值該待在 CSS。 */
-.photo-selector-panel {
-  box-shadow:
-    0 20px 60px var(--black-50),
-    inset 0 1px 0 var(--white-06);
 }

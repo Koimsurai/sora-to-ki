@@ -294,6 +294,68 @@
   font-size: var(--fs-14);
 }
 
+/* ── 表單（對話框裡的新增／編輯）：每一欄上面一行等寬小字，下面一個細框 ── */
+.adm-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.adm-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+/* 框的顏色（細線、滑過深一階、聚焦再深一階）由 AdminTheme 的 input 規則給 */
+.adm-field :is(input, textarea, select) {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  border-width: 1px;
+  border-style: solid;
+  background: transparent;
+  outline: none;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  line-height: var(--lh-150);
+}
+
+.adm-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.adm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
+}
+
+/* 表單裡的一段（例如「各語系的譯名」）：上面一條點線隔開 */
+.adm-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px dotted var(--rule);
+}
+
+.adm-form-note {
+  margin: 0;
+  font-size: var(--fs-12);
+  line-height: var(--lh-170);
+  color: var(--paper-meta);
+}
+
+.adm-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2-5);
+}
+
 /* 當成標籤用的等寬小字：AdminTheme 給 label 的字級與顏色要蓋回來 */
 .admin-layout label.adm-caps {
   font-size: var(--fs-10);
@@ -342,7 +404,7 @@
 
 /* 按鈕上的快捷鍵提示 */
 .adm-btn kbd {
-  margin-left: var(--space-2);
+  margin-left: var(--space-0-5);
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   color: var(--paper-meta);
@@ -477,6 +539,97 @@
 .adm-tags {
   display: block;
   margin-top: var(--space-1);
+}
+
+/* ── 封面（書架）：2:3 的細框；沒有封面就是一個點線框 ── */
+.adm-cover {
+  flex: none;
+  box-sizing: border-box;
+  width: 46px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+.adm-cover-empty {
+  border-style: dotted;
+  border-color: var(--paper-3);
+}
+
+.adm-cover-large {
+  width: 96px;
+}
+
+.adm-book-rating {
+  flex: none;
+  width: 52px;
+  text-align: right;
+}
+
+.adm-book-cover-field {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+/* 外部書目的搜尋結果：可以點的列 */
+.adm-hits {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--rule);
+}
+
+.adm-hit {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-2-5) var(--space-3);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dotted var(--rule);
+  color: var(--paper);
+  font-family: var(--serif);
+  text-align: left;
+  cursor: pointer;
+}
+
+.adm-hit:hover,
+.adm-hit:focus-visible {
+  background: rgba(var(--paper-rgb), 0.04);
+}
+
+/* 帳號：頭像（圓形，只有這裡用圓） */
+.adm-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.adm-avatar {
+  flex: none;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-round);
+  object-fit: cover;
+}
+
+.adm-avatar-empty {
+  border-style: dotted;
+  border-color: var(--paper-3);
+}
+
+/* 表格裡的小下拉（改角色） */
+.adm-prompt-compact {
+  min-height: 32px;
+  padding: 0 var(--space-2);
+}
+
+/* 不是連結的名稱（標籤、分類、書名） */
+.adm-cell-name {
+  display: block;
+  font-size: var(--fs-16);
+  color: var(--paper);
 }
 
 .adm-cell-text {

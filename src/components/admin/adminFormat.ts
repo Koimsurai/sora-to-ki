@@ -48,6 +48,34 @@ export function localeCoverage(post: LocalePost): LocaleCoverage[] {
   });
 }
 
+/** 分類、標籤這種「名稱＋各語系譯名」的資料：原名就是繁中，其他語系看各自的 name_* 欄 */
+export interface LocaleNamed {
+  name: string;
+  name_en: string | null;
+  name_ja: string | null;
+  name_ko: string | null;
+  name_zh_cn: string | null;
+}
+
+export function nameCoverage(row: LocaleNamed): LocaleCoverage[] {
+  const value: Record<string, string | null> = {
+    'zh-TW': row.name,
+    en: row.name_en,
+    'zh-CN': row.name_zh_cn,
+    ja: row.name_ja,
+    ko: row.name_ko,
+  };
+  return LOCALES.map(({ code, label }) => ({ code, label, has: Boolean(value[code]?.trim()) }));
+}
+
+/** 表單裡的四個譯名欄（新增語系時只要改這裡，表單自動長出欄位） */
+export const LOCALE_NAME_FIELDS = [
+  { key: 'name_en', label: 'English' },
+  { key: 'name_ja', label: '日本語' },
+  { key: 'name_ko', label: '한국어' },
+  { key: 'name_zh_cn', label: '简体中文' },
+] as const;
+
 /**
  * 要人去翻的譯文：英、日、韓。简中不算——它是由繁中轉出來的（編輯器的「從繁中產生」），
  * 缺了也不需要人動手寫。

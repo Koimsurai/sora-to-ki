@@ -1,0 +1,54 @@
+/* 後台的載入狀態（元件見 AdminLoading.tsx）：琥珀點呼吸，不轉圈 */
+
+.adm-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) 0;
+}
+
+/* 整頁的：內距跟 .adm-page 一樣（AdminPage.css 那時可能還沒載進來，所以這裡自己寫一份） */
+.adm-loading[data-page] {
+  padding: var(--space-12) var(--space-14);
+}
+
+@media (max-width: 768px) {
+  .adm-loading[data-page] {
+    padding: var(--space-8) var(--space-4);
+  }
+}
+
+.adm-loading-text {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-meta);
+}
+
+.adm-busy-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-round);
+  background: var(--amber);
+  box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
+  animation: adm-breathe 1.6s ease-in-out infinite;
+}
+
+.adm-busy-dot-small {
+  width: 5px;
+  height: 5px;
+}
+
+@keyframes adm-breathe {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-busy-dot {
+    animation: none;
+  }
+}

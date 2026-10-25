@@ -10,7 +10,9 @@ import { useMonacoShortcuts } from './monaco-shortcuts';
 import { MonacoTextHelper } from './monaco-text-helper';
 import type { MonacoEditorProps } from './types';
 import { getActiveSnippets } from './monaco-snippets';
-import './monaco-glass.css';
+import { SORA_NIGHT, defineSoraNight } from './monaco-theme';
+import './monaco-editor.css';
+import AdminLoading from '@/components/admin/AdminLoading';
 import { authHeaders } from '@/lib/authToken';
 
 const VIM_MODE_KEY = 'koimsurai_vim_mode';
@@ -46,7 +48,7 @@ export default function MonacoEditor({
   value,
   onChange,
   language = 'markdown',
-  theme = 'vs-dark',
+  theme = SORA_NIGHT,
   height = '400px',
   options = {},
   showToolbar = true,
@@ -745,7 +747,7 @@ export default function MonacoEditor({
   };
 
   return (
-    <div className="monaco-editor-glass overflow-hidden">
+    <div className="monaco-frame">
       {showToolbar && (
         <div className="monaco-toolbar-sticky">
           <MonacoToolbar
@@ -803,19 +805,16 @@ export default function MonacoEditor({
         onChange={onChange}
         theme={theme}
         options={defaultOptions}
+        beforeMount={defineSoraNight}
         onMount={handleEditorDidMount}
-        loading={
-          <div className="flex items-center justify-center h-full">
-            <div className="text-muted-foreground">載入編輯器中...</div>
-          </div>
-        }
+        loading={<AdminLoading label="打開編輯器" />}
       />
 
       {/* Vim 模式狀態列：monaco-vim 會把 :command / 模式提示寫到這個 div */}
       {vimMode && <div ref={vimStatusRef} className="monaco-vim-status" />}
 
       {/* 狀態欄（C-4：加上閱讀時間） */}
-      <div className="monaco-statusbar-glass flex items-center justify-between px-3 py-1.5 text-fs-11 text-muted-foreground/70">
+      <div className="monaco-statusbar">
         <div>
           {totalWords} 字 · {totalChars} 字元 · {totalLines} 行{totalChars > 0 && <> · 約 {readingMinutes} 分鐘閱讀</>}
         </div>
