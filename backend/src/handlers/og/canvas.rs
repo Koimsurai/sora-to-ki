@@ -6,7 +6,7 @@
 //! 之後前端那頁改了畫法，回頭改這邊也是對著同一行改。
 //!
 //! 只做到那些頁面用得到的部分：路徑（直線、弧、橢圓、二次與三次曲線）、填色與描邊、
-//! 線寬、線的接頭、虛線、全域透明度、`lighter` 疊加、兩種漸層、變換的 save／restore、
+//! 線寬、線的接頭、虛線（含 `lineDashOffset`）、全域透明度、`lighter` 疊加、兩種漸層、變換的 save／restore、
 //! 裁切（`clip`）、貼圖（含只貼原圖其中一塊的 `drawImage` 九個參數版）。
 #![allow(
     clippy::cast_possible_truncation,
@@ -99,6 +99,7 @@ struct State {
     line_cap: LineCap,
     line_join: LineJoin,
     dash: Vec<f32>,
+    dash_offset: f32,
     alpha: f32,
     lighter: bool,
     /// `clip()` 留下的裁切範圍（畫布座標的遮罩）；`None` 是沒有裁切。跟 canvas 一樣存在狀態裡，
@@ -128,6 +129,7 @@ impl Ctx {
                 line_cap: LineCap::Butt,
                 line_join: LineJoin::Miter,
                 dash: Vec::new(),
+                dash_offset: 0.0,
                 alpha: 1.0,
                 lighter: false,
                 clip: None,
@@ -178,6 +180,10 @@ impl Ctx {
     /// `setLineDash([...])`；空的就是實線
     pub fn set_line_dash(&mut self, dash: &[f32]) {
         self.state.dash = dash.to_vec();
+    }
+    /// `lineDashOffset`（負的往路徑前進的方向流，跟 canvas 一樣）
+    pub const fn set_line_dash_offset(&mut self, offset: f32) {
+        self.state.dash_offset = offset;
     }
     /// `globalAlpha`
     pub const fn set_alpha(&mut self, a: f32) {
@@ -353,7 +359,7 @@ impl Ctx {
             dash: if self.state.dash.is_empty() {
                 None
             } else {
-                StrokeDash::new(self.state.dash.clone(), 0.0)
+                StrokeDash::new(self.state.dash.clone(), self.state.dash_offset)
             },
             ..Stroke::default()
         };
@@ -444,12 +450,39 @@ pub fn load_image(bytes: &[u8]) -> Pixmap {
     let img = image::load_from_memory(bytes).expect("插圖是編進執行檔的常數，解不開代表檔案壞了").to_rgba8();
     let (w, h) = img.dimensions();
     let mut data = img.into_raw();
+    premultiply(&mut data);
+    Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(w, h).expect("插圖不會是 0×0"))
+        .expect("長度剛好是 w×h×4")
+}
+
+fn premultiply(data: &mut [u8]) {
     for px in data.as_chunks_mut::<4>().0 {
         let a = u16::from(px[3]);
         for c in &mut px[..3] {
             *c = ((u16::from(*c) * a + 127) / 255) as u8;
         }
     }
-    Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(w, h).expect("插圖不會是 0×0"))
+}
+
+/// 同 `load_image`，但先縮成 `w × h`。大幅縮小的線稿要用這個：`draw_image_sized` 是雙線性取樣，
+/// 縮到三分之一以下時細線會斷成一節一節（瀏覽器的 `drawImage` 縮圖有先做 mipmap，不會這樣）。
+/// 這裡用三角濾波（範圍跟著縮放比例放大，等於把每個新像素蓋到的舊像素平均起來），
+/// 而且是在預乘之後縮——不然透明像素的顏色會滲進線的邊緣，線變暗變細
+pub fn load_image_sized(bytes: &[u8], w: u32, h: u32) -> Pixmap {
+    let img = image::load_from_memory(bytes).expect("插圖是編進執行檔的常數，解不開代表檔案壞了").to_rgba8();
+    let (iw, ih) = img.dimensions();
+    let mut data = img.into_raw();
+    premultiply(&mut data);
+    let img = image::RgbaImage::from_raw(iw, ih, data).expect("長度沒變");
+    let mut data =
+        image::imageops::resize(&img, w.max(1), h.max(1), image::imageops::FilterType::Triangle).into_raw();
+    // 權重都是正的，縮完仍然是合法的預乘值；各通道分開四捨五入，保險起見把色值夾在 alpha 以內
+    for px in data.as_chunks_mut::<4>().0 {
+        let a = px[3];
+        for c in &mut px[..3] {
+            *c = (*c).min(a);
+        }
+    }
+    Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(w.max(1), h.max(1)).expect("不是 0×0"))
         .expect("長度剛好是 w×h×4")
 }

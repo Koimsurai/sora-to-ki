@@ -8,13 +8,17 @@ use tiny_skia::Pixmap;
 
 pub mod about;
 pub mod log;
+pub mod colophon;
 pub mod notes;
 pub mod saturn;
+pub mod works;
 
 pub use about::About;
 pub use log::Log;
+pub use colophon::Colophon;
 pub use notes::{Notes, SkyPost};
 pub use saturn::Saturn;
+pub use works::Works;
 
 pub trait Scene: Send + Sync {
     /// 一圈幾格
