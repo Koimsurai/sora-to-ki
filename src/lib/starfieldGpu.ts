@@ -245,11 +245,33 @@ interface SaturnRig {
   collapseTo(index: number): void;
 }
 
-/** 收：越收越快，像被吸進那一點；長：一下撐開、慢慢停穩 */
-const COLLAPSE_S = 0.38;
-const GROW_S = 0.7;
+/**
+ * 長（換頁落地、開場）：分層依序。星球先從那一點長出來，環從星球表面往外攤開，五條軌道由內而外
+ * 一條接一條、從衛星所在的地方畫一圈，快畫完時那顆衛星彈出來。秒數從開始長算起，全部長完約 1.2 秒
+ */
+const GROW = {
+  planet: [0, 0.45],
+  ring: [0.15, 0.6],
+  /** 第一條軌道開始畫、之後每條晚多少、一條畫多久 */
+  orbit: 0.3,
+  orbitStep: 0.07,
+  orbitDur: 0.45,
+  /** 衛星在自己那條軌道開始畫之後多久彈出來、彈多久 */
+  sat: 0.35,
+  satDur: 0.25,
+} as const;
+/**
+ * 收（換頁離開）：其他衛星先熄、軌道收回衛星那裡、環捲回星球，最後整組收進點下去的那顆衛星（或中心），
+ * 越收越快，像被吸進那一點。整組從 COLLAPSE_GROUP_FROM 秒開始收
+ */
+const COLLAPSE_S = 0.5;
+const COLLAPSE_GROUP_FROM = 0.2;
 const easeInCubic = (t: number) => t * t * t;
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+/** 帶一點回彈：衛星彈出來時稍微超過原本的大小再停穩 */
+const easeOutBack = (t: number) => 1 + 2.70158 * Math.pow(t - 1, 3) + 1.70158 * Math.pow(t - 1, 2);
+const span = (t: number, from: number, dur: number) => Math.min(1, Math.max(0, (t - from) / dur));
 
 /**
  * 「每幀往目標靠近 rate」換算成跟幀率無關的係數（rate 是以 60fps 為準的值）。
@@ -401,26 +423,31 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       .clamp(0, 1);
     return strokes(r.mul(RING_ROWS), pow(ink, 0.75), RING_COVER);
   })();
+  /** 環攤開時跟著淡入（0 到 1） */
+  const ringFade = uniform(1);
   ringMat.colorNode = paper;
-  ringMat.opacityNode = ringInk;
+  ringMat.opacityNode = ringInk.mul(ringFade);
   const ring = new THREE.Mesh(new THREE.RingGeometry(RING_INNER, RING_OUTER, 256, 1), ringMat);
   ring.rotation.x = -Math.PI / 2;
   plane.add(ring);
 
   // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
+  const CIRCLE_POINTS = 257;
   const circle = (radius: number, opacity: number) => {
     const material = new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
-    const points = Array.from({ length: 257 }, (_, k) => {
-      const a = (k / 256) * Math.PI * 2;
+    const points = Array.from({ length: CIRCLE_POINTS }, (_, k) => {
+      const a = (k / (CIRCLE_POINTS - 1)) * Math.PI * 2;
       return new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius);
     });
-    plane.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
-    return material;
+    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material);
+    plane.add(line);
+    return { material, line };
   };
 
   // 軌道與衛星。衛星是一個實心的小點，亮起來時變琥珀色、外面多一圈光暈
   const ORBIT_DIM = 0.09;
-  const orbits = ORBITS.map((r) => circle(r, ORBIT_DIM));
+  const orbitLines = ORBITS.map((r) => circle(r, ORBIT_DIM));
+  const orbits = orbitLines.map((o) => o.material);
   const glowTarget = ORBITS.map(() => 0);
   const satellites = ORBITS.map((r, i) => {
     const g = uniform(0);
@@ -447,13 +474,61 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   // 捲動帶動的旋轉單獨 lerp：自轉是等速的，不需要 lerp；放進同一個 lerp 的話目標每幀都在前進，
   // lerp 永遠收斂不了，「還在動」就永遠是真的——閒置降幀因此一直沒生效（實測卡在 60fps）。
   let currentScrollRot = 0;
+  /** 整組的縮放：長的時候一開始就是原尺寸（各部分自己長），收的最後一段才往那一點縮 */
   let currentScale = 0.0001;
   let fullScale = BASE_SCALE;
   /** 收與長都是一段有起訖的動畫（不是 lerp）：時間固定，轉場那邊才對得上拍子 */
-  let tween: { from: number; to: number; t: number; dur: number; ease: (t: number) => number } | null = null;
-  let tweenTarget = 0.0001;
+  let stage: { kind: 'grow' | 'collapse'; t: number } | null = null;
+  /** 現在要不要顯示（上一次的 animate） */
+  let shown = false;
   /** 收進去的那一點（世界座標）；null 是收進中心 */
   let pivot: THREE.Vector3 | null = null;
+  /** 收進哪一顆衛星（-1 是中心）：那一顆收的時候不熄 */
+  let pivotIndex = -1;
+  /** 各部分長到幾成（0 到 1）：星球、環、每條軌道、每顆衛星 */
+  let planetK = 0;
+  let ringK = 0;
+  const orbitK = ORBITS.map(() => 0);
+  const satK = ORBITS.map(() => 0);
+  /** 開始收的那一刻各部分長到幾成 */
+  const collapseFrom = { ring: 0, orbit: [...orbitK], sat: [...satK] };
+  /** 環從星球表面攤開：一開始外緣貼著星球 */
+  const RING_FROM = 1 / RING_OUTER;
+  const applyParts = () => {
+    body.scale.setScalar(Math.max(0.0001, planetK));
+    ring.scale.setScalar(RING_FROM + (1 - RING_FROM) * ringK);
+    ring.visible = ringK > 0;
+    ringFade.value = ringK;
+    for (const [i, o] of orbitLines.entries()) {
+      const n = Math.round(CIRCLE_POINTS * (orbitK[i] ?? 0));
+      o.line.geometry.setDrawRange(0, n);
+      o.line.visible = n > 1;
+      satellites[i].sprite.scale.setScalar(0.24 * Math.max(0.0001, satK[i] ?? 0));
+    }
+  };
+  /** 長／收的這一刻各部分該在哪 */
+  const stageAt = (kind: 'grow' | 'collapse', t: number) => {
+    if (kind === 'grow') {
+      planetK = easeOutCubic(span(t, GROW.planet[0], GROW.planet[1] - GROW.planet[0]));
+      ringK = easeOutCubic(span(t, GROW.ring[0], GROW.ring[1] - GROW.ring[0]));
+      for (let i = 0; i < orbitK.length; i++) {
+        const start = GROW.orbit + GROW.orbitStep * i;
+        orbitK[i] = easeInOutCubic(span(t, start, GROW.orbitDur));
+        satK[i] = easeOutBack(span(t, start + GROW.sat, GROW.satDur));
+      }
+      return t >= GROW.orbit + GROW.orbitStep * (orbitK.length - 1) + GROW.sat + GROW.satDur;
+    }
+    // 收：其他衛星先熄、軌道由內而外收回、環捲回星球；星球不動，跟整組一起收進那一點。
+    // 從開始收那一刻的樣子收起（還沒長完就要離開的話，不會先跳回長滿）
+    for (let i = 0; i < orbitK.length; i++) {
+      if (i !== pivotIndex) satK[i] = (collapseFrom.sat[i] ?? 0) * (1 - easeInCubic(span(t, 0, 0.16)));
+      orbitK[i] = (collapseFrom.orbit[i] ?? 0) * (1 - easeInCubic(span(t, 0.02 * i, 0.22)));
+    }
+    ringK = collapseFrom.ring * (1 - easeInCubic(span(t, 0.08, 0.22)));
+    const k = easeInCubic(span(t, COLLAPSE_GROUP_FROM, COLLAPSE_S - COLLAPSE_GROUP_FROM));
+    currentScale = THREE.MathUtils.lerp(fullScale, 0.0001, k);
+    return t >= COLLAPSE_S;
+  };
   const base = new THREE.Vector3();
   const v = new THREE.Vector3();
   const center = new THREE.Vector3();
@@ -467,25 +542,30 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       const targetScrollRot = scrollY * 0.001;
       currentScrollRot = THREE.MathUtils.lerp(currentScrollRot, targetScrollRot, lerpFactor(0.05, dt));
       body.rotation.y = currentScrollRot + autoRot;
-      // 收與長：收的時候縮到極小（非 0，管線才不會重編），長的時候撐回原尺寸
-      const targetScale = animate ? fullScale : 0.0001;
-      if (targetScale !== tweenTarget) {
-        const grow = targetScale > currentScale;
-        if (grow) pivot = null;
-        tween = {
-          from: currentScale,
-          to: targetScale,
-          t: 0,
-          dur: grow ? GROW_S : COLLAPSE_S,
-          ease: grow ? easeOutCubic : easeInCubic,
-        };
-        tweenTarget = targetScale;
+      // 收與長：收的時候縮到極小（非 0，管線才不會重編），長的時候各部分依序長回來
+      if (animate !== shown) {
+        shown = animate;
+        stage = { kind: animate ? 'grow' : 'collapse', t: 0 };
+        if (animate) {
+          pivot = null;
+          pivotIndex = -1;
+          currentScale = fullScale;
+          // 每條軌道從自己那顆衛星現在的位置開始畫（圈是對稱的，畫完之後轉了多少都一樣）
+          for (const [i, s] of satellites.entries())
+            orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r));
+        } else {
+          // 軌道收回各自衛星現在的位置：畫滿的整圈轉到從衛星那裡起算（看不出差別），收的時候尾端追回衛星
+          for (const [i, s] of satellites.entries())
+            if ((orbitK[i] ?? 0) >= 1) orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r));
+          collapseFrom.ring = ringK;
+          collapseFrom.orbit = [...orbitK];
+          collapseFrom.sat = [...satK];
+        }
       }
-      if (tween) {
-        tween.t += dt;
-        const k = Math.min(1, tween.t / tween.dur);
-        currentScale = THREE.MathUtils.lerp(tween.from, tween.to, tween.ease(k));
-        if (k >= 1) tween = null;
+      if (stage) {
+        stage.t += dt;
+        if (stageAt(stage.kind, stage.t)) stage = null;
+        applyParts();
       }
       group.scale.setScalar(currentScale);
       // 收進一顆衛星：那顆衛星在世界座標裡不動，其他的都往它縮過去
@@ -503,15 +583,15 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
         orbits[i].opacity = ORBIT_DIM + s.g.value * 0.32;
       }
       syncSun();
-      const zooming = tween !== null;
+      const zooming = stage !== null;
       return { moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
     },
     setAspect(aspect) {
       fullScale = fitScale(aspect);
       // 直的畫面把土星往上提一點（提案是在高度的 46%），下面留給手機的手指
       base.set(0, aspect < 1 ? 0.31 : 0, 0);
-      if (!tween) {
-        if (tweenTarget > 0.001) currentScale = tweenTarget = fullScale;
+      if (!stage) {
+        if (shown) currentScale = fullScale;
         if (!pivot) group.position.copy(base);
       }
     },
@@ -520,13 +600,16 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     },
     collapse() {
       currentScale = 0.0001;
-      tween = null;
+      stage = null;
+      shown = false;
       pivot = null;
+      pivotIndex = -1;
     },
     collapseTo(index) {
       const sat = satellites[index] as (typeof satellites)[number] | undefined;
       group.updateWorldMatrix(true, true);
       pivot = sat ? sat.sprite.getWorldPosition(new THREE.Vector3()) : null;
+      pivotIndex = sat ? index : -1;
     },
     project(camera, width, height) {
       const toScreen = (p: THREE.Vector3) => {
@@ -540,11 +623,16 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       const [ex, ey] = toScreen(edge);
       const [cx, cy] = toScreen(center.clone());
       const radius = Math.hypot(ex - cx, ey - cy);
-      return satellites.map((s) => {
+      return satellites.map((s, i) => {
         s.sprite.getWorldPosition(v);
         const behind = camera.position.distanceTo(v) > camDist;
         const [x, y] = toScreen(v);
-        return { x, y, hidden: currentScale < 0.05 * fullScale || (behind && Math.hypot(x - cx, y - cy) < radius) };
+        return {
+          x,
+          y,
+          hidden:
+            currentScale < 0.05 * fullScale || (satK[i] ?? 0) < 0.3 || (behind && Math.hypot(x - cx, y - cy) < radius),
+        };
       });
     },
   };
