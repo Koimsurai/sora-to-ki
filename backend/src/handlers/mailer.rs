@@ -120,7 +120,8 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
         String::new()
     } else {
         format!(
-            "<p style=\"margin:0 0 28px 0;font-size:15px;line-height:1.85;color:rgba(241,236,227,0.7);\">\n          {excerpt}{ellipsis}\n        </p>"
+            // data-part 是給測試找段落用的固定標記（信件客戶端會忽略它）：樣式改版時測試不必跟著改
+            "<p data-part=\"excerpt\" style=\"margin:0 0 28px 0;font-size:15px;line-height:1.85;color:rgba(241,236,227,0.7);\">\n          {excerpt}{ellipsis}\n        </p>"
         )
     };
     let site_bare = site.strip_prefix("https://").or_else(|| site.strip_prefix("http://")).unwrap_or(site);

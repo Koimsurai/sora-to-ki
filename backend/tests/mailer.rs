@@ -454,7 +454,8 @@ async fn a_mail_failure_does_not_fail_the_post_creation() {
 
 /// 取信裡的摘要段落（沒有就回 None）。
 fn excerpt_block(html: &str) -> Option<&str> {
-    let start = html.find("line-height:1.75")?;
+    // 用模板上的固定標記找，不用樣式字串：樣式改了（例如行高）的話，「沒有摘要就不該有段落」那條會找不到而誤判通過
+    let start = html.find("data-part=\"excerpt\"")?;
     let from = html[start..].find('>')? + start + 1;
     let to = html[from..].find("</p>")? + from;
     Some(html[from..to].trim())
