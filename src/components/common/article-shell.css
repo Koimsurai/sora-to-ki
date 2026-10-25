@@ -101,9 +101,19 @@
 
      線上同樣重現過（/blog/palworld-dedicated-server-docker：CLS 0.5266，同一個成因）。
      回歸守門在 tests/e2e/cls.spec.ts。 */
-  /* 中英排版優化：開頭/結尾標點懸掛、字距修整 */
+  /* 中英排版：標點懸掛、行首的全形標點去掉左半空白、中英之間的空隙交給瀏覽器（text-autospace，
+     約 1/8 字寬；不支援的瀏覽器由 BlogPost 改用 pangu 插空白）、日文的小假名與長音不准起首、
+     最後一行不要只剩一兩個字 */
   hanging-punctuation: first allow-end last;
   text-spacing-trim: trim-start;
+  text-autospace: normal;
+  line-break: strict;
+  text-wrap: pretty;
+}
+
+/* 內文的小標：各行長度拉平，不要最後一行只掛一個詞 */
+.post-content :is(h2, h3, h4) {
+  text-wrap: balance;
 }
 /* hover 浮窗 — 透過 [data-fn-content] 由 JS 注入文字 */
 .post-content sup a[data-fn-content]::after {

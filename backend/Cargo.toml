@@ -73,6 +73,13 @@ ferrous-opencc = "0.4"
 # ⚠ takumi **不吃系統字型**，CJK 一定要自己註冊（見 og.rs 的 load_cjk_font）。
 #   容器裡的 fonts-noto-cjk 仍然要裝——只是改成由我們讀檔案而不是靠 fontdb 掃描。
 takumi = { version = "2.5.11", features = ["from-html"] }
+# OG 圖是 APNG，而且每一格只存變動的像素（handlers/og_sky.rs 的 encode_apng）。takumi 自己的
+# write_animated_png 每一格都存整張，18 秒的圖會是幾十 MB；要設每格的範圍與 BlendOp 得直接用 png。
+# 它本來就是 takumi／image 的相依（同一個版本），不是新進來的套件。
+png = "0.18"
+# 分享圖的背景照各頁前端的 canvas 畫布逐行移植（handlers/og/canvas.rs 仿 CanvasRenderingContext2D）。
+# 同樣是 takumi 本來就在用的版本，不是新進來的套件。
+tiny-skia = "0.12"
 # upload thumbhash + gallery 圖片管線（取代 sharp）。實測 thumbhash 對 sharp 版 2/5 byte 同、3/5 差 ≤2 字元（視覺零差異）。
 image = "0.25"
 thumbhash = "0.1"

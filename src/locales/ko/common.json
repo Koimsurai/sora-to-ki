@@ -389,22 +389,24 @@
     "errorNetwork": "네트워크 오류, 잠시 후 다시 시도해주세요",
     "description": "최신 글과 기술 노트를 메일로 직접 받아보세요.",
     "privacyNote": "개인정보를 존중하며 정보를 공유하지 않습니다.",
-    "confirmedTitle": "구독 완료 √",
+    "confirmedTitle": "구독 중",
     "alreadyBody": "<em>{{email}}</em>(으)로 뉴스레터를 구독 중입니다.",
-    "nextNotice": "새 글이 나오면 메일로 알려드릴게요.",
+    "nextNotice": "다음 글이 나오면 보내 드려요.",
     "okBtn": "확인",
     "unsubBtn": "구독 해지",
-    "subscribeIntro": "새 글이 올라오면 알려드릴게요. 놓치지 마세요.",
+    "subscribeIntro": "새 글이 올라오면 메일 한 통을 보내 드려요.",
     "namePlaceholderShort": "이름 (선택)",
     "emailPlaceholderShort": "이메일 *",
-    "processing": "처리 중...",
+    "processing": "보내는 중…",
     "subscribe": "구독",
     "unsubProcessing": "처리 중…",
     "unsubConfirmJs": "{{email}} 구독을 해지할까요?",
     "unsubFailed": "구독 해지에 실패했어요",
-    "unsubDone": "해지되었습니다. 언제든 다시 환영합니다.",
-    "privacy": "개인정보를 소중히 다루며 공유하지 않습니다.",
-    "successWithEmoji": "구독 완료! 감사합니다 ✨"
+    "unsubDone": "해지했어요.",
+    "privacy": "주소는 새 글 알림에만 써요. 모든 메일 하단에서 해지할 수 있어요.",
+    "successWithEmoji": "등록했어요. 다음 글이 나오면 보내 드려요.",
+    "fieldName": "이름 (선택)",
+    "fieldEmail": "이메일"
   },
   "unsubscribe": {
     "verifying": "링크 확인 중…",
@@ -858,5 +860,8 @@
         }
       }
     }
+  },
+  "og": {
+    "tagline": "코드, 시스템, 그리고 삶의 조각들."
   }
 }

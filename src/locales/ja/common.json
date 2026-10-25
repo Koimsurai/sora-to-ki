@@ -389,22 +389,24 @@
     "errorNetwork": "ネットワークエラー、後でお試しください",
     "description": "最新の記事と技術ノートを直接メールでお届け。",
     "privacyNote": "プライバシーを尊重し、情報を共有しません。",
-    "confirmedTitle": "購読済み √",
+    "confirmedTitle": "購読中",
     "alreadyBody": "<em>{{email}}</em> でニュースレターを購読しています。",
-    "nextNotice": "新しい記事が出たらメールでお知らせします。",
+    "nextNotice": "次の記事ができたらお送りします。",
     "okBtn": "OK",
     "unsubBtn": "購読解除",
-    "subscribeIntro": "新しい記事のお知らせをお届けします。",
+    "subscribeIntro": "新しい記事を書いたら、メールを一通お送りします。",
     "namePlaceholderShort": "お名前（任意）",
     "emailPlaceholderShort": "メールアドレス *",
-    "processing": "処理中...",
+    "processing": "送信中…",
     "subscribe": "購読",
     "unsubProcessing": "処理中…",
     "unsubConfirmJs": "{{email}} を解除しますか？",
     "unsubFailed": "解除に失敗しました",
-    "unsubDone": "解除しました。いつでもまたどうぞ。",
-    "privacy": "プライバシーを尊重し、情報を共有することはありません。",
-    "successWithEmoji": "購読完了！ありがとうございます ✨"
+    "unsubDone": "解除しました。",
+    "privacy": "アドレスは新しい記事のお知らせにだけ使います。どのメールからも解除できます。",
+    "successWithEmoji": "登録しました。次の記事ができたらお送りします。",
+    "fieldName": "名前（任意）",
+    "fieldEmail": "メール"
   },
   "unsubscribe": {
     "verifying": "リンクを確認中…",
@@ -858,5 +860,8 @@
         }
       }
     }
+  },
+  "og": {
+    "tagline": "コード、システム、そして暮らしのかけら。"
   }
 }
