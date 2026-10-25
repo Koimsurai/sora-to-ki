@@ -15,6 +15,7 @@ import type {
   AdminPostsResponse,
   AdminCommentsResponse,
   AdminPostDetailResponse,
+  AdminFriendsResponse,
   MetricStat,
 } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
@@ -105,6 +106,13 @@ export interface AdminStats {
   commentsThisWeek?: number;
   visitors?: number;
 }
+/** 友鏈：申請與朋友都在同一張表，前端照 status 分頁 */
+export const adminFriendsQueryOptions = queryOptions({
+  queryKey: ['admin', 'friends'],
+  queryFn: () => adminGet<AdminFriendsResponse>('/api/admin/friends'),
+  staleTime: 30 * 1000,
+});
+
 export const adminStatsQueryOptions = queryOptions({
   queryKey: ['admin', 'stats'],
   queryFn: () => adminGet<AdminStats>('/api/admin/stats'),

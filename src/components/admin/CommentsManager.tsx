@@ -30,7 +30,7 @@ import { jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading from './AdminLoading';
 import { PageHead } from './AdminPage';
 import { formatWhen } from './adminFormat';
-import './CommentsManager.css';
+import './AdminReview.css';
 
 // 留言審核（2026-10 後台提案）：左邊是清單，右邊是選中那一則的全文與動作。
 // 審完自動停在下一則（批准之後那則從「待審」消失，選取落到清單的第一則），

@@ -1,4 +1,4 @@
-/* 留言審核（元件見 CommentsManager.tsx）：左邊清單、右邊選中那一則。 */
+/* 審核版面：左邊清單、右邊選中那一則。留言審核（CommentsManager）與友鏈申請（FriendsReview）共用。 */
 
 .adm-review {
   display: flex;

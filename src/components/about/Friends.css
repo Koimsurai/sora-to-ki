@@ -624,10 +624,31 @@
   border-color: var(--amber);
 }
 
+/* 送出中、送出之後：不能再按，框退回細線 */
+.fr-submit:disabled {
+  cursor: default;
+  color: var(--paper-2);
+  border-color: var(--rule);
+}
+
 .fr-sent {
   display: block;
   font-size: var(--fs-12);
   color: var(--paper-2);
+}
+
+/* 送不出去：跟欄位底下的錯誤同一個顏色 */
+.fr-failed {
+  color: var(--amber);
+}
+
+/* 給機器人填的隱藏欄位：搬到畫面外（display: none 的欄位有些機器人會跳過） */
+.fr-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
 }
 
 .fr-sent a {

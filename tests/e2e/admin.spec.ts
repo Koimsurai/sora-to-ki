@@ -110,6 +110,50 @@ test.describe('後台', () => {
   });
 
   /**
+   * **友鏈的往返**：朋友頁送來的申請出現在「待看」、站長收下之後移到「朋友」，
+   * 而且讀者那一側的 /api/friends 馬上就有它（名單每次讀 DB，不等快取過期）。
+   * 申請直接打 API：表單本身由 friends.spec.ts 守。
+   */
+  test('友鏈往返：申請 → 待看裡看得到 → 收下 → 朋友頁的名單上有它', async ({ page }) => {
+    const name = `e2e 鄰居 ${Date.now()}`;
+    const url = `https://e2e-friend-${Date.now()}.example`;
+    await page.goto('/');
+    const status = await page.evaluate(
+      async (b) =>
+        (
+          await fetch('/api/friends/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(b),
+          })
+        ).status,
+      { name, url, description: '寫程式也寫日常', email: 'me@e2e.example', message: '想交換友鏈' },
+    );
+    expect(status, '申請要送得進去').toBe(201);
+
+    await signIn(page);
+    await gotoAdmin(page, '/admin/friends', '友鏈');
+    const item = page.getByRole('button', { name: new RegExp(name) });
+    await expect(item, '待看裡要看得到剛送來的申請').toBeVisible({ timeout: 15_000 });
+    await item.click();
+    const detail = page.getByRole('region', { name: '這份申請' });
+    await expect(detail).toContainText('想交換友鏈');
+    await expect(detail).toContainText('還沒檢查');
+
+    await detail.getByRole('button', { name: '收下', exact: true }).click();
+    await expect(item, '收下之後離開待看').toBeHidden({ timeout: 10_000 });
+    await page.getByRole('button', { name: /^朋友/ }).click();
+    await expect(page.getByRole('row').filter({ hasText: name })).toBeVisible();
+
+    const listed = await page.evaluate(async (n) => {
+      const r = await fetch('/api/friends');
+      const b = (await r.json()) as { name: string }[];
+      return b.some((f) => f.name === n);
+    }, name);
+    expect(listed, '收下之後朋友頁的名單上要馬上有它').toBe(true);
+  });
+
+  /**
    * token 被清掉 → 立刻被請出去。
    *
    * 既有的「未登入進不了後台」測的是「一開始就沒有 token」。這條測的是

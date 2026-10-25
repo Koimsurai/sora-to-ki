@@ -42,6 +42,7 @@ import { Route as AdminBooksRouteImport } from './routes/admin/books'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
 import { Route as AdminCommentsRouteImport } from './routes/admin/comments'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminFriendsRouteImport } from './routes/admin/friends'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminSubscribersRouteImport } from './routes/admin/subscribers'
 import { Route as AdminTagsRouteImport } from './routes/admin/tags'
@@ -228,6 +229,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminFriendsRoute = AdminFriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -361,6 +367,7 @@ export interface FileRoutesByFullPath {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
@@ -415,6 +422,7 @@ export interface FileRoutesByTo {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
@@ -471,6 +479,7 @@ export interface FileRoutesById {
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
@@ -528,6 +537,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/comments'
     | '/admin/dashboard'
+    | '/admin/friends'
     | '/admin/login'
     | '/admin/subscribers'
     | '/admin/tags'
@@ -582,6 +592,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/comments'
     | '/admin/dashboard'
+    | '/admin/friends'
     | '/admin/login'
     | '/admin/subscribers'
     | '/admin/tags'
@@ -637,6 +648,7 @@ export interface FileRouteTypes {
     | '/admin/categories'
     | '/admin/comments'
     | '/admin/dashboard'
+    | '/admin/friends'
     | '/admin/login'
     | '/admin/subscribers'
     | '/admin/tags'
@@ -938,6 +950,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/friends': {
+      id: '/admin/friends'
+      path: '/friends'
+      fullPath: '/admin/friends'
+      preLoaderRoute: typeof AdminFriendsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/login'
@@ -1086,6 +1105,7 @@ interface AdminRouteRouteChildren {
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCommentsRoute: typeof AdminCommentsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminFriendsRoute: typeof AdminFriendsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminTagsRoute: typeof AdminTagsRoute
@@ -1101,6 +1121,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCommentsRoute: AdminCommentsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminFriendsRoute: AdminFriendsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminTagsRoute: AdminTagsRoute,

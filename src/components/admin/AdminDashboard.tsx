@@ -6,6 +6,7 @@ import { useState, type ReactNode } from 'react';
 import {
   adminBahamutStatusQueryOptions,
   adminCommentsQueryOptions,
+  adminFriendsQueryOptions,
   adminPostsQueryOptions,
   adminStatsQueryOptions,
   vitalsStatsQueryOptions,
@@ -42,6 +43,7 @@ export default function AdminDashboard() {
   const posts = useQuery(adminPostsQueryOptions(ALL_POSTS));
   const stats = useQuery(adminStatsQueryOptions);
   const pending = useQuery(adminCommentsQueryOptions('status=pending&limit=1'));
+  const friends = useQuery(adminFriendsQueryOptions);
   // 巴哈沒設定時這支照樣回 200（ok: false），所以不用 retry；真的失敗就不顯示那一行
   const bahamut = useQuery({ ...adminBahamutStatusQueryOptions, retry: false });
   const vitals = useQuery(vitalsStatsQueryOptions(VITALS_DAYS));
@@ -80,6 +82,28 @@ export default function AdminDashboard() {
         </span>
         <Link to="/admin/comments" className="adm-row-action">
           去審 →
+        </Link>
+      </li>,
+    );
+  }
+  const friendCounts = friends.data?.counts;
+  if (friendCounts && friendCounts.pending > 0) {
+    const newest = friends.data?.friends.find((f) => f.status === 'pending');
+    todos.push(
+      <li key="friends" className="adm-row">
+        <span className="adm-mark" aria-hidden="true">
+          ○
+        </span>
+        <span className="adm-row-main">
+          <span className="adm-row-title">{friendCounts.pending} 份友鏈申請還沒看</span>
+          {newest && (
+            <span className="adm-row-sub">
+              最新一份是〈{newest.name}〉，{formatWhen(newest.created_at, 'MM.dd')} 送來的
+            </span>
+          )}
+        </span>
+        <Link to="/admin/friends" className="adm-row-action">
+          去看 →
         </Link>
       </li>,
     );

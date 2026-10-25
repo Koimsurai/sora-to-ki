@@ -3,16 +3,12 @@
  *
  * 抽屜平常收著、內容是 inert（點不到、Tab 不進去），要先點把手「交換友鏈」拉出來。
  *
- * 這是整頁唯一的寫入，而且它沒有後端——送出只是把欄位組成一封 `mailto:`。
- * 也就是說**沒有任何伺服器端的東西會發現它壞掉**：必填沒擋住、網址格式沒擋住、
- * 送出後沒回饋，站上都只是「按了沒反應」。
+ * 這是整頁唯一的寫入：送到 `POST /api/friends/apply`，進後台的友鏈審核（2026-10 之前是組一封
+ * `mailto:`，開不起郵件程式的人等於送不出去）。防濫用的規則在後端，由 backend/tests/friend_links.rs 守；
+ * 這裡守的是讀者看得到的那一半：必填與格式擋得住、送出之後有回饋、送不出去時有退路。
  *
  * 表單是 noValidate＋自己的錯誤訊息（寫在欄位底下的 `.fr-error`），不是瀏覽器的提示泡泡，
  * 所以判準是「錯誤訊息出來、欄位標成 aria-invalid、沒有切到已送出」。
- *
- * ⚠ 底下不去驗那封 mailto 的內容。`window.location.href = mailto` 沒有對應的網路請求，
- *   從測試這一側觀測不到；硬要攔就得改寫 `window.location`，那是在測試裡改變被測對象的
- *   行為，比不測更糟。這裡守的是使用者看得到的那一半。
  */
 import { expect, test } from './fixtures';
 import type { Page } from '@playwright/test';
@@ -97,16 +93,35 @@ test.describe('朋友申請', () => {
     await expect(field(page, '網址')).not.toHaveAttribute('aria-invalid', 'true');
   });
 
-  test('填完送出會給回饋，而且留下自己寄信的退路', async ({ page }) => {
+  test('填完送出真的送到後端，並給回饋；同一個網站再送一次會說為什麼、留下寄信的退路', async ({ page }) => {
+    // 每次跑用不同的網址：同一個網站後端只收一份
+    const site = `https://e2e-${Date.now()}.example`;
     await page.goto('/friends');
     await hydrated(page);
     await field(page, '名字').fill('測試的人');
-    await field(page, '網址').fill('https://example.com');
+    await field(page, '網址').fill(site);
     await field(page, '一句話').fill('路過來打個招呼');
+    await field(page, '信箱（選填）').fill('nope');
     await form(page).getByRole('button', { name: '送出申請' }).click();
+    await expect(field(page, '信箱（選填）'), '信箱有填就要像個信箱').toHaveAttribute('aria-invalid', 'true');
 
-    await expect(form(page).locator('.fr-sent'), '送出之後要有回饋').toBeVisible();
-    // 開不起來郵件程式的人（不少）得知道信要寄去哪，不然這個功能對他們等於沒有
-    await expect(form(page).locator('.fr-sent'), '自動開信失敗時沒有給出信箱').toContainText('timo9378@gmail.com');
+    await field(page, '信箱（選填）').fill('me@e2e.example');
+    const sent = page.waitForResponse((r) => r.url().includes('/api/friends/apply'));
+    await form(page).getByRole('button', { name: '送出申請' }).click();
+    expect((await sent).status(), '後端要收下').toBe(201);
+    await expect(form(page).locator('.fr-sent'), '送出之後要有回饋').toContainText('收到了');
+    await expect(form(page).getByRole('button', { name: '送出申請' }), '送過了就不能再按').toBeDisabled();
+
+    // 同一個網站再送一次：後端回 409，讀者要看到理由與信箱
+    await page.reload();
+    await hydrated(page);
+    await field(page, '名字').fill('測試的人');
+    await field(page, '網址').fill(site);
+    const again = page.waitForResponse((r) => r.url().includes('/api/friends/apply'));
+    await form(page).getByRole('button', { name: '送出申請' }).click();
+    expect((await again).status()).toBe(409);
+    const failed = form(page).locator('.fr-failed');
+    await expect(failed).toContainText('已經在名單上');
+    await expect(failed, '送不出去時要給出信箱').toContainText('timo9378@gmail.com');
   });
 });

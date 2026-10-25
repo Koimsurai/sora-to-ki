@@ -26,7 +26,7 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// 只放已經存在的頁。提案裡的碎念、收藏、照片、友鏈、訊號、外部連線等做出來了再加進來，
+// 只放已經存在的頁。提案裡的碎念、收藏、照片、訊號、外部連線等做出來了再加進來，
 // 不先放一個點進去是空頁的入口。
 const NAV: NavGroup[] = [
   { label: '此刻', items: [{ label: '總覽', path: '/admin/dashboard' }] },
@@ -43,6 +43,7 @@ const NAV: NavGroup[] = [
     label: '回 · Reply',
     items: [
       { label: '留言', path: '/admin/comments' },
+      { label: '友鏈', path: '/admin/friends' },
       { label: '電子報', path: '/admin/subscribers' },
     ],
   },
