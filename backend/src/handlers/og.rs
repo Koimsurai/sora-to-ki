@@ -39,7 +39,7 @@ use crate::state::AppState;
 // 模板是字串組裝，所以標題要轉義（改用 node tree 就不需要，但模板會變成一大串 builder 呼叫）
 use crate::util::escape_html;
 
-use scenes::{Notes, Saturn, Scene, SkyPost};
+use scenes::{About, Log, Notes, Saturn, Scene, SkyPost};
 
 /// 主標與副標：跟前端 `lib/blogReading.ts` 的 `splitTitle` 同一套規則——全形冒號，
 /// 或半形冒號後面接空白（`Rust 1.85:2024` 那種不拆）。兩邊任一段是空的就不拆
@@ -302,6 +302,8 @@ fn render(html: &str, locale: &str, scene: &dyn Scene) -> anyhow::Result<Vec<u8>
 fn page_scene(key: &str, sky: &[SkyPost]) -> Box<dyn Scene> {
     match key {
         "notes" => Box::new(Notes::new(sky, 0)),
+        "about" => Box::new(About::new()),
+        "log" => Box::new(Log::new()),
         // 其他頁的背景移植完之前，先用首頁的土星
         _ => Box::new(SaturnRef),
     }
@@ -612,7 +614,12 @@ mod tests {
     #[test]
     fn 背景會動而且首尾接得起來() {
         let sky: Vec<SkyPost> = (0..12).map(|i| SkyPost::of(&format!("p{i}"), 500 * (i + 1), 6000)).collect();
-        let scenes: [Box<dyn Scene>; 2] = [Box::new(Saturn::new()), Box::new(Notes::new(&sky, 0))];
+        let scenes: [Box<dyn Scene>; 4] = [
+            Box::new(Saturn::new()),
+            Box::new(Notes::new(&sky, 0)),
+            Box::new(About::new()),
+            Box::new(Log::new()),
+        ];
         for scene in scenes {
             let n = scene.frames();
             let (a, b) = (scene.frame(0), scene.frame(n * 3 / 5));

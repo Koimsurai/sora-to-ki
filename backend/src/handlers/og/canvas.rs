@@ -6,7 +6,8 @@
 //! 之後前端那頁改了畫法，回頭改這邊也是對著同一行改。
 //!
 //! 只做到那些頁面用得到的部分：路徑（直線、弧、橢圓、二次與三次曲線）、填色與描邊、
-//! 線寬、虛線、全域透明度、`lighter` 疊加、兩種漸層、變換的 save／restore、貼圖。
+//! 線寬、線的接頭、虛線、全域透明度、`lighter` 疊加、兩種漸層、變換的 save／restore、
+//! 裁切（`clip`）、貼圖（含只貼原圖其中一塊的 `drawImage` 九個參數版）。
 #![allow(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
@@ -20,8 +21,9 @@
 use std::f32::consts::TAU;
 
 use tiny_skia::{
-    BlendMode, Color, FillRule, GradientStop, LineCap, LinearGradient, Paint, PathBuilder, Pixmap,
-    PixmapPaint, Point, RadialGradient, Rect, Shader, SpreadMode, Stroke, StrokeDash, Transform,
+    BlendMode, Color, FillRule, GradientStop, IntRect, LineCap, LineJoin, LinearGradient, Mask, Paint,
+    PathBuilder, Pixmap, PixmapPaint, Point, RadialGradient, Rect, Shader, SpreadMode, Stroke, StrokeDash,
+    Transform,
 };
 
 /// 站上的三個顏色（`index.css`：`--ground`、`--paper`、`--amber`）
@@ -95,9 +97,13 @@ struct State {
     stroke: Style,
     line_width: f32,
     line_cap: LineCap,
+    line_join: LineJoin,
     dash: Vec<f32>,
     alpha: f32,
     lighter: bool,
+    /// `clip()` 留下的裁切範圍（畫布座標的遮罩）；`None` 是沒有裁切。跟 canvas 一樣存在狀態裡，
+    /// `restore()` 就回到 `save()` 時的範圍
+    clip: Option<Mask>,
 }
 
 pub struct Ctx {
@@ -120,9 +126,11 @@ impl Ctx {
                 stroke: ink(1.0).into(),
                 line_width: 1.0,
                 line_cap: LineCap::Butt,
+                line_join: LineJoin::Miter,
                 dash: Vec::new(),
                 alpha: 1.0,
                 lighter: false,
+                clip: None,
             },
             stack: Vec::new(),
             path: PathBuilder::new(),
@@ -162,6 +170,10 @@ impl Ctx {
     }
     pub const fn set_round_cap(&mut self, round: bool) {
         self.state.line_cap = if round { LineCap::Round } else { LineCap::Butt };
+    }
+    /// `lineJoin = 'round'`（true）或 `'miter'`（false，canvas 的預設）
+    pub const fn set_round_join(&mut self, round: bool) {
+        self.state.line_join = if round { LineJoin::Round } else { LineJoin::Miter };
     }
     /// `setLineDash([...])`；空的就是實線
     pub fn set_line_dash(&mut self, dash: &[f32]) {
@@ -272,6 +284,20 @@ impl Ctx {
         }
     }
 
+    /// `clip()`：之後畫的東西只留在目前這條路徑裡面（非零環繞、反鋸齒）。
+    /// 已經有裁切時取交集，跟 canvas 一樣
+    pub fn clip(&mut self) {
+        let Some(path) = self.path.clone().finish() else { return };
+        let transform = self.state.transform;
+        if let Some(mask) = &mut self.state.clip {
+            mask.intersect_path(&path, FillRule::Winding, true, transform);
+        } else {
+            let Some(mut mask) = Mask::new(self.pixmap.width(), self.pixmap.height()) else { return };
+            mask.fill_path(&path, FillRule::Winding, true, transform);
+            self.state.clip = Some(mask);
+        }
+    }
+
     // ── 畫 ──────────────────────────────────────────────
     fn paint(&self, style: &Style) -> Option<Paint<'static>> {
         let global = self.state.alpha;
@@ -307,7 +333,13 @@ impl Ctx {
     pub fn fill(&mut self) {
         let Some(path) = self.path.clone().finish() else { return };
         if let Some(paint) = self.paint(&self.state.fill) {
-            self.pixmap.fill_path(&path, &paint, FillRule::Winding, self.state.transform, None);
+            self.pixmap.fill_path(
+                &path,
+                &paint,
+                FillRule::Winding,
+                self.state.transform,
+                self.state.clip.as_ref(),
+            );
         }
     }
 
@@ -317,6 +349,7 @@ impl Ctx {
         let stroke = Stroke {
             width: self.state.line_width,
             line_cap: self.state.line_cap,
+            line_join: self.state.line_join,
             dash: if self.state.dash.is_empty() {
                 None
             } else {
@@ -324,13 +357,13 @@ impl Ctx {
             },
             ..Stroke::default()
         };
-        self.pixmap.stroke_path(&path, &paint, &stroke, self.state.transform, None);
+        self.pixmap.stroke_path(&path, &paint, &stroke, self.state.transform, self.state.clip.as_ref());
     }
 
     pub fn fill_rect(&mut self, x: f32, y: f32, w: f32, h: f32) {
         let Some(rect) = Rect::from_xywh(x, y, w, h) else { return };
         if let Some(paint) = self.paint(&self.state.fill) {
-            self.pixmap.fill_rect(rect, &paint, self.state.transform, None);
+            self.pixmap.fill_rect(rect, &paint, self.state.transform, self.state.clip.as_ref());
         }
     }
 
@@ -350,7 +383,7 @@ impl Ctx {
             quality: tiny_skia::FilterQuality::Bilinear,
         };
         let t = self.state.transform.pre_translate(x, y);
-        self.pixmap.draw_pixmap(0, 0, img.as_ref(), &paint, t, None);
+        self.pixmap.draw_pixmap(0, 0, img.as_ref(), &paint, t, self.state.clip.as_ref());
     }
 
     /// `drawImage(img, x, y, w, h)`：縮放到指定大小
@@ -361,6 +394,47 @@ impl Ctx {
         self.draw_image(img, 0.0, 0.0);
         self.restore();
     }
+
+    /// `drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)`：只貼原圖 (sx, sy, sw, sh) 那一塊，
+    /// 縮放到 (dx, dy, dw, dh)。來源的範圍取到整數像素（跟 canvas 差不到一個像素）
+    pub fn draw_image_sub(
+        &mut self,
+        img: &Pixmap,
+        sx: f32,
+        sy: f32,
+        sw: f32,
+        sh: f32,
+        dx: f32,
+        dy: f32,
+        dw: f32,
+        dh: f32,
+    ) {
+        let [sx, sy, sw, sh] = [sx, sy, sw, sh].map(f32::round);
+        let Some(rect) = IntRect::from_xywh(sx as i32, sy as i32, sw as u32, sh as u32) else { return };
+        let Some(part) = img.clone_rect(rect) else { return };
+        self.draw_image_sized(&part, dx, dy, dw, dh);
+    }
+}
+
+/// 把一張圖縮放到 w×h（預乘的資料直接平均，濾波照 Lanczos3）。
+///
+/// 為什麼不直接交給 `draw_image_sized`：瀏覽器把大圖縮很小時會先做 mipmap 式的平均，
+/// tiny-skia 只做雙線性取樣——縮到三分之一以下時，插圖裡幾像素寬的線會被跳著取樣，
+/// 斷成一點一點的。插圖要貼得比原圖小很多時，先用這個縮到要的大小，再 1:1 貼上去
+pub fn scale_image(img: &Pixmap, w: u32, h: u32) -> Pixmap {
+    let src =
+        image::RgbaImage::from_raw(img.width(), img.height(), img.data().to_vec()).expect("長度剛好是 w×h×4");
+    let out = image::imageops::resize(&src, w.max(1), h.max(1), image::imageops::FilterType::Lanczos3);
+    let (w, h) = out.dimensions();
+    let mut data = out.into_raw();
+    // Lanczos 會過衝：預乘的色值不能超過 alpha
+    for px in data.as_chunks_mut::<4>().0 {
+        let a = px[3];
+        for c in &mut px[..3] {
+            *c = (*c).min(a);
+        }
+    }
+    Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(w, h).expect("不會是 0×0")).expect("長度剛好是 w×h×4")
 }
 
 /// 解一張編進執行檔的插圖（`public/illustrations/*.webp` 之類）成畫布能貼的圖（預乘 alpha）。

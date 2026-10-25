@@ -34,8 +34,9 @@ fn hash01(s: &str) -> f32 {
     (f64::from(x) / 4_294_967_296.0) as f32
 }
 
-/// 有種子的亂數（JS 版的 `seeded`：整數運算、`%` 保留正負號，跟 JS 一樣）
-fn seeded(seed: f64) -> impl FnMut() -> f32 {
+/// 有種子的亂數（JS 版的 `seeded`：整數運算、`%` 保留正負號，跟 JS 一樣）。
+/// 前端各頁的畫布（noteSky、fallSky…）抄的都是同一個函式，所以其他場景也用這一份
+pub(super) fn seeded(seed: f64) -> impl FnMut() -> f32 {
     let mut s = (seed * 2f64.powi(31)).floor() as i64;
     if s == 0 {
         s = 1;

@@ -6,9 +6,13 @@
 
 use tiny_skia::Pixmap;
 
+pub mod about;
+pub mod log;
 pub mod notes;
 pub mod saturn;
 
+pub use about::About;
+pub use log::Log;
 pub use notes::{Notes, SkyPost};
 pub use saturn::Saturn;
 

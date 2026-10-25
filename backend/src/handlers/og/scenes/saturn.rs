@@ -279,8 +279,9 @@ fn render_saturn(rot: &Rot) -> SaturnLayer {
     SaturnLayer { x0, y0, w, h, px }
 }
 
-/// mulberry32：跟設計稿同一個產生器，同樣的種子撒出同樣的星
-fn rng(seed: u32) -> impl FnMut() -> f32 {
+/// mulberry32：跟設計稿同一個產生器，同樣的種子撒出同樣的星。
+/// 航行日誌那張的背景星空也用它（同一組種子，見 `log.rs`）
+pub(super) fn rng(seed: u32) -> impl FnMut() -> f32 {
     let mut a = seed;
     move || {
         a = a.wrapping_add(0x6d2b_79f5);
