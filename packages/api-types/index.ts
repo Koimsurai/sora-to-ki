@@ -26,6 +26,14 @@ export type AdminCategoryRow = {
 	short_description_zh_cn: string | null,
 };
 
+export type AdminCollectionResponse = {
+	watch: AdminWatchItem[],
+	tracks: AdminTrackItem[],
+	/**  Spotify 抓失敗的話是理由（沒接 Spotify 不算失敗，tracks 就是空的） */
+	tracks_error: string | null,
+	hidden: HiddenItem[],
+};
+
 /**
  *  admin 留言列的一列：comments 表全欄（DB 宣告序）+ LEFT JOIN 的 post_title。
  *  欄位序對齊舊 `row_to_json`（`SELECT c.*` → comments 宣告序，post_title 附在最後）。
@@ -54,6 +62,47 @@ export type AdminCommentsResponse = {
 	page: number,
 	limit: number,
 	counts: CommentCounts,
+};
+
+/**  後台的一列（申請者的 IP 不給前端） */
+export type AdminFriendRow = {
+	id: number,
+	slug: string | null,
+	name: string,
+	url: string,
+	description: string,
+	feed_url: string | null,
+	email: string | null,
+	message: string | null,
+	/**  pending | waiting | approved | rejected */
+	status: string,
+	/**  最近一次自動檢查；還沒檢查過是空陣列 */
+	checks: FriendCheck[],
+	checked_at: string | null,
+	sort_order: number,
+	created_at: string,
+	reviewed_at: string | null,
+};
+
+export type AdminFriendsResponse = {
+	friends: AdminFriendRow[],
+	counts: FriendCounts,
+};
+
+/**  後台的一張：疊過的照片，加上原本的檔名（標題改過也看得到是哪個檔）與兩個開關 */
+export type AdminPhoto = {
+	/**  manifest 上的標題（同步時是檔名） */
+	original_title: string,
+	/**  精選：前台地面站排在最上面 */
+	featured: boolean,
+	/**  前台不顯示 */
+	hidden: boolean,
+} & GalleryPhoto;
+
+export type AdminPhotosResponse = {
+	/**  上次同步 NAS 的時間（manifest 的 generatedAt） */
+	generatedAt: string,
+	photos: AdminPhoto[],
 };
 
 /**
@@ -107,6 +156,14 @@ export type AdminPostFull = {
 	format: string | null,
 	/**  摘要裡連到章節的句子，依語系分開（沒有就是空物件）。 */
 	excerpt_links: { [key in string]: ExcerptLink[] },
+	/**  排程發佈的時間（UTC，`YYYY-MM-DD HH:MM:SS`）；只有 status = 'scheduled' 才有值 */
+	publish_at: string | null,
+	/**  排程時勾了「發佈時推送電子報」，翻成 published 那一刻才寄 */
+	newsletter_pending: boolean,
+	/**  丟進回收的時間（UTC）；30 天後自動刪掉 */
+	trashed_at: string | null,
+	/**  丟進回收之前的狀態（還原時回到這裡） */
+	trashed_from: string | null,
 	tags: string[],
 };
 
@@ -130,6 +187,16 @@ export type AdminTagRow = {
 	name_zh_cn: string | null,
 };
 
+/**  後台「在聽」的一首（Spotify 最近播放，含不公開的） */
+export type AdminTrackItem = {
+	id: string,
+	name: string,
+	artists: string,
+	cover: string | null,
+	played_at: string,
+	hidden: boolean,
+};
+
 /**  `GET /api/admin/users`（**requireOwner**）。`{ users: [...] }`，顯式欄位。 */
 export type AdminUserRow = {
 	id: number,
@@ -146,6 +213,25 @@ export type AdminUserRow = {
 
 export type AdminUsersResponse = {
 	users: AdminUserRow[],
+};
+
+/**  後台「在看」的一部（動畫、電影、影集混在一起，照最後看的時間排） */
+export type AdminWatchItem = {
+	/**  anime | film | tv */
+	kind: string,
+	/**  不公開清單用的 key：動畫是 anime_sn、電影是 film_history.id、影集是劇名 */
+	key: string,
+	title: string,
+	cover: string | null,
+	/**  動畫是最後一集、影集是看了幾集、電影是評分 */
+	detail: string | null,
+	watched_at: string | null,
+	/**  bahamut | simkl | trakt … */
+	source: string | null,
+	tmdb_id: number | null,
+	hidden: boolean,
+	/**  在最愛裡的話是那一筆的 id */
+	favorite_id: number | null,
 };
 
 export type AnimeHistoryResponse = {
@@ -428,6 +514,22 @@ export type FilmsResponse = {
 	films: FilmRow[],
 };
 
+/**  一項自動檢查的結果 */
+export type FriendCheck = {
+	/**  reachable | https | feed | recent | backlink */
+	key: string,
+	label: string,
+	ok: boolean,
+	detail: string,
+};
+
+export type FriendCounts = {
+	pending: number,
+	waiting: number,
+	approved: number,
+	rejected: number,
+};
+
 /**  一篇文章 */
 export type FriendPost = {
 	title: string,
@@ -470,6 +572,16 @@ export type GalleryPhoto = {
 	tagsEn?: string[],
 	gps: PhotoGps | null,
 };
+
+/**
+ *  `GET /api/gallery/photos` 的回應：manifest，加上站長標的精選（照片 id）。
+ *  精選不放進每張照片裡：照片的形狀就是 manifest 檔的形狀，那個檔每次同步都會重寫，
+ *  不該因為一個只有讀的時候才有的值而多出欄位。
+ */
+export type GalleryPhotosResponse = {
+	/**  精選的照片 id，前台地面站排在最上面 */
+	featured: string[],
+} & PhotosManifest;
 
 /**
  *  PushEvent 的一個 commit。sha 缺的 commit 直接不收——沒有 sha 就連不出 commit 連結，
@@ -573,6 +685,14 @@ export type GithubUserResponse = {
 	html_url: string | null,
 	public_repos: number | null,
 	error: string | null,
+};
+
+/**  不公開的一筆（給後台列「藏了哪些」，Spotify 的歌不在最近播放裡也看得到） */
+export type HiddenItem = {
+	kind: string,
+	key: string,
+	title: string,
+	hidden_at: string,
 };
 
 /**  `GET /api/admin/keyword-filters`（requireAdmin）。`{ filters: rows }`（SELECT *；目前空表）。 */
@@ -1081,6 +1201,8 @@ export type ThoughtOut = {
 	edited: boolean,
 	dislikes: number,
 	comment_count: number,
+	/**  watched / read / listened / played / shared；null 是一般的碎念 */
+	verb: string | null,
 	/**  Express 的 `ref: safeParse(r.ref_json)`：解析成功→物件、失敗或 null→JSON null。 */
 	ref: ThoughtRef | null,
 };
@@ -1121,6 +1243,12 @@ export type ThoughtRef = {
 	rating: ThoughtRefScalar | null,
 	year: ThoughtRefScalar | null,
 	tmdbId: ThoughtRefScalar | null,
+	/**  歌手、作者 */
+	creator: string | null,
+	/**  進度，例如動畫看到的那一集 `EP 12`。前台原樣顯示，所以只寫不分語系的寫法 */
+	progress: string | null,
+	/**  附上的是哪一筆紀錄（`anime:<sn>`、`track:<id>`…），後台用來標「已經寫過」 */
+	key: string | null,
 };
 
 /**

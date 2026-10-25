@@ -102,16 +102,20 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
         <BackToTopButton isHomePage={isHomePage} />
       </div>
 
-      {/* 右鍵選單刻意留在容器外：它要能開在任何東西之上，包含全螢幕檢視。
-          思源宋體的按頁裁字也只在前台：後台不用它 */}
+      {/* 右鍵選單刻意留在容器外：它要能開在任何東西之上，包含全螢幕檢視。後台不掛 */}
       {!isAdminPage && (
         <ClientOnly fallback={null}>
           <Suspense fallback={null}>
             <ContextMenu />
-            <SerifFontLoader />
           </Suspense>
         </ClientOnly>
       )}
+      {/* 思源宋體的按頁裁字：前後台都要（2026-10 後台翻新之後，後台的標題、內容與表單也是宋體） */}
+      <ClientOnly fallback={null}>
+        <Suspense fallback={null}>
+          <SerifFontLoader />
+        </Suspense>
+      </ClientOnly>
     </div>
   );
 }

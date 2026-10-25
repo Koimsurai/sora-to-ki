@@ -15,15 +15,22 @@ use koimsurai_web_backend::handlers::admin::{
 use koimsurai_web_backend::handlers::auth::{AuthProvidersResponse, OAuthProviderInfo};
 use koimsurai_web_backend::handlers::books::{BookDetailResponse, BookRow, BooksListResponse};
 use koimsurai_web_backend::handlers::categories::{CategoriesResponse, CategoryRow};
+use koimsurai_web_backend::handlers::collection::{
+    AdminCollectionResponse, AdminTrackItem, AdminWatchItem, HiddenItem,
+};
+use koimsurai_web_backend::handlers::friend_links::{
+    AdminFriendRow, AdminFriendsResponse, FriendCheck, FriendCounts,
+};
 use koimsurai_web_backend::handlers::friends::{FriendPost, FriendStar};
 use koimsurai_web_backend::handlers::gallery::{
-    ExifValue, GalleryPhoto, PhotoExif, PhotoGps, PhotoUrls, PhotosManifest,
+    ExifValue, GalleryPhoto, GalleryPhotosResponse, PhotoExif, PhotoGps, PhotoUrls, PhotosManifest,
 };
 use koimsurai_web_backend::handlers::home::{
     DigestComment, DigestPost, DigestResponse, DigestThought, DigestTimeline,
 };
 use koimsurai_web_backend::handlers::link_preview::LinkPreviewResponse;
 use koimsurai_web_backend::handlers::newsletter::{SubscriberByToken, SubscriberRow, SubscribersResponse};
+use koimsurai_web_backend::handlers::photo_meta::{AdminPhoto, AdminPhotosResponse};
 use koimsurai_web_backend::handlers::polls::{PollOptionRow, PollResponse};
 use koimsurai_web_backend::handlers::posts::{
     CommentRow, CommentsResponse, Pagination, PostDetailResponse, PostListItem, PostsListResponse,
@@ -96,6 +103,13 @@ fn main() {
         .register::<PhotoGps>()
         .register::<GalleryPhoto>()
         .register::<PhotosManifest>()
+        .register::<GalleryPhotosResponse>()
+        .register::<AdminPhoto>()
+        .register::<AdminPhotosResponse>()
+        .register::<AdminWatchItem>()
+        .register::<AdminTrackItem>()
+        .register::<HiddenItem>()
+        .register::<AdminCollectionResponse>()
         .register::<AdminTagRow>()
         .register::<AdminCategoryRow>()
         .register::<AdminUserRow>()
@@ -115,6 +129,10 @@ fn main() {
         .register::<Telemetry>()
         .register::<FriendPost>()
         .register::<FriendStar>()
+        .register::<FriendCheck>()
+        .register::<AdminFriendRow>()
+        .register::<FriendCounts>()
+        .register::<AdminFriendsResponse>()
         // posts（admin）
         .register::<AdminPostFull>()
         .register::<AdminPostsResponse>()

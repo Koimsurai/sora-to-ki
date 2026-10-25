@@ -6,25 +6,43 @@ import { Heart, MessageCircle } from 'lucide-react';
 import { useThoughtReaction } from '@/hooks/useThoughtReaction';
 import { LocaleLink } from '@/i18n/locale-link';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
+import { isThoughtVerb, thoughtCard } from '@/lib/thoughtRef';
 import type { Thought } from '@/types/thought';
 
 const MOMENT_AUTHOR = 'Koimsurai';
 
+/** 附的連結或作品：左邊一條點線；作品多一張小海報（歌是方的） */
 function Embed({ th }: { th: Thought }) {
-  const ref = th.ref;
-  if (!ref || (th.ref_type !== 'link' && th.ref_type !== 'media')) return null;
-  const href = (th.ref_type === 'media' ? ref.url : null) ?? th.ref_url ?? undefined;
-  // 沒抓到標題就寫網址本身（去掉協定），站名寫在下面一行
-  const title = ref.title ?? th.ref_url?.replace(/^https?:\/\//, '') ?? '';
-  const meta =
-    th.ref_type === 'media'
-      ? [ref.kind, ref.year, ref.source].filter((v) => v !== null && v !== '').join(' · ')
-      : (ref.site ?? '');
-  return (
-    <a className="mo-embed" href={href} target="_blank" rel="noopener noreferrer">
-      <b>{title}</b>
-      {meta && <span>{meta}</span>}
+  const { t } = useTranslation();
+  const card = thoughtCard(th);
+  if (!card) return null;
+  const meta = [card.kind ? t(`thinking.kind.${card.kind}`) : null, ...card.facts].filter(Boolean).join(' · ');
+  const body = (
+    <>
+      {card.poster && (
+        <img
+          className="mo-embed-poster"
+          data-square={card.kind === 'track' || undefined}
+          src={card.poster}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          width={36}
+          height={card.kind === 'track' ? 36 : 54}
+        />
+      )}
+      <span className="mo-embed-text">
+        <b>{card.title}</b>
+        {meta && <span>{meta}</span>}
+      </span>
+    </>
+  );
+  return card.href ? (
+    <a className="mo-embed" href={card.href} target="_blank" rel="noopener noreferrer">
+      {body}
     </a>
+  ) : (
+    <div className="mo-embed">{body}</div>
   );
 }
 
@@ -43,6 +61,7 @@ export default function MomentPost({ th, detail = false }: { th: Thought; detail
     <>
       <div className="mo-post-head">
         <b>{MOMENT_AUTHOR}</b>
+        {isThoughtVerb(th.verb) && <span className="mo-verb">{t(`thinking.verb.${th.verb}`)}</span>}
         {detail ? (
           <span className="mo-time">{time}</span>
         ) : (
@@ -51,7 +70,8 @@ export default function MomentPost({ th, detail = false }: { th: Thought; detail
           </LocaleLink>
         )}
       </div>
-      <p className="mo-text">{th.content}</p>
+      {/* 只附了作品、沒寫字的那種不留一段空白 */}
+      {th.content && <p className="mo-text">{th.content}</p>}
       <Embed th={th} />
       <div className="mo-act">
         <button

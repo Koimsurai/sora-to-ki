@@ -204,34 +204,58 @@ fn manifest_from_value(v: &Value) -> PhotosManifest {
     }
 }
 
-/// `GET /api/gallery/photos` —— 讀 manifest.json（parse 後 res.json，非直接送檔）。
-#[utoipa::path(get, path = "/api/gallery/photos", tag = "gallery",
-    responses((status = 200, body = PhotosManifest)))]
-pub async fn gallery_photos() -> Response {
+/// 讀 manifest.json。沒有檔案 → 空結構（generatedAt=當下時間，非決定性欄位）；
+/// 讀不到或 JSON 壞掉 → `None`（呼叫端回 500，對齊 Express 的非 ENOENT 分支）
+pub async fn read_manifest() -> Option<PhotosManifest> {
     match tokio::fs::read_to_string(manifest_path()).await {
-        Ok(data) => match serde_json::from_str::<Value>(&data) {
-            Ok(manifest) => Json(manifest_from_value(&manifest)).into_response(),
-            // JSON.parse 失敗在 Express 落到非 ENOENT 分支 → 500
-            Err(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({ "error": "Failed to read gallery manifest" })),
-            )
-                .into_response(),
-        },
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            // 無 manifest → 空結構（generatedAt=當下時間，非決定性欄位）
-            Json(PhotosManifest {
-                version: "1.0.0".into(),
-                generated_at: crate::util::iso_from_millis(now_ms()),
-                total_photos: 0,
-                photos: vec![],
-            })
-            .into_response()
+        Ok(data) => serde_json::from_str::<Value>(&data).ok().map(|v| manifest_from_value(&v)),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Some(PhotosManifest {
+            version: "1.0.0".into(),
+            generated_at: crate::util::iso_from_millis(now_ms()),
+            total_photos: 0,
+            photos: vec![],
+        }),
+        Err(_) => None,
+    }
+}
+
+pub(crate) fn manifest_error() -> Response {
+    (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "Failed to read gallery manifest" })))
+        .into_response()
+}
+
+/// `GET /api/gallery/photos` 的回應：manifest，加上站長標的精選（照片 id）。
+/// 精選不放進每張照片裡：照片的形狀就是 manifest 檔的形狀，那個檔每次同步都會重寫，
+/// 不該因為一個只有讀的時候才有的值而多出欄位。
+#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
+pub struct GalleryPhotosResponse {
+    #[serde(flatten)]
+    pub manifest: PhotosManifest,
+    /// 精選的照片 id，前台地面站排在最上面
+    pub featured: Vec<String>,
+}
+
+/// `GET /api/gallery/photos` —— manifest 疊上後台改過的標題、標籤；藏起來的不給
+/// （見 `photo_meta`：那些改動存在 DB，重新同步 NAS 不會蓋掉）。
+#[utoipa::path(get, path = "/api/gallery/photos", tag = "gallery",
+    responses((status = 200, body = GalleryPhotosResponse)))]
+pub async fn gallery_photos(State(state): State<AppState>) -> Response {
+    let Some(mut manifest) = read_manifest().await else {
+        return manifest_error();
+    };
+    match crate::handlers::photo_meta::apply(&state.pool, &mut manifest.photos, false).await {
+        Ok(flags) => {
+            manifest.total_photos = u32::try_from(manifest.photos.len()).unwrap_or(u32::MAX);
+            let featured = manifest
+                .photos
+                .iter()
+                .zip(&flags)
+                .filter(|(_, f)| f.featured)
+                .map(|(p, _)| p.id.clone())
+                .collect();
+            Json(GalleryPhotosResponse { manifest, featured }).into_response()
         }
-        Err(_) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": "Failed to read gallery manifest" })))
-                .into_response()
-        }
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
 

@@ -27,7 +27,30 @@ fn env_or(key: &str, default: &str) -> String {
 fn newsletter_from() -> String {
     env_or("NEWSLETTER_FROM", "Koimsurai <hello@koimsurai.com>")
 }
-fn public_site_url() -> String {
+/// 寄一封純文字信給一個人（友鏈審核的回信用）。沒設 RESEND_API_KEY 回錯，由呼叫端轉告站長。
+pub(crate) async fn send_plain(state: &AppState, to: &str, subject: &str, text: &str) -> Result<(), String> {
+    let key =
+        std::env::var("RESEND_API_KEY").ok().filter(|k| !k.is_empty()).ok_or("沒有設定 RESEND_API_KEY")?;
+    let resp = state
+        .http
+        .post(format!("{}/emails", resend_base_url()))
+        .header("Authorization", format!("Bearer {key}"))
+        .json(&json!({ "from": newsletter_from(), "to": [to], "subject": subject, "text": text }))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if resp.status().is_success() {
+        return Ok(());
+    }
+    let body = resp.text().await.unwrap_or_default();
+    Err(serde_json::from_str::<Value>(&body)
+        .ok()
+        .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(String::from))
+        .unwrap_or(body))
+}
+
+/// 這個站的網址（不帶結尾的 /）。友鏈的「對方站上有連回這裡」也拿它的 host 去找
+pub(crate) fn public_site_url() -> String {
     // (PUBLIC_SITE_URL || default).replace(/\/$/, '')
     let raw = env_or("PUBLIC_SITE_URL", "https://koimsurai.com");
     raw.strip_suffix('/').unwrap_or(&raw).to_string()

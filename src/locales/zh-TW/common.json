@@ -280,7 +280,9 @@
     "label": "Moments",
     "like": "讚",
     "comments": "{{count}} 則留言",
-    "older": "更早的碎念"
+    "older": "更早的碎念",
+    "verb": { "watched": "看了", "read": "讀了", "listened": "聽了", "played": "玩了", "shared": "分享" },
+    "kind": { "film": "電影", "tv": "影集", "anime": "動畫", "book": "書", "track": "歌" }
   },
   "watch": {
     "favManage": "管理一生推",
@@ -644,10 +646,15 @@
     "fieldUrl": "網址",
     "fieldRss": "RSS（選填）",
     "fieldDesc": "一句話",
+    "fieldEmail": "信箱（選填）",
+    "fieldEmailHint": "審完會寄到這裡",
     "submit": "送出申請",
+    "sending": "送出中",
     "errRequired": "這一欄要填",
     "errUrl": "要是 http:// 或 https:// 開頭的網址",
-    "sent": "已打開郵件程式。沒有跳出來的話，寄到",
+    "errEmail": "信箱看起來不對",
+    "sent": "收到了。看過之後就會出現在這片天上。",
+    "sendFailed": "沒送出去：{{reason}}。也可以直接寫信到",
     "rulesTitle": "入軌條件",
     "rule1": "網站能正常瀏覽，有自己的網域與 HTTPS（免費子網域也可以）。",
     "rule2": "有原創內容。轉貼站、純廣告、SEO 農場不交換。",

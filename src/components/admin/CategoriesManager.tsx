@@ -1,19 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AdminCategoryRow } from '@koimsurai/api-types';
+import { toast } from 'sonner';
+
 import { adminCategoriesQueryOptions } from '@/data/adminData';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,9 +15,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, Trash2, FolderOpen, GripVertical, FileText } from 'lucide-react';
-import { toast } from 'sonner';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import AdminLoading from './AdminLoading';
+import { NameDots, PageHead } from './AdminPage';
+import { LOCALE_NAME_FIELDS } from './adminFormat';
+
+// 分類（2026-10 後台提案）：一張表，每個分類後面五顆語系點看譯名填了沒。
+// 表單分三段：名稱與網址、簡述與描述（前台文章頁分類的提示框）、各語系的譯名與譯文。
 
 interface CategoryForm {
   name: string;
@@ -49,76 +44,82 @@ interface CategoryForm {
 }
 
 /** 表單裡「描述類」譯文欄位的型別（給 keyof 索引用）。 */
-type TagLikeDesc = Pick<
-  CategoryForm,
-  | 'description_en'
-  | 'description_ja'
-  | 'description_ko'
-  | 'description_zh_cn'
-  | 'short_description_en'
-  | 'short_description_ja'
-  | 'short_description_ko'
-  | 'short_description_zh_cn'
->;
+type DescKey = Extract<keyof CategoryForm, `description_${string}` | `short_description_${string}`>;
 
-/** 譯名欄位表：新增語系時只要改這裡（表單自動長出欄位）。 */
-const LOCALE_NAME_FIELDS = [
-  { key: 'name_en', label: 'English', placeholder: 'Tech Notes' },
-  { key: 'name_ja', label: '日本語', placeholder: '技術ノート' },
-  { key: 'name_ko', label: '한국어', placeholder: '기술 노트' },
-  { key: 'name_zh_cn', label: '简体中文', placeholder: '技术笔记' },
-] as const;
+const EMPTY: CategoryForm = {
+  name: '',
+  slug: '',
+  description: '',
+  short_description: '',
+  name_en: '',
+  name_ja: '',
+  name_ko: '',
+  name_zh_cn: '',
+  description_en: '',
+  description_ja: '',
+  description_ko: '',
+  description_zh_cn: '',
+  short_description_en: '',
+  short_description_ja: '',
+  short_description_ko: '',
+  short_description_zh_cn: '',
+};
 
 export default function CategoriesManager() {
   const queryClient = useQueryClient();
-  // 分類列表改由 TanStack Query 讀（生成 AdminCategoryRow）；CRUD 後 invalidate 重抓。
-  const { data: categories = [], isPending: isLoading } = useQuery(adminCategoriesQueryOptions);
+  const { data: categories = [], isPending } = useQuery(adminCategoriesQueryOptions);
   const invalidateCategories = () => queryClient.invalidateQueries({ queryKey: adminCategoriesQueryOptions.queryKey });
-  const [editingCategory, setEditingCategory] = useState<AdminCategoryRow | null>(null);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<CategoryForm>({
-    name: '',
-    slug: '',
-    description: '',
-    short_description: '',
-    name_en: '',
-    name_ja: '',
-    name_ko: '',
-    name_zh_cn: '',
-    description_en: '',
-    description_ja: '',
-    description_ko: '',
-    description_zh_cn: '',
-    short_description_en: '',
-    short_description_ja: '',
-    short_description_ko: '',
-    short_description_zh_cn: '',
-  });
+  const [editing, setEditing] = useState<AdminCategoryRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [form, setForm] = useState<CategoryForm>(EMPTY);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
 
-  const q = searchQuery.toLowerCase();
-  const filteredCategories = categories.filter(
-    (c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q),
-  );
+  const q = search.trim().toLowerCase();
+  const shown = categories.filter((c) => !q || c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q));
+
+  const set = (patch: Partial<CategoryForm>) => setForm((f) => ({ ...f, ...patch }));
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(EMPTY);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (c: AdminCategoryRow) => {
+    setEditing(c);
+    setForm({
+      name: c.name,
+      slug: c.slug,
+      description: c.description ?? '',
+      short_description: c.short_description ?? '',
+      name_en: c.name_en ?? '',
+      name_ja: c.name_ja ?? '',
+      name_ko: c.name_ko ?? '',
+      name_zh_cn: c.name_zh_cn ?? '',
+      description_en: c.description_en ?? '',
+      description_ja: c.description_ja ?? '',
+      description_ko: c.description_ko ?? '',
+      description_zh_cn: c.description_zh_cn ?? '',
+      short_description_en: c.short_description_en ?? '',
+      short_description_ja: c.short_description_ja ?? '',
+      short_description_ko: c.short_description_ko ?? '',
+      short_description_zh_cn: c.short_description_zh_cn ?? '',
+    });
+    setDialogOpen(true);
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     try {
-      const url = editingCategory ? `/api/admin/categories/${editingCategory.id}` : '/api/admin/categories';
-      const method = editingCategory ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(editing ? `/api/admin/categories/${editing.id}` : '/api/admin/categories', {
+        method: editing ? 'PUT' : 'POST',
         headers: jsonAuthHeaders(),
-        body: JSON.stringify(formData),
+        body: JSON.stringify(form),
       });
-
       if (response.ok) {
-        toast.success(editingCategory ? '分類已更新' : '分類已創建');
+        toast.success(editing ? '分類已更新' : '分類已建立');
         setDialogOpen(false);
-        resetForm();
         void invalidateCategories();
       } else {
         toast.error('操作失敗');
@@ -129,38 +130,10 @@ export default function CategoriesManager() {
     }
   };
 
-  const handleEdit = (category: AdminCategoryRow) => {
-    setEditingCategory(category);
-    setFormData({
-      name: category.name,
-      slug: category.slug,
-      description: category.description ?? '',
-      short_description: category.short_description ?? '',
-      name_en: category.name_en ?? '',
-      name_ja: category.name_ja ?? '',
-      name_ko: category.name_ko ?? '',
-      name_zh_cn: category.name_zh_cn ?? '',
-      description_en: category.description_en ?? '',
-      description_ja: category.description_ja ?? '',
-      description_ko: category.description_ko ?? '',
-      description_zh_cn: category.description_zh_cn ?? '',
-      short_description_en: category.short_description_en ?? '',
-      short_description_ja: category.short_description_ja ?? '',
-      short_description_ko: category.short_description_ko ?? '',
-      short_description_zh_cn: category.short_description_zh_cn ?? '',
-    });
-    setDialogOpen(true);
-  };
-
   const handleDelete = async () => {
     if (!deleteId) return;
-
     try {
-      const response = await fetch(`/api/admin/categories/${deleteId}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-
+      const response = await fetch(`/api/admin/categories/${deleteId}`, { method: 'DELETE', headers: authHeaders() });
       if (response.ok) {
         toast.success('分類已刪除');
         void invalidateCategories();
@@ -175,243 +148,173 @@ export default function CategoriesManager() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      slug: '',
-      description: '',
-      short_description: '',
-      name_en: '',
-      name_ja: '',
-      name_ko: '',
-      name_zh_cn: '',
-      description_en: '',
-      description_ja: '',
-      description_ko: '',
-      description_zh_cn: '',
-      short_description_en: '',
-      short_description_ja: '',
-      short_description_ko: '',
-      short_description_zh_cn: '',
-    });
-    setEditingCategory(null);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-600 border-t-transparent"></div>
-          <p className="mt-4 text-muted-foreground">載入中...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-medium text-foreground/90">分類管理</h1>
-          <p className="text-sm text-muted-foreground mt-1">共 {categories.length} 個分類</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="subtle" size="compact" onClick={resetForm}>
-              <Plus className="size-3.5" />
-              新增分類
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingCategory ? '編輯分類' : '新增分類'}</DialogTitle>
-              <DialogDescription>{editingCategory ? '修改分類資訊' : '創建新的文章分類'}</DialogDescription>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                void handleSubmit(e);
-              }}
-            >
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">分類名稱</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="技術筆記"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="slug">URL 別名</Label>
-                  <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="tech-notes"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">描述</Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="關於技術的學習筆記"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="short_description">簡述（前台 tooltip 顯示）</Label>
-                  <Input
-                    id="short_description"
-                    value={formData.short_description}
-                    onChange={(e) => setFormData({ ...formData, short_description: e.target.value })}
-                    placeholder="一句話描述此分類"
-                  />
-                </div>
-
-                <div className="pt-2 border-t border-border/40">
-                  <p className="text-xs text-muted-foreground mb-1">多語系顯示名（選填）</p>
-                  <p className="text-fs-11 text-muted-foreground/60 mb-3">
-                    只影響各語系頁面上的顯示；「分類名稱」仍是資料鍵（文章歸屬與篩選都用它）。留空該語系就顯示原名。
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {LOCALE_NAME_FIELDS.map(({ key, label, placeholder }) => (
-                      <div className="space-y-2" key={key}>
-                        <Label htmlFor={key} size="xs">
-                          {label}
-                        </Label>
-                        <Input
-                          id={key}
-                          value={formData[key]}
-                          onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                          placeholder={placeholder}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-border/40">
-                  <p className="text-xs text-muted-foreground mb-1">多語系簡述／描述（選填）</p>
-                  <p className="text-fs-11 text-muted-foreground/60 mb-3">
-                    對應上方的「簡述」與「描述」，會顯示在各語系文章頁的分類 tooltip。留空該語系就顯示原文。
-                  </p>
-                  <div className="space-y-3">
-                    {LOCALE_NAME_FIELDS.map(({ key, label }) => {
-                      const shortKey = key.replace('name_', 'short_description_') as keyof TagLikeDesc;
-                      const descKey = key.replace('name_', 'description_') as keyof TagLikeDesc;
-                      return (
-                        <div key={key} className="grid grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <Label htmlFor={shortKey} size="xs">
-                              {label}・簡述
-                            </Label>
-                            <Input
-                              id={shortKey}
-                              value={formData[shortKey]}
-                              onChange={(e) => setFormData({ ...formData, [shortKey]: e.target.value })}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={descKey} size="xs">
-                              {label}・描述
-                            </Label>
-                            <Input
-                              id={descKey}
-                              value={formData[descKey]}
-                              onChange={(e) => setFormData({ ...formData, [descKey]: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  取消
-                </Button>
-                <Button type="submit">{editingCategory ? '更新' : '創建'}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Search */}
-      <Input
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="搜尋分類..."
-        variant="glass"
-        size="sm"
+    <div className="adm-page">
+      <PageHead
+        title="分類"
+        latin="Categories"
+        meta={isPending ? '載入中' : `${categories.length} 個`}
+        actions={
+          <button type="button" className="adm-btn adm-btn-primary" onClick={openCreate}>
+            新增分類
+          </button>
+        }
       />
 
-      {/* Category list */}
-      {filteredCategories.length > 0 ? (
-        <div className="glass rounded-xl divide-y divide-border/20 overflow-hidden">
-          {filteredCategories.map((cat) => (
-            <div key={cat.id} className="flex items-center gap-3 px-4 py-3 group hover:bg-accent/15 transition-colors">
-              <GripVertical className="size-3.5 text-muted-foreground/30 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
-              <div className="size-8 rounded-lg bg-accent/40 flex items-center justify-center shrink-0">
-                <FolderOpen className="size-3.5 text-muted-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-fs-13 font-medium text-foreground/80">{cat.name}</span>
-                  {cat.slug && <span className="text-fs-11 text-muted-foreground/50 font-mono">/{cat.slug}</span>}
-                </div>
-                {cat.description && (
-                  <p className="text-fs-12 text-muted-foreground/60 mt-0.5 truncate">{cat.description}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 text-fs-11 text-muted-foreground/50 shrink-0 mr-2">
-                <FileText className="size-3" />
-                {cat.post_count}
-              </div>
-              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => handleEdit(cat)}
-                  className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/70 hover:bg-accent/40 transition-colors"
-                >
-                  <Pencil className="size-3.5" />
-                </button>
-                <button
-                  onClick={() => setDeleteId(cat.id)}
-                  className="size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
+      <section className="adm-stack" aria-label="分類清單">
+        <div className="adm-toolbar">
+          <span className="adm-meta">前台文章頁的分類提示框用的是「簡述」</span>
+          <label className="adm-prompt">
+            <span className="adm-prompt-mark" aria-hidden="true">
+              &gt;
+            </span>
+            <span className="sr-only">搜尋分類</span>
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="名稱或網址" />
+          </label>
+        </div>
+
+        {isPending ? (
+          <AdminLoading />
+        ) : shown.length === 0 ? (
+          <p className="adm-empty">{categories.length === 0 ? '還沒有分類。' : '沒有符合的分類。'}</p>
+        ) : (
+          <div className="adm-table-wrap">
+            <table className="adm-table">
+              <thead>
+                <tr>
+                  <th scope="col">名稱</th>
+                  <th scope="col">譯名</th>
+                  <th scope="col">篇數</th>
+                  <th scope="col">
+                    <span className="sr-only">動作</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((c) => (
+                  <tr key={c.id}>
+                    <td className="adm-cell-title">
+                      <span className="adm-cell-name">{c.name}</span>
+                      <span className="adm-meta adm-tags">
+                        /{c.slug}
+                        {c.short_description ? ` · ${c.short_description}` : ''}
+                      </span>
+                    </td>
+                    <td>
+                      <NameDots row={c} />
+                    </td>
+                    <td>
+                      <span className="adm-meta">{c.post_count}</span>
+                    </td>
+                    <td>
+                      <div className="adm-row-actions">
+                        <button
+                          type="button"
+                          className="adm-icon-btn"
+                          aria-label={`編輯 ${c.name}`}
+                          onClick={() => openEdit(c)}
+                        >
+                          編輯
+                        </button>
+                        <button
+                          type="button"
+                          className="adm-icon-btn adm-icon-btn-flare"
+                          aria-label={`刪除 ${c.name}`}
+                          onClick={() => setDeleteId(c.id)}
+                        >
+                          刪除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? '編輯分類' : '新增分類'}</DialogTitle>
+            <DialogDescription>
+              「分類名稱」是資料鍵：文章的歸屬與前台篩選都比對它。各語系的欄位留空，該語系就顯示原文。
+            </DialogDescription>
+          </DialogHeader>
+          <form className="adm-form" onSubmit={(e) => void handleSubmit(e)}>
+            <div className="adm-form-grid">
+              <label className="adm-field">
+                <span className="adm-caps">分類名稱</span>
+                <input value={form.name} onChange={(e) => set({ name: e.target.value })} required />
+              </label>
+              <label className="adm-field">
+                <span className="adm-caps">網址別名</span>
+                <input value={form.slug} onChange={(e) => set({ slug: e.target.value })} placeholder="tech-notes" />
+              </label>
+            </div>
+            <label className="adm-field">
+              <span className="adm-caps">簡述 · 分類提示框的那一句</span>
+              <input value={form.short_description} onChange={(e) => set({ short_description: e.target.value })} />
+            </label>
+            <label className="adm-field">
+              <span className="adm-caps">描述</span>
+              <textarea value={form.description} onChange={(e) => set({ description: e.target.value })} />
+            </label>
+
+            <div className="adm-form-section">
+              <span className="adm-caps">各語系的譯名 · 選填</span>
+              <div className="adm-form-grid">
+                {LOCALE_NAME_FIELDS.map(({ key, label }) => (
+                  <label key={key} className="adm-field">
+                    <span className="adm-caps">{label}</span>
+                    <input value={form[key]} onChange={(e) => set({ [key]: e.target.value })} />
+                  </label>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
-          <FolderOpen className="size-12 opacity-20" />
-          <p className="mt-4 text-sm">還沒有分類</p>
-        </div>
-      )}
 
-      {/* Delete Confirmation */}
+            <div className="adm-form-section">
+              <span className="adm-caps">各語系的簡述與描述 · 選填</span>
+              {LOCALE_NAME_FIELDS.map(({ key, label }) => {
+                const shortKey = key.replace('name_', 'short_description_') as DescKey;
+                const descKey = key.replace('name_', 'description_') as DescKey;
+                return (
+                  <div key={key} className="adm-form-grid">
+                    <label className="adm-field">
+                      <span className="adm-caps">{label} · 簡述</span>
+                      <input value={form[shortKey]} onChange={(e) => set({ [shortKey]: e.target.value })} />
+                    </label>
+                    <label className="adm-field">
+                      <span className="adm-caps">{label} · 描述</span>
+                      <input value={form[descKey]} onChange={(e) => set({ [descKey]: e.target.value })} />
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="adm-form-actions">
+              <button type="button" className="adm-btn" onClick={() => setDialogOpen(false)}>
+                取消
+              </button>
+              <button type="submit" className="adm-btn adm-btn-primary">
+                {editing ? '更新' : '建立'}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>確定要刪除這個分類嗎？</AlertDialogTitle>
-            <AlertDialogDescription>此操作無法復原。分類將被永久刪除，但不會影響已分類的文章。</AlertDialogDescription>
+            <AlertDialogDescription>刪掉就拿不回來；已經歸在這個分類的文章不受影響。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                void handleDelete();
-              }}
-              variant="destructive"
-            >
+            <AlertDialogAction onClick={() => void handleDelete()} variant="destructive">
               刪除
             </AlertDialogAction>
           </AlertDialogFooter>

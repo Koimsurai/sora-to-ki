@@ -1,7 +1,7 @@
 import { ClientOnly, createFileRoute } from '@tanstack/react-router';
 import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 
-import KoimLoader from '@/components/common/KoimLoader';
+import AdminLoading from '@/components/admin/AdminLoading';
 import { useAuth } from '../../contexts/auth';
 
 // /admin/* 的版面層。整段包在 ClientOnly 裡 → 後台一行都不 SSR、不 prerender
@@ -12,7 +12,7 @@ import { useAuth } from '../../contexts/auth';
 // file route 之後全站只剩一個 router，連結也變成對著 route tree 做型別檢查。
 const AdminLayout = lazy(() => import('../../components/admin/AdminLayout'));
 
-const LoadingFallback = () => <KoimLoader inline size="sm" />;
+const LoadingFallback = () => <AdminLoading page />;
 
 /**
  * 路由保護：非 ADMIN/OWNER 一律整頁導回站台首頁。

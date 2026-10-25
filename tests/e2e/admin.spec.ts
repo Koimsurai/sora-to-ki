@@ -20,7 +20,7 @@ test.describe('後台', () => {
 
   test('帶著 OWNER 的 session 進得了後台', async ({ page }) => {
     await signIn(page);
-    await gotoAdmin(page, '/admin/tags', '標籤管理');
+    await gotoAdmin(page, '/admin/tags', '標籤');
     // 沒有被踢回首頁
     await expect(page).toHaveURL(/\/admin\/tags$/);
   });
@@ -35,11 +35,11 @@ test.describe('後台', () => {
   test('標籤：新增之後出現在列表，刪除之後消失', async ({ page }) => {
     const name = `e2e-tag-${Date.now()}`;
     await signIn(page);
-    await gotoAdmin(page, '/admin/tags', '標籤管理');
+    await gotoAdmin(page, '/admin/tags', '標籤');
 
     await page.getByRole('button', { name: '新增標籤' }).click();
     await page.getByLabel('標籤名稱').fill(name);
-    await page.getByRole('button', { name: '創建' }).click();
+    await page.getByRole('button', { name: '建立' }).click();
 
     const row = page.locator('tr', { hasText: name });
     await expect(row, '新增之後列表要立刻看得到（快取沒 invalidate 就會看不到）').toBeVisible({
@@ -91,11 +91,15 @@ test.describe('後台', () => {
     // ── 3. 站長登入後台，看得到那則待審核
     await signIn(page);
     await gotoAdmin(page, '/admin/comments', /留言/);
-    const row = page.locator('div', { hasText: content }).last();
-    await expect(row, '後台應該看得到剛送出的留言').toBeVisible({ timeout: 15_000 });
+    // 審核頁是「左邊清單、右邊選中那一則」：先在清單裡點它，右邊才是它的全文與動作
+    const item = page.getByRole('listitem').filter({ hasText: content });
+    await expect(item, '後台應該看得到剛送出的留言').toBeVisible({ timeout: 15_000 });
+    await item.getByRole('button').click();
+    const detail = page.getByRole('region', { name: '這則留言' });
+    await expect(detail).toContainText(content);
 
     // ── 4. 批准
-    await row.getByRole('button', { name: '批准' }).click();
+    await detail.getByRole('button', { name: /批准/ }).click();
 
     // ── 5. 登出，以讀者的身分再看一次
     await signOut(page);
@@ -103,6 +107,147 @@ test.describe('後台', () => {
     await expect(page.locator('.ac'), '批准之後讀者就該看得到——看不到的話留言等於石沉大海').toContainText(content, {
       timeout: 15_000,
     });
+  });
+
+  /**
+   * **友鏈的往返**：朋友頁送來的申請出現在「待看」、站長收下之後移到「朋友」，
+   * 而且讀者那一側的 /api/friends 馬上就有它（名單每次讀 DB，不等快取過期）。
+   * 申請直接打 API：表單本身由 friends.spec.ts 守。
+   */
+  test('友鏈往返：申請 → 待看裡看得到 → 收下 → 朋友頁的名單上有它', async ({ page }) => {
+    const name = `e2e 鄰居 ${Date.now()}`;
+    const url = `https://e2e-friend-${Date.now()}.example`;
+    await page.goto('/');
+    const status = await page.evaluate(
+      async (b) =>
+        (
+          await fetch('/api/friends/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(b),
+          })
+        ).status,
+      { name, url, description: '寫程式也寫日常', email: 'me@e2e.example', message: '想交換友鏈' },
+    );
+    expect(status, '申請要送得進去').toBe(201);
+
+    await signIn(page);
+    await gotoAdmin(page, '/admin/friends', '友鏈');
+    const item = page.getByRole('button', { name: new RegExp(name) });
+    await expect(item, '待看裡要看得到剛送來的申請').toBeVisible({ timeout: 15_000 });
+    await item.click();
+    const detail = page.getByRole('region', { name: '這份申請' });
+    await expect(detail).toContainText('想交換友鏈');
+    await expect(detail).toContainText('還沒檢查');
+
+    await detail.getByRole('button', { name: '收下', exact: true }).click();
+    await expect(item, '收下之後離開待看').toBeHidden({ timeout: 10_000 });
+    await page.getByRole('button', { name: /^朋友/ }).click();
+    await expect(page.getByRole('row').filter({ hasText: name })).toBeVisible();
+
+    const listed = await page.evaluate(async (n) => {
+      const r = await fetch('/api/friends');
+      const b = (await r.json()) as { name: string }[];
+      return b.some((f) => f.name === n);
+    }, name);
+    expect(listed, '收下之後朋友頁的名單上要馬上有它').toBe(true);
+  });
+
+  /**
+   * 照片：後台關掉「前台顯示」之後，公開的照片清單就沒有那張；打開又回來。
+   * 這是後台唯一能讓一張照片從前台消失的地方，壞掉的話站長以為藏起來了、讀者照樣看得到。
+   */
+  test('照片：關掉前台顯示，公開清單就沒有那張；打開又回來', async ({ page }) => {
+    const publicIds = () =>
+      page.evaluate(async () => {
+        const r = await fetch('/api/gallery/photos');
+        const b = (await r.json()) as { photos: { id: string }[] };
+        return b.photos.map((p) => p.id);
+      });
+
+    await signIn(page);
+    await gotoAdmin(page, '/admin/photos', '照片');
+    const side = page.getByRole('complementary', { name: '這張照片' });
+    const title = await side.getByRole('img').getAttribute('alt');
+    const before = await publicIds();
+
+    const toggle = side.getByRole('checkbox', { name: /前台顯示/ });
+    await expect(toggle).toBeChecked();
+    await toggle.uncheck();
+    await expect(page.getByText('藏起來了').first()).toBeVisible({ timeout: 10_000 });
+    await expect.poll(publicIds, { message: `〈${title}〉藏起來之後還在公開清單上` }).toHaveLength(before.length - 1);
+
+    await side.getByRole('checkbox', { name: /前台顯示/ }).check();
+    await expect.poll(publicIds, { message: '打開之後要回來' }).toEqual(before);
+  });
+
+  /**
+   * 收藏：同步進來的觀看紀錄，後台設成不公開之後前台的 API 就不給；改回公開又回來。
+   * 站長看到按鈕變了，卻不知道前台是不是真的拿掉了——這條驗的是後面那一半。
+   */
+  test('收藏：一部設成不公開，公開清單就沒有它；改回公開又回來', async ({ page }) => {
+    const publicFilms = () =>
+      page.evaluate(async () => {
+        const r = await fetch('/api/films/recent');
+        const b = (await r.json()) as { films: { title: string }[] };
+        return b.films.map((f) => f.title);
+      });
+
+    await signIn(page);
+    await gotoAdmin(page, '/admin/collection', '收藏');
+    const before = await publicFilms();
+    const title = before[0];
+    expect(title, '前提：種子裡要有電影').toBeTruthy();
+
+    const row = page.getByRole('listitem').filter({ hasText: title });
+    await row.getByRole('button', { name: `${title} 在前台顯示` }).click();
+    await expect(row.getByRole('button', { name: `${title} 在前台顯示` })).toHaveAttribute('aria-pressed', 'false', {
+      timeout: 10_000,
+    });
+    await expect.poll(publicFilms, { message: '設成不公開之後還在公開清單上' }).not.toContain(title);
+
+    await row.getByRole('button', { name: `${title} 在前台顯示` }).click();
+    await expect.poll(publicFilms, { message: '改回公開要回來' }).toContain(title);
+  });
+
+  /**
+   * 碎念：從右邊「最近的紀錄」挑一部電影，不寫字直接發——前台拿到的是「看了」加上那部片，
+   * 右邊那一列變成「已寫」。最後刪掉，不留在種子資料裡（列表與首頁的 e2e 也讀碎念）。
+   */
+  test('碎念：從紀錄帶入一部片、不寫字也發得出去，前台拿到動詞與作品', async ({ page }) => {
+    await signIn(page);
+    await gotoAdmin(page, '/admin/thoughts', '碎念');
+
+    const records = page.getByRole('complementary', { name: '最近的紀錄' });
+    await page.getByRole('button', { name: '看了', exact: true }).click();
+    const write = records.getByRole('button', { name: /^寫〈/ }).first();
+    await expect(write, '前提：種子裡要有觀看紀錄').toBeVisible({ timeout: 15_000 });
+    const title = /^寫〈(.+)〉$/.exec((await write.getAttribute('aria-label')) ?? '')?.[1] ?? '';
+    await write.click();
+
+    const preview = page.getByRole('region', { name: '前台會長這樣' });
+    await expect(preview).toContainText('看了');
+    await expect(preview).toContainText(title);
+
+    const posted = page.waitForResponse(
+      (r) => r.url().includes('/api/admin/thoughts') && r.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: /^發送/ }).click();
+    const id = ((await (await posted).json()) as { id: number }).id;
+
+    const thought = await page.evaluate(async (i) => {
+      const r = await fetch(`/api/thoughts/${i}`);
+      return ((await r.json()) as { thought: { content: string; verb: string; ref: { title: string; key: string } } })
+        .thought;
+    }, id);
+    expect(thought.content).toBe('');
+    expect(thought.verb).toBe('watched');
+    expect(thought.ref.title).toBe(title);
+    await expect(records.getByRole('button', { name: `寫〈${title}〉` }).first()).toHaveText('已寫');
+
+    await page.getByRole('button', { name: `刪掉〈${title}〉` }).click();
+    await page.getByRole('button', { name: '刪掉', exact: true }).click();
+    await expect(page.getByRole('button', { name: `刪掉〈${title}〉` })).toBeHidden({ timeout: 10_000 });
   });
 
   /**
@@ -114,7 +259,7 @@ test.describe('後台', () => {
    */
   test('session 失效之後會被請出後台', async ({ page }) => {
     await signIn(page);
-    await gotoAdmin(page, '/admin/tags', '標籤管理');
+    await gotoAdmin(page, '/admin/tags', '標籤');
 
     await signOut(page);
     await page.reload();

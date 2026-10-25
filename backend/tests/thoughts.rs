@@ -220,10 +220,17 @@ async fn create(app: &axum::Router, body: Value) -> (axum::http::StatusCode, Val
 }
 
 #[tokio::test]
-async fn 建立碎念_內容必填且會_trim() {
+async fn 建立碎念_沒附東西時內容必填且會_trim() {
     let (app, pool) = test_app().await;
 
-    for body in [json!({}), json!({ "content": "" }), json!({ "content": "   \n  " })] {
+    for body in [
+        json!({}),
+        json!({ "content": "" }),
+        json!({ "content": "   \n  " }),
+        json!({ "content": "", "refUrl": "  " }),
+        // ref 物件少了 json：等於什麼都沒附
+        json!({ "content": "", "ref": { "type": "media" } }),
+    ] {
         let (status, resp) = create(&app, body.clone()).await;
         assert_eq!(status, 400, "{body} 應該被擋");
         assert_eq!(resp["error"], "content required");
@@ -535,4 +542,123 @@ async fn rss_是合法的_xml_而且帶得出內容() {
     assert!(xml.contains("&lt;角括號&gt;"), "角括號要跳脫");
     assert!(xml.contains("&amp;"), "& 要跳脫");
     assert!(!xml.contains("帶 <角括號>"), "不該有沒跳脫的原文");
+}
+
+// ── 附上作品與動詞（後台從同步紀錄帶來的）────────────────────────────
+
+fn book_ref() -> Value {
+    json!({
+        "type": "media",
+        "json": { "kind": "book", "title": "長日將盡", "creator": "石黑一雄", "poster": "https://x/c.jpg", "key": "book:7" },
+    })
+}
+
+#[tokio::test]
+async fn 附了作品可以不寫字_動詞與卡片原樣存下() {
+    let (app, _pool) = test_app().await;
+    // 「讀了」一本，不多說：內容空著也要發得出去
+    let (status, r) = create(&app, json!({ "content": "", "verb": "read", "ref": book_ref() })).await;
+    assert_eq!(status, 200, "{r}");
+    let id = r["id"].as_i64().unwrap();
+
+    let (_, body) = get(&app, &format!("/api/thoughts/{id}")).await;
+    let th = &body["thought"];
+    assert_eq!(th["content"], "");
+    assert_eq!(th["verb"], "read");
+    assert_eq!(th["ref_type"], "media");
+    // 書沒有 tmdbId，不該被當成 TMDb 的作品補資料（以前一律 enrich，會蓋上 themoviedb 的來源）
+    assert_eq!(th["ref"]["kind"], "book");
+    assert!(th["ref"]["source"].is_null(), "書不是從 TMDb 來的");
+    assert_eq!(th["ref"]["creator"], "石黑一雄");
+    assert_eq!(th["ref"]["key"], "book:7", "後台靠這個標出「已經寫過」");
+}
+
+#[tokio::test]
+async fn 不認得的動詞建立與編輯都擋下() {
+    let (app, _pool) = test_app().await;
+    let (status, _) = create(&app, json!({ "content": "x", "verb": "看了" })).await;
+    assert_eq!(status, 400, "存的是 key，不是哪一個語系的字");
+
+    let (_, r) = create(&app, json!({ "content": "x", "verb": "watched" })).await;
+    let id = r["id"].as_i64().unwrap();
+    let (status, _) = update(&app, id, json!({ "verb": "loved" })).await;
+    assert_eq!(status, 400);
+    let (_, body) = get(&app, &format!("/api/thoughts/{id}")).await;
+    assert_eq!(body["thought"]["verb"], "watched", "擋下的編輯不該動到原本的值");
+}
+
+#[tokio::test]
+async fn 編輯時省略動詞會保留_給空字串才拿掉() {
+    let (app, _pool) = test_app().await;
+    let (_, r) = create(&app, json!({ "content": "", "verb": "read", "ref": book_ref() })).await;
+    let id = r["id"].as_i64().unwrap();
+    let verb = |b: &Value| b["thought"]["verb"].clone();
+
+    update(&app, id, json!({ "content": "補一句" })).await;
+    let (_, body) = get(&app, &format!("/api/thoughts/{id}")).await;
+    assert_eq!(verb(&body), "read", "只改內容時動詞要留著");
+
+    update(&app, id, json!({ "verb": "" })).await;
+    let (_, body) = get(&app, &format!("/api/thoughts/{id}")).await;
+    assert!(verb(&body).is_null());
+}
+
+#[tokio::test]
+async fn 拿掉附件之後內容不能是空的() {
+    let (app, _pool) = test_app().await;
+    let (_, r) = create(&app, json!({ "content": "", "ref": book_ref() })).await;
+    let id = r["id"].as_i64().unwrap();
+    // 拿掉作品又沒有字，會變成一則什麼都沒有的碎念
+    let (status, body) = update(&app, id, json!({ "clearRef": true })).await;
+    assert_eq!(status, 400);
+    assert_eq!(body["error"], "content required");
+    let (status, _) = update(&app, id, json!({ "clearRef": true, "content": "還是寫一句" })).await;
+    assert_eq!(status, 200);
+}
+
+#[tokio::test]
+async fn rss_沒寫字的那則用作品名當標題() {
+    let (app, _pool) = test_app().await;
+    create(&app, json!({ "content": "", "verb": "read", "ref": book_ref() })).await;
+    let (_, _, body) = common::request_full(&app, "GET", "/api/thoughts/rss", None, None).await;
+    let xml = body.as_str().unwrap();
+    // 空標題的 item 在閱讀器裡是一行空白，點不進去也認不出來
+    assert!(xml.contains("<title>長日將盡</title>"), "{xml}");
+    assert!(xml.contains("<description>📖 長日將盡</description>"), "書用書的圖示、前面不留空行");
+}
+
+#[tokio::test]
+async fn 後台統計數得出碎念的總數與本月幾則() {
+    let (app, pool) = test_app().await;
+    let (_, before) = request(&app, "GET", "/api/admin/stats", None, Some(&admin())).await;
+    seed(&pool, &[("很久以前", "2020-01-01 00:00:00")]).await;
+    create(&app, json!({ "content": "這個月的" })).await;
+
+    let (status, after) = request(&app, "GET", "/api/admin/stats", None, Some(&admin())).await;
+    assert_eq!(status, 200);
+    // 後台碎念頁的列表只抓 50 則，總數只能靠這裡
+    assert_eq!(after["thoughts"].as_i64().unwrap(), before["thoughts"].as_i64().unwrap() + 2);
+    assert_eq!(
+        after["thoughtsThisMonth"].as_i64().unwrap(),
+        before["thoughtsThisMonth"].as_i64().unwrap() + 1
+    );
+}
+
+#[tokio::test]
+async fn 首頁摘要裡沒寫字的碎念用作品名頂上() {
+    let (app, pool) = test_app().await;
+    create(&app, json!({ "content": "", "verb": "read", "ref": book_ref() })).await;
+    // 壞掉的 ref_json 不能讓整條查詢失敗（json_extract 遇到不合法的 JSON 會丟錯）
+    sqlx::query(
+        "INSERT INTO thoughts (content, ref_json, created_at) VALUES ('', '{壞掉', '2020-01-01 00:00:00')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let (status, body) = get(&app, "/api/home/digest").await;
+    assert_eq!(status, 200, "{body}");
+    let lines: Vec<&str> =
+        body["thoughts"].as_array().unwrap().iter().filter_map(|t| t["content"].as_str()).collect();
+    assert!(lines.contains(&"長日將盡"), "{lines:?}");
 }

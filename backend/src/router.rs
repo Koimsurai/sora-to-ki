@@ -60,7 +60,9 @@ pub fn build_router(state: AppState) -> Router {
         // 設備頁的遙測：只有溫度、負載、記憶體、功耗（見 handlers::telemetry），快取 30 秒
         .route("/api/telemetry", get(handlers::telemetry::telemetry).layer(cached(30)))
         // 朋友頁：朋友清單寫死在後端，順手抓每個人的 RSS 最新一篇，快取一小時
-        .route("/api/friends", get(handlers::friends::friends).layer(cached(3600)))
+        // 名單每次讀 DB（收下一位朋友馬上出現），feed 在 handler 裡各自快取一小時
+        .route("/api/friends", get(handlers::friends::friends))
+        .route("/api/friends/apply", post(handlers::friend_links::apply))
         // 每日名言（opencc cn→tw + 當日快取）
         .route("/api/quote/daily", get(handlers::quote::quote_daily))
         // 全站 RSS（app-level 非 /api；nginx `location = /rss` 指過來）
@@ -145,6 +147,7 @@ pub fn build_router(state: AppState) -> Router {
                 .put(handlers::admin::admin_update_post)
                 .delete(handlers::admin::admin_delete_post),
         )
+        .route("/api/admin/posts/{id}/restore", post(handlers::admin::admin_restore_post))
         // generate-zh-cn（ferrous-opencc Tw2s，byte-identical）
         .route("/api/admin/posts/{id}/generate-zh-cn", post(handlers::opencc::generate_zh_cn))
         // send-newsletter（reqwest 直打 Resend batch API）
@@ -170,11 +173,27 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/books/stats/summary", get(handlers::books::book_stats))
         .route("/api/admin/books", get(handlers::books::admin_books))
+        .route(
+            "/api/admin/friends",
+            get(handlers::friend_links::admin_friends).post(handlers::friend_links::admin_create_friend),
+        )
+        .route(
+            "/api/admin/friends/{id}",
+            patch(handlers::friend_links::admin_update_friend)
+                .delete(handlers::friend_links::admin_delete_friend),
+        )
+        .route("/api/admin/friends/{id}/check", post(handlers::friend_links::admin_check_friend))
         // gallery（讀 manifest / 串流代理）
         .route("/api/gallery/photos", get(handlers::gallery::gallery_photos))
         .route("/api/image-proxy", get(handlers::gallery::image_proxy))
         // gallery sync（rotate+resize+lossy webp+EXIF+manifest）
         .route("/api/admin/gallery/sync", post(handlers::gallery::gallery_sync))
+        // 照片的後台設定（標題、標籤、精選、隱藏），疊在 manifest 上
+        .route("/api/admin/gallery/photos", get(handlers::photo_meta::admin_photos))
+        .route("/api/admin/gallery/photos/{id}", patch(handlers::photo_meta::admin_update_photo))
+        // 收藏頁：觀看紀錄與聽的歌要不要出現在前台
+        .route("/api/admin/collection", get(handlers::collection::admin_collection))
+        .route("/api/admin/collection/hidden", put(handlers::collection::admin_set_hidden))
         // OG 圖（takumi；axum 不支援 :id.png 部分參數，handler 內 strip 後綴）
         .route("/api/og/{file}", get(handlers::og::og_png))
         // 上傳（axum multipart；thumbhash 實測等價）

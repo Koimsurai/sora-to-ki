@@ -1,0 +1,109 @@
+/* 友鏈申請的審核（元件見 FriendsReview.tsx）。清單與詳情的版面在 AdminReview.css，這裡只有友鏈多出來的東西：
+   清單上的檢查摘要、對方想說的話、五項自動檢查、在朋友頁上會長怎樣。 */
+
+/* 「4 / 5 · RSS 抓得到沒過」：有沒過的就用朱色，一眼看得出要點進去看 */
+.adm-fr-sum[data-bad] {
+  color: var(--flare);
+}
+
+.adm-fr-message {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  margin: 0;
+  padding-left: var(--space-4);
+  border-left: 1px dotted var(--paper-3);
+  font-size: var(--fs-15);
+  line-height: var(--lh-185);
+  color: var(--paper-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ── 自動檢查：一項一行，過的是淡墨的勾、沒過的是朱色的叉 ── */
+.adm-fr-checks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adm-fr-check-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-fr-check-list li {
+  display: grid;
+  grid-template-columns: var(--space-4) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  border-bottom: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--flare);
+}
+
+.adm-fr-mark {
+  text-align: center;
+}
+
+.adm-fr-check-list li[data-ok] {
+  color: var(--paper);
+}
+
+.adm-fr-check-list li[data-ok] .adm-fr-mark {
+  color: var(--paper-2);
+}
+
+.adm-fr-check-list li:not([data-ok]) .adm-meta {
+  color: var(--flare);
+}
+
+/* ── 在朋友頁會是：一顆實心的星配上名字與介紹，四角的取景框是朋友頁「對接」時的樣子 ── */
+.adm-fr-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+}
+
+.adm-fr-card {
+  --corner: var(--paper-3);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background:
+    linear-gradient(var(--corner), var(--corner)) left top / 10px 1px no-repeat,
+    linear-gradient(var(--corner), var(--corner)) left top / 1px 10px no-repeat,
+    linear-gradient(var(--corner), var(--corner)) right top / 10px 1px no-repeat,
+    linear-gradient(var(--corner), var(--corner)) right top / 1px 10px no-repeat,
+    linear-gradient(var(--corner), var(--corner)) left bottom / 10px 1px no-repeat,
+    linear-gradient(var(--corner), var(--corner)) left bottom / 1px 10px no-repeat,
+    linear-gradient(var(--corner), var(--corner)) right bottom / 10px 1px no-repeat,
+    linear-gradient(var(--corner), var(--corner)) right bottom / 1px 10px no-repeat;
+}
+
+.adm-fr-star {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: var(--space-1-5);
+  border-radius: var(--r-round);
+  background: var(--paper);
+}
+
+.adm-fr-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.adm-fr-card-text b {
+  font-size: var(--fs-16);
+  font-weight: 400;
+  color: var(--paper);
+}

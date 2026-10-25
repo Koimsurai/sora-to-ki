@@ -21,7 +21,10 @@ export const postSchema = z.object({
     )
     .optional(),
   cover: z.string().optional(),
-  status: z.enum(['draft', 'published', 'archived']).default('draft'),
+  // 載入時照後端的值；送出時由按下的那顆按鈕決定（儲存草稿／發佈／排程發佈）
+  status: z.enum(['draft', 'published', 'scheduled', 'trashed']).default('draft'),
+  // 排程發佈的時間：<input type="datetime-local"> 的本地字串；空 = 不排程
+  publish_at: z.string().optional(),
   layout_type: z.enum(['record', 'column']).default('record'),
   allow_comments: z.boolean().default(true),
   send_newsletter: z.boolean().default(false),

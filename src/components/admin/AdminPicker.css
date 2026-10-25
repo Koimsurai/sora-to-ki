@@ -1,0 +1,193 @@
+/* 編輯器裡的兩個挑選框（NAS 照片、舊文章連結）（2026-10 後台提案）。
+   跟後台其他浮層同一種：夜色底、一條細框、直角、不浮陰影、不用毛玻璃。
+   位置與堆疊（fixed、z-index）留在 TSX 的 utility，這裡只管材料。 */
+
+.adm-picker-scrim {
+  background: rgba(var(--ground-rgb), 0.8);
+}
+
+.adm-picker {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--ground);
+  border: 1px solid var(--rule);
+}
+
+.adm-picker-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.adm-picker-title {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--fs-16);
+  font-weight: 400;
+  color: var(--paper);
+}
+
+.adm-picker-count {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+.adm-picker-search {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.adm-picker-search .adm-prompt {
+  max-width: 420px;
+}
+
+.adm-picker-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.adm-picker-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+/* ── 文章清單：一列一篇，點線分隔，滑過墊一層很淡的墨 ── */
+.adm-picker-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-picker-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2-5) var(--space-4);
+  text-align: left;
+  background: transparent;
+  border-bottom: 1px dotted var(--rule);
+  color: var(--paper);
+  cursor: pointer;
+  transition: background-color var(--dur-150) ease;
+}
+
+.adm-picker-item:hover,
+.adm-picker-item:focus-visible {
+  background: rgba(var(--paper-rgb), 0.04);
+}
+
+.adm-picker-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-picker-item-title,
+.adm-picker-item-sub {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-picker-item-title {
+  font-size: var(--fs-14);
+}
+
+.adm-picker-item-sub {
+  margin-top: var(--space-0-5);
+  font-size: var(--fs-12);
+  color: var(--paper-meta);
+}
+
+.adm-picker-item-path {
+  flex-shrink: 0;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-3);
+}
+
+/* ── 照片格：細框方格，滑過框深一階、底下浮出標題與日期 ── */
+.adm-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.adm-picker-photo {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  padding: 0;
+  background: rgba(var(--paper-rgb), 0.04);
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  transition: border-color var(--dur-150) ease;
+}
+
+.adm-picker-photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-picker-photo:hover,
+.adm-picker-photo:focus-visible {
+  border-color: var(--paper-2);
+}
+
+.adm-picker-photo-caption {
+  position: absolute;
+  inset: auto 0 0;
+  padding: var(--space-6) var(--space-2-5) var(--space-2);
+  text-align: left;
+  background: linear-gradient(to top, var(--black-80), transparent);
+  opacity: 0;
+  transition: opacity var(--dur-200) ease;
+}
+
+.adm-picker-photo:hover .adm-picker-photo-caption,
+.adm-picker-photo:focus-visible .adm-picker-photo-caption {
+  opacity: 1;
+}
+
+.adm-picker-photo-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--fs-12);
+  color: var(--paper);
+}
+
+.adm-picker-photo-date {
+  display: block;
+  margin-top: var(--space-0-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-2);
+}
+
+.adm-picker-empty {
+  padding: var(--space-10) var(--space-4);
+  text-align: center;
+  font-size: var(--fs-14);
+  color: var(--paper-meta);
+}

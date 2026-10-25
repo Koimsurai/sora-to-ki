@@ -8,7 +8,7 @@ import { useSetAtom } from 'jotai';
 import { Masonry } from 'masonic';
 import { useTranslation } from 'react-i18next';
 import { usePageTransition } from '@/hooks/usePageTransition';
-import { loadPhotosManifest } from '@/lib/manifestLoader';
+import { loadGallery } from '@/lib/manifestLoader';
 import { after, isArriving } from '@/store/pageTransition';
 import { openViewerAtom, photosAtom } from '@/store/photoStore';
 import { createStation, drawPasses, drawVeil, noiseDataUrl, RX_PHASES, RX_TOTAL, rxStage } from './downlink';
@@ -315,12 +315,13 @@ export default function Photos() {
   const { t } = useTranslation();
   const setPhotos = useSetAtom(photosAtom);
   const openViewer = useSetAtom(openViewerAtom);
-  const { data: photos = [], isPending } = useQuery({
-    queryKey: ['gallery', 'photos'],
-    queryFn: loadPhotosManifest,
+  // 鍵跟此站點頁（colophonToys）的 ['gallery', 'photos'] 分開：那邊存的是照片陣列，這邊多帶精選
+  const { data, isPending } = useQuery({
+    queryKey: ['gallery', 'photos', 'with-featured'],
+    queryFn: loadGallery,
     staleTime: 10 * 60 * 1000,
   });
-  const frames = useMemo(() => framesOf(photos), [photos]);
+  const frames = useMemo(() => (data ? framesOf(data.photos, new Set(data.featured)) : []), [data]);
   const stats = useMemo(() => overview(frames), [frames]);
 
   // 檢視器左右翻的順序跟頁面一樣（新到舊）

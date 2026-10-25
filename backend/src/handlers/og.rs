@@ -458,14 +458,17 @@ pub async fn og_png(
 type Prepared = (String, String, String, Box<dyn Scene>);
 
 async fn prepare_post(state: &AppState, id: i64, locale: &str) -> Option<Prepared> {
-    let (post_id, title, category, created_at, updated_at) =
-        sqlx::query_as::<_, (i64, Option<String>, Option<String>, Option<String>, Option<String>)>(
-            "SELECT id, title, category, created_at, updated_at FROM posts WHERE id = ?",
-        )
-        .bind(id)
-        .fetch_optional(&state.pool)
-        .await
-        .ok()??;
+    let (post_id, title, category, created_at, updated_at) = sqlx::query_as::<
+        _,
+        (i64, Option<String>, Option<String>, Option<String>, Option<String>),
+    >(
+        // 只畫已發佈的：分享圖是公開網址，草稿與排程的標題不能從這裡漏出去
+        "SELECT id, title, category, created_at, updated_at FROM posts WHERE id = ? AND status = 'published'",
+    )
+    .bind(id)
+    .fetch_optional(&state.pool)
+    .await
+    .ok()??;
     // 這個語系的手記清單裡有它就用它的譯名與位置；沒有（沒譯、還沒發布）就退回繁中的清單
     let mut list = sky_list(&state.pool, locale).await.unwrap_or_default();
     let mut text_locale = locale;

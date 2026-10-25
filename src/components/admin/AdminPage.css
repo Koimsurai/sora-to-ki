@@ -1,0 +1,799 @@
+/* 後台各頁共用的版面（元件見 AdminPage.tsx）。材料跟前台同一套：等寬小字當標籤、
+   點線分隔列與列、四角框只給數字。 */
+
+.adm-page {
+  box-sizing: border-box;
+  max-width: 1120px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  padding: var(--space-10) var(--space-14) var(--space-16);
+}
+
+/* ── 頁首 ── */
+.adm-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.adm-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+}
+
+.adm-h1 {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3-5);
+  font-family: var(--serif);
+  font-size: var(--fs-40);
+  font-weight: 400;
+  line-height: var(--lh-110);
+  color: var(--paper);
+}
+
+.adm-latin {
+  font-family: var(--latin-display);
+  font-size: var(--fs-28);
+  color: var(--paper-meta);
+}
+
+.adm-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2-5);
+}
+
+/* ── 分段標題：等寬小字＋點線拉到底＋最右邊的「全部 →」 ── */
+.adm-section-head {
+  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  font-weight: 400;
+  letter-spacing: var(--ls-18);
+  text-transform: uppercase;
+  color: var(--paper-meta);
+}
+
+.adm-rule {
+  flex: 1;
+  border-top: 1px dotted var(--rule);
+}
+
+.adm-page .adm-section-head a {
+  letter-spacing: var(--ls-6);
+  color: var(--paper-2);
+  text-decoration: none;
+}
+
+.adm-page .adm-section-head a:hover,
+.adm-page .adm-section-head a:focus-visible {
+  color: var(--paper);
+}
+
+/* ── 列：點線分隔 ── */
+.adm-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-row {
+  box-sizing: border-box;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.adm-page a.adm-row {
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.adm-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.adm-row-title {
+  overflow: hidden;
+  font-size: var(--fs-16);
+  color: var(--paper);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--dur-150) ease;
+}
+
+.adm-page a.adm-row:hover .adm-row-title,
+.adm-page a.adm-row:focus-visible .adm-row-title {
+  color: var(--amber);
+}
+
+.adm-row-sub {
+  font-size: var(--fs-13);
+  color: var(--paper-meta);
+}
+
+.adm-meta {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+/* 列首的記號：空心圓是等著處理，朱色叉號是壞了（不單靠顏色，形狀也不同） */
+.adm-mark {
+  flex: none;
+  width: 14px;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  text-align: center;
+  color: var(--paper-meta);
+}
+
+.adm-mark[data-tone="flare"] {
+  color: var(--flare);
+}
+
+.adm-page .adm-row-action {
+  flex: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-2);
+  text-decoration: none;
+}
+
+.adm-page .adm-row-action:hover,
+.adm-page .adm-row-action:focus-visible {
+  color: var(--paper);
+}
+
+.adm-empty {
+  padding: var(--space-5) 0;
+  font-size: var(--fs-14);
+  color: var(--paper-meta);
+}
+
+/* ── 數字：四角框（前台留給投票、數字、圖表的那種框） ── */
+.adm-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+.adm-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+  padding: var(--space-5) var(--space-5-5);
+  background: var(--corner-frame);
+}
+
+.adm-tile-num {
+  font-family: var(--mono-font);
+  font-size: var(--fs-28);
+  line-height: var(--lh-110);
+  color: var(--paper);
+}
+
+.adm-tile-sub {
+  font-size: var(--fs-13);
+  color: var(--paper-meta);
+}
+
+/* 一組靠得比較近的東西（工具列＋表格＋頁尾）：頁面層的間距是 48px，組內用小一點的 */
+.adm-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* ── 工具列：左邊是分頁，右邊是搜尋 ── */
+.adm-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3-5);
+  border-bottom: 1px solid var(--rule);
+}
+
+.adm-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* 分頁：前面一顆空心小圓，選中的是琥珀實心點 */
+.adm-tab {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: none;
+  color: var(--paper-2);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  cursor: pointer;
+  transition: color var(--dur-150) ease;
+}
+
+.adm-tab:hover,
+.adm-tab[aria-pressed="true"],
+.adm-tab[aria-selected="true"] {
+  color: var(--paper);
+}
+
+.adm-tab-dot {
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-round);
+}
+
+.adm-tab[aria-pressed="true"] .adm-tab-dot,
+.adm-tab[aria-selected="true"] .adm-tab-dot {
+  background: var(--amber);
+  border-color: var(--amber);
+  box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
+}
+
+/* 一行的輸入：前面一個琥珀提示符（跟前台留言表單的 > 同一個） */
+.adm-prompt {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur-200) ease;
+}
+
+.adm-prompt:focus-within {
+  border-color: var(--paper-2);
+}
+
+.adm-prompt-mark {
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  color: var(--amber);
+}
+
+.adm-prompt input,
+.adm-prompt textarea {
+  flex: 1;
+  width: 220px;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+}
+
+/* ── 表單（對話框裡的新增／編輯）：每一欄上面一行等寬小字，下面一個細框 ── */
+.adm-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.adm-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+/* 框的顏色（細線、滑過深一階、聚焦再深一階）由 AdminTheme 的 input 規則給 */
+.adm-field :is(input, textarea, select) {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3);
+  border-width: 1px;
+  border-style: solid;
+  background: transparent;
+  outline: none;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  line-height: var(--lh-150);
+}
+
+.adm-field textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.adm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
+}
+
+/* 表單裡的一段（例如「各語系的譯名」）：上面一條點線隔開 */
+.adm-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px dotted var(--rule);
+}
+
+.adm-form-note {
+  margin: 0;
+  font-size: var(--fs-12);
+  line-height: var(--lh-170);
+  color: var(--paper-meta);
+}
+
+.adm-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2-5);
+}
+
+/* 當成標籤用的等寬小字：AdminTheme 給 label 的字級與顏色要蓋回來 */
+.admin-layout label.adm-caps {
+  font-size: var(--fs-10);
+  color: var(--paper-meta);
+}
+
+/* 多行的（回覆框）：提示符停在第一行 */
+.adm-prompt-multi {
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-3-5);
+}
+
+.adm-prompt-multi .adm-prompt-mark {
+  line-height: var(--lh-170);
+}
+
+.adm-prompt-multi textarea {
+  width: auto;
+  font-size: var(--fs-16);
+  line-height: var(--lh-170);
+  resize: vertical;
+}
+
+.adm-prompt select {
+  background: transparent;
+  border: none;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+}
+
+/* 一排的小表單（封鎖名單、關鍵字）：輸入框＋按鈕 */
+.adm-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2-5);
+}
+
+.adm-grow {
+  flex: 1 1 220px;
+}
+
+.adm-mono {
+  font-family: var(--mono-font);
+}
+
+/* 按鈕上的快捷鍵提示 */
+.adm-btn kbd {
+  margin-left: var(--space-0-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-meta);
+}
+
+.adm-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.adm-btn:disabled:hover {
+  border-color: var(--rule);
+}
+
+/* 分頁器 */
+.adm-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+/* 標籤片：細線框，後面一顆拿掉的 × */
+.adm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-chip {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-1) 0 var(--space-3);
+  border: 1px solid var(--rule);
+  font-size: var(--fs-14);
+  color: var(--paper);
+}
+
+.adm-chip-x {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--paper-meta);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  cursor: pointer;
+}
+
+.adm-chip-x:hover,
+.adm-chip-x:focus-visible {
+  color: var(--flare);
+}
+
+/* 對話框裡的多行輸入（編輯留言） */
+.adm-dialog-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 140px;
+  padding: var(--space-3);
+  border: 1px solid var(--rule);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  resize: vertical;
+}
+
+/* ── 表格：表頭是等寬小字，列與列之間的點線由 AdminTheme 的 tbody tr 畫 ── */
+.adm-table-wrap {
+  overflow-x: auto;
+}
+
+.adm-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.adm-table th {
+  padding: 0 var(--space-3) var(--space-2-5);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  font-weight: 400;
+  letter-spacing: var(--ls-18);
+  text-align: left;
+  text-transform: uppercase;
+  color: var(--paper-meta);
+}
+
+.adm-table td {
+  padding: var(--space-3-5) var(--space-3);
+  vertical-align: middle;
+}
+
+.adm-table :is(th, td):first-child {
+  padding-left: 0;
+}
+
+.adm-table :is(th, td):last-child {
+  padding-right: 0;
+}
+
+/* 標題欄吃掉剩下的寬度，其他欄縮到內容的寬度 */
+.adm-table :is(th, td):not(:first-child) {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.adm-cell-title {
+  min-width: 240px;
+}
+
+.adm-page .adm-title-link {
+  display: block;
+  font-size: var(--fs-16);
+  color: var(--paper);
+  text-decoration: none;
+  transition: color var(--dur-150) ease;
+}
+
+.adm-page .adm-title-link:hover,
+.adm-page .adm-title-link:focus-visible {
+  color: var(--amber);
+}
+
+.adm-tags {
+  display: block;
+  margin-top: var(--space-1);
+}
+
+/* ── 封面（書架）：2:3 的細框；沒有封面就是一個點線框 ── */
+.adm-cover {
+  flex: none;
+  box-sizing: border-box;
+  width: 46px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+.adm-cover-empty {
+  border-style: dotted;
+  border-color: var(--paper-3);
+}
+
+.adm-cover-large {
+  width: 96px;
+}
+
+.adm-book-rating {
+  flex: none;
+  width: 52px;
+  text-align: right;
+}
+
+.adm-book-cover-field {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+/* 外部書目的搜尋結果：可以點的列 */
+.adm-hits {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--rule);
+}
+
+.adm-hit {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--space-2-5) var(--space-3);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dotted var(--rule);
+  color: var(--paper);
+  font-family: var(--serif);
+  text-align: left;
+  cursor: pointer;
+}
+
+.adm-hit:hover,
+.adm-hit:focus-visible {
+  background: rgba(var(--paper-rgb), 0.04);
+}
+
+/* 帳號：頭像（圓形，只有這裡用圓） */
+.adm-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.adm-avatar {
+  flex: none;
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-round);
+  object-fit: cover;
+}
+
+.adm-avatar-empty {
+  border-style: dotted;
+  border-color: var(--paper-3);
+}
+
+/* 表格裡的小下拉（改角色） */
+.adm-prompt-compact {
+  min-height: 32px;
+  padding: 0 var(--space-2);
+}
+
+/* 不是連結的名稱（標籤、分類、書名） */
+.adm-cell-name {
+  display: block;
+  font-size: var(--fs-16);
+  color: var(--paper);
+}
+
+.adm-cell-text {
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.adm-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1-5);
+}
+
+/* 列上的小按鈕：細框，滑過換成琥珀框；會刪東西的是朱色字配點線框 */
+.adm-icon-btn {
+  box-sizing: border-box;
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-2-5);
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--paper-2);
+  font-family: var(--serif);
+  font-size: var(--fs-13);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
+}
+
+.admin-layout a.adm-icon-btn {
+  color: var(--paper-2);
+  text-decoration: none;
+}
+
+.adm-icon-btn:hover,
+.adm-icon-btn:focus-visible,
+.admin-layout a.adm-icon-btn:hover,
+.admin-layout a.adm-icon-btn:focus-visible {
+  border-color: var(--amber);
+  color: var(--paper);
+}
+
+/* 每一列都有一顆，平常不搶眼（淡墨點線框），滑過或聚焦才變朱色 */
+.adm-icon-btn-flare {
+  border-style: dotted;
+  color: var(--paper-meta);
+}
+
+.adm-icon-btn-flare:hover,
+.adm-icon-btn-flare:focus-visible {
+  border-style: solid;
+  border-color: var(--flare);
+  color: var(--flare);
+}
+
+/* ── 左右兩欄（總覽的「最近動過」與「訊號」）：窄的時候疊起來 ── */
+.adm-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-12);
+}
+
+.adm-split-main {
+  flex: 3 1 420px;
+  min-width: 0;
+}
+
+.adm-split-side {
+  flex: 2 1 300px;
+  min-width: 0;
+}
+
+.adm-footnote {
+  margin: var(--space-3) 0 0;
+}
+
+.adm-meta[data-tone="flare"] {
+  color: var(--flare);
+}
+
+/* Web Vitals 的一列：指標名、p75、評等 */
+.adm-vital {
+  align-items: baseline;
+}
+
+.adm-vital-name {
+  flex: none;
+  width: 44px;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+}
+
+.adm-vital-value {
+  flex: 1;
+  font-family: var(--mono-font);
+  font-size: var(--fs-20);
+  color: var(--paper);
+}
+
+/* ── 語系點：有的實心、缺的空心 ── */
+.adm-locs {
+  flex: none;
+  display: inline-flex;
+  gap: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-meta);
+}
+
+.adm-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.adm-loc-dot {
+  box-sizing: border-box;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--paper-meta);
+  border-radius: var(--r-round);
+}
+
+.adm-loc[data-has] .adm-loc-dot {
+  background: var(--paper-2);
+}
+
+/* 狀態：已發佈是實墨，其他退一階 */
+.adm-status {
+  flex: none;
+  font-size: var(--fs-13);
+  color: var(--paper-meta);
+}
+
+.adm-status[data-status="published"] {
+  color: var(--paper);
+}
+
+/* 排程是「等一下會發生」的訊號，用琥珀 */
+.adm-status[data-status="scheduled"] {
+  color: var(--amber);
+}
+
+/* 回收裡的：標題退成淡墨，一眼分得出不是活著的文章 */
+.adm-table tr[data-status="trashed"] .adm-title-link {
+  color: var(--paper-meta);
+}
+
+@media (max-width: 768px) {
+  .adm-page {
+    gap: var(--space-10);
+    padding: var(--space-6) var(--space-4) var(--space-12);
+  }
+
+  .adm-h1 {
+    font-size: var(--fs-32);
+  }
+
+  .adm-latin {
+    font-size: var(--fs-24);
+  }
+}

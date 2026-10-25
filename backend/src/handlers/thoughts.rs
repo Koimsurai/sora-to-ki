@@ -29,6 +29,7 @@ struct ThoughtRow {
     edited: bool,
     dislikes: i64,
     comment_count: i64,
+    verb: Option<String>,
 }
 
 /// `ref` 裡少數幾個「字串或數字都可能」的欄位。enrich 自己寫的是字串
@@ -87,6 +88,13 @@ pub struct ThoughtRef {
     pub year: Option<ThoughtRefScalar>,
     #[serde(rename = "tmdbId")]
     pub tmdb_id: Option<ThoughtRefScalar>,
+    // 以下是後台從同步紀錄附上的（書、歌沒有 TMDb，資料由後台備好）
+    /// 歌手、作者
+    pub creator: Option<String>,
+    /// 進度，例如動畫看到的那一集 `EP 12`。前台原樣顯示，所以只寫不分語系的寫法
+    pub progress: Option<String>,
+    /// 附上的是哪一筆紀錄（`anime:<sn>`、`track:<id>`…），後台用來標「已經寫過」
+    pub key: Option<String>,
 }
 
 /// 對外輸出的 thought：欄位順序 = Express `{ ...r, edited, ref }` 後的實際 key 順序。
@@ -107,6 +115,8 @@ pub struct ThoughtOut {
     dislikes: i64,
     #[specta(type = specta_typescript::Number)]
     comment_count: i64,
+    /// watched / read / listened / played / shared；null 是一般的碎念
+    verb: Option<String>,
     /// Express 的 `ref: safeParse(r.ref_json)`：解析成功→物件、失敗或 null→JSON null。
     #[serde(rename = "ref")]
     ref_val: Option<ThoughtRef>,
@@ -135,6 +145,7 @@ impl From<ThoughtRow> for ThoughtOut {
             edited: r.edited,
             dislikes: r.dislikes,
             comment_count: r.comment_count,
+            verb: r.verb,
             ref_val,
         }
     }
@@ -144,7 +155,7 @@ impl From<ThoughtRow> for ThoughtOut {
 /// 用顯式欄位而非 `t.*`，讓 FromRow 穩定、也不依賴實體欄位順序變動。
 const THOUGHT_SELECT: &str = r"
     t.id, t.content, t.ref_type, t.ref_url, t.ref_json, t.likes,
-    t.created_at, t.updated_at, t.edited, t.dislikes,
+    t.created_at, t.updated_at, t.edited, t.dislikes, t.verb,
     (SELECT COUNT(*) FROM comments c WHERE c.thought_id = t.id AND c.status = 'approved') AS comment_count
 ";
 
@@ -473,6 +484,28 @@ pub struct AdminThoughtBody {
     ref_obj: Option<Value>,
     #[serde(rename = "clearRef")]
     clear_ref: Option<Value>,
+    /// 動詞的 key（見 `VERBS`）；編輯時給空字串是拿掉
+    verb: Option<String>,
+}
+
+/// 碎念能用的動詞。存 key 不存字：前台五個語系各自翻
+pub const VERBS: &[&str] = &["watched", "read", "listened", "played", "shared"];
+
+/// 把 body 的 verb 整理成要存的值：`Ok(None)` 是沒有動詞，不認得的回 `Err`
+fn clean_verb(v: Option<&str>) -> Result<Option<String>, ()> {
+    match v.map(str::trim) {
+        None | Some("") => Ok(None),
+        Some(v) if VERBS.contains(&v) => Ok(Some(v.to_string())),
+        Some(_) => Err(()),
+    }
+}
+
+fn bad_verb() -> Response {
+    (
+        StatusCode::BAD_REQUEST,
+        Json(json!({ "error": "verb must be one of watched/read/listened/played/shared" })),
+    )
+        .into_response()
 }
 
 /// 依 body 解析出 (ref_type, ref_url, ref_json)（POST 分支邏輯；PUT 不做 media enrich）。
@@ -483,7 +516,9 @@ async fn resolve_ref_for_create(
     if let Some(r) = &body.ref_obj {
         let rtype = r.get("type").and_then(|v| v.as_str()).unwrap_or("");
         let json_truthy = js_truthy(r.get("json"));
-        if rtype == "media" && json_truthy {
+        // 只有帶 tmdbId 的才去 TMDb 補卡片；書與歌（後台從書架、Spotify 帶來的）原樣存下
+        let has_tmdb = js_truthy(r.get("json").and_then(|j| j.get("tmdbId")));
+        if rtype == "media" && json_truthy && has_tmdb {
             let obj = r.get("json").and_then(|v| v.as_object()).cloned().unwrap_or_default();
             let m = enrich_media_ref(http, &obj).await;
             let url = m.get("url").filter(|v| js_truthy(Some(v))).and_then(|v| v.as_str()).map(String::from);
@@ -503,7 +538,8 @@ async fn resolve_ref_for_create(
     (None, None, None)
 }
 
-/// `POST /api/admin/thoughts` —— 建立碎念（可帶 refUrl 自動 unfurl，或 ref:{type,url,json}；media 會 TMDb enrich）。
+/// `POST /api/admin/thoughts` —— 建立碎念（可帶 refUrl 自動 unfurl，或 ref:{type,url,json}；帶 tmdbId 的 media 會 TMDb enrich）。
+/// 附了東西的話內容可以空著（「看了」一部，不多說）。
 #[utoipa::path(post, path = "/api/admin/thoughts", tag = "admin", security(("bearer" = [])),
     responses((status = 200, description = "建立碎念（動態 JSON）"), (status = 401, description = "未授權")))]
 pub async fn admin_create_thought(
@@ -512,17 +548,26 @@ pub async fn admin_create_thought(
     crate::error::JsonBody(body): crate::error::JsonBody<AdminThoughtBody>,
 ) -> Response {
     let content = body.content.clone().unwrap_or_default();
-    if content.trim().is_empty() {
+    let attaches = body.ref_obj.is_some() || body.ref_url.as_deref().is_some_and(|u| !u.trim().is_empty());
+    if content.trim().is_empty() && !attaches {
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "content required" }))).into_response();
     }
+    let Ok(verb) = clean_verb(body.verb.as_deref()) else { return bad_verb() };
     let (ref_type, r_url, ref_json) = resolve_ref_for_create(&state.http, &body).await;
-    match sqlx::query("INSERT INTO thoughts (content, ref_type, ref_url, ref_json) VALUES (?, ?, ?, ?)")
-        .bind(content.trim())
-        .bind(&ref_type)
-        .bind(&r_url)
-        .bind(&ref_json)
-        .execute(&state.pool)
-        .await
+    if content.trim().is_empty() && ref_type.is_none() {
+        // 給了 ref 物件但形狀不對（沒有 type 或 json），等於什麼都沒附
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "content required" }))).into_response();
+    }
+    match sqlx::query(
+        "INSERT INTO thoughts (content, ref_type, ref_url, ref_json, verb) VALUES (?, ?, ?, ?, ?)",
+    )
+    .bind(content.trim())
+    .bind(&ref_type)
+    .bind(&r_url)
+    .bind(&ref_json)
+    .bind(&verb)
+    .execute(&state.pool)
+    .await
     {
         Ok(r) => Json(json!({ "message": "success", "id": r.last_insert_rowid() })).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
@@ -541,13 +586,14 @@ pub async fn admin_update_thought(
     _auth: crate::auth::AdminAuth,
     crate::error::JsonBody(body): crate::error::JsonBody<AdminThoughtBody>,
 ) -> Response {
-    let row = sqlx::query_as::<_, (String, Option<String>, Option<String>, Option<String>)>(
-        "SELECT content, ref_type, ref_url, ref_json FROM thoughts WHERE id = ?",
+    type Row = (String, Option<String>, Option<String>, Option<String>, Option<String>);
+    let row = sqlx::query_as::<_, Row>(
+        "SELECT content, ref_type, ref_url, ref_json, verb FROM thoughts WHERE id = ?",
     )
     .bind(&id)
     .fetch_optional(&state.pool)
     .await;
-    let (old_content, mut ref_type, mut r_url, mut ref_json) = match row {
+    let (old_content, mut ref_type, mut r_url, mut ref_json, old_verb) = match row {
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "not found" }))).into_response(),
         Ok(Some(r)) => r,
@@ -577,13 +623,24 @@ pub async fn admin_update_thought(
         Some(c) => c.trim().to_string(),
         None => old_content,
     };
+    if new_content.is_empty() && ref_type.is_none() {
+        return (StatusCode::BAD_REQUEST, Json(json!({ "error": "content required" }))).into_response();
+    }
+    let verb = match &body.verb {
+        None => old_verb,
+        Some(v) => match clean_verb(Some(v)) {
+            Ok(v) => v,
+            Err(()) => return bad_verb(),
+        },
+    };
     match sqlx::query(
-        "UPDATE thoughts SET content = ?, ref_type = ?, ref_url = ?, ref_json = ?, updated_at = CURRENT_TIMESTAMP, edited = 1 WHERE id = ?",
+        "UPDATE thoughts SET content = ?, ref_type = ?, ref_url = ?, ref_json = ?, verb = ?, updated_at = CURRENT_TIMESTAMP, edited = 1 WHERE id = ?",
     )
     .bind(&new_content)
     .bind(&ref_type)
     .bind(&r_url)
     .bind(&ref_json)
+    .bind(&verb)
     .bind(&id)
     .execute(&state.pool)
     .await
@@ -657,13 +714,30 @@ pub async fn thoughts_rss(State(state): State<AppState>) -> Response {
                     let _ = write!(desc, "\n\n🔗 {t} {u}");
                 }
                 Some("media") => {
-                    let _ = write!(desc, "\n\n🎬 {t}");
+                    let kind = ref_val.as_ref().and_then(|v| v.get("kind")).and_then(Value::as_str);
+                    let icon = match kind {
+                        Some("book") => "📖",
+                        Some("track") => "🎧",
+                        _ => "🎬",
+                    };
+                    let _ = write!(desc, "\n\n{icon} {t}");
                 }
                 _ => {}
             }
         }
-        // title = esc((content||'').slice(0,60))
-        let title_esc = escape_html(&js_substring_prefix(&content_str, 60));
+        // title = esc((content||'').slice(0,60))；只附了作品、沒寫字的那種，標題用作品名
+        let desc = desc.trim_start().to_string();
+        let title_src = if content_str.trim().is_empty() {
+            ref_val
+                .as_ref()
+                .and_then(|v| v.get("title"))
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string()
+        } else {
+            content_str
+        };
+        let title_esc = escape_html(&js_substring_prefix(&title_src, 60));
         let pub_date = js_date_to_utc_string(created_at.as_deref());
         let _ = write!(
             items,

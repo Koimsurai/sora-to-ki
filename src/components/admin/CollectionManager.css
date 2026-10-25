@@ -1,0 +1,118 @@
+/* 收藏（元件見 CollectionManager.tsx）：資料來源一行、在看與在聽的清單、最愛那一排。 */
+
+/* 資料來源：等寬小字一行，壞掉的那個用朱色 */
+.adm-coll-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-7);
+  margin: 0;
+  padding: var(--space-3) 0;
+  border-top: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+.adm-coll-sources [data-bad] {
+  color: var(--flare);
+}
+
+.adm-coll-link {
+  margin-left: auto;
+}
+
+/* ── 清單：一列一部（一首），點線分隔；不公開的整列退成淡墨 ── */
+.adm-coll-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-coll-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 72px;
+  padding: var(--space-2-5) 0;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.adm-coll-row[data-hidden] :is(.adm-cover, .adm-coll-square, .adm-coll-main) {
+  opacity: 0.55;
+}
+
+.adm-coll-square {
+  flex: none;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+.adm-coll-main {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.adm-coll-title {
+  font-size: var(--fs-16);
+  color: var(--paper);
+}
+
+.adm-coll-actions {
+  flex: none;
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* 開著的開關（★ 最愛、前台顯示）：框深一階、字實墨 */
+.adm-coll-actions .adm-btn[aria-pressed="true"] {
+  border-color: var(--paper-2);
+  color: var(--paper);
+}
+
+.adm-coll-hidden {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+/* ── 最愛：海報一排，照順序編號 ── */
+.adm-coll-favs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-6) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-coll-fav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.adm-coll-poster {
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+.adm-coll-fav .adm-coll-title {
+  font-size: var(--fs-14);
+}
+
+.adm-coll-quote input {
+  width: 100%;
+  font-size: var(--fs-13);
+}

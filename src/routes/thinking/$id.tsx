@@ -3,6 +3,7 @@ import { localeWrap } from '@/i18n/localePage';
 import ThinkingDetail from '@/components/blog/ThinkingDetail';
 import { thoughtDetailQueryOptions, thoughtTitle } from '@/data/thoughtData';
 import { pageMeta } from '@/seo/seoMeta';
+import { thoughtLine } from '@/lib/thoughtRef';
 import { DEFAULT_LOCALE } from '../../lib/locales';
 
 export const Route = createFileRoute('/thinking/$id')({
@@ -16,14 +17,10 @@ export const Route = createFileRoute('/thinking/$id')({
   head: ({ loaderData }) => {
     if (!loaderData) return {};
     const { thought } = loaderData;
+    // 只附了作品、沒寫字的那種用作品名
+    const text = thought.content.trim() || thoughtLine(thought);
     return {
-      meta: pageMeta(
-        thoughtTitle(thought.content),
-        thought.content,
-        `/thinking/${thought.id}`,
-        DEFAULT_LOCALE,
-        'moments',
-      ),
+      meta: pageMeta(thoughtTitle(text), text, `/thinking/${thought.id}`, DEFAULT_LOCALE, 'moments'),
     };
   },
   component: localeWrap(ThinkingDetail),

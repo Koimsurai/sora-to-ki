@@ -1,173 +1,81 @@
 /* ══════════════════════════════════════════
-   Admin Panel — Deep Space Glass Theme
-   Matches v0-blog-admin-panel design
+   後台的材料（2026-10 後台提案）
+   跟前台同一套：黑是紙、白是墨、琥珀是訊號。直角、細線、不浮陰影、不用毛玻璃。
+   版面（側欄、編輯器頂列）在 AdminLayout.css，捲軸在 AdminScrollbars.css；
+   這裡管的是 shadcn 元件與原生表單元素的材料：變數整組換掉，元件內建的
+   utility（框色、浮層、按鈕 variant）跟著改。各頁自己的版面在 AdminPage.css。
+   直角靠 --radius: 0 讓 shadcn 的 rounded-sm／md／lg 歸零；頁面裡不寫 rounded-*。
    ══════════════════════════════════════════ */
 
-/* Override shadcn CSS variables for glass aesthetic */
+/* shadcn 的變數整組重定義（自成一套，維持字面值，一眼看完整套配色）。
+   shadcn 吃的是 HSL 三元組，所以帶透明度的那幾個（墨 4%／8%／15%／55%／70%）
+   換算成疊在夜色上的實色。 */
 :is(.admin-layout, .admin-mode) {
-  --background: 240 10% 3.9%;
-  --foreground: 240 5.9% 90%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 240 5.9% 90%;
-  --popover: 240 5.9% 10%;
-  --popover-foreground: 240 5.9% 90%;
-  --primary: 240 5.9% 90%;
-  --primary-foreground: 240 10% 3.9%;
-  --secondary: 240 5.9% 10%;
-  --secondary-foreground: 240 5% 64.9%;
-  --muted: 240 5.9% 10%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 240 5.9% 90%;
-  --destructive: 0 72.2% 50.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 5.2% 33.9%;
-  --radius: 0.625rem;
+  --background: 240 9.1% 4.3%; /* --ground */
+  --foreground: 39 33.3% 91.8%; /* --paper */
+  --card: 240 9.1% 4.3%;
+  --card-foreground: 39 33.3% 91.8%;
+  --popover: 240 9.1% 4.3%;
+  --popover-foreground: 39 33.3% 91.8%;
+  --primary: 39 33.3% 91.8%;
+  --primary-foreground: 240 9.1% 4.3%;
+  --secondary: 240 5% 7.8%; /* 墨 4% */
+  --secondary-foreground: 33 5.1% 65.7%; /* 墨 70% */
+  --muted: 240 5% 7.8%;
+  --muted-foreground: 34 2.9% 52.4%; /* 墨 55%（--paper-meta） */
+  --accent: 240 1.8% 11.2%; /* 墨 8% */
+  --accent-foreground: 39 33.3% 91.8%;
+  --destructive: 13 68% 65.7%; /* --flare */
+  --destructive-foreground: 240 9.1% 4.3%;
+  --border: 0 1.1% 17.5%; /* 墨 15%（--rule） */
+  --input: 0 1.1% 17.5%;
+  --ring: 33 5.1% 65.7%;
+  --radius: 0rem;
 
   /* 中和全域 button 紫色變數 */
   --clr-button: transparent;
-  --clr-button-text: var(--zinc-200);
+  --clr-button-text: var(--paper);
 
-  background: #000000;
+  /* 字：標題、內容、表單的值一律思源宋體；等寬留給標籤、時間與數字（各元件自己指定） */
+  font-family: var(--serif);
+  background: var(--ground);
+  color: var(--paper);
   min-height: 100vh;
   position: relative;
 }
 
-/* Deep space background */
-.deep-space-bg {
-  position: relative;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(var(--zinc-800-rgb), 0.35) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 50%, rgba(var(--zinc-800-rgb), 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse 50% 40% at 10% 80%, rgba(var(--zinc-800-rgb), 0.1) 0%, transparent 50%), #000000;
-}
-
-/* Star particles */
-.stars {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.stars::before,
-.stars::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 20px 30px, var(--white-15), transparent),
-    radial-gradient(1px 1px at 40px 70px, var(--white-10), transparent),
-    radial-gradient(1px 1px at 50px 160px, var(--white-10), transparent),
-    radial-gradient(1px 1px at 90px 40px, var(--white-08), transparent),
-    radial-gradient(1px 1px at 130px 80px, var(--white-10), transparent),
-    radial-gradient(1px 1px at 160px 120px, var(--white-06), transparent),
-    radial-gradient(1px 1px at 200px 50px, var(--white-10), transparent),
-    radial-gradient(1px 1px at 220px 180px, var(--white-08), transparent),
-    radial-gradient(1px 1px at 280px 90px, var(--white-10), transparent),
-    radial-gradient(1px 1px at 320px 200px, var(--white-06), transparent),
-    radial-gradient(1px 1px at 360px 60px, var(--white-08), transparent),
-    radial-gradient(1px 1px at 400px 150px, var(--white-10), transparent);
-  background-repeat: repeat;
-  background-size: 420px 220px;
-  animation: drift 120s linear infinite;
-}
-
-.stars::after {
-  background-size: 580px 300px;
-  opacity: 0.5;
-  animation: drift 200s linear infinite reverse;
-}
-
-@keyframes drift {
-  from {
-    transform: translateY(0);
-  }
-
-  to {
-    transform: translateY(-220px);
-  }
-}
-
-/* Glass card */
-.glass {
-  background: rgba(var(--zinc-900-rgb), 0.6);
-  backdrop-filter: blur(var(--blur-16));
-  border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
-}
-
-.glass-subtle {
-  background: rgba(var(--zinc-900-rgb), 0.35);
-  backdrop-filter: blur(var(--blur-12));
-  border: 1px solid rgba(var(--zinc-800-rgb), 0.4);
-}
-
-/* ── Glass Sidebar ── */
-:is(.admin-layout, .admin-mode) aside {
-  background: var(--black-80);
-  backdrop-filter: blur(var(--blur-28)) saturate(180%);
-  border-color: rgba(var(--zinc-800-rgb), 0.6);
-}
-
-/* ── Glass Header ── */
-:is(.admin-layout, .admin-mode) > div > header {
-  background: var(--black-70);
-  backdrop-filter: blur(var(--blur-20)) saturate(180%);
-  border-color: rgba(var(--zinc-800-rgb), 0.6);
-}
-
-/* ── Main Content ── */
-:is(.admin-layout, .admin-mode) main.min-h-screen {
-  background: transparent;
-  position: relative;
-  z-index: 1;
-}
-
-/* ── Glass Cards ── */
-:is(.admin-layout, .admin-mode) .bg-card,
-:is(.admin-layout, .admin-mode) [class*="Card"] {
-  background: rgba(var(--zinc-900-rgb), 0.6);
-  backdrop-filter: blur(var(--blur-16));
-  border-color: rgba(var(--zinc-800-rgb), 0.6);
-  border-radius: var(--r-16);
-  box-shadow:
-    0 4px 24px var(--black-25),
-    inset 0 1px 0 var(--white-04);
-  transition: all var(--dur-300) var(--easing-standard);
-}
-
-/* ── Table ── */
+/* ── 表格：列與列之間是點線，滑過墊一層很淡的墨 ── */
 :is(.admin-layout, .admin-mode) table {
   background: transparent;
 }
 
 :is(.admin-layout, .admin-mode) thead tr {
-  border-color: rgba(var(--zinc-800-rgb), 0.6);
+  border-color: var(--rule);
 }
 
 :is(.admin-layout, .admin-mode) tbody tr {
-  border-color: rgba(var(--zinc-800-rgb), 0.4);
-  transition: all var(--dur-200) ease;
+  border-bottom: 1px dotted var(--rule);
+  transition: background-color var(--dur-150) ease;
 }
 
-:is(.admin-layout, .admin-mode) tbody tr:hover {
-  background: rgba(var(--zinc-800-rgb), 0.3);
+:is(.admin-layout, .admin-mode) tbody tr:hover,
+:is(.admin-layout, .admin-mode) tbody tr[data-state="selected"] {
+  background: rgba(var(--paper-rgb), 0.04);
 }
 
-/* ── Inputs — Glass (exclude Monaco toolbar) ── */
-:is(.admin-layout, .admin-mode) input:not(.monaco-toolbar-glass *),
-:is(.admin-layout, .admin-mode) select:not(.monaco-toolbar-glass *),
-:is(.admin-layout, .admin-mode) textarea:not(.monaco-toolbar-glass *) {
-  background: rgba(var(--zinc-900-rgb), 0.45);
+/* ── 輸入框：透明底、一條細框，滑過深一階、聚焦再深一階，沒有光暈 ── */
+/* 編輯器的標題框（.pe-title）只有一條點線、不是方框，排除在外，由 PostEditor.css 自己畫 */
+:is(.admin-layout, .admin-mode) input:not(.monaco-toolbar *, .pe-title),
+:is(.admin-layout, .admin-mode) select:not(.monaco-toolbar *),
+:is(.admin-layout, .admin-mode) textarea:not(.monaco-toolbar *) {
+  background: transparent;
   /* ⚠ !important 不能拿掉：shadcn 的 <Input>/<Select> 用 border-input 這類 utility，
-     實測拿掉之後邊框從 rgba(39,39,42,0.6) 變成 rgb(228,228,231)（zinc-200 的亮色），
+     實測拿掉之後邊框從細線變成 rgb(228,228,231)（zinc-200 的亮色），
      整個後台表單會變成淺色邊框配深色底。 */
-  border-color: rgba(var(--zinc-800-rgb), 0.6) !important;
-  color: var(--zinc-200);
-  border-radius: var(--r-10);
-  transition: all var(--dur-200) ease;
+  border-color: var(--rule) !important;
+  color: var(--paper);
+  border-radius: 0;
+  transition: border-color var(--dur-200) ease;
 }
 
 :is(.admin-layout, .admin-mode) input:hover,
@@ -175,94 +83,98 @@
 :is(.admin-layout, .admin-mode) textarea:hover {
   /* base 的 border-color 帶了 !important（見上），狀態變體就必須跟著帶，
      否則 base 會反過來蓋掉 hover/focus——實測過，hover 時邊框完全不變色。 */
-  border-color: rgba(var(--zinc-700-rgb), 0.8) !important;
+  border-color: var(--paper-3) !important;
 }
 
 :is(.admin-layout, .admin-mode) input:focus,
 :is(.admin-layout, .admin-mode) select:focus,
 :is(.admin-layout, .admin-mode) textarea:focus {
   /* 同上：base 帶了 !important，focus 也要帶 */
-  border-color: rgba(var(--zinc-600-rgb), 0.8) !important;
-  box-shadow: 0 0 0 3px rgba(var(--zinc-600-rgb), 0.2);
-  background: rgba(var(--zinc-900-rgb), 0.8);
+  border-color: var(--paper-2) !important;
+  box-shadow: none;
 }
 
-/* ── Dropdowns & Dialogs — Glass ── */
+:is(.admin-layout, .admin-mode) ::placeholder {
+  color: var(--paper-meta);
+}
+
+:is(.admin-layout, .admin-mode) input[type="search"] {
+  padding-left: var(--space-10);
+}
+
+:is(.admin-layout, .admin-mode) input[type="checkbox"],
+:is(.admin-layout, .admin-mode) input[type="radio"] {
+  accent-color: var(--paper);
+}
+
+:is(.admin-layout, .admin-mode) label {
+  color: var(--paper-2);
+  font-size: var(--fs-14);
+}
+
+/* ── 浮層（選單、對話框、下拉清單、提示、toast）：跟前台 ⌘K 同一種——夜色底、一條細框、直角、不浮陰影 ── */
 :is(.admin-layout, .admin-mode) [role="menu"],
 :is(.admin-layout, .admin-mode) [role="dialog"],
-:is(.admin-layout, .admin-mode) [data-radix-popper-content-wrapper] [role="listbox"] {
-  background: rgba(var(--zinc-900-rgb), 0.9);
-  backdrop-filter: blur(var(--blur-28)) saturate(180%);
-  border-color: rgba(var(--zinc-800-rgb), 0.6);
-  box-shadow:
-    0 20px 60px var(--black-50),
-    0 0 0 1px var(--white-04),
-    inset 0 1px 0 var(--white-06);
-  border-radius: var(--r-12);
+:is(.admin-layout, .admin-mode) [role="alertdialog"],
+:is(.admin-layout, .admin-mode) [role="tooltip"],
+:is(.admin-layout, .admin-mode) [data-radix-popper-content-wrapper] [role="listbox"],
+:is(.admin-layout, .admin-mode) [data-sonner-toast] {
+  background: rgba(var(--ground-rgb), 0.95);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  box-shadow: none;
 }
 
-/* ── Scrollbar ── */
-:is(.admin-layout, .admin-mode) ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+:is(.admin-layout, .admin-mode) [role="menuitem"]:hover,
+:is(.admin-layout, .admin-mode) [role="option"]:hover {
+  background: rgba(var(--paper-rgb), 0.06);
 }
 
-:is(.admin-layout, .admin-mode) ::-webkit-scrollbar-track {
-  background: transparent;
+:is(.admin-layout, .admin-mode) [class*="overlay"] {
+  background: rgba(var(--ground-rgb), 0.7);
 }
 
-:is(.admin-layout, .admin-mode) ::-webkit-scrollbar-thumb {
-  background: var(--zinc-800);
-  border-radius: var(--r-full);
-}
-
-:is(.admin-layout, .admin-mode) ::-webkit-scrollbar-thumb:hover {
-  background: var(--zinc-700);
-}
-
-/* ── Separators ── */
+/* ── 分隔線 ── */
 :is(.admin-layout, .admin-mode) hr,
 :is(.admin-layout, .admin-mode) .separator,
 :is(.admin-layout, .admin-mode) [data-orientation="horizontal"],
 :is(.admin-layout, .admin-mode) [data-orientation="vertical"] {
-  border-color: rgba(var(--zinc-800-rgb), 0.6);
-  background: rgba(var(--zinc-800-rgb), 0.6);
+  border-color: var(--rule);
+  background: var(--rule);
 }
 
-/* ── Badges — Glass ── */
-:is(.admin-layout, .admin-mode) [class*="badge"][class*="default"] {
-  background: rgba(var(--zinc-200-rgb), 0.1);
-  border: 1px solid rgba(var(--zinc-200-rgb), 0.2);
-  color: var(--zinc-200);
-  border-radius: var(--r-8);
+/* ── 分頁籤：選中的是墨色底線，不是一塊底色 ── */
+:is(.admin-layout, .admin-mode) [role="tab"][data-state="active"] {
+  background: transparent;
+  border-color: var(--paper);
+  color: var(--paper);
 }
 
-:is(.admin-layout, .admin-mode) [class*="badge"][class*="secondary"] {
-  background: rgba(var(--zinc-800-rgb), 0.3);
-  border: 1px solid rgba(var(--zinc-800-rgb), 0.6);
-  color: var(--zinc-400);
-  border-radius: var(--r-8);
+:is(.admin-layout, .admin-mode) [role="progressbar"] {
+  background: var(--rule);
 }
 
-/* ── Links — Override global a { color: var(--clr-button) } for admin ── */
+:is(.admin-layout, .admin-mode) [role="progressbar"] > div {
+  background: var(--paper);
+}
+
+/* ── 連結：墨 70%，滑過換成實墨 ── */
 :is(.admin-layout, .admin-mode) a {
-  color: var(--zinc-400);
+  color: var(--paper-2);
+  transition: color var(--dur-150) ease;
 }
 
 :is(.admin-layout, .admin-mode) a:hover,
-:is(.admin-layout, .admin-mode) a:focus {
-  color: var(--zinc-200);
+:is(.admin-layout, .admin-mode) a:focus-visible {
+  color: var(--paper);
   text-shadow: none;
 }
 
-/* ── Button — Remove focus ring borders ── */
-:is(.admin-layout, .admin-mode) button:focus-visible {
-  outline: none;
+/* ── 焦點：一條細墨框，跟前台的 button:focus-visible 同一個寫法 ── */
+:is(.admin-layout, .admin-mode) :is(button, a, [role="tab"]):focus-visible {
+  outline: 1px solid var(--paper-2);
+  outline-offset: 2px;
   box-shadow: none;
-}
-
-:is(.admin-layout, .admin-mode) button:focus-visible:not(:hover) {
-  outline: none;
 }
 
 /* ── Reset global button base styles for admin ──
@@ -295,72 +207,88 @@
   }
 }
 
-/* ── Default Buttons — Neutral glass style ── */
+/* ── 主要按鈕（shadcn 的 default variant）：透明底、墨 70% 的框，滑過換成琥珀框——
+   跟前台留言表單的送出鈕同一個反應 ── */
 :is(.admin-layout, .admin-mode) .bg-primary,
 :is(.admin-layout, .admin-mode) [class*="bg-primary"] {
-  background: rgba(var(--zinc-200-rgb), 0.1);
-  color: var(--zinc-200);
-  border: 1px solid rgba(var(--zinc-200-rgb), 0.2);
+  background: transparent;
+  color: var(--paper);
+  border: 1px solid var(--paper-2);
 }
 
 :is(.admin-layout, .admin-mode) .bg-primary:hover,
 :is(.admin-layout, .admin-mode) [class*="bg-primary"]:hover {
-  background: rgba(var(--zinc-200-rgb), 0.2);
+  background: transparent;
+  border-color: var(--amber);
 }
 
-/* ── Link variant — Neutral text ── */
+/* ── 開關（Radix Switch）：細線框裡一顆小圓點，關著是淡墨靠左，開著是實墨靠右、框深一階。
+   它的 class 裡也有 `data-[state=checked]:bg-primary`，上面那條會把底色改成透明；而原本的圓鈕是
+   夜色（bg-background），兩個疊起來就什麼都看不到——所以這裡把圓鈕改成墨色 ── */
+:is(.admin-layout, .admin-mode) button[role="switch"] {
+  background: transparent;
+  border: 1px solid var(--rule);
+}
+
+:is(.admin-layout, .admin-mode) button[role="switch"][data-state="checked"] {
+  border-color: var(--paper-2);
+}
+
+:is(.admin-layout, .admin-mode) button[role="switch"] > span {
+  width: 14px;
+  height: 14px;
+  margin-left: var(--space-1);
+  background: var(--paper-3);
+  box-shadow: none;
+}
+
+:is(.admin-layout, .admin-mode) button[role="switch"][data-state="checked"] > span {
+  background: var(--paper);
+}
+
 :is(.admin-layout, .admin-mode) .text-primary {
-  color: var(--zinc-400);
+  color: var(--paper-2);
 }
 
 :is(.admin-layout, .admin-mode) .text-primary:hover {
-  color: var(--zinc-200);
+  color: var(--paper);
 }
 
-/* ── Destructive Buttons — Red accent ── */
+/* ── 會刪東西的按鈕：朱色字配點線框，滑過才變實線 ── */
 :is(.admin-layout, .admin-mode) .bg-destructive,
 :is(.admin-layout, .admin-mode) [class*="bg-destructive"] {
-  background: rgba(var(--red-500-rgb), 0.2);
-  color: var(--red-300);
-  border: 1px solid rgba(var(--red-500-rgb), 0.3);
+  background: transparent;
+  color: var(--flare);
+  border: 1px dotted rgba(var(--flare-rgb), 0.6);
 }
 
 :is(.admin-layout, .admin-mode) .bg-destructive:hover,
 :is(.admin-layout, .admin-mode) [class*="bg-destructive"]:hover {
-  background: rgba(var(--red-500-rgb), 0.3);
+  background: transparent;
+  border-style: solid;
 }
 
 /* ── Zen 模式：寫作專注 ──
-   admin sidebar 是 fixed + 右側欄用 ml-52 偏移，所以兩者都要重置才不會留下黑洞。
-   Monaco 進入 / 離開 Zen 時會主動 dispatch resize 重算尺寸（PostEditor.jsx）。
-*/
-body.zen-mode-active .admin-layout > aside,
-body.zen-mode-active .admin-layout > div > header {
+   側欄與編輯器頂列都收起來、內容不再讓出側欄的寬度。
+   Monaco 進入／離開 Zen 時會主動 dispatch resize 重算尺寸（PostEditor 的 350ms 計時器）。 */
+body.zen-mode-active .adm-side,
+body.zen-mode-active .adm-editbar,
+body.zen-mode-active .adm-mobilebar {
   display: none;
 }
-body.zen-mode-active .admin-layout > div {
+
+body.zen-mode-active .adm-body {
   margin-left: 0;
-  margin-right: 0;
-  width: 100%;
 }
-body.zen-mode-active .admin-layout > div > main {
-  min-height: 100vh;
-}
-/* PostEditor 右側 metadata 面板（form 內 aside.w-[280px]）— Zen 中藏起來 */
-body.zen-mode-active .admin-layout > div > main form > aside {
+
+/* PostEditor 右側 metadata 面板（form 內的 aside）— Zen 中藏起來 */
+body.zen-mode-active .adm-main form > aside {
   display: none;
 }
+
 /* 編輯器主欄置中、限寬 */
-body.zen-mode-active .admin-layout > div > main form > main {
+body.zen-mode-active .adm-main form > main {
   max-width: 920px;
   margin: 0 auto;
   padding: var(--space-10) var(--space-8);
-}
-
-/* 選圖對話框的面板陰影。多層（投影 + 玻璃頂緣高光），跟全站其他多層陰影一樣刻意不上
-   --elev-* 尺；原本寫成 TSX 裡的 Tailwind 任意值，搬來這裡是因為設計值該待在 CSS。 */
-.photo-selector-panel {
-  box-shadow:
-    0 20px 60px var(--black-50),
-    inset 0 1px 0 var(--white-06);
 }

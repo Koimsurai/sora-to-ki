@@ -20,6 +20,7 @@ import { LocaleLink } from '@/i18n/locale-link';
 import { splitTitle } from '@/lib/blogReading';
 import { postPath } from '@/lib/postPath';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
+import { thoughtLine } from '@/lib/thoughtRef';
 
 export type MenuKey = 'notes' | 'moments' | 'works' | 'collection' | 'about' | 'more';
 
@@ -111,7 +112,7 @@ function MomentsPage({ armed }: { armed: boolean }) {
   return (
     <Page lead={<p>{t('thinking.subtitle')}</p>} all={{ to: '/thinking', label: t('siteNav.allMoments') }}>
       {thoughts.slice(0, 3).map((th) => {
-        const line = th.content.split('\n')[0];
+        const line = thoughtLine(th);
         return (
           <Row
             key={th.id}
