@@ -1,29 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- 宙と木：一彎新月，前面一棵樹 -->
+  <!-- 同 tab-planet.svg 的那顆星球與衛星，放在站上的底色上（PWA、iOS 主畫面、Google 搜尋用；這些地方不跟著主題換色）。
+       gen-icons.mjs 會拿掉圓角做 apple-touch-icon、縮到 78% 做可遮罩的版本 -->
+  <style>.s { fill: #f1ece3; }</style>
+  <rect width="64" height="64" rx="14" fill="#0a0a0c"/>
+  <g transform="translate(9 9) scale(1.4375)">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#231a58"/>
-      <stop offset="1" stop-color="#0a0718"/>
-    </linearGradient>
-    <linearGradient id="moon" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f3e8ff"/>
-      <stop offset="0.55" stop-color="#e0a3f0"/>
-      <stop offset="1" stop-color="#dc3278"/>
-    </linearGradient>
-    <mask id="cres">
-      <rect width="64" height="64" fill="#fff"/>
-      <circle cx="35" cy="17" r="15.5" fill="#000"/>
+    <clipPath id="ball"><circle cx="15" cy="17" r="14.4"/></clipPath>
+    <!-- 衛星周圍留一圈縫，星球的刷痕不貼著它 -->
+    <mask id="gap" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+      <rect width="32" height="32" fill="#fff"/>
+      <circle cx="26.6" cy="5.4" r="5.2" fill="#000"/>
     </mask>
   </defs>
-  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <!-- 新月（比初版粗，16px 時才不會只剩一條線） -->
-  <circle cx="24" cy="26" r="18" fill="url(#moon)" mask="url(#cres)"/>
-  <!-- 小星 -->
-  <circle cx="49" cy="12" r="1.8" fill="#f3e8ff"/>
-  <circle cx="55" cy="22" r="1.2" fill="#f3e8ff" opacity="0.8"/>
-  <!-- 樹冠：深色描邊把它跟月亮切開 -->
-  <path d="M34 33 C 32.5 27 38 23 42.5 25.8 C 47 23 52.5 27 51 33 C 55 37.5 51.5 44 42.5 44 C 33.5 44 30 37.5 34 33 Z"
-        fill="#c4b5fd" stroke="#0a0718" stroke-width="3.5" stroke-linejoin="round" paint-order="stroke"/>
-  <!-- 樹幹畫在樹冠之後、不描邊，才會接進樹冠裡（反過來會在兩者之間留一道深色縫） -->
-  <rect x="40.3" y="39" width="4.4" height="18" rx="1.8" fill="#c4b5fd"/>
+  <g mask="url(#gap)">
+    <g class="s" clip-path="url(#ball)" transform="rotate(-18 15 17)">
+      <rect x="-4" y="1.90" width="40" height="3.0"/>
+      <rect x="-4" y="5.90" width="40" height="3.8"/>
+      <rect x="-4" y="10.20" width="40" height="4.0"/>
+      <rect x="-4" y="14.80" width="40" height="3.6"/>
+      <rect x="-4" y="19.50" width="40" height="3.0"/>
+      <rect x="-4" y="24.30" width="40" height="2.2"/>
+      <rect x="-4" y="29.15" width="40" height="1.3"/>
+    </g>
+  </g>
+  <circle cx="26.6" cy="5.4" r="3.1" fill="#e9c17a"/>
+  </g>
 </svg>

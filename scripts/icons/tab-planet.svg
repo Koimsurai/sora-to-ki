@@ -1,31 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- 分頁列的圖示：行星、環、K。#183 之前那張點陣圖的向量重繪。
-       線寬照 16px 時 ≈ 1px 設計（32 單位的畫布，1 單位 = 0.5px）。
-       顏色跟著瀏覽器主題：淺色分頁列上白線條會消失，所以預設是深紫、深色主題才換白。
-       ⚠ gen-icons.mjs 產 favicon.ico 時會把下面那個深紫換成白——改顏色要一起看那邊。 -->
+  <!-- 宙と木的圖示：一顆由刷痕組成的星球（首頁那顆土星的畫法：一列一列的橫線，越往下越細＝背光），
+       右上一顆琥珀色的衛星（站上的琥珀只當「一個點」的訊號）。滿版、不放底板，16px 時看的是外形。
+       顏色跟著瀏覽器主題：淺色分頁列上暖白會消失，所以預設是近黑、深色主題才換暖白。
+       ⚠ gen-icons.mjs 產 favicon.ico 時會把下面那個近黑換成暖白——改顏色要一起看那邊。 -->
   <style>
-    .s { stroke: #2b2346; }
+    .s { fill: #0a0a0c; }
     @media (prefers-color-scheme: dark) {
-      .s { stroke: #ffffff; }
+      .s { fill: #f1ece3; }
     }
   </style>
   <defs>
-    <!-- 環在星球後面的那半：被星球擋住 -->
-    <mask id="behind" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
+    <clipPath id="ball"><circle cx="15" cy="17" r="14.4"/></clipPath>
+    <!-- 衛星周圍留一圈縫，星球的刷痕不貼著它 -->
+    <mask id="gap" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
       <rect width="32" height="32" fill="#fff"/>
-      <path transform="translate(16 16) rotate(-24)" d="M -10.2 0 A 10.2 10.2 0 0 1 10.2 0 Z" fill="#000"/>
-    </mask>
-    <!-- 環在星球前面的那半：從星球外框與 K 上切出一道縫，才有前後關係 -->
-    <mask id="front" maskUnits="userSpaceOnUse" x="0" y="0" width="32" height="32">
-      <rect width="32" height="32" fill="#fff"/>
-      <path transform="translate(16 16) rotate(-24)" d="M -15 0 A 15 3.9 0 0 0 15 0" fill="none" stroke="#000" stroke-width="3.2"/>
+      <circle cx="26.6" cy="5.4" r="5.2" fill="#000"/>
     </mask>
   </defs>
-  <g mask="url(#front)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <circle class="s" cx="16" cy="16" r="9.6" stroke-width="1.8"/>
-    <path class="s" d="M13.6 11.4 V18.8 M14 15.5 L18.5 11.4 M15.6 14.1 L18.6 18.8" stroke-width="2"/>
+  <g mask="url(#gap)">
+    <g class="s" clip-path="url(#ball)" transform="rotate(-18 15 17)">
+      <rect x="-4" y="1.90" width="40" height="3.0"/>
+      <rect x="-4" y="5.90" width="40" height="3.8"/>
+      <rect x="-4" y="10.20" width="40" height="4.0"/>
+      <rect x="-4" y="14.80" width="40" height="3.6"/>
+      <rect x="-4" y="19.50" width="40" height="3.0"/>
+      <rect x="-4" y="24.30" width="40" height="2.2"/>
+      <rect x="-4" y="29.15" width="40" height="1.3"/>
+    </g>
   </g>
-  <g mask="url(#behind)">
-    <ellipse class="s" transform="translate(16 16) rotate(-24)" rx="15" ry="3.9" fill="none" stroke-width="1.6"/>
-  </g>
+  <circle cx="26.6" cy="5.4" r="3.1" fill="#e9c17a"/>
 </svg>

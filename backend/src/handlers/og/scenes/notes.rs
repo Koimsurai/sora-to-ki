@@ -22,6 +22,9 @@ use super::super::canvas::{Ctx, GROUND, Gradient, amber, ink};
 
 /// 背景的星（每一顆都拖著一道淡淡的軌跡）
 const FIELD: usize = 640;
+/// 再補一批只落在內圈的（離天極 INNER_REACH 以內），接在後面抽（同前端 noteSky 的 INNER）
+const INNER: usize = 110;
+const INNER_REACH: f32 = 0.32;
 const FRAMES: usize = 150;
 const FRAME_MS: u32 = 100;
 
@@ -145,8 +148,8 @@ impl Notes {
         ctx.clear(GROUND);
         ctx.set_line_width(1.0);
         let mut rnd = seeded(0.61);
-        for _ in 0..FIELD {
-            let r = rnd().sqrt();
+        for k in 0..FIELD + INNER {
+            let r = if k < FIELD { 1.0 } else { INNER_REACH } * rnd().sqrt();
             let len = 0.1 + rnd() * 0.7;
             let a0 = rnd() * TAU;
             let a = 0.035 + rnd() * rnd() * 0.16;
