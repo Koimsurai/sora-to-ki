@@ -634,12 +634,16 @@ export function createSignalSky(signals: Signal[], now0: number) {
     ctx.globalAlpha = 1;
     backdrop(galaxy, 0.42);
     backdrop(field, 0.55);
+    // 一顆一個透明度的點（閃爍的星、歐特雲、小行星帶）：顏色只設一次，每顆改 globalAlpha。
+    // 每顆組一個 rgba() 字串的話，瀏覽器每次都要重新解析顏色，拉遠時一幀有上千顆
+    ctx.fillStyle = `rgb(${INK})`;
     for (const s of twinklers) {
       const p = skyAt(v, s.d);
       if (!p) continue;
-      ctx.fillStyle = rgba(INK, 0.5 + 0.4 * Math.sin(t * s.tw + s.ph));
+      ctx.globalAlpha = 0.5 + 0.4 * Math.sin(t * s.tw + s.ph);
       ctx.fillRect(p.x, p.y, 1.5, 1.5);
     }
+    ctx.globalAlpha = 1;
 
     // ── 刻度圈 ──
     ctx.setLineDash([2, 6]);
@@ -680,6 +684,7 @@ export function createSignalSky(signals: Signal[], now0: number) {
 
     // ── 歐特雲 ──
     let oortA = 0;
+    ctx.fillStyle = `rgb(${INK})`;
     for (const o of oort) {
       const r = v.k * o.r;
       if (r < 3 || r > v.diag * 1.2) continue;
@@ -687,9 +692,10 @@ export function createSignalSky(signals: Signal[], now0: number) {
       if (a < 0.01) continue;
       oortA = Math.max(oortA, fade(v, r));
       const p = project(v, o.p);
-      ctx.fillStyle = rgba(INK, a);
+      ctx.globalAlpha = a;
       ctx.fillRect(p.x, p.y, 1, 1);
     }
+    ctx.globalAlpha = 1;
     if (oortA > 0.05) {
       const r = OORT_AU[0] * AU * 4;
       const p = project(v, { x: -r * 0.7, y: r * 0.7, z: r * 0.1 });
@@ -704,11 +710,13 @@ export function createSignalSky(signals: Signal[], now0: number) {
       const rx = v.k * outer * AU;
       const a = fade(v, v.k * inner * AU) * fade(v, rx);
       if (a <= 0.01) return;
+      ctx.fillStyle = `rgb(${INK})`;
       for (const d of list) {
         const p = project(v, { x: d.x + sunC.x, y: d.y + sunC.y, z: d.z });
-        ctx.fillStyle = rgba(INK, d.a * a);
+        ctx.globalAlpha = d.a * a;
         ctx.fillRect(p.x, p.y, 1, 1);
       }
+      ctx.globalAlpha = 1;
       const r = ((inner + outer) / 2) * AU;
       const p = project(v, { x: sunC.x - r * 0.72, y: sunC.y - r * 0.69, z: 0 });
       marks.push({
@@ -967,6 +975,7 @@ export function createSignalSky(signals: Signal[], now0: number) {
       ctx.beginPath();
       ctx.arc(v.ex, v.ey, rE, 0, TAU);
       ctx.stroke();
+      ctx.fillStyle = `rgb(${INK})`;
       for (const g of globe) {
         const n = surface(g.lat, g.lon, days);
         const depth = depthOf(v, n);
@@ -974,9 +983,10 @@ export function createSignalSky(signals: Signal[], now0: number) {
         const xr = n.x * v.cosP - n.y * v.sinP;
         const yr = n.x * v.sinP + n.y * v.cosP;
         const day = n.x * sx + n.y * sy > 0;
-        ctx.fillStyle = rgba(INK, ga * (0.2 + 0.65 * depth) * (day ? 1 : 0.28));
+        ctx.globalAlpha = ga * (0.2 + 0.65 * depth) * (day ? 1 : 0.28);
         ctx.fillRect(v.ex + rE * xr, v.ey + rE * (yr * v.sinE - n.z * v.cosE), 1.3, 1.3);
       }
+      ctx.globalAlpha = 1;
     }
 
     // ── 國際太空站：貼著地球繞，轉到地球後面就被擋住 ──
