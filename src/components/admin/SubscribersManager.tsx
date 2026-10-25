@@ -17,7 +17,7 @@ import {
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { lookupOr } from '../../lib/tableLookup';
 import AdminLoading from './AdminLoading';
-import { PageHead } from './AdminPage';
+import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
 
 // 電子報（2026-10 後台提案的「回」）：訂閱中／已退訂兩個分頁，一位一列。
@@ -83,7 +83,7 @@ export default function SubscribersManager() {
   };
 
   return (
-    <div className="adm-page">
+    <div className="adm-page adm-page-narrow">
       <PageHead
         title="電子報"
         latin="Newsletter"
@@ -126,61 +126,63 @@ export default function SubscribersManager() {
           </label>
         </div>
 
-        {isPending ? (
-          <AdminLoading />
-        ) : visible.length === 0 ? (
-          <p className="adm-empty">
-            {q ? '找不到符合的訂閱者。' : tab === 'active' ? '還沒有人訂閱。' : '沒有退訂紀錄。'}
-          </p>
-        ) : (
-          <div className="adm-table-wrap">
-            <table className="adm-table">
-              <thead>
-                <tr>
-                  <th scope="col">Email</th>
-                  <th scope="col">名字</th>
-                  <th scope="col">訂閱</th>
-                  <th scope="col">退訂</th>
-                  <th scope="col">
-                    <span className="sr-only">動作</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map((s) => (
-                  <tr key={s.id}>
-                    <td className="adm-cell-title">
-                      <span className="adm-cell-name adm-mono">{s.email}</span>
-                    </td>
-                    <td>
-                      <span className="adm-cell-text">{s.name ?? '—'}</span>
-                    </td>
-                    <td>
-                      <span className="adm-meta">{formatWhen(s.subscribed_at, 'yyyy.MM.dd') || '—'}</span>
-                    </td>
-                    <td>
-                      <span className="adm-meta">{formatWhen(s.unsubscribed_at, 'yyyy.MM.dd') || '—'}</span>
-                    </td>
-                    <td>
-                      {s.status === 'active' && (
-                        <div className="adm-row-actions">
-                          <button
-                            type="button"
-                            className="adm-icon-btn adm-icon-btn-flare"
-                            aria-label={`把 ${s.email} 標記為退訂`}
-                            onClick={() => setToUnsubscribe(s)}
-                          >
-                            標記退訂
-                          </button>
-                        </div>
-                      )}
-                    </td>
+        <TabPanel tab={tab}>
+          {isPending ? (
+            <AdminLoading />
+          ) : visible.length === 0 ? (
+            <p className="adm-empty">
+              {q ? '找不到符合的訂閱者。' : tab === 'active' ? '還沒有人訂閱。' : '沒有退訂紀錄。'}
+            </p>
+          ) : (
+            <div className="adm-table-wrap">
+              <table className="adm-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Email</th>
+                    <th scope="col">名字</th>
+                    <th scope="col">訂閱</th>
+                    <th scope="col">退訂</th>
+                    <th scope="col">
+                      <span className="sr-only">動作</span>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {visible.map((s) => (
+                    <tr key={s.id}>
+                      <td className="adm-cell-title">
+                        <span className="adm-cell-name adm-mono">{s.email}</span>
+                      </td>
+                      <td>
+                        <span className="adm-cell-text">{s.name ?? '—'}</span>
+                      </td>
+                      <td>
+                        <span className="adm-meta">{formatWhen(s.subscribed_at, 'yyyy.MM.dd') || '—'}</span>
+                      </td>
+                      <td>
+                        <span className="adm-meta">{formatWhen(s.unsubscribed_at, 'yyyy.MM.dd') || '—'}</span>
+                      </td>
+                      <td>
+                        {s.status === 'active' && (
+                          <div className="adm-row-actions">
+                            <button
+                              type="button"
+                              className="adm-icon-btn adm-icon-btn-flare"
+                              aria-label={`把 ${s.email} 標記為退訂`}
+                              onClick={() => setToUnsubscribe(s)}
+                            >
+                              標記退訂
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </TabPanel>
       </section>
 
       <AlertDialog

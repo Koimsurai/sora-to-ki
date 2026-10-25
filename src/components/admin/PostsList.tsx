@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { postPath } from '../../lib/postPath';
 import AdminLoading from './AdminLoading';
-import { LocaleDots, PageHead } from './AdminPage';
+import { LocaleDots, PageHead, TabPanel } from './AdminPage';
 import { STATUS_LABEL, TRASH_KEEP_DAYS, formatWhen, missingTranslations, trashDaysLeft } from './adminFormat';
 
 // 手記列表（2026-10 後台提案）：狀態用分頁切、可以只看缺譯文的，每篇後面五顆語系點。
@@ -205,131 +205,133 @@ export default function PostsList() {
           </label>
         </div>
 
-        {status === 'trashed' && (
-          <p className="adm-form-note">丟進回收的手記讀者看不到，放滿 {TRASH_KEEP_DAYS} 天會自動清掉。</p>
-        )}
+        <TabPanel tab={`${status ?? 'all'}:${missing ? 'missing' : ''}`}>
+          {status === 'trashed' && (
+            <p className="adm-form-note">丟進回收的手記讀者看不到，放滿 {TRASH_KEEP_DAYS} 天會自動清掉。</p>
+          )}
 
-        {isPending ? (
-          <AdminLoading />
-        ) : filtered.length === 0 ? (
-          <div className="adm-empty">
-            {status === 'trashed' ? (
-              '回收桶是空的。'
-            ) : posts.length === 0 ? (
-              <>
-                還沒有手記。<Link to="/admin/posts/create">寫第一篇 →</Link>
-              </>
-            ) : (
-              '沒有符合的手記。'
-            )}
-          </div>
-        ) : (
-          <div className="adm-table-wrap">
-            <table className="adm-table">
-              <thead>
-                <tr>
-                  <th scope="col">標題</th>
-                  <th scope="col">分類</th>
-                  <th scope="col">語系</th>
-                  <th scope="col">狀態</th>
-                  <th scope="col">時間</th>
-                  <th scope="col">
-                    <span className="sr-only">動作</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((post) => (
-                  <tr key={post.id} data-status={post.status}>
-                    <td className="adm-cell-title">
-                      {post.status === 'trashed' ? (
-                        <span className="adm-title-link">{post.title}</span>
-                      ) : (
-                        <Link to="/admin/posts/edit/$id" params={{ id: String(post.id) }} className="adm-title-link">
-                          {post.title}
-                        </Link>
-                      )}
-                      {post.tags.length > 0 && (
-                        <span className="adm-meta adm-tags">{post.tags.map((tag) => `#${tag}`).join(' ')}</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className="adm-cell-text">{post.category ?? '未分類'}</span>
-                    </td>
-                    <td>
-                      <LocaleDots post={post} />
-                    </td>
-                    <td>
-                      <span className="adm-status" data-status={post.status}>
-                        {STATUS_LABEL[post.status] ?? post.status}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="adm-meta">{whenOf(post)}</span>
-                    </td>
-                    <td>
-                      {post.status === 'trashed' ? (
-                        <div className="adm-row-actions">
-                          <button
-                            type="button"
-                            className="adm-icon-btn"
-                            aria-label={`還原〈${post.title}〉`}
-                            onClick={() => void restore(post)}
-                          >
-                            還原
-                          </button>
-                          <button
-                            type="button"
-                            className="adm-icon-btn adm-icon-btn-flare"
-                            aria-label={`永久刪除〈${post.title}〉`}
-                            onClick={() => setPurgeTarget(post)}
-                          >
-                            永久刪除
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="adm-row-actions">
-                          <Link
-                            to="/admin/posts/edit/$id"
-                            params={{ id: String(post.id) }}
-                            className="adm-icon-btn"
-                            aria-label={`編輯〈${post.title}〉`}
-                          >
-                            編輯
-                          </Link>
-                          {post.status === 'published' && (
-                            <Link
-                              to={postPath(post)}
-                              target="_blank"
-                              className="adm-icon-btn"
-                              aria-label={`在前台開〈${post.title}〉`}
-                            >
-                              ↗
-                            </Link>
-                          )}
-                          <button
-                            type="button"
-                            className="adm-icon-btn adm-icon-btn-flare"
-                            aria-label={`刪除〈${post.title}〉`}
-                            onClick={() => void moveToTrash(post)}
-                          >
-                            刪除
-                          </button>
-                        </div>
-                      )}
-                    </td>
+          {isPending ? (
+            <AdminLoading />
+          ) : filtered.length === 0 ? (
+            <div className="adm-empty">
+              {status === 'trashed' ? (
+                '回收桶是空的。'
+              ) : posts.length === 0 ? (
+                <>
+                  還沒有手記。<Link to="/admin/posts/create">寫第一篇 →</Link>
+                </>
+              ) : (
+                '沒有符合的手記。'
+              )}
+            </div>
+          ) : (
+            <div className="adm-table-wrap">
+              <table className="adm-table">
+                <thead>
+                  <tr>
+                    <th scope="col">標題</th>
+                    <th scope="col">分類</th>
+                    <th scope="col">語系</th>
+                    <th scope="col">狀態</th>
+                    <th scope="col">時間</th>
+                    <th scope="col">
+                      <span className="sr-only">動作</span>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {filtered.map((post) => (
+                    <tr key={post.id} data-status={post.status}>
+                      <td className="adm-cell-title">
+                        {post.status === 'trashed' ? (
+                          <span className="adm-title-link">{post.title}</span>
+                        ) : (
+                          <Link to="/admin/posts/edit/$id" params={{ id: String(post.id) }} className="adm-title-link">
+                            {post.title}
+                          </Link>
+                        )}
+                        {post.tags.length > 0 && (
+                          <span className="adm-meta adm-tags">{post.tags.map((tag) => `#${tag}`).join(' ')}</span>
+                        )}
+                      </td>
+                      <td>
+                        <span className="adm-cell-text">{post.category ?? '未分類'}</span>
+                      </td>
+                      <td>
+                        <LocaleDots post={post} />
+                      </td>
+                      <td>
+                        <span className="adm-status" data-status={post.status}>
+                          {STATUS_LABEL[post.status] ?? post.status}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="adm-meta">{whenOf(post)}</span>
+                      </td>
+                      <td>
+                        {post.status === 'trashed' ? (
+                          <div className="adm-row-actions">
+                            <button
+                              type="button"
+                              className="adm-icon-btn"
+                              aria-label={`還原〈${post.title}〉`}
+                              onClick={() => void restore(post)}
+                            >
+                              還原
+                            </button>
+                            <button
+                              type="button"
+                              className="adm-icon-btn adm-icon-btn-flare"
+                              aria-label={`永久刪除〈${post.title}〉`}
+                              onClick={() => setPurgeTarget(post)}
+                            >
+                              永久刪除
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="adm-row-actions">
+                            <Link
+                              to="/admin/posts/edit/$id"
+                              params={{ id: String(post.id) }}
+                              className="adm-icon-btn"
+                              aria-label={`編輯〈${post.title}〉`}
+                            >
+                              編輯
+                            </Link>
+                            {post.status === 'published' && (
+                              <Link
+                                to={postPath(post)}
+                                target="_blank"
+                                className="adm-icon-btn"
+                                aria-label={`在前台開〈${post.title}〉`}
+                              >
+                                ↗
+                              </Link>
+                            )}
+                            <button
+                              type="button"
+                              className="adm-icon-btn adm-icon-btn-flare"
+                              aria-label={`刪除〈${post.title}〉`}
+                              onClick={() => void moveToTrash(post)}
+                            >
+                              刪除
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        {!isPending && (
-          <p className="adm-meta">
-            顯示 {filtered.length} / {source.length} 篇
-          </p>
-        )}
+          {!isPending && (
+            <p className="adm-meta">
+              顯示 {filtered.length} / {source.length} 篇
+            </p>
+          )}
+        </TabPanel>
       </section>
 
       <AlertDialog open={!!purgeTarget} onOpenChange={() => setPurgeTarget(null)}>

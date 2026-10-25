@@ -149,7 +149,7 @@ export default function CategoriesManager() {
   };
 
   return (
-    <div className="adm-page">
+    <div className="adm-page adm-page-narrow">
       <PageHead
         title="分類"
         latin="Categories"

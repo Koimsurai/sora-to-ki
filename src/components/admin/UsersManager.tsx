@@ -71,7 +71,7 @@ export default function UsersManager() {
   const countOf = (role: string) => users.filter((u) => (u.role ?? 'USER') === role).length;
 
   return (
-    <div className="adm-page">
+    <div className="adm-page adm-page-narrow">
       <PageHead
         title="帳號"
         latin="Accounts"

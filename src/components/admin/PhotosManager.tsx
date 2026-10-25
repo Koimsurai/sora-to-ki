@@ -7,7 +7,7 @@ import { adminPhotosQueryOptions } from '@/data/adminData';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import { frameOf } from '@/components/gallery/frames';
 import AdminLoading, { BusyDot } from './AdminLoading';
-import { PageHead } from './AdminPage';
+import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
 import './PhotosManager.css';
 
@@ -121,44 +121,46 @@ export default function PhotosManager() {
           </div>
         </div>
 
-        {isPending ? (
-          <AdminLoading label="讀照片" />
-        ) : shown.length === 0 ? (
-          <p className="adm-empty">
-            {photos.length === 0 ? '還沒有照片。按「從 NAS 同步」把照片拉進來。' : '這裡沒有照片。'}
-          </p>
-        ) : (
-          <div className="adm-photos">
-            <ul className="adm-photo-wall" aria-label="照片牆">
-              {shown.map((p) => (
-                <li
-                  key={p.id}
-                  // 寬度照長寬比分（橫的寬、直的窄），一列自己撐滿
-                  style={{ flexGrow: p.aspectRatio * 100, flexBasis: `${p.aspectRatio * 120}px` }}
-                >
-                  <button
-                    type="button"
-                    className="adm-photo"
-                    aria-pressed={selected?.id === p.id}
-                    aria-label={`${p.title}${p.featured ? '（精選）' : ''}${p.hidden ? '（藏起來的）' : ''}`}
-                    data-hidden={p.hidden || undefined}
-                    onClick={() => setSelectedId(p.id)}
+        <TabPanel tab={filter}>
+          {isPending ? (
+            <AdminLoading label="讀照片" />
+          ) : shown.length === 0 ? (
+            <p className="adm-empty">
+              {photos.length === 0 ? '還沒有照片。按「從 NAS 同步」把照片拉進來。' : '這裡沒有照片。'}
+            </p>
+          ) : (
+            <div className="adm-photos">
+              <ul className="adm-photo-wall" aria-label="照片牆">
+                {shown.map((p) => (
+                  <li
+                    key={p.id}
+                    // 寬度照長寬比分（橫的寬、直的窄），一列自己撐滿
+                    style={{ flexGrow: p.aspectRatio * 100, flexBasis: `${p.aspectRatio * 120}px` }}
                   >
-                    <img src={p.thumbnailUrl} alt="" loading="lazy" decoding="async" />
-                    {p.featured && <span className="adm-photo-star" aria-hidden="true" />}
-                    {untitled(p) && (
-                      <span className="adm-photo-tag" aria-hidden="true">
-                        未命名
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <button
+                      type="button"
+                      className="adm-photo"
+                      aria-pressed={selected?.id === p.id}
+                      aria-label={`${p.title}${p.featured ? '（精選）' : ''}${p.hidden ? '（藏起來的）' : ''}`}
+                      data-hidden={p.hidden || undefined}
+                      onClick={() => setSelectedId(p.id)}
+                    >
+                      <img src={p.thumbnailUrl} alt="" loading="lazy" decoding="async" />
+                      {p.featured && <span className="adm-photo-star" aria-hidden="true" />}
+                      {untitled(p) && (
+                        <span className="adm-photo-tag" aria-hidden="true">
+                          未命名
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
 
-            {selected && <PhotoEditor key={selected.id} photo={selected} onSaved={refresh} />}
-          </div>
-        )}
+              {selected && <PhotoEditor key={selected.id} photo={selected} onSaved={refresh} />}
+            </div>
+          )}
+        </TabPanel>
       </section>
     </div>
   );

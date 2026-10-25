@@ -1,13 +1,47 @@
 /* 後台各頁共用的版面（元件見 AdminPage.tsx）。材料跟前台同一套：等寬小字當標籤、
    點線分隔列與列、四角框只給數字。 */
 
+/* 撐滿側欄右邊的整個寬度；超寬螢幕才收住並置中（一列讀不完的寬度沒有用）。
+   進場：淡入、往上浮一點。只用 backwards 不用 both——停在 transform 上的話，
+   .adm-page 會變成裡面 position: fixed 元素的定位基準 */
 .adm-page {
   box-sizing: border-box;
-  max-width: 1120px;
+  width: 100%;
+  max-width: 1760px;
+  margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: var(--space-12);
   padding: var(--space-10) var(--space-14) var(--space-16);
+  animation: adm-enter var(--dur-400) var(--easing-out) backwards;
+}
+
+/* 一列一筆的清單頁（標籤、分類、帳號…）：拉到兩千寬只會讓名字跟按鈕隔一整個螢幕，
+   收成一欄放在右邊置中 */
+.adm-page-narrow {
+  max-width: 1200px;
+}
+
+/* 分頁切換：內容整塊換掉時重播一次進場（AdminPage.tsx 的 TabPanel 用 key 重掛） */
+.adm-tabpanel {
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  animation: adm-enter var(--dur-300) var(--easing-out) backwards;
+}
+
+@keyframes adm-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-page,
+  .adm-tabpanel {
+    animation: none;
+  }
 }
 
 /* ── 頁首 ── */
@@ -250,6 +284,10 @@
   height: 6px;
   border: 1px solid var(--paper-3);
   border-radius: var(--r-round);
+  transition:
+    background-color var(--dur-250) ease,
+    border-color var(--dur-250) ease,
+    box-shadow var(--dur-400) var(--easing-out);
 }
 
 .adm-tab[aria-pressed="true"] .adm-tab-dot,

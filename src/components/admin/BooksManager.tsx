@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading, { BusyDot } from './AdminLoading';
-import { PageHead } from './AdminPage';
+import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
 
 // 書架（2026-10 後台提案的「收」）：一本一列——封面、書名與作者、狀態、評分。
@@ -225,7 +225,7 @@ export default function BooksManager() {
   };
 
   return (
-    <div className="adm-page">
+    <div className="adm-page adm-page-narrow">
       <PageHead
         title="書架"
         latin="Shelf"
@@ -268,50 +268,55 @@ export default function BooksManager() {
           </label>
         </div>
 
-        {isPending ? (
-          <AdminLoading />
-        ) : shown.length === 0 ? (
-          <p className="adm-empty">{books.length === 0 ? '書架還是空的。' : '沒有符合的書。'}</p>
-        ) : (
-          <ul className="adm-list">
-            {shown.map((book) => (
-              <li key={book.id} className="adm-row adm-book">
-                {book.cover_url ? (
-                  <img className="adm-cover" src={proxiedImage(book.cover_url)} alt="" loading="lazy" />
-                ) : (
-                  <span className="adm-cover adm-cover-empty" aria-hidden="true" />
-                )}
-                <span className="adm-row-main">
-                  <span className="adm-row-title">{book.title}</span>
-                  {book.authors && <span className="adm-row-sub">{book.authors}</span>}
-                  <span className="adm-meta">{bookMeta(book)}</span>
-                </span>
-                <span className="adm-status" data-status={book.reading_status === 'reading' ? 'published' : undefined}>
-                  {statusLabel(book.reading_status)}
-                </span>
-                <span className="adm-meta adm-book-rating">{book.rating ? `★ ${book.rating}` : '—'}</span>
-                <span className="adm-row-actions">
-                  <button
-                    type="button"
-                    className="adm-icon-btn"
-                    aria-label={`編輯《${book.title}》`}
-                    onClick={() => openEdit(book)}
+        <TabPanel tab={tab}>
+          {isPending ? (
+            <AdminLoading />
+          ) : shown.length === 0 ? (
+            <p className="adm-empty">{books.length === 0 ? '書架還是空的。' : '沒有符合的書。'}</p>
+          ) : (
+            <ul className="adm-list">
+              {shown.map((book) => (
+                <li key={book.id} className="adm-row adm-book">
+                  {book.cover_url ? (
+                    <img className="adm-cover" src={proxiedImage(book.cover_url)} alt="" loading="lazy" />
+                  ) : (
+                    <span className="adm-cover adm-cover-empty" aria-hidden="true" />
+                  )}
+                  <span className="adm-row-main">
+                    <span className="adm-row-title">{book.title}</span>
+                    {book.authors && <span className="adm-row-sub">{book.authors}</span>}
+                    <span className="adm-meta">{bookMeta(book)}</span>
+                  </span>
+                  <span
+                    className="adm-status"
+                    data-status={book.reading_status === 'reading' ? 'published' : undefined}
                   >
-                    編輯
-                  </button>
-                  <button
-                    type="button"
-                    className="adm-icon-btn adm-icon-btn-flare"
-                    aria-label={`刪除《${book.title}》`}
-                    onClick={() => setDeleteId(book.id)}
-                  >
-                    刪除
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+                    {statusLabel(book.reading_status)}
+                  </span>
+                  <span className="adm-meta adm-book-rating">{book.rating ? `★ ${book.rating}` : '—'}</span>
+                  <span className="adm-row-actions">
+                    <button
+                      type="button"
+                      className="adm-icon-btn"
+                      aria-label={`編輯《${book.title}》`}
+                      onClick={() => openEdit(book)}
+                    >
+                      編輯
+                    </button>
+                    <button
+                      type="button"
+                      className="adm-icon-btn adm-icon-btn-flare"
+                      aria-label={`刪除《${book.title}》`}
+                      onClick={() => setDeleteId(book.id)}
+                    >
+                      刪除
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </TabPanel>
       </section>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
