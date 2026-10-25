@@ -342,6 +342,14 @@ export default function Friends() {
         el.classList.toggle('is-left', !right);
         el.classList.toggle('is-on', i === star);
         el.style.transform = `translate(${lx}px, ${ly}px)`;
+        // 名字上方那行介紹不算在字塊的寬度裡（浮著、最寬 300px）：星轉到邊上時它會伸出星圖被切掉，
+        // 推回來（往右長的推左、往左長的推右）
+        const desc = el.querySelector<HTMLElement>('.fr-desc');
+        if (desc) {
+          const dw = desc.offsetWidth;
+          const shift = right ? Math.min(0, w - 8 - (lx + dw)) : Math.max(0, 8 - (lx + lw - dw));
+          desc.style.translate = shift ? `${shift}px 0` : '';
+        }
         el.style.opacity = String(p.appear * (star < 0 || i === star ? 1 : 0.5) * (1 - zoom));
         el.style.visibility = zoom > 0.95 ? 'hidden' : '';
       });

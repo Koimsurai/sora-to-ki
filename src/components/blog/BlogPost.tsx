@@ -28,7 +28,6 @@ import { MermaidBlock, MermaidStatic } from './MermaidBlock';
 import { MermaidSvgContext } from '@/contexts/mermaidSvgs';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation, Trans } from 'react-i18next';
-import { FaEnvelope, FaTimes } from 'react-icons/fa';
 import ArticleComments from './ArticleComments';
 import { FontLine, LangLine } from './ArticleControls';
 import ReactionSky from './ReactionSky';
@@ -42,6 +41,7 @@ import './ArticleFrame.css';
 import SignatureSVG from '@/components/common/SignatureSVG';
 import { LinkCard } from '@/components/common/LinkCard';
 import { LinkHoverPreview } from '@/components/common/LinkHoverPreview';
+import { Modal, ModalTitle } from '@/components/common/Modal';
 import { MdxContent } from '@/components/mdx/MdxContent';
 // slugify / extractHeadings / computeReadTime：與 BlogPostPage（SSR fallback）共用同一份，
 // 確保 heading anchor id / TOC / 閱讀時間兩邊逐字一致。
@@ -853,50 +853,37 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
+  // 跟朋友頁的申請表同一套：直角細框、宋體標題、等寬小字的欄位名、底線輸入框、細框的送出鈕
   return (
-    <motion.div
-      className="subscribe-overlay"
-      onClick={onClose}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-    >
+    <Modal onClose={onClose} overlayClassName="subscribe-overlay" fade>
       <motion.div
         className="subscribe-modal"
-        onClick={(e) => e.stopPropagation()}
-        initial={{ opacity: 0, scale: 0.95, y: 16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 16 }}
-        transition={{ duration: 0.25 }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 12 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       >
-        <button type="button" className="subscribe-close" onClick={onClose} aria-label="關閉">
-          <FaTimes />
-        </button>
+        <button type="button" className="subscribe-close" onClick={onClose} aria-label={t('common.close')} />
 
         {subscribed ? (
-          /* ── 已訂閱狀態 ── */
+          /* ── 已訂閱 ── */
           <>
-            <div className="subscribe-header">
-              <FaEnvelope className="subscribe-icon" />
-              <h3>{t('newsletter.confirmedTitle')}</h3>
-              <p>
-                <Trans
-                  i18nKey="newsletter.alreadyBody"
-                  values={{ email: subscribed.email }}
-                  components={{ em: <span className="subscribe-email-chip" /> }}
-                />
-                <br />
-                {t('newsletter.nextNotice')}
-              </p>
-            </div>
-            <div className="subscribe-form">
-              <button type="button" onClick={onClose}>
+            <ModalTitle className="subscribe-title">{t('newsletter.confirmedTitle')}</ModalTitle>
+            <p className="subscribe-lead">
+              <Trans
+                i18nKey="newsletter.alreadyBody"
+                values={{ email: subscribed.email }}
+                components={{ em: <span className="subscribe-email" /> }}
+              />{' '}
+              {t('newsletter.nextNotice')}
+            </p>
+            <div className="subscribe-actions">
+              <button type="button" className="subscribe-submit" onClick={onClose}>
                 {t('newsletter.okBtn')}
               </button>
               <button
                 type="button"
-                className="subscribe-secondary"
+                className="subscribe-quiet"
                 onClick={() => {
                   void handleUnsubscribe();
                 }}
@@ -905,16 +892,13 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
                 {status === 'loading' ? t('newsletter.unsubProcessing') : t('newsletter.unsubBtn')}
               </button>
             </div>
-            {message && <p className={'subscribe-msg ' + status}>{message}</p>}
+            {message && <output className={'subscribe-msg ' + status}>{message}</output>}
           </>
         ) : (
           /* ── 訂閱表單 ── */
           <>
-            <div className="subscribe-header">
-              <FaEnvelope className="subscribe-icon" />
-              <h3>{t('newsletter.title')}</h3>
-              <p>{t('newsletter.subscribeIntro')}</p>
-            </div>
+            <ModalTitle className="subscribe-title">{t('newsletter.title')}</ModalTitle>
+            <p className="subscribe-lead">{t('newsletter.subscribeIntro')}</p>
             <form
               onSubmit={(e) => {
                 void handleSubmit(e);
@@ -923,35 +907,42 @@ const SubscribeModal = ({ onClose }: { onClose: () => void }) => {
               toolname="subscribe_newsletter"
               tooldescription="訂閱 koimsurai 電子報，有新文章時以 email 通知"
             >
-              <input
-                type="text"
-                name="name"
-                toolparamdescription="訂閱者暱稱（選填）"
-                placeholder={t('newsletter.namePlaceholderShort')}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={status === 'loading'}
-              />
-              <input
-                type="email"
-                name="email"
-                toolparamdescription="訂閱用的 email 地址"
-                placeholder={t('newsletter.emailPlaceholderShort')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={status === 'loading'}
-              />
-              <button type="submit" disabled={status === 'loading'}>
+              <label className="subscribe-field">
+                <span>{t('newsletter.fieldName')}</span>
+                <input
+                  type="text"
+                  name="name"
+                  autoComplete="name"
+                  toolparamdescription="訂閱者暱稱（選填）"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={status === 'loading'}
+                />
+              </label>
+              <label className="subscribe-field">
+                <span>{t('newsletter.fieldEmail')}</span>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  toolparamdescription="訂閱用的 email 地址"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={status === 'loading'}
+                />
+              </label>
+              <button type="submit" className="subscribe-submit" disabled={status === 'loading'}>
                 {status === 'loading' ? t('newsletter.processing') : t('newsletter.subscribe')}
               </button>
             </form>
-            {message && <p className={'subscribe-msg ' + status}>{message}</p>}
+            {message && <output className={'subscribe-msg ' + status}>{message}</output>}
             <p className="subscribe-privacy">{t('newsletter.privacy')}</p>
           </>
         )}
       </motion.div>
-    </motion.div>
+    </Modal>
   );
 };
 

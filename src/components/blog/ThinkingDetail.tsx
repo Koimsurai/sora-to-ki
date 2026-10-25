@@ -75,8 +75,14 @@ function Bit({
 }
 
 export default function ThinkingDetail() {
-  const { t } = useTranslation();
   const { id = '' } = useParams({ strict: false }); // 兩種路由（/thinking/$id、/$locale/thinking/$id）共用
+  // 換一則（頂欄的選單直接點另一則）時整頁重掛：路由會沿用同一個元件、只換 id，
+  // 而放大交棒的鏡頭、彗尾的版面與進場都是掛上時算一次的——不重掛的話還是上一則的，彗尾位置與動畫都會錯
+  return <MomentPage key={id} id={id} />;
+}
+
+function MomentPage({ id }: { id: string }) {
+  const { t } = useTranslation();
   const { isAdmin } = useAuth();
   const navigate = useLocaleNavigate();
   const admin = useThoughtAdmin();
