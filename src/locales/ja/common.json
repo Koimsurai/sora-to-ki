@@ -134,7 +134,23 @@
       "posts": "記事",
       "categories": "カテゴリ",
       "tags": "タグ"
+    },
+    "home": "ホーム",
+    "keys": {
+      "move": "移動",
+      "open": "開く",
+      "toggle": "開閉"
     }
+  },
+  "contextMenu": {
+    "back": "戻る",
+    "forward": "進む",
+    "reload": "再読み込み",
+    "openNewTab": "リンクを新しいタブで開く",
+    "copyLink": "リンクのアドレスをコピー",
+    "random": "ランダムな記事",
+    "top": "ページの先頭へ",
+    "hint": "Shift を押しながら右クリックでブラウザのメニュー"
   },
   "backToTop": {
     "label": "トップへ戻る"
@@ -428,7 +444,43 @@
     "station": "DSN · 地上局",
     "stationLabel": "遠くの探査機からの信号を受ける地上局のパラボラアンテナ",
     "passesLabel": "月ごとの受信枚数：最多は {{month}}、{{count}} 枚",
-    "frame": "写真 {{date}}"
+    "frame": "写真 {{date}}",
+    "viewer": {
+      "share": "この写真を共有",
+      "shareShort": "共有",
+      "shareTitle": "写真",
+      "shareText": "Koimsurai の写真",
+      "close": "ビューアを閉じる",
+      "closeHint": "閉じる（Esc）",
+      "prev": "前の写真",
+      "next": "次の写真"
+    },
+    "exif": {
+      "info": "写真の情報",
+      "title": "タイトル",
+      "description": "説明",
+      "basic": "基本情報",
+      "size": "サイズ",
+      "fileSize": "ファイルサイズ",
+      "format": "形式",
+      "ratio": "縦横比",
+      "camera": "カメラ",
+      "make": "メーカー",
+      "model": "モデル",
+      "lens": "レンズ",
+      "shooting": "撮影設定",
+      "focal": "焦点距離",
+      "aperture": "絞り",
+      "shutter": "シャッター速度",
+      "flash": "フラッシュ",
+      "whiteBalance": "ホワイトバランス",
+      "taken": "撮影日時",
+      "location": "位置情報",
+      "lat": "緯度",
+      "lng": "経度",
+      "altitude": "標高",
+      "tags": "タグ"
+    }
   },
   "aboutFall": {
     "kick": "について",

@@ -134,7 +134,23 @@
       "posts": "Posts",
       "categories": "Categories",
       "tags": "Tags"
+    },
+    "home": "Home",
+    "keys": {
+      "move": "move",
+      "open": "open",
+      "toggle": "toggle"
     }
+  },
+  "contextMenu": {
+    "back": "Back",
+    "forward": "Forward",
+    "reload": "Reload",
+    "openNewTab": "Open link in new tab",
+    "copyLink": "Copy link address",
+    "random": "A random post",
+    "top": "Back to top",
+    "hint": "Hold Shift while right-clicking for the browser menu"
   },
   "backToTop": {
     "label": "Back to top"
@@ -428,7 +444,43 @@
     "station": "DSN · GROUND STATION",
     "stationLabel": "A ground station dish receiving a signal from a distant probe",
     "passesLabel": "Frames received per month: most in {{month}}, {{count}} frames",
-    "frame": "Photo {{date}}"
+    "frame": "Photo {{date}}",
+    "viewer": {
+      "share": "Share this photo",
+      "shareShort": "Share",
+      "shareTitle": "Photo",
+      "shareText": "A photo by Koimsurai",
+      "close": "Close viewer",
+      "closeHint": "Close (Esc)",
+      "prev": "Previous photo",
+      "next": "Next photo"
+    },
+    "exif": {
+      "info": "Photo",
+      "title": "Title",
+      "description": "Description",
+      "basic": "Basics",
+      "size": "Dimensions",
+      "fileSize": "File size",
+      "format": "Format",
+      "ratio": "Aspect ratio",
+      "camera": "Camera",
+      "make": "Make",
+      "model": "Model",
+      "lens": "Lens",
+      "shooting": "Exposure",
+      "focal": "Focal length",
+      "aperture": "Aperture",
+      "shutter": "Shutter",
+      "flash": "Flash",
+      "whiteBalance": "White balance",
+      "taken": "Taken",
+      "location": "Location",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "altitude": "Altitude",
+      "tags": "Tags"
+    }
   },
   "aboutFall": {
     "kick": "About",

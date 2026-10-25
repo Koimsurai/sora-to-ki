@@ -1,168 +1,188 @@
+/* 指令面板（⌘K）。跟連結預覽卡、作者註小卡同一種：夜色底、一條細框、直角、不浮陰影。
+   每一項前面一個空心小圓，選到的那項變成琥珀實心點（跟此站點的問答同一套） */
+
 .cmdk-backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-palette);
-  background: rgba(var(--surface-0-rgb), 0.55);
-  backdrop-filter: blur(var(--blur-8));
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 12vh;
-  animation: cmdk-fade 0.18s ease;
+  padding-top: 14vh;
+  background: rgba(var(--ground-rgb), 0.7);
+  animation: cmdk-fade var(--dur-150) ease;
 }
 
 @keyframes cmdk-fade {
   from {
     opacity: 0;
   }
-  to {
-    opacity: 1;
-  }
 }
 
 .cmdk-wrap {
-  width: min(640px, 92vw);
-  background: rgba(var(--surface-1-rgb), 0.9);
-  border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: var(--r-12);
-  box-shadow:
-    0 24px 64px var(--black-55),
-    0 0 24px rgba(var(--brand-rgb), 0.1);
+  width: min(600px, 92vw);
   overflow: hidden;
-  animation: cmdk-pop 0.2s var(--easing-out);
+  background: rgba(var(--ground-rgb), 0.96);
+  border: 1px solid var(--rule);
+  animation: cmdk-pop var(--dur-200) var(--easing-out);
 }
 
 @keyframes cmdk-pop {
   from {
-    transform: translateY(-8px);
     opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+    transform: translateY(-6px);
   }
 }
 
+/* 輸入列：等寬的提示符（跟留言表單的 > 同一個），字是宋體 */
 .cmdk-input-row {
   display: flex;
   align-items: center;
-  gap: var(--space-2-5);
-  padding: var(--space-3) var(--space-3-5);
-  border-bottom: 1px solid var(--white-06);
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px dotted var(--rule);
 }
-.cmdk-search-icon {
-  color: var(--white-50);
-  flex-shrink: 0;
+
+.cmdk-prompt {
+  font-family: var(--mono-font);
+  font-size: var(--fs-14);
+  color: var(--amber);
 }
+
 .cmdk-wrap [cmdk-input] {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
-  color: var(--white-95);
-  font-size: var(--fs-14);
-  font-family: inherit;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-16);
 }
+
 .cmdk-wrap [cmdk-input]::placeholder {
-  color: var(--white-30);
+  color: var(--paper-3);
 }
-.cmdk-kbd,
+
 .cmdk-wrap kbd {
+  padding: 0 var(--space-1-5);
+  border: 1px solid var(--rule);
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  padding: var(--space-0-5) var(--space-1-5);
-  border-radius: var(--r-4);
-  background: var(--white-06);
-  border: 1px solid var(--white-10);
-  color: var(--white-55);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
 }
 
 .cmdk-list {
   max-height: 56vh;
   overflow-y: auto;
-  padding: var(--space-1-5);
+  padding: var(--space-2) 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--brand-rgb), 0.3) transparent;
-}
-.cmdk-list::-webkit-scrollbar {
-  width: 6px;
-}
-.cmdk-list::-webkit-scrollbar-thumb {
-  background: rgba(var(--brand-rgb), 0.25);
-  border-radius: var(--r-full);
+  scrollbar-color: var(--rule) transparent;
 }
 
+/* 分組標題：等寬小字，後面一條點線拉到底 */
 .cmdk-wrap [cmdk-group-heading] {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5) var(--space-1-5);
+  font-family: var(--mono-font);
   font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
   text-transform: uppercase;
-  letter-spacing: var(--ls-8);
-  color: var(--white-35);
-  padding: var(--space-2-5) var(--space-2-5) var(--space-1);
+  color: var(--paper-3);
   user-select: none;
+}
+
+.cmdk-wrap [cmdk-group-heading]::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dotted var(--rule);
 }
 
 .cmdk-wrap [cmdk-item] {
   display: flex;
   align-items: center;
-  gap: var(--space-2-5);
-  padding: var(--space-2) var(--space-2-5);
-  border-radius: var(--r-8);
-  color: var(--white-80);
-  font-size: var(--fs-13);
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-5);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  color: var(--paper-2);
   cursor: pointer;
-  transition:
-    background-color var(--dur-100),
-    color var(--dur-100);
+  transition: color var(--dur-100) ease;
 }
+
 .cmdk-wrap [cmdk-item][data-selected="true"] {
-  background: rgba(var(--brand-rgb), 0.15);
-  color: #fff;
+  color: var(--paper);
 }
-.cmdk-icon {
-  color: var(--white-45);
+
+.cmdk-dot {
   flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-round);
+  transition:
+    background-color var(--dur-100) ease,
+    border-color var(--dur-100) ease;
 }
-.cmdk-wrap [cmdk-item][data-selected="true"] .cmdk-icon {
-  color: var(--brand-light);
+
+.cmdk-wrap [cmdk-item][data-selected="true"] .cmdk-dot {
+  border-color: var(--amber);
+  background: var(--amber);
 }
+
 .cmdk-truncate {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
 }
+
 .cmdk-meta {
-  margin-left: auto;
-  font-size: var(--fs-11);
-  color: var(--white-35);
   flex-shrink: 0;
+  margin-left: auto;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-8);
+  color: var(--paper-3);
 }
 
 .cmdk-empty {
-  padding: var(--space-9) var(--space-3-5);
+  padding: var(--space-10) var(--space-5);
   text-align: center;
-  color: var(--white-40);
-  font-size: var(--fs-13);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  color: var(--paper-3);
 }
 
 .cmdk-footer {
   display: flex;
-  gap: var(--space-4);
-  padding: var(--space-2) var(--space-3-5);
-  border-top: 1px solid var(--white-06);
-  font-size: var(--fs-11);
-  color: var(--white-40);
+  gap: var(--space-5);
+  padding: var(--space-2-5) var(--space-5);
+  border-top: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
 }
+
 .cmdk-footer kbd {
-  margin-right: var(--space-1);
+  margin-right: var(--space-1-5);
 }
 
 @media (max-width: 640px) {
   .cmdk-backdrop {
     padding-top: 8vh;
   }
+
   .cmdk-list {
     max-height: 60vh;
+  }
+
+  .cmdk-footer {
+    display: none;
   }
 }

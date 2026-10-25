@@ -80,6 +80,18 @@ export interface PerfReport {
   clockSkewMs: number;
 }
 
+/** 建 runner 各段花了多久（毫秒）：土星出來得慢的時候看是哪一段（?debug=perf 的徽章會顯示） */
+export interface InitTiming {
+  /** 判斷是不是軟體渲染 */
+  probe: number;
+  /** renderer.init：拿 GPU adapter、建 device */
+  device: number;
+  /** 建場景＋預先編譯所有著色器（沒有著色器快取時最慢的就是這段） */
+  compile: number;
+  /** 暖機的第一幀 */
+  first: number;
+}
+
 export interface StarfieldRunner {
   setSize(width: number, height: number): void;
   setRunning(running: boolean): void;
@@ -566,8 +578,16 @@ async function softwareRendering(): Promise<boolean> {
 
 export async function createStarfieldRunner(
   init: StarfieldInit,
-): Promise<{ runner: StarfieldRunner; backend: 'WebGPU' | 'WebGL2' }> {
+): Promise<{ runner: StarfieldRunner; backend: 'WebGPU' | 'WebGL2'; timing: InitTiming }> {
+  let mark = performance.now();
+  const lap = () => {
+    const now = performance.now();
+    const d = Math.round(now - mark);
+    mark = now;
+    return d;
+  };
   if (await softwareRendering()) throw new Error('沒有硬體加速（軟體渲染），不建 3D');
+  const probe = lap();
   const renderer = new THREE.WebGPURenderer({
     // 型別只收 HTMLCanvasElement；OffscreenCanvas 在 runtime 相容（官方 worker 範例同款用法）
     canvas: init.canvas as HTMLCanvasElement,
@@ -586,6 +606,7 @@ export async function createStarfieldRunner(
     );
   };
   await renderer.init();
+  const device = lap();
   const backend: 'WebGPU' | 'WebGL2' =
     (renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend === true ? 'WebGPU' : 'WebGL2';
 
@@ -648,8 +669,10 @@ export async function createStarfieldRunner(
   // （實測主 pipeline 第一次畫要 100–440ms，換成這個之後剩 70–170ms，剩下的是 bloom 的全螢幕 pass）。
   await scenePass.compileAsync(renderer);
   await saturnPass.compileAsync(renderer);
+  const compile = lap();
   pipeline.render();
   saturn.group.visible = false;
+  const first = lap();
 
   // ── 渲染迴圈 ──────────────────────────────────────────────────
   //
@@ -780,6 +803,7 @@ export async function createStarfieldRunner(
 
   return {
     backend,
+    timing: { probe, device, compile, first },
     runner: {
       setSize(width, height) {
         markActive();
