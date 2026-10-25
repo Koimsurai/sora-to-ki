@@ -262,7 +262,13 @@
     "font": "Font",
     "originalText": "original",
     "sameTag": "Also tagged #{{name}}",
-    "sameTagNone": "This is the only post with this tag."
+    "sameTagNone": "This is the only post with this tag.",
+    "fontNames": {
+      "noto-serif": "Noto Serif",
+      "source-han": "Noto Sans",
+      "lxgw": "LXGW WenKai",
+      "misans": "MiSans"
+    }
   },
   "thinking": {
     "title": "Murmurs",
@@ -860,7 +866,8 @@
           "d": "Finally it joins the spiral on the works page: the center is the start, and newer works sit farther out. The one you just made is the newest, so it goes on the outermost turn."
         }
       }
-    }
+    },
+    "fontReading": "Articles can also be read in a sans, a handwritten-style or a modern sans face, each served per language by this site. MiSans is a free commercial font by Xiaomi."
   },
   "og": {
     "tagline": "Code, systems, and fragments of life."

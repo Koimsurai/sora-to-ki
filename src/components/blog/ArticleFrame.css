@@ -161,15 +161,59 @@
   color: var(--paper-3);
 }
 
+/* ── 非原文語系的 AI 翻譯提示：跟摘要同一種框（四個角、等寬的標頭），前面一個琥珀點——
+   它要一眼看得出「不是內文」，原本只是一行小字，跟內文的第一段分不太出來 ── */
 .ar-notice {
-  margin: 0 0 var(--space-6);
+  margin: 0 0 var(--space-8);
+  padding: var(--space-4) var(--space-5);
+  background:
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 12px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px 12px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 12px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px 12px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 12px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px 12px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 12px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px 12px no-repeat;
+}
+
+.ar-notice-hd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--amber);
+}
+
+.ar-notice-hd i {
+  width: 6px;
+  height: 6px;
+  background: var(--amber);
+  border-radius: var(--r-round);
+}
+
+.ar-notice p {
+  margin: 0;
   font-size: var(--fs-13);
+  line-height: var(--lh-170);
   color: var(--paper-2);
 }
 
 .ar-notice a {
   margin-left: var(--space-2);
   color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--paper-3);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.ar-notice a:hover,
+.ar-notice a:focus-visible {
+  text-decoration-color: var(--amber);
 }
 
 /* ── 摘要：編號 00、四個角框起來、字小一號——它是附件，不是內文 ── */

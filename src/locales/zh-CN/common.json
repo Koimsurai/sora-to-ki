@@ -262,7 +262,13 @@
     "font": "字体",
     "originalText": "原文",
     "sameTag": "同标 #{{name}}",
-    "sameTagNone": "这个标签只有这一篇。"
+    "sameTagNone": "这个标签只有这一篇。",
+    "fontNames": {
+      "noto-serif": "思源宋体",
+      "source-han": "思源黑体",
+      "lxgw": "霞鹜文楷",
+      "misans": "MiSans"
+    }
   },
   "thinking": {
     "title": "碎念",
@@ -860,7 +866,8 @@
           "d": "最后放上作品页的螺旋：中心是起点，越新的越外圈。你刚做的这颗最新，所以排在最外面。"
         }
       }
-    }
+    },
+    "fontReading": "读文章时还能换成黑体、楷体或现代无衬线，四种都按语系由站上提供。MiSans 是小米的免费商用字体。"
   },
   "og": {
     "tagline": "代码、系统，与生活碎片。"

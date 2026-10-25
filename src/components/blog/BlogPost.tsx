@@ -125,9 +125,11 @@ const nodeText = (node: React.ReactNode): string => {
 };
 
 /* ── 閱讀字體 ── */
-/* 選項（id 與顯示名）在 blog/ArticleControls 的 FONT_OPTIONS（不 export，只有字體那一行在用）；字體棧本身在 index.css（--blog-font-<id>）——
+/* 選項的 id 在 blog/ArticleControls 的 FONT_OPTIONS、顯示名在語系檔的 blog.fontNames（各語系配的字不同）；
+   字體棧在 index.css（--blog-font-<id> 指向 --serif／--sans／--kai／--modern，各語系各一支，全是按頁裁字）——
    偏好必須在 paint 之前套用（見 __root.tsx 的 pre-paint script），而那段只能碰 CSS。
-   新增字體：FONT_OPTIONS 加一列 + index.css 加兩行（--blog-font-<id> 與 html[data-blog-font=...]）。 */
+   新增字體：FONT_OPTIONS 加 id、語系檔加名字、index.css 加 --blog-font-<id> 與 html[data-blog-font=...]；
+   要是新的一種字，還要在 lib/serifSubset 的 FontStyle 與伺服器的 FONTS 表、scripts/fetch-serif-font.mjs 各加一份 */
 const DEFAULT_BLOG_FONT = 'noto-serif';
 /** 舊版後端沒有 excerpt_links 欄位時給的空陣列（固定一份，摘要才不會每次重切） */
 const NO_LINKS: readonly ExcerptLink[] = [];
@@ -140,20 +142,27 @@ const TERMINAL_LANGS = new Set(['bash', 'sh', 'shell', 'zsh', 'console', 'termin
 
 // 非原文語系的文章：頂部掛「AI 翻譯、未經人工審校」提示（站長無法人工審日/韓等語法）。
 // 文字用目標語言寫（提示會出現在該語系頁），連回原文（source_language，走不帶 prefix 的規範路徑）。
-const AI_TRANSLATION_NOTICE: Record<string, { text: string; original: string }> = {
+const AI_TRANSLATION_NOTICE: Record<string, { label: string; text: string; original: string }> = {
   en: {
+    label: 'AI TRANSLATION',
     text: 'AI-translated from the original (Traditional Chinese) — not human-reviewed, so wording may be imperfect.',
     original: 'View original',
   },
   ja: {
+    label: 'AI 翻訳',
     text: 'この記事は原文（繁体字中国語）からのAI翻訳です。人手による校正はしていないため、表現に不自然さが残る場合があります。',
     original: '原文を見る',
   },
   ko: {
+    label: 'AI 번역',
     text: '이 글은 원문(번체 중국어)의 AI 번역본이며, 사람이 검수하지 않아 표현이 어색할 수 있습니다.',
     original: '원문 보기',
   },
-  'zh-CN': { text: '本文由原文（繁体中文）AI 翻译，未经人工审校，措辞可能不够自然。', original: '查看原文' },
+  'zh-CN': {
+    label: 'AI 翻译',
+    text: '本文由原文（繁体中文）AI 翻译，未经人工审校，措辞可能不够自然。',
+    original: '查看原文',
+  },
 };
 
 // 後台編輯器預覽（PostPreview）也重用這批 → export，讓預覽跟前台同一套渲染（shiki/mermaid/terminal）。
@@ -976,10 +985,13 @@ const LOCALE_TO_DATE_LOCALE: Record<string, string> = {
 };
 
 function parseLocaleFromPath(pathname: string) {
-  if (pathname.startsWith('/en/blog/')) return 'en';
-  if (pathname.startsWith('/zh-cn/blog/')) return 'zh-CN';
-  if (pathname.startsWith('/ja/blog/')) return 'ja';
-  if (pathname.startsWith('/ko/blog/')) return 'ko';
+  // 不分大小寫：站上的網址是 /zh-CN/，這裡原本只認小寫的 /zh-cn/——直接打開（或從分享的連結進來）
+  // 簡中文章時抓的是繁中原文，也沒有 AI 翻譯的提示；只有在頁面上切語系時才對
+  const path = pathname.toLowerCase();
+  if (path.startsWith('/en/blog/')) return 'en';
+  if (path.startsWith('/zh-cn/blog/')) return 'zh-CN';
+  if (path.startsWith('/ja/blog/')) return 'ja';
+  if (path.startsWith('/ko/blog/')) return 'ko';
   return 'zh-TW';
 }
 
@@ -1393,10 +1405,17 @@ function BlogPost() {
 
         {/* 非原文語系 → AI 翻譯提示（連回原文） */}
         {currentLocale !== sourceLang && translationNotice && (
-          <p className="ar-notice">
-            {translationNotice.text}
-            <a href={`/blog/${id}`}>{translationNotice.original} →</a>
-          </p>
+          // 跟摘要同一種框（四個角、等寬小字的標頭）：一眼看得出它是附註、不是內文
+          <aside className="ar-notice" role="note">
+            <div className="ar-notice-hd">
+              <i aria-hidden="true" />
+              {translationNotice.label}
+            </div>
+            <p>
+              {translationNotice.text}
+              <a href={`/blog/${id}`}>{translationNotice.original} →</a>
+            </p>
+          </aside>
         )}
 
         {post.excerpt && (
