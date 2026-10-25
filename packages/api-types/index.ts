@@ -1201,6 +1201,8 @@ export type ThoughtOut = {
 	edited: boolean,
 	dislikes: number,
 	comment_count: number,
+	/**  watched / read / listened / played / shared；null 是一般的碎念 */
+	verb: string | null,
 	/**  Express 的 `ref: safeParse(r.ref_json)`：解析成功→物件、失敗或 null→JSON null。 */
 	ref: ThoughtRef | null,
 };
@@ -1241,6 +1243,12 @@ export type ThoughtRef = {
 	rating: ThoughtRefScalar | null,
 	year: ThoughtRefScalar | null,
 	tmdbId: ThoughtRefScalar | null,
+	/**  歌手、作者 */
+	creator: string | null,
+	/**  進度，例如動畫看到的那一集 `EP 12`。前台原樣顯示，所以只寫不分語系的寫法 */
+	progress: string | null,
+	/**  附上的是哪一筆紀錄（`anime:<sn>`、`track:<id>`…），後台用來標「已經寫過」 */
+	key: string | null,
 };
 
 /**

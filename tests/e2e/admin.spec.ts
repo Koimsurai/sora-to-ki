@@ -211,6 +211,46 @@ test.describe('後台', () => {
   });
 
   /**
+   * 碎念：從右邊「最近的紀錄」挑一部電影，不寫字直接發——前台拿到的是「看了」加上那部片，
+   * 右邊那一列變成「已寫」。最後刪掉，不留在種子資料裡（列表與首頁的 e2e 也讀碎念）。
+   */
+  test('碎念：從紀錄帶入一部片、不寫字也發得出去，前台拿到動詞與作品', async ({ page }) => {
+    await signIn(page);
+    await gotoAdmin(page, '/admin/thoughts', '碎念');
+
+    const records = page.getByRole('complementary', { name: '最近的紀錄' });
+    await page.getByRole('button', { name: '看了', exact: true }).click();
+    const write = records.getByRole('button', { name: /^寫〈/ }).first();
+    await expect(write, '前提：種子裡要有觀看紀錄').toBeVisible({ timeout: 15_000 });
+    const title = /^寫〈(.+)〉$/.exec((await write.getAttribute('aria-label')) ?? '')?.[1] ?? '';
+    await write.click();
+
+    const preview = page.getByRole('region', { name: '前台會長這樣' });
+    await expect(preview).toContainText('看了');
+    await expect(preview).toContainText(title);
+
+    const posted = page.waitForResponse(
+      (r) => r.url().includes('/api/admin/thoughts') && r.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: /^發送/ }).click();
+    const id = ((await (await posted).json()) as { id: number }).id;
+
+    const thought = await page.evaluate(async (i) => {
+      const r = await fetch(`/api/thoughts/${i}`);
+      return ((await r.json()) as { thought: { content: string; verb: string; ref: { title: string; key: string } } })
+        .thought;
+    }, id);
+    expect(thought.content).toBe('');
+    expect(thought.verb).toBe('watched');
+    expect(thought.ref.title).toBe(title);
+    await expect(records.getByRole('button', { name: `寫〈${title}〉` }).first()).toHaveText('已寫');
+
+    await page.getByRole('button', { name: `刪掉〈${title}〉` }).click();
+    await page.getByRole('button', { name: '刪掉', exact: true }).click();
+    await expect(page.getByRole('button', { name: `刪掉〈${title}〉` })).toBeHidden({ timeout: 10_000 });
+  });
+
+  /**
    * token 被清掉 → 立刻被請出去。
    *
    * 既有的「未登入進不了後台」測的是「一開始就沒有 token」。這條測的是

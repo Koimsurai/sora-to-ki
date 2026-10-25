@@ -48,6 +48,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as AdminPhotosRouteImport } from './routes/admin/photos'
 import { Route as AdminSubscribersRouteImport } from './routes/admin/subscribers'
 import { Route as AdminTagsRouteImport } from './routes/admin/tags'
+import { Route as AdminThoughtsRouteImport } from './routes/admin/thoughts'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
@@ -261,6 +262,11 @@ const AdminTagsRoute = AdminTagsRouteImport.update({
   path: '/tags',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminThoughtsRoute = AdminThoughtsRouteImport.update({
+  id: '/thoughts',
+  path: '/thoughts',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -385,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
+  '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
@@ -442,6 +449,7 @@ export interface FileRoutesByTo {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
+  '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
@@ -501,6 +509,7 @@ export interface FileRoutesById {
   '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
+  '/admin/thoughts': typeof AdminThoughtsRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
@@ -561,6 +570,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
+    | '/admin/thoughts'
     | '/admin/users'
     | '/auth/callback'
     | '/blog/$id'
@@ -618,6 +628,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
+    | '/admin/thoughts'
     | '/admin/users'
     | '/auth/callback'
     | '/blog/$id'
@@ -676,6 +687,7 @@ export interface FileRouteTypes {
     | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
+    | '/admin/thoughts'
     | '/admin/users'
     | '/auth/callback'
     | '/blog/$id'
@@ -1016,6 +1028,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTagsRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/thoughts': {
+      id: '/admin/thoughts'
+      path: '/thoughts'
+      fullPath: '/admin/thoughts'
+      preLoaderRoute: typeof AdminThoughtsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
@@ -1149,6 +1168,7 @@ interface AdminRouteRouteChildren {
   AdminPhotosRoute: typeof AdminPhotosRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminTagsRoute: typeof AdminTagsRoute
+  AdminThoughtsRoute: typeof AdminThoughtsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminPostsCreateRoute: typeof AdminPostsCreateRoute
@@ -1167,6 +1187,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminPhotosRoute: AdminPhotosRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminTagsRoute: AdminTagsRoute,
+  AdminThoughtsRoute: AdminThoughtsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminPostsCreateRoute: AdminPostsCreateRoute,

@@ -727,21 +727,27 @@ export function makeTools(api: ApiClient): Tool[] {
     // ── 碎念 thoughts ─────────────────────────────────────────
     {
       name: 'koimsurai_create_thought',
-      description: '發一則碎念（短想法 feed）。content 必填；refUrl 給連結會自動抓 OG 卡片。',
+      description:
+        '發一則碎念（短想法 feed）。content 必填；refUrl 給連結會自動抓 OG 卡片。verb 是前台「Koimsurai 看了／讀了…」的動詞（存 key，五個語系各自翻）。',
       inputSchema: {
         type: 'object',
         properties: {
           content: { type: 'string' },
           refUrl: { type: 'string', description: '附帶連結（可選，會 unfurl）' },
+          verb: {
+            type: 'string',
+            enum: ['watched', 'read', 'listened', 'played', 'shared'],
+            description: '動詞（可選）；分享連結用 shared',
+          },
         },
         required: ['content'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('POST', '/api/admin/thoughts', { body: pick(a, ['content', 'refUrl']) }),
+      handler: (a) => api.request('POST', '/api/admin/thoughts', { body: pick(a, ['content', 'refUrl', 'verb']) }),
     },
     {
       name: 'koimsurai_update_thought',
-      description: '更新碎念。id 必填；clearRef=true 可清掉原本的連結卡片。',
+      description: '更新碎念。id 必填；clearRef=true 可清掉原本的連結卡片；verb 給空字串是拿掉動詞。',
       inputSchema: {
         type: 'object',
         properties: {
@@ -749,12 +755,15 @@ export function makeTools(api: ApiClient): Tool[] {
           content: { type: 'string' },
           refUrl: { type: 'string' },
           clearRef: { type: 'boolean' },
+          verb: { type: 'string', enum: ['', 'watched', 'read', 'listened', 'played', 'shared'] },
         },
         required: ['id'],
         additionalProperties: false,
       },
       handler: (a) =>
-        api.request('PUT', `/api/admin/thoughts/${idOf(a)}`, { body: pick(a, ['content', 'refUrl', 'clearRef']) }),
+        api.request('PUT', `/api/admin/thoughts/${idOf(a)}`, {
+          body: pick(a, ['content', 'refUrl', 'clearRef', 'verb']),
+        }),
     },
     {
       name: 'koimsurai_delete_thought',

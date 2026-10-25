@@ -280,7 +280,9 @@
     "label": "Moments",
     "like": "좋아요",
     "comments": "댓글 {{count}}개",
-    "older": "더 이전의 혼잣말"
+    "older": "더 이전의 혼잣말",
+    "verb": { "watched": "봤다", "read": "읽었다", "listened": "들었다", "played": "플레이했다", "shared": "공유" },
+    "kind": { "film": "영화", "tv": "시리즈", "anime": "애니", "book": "책", "track": "곡" }
   },
   "watch": {
     "favManage": "인생작 관리",

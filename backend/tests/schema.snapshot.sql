@@ -142,7 +142,7 @@ table tags
   CREATE TABLE tags ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP , name_en TEXT, name_ja TEXT, name_ko TEXT, name_zh_cn TEXT)
 
 table thoughts
-  CREATE TABLE thoughts ( id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT NOT NULL, ref_type TEXT, ref_url TEXT, ref_json TEXT, likes INTEGER DEFAULT 0, dislikes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME, edited INTEGER DEFAULT 0 )
+  CREATE TABLE thoughts ( id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT NOT NULL, ref_type TEXT, ref_url TEXT, ref_json TEXT, likes INTEGER DEFAULT 0, dislikes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME, edited INTEGER DEFAULT 0 , verb TEXT)
 
 table tv_history
   CREATE TABLE tv_history ( id INTEGER PRIMARY KEY AUTOINCREMENT, series_name TEXT NOT NULL, episode_label TEXT, watched_date DATE, source TEXT, tmdb_id INTEGER, poster_url TEXT, genres TEXT, synced_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(series_name, episode_label, watched_date) )

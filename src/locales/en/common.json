@@ -280,7 +280,9 @@
     "label": "",
     "like": "Like",
     "comments": "{{count}} comments",
-    "older": "Earlier"
+    "older": "Earlier",
+    "verb": { "watched": "watched", "read": "read", "listened": "listened to", "played": "played", "shared": "shared" },
+    "kind": { "film": "Film", "tv": "Series", "anime": "Anime", "book": "Book", "track": "Track" }
   },
   "watch": {
     "favManage": "Manage favorites",

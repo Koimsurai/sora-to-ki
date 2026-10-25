@@ -106,6 +106,8 @@ export interface AdminStats {
   postsThisMonth?: number;
   comments?: number;
   commentsThisWeek?: number;
+  thoughts?: number;
+  thoughtsThisMonth?: number;
   visitors?: number;
 }
 /** 收藏：在看（含不公開的）、在聽、不公開清單 */

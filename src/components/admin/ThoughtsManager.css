@@ -1,0 +1,243 @@
+/* 碎念（元件見 ThoughtsManager.tsx）：撰寫框、附上的作品、前台預覽、發過的、最近的紀錄。 */
+
+.adm-th-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+/* ── 撰寫框：一個細框，底下一條點線分出「附上」那一排 ── */
+.adm-th-compose {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule);
+  transition: border-color var(--dur-200) ease;
+}
+
+.adm-th-compose:focus-within {
+  border-color: var(--paper-3);
+}
+
+.adm-th-text {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5) var(--space-1-5);
+}
+
+.adm-th-text .adm-prompt-mark {
+  font-size: var(--fs-16);
+  line-height: var(--lh-170);
+}
+
+.adm-th-text textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-18);
+  line-height: var(--lh-170);
+}
+
+.adm-th-text textarea::placeholder {
+  color: var(--paper-meta);
+}
+
+.adm-th-url {
+  margin: 0 var(--space-5) var(--space-4) calc(var(--space-5) + var(--space-6));
+}
+
+.adm-th-attached {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0 var(--space-5) var(--space-4) calc(var(--space-5) + var(--space-6));
+  padding: var(--space-3-5);
+  border: 1px solid var(--rule);
+}
+
+.adm-th-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2-5);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px dotted var(--rule);
+}
+
+/* 附上的小鈕：細框，按下去框與字都實墨、點變琥珀 */
+.adm-th-chip {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--paper-2);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
+}
+
+.adm-th-chip:hover,
+.adm-th-chip:focus-visible {
+  border-color: var(--paper-3);
+  color: var(--paper);
+}
+
+.adm-th-chip[aria-pressed="true"] {
+  border-color: var(--paper-2);
+  color: var(--paper);
+}
+
+.adm-th-chip[aria-pressed="true"] .adm-tab-dot {
+  background: var(--amber);
+  border-color: var(--amber);
+}
+
+.adm-th-verb select {
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+}
+
+.adm-th-bar kbd {
+  margin-left: var(--space-2);
+}
+
+/* ── 附上的作品：海報、種類與小字、名字 ── */
+.adm-th-card {
+  min-width: 0;
+  display: flex;
+  gap: var(--space-4);
+}
+
+.adm-th-attached .adm-th-card {
+  flex: 1;
+}
+
+.adm-th-poster {
+  flex: none;
+  box-sizing: border-box;
+  width: 64px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+.adm-th-poster[data-square],
+.adm-th-thumb[data-square] {
+  aspect-ratio: 1;
+}
+
+.adm-th-card[data-compact] .adm-th-poster {
+  width: 48px;
+}
+
+.adm-th-card-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-1-5);
+}
+
+.adm-th-card-title {
+  font-size: var(--fs-18);
+  color: var(--paper);
+  overflow-wrap: anywhere;
+}
+
+.adm-th-card[data-compact] .adm-th-card-title {
+  font-size: var(--fs-16);
+}
+
+/* ── 前台會長這樣：四個角的細線框（前台碎念頁的取景框） ── */
+.adm-th-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3-5);
+  padding: var(--space-5) var(--space-6);
+  background:
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px 10px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 10px 1px no-repeat,
+    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px 10px no-repeat;
+}
+
+.adm-th-preview-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2-5);
+  font-size: var(--fs-16);
+}
+
+.adm-th-verb-text {
+  color: var(--paper-2);
+}
+
+.adm-th-preview-text {
+  margin: 0;
+  font-size: var(--fs-16);
+  line-height: var(--lh-185);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.adm-th-placeholder {
+  color: var(--paper-meta);
+}
+
+.adm-th-preview .adm-th-card {
+  padding: var(--space-3);
+  border: 1px solid var(--rule);
+}
+
+/* ── 發過的、最近的紀錄：一列一則，點線分隔 ── */
+.adm-th-list,
+.adm-th-records {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-th-records .adm-row-title {
+  font-size: var(--fs-14);
+}
+
+.adm-th-list .adm-row[data-editing] .adm-row-title {
+  color: var(--amber);
+}
+
+.adm-th-row-verb {
+  flex: none;
+  width: 44px;
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.adm-th-thumb {
+  flex: none;
+  box-sizing: border-box;
+  width: 32px;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+/* 寫過的退成淡墨：還是可以再寫一則 */
+.adm-th-records .adm-row[data-done] .adm-row-title,
+.adm-th-records .adm-row[data-done] .adm-btn {
+  color: var(--paper-meta);
+}

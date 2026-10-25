@@ -102,8 +102,13 @@ pub async fn home_digest(
     .fetch_all(&state.pool)
     .await?;
 
+    // 只附了作品、沒寫字的碎念用作品名頂上（首頁那一行不該是空的）。
+    // json_valid 先擋：舊資料的 ref_json 壞掉的話 json_extract 會讓整條查詢失敗
     let thoughts = sqlx::query_as::<_, DigestThought>(
-        "SELECT id, substr(content, 1, 120) AS content, ref_type, created_at FROM thoughts \
+        "SELECT id, substr(CASE WHEN trim(content) <> '' THEN content \
+                  WHEN json_valid(ref_json) THEN COALESCE(json_extract(ref_json, '$.title'), '') \
+                  ELSE '' END, 1, 120) AS content, \
+                ref_type, created_at FROM thoughts \
          ORDER BY created_at DESC LIMIT 3",
     )
     .fetch_all(&state.pool)

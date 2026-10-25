@@ -129,14 +129,38 @@
     0 0 16px var(--ground);
 }
 
-/* 附的連結：左邊一條點線，不是一張卡 */
+.mo-verb {
+  color: var(--paper-2);
+}
+
+/* 附的連結或作品：左邊一條點線，不是一張卡；作品多一張小海報 */
 .mo-embed {
   position: relative;
-  display: grid;
-  gap: var(--space-px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   margin-top: var(--space-2);
   padding: var(--space-px) 0 var(--space-px) var(--space-3);
   font-size: var(--fs-13);
+}
+
+.mo-embed-poster {
+  flex: none;
+  box-sizing: border-box;
+  width: 36px;
+  height: 54px;
+  object-fit: cover;
+  border: 1px solid var(--rule);
+}
+
+.mo-embed-poster[data-square] {
+  height: 36px;
+}
+
+.mo-embed-text {
+  display: grid;
+  gap: var(--space-px);
+  min-width: 0;
 }
 
 .mo-embed::before {
@@ -155,11 +179,11 @@
   transition: color var(--dur-200) ease;
 }
 
-.mo-embed:hover b {
+a.mo-embed:hover b {
   color: var(--amber);
 }
 
-.mo-embed span {
+.mo-embed-text > span {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
@@ -213,6 +237,7 @@
 }
 
 .mo-post.is-left .mo-embed {
+  flex-direction: row-reverse;
   padding: var(--space-px) var(--space-3) var(--space-px) 0;
 }
 
@@ -423,46 +448,6 @@
 
 .mo.is-leaving .mo-head {
   opacity: 0;
-}
-
-/* ── 管理者發文 ── */
-.mo-compose {
-  display: grid;
-  gap: var(--space-2);
-  max-width: 480px;
-  margin-top: var(--space-6);
-}
-
-.mo-compose textarea,
-.mo-compose input {
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-2);
-  background: rgba(var(--ground-rgb), 0.8);
-  color: var(--paper);
-  font: inherit;
-  font-size: var(--fs-14);
-}
-
-.mo-compose-chip {
-  display: flex;
-  gap: var(--space-2);
-  font-family: var(--mono-font);
-  font-size: var(--fs-11);
-  color: var(--paper-2);
-}
-
-.mo-compose button[type="submit"] {
-  justify-self: start;
-  padding: var(--space-1) var(--space-4);
-  border: 1px solid var(--paper-3);
-  border-radius: var(--r-full);
-  font-size: var(--fs-13);
-}
-
-.mo-compose button[type="submit"]:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 /* ── 單則（blog/ThinkingDetail）：彗核是這一則（字大一點），留言是彗尾上的碎屑，彗尾末端是送出列 ── */

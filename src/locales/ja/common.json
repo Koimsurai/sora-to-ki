@@ -280,7 +280,9 @@
     "label": "Moments",
     "like": "いいね",
     "comments": "コメント {{count}} 件",
-    "older": "もっと前のつぶやき"
+    "older": "もっと前のつぶやき",
+    "verb": { "watched": "観た", "read": "読んだ", "listened": "聴いた", "played": "遊んだ", "shared": "シェア" },
+    "kind": { "film": "映画", "tv": "ドラマ", "anime": "アニメ", "book": "本", "track": "曲" }
   },
   "watch": {
     "favManage": "お気に入り管理",

@@ -280,7 +280,9 @@
     "label": "Moments",
     "like": "赞",
     "comments": "{{count}} 条留言",
-    "older": "更早的碎念"
+    "older": "更早的碎念",
+    "verb": { "watched": "看了", "read": "读了", "listened": "听了", "played": "玩了", "shared": "分享" },
+    "kind": { "film": "电影", "tv": "剧集", "anime": "动画", "book": "书", "track": "歌" }
   },
   "watch": {
     "favManage": "管理一生推",

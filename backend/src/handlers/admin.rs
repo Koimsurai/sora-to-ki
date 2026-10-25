@@ -1982,6 +1982,16 @@ pub async fn admin_stats(State(state): State<AppState>, _auth: crate::auth::Admi
         Ok(r) => r,
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
+    // 碎念：後台碎念頁的頁首「n 則 · 本月 n」（列表只抓最近 50 則，數不出總數）
+    let thoughts = sqlx::query_as::<_, (i64, i64)>(
+        "SELECT COUNT(*), COUNT(CASE WHEN created_at >= date('now', 'start of month') THEN 1 END) FROM thoughts",
+    )
+    .fetch_one(&state.pool)
+    .await;
+    let (total_thoughts, thoughts_this_month) = match thoughts {
+        Ok(r) => r,
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
+    };
     // Math.floor(Math.random()*1000)+1000 → [1000,1999]
     let visitors: i64 = match sqlx::query_scalar::<_, i64>("SELECT COALESCE(SUM(view_count), 0) FROM posts")
         .fetch_one(&state.pool)
@@ -2000,6 +2010,8 @@ pub async fn admin_stats(State(state): State<AppState>, _auth: crate::auth::Admi
         "postsThisMonth": this_month,
         "comments": total_comments,
         "commentsThisWeek": comments_this_week,
+        "thoughts": total_thoughts,
+        "thoughtsThisMonth": thoughts_this_month,
         "visitors": visitors,
         "message": "success",
     }))

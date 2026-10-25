@@ -34,6 +34,7 @@ const NAV: NavGroup[] = [
     label: '寫 · Write',
     items: [
       { label: '手記', path: '/admin/posts' },
+      { label: '碎念', path: '/admin/thoughts' },
       { label: '分類', path: '/admin/categories' },
       { label: '標籤', path: '/admin/tags' },
     ],
