@@ -3,6 +3,7 @@ pub mod auth;
 pub mod bahamut;
 pub mod books;
 pub mod categories;
+pub mod collection;
 pub mod comments;
 pub mod excerpt_links;
 pub mod friend_links;

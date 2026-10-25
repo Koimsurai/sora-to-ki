@@ -15,6 +15,9 @@ use koimsurai_web_backend::handlers::admin::{
 use koimsurai_web_backend::handlers::auth::{AuthProvidersResponse, OAuthProviderInfo};
 use koimsurai_web_backend::handlers::books::{BookDetailResponse, BookRow, BooksListResponse};
 use koimsurai_web_backend::handlers::categories::{CategoriesResponse, CategoryRow};
+use koimsurai_web_backend::handlers::collection::{
+    AdminCollectionResponse, AdminTrackItem, AdminWatchItem, HiddenItem,
+};
 use koimsurai_web_backend::handlers::friend_links::{
     AdminFriendRow, AdminFriendsResponse, FriendCheck, FriendCounts,
 };
@@ -103,6 +106,10 @@ fn main() {
         .register::<GalleryPhotosResponse>()
         .register::<AdminPhoto>()
         .register::<AdminPhotosResponse>()
+        .register::<AdminWatchItem>()
+        .register::<AdminTrackItem>()
+        .register::<HiddenItem>()
+        .register::<AdminCollectionResponse>()
         .register::<AdminTagRow>()
         .register::<AdminCategoryRow>()
         .register::<AdminUserRow>()

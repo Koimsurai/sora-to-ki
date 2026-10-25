@@ -83,6 +83,8 @@ impl Modify for SecurityAddon {
         handlers::gallery::gallery_sync,
         handlers::photo_meta::admin_photos,
         handlers::photo_meta::admin_update_photo,
+        handlers::collection::admin_collection,
+        handlers::collection::admin_set_hidden,
         handlers::gallery::image_proxy,
         handlers::home::health,
         handlers::telemetry::telemetry,

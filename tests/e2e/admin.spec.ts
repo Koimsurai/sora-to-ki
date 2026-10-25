@@ -182,6 +182,35 @@ test.describe('後台', () => {
   });
 
   /**
+   * 收藏：同步進來的觀看紀錄，後台設成不公開之後前台的 API 就不給；改回公開又回來。
+   * 站長看到按鈕變了，卻不知道前台是不是真的拿掉了——這條驗的是後面那一半。
+   */
+  test('收藏：一部設成不公開，公開清單就沒有它；改回公開又回來', async ({ page }) => {
+    const publicFilms = () =>
+      page.evaluate(async () => {
+        const r = await fetch('/api/films/recent');
+        const b = (await r.json()) as { films: { title: string }[] };
+        return b.films.map((f) => f.title);
+      });
+
+    await signIn(page);
+    await gotoAdmin(page, '/admin/collection', '收藏');
+    const before = await publicFilms();
+    const title = before[0];
+    expect(title, '前提：種子裡要有電影').toBeTruthy();
+
+    const row = page.getByRole('listitem').filter({ hasText: title });
+    await row.getByRole('button', { name: `${title} 在前台顯示` }).click();
+    await expect(row.getByRole('button', { name: `${title} 在前台顯示` })).toHaveAttribute('aria-pressed', 'false', {
+      timeout: 10_000,
+    });
+    await expect.poll(publicFilms, { message: '設成不公開之後還在公開清單上' }).not.toContain(title);
+
+    await row.getByRole('button', { name: `${title} 在前台顯示` }).click();
+    await expect.poll(publicFilms, { message: '改回公開要回來' }).toContain(title);
+  });
+
+  /**
    * token 被清掉 → 立刻被請出去。
    *
    * 既有的「未登入進不了後台」測的是「一開始就沒有 token」。這條測的是

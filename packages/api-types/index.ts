@@ -26,6 +26,14 @@ export type AdminCategoryRow = {
 	short_description_zh_cn: string | null,
 };
 
+export type AdminCollectionResponse = {
+	watch: AdminWatchItem[],
+	tracks: AdminTrackItem[],
+	/**  Spotify 抓失敗的話是理由（沒接 Spotify 不算失敗，tracks 就是空的） */
+	tracks_error: string | null,
+	hidden: HiddenItem[],
+};
+
 /**
  *  admin 留言列的一列：comments 表全欄（DB 宣告序）+ LEFT JOIN 的 post_title。
  *  欄位序對齊舊 `row_to_json`（`SELECT c.*` → comments 宣告序，post_title 附在最後）。
@@ -179,6 +187,16 @@ export type AdminTagRow = {
 	name_zh_cn: string | null,
 };
 
+/**  後台「在聽」的一首（Spotify 最近播放，含不公開的） */
+export type AdminTrackItem = {
+	id: string,
+	name: string,
+	artists: string,
+	cover: string | null,
+	played_at: string,
+	hidden: boolean,
+};
+
 /**  `GET /api/admin/users`（**requireOwner**）。`{ users: [...] }`，顯式欄位。 */
 export type AdminUserRow = {
 	id: number,
@@ -195,6 +213,25 @@ export type AdminUserRow = {
 
 export type AdminUsersResponse = {
 	users: AdminUserRow[],
+};
+
+/**  後台「在看」的一部（動畫、電影、影集混在一起，照最後看的時間排） */
+export type AdminWatchItem = {
+	/**  anime | film | tv */
+	kind: string,
+	/**  不公開清單用的 key：動畫是 anime_sn、電影是 film_history.id、影集是劇名 */
+	key: string,
+	title: string,
+	cover: string | null,
+	/**  動畫是最後一集、影集是看了幾集、電影是評分 */
+	detail: string | null,
+	watched_at: string | null,
+	/**  bahamut | simkl | trakt … */
+	source: string | null,
+	tmdb_id: number | null,
+	hidden: boolean,
+	/**  在最愛裡的話是那一筆的 id */
+	favorite_id: number | null,
 };
 
 export type AnimeHistoryResponse = {
@@ -648,6 +685,14 @@ export type GithubUserResponse = {
 	html_url: string | null,
 	public_repos: number | null,
 	error: string | null,
+};
+
+/**  不公開的一筆（給後台列「藏了哪些」，Spotify 的歌不在最近播放裡也看得到） */
+export type HiddenItem = {
+	kind: string,
+	key: string,
+	title: string,
+	hidden_at: string,
 };
 
 /**  `GET /api/admin/keyword-filters`（requireAdmin）。`{ filters: rows }`（SELECT *；目前空表）。 */

@@ -284,12 +284,32 @@ pub async fn recently_played(State(state): State<AppState>) -> Response {
         // 反序列化成自己的形狀再送出：只留前端用得到的欄位，且型別由這裡定義。
         // 解析失敗（Spotify 改結構）退成空清單，不要讓整頁掛掉。
         Ok(v) => {
-            Json(serde_json::from_value::<RecentlyPlayedResponse>(v).unwrap_or_default()).into_response()
+            let mut payload = serde_json::from_value::<RecentlyPlayedResponse>(v).unwrap_or_default();
+            // 後台收藏頁設成不公開的歌不給（見 handlers/collection）
+            let hidden = crate::handlers::collection::hidden_keys(&state.pool, "track").await;
+            payload.items.retain(|i| !hidden.contains(&i.track.id));
+            Json(payload).into_response()
         }
         // 沒接 Spotify 的環境（CI、新部署）：空清單，不是 500——收藏頁與頂欄選單都會打這支，
         // 回 500 的話瀏覽器每次都在 console 記一筆錯誤
         Err(SpErr::NotConfigured) => Json(RecentlyPlayedResponse::default()).into_response(),
         Err(e) => err_json("Failed to fetch Spotify recently played", &e),
+    }
+}
+
+/// 最近播放的原樣（不過濾不公開的歌）——後台收藏頁要列出來讓站長決定哪幾首藏起來。
+/// 沒接 Spotify 回空清單；抓失敗回錯誤訊息。
+pub(crate) async fn recent_unfiltered(state: &AppState) -> Result<RecentlyPlayedResponse, String> {
+    let r: Result<Value, SpErr> = async {
+        let token = access_token(state).await?;
+        let (_, v) = sp_get(state, "/v1/me/player/recently-played?limit=50", &token, None).await?;
+        Ok(v)
+    }
+    .await;
+    match r {
+        Ok(v) => Ok(serde_json::from_value::<RecentlyPlayedResponse>(v).unwrap_or_default()),
+        Err(SpErr::NotConfigured) => Ok(RecentlyPlayedResponse::default()),
+        Err(e) => Err(e.details().to_string()),
     }
 }
 
@@ -309,7 +329,13 @@ pub async fn now_playing(State(state): State<AppState>) -> Response {
             if status == StatusCode::NO_CONTENT || !js_truthy(Some(&v)) {
                 return Json(NowPlayingResponse::default()).into_response();
             }
-            Json(serde_json::from_value::<NowPlayingResponse>(v).unwrap_or_default()).into_response()
+            let playing = serde_json::from_value::<NowPlayingResponse>(v).unwrap_or_default();
+            // 正在聽一首不公開的歌：對外就說沒在播
+            let hidden = crate::handlers::collection::hidden_keys(&state.pool, "track").await;
+            if playing.item.as_ref().is_some_and(|t| hidden.contains(&t.id)) {
+                return Json(NowPlayingResponse::default()).into_response();
+            }
+            Json(playing).into_response()
         }
         Err(_) => Json(NowPlayingResponse::default()).into_response(),
     }
@@ -402,15 +428,21 @@ pub async fn top_tracks(State(state): State<AppState>, Query(q): Query<TopTracks
     let limit = q.limit.as_deref().and_then(|s| s.parse::<i64>().ok()).unwrap_or(20).clamp(1, 50);
     let key = format!("{time_range}:{limit}");
     let now = now_ms();
+    // 快取存的是 Spotify 給的原樣，不公開的歌在送出前才拿掉：改了設定馬上生效，不用等快取過期
+    let hidden = crate::handlers::collection::hidden_keys(&state.pool, "track").await;
+    let visible = |mut p: TopTracksResponse| {
+        p.items.retain(|t| !hidden.contains(&t.id));
+        Json(p).into_response()
+    };
     let cached = state.spotify.top_tracks.lock().get(&key).cloned();
     if let Some((data, exp)) = &cached
         && *exp > now
     {
-        return Json(data.clone()).into_response();
+        return visible(data.clone());
     }
     if state.spotify.top_disabled_until.load(Ordering::Relaxed) > now {
         if let Some((data, _)) = &cached {
-            return Json(data.clone()).into_response();
+            return visible(data.clone());
         }
         return (StatusCode::TOO_MANY_REQUESTS, Json(json!({ "error": "Spotify rate limited, try later" })))
             .into_response();
@@ -426,13 +458,13 @@ pub async fn top_tracks(State(state): State<AppState>, Query(q): Query<TopTracks
         Ok(v) => {
             let payload = serde_json::from_value::<TopTracksResponse>(v).unwrap_or_default();
             state.spotify.top_tracks.lock().insert(key, (payload.clone(), now + TOP_TRACKS_TTL));
-            Json(payload).into_response()
+            visible(payload)
         }
         Err(e) => {
             if matches!(e.status(), Some(StatusCode::FORBIDDEN | StatusCode::TOO_MANY_REQUESTS)) {
                 state.spotify.top_disabled_until.store(now + SPOTIFY_TOP_COOLDOWN, Ordering::Relaxed);
                 if let Some((data, _)) = &cached {
-                    return Json(data.clone()).into_response();
+                    return visible(data.clone());
                 }
             }
             err_json("Failed to fetch Spotify top tracks", &e)
@@ -1071,5 +1103,56 @@ mod tests {
         assert!(loc.contains("redirect_uri="), "redirect_uri 沒帶上：{loc}");
         // SAFETY: 見上。
         unsafe { std::env::remove_var("SPOTIFY_CLIENT_ID") };
+    }
+
+    fn track(id: &str) -> Value {
+        json!({
+            "id": id, "name": id, "artists": [{ "name": "a" }],
+            "album": { "name": "al", "images": [{ "url": "https://i/1" }], "release_date": "2026" },
+            "duration_ms": 1, "external_urls": { "spotify": "https://s" }, "popularity": 1, "explicit": false,
+        })
+    }
+
+    /// 後台收藏頁設成不公開的歌：公開的最近播放、正在播放都不給，後台照樣列得出來。
+    /// 壞掉的話站長以為藏起來了，頂欄的「正在聽」照樣把它秀出來。
+    #[tokio::test]
+    async fn 不公開的歌_公開端點不給_後台照樣看得到() {
+        let _env = ENV_LOCK.lock().await;
+        unsafe { set_creds(true) };
+        let server = MockServer::start().await;
+        mount_token(&server).await;
+        Mock::given(method("GET"))
+            .and(mock_path("/spotify-api/v1/me/player/recently-played"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "items": [
+                { "track": track("open"), "played_at": "2026-10-25T01:00:00Z" },
+                { "track": track("secret"), "played_at": "2026-10-25T00:00:00Z" },
+            ]})))
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(mock_path("/spotify-api/v1/me/player/currently-playing"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(json!({ "is_playing": true, "item": track("secret"), "progress_ms": 5 })),
+            )
+            .mount(&server)
+            .await;
+        let st = state_with_mock(&server).await;
+        sqlx::query("INSERT INTO collection_hidden (kind, key, title) VALUES ('track', 'secret', 's')")
+            .execute(&st.pool)
+            .await
+            .unwrap();
+
+        let v = body_of(recently_played(AxState(st.clone())).await).await;
+        let ids: Vec<_> = v["items"].as_array().unwrap().iter().map(|i| i["track"]["id"].clone()).collect();
+        assert_eq!(ids, [json!("open")], "不公開的歌不該出現在最近播放");
+
+        let v = body_of(now_playing(AxState(st.clone())).await).await;
+        assert_eq!(v["is_playing"], false, "正在聽不公開的歌：對外說沒在播");
+        assert_eq!(v["item"], Value::Null);
+
+        let all = recent_unfiltered(&st).await.unwrap();
+        assert_eq!(all.items.len(), 2, "後台要列得出來，才能改回公開");
+        unsafe { set_creds(false) };
     }
 }

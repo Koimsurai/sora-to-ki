@@ -84,6 +84,9 @@ table books
 table categories
   CREATE TABLE categories ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT UNIQUE NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, short_description TEXT DEFAULT '' , name_en TEXT, name_ja TEXT, name_ko TEXT, name_zh_cn TEXT, description_en TEXT, description_ja TEXT, description_ko TEXT, description_zh_cn TEXT, short_description_en TEXT, short_description_ja TEXT, short_description_ko TEXT, short_description_zh_cn TEXT)
 
+table collection_hidden
+  CREATE TABLE collection_hidden ( kind TEXT NOT NULL, key TEXT NOT NULL, title TEXT NOT NULL DEFAULT '', hidden_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (kind, key) )
+
 table collection_items
   CREATE TABLE collection_items ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, original_title TEXT, year INTEGER, poster_url TEXT, overview TEXT, external_id TEXT, collection_type TEXT NOT NULL, media_format TEXT NOT NULL, source TEXT DEFAULT 'manual', status TEXT DEFAULT 'completed', rating INTEGER, review TEXT, is_favorite BOOLEAN DEFAULT 0, watch_date DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP )
 

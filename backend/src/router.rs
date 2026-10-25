@@ -191,6 +191,9 @@ pub fn build_router(state: AppState) -> Router {
         // 照片的後台設定（標題、標籤、精選、隱藏），疊在 manifest 上
         .route("/api/admin/gallery/photos", get(handlers::photo_meta::admin_photos))
         .route("/api/admin/gallery/photos/{id}", patch(handlers::photo_meta::admin_update_photo))
+        // 收藏頁：觀看紀錄與聽的歌要不要出現在前台
+        .route("/api/admin/collection", get(handlers::collection::admin_collection))
+        .route("/api/admin/collection/hidden", put(handlers::collection::admin_set_hidden))
         // OG 圖（takumi；axum 不支援 :id.png 部分參數，handler 內 strip 後綴）
         .route("/api/og/{file}", get(handlers::og::og_png))
         // 上傳（axum multipart；thumbhash 實測等價）

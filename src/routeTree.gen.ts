@@ -40,6 +40,7 @@ import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscr
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminBooksRouteImport } from './routes/admin/books'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
+import { Route as AdminCollectionRouteImport } from './routes/admin/collection'
 import { Route as AdminCommentsRouteImport } from './routes/admin/comments'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminFriendsRouteImport } from './routes/admin/friends'
@@ -220,6 +221,11 @@ const AdminCategoriesRoute = AdminCategoriesRouteImport.update({
   path: '/categories',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminCollectionRoute = AdminCollectionRouteImport.update({
+  id: '/collection',
+  path: '/collection',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminCommentsRoute = AdminCommentsRouteImport.update({
   id: '/comments',
   path: '/comments',
@@ -371,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/collection': typeof AdminCollectionRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
@@ -427,6 +434,7 @@ export interface FileRoutesByTo {
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/collection': typeof AdminCollectionRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
@@ -485,6 +493,7 @@ export interface FileRoutesById {
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/categories': typeof AdminCategoriesRoute
+  '/admin/collection': typeof AdminCollectionRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
@@ -544,6 +553,7 @@ export interface FileRouteTypes {
     | '/$locale/unsubscribe'
     | '/admin/books'
     | '/admin/categories'
+    | '/admin/collection'
     | '/admin/comments'
     | '/admin/dashboard'
     | '/admin/friends'
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/$locale/unsubscribe'
     | '/admin/books'
     | '/admin/categories'
+    | '/admin/collection'
     | '/admin/comments'
     | '/admin/dashboard'
     | '/admin/friends'
@@ -657,6 +668,7 @@ export interface FileRouteTypes {
     | '/$locale/unsubscribe'
     | '/admin/books'
     | '/admin/categories'
+    | '/admin/collection'
     | '/admin/comments'
     | '/admin/dashboard'
     | '/admin/friends'
@@ -948,6 +960,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCategoriesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/collection': {
+      id: '/admin/collection'
+      path: '/collection'
+      fullPath: '/admin/collection'
+      preLoaderRoute: typeof AdminCollectionRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/comments': {
       id: '/admin/comments'
       path: '/comments'
@@ -1122,6 +1141,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteRouteChildren {
   AdminBooksRoute: typeof AdminBooksRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
+  AdminCollectionRoute: typeof AdminCollectionRoute
   AdminCommentsRoute: typeof AdminCommentsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminFriendsRoute: typeof AdminFriendsRoute
@@ -1139,6 +1159,7 @@ interface AdminRouteRouteChildren {
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminBooksRoute: AdminBooksRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
+  AdminCollectionRoute: AdminCollectionRoute,
   AdminCommentsRoute: AdminCommentsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminFriendsRoute: AdminFriendsRoute,
