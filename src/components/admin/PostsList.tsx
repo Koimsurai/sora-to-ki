@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AdminPostFull } from '@koimsurai/api-types';
-import { adminPostsQueryOptions } from '@/data/adminData';
-import { Link } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Search, Pencil, ExternalLink } from 'lucide-react';
-import { format } from 'date-fns';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { postPath } from '../../lib/postPath';
+
+import { adminPostsQueryOptions } from '@/data/adminData';
+import { authHeaders } from '@/lib/authToken';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,240 +16,337 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { authHeaders } from '@/lib/authToken';
+import { postPath } from '../../lib/postPath';
+import AdminLoading from './AdminLoading';
+import { LocaleDots, PageHead } from './AdminPage';
+import { STATUS_LABEL, TRASH_KEEP_DAYS, formatWhen, missingTranslations, trashDaysLeft } from './adminFormat';
 
-/** `GET /api/admin/posts` 的單列（型別由後端 Rust struct 生成）。 */
-type PostItem = AdminPostFull;
+// 手記列表（2026-10 後台提案）：狀態用分頁切、可以只看缺譯文的，每篇後面五顆語系點。
+// 篩選放在網址上（routes/admin/posts/index.tsx 的 validateSearch），總覽的「等你處理」直接連得進來。
+//
+// 讀網址用非嚴格的 useSearch、寫回去時直接指定 /admin/posts，而不是 getRouteApi('/admin/posts/')：
+// 後者在元件不是掛在那條路由底下時會丟「Could not find an active match」——
+// render-smoke.test 就是單獨掛它的，這樣元件也不綁死在某一條路由上。
+// 值本身的驗證在路由的 validateSearch，這裡只挑出認得的幾種。
+//
+// 刪除是丟進回收桶（30 天後自動清掉），所以不先問；提示裡有「還原」。
+// 永久刪除只在回收分頁裡，那裡才問一次。
+
+const STATUSES = ['published', 'draft', 'scheduled', 'trashed'] as const;
+type PostsStatus = (typeof STATUSES)[number];
+
+function readFilters(search: { status?: unknown; missing?: unknown }): PostsSearch {
+  return {
+    status: STATUSES.find((s) => s === search.status),
+    missing: search.missing === true ? true : undefined,
+  };
+}
+
+interface PostsSearch {
+  status?: PostsStatus;
+  missing?: boolean;
+}
+
+/** 跟總覽同一個查詢鍵，兩頁共用快取。後端的「全部」不含回收桶 */
+const ALL_POSTS = 'limit=500';
+const TRASHED_POSTS = 'status=trashed&limit=500';
+
+const TABS = [
+  { key: undefined, label: '全部' },
+  { key: 'published', label: '已發佈' },
+  { key: 'draft', label: '草稿' },
+  { key: 'scheduled', label: '排程' },
+  { key: 'trashed', label: '回收' },
+] as const;
+
+const touched = (p: AdminPostFull) => p.updated_at ?? p.created_at;
+
+function matches(post: AdminPostFull, q: string): boolean {
+  if (!q) return true;
+  const needle = q.toLowerCase();
+  return [post.title, post.category ?? '', ...post.tags].some((s) => s.toLowerCase().includes(needle));
+}
 
 export default function PostsList() {
   const queryClient = useQueryClient();
-  // 文章列表改由 TanStack Query 讀（生成 AdminPostsResponse）；刪除後 invalidate 重抓。
-  const { data, isPending: isLoading } = useQuery(adminPostsQueryOptions('limit=500'));
-  const posts: PostItem[] = data?.posts ?? [];
-  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const { status, missing } = readFilters(useSearch({ strict: false }));
+  const navigate = useNavigate();
+  const setFilters = (next: PostsSearch) => void navigate({ to: '/admin/posts', search: next });
+  const { data, isPending } = useQuery(adminPostsQueryOptions(ALL_POSTS));
+  const { data: trashedData } = useQuery(adminPostsQueryOptions(TRASHED_POSTS));
+  const posts: AdminPostFull[] = data?.posts ?? [];
+  const trashed: AdminPostFull[] = trashedData?.posts ?? [];
+  const [purgeTarget, setPurgeTarget] = useState<AdminPostFull | null>(null);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('all');
+  // 「還剩幾天」算一次就好；render 裡直接 new Date() 每次重畫都會變
+  const [now] = useState(() => new Date());
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'posts'] });
+    void queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] });
+  };
 
-    try {
-      const response = await fetch(`/api/admin/posts/${deleteId}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-
-      if (response.ok) {
-        toast.success('文章已刪除');
-        void queryClient.invalidateQueries({ queryKey: ['admin', 'posts'] });
-      } else {
-        toast.error('刪除失敗');
-      }
-    } catch (error) {
-      console.error('刪除文章失敗:', error);
-      toast.error('刪除失敗');
-    } finally {
-      setDeleteId(null);
+  const send = async (path: string, method: 'POST' | 'DELETE') => {
+    const res = await fetch(path, { method, headers: authHeaders() });
+    if (!res.ok) {
+      const err = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(err.error ?? `${res.status}`);
     }
   };
 
-  const statusLabels: Record<string, string> = {
-    published: '已發佈',
-    draft: '草稿',
-    archived: '已封存',
+  const restore = async (post: AdminPostFull) => {
+    try {
+      await send(`/api/admin/posts/${post.id}/restore`, 'POST');
+      toast.success(`〈${post.title}〉已還原`);
+      refresh();
+    } catch (e) {
+      toast.error(`還原失敗：${e instanceof Error ? e.message : ''}`);
+    }
   };
 
-  const statusStyle: Record<string, string> = {
-    published: 'text-foreground/50 bg-accent/50',
-    draft: 'text-muted-foreground/70 bg-accent/25',
-    archived: 'text-muted-foreground/50 bg-accent/20',
+  const moveToTrash = async (post: AdminPostFull) => {
+    try {
+      await send(`/api/admin/posts/${post.id}`, 'DELETE');
+      toast(`〈${post.title}〉丟進回收桶了`, {
+        description: `${TRASH_KEEP_DAYS} 天後自動清掉`,
+        action: { label: '還原', onClick: () => void restore(post) },
+      });
+      refresh();
+    } catch (e) {
+      toast.error(`刪除失敗：${e instanceof Error ? e.message : ''}`);
+    }
   };
 
-  const filtered = posts.filter((p) => {
-    if (filter === 'published' && p.status !== 'published') return false;
-    if (filter === 'draft' && p.status !== 'draft') return false;
-    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  const purge = async () => {
+    if (!purgeTarget) return;
+    try {
+      await send(`/api/admin/posts/${purgeTarget.id}?permanent=true`, 'DELETE');
+      toast.success('已永久刪除');
+      refresh();
+    } catch (e) {
+      toast.error(`刪除失敗：${e instanceof Error ? e.message : ''}`);
+    } finally {
+      setPurgeTarget(null);
+    }
+  };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-600 border-t-transparent"></div>
-          <p className="mt-4 text-muted-foreground">載入中...</p>
-        </div>
-      </div>
-    );
-  }
+  const countOf = (key: PostsStatus | undefined) => {
+    if (key === 'trashed') return trashed.length;
+    return key ? posts.filter((p) => p.status === key).length : posts.length;
+  };
+  const source = status === 'trashed' ? trashed : posts;
+  const filtered = source
+    .filter((p) => !status || p.status === status)
+    .filter((p) => !missing || (p.status === 'published' && missingTranslations(p).length > 0))
+    .filter((p) => matches(p, search.trim()));
+  const scheduledCount = countOf('scheduled');
+
+  /** 時間欄：排程的是預定發佈的時間、回收的是還剩幾天、其他是最後更新 */
+  const whenOf = (post: AdminPostFull) => {
+    if (post.status === 'scheduled') return `${formatWhen(post.publish_at, 'MM.dd HH:mm')} 發佈`;
+    if (post.status === 'trashed') return `還剩 ${trashDaysLeft(post.trashed_at, now)} 天`;
+    return formatWhen(touched(post), 'yyyy.MM.dd');
+  };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-medium text-foreground/90">文章管理</h1>
-          <p className="text-sm text-muted-foreground mt-1">共 {posts.length} 篇文章</p>
-        </div>
-        <Button variant="subtle" size="compact" asChild>
-          <Link to="/admin/posts/create">
-            <Plus className="size-3.5" />
-            新增文章
+    <div className="adm-page">
+      <PageHead
+        title="手記"
+        latin="Notes"
+        meta={
+          isPending
+            ? '載入中'
+            : `${posts.length} 篇 · 草稿 ${countOf('draft')}${scheduledCount ? ` · 排程 ${scheduledCount}` : ''}`
+        }
+        actions={
+          <Link to="/admin/posts/create" className="adm-btn adm-btn-primary">
+            新寫一篇
           </Link>
-        </Button>
-      </div>
+        }
+      />
 
-      {/* Filters + Search */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1 shrink-0">
-          {[
-            { key: 'all', label: '全部' },
-            { key: 'published', label: '已發佈' },
-            { key: 'draft', label: '草稿' },
-          ].map((f) => (
+      <section className="adm-stack" aria-label="手記清單">
+        <div className="adm-toolbar">
+          <div className="adm-tabs">
+            {TABS.map((t) => (
+              <button
+                key={t.label}
+                type="button"
+                className="adm-tab"
+                aria-pressed={status === t.key}
+                onClick={() => setFilters({ status: t.key, missing })}
+              >
+                <span className="adm-tab-dot" aria-hidden="true" />
+                {t.label}
+                <span className="adm-meta">{isPending ? '' : countOf(t.key)}</span>
+              </button>
+            ))}
             <button
-              key={f.key}
-              onClick={() => setFilter(f.key)}
-              className={`text-fs-12 px-2.5 py-1 rounded-lg transition-colors ${
-                filter === f.key
-                  ? 'bg-accent/60 text-foreground/80'
-                  : 'text-muted-foreground/60 hover:text-foreground/60 hover:bg-accent/25'
-              }`}
+              type="button"
+              className="adm-tab"
+              aria-pressed={missing === true}
+              onClick={() => setFilters({ status, missing: missing ? undefined : true })}
             >
-              {f.label}
+              <span className="adm-tab-dot" aria-hidden="true" />
+              缺譯文
             </button>
-          ))}
+          </div>
+          <label className="adm-prompt">
+            <span className="adm-prompt-mark" aria-hidden="true">
+              &gt;
+            </span>
+            <span className="sr-only">搜尋手記</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="標題、分類、標籤"
+            />
+          </label>
         </div>
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="搜尋文章..."
-            variant="glass"
-            size="compact"
-            className="pl-8"
-          />
-        </div>
-      </div>
 
-      {/* Posts table */}
-      {filtered.length > 0 ? (
-        <div className="glass rounded-xl overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border/20 text-fs-11 text-muted-foreground/50 uppercase tracking-wider">
-                <th className="text-left px-4 py-2.5 font-medium w-8">#</th>
-                <th className="text-left px-4 py-2.5 font-medium">標題</th>
-                <th className="text-left px-4 py-2.5 font-medium w-16">分類</th>
-                <th className="text-center px-4 py-2.5 font-medium w-16">狀態</th>
-                <th className="text-right px-4 py-2.5 font-medium w-24">日期</th>
-                <th className="text-right px-4 py-2.5 font-medium w-20">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/15">
-              {filtered.map((post) => (
-                <tr key={post.id} className="group hover:bg-accent/15 transition-colors">
-                  <td className="px-4 py-2.5">
-                    <span className="text-fs-11 text-muted-foreground/40 font-mono">{post.id}</span>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <div>
-                      <span className="text-fs-13 text-foreground/80 group-hover:text-foreground/90 transition-colors">
-                        {post.title}
-                      </span>
+        {status === 'trashed' && (
+          <p className="adm-form-note">丟進回收的手記讀者看不到，放滿 {TRASH_KEEP_DAYS} 天會自動清掉。</p>
+        )}
+
+        {isPending ? (
+          <AdminLoading />
+        ) : filtered.length === 0 ? (
+          <div className="adm-empty">
+            {status === 'trashed' ? (
+              '回收桶是空的。'
+            ) : posts.length === 0 ? (
+              <>
+                還沒有手記。<Link to="/admin/posts/create">寫第一篇 →</Link>
+              </>
+            ) : (
+              '沒有符合的手記。'
+            )}
+          </div>
+        ) : (
+          <div className="adm-table-wrap">
+            <table className="adm-table">
+              <thead>
+                <tr>
+                  <th scope="col">標題</th>
+                  <th scope="col">分類</th>
+                  <th scope="col">語系</th>
+                  <th scope="col">狀態</th>
+                  <th scope="col">時間</th>
+                  <th scope="col">
+                    <span className="sr-only">動作</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((post) => (
+                  <tr key={post.id} data-status={post.status}>
+                    <td className="adm-cell-title">
+                      {post.status === 'trashed' ? (
+                        <span className="adm-title-link">{post.title}</span>
+                      ) : (
+                        <Link to="/admin/posts/edit/$id" params={{ id: String(post.id) }} className="adm-title-link">
+                          {post.title}
+                        </Link>
+                      )}
                       {post.tags.length > 0 && (
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {post.tags.slice(0, 3).map((tag) => (
-                            <span key={tag} className="text-fs-10 text-muted-foreground/35 font-mono">
-                              #{tag}
-                            </span>
-                          ))}
+                        <span className="adm-meta adm-tags">{post.tags.map((tag) => `#${tag}`).join(' ')}</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className="adm-cell-text">{post.category ?? '未分類'}</span>
+                    </td>
+                    <td>
+                      <LocaleDots post={post} />
+                    </td>
+                    <td>
+                      <span className="adm-status" data-status={post.status}>
+                        {STATUS_LABEL[post.status] ?? post.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="adm-meta">{whenOf(post)}</span>
+                    </td>
+                    <td>
+                      {post.status === 'trashed' ? (
+                        <div className="adm-row-actions">
+                          <button
+                            type="button"
+                            className="adm-icon-btn"
+                            aria-label={`還原〈${post.title}〉`}
+                            onClick={() => void restore(post)}
+                          >
+                            還原
+                          </button>
+                          <button
+                            type="button"
+                            className="adm-icon-btn adm-icon-btn-flare"
+                            aria-label={`永久刪除〈${post.title}〉`}
+                            onClick={() => setPurgeTarget(post)}
+                          >
+                            永久刪除
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="adm-row-actions">
+                          <Link
+                            to="/admin/posts/edit/$id"
+                            params={{ id: String(post.id) }}
+                            className="adm-icon-btn"
+                            aria-label={`編輯〈${post.title}〉`}
+                          >
+                            編輯
+                          </Link>
+                          {post.status === 'published' && (
+                            <Link
+                              to={postPath(post)}
+                              target="_blank"
+                              className="adm-icon-btn"
+                              aria-label={`在前台開〈${post.title}〉`}
+                            >
+                              ↗
+                            </Link>
+                          )}
+                          <button
+                            type="button"
+                            className="adm-icon-btn adm-icon-btn-flare"
+                            aria-label={`刪除〈${post.title}〉`}
+                            onClick={() => void moveToTrash(post)}
+                          >
+                            刪除
+                          </button>
                         </div>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span className="text-fs-11 text-muted-foreground/60">{post.category ?? '未分類'}</span>
-                  </td>
-                  <td className="px-4 py-2.5 text-center">
-                    <span
-                      className={`text-fs-10 px-1.5 py-0.5 rounded ${statusStyle[post.status] || 'text-muted-foreground bg-accent/20'}`}
-                    >
-                      {statusLabels[post.status] || post.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <span className="text-fs-11 text-muted-foreground/40">
-                      {post.created_at ? format(new Date(post.created_at), 'yyyy-MM-dd') : ''}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Link
-                        to="/admin/posts/edit/$id"
-                        params={{ id: String(post.id) }}
-                        className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
-                      >
-                        <Pencil className="size-3" />
-                      </Link>
-                      {/* 文章網址是 /blog/:id（posts 表沒有 slug 欄位） */}
-                      <Link
-                        to={postPath(post)}
-                        target="_blank"
-                        className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground/60 hover:bg-accent/40 transition-colors"
-                      >
-                        <ExternalLink className="size-3" />
-                      </Link>
-                      <button
-                        onClick={() => setDeleteId(post.id)}
-                        className="size-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <Trash2 className="size-3" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
-          <Search className="size-12 opacity-20" />
-          <p className="mt-4 text-sm">還沒有文章</p>
-          <Button variant="subtle" className="mt-4" size="sm" asChild>
-            <Link to="/admin/posts/create">
-              <Plus className="mr-2 size-3.5" />
-              創建第一篇文章
-            </Link>
-          </Button>
-        </div>
-      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between text-fs-11 text-muted-foreground/40">
-        <span>
-          顯示 {filtered.length} / {posts.length} 篇文章
-        </span>
-      </div>
+        {!isPending && (
+          <p className="adm-meta">
+            顯示 {filtered.length} / {source.length} 篇
+          </p>
+        )}
+      </section>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={!!purgeTarget} onOpenChange={() => setPurgeTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>確定要刪除這篇文章嗎？</AlertDialogTitle>
-            <AlertDialogDescription>此操作無法復原。文章將被永久刪除。</AlertDialogDescription>
+            <AlertDialogTitle>永久刪除〈{purgeTarget?.title}〉？</AlertDialogTitle>
+            <AlertDialogDescription>刪了就找不回來，連同它的標籤關聯。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>留著</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                void handleDelete();
+                void purge();
               }}
               variant="destructive"
             >
-              刪除
+              永久刪除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

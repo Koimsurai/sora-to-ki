@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaSearch, FaFileAlt } from 'react-icons/fa';
+import { Search, X } from 'lucide-react';
 import { recentPostsQueryOptions } from '@/data/blogList';
+import AdminLoading from './AdminLoading';
+import './AdminPicker.css';
 
 interface LinkablePost {
   id: number | string;
@@ -52,73 +54,63 @@ const PostLinkModal = ({ isOpen, onClose, onSelect }: PostLinkModalProps) => {
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-10000 flex items-start justify-center pt-[12vh] bg-black/60 backdrop-blur-xs"
+        className="adm-picker-scrim fixed inset-0 z-10000 flex items-start justify-center pt-[12vh]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
       >
         <motion.div
-          className="w-[min(640px,92vw)] rounded-xl border border-zinc-700/60 bg-zinc-900/95 backdrop-blur-md shadow-2xl overflow-hidden"
-          initial={{ scale: 0.96, y: -10, opacity: 0 }}
-          animate={{ scale: 1, y: 0, opacity: 1 }}
-          exit={{ scale: 0.96, y: -10, opacity: 0 }}
+          className="adm-picker w-[min(640px,92vw)]"
+          initial={{ y: -8, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -8, opacity: 0 }}
           transition={{ duration: 0.16 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800">
-            <FaSearch className="text-zinc-500 shrink-0" />
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="搜尋文章標題或摘要…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') onClose();
-                if (e.key === 'Enter' && filtered[0]) onSelect(filtered[0]);
-              }}
-              className="flex-1 bg-transparent outline-hidden text-zinc-100 placeholder-zinc-500 text-sm"
-            />
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-zinc-500 hover:text-zinc-200 transition-colors"
-              aria-label="close"
-            >
-              <FaTimes />
+          <div className="adm-picker-head">
+            <label className="adm-prompt adm-grow">
+              <Search className="size-3.5 text-muted-foreground" aria-hidden="true" />
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="搜尋文章標題或摘要"
+                aria-label="搜尋文章"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') onClose();
+                  if (e.key === 'Enter' && filtered[0]) onSelect(filtered[0]);
+                }}
+              />
+            </label>
+            <button type="button" onClick={onClose} className="adm-icon-btn" aria-label="關閉">
+              <X className="size-3.5" />
             </button>
           </div>
-          <div className="max-h-[60vh] overflow-y-auto">
-            {loading && <div className="px-4 py-6 text-center text-sm text-zinc-500">載入文章清單中…</div>}
+          <div className="adm-picker-body max-h-[60vh]">
+            {loading && <AdminLoading label="讀文章清單" />}
             {!loading && filtered.length === 0 && (
-              <div className="px-4 py-6 text-center text-sm text-zinc-500">
-                {query ? '找不到符合的文章' : '沒有可用的文章'}
-              </div>
+              <p className="adm-picker-empty">{query ? '找不到符合的文章' : '沒有可用的文章'}</p>
             )}
             {!loading && filtered.length > 0 && (
-              <ul className="py-1">
+              <ul className="adm-picker-list">
                 {filtered.map((p) => (
                   <li key={p.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(p)}
-                      className="flex items-start gap-3 w-full text-left px-4 py-2.5 hover:bg-zinc-800/70 transition-colors"
-                    >
-                      <FaFileAlt className="text-zinc-500 mt-0.5 shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm text-zinc-100 truncate">{p.title}</div>
-                        {p.excerpt && <div className="text-xs text-zinc-500 truncate mt-0.5">{p.excerpt}</div>}
-                      </div>
-                      <code className="text-fs-10 text-zinc-600 mt-1 shrink-0">/blog/{p.id}</code>
+                    <button type="button" onClick={() => onSelect(p)} className="adm-picker-item">
+                      <span className="adm-picker-item-main">
+                        <span className="adm-picker-item-title">{p.title}</span>
+                        {p.excerpt && <span className="adm-picker-item-sub">{p.excerpt}</span>}
+                      </span>
+                      <code className="adm-picker-item-path">/blog/{p.id}</code>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          <div className="px-4 py-2 text-fs-11 text-zinc-600 border-t border-zinc-800 flex items-center justify-between">
-            <span>↑↓ 選擇 · Enter 選第一筆 · Esc 關閉</span>
+          <div className="adm-picker-foot">
+            <span>Enter 選第一篇 · Esc 關閉</span>
             <span>
               {filtered.length} / {posts.length} 篇
             </span>

@@ -1,0 +1,157 @@
+/* 手記編輯器的外觀（2026-10 後台提案）。存檔、自動備份、語系切換的邏輯都在 PostEditor.tsx，這裡只管長相。
+   分頁、按鈕、等寬小字沿用 AdminPage.css 與 AdminLayout.css 的 .adm-* */
+
+/* ── 語系分頁：正在編的是琥珀點、已經有內容的是墨點、還沒寫的是空心 ── */
+.pe-locales {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+.pe-locale {
+  min-height: 44px;
+  margin-bottom: -1px;
+  border-bottom: 1px solid transparent;
+}
+
+.pe-locale[aria-pressed="true"] {
+  border-bottom-color: var(--paper);
+}
+
+.pe-locale[data-has]:not([aria-pressed="true"]) .adm-tab-dot {
+  background: var(--paper-2);
+  border-color: var(--paper-2);
+}
+
+.pe-locale-action {
+  margin-left: auto;
+  gap: var(--space-1-5);
+  border-style: dotted;
+}
+
+.pe-hint {
+  margin: 0 0 var(--space-5);
+}
+
+/* ── 發佈設定：現在的狀態、排程時間 ── */
+.pe-state {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.pe-schedule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pe-schedule .adm-btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* datetime-local 的日曆圖示與彈出的月曆是瀏覽器畫的，預設是淺色版，在夜色上看不到圖示 */
+.pe-schedule input {
+  color-scheme: dark;
+}
+
+.pe-side-hint {
+  margin: var(--space-1-5) 0 0;
+  font-size: var(--fs-11);
+  line-height: var(--lh-150);
+  color: var(--paper-meta);
+}
+
+/* ── 標題：大字宋體，只留底下一條點線 ── */
+.admin-layout input.pe-title {
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: var(--space-6);
+  padding: var(--space-1) 0 var(--space-3);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dotted var(--paper-3);
+  outline: none;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-32);
+  line-height: var(--lh-130);
+}
+/* 滑過（墨 40%）與聚焦（墨 70%）的底線顏色由 AdminTheme 的 input:hover／:focus 給，跟這裡要的一樣 */
+
+/* ── 原稿與預覽的框 ── */
+.pe-frame {
+  border: 1px solid var(--rule);
+}
+
+.pe-frame-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.pe-view {
+  min-height: 32px;
+  font-size: var(--fs-13);
+}
+
+.pe-frame-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* 預覽：跟文章頁同一套渲染，底色就是夜色 */
+.pe-preview {
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-7);
+  border-top: 1px dotted var(--rule);
+  background: var(--ground);
+}
+
+/* ── 右欄：這篇的設定 ── */
+.pe-side {
+  overflow-y: auto;
+  border-left: 1px solid var(--rule);
+}
+
+/* 分段標題：等寬小字，後面一條點線拉到底（同 .adm-section-head） */
+.pe-side-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  margin: 0 0 var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  font-weight: 400;
+  letter-spacing: var(--ls-18);
+  text-transform: uppercase;
+  color: var(--paper-meta);
+}
+
+.pe-side-head::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dotted var(--rule);
+}
+
+.pe-side-head svg {
+  width: 12px;
+  height: 12px;
+}
+
+.pe-wide {
+  width: 100%;
+  margin-top: var(--space-1);
+}

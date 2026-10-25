@@ -151,6 +151,8 @@ async fn run() -> anyhow::Result<()> {
     handlers::bahamut::spawn_sync(state.clone());
     // 國圖新書書目索引（ENABLE_TW_ISBN_SYNC=1 才啟動；見 handlers/tw_isbn.rs）
     handlers::tw_isbn::spawn_sync(state.clone());
+    // 排程發佈與回收桶：一律啟動（見 handlers/post_lifecycle.rs）
+    handlers::post_lifecycle::spawn(state.clone());
 
     let app = router::build_router(state);
 

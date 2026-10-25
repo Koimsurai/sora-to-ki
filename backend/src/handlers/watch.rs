@@ -222,8 +222,11 @@ fn js_limit(q: &LimitQuery, default: &str, cap: i64) -> i64 {
 )]
 pub async fn anime_history(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
     let mut query = sqlx::query_as::<_, AnimeRow>(
+        // 後台收藏頁設成不公開的整部拿掉（collection_hidden，見 handlers/collection）
         "SELECT anime_sn, video_sn, title, cover_url, episode, tmdb_id, last_watched_at \
-         FROM anime_history ORDER BY last_watched_at DESC LIMIT ?",
+         FROM anime_history \
+         WHERE CAST(anime_sn AS TEXT) NOT IN (SELECT key FROM collection_hidden WHERE kind = 'anime') \
+         ORDER BY last_watched_at DESC LIMIT ?",
     );
     query = query.bind(js_limit(&q, "50", 2000));
     match query.fetch_all(&state.pool).await {
@@ -241,7 +244,9 @@ pub async fn anime_history(State(state): State<AppState>, Query(q): Query<LimitQ
 pub async fn films_recent(State(state): State<AppState>, Query(q): Query<LimitQuery>) -> Response {
     let mut query = sqlx::query_as::<_, FilmRow>(
         "SELECT id, title, watched_date, rating, source, tmdb_id, poster_url, release_year, genres \
-         FROM film_history ORDER BY watched_date DESC NULLS LAST, id DESC LIMIT ?",
+         FROM film_history \
+         WHERE CAST(id AS TEXT) NOT IN (SELECT key FROM collection_hidden WHERE kind = 'film') \
+         ORDER BY watched_date DESC NULLS LAST, id DESC LIMIT ?",
     );
     query = query.bind(js_limit(&q, "50", 200));
     match query.fetch_all(&state.pool).await {
@@ -274,7 +279,9 @@ pub async fn tv_recent(State(state): State<AppState>, Query(q): Query<LimitQuery
     let mut query = sqlx::query_as::<_, TvRow>(
         "SELECT series_name, MAX(watched_date) AS last_watched, COUNT(*) AS ep_count, \
                 MAX(tmdb_id) AS tmdb_id, MAX(poster_url) AS poster_url, MAX(genres) AS genres, MAX(source) AS source \
-         FROM tv_history GROUP BY series_name ORDER BY last_watched DESC NULLS LAST LIMIT ?",
+         FROM tv_history \
+         WHERE series_name NOT IN (SELECT key FROM collection_hidden WHERE kind = 'tv') \
+         GROUP BY series_name ORDER BY last_watched DESC NULLS LAST LIMIT ?",
     );
     query = query.bind(js_limit(&q, "50", 200));
     match query.fetch_all(&state.pool).await {
@@ -290,12 +297,28 @@ pub async fn watch_stats(State(state): State<AppState>) -> Response {
         let pool = state.pool.clone();
         async move { sqlx::query_scalar::<_, i64>(sql).fetch_one(&pool).await.unwrap_or(0) }
     };
+    // 不公開的不算：不然前台寫「看了 12 部」卻只列得出 11 部
     let (anime_count, anime_episodes, film_count, tv_series_count, tv_episodes) = tokio::join!(
-        count("SELECT COUNT(DISTINCT anime_sn) AS n FROM anime_history"),
-        count("SELECT COUNT(*) AS n FROM anime_history"),
-        count("SELECT COUNT(*) AS n FROM film_history"),
-        count("SELECT COUNT(DISTINCT series_name) AS n FROM tv_history"),
-        count("SELECT COUNT(*) AS n FROM tv_history")
+        count(
+            "SELECT COUNT(DISTINCT anime_sn) AS n FROM anime_history \
+             WHERE CAST(anime_sn AS TEXT) NOT IN (SELECT key FROM collection_hidden WHERE kind = 'anime')"
+        ),
+        count(
+            "SELECT COUNT(*) AS n FROM anime_history \
+             WHERE CAST(anime_sn AS TEXT) NOT IN (SELECT key FROM collection_hidden WHERE kind = 'anime')"
+        ),
+        count(
+            "SELECT COUNT(*) AS n FROM film_history \
+             WHERE CAST(id AS TEXT) NOT IN (SELECT key FROM collection_hidden WHERE kind = 'film')"
+        ),
+        count(
+            "SELECT COUNT(DISTINCT series_name) AS n FROM tv_history \
+             WHERE series_name NOT IN (SELECT key FROM collection_hidden WHERE kind = 'tv')"
+        ),
+        count(
+            "SELECT COUNT(*) AS n FROM tv_history \
+             WHERE series_name NOT IN (SELECT key FROM collection_hidden WHERE kind = 'tv')"
+        )
     );
     Json(WatchStatsResponse {
         message: "success".into(),

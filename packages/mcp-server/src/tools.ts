@@ -95,7 +95,16 @@ const postWriteProps = {
     },
   },
   category: { type: 'string', description: '分類名（需已存在於 categories）' },
-  status: { type: 'string', enum: ['draft', 'published'], description: '狀態；建立時預設 draft' },
+  status: {
+    type: 'string',
+    enum: ['draft', 'published', 'scheduled'],
+    description: '狀態；建立時預設 draft。scheduled 要一起給 publish_at',
+  },
+  publish_at: {
+    type: 'string',
+    description:
+      'status=scheduled 時的發佈時間，要在未來。帶時區的 ISO 8601（如 2026-10-28T09:00:00+08:00）；不帶時區的當成 UTC',
+  },
   format: {
     type: 'string',
     enum: ['markdown', 'mdx'],
@@ -349,7 +358,11 @@ export function makeTools(api: ApiClient): Tool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          status: { type: 'string', enum: ['published', 'draft'], description: '省略=全部狀態' },
+          status: {
+            type: 'string',
+            enum: ['published', 'draft', 'scheduled', 'trashed'],
+            description: '省略=全部（不含回收桶）',
+          },
           search: { type: 'string', description: '標題/內文關鍵字' },
           page: { type: 'number', description: '頁碼，預設 1' },
           limit: { type: 'number', description: '每頁筆數，預設由後端決定' },
@@ -463,14 +476,33 @@ export function makeTools(api: ApiClient): Tool[] {
     },
     {
       name: 'koimsurai_delete_post',
-      description: '⚠️ 刪除文章（連同 post_tags）。不可復原——請先確認。',
+      description:
+        '把文章丟進回收桶（讀者看不到，30 天後自動刪掉，期間可用 koimsurai_restore_post 還原）。' +
+        '⚠️ permanent=true 才永久刪除（連同 post_tags，不可復原），而且只對已經在回收桶裡的文章有效——請先確認。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          permanent: { type: 'boolean', description: 'true：從回收桶永久刪除' },
+        },
+        required: ['id'],
+        additionalProperties: false,
+      },
+      handler: (a) =>
+        api.request('DELETE', `/api/admin/posts/${idOf(a)}`, {
+          query: { permanent: a.permanent === true ? 'true' : undefined },
+        }),
+    },
+    {
+      name: 'koimsurai_restore_post',
+      description: '從回收桶還原文章，回到丟之前的狀態（原本是排程的會回到草稿）。',
       inputSchema: {
         type: 'object',
         properties: { id: { type: 'number' } },
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('DELETE', `/api/admin/posts/${idOf(a)}`),
+      handler: (a) => api.request('POST', `/api/admin/posts/${idOf(a)}/restore`),
     },
     {
       name: 'koimsurai_generate_post_zh_cn',
@@ -695,21 +727,27 @@ export function makeTools(api: ApiClient): Tool[] {
     // ── 碎念 thoughts ─────────────────────────────────────────
     {
       name: 'koimsurai_create_thought',
-      description: '發一則碎念（短想法 feed）。content 必填；refUrl 給連結會自動抓 OG 卡片。',
+      description:
+        '發一則碎念（短想法 feed）。content 必填；refUrl 給連結會自動抓 OG 卡片。verb 是前台「Koimsurai 看了／讀了…」的動詞（存 key，五個語系各自翻）。',
       inputSchema: {
         type: 'object',
         properties: {
           content: { type: 'string' },
           refUrl: { type: 'string', description: '附帶連結（可選，會 unfurl）' },
+          verb: {
+            type: 'string',
+            enum: ['watched', 'read', 'listened', 'played', 'shared'],
+            description: '動詞（可選）；分享連結用 shared',
+          },
         },
         required: ['content'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('POST', '/api/admin/thoughts', { body: pick(a, ['content', 'refUrl']) }),
+      handler: (a) => api.request('POST', '/api/admin/thoughts', { body: pick(a, ['content', 'refUrl', 'verb']) }),
     },
     {
       name: 'koimsurai_update_thought',
-      description: '更新碎念。id 必填；clearRef=true 可清掉原本的連結卡片。',
+      description: '更新碎念。id 必填；clearRef=true 可清掉原本的連結卡片；verb 給空字串是拿掉動詞。',
       inputSchema: {
         type: 'object',
         properties: {
@@ -717,12 +755,15 @@ export function makeTools(api: ApiClient): Tool[] {
           content: { type: 'string' },
           refUrl: { type: 'string' },
           clearRef: { type: 'boolean' },
+          verb: { type: 'string', enum: ['', 'watched', 'read', 'listened', 'played', 'shared'] },
         },
         required: ['id'],
         additionalProperties: false,
       },
       handler: (a) =>
-        api.request('PUT', `/api/admin/thoughts/${idOf(a)}`, { body: pick(a, ['content', 'refUrl', 'clearRef']) }),
+        api.request('PUT', `/api/admin/thoughts/${idOf(a)}`, {
+          body: pick(a, ['content', 'refUrl', 'clearRef', 'verb']),
+        }),
     },
     {
       name: 'koimsurai_delete_thought',

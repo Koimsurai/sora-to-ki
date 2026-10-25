@@ -1,0 +1,292 @@
+/* 後台的外框（元件與說明見 AdminLayout.tsx）。
+   桌機：左邊 240px 固定的側欄，右邊是頁面。≤768px：側欄收成從左邊滑出來的選單，頂上一條細列放開關。
+   編輯器那幾頁沒有側欄，換成一條固定在頂上的編輯列。 */
+
+/* 側欄的寬度：側欄自己的 width 與內容讓出的 margin-left 都讀它。它是版面尺寸，不是間距尺上的一格 */
+.admin-layout {
+  --adm-side-w: 240px;
+}
+
+/* 等寬小字的標籤：分組名、狀態、時間 */
+.adm-caps {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  text-transform: uppercase;
+  color: var(--paper-meta);
+}
+
+/* 字標：整段英文的大字用 Instrument Serif（只有一個字重，不要加粗） */
+.admin-layout .adm-wordmark {
+  font-family: var(--latin-display);
+  font-size: var(--fs-28);
+  line-height: var(--lh-100);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+/* ── 側欄 ── */
+.adm-side {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  box-sizing: border-box;
+  width: var(--adm-side-w);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-7) 0 var(--space-6);
+  overflow-y: auto;
+  background: var(--ground);
+  border-right: 1px solid var(--rule);
+}
+
+.adm-brand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  padding: 0 var(--space-6);
+}
+
+.adm-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* 分組名後面一條點線拉到底（跟前台 ⌘K 的分組標題同一種） */
+.adm-group-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  padding: 0 var(--space-6) var(--space-1-5);
+}
+
+.adm-group-label::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dotted var(--rule);
+}
+
+.adm-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-side .adm-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  padding: 0 var(--space-6);
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+  text-decoration: none;
+  transition: color var(--dur-150) ease;
+}
+
+.adm-side .adm-link:hover,
+.adm-side .adm-link:focus-visible,
+.adm-side .adm-link[aria-current="page"] {
+  color: var(--paper);
+}
+
+/* 每一項前面一個空心小圓；現在這一頁是琥珀實心點（跟前台的問答、⌘K 同一套） */
+.adm-dot {
+  flex: none;
+  box-sizing: border-box;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-round);
+  transition:
+    background-color var(--dur-200) ease,
+    border-color var(--dur-200) ease;
+}
+
+.adm-link[aria-current="page"] .adm-dot {
+  background: var(--amber);
+  border-color: var(--amber);
+  box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
+}
+
+.adm-foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+  padding: var(--space-4) var(--space-6) 0;
+  border-top: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+.adm-side .adm-foot-link {
+  color: var(--paper-2);
+  text-decoration: none;
+}
+
+.adm-side .adm-foot-link:hover,
+.adm-side .adm-foot-link:focus-visible {
+  color: var(--paper);
+}
+
+.adm-who {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* ── 按鈕：透明底、一條細框，滑過換成琥珀框（跟前台留言表單的送出鈕同一個反應）──
+   主要的那顆框是墨 70%。全站 button 的紫底在 @layer base，這裡未分層，自然蓋得過 */
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1-5);
+  min-height: 40px;
+  padding: 0 var(--space-3-5);
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  cursor: pointer;
+  transition: border-color var(--dur-200) ease;
+}
+
+.adm-btn:hover,
+.adm-btn:focus-visible {
+  border-color: var(--amber);
+}
+
+.adm-btn-primary {
+  border-color: var(--paper-2);
+}
+
+/* 長得像按鈕的連結（「新寫一篇」這種）：蓋過後台 a 的墨 70% 與底線 */
+.admin-layout a.adm-btn {
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.adm-btn-small {
+  min-height: 32px;
+  padding: 0 var(--space-2-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-2);
+}
+
+/* ── 頁面 ── */
+.adm-body {
+  margin-left: var(--adm-side-w);
+  min-height: 100vh;
+}
+
+.adm-body[data-editor] {
+  margin-left: 0;
+}
+
+/* ── 編輯器的頂列：回手記、存檔、發佈。捲下去也一直在（sticky） ── */
+.adm-editbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  box-sizing: border-box;
+  min-height: 64px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2-5) var(--space-8);
+  background: var(--ground);
+  border-bottom: 1px solid var(--rule);
+}
+
+.admin-layout .adm-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+  text-decoration: none;
+}
+
+.admin-layout .adm-back:hover,
+.admin-layout .adm-back:focus-visible {
+  color: var(--paper);
+}
+
+.adm-editbar-actions {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2-5);
+}
+
+/* ── 窄螢幕：側欄收成滑出來的選單 ── */
+.adm-mobilebar,
+.adm-scrim {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .adm-side {
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition:
+      transform var(--dur-300) var(--easing-out),
+      visibility var(--dur-300) step-end;
+  }
+
+  /* 收起來時也藏掉（visibility），不然 Tab 會走進看不見的選單裡 */
+  .adm-side[data-open] {
+    visibility: visible;
+    transform: none;
+    transition:
+      transform var(--dur-300) var(--easing-out),
+      visibility var(--dur-300) step-start;
+  }
+
+  .adm-body {
+    margin-left: 0;
+  }
+
+  .adm-mobilebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    box-sizing: border-box;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: 0 var(--space-4);
+    background: var(--ground);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .admin-layout .adm-mobilebar .adm-wordmark {
+    font-size: var(--fs-24);
+  }
+
+  .adm-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    padding: 0;
+    background: rgba(var(--ground-rgb), 0.7);
+    border: none;
+    cursor: default;
+  }
+
+  .adm-editbar {
+    padding: var(--space-2) var(--space-4);
+  }
+}

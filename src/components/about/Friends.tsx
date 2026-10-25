@@ -48,7 +48,7 @@ const DOCK_FRAME_MS = 33;
 /** 抽屜：滑過把手停多久才拉出來、滑鼠離開多久才收（跟頂欄的選單同一組數字，layout/SiteNav） */
 const OPEN_AFTER_MS = 280;
 const CLOSE_AFTER_MS = 320;
-/** 送出之後抽屜等多久收起（讓「已打開郵件程式」那行先被看到一眼） */
+/** 送出之後抽屜等多久收起（讓「收到了」那行先被看到一眼） */
 const CLOSE_AFTER_SEND_MS = 600;
 /** 軌道讓位的快慢（每秒往目標靠近的比例，指數趨近） */
 const INSET_RATE = 6;
@@ -67,9 +67,18 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 /
 const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 const hostOf = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-type FieldKey = 'name' | 'url' | 'rss' | 'desc';
-type FormErrors = Partial<Record<FieldKey, 'required' | 'url'>>;
-const FIELD_ORDER: FieldKey[] = ['name', 'url', 'rss', 'desc'];
+type FieldKey = 'name' | 'url' | 'rss' | 'desc' | 'email';
+type FieldError = 'required' | 'url' | 'email';
+type FormErrors = Partial<Record<FieldKey, FieldError>>;
+const FIELD_ORDER: FieldKey[] = ['name', 'url', 'rss', 'desc', 'email'];
+const ERROR_TEXT: Record<FieldError, string> = {
+  required: 'friends.errRequired',
+  url: 'friends.errUrl',
+  email: 'friends.errEmail',
+};
+
+/** 只擋明顯打錯的（後端規則一樣）：有 @、@ 後面有點、沒有空白 */
+const isEmail = (s: string) => /^[^\s@]+@[^\s@.][^\s@]*\.[^\s@]+$/.test(s);
 
 const isWebUrl = (s: string) => {
   try {
@@ -87,6 +96,7 @@ function checkForm(form: Record<FieldKey, string>): FormErrors {
   if (!form.url.trim()) found.url = 'required';
   else if (!isWebUrl(form.url.trim())) found.url = 'url';
   if (form.rss.trim() && !isWebUrl(form.rss.trim())) found.rss = 'url';
+  if (form.email.trim() && !isEmail(form.email.trim())) found.email = 'email';
   return found;
 }
 
@@ -125,10 +135,15 @@ export default function Friends() {
     [friends],
   );
 
-  const [form, setForm] = useState<Record<FieldKey, string>>({ name: '', url: '', rss: '', desc: '' });
+  const [form, setForm] = useState<Record<FieldKey, string>>({ name: '', url: '', rss: '', desc: '', email: '' });
   const [errors, setErrors] = useState<FormErrors>({});
   const inputsRef = useRef<Partial<Record<FieldKey, HTMLInputElement | null>>>({});
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  /** 送不出去的理由（後端回的，或網路錯誤） */
+  const [failed, setFailed] = useState<string | null>(null);
+  /** 隱藏欄位：真人看不到也不會填，填了的是機器人（後端假裝收到、不存） */
+  const [trap, setTrap] = useState('');
   const [docked, setDocked] = useState<number | null>(null);
   const [sideOpen, setSideOpen] = useState(false);
   const sideOpenRef = useRef(false);
@@ -583,7 +598,7 @@ export default function Friends() {
         />
         {err && (
           <em className="fr-error" id={`fr-err-${key}`}>
-            {t(err === 'required' ? 'friends.errRequired' : 'friends.errUrl')}
+            {t(ERROR_TEXT[err])}
           </em>
         )}
       </label>
@@ -599,13 +614,38 @@ export default function Friends() {
       inputsRef.current[first]?.focus();
       return;
     }
-    const subject = `[Friend-link] ${form.name.trim()}`;
-    const body = [`Name: ${form.name}`, `URL: ${form.url}`, `RSS: ${form.rss}`, `Intro: ${form.desc}`].join('\n');
-    sentRef.current = true;
-    setSent(true);
-    // 抽屜收起來，讓預覽星點火入軌那一段在整片天上播
-    window.setTimeout(closeSide, CLOSE_AFTER_SEND_MS);
-    window.location.href = `mailto:${CONTACT}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    if (sending) return;
+    setSending(true);
+    setFailed(null);
+    void (async () => {
+      try {
+        const res = await fetch('/api/friends/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: form.name,
+            url: form.url,
+            feed_url: form.rss,
+            description: form.desc,
+            email: form.email,
+            website: trap,
+          }),
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          setFailed(body.error ?? String(res.status));
+          return;
+        }
+        sentRef.current = true;
+        setSent(true);
+        // 抽屜收起來，讓預覽星點火入軌那一段在整片天上播
+        window.setTimeout(closeSide, CLOSE_AFTER_SEND_MS);
+      } catch (err) {
+        setFailed(err instanceof Error ? err.message : String(err));
+      } finally {
+        setSending(false);
+      }
+    })();
   };
 
   const open = docked === null ? null : friends[docked];
@@ -823,12 +863,29 @@ export default function Friends() {
               {fieldRow('url', t('friends.fieldUrl'), { type: 'url', required: true, placeholder: 'https://' })}
               {fieldRow('rss', t('friends.fieldRss'), { type: 'url', placeholder: 'https://' })}
               {fieldRow('desc', t('friends.fieldDesc'), { type: 'text', maxLength: 40 })}
-              <button type="submit" className="fr-submit">
-                {t('friends.submit')}
+              {fieldRow('email', t('friends.fieldEmail'), {
+                type: 'email',
+                maxLength: 120,
+                placeholder: t('friends.fieldEmailHint'),
+              })}
+              {/* 給機器人填的：畫面外、Tab 走不到、讀屏器也略過 */}
+              <input
+                className="fr-trap"
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                value={trap}
+                onChange={(e) => setTrap(e.target.value)}
+              />
+              <button type="submit" className="fr-submit" disabled={sending || sent}>
+                {sending ? t('friends.sending') : t('friends.submit')}
               </button>
-              {sent && (
-                <output className="fr-sent">
-                  {t('friends.sent')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+              {sent && <output className="fr-sent">{t('friends.sent')}</output>}
+              {failed && (
+                <output className="fr-sent fr-failed">
+                  {t('friends.sendFailed', { reason: failed })} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
                 </output>
               )}
             </form>

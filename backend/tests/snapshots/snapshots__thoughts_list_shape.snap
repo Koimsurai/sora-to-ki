@@ -18,6 +18,7 @@ expression: body
       "edited": false,
       "dislikes": 0,
       "comment_count": 0,
+      "verb": null,
       "ref": null
     }
   ]

@@ -1,0 +1,103 @@
+/* 後台的捲軸（元件與說明見 AdminScrollbars.tsx）。
+   原生捲軸整個收掉：html 上的 .admin-scroll 是 AdminScrollbars 掛載時加的，離開後台就拿掉，
+   前台不受影響。scrollbar-width 管 Firefox 與新版 Chromium／Safari，-webkit 那條給 18.2 以前的 Safari。 */
+html.admin-scroll,
+html.admin-scroll * {
+  scrollbar-width: none;
+}
+
+html.admin-scroll ::-webkit-scrollbar {
+  display: none;
+}
+
+/* 整層蓋在最上面但不吃滑鼠，只有捲軸本身在看得到的時候才接事件。
+   用 --z-toast：對話框、⌘K 裡的清單捲動時，捲軸也要畫在它們上面 */
+.adm-sb-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-toast);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-300) ease;
+}
+
+.adm-sb-layer:not([data-phase="idle"]) {
+  opacity: 1;
+}
+
+.adm-sb {
+  position: absolute;
+  pointer-events: none;
+}
+
+.adm-sb-layer:not([data-phase="idle"]) .adm-sb {
+  pointer-events: auto;
+}
+
+/* 軌道：1px 的細線，貼著那條邊 */
+.adm-sb::before {
+  content: "";
+  position: absolute;
+  background: var(--rule);
+}
+
+.adm-sb[data-axis="y"] {
+  width: 12px;
+}
+
+.adm-sb[data-axis="y"]::before {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.adm-sb[data-axis="x"] {
+  height: 12px;
+}
+
+.adm-sb[data-axis="x"]::before {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+}
+
+/* 短條：墨 55%，置中壓在那條線上 */
+.adm-sb-thumb {
+  position: absolute;
+  background: var(--paper-meta);
+  transition:
+    width var(--dur-150) ease,
+    height var(--dur-150) ease,
+    background-color var(--dur-150) ease;
+}
+
+.adm-sb[data-axis="y"] .adm-sb-thumb {
+  right: -1px;
+  width: 3px;
+}
+
+.adm-sb[data-axis="x"] .adm-sb-thumb {
+  bottom: -1px;
+  height: 3px;
+}
+
+/* 游標靠近時加寬到 5px、深一階，比較好抓；拖著的時候是實墨 */
+.adm-sb-layer[data-phase="hover"] .adm-sb[data-axis="y"] .adm-sb-thumb,
+.adm-sb-layer[data-phase="drag"] .adm-sb[data-axis="y"] .adm-sb-thumb {
+  right: -2px;
+  width: 5px;
+  background: var(--paper-2);
+}
+
+.adm-sb-layer[data-phase="hover"] .adm-sb[data-axis="x"] .adm-sb-thumb,
+.adm-sb-layer[data-phase="drag"] .adm-sb[data-axis="x"] .adm-sb-thumb {
+  bottom: -2px;
+  height: 5px;
+  background: var(--paper-2);
+}
+
+.adm-sb-layer[data-phase="drag"] .adm-sb-thumb {
+  background: var(--paper);
+}

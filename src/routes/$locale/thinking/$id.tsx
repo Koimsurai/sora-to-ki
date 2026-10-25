@@ -3,6 +3,7 @@ import { localeWrap } from '@/i18n/localePage';
 import ThinkingDetail from '@/components/blog/ThinkingDetail';
 import { thoughtDetailQueryOptions, thoughtTitle } from '@/data/thoughtData';
 import { pageMeta } from '@/seo/seoMeta';
+import { thoughtLine } from '@/lib/thoughtRef';
 import { localeFromPrefix } from '@/i18n/start-i18n';
 import { DEFAULT_LOCALE } from '../../../lib/locales';
 
@@ -19,15 +20,11 @@ export const Route = createFileRoute('/$locale/thinking/$id')({
     if (!loaderData) return {};
     const { thought } = loaderData;
     const locale = localeFromPrefix(params.locale) ?? DEFAULT_LOCALE;
-    // 碎念本身不分語系（內容就一份），但 canonical/og:locale 要跟著路由
+    // 碎念本身不分語系（內容就一份），但 canonical/og:locale 要跟著路由。
+    // 只附了作品、沒寫字的那種用作品名
+    const text = thought.content.trim() || thoughtLine(thought);
     return {
-      meta: pageMeta(
-        thoughtTitle(thought.content),
-        thought.content,
-        `/${params.locale}/thinking/${thought.id}`,
-        locale,
-        'moments',
-      ),
+      meta: pageMeta(thoughtTitle(text), text, `/${params.locale}/thinking/${thought.id}`, locale, 'moments'),
     };
   },
   component: localeWrap(ThinkingDetail),

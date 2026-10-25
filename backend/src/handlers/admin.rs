@@ -11,7 +11,7 @@ use sqlx::FromRow;
 use crate::{
     error::AppError,
     handlers::{
-        excerpt_links,
+        excerpt_links, post_lifecycle,
         posts::{PostRow, available_locales_with_source},
     },
     state::AppState,
@@ -363,6 +363,14 @@ pub struct AdminPostFull {
     pub format: Option<String>,
     /// 摘要裡連到章節的句子，依語系分開（沒有就是空物件）。
     pub excerpt_links: excerpt_links::LinkMap,
+    /// 排程發佈的時間（UTC，`YYYY-MM-DD HH:MM:SS`）；只有 status = 'scheduled' 才有值
+    pub publish_at: Option<String>,
+    /// 排程時勾了「發佈時推送電子報」，翻成 published 那一刻才寄
+    pub newsletter_pending: bool,
+    /// 丟進回收的時間（UTC）；30 天後自動刪掉
+    pub trashed_at: Option<String>,
+    /// 丟進回收之前的狀態（還原時回到這裡）
+    pub trashed_from: Option<String>,
     pub tags: Vec<String>,
 }
 
@@ -401,6 +409,10 @@ impl AdminPostFull {
             excerpt_ko: r.excerpt_ko.clone(),
             format: r.format.clone(),
             excerpt_links: excerpt_links::parse_stored(r.excerpt_links.as_deref()),
+            publish_at: r.publish_at.clone(),
+            newsletter_pending: r.newsletter_pending.unwrap_or(0) != 0,
+            trashed_at: r.trashed_at.clone(),
+            trashed_from: r.trashed_from.clone(),
             tags: split_tags(r.tags.as_deref()),
         }
     }
@@ -440,8 +452,11 @@ pub async fn admin_posts(
          LEFT JOIN post_tags pt ON p.id = pt.post_id \
          LEFT JOIN tags t ON pt.tag_id = t.id WHERE 1=1",
     );
+    // 沒指定狀態時不含回收桶：「全部」是還活著的文章，回收要明確點進去才看得到
     if q.status.is_some() {
         sql.push_str(" AND p.status = ?");
+    } else {
+        sql.push_str(" AND p.status <> 'trashed'");
     }
     if q.search.is_some() {
         sql.push_str(" AND (p.title LIKE ? OR p.content LIKE ?)");
@@ -465,6 +480,8 @@ pub async fn admin_posts(
     );
     if q.status.is_some() {
         count_sql.push_str(" AND p.status = ?");
+    } else {
+        count_sql.push_str(" AND p.status <> 'trashed'");
     }
     if q.search.is_some() {
         count_sql.push_str(" AND (p.title LIKE ? OR p.content LIKE ?)");
@@ -1460,7 +1477,16 @@ pub async fn admin_create_post(
     let content = b.get("content").and_then(to_s);
     let excerpt = b.get("excerpt").and_then(to_s); // 缺→NULL、''→''
     let category = truthy_s(b.get("category")); // || null
-    let status = if b.contains_key("status") { b.get("status").and_then(to_s) } else { Some("draft".into()) };
+    // 狀態與排程時間一起驗：缺 key = 草稿；scheduled 要有未來的 publish_at
+    let lifecycle = match post_lifecycle::lifecycle(
+        b.get("status").and_then(|v| v.as_str()).unwrap_or("draft"),
+        b.get("publish_at").and_then(|v| v.as_str()),
+        js_truthy(b.get("send_newsletter")),
+    ) {
+        Ok(lc) => lc,
+        Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+    };
+    let status = Some(lifecycle.status.clone());
     let layout_type = if b.contains_key("layout_type") {
         b.get("layout_type").and_then(to_s)
     } else {
@@ -1535,6 +1561,9 @@ pub async fn admin_create_post(
         Ok(r) => r.last_insert_rowid(),
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
+    if let Err(e) = post_lifecycle::store_lifecycle(&state.pool, post_id, &lifecycle).await {
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
+    }
     let tags = tags_from(&b);
     if let Err(e) = manage_tags(&state, &post_id.to_string(), &tags).await {
         return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
@@ -1553,7 +1582,10 @@ pub async fn admin_create_post(
         data.insert("category".into(), v.clone());
     }
     data.insert("tags".into(), json!(tags_from(&b)));
-    data.insert("status".into(), b.get("status").cloned().unwrap_or_else(|| json!("draft")));
+    data.insert("status".into(), json!(lifecycle.status));
+    if let Some(at) = &lifecycle.publish_at {
+        data.insert("publish_at".into(), json!(at));
+    }
     data.insert("source_language".into(), json!(source_language));
     if want_newsletter {
         data.insert("newsletter".into(), dispatch_newsletter_result(&state, post_id).await);
@@ -1581,6 +1613,18 @@ pub async fn admin_update_post(
     let status_str = b.get("status").and_then(|v| v.as_str()).map(String::from);
     // 發佈時是否推送 Newsletter：先記旗標，更新成功後再寄（見下方）。
     let want_newsletter = js_truthy(b.get("send_newsletter")) && status_str.as_deref() == Some("published");
+    // 有帶 status 才動生命週期；排程要有未來的 publish_at（見 post_lifecycle::lifecycle）
+    let lifecycle = match &status_str {
+        None => None,
+        Some(s) => match post_lifecycle::lifecycle(
+            s,
+            b.get("publish_at").and_then(|v| v.as_str()),
+            js_truthy(b.get("send_newsletter")),
+        ) {
+            Ok(lc) => Some(lc),
+            Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e }))).into_response(),
+        },
+    };
 
     if let Some(v) = b.get("source_language") {
         let s = v.as_str().unwrap_or("");
@@ -1746,6 +1790,11 @@ pub async fn admin_update_post(
         }
         Ok(_) => {}
     }
+    if let Some(lc) = &lifecycle
+        && let Err(e) = post_lifecycle::store_lifecycle(&state.pool, id, lc).await
+    {
+        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
+    }
     // tags 有帶 key（含空陣列）才重建關聯；缺 key 不動（回應仍回 body 的 tags 或 []）
     let tags = tags_from(&b);
     if b.contains_key("tags")
@@ -1765,34 +1814,89 @@ pub async fn admin_update_post(
     if let Some(v) = b.get("status") {
         data.insert("status".into(), v.clone());
     }
+    if let Some(at) = lifecycle.as_ref().and_then(|lc| lc.publish_at.as_ref()) {
+        data.insert("publish_at".into(), json!(at));
+    }
     if want_newsletter {
         data.insert("newsletter".into(), dispatch_newsletter_result(&state, id).await);
     }
     Json(json!({ "message": "success", "data": Value::Object(data) })).into_response()
 }
 
-/// `DELETE /api/admin/posts/:id` —— 先清 post_tags 再刪文；404 對齊。
+#[derive(Debug, Deserialize)]
+pub struct DeletePostQuery {
+    /// `true` / `1`：真的刪掉。只對已經在回收裡的文章有效
+    permanent: Option<String>,
+}
+
+/// `DELETE /api/admin/posts/:id` —— 丟進回收（30 天後自動刪掉，期間可以還原）。
+/// `?permanent=true` 才真的刪，而且只刪**已經在回收裡**的：一步刪掉一篇還在線上的文章
+/// 是最不該發生的意外，至少要先看它在回收桶裡躺一次。
 #[utoipa::path(delete, path = "/api/admin/posts/{id}", tag = "admin", security(("bearer" = [])),
-    params(("id" = i64, Path)),
+    params(("id" = i64, Path), ("permanent" = Option<String>, Query, description = "true：從回收桶永久刪除")),
     responses(
-        (status = 200, description = "刪除文章（動態 JSON）"),
+        (status = 200, description = "丟進回收或永久刪除（動態 JSON）"),
         (status = 400, body = ErrorResponse, description = "id 不是合法的 i64"),
         (status = 401, description = "未授權"),
+        (status = 404, description = "文章不存在"),
+        (status = 409, description = "要永久刪除的文章不在回收裡"),
     ))]
 pub async fn admin_delete_post(
     State(state): State<AppState>,
     _auth: crate::auth::AdminAuth,
     crate::error::PathParam(id): crate::error::PathParam<i64>,
+    Query(q): Query<DeletePostQuery>,
 ) -> Response {
-    if let Err(e) = sqlx::query("DELETE FROM post_tags WHERE post_id = ?").bind(id).execute(&state.pool).await
+    let status = match sqlx::query_scalar::<_, String>("SELECT status FROM posts WHERE id = ?")
+        .bind(id)
+        .fetch_optional(&state.pool)
+        .await
     {
-        return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
+        Ok(Some(s)) => s,
+        Ok(None) => return (StatusCode::NOT_FOUND, Json(json!({ "error": "文章不存在" }))).into_response(),
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
+    };
+    let permanent = matches!(q.permanent.as_deref(), Some("true" | "1"));
+
+    if !permanent {
+        return match post_lifecycle::trash(&state.pool, id).await {
+            Ok(true) => Json(json!({
+                "message": "已丟進回收桶",
+                "status": "trashed",
+                "keep_days": post_lifecycle::TRASH_KEEP_DAYS,
+            }))
+            .into_response(),
+            Ok(false) => Json(json!({ "message": "已經在回收桶裡", "status": "trashed" })).into_response(),
+            Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
+        };
     }
-    match sqlx::query("DELETE FROM posts WHERE id = ?").bind(id).execute(&state.pool).await {
-        Ok(r) if r.rows_affected() == 0 => {
-            (StatusCode::NOT_FOUND, Json(json!({ "error": "文章不存在" }))).into_response()
-        }
-        Ok(r) => Json(json!({ "message": "文章已刪除", "deleted": r.rows_affected() })).into_response(),
+    if status != "trashed" {
+        return (StatusCode::CONFLICT, Json(json!({ "error": "只能永久刪除回收桶裡的文章，請先丟進回收" })))
+            .into_response();
+    }
+    match post_lifecycle::delete_permanently(&state.pool, id).await {
+        Ok(n) => Json(json!({ "message": "文章已永久刪除", "deleted": n })).into_response(),
+        Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
+    }
+}
+
+/// `POST /api/admin/posts/:id/restore` —— 從回收還原，回到丟之前的狀態（排程的回到草稿）。
+#[utoipa::path(post, path = "/api/admin/posts/{id}/restore", tag = "admin", security(("bearer" = [])),
+    params(("id" = i64, Path)),
+    responses(
+        (status = 200, description = "已還原（動態 JSON，帶還原後的 status）"),
+        (status = 400, body = ErrorResponse, description = "id 不是合法的 i64"),
+        (status = 401, description = "未授權"),
+        (status = 404, description = "文章不存在或不在回收裡"),
+    ))]
+pub async fn admin_restore_post(
+    State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
+    crate::error::PathParam(id): crate::error::PathParam<i64>,
+) -> Response {
+    match post_lifecycle::restore(&state.pool, id).await {
+        Ok(Some(status)) => Json(json!({ "message": "已還原", "status": status })).into_response(),
+        Ok(None) => (StatusCode::NOT_FOUND, Json(json!({ "error": "回收桶裡沒有這篇" }))).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     }
 }
@@ -1852,16 +1956,20 @@ pub async fn admin_get_post(
         (status = 401, description = "未授權"),
     ))]
 pub async fn admin_stats(State(state): State<AppState>, _auth: crate::auth::AdminAuth) -> Response {
-    let posts = sqlx::query_as::<_, (i64, i64, i64, i64)>(
-        "SELECT COUNT(*), \
+    // totalPosts 不含回收桶；排程另外算，下一篇排程的時間給總覽顯示
+    let posts = sqlx::query_as::<_, (i64, i64, i64, i64, i64, i64, Option<String>)>(
+        "SELECT COUNT(CASE WHEN status <> 'trashed' THEN 1 END), \
                 COUNT(CASE WHEN status = 'published' THEN 1 END), \
                 COUNT(CASE WHEN status = 'draft' THEN 1 END), \
-                COUNT(CASE WHEN created_at >= date('now', '-30 days') THEN 1 END) \
+                COUNT(CASE WHEN status <> 'trashed' AND created_at >= date('now', '-30 days') THEN 1 END), \
+                COUNT(CASE WHEN status = 'scheduled' THEN 1 END), \
+                COUNT(CASE WHEN status = 'trashed' THEN 1 END), \
+                MIN(CASE WHEN status = 'scheduled' THEN publish_at END) \
          FROM posts",
     )
     .fetch_one(&state.pool)
     .await;
-    let (total_posts, published, draft, this_month) = match posts {
+    let (total_posts, published, draft, this_month, scheduled, trashed, next_scheduled_at) = match posts {
         Ok(r) => r,
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
@@ -1871,6 +1979,16 @@ pub async fn admin_stats(State(state): State<AppState>, _auth: crate::auth::Admi
     .fetch_one(&state.pool)
     .await;
     let (total_comments, comments_this_week) = match comments {
+        Ok(r) => r,
+        Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
+    };
+    // 碎念：後台碎念頁的頁首「n 則 · 本月 n」（列表只抓最近 50 則，數不出總數）
+    let thoughts = sqlx::query_as::<_, (i64, i64)>(
+        "SELECT COUNT(*), COUNT(CASE WHEN created_at >= date('now', 'start of month') THEN 1 END) FROM thoughts",
+    )
+    .fetch_one(&state.pool)
+    .await;
+    let (total_thoughts, thoughts_this_month) = match thoughts {
         Ok(r) => r,
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
     };
@@ -1886,9 +2004,14 @@ pub async fn admin_stats(State(state): State<AppState>, _auth: crate::auth::Admi
         "totalPosts": total_posts,
         "publishedPosts": published,
         "draftPosts": draft,
+        "scheduledPosts": scheduled,
+        "trashedPosts": trashed,
+        "nextScheduledAt": next_scheduled_at,
         "postsThisMonth": this_month,
         "comments": total_comments,
         "commentsThisWeek": comments_this_week,
+        "thoughts": total_thoughts,
+        "thoughtsThisMonth": thoughts_this_month,
         "visitors": visitors,
         "message": "success",
     }))

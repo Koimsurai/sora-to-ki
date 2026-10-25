@@ -1,0 +1,155 @@
+/* 照片（元件見 PhotosManager.tsx）：左邊照片牆、右邊選中那一張。 */
+
+.adm-photos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-8);
+}
+
+/* ── 照片牆：每一列照長寬比分寬度、自己撐滿（li 的 flex-grow／basis 寫在 TSX 裡，值來自每張照片） ── */
+.adm-photo-wall {
+  flex: 999 1 420px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 最後一列的填充：不然最後一列只剩一兩張時會被拉滿整列、比例走樣 */
+.adm-photo-wall::after {
+  content: "";
+  flex-grow: 999;
+}
+
+.adm-photo {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 140px;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(var(--paper-rgb), 0.04);
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  transition: border-color var(--dur-150) ease;
+}
+
+.adm-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-photo:hover,
+.adm-photo:focus-visible {
+  border-color: var(--paper-2);
+}
+
+/* 選中的那張：實墨框，右上角一顆琥珀點（「你在哪裡」） */
+.adm-photo[aria-pressed="true"] {
+  border-color: var(--paper);
+}
+
+.adm-photo[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-round);
+  background: var(--amber);
+}
+
+/* 藏起來的：退成淡墨 */
+.adm-photo[data-hidden] img {
+  opacity: 0.4;
+}
+
+/* 精選：右上角一顆實墨的星 */
+.adm-photo-star {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-round);
+  background: var(--paper);
+}
+
+.adm-photo-tag {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-1-5);
+  padding: 0 var(--space-1);
+  background: rgba(var(--ground-rgb), 0.7);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--paper-2);
+}
+
+/* ── 右邊：選中那一張 ── */
+.adm-photo-side {
+  flex: 1 0 300px;
+  max-width: 100%;
+  position: sticky;
+  top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.adm-photo-preview {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  background: rgba(var(--paper-rgb), 0.04);
+  border: 1px solid var(--rule);
+}
+
+.adm-photo-exif {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: var(--space-1-5) var(--space-3);
+  margin: 0;
+  padding: var(--space-3) 0;
+  border-top: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+}
+
+.adm-photo-exif dt {
+  color: var(--paper-meta);
+}
+
+.adm-photo-exif dd {
+  margin: 0;
+  color: var(--paper);
+}
+
+.adm-photo-toggles {
+  display: flex;
+  flex-direction: column;
+}
+
+/* 一行一個開關：方框、名字、說明 */
+.adm-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  font-size: var(--fs-14);
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.adm-check .adm-meta {
+  margin-left: auto;
+}

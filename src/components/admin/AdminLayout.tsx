@@ -1,147 +1,86 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate, type LinkProps } from '@tanstack/react-router';
-import {
-  LayoutDashboard,
-  FileText,
-  FolderOpen,
-  Tags,
-  BookOpen,
-  Library,
-  Sparkles,
-  Menu,
-  X,
-  ChevronRight,
-  LogOut,
-  User,
-  Users,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Save,
-  SaveAll,
-  Send,
-  MessageSquare,
-  Mail,
-  Home,
-  type LucideIcon,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+
 import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from '../../contexts/auth';
+import { useEditorScheduledAt } from '@/store/editorScheduleStore';
+import AdminScrollbars from './AdminScrollbars';
 import './AdminTheme.css';
-import './ModernEnhancements.css';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import './AdminLayout.css';
 
-const BREADCRUMB_LABELS: Record<string, string> = {
-  admin: '後台',
-  dashboard: '儀表板',
-  posts: '文章',
-  categories: '分類',
-  tags: '標籤',
-  comments: '留言',
-  notes: '日記',
-  books: '書籍',
-  editor: '編輯器',
-  create: '新增',
-  edit: '編輯',
-  'article-generator': 'AI 寫作',
-};
-
-/**
- * 麵包屑的中繼連結。
- *
- * TanStack 的 `Link` 把 `to` 對著 route tree 做型別檢查，而麵包屑是從當前 pathname
- * 逐段拼出來的字串，型別上對不起來。這裡刻意退回原生 `<a>` 而不是硬轉型：
- *
- *   - 硬轉型（`to={href as never}`）會騙過編譯器，但拼錯路徑仍然只有執行期才知道，
- *     等於付了型別的醜、卻沒買到型別的保障。
- *   - 麵包屑的中繼層級只有 `/admin`、`/admin/posts` 這種，點下去整頁重載一次的成本
- *     對後台可以接受（而且後台本來就是 client-only、沒有 SSR 要保）。
- *
- * 側欄那組連結是**寫死的已知路徑**，所以那邊照樣用 `Link`，享有型別檢查。
- */
-const BreadcrumbAnchor = ({ href, label }: { href: string; label: string }) => (
-  <BreadcrumbLink asChild>
-    <a href={href}>{label}</a>
-  </BreadcrumbLink>
-);
-
-const AdminBreadcrumb = () => {
-  const { pathname } = useLocation();
-  const segments = pathname.split('/').filter(Boolean);
-
-  return (
-    <Breadcrumb>
-      <BreadcrumbList>
-        {segments.map((segment, index) => {
-          const href = '/' + segments.slice(0, index + 1).join('/');
-          const isLast = index === segments.length - 1;
-          const label = BREADCRUMB_LABELS[segment] || segment;
-
-          return (
-            <React.Fragment key={href}>
-              <BreadcrumbItem>
-                {isLast ? <BreadcrumbPage>{label}</BreadcrumbPage> : <BreadcrumbAnchor href={href} label={label} />}
-              </BreadcrumbItem>
-              {!isLast && (
-                <BreadcrumbSeparator>
-                  <ChevronRight />
-                </BreadcrumbSeparator>
-              )}
-            </React.Fragment>
-          );
-        })}
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
-};
+// 後台的外框（2026-10 後台提案）：左邊一條側欄，分組跟前台的分區對應——此刻、寫、收、回、站；
+// 現在在哪一頁是琥珀實心點，其他是空心小圓。編輯器那幾頁沒有側欄（整個寬度留給寫作），
+// 換成一條只有「回手記」與存檔、發佈的頂列。
 
 // path 用 Link 的 `to` 型別而不是 string：側欄路徑寫錯（或某天路由改名）會在編譯期就被抓到。
-// 這是換到 TanStack 之後真正多拿到的東西——react-router 時代這裡是純字串，打錯要等點下去才知道。
 type AdminPath = NonNullable<LinkProps['to']>;
-interface SidebarItem {
-  id: string;
-  icon: LucideIcon;
+
+interface NavItem {
   label: string;
   path: AdminPath;
   ownerOnly?: boolean;
 }
 
-const sidebarItems: SidebarItem[] = [
-  { id: 'dashboard', icon: LayoutDashboard, label: '儀表板', path: '/admin/dashboard' },
-  { id: 'posts', icon: FileText, label: '文章', path: '/admin/posts' },
-  { id: 'categories', icon: FolderOpen, label: '分類', path: '/admin/categories' },
-  { id: 'tags', icon: Tags, label: '標籤', path: '/admin/tags' },
-  { id: 'comments', icon: MessageSquare, label: '留言', path: '/admin/comments' },
-  { id: 'subscribers', icon: Mail, label: '電子報訂閱', path: '/admin/subscribers' },
-  { id: 'notes', icon: BookOpen, label: '日記', path: '/admin/notes' },
-  { id: 'books', icon: Library, label: '書籍', path: '/admin/books' },
-  { id: 'article-generator', icon: Sparkles, label: 'AI 寫作', path: '/admin/article-generator' },
-  { id: 'users', icon: Users, label: '用戶管理', path: '/admin/users', ownerOnly: true },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+// 只放已經存在的頁。提案裡的碎念、訊號、外部連線等做出來了再加進來，
+// 不先放一個點進去是空頁的入口。
+const NAV: NavGroup[] = [
+  { label: '此刻', items: [{ label: '總覽', path: '/admin/dashboard' }] },
+  {
+    label: '寫 · Write',
+    items: [
+      { label: '手記', path: '/admin/posts' },
+      { label: '碎念', path: '/admin/thoughts' },
+      { label: '分類', path: '/admin/categories' },
+      { label: '標籤', path: '/admin/tags' },
+    ],
+  },
+  {
+    label: '收 · Keep',
+    items: [
+      { label: '收藏', path: '/admin/collection' },
+      { label: '書架', path: '/admin/books' },
+      { label: '照片', path: '/admin/photos' },
+    ],
+  },
+  {
+    label: '回 · Reply',
+    items: [
+      { label: '留言', path: '/admin/comments' },
+      { label: '友鏈', path: '/admin/friends' },
+      { label: '電子報', path: '/admin/subscribers' },
+    ],
+  },
+  { label: '站 · Station', items: [{ label: '帳號', path: '/admin/users', ownerOnly: true }] },
 ];
 
+const isEditorPath = (p: string) => p.startsWith('/admin/posts/edit') || p.startsWith('/admin/posts/create');
+
+/** /admin 本身就是總覽（routes/admin/index.tsx），側欄的點要停在總覽上 */
+function isActive(pathname: string, path: string): boolean {
+  if (path === '/admin/dashboard' && /^\/admin\/?$/.test(pathname)) return true;
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+/**
+ * 編輯器頂列的三顆鈕。PostEditor 在表單裡放了三顆藏起來的鈕（同一組 id）做真正的送出——
+ * 送出要經過 react-hook-form 的 handleSubmit，而那個實例只活在 PostEditor 裡。
+ */
+const clickEditorButton = (id: 'save-draft-btn' | 'save-exit-btn' | 'publish-btn') =>
+  document.getElementById(id)?.click();
+
 const AdminLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, logout, isOwner } = useAuth();
+  const editor = isEditorPath(pathname);
+  // 編輯器裡填了排程時間，主要按鈕就是「排程發佈」
+  const scheduledAt = useEditorScheduledAt();
 
   // TanStack 的 navigate 收物件（`{ to }`）而不是字串，這是與 react-router 最主要的簽名差異。
   const handleLogout = () => {
@@ -156,11 +95,12 @@ const AdminLayout = () => {
     };
   }, []);
 
-  // 過濾 sidebar：ownerOnly 僅 OWNER 可見
-  const visibleSidebarItems = sidebarItems.filter((item) => !item.ownerOnly || isOwner);
+  const close = () => setMenuOpen(false);
+  const name = user?.displayName ?? user?.name ?? '站長';
+  const role = user?.role === 'OWNER' ? '站長' : '管理員';
 
   return (
-    <div className="min-h-screen admin-layout deep-space-bg">
+    <div className="admin-layout">
       {/*
         後台的 toast 出口。`components/ui/sonner.tsx` 連配色都寫好了，但在這行之前
         **沒有任何地方掛載它**——於是 11 個後台元件裡所有的 `toast.success/error`
@@ -180,182 +120,108 @@ const AdminLayout = () => {
         掛在這裡而不是 __root：目前 `toast` 的使用者全部在 components/admin/ 底下。
       */}
       <Toaster />
+      <AdminScrollbars />
 
-      {/* Stars overlay */}
-      <div className="stars" />
-
-      {/* Sidebar - Desktop */}
-      <aside
-        className={cn(
-          'fixed left-0 top-0 z-40 h-screen transition-all duration-300 border-r border-border/40',
-          sidebarOpen ? 'w-52' : 'w-[60px]',
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-        )}
-      >
-        <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex items-center h-14 px-3 shrink-0">
-            {sidebarOpen ? (
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="size-7 rounded-md bg-foreground/10 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-semibold text-foreground/80">K</span>
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-fs-13 font-medium text-foreground/90 truncate leading-tight">Koimsurai</span>
-                    <span className="text-fs-11 text-muted-foreground truncate leading-tight">管理後台</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSidebarOpen(false)}
-                  className="shrink-0 size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/80 hover:bg-accent/50 transition-colors"
-                >
-                  <PanelLeftClose className="size-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex w-full justify-center">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="shrink-0 size-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground/80 hover:bg-accent/50 transition-colors"
-                >
-                  <PanelLeftOpen className="size-4" />
-                </button>
-              </div>
-            )}
+      {!editor && (
+        <aside id="adm-side" className="adm-side" data-open={menuOpen || undefined}>
+          <div className="adm-brand">
+            <Link to="/admin/dashboard" className="adm-wordmark" onClick={close}>
+              sora to ki
+            </Link>
+            <span className="adm-caps">管制室 · Admin</span>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
-            {visibleSidebarItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname.startsWith(item.path);
-
+          <nav className="adm-nav" aria-label="後台">
+            {NAV.map((group) => {
+              const items = group.items.filter((item) => !item.ownerOnly || isOwner);
+              if (items.length === 0) return null;
               return (
-                <Link
-                  key={item.id}
-                  to={item.path}
-                  className={cn(
-                    'flex items-center gap-2.5 w-full rounded-lg px-2.5 py-1.75 text-fs-13 transition-colors',
-                    isActive
-                      ? 'bg-accent/80 text-foreground'
-                      : 'text-muted-foreground hover:text-foreground/80 hover:bg-accent/40',
-                    !sidebarOpen && 'justify-center px-0',
-                  )}
-                >
-                  <Icon className="size-[16px] shrink-0" />
-                  {sidebarOpen && <span className="truncate">{item.label}</span>}
-                </Link>
+                <div key={group.label} className="adm-group">
+                  <span className="adm-caps adm-group-label">{group.label}</span>
+                  <ul>
+                    {items.map((item) => {
+                      const active = isActive(pathname, item.path);
+                      return (
+                        <li key={item.path}>
+                          <Link
+                            to={item.path}
+                            className="adm-link"
+                            aria-current={active ? 'page' : undefined}
+                            onClick={close}
+                          >
+                            <span className="adm-dot" aria-hidden="true" />
+                            {item.label}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
             })}
           </nav>
 
-          {/* User Menu */}
-          <div className="px-3 py-3 shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={cn(
-                    'flex items-center gap-2.5 w-full rounded-lg transition-colors hover:bg-accent/30 p-1',
-                    !sidebarOpen && 'justify-center p-0',
-                  )}
-                >
-                  <Avatar className="size-7 shrink-0">
-                    {user?.avatar && <AvatarImage src={user.avatar} alt={user.displayName ?? '管理員'} />}
-                    <AvatarFallback className="text-fs-11">
-                      {(user?.displayName ?? '管理員').slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  {sidebarOpen && (
-                    <div className="flex flex-col min-w-0 text-left">
-                      <span className="text-fs-13 font-medium text-foreground/80 truncate leading-tight">
-                        {user?.displayName ?? '管理員'}
-                      </span>
-                      <span className="text-fs-11 text-muted-foreground truncate leading-tight">
-                        {user?.email ?? ''}
-                      </span>
-                    </div>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>我的帳戶</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    void navigate({ to: '/' });
-                  }}
-                >
-                  <Home className="mr-2 h-4 w-4" />
-                  回到前台
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  個人資料
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  登出
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className={cn('transition-all duration-300 relative z-10', sidebarOpen ? 'md:ml-52' : 'md:ml-[60px]')}>
-        {/* Header */}
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/40 glass-subtle px-4 sm:px-6">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X /> : <Menu />}
-          </Button>
-
-          <AdminBreadcrumb />
-
-          {pathname.includes('/admin/posts/edit') ||
-          pathname.includes('/admin/posts/create') ||
-          pathname === '/admin/posts/new' ? (
-            <div className="ml-auto flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="xs"
-                tone="muted"
-                onClick={() => document.getElementById('save-draft-btn')?.click()}
-              >
-                <Save className="size-3.5" />
-                儲存草稿
-              </Button>
-              <Button
-                variant="ghost"
-                size="xs"
-                tone="muted"
-                onClick={() => document.getElementById('save-exit-btn')?.click()}
-              >
-                <SaveAll className="size-3.5" />
-                存並回列表
-              </Button>
-              <Button variant="subtle" size="xs" onClick={() => document.getElementById('publish-btn')?.click()}>
-                <Send className="size-3.5" />
-                發佈文章
-              </Button>
+          <div className="adm-foot">
+            <Link to="/" className="adm-foot-link">
+              回到前台 ↗
+            </Link>
+            <div className="adm-who">
+              <span>
+                {name} · {role}
+              </span>
+              <button type="button" className="adm-btn adm-btn-small" onClick={handleLogout}>
+                登出
+              </button>
             </div>
-          ) : null}
-        </header>
+          </div>
+        </aside>
+      )}
 
-        {/* Content */}
-        <main className="min-h-screen">
+      {menuOpen && <button type="button" className="adm-scrim" aria-label="收起選單" onClick={close} />}
+
+      <div className="adm-body" data-editor={editor || undefined}>
+        {editor ? (
+          <header className="adm-editbar">
+            <Link to="/admin/posts" className="adm-back">
+              ← 手記
+            </Link>
+            <div className="adm-editbar-actions">
+              <button type="button" className="adm-btn" onClick={() => clickEditorButton('save-draft-btn')}>
+                儲存草稿
+              </button>
+              <button type="button" className="adm-btn" onClick={() => clickEditorButton('save-exit-btn')}>
+                存並回列表
+              </button>
+              <button
+                type="button"
+                className="adm-btn adm-btn-primary"
+                onClick={() => clickEditorButton('publish-btn')}
+              >
+                {scheduledAt ? '排程發佈' : '發佈文章'}
+              </button>
+            </div>
+          </header>
+        ) : (
+          <div className="adm-mobilebar">
+            <button
+              type="button"
+              className="adm-btn adm-btn-small"
+              aria-expanded={menuOpen}
+              aria-controls="adm-side"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {menuOpen ? '收起' : '選單'}
+            </button>
+            <Link to="/admin/dashboard" className="adm-wordmark">
+              sora to ki
+            </Link>
+          </div>
+        )}
+
+        <main className="adm-main">
           <Outlet />
         </main>
       </div>
-
-      {/* Mobile Overlay */}
-      {mobileMenuOpen && (
-        // 手機側欄的遮罩，點它收起選單；鍵盤路徑是選單本身的開關鈕
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
-        <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setMobileMenuOpen(false)} />
-      )}
     </div>
   );
 };

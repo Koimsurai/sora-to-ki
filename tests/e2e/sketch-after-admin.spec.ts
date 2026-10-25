@@ -24,8 +24,9 @@ test('Monaco 載入之後，Sketch 區塊照樣畫得出來、沒有任何 UMD �
     const w = window as unknown as { __anonDefine: number; __csp: string[] };
     w.__anonDefine = 0;
     w.__csp = [];
+    // 來源檔與行號一起記：違規只在整套跑、機器忙的時候偶爾出現，沒有位置就查不到是誰在 eval
     document.addEventListener('securitypolicyviolation', (e) =>
-      w.__csp.push(`${e.effectiveDirective} ${e.blockedURI}`),
+      w.__csp.push(`${e.effectiveDirective} ${e.blockedURI} @ ${e.sourceFile}:${e.lineNumber}`),
     );
     // Monaco 掛上 define 的那一刻包一層，數匿名呼叫（第一個參數不是模組名稱的那種）
     let real: unknown;

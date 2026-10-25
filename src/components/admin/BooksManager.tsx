@@ -1,20 +1,11 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { BookRow } from '@koimsurai/api-types';
+import { toast } from 'sonner';
+
 import { adminBooksQueryOptions } from '@/data/adminData';
 import { proxiedImage } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,15 +16,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Pencil, BookOpen, Search, Loader2, Star } from 'lucide-react';
-import { toast } from 'sonner';
-import { type FormEvent } from 'react';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+import AdminLoading, { BusyDot } from './AdminLoading';
+import { PageHead } from './AdminPage';
+import { formatWhen } from './adminFormat';
+
+// 書架（2026-10 後台提案的「收」）：一本一列——封面、書名與作者、狀態、評分。
+// 新增時可以先搜外部書目（Google Books、OpenLibrary、國圖）帶入，再手動補。
 
 /** `GET /api/books` 的單本，型別由後端 Rust struct 生成（見 backend/SPECTA_PLAN.md）。 */
 type Book = BookRow;
 /** 外部搜尋的一筆：同樣的欄位，多一個來源（國圖的書目沒有封面與簡介）。 */
 type SearchHit = Book & { source?: 'google' | 'openlibrary' | 'ncl' };
+type Status = 'to-read' | 'reading' | 'read';
 
 interface BookFormData {
   isbn: string;
@@ -54,148 +49,76 @@ interface BookFormData {
   date_finished: string;
 }
 
+const EMPTY: BookFormData = {
+  isbn: '',
+  title: '',
+  authors: '',
+  publisher: '',
+  published_date: '',
+  description: '',
+  cover_url: '',
+  page_count: '',
+  language: '',
+  categories: '',
+  reading_status: 'to-read',
+  rating: null,
+  personal_notes: '',
+  date_started: '',
+  date_finished: '',
+};
+
+const STATUS_LABEL: Record<Status, string> = { 'to-read': '想讀', reading: '在讀', read: '讀完' };
+const TABS: { key: Status | 'all'; label: string }[] = [
+  { key: 'all', label: '全部' },
+  { key: 'reading', label: '在讀' },
+  { key: 'to-read', label: '想讀' },
+  { key: 'read', label: '讀完' },
+];
+
+const statusLabel = (s: string | null) => (s ? ((STATUS_LABEL as Record<string, string | undefined>)[s] ?? s) : '');
 const today = () => new Date().toLocaleDateString('sv-SE'); // sv-SE 的格式剛好是 YYYY-MM-DD（本地時區）
+
+/** 這本書的一行小字：出版社、頁數、讀的時間 */
+function bookMeta(b: Book): string {
+  const parts = [b.publisher, b.page_count ? `${b.page_count} 頁` : null];
+  if (b.date_finished) parts.push(`${formatWhen(b.date_finished, 'yyyy.MM.dd')} 讀完`);
+  else if (b.date_started) parts.push(`${formatWhen(b.date_started, 'yyyy.MM.dd')} 開始`);
+  return parts.filter(Boolean).join(' · ');
+}
 
 export default function BooksManager() {
   const queryClient = useQueryClient();
-  // 書籍列表改由 TanStack Query 讀（生成 BookRow）；CRUD 後 invalidate 重抓。
-  const { data: books = [], isPending: isLoading } = useQuery(adminBooksQueryOptions);
+  const { data: books = [], isPending } = useQuery(adminBooksQueryOptions);
   const invalidateBooks = () => queryClient.invalidateQueries({ queryKey: adminBooksQueryOptions.queryKey });
-  const [editingBook, setEditingBook] = useState<Book | null>(null);
-  const [deleteId, setDeleteId] = useState<number | string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchHit[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [formData, setFormData] = useState<BookFormData>({
-    isbn: '',
-    title: '',
-    authors: '',
-    publisher: '',
-    published_date: '',
-    description: '',
-    cover_url: '',
-    page_count: '',
-    language: '',
-    categories: '',
-    reading_status: 'to-read',
-    rating: null,
-    personal_notes: '',
-    date_started: '',
-    date_finished: '',
-  });
+  const [editing, setEditing] = useState<Book | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [localSearchQuery, setLocalSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [form, setForm] = useState<BookFormData>(EMPTY);
+  const [externalQuery, setExternalQuery] = useState('');
+  const [results, setResults] = useState<SearchHit[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<Status | 'all'>('all');
 
-  const filteredBooks = books.filter((book) => {
-    if (filterStatus !== 'all' && book.reading_status !== filterStatus) return false;
-    const query = localSearchQuery.toLowerCase();
-    return (
-      book.title.toLowerCase().includes(query) ||
-      (book.authors?.toLowerCase().includes(query) ?? false) ||
-      (book.isbn?.toLowerCase().includes(query) ?? false)
-    );
-  });
+  const set = (patch: Partial<BookFormData>) => setForm((f) => ({ ...f, ...patch }));
+  const countOf = (key: Status | 'all') =>
+    key === 'all' ? books.length : books.filter((b) => b.reading_status === key).length;
+  const q = search.trim().toLowerCase();
+  const shown = books
+    .filter((b) => tab === 'all' || b.reading_status === tab)
+    .filter((b) => !q || [b.title, b.authors ?? '', b.isbn ?? ''].some((s) => s.toLowerCase().includes(q)));
 
-  const statusCounts: Record<string, number> = {
-    all: books.length,
-    'to-read': books.filter((b) => b.reading_status === 'to-read').length,
-    reading: books.filter((b) => b.reading_status === 'reading').length,
-    read: books.filter((b) => b.reading_status === 'read').length,
+  const openCreate = () => {
+    setEditing(null);
+    setForm(EMPTY);
+    setResults([]);
+    setExternalQuery('');
+    setDialogOpen(true);
   };
 
-  const statusConfig: Record<string, string> = {
-    'to-read': 'text-muted-foreground/60 bg-accent/25',
-    reading: 'text-foreground/70 bg-accent/60',
-    read: 'text-foreground/50 bg-accent/50',
-  };
-
-  // 搜尋外部書籍 (Google Books API)
-  const searchExternalBooks = async () => {
-    if (!searchQuery.trim()) {
-      toast.error('請輸入 ISBN 或書名');
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const response = await fetch(`/api/books/search/external?query=${encodeURIComponent(searchQuery)}`);
-      const data = (await response.json()) as { message?: string; books?: SearchHit[]; warnings?: string[] };
-
-      if (data.message === 'success' && data.books) {
-        setSearchResults(data.books);
-        // 來源壞掉（例如 Google Books 額度用完）時要講出來，不然看起來就像「這本書不存在」
-        for (const w of data.warnings ?? []) toast.warning(w, { duration: 10000 });
-        if (data.books.length === 0) {
-          toast.info(data.warnings?.length ? '備用來源（OpenLibrary）也沒有這本' : '未找到相關書籍');
-        } else {
-          toast.success(`找到 ${data.books.length} 本書籍`);
-        }
-      } else {
-        toast.error('搜尋失敗');
-      }
-    } catch (error) {
-      console.error('搜尋書籍失敗:', error);
-      toast.error('搜尋失敗,請稍後再試');
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // 從搜尋結果選擇書籍
-  const handleSelectFromSearch = (book: Book) => {
-    setFormData({
-      isbn: book.isbn ?? '',
-      title: book.title || '',
-      authors: book.authors ?? '',
-      publisher: book.publisher ?? '',
-      published_date: book.published_date ?? '',
-      description: book.description ?? '',
-      cover_url: book.cover_url ?? '',
-      page_count: book.page_count ?? '',
-      language: book.language ?? '',
-      categories: book.categories ?? '',
-      reading_status: 'to-read',
-      rating: null,
-      personal_notes: '',
-      date_started: '',
-      date_finished: '',
-    });
-    setSearchResults([]);
-    setSearchQuery('');
-    toast.success('已自動填入書籍資訊');
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    try {
-      const url = editingBook ? `/api/books/${editingBook.id}` : '/api/books';
-      const method = editingBook ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: jsonAuthHeaders(),
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        toast.success(editingBook ? '書籍已更新' : '書籍已新增');
-        setDialogOpen(false);
-        resetForm();
-        void invalidateBooks();
-      } else {
-        toast.error('操作失敗');
-      }
-    } catch (error) {
-      console.error('保存書籍失敗:', error);
-      toast.error('保存失敗');
-    }
-  };
-
-  const handleEdit = (book: Book) => {
-    setEditingBook(book);
-    setFormData({
+  const openEdit = (book: Book) => {
+    setEditing(book);
+    setForm({
       isbn: book.isbn ?? '',
       title: book.title || '',
       authors: book.authors ?? '',
@@ -215,17 +138,80 @@ export default function BooksManager() {
     setDialogOpen(true);
   };
 
+  // 搜外部書目（後端依序問 Google Books、OpenLibrary、國圖）
+  const searchExternal = async () => {
+    if (!externalQuery.trim()) {
+      toast.error('請輸入 ISBN 或書名');
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/books/search/external?query=${encodeURIComponent(externalQuery)}`);
+      const data = (await response.json()) as { message?: string; books?: SearchHit[]; warnings?: string[] };
+      if (data.message === 'success' && data.books) {
+        setResults(data.books);
+        // 來源壞掉（例如 Google Books 額度用完）時要講出來，不然看起來就像「這本書不存在」
+        for (const w of data.warnings ?? []) toast.warning(w, { duration: 10000 });
+        if (data.books.length === 0) {
+          toast.info(data.warnings?.length ? '備用來源（OpenLibrary）也沒有這本' : '找不到這本書');
+        }
+      } else {
+        toast.error('搜尋失敗');
+      }
+    } catch (error) {
+      console.error('搜尋書籍失敗:', error);
+      toast.error('搜尋失敗，請稍後再試');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const pick = (book: Book) => {
+    setForm({
+      ...EMPTY,
+      isbn: book.isbn ?? '',
+      title: book.title || '',
+      authors: book.authors ?? '',
+      publisher: book.publisher ?? '',
+      published_date: book.published_date ?? '',
+      description: book.description ?? '',
+      cover_url: book.cover_url ?? '',
+      page_count: book.page_count ?? '',
+      language: book.language ?? '',
+      categories: book.categories ?? '',
+    });
+    setResults([]);
+    setExternalQuery('');
+    toast.success('已帶入書目');
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(editing ? `/api/books/${editing.id}` : '/api/books', {
+        method: editing ? 'PUT' : 'POST',
+        headers: jsonAuthHeaders(),
+        body: JSON.stringify(form),
+      });
+      if (response.ok) {
+        toast.success(editing ? '已更新' : '已放上書架');
+        setDialogOpen(false);
+        void invalidateBooks();
+      } else {
+        toast.error('操作失敗');
+      }
+    } catch (error) {
+      console.error('保存書籍失敗:', error);
+      toast.error('保存失敗');
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
-
     try {
-      const response = await fetch(`/api/books/${deleteId}`, {
-        method: 'DELETE',
-        headers: authHeaders(),
-      });
-
+      const response = await fetch(`/api/books/${deleteId}`, { method: 'DELETE', headers: authHeaders() });
       if (response.ok) {
-        toast.success('書籍已刪除');
+        toast.success('已從書架拿掉');
         void invalidateBooks();
       } else {
         toast.error('刪除失敗');
@@ -238,478 +224,298 @@ export default function BooksManager() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      isbn: '',
-      title: '',
-      authors: '',
-      publisher: '',
-      published_date: '',
-      description: '',
-      cover_url: '',
-      page_count: '',
-      language: '',
-      categories: '',
-      reading_status: 'to-read',
-      rating: null,
-      personal_notes: '',
-      date_started: '',
-      date_finished: '',
-    });
-    setEditingBook(null);
-    setSearchResults([]);
-    setSearchQuery('');
-  };
-
-  const statusLabels: Record<string, string> = {
-    'to-read': '想讀',
-    reading: '閱讀中',
-    read: '已完成',
-  };
-
-  const renderStars = (rating: number | string | null) => {
-    const numRating = Math.round(parseFloat(String(rating ?? 0)) || 0);
-    return (
-      <div className="flex items-center gap-0.5">
-        {Array.from({ length: 5 }, (_, i) => (
-          <Star
-            key={i}
-            className={`size-3 ${i < numRating ? 'text-foreground/50 fill-foreground/50' : 'text-muted-foreground/20'}`}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-zinc-600 border-t-transparent"></div>
-          <p className="mt-4 text-muted-foreground">載入中...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-medium text-foreground/90">書籍管理</h1>
-          <p className="text-sm text-muted-foreground mt-1">閱讀紀錄與書評管理</p>
-        </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="subtle" size="compact" onClick={resetForm}>
-              <Plus className="size-3.5" />
-              新增書籍
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl">{editingBook ? '編輯書籍' : '新增書籍'}</DialogTitle>
-              <DialogDescription>
-                {editingBook ? '修改書籍資訊' : '從 ISBN 或書名搜尋,或手動輸入書籍資訊'}
-              </DialogDescription>
-            </DialogHeader>
-
-            <form
-              onSubmit={(e) => {
-                void handleSubmit(e);
-              }}
-            >
-              {/* 內容滾動區域 */}
-              <div className="max-h-[65vh] overflow-y-auto pr-2 space-y-4">
-                {/* ISBN/書名搜尋區塊 */}
-                {!editingBook && (
-                  <div className="space-y-3 pb-4 border-b border-zinc-800/50">
-                    <Label>📚 快速搜尋 (Google Books + OpenLibrary)</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            void searchExternalBooks();
-                          }
-                        }}
-                        placeholder="輸入 ISBN 或書名搜尋..."
-                        className="flex-1"
-                      />
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          void searchExternalBooks();
-                        }}
-                        disabled={isSearching || !searchQuery.trim()}
-                      >
-                        {isSearching ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            搜尋中...
-                          </>
-                        ) : (
-                          <>
-                            <Search className="mr-2 h-4 w-4" />
-                            搜尋
-                          </>
-                        )}
-                      </Button>
-                    </div>
-
-                    {/* 搜尋結果 */}
-                    {searchResults.length > 0 && (
-                      <div className="max-h-[300px] overflow-y-auto space-y-2 p-3 bg-muted/50 rounded-lg">
-                        <p className="text-sm font-medium mb-2">搜尋結果 ({searchResults.length}):</p>
-                        {searchResults.map((book) => (
-                          <button
-                            type="button"
-                            // OpenLibrary 的結果可能沒有 ISBN；來源＋ISBN＋書名才夠分辨
-                            key={`${book.source ?? ''}-${book.isbn ?? ''}-${book.title}`}
-                            className="w-full text-left flex gap-3 p-3 bg-background rounded-lg hover:bg-accent cursor-pointer transition-colors"
-                            onClick={() => handleSelectFromSearch(book)}
-                          >
-                            {book.cover_url && (
-                              <img
-                                src={proxiedImage(book.cover_url)}
-                                alt={book.title}
-                                className="w-12 h-16 object-cover rounded"
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm truncate">
-                                {book.source === 'ncl' && (
-                                  <span
-                                    className="mr-1.5 rounded border border-border px-1 text-fs-10 text-muted-foreground"
-                                    title="國家圖書館新書書目：台灣版的書名與出版社是對的，但沒有封面與簡介"
-                                  >
-                                    國圖
-                                  </span>
-                                )}
-                                {book.title}
-                              </h4>
-                              {book.authors && <p className="text-xs text-muted-foreground">{book.authors}</p>}
-                              {book.isbn && <p className="text-xs text-muted-foreground">ISBN: {book.isbn}</p>}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 表單內容 */}
-                <div className="space-y-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="isbn">ISBN</Label>
-                      <Input
-                        id="isbn"
-                        value={formData.isbn}
-                        onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
-                        placeholder="9789864060313"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="language">語言</Label>
-                      <Input
-                        id="language"
-                        value={formData.language}
-                        onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                        placeholder="zh-TW"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="title">書名 *</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="原子習慣"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="authors">作者</Label>
-                    <Input
-                      id="authors"
-                      value={formData.authors}
-                      onChange={(e) => setFormData({ ...formData, authors: e.target.value })}
-                      placeholder="詹姆斯·克利爾"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="publisher">出版社</Label>
-                      <Input
-                        id="publisher"
-                        value={formData.publisher}
-                        onChange={(e) => setFormData({ ...formData, publisher: e.target.value })}
-                        placeholder="方智出版"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="published_date">出版日期</Label>
-                      <Input
-                        id="published_date"
-                        type="date"
-                        value={formData.published_date}
-                        onChange={(e) => setFormData({ ...formData, published_date: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="page_count">頁數</Label>
-                      <Input
-                        id="page_count"
-                        type="number"
-                        value={formData.page_count}
-                        onChange={(e) => setFormData({ ...formData, page_count: e.target.value })}
-                        placeholder="320"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="categories">分類</Label>
-                      <Input
-                        id="categories"
-                        value={formData.categories}
-                        onChange={(e) => setFormData({ ...formData, categories: e.target.value })}
-                        placeholder="自我成長"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="cover_url">封面圖片網址</Label>
-                    <Input
-                      id="cover_url"
-                      value={formData.cover_url}
-                      onChange={(e) => setFormData({ ...formData, cover_url: e.target.value })}
-                      placeholder="https://example.com/cover.jpg"
-                    />
-                    {formData.cover_url && (
-                      <div className="mt-2 rounded-lg overflow-hidden border max-w-[200px]">
-                        <img src={proxiedImage(formData.cover_url)} alt="封面預覽" className="w-full h-auto" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">描述</Label>
-                    <textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="書籍簡介..."
-                      rows={3}
-                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring resize-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="reading_status">閱讀狀態</Label>
-                      <select
-                        id="reading_status"
-                        value={formData.reading_status}
-                        onChange={(e) => {
-                          // 切到「閱讀中／已完成」時順手補今天的日期（只補空的，已經填過的不動）
-                          const status = e.target.value;
-                          setFormData({
-                            ...formData,
-                            reading_status: status,
-                            date_started:
-                              status !== 'to-read' && !formData.date_started ? today() : formData.date_started,
-                            date_finished:
-                              status === 'read' && !formData.date_finished ? today() : formData.date_finished,
-                          });
-                        }}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <option value="to-read">想讀</option>
-                        <option value="reading">閱讀中</option>
-                        <option value="read">已完成</option>
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="rating">評分 (0-5)</Label>
-                      <Input
-                        id="rating"
-                        type="number"
-                        min="0"
-                        max="5"
-                        step="0.1"
-                        value={formData.rating ?? ''}
-                        onChange={(e) =>
-                          setFormData({ ...formData, rating: e.target.value ? parseFloat(e.target.value) : null })
-                        }
-                        placeholder="5"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="date_started">開始讀</Label>
-                      <Input
-                        id="date_started"
-                        type="date"
-                        value={formData.date_started}
-                        onChange={(e) => setFormData({ ...formData, date_started: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="date_finished">讀完</Label>
-                      <Input
-                        id="date_finished"
-                        type="date"
-                        value={formData.date_finished}
-                        onChange={(e) => setFormData({ ...formData, date_finished: e.target.value })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="personal_notes">個人筆記</Label>
-                    <textarea
-                      id="personal_notes"
-                      value={formData.personal_notes}
-                      onChange={(e) => setFormData({ ...formData, personal_notes: e.target.value })}
-                      placeholder="分享您的閱讀心得和筆記..."
-                      rows={4}
-                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-              {/* 關閉滾動區域 div */}
-
-              <DialogFooter className="mt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  取消
-                </Button>
-                <Button type="submit">{editingBook ? '更新' : '新增'}</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Filter tabs */}
-      <div className="flex items-center gap-1">
-        {[
-          { key: 'all', label: '全部' },
-          { key: 'read', label: '已完成' },
-          { key: 'reading', label: '閱讀中' },
-          { key: 'to-read', label: '想讀' },
-        ].map((s) => (
-          <button
-            key={s.key}
-            onClick={() => setFilterStatus(s.key)}
-            className={`text-fs-12 px-2.5 py-1 rounded-lg transition-colors ${
-              filterStatus === s.key
-                ? 'bg-accent/60 text-foreground/80'
-                : 'text-muted-foreground/60 hover:text-foreground/60 hover:bg-accent/25'
-            }`}
-          >
-            {s.label}
-            <span className="ml-1 text-muted-foreground/40">{statusCounts[s.key]}</span>
+    <div className="adm-page">
+      <PageHead
+        title="書架"
+        latin="Shelf"
+        meta={isPending ? '載入中' : `${books.length} 本 · 在讀 ${countOf('reading')}`}
+        actions={
+          <button type="button" className="adm-btn adm-btn-primary" onClick={openCreate}>
+            加一本書
           </button>
-        ))}
-      </div>
-
-      {/* Search */}
-      <Input
-        value={localSearchQuery}
-        onChange={(e) => setLocalSearchQuery(e.target.value)}
-        placeholder="搜尋書名或作者..."
-        variant="glass"
-        size="sm"
+        }
       />
 
-      {/* Book list */}
-      {filteredBooks.length > 0 ? (
-        <div className="grid gap-3">
-          {filteredBooks.map((book) => (
-            <div key={book.id} className="glass rounded-xl px-5 py-4 group hover:border-border/60 transition-all">
-              <div className="flex items-start gap-4">
-                {book.cover_url ? (
-                  <div className="size-12 rounded-lg overflow-hidden shrink-0">
-                    <img src={proxiedImage(book.cover_url)} alt={book.title} className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="size-12 rounded-lg bg-accent/30 flex items-center justify-center shrink-0">
-                    <BookOpen className="size-5 text-muted-foreground/60" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-fs-14 font-medium text-foreground/80">{book.title}</span>
-                    <span
-                      className={`text-fs-10 px-1.5 py-0.5 rounded ${statusConfig[book.reading_status ?? ''] || ''}`}
-                    >
-                      {statusLabels[book.reading_status ?? ''] || book.reading_status}
-                    </span>
-                  </div>
-                  {book.authors && <div className="text-fs-12 text-muted-foreground/50 mb-1.5">{book.authors}</div>}
-                  {(book.rating ?? 0) > 0 && <div className="mb-1.5">{renderStars(book.rating ?? null)}</div>}
-                  {book.personal_notes && (
-                    <p className="text-fs-12 text-muted-foreground/60 leading-relaxed line-clamp-2">
-                      {book.personal_notes}
-                    </p>
-                  )}
-                  {book.publisher && <div className="text-fs-11 text-muted-foreground/40 mt-1.5">{book.publisher}</div>}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => handleEdit(book)}
-                    className="size-7 flex items-center justify-center rounded-md text-muted-foreground/30 hover:text-foreground/60 hover:bg-accent/40 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteId(book.id)}
-                    className="size-7 flex items-center justify-center rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <span className="text-xs">✕</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+      <section className="adm-stack" aria-label="書單">
+        <div className="adm-toolbar">
+          <div className="adm-tabs">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className="adm-tab"
+                aria-pressed={tab === t.key}
+                onClick={() => setTab(t.key)}
+              >
+                <span className="adm-tab-dot" aria-hidden="true" />
+                {t.label}
+                <span className="adm-meta">{isPending ? '' : countOf(t.key)}</span>
+              </button>
+            ))}
+          </div>
+          <label className="adm-prompt">
+            <span className="adm-prompt-mark" aria-hidden="true">
+              &gt;
+            </span>
+            <span className="sr-only">搜尋書架</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="書名、作者、ISBN"
+            />
+          </label>
         </div>
-      ) : (
-        <div className="glass rounded-xl flex flex-col items-center justify-center py-16 text-muted-foreground/50">
-          <BookOpen className="size-12 opacity-20" />
-          <p className="mt-4 text-sm">
-            {localSearchQuery || filterStatus !== 'all' ? '沒有找到符合條件的書籍' : '還沒有書籍'}
-          </p>
-        </div>
-      )}
 
-      {/* Delete Confirmation */}
+        {isPending ? (
+          <AdminLoading />
+        ) : shown.length === 0 ? (
+          <p className="adm-empty">{books.length === 0 ? '書架還是空的。' : '沒有符合的書。'}</p>
+        ) : (
+          <ul className="adm-list">
+            {shown.map((book) => (
+              <li key={book.id} className="adm-row adm-book">
+                {book.cover_url ? (
+                  <img className="adm-cover" src={proxiedImage(book.cover_url)} alt="" loading="lazy" />
+                ) : (
+                  <span className="adm-cover adm-cover-empty" aria-hidden="true" />
+                )}
+                <span className="adm-row-main">
+                  <span className="adm-row-title">{book.title}</span>
+                  {book.authors && <span className="adm-row-sub">{book.authors}</span>}
+                  <span className="adm-meta">{bookMeta(book)}</span>
+                </span>
+                <span className="adm-status" data-status={book.reading_status === 'reading' ? 'published' : undefined}>
+                  {statusLabel(book.reading_status)}
+                </span>
+                <span className="adm-meta adm-book-rating">{book.rating ? `★ ${book.rating}` : '—'}</span>
+                <span className="adm-row-actions">
+                  <button
+                    type="button"
+                    className="adm-icon-btn"
+                    aria-label={`編輯《${book.title}》`}
+                    onClick={() => openEdit(book)}
+                  >
+                    編輯
+                  </button>
+                  <button
+                    type="button"
+                    className="adm-icon-btn adm-icon-btn-flare"
+                    aria-label={`刪除《${book.title}》`}
+                    onClick={() => setDeleteId(book.id)}
+                  >
+                    刪除
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editing ? '編輯這本書' : '加一本書'}</DialogTitle>
+            <DialogDescription>
+              {editing
+                ? '改完按「更新」。'
+                : '先用 ISBN 或書名搜外部書目帶入，再補自己的狀態、評分與筆記；也可以全部手打。'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="adm-form" onSubmit={(e) => void handleSubmit(e)}>
+            {!editing && (
+              <div className="adm-stack">
+                <div className="adm-inline-form">
+                  <label className="adm-prompt adm-grow">
+                    <span className="adm-prompt-mark" aria-hidden="true">
+                      &gt;
+                    </span>
+                    <span className="sr-only">搜尋外部書目</span>
+                    <input
+                      value={externalQuery}
+                      onChange={(e) => setExternalQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void searchExternal();
+                        }
+                      }}
+                      placeholder="ISBN 或書名（Google Books、OpenLibrary、國圖）"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="adm-btn"
+                    disabled={isSearching || !externalQuery.trim()}
+                    onClick={() => void searchExternal()}
+                  >
+                    {isSearching && <BusyDot />}
+                    {isSearching ? '搜尋中' : '搜尋'}
+                  </button>
+                </div>
+                {results.length > 0 && (
+                  <ul className="adm-list adm-hits" aria-label="搜尋結果">
+                    {results.map((hit) => (
+                      // OpenLibrary 的結果可能沒有 ISBN；來源＋ISBN＋書名才夠分辨
+                      <li key={`${hit.source ?? ''}-${hit.isbn ?? ''}-${hit.title}`}>
+                        <button type="button" className="adm-row adm-hit" onClick={() => pick(hit)}>
+                          {hit.cover_url ? (
+                            <img className="adm-cover" src={proxiedImage(hit.cover_url)} alt="" />
+                          ) : (
+                            <span className="adm-cover adm-cover-empty" aria-hidden="true" />
+                          )}
+                          <span className="adm-row-main">
+                            <span className="adm-row-title">{hit.title}</span>
+                            <span className="adm-meta">
+                              {[
+                                hit.source === 'ncl' ? '國圖（沒有封面與簡介）' : null,
+                                hit.authors,
+                                hit.isbn && `ISBN ${hit.isbn}`,
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            <label className="adm-field">
+              <span className="adm-caps">書名</span>
+              <input value={form.title} onChange={(e) => set({ title: e.target.value })} required />
+            </label>
+            <div className="adm-form-grid">
+              <label className="adm-field">
+                <span className="adm-caps">作者</span>
+                <input value={form.authors} onChange={(e) => set({ authors: e.target.value })} />
+              </label>
+              <label className="adm-field">
+                <span className="adm-caps">出版社</span>
+                <input value={form.publisher} onChange={(e) => set({ publisher: e.target.value })} />
+              </label>
+              <label className="adm-field">
+                <span className="adm-caps">ISBN</span>
+                <input value={form.isbn} onChange={(e) => set({ isbn: e.target.value })} />
+              </label>
+              <label className="adm-field">
+                <span className="adm-caps">出版日期</span>
+                <input
+                  type="date"
+                  value={form.published_date}
+                  onChange={(e) => set({ published_date: e.target.value })}
+                />
+              </label>
+              <label className="adm-field">
+                <span className="adm-caps">頁數</span>
+                <input type="number" value={form.page_count} onChange={(e) => set({ page_count: e.target.value })} />
+              </label>
+              <label className="adm-field">
+                <span className="adm-caps">語言</span>
+                <input value={form.language} onChange={(e) => set({ language: e.target.value })} placeholder="zh-TW" />
+              </label>
+            </div>
+            <label className="adm-field">
+              <span className="adm-caps">分類</span>
+              <input value={form.categories} onChange={(e) => set({ categories: e.target.value })} />
+            </label>
+            <div className="adm-book-cover-field">
+              <label className="adm-field adm-grow">
+                <span className="adm-caps">封面網址</span>
+                <input value={form.cover_url} onChange={(e) => set({ cover_url: e.target.value })} />
+              </label>
+              {form.cover_url && (
+                <img className="adm-cover adm-cover-large" src={proxiedImage(form.cover_url)} alt="封面預覽" />
+              )}
+            </div>
+            <label className="adm-field">
+              <span className="adm-caps">簡介</span>
+              <textarea value={form.description} onChange={(e) => set({ description: e.target.value })} />
+            </label>
+
+            <div className="adm-form-section">
+              <span className="adm-caps">我讀這本</span>
+              <div className="adm-form-grid">
+                <label className="adm-field">
+                  <span className="adm-caps">狀態</span>
+                  <select
+                    value={form.reading_status}
+                    onChange={(e) => {
+                      // 切到「在讀／讀完」時順手補今天的日期（只補空的，已經填過的不動）
+                      const status = e.target.value;
+                      set({
+                        reading_status: status,
+                        date_started: status !== 'to-read' && !form.date_started ? today() : form.date_started,
+                        date_finished: status === 'read' && !form.date_finished ? today() : form.date_finished,
+                      });
+                    }}
+                  >
+                    <option value="to-read">想讀</option>
+                    <option value="reading">在讀</option>
+                    <option value="read">讀完</option>
+                  </select>
+                </label>
+                <label className="adm-field">
+                  <span className="adm-caps">評分 · 0–5</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={form.rating ?? ''}
+                    onChange={(e) => set({ rating: e.target.value ? parseFloat(e.target.value) : null })}
+                  />
+                </label>
+                <label className="adm-field">
+                  <span className="adm-caps">開始讀</span>
+                  <input
+                    type="date"
+                    value={form.date_started}
+                    onChange={(e) => set({ date_started: e.target.value })}
+                  />
+                </label>
+                <label className="adm-field">
+                  <span className="adm-caps">讀完</span>
+                  <input
+                    type="date"
+                    value={form.date_finished}
+                    onChange={(e) => set({ date_finished: e.target.value })}
+                  />
+                </label>
+              </div>
+              <label className="adm-field">
+                <span className="adm-caps">筆記</span>
+                <textarea value={form.personal_notes} onChange={(e) => set({ personal_notes: e.target.value })} />
+              </label>
+            </div>
+
+            <div className="adm-form-actions">
+              <button type="button" className="adm-btn" onClick={() => setDialogOpen(false)}>
+                取消
+              </button>
+              <button type="submit" className="adm-btn adm-btn-primary">
+                {editing ? '更新' : '放上書架'}
+              </button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>確定要刪除這本書嗎？</AlertDialogTitle>
-            <AlertDialogDescription>此操作無法復原。書籍將被永久刪除。</AlertDialogDescription>
+            <AlertDialogTitle>確定要把這本書拿掉嗎？</AlertDialogTitle>
+            <AlertDialogDescription>連同評分與筆記一起刪掉，拿不回來。</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                void handleDelete();
-              }}
-              variant="destructive"
-            >
+            <AlertDialogAction onClick={() => void handleDelete()} variant="destructive">
               刪除
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -126,9 +126,9 @@ const ROUTES = [
  * 每個路由要等的東西不一樣，用標題（編輯器那種沒有 <h1> 的頁面才需要另外處理）。
  */
 const ADMIN_ROUTES: { route: string; heading?: string | RegExp; ready?: (p: Page) => ReturnType<Page['locator']> }[] = [
-  { route: '/admin/dashboard', heading: /儀表板|Dashboard/ },
-  { route: '/admin/posts', heading: /文章/ },
-  { route: '/admin/tags', heading: '標籤管理' },
+  { route: '/admin/dashboard', heading: /此刻/ },
+  { route: '/admin/posts', heading: /手記/ },
+  { route: '/admin/tags', heading: '標籤' },
   // 下面這批是 2026-10 接上 @shadcn/lint 時補的：那次要把後台 TSX 裡的 `text-[11px]`
   // 與手動壓小的 Button 收回尺上，動到的檔案散在這些頁面，而原本只守上面三頁。
   //
@@ -136,10 +136,9 @@ const ADMIN_ROUTES: { route: string; heading?: string | RegExp; ready?: (p: Page
   //   留言、真的退訂種子讀者（跨檔平行跑），於是同一個 DOM 路徑上的按鈕這次是「批准」、
   //   下次是「垃圾」——實測整套 e2e 跑下來留言頁 31 個元素「變了」、78 個路徑只在一邊，
   //   全是資料不同而不是樣式不同。要驗這兩頁就單獨跑、而且先重起 stack。
-  { route: '/admin/categories', heading: '分類管理' },
-  { route: '/admin/books', heading: '書籍管理' },
-  { route: '/admin/users', heading: '用戶管理' },
-  { route: '/admin/article-generator', heading: 'AI 寫作助手' },
+  { route: '/admin/categories', heading: '分類' },
+  { route: '/admin/books', heading: '書架' },
+  { route: '/admin/users', heading: '帳號' },
   // 編輯器沒有 <h1>（標題那格是 input），等 monaco 掛上。
   { route: '/admin/posts/create', ready: (p) => p.locator('.monaco-editor').first() },
 ];

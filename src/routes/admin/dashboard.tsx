@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Suspense, lazy } from 'react';
 
-import KoimLoader from '@/components/common/KoimLoader';
+import AdminLoading from '@/components/admin/AdminLoading';
 
 // 儀表板（與 /admin 同一個畫面，側欄連的是這個網址）。維持 lazy()：後台的重元件（monaco 等）要留在自己的 chunk，不進主 bundle。
 const Page = lazy(() => import('../../components/admin/AdminDashboard'));
 
 export const Route = createFileRoute('/admin/dashboard')({
   component: () => (
-    <Suspense fallback={<KoimLoader inline size="sm" />}>
+    <Suspense fallback={<AdminLoading page />}>
       <Page />
     </Suspense>
   ),
