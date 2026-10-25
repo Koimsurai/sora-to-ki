@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AdminPostFull } from '@koimsurai/api-types';
-import { Link, getRouteApi } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { toast } from 'sonner';
 
 import { adminPostsQueryOptions } from '@/data/adminData';
@@ -22,8 +22,22 @@ import { STATUS_LABEL, formatWhen, missingTranslations } from './adminFormat';
 
 // 手記列表（2026-10 後台提案）：狀態用分頁切、可以只看缺譯文的，每篇後面五顆語系點。
 // 篩選放在網址上（routes/admin/posts/index.tsx 的 validateSearch），總覽的「等你處理」直接連得進來。
-// 用 getRouteApi 而不是 import 那支路由檔：路由檔 lazy 載入本元件，反過來 import 會繞一圈。
-const route = getRouteApi('/admin/posts/');
+//
+// 讀網址用非嚴格的 useSearch、寫回去時直接指定 /admin/posts，而不是 getRouteApi('/admin/posts/')：
+// 後者在元件不是掛在那條路由底下時會丟「Could not find an active match」——
+// render-smoke.test 就是單獨掛它的，這樣元件也不綁死在某一條路由上。
+// 值本身的驗證在路由的 validateSearch，這裡只挑出認得的兩種。
+function readFilters(search: { status?: unknown; missing?: unknown }): PostsSearch {
+  return {
+    status: search.status === 'published' || search.status === 'draft' ? search.status : undefined,
+    missing: search.missing === true ? true : undefined,
+  };
+}
+
+interface PostsSearch {
+  status?: 'published' | 'draft';
+  missing?: boolean;
+}
 
 /** 跟總覽同一個查詢鍵，兩頁共用快取 */
 const ALL_POSTS = 'limit=500';
@@ -44,8 +58,9 @@ function matches(post: AdminPostFull, q: string): boolean {
 
 export default function PostsList() {
   const queryClient = useQueryClient();
-  const { status, missing } = route.useSearch();
-  const navigate = route.useNavigate();
+  const { status, missing } = readFilters(useSearch({ strict: false }));
+  const navigate = useNavigate();
+  const setFilters = (next: PostsSearch) => void navigate({ to: '/admin/posts', search: next });
   const { data, isPending } = useQuery(adminPostsQueryOptions(ALL_POSTS));
   const posts: AdminPostFull[] = data?.posts ?? [];
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -99,7 +114,7 @@ export default function PostsList() {
                 type="button"
                 className="adm-tab"
                 aria-pressed={status === t.key}
-                onClick={() => void navigate({ search: (prev) => ({ ...prev, status: t.key }) })}
+                onClick={() => setFilters({ status: t.key, missing })}
               >
                 <span className="adm-tab-dot" aria-hidden="true" />
                 {t.label}
@@ -110,9 +125,7 @@ export default function PostsList() {
               type="button"
               className="adm-tab"
               aria-pressed={missing === true}
-              onClick={() =>
-                void navigate({ search: (prev) => ({ ...prev, missing: prev.missing ? undefined : true }) })
-              }
+              onClick={() => setFilters({ status, missing: missing ? undefined : true })}
             >
               <span className="adm-tab-dot" aria-hidden="true" />
               缺譯文
