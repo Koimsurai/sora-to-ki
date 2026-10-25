@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading from './AdminLoading';
-import { PageHead } from './AdminPage';
+import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
 import './AdminReview.css';
 
@@ -356,299 +356,309 @@ export default function CommentsManager() {
           )}
         </div>
 
-        {isList &&
-          (isPending ? (
-            <AdminLoading />
-          ) : comments.length === 0 ? (
-            <p className="adm-empty">
-              {searchQuery ? '找不到符合的留言。' : `${statusLabel(view === 'all' ? null : view)}沒有留言。`}
-            </p>
-          ) : (
-            <div className="adm-review">
-              <ul className="adm-review-list" aria-label="留言">
-                {comments.map((c) => (
-                  <li key={c.id}>
-                    <button
-                      type="button"
-                      className="adm-review-item"
-                      aria-pressed={selected?.id === c.id}
-                      aria-label={`${c.author}：${c.content}`}
-                      onClick={() => setSelectedId(c.id)}
-                    >
-                      <span className="adm-tab-dot" aria-hidden="true" />
-                      <span className="adm-review-item-main">
-                        <span className="adm-review-item-top">
-                          <span className="adm-review-who">{c.author}</span>
-                          <span className="adm-meta">{formatWhen(c.created_at)}</span>
-                        </span>
-                        <span className="adm-meta adm-review-where">
-                          {placeOf(c).label}
-                          {view === 'all' && c.status ? ` · ${statusLabel(c.status)}` : ''}
-                        </span>
-                        <span className="adm-review-excerpt">{c.content}</span>
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-
-              {selected && (
-                <section className="adm-review-detail" aria-label="這則留言">
-                  <div className="adm-review-head">
-                    <div className="adm-head-text">
-                      <span className="adm-review-name">
-                        {selected.author}
-                        {selected.is_admin ? <span className="adm-meta"> · 站長</span> : null}
-                      </span>
-                      <span className="adm-meta">
-                        {formatWhen(selected.created_at, 'yyyy.MM.dd HH:mm')}
-                        {selected.email ? ` · ${selected.email}` : ''}
-                        {selected.ip ? ` · IP ${selected.ip}` : ''}
-                        {selected.status ? ` · ${statusLabel(selected.status)}` : ''}
-                      </span>
-                    </div>
-                    {placeOf(selected).href && (
-                      <a
-                        href={placeOf(selected).href ?? undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="adm-row-action"
-                      >
-                        在{placeOf(selected).label}裡開 ↗
-                      </a>
-                    )}
-                  </div>
-
-                  {selected.parent_id ? <p className="adm-meta">這是一則回覆（回覆 #{selected.parent_id}）</p> : null}
-                  <p className="adm-review-body">{selected.content}</p>
-
-                  <div className="adm-review-actions">
-                    {selected.status !== 'approved' && (
+        <TabPanel tab={view}>
+          {isList &&
+            (isPending ? (
+              <AdminLoading />
+            ) : comments.length === 0 ? (
+              <p className="adm-empty">
+                {searchQuery ? '找不到符合的留言。' : `${statusLabel(view === 'all' ? null : view)}沒有留言。`}
+              </p>
+            ) : (
+              <div className="adm-review">
+                <ul className="adm-review-list" aria-label="留言">
+                  {comments.map((c) => (
+                    <li key={c.id}>
                       <button
                         type="button"
-                        className="adm-btn adm-btn-primary"
-                        onClick={() => void updateStatus(selected.id, 'approved')}
+                        className="adm-review-item"
+                        aria-pressed={selected?.id === c.id}
+                        aria-label={`${c.author}：${c.content}`}
+                        onClick={() => setSelectedId(c.id)}
                       >
-                        批准 <kbd>A</kbd>
+                        <span className="adm-tab-dot" aria-hidden="true" />
+                        <span className="adm-review-item-main">
+                          <span className="adm-review-item-top">
+                            <span className="adm-review-who">{c.author}</span>
+                            <span className="adm-meta">{formatWhen(c.created_at)}</span>
+                          </span>
+                          <span className="adm-meta adm-review-where">
+                            {placeOf(c).label}
+                            {view === 'all' && c.status ? ` · ${statusLabel(c.status)}` : ''}
+                          </span>
+                          <span className="adm-review-excerpt">{c.content}</span>
+                        </span>
                       </button>
-                    )}
-                    {selected.status !== 'spam' && (
-                      <button type="button" className="adm-btn" onClick={() => void updateStatus(selected.id, 'spam')}>
-                        標成垃圾 <kbd>S</kbd>
+                    </li>
+                  ))}
+                </ul>
+
+                {selected && (
+                  <section className="adm-review-detail" aria-label="這則留言">
+                    <div className="adm-review-head">
+                      <div className="adm-head-text">
+                        <span className="adm-review-name">
+                          {selected.author}
+                          {selected.is_admin ? <span className="adm-meta"> · 站長</span> : null}
+                        </span>
+                        <span className="adm-meta">
+                          {formatWhen(selected.created_at, 'yyyy.MM.dd HH:mm')}
+                          {selected.email ? ` · ${selected.email}` : ''}
+                          {selected.ip ? ` · IP ${selected.ip}` : ''}
+                          {selected.status ? ` · ${statusLabel(selected.status)}` : ''}
+                        </span>
+                      </div>
+                      {placeOf(selected).href && (
+                        <a
+                          href={placeOf(selected).href ?? undefined}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="adm-row-action"
+                        >
+                          在{placeOf(selected).label}裡開 ↗
+                        </a>
+                      )}
+                    </div>
+
+                    {selected.parent_id ? <p className="adm-meta">這是一則回覆（回覆 #{selected.parent_id}）</p> : null}
+                    <p className="adm-review-body">{selected.content}</p>
+
+                    <div className="adm-review-actions">
+                      {selected.status !== 'approved' && (
+                        <button
+                          type="button"
+                          className="adm-btn adm-btn-primary"
+                          onClick={() => void updateStatus(selected.id, 'approved')}
+                        >
+                          批准 <kbd>A</kbd>
+                        </button>
+                      )}
+                      {selected.status !== 'spam' && (
+                        <button
+                          type="button"
+                          className="adm-btn"
+                          onClick={() => void updateStatus(selected.id, 'spam')}
+                        >
+                          標成垃圾 <kbd>S</kbd>
+                        </button>
+                      )}
+                      {selected.status !== 'trash' && (
+                        <button
+                          type="button"
+                          className="adm-btn"
+                          onClick={() => void updateStatus(selected.id, 'trash')}
+                        >
+                          丟進垃圾桶
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="adm-btn"
+                        onClick={() => {
+                          setEditDialog({ open: true, comment: selected });
+                          setEditText(selected.content);
+                        }}
+                      >
+                        編輯
                       </button>
-                    )}
-                    {selected.status !== 'trash' && (
-                      <button type="button" className="adm-btn" onClick={() => void updateStatus(selected.id, 'trash')}>
-                        丟進垃圾桶
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="adm-btn"
-                      onClick={() => {
-                        setEditDialog({ open: true, comment: selected });
-                        setEditText(selected.content);
+                      <span className="adm-review-gap" />
+                      {selected.ip && (
+                        <button
+                          type="button"
+                          className="adm-icon-btn adm-icon-btn-flare"
+                          onClick={() => {
+                            if (selected.ip) void blockIp(selected.ip);
+                          }}
+                        >
+                          封鎖這個 IP
+                        </button>
+                      )}
+                      {selected.status === 'trash' && (
+                        <button
+                          type="button"
+                          className="adm-icon-btn adm-icon-btn-flare"
+                          onClick={() => setDeleteId(selected.id)}
+                        >
+                          永久刪除…
+                        </button>
+                      )}
+                    </div>
+
+                    <form
+                      className="adm-review-reply"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void handleReply();
                       }}
                     >
-                      編輯
-                    </button>
-                    <span className="adm-review-gap" />
-                    {selected.ip && (
-                      <button
-                        type="button"
-                        className="adm-icon-btn adm-icon-btn-flare"
-                        onClick={() => {
-                          if (selected.ip) void blockIp(selected.ip);
-                        }}
-                      >
-                        封鎖這個 IP
-                      </button>
-                    )}
-                    {selected.status === 'trash' && (
-                      <button
-                        type="button"
-                        className="adm-icon-btn adm-icon-btn-flare"
-                        onClick={() => setDeleteId(selected.id)}
-                      >
-                        永久刪除…
-                      </button>
-                    )}
-                  </div>
+                      <label className="adm-caps" htmlFor="adm-reply">
+                        以站長身分回覆 · R
+                      </label>
+                      <div className="adm-prompt adm-prompt-multi">
+                        <span className="adm-prompt-mark" aria-hidden="true">
+                          &gt;
+                        </span>
+                        <textarea
+                          id="adm-reply"
+                          ref={replyRef}
+                          rows={3}
+                          value={replyText}
+                          placeholder="寫點什麼；回覆會帶著站長的標記"
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                              e.preventDefault();
+                              void handleReply();
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="adm-review-reply-foot">
+                        <span className="adm-meta">j k 上下 · a 批准 · s 垃圾 · r 回覆</span>
+                        <button type="submit" className="adm-btn" disabled={!replyText.trim()}>
+                          送出回覆 ⌘↵
+                        </button>
+                      </div>
+                    </form>
+                  </section>
+                )}
+              </div>
+            ))}
 
-                  <form
-                    className="adm-review-reply"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      void handleReply();
-                    }}
-                  >
-                    <label className="adm-caps" htmlFor="adm-reply">
-                      以站長身分回覆 · R
-                    </label>
-                    <div className="adm-prompt adm-prompt-multi">
-                      <span className="adm-prompt-mark" aria-hidden="true">
-                        &gt;
+          {isList && total > PAGE_SIZE && (
+            <div className="adm-pager">
+              <button
+                type="button"
+                className="adm-btn adm-btn-small"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                ← 上一頁
+              </button>
+              <span className="adm-meta">
+                第 {page} 頁 · 共 {total} 則
+              </span>
+              <button
+                type="button"
+                className="adm-btn adm-btn-small"
+                disabled={comments.length < PAGE_SIZE}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                下一頁 →
+              </button>
+            </div>
+          )}
+
+          {view === 'blacklist' && (
+            <div className="adm-stack">
+              <form
+                className="adm-inline-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void addBlacklist();
+                }}
+              >
+                <label className="adm-prompt">
+                  <span className="adm-prompt-mark" aria-hidden="true">
+                    &gt;
+                  </span>
+                  <span className="sr-only">IP 位址</span>
+                  <input
+                    placeholder="IP 位址"
+                    value={newBlacklistIp}
+                    onChange={(e) => setNewBlacklistIp(e.target.value)}
+                  />
+                </label>
+                <label className="adm-prompt adm-grow">
+                  <span className="sr-only">原因</span>
+                  <input
+                    placeholder="原因（選填）"
+                    value={newBlacklistReason}
+                    onChange={(e) => setNewBlacklistReason(e.target.value)}
+                  />
+                </label>
+                <button type="submit" className="adm-btn">
+                  封鎖
+                </button>
+              </form>
+              {blacklist.length === 0 ? (
+                <p className="adm-empty">封鎖名單是空的。</p>
+              ) : (
+                <ul className="adm-list">
+                  {blacklist.map((b) => (
+                    <li key={b.id} className="adm-row">
+                      <span className="adm-row-main">
+                        <span className="adm-row-title adm-mono">{b.ip}</span>
+                        <span className="adm-meta">
+                          {b.reason ? `${b.reason} · ` : ''}
+                          {formatWhen(b.created_at, 'yyyy.MM.dd')}
+                        </span>
                       </span>
-                      <textarea
-                        id="adm-reply"
-                        ref={replyRef}
-                        rows={3}
-                        value={replyText}
-                        placeholder="寫點什麼；回覆會帶著站長的標記"
-                        onChange={(e) => setReplyText(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                            e.preventDefault();
-                            void handleReply();
-                          }
-                        }}
-                      />
-                    </div>
-                    <div className="adm-review-reply-foot">
-                      <span className="adm-meta">j k 上下 · a 批准 · s 垃圾 · r 回覆</span>
-                      <button type="submit" className="adm-btn" disabled={!replyText.trim()}>
-                        送出回覆 ⌘↵
+                      <button
+                        type="button"
+                        className="adm-icon-btn"
+                        aria-label={`解除封鎖 ${b.ip}`}
+                        onClick={() => void removeBlacklist(b.id)}
+                      >
+                        解除
                       </button>
-                    </div>
-                  </form>
-                </section>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
-          ))}
+          )}
 
-        {isList && total > PAGE_SIZE && (
-          <div className="adm-pager">
-            <button
-              type="button"
-              className="adm-btn adm-btn-small"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              ← 上一頁
-            </button>
-            <span className="adm-meta">
-              第 {page} 頁 · 共 {total} 則
-            </span>
-            <button
-              type="button"
-              className="adm-btn adm-btn-small"
-              disabled={comments.length < PAGE_SIZE}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              下一頁 →
-            </button>
-          </div>
-        )}
-
-        {view === 'blacklist' && (
-          <div className="adm-stack">
-            <form
-              className="adm-inline-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void addBlacklist();
-              }}
-            >
-              <label className="adm-prompt">
-                <span className="adm-prompt-mark" aria-hidden="true">
-                  &gt;
-                </span>
-                <span className="sr-only">IP 位址</span>
-                <input
-                  placeholder="IP 位址"
-                  value={newBlacklistIp}
-                  onChange={(e) => setNewBlacklistIp(e.target.value)}
-                />
-              </label>
-              <label className="adm-prompt adm-grow">
-                <span className="sr-only">原因</span>
-                <input
-                  placeholder="原因（選填）"
-                  value={newBlacklistReason}
-                  onChange={(e) => setNewBlacklistReason(e.target.value)}
-                />
-              </label>
-              <button type="submit" className="adm-btn">
-                封鎖
-              </button>
-            </form>
-            {blacklist.length === 0 ? (
-              <p className="adm-empty">封鎖名單是空的。</p>
-            ) : (
-              <ul className="adm-list">
-                {blacklist.map((b) => (
-                  <li key={b.id} className="adm-row">
-                    <span className="adm-row-main">
-                      <span className="adm-row-title adm-mono">{b.ip}</span>
-                      <span className="adm-meta">
-                        {b.reason ? `${b.reason} · ` : ''}
-                        {formatWhen(b.created_at, 'yyyy.MM.dd')}
-                      </span>
-                    </span>
-                    <button
-                      type="button"
-                      className="adm-icon-btn"
-                      aria-label={`解除封鎖 ${b.ip}`}
-                      onClick={() => void removeBlacklist(b.id)}
-                    >
-                      解除
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
-        {view === 'keywords' && (
-          <div className="adm-stack">
-            <form
-              className="adm-inline-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void addKeyword();
-              }}
-            >
-              <label className="adm-prompt adm-grow">
-                <span className="adm-prompt-mark" aria-hidden="true">
-                  &gt;
-                </span>
-                <span className="sr-only">關鍵字</span>
-                <input placeholder="關鍵字" value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} />
-              </label>
-              <label className="adm-prompt">
-                <span className="sr-only">碰到時怎麼辦</span>
-                <select value={newKeywordAction} onChange={(e) => setNewKeywordAction(e.target.value)}>
-                  <option value="spam">標成垃圾</option>
-                  <option value="reject">直接拒絕</option>
-                </select>
-              </label>
-              <button type="submit" className="adm-btn">
-                新增
-              </button>
-            </form>
-            {keywordFilters.length === 0 ? (
-              <p className="adm-empty">還沒有過濾的關鍵字。</p>
-            ) : (
-              <ul className="adm-chips">
-                {keywordFilters.map((f) => (
-                  <li key={f.id} className="adm-chip">
-                    {f.keyword}
-                    <span className="adm-meta">{f.action === 'reject' ? '拒絕' : '垃圾'}</span>
-                    <button
-                      type="button"
-                      className="adm-chip-x"
-                      aria-label={`拿掉 ${f.keyword}`}
-                      onClick={() => void removeKeyword(f.id)}
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+          {view === 'keywords' && (
+            <div className="adm-stack">
+              <form
+                className="adm-inline-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void addKeyword();
+                }}
+              >
+                <label className="adm-prompt adm-grow">
+                  <span className="adm-prompt-mark" aria-hidden="true">
+                    &gt;
+                  </span>
+                  <span className="sr-only">關鍵字</span>
+                  <input placeholder="關鍵字" value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} />
+                </label>
+                <label className="adm-prompt">
+                  <span className="sr-only">碰到時怎麼辦</span>
+                  <select value={newKeywordAction} onChange={(e) => setNewKeywordAction(e.target.value)}>
+                    <option value="spam">標成垃圾</option>
+                    <option value="reject">直接拒絕</option>
+                  </select>
+                </label>
+                <button type="submit" className="adm-btn">
+                  新增
+                </button>
+              </form>
+              {keywordFilters.length === 0 ? (
+                <p className="adm-empty">還沒有過濾的關鍵字。</p>
+              ) : (
+                <ul className="adm-chips">
+                  {keywordFilters.map((f) => (
+                    <li key={f.id} className="adm-chip">
+                      {f.keyword}
+                      <span className="adm-meta">{f.action === 'reject' ? '拒絕' : '垃圾'}</span>
+                      <button
+                        type="button"
+                        className="adm-chip-x"
+                        aria-label={`拿掉 ${f.keyword}`}
+                        onClick={() => void removeKeyword(f.id)}
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </TabPanel>
       </section>
 
       <Dialog open={editDialog.open} onOpenChange={(o) => setEditDialog({ open: o, comment: editDialog.comment })}>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate, type LinkProps } from '@tanstack/react-router';
+import { Link, Outlet, useLocation, useNavigate, useRouter, type LinkProps } from '@tanstack/react-router';
 
 import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from '../../contexts/auth';
@@ -94,6 +94,20 @@ const AdminLayout = () => {
       document.body.classList.remove('admin-mode');
     };
   }, []);
+
+  // 換頁轉場：在後台裡每一次換頁都走 View Transition，舊畫面淡出（AdminLayout.css 的
+  // html.adm-vt 那段），新的那頁自己淡入上浮（.adm-page 的進場）。
+  // 只在後台開：前台各頁有自己的轉場（TransitionLayer），全站預設打開會跟它疊在一起。
+  const router = useRouter();
+  useEffect(() => {
+    const prev = router.options.defaultViewTransition;
+    router.update({ ...router.options, defaultViewTransition: true });
+    document.documentElement.classList.add('adm-vt');
+    return () => {
+      router.update({ ...router.options, defaultViewTransition: prev });
+      document.documentElement.classList.remove('adm-vt');
+    };
+  }, [router]);
 
   const close = () => setMenuOpen(false);
   const name = user?.displayName ?? user?.name ?? '站長';

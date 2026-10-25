@@ -181,6 +181,30 @@
   color: var(--paper-2);
 }
 
+/* ── 換頁轉場（AdminLayout 在後台裡打開路由的 View Transition）──
+   舊畫面整張淡出，新畫面不另外動：新的那頁自己會淡入上浮（.adm-page 的進場），
+   兩邊都動的話會變成「淡兩次」。側欄兩張都一樣，看起來就是不動的。
+   選擇器帶 html.adm-vt：特異性才贏得過 BlogPost.css 給前台文章頁的那組 root 動畫 */
+html.adm-vt::view-transition-old(root) {
+  animation: adm-leave var(--dur-200) ease-out both;
+}
+
+html.adm-vt::view-transition-new(root) {
+  animation: none;
+}
+
+@keyframes adm-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.adm-vt::view-transition-old(root) {
+    animation: none;
+  }
+}
+
 /* ── 頁面 ── */
 .adm-body {
   margin-left: var(--adm-side-w);

@@ -110,7 +110,7 @@ export default function TagsManager() {
   };
 
   return (
-    <div className="adm-page">
+    <div className="adm-page adm-page-narrow">
       <PageHead
         title="標籤"
         latin="Tags"

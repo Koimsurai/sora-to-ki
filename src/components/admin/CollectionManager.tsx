@@ -8,7 +8,7 @@ import { adminBahamutStatusQueryOptions, adminCollectionQueryOptions } from '@/d
 import { watchFavoritesQueryOptions } from '@/data/watchData';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading from './AdminLoading';
-import { PageHead } from './AdminPage';
+import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
 import './CollectionManager.css';
 
@@ -95,7 +95,7 @@ export default function CollectionManager() {
   const b = bahamut.data;
 
   return (
-    <div className="adm-page">
+    <div className="adm-page adm-page-narrow">
       <PageHead
         title="收藏"
         latin="Collection"
@@ -136,21 +136,23 @@ export default function CollectionManager() {
           </div>
         </div>
 
-        {isPending ? (
-          <AdminLoading label="讀收藏" />
-        ) : tab === 'watch' ? (
-          <WatchList items={watch} busyKey={busyKey} onHide={setHidden} onFavorite={toggleFavorite} />
-        ) : tab === 'listen' ? (
-          <ListenList
-            tracks={tracks}
-            hiddenTracks={hiddenTracks}
-            error={data?.tracks_error ?? null}
-            busyKey={busyKey}
-            onHide={setHidden}
-          />
-        ) : (
-          <FavoriteList favorites={favs} loading={favorites.isPending} busyKey={busyKey} run={run} />
-        )}
+        <TabPanel tab={tab}>
+          {isPending ? (
+            <AdminLoading label="讀收藏" />
+          ) : tab === 'watch' ? (
+            <WatchList items={watch} busyKey={busyKey} onHide={setHidden} onFavorite={toggleFavorite} />
+          ) : tab === 'listen' ? (
+            <ListenList
+              tracks={tracks}
+              hiddenTracks={hiddenTracks}
+              error={data?.tracks_error ?? null}
+              busyKey={busyKey}
+              onHide={setHidden}
+            />
+          ) : (
+            <FavoriteList favorites={favs} loading={favorites.isPending} busyKey={busyKey} run={run} />
+          )}
+        </TabPanel>
       </section>
     </div>
   );
