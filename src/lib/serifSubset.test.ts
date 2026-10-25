@@ -99,3 +99,9 @@ describe('四種字型風格', () => {
     expect(styleOfFamily('"Fira Code"')).toBeNull();
   });
 });
+
+describe('哪些字交給裁字字型', () => {
+  it('箭頭與數學符號也要（「查看原文 →」「⋯」原本每次都退回系統字型）', () => {
+    for (const ch of '→⋯×') expect(isSerifCodepoint(ch.codePointAt(0) ?? 0), ch).toBe(true);
+  });
+});
