@@ -227,7 +227,7 @@ async fn 排程中的文章丟進回收再還原是草稿() {
     .await;
     admin(&app, "DELETE", &format!("/api/admin/posts/{id}"), None).await;
     // 在回收裡的時候就算時間到了也不能發出去
-    assert!(post_lifecycle::publish_due(&pool).await.unwrap().is_empty());
+    assert_eq!(post_lifecycle::publish_due(&pool).await.unwrap(), Vec::<(i64, bool)>::new());
     let (_, v) = admin(&app, "POST", &format!("/api/admin/posts/{id}/restore"), None).await;
     assert_eq!(v["status"], "draft", "排程時間在丟的時候清掉了，還原後讓人重新決定");
 }

@@ -235,6 +235,8 @@ export default function FriendsReview() {
                         type="button"
                         className="adm-review-item"
                         aria-pressed={selected.id === f.id}
+                        // 鈕裡全是資料，沒有固定的字；報讀器念名字、網域與檢查結果
+                        aria-label={`${f.name}，${hostOf(f.url)}，${sum.text}`}
                         onClick={() => {
                           setSelectedId(f.id);
                           setReply('');

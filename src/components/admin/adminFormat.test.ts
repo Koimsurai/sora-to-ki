@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { STATUS_LABEL, localInputToIso, parseDbTime, toLocalInput, trashDaysLeft } from './adminFormat';
 
