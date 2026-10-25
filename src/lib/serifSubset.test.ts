@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
   decodeCodepoints,
+  familyOf,
+  styleOfFamily,
   isSerifCodepoint,
   isSerifFace,
   keyOf,
@@ -74,5 +76,26 @@ describe('四套字形', () => {
     expect(new URL(subsetUrl(400, cps('永'), 'jp'), 'https://x').searchParams.get('f')).toBe('jp');
     expect(['tc', 'sc', 'jp', 'kr'].every(isSerifFace)).toBe(true);
     for (const v of ['', 'TC', 'zh', undefined, 1]) expect(isSerifFace(v)).toBe(false);
+  });
+});
+
+describe('四種字型風格', () => {
+  it('宋體的網址跟以前一樣（瀏覽器與伺服器快取裡的照用），其他風格換路徑', () => {
+    expect(subsetUrl(400, cps('宙'))).toMatch(/^\/fonts\/serif\/400\//);
+    expect(subsetUrl(600, cps('宙'), 'jp', 'kai')).toMatch(/^\/fonts\/kai\/600\/[0-9a-f]{8}\.woff2\?c=[^&]+&f=jp$/);
+  });
+
+  it('字族名：繁中不加後綴，其他加語系；宋體沿用原本的 Koim Serif', () => {
+    expect(familyOf('serif', 'tc')).toBe('Koim Serif');
+    expect(familyOf('kai', 'kr')).toBe('Koim Kai KR');
+    expect(familyOf('modern', 'sc')).toBe('Koim Modern SC');
+  });
+
+  it('從 font-family 的第一個字族認得出是哪一種（含引號），別的字型不算', () => {
+    expect(styleOfFamily('"Koim Sans JP"')).toBe('sans');
+    expect(styleOfFamily(' Koim Kai')).toBe('kai');
+    expect(styleOfFamily('"Koim Serif"')).toBe('serif');
+    expect(styleOfFamily('"Koim Serifish"'), '名字開頭一樣但不是同一個字族').toBeNull();
+    expect(styleOfFamily('"Fira Code"')).toBeNull();
   });
 });
