@@ -10,6 +10,7 @@ import type {
   TvRow,
   WatchFavoriteRow,
 } from '@koimsurai/api-types';
+import { proxiedImage } from '@/lib/api';
 import { dedupeWatchItems } from '@/lib/mediaLists';
 import type { Signal } from './signalSky';
 
@@ -176,7 +177,9 @@ export function bookSignals(books: BookRow[], statusLabel: (s: BookStatus) => st
       kind: 'book',
       title: b.title,
       meta: [b.authors, statusLabel(status), stars(b.rating)].filter(Boolean).join(' · '),
-      cover: thumb(b.cover_url),
+      // 書封來自各家書店（Google Books、誠品、博客來…），一家一家放進 CSP 的 img-src 放不完：
+      // 走後端的 image-proxy 變成同源（順便縮成 webp）。影劇與 Spotify 的 CDN 在白名單裡，照舊直連
+      cover: b.cover_url ? proxiedImage(thumb(b.cover_url), 384) : null,
       href: null,
       at: status === 'read' ? timeOf(b.date_finished ?? b.date_added) : null,
       size: b.page_count ? log01(b.page_count, maxPages) : 0.35,

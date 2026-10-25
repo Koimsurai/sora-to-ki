@@ -26,7 +26,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: '宙と木 · Koimsurai' },
-      { name: 'theme-color', content: '#7f5af0' },
+      { name: 'theme-color', content: '#0a0a0c' },
     ],
     // PWA:manifest 過去從沒被掛上 → 瀏覽器根本看不到它,站台不可安裝。
     links: [

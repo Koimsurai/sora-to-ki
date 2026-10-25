@@ -82,11 +82,16 @@ export function channelOf(w: number, h: number) {
   return { y: h / 2, end: d.x + d.dw * 0.2 };
 }
 
+/** 天線亮起來時饋源那圈光的半徑 */
+const GLOW_R = 30;
+
 function dishOf(w: number, h: number) {
-  const dh = h - 8;
+  // 天線底邊貼著畫布底下 4px；上面要留到饋源那圈光整個畫得下（饋源在圖的上緣附近，
+  // 原本天線撐滿整個高度時，光的上半圈被畫布的邊切掉）：y + dh × feed.y ≥ 光的半徑
+  const y = Math.max(4, (GLOW_R + 2 - (h - 4) * DISH.feed[1]) / (1 - DISH.feed[1]));
+  const dh = h - 4 - y;
   const dw = dh * DISH.ratio;
   const x = w - dw;
-  const y = 4;
   // 翻過來之後饋源在 1 − feed.x
   return { x, y, dw, dh, fx: x + dw * (1 - DISH.feed[0]), fy: y + dh * DISH.feed[1] };
 }
@@ -122,12 +127,12 @@ export function createStrip() {
         ctx.restore();
       }
       if (flash > 0) {
-        const g = ctx.createRadialGradient(d.fx, d.fy, 0, d.fx, d.fy, 30);
+        const g = ctx.createRadialGradient(d.fx, d.fy, 0, d.fx, d.fy, GLOW_R);
         g.addColorStop(0, `rgba(${AMBER}, ${0.7 * flash})`);
         g.addColorStop(1, `rgba(${AMBER}, 0)`);
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(d.fx, d.fy, 30, 0, TAU);
+        ctx.arc(d.fx, d.fy, GLOW_R, 0, TAU);
         ctx.fill();
       }
 
