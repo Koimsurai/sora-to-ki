@@ -97,7 +97,7 @@ describe('pageMeta', () => {
   // 尺寸標錯的話 Facebook 會裁切或整個不顯示預覽圖
   it('og:image 帶著與實際圖一致的尺寸', () => {
     const m = pageMeta('t', 'd', '/', 'zh-TW');
-    expect(pick(m, 'og:image')).toBe('https://koimsurai.com/og-default-v2.png');
+    expect(pick(m, 'og:image')).toBe('https://koimsurai.com/og-default-v3.png');
     expect(pick(m, 'og:image:width')).toBe('1200');
     expect(pick(m, 'og:image:height')).toBe('630');
   });

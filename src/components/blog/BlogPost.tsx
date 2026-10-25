@@ -17,7 +17,6 @@ import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from '@/components/common/KoimLoader';
 import rehypeRaw from 'rehype-raw';
-import pangu from 'pangu';
 import { highlightCode } from '@/lib/mdx/shikiHighlight';
 import { langEmoji } from '@/lib/langEmoji';
 import { CodeBody } from '@/components/mdx/CodeSurface';
@@ -1168,17 +1167,21 @@ function BlogPost() {
     if (!post?.content || !contentRef.current) return;
     const root = contentRef.current;
 
-    // 1) 中英文自動加空格（pangu），略過 code/pre 區塊以免破壞範例
-    requestAnimationFrame(() => {
-      try {
-        root.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th').forEach((el) => {
-          if (el.closest('pre') || el.closest('code')) return;
-          (pangu as unknown as { spacingElementByNode: (node: Node) => void }).spacingElementByNode(el);
+    // 1) 中英文之間的空隙：支援 text-autospace 的瀏覽器由 CSS 處理（article-shell.css），
+    //    其他的才載 pangu 往 DOM 裡插空白，略過 code/pre 區塊以免破壞範例
+    if (!CSS.supports('text-autospace', 'normal')) {
+      void import('pangu')
+        .then(({ default: pangu }) => {
+          root.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6, blockquote, td, th').forEach((el) => {
+            if (el.closest('pre') || el.closest('code')) return;
+            (pangu as unknown as { spacingElementByNode: (node: Node) => void }).spacingElementByNode(el);
+          });
+        })
+        .catch(() => {
+          /* pangu 失敗不影響閱讀 */
         });
-      } catch {
-        /* pangu 失敗不影響閱讀 */
-      }
-
+    }
+    requestAnimationFrame(() => {
       // 2) 腳註 hover 浮窗：把腳註內容寫到 ref 連結的 data-fn-content
       try {
         const fnMap = new Map<string, string>();

@@ -39,59 +39,93 @@ use crate::state::AppState;
 // （改用 node tree 就不需要，但那樣模板會變成一大串 builder 呼叫，比較難讀。）
 use crate::util::escape_html;
 
-const OG_WIDTH: u32 = 1200;
-const OG_HEIGHT: u32 = 630;
+use super::og_sky::{self, H as OG_HEIGHT, Scene, W as OG_WIDTH};
 
-/// OG 卡片的 HTML。
+/// 主標與副標：跟前端 `lib/blogReading.ts` 的 `splitTitle` 同一套規則——全形冒號，
+/// 或半形冒號後面接空白（`Rust 1.85:2024` 那種不拆）。兩邊任一段是空的就不拆
+fn split_title(title: &str) -> (&str, Option<&str>) {
+    let cut = title.char_indices().find_map(|(i, c)| match c {
+        '：' => Some((i, c.len_utf8())),
+        ':' if title[i + 1..].starts_with(char::is_whitespace) => Some((i, 1)),
+        _ => None,
+    });
+    let Some((at, len)) = cut else { return (title, None) };
+    let (main, sub) = (title[..at].trim(), title[at + len..].trim());
+    if main.is_empty() || sub.is_empty() { (title, None) } else { (main, Some(sub)) }
+}
+
+/// 一張卡上的字。`kicker` 是標題上面那行琥珀色的小字（分類 · 日期）
+struct Card<'a> {
+    kicker: &'a str,
+    title: &'a str,
+    sub: Option<&'a str>,
+    /// 左上角要不要寫站名：站台預設圖的大標就是站名，那張只留網址
+    brand: bool,
+}
+
+/// 字那一層的 HTML：**底是透明的**，背景（土星、軌道、星）由 `og_sky` 逐格畫好再疊上來。
+/// 版面照設計畫布的 OgImage（字在左、圖在右），字型與顏色照翻新後的站：
+/// 思源宋體（容器裡是同一套字的 Noto Serif CJK）、暖白字、琥珀色的 Fira Code 小字。
 ///
 /// ⚠ 根節點要自己撐滿畫布（`width/height: 100%`）——takumi 不會替你做，
 ///   忘了的話內容會擠在左上角。
 ///
-/// ⚠ 標題的 `line-clamp: 3` 是舊版 `wrap_title(t, 16, 3)` 的替代品，差別是它按
-///   **實際寬度**斷行、而且只在合法的斷點斷（標點不起首、單字不切半）。
+/// ⚠ `line-clamp` 按**實際寬度**斷行、而且只在合法的斷點斷（標點不起首、單字不切半）。
 ///
 /// ⚠ 省略號要靠 `text-overflow: ellipsis`，**不是** `line-clamp` 自己加的。
 ///   這是試出來的，三種寫法的實際結果：
 ///     `line-clamp:3` 單獨用            → 正確截成三行，但**沒有省略號**
 ///     `max-lines:3; block-ellipsis:auto` → 完全沒截，變五行把頁尾擠出畫面
 ///     `…; continue:discard`            → 整段 style 被丟掉（字級／顏色全失效）
-///   所以是 `line-clamp:3` + `text-overflow:ellipsis`。動這兩行之前先跑 `產生樣張`。
-fn build_html(title: &str, category: Option<&str>, date: &str) -> String {
-    let cat = category.filter(|c| !c.is_empty()).unwrap_or("手記");
+///   所以是 `line-clamp` + `text-overflow:ellipsis`。動這兩行之前先跑 `產生樣張`。
+///
+/// 讓軌道線在字底下淡掉的那片漸層不在這裡，在 `og_sky::compose`：見那邊的註解。
+fn build_html(card: &Card) -> String {
+    let brand = if card.brand {
+        r#"<span style="font-family:'Noto Serif CJK TC'; font-size:30px; font-weight:700; color:#f1ece3;">宙と木</span>"#
+    } else {
+        ""
+    };
+    let sub = card.sub.map_or_else(String::new, |s| {
+        format!(
+            r#"<div style="font-size:26px; line-height:1.45; color:rgba(241,236,227,0.7); line-clamp:2; text-overflow:ellipsis;">{}</div>"#,
+            escape_html(s)
+        )
+    });
     format!(
-        r#"<div style="
-  width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between;
-  padding:80px; box-sizing:border-box; font-family:'Noto Sans CJK TC';
-  background-color:#11102a;
-  background-image:
-    radial-gradient(45% 45% at 85% 20%, rgba(127,90,240,0.55), rgba(127,90,240,0)),
-    linear-gradient(135deg, #0a0a1a 0%, #11102a 50%, #1a0a2e 100%);
-">
-  <div style="display:flex; flex-direction:column;">
-    <div style="width:120px; height:4px; border-radius:2px;
-      background-image:linear-gradient(90deg, #e0c3fc, #7f5af0, #dc3278);"></div>
-    <div style="margin-top:24px; font-size:28px; font-weight:600; color:#c4b5fd; letter-spacing:2px;">{cat}</div>
-  </div>
-
-  <div style="font-size:76px; font-weight:700; line-height:1.25; color:#ffffff;
-    line-clamp:3; text-overflow:ellipsis;">{title}</div>
-
-  <div style="display:flex; flex-direction:row; align-items:center; justify-content:space-between;">
-    <div style="font-size:26px; color:rgba(255,255,255,0.55);">{date} · koimsurai.com</div>
-    <div style="font-size:32px; font-weight:700;
-      background-image:linear-gradient(90deg, #e0c3fc, #7f5af0, #dc3278);
-      background-clip:text; color:transparent;">Koimsurai</div>
+        r#"<div style="width:100%; height:100%; display:flex; position:relative; font-family:'Noto Serif CJK TC';">
+  <div style="position:absolute; left:72px; top:64px; bottom:64px; width:620px;
+    display:flex; flex-direction:column; justify-content:space-between;">
+    <div style="display:flex; flex-direction:row; align-items:baseline; gap:14px;">
+      {brand}
+      <span style="font-family:'Fira Code'; font-size:15px; letter-spacing:0.16em; color:rgba(241,236,227,0.45);">koimsurai.com</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:20px;">
+      <div style="font-family:'Fira Code','Noto Sans CJK TC'; font-size:18px; letter-spacing:0.12em; color:#e9c17a;">{kicker}</div>
+      <div style="font-size:54px; font-weight:700; line-height:1.25; color:#f1ece3; line-clamp:3; text-overflow:ellipsis; text-wrap:balance;">{title}</div>
+      {sub}
+    </div>
   </div>
 </div>"#,
-        cat = escape_html(&cat.to_uppercase()),
-        title = escape_html(title.trim()),
-        date = escape_html(date),
+        kicker = escape_html(card.kicker),
+        title = escape_html(card.title.trim()),
     )
 }
 
-/// 進程級狀態：字型（載一次共用）+ OG 快取（無 TTL，對齊 Express 的 `_ogCache`）。
+/// 文章的卡：分類是空的時候退回「手記」，日期寫成 `2026/10/13`
+fn post_card_html(title: &str, category: Option<&str>, date: &str) -> String {
+    let cat = category.filter(|c| !c.is_empty()).unwrap_or("手記");
+    let date = date.replace('-', "/");
+    let kicker = if date.is_empty() { cat.to_string() } else { format!("{cat} · {date}") };
+    let (main, sub) = split_title(title.trim());
+    build_html(&Card { kicker: &kicker, title: main, sub, brand: true })
+}
+
+/// 進程級狀態：字型與背景（載一次共用）+ OG 快取。
 struct OgState {
     fonts: Fonts,
+    /// 背景不會因文章而變：土星與軌道只算一次（第一次產圖時）
+    scene: std::sync::LazyLock<Scene>,
     cache: Mutex<std::collections::HashMap<i64, CachedOg>>,
 }
 struct CachedOg {
@@ -101,18 +135,30 @@ struct CachedOg {
 }
 static OG: std::sync::OnceLock<OgState> = std::sync::OnceLock::new();
 
-/// Debian 的 `fonts-noto-cjk` 裝出來的路徑。多列一個 Bold 是因為標題是 700——
-/// 少了它 takumi 會用合成粗體（font-synthesis），中文的合成粗體很糊。
+/// 快取最多留幾篇。動畫一張約幾百 KB，全站文章都被爬過一輪也不會吃掉太多記憶體，
+/// 但沒有上限的話它只會長不會縮
+const CACHE_MAX: usize = 48;
+
+/// Debian 的 `fonts-noto-cjk` 裝出來的路徑。標題是宋體 700、分類那行的中文退回黑體。
+/// 每個字重都要有檔案——少了的話 takumi 會用合成粗體（font-synthesis），中文的合成粗體很糊。
 ///
-/// ⚠ 這裡刻意**不 panic**。字型讀不到時仍然要能出圖（拉丁字用內建的 Geist），
-/// 只是中文會變豆腐——而那至少還看得出「圖有產出、字型掛了」，比整條端點 500 好查。
-const CJK_FONTS: [&str; 2] = [
+/// ⚠ 這裡刻意**不 panic**。字型讀不到時仍然要能出圖，只是中文會變豆腐——
+/// 而那至少還看得出「圖有產出、字型掛了」，比整條端點 500 好查。
+const CJK_FONTS: [&str; 3] = [
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc",
+    "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-    "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
 ];
+
+/// 分類、日期、網址那幾行的等寬字，跟站上同一套（`@fontsource-variable/fira-code` 的拉丁子集，
+/// 授權 OFL，見同目錄的 FiraCode-OFL.txt）。只有 35 KB，直接編進執行檔，不用動容器
+const FIRA_CODE: &[u8] = include_bytes!("../../assets/fonts/FiraCode-latin.woff2");
 
 fn load_cjk_font() -> Fonts {
     let mut fonts = Fonts::default();
+    if let Err(e) = fonts.register(FontResource::new(FIRA_CODE.to_vec())) {
+        tracing::error!("[OG] Fira Code 註冊失敗: {e}");
+    }
     let mut loaded = 0usize;
     for path in CJK_FONTS {
         match std::fs::read(path) {
@@ -135,11 +181,21 @@ fn load_cjk_font() -> Fonts {
 }
 
 fn og_state() -> &'static OgState {
-    OG.get_or_init(|| OgState { fonts: load_cjk_font(), cache: Mutex::new(std::collections::HashMap::new()) })
+    OG.get_or_init(|| OgState {
+        fonts: load_cjk_font(),
+        scene: std::sync::LazyLock::new(Scene::new),
+        cache: Mutex::new(std::collections::HashMap::new()),
+    })
 }
 
-/// HTML → PNG（CPU 密集，呼叫端丟 spawn_blocking）。
-fn render_png(html: &str, fonts: &Fonts) -> anyhow::Result<Vec<u8>> {
+/// 字那一層 → 疊在每一格背景上 → APNG（CPU 密集，呼叫端丟 spawn_blocking）。
+fn render_og(html: &str, fonts: &Fonts, scene: &Scene) -> anyhow::Result<Vec<u8>> {
+    let overlay = render_overlay(html, fonts)?;
+    og_sky::encode_apng(|i| og_sky::compose(&scene.frame(i), &overlay))
+}
+
+/// 字那一層，RGBA（非預乘），底是透明的。
+fn render_overlay(html: &str, fonts: &Fonts) -> anyhow::Result<Vec<u8>> {
     let node = Node::from_html(html, FromHtmlOptions::default())
         .map_err(|e| anyhow::anyhow!("takumi from_html: {e}"))?;
     // 宣告內容語言。OG 端點用的是預設語系的標題，而站上的預設是 zh-Hant。
@@ -155,16 +211,15 @@ fn render_png(html: &str, fonts: &Fonts) -> anyhow::Result<Vec<u8>> {
     //   兩個都比這行雜訊更糟。OG 有快取，每篇文章實際只會 render 一次。
     let lang = Lang::parse("zh-Hant").ok();
     let options = RenderOptions::builder()
-        .viewport(Viewport::new((OG_WIDTH, OG_HEIGHT)))
+        .viewport(Viewport::new(og_sky::SIZE))
         .node(node)
         .fonts(fonts)
         .lang(lang)
         .build();
     let image = takumi::render(options).map_err(|e| anyhow::anyhow!("takumi render: {e}"))?;
-    let mut out = Vec::new();
-    takumi::write_image(&image, &mut out, OutputFormat::Png)
-        .map_err(|e| anyhow::anyhow!("takumi encode: {e}"))?;
-    Ok(out)
+    let raw = image.into_raw();
+    anyhow::ensure!(raw.len() == OG_WIDTH * OG_HEIGHT * 4, "takumi 畫出來的尺寸不對（{} bytes）", raw.len());
+    Ok(raw)
 }
 
 /// ETag 用的雜湊。FNV-1a：不需要相依、跨版本永遠決定性（ETag 會被客戶端與 CDN
@@ -240,8 +295,13 @@ pub async fn og_png(State(state): State<AppState>, Path(file): Path<String>, req
 
     // date = (created_at || '').slice(0,10)
     let date = crate::util::js_substring_prefix(created_at.as_deref().unwrap_or(""), 10);
-    let html = build_html(&title, category.as_deref(), &date);
-    let png = match tokio::task::spawn_blocking(move || render_png(&html, &og_state().fonts)).await {
+    let html = post_card_html(&title, category.as_deref(), &date);
+    let png = match tokio::task::spawn_blocking(move || {
+        let og = og_state();
+        render_og(&html, &og.fonts, &og.scene)
+    })
+    .await
+    {
         Ok(Ok(p)) => Arc::new(p),
         Ok(Err(e)) => {
             tracing::error!("[OG] 產圖失敗 (post {post_id}): {e}");
@@ -253,7 +313,17 @@ pub async fn og_png(State(state): State<AppState>, Path(file): Path<String>, req
         }
     };
     let etag = format!("\"og-{post_id}-{:016x}\"", fnv1a(&cache_key));
-    og.cache.lock().insert(post_id, CachedOg { png: png.clone(), etag: etag.clone(), key: cache_key });
+    {
+        let mut cache = og.cache.lock();
+        // 滿了就隨便丟一篇（不追蹤誰最久沒用）：被丟掉的那篇下次再算一次就好
+        if cache.len() >= CACHE_MAX
+            && !cache.contains_key(&post_id)
+            && let Some(&evict) = cache.keys().next()
+        {
+            cache.remove(&evict);
+        }
+        cache.insert(post_id, CachedOg { png: png.clone(), etag: etag.clone(), key: cache_key });
+    }
     (
         [
             (header::CONTENT_TYPE, "image/png".to_string()),
@@ -290,45 +360,126 @@ mod tests {
     /// 標題直接來自使用者輸入，`</div>` 之類的東西不能把模板打斷。
     #[test]
     fn 標題裡的標籤不會逃出模板() {
-        let html = build_html("</div><script>alert(1)</script>", None, "2026-08-09");
-        assert!(!html.contains("<script>"), "原始 <script> 進了模板：{html}");
-        assert!(html.contains("&lt;script&gt;"));
+        let html = post_card_html("</div><script>alert(1)</script>：<b>副標</b>", None, "2026-08-09");
+        assert!(!html.contains("<script>") && !html.contains("<b>"), "原始標籤進了模板：{html}");
+        assert!(html.contains("&lt;script&gt;") && html.contains("&lt;b&gt;"));
     }
 
-    /// 分類是空的時候要退回「手記」（沿用 Express 的行為）。
+    /// 分類是空的時候要退回「手記」（沿用 Express 的行為）；日期寫成斜線。
     #[test]
     fn 空分類退回手記() {
-        assert!(build_html("t", None, "d").contains("手記"));
-        assert!(build_html("t", Some(""), "d").contains("手記"));
-        assert!(build_html("t", Some("技術"), "d").contains("技術"));
+        assert!(post_card_html("t", None, "d").contains("手記"));
+        assert!(post_card_html("t", Some(""), "d").contains("手記"));
+        assert!(post_card_html("t", Some("技術"), "2026-10-13").contains("技術 · 2026/10/13"));
+        assert!(post_card_html("t", Some("技術"), "").contains(">技術<"), "沒有日期就不要留一個孤零零的 ·");
+    }
+
+    /// 主標／副標的拆法要跟前端 `splitTitle` 一致（那邊的測試在 `lib/blogReading.test.ts`）。
+    #[test]
+    fn 主標副標照前端的規則拆() {
+        assert_eq!(
+            split_title("為什麼我開始使用 Zed 編輯器：從 VS Code 搬家"),
+            ("為什麼我開始使用 Zed 編輯器", Some("從 VS Code 搬家"))
+        );
+        assert_eq!(split_title("CrowdSec: 取代 fail2ban"), ("CrowdSec", Some("取代 fail2ban")));
+        // 半形冒號後面沒有空白：版本號、時間，不拆
+        assert_eq!(split_title("Rust 1.85:2024 edition"), ("Rust 1.85:2024 edition", None));
+        // 任一邊是空的也不拆
+        assert_eq!(split_title("：只有副標"), ("：只有副標", None));
+        assert_eq!(split_title("只有主標："), ("只有主標：", None));
+        assert_eq!(split_title(""), ("", None));
     }
 
     /// ⚠ 這是換掉 resvg 之後最重要的一條：**真的把圖畫出來**。
     ///
     /// 舊版的測試釘的是「SVG 字串長得對」，但那證明不了圖畫得出來——
     /// 模板寫壞、字型沒載到、takumi API 換了，SVG 字串測試通通照過。
-    /// 這條走完整條路徑（HTML → 排版 → 光柵化 → PNG），並檢查輸出真的是
-    /// 1200×630 的 PNG。
+    /// 這條走完整條路徑（HTML → 排版 → 光柵化 → 疊上背景 → APNG），並檢查輸出真的是
+    /// 1200×630、會動的 PNG。只編前幾格：整段 180 格在 debug 建置下要跑很久，
+    /// 而格與格之間走的是同一段程式。
     #[test]
-    fn 長標題也畫得出正確尺寸的_png() {
+    fn 長標題也畫得出正確尺寸的_apng() {
         let fonts = load_cjk_font();
+        let scene = Scene::new();
         // 遠超過三行的標題：舊版會在這裡把字元硬切掉，新版交給 line-clamp
         let long = "把 NLLB 翻譯接進 Rust,在 Windows 上撞穿整條工具鏈：ct2rs × CTranslate2 的 protobuf 撞名、CRT 之爭、關閉死鎖與 NVIDIA 崩潰";
+        let overlay = render_overlay(&post_card_html(long, Some("位元築夢"), "2026-07-21"), &fonts)
+            .expect("長標題要畫得出來");
         let png =
-            render_png(&build_html(long, Some("位元築夢"), "2026-07-21"), &fonts).expect("長標題要畫得出來");
+            og_sky::encode_frames(3, |i| og_sky::compose(&scene.frame(i), &overlay)).expect("要編得出來");
         // PNG magic
         assert_eq!(&png[..8], &[0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a], "輸出不是 PNG");
         // IHDR 的寬高（big-endian u32，位移 16/20）
         let w = u32::from_be_bytes([png[16], png[17], png[18], png[19]]);
         let h = u32::from_be_bytes([png[20], png[21], png[22], png[23]]);
-        assert_eq!((w, h), (OG_WIDTH, OG_HEIGHT), "尺寸不對");
+        assert_eq!((w as usize, h as usize), (OG_WIDTH, OG_HEIGHT), "尺寸不對");
+        // acTL（動畫控制）要在第一個 IDAT 之前，不然瀏覽器把它當成一般的 PNG
+        let pos = |tag: &[u8]| png.windows(4).position(|c| c == tag);
+        let (actl, idat) = (pos(b"acTL").expect("沒有 acTL：不是 APNG"), pos(b"IDAT").expect("沒有 IDAT"));
+        assert!(actl < idat);
+        // 一格只存變動的像素：後面兩格（fdAT）加起來要遠小於第一格（IDAT）
+        let bytes_of = |tag: &[u8]| -> usize {
+            let (mut at, mut sum) = (8, 0);
+            while at + 8 <= png.len() {
+                let len = u32::from_be_bytes([png[at], png[at + 1], png[at + 2], png[at + 3]]) as usize;
+                if &png[at + 4..at + 8] == tag {
+                    sum += len;
+                }
+                at += 12 + len;
+            }
+            sum
+        };
+        let (first, rest) = (bytes_of(b"IDAT"), bytes_of(b"fdAT"));
+        assert!(
+            rest > 0 && rest * 5 < first,
+            "後面的格沒有只存差異：第一格 {first} bytes，後兩格 {rest} bytes"
+        );
+    }
+
+    /// 背景要真的會動，而且最後一格接得回第一格（衛星、閃的星都走完整數圈）。
+    #[test]
+    fn 背景會動而且首尾接得起來() {
+        let scene = Scene::new();
+        let (a, b) = (scene.frame(0), scene.frame(og_sky::FRAMES / 2));
+        assert!(
+            a.iter().zip(&b).any(|(p, q)| (0..3).any(|c| (p[c] - q[c]).abs() > 0.5)),
+            "半圈後的畫面跟第一格一模一樣：沒有在動"
+        );
+        // 第 FRAMES 格（＝下一圈的第 0 格）應該跟第 0 格一樣
+        let wrap = scene.frame(og_sky::FRAMES);
+        let max = a
+            .iter()
+            .zip(&wrap)
+            .flat_map(|(p, q)| (0..3).map(move |c| (p[c] - q[c]).abs()))
+            .fold(0.0f32, f32::max);
+        assert!(max < 0.5, "繞完一圈接不回第一格（最大色差 {max}）");
     }
 
     /// 空標題、空日期也不能炸——資料庫裡真的有這種列。
     #[test]
     fn 空輸入不會_panic() {
         let fonts = load_cjk_font();
-        assert!(render_png(&build_html("", None, ""), &fonts).is_ok());
+        assert!(render_overlay(&post_card_html("", None, ""), &fonts).is_ok());
+    }
+
+    /// 站台的預設分享圖（不是文章的頁面用它）：`public/og-default-v3.png`。
+    /// 改了模板或背景就重跑一次並提交（release 建置，debug 要跑很久）：
+    ///
+    ///   cargo nextest run --release --run-ignored only -E 'test(產生站台預設分享圖)'
+    #[test]
+    #[ignore = "產生 public/ 底下的靜態檔，改模板時手動跑"]
+    fn 產生站台預設分享圖() {
+        let fonts = load_cjk_font();
+        let html = build_html(&Card {
+            kicker: "KOIMSURAI",
+            title: "宙と木",
+            sub: Some("閱讀筆記、作品紀錄與系統實驗"),
+            brand: false,
+        });
+        let png = render_og(&html, &fonts, &Scene::new()).unwrap();
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../public/og-default-v3.png");
+        std::fs::write(&path, &png).unwrap();
+        println!("{} → {} bytes", path.display(), png.len());
     }
 
     /// 把幾張樣張寫到 `/tmp/og-preview/`，用眼睛看。
@@ -336,14 +487,15 @@ mod tests {
     /// 這條**不是斷言**，是工具——排版對不對（有沒有壓到邊、標點有沒有跑到行首、
     /// 長標題截在哪）只有看得出來。改動模板時跑它：
     ///
-    ///   cargo test --lib og::tests::產生樣張 -- --ignored --nocapture
+    ///   cargo nextest run --release --run-ignored only -E 'test(產生樣張)' --no-capture
     #[test]
     #[ignore = "產生樣張供人工檢視，不做斷言"]
     fn 產生樣張() {
         let fonts = load_cjk_font();
+        let scene = Scene::new();
         let dir = std::path::Path::new("/tmp/og-preview");
         std::fs::create_dir_all(dir).unwrap();
-        let cases: [(&str, &str, Option<&str>); 5] = [
+        let cases: [(&str, &str, Option<&str>); 6] = [
             (
                 "cjk-long",
                 "把 NLLB 翻譯接進 Rust,在 Windows 上撞穿整條工具鏈：ct2rs × CTranslate2 的 protobuf 撞名、CRT 之爭、關閉死鎖與 NVIDIA 崩潰",
@@ -352,10 +504,15 @@ mod tests {
             ("cjk-short", "為什麼我從 VS Code 換到 Zed", Some("技術")),
             ("latin-long", "Why I switched from VS Code to Zed and never looked back", Some("Tech")),
             ("mixed", "CrowdSec 取代 fail2ban：從一次被掃到脫褲子說起", None),
+            (
+                "subtitle",
+                "用 Frigate + Home Assistant 自製 Furbo 寵物保母：本機 AI 寫貓咪日記，但分不出我的兩隻貓",
+                Some("位元築夢"),
+            ),
             ("empty", "", None),
         ];
         for (name, title, cat) in cases {
-            let png = render_png(&build_html(title, cat, "2026-08-09"), &fonts).unwrap();
+            let png = render_og(&post_card_html(title, cat, "2026-08-09"), &fonts, &scene).unwrap();
             let path = dir.join(format!("{name}.png"));
             std::fs::write(&path, &png).unwrap();
             println!("{} → {}", path.display(), png.len());
