@@ -12,6 +12,9 @@ const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
 /** 背景的星（每一顆都拖著一道淡淡的軌跡） */
 const FIELD = 640;
+/** 再補一批只落在內圈的（離天極 INNER_REACH 以內）：面積均勻撒的話天極附近太空，像缺了一塊 */
+const INNER = 110;
+const INNER_REACH = 0.32;
 /** 每秒繞天極轉多少（弧度）：內圈也看得出在走 */
 const SPIN = 0.035;
 
@@ -150,13 +153,18 @@ const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t 
 
 export function createNoteSky() {
   const rnd = seeded(0.61);
-  const field = Array.from({ length: FIELD }, () => ({
-    r: Math.sqrt(rnd()),
+  const star = (reach: number) => ({
+    r: reach * Math.sqrt(rnd()),
     len: 0.1 + rnd() * 0.7,
     a0: rnd() * TAU,
     a: 0.035 + rnd() * rnd() * 0.16,
     star: 0.5 + rnd() * 1.1,
-  }));
+  });
+  // 內圈那批接在後面抽：原本那 640 顆的位置不變（分享圖 og/scenes/notes.rs 照同樣的順序抽）
+  const field = [
+    ...Array.from({ length: FIELD }, () => star(1)),
+    ...Array.from({ length: INNER }, () => star(INNER_REACH)),
+  ];
 
   function draw(ctx: CanvasRenderingContext2D, w: number, h: number, posts: SkyPost[], f: SkyFrame) {
     if (!f.overlay) ctx.clearRect(0, 0, w, h);

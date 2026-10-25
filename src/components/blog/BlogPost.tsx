@@ -1374,7 +1374,12 @@ function BlogPost() {
           <h1>{titleParts.main}</h1>
           {titleParts.sub && <p className="ar-sub">{titleParts.sub}</p>}
           <div className="ar-meta">
-            {post.layout_type !== 'column' && (
+            {/* 紀錄是當下寫的，寫日期；專欄是長期維護的一篇（像一張音樂心得），寫最後修訂到哪天 */}
+            {post.layout_type === 'column' ? (
+              <time dateTime={post.updated_at ?? post.created_at} suppressHydrationWarning>
+                {t('blog.revised')} {dotDate(parseServerDate(post.updated_at ?? post.created_at))}
+              </time>
+            ) : (
               <time dateTime={post.created_at} suppressHydrationWarning>
                 {dotDate(parseServerDate(post.created_at))}
               </time>

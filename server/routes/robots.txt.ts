@@ -11,8 +11,8 @@ const SITE_URL = (process.env.SITE_URL ?? '') || 'https://koimsurai.com';
 // 防止 JSON 被收錄改由後端回應標頭 `X-Robots-Tag: noindex` 處理（見 backend/src/router.rs），
 // 那才是 Google 官方對這個需求的建議做法。
 //
-// Googlebot-Image 那組是在挑 Google 搜尋結果的圖示：分頁列用行星（favicon.svg / .ico），
-// 搜尋結果要新月與樹（favicon-96.png）。Google 只採用 Googlebot-Image 抓得到的圖示，
+// Googlebot-Image 那組是在挑 Google 搜尋結果的圖示：分頁列那支（favicon.svg / .ico）沒有底板、
+// 顏色跟著瀏覽器主題，搜尋結果要有底板的那支（favicon-96.png）。Google 只採用 Googlebot-Image 抓得到的圖示，
 // 擋掉前兩者它就只剩 96px 那張可選。⚠ 爬蟲只套用「最符合自己」的那一組，不會疊加 `*`，
 // 所以那組要把 /admin 再寫一次。
 const ROBOTS = `User-agent: *
