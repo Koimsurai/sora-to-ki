@@ -189,7 +189,8 @@ async fn og_圖會隨標題改變而換掉_etag() {
 async fn og_對不存在的文章與錯誤後綴都回_404() {
     let (app, _pool) = test_app().await;
     // 不認得的頁名也是 404（頁的分享圖只有 handlers/og.rs 的 PAGES 那幾張）
-    for path in ["/api/og/999999.png", "/api/og/1.jpg", "/api/og/1", "/api/og/沒有後綴", "/api/og/nope.png"] {
+    for path in ["/api/og/999999.png", "/api/og/1.jpg", "/api/og/1", "/api/og/沒有後綴", "/api/og/nope.png"]
+    {
         let (st, _headers, _) = request_full(&app, "GET", path, None, None).await;
         assert_eq!(st, StatusCode::NOT_FOUND, "{path}");
     }
