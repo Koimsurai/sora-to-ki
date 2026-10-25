@@ -4,32 +4,7 @@
 
 /* --post-* 變數在 index.css 的 :root（LinkCard 也在用）。 */
 
-/* 2026-10 翻新（提案 v14）：內文結構不動，紫色全部收回暖白。文章頁、MDX 區塊與程式碼框裡用到的品牌紫、
-   洋紅、薰衣草、紫羅蘭與 Happy Hues 的綠，在文章範圍裡一律指到暖白（--paper），面板底色指到頁面的紙色；
-   後台還在用同一組變數，所以只在這裡改，不動 :root。琥珀只留給「你在哪裡」那一點（目錄、語言） */
-.ar-page {
-  --brand: var(--paper);
-  --brand-rgb: var(--paper-rgb);
-  --brand-light: var(--paper);
-  --magenta: var(--paper);
-  --magenta-rgb: var(--paper-rgb);
-  --lavender-rgb: var(--paper-rgb);
-  --lavender-soft: var(--paper);
-  --lavender-soft-rgb: var(--paper-rgb);
-  --violet-300-rgb: var(--paper-rgb);
-  --violet-400: var(--paper);
-  --violet-400-rgb: var(--paper-rgb);
-  --iris-rgb: var(--paper-rgb);
-  --clr-tertiary-rgb: var(--paper-rgb);
-  --surface-0: var(--ground);
-  --surface-0-rgb: var(--ground-rgb);
-  --surface-1: var(--ground);
-  --surface-1-rgb: var(--ground-rgb);
-  --surface-2: var(--ground);
-  --surface-2-rgb: var(--ground-rgb);
-  --surface-3: var(--ground);
-  --surface-3-rgb: var(--ground-rgb);
-}
+/* 2026-10 翻新：文章範圍裡的品牌紫收回暖白，定義在 index.css（跟其他公開元件共用同一份） */
 
 /* code block 與終端機視窗都要能被讀者選取複製（terminal-block 是 console/bash/sh 等語言
    的渲染路徑，先前漏了這條 override → 繼承上面 .post-content 的 none 而選不起來）。 */
