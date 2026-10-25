@@ -7,8 +7,8 @@
 //! 像素都變，每一格都得存整張圖，檔案會大十倍。動的東西都排成剛好在 `LOOP_MS` 內
 //! 繞完整數圈，所以最後一格接回第一格看不出接縫。
 //!
-//! 輸出是 APNG（見 `encode_apng`）。第一格同時是「預設圖」：不播動畫的平台（多數社群網站）
-//! 只顯示它，所以第一格本身就要是一張完整的圖，不能是半途的樣子。
+//! 這一張用在首頁與站台預設圖。它比其他頁早寫，畫法是自己逐像素算，沒走 `canvas`：
+//! 土星的刷痕本來就是逐像素的著色器（前端也是 `putImageData`）。
 #![allow(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
@@ -21,16 +21,15 @@
 
 use std::f32::consts::{PI, TAU};
 
-pub const W: usize = 1200;
-pub const H: usize = 630;
-/// 給 takumi 的 viewport
-pub const SIZE: (u32, u32) = (W as u32, H as u32);
+use tiny_skia::Pixmap;
+
+use super::super::apng::{H, W};
 
 /// 一圈的長度與每格的時間。100ms 一格（10fps）：衛星一格移動幾個像素，看起來是連續的，
 /// 而格數直接決定檔案大小
-pub const LOOP_MS: u32 = 18_000;
-pub const FRAME_MS: u32 = 100;
-pub const FRAMES: usize = (LOOP_MS / FRAME_MS) as usize;
+const LOOP_MS: u32 = 18_000;
+const FRAME_MS: u32 = 100;
+const FRAMES: usize = (LOOP_MS / FRAME_MS) as usize;
 
 const GROUND: [f32; 3] = [10.0, 10.0, 12.0];
 const INK: [f32; 3] = [241.0, 236.0, 227.0];
@@ -303,12 +302,12 @@ struct Star {
 }
 
 /// 整張圖不變的部分先畫好，之後每一格從這裡複製
-pub struct Scene {
+pub struct Saturn {
     rot: Rot,
     /// 底色＋不閃的星＋軌道（RGB）
     back: Vec<[f32; 3]>,
     twinkle: Vec<Star>,
-    saturn: SaturnLayer,
+    planet: SaturnLayer,
 }
 
 /// 反鋸齒的實心圓，`alpha` 是最濃處的不透明度（source-over）
@@ -351,7 +350,13 @@ fn glow(buf: &mut [[f32; 3]], x: f32, y: f32, r: f32, color: [f32; 3], alpha: f3
     }
 }
 
-impl Scene {
+impl Default for Saturn {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Saturn {
     pub fn new() -> Self {
         let rot = Rot::new();
         let mut back = vec![GROUND; W * H];
@@ -403,12 +408,11 @@ impl Scene {
             }
         }
 
-        let saturn = render_saturn(&rot);
-        Self { rot, back, twinkle, saturn }
+        let planet = render_saturn(&rot);
+        Self { rot, back, twinkle, planet }
     }
 
-    /// 第 `index` 格（0..FRAMES）的背景，RGB
-    pub fn frame(&self, index: usize) -> Vec<[f32; 3]> {
+    fn frame_rgb(&self, index: usize) -> Vec<[f32; 3]> {
         let t = index as f32 / FRAMES as f32; // 一圈裡的進度 0–1
         let mut buf = self.back.clone();
         for s in &self.twinkle {
@@ -441,7 +445,7 @@ impl Scene {
                 draw_sat(&mut buf, i, v);
             }
         }
-        let sl = &self.saturn;
+        let sl = &self.planet;
         for row in 0..sl.h {
             for col in 0..sl.w {
                 let s = sl.px[row * sl.w + col];
@@ -462,89 +466,21 @@ impl Scene {
     }
 }
 
-/// 字底下的那片漸層：左邊壓暗到幾成（往右漸淡，過了 66% 寬就沒有）。讓軌道線與星在字底下
-/// 淡掉，字才讀得清楚
-fn veil(x: usize) -> f32 {
-    let u = x as f32 / W as f32;
-    if u < 0.4 { 0.9 - 0.18 * u / 0.4 } else { (0.72 * (0.66 - u) / 0.26).max(0.0) }
-}
-
-/// 背景壓上左邊的漸層、再疊上字那一層（takumi 畫出來的 RGBA，非預乘），轉成 8-bit RGBA。
-///
-/// ⚠ 漸層不放在 takumi 的 HTML 裡：它畫出來的半透明底色在低不透明度時顏色會偏
-/// （存的是預乘再還原的值，alpha 幾 % 的時候 RGB 只剩一兩階），疊上去變成一條一條的直紋。
-/// 在這裡用浮點數直接往底色壓就沒有這個問題。
-pub fn compose(sky: &[[f32; 3]], overlay: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(W * H * 4);
-    for (i, p) in sky.iter().enumerate() {
-        let o = &overlay[i * 4..i * 4 + 4];
-        let a = f32::from(o[3]) / 255.0;
-        let v = veil(i % W);
-        for ch in 0..3 {
-            let back = p[ch] + (GROUND[ch] - p[ch]) * v;
-            out.push((f32::from(o[ch]) * a + back * (1.0 - a)).round().clamp(0.0, 255.0) as u8);
-        }
-        out.push(255);
+impl super::Scene for Saturn {
+    fn frames(&self) -> usize {
+        FRAMES
     }
-    out
-}
-
-/// 逐格編成 APNG。第一格存整張；之後每一格只存「跟上一格不一樣的像素」：
-/// 取變動範圍的外框當這一格的大小，框裡沒變的像素寫成全透明、用 `BlendOp::Over`
-/// 疊在上一格上，於是只有變的點會蓋上去。全透明的長串壓縮後幾乎不佔空間，
-/// 一格常常只有幾 KB（每格都存整張的話，18 秒的圖會是幾十 MB）。
-pub fn encode_apng(next_frame: impl FnMut(usize) -> Vec<u8>) -> anyhow::Result<Vec<u8>> {
-    encode_frames(FRAMES, next_frame)
-}
-
-/// `encode_apng` 的本體，格數另外給（測試只編前幾格）
-pub fn encode_frames(frames: usize, mut next_frame: impl FnMut(usize) -> Vec<u8>) -> anyhow::Result<Vec<u8>> {
-    let mut out = Vec::new();
-    let mut enc = png::Encoder::new(&mut out, W as u32, H as u32);
-    enc.set_color(png::ColorType::Rgba);
-    enc.set_depth(png::BitDepth::Eight);
-    enc.set_compression(png::Compression::High);
-    enc.set_animated(frames as u32, 0)?;
-    enc.set_frame_delay(FRAME_MS as u16, 1000)?;
-    let mut writer = enc.write_header()?;
-    let mut prev = next_frame(0);
-    writer.write_image_data(&prev)?;
-    writer.set_blend_op(png::BlendOp::Over)?;
-    for index in 1..frames {
-        let cur = next_frame(index);
-        let (mut x0, mut y0, mut x1, mut y1) = (W, H, 0, 0);
-        for y in 0..H {
-            for x in 0..W {
-                let o = (y * W + x) * 4;
-                if cur[o..o + 3] != prev[o..o + 3] {
-                    x0 = x0.min(x);
-                    x1 = x1.max(x + 1);
-                    y0 = y0.min(y);
-                    y1 = y1.max(y + 1);
-                }
-            }
-        }
-        // 完全沒變的一格：還是要寫一格（格數已經寫在檔頭），寫一個透明像素
-        if x1 == 0 {
-            (x0, y0, x1, y1) = (0, 0, 1, 1);
-        }
-        let (fw, fh) = (x1 - x0, y1 - y0);
-        let mut sub = vec![0u8; fw * fh * 4];
-        for y in y0..y1 {
-            for x in x0..x1 {
-                let o = (y * W + x) * 4;
-                if cur[o..o + 3] != prev[o..o + 3] {
-                    let s = ((y - y0) * fw + (x - x0)) * 4;
-                    sub[s..s + 4].copy_from_slice(&cur[o..o + 4]);
-                }
-            }
-        }
-        writer.reset_frame_position()?;
-        writer.set_frame_dimension(fw as u32, fh as u32)?;
-        writer.set_frame_position(x0 as u32, y0 as u32)?;
-        writer.write_image_data(&sub)?;
-        prev = cur;
+    fn frame_ms(&self) -> u32 {
+        FRAME_MS
     }
-    writer.finish()?;
-    Ok(out)
+    fn frame(&self, index: usize) -> Pixmap {
+        let rgb = self.frame_rgb(index);
+        let mut data = Vec::with_capacity(W * H * 4);
+        for p in rgb {
+            data.extend(p.map(|c| c.round().clamp(0.0, 255.0) as u8));
+            data.push(255);
+        }
+        Pixmap::from_vec(data, tiny_skia::IntSize::from_wh(W as u32, H as u32).expect("常數尺寸"))
+            .expect("長度剛好是 W×H×4")
+    }
 }

@@ -136,6 +136,23 @@ fn locale_content(row: &PostRow, locale: &str) -> Option<(String, String, String
 /// 讀者就會看到「分類寫 4 篇、點進去 0 篇」「分頁說有 11 篇卻翻到空白頁」。
 ///
 /// locale 一律先過 `parse_locale`，是白名單裡的 `&'static str`，直接內插無注入風險。
+/// 分享圖（handlers/og）畫手記星軌用：這個語系看得到的已發布文章，由新到舊，
+/// `(id, 標題, 內文字數)`。跟 `list_posts` 同一套語系規則，手記頁畫的是同一片天
+pub(crate) async fn sky_list(
+    pool: &sqlx::SqlitePool,
+    locale: &str,
+) -> Result<Vec<(i64, String, usize)>, sqlx::Error> {
+    let sql = format!(
+        "SELECT p.*, NULL AS tags FROM posts p WHERE p.status = 'published' AND {} ORDER BY p.created_at DESC",
+        locale_available_sql(locale, "p")
+    );
+    let rows = sqlx::query_as::<_, PostRow>(sqlx::AssertSqlSafe(sql.as_str())).fetch_all(pool).await?;
+    Ok(rows
+        .iter()
+        .filter_map(|r| locale_content(r, locale).map(|(t, c, _)| (r.id, t, c.chars().count())))
+        .collect())
+}
+
 pub(crate) fn locale_available_sql(locale: &str, alias: &str) -> String {
     let is_source = format!("COALESCE({alias}.source_language, 'zh-TW') = '{locale}'");
     match locale_suffix(locale) {

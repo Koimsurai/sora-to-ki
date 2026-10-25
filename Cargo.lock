@@ -2149,6 +2149,7 @@ dependencies = [
  "takumi",
  "thumbhash",
  "tikv-jemallocator",
+ "tiny-skia",
  "tokio",
  "tower",
  "tower-http 0.7.0",
@@ -4974,6 +4975,7 @@ dependencies = [
  "bytemuck",
  "cfg-if",
  "log",
+ "png",
  "tiny-skia-path",
 ]
 

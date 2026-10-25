@@ -13,7 +13,6 @@ pub mod mailer;
 pub mod newsletter;
 pub mod oauth;
 pub mod og;
-mod og_sky;
 pub mod opencc;
 pub mod polls;
 pub mod posts;

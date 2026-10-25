@@ -60,6 +60,10 @@ COPY --from=planner /build/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 COPY Cargo.toml Cargo.lock ./
 COPY backend ./backend
+# 分享圖（handlers/og）編進執行檔的兩樣前端檔案：各頁的頁名與副標（語系檔）、各頁的插圖。
+# 少了的話 include_str!／include_bytes! 編不過——不會靜靜地出一張缺字的圖
+COPY src/locales ./src/locales
+COPY public/illustrations ./public/illustrations
 RUN cargo build --release -p koimsurai-web-backend \
     && cp target/release/koimsurai-web-backend /koimsurai-web-backend
 
