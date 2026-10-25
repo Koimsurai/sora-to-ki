@@ -3,46 +3,30 @@ import { useQuery } from '@tanstack/react-query';
 import { Command } from 'cmdk';
 import { useLocale, useLocaleNavigate } from '@/hooks/useLocale';
 import { useTranslation } from 'react-i18next';
-import {
-  FileText,
-  Hash,
-  Folder,
-  BookOpen,
-  Activity,
-  Home,
-  Compass,
-  Camera,
-  Settings,
-  Search,
-  type LucideIcon,
-} from 'lucide-react';
 import { recentPostsQueryOptions, blogCategoriesQueryOptions, blogTagsQueryOptions } from '@/data/blogList';
+import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS } from '@/data/siteSections';
 import { closeCommandPalette, toggleCommandPalette, useCommandPaletteOpen } from '@/store/commandPaletteStore';
 import './CommandPalette.css';
 import { useCategoryLabel } from '@/lib/categoryLabel';
 
-interface StaticPage {
-  label: string;
-  path: string;
-  icon: LucideIcon;
-  keywords: string;
-}
+/** 頁面：首頁＋導覽列上的每一區（跟頂欄同一份，改了分區這裡自己跟著變） */
+const PAGES = [{ key: 'home', to: '/', caps: 'HOME' }, ...MAIN_SECTIONS, ...ABOUT_SECTIONS, ...MORE_SECTIONS];
 
-const STATIC_PAGES: StaticPage[] = [
-  { label: '首頁', path: '/', icon: Home, keywords: 'home index 主頁' },
-  { label: '手記', path: '/blog', icon: FileText, keywords: 'blog posts 文章 日記' },
-  {
-    label: '收藏',
-    path: '/watch',
-    icon: BookOpen,
-    keywords: 'collection watch anime 動畫 電影 影集 books 書櫃 閱讀 music spotify 音樂',
-  },
-  { label: '航行日誌', path: '/history', icon: Activity, keywords: 'log history activity 航行日誌 歷史 動態' },
-  { label: '軌跡', path: '/about#journey', icon: Compass, keywords: 'journey 旅程 時間線' },
-  { label: '留言', path: '/messages', icon: Compass, keywords: 'messages 留言 guestbook contact' },
-  { label: '相簿', path: '/photos', icon: Camera, keywords: 'photos 照片 相簿' },
-  { label: '工作站', path: '/setup', icon: Settings, keywords: 'setup 設備' },
-];
+/** 搜尋用的別名：打英文、打舊名字（相簿、工作站、友鏈）都找得到 */
+const KEYWORDS: Record<string, string> = {
+  home: 'home index 首頁 主頁',
+  notes: 'blog posts notes 文章 手記 日記',
+  moments: 'thinking moments 碎念 想法',
+  works: 'portfolio works projects 作品 專案',
+  collection: 'collection watch anime 動畫 電影 影集 books 書櫃 閱讀 music spotify 音樂',
+  about: 'about me 關於 自我介紹',
+  setup: 'setup gear 設備 工作站',
+  log: 'log history activity 航行日誌 歷史 動態',
+  messages: 'messages 留言 guestbook contact',
+  photos: 'photos gallery 照片 相簿 攝影',
+  friends: 'friends links 朋友 友鏈',
+  colophon: 'colophon about-site 此站點 關於本站 問答',
+};
 
 export default function CommandPalette() {
   const categoryLabel = useCategoryLabel();
@@ -100,7 +84,9 @@ export default function CommandPalette() {
       <div className="cmdk-wrap">
         <Command label={t('commandPalette.label')} shouldFilter>
           <div className="cmdk-input-row">
-            <Search className="cmdk-search-icon" size={16} />
+            <span className="cmdk-prompt" aria-hidden="true">
+              &gt;
+            </span>
             {/* 命令面板一開就該能直接打字——autoFocus 正是使用者預期，少了它反而要多按一次 Tab */}
             {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
             <Command.Input placeholder={t('commandPalette.placeholder')} autoFocus />
@@ -111,13 +97,20 @@ export default function CommandPalette() {
             <Command.Empty className="cmdk-empty">{t('commandPalette.empty')}</Command.Empty>
 
             <Command.Group heading={t('commandPalette.groups.pages')}>
-              {STATIC_PAGES.map((p) => (
-                <Command.Item key={p.path} value={`${p.label} ${p.keywords} ${p.path}`} onSelect={() => go(p.path)}>
-                  <p.icon size={14} className="cmdk-icon" />
-                  <span>{p.label}</span>
-                  <span className="cmdk-meta">{p.path}</span>
-                </Command.Item>
-              ))}
+              {PAGES.map((p) => {
+                const label = p.key === 'home' ? t('commandPalette.home') : t(`siteNav.${p.key}`);
+                return (
+                  <Command.Item
+                    key={p.to}
+                    value={`${label} ${KEYWORDS[p.key] ?? ''} ${p.to}`}
+                    onSelect={() => go(p.to)}
+                  >
+                    <i className="cmdk-dot" aria-hidden="true" />
+                    <span>{label}</span>
+                    <span className="cmdk-meta">{p.caps}</span>
+                  </Command.Item>
+                );
+              })}
             </Command.Group>
 
             {postItems.length > 0 && (
@@ -128,7 +121,7 @@ export default function CommandPalette() {
                     value={`${p.title} ${p.excerpt} ${p.tags.join(' ')} ${p.category ?? ''}`}
                     onSelect={() => go(`/blog/${p.id}`)}
                   >
-                    <FileText size={14} className="cmdk-icon" />
+                    <i className="cmdk-dot" aria-hidden="true" />
                     <span className="cmdk-truncate">{p.title}</span>
                     {p.category && <span className="cmdk-meta">{categoryLabel(p.category)}</span>}
                   </Command.Item>
@@ -141,11 +134,11 @@ export default function CommandPalette() {
                 {categories.map((c) => (
                   <Command.Item
                     key={`cat-${c.name}`}
-                    value={`category ${c.name}`}
+                    value={`category ${c.name} ${categoryLabel(c.name)}`}
                     onSelect={() => go(`/blog?category=${encodeURIComponent(c.name)}`)}
                   >
-                    <Folder size={14} className="cmdk-icon" />
-                    <span>{c.name}</span>
+                    <i className="cmdk-dot" aria-hidden="true" />
+                    <span>{categoryLabel(c.name)}</span>
                     {
                       <span className="cmdk-meta">
                         {c.post_count} {t('blog.postCount')}
@@ -167,8 +160,9 @@ export default function CommandPalette() {
                       value={`tag ${name}`}
                       onSelect={() => go(`/blog?tag=${encodeURIComponent(name)}`)}
                     >
-                      <Hash size={14} className="cmdk-icon" />
+                      <i className="cmdk-dot" aria-hidden="true" />
                       <span>{name}</span>
+                      <span className="cmdk-meta">#</span>
                     </Command.Item>
                   );
                 })}
@@ -178,13 +172,13 @@ export default function CommandPalette() {
 
           <div className="cmdk-footer">
             <span>
-              <kbd>↑↓</kbd> 移動
+              <kbd>↑↓</kbd> {t('commandPalette.keys.move')}
             </span>
             <span>
-              <kbd>↵</kbd> 開啟
+              <kbd>↵</kbd> {t('commandPalette.keys.open')}
             </span>
             <span>
-              <kbd>⌘K</kbd> 切換
+              <kbd>⌘K</kbd> {t('commandPalette.keys.toggle')}
             </span>
           </div>
         </Command>

@@ -2,7 +2,7 @@
 // 右鍵在連結上 → 多出「開新分頁 / 複製連結」；隨處都有「隨機文章 / 回到頂部」。
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, ArrowUp, Copy, ExternalLink, RotateCw, Shuffle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './ContextMenu.css';
 
 interface MenuState {
@@ -16,6 +16,7 @@ export default function ContextMenu() {
   const [pos, setPos] = useState<{ left: number; top: number }>({ left: -9999, top: -9999 });
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // 右鍵：Shift 放行原生；否則攔截、記錄座標與（若有）連結
   useEffect(() => {
@@ -100,36 +101,36 @@ export default function ContextMenu() {
       style={{ left: pos.left, top: pos.top }}
       onContextMenu={(e) => e.preventDefault()}
     >
+      {/* 上一頁、下一頁、重新整理：一行等寬的箭頭，像瀏覽器那三顆但不畫成按鈕 */}
       <div className="ctx-nav">
         <button
           type="button"
           className="ctx-nav-btn"
-          title="上一頁"
-          aria-label="上一頁"
+          title={t('contextMenu.back')}
+          aria-label={t('contextMenu.back')}
           onClick={() => run(() => history.back())}
         >
-          <ArrowLeft className="ctx-icon" aria-hidden />
+          ←
         </button>
         <button
           type="button"
           className="ctx-nav-btn"
-          title="下一頁"
-          aria-label="下一頁"
+          title={t('contextMenu.forward')}
+          aria-label={t('contextMenu.forward')}
           onClick={() => run(() => history.forward())}
         >
-          <ArrowRight className="ctx-icon" aria-hidden />
+          →
         </button>
         <button
           type="button"
           className="ctx-nav-btn"
-          title="重新整理"
-          aria-label="重新整理"
+          title={t('contextMenu.reload')}
+          aria-label={t('contextMenu.reload')}
           onClick={() => run(() => location.reload())}
         >
-          <RotateCw className="ctx-icon" aria-hidden />
+          ↻
         </button>
       </div>
-      <div className="ctx-divider" />
       {href ? (
         <>
           <button
@@ -138,8 +139,8 @@ export default function ContextMenu() {
             className="ctx-item"
             onClick={() => run(() => window.open(href, '_blank', 'noopener,noreferrer'))}
           >
-            <ExternalLink className="ctx-icon" aria-hidden />
-            在新分頁開啟連結
+            <i className="ctx-dot" aria-hidden="true" />
+            {t('contextMenu.openNewTab')}
           </button>
           <button
             type="button"
@@ -147,15 +148,15 @@ export default function ContextMenu() {
             className="ctx-item"
             onClick={() => run(() => void navigator.clipboard.writeText(new URL(href, location.href).href))}
           >
-            <Copy className="ctx-icon" aria-hidden />
-            複製連結網址
+            <i className="ctx-dot" aria-hidden="true" />
+            {t('contextMenu.copyLink')}
           </button>
           <div className="ctx-divider" />
         </>
       ) : null}
       <button type="button" role="menuitem" className="ctx-item" onClick={() => run(goRandom)}>
-        <Shuffle className="ctx-icon" aria-hidden />
-        隨機文章
+        <i className="ctx-dot" aria-hidden="true" />
+        {t('contextMenu.random')}
       </button>
       <button
         type="button"
@@ -163,10 +164,10 @@ export default function ContextMenu() {
         className="ctx-item"
         onClick={() => run(() => window.scrollTo({ top: 0, behavior: 'smooth' }))}
       >
-        <ArrowUp className="ctx-icon" aria-hidden />
-        回到頂部
+        <i className="ctx-dot" aria-hidden="true" />
+        {t('contextMenu.top')}
       </button>
-      <div className="ctx-hint">按住 Shift 右鍵可叫出瀏覽器原生選單</div>
+      <div className="ctx-hint">{t('contextMenu.hint')}</div>
     </div>
   );
 }

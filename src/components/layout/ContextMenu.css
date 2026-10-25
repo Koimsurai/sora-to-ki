@@ -1,103 +1,104 @@
+/* 自訂右鍵選單。跟指令面板（⌘K）、連結預覽卡同一種：夜色底、一條細框、直角、不浮陰影；
+   每一項前面一個空心小圓，滑過去變成琥珀實心點 */
+
 .ctx-menu {
   position: fixed;
   z-index: var(--z-ctx-menu);
   min-width: 13rem;
-  padding: var(--space-1-5);
-  border-radius: var(--r-12);
-  background: rgba(var(--surface-2-rgb), 0.9);
-  border: 1px solid var(--white-10);
-  box-shadow: var(--elev-5);
-  backdrop-filter: blur(var(--blur-16));
-  animation: ctx-in 0.13s ease;
+  padding: var(--space-1) 0 var(--space-1-5);
+  background: rgba(var(--ground-rgb), 0.96);
+  border: 1px solid var(--rule);
+  animation: ctx-in var(--dur-150) var(--easing-out);
   user-select: none;
-  -webkit-user-select: none;
 }
+
 @keyframes ctx-in {
   from {
     opacity: 0;
-    transform: scale(0.97) translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
+    transform: translateY(-4px);
   }
 }
+
+/* 上一頁、下一頁、重新整理：一行三個等寬箭頭，底下一條點線 */
 .ctx-nav {
   display: flex;
-  gap: var(--space-1);
-  padding: var(--space-px);
+  padding: 0 var(--space-2);
+  border-bottom: 1px dotted var(--rule);
 }
+
 .ctx-nav-btn {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2);
+  padding: var(--space-2) 0;
   border: none;
-  border-radius: var(--r-8);
   background: transparent;
-  box-shadow: none;
-  outline: none;
-  color: var(--white-70);
+  font-family: var(--mono-font);
+  font-size: var(--fs-14);
+  color: var(--paper-3);
   cursor: pointer;
-  transition:
-    background var(--dur-150) ease,
-    color var(--dur-150) ease;
+  transition: color var(--dur-150) ease;
 }
+
 .ctx-nav-btn:hover,
-.ctx-nav-btn:focus,
 .ctx-nav-btn:focus-visible {
-  background: var(--white-08);
-  color: #fff;
-  box-shadow: none;
+  color: var(--amber);
   outline: none;
 }
 
 .ctx-item {
   display: flex;
   align-items: center;
-  gap: var(--space-2-5);
+  gap: var(--space-3);
   width: 100%;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border: none;
-  border-radius: var(--r-8);
   background: transparent;
-  box-shadow: none;
-  outline: none;
-  color: var(--white-80);
+  font-family: var(--serif);
   font-size: var(--fs-14);
-  font-weight: 400;
-  font-family: inherit;
   text-align: left;
+  color: var(--paper-2);
   cursor: pointer;
-  transition:
-    background var(--dur-150) ease,
-    color var(--dur-150) ease;
+  transition: color var(--dur-150) ease;
 }
-/* 蓋掉全域 button{紫底}＋button:hover{紫底+光暈} */
+
+.ctx-nav + .ctx-item {
+  margin-top: var(--space-1);
+}
+
 .ctx-item:hover,
-.ctx-item:focus,
 .ctx-item:focus-visible {
-  background: var(--white-08);
-  color: #fff;
-  box-shadow: none;
-  border-color: transparent;
+  color: var(--paper);
   outline: none;
 }
-.ctx-icon {
-  width: 1rem;
-  height: 1rem;
-  flex: 0 0 auto;
-  opacity: 0.8;
+
+.ctx-dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-round);
+  transition:
+    background-color var(--dur-150) ease,
+    border-color var(--dur-150) ease;
 }
+
+.ctx-item:hover .ctx-dot,
+.ctx-item:focus-visible .ctx-dot {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+
 .ctx-divider {
-  height: 1px;
-  margin: var(--space-1);
-  background: var(--white-08);
+  margin: var(--space-1) var(--space-4);
+  border-top: 1px dotted var(--rule);
 }
+
 .ctx-hint {
-  padding: var(--space-2) var(--space-3) var(--space-1);
-  font-size: var(--fs-11);
-  color: var(--white-30);
-  line-height: var(--lh-140);
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-4) 0;
+  border-top: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-4);
+  line-height: var(--lh-150);
+  color: var(--paper-3);
 }

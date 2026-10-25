@@ -134,7 +134,23 @@
       "posts": "文章",
       "categories": "分类",
       "tags": "标签"
+    },
+    "home": "首页",
+    "keys": {
+      "move": "移动",
+      "open": "打开",
+      "toggle": "开关"
     }
+  },
+  "contextMenu": {
+    "back": "上一页",
+    "forward": "下一页",
+    "reload": "刷新",
+    "openNewTab": "在新标签页打开链接",
+    "copyLink": "复制链接地址",
+    "random": "随机一篇文章",
+    "top": "回到顶部",
+    "hint": "按住 Shift 再按右键，是浏览器原本的菜单"
   },
   "backToTop": {
     "label": "回到顶部"
@@ -428,7 +444,43 @@
     "station": "DSN · 地面站",
     "stationLabel": "地面站的碟形天线，接收远处探测器传来的信号",
     "passesLabel": "每个月收到几张：{{month}} 最多，{{count}} 张",
-    "frame": "照片 {{date}}"
+    "frame": "照片 {{date}}",
+    "viewer": {
+      "share": "分享这张照片",
+      "shareShort": "分享",
+      "shareTitle": "照片",
+      "shareText": "查看我的照片作品",
+      "close": "关闭查看器",
+      "closeHint": "关闭（Esc）",
+      "prev": "上一张照片",
+      "next": "下一张照片"
+    },
+    "exif": {
+      "info": "照片信息",
+      "title": "标题",
+      "description": "描述",
+      "basic": "基本信息",
+      "size": "尺寸",
+      "fileSize": "文件大小",
+      "format": "格式",
+      "ratio": "比例",
+      "camera": "相机信息",
+      "make": "制造商",
+      "model": "型号",
+      "lens": "镜头",
+      "shooting": "拍摄参数",
+      "focal": "焦距",
+      "aperture": "光圈",
+      "shutter": "快门",
+      "flash": "闪光灯",
+      "whiteBalance": "白平衡",
+      "taken": "拍摄时间",
+      "location": "位置信息",
+      "lat": "纬度",
+      "lng": "经度",
+      "altitude": "海拔",
+      "tags": "标签"
+    }
   },
   "aboutFall": {
     "kick": "关于",

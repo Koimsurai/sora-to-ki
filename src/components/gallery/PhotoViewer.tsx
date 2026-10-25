@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Keyboard, Thumbs } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -20,6 +21,7 @@ import 'swiper/css/navigation';
 import './PhotoViewer.css';
 
 const PhotoViewer: React.FC = () => {
+  const { t } = useTranslation();
   const isOpen = useAtomValue(viewerOpenAtom);
   const selectedPhoto = useAtomValue(selectedPhotoAtom);
   const photos = useAtomValue(photosAtom);
@@ -119,7 +121,7 @@ const PhotoViewer: React.FC = () => {
           <div className="photo-viewer-info">
             <div className="photo-title">
               {/* 原本直接印 DateTimeOriginal 原字串，兩種格式（exiftool / ISO）就長不一樣 */}
-              照片 {exifYmd(currentPhoto.exif?.DateTimeOriginal) || currentPhoto.title}
+              {t('photos.frame', { date: exifYmd(currentPhoto.exif?.DateTimeOriginal) || currentPhoto.title })}
             </div>
           </div>
 
@@ -128,7 +130,7 @@ const PhotoViewer: React.FC = () => {
             {/* 分享按鈕 */}
             <button
               className="action-btn action-btn-share"
-              aria-label="分享這張照片"
+              aria-label={t('photos.viewer.share')}
               onClick={(e) => {
                 e.stopPropagation();
                 // lib.dom 把 Web Share API 宣告成必然存在，桌面 Firefox 實際沒有。
@@ -137,8 +139,8 @@ const PhotoViewer: React.FC = () => {
                 if (nav.share) {
                   nav
                     .share({
-                      title: currentPhoto.title || '照片分享',
-                      text: `查看我的照片作品`,
+                      title: currentPhoto.title || t('photos.viewer.shareTitle'),
+                      text: t('photos.viewer.shareText'),
                       url: window.location.href,
                     })
                     .catch(() => {
@@ -146,7 +148,7 @@ const PhotoViewer: React.FC = () => {
                     });
                 }
               }}
-              title="分享"
+              title={t('photos.viewer.shareShort')}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -165,12 +167,12 @@ const PhotoViewer: React.FC = () => {
             {/* 關閉按鈕 */}
             <button
               className="action-btn action-btn-close"
-              aria-label="關閉檢視器"
+              aria-label={t('photos.viewer.close')}
               onClick={(e) => {
                 e.stopPropagation();
                 closeViewer();
               }}
-              title="關閉 (ESC)"
+              title={t('photos.viewer.closeHint')}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -192,7 +194,11 @@ const PhotoViewer: React.FC = () => {
           {/* 主圖輪播區域 */}
           <div className="photo-viewer-main">
             {/* 自訂導航按鈕 - 上一張 */}
-            <button aria-label="上一張照片" className="custom-swiper-button-prev" onClick={(e) => e.stopPropagation()}>
+            <button
+              aria-label={t('photos.viewer.prev')}
+              className="custom-swiper-button-prev"
+              onClick={(e) => e.stopPropagation()}
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -204,7 +210,11 @@ const PhotoViewer: React.FC = () => {
                 <polyline points="15 18 9 12 15 6" />
               </svg>
             </button>
-            <button aria-label="下一張照片" className="custom-swiper-button-next" onClick={(e) => e.stopPropagation()}>
+            <button
+              aria-label={t('photos.viewer.next')}
+              className="custom-swiper-button-next"
+              onClick={(e) => e.stopPropagation()}
+            >
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
