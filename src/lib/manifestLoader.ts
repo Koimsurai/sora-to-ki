@@ -4,37 +4,44 @@
  * 載入照片 manifest 資料
  */
 
-import type { PhotosManifest } from '@koimsurai/api-types';
+import type { GalleryPhotosResponse } from '@koimsurai/api-types';
 import type { PhotoManifest } from '@/types/photo';
 
-// 舊名，只剩本檔在用；形狀吃後端生成的（backend handlers::gallery::PhotosManifest）
-type PhotosManifestData = PhotosManifest;
+export interface Gallery {
+  photos: PhotoManifest[];
+  /** 站長在後台標的精選（照片 id）；照片頁排在最上面 */
+  featured: string[];
+}
 
 /**
- * 從 public/photos-manifest.json 載入照片資料
+ * 從 /api/gallery/photos 載入照片（manifest 疊上後台改過的標題與標籤，藏起來的不在裡面）
  */
-export async function loadPhotosManifest(): Promise<PhotoManifest[]> {
+export async function loadGallery(): Promise<Gallery> {
   try {
-    // API endpoint for NAS Gallery
     const response = await fetch('/api/gallery/photos');
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data = (await response.json()) as PhotosManifestData;
+    const data = (await response.json()) as GalleryPhotosResponse;
 
     console.log(`✅ 載入 ${data.totalPhotos} 張照片`);
     console.log(`📅 生成時間: ${data.generatedAt}`);
 
-    return data.photos;
+    return { photos: data.photos, featured: data.featured };
   } catch (error) {
     console.error('❌ 載入 photos-manifest.json 失敗:', error);
 
     // 如果 manifest 不存在,回退到使用本地圖片
     console.warn('⚠️  回退到本地圖片模式');
-    return loadLocalPhotos();
+    return { photos: loadLocalPhotos(), featured: [] };
   }
+}
+
+/** 只要照片、不管精選的地方（編輯器的選圖、此站點頁）用這個 */
+export async function loadPhotosManifest(): Promise<PhotoManifest[]> {
+  return (await loadGallery()).photos;
 }
 
 /**

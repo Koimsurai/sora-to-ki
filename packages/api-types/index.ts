@@ -81,6 +81,22 @@ export type AdminFriendsResponse = {
 	counts: FriendCounts,
 };
 
+/**  後台的一張：疊過的照片，加上原本的檔名（標題改過也看得到是哪個檔）與兩個開關 */
+export type AdminPhoto = {
+	/**  manifest 上的標題（同步時是檔名） */
+	original_title: string,
+	/**  精選：前台地面站排在最上面 */
+	featured: boolean,
+	/**  前台不顯示 */
+	hidden: boolean,
+} & GalleryPhoto;
+
+export type AdminPhotosResponse = {
+	/**  上次同步 NAS 的時間（manifest 的 generatedAt） */
+	generatedAt: string,
+	photos: AdminPhoto[],
+};
+
 /**
  *  `GET /api/admin/posts/:id` 成功回應：`{message, ...row, tags, available_locales}`。
  *  flatten 讓 row 的欄位攤平在頂層，key 序 = message → AdminPostFull 欄位序 → available_locales。
@@ -519,6 +535,16 @@ export type GalleryPhoto = {
 	tagsEn?: string[],
 	gps: PhotoGps | null,
 };
+
+/**
+ *  `GET /api/gallery/photos` 的回應：manifest，加上站長標的精選（照片 id）。
+ *  精選不放進每張照片裡：照片的形狀就是 manifest 檔的形狀，那個檔每次同步都會重寫，
+ *  不該因為一個只有讀的時候才有的值而多出欄位。
+ */
+export type GalleryPhotosResponse = {
+	/**  精選的照片 id，前台地面站排在最上面 */
+	featured: string[],
+} & PhotosManifest;
 
 /**
  *  PushEvent 的一個 commit。sha 缺的 commit 直接不收——沒有 sha 就連不出 commit 連結，

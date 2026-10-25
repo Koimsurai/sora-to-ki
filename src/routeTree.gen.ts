@@ -44,6 +44,7 @@ import { Route as AdminCommentsRouteImport } from './routes/admin/comments'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminFriendsRouteImport } from './routes/admin/friends'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminPhotosRouteImport } from './routes/admin/photos'
 import { Route as AdminSubscribersRouteImport } from './routes/admin/subscribers'
 import { Route as AdminTagsRouteImport } from './routes/admin/tags'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
@@ -239,6 +240,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminPhotosRoute = AdminPhotosRouteImport.update({
+  id: '/photos',
+  path: '/photos',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminSubscribersRoute = AdminSubscribersRouteImport.update({
   id: '/subscribers',
   path: '/subscribers',
@@ -369,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -424,6 +431,7 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -481,6 +489,7 @@ export interface FileRoutesById {
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/friends': typeof AdminFriendsRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/photos': typeof AdminPhotosRoute
   '/admin/subscribers': typeof AdminSubscribersRoute
   '/admin/tags': typeof AdminTagsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -539,6 +548,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/friends'
     | '/admin/login'
+    | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/users'
@@ -594,6 +604,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/friends'
     | '/admin/login'
+    | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/users'
@@ -650,6 +661,7 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/friends'
     | '/admin/login'
+    | '/admin/photos'
     | '/admin/subscribers'
     | '/admin/tags'
     | '/admin/users'
@@ -964,6 +976,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/photos': {
+      id: '/admin/photos'
+      path: '/photos'
+      fullPath: '/admin/photos'
+      preLoaderRoute: typeof AdminPhotosRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/subscribers': {
       id: '/admin/subscribers'
       path: '/subscribers'
@@ -1107,6 +1126,7 @@ interface AdminRouteRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminFriendsRoute: typeof AdminFriendsRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminPhotosRoute: typeof AdminPhotosRoute
   AdminSubscribersRoute: typeof AdminSubscribersRoute
   AdminTagsRoute: typeof AdminTagsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -1123,6 +1143,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
   AdminFriendsRoute: AdminFriendsRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminPhotosRoute: AdminPhotosRoute,
   AdminSubscribersRoute: AdminSubscribersRoute,
   AdminTagsRoute: AdminTagsRoute,
   AdminUsersRoute: AdminUsersRoute,

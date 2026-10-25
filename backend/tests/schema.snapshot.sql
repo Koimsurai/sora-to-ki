@@ -111,6 +111,9 @@ table newsletter_subscribers
 table oauth_users
   CREATE TABLE oauth_users ( id INTEGER PRIMARY KEY AUTOINCREMENT, provider TEXT NOT NULL, provider_id TEXT NOT NULL, display_name TEXT NOT NULL, email TEXT DEFAULT '', avatar_url TEXT DEFAULT '', role TEXT NOT NULL DEFAULT 'USER', linked_to INTEGER DEFAULT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(provider, provider_id) )
 
+table photo_meta
+  CREATE TABLE photo_meta ( photo_id TEXT PRIMARY KEY, title TEXT, description TEXT, tags TEXT, tags_en TEXT, featured INTEGER NOT NULL DEFAULT 0, hidden INTEGER NOT NULL DEFAULT 0, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP )
+
 table poll_votes
   CREATE TABLE poll_votes ( poll_id TEXT NOT NULL, option_key TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 0, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (poll_id, option_key) )
 

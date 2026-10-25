@@ -16,6 +16,7 @@ import type {
   AdminCommentsResponse,
   AdminPostDetailResponse,
   AdminFriendsResponse,
+  AdminPhotosResponse,
   MetricStat,
 } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
@@ -106,6 +107,13 @@ export interface AdminStats {
   commentsThisWeek?: number;
   visitors?: number;
 }
+/** 照片：manifest 疊上後台設定，含藏起來的（後台照片頁） */
+export const adminPhotosQueryOptions = queryOptions({
+  queryKey: ['admin', 'photos'],
+  queryFn: () => adminGet<AdminPhotosResponse>('/api/admin/gallery/photos'),
+  staleTime: 60 * 1000,
+});
+
 /** 友鏈：申請與朋友都在同一張表，前端照 status 分頁 */
 export const adminFriendsQueryOptions = queryOptions({
   queryKey: ['admin', 'friends'],

@@ -20,13 +20,14 @@ use koimsurai_web_backend::handlers::friend_links::{
 };
 use koimsurai_web_backend::handlers::friends::{FriendPost, FriendStar};
 use koimsurai_web_backend::handlers::gallery::{
-    ExifValue, GalleryPhoto, PhotoExif, PhotoGps, PhotoUrls, PhotosManifest,
+    ExifValue, GalleryPhoto, GalleryPhotosResponse, PhotoExif, PhotoGps, PhotoUrls, PhotosManifest,
 };
 use koimsurai_web_backend::handlers::home::{
     DigestComment, DigestPost, DigestResponse, DigestThought, DigestTimeline,
 };
 use koimsurai_web_backend::handlers::link_preview::LinkPreviewResponse;
 use koimsurai_web_backend::handlers::newsletter::{SubscriberByToken, SubscriberRow, SubscribersResponse};
+use koimsurai_web_backend::handlers::photo_meta::{AdminPhoto, AdminPhotosResponse};
 use koimsurai_web_backend::handlers::polls::{PollOptionRow, PollResponse};
 use koimsurai_web_backend::handlers::posts::{
     CommentRow, CommentsResponse, Pagination, PostDetailResponse, PostListItem, PostsListResponse,
@@ -99,6 +100,9 @@ fn main() {
         .register::<PhotoGps>()
         .register::<GalleryPhoto>()
         .register::<PhotosManifest>()
+        .register::<GalleryPhotosResponse>()
+        .register::<AdminPhoto>()
+        .register::<AdminPhotosResponse>()
         .register::<AdminTagRow>()
         .register::<AdminCategoryRow>()
         .register::<AdminUserRow>()

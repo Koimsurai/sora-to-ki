@@ -42,7 +42,7 @@ export interface Frame {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-function frameOf(photo: PhotoManifest): Frame {
+export function frameOf(photo: PhotoManifest): Frame {
   const exif = photo.exif;
   const clock = parseExifWallClock(exif?.DateTimeOriginal);
   const no = /(\d{3,5})(?!.*\d)/.exec(photo.id)?.[1] ?? photo.id.slice(-4);
@@ -63,11 +63,18 @@ function frameOf(photo: PhotoManifest): Frame {
   };
 }
 
-/** 由新到舊：最新收到的排最前面（沒有拍攝時間的排最後） */
-export function framesOf(photos: PhotoManifest[]): Frame[] {
+/**
+ * 站長標的精選排最上面，其餘由新到舊：最新收到的排最前面（沒有拍攝時間的排最後）。
+ * 精選之間也是由新到舊
+ */
+export function framesOf(photos: PhotoManifest[], featured: ReadonlySet<string> = new Set()): Frame[] {
+  const rank = (f: Frame) => (featured.has(f.photo.id) ? 0 : 1);
   return photos
     .map(frameOf)
-    .sort((a, b) => (b.photo.shootTime ?? 0) - (a.photo.shootTime ?? 0) || b.date.localeCompare(a.date));
+    .sort(
+      (a, b) =>
+        rank(a) - rank(b) || (b.photo.shootTime ?? 0) - (a.photo.shootTime ?? 0) || b.date.localeCompare(a.date),
+    );
 }
 
 /** 總覽：一共幾格、第一格與最後一格的年月、各鏡頭幾張（多的在前；手機各機型併成一行）、每個月幾張 */

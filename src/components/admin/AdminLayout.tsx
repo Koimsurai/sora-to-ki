@@ -38,7 +38,13 @@ const NAV: NavGroup[] = [
       { label: '標籤', path: '/admin/tags' },
     ],
   },
-  { label: '收 · Keep', items: [{ label: '書架', path: '/admin/books' }] },
+  {
+    label: '收 · Keep',
+    items: [
+      { label: '書架', path: '/admin/books' },
+      { label: '照片', path: '/admin/photos' },
+    ],
+  },
   {
     label: '回 · Reply',
     items: [

@@ -154,6 +154,34 @@ test.describe('後台', () => {
   });
 
   /**
+   * 照片：後台關掉「前台顯示」之後，公開的照片清單就沒有那張；打開又回來。
+   * 這是後台唯一能讓一張照片從前台消失的地方，壞掉的話站長以為藏起來了、讀者照樣看得到。
+   */
+  test('照片：關掉前台顯示，公開清單就沒有那張；打開又回來', async ({ page }) => {
+    const publicIds = () =>
+      page.evaluate(async () => {
+        const r = await fetch('/api/gallery/photos');
+        const b = (await r.json()) as { photos: { id: string }[] };
+        return b.photos.map((p) => p.id);
+      });
+
+    await signIn(page);
+    await gotoAdmin(page, '/admin/photos', '照片');
+    const side = page.getByRole('complementary', { name: '這張照片' });
+    const title = await side.getByRole('img').getAttribute('alt');
+    const before = await publicIds();
+
+    const toggle = side.getByRole('checkbox', { name: /前台顯示/ });
+    await expect(toggle).toBeChecked();
+    await toggle.uncheck();
+    await expect(page.getByText('藏起來了').first()).toBeVisible({ timeout: 10_000 });
+    await expect.poll(publicIds, { message: `〈${title}〉藏起來之後還在公開清單上` }).toHaveLength(before.length - 1);
+
+    await side.getByRole('checkbox', { name: /前台顯示/ }).check();
+    await expect.poll(publicIds, { message: '打開之後要回來' }).toEqual(before);
+  });
+
+  /**
    * token 被清掉 → 立刻被請出去。
    *
    * 既有的「未登入進不了後台」測的是「一開始就沒有 token」。這條測的是
