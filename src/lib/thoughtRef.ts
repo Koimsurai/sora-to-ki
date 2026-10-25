@@ -6,13 +6,13 @@ import type { ThoughtOut } from '@koimsurai/api-types';
 export const THOUGHT_VERBS = ['watched', 'read', 'listened', 'played', 'shared'] as const;
 export type ThoughtVerb = (typeof THOUGHT_VERBS)[number];
 
-export const MEDIA_KINDS = ['film', 'tv', 'anime', 'book', 'track'] as const;
+const MEDIA_KINDS = ['film', 'tv', 'anime', 'book', 'track'] as const;
 export type MediaKind = (typeof MEDIA_KINDS)[number];
 
 export const isThoughtVerb = (v: unknown): v is ThoughtVerb =>
   typeof v === 'string' && (THOUGHT_VERBS as readonly string[]).includes(v);
 
-export const isMediaKind = (v: unknown): v is MediaKind =>
+const isMediaKind = (v: unknown): v is MediaKind =>
   typeof v === 'string' && (MEDIA_KINDS as readonly string[]).includes(v);
 
 /** 附上某種東西時預設的動詞（後台可以改） */
