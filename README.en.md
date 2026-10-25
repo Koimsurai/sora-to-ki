@@ -79,10 +79,12 @@ Articles can also be read in a sans, a handwritten-style or a modern sans face, 
 | Home: moons around Saturn | Notes: rings of star trails |
 |:---:|:---:|
 | [![Home](.github/screenshots/home.jpg)](https://koimsurai.com) | [![Notes](.github/screenshots/notes.jpg)](https://koimsurai.com/en/blog) |
-| **Article** | **Works: a spiral course outward** |
-| [![Article](.github/screenshots/post.jpg)](https://koimsurai.com/en/blog) | [![Works](.github/screenshots/works.jpg)](https://koimsurai.com/en/portfolio) |
-| **Collection: signals sent from Earth** | **Log: a launch from the ground** |
-| [![Collection](.github/screenshots/collection.jpg)](https://koimsurai.com/en/watch) | [![Log](.github/screenshots/log.jpg)](https://koimsurai.com/en/history) |
+| **Article** | **Photos: pictures downlinked from deep space** |
+| [![Article](.github/screenshots/post.jpg)](https://koimsurai.com/en/blog) | [![Photos](.github/screenshots/photos.jpg)](https://koimsurai.com/en/photos) |
+| **Works: a spiral course outward** | **Collection: signals sent from Earth** |
+| [![Works](.github/screenshots/works.jpg)](https://koimsurai.com/en/portfolio) | [![Collection](.github/screenshots/collection.jpg)](https://koimsurai.com/en/watch) |
+| **Friends: stars around one center** | **Log: a launch from the ground** |
+| [![Friends](.github/screenshots/friends.jpg)](https://koimsurai.com/en/friends) | [![Log](.github/screenshots/log.jpg)](https://koimsurai.com/en/history) |
 | **Setup: a spacecraft's blueprints** | **Colophon** |
 | [![Setup](.github/screenshots/setup.jpg)](https://koimsurai.com/en/setup) | [![Colophon](.github/screenshots/colophon.jpg)](https://koimsurai.com/en/about-site) |
 

@@ -79,10 +79,12 @@
 | 首頁：繞著土星的衛星 | 手記：一圈一圈的星軌 |
 |:---:|:---:|
 | [![首頁](.github/screenshots/home.jpg)](https://koimsurai.com) | [![手記](.github/screenshots/notes.jpg)](https://koimsurai.com/blog) |
-| **文章** | **作品：往外長的螺旋航線** |
-| [![文章](.github/screenshots/post.jpg)](https://koimsurai.com/blog) | [![作品](.github/screenshots/works.jpg)](https://koimsurai.com/portfolio) |
-| **收藏：從地球發出的訊號** | **航行日誌：從地表升空** |
-| [![收藏](.github/screenshots/collection.jpg)](https://koimsurai.com/watch) | [![航行日誌](.github/screenshots/log.jpg)](https://koimsurai.com/history) |
+| **文章** | **照片：從深空傳回來的照片** |
+| [![文章](.github/screenshots/post.jpg)](https://koimsurai.com/blog) | [![照片](.github/screenshots/photos.jpg)](https://koimsurai.com/photos) |
+| **作品：往外長的螺旋航線** | **收藏：從地球發出的訊號** |
+| [![作品](.github/screenshots/works.jpg)](https://koimsurai.com/portfolio) | [![收藏](.github/screenshots/collection.jpg)](https://koimsurai.com/watch) |
+| **朋友：繞著同一個中心的星** | **航行日誌：從地表升空** |
+| [![朋友](.github/screenshots/friends.jpg)](https://koimsurai.com/friends) | [![航行日誌](.github/screenshots/log.jpg)](https://koimsurai.com/history) |
 | **設備：太空船的工程圖** | **此站點** |
 | [![設備](.github/screenshots/setup.jpg)](https://koimsurai.com/setup) | [![此站點](.github/screenshots/colophon.jpg)](https://koimsurai.com/about-site) |
 
