@@ -35,7 +35,7 @@ const GAP_Y = 12;
 /** 多久沒收到 3D 送來的位置就當作沒有 3D */
 const FLAT_AFTER_MS = 2500;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
-const SATURN_COLLAPSE_MS = 380;
+const SATURN_COLLAPSE_MS = 500;
 
 // 照字素切：碎念裡的 emoji 是好幾個碼位組成的，照碼位切會切出半個
 const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });

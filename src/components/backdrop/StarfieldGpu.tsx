@@ -28,7 +28,7 @@ const canOffscreen =
 const transferred = new WeakSet<HTMLCanvasElement>();
 
 /** 離開首頁時土星收成一點要多久（runner 的縮放 lerp 大約這麼久收斂） */
-const SATURN_COLLAPSE_MS = 450;
+const SATURN_COLLAPSE_MS = 550;
 
 /** 自己畫天空的頁面上，星空等多久才建（那幾頁的進場動畫：收藏頁俯衝 2 秒＋名字淡入 0.9 秒、手記 1.8 秒） */
 const BARE_DEFER_MS = 3000;
