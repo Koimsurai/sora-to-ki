@@ -120,7 +120,7 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
         String::new()
     } else {
         format!(
-            "<p style=\"margin:0 0 24px 0;font-size:15px;line-height:1.75;color:rgba(231,227,247,0.75);\">\n          {excerpt}{ellipsis}\n        </p>"
+            "<p style=\"margin:0 0 28px 0;font-size:15px;line-height:1.85;color:rgba(241,236,227,0.7);\">\n          {excerpt}{ellipsis}\n        </p>"
         )
     };
     let site_bare = site.strip_prefix("https://").or_else(|| site.strip_prefix("http://")).unwrap_or(site);
@@ -133,53 +133,51 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title>
 </head>
-<body style="margin:0;padding:0;background:#0c0a18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'PingFang TC','Noto Sans TC',sans-serif;color:#e7e3f7;">
+<body style="margin:0;padding:0;background:#0a0a0c;font-family:'Noto Serif TC','Source Han Serif TC','Songti TC','PMingLiU',Georgia,serif;color:#f1ece3;">
 <div style="display:none;max-height:0;overflow:hidden;color:transparent;">
 {excerpt} · Koimsurai 新文章上架
 </div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0c0a18;">
-  <tr><td align="center" style="padding:32px 16px;">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+<!-- 跟站上翻新後（2026-10）同一套：黑底（--ground）、紙色的宋體字（--paper）、琥珀點（--amber）、
+     等寬字加點線底線的連結。信件客戶端不吃外部 CSS 與網頁字型，全部寫 inline、字型只用本機有的 -->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0c;">
+  <tr><td align="center" style="padding:40px 20px;">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
       <!-- header -->
-      <tr><td style="padding:8px 0 24px 0;">
-        <a href="{site}" style="color:#c7b8ff;text-decoration:none;font-size:14px;letter-spacing:0.18em;text-transform:uppercase;font-weight:600;">
-          ✦ Koimsurai
-        </a>
+      <tr><td style="padding:0 0 36px 0;">
+        <a href="{site}" style="color:#f1ece3;text-decoration:none;font-size:20px;letter-spacing:0.01em;">Koimsurai</a>
       </td></tr>
 
-      <!-- card -->
-      <tr><td style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:18px;padding:36px 32px;">
-        <p style="margin:0 0 18px 0;font-size:13px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(199,184,255,0.6);font-weight:600;">
-          New Post
+      <!-- post -->
+      <tr><td style="padding:28px 0 0 0;border-top:1px solid rgba(241,236,227,0.1);">
+        <p style="margin:0 0 16px 0;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px;letter-spacing:0.06em;color:rgba(241,236,227,0.4);">
+          <span style="color:#e9c17a;">●</span>&nbsp; 手記 · 新文章
         </p>
-        <h1 style="margin:0 0 16px 0;font-size:24px;line-height:1.4;color:#ffffff;font-weight:700;">
+        <h1 style="margin:0 0 18px 0;font-size:26px;line-height:1.45;color:#f1ece3;font-weight:600;">
           {title}
         </h1>
         {excerpt_block}
-        <p style="margin:8px 0 0 0;">
-          <a href="{url}" style="display:inline-block;padding:11px 22px;background:rgba(199,184,255,0.08);border:1px solid rgba(199,184,255,0.35);color:#ffffff;text-decoration:none;border-radius:999px;font-size:14px;font-weight:500;letter-spacing:0.02em;">
-            閱讀全文 →
-          </a>
+        <p style="margin:0;">
+          <a href="{url}" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;letter-spacing:0.06em;color:#e9c17a;text-decoration:none;border-bottom:1px dotted rgba(233,193,122,0.6);padding-bottom:2px;">閱讀全文 →</a>
         </p>
       </td></tr>
 
       <!-- greeting -->
-      <tr><td style="padding:28px 4px 0 4px;font-size:13px;line-height:1.7;color:rgba(231,227,247,0.55);">
+      <tr><td style="padding:44px 0 0 0;font-size:13px;line-height:1.8;color:rgba(241,236,227,0.55);">
         {greeting}
         <br>
         感謝你訂閱 Koimsurai。如果今天這封信打擾到你，請點下面的退訂連結，下次就不會再寄了。
       </td></tr>
 
       <!-- footer -->
-      <tr><td style="padding:32px 4px 0 4px;border-top:1px solid rgba(255,255,255,0.06);margin-top:24px;font-size:11px;line-height:1.7;color:rgba(231,227,247,0.4);">
-        <p style="margin:24px 0 0 0;">
+      <tr><td style="padding:24px 0 0 0;">
+        <p style="margin:0;padding-top:20px;border-top:1px solid rgba(241,236,227,0.1);font-size:11px;line-height:1.8;color:rgba(241,236,227,0.4);">
           You're receiving this because you subscribed at
-          <a href="{site}" style="color:rgba(199,184,255,0.7);text-decoration:underline;">{site_bare}</a>.
+          <a href="{site}" style="color:rgba(241,236,227,0.7);text-decoration:underline;">{site_bare}</a>.
         </p>
-        <p style="margin:8px 0 0 0;">
-          <a href="{unsub}" style="color:rgba(199,184,255,0.7);text-decoration:underline;">一鍵退訂</a>
-          &nbsp;·&nbsp;
-          <a href="{site}/blog" style="color:rgba(199,184,255,0.7);text-decoration:underline;">所有文章</a>
+        <p style="margin:8px 0 0 0;font-size:11px;line-height:1.8;">
+          <a href="{unsub}" style="color:rgba(241,236,227,0.7);text-decoration:underline;">一鍵退訂</a>
+          <span style="color:rgba(241,236,227,0.4);">&nbsp;·&nbsp;</span>
+          <a href="{site}/blog" style="color:rgba(241,236,227,0.7);text-decoration:underline;">所有文章</a>
         </p>
       </td></tr>
     </table>
