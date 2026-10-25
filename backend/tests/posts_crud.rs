@@ -47,7 +47,12 @@ async fn 刪除文章會連帶清掉標籤關聯() {
     };
     assert_eq!(count().await, 1, "建立時的標籤沒掛上");
 
+    // 第一次刪是丟回收：還原時標籤要在，所以關聯不動
     let (st, v) = admin(&app, "DELETE", &format!("/api/admin/posts/{id}"), None).await;
+    assert!(st.is_success(), "得到 {st} {v}");
+    assert_eq!(count().await, 1, "丟進回收就把標籤拆掉的話，還原回來會少了標籤");
+
+    let (st, v) = admin(&app, "DELETE", &format!("/api/admin/posts/{id}?permanent=true"), None).await;
     assert!(st.is_success(), "得到 {st} {v}");
     assert_eq!(count().await, 0, "標籤關聯沒被清掉，會變成孤兒列");
 

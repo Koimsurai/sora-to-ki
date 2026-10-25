@@ -35,7 +35,8 @@ pub async fn notify_on_post_write(req: Request, next: Next) -> Response {
     res
 }
 
-async fn fire() {
+/// 請前端清 ISR 快取。不是經過 HTTP 寫入文章的地方（排程 worker）要自己呼叫。
+pub async fn fire() {
     // 兩個 env 都要有值才啟用;缺任一 = 功能沒開,安靜跳過。
     // 注意要擋空字串:compose 用 ${REVALIDATE_SECRET:-} 替換,未設定時傳進來的是空字串而非「不存在」,
     // env::var 會回 Ok("") —— 不擋的話每次發文都會送出空密鑰、被前端擋掉,然後在 log 噴 warn。

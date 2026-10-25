@@ -96,6 +96,10 @@ export interface AdminStats {
   totalPosts?: number;
   publishedPosts?: number;
   draftPosts?: number;
+  scheduledPosts?: number;
+  trashedPosts?: number;
+  /** 最早一篇排程的發佈時間（UTC 的 DB 時間）；沒有排程是 null */
+  nextScheduledAt?: string | null;
   postsThisMonth?: number;
   comments?: number;
   commentsThisWeek?: number;

@@ -176,7 +176,10 @@ export default function AdminDashboard() {
         <div className="adm-tile">
           <span className="adm-caps">手記</span>
           <span className="adm-tile-num">{num(s?.publishedPosts)}</span>
-          <span className="adm-tile-sub">已發佈 · 草稿 {num(s?.draftPosts)}</span>
+          <span className="adm-tile-sub">
+            已發佈 · 草稿 {num(s?.draftPosts)}
+            {s?.nextScheduledAt && ` · 下一篇排程 ${formatWhen(s.nextScheduledAt, 'MM.dd HH:mm')}`}
+          </span>
         </div>
         <div className="adm-tile">
           <span className="adm-caps">近 30 天</span>

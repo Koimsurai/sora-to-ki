@@ -56,6 +56,31 @@ export type AdminCommentsResponse = {
 	counts: CommentCounts,
 };
 
+/**  後台的一列（申請者的 IP 不給前端） */
+export type AdminFriendRow = {
+	id: number,
+	slug: string | null,
+	name: string,
+	url: string,
+	description: string,
+	feed_url: string | null,
+	email: string | null,
+	message: string | null,
+	/**  pending | waiting | approved | rejected */
+	status: string,
+	/**  最近一次自動檢查；還沒檢查過是空陣列 */
+	checks: FriendCheck[],
+	checked_at: string | null,
+	sort_order: number,
+	created_at: string,
+	reviewed_at: string | null,
+};
+
+export type AdminFriendsResponse = {
+	friends: AdminFriendRow[],
+	counts: FriendCounts,
+};
+
 /**
  *  `GET /api/admin/posts/:id` 成功回應：`{message, ...row, tags, available_locales}`。
  *  flatten 讓 row 的欄位攤平在頂層，key 序 = message → AdminPostFull 欄位序 → available_locales。
@@ -107,6 +132,14 @@ export type AdminPostFull = {
 	format: string | null,
 	/**  摘要裡連到章節的句子，依語系分開（沒有就是空物件）。 */
 	excerpt_links: { [key in string]: ExcerptLink[] },
+	/**  排程發佈的時間（UTC，`YYYY-MM-DD HH:MM:SS`）；只有 status = 'scheduled' 才有值 */
+	publish_at: string | null,
+	/**  排程時勾了「發佈時推送電子報」，翻成 published 那一刻才寄 */
+	newsletter_pending: boolean,
+	/**  丟進回收的時間（UTC）；30 天後自動刪掉 */
+	trashed_at: string | null,
+	/**  丟進回收之前的狀態（還原時回到這裡） */
+	trashed_from: string | null,
 	tags: string[],
 };
 
@@ -426,6 +459,22 @@ export type FilmRow = {
 export type FilmsResponse = {
 	message: string,
 	films: FilmRow[],
+};
+
+/**  一項自動檢查的結果 */
+export type FriendCheck = {
+	/**  reachable | https | feed | recent | backlink */
+	key: string,
+	label: string,
+	ok: boolean,
+	detail: string,
+};
+
+export type FriendCounts = {
+	pending: number,
+	waiting: number,
+	approved: number,
+	rejected: number,
 };
 
 /**  一篇文章 */

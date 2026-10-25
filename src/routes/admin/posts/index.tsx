@@ -6,7 +6,8 @@ import AdminLoading from '@/components/admin/AdminLoading';
 // 文章列表。維持 lazy()：後台的重元件（monaco 等）要留在自己的 chunk，不進主 bundle。
 const Page = lazy(() => import('../../../components/admin/PostsList'));
 
-export type PostsStatusFilter = 'published' | 'draft';
+const STATUSES = ['published', 'draft', 'scheduled', 'trashed'] as const;
+export type PostsStatusFilter = (typeof STATUSES)[number];
 
 /**
  * 篩選放在網址上：總覽的「等你處理」可以直接連到「草稿」或「缺譯文」，重新整理也不會掉。
@@ -21,7 +22,7 @@ export interface PostsSearch {
 
 export const Route = createFileRoute('/admin/posts/')({
   validateSearch: (search: Record<string, unknown>): PostsSearch => ({
-    status: search.status === 'published' || search.status === 'draft' ? search.status : undefined,
+    status: STATUSES.find((s) => s === search.status),
     missing: search.missing === true || search.missing === 'true' ? true : undefined,
   }),
   component: () => (

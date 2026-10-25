@@ -28,6 +28,8 @@ import { toast } from 'sonner';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading, { BusyDot } from './AdminLoading';
+import { STATUS_LABEL, formatWhen, localInputToIso, toLocalInput } from './adminFormat';
+import { setEditorScheduledAt } from '@/store/editorScheduleStore';
 import './AdminPage.css';
 import './PostEditor.css';
 
@@ -211,6 +213,7 @@ export default function PostEditor() {
       tags: [],
       cover: '',
       status: 'draft',
+      publish_at: '',
       layout_type: 'record',
       allow_comments: true,
       send_newsletter: false,
@@ -235,6 +238,14 @@ export default function PostEditor() {
   });
 
   const sourceLanguage = form.watch('source_language') ?? 'zh-TW';
+  const publishAt = form.watch('publish_at') ?? '';
+  const currentStatus = form.watch('status') ?? 'draft';
+
+  // 頂列的主要按鈕看這個值決定寫「發佈文章」還是「排程發佈」；離開編輯器時清掉
+  useEffect(() => {
+    setEditorScheduledAt(publishAt);
+  }, [publishAt]);
+  useEffect(() => () => setEditorScheduledAt(''), []);
   const titleName = fieldNameFor('title', activeLocale, sourceLanguage);
   const contentName = fieldNameFor('content', activeLocale, sourceLanguage);
   const summaryName = fieldNameFor('summary', activeLocale, sourceLanguage);
@@ -370,7 +381,9 @@ export default function PostEditor() {
       allow_comments: postData.allow_comments,
       series_name: asText(postData.series_name),
       series_order: asText(postData.series_order),
-      send_newsletter: false,
+      // 排程中的文章：時間換回本地時間給 datetime-local；排程時勾的電子報也要照實顯示
+      publish_at: toLocalInput(postData.publish_at),
+      send_newsletter: postData.status === 'scheduled' && postData.newsletter_pending,
     };
     form.reset(formattedData as PostFormInput);
     // 載入既有文章 → 把編輯器狀態同步成該篇的值。資料是非同步來的，render 期沒有。
@@ -455,6 +468,8 @@ export default function PostEditor() {
       excerpt_ja: summary_ja,
       excerpt_ko: summary_ko,
       tags: tagsArray,
+      // 表單裡的是本地時間字串，不能原樣送；排程時由 onPublish 換成帶時區的 ISO 放進 overrides
+      publish_at: null,
       ...overrides,
     };
   };
@@ -510,12 +525,21 @@ export default function PostEditor() {
       toast.info('正在處理中，請稍候');
       return;
     }
+    // 填了排程時間就是排程發佈；時間已經過了就停下來問人，不擅自當成「立刻發」
+    const scheduleAt = localInputToIso(data.publish_at ?? '');
+    if (scheduleAt && new Date(scheduleAt).getTime() <= Date.now()) {
+      toast.error('排程時間已經過了：改一個未來的時間，或清空它直接發佈');
+      return;
+    }
     submitLockRef.current = true;
     setIsPublishing(true);
     try {
       const url = id ? `/api/admin/posts/${id}` : '/api/admin/posts';
       const method = id ? 'PUT' : 'POST';
-      const payload = buildPayload(data, { status: 'published' });
+      const payload = buildPayload(
+        data,
+        scheduleAt ? { status: 'scheduled', publish_at: scheduleAt } : { status: 'published' },
+      );
 
       const response = await fetch(url, {
         method,
@@ -524,7 +548,7 @@ export default function PostEditor() {
       });
 
       if (response.ok) {
-        toast.success('文章已發佈');
+        toast.success(scheduleAt ? `已排程：${formatWhen(new Date(scheduleAt), 'MM.dd HH:mm')} 發佈` : '文章已發佈');
         // 若有勾「發佈時推送 Newsletter」，後端會在 data.newsletter 回寄送結果
         try {
           const body = (await response.json()) as {
@@ -543,7 +567,9 @@ export default function PostEditor() {
         }
         void navigate({ to: '/admin/posts' });
       } else {
-        toast.error('發佈失敗');
+        // 排程時間不對之類的 400 會帶理由，照實顯示
+        const err = (await response.json().catch(() => ({}))) as { error?: string };
+        toast.error(err.error ?? '發佈失敗');
       }
     } catch (error) {
       console.error('發佈失敗:', error);
@@ -993,28 +1019,44 @@ export default function PostEditor() {
                     發佈設定
                   </h3>
                   <div className="space-y-4">
+                    {/* 狀態由頂列按下的那顆按鈕決定，這裡只顯示現在是什麼 */}
+                    <p className="pe-state">
+                      <span className="adm-caps">現在</span>
+                      <span className="adm-status" data-status={currentStatus}>
+                        {STATUS_LABEL[currentStatus] ?? currentStatus}
+                      </span>
+                    </p>
+
                     <FormField
                       control={form.control}
-                      name="status"
+                      name="publish_at"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>狀態</FormLabel>
-                          <Select
-                            key={`status-${hydrated ? 'r' : 'i'}`}
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
+                          <FormLabel>排程發佈</FormLabel>
+                          <div className="pe-schedule">
                             <FormControl>
-                              <SelectTrigger variant="glass" size="compact">
-                                <SelectValue />
-                              </SelectTrigger>
+                              <input
+                                type="datetime-local"
+                                className="h-8 w-full border px-2 text-sm outline-hidden"
+                                {...field}
+                                value={field.value ?? ''}
+                              />
                             </FormControl>
-                            <SelectContent>
-                              <SelectItem value="draft">草稿</SelectItem>
-                              <SelectItem value="published">已發佈</SelectItem>
-                              <SelectItem value="archived">已封存</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            {field.value && (
+                              <button
+                                type="button"
+                                className="adm-btn adm-btn-small"
+                                onClick={() => form.setValue('publish_at', '', { shouldDirty: true })}
+                              >
+                                清空
+                              </button>
+                            )}
+                          </div>
+                          <p className="pe-side-hint">
+                            {field.value
+                              ? '按「排程發佈」之後，到這個時間才會出現在前台（最多晚一分鐘）。'
+                              : '留空＝按「發佈文章」立刻發佈。'}
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1127,7 +1169,9 @@ export default function PostEditor() {
                         <FormItem className="flex items-center justify-between">
                           <div className="flex flex-col gap-0.5">
                             <FormLabel>發佈時推送 Newsletter</FormLabel>
-                            <span className="text-fs-10 text-muted-foreground/60">文章狀態為「已發佈」時才會觸發</span>
+                            <span className="text-fs-10 text-muted-foreground/60">
+                              按「發佈文章」時寄；排程的話等時間到了才寄
+                            </span>
                           </div>
                           <FormControl>
                             <Switch checked={field.value} onCheckedChange={field.onChange} />

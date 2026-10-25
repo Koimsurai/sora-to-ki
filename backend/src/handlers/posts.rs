@@ -84,6 +84,17 @@ pub struct PostRow {
     /// 摘要裡連到章節的句子（JSON，依語系分開；見 `excerpt_links` 模組）。
     #[sqlx(default)]
     pub(crate) excerpt_links: Option<String>,
+    /// 排程發佈的時間（UTC）；只有 status = 'scheduled' 才有值。見 `post_lifecycle`
+    #[sqlx(default)]
+    pub(crate) publish_at: Option<String>,
+    /// 排程時勾了「發佈時推送電子報」
+    #[sqlx(default)]
+    pub(crate) newsletter_pending: Option<i64>,
+    /// 丟進回收的時間（UTC）與丟之前的狀態
+    #[sqlx(default)]
+    pub(crate) trashed_at: Option<String>,
+    #[sqlx(default)]
+    pub(crate) trashed_from: Option<String>,
     // GROUP_CONCAT(t.name)；無 tag 時為 NULL
     pub(crate) tags: Option<String>,
 }
@@ -199,7 +210,6 @@ pub struct ListQuery {
     search: Option<String>,
     tag: Option<String>,
     category: Option<String>,
-    status: Option<String>,
     #[serde(rename = "sortBy")]
     sort_by: Option<String>,
     lang: Option<String>,
@@ -311,7 +321,9 @@ pub async fn list_posts(
     State(state): State<AppState>,
     Query(q): Query<ListQuery>,
 ) -> Result<Json<PostsListResponse>, AppError> {
-    let status = q.status.as_deref().unwrap_or("published");
+    // 公開列表只有已發佈的。以前會照 ?status= 讀，任何人帶 ?status=draft 就看得到草稿
+    // （排程與回收上線之後還會看到還沒發的、已經丟掉的）；後台有自己的 /api/admin/posts。
+    let status = "published";
     let page = parse_int(q.page.as_deref(), 1);
     let limit = parse_int(q.limit.as_deref(), 10);
     let offset = (page - 1) * limit;
@@ -526,7 +538,9 @@ pub async fn get_post(
         }
     };
 
-    let Some(row) = row else {
+    // 沒發佈的（草稿、排程、回收）對讀者就是不存在：id 是流水號，猜得到。
+    // 回應跟真的不存在一模一樣，不透露「這個 id 有東西只是還沒發」。
+    let Some(row) = row.filter(|r| r.status == "published") else {
         // 對齊 Express：404 + {"message":"Post not found"}
         return Ok((StatusCode::NOT_FOUND, Json(json!({ "message": "Post not found" }))).into_response());
     };
@@ -847,8 +861,21 @@ pub async fn patch_post_status(
         Ok(r) if r.rows_affected() == 0 => {
             (StatusCode::NOT_FOUND, Json(json!({ "message": "找不到文章" }))).into_response()
         }
-        Ok(r) => Json(json!({ "message": "狀態更新成功", "status": status, "changes": r.rows_affected() }))
-            .into_response(),
+        Ok(r) => {
+            // 直接改成發佈／草稿：原本的排程時間與回收紀錄都作廢
+            let lc = crate::handlers::post_lifecycle::Lifecycle {
+                status: status.clone(),
+                publish_at: None,
+                newsletter_pending: false,
+            };
+            if let Ok(n) = id.parse::<i64>()
+                && let Err(e) = crate::handlers::post_lifecycle::store_lifecycle(&state.pool, n, &lc).await
+            {
+                return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
+            }
+            Json(json!({ "message": "狀態更新成功", "status": status, "changes": r.rows_affected() }))
+                .into_response()
+        }
     }
 }
 

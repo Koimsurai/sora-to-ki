@@ -773,6 +773,16 @@
   color: var(--paper);
 }
 
+/* 排程是「等一下會發生」的訊號，用琥珀 */
+.adm-status[data-status="scheduled"] {
+  color: var(--amber);
+}
+
+/* 回收裡的：標題退成淡墨，一眼分得出不是活著的文章 */
+.adm-table tr[data-status="trashed"] .adm-title-link {
+  color: var(--paper-meta);
+}
+
 @media (max-width: 768px) {
   .adm-page {
     gap: var(--space-10);

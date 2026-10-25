@@ -36,6 +36,39 @@
   margin: 0 0 var(--space-5);
 }
 
+/* ── 發佈設定：現在的狀態、排程時間 ── */
+.pe-state {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.pe-schedule {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pe-schedule .adm-btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* datetime-local 的日曆圖示與彈出的月曆是瀏覽器畫的，預設是淺色版，在夜色上看不到圖示 */
+.pe-schedule input {
+  color-scheme: dark;
+}
+
+.pe-side-hint {
+  margin: var(--space-1-5) 0 0;
+  font-size: var(--fs-11);
+  line-height: var(--lh-150);
+  color: var(--paper-meta);
+}
+
 /* ── 標題：大字宋體，只留底下一條點線 ── */
 .admin-layout input.pe-title {
   box-sizing: border-box;

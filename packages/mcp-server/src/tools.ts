@@ -95,7 +95,16 @@ const postWriteProps = {
     },
   },
   category: { type: 'string', description: '分類名（需已存在於 categories）' },
-  status: { type: 'string', enum: ['draft', 'published'], description: '狀態；建立時預設 draft' },
+  status: {
+    type: 'string',
+    enum: ['draft', 'published', 'scheduled'],
+    description: '狀態；建立時預設 draft。scheduled 要一起給 publish_at',
+  },
+  publish_at: {
+    type: 'string',
+    description:
+      'status=scheduled 時的發佈時間，要在未來。帶時區的 ISO 8601（如 2026-10-28T09:00:00+08:00）；不帶時區的當成 UTC',
+  },
   format: {
     type: 'string',
     enum: ['markdown', 'mdx'],
@@ -349,7 +358,11 @@ export function makeTools(api: ApiClient): Tool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          status: { type: 'string', enum: ['published', 'draft'], description: '省略=全部狀態' },
+          status: {
+            type: 'string',
+            enum: ['published', 'draft', 'scheduled', 'trashed'],
+            description: '省略=全部（不含回收桶）',
+          },
           search: { type: 'string', description: '標題/內文關鍵字' },
           page: { type: 'number', description: '頁碼，預設 1' },
           limit: { type: 'number', description: '每頁筆數，預設由後端決定' },
@@ -463,14 +476,33 @@ export function makeTools(api: ApiClient): Tool[] {
     },
     {
       name: 'koimsurai_delete_post',
-      description: '⚠️ 刪除文章（連同 post_tags）。不可復原——請先確認。',
+      description:
+        '把文章丟進回收桶（讀者看不到，30 天後自動刪掉，期間可用 koimsurai_restore_post 還原）。' +
+        '⚠️ permanent=true 才永久刪除（連同 post_tags，不可復原），而且只對已經在回收桶裡的文章有效——請先確認。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'number' },
+          permanent: { type: 'boolean', description: 'true：從回收桶永久刪除' },
+        },
+        required: ['id'],
+        additionalProperties: false,
+      },
+      handler: (a) =>
+        api.request('DELETE', `/api/admin/posts/${idOf(a)}`, {
+          query: { permanent: a.permanent === true ? 'true' : undefined },
+        }),
+    },
+    {
+      name: 'koimsurai_restore_post',
+      description: '從回收桶還原文章，回到丟之前的狀態（原本是排程的會回到草稿）。',
       inputSchema: {
         type: 'object',
         properties: { id: { type: 'number' } },
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('DELETE', `/api/admin/posts/${idOf(a)}`),
+      handler: (a) => api.request('POST', `/api/admin/posts/${idOf(a)}/restore`),
     },
     {
       name: 'koimsurai_generate_post_zh_cn',

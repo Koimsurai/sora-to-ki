@@ -30,6 +30,9 @@ index idx_film_history_tmdb
 index idx_film_history_uniq
   CREATE UNIQUE INDEX idx_film_history_uniq ON film_history (title, COALESCE(watched_date, ''))
 
+index idx_friend_links_status
+  CREATE INDEX idx_friend_links_status ON friend_links (status, sort_order)
+
 index idx_newsletter_status
   CREATE INDEX idx_newsletter_status ON newsletter_subscribers(status)
 
@@ -53,6 +56,9 @@ index idx_posts_slug
 
 index idx_posts_status_created
   CREATE INDEX idx_posts_status_created ON posts(status, created_at DESC)
+
+index idx_posts_status_publish_at
+  CREATE INDEX idx_posts_status_publish_at ON posts (status, publish_at)
 
 index idx_thoughts_created
   CREATE INDEX idx_thoughts_created ON thoughts(created_at DESC)
@@ -87,6 +93,9 @@ table comments
 table film_history
   CREATE TABLE film_history ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, watched_date DATE, rating INTEGER, source TEXT, tmdb_id INTEGER, poster_url TEXT, release_year INTEGER, genres TEXT, notes TEXT, synced_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(title, watched_date) )
 
+table friend_links
+  CREATE TABLE friend_links ( id INTEGER PRIMARY KEY AUTOINCREMENT, slug TEXT UNIQUE, name TEXT NOT NULL, url TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', feed_url TEXT, email TEXT, message TEXT, status TEXT NOT NULL DEFAULT 'pending', checks TEXT, checked_at DATETIME, ip TEXT, sort_order INTEGER NOT NULL DEFAULT 0, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, reviewed_at DATETIME )
+
 table ip_blacklist
   CREATE TABLE ip_blacklist ( id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT UNIQUE NOT NULL, reason TEXT DEFAULT '', created_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 
@@ -115,7 +124,7 @@ table post_tags
   CREATE TABLE post_tags ( post_id INTEGER, tag_id INTEGER, PRIMARY KEY (post_id, tag_id), FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE, FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE )
 
 table posts
-  CREATE TABLE posts ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, excerpt TEXT, category TEXT, status TEXT DEFAULT 'published', author TEXT DEFAULT 'Koimsurai', view_count INTEGER DEFAULT 0, likes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, layout_type TEXT DEFAULT 'record', source_language TEXT DEFAULT 'zh-TW', title_en TEXT, content_en TEXT, excerpt_en TEXT, title_zh_cn TEXT, content_zh_cn TEXT, excerpt_zh_cn TEXT, title_ja TEXT, content_ja TEXT, excerpt_ja TEXT, title_ko TEXT, content_ko TEXT, excerpt_ko TEXT, series_name TEXT DEFAULT NULL, series_order INTEGER DEFAULT NULL, allow_comments INTEGER DEFAULT 1 , format TEXT DEFAULT 'markdown', slug TEXT, excerpt_links TEXT)
+  CREATE TABLE posts ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, excerpt TEXT, category TEXT, status TEXT DEFAULT 'published', author TEXT DEFAULT 'Koimsurai', view_count INTEGER DEFAULT 0, likes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, layout_type TEXT DEFAULT 'record', source_language TEXT DEFAULT 'zh-TW', title_en TEXT, content_en TEXT, excerpt_en TEXT, title_zh_cn TEXT, content_zh_cn TEXT, excerpt_zh_cn TEXT, title_ja TEXT, content_ja TEXT, excerpt_ja TEXT, title_ko TEXT, content_ko TEXT, excerpt_ko TEXT, series_name TEXT DEFAULT NULL, series_order INTEGER DEFAULT NULL, allow_comments INTEGER DEFAULT 1 , format TEXT DEFAULT 'markdown', slug TEXT, excerpt_links TEXT, publish_at DATETIME, newsletter_pending INTEGER NOT NULL DEFAULT 0, trashed_at DATETIME, trashed_from TEXT)
 
 table site_counters
   CREATE TABLE site_counters ( key TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP )

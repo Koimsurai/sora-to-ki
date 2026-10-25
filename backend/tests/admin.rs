@@ -347,8 +347,20 @@ async fn post_round_trip_keeps_i18n_and_status() {
         public["posts"].as_array().expect("陣列").iter().map(|p| p["title"].clone()).collect();
     assert!(titles.contains(&json!("新文章")), "發布後仍沒出現在公開清單：{titles:?}");
 
+    // 刪除先丟回收：後台還查得到、公開清單看不到
     let (st, _) = admin(&app, "DELETE", &format!("/api/admin/posts/{id}"), None).await;
-    assert!(st.is_success(), "刪除文章失敗：{st}");
+    assert!(st.is_success(), "丟進回收失敗：{st}");
+    let (_, one) = admin(&app, "GET", &format!("/api/admin/posts/{id}"), None).await;
+    assert_eq!(one["status"], "trashed");
+    assert_eq!(one["trashed_from"], "published");
+    let (_, public) = request(&app, "GET", "/api/posts", None, None).await;
+    let titles: Vec<_> =
+        public["posts"].as_array().expect("陣列").iter().map(|p| p["title"].clone()).collect();
+    assert!(!titles.contains(&json!("新文章")), "回收裡的文章漏到公開清單了");
+
+    // 從回收永久刪除之後才真的查不到
+    let (st, _) = admin(&app, "DELETE", &format!("/api/admin/posts/{id}?permanent=true"), None).await;
+    assert!(st.is_success(), "永久刪除失敗：{st}");
     let (st, _) = admin(&app, "GET", &format!("/api/admin/posts/{id}"), None).await;
     assert_eq!(st, StatusCode::NOT_FOUND, "刪掉之後該查不到");
 }

@@ -59,7 +59,7 @@ fn titles(body: &Value) -> Vec<String> {
 // ── 篩選 ──────────────────────────────────────────────────────────────
 
 #[tokio::test]
-async fn 預設只回_published_帶_status_才看得到草稿() {
+async fn 公開列表只回_published_帶_status_也看不到草稿() {
     let (app, _pool) = test_app().await;
     // 種子有一篇 published（id 1）與一篇 draft（id 2）
     let (status, body) = get(&app, "/api/posts").await;
@@ -67,8 +67,21 @@ async fn 預設只回_published_帶_status_才看得到草稿() {
     assert_eq!(titles(&body), ["公開文章"], "草稿不該出現在預設列表");
     assert_eq!(body["pagination"]["total"], 1);
 
-    let (_, body) = get(&app, "/api/posts?status=draft").await;
-    assert_eq!(titles(&body), ["未發布草稿"]);
+    // 以前照 ?status= 讀，任何人都拿得到草稿；後台有自己的 /api/admin/posts
+    for q in ["draft", "scheduled", "trashed"] {
+        let (_, body) = get(&app, &format!("/api/posts?status={q}")).await;
+        assert_eq!(titles(&body), ["公開文章"], "?status={q} 不該讓公開列表換成別的狀態");
+    }
+}
+
+#[tokio::test]
+async fn 沒發佈的文章用_id_也讀不到() {
+    let (app, _pool) = test_app().await;
+    // id 是流水號，猜得到；草稿的回應要跟真的不存在一模一樣
+    let (status, body) = get(&app, "/api/posts/2").await;
+    assert_eq!(status, 404, "草稿不該能從公開端點讀到：{body}");
+    let (missing_status, missing) = get(&app, "/api/posts/999999").await;
+    assert_eq!((status, &body), (missing_status, &missing), "草稿與不存在要分不出來");
 }
 
 #[tokio::test]

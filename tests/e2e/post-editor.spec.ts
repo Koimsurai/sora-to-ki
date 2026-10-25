@@ -79,9 +79,13 @@ async function cleanupPosts(page: Page) {
       const r = await fetch('/api/admin/posts?limit=200', { headers });
       if (!r.ok) return;
       const body = (await r.json()) as { posts?: { id: number; title: string }[] };
-      for (const p of body.posts ?? []) {
+      // 「全部」不含回收桶，回收裡的另外撈；刪除是兩段：先丟回收、再從回收永久刪除
+      const trashed = await fetch('/api/admin/posts?status=trashed&limit=200', { headers });
+      const trashedBody = trashed.ok ? ((await trashed.json()) as typeof body) : { posts: [] };
+      for (const p of [...(body.posts ?? []), ...(trashedBody.posts ?? [])]) {
         if (p.title?.startsWith(prefix)) {
           await fetch(`/api/admin/posts/${p.id}`, { method: 'DELETE', headers });
+          await fetch(`/api/admin/posts/${p.id}?permanent=true`, { method: 'DELETE', headers });
         }
       }
     },
@@ -299,6 +303,79 @@ test.describe('文章編輯器', () => {
 
     await expect(titleInput(page)).toHaveValue(name);
     await expect.poll(() => contentText(page)).toBe('還沒存就關掉的內容。');
+  });
+
+  /**
+   * 排程發佈：填了時間，頂列的按鈕要變成「排程發佈」，送出後在列表的「排程」分頁，
+   * 而且讀者看不到——提早出現跟忘了出現一樣糟，而兩者都不會有錯誤訊息。
+   * 到時間翻成已發佈是後端 worker 的事，那段在 backend/tests/post_lifecycle.rs。
+   */
+  test('排程發佈：按鈕跟著換、送出後在排程分頁、讀者看不到', async ({ page }) => {
+    const name = `${E2E_POST_PREFIX}scheduled-${Date.now()}`;
+    await gotoEditor(page);
+    await titleInput(page).fill(name);
+    await typeContent(page, '明天再見客。');
+
+    await expect(page.getByRole('button', { name: '發佈文章' })).toBeVisible();
+    await page.getByLabel('排程發佈').fill('2099-01-01T09:00');
+    await expect(page.getByRole('button', { name: '排程發佈' }), '填了時間，主要按鈕要換字').toBeVisible();
+    await page.getByRole('button', { name: '排程發佈' }).click();
+
+    await expect(page).toHaveURL(/\/admin\/posts$/, { timeout: 20_000 });
+    await page.getByRole('button', { name: /^排程/ }).click();
+    const row = page.getByRole('row').filter({ hasText: name });
+    await expect(row, '排程分頁要看得到它').toBeVisible({ timeout: 15_000 });
+    await expect(row).toContainText('01.01 09:00 發佈');
+
+    const listed = await page.evaluate(async (t) => {
+      const r = await fetch('/api/posts');
+      const b = (await r.json()) as { posts?: { title: string }[] };
+      return (b.posts ?? []).some((p) => p.title === t);
+    }, name);
+    expect(listed, '排程的文章不該提早出現在 /api/posts').toBe(false);
+  });
+
+  /**
+   * 列表上的刪除是丟回收：不先問、提示裡能還原；回收分頁裡才有永久刪除，而且要再確認一次。
+   */
+  test('刪除丟進回收，還原得回來，永久刪除才真的消失', async ({ page }) => {
+    const name = `${E2E_POST_PREFIX}trash-${Date.now()}`;
+    await gotoEditor(page);
+    await titleInput(page).fill(name);
+    await typeContent(page, '等一下會被丟掉。');
+    await page.getByRole('button', { name: '存並回列表' }).click();
+    await expect(page).toHaveURL(/\/admin\/posts$/, { timeout: 20_000 });
+
+    const row = () => page.getByRole('row').filter({ hasText: name });
+    await row()
+      .getByRole('button', { name: `刪除〈${name}〉` })
+      .click();
+    await expect(page.getByText('丟進回收桶了').first()).toBeVisible({ timeout: 10_000 });
+    await expect(row(), '丟進回收之後不在「全部」裡').toBeHidden({ timeout: 10_000 });
+
+    await page.getByRole('button', { name: /^回收/ }).click();
+    await expect(row()).toBeVisible({ timeout: 10_000 });
+    await expect(row()).toContainText('還剩 30 天');
+
+    await row()
+      .getByRole('button', { name: `還原〈${name}〉` })
+      .click();
+    await expect(row(), '還原之後離開回收分頁').toBeHidden({ timeout: 10_000 });
+    await page.getByRole('button', { name: /^全部/ }).click();
+    await expect(row()).toBeVisible({ timeout: 10_000 });
+
+    // 再丟一次，這次永久刪除
+    await row()
+      .getByRole('button', { name: `刪除〈${name}〉` })
+      .click();
+    await expect(row()).toBeHidden({ timeout: 10_000 });
+    await page.getByRole('button', { name: /^回收/ }).click();
+    await row()
+      .getByRole('button', { name: `永久刪除〈${name}〉` })
+      .click();
+    await page.getByRole('alertdialog').getByRole('button', { name: '永久刪除' }).click();
+    await expect(row()).toBeHidden({ timeout: 10_000 });
+    await expect.poll(() => countPostsNamed(page, name)).toBe(0);
   });
 
   /** Zen 模式：F11 進、Esc 出，靠 body class 讓側欄與 header 收起來。 */

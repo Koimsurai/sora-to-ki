@@ -28,7 +28,7 @@ pub struct CommentBody {
 /// 取 client IP：對齊 Express `req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || ''`。
 /// 生產有 nginx 設 X-Forwarded-For（trust proxy=1），故 XFF 最左即真實 IP。
 /// 無 XFF 時 Express 退 req.ip（socket）；這裡退 ''（生產不會走到，見 STRANGLER 備註）。
-fn client_ip(headers: &HeaderMap) -> String {
+pub(crate) fn client_ip(headers: &HeaderMap) -> String {
     headers
         .get("x-forwarded-for")
         .and_then(|v| v.to_str().ok())

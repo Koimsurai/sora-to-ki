@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation, useNavigate, type LinkProps } from '@tanstac
 
 import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from '../../contexts/auth';
+import { useEditorScheduledAt } from '@/store/editorScheduleStore';
 import AdminScrollbars from './AdminScrollbars';
 import './AdminTheme.css';
 import './AdminLayout.css';
@@ -69,6 +70,8 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const { user, logout, isOwner } = useAuth();
   const editor = isEditorPath(pathname);
+  // 編輯器裡填了排程時間，主要按鈕就是「排程發佈」
+  const scheduledAt = useEditorScheduledAt();
 
   // TanStack 的 navigate 收物件（`{ to }`）而不是字串，這是與 react-router 最主要的簽名差異。
   const handleLogout = () => {
@@ -185,7 +188,7 @@ const AdminLayout = () => {
                 className="adm-btn adm-btn-primary"
                 onClick={() => clickEditorButton('publish-btn')}
               >
-                發佈文章
+                {scheduledAt ? '排程發佈' : '發佈文章'}
               </button>
             </div>
           </header>
