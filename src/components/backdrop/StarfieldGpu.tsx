@@ -164,7 +164,9 @@ export default function StarfieldGpu({
         waitArrival?.disconnect();
         controlRef.current?.saturn(true, animateSaturn);
       });
-      waitArrival.observe(root, { attributes: true, attributeFilter: ['data-pt'] });
+      // data-boot 也要看：開場的點從畫面正中間出發，而首頁的錨點就是正中間——一落地就結束（data-pt 拿掉），
+      // 但開場的 data-boot 還要再過半秒才拿掉。只看 data-pt 的話，最後那次變化就沒人接，土星永遠停在一點
+      waitArrival.observe(root, { attributes: true, attributeFilter: ['data-pt', 'data-boot'] });
     } else controlRef.current?.saturn(isOnHomePage, animateSaturn);
     wasHomeRef.current = isOnHomePage;
     controlRef.current?.scroll(window.scrollY);
