@@ -472,6 +472,14 @@
   color: var(--paper-3);
 }
 
+/* 三種字底下一行小字：文章另外能換的字體，與 MiSans 的註明 */
+.cl-fonts .cl-fonts-note {
+  margin-top: var(--space-2);
+  font-size: var(--fs-12);
+  line-height: var(--lh-170);
+  color: var(--paper-3);
+}
+
 .cl-pages li {
   display: flex;
   justify-content: space-between;

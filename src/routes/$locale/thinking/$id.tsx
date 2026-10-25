@@ -26,6 +26,7 @@ export const Route = createFileRoute('/$locale/thinking/$id')({
         thought.content,
         `/${params.locale}/thinking/${thought.id}`,
         locale,
+        'moments',
       ),
     };
   },

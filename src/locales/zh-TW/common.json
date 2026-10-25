@@ -262,7 +262,13 @@
     "font": "字體",
     "originalText": "原文",
     "sameTag": "同標 #{{name}}",
-    "sameTagNone": "這個標籤只有這一篇。"
+    "sameTagNone": "這個標籤只有這一篇。",
+    "fontNames": {
+      "noto-serif": "思源宋體",
+      "source-han": "思源黑體",
+      "lxgw": "霞鶩文楷",
+      "misans": "MiSans"
+    }
   },
   "thinking": {
     "title": "碎念",
@@ -389,22 +395,24 @@
     "errorNetwork": "網路錯誤，請稍後再試",
     "description": "獲取最新文章更新與技術分享，直接送到您的信箱。",
     "privacyNote": "我們重視您的隱私，不會分享您的資訊。",
-    "confirmedTitle": "已訂閱 √",
+    "confirmedTitle": "已訂閱",
     "alreadyBody": "你已用 <em>{{email}}</em> 訂閱了電子報。",
-    "nextNotice": "下次有新文章我們會寄到你信箱。",
+    "nextNotice": "下一篇寫好時會寄給你。",
     "okBtn": "好的",
     "unsubBtn": "退訂",
-    "subscribeIntro": "獲取最新文章通知，不錯過任何精彩內容。",
+    "subscribeIntro": "有新文章時，寄一封信給你。",
     "namePlaceholderShort": "名字（選填）",
     "emailPlaceholderShort": "電子郵件 *",
-    "processing": "處理中...",
+    "processing": "送出中…",
     "subscribe": "訂閱",
     "unsubProcessing": "處理中…",
     "unsubConfirmJs": "確定要退訂 {{email}}?",
     "unsubFailed": "退訂失敗",
-    "unsubDone": "已退訂。隨時歡迎再回來訂閱。",
-    "privacy": "我們重視您的隱私，不會分享您的資訊。",
-    "successWithEmoji": "訂閱成功！感謝您的訂閱 ✨"
+    "unsubDone": "已退訂。",
+    "privacy": "信箱只拿來寄新文章，每一封信底下都能退訂。",
+    "successWithEmoji": "訂好了，下一篇寫好時會寄到你的信箱。",
+    "fieldName": "名字（選填）",
+    "fieldEmail": "Email"
   },
   "unsubscribe": {
     "verifying": "驗證連結中…",
@@ -643,7 +651,8 @@
     "rule1": "網站能正常瀏覽，有自己的網域與 HTTPS（免費子網域也可以）。",
     "rule2": "有原創內容。轉貼站、純廣告、SEO 農場不交換。",
     "rule3": "有 RSS 的話，你寫了新文章這裡會收到訊號。",
-    "rule4": "先在你的站掛上這裡的連結，我會更快回覆。"
+    "rule4": "先在你的站掛上這裡的連結，我會更快回覆。",
+    "drawer": "交換友鏈"
   },
   "messages": {
     "title": "留言",
@@ -857,6 +866,10 @@
           "d": "最後放上作品頁的螺旋：中心是起點，越新的越外圈。你剛做的這顆最新，所以排在最外面。"
         }
       }
-    }
+    },
+    "fontReading": "讀文章時還能換成黑體、楷體或現代無襯線，四種都照語系由站上提供。MiSans 是小米的免費商用字型。"
+  },
+  "og": {
+    "tagline": "代碼、系統，與生活碎片。"
   }
 }

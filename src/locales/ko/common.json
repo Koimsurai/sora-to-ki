@@ -262,7 +262,13 @@
     "font": "글꼴",
     "originalText": "원문",
     "sameTag": "#{{name}} 태그의 글",
-    "sameTagNone": "이 태그는 이 글뿐이다."
+    "sameTagNone": "이 태그는 이 글뿐이다.",
+    "fontNames": {
+      "noto-serif": "본명조",
+      "source-han": "본고딕",
+      "lxgw": "고운바탕",
+      "misans": "Pretendard"
+    }
   },
   "thinking": {
     "title": "혼잣말",
@@ -389,22 +395,24 @@
     "errorNetwork": "네트워크 오류, 잠시 후 다시 시도해주세요",
     "description": "최신 글과 기술 노트를 메일로 직접 받아보세요.",
     "privacyNote": "개인정보를 존중하며 정보를 공유하지 않습니다.",
-    "confirmedTitle": "구독 완료 √",
+    "confirmedTitle": "구독 중",
     "alreadyBody": "<em>{{email}}</em>(으)로 뉴스레터를 구독 중입니다.",
-    "nextNotice": "새 글이 나오면 메일로 알려드릴게요.",
+    "nextNotice": "다음 글이 나오면 보내 드려요.",
     "okBtn": "확인",
     "unsubBtn": "구독 해지",
-    "subscribeIntro": "새 글이 올라오면 알려드릴게요. 놓치지 마세요.",
+    "subscribeIntro": "새 글이 올라오면 메일 한 통을 보내 드려요.",
     "namePlaceholderShort": "이름 (선택)",
     "emailPlaceholderShort": "이메일 *",
-    "processing": "처리 중...",
+    "processing": "보내는 중…",
     "subscribe": "구독",
     "unsubProcessing": "처리 중…",
     "unsubConfirmJs": "{{email}} 구독을 해지할까요?",
     "unsubFailed": "구독 해지에 실패했어요",
-    "unsubDone": "해지되었습니다. 언제든 다시 환영합니다.",
-    "privacy": "개인정보를 소중히 다루며 공유하지 않습니다.",
-    "successWithEmoji": "구독 완료! 감사합니다 ✨"
+    "unsubDone": "해지했어요.",
+    "privacy": "주소는 새 글 알림에만 써요. 모든 메일 하단에서 해지할 수 있어요.",
+    "successWithEmoji": "등록했어요. 다음 글이 나오면 보내 드려요.",
+    "fieldName": "이름 (선택)",
+    "fieldEmail": "이메일"
   },
   "unsubscribe": {
     "verifying": "링크 확인 중…",
@@ -643,7 +651,8 @@
     "rule1": "사이트가 정상적으로 열리고, 자체 도메인과 HTTPS가 있을 것 (무료 서브도메인도 가능).",
     "rule2": "직접 쓴 콘텐츠가 있을 것. 퍼온 글 사이트, 광고 사이트, SEO 농장은 교환하지 않습니다.",
     "rule3": "RSS가 있으면 새 글을 올릴 때마다 여기에 신호가 도착합니다.",
-    "rule4": "먼저 당신의 사이트에 이곳 링크를 걸어 주시면 더 빨리 답장합니다."
+    "rule4": "먼저 당신의 사이트에 이곳 링크를 걸어 주시면 더 빨리 답장합니다.",
+    "drawer": "링크 교환"
   },
   "messages": {
     "title": "방명록",
@@ -857,6 +866,10 @@
           "d": "마지막으로 작품 페이지의 나선에 올린다. 중심이 출발점이고, 새것일수록 바깥쪽이다. 방금 만든 이 별이 가장 새것이라 가장 바깥에 놓인다."
         }
       }
-    }
+    },
+    "fontReading": "글은 고딕, 손글씨풍, 모던 산세리프로도 바꿔 읽을 수 있으며, 모두 언어별로 이 사이트에서 제공합니다. MiSans는 샤오미의 무료 상업용 글꼴입니다."
+  },
+  "og": {
+    "tagline": "코드, 시스템, 그리고 삶의 조각들."
   }
 }

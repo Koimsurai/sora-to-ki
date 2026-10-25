@@ -857,6 +857,11 @@
      它只有一個字重，不要加粗。思源宋體是按頁裁字（layout/SerifFontLoader）：堆疊第一個
      "Koim Serif" 是裁出來的字，本機裝了 "Noto Serif TC" 的訪客不會下載任何東西 */
   --serif: "Koim Serif", "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC", "PMingLiU", serif;
+  /* 文章的「字體」可以換的另外三種，也是按頁裁字（字族名見 lib/serifSubset 的 familyOf，各語系配的字見
+     server/routes/fonts/[style]）：黑體、手寫味的楷、現代無襯線。下面 :lang() 換成各語系那一支 */
+  --sans: "Koim Sans", "Noto Sans TC", "Noto Sans CJK TC", "Source Han Sans TC", sans-serif;
+  --kai: "Koim Kai", "LXGW WenKai TC", var(--serif);
+  --modern: "Koim Modern", MiSans, sans-serif;
   --latin-display: "Instrument Serif", var(--serif);
 
   --cjk-font:
@@ -891,10 +896,14 @@
  * 以及 blog/ArticleControls 的 FONT_OPTIONS（只放 id + 顯示名）。__root.tsx 的 script 不必動——它只
  * 驗證 id 格式後原樣寫進 attribute，不認識任何字體。 */
 :root {
-  --blog-font-misans: MiSans, system-ui, -apple-system, sans-serif;
-  --blog-font-lxgw: "LXGW WenKai TC", "LXGW WenKai", cursive;
-  --blog-font-noto-serif: "Noto Serif SC", "Noto Serif TC", Georgia, serif;
-  --blog-font-source-han: "Noto Sans SC", "Noto Sans TC", "Source Han Sans SC", sans-serif;
+  /* 四種都是站上按頁裁字提供的（上面的 --serif／--sans／--kai／--modern，各語系各一支），
+     不靠訪客電腦裡剛好有裝。id 沿用舊的（存在讀者的 localStorage 裡） */
+  --blog-font-misans: var(--modern);
+  --blog-font-lxgw: var(--kai);
+  /* 思源宋體＝站上那套按頁裁字的堆疊（--serif，各語系各自那一套字形，:lang() 換掉）。
+     原本寫死 "Noto Serif SC/TC"：訪客電腦裡沒裝就整篇退回系統字型，簡中頁還會兩套字形混排 */
+  --blog-font-noto-serif: var(--serif);
+  --blog-font-source-han: var(--sans);
 
   /* 沒有偏好時的預設（對齊 FONT_OPTIONS 的原始預設 'noto-serif'） */
   --blog-font: var(--blog-font-noto-serif);
@@ -1132,6 +1141,9 @@ body::after {
   --cjk-font: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "MiSans", sans-serif;
   /* 按頁裁的思源宋體各語系一套（layout/SerifFontLoader）：這裡放簡中那套，本機有裝就用本機的 */
   --serif: "Koim Serif SC", "Noto Serif SC", "Noto Serif CJK SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  --sans: "Koim Sans SC", "Noto Sans SC", "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  --kai: "Koim Kai SC", "LXGW WenKai", var(--serif);
+  --modern: "Koim Modern SC", MiSans, sans-serif;
 }
 
 :lang(ja) {
@@ -1141,12 +1153,20 @@ body::after {
   --serif:
     "Koim Serif JP", "Noto Serif JP", "Noto Serif CJK JP", "Source Han Serif JP", "Hiragino Mincho ProN", "Yu Mincho",
     serif;
+  /* 日文：楷是霞鶩文楷的源頭 Klee One，現代無襯線是 BIZ UDPゴシック */
+  --sans: "Koim Sans JP", "Noto Sans JP", "Noto Sans CJK JP", "Source Han Sans JP", sans-serif;
+  --kai: "Koim Kai JP", "Klee One", var(--serif);
+  --modern: "Koim Modern JP", "BIZ UDPGothic", sans-serif;
 }
 
 :lang(ko) {
   --cjk-font: "Apple SD Gothic Neo", "Malgun Gothic", "Source Han Sans KR", "Noto Sans KR", sans-serif;
   --serif:
     "Koim Serif KR", "Noto Serif KR", "Noto Serif CJK KR", "Source Han Serif KR", "AppleMyungjo", "Batang", serif;
+  /* 韓文：沒有文楷，手寫味用 Gowun Batang；現代無襯線是 Pretendard */
+  --sans: "Koim Sans KR", "Noto Sans KR", "Noto Sans CJK KR", "Source Han Sans KR", sans-serif;
+  --kai: "Koim Kai KR", "Gowun Batang", var(--serif);
+  --modern: "Koim Modern KR", "Pretendard Variable", Pretendard, sans-serif;
 }
 
 :lang(en) {

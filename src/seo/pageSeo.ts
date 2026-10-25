@@ -19,30 +19,32 @@ interface SeoEntry {
   descKey?: string;
   title?: string;
   description?: string;
+  /** 這一頁的分享圖（後端 handlers/og.rs 的 PAGES）；沒寫就是首頁那張 */
+  og?: string;
 }
 
 const PAGE_SEO: Record<string, SeoEntry> = {
   // 首頁（basePath = ''）：title 留 null → 站台預設名（宙と木 · Koimsurai），描述用 hero 標語。
   // 原本首頁 head() 只出 links → SSR 完全沒有 og/description（Hero 的 <SEOHead> 是 helmet、爬蟲看不到）。
-  '': { descKey: 'hero.description' },
+  '': { descKey: 'hero.description', og: 'home' },
   // 有 i18n 翻譯的
-  blog: { titleKey: 'blog.metaTitle', descKey: 'blog.description' },
-  setup: { titleKey: 'setup.title', descKey: 'setup.description' },
-  thinking: { titleKey: 'thinking.title', descKey: 'thinking.subtitle' },
+  blog: { titleKey: 'blog.metaTitle', descKey: 'blog.description', og: 'notes' },
+  setup: { titleKey: 'setup.title', descKey: 'setup.description', og: 'setup' },
+  thinking: { titleKey: 'thinking.title', descKey: 'thinking.subtitle', og: 'moments' },
   // 收藏（看過的、讀過的、常聽的）：網址沿用 /watch
-  watch: { titleKey: 'collection.title', descKey: 'collection.subtitle' },
+  watch: { titleKey: 'collection.title', descKey: 'collection.subtitle', og: 'collection' },
   // 這三頁的各語系翻譯原本散在元件內（AboutPage.SEO / Portfolio.dict）或直接寫死中文，
   // 已搬進 locales/*/common.json → 標題現在會跟著語系走，不再各語系都出中文。
-  about: { titleKey: 'about.title', descKey: 'about.description' },
-  portfolio: { titleKey: 'portfolio.title', descKey: 'portfolio.description' },
-  photos: { titleKey: 'photos.title', descKey: 'photos.description' },
+  about: { titleKey: 'about.title', descKey: 'about.description', og: 'about' },
+  portfolio: { titleKey: 'portfolio.title', descKey: 'portfolio.description', og: 'works' },
+  photos: { titleKey: 'photos.title', descKey: 'photos.description', og: 'photos' },
   // info.* 系列（走 localePage('<basePath>')）——原本沒登記 → <title> 全是站台預設值。
   // title/subtitle 五語系齊全，subtitle 當描述（同 thinking / watch.library 慣例）。
   // 2026-10 翻新後朋友、留言、航行日誌各有自己的文字（不再是 info.*）
-  friends: { titleKey: 'friends.title', descKey: 'friends.subtitle' },
-  messages: { titleKey: 'messages.title', descKey: 'messages.subtitle' },
-  history: { titleKey: 'log.title', descKey: 'log.subtitle' },
-  'about-site': { titleKey: 'colophon.title', descKey: 'colophon.subtitle' },
+  friends: { titleKey: 'friends.title', descKey: 'friends.subtitle', og: 'friends' },
+  messages: { titleKey: 'messages.title', descKey: 'messages.subtitle', og: 'messages' },
+  history: { titleKey: 'log.title', descKey: 'log.subtitle', og: 'log' },
+  'about-site': { titleKey: 'colophon.title', descKey: 'colophon.subtitle', og: 'colophon' },
 };
 
 // createI18n 每次呼叫都會建新實例；head() 每次 render 都會跑，所以以 locale 快取。
@@ -64,5 +66,5 @@ export function seoMetaFor(basePath: string, locale: Locale, canonicalPath: stri
   const t = i18nFor(locale).t;
   const title = entry.titleKey ? t(entry.titleKey) : (entry.title ?? null);
   const description = entry.descKey ? t(entry.descKey) : (entry.description ?? '');
-  return pageMeta(title, description, canonicalPath, locale);
+  return pageMeta(title, description, canonicalPath, locale, entry.og);
 }

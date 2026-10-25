@@ -91,12 +91,11 @@ export function LangLine({
   );
 }
 
-const FONT_OPTIONS = [
-  { id: 'misans', name: 'MiSans' },
-  { id: 'lxgw', name: '霞鶩文楷' },
-  { id: 'noto-serif', name: '思源宋體' },
-  { id: 'source-han', name: '思源黑體' },
-];
+/**
+ * 四種字體（index.css 的 --blog-font-<id>）。每種在各語系配的是不同的字（中文的霞鶩文楷在日文是
+ * Klee One、韓文是 Gowun Batang…），所以顯示名在語系檔的 blog.fontNames。id 沿用舊的：存在讀者的 localStorage 裡
+ */
+const FONT_OPTIONS = ['noto-serif', 'source-han', 'lxgw', 'misans'] as const;
 
 export function FontLine({
   current,
@@ -110,7 +109,7 @@ export function FontLine({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
-  const name = FONT_OPTIONS.find((f) => f.id === current)?.name ?? current;
+  const nameOf = (id: string) => t(`blog.fontNames.${id}`, { defaultValue: id });
 
   // 點外面或按 Esc 收起來
   useEffect(() => {
@@ -133,26 +132,26 @@ export function FontLine({
     <div className={['ac-font', className].filter(Boolean).join(' ')} ref={boxRef}>
       {open && (
         <ul className="ac-font-list">
-          {FONT_OPTIONS.map((f) => (
-            <li key={f.id}>
+          {FONT_OPTIONS.map((id) => (
+            <li key={id}>
               <button
                 type="button"
-                aria-pressed={f.id === current}
+                aria-pressed={id === current}
                 // 每個選項用自己的字體寫：直接指向 index.css 的那份定義，不另存一份字體棧
-                style={{ fontFamily: `var(--blog-font-${f.id})` }}
+                style={{ fontFamily: `var(--blog-font-${id})` }}
                 onClick={() => {
-                  onChange(f.id);
+                  onChange(id);
                   setOpen(false);
                 }}
               >
-                {f.name}
+                {nameOf(id)}
               </button>
             </li>
           ))}
         </ul>
       )}
       <button type="button" className="ac-font-btn" aria-expanded={open} onClick={() => setOpen(!open)}>
-        {t('blog.font')}　{name}
+        {t('blog.font')}　{nameOf(current)}
       </button>
     </div>
   );

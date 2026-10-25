@@ -697,155 +697,198 @@ a.series-nav-title:hover {
 }
 
 /* ═══════════════════════
-   Subscribe Modal
+   訂閱電子報（SubscribeModal）
+   跟朋友頁的申請表同一套：夜色底、一條細框、直角；宋體標題、等寬小字的欄位名、底線輸入框、細框的送出鈕
    ═══════════════════════ */
 .subscribe-overlay {
   position: fixed;
   inset: 0;
-  background: var(--black-60);
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal);
-  backdrop-filter: blur(var(--blur-4));
+  padding: var(--space-4);
+  background: rgba(var(--ground-rgb), 0.75);
 }
 
 .subscribe-modal {
   position: relative;
-  width: 90%;
-  max-width: 400px;
-  background: rgba(var(--surface-3-rgb), 0.95);
-  border: 1px solid rgba(var(--brand-rgb), 0.2);
-  border-radius: var(--r-16);
-  padding: var(--space-8);
-  text-align: center;
-  backdrop-filter: blur(var(--blur-16));
+  display: grid;
+  gap: var(--space-4);
+  width: min(400px, 100%);
+  padding: var(--space-8) var(--space-8) var(--space-6);
+  background: rgba(var(--ground-rgb), 0.96);
+  border: 1px solid var(--rule);
 }
 
+/* 關閉：右上角兩條細線交叉（跟圖片燈箱同一個畫法，不靠圖示字型） */
 .subscribe-close {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 28px;
+  height: 28px;
+  padding: 0;
   background: none;
-  border: none;
-  color: var(--post-muted);
-  font-size: var(--fs-16);
+  border: 0;
+  color: var(--paper-3);
   cursor: pointer;
+  transition: color var(--dur-200) ease;
 }
 
-.subscribe-close:hover {
-  color: #fff;
+.subscribe-close::before,
+.subscribe-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1px;
+  background: currentColor;
 }
 
-.subscribe-header {
-  margin-bottom: var(--space-6);
+.subscribe-close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.subscribe-icon {
-  font-size: var(--fs-32);
-  color: var(--post-accent);
-  margin-bottom: var(--space-2);
+.subscribe-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
-.subscribe-header h3 {
-  font-size: var(--fs-20);
-  color: #fff;
-  margin: var(--space-2) 0 var(--space-1);
+.subscribe-close:hover,
+.subscribe-close:focus-visible {
+  color: var(--paper);
+  outline: none;
 }
 
-/* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.post-content .markdown-alert p` 是文章裡提示框的段落，這裡是訂閱視窗的說明，不同節點、不會同時命中。 */
-.subscribe-header p {
-  font-size: var(--fs-14);
-  color: var(--post-muted);
+.subscribe-title {
   margin: 0;
+  font-family: var(--serif);
+  font-size: var(--fs-22);
+  font-weight: 600;
+  color: var(--paper);
+}
+
+.subscribe-lead {
+  margin: calc(-1 * var(--space-2)) 0 0;
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+.subscribe-email {
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  color: var(--paper);
 }
 
 .subscribe-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  display: grid;
+  gap: var(--space-4);
 }
 
-.subscribe-form input {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--r-8);
-  border: 1px solid var(--white-10);
-  background: var(--white-04);
-  color: #fff;
-  font-size: var(--fs-14);
-  outline: none;
-  transition: border-color var(--dur-200);
+.subscribe-field {
+  display: grid;
+  gap: var(--space-1);
 }
 
-.subscribe-form input:focus {
-  border-color: var(--post-accent);
-}
-
-.subscribe-form button {
-  padding: var(--space-3);
-  border: none;
-  border-radius: var(--r-8);
-  background: var(--post-accent);
-  color: #fff;
-  font-size: var(--fs-14);
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity var(--dur-200);
-}
-
-.subscribe-form button:hover {
-  opacity: 0.9;
-}
-
-.subscribe-form button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Secondary ghost button used for the "已訂閱" → 退訂 action */
-.subscribe-form button.subscribe-secondary {
-  background: transparent;
-  color: var(--white-55);
-  border: 1px solid var(--white-10);
-}
-.subscribe-form button.subscribe-secondary:hover {
-  background: rgba(var(--crimson-rgb), 0.1);
-  border-color: rgba(var(--crimson-rgb), 0.35);
-  color: rgba(255, 200, 210, 0.95);
-  opacity: 1;
-}
-
-/* Email chip shown in 已訂閱 confirmation copy */
-.subscribe-email-chip {
-  display: inline-block;
-  padding: var(--space-px) var(--space-2);
-  background: rgba(var(--brand-rgb), 0.1);
-  border: 1px solid rgba(var(--brand-rgb), 0.25);
-  border-radius: var(--r-6);
+.subscribe-field span {
   font-family: var(--mono-font);
-  font-size: 0.85em;
-  color: rgba(var(--lavender-rgb), 0.95);
-  margin: 0 var(--space-0-5);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-3);
+}
+
+.subscribe-field input {
+  padding: var(--space-1) 0;
+  font: inherit;
+  font-size: var(--fs-16);
+  color: var(--paper);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  outline: none;
+  appearance: none;
+}
+
+.subscribe-field input:focus {
+  border-bottom-color: var(--paper-2);
+}
+
+.subscribe-field input::placeholder {
+  color: var(--paper-3);
+}
+
+.subscribe-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.subscribe-submit {
+  justify-self: start;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 0;
+  font-size: var(--fs-14);
+  color: var(--paper);
+  background: none;
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  transition: border-color var(--dur-200) ease;
+}
+
+.subscribe-submit:hover,
+.subscribe-submit:focus-visible {
+  border-color: var(--amber);
+  outline: none;
+}
+
+.subscribe-submit:disabled,
+.subscribe-quiet:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* 退訂：不搶戲的一行字 */
+.subscribe-quiet {
+  padding: 0;
+  font-size: var(--fs-13);
+  color: var(--paper-3);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.subscribe-quiet:hover,
+.subscribe-quiet:focus-visible {
+  color: var(--paper);
+  outline: none;
 }
 
 .subscribe-msg {
-  margin-top: var(--space-3);
   font-size: var(--fs-13);
-}
-
-.subscribe-msg.success {
-  color: var(--post-green);
+  color: var(--paper-2);
 }
 
 .subscribe-msg.error {
-  color: var(--coral);
+  color: var(--amber);
 }
 
 .subscribe-privacy {
-  margin-top: var(--space-3);
-  font-size: var(--fs-12);
-  color: var(--white-25);
+  margin: 0;
+  padding-top: var(--space-3);
+  border-top: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-4);
+  line-height: var(--lh-170);
+  color: var(--paper-3);
 }
+
 /* Back to blog link (error page) */
 .back-to-blog-link {
   display: inline-flex;

@@ -341,6 +341,8 @@ export default function Colophon() {
           <b className="is-mono">2026.10.24</b>
           <span>{t('colophon.fontMono')}</span>
         </li>
+        {/* 文章的字體切換另外三種；MiSans 的授權要求註明有用到它 */}
+        <li className="cl-fonts-note">{t('colophon.fontReading')}</li>
       </ul>
     ),
     sky: (

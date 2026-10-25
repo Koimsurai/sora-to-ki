@@ -1,5 +1,7 @@
 /**
- * 朋友頁 `/friends` 的申請表單（側欄「成為下一顆」）。
+ * 朋友頁 `/friends` 的申請表單（右邊抽屜裡的「成為下一顆」）。
+ *
+ * 抽屜平常收著、內容是 inert（點不到、Tab 不進去），要先點把手「交換友鏈」拉出來。
  *
  * 這是整頁唯一的寫入，而且它沒有後端——送出只是把欄位組成一封 `mailto:`。
  * 也就是說**沒有任何伺服器端的東西會發現它壞掉**：必填沒擋住、網址格式沒擋住、
@@ -32,16 +34,38 @@ async function submitUntil(page: Page, settled: () => Promise<void>) {
   }).toPass({ timeout: 20_000, intervals: [200, 400, 800, 1500] });
 }
 
+const handle = (page: Page) => page.getByRole('button', { name: '交換友鏈' });
+
+/** 拉出抽屜；跟送出一樣，SSR 的把手在 React 接上之前點了沒反應，重試到展開為止 */
+async function openDrawer(page: Page) {
+  await expect(async () => {
+    if ((await handle(page).getAttribute('aria-expanded')) !== 'true') await handle(page).click();
+    await expect(handle(page)).toHaveAttribute('aria-expanded', 'true', { timeout: 1_000 });
+  }).toPass({ timeout: 20_000, intervals: [200, 400, 800, 1500] });
+}
+
 /**
- * 等 React 接手：先送一次空表單，錯誤訊息出來了才算。
+ * 等 React 接手：拉出抽屜、先送一次空表單，錯誤訊息出來了才算。
  * hydration 之前填進受控欄位的字，接手時可能被 state 蓋回空的，於是送出時還是空表單。
  */
 async function hydrated(page: Page) {
+  await openDrawer(page);
   await submitUntil(page, () => expect(form(page).locator('.fr-error').first()).toBeVisible({ timeout: 2_000 }));
 }
 
 test.describe('朋友申請', () => {
   test.use({ locale: 'zh-TW' });
+
+  test('抽屜平常收著，點把手拉出來、Esc 收回去', async ({ page }) => {
+    await page.goto('/friends');
+    await expect(handle(page)).toHaveAttribute('aria-expanded', 'false');
+    // 收著的時候表單點不到（inert），Tab 也不會跑進畫面外的抽屜
+    await expect(page.locator('#fr-side-body')).toHaveAttribute('inert', '');
+    await openDrawer(page);
+    await expect(page.locator('#fr-side-body')).not.toHaveAttribute('inert', '');
+    await page.keyboard.press('Escape');
+    await expect(handle(page)).toHaveAttribute('aria-expanded', 'false');
+  });
 
   test('空的表單送不出去：名字與網址是必填，RSS 不是', async ({ page }) => {
     await page.goto('/friends');

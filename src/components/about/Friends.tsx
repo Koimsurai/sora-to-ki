@@ -1,7 +1,9 @@
 // 朋友：這個站是中心的琥珀點，朋友是繞著它轉的星，各在自己的橢圓軌道上（about/friendsSky）。
 // 朋友最近的每一篇是他軌道上的一個刻點（後端從他的 RSS 抓），滑過看標題、點了開文章；
 // 點一顆星就跟他對接：鏡頭拉近、兩艘船接上，旁邊展開他最近的文章。
-// 右邊是交換用的本站資料與申請表：打名字時一顆預覽星從畫面外飛來等著，送出時點火切進空軌道。
+// 交換用的本站資料與申請表收在右邊的抽屜（跟頂欄的選單一樣：滑過把手停一下、或點它才拉出來），
+// 拉出來時整個軌道系統往左讓位、不被蓋住；打名字時一顆預覽星從畫面外飛來等著，送出時抽屜收起、
+// 預覽星點火切進空軌道。
 // 換頁進來時琥珀點落在中心，軌道從內往外一條接一條長出來；離開時軌道收回中心，點從中心飛走。
 import { useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes, type MouseEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +11,16 @@ import { useTranslation } from 'react-i18next';
 import { friendsQueryOptions } from '@/data/friendsData';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { after, isArriving } from '@/store/pageTransition';
-import { createSky, drawDockIllustration, frameOf, FRESH_DAYS, INSERT_S, type Drawn, type Preview } from './friendsSky';
+import {
+  createSky,
+  drawDockIllustration,
+  frameOf,
+  FRESH_DAYS,
+  INSERT_S,
+  type Drawn,
+  type Inset,
+  type Preview,
+} from './friendsSky';
 import './Friends.css';
 import { sameTitle } from '@/lib/pageTitle';
 
@@ -34,6 +45,20 @@ const JOIN_S = 0.9;
 const HOLD_S = 1.4;
 /** 對接插圖只是慢慢晃，30fps 就夠 */
 const DOCK_FRAME_MS = 33;
+/** 抽屜：滑過把手停多久才拉出來、滑鼠離開多久才收（跟頂欄的選單同一組數字，layout/SiteNav） */
+const OPEN_AFTER_MS = 280;
+const CLOSE_AFTER_MS = 320;
+/** 送出之後抽屜等多久收起（讓「已打開郵件程式」那行先被看到一眼） */
+const CLOSE_AFTER_SEND_MS = 600;
+/** 軌道讓位的快慢（每秒往目標靠近的比例，指數趨近） */
+const INSET_RATE = 6;
+/** 星旁的字離星多遠（CSS 像素），與疊到時滑開的快慢（臨界阻尼彈簧的角頻率：從靜止起步、不過衝） */
+const LABEL_GAP = 14;
+const LABEL_SPRING = 9;
+/** 跟 Friends.css 的斷點同一個：窄螢幕的抽屜從底下拉上來 */
+const SHEET_QUERY = '(max-width: 760px)';
+/** 窄螢幕的頂欄高度（index.css 的 ≤480 是 56px）：抽屜從底下拉起來時，軌道擠到頂欄與抽屜之間 */
+const SHEET_TOP = 56;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -105,6 +130,17 @@ export default function Friends() {
   const inputsRef = useRef<Partial<Record<FieldKey, HTMLInputElement | null>>>({});
   const [sent, setSent] = useState(false);
   const [docked, setDocked] = useState<number | null>(null);
+  const [sideOpen, setSideOpen] = useState(false);
+  const sideOpenRef = useRef(false);
+  sideOpenRef.current = sideOpen;
+  const sideRef = useRef<HTMLElement>(null);
+  const intentRef = useRef(0);
+  const closeTimerRef = useRef(0);
+  /** 軌道現在讓了多少位（動畫中的值，畫布與中心點都用它） */
+  const insetRef = useRef<Inset>({ right: 0, bottom: 0, top: 0 });
+  /** 每塊星旁的字為了不疊在一起被推開了多少（動畫中的值） */
+  const labelOffRef = useRef<number[]>([]);
+  const labelVelRef = useRef<number[]>([]);
   const previewName = form.name.trim();
   const nameRef = useRef(previewName);
   nameRef.current = previewName;
@@ -130,7 +166,28 @@ export default function Friends() {
   const friendsRef = useRef(friends);
   friendsRef.current = friends;
 
+  const openSide = () => {
+    window.clearTimeout(closeTimerRef.current);
+    setSideOpen(true);
+  };
+  const closeSide = () => {
+    window.clearTimeout(intentRef.current);
+    window.clearTimeout(closeTimerRef.current);
+    setSideOpen(false);
+  };
+  /** 滑鼠離開抽屜：等一下再收；正在輸入框裡打字就不收（打到一半抽屜跑掉最煩） */
+  const leaveSide = () => {
+    window.clearTimeout(intentRef.current);
+    if (!sideOpenRef.current) return;
+    closeTimerRef.current = window.setTimeout(() => {
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement && sideRef.current?.contains(active)) return;
+      setSideOpen(false);
+    }, CLOSE_AFTER_MS);
+  };
+
   const dock = (i: number) => {
+    closeSide();
     const s = dockRef.current;
     if (s.want && s.i === i) return;
     if (s.d > 0 && s.i !== i) {
@@ -154,7 +211,7 @@ export default function Friends() {
     const box = boxRef.current;
     if (!box) return null;
     const r = box.getBoundingClientRect();
-    const { cx, cy } = frameOf(box.clientWidth, box.clientHeight);
+    const { cx, cy } = frameOf(box.clientWidth, box.clientHeight, insetRef.current);
     return { x: r.left + cx, y: r.top + cy };
   };
 
@@ -175,10 +232,12 @@ export default function Friends() {
     },
   });
 
-  // Esc 解除對接
+  // Esc 收抽屜、解除對接
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') undock();
+      if (e.key !== 'Escape') return;
+      closeSide();
+      undock();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -231,6 +290,24 @@ export default function Friends() {
         cv.height = Math.round(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // 抽屜拉出來時軌道讓位：寬螢幕讓出右邊、手機讓出底下（抽屜本身的大小，transform 不影響 offset*）
+      const side = sideRef.current;
+      const sheet = window.matchMedia(SHEET_QUERY).matches;
+      const goal: Inset =
+        sideOpenRef.current && side
+          ? sheet
+            ? { right: 0, bottom: side.offsetHeight, top: SHEET_TOP }
+            : { right: side.offsetWidth, bottom: 0, top: 0 }
+          : { right: 0, bottom: 0, top: 0 };
+      const ins = insetRef.current;
+      const k = reduce ? 1 : Math.min(1, dt * INSET_RATE);
+      for (const key of ['right', 'bottom', 'top'] as const) {
+        ins[key] += (goal[key] - ins[key]) * k;
+        if (Math.abs(goal[key] - ins[key]) < 0.5) ins[key] = goal[key];
+      }
+      // 讓出來之後剩下的寬度（星旁的字不要排進抽屜底下）
+      const vw = w - ins.right;
 
       // 對接：先拉近再接上，解除時倒著走；換一顆要等退回 0 才換
       const ds = dockRef.current;
@@ -314,37 +391,78 @@ export default function Friends() {
         dock: ds.d > 0 ? { i: ds.i, zoom, join } : null,
         preview,
         art,
+        inset: { ...ins },
       });
       drawnRef.current = drawn;
 
-      const { cx } = frameOf(w, h);
-      // 已經放好的字（兩顆星靠近時，後放的那塊讓到上面或下面）
+      const { cx, cy, squash } = frameOf(w, h, ins);
+      // 星旁的字往「遠離中心」的方向長，錨點跟著星繞中心的角度連續地變（同首頁衛星的字，home/HomeOrbit）：
+      // 在右邊從星的右側開始、在左邊結束在星的左側、在正上方正下方置中——星怎麼走字就怎麼跟，
+      // 不會在走過中線的那一幀整塊翻到另一邊。兩塊字疊在一起時，後放的那塊滑到上面或下面（也是滑過去，不是跳）
       const taken: { x: number; y: number; w: number; h: number }[] = [];
       drawn.stars.forEach((p, i) => {
         const el = labelsRef.current[i];
         if (!el) return;
-        // 字放在星的外側：星在中心左邊，字往左長
-        const right = p.x >= cx;
+        const dx = p.x - cx;
+        // 軌道是壓扁的橢圓：角度要在攤平之後量，不然星在上下方時一點點橫移就換邊
+        const dy = (p.y - cy) / squash;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+        /** 字有幾成落在星的左邊：0 是整塊在右、1 是整塊在左 */
+        const fx = 0.5 - 0.5 * ux;
         const lw = el.offsetWidth;
         const lh = el.offsetHeight;
-        let lx = right ? p.x + 14 : p.x - 14 - lw;
-        let ly = p.y - 12;
-        lx = Math.max(8, Math.min(w - lw - 8, lx));
+        let lx = p.x + ux * LABEL_GAP - lw * fx;
+        // 在旁邊時第一行（名字）對齊星；往正下方轉時整塊移到星的下面、往正上方轉時移到上面
+        const side = p.y - 12;
+        let ly = uy >= 0 ? side + (p.y + LABEL_GAP - side) * uy : side + (p.y - LABEL_GAP - lh - side) * -uy;
+        lx = Math.max(8, Math.min(vw - lw - 8, lx));
+        let pushed = ly;
         for (const o of taken) {
-          if (lx < o.x + o.w && lx + lw > o.x && ly < o.y + o.h && ly + lh > o.y) {
+          if (lx < o.x + o.w && lx + lw > o.x && pushed < o.y + o.h && pushed + lh > o.y) {
             const below = o.y + o.h + 6;
             const above = o.y - lh - 6;
-            ly = Math.abs(below - ly) < Math.abs(above - ly) && below + lh < h - 8 ? below : above;
+            pushed = Math.abs(below - pushed) < Math.abs(above - pushed) && below + lh < h - 8 ? below : above;
           }
         }
-        ly = Math.max(8, Math.min(h - lh - 8, ly));
-        taken.push({ x: lx, y: ly, w: lw, h: lh });
-        el.classList.toggle('is-left', !right);
+        // 推開的量用彈簧追：直接指數趨近的話第一幀就衝最快，看起來還是「跳」了一下
+        const goalOff = pushed - ly;
+        let off = labelOffRef.current[i] ?? goalOff;
+        let vel = labelVelRef.current[i] ?? 0;
+        if (reduce) {
+          off = goalOff;
+          vel = 0;
+        } else {
+          vel += (LABEL_SPRING ** 2 * (goalOff - off) - 2 * LABEL_SPRING * vel) * dt;
+          off += vel * dt;
+        }
+        labelOffRef.current[i] = off;
+        labelVelRef.current[i] = vel;
+        ly = Math.max(8, Math.min(h - lh - 8, ly + off));
+        taken.push({ x: lx, y: pushed, w: lw, h: lh });
         el.classList.toggle('is-on', i === star);
         el.style.transform = `translate(${lx}px, ${ly}px)`;
+        // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在上下方置中），一樣是連續變的
+        for (const line of el.children) {
+          if (line instanceof HTMLElement && !line.classList.contains('fr-desc')) {
+            line.style.translate = `${((lw - line.offsetWidth) * fx).toFixed(1)}px 0`;
+          }
+        }
+        // 名字上方那行介紹不算在字塊的寬度裡（浮著、最寬 300px）：照同一個比例對齊，
+        // 伸出天空左右邊的部分推回來
+        const desc = el.querySelector<HTMLElement>('.fr-desc');
+        if (desc) {
+          const dw = desc.offsetWidth;
+          const at = (lw - dw) * fx;
+          const shift = Math.min(0, vw - 8 - (lx + at + dw)) + Math.max(0, 8 - (lx + at));
+          desc.style.translate = `${(at + shift).toFixed(1)}px 0`;
+        }
         el.style.opacity = String(p.appear * (star < 0 || i === star ? 1 : 0.5) * (1 - zoom));
         el.style.visibility = zoom > 0.95 ? 'hidden' : '';
       });
+      // 中心的站名跟著軌道系統走（抽屜拉出來時軌道讓位，它也要跟著讓）
+      if (centerRef.current) centerRef.current.style.translate = `${cx.toFixed(1)}px ${cy.toFixed(1)}px`;
       if (centerRef.current) centerRef.current.style.opacity = String((1 - zoom) * (1 - erase));
 
       const pl = previewLabelRef.current;
@@ -400,7 +518,8 @@ export default function Friends() {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       if (start < 0) start = now;
-      if (now - last < DOCK_FRAME_MS) return;
+      // 抽屜收著就看不到，不畫
+      if (!sideOpenRef.current || now - last < DOCK_FRAME_MS) return;
       last = now;
       const w = cv.clientWidth;
       const h = cv.clientHeight;
@@ -423,9 +542,13 @@ export default function Friends() {
     return () => window.clearTimeout(id);
   }, [docked]);
 
-  // 點畫布：刻點開文章、星對接、空的地方解除對接
+  // 點畫布：抽屜開著就先收抽屜；刻點開文章、星對接、空的地方解除對接
   const onSkyClick = (e: MouseEvent<HTMLCanvasElement>) => {
     e.stopPropagation();
+    if (sideOpenRef.current) {
+      closeSide();
+      return;
+    }
     const { star, beacon } = hoverRef.current;
     if (beacon) {
       const f = friends.at(beacon[0]);
@@ -480,13 +603,15 @@ export default function Friends() {
     const body = [`Name: ${form.name}`, `URL: ${form.url}`, `RSS: ${form.rss}`, `Intro: ${form.desc}`].join('\n');
     sentRef.current = true;
     setSent(true);
+    // 抽屜收起來，讓預覽星點火入軌那一段在整片天上播
+    window.setTimeout(closeSide, CLOSE_AFTER_SEND_MS);
     window.location.href = `mailto:${CONTACT}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   const open = docked === null ? null : friends[docked];
 
   return (
-    <div className="fr" ref={pageRef}>
+    <div className={sideOpen ? 'fr is-side-open' : 'fr'} ref={pageRef}>
       <header className="fr-head">
         <div className="fr-title">
           <h1>{t('friends.title')}</h1>
@@ -634,65 +759,90 @@ export default function Friends() {
           ))}
         </ul>
 
-        <aside className="fr-side">
-          <div className="fr-dock">
-            <canvas ref={sideArtRef} aria-hidden="true" />
-            <span className="sr-only">{t('friends.dockLabel')}</span>
+        <aside
+          className={sideOpen ? 'fr-side is-open' : 'fr-side'}
+          ref={sideRef}
+          onPointerEnter={() => window.clearTimeout(closeTimerRef.current)}
+          onPointerLeave={(e) => {
+            if (e.pointerType === 'mouse') leaveSide();
+          }}
+        >
+          {/* 把手：滑鼠停一下才拉出來（掃過去不算），觸控與鍵盤用點的 */}
+          <button
+            type="button"
+            className="fr-handle"
+            aria-expanded={sideOpen}
+            aria-controls="fr-side-body"
+            onPointerEnter={(e) => {
+              if (e.pointerType !== 'mouse' || sideOpenRef.current) return;
+              intentRef.current = window.setTimeout(openSide, OPEN_AFTER_MS);
+            }}
+            onPointerLeave={() => window.clearTimeout(intentRef.current)}
+            onClick={() => (sideOpenRef.current ? closeSide() : openSide())}
+          >
+            <i aria-hidden="true" />
+            {t('friends.drawer')}
+          </button>
+          <div className="fr-side-body" id="fr-side-body" inert={!sideOpen}>
+            <div className="fr-dock">
+              <canvas ref={sideArtRef} aria-hidden="true" />
+              <span className="sr-only">{t('friends.dockLabel')}</span>
+            </div>
+
+            <section className="fr-card" aria-labelledby="fr-card-title">
+              <h2 id="fr-card-title">{t('friends.cardTitle')}</h2>
+              <b>{SITE.name}</b>
+              <dl>
+                <div>
+                  <dt>URL</dt>
+                  <dd>{SITE.url}</dd>
+                </div>
+                <div>
+                  <dt>DESC</dt>
+                  <dd>{t('friends.siteDesc')}</dd>
+                </div>
+                <div>
+                  <dt>RSS</dt>
+                  <dd>{SITE.rss}</dd>
+                </div>
+                <div>
+                  <dt>ICON</dt>
+                  <dd>{`${SITE.url}/favicon.svg`}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <form className="fr-form" onSubmit={submit} noValidate>
+              <h2>{t('friends.formTitle')}</h2>
+              {fieldRow('name', t('friends.fieldName'), {
+                type: 'text',
+                maxLength: 24,
+                required: true,
+                placeholder: t('friends.fieldNameHint'),
+              })}
+              {fieldRow('url', t('friends.fieldUrl'), { type: 'url', required: true, placeholder: 'https://' })}
+              {fieldRow('rss', t('friends.fieldRss'), { type: 'url', placeholder: 'https://' })}
+              {fieldRow('desc', t('friends.fieldDesc'), { type: 'text', maxLength: 40 })}
+              <button type="submit" className="fr-submit">
+                {t('friends.submit')}
+              </button>
+              {sent && (
+                <output className="fr-sent">
+                  {t('friends.sent')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+                </output>
+              )}
+            </form>
+
+            <section className="fr-rules" aria-labelledby="fr-rules-title">
+              <h2 id="fr-rules-title">{t('friends.rulesTitle')}</h2>
+              <ol>
+                <li>{t('friends.rule1')}</li>
+                <li>{t('friends.rule2')}</li>
+                <li>{t('friends.rule3')}</li>
+                <li>{t('friends.rule4')}</li>
+              </ol>
+            </section>
           </div>
-
-          <section className="fr-card" aria-labelledby="fr-card-title">
-            <h2 id="fr-card-title">{t('friends.cardTitle')}</h2>
-            <b>{SITE.name}</b>
-            <dl>
-              <div>
-                <dt>URL</dt>
-                <dd>{SITE.url}</dd>
-              </div>
-              <div>
-                <dt>DESC</dt>
-                <dd>{t('friends.siteDesc')}</dd>
-              </div>
-              <div>
-                <dt>RSS</dt>
-                <dd>{SITE.rss}</dd>
-              </div>
-              <div>
-                <dt>ICON</dt>
-                <dd>{`${SITE.url}/favicon.svg`}</dd>
-              </div>
-            </dl>
-          </section>
-
-          <form className="fr-form" onSubmit={submit} noValidate>
-            <h2>{t('friends.formTitle')}</h2>
-            {fieldRow('name', t('friends.fieldName'), {
-              type: 'text',
-              maxLength: 24,
-              required: true,
-              placeholder: t('friends.fieldNameHint'),
-            })}
-            {fieldRow('url', t('friends.fieldUrl'), { type: 'url', required: true, placeholder: 'https://' })}
-            {fieldRow('rss', t('friends.fieldRss'), { type: 'url', placeholder: 'https://' })}
-            {fieldRow('desc', t('friends.fieldDesc'), { type: 'text', maxLength: 40 })}
-            <button type="submit" className="fr-submit">
-              {t('friends.submit')}
-            </button>
-            {sent && (
-              <output className="fr-sent">
-                {t('friends.sent')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
-              </output>
-            )}
-          </form>
-
-          <section className="fr-rules" aria-labelledby="fr-rules-title">
-            <h2 id="fr-rules-title">{t('friends.rulesTitle')}</h2>
-            <ol>
-              <li>{t('friends.rule1')}</li>
-              <li>{t('friends.rule2')}</li>
-              <li>{t('friends.rule3')}</li>
-              <li>{t('friends.rule4')}</li>
-            </ol>
-          </section>
         </aside>
       </div>
     </div>

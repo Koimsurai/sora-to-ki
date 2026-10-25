@@ -63,10 +63,28 @@ const jsonLdScript = (data: unknown): { type: string; children: string } => ({
   children: JSON.stringify(data).replace(/</g, '\\u003c'),
 });
 
-/** 一般頁面（非文章）head() 用的 meta。canonicalPath 例:/music、/en/music */
-export function pageMeta(title: string | null, description: string, canonicalPath: string, locale: string): MetaTag[] {
+/**
+ * 分享圖的網址：後端 `handlers/og.rs` 每頁一張（`key` 是那邊 `PAGES` 的名字，文章用 id），
+ * 圖上的字照語系。繁中不帶參數，網址跟著短一點
+ */
+function ogImageUrl(key: string | number, locale: string): string {
+  const query = locale === DEFAULT_LOCALE ? '' : `?l=${encodeURIComponent(locale)}`;
+  return `${BASE_URL}/api/og/${key}.png${query}`;
+}
+
+/**
+ * 一般頁面（非文章）head() 用的 meta。canonicalPath 例:/music、/en/music；
+ * og 是這一頁分享圖的名字（見 `ogImageUrl`），沒給就用首頁那張
+ */
+export function pageMeta(
+  title: string | null,
+  description: string,
+  canonicalPath: string,
+  locale: string,
+  og = 'home',
+): MetaTag[] {
   const url = `${BASE_URL}${canonicalPath}`;
-  const image = `${BASE_URL}/og-default-v2.png`;
+  const image = ogImageUrl(og, locale);
   // 對齊 SEOHead 既有的標題格式
   const fullTitle = title ? `${title} - 宙と木` : SITE_NAME;
 
@@ -96,8 +114,8 @@ export function pageMeta(title: string | null, description: string, canonicalPat
 export function articleMeta(post: PostData, canonicalPath: string, locale: string): MetaTag[] {
   const description = post.excerpt;
   const url = `${BASE_URL}${canonicalPath}`;
-  // OG 圖由後端 resvg 生成（CJK 已驗）。舊的前端 /og-image/:id（sharp）隨 serve.mjs 一起退役。
-  const image = `${BASE_URL}/api/og/${post.id}.png`;
+  // 文章的分享圖：手記的星軌、亮的是這一篇，字照語系（後端 handlers/og.rs）
+  const image = ogImageUrl(post.id, locale);
   const publishedIso = toIso(post.created_at);
   const modifiedIso = toIso(post.updated_at);
 

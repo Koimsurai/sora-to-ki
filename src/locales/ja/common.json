@@ -262,7 +262,13 @@
     "font": "書体",
     "originalText": "原文",
     "sameTag": "#{{name}} の記事",
-    "sameTagNone": "このタグはこの記事だけ。"
+    "sameTagNone": "このタグはこの記事だけ。",
+    "fontNames": {
+      "noto-serif": "源ノ明朝",
+      "source-han": "源ノ角ゴシック",
+      "lxgw": "Klee One",
+      "misans": "BIZ UDPゴシック"
+    }
   },
   "thinking": {
     "title": "つぶやき",
@@ -389,22 +395,24 @@
     "errorNetwork": "ネットワークエラー、後でお試しください",
     "description": "最新の記事と技術ノートを直接メールでお届け。",
     "privacyNote": "プライバシーを尊重し、情報を共有しません。",
-    "confirmedTitle": "購読済み √",
+    "confirmedTitle": "購読中",
     "alreadyBody": "<em>{{email}}</em> でニュースレターを購読しています。",
-    "nextNotice": "新しい記事が出たらメールでお知らせします。",
+    "nextNotice": "次の記事ができたらお送りします。",
     "okBtn": "OK",
     "unsubBtn": "購読解除",
-    "subscribeIntro": "新しい記事のお知らせをお届けします。",
+    "subscribeIntro": "新しい記事を書いたら、メールを一通お送りします。",
     "namePlaceholderShort": "お名前（任意）",
     "emailPlaceholderShort": "メールアドレス *",
-    "processing": "処理中...",
+    "processing": "送信中…",
     "subscribe": "購読",
     "unsubProcessing": "処理中…",
     "unsubConfirmJs": "{{email}} を解除しますか？",
     "unsubFailed": "解除に失敗しました",
-    "unsubDone": "解除しました。いつでもまたどうぞ。",
-    "privacy": "プライバシーを尊重し、情報を共有することはありません。",
-    "successWithEmoji": "購読完了！ありがとうございます ✨"
+    "unsubDone": "解除しました。",
+    "privacy": "アドレスは新しい記事のお知らせにだけ使います。どのメールからも解除できます。",
+    "successWithEmoji": "登録しました。次の記事ができたらお送りします。",
+    "fieldName": "名前（任意）",
+    "fieldEmail": "メール"
   },
   "unsubscribe": {
     "verifying": "リンクを確認中…",
@@ -643,7 +651,8 @@
     "rule1": "サイトが正常に閲覧でき、独自ドメインと HTTPS があること（無料サブドメインも可）。",
     "rule2": "オリジナルの内容があること。転載サイト、広告だけのサイト、SEO ファームは不可。",
     "rule3": "RSS があれば、新しい記事を書いたときにここへ信号が届きます。",
-    "rule4": "先にあなたのサイトにリンクを貼ってもらえると、返信が早くなります。"
+    "rule4": "先にあなたのサイトにリンクを貼ってもらえると、返信が早くなります。",
+    "drawer": "相互リンク"
   },
   "messages": {
     "title": "メッセージ",
@@ -857,6 +866,10 @@
           "d": "最後に作品ページの螺旋に載せる。中心が出発点で、新しいものほど外側。いま作ったこの星がいちばん新しいので、いちばん外に並ぶ。"
         }
       }
-    }
+    },
+    "fontReading": "記事はゴシック体、手書き風、モダンなサンセリフにも切り替えられ、どれも言語ごとにこのサイトから配信しています。MiSans は Xiaomi の無料商用フォントです。"
+  },
+  "og": {
+    "tagline": "コード、システム、そして暮らしのかけら。"
   }
 }

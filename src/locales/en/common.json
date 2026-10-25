@@ -262,7 +262,13 @@
     "font": "Font",
     "originalText": "original",
     "sameTag": "Also tagged #{{name}}",
-    "sameTagNone": "This is the only post with this tag."
+    "sameTagNone": "This is the only post with this tag.",
+    "fontNames": {
+      "noto-serif": "Noto Serif",
+      "source-han": "Noto Sans",
+      "lxgw": "LXGW WenKai",
+      "misans": "MiSans"
+    }
   },
   "thinking": {
     "title": "Murmurs",
@@ -389,22 +395,24 @@
     "errorNetwork": "Network error, please try again later",
     "description": "Get the latest posts and tech notes straight in your inbox.",
     "privacyNote": "We respect your privacy and never share your info.",
-    "confirmedTitle": "Subscribed √",
+    "confirmedTitle": "Subscribed",
     "alreadyBody": "You subscribed to the newsletter with <em>{{email}}</em>.",
-    "nextNotice": "We'll email you when there's a new post.",
+    "nextNotice": "The next post will be sent to you.",
     "okBtn": "OK",
     "unsubBtn": "Unsubscribe",
-    "subscribeIntro": "Get notified about new posts. Don't miss a thing.",
+    "subscribeIntro": "One email whenever there is a new post.",
     "namePlaceholderShort": "Name (optional)",
     "emailPlaceholderShort": "Email *",
-    "processing": "Processing...",
+    "processing": "Sending…",
     "subscribe": "Subscribe",
     "unsubProcessing": "Processing…",
     "unsubConfirmJs": "Unsubscribe {{email}}?",
     "unsubFailed": "Unsubscribe failed",
-    "unsubDone": "Unsubscribed. You're welcome back anytime.",
-    "privacy": "We value your privacy and will not share your information.",
-    "successWithEmoji": "Subscribed! Thanks for joining ✨"
+    "unsubDone": "Unsubscribed.",
+    "privacy": "Your address is only used to send new posts. Every email has an unsubscribe link.",
+    "successWithEmoji": "Done. The next post will land in your inbox.",
+    "fieldName": "Name (optional)",
+    "fieldEmail": "Email"
   },
   "unsubscribe": {
     "verifying": "Verifying link…",
@@ -643,7 +651,8 @@
     "rule1": "The site loads, has its own domain and HTTPS (a free subdomain is fine).",
     "rule2": "Original content. No repost sites, ad farms or SEO farms.",
     "rule3": "If you have RSS, a signal shows up here whenever you post.",
-    "rule4": "Link here from your site first and I'll reply sooner."
+    "rule4": "Link here from your site first and I'll reply sooner.",
+    "drawer": "Exchange links"
   },
   "messages": {
     "title": "Messages",
@@ -857,6 +866,10 @@
           "d": "Finally it joins the spiral on the works page: the center is the start, and newer works sit farther out. The one you just made is the newest, so it goes on the outermost turn."
         }
       }
-    }
+    },
+    "fontReading": "Articles can also be read in a sans, a handwritten-style or a modern sans face, each served per language by this site. MiSans is a free commercial font by Xiaomi."
+  },
+  "og": {
+    "tagline": "Code, systems, and fragments of life."
   }
 }
