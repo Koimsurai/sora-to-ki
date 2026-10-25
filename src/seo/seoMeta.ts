@@ -67,7 +67,7 @@ const jsonLdScript = (data: unknown): { type: string; children: string } => ({
  * 分享圖的網址：後端 `handlers/og.rs` 每頁一張（`key` 是那邊 `PAGES` 的名字，文章用 id），
  * 圖上的字照語系。繁中不帶參數，網址跟著短一點
  */
-export function ogImageUrl(key: string | number, locale: string): string {
+function ogImageUrl(key: string | number, locale: string): string {
   const query = locale === DEFAULT_LOCALE ? '' : `?l=${encodeURIComponent(locale)}`;
   return `${BASE_URL}/api/og/${key}.png${query}`;
 }

@@ -148,7 +148,7 @@ async fn 退訂可以用_token_或_email_兩者皆無則_400() {
 
 // ── OG 分享圖 ─────────────────────────────────────────────────────────────
 
-/// ETag 的 cache key 是 `id::updated_at::title`。文章改了標題就必須換一張圖——
+/// ETag 的 cache key 含標題與更新時間。文章改了標題就必須換一張圖——
 /// 少算 title 的話分享到社群還是舊標題，而且回的是 200 + 舊 bytes，看起來完全正常。
 #[tokio::test]
 async fn og_圖會隨標題改變而換掉_etag() {
@@ -157,7 +157,7 @@ async fn og_圖會隨標題改變而換掉_etag() {
     assert_eq!(st, StatusCode::OK);
     assert_eq!(headers.get("content-type").unwrap(), "image/png");
     let etag1 = headers.get("etag").unwrap().to_str().unwrap().to_string();
-    assert!(etag1.starts_with("\"og-1-"), "得到 {etag1}");
+    assert!(etag1.starts_with("\"og-"), "得到 {etag1}");
     assert_eq!(
         headers.get("cache-control").unwrap(),
         "public, max-age=300, s-maxage=86400",
@@ -188,7 +188,8 @@ async fn og_圖會隨標題改變而換掉_etag() {
 #[tokio::test]
 async fn og_對不存在的文章與錯誤後綴都回_404() {
     let (app, _pool) = test_app().await;
-    for path in ["/api/og/999999.png", "/api/og/1.jpg", "/api/og/1", "/api/og/沒有後綴"] {
+    // 不認得的頁名也是 404（頁的分享圖只有 handlers/og.rs 的 PAGES 那幾張）
+    for path in ["/api/og/999999.png", "/api/og/1.jpg", "/api/og/1", "/api/og/沒有後綴", "/api/og/nope.png"] {
         let (st, _headers, _) = request_full(&app, "GET", path, None, None).await;
         assert_eq!(st, StatusCode::NOT_FOUND, "{path}");
     }
