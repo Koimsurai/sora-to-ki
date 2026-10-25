@@ -7,7 +7,11 @@
 // 場景/渲染全在 lib/starfieldGpu.ts；本元件只管 canvas 元素、訊息、徽章/量測 overlay。
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
-import type { PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
+import type { InitTiming, PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
+
+/** 徽章上的一行：開頁多久之後就緒、各段各花多少（土星出來得慢時看是卡在哪一段） */
+const describeInit = (t?: InitTiming) =>
+  `就緒於 ${Math.round(performance.now())} ms${t ? `（偵測 ${t.probe}・GPU ${t.device}・編譯 ${t.compile}・首幀 ${t.first}）` : ''}`;
 import { isArriving } from '@/store/pageTransition';
 import { skyPan, subscribeSkyPan } from '@/store/skyPan';
 import {
@@ -57,6 +61,8 @@ export default function StarfieldGpu({
 }: StarfieldGpuProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [backend, setBackend] = useState(BACKEND_PENDING);
+  /** 建 runner 各段的時間＋從開頁到就緒（只給 ?debug=perf 的徽章看） */
+  const [initInfo, setInitInfo] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [perf, setPerf] = useState<PerfReport | null>(null);
   const perfDebug = useMemo(() => new URLSearchParams(window.location.search).get('debug') === 'perf', []);
@@ -226,14 +232,17 @@ export default function StarfieldGpu({
         e: MessageEvent<{
           type: string;
           backend?: string;
+          timing?: InitTiming;
           report?: PerfReport;
           message?: string;
           positions?: SatelliteScreen[];
         }>,
       ) => {
         if (e.data.type === 'satellites') publishSatellites(e.data.positions ?? []);
-        else if (e.data.type === 'ready') setBackend(`${e.data.backend} · worker`);
-        else if (e.data.type === 'perf') setPerf(e.data.report ?? null);
+        else if (e.data.type === 'ready') {
+          setBackend(`${e.data.backend} · worker`);
+          setInitInfo(describeInit(e.data.timing));
+        } else if (e.data.type === 'perf') setPerf(e.data.report ?? null);
         else if (e.data.type === 'lost') recover(e.data.message ?? 'GPU device lost');
         else if (e.data.type === 'error') {
           // canvas 已 transfer、無法回收給主執行緒重用 → 本 session 放棄（頁面留下 CSS 星空）
@@ -265,7 +274,11 @@ export default function StarfieldGpu({
     let runnerHandle: StarfieldRunner | null = null;
     void import('@/lib/starfieldGpu').then(async ({ createStarfieldRunner }) => {
       try {
-        const { runner, backend: be } = await createStarfieldRunner({
+        const {
+          runner,
+          backend: be,
+          timing,
+        } = await createStarfieldRunner({
           canvas,
           width: canvas.clientWidth,
           height: canvas.clientHeight,
@@ -296,6 +309,7 @@ export default function StarfieldGpu({
           pan: (x, y) => runner.setPan(x, y),
         };
         setBackend(`${be} · main`);
+        setInitInfo(describeInit(timing));
       } catch (err) {
         console.warn('[StarfieldGpu] 主執行緒初始化失敗:', err);
         setFailed(true);
@@ -352,6 +366,7 @@ export default function StarfieldGpu({
           }}
         >
           StarfieldGpu · {backend} · TSL bloom
+          {initInfo && ` · ${initInfo}`}
           {perf &&
             ` · ${perf.fps.toFixed(0)} fps · ${perf.avgMs.toFixed(2)} ms${perf.gpuMs != null ? ` · GPU ${perf.gpuMs.toFixed(2)} ms` : ''}${perf.quality ? ` · 品質降級 L${perf.quality}` : ''} · ${perf.idle ? '閒置' : '活動'} · vsync ${perf.vsyncMs.toFixed(1)} ms · 時鐘差 ${perf.clockSkewMs.toFixed(0)} ms`}
         </div>
