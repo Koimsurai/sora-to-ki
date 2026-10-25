@@ -71,7 +71,10 @@ export type SerifWeight = (typeof SERIF_WEIGHTS)[number];
 /** 一次最多裁幾個字。正常的長文約一千個，上限只是擋住惡意的超大請求 */
 export const MAX_CODEPOINTS = 4000;
 
-/** 交給思源宋體的字：英數與拉丁補充（混排時用它自己配好的字形）、標點、注音、假名、中日韓漢字、韓文 */
+/**
+ * 交給裁字字型的字：英數與拉丁補充（混排時用它自己配好的字形）、標點、箭頭與數學符號、注音、假名、
+ * 中日韓漢字、韓文。箭頭（「查看原文 →」）與數學符號（「⋯」）原本不在裡面，每次都退回系統字型
+ */
 export function isSerifCodepoint(cp: number): boolean {
   return (
     (cp >= 0x20 && cp <= 0x7e) ||
@@ -79,6 +82,7 @@ export function isSerifCodepoint(cp: number): boolean {
     (cp >= 0x1100 && cp <= 0x11ff) ||
     (cp >= 0xac00 && cp <= 0xd7af) ||
     (cp >= 0x2000 && cp <= 0x206f) ||
+    (cp >= 0x2190 && cp <= 0x22ff) ||
     (cp >= 0x2e80 && cp <= 0x2fdf) ||
     (cp >= 0x3000 && cp <= 0x31ff) ||
     (cp >= 0x3400 && cp <= 0x4dbf) ||

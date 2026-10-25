@@ -182,12 +182,15 @@ export default function SerifFontLoader() {
       }
     });
     mo.observe(document.body, { childList: true, subtree: true, characterData: true });
-    // 讀者換了文章字體：記下來的「誰用哪種字型」全部作廢，整頁重掃
+    // 讀者換了文章字體：記下來的「誰用哪種字型」全部作廢，整頁重掃。
+    // 站內切語系也要整頁重掃：React 先把字換成新語系、<html lang> 稍後才改，那一瞬間收到的
+    // 新字（簡體的「记」「关」）是照舊的那套去要的（繁中的字型裡沒有它們）；lang 換過來之後
+    // 那些節點不會再變，新的那套就永遠沒要到，頂欄的字退回系統字型
     const fontMo = new MutationObserver(() => {
       useOf = new WeakMap();
       queue(document.body);
     });
-    fontMo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-blog-font'] });
+    fontMo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-blog-font', 'lang'] });
     return () => {
       mo.disconnect();
       fontMo.disconnect();
