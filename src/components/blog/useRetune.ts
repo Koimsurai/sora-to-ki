@@ -57,6 +57,11 @@ export function setRetune(postId: number, from: string, content: HTMLElement | n
 }
 
 /** 這一頁是不是切語系換過來的（不消耗交接） */
+/** 有沒有一個還沒過期的交接（不管哪一篇）：剛在文章頁切了語系，新語系那頁一進來就要捲回同一章 */
+export function retunePending(): boolean {
+  return pending !== null && performance.now() - pending.at <= TTL_MS;
+}
+
 export function peekRetune(postId: number): Retune | null {
   if (!pending || pending.postId !== postId || performance.now() - pending.at > TTL_MS) return null;
   return pending;
