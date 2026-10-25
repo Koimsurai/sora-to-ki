@@ -1,12 +1,10 @@
-/* 朋友（about/Friends）：左邊是軌道（畫布 about/friendsSky + 疊在上面的字），右邊一欄是對接插圖、
-   本站資料、申請表與入軌條件。窄螢幕上下疊，軌道在上 */
+/* 朋友（about/Friends）：軌道鋪滿整個視窗（畫布 about/friendsSky + 疊在上面的字），標題疊在左上。
+   對接插圖、本站資料、申請表與入軌條件收在右邊的抽屜裡，跟頂欄的選單一樣滑過停一下或點把手才拉出來；
+   拉出來時軌道往左讓位（畫布的 inset），不會被蓋住。窄螢幕的抽屜從底下拉上來 */
 
 .fr {
-  display: grid;
-  gap: var(--space-8);
-  max-width: 1280px;
-  padding: var(--page-top) var(--space-10) var(--page-bottom);
-  margin: 0 auto;
+  position: relative;
+  height: 100svh;
   font-family: var(--serif);
   color: var(--paper);
 }
@@ -64,19 +62,20 @@
   opacity: 0;
 }
 
-.fr-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: var(--space-10);
-  align-items: start;
+/* 標題疊在天上，不擋滑鼠（星的字與畫布要點得到） */
+.fr-head {
+  position: absolute;
+  top: var(--page-top);
+  left: var(--space-10);
+  z-index: 1;
+  max-width: min(520px, 60vw);
+  pointer-events: none;
 }
 
 /* ── 軌道 ── */
 .fr-sky {
-  position: sticky;
-  top: var(--page-top);
-  height: min(640px, calc(100svh - var(--page-top) - var(--page-bottom)));
-  min-height: 460px;
+  position: absolute;
+  inset: 0;
   /* 預覽星從畫面外飛進來：它的名字不能把頁面撐寬 */
   overflow: clip;
 }
@@ -95,11 +94,12 @@
 
 .fr-center {
   position: absolute;
-  top: calc(50% + var(--space-6));
-  left: 50%;
+  top: var(--space-6);
+  left: 0;
   font-size: var(--fs-14);
   color: var(--paper-2);
   pointer-events: none;
+  /* 位置由畫布那一幀給（translate 是軌道中心），這裡只負責置中在它底下 */
   transform: translateX(-50%);
 }
 
@@ -126,20 +126,18 @@
     0 0 12px var(--ground);
 }
 
-.fr-label.is-left {
-  text-align: right;
+/* 名字是對接的按鈕 */
+/* 每一行都只有自己那麼寬，對齊由畫布那一幀給（照星在中心的哪一邊連續地變） */
+.fr-label > * {
+  justify-self: start;
+  max-width: 100%;
 }
 
-/* 名字是對接的按鈕 */
 .fr-name {
   justify-self: start;
   font-size: var(--fs-16);
   line-height: var(--lh-130);
   color: var(--paper);
-}
-
-.fr-label.is-left .fr-name {
-  justify-self: end;
 }
 
 .fr-host {
@@ -154,10 +152,6 @@
   margin-top: var(--space-1);
   font-size: var(--fs-12);
   color: var(--paper-2);
-}
-
-.fr-label.is-left .fr-latest {
-  justify-content: flex-end;
 }
 
 .fr-latest time {
@@ -205,11 +199,6 @@
   transition: opacity var(--dur-300) ease;
 }
 
-.fr-label.is-left .fr-desc {
-  right: 0;
-  left: auto;
-}
-
 .fr-label.is-on .fr-desc {
   opacity: 1;
 }
@@ -242,8 +231,9 @@
 /* 對接之後展開的面板：寬螢幕在右半邊、窄螢幕在軌道下半部 */
 .fr-panel {
   position: absolute;
-  top: 10%;
-  right: 0;
+  top: 18%;
+  /* 右邊讓出抽屜的把手 */
+  right: var(--space-14);
   left: 56%;
   display: grid;
   gap: var(--space-2);
@@ -358,8 +348,8 @@
 
 .fr-legend {
   position: absolute;
-  bottom: 0;
-  left: 0;
+  bottom: var(--space-8);
+  left: var(--space-10);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-5);
@@ -413,10 +403,93 @@
   color: var(--paper-2);
 }
 
-/* ── 右欄 ── */
+/* ── 抽屜 ── */
+/* 整個抽屜是 fixed、平常推到畫面外，只露出左邊那支把手；打開時滑進來。
+   不蓋頂欄：內容區（main-content-container）自己是一個堆疊脈絡，頂欄在它外面，所以上緣留 page-top */
 .fr-side {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  width: min(380px, 92vw);
+  transform: translateX(100%);
+  transition:
+    transform var(--dur-500) var(--easing-out),
+    opacity var(--dur-300) ease;
+}
+
+.fr-side.is-open {
+  transform: none;
+}
+
+.fr-side-body {
   display: grid;
+  align-content: start;
   gap: var(--space-8);
+  height: 100%;
+  padding: var(--page-top) var(--space-6) var(--space-8);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: rgba(var(--ground-rgb), 0.96);
+  border-left: 1px solid var(--rule);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+/* 把手：貼在抽屜左緣外面，抽屜收著時它就在視窗右緣。一條豎線、一個空心點、直排的等寬小字；
+   滑過或打開時點變成琥珀實心（跟右鍵選單、指令面板同一套） */
+.fr-handle {
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-3);
+  translate: 0 -50%;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+  writing-mode: vertical-rl;
+  transition: color var(--dur-200) ease;
+}
+
+.fr-handle::before {
+  content: "";
+  width: 1px;
+  height: 40px;
+  background: var(--rule);
+}
+
+.fr-handle i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--paper-3);
+  border-radius: var(--r-round);
+  transition:
+    background-color var(--dur-200) ease,
+    border-color var(--dur-200) ease;
+}
+
+.fr-handle:hover,
+.fr-handle:focus-visible,
+.fr-side.is-open .fr-handle {
+  color: var(--paper);
+}
+
+.fr-handle:hover i,
+.fr-handle:focus-visible i,
+.fr-side.is-open .fr-handle i {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+
+.fr-handle:focus-visible {
+  outline: 1px dotted var(--paper-3);
+  outline-offset: -2px;
 }
 
 .fr-dock {
@@ -586,27 +659,25 @@
   color: var(--paper-3);
 }
 
-@media (max-width: 900px) {
-  .fr-body {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 760px) {
+  /* 手機：天空佔一整個畫面，底下接著朋友清單（星旁邊只放得下名字），頁面照常往下捲 */
+  .fr {
+    height: auto;
+  }
+
+  .fr-head {
+    left: var(--space-4);
+  }
+
+  .fr-legend {
+    bottom: var(--space-12);
+    left: var(--space-4);
   }
 
   .fr-sky {
     position: relative;
-    top: auto;
-    height: 460px;
-  }
-}
-
-@media (max-width: 760px) {
-  .fr {
-    padding-right: var(--space-4);
-    padding-left: var(--space-4);
-  }
-
-  .fr-sky {
-    height: 400px;
-    min-height: 0;
+    inset: auto;
+    height: 100svh;
   }
 
   /* 星旁邊只留名字，其餘列在底下的清單 */
@@ -616,17 +687,54 @@
 
   .fr-list {
     display: grid;
+    padding: var(--space-6) var(--space-4) calc(var(--page-bottom) + var(--space-12));
+  }
+
+  /* 抽屜改從底下拉上來；把手是貼在它上緣的一條橫的 */
+  .fr-side {
+    top: auto;
+    left: 0;
+    width: auto;
+    height: min(62svh, 560px);
+    transform: translateY(100%);
+  }
+
+  /* 抽屜拉起來時天只剩上面一小塊：標題與圖例退開，別壓在讓位過去的軌道上 */
+  .fr.is-side-open :is(.fr-head, .fr-legend) {
+    opacity: 0;
+  }
+
+  .fr-side-body {
+    padding: var(--space-6) var(--space-4) var(--space-8);
+    border-top: 1px solid var(--rule);
+    border-left: 0;
+  }
+
+  .fr-handle {
+    top: auto;
+    right: auto;
+    bottom: 100%;
+    left: 50%;
+    flex-direction: row;
+    padding: var(--space-3) var(--space-5);
+    translate: -50% 0;
+    writing-mode: horizontal-tb;
+    background: rgba(var(--ground-rgb), 0.96);
+    border: 1px solid var(--rule);
+    border-bottom: 0;
+  }
+
+  .fr-handle::before {
+    width: 24px;
+    height: 1px;
   }
 }
 
 /* 跟畫布的窄螢幕門檻同一個（friendsSky 的 NARROW_PX）：對接的船在上方，面板接在下面 */
 @media (max-width: 600px) {
-  .fr-sky {
-    height: 440px;
-  }
-
   .fr-panel {
     top: 44%;
+    right: 0;
     left: 0;
     max-height: 56%;
     padding: var(--space-4);
