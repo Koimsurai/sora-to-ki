@@ -1,4 +1,4 @@
-import { Fragment, useMemo, type ReactElement } from 'react';
+import { Fragment, startTransition, useEffect, useMemo, useState, type ReactElement } from 'react';
 import * as jsxRuntime from 'react/jsx-runtime';
 import { toJsxRuntime } from 'hast-util-to-jsx-runtime';
 import { literalValue } from '@koimsurai/mdx-core';
@@ -11,7 +11,24 @@ interface MdxContentProps {
   // 基礎元素 override（code/pre/p/a/img/h1-h4）由 BlogPost 傳入，與 markdown 管線共用同一批
   // 元件（shiki 高亮、mermaid、連結卡、圖片燈箱、標題錨點）→ MDX 文不比 markdown 文遜。
   baseComponents?: Record<string, unknown>;
+  /**
+   * 分批掛上去：先掛前 FIRST_NODES 個頂層節點，其餘每一幀補 STEP_NODES 個。之後的每一批走 startTransition，
+   * React 渲染到一半可以讓出這一幀（程式碼上色、圖表這類重的區塊才不會整批擠在同一幀）。
+   * 給「站內換頁進來」用（blog/BlogPost 決定）：整篇一次掛上的話，第一次排版要把一兩千個元素的字
+   * 全部定形（實測 70ms 以上），剛好卡在轉場飛行的半途。那時候內文還沒露出來，分批不會被看見。
+   * SSR、hydration、直接打開都是整篇一次（分批會讓 hydration 對不上，也會讓捲動還原找不到位置）。
+   */
+  progressive?: boolean;
+  /** 全部掛完（progressive 時是最後一批掛上之後；否則是第一次掛上之後） */
+  onDone?: () => void;
 }
+
+/**
+ * 分批時第一批與之後每一批的頂層節點數（含段落之間的換行節點，所以實際的段落大約一半）。
+ * 第一批小：它跟頁首、側欄擠在轉場半途的同一幀，而頁首底下那一屏下一幀就補齊了
+ */
+const FIRST_NODES = 8;
+const STEP_NODES = 24;
 
 /**
  * 渲染 server 編譯好的 MDX。
@@ -39,15 +56,39 @@ interface MdxContentProps {
  * 實際上這條路徑不太會丟錯，因為 server 端 `compileMdxSource` 已經先擋過一次；
  * 這裡是第二道，防的是「舊快取裡還留著用新規則編不出來的內容」。
  */
-export function MdxContent({ compiled, baseComponents }: MdxContentProps) {
+export function MdxContent({ compiled, baseComponents, progressive = false, onDone }: MdxContentProps) {
+  const tree = useMemo(() => {
+    try {
+      return JSON.parse(compiled) as Parameters<typeof toJsxRuntime>[0];
+    } catch (e) {
+      return e instanceof Error ? e : new Error(String(e));
+    }
+  }, [compiled]);
+  const total = tree instanceof Error || !('children' in tree) ? 0 : tree.children.length;
+  const [limit, setLimit] = useState(progressive ? FIRST_NODES : Infinity);
+  // 一幀補一批，補完通知外面（註腳的浮窗、目錄這些要等整篇都在才量得到）
+  useEffect(() => {
+    if (limit >= total) {
+      onDone?.();
+      return;
+    }
+    const id = requestAnimationFrame(() => startTransition(() => setLimit((l) => l + STEP_NODES)));
+    return () => cancelAnimationFrame(id);
+  }, [limit, total, onDone]);
+
   return useMemo(() => {
     // 自訂 block 覆蓋在 base 之上（同名以 block 為準）。
     const components = { ...baseComponents, ...MDX_BLOCKS } as Record<string, unknown>;
     try {
-      const tree = JSON.parse(compiled) as Parameters<typeof toJsxRuntime>[0];
+      if (tree instanceof Error) throw tree;
+      // 只截頂層：節點的 key 照位置給，前面已經掛上的那些不會被重建
+      const shown =
+        limit >= total || !('children' in tree)
+          ? tree
+          : ({ ...tree, children: tree.children.slice(0, limit) } as typeof tree);
       // 明確標成 ReactElement：`toJsxRuntime` 宣告的回傳是 `JSX.Element`，
       // 而 type-aware lint 在這個 monorepo 的解析下把它判成 unresolved（no-unsafe-return）。
-      const rendered: ReactElement = toJsxRuntime(tree, {
+      const rendered: ReactElement = toJsxRuntime(shown, {
         Fragment,
         jsx: jsxRuntime.jsx,
         jsxs: jsxRuntime.jsxs,
@@ -80,5 +121,5 @@ export function MdxContent({ compiled, baseComponents }: MdxContentProps) {
         </div>
       );
     }
-  }, [compiled, baseComponents]);
+  }, [tree, limit, total, baseComponents]);
 }
