@@ -312,10 +312,25 @@ export default function Collection() {
     let pointer: { x: number; y: number } | null = null;
     // 每幀都會寫字的地方：字沒變就不動 DOM
     const texts = new Map<HTMLElement, string>();
+    // 名字的寬度（決定寫在點的左邊還是右邊）：每幀現量的話，前面剛寫過位置，量一次就逼瀏覽器重排一次版；
+    // 字沒變寬度就沒變，換字、字型載完、視窗大小變了才重量
+    const widths = new Map<HTMLElement, number>();
+    const widthOf = (el: HTMLElement) => {
+      let wd = widths.get(el);
+      if (wd === undefined) {
+        wd = el.offsetWidth;
+        widths.set(el, wd);
+      }
+      return wd;
+    };
+    const remeasure = () => widths.clear();
+    document.fonts.addEventListener('loadingdone', remeasure);
+    window.addEventListener('resize', remeasure);
     const setText = (el: HTMLElement, s: string) => {
       if (texts.get(el) === s) return;
       texts.set(el, s);
       el.textContent = s;
+      widths.delete(el);
     };
     // 觸控沒有「滑過」：點一下打開接收畫面，再點同一點才開連結
     let touch = false;
@@ -470,8 +485,8 @@ export default function Collection() {
         if (!el) continue;
         seen.add(m.key);
         // 點的右邊放不下名字，就寫在左邊
-        const flip = !m.key.startsWith('scale-') && m.key !== 'records' && m.x + 20 + el.offsetWidth > w - 8;
-        el.style.transform = `translate(${flip ? Math.max(-8, m.x - el.offsetWidth - 24) : m.x}px, ${m.y}px)`;
+        const flip = !m.key.startsWith('scale-') && m.key !== 'records' && m.x + 20 + widthOf(el) > w - 8;
+        el.style.transform = `translate(${flip ? Math.max(-8, m.x - widthOf(el) - 24) : m.x}px, ${m.y}px)`;
         el.style.opacity = String(Math.min(1, m.a) * bloom);
         if (m.key === 'records') {
           setText(el, t('collection.sky.records', { date: sentAt(t, m.dist, clock) }));
@@ -495,7 +510,7 @@ export default function Collection() {
           return;
         }
         const left = q.x > w * 0.7;
-        el.style.transform = `translate(${left ? q.x - 12 - el.offsetWidth : q.x + 12}px, ${q.y - 9}px)`;
+        el.style.transform = `translate(${left ? q.x - 12 - widthOf(el) : q.x + 12}px, ${q.y - 9}px)`;
         el.style.opacity = String(q.a * bloom * (sid === id ? 0 : 1));
       });
 
@@ -538,12 +553,78 @@ export default function Collection() {
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
+      document.fonts.removeEventListener('loadingdone', remeasure);
+      window.removeEventListener('resize', remeasure);
       cv.removeEventListener('pointermove', onMove);
       cv.removeEventListener('pointerdown', onDown);
       cv.removeEventListener('pointerleave', onLeave);
       cv.removeEventListener('click', onClick);
     };
   }, [sky, byId, t]);
+
+  // 滑過的那一點一換（捲動時星從游標底下滑過，換得很勤）這一頁就重新渲染一次：
+  // 跟它無關的幾塊先包好，不然每次都要把全部作品的清單、每個名字重建一遍
+  const markSpans = useMemo(
+    () =>
+      MARK_KEYS.map((key) => (
+        <span
+          key={key}
+          className={key === 'records' ? 'cx-mark is-edge' : key.startsWith('scale-') ? 'cx-mark is-scale' : 'cx-mark'}
+          aria-hidden="true"
+          ref={(el) => {
+            if (el) marksRef.current.set(key, el);
+            else marksRef.current.delete(key);
+          }}
+        />
+      )),
+    [],
+  );
+  const nameSpans = useMemo(
+    () =>
+      named.map((s) => (
+        <span
+          key={s.id}
+          className="cx-name"
+          aria-hidden="true"
+          ref={(el) => {
+            if (el) namesRef.current.set(s.id, el);
+            else namesRef.current.delete(s.id);
+          }}
+        >
+          {s.title}
+        </span>
+      )),
+    [named],
+  );
+  const srList = useMemo(
+    () =>
+      (['watch', 'book', 'music'] as const).map((kind) => {
+        const title = t(`collection.${kind === 'book' ? 'books' : kind}.title`);
+        return (
+          <section key={kind} aria-label={title}>
+            <h2>{title}</h2>
+            <ul>
+              {signals
+                .filter((s) => s.kind === kind)
+                .map((s) => (
+                  <li key={s.id}>
+                    {s.href ? (
+                      <a href={s.href} target="_blank" rel="noopener noreferrer">
+                        {s.title}
+                      </a>
+                    ) : (
+                      s.title
+                    )}
+                    {`，${s.meta}`}
+                    {s.quote ? `：「${s.quote}」` : ''}
+                  </li>
+                ))}
+            </ul>
+          </section>
+        );
+      }),
+    [signals, t],
+  );
 
   const counts = bookCounts(books);
   const lastTrack = recent?.tracks?.[0]?.track ?? null;
@@ -598,32 +679,8 @@ export default function Collection() {
     <div className="cx" ref={pageRef}>
       <div className="cx-sky">
         <canvas ref={canvasRef} aria-hidden="true" />
-        {MARK_KEYS.map((key) => (
-          <span
-            key={key}
-            className={
-              key === 'records' ? 'cx-mark is-edge' : key.startsWith('scale-') ? 'cx-mark is-scale' : 'cx-mark'
-            }
-            aria-hidden="true"
-            ref={(el) => {
-              if (el) marksRef.current.set(key, el);
-              else marksRef.current.delete(key);
-            }}
-          />
-        ))}
-        {named.map((s) => (
-          <span
-            key={s.id}
-            className="cx-name"
-            aria-hidden="true"
-            ref={(el) => {
-              if (el) namesRef.current.set(s.id, el);
-              else namesRef.current.delete(s.id);
-            }}
-          >
-            {s.title}
-          </span>
-        ))}
+        {markSpans}
+        {nameSpans}
         <div className={hovered ? 'cx-scope is-on' : 'cx-scope'} ref={scopeRef} aria-hidden="true">
           {hovered && (
             <>
@@ -708,33 +765,7 @@ export default function Collection() {
       </p>
 
       {/* 畫布上的訊號給螢幕閱讀器與搜尋引擎的版本：每一種的全部作品 */}
-      <div className="sr-only">
-        {(['watch', 'book', 'music'] as const).map((kind) => {
-          const title = t(`collection.${kind === 'book' ? 'books' : kind}.title`);
-          return (
-            <section key={kind} aria-label={title}>
-              <h2>{title}</h2>
-              <ul>
-                {signals
-                  .filter((s) => s.kind === kind)
-                  .map((s) => (
-                    <li key={s.id}>
-                      {s.href ? (
-                        <a href={s.href} target="_blank" rel="noopener noreferrer">
-                          {s.title}
-                        </a>
-                      ) : (
-                        s.title
-                      )}
-                      {`，${s.meta}`}
-                      {s.quote ? `：「${s.quote}」` : ''}
-                    </li>
-                  ))}
-              </ul>
-            </section>
-          );
-        })}
-      </div>
+      <div className="sr-only">{srList}</div>
 
       {editing && (
         <FavoritesEditor
