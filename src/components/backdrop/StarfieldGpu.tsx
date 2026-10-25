@@ -30,6 +30,42 @@ const transferred = new WeakSet<HTMLCanvasElement>();
 /** 離開首頁時土星收成一點要多久（runner 的縮放 lerp 大約這麼久收斂） */
 const SATURN_COLLAPSE_MS = 450;
 
+/** 自己畫天空的頁面上，星空等多久才建（那幾頁的進場動畫：收藏頁俯衝 2 秒＋名字淡入 0.9 秒、手記 1.8 秒） */
+const BARE_DEFER_MS = 3000;
+
+/**
+ * 什麼時候建星空。自己畫天空的頁面（hooks/useBareSky：收藏、關於、手記）重整進來時先不建：
+ * 建 GPU device 會佔住 GPU 執行緒將近百毫秒，剛好落在那一頁進場動畫的中間，頁面自己的畫布排在後面，
+ * 整個畫面頓一下（收藏頁實測 67–85ms）。星空在那幾頁本來就淡出不畫，等進場跑完、主執行緒閒下來再建；
+ * 還沒建就離開那一頁的話馬上建。回傳取消
+ */
+function whenSkyNeeded(start: () => void): () => void {
+  const root = document.documentElement;
+  if (root.dataset.sky !== 'bare') {
+    start();
+    return () => undefined;
+  }
+  let idle = 0;
+  const cleanup = () => {
+    mo.disconnect();
+    window.clearTimeout(timer);
+    if (idle && 'cancelIdleCallback' in window) window.cancelIdleCallback(idle);
+  };
+  const go = () => {
+    cleanup();
+    start();
+  };
+  const mo = new MutationObserver(() => {
+    if (root.dataset.sky !== 'bare') go();
+  });
+  mo.observe(root, { attributes: true, attributeFilter: ['data-sky'] });
+  const timer = window.setTimeout(() => {
+    if ('requestIdleCallback' in window) idle = window.requestIdleCallback(go, { timeout: 1000 });
+    else go();
+  }, BARE_DEFER_MS);
+  return cleanup;
+}
+
 /** runner 還沒就緒時徽章顯示的字串，同時是 canvas 淡入的開關 */
 const BACKEND_PENDING = '初始化中…';
 
@@ -204,16 +240,18 @@ export default function StarfieldGpu({
       // 這是 worker 進入點並單獨打包，換成 @/ alias 它就認不出來了。
       const worker = new Worker(new URL('../../workers/spaceGpuWorker.ts', import.meta.url), { type: 'module' });
       const offscreen = canvas.transferControlToOffscreen();
-      worker.postMessage(
-        {
-          type: 'init',
-          canvas: offscreen,
-          width: canvas.clientWidth,
-          height: canvas.clientHeight,
-          dpr: window.devicePixelRatio,
-          lite: liteRef.current,
-        },
-        [offscreen],
+      const cancelStart = whenSkyNeeded(() =>
+        worker.postMessage(
+          {
+            type: 'init',
+            canvas: offscreen,
+            width: canvas.clientWidth,
+            height: canvas.clientHeight,
+            dpr: window.devicePixelRatio,
+            lite: liteRef.current,
+          },
+          [offscreen],
+        ),
       );
       // ⚠ 明送一次當下的狀態，不能只靠下面的 visibilitychange / fullscreenchange。
       //
@@ -261,6 +299,7 @@ export default function StarfieldGpu({
       document.addEventListener('visibilitychange', onVis);
       document.addEventListener('fullscreenchange', onVis);
       return () => {
+        cancelStart();
         window.removeEventListener('resize', onResize);
         document.removeEventListener('visibilitychange', onVis);
         document.removeEventListener('fullscreenchange', onVis);
