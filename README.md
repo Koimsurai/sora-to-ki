@@ -76,13 +76,23 @@
 
 ## 📸 畫面
 
-| 碎念 | 作品 |
+| 首頁：繞著土星的衛星 | 手記：一圈一圈的星軌 |
 |:---:|:---:|
-| [![碎念](.github/screenshots/moments.jpg)](https://koimsurai.com/thinking) | [![作品](.github/screenshots/works.jpg)](https://koimsurai.com/portfolio) |
-| **收藏** | **航行日誌** |
+| [![首頁](.github/screenshots/home.jpg)](https://koimsurai.com) | [![手記](.github/screenshots/notes.jpg)](https://koimsurai.com/blog) |
+| **文章** | **作品：往外長的螺旋航線** |
+| [![文章](.github/screenshots/post.jpg)](https://koimsurai.com/blog) | [![作品](.github/screenshots/works.jpg)](https://koimsurai.com/portfolio) |
+| **收藏：從地球發出的訊號** | **航行日誌：從地表升空** |
 | [![收藏](.github/screenshots/collection.jpg)](https://koimsurai.com/watch) | [![航行日誌](.github/screenshots/log.jpg)](https://koimsurai.com/history) |
-| **設備** | **此站點** |
+| **設備：太空船的工程圖** | **此站點** |
 | [![設備](.github/screenshots/setup.jpg)](https://koimsurai.com/setup) | [![此站點](.github/screenshots/colophon.jpg)](https://koimsurai.com/about-site) |
+
+### 後台
+
+| 此刻 | 手記 |
+|:---:|:---:|
+| ![後台：此刻](.github/screenshots/admin-dashboard.jpg) | ![後台：手記](.github/screenshots/admin-posts.jpg) |
+| **碎念**：右邊是同步進來的紀錄，按「寫」帶進左邊 | **留言**：左邊清單、右邊那一則，鍵盤 j／k／a／s／r |
+| ![後台：碎念](.github/screenshots/admin-thoughts.jpg) | ![後台：留言](.github/screenshots/admin-comments.jpg) |
 
 ## 🚀 2026-10 的大遷移
 
@@ -98,6 +108,7 @@
 **後台**
 
 - 換成跟前台同一套材料，側欄照前台的分區分成「此刻、寫、收、回、站」
+- 內容撐滿側欄右邊的寬度（清單類的頁面收成一欄置中）；換頁時舊畫面淡出、新的那頁淡入上浮，切分頁也一樣
 - 新功能：排程發佈、回收桶、碎念附作品、友鏈申請審核、照片與收藏的前台顯示設定（見下面「站台本身」）
 
 **更早的一次遷移**：2026-07 後端從 Express 整套搬到 Rust，120 多個端點逐一對拍、確認回應一模一樣才切換。過程記錄在 [`backend/STRANGLER.md`](backend/STRANGLER.md)。

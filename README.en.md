@@ -76,13 +76,23 @@ Articles can also be read in a sans, a handwritten-style or a modern sans face, 
 
 ## 📸 Screenshots
 
-| Moments | Works |
+| Home: moons around Saturn | Notes: rings of star trails |
 |:---:|:---:|
-| [![Moments](.github/screenshots/moments.jpg)](https://koimsurai.com/en/thinking) | [![Works](.github/screenshots/works.jpg)](https://koimsurai.com/en/portfolio) |
-| **Collection** | **Log** |
+| [![Home](.github/screenshots/home.jpg)](https://koimsurai.com) | [![Notes](.github/screenshots/notes.jpg)](https://koimsurai.com/en/blog) |
+| **Article** | **Works: a spiral course outward** |
+| [![Article](.github/screenshots/post.jpg)](https://koimsurai.com/en/blog) | [![Works](.github/screenshots/works.jpg)](https://koimsurai.com/en/portfolio) |
+| **Collection: signals sent from Earth** | **Log: a launch from the ground** |
 | [![Collection](.github/screenshots/collection.jpg)](https://koimsurai.com/en/watch) | [![Log](.github/screenshots/log.jpg)](https://koimsurai.com/en/history) |
-| **Setup** | **Colophon** |
+| **Setup: a spacecraft's blueprints** | **Colophon** |
 | [![Setup](.github/screenshots/setup.jpg)](https://koimsurai.com/en/setup) | [![Colophon](.github/screenshots/colophon.jpg)](https://koimsurai.com/en/about-site) |
+
+### Admin
+
+| Now | Notes |
+|:---:|:---:|
+| ![Admin: Now](.github/screenshots/admin-dashboard.jpg) | ![Admin: Notes](.github/screenshots/admin-posts.jpg) |
+| **Moments**: synced records on the right; "Write" pulls one into the composer | **Comments**: list on the left, the selected one on the right; keyboard j / k / a / s / r |
+| ![Admin: Moments](.github/screenshots/admin-thoughts.jpg) | ![Admin: Comments](.github/screenshots/admin-comments.jpg) |
 
 ## 🚀 The October 2026 rebuild
 
@@ -98,6 +108,7 @@ This wasn't a reskin: the whole site was rebuilt to the three rules above. The p
 **Admin**
 
 - Rebuilt in the same materials, with the sidebar grouped like the site: Now, Write, Keep, Reply, Station
+- Content fills the full width to the right of the sidebar (list pages stay one centred column); changing pages fades the old one out while the new one fades and rises in, and switching tabs does the same
 - New features: scheduled publishing, a trash, moments with attached works, link-exchange review, and public-visibility settings for photos and the collection (see "The site itself" below)
 
 **An earlier migration**: in July 2026 the backend moved from Express to Rust in one go. All 120+ endpoints were diffed against the old ones, and the switch happened only once every response matched. The process is written up in [`backend/STRANGLER.md`](backend/STRANGLER.md) (in Chinese).
