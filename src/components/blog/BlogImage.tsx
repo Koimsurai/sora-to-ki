@@ -1,7 +1,5 @@
-import { useState, useEffect, useCallback, useRef, useMemo, type ImgHTMLAttributes } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback, useRef, useMemo, type ImgHTMLAttributes, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FaTimes } from 'react-icons/fa';
 import { thumbHashToDataURL, thumbHashToApproximateAspectRatio } from 'thumbhash';
 import { Modal, ModalTitle } from '@/components/common/Modal';
 import './BlogImage.css';
@@ -9,7 +7,7 @@ import './BlogImage.css';
 /**
  * `BlogImage` — 文章內文的 `<img>` 渲染器（ReactMarkdown / MDX 的 `img` 元件）。
  * - 從 URL 的 `#th=…&w=…&h=…` fragment 解出 thumbhash 佔位圖與原始尺寸（防 CLS）
- * - 點擊放大：下方的 `ImageLightbox` modal（浮在正中央、滾動立即關閉）
+ * - 點擊放大：下方的 `ImageLightbox`（從文章裡的位置放大到正中央；捲一小段才收回原位）
  * - NAS 圖片 hover 顯示完整 EXIF（從 manifest 讀取）
  *
  * ⚠ 這個檔原本叫 `gallery/ImageLightbox.tsx`，但它**跟照片牆沒有任何關係**：
@@ -173,6 +171,7 @@ type BlogImageProps = { src?: string; alt?: string } & ImgHTMLAttributes<HTMLIma
 export const BlogImage = ({ src, alt, ...props }: BlogImageProps) => {
   const [showLightbox, setShowLightbox] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
   const [exifData, setExifData] = useState<ExifData | null>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
   const isNAS = isNASImage(src);
@@ -247,12 +246,14 @@ export const BlogImage = ({ src, alt, ...props }: BlogImageProps) => {
             也沒有鍵盤操作，報讀器更不會提示它可以按開大圖。 */}
         <button
           type="button"
-          className="blog-image-zoom"
+          // 燈箱開著時原圖藏起來：看起來是同一張圖飛出去、再飛回來
+          className={showLightbox ? 'blog-image-zoom is-zoomed' : 'blog-image-zoom'}
           onClick={() => setShowLightbox(true)}
           aria-label={alt ? `放大檢視：${alt}` : '放大檢視圖片'}
         >
           <img
             {...props}
+            ref={imgRef}
             src={displaySrc}
             alt={alt ?? ''}
             // ⚠ 這兩個屬性是版面預留的唯一來源（見 decodeSizeFromSrc）。
@@ -296,7 +297,15 @@ export const BlogImage = ({ src, alt, ...props }: BlogImageProps) => {
           </span>
         )}
       </span>
-      {showLightbox && <ImageLightbox src={fullSrc} alt={alt} onClose={() => setShowLightbox(false)} />}
+      {showLightbox && (
+        <ImageLightbox
+          src={fullSrc}
+          alt={alt}
+          origin={imgRef}
+          naturalWidth={size?.width}
+          onClose={() => setShowLightbox(false)}
+        />
+      )}
     </>
   );
 };
@@ -304,53 +313,124 @@ export const BlogImage = ({ src, alt, ...props }: BlogImageProps) => {
 interface ImageLightboxProps {
   src?: string;
   alt?: string;
+  /** 文章裡那張圖：放大從它的位置出發，收回時回到它（捲動過的話是它現在的位置） */
+  origin: RefObject<HTMLImageElement | null>;
+  /** 原圖的寬（上傳時寫進網址的 &w=）：放大不超過原圖，小圖不會被放到糊掉 */
+  naturalWidth?: number;
   onClose: () => void;
 }
 
-// Lightbox 主組件 — 使用 Portal 渲染到 body
-function ImageLightbox({ src, alt, onClose }: ImageLightboxProps) {
+/** 開著時捲了多少才收回去：小於這段當成手滑，燈箱停著不動 */
+const SCROLL_CLOSE_PX = 56;
+/** 放大與收回的時間（毫秒） */
+const OPEN_MS = 340;
+const CLOSE_MS = 300;
+const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+/** 把 target 那個框變成 from 那個框的 transform（transform-origin 在中心） */
+function flip(from: DOMRect, target: DOMRect) {
+  const dx = from.left + from.width / 2 - (target.left + target.width / 2);
+  const dy = from.top + from.height / 2 - (target.top + target.height / 2);
+  return `translate(${dx}px, ${dy}px) scale(${from.width / target.width})`;
+}
+
+// 燈箱：圖從文章裡的位置放大到正中央。開著時捲動先停住（手滑不算），捲超過一小段才收——
+// 收的時候縮回原圖現在的位置（頁面捲過了，所以是跟著捲動後的那個位置）；Esc、點背景、關閉鈕也一樣收回去
+function ImageLightbox({ src, alt, origin, naturalWidth, onClose }: ImageLightboxProps) {
   const { t } = useTranslation();
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [closing, setClosing] = useState(false);
   const closingRef = useRef(false);
+
+  // 放大後的大小：照文章裡那張的比例，塞進視窗（寬 92%、高 86%），不超過原圖
+  const [box] = useState(() => {
+    const o = origin.current?.getBoundingClientRect();
+    const ratio = o && o.height > 0 ? o.width / o.height : 1.5;
+    let w = Math.min(window.innerWidth * 0.92, window.innerHeight * 0.86 * ratio);
+    if (naturalWidth) w = Math.min(w, naturalWidth);
+    return { width: Math.round(w), height: Math.round(w / ratio) };
+  });
+  const reduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 打開：從文章裡的位置放大過來。燈箱的圖在 Radix 的 Portal 裡，Portal 自己掛好之後才把內容放進來，
+  // 所以不能在這個元件的 layout effect 裡量（那時圖還不在頁面上）；圖接上的那一刻才量、才開始飛
+  const openedRef = useRef(false);
+  const attach = useCallback(
+    (img: HTMLImageElement | null) => {
+      imgRef.current = img;
+      if (!img || openedRef.current) return;
+      openedRef.current = true;
+      const o = origin.current?.getBoundingClientRect();
+      if (!o || reduce()) return;
+      img.animate([{ transform: flip(o, img.getBoundingClientRect()) }, { transform: 'none' }], {
+        duration: OPEN_MS,
+        easing: EASE,
+      });
+    },
+    [origin],
+  );
 
   const handleClose = useCallback(() => {
     if (closingRef.current) return;
     closingRef.current = true;
-    onClose();
-  }, [onClose]);
+    setClosing(true);
+    const img = imgRef.current;
+    const o = origin.current?.getBoundingClientRect();
+    // 原圖不在畫面上（捲很遠、或被拿掉了）就不飛回去，淡掉就好
+    const visible = o && o.bottom > 0 && o.top < window.innerHeight && o.width > 0;
+    if (!img || !visible || reduce()) {
+      window.setTimeout(onClose, reduce() ? 0 : CLOSE_MS);
+      return;
+    }
+    const anim = img.animate([{ transform: 'none' }, { transform: flip(o, img.getBoundingClientRect()) }], {
+      duration: CLOSE_MS,
+      easing: EASE,
+      fill: 'forwards',
+    });
+    void anim.finished.then(onClose, onClose);
+  }, [origin, onClose]);
 
+  // 捲動：累計捲了多少（含頁面已經到底、捲不動時的滾輪），超過一小段才收
   useEffect(() => {
-    // 滾動立即關閉 — 不 preventDefault，不會卡頓
-    const handleWheel = () => handleClose();
-    const handleScroll = () => handleClose();
-
-    window.addEventListener('wheel', handleWheel, { passive: true });
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
+    const startY = window.scrollY;
+    let wheel = 0;
+    const check = () => {
+      if (Math.abs(window.scrollY - startY) > SCROLL_CLOSE_PX || Math.abs(wheel) > SCROLL_CLOSE_PX * 2) handleClose();
+    };
+    const onWheel = (e: WheelEvent) => {
+      wheel += e.deltaY;
+      check();
+    };
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('wheel', onWheel, { passive: true });
     return () => {
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('wheel', onWheel);
     };
   }, [handleClose]);
 
-  // Esc、焦點交給 Modal；捲動不鎖——滾一下就關、頁面照常捲（上面的 wheel/scroll 監聽）
+  // Esc、焦點交給 Modal；捲動不鎖——頁面照常捲，捲夠了燈箱才收（上面的監聽）
   return (
-    <Modal onClose={handleClose} overlayClassName="image-lightbox-overlay" fade lockScroll={false}>
+    <Modal
+      onClose={handleClose}
+      overlayClassName={closing ? 'image-lightbox-overlay is-closing' : 'image-lightbox-overlay'}
+      lockScroll={false}
+    >
       {/* display: contents——只是給 Radix 一個「對話框本體」的邊界，不參與版面 */}
       <div className="image-lightbox-content">
         <ModalTitle className="sr-only">{(alt ?? '') || t('common.imageViewer')}</ModalTitle>
-        <motion.img
+        <img
+          ref={attach}
           src={src}
           alt={alt ?? ''}
           className="image-lightbox-img"
-          initial={{ scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.85, opacity: 0 }}
-          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+          width={box.width}
+          height={box.height}
+          // 先用文章裡已經載好的那張墊著，原圖載到之前不會一片空白
+          style={{ backgroundImage: origin.current ? `url(${origin.current.currentSrc})` : undefined }}
         />
         {alt && <p className="image-lightbox-cap">{alt}</p>}
-        <button type="button" className="image-lightbox-close" onClick={handleClose} aria-label={t('common.close')}>
-          <FaTimes />
-        </button>
+        <button type="button" className="image-lightbox-close" onClick={handleClose} aria-label={t('common.close')} />
       </div>
     </Modal>
   );

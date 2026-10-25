@@ -447,6 +447,14 @@ a.series-nav-title:hover {
   justify-content: center;
   background: rgba(var(--ground-rgb), 0.95);
   cursor: zoom-out;
+  animation: lightbox-in var(--dur-300) ease;
+  transition: background-color var(--dur-300) ease;
+}
+
+@keyframes lightbox-in {
+  from {
+    background-color: transparent;
+  }
 }
 
 /* ═══════════════════════

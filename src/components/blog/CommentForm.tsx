@@ -2,7 +2,7 @@
 // 平常只有一行「TX｜想說的話｜字數｜送出」，焦點移進來才往上展開登入圖示、名字、Email、網站、驗證碼與規則
 // （收起來時仍在版面裡，高度 0：驗證沒過時才能把焦點移進去）。上緣那條線是打的字即時變成的波形，送出時往右飛走。
 // 資料照文章留言那一套（匿名的要審核，登入的直接公開）；回覆給誰由外面決定（清單上的「回覆」）。
-import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
@@ -118,7 +118,10 @@ export default function CommentForm({
     if (!form) return;
     const onIn = () => setFocused(true);
     const onOut = (e: FocusEvent) => {
-      if (!(e.relatedTarget instanceof Node && form.contains(e.relatedTarget))) setFocused(false);
+      if (e.relatedTarget instanceof Node && form.contains(e.relatedTarget)) return;
+      // 焦點所在的元素自己被拿掉（按「改用匿名／改用帳號」時那顆按鈕就被換掉了）：不算離開
+      if (e.target instanceof Node && !e.target.isConnected) return;
+      setFocused(false);
     };
     form.addEventListener('focusin', onIn);
     form.addEventListener('focusout', onOut);
@@ -127,6 +130,19 @@ export default function CommentForm({
       form.removeEventListener('focusout', onOut);
     };
   }, []);
+
+  // 換了身分：游標直接放到新的那一組該填的欄位（匿名→名字，帳號→內容）。
+  // 在畫之前做：按鈕被換掉時焦點可能先掉出表單一下，這裡接回來，面板不會收起來又展開
+  const switchedRef = useRef(false);
+  useLayoutEffect(() => {
+    if (!switchedRef.current) return;
+    switchedRef.current = false;
+    (asUser ? textRef : nameRef).current?.focus();
+  }, [asUser, textRef]);
+  const switchTo = (anon: boolean) => {
+    switchedRef.current = true;
+    setAnonymous(anon);
+  };
 
   const login = (provider: 'github' | 'google') => {
     sessionStorage.setItem('oauth_return_to', window.location.pathname);
@@ -232,7 +248,7 @@ export default function CommentForm({
           {asUser ? (
             <p className="cf-as">
               {t('signal.asUser', { name: user?.displayName ?? '' })}
-              <button type="button" onClick={() => setAnonymous(true)}>
+              <button type="button" onClick={() => switchTo(true)}>
                 {t('signal.useAnonymous')}
               </button>
             </p>
@@ -264,7 +280,7 @@ export default function CommentForm({
                     </button>
                   )}
                   {isLoggedIn && (
-                    <button type="button" onClick={() => setAnonymous(false)}>
+                    <button type="button" onClick={() => switchTo(false)}>
                       {t('signal.useAccount')}
                     </button>
                   )}

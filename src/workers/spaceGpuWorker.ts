@@ -79,7 +79,11 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   if (msg.type === 'init') {
     void (async () => {
       try {
-        const { runner: r, backend } = await createStarfieldRunner({
+        const {
+          runner: r,
+          backend,
+          timing,
+        } = await createStarfieldRunner({
           canvas: msg.canvas,
           width: msg.width,
           height: msg.height,
@@ -98,7 +102,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         if (lastGlow) runner.setSatelliteGlow(lastGlow);
         if (lastStars !== null) runner.setStars(lastStars);
         if (lastPan) runner.setPan(lastPan.x, lastPan.y);
-        self.postMessage({ type: 'ready', backend });
+        self.postMessage({ type: 'ready', backend, timing });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
       }

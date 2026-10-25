@@ -28,9 +28,17 @@
   max-height: 86vh;
   object-fit: contain;
   border-radius: var(--r-2);
+  /* 原圖載到之前，用文章裡已經載好的那張墊著（JS 給 background-image） */
+  background-size: cover;
+  background-position: center;
   cursor: default;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+/* 燈箱開著時，文章裡那張藏起來：看起來是同一張圖飛出去再飛回來 */
+.blog-image-zoom.is-zoomed img {
+  visibility: hidden;
 }
 
 /* 圖說：跟文章裡的圖說同一種（小一號、淡一階） */
@@ -44,33 +52,66 @@
   cursor: default;
 }
 
-/* 關閉：跟影片播放鈕同一種細線圓圈 */
+/* 燈箱開著時頂欄藏起來：遮罩只有 95% 不透明，右上角頂欄那顆點會從關閉鈕的圓圈裡透出來 */
+body:has(.image-lightbox-overlay) .snav {
+  visibility: hidden;
+}
+
+/* 關閉：細線圓圈，裡面兩條細線交叉（CSS 畫，不靠圖示字型） */
 .image-lightbox-close {
   position: fixed;
   top: 1.5rem;
   right: 1.5rem;
+  z-index: 2;
   width: 40px;
   height: 40px;
+  padding: 0;
+  border: 1px solid var(--paper-3);
   border-radius: var(--r-round);
   background: none;
-  border: 1px solid var(--paper-3);
   color: var(--paper-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: pointer;
   transition:
     border-color var(--dur-200) ease,
     color var(--dur-200) ease;
-  z-index: 2;
 }
 
-/* 蓋掉全域 button:hover 的底色與光暈（specificity 0,2,0 > 0,1,1） */
+.image-lightbox-close::before,
+.image-lightbox-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+}
+
+.image-lightbox-close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.image-lightbox-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
 .image-lightbox-close:hover,
-.image-lightbox-close:focus,
 .image-lightbox-close:focus-visible {
-  background: none;
   border-color: var(--paper);
-  box-shadow: none;
   color: var(--paper);
+  outline: none;
+}
+
+/* 收回去的時候：背景、圖說、關閉鈕一起淡掉，只剩圖飛回原位 */
+.image-lightbox-overlay.is-closing {
+  background-color: transparent;
+}
+
+.image-lightbox-overlay.is-closing :is(.image-lightbox-cap, .image-lightbox-close) {
+  opacity: 0;
+}
+
+.image-lightbox-cap,
+.image-lightbox-close {
+  transition: opacity var(--dur-250) ease;
 }

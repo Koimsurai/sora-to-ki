@@ -134,7 +134,23 @@
       "posts": "文章",
       "categories": "分類",
       "tags": "標籤"
+    },
+    "home": "首頁",
+    "keys": {
+      "move": "移動",
+      "open": "開啟",
+      "toggle": "開關"
     }
+  },
+  "contextMenu": {
+    "back": "上一頁",
+    "forward": "下一頁",
+    "reload": "重新整理",
+    "openNewTab": "在新分頁開啟連結",
+    "copyLink": "複製連結網址",
+    "random": "隨機一篇文章",
+    "top": "回到頂端",
+    "hint": "按住 Shift 再按右鍵，是瀏覽器原本的選單"
   },
   "backToTop": {
     "label": "回到頂部"
@@ -428,7 +444,43 @@
     "station": "DSN · 地面站",
     "stationLabel": "地面站的碟形天線，接收遠處探測器傳來的訊號",
     "passesLabel": "每個月收到幾張：{{month}} 最多，{{count}} 張",
-    "frame": "照片 {{date}}"
+    "frame": "照片 {{date}}",
+    "viewer": {
+      "share": "分享這張照片",
+      "shareShort": "分享",
+      "shareTitle": "照片",
+      "shareText": "查看我的照片作品",
+      "close": "關閉檢視器",
+      "closeHint": "關閉（Esc）",
+      "prev": "上一張照片",
+      "next": "下一張照片"
+    },
+    "exif": {
+      "info": "照片資訊",
+      "title": "標題",
+      "description": "描述",
+      "basic": "基本資訊",
+      "size": "尺寸",
+      "fileSize": "檔案大小",
+      "format": "格式",
+      "ratio": "比例",
+      "camera": "相機資訊",
+      "make": "製造商",
+      "model": "型號",
+      "lens": "鏡頭",
+      "shooting": "拍攝參數",
+      "focal": "焦距",
+      "aperture": "光圈",
+      "shutter": "快門",
+      "flash": "閃光燈",
+      "whiteBalance": "白平衡",
+      "taken": "拍攝時間",
+      "location": "位置資訊",
+      "lat": "緯度",
+      "lng": "經度",
+      "altitude": "海拔",
+      "tags": "標籤"
+    }
   },
   "aboutFall": {
     "kick": "關於",
