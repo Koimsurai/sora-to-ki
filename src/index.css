@@ -885,7 +885,9 @@
 :root {
   --blog-font-misans: MiSans, system-ui, -apple-system, sans-serif;
   --blog-font-lxgw: "LXGW WenKai TC", "LXGW WenKai", cursive;
-  --blog-font-noto-serif: "Noto Serif SC", "Noto Serif TC", Georgia, serif;
+  /* 思源宋體＝站上那套按頁裁字的堆疊（--serif，各語系各自那一套字形，:lang() 換掉）。
+     原本寫死 "Noto Serif SC/TC"：訪客電腦裡沒裝就整篇退回系統字型，簡中頁還會兩套字形混排 */
+  --blog-font-noto-serif: var(--serif);
   --blog-font-source-han: "Noto Sans SC", "Noto Sans TC", "Source Han Sans SC", sans-serif;
 
   /* 沒有偏好時的預設（對齊 FONT_OPTIONS 的原始預設 'noto-serif'） */
