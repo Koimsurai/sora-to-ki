@@ -62,7 +62,7 @@
     "listening": "聴いている",
     "recently": "最近",
     "episode": "第 {{ep}} 話",
-    "aboutLead": "Koimsurai、コードを書く人。",
+    "aboutLead": "Koimsurai、コードを書く人。ときどき何かを作る。",
     "aboutAll": "自己紹介"
   },
   "user": {
@@ -72,7 +72,7 @@
     "signInWithGoogle": "Google でログイン"
   },
   "hero": {
-    "description": "宙と木 — Koimsurai の個人空間。エンジニアの読書ノート、作品記録、システム実験。"
+    "description": "宙と木、Koimsurai の個人空間。コードを書く人。ときどき何かを作る。"
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -639,7 +639,7 @@
     "legendDim": "暗いほど：更新から時間が経っている",
     "dockLabel": "ドッキング直前の二隻の船、その間を信号が行き来している",
     "cardTitle": "このサイトの情報",
-    "siteDesc": "あるエンジニアの個人スペース",
+    "siteDesc": "コードを書く人。ときどき何かを作る",
     "formTitle": "次の星になる",
     "fieldName": "名前",
     "fieldNameHint": "サイト名",
@@ -878,6 +878,6 @@
     "fontReading": "記事はゴシック体、手書き風、モダンなサンセリフにも切り替えられ、どれも言語ごとにこのサイトから配信しています。MiSans は Xiaomi の無料商用フォントです。"
   },
   "og": {
-    "tagline": "コード、システム、そして暮らしのかけら。"
+    "tagline": "コードを書く人。ときどき何かを作る。"
   }
 }

@@ -62,7 +62,7 @@
     "listening": "在聽",
     "recently": "最近",
     "episode": "第 {{ep}} 集",
-    "aboutLead": "Koimsurai，一個寫程式的人。",
+    "aboutLead": "Koimsurai，一個寫代碼的人，偶爾造點東西。",
     "aboutAll": "關於我"
   },
   "user": {
@@ -72,7 +72,7 @@
     "signInWithGoogle": "Google 登入"
   },
   "hero": {
-    "description": "宙と木 — Koimsurai 的個人空間。一個工程師的閱讀筆記、作品紀錄與系統實驗。"
+    "description": "宙と木，Koimsurai 的個人空間。一個寫代碼的人，偶爾造點東西。"
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -639,7 +639,7 @@
     "legendDim": "越暗：越久沒更新",
     "dockLabel": "兩艘正要對接的船，中間有一道訊號",
     "cardTitle": "本站資料",
-    "siteDesc": "一個工程師的個人空間",
+    "siteDesc": "一個寫代碼的人，偶爾造點東西",
     "formTitle": "成為下一顆",
     "fieldName": "名字",
     "fieldNameHint": "你的網站名稱",
@@ -878,6 +878,6 @@
     "fontReading": "讀文章時還能換成黑體、楷體或現代無襯線，四種都照語系由站上提供。MiSans 是小米的免費商用字型。"
   },
   "og": {
-    "tagline": "代碼、系統，與生活碎片。"
+    "tagline": "一個寫代碼的人，偶爾造點東西。"
   }
 }
