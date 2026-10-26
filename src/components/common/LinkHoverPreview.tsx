@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, queryOptions } from '@tanstack/react-query';
@@ -68,7 +68,15 @@ export function LinkHoverPreview({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const anchorRef = useRef<HTMLAnchorElement>(null);
 
-  const { data, isPending } = useQuery({ ...linkPreviewQueryOptions(href), enabled: open });
+  // 文章裡連自己站的常寫成相對路徑（/blog/…）：原樣送給後端的話它不知道去哪裡抓，只好給沒有圖的降級卡
+  const target = useMemo(() => {
+    try {
+      return new URL(href, 'https://koimsurai.com').href;
+    } catch {
+      return href;
+    }
+  }, [href]);
+  const { data, isPending } = useQuery({ ...linkPreviewQueryOptions(target), enabled: open });
 
   const openSoon = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
