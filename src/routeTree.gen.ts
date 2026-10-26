@@ -38,6 +38,7 @@ import { Route as LocalePortfolioRouteImport } from './routes/$locale/portfolio'
 import { Route as LocaleSetupRouteImport } from './routes/$locale/setup'
 import { Route as LocaleUnsubscribeRouteImport } from './routes/$locale/unsubscribe'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 import { Route as AdminBooksRouteImport } from './routes/admin/books'
 import { Route as AdminCategoriesRouteImport } from './routes/admin/categories'
 import { Route as AdminCollectionRouteImport } from './routes/admin/collection'
@@ -211,6 +212,11 @@ const LocaleUnsubscribeRoute = LocaleUnsubscribeRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminBooksRoute = AdminBooksRouteImport.update({
@@ -387,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/collection': typeof AdminCollectionRoute
@@ -446,6 +453,7 @@ export interface FileRoutesByTo {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/collection': typeof AdminCollectionRoute
@@ -507,6 +515,7 @@ export interface FileRoutesById {
   '/$locale/portfolio': typeof LocalePortfolioRoute
   '/$locale/setup': typeof LocaleSetupRoute
   '/$locale/unsubscribe': typeof LocaleUnsubscribeRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/books': typeof AdminBooksRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/collection': typeof AdminCollectionRoute
@@ -569,6 +578,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/unsubscribe'
+    | '/admin/analytics'
     | '/admin/books'
     | '/admin/categories'
     | '/admin/collection'
@@ -628,6 +638,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/unsubscribe'
+    | '/admin/analytics'
     | '/admin/books'
     | '/admin/categories'
     | '/admin/collection'
@@ -688,6 +699,7 @@ export interface FileRouteTypes {
     | '/$locale/portfolio'
     | '/$locale/setup'
     | '/$locale/unsubscribe'
+    | '/admin/analytics'
     | '/admin/books'
     | '/admin/categories'
     | '/admin/collection'
@@ -971,6 +983,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/books': {
       id: '/admin/books'
       path: '/books'
@@ -1178,6 +1197,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBooksRoute: typeof AdminBooksRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCollectionRoute: typeof AdminCollectionRoute
@@ -1197,6 +1217,7 @@ interface AdminRouteRouteChildren {
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBooksRoute: AdminBooksRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCollectionRoute: AdminCollectionRoute,

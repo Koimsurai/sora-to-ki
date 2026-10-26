@@ -1,0 +1,157 @@
+/* 流量頁（AdminAnalytics.tsx）。材料跟總覽同一套：等寬小字、點線、琥珀只給資料本身。 */
+
+/* 總數、走勢、排行三段：段跟段之間要比段內鬆 */
+.adm-an-report {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+}
+
+/* 數字格裡的單位（分、秒、%）：小一號、不用等寬 */
+.adm-an-unit {
+  margin: 0 var(--space-1) 0 var(--space-0-5);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  color: var(--paper-meta);
+}
+
+/* ── 柱狀圖 ── */
+.adm-an-chart {
+  margin: var(--space-4) 0 0;
+}
+
+.adm-an-plot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* 最大值標在左上，配一條極淡的線當刻度；其他格線都不畫 */
+.adm-an-max {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+.adm-an-bars {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-px);
+  height: 220px;
+  border-top: 1px dotted var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* 一格一欄；感應區是整欄，柱子貼著底 */
+.adm-an-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.adm-an-col:hover {
+  background: rgba(var(--paper-rgb), 0.04);
+}
+
+.adm-an-bar {
+  width: min(100%, 28px);
+  min-height: 1px;
+  background: rgba(var(--amber-rgb), 0.7);
+  border-radius: var(--r-4) var(--r-4) 0 0;
+  transition: background var(--dur-150) var(--easing-standard);
+}
+
+.adm-an-col:hover .adm-an-bar {
+  background: var(--amber);
+}
+
+.adm-an-axis {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+/* ── 排行：四張表兩兩一排，窄的時候一張一排 ──
+   最小寬 560：內容區最寬約 1650，放不下三張，就不會排成 3＋1 */
+.adm-an-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr));
+  gap: var(--space-10) var(--space-12);
+}
+
+.adm-an-rank-wrap {
+  min-width: 0;
+}
+
+.adm-an-rank {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 背後那條長條是跟第一名比的比例（--w 由元件給） */
+.adm-an-rank li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 36px;
+  padding: 0 var(--space-2-5);
+  background: linear-gradient(to right, rgba(var(--amber-rgb), 0.1) var(--w), transparent var(--w)) no-repeat;
+  border-bottom: 1px dotted var(--rule);
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+}
+
+.adm-an-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-an-name[data-mono] {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+}
+
+.adm-an-count {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper);
+}
+
+/* ── 還沒設 key 的說明 ── */
+.adm-an-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 720px;
+  font-size: var(--fs-14);
+  line-height: var(--lh-170);
+  color: var(--paper-2);
+}
+
+.adm-an-setup ol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5);
+  margin: 0;
+  padding-left: var(--space-5);
+  list-style: decimal;
+}
+
+.adm-an-setup code {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--amber);
+}
+
+.adm-an-setup b {
+  font-weight: 500;
+  color: var(--paper);
+}

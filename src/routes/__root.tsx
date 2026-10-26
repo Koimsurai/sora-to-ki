@@ -167,6 +167,13 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
                下面那段先把設定存進 plausible.o，站台腳本載入後自己會讀
                （`plausible.o && S(plausible.o)`）。
 
+            站長自己不算進去，兩層：
+              · transformRequest 回 null 的事件不送 —— /admin 底下一律不送（後台不是讀者會看的頁面）。
+                它跟 endpoint 一樣是 init() 的選項，照上面那個 Object.assign 合併得進去。
+              · 開過後台的瀏覽器會被 AdminLayout 設上 localStorage.plausible_ignore = "true"，
+                腳本看到就整個不送（v3 的 track() 裡寫死的檢查）。所以在前台逛也不算。
+              Plausible 的 Shields 也能擋 IP，但家用與手機網路的 IP 會換，靠不住。
+
             對應的 nginx 在 /etc/nginx/sites-available/koimsurai：
             location ^~ /s/js/ 與 location = /s/event。
             SPA 換頁不必額外處理：腳本自己 patch 了 history.pushState 並監聽 popstate。 */}
@@ -179,7 +186,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
               // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
               dangerouslySetInnerHTML={{
                 __html:
-                  "window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init({endpoint:'/s/event'})",
+                  "window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init({endpoint:'/s/event',transformRequest:function(p){return/^\\/admin(\\/|$)/.test(location.pathname)?null:p}})",
               }}
             />
           </>

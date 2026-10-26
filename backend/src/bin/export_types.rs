@@ -12,6 +12,9 @@ use koimsurai_web_backend::handlers::admin::{
     CategoryCreated, CategoryDeleted, CategoryUpdated, CommentCounts, CreatedResponse, ErrorResponse,
     KeywordFilterRow, KeywordFiltersResponse, MessageResponse, TagCreated, TagUpdated,
 };
+use koimsurai_web_backend::handlers::analytics::{
+    AnalyticsPoint, AnalyticsResponse, AnalyticsRow, AnalyticsTotals,
+};
 use koimsurai_web_backend::handlers::auth::{AuthProvidersResponse, OAuthProviderInfo};
 use koimsurai_web_backend::handlers::books::{BookDetailResponse, BookRow, BooksListResponse};
 use koimsurai_web_backend::handlers::categories::{CategoriesResponse, CategoryRow};
@@ -133,6 +136,11 @@ fn main() {
         .register::<AdminFriendRow>()
         .register::<FriendCounts>()
         .register::<AdminFriendsResponse>()
+        // 流量（Plausible 代理）
+        .register::<AnalyticsTotals>()
+        .register::<AnalyticsPoint>()
+        .register::<AnalyticsRow>()
+        .register::<AnalyticsResponse>()
         // posts（admin）
         .register::<AdminPostFull>()
         .register::<AdminPostsResponse>()
