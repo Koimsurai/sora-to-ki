@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/auth';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import { lookupOr } from '../../lib/tableLookup';
 import AdminLoading from './AdminLoading';
+import { AdminSelect } from './AdminFields';
 import { PageHead } from './AdminPage';
 import { formatWhen } from './adminFormat';
 
@@ -160,18 +161,19 @@ export default function UsersManager() {
                       {isOwner && (
                         <td>
                           {editable ? (
-                            <label className="adm-prompt adm-prompt-compact">
-                              <span className="sr-only">{u.display_name ?? '這位'}的角色</span>
-                              <select
+                            <div className="adm-prompt adm-prompt-compact">
+                              <AdminSelect
+                                label={`${u.display_name ?? '這位'}的角色`}
                                 value={u.role ?? 'USER'}
-                                onChange={(e) => {
-                                  if (e.target.value !== u.role) setChange({ user: u, role: e.target.value });
+                                onChange={(role) => {
+                                  if (role !== u.role) setChange({ user: u, role });
                                 }}
-                              >
-                                <option value="USER">讀者</option>
-                                <option value="ADMIN">管理員</option>
-                              </select>
-                            </label>
+                                options={[
+                                  { value: 'USER', label: '讀者' },
+                                  { value: 'ADMIN', label: '管理員' },
+                                ]}
+                              />
+                            </div>
                           ) : (
                             <span className="adm-meta">—</span>
                           )}

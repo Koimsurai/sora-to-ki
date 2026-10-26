@@ -1,5 +1,5 @@
 import type { AdminPostFull } from '@koimsurai/api-types';
-import { format } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
 
 // 後台各頁共用的純函式（不是元件，所以跟 AdminPage.tsx 分開放——同一個檔混著元件與函式，
 // fast refresh 就不能只換元件）。
@@ -36,6 +36,33 @@ export function localInputToIso(value: string): string | null {
   if (!value) return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/** 日期欄位打字時接受的寫法：2026-10-26、2026.10.26、2026/10/26（月日可以不補零） */
+const DATE_FORMATS = ['yyyy-MM-dd', 'yyyy.MM.dd', 'yyyy/MM/dd', 'yyyy-M-d', 'yyyy.M.d', 'yyyy/M/d'];
+
+/** 日期欄位打進來的字 → `yyyy-MM-dd`；認不得回 null，空的回空字串 */
+export function normalizeDate(text: string): string | null {
+  const t = text.trim();
+  if (!t) return '';
+  for (const f of DATE_FORMATS) {
+    const d = parse(t, f, new Date());
+    if (isValid(d) && d.getFullYear() >= 1000) return format(d, 'yyyy-MM-dd');
+  }
+  return null;
+}
+
+/** 時間欄位打進來的字 → `HH:mm`（930、9:30、09:30 都收）；認不得回 null，空的回空字串 */
+export function normalizeTime(text: string): string | null {
+  const t = text.trim();
+  if (!t) return '';
+  const m = /^(\d{1,2})(?::?(\d{2}))?$/.exec(t);
+  if (!m) return null;
+  const h = Number(m[1]);
+  // 分鐘那組是選填的（「9」就是九點整），沒對到時是 undefined
+  const min = m[2] ? Number(m[2]) : 0;
+  if (h > 23 || min > 59) return null;
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
 /** 回收桶放多久（跟後端 post_lifecycle::TRASH_KEEP_DAYS 一致） */

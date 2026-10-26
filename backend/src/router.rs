@@ -157,6 +157,8 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/admin/comments/batch/status", patch(handlers::admin::admin_batch_comment_status))
         // 後台統計（⚠️ visitors 用 Math.random，非 byte 對拍——除該欄外對拍）
         .route("/api/admin/stats", get(handlers::admin::admin_stats))
+        // 流量（代理自架 Plausible 的 Stats API，key 只在後端）
+        .route("/api/admin/analytics", get(handlers::analytics::admin_analytics))
         .route("/api/admin/comments/{id}/status", patch(handlers::admin::patch_comment_status))
         .route("/api/admin/comments/{id}/reply", post(handlers::admin::reply_comment))
         .route(

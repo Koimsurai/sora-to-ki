@@ -49,6 +49,22 @@
   text-align: center;
 }
 
+/* 檢查進行中：一顆在呼吸的點加一行字；舊的結果先淡下去，看得出等一下會換掉 */
+.adm-fr-checking {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.adm-fr-check-list[data-stale] {
+  opacity: 0.4;
+  transition: opacity var(--dur-200) var(--easing-standard);
+}
+
+.adm-row-actions .adm-icon-btn[aria-busy="true"] {
+  gap: var(--space-2);
+}
+
 .adm-fr-check-list li[data-ok] {
   color: var(--paper);
 }
