@@ -39,6 +39,15 @@ export interface ArcLayout {
 export const arcX = (L: Pick<ArcLayout, 'cx' | 'amp' | 'y0' | 'period' | 'phase'>, y: number) =>
   L.cx + L.amp * Math.sin(((y - L.y0) / L.period) * TAU + L.phase);
 
+/**
+ * 彗尾在高度 y 有多寬（弧線到一側的距離）：塵埃散開的寬度（同 createComet 的 width），
+ * 塵埃再照近似常態的側偏（標準差約 0.5）落在兩側，取一倍大約包住九成五
+ */
+export const tailHalfWidth = (L: Pick<ArcLayout, 'y0' | 'yEnd' | 'narrow'>, y: number, zoom: number) => {
+  const u = Math.min(1, Math.max(0, (y - L.y0) / Math.max(1, L.yEnd - L.y0)));
+  return (6 + (L.narrow ? 16 : 46) * Math.sqrt(u)) * zoom;
+};
+
 /** 窄於這個寬度就收成貼左的直線，字一律在右邊 */
 const NARROW_PX = 760;
 const GAP = 230;
@@ -182,7 +191,8 @@ const BIT_GAP = 150;
 
 /**
  * 單則頁的排版：放大過的那一段彗尾上，那則碎念在 top（就是 T），留言接著沿彗尾往下排，
- * 送出列在最後。字放的那一邊跟列表頁同一個規則（彗尾往下會彎過去的另一邊）
+ * 送出列在最後。字放的那一邊跟列表頁同一個規則（彗尾往下會彎過去的另一邊），送出列也是：
+ * 原本固定放右邊，彗尾在那裡往右下彎的話整條穿過輸入框與送出鈕
  */
 export function layoutSegment(
   arc: Pick<ArcLayout, 'cx' | 'amp' | 'y0' | 'period' | 'phase'>,
@@ -203,7 +213,7 @@ export function layoutSegment(
   const height = endY + 280;
   // 彗尾畫到列表那條彗尾的尾端（放大後），塵埃的分布才跟列表上一樣；留言太多、頁面比它長時再往下延
   const yEnd = Math.max(height - 30, arc.y0 + span);
-  return { ...arc, yEnd, narrow, posts, ghosts: [], end: { y: endY, left: false }, height };
+  return { ...arc, yEnd, narrow, posts, ghosts: [], end: { y: endY, left: sideAt(endY) }, height };
 }
 
 export function createComet(tailLength: number, narrow: boolean, zoom = 1) {

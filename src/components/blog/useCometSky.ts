@@ -16,6 +16,7 @@ import {
   layoutArc,
   RETRACT_MS,
   REVEAL_MS,
+  tailHalfWidth,
   type ArcLayout,
 } from './comet';
 import { COMET_ZOOM, setCometZoom, setCometZoomOut, ZOOM_MS } from './cometZoom';
@@ -239,11 +240,27 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
       const custom = optsRef.current.layout;
       const L = custom ? custom(width, top, heights, originOf(page)) : layoutArc(width, top, heights, ghostCount);
       layoutRef.current = L;
+      // 字離弧線多遠：列表頁固定 26px；單則頁的彗尾放大過、散得很開（半寬 60–120px），
+      // 固定 26px 的話字整段壓在塵埃裡，改成照那個高度的彗尾半寬來留。
+      // 想放的那一邊塞不下（會被擠回弧線上）就換另一邊；兩邊都塞不下（手機：彗尾貼左、字在右）
+      // 就放在空間大的那一邊，寬度縮到塞得進去（最窄 200px，再窄寧可壓到一點也不要擠成一條）
       const at = (el: HTMLElement, x: number, y: number, left: boolean) => {
-        const w = el.offsetWidth;
-        const raw = left ? x - 26 - w : x + 26;
+        el.style.maxWidth = '';
+        let w = el.offsetWidth;
+        const gap = zoom > 1 ? Math.max(26, tailHalfWidth(L, y + el.offsetHeight / 2, zoom) + 12) : 26;
+        const room = (l: boolean) => (l ? x - gap - 16 : width - 16 - (x + gap));
+        const fits = (l: boolean) => room(l) >= w;
+        let side = left;
+        if (zoom > 1 && !fits(left)) {
+          side = fits(!left) ? !left : room(!left) > room(left) ? !left : left;
+          if (!fits(side) && room(side) >= 200) {
+            el.style.maxWidth = `${Math.floor(room(side))}px`;
+            w = el.offsetWidth;
+          }
+        }
+        const raw = side ? x - gap - w : x + gap;
         el.style.transform = `translate(${Math.max(16, Math.min(width - 16 - w, raw))}px, ${y - 12}px)`;
-        el.classList.toggle('is-left', left);
+        el.classList.toggle('is-left', side);
       };
       L.posts.forEach((p, i) => {
         const x = arcX(L, p.y);
@@ -288,7 +305,7 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
     void (document as { fonts?: FontFaceSet }).fonts?.ready.then(place);
     return () => ro.disconnect();
     // 內容變了但筆數沒變：ResizeObserver 會抓到高度改變（ref 本身不會變，列出來只是讓檢查看得懂）
-  }, [postCount, ghostCount, headGap, pageRef, headRef, postsRef, dotsRef, ghostsRef, endRef]);
+  }, [postCount, ghostCount, headGap, zoom, pageRef, headRef, postsRef, dotsRef, ghostsRef, endRef]);
 
   // 彗星：每一幀畫彗尾，並把彗尾長到的地方的碎念浮出來
   useEffect(() => {
