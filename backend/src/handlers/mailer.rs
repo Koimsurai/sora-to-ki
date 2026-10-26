@@ -1,12 +1,12 @@
 //! Newsletter mailer（resend 硬骨頭）。移植 Express `mailer.js` + `/admin/posts/:id/send-newsletter`。
 //!
 //! Express 用 `resend` npm SDK 的 `batch.send`。改用 reqwest 直打 Resend batch API。
-//! **wire byte-target**：`resend` SDK 的 `parseEmailToApiOptions` 把每封信轉成
-//! `{from, headers, html, subject, text, to}`（其餘欄位 undefined→JSON.stringify 丟棄）。
-//! ⚠️ **保留 Express bug**：mailer.js 傳 `reply_to`（snake），但 SDK 讀 `email.replyTo`（camel）
-//! → `reply_to` 恆 undefined → **wire 不含 reply_to**（即使 NEWSLETTER_REPLY_TO 有設）。
-//! 為遷移期 byte-equivalence，Rust **一併省略 reply_to**（記在行為清理版待修）。
-//! 驗證方式：兩邊都 `RESEND_BASE_URL` 指本地 mock、比對實際 wire body（不真寄）。
+//! 每封信是 `{from, headers, html, subject, text, to}`，有設 `NEWSLETTER_REPLY_TO` 再加 `reply_to`。
+//!
+//! **`reply_to` 一定要帶。** 寄件位址在 `send.` 子網域（Resend 的寄信網域），那裡沒有 MX、收不了信：
+//! 不帶的話讀者或友鏈申請人按「回覆」會被退信，站長什麼都收不到。Express 版傳的是 `reply_to`、
+//! SDK 讀的卻是 `replyTo`，所以從來沒送出去過；搬到 Rust 時照抄了那個行為，2026-10 才補上。
+//! 驗證方式：`RESEND_BASE_URL` 指本地 mock、比對實際 wire body（不真寄）。
 
 use axum::{
     Json,
@@ -27,6 +27,10 @@ fn env_or(key: &str, default: &str) -> String {
 fn newsletter_from() -> String {
     env_or("NEWSLETTER_FROM", "Koimsurai <hello@koimsurai.com>")
 }
+/// 對方按「回覆」時寄到哪裡（見檔頭：寄件位址本身收不了信）
+fn reply_to() -> Option<String> {
+    std::env::var("NEWSLETTER_REPLY_TO").ok().filter(|s| !s.trim().is_empty())
+}
 /// 寄一封信給一個人（友鏈審核的回信用）：HTML 版加純文字版（不顯示 HTML 的信件軟體看後者）。
 /// 沒設 RESEND_API_KEY 回錯，由呼叫端轉告站長。
 pub(crate) async fn send_one(
@@ -38,13 +42,16 @@ pub(crate) async fn send_one(
 ) -> Result<(), String> {
     let key =
         std::env::var("RESEND_API_KEY").ok().filter(|k| !k.is_empty()).ok_or("沒有設定 RESEND_API_KEY")?;
+    let mut body =
+        json!({ "from": newsletter_from(), "to": [to], "subject": subject, "text": text, "html": html });
+    if let Some(r) = reply_to() {
+        body["reply_to"] = json!(r);
+    }
     let resp = state
         .http
         .post(format!("{}/emails", resend_base_url()))
         .header("Authorization", format!("Bearer {key}"))
-        .json(
-            &json!({ "from": newsletter_from(), "to": [to], "subject": subject, "text": text, "html": html }),
-        )
+        .json(&body)
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -261,7 +268,7 @@ pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (
     (html, text)
 }
 
-/// 建每封信的 wire object：`{from, headers, html, subject, text, to}`（reply_to 略，對齊 SDK bug）。
+/// 建每封信的 wire object：`{from, headers, html, subject, text, to}`，有設回覆位址再加 `reply_to`（見檔頭）。
 fn build_email_object(site: &str, from: &str, subject: &str, post: &Post, sub: &Sub) -> Value {
     let unsub = unsubscribe_url(site, &sub.token);
     let mut headers = Map::new();
@@ -274,6 +281,9 @@ fn build_email_object(site: &str, from: &str, subject: &str, post: &Post, sub: &
     m.insert("subject".into(), json!(subject));
     m.insert("text".into(), json!(render_text(site, post, sub)));
     m.insert("to".into(), json!([sub.email]));
+    if let Some(r) = reply_to() {
+        m.insert("reply_to".into(), json!(r));
+    }
     Value::Object(m)
 }
 
