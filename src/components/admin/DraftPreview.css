@@ -1,0 +1,26 @@
+/* 草稿預覽頁左下角的標示：等寬小字、一顆琥珀點，跟文章頁的資訊行同一種語氣 */
+.dp-badge {
+  position: fixed;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: min(560px, calc(100vw - 32px));
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-2);
+  background: var(--ground);
+  border: 1px solid var(--rule);
+}
+
+.dp-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: var(--amber);
+}
