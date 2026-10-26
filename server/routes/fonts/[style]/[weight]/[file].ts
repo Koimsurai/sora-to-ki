@@ -6,8 +6,9 @@ import { createError, defineEventHandler, getQuery, getRouterParam } from 'nitro
 // subset-font 要在執行期用 require.resolve 找 HarfBuzz 的 wasm，所以不能打包進來：
 // vite.config.start.ts 的 traceDeps 讓 nitro 把它當外部相依，整包複製進 .output。
 // 那個 require.resolve 指向的是 harfbuzzjs 的 .wasm，追蹤工具看不出那是一個相依，所以這裡明確
-// import 一次，harfbuzzjs 整包（含 wasm）才會被帶進去。它的入口只定義工廠函式，不會實例化 wasm
-import 'harfbuzzjs';
+// import 它，harfbuzzjs 整包（含 wasm）才會被帶進去。它的入口在 import 時就會實例化 wasm（top-level await），
+// 這裡也直接用它讀字型有哪些字（繁中缺字的備援，見 coverageOf）
+import { Blob as HbBlob, Face as HbFace } from 'harfbuzzjs';
 import subsetFont from 'subset-font';
 import {
   decodeCodepoints,
@@ -20,9 +21,10 @@ import {
   type SerifWeight,
 } from '../../../../../src/lib/serifSubset';
 
-// 按頁裁字：GET /fonts/<風格>/<字重>/<鍵>.woff2?c=<字集>&f=<tc|sc|jp|kr>，回一個只含這些字的字型。
+// 按頁裁字：GET /fonts/<風格>/<字重>/<鍵>.woff2?c=<字集>&f=<tc|sc|jp|kr>[&x=<tc|sc|jp|kr>]，回一個只含這些字的字型。
 // 風格是宋體（站上的主字型）、黑體、楷（手寫味）、現代無襯線（後三種是文章的「字體」切換）；
 // f 是哪一套語系（同一種風格在各語系配的是不同的字，見 FONTS），沒帶就是繁中。編碼見 src/lib/serifSubset.ts。
+// x 是「只裁 x 那一套沒有的字」：繁中頁面上的簡體字（留言）用簡中那套補，見 serifSubset 的 fallbackFamilyOf。
 //
 // 原檔由 scripts/fetch-serif-font.mjs 下載，Docker 建置時放進映像；沒有原檔就回 404，
 // 瀏覽器退回堆疊裡的下一個字型，頁面照常。
@@ -120,9 +122,23 @@ const serial = <T>(job: () => Promise<T>): Promise<T> => {
   return run;
 };
 
+/** 原檔有哪些字（一支約 30 ms 算一次，之後留著；一套兩萬到三萬個碼位） */
+const coverages = new Map<string, Promise<Set<number>>>();
+function coverageOf(file: string): Promise<Set<number>> {
+  let cov = coverages.get(file);
+  if (!cov) {
+    cov = sourceOf(file).then((buf) => new Set(new HbFace(new HbBlob(buf)).collectUnicodes()));
+    // 讀失敗就別記著，下次再試
+    cov.catch(() => coverages.delete(file));
+    coverages.set(file, cov);
+  }
+  return cov;
+}
+
 async function build(src: Source, weight: SerifWeight, cps: number[]): Promise<Buffer> {
   const font = await sourceOf(fileOf(src, weight));
-  return subsetFont(font, String.fromCodePoint(...cps), {
+  // 備援請求裡的字可能全都在繁中那套裡（沒有缺字）：裁一個只有空白的字型，瀏覽器照樣載得起來
+  return subsetFont(font, cps.length ? String.fromCodePoint(...cps) : ' ', {
     targetFormat: 'woff2',
     // 可變字重的檔才有 wght 軸；兩個檔的那種，字重已經由選哪個檔決定了
     ...('file' in src ? { variationAxes: { wght: weight } } : {}),
@@ -133,7 +149,7 @@ export default defineEventHandler(async (event) => {
   const style = getRouterParam(event, 'style');
   const weight = Number(getRouterParam(event, 'weight'));
   const file = getRouterParam(event, 'file') ?? '';
-  const { c, f = 'tc' } = getQuery(event);
+  const { c, f = 'tc', x } = getQuery(event);
   const key = /^([0-9a-f]{8})\.woff2$/.exec(file)?.[1];
   if (
     !isFontStyle(style) ||
@@ -141,20 +157,28 @@ export default defineEventHandler(async (event) => {
     !key ||
     typeof c !== 'string' ||
     keyOf(c) !== key ||
-    !isSerifFace(f)
+    !isSerifFace(f) ||
+    (x !== undefined && (!isSerifFace(x) || x === f))
   ) {
     throw createError({ statusCode: 400, statusMessage: 'Bad Request' });
   }
-  const cps = decodeCodepoints(c);
+  let cps = decodeCodepoints(c);
   if (!cps) throw createError({ statusCode: 400, statusMessage: 'Bad Request' });
   const src = FONTS[style][f];
   if (!existsSync(join(FONT_DIR, fileOf(src, weight))))
     throw createError({ statusCode: 404, statusMessage: 'Not Found' });
+  if (x !== undefined) {
+    const other = fileOf(FONTS[style][x], weight);
+    if (!existsSync(join(FONT_DIR, other))) throw createError({ statusCode: 404, statusMessage: 'Not Found' });
+    const has = await coverageOf(other);
+    cps = cps.filter((cp) => !has.has(cp));
+  }
 
   // 快取的鍵用完整字集的雜湊：網址上的 8 位鍵只是方便讀，可能撞。
   // 宋體不帶風格前綴：磁碟上已經裁好的那些照用
   const prefix = style === 'serif' ? '' : `${style}-`;
-  const id = `${prefix}${f}-${weight}-${createHash('sha256').update(c).digest('hex').slice(0, 32)}`;
+  const hash = createHash('sha256').update(c).digest('hex').slice(0, 32);
+  const id = `${prefix}${f}-${x ? `x${x}-` : ''}${weight}-${hash}`;
   let buf = memory.get(id);
   if (!buf) {
     const onDisk = join(CACHE_DIR, `${id}.woff2`);

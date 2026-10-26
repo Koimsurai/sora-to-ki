@@ -1,5 +1,5 @@
 // 關於頁的近景（about/AboutFall）。整頁是一段下墜，背景的星星就是下墜的參照：
-//   - 星：平常是點，捲得越快往上拉成越長的線（關於頁收掉了一般的背景星空，見 hooks/useBareSky）
+//   - 星：平常是點，捲得越快拉成越長的線，拖尾在移動方向的後面（往上捲時反過來）（關於頁收掉了一般的背景星空，見 hooks/useBareSky）
 //   - 地平線：落地時升上來的一顆星球的邊——近處有起伏、長著草，後面兩層更遠的山稜
 //   - 樹：長在地平線上，有粗細、有樹葉，跟著風輕輕晃
 //   - 返回艙：掛著線畫的降落傘一起降下，著地彈一下、揚起一陣土，傘洩氣塌下去攤在地上
@@ -50,7 +50,7 @@ export interface FallState {
   dt: number;
   /** 頁面捲了多少（頁面座標） */
   top: number;
-  /** 0 到 1：捲得多快（星就拉多長） */
+  /** -1 到 1：捲得多快（星就拉多長）；正的是往下捲（下墜），負的是往上捲，拖尾畫在另一邊 */
   speed: number;
   /** 各段在頁面座標裡的位置 */
   landTop: number;
@@ -221,6 +221,9 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
     ctx.clearRect(0, 0, w, h);
     const { landAt, pFall, landK, dig } = phases(s);
     ctx.lineWidth = 1;
+    // 拖尾永遠在移動方向的後面：往下捲時星往上走、尾巴在下面；往上捲反過來
+    const pace = Math.abs(s.speed);
+    const dir = s.speed < 0 ? -1 : 1;
 
     // 星：釘在各自的深度上，畫面往下捲多少它就往上掠過多少（越近越快）；捲得快就拉成線。
     // 著地之後地面擋住了下半片天空，星慢慢淡掉
@@ -230,16 +233,16 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
       const span = h + 40;
       const y = ((((st.y * span - fallTop * st.depth * 0.6) % span) + span) % span) - 20;
       const x = st.x * (w - 100) + 10;
-      const len = s.speed * 160 * st.depth;
+      const len = pace * 160 * st.depth;
       const a = st.a * sky;
       if (len > 1) {
-        const g = ctx.createLinearGradient(x, y, x, y + len);
+        const g = ctx.createLinearGradient(x, y, x, y + dir * len);
         g.addColorStop(0, `rgba(${INK}, ${a.toFixed(3)})`);
         g.addColorStop(1, `rgba(${INK}, 0)`);
         ctx.strokeStyle = g;
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(x, y + len);
+        ctx.lineTo(x, y + dir * len);
         ctx.stroke();
       }
       ctx.fillStyle = `rgba(${INK}, ${a.toFixed(3)})`;
@@ -256,9 +259,9 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
         const y = cy + d.y * h * (1.6 + i);
         if (y < -10 || y > h + 10) continue;
         const x = d.x * w;
-        const stretch = 2 + s.speed * 30;
+        const stretch = Math.min(24, 2 + pace * 30);
         ctx.fillStyle = `rgba(${INK}, ${(d.a * (1 - landK)).toFixed(3)})`;
-        ctx.fillRect(x, y, 1.4, Math.min(24, stretch));
+        ctx.fillRect(x, dir > 0 ? y : y - stretch, 1.4, stretch);
       }
     }
 
@@ -439,19 +442,19 @@ export function createFallSky(starCount: number, chute: HTMLImageElement) {
     ctx.fillStyle = `rgba(${INK}, 0.35)`;
     ctx.fillText(digging ? s.labels.dig : s.labels.fall, mark.x - 12, y0 - 16);
 
-    // 琥珀點：讀者。下墜得越快，上面拖出一道越長的光
+    // 琥珀點：讀者。下墜得越快，上面拖出一道越長的光；往上捲（往上升）時光拖在下面
     if (s.dot) {
       const { x, y } = s.dot;
-      const tail = s.speed * 60 * (1 - landK);
+      const tail = pace * 60 * (1 - landK);
       if (tail > 1) {
-        const g = ctx.createLinearGradient(x, y, x, y - tail);
+        const g = ctx.createLinearGradient(x, y, x, y - dir * tail);
         g.addColorStop(0, `rgba(${AMBER}, 0.6)`);
         g.addColorStop(1, `rgba(${AMBER}, 0)`);
         ctx.strokeStyle = g;
         ctx.lineWidth = 1.4;
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(x, y - tail);
+        ctx.lineTo(x, y - dir * tail);
         ctx.stroke();
         ctx.lineWidth = 1;
       }

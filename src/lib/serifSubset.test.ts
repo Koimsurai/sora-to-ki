@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
   decodeCodepoints,
+  fallbackFamilyOf,
   familyOf,
+  isHanCodepoint,
   styleOfFamily,
   isSerifCodepoint,
   isSerifFace,
@@ -97,6 +99,28 @@ describe('四種字型風格', () => {
     expect(styleOfFamily('"Koim Serif"')).toBe('serif');
     expect(styleOfFamily('"Koim Serifish"'), '名字開頭一樣但不是同一個字族').toBeNull();
     expect(styleOfFamily('"Fira Code"')).toBeNull();
+  });
+});
+
+describe('繁中缺字的備援', () => {
+  it('備援的網址從簡中那套裁、帶 x=tc；一般的網址不帶 x（已經在快取裡的照用）', () => {
+    const q = new URL(subsetUrl(400, cps('帅满'), 'sc', 'serif', 'tc'), 'https://x').searchParams;
+    expect(q.get('f')).toBe('sc');
+    expect(q.get('x')).toBe('tc');
+    expect(subsetUrl(400, cps('帅满'))).not.toContain('x=');
+  });
+
+  it('現代無襯線繁簡同一支，不需要備援；其他三種各有自己的備援字族', () => {
+    expect(fallbackFamilyOf('modern')).toBeNull();
+    // 名字要跟 index.css 堆疊裡寫的一致
+    expect(fallbackFamilyOf('serif')).toBe('Koim Serif Fallback');
+    expect(fallbackFamilyOf('sans')).toBe('Koim Sans Fallback');
+    expect(fallbackFamilyOf('kai')).toBe('Koim Kai Fallback');
+  });
+
+  it('只有漢字交給備援：假名、標點、英數繁簡一樣', () => {
+    for (const ch of '帅满㐀豈') expect(isHanCodepoint(ch.codePointAt(0) ?? 0), ch).toBe(true);
+    for (const ch of 'aあ，→') expect(isHanCodepoint(ch.codePointAt(0) ?? 0), ch).toBe(false);
   });
 });
 
