@@ -568,6 +568,39 @@ async fn the_from_address_is_the_configured_sender() {
     assert_eq!(m["from"], "Test <no-reply@example.test>", "from 要用 NEWSLETTER_FROM 設的值");
 }
 
+/// **回覆位址要真的送出去。** 寄件位址在收不了信的子網域，少了 `reply_to`，
+/// 讀者按「回覆」就是退信。Express 版因為 SDK 欄位名稱對不上，這個欄位從來沒送出過。
+#[tokio::test]
+async fn the_reply_to_address_is_sent_when_configured() {
+    let server = mock_resend(200, json!({ "data": [] })).await;
+    unsafe {
+        std::env::set_var("NEWSLETTER_REPLY_TO", "me@example.test");
+    }
+    let (app, pool) = test_app().await;
+    seed_post(&pool, 131, "標題", "摘要", "published").await;
+    seed_sub(&pool, "a@x.test", None, "active", Some("t")).await;
+    send(&app, 131).await;
+
+    let m = sent_emails(&server).await.pop().unwrap();
+    assert_eq!(m["reply_to"], "me@example.test");
+}
+
+/// 沒設回覆位址就不帶這個欄位（不送空字串：Resend 會把它當成無效位址擋掉整批）。
+#[tokio::test]
+async fn no_reply_to_field_when_not_configured() {
+    let server = mock_resend(200, json!({ "data": [] })).await;
+    unsafe {
+        std::env::remove_var("NEWSLETTER_REPLY_TO");
+    }
+    let (app, pool) = test_app().await;
+    seed_post(&pool, 132, "標題", "摘要", "published").await;
+    seed_sub(&pool, "a@x.test", None, "active", Some("t")).await;
+    send(&app, 132).await;
+
+    let m = sent_emails(&server).await.pop().unwrap();
+    assert!(m.get("reply_to").is_none(), "{m}");
+}
+
 /// `RESEND_API_KEY` 是**空字串**時也算沒設定。
 ///
 /// route 那層會先擋（回 500），所以這條走的是「發佈即推送」的路徑——
