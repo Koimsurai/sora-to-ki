@@ -156,46 +156,166 @@
   margin-top: var(--space-1);
 }
 
-/* ── 摘要對應（ExcerptLinksEditor）：摘要切成一句一句，每句一個下拉選章節 ── */
+/* ── 摘要對應（ExcerptLinksEditor）：側欄只放精簡的，編輯在寬的視窗裡 ── */
 .pe-links {
   display: grid;
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
 
+.pe-links-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 .pe-links-list {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1-5);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.pe-link {
-  display: grid;
-  gap: var(--space-1);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px dotted var(--rule);
+.pe-links-list li {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--fs-11);
+  line-height: var(--lh-150);
 }
 
-.pe-link-text {
-  font-size: var(--fs-13);
-  line-height: var(--lh-160);
+.pe-links-to {
+  flex: none;
+  font-family: var(--mono-font);
+  color: var(--amber);
+}
+
+.pe-links-text {
+  overflow: hidden;
   color: var(--paper-meta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* 連過的句子：跟前台一樣畫底線，琥珀色 */
-.pe-link[data-on] .pe-link-text {
+.pe-board {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-6);
+  max-height: 70vh;
+}
+
+.pe-board-text {
+  overflow-y: auto;
+  font-family: var(--serif);
+  font-size: var(--fs-16);
+  line-height: var(--lh-185);
+  color: var(--paper-2);
+  user-select: text;
+}
+
+/* 連過的那段：琥珀點線底線，後面上標章節編號（用偽元素寫，反白時不會被選進去） */
+.pe-board-link {
+  all: unset;
   color: var(--paper);
   text-decoration: underline dotted var(--amber);
   text-underline-offset: 0.3em;
+  cursor: pointer;
 }
 
-.pe-link select {
+.pe-board-link::after {
+  content: attr(data-to);
+  margin-left: var(--space-0-5);
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  vertical-align: super;
+  color: var(--amber);
+}
+
+.pe-board-link[aria-pressed="true"],
+.pe-board-link:focus-visible {
+  background: rgba(var(--amber-rgb), 0.2);
+  outline: none;
+}
+
+.pe-board-side {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  overflow-y: auto;
+}
+
+.pe-board-status {
+  margin: 0;
+  font-size: var(--fs-13);
+  line-height: var(--lh-160);
+  color: var(--paper);
+}
+
+.pe-board-status[data-problem] {
+  color: var(--flare);
+}
+
+.pe-board-chapters {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px dotted var(--rule);
+}
+
+.pe-board-chapters li {
+  border-bottom: 1px dotted var(--rule);
+}
+
+.pe-board-chapters button {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
   width: 100%;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1-5) var(--space-1);
+  font-size: var(--fs-13);
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.pe-board-chapters li[data-level="3"] button {
+  padding-left: var(--space-5);
+}
+
+.pe-board-chapters button:hover:not(:disabled),
+.pe-board-chapters button:focus-visible {
+  background: rgba(var(--paper-rgb), 0.06);
+}
+
+/* 還沒選一段字的時候章節只是看的，淡一點 */
+.pe-board-chapters button:disabled {
+  color: var(--paper-meta);
+  cursor: default;
+}
+
+.pe-board-chapters button[aria-current="true"] {
+  color: var(--amber);
+}
+
+.pe-board-num {
+  flex: none;
   font-family: var(--mono-font);
   font-size: var(--fs-11);
+  color: var(--paper-meta);
+}
+
+.pe-board-title {
+  flex: 1;
+}
+
+.pe-board-count {
+  flex: none;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  color: var(--amber);
 }
 
 .pe-links-orphans ul {
