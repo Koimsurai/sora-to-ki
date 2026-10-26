@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery, queryOptions } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { apiUrl } from '@/lib/api';
 import type { LinkPreviewResponse } from '@koimsurai/api-types';
 import './link-hover-preview.css';
@@ -106,6 +107,20 @@ export function LinkHoverPreview({
   }, []);
 
   const isInternal = /^\/(blog|thinking)\//.test(href) || href.includes('koimsurai.com');
+  // 站內的頁面（文章、碎念，含各語系前綴）走路由換頁，跟站上其他連結一樣有轉場；
+  // 普通 <a> 的話是整頁重新載入。/uploads/ 這種檔案不是頁面，照原樣開
+  const navigate = useNavigate();
+  const routePath = useMemo(() => {
+    try {
+      const u = new URL(href, 'https://koimsurai.com');
+      if (u.hostname !== 'koimsurai.com') return null;
+      return /^\/(?:(?:en|ja|ko|zh-cn)\/)?(?:blog|thinking)(?:\/|$)/i.test(u.pathname)
+        ? u.pathname + u.search + u.hash
+        : null;
+    } catch {
+      return null;
+    }
+  }, [href]);
 
   return (
     <>
@@ -115,6 +130,13 @@ export function LinkHoverPreview({
         className={className}
         target={isInternal ? undefined : '_blank'}
         rel={isInternal ? undefined : 'noopener noreferrer'}
+        onClick={(e) => {
+          // 新分頁、另存（中鍵、⌘／Ctrl、Shift）照瀏覽器原本的做法
+          if (!routePath || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          setOpen(false);
+          void navigate({ href: routePath });
+        }}
         onMouseEnter={openSoon}
         onMouseLeave={closeSoon}
         onFocus={openSoon}
