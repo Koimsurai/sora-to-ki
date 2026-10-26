@@ -108,6 +108,40 @@ async fn 後台列得出每一部_標出藏了沒與在不在最愛() {
     assert_eq!(v["tracks_error"], Value::Null);
 }
 
+/// Simkl 的電影帶 tmdb_id、不存海報，前台讀的時候才從 TMDb 補。後台原本直接讀 DB 欄位，
+/// 所以 Simkl 同步進來的每一部在後台都是空框
+///
+/// ⚠ 用 `std::env::set_var` 指向 mock，依賴 nextest 的行程隔離（同 tests/watch.rs）。
+#[tokio::test]
+async fn 後台的電影缺海報時從_tmdb_補() {
+    let server = wiremock::MockServer::start().await;
+    unsafe {
+        std::env::set_var("TMDB_BASE_URL", server.uri());
+        std::env::set_var("TMDB_API_TOKEN", "test-tmdb-token");
+    }
+    wiremock::Mock::given(wiremock::matchers::path("/3/movie/555"))
+        .respond_with(
+            wiremock::ResponseTemplate::new(200)
+                .set_body_json(json!({ "title": "公開的電影", "poster_path": "/p.jpg" })),
+        )
+        .mount(&server)
+        .await;
+    let (app, pool) = test_app().await;
+    seed(&pool).await;
+
+    let (st, v) = admin(&app, "GET", "/api/admin/collection", None).await;
+    assert_eq!(st, StatusCode::OK, "{v}");
+    let watch = v["watch"].as_array().unwrap();
+    let cover = |kind: &str, key: &str| {
+        watch.iter().find(|w| w["kind"] == kind && w["key"] == key).map(|w| w["cover"].clone()).unwrap()
+    };
+    assert_eq!(cover("film", "1"), "https://image.tmdb.org/t/p/w342/p.jpg");
+    assert_eq!(cover("film", "2"), Value::Null, "沒有 tmdb_id 的補不了");
+
+    let reqs = server.received_requests().await.unwrap();
+    assert_eq!(reqs.len(), 1, "只有缺圖又有 tmdb_id 的那部該打，實際打了 {} 次", reqs.len());
+}
+
 #[tokio::test]
 async fn 種類或_key_不對就不收_而且要登入() {
     let (app, _pool) = test_app().await;

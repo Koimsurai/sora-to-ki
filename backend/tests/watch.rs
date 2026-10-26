@@ -138,6 +138,30 @@ async fn tv_recent_以_series_name_聚合_集數與最後觀看日都取自整�
     assert_eq!(s[1]["ep_count"], 1);
 }
 
+/// Simkl 的影集帶 tmdb_id、不存海報（simkl.rs 的 `poster_for`），跟電影一樣要在讀的時候補；
+/// 原本只有 films_recent 會補，影集就一直是空框
+#[tokio::test]
+async fn tv_recent_缺海報又有_tmdb_id_的影集從_tmdb_補() {
+    let server = mock_tmdb().await;
+    Mock::given(method("GET"))
+        .and(path("/3/tv/1396"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(tmdb_movie_body()))
+        .mount(&server)
+        .await;
+    let (app, pool) = test_app().await;
+    seed_watch(&pool).await;
+
+    let (st, body) = get(&app, "/api/tv/recent").await;
+    assert_eq!(st, StatusCode::OK);
+    let s = body["series"].as_array().unwrap();
+    assert_eq!(s[0]["series_name"], "絕命毒師");
+    assert_eq!(s[0]["poster_url"], "https://image.tmdb.org/t/p/w342/poster.jpg");
+    assert_eq!(s[1]["poster_url"], Value::Null, "沒有 tmdb_id 的補不了，維持空的");
+
+    let reqs = server.received_requests().await.unwrap();
+    assert_eq!(reqs.len(), 1, "只有有 tmdb_id 的那部該打，實際打了 {} 次", reqs.len());
+}
+
 #[tokio::test]
 async fn watch_stats_分得清楚部數與集數() {
     let (app, pool) = test_app().await;
