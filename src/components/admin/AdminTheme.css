@@ -102,9 +102,49 @@
   padding-left: var(--space-10);
 }
 
-:is(.admin-layout, .admin-mode) input[type="checkbox"],
+/* 核取方塊與單選：不用瀏覽器畫的那顆（accent-color 只換得了顏色，形狀、圓角、勾勾還是系統的）。
+   空的是一個細框；勾起來是琥珀框裡一塊琥珀（單選是圓的） */
+:is(.admin-layout, .admin-mode) :is(input[type="checkbox"], input[type="radio"]) {
+  appearance: none;
+  flex: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border: 1px solid var(--paper-3);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color var(--dur-150) ease,
+    box-shadow var(--dur-150) ease;
+}
+
 :is(.admin-layout, .admin-mode) input[type="radio"] {
-  accent-color: var(--paper);
+  border-radius: var(--r-round);
+}
+
+:is(.admin-layout, .admin-mode) :is(input[type="checkbox"], input[type="radio"]):hover,
+:is(.admin-layout, .admin-mode) :is(input[type="checkbox"], input[type="radio"]):focus-visible {
+  border-color: var(--paper);
+  outline: none;
+}
+
+:is(.admin-layout, .admin-mode) :is(input[type="checkbox"], input[type="radio"]):checked {
+  border-color: var(--amber);
+  box-shadow:
+    inset 0 0 0 2px var(--ground),
+    inset 0 0 0 7px var(--amber);
+}
+
+/* 數字欄位右邊那對上下箭頭是瀏覽器畫的：收掉，打字就好 */
+:is(.admin-layout, .admin-mode) input[type="number"] {
+  appearance: textfield;
+}
+
+:is(.admin-layout, .admin-mode) input[type="number"]::-webkit-inner-spin-button,
+:is(.admin-layout, .admin-mode) input[type="number"]::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
 :is(.admin-layout, .admin-mode) label {
@@ -286,9 +326,13 @@ body.zen-mode-active .adm-main form > aside {
   display: none;
 }
 
-/* 編輯器主欄置中、限寬 */
+/* 編輯器主欄：撐滿整個視窗（以前限寬 920px，結果收掉側欄之後反而比平常還窄）；
+   高度在 PostEditor 裡跟著 zenMode 換成視窗高度 */
 body.zen-mode-active .adm-main form > main {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: var(--space-10) var(--space-8);
+  padding: var(--space-8) var(--space-12);
+}
+
+/* 進 Zen 時 PostEditor 把編輯框捲到頂端，上面留一點邊 */
+body.zen-mode-active .pe-frame {
+  scroll-margin-top: var(--space-6);
 }

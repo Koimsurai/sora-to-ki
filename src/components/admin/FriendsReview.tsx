@@ -68,6 +68,8 @@ export default function FriendsReview() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [reply, setReply] = useState('');
   const [busy, setBusy] = useState<'check' | 'save' | null>(null);
+  /** 正在檢查的那一份（朋友表格一列一顆鈕，要知道是哪一列在跑） */
+  const [checkingId, setCheckingId] = useState<number | null>(null);
   const [editing, setEditing] = useState<AdminFriendRow | 'new' | null>(null);
   const [form, setForm] = useState<FriendForm>(EMPTY_FORM);
   const [removeTarget, setRemoveTarget] = useState<AdminFriendRow | null>(null);
@@ -113,16 +115,24 @@ export default function FriendsReview() {
     }
   };
 
+  // 檢查要連到對方的站（逾時可能好幾秒），按下去的那一列要看得出在跑，跑完說結果——
+  // 不然結果只是表格裡一格字悄悄變了，看起來像按了沒反應
   const runCheck = async (f: AdminFriendRow) => {
     setBusy('check');
+    setCheckingId(f.id);
     try {
       const res = await fetch(`/api/admin/friends/${f.id}/check`, { method: 'POST', headers: authHeaders() });
       if (!res.ok) throw new Error(`${res.status}`);
-      refresh();
+      const row = (await res.json()) as AdminFriendRow;
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'friends'] });
+      const sum = checkSummary(row);
+      if (sum.bad) toast.warning(`〈${f.name}〉檢查完了：${sum.text}`);
+      else toast.success(`〈${f.name}〉檢查完了：${sum.text}，全部通過`);
     } catch (e) {
       toast.error(`檢查失敗：${e instanceof Error ? e.message : ''}`);
     } finally {
       setBusy(null);
+      setCheckingId(null);
     }
   };
 
@@ -290,9 +300,10 @@ export default function FriendsReview() {
                           type="button"
                           className="adm-btn adm-btn-small"
                           disabled={busy !== null}
+                          aria-busy={checkingId === selected.id}
                           onClick={() => void runCheck(selected)}
                         >
-                          {busy === 'check' ? (
+                          {checkingId === selected.id ? (
                             <>
                               <BusyDot />
                               檢查中
@@ -307,12 +318,20 @@ export default function FriendsReview() {
                     >
                       自動檢查{selected.checked_at ? ` · ${formatWhen(selected.checked_at)}` : ''}
                     </SectionHead>
-                    {selected.checks.length === 0 ? (
-                      <p className="adm-meta">
-                        還沒檢查。按下去會連到對方的站，看連不連得到、有沒有 RSS、有沒有連回來。
+                    {checkingId === selected.id && (
+                      <p className="adm-meta adm-fr-checking" aria-live="polite">
+                        <BusyDot />
+                        正在連到 {hostOf(selected.url)}——連不到的話會等到逾時，可能要十幾秒
                       </p>
+                    )}
+                    {selected.checks.length === 0 ? (
+                      checkingId !== selected.id && (
+                        <p className="adm-meta">
+                          還沒檢查。按下去會連到對方的站，看連不連得到、有沒有 RSS、有沒有連回來。
+                        </p>
+                      )
                     ) : (
-                      <ul className="adm-fr-check-list">
+                      <ul className="adm-fr-check-list" data-stale={checkingId === selected.id || undefined}>
                         {selected.checks.map((c) => (
                           <li key={c.key} data-ok={c.ok || undefined}>
                             <span className="adm-fr-mark" aria-hidden="true">
@@ -423,9 +442,16 @@ export default function FriendsReview() {
                           </a>
                         </td>
                         <td>
-                          <span className="adm-meta adm-fr-sum" data-bad={sum.bad || undefined}>
-                            {sum.text}
-                          </span>
+                          {checkingId === f.id ? (
+                            <span className="adm-meta adm-fr-checking">
+                              <BusyDot />
+                              檢查中
+                            </span>
+                          ) : (
+                            <span className="adm-meta adm-fr-sum" data-bad={sum.bad || undefined}>
+                              {sum.text}
+                            </span>
+                          )}
                         </td>
                         <td>
                           <span className="adm-meta">{formatWhen(f.reviewed_at, 'yyyy.MM.dd')}</span>
@@ -437,11 +463,19 @@ export default function FriendsReview() {
                                 <button
                                   type="button"
                                   className="adm-icon-btn"
-                                  aria-label={`檢查 ${f.name}`}
+                                  aria-label={checkingId === f.id ? `正在檢查 ${f.name}` : `檢查 ${f.name}`}
+                                  aria-busy={checkingId === f.id}
                                   disabled={busy !== null}
                                   onClick={() => void runCheck(f)}
                                 >
-                                  檢查
+                                  {checkingId === f.id ? (
+                                    <>
+                                      <BusyDot />
+                                      檢查中
+                                    </>
+                                  ) : (
+                                    '檢查'
+                                  )}
                                 </button>
                                 <button
                                   type="button"

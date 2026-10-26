@@ -30,9 +30,13 @@ import {
 import { toast } from 'sonner';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
+// 改名：這個檔已經有一個叫 format 的狀態（文章是 md 還是 mdx）
+import { format as formatDate } from 'date-fns';
 import AdminLoading, { BusyDot } from './AdminLoading';
+import { AdminDateField, AdminTimeField } from './AdminFields';
 import { STATUS_LABEL, formatWhen, localInputToIso, toLocalInput } from './adminFormat';
 import { setEditorScheduledAt } from '@/store/editorScheduleStore';
+import { useConfirm } from '@/hooks/useConfirm';
 import './AdminPage.css';
 import './PostEditor.css';
 
@@ -184,6 +188,8 @@ export default function PostEditor() {
   const isLoading = !!id && postPending; // 編輯模式載入文章時的骨架 gate
   const [activeLocale, setActiveLocale] = useState('zh-TW');
   const [zenMode, setZenMode] = useState(false);
+  // 推送電子報、覆蓋簡中之前問一句（後台樣式的對話框，不是瀏覽器的 confirm）
+  const { confirm, confirmDialog } = useConfirm();
   // 載入既有文章時，form.reset 在 Select mount 之後才跑 → Radix Select 的觸發器不會反映
   // 「事後才填進來的受控值」，看起來像被 reset（值其實有）。用這個旗標當 key 讓 Select 在
   // reset 完成後重新 mount 一次，用正確的值初始化 → 顯示正常。新文章保持 false（預設值本就正確）。
@@ -332,6 +338,8 @@ export default function PostEditor() {
   // ── 在前台預覽（admin/DraftPreview，/preview/post）──
   // 按下去才開始同步：開一個分頁，用讀者看到的文章頁畫正在編的內容（還沒存的也算），之後這裡一改那邊跟著更新
   const previewOpenRef = useRef(false);
+  /** 編輯框（分頁列＋Monaco／預覽）：進 Zen 時捲到視窗頂端 */
+  const frameRef = useRef<HTMLDivElement>(null);
   const buildPreviewSnapshot = useCallback((): PostPreviewSnapshot => {
     const v = form.getValues();
     const source = v.source_language ?? 'zh-TW';
@@ -399,14 +407,26 @@ export default function PostEditor() {
     return () => window.removeEventListener('keydown', onKey);
   }, [zenMode]);
 
+  // 編輯區的高度：平常是固定的；Zen 模式整個編輯框撐滿視窗——進 Zen 時把框捲到視窗頂端
+  // （語系分頁與標題留在上面，往上捲就看得到），所以要扣的只有框自己的分頁列、工具列、
+  // 狀態列（量過約 122px）加上下留白，共 11rem。以前扣的是「上面所有東西」的估計值，
+  // 結果在 1047 高的螢幕上反而比平常的 700px 還矮，下緣還超出視窗。
+  const fullHeight = zenMode ? 'calc(100vh - 11rem)' : '700px';
+  const halfHeight = zenMode ? 'calc(50vh - 5.5rem)' : '360px';
+  const editorHeight = editorView === 'split' ? halfHeight : fullHeight;
+  const previewHeight = editorView === 'split' ? halfHeight : fullHeight;
+
   // Zen 模式時隱藏 admin 側欄與 header（透過 body class）
   // 切換完 dispatch resize 讓 Monaco 重新計算尺寸（automaticLayout 監聽 ResizeObserver）
   useEffect(() => {
     document.body.classList.toggle('zen-mode-active', zenMode);
+    // 等側欄收掉、版面重排之後再捲（scroll-margin-top 在 AdminTheme.css）
+    const raf = zenMode ? requestAnimationFrame(() => frameRef.current?.scrollIntoView({ block: 'start' })) : 0;
     // 等下一個 frame，確保 CSS 套用完才觸發 resize
     const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
     return () => {
       clearTimeout(t);
+      cancelAnimationFrame(raf);
       document.body.classList.remove('zen-mode-active');
     };
   }, [zenMode]);
@@ -502,7 +522,13 @@ export default function PostEditor() {
    * 從標題生成 slug
    */
   const handleSendNewsletter = async () => {
-    if (!confirm('要立即推送這篇文章給所有訂閱者嗎？')) return;
+    const ok = await confirm({
+      title: '現在推送給所有訂閱者？',
+      description: '寄出去就收不回來了。',
+      confirmLabel: '推送',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(`/api/admin/posts/${id}/send-newsletter`, {
         method: 'POST',
@@ -659,7 +685,16 @@ export default function PostEditor() {
       return;
     }
     const existing = form.getValues('title_zh_cn') ?? form.getValues('content_zh_cn');
-    if (existing && !window.confirm('已有简体中文內容，要覆蓋嗎？')) return;
+    if (
+      existing &&
+      !(await confirm({
+        title: '覆蓋現在的簡中？',
+        description: '已經有简体中文的內容了，重新從繁中轉一次會把它蓋掉。',
+        confirmLabel: '覆蓋',
+        danger: true,
+      }))
+    )
+      return;
 
     setIsGeneratingZhCN(true);
     try {
@@ -892,7 +927,7 @@ export default function PostEditor() {
               />
 
               {/* Content (per-locale)：原稿與預覽 */}
-              <div className="pe-frame">
+              <div className="pe-frame" ref={frameRef}>
                 <div className="pe-frame-bar">
                   <button
                     type="button"
@@ -948,7 +983,7 @@ export default function PostEditor() {
                     value={contentValue}
                     onChange={(v) => form.setValue(contentName, v ?? '', { shouldDirty: true })}
                     language="markdown"
-                    height={editorView === 'split' ? '360px' : '700px'}
+                    height={editorHeight}
                     onSave={() => {
                       void form.handleSubmit(
                         (d) => onSaveDraft(d),
@@ -959,7 +994,7 @@ export default function PostEditor() {
                 )}
 
                 {editorView !== 'edit' && (
-                  <div className={`${editorView === 'split' ? 'max-h-[340px]' : 'max-h-[700px]'} pe-preview`}>
+                  <div className="pe-preview" style={{ maxHeight: previewHeight }}>
                     {/* 跟前台同一套渲染（MDX blocks / shiki / alert / 連結卡）→ 所見即所得 */}
                     <PostPreview content={contentValue} format={format} />
                   </div>
@@ -1113,36 +1148,39 @@ export default function PostEditor() {
                     <FormField
                       control={form.control}
                       name="publish_at"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>排程發佈</FormLabel>
-                          <div className="pe-schedule">
-                            <FormControl>
-                              <input
-                                type="datetime-local"
-                                className="h-8 w-full border px-2 text-sm outline-hidden"
-                                {...field}
-                                value={field.value ?? ''}
-                              />
-                            </FormControl>
-                            {field.value && (
-                              <button
-                                type="button"
-                                className="adm-btn adm-btn-small"
-                                onClick={() => form.setValue('publish_at', '', { shouldDirty: true })}
-                              >
-                                清空
-                              </button>
-                            )}
-                          </div>
-                          <p className="pe-side-hint">
-                            {field.value
-                              ? '按「排程發佈」之後，到這個時間才會出現在前台（最多晚一分鐘）。'
-                              : '留空＝按「發佈文章」立刻發佈。'}
-                          </p>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        // 值照舊是 datetime-local 的寫法（yyyy-MM-ddTHH:mm），拆成日期與時間兩格來填。
+                        // 只填日期就當早上九點；只填時間就當今天
+                        const [day = '', time = ''] = (field.value ?? '').split('T');
+                        const setSchedule = (d: string, t: string) => {
+                          if (!d && !t) return field.onChange('');
+                          field.onChange(`${d || formatDate(new Date(), 'yyyy-MM-dd')}T${t || '09:00'}`);
+                        };
+                        return (
+                          <FormItem>
+                            <FormLabel>排程發佈</FormLabel>
+                            <div className="pe-schedule">
+                              <AdminDateField label="排程發佈日期" value={day} onChange={(d) => setSchedule(d, time)} />
+                              <AdminTimeField label="排程發佈時間" value={time} onChange={(t) => setSchedule(day, t)} />
+                              {field.value && (
+                                <button
+                                  type="button"
+                                  className="adm-btn adm-btn-small"
+                                  onClick={() => form.setValue('publish_at', '', { shouldDirty: true })}
+                                >
+                                  清空
+                                </button>
+                              )}
+                            </div>
+                            <p className="pe-side-hint">
+                              {field.value
+                                ? '按「排程發佈」之後，到這個時間才會出現在前台（最多晚一分鐘）。'
+                                : '留空＝按「發佈文章」立刻發佈。'}
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
 
                     <FormField
@@ -1359,6 +1397,7 @@ export default function PostEditor() {
           </form>
         </Form>
       </div>
+      {confirmDialog}
     </>
   );
 }

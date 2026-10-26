@@ -14,6 +14,7 @@ import { SORA_NIGHT, defineSoraNight } from './monaco-theme';
 import './monaco-editor.css';
 import AdminLoading from '@/components/admin/AdminLoading';
 import { authHeaders } from '@/lib/authToken';
+import { toast } from 'sonner';
 
 const VIM_MODE_KEY = 'koimsurai_vim_mode';
 
@@ -202,7 +203,7 @@ export default function MonacoEditor({
       }
     } catch (err) {
       console.error('Upload image error:', err);
-      alert('圖片上傳失敗: ' + (err instanceof Error ? err.message : String(err)));
+      toast.error(`圖片上傳失敗：${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setUploading(false);
     }
@@ -401,7 +402,7 @@ export default function MonacoEditor({
         }
       } catch (err) {
         console.error('Paste/Upload image error:', err);
-        alert('圖片上傳失敗: ' + (err instanceof Error ? err.message : String(err)));
+        toast.error(`圖片上傳失敗：${err instanceof Error ? err.message : String(err)}`);
       }
     };
 
@@ -468,7 +469,7 @@ export default function MonacoEditor({
         }
       } catch (err) {
         console.error('Drop/Upload image error:', err);
-        alert('圖片上傳失敗');
+        toast.error(`圖片上傳失敗：${err instanceof Error ? err.message : String(err)}`);
       }
     };
 

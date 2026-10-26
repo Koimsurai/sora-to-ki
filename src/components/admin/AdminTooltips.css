@@ -1,0 +1,39 @@
+/* 後台的提示框（元件見 AdminTooltips.tsx）：夜色底、一條細框、直角，等寬小字。
+   pointer-events: none——它長在游標附近，不能擋住游標底下的東西 */
+.adm-tip {
+  position: fixed;
+  z-index: var(--z-toast);
+  box-sizing: border-box;
+  max-width: 320px;
+  padding: var(--space-1-5) var(--space-2-5);
+  background: rgba(var(--ground-rgb), 0.95);
+  border: 1px solid var(--rule);
+  color: var(--paper-2);
+  font-family: var(--serif);
+  font-size: var(--fs-12);
+  line-height: var(--lh-150);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.adm-tip[data-ready] {
+  animation: adm-tip-in var(--dur-150) var(--easing-out) forwards;
+}
+
+@keyframes adm-tip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-tip[data-ready] {
+    animation: none;
+    opacity: 1;
+  }
+}

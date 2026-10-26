@@ -317,9 +317,14 @@ test.describe('文章編輯器', () => {
     await typeContent(page, '明天再見客。');
 
     await expect(page.getByRole('button', { name: '發佈文章' })).toBeVisible();
-    await page.getByLabel('排程發佈').fill('2099-01-01T09:00');
-    await expect(page.getByRole('button', { name: '排程發佈' }), '填了時間，主要按鈕要換字').toBeVisible();
-    await page.getByRole('button', { name: '排程發佈' }).click();
+    // 日期與時間是兩格自己畫的欄位（不是瀏覽器的 datetime-local），離開欄位才算填好
+    await page.getByLabel('排程發佈日期', { exact: true }).fill('2099-01-01');
+    await page.getByLabel('排程發佈時間', { exact: true }).fill('09:00');
+    await page.getByLabel('排程發佈時間', { exact: true }).press('Tab');
+    // exact：日期欄的月曆鈕叫「排程發佈日期：開月曆」，不精確比對會撞到它
+    const publish = page.getByRole('button', { name: '排程發佈', exact: true });
+    await expect(publish, '填了時間，主要按鈕要換字').toBeVisible();
+    await publish.click();
 
     await expect(page).toHaveURL(/\/admin\/posts$/, { timeout: 20_000 });
     await page.getByRole('button', { name: /^排程/ }).click();

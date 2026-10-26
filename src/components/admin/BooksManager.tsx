@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading, { BusyDot } from './AdminLoading';
+import { AdminDateField, AdminSelect } from './AdminFields';
 import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
 
@@ -409,14 +410,16 @@ export default function BooksManager() {
                 <span className="adm-caps">ISBN</span>
                 <input value={form.isbn} onChange={(e) => set({ isbn: e.target.value })} />
               </label>
-              <label className="adm-field">
-                <span className="adm-caps">出版日期</span>
-                <input
-                  type="date"
+              <div className="adm-field">
+                <span className="adm-caps" aria-hidden="true">
+                  出版日期
+                </span>
+                <AdminDateField
+                  label="出版日期"
                   value={form.published_date}
-                  onChange={(e) => set({ published_date: e.target.value })}
+                  onChange={(v) => set({ published_date: v })}
                 />
-              </label>
+              </div>
               <label className="adm-field">
                 <span className="adm-caps">頁數</span>
                 <input type="number" value={form.page_count} onChange={(e) => set({ page_count: e.target.value })} />
@@ -447,25 +450,28 @@ export default function BooksManager() {
             <div className="adm-form-section">
               <span className="adm-caps">我讀這本</span>
               <div className="adm-form-grid">
-                <label className="adm-field">
-                  <span className="adm-caps">狀態</span>
-                  <select
+                <div className="adm-field">
+                  <span className="adm-caps" aria-hidden="true">
+                    狀態
+                  </span>
+                  <AdminSelect
+                    label="狀態"
                     value={form.reading_status}
-                    onChange={(e) => {
+                    onChange={(status) => {
                       // 切到「在讀／讀完」時順手補今天的日期（只補空的，已經填過的不動）
-                      const status = e.target.value;
                       set({
                         reading_status: status,
                         date_started: status !== 'to-read' && !form.date_started ? today() : form.date_started,
                         date_finished: status === 'read' && !form.date_finished ? today() : form.date_finished,
                       });
                     }}
-                  >
-                    <option value="to-read">想讀</option>
-                    <option value="reading">在讀</option>
-                    <option value="read">讀完</option>
-                  </select>
-                </label>
+                    options={[
+                      { value: 'to-read', label: '想讀' },
+                      { value: 'reading', label: '在讀' },
+                      { value: 'read', label: '讀完' },
+                    ]}
+                  />
+                </div>
                 <label className="adm-field">
                   <span className="adm-caps">評分 · 0–5</span>
                   <input
@@ -477,22 +483,18 @@ export default function BooksManager() {
                     onChange={(e) => set({ rating: e.target.value ? parseFloat(e.target.value) : null })}
                   />
                 </label>
-                <label className="adm-field">
-                  <span className="adm-caps">開始讀</span>
-                  <input
-                    type="date"
-                    value={form.date_started}
-                    onChange={(e) => set({ date_started: e.target.value })}
-                  />
-                </label>
-                <label className="adm-field">
-                  <span className="adm-caps">讀完</span>
-                  <input
-                    type="date"
-                    value={form.date_finished}
-                    onChange={(e) => set({ date_finished: e.target.value })}
-                  />
-                </label>
+                <div className="adm-field">
+                  <span className="adm-caps" aria-hidden="true">
+                    開始讀
+                  </span>
+                  <AdminDateField label="開始讀" value={form.date_started} onChange={(v) => set({ date_started: v })} />
+                </div>
+                <div className="adm-field">
+                  <span className="adm-caps" aria-hidden="true">
+                    讀完
+                  </span>
+                  <AdminDateField label="讀完" value={form.date_finished} onChange={(v) => set({ date_finished: v })} />
+                </div>
               </div>
               <label className="adm-field">
                 <span className="adm-caps">筆記</span>

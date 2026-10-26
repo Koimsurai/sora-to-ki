@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from '../../contexts/auth';
 import { useEditorScheduledAt } from '@/store/editorScheduleStore';
 import AdminScrollbars from './AdminScrollbars';
+import AdminTooltips from './AdminTooltips';
 import './AdminTheme.css';
 import './AdminLayout.css';
 
@@ -135,6 +136,7 @@ const AdminLayout = () => {
       */}
       <Toaster />
       <AdminScrollbars />
+      <AdminTooltips />
 
       {!editor && (
         <aside id="adm-side" className="adm-side" data-open={menuOpen || undefined}>
