@@ -1,7 +1,7 @@
 {
   "name": "宙と木 — Koimsurai",
   "short_name": "宙と木",
-  "description": "Koimsurai 的個人空間 — 一個工程師的閱讀筆記、作品紀錄與系統實驗。",
+  "description": "宙と木，Koimsurai 的個人空間。一個寫代碼的人，偶爾造點東西。",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

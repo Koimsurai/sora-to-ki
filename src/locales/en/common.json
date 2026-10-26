@@ -62,7 +62,7 @@
     "listening": "Listening",
     "recently": "Lately",
     "episode": "Ep. {{ep}}",
-    "aboutLead": "Koimsurai, someone who writes code.",
+    "aboutLead": "Koimsurai, someone who writes code and occasionally builds things.",
     "aboutAll": "About me"
   },
   "user": {
@@ -72,7 +72,7 @@
     "signInWithGoogle": "Sign in with Google"
   },
   "hero": {
-    "description": "Sora to Ki (宙と木) — Koimsurai's personal space. A developer's reading notes, portfolio, and system experiments."
+    "description": "Sora to Ki (宙と木), Koimsurai's personal space. Someone who writes code and occasionally builds things."
   },
   "footer": {
     "tagline": "Stay hungry. Stay foolish.",
@@ -639,7 +639,7 @@
     "legendDim": "Dimmer: longer since the last update",
     "dockLabel": "Two ships about to dock, a signal passing between them",
     "cardTitle": "This site",
-    "siteDesc": "A developer's personal corner",
+    "siteDesc": "Someone who writes code and occasionally builds things",
     "formTitle": "Be the next one",
     "fieldName": "Name",
     "fieldNameHint": "Your site's name",
@@ -878,6 +878,6 @@
     "fontReading": "Articles can also be read in a sans, a handwritten-style or a modern sans face, each served per language by this site. MiSans is a free commercial font by Xiaomi."
   },
   "og": {
-    "tagline": "Code, systems, and fragments of life."
+    "tagline": "Someone who writes code and occasionally builds things."
   }
 }

@@ -134,7 +134,7 @@ pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) 
         .collect();
 
     let xml = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n  <channel>\n    <title>Koimsurai 手記</title>\n    <link>{site_url}{url_prefix}/blog</link>\n    <description>Koimsurai 的個人部落格 — 技術筆記、生活隨筆、影集心得</description>\n    <language>{locale}</language>\n    <lastBuildDate>{last_build}</lastBuildDate>\n    <atom:link href=\"{site_url}/rss{self_q}\" rel=\"self\" type=\"application/rss+xml\"/>\n{}\n  </channel>\n</rss>",
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n  <channel>\n    <title>Koimsurai 手記</title>\n    <link>{site_url}{url_prefix}/blog</link>\n    <description>宙と木，Koimsurai 的手記。一個寫代碼的人，偶爾造點東西。</description>\n    <language>{locale}</language>\n    <lastBuildDate>{last_build}</lastBuildDate>\n    <atom:link href=\"{site_url}/rss{self_q}\" rel=\"self\" type=\"application/rss+xml\"/>\n{}\n  </channel>\n</rss>",
         items.join("\n")
     );
     ([(header::CONTENT_TYPE, "application/rss+xml; charset=utf-8")], xml).into_response()
