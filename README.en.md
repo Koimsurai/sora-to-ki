@@ -235,6 +235,7 @@ Only `DATABASE_URL` and `JWT_SECRET` are required (both are in the example file)
 | Bookshelf | `GOOGLE_BOOKS_API_KEY` `ENABLE_TW_ISBN_SYNC` |
 | Newsletter | `RESEND_API_KEY` |
 | Error tracking | `SENTRY_DSN` `SENTRY_FRONTEND_DSN` |
+| Admin traffic (Plausible) | `PLAUSIBLE_API_KEY` `PLAUSIBLE_SITE_ID` |
 | ISR purge | `FRONTEND_REVALIDATE_URL` `REVALIDATE_SECRET` |
 
 ## 📜 Common commands

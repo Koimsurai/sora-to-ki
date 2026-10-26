@@ -1,5 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
 import type {
+  AnalyticsResponse,
   AdminTagRow,
   AdminCategoryRow,
   AdminUserRow,
@@ -130,6 +131,26 @@ export const adminFriendsQueryOptions = queryOptions({
   queryFn: () => adminGet<AdminFriendsResponse>('/api/admin/friends'),
   staleTime: 30 * 1000,
 });
+
+export type AnalyticsPeriod = '7d' | '30d' | '6mo';
+
+/**
+ * 流量（後端代理自架 Plausible）。Plausible 拒絕時後端回 502 帶 `error`（key 錯、site_id 錯），
+ * 那句話要原樣顯示給站長看，所以不走 adminGet 那個只報狀態碼的錯誤。
+ */
+export const adminAnalyticsQueryOptions = (period: AnalyticsPeriod) =>
+  queryOptions({
+    queryKey: ['admin', 'analytics', period],
+    queryFn: async () => {
+      const res = await fetch(apiUrl(`/api/admin/analytics?period=${period}`), { headers: authHeaders() });
+      const body = (await res.json().catch(() => ({}))) as AnalyticsResponse & { error?: string };
+      if (!res.ok) throw new Error(body.error ?? `${res.status}`);
+      return body;
+    },
+    staleTime: STALE,
+    // 上游是別的服務，壞了重試也多半一樣壞；讓錯誤訊息早點出來
+    retry: false,
+  });
 
 export const adminStatsQueryOptions = queryOptions({
   queryKey: ['admin', 'stats'],

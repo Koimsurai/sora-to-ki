@@ -13,7 +13,8 @@
   flex-direction: column;
   gap: var(--space-12);
   padding: var(--space-10) var(--space-14) var(--space-16);
-  animation: adm-enter var(--dur-400) var(--easing-out) backwards;
+  /* 晚一點才開始：換頁時讓舊頁先退一段（AdminLayout.css 的 adm-leave），兩段才分得出先後 */
+  animation: adm-enter 560ms var(--easing-out) 90ms backwards;
 }
 
 /* 一列一筆的清單頁（標籤、分類、帳號…）：拉到兩千寬只會讓名字跟按鈕隔一整個螢幕，
@@ -27,13 +28,21 @@
   display: flex;
   flex-direction: column;
   gap: inherit;
-  animation: adm-enter var(--dur-300) var(--easing-out) backwards;
+  animation: adm-tab-enter 380ms var(--easing-out) backwards;
 }
 
 @keyframes adm-enter {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(32px);
+  }
+}
+
+/* 分頁只換下半塊，位移小一點：頁首沒動，整塊跳太遠反而像換了一頁 */
+@keyframes adm-tab-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
   }
 }
 

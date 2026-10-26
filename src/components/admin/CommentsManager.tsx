@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading from './AdminLoading';
+import { AdminSelect } from './AdminFields';
 import { PageHead, TabPanel } from './AdminPage';
 import { formatWhen } from './adminFormat';
 import './AdminReview.css';
@@ -625,13 +626,17 @@ export default function CommentsManager() {
                   <span className="sr-only">關鍵字</span>
                   <input placeholder="關鍵字" value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} />
                 </label>
-                <label className="adm-prompt">
-                  <span className="sr-only">碰到時怎麼辦</span>
-                  <select value={newKeywordAction} onChange={(e) => setNewKeywordAction(e.target.value)}>
-                    <option value="spam">標成垃圾</option>
-                    <option value="reject">直接拒絕</option>
-                  </select>
-                </label>
+                <div className="adm-prompt">
+                  <AdminSelect
+                    label="碰到時怎麼辦"
+                    value={newKeywordAction}
+                    onChange={setNewKeywordAction}
+                    options={[
+                      { value: 'spam', label: '標成垃圾' },
+                      { value: 'reject', label: '直接拒絕' },
+                    ]}
+                  />
+                </div>
                 <button type="submit" className="adm-btn">
                   新增
                 </button>

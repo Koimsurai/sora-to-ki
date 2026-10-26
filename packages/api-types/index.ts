@@ -234,6 +234,46 @@ export type AdminWatchItem = {
 	favorite_id: number | null,
 };
 
+/**  走勢圖的一格。`date` 是那一格的起點（`yyyy-MM-dd`，週粒度時是那週的第一天） */
+export type AnalyticsPoint = {
+	date: string,
+	visitors: number,
+	pageviews: number,
+};
+
+export type AnalyticsResponse = {
+	/**  後端有沒有設 `PLAUSIBLE_API_KEY`；沒設時其他欄位都是空的 */
+	configured: boolean,
+	period: string,
+	/**  最近五分鐘的訪客（Plausible 的 realtime）；查不到時是 null，不影響其他欄位 */
+	realtime: number | null,
+	totals: AnalyticsTotals,
+	series: AnalyticsPoint[],
+	pages: AnalyticsRow[],
+	sources: AnalyticsRow[],
+	/**  國家是 ISO 3166-1 alpha-2 國碼，前端用 `Intl.DisplayNames` 翻成中文 */
+	countries: AnalyticsRow[],
+	devices: AnalyticsRow[],
+	/**  「在 Plausible 打開」的連結 */
+	dashboard_url: string,
+};
+
+/**  排行表的一列：名字（頁面路徑、來源、國碼、裝置）與訪客數 */
+export type AnalyticsRow = {
+	name: string,
+	visitors: number,
+};
+
+export type AnalyticsTotals = {
+	visitors: number,
+	visits: number,
+	pageviews: number,
+	/**  跳出率，百分比（0–100） */
+	bounce_rate: number | null,
+	/**  平均停留，秒 */
+	visit_duration: number | null,
+};
+
 export type AnimeHistoryResponse = {
 	message: string,
 	history: AnimeRow[],

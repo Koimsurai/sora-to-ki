@@ -103,11 +103,6 @@
   border-color: var(--amber);
 }
 
-.adm-th-verb select {
-  font-family: var(--serif);
-  font-size: var(--fs-14);
-}
-
 .adm-th-bar kbd {
   margin-left: var(--space-2);
 }

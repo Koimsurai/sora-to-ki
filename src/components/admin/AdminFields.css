@@ -1,0 +1,302 @@
+/* 後台的下拉、日期、時間（元件見 AdminFields.tsx）。
+   觸發的那顆跟旁邊的輸入框同一個樣子；展開的清單與月曆是夜色底、細框、直角，琥珀只給選中的那一個。 */
+
+/* ── 下拉：觸發鈕 ──
+   單獨放的時候是一個框；放進 .adm-prompt（一行的輸入框）就把框交給外面那一圈 */
+.adm-select {
+  all: unset;
+  box-sizing: border-box;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--rule);
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  cursor: pointer;
+  transition: border-color var(--dur-200) ease;
+}
+
+.adm-select:hover,
+.adm-select:focus-visible,
+.adm-select[data-state="open"] {
+  border-color: var(--paper-3);
+}
+
+.adm-select[data-disabled] {
+  color: var(--paper-meta);
+  cursor: default;
+}
+
+.adm-select-icon {
+  display: inline-flex;
+  color: var(--paper-meta);
+  transition: transform var(--dur-200) var(--easing-out);
+}
+
+.adm-select-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.adm-select[data-state="open"] .adm-select-icon {
+  transform: rotate(180deg);
+}
+
+.adm-field .adm-select {
+  width: 100%;
+}
+
+.adm-prompt .adm-select {
+  min-height: 0;
+  padding: 0;
+  border: none;
+}
+
+/* ── 下拉：展開的清單（portal 到 body） ── */
+.adm-select-menu {
+  z-index: var(--z-menu);
+  box-sizing: border-box;
+  min-width: var(--radix-select-trigger-width);
+  max-height: var(--radix-select-content-available-height);
+  padding: var(--space-1) 0;
+  background: rgba(var(--ground-rgb), 0.95);
+  border: 1px solid var(--rule);
+  animation: adm-pop-in var(--dur-200) var(--easing-out);
+}
+
+.adm-select-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--space-4) 0 var(--space-7);
+  color: var(--paper-2);
+  font-family: var(--serif);
+  font-size: var(--fs-14);
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.adm-select-item[data-highlighted] {
+  background: rgba(var(--paper-rgb), 0.06);
+  color: var(--paper);
+}
+
+.adm-select-item[data-state="checked"] {
+  color: var(--paper);
+}
+
+.adm-select-check {
+  position: absolute;
+  left: var(--space-2);
+  display: inline-flex;
+  color: var(--amber);
+}
+
+.adm-select-check svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── 日期／時間：一個輸入框，日期的右邊一顆月曆鈕 ── */
+.adm-datefield {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* 兩個 class 的特異性：要贏過 .adm-field :is(input, …)（一個 class 加一個元素），
+   不然右邊留給月曆鈕的空間會被它的 padding 蓋掉 */
+.adm-datefield .adm-datefield-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-10) var(--space-2) var(--space-3);
+  border-width: 1px;
+  border-style: solid;
+  background: transparent;
+  outline: none;
+  color: var(--paper);
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  letter-spacing: var(--ls-4);
+}
+
+.adm-timefield .adm-datefield-input {
+  padding-right: var(--space-3);
+}
+
+.adm-datefield-btn {
+  all: unset;
+  position: absolute;
+  right: var(--space-1);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--paper-meta);
+  cursor: pointer;
+  transition: color var(--dur-200) ease;
+}
+
+.adm-datefield-btn:hover,
+.adm-datefield-btn:focus-visible,
+.adm-datefield-btn[data-state="open"] {
+  color: var(--amber);
+}
+
+.adm-datefield-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ── 月曆（portal 到 body） ── */
+.adm-cal-pop {
+  z-index: var(--z-menu);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: rgba(var(--ground-rgb), 0.95);
+  border: 1px solid var(--rule);
+  outline: none;
+  animation: adm-pop-in var(--dur-200) var(--easing-out);
+}
+
+.adm-cal {
+  position: relative;
+  color: var(--paper);
+}
+
+.adm-cal-caption {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  margin-bottom: var(--space-2);
+}
+
+.adm-cal-caption-label {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-12);
+  color: var(--paper);
+}
+
+.adm-cal-nav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  gap: var(--space-1);
+}
+
+.adm-cal-navbtn {
+  all: unset;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--rule);
+  color: var(--paper-2);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-200) ease,
+    color var(--dur-200) ease;
+}
+
+.adm-cal-navbtn:hover,
+.adm-cal-navbtn:focus-visible {
+  border-color: var(--amber);
+  color: var(--paper);
+}
+
+.adm-cal-navbtn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.adm-cal-grid {
+  border-collapse: collapse;
+}
+
+.adm-cal-weekday {
+  width: 36px;
+  height: 28px;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  font-weight: 400;
+  color: var(--paper-meta);
+}
+
+.adm-cal-day {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  text-align: center;
+}
+
+.adm-cal-daybtn {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin: auto;
+  border: 1px solid transparent;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-150) ease,
+    color var(--dur-150) ease;
+}
+
+.adm-cal-daybtn:hover,
+.adm-cal-daybtn:focus-visible {
+  border-color: var(--paper-3);
+  color: var(--paper);
+}
+
+/* 今天：底下一個小點；選中的那天：琥珀框、琥珀字 */
+.adm-cal-today .adm-cal-daybtn {
+  color: var(--paper);
+  text-decoration: underline dotted var(--paper-3);
+  text-underline-offset: 0.35em;
+}
+
+.adm-cal-selected .adm-cal-daybtn {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.adm-cal-outside .adm-cal-daybtn {
+  color: var(--paper-meta);
+}
+
+.adm-cal-disabled .adm-cal-daybtn {
+  color: var(--paper-meta);
+  cursor: default;
+}
+
+.adm-cal-hidden {
+  visibility: hidden;
+}
+
+@keyframes adm-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-select-menu,
+  .adm-cal-pop {
+    animation: none;
+  }
+}

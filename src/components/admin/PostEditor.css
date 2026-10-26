@@ -46,20 +46,25 @@
   border-bottom: 1px dotted var(--rule);
 }
 
+/* 日期一整行（右邊一顆月曆鈕），時間與「清空」在下一行 */
 .pe-schedule {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+
+.pe-schedule > .adm-datefield:first-child {
+  flex: 1 1 100%;
+}
+
+.pe-schedule > .adm-timefield {
+  flex: 1 1 0;
 }
 
 .pe-schedule .adm-btn {
   flex: none;
   white-space: nowrap;
-}
-
-/* datetime-local 的日曆圖示與彈出的月曆是瀏覽器畫的，預設是淺色版，在夜色上看不到圖示 */
-.pe-schedule input {
-  color-scheme: dark;
 }
 
 .pe-side-hint {
@@ -157,8 +162,11 @@
 }
 
 /* ── 摘要對應（ExcerptLinksEditor）：側欄只放精簡的，編輯在寬的視窗裡 ── */
+/* minmax(0, 1fr)：不寫的話 grid 的欄寬是內容的最小寬度，而 nowrap 的長句最小寬度就是整句，
+   會把整個側欄撐寬、要往右捲才看得到「編輯對應」 */
 .pe-links {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
   margin-top: var(--space-3);
 }
@@ -172,6 +180,7 @@
 
 .pe-links-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1-5);
   margin: 0;
   padding: 0;
@@ -192,6 +201,7 @@
 }
 
 .pe-links-text {
+  min-width: 0;
   overflow: hidden;
   color: var(--paper-meta);
   text-overflow: ellipsis;

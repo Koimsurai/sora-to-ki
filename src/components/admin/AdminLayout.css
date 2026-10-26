@@ -182,25 +182,36 @@
 }
 
 /* ── 換頁轉場（AdminLayout 在後台裡打開路由的 View Transition）──
-   舊畫面整張淡出，新畫面不另外動：新的那頁自己會淡入上浮（.adm-page 的進場），
-   兩邊都動的話會變成「淡兩次」。側欄兩張都一樣，看起來就是不動的。
+   只有內容區在動：.adm-main 自己一個轉場群組，整張畫面（root）不動，側欄就穩穩停著。
+   舊的那頁往上退、淡掉；新的那頁不另外動——它自己會從下面浮上來（.adm-page 的進場），
+   兩邊都套動畫的話會變成「淡兩次」。
+   .adm-main 沒有底色，所以新頁淡入時看得到舊頁在底下退場，兩段是疊著接上的。
+   群組本身不做大小的補間：新舊兩頁高度不同時，補間會把舊頁的截圖拉著走。
    選擇器帶 html.adm-vt：特異性才贏得過 BlogPost.css 給前台文章頁的那組 root 動畫 */
-html.adm-vt::view-transition-old(root) {
-  animation: adm-leave var(--dur-200) ease-out both;
+html.adm-vt .adm-main {
+  view-transition-name: adm-main;
 }
 
-html.adm-vt::view-transition-new(root) {
+html.adm-vt::view-transition-old(root),
+html.adm-vt::view-transition-new(root),
+html.adm-vt::view-transition-group(adm-main),
+html.adm-vt::view-transition-new(adm-main) {
   animation: none;
+}
+
+html.adm-vt::view-transition-old(adm-main) {
+  animation: adm-leave 240ms var(--easing-standard) both;
 }
 
 @keyframes adm-leave {
   to {
     opacity: 0;
+    transform: translateY(-20px) scale(0.985);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html.adm-vt::view-transition-old(root) {
+  html.adm-vt::view-transition-old(adm-main) {
     animation: none;
   }
 }

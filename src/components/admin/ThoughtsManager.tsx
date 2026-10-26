@@ -29,6 +29,7 @@ import {
 } from '@/lib/thoughtRef';
 import type { Thought } from '@/types/thought';
 import AdminLoading from './AdminLoading';
+import { AdminSelect } from './AdminFields';
 import { PageHead, SectionHead } from './AdminPage';
 import { formatWhen } from './adminFormat';
 import { candidates, type Candidate } from './thoughtCandidates';
@@ -329,20 +330,24 @@ export default function ThoughtsManager() {
                 </button>
               ))}
               <span className="adm-grow" />
-              <label className="adm-prompt adm-prompt-compact adm-th-verb">
-                <span className="adm-meta">動詞</span>
-                <select value={verbChoice} onChange={(e) => setVerbChoice(e.target.value as VerbChoice)}>
-                  <option value="auto">
-                    {verb && verbChoice === 'auto' ? `${VERB_LABEL[verb]}（依類型）` : '依類型'}
-                  </option>
-                  {THOUGHT_VERBS.map((v) => (
-                    <option key={v} value={v}>
-                      {VERB_LABEL[v]}
-                    </option>
-                  ))}
-                  <option value="none">不用動詞</option>
-                </select>
-              </label>
+              <div className="adm-prompt adm-prompt-compact adm-th-verb">
+                <span className="adm-meta" aria-hidden="true">
+                  動詞
+                </span>
+                <AdminSelect
+                  label="動詞"
+                  value={verbChoice}
+                  onChange={(v) => setVerbChoice(v as VerbChoice)}
+                  options={[
+                    {
+                      value: 'auto',
+                      label: verb && verbChoice === 'auto' ? `${VERB_LABEL[verb]}（依類型）` : '依類型',
+                    },
+                    ...THOUGHT_VERBS.map((v) => ({ value: v, label: VERB_LABEL[v] })),
+                    { value: 'none', label: '不用動詞' },
+                  ]}
+                />
+              </div>
               {editing && (
                 <button type="button" className="adm-btn" onClick={reset}>
                   取消

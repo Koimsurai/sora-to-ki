@@ -154,6 +154,48 @@ test.describe('後台', () => {
   });
 
   /**
+   * 流量：e2e 沒有 Plausible 的 key，後端回 configured: false → 畫面要教人怎麼設。
+   * 接上之後的報表用攔截的假資料驗：總數、柱狀圖、排行都畫得出來，國碼翻成國名。
+   * （後端把 Plausible 的回應整理成這個形狀，那段在 backend/tests/analytics.rs 測。）
+   */
+  test('流量：沒設 key 時說怎麼設；有資料時畫得出報表', async ({ page }) => {
+    await signIn(page);
+    await gotoAdmin(page, '/admin/analytics', '流量');
+    await expect(page.getByText('PLAUSIBLE_API_KEY', { exact: false })).toBeVisible();
+
+    await page.route('**/api/admin/analytics?*', (route) =>
+      route.fulfill({
+        json: {
+          configured: true,
+          period: '30d',
+          realtime: 2,
+          totals: { visitors: 1234, visits: 1500, pageviews: 4321, bounce_rate: 61.4, visit_duration: 125 },
+          series: [
+            { date: '2026-10-24', visitors: 0, pageviews: 0 },
+            { date: '2026-10-25', visitors: 40, pageviews: 90 },
+            { date: '2026-10-26', visitors: 20, pageviews: 30 },
+          ],
+          pages: [{ name: '/blog/hello', visitors: 80 }],
+          sources: [{ name: 'Direct / None', visitors: 50 }],
+          countries: [{ name: 'TW', visitors: 70 }],
+          devices: [{ name: 'Mobile', visitors: 30 }],
+          dashboard_url: 'https://plausible.example/koimsurai.com',
+        },
+      }),
+    );
+    await page.getByRole('button', { name: '7 天' }).click();
+    await expect(page.getByText('此刻 2 人在站上')).toBeVisible();
+    await expect(page.getByText('1,234', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('總數')).toContainText('2分05秒');
+    await expect(page.locator('.adm-an-col'), '一天一根柱子').toHaveCount(3);
+    const pages = page.getByRole('region', { name: '熱門頁面' });
+    await expect(pages).toContainText('/blog/hello');
+    await expect(page.getByRole('region', { name: '從哪裡來' })).toContainText('直接造訪');
+    await expect(page.getByRole('region', { name: '國家' })).toContainText('台灣');
+    await expect(page.getByRole('region', { name: '裝置' })).toContainText('手機');
+  });
+
+  /**
    * 照片：後台關掉「前台顯示」之後，公開的照片清單就沒有那張；打開又回來。
    * 這是後台唯一能讓一張照片從前台消失的地方，壞掉的話站長以為藏起來了、讀者照樣看得到。
    */

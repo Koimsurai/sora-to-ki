@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { useAuth } from '../../contexts/auth';
 import { useEditorScheduledAt } from '@/store/editorScheduleStore';
 import AdminScrollbars from './AdminScrollbars';
+import AdminTooltips from './AdminTooltips';
 import './AdminTheme.css';
 import './AdminLayout.css';
 
@@ -29,7 +30,13 @@ interface NavGroup {
 // 只放已經存在的頁。提案裡的碎念、訊號、外部連線等做出來了再加進來，
 // 不先放一個點進去是空頁的入口。
 const NAV: NavGroup[] = [
-  { label: '此刻', items: [{ label: '總覽', path: '/admin/dashboard' }] },
+  {
+    label: '此刻',
+    items: [
+      { label: '總覽', path: '/admin/dashboard' },
+      { label: '流量', path: '/admin/analytics' },
+    ],
+  },
   {
     label: '寫 · Write',
     items: [
@@ -95,6 +102,17 @@ const AdminLayout = () => {
     };
   }, []);
 
+  // 進得了後台的就是站長：這個瀏覽器之後在前台逛也不算進 Plausible（腳本看到這個旗標就不送，
+  // 見 routes/__root.tsx 的說明）。登出也不拿掉——瀏覽器還是站長的。
+  // 隱私模式或封鎖儲存時 localStorage 會丟錯，那就只是這次沒設到。
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('plausible_ignore', 'true');
+    } catch {
+      // 寫不進去就算了
+    }
+  }, []);
+
   // 換頁轉場：在後台裡每一次換頁都走 View Transition，舊畫面淡出（AdminLayout.css 的
   // html.adm-vt 那段），新的那頁自己淡入上浮（.adm-page 的進場）。
   // 只在後台開：前台各頁有自己的轉場（TransitionLayer），全站預設打開會跟它疊在一起。
@@ -135,6 +153,7 @@ const AdminLayout = () => {
       */}
       <Toaster />
       <AdminScrollbars />
+      <AdminTooltips />
 
       {!editor && (
         <aside id="adm-side" className="adm-side" data-open={menuOpen || undefined}>
