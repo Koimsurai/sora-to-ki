@@ -27,15 +27,24 @@ fn env_or(key: &str, default: &str) -> String {
 fn newsletter_from() -> String {
     env_or("NEWSLETTER_FROM", "Koimsurai <hello@koimsurai.com>")
 }
-/// 寄一封純文字信給一個人（友鏈審核的回信用）。沒設 RESEND_API_KEY 回錯，由呼叫端轉告站長。
-pub(crate) async fn send_plain(state: &AppState, to: &str, subject: &str, text: &str) -> Result<(), String> {
+/// 寄一封信給一個人（友鏈審核的回信用）：HTML 版加純文字版（不顯示 HTML 的信件軟體看後者）。
+/// 沒設 RESEND_API_KEY 回錯，由呼叫端轉告站長。
+pub(crate) async fn send_one(
+    state: &AppState,
+    to: &str,
+    subject: &str,
+    text: &str,
+    html: &str,
+) -> Result<(), String> {
     let key =
         std::env::var("RESEND_API_KEY").ok().filter(|k| !k.is_empty()).ok_or("沒有設定 RESEND_API_KEY")?;
     let resp = state
         .http
         .post(format!("{}/emails", resend_base_url()))
         .header("Authorization", format!("Bearer {key}"))
-        .json(&json!({ "from": newsletter_from(), "to": [to], "subject": subject, "text": text }))
+        .json(
+            &json!({ "from": newsletter_from(), "to": [to], "subject": subject, "text": text, "html": html }),
+        )
         .send()
         .await
         .map_err(|e| e.to_string())?;
@@ -189,6 +198,69 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
     )
 }
 
+/// 友鏈審核的回信：站長寫的那段放中間，前面標明是哪個站的申請，後面署名與朋友頁連結。
+/// 版型跟新文章通知信同一套（見 [`render_email`]）。回傳 (HTML, 純文字)
+pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (String, String) {
+    let name = escape_html(site_name);
+    // 空一行是分段，單一個換行是段內換行
+    let body = reply
+        .split("\n\n")
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .map(|p| {
+            format!(
+                "<p style=\"margin:0 0 18px 0;font-size:16px;line-height:1.85;color:#f1ece3;\">{}</p>",
+                escape_html(p).replace('\n', "<br>")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n        ");
+    let site_bare = site.strip_prefix("https://").or_else(|| site.strip_prefix("http://")).unwrap_or(site);
+    let html = format!(
+        r#"<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>關於「{name}」的友鏈申請</title>
+</head>
+<body style="margin:0;padding:0;background:#0a0a0c;font-family:'Noto Serif TC','Source Han Serif TC','Songti TC','PMingLiU',Georgia,serif;color:#f1ece3;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0c;">
+  <tr><td align="center" style="padding:40px 20px;">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+      <tr><td style="padding:0 0 36px 0;">
+        <a href="{site}" style="color:#f1ece3;text-decoration:none;font-size:20px;letter-spacing:0.01em;">Koimsurai</a>
+      </td></tr>
+
+      <tr><td style="padding:28px 0 0 0;border-top:1px solid rgba(241,236,227,0.1);">
+        <p style="margin:0 0 20px 0;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px;letter-spacing:0.06em;color:rgba(241,236,227,0.4);">
+          <span style="color:#e9c17a;">●</span>&nbsp; 友鏈申請 · {name}
+        </p>
+        {body}
+      </td></tr>
+
+      <tr><td style="padding:16px 0 0 0;font-size:14px;line-height:1.8;color:rgba(241,236,227,0.55);">
+        — 宙と木 · Koimsurai
+      </td></tr>
+      <tr><td style="padding:12px 0 0 0;">
+        <a href="{site}/friends" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;letter-spacing:0.06em;color:#e9c17a;text-decoration:none;border-bottom:1px dotted rgba(233,193,122,0.6);padding-bottom:2px;">朋友頁 →</a>
+      </td></tr>
+
+      <tr><td style="padding:40px 0 0 0;">
+        <p style="margin:0;padding-top:20px;border-top:1px solid rgba(241,236,227,0.1);font-size:11px;line-height:1.8;color:rgba(241,236,227,0.4);">
+          這封信是回覆你在 <a href="{site}/friends" style="color:rgba(241,236,227,0.7);text-decoration:underline;">{site_bare}</a> 送出的友鏈申請。
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>"#
+    );
+    let text = format!("{}\n\n— 宙と木 · Koimsurai\n{site}/friends", reply.trim());
+    (html, text)
+}
+
 /// 建每封信的 wire object：`{from, headers, html, subject, text, to}`（reply_to 略，對齊 SDK bug）。
 fn build_email_object(site: &str, from: &str, subject: &str, post: &Post, sub: &Sub) -> Value {
     let unsub = unsubscribe_url(site, &sub.token);
@@ -339,4 +411,30 @@ pub async fn send_newsletter_route(
     let (sent, failed, errors) = send_newsletter(&state, &post, &subs).await;
     Json(json!({ "message": "newsletter dispatched", "sent": sent, "failed": failed, "errors": errors }))
         .into_response()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render_friend_reply;
+
+    #[test]
+    fn 友鏈回信_站長的字照原樣分段_而且會跳脫() {
+        let (html, text) = render_friend_reply(
+            "https://koimsurai.com",
+            "Ink<Codes>",
+            "收下了！\n已經加上去。\n\n<b>謝謝</b>",
+        );
+        // 空一行是分段、單一個換行是段內換行
+        assert!(html.contains("收下了！<br>已經加上去。</p>"), "{html}");
+        // 站長打的字與對方的站名都不能被當成 HTML
+        assert!(html.contains("&lt;b&gt;謝謝&lt;/b&gt;"));
+        assert!(html.contains("友鏈申請 · Ink&lt;Codes&gt;"));
+        assert!(!html.contains("<b>謝謝"));
+        assert!(html.contains("https://koimsurai.com/friends"), "要有朋友頁的連結");
+        // 純文字版：原文、署名、朋友頁
+        assert_eq!(
+            text,
+            "收下了！\n已經加上去。\n\n<b>謝謝</b>\n\n— 宙と木 · Koimsurai\nhttps://koimsurai.com/friends"
+        );
+    }
 }
