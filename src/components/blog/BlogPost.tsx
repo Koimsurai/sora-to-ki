@@ -9,6 +9,7 @@ import {
   postsByTagQueryOptions,
   postReactionsQueryOptions,
   seriesQueryOptions,
+  type PostDetail,
 } from '@/data/blogList';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
@@ -1006,10 +1007,19 @@ function postPathForLocale(id: string | number | undefined, locale: string, sour
   return `${LOCALE_URL_PREFIX[locale] || ''}/blog/${id}`;
 }
 
+/**
+ * 草稿預覽（admin/DraftPreview）：不打 API，直接用編輯器交過來的資料畫；
+ * 會寫進資料庫的（瀏覽數、回應、留言）都不做，換語系改成切換預覽的語系
+ */
+export interface BlogPostPreview {
+  data: PostDetail;
+  onLocale: (locale: string) => void;
+}
+
 /* ═══════════════════════════════════
    BlogPost — 文章內頁
    ═══════════════════════════════════ */
-function BlogPost() {
+function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
   const { t } = useTranslation();
   const tagLabel = useTagLabel();
   const categoryLabel = useCategoryLabel();
@@ -1041,14 +1051,18 @@ function BlogPost() {
   // hydrate 讀同一份快取，不再重打 API。placeholderData 保留上一篇資料做平滑過渡（不閃白）。
   // date 是 client 依語系格式化的衍生欄位（API 不回傳）。
   const {
-    data: postData,
-    isPending,
+    data: fetched,
+    isPending: fetching,
     isPlaceholderData,
-    error: queryError,
+    error: fetchError,
   } = useQuery({
     ...postDetailQueryOptions(id, pathLocale),
     placeholderData: keepPreviousData,
+    enabled: !preview,
   });
+  const postData = preview ? preview.data : fetched;
+  const isPending = !preview && fetching;
+  const queryError = preview ? null : fetchError;
   const post = useMemo<Post | null>(() => {
     if (!postData) return null;
     const dateLocale = LOCALE_TO_DATE_LOCALE[postData.locale] ?? 'zh-TW';
@@ -1162,13 +1176,13 @@ function BlogPost() {
 
   /* ── 成功載入一篇：增加瀏覽數（每次載入新文章打一次）── */
   useEffect(() => {
-    if (!postData?.id) return;
+    if (!postData?.id || preview) return;
     // 刻意不用 AbortController：瀏覽數是 fire-and-forget，使用者讀完隨即跳頁正是常態，
     // 中止等於把要記的那一筆丟掉。sendBeacon 就是為這種卸載期送出設計的，
     // 後端 post_view 只吃 Path(id)、不讀 body，空 POST 即可。
     // 佇列滿時會回 false，那一筆就放掉——瀏覽數不值得為此再開一條 fetch。
     navigator.sendBeacon('/api/posts/' + postData.id + '/view');
-  }, [postData?.id]);
+  }, [postData?.id, preview]);
 
   /* 註：原本這裡有「preview commit 過來自動 scroll 到使用者讀到那段」的邏輯，
        試了 ratio、文字匹配、比例對應好幾輪，preview 跟 BlogPost 渲染差異太大
@@ -1405,6 +1419,10 @@ function BlogPost() {
               source={sourceLang}
               available={availableLocales}
               onSelect={(loc) => {
+                if (preview) {
+                  preview.onLocale(loc);
+                  return;
+                }
                 const target = postPathForLocale(id, loc, sourceLang); // 已是絕對 locale 路徑,用 href 不再加前綴
                 // 記下讀者在哪一章，新語系那頁放回同一個地方（捲動由那邊負責，這裡不要先跳回頂端）
                 setRetune(
@@ -1517,13 +1535,16 @@ function BlogPost() {
               <FontLine className="ar-font-narrow" current={currentFont} onChange={handleFontChange} />
             </div>
             {/* 回應的狀態只有一個持有者（文章頁）：傳給星座，各自呼叫 useReactions 的話 mine 會分岔 */}
-            <ReactionSky counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />
+            {/* 草稿預覽不放回應與留言：按下去會真的寫進資料庫 */}
+            {!preview && <ReactionSky counts={reactionCounts} mine={myReactions} toggle={toggleReaction} />}
             {post.series_name && <SeriesNav seriesName={post.series_name} currentId={post.id} />}
             <PrevNextNav currentId={post.id} />
             <SameCategory currentId={post.id} postCategory={post.category ?? undefined} />
-            <div className="post-extras" id="comments">
-              <ArticleComments postId={post.id} allowComments={post.allow_comments} />
-            </div>
+            {!preview && (
+              <div className="post-extras" id="comments">
+                <ArticleComments postId={post.id} allowComments={post.allow_comments} />
+              </div>
+            )}
           </footer>
         )}
       </div>

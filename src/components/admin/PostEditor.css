@@ -155,3 +155,62 @@
   width: 100%;
   margin-top: var(--space-1);
 }
+
+/* ── 摘要對應（ExcerptLinksEditor）：摘要切成一句一句，每句一個下拉選章節 ── */
+.pe-links {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.pe-links-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pe-link {
+  display: grid;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px dotted var(--rule);
+}
+
+.pe-link-text {
+  font-size: var(--fs-13);
+  line-height: var(--lh-160);
+  color: var(--paper-meta);
+}
+
+/* 連過的句子：跟前台一樣畫底線，琥珀色 */
+.pe-link[data-on] .pe-link-text {
+  color: var(--paper);
+  text-decoration: underline dotted var(--amber);
+  text-underline-offset: 0.3em;
+}
+
+.pe-link select {
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+}
+
+.pe-links-orphans ul {
+  display: grid;
+  gap: var(--space-1-5);
+  margin: var(--space-1-5) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pe-links-orphans li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+}

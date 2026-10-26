@@ -188,11 +188,14 @@ pub async fn generate_zh_cn(
         return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
 
+    // 轉好的簡體連結也回給編輯器：它手上那份還是轉之前的，下次存檔會把這裡寫的蓋掉
+    let links_zh_cn = excerpt_links::parse_stored(links.as_deref()).remove("zh-CN").unwrap_or_default();
     Json(json!({
         "message": "success",
         "title_zh_cn": title_zh_cn,
         "content_zh_cn": content_zh_cn,
         "excerpt_zh_cn": excerpt_zh_cn,
+        "excerpt_links_zh_cn": links_zh_cn,
     }))
     .into_response()
 }
