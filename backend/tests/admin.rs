@@ -658,6 +658,25 @@ async fn 自動轉簡體會把結果寫回文章() {
 }
 
 #[tokio::test]
+async fn 轉簡體時摘要連結也轉_並回給編輯器() {
+    // 編輯器手上那份簡體連結是轉之前的：回應不帶回來的話，下一次存檔會把轉好的蓋掉
+    let (app, _pool) = test_app().await;
+    let id = create_post(
+        &app,
+        json!({
+            "title": "標題", "content": "## 一\n內文", "excerpt": "先說結論。再講細節。",
+            "source_language": "zh-TW",
+            "excerpt_links": { "zh-TW": [{ "text": "再講細節。", "to": "01" }] },
+        }),
+    )
+    .await;
+
+    let (st, v) = admin(&app, "POST", &format!("/api/admin/posts/{id}/generate-zh-cn"), None).await;
+    assert!(st.is_success(), "得到 {st} {v}");
+    assert_eq!(v["excerpt_links_zh_cn"], json!([{ "text": "再讲细节。", "to": "01" }]));
+}
+
+#[tokio::test]
 async fn 沒有摘要時轉出來的是_null_不是空字串() {
     // 空字串會讓前端的「有沒有簡體版摘要」判斷（truthy）誤判成有，
     // 然後在簡中版顯示一段空白的摘要區塊。

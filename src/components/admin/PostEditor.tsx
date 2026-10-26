@@ -8,6 +8,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { postSchema, type PostFormInput } from '@/schemas/post';
 import { MonacoEditor } from '@/components/monaco-editor';
 import { PostPreview } from './PostPreview';
+import ExcerptLinksEditor from './ExcerptLinksEditor';
+import type { ExcerptLink } from '@koimsurai/api-types';
+import { publishPostPreview, type PostPreviewSnapshot, type PreviewText } from '@/store/postPreview';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -185,6 +188,8 @@ export default function PostEditor() {
   // 「事後才填進來的受控值」，看起來像被 reset（值其實有）。用這個旗標當 key 讓 Select 在
   // reset 完成後重新 mount 一次，用正確的值初始化 → 顯示正常。新文章保持 false（預設值本就正確）。
   const [hydrated, setHydrated] = useState(false);
+  /** 摘要裡連到章節的句子（語系 → 句子）。不在表單裡：zod schema 管的是字串欄位，這個是結構 */
+  const [excerptLinks, setExcerptLinks] = useState<Record<string, ExcerptLink[]>>({});
   const [autosaveStatus, setAutosaveStatus] = useState(''); // '', 'saved', 'restoring'
   const submitLockRef = useRef(false);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -324,6 +329,64 @@ export default function PostEditor() {
     }
   }, [autosaveKey, form, id, flashStatus]);
 
+  // ── 在前台預覽（admin/DraftPreview，/preview/post）──
+  // 按下去才開始同步：開一個分頁，用讀者看到的文章頁畫正在編的內容（還沒存的也算），之後這裡一改那邊跟著更新
+  const previewOpenRef = useRef(false);
+  const buildPreviewSnapshot = useCallback((): PostPreviewSnapshot => {
+    const v = form.getValues();
+    const source = v.source_language ?? 'zh-TW';
+    const texts: Record<string, PreviewText> = {};
+    for (const t of LOCALE_TABS) {
+      const pick = (base: 'title' | 'content' | 'summary') => {
+        const value = v[fieldNameFor(base, t.code, source)];
+        return typeof value === 'string' ? value : '';
+      };
+      texts[t.code] = { title: pick('title'), content: pick('content'), excerpt: pick('summary') };
+    }
+    // 表單裡沒填是空字串，文章頁那邊的「沒有」是 null
+    const orNull = (s: string | undefined) => (s?.trim() ? s : null);
+    return {
+      id: postData?.id ?? null,
+      slug: orNull(v.slug),
+      format,
+      category: orNull(v.category),
+      tags: (v.tags ?? []).map((tag) => (typeof tag === 'string' ? tag : tag.label)),
+      series_name: orNull(v.series_name),
+      series_order: v.series_order ? Number(v.series_order) : null,
+      layout_type: v.layout_type ?? 'record',
+      allow_comments: v.allow_comments ?? true,
+      status: v.status ?? 'draft',
+      source_language: source,
+      created_at: postData?.created_at ?? null,
+      updated_at: postData?.updated_at ?? null,
+      view_count: postData?.view_count ?? 0,
+      author: postData?.author ?? null,
+      texts,
+      excerpt_links: excerptLinks,
+    };
+  }, [form, postData, format, excerptLinks]);
+  const openPreview = () => {
+    previewOpenRef.current = true;
+    publishPostPreview(buildPreviewSnapshot());
+    // 同一個名字：再按一次是切回那個分頁，不會一直開新的
+    window.open('/preview/post', 'koimsurai-draft-preview');
+  };
+  useEffect(() => {
+    let timer = 0;
+    const push = () => {
+      if (!previewOpenRef.current) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => publishPostPreview(buildPreviewSnapshot()), 300);
+    };
+    const sub = form.watch(push);
+    // 表單以外的變動（摘要連結、文章載入完）也要送一次
+    push();
+    return () => {
+      sub.unsubscribe();
+      window.clearTimeout(timer);
+    };
+  }, [form, buildPreviewSnapshot]);
+
   // ── Zen 模式：F11 / Esc 切換 ──
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -389,6 +452,8 @@ export default function PostEditor() {
     // 載入既有文章 → 把編輯器狀態同步成該篇的值。資料是非同步來的，render 期沒有。
     // eslint-disable-next-line @eslint-react/set-state-in-effect
     setActiveLocale(postData.source_language ?? 'zh-TW');
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
+    setExcerptLinks(postData.excerpt_links);
     // reset 完成 → 讓下方 Select 依 key 重新 mount、以正確值初始化（此 set-state 是刻意的）
     // eslint-disable-next-line @eslint-react/set-state-in-effect
     setHydrated(true);
@@ -468,6 +533,9 @@ export default function PostEditor() {
       excerpt_ja: summary_ja,
       excerpt_ko: summary_ko,
       tags: tagsArray,
+      // 每個語系都送（沒有的送空陣列）：後端是「有帶到的語系整組換掉、空的刪掉」，
+      // 只送有連的語系的話，取消掉最後一句連結的那個語系會留在資料庫裡
+      excerpt_links: Object.fromEntries(LOCALE_TABS.map((t) => [t.code, excerptLinks[t.code] ?? []])),
       // 表單裡的是本地時間字串，不能原樣送；排程時由 onPublish 換成帶時區的 ISO 放進 overrides
       publish_at: null,
       ...overrides,
@@ -610,10 +678,17 @@ export default function PostEditor() {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? `API 錯誤 (${res.status})`);
       }
-      const data = (await res.json()) as { title_zh_cn?: string; content_zh_cn?: string; excerpt_zh_cn?: string };
+      const data = (await res.json()) as {
+        title_zh_cn?: string;
+        content_zh_cn?: string;
+        excerpt_zh_cn?: string;
+        excerpt_links_zh_cn?: ExcerptLink[];
+      };
       form.setValue('title_zh_cn', data.title_zh_cn ?? '');
       form.setValue('content_zh_cn', data.content_zh_cn ?? '');
       form.setValue('summary_zh_cn', data.excerpt_zh_cn ?? '');
+      // 後端把繁體的摘要連結也轉好存進去了；手上這份是轉之前的，不換掉的話下次存檔會蓋回去
+      setExcerptLinks((prev) => ({ ...prev, 'zh-CN': data.excerpt_links_zh_cn ?? [] }));
       toast.success('简体中文已生成（OpenCC 繁轉簡）');
       setActiveLocale('zh-CN');
     } catch (e) {
@@ -842,6 +917,14 @@ export default function PostEditor() {
                     onClick={() => setEditorView('preview')}
                   >
                     預覽
+                  </button>
+                  <button
+                    type="button"
+                    className="adm-tab pe-view"
+                    title="開一個分頁，用讀者看到的文章頁畫這份草稿（還沒存的也算）；這裡改了那邊跟著更新"
+                    onClick={openPreview}
+                  >
+                    在前台預覽 ↗
                   </button>
                   <div className="pe-frame-status">
                     {autosaveStatus === 'saved' && <span className="adm-meta">已自動備份</span>}
@@ -1260,6 +1343,12 @@ export default function PostEditor() {
                         placeholder="文章摘要（點擊右上角 AI 生成或手動輸入）..."
                         rows={4}
                         className="w-full border px-3 py-2 text-sm resize-none focus:outline-hidden mt-1"
+                      />
+                      <ExcerptLinksEditor
+                        excerpt={summaryValue}
+                        content={contentValue}
+                        links={excerptLinks[activeLocale] ?? []}
+                        onChange={(next) => setExcerptLinks((prev) => ({ ...prev, [activeLocale]: next }))}
                       />
                     </div>
                   </div>

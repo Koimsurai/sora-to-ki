@@ -53,6 +53,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogIdRouteImport } from './routes/blog/$id'
+import { Route as PreviewPostRouteImport } from './routes/preview/post'
 import { Route as ThinkingIndexRouteImport } from './routes/thinking/index'
 import { Route as ThinkingIdRouteImport } from './routes/thinking/$id'
 import { Route as WatchIndexRouteImport } from './routes/watch/index'
@@ -287,6 +288,11 @@ const BlogIdRoute = BlogIdRouteImport.update({
   path: '/blog/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreviewPostRoute = PreviewPostRouteImport.update({
+  id: '/preview/post',
+  path: '/preview/post',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ThinkingIndexRoute = ThinkingIndexRouteImport.update({
   id: '/thinking/',
   path: '/thinking/',
@@ -395,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
+  '/preview/post': typeof PreviewPostRoute
   '/thinking/$id': typeof ThinkingIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -453,6 +460,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
+  '/preview/post': typeof PreviewPostRoute
   '/thinking/$id': typeof ThinkingIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale': typeof LocaleIndexRoute
@@ -513,6 +521,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/blog/$id': typeof BlogIdRoute
+  '/preview/post': typeof PreviewPostRoute
   '/thinking/$id': typeof ThinkingIdRoute
   '/watch/library': typeof WatchLibraryRoute
   '/$locale/': typeof LocaleIndexRoute
@@ -574,6 +583,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/auth/callback'
     | '/blog/$id'
+    | '/preview/post'
     | '/thinking/$id'
     | '/watch/library'
     | '/$locale/'
@@ -632,6 +642,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/auth/callback'
     | '/blog/$id'
+    | '/preview/post'
     | '/thinking/$id'
     | '/watch/library'
     | '/$locale'
@@ -691,6 +702,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/auth/callback'
     | '/blog/$id'
+    | '/preview/post'
     | '/thinking/$id'
     | '/watch/library'
     | '/$locale/'
@@ -739,6 +751,7 @@ export interface RootRouteChildren {
   LocaleUnsubscribeRoute: typeof LocaleUnsubscribeRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   BlogIdRoute: typeof BlogIdRoute
+  PreviewPostRoute: typeof PreviewPostRoute
   ThinkingIdRoute: typeof ThinkingIdRoute
   WatchLibraryRoute: typeof WatchLibraryRoute
   LocaleIndexRoute: typeof LocaleIndexRoute
@@ -1063,6 +1076,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/preview/post': {
+      id: '/preview/post'
+      path: '/preview/post'
+      fullPath: '/preview/post'
+      preLoaderRoute: typeof PreviewPostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/thinking/': {
       id: '/thinking/'
       path: '/thinking'
@@ -1229,6 +1249,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleUnsubscribeRoute: LocaleUnsubscribeRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   BlogIdRoute: BlogIdRoute,
+  PreviewPostRoute: PreviewPostRoute,
   ThinkingIdRoute: ThinkingIdRoute,
   WatchLibraryRoute: WatchLibraryRoute,
   LocaleIndexRoute: LocaleIndexRoute,
