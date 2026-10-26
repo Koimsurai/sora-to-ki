@@ -101,7 +101,7 @@ pub async fn admin_collection(
 ) -> Result<Json<AdminCollectionResponse>, crate::error::AppError> {
     let pool = &state.pool;
     // 一部一列：動畫照 anime_sn 併、影集照劇名併；最愛照 tmdb_id＋種類對上
-    let watch = sqlx::query_as::<_, AdminWatchItem>(
+    let mut watch = sqlx::query_as::<_, AdminWatchItem>(
         "SELECT w.kind, w.key, w.title, w.cover, w.detail, w.watched_at, w.source, w.tmdb_id, \
                 EXISTS (SELECT 1 FROM collection_hidden h WHERE h.kind = w.kind AND h.key = w.key) AS hidden, \
                 (SELECT f.id FROM watch_favorites f WHERE f.tmdb_id = w.tmdb_id \
@@ -124,6 +124,20 @@ pub async fn admin_collection(
     .bind(WATCH_LIMIT)
     .fetch_all(pool)
     .await?;
+    // Simkl／Trakt 的電影與影集帶 tmdb_id、不存海報，前台讀的時候才從 TMDb 補；後台也要補，
+    // 不然那些列在後台永遠是空框
+    for w in &mut watch {
+        let kind = match w.kind.as_str() {
+            "film" => "movie",
+            "tv" => "tv",
+            _ => continue,
+        };
+        if w.cover.as_deref().unwrap_or("").is_empty()
+            && let Some(id) = w.tmdb_id
+        {
+            w.cover = crate::handlers::watch::tmdb_poster(&state, kind, id).await;
+        }
+    }
 
     let hidden_tracks = hidden_keys(pool, "track").await;
     let (tracks, tracks_error) = match crate::handlers::spotify::recent_unfiltered(&state).await {

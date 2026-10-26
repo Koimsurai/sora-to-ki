@@ -286,7 +286,17 @@ pub async fn tv_recent(State(state): State<AppState>, Query(q): Query<LimitQuery
     query = query.bind(js_limit(&q, "50", 200));
     match query.fetch_all(&state.pool).await {
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
-        Ok(series) => Json(TvResponse { message: "success".into(), series }).into_response(),
+        Ok(mut series) => {
+            // Simkl 同步進來的影集帶 tmdb_id、不存海報（同 films_recent 的電影）
+            for s in &mut series {
+                if s.poster_url.as_deref().unwrap_or("").is_empty()
+                    && let Some(id) = s.tmdb_id
+                {
+                    s.poster_url = tmdb_poster(&state, "tv", id).await;
+                }
+            }
+            Json(TvResponse { message: "success".into(), series }).into_response()
+        }
     }
 }
 
@@ -388,6 +398,15 @@ async fn tmdb_detail(state: &AppState, kind: &str, id: &Value, locale: &str) -> 
     let out = json!({ "title": title, "poster_url": poster, "backdrop_url": backdrop, "year": year });
     state.watch.tmdb_detail.lock().insert(key, out.clone());
     Some(out)
+}
+
+/// 用 tmdb_id 從 TMDb 補直式海報（w342）。Simkl／Trakt 同步進來、帶 tmdb_id 的列刻意不存海報
+/// （見 simkl.rs 的 `poster_for`），讀的時候才補；`kind` 是 "movie" 或 "tv"。
+pub(crate) async fn tmdb_poster(state: &AppState, kind: &str, tmdb_id: i64) -> Option<String> {
+    tmdb_detail(state, kind, &Value::from(tmdb_id), "zh-TW")
+        .await?
+        .get("poster_url")
+        .and_then(|v| v.as_str().map(String::from))
 }
 
 // ── watch_favorites ──────────────────────────────────────────────────────
