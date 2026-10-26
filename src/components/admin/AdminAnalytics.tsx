@@ -57,10 +57,23 @@ const regionNames = (() => {
 
 const DEVICE: Record<string, string> = { Desktop: '桌機', Laptop: '筆電', Mobile: '手機', Tablet: '平板' };
 
+/**
+ * 兩碼的地區代碼 → 中文國名。`Intl.DisplayNames` 拿到不合格的代碼會丟 RangeError（不是回 undefined），
+ * 一個怪值就讓整頁掛掉：查不到國家的訪客 Plausible 回的是兩個 NUL（後端已經濾掉，這裡再擋一次）
+ */
+function countryName(code: string): string {
+  if (!/^[A-Za-z]{2}$/.test(code)) return '不明';
+  try {
+    return regionNames?.of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 const label = {
   page: (n: string) => n,
   source: (n: string) => (n === 'Direct / None' ? '直接造訪' : n),
-  country: (n: string) => (n ? (regionNames?.of(n) ?? n) : '不明'),
+  country: countryName,
   device: (n: string) => DEVICE[n] ?? n,
 };
 
