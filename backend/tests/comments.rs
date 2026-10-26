@@ -12,7 +12,7 @@ mod common;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
-use common::{TEST_SECRET, test_app};
+use common::{TEST_SECRET, get, owner_token, request, test_app};
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
@@ -465,4 +465,104 @@ async fn body_不是合法_json_時回_json_錯誤而不是空白() {
     let bytes = resp.into_body().collect().await.unwrap().to_bytes();
     let v: Value = serde_json::from_slice(&bytes).expect("錯誤回應本身也要是 JSON");
     assert!(v.get("error").is_some(), "沒有 error 欄位：{v}");
+}
+
+// ── 留言頁（/messages）：不屬於文章也不屬於碎念，記在 comments.page ─────────────
+//
+// 翻新上線時留言頁送的是 post_id = 'meta-messages'，撞 comments.post_id 的外鍵，
+// 一則都沒寫進去過（使用者看到的是「送不出去，稍後再試一次」）。
+
+#[tokio::test]
+async fn 留言頁的留言寫得進去_審核過才讀得到() {
+    let (app, pool) = test_app().await;
+    let (status, resp) = post_with(
+        &app,
+        "/api/pages/messages/comments",
+        json!({ "author": "路過", "content": "你好", "captcha": 5, "captchaAnswer": 5 }),
+        &[],
+    )
+    .await;
+    assert_eq!(status, 201, "{resp}");
+    let id = resp["id"].as_i64().unwrap();
+    assert_eq!(status_in_db(&pool, id).await, "pending", "匿名的一樣要審核");
+    let (page, post): (Option<String>, Option<i64>) =
+        sqlx::query_as("SELECT page, post_id FROM comments WHERE id = ?")
+            .bind(id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(page.as_deref(), Some("messages"));
+    assert_eq!(post, None, "不該掛在任何一篇文章上");
+
+    let (_, list) = get(&app, "/api/pages/messages/comments").await;
+    assert_eq!(list["comments"].as_array().unwrap().len(), 0, "待審核的不公開");
+    sqlx::query("UPDATE comments SET status = 'approved' WHERE id = ?")
+        .bind(id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (_, list) = get(&app, "/api/pages/messages/comments").await;
+    assert_eq!(list["comments"][0]["content"], "你好");
+}
+
+#[tokio::test]
+async fn 登入的留言在留言頁直接公開() {
+    let (app, _pool) = test_app().await;
+    let token = format!("Bearer {}", oauth_token(Some(9), Some("github")));
+    let (status, resp) = post_with(
+        &app,
+        "/api/pages/messages/comments",
+        json!({ "author": "某人", "content": "嗨" }),
+        &[(header::AUTHORIZATION.as_str(), &token)],
+    )
+    .await;
+    assert_eq!(status, 201, "{resp}");
+    let (_, list) = get(&app, "/api/pages/messages/comments").await;
+    assert_eq!(list["comments"][0]["author"], "某人");
+}
+
+#[tokio::test]
+async fn 不在白名單的頁面沒有留言區() {
+    let (app, pool) = test_app().await;
+    let (status, _) = get(&app, "/api/pages/anything/comments").await;
+    assert_eq!(status, 404);
+    let (status, _) =
+        post_with(&app, "/api/pages/anything/comments", json!({ "author": "a", "content": "b" }), &[]).await;
+    assert_eq!(status, 404);
+    let n: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM comments").fetch_one(&pool).await.unwrap();
+    assert_eq!(n, 0);
+}
+
+#[tokio::test]
+async fn 站長回覆留言頁或碎念的留言_回覆留在同一個地方() {
+    // 以前只抄原留言的 post_id：回覆碎念或留言頁的留言時，回覆變成哪裡都不屬於的孤兒
+    let (app, pool) = test_app().await;
+    let token = owner_token(true);
+    sqlx::query("INSERT INTO comments (id, page, author, content, status) VALUES (900, 'messages', '訪客', '問題', 'approved')")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO comments (id, thought_id, author, content, status) VALUES (901, 7, '訪客', '碎念留言', 'approved')")
+        .execute(&pool)
+        .await
+        .unwrap();
+    for (parent, want_page, want_thought) in [(900, Some("messages"), None), (901, None, Some(7))] {
+        let (status, resp) = request(
+            &app,
+            "POST",
+            &format!("/api/admin/comments/{parent}/reply"),
+            Some(json!({ "content": "回覆" })),
+            Some(&token),
+        )
+        .await;
+        assert_eq!(status, 201, "{resp}");
+        let (page, thought): (Option<String>, Option<i64>) =
+            sqlx::query_as("SELECT page, thought_id FROM comments WHERE id = ?")
+                .bind(resp["id"].as_i64().unwrap())
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(page.as_deref(), want_page, "回覆 #{parent}");
+        assert_eq!(thought, want_thought, "回覆 #{parent}");
+    }
 }

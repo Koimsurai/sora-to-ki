@@ -80,6 +80,8 @@ impl Modify for SecurityAddon {
         handlers::categories::list_categories,
         handlers::comments::post_comment,
         handlers::comments::thought_comment,
+        handlers::comments::page_comments,
+        handlers::comments::page_comment,
         handlers::gallery::gallery_photos,
         handlers::gallery::gallery_sync,
         handlers::photo_meta::admin_photos,
