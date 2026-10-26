@@ -401,7 +401,7 @@ pnpm format:css    # 自動修格式
 
 | 元件 | 加了什麼 |
 |---|---|
-| Button | `size="compact"`（h-8）／`"xs"`（h-7）、`variant="subtle"`（淡邊框）、`tone=`（審核動作的語意色：success／danger／destructive／neutral／accent／info／caution／muted） |
+| Button | `size="compact"`（h-8）／`"xs"`（h-7）、`variant="subtle"`（淡邊框）、`tone=`（審核動作的語意色：success／danger／destructive／neutral／info／caution／muted；紫色的 accent 在 2026-10 翻新後拿掉了） |
 | Input／SelectTrigger | `size="compact"`／`"sm"`、`variant="glass"`（後台面板的半透明框） |
 | AlertDialogAction | `variant`（跟 Button 同一組） |
 | Label | `size="xs"` |
