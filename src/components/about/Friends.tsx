@@ -24,7 +24,7 @@ import {
 import './Friends.css';
 import { sameTitle } from '@/lib/pageTitle';
 
-const CONTACT = 'timo9378@gmail.com';
+const CONTACT = 'service@koimsurai.com';
 const SITE = { name: '宙と木', url: 'https://koimsurai.com', rss: 'https://koimsurai.com/rss.xml' };
 const ART = '/illustrations/docking.webp';
 
