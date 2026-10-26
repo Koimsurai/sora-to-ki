@@ -2,7 +2,9 @@
 // 平常只有雜訊，打字時你打的字即時變成波形，送出時那一段往右飛進天線、天線亮一下。
 // 底下照無線電的瀑布圖排（blog/SignalLog）：頻道是「現在」，收到的訊號從它底下往下流，最新的在最上面。
 // 發送台（blog/CommentForm）黏在視窗底部：只有一行字和送出鈕，點進去才往上展開身分、驗證碼與規則。
-// 資料沿用文章留言那一套（post_id = meta-messages，匿名的要審核，登入的直接公開）。
+// 資料是後端的 /api/pages/messages/comments（comments.page，見 migration 0026）：規則跟文章留言一樣，
+// 匿名的要審核，登入的直接公開。不能拿文章留言的路徑硬塞一個假的文章 id——comments.post_id 有外鍵，
+// 翻新上線時就是那樣，每一則都寫不進去。
 // 換頁進來時琥珀點落在頻道的左端，起點振一下（像超聲波探頭），一道琥珀色的光沿頻道跑進天線（線跟著它長出來）；
 // 離開時倒過來：那道光從天線倒著跑回起點（線跟著收掉），起點振一下，點從那裡往左飛走。
 import { useEffect, useRef, useState } from 'react';
@@ -18,8 +20,8 @@ import { channelOf, createStrip, DISH_SRC, SEND_S } from './messagesWave';
 import './Messages.css';
 import { sameTitle } from '@/lib/pageTitle';
 
-const BASE = 'posts';
-const POST_ID = 'meta-messages';
+const BASE = 'pages';
+const POST_ID = 'messages';
 const CONTACT = 'timo9378@gmail.com';
 /** 進場：點落地、起點振一下，那道光沿頻道跑進天線要幾秒 */
 const ARRIVE_S = 1.1;

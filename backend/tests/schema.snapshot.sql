@@ -18,6 +18,9 @@ index idx_books_reading_status
 index idx_collection_type
   CREATE INDEX idx_collection_type ON collection_items(collection_type)
 
+index idx_comments_page
+  CREATE INDEX idx_comments_page ON comments(page, status)
+
 index idx_comments_post_status
   CREATE INDEX idx_comments_post_status ON comments(post_id, status)
 
@@ -91,7 +94,7 @@ table collection_items
   CREATE TABLE collection_items ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, original_title TEXT, year INTEGER, poster_url TEXT, overview TEXT, external_id TEXT, collection_type TEXT NOT NULL, media_format TEXT NOT NULL, source TEXT DEFAULT 'manual', status TEXT DEFAULT 'completed', rating INTEGER, review TEXT, is_favorite BOOLEAN DEFAULT 0, watch_date DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP )
 
 table comments
-  CREATE TABLE comments ( id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER, author TEXT NOT NULL, content TEXT NOT NULL, likes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, status TEXT DEFAULT 'approved', ip TEXT DEFAULT '', parent_id INTEGER DEFAULT NULL, is_admin INTEGER DEFAULT 0, email TEXT DEFAULT '', website TEXT DEFAULT '', avatar_url TEXT DEFAULT '', thought_id INTEGER DEFAULT NULL, FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE )
+  CREATE TABLE comments ( id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER, author TEXT NOT NULL, content TEXT NOT NULL, likes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, status TEXT DEFAULT 'approved', ip TEXT DEFAULT '', parent_id INTEGER DEFAULT NULL, is_admin INTEGER DEFAULT 0, email TEXT DEFAULT '', website TEXT DEFAULT '', avatar_url TEXT DEFAULT '', thought_id INTEGER DEFAULT NULL, page TEXT DEFAULT NULL, FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE )
 
 table film_history
   CREATE TABLE film_history ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, watched_date DATE, rating INTEGER, source TEXT, tmdb_id INTEGER, poster_url TEXT, release_year INTEGER, genres TEXT, notes TEXT, synced_at DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(title, watched_date) )

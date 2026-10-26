@@ -72,6 +72,23 @@ test.describe('留言', () => {
   });
 
   /**
+   * 留言頁的留言不屬於任何一篇文章（後端的 comments.page）。翻新上線時它借文章留言的路徑、
+   * 塞一個假的文章 id（meta-messages），每一則都撞外鍵、回 400——訪客看到「送不出去」，
+   * 而這裡沒有任何一條測試真的送過一則，所以上線兩天都沒人發現。
+   */
+  test('留言頁的匿名留言送得出去', async ({ page }) => {
+    await page.goto('/messages');
+    const posted = page.waitForResponse((r) => r.url().includes('/comments') && r.request().method() === 'POST');
+    await fillAnonymousComment(page, 'e2e 訪客', `留言頁的 e2e 留言 ${Date.now()}`);
+    await page.locator('button.cf-submit').click();
+
+    const resp = await posted;
+    expect(resp.url(), '留言頁有自己的留言區，不借文章的').toContain('/api/pages/messages/comments');
+    expect(resp.status(), '留言 API 應該收下').toBe(201);
+    await expect(page.locator('.cf-note'), '應該告訴訪客送出了、要等審核').toContainText('審核');
+  });
+
+  /**
    * 表單是 noValidate＋自己的錯誤訊息（不是瀏覽器的提示泡泡）：擋下來時錯誤寫在
    * 送出鈕下方的 `.cf-note`，而且**一個請求都不送**——擋在前端才不會浪費一次寫入。
    */

@@ -88,6 +88,11 @@ pub fn build_router(state: AppState) -> Router {
             "/api/posts/{id}/comments",
             get(handlers::posts::post_comments).post(handlers::comments::post_comment),
         )
+        // 不是文章也不是碎念、自己有留言的頁面（留言頁）
+        .route(
+            "/api/pages/{page}/comments",
+            get(handlers::comments::page_comments).post(handlers::comments::page_comment),
+        )
         // 計數寫入（公開）
         .route("/api/posts/{id}/view", post(handlers::posts::post_view))
         .route("/api/posts/{id}/like", post(handlers::posts::post_like))
