@@ -3,9 +3,9 @@
 import type { ExcerptLink } from '@koimsurai/api-types';
 import { extractHeadings } from '@/lib/mdx/blogContent';
 
-/** 同後端 handlers/excerpt_links.rs：一個語系最多幾句、一句最多幾個字 */
+/** 同後端 handlers/excerpt_links.rs：一個語系最多幾段、一段最多幾個字 */
 export const MAX_LINKS_PER_LOCALE = 24;
-export const MAX_LINK_CHARS = 120;
+const MAX_LINK_CHARS = 120;
 
 export interface ChapterOption {
   /** `05`、`05.4` */
