@@ -128,8 +128,9 @@ export default function AboutFall() {
     let travelled = 0;
     let speed = 0;
     const onScroll = () => {
-      // 換頁時捲動位置被重設（從上一頁的捲動位置跳回頂端）不算往下掉：不然一進來星星全被拉成條紋
-      if (!root.dataset.pt) travelled += Math.abs(window.scrollY - lastY);
+      // 換頁時捲動位置被重設（從上一頁的捲動位置跳回頂端）不算往下掉：不然一進來星星全被拉成條紋。
+      // 帶正負號：往上捲時星星往下走，拖尾要畫在另一邊
+      if (!root.dataset.pt) travelled += window.scrollY - lastY;
       lastY = window.scrollY;
     };
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -179,7 +180,7 @@ export default function AboutFall() {
         t: now / 1000,
         dt: reduce ? 0 : dt,
         top,
-        speed: reduce ? 0 : Math.min(1, speed / 2500),
+        speed: reduce ? 0 : Math.max(-1, Math.min(1, speed / 2500)),
         landTop: land.offsetTop,
         layerTop: layer.offsetTop,
         coreMid: core.offsetTop + core.offsetHeight / 2,

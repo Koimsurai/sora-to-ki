@@ -856,11 +856,14 @@
   /* 字：中文與中英混排一律思源宋體；Instrument Serif 只給「整段都是英文的大字」（名字、Notes），
      它只有一個字重，不要加粗。思源宋體是按頁裁字（layout/SerifFontLoader）：堆疊第一個
      "Koim Serif" 是裁出來的字，本機裝了 "Noto Serif TC" 的訪客不會下載任何東西 */
-  --serif: "Koim Serif", "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC", "PMingLiU", serif;
+  /* "Koim Serif Fallback" 是繁中那套缺的字（簡體留言裡的帅、满、关⋯）從簡中那套補的，見 SerifFontLoader 的 addFallback */
+  --serif:
+    "Koim Serif", "Koim Serif Fallback", "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC",
+    "PMingLiU", serif;
   /* 文章的「字體」可以換的另外三種，也是按頁裁字（字族名見 lib/serifSubset 的 familyOf，各語系配的字見
      server/routes/fonts/[style]）：黑體、手寫味的楷、現代無襯線。下面 :lang() 換成各語系那一支 */
-  --sans: "Koim Sans", "Noto Sans TC", "Noto Sans CJK TC", "Source Han Sans TC", sans-serif;
-  --kai: "Koim Kai", "LXGW WenKai TC", var(--serif);
+  --sans: "Koim Sans", "Koim Sans Fallback", "Noto Sans TC", "Noto Sans CJK TC", "Source Han Sans TC", sans-serif;
+  --kai: "Koim Kai", "Koim Kai Fallback", "LXGW WenKai TC", var(--serif);
   --modern: "Koim Modern", MiSans, sans-serif;
   --latin-display: "Instrument Serif", var(--serif);
 

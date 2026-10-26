@@ -13,7 +13,9 @@
 import { useEffect } from 'react';
 import {
   MAX_CODEPOINTS,
+  fallbackFamilyOf,
   familyOf,
+  isHanCodepoint,
   isSerifCodepoint,
   serifFaceOf,
   styleOfFamily,
@@ -99,6 +101,25 @@ function load(style: FontStyle, which: SerifFace, w: SerifWeight, want: Set<numb
     document.fonts.delete(face);
     for (const cp of cps) loaded.delete(cp);
   });
+  if (which === 'tc') addFallback(style, w, cps);
+}
+
+/**
+ * 繁中那套缺的字（簡體留言裡的帅、满、关⋯）從簡中那套補，字族見 serifSubset 的 fallbackFamilyOf。
+ * 這個字型**不主動載**：它在 CSS 堆疊裡排在繁中那套後面，瀏覽器只有在繁中那套找不到某個字時才會去要它，
+ * 所以整頁都是繁體字的時候不會多一個請求。伺服器只裁繁中缺的字（`x=tc`），要了也只有幾 KB
+ */
+function addFallback(style: FontStyle, w: SerifWeight, cps: number[]) {
+  const family = fallbackFamilyOf(style);
+  const han = cps.filter(isHanCodepoint);
+  if (!family || !han.length) return;
+  document.fonts.add(
+    new FontFace(family, `url(${subsetUrl(w, han, 'sc', style, 'tc')}) format("woff2")`, {
+      weight: String(w),
+      unicodeRange: unicodeRangeOf(han),
+      display: 'swap',
+    }),
+  );
 }
 
 /** 本機的那一支叫什麼（同 index.css 各風格堆疊裡排在裁字字型後面的那些；Linux 的套件常叫 "Noto Serif CJK SC" 這種名字） */

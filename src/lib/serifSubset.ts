@@ -48,6 +48,15 @@ export function familyOf(style: FontStyle, face: SerifFace): string {
   return face === 'tc' ? base : `${base} ${face.toUpperCase()}`;
 }
 
+/**
+ * 繁中那套缺字時的備援字族（CSS 堆疊裡緊接在繁中那套後面）。繁中的思源宋體沒有簡體專用的字
+ * （帅、满、关⋯），簡體的留言放在繁中頁面上，那些字會退回系統字型、跟周圍對不上。
+ * 備援從簡中那套裁，而且只裁繁中真的缺的字（網址帶 `x=tc`）。現代無襯線繁簡是同一支，不需要
+ */
+export function fallbackFamilyOf(style: FontStyle): string | null {
+  return style === 'modern' ? null : `${STYLE_FAMILY[style]} Fallback`;
+}
+
 /** 元素的 font-family 第一個字族 → 它是哪一種風格的裁字字型；不是裁字字型回 null */
 export function styleOfFamily(first: string): FontStyle | null {
   const name = first.trim().replace(/^["']|["']$/g, '');
@@ -91,6 +100,11 @@ export function isSerifCodepoint(cp: number): boolean {
     (cp >= 0xfe30 && cp <= 0xfe4f) ||
     (cp >= 0xff00 && cp <= 0xffef)
   );
+}
+
+/** 漢字（擴充 A、基本區、相容字）：繁簡會不同的只有這些，備援只看它們 */
+export function isHanCodepoint(cp: number): boolean {
+  return (cp >= 0x3400 && cp <= 0x4dbf) || (cp >= 0x4e00 && cp <= 0x9fff) || (cp >= 0xf900 && cp <= 0xfaff);
 }
 
 export function isSerifWeight(n: number): n is SerifWeight {
@@ -137,15 +151,17 @@ export function keyOf(c: string): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
+/** `exclude`：只裁那一套沒有的字（繁中缺字的備援，見 fallbackFamilyOf） */
 export function subsetUrl(
   weight: SerifWeight,
   cps: Iterable<number>,
   face: SerifFace = 'tc',
   style: FontStyle = 'serif',
+  exclude?: SerifFace,
 ): string {
   const c = encodeCodepoints(cps);
   // 繁中不帶 f：網址跟以前一樣，已經在瀏覽器與伺服器快取裡的字型照用
-  return `/fonts/${style}/${weight}/${keyOf(c)}.woff2?c=${c}${face === 'tc' ? '' : `&f=${face}`}`;
+  return `/fonts/${style}/${weight}/${keyOf(c)}.woff2?c=${c}${face === 'tc' ? '' : `&f=${face}`}${exclude ? `&x=${exclude}` : ''}`;
 }
 
 /** FontFace 的 unicode-range：連續的碼位併成一段 */
