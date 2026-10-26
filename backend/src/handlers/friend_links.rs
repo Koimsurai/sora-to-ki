@@ -206,6 +206,20 @@ pub fn links_back(html: &str, our_host: &str) -> bool {
     !our_host.is_empty() && html.to_ascii_lowercase().contains(&our_host.to_ascii_lowercase())
 }
 
+/// mx-space 系的前端（Shiro、Shiroi、Yohaku）友鏈清單是瀏覽器打開後才從 API 載入的，
+/// 伺服器回的 HTML 裡根本沒有那份清單，照 HTML 找一定判成沒放。那些前端會把 API 位址寫在
+/// `window.__ENV` 的 `NEXT_PUBLIC_API_URL`，友鏈固定在 `{API}/links/all`（v2、v3 都是）
+pub fn mx_space_links_url(html: &str) -> Option<String> {
+    static API: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(r#""NEXT_PUBLIC_API_URL"\s*:\s*"(https?://[^"\s]+)""#).expect("固定的正規式")
+    });
+    if !html.contains("mx-space") {
+        return None;
+    }
+    let api = API.captures(html)?.get(1)?.as_str().trim_end_matches('/');
+    Some(format!("{api}/links/all"))
+}
+
 /// 五項自動檢查。回傳結果，以及首頁上找到的 feed（申請時沒填 feed 的話用這個）
 pub async fn run_checks(
     http: &reqwest::Client,
@@ -285,6 +299,16 @@ pub async fn run_checks(
                 break;
             }
         }
+    }
+    // 還是沒有：mx-space 的友鏈在 API 裡（見 mx_space_links_url）。API 位址是對方 HTML 寫的，
+    // 一樣走 fetch_page，過 net_guard
+    if back.is_none()
+        && let Some(api) = mx_space_links_url(html)
+        && let Ok(page) = fetch_page(http, &api).await
+        && (200..300).contains(&page.status)
+        && links_back(&page.body, our_host)
+    {
+        back = Some("mx-space 的友鏈清單裡有".to_string());
     }
     out.push(match back {
         Some(where_) => check("backlink", "對方站上有連回這裡", true, where_),
@@ -705,7 +729,12 @@ pub async fn admin_update_friend(
     let mail = match (reply, before.email.as_deref()) {
         (Some(text), Some(to)) => {
             let subject = format!("關於「{}」的友鏈申請", app.name);
-            Some(match crate::handlers::mailer::send_plain(&state, to, &subject, text).await {
+            let (html, plain) = crate::handlers::mailer::render_friend_reply(
+                &crate::handlers::mailer::public_site_url(),
+                &app.name,
+                text,
+            );
+            Some(match crate::handlers::mailer::send_one(&state, to, &subject, &plain, &html).await {
                 Ok(()) => json!({ "sent": true }),
                 Err(e) => json!({ "sent": false, "error": e }),
             })
@@ -862,6 +891,21 @@ mod tests {
         assert_eq!(host_of("https://WWW.Blog.Example/x").as_deref(), Some("blog.example"));
         assert_eq!(slug_for("https://blog.doraeyi.com").as_deref(), Some("blog-doraeyi-com"));
         assert_eq!(slug_for("https://www.a.example").as_deref(), Some("a-example"));
+    }
+
+    #[test]
+    fn mx_space_的友鏈在_api_裡_從_html_找出位址() {
+        // 實際的樣子（inkcodes.com，Yohaku 主題）：API 位址寫在 window.__ENV，HTML 裡沒有友鏈清單
+        let html = r#"<script>window.__ENV = {"NEXT_PUBLIC_API_URL":"https://api.inkcodes.com/api/v3","NEXT_PUBLIC_GATEWAY_URL":"https://api.inkcodes.com"}</script>
+            <script>console.info("%c Mix Space %c https://github.com/mx-space")</script>"#;
+        assert_eq!(mx_space_links_url(html).as_deref(), Some("https://api.inkcodes.com/api/v3/links/all"));
+        // 結尾多一條斜線也一樣
+        let slash = html.replace("/api/v3\"", "/api/v2/\"");
+        assert_eq!(mx_space_links_url(&slash).as_deref(), Some("https://api.inkcodes.com/api/v2/links/all"));
+        // 不是 mx-space 的 Next.js 站（一樣有 NEXT_PUBLIC_API_URL）不去猜
+        assert_eq!(mx_space_links_url(r#"{"NEXT_PUBLIC_API_URL":"https://api.example"}"#), None);
+        // 位址不是 http(s) 的不收
+        assert_eq!(mx_space_links_url(r#"mx-space {"NEXT_PUBLIC_API_URL":"javascript:alert(1)"}"#), None);
     }
 
     #[test]
