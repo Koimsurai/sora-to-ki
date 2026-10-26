@@ -1348,6 +1348,7 @@ export default function PostEditor() {
                         excerpt={summaryValue}
                         content={contentValue}
                         links={excerptLinks[activeLocale] ?? []}
+                        localeLabel={LOCALE_TABS.find((t) => t.code === activeLocale)?.label}
                         onChange={(next) => setExcerptLinks((prev) => ({ ...prev, [activeLocale]: next }))}
                       />
                     </div>
