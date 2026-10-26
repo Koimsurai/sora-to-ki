@@ -32,50 +32,52 @@ export function chapterOptions(content: string): ChapterOption[] {
   return out;
 }
 
-export interface ExcerptSegment {
+export interface ExcerptPiece {
   /** 在摘要裡從第幾個字開始（也拿來當 key） */
   at: number;
-  /** 原樣（含前後空白），拼回去就是整段摘要 */
-  raw: string;
-  /** 去掉前後空白：存進 excerpt_links 的就是這個 */
   text: string;
-  /** 已經連到的章節編號 */
+  /** 連到的章節編號；沒連的那幾段沒有 */
   to?: string;
 }
 
 /**
- * 一句：非貪婪地吃到句尾為止。句尾是中日文的句號、問號、驚嘆號、分號；英文的同一批要後面接空白或結尾
- * （句子內容不能直接排除「.」，不然 `v1.2.3`、網址會被切斷）
+ * 摘要切成一段一段：連過的那幾段單獨一段，其餘原樣（拼回去就是整段摘要）。
+ * 跟文章頁（blog/ArticleSummary）同一個規則：找的是第一次出現的位置，重疊的只留先出現的
  */
-const SENTENCE = /[\s\S]*?(?:[。！？；]|[!?;.](?=\s|$)|$)/g;
-
-/**
- * 摘要切成一段一段給後台逐句對應：已經連過的句子原樣保留成一段（不一定剛好是一整句，
- * 以前用 MCP 寫的可能是半句），其餘照句尾切。空白不單獨成段
- */
-export function excerptSegments(excerpt: string, links: readonly ExcerptLink[]): ExcerptSegment[] {
+export function excerptPieces(excerpt: string, links: readonly ExcerptLink[]): ExcerptPiece[] {
   const spans = links
     .map((l) => ({ at: excerpt.indexOf(l.text), len: l.text.length, to: l.to }))
     .filter((s) => s.at >= 0 && s.len > 0)
     .sort((a, b) => a.at - b.at);
-  const out: ExcerptSegment[] = [];
-  const plain = (from: number, to: number) => {
-    const part = excerpt.slice(from, to);
-    for (const m of part.matchAll(SENTENCE)) {
-      if (!m[0].trim()) continue;
-      out.push({ at: from + m.index, raw: m[0], text: m[0].trim() });
-    }
-  };
+  const out: ExcerptPiece[] = [];
   let i = 0;
   for (const s of spans) {
     if (s.at < i) continue;
-    plain(i, s.at);
-    const raw = excerpt.slice(s.at, s.at + s.len);
-    out.push({ at: s.at, raw, text: raw.trim(), to: s.to });
+    if (s.at > i) out.push({ at: i, text: excerpt.slice(i, s.at) });
+    out.push({ at: s.at, text: excerpt.slice(s.at, s.at + s.len), to: s.to });
     i = s.at + s.len;
   }
-  plain(i, excerpt.length);
+  if (i < excerpt.length) out.push({ at: i, text: excerpt.slice(i) });
   return out;
+}
+
+/**
+ * 反白的那段能不能拿來連：可以的話回 null，不行的話回一句說明。
+ * 已經連過的同一段可以（那是換章節），跟別段重疊的不行（文章頁只會畫先出現的那段，另一段會靜靜不見）
+ */
+export function checkSelection(excerpt: string, links: readonly ExcerptLink[], text: string): string | null {
+  if (!text) return '先在摘要裡反白一段字';
+  if (text.length > MAX_LINK_CHARS) return `一段最多 ${MAX_LINK_CHARS} 字，這段有 ${text.length} 字`;
+  const at = excerpt.indexOf(text);
+  if (at < 0) return '只能選摘要裡的字';
+  const existing = links.some((l) => l.text === text);
+  if (!existing && links.length >= MAX_LINKS_PER_LOCALE) return `一個語系最多連 ${MAX_LINKS_PER_LOCALE} 段`;
+  const clash = links.find((l) => {
+    if (l.text === text) return false;
+    const from = excerpt.indexOf(l.text);
+    return from >= 0 && from < at + text.length && at < from + l.text.length;
+  });
+  return clash ? `跟已經連的「${clash.text}」重疊了` : null;
 }
 
 /** 連到的句子在摘要裡已經找不到（摘要改過）——後台列出來讓人刪 */
