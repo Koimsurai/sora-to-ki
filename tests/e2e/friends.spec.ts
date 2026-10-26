@@ -122,6 +122,6 @@ test.describe('朋友申請', () => {
     expect((await again).status()).toBe(409);
     const failed = form(page).locator('.fr-failed');
     await expect(failed).toContainText('已經在名單上');
-    await expect(failed, '送不出去時要給出信箱').toContainText('timo9378@gmail.com');
+    await expect(failed, '送不出去時要給出信箱').toContainText('service@koimsurai.com');
   });
 });

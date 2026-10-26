@@ -22,7 +22,7 @@ import { sameTitle } from '@/lib/pageTitle';
 
 const BASE = 'pages';
 const POST_ID = 'messages';
-const CONTACT = 'timo9378@gmail.com';
+const CONTACT = 'service@koimsurai.com';
 /** 進場：點落地、起點振一下，那道光沿頻道跑進天線要幾秒 */
 const ARRIVE_S = 1.1;
 /** 起點振鈴衰減完要幾秒 */
