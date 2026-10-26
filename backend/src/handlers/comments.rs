@@ -9,8 +9,14 @@ use serde_json::{Value, json};
 
 use crate::{
     auth::{bearer_token, verify_jwt},
+    error::AppError,
+    handlers::posts::{CommentRow, CommentsResponse},
     state::AppState,
 };
+
+/// 自己有留言、但不是文章也不是碎念的頁面（`comments.page`，見 migration 0026）。
+/// 白名單：路徑上的名字不在這裡就是 404，不讓人隨便開一個新的留言區
+const PAGES: &[&str] = &["messages"];
 
 #[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CommentBody {
@@ -54,7 +60,7 @@ fn js_loose_eq(a: &Value, b: &Value) -> bool {
 }
 
 /// createComment 等價：author/content 必填 → OAuth 偵測 → captcha（匿名）→ IP 黑名單 →
-/// 關鍵字過濾（reject/spam）→ 審核狀態 → INSERT → 201。target_col 為 'post_id'|'thought_id'（固定）。
+/// 關鍵字過濾（reject/spam）→ 審核狀態 → INSERT → 201。target_col 為 'post_id'|'thought_id'|'page'（固定）。
 async fn create_comment(
     state: &AppState,
     headers: &HeaderMap,
@@ -179,4 +185,45 @@ pub async fn thought_comment(
     crate::error::JsonBody(body): crate::error::JsonBody<CommentBody>,
 ) -> Response {
     create_comment(&state, &headers, "thought_id", &id, body).await
+}
+
+/// `GET /api/pages/:page/comments` —— 公開純讀（只列 approved）。目前只有留言頁
+#[utoipa::path(
+    get, path = "/api/pages/{page}/comments", tag = "posts",
+    params(("page" = String, Path)),
+    responses((status = 200, body = CommentsResponse), (status = 404, description = "沒有這個留言區")),
+)]
+pub async fn page_comments(
+    State(state): State<AppState>,
+    Path(page): Path<String>,
+) -> Result<Response, AppError> {
+    if !PAGES.contains(&page.as_str()) {
+        return Ok(StatusCode::NOT_FOUND.into_response());
+    }
+    let comments = sqlx::query_as::<_, CommentRow>(
+        "SELECT id, post_id, author, content, likes, created_at, is_admin, website, status, parent_id, avatar_url, thought_id \
+         FROM comments WHERE page = ? AND status = 'approved' ORDER BY created_at ASC",
+    )
+    .bind(&page)
+    .fetch_all(&state.pool)
+    .await?;
+    Ok(Json(CommentsResponse::new(comments)).into_response())
+}
+
+/// `POST /api/pages/:page/comments` —— 留言頁的留言（規則同文章留言：匿名的要審核，登入的直接公開）
+#[utoipa::path(
+    post, path = "/api/pages/{page}/comments", tag = "posts",
+    params(("page" = String, Path)),
+    responses((status = 200, description = "新增留言頁的留言（動態 JSON）"), (status = 404, description = "沒有這個留言區")),
+)]
+pub async fn page_comment(
+    State(state): State<AppState>,
+    Path(page): Path<String>,
+    headers: HeaderMap,
+    crate::error::JsonBody(body): crate::error::JsonBody<CommentBody>,
+) -> Response {
+    if !PAGES.contains(&page.as_str()) {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    create_comment(&state, &headers, "page", &page, body).await
 }

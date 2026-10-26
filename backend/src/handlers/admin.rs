@@ -1316,24 +1316,29 @@ pub async fn reply_comment(
     if content.is_empty() {
         return (StatusCode::BAD_REQUEST, Json(json!({ "error": "Content is required" }))).into_response();
     }
-    // 取原留言的 post_id（可能為 NULL）；查無此留言 → 404
-    let parent = sqlx::query_scalar::<_, Option<i64>>("SELECT post_id FROM comments WHERE id = ?")
-        .bind(id)
-        .fetch_optional(&state.pool)
-        .await;
-    let post_id = match parent {
+    // 回覆跟原留言放在同一個地方：文章（post_id）、碎念（thought_id）或留言頁（page），三個都照抄。
+    // 以前只抄 post_id，回覆碎念或留言頁的留言時，回覆會變成哪裡都不屬於的孤兒。查無此留言 → 404
+    let parent = sqlx::query_as::<_, (Option<i64>, Option<i64>, Option<String>)>(
+        "SELECT post_id, thought_id, page FROM comments WHERE id = ?",
+    )
+    .bind(id)
+    .fetch_optional(&state.pool)
+    .await;
+    let (post_id, thought_id, page) = match parent {
         Err(e) => return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
         Ok(None) => {
             return (StatusCode::NOT_FOUND, Json(json!({ "error": "Parent comment not found" })))
                 .into_response();
         }
-        Ok(Some(pid)) => pid,
+        Ok(Some(p)) => p,
     };
     match sqlx::query(
-        "INSERT INTO comments (post_id, author, content, status, is_admin, parent_id, ip) \
-         VALUES (?, '站長', ?, 'approved', 1, ?, '')",
+        "INSERT INTO comments (post_id, thought_id, page, author, content, status, is_admin, parent_id, ip) \
+         VALUES (?, ?, ?, '站長', ?, 'approved', 1, ?, '')",
     )
     .bind(post_id)
+    .bind(thought_id)
+    .bind(page)
     .bind(&content)
     .bind(id)
     .execute(&state.pool)
