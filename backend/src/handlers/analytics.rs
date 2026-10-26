@@ -169,12 +169,14 @@ fn day_of(label: &str) -> String {
     label.get(..10).unwrap_or(label).to_string()
 }
 
-/// 排行：dimensions 第一個是名字，metrics 第一個是訪客數
+/// 排行：dimensions 第一個是名字，metrics 第一個是訪客數。
+/// 查不到國家的訪客（區網裡連進來的，nginx 看到的是路由器的私有 IP）Plausible 存成兩個 NUL
+/// （ClickHouse 的 `FixedString(2)`），API 原樣回出來；去掉之後是空字串，前端顯示成「不明」
 fn rows_from(body: &Value) -> Vec<AnalyticsRow> {
     results(body)
         .iter()
         .map(|r| AnalyticsRow {
-            name: r["dimensions"][0].as_str().unwrap_or_default().to_string(),
+            name: r["dimensions"][0].as_str().unwrap_or_default().trim_matches('\0').to_string(),
             visitors: int(&r["metrics"][0]),
         })
         .collect()
@@ -383,6 +385,23 @@ mod tests {
             [
                 AnalyticsRow { name: "/blog/a".into(), visitors: 9 },
                 AnalyticsRow { name: "/".into(), visitors: 4 }
+            ]
+        );
+    }
+
+    #[test]
+    fn 查不到國家的那兩個_nul_變成空字串() {
+        // 實際的樣子：區網連進來的訪客沒有國家，Plausible 回 "\u0000\u0000"。
+        // 原樣送到前端的話不是空字串，Intl.DisplayNames 拿到它會丟 RangeError，整個流量頁掛掉
+        let body = json!({ "results": [
+            { "metrics": [9], "dimensions": ["\u{0}\u{0}"] },
+            { "metrics": [3], "dimensions": ["TW"] },
+        ] });
+        assert_eq!(
+            rows_from(&body),
+            [
+                AnalyticsRow { name: String::new(), visitors: 9 },
+                AnalyticsRow { name: "TW".into(), visitors: 3 }
             ]
         );
     }
