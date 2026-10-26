@@ -36,7 +36,6 @@ const buttonVariants = cva(
         danger: 'text-red-400 hover:text-red-300 hover:bg-red-400/10',
         destructive: 'text-red-500 hover:text-red-400 hover:bg-red-500/10',
         neutral: 'text-zinc-400 hover:text-zinc-300 hover:bg-zinc-400/10',
-        accent: 'text-purple-400 hover:text-purple-300 hover:bg-purple-400/10',
         info: 'text-blue-400 hover:text-blue-300 hover:bg-blue-400/10',
         caution: 'text-orange-400 hover:text-orange-300 hover:bg-orange-400/10',
         muted: 'text-muted-foreground hover:text-foreground/80',
