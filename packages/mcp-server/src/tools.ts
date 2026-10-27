@@ -1,7 +1,26 @@
 // MCP 工具定義：每個工具 = 一段對 admin REST 端點的封裝。
 // inputSchema 用原始 JSON Schema（不綁 zod，避免 SDK 內建 zod 與 repo zod 版本摩擦）。
+import { readFile } from 'node:fs/promises';
+
 import type { ApiClient } from './api.js';
 import { BLOCKS, renderBlocksForGuide } from './blocks.js';
+import {
+  applyEdits,
+  checkExcerptLinks,
+  CONTENT_FIELDS,
+  type Edit,
+  effective,
+  fetchPost,
+  LIST_DEFAULT_FIELDS,
+  LOCALES,
+  outline,
+  type Post,
+  postForLocale,
+  project,
+  readFields,
+  sourceOf,
+  validateFields,
+} from './posts.js';
 import { validateContent } from './validate.js';
 
 export interface Tool {
@@ -61,6 +80,7 @@ const POST_WRITE_FIELDS = [
   'excerpt',
   'category',
   'status',
+  'publish_at',
   'format',
   'layout_type',
   'tags',
@@ -133,7 +153,84 @@ const postWriteProps = {
     description: "來源語言（title/content 用哪一語寫的），預設 'zh-TW'。其餘語言放 *_en/*_ja/*_ko/*_zh_cn 欄。",
   },
   ...i18nProps(),
+  files: {
+    type: 'object',
+    description:
+      '從 MCP server 本機的檔案讀欄位內容，免得長文整份塞進參數：{"content": "/path/post.mdx", "content_en": "/path/en.mdx"}。' +
+      '只收文字欄位（title／content／excerpt 與各語系版本），同一欄不能同時用 files 又直接帶。',
+    additionalProperties: { type: 'string' },
+  },
+  validate: {
+    type: 'boolean',
+    description:
+      '預設 true：寫入前先在伺服器端驗每一個要寫進去的內文欄位（等同 validate_mdx），有錯就整筆拒絕、不寫入。' +
+      '沒帶 format 時用文章現有的 format（建立時是 markdown）。不必再先另外呼叫 validate_mdx。',
+  },
 };
+
+/** 可以用 files／edits 給的文字欄位 */
+const TEXT_FIELDS: ReadonlySet<string> = new Set(['title', 'content', 'excerpt', ...I18N_FIELDS]);
+
+/**
+ * create_post / update_post 共用：組 body（直接帶的＋files 讀的＋edits 改的）→ 先驗 → 寫入 →
+ * 讀回來只回摘要（id、slug、改了哪些欄、驗證結果、摘要連結有沒有對上），不回整篇內文。
+ */
+async function writePost(api: ApiClient, a: Record<string, unknown>, id?: string): Promise<Post> {
+  const body = pick(a, [...POST_WRITE_FIELDS]);
+  const merge = (extra: Post, from: string) => {
+    for (const [k, v] of Object.entries(extra)) {
+      if (k in body) throw new Error(`${k} 同時直接帶了又從 ${from} 給，只能擇一`);
+      body[k] = v;
+    }
+  };
+  if (a.files && typeof a.files === 'object') merge(await readFields(a.files as Post, TEXT_FIELDS), 'files');
+
+  let before: Post | undefined;
+  const edits = Array.isArray(a.edits) ? (a.edits as Edit[]) : [];
+  if (edits.length) {
+    if (!id) throw new Error('edits 只能用在 update_post');
+    for (const e of edits) {
+      if (e.field && !TEXT_FIELDS.has(e.field)) throw new Error(`edits 不能改 ${e.field}（只收文字欄位）`);
+    }
+    before = await fetchPost(api, id);
+    merge(applyEdits(before, edits), 'edits');
+  }
+
+  const touchesContent = CONTENT_FIELDS.some((f) => typeof body[f] === 'string');
+  let validation: Post | undefined;
+  if (a.validate !== false && touchesContent) {
+    let format = typeof body.format === 'string' ? body.format : undefined;
+    if (!format && id) {
+      before ??= await fetchPost(api, id);
+      format = typeof before.format === 'string' ? before.format : undefined;
+    }
+    validation = await validateFields(body, format ?? 'markdown');
+  }
+
+  const res = id
+    ? await api.request<{ data?: Post }>('PUT', `/api/admin/posts/${id}`, { body })
+    : await api.request<{ data?: Post }>('POST', '/api/admin/posts', { body });
+  const postId = id ?? String(res.data?.id);
+  const after = await fetchPost(api, postId);
+
+  const result: Post = {
+    id: after.id,
+    slug: after.slug,
+    status: after.status,
+    format: after.format,
+    updated: Object.keys(body),
+  };
+  if (after.publish_at) result.publish_at = after.publish_at;
+  // 只在有帶 tags 時回報：沒帶時後端的回應寫 `tags: []`，看起來像標籤被清掉了
+  if ('tags' in body) result.tags = after.tags;
+  if (validation) result.validation = validation;
+  const touchesLinks = Object.keys(body).some((k) => /^(content|excerpt)/.test(k));
+  if (touchesLinks && Object.keys(after.excerpt_links ?? {}).length) {
+    result.excerpt_links = checkExcerptLinks(after);
+  }
+  if (res.data?.newsletter !== undefined) result.newsletter = res.data.newsletter;
+  return result;
+}
 
 /** 4 語 × 3 欄的 i18n 屬性。zh-TW 是來源（存 title/content/excerpt）；這裡放各譯文語言。 */
 function i18nProps(): Record<string, { type: 'string'; description: string }> {
@@ -161,14 +258,16 @@ const AUTHORING_GUIDE = `# koimsurai 文章撰寫指南（給 AI）
 - 先 koimsurai_list_categories 看現有分類，用既有的（或明確跟站長確認要新分類）。
 - 先 status='draft'。發布交給站長（審過再 set_post_status 或 send_newsletter）。
 - 不確定該用哪個 block／忘記語法 → \`koimsurai_list_blocks\`（結構化目錄，比翻這份指南快）。
-- **送出前一定先跑 \`koimsurai_validate_mdx\`**：MDX 編譯失敗在前台是**靜默退回 markdown**（讀者會看到裸露的標籤原始碼），而 create/update 仍回 success——不驗就沒人知道寫壞了。
+- **內文一定要驗過**：MDX 編譯失敗在前台是**靜默退回 markdown**（讀者會看到裸露的標籤原始碼）。create/update 預設會在寫入前驗（\`validate\`），有錯就拒絕；寫作途中想先看結果或章節大綱就跑 \`koimsurai_validate_mdx\`。千萬別帶 \`validate: false\` 繞過。
+- **長文別整份來回送**：整篇用 \`files: {"content": "/path/post.mdx"}\` 從本機檔案讀；只改幾句用 update_post 的 \`edits\`。
 
 ## 2. 文章欄位（create_post 參數）
 - **title**：想要副標就用全形冒號分隔「主標：副標」，前端自動把冒號後段渲染成副標。
   例：關掉翻譯器，程式卻關不掉：一個躺了兩年的 thread_local 死鎖
 - **excerpt**：會渲染成文章開頭的「00 摘要」框 → 寫 2~4 句**真正的重點摘要**，不是複製第一段。
 - **excerpt_links**：摘要裡幾句關鍵的話連到它所在的章節（讀者滑過時右邊目錄那一章會亮、點了跳過去）。
-  一篇挑 4~9 句就好，每個語系各一組；格式見 create_post 的參數說明。
+  一篇挑 4~9 句就好，每個語系各一組；格式見 create_post 的參數說明。章節編號照抄 validate_mdx（或 get_post 帶 outline）回的大綱，
+  寫入後回傳的 excerpt_links 會列出哪幾條沒對上。
 - **category**：必須是已存在的分類名。
 - **tags**：3~5 個；不存在的會自動建立。
 - **format**：用到下面「自訂 block / 圖表 / 行內 JS」→ 'mdx'；純文字 → 'markdown'（預設）。
@@ -233,9 +332,10 @@ CJK 的 \`『』《》「」（）\` 全都算標點，所以夾在中日韓文�
 1) 分類存在　2) title 決定要不要副標（冒號）　3) excerpt 是真的重點摘要
 4) 內文穿插彩色 alert / 程式碼 / 圖表，別通篇純引用　5) format='mdx' 的話正文 \`<\`/\`{\` 都跳脫了
 6) tags 3~5　7) status='draft' 交站長審　8) 要多語？zh-CN 用 generate 工具、en/ja/ko 填譯文欄
-9) **跑過 koimsurai_validate_mdx 且 errors 為空**（多語系的話每個 content_* 都要驗）`;
+9) **寫入時沒被驗證擋下**（多語系的每個 content_* 都會一起驗），回傳的 excerpt_links 每個語系都「全部對上」`;
 
-// 圖片 mime ↔ 副檔名（後端用「原始檔名的副檔名」決定存檔 ext、用 mimetype 判斷是否算 thumbhash）。
+// mime ↔ 副檔名（後端用「原始檔名的副檔名」決定存檔 ext、用 mimetype 判斷：image/ 算 thumbhash，
+// video/ 把旋轉 metadata 烘進畫素）。影片的 mimetype 一定要對，不然手機直拍的片會躺著播。
 const EXT_MIME: Record<string, string> = {
   png: 'image/png',
   jpg: 'image/jpeg',
@@ -245,6 +345,10 @@ const EXT_MIME: Record<string, string> = {
   svg: 'image/svg+xml',
   avif: 'image/avif',
   bmp: 'image/bmp',
+  mp4: 'video/mp4',
+  m4v: 'video/mp4',
+  webm: 'video/webm',
+  mov: 'video/quicktime',
 };
 const MIME_EXT: Record<string, string> = {
   'image/png': 'png',
@@ -254,6 +358,9 @@ const MIME_EXT: Record<string, string> = {
   'image/svg+xml': 'svg',
   'image/avif': 'avif',
   'image/bmp': 'bmp',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
 };
 function extOf(name: string): string {
   return /\.([a-z0-9]+)$/i.exec(name)?.[1]?.toLowerCase() ?? '';
@@ -317,9 +424,10 @@ export function makeTools(api: ApiClient): Tool[] {
     {
       name: 'koimsurai_upload_image',
       description:
-        '上傳圖片到後台（storage/uploads），回傳可直接放進文章的相對 URL 與 markdown。' +
-        '來源三擇一：path（MCP server 本機檔案路徑）/ url（遠端圖片，下載後轉存）/ data（base64，可含 data: 前綴）。' +
-        '回傳 url 形如 /uploads/YYYY/MM/xxx.png#th=…（#th 是模糊佔位 thumbhash，原樣保留即可）。文章裡用 ![alt](url) 引用。',
+        '上傳圖片或影片（mp4／webm／mov，上限 50MB）到後台（storage/uploads），回傳可直接放進文章的相對 URL 與引用語法。' +
+        '來源三擇一：path（MCP server 本機檔案路徑，影片建議用這個）/ url（遠端檔案，下載後轉存）/ data（base64，可含 data: 前綴）。' +
+        '圖片的 url 形如 /uploads/YYYY/MM/xxx.png#th=…&w=…&h=…（片段是模糊佔位與尺寸，原樣保留），文章裡用 ![alt](url)；' +
+        '影片回的 markdown 是 <Video src="…" />（format 要是 mdx）。',
       inputSchema: {
         type: 'object',
         properties: {
@@ -330,7 +438,7 @@ export function makeTools(api: ApiClient): Tool[] {
             type: 'string',
             description: '檔名（決定副檔名）。path/url 可省略自動推斷；data 建議提供以帶正確副檔名',
           },
-          alt: { type: 'string', description: '圖片替代文字，用於回傳的 markdown ![alt](url)' },
+          alt: { type: 'string', description: '圖片替代文字（回傳的 ![alt](url)）；影片則當成 <Video> 的 caption' },
         },
         additionalProperties: false,
       },
@@ -342,11 +450,14 @@ export function makeTools(api: ApiClient): Tool[] {
           thumbhash?: string | null;
         }>('/api/admin/upload', bytes, filename, mime);
         const alt = typeof a.alt === 'string' ? a.alt : '';
+        const isVideo = mime.startsWith('video/');
         return {
           url: result.url,
           filename: result.filename,
           thumbhash: result.thumbhash ?? null,
-          markdown: `![${alt}](${result.url})`,
+          markdown: isVideo
+            ? `<Video src="${result.url}"${alt ? ` caption="${alt.replaceAll('"', '”')}"` : ''} />`
+            : `![${alt}](${result.url})`,
         };
       },
     },
@@ -354,7 +465,9 @@ export function makeTools(api: ApiClient): Tool[] {
     // ── 文章 CRUD ──────────────────────────────────────────────
     {
       name: 'koimsurai_list_posts',
-      description: '列出後台文章（含草稿）。可依狀態/關鍵字過濾、分頁。回 AdminPostsResponse。',
+      description:
+        '列出後台文章（含草稿）。可依狀態/關鍵字過濾、分頁。' +
+        `預設每篇只回 ${LIST_DEFAULT_FIELDS.join('、')}（不含內文）；要別的欄位用 fields 指定，["*"] 是全部。`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -365,25 +478,59 @@ export function makeTools(api: ApiClient): Tool[] {
           },
           search: { type: 'string', description: '標題/內文關鍵字' },
           page: { type: 'number', description: '頁碼，預設 1' },
-          limit: { type: 'number', description: '每頁筆數，預設由後端決定' },
+          limit: { type: 'number', description: '每頁筆數，預設 10' },
+          fields: {
+            type: 'array',
+            items: { type: 'string' },
+            description:
+              '每篇要回哪些欄位（例 ["id","title","excerpt","excerpt_links"]）；["*"] 回整列（含五個語系的全文，很大）',
+          },
         },
         additionalProperties: false,
       },
-      handler: (a) =>
-        api.request('GET', '/api/admin/posts', {
-          query: { status: a.status, search: a.search, page: a.page, limit: a.limit },
-        }),
+      handler: async (a) => {
+        const res = await api.request<{ posts: Post[]; total: number; totalPages: number; currentPage: number }>(
+          'GET',
+          '/api/admin/posts',
+          { query: { status: a.status, search: a.search, page: a.page, limit: a.limit } },
+        );
+        const fields = Array.isArray(a.fields) ? (a.fields as string[]) : [...LIST_DEFAULT_FIELDS];
+        const posts = fields.includes('*') ? res.posts : res.posts.map((p) => project(p, fields));
+        return { total: res.total, totalPages: res.totalPages, currentPage: res.currentPage, posts };
+      },
     },
     {
       name: 'koimsurai_get_post',
-      description: '讀單篇文章完整內容（含全部 i18n 欄位與 tags）。回 AdminPostDetailResponse。',
+      description:
+        '讀單篇文章。不帶參數回整列（五個語系的全部欄位，長文會很大）；' +
+        '帶 locale 只回那個語系的 title／excerpt／content／excerpt_links 加上共用的中繼資料；' +
+        '帶 fields 只回指定欄位（例 ["excerpt_links","status"]）。outline: true 另外附上該語系的章節編號大綱。',
       inputSchema: {
         type: 'object',
-        properties: { id: { type: 'number', description: '文章 id' } },
+        properties: {
+          id: { type: 'number', description: '文章 id' },
+          locale: { type: 'string', enum: [...LOCALES], description: '只看這個語系' },
+          fields: { type: 'array', items: { type: 'string' }, description: '只回這些欄位（跟 locale 擇一）' },
+          outline: {
+            type: 'boolean',
+            description: '附上章節大綱（num 對標題，excerpt_links 的 to 就是 num）；語系看 locale，沒帶用來源語言',
+          },
+        },
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('GET', `/api/admin/posts/${idOf(a)}`),
+      handler: async (a) => {
+        const post = await fetchPost(api, idOf(a));
+        const locale = typeof a.locale === 'string' ? a.locale : undefined;
+        let out: Post;
+        if (locale) out = postForLocale(post, locale);
+        else if (Array.isArray(a.fields)) out = project(post, a.fields as string[]);
+        else out = post;
+        if (a.outline === true) {
+          out = { ...out, outline: outline(effective(post, 'content', locale ?? sourceOf(post))) };
+        }
+        return out;
+      },
     },
     {
       name: 'koimsurai_list_blocks',
@@ -414,28 +561,33 @@ export function makeTools(api: ApiClient): Tool[] {
         '⭐ 驗證文章內容（**建議 create_post / update_post 前一定先跑**）。' +
         '會真的跑一次 MDX 編譯 + 檢查未知 block、alert 語法、手打編號、裸網址清單、外部熱連結。' +
         '重要：MDX 編譯失敗在前台是**靜默退回 markdown**（讀者看到裸露的標籤原始碼），而 create/update 仍回 success ' +
-        '——不先驗就不會有人知道寫壞了。回 { ok, summary, errors, warnings, hints }，errors 非空就別送出。',
+        '——不先驗就不會有人知道寫壞了。回 { ok, summary, errors, warnings, hints, outline }，errors 非空就別送出。' +
+        'outline 是章節編號對標題（excerpt_links 的 to 就是這裡的 num）。' +
+        '只是要寫入的話不必先跑這個：create_post／update_post 預設會在伺服器端先驗。',
       inputSchema: {
         type: 'object',
         properties: {
-          content: { type: 'string', description: '要驗的文章內文（也可拿來驗某個語系的譯文）' },
+          content: { type: 'string', description: '要驗的文章內文（也可拿來驗某個語系的譯文）；跟 path 擇一' },
+          path: { type: 'string', description: 'MCP server 本機的檔案路徑，讀進來當 content 驗' },
           format: { type: 'string', enum: ['markdown', 'mdx'], description: "內容格式，預設 'mdx'" },
         },
-        required: ['content'],
         additionalProperties: false,
       },
-      handler: (a) =>
-        validateContent(
-          typeof a.content === 'string' ? a.content : '',
-          typeof a.format === 'string' ? a.format : 'mdx',
-        ),
+      handler: async (a) => {
+        const content =
+          typeof a.path === 'string' ? await readFile(a.path, 'utf8') : typeof a.content === 'string' ? a.content : '';
+        if (!content) throw new Error('請提供 content 或 path');
+        const result = await validateContent(content, typeof a.format === 'string' ? a.format : 'mdx');
+        return { ...result, outline: outline(content) };
+      },
     },
     {
       name: 'koimsurai_create_post',
       description:
         '建立文章。title/content 必填，其餘可選。預設 status=draft（不會直接公開）。' +
         '⭐ 寫「完整文章」前先呼叫 koimsurai_authoring_guide（副標/摘要/彩色 alert/自訂 block/MDX 坑/檢查清單）。' +
-        '⭐ format=mdx 時，送出前先用 koimsurai_validate_mdx 驗過（編譯失敗會靜默退回 markdown，這裡仍會回 success）。' +
+        '寫入前預設會在伺服器端驗過每個內文欄位（validate），有錯就拒絕；長文可用 files 從本機檔案讀。' +
+        '回傳只有 id、slug、改了哪些欄、驗證結果與摘要連結檢查，不回內文。' +
         'title 用「主標：副標」冒號分隔會自動出副標；excerpt 會變成開頭的「00 摘要」框，excerpt_links 讓其中幾句連到章節。' +
         "用到 <Note>/<Annot>/<Spoiler>/<BarChart> 或行內 JS → format='mdx'。" +
         '多語系：zh-CN 用 generate_post_zh_cn 自動轉；en/ja/ko 填 title_en/content_en…等譯文欄（見指南第 6 點）。' +
@@ -446,19 +598,41 @@ export function makeTools(api: ApiClient): Tool[] {
         required: ['title', 'content'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('POST', '/api/admin/posts', { body: pick(a, [...POST_WRITE_FIELDS]) }),
+      handler: (a) => writePost(api, a),
     },
     {
       name: 'koimsurai_update_post',
       description:
-        '更新文章。只送想改的欄位（其餘不動）。id 必填。改到 mdx 內文時，送出前先用 koimsurai_validate_mdx 驗過。',
+        '更新文章。只送想改的欄位（其餘不動）。id 必填。' +
+        '改一小段用 edits（[{old, new}]，預設改 content，也可指定 field 如 content_en），不必重送整篇；' +
+        '整篇換掉的長文可用 files 從本機檔案讀。寫入前預設會驗過內文（validate），有錯就拒絕、不寫入。' +
+        '回傳只有 id、slug、改了哪些欄、驗證結果；動到內文或摘要時另外回報 excerpt_links 有沒有對上。',
       inputSchema: {
         type: 'object',
-        properties: { id: { type: 'number', description: '文章 id' }, ...postWriteProps },
+        properties: {
+          id: { type: 'number', description: '文章 id' },
+          ...postWriteProps,
+          edits: {
+            type: 'array',
+            description:
+              '局部修改，照順序套用到現有內容上。每個 old 必須在當下的文字裡剛好出現一次（不唯一就多帶點前後文），' +
+              '否則整筆拒絕。同一欄不能同時用 edits 又直接帶整份。',
+            items: {
+              type: 'object',
+              properties: {
+                field: { type: 'string', description: "要改的欄位，預設 'content'（也可 content_en、excerpt_ja…）" },
+                old: { type: 'string' },
+                new: { type: 'string' },
+              },
+              required: ['old', 'new'],
+              additionalProperties: false,
+            },
+          },
+        },
         required: ['id'],
         additionalProperties: false,
       },
-      handler: (a) => api.request('PUT', `/api/admin/posts/${idOf(a)}`, { body: pick(a, [...POST_WRITE_FIELDS]) }),
+      handler: (a) => writePost(api, a, idOf(a)),
     },
     {
       name: 'koimsurai_set_post_status',
