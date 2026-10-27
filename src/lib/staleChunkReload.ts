@@ -38,4 +38,23 @@ export function installStaleChunkReload(): void {
     event.preventDefault();
     window.location.reload();
   });
+  // 路由在滑過連結時就預先載入下一頁（defaultPreload: 'intent'），預載失敗的 promise 沒有人接，
+  // 會變成 unhandledrejection 進 GlitchTip。那只是舊分頁，真的點下去時路由與上面那段會重整，
+  // 不在這裡重整（滑過就整頁重來會弄丟還沒送出的留言）。只是不回報：
+  // 這裡比 Sentry 的監聽器早掛上（AppShell 一載入就裝，Sentry 是之後動態載入的），
+  // stopImmediatePropagation 讓它收不到
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason: unknown = event.reason;
+    const msg = reason instanceof Error ? reason.message : typeof reason === 'string' ? reason : '';
+    if (!isStaleChunkError(msg)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  });
+}
+
+/** 舊分頁載到已經不存在的 chunk 時，各家瀏覽器與 vite 的訊息 */
+export function isStaleChunkError(msg: string): boolean {
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to preload CSS/i.test(
+    msg,
+  );
 }

@@ -181,7 +181,10 @@ export function createNoteSky() {
     const n = posts.length;
     // 換到文章：整片星空當一張照片推近（zoomOf），推到那一篇的星軌疊上文章的軌道
     const zk = f.zoom ? easeInOut(f.zoom.k) : 0;
-    const zoom = f.zoom ? zoomOf(postArc(f.zoom.i, n, posts[f.zoom.i], w, h, f.t, 1), f.zoom.geom, zk) : null;
+    const zoomed = f.zoom ? zoomOf(postArc(f.zoom.i, n, posts[f.zoom.i], w, h, f.t, 1), f.zoom.geom, zk) : null;
+    // 算出來不是正的有限數（GlitchTip 上看過一次 createRadialGradient 收到非有限數字）就當這一幀沒在推近，
+    // 不讓整個 rAF 迴圈在這裡丟例外停掉
+    const zoom = zoomed && Number.isFinite(zoomed.scale) && zoomed.scale > 0 ? zoomed : null;
     /** 放大之後線與點要維持原本的粗細 */
     const px1 = zoom ? 1 / zoom.scale : 1;
     // 其他的星軌與背景的星：推近時從鏡頭旁邊飛過去，快到位才淡掉
@@ -233,6 +236,7 @@ export function createNoteSky() {
       ctx.lineWidth = px1;
       if (zooming) return; // 那顆星由轉場畫（它變成讀者的琥珀點）
       const head = arcPoint(arc, arc.a1);
+      if (!Number.isFinite(head.x) || !Number.isFinite(head.y)) return;
       if (on) {
         const g = ctx.createRadialGradient(head.x, head.y, 0, head.x, head.y, 14 * px1);
         g.addColorStop(0, `rgba(${AMBER}, ${0.6 * fade * glow})`);
