@@ -148,6 +148,24 @@ test.describe('文章頁的互動', () => {
   });
 
   /**
+   * 行內程式碼開頭是圖表關鍵字（`flowchart LR`）時，它還是行內程式碼，不是一張圖。
+   *
+   * CodeBlock 原本用 `!inline` 排除行內程式碼，但 MDX 與 react-markdown 都不會傳 inline，
+   * 那個值永遠是 undefined：行內的 `flowchart LR` 被當成整張圖去畫，段落中間冒出解析失敗。
+   * 同一篇裡另外放一個沒標語言的圍籬，確認「靠關鍵字認出圖」那條路沒被一起關掉。
+   */
+  test('行內的 `flowchart LR` 是行內程式碼，沒標語言的圍籬照樣畫成圖', async ({ page }) => {
+    await page.goto(MDX);
+    const inline = article(page).locator('p code', { hasText: 'flowchart LR' });
+    await expect(inline, '行內程式碼要照樣顯示在段落裡').toBeVisible({ timeout: 15_000 });
+    await expect(article(page).locator('p .mermaid-render, p .mermaid-error'), '段落裡不該長出圖').toHaveCount(0);
+    await expect(article(page).locator('.mermaid-error'), '不該有任何解析失敗').toHaveCount(0);
+    await expect(article(page).locator('.mermaid-render'), '圍籬那張要畫出來，而且只有它一張').toHaveCount(1, {
+      timeout: 15_000,
+    });
+  });
+
+  /**
    * MDX 區塊必須是**元件**，不是文字。
    *
    * `blogList.ts` 編譯失敗時會 catch 住並退回 markdown 渲染，於是整篇文章看起來

@@ -19,6 +19,7 @@ import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from '@/components/common/KoimLoader';
 import rehypeRaw from 'rehype-raw';
 import { highlightCode } from '@/lib/mdx/shikiHighlight';
+import { isBlockCode } from '@/lib/mdx/codeKind';
 import { langEmoji } from '@/lib/langEmoji';
 import { CodeBody } from '@/components/mdx/CodeSurface';
 // 圖表整套（渲染、工具列、主題／版面切換、全螢幕、mermaid+ELK 的延遲載入）在 MermaidBlock.tsx。
@@ -170,13 +171,11 @@ const AI_TRANSLATION_NOTICE: Record<string, { label: string; text: string; origi
 // 後台編輯器預覽（PostPreview）也重用這批 → export，讓預覽跟前台同一套渲染（shiki/mermaid/terminal）。
 export const CodeBlock = ({
   node: _node,
-  inline,
   className,
   children,
   ...props
 }: {
   node?: unknown;
-  inline?: boolean;
   className?: string;
   children?: React.ReactNode;
 } & React.HTMLAttributes<HTMLElement>) => {
@@ -185,7 +184,10 @@ export const CodeBlock = ({
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const match = /language-(\w+)/.exec(className ?? '');
   const lang = match ? match[1] : 'text';
-  const codeText = nodeText(children).replace(/\n$/, '');
+  const rawText = nodeText(children);
+  // 行內還是圍籬：MDX 與 react-markdown 都不會傳 `inline` 進來，要看內容（見 lib/mdx/codeKind）
+  const inline = !isBlockCode(rawText);
+  const codeText = rawText.replace(/\n$/, '');
 
   // 自動偵測 mermaid 圖表：有 language tag 或內容以 mermaid 關鍵字開頭
   const isMermaid =
