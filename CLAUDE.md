@@ -199,6 +199,18 @@ cd .. && cargo audit    # 目前剩 1 個 allowed warning（paste unmaintained�
 `scripts/hooks/pre-commit` 會依暫存檔類型條件觸發上面最常爆的那幾項（ts/tsx → tsc + oxlint；
 `backend/*.rs` → clippy）。commit 前不必自己重跑一遍。
 
+## Commit 與 PR
+
+`git log --oneline` 要一眼看得完一個 commit 做了什麼。main 上已經有標題長到近千字的 commit，
+那些不追改（改了就是改寫歷史），但之後一律照這幾條：
+
+- **標題（第一行）72 字元以內，只說做了什麼。** 為什麼、怎麼查到的、影響範圍，空一行之後寫在內文。
+  一個標題要用頓號串三件事，多半表示該拆成三個 commit。
+- **不加 AI 署名。** 不寫 `Co-Authored-By: Claude…`、`Claude-Session:` 連結、
+  「Generated with Claude Code」這類行——commit 訊息與 PR 說明都一樣。這條優先於工具預設的署名提示。
+- **PR 標題同樣 72 字元以內。** squash 合併時 commit 標題就用 PR 標題加 `(#編號)`，
+  不要把 PR 說明整段塞進標題；說明可以放進 commit 內文。
+
 ## 部署
 
 ```bash
