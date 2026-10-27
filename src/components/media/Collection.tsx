@@ -530,10 +530,11 @@ export default function Collection() {
       namesRef.current.forEach(claim);
       marksRef.current.forEach(claim);
 
-      // 圖例：畫面裡有那一種訊號的，那一行比較亮
+      // 圖例：畫面裡有那一種訊號的，那一行比較亮。暗的那幾行下限 0.7：原本 0.45 疊上灰字，
+      // 「最近看的是」後面的日期只剩 1.6:1，等於看不到（2026-10 可讀性檢查）
       legendRef.current.forEach((el, kind) => {
         const n = inView[kind as keyof typeof inView];
-        el.style.opacity = String(0.45 + 0.55 * Math.min(1, n / 3));
+        el.style.opacity = String(0.7 + 0.3 * Math.min(1, n / 3));
       });
 
       // 底欄（圖例、讀數）跟名字一起：俯衝到一半才淡進來，離開時先淡掉

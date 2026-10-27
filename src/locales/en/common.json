@@ -327,24 +327,6 @@
       "esp32": "A 433MHz transmitter built from two boards, mimicking the ceiling light’s stock remote",
       "doorbell": "Battery doorbell, online through its hub"
     },
-    "topo": {
-      "internet": "Internet",
-      "switch": "Switch",
-      "sensors": "Light · temp · motion",
-      "irBlaster": "IR blaster",
-      "rfBlaster": "433MHz RF",
-      "rig": "Main rig",
-      "ac": "AC",
-      "light": "Ceiling light",
-      "netWired": "Wired",
-      "netMain": "Main network",
-      "netIot": "IoT only",
-      "matterHub": "Matter hub",
-      "doorbellHub": "Doorbell hub",
-      "doorbell": "Doorbell",
-      "appliances": "Appliances",
-      "appliancesSub": "Dehumidifier · purifier · cam…"
-    },
     "appliances": {
       "title": "Other connected appliances",
       "types": {
@@ -357,35 +339,31 @@
       }
     },
     "sheet": {
-      "tabs": "Sheets",
-      "memoryTitle": "The one back home",
-      "memoryText": "The backup base when I'm back home. There are no photos of it; this is roughly how I remember it.",
-      "fromMemory": "FROM MEMORY",
-      "root": "Every automation starts here",
-      "drag": "← drag sideways to see the whole sheet →",
-      "to": {
-        "voice": "Google Home voice",
-        "climate": "Temperature & humidity",
-        "ac": "Air conditioner",
-        "light": "Ceiling light",
-        "door": "Front door"
-      },
-      "subsystemTitle": "Subsystems",
-      "uplink": "Uplink: commands",
-      "downlink": "Downlink: reports",
+      "memoryText": "The backup base when I'm back home. There are no photos of it; the specs are from memory.",
       "telemetry": "Telemetry",
       "telemetryEvery": "Sent back by this server, every 30 seconds",
-      "telemetryWait": "Waiting for signal",
-      "subsystem": {
-        "cdh": "Command & data handling",
-        "eps": "Electrical power",
-        "tcs": "Thermal control",
-        "data": "Data recording",
-        "comm": "Communications",
-        "bus": "Bus",
-        "struct": "Structure",
-        "crew": "Crew interface"
-      }
+      "telemetryWait": "Waiting for signal"
+    },
+    "bay": {
+      "canvas": "Line drawing of a space shuttle payload bay: four payloads, and the old machine on a distant orbit",
+      "hintWide": "Click a tag or a payload · ←→ to switch · Esc back to the bay",
+      "hintTouch": "Tap a tag or a payload · swipe to switch",
+      "lede": {
+        "main-rig": "The one I sit in front of every day. All white.",
+        "server": "The one that's always on. Home Assistant runs here, and every smart device at home talks to it.",
+        "network": "One mesh router covers the whole home: wired gear goes through the switch, the rest is wireless.",
+        "peripherals": "What my hands touch on the desk every day."
+      },
+      "count_one": "{{count}} part",
+      "count_other": "{{count}} parts",
+      "specCount_one": "{{count}} item",
+      "specCount_other": "{{count}} items",
+      "notDrawn": "not shown",
+      "devices": "Devices on this machine · Home Assistant",
+      "records": "Notes about this machine",
+      "prev": "Previous",
+      "next": "Next",
+      "home": "Back to the bay"
     }
   },
   "newsletter": {
@@ -731,6 +709,11 @@
     "legendHeight": "Height: cumulative GitHub contributions",
     "legendDots": "Dots: redesigns (hover for which)",
     "legendHeat": "Lights on the ground: contributions per day, seven rows a week",
+    "legendWeek": "Lights on the ground: contributions per week, brighter means more",
+    "scrubHint": "Slide along the trajectory to read any point in time",
+    "altAt": "Altitude {{n}} (cumulative contributions)",
+    "weekCommits_one": "{{count}} contribution that week",
+    "weekCommits_other": "{{count}} contributions that week",
     "statusLabel": "Right now",
     "coding": "Coding today",
     "codingValue": "{{h}} h {{m}} min",

@@ -1,8 +1,9 @@
 // 首頁門面（2026-10 翻新，提案的 B）：五個分區是繞著土星轉的五顆衛星。
 //
 // 土星、軌道與衛星都是 3D 背景裡的東西（lib/starfieldGpu 的 buildSaturn）。這裡只放字：每顆衛星
-// 一個連結（名字、最新一則、數字），平常看不見，滑鼠靠近那顆衛星、或鍵盤停在那個連結上才浮出來，
-// 同時把亮度送回 3D，那條軌道與那顆衛星跟著亮。閒著的時候，偶爾有一顆自己亮一下。
+// 一個常駐的小標註（英文名，像星圖上的標註），加上一張字卡（名字、最新一則、數字）。字卡平常看不見，
+// 滑鼠靠近那顆衛星、或鍵盤停在那個連結上才浮出來，標註同時讓位；亮度也送回 3D，那條軌道與那顆衛星
+// 跟著亮。閒著的時候，偶爾有一顆自己亮一下。窄畫面的字卡放在土星下方，不貼著衛星。
 // 字的位置每幀跟著 3D 送來的衛星位置走（store/homeOrbit）。
 //
 // 沒有 3D 的時候（手機、沒有硬體加速）收不到位置，五個連結就直接排成一欄。
@@ -32,6 +33,11 @@ const ORBIT_FLAT = 2.5;
 /** 字離衛星多遠 */
 const GAP_X = 18;
 const GAP_Y = 12;
+/** 常駐小標註離衛星多遠 */
+const TAG_GAP_X = 10;
+const TAG_GAP_Y = 7;
+/** 比這窄的畫面，浮出來的那張字卡放在土星下方的空白，不貼著衛星（手機上貼著會壓到軌道） */
+const NARROW_PX = 640;
 /** 多久沒收到 3D 送來的位置就當作沒有 3D */
 const FLAT_AFTER_MS = 2500;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
@@ -52,6 +58,7 @@ export default function HomeOrbit() {
   const { data: watch } = useQuery(watchStatsQueryOptions);
   const sectionRef = useRef<HTMLElement>(null);
   const labelsRef = useRef<(HTMLAnchorElement | null)[]>([]);
+  const tagsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const [flat, setFlat] = useState(false);
   /** 衛星在畫面上的位置與速度（px/ms），轉場的「收」要用 */
   const positionsRef = useRef<SatelliteScreen[]>([]);
@@ -156,7 +163,7 @@ export default function HomeOrbit() {
     };
     // 觸控沒有「靠近」：點一下畫面就依序指到下一顆（點到字本身就照常進那一頁）
     const onTap = (e: PointerEvent) => {
-      if (e.pointerType === 'mouse' || (e.target as Element).closest('.horbit-label')) return;
+      if (e.pointerType === 'mouse' || (e.target as Element).closest('.horbit-label, .horbit-tag')) return;
       tapped = (tapped + 1) % count;
       lastInput = performance.now();
     };
@@ -212,6 +219,8 @@ export default function HomeOrbit() {
       const box = section.getBoundingClientRect();
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
+      const narrow = window.innerWidth < NARROW_PX;
+      const leaving = section.classList.contains('is-leaving');
       positions.forEach((p, i) => {
         const el = labelsRef.current[i];
         if (!el) return;
@@ -224,12 +233,18 @@ export default function HomeOrbit() {
         const ux = dx / len;
         const uy = dy / len;
         /** 字有幾成落在點的左邊（上面）：0 是整個在右（下），1 是整個在左（上） */
-        const fx = 0.5 - 0.5 * ux;
+        const fx = narrow ? 0.5 : 0.5 - 0.5 * ux;
         const fy = 0.5 - 0.5 * uy;
         const w = el.offsetWidth;
         const h = el.offsetHeight;
         let x = p.x + ux * GAP_X - w * fx;
         let y = p.y + uy * GAP_Y - h * fy;
+        // 窄畫面：軌道幾乎佔滿寬度，貼著衛星一定壓到軌道。字卡放到土星下方那片空白、置中，
+        // 是哪一顆由 3D 那邊亮起來的衛星與軌道指出來
+        if (narrow) {
+          x = cx - w / 2;
+          y = cy + Math.min(window.innerHeight * 0.24, 220);
+        }
         // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在下面置中），一樣是連續變的
         for (const line of el.children) {
           if (line instanceof HTMLElement) line.style.translate = `${((w - line.offsetWidth) * fx).toFixed(1)}px 0`;
@@ -241,9 +256,24 @@ export default function HomeOrbit() {
         el.dataset.ty = p.y.toFixed(1);
         el.dataset.ptSource = String(i);
         // 換頁在收的時候字先退掉，只剩那一點
-        const show = p.hidden || section.classList.contains('is-leaving') ? 0 : (glow[i] ?? 0);
+        const show = p.hidden || leaving ? 0 : (glow[i] ?? 0);
         el.style.opacity = String(show);
         el.classList.toggle('is-on', show > 0.6);
+
+        // 常駐的小標註：像星圖上的標註，讓第一次來的人一眼看出有五個地方可以去。
+        // 字卡浮出來的時候它讓位（交叉淡出），衛星轉到土星後面時跟著藏起來
+        const tag = tagsRef.current[i];
+        if (!tag) return;
+        const tw = tag.offsetWidth;
+        const th = tag.offsetHeight;
+        const tx = Math.max(8, Math.min(window.innerWidth - tw - 8, p.x + ux * TAG_GAP_X - tw * (0.5 - 0.5 * ux)));
+        const ty = Math.max(64, Math.min(window.innerHeight - th - 8, p.y + uy * TAG_GAP_Y - th * fy));
+        tag.style.transform = `translate(${tx - box.left}px, ${ty - box.top}px)`;
+        // 字卡一開始浮出，小標註就整個讓位（它自己有 0.3 秒的淡出）。照字卡亮度按比例退的話，
+        // 閒置提示的字卡只亮到一半，標註還剩兩成，兩個疊在一起
+        const tagShow = p.hidden || leaving || (!narrow && show > 0.01) ? 0 : 1;
+        tag.style.opacity = String(tagShow);
+        tag.classList.toggle('is-on', tagShow > 0.5);
       });
     };
     raf = requestAnimationFrame(frame);
@@ -286,6 +316,21 @@ export default function HomeOrbit() {
             </LocaleLink>
           );
         })}
+        {/* 常駐小標註：同一個連結的第二個點擊區（觸控可以直接點），對輔助技術藏起來，免得同一個連結念兩次 */}
+        {MAIN_SECTIONS.map((s, i) => (
+          <LocaleLink
+            key={`tag-${s.key}`}
+            to={s.to}
+            className="horbit-tag"
+            tabIndex={-1}
+            aria-hidden="true"
+            ref={(el: HTMLAnchorElement | null) => {
+              tagsRef.current[i] = el;
+            }}
+          >
+            {s.caps}
+          </LocaleLink>
+        ))}
       </nav>
     </section>
   );

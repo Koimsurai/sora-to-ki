@@ -62,20 +62,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3.4rem;
-  height: 3.4rem;
+  width: 3.6rem;
+  height: 3.6rem;
   padding: 0 0 0 var(--space-0-5);
-  /* 照提案：一個細線圓圈，底下墊一層很淡的夜色，亮的畫面上才看得到 */
+  /* 像儀器上的準星：一個細線圓圈，上下左右四道短刻度，正中間一個琥珀色的三角（琥珀是站上給「讀者」的顏色）。
+     底下墊一層很淡的夜色，亮的畫面上才看得到 */
   border: 1px solid var(--paper-2);
   border-radius: var(--r-round);
   background: rgba(var(--ground-rgb), 0.35);
-  color: var(--paper);
-  font-size: var(--fs-16);
+  color: var(--amber);
+  font-size: var(--fs-14);
   cursor: pointer;
   box-shadow: none;
   transition:
     border-color var(--dur-150) ease,
     background var(--dur-150) ease;
+}
+/* 四道刻度畫在圓圈外面一圈；滑過時往圓圈收進去一點 */
+.vp-bigplay::before {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--space-2-5));
+  background:
+    linear-gradient(var(--paper-2), var(--paper-2)) center top / 1px 7px no-repeat,
+    linear-gradient(var(--paper-2), var(--paper-2)) center bottom / 1px 7px no-repeat,
+    linear-gradient(var(--paper-2), var(--paper-2)) left center / 7px 1px no-repeat,
+    linear-gradient(var(--paper-2), var(--paper-2)) right center / 7px 1px no-repeat;
+  pointer-events: none;
+  transition: inset var(--dur-200) var(--easing-out);
 }
 .vp-bigplay:hover,
 .vp-bigplay:focus,
@@ -84,6 +98,10 @@
   border-color: var(--paper);
   box-shadow: none;
   outline: none;
+}
+.vp-bigplay:hover::before,
+.vp-bigplay:focus-visible::before {
+  inset: calc(-1 * var(--space-1-5));
 }
 .vp-bigplay:focus:not(:focus-visible) {
   background: rgba(var(--ground-rgb), 0.35);
@@ -181,6 +199,75 @@ a.vp-btn:active {
 a.vp-btn:hover,
 a.vp-btn:focus-visible {
   color: var(--paper);
+}
+
+/* 音量：平常只露出喇叭鍵，滑過或鍵盤停在這一組才把滑桿拉開。
+   畫法跟進度條同一套：1px 軌道、填滿的那段 2px、琥珀小點標目前的位置 */
+.vp-vol {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.vp-vol-range {
+  width: 0;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  transition:
+    width var(--dur-200) var(--easing-out),
+    opacity var(--dur-150) ease;
+}
+.vp-vol:hover .vp-vol-range,
+.vp-vol:focus-within .vp-vol-range {
+  width: 4rem;
+  margin-right: var(--space-4);
+  opacity: 1;
+}
+/* 軌道跟滑塊一樣高（7px），線只畫中間 2px：這樣滑塊不用負 margin 就置中 */
+.vp-vol-range::-webkit-slider-runnable-track {
+  height: 7px;
+  background:
+    linear-gradient(to right, var(--paper) 0 var(--vol), var(--paper-3) var(--vol) 100%) center / 100% 2px no-repeat;
+}
+.vp-vol-range::-moz-range-track {
+  height: 1px;
+  background: var(--paper-3);
+}
+.vp-vol-range::-moz-range-progress {
+  height: 2px;
+  background: var(--paper);
+}
+.vp-vol-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 7px;
+  height: 7px;
+  border: 0;
+  border-radius: var(--r-round);
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.6);
+}
+.vp-vol-range::-moz-range-thumb {
+  width: 7px;
+  height: 7px;
+  border: 0;
+  border-radius: var(--r-round);
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.6);
+}
+.vp-vol-range:focus-visible::-webkit-slider-thumb {
+  outline: 1px solid var(--paper-3);
+  outline-offset: 2px;
+}
+/* iOS 不讓網頁改音量，觸控裝置只留靜音鍵 */
+@media (hover: none) {
+  .vp-vol-range {
+    display: none;
+  }
 }
 
 /* 進度條 */

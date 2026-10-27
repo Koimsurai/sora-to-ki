@@ -29,6 +29,13 @@ const ERASE_MS = 600;
 const LEAVE_SPEED = 0.9;
 /** 比這窄就不標大轉折的名字（放不下） */
 const NARROW_PX = 600;
+/**
+ * 比這窄（跟 Log.css 的 760 斷點同一個）：地上的燈一週一盞、讀數改成手指沿軌跡滑。
+ * 一天一盞的燈在手機上會糊成一團白，滑過單一盞燈的提示也幾乎點不到
+ */
+const COMPACT_PX = 760;
+/** 手指離里程碑多近（水平，CSS 像素）就吸到那個里程碑上 */
+const SNAP_PX = 12;
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const dotDate = (d: string) => d.replaceAll('-', '.');
@@ -75,8 +82,15 @@ export default function Log() {
   const eraseRef = useRef(0);
   /** 鏡頭跟著滑鼠轉的量（-1–1，平滑過的） */
   const lookRef = useRef(0);
-  const textRef = useRef({ milestones, dayDates, contrib: (n: number) => t('log.contrib', { count: n }) });
-  textRef.current = { milestones, dayDates, contrib: (n: number) => t('log.contrib', { count: n }) };
+  const texts = {
+    milestones,
+    dayDates,
+    contrib: (n: number) => t('log.contrib', { count: n }),
+    altAt: (n: number) => t('log.altAt', { n: n.toLocaleString('en-US') }),
+    weekCommits: (n: number) => t('log.weekCommits', { count: n }),
+  };
+  const textRef = useRef(texts);
+  textRef.current = texts;
 
   const box = () => {
     const el = boxRef.current;
@@ -134,16 +148,33 @@ export default function Log() {
     const rocket = new Image();
     rocket.src = ROCKET_SRC;
     let pointer: [number, number] | null = null;
+    /** 窄螢幕的讀數：手指（或滑鼠）停在畫面上的水平位置。放開之後留著，讀數才看得到 */
+    let scrubX: number | null = null;
+    let dragging = false;
+    const compactNow = () => el.clientWidth < COMPACT_PX;
     const onMove = (e: PointerEvent) => {
       const r = el.getBoundingClientRect();
       pointer = [e.clientX - r.left, e.clientY - r.top];
+      if (compactNow() && (dragging || e.pointerType === 'mouse')) scrubX = pointer[0];
+    };
+    const onDown = (e: PointerEvent) => {
+      onMove(e);
+      if (!compactNow()) return;
+      dragging = true;
+      scrubX = pointer?.[0] ?? null;
+      el.setPointerCapture(e.pointerId);
+    };
+    const onUp = () => {
+      dragging = false;
     };
     // 觸控：點一下就停在那裡（手指離開時不清掉，提示才看得到）
     const onLeave = (e: PointerEvent) => {
       if (e.pointerType !== 'touch') pointer = null;
     };
     el.addEventListener('pointermove', onMove);
-    el.addEventListener('pointerdown', onMove);
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
     el.addEventListener('pointerleave', onLeave);
     let visible = true;
     const io = new IntersectionObserver(([e]) => {
@@ -172,12 +203,29 @@ export default function Log() {
       const grow = reduce ? 1 : easeInOut(Math.min(1, real / CLIMB_S));
       const erase = leaveRef.current === null ? 0 : easeIn(Math.min(1, (now - leaveRef.current) / ERASE_MS));
       eraseRef.current = erase;
-      // 鏡頭跟著滑鼠的水平位置轉一點點（平滑地跟）
-      const want = pointer && !reduce ? (pointer[0] / w) * 2 - 1 : 0;
+      const compact = w < COMPACT_PX;
+      // 鏡頭跟著滑鼠的水平位置轉一點點（平滑地跟）。窄螢幕不轉：手指在滑讀數，鏡頭跟著轉會讓軌跡在指尖下移動
+      const want = pointer && !reduce && !compact ? (pointer[0] / w) * 2 - 1 : 0;
       lookRef.current += (want - lookRef.current) * Math.min(1, dt * 2);
       const look = lookRef.current;
-      const hit =
-        pointer && grow >= 1 && leaveRef.current === null ? log.hit(w, h, look, pointer[0], pointer[1]) : null;
+      const ready = grow >= 1 && leaveRef.current === null;
+      const hit = pointer && ready && !compact ? log.hit(w, h, look, pointer[0], pointer[1]) : null;
+      // 窄螢幕的讀數：手指的水平位置對到軌跡上的那一天；靠近里程碑就吸過去
+      let scrubDay = -1;
+      let snapped = -1;
+      const sx = scrubX;
+      if (compact && ready && sx !== null) {
+        scrubDay = log.dayAtX(w, h, look, sx);
+        let best = SNAP_PX;
+        log.milestonesAt(w, h, look).forEach((p, k) => {
+          const d = p ? Math.abs(p.x - sx) : Infinity;
+          if (d < best) {
+            best = d;
+            snapped = k;
+          }
+        });
+        if (snapped >= 0) scrubDay = log.milestoneIndex[snapped];
+      }
       const drawn = log.draw(ctx, {
         w,
         h,
@@ -186,16 +234,18 @@ export default function Log() {
         grow,
         erase,
         look,
-        milestone: hit?.milestone ?? -1,
+        milestone: compact ? snapped : (hit?.milestone ?? -1),
         day: hit?.day ?? -1,
         rocket,
+        compact,
+        scrub: scrubDay,
       });
 
       // 字跟著軌跡：大轉折的名字在點的上方左右交錯（下方是地上的刻度），火箭飛過去才出現；靠太近的往上讓開
       const at = log.milestonesAt(w, h, look);
       let flip = false;
       const taken: { x: number; y: number; w: number; h: number }[] = [];
-      const { milestones: ms, dayDates: dates, contrib } = textRef.current;
+      const { milestones: ms, dayDates: dates, contrib, altAt, weekCommits } = textRef.current;
       ms.forEach((m, k) => {
         if (m.level !== 2) return;
         const label = labelsRef.current[k];
@@ -232,7 +282,14 @@ export default function Log() {
         let text = '';
         let date = '';
         let p: { x: number; y: number } | null = null;
-        if (hit && hit.milestone >= 0) {
+        if (scrubDay >= 0) {
+          // 窄螢幕的讀數：日期、那時飛到多高（累積貢獻）、那一週幾次；吸到里程碑時標題是它的名字
+          const when = dates[scrubDay] ? dotDate(dates[scrubDay]) : '';
+          const detail = `${altAt(log.cumAt(scrubDay))} · ${weekCommits(log.weekOf(scrubDay))}`;
+          text = snapped >= 0 ? ms[snapped].label : when;
+          date = snapped >= 0 ? `${when} · ${detail}` : detail;
+          p = log.pathOnScreen(w, h, look, scrubDay);
+        } else if (hit && hit.milestone >= 0) {
           const m = ms[hit.milestone];
           text = m.label;
           date = dotDate(m.date);
@@ -262,7 +319,9 @@ export default function Log() {
       cancelAnimationFrame(raf);
       io.disconnect();
       el.removeEventListener('pointermove', onMove);
-      el.removeEventListener('pointerdown', onMove);
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
       el.removeEventListener('pointerleave', onLeave);
     };
   }, [log]);
@@ -330,6 +389,11 @@ export default function Log() {
           <li>{t('log.legendDots')}</li>
           <li>{t('log.legendHeat')}</li>
         </ul>
+        {/* 窄螢幕的圖例：燈是一週一盞；高度是什麼由讀數自己說（滑一下就看到「高度 N（累積貢獻）」） */}
+        <ul className="lg-legend lg-legend-compact">
+          <li>{t('log.legendWeek')}</li>
+          <li>{t('log.scrubHint')}</li>
+        </ul>
         <div className="lg-strip-row">
           <div className="lg-cell lg-cell-flight">
             <div>
@@ -365,7 +429,19 @@ export default function Log() {
               <b className="lg-v">—</b>
             )}
           </div>
-          <div className="lg-cell">
+          {/* 窄螢幕放不下每個語言一條：收成一條分段的橫條，名字照份量排在下面 */}
+          {coding?.languages.length ? (
+            <div className="lg-cell lg-cell-stack">
+              <span className="lg-k">{t('log.languages')}</span>
+              <div className="lg-stack" aria-hidden="true">
+                {coding.languages.map((l) => (
+                  <i key={l.name} style={{ flexGrow: l.percent }} />
+                ))}
+              </div>
+              <span className="lg-s">{coding.languages.map((l) => l.name).join(' · ')}</span>
+            </div>
+          ) : null}
+          <div className="lg-cell lg-cell-play">
             <span className="lg-k">{t('log.playing')}</span>
             <b className="lg-v">{playing?.recent?.name ?? '—'}</b>
             {playing && (

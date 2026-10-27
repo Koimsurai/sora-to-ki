@@ -6,8 +6,12 @@
 
 /** 軌道半徑：大到看起來幾乎是直的 */
 const ORBIT_RB = 1500;
-/** 窄於這個寬度沒有放軌道的空間（目錄改走別的地方） */
+/** 窄於這個寬度，內文欄旁邊沒有空間：軌道貼到右邊緣，章節名收進底部的清單 */
 const ORBIT_MIN_W = 1100;
+/** 貼邊的軌道半徑更大：邊上只有十來 px，弧要直到兩端不跑出畫面（拱起約 H²/8RB，844 高時約 9px） */
+const NARROW_RB = 8000;
+/** 貼邊時軌道中段離右緣多遠（內文右邊留白約 18px，刻度往內 5px 不壓到字） */
+const NARROW_EDGE = 10;
 /** 內文欄寬與它離軌道多遠（跟 BlogPost.css 的 --ar-col / --ar-gap 一樣） */
 const ARTICLE_COL = 680;
 const RAIL_GAP = 120;
@@ -21,18 +25,22 @@ export interface OrbitGeom {
   aTop: number;
   aBot: number;
   RB: number;
+  /** 貼在右邊緣的窄螢幕版（章節名不放在刻度旁，收進底部的清單） */
+  narrow: boolean;
 }
 
 /** 內文欄的左緣（跟 CSS 的 max(56px, calc(50% - 560px)) 一樣） */
 const articleLeft = (w: number) => Math.max(56, w / 2 - 560);
 
-export function orbitGeometry(w: number, h: number): OrbitGeom | null {
-  if (w < ORBIT_MIN_W) return null;
-  const railX = articleLeft(w) + ARTICLE_COL + RAIL_GAP;
-  const topY = 136;
-  const H = Math.max(200, h - topY - 130);
-  const RB = ORBIT_RB;
+export function orbitGeometry(w: number, h: number): OrbitGeom {
+  const narrow = w < ORBIT_MIN_W;
+  // 窄螢幕：頂端在頁首（56–60px）底下，底端貼近畫面下緣
+  const railX = narrow ? w - NARROW_EDGE : articleLeft(w) + ARTICLE_COL + RAIL_GAP;
+  const topY = narrow ? 84 : 136;
+  const H = Math.max(200, h - topY - (narrow ? 36 : 130));
+  const RB = narrow ? NARROW_RB : ORBIT_RB;
   return {
+    narrow,
     railX,
     topY,
     H,

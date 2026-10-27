@@ -610,35 +610,135 @@
 }
 
 /* ── ImageCompare ── */
+/* 前後比對：外面是四角框（跟摘要、圖表同一個框），圖在框裡留一點邊 */
 .mdx-imgcompare {
   margin: var(--space-7) 0;
 }
 .mdx-imgcompare-frame {
   position: relative;
-  border-radius: var(--r-2);
-  overflow: hidden;
+  padding: var(--space-2);
+  background: var(--corner-frame);
 }
 .mdx-imgcompare-frame img {
   display: block;
   width: 100%;
 }
+/* 把手：一條點線從上到下，中間一顆琥珀點外面一圈細線（點是讀者，站上每一頁都是它） */
+/* ⚠ pointer-events 一定要寫：套件包把手的那一層是 none（它內建的把手自己把線與圓鈕設回 auto），
+   而觸控裝置上套件只認把手（onlyHandleDraggable 在 pointer: coarse 時預設開），漏了這行手機就完全拖不動 */
+.mdx-imgcompare-handle {
+  position: relative;
+  width: 28px;
+  height: 100%;
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+/* 手指：按得到的範圍加寬到 44px，畫出來的線與圈不變 */
+@media (pointer: coarse) {
+  .mdx-imgcompare-handle {
+    width: 44px;
+  }
+}
+.mdx-imgcompare-handle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 1px dashed var(--paper-2);
+}
+.mdx-imgcompare-handle span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--paper-2);
+  border-radius: var(--r-round);
+  background: rgba(var(--ground-rgb), 0.6);
+  transform: translate(-50%, -50%);
+  transition: border-color var(--dur-200) ease;
+}
+.mdx-imgcompare-handle span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-round);
+  background: var(--amber);
+  box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
+  transform: translate(-50%, -50%);
+}
+.mdx-imgcompare-slider:hover .mdx-imgcompare-handle span,
+.mdx-imgcompare-slider:focus-within .mdx-imgcompare-handle span {
+  border-color: var(--amber);
+}
+/* 圈的左右各一個細箭頭，說明「這條線可以左右拉」。進到畫面先往外推兩下當提示，
+   之後靜止；滑過時箭頭變琥珀、往外撐開一點 */
+.mdx-imgcompare-chev {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border: solid var(--paper);
+  border-width: 0 0 1px 1px;
+  filter: drop-shadow(0 0 3px var(--ground));
+  transition:
+    border-color var(--dur-200) ease,
+    translate var(--dur-200) var(--easing-out);
+}
+.mdx-imgcompare-chev--l {
+  transform: translate(calc(-50% - 22px), -50%) rotate(45deg);
+  animation: mdx-imgcompare-nudge-l 1.4s ease-in-out 0.6s 2;
+}
+.mdx-imgcompare-chev--r {
+  transform: translate(calc(-50% + 22px), -50%) rotate(-135deg);
+  animation: mdx-imgcompare-nudge-r 1.4s ease-in-out 0.6s 2;
+}
+.mdx-imgcompare-slider:hover .mdx-imgcompare-chev,
+.mdx-imgcompare-slider:focus-within .mdx-imgcompare-chev {
+  border-color: var(--amber);
+}
+.mdx-imgcompare-slider:hover .mdx-imgcompare-chev--l,
+.mdx-imgcompare-slider:focus-within .mdx-imgcompare-chev--l {
+  translate: -3px 0;
+}
+.mdx-imgcompare-slider:hover .mdx-imgcompare-chev--r,
+.mdx-imgcompare-slider:focus-within .mdx-imgcompare-chev--r {
+  translate: 3px 0;
+}
+@keyframes mdx-imgcompare-nudge-l {
+  50% {
+    translate: -5px 0;
+  }
+}
+@keyframes mdx-imgcompare-nudge-r {
+  50% {
+    translate: 5px 0;
+  }
+}
+/* 兩側的標籤：等寬小字，像圖紙上的標註，不是貼上去的色塊 */
 .mdx-imgcompare-badge {
   position: absolute;
   z-index: 2; /* 蓋在 slider 兩張圖之上，否則會被內部堆疊吃掉（只有一側看得到） */
-  top: 0.6rem;
-  padding: var(--space-0-5) var(--space-2);
+  top: var(--space-4);
   font-family: var(--mono-font);
-  font-size: var(--fs-11);
-  letter-spacing: var(--ls-12);
-  color: var(--paper);
-  background: rgba(var(--ground-rgb), 0.7);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-2);
+  text-shadow:
+    0 0 6px var(--ground),
+    0 0 12px var(--ground);
   pointer-events: none;
 }
 .mdx-imgcompare-badge--before {
-  left: 0.6rem;
+  left: var(--space-4);
 }
 .mdx-imgcompare-badge--after {
-  right: 0.6rem;
+  right: var(--space-4);
 }
 .mdx-imgcompare-loading {
   height: 320px;
