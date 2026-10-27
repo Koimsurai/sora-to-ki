@@ -9,6 +9,9 @@
 # ⚠️ 這個 repo 的 PR 是 squash merge，所以要寫的是**合併後 main 上那顆**的 SHA，
 # 不是分支上原本那筆。分支被刪掉後原 SHA 就不在 main 的歷史裡，blame 會完全無視它
 # （不報錯，只是靜靜地沒生效）——所以 SHA 要等 merge 完才填得對。
+#
+# 2026-10-27 整理過一次 commit 訊息（改寫了 main 的歷史），所有 SHA 都換過；
+# 下面這顆是改寫後的。
 
 # chore: 補上 oxfmt(JS/TS formatter) (#130) —— 218 檔格式化 + 接線
-2b0b89b1a39615343558f20512e18037cea4102a
+25e7f86407a50cf7cf3d5a8a7307b3800b3b604b
