@@ -4,7 +4,12 @@ import { stripLocalePrefix } from '@/i18n/start-i18n';
 import SiteNav from './SiteNav';
 import ScrollToTop from './ScrollToTop';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
+import { installStaleChunkReload } from '@/lib/staleChunkReload';
 import BackToTopButton from './BackToTopButton';
+
+// 重新部署後舊分頁載不到新 chunk 時重整一次（lib/staleChunkReload）。要在模組載入時就掛：
+// 下面那些 lazy 的 import 在第一次 render 就開始了，等 useEffect 才掛會漏掉
+installStaleChunkReload();
 
 // 桌面 WebGL 背景/開場 + 互動式 overlay → 純 client(three.js / portal 不進 SSR)
 // GPU 探測跟這支 chunk 的下載同時起跑，不要等元件掛上才開始：開場要等探測做完才播

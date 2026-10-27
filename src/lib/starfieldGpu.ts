@@ -816,6 +816,8 @@ export async function createStarfieldRunner(
   let starsOn = true;
   /** 全暗之後已經清過一幀了 */
   let darkDrawn = false;
+  /** 畫的時候丟過例外（device 不能用了）：等呼叫端重建，這一組不再重開迴圈 */
+  let broken = false;
   const loop = (now: number) => {
     // ⚠ 跟 lastActive 比要用同一個時鐘：lastActive 是 performance.now()，而 rAF 的 now 是
     //   這一幀的時間戳，規格沒保證兩者在 worker 裡同步。now 落後的話「距上次活動」永遠小於門檻，
@@ -849,7 +851,17 @@ export async function createStarfieldRunner(
       if (s.moving) markActive();
       init.onSatellites?.(saturn.project(saturnCam, viewW, viewH));
     }
-    pipeline.render();
+    try {
+      pipeline.render();
+    } catch (err) {
+      // iOS 的 App 從背景切回來時，device 可能已經不能用了、lost 卻沒有觸發：畫的時候才丟
+      // （createCommandEncoder 的 InvalidStateError、getCurrentTexture 回 null）。three 的動畫迴圈是先排下一幀
+      // 才呼叫這裡，所以之後每一幀都會再丟一次，土星就再也不出來。當成 device lost，交給呼叫端整組重建
+      broken = true;
+      void renderer.setAnimationLoop(null);
+      init.onDeviceLost?.(`render failed: ${String(err)}`);
+      return;
+    }
     // ⚠ 每一幀都要取回：three 的 query pool 格數有限，一秒才取一次的話格子在幾分之一秒內就滿了，
     //   之後的 pass 根本沒量到（實測量出 0.05ms 這種不可能的值）。取回是非同步的，結果晚一兩幀到。
     void renderer
@@ -940,7 +952,7 @@ export async function createStarfieldRunner(
         saturnAnimate = false;
       },
       setRunning(running) {
-        if (running) {
+        if (running && !broken) {
           lastRender = -1; // 暫停期間的時間不灌進 delta
           pacer.reset();
           markActive();

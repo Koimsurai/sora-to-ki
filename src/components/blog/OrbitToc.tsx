@@ -410,7 +410,9 @@ export default function OrbitToc({
           li.style.maxWidth = `${Math.max(60, W - q.x - 40)}px`;
         }
         if (i === ping.i) {
-          const k = ((now - ping.at) / PING_MS) % 1;
+          // ping.at 是點下去那一刻的 performance.now()，而 now 是這一幀的 rAF 時間戳，可能比它早一點：
+          // 差值是負的話 k 也是負的，半徑變負數，arc 會丟 IndexSizeError（GlitchTip 上看過）
+          const k = (Math.max(0, now - ping.at) / PING_MS) % 1;
           ctx.strokeStyle = `rgba(${INK}, ${0.7 * (1 - k)})`;
           ctx.beginPath();
           ctx.arc(q.x, q.y, 4 + k * 12, 0, TAU);

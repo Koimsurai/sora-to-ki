@@ -81,8 +81,10 @@ peerDependencyRules:
     vite: '*'
     vitest: '*'
 
-# patchedDependencies 已清空。原本這裡有一筆 '@types/three@0.185.1' —— 它把 Node.d.ts
-# 裡那組 20 層巢狀的 `TNodeType extends …` conditional type 攤平成 NodeExtras 查表，
-# 因為那個型別會讓 type-aware lint 吃掉大量記憶體。
-# 上游在 0.185.3 自己做了同一件事（產出的 Node.d.ts 與我們 patch 後的檔案 byte 相同），
-# 所以升版之後 patch 就是多餘的，留著只會在下次 @types/three 升版時變成一個假衝突。
+# mdast-util-gfm-autolink-literal：email 自動連結的正規式寫成 lookbehind 字面值，Safari < 16.4
+# 解析到就是 SyntaxError，整支文章頁的 chunk 載不起來（GlitchTip 上 iOS 15.4–16.3 的
+# 「invalid group specifier name」）。patch 改成執行期建、不支援就退回沒有 lookbehind 的版本；
+# findEmail 自己會用 previous() 再檢查前一個字，所以兩個版本收的 email 一樣。
+# 升版時先看上游拿掉 lookbehind 了沒，拿掉了這筆就刪掉。
+patchedDependencies:
+  mdast-util-gfm-autolink-literal@2.0.1: patches/mdast-util-gfm-autolink-literal@2.0.1.patch

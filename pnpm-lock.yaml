@@ -155,6 +155,9 @@ overrides:
   vite@*: npm:@voidzero-dev/vite-plus-core@1.0.0
   vitest@*: 5.0.1
 
+patchedDependencies:
+  mdast-util-gfm-autolink-literal@2.0.1: 465e05279ee66979c95bd929c1cac1ff6e4dd5abadffa37cb817b4033227fb5c
+
 importers:
 
   .:
@@ -14679,7 +14682,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  mdast-util-gfm-autolink-literal@2.0.1:
+  mdast-util-gfm-autolink-literal@2.0.1(patch_hash=465e05279ee66979c95bd929c1cac1ff6e4dd5abadffa37cb817b4033227fb5c):
     dependencies:
       '@types/mdast': 4.0.4
       ccount: 2.0.1
@@ -14727,7 +14730,7 @@ snapshots:
   mdast-util-gfm@3.1.0(supports-color@7.2.0):
     dependencies:
       mdast-util-from-markdown: 2.0.2(supports-color@7.2.0)
-      mdast-util-gfm-autolink-literal: 2.0.1
+      mdast-util-gfm-autolink-literal: 2.0.1(patch_hash=465e05279ee66979c95bd929c1cac1ff6e4dd5abadffa37cb817b4033227fb5c)
       mdast-util-gfm-footnote: 2.1.0(supports-color@7.2.0)
       mdast-util-gfm-strikethrough: 2.0.0(supports-color@7.2.0)
       mdast-util-gfm-table: 2.0.0(supports-color@7.2.0)
