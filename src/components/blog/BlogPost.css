@@ -114,6 +114,9 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* 卡片有最小高度，標題被拉高的話，截掉的第三行會從底下露出半截（Chrome 新的 line-clamp
+     只是把多的行藏起來、版面上還在）。高度照兩行自己算，不被拉伸 */
+  align-self: start;
 }
 .prev-next-placeholder {
   display: block;

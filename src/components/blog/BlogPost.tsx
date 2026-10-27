@@ -728,12 +728,25 @@ const TagShelf = ({
 }) => {
   const { t } = useTranslation();
   const locale = useLocale();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState<string | null>(null);
-  const { data: posts = [], isFetching } = useQuery({
+  // 換另一個標籤時留著上一組，等新的到了再換：不然會先收起來再展開，內文跳兩下
+  const {
+    data: posts = [],
+    isFetching,
+    isPlaceholderData,
+  } = useQuery({
     ...postsByTagQueryOptions(open ?? '', locale),
     enabled: open !== null,
+    placeholderData: keepPreviousData,
   });
+  // 滑鼠靠近（或鍵盤停在）標籤就先抓：點下去時資料多半已經在了
+  // 預抓失敗不要緊：點下去時 useQuery 會再抓一次
+  const prefetch = (name: string) =>
+    void queryClient.query(postsByTagQueryOptions(name, locale)).catch(() => undefined);
   const others = posts.filter((p) => String(p.id) !== String(currentId)).slice(0, 5);
+  // 資料到了才出現：原本先出現標題、清單晚一點才到，內文會被推兩次（實測 51px 再 80px）
+  const ready = open !== null && (!isFetching || (isPlaceholderData && posts.length > 0));
   return (
     <>
       <div className="ar-tags">
@@ -742,29 +755,33 @@ const TagShelf = ({
             key={name}
             type="button"
             aria-expanded={open === name}
+            onPointerEnter={() => prefetch(name)}
+            onFocus={() => prefetch(name)}
             onClick={() => setOpen(open === name ? null : name)}
           >
             #{label(name)}
           </button>
         ))}
       </div>
-      {open !== null && (
-        <section className="ar-same ar-tag-shelf" key={open}>
-          <p className="ar-label">{t('blog.sameTag', { name: label(open) })}</p>
-          {others.length ? (
-            <ul>
-              {others.map((p) => (
-                <li key={p.id}>
-                  <time dateTime={p.created_at} suppressHydrationWarning>
-                    {dotDate(parseServerDate(p.created_at), true)}
-                  </time>
-                  <PreviewablePostLink post={p}>{splitTitle(p.title).main}</PreviewablePostLink>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            !isFetching && <p className="ar-tag-none">{t('blog.sameTagNone')}</p>
-          )}
+      {ready && (
+        <section className="ar-same ar-tag-shelf">
+          <div className="ar-tag-shelf-in">
+            <p className="ar-label">{t('blog.sameTag', { name: label(open) })}</p>
+            {others.length ? (
+              <ul>
+                {others.map((p) => (
+                  <li key={p.id}>
+                    <time dateTime={p.created_at} suppressHydrationWarning>
+                      {dotDate(parseServerDate(p.created_at), true)}
+                    </time>
+                    <PreviewablePostLink post={p}>{splitTitle(p.title).main}</PreviewablePostLink>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="ar-tag-none">{t('blog.sameTagNone')}</p>
+            )}
+          </div>
         </section>
       )}
     </>
