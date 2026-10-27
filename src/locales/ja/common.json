@@ -327,24 +327,6 @@
       "esp32": "2 枚の基板で組んだ 433MHz 送信機。シーリングライトの純正リモコンを再現",
       "doorbell": "バッテリー式ドアベル。ハブ経由でネットに接続"
     },
-    "topo": {
-      "internet": "インターネット",
-      "switch": "スイッチ",
-      "sensors": "照度・温湿度・人感",
-      "irBlaster": "赤外線リモコン",
-      "rfBlaster": "433MHz 無線",
-      "rig": "メイン機",
-      "ac": "エアコン",
-      "light": "シーリングライト",
-      "netWired": "有線",
-      "netMain": "メイン",
-      "netIot": "IoT 専用",
-      "matterHub": "Matter ハブ",
-      "doorbellHub": "ドアベルハブ",
-      "doorbell": "ドアベル",
-      "appliances": "ネット家電",
-      "appliancesSub": "除湿機・空清・カメラ…"
-    },
     "appliances": {
       "title": "その他のネット家電",
       "types": {
@@ -357,35 +339,31 @@
       }
     },
     "sheet": {
-      "tabs": "図面",
-      "memoryTitle": "実家のあの一台",
-      "memoryText": "実家に帰ったときの予備の拠点。写真はなく、これは記憶の中のだいたいの姿。",
-      "fromMemory": "記憶から",
-      "root": "すべての自動化はここから",
-      "drag": "← 左右にドラッグして図面全体を見る →",
-      "to": {
-        "voice": "Google Home 音声",
-        "climate": "温湿度センサー",
-        "ac": "エアコン",
-        "light": "シーリングライト",
-        "door": "玄関"
-      },
-      "subsystemTitle": "サブシステム",
-      "uplink": "アップリンク：指令",
-      "downlink": "ダウンリンク：報告",
+      "memoryText": "実家に帰ったときの予備の拠点。写真はなく、スペックは記憶から。",
       "telemetry": "テレメトリ",
       "telemetryEvery": "このサーバーから 30 秒ごとに届く値",
-      "telemetryWait": "信号待ち",
-      "subsystem": {
-        "cdh": "計算とデータ処理",
-        "eps": "電力",
-        "tcs": "熱制御",
-        "data": "データ記録",
-        "comm": "通信",
-        "bus": "バス",
-        "struct": "構造",
-        "crew": "乗員インターフェース"
-      }
+      "telemetryWait": "信号待ち"
+    },
+    "bay": {
+      "canvas": "スペースシャトルの貨物室の線画：4つのペイロードと、遠くの軌道にある実家の一台",
+      "hintWide": "タグか貨物室のペイロードをクリック · ←→ で切り替え · Esc で全体に戻る",
+      "hintTouch": "タグかペイロードをタップ · 左右スワイプで切り替え",
+      "lede": {
+        "main-rig": "毎日その前に座っている一台。全部白で揃えた。",
+        "server": "ずっと動いている一台。Home Assistant がここで動いていて、家のスマートデバイスはすべてここにつながる。",
+        "network": "メッシュルーター1台で家全体をカバー。有線はスイッチ経由、ほかは無線。",
+        "peripherals": "机の上で毎日触れているもの。"
+      },
+      "count_one": "{{count}} 点",
+      "count_other": "{{count}} 点",
+      "specCount_one": "{{count}} 項目",
+      "specCount_other": "{{count}} 項目",
+      "notDrawn": "図には未記載",
+      "devices": "このマシンにつながるデバイス · Home Assistant",
+      "records": "このマシンに関する記録",
+      "prev": "前へ",
+      "next": "次へ",
+      "home": "全体に戻る"
     }
   },
   "newsletter": {
@@ -731,6 +709,11 @@
     "legendHeight": "高さ：GitHub コントリビューションの累計",
     "legendDots": "点：リニューアル（ホバーで内容）",
     "legendHeat": "地上の灯り：毎日のコントリビューション、1 週間で 7 列",
+    "legendWeek": "地上の灯り：週ごとのコントリビューション、明るいほど多い",
+    "scrubHint": "軌跡に沿ってスライドすると、各時点が読めます",
+    "altAt": "高度 {{n}}（累計のコントリビューション）",
+    "weekCommits_one": "その週 {{count}} コントリビューション",
+    "weekCommits_other": "その週 {{count}} コントリビューション",
     "statusLabel": "現在の様子",
     "coding": "今日のコーディング",
     "codingValue": "{{h}} 時間 {{m}} 分",

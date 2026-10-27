@@ -327,24 +327,6 @@
       "esp32": "보드 두 장으로 만든 433MHz 송신기. 천장등 순정 리모컨을 흉내 낸다",
       "doorbell": "배터리 도어벨, 허브를 통해 연결"
     },
-    "topo": {
-      "internet": "인터넷",
-      "switch": "스위치",
-      "sensors": "조도·온습도·재실",
-      "irBlaster": "적외선 리모컨",
-      "rfBlaster": "433MHz RF",
-      "rig": "메인 PC",
-      "ac": "에어컨",
-      "light": "천장등",
-      "netWired": "유선",
-      "netMain": "메인",
-      "netIot": "IoT 전용",
-      "matterHub": "Matter 허브",
-      "doorbellHub": "도어벨 허브",
-      "doorbell": "도어벨",
-      "appliances": "스마트 가전",
-      "appliancesSub": "제습기 · 공기청정기 · 카메라…"
-    },
     "appliances": {
       "title": "그 밖의 스마트 가전",
       "types": {
@@ -357,35 +339,31 @@
       }
     },
     "sheet": {
-      "tabs": "도면",
-      "memoryTitle": "본가의 그 컴퓨터",
-      "memoryText": "본가에 갔을 때 쓰는 예비 기지. 사진이 없어서, 기억 속 대략적인 모습입니다.",
-      "fromMemory": "기억으로",
-      "root": "모든 자동화는 여기서 시작",
-      "drag": "← 좌우로 드래그해서 도면 전체 보기 →",
-      "to": {
-        "voice": "Google Home 음성",
-        "climate": "온습도 센서",
-        "ac": "에어컨",
-        "light": "천장등",
-        "door": "현관"
-      },
-      "subsystemTitle": "서브시스템",
-      "uplink": "업링크: 명령",
-      "downlink": "다운링크: 보고",
+      "memoryText": "본가에 갔을 때 쓰는 예비 기지. 사진이 없어서 사양은 기억에 의존했습니다.",
       "telemetry": "텔레메트리",
       "telemetryEvery": "이 서버가 30초마다 보내오는 값",
-      "telemetryWait": "신호 대기 중",
-      "subsystem": {
-        "cdh": "연산·데이터 처리",
-        "eps": "전력",
-        "tcs": "열 제어",
-        "data": "데이터 기록",
-        "comm": "통신",
-        "bus": "버스",
-        "struct": "구조",
-        "crew": "승무원 인터페이스"
-      }
+      "telemetryWait": "신호 대기 중"
+    },
+    "bay": {
+      "canvas": "우주왕복선 화물칸의 선화: 네 개의 페이로드와, 먼 궤도에 있는 본가의 그 컴퓨터",
+      "hintWide": "태그나 화물칸의 페이로드를 클릭 · ←→ 로 전환 · Esc 로 전체 보기",
+      "hintTouch": "태그나 페이로드를 탭 · 좌우로 밀어서 전환",
+      "lede": {
+        "main-rig": "매일 그 앞에 앉는 메인 PC. 전부 흰색으로 맞췄다.",
+        "server": "항상 켜져 있는 서버. Home Assistant가 여기서 돌고, 집의 스마트 기기는 모두 여기에 연결된다.",
+        "network": "메시 라우터 한 대가 집 전체를 맡는다. 유선은 스위치를 거치고, 나머지는 무선.",
+        "peripherals": "책상 위에서 매일 손에 닿는 것들."
+      },
+      "count_one": "{{count}}개",
+      "count_other": "{{count}}개",
+      "specCount_one": "{{count}}항목",
+      "specCount_other": "{{count}}항목",
+      "notDrawn": "도면에 없음",
+      "devices": "이 서버에 연결된 기기 · Home Assistant",
+      "records": "이 서버에 관한 기록",
+      "prev": "이전",
+      "next": "다음",
+      "home": "전체 보기"
     }
   },
   "newsletter": {
@@ -731,6 +709,11 @@
     "legendHeight": "높이: 누적 GitHub 기여",
     "legendDots": "점: 개편 (마우스를 올리면 내용)",
     "legendHeat": "땅 위의 불빛: 하루 기여, 한 주에 일곱 줄",
+    "legendWeek": "땅 위의 불빛: 주별 기여, 밝을수록 많음",
+    "scrubHint": "궤적을 따라 밀어서 각 시점을 확인하세요",
+    "altAt": "고도 {{n}} (누적 기여)",
+    "weekCommits_one": "그 주 기여 {{count}}회",
+    "weekCommits_other": "그 주 기여 {{count}}회",
     "statusLabel": "지금 상태",
     "coding": "오늘 코딩한 시간",
     "codingValue": "{{h}}시간 {{m}}분",

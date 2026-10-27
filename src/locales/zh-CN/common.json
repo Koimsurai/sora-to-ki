@@ -327,24 +327,6 @@
       "esp32": "两块板子组成的 433MHz 发射器，模拟吸顶灯的原厂遥控器",
       "doorbell": "电池门铃，通过网关联网"
     },
-    "topo": {
-      "internet": "互联网",
-      "switch": "交换机",
-      "sensors": "光照・温湿度・人体",
-      "irBlaster": "红外遥控",
-      "rfBlaster": "433MHz 射频",
-      "rig": "主力机",
-      "ac": "空调",
-      "light": "吸顶灯",
-      "netWired": "有线",
-      "netMain": "主网络",
-      "netIot": "IoT 专用",
-      "matterHub": "Matter 中枢",
-      "doorbellHub": "门铃网关",
-      "doorbell": "门铃",
-      "appliances": "联网家电",
-      "appliancesSub": "除湿机・空净・摄像头…"
-    },
     "appliances": {
       "title": "其他联网家电",
       "types": {
@@ -357,35 +339,31 @@
       }
     },
     "sheet": {
-      "tabs": "图纸",
-      "memoryTitle": "老家的那台",
-      "memoryText": "回老家时的备用基地。没有照片，这是记忆里它大概的样子。",
-      "fromMemory": "凭记忆",
-      "root": "所有自动化从这里发出",
-      "drag": "← 左右拖动看整张图 →",
-      "to": {
-        "voice": "Google Home 语音",
-        "climate": "温湿度感测",
-        "ac": "空调",
-        "light": "吸顶灯",
-        "door": "门口"
-      },
-      "subsystemTitle": "子系统",
-      "uplink": "上行：指令",
-      "downlink": "下行：回报",
+      "memoryText": "回老家时的备用基地。没有照片，规格照记忆写。",
       "telemetry": "遥测",
       "telemetryEvery": "这台服务器传回来的，每 30 秒更新一次",
-      "telemetryWait": "等待信号",
-      "subsystem": {
-        "cdh": "运算与数据处理",
-        "eps": "电力",
-        "tcs": "热控",
-        "data": "数据记录",
-        "comm": "通信",
-        "bus": "主体",
-        "struct": "结构",
-        "crew": "乘员界面"
-      }
+      "telemetryWait": "等待信号"
+    },
+    "bay": {
+      "canvas": "航天飞机货舱的线稿：四件载荷，与远处轨道上的老家那台",
+      "hintWide": "点标签或货舱里的载荷 · ←→ 换一件 · Esc 回到整架",
+      "hintTouch": "点标签或货舱里的载荷 · 左右滑换一件",
+      "lede": {
+        "main-rig": "每天坐在前面的那台，整台走白色。",
+        "server": "一直开着的那台。Home Assistant 跑在这里，家里的智能设备都接到它。",
+        "network": "一台 Mesh 路由器撑起整个家，有线的接交换机，其他走无线。",
+        "peripherals": "桌上每天摸到的东西。"
+      },
+      "count_one": "{{count}} 件",
+      "count_other": "{{count}} 件",
+      "specCount_one": "{{count}} 项",
+      "specCount_other": "{{count}} 项",
+      "notDrawn": "图上未绘出",
+      "devices": "接在这台上的设备 · Home Assistant",
+      "records": "跟这台有关的记录",
+      "prev": "上一件",
+      "next": "下一件",
+      "home": "回到整架"
     }
   },
   "newsletter": {
@@ -731,6 +709,11 @@
     "legendHeight": "高度：累积的 GitHub 贡献",
     "legendDots": "点：改版（滑过看是哪一次）",
     "legendHeat": "地上的灯：每天的贡献，一周七排",
+    "legendWeek": "地上的灯：每周的贡献，越亮越多",
+    "scrubHint": "沿着轨迹滑动，看每个时间点",
+    "altAt": "高度 {{n}}（累计贡献）",
+    "weekCommits_one": "那周 {{count}} 次贡献",
+    "weekCommits_other": "那周 {{count}} 次贡献",
     "statusLabel": "现在的状态",
     "coding": "今天写程序",
     "codingValue": "{{h}} 小时 {{m}} 分",

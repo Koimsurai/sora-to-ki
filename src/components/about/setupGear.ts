@@ -1,10 +1,9 @@
 // 設備清單的資料。產品名與規格是原文（型號不翻譯），用途說明走翻譯檔的 setup.roles.*。
-// 圖紙上畫在哪裡在 setupSheets；零件線稿是 public/illustrations/setup/<id>.webp（暖白透明底）。
+// 每件東西畫在哪一張圖紙、編號圈擺哪裡在 setupPayloads。
 
 type CategoryId = 'main-rig' | 'server' | 'network' | 'smart-home' | 'peripherals';
 
 export interface GearItem {
-  /** 也是零件線稿的檔名 */
   id: string;
   name: string;
   spec: string;
@@ -57,7 +56,7 @@ export const GEAR: GearCategory[] = [
     id: 'network',
     name: 'Network & Mobile',
     items: [
-      { id: 'router', name: 'Wi-Fi 7 Mesh Router', spec: 'BE5000' },
+      { id: 'zenwifi-bd5', name: 'ASUS ZenWiFi BD5', spec: 'Wi-Fi 7 BE5000 · 2.5G' },
       { id: 'qg-u1050', name: 'ASUS QG-U1050', spec: '5-Port Switch' },
       { id: 'pixel-8-pro', name: 'Google Pixel 8 Pro', spec: '256GB / Bay Blue' },
       { id: 'blade-14', name: 'Razer Blade 14 (2021)', spec: 'Ryzen 5900HX / RTX 3070' },
@@ -115,6 +114,8 @@ export const GEAR: GearCategory[] = [
       { id: 'mv7-plus', name: 'Shure MV7+', spec: 'USB/XLR Podcast Microphone' },
       { id: 'psa1-plus', name: 'RODE PSA1+', spec: 'Professional Studio Boom Arm' },
       { id: 't100', name: 'Creative T100', spec: 'Hi-Fi 2.0 Speakers' },
+      { id: 'revon-elite', name: 'Dezctop Revon Elite', spec: '180 × 80 cm Standing Desk' },
+      { id: 'infinite-s', name: 'MarsRhino Infinite S', spec: 'Mesh Ergonomic Chair' },
     ],
   },
 ];
