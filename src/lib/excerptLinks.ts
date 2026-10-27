@@ -1,7 +1,7 @@
 // 摘要裡「哪幾句連到哪一章」（posts.excerpt_links）的純邏輯：後台的逐句對應與草稿預覽共用。
-// 章節編號的規則見 lib/mdx/blogContent 的 chapterIds（第幾個 `##` 兩位數，底下第幾個 `###` 接 `.N`）。
+// 章節編號的規則見 mdx-core 的 chapterNumbers（第幾個 `##` 兩位數，底下第幾個 `###` 接 `.N`）。
 import type { ExcerptLink } from '@koimsurai/api-types';
-import { extractHeadings } from '@/lib/mdx/blogContent';
+import { chapterNumbers, scanHeadings } from '@koimsurai/mdx-core/headings';
 
 /** 同後端 handlers/excerpt_links.rs：一個語系最多幾段、一段最多幾個字 */
 export const MAX_LINKS_PER_LOCALE = 24;
@@ -16,20 +16,10 @@ export interface ChapterOption {
 
 /** 內文的章節（只算 `##` 與 `###`，跟文章頁左邊印的編號一樣） */
 export function chapterOptions(content: string): ChapterOption[] {
-  const out: ChapterOption[] = [];
-  let major = 0;
-  let minor = 0;
-  for (const h of extractHeadings(content)) {
-    if (h.level === 2) {
-      major += 1;
-      minor = 0;
-      out.push({ num: String(major).padStart(2, '0'), text: h.text, level: 2 });
-    } else if (h.level === 3 && major > 0) {
-      minor += 1;
-      out.push({ num: `${String(major).padStart(2, '0')}.${minor}`, text: h.text, level: 3 });
-    }
-  }
-  return out;
+  const headings = scanHeadings(content);
+  return chapterNumbers(headings).flatMap((num, i) =>
+    num ? [{ num, text: headings[i].text, level: headings[i].level as 2 | 3 }] : [],
+  );
 }
 
 export interface ExcerptPiece {
