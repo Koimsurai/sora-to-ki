@@ -1,0 +1,38 @@
+diff --git a/lib/index.js b/lib/index.js
+index c5ca771c24dd914e342f791716a822431ee32b3a..4f727110cfd1b9e341c03dbb3754c680b998db12 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -126,13 +126,32 @@ function exitLiteralAutolink(token) {
+   this.exit(token)
+ }
+ 
++/**
++ * Patched (koimsurai): a lookbehind in a regex *literal* is a parse-time SyntaxError on
++ * Safari < 16.4, which takes the whole bundle chunk down with it. Build it at runtime and fall
++ * back to the same expression without the lookbehind; `findEmail` re-checks the previous
++ * character with `previous()`, so the fallback accepts the same emails.
++ *
++ * @returns {RegExp}
++ */
++function emailExpression() {
++  try {
++    return new RegExp(
++      '(?<=^|\\s|\\p{P}|\\p{S})([-.\\w+]+)@([-\\w]+(?:\\.[-\\w]+)+)',
++      'gu'
++    )
++  } catch {
++    return /([-.\w+]+)@([-\w]+(?:\.[-\w]+)+)/gu
++  }
++}
++
+ /** @type {FromMarkdownTransform} */
+ function transformGfmAutolinkLiterals(tree) {
+   findAndReplace(
+     tree,
+     [
+       [/(https?:\/\/|www(?=\.))([-.\w]+)([^ \t\r\n]*)/gi, findUrl],
+-      [/(?<=^|\s|\p{P}|\p{S})([-.\w+]+)@([-\w]+(?:\.[-\w]+)+)/gu, findEmail]
++      [emailExpression(), findEmail]
+     ],
+     {ignore: ['link', 'linkReference']}
+   )

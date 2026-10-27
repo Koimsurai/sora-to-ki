@@ -313,49 +313,57 @@ export default function StarfieldGpu({
     // ── 主執行緒 fallback（同一個 runner）──
     let disposed = false;
     let runnerHandle: StarfieldRunner | null = null;
-    void import('@/lib/starfieldGpu').then(async ({ createStarfieldRunner }) => {
-      try {
-        const {
-          runner,
-          backend: be,
-          timing,
-        } = await createStarfieldRunner({
-          canvas,
-          width: canvas.clientWidth,
-          height: canvas.clientHeight,
-          dpr: window.devicePixelRatio,
-          lite: liteRef.current,
-          onPerf: setPerf,
-          onDeviceLost: (message) => {
-            if (!disposed) recover(message);
-          },
-          onSatellites: publishSatellites,
-        });
-        if (disposed) {
-          runner.dispose();
-          return;
+    void import('@/lib/starfieldGpu')
+      .then(async ({ createStarfieldRunner }) => {
+        try {
+          const {
+            runner,
+            backend: be,
+            timing,
+          } = await createStarfieldRunner({
+            canvas,
+            width: canvas.clientWidth,
+            height: canvas.clientHeight,
+            dpr: window.devicePixelRatio,
+            lite: liteRef.current,
+            onPerf: setPerf,
+            onDeviceLost: (message) => {
+              if (!disposed) recover(message);
+            },
+            onSatellites: publishSatellites,
+          });
+          if (disposed) {
+            runner.dispose();
+            return;
+          }
+          runnerHandle = runner;
+          // runner 預設是跑的，而 init 是 async——這段期間發生的 visibility/fullscreen 變化
+          // 只會打到還是 null 的 runnerHandle 上、被靜默丟掉。補套一次當下的狀態，
+          // 否則「冷啟動時就進全螢幕」會讓背景在影片播放中自己跑起來（worker 路徑同理，
+          // 見 spaceGpuWorker 的 lastRunning）。
+          runner.setRunning(shouldRun());
+          controlRef.current = {
+            scroll: (y) => runner.setScroll(y),
+            saturn: (v, a) => runner.setSaturn(v, a),
+            glow: (g) => runner.setSatelliteGlow(g),
+            collapse: (index) => runner.collapseSaturnTo(index),
+            stars: (visible) => runner.setStars(visible),
+            pan: (x, y) => runner.setPan(x, y),
+          };
+          setBackend(`${be} · main`);
+          setInitInfo(describeInit(timing));
+        } catch (err) {
+          console.warn('[StarfieldGpu] 主執行緒初始化失敗:', err);
+          setFailed(true);
         }
-        runnerHandle = runner;
-        // runner 預設是跑的，而 init 是 async——這段期間發生的 visibility/fullscreen 變化
-        // 只會打到還是 null 的 runnerHandle 上、被靜默丟掉。補套一次當下的狀態，
-        // 否則「冷啟動時就進全螢幕」會讓背景在影片播放中自己跑起來（worker 路徑同理，
-        // 見 spaceGpuWorker 的 lastRunning）。
-        runner.setRunning(shouldRun());
-        controlRef.current = {
-          scroll: (y) => runner.setScroll(y),
-          saturn: (v, a) => runner.setSaturn(v, a),
-          glow: (g) => runner.setSatelliteGlow(g),
-          collapse: (index) => runner.collapseSaturnTo(index),
-          stars: (visible) => runner.setStars(visible),
-          pan: (x, y) => runner.setPan(x, y),
-        };
-        setBackend(`${be} · main`);
-        setInitInfo(describeInit(timing));
-      } catch (err) {
-        console.warn('[StarfieldGpu] 主執行緒初始化失敗:', err);
-        setFailed(true);
-      }
-    });
+      })
+      .catch((err: unknown) => {
+        // 這支 chunk 本身載不起來：走主執行緒這條的多半是沒有 OffscreenCanvas 的舊 iOS（16.4 以前），
+        // three 裡的 class static block 它解析不了（GlitchTip 上的「Unexpected token '{'」）。
+        // 收掉 3D，頁面留下 CSS 星空，不要變成沒人接的 promise rejection
+        console.warn('[StarfieldGpu] 3D 模組載入失敗:', err);
+        if (!disposed) setFailed(true);
+      });
     const onResize = () => runnerHandle?.setSize(canvas.clientWidth, canvas.clientHeight);
     const onVis = () => runnerHandle?.setRunning(shouldRun());
     window.addEventListener('resize', onResize);

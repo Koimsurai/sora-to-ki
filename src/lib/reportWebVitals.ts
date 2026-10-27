@@ -5,12 +5,14 @@
 // 聚合自看：GET /api/vitals/stats。
 //
 // 不送任何 PII：只有 metric 名/值/rating/pathname/是否行動裝置。
-import { onINP, onLCP, onFCP, onTTFB, type Metric } from 'web-vitals';
-// CLS 單獨從 attribution build 取：它多回一個 largestShiftTarget（那次最大位移元素的 CSS
-// 選擇器）。這是唯一能回答「到底是哪個元素在動」的東西——CLS 只在實地出現（同一頁在無節流
-// 的本機跑 Lighthouse 是 CLS 0），所以只能靠真實讀者的瀏覽器指認。
-// 其餘四個 metric 仍走精簡版，不必為它們付 attribution 的 bundle 成本。
-import { onCLS, type CLSMetricWithAttribution } from 'web-vitals/attribution';
+import { onINP, onFCP, onTTFB, type Metric } from 'web-vitals';
+// CLS 與 LCP 從 attribution build 取，這兩個的問題都只在實地出現，只能靠真實讀者的瀏覽器指認：
+//   - CLS 多回一個 largestShiftTarget（那次最大位移元素的 CSS 選擇器）。同一頁在無節流的本機跑
+//     Lighthouse 是 CLS 0
+//   - LCP 多回元素與四段時間（server 回應、資源開始載入前的等待、下載、下載完到畫出來）。
+//     2026-10 大陸讀者的手機 FCP 2.6 秒、LCP 5.6 秒，模擬網路量不出中間那 3 秒卡在哪
+// 其餘三個 metric 仍走精簡版，不必為它們付 attribution 的 bundle 成本。
+import { onCLS, onLCP, type CLSMetricWithAttribution, type LCPMetricWithAttribution } from 'web-vitals/attribution';
 
 import { isBotUserAgent } from './bot';
 
@@ -38,7 +40,19 @@ function trackShiftPath() {
   }
 }
 
-function send(m: Metric, attr?: { target?: string; loadState?: string; shiftPath?: string }) {
+/** LCP 的四段時間 → `ttfb/載入延遲/下載/繪製延遲`（毫秒整數，後端 migration 0027 的 lcp_phases） */
+export function lcpPhases(a: {
+  timeToFirstByte: number;
+  resourceLoadDelay: number;
+  resourceLoadDuration: number;
+  elementRenderDelay: number;
+}): string {
+  return [a.timeToFirstByte, a.resourceLoadDelay, a.resourceLoadDuration, a.elementRenderDelay]
+    .map((ms) => Math.max(0, Math.round(ms)))
+    .join('/');
+}
+
+function send(m: Metric, attr?: { target?: string; loadState?: string; shiftPath?: string; lcpPhases?: string }) {
   const path = window.location.pathname;
   // 後台不上報：/admin 有 auth、robots.txt 也 Disallow，不是讀者體驗的一部分；而編輯器
   // （大量 textarea + 即時預覽 + 非同步載入的清單）天生就會位移，混進來會蓋掉文章頁的真實
@@ -92,7 +106,9 @@ export function initWebVitals() {
     });
   });
   onINP(send);
-  onLCP(send);
+  onLCP((m: LCPMetricWithAttribution) => {
+    send(m, { target: m.attribution.target, lcpPhases: lcpPhases(m.attribution) });
+  });
   onFCP(send);
   onTTFB(send);
 }

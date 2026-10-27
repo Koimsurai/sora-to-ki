@@ -25,9 +25,6 @@ vi.mock('web-vitals', () => ({
   onINP: (f: (m: unknown) => void) => {
     cbs.inp = f;
   },
-  onLCP: (f: (m: unknown) => void) => {
-    cbs.lcp = f;
-  },
   onFCP: (f: (m: unknown) => void) => {
     cbs.fcp = f;
   },
@@ -38,6 +35,9 @@ vi.mock('web-vitals', () => ({
 vi.mock('web-vitals/attribution', () => ({
   onCLS: (f: (m: unknown) => void) => {
     cbs.cls = f;
+  },
+  onLCP: (f: (m: unknown) => void) => {
+    cbs.lcp = f;
   },
 }));
 vi.mock('./bot', () => ({ isBotUserAgent: () => isBot }));
@@ -103,6 +103,14 @@ const metric = (over: Record<string, unknown> = {}) => ({
   name: 'LCP',
   value: 1234.5,
   rating: 'good',
+  // LCP 走 attribution build，回呼會讀這個；其他 metric 不看它
+  attribution: {
+    target: 'main>h1',
+    timeToFirstByte: 400,
+    resourceLoadDelay: 0,
+    resourceLoadDuration: 0,
+    elementRenderDelay: 834.5,
+  },
   ...over,
 });
 
@@ -192,7 +200,17 @@ describe('送出去的內容', () => {
   // ⚠ 檔頭寫著「不送任何 PII：只有 metric 名/值/rating/pathname/是否行動裝置」。
   // 多送一個欄位不會有任何症狀，所以用白名單釘住——這是那句承諾唯一的守衛。
   it('欄位是白名單，不會夾帶任何多餘的東西', async () => {
-    const allowed = new Set(['metric', 'value', 'rating', 'path', 'isMobile', 'target', 'loadState', 'shiftPath']);
+    const allowed = new Set([
+      'metric',
+      'value',
+      'rating',
+      'path',
+      'isMobile',
+      'target',
+      'loadState',
+      'shiftPath',
+      'lcpPhases',
+    ]);
     const init = await load();
     init();
     cbs.lcp?.(metric());
@@ -283,6 +301,39 @@ describe('CLS 的診斷欄位', () => {
     init();
     cbs.cls?.({ ...metric({ name: 'CLS' }), attribution: {} });
     expect('shiftPath' in lastBody()).toBe(false);
+  });
+});
+
+describe('LCP 的診斷欄位', () => {
+  it('帶上 LCP 元素與四段時間（毫秒取整、斜線隔開，後端只收這個格式）', async () => {
+    (await load())();
+    cbs.lcp?.(
+      metric({
+        attribution: {
+          target: 'section.hero>h1',
+          timeToFirstByte: 1993.4,
+          resourceLoadDelay: 120.6,
+          resourceLoadDuration: 300,
+          elementRenderDelay: 3100.2,
+        },
+      }),
+    );
+    expect(lastBody().target).toBe('section.hero>h1');
+    expect(lastBody().lcpPhases).toBe('1993/121/300/3100');
+  });
+
+  it('負數夾成 0：後端看到負號會整欄當沒帶', async () => {
+    const { lcpPhases } = await import('./reportWebVitals');
+    expect(
+      lcpPhases({ timeToFirstByte: -0.2, resourceLoadDelay: 0, resourceLoadDuration: 0, elementRenderDelay: 10 }),
+    ).toBe('0/0/0/10');
+  });
+
+  it('其他 metric 不帶 lcpPhases', async () => {
+    (await load())();
+    cbs.fcp?.(metric({ name: 'FCP' }));
+    expect(lastBody().lcpPhases).toBeUndefined();
+    expect(lastBody().target).toBeUndefined();
   });
 });
 

@@ -636,6 +636,39 @@ async fn vitals_beacon_stores_cls_attribution() {
     assert_eq!(rows[2].3, None);
 }
 
+/// LCP 的元素存進 target、四段時間存進 lcp_phases；格式不對的 lcpPhases 當沒帶（NULL），
+/// 但那筆 LCP 本身照收——歸因壞掉不該連數字一起丟
+#[tokio::test]
+async fn vitals_beacon_stores_lcp_attribution() {
+    let (app, pool) = test_app().await;
+    for (path, phases) in [
+        ("/a", "1993/120/300/3100"),
+        ("/b", "1/2/3"),
+        ("/c", "1/2/3/-4"),
+        ("/d", "1/2/3/999999"),
+        ("/e", "1/2/x/4"),
+        ("/f", "1/2/3/4/5"),
+    ] {
+        let b = json!({
+            "metric": "LCP", "value": 5600.0, "rating": "poor", "path": path,
+            "target": "main>section.hero>h1", "lcpPhases": phases,
+        });
+        let (status, _) = post_json(&app, "/api/vitals", b).await;
+        assert_eq!(status, StatusCode::NO_CONTENT);
+    }
+    let rows: Vec<(String, Option<String>, Option<String>)> =
+        sqlx::query_as("SELECT path, target, lcp_phases FROM web_vitals ORDER BY path")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+    assert_eq!(rows.len(), 6, "lcpPhases 壞掉的那幾筆 LCP 也要照收");
+    assert_eq!(rows[0].1.as_deref(), Some("main>section.hero>h1"));
+    assert_eq!(rows[0].2.as_deref(), Some("1993/120/300/3100"));
+    for r in &rows[1..] {
+        assert_eq!(r.2, None, "{} 的 lcpPhases 格式不對，應該存 NULL", r.0);
+    }
+}
+
 /// 非法 beacon 一律不進資料表。
 ///
 /// 補這個測試是 cargo-mutants 指出來的：原本 vitals.rs 覆蓋率 98.67%，但把 `report_vital`

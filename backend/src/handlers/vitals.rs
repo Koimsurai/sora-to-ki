@@ -43,8 +43,8 @@ pub struct VitalBeacon {
     pub path: String,
     #[serde(default, rename = "isMobile")]
     pub is_mobile: bool,
-    /// CLS 歸因：那次最大位移元素的 CSS 選擇器（web-vitals 的 largestShiftTarget）。
-    /// 只有 CLS 會帶，其餘 metric 為 None。
+    /// 歸因的元素（CSS 選擇器）：CLS 是最大那次位移的元素（largestShiftTarget），
+    /// LCP 是最大內容繪製的元素。其餘 metric 為 None。
     #[serde(default)]
     pub target: Option<String>,
     /// 位移發生時頁面處於哪個載入階段（loading / dom-interactive / complete…）。
@@ -55,6 +55,23 @@ pub struct VitalBeacon {
     /// 離開時的位置——兩者不同時，該修的是這一欄指的頁面。
     #[serde(default, rename = "shiftPath")]
     pub shift_path: Option<String>,
+    /// LCP 花在哪一段：`ttfb/載入延遲/下載/繪製延遲`（毫秒整數，見 migration 0027）。只有 LCP 會帶
+    #[serde(default, rename = "lcpPhases")]
+    pub lcp_phases: Option<String>,
+}
+
+/// `lcpPhases` 只收四個 0 到 120 秒的整數，用斜線隔開；其他一律當沒帶（存 NULL）
+fn lcp_phases(s: Option<String>) -> Option<String> {
+    let s = s?;
+    let parts: Vec<&str> = s.split('/').collect();
+    let ok = parts.len() == 4
+        && parts.iter().all(|p| {
+            !p.is_empty()
+                && p.len() <= 6
+                && p.bytes().all(|b| b.is_ascii_digit())
+                && p.parse::<u32>().is_ok_and(|n| n <= 120_000)
+        });
+    ok.then_some(s)
 }
 
 /// 歸因欄位的長度上限。選擇器可以很長（html>body>div#root>…），但超過這個長度就不是
@@ -92,8 +109,8 @@ pub async fn report_vital(
         let path = b.path.split('?').next().unwrap_or("/");
         sqlx::query(
             "INSERT INTO web_vitals \
-               (metric, value, rating, path, is_mobile, target, load_state, shift_path) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+               (metric, value, rating, path, is_mobile, target, load_state, shift_path, lcp_phases) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(&b.metric)
         .bind(b.value)
@@ -104,6 +121,7 @@ pub async fn report_vital(
         .bind(clamp_attr(b.load_state))
         // shift_path 也去掉 query（同 path 的理由：避免存到 token 類參數）
         .bind(clamp_attr(b.shift_path.map(|s| s.split('?').next().unwrap_or("/").to_string())))
+        .bind(lcp_phases(b.lcp_phases))
         .execute(&state.pool)
         .await?;
     }
