@@ -265,9 +265,14 @@ export function seed(dbPath) {
     `INSERT INTO posts (id, title, content, excerpt, category, status, author, created_at, format, allow_comments)
      VALUES (6, ?, ?, ?, '技術', 'published', 'Koimsurai', ?, 'mdx', 1)`,
     'MDX 區塊測試文',
+    // 最後兩段：行內的 `flowchart LR` 不能被當成圖（CodeBlock 曾經用一個永遠是 undefined 的 inline
+    // 判斷，行內程式碼開頭是圖表關鍵字就被拿去畫，段落中間冒出解析失敗）；沒標語言的圍籬照樣靠關鍵字認成圖。
+    // 放在最後，前面元素的 DOM 位置不變（computed-style 的基準照路徑比對）
     '# MDX\n\n<Poll id="demo" question="你偏好哪一種渲染?" ' +
       'options={[{key:"a",label:"單次 SSR"},{key:"b",label:"CSR"}]} />\n\n' +
-      '一段普通內文。\n',
+      '一段普通內文。\n\n' +
+      '一樣是 `flowchart LR`，這裡只是行內程式碼。\n\n' +
+      '```\nflowchart LR\n  A --> B\n```\n',
     'MDX 區塊',
     T(11),
   );
