@@ -24,7 +24,6 @@ export const LIST_DEFAULT_FIELDS = [
 ] as const;
 
 export const LOCALES = ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'] as const;
-export type Locale = (typeof LOCALES)[number];
 
 /** 內文欄位（會拿去驗 MDX 的那些） */
 export const CONTENT_FIELDS = ['content', 'content_en', 'content_ja', 'content_ko', 'content_zh_cn'] as const;
@@ -42,7 +41,7 @@ export const sourceOf = (post: Post): string =>
  * 某語系的 title/content/excerpt 存在哪一欄。來源語言存在不帶後綴的那三欄，其餘是 `_en`、`_zh_cn`…。
  * 不是來源的 zh-TW 沒有欄位（回 null）。
  */
-export function suffixFor(locale: string, source: string): string | null {
+function suffixFor(locale: string, source: string): string | null {
   if (locale === source) return '';
   if (locale === 'zh-TW') return null;
   return `_${locale.toLowerCase().replace('-', '_')}`;
