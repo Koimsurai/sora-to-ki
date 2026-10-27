@@ -57,27 +57,33 @@ body:has(.image-lightbox-overlay) .snav {
   visibility: hidden;
 }
 
-/* 關閉：細線圓圈，裡面兩條細線交叉（CSS 畫，不靠圖示字型） */
+/* 關閉：一個四角框（跟文章裡的區塊同一個框），裡面兩條細線交叉；滑過時叉變琥珀、框角往外撐一點。
+   框角是 --corner-frame 那組漸層，所以畫在 ::before 上才能單獨放大，叉畫在 span 的前後偽元素 */
 .image-lightbox-close {
   position: fixed;
   top: 1.5rem;
   right: 1.5rem;
   z-index: 2;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   padding: 0;
-  border: 1px solid var(--paper-3);
-  border-radius: var(--r-round);
+  border: 0;
   background: none;
   color: var(--paper-2);
   cursor: pointer;
-  transition:
-    border-color var(--dur-200) ease,
-    color var(--dur-200) ease;
+  transition: color var(--dur-200) ease;
 }
 
-.image-lightbox-close::before,
-.image-lightbox-close::after {
+.image-lightbox-close::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--corner-frame);
+  transition: inset var(--dur-200) var(--easing-out);
+}
+
+.image-lightbox-close span::before,
+.image-lightbox-close span::after {
   content: "";
   position: absolute;
   top: 50%;
@@ -87,19 +93,25 @@ body:has(.image-lightbox-overlay) .snav {
   background: currentColor;
 }
 
-.image-lightbox-close::before {
+.image-lightbox-close span::before {
   transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.image-lightbox-close::after {
+.image-lightbox-close span::after {
   transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .image-lightbox-close:hover,
 .image-lightbox-close:focus-visible {
-  border-color: var(--paper);
-  color: var(--paper);
+  background: none;
+  box-shadow: none;
+  color: var(--amber);
   outline: none;
+}
+
+.image-lightbox-close:hover::before,
+.image-lightbox-close:focus-visible::before {
+  inset: -4px;
 }
 
 /* 收回去的時候：背景、圖說、關閉鈕一起淡掉，只剩圖飛回原位 */

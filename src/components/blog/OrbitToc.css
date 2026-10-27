@@ -11,7 +11,12 @@
   color: var(--paper);
 }
 
-.orbit-toc.is-off {
+/* 寬螢幕：清單容器不存在，目錄頭、章節名、頁尾各自擺在軌道旁（位置由畫布寫） */
+.orbit-toc-panel {
+  display: contents;
+}
+
+.orbit-toc-grip {
   display: none;
 }
 
@@ -169,4 +174,99 @@ html[data-pt] .orbit-toc-list {
 .orbit-toc.is-leaving .orbit-toc-list {
   opacity: 0;
   transition: opacity var(--dur-200) ease;
+}
+
+/* ── 窄螢幕：軌道貼在右邊緣，軌道本身就是按鈕；章節名、閱讀進度、回到頂部收進底部的清單 ── */
+.orbit-toc.is-narrow .orbit-toc-grip {
+  /* top / height 由畫布照軌道的位置寫 */
+  position: absolute;
+  right: 0;
+  display: block;
+  width: 28px;
+  pointer-events: auto;
+  /* 只認點，不搶捲動 */
+  touch-action: pan-y;
+}
+
+.orbit-toc.is-narrow .orbit-toc-panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  gap: var(--space-3);
+  max-height: 62vh;
+  padding: var(--space-4) var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule);
+  background: rgba(var(--ground-rgb), 0.96);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 收起時一定要 visibility: hidden，只靠透明不夠：章節按鈕自己是 pointer-events: auto，
+     而清單本身可以捲——手指在畫面下半部滑，捲到的是這張看不見的清單，頁面完全捲不動 */
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--dur-300) ease,
+    transform var(--dur-300) var(--easing-out),
+    visibility 0s linear var(--dur-300);
+}
+
+.orbit-toc.is-narrow.is-sheet .orbit-toc-panel {
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity var(--dur-300) ease,
+    transform var(--dur-300) var(--easing-out);
+}
+
+/* 清單裡的章節是一般的一列一列，不是擺在刻度旁的浮字 */
+.orbit-toc.is-narrow .orbit-toc-list {
+  display: grid;
+}
+
+.orbit-toc.is-narrow .orbit-toc-list li,
+.orbit-toc.is-narrow.is-rest .orbit-toc-list li,
+.orbit-toc.is-narrow.is-quiet .orbit-toc-list li:not(.is-on, .is-ping) {
+  position: static;
+  opacity: 1;
+}
+
+.orbit-toc.is-narrow .orbit-toc-list button {
+  width: 100%;
+  padding: var(--space-2-5) 0;
+  border-bottom: 1px dotted var(--rule);
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+.orbit-toc.is-narrow .orbit-toc-list .is-deep button {
+  padding-left: var(--space-4);
+  font-size: var(--fs-13);
+}
+
+.orbit-toc.is-narrow .orbit-toc-list .is-on button {
+  color: var(--amber);
+}
+
+.orbit-toc.is-narrow .orbit-toc-t {
+  white-space: normal;
+}
+
+.orbit-toc.is-narrow .orbit-toc-min {
+  margin-left: auto;
+  opacity: 1;
+}
+
+.orbit-toc.is-narrow .orbit-toc-ft {
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-toc.is-narrow .orbit-toc-panel {
+    transition: none;
+  }
 }

@@ -187,7 +187,7 @@ function Notes() {
       );
       const i = indexOf.get(id);
       const geom = orbitGeometry(w, h);
-      if (i !== undefined && geom) {
+      if (i !== undefined) {
         setOrbitHandoff('article', id);
         const at = performance.now();
         zoomRef.current = { i, at };
@@ -352,7 +352,7 @@ function Notes() {
                     onPointerEnter={() => (hoveredRef.current = i)}
                     onPointerLeave={() => (hoveredRef.current = -1)}
                   >
-                    <time dateTime={p.created_at} suppressHydrationWarning>
+                    <time dateTime={p.created_at} className="nt-shadow" suppressHydrationWarning>
                       {dotDate(d, true)}
                     </time>
                     <LocaleLink
@@ -367,7 +367,7 @@ function Notes() {
                       <b>{title.main}</b>
                       {title.sub && <span className="nt-sub">{title.sub}</span>}
                     </LocaleLink>
-                    <span className="nt-meta">
+                    <span className="nt-meta nt-shadow">
                       {[p.category ? categoryLabel(p.category) : '', minutes(p)].filter(Boolean).join(' · ')}
                     </span>
                   </li>

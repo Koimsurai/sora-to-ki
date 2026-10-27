@@ -7,8 +7,17 @@
  * 控制列：播放/暫停 · 進度條（可點可拖）· 時間 · 音量 · 下載 · 全螢幕。
  * 播放中滑鼠離開會自動淡出，hover / 暫停時浮出。
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { FaPlay, FaPause, FaVolumeHigh, FaVolumeXmark, FaDownload, FaExpand, FaCompress } from 'react-icons/fa6';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import {
+  FaPlay,
+  FaPause,
+  FaVolumeHigh,
+  FaVolumeLow,
+  FaVolumeXmark,
+  FaDownload,
+  FaExpand,
+  FaCompress,
+} from 'react-icons/fa6';
 import './VideoPlayer.css';
 
 const fmt = (s: number) => {
@@ -35,6 +44,8 @@ export default function VideoPlayer({
   const wrapRef = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
+  /** 0–1；靜音時保留原本的音量，取消靜音就回到那裡 */
+  const [volume, setVolume] = useState(1);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -188,7 +199,10 @@ export default function VideoPlayer({
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-          onVolumeChange={(e) => setMuted(e.currentTarget.muted)}
+          onVolumeChange={(e) => {
+            setMuted(e.currentTarget.muted);
+            setVolume(e.currentTarget.volume);
+          }}
         />
 
         {/* 未播放時的大播放鍵（播放後隱藏） */}
@@ -252,17 +266,47 @@ export default function VideoPlayer({
             {fmt(time)} / {fmt(duration)}
           </span>
 
-          <button
-            type="button"
-            className="vp-btn"
-            onClick={() => {
-              const v = videoRef.current;
-              if (v) v.muted = !v.muted;
-            }}
-            aria-label={muted ? '取消靜音' : '靜音'}
-          >
-            {muted ? <FaVolumeXmark aria-hidden /> : <FaVolumeHigh aria-hidden />}
-          </button>
+          {/* 音量：靜音鈕旁邊一條細滑桿，滑過（或鍵盤停在）這一組時才展開。
+              手機不顯示滑桿：iOS 不讓網頁改影片音量（只有實體按鍵），放上去也拉不動 */}
+          <div className="vp-vol">
+            <button
+              type="button"
+              className="vp-btn"
+              onClick={() => {
+                const v = videoRef.current;
+                if (!v) return;
+                v.muted = !v.muted;
+                // 拉到 0 之後再按取消靜音：給一個聽得到的音量，不然按了等於沒按
+                if (!v.muted && v.volume === 0) v.volume = 0.5;
+              }}
+              aria-label={muted ? '取消靜音' : '靜音'}
+            >
+              {muted || volume === 0 ? (
+                <FaVolumeXmark aria-hidden />
+              ) : volume < 0.5 ? (
+                <FaVolumeLow aria-hidden />
+              ) : (
+                <FaVolumeHigh aria-hidden />
+              )}
+            </button>
+            <input
+              type="range"
+              className="vp-vol-range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={muted ? 0 : volume}
+              aria-label="音量"
+              onChange={(e) => {
+                const v = videoRef.current;
+                if (!v) return;
+                const next = Number(e.currentTarget.value);
+                v.volume = next;
+                v.muted = next === 0;
+              }}
+              style={{ '--vol': `${(muted ? 0 : volume) * 100}%` } as CSSProperties}
+            />
+          </div>
 
           <a className="vp-btn" href={src} download aria-label="下載影片">
             <FaDownload aria-hidden />

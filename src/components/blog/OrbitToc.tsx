@@ -89,6 +89,9 @@ export default function OrbitToc({
   const hdRef = useRef<HTMLDivElement>(null);
   const ftRef = useRef<HTMLDivElement>(null);
   const pctRef = useRef<HTMLElement>(null);
+  /** 窄螢幕：軌道上的觸控區（點了打開底部的章節清單） */
+  const gripRef = useRef<HTMLButtonElement>(null);
+  const [sheet, setSheet] = useState(false);
   const leftRef = useRef<HTMLSpanElement>(null);
 
   /** 軌道從什麼時候開始長；-1 是還沒（轉場還藏著這一頁） */
@@ -119,15 +122,11 @@ export default function OrbitToc({
   };
 
   usePageTransition({
-    anchor: () => {
-      const g = orbitGeometry(window.innerWidth, window.innerHeight);
-      return g ? orbitPoint(g, 0) : null;
-    },
+    anchor: () => orbitPoint(orbitGeometry(window.innerWidth, window.innerHeight), 0),
     // 從手記推近過來的：點已經跟著那顆星到了軌道頂端，鏡頭不用再動
-    arrive: () => (fullRef.current && orbitGeometry(window.innerWidth, window.innerHeight) ? { still: true } : null),
+    arrive: () => (fullRef.current ? { still: true } : null),
     leave: ({ to }) => {
       const g = orbitGeometry(window.innerWidth, window.innerHeight);
-      if (!g) return null;
       rootRef.current?.classList.add('is-leaving');
       rootRef.current?.closest('.ar-page')?.classList.add('is-leaving');
       const at = performance.now();
@@ -176,10 +175,9 @@ export default function OrbitToc({
   }, []);
 
   // 不是從手記、也不是切語系換過來的：筆尖畫軌道之前內文先藏著（一開始就藏，不然點落地那一下會先閃出整篇）。
-  // 畫的過程由 frame 推 --scan；量不到軌道（窄螢幕）就不藏，保險起見幾秒後一定拿掉
+  // 畫的過程由 frame 推 --scan；保險起見幾秒後一定拿掉
   useEffect(() => {
     if (hand !== null || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (!orbitGeometry(window.innerWidth, window.innerHeight)) return;
     const root = rootRef.current;
     const col = root ? colOf(root) : null;
     if (!col) return;
@@ -228,8 +226,16 @@ export default function OrbitToc({
         els[i] ??= document.getElementById(h.id);
       });
       g = orbitGeometry(window.innerWidth, window.innerHeight);
-      root.classList.toggle('is-off', !g);
-      if (!g) return;
+      // 窄螢幕：軌道貼在右邊緣，章節名不放在刻度旁，收進底部的清單（點軌道打開）
+      root.classList.toggle('is-narrow', g.narrow);
+      if (g.narrow) {
+        // 從寬螢幕縮過來時，章節名身上還留著擺在刻度旁的位置
+        itemsRef.current.forEach((li) => {
+          if (li) li.style.cssText = '';
+        });
+        const grip = gripRef.current;
+        if (grip) Object.assign(grip.style, { top: `${g.topY}px`, height: `${g.H}px` });
+      }
       // 畫布只在視窗大小變了才重設（重設會清空畫面）；內文長高、上面多展開一塊這類只要重量位置
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.round(window.innerWidth * dpr);
@@ -334,9 +340,10 @@ export default function OrbitToc({
         return;
       }
 
-      // 其他文章的軌道：頁首時看得到，開始讀之後退到幾乎看不見
+      // 其他文章的軌道：頁首時看得到，開始讀之後退到幾乎看不見。
+      // 窄螢幕不畫：它們在這道軌道的內側，貼邊時就壓在內文上
       const fade = 1 - clamp(window.scrollY / 500) * 0.65;
-      for (const o of OTHERS) {
+      for (const o of geom.narrow ? [] : OTHERS) {
         const u1 = Math.min(1.25, o.u0 + o.len * grow);
         ctx.strokeStyle = `rgba(${INK}, ${0.13 * o.a * fade})`;
         ctx.beginPath();
@@ -405,7 +412,7 @@ export default function OrbitToc({
         ctx.stroke();
         ctx.lineWidth = 1;
         const q = at(u);
-        if (li) {
+        if (li && !geom.narrow) {
           li.style.transform = `translate(${q.x + (deep[i] ? 20 : 14)}px, ${q.y - 10}px)`;
           li.style.maxWidth = `${Math.max(60, W - q.x - 40)}px`;
         }
@@ -467,8 +474,11 @@ export default function OrbitToc({
 
       const top = at(0);
       const bot = at(1);
-      if (hdRef.current) hdRef.current.style.transform = `translate(${top.x - 4}px, ${top.y - 34}px)`;
-      if (ftRef.current) ftRef.current.style.transform = `translate(${bot.x - 4}px, ${bot.y + 22}px)`;
+      // 窄螢幕：這兩行在底部的清單裡，不跟著軌道擺
+      if (hdRef.current)
+        hdRef.current.style.transform = geom.narrow ? '' : `translate(${top.x - 4}px, ${top.y - 34}px)`;
+      if (ftRef.current)
+        ftRef.current.style.transform = geom.narrow ? '' : `translate(${bot.x - 4}px, ${bot.y + 22}px)`;
       root.classList.toggle('is-rest', window.scrollY < 40);
       if (cur !== on) {
         on = cur;
@@ -517,39 +527,79 @@ export default function OrbitToc({
       top: el.getBoundingClientRect().top + window.scrollY - 96,
       behavior: reduce ? 'auto' : 'smooth',
     });
+    setSheet(false);
   };
+
+  // 底部清單開著時：點清單以外的地方、按 Esc 收起來。
+  // 開關走 classList 不走 className：畫布每一幀也在根元素上切 is-narrow、is-rest 這些，重新渲染會把它們洗掉
+  useEffect(() => {
+    rootRef.current?.classList.toggle('is-sheet', sheet);
+    if (!sheet) return;
+    const root = rootRef.current;
+    const onDown = (e: PointerEvent) => {
+      if (!root?.querySelector('.orbit-toc-panel')?.contains(e.target as Node) && e.target !== gripRef.current)
+        setSheet(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSheet(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [sheet]);
 
   return (
     <div className="orbit-toc" ref={rootRef}>
       <canvas className="orbit-toc-cv" ref={canvasRef} aria-hidden="true" />
-      <div className="orbit-toc-hd" ref={hdRef}>
-        <span>{t('blog.toc')}</span>
-        <b ref={pctRef}>0%</b>
-        <span ref={leftRef} />
-      </div>
-      <nav aria-label={t('blog.toc')}>
-        <ol className="orbit-toc-list">
-          {headings.map((h, i) => (
-            <li
-              key={h.id}
-              className={h.level >= 3 ? 'is-deep' : undefined}
-              ref={(el) => {
-                itemsRef.current[i] = el;
-              }}
-            >
-              <button type="button" data-heading-id={h.id} onClick={() => go(h.id)} title={h.text}>
-                <span className="orbit-toc-t">{h.text}</span>
-                <span className="orbit-toc-min" />
-              </button>
-            </li>
-          ))}
-        </ol>
-      </nav>
-      <div className="orbit-toc-ft" ref={ftRef}>
-        <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          ↑ {t('blog.backToArticleTop')}
-        </button>
-        {footer}
+      {/* 窄螢幕才有：軌道本身就是按鈕，點了從底部拉出章節清單 */}
+      <button
+        type="button"
+        className="orbit-toc-grip"
+        ref={gripRef}
+        aria-label={t('blog.toc')}
+        aria-expanded={sheet}
+        onClick={() => setSheet((v) => !v)}
+      />
+      {/* 寬螢幕這一層不存在（display: contents），三樣東西各自擺在軌道旁；窄螢幕它是底部的清單 */}
+      <div className="orbit-toc-panel">
+        <div className="orbit-toc-hd" ref={hdRef}>
+          <span>{t('blog.toc')}</span>
+          <b ref={pctRef}>0%</b>
+          <span ref={leftRef} />
+        </div>
+        <nav aria-label={t('blog.toc')}>
+          <ol className="orbit-toc-list">
+            {headings.map((h, i) => (
+              <li
+                key={h.id}
+                className={h.level >= 3 ? 'is-deep' : undefined}
+                ref={(el) => {
+                  itemsRef.current[i] = el;
+                }}
+              >
+                <button type="button" data-heading-id={h.id} onClick={() => go(h.id)} title={h.text}>
+                  <span className="orbit-toc-t">{h.text}</span>
+                  <span className="orbit-toc-min" />
+                </button>
+              </li>
+            ))}
+          </ol>
+        </nav>
+        <div className="orbit-toc-ft" ref={ftRef}>
+          <button
+            type="button"
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              setSheet(false);
+            }}
+          >
+            ↑ {t('blog.backToArticleTop')}
+          </button>
+          {footer}
+        </div>
       </div>
     </div>
   );

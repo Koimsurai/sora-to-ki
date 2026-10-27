@@ -108,6 +108,13 @@ export function zoomOf(arc: Arc, g: OrbitGeom, e: number) {
   const S = g.RB / arc.r;
   const scale = Math.exp(Math.log(S) * e);
   const rot = (g.aTop - arc.a1) * e;
+  if (g.narrow) {
+    // 窄螢幕的軌道半徑大很多（要放大四、五十倍）：以天極為支點的話，那道星軌在中段會整個甩出畫面。
+    // 改以那顆星為支點：星沿直線移到軌道頂端，星軌一邊放大一邊轉正，全程都在畫面上。終點跟上面一樣
+    const head = arcPoint(arc, arc.a1);
+    const top = { x: g.cx + Math.cos(g.aTop) * g.RB, y: g.cy + Math.sin(g.aTop) * g.RB };
+    return { px: head.x, py: head.y, tx: head.x + (top.x - head.x) * e, ty: head.y + (top.y - head.y) * e, rot, scale };
+  }
   return { px: arc.cx, py: arc.cy, tx: arc.cx + (g.cx - arc.cx) * e, ty: arc.cy + (g.cy - arc.cy) * e, rot, scale };
 }
 

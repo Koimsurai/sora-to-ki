@@ -443,7 +443,9 @@ function ImageLightbox({ src, alt, origin, naturalWidth, onClose }: ImageLightbo
           style={{ backgroundImage: origin.current ? `url(${origin.current.currentSrc})` : undefined }}
         />
         {alt && <p className="image-lightbox-cap">{alt}</p>}
-        <button type="button" className="image-lightbox-close" onClick={handleClose} aria-label={t('common.close')} />
+        <button type="button" className="image-lightbox-close" onClick={handleClose} aria-label={t('common.close')}>
+          <span aria-hidden />
+        </button>
       </div>
     </Modal>
   );

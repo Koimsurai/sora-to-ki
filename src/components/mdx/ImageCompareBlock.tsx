@@ -26,6 +26,14 @@ export default function ImageCompareBlock({
       <div className="mdx-imgcompare-frame">
         <ReactCompareSlider
           className="mdx-imgcompare-slider"
+          // 站上的語彙：分隔是一條點線，把手是琥珀點（讀者）外面一圈細線，不用套件預設的白線＋箭頭圓鈕
+          handle={
+            <div className="mdx-imgcompare-handle" aria-hidden>
+              <i className="mdx-imgcompare-chev mdx-imgcompare-chev--l" />
+              <span />
+              <i className="mdx-imgcompare-chev mdx-imgcompare-chev--r" />
+            </div>
+          }
           itemOne={<ReactCompareSliderImage src={before} alt={alt ? `${alt}（${beforeLabel}）` : beforeLabel} />}
           itemTwo={<ReactCompareSliderImage src={after} alt={alt ? `${alt}（${afterLabel}）` : afterLabel} />}
         />

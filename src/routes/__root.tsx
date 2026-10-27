@@ -85,7 +85,9 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const locale = localeFromPathname(pathname);
   return (
-    <html lang={locale}>
+    // suppressHydrationWarning：head 裡那段開場腳本在 React 接手前就在 <html> 掛上 data-boot 與 --boot-p，
+    // 這是刻意的（paint 之前就要藏住頁面），不是不一致。只壓 <html> 這一層的屬性，子孫照常檢查
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <HeadContent />
         {/* WebMCP origin trial。沒有 token，navigator.modelContext 不存在，Lighthouse 的
@@ -177,7 +179,8 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             對應的 nginx 在 /etc/nginx/sites-available/koimsurai：
             location ^~ /s/js/ 與 location = /s/event。
             SPA 換頁不必額外處理：腳本自己 patch 了 history.pushState 並監聽 popstate。 */}
-        {import.meta.env.VITE_PLAUSIBLE_SCRIPT ? (
+        {/* 只在正式建置輸出：dev 沒有 nginx 轉發 /s/js/，那支腳本一定 404（.env 裡有設，是給 docker build 用的） */}
+        {import.meta.env.PROD && import.meta.env.VITE_PLAUSIBLE_SCRIPT ? (
           <>
             <script async src={`/s/js/${import.meta.env.VITE_PLAUSIBLE_SCRIPT}`} />
             <script

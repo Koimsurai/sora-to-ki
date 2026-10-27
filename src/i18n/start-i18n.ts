@@ -97,17 +97,19 @@ export function localeUrl(locale: Locale, basePath = ''): string {
 
 /**
  * canonical + hreflang alternates(含 x-default = 預設語言),給路由 head() 用。
+ * 屬性名寫 hrefLang（React 的寫法）：head() 的 links 是 React 渲染的，寫成 hreflang 會被當成未知屬性報錯，
+ * 輸出到 HTML 時一樣是 hreflang
  * locales 預設全 5 語(UI 頁都有翻譯);blog 之後傳該篇的 available_locales,只連真的有的語言。
  */
 export function buildAlternateLinks(
   basePath: string,
   currentLocale: Locale,
   locales: readonly Locale[] = SUPPORTED_LOCALES,
-): { rel: string; href: string; hreflang?: string }[] {
+): { rel: string; href: string; hrefLang?: string }[] {
   return [
     { rel: 'canonical', href: localeUrl(currentLocale, basePath) },
-    ...locales.map((loc) => ({ rel: 'alternate', hreflang: loc, href: localeUrl(loc, basePath) })),
-    { rel: 'alternate', hreflang: 'x-default', href: localeUrl(DEFAULT_LOCALE, basePath) },
+    ...locales.map((loc) => ({ rel: 'alternate', hrefLang: loc, href: localeUrl(loc, basePath) })),
+    { rel: 'alternate', hrefLang: 'x-default', href: localeUrl(DEFAULT_LOCALE, basePath) },
   ];
 }
 

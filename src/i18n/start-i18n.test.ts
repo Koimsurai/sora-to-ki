@@ -71,12 +71,12 @@ describe('localeUrl / buildAlternateLinks', () => {
     expect(links[0]).toEqual({ rel: 'canonical', href: 'https://koimsurai.com/en/blog/39' });
     expect(links).toContainEqual({
       rel: 'alternate',
-      hreflang: 'zh-TW',
+      hrefLang: 'zh-TW',
       href: 'https://koimsurai.com/blog/39',
     });
     expect(links).toContainEqual({
       rel: 'alternate',
-      hreflang: 'x-default',
+      hrefLang: 'x-default',
       href: 'https://koimsurai.com/blog/39',
     });
     // 只列文章實際存在的語言（+canonical +x-default）

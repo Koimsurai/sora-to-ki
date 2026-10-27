@@ -141,19 +141,33 @@ function devApiProxy(): Plugin {
           })
           .catch(next);
       });
-      // 相簿的圖：正式環境是 nginx 直接從這個目錄給（location /nas-images/），dev 照做一份唯讀的
-      const gallery = path.resolve(process.env.NAS_GALLERY_DIR ?? '/mnt/hdd16tb_01/nas-storage/gallery');
-      server.middlewares.use('/nas-images', (req, res, next) => {
-        const file = path.resolve(gallery, `.${decodeURIComponent((req.url ?? '').split('?')[0])}`);
-        if (!file.startsWith(`${gallery}${path.sep}`) || !fs.existsSync(file)) {
-          next();
-          return;
-        }
-        const ext = path.extname(file).toLowerCase();
-        const type = { '.webp': 'image/webp', '.jpeg': 'image/jpeg', '.jpg': 'image/jpeg', '.png': 'image/png' }[ext];
-        if (type) res.setHeader('content-type', type);
-        fs.createReadStream(file).pipe(res);
-      });
+      // 相簿的圖與文章上傳的圖：正式環境是 nginx 直接從這兩個目錄給（location /nas-images/、/uploads/），
+      // dev 照做一份唯讀的。少了 /uploads 的話，文章裡的圖（前後比對、內文圖片）在 dev 上全是破圖
+      const types: Record<string, string> = {
+        '.webp': 'image/webp',
+        '.jpeg': 'image/jpeg',
+        '.jpg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+      };
+      const serveDir = (mount: string, dir: string) => {
+        const root = path.resolve(dir);
+        server.middlewares.use(mount, (req, res, next) => {
+          const file = path.resolve(root, `.${decodeURIComponent((req.url ?? '').split('?')[0])}`);
+          if (!file.startsWith(`${root}${path.sep}`) || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+            next();
+            return;
+          }
+          const type = types[path.extname(file).toLowerCase()];
+          if (type) res.setHeader('content-type', type);
+          fs.createReadStream(file).pipe(res);
+        });
+      };
+      serveDir('/nas-images', process.env.NAS_GALLERY_DIR ?? '/mnt/hdd16tb_01/nas-storage/gallery');
+      serveDir('/uploads', process.env.UPLOADS_DIR ?? '/mnt/hdd16tb_01/Blog/uploads');
     },
   };
 }
