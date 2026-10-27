@@ -1,6 +1,7 @@
 // 航行日誌的畫布：從地表升空。仰角看一段點畫的地球邊緣，火箭從發射台離地，
 // 沿著一個垂直於地面的平面爬升：往遠方是時間（從站點誕生到今天），離地高度是累積的 GitHub 貢獻。
 // 改版是軌跡上的節點；每天的貢獻是地上沿著地面軌跡排開的燈（一天一盞、一週七排），近大遠小。
+// 窄螢幕（compact）改成一週一盞排成一列，亮度是那一週的提交數，並畫出手指滑到的那一天（scrub）。
 // 火箭的角度照重力轉向：離地時垂直，之後慢慢往下壓，平滑地變，不跟著每天的資料抖。
 // 地表照真實的地理畫：發射台在台灣，往右是東、往遠方是北；陸地用首頁土星那種刻線畫，看得出台灣、福建沿海、九州與琉球。
 // 這裡只畫點、線與插圖，字（里程碑的名字、遙測讀數、提示）是疊在上面的 DOM。
@@ -72,7 +73,17 @@ export interface LogFrame {
   /** 滑到的那一天（沒有是 -1） */
   day: number;
   rocket: HTMLImageElement | null;
+  /**
+   * 窄螢幕：地上的燈一週一盞（一天一盞在手機上會糊成一團白），亮度是那一週的提交數；
+   * 讀數改成手指沿軌跡滑（scrub）
+   */
+  compact?: boolean;
+  /** 讀數停在第幾天（窄螢幕手指滑到的地方；沒有是 -1）：軌跡上畫一圈，垂一條線到地面 */
+  scrub?: number;
 }
+
+/** 一週一盞燈時，燈排在第幾排（七排的中間） */
+const WEEK_LANE = 3;
 
 const dayIndex = (start: number, date: string) => Math.round((new Date(`${date}T00:00:00`).getTime() - start) / DAY_MS);
 
@@ -166,6 +177,13 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
   const total = cum[cum.length - 1] || 1;
   const startDow = new Date(startMs).getDay();
   const msIndex = milestoneDates.map((d) => Math.max(0, Math.min(N - 1, dayIndex(startMs, d))));
+  // 一週一盞燈（窄螢幕）：每週的提交數，亮度照最忙那幾週（第九十個百分位）比，免得一兩週特別多就把其他的壓成全暗
+  const weeks: number[] = [];
+  counts.forEach((c, i) => {
+    const k = Math.floor(i / 7);
+    weeks[k] = (weeks[k] ?? 0) + c;
+  });
+  const weekTop = Math.max(1, [...weeks].sort((a, b) => a - b)[Math.floor((weeks.length - 1) * 0.9)] ?? 1);
   // 地上的月份刻度：每三個月一個
   const ticks: { i: number; label: string }[] = [];
   for (let m = new Date(startMs); ; m = new Date(m.getFullYear(), m.getMonth() + 3, 1)) {
@@ -211,6 +229,11 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
     const p = mul(radial(thetaOf(i)), R);
     return [p[0], p[1], 40 + dow * LANE];
   };
+  /** 第 k 週那盞燈：在那一週正中間那天的位置，排在七排的中間 */
+  const weekLightAt = (k: number): V3 => {
+    const p = mul(radial(thetaOf(Math.min(N - 1, k * 7 + 3))), R);
+    return [p[0], p[1], 40 + WEEK_LANE * LANE];
+  };
 
   /** 飛行路徑角：就是畫出來那條軌跡的切線，火箭永遠順著自己拖出來的線飛 */
   const gammaAt = (i: number) => {
@@ -234,7 +257,8 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
     const up = cross(right, f);
     const fl = Math.min(w * 1.1, h * 1.5);
     const cx = w * 0.5;
-    const cy = h * 0.52;
+    // 窄螢幕底下那排讀數佔得比較高：整個場景往上移一點，地面與燈才不會壓在讀數後面
+    const cy = h * (w < 760 ? 0.44 : 0.52);
     const project = (p: V3): ScreenPoint | null => {
       const d = sub(p, eye);
       const z = dot(d, f);
@@ -273,6 +297,26 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
     },
     /** 第 i 天的燈在畫面上的位置 */
     lightOnScreen: (w: number, h: number, look: number, i: number) => camera(w, h, look).project(lightAt(i)),
+    /** 第 i 天軌跡上的點在畫面上的位置（讀數框跟著它） */
+    pathOnScreen: (w: number, h: number, look: number, i: number) => camera(w, h, look).project(pathAt(i)),
+    /** 手指在畫面上的水平位置 → 軌跡上最靠近的那一天（只看到 upto 為止，火箭還沒飛到的不算） */
+    dayAtX(w: number, h: number, look: number, px: number, upto = N - 1) {
+      const cam = camera(w, h, look);
+      let best = Infinity;
+      let day = 0;
+      for (let i = 0; i <= Math.min(N - 1, upto); i++) {
+        const p = cam.project(pathAt(i));
+        if (!p) continue;
+        const d = Math.abs(p.x - px);
+        if (d < best) {
+          best = d;
+          day = i;
+        }
+      }
+      return day;
+    },
+    /** 第 i 天那一週的提交數（讀數框用） */
+    weekOf: (i: number) => weeks[Math.floor(Math.max(0, i) / 7)] ?? 0,
     /** 火箭的機鼻：離開時點跟著它 */
     rocketNose: (w: number, h: number, look: number, erase: number) => {
       const cam = camera(w, h, look);
@@ -312,7 +356,7 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
     },
 
     draw(ctx: CanvasRenderingContext2D, f: LogFrame) {
-      const { w, h, t, dt, grow, erase, look, milestone, day, rocket } = f;
+      const { w, h, t, dt, grow, erase, look, milestone, day, rocket, compact = false, scrub = -1 } = f;
       ctx.clearRect(0, 0, w, h);
       const cam = camera(w, h, look);
       const fade = 1 - erase;
@@ -439,17 +483,39 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
       }
 
       // 地上的燈：每天一盞，火箭飛過去才亮；有貢獻的會微微閃
-      for (let i = 0; i <= tip && i < counts.length; i++) {
-        const p = cam.project(lightAt(i));
-        if (!p) continue;
-        const c = counts[i];
-        const on = i === day;
-        const flick = c ? 0.85 + 0.15 * Math.sin(t * 2.3 + i * 1.7) : 1;
-        const r = (c ? Math.min(3.6, 0.9 + Math.sqrt(c) * 0.45) : 0.6) * Math.min(1.4, 0.55 + p.s * 0.6);
-        ctx.fillStyle = `rgba(${INK}, ${(on ? 1 : c ? Math.min(1, 0.3 + c / 30) * flick : 0.1) * fade})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, on ? r + 1.5 : r, 0, TAU);
-        ctx.fill();
+      if (!compact) {
+        for (let i = 0; i <= tip && i < counts.length; i++) {
+          const p = cam.project(lightAt(i));
+          if (!p) continue;
+          const c = counts[i];
+          const on = i === day;
+          const flick = c ? 0.85 + 0.15 * Math.sin(t * 2.3 + i * 1.7) : 1;
+          const r = (c ? Math.min(3.6, 0.9 + Math.sqrt(c) * 0.45) : 0.6) * Math.min(1.4, 0.55 + p.s * 0.6);
+          ctx.fillStyle = `rgba(${INK}, ${(on ? 1 : c ? Math.min(1, 0.3 + c / 30) * flick : 0.1) * fade})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, on ? r + 1.5 : r, 0, TAU);
+          ctx.fill();
+        }
+      } else {
+        // 窄螢幕：一週一盞，排成一列；越亮代表那一週提交越多。讀數停在的那一週點亮。
+        // 燈的大小照畫面上相鄰兩盞的間距收：一年多八十幾週擠在兩三百像素裡，照每天那套的半徑會糊成一條
+        const scrubWeek = scrub >= 0 ? Math.floor(scrub / 7) : -1;
+        const a0 = cam.project(weekLightAt(0));
+        const a1 = cam.project(weekLightAt(Math.max(1, weeks.length - 1)));
+        const step = a0 && a1 ? Math.hypot(a1.x - a0.x, a1.y - a0.y) / Math.max(1, weeks.length - 1) : 4;
+        const rMax = Math.max(0.8, step * 0.42);
+        for (let k = 0; k * 7 <= tip && k < weeks.length; k++) {
+          const p = cam.project(weekLightAt(k));
+          if (!p) continue;
+          const v = Math.min(1, (weeks[k] ?? 0) / weekTop);
+          const on = k === scrubWeek;
+          const flick = v ? 0.88 + 0.12 * Math.sin(t * 2.3 + k * 1.7) : 1;
+          const r = v ? rMax * (0.55 + 0.45 * Math.sqrt(v)) : rMax * 0.4;
+          ctx.fillStyle = `rgba(${INK}, ${(on ? 1 : v ? (0.2 + 0.8 * v) * flick : 0.1) * fade})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, on ? r + 1.5 : r, 0, TAU);
+          ctx.fill();
+        }
       }
 
       // 軌跡：從發射台爬到現在的一條線；底下垂幾條淡淡的線，看得出離地多高
@@ -496,6 +562,27 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
           ctx.stroke();
         }
       });
+
+      // 讀數停在的那一天：軌跡上一圈，垂一條點線到地面（看得出「這時候飛到多高」）
+      if (scrub >= 0 && scrub <= tip) {
+        const a = cam.project(pathAt(scrub));
+        const b = cam.project(mul(radial(thetaOf(scrub)), R));
+        if (a && b) {
+          ctx.setLineDash([2, 4]);
+          ctx.strokeStyle = `rgba(${AMBER}, ${0.5 * fade})`;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.strokeStyle = `rgba(${AMBER}, ${fade})`;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.arc(a.x, a.y, 6, 0, TAU);
+          ctx.stroke();
+          ctx.lineWidth = 1;
+        }
+      }
 
       // 發射台：起點地上一個小三角
       const pad = cam.project(pathAt(0));

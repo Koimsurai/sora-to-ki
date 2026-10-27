@@ -382,8 +382,9 @@
   color: var(--paper);
 }
 
+/* 日期是要讀的資訊，而且整行可能被調暗（見 Collection 的圖例亮度），用次一階的灰 */
 .cx-live span {
-  color: var(--paper-3);
+  color: var(--paper-2);
 }
 
 /* ── 讀數：現在看到多遠、這個距離的訊號是什麼時候發出的 ── */

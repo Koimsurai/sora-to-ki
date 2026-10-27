@@ -237,6 +237,32 @@
   color: var(--paper-3);
 }
 
+/* 窄螢幕才有的：一行圖例、語言的分段橫條（見 Log 的 COMPACT_PX） */
+.lg-legend.lg-legend-compact,
+.lg-cell-stack {
+  display: none;
+}
+
+.lg-stack {
+  display: flex;
+  gap: var(--space-px);
+  height: 4px;
+}
+
+.lg-stack i {
+  min-width: 2px;
+  background: var(--rule);
+}
+
+/* 份量最重的最亮，往後一階一階淡 */
+.lg-stack i:nth-child(1) {
+  background: var(--paper-2);
+}
+
+.lg-stack i:nth-child(2) {
+  background: var(--paper-3);
+}
+
 /* 收：字退掉，只剩火箭飛走（畫布上的字由那一幀一起淡掉） */
 .lg-top,
 .lg-strip {
@@ -260,6 +286,22 @@
 @media (max-width: 760px) {
   .lg {
     --lg-edge: var(--space-4);
+    /* 手機一屏、不往下捲：最矮要放得進 iPhone Duo 外螢幕（580 高） */
+    min-height: 520px;
+  }
+
+  /* 手指在畫布上是滑讀數，不是捲頁（這一頁本來就一屏） */
+  .lg-line {
+    touch-action: none;
+  }
+
+  .lg-legend.lg-legend-compact {
+    display: flex;
+  }
+
+  .lg-cell-stack {
+    display: grid;
+    grid-column: 1 / -1;
   }
 
   .lg-met {
@@ -270,16 +312,119 @@
     display: none;
   }
 
+  /* 讀數排壓矮，不蓋到地面與燈：高度、天數、今天寫程式一行，語言一行，最近在玩一行（只留名字） */
+  .lg-strip {
+    gap: var(--space-2);
+    padding-block: var(--space-4);
+  }
+
   .lg-strip-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-4);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+    padding-top: var(--space-3);
   }
 
   .lg-cell-flight {
+    grid-column: span 2;
+    gap: var(--space-3);
+  }
+
+  .lg-cell-play {
     grid-column: 1 / -1;
   }
 
   .lg-strip .lg-v {
     font-size: var(--fs-16);
+  }
+
+  /* 補充的小字（WakaTime、近兩週玩多久）在窄螢幕拿掉；語言的名字留著，那是橫條的圖例 */
+  .lg-strip .lg-cell:not(.lg-cell-stack) .lg-s {
+    display: none;
+  }
+}
+
+/* 不到 640 高的橫式（摺疊機攤開橫拿 585 高）：桌機那個最小高度會讓它多出一截可以捲 */
+@media (max-height: 640px) and (orientation: landscape) {
+  .lg {
+    min-height: 0;
+  }
+
+  /* 地上的燈往下長得比較多，圖例會壓到燈 */
+  .lg-head p,
+  .lg-legend {
+    display: none;
+  }
+}
+
+/* 手機橫拿、摺疊機的矮橫式：一樣一屏不捲動。最小高度拿掉（撐高就多出一截可以捲），
+   頁首縮成一行，讀數排只留一行：高度、天數、今天寫程式、最近在玩；語言與圖例拿掉 */
+@media (max-height: 520px) and (orientation: landscape) {
+  .lg {
+    --lg-edge: var(--space-6);
+    min-height: 0;
+  }
+
+  .lg-top {
+    top: var(--space-16);
+    flex-wrap: nowrap;
+  }
+
+  .lg-title h1 {
+    font-size: var(--fs-24);
+  }
+
+  .lg-latin {
+    font-size: var(--fs-16);
+  }
+
+  .lg-met {
+    justify-items: end;
+  }
+
+  .lg-head p,
+  .lg-legend,
+  .lg-legend.lg-legend-compact,
+  .lg-cell-langs,
+  .lg-cell-stack,
+  .lg-strip .lg-s {
+    display: none;
+  }
+
+  .lg-strip {
+    gap: var(--space-1);
+    padding-block: var(--space-2);
+  }
+
+  .lg-strip-row {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    gap: var(--space-6);
+    padding-top: var(--space-2);
+  }
+
+  .lg-cell-flight {
+    grid-column: auto;
+    gap: var(--space-6);
+  }
+
+  .lg-cell-play {
+    grid-column: auto;
+  }
+
+  .lg-strip .lg-v {
+    font-size: var(--fs-14);
+  }
+}
+
+/* 又窄又矮（摺疊機外螢幕橫拿）：火箭飛到右上角會撞到任務時間，讓給火箭 */
+@media (max-width: 760px) and (max-height: 520px) and (orientation: landscape) {
+  .lg-met {
+    display: none;
+  }
+}
+
+/* 很矮的螢幕（iPhone Duo 外螢幕 580 高）：副標拿掉，讓出畫面給軌跡 */
+@media (max-width: 760px) and (max-height: 700px) {
+  .lg-head p {
+    display: none;
   }
 }

@@ -75,6 +75,40 @@
   color: var(--paper-3);
 }
 
+/* 每顆衛星旁常駐的小標註（像星圖上的標註）：位置與透明度一樣由 JS 每幀寫。
+   字卡浮出來時它淡出讓位；還沒收到第一幀位置前是透明的，不會先閃在左上角 */
+.horbit-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* 點擊區比字大一圈，手機上點得到；視覺上不變 */
+  padding: var(--space-1) var(--space-2);
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2));
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-2);
+  text-decoration: none;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-300) ease,
+    color var(--dur-200) ease;
+}
+
+.horbit-tag.is-on {
+  pointer-events: auto;
+}
+
+.horbit-tag:hover {
+  color: var(--amber);
+}
+
+.horbit.is-flat .horbit-tag {
+  display: none;
+}
+
 /* 沒有 3D（手機、沒有硬體加速）：五個連結直接排成一欄。
    位置與透明度原本是 JS 寫在 style 上的，只有 !important 蓋得過 inline style */
 .horbit.is-flat .horbit-labels {
