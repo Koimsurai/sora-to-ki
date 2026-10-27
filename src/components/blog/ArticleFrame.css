@@ -142,9 +142,25 @@
   text-underline-offset: 4px;
 }
 
-/* 同標籤的文章：標籤底下就地展開（跟文末「同在某專欄」同一個樣式） */
+/* 同標籤的文章：標籤底下就地展開（跟文末「同在某專欄」同一個樣式）。
+   高度從 0 滑開（grid 的 0fr → 1fr），底下的內文是被慢慢推下去的，不是一下子跳下去；
+   上方的間距放在裡面那層，跟著一起展開 */
 .ar-tag-shelf {
-  margin-top: var(--space-4);
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-400) var(--easing-out);
+}
+
+@starting-style {
+  .ar-tag-shelf {
+    grid-template-rows: 0fr;
+  }
+}
+
+.ar-tag-shelf-in {
+  min-height: 0;
+  overflow: hidden;
+  padding-top: var(--space-4);
   animation: ar-shelf var(--dur-400) var(--easing-out);
 }
 
