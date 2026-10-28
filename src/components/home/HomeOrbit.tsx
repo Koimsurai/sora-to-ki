@@ -46,7 +46,11 @@ const TAG_GAP_Y = 7;
 /** 比這窄的畫面，浮出來的那張字卡放在土星下方的空白，不貼著衛星（手機上貼著會壓到軌道） */
 const NARROW_PX = 640;
 const pad2 = (n: number) => String(n).padStart(2, '0');
-/** 多久沒收到 3D 送來的位置就當作沒有 3D */
+/**
+ * 多久沒收到 3D 送來的位置就當作沒有 3D。GPU 探測確定是軟體渲染時（html.no-gpu，見 SpaceBackdropShell）
+ * 不用等：3D 不會來。實地資料（2026-10）裡沒有 3D 的手機，首頁的 LCP 就是這排連結，中位數 4.6 秒，
+ * 大半是在等這 2.5 秒
+ */
 const FLAT_AFTER_MS = 2500;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
 const SATURN_COLLAPSE_MS = 500;
@@ -203,7 +207,8 @@ export default function HomeOrbit() {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const live = positions.length === count && now - lastPositionsAt < FLAT_AFTER_MS;
-      const nextFlat = !live && now - lastPositionsAt > FLAT_AFTER_MS;
+      const noGpu = document.documentElement.classList.contains('no-gpu');
+      const nextFlat = !live && (noGpu || now - lastPositionsAt > FLAT_AFTER_MS);
       if (nextFlat !== flatNow) {
         flatNow = nextFlat;
         setFlat(nextFlat);
