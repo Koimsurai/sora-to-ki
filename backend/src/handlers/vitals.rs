@@ -20,7 +20,14 @@ use serde_json::json;
 
 use crate::{error::AppError, state::AppState};
 
-const METRICS: [&str; 5] = ["LCP", "CLS", "INP", "FCP", "TTFB"];
+/// 前五個是 web-vitals 量的 Core Web Vitals；後兩個是自己量的（src/lib/reportWebVitals.ts）：
+/// TX 是站內換頁轉場的順暢度（值是最長那一幀的毫秒），BOOT 是開場退場、讀者真正看到頁面的時間
+const METRICS: [&str; 7] = ["LCP", "CLS", "INP", "FCP", "TTFB", "TX", "BOOT"];
+/// 載入方式（web-vitals 的 navigationType）；站內換頁的 TX 是 spa
+const NAV_TYPES: [&str; 7] =
+    ["navigate", "reload", "back-forward", "back-forward-cache", "prerender", "restore", "spa"];
+/// 有沒有硬體加速的 GPU（src/lib/webglSupport 的探測結果）
+const GPUS: [&str; 2] = ["hw", "none"];
 const RATINGS: [&str; 3] = ["good", "needs-improvement", "poor"];
 
 // ⚠ 下面 vitals_stats 的兩句 SQL 都帶 `path <> '/admin' AND path NOT LIKE '/admin/%'`，
@@ -58,6 +65,29 @@ pub struct VitalBeacon {
     /// LCP 花在哪一段：`ttfb/載入延遲/下載/繪製延遲`（毫秒整數，見 migration 0027）。只有 LCP 會帶
     #[serde(default, rename = "lcpPhases")]
     pub lcp_phases: Option<String>,
+    /// 這次載入是怎麼來的（NAV_TYPES），其他值當沒帶
+    #[serde(default, rename = "navType")]
+    pub nav_type: Option<String>,
+    /// 各 metric 自己的細節，斜線隔開（見 migration 0028）。只收英數與 `/._-`、最長 80 字
+    #[serde(default)]
+    pub detail: Option<String>,
+    /// hw 或 none（GPUS），其他值當沒帶
+    #[serde(default)]
+    pub gpu: Option<String>,
+}
+
+/// 只收白名單裡的值，其他一律當沒帶（存 NULL）
+fn one_of(s: Option<String>, allowed: &[&str]) -> Option<String> {
+    s.filter(|v| allowed.contains(&v.as_str()))
+}
+
+/// `detail` 只收英數與 `/._-`、最長 80 字；不合格當沒帶（那筆 metric 本身照收）
+fn detail(s: Option<String>) -> Option<String> {
+    s.filter(|v| {
+        !v.is_empty()
+            && v.len() <= 80
+            && v.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'/' | b'.' | b'_' | b'-'))
+    })
 }
 
 /// `lcpPhases` 只收四個 0 到 120 秒的整數，用斜線隔開；其他一律當沒帶（存 NULL）
@@ -109,8 +139,9 @@ pub async fn report_vital(
         let path = b.path.split('?').next().unwrap_or("/");
         sqlx::query(
             "INSERT INTO web_vitals \
-               (metric, value, rating, path, is_mobile, target, load_state, shift_path, lcp_phases) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+               (metric, value, rating, path, is_mobile, target, load_state, shift_path, lcp_phases, \
+                nav_type, detail, gpu) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         )
         .bind(&b.metric)
         .bind(b.value)
@@ -122,6 +153,9 @@ pub async fn report_vital(
         // shift_path 也去掉 query（同 path 的理由：避免存到 token 類參數）
         .bind(clamp_attr(b.shift_path.map(|s| s.split('?').next().unwrap_or("/").to_string())))
         .bind(lcp_phases(b.lcp_phases))
+        .bind(one_of(b.nav_type, &NAV_TYPES))
+        .bind(detail(b.detail))
+        .bind(one_of(b.gpu, &GPUS))
         .execute(&state.pool)
         .await?;
     }

@@ -4,17 +4,32 @@
 // 但**資料送自己的 Rust 端點、存自己的 SQLite**——用它的尺、不進它的家（不碰 GA4）。
 // 聚合自看：GET /api/vitals/stats。
 //
-// 不送任何 PII：只有 metric 名/值/rating/pathname/是否行動裝置。
-import { onINP, onFCP, onTTFB, type Metric } from 'web-vitals';
+// 不送任何 PII：只有 metric 名/值/rating/pathname/是否行動裝置，加上載入方式與有沒有硬體 GPU。
+//
+// 除了 web-vitals 的五個，還有兩個自己量的（後端 migration 0028）：
+//   - TX：站內換頁的順暢度。web-vitals 只量第一次載入，換頁（這個站最在意的轉場）沒有任何實地數據
+//   - BOOT：開場退場、讀者真正看到頁面的時間。LCP 算的是被開場夜色蓋住的內容，不是讀者等了多久
+import { onFCP, onTTFB, type Metric } from 'web-vitals';
 // CLS 與 LCP 從 attribution build 取，這兩個的問題都只在實地出現，只能靠真實讀者的瀏覽器指認：
 //   - CLS 多回一個 largestShiftTarget（那次最大位移元素的 CSS 選擇器）。同一頁在無節流的本機跑
 //     Lighthouse 是 CLS 0
 //   - LCP 多回元素與四段時間（server 回應、資源開始載入前的等待、下載、下載完到畫出來）。
 //     2026-10 大陸讀者的手機 FCP 2.6 秒、LCP 5.6 秒，模擬網路量不出中間那 3 秒卡在哪
-// 其餘三個 metric 仍走精簡版，不必為它們付 attribution 的 bundle 成本。
-import { onCLS, onLCP, type CLSMetricWithAttribution, type LCPMetricWithAttribution } from 'web-vitals/attribution';
+//   - INP 多回互動的元素、互動類型與三段時間（輸入延遲、處理、畫面更新）。只有數字的話，
+//     差的那幾筆是點了什麼、卡在哪一段都不知道
+// FCP、TTFB 仍走精簡版，不必為它們付 attribution 的 bundle 成本。
+import {
+  onCLS,
+  onINP,
+  onLCP,
+  type CLSMetricWithAttribution,
+  type INPMetricWithAttribution,
+  type LCPMetricWithAttribution,
+} from 'web-vitals/attribution';
 
 import { isBotUserAgent } from './bot';
+import { knownHardwareGpu } from './webglSupport';
+import { subscribeBoot, subscribeTransitions } from '@/store/pageTransition';
 
 /* ── 最大位移發生在哪一頁 ──
  *
@@ -52,7 +67,42 @@ export function lcpPhases(a: {
     .join('/');
 }
 
-function send(m: Metric, attr?: { target?: string; loadState?: string; shiftPath?: string; lcpPhases?: string }) {
+/** 要上報的一筆：web-vitals 的 Metric，或自己量的 TX、BOOT */
+interface Beacon {
+  name: string;
+  value: number;
+  rating: Metric['rating'];
+  /** 這次載入是怎麼來的；站內換頁是 spa */
+  navigationType?: string;
+}
+
+interface Attribution {
+  target?: string;
+  loadState?: string;
+  shiftPath?: string;
+  lcpPhases?: string;
+  /** 各 metric 自己的細節，斜線隔開（後端只收英數與 /._-） */
+  detail?: string;
+}
+
+/**
+ * 自己量的兩個 metric 的好壞門檻。TX 是換頁時最長的那一幀：兩幀（60Hz 下 34ms）以內看不出來，
+ * 超過 100ms 就是看得到的頓。BOOT 是開場退場的時間：開場最少停 1.1 秒、最多等 3.5 秒（layout/TransitionLayer）
+ */
+const rate = (v: number, good: number, poor: number): Metric['rating'] =>
+  v <= good ? 'good' : v > poor ? 'poor' : 'needs-improvement';
+const TX_GOOD = 34;
+const TX_POOR = 100;
+const BOOT_GOOD = 2000;
+const BOOT_POOR = 3500;
+
+/** 這次頁面載入的方式（Navigation Timing 的寫法是底線，web-vitals 跟後端用連字號） */
+function loadNavType(): string | undefined {
+  const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  return nav?.type.replace('_', '-');
+}
+
+function send(m: Beacon, attr?: Attribution) {
   const path = window.location.pathname;
   // 後台不上報：/admin 有 auth、robots.txt 也 Disallow，不是讀者體驗的一部分；而編輯器
   // （大量 textarea + 即時預覽 + 非同步載入的清單）天生就會位移，混進來會蓋掉文章頁的真實
@@ -68,6 +118,9 @@ function send(m: Metric, attr?: { target?: string; loadState?: string; shiftPath
     rating: m.rating,
     path,
     isMobile: window.matchMedia('(max-width: 768px)').matches,
+    navType: m.navigationType,
+    // 有沒有硬體 GPU 是效能差最多的分界（沒有的話整站關掉 3D 與毛玻璃）；還沒探測完就不帶
+    gpu: ((g) => (g === null ? undefined : g ? 'hw' : 'none'))(knownHardwareGpu()),
     ...attr,
   });
   // sendBeacon：頁面卸載期也保證送達（LCP/CLS 在 pagehide 才定稿）。
@@ -105,10 +158,37 @@ export function initWebVitals() {
       shiftPath: largestShift.path || undefined,
     });
   });
-  onINP(send);
+  onINP((m: INPMetricWithAttribution) => {
+    const a = m.attribution;
+    const ms = (v: number) => Math.max(0, Math.round(v));
+    send(m, {
+      target: a.interactionTarget || undefined,
+      loadState: a.loadState,
+      detail: `${a.interactionType}/${ms(a.inputDelay)}/${ms(a.processingDuration)}/${ms(a.presentationDelay)}`,
+    });
+  });
   onLCP((m: LCPMetricWithAttribution) => {
     send(m, { target: m.attribution.target, lcpPhases: lcpPhases(m.attribution) });
   });
   onFCP(send);
   onTTFB(send);
+  // 站內換頁：值是最長那一幀，細節是 幀數/長幀數/總時長；target 記從哪頁到哪頁
+  subscribeTransitions((r) => {
+    send(
+      { name: 'TX', value: Math.round(r.maxFrame), rating: rate(r.maxFrame, TX_GOOD, TX_POOR), navigationType: 'spa' },
+      { target: `${r.from} → ${r.to}`, detail: `${r.frames}/${r.long}/${Math.round(r.ms)}` },
+    );
+  });
+  // 開場退場：從這次載入開始過了多久；首頁有沒有等到 3D 土星交棒
+  subscribeBoot((r) => {
+    send(
+      {
+        name: 'BOOT',
+        value: Math.round(r.at),
+        rating: rate(r.at, BOOT_GOOD, BOOT_POOR),
+        navigationType: loadNavType(),
+      },
+      { detail: r.end },
+    );
+  });
 }

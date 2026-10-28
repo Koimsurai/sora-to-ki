@@ -669,6 +669,58 @@ async fn vitals_beacon_stores_lcp_attribution() {
     }
 }
 
+/// 自己量的 TX（換頁順暢度）、BOOT（開場）照收；載入方式、細節、GPU 三個脈絡欄位只收白名單／
+/// 合格格式，不合格的當沒帶（NULL），但那筆 metric 本身照收——脈絡壞掉不該連數字一起丟
+#[tokio::test]
+async fn vitals_beacon_stores_context_fields() {
+    let (app, pool) = test_app().await;
+    for (path, metric, nav, det, gpu) in [
+        ("/a", "TX", "spa", "142/2/2149", "hw"),
+        ("/b", "BOOT", "reload", "ring", "none"),
+        ("/c", "INP", "navigate", "pointer/12/30/40", "hw"),
+        ("/d", "LCP", "sideways", "a b", "maybe"),
+        ("/e", "CLS", "navigate", "<script>", "hw"),
+    ] {
+        let b = json!({
+            "metric": metric, "value": 33.4, "rating": "good", "path": path,
+            "navType": nav, "detail": det, "gpu": gpu,
+        });
+        let (status, _) = post_json(&app, "/api/vitals", b).await;
+        assert_eq!(status, StatusCode::NO_CONTENT);
+    }
+    let long = json!({
+        "metric": "TX", "value": 20.0, "rating": "good", "path": "/f", "detail": "1/".repeat(41),
+    });
+    let (status, _) = post_json(&app, "/api/vitals", long).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+
+    /// (path, metric, nav_type, detail, gpu)
+    type Row = (String, String, Option<String>, Option<String>, Option<String>);
+    let rows: Vec<Row> =
+        sqlx::query_as("SELECT path, metric, nav_type, detail, gpu FROM web_vitals ORDER BY path")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+    assert_eq!(rows.len(), 6, "脈絡欄位不合格的那幾筆也要照收");
+    assert_eq!(
+        (rows[0].2.as_deref(), rows[0].3.as_deref(), rows[0].4.as_deref()),
+        (Some("spa"), Some("142/2/2149"), Some("hw"))
+    );
+    assert_eq!(rows[1].1, "BOOT");
+    assert_eq!(
+        (rows[1].2.as_deref(), rows[1].3.as_deref(), rows[1].4.as_deref()),
+        (Some("reload"), Some("ring"), Some("none"))
+    );
+    assert_eq!(rows[2].3.as_deref(), Some("pointer/12/30/40"));
+    assert_eq!(
+        (rows[3].2.as_deref(), rows[3].3.as_deref(), rows[3].4.as_deref()),
+        (None, None, None),
+        "白名單外的值存 NULL"
+    );
+    assert_eq!(rows[4].3, None, "detail 只收英數與 /._-");
+    assert_eq!(rows[5].3, None, "detail 超過 80 字當沒帶");
+}
+
 /// 非法 beacon 一律不進資料表。
 ///
 /// 補這個測試是 cargo-mutants 指出來的：原本 vitals.rs 覆蓋率 98.67%，但把 `report_vital`

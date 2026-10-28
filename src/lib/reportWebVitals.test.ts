@@ -20,11 +20,9 @@ interface Cbs {
 }
 let cbs: Cbs = {};
 let isBot = false;
+let gpu: boolean | null = null;
 
 vi.mock('web-vitals', () => ({
-  onINP: (f: (m: unknown) => void) => {
-    cbs.inp = f;
-  },
   onFCP: (f: (m: unknown) => void) => {
     cbs.fcp = f;
   },
@@ -36,11 +34,15 @@ vi.mock('web-vitals/attribution', () => ({
   onCLS: (f: (m: unknown) => void) => {
     cbs.cls = f;
   },
+  onINP: (f: (m: unknown) => void) => {
+    cbs.inp = f;
+  },
   onLCP: (f: (m: unknown) => void) => {
     cbs.lcp = f;
   },
 }));
 vi.mock('./bot', () => ({ isBotUserAgent: () => isBot }));
+vi.mock('./webglSupport', () => ({ knownHardwareGpu: () => gpu }));
 
 /** sendBeacon 收到的東西 */
 let beacons: { url: string; body: string }[] = [];
@@ -210,6 +212,9 @@ describe('送出去的內容', () => {
       'loadState',
       'shiftPath',
       'lcpPhases',
+      'navType',
+      'detail',
+      'gpu',
     ]);
     const init = await load();
     init();
@@ -334,6 +339,78 @@ describe('LCP 的診斷欄位', () => {
     cbs.fcp?.(metric({ name: 'FCP' }));
     expect(lastBody().lcpPhases).toBeUndefined();
     expect(lastBody().target).toBeUndefined();
+  });
+});
+
+describe('INP 的診斷欄位', () => {
+  it('帶上互動的元素、載入階段，細節是 類型/輸入延遲/處理/畫面更新（毫秒取整、負數夾成 0）', async () => {
+    const init = await load();
+    init();
+    cbs.inp?.({
+      name: 'INP',
+      value: 312,
+      rating: 'poor',
+      navigationType: 'navigate',
+      attribution: {
+        interactionTarget: 'nav.snav>a',
+        interactionType: 'pointer',
+        loadState: 'complete',
+        inputDelay: 12.4,
+        processingDuration: 250.6,
+        presentationDelay: -1,
+      },
+    });
+    expect(lastBody()).toMatchObject({
+      metric: 'INP',
+      target: 'nav.snav>a',
+      loadState: 'complete',
+      detail: 'pointer/12/251/0',
+      navType: 'navigate',
+    });
+  });
+});
+
+describe('自己量的 TX（換頁順暢度）與 BOOT（開場）', () => {
+  it('換頁跑完送 TX：值是最長那一幀，細節是 幀數/長幀數/總時長，target 是從哪頁到哪頁', async () => {
+    const init = await load();
+    const { reportTransition } = await import('@/store/pageTransition');
+    init();
+    reportTransition({ from: '/', to: '/blog', ms: 2149.6, frames: 142, maxFrame: 33.4, long: 0 });
+    expect(lastBody()).toMatchObject({
+      metric: 'TX',
+      value: 33,
+      rating: 'good',
+      target: '/ → /blog',
+      detail: '142/0/2150',
+      navType: 'spa',
+    });
+    reportTransition({ from: '/blog', to: '/about', ms: 2000, frames: 100, maxFrame: 80, long: 2 });
+    expect(lastBody()).toMatchObject({ rating: 'needs-improvement' });
+    reportTransition({ from: '/about', to: '/', ms: 2000, frames: 100, maxFrame: 101, long: 3 });
+    expect(lastBody()).toMatchObject({ rating: 'poor' });
+  });
+
+  it('開場比上報早結束也照送：BOOT 是退場的時間，細節是 ring／collapse', async () => {
+    const init = await load();
+    const { reportBoot } = await import('@/store/pageTransition');
+    reportBoot({ at: 1360.2, end: 'ring' });
+    init();
+    expect(lastBody()).toMatchObject({ metric: 'BOOT', value: 1360, rating: 'good', detail: 'ring' });
+  });
+
+  it('有沒有硬體 GPU：探測完才帶，還沒探測完不帶這個欄位', async () => {
+    const init = await load();
+    init();
+    gpu = null;
+    cbs.fcp?.(metric({ name: 'FCP' }));
+    expect(lastBody()).not.toHaveProperty('gpu');
+    gpu = true;
+    cbs.fcp?.(metric({ name: 'FCP' }));
+    expect(lastBody()).toMatchObject({ gpu: 'hw' });
+    gpu = false;
+    cbs.fcp?.(metric({ name: 'FCP' }));
+    expect(lastBody()).toMatchObject({ gpu: 'none' });
+    gpu = null;
   });
 });
 

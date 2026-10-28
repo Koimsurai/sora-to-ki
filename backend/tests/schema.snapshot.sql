@@ -178,7 +178,7 @@ table watch_favorites
   CREATE TABLE watch_favorites ( id INTEGER PRIMARY KEY AUTOINCREMENT, tmdb_id INTEGER NOT NULL, kind TEXT NOT NULL DEFAULT 'film', rating INTEGER DEFAULT 5, quote TEXT DEFAULT '', poster_url TEXT, year INTEGER, sort_order INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 
 table web_vitals
-  CREATE TABLE web_vitals ( id INTEGER PRIMARY KEY AUTOINCREMENT, metric TEXT NOT NULL, value REAL NOT NULL, rating TEXT NOT NULL, path TEXT NOT NULL, is_mobile INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')) , target TEXT, load_state TEXT, shift_path TEXT, lcp_phases TEXT)
+  CREATE TABLE web_vitals ( id INTEGER PRIMARY KEY AUTOINCREMENT, metric TEXT NOT NULL, value REAL NOT NULL, rating TEXT NOT NULL, path TEXT NOT NULL, is_mobile INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')) , target TEXT, load_state TEXT, shift_path TEXT, lcp_phases TEXT, nav_type TEXT, detail TEXT, gpu TEXT)
 
 trigger tw_books_ad
   CREATE TRIGGER tw_books_ad AFTER DELETE ON tw_books BEGIN INSERT INTO tw_books_fts(tw_books_fts, rowid, title, author, publisher) VALUES ('delete', old.id, old.title, old.author, old.publisher); END

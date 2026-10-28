@@ -22,6 +22,8 @@ import { RING_OUTER, saturnGrowAt, saturnRingOnScreen } from '@/lib/saturnSpec';
 import { currentFold, offCrease } from '@/lib/viewportFold';
 import {
   after,
+  reportBoot,
+  reportTransition,
   currentPage,
   markTransitionFrom,
   setTransitionDot,
@@ -180,6 +182,13 @@ interface Run {
   carried: boolean;
   /** 彗尾的塵埃（世界座標） */
   dust: { x: number; y: number; vx: number; vy: number; life: number; size: number }[];
+  /** 站內換頁從哪一頁到哪一頁：跑完時上報這一趟順不順（store/pageTransition 的 reportTransition）；開場那一趟是 null */
+  report: { from: string; to: string } | null;
+  /** 這一趟的幀：上一幀的時間、幾幀、最長一幀、超過 50ms 的幾幀 */
+  prevFrame: number;
+  frames: number;
+  maxFrame: number;
+  longFrames: number;
 }
 
 const mainOf = () => document.querySelector<HTMLElement>('.main-content-container > main');
@@ -490,6 +499,14 @@ export default function TransitionLayer() {
       const r = run;
       if (!r) return;
       raf = requestAnimationFrame(frame);
+      // 幀與幀之間隔多久：主執行緒卡住（新的一頁掛上去）的那一下會在這裡變成一個長幀
+      if (r.prevFrame) {
+        const d = now - r.prevFrame;
+        r.frames++;
+        r.maxFrame = Math.max(r.maxFrame, d);
+        if (d > 50) r.longFrames++;
+      }
+      r.prevFrame = now;
       try {
         if (now - r.t0 > RUN_LIMIT_MS) throw new Error('換頁轉場跑太久');
         step(r, now);
@@ -634,6 +651,16 @@ export default function TransitionLayer() {
       dot(landed, 3 * (1 - easeOut(g)), 1 - g);
       if (g >= 1 && !r.dust.length && !alive) {
         cancelAnimationFrame(raf);
+        // 正常跑完才上報（出錯、被下一次換頁打斷、元件卸載都不算）
+        if (r.report) {
+          reportTransition({
+            ...r.report,
+            ms: now - r.t0,
+            frames: r.frames,
+            maxFrame: r.maxFrame,
+            long: r.longFrames,
+          });
+        }
         finish(r);
       }
     };
@@ -755,6 +782,11 @@ export default function TransitionLayer() {
         trackAt: 0,
         carried: true,
         dust: [],
+        report: null,
+        prevFrame: 0,
+        frames: 0,
+        maxFrame: 0,
+        longFrames: 0,
       };
       run = r;
       if (handoff) {
@@ -765,6 +797,7 @@ export default function TransitionLayer() {
       }
       root.dataset.pt = 'fly';
       root.dataset.boot = 'out';
+      reportBoot({ at: performance.now(), end: handoff ? 'ring' : 'collapse' });
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(frame);
       // 首頁交棒時夜色淡掉、環留著，等這一頁開始長（3D 土星開始長）才長大淡掉，見下面的 grow；
@@ -849,6 +882,11 @@ export default function TransitionLayer() {
           trackAt: 0,
           carried: carry !== null,
           dust: carry?.dust ?? [],
+          report: { from: currentLocation.pathname, to: nextLocation.pathname },
+          prevFrame: 0,
+          frames: 0,
+          maxFrame: 0,
+          longFrames: 0,
         };
         run = r;
         root.dataset.pt = 'leave';
