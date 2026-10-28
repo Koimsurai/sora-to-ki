@@ -336,6 +336,12 @@ export default function TransitionLayer() {
       r.screen = { ...p };
       r.trackAt = now;
       setTransitionDot(p);
+      // 開場交棒時那道小環套在點上跟著走（index.css 的 --boot-ring-dx／dy），點落在土星中心時環才長大
+      if (root.dataset.bootRing === 'grow') {
+        const boot = document.getElementById('boot');
+        boot?.style.setProperty('--boot-ring-dx', `${(p.x - window.innerWidth / 2).toFixed(1)}px`);
+        boot?.style.setProperty('--boot-ring-dy', `${(p.y - window.innerHeight / 2).toFixed(1)}px`);
+      }
     };
 
     const dot = (p: Pt, radius: number, alpha = 1) => {
@@ -402,6 +408,30 @@ export default function TransitionLayer() {
           total: 1,
           at: now,
           dur: 1,
+          acquire: 0,
+          start: { ...r.pos },
+          brakeFrom: 0,
+          brakeTo: 0,
+        };
+        r.offset = { x: 0, y: 0 };
+        r.cam = { x: 0, y: 0 };
+        root.dataset.pt = 'fly';
+        r.main.style.transition = 'none';
+        r.main.style.opacity = '0';
+        return;
+      }
+      // 開場交棒給首頁的 3D 土星：點從畫面中間直直滑到土星中心，環套在點上一起走，鏡頭不動。
+      // 不走下面那套飛行：土星不在正中間的畫面（手機直拿，土星往上提）差的只有幾十 px，
+      // 那套會先飛出去一大段再煞停回來，環被留在原地（桌機的土星就在正中間，本來就不飛）
+      if (root.dataset.bootRing === 'grow') {
+        const d = len({ x: anchor.x - r.pos.x, y: anchor.y - r.pos.y });
+        r.to = anchor;
+        r.flight = {
+          points: [{ ...r.pos }, anchor],
+          cum: [0, d],
+          total: Math.max(1, d),
+          at: now,
+          dur: clamp(d / SPEED, FLY_MIN_MS, FLY_MAX_MS),
           acquire: 0,
           start: { ...r.pos },
           brakeFrom: 0,
@@ -679,9 +709,15 @@ export default function TransitionLayer() {
       delete root.dataset.bootRing;
       delete root.dataset.bootCollapse;
       root.style.removeProperty('--boot-p');
-      root.style.removeProperty('--boot-ring-dy');
       const boot = document.getElementById('boot');
-      for (const name of ['--boot-ring-size', '--boot-ring-a', '--boot-ring-back-a', '--boot-planet-r']) {
+      for (const name of [
+        '--boot-ring-dx',
+        '--boot-ring-dy',
+        '--boot-ring-size',
+        '--boot-ring-a',
+        '--boot-ring-back-a',
+        '--boot-planet-r',
+      ]) {
         boot?.style.removeProperty(name);
       }
     };
@@ -792,7 +828,7 @@ export default function TransitionLayer() {
       if (handoff) {
         const ring = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
         bootRingUnit = ring.r / RING_OUTER;
-        root.style.setProperty('--boot-ring-dy', `${ring.y - window.innerHeight / 2}px`);
+        // 環的位置不在這裡定：它套在點上跟著走（track），點落在土星中心（首頁的錨點）時剛好就位
         root.dataset.bootRing = 'grow';
       }
       root.dataset.pt = 'fly';

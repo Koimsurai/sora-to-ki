@@ -1299,8 +1299,9 @@ html[data-boot] .pt-canvas {
   left: 50%;
   width: 80px;
   height: 80px;
-  /* 首頁換頁時長大到 3D 土星環的位置與大小（--boot-ring-dy／--boot-ring-size，layout/TransitionLayer 算） */
-  translate: -50% calc(-50% + var(--boot-ring-dy, 0px));
+  /* 首頁交棒時跟著那顆點滑到 3D 土星的中心（--boot-ring-dx／dy），再長大到 3D 土星環的大小（--boot-ring-size），
+     都由 layout/TransitionLayer 逐幀寫；筆尖跟環一起走 */
+  translate: calc(-50% + var(--boot-ring-dx, 0px)) calc(-50% + var(--boot-ring-dy, 0px));
   overflow: visible;
 }
 
@@ -1338,6 +1339,7 @@ html[data-boot] .pt-canvas {
   left: 50%;
   width: 0;
   height: 0;
+  translate: var(--boot-ring-dx, 0px) var(--boot-ring-dy, 0px);
   rotate: 11.5deg;
   transition: opacity var(--dur-250) ease;
 }
