@@ -108,6 +108,13 @@ const fmt = (n: number | undefined) => (n === undefined ? '—' : n.toLocaleStri
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+/** 畫面上的一個框（DOMRect 也合這個形狀） */
+interface Box {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
 
 /** 距離（光秒）換成最順口的單位：光秒、光分、光時、光日、光年 */
 function distance(t: TFunction, ls: number): { n: string; unit: string } {
@@ -323,7 +330,15 @@ export default function Collection() {
       }
       return wd;
     };
-    const remeasure = () => widths.clear();
+    // 名字與地標的框（避讓用）：每幀寫完位置再 getBoundingClientRect 的話，一幀要多排一次版（換頁進來時
+    // CPU 降速 4 倍一幀 44–88ms）。框 = 畫布左上 + 這幀寫的位移 + 固定的偏移（CSS 的 translate），
+    // 偏移與尺寸量一次記著，跟寬度同一套時機重量
+    const boxes = new Map<HTMLElement, { dx: number; dy: number; w: number; h: number }>();
+    const placed = new Map<HTMLElement, [number, number]>();
+    const remeasure = () => {
+      widths.clear();
+      boxes.clear();
+    };
     document.fonts.addEventListener('loadingdone', remeasure);
     window.addEventListener('resize', remeasure);
     const setText = (el: HTMLElement, s: string) => {
@@ -331,6 +346,7 @@ export default function Collection() {
       texts.set(el, s);
       el.textContent = s;
       widths.delete(el);
+      boxes.delete(el);
     };
     // 觸控沒有「滑過」：點一下打開接收畫面，再點同一點才開連結
     let touch = false;
@@ -440,6 +456,20 @@ export default function Collection() {
       };
       const { points, marks, inView } = sky.draw(ctx, f);
       const cr = cv.getBoundingClientRect();
+      // 頁首與底欄先佔位：在這一幀寫任何樣式之前量（版面還是乾淨的）
+      const taken: Box[] = [footRef.current, headRef.current].flatMap((el) =>
+        el ? [...el.children].map((c) => c.getBoundingClientRect()) : [],
+      );
+      // 字型載完、換字之後寬度與框要重量：也在寫入之前一次量完（寫一個量一個的話，每量一次就重排一次版）。
+      // 框照上一幀寫的位置算，那就是它現在在畫面上的位置
+      for (const el of [...marksRef.current.values(), ...namesRef.current.values()]) {
+        widthOf(el);
+        const at = placed.get(el);
+        if (at && !boxes.has(el)) {
+          const r = el.getBoundingClientRect();
+          boxes.set(el, { dx: r.left - cr.left - at[0], dy: r.top - cr.top - at[1], w: r.width, h: r.height });
+        }
+      }
       const e = sky.earth(f);
       dotRef.current = { x: cr.left + e.x, y: cr.top + e.y };
       lastPoints = points;
@@ -486,7 +516,9 @@ export default function Collection() {
         seen.add(m.key);
         // 點的右邊放不下名字，就寫在左邊
         const flip = !m.key.startsWith('scale-') && m.key !== 'records' && m.x + 20 + widthOf(el) > w - 8;
-        el.style.transform = `translate(${flip ? Math.max(-8, m.x - widthOf(el) - 24) : m.x}px, ${m.y}px)`;
+        const mx = flip ? Math.max(-8, m.x - widthOf(el) - 24) : m.x;
+        el.style.transform = `translate(${mx}px, ${m.y}px)`;
+        placed.set(el, [mx, m.y]);
         el.style.opacity = String(Math.min(1, m.a) * bloom);
         if (m.key === 'records') {
           setText(el, t('collection.sky.records', { date: sentAt(t, m.dist, clock) }));
@@ -510,17 +542,30 @@ export default function Collection() {
           return;
         }
         const left = q.x > w * 0.7;
-        el.style.transform = `translate(${left ? q.x - 12 - widthOf(el) : q.x + 12}px, ${q.y - 9}px)`;
+        const nx = left ? q.x - 12 - widthOf(el) : q.x + 12;
+        el.style.transform = `translate(${nx}px, ${q.y - 9}px)`;
+        placed.set(el, [nx, q.y - 9]);
         el.style.opacity = String(q.a * bloom * (sid === id ? 0 : 1));
       });
 
+      // 這一幀寫的位置換成畫面上的框（偏移與尺寸只在記著的失效時量一次）
+      const boxOf = (el: HTMLElement): Box => {
+        const at = placed.get(el);
+        if (!at) return el.getBoundingClientRect();
+        let b = boxes.get(el);
+        if (!b) {
+          const r = el.getBoundingClientRect();
+          b = { dx: r.left - cr.left - at[0], dy: r.top - cr.top - at[1], w: r.width, h: r.height };
+          boxes.set(el, b);
+        }
+        const left = cr.left + at[0] + b.dx;
+        const top = cr.top + at[1] + b.dy;
+        return { left, top, right: left + b.w, bottom: top + b.h };
+      };
       // 名字擠在一起的話，後面的讓開：頁首與底欄先佔位，再來是最愛的名字，最後是地標（地球最前面）
-      const taken: DOMRect[] = [footRef.current, headRef.current].flatMap((el) =>
-        el ? [...el.children].map((c) => c.getBoundingClientRect()) : [],
-      );
       const claim = (el: HTMLElement) => {
         if (Number(el.style.opacity) < 0.05) return;
-        const r = el.getBoundingClientRect();
+        const r = boxOf(el);
         if (taken.some((o) => r.left < o.right && r.right > o.left && r.top < o.bottom && r.bottom > o.top)) {
           el.style.opacity = '0';
           return;
