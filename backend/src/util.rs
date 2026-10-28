@@ -166,6 +166,70 @@ pub fn js_substring_prefix(s: &str, n: usize) -> String {
     String::from_utf16_lossy(&units)
 }
 
+/// 閱讀時間的估算速度。前端 `src/lib/readTime.ts` 是同一套規則，兩邊的測試用同一組範例對齊——
+/// 改這裡要一起改那邊，不然手記列表跟文章頁會顯示不同的分鐘數。
+///
+/// 中日韓文一分鐘 400 字（技術文章比一般閱讀慢）、英文一分鐘 230 個詞、一張圖 10 秒、
+/// 程式碼一行 2 秒（掃過去，不是逐字讀）。原本是整份 markdown 原始碼的字數除以 500，連程式碼、
+/// 網址（圖片網址還帶著一長串尺寸與雜湊）、元件屬性都算進去，英文也當中文算，普遍高估四到五成。
+const CJK_PER_MIN: f64 = 400.0;
+const WORDS_PER_MIN: f64 = 230.0;
+const SECONDS_PER_IMAGE: f64 = 10.0;
+const SECONDS_PER_CODE_LINE: f64 = 2.0;
+
+/// 估一篇文章（markdown / MDX 原始碼）要讀幾分鐘，最少 1 分鐘。
+#[must_use]
+pub fn read_minutes(markdown: &str) -> i64 {
+    use regex::Regex;
+    use std::sync::LazyLock;
+    static INLINE_CODE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"`[^`\n]*`").expect("固定的 regex"));
+    static IMAGE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"!\[[^\]]*\]\([^)]*\)").expect("固定的 regex"));
+    static HTML_IMAGE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)<img\b").expect("固定的 regex"));
+    static LINK: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"\[([^\]]*)\]\([^)]*\)").expect("固定的 regex"));
+    static TAG: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"<[^>]+>").expect("固定的 regex"));
+    static URL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://\S+").expect("固定的 regex"));
+    static WORD: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"[A-Za-z0-9][A-Za-z0-9'’.-]*").expect("固定的 regex"));
+
+    // 程式碼區塊（``` 或 ~~~ 圍起來的）只算行數，內容不當文字讀
+    let mut prose = String::with_capacity(markdown.len());
+    let mut fence: Option<&str> = None;
+    let mut code_lines = 0_u32;
+    for line in markdown.lines() {
+        let t = line.trim_start();
+        match fence {
+            Some(f) if t.starts_with(f) => fence = None,
+            Some(_) => code_lines += 1,
+            None if t.starts_with("```") || t.starts_with("~~~") => fence = Some(&t[..3]),
+            None => {
+                prose.push_str(line);
+                prose.push('\n');
+            }
+        }
+    }
+    let images = IMAGE.find_iter(&prose).count() + HTML_IMAGE.find_iter(&prose).count();
+    let text = INLINE_CODE.replace_all(&prose, " x ");
+    let text = IMAGE.replace_all(&text, " ");
+    let text = LINK.replace_all(&text, "$1");
+    let text = TAG.replace_all(&text, " ");
+    let text = URL.replace_all(&text, " ");
+    let is_cjk = |c: char| matches!(c, '\u{3400}'..='\u{9fff}' | '\u{f900}'..='\u{faff}' | '\u{3040}'..='\u{30ff}' | '\u{ac00}'..='\u{d7af}');
+    let cjk = text.chars().filter(|&c| is_cjk(c)).count();
+    let latin: String = text.chars().map(|c| if is_cjk(c) { ' ' } else { c }).collect();
+    let words = WORD.find_iter(&latin).count();
+
+    #[allow(clippy::cast_precision_loss, reason = "字數與行數遠小於 2^52，轉成 f64 不會失真")]
+    let minutes = (cjk as f64) / CJK_PER_MIN
+        + (words as f64) / WORDS_PER_MIN
+        + (images as f64) * SECONDS_PER_IMAGE / 60.0
+        + f64::from(code_lines) * SECONDS_PER_CODE_LINE / 60.0;
+    #[allow(clippy::cast_possible_truncation, reason = "四捨五入後的分鐘數是小整數")]
+    let rounded = minutes.round() as i64;
+    rounded.max(1)
+}
+
 /// 寬鬆 parseInt：trim 後嘗試解析整數，失敗用 default。
 pub fn parse_int(s: Option<&str>, default: i64) -> i64 {
     s.and_then(|v| v.trim().parse::<i64>().ok()).unwrap_or(default)
@@ -651,6 +715,44 @@ mod props {
         fn gen_slug_is_lowercase(name in ".{0,120}") {
             let s = gen_slug(&name);
             proptest::prop_assert_eq!(s.to_lowercase(), s);
+        }
+    }
+}
+
+#[cfg(test)]
+mod read_minutes_tests {
+    use super::read_minutes;
+
+    // 同一組範例也在前端 src/lib/readTime.test.ts：兩邊要算出一樣的分鐘數
+    #[test]
+    fn matches_the_shared_examples() {
+        let code = format!("```ts\n{}```\n", "let x = 1;\n".repeat(60));
+        let mixed = format!(
+            "{}\n\n{}\n\n![a](/a.webp)\n![b](/b.webp)\n<img src=\"/c.webp\" />\n\n```\n{}```\n",
+            "字".repeat(400),
+            "word ".repeat(230),
+            "x\n".repeat(30)
+        );
+        let cases = [
+            ("空白", String::new(), 1),
+            ("800 個中文字", "字".repeat(800), 2),
+            ("460 個英文詞", "word ".repeat(460), 2),
+            ("60 行程式碼", code, 2),
+            ("只有 6 張圖", "![](/a.webp)\n".repeat(6), 1),
+            ("混合：1 + 1 + 0.5 + 1 = 3.5 → 4", mixed, 4),
+            (
+                "連結只算文字、網址與圖片網址不算",
+                format!(
+                    "{}[看這裡](https://example.com/{})\nhttps://example.com/{}\n![圖](/a.webp#th=abc&w=1600&h=900)",
+                    "字".repeat(780),
+                    "a/".repeat(500),
+                    "b/".repeat(500)
+                ),
+                2,
+            ),
+        ];
+        for (label, md, want) in cases {
+            assert_eq!(read_minutes(&md), want, "{label}");
         }
     }
 }

@@ -943,8 +943,10 @@ export type PostListItem = {
 	 *  進列表要多 ~188KB，所以只送前端截斷所需的長度。
 	 */
 	content_preview: string,
-	/**  該語系內文的長度（字元數）。手記列表用它估閱讀時間、決定那篇文章的星軌拖多長。 */
+	/**  該語系內文的長度（字元數）。手記列表用它決定那篇文章的星軌拖多長。 */
 	content_length: number,
+	/**  該語系內文要讀幾分鐘（`util::read_minutes`，跟文章頁用同一套規則）。 */
+	read_minutes: number,
 	category: string | null,
 	status: string,
 	author: string | null,

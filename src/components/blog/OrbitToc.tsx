@@ -27,6 +27,7 @@ import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { peekRetune } from './useRetune';
 import { applyZoom, arcPoint, keepTimeOf, orbitSpan, postArc, skyPostOf, zoomMap, zoomOf, type Arc } from './noteSky';
 import './OrbitToc.css';
+import { readMinutesOfElements } from '@/lib/readTime';
 
 export interface TocHeading {
   id: string;
@@ -59,8 +60,6 @@ function geomNow() {
 
 /** 被摘要點名的那一章，漣漪擴一圈的時間 */
 const PING_MS = 1100;
-/** 一分鐘讀幾個字（跟手記列表一樣） */
-const CHARS_PER_MIN = 700;
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 
@@ -79,10 +78,13 @@ export default function OrbitToc({
   contentRef,
   footer,
   pingRef,
+  totalMinutes,
 }: {
   postId: number;
   headings: TocHeading[];
   contentRef: React.RefObject<HTMLElement | null>;
+  /** 整篇要讀幾分鐘（文章頁頂端那個數字，lib/readTime）：「還剩幾分鐘」照它算，兩邊才對得上 */
+  totalMinutes: number;
   /** 目錄底下「回到文章頂部」旁邊多放的東西（文章頁的字體那一行） */
   footer?: React.ReactNode;
   /** 這裡把「讓某一章亮起來」的函式掛上去，給摘要裡連到章節的句子用（null = 熄掉） */
@@ -273,15 +275,14 @@ export default function OrbitToc({
       if (ys.length) ys[ys.length - 1] = Math.min(ys[ys.length - 1], H);
       for (let i = ys.length - 2; i >= 0; i--) ys[i] = Math.min(ys[i], ys[i + 1] - gap(i + 1));
       us = ys.map((y) => y / H);
-      // 每節要讀幾分鐘：到下一個標題之前的字數
+      // 每節要讀幾分鐘：到下一個標題之前的內容（lib/readTime，跟整篇同一組速度）
       itemsRef.current.forEach((li, i) => {
         const m = li?.querySelector<HTMLElement>('.orbit-toc-min');
         if (!m) return;
-        let n = 0;
+        const section: Element[] = [];
         const stop = els[i + 1];
-        for (let el = els[i]?.nextElementSibling; el && el !== stop; el = el.nextElementSibling)
-          n += el.textContent.length;
-        m.textContent = t('blog.minutes', { count: Math.max(1, Math.round(n / CHARS_PER_MIN)) });
+        for (let el = els[i]?.nextElementSibling; el && el !== stop; el = el.nextElementSibling) section.push(el);
+        m.textContent = t('blog.minutes', { count: readMinutesOfElements(section) });
       });
     };
     const lerp = (xs: number[], ys: number[], x: number) => {
@@ -291,7 +292,7 @@ export default function OrbitToc({
       return ys[ys.length - 1];
     };
 
-    const totalMin = Math.max(1, Math.round(content.textContent.length / CHARS_PER_MIN));
+    const totalMin = totalMinutes;
     let on = -2;
     let raf = 0;
     let last = 0;
@@ -539,7 +540,7 @@ export default function OrbitToc({
       unsubscribeFold();
       ro.disconnect();
     };
-  }, [headings, contentRef, t]);
+  }, [headings, contentRef, t, totalMinutes]);
 
   const go = (id: string) => {
     const el = document.getElementById(id);
