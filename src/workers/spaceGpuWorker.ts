@@ -98,7 +98,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           // device lost：worker 裡的 console.error 不會出現在頁面 console，而且這個 renderer
           // 之後一幀都不會再畫。轉給主執行緒，由它換一張新 canvas 重建（見 StarfieldGpu）。
           onDeviceLost: (message) => self.postMessage({ type: 'lost', message }),
-          onSatellites: (positions) => self.postMessage({ type: 'satellites', positions }),
+          onSatellites: (positions, at) => self.postMessage({ type: 'satellites', positions, at }),
         });
         runner = r;
         runner.setScroll(lastScroll);

@@ -20,7 +20,13 @@ import { saturnFrame } from '@/lib/saturnSpec';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
 import { isTallMedium } from '@/lib/viewportShape';
-import { collapseSaturnTo, setSatelliteGlow, subscribeSatellites, type SatelliteScreen } from '@/store/homeOrbit';
+import {
+  absNow,
+  collapseSaturnTo,
+  setSatelliteGlow,
+  subscribeSatellites,
+  type SatelliteScreen,
+} from '@/store/homeOrbit';
 import { after, type Pt } from '@/store/pageTransition';
 import FoldIndex from '@/components/common/FoldIndex';
 import { useFoldPose } from '@/hooks/useFoldPose';
@@ -52,6 +58,8 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
  * 大半是在等這 2.5 秒
  */
 const FLAT_AFTER_MS = 2500;
+/** 字的位置最多往前推算多久（3D 送來的位置晚到或沒到的那幾幀用速度補） */
+const PREDICT_MAX_MS = 50;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
 const SATURN_COLLAPSE_MS = 500;
 
@@ -154,18 +162,23 @@ export default function HomeOrbit() {
       fold = currentFold();
     });
 
-    const unsubscribe = subscribeSatellites((next) => {
-      const now = performance.now();
+    /** 收到的這組位置是 3D 在哪個時間點算的（store/homeOrbit 的 absNow 時基） */
+    let positionsAt = 0;
+    const unsubscribe = subscribeSatellites((next, at) => {
       const prev = positionsRef.current;
-      if (next.length && prev.length === next.length && now > lastPositionsAt) {
+      // 速度照 3D 算位置的時間差算，不照訊息到達的時間：訊息有時一幀到兩筆、有時一筆都沒有
+      if (next.length && prev.length === next.length && at > positionsAt) {
         velocityRef.current = next.map((p, i) => ({
-          x: (p.x - prev[i].x) / (now - lastPositionsAt),
-          y: (p.y - prev[i].y) / (now - lastPositionsAt),
+          x: (p.x - prev[i].x) / (at - positionsAt),
+          y: (p.y - prev[i].y) / (at - positionsAt),
         }));
       }
       positions = next;
       positionsRef.current = next;
-      if (next.length) lastPositionsAt = now;
+      if (next.length) {
+        lastPositionsAt = performance.now();
+        positionsAt = at;
+      }
     });
 
     /** 指到（聚焦）的是第幾顆的字卡或目錄那一列 */
@@ -214,12 +227,20 @@ export default function HomeOrbit() {
         setFlat(nextFlat);
       }
       if (!live) return;
+      // 字跟著衛星：3D 在 worker 裡畫，位置傳過來時已經晚了一點，而且跟這邊的幀不同步（有的幀收到兩筆、
+      // 有的一筆也沒有），照收到的位置擺字會一停一跳。照速度推算到這一幀的時間，字就跟畫面上的衛星對齊。
+      // 最多推 PREDICT_MAX_MS：3D 停下來（分頁切走、收起來）時字不會自己飄走
+      const ahead = Math.min(PREDICT_MAX_MS, Math.max(0, absNow() - positionsAt));
+      const shown = positions.map((p, i) => {
+        const v = velocityRef.current[i] as Pt | undefined;
+        return v ? { ...p, x: p.x + v.x * ahead, y: p.y + v.y * ahead } : p;
+      });
 
       let near = focused >= 0 ? focused : hovered >= 0 ? hovered : tapped;
       if (near < 0 && pointer) {
         const [px, py] = pointer;
         let best = NEAR_PX;
-        positions.forEach((p, i) => {
+        shown.forEach((p, i) => {
           const d = Math.hypot(p.x - px, p.y - py);
           if (!p.hidden && d < best) {
             best = d;
@@ -254,7 +275,7 @@ export default function HomeOrbit() {
       // 尺寸先一次量完再寫：讀寫交錯的話，每讀一次 offsetWidth 瀏覽器就得把前一顆剛寫的樣式排一次版，
       // 一幀重排十幾次；換頁時整頁正在換，每一次都是整頁的排版（CPU 降速 4 倍時一幀 80–115ms）。
       // 這裡寫的 transform、translate、opacity、is-on（只改 pointer-events）都不影響尺寸，量到的跟交錯時一樣
-      const sizes = positions.map((_, i) => {
+      const sizes = shown.map((_, i) => {
         const el = labelsRef.current[i];
         const tag = tagsRef.current[i];
         return {
@@ -265,7 +286,7 @@ export default function HomeOrbit() {
           th: tag?.offsetHeight ?? 0,
         };
       });
-      positions.forEach((p, i) => {
+      shown.forEach((p, i) => {
         const el = labelsRef.current[i];
         if (!el) return;
         const size = sizes[i];

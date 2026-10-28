@@ -14,18 +14,30 @@ export interface SatelliteScreen {
 }
 
 type Listener<T> = (value: T) => void;
+/** 衛星的位置，與它是哪個時間點的位置（performance.timeOrigin + performance.now()，主執行緒與 worker 共用的時基） */
+type PositionListener = (positions: SatelliteScreen[], at: number) => void;
+
+/** 現在的絕對時間（毫秒）。worker 的 performance.now() 從 worker 建立時起算，加上 timeOrigin 才跟主執行緒對得上 */
+export const absNow = () => performance.timeOrigin + performance.now();
 
 let positions: SatelliteScreen[] = [];
-const positionListeners = new Set<Listener<SatelliteScreen[]>>();
+let positionsAt = 0;
+const positionListeners = new Set<PositionListener>();
 
-export function publishSatellites(next: SatelliteScreen[]) {
+/**
+ * 3D 那邊每畫一幀送一次。at 是算出這些位置的時間：3D 在 worker 裡畫，訊息到主執行緒時已經晚了一點，
+ * 而且跟主執行緒的幀不同步（有的幀收到兩筆、有的一筆也沒有），字照收到的時間走會一停一跳。
+ * 首頁的字照 at 推算到自己這一幀的時間（home/HomeOrbit）
+ */
+export function publishSatellites(next: SatelliteScreen[], at = absNow()) {
   positions = next;
-  for (const fn of positionListeners) fn(next);
+  positionsAt = at;
+  for (const fn of positionListeners) fn(next, at);
 }
 
-export function subscribeSatellites(fn: Listener<SatelliteScreen[]>): () => void {
+export function subscribeSatellites(fn: PositionListener): () => void {
   positionListeners.add(fn);
-  if (positions.length) fn(positions);
+  if (positions.length) fn(positions, positionsAt);
   return () => {
     positionListeners.delete(fn);
   };

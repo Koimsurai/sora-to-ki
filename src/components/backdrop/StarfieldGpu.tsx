@@ -278,9 +278,10 @@ export default function StarfieldGpu({
           report?: PerfReport;
           message?: string;
           positions?: SatelliteScreen[];
+          at?: number;
         }>,
       ) => {
-        if (e.data.type === 'satellites') publishSatellites(e.data.positions ?? []);
+        if (e.data.type === 'satellites') publishSatellites(e.data.positions ?? [], e.data.at);
         else if (e.data.type === 'ready') {
           setBackend(`${e.data.backend} · worker`);
           setInitInfo(describeInit(e.data.timing));

@@ -139,7 +139,7 @@ export interface StarfieldInit {
    * 土星顯示時，每畫一幀回報一次衛星在畫面上的位置（首頁的字跟著它走，見 store/homeOrbit）。
    * 土星收起來時送一次空陣列。
    */
-  onSatellites?: (positions: SatelliteScreen[]) => void;
+  onSatellites?: (positions: SatelliteScreen[], at: number) => void;
   /** 手機：星星只畫三分之一左右（手機只在首頁跑 3D，主角是土星與衛星） */
   lite?: boolean;
 }
@@ -885,7 +885,8 @@ export async function createStarfieldRunner(
       const s = saturn.update(delta, scrollY, saturnAnimate);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
-      init.onSatellites?.(saturn.project(saturnCam, viewW, viewH));
+      // 附上算出位置的時間（跟主執行緒共用的時基），首頁的字照它推算到自己那一幀（store/homeOrbit）
+      init.onSatellites?.(saturn.project(saturnCam, viewW, viewH), performance.timeOrigin + performance.now());
     }
     try {
       pipeline.render();
@@ -958,7 +959,7 @@ export async function createStarfieldRunner(
       },
       setSaturn(visible, animate) {
         markActive();
-        if (saturnVisible && !visible) init.onSatellites?.([]);
+        if (saturnVisible && !visible) init.onSatellites?.([], performance.timeOrigin + performance.now());
         // 每次重新出現都從一點撐開（換頁轉場的「長」）
         if (!saturnVisible && visible) saturn.collapse();
         saturnVisible = visible;
