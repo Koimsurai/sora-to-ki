@@ -31,6 +31,8 @@ use crate::state::AppState;
 const TIMEOUT: Duration = Duration::from_secs(10);
 /// 熱門頁面、來源那幾張表各取幾列
 const TOP_N: u64 = 10;
+/// 每篇文章那張表取幾篇
+const POSTS_N: usize = 10;
 
 fn api_key() -> Option<String> {
     std::env::var("PLAUSIBLE_API_KEY").ok().filter(|s| !s.trim().is_empty())
@@ -49,14 +51,26 @@ pub struct AnalyticsQuery {
     pub period: Option<String>,
 }
 
-/// 期間 → (Plausible 的 date_range, 走勢圖的時間粒度)。只收這三種，其他一律當 30 天。
+/// 期間 → (名稱, 天數, 走勢圖的時間粒度)。只收這三種，其他一律當 30 天。
 /// 半年用週：一天一格的話 180 根柱子擠在一起，看不出起伏。
-fn period_spec(period: Option<&str>) -> (&'static str, &'static str) {
+fn period_spec(period: Option<&str>) -> (&'static str, i64, &'static str) {
     match period {
-        Some("7d") => ("7d", "time:day"),
-        Some("6mo") => ("6mo", "time:week"),
-        _ => ("30d", "time:day"),
+        Some("7d") => ("7d", 7, "time:day"),
+        Some("6mo") => ("6mo", 182, "time:week"),
+        _ => ("30d", 30, "time:day"),
     }
+}
+
+/// 這一段與上一段的日期（含頭含尾，`yyyy-MM-dd`）。這一段是到昨天為止的 N 天（跟 Plausible 的
+/// `7d`／`30d` 一樣不含今天），上一段緊接在它前面、一樣長，用來算「比上一段多還是少」
+fn date_ranges(days: i64, today: chrono::NaiveDate) -> ([String; 2], [String; 2]) {
+    let day = |n: i64| (today - chrono::TimeDelta::days(n)).to_string();
+    ([day(days), day(1)], [day(days * 2), day(days + 1)])
+}
+
+/// 台北的今天（Plausible 站台設的時區）
+fn today_taipei() -> chrono::NaiveDate {
+    (chrono::Utc::now() + chrono::TimeDelta::hours(8)).date_naive()
 }
 
 #[derive(Debug, Default, Serialize, PartialEq, specta::Type, utoipa::ToSchema)]
@@ -71,6 +85,8 @@ pub struct AnalyticsTotals {
     pub bounce_rate: f64,
     /// 平均停留，秒
     pub visit_duration: f64,
+    /// 每次造訪平均看幾頁
+    pub views_per_visit: f64,
 }
 
 /// 走勢圖的一格。`date` 是那一格的起點（`yyyy-MM-dd`，週粒度時是那週的第一天）
@@ -91,16 +107,60 @@ pub struct AnalyticsRow {
     pub visitors: i64,
 }
 
+/// 一篇文章這段期間的表現。各語系的同一篇合在一起算；捲動與停留照人數加權平均
+#[derive(Debug, Serialize, PartialEq, specta::Type, utoipa::ToSchema)]
+pub struct PostPerf {
+    #[specta(type = specta_typescript::Number)]
+    pub id: i64,
+    pub slug: String,
+    pub title: String,
+    #[specta(type = specta_typescript::Number)]
+    pub visitors: i64,
+    /// 平均捲到全文的幾成（0–100）：畫面底邊到過的最遠處 ÷ 頁高，跳到底部也算。資料不夠時是 null
+    pub scroll_depth: Option<f64>,
+    /// 平均停留，秒（分頁在背景的時間不算）。資料不夠時是 null
+    pub time_on_page: Option<f64>,
+    /// 讀完要幾分鐘（util::read_minutes，跟前台一樣）
+    #[specta(type = specta_typescript::Number)]
+    pub read_minutes: i64,
+    /// 文章頁的 ❤️ 總數（不限期間）
+    #[specta(type = specta_typescript::Number)]
+    pub hearts: i64,
+    /// 已核准的留言數（不限期間）
+    #[specta(type = specta_typescript::Number)]
+    pub comments: i64,
+}
+
+/// 一個來源與從它進站時先看的那幾頁
+#[derive(Debug, Serialize, PartialEq, specta::Type, utoipa::ToSchema)]
+pub struct SourceEntries {
+    pub source: String,
+    #[specta(type = specta_typescript::Number)]
+    pub visitors: i64,
+    pub entries: Vec<AnalyticsRow>,
+}
+
 #[derive(Debug, Default, Serialize, specta::Type, utoipa::ToSchema)]
 pub struct AnalyticsResponse {
     /// 後端有沒有設 `PLAUSIBLE_API_KEY`；沒設時其他欄位都是空的
     pub configured: bool,
     pub period: String,
+    /// 這一段的日期（含頭含尾，`yyyy-MM-dd`）
+    pub start: String,
+    pub end: String,
     /// 最近五分鐘的訪客（Plausible 的 realtime）；查不到時是 null，不影響其他欄位
     #[specta(type = Option<specta_typescript::Number>)]
     pub realtime: Option<i64>,
     pub totals: AnalyticsTotals,
+    /// 上一段（緊接在前、一樣長）的總數，算漲跌用
+    pub previous: AnalyticsTotals,
     pub series: Vec<AnalyticsPoint>,
+    /// 每篇文章（看的人最多的前幾篇）
+    pub posts: Vec<PostPerf>,
+    /// 前幾大來源，各帶從它進站時先看的那幾頁
+    pub entries: Vec<SourceEntries>,
+    /// Google 搜尋字詞（Search Console）
+    pub search: crate::handlers::search_console::SearchTerms,
     pub pages: Vec<AnalyticsRow>,
     pub sources: Vec<AnalyticsRow>,
     /// 國家是 ISO 3166-1 alpha-2 國碼，前端用 `Intl.DisplayNames` 翻成中文
@@ -121,7 +181,7 @@ fn results(body: &Value) -> &[Value] {
 }
 
 /// 總數那個查詢：沒有 dimensions，只有一列，metrics 照請求的順序
-/// （visitors, visits, pageviews, bounce_rate, visit_duration）
+/// （visitors, visits, pageviews, bounce_rate, visit_duration, views_per_visit）
 fn totals_from(body: &Value) -> AnalyticsTotals {
     let Some(m) = results(body).first().and_then(|r| r["metrics"].as_array()) else {
         return AnalyticsTotals::default();
@@ -133,7 +193,114 @@ fn totals_from(body: &Value) -> AnalyticsTotals {
         pageviews: int(at(2)),
         bounce_rate: at(3).as_f64().unwrap_or(0.0),
         visit_duration: at(4).as_f64().unwrap_or(0.0),
+        views_per_visit: at(5).as_f64().unwrap_or(0.0),
     }
+}
+
+/// 網址裡的文章：`/blog/<slug 或 id>`，前面可以有語系（`/en/blog/…`）；不是文章頁回 None
+fn post_key(path: &str) -> Option<String> {
+    let mut segs = path.split(['?', '#']).next()?.split('/').filter(|s| !s.is_empty());
+    let first = segs.next()?;
+    let blog = if first == "blog" { first } else { segs.next()? };
+    if blog != "blog" {
+        return None;
+    }
+    let key = segs.next()?;
+    segs.next().is_none().then(|| key.to_string())
+}
+
+/// 各頁的訪客、捲動、停留 → 每篇文章一列（各語系合併、照人數加權），看的人多的在前
+fn merge_posts(body: &Value) -> Vec<(String, i64, Option<f64>, Option<f64>)> {
+    // key → (訪客, 捲動×人數, 有捲動資料的人數, 停留×人數, 有停留資料的人數)
+    let mut acc: Vec<(String, i64, f64, i64, f64, i64)> = Vec::new();
+    for r in results(body) {
+        let Some(key) = r["dimensions"][0].as_str().and_then(post_key) else { continue };
+        let m = &r["metrics"];
+        let v = int(&m[0]);
+        let i = acc.iter().position(|a| a.0 == key).unwrap_or_else(|| {
+            acc.push((key, 0, 0.0, 0, 0.0, 0));
+            acc.len() - 1
+        });
+        let a = &mut acc[i];
+        a.1 += v;
+        #[allow(clippy::cast_precision_loss, reason = "訪客數遠小於 2^52")]
+        if let Some(sd) = m[1].as_f64() {
+            a.2 += sd * v as f64;
+            a.3 += v;
+        }
+        #[allow(clippy::cast_precision_loss, reason = "訪客數遠小於 2^52")]
+        if let Some(t) = m[2].as_f64() {
+            a.4 += t * v as f64;
+            a.5 += v;
+        }
+    }
+    acc.sort_by_key(|a| std::cmp::Reverse(a.1));
+    #[allow(clippy::cast_precision_loss, reason = "訪客數遠小於 2^52")]
+    let avg = |sum: f64, n: i64| (n > 0).then(|| (sum / n as f64 * 10.0).round() / 10.0);
+    acc.into_iter().map(|(k, v, sd, sdn, t, tn)| (k, v, avg(sd, sdn), avg(t, tn))).collect()
+}
+
+/// 來源 × 進站頁 → 前 `top` 個來源（照 `sources` 的順序），每個帶前 `per` 個進站頁
+fn group_entries(sources: &[AnalyticsRow], body: &Value, top: usize, per: usize) -> Vec<SourceEntries> {
+    sources
+        .iter()
+        .take(top)
+        .map(|s| SourceEntries {
+            source: s.name.clone(),
+            visitors: s.visitors,
+            entries: results(body)
+                .iter()
+                .filter(|r| r["dimensions"][0].as_str() == Some(s.name.as_str()))
+                .take(per)
+                .map(|r| AnalyticsRow {
+                    name: r["dimensions"][1].as_str().unwrap_or_default().to_string(),
+                    visitors: int(&r["metrics"][0]),
+                })
+                .collect(),
+        })
+        .collect()
+}
+
+/// 每篇文章補上標題、閱讀時間、愛心與留言（資料庫裡找不到的那篇——改過網址又沒留舊網址——略過）
+async fn posts_from(state: &AppState, merged: Vec<(String, i64, Option<f64>, Option<f64>)>) -> Vec<PostPerf> {
+    let mut out = Vec::new();
+    for (key, visitors, scroll_depth, time_on_page) in merged.into_iter().take(POSTS_N) {
+        let row: Option<(i64, Option<String>, String, String)> = sqlx::query_as(
+            "SELECT id, slug, title, content FROM posts WHERE slug = ? OR CAST(id AS TEXT) = ? LIMIT 1",
+        )
+        .bind(&key)
+        .bind(&key)
+        .fetch_optional(&state.pool)
+        .await
+        .ok()
+        .flatten();
+        let Some((id, slug, title, content)) = row else { continue };
+        let hearts: i64 = sqlx::query_scalar(
+            "SELECT COALESCE((SELECT count FROM post_reactions WHERE post_id = ? AND emoji = '❤️'), 0)",
+        )
+        .bind(id)
+        .fetch_one(&state.pool)
+        .await
+        .unwrap_or(0);
+        let comments: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM comments WHERE post_id = ? AND status = 'approved'")
+                .bind(id)
+                .fetch_one(&state.pool)
+                .await
+                .unwrap_or(0);
+        out.push(PostPerf {
+            id,
+            slug: slug.unwrap_or(key),
+            title,
+            visitors,
+            scroll_depth,
+            time_on_page,
+            read_minutes: crate::util::read_minutes(&content),
+            hearts,
+            comments,
+        });
+    }
+    out
 }
 
 /// 走勢：結果只有「有資料的那幾格」，沒人來的日子不會出現。
@@ -236,17 +403,21 @@ pub async fn admin_analytics(
     _auth: crate::auth::AdminAuth,
     Query(q): Query<AnalyticsQuery>,
 ) -> Response {
-    let (range, bucket) = period_spec(q.period.as_deref());
+    let (period, days, bucket) = period_spec(q.period.as_deref());
+    let ([start, end], [prev_start, prev_end]) = date_ranges(days, today_taipei());
     let site = site_id();
     let dashboard_url = format!("{}/{site}", state.external.plausible);
     let Some(key) = api_key() else {
         return Json(AnalyticsResponse {
-            period: range.into(),
+            period: period.into(),
+            start,
+            end,
             dashboard_url,
             ..AnalyticsResponse::default()
         })
         .into_response();
     };
+    let range = json!([start, end]);
 
     let top = |dimension: &str, extra: Value| {
         let mut body = json!({
@@ -262,17 +433,29 @@ pub async fn admin_analytics(
         }
         body
     };
+    let totals_body = |range: Value| {
+        json!({
+            "site_id": site,
+            "date_range": range,
+            "metrics": ["visitors", "visits", "pageviews", "bounce_rate", "visit_duration", "views_per_visit"],
+        })
+    };
 
-    let (totals, series, pages, sources, countries, devices, live) = tokio::join!(
-        query(
-            &state,
-            &key,
-            json!({
-                "site_id": site,
-                "date_range": range,
-                "metrics": ["visitors", "visits", "pageviews", "bounce_rate", "visit_duration"],
-            }),
-        ),
+    let (
+        totals,
+        previous,
+        series,
+        pages,
+        sources,
+        countries,
+        devices,
+        post_pages,
+        source_entry,
+        live,
+        search,
+    ) = tokio::join!(
+        query(&state, &key, totals_body(range.clone())),
+        query(&state, &key, totals_body(json!([prev_start, prev_end]))),
         query(
             &state,
             &key,
@@ -293,28 +476,60 @@ pub async fn admin_analytics(
         query(&state, &key, top("visit:source", json!({}))),
         query(&state, &key, top("visit:country", json!({}))),
         query(&state, &key, top("visit:device", json!({}))),
+        // 文章頁的捲動與停留：各語系分開回，下面合併（一篇最多五個語系，取 300 列夠用）
+        query(
+            &state,
+            &key,
+            json!({
+                "site_id": site,
+                "date_range": range,
+                "metrics": ["visitors", "scroll_depth", "time_on_page"],
+                "dimensions": ["event:page"],
+                "filters": [["contains", "event:page", ["/blog/"]]],
+                "order_by": [["visitors", "desc"]],
+                "pagination": { "limit": 300 },
+            }),
+        ),
+        query(
+            &state,
+            &key,
+            json!({
+                "site_id": site,
+                "date_range": range,
+                "metrics": ["visitors"],
+                "dimensions": ["visit:source", "visit:entry_page"],
+                "order_by": [["visitors", "desc"]],
+                "pagination": { "limit": 100 },
+            }),
+        ),
         realtime(&state, &key, &site),
+        crate::handlers::search_console::top_queries(&state, &start, &end, 15),
     );
 
     // 任一個查詢失敗多半是同一個原因（key 錯、site_id 錯、Plausible 掛了），回第一個就夠
-    let (totals, series, pages, sources, countries, devices) =
-        match (totals, series, pages, sources, countries, devices) {
-            (Ok(a), Ok(b), Ok(c), Ok(d), Ok(e), Ok(f)) => (a, b, c, d, e, f),
-            (a, b, c, d, e, f) => {
-                let error = [a, b, c, d, e, f].into_iter().find_map(Result::err).unwrap_or_default();
-                tracing::warn!(%error, "Plausible 查詢失敗");
-                return (StatusCode::BAD_GATEWAY, Json(json!({ "error": error }))).into_response();
-            }
-        };
+    let results = [totals, previous, series, pages, sources, countries, devices, post_pages, source_entry];
+    if let Some(error) = results.iter().find_map(|r| r.as_ref().err()) {
+        tracing::warn!(%error, "Plausible 查詢失敗");
+        return (StatusCode::BAD_GATEWAY, Json(json!({ "error": error }))).into_response();
+    }
+    let [totals, previous, series, pages, sources, countries, devices, post_pages, source_entry] =
+        results.map(Result::unwrap_or_default);
+    let sources = rows_from(&sources);
 
     Json(AnalyticsResponse {
         configured: true,
-        period: range.into(),
+        period: period.into(),
+        start,
+        end,
         realtime: live,
         totals: totals_from(&totals),
+        previous: totals_from(&previous),
         series: series_from(&series),
+        posts: posts_from(&state, merge_posts(&post_pages)).await,
+        entries: group_entries(&sources, &source_entry, 4, 5),
+        search,
         pages: rows_from(&pages),
-        sources: rows_from(&sources),
+        sources,
         countries: rows_from(&countries),
         devices: rows_from(&devices),
         dashboard_url,
@@ -328,15 +543,15 @@ mod tests {
 
     #[test]
     fn period_falls_back_to_30_days() {
-        assert_eq!(period_spec(Some("7d")), ("7d", "time:day"));
-        assert_eq!(period_spec(Some("6mo")), ("6mo", "time:week"));
-        assert_eq!(period_spec(Some("all")), ("30d", "time:day"));
-        assert_eq!(period_spec(None), ("30d", "time:day"));
+        assert_eq!(period_spec(Some("7d")), ("7d", 7, "time:day"));
+        assert_eq!(period_spec(Some("6mo")), ("6mo", 182, "time:week"));
+        assert_eq!(period_spec(Some("all")), ("30d", 30, "time:day"));
+        assert_eq!(period_spec(None), ("30d", 30, "time:day"));
     }
 
     #[test]
     fn totals_follow_requested_metric_order() {
-        let body = json!({ "results": [{ "metrics": [12, 15, 40, 61.5, 93], "dimensions": [] }] });
+        let body = json!({ "results": [{ "metrics": [12, 15, 40, 61.5, 93, 2.7], "dimensions": [] }] });
         assert_eq!(
             totals_from(&body),
             AnalyticsTotals {
@@ -344,7 +559,8 @@ mod tests {
                 visits: 15,
                 pageviews: 40,
                 bounce_rate: 61.5,
-                visit_duration: 93.0
+                visit_duration: 93.0,
+                views_per_visit: 2.7,
             }
         );
         assert_eq!(totals_from(&json!({ "results": [] })), AnalyticsTotals::default());
@@ -372,6 +588,69 @@ mod tests {
             series_from(&body),
             [AnalyticsPoint { date: "2026-10-25".into(), visitors: 1, pageviews: 2 }]
         );
+    }
+
+    #[test]
+    fn date_ranges_end_yesterday_and_previous_is_right_before() {
+        let today = chrono::NaiveDate::from_ymd_opt(2026, 10, 28).expect("合法日期");
+        let (now, prev) = date_ranges(7, today);
+        assert_eq!(now, ["2026-10-21".to_string(), "2026-10-27".to_string()]);
+        assert_eq!(prev, ["2026-10-14".to_string(), "2026-10-20".to_string()]);
+        let (now, prev) = date_ranges(30, today);
+        assert_eq!(now, ["2026-09-28".to_string(), "2026-10-27".to_string()], "跨月");
+        assert_eq!(prev, ["2026-08-29".to_string(), "2026-09-27".to_string()]);
+    }
+
+    #[test]
+    fn post_key_reads_article_paths_in_every_locale() {
+        assert_eq!(post_key("/blog/zed").as_deref(), Some("zed"));
+        assert_eq!(post_key("/zh-cn/blog/zed").as_deref(), Some("zed"));
+        assert_eq!(post_key("/en/blog/77?ref=x").as_deref(), Some("77"));
+        assert_eq!(post_key("/blog"), None, "列表不是文章");
+        assert_eq!(post_key("/zh-cn/blog/"), None);
+        assert_eq!(post_key("/about"), None);
+        assert_eq!(post_key("/blog/zed/extra"), None);
+    }
+
+    #[test]
+    fn merge_posts_combines_locales_weighted_by_visitors() {
+        let body = json!({ "results": [
+            { "metrics": [100, 40, 20], "dimensions": ["/zh-cn/blog/a"] },
+            { "metrics": [300, 60, 60], "dimensions": ["/blog/b"] },
+            { "metrics": [100, 80, null], "dimensions": ["/en/blog/a"] },
+            { "metrics": [50, null, null], "dimensions": ["/blog"] },
+        ] });
+        assert_eq!(
+            merge_posts(&body),
+            vec![
+                ("b".into(), 300, Some(60.0), Some(60.0)),
+                // 捲動：(40×100 + 80×100) / 200；停留只有中文那 100 人有資料
+                ("a".into(), 200, Some(60.0), Some(20.0)),
+            ]
+        );
+    }
+
+    #[test]
+    fn group_entries_follows_source_order() {
+        let sources = vec![
+            AnalyticsRow { name: "Twitter".into(), visitors: 30 },
+            AnalyticsRow { name: "Google".into(), visitors: 5 },
+        ];
+        let body = json!({ "results": [
+            { "metrics": [20], "dimensions": ["Twitter", "/zh-cn"] },
+            { "metrics": [4], "dimensions": ["Google", "/blog/a"] },
+            { "metrics": [10], "dimensions": ["Twitter", "/en"] },
+            { "metrics": [1], "dimensions": ["Bing", "/"] },
+        ] });
+        let g = group_entries(&sources, &body, 4, 1);
+        assert_eq!(g.len(), 2);
+        assert_eq!((g[0].source.as_str(), g[0].visitors), ("Twitter", 30));
+        assert_eq!(
+            g[0].entries,
+            vec![AnalyticsRow { name: "/zh-cn".into(), visitors: 20 }],
+            "每個來源只取前 per 個"
+        );
+        assert_eq!(g[1].entries, vec![AnalyticsRow { name: "/blog/a".into(), visitors: 4 }]);
     }
 
     #[test]

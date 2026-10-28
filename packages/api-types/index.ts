@@ -245,10 +245,21 @@ export type AnalyticsResponse = {
 	/**  後端有沒有設 `PLAUSIBLE_API_KEY`；沒設時其他欄位都是空的 */
 	configured: boolean,
 	period: string,
+	/**  這一段的日期（含頭含尾，`yyyy-MM-dd`） */
+	start: string,
+	end: string,
 	/**  最近五分鐘的訪客（Plausible 的 realtime）；查不到時是 null，不影響其他欄位 */
 	realtime: number | null,
 	totals: AnalyticsTotals,
+	/**  上一段（緊接在前、一樣長）的總數，算漲跌用 */
+	previous: AnalyticsTotals,
 	series: AnalyticsPoint[],
+	/**  每篇文章（看的人最多的前幾篇） */
+	posts: PostPerf[],
+	/**  前幾大來源，各帶從它進站時先看的那幾頁 */
+	entries: SourceEntries[],
+	/**  Google 搜尋字詞（Search Console） */
+	search: SearchTerms,
 	pages: AnalyticsRow[],
 	sources: AnalyticsRow[],
 	/**  國家是 ISO 3166-1 alpha-2 國碼，前端用 `Intl.DisplayNames` 翻成中文 */
@@ -272,6 +283,8 @@ export type AnalyticsTotals = {
 	bounce_rate: number | null,
 	/**  平均停留，秒 */
 	visit_duration: number | null,
+	/**  每次造訪平均看幾頁 */
+	views_per_visit: number | null,
 };
 
 export type AnimeHistoryResponse = {
@@ -973,6 +986,24 @@ export type PostListItem = {
 	tags: string[],
 };
 
+/**  一篇文章這段期間的表現。各語系的同一篇合在一起算；捲動與停留照人數加權平均 */
+export type PostPerf = {
+	id: number,
+	slug: string,
+	title: string,
+	visitors: number,
+	/**  平均捲到全文的幾成（0–100）：畫面底邊到過的最遠處 ÷ 頁高，跳到底部也算。資料不夠時是 null */
+	scroll_depth: number | null,
+	/**  平均停留，秒（分頁在背景的時間不算）。資料不夠時是 null */
+	time_on_page: number | null,
+	/**  讀完要幾分鐘（util::read_minutes，跟前台一樣） */
+	read_minutes: number,
+	/**  文章頁的 ❤️ 總數（不限期間） */
+	hearts: number,
+	/**  已核准的留言數（不限期間） */
+	comments: number,
+};
+
 export type PostsListResponse = {
 	message: string,
 	posts: PostListItem[],
@@ -980,37 +1011,6 @@ export type PostsListResponse = {
 	pagination: Pagination,
 };
 
-export type ReactionRow = {
-	emoji: string,
-	count: number,
-};
-
-export type ReactionsResponse = {
-	reactions: ReactionRow[],
-};
-
-export type RecentPlayItem = {
-	track: SpotifyTrack,
-	played_at: string,
-};
-
-/**  `GET /api/spotify/recently-played` */
-export type RecentlyPlayedResponse = {
-	items: RecentPlayItem[],
-};
-
-export type SeriesDetailResponse = {
-	name: string,
-	posts: SeriesPostRow[],
-};
-
-export type SeriesListResponse = {
-	series: SeriesRow[],
-};
-
-/**  `GET /api/series/:name` 單列：某系列下的文章（精簡欄位）。 */
-export type SeriesPostRow = {
-	id: number,
 /**  一筆紀錄。`target_title`：文章是標題、留言是它所在那篇的標題、碎念是內文開頭 */
 export type ReactionLogEvent = {
 	id: number,
@@ -1036,6 +1036,54 @@ export type ReactionLogResponse = {
 	events: ReactionLogEvent[],
 };
 
+export type ReactionRow = {
+	emoji: string,
+	count: number,
+};
+
+export type ReactionsResponse = {
+	reactions: ReactionRow[],
+};
+
+export type RecentPlayItem = {
+	track: SpotifyTrack,
+	played_at: string,
+};
+
+/**  `GET /api/spotify/recently-played` */
+export type RecentlyPlayedResponse = {
+	items: RecentPlayItem[],
+};
+
+/**  一個搜尋字詞：點了幾次、出現幾次、點擊率（0–1）、平均排名 */
+export type SearchQueryRow = {
+	query: string,
+	clicks: number,
+	impressions: number,
+	ctr: number | null,
+	position: number | null,
+};
+
+export type SearchTerms = {
+	/**  後端有沒有設 `GSC_SERVICE_ACCOUNT_FILE` */
+	configured: boolean,
+	/**  查詢失敗的原因；成功是 null */
+	error: string | null,
+	queries: SearchQueryRow[],
+};
+
+export type SeriesDetailResponse = {
+	name: string,
+	posts: SeriesPostRow[],
+};
+
+export type SeriesListResponse = {
+	series: SeriesRow[],
+};
+
+/**  `GET /api/series/:name` 單列：某系列下的文章（精簡欄位）。 */
+export type SeriesPostRow = {
+	id: number,
 	title: string,
 	excerpt: string | null,
 	series_name: string | null,
@@ -1049,6 +1097,13 @@ export type SeriesRow = {
 	count: number,
 	first_at: string | null,
 	last_at: string | null,
+};
+
+/**  一個來源與從它進站時先看的那幾頁 */
+export type SourceEntries = {
+	source: string,
+	visitors: number,
+	entries: AnalyticsRow[],
 };
 
 export type SpotifyAlbum = {

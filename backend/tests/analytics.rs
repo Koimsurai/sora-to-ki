@@ -28,8 +28,26 @@ async fn app_against(server: &MockServer) -> axum::Router {
 fn answer(req: &Request) -> ResponseTemplate {
     let body: Value = serde_json::from_slice(&req.body).unwrap_or_default();
     let dim = body["dimensions"][0].as_str().unwrap_or("");
+    // 兩個 event:page 查詢：熱門頁面（濾掉後台）與文章頁的捲動／停留（只要 /blog/）
+    let articles = body["filters"][0][0] == "contains";
+    let source_entry = body["dimensions"][1] == "visit:entry_page";
+    // 上一段的總數：這一段到昨天（台北）為止，上一段的結束日不是昨天
+    let yesterday = ((chrono::Utc::now() + chrono::TimeDelta::hours(8)).date_naive()
+        - chrono::TimeDelta::days(1))
+    .to_string();
+    let previous = dim.is_empty() && body["date_range"][1].as_str() != Some(yesterday.as_str());
     let out = match dim {
-        "" => json!({ "results": [{ "metrics": [120, 150, 400, 55, 75], "dimensions": [] }] }),
+        "" if previous => json!({ "results": [{ "metrics": [30, 40, 90, 70, 60, 2.25], "dimensions": [] }] }),
+        "" => json!({ "results": [{ "metrics": [120, 150, 400, 55, 75, 2.67], "dimensions": [] }] }),
+        "event:page" if articles => json!({ "results": [
+            { "metrics": [80, 55, 40], "dimensions": ["/blog/1"] },
+            { "metrics": [20, 75, null], "dimensions": ["/en/blog/1"] },
+            { "metrics": [5, 10, 3], "dimensions": ["/blog/no-such-post"] },
+        ] }),
+        "visit:source" if source_entry => json!({ "results": [
+            { "metrics": [20], "dimensions": ["Google", "/blog/1"] },
+            { "metrics": [10], "dimensions": ["Google", "/"] },
+        ] }),
         "time:day" => json!({
             "results": [{ "metrics": [7, 9], "dimensions": ["2026-10-25"] }],
             "meta": { "time_labels": ["2026-10-24", "2026-10-25"] },
@@ -103,6 +121,29 @@ async fn shapes_plausible_results_for_the_admin_page() {
     assert_eq!(body["pages"], json!([{ "name": "/blog/hello", "visitors": 80 }]));
     assert_eq!(body["countries"][0]["name"], "TW");
     assert_eq!(body["dashboard_url"], format!("{}/example.test", server.uri()));
+    // 上一段：算漲跌用
+    assert_eq!(body["previous"]["visitors"], 30);
+    assert_eq!(body["totals"]["views_per_visit"], 2.67);
+    // 每篇文章：兩個語系合併，捲動照人數加權 (55×80 + 75×20) / 100，停留只有 80 人有資料；
+    // 資料庫裡找不到的那篇略過
+    assert_eq!(
+        body["posts"],
+        json!([{
+            "id": 1, "slug": "1", "title": "公開文章", "visitors": 100,
+            "scroll_depth": 59.0, "time_on_page": 40.0, "read_minutes": 1, "hearts": 0, "comments": 0,
+        }])
+    );
+    assert_eq!(
+        body["entries"],
+        json!([{ "source": "Google", "visitors": 30, "entries": [
+            { "name": "/blog/1", "visitors": 20 },
+            { "name": "/", "visitors": 10 },
+        ] }])
+    );
+    // 沒設服務帳號：搜尋字詞那塊回 configured: false，不算錯誤
+    assert_eq!(body["search"]["configured"], false);
+    // 期間是明確的日期（到昨天為止的 7 天）
+    assert!(body["start"].as_str().is_some_and(|d| d.len() == 10));
 
     // 送出去的查詢：站台名、期間都要帶對；熱門頁面要把後台濾掉
     let sent: Vec<Value> = server
@@ -113,9 +154,19 @@ async fn shapes_plausible_results_for_the_admin_page() {
         .filter(|r| r.url.path() == "/api/v2/query")
         .map(|r| serde_json::from_slice(&r.body).unwrap_or_default())
         .collect();
-    assert_eq!(sent.len(), 6);
-    assert!(sent.iter().all(|q| q["site_id"] == "example.test" && q["date_range"] == "7d"));
-    let pages = sent.iter().find(|q| q["dimensions"][0] == "event:page").cloned().unwrap_or_default();
+    assert_eq!(sent.len(), 9);
+    let this_period = json!([body["start"], body["end"]]);
+    assert!(sent.iter().all(|q| q["site_id"] == "example.test"));
+    assert_eq!(
+        sent.iter().filter(|q| q["date_range"] == this_period).count(),
+        8,
+        "除了上一段的總數，其他查詢都是這一段"
+    );
+    let pages = sent
+        .iter()
+        .find(|q| q["dimensions"][0] == "event:page" && q["filters"][0][0] == "contains_not")
+        .cloned()
+        .unwrap_or_default();
     assert_eq!(pages["filters"], json!([["contains_not", "event:page", ["/admin"]]]));
 }
 

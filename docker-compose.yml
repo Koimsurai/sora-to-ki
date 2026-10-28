@@ -122,8 +122,13 @@ services:
       - ENABLE_SIMKL_SYNC=1
       # 國圖新書書目索引：每天用 If-Modified-Since 問一輪每月 CSV（handlers/tw_isbn.rs）
       - ENABLE_TW_ISBN_SYNC=1
+      # 後台「流量」頁的 Google 搜尋字詞（handlers/search_console.rs）：服務帳號金鑰從下面唯讀掛進來
+      - GSC_SERVICE_ACCOUNT_FILE=/run/secrets/gsc_service_account.json
     volumes:
       - backend-db-data:/usr/src/app/db
+      # Search Console 的服務帳號金鑰（主機上是 600，容器以 root 跑讀得到）。檔案不在的話 docker 會在主機
+      # 那個位置建一個空資料夾，後台就顯示「讀不到服務帳號金鑰檔」，不影響其他功能
+      - /home/timo9378/.config/gsc/service_account.json:/run/secrets/gsc_service_account.json:ro
       - /mnt/hdd16tb_01/Blog/uploads:/usr/src/app/storage/uploads
       - /mnt/hdd16tb_01/nas-storage/Blog_Source:/usr/src/app/storage/Blog_Source:ro
       - /mnt/hdd16tb_01/nas-storage/gallery:/usr/src/app/storage/gallery

@@ -25,6 +25,7 @@ pub mod quote;
 pub mod reaction_log;
 pub mod report_tunnel;
 pub mod rss;
+pub mod search_console;
 pub mod series;
 pub mod simkl;
 pub mod site;
