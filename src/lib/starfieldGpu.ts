@@ -269,6 +269,8 @@ const GROW = {
  * 越收越快，像被吸進那一點。整組從 COLLAPSE_GROUP_FROM 秒開始收
  */
 const COLLAPSE_S = 0.5;
+/** 摺疊機摺起來或攤開時，土星滑到新位置、新大小的時間（秒） */
+const REFOLD_S = 0.6;
 const COLLAPSE_GROUP_FROM = 0.2;
 const easeInCubic = (t: number) => t * t * t;
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -540,6 +542,10 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   };
   const base = new THREE.Vector3();
   const v = new THREE.Vector3();
+  /** 摺起來或攤開：從當下的位置與大小滑過去，不是一下跳到另一半（一般的視窗縮放照舊直接套） */
+  let glide: { from: THREE.Vector3; scale: number; t: number; k: number } | null = null;
+  let lastPose: Fold['pose'] | null = null;
+  let viewSet = false;
   const center = new THREE.Vector3();
   const edge = new THREE.Vector3();
   return {
@@ -576,10 +582,18 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
         if (stageAt(stage.kind, stage.t)) stage = null;
         applyParts();
       }
+      if (glide && (stage || pivot)) glide = null;
+      if (glide) {
+        glide.t += dt;
+        glide.k = easeInOutCubic(Math.min(1, glide.t / REFOLD_S));
+        currentScale = THREE.MathUtils.lerp(glide.scale, fullScale, glide.k);
+      }
       group.scale.setScalar(currentScale);
       // 收進一顆衛星：那顆衛星在世界座標裡不動，其他的都往它縮過去
       if (pivot) group.position.copy(pivot).addScaledVector(v.copy(base).sub(pivot), currentScale / fullScale);
+      else if (glide) group.position.lerpVectors(glide.from, base, glide.k);
       else group.position.copy(base);
+      if (glide && glide.k >= 1) glide = null;
       // 往衛星收的時候衛星停住，不然收進去的那一點會跟著軌道跑掉
       if (!pivot) clock += dt;
       let glowing = false;
@@ -592,7 +606,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
         orbits[i].opacity = ORBIT_DIM + s.g.value * 0.32;
       }
       syncSun();
-      const zooming = stage !== null;
+      const zooming = stage !== null || glide !== null;
       return { moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
     },
     setView(width, height, fold) {
@@ -604,9 +618,17 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
         (0.5 - f.y / height) * 2 * SATURN_VIEW_HALF,
         0,
       );
+      const pose = fold?.pose ?? null;
+      const refold = viewSet && pose !== lastPose;
+      lastPose = pose;
+      viewSet = true;
       if (!stage) {
-        if (shown) currentScale = fullScale;
-        if (!pivot) group.position.copy(base);
+        if (refold && shown && !pivot) glide = { from: group.position.clone(), scale: currentScale, t: 0, k: 0 };
+        // 滑到一半又收到一次（摺起來時 resize 與 media query 都會通知）：繼續滑，目標已經換成新的
+        else if (!glide) {
+          if (shown) currentScale = fullScale;
+          if (!pivot) group.position.copy(base);
+        }
       }
     },
     setGlow(glow) {

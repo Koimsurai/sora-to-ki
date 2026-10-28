@@ -24,3 +24,22 @@ html:not([data-pt="out"]) .main-content-container > main {
 html[data-pt] .main-content-container {
   overflow: clip;
 }
+
+/* 摺疊機摺起來或攤開（lib/viewportFold 的 installRefold 掛 data-refold）：瀏覽器是換好版面之後才通知，
+   拿不到換之前的樣子，所以不做形變，內容淡入蓋掉跳的那一下；首頁的土星自己滑過去（lib/starfieldGpu）。
+   只動透明度：位移會讓 main 變成 fixed 子元素（文章的軌道目錄）的定位基準 */
+@keyframes refold-in {
+  from {
+    opacity: 0;
+  }
+}
+
+html[data-refold] .main-content-container > main {
+  animation: refold-in var(--dur-500) var(--easing-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-refold] .main-content-container > main {
+    animation: none;
+  }
+}

@@ -74,3 +74,25 @@ export function subscribeFold(onChange: () => void): () => void {
     window.removeEventListener('resize', onChange);
   };
 }
+
+let refoldInstalled = false;
+
+/**
+ * 摺起來或攤開的那一下，在 html 掛 data-refold 一段時間（CSS 讓內容淡入）。
+ * 姿勢真的變了才算：同一次摺疊 resize 與 media query 會各通知一次
+ */
+export function installRefold(ms = 600): void {
+  if (refoldInstalled || typeof window === 'undefined') return;
+  refoldInstalled = true;
+  const root = document.documentElement;
+  let pose = currentFold()?.pose ?? null;
+  let timer = 0;
+  subscribeFold(() => {
+    const next = currentFold()?.pose ?? null;
+    if (next === pose) return;
+    pose = next;
+    root.dataset.refold = next ?? 'flat';
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => delete root.dataset.refold, ms);
+  });
+}
