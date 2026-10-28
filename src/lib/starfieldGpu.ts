@@ -55,12 +55,16 @@ import {
   satellitePhase,
   satelliteSpeed,
   saturnFrame,
+  saturnGrowAt,
+  SATURN_VIEW_HALF,
+  BASE_SCALE,
+  fitScale,
   SUN,
   TILT,
 } from './saturnSpec';
 import type { Fold } from './viewportFold';
 import { inspectWebGL } from './webglRenderer';
-import type { SatelliteScreen } from '@/store/homeOrbit';
+import type { SatelliteScreen, SaturnGrow } from '@/store/homeOrbit';
 
 /** 環在半徑 1（土星赤道半徑）處的角速度（rad/s）；實際照半徑的 -1.5 次方遞減 */
 const RING_SPIN = 0.3;
@@ -139,7 +143,12 @@ export interface StarfieldInit {
    * 土星顯示時，每畫一幀回報一次衛星在畫面上的位置（首頁的字跟著它走，見 store/homeOrbit）。
    * 土星收起來時送一次空陣列。
    */
-  onSatellites?: (positions: SatelliteScreen[]) => void;
+  onSatellites?: (positions: SatelliteScreen[], at: number) => void;
+  /**
+   * 土星正在長時，每畫一幀回報星球與環長到幾成。開場那道小環照這個跟著長（layout/TransitionLayer）：
+   * 剛載入時很忙，這裡的一幀最多只走 0.05 秒，實際長得比時間表慢，小環照自己的時鐘走會跑到前面
+   */
+  onSaturnGrow?: (grow: SaturnGrow) => void;
   /** 手機：星星只畫三分之一左右（手機只在首頁跑 3D，主角是土星與衛星） */
   lite?: boolean;
 }
@@ -232,8 +241,9 @@ interface SaturnRig {
   /**
    * moving：還在追趕目標（收與長的縮放、捲動旋轉、衛星的亮度沒收斂），這段時間不進閒置降幀。
    * zooming：收與長的縮放還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
+   * grow：正在長的話，星球與環此刻各長到幾成（長完的那一幀是 1、1），其餘時候是 null
    */
-  update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean };
+  update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean; grow: SaturnGrow | null };
   /** 視窗大小：窄的視窗要把整組縮小，最外圈的軌道才放得下；位置與可用的那一塊照 saturnFrame */
   setView(width: number, height: number, fold: Fold | null): void;
   /** 每顆衛星該有多亮（0 到 1），實際亮度會慢慢靠過去 */
@@ -251,11 +261,10 @@ interface SaturnRig {
 
 /**
  * 長（換頁落地、開場）：分層依序。星球先從那一點長出來，環從星球表面往外攤開，五條軌道由內而外
- * 一條接一條、從衛星所在的地方畫一圈，快畫完時那顆衛星彈出來。秒數從開始長算起，全部長完約 1.2 秒
+ * 一條接一條、從衛星所在的地方畫一圈，快畫完時那顆衛星彈出來。秒數從開始長算起，全部長完約 1.2 秒。
+ * 星球與環的時間在 lib/saturnSpec 的 saturnGrowAt（開場那道小環也照它跟著長）
  */
 const GROW = {
-  planet: [0, 0.45],
-  ring: [0.15, 0.6],
   /** 第一條軌道開始畫、之後每條晚多少、一條畫多久 */
   orbit: 0.3,
   orbitStep: 0.07,
@@ -273,7 +282,6 @@ const COLLAPSE_S = 0.5;
 const REFOLD_S = 0.6;
 const COLLAPSE_GROUP_FROM = 0.2;
 const easeInCubic = (t: number) => t * t * t;
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 /** 帶一點回彈：衛星彈出來時稍微超過原本的大小再停穩 */
 const easeOutBack = (t: number) => 1 + 2.70158 * Math.pow(t - 1, 3) + 1.70158 * Math.pow(t - 1, 2);
@@ -291,21 +299,9 @@ const INK = new THREE.Color('#f1ece3');
 const GROUND = new THREE.Color('#0a0a0c');
 /** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
 const SATURN_FOV = 8;
-const SATURN_VIEW_HALF = 3.84;
 const SATURN_CAMERA_Z = SATURN_VIEW_HALF / Math.tan(THREE.MathUtils.degToRad(SATURN_FOV / 2));
 /** 琥珀（--amber）：靠近的那顆衛星 */
 const AMBER = new THREE.Color('#e9c17a');
-/**
- * 整組的大小：鏡頭在 z=5、視角 75°，畫面半高是 3.84 個單位。0.63 讓星球半徑約是畫面高度的 8%，
- * 最外圈軌道半徑 5.7 × 0.63 ≈ 3.6，寬螢幕放得下；窄的視窗照長寬比再縮
- */
-const BASE_SCALE = 0.63;
-/**
- * 放進 boxW × boxH 那一塊（CSS 像素，畫面高 viewH）要縮到多少：寬照長寬比、高留給扁的軌道。
- * 整個畫面時高那一項比 BASE_SCALE 大，不起作用；摺起來只剩上半時才是它在限制
- */
-const fitScale = (boxW: number, boxH: number, viewH: number) =>
-  Math.min(BASE_SCALE, (0.6 * boxW) / viewH, (1.3 * boxH) / viewH);
 
 /// 土星（2026-10 翻新）：刻線畫的星球與環，外面五條軌道各有一顆衛星。
 ///
@@ -520,8 +516,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
   /** 長／收的這一刻各部分該在哪 */
   const stageAt = (kind: 'grow' | 'collapse', t: number) => {
     if (kind === 'grow') {
-      planetK = easeOutCubic(span(t, GROW.planet[0], GROW.planet[1] - GROW.planet[0]));
-      ringK = easeOutCubic(span(t, GROW.ring[0], GROW.ring[1] - GROW.ring[0]));
+      ({ planet: planetK, ring: ringK } = saturnGrowAt(t));
       for (let i = 0; i < orbitK.length; i++) {
         const start = GROW.orbit + GROW.orbitStep * i;
         orbitK[i] = easeInOutCubic(span(t, start, GROW.orbitDur));
@@ -577,6 +572,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
           collapseFrom.sat = [...satK];
         }
       }
+      const growing = stage?.kind === 'grow';
       if (stage) {
         stage.t += dt;
         if (stageAt(stage.kind, stage.t)) stage = null;
@@ -607,7 +603,11 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       }
       syncSun();
       const zooming = stage !== null || glide !== null;
-      return { moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
+      return {
+        moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002,
+        zooming,
+        grow: growing ? { planet: planetK, ring: ringK } : null,
+      };
     },
     setView(width, height, fold) {
       const f = saturnFrame(width, height, fold);
@@ -885,7 +885,9 @@ export async function createStarfieldRunner(
       const s = saturn.update(delta, scrollY, saturnAnimate);
       saturnZooming = s.zooming;
       if (s.moving) markActive();
-      init.onSatellites?.(saturn.project(saturnCam, viewW, viewH));
+      // 附上算出位置的時間（跟主執行緒共用的時基），首頁的字照它推算到自己那一幀（store/homeOrbit）
+      init.onSatellites?.(saturn.project(saturnCam, viewW, viewH), performance.timeOrigin + performance.now());
+      if (s.grow) init.onSaturnGrow?.(s.grow);
     }
     try {
       pipeline.render();
@@ -958,7 +960,7 @@ export async function createStarfieldRunner(
       },
       setSaturn(visible, animate) {
         markActive();
-        if (saturnVisible && !visible) init.onSatellites?.([]);
+        if (saturnVisible && !visible) init.onSatellites?.([], performance.timeOrigin + performance.now());
         // 每次重新出現都從一點撐開（換頁轉場的「長」）
         if (!saturnVisible && visible) saturn.collapse();
         saturnVisible = visible;

@@ -155,3 +155,169 @@
   font-weight: 500;
   color: var(--paper);
 }
+
+/* ── 開頭那句話 ── */
+.adm-an-summary {
+  margin: 0;
+  max-width: 760px;
+  font-family: var(--serif);
+  font-size: var(--fs-20);
+  line-height: var(--lh-160);
+  color: var(--paper-2);
+}
+
+.adm-an-summary b {
+  font-weight: 500;
+  color: var(--amber);
+}
+
+/* 總數格裡跟上一段比的那一行 */
+.adm-an-delta {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+}
+
+/* 每一段開頭的白話說明 */
+.adm-an-note {
+  margin: 0;
+  max-width: 760px;
+  font-size: var(--fs-13);
+  line-height: var(--lh-170);
+  color: var(--paper-meta);
+}
+
+.adm-an-note code {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper-2);
+}
+
+/* ── 每篇文章、搜尋字詞：列首是內容不是表頭，不用表頭那套等寬小字 ── */
+.adm-an-posts tbody th {
+  padding: var(--space-3-5) var(--space-3) var(--space-3-5) 0;
+  border-bottom: 1px dotted var(--rule);
+  font-family: inherit;
+  font-size: var(--fs-14);
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  color: var(--paper);
+}
+
+.adm-an-posts tbody td {
+  border-bottom: 1px dotted var(--rule);
+  font-family: var(--mono-font);
+  font-size: var(--fs-13);
+  color: var(--paper-2);
+  text-align: right;
+}
+
+.adm-an-posts thead th:not(:first-child) {
+  text-align: right;
+}
+
+.adm-an-posts a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.adm-an-posts a:hover {
+  text-decoration: underline dotted;
+}
+
+/* ── 從哪裡來：一個來源一塊，塊裡是它帶進來的人先看的頁面 ── */
+.adm-an-sources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: var(--space-8) var(--space-10);
+}
+
+.adm-an-src {
+  min-width: 0;
+}
+
+.adm-an-src-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--fs-14);
+  color: var(--paper);
+}
+
+/* ── 收到的愛心與反應：時間、做了什麼、脈絡 ── */
+.adm-an-events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-an-events li {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px dotted var(--rule);
+  font-size: var(--fs-14);
+  color: var(--paper-2);
+}
+
+/* 收回的那筆淡一點 */
+.adm-an-events li[data-undo] {
+  color: var(--paper-meta);
+}
+
+.adm-an-when {
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  color: var(--paper-meta);
+}
+
+.adm-an-ctx {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-meta);
+  text-align: right;
+}
+
+/* 開始記錄之前的總數：放在最下面、跟上面的事件隔一條實線 */
+.adm-an-events li.adm-an-before {
+  grid-template-columns: 96px minmax(0, 1fr);
+  border-top: 1px solid var(--rule);
+  border-bottom: none;
+  color: var(--paper-meta);
+}
+
+@media (max-width: 768px) {
+  .adm-an-events li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+
+  .adm-an-ctx {
+    text-align: left;
+  }
+}
+
+/* ── 收起來的那段：熱門頁面、國家、裝置 ── */
+.adm-an-more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.adm-an-more summary {
+  cursor: pointer;
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+  letter-spacing: var(--ls-12);
+  color: var(--paper-2);
+}
+
+.adm-an-more[open] summary {
+  margin-bottom: var(--space-6);
+}

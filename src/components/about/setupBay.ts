@@ -980,6 +980,10 @@ export function createBay(opts: BayOptions) {
     const appear = S.view === VIEWS.top ? clamp01((S.doors - 0.6) / 0.4) : clamp01((S.intro - 0.85) / 0.15);
     const base = (1 - Math.min(1, S.dim * 1.5)) * appear * (1 - clamp01(S.leave * 5));
     const rows = S.fold ? manifest(S.fold) : null;
+    // 尺寸先一次量完再寫（同首頁衛星的字，home/HomeOrbit）：讀寫交錯的話，每讀一次 offsetWidth
+    // 瀏覽器就得把前一個標籤剛寫的樣式排一次版。這裡寫的 data-hot（只改顏色）、data-off（只改
+    // pointer-events）、opacity、transform 都不影響尺寸；width 只寫在摺起來的貨單列上，那幾個不在這裡量
+    const sizes = tags.map((el) => ({ w: el.offsetWidth, h: el.offsetHeight }));
     tags.forEach((el, i) => {
       let at: Pt;
       let to: Pt;
@@ -1036,8 +1040,7 @@ export function createBay(opts: BayOptions) {
       el.dataset.off = a < 0.3 ? '1' : '';
       el.style.opacity = a.toFixed(3);
       if (a <= 0.01) return;
-      const w = el.offsetWidth;
-      const h = el.offsetHeight;
+      const { w, h } = sizes[i];
       const dx = to.x - at.x;
       const dy = to.y - at.y;
       /** -1 字在左、1 字在右、0 字在正上（下）方 */

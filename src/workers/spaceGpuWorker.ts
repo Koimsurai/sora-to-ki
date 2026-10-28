@@ -6,7 +6,7 @@
 //   ‧ handleProps 無 try/catch（init 失敗後任何 props 訊息都在 worker 內 uncaught throw）
 //   ‧ worker 內 shim self.document={} 干擾環境判定
 // 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse / stars，錯誤一律回報主執行緒處理。
-// 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）。
+// 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）、土星長到幾成（saturnGrow）。
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
 import type { Fold } from '../lib/viewportFold';
 
@@ -98,7 +98,8 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           // device lost：worker 裡的 console.error 不會出現在頁面 console，而且這個 renderer
           // 之後一幀都不會再畫。轉給主執行緒，由它換一張新 canvas 重建（見 StarfieldGpu）。
           onDeviceLost: (message) => self.postMessage({ type: 'lost', message }),
-          onSatellites: (positions) => self.postMessage({ type: 'satellites', positions }),
+          onSatellites: (positions, at) => self.postMessage({ type: 'satellites', positions, at }),
+          onSaturnGrow: (grow) => self.postMessage({ type: 'saturnGrow', grow }),
         });
         runner = r;
         runner.setScroll(lastScroll);

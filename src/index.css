@@ -1297,21 +1297,109 @@ html[data-boot] .pt-canvas {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 44px;
-  height: 44px;
-  translate: -50% -50%;
+  width: 80px;
+  height: 80px;
+  /* 首頁換頁時長大到 3D 土星環的位置與大小（--boot-ring-dy／--boot-ring-size，layout/TransitionLayer 算） */
+  translate: -50% calc(-50% + var(--boot-ring-dy, 0px));
   overflow: visible;
-  rotate: -90deg;
 }
 
-.boot-ring circle {
+.boot-ring ellipse {
   fill: none;
-  stroke: var(--paper-3);
+  stroke: var(--paper);
   stroke-width: 1;
-  /* 周長 2π·21 ≈ 132 */
-  stroke-dasharray: 132;
-  stroke-dashoffset: calc(132 * (1 - var(--boot-p, 0)));
+  /* 長大時線不要跟著變粗：環一直是髮絲線 */
+  vector-effect: non-scaling-stroke;
+}
+
+/* 還沒載到的部分：整圈很淡的底線。每一圈的深淺照 3D 土星環那一段的亮度（--tone，__root.tsx 的 BOOT_RINGS） */
+.boot-ring-base {
+  stroke-opacity: calc(var(--tone, 1) * 0.12);
+}
+
+/* 載到的部分：照 --boot-p 畫（pathLength = 1） */
+.boot-ring-prog {
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--boot-p, 0));
+  stroke-opacity: calc(var(--tone, 1) * 0.8);
   transition: stroke-dashoffset var(--dur-400) var(--easing-out);
+}
+
+/* 後半圈在點後面：淡一點點，看得出前後就好（太暗的話像一半壞掉） */
+.boot-ring.is-back {
+  opacity: 0.7;
+}
+
+/* 筆尖：沿著外面那圈（A 環，rx 23.85、ry 23.85·0.408，同樣往右下斜 11.5°）走到 --boot-p，
+   跟進度線同一個過渡時間與曲線，所以一直貼在畫到的最前端；後面三顆越來越小越淡 */
+.boot-pen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  rotate: 11.5deg;
+  transition: opacity var(--dur-250) ease;
+}
+
+.boot-pen i {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 3px;
+  border-radius: var(--r-full);
+  background: var(--paper);
+  offset-path: path("M 23.85 0 A 23.85 9.73 0 1 1 -23.85 0 A 23.85 9.73 0 1 1 23.85 0");
+  offset-rotate: 0deg;
+  offset-distance: calc(var(--boot-p, 0) * 100% - var(--lag, 0%));
+  transition: offset-distance var(--dur-400) var(--easing-out);
+}
+
+.boot-pen i:first-child {
+  box-shadow: 0 0 6px rgba(var(--paper-rgb), 0.8);
+}
+
+.boot-pen i:nth-child(2) {
+  --lag: 2%;
+
+  scale: 0.75;
+  opacity: 0.55;
+}
+
+.boot-pen i:nth-child(3) {
+  --lag: 4%;
+
+  scale: 0.55;
+  opacity: 0.3;
+}
+
+.boot-pen i:nth-child(4) {
+  --lag: 6%;
+
+  scale: 0.4;
+  opacity: 0.15;
+}
+
+html[data-boot="out"] .boot-pen {
+  opacity: 0;
+}
+
+/* 不交棒的時候（別頁、沒有 3D、3D 等太久）：環收回中間那顆點裡，點再飛出去（layout/TransitionLayer 的
+   BOOT_COLLAPSE_MS）。縮的是框的寬高，SVG 照新尺寸重畫，線一直是 1px；筆尖先退掉 */
+html[data-boot-collapse] .boot-ring,
+html[data-boot-collapse] .boot-ring.is-back {
+  width: 0;
+  height: 0;
+  opacity: 0;
+  transition:
+    width var(--dur-250) ease-in,
+    height var(--dur-250) ease-in,
+    opacity var(--dur-250) ease-in;
+}
+
+html[data-boot-collapse] .boot-pen {
+  opacity: 0;
 }
 
 /* 夜色裡這顆點晚一點才藏：轉場的畫布要一兩幀才畫出它的那顆，兩顆疊著交棒、中間不會空一下 */
@@ -1323,6 +1411,41 @@ html[data-boot="out"] .boot-dot {
 html[data-boot="out"] .boot-ring {
   opacity: 0;
   transition: opacity var(--dur-250) ease;
+}
+
+/* 首頁交棒（layout/TransitionLayer）：夜色只淡掉底色、環留著；等這一頁開始長（3D 土星開始長，
+   data-boot-ring 從 grow 變成 go），環才長大到 3D 土星環的大小、同時淡掉，3D 的環正好從星球表面攤開接手 */
+html[data-boot="out"][data-boot-ring] #boot {
+  opacity: 1;
+  background-color: transparent;
+  transition: background-color var(--dur-500) ease;
+}
+
+html[data-boot="out"][data-boot-ring] .boot-ring {
+  opacity: 1;
+}
+
+html[data-boot="out"][data-boot-ring] .boot-ring.is-back {
+  opacity: 0.7;
+}
+
+/* 長大與淡掉逐幀由 layout/TransitionLayer 照 3D 土星的時間表寫進來。用寬高而不是 scale：scale 是把 80px 那張
+   點陣圖拉大，髮絲線會跟著變粗；改框的大小，SVG 照新尺寸重畫，線一直是 1px */
+html[data-boot="out"][data-boot-ring="go"] .boot-ring {
+  width: var(--boot-ring-size, 80px);
+  height: var(--boot-ring-size, 80px);
+  opacity: var(--boot-ring-a, 1);
+  transition: none;
+}
+
+/* 後半圈被長出來的星球擋住：中間挖掉一個跟星球一樣大的圓（--boot-planet-r），兩側露在星球外面的照樣看得到 */
+html[data-boot="out"][data-boot-ring="go"] .boot-ring.is-back {
+  opacity: var(--boot-ring-back-a, 0.7);
+  mask-image: radial-gradient(
+    circle at center,
+    transparent var(--boot-planet-r, 0px),
+    #000 calc(var(--boot-planet-r, 0px) + 1px)
+  );
 }
 
 @keyframes boot-breathe {

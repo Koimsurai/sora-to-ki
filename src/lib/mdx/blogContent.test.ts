@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { chapterIds, computeReadTime, extractHeadings, slugify } from './blogContent';
+import { chapterIds, extractHeadings, slugify } from './blogContent';
 
 // 這三個函式決定文章頁的 anchor id、右側 TOC 與閱讀時間。
 // BlogPost（完整版）與 BlogPostPage（SSR fallback）共用同一份，
@@ -103,25 +103,6 @@ describe('extractHeadings', () => {
   it('沒有標題就回空陣列，不是 null', () => {
     expect(extractHeadings('只有一段內文。')).toEqual([]);
     expect(extractHeadings('')).toEqual([]);
-  });
-});
-
-describe('computeReadTime', () => {
-  it('至少回 1 分鐘（空內容也不會是 0 分鐘）', () => {
-    expect(computeReadTime('')).toBe(1);
-    expect(computeReadTime('短短一句')).toBe(1);
-  });
-
-  it('約 500 字一分鐘，無條件進位', () => {
-    expect(computeReadTime('字'.repeat(500))).toBe(1);
-    expect(computeReadTime('字'.repeat(501))).toBe(2);
-    expect(computeReadTime('字'.repeat(1500))).toBe(3);
-  });
-
-  it('HTML 標籤與 markdown 符號不算進字數', () => {
-    const plain = '字'.repeat(600);
-    expect(computeReadTime(`<div class="x">${plain}</div>`)).toBe(computeReadTime(plain));
-    expect(computeReadTime(`## ${plain}`)).toBe(computeReadTime(plain));
   });
 });
 

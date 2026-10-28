@@ -44,9 +44,10 @@ import { LinkCard } from '@/components/common/LinkCard';
 import { LinkHoverPreview } from '@/components/common/LinkHoverPreview';
 import { Modal, ModalTitle } from '@/components/common/Modal';
 import { MdxContent } from '@/components/mdx/MdxContent';
-// slugify / extractHeadings / computeReadTime：與 BlogPostPage（SSR fallback）共用同一份，
-// 確保 heading anchor id / TOC / 閱讀時間兩邊逐字一致。
-import { slugify, extractHeadings, computeReadTime } from '@/lib/mdx/blogContent';
+// slugify / extractHeadings：與 BlogPostPage（SSR fallback）共用同一份，確保 heading anchor id / TOC 兩邊逐字一致。
+import { slugify, extractHeadings } from '@/lib/mdx/blogContent';
+// 閱讀時間跟手記列表（後端 read_minutes）同一套規則
+import { readMinutes } from '@/lib/readTime';
 // 標題拆解、閱讀進度、scroll-spy 的挑選邏輯——純函式，抽出去才測得到（見該檔說明）。
 import { splitTitle } from '@/lib/blogReading';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
@@ -57,6 +58,7 @@ import { isArriving } from '@/store/pageTransition';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath, postShareUrl } from '@/lib/postPath';
 import { lookup } from '@/lib/tableLookup';
+import { visitHeaders } from '@/lib/visitContext';
 
 /// `GET /api/posts/:id` 的成功回應（型別由後端 Rust struct 生成），外加 client 端自己算的
 /// `date`（由 created_at 依語系格式化，見下方 setPost）。API 不回傳 date。
@@ -507,7 +509,7 @@ function useReactions(postId: string | number) {
       });
       fetch(`/api/posts/${postId}/reactions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...visitHeaders() },
         body: JSON.stringify({ emoji, delta }),
       })
         .then((r) => r.json() as Promise<{ count?: number }>)
@@ -1307,7 +1309,7 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
   };
 
   /* ── Read time（與 fallback 共用同一算法）── */
-  const readTime = useMemo(() => computeReadTime(post?.content ?? ''), [post?.content]);
+  const readTime = useMemo(() => readMinutes(post?.content ?? ''), [post?.content]);
 
   /* ── Extract headings：同步 useMemo（不再 useEffect 延遲）→ 第一幀 TOC 就有值、
         scroll-spy 也能更早啟動；與 fallback 共用 extractHeadings，anchor id 逐字一致 ── */
@@ -1400,6 +1402,7 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
         contentRef={contentRef}
         footer={<FontLine current={currentFont} onChange={handleFontChange} />}
         pingRef={tocPingRef}
+        totalMinutes={readTime}
       />
       <PostsNav currentId={post.id} postCategory={post.category ?? undefined} />
 

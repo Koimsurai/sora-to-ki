@@ -241,18 +241,70 @@ export default function Log() {
         scrub: scrubDay,
       });
 
-      // 字跟著軌跡：大轉折的名字在點的上方左右交錯（下方是地上的刻度），火箭飛過去才出現；靠太近的往上讓開
+      // 先換字、再一次量完尺寸、最後才寫位置（同首頁衛星的字，home/HomeOrbit）：讀寫交錯的話，
+      // 每讀一次 offsetWidth 瀏覽器就得把前一塊剛寫的樣式排一次版。這裡寫的 transform、opacity 都不影響尺寸
       const at = log.milestonesAt(w, h, look);
+      const { milestones: ms, dayDates: dates, contrib, altAt, weekCommits } = textRef.current;
+      // 遙測列的高度（累積貢獻）與飛了幾天：跟著火箭爬升一起跳
+      const here = drawn.now;
+      const altText = log.cumAt(drawn.tip).toLocaleString('en-US');
+      if (altRef.current && altRef.current.textContent !== altText) altRef.current.textContent = altText;
+      const dayText = `${drawn.tip + 1}d`;
+      if (elapsedRef.current && elapsedRef.current.textContent !== dayText) elapsedRef.current.textContent = dayText;
+
+      // 提示：滑到的那個里程碑或那一天
+      const tip = tipRef.current;
+      let tipAt: { x: number; y: number } | null = null;
+      if (tip) {
+        let text = '';
+        let date = '';
+        if (scrubDay >= 0) {
+          // 窄螢幕的讀數：日期、那時飛到多高（累積貢獻）、那一週幾次；吸到里程碑時標題是它的名字
+          const when = dates[scrubDay] ? dotDate(dates[scrubDay]) : '';
+          const detail = `${altAt(log.cumAt(scrubDay))} · ${weekCommits(log.weekOf(scrubDay))}`;
+          text = snapped >= 0 ? ms[snapped].label : when;
+          date = snapped >= 0 ? `${when} · ${detail}` : detail;
+          tipAt = log.pathOnScreen(w, h, look, scrubDay);
+        } else if (hit && hit.milestone >= 0) {
+          const m = ms[hit.milestone];
+          text = m.label;
+          date = dotDate(m.date);
+          tipAt = at[hit.milestone];
+        } else if (hit && hit.day >= 0 && dates[hit.day]) {
+          text = contrib(log.counts[hit.day] ?? 0);
+          date = dotDate(dates[hit.day]);
+          tipAt = log.lightOnScreen(w, h, look, hit.day);
+        }
+        if (tipAt) {
+          const key = `${date}|${text}`;
+          if (tip.dataset.key !== key) {
+            tip.dataset.key = key;
+            const b = tip.querySelector('b');
+            const span = tip.querySelector('span');
+            if (b) b.textContent = text;
+            if (span) span.textContent = date;
+          }
+        }
+      }
+
+      const sizes = ms.map((m, k) => {
+        const label = m.level === 2 ? labelsRef.current[k] : null;
+        return label ? { w: label.offsetWidth, h: label.offsetHeight } : null;
+      });
+      const nowW = nowRef.current?.offsetWidth ?? 0;
+      const tipW = tipAt ? (tip?.offsetWidth ?? 0) : 0;
+      const tipH = tipAt ? (tip?.offsetHeight ?? 0) : 0;
+
+      // 字跟著軌跡：大轉折的名字在點的上方左右交錯（下方是地上的刻度），火箭飛過去才出現；靠太近的往上讓開
       let flip = false;
       const taken: { x: number; y: number; w: number; h: number }[] = [];
-      const { milestones: ms, dayDates: dates, contrib, altAt, weekCommits } = textRef.current;
       ms.forEach((m, k) => {
         if (m.level !== 2) return;
         const label = labelsRef.current[k];
         const p = at[k];
-        if (!label || !p) return;
-        const lw = label.offsetWidth;
-        const lh = label.offsetHeight;
+        const size = sizes[k];
+        if (!label || !p || !size) return;
+        const { w: lw, h: lh } = size;
         const x = flip ? p.x + 8 : p.x - 8 - lw;
         let y = p.y - 8 - lh;
         flip = !flip;
@@ -264,52 +316,13 @@ export default function Log() {
         // 窄螢幕放不下名字：只留點，點一下看提示（完整清單另外給報讀器）
         label.style.opacity = String((w >= NARROW_PX && log.milestoneIndex[k] <= drawn.tip ? 1 : 0) * (1 - erase));
       });
-      // 遙測列的高度（累積貢獻）與飛了幾天：跟著火箭爬升一起跳
-      const here = drawn.now;
-      const altText = log.cumAt(drawn.tip).toLocaleString('en-US');
-      if (altRef.current && altRef.current.textContent !== altText) altRef.current.textContent = altText;
-      const dayText = `${drawn.tip + 1}d`;
-      if (elapsedRef.current && elapsedRef.current.textContent !== dayText) elapsedRef.current.textContent = dayText;
       if (nowRef.current && here) {
-        const nw = nowRef.current.offsetWidth;
-        nowRef.current.style.transform = `translate(${here.x - nw - 14}px, ${here.y - 8}px)`;
+        nowRef.current.style.transform = `translate(${here.x - nowW - 14}px, ${here.y - 8}px)`;
         nowRef.current.style.opacity = String((grow >= 1 ? 1 : 0) * (1 - erase));
       }
-
-      // 提示：滑到的那個里程碑或那一天
-      const tip = tipRef.current;
       if (tip) {
-        let text = '';
-        let date = '';
-        let p: { x: number; y: number } | null = null;
-        if (scrubDay >= 0) {
-          // 窄螢幕的讀數：日期、那時飛到多高（累積貢獻）、那一週幾次；吸到里程碑時標題是它的名字
-          const when = dates[scrubDay] ? dotDate(dates[scrubDay]) : '';
-          const detail = `${altAt(log.cumAt(scrubDay))} · ${weekCommits(log.weekOf(scrubDay))}`;
-          text = snapped >= 0 ? ms[snapped].label : when;
-          date = snapped >= 0 ? `${when} · ${detail}` : detail;
-          p = log.pathOnScreen(w, h, look, scrubDay);
-        } else if (hit && hit.milestone >= 0) {
-          const m = ms[hit.milestone];
-          text = m.label;
-          date = dotDate(m.date);
-          p = at[hit.milestone];
-        } else if (hit && hit.day >= 0 && dates[hit.day]) {
-          text = contrib(log.counts[hit.day] ?? 0);
-          date = dotDate(dates[hit.day]);
-          p = log.lightOnScreen(w, h, look, hit.day);
-        }
-        if (p) {
-          const key = `${date}|${text}`;
-          if (tip.dataset.key !== key) {
-            tip.dataset.key = key;
-            const b = tip.querySelector('b');
-            const s = tip.querySelector('span');
-            if (b) b.textContent = text;
-            if (s) s.textContent = date;
-          }
-          const tw = tip.offsetWidth;
-          tip.style.transform = `translate(${Math.max(0, Math.min(w - tw, p.x - tw / 2))}px, ${p.y - tip.offsetHeight - 14}px)`;
+        if (tipAt) {
+          tip.style.transform = `translate(${Math.max(0, Math.min(w - tipW, tipAt.x - tipW / 2))}px, ${tipAt.y - tipH - 14}px)`;
           tip.style.opacity = '1';
         } else tip.style.opacity = '0';
       }

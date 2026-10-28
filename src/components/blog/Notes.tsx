@@ -34,8 +34,6 @@ import './Notes.css';
 
 /** 先列這麼多篇，其他的按「還有 N 篇」才展開 */
 const FIRST = 20;
-/** 估閱讀時間：一分鐘讀幾個字（內文含程式碼與 markdown 記號，比純中文讀得快） */
-const CHARS_PER_MIN = 700;
 /** 快門打開、星軌拖出來的時間（秒） */
 const EXPOSE_S = 1.8;
 /** 點進一篇文章時，它的星軌拉成文章頁軌道的時間 */
@@ -285,9 +283,10 @@ function Notes() {
 
   const label = t('blog.title');
   const latin = 'Notes';
+  // 閱讀時間由後端照文章頁同一套規則算好（read_minutes，lib/readTime）；舊版後端沒有這一欄就不顯示
   const minutes = (p: PostListItem) => {
-    const n = lengthOf(p);
-    return n ? t('blog.minutes', { count: Math.max(1, Math.round(n / CHARS_PER_MIN)) }) : '';
+    const n = (p as Partial<PostListItem>).read_minutes;
+    return n ? t('blog.minutes', { count: n }) : '';
   };
 
   return (

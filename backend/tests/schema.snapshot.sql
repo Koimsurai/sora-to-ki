@@ -63,6 +63,9 @@ index idx_posts_status_created
 index idx_posts_status_publish_at
   CREATE INDEX idx_posts_status_publish_at ON posts (status, publish_at)
 
+index idx_reaction_events_created
+  CREATE INDEX idx_reaction_events_created ON reaction_events(created_at)
+
 index idx_thoughts_created
   CREATE INDEX idx_thoughts_created ON thoughts(created_at DESC)
 
@@ -135,6 +138,9 @@ table post_tags
 table posts
   CREATE TABLE posts ( id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, excerpt TEXT, category TEXT, status TEXT DEFAULT 'published', author TEXT DEFAULT 'Koimsurai', view_count INTEGER DEFAULT 0, likes INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, layout_type TEXT DEFAULT 'record', source_language TEXT DEFAULT 'zh-TW', title_en TEXT, content_en TEXT, excerpt_en TEXT, title_zh_cn TEXT, content_zh_cn TEXT, excerpt_zh_cn TEXT, title_ja TEXT, content_ja TEXT, excerpt_ja TEXT, title_ko TEXT, content_ko TEXT, excerpt_ko TEXT, series_name TEXT DEFAULT NULL, series_order INTEGER DEFAULT NULL, allow_comments INTEGER DEFAULT 1 , format TEXT DEFAULT 'markdown', slug TEXT, excerpt_links TEXT, publish_at DATETIME, newsletter_pending INTEGER NOT NULL DEFAULT 0, trashed_at DATETIME, trashed_from TEXT)
 
+table reaction_events
+  CREATE TABLE reaction_events ( id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL DEFAULT (datetime('now')), kind TEXT NOT NULL, target_id INTEGER, value TEXT NOT NULL, delta INTEGER NOT NULL, country TEXT, referrer TEXT, device TEXT, locale TEXT )
+
 table site_counters
   CREATE TABLE site_counters ( key TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 
@@ -178,7 +184,7 @@ table watch_favorites
   CREATE TABLE watch_favorites ( id INTEGER PRIMARY KEY AUTOINCREMENT, tmdb_id INTEGER NOT NULL, kind TEXT NOT NULL DEFAULT 'film', rating INTEGER DEFAULT 5, quote TEXT DEFAULT '', poster_url TEXT, year INTEGER, sort_order INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP )
 
 table web_vitals
-  CREATE TABLE web_vitals ( id INTEGER PRIMARY KEY AUTOINCREMENT, metric TEXT NOT NULL, value REAL NOT NULL, rating TEXT NOT NULL, path TEXT NOT NULL, is_mobile INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')) , target TEXT, load_state TEXT, shift_path TEXT, lcp_phases TEXT)
+  CREATE TABLE web_vitals ( id INTEGER PRIMARY KEY AUTOINCREMENT, metric TEXT NOT NULL, value REAL NOT NULL, rating TEXT NOT NULL, path TEXT NOT NULL, is_mobile INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')) , target TEXT, load_state TEXT, shift_path TEXT, lcp_phases TEXT, nav_type TEXT, detail TEXT, gpu TEXT)
 
 trigger tw_books_ad
   CREATE TRIGGER tw_books_ad AFTER DELETE ON tw_books BEGIN INSERT INTO tw_books_fts(tw_books_fts, rowid, title, author, publisher) VALUES ('delete', old.id, old.title, old.author, old.publisher); END

@@ -327,7 +327,7 @@ const ISR_ROUTE_RULES = {
   ), // 文章頁:內容幾乎不動 → 1 小時
 };
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   // Sentry 的 tree-shaking 旗標。這些是 SDK 內部拿來包住整段功能的常數，
   // 在 build 時替換成 false，那幾塊就會被搖掉。
   //
@@ -435,9 +435,12 @@ export default defineConfig({
         // 找 HarfBuzz 的 wasm，打包進來就找不到。整包追蹤進 .output，連同它載入的 wasm 套件。
         // 少了這行，本機從專案目錄跑產物照樣正常（借用了專案的 node_modules），進了映像才 500
         traceDeps: ['subset-font*', 'harfbuzzjs*', 'fontverter*', 'wawoff2*', 'woff2sfnt-sfnt2woff*'],
-        // ISR：node-server preset 內建 SWR（TTL 過期先回舊、背景重生，不需 CDN）
-        routeRules: ISR_ROUTE_RULES,
+        // ISR：node-server preset 內建 SWR（TTL 過期先回舊、背景重生，不需 CDN）。
+        // 只在 build 出來的正式版套用：dev 也套的話，改完程式碼重新整理會先拿到快取裡的舊 HTML（瀏覽器端
+        // 還會照 max-age=3600 再存一份），跟新的 JS 對不上 → hydration 失敗、整棵樹在 client 重建，
+        // 開場那層停在舊的樣子（實際遇過：舊版的進度圈沒有新 CSS 可套，畫成一個黑圈）
+        routeRules: command === 'build' ? ISR_ROUTE_RULES : {},
       },
     }),
   ],
-});
+}));

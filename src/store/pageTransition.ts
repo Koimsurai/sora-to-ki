@@ -132,6 +132,53 @@ export const setTransitionDot = (p: Pt | null) => {
 };
 export const transitionDot = (): Pt | null => dotNow;
 
+/** 一趟站內換頁的順暢度：從點下去到轉場跑完，轉場那條迴圈每一幀之間隔了多久（lib/reportWebVitals 上報成 TX） */
+export interface TransitionReport {
+  from: string;
+  to: string;
+  /** 從點下去到轉場跑完（毫秒） */
+  ms: number;
+  frames: number;
+  /** 最長那一幀（毫秒） */
+  maxFrame: number;
+  /** 超過 50ms 的幀數 */
+  long: number;
+}
+const transitionListeners = new Set<(r: TransitionReport) => void>();
+export function reportTransition(r: TransitionReport) {
+  for (const fn of transitionListeners) fn(r);
+}
+export function subscribeTransitions(fn: (r: TransitionReport) => void): () => void {
+  transitionListeners.add(fn);
+  return () => {
+    transitionListeners.delete(fn);
+  };
+}
+
+/**
+ * 開場退場（夜色開始淡掉、讀者看得到頁面）的那一刻（lib/reportWebVitals 上報成 BOOT）。
+ * 上報那邊可能比開場晚掛上，所以記住最後一次，訂閱時補送
+ */
+export interface BootReport {
+  /** performance.now()：從這次載入開始算 */
+  at: number;
+  /** ring：首頁交棒給 3D 土星；collapse：環收回點裡 */
+  end: 'ring' | 'collapse';
+}
+let lastBoot: BootReport | null = null;
+const bootListeners = new Set<(r: BootReport) => void>();
+export function reportBoot(r: BootReport) {
+  lastBoot = r;
+  for (const fn of bootListeners) fn(r);
+}
+export function subscribeBoot(fn: (r: BootReport) => void): () => void {
+  bootListeners.add(fn);
+  if (lastBoot) fn(lastBoot);
+  return () => {
+    bootListeners.delete(fn);
+  };
+}
+
 /** 頁面的「收」用的計時：時間到就算收完 */
 export const after = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
@@ -142,6 +189,8 @@ export const after = (ms: number) => new Promise<void>((resolve) => window.setTi
 export const isArriving = () => {
   const root = document.documentElement;
   const pt = root.dataset.pt;
-  // 開場時（html[data-boot]，見 __root.tsx）頁面藏在夜色後面，也還不該開始長：等那顆點飛進來
-  return pt === 'out' || pt === 'fly' || root.hasAttribute('data-boot');
+  // 開場時（html[data-boot]，見 __root.tsx）頁面藏在夜色後面，也還不該開始長：等那顆點飛進來。
+  // 首頁交棒（data-boot-ring="go"）時夜色已經在淡、開場那道環正在長大：土星就從這一刻開始長，兩道環才接得上
+  const booting = root.hasAttribute('data-boot') && root.dataset.bootRing !== 'go';
+  return pt === 'out' || pt === 'fly' || booting;
 };

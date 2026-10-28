@@ -429,9 +429,46 @@ export default function Friends() {
       // 在右邊從星的右側開始、在左邊結束在星的左側、在正上方正下方置中——星怎麼走字就怎麼跟，
       // 不會在走過中線的那一幀整塊翻到另一邊。兩塊字疊在一起時，後放的那塊滑到上面或下面（也是滑過去，不是跳）
       const taken: { x: number; y: number; w: number; h: number }[] = [];
+
+      // 刻點的標題：換了一個刻點才換字。換字放在量尺寸之前，量到的才是新的字
+      const tip = tipRef.current;
+      const tipBeacon = beacon && drawn.beacons.find((x) => x.i === beacon[0] && x.j === beacon[1]);
+      const tipPost = tipBeacon ? friendsRef.current[tipBeacon.i]?.posts[tipBeacon.j] : null;
+      if (tip && tipBeacon && tipPost) {
+        const key = `${tipBeacon.i}:${tipBeacon.j}`;
+        if (tip.dataset.key !== key) {
+          tip.dataset.key = key;
+          const time = tip.querySelector('time');
+          const title = tip.querySelector('span');
+          if (time) time.textContent = tipPost.when?.label ?? '';
+          if (title) title.textContent = tipPost.title;
+        }
+      }
+      // 尺寸先一次量完再寫（同首頁衛星的字，home/HomeOrbit）：讀寫交錯的話，每讀一次 offsetWidth
+      // 瀏覽器就得把前一塊字剛寫的樣式排一次版，一幀重排十幾次。這裡寫的 transform、translate、opacity、
+      // visibility、is-on（只改介紹那行的透明度）都不影響尺寸，量到的跟交錯時一樣
+      const sizes = drawn.stars.map((_, i) => {
+        const el = labelsRef.current[i];
+        if (!el) return null;
+        const desc = el.querySelector<HTMLElement>('.fr-desc');
+        return {
+          w: el.offsetWidth,
+          h: el.offsetHeight,
+          lines: [...el.children].map((line) =>
+            line instanceof HTMLElement && !line.classList.contains('fr-desc') ? line.offsetWidth : null,
+          ),
+          desc,
+          dw: desc?.offsetWidth ?? 0,
+        };
+      });
+      const previewW = previewLabelRef.current?.offsetWidth ?? 0;
+      const tipW = tip?.offsetWidth ?? 0;
+      const tipH = tip?.offsetHeight ?? 0;
+
       drawn.stars.forEach((p, i) => {
         const el = labelsRef.current[i];
-        if (!el) return;
+        const size = sizes[i];
+        if (!el || !size) return;
         const dx = p.x - cx;
         // 軌道是壓扁的橢圓：角度要在攤平之後量，不然星在上下方時一點點橫移就換邊
         const dy = (p.y - cy) / squash;
@@ -440,8 +477,7 @@ export default function Friends() {
         const uy = dy / len;
         /** 字有幾成落在星的左邊：0 是整塊在右、1 是整塊在左 */
         const fx = 0.5 - 0.5 * ux;
-        const lw = el.offsetWidth;
-        const lh = el.offsetHeight;
+        const { w: lw, h: lh } = size;
         let lx = p.x + ux * LABEL_GAP - lw * fx;
         // 在旁邊時第一行（名字）對齊星；往正下方轉時整塊移到星的下面、往正上方轉時移到上面
         const side = p.y - 12;
@@ -473,16 +509,16 @@ export default function Friends() {
         el.classList.toggle('is-on', i === star);
         el.style.transform = `translate(${lx}px, ${ly}px)`;
         // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在上下方置中），一樣是連續變的
-        for (const line of el.children) {
-          if (line instanceof HTMLElement && !line.classList.contains('fr-desc')) {
-            line.style.translate = `${((lw - line.offsetWidth) * fx).toFixed(1)}px 0`;
+        for (const [k, line] of [...el.children].entries()) {
+          const lineW = size.lines[k];
+          if (line instanceof HTMLElement && lineW != null) {
+            line.style.translate = `${((lw - lineW) * fx).toFixed(1)}px 0`;
           }
         }
         // 名字上方那行介紹不算在字塊的寬度裡（浮著、最寬 300px）：照同一個比例對齊，
         // 伸出天空左右邊的部分推回來
-        const desc = el.querySelector<HTMLElement>('.fr-desc');
+        const { desc, dw } = size;
         if (desc) {
-          const dw = desc.offsetWidth;
           const at = (lw - dw) * fx;
           const shift = Math.min(0, vw - 8 - (lx + at + dw)) + Math.max(0, 8 - (lx + at));
           desc.style.translate = `${(at + shift).toFixed(1)}px 0`;
@@ -497,29 +533,17 @@ export default function Friends() {
       const pl = previewLabelRef.current;
       if (pl) {
         if (drawn.preview) {
-          pl.style.transform = `translate(${drawn.preview.x - pl.offsetWidth / 2}px, ${drawn.preview.y + 10}px)`;
+          pl.style.transform = `translate(${drawn.preview.x - previewW / 2}px, ${drawn.preview.y + 10}px)`;
           pl.style.opacity = String(drawn.preview.alpha);
         } else pl.style.opacity = '0';
       }
 
-      // 刻點的標題
-      const tip = tipRef.current;
+      // 刻點的標題（字在上面量尺寸之前就換好了）
       if (tip) {
-        const b = beacon && drawn.beacons.find((x) => x.i === beacon[0] && x.j === beacon[1]);
-        const post = b ? friendsRef.current[b.i]?.posts[b.j] : null;
-        if (b && post) {
-          const key = `${b.i}:${b.j}`;
-          if (tip.dataset.key !== key) {
-            tip.dataset.key = key;
-            const time = tip.querySelector('time');
-            const title = tip.querySelector('span');
-            if (time) time.textContent = post.when?.label ?? '';
-            if (title) title.textContent = post.title;
-          }
-          const tw = tip.offsetWidth;
-          const tx = Math.max(8, Math.min(w - tw - 8, b.x - tw / 2));
-          const ty = b.y - tip.offsetHeight - 12;
-          tip.style.transform = `translate(${tx}px, ${ty < 8 ? b.y + 14 : ty}px)`;
+        if (tipBeacon && tipPost) {
+          const tx = Math.max(8, Math.min(w - tipW - 8, tipBeacon.x - tipW / 2));
+          const ty = tipBeacon.y - tipH - 12;
+          tip.style.transform = `translate(${tx}px, ${ty < 8 ? tipBeacon.y + 14 : ty}px)`;
           tip.style.opacity = '1';
         } else tip.style.opacity = '0';
       }

@@ -26,12 +26,16 @@ import { inspectWebGL } from './webglRenderer';
 const WORKER_TIMEOUT_MS = 4000;
 
 let pending: Promise<boolean> | null = null;
+let verdict: boolean | null = null;
 
 /** true = 有硬體加速的 WebGL。false = 拿不到 context，或拿到的是 CPU 光柵化。 */
 export function probeHardwareGpu(): Promise<boolean> {
-  pending ??= runProbe();
+  pending ??= runProbe().then((v) => (verdict = v));
   return pending;
 }
+
+/** 探測的結果，還沒探測完（或根本沒探測）是 null。不會因為問了就去探測（lib/reportWebVitals 用） */
+export const knownHardwareGpu = (): boolean | null => verdict;
 
 function probeOnMainThread(): boolean {
   try {

@@ -45,7 +45,7 @@ pub async fn get_site_likes(State(state): State<AppState>) -> Response {
 
 /// `POST /api/site/likes` —— 公開 +1（防重複在 client 端以 localStorage 做）。
 #[utoipa::path(post, path = "/api/site/likes", tag = "site", responses((status = 200, body = CountResponse)))]
-pub async fn post_site_like(State(state): State<AppState>) -> Response {
+pub async fn post_site_like(State(state): State<AppState>, headers: axum::http::HeaderMap) -> Response {
     if let Err(e) = sqlx::query(
         "INSERT INTO site_counters (key, count, updated_at) VALUES (?, 1, datetime('now')) \
          ON CONFLICT(key) DO UPDATE SET count = count + 1, updated_at = datetime('now')",
@@ -56,6 +56,8 @@ pub async fn post_site_like(State(state): State<AppState>) -> Response {
     {
         return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
+    let ctx = super::reaction_log::VisitCtx::from_headers(&headers);
+    super::reaction_log::record(&state, "site", None, "like", 1, &ctx).await;
     match read_count(&state, LIKE_KEY).await {
         Ok(count) => Json(CountResponse { count }).into_response(),
         Err(e) => crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e),
@@ -136,7 +138,7 @@ mod tests {
         assert_eq!(v["count"], 0, "沒有紀錄時要回 0，不是 null");
 
         for expect in 1..=3 {
-            let v = body_of(post_site_like(AxState(st.clone())).await).await;
+            let v = body_of(post_site_like(AxState(st.clone()), axum::http::HeaderMap::new()).await).await;
             assert_eq!(v["count"], expect, "POST 要回加完之後的值，前端才不用再讀一次");
         }
         let v = body_of(get_site_likes(AxState(st)).await).await;

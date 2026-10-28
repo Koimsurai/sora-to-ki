@@ -98,3 +98,40 @@ export function saturnFrame(w: number, h: number, fold: Fold | null) {
   if (fold) return { x: w / 2, y: fold.first.y + fold.first.height / 2, width: w, height: h, zoom: 1 };
   return { x: w / 2, y: h * (h > w ? focusY(w, h, 0.46) : 0.5), width: w, height: h, zoom: 1 };
 }
+
+/** 土星那層的鏡頭在 z = 0 的平面上，畫面半高是幾個單位（lib/starfieldGpu 的 saturnCam） */
+export const SATURN_VIEW_HALF = 3.84;
+/**
+ * 整組的大小：0.63 讓星球半徑約是畫面高度的 8%，最外圈軌道半徑 5.7 × 0.63 ≈ 3.6，寬螢幕放得下；
+ * 窄的視窗照長寬比再縮
+ */
+export const BASE_SCALE = 0.63;
+/**
+ * 放進 boxW × boxH 那一塊（CSS 像素，畫面高 viewH）要縮到多少：寬照長寬比、高留給扁的軌道。
+ * 整個畫面時高那一項比 BASE_SCALE 大，不起作用；摺起來只剩上半時才是它在限制
+ */
+export const fitScale = (boxW: number, boxH: number, viewH: number) =>
+  Math.min(BASE_SCALE, (0.6 * boxW) / viewH, (1.3 * boxH) / viewH);
+
+/** 長（換頁落地、開場）時星球與環各從第幾秒長到第幾秒；其餘的軌道與衛星在 lib/starfieldGpu 的 GROW */
+const GROW_PLANET = [0, 0.45] as const;
+const GROW_RING = [0.15, 0.6] as const;
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+const growSpan = ([from, to]: readonly [number, number], t: number) =>
+  easeOutCubic(Math.min(1, Math.max(0, (t - from) / (to - from))));
+
+/**
+ * 開始長之後 t 秒，星球與環各長到幾成（0 到 1）。3D 土星照這個長，開場那道小環也照這個
+ * 跟著長、跟著淡（layout/TransitionLayer），兩邊才對得上
+ */
+export const saturnGrowAt = (t: number) => ({ planet: growSpan(GROW_PLANET, t), ring: growSpan(GROW_RING, t) });
+
+/**
+ * 首頁 3D 土星的環在畫面上的中心與外緣半徑（CSS 像素）。開場那道小環在換頁時長大，
+ * 要剛好長到這個大小，跟 3D 的環交棒（layout/TransitionLayer）
+ */
+export function saturnRingOnScreen(w: number, h: number, fold: Fold | null) {
+  const f = saturnFrame(w, h, fold);
+  const scale = fitScale(f.width, f.height, h) * f.zoom;
+  return { x: f.x, y: f.y, r: ((RING_OUTER * scale) / SATURN_VIEW_HALF) * (h / 2) };
+}

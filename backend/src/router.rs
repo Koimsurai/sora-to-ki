@@ -164,6 +164,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/admin/stats", get(handlers::admin::admin_stats))
         // 流量（代理自架 Plausible 的 Stats API，key 只在後端）
         .route("/api/admin/analytics", get(handlers::analytics::admin_analytics))
+        .route("/api/admin/reactions", get(handlers::reaction_log::admin_reactions))
         .route("/api/admin/comments/{id}/status", patch(handlers::admin::patch_comment_status))
         .route("/api/admin/comments/{id}/reply", post(handlers::admin::reply_comment))
         .route(

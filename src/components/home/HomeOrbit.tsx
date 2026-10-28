@@ -20,7 +20,13 @@ import { saturnFrame } from '@/lib/saturnSpec';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
 import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
 import { isTallMedium } from '@/lib/viewportShape';
-import { collapseSaturnTo, setSatelliteGlow, subscribeSatellites, type SatelliteScreen } from '@/store/homeOrbit';
+import {
+  absNow,
+  collapseSaturnTo,
+  setSatelliteGlow,
+  subscribeSatellites,
+  type SatelliteScreen,
+} from '@/store/homeOrbit';
 import { after, type Pt } from '@/store/pageTransition';
 import FoldIndex from '@/components/common/FoldIndex';
 import { useFoldPose } from '@/hooks/useFoldPose';
@@ -46,8 +52,16 @@ const TAG_GAP_Y = 7;
 /** 比這窄的畫面，浮出來的那張字卡放在土星下方的空白，不貼著衛星（手機上貼著會壓到軌道） */
 const NARROW_PX = 640;
 const pad2 = (n: number) => String(n).padStart(2, '0');
-/** 多久沒收到 3D 送來的位置就當作沒有 3D */
+/**
+ * 多久沒收到 3D 送來的位置就當作沒有 3D。GPU 探測確定是軟體渲染時（html.no-gpu，見 SpaceBackdropShell）
+ * 不用等：3D 不會來。實地資料（2026-10）裡沒有 3D 的手機，首頁的 LCP 就是這排連結，中位數 4.6 秒，
+ * 大半是在等這 2.5 秒
+ */
 const FLAT_AFTER_MS = 2500;
+/** 字的位置最多往前推算多久（3D 送來的位置晚到或沒到的那幾幀用速度補） */
+const PREDICT_MAX_MS = 50;
+/** 字卡、小標註透明之後還要再跟幾毫秒：淡出的轉場（HomeOrbit.css 的 0.3 秒）跑完之前它還看得到 */
+const FADE_OUT_MS = 400;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
 const SATURN_COLLAPSE_MS = 500;
 
@@ -145,23 +159,45 @@ export default function HomeOrbit() {
     let hintStart = 0;
     let raf = 0;
     let flatNow = false;
+    // 字卡與小標註最後一次看得到（透明度大於 0）是什麼時候：整個淡出之後就不再每幀擺位置。
+    // 每一幀改它們的樣式，瀏覽器就得重算那些元素的樣式；五張字卡、五個小標註加上字卡裡的每一行，
+    // 在慢手機上一幀要好幾毫秒（CPU 降速 4 倍時首頁閒置只剩 20fps），而字卡大部分時間是透明的
+    const labelLitAt: number[] = [];
+    const tagLitAt: number[] = [];
+    /** 上一次寫進去的值：值沒變就不再寫 */
+    const written = new WeakMap<HTMLElement, Partial<Record<'transform' | 'translate' | 'opacity', string>>>();
+    const setStyle = (el: HTMLElement, prop: 'transform' | 'translate' | 'opacity', value: string) => {
+      let last = written.get(el);
+      if (!last) {
+        last = {};
+        written.set(el, last);
+      }
+      if (last[prop] === value) return;
+      last[prop] = value;
+      el.style[prop] = value;
+    };
     let fold: Fold | null = currentFold();
     const unsubscribeFold = subscribeFold(() => {
       fold = currentFold();
     });
 
-    const unsubscribe = subscribeSatellites((next) => {
-      const now = performance.now();
+    /** 收到的這組位置是 3D 在哪個時間點算的（store/homeOrbit 的 absNow 時基） */
+    let positionsAt = 0;
+    const unsubscribe = subscribeSatellites((next, at) => {
       const prev = positionsRef.current;
-      if (next.length && prev.length === next.length && now > lastPositionsAt) {
+      // 速度照 3D 算位置的時間差算，不照訊息到達的時間：訊息有時一幀到兩筆、有時一筆都沒有
+      if (next.length && prev.length === next.length && at > positionsAt) {
         velocityRef.current = next.map((p, i) => ({
-          x: (p.x - prev[i].x) / (now - lastPositionsAt),
-          y: (p.y - prev[i].y) / (now - lastPositionsAt),
+          x: (p.x - prev[i].x) / (at - positionsAt),
+          y: (p.y - prev[i].y) / (at - positionsAt),
         }));
       }
       positions = next;
       positionsRef.current = next;
-      if (next.length) lastPositionsAt = now;
+      if (next.length) {
+        lastPositionsAt = performance.now();
+        positionsAt = at;
+      }
     });
 
     /** 指到（聚焦）的是第幾顆的字卡或目錄那一列 */
@@ -203,18 +239,27 @@ export default function HomeOrbit() {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const live = positions.length === count && now - lastPositionsAt < FLAT_AFTER_MS;
-      const nextFlat = !live && now - lastPositionsAt > FLAT_AFTER_MS;
+      const noGpu = document.documentElement.classList.contains('no-gpu');
+      const nextFlat = !live && (noGpu || now - lastPositionsAt > FLAT_AFTER_MS);
       if (nextFlat !== flatNow) {
         flatNow = nextFlat;
         setFlat(nextFlat);
       }
       if (!live) return;
+      // 字跟著衛星：3D 在 worker 裡畫，位置傳過來時已經晚了一點，而且跟這邊的幀不同步（有的幀收到兩筆、
+      // 有的一筆也沒有），照收到的位置擺字會一停一跳。照速度推算到這一幀的時間，字就跟畫面上的衛星對齊。
+      // 最多推 PREDICT_MAX_MS：3D 停下來（分頁切走、收起來）時字不會自己飄走
+      const ahead = Math.min(PREDICT_MAX_MS, Math.max(0, absNow() - positionsAt));
+      const shown = positions.map((p, i) => {
+        const v = velocityRef.current[i] as Pt | undefined;
+        return v ? { ...p, x: p.x + v.x * ahead, y: p.y + v.y * ahead } : p;
+      });
 
       let near = focused >= 0 ? focused : hovered >= 0 ? hovered : tapped;
       if (near < 0 && pointer) {
         const [px, py] = pointer;
         let best = NEAR_PX;
-        positions.forEach((p, i) => {
+        shown.forEach((p, i) => {
           const d = Math.hypot(p.x - px, p.y - py);
           if (!p.hidden && d < best) {
             best = d;
@@ -246,9 +291,24 @@ export default function HomeOrbit() {
       const narrow =
         fold !== null || window.innerWidth < NARROW_PX || isTallMedium(window.innerWidth, window.innerHeight);
       const leaving = section.classList.contains('is-leaving');
-      positions.forEach((p, i) => {
+      // 尺寸先一次量完再寫：讀寫交錯的話，每讀一次 offsetWidth 瀏覽器就得把前一顆剛寫的樣式排一次版，
+      // 一幀重排十幾次；換頁時整頁正在換，每一次都是整頁的排版（CPU 降速 4 倍時一幀 80–115ms）。
+      // 這裡寫的 transform、translate、opacity、is-on（只改 pointer-events）都不影響尺寸，量到的跟交錯時一樣
+      const sizes = shown.map((_, i) => {
+        const el = labelsRef.current[i];
+        const tag = tagsRef.current[i];
+        return {
+          w: el?.offsetWidth ?? 0,
+          h: el?.offsetHeight ?? 0,
+          lines: el ? [...el.children].map((line) => (line instanceof HTMLElement ? line.offsetWidth : 0)) : [],
+          tw: tag?.offsetWidth ?? 0,
+          th: tag?.offsetHeight ?? 0,
+        };
+      });
+      shown.forEach((p, i) => {
         const el = labelsRef.current[i];
         if (!el) return;
+        const size = sizes[i];
         // 字往「遠離土星」的方向長，不壓在軌道與土星上。錨點跟著衛星繞土星的角度連續地變：
         // 在右邊時字從點的右側開始、在左邊時字結束在點的左側、在正下方時字置中在點下面——
         // 衛星怎麼走字就怎麼跟，不會在某個位置突然被推到另一邊
@@ -260,8 +320,7 @@ export default function HomeOrbit() {
         /** 字有幾成落在點的左邊（上面）：0 是整個在右（下），1 是整個在左（上） */
         const fx = narrow ? 0.5 : 0.5 - 0.5 * ux;
         const fy = 0.5 - 0.5 * uy;
-        const w = el.offsetWidth;
-        const h = el.offsetHeight;
+        const { w, h } = size;
         let x = p.x + ux * GAP_X - w * fx;
         let y = p.y + uy * GAP_Y - h * fy;
         // 窄畫面：軌道幾乎佔滿寬度，貼著衛星一定壓到軌道。字卡放到土星下方那片空白、置中，
@@ -270,44 +329,53 @@ export default function HomeOrbit() {
           x = cx - w / 2;
           y = center().y + Math.min(window.innerHeight * 0.24, 220);
         }
-        // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在下面置中），一樣是連續變的
-        for (const line of el.children) {
-          if (line instanceof HTMLElement) line.style.translate = `${((w - line.offsetWidth) * fx).toFixed(1)}px 0`;
-        }
         x = Math.max(16, Math.min(window.innerWidth - w - 16, x));
         y = Math.max(72, Math.min(window.innerHeight - h - 16, y));
-        el.style.transform = `translate(${x - box.left}px, ${y - box.top}px)`;
-        el.dataset.tx = p.x.toFixed(1);
-        el.dataset.ty = p.y.toFixed(1);
+        const tx = p.x.toFixed(1);
+        const ty = p.y.toFixed(1);
         // 目錄那一列：換頁的點也從那顆衛星出發；靠近的那一列展開，閒置提示只讓它亮一下
         const row = indexRef.current[i];
         if (row) {
           const a = row.firstElementChild as HTMLElement | null;
           if (a) {
-            a.dataset.tx = el.dataset.tx;
-            a.dataset.ty = el.dataset.ty;
+            a.dataset.tx = tx;
+            a.dataset.ty = ty;
           }
           row.classList.toggle('is-on', i === near);
           row.classList.toggle('is-hint', i === hint && hintLevel > 0.2);
         }
         // 換頁在收的時候字先退掉，只剩那一點；摺起來時字卡換成目錄
         const show = p.hidden || leaving || fold ? 0 : (glow[i] ?? 0);
-        el.style.opacity = String(show);
+        if (show > 0) labelLitAt[i] = now;
+        // 整個淡出的字卡不跟：要再浮出來的那一幀，位置跟透明度一起寫，淡入就從對的位置開始
+        if (now - (labelLitAt[i] ?? -Infinity) <= FADE_OUT_MS) {
+          // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在下面置中），一樣是連續變的
+          for (const [k, line] of [...el.children].entries()) {
+            if (line instanceof HTMLElement)
+              setStyle(line, 'translate', `${((w - (size.lines[k] ?? 0)) * fx).toFixed(1)}px 0`);
+          }
+          setStyle(el, 'transform', `translate(${x - box.left}px, ${y - box.top}px)`);
+          el.dataset.tx = tx;
+          el.dataset.ty = ty;
+        }
+        setStyle(el, 'opacity', String(show));
         el.classList.toggle('is-on', show > 0.6);
 
         // 常駐的小標註：像星圖上的標註，讓第一次來的人一眼看出有五個地方可以去。
         // 字卡浮出來的時候它讓位（交叉淡出），衛星轉到土星後面時跟著藏起來
         const tag = tagsRef.current[i];
         if (!tag) return;
-        const tw = tag.offsetWidth;
-        const th = tag.offsetHeight;
-        const tx = Math.max(8, Math.min(window.innerWidth - tw - 8, p.x + ux * TAG_GAP_X - tw * (0.5 - 0.5 * ux)));
-        const ty = Math.max(64, Math.min(window.innerHeight - th - 8, p.y + uy * TAG_GAP_Y - th * fy));
-        tag.style.transform = `translate(${tx - box.left}px, ${ty - box.top}px)`;
+        const { tw, th } = size;
         // 字卡一開始浮出，小標註就整個讓位（它自己有 0.3 秒的淡出）。照字卡亮度按比例退的話，
         // 閒置提示的字卡只亮到一半，標註還剩兩成，兩個疊在一起
         const tagShow = p.hidden || leaving || (!narrow && show > 0.01) ? 0 : 1;
-        tag.style.opacity = String(tagShow);
+        if (tagShow > 0) tagLitAt[i] = now;
+        if (now - (tagLitAt[i] ?? -Infinity) <= FADE_OUT_MS) {
+          const gx = Math.max(8, Math.min(window.innerWidth - tw - 8, p.x + ux * TAG_GAP_X - tw * (0.5 - 0.5 * ux)));
+          const gy = Math.max(64, Math.min(window.innerHeight - th - 8, p.y + uy * TAG_GAP_Y - th * fy));
+          setStyle(tag, 'transform', `translate(${gx - box.left}px, ${gy - box.top}px)`);
+        }
+        setStyle(tag, 'opacity', String(tagShow));
         tag.classList.toggle('is-on', tagShow > 0.5);
       });
     };

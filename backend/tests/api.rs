@@ -669,6 +669,58 @@ async fn vitals_beacon_stores_lcp_attribution() {
     }
 }
 
+/// 自己量的 TX（換頁順暢度）、BOOT（開場）照收；載入方式、細節、GPU 三個脈絡欄位只收白名單／
+/// 合格格式，不合格的當沒帶（NULL），但那筆 metric 本身照收——脈絡壞掉不該連數字一起丟
+#[tokio::test]
+async fn vitals_beacon_stores_context_fields() {
+    let (app, pool) = test_app().await;
+    for (path, metric, nav, det, gpu) in [
+        ("/a", "TX", "spa", "142/2/2149", "hw"),
+        ("/b", "BOOT", "reload", "ring", "none"),
+        ("/c", "INP", "navigate", "pointer/12/30/40", "hw"),
+        ("/d", "LCP", "sideways", "a b", "maybe"),
+        ("/e", "CLS", "navigate", "<script>", "hw"),
+    ] {
+        let b = json!({
+            "metric": metric, "value": 33.4, "rating": "good", "path": path,
+            "navType": nav, "detail": det, "gpu": gpu,
+        });
+        let (status, _) = post_json(&app, "/api/vitals", b).await;
+        assert_eq!(status, StatusCode::NO_CONTENT);
+    }
+    let long = json!({
+        "metric": "TX", "value": 20.0, "rating": "good", "path": "/f", "detail": "1/".repeat(41),
+    });
+    let (status, _) = post_json(&app, "/api/vitals", long).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+
+    /// (path, metric, nav_type, detail, gpu)
+    type Row = (String, String, Option<String>, Option<String>, Option<String>);
+    let rows: Vec<Row> =
+        sqlx::query_as("SELECT path, metric, nav_type, detail, gpu FROM web_vitals ORDER BY path")
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+    assert_eq!(rows.len(), 6, "脈絡欄位不合格的那幾筆也要照收");
+    assert_eq!(
+        (rows[0].2.as_deref(), rows[0].3.as_deref(), rows[0].4.as_deref()),
+        (Some("spa"), Some("142/2/2149"), Some("hw"))
+    );
+    assert_eq!(rows[1].1, "BOOT");
+    assert_eq!(
+        (rows[1].2.as_deref(), rows[1].3.as_deref(), rows[1].4.as_deref()),
+        (Some("reload"), Some("ring"), Some("none"))
+    );
+    assert_eq!(rows[2].3.as_deref(), Some("pointer/12/30/40"));
+    assert_eq!(
+        (rows[3].2.as_deref(), rows[3].3.as_deref(), rows[3].4.as_deref()),
+        (None, None, None),
+        "白名單外的值存 NULL"
+    );
+    assert_eq!(rows[4].3, None, "detail 只收英數與 /._-");
+    assert_eq!(rows[5].3, None, "detail 超過 80 字當沒帶");
+}
+
 /// 非法 beacon 一律不進資料表。
 ///
 /// 補這個測試是 cargo-mutants 指出來的：原本 vitals.rs 覆蓋率 98.67%，但把 `report_vital`
@@ -764,4 +816,106 @@ fn urlencode(s: &str) -> String {
         }
     }
     out
+}
+
+/// 帶著讀者脈絡的標頭發 POST（國家、來源網站、語系、User-Agent）
+async fn post_with_visit(app: &axum::Router, path: &str, body: Option<Value>) -> StatusCode {
+    use axum::body::Body;
+    use axum::http::{Request, header};
+    use tower::ServiceExt;
+    let b = Request::builder()
+        .method("POST")
+        .uri(path)
+        .header("cf-ipcountry", "JP")
+        .header("x-visit-referrer", "t.co")
+        .header("x-visit-locale", "ja")
+        .header(header::USER_AGENT, "Mozilla/5.0 (iPhone) Mobile/15E148");
+    let req = match body {
+        Some(v) => {
+            b.header(header::CONTENT_TYPE, "application/json").body(Body::from(v.to_string())).unwrap()
+        }
+        None => b.body(Body::empty()).unwrap(),
+    };
+    app.clone().oneshot(req).await.unwrap().status()
+}
+
+/// 每一次愛心、表情、印記、留言的讚、碎念的喜歡都記一筆（migration 0029），後台看得到；
+/// 開始記錄之前的那些照「現在的總數減掉紀錄裡的」算
+#[tokio::test]
+async fn reactions_are_logged_with_visit_context() {
+    let (app, pool) = test_app().await;
+    // 開始記錄之前就有的：文章 1 已經有 5 顆愛心、首頁 3 個印記
+    sqlx::query("INSERT INTO post_reactions (post_id, emoji, count) VALUES (1, '❤️', 5)")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO site_counters (key, count) VALUES ('site_likes', 3)")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO comments (id, post_id, author, content, status) VALUES (7, 1, 'a', 'b', 'approved')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(
+        post_with_visit(&app, "/api/posts/1/reactions", Some(json!({ "emoji": "❤️" }))).await,
+        StatusCode::OK
+    );
+    assert_eq!(
+        post_with_visit(&app, "/api/posts/1/reactions", Some(json!({ "emoji": "🎉", "delta": -1 }))).await,
+        StatusCode::OK
+    );
+    assert_eq!(post_with_visit(&app, "/api/site/likes", None).await, StatusCode::OK);
+    assert_eq!(post_with_visit(&app, "/api/comments/7/like", None).await, StatusCode::OK);
+    // 喜歡換成不喜歡：收回一個、按下另一個，兩筆
+    assert_eq!(
+        post_with_visit(&app, "/api/thoughts/1/react", Some(json!({ "prev": "like", "next": "dislike" })))
+            .await,
+        StatusCode::OK
+    );
+
+    let token = owner_token(true);
+    let (status, body) = request(&app, "GET", "/api/admin/reactions", None, Some(&token)).await;
+    assert_eq!(status, StatusCode::OK);
+    let events = body["events"].as_array().unwrap();
+    let got: Vec<(String, String, i64, Option<String>)> = events
+        .iter()
+        .rev()
+        .map(|e| {
+            (
+                e["kind"].as_str().unwrap().to_string(),
+                e["value"].as_str().unwrap().to_string(),
+                e["delta"].as_i64().unwrap(),
+                e["target_title"].as_str().map(str::to_string),
+            )
+        })
+        .collect();
+    assert_eq!(
+        got,
+        vec![
+            ("post".into(), "❤️".into(), 1, Some("公開文章".into())),
+            ("post".into(), "🎉".into(), -1, Some("公開文章".into())),
+            ("site".into(), "like".into(), 1, None),
+            ("comment".into(), "like".into(), 1, Some("公開文章".into()),),
+            ("thought".into(), "like".into(), -1, Some("第一則碎念".into())),
+            ("thought".into(), "dislike".into(), 1, Some("第一則碎念".into())),
+        ]
+    );
+    for e in events {
+        assert_eq!(
+            (e["country"].as_str(), e["referrer"].as_str(), e["device"].as_str(), e["locale"].as_str()),
+            (Some("JP"), Some("t.co"), Some("mobile"), Some("ja")),
+            "每一筆都帶讀者脈絡"
+        );
+    }
+    // 現在文章 1 有 6 顆愛心（5 + 紀錄裡的 1），開始記錄之前是 5；首頁 4 個印記，之前是 3
+    assert_eq!(body["before_post_hearts"], json!(5));
+    assert_eq!(body["before_site"], json!(3));
+    assert!(body["since"].is_string());
+
+    let (status, _) = get(&app, "/api/admin/reactions").await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "後台端點要登入");
 }

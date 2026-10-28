@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { CommentRow } from '@koimsurai/api-types';
 import { commentsQueryOptions } from '@/data/commentsData';
+import { visitHeaders } from '@/lib/visitContext';
 
 export function useCommentLikes(base: string, postId: string | number) {
   const queryClient = useQueryClient();
@@ -23,7 +24,7 @@ export function useCommentLikes(base: string, postId: string | number) {
   const like = async (id: number) => {
     if (liked.includes(id)) return;
     try {
-      const res = await fetch(`/api/comments/${id}/like`, { method: 'POST' });
+      const res = await fetch(`/api/comments/${id}/like`, { method: 'POST', headers: visitHeaders() });
       if (!res.ok) return;
       const data = (await res.json()) as { likes: number };
       queryClient.setQueryData<CommentRow[]>(commentsQueryOptions(base, postId).queryKey, (old) =>

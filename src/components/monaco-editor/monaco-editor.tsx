@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect, useMemo } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Editor, { loader } from '@monaco-editor/react';
 import type { editor, IDisposable } from 'monaco-editor';
@@ -15,6 +15,7 @@ import './monaco-editor.css';
 import AdminLoading from '@/components/admin/AdminLoading';
 import { authHeaders } from '@/lib/authToken';
 import { toast } from 'sonner';
+import { readMinutes } from '@/lib/readTime';
 
 const VIM_MODE_KEY = 'koimsurai_vim_mode';
 
@@ -82,6 +83,8 @@ export default function MonacoEditor({
   // 統計數據
   const [totalWords, setTotalWords] = useState(0);
   const [totalChars, setTotalChars] = useState(0);
+  /** 閱讀時間：跟前台文章頁、手記列表同一套規則（lib/readTime） */
+  const [readingMinutes, setReadingMinutes] = useState(0);
   const [totalLines, setTotalLines] = useState(0);
 
   const [selWords, setSelWords] = useState(0);
@@ -273,6 +276,7 @@ export default function MonacoEditor({
         setTotalChars(countGraphemes(value));
         setTotalLines(model.getLineCount());
         setTotalWords(countWords(value));
+        setReadingMinutes(value ? readMinutes(value) : 0);
       } catch {
         // ignore
       }
@@ -708,14 +712,6 @@ export default function MonacoEditor({
     });
     return () => action.dispose();
   }, [isEditorReady, handleOpenPostLink]);
-
-  // 閱讀時間（C-4）— 中文 ~500 字/min，英文 ~250 字/min；用混合估算
-  const readingMinutes = useMemo(() => {
-    if (!totalChars && !totalWords) return 0;
-    // 假設大宗為 CJK：用字元數除以 500 較貼近實際
-    const minutes = Math.max(1, Math.round(totalChars / 500));
-    return minutes;
-  }, [totalChars, totalWords]);
 
   const defaultOptions: editor.IStandaloneEditorConstructionOptions = {
     fontSize: 14,

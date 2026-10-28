@@ -158,15 +158,22 @@ export default function Works() {
       const settle = reduce ? 1 : Math.min(1, Math.max(0, (t - GROW_S) / SETTLE_S));
       const placed = spiral.draw(ctx, { w, h, t, dt: reduce ? 0 : dt, near, grow, erase, settle });
       const { cx, cy } = frameOf(w, h);
+      // 尺寸先一次量完再寫（同首頁衛星的字，home/HomeOrbit）：讀寫交錯的話，每讀一次 offsetWidth
+      // 瀏覽器就得把前一顆剛寫的樣式排一次版。這裡寫的 transform、opacity、is-left（只改對齊）、
+      // is-on（只改說明那行的透明度）都不影響尺寸，量到的跟交錯時一樣
+      const sizes = placed.map((_, i) => {
+        const el = labelsRef.current[i];
+        return el ? { w: el.offsetWidth, h: el.offsetHeight } : null;
+      });
       placed.forEach((p, i) => {
         const el = labelsRef.current[i];
-        if (!el) return;
+        const size = sizes[i];
+        if (!el || !size) return;
         // 字往外長：沿著從中心指向這一顆的方向，放在星體外面；起點那顆放正上方
         const dx = p.x - cx;
         const dy = p.y - cy;
         const d = Math.hypot(dx, dy) || 1;
-        const lw = el.offsetWidth;
-        const lh = el.offsetHeight;
+        const { w: lw, h: lh } = size;
         const right = dx >= 0;
         let lx = p.x + (dx / d) * p.reach + (right ? 0 : -lw);
         let ly = p.y + (dy / d) * p.reach - lh / 2;
