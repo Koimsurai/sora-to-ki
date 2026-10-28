@@ -160,10 +160,26 @@ const ok = async (name, expected) => {
   return existsSync(out) && sha(await readFile(out)) === expected;
 };
 
+/** 連線斷掉時最多試幾次：MiSans 那個 228 MB 的壓縮檔在 CI 上常被切斷（NGHTTP2_PROTOCOL_ERROR） */
+const ATTEMPTS = 3;
+
+async function fetchBody(url) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`下載失敗 ${res.status}：${url}`, { cause: 'status' });
+      return Buffer.from(await res.arrayBuffer());
+    } catch (err) {
+      // 伺服器回錯誤碼不是斷線，重試也一樣
+      if (attempt >= ATTEMPTS || (err instanceof Error && err.cause === 'status')) throw err;
+      console.log(`下載中斷，第 ${attempt} 次重試：${url}`);
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    }
+  }
+}
+
 async function download(url, expected, label) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`下載失敗 ${res.status}：${url}`);
-  const buf = Buffer.from(await res.arrayBuffer());
+  const buf = await fetchBody(url);
   const got = sha(buf);
   if (got !== expected) throw new Error(`sha256 不符（${label}）：預期 ${expected}，實際 ${got}`);
   return buf;
