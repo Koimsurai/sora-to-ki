@@ -554,7 +554,7 @@ a.series-nav-title:hover {
 .terminal-body .shiki-output pre.shiki {
   margin: 0;
   padding: 0 var(--space-4-5);
-  /* ⚠ !important 不能拿掉：shiki 會把主題背景寫進 pre 自己的樣式，這裡要的是
+  /* ⚠ !important 不能拿掉：高亮輸出會把主題背景寫進 pre 自己的樣式，這裡要的是
      透明（背景由外層 .terminal-body 畫）。實測拿掉之後變成 rgb(18,18,18)。 */
   background: transparent !important;
   font-size: var(--fs-14);

@@ -1,5 +1,5 @@
 // 一般 CodeBlock 與 CodeTabs 共用的程式碼呈現，確保兩者視覺一致：
-//   CodeBody：shiki 高亮輸出（或 fallback）+ 長碼「展開程式碼」收合（平滑過場）。行號由 CSS counter 加。
+//   CodeBody：程式碼高亮的輸出（或 fallback）+ 長碼「展開程式碼」收合（平滑過場）。行號由 CSS counter 加。
 // 語言 emoji（標頭用）在 ../lib/langEmoji（單獨成檔，避免與元件同檔觸發 fast-refresh 警告）。
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import './CodeSurface.css';
@@ -33,7 +33,7 @@ export function CodeBody({ highlighted, code }: { highlighted: string | null; co
     <div className={collapsed ? 'code-surface-body code-surface-body--collapsed' : 'code-surface-body'}>
       <div className="code-surface-clip" ref={clipRef}>
         {highlighted ? (
-          // shiki 產生的可信 HTML（作者內容 + shiki 高亮）
+          // 高亮產生的可信 HTML（作者內容 + lib/mdx/codeHighlight）
           // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
           <div className="shiki-output" dangerouslySetInnerHTML={{ __html: highlighted }} />
         ) : (

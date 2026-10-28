@@ -9,7 +9,7 @@ import { articleJsonLd, articleMeta } from '@/seo/seoMeta';
 
 // 預設語言(zh-TW)文章頁:/blog/:id。
 // Tier-2：BlogPost 改為 SSR-safe，直接 eager import + 單次 SSR（不再 ClientOnly 蓋 BlogPostPage
-// fallback → 消除進場的雙渲染 swap）。內文/TOC/程式碼(plain)在 SSR 就出；shiki 反白、mermaid
+// fallback → 消除進場的雙渲染 swap）。內文/TOC/程式碼(plain)在 SSR 就出；程式碼高亮、mermaid
 // 圖、互動於 hydration 後原地增強，不再卸載重掛。eager import 只進「文章路由 chunk」不進全域。
 export const Route = createFileRoute('/blog/$id')({
   loader: async ({ context, params }) => {

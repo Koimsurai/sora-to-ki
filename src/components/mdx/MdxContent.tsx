@@ -9,7 +9,7 @@ interface MdxContentProps {
   /** server 端 `compileMdxSource` 產出的**序列化 hast 樹**（JSON 字串）。 */
   compiled: string;
   // 基礎元素 override（code/pre/p/a/img/h1-h4）由 BlogPost 傳入，與 markdown 管線共用同一批
-  // 元件（shiki 高亮、mermaid、連結卡、圖片燈箱、標題錨點）→ MDX 文不比 markdown 文遜。
+  // 元件（程式碼高亮、mermaid、連結卡、圖片燈箱、標題錨點）→ MDX 文不比 markdown 文遜。
   baseComponents?: Record<string, unknown>;
   /**
    * 分批掛上去：先掛前 FIRST_NODES 個頂層節點，其餘每一幀補 STEP_NODES 個。之後的每一批走 startTransition，

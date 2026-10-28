@@ -1,6 +1,6 @@
 /* 後台編輯器的「所見即所得」預覽：跟前台文章頁走同一套渲染管線 —— MDX 走 compileMdx(RPC)
    + MdxContent(runSync)、Markdown 走 ReactMarkdown，兩者共用前台的 code/p/img/a 元件
-   （shiki 高亮、mermaid、行內連結 hover 卡、圖片燈箱）。→ 預覽跟實際發布長得一樣。
+   （程式碼高亮、mermaid、行內連結 hover 卡、圖片燈箱）。→ 預覽跟實際發布長得一樣。
    compileMdx 是 server-only（重編譯器不進 client bundle），這裡在 client 端 debounce 後 RPC 呼叫。 */
 import { useEffect, useMemo, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';

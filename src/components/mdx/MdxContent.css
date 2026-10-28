@@ -360,7 +360,7 @@
 }
 
 /* ── <CodeTabs> 多檔程式碼分頁：外框跟一般程式碼區塊一樣（細線、淡底），
-   分頁是一排等寬小字檔名，現在這個底下一條線。程式碼區 shiki 呈現與一般 code block 一致。 ── */
+   分頁是一排等寬小字檔名，現在這個底下一條線。程式碼區的高亮與一般 code block 一致。 ── */
 .mdx-codetabs {
   margin: var(--space-6) 0;
   border: 1px solid var(--rule);
@@ -579,7 +579,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Diff：沿用 .code-block-wrapper 外框，只加紅綠行底 + 統計 ── */
-/* grid 讓每行變全寬 row（忽略 shiki 的 \n 空白）→ 行底能鋪滿 */
+/* grid 讓每行變全寬 row（忽略行與行之間的 \n 空白）→ 行底能鋪滿 */
 .mdx-diff .shiki-output code {
   display: grid;
 }

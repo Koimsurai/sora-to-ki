@@ -995,7 +995,7 @@ export default function PostEditor() {
 
                 {editorView !== 'edit' && (
                   <div className="pe-preview" style={{ maxHeight: previewHeight }}>
-                    {/* 跟前台同一套渲染（MDX blocks / shiki / alert / 連結卡）→ 所見即所得 */}
+                    {/* 跟前台同一套渲染（MDX blocks / 程式碼高亮 / alert / 連結卡）→ 所見即所得 */}
                     <PostPreview content={contentValue} format={format} />
                   </div>
                 )}

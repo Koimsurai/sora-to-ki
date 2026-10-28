@@ -110,7 +110,7 @@ CSS 跟同名元件放在一起。**跨資料夾的 import 一律走 `@/` alias*
 | `i18n/` | 語系切換、`localePage` 系列的路由包裝 |
 | `seo/` | `seoMeta`（JSON-LD）、`pageSeo`（各頁 meta） |
 | `lib/` | 純工具，不含 React |
-| `lib/mdx/` | MDX 編譯鏈：`mdx-compile-core`（plugin 組態）、`shikiHighlight`、`blogContent` |
+| `lib/mdx/` | MDX 編譯鏈：`mdx-compile-core`（plugin 組態）、`codeHighlight`（程式碼高亮）、`blogContent` |
 | `hooks/` | React hook |
 | `store/` | jotai atom 與訂閱式狀態 |
 | `contexts/`、`types/`、`schemas/`、`styles/`、`workers/` | 各一類，維持原樣 |

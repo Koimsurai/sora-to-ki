@@ -18,7 +18,7 @@ import remarkGfm from 'remark-gfm';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from '@/components/common/KoimLoader';
 import rehypeRaw from 'rehype-raw';
-import { highlightCode } from '@/lib/mdx/shikiHighlight';
+import { highlightCode } from '@/lib/mdx/codeHighlight';
 import { isBlockCode } from '@/lib/mdx/codeKind';
 import { langEmoji } from '@/lib/langEmoji';
 import { CodeBody } from '@/components/mdx/CodeSurface';
@@ -168,7 +168,7 @@ const AI_TRANSLATION_NOTICE: Record<string, { label: string; text: string; origi
   },
 };
 
-// 後台編輯器預覽（PostPreview）也重用這批 → export，讓預覽跟前台同一套渲染（shiki/mermaid/terminal）。
+// 後台編輯器預覽（PostPreview）也重用這批 → export，讓預覽跟前台同一套渲染（程式碼高亮/mermaid/terminal）。
 export const CodeBlock = ({
   node: _node,
   className,
@@ -206,7 +206,7 @@ export const CodeBlock = ({
     // Window 是 [Global] 介面，解構後直接呼叫不會 Illegal invocation（同 AppShell 手法）。
     const ric = (window as Partial<Window>).requestIdleCallback;
     // 排程 handle 要接住：只靠 cancelled 旗標的話，unmount 後 callback 仍會跑完
-    // 整個 highlightCode（shiki 反白不便宜），只是把結果丟掉。取消掉才是真的省。
+    // 整個 highlightCode，只是把結果丟掉。取消掉才是真的省。
     let idleId: number | undefined;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     if (ric) {
@@ -270,7 +270,7 @@ export const CodeBlock = ({
           </div>
           <div className="terminal-body">
             {highlighted ? (
-              // shiki 高亮的可信 HTML（作者內容 + shiki）
+              // 高亮產生的可信 HTML（作者內容 + lib/mdx/codeHighlight）
               // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
               <div className="shiki-output" dangerouslySetInnerHTML={{ __html: highlighted }} />
             ) : (
@@ -1150,7 +1150,7 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
     [createHeading],
   );
 
-  // MDX 文章的基礎元素 override：與 markdown 管線共用同一批元件（shiki 高亮、mermaid、
+  // MDX 文章的基礎元素 override：與 markdown 管線共用同一批元件（程式碼高亮、mermaid、
   // 連結卡、圖片燈箱、標題錨點）→ MDX 文不比 markdown 文遜。傳給 MdxContent。
   const mdxBaseComponents = useMemo(
     () => ({

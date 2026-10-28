@@ -89,8 +89,8 @@ const DIRECTIVES = {
   //
   // 'unsafe-inline'：SSR 的 hydration payload 等 inline script，見檔頭。
   //
-  // 'wasm-unsafe-eval'：shiki 的 oniguruma 正則引擎是 WebAssembly
-  //   （assets/wasm-*.js，608 KB 的 base64 內嵌 wasm），沒有它程式碼區塊不會高亮。
+  // 'wasm-unsafe-eval'：程式碼高亮（@pierre/highlights，見 lib/mdx/codeHighlight）是 WebAssembly
+  //   （base64 內嵌在它的 JS 模組裡），沒有它程式碼區塊不會高亮。
   //   這條是**窄的**——只允許編譯 wasm，不允許 JS 的 eval。它會一直留著。
   //
   // ✅ `'unsafe-eval'` 已經拿掉了。它原本是給 MDX 用的：server 編譯成 JS 字串、
