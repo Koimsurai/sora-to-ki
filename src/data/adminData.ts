@@ -1,6 +1,7 @@
 import { queryOptions } from '@tanstack/react-query';
 import type {
   AnalyticsResponse,
+  ReactionLogResponse,
   AdminTagRow,
   AdminCategoryRow,
   AdminUserRow,
@@ -151,6 +152,13 @@ export const adminAnalyticsQueryOptions = (period: AnalyticsPeriod) =>
     // 上游是別的服務，壞了重試也多半一樣壞；讓錯誤訊息早點出來
     retry: false,
   });
+
+/** 最近收到的愛心與反應（後端 handlers/reaction_log.rs），與開始記錄之前的總數 */
+export const adminReactionsQueryOptions = queryOptions({
+  queryKey: ['admin', 'reactions'],
+  queryFn: () => adminGet<ReactionLogResponse>('/api/admin/reactions?limit=50'),
+  staleTime: STALE,
+});
 
 export const adminStatsQueryOptions = queryOptions({
   queryKey: ['admin', 'stats'],

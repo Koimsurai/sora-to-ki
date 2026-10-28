@@ -22,6 +22,7 @@ pub mod polls;
 pub mod post_lifecycle;
 pub mod posts;
 pub mod quote;
+pub mod reaction_log;
 pub mod report_tunnel;
 pub mod rss;
 pub mod series;

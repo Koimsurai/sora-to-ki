@@ -40,6 +40,7 @@ use koimsurai_web_backend::handlers::posts::{
     ReactionRow, ReactionsResponse,
 };
 use koimsurai_web_backend::handlers::quote::{DailyQuote, DailyQuoteResponse};
+use koimsurai_web_backend::handlers::reaction_log::{ReactionLogEvent, ReactionLogResponse};
 use koimsurai_web_backend::handlers::series::{
     SeriesDetailResponse, SeriesListResponse, SeriesPostRow, SeriesRow,
 };
@@ -141,6 +142,9 @@ fn main() {
         .register::<AnalyticsPoint>()
         .register::<AnalyticsRow>()
         .register::<AnalyticsResponse>()
+        // 愛心與反應的紀錄
+        .register::<ReactionLogEvent>()
+        .register::<ReactionLogResponse>()
         // posts（admin）
         .register::<AdminPostFull>()
         .register::<AdminPostsResponse>()

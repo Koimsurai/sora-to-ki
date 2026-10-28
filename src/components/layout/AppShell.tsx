@@ -5,6 +5,7 @@ import SiteNav from './SiteNav';
 import ScrollToTop from './ScrollToTop';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
 import { loadSpaceBackdropShell } from '@/components/backdrop/prewarm';
+import { landingReferrer } from '@/lib/visitContext';
 import { installStaleChunkReload } from '@/lib/staleChunkReload';
 import { installRefold } from '@/lib/viewportFold';
 import BackToTopButton from './BackToTopButton';
@@ -43,6 +44,11 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
   //   等收緊那條時再一起處理。目前的取捨是：不為了少數幾類錯誤把 SDK 提到關鍵路徑上。
   useEffect(() => {
     void import('@/lib/errorReporting').then((m) => m.initErrorReporting());
+  }, []);
+
+  // 這次造訪從哪個網站連進來：趁還沒重新整理先記下（lib/visitContext，按愛心時帶給後端）
+  useEffect(() => {
+    landingReferrer();
   }, []);
 
   const [backdropLoaded, setBackdropLoaded] = useState(spaceBackdropShell !== null);

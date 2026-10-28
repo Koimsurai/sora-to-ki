@@ -1011,6 +1011,31 @@ export type SeriesListResponse = {
 /**  `GET /api/series/:name` 單列：某系列下的文章（精簡欄位）。 */
 export type SeriesPostRow = {
 	id: number,
+/**  一筆紀錄。`target_title`：文章是標題、留言是它所在那篇的標題、碎念是內文開頭 */
+export type ReactionLogEvent = {
+	id: number,
+	created_at: string,
+	kind: string,
+	target_id: number | null,
+	target_title: string | null,
+	value: string,
+	delta: number,
+	country: string | null,
+	referrer: string | null,
+	device: string | null,
+	locale: string | null,
+};
+
+export type ReactionLogResponse = {
+	/**  第一筆紀錄的時間；還沒有任何紀錄是 null */
+	since: string | null,
+	/**  開始記錄之前文章收到的愛心（現在的總數減掉紀錄裡的 ❤️，不會小於 0） */
+	before_post_hearts: number,
+	/**  開始記錄之前首頁的印記 */
+	before_site: number,
+	events: ReactionLogEvent[],
+};
+
 	title: string,
 	excerpt: string | null,
 	series_name: string | null,

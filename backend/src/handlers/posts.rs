@@ -766,6 +766,7 @@ pub struct ReactionBody {
 pub async fn post_reaction(
     State(state): State<AppState>,
     Path(id): Path<String>,
+    headers: axum::http::HeaderMap,
     crate::error::JsonBody(body): crate::error::JsonBody<ReactionBody>,
 ) -> Response {
     const ALLOWED: [&str; 6] = ["👍", "❤️", "🎉", "🚀", "🤔", "😂"];
@@ -788,6 +789,8 @@ pub async fn post_reaction(
     {
         return crate::error::internal_error(StatusCode::INTERNAL_SERVER_ERROR, e);
     }
+    let ctx = super::reaction_log::VisitCtx::from_headers(&headers);
+    super::reaction_log::record(&state, "post", id.parse().ok(), &emoji, d, &ctx).await;
     let count =
         sqlx::query_scalar::<_, i64>("SELECT count FROM post_reactions WHERE post_id = ? AND emoji = ?")
             .bind(&id)
@@ -806,7 +809,11 @@ pub async fn post_reaction(
     params(("id" = String, Path)),
     responses((status = 200, description = "留言讚 +1（動態 JSON）")),
 )]
-pub async fn comment_like(State(state): State<AppState>, Path(id): Path<String>) -> Response {
+pub async fn comment_like(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    headers: axum::http::HeaderMap,
+) -> Response {
     match sqlx::query("UPDATE comments SET likes = likes + 1 WHERE id = ?")
         .bind(&id)
         .execute(&state.pool)
@@ -816,7 +823,10 @@ pub async fn comment_like(State(state): State<AppState>, Path(id): Path<String>)
         Ok(r) if r.rows_affected() == 0 => {
             return (StatusCode::NOT_FOUND, Json(json!({ "message": "Comment not found" }))).into_response();
         }
-        Ok(_) => {}
+        Ok(_) => {
+            let ctx = super::reaction_log::VisitCtx::from_headers(&headers);
+            super::reaction_log::record(&state, "comment", id.parse().ok(), "like", 1, &ctx).await;
+        }
     }
     match sqlx::query_scalar::<_, i64>("SELECT likes FROM comments WHERE id = ?")
         .bind(&id)

@@ -58,6 +58,7 @@ import { isArriving } from '@/store/pageTransition';
 import { useCategoryLabel, useTagLabel } from '@/lib/categoryLabel';
 import { postPath, postShareUrl } from '@/lib/postPath';
 import { lookup } from '@/lib/tableLookup';
+import { visitHeaders } from '@/lib/visitContext';
 
 /// `GET /api/posts/:id` 的成功回應（型別由後端 Rust struct 生成），外加 client 端自己算的
 /// `date`（由 created_at 依語系格式化，見下方 setPost）。API 不回傳 date。
@@ -508,7 +509,7 @@ function useReactions(postId: string | number) {
       });
       fetch(`/api/posts/${postId}/reactions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...visitHeaders() },
         body: JSON.stringify({ emoji, delta }),
       })
         .then((r) => r.json() as Promise<{ count?: number }>)

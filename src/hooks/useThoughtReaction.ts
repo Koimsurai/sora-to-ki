@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ThoughtOut } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
+import { visitHeaders } from '@/lib/visitContext';
 
 export type Reaction = '' | 'like' | 'dislike';
 
@@ -31,7 +32,7 @@ export function useThoughtReaction(th: Pick<ThoughtOut, 'id' | 'likes' | 'dislik
     try {
       const r = await fetch(apiUrl(`/api/thoughts/${th.id}/react`), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...visitHeaders() },
         body: JSON.stringify({ prev: reacted, next }),
       });
       const d = (await r.json().catch(() => ({}))) as { likes?: number; dislikes?: number };

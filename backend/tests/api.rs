@@ -817,3 +817,105 @@ fn urlencode(s: &str) -> String {
     }
     out
 }
+
+/// 帶著讀者脈絡的標頭發 POST（國家、來源網站、語系、User-Agent）
+async fn post_with_visit(app: &axum::Router, path: &str, body: Option<Value>) -> StatusCode {
+    use axum::body::Body;
+    use axum::http::{Request, header};
+    use tower::ServiceExt;
+    let b = Request::builder()
+        .method("POST")
+        .uri(path)
+        .header("cf-ipcountry", "JP")
+        .header("x-visit-referrer", "t.co")
+        .header("x-visit-locale", "ja")
+        .header(header::USER_AGENT, "Mozilla/5.0 (iPhone) Mobile/15E148");
+    let req = match body {
+        Some(v) => {
+            b.header(header::CONTENT_TYPE, "application/json").body(Body::from(v.to_string())).unwrap()
+        }
+        None => b.body(Body::empty()).unwrap(),
+    };
+    app.clone().oneshot(req).await.unwrap().status()
+}
+
+/// 每一次愛心、表情、印記、留言的讚、碎念的喜歡都記一筆（migration 0029），後台看得到；
+/// 開始記錄之前的那些照「現在的總數減掉紀錄裡的」算
+#[tokio::test]
+async fn reactions_are_logged_with_visit_context() {
+    let (app, pool) = test_app().await;
+    // 開始記錄之前就有的：文章 1 已經有 5 顆愛心、首頁 3 個印記
+    sqlx::query("INSERT INTO post_reactions (post_id, emoji, count) VALUES (1, '❤️', 5)")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO site_counters (key, count) VALUES ('site_likes', 3)")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO comments (id, post_id, author, content, status) VALUES (7, 1, 'a', 'b', 'approved')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    assert_eq!(
+        post_with_visit(&app, "/api/posts/1/reactions", Some(json!({ "emoji": "❤️" }))).await,
+        StatusCode::OK
+    );
+    assert_eq!(
+        post_with_visit(&app, "/api/posts/1/reactions", Some(json!({ "emoji": "🎉", "delta": -1 }))).await,
+        StatusCode::OK
+    );
+    assert_eq!(post_with_visit(&app, "/api/site/likes", None).await, StatusCode::OK);
+    assert_eq!(post_with_visit(&app, "/api/comments/7/like", None).await, StatusCode::OK);
+    // 喜歡換成不喜歡：收回一個、按下另一個，兩筆
+    assert_eq!(
+        post_with_visit(&app, "/api/thoughts/1/react", Some(json!({ "prev": "like", "next": "dislike" })))
+            .await,
+        StatusCode::OK
+    );
+
+    let token = owner_token(true);
+    let (status, body) = request(&app, "GET", "/api/admin/reactions", None, Some(&token)).await;
+    assert_eq!(status, StatusCode::OK);
+    let events = body["events"].as_array().unwrap();
+    let got: Vec<(String, String, i64, Option<String>)> = events
+        .iter()
+        .rev()
+        .map(|e| {
+            (
+                e["kind"].as_str().unwrap().to_string(),
+                e["value"].as_str().unwrap().to_string(),
+                e["delta"].as_i64().unwrap(),
+                e["target_title"].as_str().map(str::to_string),
+            )
+        })
+        .collect();
+    assert_eq!(
+        got,
+        vec![
+            ("post".into(), "❤️".into(), 1, Some("公開文章".into())),
+            ("post".into(), "🎉".into(), -1, Some("公開文章".into())),
+            ("site".into(), "like".into(), 1, None),
+            ("comment".into(), "like".into(), 1, Some("公開文章".into()),),
+            ("thought".into(), "like".into(), -1, Some("第一則碎念".into())),
+            ("thought".into(), "dislike".into(), 1, Some("第一則碎念".into())),
+        ]
+    );
+    for e in events {
+        assert_eq!(
+            (e["country"].as_str(), e["referrer"].as_str(), e["device"].as_str(), e["locale"].as_str()),
+            (Some("JP"), Some("t.co"), Some("mobile"), Some("ja")),
+            "每一筆都帶讀者脈絡"
+        );
+    }
+    // 現在文章 1 有 6 顆愛心（5 + 紀錄裡的 1），開始記錄之前是 5；首頁 4 個印記，之前是 3
+    assert_eq!(body["before_post_hearts"], json!(5));
+    assert_eq!(body["before_site"], json!(3));
+    assert!(body["since"].is_string());
+
+    let (status, _) = get(&app, "/api/admin/reactions").await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "後台端點要登入");
+}

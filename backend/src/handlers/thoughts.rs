@@ -295,6 +295,7 @@ pub struct ThoughtReactResponse {
 pub async fn thought_react(
     State(state): State<AppState>,
     Path(id): Path<String>,
+    headers: axum::http::HeaderMap,
     crate::error::JsonBody(body): crate::error::JsonBody<ReactBody>,
 ) -> Response {
     if !react_ok(body.prev.as_deref()) || !react_ok(body.next.as_deref()) {
@@ -315,6 +316,13 @@ pub async fn thought_react(
     .await
     {
         return crate::error::internal_error(StatusCode::BAD_REQUEST, e);
+    }
+    // 喜歡換成不喜歡是兩筆：收回一個、按下另一個
+    let ctx = super::reaction_log::VisitCtx::from_headers(&headers);
+    for (value, delta) in [("like", d_like), ("dislike", d_dislike)] {
+        if delta != 0 {
+            super::reaction_log::record(&state, "thought", id.parse().ok(), value, delta, &ctx).await;
+        }
     }
 
     let row = sqlx::query_as::<_, (i64, i64)>("SELECT likes, dislikes FROM thoughts WHERE id = ?")
