@@ -234,6 +234,8 @@ export function createBay(opts: BayOptions) {
     sk: 0,
     tok: 0,
     worldM: null as DOMMatrix | null,
+    /** 摺起來或攤開：從換之前的鏡頭（中心、縮放、旋轉）滑到新的，太空梭不是一下跳到另一半 */
+    morph: null as { c: Pt; s: number; rot: number; cam: Cam; t0: number } | null,
     lastNow: 0,
     t0: performance.now(),
     alive: true,
@@ -244,6 +246,12 @@ export function createBay(opts: BayOptions) {
     const W = root.clientWidth;
     const H = root.clientHeight;
     if (!W || !H) return;
+    // 姿勢真的變了（不是一般的縮放）：記下換之前畫面上的鏡頭，applyWorld 從這裡滑過去
+    const nextPose = currentFold()?.pose ?? null;
+    if (S.W && nextPose !== (S.fold?.pose ?? null) && !reduce) {
+      const from = S.morph ? morphNow() : { c: center(), s: fitScale() * S.cam.z, rot: S.rot, cam: { ...S.cam } };
+      S.morph = { ...from, t0: performance.now() };
+    }
     S.W = W;
     S.H = H;
     S.dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -317,14 +325,32 @@ export function createBay(opts: BayOptions) {
     if (!m) return toScreen(p);
     return { x: (m.a * p.x + m.c * p.y + m.e) / S.dpr, y: (m.b * p.x + m.d * p.y + m.f) / S.dpr };
   };
+  /** 摺起來或攤開時鏡頭滑多久 */
+  const REFOLD_MS = 600;
+  /** 這一刻的鏡頭：平常就是版面算出來的；換姿勢的那 0.6 秒從換之前的鏡頭滑過去（旋轉也一起轉） */
+  function morphNow(): { c: Pt; s: number; rot: number; cam: Cam } {
+    const to = { c: center(), s: fitScale() * S.cam.z, rot: S.rot, cam: S.cam };
+    const m = S.morph;
+    if (!m) return to;
+    const k = ease(clamp01((performance.now() - m.t0) / REFOLD_MS));
+    if (k >= 1) {
+      S.morph = null;
+      return to;
+    }
+    return {
+      c: { x: lerp(m.c.x, to.c.x, k), y: lerp(m.c.y, to.c.y, k) },
+      s: lerp(m.s, to.s, k),
+      rot: lerp(m.rot, to.rot, k),
+      cam: { x: lerp(m.cam.x, to.cam.x, k), y: lerp(m.cam.y, to.cam.y, k), z: to.cam.z },
+    };
+  }
   function applyWorld() {
-    const s = fitScale() * S.cam.z;
-    const c = center();
+    const { c, s, rot, cam } = morphNow();
     ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
     ctx.translate(c.x, c.y);
-    if (S.rot) ctx.rotate(S.rot);
+    if (rot) ctx.rotate(rot);
     ctx.scale(s, s);
-    ctx.translate(-S.cam.x, -S.cam.y);
+    ctx.translate(-cam.x, -cam.y);
   }
   const screenSpace = () => ctx.setTransform(S.dpr, 0, 0, S.dpr, 0, 0);
 

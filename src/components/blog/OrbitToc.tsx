@@ -22,7 +22,7 @@ import {
   takeOrbitHandoff,
   type OrbitGeom,
 } from '@/lib/articleOrbit';
-import { subscribeFold } from '@/lib/viewportFold';
+import { currentFold, subscribeFold } from '@/lib/viewportFold';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { peekRetune } from './useRetune';
 import { applyZoom, arcPoint, keepTimeOf, orbitSpan, postArc, skyPostOf, zoomMap, zoomOf, type Arc } from './noteSky';
@@ -49,6 +49,13 @@ const PEN_BACK_S = 0.7;
 const PEN_LEAD_PX = 40;
 /** 這一頁的內文那一欄 */
 const colOf = (root: Element) => root.closest('.ar-page')?.querySelector<HTMLElement>('.ar-col') ?? null;
+
+/** 現在的軌道幾何。書本式摺起來時軌道從左頁導讀（標題那一塊）底下開始，要量它 */
+function geomNow() {
+  const fold = currentFold();
+  const lead = fold?.pose === 'book' ? document.querySelector('.ar-lead') : null;
+  return orbitGeometry(window.innerWidth, window.innerHeight, fold, lead?.getBoundingClientRect().bottom);
+}
 
 /** 被摘要點名的那一章，漣漪擴一圈的時間 */
 const PING_MS = 1100;
@@ -123,11 +130,11 @@ export default function OrbitToc({
   };
 
   usePageTransition({
-    anchor: () => orbitPoint(orbitGeometry(window.innerWidth, window.innerHeight), 0),
+    anchor: () => orbitPoint(geomNow(), 0),
     // 從手記推近過來的：點已經跟著那顆星到了軌道頂端，鏡頭不用再動
     arrive: () => (fullRef.current ? { still: true } : null),
     leave: ({ to }) => {
-      const g = orbitGeometry(window.innerWidth, window.innerHeight);
+      const g = geomNow();
       rootRef.current?.classList.add('is-leaving');
       rootRef.current?.closest('.ar-page')?.classList.add('is-leaving');
       const at = performance.now();
@@ -226,7 +233,7 @@ export default function OrbitToc({
       headings.forEach((h, i) => {
         els[i] ??= document.getElementById(h.id);
       });
-      g = orbitGeometry(window.innerWidth, window.innerHeight);
+      g = geomNow();
       // 窄螢幕：軌道貼在右邊緣，章節名不放在刻度旁，收進底部的清單（點軌道打開）
       root.classList.toggle('is-narrow', g.narrow);
       root.classList.toggle('is-docked', g.docked);
@@ -253,7 +260,14 @@ export default function OrbitToc({
       end = start + content.offsetHeight;
       marks = els.map((el) => (el ? docTop(el) : start));
       const H = g.H;
-      const gap = (i: number) => (deep[i] ? 21 : 25);
+      // 章節太多、軌道太短（書本式的左頁、矮的畫面）：小節的名字收起來、刻度疊在大節上；
+      // 還是放不下就把間距等比例縮小，名字才不會被往上推到軌道外面
+      const tops = deep.filter((d) => !d).length;
+      const need = deep.reduce((sum, d, i) => sum + (i ? (d ? 21 : 25) : 0), 0);
+      const crowded = !g.narrow && need > H;
+      root.classList.toggle('is-crowded', crowded);
+      const topGap = crowded ? Math.min(25, H / Math.max(1, tops - 1)) : 25;
+      const gap = (i: number) => (deep[i] ? (crowded ? 0 : 21) : topGap);
       const ys = marks.map((m) => clamp((m - start) / Math.max(1, end - start)) * H);
       for (let i = 1; i < ys.length; i++) ys[i] = Math.max(ys[i], ys[i - 1] + gap(i));
       if (ys.length) ys[ys.length - 1] = Math.min(ys[ys.length - 1], H);
@@ -343,9 +357,9 @@ export default function OrbitToc({
       }
 
       // 其他文章的軌道：頁首時看得到，開始讀之後退到幾乎看不見。
-      // 窄螢幕不畫：它們在這道軌道的內側，貼邊時就壓在內文上
+      // 窄螢幕不畫：它們在這道軌道的內側，貼邊時就壓在內文上；書本式也不畫，會劃過左頁的標題
       const fade = 1 - clamp(window.scrollY / 500) * 0.65;
-      for (const o of geom.narrow ? [] : OTHERS) {
+      for (const o of geom.narrow || geom.book ? [] : OTHERS) {
         const u1 = Math.min(1.25, o.u0 + o.len * grow);
         ctx.strokeStyle = `rgba(${INK}, ${0.13 * o.a * fade})`;
         ctx.beginPath();
@@ -416,7 +430,7 @@ export default function OrbitToc({
         const q = at(u);
         if (li && !geom.narrow) {
           li.style.transform = `translate(${q.x + (deep[i] ? 20 : 14)}px, ${q.y - 10}px)`;
-          li.style.maxWidth = `${Math.max(60, W - q.x - 40)}px`;
+          li.style.maxWidth = `${Math.max(60, geom.nameRight - q.x)}px`;
         }
         if (i === ping.i) {
           // ping.at 是點下去那一刻的 performance.now()，而 now 是這一幀的 rAF 時間戳，可能比它早一點：

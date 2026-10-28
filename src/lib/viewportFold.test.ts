@@ -57,10 +57,15 @@ describe('摺起來時的版面', () => {
     expect(saturnFrame(1440, 900, null)).toMatchObject({ x: 720, y: 450 });
   });
 
-  it('文章軌道：書本式在右半、有章節名；筆電式只在上半、清單一直開著', () => {
-    const book = orbitGeometry(951, 585, foldOf(BOOK));
+  it('文章軌道：書本式在左頁導讀底下、章節名不越過摺痕；筆電式只在上半、清單一直開著', () => {
+    const book = orbitGeometry(951, 585, foldOf(BOOK), 260);
     expect(book.narrow).toBe(false);
-    expect(book.railX).toBeGreaterThan(476 + 50);
+    expect(book.railX).toBeLessThan(475);
+    expect(book.topY).toBeGreaterThan(260);
+    expect(book.nameRight).toBeLessThan(475);
+    // 攤平的 951：中寬，軌道帶章節名，不貼邊
+    expect(orbitGeometry(951, 585, null).narrow).toBe(false);
+    expect(orbitGeometry(899, 585, null).narrow).toBe(true);
     const laptop = orbitGeometry(669, 867, foldOf(LAPTOP));
     expect(laptop.narrow).toBe(true);
     expect(laptop.docked).toBe(true);

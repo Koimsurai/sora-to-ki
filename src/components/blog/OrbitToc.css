@@ -282,3 +282,8 @@ html[data-pt] .orbit-toc-list {
   opacity: 1;
   transform: none;
 }
+
+/* 章節太多、軌道太短：小節的名字收起來（刻度還在），只留大節（OrbitToc 的 measure 切 is-crowded） */
+.orbit-toc.is-crowded:not(.is-narrow) .orbit-toc-list li.is-deep {
+  visibility: hidden;
+}

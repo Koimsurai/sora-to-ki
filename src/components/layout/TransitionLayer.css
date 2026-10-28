@@ -34,12 +34,18 @@ html[data-pt] .main-content-container {
   }
 }
 
-html[data-refold] .main-content-container > main {
+html[data-refold] .main-content-container > main:not(:has(.horbit, .su)) {
+  animation: refold-in var(--dur-500) var(--easing-out);
+}
+
+/* 首頁與設備頁的畫布自己滑過去（土星、太空梭），整頁淡入會把滑的過程蓋掉：
+   只淡入版面換掉的那幾塊（首頁的目錄自己處理，設備頁是標籤／貨單） */
+html[data-refold] .su-tags {
   animation: refold-in var(--dur-500) var(--easing-out);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html[data-refold] .main-content-container > main {
+  html[data-refold] :is(.main-content-container > main, .su-tags) {
     animation: none;
   }
 }

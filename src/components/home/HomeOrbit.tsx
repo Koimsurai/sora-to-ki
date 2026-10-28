@@ -70,7 +70,11 @@ export default function HomeOrbit() {
   // 摺起來（CSS 的 viewport-segments）：浮動字卡換成另一半的目錄
   const book = useMediaQuery('(horizontal-viewport-segments: 2)');
   const laptop = useMediaQuery('(vertical-viewport-segments: 2)');
-  const folded = book || laptop;
+  const pose = book ? 'book' : laptop ? 'laptop' : null;
+  const folded = pose !== null;
+  // 攤開時目錄不要一下消失：留在原地淡出（位置照上一次摺起來的姿勢）
+  const [lastPose, setLastPose] = useState<typeof pose>(null);
+  if (pose && pose !== lastPose) setLastPose(pose);
   const [flat, setFlat] = useState(false);
   /** 衛星在畫面上的位置與速度（px/ms），轉場的「收」要用 */
   const positionsRef = useRef<SatelliteScreen[]>([]);
@@ -374,8 +378,8 @@ export default function HomeOrbit() {
           </LocaleLink>
         ))}
         {/* 摺起來時另一半的目錄（沒有 3D 的平面備案本來就是一欄連結，不另外放） */}
-        {folded && !flat && (
-          <ol className="horbit-index">
+        {lastPose && !flat && (
+          <ol className={`horbit-index${folded ? '' : ' is-out'}`} data-pose={lastPose} aria-hidden={!folded}>
             {MAIN_SECTIONS.map((s, i) => {
               const info = lines[s.key];
               return (

@@ -151,24 +151,38 @@
   margin: 0;
   list-style: none;
   pointer-events: auto;
+  animation: horbit-index-in var(--dur-500) var(--easing-out);
+  transition: opacity var(--dur-300) ease;
 }
 
-@media (horizontal-viewport-segments: 2) {
-  .horbit-index {
-    top: 50%;
-    right: var(--space-10);
-    translate: 0 -50%;
-    /* 左邊讓出外圈軌道越過摺痕的那一段，衛星的標註經過時不撞到目錄 */
-    width: min(270px, calc(env(viewport-segment-width 1 0) - var(--space-24) - var(--space-16)));
+.horbit-index[data-pose="book"] {
+  top: 50%;
+  right: var(--space-10);
+  translate: 0 -50%;
+  /* 左邊讓出外圈軌道越過摺痕的那一段，衛星的標註經過時不撞到目錄 */
+  width: min(270px, calc(env(viewport-segment-width 1 0, 50vw) - var(--space-24) - var(--space-16)));
+}
+
+.horbit-index[data-pose="laptop"] {
+  top: calc(env(viewport-segment-top 0 1, 50vh) + var(--space-10));
+  left: 50%;
+  translate: -50% 0;
+}
+
+/* 摺起來時淡入；攤開時留在原地淡出（env 失效時退回 50%，跟摺痕的位置差不到一兩 px） */
+@keyframes horbit-index-in {
+  from {
+    opacity: 0;
   }
 }
 
-@media (vertical-viewport-segments: 2) {
-  .horbit-index {
-    top: calc(env(viewport-segment-top 0 1) + var(--space-10));
-    left: 50%;
-    translate: -50% 0;
-  }
+.horbit-index.is-out {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-300) ease,
+    visibility 0s linear var(--dur-300);
 }
 
 .horbit-index-a {
@@ -244,6 +258,14 @@
 
 .horbit-index li:is(.is-on, .is-hint) :is(.no, .en) {
   color: var(--amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .horbit-index,
+  .horbit-index.is-out {
+    animation: none;
+    transition: none;
+  }
 }
 
 .horbit-index-a:focus-visible {
