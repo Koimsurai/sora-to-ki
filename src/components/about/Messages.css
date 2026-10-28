@@ -122,3 +122,68 @@
     margin-left: calc(-1 * var(--space-4));
   }
 }
+
+/* ── 摺疊機摺起來 ──
+   書本式（左右兩半）：頁首、頻道、瀑布圖在左半捲動，發送台住在右半；
+   筆電式（上下兩半）：瀑布圖在上半捲動，發送台佔滿摺痕以下那一半，像鍵盤。
+   兩種都讓發送台一直展開（署名、規則都攤開），那一半是一整座發報台，不是一條輸入框配一片空白 */
+@media (horizontal-viewport-segments: 2), (vertical-viewport-segments: 2) {
+  .msg-tx .cf-panel {
+    grid-template-rows: 1fr;
+    border-top: 1px solid var(--rule);
+  }
+
+  .msg-tx .cf-fields {
+    padding-top: var(--space-4);
+    overflow-y: auto;
+  }
+}
+
+@media (horizontal-viewport-segments: 2) {
+  .msg {
+    grid-template-columns: env(viewport-segment-width 0 0) env(viewport-segment-width 1 0);
+    column-gap: calc(env(viewport-segment-left 1 0) - env(viewport-segment-right 0 0));
+    max-width: none;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .msg > * {
+    grid-column: 1;
+    margin-inline: var(--space-10) var(--space-6);
+  }
+
+  .msg > .msg-tx {
+    position: sticky;
+    top: var(--page-top);
+    grid-row: 1 / span 3;
+    grid-column: 2;
+    align-self: start;
+    padding: 0 var(--space-10) 0 var(--space-6);
+    margin: 0;
+    background: none;
+    backdrop-filter: none;
+  }
+
+  .msg-tx .cf-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (vertical-viewport-segments: 2) {
+  .msg {
+    padding-bottom: 0;
+  }
+
+  .msg-tx {
+    box-sizing: border-box;
+    /* 發送台本身是 grid：撐高之後多的空間不要分給每一列 */
+    align-content: start;
+    height: calc(100dvh - env(viewport-segment-top 0 1));
+    padding-top: var(--space-6);
+    overflow-y: auto;
+    border-top: 1px solid rgba(var(--paper-rgb), 0.15);
+    /* 下半整片是發送台，不透出底下捲過去的瀑布圖 */
+    background: rgb(var(--ground-rgb));
+  }
+}

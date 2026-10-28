@@ -674,3 +674,51 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
     display: none;
   }
 }
+
+/* 左頁導讀的外框：平常不存在，標題那一塊照常排在內文欄裡（摺疊機書本式才用到，見檔尾） */
+.ar-lead {
+  display: contents;
+}
+
+/* 中寬（900–1099，例如摺疊機內螢幕攤平橫拿 951）：內文欄縮窄，右邊留給帶章節名的軌道。
+   寬度要跟 lib/articleOrbit 的 MID_RAIL_FROM_RIGHT 一致：軌道離右緣 280，內文離軌道 60 */
+@media (min-width: 900px) and (max-width: 1099px) {
+  .ar-col {
+    width: calc(100% - var(--space-14) - 340px);
+    margin-left: var(--space-14);
+  }
+}
+
+/* 摺疊機摺起來。書本式：左頁是導讀（麵包屑、標題、日期，軌道目錄接在底下，固定不捲），右頁是內文；
+   筆電式：內文在上半捲，底部多留一段下半的高度，最後一段才捲得到摺痕以上 */
+@media (horizontal-viewport-segments: 2) {
+  .ar-col {
+    width: calc(env(viewport-segment-width 1 0) - var(--space-12));
+    margin-left: calc(env(viewport-segment-left 1 0) + var(--space-6));
+  }
+
+  .ar-lead {
+    position: fixed;
+    top: var(--space-20);
+    left: var(--space-8);
+    z-index: 2;
+    display: block;
+    width: calc(env(viewport-segment-width 0 0) - var(--space-14));
+    max-height: 46vh;
+    overflow: hidden auto;
+  }
+
+  .ar-lead .ar-head {
+    margin-bottom: 0;
+  }
+
+  .ar-lead .ar-head h1 {
+    font-size: var(--fs-24);
+  }
+}
+
+@media (vertical-viewport-segments: 2) {
+  .ar-page {
+    padding-bottom: calc(100dvh - env(viewport-segment-bottom 0 0));
+  }
+}

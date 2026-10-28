@@ -133,7 +133,7 @@ describe('init 之後的訊息直接轉給 runner', () => {
     expect(runner.setRunning).toHaveBeenCalledWith(false);
     expect(runner.setScroll).toHaveBeenCalledWith(7);
     expect(runner.setSaturn).toHaveBeenCalledWith(false, true);
-    expect(runner.setSize).toHaveBeenCalledWith(800, 600);
+    expect(runner.setSize).toHaveBeenCalledWith(800, 600, undefined);
   });
 
   it('ready 會帶著 backend 回報，主執行緒靠它顯示徽章並重新同步狀態', () => {

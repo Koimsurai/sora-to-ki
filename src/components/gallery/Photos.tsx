@@ -4,13 +4,14 @@
 // 頁首是地面站與遠處的探測器、收到幾格、各鏡頭幾張，下面一條是每個月收到幾張。點一張打開檢視器。
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { Masonry } from 'masonic';
 import { useTranslation } from 'react-i18next';
+import { useFoldPose } from '@/hooks/useFoldPose';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { loadGallery } from '@/lib/manifestLoader';
 import { after, isArriving } from '@/store/pageTransition';
-import { openViewerAtom, photosAtom } from '@/store/photoStore';
+import { closeViewerAtom, openViewerAtom, photosAtom, viewerOpenAtom } from '@/store/photoStore';
 import { createStation, drawPasses, drawVeil, noiseDataUrl, RX_PHASES, RX_TOTAL, rxStage } from './downlink';
 import { framesOf, overview, type Frame } from './frames';
 import PhotoViewer from './PhotoViewer';
@@ -19,6 +20,8 @@ import { sameTitle } from '@/lib/pageTitle';
 
 /** 一欄至少多寬（像素）：照片牆鋪滿整頁，寬螢幕五欄左右、手機一欄 */
 const COLUMN_PX = 320;
+/** 摺疊機書本式：照片牆只有左頁那麼寬，縮成兩欄小圖（右頁是點開的那張） */
+const BOOK_COLUMN_PX = 170;
 /** 照片進畫面多少才開始接收 */
 const RX_THRESHOLD = 0.35;
 /** 同時最多收幾張：其他的排隊（一整排同時開始太吵，也像一格一格在下傳） */
@@ -329,6 +332,22 @@ export default function Photos() {
     setPhotos(frames.map((f) => f.photo));
   }, [frames, setPhotos]);
 
+  // 摺疊機書本式像翻開的相簿：左頁是照片牆，右頁一直是一張照片（檢視器只佔右頁，見 PhotoViewer.css）。
+  // 摺起來時沒有開著的就打開最新那張；攤開時收起來（右頁那張是版面的一部分，不是讀者要的全螢幕）
+  const pose = useFoldPose();
+  const viewerOpen = useAtomValue(viewerOpenAtom);
+  const closeViewer = useSetAtom(closeViewerAtom);
+  const wasBookRef = useRef(false);
+  useEffect(() => {
+    if (pose === 'book') {
+      wasBookRef.current = true;
+      if (!viewerOpen && frames[0]) openViewer(frames[0].photo);
+    } else if (wasBookRef.current) {
+      wasBookRef.current = false;
+      if (viewerOpen) closeViewer();
+    }
+  }, [pose, viewerOpen, frames, openViewer, closeViewer]);
+
   const stationRef = useRef<HTMLCanvasElement>(null);
   const passesRef = useRef<HTMLCanvasElement>(null);
   const station = useMemo(() => createStation(), []);
@@ -556,7 +575,9 @@ export default function Photos() {
           itemAs="li"
           // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- 標籤已經是 ul，這是在蓋掉函式庫的預設 role
           role="list"
-          columnWidth={COLUMN_PX}
+          // 換欄寬要整個重排（masonic 只在掛上時量一次）
+          key={pose === 'book' ? 'book' : 'wall'}
+          columnWidth={pose === 'book' ? BOOK_COLUMN_PX : COLUMN_PX}
           maxColumnCount={6}
           columnGutter={28}
           rowGutter={40}

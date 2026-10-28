@@ -543,6 +543,56 @@
   transition: opacity var(--dur-400) ease;
 }
 
+/* 摺疊機摺起來（data-fold 由畫布照 window.viewport.segments 切）：
+   四件酬載的標籤排成另一半的貨單（位置與走線由畫布擺），筆電式零件表佔滿摺痕以下那一半 */
+.su[data-fold="laptop"] .su-panel {
+  top: env(viewport-segment-top 0 1, 54%);
+  height: auto;
+}
+
+/* 標籤排成貨單，提示就不用了（每一列看得出是可以點的） */
+.su[data-fold] .su-hint {
+  display: none;
+}
+
+.su-tag-more {
+  display: none;
+}
+
+.su[data-fold] .su-tag:not(:last-child) {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  column-gap: var(--space-2);
+  padding: 0;
+  text-align: left;
+  white-space: normal;
+}
+
+.su[data-fold] .su-tag:not(:last-child) .su-tag-name {
+  font-size: var(--fs-16);
+  color: var(--paper);
+}
+
+.su[data-fold] .su-tag-more {
+  display: contents;
+}
+
+.su[data-fold] .su-tag-count {
+  justify-self: end;
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-6);
+  color: var(--paper-3);
+}
+
+.su[data-fold] .su-tag-lede {
+  grid-column: 2 / -1;
+  padding-top: var(--space-1);
+  font-size: var(--fs-12);
+  line-height: var(--lh-150);
+  color: var(--paper-3);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .su-panel,
   .su-bom > li,

@@ -3,6 +3,8 @@
 // 一路經過國際太空站、月球、韋伯望遠鏡、行星、小行星帶、柯伊伯帶、新視野號、航海家一號、
 // 太陽圈邊界、歐特雲，到附近的恆星；最後面是照真實方向畫的銀河。
 // 行星與月球用平均軌道算今天的位置，恆星用真的赤經、赤緯與距離。這裡只有幾何與畫圖，不碰 React。
+import { currentFold } from '@/lib/viewportFold';
+import { focusY } from '@/lib/viewportShape';
 
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -462,6 +464,9 @@ export function createSignalSky(signals: Signal[], now0: number) {
   /** 鏡頭：多遠的東西剛好在畫面邊上（D）、從多高往下看（E）、轉到哪個方向（psi） */
   const view = (f: SkyFrame) => {
     const narrow = f.w < 760;
+    // 摺疊機書本式：地球在左頁正中，在看／在讀／在聽與讀數在右頁
+    const fold = currentFold();
+    const book = fold?.pose === 'book' ? fold.first : null;
     const R = narrow ? Math.min(f.w * 0.46, f.h * 0.42) : Math.min(f.w * 0.38, f.h * 0.8);
     const D = 10 ** (L0 + (L1 - L0) * f.s);
     // 一開始幾乎是從上面往下看地球與月球，退得越遠越斜，最後像從側面看一片圓盤
@@ -476,8 +481,9 @@ export function createSignalSky(signals: Signal[], now0: number) {
       cosE: Math.cos(e),
       cosP: Math.cos(psi),
       sinP: Math.sin(psi),
-      ex: narrow ? f.w * 0.5 : f.w * 0.56,
-      ey: narrow ? f.h * 0.56 : f.h * 0.54,
+      ex: book ? book.x + book.width * 0.5 : narrow ? f.w * 0.5 : f.w * 0.56,
+      // 摺疊機直拿：地球提到摺痕以上（lib/viewportShape）
+      ey: f.h * focusY(f.w, f.h, narrow ? 0.56 : 0.54, 0.4),
       diag: Math.hypot(f.w, f.h),
     };
   };

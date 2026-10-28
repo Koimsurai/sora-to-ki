@@ -7,6 +7,7 @@ import { MILESTONE_BEATS_BY_LANG, MILESTONE_STATIC, MILESTONES_BY_LANG, YEAR_LAB
 import { SKILL_GROUPS, WORK_BY_LANG, WORK_PERIODS } from '@/data/aboutData';
 import { lookupOr } from '@/lib/tableLookup';
 import { usePageTransition } from '@/hooks/usePageTransition';
+import { currentFold } from '@/lib/viewportFold';
 import { useBareSky } from '@/hooks/useBareSky';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { createFallSky, meterMark, phases, smooth } from './fallSky';
@@ -146,14 +147,18 @@ export default function AboutFall() {
       // 速度：這一幀捲了多少，平滑一下（px/s）
       speed += (travelled / Math.max(dt, 0.016) - speed) * Math.min(1, dt * 6);
       travelled = 0;
-      const w = window.innerWidth;
+      const cw = window.innerWidth;
       const h = window.innerHeight;
+      // 摺疊機書本式：下墜（琥珀點、高度計、地平線、降落傘）只在左頁，右頁是一年一年的字
+      const fold = currentFold();
+      const w = fold?.pose === 'book' ? fold.first.x + fold.first.width : cw;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
-        cv.width = Math.round(w * dpr);
+      if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(h * dpr)) {
+        cv.width = Math.round(cw * dpr);
         cv.height = Math.round(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (w < cw) ctx.clearRect(0, 0, cw, h);
       // 換頁的點還在飛：上一頁的捲動位置可能還沒重設，這時一律當作在最上面（不然雲層、高度計會先冒出來一下）
       const top = isArriving() ? 0 : window.scrollY - docTop(page);
       const state = {

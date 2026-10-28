@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { friendsQueryOptions } from '@/data/friendsData';
 import { usePageTransition } from '@/hooks/usePageTransition';
+import { currentFold } from '@/lib/viewportFold';
 import { after, isArriving } from '@/store/pageTransition';
 import {
   createSky,
@@ -306,15 +307,28 @@ export default function Friends() {
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      // 抽屜拉出來時軌道讓位：寬螢幕讓出右邊、手機讓出底下（抽屜本身的大小，transform 不影響 offset*）
+      // 抽屜拉出來時軌道讓位：寬螢幕讓出右邊、手機讓出底下（抽屜本身的大小，transform 不影響 offset*）。
+      // 摺疊機摺起來時另一半是朋友清單，軌道一樣讓出那一半（書本式右半、筆電式下半）
       const side = sideRef.current;
       const sheet = window.matchMedia(SHEET_QUERY).matches;
-      const goal: Inset =
+      const fold = currentFold();
+      const base: Inset =
+        fold?.pose === 'book'
+          ? { right: w - (fold.first.x + fold.first.width), bottom: 0, top: 0 }
+          : fold
+            ? { right: 0, bottom: h - (fold.first.y + fold.first.height), top: 0 }
+            : { right: 0, bottom: 0, top: 0 };
+      const drawer: Inset =
         sideOpenRef.current && side
           ? sheet
             ? { right: 0, bottom: side.offsetHeight, top: SHEET_TOP }
             : { right: side.offsetWidth, bottom: 0, top: 0 }
           : { right: 0, bottom: 0, top: 0 };
+      const goal: Inset = {
+        right: Math.max(base.right, drawer.right),
+        bottom: Math.max(base.bottom, drawer.bottom),
+        top: drawer.top,
+      };
       const ins = insetRef.current;
       const k = reduce ? 1 : Math.min(1, dt * INSET_RATE);
       for (const key of ['right', 'bottom', 'top'] as const) {

@@ -329,3 +329,35 @@
     translate: none;
   }
 }
+
+/* 摺疊機書本式：整頁（地面站、照片牆）收進左頁，右頁是檢視器（PhotoViewer.css） */
+@media (horizontal-viewport-segments: 2) {
+  .ph {
+    max-width: env(viewport-segment-width 0 0);
+    padding-inline: var(--space-6);
+  }
+
+  /* 左頁只有 470 寬：照窄螢幕排，接收紀錄放在地面站下面 */
+  .ph-station {
+    height: auto;
+    padding-top: calc(var(--space-20) * 2.5);
+  }
+
+  .ph-station canvas {
+    bottom: auto;
+    height: 200px;
+  }
+
+  .ph-station-name {
+    top: 180px;
+    bottom: auto;
+    left: 150px;
+  }
+
+  .ph-log {
+    position: static;
+    width: 100%;
+    margin-top: var(--space-6);
+    translate: none;
+  }
+}

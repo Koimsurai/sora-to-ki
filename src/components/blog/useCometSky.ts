@@ -258,7 +258,13 @@ export function useCometSky(refs: Refs, postCount: number, ghostCount: number, o
             w = el.offsetWidth;
           }
         }
-        const raw = side ? x - gap - w : x + gap;
+        // 摺疊機書本式：字一律從右頁的那條邊開始（comet 的 layoutArc）
+        if (L.column !== undefined) {
+          side = false;
+          el.style.maxWidth = `${Math.floor(width - 24 - L.column)}px`;
+          w = el.offsetWidth;
+        }
+        const raw = L.column ?? (side ? x - gap - w : x + gap);
         el.style.transform = `translate(${Math.max(16, Math.min(width - 16 - w, raw))}px, ${y - 12}px)`;
         el.classList.toggle('is-left', side);
       };

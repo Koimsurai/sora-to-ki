@@ -7,6 +7,7 @@
 // 這裡只畫點、線與插圖，字（里程碑的名字、遙測讀數、提示）是疊在上面的 DOM。
 
 import LAND_DATA from '@/data/landAroundTaiwan.json';
+import { currentFold } from '@/lib/viewportFold';
 
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
@@ -255,10 +256,14 @@ export function createLog(start: string, counts: number[], milestoneDates: strin
     const f = norm(sub(target, eye));
     const right = norm(cross(f, up0));
     const up = cross(right, f);
-    const fl = Math.min(w * 1.1, h * 1.5);
-    const cx = w * 0.5;
+    // 摺疊機摺起來：場景放在第一半（書本式左頁、筆電式上半），讀數排在另一半；
+    // 地面與遠處的燈照樣可以越過摺痕
+    const fold = currentFold();
+    const box = fold ? fold.first : { x: 0, y: 0, width: w, height: h };
+    const fl = Math.min(box.width * 1.1, box.height * 1.5);
+    const cx = box.x + box.width * 0.5;
     // 窄螢幕底下那排讀數佔得比較高：整個場景往上移一點，地面與燈才不會壓在讀數後面
-    const cy = h * (w < 760 ? 0.44 : 0.52);
+    const cy = fold ? box.y + box.height * 0.58 : h * (w < 760 ? 0.44 : 0.52);
     const project = (p: V3): ScreenPoint | null => {
       const d = sub(p, eye);
       const z = dot(d, f);

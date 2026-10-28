@@ -71,6 +71,14 @@
   color: var(--amber);
 }
 
+/* 摺疊機直拿（中等寬度的直式，lib/viewportShape 的 isTallMedium）：橫的摺痕在高度 45% 上下，
+   開場這一屏縮成 72vh，「坐穩了。」落在 36% 左右，句號（琥珀點）不壓在摺痕上 */
+@media (min-width: 560px) and (max-width: 1099px) and (orientation: portrait) {
+  .af-top {
+    min-height: 72vh;
+  }
+}
+
 .af-top h1 {
   margin: 0;
   font-size: clamp(56px, 7vw, 96px);
@@ -364,5 +372,22 @@
   .af-jobs li,
   .af-skills li {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── 摺疊機書本式：左頁是下墜（畫布只畫到左頁，見 AboutFall），開頭、落地、地心三段也在左頁；
+   右頁是一年一年的字與地層。高度計在左頁的右緣，右頁的字不用再讓位給它 ── */
+@media (horizontal-viewport-segments: 2) {
+  .af-top,
+  .af-land,
+  .af-core {
+    width: env(viewport-segment-width 0 0);
+  }
+
+  .af-ch,
+  .af-layer {
+    max-width: none;
+    margin-right: var(--space-10);
+    margin-left: calc(env(viewport-segment-left 1 0) + var(--space-8));
   }
 }

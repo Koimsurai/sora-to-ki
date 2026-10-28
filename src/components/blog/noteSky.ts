@@ -6,6 +6,7 @@
 // 這裡只有畫圖，不碰 React。
 import type { OrbitGeom } from '@/lib/articleOrbit';
 import type { Pt } from '@/store/pageTransition';
+import { currentFold, type Fold } from '@/lib/viewportFold';
 
 const TAU = Math.PI * 2;
 const INK = '241, 236, 227';
@@ -52,7 +53,9 @@ export function skyPostOf(p: { title: string; content_length?: number }, maxLen:
   return { length: n ? n / Math.max(1, maxLen) : 0.2 + 0.4 * hash01(`${p.title}#len`), seed: hash01(p.title) };
 }
 
-export const poleOf = (w: number, h: number): Pt => ({ x: w * 0.76, y: h * 0.3 });
+/** 星軌繞著轉的那一點。摺疊機書本式：移到右頁正中（左頁是清單），星軌照樣畫滿整片天、越過摺痕 */
+export const poleOf = (w: number, h: number, fold: Fold | null = currentFold()): Pt =>
+  fold?.pose === 'book' ? { x: fold.second.x + fold.second.width / 2, y: h * 0.42 } : { x: w * 0.76, y: h * 0.3 };
 const reachOf = (w: number, h: number) => {
   const p = poleOf(w, h);
   return Math.hypot(Math.max(p.x, w - p.x), Math.max(p.y, h - p.y));

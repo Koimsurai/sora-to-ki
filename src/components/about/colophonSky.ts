@@ -2,6 +2,8 @@
 // 點一顆星，六分儀轉過去對準它，望遠鏡拉出一條虛線視線，目鏡裡就是那一條的說明（頁面疊的 DOM）。
 // 這裡只畫六分儀、星點與視線，星的名字是疊在上面的按鈕。
 
+import { currentFold } from '@/lib/viewportFold';
+
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
 const TAU = Math.PI * 2;
@@ -45,7 +47,21 @@ const NARROW: Record<StarKey, [number, number]> = {
   license: [0.46, 0.56],
   qa: [0.16, 0.58],
 };
+/** 摺疊機筆電式：天空只剩摺痕以上那塊橫的（669 × 390），標題佔掉左上：星散在標題右邊與下方，六分儀在左下 */
+const LAPTOP: Record<StarKey, [number, number]> = {
+  material: [0.52, 0.42],
+  type: [0.66, 0.3],
+  sky: [0.8, 0.38],
+  rule1: [0.92, 0.27],
+  rule2: [0.58, 0.62],
+  rule3: [0.74, 0.7],
+  license: [0.9, 0.56],
+  qa: [0.84, 0.86],
+};
 const NARROW_PX = 760;
+/** 窄螢幕的星圖（擠在上半、六分儀在下半）。筆電式的天空是橫的，六分儀照寬螢幕擺在左下 */
+const isNarrow = (w: number) => w < NARROW_PX && currentFold()?.pose !== 'laptop';
+const layoutOf = (w: number) => (currentFold()?.pose === 'laptop' ? LAPTOP : isNarrow(w) ? NARROW : WIDE);
 
 export interface ColophonFrame {
   w: number;
@@ -67,13 +83,15 @@ export interface ColophonFrame {
 }
 
 export function starAt(key: StarKey, w: number, h: number) {
-  const [x, y] = (w < NARROW_PX ? NARROW : WIDE)[key];
+  const [x, y] = layoutOf(w)[key];
   return { x: x * w, y: y * h };
 }
 
 /** 六分儀擺在哪、多大：寬螢幕在左下，窄螢幕在下半部 */
 function placeOf(w: number, h: number) {
-  const narrow = w < NARROW_PX;
+  const narrow = isNarrow(w);
+  // 筆電式的天空只有 390 高：六分儀小一點、低一點，讓出標題底下那行提示
+  if (currentFold()?.pose === 'laptop') return { cx: w * 0.2, cy: h * 0.72, size: Math.min(w * 0.32, h * 0.5) };
   const size = narrow ? Math.min(w * 0.7, h * 0.42) : Math.min(w * 0.36, h * 0.56);
   return { cx: narrow ? w * 0.42 : w * 0.22, cy: narrow ? h * 0.78 : h * 0.66, size };
 }

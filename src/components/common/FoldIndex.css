@@ -1,0 +1,49 @@
+/* 摺起來時另一半的目錄（common/FoldIndex）。書本式在右半、垂直置中；筆電式在下半、水平置中。
+   寬度用 --fold-index-w 調（書本式要讓出畫面那一半越過摺痕的部分）。
+   env 在攤開後失效時退回 50%，跟摺痕的位置差不到一兩 px，淡出時不會跳 */
+.fold-index {
+  position: absolute;
+  display: grid;
+  width: var(--fold-index-w, min(320px, 80vw));
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  pointer-events: auto;
+  animation: fold-index-in var(--dur-500) var(--easing-out);
+  transition: opacity var(--dur-300) ease;
+}
+
+.fold-index[data-pose="book"] {
+  top: 50%;
+  right: var(--space-10);
+  translate: 0 -50%;
+}
+
+.fold-index[data-pose="laptop"] {
+  top: calc(env(viewport-segment-top 0 1, 50vh) + var(--space-10));
+  left: 50%;
+  translate: -50% 0;
+}
+
+@keyframes fold-index-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.fold-index.is-out {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--dur-300) ease,
+    visibility 0s linear var(--dur-300);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fold-index,
+  .fold-index.is-out {
+    animation: none;
+    transition: none;
+  }
+}

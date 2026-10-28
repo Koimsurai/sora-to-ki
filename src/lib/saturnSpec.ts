@@ -1,5 +1,7 @@
 // 首頁那顆土星的設定：3D 版（lib/starfieldGpu）與此站點遊樂場的平面版（about/colophonSaturn）共用這一份，
 // 兩邊畫出來的才是同一顆。只有數字，不碰 three。
+import type { Fold } from './viewportFold';
+import { focusY } from './viewportShape';
 
 /** 俯角與側傾，跟提案的示意一樣：從上方 24° 往下看，整組往右下斜 11° */
 export const TILT = 0.42;
@@ -77,3 +79,22 @@ export const RING_ROWS = 34;
 /** 最濃的地方線也只佔一列的幾成：線與線之間永遠留一道黑縫 */
 export const PLANET_COVER = 0.76;
 export const RING_COVER = 0.64;
+
+/**
+ * 首頁土星佔的那一塊（CSS 像素）：中心與可用的寬高。3D 背景與換頁的錨點都照這個。
+ * 橫的畫面置中；直的手機提到 46%，下面留給手指；摺疊機直拿與直式平板再往上提到摺痕以上（lib/viewportShape）。
+ * 摺起來時星球本體放進第一半（書本式左半、筆電式上半），另一半是五個分區的目錄
+ */
+/** 書本式摺起來時再放大幾倍：左半一整頁是插圖，照整個畫面的尺寸算會顯得縮在角落 */
+const BOOK_ZOOM = 1.3;
+
+export function saturnFrame(w: number, h: number, fold: Fold | null) {
+  // 背景是連續的：外圈軌道可以越過摺痕，只有星球本體待在第一半。
+  // 書本式的本體在左半偏右一點、照比左半寬一些的那塊縮放；筆電式在上半中間、照整個畫面縮放
+  if (fold?.pose === 'book') {
+    const b = fold.first;
+    return { x: b.x + b.width * 0.5, y: b.y + b.height / 2, width: b.width * 1.25, height: b.height, zoom: BOOK_ZOOM };
+  }
+  if (fold) return { x: w / 2, y: fold.first.y + fold.first.height / 2, width: w, height: h, zoom: 1 };
+  return { x: w / 2, y: h * (h > w ? focusY(w, h, 0.46) : 0.5), width: w, height: h, zoom: 1 };
+}

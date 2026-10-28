@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // type-only：編譯期抹除，不影響 lazy dynamic import 的 chunk 邊界
 import type { InitTiming, PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
+import { currentFold, subscribeFold } from '@/lib/viewportFold';
 
 /** 徽章上的一行：開頁多久之後就緒、各段各花多少（土星出來得慢時看是卡在哪一段） */
 const describeInit = (t?: InitTiming) =>
@@ -247,6 +248,7 @@ export default function StarfieldGpu({
             canvas: offscreen,
             width: canvas.clientWidth,
             height: canvas.clientHeight,
+            fold: currentFold(),
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
           },
@@ -293,14 +295,20 @@ export default function StarfieldGpu({
       };
       worker.addEventListener('message', onMsg);
       const onResize = () =>
-        worker.postMessage({ type: 'resize', width: canvas.clientWidth, height: canvas.clientHeight });
+        worker.postMessage({
+          type: 'resize',
+          width: canvas.clientWidth,
+          height: canvas.clientHeight,
+          fold: currentFold(),
+        });
       const onVis = () => worker.postMessage({ type: 'running', value: shouldRun() });
-      window.addEventListener('resize', onResize);
+      // 摺疊機摺起來或攤開不一定會發 resize（見 lib/viewportFold），一起聽
+      const unsubscribeFold = subscribeFold(onResize);
       document.addEventListener('visibilitychange', onVis);
       document.addEventListener('fullscreenchange', onVis);
       return () => {
         cancelStart();
-        window.removeEventListener('resize', onResize);
+        unsubscribeFold();
         document.removeEventListener('visibilitychange', onVis);
         document.removeEventListener('fullscreenchange', onVis);
         // terminate() 已經讓 worker 連同監聽器一起消失，但明寫出來才對稱、也不必讓
@@ -324,6 +332,7 @@ export default function StarfieldGpu({
             canvas,
             width: canvas.clientWidth,
             height: canvas.clientHeight,
+            fold: currentFold(),
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
             onPerf: setPerf,
@@ -364,14 +373,14 @@ export default function StarfieldGpu({
         console.warn('[StarfieldGpu] 3D 模組載入失敗:', err);
         if (!disposed) setFailed(true);
       });
-    const onResize = () => runnerHandle?.setSize(canvas.clientWidth, canvas.clientHeight);
+    const onResize = () => runnerHandle?.setSize(canvas.clientWidth, canvas.clientHeight, currentFold());
     const onVis = () => runnerHandle?.setRunning(shouldRun());
-    window.addEventListener('resize', onResize);
+    const unsubscribeFold = subscribeFold(onResize);
     document.addEventListener('visibilitychange', onVis);
     document.addEventListener('fullscreenchange', onVis);
     return () => {
       disposed = true;
-      window.removeEventListener('resize', onResize);
+      unsubscribeFold();
       document.removeEventListener('visibilitychange', onVis);
       document.removeEventListener('fullscreenchange', onVis);
       runnerHandle?.dispose();

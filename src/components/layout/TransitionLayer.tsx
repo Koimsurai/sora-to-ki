@@ -17,6 +17,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
+import { currentFold, offCrease } from '@/lib/viewportFold';
 import {
   after,
   currentPage,
@@ -327,7 +328,8 @@ export default function TransitionLayer() {
     const plan = (r: Run, now: number) => {
       const page = currentPage();
       const fresh = page.generation !== r.oldGeneration ? page.handle : null;
-      const anchor = fresh?.anchor?.() ?? defaultAnchor(r.main);
+      // 摺疊機摺起來時，落點若在摺痕上就挪到那一半的中間（lib/viewportFold）
+      const anchor = offCrease(fresh?.anchor?.() ?? defaultAnchor(r.main), currentFold());
       const w = window.innerWidth;
       const h = window.innerHeight;
       const mid = { x: w / 2, y: h / 2 };

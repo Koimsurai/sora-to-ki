@@ -1405,58 +1405,61 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
 
       {/* 換一篇就整欄重掛（標題、摘要、內文、文末）；左欄不重掛，清單自己滑 */}
       <div className="ar-col" ref={colRef} key={post.id}>
-        <header className="ar-head">
-          <p className="ar-kick">
-            <LocaleLink to="/blog">{t('blog.title')}</LocaleLink>
-            {post.category && (
-              <>
-                <span aria-hidden="true">/</span>
-                <LocaleLink to="/blog" search={{ category: post.category } as never}>
-                  {categoryLabel(post.category)}
-                </LocaleLink>
-              </>
-            )}
-          </p>
-          <h1>{titleParts.main}</h1>
-          {titleParts.sub && <p className="ar-sub">{titleParts.sub}</p>}
-          <div className="ar-meta">
-            {/* 紀錄是當下寫的，寫日期；專欄是長期維護的一篇（像一張音樂心得），寫最後修訂到哪天 */}
-            {post.layout_type === 'column' ? (
-              <time dateTime={post.updated_at ?? post.created_at} suppressHydrationWarning>
-                {t('blog.revised')} {dotDate(parseServerDate(post.updated_at ?? post.created_at))}
-              </time>
-            ) : (
-              <time dateTime={post.created_at} suppressHydrationWarning>
-                {dotDate(parseServerDate(post.created_at))}
-              </time>
-            )}
-            <span>{t('blog.minutes', { count: readTime })}</span>
-            <span>{t('blog.views', { count: post.view_count })}</span>
-            <LangLine
-              current={currentLocale}
-              from={peekRetune(post.id)?.from}
-              source={sourceLang}
-              available={availableLocales}
-              onSelect={(loc) => {
-                if (preview) {
-                  preview.onLocale(loc);
-                  return;
-                }
-                const target = postPathForLocale(id, loc, sourceLang); // 已是絕對 locale 路徑,用 href 不再加前綴
-                // 記下讀者在哪一章，新語系那頁放回同一個地方（捲動由那邊負責，這裡不要先跳回頂端）
-                setRetune(
-                  post.id,
-                  currentLocale,
-                  contentRef.current,
-                  headings.map((h) => h.id),
-                );
-                void navigate({ href: target, resetScroll: false, state: { keepScroll: true } });
-              }}
-              onUnavailable={(name) => setToastMsg(`「${name}」版本尚未提供`)}
-            />
-          </div>
-          {postTags.length > 0 && <TagShelf tags={postTags} currentId={post.id} label={tagLabel} />}
-        </header>
+        {/* 摺疊機書本式時這一塊是左頁導讀（固定不捲，軌道目錄接在它底下）；平常是 display: contents，不存在 */}
+        <div className="ar-lead">
+          <header className="ar-head">
+            <p className="ar-kick">
+              <LocaleLink to="/blog">{t('blog.title')}</LocaleLink>
+              {post.category && (
+                <>
+                  <span aria-hidden="true">/</span>
+                  <LocaleLink to="/blog" search={{ category: post.category } as never}>
+                    {categoryLabel(post.category)}
+                  </LocaleLink>
+                </>
+              )}
+            </p>
+            <h1>{titleParts.main}</h1>
+            {titleParts.sub && <p className="ar-sub">{titleParts.sub}</p>}
+            <div className="ar-meta">
+              {/* 紀錄是當下寫的，寫日期；專欄是長期維護的一篇（像一張音樂心得），寫最後修訂到哪天 */}
+              {post.layout_type === 'column' ? (
+                <time dateTime={post.updated_at ?? post.created_at} suppressHydrationWarning>
+                  {t('blog.revised')} {dotDate(parseServerDate(post.updated_at ?? post.created_at))}
+                </time>
+              ) : (
+                <time dateTime={post.created_at} suppressHydrationWarning>
+                  {dotDate(parseServerDate(post.created_at))}
+                </time>
+              )}
+              <span>{t('blog.minutes', { count: readTime })}</span>
+              <span>{t('blog.views', { count: post.view_count })}</span>
+              <LangLine
+                current={currentLocale}
+                from={peekRetune(post.id)?.from}
+                source={sourceLang}
+                available={availableLocales}
+                onSelect={(loc) => {
+                  if (preview) {
+                    preview.onLocale(loc);
+                    return;
+                  }
+                  const target = postPathForLocale(id, loc, sourceLang); // 已是絕對 locale 路徑,用 href 不再加前綴
+                  // 記下讀者在哪一章，新語系那頁放回同一個地方（捲動由那邊負責，這裡不要先跳回頂端）
+                  setRetune(
+                    post.id,
+                    currentLocale,
+                    contentRef.current,
+                    headings.map((h) => h.id),
+                  );
+                  void navigate({ href: target, resetScroll: false, state: { keepScroll: true } });
+                }}
+                onUnavailable={(name) => setToastMsg(`「${name}」版本尚未提供`)}
+              />
+            </div>
+            {postTags.length > 0 && <TagShelf tags={postTags} currentId={post.id} label={tagLabel} />}
+          </header>
+        </div>
 
         {/* 非原文語系 → AI 翻譯提示（連回原文） */}
         {currentLocale !== sourceLang && translationNotice && (

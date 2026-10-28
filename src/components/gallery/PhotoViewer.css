@@ -273,3 +273,68 @@
     right: 12px;
   }
 }
+
+/* ── 摺疊機摺起來 ──
+   書本式像翻開的相簿：檢視器只佔右頁，上面是照片、下面是拍攝資訊；縮圖列不要（左頁就是照片牆），
+   也不給關（右頁一直有一張，攤開時由照片頁收起來） */
+@media (horizontal-viewport-segments: 2) {
+  .photo-viewer-overlay {
+    /* 頂欄（站名與選單）留著：右頁上面那一條是選單 */
+    top: 60px;
+    left: env(viewport-segment-left 1 0);
+    border-left: 1px solid var(--rule);
+  }
+
+  .photo-viewer-overlay .photo-viewer-main {
+    top: var(--space-12);
+    right: 0;
+    bottom: 42%;
+  }
+
+  .photo-viewer-overlay .gallery-thumbnail-container,
+  .photo-viewer-overlay .action-btn-close,
+  .photo-viewer-overlay .zoom-indicator {
+    display: none;
+  }
+
+  .photo-viewer-overlay .viewer-top-right-buttons {
+    right: var(--space-4);
+  }
+
+  .photo-viewer-overlay .exif-panel {
+    top: 58%;
+    left: 0;
+    display: block;
+    width: auto;
+    max-width: none;
+    border-top: 1px solid var(--rule);
+    border-left: 0;
+  }
+}
+
+/* 筆電式：照片在上半，拍攝資訊與縮圖列（下一張）在下半 */
+@media (vertical-viewport-segments: 2) {
+  .photo-viewer-overlay .photo-viewer-main {
+    right: 0;
+    bottom: calc(100% - env(viewport-segment-bottom 0 0));
+  }
+
+  .photo-viewer-overlay .exif-panel {
+    top: env(viewport-segment-top 0 1);
+    bottom: 120px;
+    left: 0;
+    display: block;
+    width: auto;
+    max-width: none;
+    border-top: 1px solid var(--rule);
+    border-left: 0;
+  }
+
+  .photo-viewer-overlay .gallery-thumbnail-container {
+    right: 0;
+  }
+
+  .photo-viewer-overlay .viewer-top-right-buttons {
+    right: var(--space-4);
+  }
+}

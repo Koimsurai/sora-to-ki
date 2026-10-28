@@ -10,6 +10,7 @@ import { usePageTransition } from '@/hooks/usePageTransition';
 import { parseServerDate } from '@/lib/serverDate';
 import { lookupOr } from '@/lib/tableLookup';
 import { after, isArriving } from '@/store/pageTransition';
+import FoldIndex from '@/components/common/FoldIndex';
 import { bodiesOf, createSpiral, frameOf, workStatsOf } from './worksSky';
 import './Works.css';
 import { sameTitle } from '@/lib/pageTitle';
@@ -58,6 +59,8 @@ export default function Works() {
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const labelsRef = useRef<(HTMLElement | null)[]>([]);
+  /** 摺疊機摺起來時另一半的作品目錄：滑過哪一列，螺旋上那一顆就亮 */
+  const indexRef = useRef<(HTMLLIElement | null)[]>([]);
   const focusRef = useRef(-1);
   /** 最近一幀的時間（秒）：錨點與收的位置要跟畫面上的一致 */
   const clockRef = useRef(0);
@@ -173,6 +176,7 @@ export default function Works() {
         }
         el.classList.toggle('is-left', i !== 0 && !right);
         el.classList.toggle('is-on', i === near);
+        indexRef.current[i]?.classList.toggle('is-on', i === near);
         lx = Math.max(12, Math.min(w - lw - 12, lx));
         ly = Math.max(12, Math.min(h - lh - 12, ly));
         el.style.transform = `translate(${lx}px, ${ly}px)`;
@@ -238,6 +242,45 @@ export default function Works() {
             );
           })}
         </ol>
+        {/* 摺疊機摺起來：另一半是作品目錄（common/FoldIndex），每一列名字、年份、一句介紹都攤開 */}
+        <FoldIndex className="wk-index">
+          {works.map((w, i) => {
+            const inner = (
+              <>
+                <span className="wk-index-name">
+                  {w.name}
+                  {w.origin && <em>{t('works.origin')}</em>}
+                </span>
+                <span className="wk-index-year">{w.year}</span>
+                <span className="wk-index-what">{lookupOr(w.what, lang, w.what['zh-TW'])}</span>
+              </>
+            );
+            const hover = {
+              onPointerEnter: () => (focusRef.current = i),
+              onPointerLeave: () => (focusRef.current = -1),
+              onFocus: () => (focusRef.current = i),
+              onBlur: () => (focusRef.current = -1),
+            };
+            return (
+              <li
+                key={w.repo}
+                ref={(el) => {
+                  indexRef.current[i] = el;
+                }}
+              >
+                {w.url ? (
+                  <a className="wk-index-a" href={w.url} target="_blank" rel="noopener noreferrer" {...hover}>
+                    {inner}
+                  </a>
+                ) : (
+                  <span className="wk-index-a" {...hover}>
+                    {inner}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </FoldIndex>
         <ul className="wk-legend">
           <li>{t('works.legendCore')}</li>
           <li>{t('works.legendSurface')}</li>
