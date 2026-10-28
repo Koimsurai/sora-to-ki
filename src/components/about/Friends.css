@@ -761,3 +761,61 @@
     padding: var(--space-4);
   }
 }
+
+/* ── 摺疊機摺起來：軌道讓出另一半（Friends 的 inset），那一半是朋友清單（平常只有手機在天空底下才有） ──
+   書本式：右半，可以自己捲；星旁只留名字，其他在清單裡；圖例只留在左頁 */
+@media (horizontal-viewport-segments: 2) {
+  .fr-list {
+    position: absolute;
+    top: var(--page-top);
+    right: var(--space-14);
+    bottom: var(--space-12);
+    left: calc(env(viewport-segment-left 1 0) + var(--space-8));
+    z-index: 1;
+    display: grid;
+    align-content: start;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .fr-label :is(.fr-host, .fr-latest, .fr-desc) {
+    display: none;
+  }
+
+  .fr-legend {
+    max-width: calc(env(viewport-segment-width 0 0) - var(--space-12));
+  }
+}
+
+/* 筆電式：整頁回到一屏（不照手機往下捲），天空在上半、清單在下半 */
+@media (vertical-viewport-segments: 2) {
+  .fr {
+    height: 100svh;
+  }
+
+  .fr-sky {
+    position: absolute;
+    inset: 0;
+    height: auto;
+  }
+
+  .fr-list {
+    position: absolute;
+    top: calc(env(viewport-segment-top 0 1) + var(--space-6));
+    right: var(--space-6);
+    bottom: var(--space-16);
+    left: var(--space-6);
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    column-gap: var(--space-8);
+    padding: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .fr-legend {
+    bottom: var(--space-4);
+  }
+}

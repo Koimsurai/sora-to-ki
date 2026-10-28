@@ -641,3 +641,15 @@
     padding: 0 var(--cl-edge);
   }
 }
+
+/* 摺疊機筆電式：天空只到摺痕（星圖照寬螢幕排，見 colophonSky 的 isNarrow），目鏡從摺痕下緣開始 */
+@media (vertical-viewport-segments: 2) {
+  .cl-sky {
+    height: env(viewport-segment-height 0 0);
+    min-height: 0;
+  }
+
+  .cl-eyepiece {
+    margin-top: calc(env(viewport-segment-top 0 1) - env(viewport-segment-bottom 0 0) + var(--space-6));
+  }
+}

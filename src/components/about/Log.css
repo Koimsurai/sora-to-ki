@@ -428,3 +428,49 @@
     display: none;
   }
 }
+
+/* ── 摺疊機摺起來：軌跡在第一半（logSky 的 camera），讀數排在另一半 ──
+   書本式：右頁一欄由上往下，空間夠，語言與圖例都回來 */
+@media (horizontal-viewport-segments: 2) {
+  .lg-strip {
+    top: calc(var(--page-top) + var(--space-16));
+    left: env(viewport-segment-left 1 0);
+    align-content: start;
+    padding: 0 var(--space-10) 0 var(--space-8);
+    background: none;
+  }
+
+  .lg-strip-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--space-5);
+  }
+
+  .lg-cell-flight {
+    grid-column: 1 / -1;
+  }
+
+  .lg-legend,
+  .lg-cell-langs {
+    display: flex;
+  }
+
+  .lg-cell-langs {
+    display: grid;
+    grid-column: 1 / -1;
+  }
+}
+
+/* 筆電式：讀數排從摺痕下緣開始，佔滿下半 */
+@media (vertical-viewport-segments: 2) {
+  .lg-strip {
+    top: env(viewport-segment-top 0 1);
+    align-content: start;
+    padding-top: var(--space-6);
+    /* 下半整片是讀數排：地面的線不要從字後面穿過去 */
+    background: rgba(var(--ground-rgb), 0.9);
+  }
+
+  .lg-legend {
+    display: flex;
+  }
+}

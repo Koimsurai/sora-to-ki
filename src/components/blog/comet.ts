@@ -6,6 +6,7 @@
 // 座標分兩種：版面座標以頁面容器左上角為原點（捲動不變），畫面座標是視窗座標。
 // 畫布固定在視窗上，每一幀把版面座標加上容器目前的位置（origin）。
 
+import { currentFold, type Fold } from '@/lib/viewportFold';
 import type { Pt } from '@/store/pageTransition';
 
 const AMBER = '233, 193, 122';
@@ -27,6 +28,8 @@ export interface ArcLayout {
   /** 彗尾畫到哪裡 */
   yEnd: number;
   narrow: boolean;
+  /** 字一律從這個 x 開始排（摺疊機書本式：彗星在左頁、字在右頁）；沒有就沿著弧線左右排 */
+  column?: number;
   /** 每一則的點：高度與字放在哪一邊 */
   posts: { y: number; left: boolean }[];
   /** 更舊的只剩一個點 */
@@ -58,16 +61,24 @@ const GHOST_STEP = 30;
  * 排版：從彗核開始往下，每一則之間至少一個固定間距，字太長就再拉開。
  * 字放在「彗尾往下會彎過去的另一邊」，尾巴就不會穿過字
  */
-export function layoutArc(width: number, top: number, heights: number[], ghostCount: number): ArcLayout {
-  const narrow = width < NARROW_PX;
+export function layoutArc(
+  width: number,
+  top: number,
+  heights: number[],
+  ghostCount: number,
+  fold: Fold | null = currentFold(),
+): ArcLayout {
+  // 摺疊機書本式：彗星在左頁擺盪，字全部排在右頁，不沿著弧線左右交錯、橫跨摺痕
+  const book = fold?.pose === 'book';
+  const narrow = !book && width < NARROW_PX;
   const base = {
-    cx: narrow ? 30 : width * 0.5,
-    amp: narrow ? 18 : Math.min(width * 0.22, 330),
+    cx: book ? fold.first.x + fold.first.width * 0.5 : narrow ? 30 : width * 0.5,
+    amp: book ? fold.first.width * 0.24 : narrow ? 18 : Math.min(width * 0.22, 330),
     y0: top,
     period: PERIOD,
     phase: 0.9,
   };
-  const sideAt = (y: number) => !narrow && arcX(base, y + 160) > arcX(base, y);
+  const sideAt = (y: number) => !book && !narrow && arcX(base, y + 160) > arcX(base, y);
   const gap = narrow ? GAP_NARROW : GAP;
   const posts: ArcLayout['posts'] = [];
   let y = top;
@@ -80,7 +91,16 @@ export function layoutArc(width: number, top: number, heights: number[], ghostCo
   const ghosts = Array.from({ length: ghostCount }, (_, k) => gy0 + k * GHOST_STEP);
   const endY = (ghosts.at(-1) ?? y + lastH) + (ghosts.length ? 90 : 120);
   const height = endY + 140;
-  return { ...base, yEnd: height - 30, narrow, posts, ghosts, end: { y: endY, left: sideAt(endY) }, height };
+  return {
+    ...base,
+    yEnd: height - 30,
+    narrow,
+    column: book ? fold.second.x + 32 : undefined,
+    posts,
+    ghosts,
+    end: { y: endY, left: sideAt(endY) },
+    height,
+  };
 }
 
 interface Dust {
@@ -172,10 +192,13 @@ const LIST_TOP = 270;
  * 讓那一段彗尾的彎法跟在列表上看到的差不多；那一則放在 top
  */
 export function estimateZoom(width: number, index: number, top: number, zoom: number): ZoomSpec {
-  const narrow = width < NARROW_PX;
+  // 摺疊機書本式：彗星在左頁（跟 layoutArc 一樣）
+  const fold = currentFold();
+  const book = fold?.pose === 'book' ? fold.first : null;
+  const narrow = !book && width < NARROW_PX;
   const arc = {
-    cx: narrow ? 30 : width * 0.5,
-    amp: narrow ? 18 : Math.min(width * 0.22, 330),
+    cx: book ? book.x + book.width * 0.5 : narrow ? 30 : width * 0.5,
+    amp: book ? book.width * 0.24 : narrow ? 18 : Math.min(width * 0.22, 330),
     y0: LIST_TOP,
     period: PERIOD,
     phase: 0.9,
@@ -209,11 +232,26 @@ export function layoutSegment(
     posts.push({ y, left: sideAt(y) });
     if (i < heights.length - 1) y += Math.max(i === 0 ? BIT_GAP * 1.3 : BIT_GAP, h + 56);
   });
-  const endY = y + Math.max(BIT_GAP, (heights.at(-1) ?? 0) + 64);
+  // 摺疊機筆電式：送出列不要停在摺痕上，至少從下半開始（像鍵盤）
+  const fold = currentFold();
+  const endY = Math.max(
+    y + Math.max(BIT_GAP, (heights.at(-1) ?? 0) + 64),
+    fold?.pose === 'laptop' ? fold.second.y + 24 : 0,
+  );
   const height = endY + 280;
   // 彗尾畫到列表那條彗尾的尾端（放大後），塵埃的分布才跟列表上一樣；留言太多、頁面比它長時再往下延
   const yEnd = Math.max(height - 30, arc.y0 + span);
-  return { ...arc, yEnd, narrow, posts, ghosts: [], end: { y: endY, left: sideAt(endY) }, height };
+  return {
+    ...arc,
+    yEnd,
+    narrow,
+    // 摺疊機書本式：那則碎念、留言與送出列都排在右頁（彗星在左頁）
+    column: fold?.pose === 'book' ? fold.second.x + 32 : undefined,
+    posts,
+    ghosts: [],
+    end: { y: endY, left: sideAt(endY) },
+    height,
+  };
 }
 
 export function createComet(tailLength: number, narrow: boolean, zoom = 1) {
