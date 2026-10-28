@@ -20,6 +20,7 @@ import AppShell from '@/components/layout/AppShell';
 import NotFound from '@/components/layout/NotFound';
 import { localeWrap } from '@/i18n/localePage';
 import { RING_OUTER, RING_SEGMENTS } from '@/lib/saturnSpec';
+import { BOOT_MOUNT_SCRIPT, BOOT_RING_FLAT, BOOT_SCRIPT } from '@/lib/bootRing';
 import { prewarmSpaceBackdrop } from '@/components/backdrop/prewarm';
 
 // 3D 背景在這裡就先開始準備（worker、GPU 探測、chunk），跟頁面其他工作同時進行（backdrop/prewarm）
@@ -94,26 +95,51 @@ const BOOT_RINGS = RING_SEGMENTS.filter((_, i) => i === 4 || i === 7).map(([inne
   r: (((inner + outer) / 2) * 26) / RING_OUTER,
   tone: tone ** 0.75,
 }));
-/** 開場那道行星環的一半（後半圈或前半圈）。半徑與傾角見 index.css 的 #boot 那段 */
-function BootRing({ half }: { half: 'back' | 'front' }) {
-  const id = `boot-${half}`;
+/** 這一半的兩圈橢圓（傾角：往右下斜 11.5°，從上方 24° 往下看，ry = r · sin 24°，跟 lib/saturnSpec 的 TILT／ROLL 一樣） */
+function BootRingLines({ half, kind }: { half: 'back' | 'front'; kind: 'base' | 'prog' }) {
+  const id = `boot-${half}-${kind}`;
   return (
-    <svg className={`boot-ring is-${half}`} viewBox="-40 -40 80 80">
+    <svg viewBox="-40 -40 80 80">
       <defs>
         <clipPath id={id}>
           <rect x="-40" y={half === 'back' ? -40 : 0} width="80" height="40" />
         </clipPath>
       </defs>
-      {/* 傾角：往右下斜 11.5°，從上方 24° 往下看（ry = r · sin 24°），跟 lib/saturnSpec 的 TILT／ROLL 一樣 */}
       <g transform="rotate(11.5)" clipPath={`url(#${id})`}>
         {BOOT_RINGS.map(({ r, tone }) => (
-          <g key={r} style={{ '--tone': tone } as CSSProperties}>
-            <ellipse className="boot-ring-base" rx={r} ry={r * 0.408} />
-            <ellipse className="boot-ring-prog" rx={r} ry={r * 0.408} pathLength={1} />
-          </g>
+          <ellipse
+            key={r}
+            className={`boot-ring-${kind}`}
+            rx={r}
+            ry={r * BOOT_RING_FLAT}
+            style={{ '--tone': tone } as CSSProperties}
+          />
         ))}
       </g>
     </svg>
+  );
+}
+
+/**
+ * 開場那道行星環的一半（後半圈或前半圈）。半徑與傾角見 index.css 的 #boot 那段。
+ * 由下往上三層：畫到的那段（整圈畫好）、蓋住還沒畫到的遮片（跟夜色同色，跟著進度轉，lib/bootRing）、很淡的底線。
+ * 線本身不在任何會動的圖層裡，所以一直是向量畫的髮絲線
+ */
+function BootRing({ half }: { half: 'back' | 'front' }) {
+  return (
+    <div className={`boot-ring is-${half}`}>
+      <BootRingLines half={half} kind="prog" />
+      {/* 傾角與壓扁放在 .boot-arc 上：壓扁之前是正圓，旋轉的角度就是橢圓的參數角 */}
+      <div className="boot-arc">
+        <div className="boot-arc-half">
+          <div className="boot-arc-cover">
+            <i />
+          </div>
+        </div>
+        <i className="boot-arc-seam" />
+      </div>
+      <BootRingLines half={half} kind="base" />
+    </div>
   );
 }
 
@@ -122,7 +148,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const locale = localeFromPathname(pathname);
   return (
-    // suppressHydrationWarning：head 裡那段開場腳本在 React 接手前就在 <html> 掛上 data-boot 與 --boot-p，
+    // suppressHydrationWarning：head 裡那段開場腳本在 React 接手前就在 <html> 掛上 data-boot，
     // 這是刻意的（paint 之前就要藏住頁面），不是不一致。只壓 <html> 這一層的屬性，子孫照常檢查
     <html lang={locale} suppressHydrationWarning>
       <head>
@@ -176,7 +202,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
           }}
         />
         {/* 開場（index.css 的 #boot、layout/TransitionLayer 的 enter）：在 paint 之前掛上 html[data-boot]，
-            頁面就先藏在夜色後面、不會先閃出來；外圈那道線照載入的階段推（--boot-p）。
+            頁面就先藏在夜色後面、不會先閃出來；外圈那道線照載入的階段推（window.__bootP，lib/bootRing）。
             轉場掛上之後接手：畫滿那一圈，點飛向這一頁的錨點，夜色淡掉。
             不演的：後台、要求減少動態、自動化瀏覽器（e2e 與爬蟲不必等一段動畫）。
             同一個分頁重新整理時是 quick（不再刻意停留）。6 秒後一定拿掉：轉場的程式沒載到也不會卡住 */}
@@ -184,8 +210,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
           // 同上：必須在 paint 之前同步跑完。內容是寫死的字串常量，沒有變數插值也沒有使用者輸入
           // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
           dangerouslySetInnerHTML={{
-            __html:
-              "(function(){try{var d=document.documentElement;if(navigator.webdriver||/^\\/admin(\\/|$)/.test(location.pathname)||matchMedia('(prefers-reduced-motion: reduce)').matches)return;var q=sessionStorage.getItem('koim-boot');sessionStorage.setItem('koim-boot','1');d.setAttribute('data-boot',q?'quick':'');var set=function(v){if(d.hasAttribute('data-boot'))d.style.setProperty('--boot-p',String(v))};set(0.12);document.addEventListener('DOMContentLoaded',function(){set(0.45)});if(document.fonts)document.fonts.ready.then(function(){set(0.65)});addEventListener('load',function(){set(0.85)});setTimeout(function(){d.removeAttribute('data-boot');d.style.removeProperty('--boot-p')},6000)}catch(e){}})()",
+            __html: BOOT_SCRIPT,
           }}
         />
         {/* Plausible 分析。未設 VITE_PLAUSIBLE_SCRIPT 就整個不輸出 —— dev 與 e2e 都不設。
@@ -247,6 +272,13 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
             <i />
             <i />
           </div>
+          {/* 環與筆尖剛解析完：把現在的進度擺上去（lib/bootRing），第一次繪製時就在對的位置。
+              放在 #boot 裡面而不是後面：body 底下的結構不變，網站內容的位置不會跟著挪 */}
+          <script
+            // 同 head 那段：寫死的字串常量，沒有變數插值
+            // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml
+            dangerouslySetInnerHTML={{ __html: BOOT_MOUNT_SCRIPT }}
+          />
         </div>
         {/* 全域 providers(對齊舊 App.tsx 疊法)。SEOHead 已退休 → HelmetProvider/react-helmet-async 一併移除。 */}
         <AuthProvider>
