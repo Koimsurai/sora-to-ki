@@ -9,6 +9,7 @@
 //   衛星      GitHub 星星
 //   自轉      最後一次推送越近轉得越快
 // 這裡只有幾何與畫圖，不碰 React。
+import { isShortLandscape } from '@/lib/viewportShape';
 import { parseServerDate } from '@/lib/serverDate';
 
 const TAU = Math.PI * 2;
@@ -618,8 +619,10 @@ const PEN_TAIL = 0.9;
 /** 螺旋在畫面上的框：寬螢幕橫躺、置中；直立的螢幕把鏡頭轉九十度，長軸改成直的 */
 export function frameOf(w: number, h: number) {
   if (w >= h) {
-    const rx = Math.min(w * 0.42, (h * 0.4) / INCLINE);
-    return { cx: w / 2, cy: h / 2, rx, ry: rx * INCLINE };
+    // 又寬又矮（手機橫拿）：上面有標題，盤面縮小一點、往下挪，作品名才不會壓到標題
+    const short = isShortLandscape(w, h);
+    const rx = Math.min(w * 0.42, (h * (short ? 0.3 : 0.4)) / INCLINE);
+    return { cx: w / 2, cy: h * (short ? 0.58 : 0.5), rx, ry: rx * INCLINE };
   }
   const ry = Math.min(h * 0.34, (w * 0.44) / INCLINE);
   return { cx: w / 2, cy: h * 0.56, rx: ry * INCLINE, ry };

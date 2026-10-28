@@ -1,5 +1,6 @@
 // 首頁那顆土星的設定：3D 版（lib/starfieldGpu）與此站點遊樂場的平面版（about/colophonSaturn）共用這一份，
 // 兩邊畫出來的才是同一顆。只有數字，不碰 three。
+import { focusY } from './viewportShape';
 
 /** 俯角與側傾，跟提案的示意一樣：從上方 24° 往下看，整組往右下斜 11° */
 export const TILT = 0.42;
@@ -77,3 +78,9 @@ export const RING_ROWS = 34;
 /** 最濃的地方線也只佔一列的幾成：線與線之間永遠留一道黑縫 */
 export const PLANET_COVER = 0.76;
 export const RING_COVER = 0.64;
+
+/**
+ * 首頁土星的中心在畫面高度的幾成（3D 背景與換頁的錨點都照這個）：橫的畫面置中；
+ * 直的手機提到 46%，下面留給手指；摺疊機直拿與直式平板再往上提到摺痕以上（lib/viewportShape）
+ */
+export const saturnCenterY = (w: number, h: number) => (h > w ? focusY(w, h, 0.46) : 0.5);

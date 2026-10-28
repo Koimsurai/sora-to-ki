@@ -4,6 +4,7 @@
 // 點一顆星，鏡頭拉近、星換成對接線稿的那艘船，這個站的船從左邊滑進來接上（面板由頁面疊在旁邊）。
 // 表單打名字時，一顆預覽星從畫面外飛到外圈等著；送出時點火，沿轉移軌道切進那條空軌道。
 // 這裡只畫點、線與插圖，字全是疊在上面的 DOM（要能點、要被裁字器看到）。
+import { focusY } from '@/lib/viewportShape';
 
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
@@ -125,7 +126,8 @@ export function frameOf(w: number, h: number, inset: Inset = NO_INSET) {
   const vh = h - inset.bottom - inset.top;
   return {
     cx: vw * 0.5,
-    cy: inset.top + vh * 0.5,
+    // 摺疊機直拿：太陽提到摺痕以上（lib/viewportShape）；上面還有標題，不提太高
+    cy: inset.top + vh * focusY(w, h, 0.5, 0.42),
     R: narrow ? Math.min(vw * 0.4, vh * 0.42) : Math.min(vw * 0.42, vh * 0.7),
     squash: narrow ? 0.85 : 0.6,
     narrow,

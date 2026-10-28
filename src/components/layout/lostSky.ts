@@ -1,6 +1,7 @@
 // 404 的畫面：一個繫繩斷掉的太空人在黑裡慢慢漂、慢慢翻滾，偶爾往前漂近一點又退回去。
 // 斷掉的那一端還在閃，也還在發訊號，但每一道都斷在半路。
 // 星空是全站背景在畫（這裡不畫星），這裡只畫太空人、斷端與斷掉的訊號。
+import { isShortLandscape } from '@/lib/viewportShape';
 
 const INK = '241, 236, 227';
 const AMBER = '233, 193, 122';
@@ -30,7 +31,8 @@ export function createLost() {
 
   /** 太空人的位置、大小、角度：右半邊，慢慢漂、慢慢翻，偶爾往前漂近一點 */
   const pose = (w: number, h: number, t: number) => {
-    const narrow = w < 760;
+    // 又寬又矮的橫式（手機橫拿）照寬螢幕排：太空人在右、字在左
+    const narrow = w < 760 && !isShortLandscape(w, h);
     const base = narrow ? Math.min(w * 0.7, h * 0.4) : Math.min(h * 0.7, w * 0.38);
     const size = base * (1 + Math.sin(t * 0.05) * 0.06);
     const cx = w * (narrow ? 0.55 : 0.64) + Math.sin(t * 0.07) * w * 0.02;

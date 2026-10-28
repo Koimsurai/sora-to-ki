@@ -14,7 +14,9 @@ import { LocaleLink } from '@/i18n/locale-link';
 import { MAIN_SECTIONS } from '@/data/siteSections';
 import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
+import { saturnCenterY } from '@/lib/saturnSpec';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
+import { isTallMedium } from '@/lib/viewportShape';
 import { collapseSaturnTo, setSatelliteGlow, subscribeSatellites, type SatelliteScreen } from '@/store/homeOrbit';
 import { after, type Pt } from '@/store/pageTransition';
 import { usePageTransition } from '@/hooks/usePageTransition';
@@ -69,7 +71,7 @@ export default function HomeOrbit() {
   // 軌道方向飛出去；從導覽列或上一頁離開就收進土星中心
   const center = (): Pt => ({
     x: window.innerWidth / 2,
-    y: window.innerHeight * (window.innerHeight > window.innerWidth ? 0.46 : 0.5),
+    y: window.innerHeight * saturnCenterY(window.innerWidth, window.innerHeight),
   });
   usePageTransition({
     anchor: center,
@@ -219,7 +221,8 @@ export default function HomeOrbit() {
       const box = section.getBoundingClientRect();
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
-      const narrow = window.innerWidth < NARROW_PX;
+      // 摺疊機直拿（中等寬度的直式）也照窄畫面排：土星提到摺痕以上，字卡放到下面那片空白
+      const narrow = window.innerWidth < NARROW_PX || isTallMedium(window.innerWidth, window.innerHeight);
       const leaving = section.classList.contains('is-leaving');
       positions.forEach((p, i) => {
         const el = labelsRef.current[i];
@@ -243,7 +246,7 @@ export default function HomeOrbit() {
         // 是哪一顆由 3D 那邊亮起來的衛星與軌道指出來
         if (narrow) {
           x = cx - w / 2;
-          y = cy + Math.min(window.innerHeight * 0.24, 220);
+          y = center().y + Math.min(window.innerHeight * 0.24, 220);
         }
         // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在下面置中），一樣是連續變的
         for (const line of el.children) {

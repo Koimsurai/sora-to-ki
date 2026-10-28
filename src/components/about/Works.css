@@ -5,6 +5,7 @@
   position: relative;
   height: 100svh;
   min-height: 560px;
+  /* 又寬又矮的橫式見檔尾 */
   overflow: hidden;
   font-family: var(--serif);
   color: var(--paper);
@@ -182,5 +183,13 @@
 
   .wk-label.is-left .wk-what {
     left: auto;
+  }
+}
+
+/* 又寬又矮的橫式（手機橫拿、摺疊機外螢幕橫拿）：軌道本來就橫躺置中（about/worksSky 的 frameOf），
+   撐到 560 只會多出一截可以捲 */
+@media (max-height: 519px) and (orientation: landscape) {
+  .wk {
+    min-height: 0;
   }
 }

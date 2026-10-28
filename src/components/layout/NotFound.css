@@ -4,6 +4,7 @@
 .nf-page {
   position: relative;
   height: 100svh;
+  /* 又寬又矮的橫式見檔尾：撐到 560 會多出一截可以捲 */
   min-height: 560px;
   overflow: hidden;
   font-family: var(--serif);
@@ -164,5 +165,42 @@
 
   .nf-title {
     font-size: var(--fs-24);
+  }
+}
+
+/* 又寬又矮的橫式（手機橫拿、摺疊機外螢幕橫拿）：照寬螢幕排，太空人在右（layout/lostSky）、字在左，字縮一號 */
+@media (max-height: 519px) and (orientation: landscape) {
+  .nf-page {
+    --nf-edge: var(--space-6);
+    min-height: 0;
+  }
+
+  .nf-scrim {
+    background: linear-gradient(90deg, rgba(var(--ground-rgb), 0.7), rgba(var(--ground-rgb), 0) 60%);
+  }
+
+  .nf-inner {
+    top: calc(50% + var(--space-6));
+    right: auto;
+    bottom: auto;
+    max-width: 52%;
+    gap: var(--space-2);
+    transform: translateY(-50%);
+  }
+
+  .nf-code {
+    font-size: var(--fs-32);
+  }
+
+  .nf-title {
+    font-size: var(--fs-20);
+  }
+
+  .nf-sub {
+    font-size: var(--fs-13);
+  }
+
+  .nf-actions {
+    margin-top: var(--space-2);
   }
 }

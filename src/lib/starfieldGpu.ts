@@ -54,6 +54,7 @@ import {
   SATURN_BANDS_FULL,
   satellitePhase,
   satelliteSpeed,
+  saturnCenterY,
   SUN,
   TILT,
 } from './saturnSpec';
@@ -230,8 +231,8 @@ interface SaturnRig {
    * zooming：收與長的縮放還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
    */
   update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean };
-  /** 視窗的長寬比：窄的視窗要把整組縮小，最外圈的軌道才放得下 */
-  setAspect(aspect: number): void;
+  /** 視窗大小：窄的視窗要把整組縮小，最外圈的軌道才放得下；土星的高度照 saturnCenterY */
+  setView(width: number, height: number): void;
   /** 每顆衛星該有多亮（0 到 1），實際亮度會慢慢靠過去 */
   setGlow(glow: number[]): void;
   /** 衛星在畫面上的位置（CSS 像素），首頁的字跟著它走 */
@@ -586,10 +587,10 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       const zooming = stage !== null;
       return { moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
     },
-    setAspect(aspect) {
-      fullScale = fitScale(aspect);
-      // 直的畫面把土星往上提一點（提案是在高度的 46%），下面留給手機的手指
-      base.set(0, aspect < 1 ? 0.31 : 0, 0);
+    setView(width, height) {
+      fullScale = fitScale(width / height);
+      // 直的畫面把土星往上提（saturnCenterY）：z = 0 的平面上，畫面半高是 SATURN_VIEW_HALF 個單位
+      base.set(0, (0.5 - saturnCenterY(width, height)) * 2 * SATURN_VIEW_HALF, 0);
       if (!stage) {
         if (shown) currentScale = fullScale;
         if (!pivot) group.position.copy(base);
@@ -718,7 +719,7 @@ export async function createStarfieldRunner(
   saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
   // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
   const saturn = buildSaturn(new THREE.Vector3(...SUN).multiplyScalar(10));
-  saturn.setAspect(aspect0);
+  saturn.setView(init.width, init.height);
   let viewW = init.width;
   let viewH = init.height;
   let saturnVisible = false;
@@ -909,7 +910,7 @@ export async function createStarfieldRunner(
         markActive();
         viewW = width;
         viewH = height;
-        saturn.setAspect(width / height);
+        saturn.setView(width, height);
         camera.aspect = width / height;
         saturnCam.aspect = camera.aspect;
         saturnCam.updateProjectionMatrix();

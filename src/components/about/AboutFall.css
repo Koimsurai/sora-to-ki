@@ -71,6 +71,14 @@
   color: var(--amber);
 }
 
+/* 摺疊機直拿（中等寬度的直式，lib/viewportShape 的 isTallMedium）：橫的摺痕在高度 45% 上下，
+   開場這一屏縮成 72vh，「坐穩了。」落在 36% 左右，句號（琥珀點）不壓在摺痕上 */
+@media (min-width: 560px) and (max-width: 1099px) and (orientation: portrait) {
+  .af-top {
+    min-height: 72vh;
+  }
+}
+
 .af-top h1 {
   margin: 0;
   font-size: clamp(56px, 7vw, 96px);

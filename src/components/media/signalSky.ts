@@ -3,6 +3,7 @@
 // 一路經過國際太空站、月球、韋伯望遠鏡、行星、小行星帶、柯伊伯帶、新視野號、航海家一號、
 // 太陽圈邊界、歐特雲，到附近的恆星；最後面是照真實方向畫的銀河。
 // 行星與月球用平均軌道算今天的位置，恆星用真的赤經、赤緯與距離。這裡只有幾何與畫圖，不碰 React。
+import { focusY } from '@/lib/viewportShape';
 
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -477,7 +478,8 @@ export function createSignalSky(signals: Signal[], now0: number) {
       cosP: Math.cos(psi),
       sinP: Math.sin(psi),
       ex: narrow ? f.w * 0.5 : f.w * 0.56,
-      ey: narrow ? f.h * 0.56 : f.h * 0.54,
+      // 摺疊機直拿：地球提到摺痕以上（lib/viewportShape）
+      ey: f.h * focusY(f.w, f.h, narrow ? 0.56 : 0.54, 0.4),
       diag: Math.hypot(f.w, f.h),
     };
   };
