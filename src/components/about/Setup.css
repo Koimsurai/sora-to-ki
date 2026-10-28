@@ -543,6 +543,22 @@
   transition: opacity var(--dur-400) ease;
 }
 
+/* 摺疊機摺起來（data-fold 由畫布照 window.viewport.segments 切）：
+   筆電式零件表佔滿摺痕以下那一半；書本式提示放在右半，不橫跨摺痕 */
+.su[data-fold="laptop"] .su-panel {
+  top: env(viewport-segment-top 0 1, 54%);
+  height: auto;
+}
+
+.su[data-fold="laptop"] .su-hint {
+  top: calc(env(viewport-segment-top 0 1, 54%) + var(--space-16));
+  bottom: auto;
+}
+
+.su[data-fold="book"] .su-hint {
+  left: env(viewport-segment-left 1 0, 50%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .su-panel,
   .su-bom > li,

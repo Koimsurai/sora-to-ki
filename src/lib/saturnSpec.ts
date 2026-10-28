@@ -1,5 +1,6 @@
 // 首頁那顆土星的設定：3D 版（lib/starfieldGpu）與此站點遊樂場的平面版（about/colophonSaturn）共用這一份，
 // 兩邊畫出來的才是同一顆。只有數字，不碰 three。
+import type { Fold } from './viewportFold';
 import { focusY } from './viewportShape';
 
 /** 俯角與側傾，跟提案的示意一樣：從上方 24° 往下看，整組往右下斜 11° */
@@ -80,7 +81,14 @@ export const PLANET_COVER = 0.76;
 export const RING_COVER = 0.64;
 
 /**
- * 首頁土星的中心在畫面高度的幾成（3D 背景與換頁的錨點都照這個）：橫的畫面置中；
- * 直的手機提到 46%，下面留給手指；摺疊機直拿與直式平板再往上提到摺痕以上（lib/viewportShape）
+ * 首頁土星佔的那一塊（CSS 像素）：中心與可用的寬高。3D 背景與換頁的錨點都照這個。
+ * 橫的畫面置中；直的手機提到 46%，下面留給手指；摺疊機直拿與直式平板再往上提到摺痕以上（lib/viewportShape）。
+ * 摺起來時整組放進畫面那一半（書本式左半、筆電式上半），另一半留給字卡
  */
-export const saturnCenterY = (w: number, h: number) => (h > w ? focusY(w, h, 0.46) : 0.5);
+export function saturnFrame(w: number, h: number, fold: Fold | null) {
+  if (fold) {
+    const b = fold.first;
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2, width: b.width, height: b.height };
+  }
+  return { x: w / 2, y: h * (h > w ? focusY(w, h, 0.46) : 0.5), width: w, height: h };
+}

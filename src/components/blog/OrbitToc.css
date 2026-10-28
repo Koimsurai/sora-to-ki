@@ -270,3 +270,15 @@ html[data-pt] .orbit-toc-list {
     transition: none;
   }
 }
+
+/* 筆電式摺起來：軌道只在上半，章節清單與閱讀進度一直開著、佔滿摺痕以下那一半 */
+.orbit-toc.is-narrow.is-docked .orbit-toc-panel {
+  top: env(viewport-segment-top 0 1, 54%);
+  max-height: none;
+  /* 一直開著，底下是捲過去的內文：不透出來 */
+  background: rgb(var(--ground-rgb));
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+}

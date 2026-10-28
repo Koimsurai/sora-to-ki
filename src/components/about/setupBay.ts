@@ -8,6 +8,10 @@
 //
 // 這裡只有畫布與動畫，不碰 React：標籤、零件表、提示是頁面給的 DOM，這裡只負責擺位置、切狀態
 // （根元素的 data-mode / data-open / data-arriving）；選了哪一件用 onSelect 告訴頁面。
+//
+// 摺疊機摺起來（lib/viewportFold）：書本式太空梭在左半、老家那台在右半，圖紙的零件表那欄剛好在右半；
+// 筆電式俯視圖轉成機頭朝右放在上半，零件表從下半升起。
+import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
 import { artSrc, BASE, partsSrc, PAYLOADS, type Payload, type Pt as Pct } from './setupPayloads';
 
 interface Pt {
@@ -188,6 +192,8 @@ export function createBay(opts: BayOptions) {
 
   const S = {
     mode: 'tall' as Mode,
+    /** 摺起來時的兩半（畫布座標）；攤平是 null */
+    fold: null as Fold | null,
     view: VIEWS.top,
     rot: 0,
     W: 0,
@@ -243,11 +249,26 @@ export function createBay(opts: BayOptions) {
     S.dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.round(W * S.dpr);
     canvas.height = Math.round(H * S.dpr);
-    S.mode = H < 480 && W > H ? 'short' : W >= 760 && W / H >= 1.05 ? 'wide' : 'tall';
+    const fold = currentFold();
+    const at = root.getBoundingClientRect();
+    const shift = (b: Fold['first']) => ({ ...b, x: b.x - at.left, y: b.y - at.top });
+    S.fold = fold && { pose: fold.pose, first: shift(fold.first), second: shift(fold.second) };
+    root.dataset.fold = S.fold?.pose ?? '';
+    // 書本式是寬版（951 × 585 本來就是）；筆電式照直版排，零件表從下半升起
+    S.mode =
+      S.fold?.pose === 'laptop'
+        ? 'tall'
+        : S.fold?.pose === 'book'
+          ? 'wide'
+          : H < 480 && W > H
+            ? 'short'
+            : W >= 760 && W / H >= 1.05
+              ? 'wide'
+              : 'tall';
     root.dataset.mode = S.mode;
     S.view = S.mode === 'wide' ? VIEWS.obl : VIEWS.top;
-    // 很矮的橫式：俯視圖轉 90 度，機頭朝右
-    S.rot = S.mode === 'short' ? Math.PI / 2 : 0;
+    // 很矮的橫式與筆電式的上半：俯視圖轉 90 度，機頭朝右
+    S.rot = S.mode === 'short' || S.fold?.pose === 'laptop' ? Math.PI / 2 : 0;
     S.top = header.offsetTop + header.offsetHeight;
     S.home = { x: S.view.box.x + S.view.box.w / 2, y: S.view.box.y + S.view.box.h / 2 };
     if (!S.busy && S.sel < 0) S.cam = { x: S.home.x, y: S.home.y, z: 1 };
@@ -257,6 +278,10 @@ export function createBay(opts: BayOptions) {
   /** 場景區：從頁首底下開始，底下留給提示（很矮的橫式整個畫面都是場景，頁首縮成一行壓在左上） */
   function sceneRect(): Box {
     const top = S.mode === 'short' ? 0 : S.top + 4;
+    const f = S.fold;
+    // 摺起來：場景只在第一半（書本式的左半、筆電式頁首以下的上半）
+    if (f?.pose === 'book') return { x: 0, y: top, w: f.first.width, h: S.H - top - 34 };
+    if (f) return { x: 0, y: top, w: S.W, h: f.first.y + f.first.height - top - 8 };
     const bottom = S.mode === 'short' ? 0 : 34;
     return { x: 0, y: top, w: S.W, h: S.H - top - bottom };
   }
@@ -717,6 +742,11 @@ export function createBay(opts: BayOptions) {
   // ── 老家那台 ──
   function satRect() {
     const r = sceneRect();
+    // 書本式：老家那台在右半（右半平常只有它和軌道，選一件時那裡是零件表）
+    if (S.fold?.pose === 'book') {
+      const sz = Math.max(90, Math.min(168, S.fold.second.width * 0.3));
+      return { x: S.W - sz - 36, y: r.y + 8, s: sz };
+    }
     if (S.mode === 'tall') {
       const sz = Math.max(70, Math.min(104, r.w * 0.24));
       return { x: r.w - sz - 14, y: r.y + 4, s: sz };
@@ -890,9 +920,11 @@ export function createBay(opts: BayOptions) {
           const top = Math.max(sceneRect().y + 12, a0.y - 150);
           to = { x: a3.x + 56, y: top + i * (S.mode === 'short' ? 22 : 30) };
         } else {
-          // 俯視：拉到右邊的艙門上；很矮的橫式（俯視圖轉成機頭朝右）一個在上、一個在下交錯，字才排得開
-          const side = S.mode === 'short' && i % 2 ? 474 : 1040;
+          // 俯視：拉到右邊的艙門上；俯視圖轉成機頭朝右時（很矮的橫式、筆電式）一個在上、一個在下交錯，字才排得開
+          const side = S.rot && i % 2 ? 474 : 1040;
           to = wToS({ x: side, y: S.view.slots[i].y });
+          // 筆電式的上半比矮橫式小，下排的 03 會撞到 01：往下錯開一行
+          if (S.fold && i === 2) to = { x: to.x, y: to.y + 24 };
         }
         if (i === S.carried) a = 0;
       } else {
@@ -939,6 +971,11 @@ export function createBay(opts: BayOptions) {
     const top = S.top + 8;
     const bottom = S.mode === 'short' ? 10 : 40;
     const r = { x: 20, y: top, w: S.W - 40, h: S.H - top - bottom };
+    // 書本式：零件表那欄從摺痕右邊開始，線稿在左半、零件表在右半
+    if (S.fold?.pose === 'book') {
+      const div = S.fold.second.x + 4;
+      return { ...r, div, pw: r.x + r.w - div };
+    }
     const pw = Math.min(S.mode === 'short' ? 300 : 440, r.w * 0.42);
     return { ...r, div: r.x + r.w - pw, pw };
   }
@@ -950,7 +987,8 @@ export function createBay(opts: BayOptions) {
   function artRect(ratio: number): Box {
     let box: Box;
     if (S.mode === 'tall') {
-      const ph = S.H * 0.46;
+      // 筆電式：零件表佔滿下半，線稿在上半
+      const ph = S.fold ? S.H - S.fold.first.y - S.fold.first.height : S.H * 0.46;
       // 圖紙外框比線稿往外 10px：再留一段，框線才不會頂到頁首的字
       const y = S.top + 24;
       box = { x: 16, y, w: S.W - 32, h: S.H - ph - y - 12 };
@@ -1706,6 +1744,8 @@ export function createBay(opts: BayOptions) {
   };
   const ro = new ResizeObserver(() => layout());
   ro.observe(root);
+  // 摺起來或攤開時畫布大小不一定會變
+  const unsubscribeFold = subscribeFold(() => layout());
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointerup', onUp);
   canvas.addEventListener('pointermove', onMove);
@@ -1753,6 +1793,7 @@ export function createBay(opts: BayOptions) {
     destroy: () => {
       S.alive = false;
       ro.disconnect();
+      unsubscribeFold();
       canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointerup', onUp);
       canvas.removeEventListener('pointermove', onMove);

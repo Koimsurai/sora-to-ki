@@ -54,10 +54,11 @@ import {
   SATURN_BANDS_FULL,
   satellitePhase,
   satelliteSpeed,
-  saturnCenterY,
+  saturnFrame,
   SUN,
   TILT,
 } from './saturnSpec';
+import type { Fold } from './viewportFold';
 import { inspectWebGL } from './webglRenderer';
 import type { SatelliteScreen } from '@/store/homeOrbit';
 
@@ -94,7 +95,8 @@ export interface InitTiming {
 }
 
 export interface StarfieldRunner {
-  setSize(width: number, height: number): void;
+  /** fold：摺疊機摺起來時的兩半（lib/viewportFold），土星放進其中一半 */
+  setSize(width: number, height: number, fold?: Fold | null): void;
   setRunning(running: boolean): void;
   /** 捲動位置（土星的捲動旋轉；worker 無 window，由主執行緒轉發） */
   setScroll(y: number): void;
@@ -115,6 +117,7 @@ export interface StarfieldInit {
   canvas: HTMLCanvasElement | OffscreenCanvas;
   width: number;
   height: number;
+  fold?: Fold | null;
   dpr: number;
   /** 每秒回報一次渲染迴圈的狀態（?debug=perf 用） */
   onPerf?: (report: PerfReport) => void;
@@ -231,8 +234,8 @@ interface SaturnRig {
    * zooming：收與長的縮放還沒收斂——這段要跟著螢幕更新率畫，不受 60fps 上限限制。
    */
   update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean };
-  /** 視窗大小：窄的視窗要把整組縮小，最外圈的軌道才放得下；土星的高度照 saturnCenterY */
-  setView(width: number, height: number): void;
+  /** 視窗大小：窄的視窗要把整組縮小，最外圈的軌道才放得下；位置與可用的那一塊照 saturnFrame */
+  setView(width: number, height: number, fold: Fold | null): void;
   /** 每顆衛星該有多亮（0 到 1），實際亮度會慢慢靠過去 */
   setGlow(glow: number[]): void;
   /** 衛星在畫面上的位置（CSS 像素），首頁的字跟著它走 */
@@ -295,7 +298,12 @@ const AMBER = new THREE.Color('#e9c17a');
  * 最外圈軌道半徑 5.7 × 0.63 ≈ 3.6，寬螢幕放得下；窄的視窗照長寬比再縮
  */
 const BASE_SCALE = 0.63;
-const fitScale = (aspect: number) => Math.min(BASE_SCALE, 0.6 * aspect);
+/**
+ * 放進 boxW × boxH 那一塊（CSS 像素，畫面高 viewH）要縮到多少：寬照長寬比、高留給扁的軌道。
+ * 整個畫面時高那一項比 BASE_SCALE 大，不起作用；摺起來只剩上半時才是它在限制
+ */
+const fitScale = (boxW: number, boxH: number, viewH: number) =>
+  Math.min(BASE_SCALE, (0.6 * boxW) / viewH, (1.3 * boxH) / viewH);
 
 /// 土星（2026-10 翻新）：刻線畫的星球與環，外面五條軌道各有一顆衛星。
 ///
@@ -587,10 +595,15 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
       const zooming = stage !== null;
       return { moving: zooming || glowing || Math.abs(targetScrollRot - currentScrollRot) > 0.002, zooming };
     },
-    setView(width, height) {
-      fullScale = fitScale(width / height);
-      // 直的畫面把土星往上提（saturnCenterY）：z = 0 的平面上，畫面半高是 SATURN_VIEW_HALF 個單位
-      base.set(0, (0.5 - saturnCenterY(width, height)) * 2 * SATURN_VIEW_HALF, 0);
+    setView(width, height, fold) {
+      const f = saturnFrame(width, height, fold);
+      fullScale = fitScale(f.width, f.height, height);
+      // z = 0 的平面上，畫面半高是 SATURN_VIEW_HALF 個單位、半寬再乘上長寬比
+      base.set(
+        (f.x / width - 0.5) * 2 * SATURN_VIEW_HALF * (width / height),
+        (0.5 - f.y / height) * 2 * SATURN_VIEW_HALF,
+        0,
+      );
       if (!stage) {
         if (shown) currentScale = fullScale;
         if (!pivot) group.position.copy(base);
@@ -719,7 +732,7 @@ export async function createStarfieldRunner(
   saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
   // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
   const saturn = buildSaturn(new THREE.Vector3(...SUN).multiplyScalar(10));
-  saturn.setView(init.width, init.height);
+  saturn.setView(init.width, init.height, init.fold ?? null);
   let viewW = init.width;
   let viewH = init.height;
   let saturnVisible = false;
@@ -906,11 +919,11 @@ export async function createStarfieldRunner(
     backend,
     timing: { probe, device, compile, first },
     runner: {
-      setSize(width, height) {
+      setSize(width, height, fold) {
         markActive();
         viewW = width;
         viewH = height;
-        saturn.setView(width, height);
+        saturn.setView(width, height, fold ?? null);
         camera.aspect = width / height;
         saturnCam.aspect = camera.aspect;
         saturnCam.updateProjectionMatrix();

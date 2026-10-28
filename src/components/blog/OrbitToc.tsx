@@ -22,6 +22,7 @@ import {
   takeOrbitHandoff,
   type OrbitGeom,
 } from '@/lib/articleOrbit';
+import { subscribeFold } from '@/lib/viewportFold';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { peekRetune } from './useRetune';
 import { applyZoom, arcPoint, keepTimeOf, orbitSpan, postArc, skyPostOf, zoomMap, zoomOf, type Arc } from './noteSky';
@@ -228,6 +229,7 @@ export default function OrbitToc({
       g = orbitGeometry(window.innerWidth, window.innerHeight);
       // 窄螢幕：軌道貼在右邊緣，章節名不放在刻度旁，收進底部的清單（點軌道打開）
       root.classList.toggle('is-narrow', g.narrow);
+      root.classList.toggle('is-docked', g.docked);
       if (g.narrow) {
         // 從寬螢幕縮過來時，章節名身上還留著擺在刻度旁的位置
         itemsRef.current.forEach((li) => {
@@ -486,6 +488,11 @@ export default function OrbitToc({
           li?.classList.toggle('is-past', i < cur);
           li?.classList.toggle('is-on', i === cur);
         });
+        // 筆電式摺起來時清單一直開在下半：讀到的那一節捲進清單的上三分之一
+        const li = itemsRef.current[cur];
+        const panel = li?.closest<HTMLElement>('.orbit-toc-panel');
+        if (geom.docked && li && panel)
+          panel.scrollTo({ top: li.offsetTop - panel.clientHeight / 3, behavior: 'smooth' });
       }
       if (pctRef.current) pctRef.current.textContent = `${Math.round(p * 100)}%`;
       if (leftRef.current) {
@@ -507,14 +514,15 @@ export default function OrbitToc({
     ro.observe(content);
     const col = content.closest('.ar-col');
     if (col) ro.observe(col);
-    window.addEventListener('resize', measure);
+    // 摺疊機摺起來或攤開不一定會發 resize（lib/viewportFold），一起聽
+    const unsubscribeFold = subscribeFold(measure);
     measure();
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
       window.clearTimeout(quiet);
       window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', measure);
+      unsubscribeFold();
       ro.disconnect();
     };
   }, [headings, contentRef, t]);

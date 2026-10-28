@@ -674,3 +674,18 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
     display: none;
   }
 }
+
+/* 摺疊機摺起來。書本式：內文在左半（約 470 寬，比手機寬一點），右半是帶章節名的軌道（lib/articleOrbit）；
+   筆電式：內文在上半捲，底部多留一段下半的高度，最後一段才捲得到摺痕以上 */
+@media (horizontal-viewport-segments: 2) {
+  .ar-col {
+    width: calc(env(viewport-segment-width 0 0) - var(--space-12));
+    margin-left: var(--space-6);
+  }
+}
+
+@media (vertical-viewport-segments: 2) {
+  .ar-page {
+    padding-bottom: calc(100dvh - env(viewport-segment-bottom 0 0));
+  }
+}

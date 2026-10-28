@@ -2,7 +2,9 @@
 // 其中一道：極點在畫面右邊很遠的地方，看到的是一段幾乎直立的弧。這道弧同時是目錄。
 //
 // 手記列表（blog/Notes）換到文章時要把那篇的星軌拉成這道弧，所以兩邊共用這份幾何：
-// 位置只由視窗大小決定，換頁前後算出來的會一模一樣。
+// 位置只由視窗大小（與摺疊機摺起來的兩半）決定，換頁前後算出來的會一模一樣。
+
+import { currentFold, type Fold } from './viewportFold';
 
 /** 軌道半徑：大到看起來幾乎是直的 */
 const ORBIT_RB = 1500;
@@ -27,20 +29,34 @@ export interface OrbitGeom {
   RB: number;
   /** 貼在右邊緣的窄螢幕版（章節名不放在刻度旁，收進底部的清單） */
   narrow: boolean;
+  /** 筆電式摺起來：軌道只在上半，底部的清單一直開著、佔滿下半 */
+  docked: boolean;
 }
 
 /** 內文欄的左緣（跟 CSS 的 max(56px, calc(50% - 560px)) 一樣） */
 const articleLeft = (w: number) => Math.max(56, w / 2 - 560);
 
-export function orbitGeometry(w: number, h: number): OrbitGeom {
-  const narrow = w < ORBIT_MIN_W;
+/** 書本式摺起來時軌道離摺痕多遠：其他文章的軌道畫在它左邊 50px 內，不能越過摺痕壓到內文 */
+const FOLD_RAIL_GAP = 64;
+
+export function orbitGeometry(w: number, h: number, fold: Fold | null = currentFold()): OrbitGeom {
+  // 書本式摺起來：內文在左半，右半是寬螢幕那種帶章節名的軌道
+  const book = fold?.pose === 'book';
+  const narrow = !book && w < ORBIT_MIN_W;
   // 窄螢幕：頂端在頁首（56–60px）底下，底端貼近畫面下緣
-  const railX = narrow ? w - NARROW_EDGE : articleLeft(w) + ARTICLE_COL + RAIL_GAP;
+  const railX = book
+    ? fold.second.x + FOLD_RAIL_GAP
+    : narrow
+      ? w - NARROW_EDGE
+      : articleLeft(w) + ARTICLE_COL + RAIL_GAP;
   const topY = narrow ? 84 : 136;
-  const H = Math.max(200, h - topY - (narrow ? 36 : 130));
+  const docked = fold?.pose === 'laptop';
+  const bottom = docked ? fold.first.y + fold.first.height - 16 : h - (narrow ? 36 : 130);
+  const H = Math.max(200, bottom - topY);
   const RB = narrow ? NARROW_RB : ORBIT_RB;
   return {
     narrow,
+    docked,
     railX,
     topY,
     H,

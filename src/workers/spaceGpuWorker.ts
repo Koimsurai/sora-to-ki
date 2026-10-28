@@ -8,12 +8,14 @@
 // 這裡協定極簡：init / resize / running / scroll / saturn / glow / collapse / stars，錯誤一律回報主執行緒處理。
 // 回程：ready / perf / lost / error，以及首頁衛星的位置（satellites）。
 import { createStarfieldRunner, type StarfieldRunner } from '../lib/starfieldGpu';
+import type { Fold } from '../lib/viewportFold';
 
 interface InitMsg {
   type: 'init';
   canvas: OffscreenCanvas;
   width: number;
   height: number;
+  fold?: Fold | null;
   dpr: number;
   lite?: boolean;
 }
@@ -21,6 +23,8 @@ interface ResizeMsg {
   type: 'resize';
   width: number;
   height: number;
+  /** 摺疊機摺起來時的兩半（主執行緒讀 window.viewport.segments 轉來） */
+  fold?: Fold | null;
 }
 interface RunningMsg {
   type: 'running';
@@ -87,6 +91,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           canvas: msg.canvas,
           width: msg.width,
           height: msg.height,
+          fold: msg.fold,
           dpr: msg.dpr,
           lite: msg.lite,
           onPerf: (report) => self.postMessage({ type: 'perf', report }),
@@ -108,7 +113,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
       }
     })();
   } else if (msg.type === 'resize') {
-    runner?.setSize(msg.width, msg.height);
+    runner?.setSize(msg.width, msg.height, msg.fold);
   } else if (msg.type === 'running') {
     lastRunning = msg.value;
     runner?.setRunning(msg.value);

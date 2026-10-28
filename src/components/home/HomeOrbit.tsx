@@ -3,7 +3,8 @@
 // 土星、軌道與衛星都是 3D 背景裡的東西（lib/starfieldGpu 的 buildSaturn）。這裡只放字：每顆衛星
 // 一個常駐的小標註（英文名，像星圖上的標註），加上一張字卡（名字、最新一則、數字）。字卡平常看不見，
 // 滑鼠靠近那顆衛星、或鍵盤停在那個連結上才浮出來，標註同時讓位；亮度也送回 3D，那條軌道與那顆衛星
-// 跟著亮。閒著的時候，偶爾有一顆自己亮一下。窄畫面的字卡放在土星下方，不貼著衛星。
+// 跟著亮。閒著的時候，偶爾有一顆自己亮一下。窄畫面的字卡放在土星下方，不貼著衛星；
+// 摺疊機摺起來時土星在一半（書本式左半、筆電式上半），字卡放在另一半的中間。
 // 字的位置每幀跟著 3D 送來的衛星位置走（store/homeOrbit）。
 //
 // 沒有 3D 的時候（手機、沒有硬體加速）收不到位置，五個連結就直接排成一欄。
@@ -14,8 +15,9 @@ import { LocaleLink } from '@/i18n/locale-link';
 import { MAIN_SECTIONS } from '@/data/siteSections';
 import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
-import { saturnCenterY } from '@/lib/saturnSpec';
+import { saturnFrame } from '@/lib/saturnSpec';
 import { dotDate, parseServerDate } from '@/lib/serverDate';
+import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
 import { isTallMedium } from '@/lib/viewportShape';
 import { collapseSaturnTo, setSatelliteGlow, subscribeSatellites, type SatelliteScreen } from '@/store/homeOrbit';
 import { after, type Pt } from '@/store/pageTransition';
@@ -69,10 +71,10 @@ export default function HomeOrbit() {
   // 換頁轉場：首頁的錨點是土星的中心。換進來時點飛到這裡、土星從這一點撐開（3D 那邊自己長，
   // 見 StarfieldGpu），所以「長」由首頁接手。換出去時整組收進點下去的那顆衛星，點順著那顆衛星的
   // 軌道方向飛出去；從導覽列或上一頁離開就收進土星中心
-  const center = (): Pt => ({
-    x: window.innerWidth / 2,
-    y: window.innerHeight * saturnCenterY(window.innerWidth, window.innerHeight),
-  });
+  const center = (): Pt => {
+    const f = saturnFrame(window.innerWidth, window.innerHeight, currentFold());
+    return { x: f.x, y: f.y };
+  };
   usePageTransition({
     anchor: center,
     leave: ({ source, to }) => {
@@ -136,6 +138,10 @@ export default function HomeOrbit() {
     let hintStart = 0;
     let raf = 0;
     let flatNow = false;
+    let fold: Fold | null = currentFold();
+    const unsubscribeFold = subscribeFold(() => {
+      fold = currentFold();
+    });
 
     const unsubscribe = subscribeSatellites((next) => {
       const now = performance.now();
@@ -219,10 +225,14 @@ export default function HomeOrbit() {
       setSatelliteGlow(glow);
 
       const box = section.getBoundingClientRect();
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
-      // 摺疊機直拿（中等寬度的直式）也照窄畫面排：土星提到摺痕以上，字卡放到下面那片空白
-      const narrow = window.innerWidth < NARROW_PX || isTallMedium(window.innerWidth, window.innerHeight);
+      // 字往外長的方向以土星為中心。攤平時照原本的畫面中心（土星在 46% 時差一點，看不出來）
+      const sat = fold ? saturnFrame(window.innerWidth, window.innerHeight, fold) : null;
+      const cx = sat ? sat.x : window.innerWidth / 2;
+      const cy = sat ? sat.y : window.innerHeight / 2;
+      // 摺疊機直拿（中等寬度的直式）也照窄畫面排：土星提到摺痕以上，字卡放到下面那片空白。
+      // 摺起來時字卡一樣不貼著衛星，放到另一半
+      const narrow =
+        fold !== null || window.innerWidth < NARROW_PX || isTallMedium(window.innerWidth, window.innerHeight);
       const leaving = section.classList.contains('is-leaving');
       positions.forEach((p, i) => {
         const el = labelsRef.current[i];
@@ -244,7 +254,11 @@ export default function HomeOrbit() {
         let y = p.y + uy * GAP_Y - h * fy;
         // 窄畫面：軌道幾乎佔滿寬度，貼著衛星一定壓到軌道。字卡放到土星下方那片空白、置中，
         // 是哪一顆由 3D 那邊亮起來的衛星與軌道指出來
-        if (narrow) {
+        if (fold) {
+          const half = fold.second;
+          x = half.x + half.width / 2 - w / 2;
+          y = half.y + half.height / 2 - h / 2;
+        } else if (narrow) {
           x = cx - w / 2;
           y = center().y + Math.min(window.innerHeight * 0.24, 220);
         }
@@ -284,6 +298,7 @@ export default function HomeOrbit() {
     return () => {
       cancelAnimationFrame(raf);
       unsubscribe();
+      unsubscribeFold();
       setSatelliteGlow([]);
       section.removeEventListener('pointermove', onMove);
       section.removeEventListener('pointerleave', onLeave);
