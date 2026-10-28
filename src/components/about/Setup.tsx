@@ -139,7 +139,7 @@ export default function Setup() {
         {!sameTitle(t('setup.heroTitle'), 'Setup') && <span className="su-latin">PAYLOAD BAY</span>}
       </header>
 
-      {/* 箱子的標籤：位置由畫布每一幀擺（引線也是畫布畫的） */}
+      {/* 箱子的標籤：位置由畫布每一幀擺（引線也是畫布畫的）；摺起來時是另一半的貨單 */}
       <div className="su-tags">
         {[...PAYLOADS.map((p) => ({ no: p.no, key: p.key })), { no: BASE.no, key: BASE.key }].map((p, i) => (
           <button
@@ -157,6 +157,18 @@ export default function Setup() {
           >
             <span className="su-tag-no">{pad2(p.no)}</span>
             <span className="su-tag-name">{t(`setup.cat.${p.key}.short`)}</span>
+            {/* 摺疊機摺起來時標籤排成貨單，多出件數與一句說明（平常藏著） */}
+            {i < 4 && (
+              <span className="su-tag-more">
+                <span className="su-tag-count">
+                  {t('setup.bay.count', {
+                    count:
+                      PAYLOADS[i].parts.length + (PAYLOADS[i].unseen?.length ?? 0) + (PAYLOADS[i].others?.length ?? 0),
+                  })}
+                </span>
+                <span className="su-tag-lede">{t(`setup.bay.lede.${p.key}`)}</span>
+              </span>
+            )}
           </button>
         ))}
       </div>

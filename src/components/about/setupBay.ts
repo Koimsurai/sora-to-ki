@@ -253,7 +253,11 @@ export function createBay(opts: BayOptions) {
     const at = root.getBoundingClientRect();
     const shift = (b: Fold['first']) => ({ ...b, x: b.x - at.left, y: b.y - at.top });
     S.fold = fold && { pose: fold.pose, first: shift(fold.first), second: shift(fold.second) };
-    root.dataset.fold = S.fold?.pose ?? '';
+    // 攤平時整個拿掉（CSS 用 [data-fold] 判斷，空字串也算有）
+    if (S.fold) root.dataset.fold = S.fold.pose;
+    else delete root.dataset.fold;
+    // 攤開時標籤回到一行字的寬度（摺起來時貨單那一列的寬度由 drawTags 寫）
+    if (!S.fold) for (const el of tags) el.style.width = '';
     // 書本式是寬版（951 × 585 本來就是）；筆電式照直版排，零件表從下半升起
     S.mode =
       S.fold?.pose === 'laptop'
@@ -743,9 +747,10 @@ export function createBay(opts: BayOptions) {
   function satRect() {
     const r = sceneRect();
     // 書本式：老家那台在右半（右半平常只有它和軌道，選一件時那裡是零件表）
+    // 貼著頂欄底下，底下留給貨單
     if (S.fold?.pose === 'book') {
-      const sz = Math.max(90, Math.min(168, S.fold.second.width * 0.3));
-      return { x: S.W - sz - 36, y: r.y + 8, s: sz };
+      const sz = Math.max(90, Math.min(140, S.fold.second.width * 0.26));
+      return { x: S.W - sz - 36, y: 56, s: sz };
     }
     if (S.mode === 'tall') {
       const sz = Math.max(70, Math.min(104, r.w * 0.24));
@@ -901,16 +906,83 @@ export function createBay(opts: BayOptions) {
    * 線從箱頂垂直往上到自己那一行再水平拉到字（左邊的箱子走最上面那行，線不會交叉）；
    * 俯視：全部往右拉到艙門上
    */
+  /** 走線之間隔多遠（px） */
+  const TRACE_GAP = 8;
+  /**
+   * 摺起來時四件酬載的標籤排成另一半的貨單（編號、名稱、件數、一句說明），引線像電路板的走線一樣
+   * 從箱子出發、走到總線、跨過摺痕再轉進那一列。走線的次序照箱子在畫面上的左右排，四條不會交叉：
+   * 書本式總線在太空梭上方、貨單在右半由上往下；筆電式總線在摺痕下緣、貨單在下半由下往上
+   */
+  function manifest(f: Fold): { route: Pt[]; x: number; y: number; w: number }[] {
+    const ats = [0, 1, 2, 3].map((i) => wToS(tagAnchor(i)));
+    const rank = ats.map((p) => ats.filter((q) => q.x < p.x).length);
+    const heights = tags.slice(0, 4).map((el) => el.offsetHeight);
+    const sum = heights.reduce((s, h) => s + h, 0);
+    const ROW_GAP = 14;
+    const book = f.pose === 'book';
+    const x = book ? f.second.x + 72 : S.W / 2 - 130;
+    const w = book ? f.second.x + f.second.width - 28 - x : 280;
+    const busTop = book ? Math.max(sceneRect().y + 10, Math.min(...ats.map((p) => p.y)) - 120) : f.second.y + 14;
+    const sat = satRect();
+    const rowsTop = book
+      ? Math.max(sat.y + sat.s + 28, (S.H + sat.y + sat.s - sum - ROW_GAP * 3) / 2)
+      : busTop + TRACE_GAP * 4 + 28;
+    // 第幾列（由上往下）：書本式最左的箱子在最上面；筆電式反過來，最左的在最下面
+    const tops: number[] = [];
+    let y = rowsTop;
+    for (let row = 0; row < 4; row++) {
+      const i = rank.indexOf(book ? row : 3 - row);
+      tops[i] = y;
+      y += (heights[i] ?? 0) + ROW_GAP;
+    }
+    return ats.map((at, i) => {
+      const r = rank[i];
+      const busY = busTop + r * TRACE_GAP;
+      const xv = book ? x - 18 - r * TRACE_GAP : x - 18 - (3 - r) * TRACE_GAP;
+      const rowY = tops[i] + 11;
+      return {
+        route: [at, { x: at.x, y: busY }, { x: xv, y: busY }, { x: xv, y: rowY }, { x: x - 6, y: rowY }],
+        x,
+        y: tops[i],
+        w,
+      };
+    });
+  }
   function drawTags() {
     if (!S.worldM) return;
     screenSpace();
     const appear = S.view === VIEWS.top ? clamp01((S.doors - 0.6) / 0.4) : clamp01((S.intro - 0.85) / 0.15);
     const base = (1 - Math.min(1, S.dim * 1.5)) * appear * (1 - clamp01(S.leave * 5));
+    const rows = S.fold ? manifest(S.fold) : null;
     tags.forEach((el, i) => {
       let at: Pt;
       let to: Pt;
       let a = base;
       let column = false;
+      const row = i < 4 ? rows?.[i] : undefined;
+      if (row) {
+        if (i === S.carried) a = 0;
+        const hot = i === S.hover || i === S.sel;
+        el.dataset.hot = hot ? '1' : '';
+        el.dataset.off = a < 0.3 ? '1' : '';
+        el.style.opacity = a.toFixed(3);
+        el.style.width = `${row.w}px`;
+        el.style.transform = `translate(${row.x.toFixed(1)}px, ${row.y.toFixed(1)}px)`;
+        if (a <= 0.01) return;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = `rgba(${hot ? AMB : INK}, ${hot ? 0.9 : 0.4})`;
+        ctx.beginPath();
+        row.route.forEach((p, k) => (k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+        ctx.stroke();
+        ctx.fillStyle = `rgba(${hot ? AMB : INK}, 0.9)`;
+        ctx.beginPath();
+        ctx.arc(row.route[0].x, row.route[0].y, 2, 0, TAU);
+        ctx.fill();
+        ctx.restore();
+        return;
+      }
       if (i < 4) {
         at = wToS(tagAnchor(i));
         if (S.view === VIEWS.obl) {

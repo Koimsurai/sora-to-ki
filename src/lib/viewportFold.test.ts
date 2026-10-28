@@ -49,9 +49,11 @@ describe('offCrease', () => {
 });
 
 describe('摺起來時的版面', () => {
-  it('首頁土星：書本式在左半中間，筆電式在上半中間；攤平照原本', () => {
-    expect(saturnFrame(951, 585, foldOf(BOOK))).toMatchObject({ x: 237.5, y: 292.5, width: 475 });
-    expect(saturnFrame(669, 867, foldOf(LAPTOP))).toMatchObject({ x: 334.5, y: 195, height: 390 });
+  it('首頁土星：本體在第一半（書本式左半、筆電式上半），軌道照比半邊大的那塊縮放；攤平照原本', () => {
+    const book = saturnFrame(951, 585, foldOf(BOOK));
+    expect(book.x).toBeLessThan(475);
+    expect(book.width).toBeGreaterThan(475);
+    expect(saturnFrame(669, 867, foldOf(LAPTOP))).toMatchObject({ x: 334.5, y: 195, width: 669, height: 867 });
     expect(saturnFrame(1440, 900, null)).toMatchObject({ x: 720, y: 450 });
   });
 

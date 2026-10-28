@@ -4,7 +4,8 @@
 // 一個常駐的小標註（英文名，像星圖上的標註），加上一張字卡（名字、最新一則、數字）。字卡平常看不見，
 // 滑鼠靠近那顆衛星、或鍵盤停在那個連結上才浮出來，標註同時讓位；亮度也送回 3D，那條軌道與那顆衛星
 // 跟著亮。閒著的時候，偶爾有一顆自己亮一下。窄畫面的字卡放在土星下方，不貼著衛星；
-// 摺疊機摺起來時土星在一半（書本式左半、筆電式上半），字卡放在另一半的中間。
+// 摺疊機摺起來時星球本體在一半（書本式左半、筆電式上半，外圈軌道照樣越過摺痕），另一半是五個分區的
+// 目錄：像攤開的書，一頁是插圖、一頁是目錄。靠近哪顆衛星（或滑過、聚焦哪一列），那一列才展開最新一則。
 // 字的位置每幀跟著 3D 送來的衛星位置走（store/homeOrbit）。
 //
 // 沒有 3D 的時候（手機、沒有硬體加速）收不到位置，五個連結就直接排成一欄。
@@ -21,6 +22,7 @@ import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
 import { isTallMedium } from '@/lib/viewportShape';
 import { collapseSaturnTo, setSatelliteGlow, subscribeSatellites, type SatelliteScreen } from '@/store/homeOrbit';
 import { after, type Pt } from '@/store/pageTransition';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import './HomeOrbit.css';
 
@@ -42,6 +44,7 @@ const TAG_GAP_X = 10;
 const TAG_GAP_Y = 7;
 /** 比這窄的畫面，浮出來的那張字卡放在土星下方的空白，不貼著衛星（手機上貼著會壓到軌道） */
 const NARROW_PX = 640;
+const pad2 = (n: number) => String(n).padStart(2, '0');
 /** 多久沒收到 3D 送來的位置就當作沒有 3D */
 const FLAT_AFTER_MS = 2500;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
@@ -63,6 +66,11 @@ export default function HomeOrbit() {
   const sectionRef = useRef<HTMLElement>(null);
   const labelsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const tagsRef = useRef<(HTMLAnchorElement | null)[]>([]);
+  const indexRef = useRef<(HTMLLIElement | null)[]>([]);
+  // 摺起來（CSS 的 viewport-segments）：浮動字卡換成另一半的目錄
+  const book = useMediaQuery('(horizontal-viewport-segments: 2)');
+  const laptop = useMediaQuery('(vertical-viewport-segments: 2)');
+  const folded = book || laptop;
   const [flat, setFlat] = useState(false);
   /** 衛星在畫面上的位置與速度（px/ms），轉場的「收」要用 */
   const positionsRef = useRef<SatelliteScreen[]>([]);
@@ -157,13 +165,17 @@ export default function HomeOrbit() {
       if (next.length) lastPositionsAt = now;
     });
 
+    /** 指到（聚焦）的是第幾顆的字卡或目錄那一列 */
+    const indexOf = (target: EventTarget | null) => {
+      const el = (target as Element | null)?.closest<HTMLElement>('.horbit-label, .horbit-index-a');
+      return el?.dataset.ptSource ? Number(el.dataset.ptSource) : -1;
+    };
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== 'mouse') return;
       pointer = [e.clientX, e.clientY];
       lastInput = performance.now();
       // 從衛星移到字上會離開「靠近」的範圍：指在字上的時候那顆要一直亮著，字才點得到
-      const label = (e.target as Element).closest<HTMLAnchorElement>('.horbit-label');
-      hovered = label ? labelsRef.current.indexOf(label) : -1;
+      hovered = indexOf(e.target);
     };
     const onLeave = () => {
       pointer = null;
@@ -171,12 +183,13 @@ export default function HomeOrbit() {
     };
     // 觸控沒有「靠近」：點一下畫面就依序指到下一顆（點到字本身就照常進那一頁）
     const onTap = (e: PointerEvent) => {
-      if (e.pointerType === 'mouse' || (e.target as Element).closest('.horbit-label, .horbit-tag')) return;
+      if (e.pointerType === 'mouse' || (e.target as Element).closest('.horbit-label, .horbit-tag, .horbit-index'))
+        return;
       tapped = (tapped + 1) % count;
       lastInput = performance.now();
     };
     const onFocusIn = (e: FocusEvent) => {
-      const i = labelsRef.current.indexOf(e.target as HTMLAnchorElement);
+      const i = indexOf(e.target);
       if (i >= 0) focused = i;
     };
     const onFocusOut = () => {
@@ -230,7 +243,7 @@ export default function HomeOrbit() {
       const cx = sat ? sat.x : window.innerWidth / 2;
       const cy = sat ? sat.y : window.innerHeight / 2;
       // 摺疊機直拿（中等寬度的直式）也照窄畫面排：土星提到摺痕以上，字卡放到下面那片空白。
-      // 摺起來時字卡一樣不貼著衛星，放到另一半
+      // 摺起來時字卡不出來（換成目錄），小標註照窄畫面一直掛著
       const narrow =
         fold !== null || window.innerWidth < NARROW_PX || isTallMedium(window.innerWidth, window.innerHeight);
       const leaving = section.classList.contains('is-leaving');
@@ -254,11 +267,7 @@ export default function HomeOrbit() {
         let y = p.y + uy * GAP_Y - h * fy;
         // 窄畫面：軌道幾乎佔滿寬度，貼著衛星一定壓到軌道。字卡放到土星下方那片空白、置中，
         // 是哪一顆由 3D 那邊亮起來的衛星與軌道指出來
-        if (fold) {
-          const half = fold.second;
-          x = half.x + half.width / 2 - w / 2;
-          y = half.y + half.height / 2 - h / 2;
-        } else if (narrow) {
+        if (narrow) {
           x = cx - w / 2;
           y = center().y + Math.min(window.innerHeight * 0.24, 220);
         }
@@ -271,9 +280,19 @@ export default function HomeOrbit() {
         el.style.transform = `translate(${x - box.left}px, ${y - box.top}px)`;
         el.dataset.tx = p.x.toFixed(1);
         el.dataset.ty = p.y.toFixed(1);
-        el.dataset.ptSource = String(i);
-        // 換頁在收的時候字先退掉，只剩那一點
-        const show = p.hidden || leaving ? 0 : (glow[i] ?? 0);
+        // 目錄那一列：換頁的點也從那顆衛星出發；靠近的那一列展開，閒置提示只讓它亮一下
+        const row = indexRef.current[i];
+        if (row) {
+          const a = row.firstElementChild as HTMLElement | null;
+          if (a) {
+            a.dataset.tx = el.dataset.tx;
+            a.dataset.ty = el.dataset.ty;
+          }
+          row.classList.toggle('is-on', i === near);
+          row.classList.toggle('is-hint', i === hint && hintLevel > 0.2);
+        }
+        // 換頁在收的時候字先退掉，只剩那一點；摺起來時字卡換成目錄
+        const show = p.hidden || leaving || fold ? 0 : (glow[i] ?? 0);
         el.style.opacity = String(show);
         el.classList.toggle('is-on', show > 0.6);
 
@@ -309,7 +328,11 @@ export default function HomeOrbit() {
   }, []);
 
   return (
-    <section ref={sectionRef} className={`horbit${flat ? ' is-flat' : ''}`} aria-labelledby="horbit-title">
+    <section
+      ref={sectionRef}
+      className={`horbit${flat ? ' is-flat' : ''}${folded && !flat ? ' is-folded' : ''}`}
+      aria-labelledby="horbit-title"
+    >
       <h1 id="horbit-title" className="sr-only">
         {t('home.orbit.title')}
       </h1>
@@ -321,6 +344,7 @@ export default function HomeOrbit() {
               key={s.key}
               to={s.to}
               className="horbit-label"
+              data-pt-source={i}
               ref={(el: HTMLAnchorElement | null) => {
                 labelsRef.current[i] = el;
               }}
@@ -349,6 +373,34 @@ export default function HomeOrbit() {
             {s.caps}
           </LocaleLink>
         ))}
+        {/* 摺起來時另一半的目錄（沒有 3D 的平面備案本來就是一欄連結，不另外放） */}
+        {folded && !flat && (
+          <ol className="horbit-index">
+            {MAIN_SECTIONS.map((s, i) => {
+              const info = lines[s.key];
+              return (
+                <li
+                  key={s.key}
+                  ref={(el) => {
+                    indexRef.current[i] = el;
+                  }}
+                >
+                  <LocaleLink to={s.to} className="horbit-index-a" data-pt-source={i}>
+                    <span className="no">{pad2(i + 1)}</span>
+                    <span className="zh">{t(`siteNav.${s.key}`)}</span>
+                    <span className="en">{s.caps}</span>
+                    <span className="more">
+                      <span>
+                        {info?.line && <span className="line">{info.line}</span>}
+                        {info?.n && <span className="n">{info.n}</span>}
+                      </span>
+                    </span>
+                  </LocaleLink>
+                </li>
+              );
+            })}
+          </ol>
+        )}
       </nav>
     </section>
   );

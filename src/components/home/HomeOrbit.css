@@ -136,3 +136,116 @@
     min-height: 0;
   }
 }
+
+/* ── 摺疊機摺起來：另一半是五個分區的目錄（像攤開的書，一頁插圖一頁目錄） ──
+   浮動字卡藏起來（連鍵盤也跳過），目錄就是這裡的導覽；衛星旁的小標註照常掛著 */
+.horbit.is-folded .horbit-label {
+  visibility: hidden;
+}
+
+.horbit-index {
+  position: absolute;
+  display: grid;
+  width: min(320px, 80vw);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  pointer-events: auto;
+}
+
+@media (horizontal-viewport-segments: 2) {
+  .horbit-index {
+    top: 50%;
+    right: var(--space-10);
+    translate: 0 -50%;
+    width: min(300px, calc(env(viewport-segment-width 1 0) - var(--space-24) - var(--space-10)));
+  }
+}
+
+@media (vertical-viewport-segments: 2) {
+  .horbit-index {
+    top: calc(env(viewport-segment-top 0 1) + var(--space-10));
+    left: 50%;
+    translate: -50% 0;
+  }
+}
+
+.horbit-index-a {
+  display: grid;
+  grid-template-columns: var(--space-8) auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px dotted rgba(var(--paper-rgb), 0.15);
+  font-family: var(--serif);
+  color: var(--paper-2);
+  text-decoration: none;
+  transition: color var(--dur-200) ease;
+}
+
+.horbit-index-a .no {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+.horbit-index-a .zh {
+  font-size: var(--fs-18);
+  font-weight: 600;
+  line-height: var(--lh-120);
+}
+
+.horbit-index-a .en {
+  font-family: var(--mono-font);
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-18);
+  color: var(--paper-3);
+  transition: color var(--dur-200) ease;
+}
+
+/* 最新一則：收著，靠近那顆衛星（或滑過、聚焦這一列）才展開 */
+.horbit-index-a .more {
+  display: grid;
+  grid-template-rows: 0fr;
+  grid-column: 2 / -1;
+  transition: grid-template-rows var(--dur-300) var(--easing-out);
+}
+
+.horbit-index-a .more > span {
+  display: grid;
+  gap: var(--space-1);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.horbit-index-a .line {
+  padding-top: var(--space-1-5);
+  font-size: var(--fs-13);
+  line-height: var(--lh-150);
+  color: var(--paper-2);
+}
+
+.horbit-index-a .n {
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  letter-spacing: var(--ls-4);
+  color: var(--paper-3);
+}
+
+.horbit-index li.is-on .horbit-index-a {
+  color: var(--paper);
+}
+
+.horbit-index li.is-on .more {
+  grid-template-rows: 1fr;
+}
+
+.horbit-index li:is(.is-on, .is-hint) :is(.no, .en) {
+  color: var(--amber);
+}
+
+.horbit-index-a:focus-visible {
+  outline: 1px solid var(--paper-2);
+  outline-offset: 4px;
+}
