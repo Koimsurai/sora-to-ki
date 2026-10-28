@@ -60,6 +60,8 @@ const pad2 = (n: number) => String(n).padStart(2, '0');
 const FLAT_AFTER_MS = 2500;
 /** 字的位置最多往前推算多久（3D 送來的位置晚到或沒到的那幾幀用速度補） */
 const PREDICT_MAX_MS = 50;
+/** 字卡、小標註透明之後還要再跟幾毫秒：淡出的轉場（HomeOrbit.css 的 0.3 秒）跑完之前它還看得到 */
+const FADE_OUT_MS = 400;
 /** 換頁時土星收進衛星的時間（跟 lib/starfieldGpu 的 COLLAPSE_S 一樣） */
 const SATURN_COLLAPSE_MS = 500;
 
@@ -157,6 +159,23 @@ export default function HomeOrbit() {
     let hintStart = 0;
     let raf = 0;
     let flatNow = false;
+    // 字卡與小標註最後一次看得到（透明度大於 0）是什麼時候：整個淡出之後就不再每幀擺位置。
+    // 每一幀改它們的樣式，瀏覽器就得重算那些元素的樣式；五張字卡、五個小標註加上字卡裡的每一行，
+    // 在慢手機上一幀要好幾毫秒（CPU 降速 4 倍時首頁閒置只剩 20fps），而字卡大部分時間是透明的
+    const labelLitAt: number[] = [];
+    const tagLitAt: number[] = [];
+    /** 上一次寫進去的值：值沒變就不再寫 */
+    const written = new WeakMap<HTMLElement, Partial<Record<'transform' | 'translate' | 'opacity', string>>>();
+    const setStyle = (el: HTMLElement, prop: 'transform' | 'translate' | 'opacity', value: string) => {
+      let last = written.get(el);
+      if (!last) {
+        last = {};
+        written.set(el, last);
+      }
+      if (last[prop] === value) return;
+      last[prop] = value;
+      el.style[prop] = value;
+    };
     let fold: Fold | null = currentFold();
     const unsubscribeFold = subscribeFold(() => {
       fold = currentFold();
@@ -310,29 +329,36 @@ export default function HomeOrbit() {
           x = cx - w / 2;
           y = center().y + Math.min(window.innerHeight * 0.24, 220);
         }
-        // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在下面置中），一樣是連續變的
-        for (const [k, line] of [...el.children].entries()) {
-          if (line instanceof HTMLElement) line.style.translate = `${((w - (size.lines[k] ?? 0)) * fx).toFixed(1)}px 0`;
-        }
         x = Math.max(16, Math.min(window.innerWidth - w - 16, x));
         y = Math.max(72, Math.min(window.innerHeight - h - 16, y));
-        el.style.transform = `translate(${x - box.left}px, ${y - box.top}px)`;
-        el.dataset.tx = p.x.toFixed(1);
-        el.dataset.ty = p.y.toFixed(1);
+        const tx = p.x.toFixed(1);
+        const ty = p.y.toFixed(1);
         // 目錄那一列：換頁的點也從那顆衛星出發；靠近的那一列展開，閒置提示只讓它亮一下
         const row = indexRef.current[i];
         if (row) {
           const a = row.firstElementChild as HTMLElement | null;
           if (a) {
-            a.dataset.tx = el.dataset.tx;
-            a.dataset.ty = el.dataset.ty;
+            a.dataset.tx = tx;
+            a.dataset.ty = ty;
           }
           row.classList.toggle('is-on', i === near);
           row.classList.toggle('is-hint', i === hint && hintLevel > 0.2);
         }
         // 換頁在收的時候字先退掉，只剩那一點；摺起來時字卡換成目錄
         const show = p.hidden || leaving || fold ? 0 : (glow[i] ?? 0);
-        el.style.opacity = String(show);
+        if (show > 0) labelLitAt[i] = now;
+        // 整個淡出的字卡不跟：要再浮出來的那一幀，位置跟透明度一起寫，淡入就從對的位置開始
+        if (now - (labelLitAt[i] ?? -Infinity) <= FADE_OUT_MS) {
+          // 每一行也照同一個比例對齊（在右邊靠左、在左邊靠右、在下面置中），一樣是連續變的
+          for (const [k, line] of [...el.children].entries()) {
+            if (line instanceof HTMLElement)
+              setStyle(line, 'translate', `${((w - (size.lines[k] ?? 0)) * fx).toFixed(1)}px 0`);
+          }
+          setStyle(el, 'transform', `translate(${x - box.left}px, ${y - box.top}px)`);
+          el.dataset.tx = tx;
+          el.dataset.ty = ty;
+        }
+        setStyle(el, 'opacity', String(show));
         el.classList.toggle('is-on', show > 0.6);
 
         // 常駐的小標註：像星圖上的標註，讓第一次來的人一眼看出有五個地方可以去。
@@ -340,13 +366,16 @@ export default function HomeOrbit() {
         const tag = tagsRef.current[i];
         if (!tag) return;
         const { tw, th } = size;
-        const tx = Math.max(8, Math.min(window.innerWidth - tw - 8, p.x + ux * TAG_GAP_X - tw * (0.5 - 0.5 * ux)));
-        const ty = Math.max(64, Math.min(window.innerHeight - th - 8, p.y + uy * TAG_GAP_Y - th * fy));
-        tag.style.transform = `translate(${tx - box.left}px, ${ty - box.top}px)`;
         // 字卡一開始浮出，小標註就整個讓位（它自己有 0.3 秒的淡出）。照字卡亮度按比例退的話，
         // 閒置提示的字卡只亮到一半，標註還剩兩成，兩個疊在一起
         const tagShow = p.hidden || leaving || (!narrow && show > 0.01) ? 0 : 1;
-        tag.style.opacity = String(tagShow);
+        if (tagShow > 0) tagLitAt[i] = now;
+        if (now - (tagLitAt[i] ?? -Infinity) <= FADE_OUT_MS) {
+          const gx = Math.max(8, Math.min(window.innerWidth - tw - 8, p.x + ux * TAG_GAP_X - tw * (0.5 - 0.5 * ux)));
+          const gy = Math.max(64, Math.min(window.innerHeight - th - 8, p.y + uy * TAG_GAP_Y - th * fy));
+          setStyle(tag, 'transform', `translate(${gx - box.left}px, ${gy - box.top}px)`);
+        }
+        setStyle(tag, 'opacity', String(tagShow));
         tag.classList.toggle('is-on', tagShow > 0.5);
       });
     };
