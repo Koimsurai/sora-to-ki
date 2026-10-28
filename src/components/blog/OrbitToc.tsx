@@ -228,6 +228,10 @@ export default function OrbitToc({
     let marks: number[] = [];
     let us: number[] = [];
     const docTop = (el: Element) => el.getBoundingClientRect().top + window.scrollY;
+    // 字沒變就不寫：寫 textContent 一定換掉文字節點，頁面上的 :has() 規則（body、.orbit-toc 都有）跟著失效重算
+    const setText = (el: HTMLElement, s: string) => {
+      if (el.textContent !== s) el.textContent = s;
+    };
 
     // 量：章節在頁面上的位置 → 軌道上的位置（照實際距離，太擠的地方往下推開）
     const measure = () => {
@@ -282,7 +286,7 @@ export default function OrbitToc({
         const section: Element[] = [];
         const stop = els[i + 1];
         for (let el = els[i]?.nextElementSibling; el && el !== stop; el = el.nextElementSibling) section.push(el);
-        m.textContent = t('blog.minutes', { count: readMinutesOfElements(section) });
+        setText(m, t('blog.minutes', { count: readMinutesOfElements(section) }));
       });
     };
     const lerp = (xs: number[], ys: number[], x: number) => {
@@ -356,6 +360,10 @@ export default function OrbitToc({
         }
         return;
       }
+
+      // 內文的欄位在畫面上的位置：在這一幀寫任何樣式之前量，版面還是乾淨的，量了不必重排
+      const col = colOf(root);
+      const colTop = col && drawing && tt < GROW_S ? col.getBoundingClientRect().top : 0;
 
       // 其他文章的軌道：頁首時看得到，開始讀之後退到幾乎看不見。
       // 窄螢幕不畫：它們在這道軌道的內側，貼邊時就壓在內文上；書本式也不畫，會劃過左頁的標題
@@ -455,11 +463,10 @@ export default function OrbitToc({
       const hd = at(headU);
       readerRef.current = hd;
       // 內文跟著筆尖往下顯現：筆尖以上是寫好的，以下先藏著（遮罩見 ArticleFrame.css 的 is-drawing）
-      const col = colOf(root);
       if (col) {
         if (drawing && tt < GROW_S) {
           col.classList.add('is-drawing');
-          col.style.setProperty('--scan', `${hd.y - col.getBoundingClientRect().top + PEN_LEAD_PX}px`);
+          col.style.setProperty('--scan', `${hd.y - colTop + PEN_LEAD_PX}px`);
         } else if (col.classList.contains('is-drawing')) {
           col.classList.remove('is-drawing');
           col.style.removeProperty('--scan');
@@ -509,10 +516,12 @@ export default function OrbitToc({
         if (geom.docked && li && panel)
           panel.scrollTo({ top: li.offsetTop - panel.clientHeight / 3, behavior: 'smooth' });
       }
-      if (pctRef.current) pctRef.current.textContent = `${Math.round(p * 100)}%`;
+      if (pctRef.current) setText(pctRef.current, `${Math.round(p * 100)}%`);
       if (leftRef.current) {
-        leftRef.current.textContent =
-          p >= 1 ? t('blog.readDone') : t('blog.minutesLeft', { count: Math.max(1, Math.ceil(totalMin * (1 - p))) });
+        setText(
+          leftRef.current,
+          p >= 1 ? t('blog.readDone') : t('blog.minutesLeft', { count: Math.max(1, Math.ceil(totalMin * (1 - p))) }),
+        );
       }
     };
 
