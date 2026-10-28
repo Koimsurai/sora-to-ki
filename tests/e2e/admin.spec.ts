@@ -155,7 +155,8 @@ test.describe('後台', () => {
 
   /**
    * 流量：e2e 沒有 Plausible 的 key，後端回 configured: false → 畫面要教人怎麼設。
-   * 接上之後的報表用攔截的假資料驗：總數、柱狀圖、排行都畫得出來，國碼翻成國名。
+   * 接上之後的報表用攔截的假資料驗：摘要、跟上一段比、柱狀圖、每篇文章、來源與進站頁、
+   * 搜尋字詞、收起來的排行（國碼翻成國名）都畫得出來。
    * （後端把 Plausible 的回應整理成這個形狀，那段在 backend/tests/analytics.rs 測。）
    */
   test('流量：沒設 key 時說怎麼設；有資料時畫得出報表', async ({ page }) => {
@@ -163,20 +164,50 @@ test.describe('後台', () => {
     await gotoAdmin(page, '/admin/analytics', '流量');
     await expect(page.getByText('PLAUSIBLE_API_KEY', { exact: false })).toBeVisible();
 
+    const totals = {
+      visitors: 1234,
+      visits: 1500,
+      pageviews: 4321,
+      bounce_rate: 61.4,
+      visit_duration: 125,
+      views_per_visit: 2.9,
+    };
     await page.route('**/api/admin/analytics?*', (route) =>
       route.fulfill({
         json: {
           configured: true,
-          period: '30d',
+          period: '7d',
+          start: '2026-10-20',
+          end: '2026-10-26',
           realtime: 2,
-          totals: { visitors: 1234, visits: 1500, pageviews: 4321, bounce_rate: 61.4, visit_duration: 125 },
+          totals,
+          previous: { ...totals, visitors: 617, bounce_rate: 70 },
           series: [
             { date: '2026-10-24', visitors: 0, pageviews: 0 },
             { date: '2026-10-25', visitors: 40, pageviews: 90 },
             { date: '2026-10-26', visitors: 20, pageviews: 30 },
           ],
+          posts: [
+            {
+              id: 1,
+              slug: 'hello',
+              title: '第一篇測試文章',
+              visitors: 80,
+              scroll_depth: 72.4,
+              time_on_page: 95,
+              read_minutes: 6,
+              hearts: 3,
+              comments: 1,
+            },
+          ],
+          entries: [{ source: 'Direct / None', visitors: 50, entries: [{ name: '/blog/hello', visitors: 30 }] }],
+          search: {
+            configured: true,
+            error: null,
+            queries: [{ query: 'koimsurai', clicks: 4, impressions: 120, ctr: 0.033, position: 3.2 }],
+          },
           pages: [{ name: '/blog/hello', visitors: 80 }],
-          sources: [{ name: 'Direct / None', visitors: 50 }],
+          sources: [{ name: 'Direct / None', visitors: 1000 }],
           countries: [{ name: 'TW', visitors: 70 }],
           devices: [{ name: 'Mobile', visitors: 30 }],
           dashboard_url: 'https://plausible.example/koimsurai.com',
@@ -185,12 +216,23 @@ test.describe('後台', () => {
     );
     await page.getByRole('button', { name: '7 天' }).click();
     await expect(page.getByText('此刻 2 人在站上')).toBeVisible();
-    await expect(page.getByText('1,234', { exact: true })).toBeVisible();
+    await expect(page.locator('.adm-an-summary')).toContainText('是上一段的 2 倍');
+    await expect(page.locator('.adm-an-summary'), '八成以上是直接來的').toContainText('8 成是直接造訪');
+    await expect(page.getByLabel('總數').getByText('1,234', { exact: true })).toBeVisible();
     await expect(page.getByLabel('總數')).toContainText('2分05秒');
+    await expect(page.getByLabel('總數'), '跳出率越低越好').toContainText('上一段 70%，變好');
     await expect(page.locator('.adm-an-col'), '一天一根柱子').toHaveCount(3);
-    const pages = page.getByRole('region', { name: '熱門頁面' });
-    await expect(pages).toContainText('/blog/hello');
-    await expect(page.getByRole('region', { name: '從哪裡來' })).toContainText('直接造訪');
+
+    const posts = page.getByRole('region', { name: '每篇文章' });
+    await expect(posts.getByRole('row', { name: /第一篇測試文章/ })).toContainText('72%');
+    await expect(posts.getByRole('row', { name: /第一篇測試文章/ })).toContainText('1 分 35 秒');
+    const sources = page.getByRole('region', { name: '從哪裡來，先看了什麼' });
+    await expect(sources, '進站頁的網址換成文章標題').toContainText('《第一篇測試文章》');
+    await expect(page.getByRole('region', { name: '在 Google 搜了什麼' })).toContainText('koimsurai');
+    await expect(page.getByRole('region', { name: '收到的愛心與反應' })).toContainText('只有總數');
+
+    await page.getByText('熱門頁面、國家與裝置').click();
+    await expect(page.getByRole('region', { name: '熱門頁面' })).toContainText('/blog/hello');
     await expect(page.getByRole('region', { name: '國家' })).toContainText('台灣');
     await expect(page.getByRole('region', { name: '裝置' })).toContainText('手機');
   });
