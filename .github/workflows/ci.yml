@@ -738,15 +738,20 @@ jobs:
     # 改設定，也不吃帳號的 Packages 儲存額度。內容只有編譯產物與已經公開的原始碼——
     # .dockerignore 擋掉 .env* 與 .git，不會把祕密烤進快取層。
     # ⚠ 哪天 repo 轉成 private，這個前提就要重新確認。
-    env:
-      CACHE_FE: ghcr.io/${{ github.repository }}/buildcache-frontend
-      CACHE_BE: ghcr.io/${{ github.repository }}/buildcache-backend
     steps:
       # fetch-depth: 2 是給下面那個 diff 用的（要有 HEAD^ 才比得出改了什麼）
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
           fetch-depth: 2
+      # 映像位址只收小寫，github.repository 卻帶著擁有者的大小寫（Koimsurai），
+      # 直接用的話快取讀寫都會失敗（invalid reference format）
+      - name: 快取位址
+        id: cache
+        run: |
+          repo="${GITHUB_REPOSITORY,,}"
+          echo "fe=ghcr.io/$repo/buildcache-frontend" >> "$GITHUB_OUTPUT"
+          echo "be=ghcr.io/$repo/buildcache-backend" >> "$GITHUB_OUTPUT"
       # 只建「輸入真的變過」的那個 image。
       #
       # 我原本在這裡寫「cache mount 不會被 type=gha 匯出」——講太窄了。實情是
@@ -805,17 +810,35 @@ jobs:
       # load: true 把建好的 image 匯進本機 daemon，trivy 才掃得到（build 完只留在
       # buildx 的快取裡，daemon 看不見）。匯出有成本，所以只在那個 image 真的重建時才做
       # ——上面的 scope 判斷已經幫我們擋掉不必要的那次。
+      # 字型原檔在這台主機上抓好，再用具名 context 蓋掉 Dockerfile 的 serif-font 階段。
+      # 在 buildx 的容器裡抓 MiSans（228 MB）每次都在十秒左右被切斷（NGHTTP2_PROTOCOL_ERROR），
+      # 同一支腳本在主機上（e2e、Lighthouse 那兩個 job）照常抓得到；本機的 docker compose 也抓得到
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        if: steps.scope.outputs.frontend == 'true'
+        with:
+          node-version: 26
+      - name: 裁字字型原檔快取
+        if: steps.scope.outputs.frontend == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/serif-font/fonts
+          key: serif-fonts-docker-${{ hashFiles('scripts/fetch-serif-font.mjs') }}
+      - name: 下載裁字字型原檔（快取命中時只校驗 sha256）
+        if: steps.scope.outputs.frontend == 'true'
+        run: node scripts/fetch-serif-font.mjs .cache/serif-font/fonts
       - name: build frontend image
         if: steps.scope.outputs.frontend == 'true'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
           file: Dockerfile
+          # COPY --from=serif-font /fonts 讀的就是這個資料夾底下的 fonts/
+          build-contexts: serif-font=.cache/serif-font
           push: false
           load: true
           tags: local/web-frontend:ci
-          cache-from: type=registry,ref=${{ env.CACHE_FE }}
-          cache-to: ${{ github.event_name == 'push' && format('type=registry,ref={0},mode=max,image-manifest=true,oci-mediatypes=true', env.CACHE_FE) || '' }}
+          cache-from: type=registry,ref=${{ steps.cache.outputs.fe }}
+          cache-to: ${{ github.event_name == 'push' && format('type=registry,ref={0},mode=max,image-manifest=true,oci-mediatypes=true', steps.cache.outputs.fe) || '' }}
           # 同下面 backend 的說明：runtime 層的 `apt-get upgrade` 不能吃快取。
           no-cache-filters: runtime
       - name: build backend image
@@ -827,8 +850,8 @@ jobs:
           push: false
           load: true
           tags: local/web-backend:ci
-          cache-from: type=registry,ref=${{ env.CACHE_BE }}
-          cache-to: ${{ github.event_name == 'push' && format('type=registry,ref={0},mode=max,image-manifest=true,oci-mediatypes=true', env.CACHE_BE) || '' }}
+          cache-from: type=registry,ref=${{ steps.cache.outputs.be }}
+          cache-to: ${{ github.event_name == 'push' && format('type=registry,ref={0},mode=max,image-manifest=true,oci-mediatypes=true', steps.cache.outputs.be) || '' }}
           # runtime 那一層做 `apt-get upgrade`，而快取鍵只看 Dockerfile 的字面、不看
           # 「apt 現在有什麼版本」——指令沒改就直接重用舊層，upgrade 等於凍結在建那層
           # 的當天。實際發生過：libssh-4 卡在 0.11.2（0.11.5 早就發了），trivy 一次報
