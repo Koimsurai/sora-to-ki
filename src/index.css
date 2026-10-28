@@ -1253,11 +1253,15 @@ html.fs-active .comet {
 
 /* ──────────────────────────────────────────────────────────────
    開場：一切從一個點開始（layout/TransitionLayer 的 enter、__root.tsx 的 #boot）
-   一進站，畫面只有夜色與正中一顆琥珀點在呼吸，外圈一道細線照載入進度畫一圈（--boot-p，head 裡那段
+   一進站，畫面只有夜色與一顆琥珀點在呼吸（在首頁土星的位置，見 --boot-cy），外圈一道細線照載入進度畫一圈（--boot-p，head 裡那段
    同步 script 照載入的階段推）。載好了這顆點就是換頁轉場的那顆：飛向這一頁的錨點、由這一頁接手長出來。
    html[data-boot] 是 head 的 script 一開始就掛上的（還沒 paint），所以頁面不會先閃出來
 ─────────────────────────────────────────────────────────────── */
 #boot {
+  /* 點與環的高度跟首頁 3D 土星的中心一樣（lib/saturnSpec 的 saturnFrame）：直拿往上提，
+     首頁交棒時環就在土星上原地長大，不用先滑過去。摺疊機那類對不上的，由 layout/TransitionLayer 滑過去補 */
+  --boot-cy: 50%;
+
   position: fixed;
   inset: 0;
   z-index: var(--z-intro);
@@ -1268,6 +1272,19 @@ html.fs-active .comet {
 
 html[data-boot] #boot {
   display: block;
+}
+
+@media (orientation: portrait) {
+  #boot {
+    --boot-cy: 46%;
+  }
+}
+
+/* 中等寬度的直式（摺疊機內螢幕直拿、直式平板）提得更高（lib/viewportShape 的 isTallMedium） */
+@media (orientation: portrait) and (560px <= width < 1100px) {
+  #boot {
+    --boot-cy: 36%;
+  }
 }
 
 /* 交棒：黑幕淡掉、這顆點交給轉場畫布（畫布暫時升到黑幕之上，點才不會被壓暗） */
@@ -1282,7 +1299,7 @@ html[data-boot] .pt-canvas {
 
 .boot-dot {
   position: absolute;
-  top: 50%;
+  top: var(--boot-cy);
   left: 50%;
   width: 6px;
   height: 6px;
@@ -1295,7 +1312,7 @@ html[data-boot] .pt-canvas {
 
 .boot-ring {
   position: absolute;
-  top: 50%;
+  top: var(--boot-cy);
   left: 50%;
   width: 80px;
   height: 80px;
@@ -1335,7 +1352,7 @@ html[data-boot] .pt-canvas {
    跟進度線同一個過渡時間與曲線，所以一直貼在畫到的最前端；後面三顆越來越小越淡 */
 .boot-pen {
   position: absolute;
-  top: 50%;
+  top: var(--boot-cy);
   left: 50%;
   width: 0;
   height: 0;

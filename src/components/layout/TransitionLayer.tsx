@@ -329,6 +329,9 @@ export default function TransitionLayer() {
       }
     };
 
+    /** 開場那顆點在畫面上的位置（index.css 的 --boot-cy），環的 --boot-ring-dx／dy 從這裡算 */
+    let bootOrigin: Pt = { x: 0, y: 0 };
+
     /** 記下點在畫面上的位置與速度 */
     const track = (r: Run, p: Pt, now: number) => {
       const dt = now - r.trackAt;
@@ -339,8 +342,8 @@ export default function TransitionLayer() {
       // 開場交棒時那道小環套在點上跟著走（index.css 的 --boot-ring-dx／dy），點落在土星中心時環才長大
       if (root.dataset.bootRing === 'grow') {
         const boot = document.getElementById('boot');
-        boot?.style.setProperty('--boot-ring-dx', `${(p.x - window.innerWidth / 2).toFixed(1)}px`);
-        boot?.style.setProperty('--boot-ring-dy', `${(p.y - window.innerHeight / 2).toFixed(1)}px`);
+        boot?.style.setProperty('--boot-ring-dx', `${(p.x - bootOrigin.x).toFixed(1)}px`);
+        boot?.style.setProperty('--boot-ring-dy', `${(p.y - bootOrigin.y).toFixed(1)}px`);
       }
     };
 
@@ -400,7 +403,9 @@ export default function TransitionLayer() {
       const gap = { x: target.x - r.pos.x, y: target.y - r.pos.y };
       r.to = approach ? (approach.at(-1) ?? anchor) : anchor;
       // 點已經在錨點上了（手記的星軌直接被拉成文章的軌道）：不用飛，鏡頭不動，直接長
-      r.still = Boolean(arrival?.still) || (!approach && len(gap) < 6);
+      // 開場交棒時環套在點上，差幾 px 跳過去也看得出來，要滑；只有真的對上才原地長
+      const near = root.dataset.bootRing === 'grow' ? 1 : 6;
+      r.still = Boolean(arrival?.still) || (!approach && len(gap) < near);
       if (r.still) {
         r.flight = {
           points: [r.to, r.to],
@@ -420,9 +425,9 @@ export default function TransitionLayer() {
         r.main.style.opacity = '0';
         return;
       }
-      // 開場交棒給首頁的 3D 土星：點從畫面中間直直滑到土星中心，環套在點上一起走，鏡頭不動。
-      // 不走下面那套飛行：土星不在正中間的畫面（手機直拿，土星往上提）差的只有幾十 px，
-      // 那套會先飛出去一大段再煞停回來，環被留在原地（桌機的土星就在正中間，本來就不飛）
+      // 開場交棒給首頁的 3D 土星：點平常就在土星中心（index.css 的 --boot-cy），上面就原地長了。
+      // 對不上的（摺疊機摺起來之類）差的只有幾十 px：點直直滑過去，環套在點上一起走，鏡頭不動。
+      // 不走下面那套飛行：那套會先飛出去一大段再煞停回來，環被留在原地
       if (root.dataset.bootRing === 'grow') {
         const d = len({ x: anchor.x - r.pos.x, y: anchor.y - r.pos.y });
         r.to = anchor;
@@ -431,7 +436,8 @@ export default function TransitionLayer() {
           cum: [0, d],
           total: Math.max(1, d),
           at: now,
-          dur: clamp(d / SPEED, FLY_MIN_MS, FLY_MAX_MS),
+          // 差幾 px 的不要也滑滿最短的那 0.7 秒：40px 以內照距離縮短
+          dur: clamp(d / SPEED, FLY_MIN_MS * Math.min(1, d / 40), FLY_MAX_MS),
           acquire: 0,
           start: { ...r.pos },
           brakeFrom: 0,
@@ -787,7 +793,12 @@ export default function TransitionLayer() {
         endBoot();
         return;
       }
-      const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      // 從開場那顆點實際在的位置起飛（直拿時它在畫面中間偏上，見 index.css 的 --boot-cy）
+      const dot = document.querySelector('.boot-dot')?.getBoundingClientRect();
+      const center = dot
+        ? { x: dot.left + dot.width / 2, y: dot.top + dot.height / 2 }
+        : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      bootOrigin = center;
       const now = performance.now();
       const r: Run = {
         phase: 'fly',
