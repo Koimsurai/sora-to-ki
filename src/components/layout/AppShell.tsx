@@ -47,7 +47,7 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const bare = stripLocalePrefix(pathname); // 去 locale 前綴(無前導斜線)
 
-  // 文章內頁（BlogPost）是重 lazy chunk（BlogPost.css + shiki + mermaid，134 KB gzip）。頁面 idle 後
+  // 文章內頁（BlogPost）是重 lazy chunk（BlogPost.css + 程式碼高亮 + mermaid，134 KB gzip）。頁面 idle 後
   // 先暖起來——否則首次點進文章會先閃一下 BlogPostPage 極簡 fallback（純 sans-serif 無樣式）
   // 才換成完整版。暖過後 Suspense 立即解析、fallback 不再出現。import 路徑與路由的 lazy
   // 同一支 → Vite dedupe 同 chunk。requestIdleCallback 不搶首屏；Safari 無此 API 退 setTimeout。

@@ -3,7 +3,7 @@
 .code-surface-body .shiki-output pre.shiki {
   margin: 0;
   padding: 0;
-  /* ⚠ 同上：shiki 的主題背景要壓掉，背景由外層 .code-surface-body 畫 */
+  /* ⚠ 同上：高亮輸出的主題背景要壓掉，背景由外層 .code-surface-body 畫 */
   background: transparent !important;
   font-size: var(--fs-13);
   line-height: var(--lh-170);

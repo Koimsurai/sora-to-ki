@@ -1,5 +1,5 @@
 // MDX <Install pkg="react-compare-slider" />：套件安裝指令分頁（npm/pnpm/yarn/bun）。
-// 直接生成四個 pkg manager 的指令，套用站上既有的 CodeTabs（分頁 + shiki 高亮 + 複製鈕）。
+// 直接生成四個 pkg manager 的指令，套用站上既有的 CodeTabs（分頁 + 程式碼高亮 + 複製鈕）。
 // dev=true → 開發依賴（-D / -d）。
 import CodeTabsBlock from './CodeTabsBlock';
 

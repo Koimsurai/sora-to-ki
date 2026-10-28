@@ -1,8 +1,8 @@
 // MDX <Diff lang="ts">…</Diff>：程式碼前後對比。行首 + 為新增、- 為刪除、其餘上下文。
-// 重用站上既有 shiki（highlightCode）高亮 base 語言，再依 diff 類型給每行加紅綠底 class。
-// SSR 出樸素 pre（CodeBody fallback），client idle 後套 shiki——與 CodeBlock 同策略。
+// 重用站上既有的程式碼高亮（highlightCode）上色 base 語言，再依 diff 類型給每行加紅綠底 class。
+// SSR 出樸素 pre（CodeBody fallback），client idle 後套上高亮——與 CodeBlock 同策略。
 import { useEffect, useMemo, useState } from 'react';
-import { highlightCode } from '@/lib/mdx/shikiHighlight';
+import { highlightCode } from '@/lib/mdx/codeHighlight';
 import { langEmoji } from '@/lib/langEmoji';
 import { CodeBody } from './CodeSurface';
 
@@ -29,7 +29,7 @@ function parseDiff(raw: string): { code: string; types: LineType[] } {
   return { code, types };
 }
 
-// shiki 每行輸出 <span class="line">；依序把 add/del 行補上 diff class（CSS 上紅綠底）。
+// 高亮輸出每行一個 <span class="line">（lib/mdx/codeHighlight 刻意照 shiki 的結構排）；依序把 add/del 行補上 diff class（CSS 上紅綠底）。
 function tagDiffLines(html: string, types: LineType[]): string {
   let i = 0;
   return html.replace(/<span class="line"/g, () => {

@@ -327,7 +327,7 @@ export function Spoiler({ children }: { children?: ReactNode }) {
   );
 }
 
-/** 程式碼前後對比（行首 + 新增、- 刪除；重用 shiki 高亮 base 語言）。code 用屬性字串傳、
+/** 程式碼前後對比（行首 + 新增、- 刪除；重用程式碼高亮 base 語言）。code 用屬性字串傳、
  *  多行用範本字面值：<Diff lang="ts" code={`-const a = 1\n+const a = 2`} title="patch" /> */
 export function Diff(props: { code?: string; lang?: string; title?: string }) {
   return <DiffImpl {...props} />;

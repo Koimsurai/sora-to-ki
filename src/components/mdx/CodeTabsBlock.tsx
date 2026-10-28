@@ -1,5 +1,5 @@
-// MDX <CodeTabs>：多檔程式碼分頁。重用站上既有的 shiki 高亮（highlightCode）。
-// SSR 出樸素 pre（fallback），client 端 idle 後套 shiki——與 CodeBlock 同策略、不需 ClientOnly。
+// MDX <CodeTabs>：多檔程式碼分頁。重用站上既有的程式碼高亮（highlightCode）。
+// SSR 出樸素 pre（fallback），client 端 idle 後套上高亮——與 CodeBlock 同策略、不需 ClientOnly。
 // 分頁依副檔名帶上檔案類型彩色圖示（照 VS Code 檔案圖示的感覺）。
 /* 檔案圖示是從靜態 FILE_ICONS 表取出的既有元件 ref（非 render 期建立），static-components 誤判 → 關該規則。 */
 /* eslint-disable @eslint-react/static-components */
@@ -19,7 +19,7 @@ import {
   SiGnubash,
 } from 'react-icons/si';
 import { VscFileCode } from 'react-icons/vsc';
-import { highlightCode } from '@/lib/mdx/shikiHighlight';
+import { highlightCode } from '@/lib/mdx/codeHighlight';
 import { CodeBody } from './CodeSurface';
 
 interface CodeFile {

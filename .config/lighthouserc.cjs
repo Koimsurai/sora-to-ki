@@ -116,7 +116,7 @@ module.exports = {
           },
         },
         {
-          // ── 文章內頁：多了 shiki（語法高亮）與 mermaid ──────────
+          // ── 文章內頁：多了程式碼高亮與 mermaid ──────────
           // 實測 /blog/4：script 2.18 MB、total 2.68 MB。這兩包是文章頁獨有的，
           // 所以它的上限本來就該比別頁高——用全站共用的數字就等於把別頁一起放寬。
           matchingUrlPattern: '.*/blog/\\d+.*',
@@ -128,7 +128,7 @@ module.exports = {
         {
           // ── 其餘頁面：不該載到文章頁那兩包 ──────────────────────
           // 實測最大的是 /photos（script 1.86 MB、total 2.25 MB，masonry + 圖片檢視器）。
-          // 這組上限的另一個作用是**擋住 shiki/mermaid 洩漏到共用 chunk**——
+          // 這組上限的另一個作用是**擋住高亮/mermaid 洩漏到共用 chunk**——
           // 真的洩漏了，這幾頁會一起爆掉，而畫面上完全看不出來。
           matchingUrlPattern: '^(?!.*/blog/\\d).*$',
           assertions: {

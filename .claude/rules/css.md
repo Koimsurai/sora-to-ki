@@ -447,14 +447,14 @@ Tailwind 的 preflight 把 `list-style` 歸零，不補的話清單沒有符號�
 | `@media (prefers-reduced-motion)` | 要蓋過全站元件動畫；**測試瀏覽器不會觸發** |
 | `html.no-gpu *` | 無 GPU 機器的降級；**測試瀏覽器一定會觸發**（見下面） |
 | `html.fs-active` | 全螢幕影片的 GPU 爭用修正；不會被觸發 |
-| shiki 背景 | 壓 shiki 自己的主題 |
+| 程式碼高亮的背景 | 壓高亮輸出寫在 pre 上的主題背景 |
 | 後台表單邊框、monaco 捲軸與行號 | 壓 shadcn utility 與 monaco 注入的樣式 |
 
 **不要用 `grep -c '!important'` 數它**——會把**註解裡在討論** `!important` 的句子也算進去。
 要數就跑 `pnpm lint:css`，biome 認的是語法樹。
 同一個坑也會發生在數色彩字面值上。
 
-**壓 inline style 是最常見的正當理由**（shiki、monaco 都是這類）——
+**壓 inline style 是最常見的正當理由**（程式碼高亮、monaco 都是這類）——
 inline style 只有 `!important` 蓋得過，這種情況不管 cascade layer 怎麼排都一樣。
 判斷「這個 `!important` 是不是多餘」時，先看它要蓋的對象是不是 JS 寫進 `style=""` 的。
 
