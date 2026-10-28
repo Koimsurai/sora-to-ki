@@ -597,7 +597,7 @@ function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
     },
     setView(width, height, fold) {
       const f = saturnFrame(width, height, fold);
-      fullScale = fitScale(f.width, f.height, height);
+      fullScale = fitScale(f.width, f.height, height) * f.zoom;
       // z = 0 的平面上，畫面半高是 SATURN_VIEW_HALF 個單位、半寬再乘上長寬比
       base.set(
         (f.x / width - 0.5) * 2 * SATURN_VIEW_HALF * (width / height),
