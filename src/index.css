@@ -1257,16 +1257,24 @@ html.fs-active .comet {
    同步 script 照載入的階段推）。載好了這顆點就是換頁轉場的那顆：飛向這一頁的錨點、由這一頁接手長出來。
    html[data-boot] 是 head 的 script 一開始就掛上的（還沒 paint），所以頁面不會先閃出來
 ─────────────────────────────────────────────────────────────── */
+/* 夜色的顏色放在註冊過的變數裡：首頁交棒時它淡成透明，開場環的遮片（.boot-arc）用同一個值，一起淡 */
+@property --boot-bg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
 #boot {
   /* 點與環的高度跟首頁 3D 土星的中心一樣（lib/saturnSpec 的 saturnFrame）：直拿往上提，
      首頁交棒時環就在土星上原地長大，不用先滑過去。摺疊機那類對不上的，由 layout/TransitionLayer 滑過去補 */
   --boot-cy: 50%;
+  --boot-bg: var(--ground);
 
   position: fixed;
   inset: 0;
   z-index: var(--z-intro);
   display: none;
-  background: var(--ground);
+  background: var(--boot-bg);
   pointer-events: none;
 }
 
@@ -1319,6 +1327,13 @@ html[data-boot] .pt-canvas {
   /* 首頁交棒時跟著那顆點滑到 3D 土星的中心（--boot-ring-dx／dy），再長大到 3D 土星環的大小（--boot-ring-size），
      都由 layout/TransitionLayer 逐幀寫；筆尖跟環一起走 */
   translate: calc(-50% + var(--boot-ring-dx, 0px)) calc(-50% + var(--boot-ring-dy, 0px));
+}
+
+.boot-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: visible;
 }
 
@@ -1335,12 +1350,74 @@ html[data-boot] .pt-canvas {
   stroke-opacity: calc(var(--tone, 1) * 0.12);
 }
 
-/* 載到的部分：照 --boot-p 畫（pathLength = 1） */
+/* 載到的部分：整圈都畫好，還沒載到的由上面的遮片蓋住（lib/bootRing）。底線疊在遮片上面：同一個顏色的
+   兩層，疊的順序對調後透明度相加的結果一樣（0.8 + 0.12·0.2 = 0.12 + 0.8·0.88） */
 .boot-ring-prog {
-  stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--boot-p, 0));
   stroke-opacity: calc(var(--tone, 1) * 0.8);
-  transition: stroke-dashoffset var(--dur-400) var(--easing-out);
+}
+
+/* 遮片：跟夜色同一個顏色（--boot-bg，夜色淡掉時它跟著淡），只用 transform 轉，主執行緒卡住時合成器照樣在轉。
+   線不在會動的圖層裡（放在裡面的話合成器旋轉時會重新取樣，髮絲線變糊）。
+     .boot-arc        傾角與壓扁（壓扁之前是正圓，所以旋轉的角度就是橢圓的參數角）
+     .boot-arc-half   前半圈 / 後半圈（不動的半平面）
+     .boot-arc-cover  跟著進度轉的正方形，它的下半平面（i）就是遮片：蓋住 [轉角, 轉角 + 180°]
+     .boot-arc-seam   前後半圈的接縫在橢圓兩端，兩邊遮片的邊緣在那裡各漏半個像素，補一小塊 */
+.boot-arc {
+  position: absolute;
+  inset: 0;
+  transform: rotate(11.5deg) scaleY(0.408);
+}
+
+.boot-arc-half {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+}
+
+.is-back .boot-arc-half {
+  top: 0;
+}
+
+.boot-arc-cover {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 200%;
+}
+
+.is-back .boot-arc-cover {
+  top: 0;
+  /* 預設（JS 還沒擺上去之前）：整個後半圈都蓋住 */
+  transform: rotate(180deg);
+}
+
+.boot-arc-cover i,
+.boot-arc-seam {
+  position: absolute;
+  background: var(--boot-bg);
+}
+
+.boot-arc-cover i {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 50%;
+}
+
+/* 兩圈（半徑 20.17 與 23.84，框是 80）在長軸端點的那一段，上下各一個螢幕像素（壓扁後是 2.94） */
+.boot-arc-seam {
+  top: 46.3%;
+  left: 17.7%;
+  width: 9.6%;
+  height: 7.4%;
+}
+
+.is-back .boot-arc-seam {
+  left: 72.7%;
 }
 
 /* 後半圈在點後面：淡一點點，看得出前後就好（太暗的話像一半壞掉） */
@@ -1348,8 +1425,9 @@ html[data-boot] .pt-canvas {
   opacity: 0.7;
 }
 
-/* 筆尖：沿著外面那圈（A 環，rx 23.85、ry 23.85·0.408，同樣往右下斜 11.5°）走到 --boot-p，
-   跟進度線同一個過渡時間與曲線，所以一直貼在畫到的最前端；後面三顆越來越小越淡 */
+/* 筆尖：沿著外面那圈（A 環，rx 23.85、ry 23.85·0.408，同樣往右下斜 11.5°）走到現在的進度，
+   位置由 lib/bootRing 寫成 translate 的關鍵影格，跟進度線同一組時間與曲線，所以一直貼在畫到的最前端；
+   後面三顆越來越小越淡 */
 .boot-pen {
   position: absolute;
   top: var(--boot-cy);
@@ -1369,33 +1447,26 @@ html[data-boot] .pt-canvas {
   height: 3px;
   border-radius: var(--r-full);
   background: var(--paper);
-  offset-path: path("M 23.85 0 A 23.85 9.73 0 1 1 -23.85 0 A 23.85 9.73 0 1 1 23.85 0");
-  offset-rotate: 0deg;
-  offset-distance: calc(var(--boot-p, 0) * 100% - var(--lag, 0%));
-  transition: offset-distance var(--dur-400) var(--easing-out);
+  /* 預設擺在起點（JS 還沒擺上去之前） */
+  transform: translate(22.35px, -1.5px);
 }
 
 .boot-pen i:first-child {
   box-shadow: 0 0 6px rgba(var(--paper-rgb), 0.8);
 }
 
+/* 後面三顆各落後弧長的 2%、4%、6%（lib/bootRing 的 LAG） */
 .boot-pen i:nth-child(2) {
-  --lag: 2%;
-
   scale: 0.75;
   opacity: 0.55;
 }
 
 .boot-pen i:nth-child(3) {
-  --lag: 4%;
-
   scale: 0.55;
   opacity: 0.3;
 }
 
 .boot-pen i:nth-child(4) {
-  --lag: 6%;
-
   scale: 0.4;
   opacity: 0.15;
 }
@@ -1435,9 +1506,10 @@ html[data-boot="out"] .boot-ring {
 /* 首頁交棒（layout/TransitionLayer）：夜色只淡掉底色、環留著；等這一頁開始長（3D 土星開始長，
    data-boot-ring 從 grow 變成 go），環才長大到 3D 土星環的大小、同時淡掉，3D 的環正好從星球表面攤開接手 */
 html[data-boot="out"][data-boot-ring] #boot {
+  --boot-bg: transparent;
+
   opacity: 1;
-  background-color: transparent;
-  transition: background-color var(--dur-500) ease;
+  transition: --boot-bg var(--dur-500) ease;
 }
 
 html[data-boot="out"][data-boot-ring] .boot-ring {

@@ -714,7 +714,6 @@ export default function TransitionLayer() {
       root.removeAttribute('data-boot');
       delete root.dataset.bootRing;
       delete root.dataset.bootCollapse;
-      root.style.removeProperty('--boot-p');
       const boot = document.getElementById('boot');
       for (const name of [
         '--boot-ring-dx',
@@ -777,7 +776,8 @@ export default function TransitionLayer() {
       await Promise.race([Promise.all([loaded, document.fonts.ready, painted, skyDrawn]), after(BOOT_WAIT_MS)]);
       // 第一次來的人多停一下，看得到那顆點在呼吸（performance.now() 從這次載入開始算）
       await after(Math.max(0, (quick ? BOOT_QUICK_MS : BOOT_MIN_MS) - performance.now()));
-      root.style.setProperty('--boot-p', '1');
+      // 畫滿那一圈（lib/bootRing：交給合成器轉，主執行緒忙也照樣走）
+      window.__bootP?.(1);
       await after(BOOT_CLOSE_MS);
       // 首頁、3D 的土星已經畫出來：開場那道行星環長大到 3D 土星環的位置與大小，跟它交棒（index.css 的 #boot）。
       // 別頁、沒有 3D、等太久 3D 還沒好：環先收回點裡（index.css 的 data-boot-collapse），點再飛出去，
