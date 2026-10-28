@@ -7,7 +7,7 @@ import '@fontsource/instrument-serif/400.css';
 import '@fontsource-variable/fira-code';
 import '../index.css';
 import '../App.css';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { Outlet, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { ParallaxProvider } from 'react-scroll-parallax';
@@ -19,6 +19,7 @@ import { LOCALE_TO_OG } from '@/seo/seoMeta';
 import AppShell from '@/components/layout/AppShell';
 import NotFound from '@/components/layout/NotFound';
 import { localeWrap } from '@/i18n/localePage';
+import { RING_OUTER, RING_SEGMENTS } from '@/lib/saturnSpec';
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -78,6 +79,38 @@ function useServiceWorker() {
       return () => window.removeEventListener('load', onLoad);
     }
   }, []);
+}
+
+/**
+ * 開場那道小環是載入條，只畫兩圈：B 環最亮的那段與 A 環（lib/saturnSpec 的 RING_SEGMENTS 第 5、8 段），
+ * 中間空出來的就是卡西尼縫。半徑照 3D 土星環的比例縮（3D 環外緣是 26px），亮度照那一段的亮度
+ * （跟 3D 的刷痕一樣取 0.75 次方），長大交棒時兩圈正好落在 3D 環最亮的兩道上
+ */
+const BOOT_RINGS = RING_SEGMENTS.filter((_, i) => i === 4 || i === 7).map(([inner, outer, tone]) => ({
+  r: (((inner + outer) / 2) * 26) / RING_OUTER,
+  tone: tone ** 0.75,
+}));
+/** 開場那道行星環的一半（後半圈或前半圈）。半徑與傾角見 index.css 的 #boot 那段 */
+function BootRing({ half }: { half: 'back' | 'front' }) {
+  const id = `boot-${half}`;
+  return (
+    <svg className={`boot-ring is-${half}`} viewBox="-40 -40 80 80">
+      <defs>
+        <clipPath id={id}>
+          <rect x="-40" y={half === 'back' ? -40 : 0} width="80" height="40" />
+        </clipPath>
+      </defs>
+      {/* 傾角：往右下斜 11.5°，從上方 24° 往下看（ry = r · sin 24°），跟 lib/saturnSpec 的 TILT／ROLL 一樣 */}
+      <g transform="rotate(11.5)" clipPath={`url(#${id})`}>
+        {BOOT_RINGS.map(({ r, tone }) => (
+          <g key={r} style={{ '--tone': tone } as CSSProperties}>
+            <ellipse className="boot-ring-base" rx={r} ry={r * 0.408} />
+            <ellipse className="boot-ring-prog" rx={r} ry={r * 0.408} pathLength={1} />
+          </g>
+        ))}
+      </g>
+    </svg>
+  );
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
@@ -197,11 +230,19 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
       </head>
       <body>
         {/* 開場的夜色與那顆點（只在 html[data-boot] 時顯示，見上面 head 裡那段） */}
+        {/* 開場的進度是一道行星環（跟首頁土星同一個傾角、同一份環的結構）：後半圈在點後面、前半圈疊在點上。
+            首頁換頁時它長大、交棒給 3D 土星的環（layout/TransitionLayer） */}
         <div id="boot" aria-hidden="true">
-          <svg className="boot-ring" viewBox="0 0 44 44">
-            <circle cx="22" cy="22" r="21" />
-          </svg>
+          <BootRing half="back" />
           <i className="boot-dot" />
+          <BootRing half="front" />
+          {/* 畫環的筆尖：沿著同一道橢圓走到進度的最前端，後面拖三顆漸淡的點 */}
+          <div className="boot-pen">
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
         </div>
         {/* 全域 providers(對齊舊 App.tsx 疊法)。SEOHead 已退休 → HelmetProvider/react-helmet-async 一併移除。 */}
         <AuthProvider>

@@ -61,6 +61,24 @@ export function subscribeSatelliteGlow(fn: Listener<number[]>): () => void {
   };
 }
 
+/** 土星正在長時，星球與環各長到幾成（0 到 1） */
+export interface SaturnGrow {
+  planet: number;
+  ring: number;
+}
+
+let grow: (SaturnGrow & { at: number }) | null = null;
+
+/** 3D 那邊每畫一幀長的進度就送一次；開場那道小環照它跟著長（layout/TransitionLayer） */
+export function publishSaturnGrow(next: SaturnGrow) {
+  grow = { ...next, at: performance.now() };
+}
+
+/** 最近一次回報的長的進度，跟收到它的時間（performance.now）；從來沒長過是 null */
+export function latestSaturnGrow() {
+  return grow;
+}
+
 const collapseListeners = new Set<Listener<number>>();
 
 /** 換頁轉場的「收」：土星整組收進第 index 顆衛星（-1 是收進中心），見 home/HomeOrbit */

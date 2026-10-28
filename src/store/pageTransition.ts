@@ -142,6 +142,8 @@ export const after = (ms: number) => new Promise<void>((resolve) => window.setTi
 export const isArriving = () => {
   const root = document.documentElement;
   const pt = root.dataset.pt;
-  // 開場時（html[data-boot]，見 __root.tsx）頁面藏在夜色後面，也還不該開始長：等那顆點飛進來
-  return pt === 'out' || pt === 'fly' || root.hasAttribute('data-boot');
+  // 開場時（html[data-boot]，見 __root.tsx）頁面藏在夜色後面，也還不該開始長：等那顆點飛進來。
+  // 首頁交棒（data-boot-ring="go"）時夜色已經在淡、開場那道環正在長大：土星就從這一刻開始長，兩道環才接得上
+  const booting = root.hasAttribute('data-boot') && root.dataset.bootRing !== 'go';
+  return pt === 'out' || pt === 'fly' || booting;
 };

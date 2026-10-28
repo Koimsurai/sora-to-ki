@@ -17,6 +17,8 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
+import { isBotUserAgent } from '@/lib/bot';
+import { RING_OUTER, saturnGrowAt, saturnRingOnScreen } from '@/lib/saturnSpec';
 import { currentFold, offCrease } from '@/lib/viewportFold';
 import {
   after,
@@ -27,6 +29,7 @@ import {
   type Departure,
   type Pt,
 } from '@/store/pageTransition';
+import { latestSaturnGrow, subscribeSatellites } from '@/store/homeOrbit';
 import { setSkyPan } from '@/store/skyPan';
 import './TransitionLayer.css';
 
@@ -52,7 +55,19 @@ const BOOT_QUICK_MS = 300;
 const BOOT_WAIT_MS = 3500;
 /** 那一圈畫滿之後停一下再飛；夜色淡掉要多久（跟 index.css 的 #boot 一樣） */
 const BOOT_CLOSE_MS = 260;
+/** 不交棒的時候，環收回點裡要多久（跟 index.css 的 data-boot-collapse 一樣） */
+const BOOT_COLLAPSE_MS = 250;
 const BOOT_FADE_MS = 520;
+/** 開場那道行星環最外圈的半徑與它那個框的邊長（px，跟 __root.tsx 的 BOOT_RINGS、index.css 的 .boot-ring 一樣） */
+const BOOT_RING_R = 26;
+const BOOT_RING_BOX = 80;
+/** 3D 的環在透視下外緣看起來小一點（實測差 7%）：小環長到剛好疊在它上面 */
+const BOOT_RING_PERSPECTIVE = 0.93;
+/** 星球長到幾成時小環追上它（之後兩道環一樣大）；3D 一直沒回報就自己長；交棒收掉的保險時間；最多等這一頁開始長多久 */
+const BOOT_RING_CATCH = 0.6;
+const BOOT_RING_ALONE_MS = 600;
+const BOOT_RING_GROW_MS = 2000;
+const BOOT_RING_WAIT_MS = 2500;
 const ACQUIRE_MAX_MS = 360;
 /** 跟拍那段至少飛多遠（視窗短邊的倍數） */
 const TRAVEL = 0.42;
@@ -68,6 +83,36 @@ const AMBER = '233, 193, 122';
 const INK = '241, 236, 227';
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
+
+/**
+ * 首頁的 3D 土星畫出第一幀（3D 那邊開始回報衛星位置，store/homeOrbit）；確定沒有 GPU（html.no-gpu）或
+ * 是爬蟲就不用等。開場等不到也不會卡：外面跟 BOOT_WAIT_MS 一起比
+ */
+const saturnDrawn = (signal: AbortSignal) =>
+  new Promise<void>((resolve) => {
+    const root = document.documentElement;
+    let finished = false;
+    // 已經有位置的話 subscribeSatellites 會當場呼叫回來（那時 unsubscribe 還沒指派），收尾放到下一個 microtask
+    const done = () => {
+      if (finished) return;
+      finished = true;
+      resolve();
+      queueMicrotask(() => {
+        unsubscribe();
+        mo.disconnect();
+      });
+    };
+    const mo = new MutationObserver(() => {
+      if (root.classList.contains('no-gpu')) done();
+    });
+    const unsubscribe = subscribeSatellites((positions) => {
+      if (positions.length) done();
+    });
+    mo.observe(root, { attributes: true, attributeFilter: ['class'] });
+    signal.addEventListener('abort', done, { once: true });
+    // 爬蟲不載 3D（backdrop/SpaceBackdropShell），等了也是白等
+    if (root.classList.contains('no-gpu') || isBotUserAgent(navigator.userAgent)) done();
+  });
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeIn = (t: number) => t * t * t;
 const smooth = (a: number, b: number, x: number) => {
@@ -561,6 +606,13 @@ export default function TransitionLayer() {
       const to = r.to ?? r.pos;
       if (r.growAt === now) {
         root.dataset.pt = 'grow';
+        // 開場那道行星環：這一刻 3D 土星開始長，環跟著長大淡掉交棒（index.css 的 data-boot-ring="go"）
+        if (root.dataset.bootRing === 'grow') {
+          root.dataset.bootRing = 'go';
+          growBootRing();
+          window.clearTimeout(bootTimer);
+          bootTimer = window.setTimeout(endBoot, BOOT_RING_GROW_MS);
+        }
         const page = currentPage();
         const fresh = page.generation !== r.oldGeneration ? page.handle : null;
         // 交給頁面的線換成新的一頁原位的座標
@@ -591,6 +643,48 @@ export default function TransitionLayer() {
     // 等太久（網路慢）也不卡：最多等 BOOT_WAIT_MS 就飛
     const bootAbort = new AbortController();
     let bootTimer = 0;
+    let bootRingRaf = 0;
+    /** 3D 土星在畫面上的「一個單位」（星球半徑）是幾 px；首頁交棒時才有 */
+    let bootRingUnit = 0;
+    const endBoot = () => {
+      cancelAnimationFrame(bootRingRaf);
+      root.removeAttribute('data-boot');
+      delete root.dataset.bootRing;
+      delete root.dataset.bootCollapse;
+      root.style.removeProperty('--boot-p');
+      root.style.removeProperty('--boot-ring-dy');
+      const boot = document.getElementById('boot');
+      for (const name of ['--boot-ring-size', '--boot-ring-a', '--boot-ring-back-a', '--boot-planet-r']) {
+        boot?.style.removeProperty(name);
+      }
+    };
+    // 小環跟著 3D 土星實際長到哪裡走（store/homeOrbit 的 latestSaturnGrow，3D 每畫一幀回報一次）：
+    // 星球長出來時先追到星球表面那麼大、一直在星球外面，3D 的環從星球表面攤開時兩道一樣大，
+    // 3D 的環亮起來多少、小環就淡多少。後半圈在星球後面的那段照星球此刻的大小挖掉
+    // （index.css 的 --boot-planet-r），不會畫在星球表面上。3D 還沒開始長之前小環就停在原地等；
+    // 一直等不到（3D 沒起來）就照同一張時間表（lib/saturnSpec 的 saturnGrowAt）自己長完
+    const growBootRing = () => {
+      // 逐幀的變數寫在 #boot 上，不寫在 <html>：根元素上的自訂屬性一變，整頁的樣式都要重算
+      const boot = document.getElementById('boot');
+      if (!boot) return;
+      const start = performance.now();
+      const step = (now: number) => {
+        const reported = latestSaturnGrow();
+        const alone = (now - start - BOOT_RING_ALONE_MS) / 1000;
+        const { planet, ring } =
+          reported && reported.at >= start ? reported : alone > 0 ? saturnGrowAt(alone) : { planet: 0, ring: 0 };
+        const target = BOOT_RING_PERSPECTIVE * bootRingUnit * (1 + (RING_OUTER - 1) * ring);
+        const r = BOOT_RING_R + (target - BOOT_RING_R) * clamp(planet / BOOT_RING_CATCH);
+        boot.style.setProperty('--boot-ring-size', `${(r / BOOT_RING_R) * BOOT_RING_BOX}px`);
+        boot.style.setProperty('--boot-ring-a', (1 - ring).toFixed(3));
+        boot.style.setProperty('--boot-ring-back-a', (0.7 * (1 - ring)).toFixed(3));
+        boot.style.setProperty('--boot-planet-r', `${(bootRingUnit * planet).toFixed(1)}px`);
+        if (ring < 1) bootRingRaf = requestAnimationFrame(step);
+        else endBoot();
+      };
+      cancelAnimationFrame(bootRingRaf);
+      bootRingRaf = requestAnimationFrame(step);
+    };
     const enter = async () => {
       if (!root.hasAttribute('data-boot')) return;
       const quick = root.dataset.boot === 'quick';
@@ -602,16 +696,32 @@ export default function TransitionLayer() {
       const painted = new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
       );
-      await Promise.race([Promise.all([loaded, document.fonts.ready, painted]), after(BOOT_WAIT_MS)]);
+      // 首頁：3D 的土星畫出第一幀才算載完（環要交棒給它）。確定沒有 GPU（html.no-gpu）就不等
+      const home = stripLocalePrefix(window.location.pathname) === '';
+      // 用物件記：在 then 裡改一個 let，型別檢查看不到，會把後面的判斷當成永遠是 false
+      const sky = { ready: false };
+      const skyDrawn = home
+        ? saturnDrawn(bootAbort.signal).then(() => {
+            sky.ready = true;
+          })
+        : Promise.resolve();
+      await Promise.race([Promise.all([loaded, document.fonts.ready, painted, skyDrawn]), after(BOOT_WAIT_MS)]);
       // 第一次來的人多停一下，看得到那顆點在呼吸（performance.now() 從這次載入開始算）
       await after(Math.max(0, (quick ? BOOT_QUICK_MS : BOOT_MIN_MS) - performance.now()));
       root.style.setProperty('--boot-p', '1');
       await after(BOOT_CLOSE_MS);
+      // 首頁、3D 的土星已經畫出來：開場那道行星環長大到 3D 土星環的位置與大小，跟它交棒（index.css 的 #boot）。
+      // 別頁、沒有 3D、等太久 3D 還沒好：環先收回點裡（index.css 的 data-boot-collapse），點再飛出去，
+      // 跟換頁時土星收成一點是同一個動作
+      const handoff = home && sky.ready && !root.classList.contains('no-gpu');
+      if (!handoff && !reduce.matches) {
+        root.dataset.bootCollapse = '';
+        await after(BOOT_COLLAPSE_MS);
+      }
       const main = mainOf();
       if (bootAbort.signal.aborted) return;
       if (!main || reduce.matches || run) {
-        root.removeAttribute('data-boot');
-        root.style.removeProperty('--boot-p');
+        endBoot();
         return;
       }
       const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
@@ -647,14 +757,19 @@ export default function TransitionLayer() {
         dust: [],
       };
       run = r;
+      if (handoff) {
+        const ring = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
+        bootRingUnit = ring.r / RING_OUTER;
+        root.style.setProperty('--boot-ring-dy', `${ring.y - window.innerHeight / 2}px`);
+        root.dataset.bootRing = 'grow';
+      }
       root.dataset.pt = 'fly';
       root.dataset.boot = 'out';
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(frame);
-      bootTimer = window.setTimeout(() => {
-        root.removeAttribute('data-boot');
-        root.style.removeProperty('--boot-p');
-      }, BOOT_FADE_MS);
+      // 首頁交棒時夜色淡掉、環留著，等這一頁開始長（3D 土星開始長）才長大淡掉，見下面的 grow；
+      // 萬一一直沒等到（換頁被打斷），晚一點照樣收掉
+      bootTimer = window.setTimeout(endBoot, root.dataset.bootRing ? BOOT_RING_WAIT_MS : BOOT_FADE_MS);
     };
     void enter();
 
@@ -777,6 +892,7 @@ export default function TransitionLayer() {
     return () => {
       bootAbort.abort();
       window.clearTimeout(bootTimer);
+      cancelAnimationFrame(bootRingRaf);
       unblock();
       unsubscribe();
       document.removeEventListener('click', onClick, true);

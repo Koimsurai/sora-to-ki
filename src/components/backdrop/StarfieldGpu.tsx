@@ -17,9 +17,11 @@ import { isArriving } from '@/store/pageTransition';
 import { skyPan, subscribeSkyPan } from '@/store/skyPan';
 import {
   publishSatellites,
+  publishSaturnGrow,
   subscribeSaturnCollapse,
   subscribeSatelliteGlow,
   type SatelliteScreen,
+  type SaturnGrow,
 } from '@/store/homeOrbit';
 
 const canOffscreen =
@@ -203,7 +205,8 @@ export default function StarfieldGpu({
       });
       // data-boot 也要看：開場的點從畫面正中間出發，而首頁的錨點就是正中間——一落地就結束（data-pt 拿掉），
       // 但開場的 data-boot 還要再過半秒才拿掉。只看 data-pt 的話，最後那次變化就沒人接，土星永遠停在一點
-      waitArrival.observe(root, { attributes: true, attributeFilter: ['data-pt', 'data-boot'] });
+      // data-boot-ring 也要看：首頁交棒那一刻（go）土星就開始長，不等夜色拿掉
+      waitArrival.observe(root, { attributes: true, attributeFilter: ['data-pt', 'data-boot', 'data-boot-ring'] });
     } else controlRef.current?.saturn(isOnHomePage, animateSaturn);
     wasHomeRef.current = isOnHomePage;
     controlRef.current?.scroll(window.scrollY);
@@ -279,9 +282,11 @@ export default function StarfieldGpu({
           message?: string;
           positions?: SatelliteScreen[];
           at?: number;
+          grow?: SaturnGrow;
         }>,
       ) => {
         if (e.data.type === 'satellites') publishSatellites(e.data.positions ?? [], e.data.at);
+        else if (e.data.type === 'saturnGrow' && e.data.grow) publishSaturnGrow(e.data.grow);
         else if (e.data.type === 'ready') {
           setBackend(`${e.data.backend} · worker`);
           setInitInfo(describeInit(e.data.timing));
@@ -341,6 +346,7 @@ export default function StarfieldGpu({
               if (!disposed) recover(message);
             },
             onSatellites: publishSatellites,
+            onSaturnGrow: publishSaturnGrow,
           });
           if (disposed) {
             runner.dispose();
