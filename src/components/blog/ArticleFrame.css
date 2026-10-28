@@ -34,6 +34,14 @@
 /* 切語系「重新收訊」（blog/useRetune）：掃描線以上是新語系的字，以下先藏著。
    --scan 是線在這一欄裡的位置（JS 逐幀寫） */
 /* 不是從手記換過來的：目錄的點當筆尖往下畫軌道，內文跟著筆尖往下顯現（blog/OrbitToc），同一個遮罩 */
+/* 只有 .ar-col 自己的遮罩讀它，宣告成不繼承：沒宣告的自訂屬性會繼承，逐幀改它等於全文每個元素
+   每幀重算一次樣式（三千個元素的文章，CPU 降速 4 倍時一幀 62ms；不繼承 2ms） */
+@property --scan {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 .ar-col.is-retuning,
 .ar-col.is-drawing {
   mask-image: linear-gradient(to bottom, #000 calc(var(--scan, 0px) - 2px), transparent calc(var(--scan, 0px) + 24px));
