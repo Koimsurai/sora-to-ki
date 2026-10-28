@@ -20,6 +20,10 @@ import AppShell from '@/components/layout/AppShell';
 import NotFound from '@/components/layout/NotFound';
 import { localeWrap } from '@/i18n/localePage';
 import { RING_OUTER, RING_SEGMENTS } from '@/lib/saturnSpec';
+import { prewarmSpaceBackdrop } from '@/components/backdrop/prewarm';
+
+// 3D 背景在這裡就先開始準備（worker、GPU 探測、chunk），跟頁面其他工作同時進行（backdrop/prewarm）
+prewarmSpaceBackdrop();
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({

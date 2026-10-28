@@ -1,14 +1,21 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { createElement, useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { isBotUserAgent } from '@/lib/bot';
 import BackdropErrorBoundary from './BackdropErrorBoundary';
 import { useHardwareGpu } from '@/hooks/useHardwareGpu';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
+import { dropSpaceWorker, loadStarfieldGpu } from './prewarm';
+import type * as StarfieldGpuModule from './StarfieldGpu';
 
 // WebGPU 太空背景（星空+土星單 canvas，three/webgpu 獨立 lazy chunk，不進主 bundle）。
 // 2026-07-19 翻預設：取代舊 pmndrs 雙 canvas 棧（strangler 完成）。
-const LazyStarfieldGpu = lazy(() => import('./StarfieldGpu'));
+// chunk 載好就直接掛，不用 React.lazy：Suspense 在內容載好之後還會再等約 300ms 才顯示，首頁的開場要等
+// 3D 的第一幀，這段是白等。chunk 在主程式一開始就在下載了（backdrop/prewarm），載好的元件記在這裡
+let starfieldGpu: typeof StarfieldGpuModule.default | null = null;
+function LoadedStarfieldGpu(props: ComponentProps<typeof StarfieldGpuModule.default>) {
+  return starfieldGpu ? createElement(starfieldGpu, props) : null;
+}
 
 /** 手機離開首頁後 3D 再留多久才卸載（等土星收成一點） */
 const LINGER_MS = 600;
@@ -42,6 +49,8 @@ export default function SpaceBackdropShell() {
   // 軟體渲染 → 在 <html> 掛 .no-gpu，讓 CSS 一次關掉整站最貴的那些效果（見 index.css）
   useEffect(() => {
     if (!softwareGpu) return;
+    // 主程式一開始先建好的 3D worker 用不到了（backdrop/prewarm）
+    dropSpaceWorker();
     document.documentElement.classList.add('no-gpu');
     return () => document.documentElement.classList.remove('no-gpu');
   }, [softwareGpu]);
@@ -93,6 +102,23 @@ export default function SpaceBackdropShell() {
     return () => clearTimeout(timer);
   }, [lingering]);
 
+  const [starfieldLoaded, setStarfieldLoaded] = useState(starfieldGpu !== null);
+  const wantStarfield = hardwareGpu === true && !isBot;
+  useEffect(() => {
+    if (!wantStarfield) return;
+    let alive = true;
+    loadStarfieldGpu()
+      .then((m) => {
+        starfieldGpu = m.default;
+        if (alive) setStarfieldLoaded(true);
+      })
+      // chunk 載不到（剛部署完、舊的 hash 不在了）：跟 3D 起不來一樣，留下 CSS 星空
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [wantStarfield]);
+
   // 爬蟲完全不載 three。手機只在首頁載：首頁的五顆衛星在 3D 裡，其他頁用不到，離開首頁就收掉
   if (isBot || (isMobile && !isOnHomePage && !lingering)) return null;
 
@@ -102,11 +128,9 @@ export default function SpaceBackdropShell() {
           worker 內失敗則 StarfieldGpu 自行歸 null，頁面留下黑紙與 CSS 星空。
           等 GPU 探測有結果才掛：沒有 GPU 的機器上多下載、解析一次 three.js 是白花的 CPU——
           CI 的 e2e 每頁都付這筆，實際因此逾時過。 */}
-      {hardwareGpu === true && (
+      {hardwareGpu === true && starfieldLoaded && (
         <BackdropErrorBoundary fallback={null}>
-          <Suspense fallback={null}>
-            <LazyStarfieldGpu isOnHomePage={isOnHomePage} lite={isMobile} />
-          </Suspense>
+          <LoadedStarfieldGpu isOnHomePage={isOnHomePage} lite={isMobile} />
         </BackdropErrorBoundary>
       )}
     </>

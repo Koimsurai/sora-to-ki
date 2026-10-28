@@ -13,6 +13,7 @@ import { currentFold, subscribeFold } from '@/lib/viewportFold';
 /** 徽章上的一行：開頁多久之後就緒、各段各花多少（土星出來得慢時看是卡在哪一段） */
 const describeInit = (t?: InitTiming) =>
   `就緒於 ${Math.round(performance.now())} ms${t ? `（偵測 ${t.probe}・GPU ${t.device}・編譯 ${t.compile}・首幀 ${t.first}）` : ''}`;
+import { takeSpaceWorker } from './prewarm';
 import { isArriving } from '@/store/pageTransition';
 import { skyPan, subscribeSkyPan } from '@/store/skyPan';
 import {
@@ -240,9 +241,8 @@ export default function StarfieldGpu({
         return;
       }
       transferred.add(canvas);
-      // ⚠️ 這裡必須是字面相對路徑：vite 靠靜態分析 `new URL(…, import.meta.url)` 才認得出
-      // 這是 worker 進入點並單獨打包，換成 @/ alias 它就認不出來了。
-      const worker = new Worker(new URL('../../workers/spaceGpuWorker.ts', import.meta.url), { type: 'module' });
+      // 主程式一開始就先建好的那個（backdrop/prewarm，three.js 多半已經載好了）；重建時是新的一個
+      const worker = takeSpaceWorker();
       const offscreen = canvas.transferControlToOffscreen();
       const cancelStart = whenSkyNeeded(() =>
         worker.postMessage(

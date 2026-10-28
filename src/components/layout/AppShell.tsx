@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { createElement, lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode } from 'react';
 import { ClientOnly, useRouterState } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import SiteNav from './SiteNav';
 import ScrollToTop from './ScrollToTop';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
+import { loadSpaceBackdropShell } from '@/components/backdrop/prewarm';
 import { installStaleChunkReload } from '@/lib/staleChunkReload';
 import { installRefold } from '@/lib/viewportFold';
 import BackToTopButton from './BackToTopButton';
@@ -15,12 +16,12 @@ installStaleChunkReload();
 installRefold();
 
 // 桌面 WebGL 背景/開場 + 互動式 overlay → 純 client(three.js / portal 不進 SSR)
-// GPU 探測跟這支 chunk 的下載同時起跑，不要等元件掛上才開始：開場要等探測做完才播
-// 越早開始，首頁的土星越早出現。
-const SpaceBackdropShell = lazy(() => {
-  void import('@/lib/webglSupport').then((m) => m.probeHardwareGpu());
-  return import('@/components/backdrop/SpaceBackdropShell');
-});
+// 3D 背景殼：chunk 與 GPU 探測在主程式一開始就起跑（backdrop/prewarm），越早開始，首頁的土星越早出現。
+// 載好就直接掛，不用 React.lazy：Suspense 在內容載好之後還會再等約 300ms 才顯示，首頁的開場要等 3D 的第一幀
+let spaceBackdropShell: ComponentType | null = null;
+function LoadedSpaceBackdropShell() {
+  return spaceBackdropShell ? createElement(spaceBackdropShell) : null;
+}
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const ContextMenu = lazy(() => import('./ContextMenu'));
 const SerifFontLoader = lazy(() => import('./SerifFontLoader'));
@@ -42,6 +43,21 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
   //   等收緊那條時再一起處理。目前的取捨是：不為了少數幾類錯誤把 SDK 提到關鍵路徑上。
   useEffect(() => {
     void import('@/lib/errorReporting').then((m) => m.initErrorReporting());
+  }, []);
+
+  const [backdropLoaded, setBackdropLoaded] = useState(spaceBackdropShell !== null);
+  useEffect(() => {
+    let alive = true;
+    loadSpaceBackdropShell()
+      .then((m) => {
+        spaceBackdropShell = m.default;
+        if (alive) setBackdropLoaded(true);
+      })
+      // chunk 載不到（剛部署完、舊的 hash 不在了）：留下 CSS 星空
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -75,11 +91,7 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
       <ScrollToTop />
       {/* CSS 星空底:手機唯一背景;桌面是 3D 載入前的秒出 placeholder。SSR 即出。 */}
       <CSSStarfield />
-      <ClientOnly fallback={null}>
-        <Suspense fallback={null}>
-          <SpaceBackdropShell />
-        </Suspense>
-      </ClientOnly>
+      <ClientOnly fallback={null}>{backdropLoaded && <LoadedSpaceBackdropShell />}</ClientOnly>
 
       <div
         className="main-content-container"
