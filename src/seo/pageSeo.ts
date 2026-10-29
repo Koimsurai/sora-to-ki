@@ -1,4 +1,4 @@
-import { createI18n } from '@/i18n/start-i18n';
+import { createI18n, isLocaleLoaded } from '@/i18n/start-i18n';
 import { type Locale } from '@/lib/locales';
 import { pageMeta } from './seoMeta';
 import { lookup } from '@/lib/tableLookup';
@@ -54,7 +54,8 @@ function i18nFor(locale: Locale) {
   let inst = cache.get(locale);
   if (!inst) {
     inst = createI18n(locale);
-    cache.set(locale, inst);
+    // 那個語系還沒載到就不快取，免得之後一直拿到沒有字串的實例（正常流程裡 beforeLoad 已經載好了）
+    if (isLocaleLoaded(locale)) cache.set(locale, inst);
   }
   return inst;
 }

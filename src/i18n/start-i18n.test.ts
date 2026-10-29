@@ -1,11 +1,13 @@
 // start-i18n 純函式的單元測試：locale 解析／URL 建構／hreflang／Accept-Language
 // 協商／bot 偵測，以及「每 render 獨立 i18n instance」的隔離保證（SSR 不互踩的關鍵）。
-import { describe, expect, it } from 'vite-plus/test';
+import { beforeAll, describe, expect, it } from 'vite-plus/test';
 
 import {
   LOCALE_LABELS,
   buildAlternateLinks,
   createI18n,
+  isLocaleLoaded,
+  loadLocale,
   localeFromPathname,
   localeFromPrefix,
   localeUrl,
@@ -121,6 +123,10 @@ describe('isBotUserAgent', () => {
 });
 
 describe('翻譯資源與常數一致性', () => {
+  // 預設語系以外的字串用到才載（loadLocale）
+  beforeAll(async () => {
+    await Promise.all(SUPPORTED_LOCALES.map(loadLocale));
+  });
   it('LOCALE_LABELS 覆蓋所有支援語言', () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(LOCALE_LABELS[locale], locale).toBeTruthy();
@@ -145,6 +151,15 @@ describe('翻譯資源與常數一致性', () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(keysOf(locale), `${locale} 的 key 集合應與 zh-TW 一致`).toEqual(reference);
     }
+  });
+});
+
+describe('語系字串用到才載', () => {
+  it('預設語系不用載；loadLocale 之後 createI18n 拿得到那個語系的字串', async () => {
+    expect(isLocaleLoaded(DEFAULT_LOCALE)).toBe(true);
+    await loadLocale('ko');
+    expect(isLocaleLoaded('ko')).toBe(true);
+    expect(createI18n('ko').t('nav.home')).not.toBe('nav.home');
   });
 });
 

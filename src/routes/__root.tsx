@@ -11,7 +11,7 @@ import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { Outlet, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
 import { AuthProvider } from '../contexts/AuthContext';
-import { localeFromPathname } from '@/i18n/start-i18n';
+import { loadLocale, localeFromPathname } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { SUPPORTED_LOCALES } from '../lib/locales';
 import { LOCALE_TO_OG } from '@/seo/seoMeta';
@@ -26,6 +26,10 @@ import { prewarmSpaceBackdrop } from '@/components/backdrop/prewarm';
 prewarmSpaceBackdrop();
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // 這一頁的語系字串（不是預設語系才要載，見 i18n/start-i18n 的 loadLocale）：伺服器畫頁前、站內換到別的語系時
+  beforeLoad: async ({ location }) => {
+    await loadLocale(localeFromPathname(location.pathname));
+  },
   head: () => ({
     meta: [
       { charSet: 'utf-8' },

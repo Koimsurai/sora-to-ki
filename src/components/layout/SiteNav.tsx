@@ -11,7 +11,7 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { FaGithub, FaGoogle } from 'react-icons/fa';
 import { LocaleLink } from '@/i18n/locale-link';
-import { LOCALE_LABELS, stripLocalePrefix } from '@/i18n/start-i18n';
+import { LOCALE_LABELS, loadLocale, stripLocalePrefix } from '@/i18n/start-i18n';
 import { SUPPORTED_LOCALES, LOCALE_PREFIX, type Locale } from '@/lib/locales';
 import { useAuth } from '@/contexts/auth';
 import { openCommandPalette } from '@/store/commandPaletteStore';
@@ -186,7 +186,10 @@ export default function SiteNav() {
   }, [open]);
 
   const current = i18n.resolvedLanguage ?? i18n.language;
-  const switchLocale = (code: Locale) => {
+  const switchLocale = async (code: Locale) => {
+    // 別的語系的字串用到才載（i18n/start-i18n 的 loadLocale）：先載好、交給外殼這個實例，
+    // 不然外殼換過去的那一下拿不到字，會先閃回預設語系。滑到按鈕上就開始載，點下去時多半已經在了
+    if (!i18n.hasResourceBundle(code, 'common')) i18n.addResourceBundle(code, 'common', await loadLocale(code));
     void i18n.changeLanguage(code);
     // 同一個路徑換語系前綴：一定要換網址。頁面內容由 LocaleProvider 依「網址」建的 i18n instance 驅動，
     // 只呼叫 changeLanguage 只會換到外殼，內容不會跟著換
@@ -214,7 +217,9 @@ export default function SiteNav() {
             lang={code}
             className={code === current ? 'is-on' : undefined}
             aria-current={code === current ? 'true' : undefined}
-            onClick={() => switchLocale(code)}
+            onPointerEnter={() => void loadLocale(code)}
+            onFocus={() => void loadLocale(code)}
+            onClick={() => void switchLocale(code)}
           >
             {LOCALE_LABELS[code]}
           </button>
