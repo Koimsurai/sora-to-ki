@@ -18,6 +18,7 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import { isBotUserAgent } from '@/lib/bot';
+import { palette } from '@/lib/palette';
 import { RING_OUTER, saturnGrowAt, saturnRingOnScreen } from '@/lib/saturnSpec';
 import { currentFold, offCrease } from '@/lib/viewportFold';
 import {
@@ -81,8 +82,7 @@ const SKY_PARALLAX = 0.14;
 const RUN_LIMIT_MS = 8000;
 /** 彗尾的塵埃多久熄掉 */
 const DUST_LIFE_MS = 900;
-const AMBER = '233, 193, 122';
-const INK = '241, 236, 227';
+const { paper: INK, amber: AMBER } = palette();
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 

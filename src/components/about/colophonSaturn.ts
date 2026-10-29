@@ -25,12 +25,15 @@ import {
   SUN,
   TILT,
 } from '@/lib/saturnSpec';
+import { channels, palette } from '@/lib/palette';
 
 const TAU = Math.PI * 2;
-const INK = [241, 236, 227] as const;
-const GROUND = [10, 10, 12] as const;
-const INK_RGB = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const COLORS = palette();
+/** 逐像素混色用的三個數字；畫線與點用下面的字串 */
+const INK = channels(COLORS.paper);
+const GROUND = channels(COLORS.ground);
+const INK_RGB = COLORS.paper;
+const AMBER = COLORS.amber;
 
 /** 拆開的步驟（0 起算）：球與光、刷痕、雲帶、環、衛星、星軌 */
 export const SATURN_STEPS = ['light', 'strokes', 'bands', 'rings', 'satellites', 'trails'] as const;

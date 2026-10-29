@@ -4,14 +4,16 @@ import type * as Monaco from 'monaco-editor';
 // 行號與捲軸的顏色也在這裡給：原本是在 CSS 裡用 !important 硬蓋 Monaco 注入的顏色，
 // 主題本身給對了就不用跟它搶。
 //
-// Monaco 的主題吃的是 hex（可帶 alpha），不吃 CSS 變數，所以這裡抄一份 index.css 的值：
-//   --ground #0a0a0c、--paper #f1ece3、--amber #e9c17a；alpha 照透明度梯子（10 → 1a、15 → 26…）。
+// Monaco 的主題吃的是 hex（可帶 alpha），不吃 CSS 變數，所以從 lib/palette 讀了再換成 hex；
+// alpha 照透明度梯子（10 → 1a、15 → 26…）。
+import { hex, palette } from '@/lib/palette';
 
 export const SORA_NIGHT = 'sora-night';
 
-const GROUND = '#0a0a0c';
-const PAPER = '#f1ece3';
-const AMBER = '#e9c17a';
+const COLORS = palette();
+const GROUND = hex(COLORS.ground);
+const PAPER = hex(COLORS.paper);
+const AMBER = hex(COLORS.amber);
 const hex2 = (n: number) => Math.round(n).toString(16).padStart(2, '0');
 
 /** 墨色加上透明度（alpha 是 0–1，落在透明度梯子上）。給 `colors`：介面顏色吃 #rrggbbaa */

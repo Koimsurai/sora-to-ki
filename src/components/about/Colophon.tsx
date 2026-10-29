@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { LinkCard } from '@/components/common/LinkCard';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import { LocaleLink } from '@/i18n/locale-link';
+import { palette } from '@/lib/palette';
 import { lookupOr } from '@/lib/tableLookup';
 import { sameTitle } from '@/lib/pageTitle';
 import { after, isArriving, transitionDot } from '@/store/pageTransition';
@@ -30,7 +31,7 @@ import './Colophon.css';
 /** 視線從望遠鏡拉到星要多久（秒） */
 const SIGHT_S = 0.7;
 /** 星座線的墨色（--paper） */
-const INK_RGB = '241, 236, 227';
+const INK_RGB = palette().paper;
 /** 點畫星座時飛的速度倍率（比一般換頁快一點） */
 const CONSTELLATION_PACE = 1.5;
 /** 落地後星座線收掉的時間 */

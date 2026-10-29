@@ -10,11 +10,11 @@ import { useTranslation } from 'react-i18next';
 import { RX_PHASES } from '@/components/gallery/downlink';
 import { WORKS, worksQueryOptions } from '@/data/works';
 import { loadPhotosManifest } from '@/lib/manifestLoader';
+import { palette } from '@/lib/palette';
 import { createTrails, drawOrbits, renderSaturn, satelliteAt, SATURN_STEPS } from './colophonSaturn';
 import { bodiesOf, createSpiral, drawBody, drawGlyph, workStatsOf, type WorkStats } from './worksSky';
 
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const { paper: INK, amber: AMBER } = palette();
 const TAU = Math.PI * 2;
 
 /** 畫布跟著容器的大小、清掉、設好像素比；回傳 CSS 像素的寬高 */

@@ -40,6 +40,7 @@ import {
 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createFramePacer } from './framePacer';
+import { channels, DEFAULT_PALETTE, type Palette } from './palette';
 import {
   ORBITS,
   PLANET_COVER,
@@ -139,6 +140,11 @@ export interface StarfieldInit {
    * 呼叫端收到之後要整個重建（canvas 已 transfer 給 worker 的話得換一個新的 canvas 元素）。
    */
   onDeviceLost?: (message: string) => void;
+  /**
+   * 站上的配色（lib/palette）。由主執行緒讀好傳進來：這支常在 worker 裡跑，那裡讀不到 CSS。
+   * 沒給就是預設的配色。
+   */
+  palette?: Palette;
   /**
    * 土星顯示時，每畫一幀回報一次衛星在畫面上的位置（首頁的字跟著它走，見 store/homeOrbit）。
    * 土星收起來時送一次空陣列。
@@ -293,15 +299,25 @@ const span = (t: number, from: number, dur: number) => Math.min(1, Math.max(0, (
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
 
-/** 墨色（--paper #f1ece3）。three 的 Color 會自己換成線性空間 */
-const INK = new THREE.Color('#f1ece3');
-/** 紙色（--ground #0a0a0c）：擋住背面那顆球的顏色，要跟頁面底色一樣才看不出它在那裡 */
-const GROUND = new THREE.Color('#0a0a0c');
 /** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
 const SATURN_FOV = 8;
 const SATURN_CAMERA_Z = SATURN_VIEW_HALF / Math.tan(THREE.MathUtils.degToRad(SATURN_FOV / 2));
-/** 琥珀（--amber）：靠近的那顆衛星 */
-const AMBER = new THREE.Color('#e9c17a');
+
+/** sRGB 的 `r, g, b` → three 的 Color（自己換成線性空間，跟 `new THREE.Color('#rrggbb')` 一樣） */
+const threeColor = (rgb: string) => {
+  const [r, g, b] = channels(rgb);
+  return new THREE.Color().setRGB(r / 255, g / 255, b / 255, THREE.SRGBColorSpace);
+};
+
+/** 土星用的三個顏色 */
+interface SaturnColors {
+  /** 墨色（--paper）：刷痕、軌道 */
+  INK: THREE.Color;
+  /** 紙色（--ground）：擋住背面那顆球的顏色，要跟頁面底色一樣才看不出它在那裡 */
+  GROUND: THREE.Color;
+  /** 琥珀（--amber）：靠近的那顆衛星 */
+  AMBER: THREE.Color;
+}
 
 /// 土星（2026-10 翻新）：刻線畫的星球與環，外面五條軌道各有一顆衛星。
 ///
@@ -311,7 +327,7 @@ const AMBER = new THREE.Color('#e9c17a');
 ///
 /// 只有星球繞自己的軸自轉（0.05 rad/s，捲動再多轉一點）；環與軌道的平面固定不動，
 /// 不然衛星的軌道會跟著晃。換頁時整組從一點撐開、或收回一點。
-function buildSaturn(sunWorld: THREE.Vector3): SaturnRig {
+function buildSaturn(sunWorld: THREE.Vector3, { INK, GROUND, AMBER }: SaturnColors): SaturnRig {
   // 外層側傾、內層俯角：跟提案的投影同一個順序（先自轉、再俯、再側傾）。
   // 環與軌道都在內層的水平面（y = 0）上，星球繞內層的 y 軸自轉，軸自然垂直於環
   const group = new THREE.Group();
@@ -753,7 +769,12 @@ export async function createStarfieldRunner(
   const saturnCam = new THREE.PerspectiveCamera(SATURN_FOV, aspect0, 1, 200);
   saturnCam.position.set(0, 0, SATURN_CAMERA_Z);
   // 光從左上前方來（跟提案一樣）。只用來算星球上點的亮暗，場景裡沒有真的燈
-  const saturn = buildSaturn(new THREE.Vector3(...SUN).multiplyScalar(10));
+  const colors = init.palette ?? DEFAULT_PALETTE;
+  const saturn = buildSaturn(new THREE.Vector3(...SUN).multiplyScalar(10), {
+    INK: threeColor(colors.paper),
+    GROUND: threeColor(colors.ground),
+    AMBER: threeColor(colors.amber),
+  });
   saturn.setView(init.width, init.height, init.fold ?? null);
   let viewW = init.width;
   let viewH = init.height;

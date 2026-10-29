@@ -7,11 +7,10 @@
 // 這裡只畫點、線與插圖，字（里程碑的名字、遙測讀數、提示）是疊在上面的 DOM。
 
 import LAND_DATA from '@/data/landAroundTaiwan.json';
+import { palette } from '@/lib/palette';
 import { currentFold } from '@/lib/viewportFold';
 
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
-const GROUND = '10, 10, 12';
+const { paper: INK, amber: AMBER, ground: GROUND } = palette();
 const TAU = Math.PI * 2;
 const DAY_MS = 86400000;
 /** 字型：地上的月份刻度是數字，用等寬字畫在畫布上（數字不需要裁字） */

@@ -9,14 +9,13 @@
 //   衛星      GitHub 星星
 //   自轉      最後一次推送越近轉得越快
 // 這裡只有幾何與畫圖，不碰 React。
+import { palette } from '@/lib/palette';
 import { currentFold, type Fold } from '@/lib/viewportFold';
 import { isShortLandscape } from '@/lib/viewportShape';
 import { parseServerDate } from '@/lib/serverDate';
 
 const TAU = Math.PI * 2;
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
-const GROUND = '10, 10, 12';
+const { paper: INK, amber: AMBER, ground: GROUND } = palette();
 const LIGHT = (() => {
   const v = [-0.55, 0.5, 0.67];
   const l = Math.hypot(...v);

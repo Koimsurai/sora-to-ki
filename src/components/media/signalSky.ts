@@ -3,13 +3,13 @@
 // 一路經過國際太空站、月球、韋伯望遠鏡、行星、小行星帶、柯伊伯帶、新視野號、航海家一號、
 // 太陽圈邊界、歐特雲，到附近的恆星；最後面是照真實方向畫的銀河。
 // 行星與月球用平均軌道算今天的位置，恆星用真的赤經、赤緯與距離。這裡只有幾何與畫圖，不碰 React。
+import { palette } from '@/lib/palette';
 import { currentFold } from '@/lib/viewportFold';
 import { focusY } from '@/lib/viewportShape';
 
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const { paper: INK, amber: AMBER } = palette();
 
 /** 一光年、一天文單位各是幾光秒 */
 export const LIGHT_YEAR = 31_557_600;

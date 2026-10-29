@@ -7,11 +7,11 @@
 //   - 高度計：右邊的尺，下墜時是離地表幾公里，往下挖時換成地表以下幾公尺
 // 琥珀點（讀者）由頁面算位置（它會從標題的句號落到高度計上，著地時停在「就此落下。」的句號），
 // 這裡只負責畫。畫布固定在視窗上，位置都由捲動算出來；這裡只有畫圖，不碰 React。
+import { palette } from '@/lib/palette';
 import type { Pt } from '@/store/pageTransition';
 
 const TAU = Math.PI * 2;
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const { paper: INK, amber: AMBER } = palette();
 /** 起點的高度（公里）：地球同步軌道那麼高 */
 const TOP_KM = 36000;
 /** 地底的深度刻度（公尺）：挖到地心是這麼深 */

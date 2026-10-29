@@ -19,6 +19,7 @@ import AppShell from '@/components/layout/AppShell';
 import NotFound from '@/components/layout/NotFound';
 import { localeWrap } from '@/i18n/localePage';
 import { RING_OUTER, RING_SEGMENTS } from '@/lib/saturnSpec';
+import { hex, palette } from '@/lib/palette';
 import { BOOT_MOUNT_SCRIPT, BOOT_RING_FLAT, BOOT_SCRIPT } from '@/lib/bootRing';
 import { prewarmSpaceBackdrop } from '@/components/backdrop/prewarm';
 
@@ -35,7 +36,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: '宙と木 · Koimsurai' },
-      { name: 'theme-color', content: '#0a0a0c' },
+      { name: 'theme-color', content: hex(palette().ground) },
     ],
     // PWA:manifest 過去從沒被掛上 → 瀏覽器根本看不到它,站台不可安裝。
     links: [

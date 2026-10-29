@@ -22,6 +22,7 @@ import {
   takeOrbitHandoff,
   type OrbitGeom,
 } from '@/lib/articleOrbit';
+import { palette } from '@/lib/palette';
 import { currentFold, subscribeFold } from '@/lib/viewportFold';
 import { after, isArriving, type Pt } from '@/store/pageTransition';
 import { peekRetune } from './useRetune';
@@ -35,8 +36,7 @@ export interface TocHeading {
   level: number;
 }
 
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const { paper: INK, amber: AMBER } = palette();
 const TAU = Math.PI * 2;
 /** 從頂端往下長出來的時間（秒） */
 const GROW_S = 1.4;

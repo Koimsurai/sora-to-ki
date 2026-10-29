@@ -2,10 +2,10 @@
 // 點一顆星，六分儀轉過去對準它，望遠鏡拉出一條虛線視線，目鏡裡就是那一條的說明（頁面疊的 DOM）。
 // 這裡只畫六分儀、星點與視線，星的名字是疊在上面的按鈕。
 
+import { palette } from '@/lib/palette';
 import { currentFold } from '@/lib/viewportFold';
 
-const INK = '241, 236, 227';
-const AMBER = '233, 193, 122';
+const { paper: INK, amber: AMBER } = palette();
 const TAU = Math.PI * 2;
 
 /** 六分儀線稿（public/illustrations/sextant.webp，880×775）：左右翻過來畫，望遠鏡才朝右上方。
