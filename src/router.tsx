@@ -3,6 +3,7 @@ import type { SiteConfig } from '@koimsurai/api-types';
 import { createRouter as createTanStackRouter } from '@tanstack/react-router';
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
 import { siteConfigQueryOptions } from '@/data/siteConfig';
+import { setLocaleConfig } from '@/lib/locales';
 import { setSiteIdentity } from '@/lib/siteIdentity';
 import { routeTree } from './routeTree.gen';
 
@@ -24,7 +25,9 @@ export function getRouter() {
   queryClient.getQueryCache().subscribe(({ query }) => {
     if (query.queryHash !== siteConfigHash) return;
     const data = query.state.data as SiteConfig | undefined;
-    if (data) setSiteIdentity(data);
+    if (!data) return;
+    setSiteIdentity(data);
+    setLocaleConfig(data.default_locale, data.locales);
   });
   return router;
 }

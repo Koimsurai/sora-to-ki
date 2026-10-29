@@ -39,12 +39,10 @@ pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) 
         Some(s) => format!(" AND NULLIF(p.content_{s}, '') IS NOT NULL"),
         None => String::new(),
     };
-    let url_prefix = match locale {
-        "zh-CN" => "/zh-cn",
-        "en" => "/en",
-        "ja" => "/ja",
-        "ko" => "/ko",
-        _ => "",
+    // 網址前綴跟著站台設定的預設語系走（預設語系不帶前綴）
+    let url_prefix = match crate::handlers::site_config::locale_prefix(locale) {
+        p if p.is_empty() => p,
+        p => format!("/{p}"),
     };
     let self_q = if url_prefix.is_empty() { String::new() } else { format!("?lang={locale}") };
     let site_url = crate::identity::site_url();

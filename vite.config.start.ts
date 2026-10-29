@@ -137,7 +137,9 @@ function devApiProxy(): Plugin {
 // 以及為了 prerender 內部 crawler 而綁 server/preview host 的 hack。
 // ISR 已實測能給出同樣完整的 HTML(/blog 有文章標題與連結、/blog/$id 有內文與 meta)。
 
-const LOCALE_PREFIXES = ['en', 'ja', 'ko', 'zh-cn'];
+// 非預設語系的網址前綴（src/lib/locales 的 PREFIX）。預設語系是站台設定、建置時不知道，所以五個都列：
+// 預設語系自己的前綴是 404，多一條快取規則沒有影響
+const LOCALE_PREFIXES = ['en', 'ja', 'ko', 'zh-cn', 'zh-tw'];
 // UI 頁(全 5 語都有)。加新頁只要加名字,ISR 規則會自動涵蓋 5 個語系路徑。
 const UI_PAGES = [
   'about',

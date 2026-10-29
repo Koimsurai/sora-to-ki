@@ -1,4 +1,5 @@
 import { createFileRoute, notFound, redirect } from '@tanstack/react-router';
+import { defaultLocale } from '@/lib/locales';
 import { postIdent } from '../../../lib/postPath';
 import { buildAlternateLinks, localeFromPrefix, toLocales } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
@@ -11,7 +12,7 @@ import { articleJsonLd, articleMeta } from '@/seo/seoMeta';
 export const Route = createFileRoute('/$locale/blog/$id')({
   loader: async ({ context, params }) => {
     const locale = localeFromPrefix(params.locale);
-    if (!locale || locale === 'zh-TW') throw notFound();
+    if (!locale || locale === defaultLocale()) throw notFound();
     try {
       // 側欄 / 上下篇導覽 / 站內連結卡的「首幀完整」：平行預取清單 + 分類（同 /blog/$id）。
       // 參數對齊元件端 useQuery（limit=200、該語系 locale），否則 queryKey 不符 → 白預取、

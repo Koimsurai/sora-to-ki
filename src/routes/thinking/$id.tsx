@@ -4,7 +4,7 @@ import ThinkingDetail from '@/components/blog/ThinkingDetail';
 import { thoughtDetailQueryOptions, thoughtTitle } from '@/data/thoughtData';
 import { pageMeta } from '@/seo/seoMeta';
 import { thoughtLine } from '@/lib/thoughtRef';
-import { DEFAULT_LOCALE } from '../../lib/locales';
+import { defaultLocale } from '../../lib/locales';
 
 export const Route = createFileRoute('/thinking/$id')({
   loader: async ({ context, params }) => {
@@ -20,7 +20,7 @@ export const Route = createFileRoute('/thinking/$id')({
     // 只附了作品、沒寫字的那種用作品名
     const text = thought.content.trim() || thoughtLine(thought);
     return {
-      meta: pageMeta(thoughtTitle(text), text, `/thinking/${thought.id}`, DEFAULT_LOCALE, 'moments'),
+      meta: pageMeta(thoughtTitle(text), text, `/thinking/${thought.id}`, defaultLocale(), 'moments'),
     };
   },
   component: localeWrap(ThinkingDetail),

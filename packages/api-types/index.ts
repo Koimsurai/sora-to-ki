@@ -1270,6 +1270,10 @@ export type SiteConfig = {
 	email: string,
 	/**  GitHub 帳號名；空字串＝沒有 */
 	github: string,
+	/**  預設語系（不帶前綴的網址） */
+	default_locale: string,
+	/**  有開的語系，照語系選單的順序；一定含預設語系 */
+	locales: string[],
 };
 
 /**  一個來源與從它進站時先看的那幾頁 */

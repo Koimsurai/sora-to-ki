@@ -3,7 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { Suspense, lazy, type ComponentType, type ReactElement } from 'react';
 import { buildAlternateLinks, localeFromPrefix } from './start-i18n';
 import { LocaleProvider } from './LocaleProvider';
-import { DEFAULT_LOCALE } from '@/lib/locales';
+import { defaultLocale } from '@/lib/locales';
 import { useLocale } from '@/hooks/useLocale';
 import KoimLoader from '@/components/common/KoimLoader';
 import { seoMetaFor } from '@/seo/pageSeo';
@@ -47,10 +47,10 @@ export function localePage(basePath: string) {
     // meta 走 head() 而非元件內的 <SEOHead>：SEOHead 是 helmet，hydrate 後才掛，爬蟲看不到
     // → 過去每頁 SSR 的 <title> 全是同一個預設值、且無 description。詳見 pageSeo.ts。
     head: () => ({
-      meta: seoMetaFor(basePath, DEFAULT_LOCALE, `/${basePath}`),
-      links: buildAlternateLinks(basePath, DEFAULT_LOCALE),
+      meta: seoMetaFor(basePath, defaultLocale(), `/${basePath}`),
+      links: buildAlternateLinks(basePath, defaultLocale()),
       // 文章列表宣告成 Blog（CollectionPage 的專用型別），爬蟲才知道這頁是集合而非普通頁
-      ...(basePath === 'blog' ? { scripts: [blogListJsonLd(DEFAULT_LOCALE)] } : {}),
+      ...(basePath === 'blog' ? { scripts: [blogListJsonLd(defaultLocale())] } : {}),
     }),
   };
 }
@@ -85,7 +85,7 @@ export function localePagePrefixed(basePath: string) {
   return {
     beforeLoad: (ctx: PageGateContext) => gate(ctx, basePath),
     head: ({ params }: { params: { locale: string } }) => {
-      const locale = localeFromPrefix(params.locale) ?? DEFAULT_LOCALE;
+      const locale = localeFromPrefix(params.locale) ?? defaultLocale();
       return {
         meta: seoMetaFor(basePath, locale, `/${params.locale}/${basePath}`),
         links: buildAlternateLinks(basePath, locale),
@@ -94,7 +94,7 @@ export function localePagePrefixed(basePath: string) {
     },
     loader: ({ params }: { params: { locale: string } }) => {
       const locale = localeFromPrefix(params.locale);
-      if (!locale || locale === 'zh-TW') throw notFound();
+      if (!locale || locale === defaultLocale()) throw notFound();
     },
   };
 }

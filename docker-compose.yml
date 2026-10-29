@@ -87,6 +87,8 @@ services:
       - SITE_DESCRIPTION=${SITE_DESCRIPTION:-}
       - SITE_EMAIL=${SITE_EMAIL:-}
       - SITE_GITHUB=${SITE_GITHUB:-}
+      - SITE_DEFAULT_LOCALE=${SITE_DEFAULT_LOCALE:-}
+      - SITE_LOCALES=${SITE_LOCALES:-}
       # 文章內容變更後通知前端清 ISR 快取（fire-and-forget，失敗只會 warn，最壞就是等 TTL）。
       # 13579 = 前端容器內部 port（Dockerfile ENV PORT=13579）。兩邊密鑰必須相同。
       - FRONTEND_REVALIDATE_URL=http://frontend:13579/_revalidate
