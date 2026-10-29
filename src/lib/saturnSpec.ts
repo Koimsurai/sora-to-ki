@@ -140,8 +140,10 @@ export interface PlanetSpec {
   boot: [r: number, tone: number][];
   /** 反方向公轉的衛星（由內到外第幾顆，0 起算） */
   retrograde: number[];
-  /** 主星會脹縮（參宿四）：半徑變化多少（幾成）、脹縮一次幾秒 */
-  pulse?: { amp: number; period: number };
+  /** 主星會脹縮（參宿四）：半徑變化多少（幾成）、脹縮一次幾秒、亮度跟著變多少（幾成） */
+  pulse?: { amp: number; period: number; light: number };
+  /** 伴星（參宿四的 Siwarha）：繞主星的半徑（星球半徑）、大小、轉一圈幾秒。不是分區、沒有字卡 */
+  companion?: { a: number; size: number; period: number };
   /**
    * 每條軌道自己的形狀（黑洞的 S 星、海王星的崔頓與海衛二）：一條一筆，由內到外。
    * 沒給的話是同一個平面上的正圓（ORBITS）
@@ -335,7 +337,8 @@ const BLACK_HOLE: PlanetSpec = {
  * 亮度照邊緣變暗（中間亮、邊緣暗）；表面只有幾個巨大的對流胞（少數表面被直接拍到的恆星，VLT 與 ALMA 的影像）。
  * 它是半規則變星，大約每 400 天脹縮一次（pulse，這裡縮成幾秒）。
  * 2019–2020 年的大暗化：它暗到只剩三分之一，哈伯查出是南半球噴出一大團物質、冷卻成塵埃擋住了光（spots 裡那塊暗的）。
- * 最內圈那顆是 2025 年確認的伴星 Siwarha，軌道有點扁、有點斜
+ * 2025 年確認的伴星 Siwarha：很暗、離參宿四很近（比所有分區的軌道都內側），貼著它繞（companion）。
+ * 參宿四沒有已知的行星，五條軌道是網站的分區，畫成點線像一圈圈拋出去的塵埃殼
  */
 const BETELGEUSE: PlanetSpec = {
   kind: 'star',
@@ -357,14 +360,8 @@ const BETELGEUSE: PlanetSpec = {
   // 開場不畫環：恆星的輪廓在呼吸，外面一圈圈塵埃殼照載入階段出現（__root.tsx 的 BootShells）
   boot: [],
   retrograde: [],
-  stars: [
-    { a: 2.9, e: 0.12, incl: 10, node: 60, peri: 30, precess: 0 },
-    { a: 3.55, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
-    { a: 4.25, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
-    { a: 4.95, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
-    { a: 5.7, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
-  ],
-  pulse: { amp: 0.035, period: 9 },
+  pulse: { amp: 0.07, period: 7, light: 0.22 },
+  companion: { a: 1.6, size: 0.12, period: 11 },
 };
 
 export const PLANETS: Record<Theme, PlanetSpec> = {

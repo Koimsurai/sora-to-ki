@@ -1431,7 +1431,7 @@ html[data-boot-ring="go"] .boot-swirl {
     opacity var(--dur-300) var(--easing-standard),
     scale var(--dur-300) var(--easing-standard);
 }
-/* 參宿四：不畫環，恆星的輪廓在呼吸、外面的塵埃殼照載入的階段一圈圈出現（__root.tsx 的 BootShells） */
+/* 參宿四：不畫環，恆星的輪廓照載入的進度從一個點膨脹開來（藍白星膨脹成紅超巨星），一邊在呼吸（__root.tsx 的 BootShells） */
 .boot-shells {
   display: none;
   position: absolute;
@@ -1451,26 +1451,18 @@ html[data-boot-ring="go"] .boot-swirl {
     display: block;
   }
 }
-.boot-star,
-.boot-shell {
+.boot-star {
   fill: none;
   stroke: var(--ink);
-  vector-effect: non-scaling-stroke;
-}
-.boot-star {
   stroke-width: 1.2;
   stroke-opacity: 0.85;
+  vector-effect: non-scaling-stroke;
   transform-box: fill-box;
   transform-origin: center;
+  /* 膨脹（照進度）與呼吸（transform 的動畫）分開兩個屬性，疊在一起 */
+  scale: calc(0.15 + 0.85 * var(--boot-p, 0));
+  transition: scale var(--dur-400) var(--easing-out);
   animation: boot-star-breathe 2.4s ease-in-out infinite;
-}
-.boot-shell {
-  stroke-width: 1;
-  stroke-opacity: 0.35;
-  stroke-dasharray: 1 2.2;
-  opacity: clamp(0, calc((var(--boot-p, 0) - var(--at)) * 20 + 1), 1);
-  transition: opacity var(--dur-250) var(--easing-out);
-  transition-delay: calc((var(--at) - 0.12) * var(--dur-100));
 }
 @keyframes boot-star-breathe {
   0%,
@@ -1481,11 +1473,7 @@ html[data-boot-ring="go"] .boot-swirl {
     transform: scale(1.04);
   }
 }
-/* 交棒：塵埃殼往外散開淡掉，輪廓貼著 3D 的恆星長、合起來之後淡掉（--boot-photon-a，layout/TransitionLayer） */
-html[data-boot-ring="go"] .boot-shell {
-  opacity: 0;
-  transition: opacity var(--dur-300) var(--easing-standard);
-}
+/* 交棒：輪廓貼著 3D 的恆星長、合起來之後淡掉（--boot-photon-a，layout/TransitionLayer） */
 html[data-boot-ring="go"] .boot-star {
   opacity: var(--boot-photon-a, 1);
   animation: none;

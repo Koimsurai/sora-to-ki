@@ -146,12 +146,12 @@ const escape = (tau: number) => 1 - (1 - Math.cos(Math.PI * (1 - tau ** 2))) / 2
  */
 const HOLE_R = 11;
 /**
- * 參宿四的換頁：點一路甩出淡淡的塵埃殼（它一直在往外拋物質，2019 年的大暗化就是其中一團冷卻成的塵埃）。
- * 每隔 SHELL_EVERY 毫秒甩一圈，往外擴 SHELL_SPEED px/ms、活 SHELL_LIFE 毫秒。點本身也在呼吸（變星）
+ * 參宿四的換頁：點一路甩出塵埃殼（它一直在往外拋物質，2019 年的大暗化就是其中一團冷卻成的塵埃）。
+ * 每隔 SHELL_EVERY 毫秒甩一圈，越擴越慢、最遠到 SHELL_REACH px、活 SHELL_LIFE 毫秒。點本身也在呼吸（變星）
  */
 const SHELL_EVERY = 130;
-const SHELL_SPEED = 0.07;
-const SHELL_LIFE = 1400;
+const SHELL_REACH = 70;
+const SHELL_LIFE = 1500;
 const HOLE_SWIRL = 2.4;
 const HOLE_PULL = 1.3;
 /** 海王星的預言落點（predicted）：圈的半徑、外面那四道刻度的長度（px） */
@@ -261,8 +261,8 @@ interface Run {
   waves: { at: number; c: Pt; strength: number }[];
   /** 黑洞：離開的那一點變成的小黑洞（世界座標）與它出現的時間；沒有是 null */
   hole: { c: Pt; at: number } | null;
-  /** 參宿四：點飛過的路上甩出的塵埃殼（世界座標、出發的時間） */
-  shells: { c: Pt; at: number }[];
+  /** 參宿四：點飛過的路上甩出的塵埃殼（世界座標、出發的時間、每一圈自己的形狀） */
+  shells: { c: Pt; at: number; phase: number[] }[];
   chirp: number;
   cam: Pt;
   /** 點不用飛（已經在錨點上）：鏡頭不動 */
@@ -502,20 +502,30 @@ export default function TransitionLayer() {
       ctx.fill();
     };
 
-    /** 參宿四的塵埃殼：一圈圈點線往外擴、淡掉。回傳還有沒有沒散完的 */
+    /**
+     * 參宿四的塵埃殼：VLT 拍到它周圍的物質是一團一團、不對稱的，不是整齊的圓。每一圈由細小的塵埃點組成，
+     * 半徑不規則起伏、點聚成一段段團塊（每一圈的形狀各自不同，phase），往外擴得越來越慢（被拋出的物質會減速）。
+     * 回傳還有沒有沒散完的
+     */
     const dustShells = (r: Run, now: number) => {
       if (!r.shells.length) return false;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([2, 3]);
       r.shells = r.shells.filter((sh) => now - sh.at < SHELL_LIFE);
       for (const sh of r.shells) {
         const age = (now - sh.at) / SHELL_LIFE;
-        ctx.strokeStyle = `rgba(${INK}, ${(0.65 * Math.pow(1 - age, 1.3)).toFixed(3)})`;
-        ctx.beginPath();
-        ctx.arc(sh.c.x, sh.c.y, 3 + (now - sh.at) * SHELL_SPEED, 0, Math.PI * 2);
-        ctx.stroke();
+        const radius = 3 + SHELL_REACH * easeOut(age);
+        const fade = 0.75 * Math.pow(1 - age, 1.2);
+        const [p1, p2, p3, p4, p5] = sh.phase;
+        const n = Math.round(clamp(radius * 0.9, 12, 90));
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          const lump = 0.16 * Math.sin(2 * a + p1) + 0.09 * Math.sin(3 * a + p2) + 0.05 * Math.sin(5 * a + p3);
+          const clump = clamp(0.45 + 0.6 * Math.sin(4 * a + p4) + 0.35 * Math.sin(7 * a + p5));
+          if (clump < 0.08) continue;
+          const rr = radius * (1 + lump);
+          ctx.fillStyle = `rgba(${INK}, ${(fade * clump).toFixed(3)})`;
+          ctx.fillRect(sh.c.x + rr * Math.cos(a) - 0.65, sh.c.y + rr * Math.sin(a) - 0.65, 1.3, 1.3);
+        }
       }
-      ctx.setLineDash([]);
       return r.shells.length > 0;
     };
 
@@ -1079,7 +1089,12 @@ export default function TransitionLayer() {
         }
         if (THEME === 'betelgeuse' && r.flight && !r.still && len(moved) > 0.2) {
           const lastShell = r.shells.at(-1);
-          if (!lastShell || now - lastShell.at > SHELL_EVERY) r.shells.push({ c: { ...r.pos }, at: now });
+          if (!lastShell || now - lastShell.at > SHELL_EVERY)
+            r.shells.push({
+              c: { ...r.pos },
+              at: now,
+              phase: Array.from({ length: 5 }, () => Math.random() * Math.PI * 2),
+            });
         }
         dot(onScreen, 3, 1, stretch);
         if (r.phase === 'fly') return;

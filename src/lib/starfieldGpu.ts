@@ -381,6 +381,8 @@ function buildSaturn(
   // 星球本身是不透明的黑球，背面的點、環與軌道的背段、轉到後面的衛星都被它的深度擋掉
   const sunInPlanet = uniform(new THREE.Vector3());
   const sunInPlane = uniform(new THREE.Vector3());
+  /** 會脹縮的主星（參宿四）此刻的亮度倍數：跟著脹縮一起變 */
+  const breathLight = uniform(1);
   /** 環轉了多久（秒）：跟著每一幀的 dt 走，閒置降幀、收起來時一起停 */
   const ringClock = uniform(0);
   // 刷痕的顏色：墨色，海王星往訊號色偏一點（規格裡的 tint）
@@ -443,7 +445,9 @@ function buildSaturn(
     }
     // 恆星表面只有幾個巨大的對流胞：很低頻的雜訊，一塊亮一塊暗
     if (spec.kind === 'star')
-      tone = tone.mul(mix(float(0.55), float(1.25), smoothstep(-0.45, 0.45, mx_noise_float(n.mul(1.7)))));
+      tone = tone
+        .mul(mix(float(0.55), float(1.25), smoothstep(-0.45, 0.45, mx_noise_float(n.mul(1.7)))))
+        .mul(breathLight);
     // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
     tone = tone.mul(smoothstep(spec.pole[0], spec.pole[1], abs(lat)));
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
@@ -641,13 +645,25 @@ function buildSaturn(
         glow
           .mul(plume)
           .mul(mix(float(0.35), float(1), breakup))
-          .mul(0.55),
+          .mul(0.55)
+          .mul(breathLight),
         0.5,
       ).mul(lensFade);
     })();
     lens = new THREE.Mesh(new THREE.PlaneGeometry(4, 4), haloMat);
     lens.renderOrder = 2;
     group.add(lens);
+  }
+
+  // 伴星（參宿四的 Siwarha）：很小、很暗的一個點，在環的平面上貼著主星繞
+  let companion: THREE.Sprite | null = null;
+  if (spec.companion) {
+    const mat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
+    mat.colorNode = vec3(INK.r, INK.g, INK.b);
+    mat.opacityNode = smoothstep(0.5, 0.15, uv().sub(0.5).length()).mul(0.7);
+    companion = new THREE.Sprite(mat);
+    companion.scale.setScalar(0.0001);
+    plane.add(companion);
   }
 
   // 每條軌道一個容器：S 星的軌道（黑洞）各自傾斜（holder：傾角與升交點），近點的方向與進動放在 apsis。
@@ -882,11 +898,19 @@ function buildSaturn(
         if (stageAt(stage.kind, stage.t)) stage = null;
         applyParts();
       } else if (reshaping) applyParts();
-      // 會脹縮的主星（參宿四）：每一幀照時鐘脹縮，光暈跟著
+      // 會脹縮的主星（參宿四）：每一幀照時鐘脹縮，光暈跟著，亮度也跟著起伏
       if (spec.pulse) {
-        const breath = 1 + spec.pulse.amp * Math.sin((2 * Math.PI * clock) / spec.pulse.period);
+        const wave = Math.sin((2 * Math.PI * clock) / spec.pulse.period);
+        const breath = 1 + spec.pulse.amp * wave;
         body.scale.setScalar(Math.max(0.0001, planetK) * breath);
         lens?.scale.setScalar(Math.max(0.0001, planetK) * breath);
+        breathLight.value = 1 + spec.pulse.light * wave;
+      }
+      // 伴星：貼著主星繞，轉到後面被主星擋住（深度測試）
+      if (companion && spec.companion) {
+        const a = (2 * Math.PI * clock) / spec.companion.period;
+        companion.position.set(Math.cos(a) * spec.companion.a, 0, Math.sin(a) * spec.companion.a);
+        companion.scale.setScalar(spec.companion.size * Math.max(0.0001, planetK));
       }
       if (glide && (stage || pivot)) glide = null;
       if (glide) {
