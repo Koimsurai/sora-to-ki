@@ -109,9 +109,6 @@ onTheme((theme) => {
   THEME = theme;
   RING_OUTER = PLANETS[theme].ring.outer;
 });
-/** 黑洞的尾巴：點身後多長（px）以內才畫、最遠那端繞著點轉了多少（rad） */
-const BH_TAIL = 220;
-const BH_CURL = 4.5;
 /** 黑洞的時間膨脹：飛行拉長幾倍（後段越飛越慢，見 dilate） */
 const BH_DILATE = 1.35;
 /**
@@ -522,46 +519,13 @@ export default function TransitionLayer() {
      * 一小段一筆、平頭：圓頭的話相鄰兩筆的半透明端點疊在一起，接頭會亮成一串珠子
      *
      * 海王星跟 3D 的 Adams 環同一個長相：一條很淡的髮絲，上面四段亮的（TAIL_ARCS，從點往回量）。
-     * 黑洞的尾巴越舊越被點拉回去，捲成一道螺旋（BH_CURL）
+     * 黑洞跟土星一樣是一條順著路的髮絲（試過捲成螺旋：跟點實際走的路無關，單看像一條畸形的線）
      */
-    const tail = (trail: Run['trail'], now: number) => {
+    const tail = (points: Run['trail'], now: number) => {
       ctx.lineWidth = 1;
       ctx.lineCap = 'butt';
       let alive = false;
       let back = 0;
-      // 黑洞：點身後的線離點越遠被拉回去越多——繞著點轉、同時往點收，捲成一道小螺旋；超過 BH_TAIL 的那段
-      // 已經被吞掉，不畫（照時間捲的話，飛得遠時舊的那段半徑有好幾百 px，會甩出一道橫過整頁的大弧）。
-      // 只改畫的位置，trail 本身不動
-      let points = trail;
-      const head = trail.at(-1);
-      if (THEME === 'blackhole' && head) {
-        const curl = (p: Pt, along: number, t: number) => {
-          const u = along / BH_TAIL;
-          const turn = u * u * BH_CURL;
-          const pull = 1 - 0.7 * u;
-          const dx = p.x - head.x;
-          const dy = p.y - head.y;
-          return {
-            x: head.x + (dx * Math.cos(turn) - dy * Math.sin(turn)) * pull,
-            y: head.y + (dx * Math.sin(turn) + dy * Math.cos(turn)) * pull,
-            t,
-          };
-        };
-        points = [curl(head, 0, head.t)];
-        let along = 0;
-        // 飛得快時軌跡點隔二、三十 px，直接捲會變成一折一折的多邊形：每段先切到 4px 以內
-        for (let i = trail.length - 1; i > 0 && along < BH_TAIL; i--) {
-          const a = trail[i];
-          const b = trail[i - 1];
-          const step = len({ x: b.x - a.x, y: b.y - a.y });
-          const pieces = Math.max(1, Math.ceil(step / 4));
-          for (let k = 1; k <= pieces && along < BH_TAIL; k++) {
-            const f = k / pieces;
-            along += step / pieces;
-            points.unshift(curl({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f }, along, a.t + (b.t - a.t) * f));
-          }
-        }
-      }
       for (let i = points.length - 1; i > 0; i--) {
         const a = points[i - 1];
         const b = points[i];

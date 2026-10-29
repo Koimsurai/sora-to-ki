@@ -323,6 +323,8 @@ const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60)
 const DISK_COVER = 0.8;
 /** 重力透鏡的愛因斯坦半徑是陰影半徑的幾倍（貼著光子環外面那一圈的星被拉成弧） */
 const LENS_EINSTEIN = 2.2;
+/** 透鏡的軟化半徑（愛因斯坦半徑的幾成）：放大倍率的上限，星在那一帶才不會一幀跳一大段 */
+const LENS_SOFT = 0.45;
 
 /** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
 const SATURN_FOV = 8;
@@ -1053,6 +1055,8 @@ export async function createStarfieldRunner(
   /** 重力透鏡的中心（畫面 0–1）、愛因斯坦半徑（畫面高度的幾成）、寬高比；半徑 0 是關掉 */
   const lensCenter = uniform(new THREE.Vector2(0.5, 0.5));
   const lensRadius = uniform(0);
+  /** 陰影的半徑（畫面高度的幾成）：這一圈裡面不偏折 */
+  const lensShadow = uniform(0);
   const lensAspect = uniform(init.width / Math.max(1, init.height));
   const scenePass = pass(scene, camera, { samples: msaa });
   scenePass.setMRT(mrt({ output, bloomIntensity: float(0) })); // 全域預設：不進 bloom
@@ -1061,9 +1065,15 @@ export async function createStarfieldRunner(
   // 重力透鏡（黑洞）：星空在「被黑洞偏折過的位置」取樣。點質量透鏡：β = θ − θE²/θ（θE 是愛因斯坦半徑），
   // 越靠近黑洞偏得越多，貼著光子環的星被拉成弧。lensRadius 是 0（別的主題、黑洞沒顯示）時取樣位置跟原本一樣；
   // 三個主題共用這一份 shader，換主題不用重編。光暈也吃偏折過的星空，跟星星本身對得上
+  // ⚠️ 照原式 θE²/θ 的話越靠近中心放大倍率趨近無限大：星空在慢慢轉，那一帶的星一幀跳一大段，
+  //   閒置降到 30fps 時看起來一格一格地卡（實際被說過「星空進到黑洞之後變卡」）。分母加一個軟化半徑，
+  //   放大倍率有上限；陰影裡面本來就被黑球擋住，那一塊不偏折
   const d = screenUV.sub(lensCenter).mul(vec2(lensAspect, 1));
-  const bend = float(1).sub(lensRadius.mul(lensRadius).div(dot(d, d).max(0.000001)));
-  const lensedUV = select(lensRadius.greaterThan(0), lensCenter.add(d.mul(bend).div(vec2(lensAspect, 1))), screenUV);
+  const r2 = dot(d, d);
+  const soft = lensRadius.mul(LENS_SOFT);
+  const bend = float(1).sub(lensRadius.mul(lensRadius).div(r2.add(soft.mul(soft))));
+  const lensOn = lensRadius.greaterThan(0).and(r2.greaterThan(lensShadow.mul(lensShadow)));
+  const lensedUV = select(lensOn, lensCenter.add(d.mul(bend).div(vec2(lensAspect, 1))), screenUV);
   const starsColor = scenePassColor.sample(lensedUV);
   const bloomPass = bloom(starsColor.mul(bloomMask.sample(lensedUV)), 0.35, 0.35, 0.5); // strength / radius / threshold
   const combined = starsColor.add(bloomPass);
@@ -1180,6 +1190,7 @@ export async function createStarfieldRunner(
       if (pendingTheme && !saturnAnimate && !s.moving) commitTheme();
       const lensAt = saturn.lensOnScreen(saturnCam, viewW, viewH);
       lensRadius.value = lensAt ? lensAt.r / viewH : 0;
+      lensShadow.value = lensAt ? (0.95 * lensAt.r) / LENS_EINSTEIN / viewH : 0;
       if (lensAt) lensCenter.value.set(lensAt.x / viewW, lensAt.y / viewH);
       // 附上算出位置的時間（跟主執行緒共用的時基），首頁的字照它推算到自己那一幀（store/homeOrbit）
       init.onSatellites?.(saturn.project(saturnCam, viewW, viewH), performance.timeOrigin + performance.now());
