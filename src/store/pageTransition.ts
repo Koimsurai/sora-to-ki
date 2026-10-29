@@ -164,6 +164,12 @@ export interface BootReport {
   at: number;
   /** ring：首頁交棒給 3D 土星；collapse：環收回點裡 */
   end: 'ring' | 'collapse';
+  /** 開場的程式開始跑的時間（JS 到了、React 接手）；從這裡起最多等 3.5 秒 */
+  startedAt: number;
+  /** 等完（或等到上限）的時間；之後是最短停留與收場動畫 */
+  waitedAt: number;
+  /** 最後等到的那一項：load（整頁含圖片）、fonts、paint、sky（首頁的 3D）；cap 是等到上限 */
+  waitedFor: string;
 }
 let lastBoot: BootReport | null = null;
 const bootListeners = new Set<(r: BootReport) => void>();
