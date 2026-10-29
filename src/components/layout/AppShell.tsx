@@ -5,6 +5,7 @@ import SiteNav from './SiteNav';
 import ScrollToTop from './ScrollToTop';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
 import { loadSpaceBackdropShell } from '@/components/backdrop/prewarm';
+import type * as TransitionLayerModule from './TransitionLayer';
 import { landingReferrer } from '@/lib/visitContext';
 import { installStaleChunkReload } from '@/lib/staleChunkReload';
 import { installRefold } from '@/lib/viewportFold';
@@ -25,7 +26,23 @@ function LoadedSpaceBackdropShell() {
 const CommandPalette = lazy(() => import('./CommandPalette'));
 const ContextMenu = lazy(() => import('./ContextMenu'));
 const SerifFontLoader = lazy(() => import('./SerifFontLoader'));
-const TransitionLayer = lazy(() => import('./TransitionLayer'));
+
+// 換頁轉場與開場：跟上面的背景殼同一個理由，不用 React.lazy。開場要等它掛上才開始算「等完了沒」，
+// 而 React.lazy 的版本要等 React 接手整頁才開始下載、載好之後 Suspense 又再等約 300ms：
+// 文章頁實測（跨國網路、中階 CPU）chunk 在 2.9 秒才開始抓，開場程式 4.0 秒才跑。
+// 模組一載入就開始下載，React 接手完就能掛。
+// ⚠ 後台不先載：後台不演轉場，以前也從來不載這個 chunk，它帶的 CSS 一進後台就改了層疊順序
+// （實測後台狀態標籤的顏色被蓋掉）。從後台切回前台時才補下載
+const isAdminPath = (path: string) => /^admin(\/|$)/.test(stripLocalePrefix(path));
+let transitionLayerChunk: Promise<typeof TransitionLayerModule> | null = null;
+const loadTransitionLayer = () => (transitionLayerChunk ??= import('./TransitionLayer'));
+if (typeof window !== 'undefined' && !isAdminPath(window.location.pathname)) {
+  loadTransitionLayer().catch(() => undefined);
+}
+let transitionLayer: ComponentType | null = null;
+function LoadedTransitionLayer() {
+  return transitionLayer ? createElement(transitionLayer) : null;
+}
 
 // 全域 app 殼(對齊舊 App.tsx 的 Layout + App 疊法):導覽列 / 背景 / chrome 包住路由內容(children = <Outlet/>)。
 // admin 隱藏導覽列/CommandPalette。
@@ -67,6 +84,23 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
 
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const bare = stripLocalePrefix(pathname); // 去 locale 前綴(無前導斜線)
+  const isAdminPage = isAdminPath(pathname);
+
+  const [transitionLoaded, setTransitionLoaded] = useState(transitionLayer !== null);
+  useEffect(() => {
+    if (isAdminPage || transitionLayer) return;
+    let alive = true;
+    loadTransitionLayer()
+      .then((m) => {
+        transitionLayer = m.default;
+        if (alive) setTransitionLoaded(true);
+      })
+      // 載不到：沒有轉場，開場由 head 那段腳本 6 秒後自己收掉（lib/bootRing，同原本 lazy 失敗時）
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [isAdminPage]);
 
   // 文章內頁（BlogPost）是重 lazy chunk（BlogPost.css + 程式碼高亮 + mermaid，134 KB gzip）。頁面 idle 後
   // 先暖起來——否則首次點進文章會先閃一下 BlogPostPage 極簡 fallback（純 sans-serif 無樣式）
@@ -88,7 +122,6 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
     const warmTimer = setTimeout(warm, 1500);
     return () => clearTimeout(warmTimer);
   }, [linksToPosts]);
-  const isAdminPage = bare === 'admin' || bare.startsWith('admin/');
 
   return (
     <div className="App">
@@ -104,11 +137,9 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
         {!isAdminPage && <SiteNav />}
         <main style={{ flex: '1 0 auto' }}>{children}</main>
         {/* 換頁轉場：在內容容器裡、導覽列底下（見 TransitionLayer.css）。後台不演 */}
-        {!isAdminPage && (
+        {!isAdminPage && transitionLoaded && (
           <ClientOnly fallback={null}>
-            <Suspense fallback={null}>
-              <TransitionLayer />
-            </Suspense>
+            <LoadedTransitionLayer />
           </ClientOnly>
         )}
         {!isAdminPage && (
