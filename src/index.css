@@ -1431,8 +1431,9 @@ html[data-boot-ring="go"] .boot-swirl {
     opacity var(--dur-300) var(--easing-standard),
     scale var(--dur-300) var(--easing-standard);
 }
-/* 參宿四：不畫環，恆星的輪廓照載入的進度從一個點膨脹開來（藍白星膨脹成紅超巨星），一邊在呼吸（__root.tsx 的 BootShells） */
-.boot-shells {
+/* 參宿四：不畫環，伴星沿著斜的軌道照載入的進度繞一圈，中間的恆星輪廓在呼吸（__root.tsx 的 BootShells） */
+.boot-shells,
+.boot-sat {
   display: none;
   position: absolute;
   inset: 0;
@@ -1447,9 +1448,40 @@ html[data-boot-ring="go"] .boot-swirl {
   .boot-pen {
     display: none;
   }
-  .boot-shells {
+  .boot-shells,
+  .boot-sat {
     display: block;
   }
+}
+.boot-sat-orbit {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-opacity: 0.4;
+  stroke-dasharray: 1 2;
+  vector-effect: non-scaling-stroke;
+}
+/* 伴星：在跟環同一個傾角、壓扁的平面上轉。轉的是手臂（rotate，交給合成器），點在手臂末端；
+   起點在左端，照 --boot-p 轉一圈。點被壓扁成橢圓不明顯（3px） */
+.boot-sat {
+  transform: rotate(11.5deg) scaleY(0.408);
+}
+.boot-sat-arm {
+  position: absolute;
+  inset: 0;
+  rotate: calc(180deg + var(--boot-p, 0) * 360deg);
+  transition: rotate var(--dur-400) var(--easing-out);
+}
+.boot-sat-arm i {
+  position: absolute;
+  top: 50%;
+  left: 82.5%; /* 中心 50% ＋ 軌道半徑 26px（框 80px 的 32.5%）：框長大時跟著長 */
+  width: 3px;
+  height: 3px;
+  translate: -50% -50%;
+  border-radius: var(--r-full);
+  background: var(--ink);
+  box-shadow: 0 0 6px var(--ink);
 }
 .boot-star {
   fill: none;
@@ -1459,9 +1491,6 @@ html[data-boot-ring="go"] .boot-swirl {
   vector-effect: non-scaling-stroke;
   transform-box: fill-box;
   transform-origin: center;
-  /* 膨脹（照進度）與呼吸（transform 的動畫）分開兩個屬性，疊在一起 */
-  scale: calc(0.15 + 0.85 * var(--boot-p, 0));
-  transition: scale var(--dur-400) var(--easing-out);
   animation: boot-star-breathe 2.4s ease-in-out infinite;
 }
 @keyframes boot-star-breathe {
@@ -1474,6 +1503,10 @@ html[data-boot-ring="go"] .boot-swirl {
   }
 }
 /* 交棒：輪廓貼著 3D 的恆星長、合起來之後淡掉（--boot-photon-a，layout/TransitionLayer） */
+html[data-boot-ring="go"] .boot-sat,
+html[data-boot-ring="go"] .boot-sat-orbit {
+  opacity: var(--boot-photon-a, 1);
+}
 html[data-boot-ring="go"] .boot-star {
   opacity: var(--boot-photon-a, 1);
   animation: none;

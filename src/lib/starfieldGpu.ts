@@ -446,7 +446,8 @@ function buildSaturn(
     // 恆星表面只有幾個巨大的對流胞：很低頻的雜訊，一塊亮一塊暗
     if (spec.kind === 'star')
       tone = tone
-        .mul(mix(float(0.55), float(1.25), smoothstep(-0.45, 0.45, mx_noise_float(n.mul(1.7)))))
+        .mul(mix(float(0.3), float(1.35), smoothstep(-0.4, 0.4, mx_noise_float(n.mul(1.6)))))
+        .mul(mix(float(0.6), float(1.1), smoothstep(-0.5, 0.5, mx_noise_float(n.mul(7)))))
         .mul(breathLight);
     // 極區整片暗下去：真實的土星兩極偏暗，而且斜看時極點附近的線會繞成一圈一圈的靶心
     tone = tone.mul(smoothstep(spec.pole[0], spec.pole[1], abs(lat)));
@@ -455,9 +456,14 @@ function buildSaturn(
     // 恆星（參宿四）用畫面上水平的直線刻（版畫用平行直線排出球體明暗的刻法），不跟著自轉：
     // 行星照緯度一列列刻（沿雲帶彎），恆星這樣刻就是一顆有雲帶的行星；以圓心刻一圈圈同心圓則像一個標靶（都試過）。
     // 對流胞在線上一塊亮一塊暗地轉
+    // 恆星的扭曲用各方向等向的雜訊：行星的雜訊是橫向拉長的（沿雲帶），用在恆星上每條線都朝同一個方向、
+    // 同樣節奏地波動，看起來像整齊的水波紋。等向的雜訊讓線繞著一團團對流胞捲曲，再疊一層細的把線打斷
     const row =
       spec.kind === 'star'
-        ? normalView.y.mul(spec.rows).add(wave.mul(spec.stroke.wave))
+        ? normalView.y
+            .mul(spec.rows)
+            .add(mx_noise_float(n.mul(1.6)).mul(spec.stroke.wave))
+            .add(mx_noise_float(n.mul(4.5)).mul(spec.stroke.wave * 0.35))
         : n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave));
     const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
       .mul(spec.stroke.swell)

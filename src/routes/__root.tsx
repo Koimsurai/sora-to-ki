@@ -207,16 +207,29 @@ const SWIRL_ARMS = SWIRL_STAGES.map((at, i) => {
 const PHOTON_R = (1.04 * 26) / PLANETS.blackhole.ring.outer;
 
 /**
- * 參宿四的開場：參宿四原本是一顆藍白色的大質量恆星，到了晚年才膨脹成紅超巨星。中間那顆點外面的恆星輪廓
- * 照載入的進度一路膨脹（index.css 的 .boot-star，照 --boot-p），一邊在呼吸（它是會脹縮的變星）；
- * 載完時剛好是 3D 恆星的大小（半徑照 3D 的比例縮，環外緣是 26px），交棒時貼著 3D 的恆星長（layout/TransitionLayer）
+ * 參宿四的開場：伴星 Siwarha 照載入的進度繞它一圈。參宿四的亮度除了約 400 天的呼吸，還有一個約 2100 天的
+ * 長週期起伏，天文學家從這個週期推測有一顆伴星在繞它，2025 年才真的看到。
+ * 軌道是斜的橢圓（跟土星環同一個傾角與壓扁），伴星是 HTML 的點、照 --boot-p 轉（index.css 的 .boot-sat，
+ * 交給合成器轉，主執行緒卡住時照樣在走）。中間的恆星輪廓在呼吸。
+ * 半徑照 3D 的比例縮（環外緣是 26px）：恆星 1、伴星的軌道 1.6，交棒時貼著 3D 的長（layout/TransitionLayer）
  */
 const STAR_R = 26 / PLANETS.betelgeuse.ring.outer;
+const SAT_R = (PLANETS.betelgeuse.companion?.a ?? 1.6) * STAR_R;
 function BootShells() {
   return (
-    <svg viewBox="-40 -40 80 80" className="boot-shells">
-      <circle className="boot-star" r={STAR_R} />
-    </svg>
+    <>
+      <svg viewBox="-40 -40 80 80" className="boot-shells">
+        <g transform="rotate(11.5)">
+          <ellipse className="boot-sat-orbit" rx={SAT_R} ry={SAT_R * BOOT_RING_FLAT} />
+        </g>
+        <circle className="boot-star" r={STAR_R} />
+      </svg>
+      <div className="boot-sat">
+        <div className="boot-sat-arm">
+          <i />
+        </div>
+      </div>
+    </>
   );
 }
 function BootSwirl() {

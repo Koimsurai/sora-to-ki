@@ -346,7 +346,7 @@ const BETELGEUSE: PlanetSpec = {
   base: 0.62,
   rows: 26,
   cover: 0.72,
-  stroke: { wave: 0.5, swell: 0.3, floor: 0.35 },
+  stroke: { wave: 2.4, swell: 0.4, floor: 0.2 },
   tint: 0,
   pole: [95, 94],
   spots: [
