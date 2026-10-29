@@ -578,3 +578,37 @@ async fn reset_admin_refuses_when_no_password_is_available() {
     assert_eq!(status, 400, "沒有任何密碼來源時應該拒絕：{body}");
     assert!(body["message"].as_str().unwrap().contains("ADMIN_PASSWORD"));
 }
+
+/// 全新部署：users 是空的 → 建出第一個管理員，而且那組帳密真的登得進去。
+#[tokio::test]
+async fn first_admin_is_created_on_an_empty_users_table() {
+    use koimsurai_web_backend::handlers::auth::create_first_admin;
+    let (app, pool) = test_app().await;
+    sqlx::query("DELETE FROM users").execute(&pool).await.unwrap();
+
+    let created = create_first_admin(&pool, "owner", "first-pass").await.unwrap();
+    assert_eq!(created.as_deref(), Some("owner"));
+
+    let (status, body) = request(
+        &app,
+        "POST",
+        "/api/auth/login",
+        Some(json!({ "username": "owner", "password": "first-pass" })),
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "建出來的帳號要登得進去：{body}");
+}
+
+/// 已經有使用者 → 什麼都不做，env 留著也不會每次開機把密碼蓋掉。
+#[tokio::test]
+async fn first_admin_is_skipped_once_any_user_exists() {
+    use koimsurai_web_backend::handlers::auth::create_first_admin;
+    let (_app, pool) = test_app().await;
+    sqlx::query("DELETE FROM users").execute(&pool).await.unwrap();
+    seed_admin(&pool, "admin", "kept-pass", "admin").await;
+
+    assert_eq!(create_first_admin(&pool, "intruder", "x").await.unwrap(), None);
+    let (n,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users").fetch_one(&pool).await.unwrap();
+    assert_eq!(n, 1, "不該多出第二個帳號");
+}

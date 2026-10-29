@@ -220,6 +220,12 @@ docker compose up -d --build frontend   # 只動前端時
 
 使用者已授權助手直接執行部署，不需要每次徵詢。
 
+**`docker-compose.yml` 是給自架者的通用版**，koimsurai.com 自己的東西（主機上的資料夾、
+observability 網路、GlitchTip 的 source map secret、舊站 archive、站台身分與作品清單）全在
+**未提交的 `docker-compose.override.yml`**，compose 會自動疊上去。改部署設定先想清楚是
+「每個自架者都要」還是「只有這台」：後者寫進 override，不要寫回通用版。
+改完用 `docker compose config` 看疊完的結果。
+
 **`VITE_RELEASE` 沒帶的話 SDK 不會帶版本標記**（功能仍正常，只是 GlitchTip 上的
 issue 歸不到某次部署）。要帶就 `VITE_RELEASE=$(git rev-parse --short HEAD) docker compose …`。
 

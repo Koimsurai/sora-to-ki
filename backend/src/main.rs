@@ -128,6 +128,10 @@ async fn run() -> anyhow::Result<()> {
     // 對全新 DB / 測試 in-memory DB 建出完整 schema。
     sqlx::migrate!("./migrations").run(&pool).await?;
 
+    if let Some(username) = handlers::auth::bootstrap_admin(&pool).await? {
+        tracing::info!(username = %username, "全新部署：已用 ADMIN_USERNAME / ADMIN_PASSWORD 建立第一個管理員");
+    }
+
     let http = reqwest::Client::builder().timeout(Duration::from_secs(30)).build()?;
 
     // JWT_SECRET（HS256 驗章）。fail-fast：沒設就不啟動。
