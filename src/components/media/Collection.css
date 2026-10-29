@@ -116,7 +116,7 @@
 }
 
 .cx-mark.is-edge {
-  color: rgba(var(--amber-rgb), 0.7);
+  color: var(--signal);
   translate: -50% calc(-100% - var(--space-1));
 }
 
@@ -175,7 +175,7 @@
   height: 140px;
   aspect-ratio: 2 / 3;
   overflow: hidden;
-  border: 1px solid rgba(var(--amber-rgb), 0.6);
+  border: 1px solid var(--signal);
   background: var(--ground);
 }
 
@@ -237,7 +237,7 @@
 }
 
 .cx-scope-text .cx-scope-dist {
-  color: rgba(var(--amber-rgb), 0.8);
+  color: var(--signal);
 }
 
 .cx-scope.is-left .cx-scope-text {

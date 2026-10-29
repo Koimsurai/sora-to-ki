@@ -54,8 +54,8 @@
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
-    rgba(var(--paper-rgb), 0.6) 110deg,
-    rgba(var(--paper-rgb), 0.8) 200deg,
+    var(--ink-subtle) 110deg,
+    var(--ink-body) 200deg,
     transparent 240deg
   );
   -webkit-mask: radial-gradient(
@@ -80,8 +80,8 @@
   background: conic-gradient(
     from 180deg,
     transparent 0deg,
-    rgba(var(--paper-rgb), 0.8) 90deg,
-    rgba(var(--paper-rgb), 0.55) 180deg,
+    var(--ink-body) 90deg,
+    var(--ink-subtle) 180deg,
     transparent 220deg
   );
   animation: koimSpinReverse 2.4s linear infinite;
@@ -121,7 +121,7 @@
 .koim-loader-glow {
   position: absolute;
   inset: -20px;
-  background: radial-gradient(circle, rgba(var(--paper-rgb), 0.2) 0%, transparent 65%);
+  background: radial-gradient(circle, var(--wash-strong) 0%, transparent 65%);
   pointer-events: none;
   filter: blur(var(--blur-4));
   animation: koimLoaderBreath 2.4s ease-in-out infinite reverse;
@@ -154,7 +154,7 @@
   margin: 0;
   font-size: var(--fs-14);
   letter-spacing: var(--ls-8);
-  background: linear-gradient(90deg, var(--white-45) 0%, rgba(var(--paper-rgb), 0.95) 50%, var(--white-45) 100%);
+  background: linear-gradient(90deg, var(--line-strong) 0%, var(--ink) 50%, var(--line-strong) 100%);
   background-size: 200% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

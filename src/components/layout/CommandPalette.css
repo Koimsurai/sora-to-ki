@@ -9,7 +9,7 @@
   align-items: flex-start;
   justify-content: center;
   padding-top: 14vh;
-  background: rgba(var(--ground-rgb), 0.7);
+  background: var(--veil-2);
   animation: cmdk-fade var(--dur-150) ease;
 }
 
@@ -22,7 +22,7 @@
 .cmdk-wrap {
   width: min(600px, 92vw);
   overflow: hidden;
-  background: rgba(var(--ground-rgb), 0.96);
+  background: var(--veil-3);
   border: 1px solid var(--line);
   animation: cmdk-pop var(--dur-200) var(--easing-out);
 }

@@ -262,7 +262,7 @@
 .ph-rx-scan,
 .ph-rx-sweep {
   position: absolute;
-  background: rgba(var(--amber-rgb), 0.9);
+  background: var(--signal);
   opacity: 0;
   pointer-events: none;
 }
@@ -288,7 +288,7 @@
   font-size: var(--fs-10);
   line-height: var(--lh-170);
   letter-spacing: var(--ls-4);
-  color: rgba(var(--paper-rgb), 0.5);
+  color: var(--ink-subtle);
 }
 
 .ph-tel b {

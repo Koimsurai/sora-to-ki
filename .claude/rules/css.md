@@ -42,7 +42,7 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 
 `margin` / `padding` / `gap` / `font-size` / `line-height` / `letter-spacing` /
 `border-radius` / `transition` 的時間與曲線不准再寫字面值；`z-index` 的門檻是 1000。
-透明度另有一把 19 階的階梯（見下面）。
+顏色走配色那一節的語意層，元件裡不寫透明度。
 
 **`var(--x)` 引用的變數也必須有定義**，同一道檢查在擋。打錯或不存在的 token（`var(--fs-15)`，
 尺上沒有 15）不會有錯誤訊息，宣告會靜靜失效、退回繼承值。定義算 CSS 的 `--x:`、TS/TSX 裡
@@ -255,8 +255,6 @@ v4 的 oklch 不等於 v3 hex，而且 Tailwind 只輸出被 utility 用到的 s
 token 表是從 `index.css` 讀的，加新 token 不用改腳本。這條零誤判：值都相等了，
 寫字面值只剩「不知道有 token」一種原因。
 
-`--brand-light` 指向 `var(--violet-300)`——它就是那個色票，不要另抄一份 hex。
-
 ## 等寬字只有一套堆疊：`--mono-font`
 
 ```
@@ -271,10 +269,14 @@ token 表是從 `index.css` 讀的，加新 token 不用改腳本。這條零誤
 `var(--cjk-font)` 放在 `monospace` 之前是刻意的：那是 sans-serif 鏈，讓程式碼裡的
 中文走比例字體——CJK 等寬字很少而且不好看。
 
-## `opacity` 也走那把 19 階的階梯
+## `opacity` 有一把 19 階的階梯
 
-這條**不是**「要用 token」，是「值要在階梯上」——`--white-NN` 那些是顏色，不能拿來
-當 `opacity`。但兩者量的是同一件事（多透明），所以共用同一套詞彙。
+```
+0.02 0.04 0.06 0.08 0.10 · 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 · 0.70 0.80 0.90 0.95
+```
+
+這條**不是**「要用 token」，是「值要在階梯上」。它只管元素的 `opacity`（淡出、停用狀態），
+顏色不走這把尺（2026-10 之前顏色也走，元件因此挑出 25 種字色，改成語意層了）。
 
 `opacity` **不在 computed-style 的 PROPS 裡**（動畫元素上逐幀不同），所以這一條
 只有 `check:css-tokens` 在守，改它的時候不會有第二道保險。
@@ -300,26 +302,26 @@ token 表是從 `index.css` 讀的，加新 token 不用改腳本。這條零誤
 **「自成一套」是一個判準**：`AdminTheme.css` 開頭把 shadcn 變數整組重定義的區塊、
 圖表的 `--pele-*` 那組。**只把其中一兩個改成 `var()` 會讓它們跟兄弟讀起來不一樣**，而那些
 區塊的價值就是「一眼看完整套配色」。`markdown-alert-*` 是反例：它**本來就不成套**
-（`important` 早就在用 `var(--brand-light)`，另外四個是字面值），所以那一組收掉是修
+（`important` 原本就用 token，另外四個是字面值），所以那一組收掉是修
 不一致，不是破壞對稱。
 
 **判斷「能不能併」要算 Lab 色差，不要看 hex 長得像不像。** 兩個實例：
 `#8b7cf6` vs `#8b5cf6` 只差一個字元，**ΔE 22.3**；`#dc3250` vs `#dc3278` 前四碼相同，
 **ΔE 23.2**。兩組都不能併。反過來，`#e2e0ea` 對 `#e5e5f5` 看起來差得多，ΔE 只有 3.6。
 
-## 透明度也有一把尺：19 階，白／黑／品牌紫共用
+## 元件裡不寫透明度，`check:css-tokens` 的規則 3 在擋
 
-```
-0.02 0.04 0.06 0.08 0.10 · 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 · 0.70 0.80 0.90 0.95
-```
+字（`color`）、線（`border*` / `outline*` / `text-decoration*` / `stroke` / `scrollbar-color`）、
+面（`background*` / `fill`）只能用語意層。擋下的是：原始色（`--paper` / `--amber` / `--flare`）、
+`rgba(var(--x-rgb), a)`、帶 alpha 的字面色（`rgba(…, 0.x)`、`hsla()`、`#rrggbbaa`），
+以及字與線裡的 `--black-NN`。
 
-低端 0.02 步（髮絲線，0.02 與 0.04 在感知上差兩倍）、中段 0.05、高段 0.10。定義在
-`index.css` 的 `--white-NN` / `--black-NN`（NN 就是 alpha×100）。規則：
+不擋的：`index.css`（定義的地方）、陰影與光暈（`box-shadow` / `text-shadow` / `filter`，是效果不是
+角色，各處的強度是調過的，例如開場那顆點與目錄上「你在這裡」的光暈）、面上的 `--black-NN`
+（陰影 `--elev-*` 與影片縮圖的壓暗）、Tailwind 色票。刻意留著的例外寫在腳本的 `ROLE_EXEMPT`，
+附理由（目前只有程式碼的行號）。
 
-- `rgba(255,255,255,a)` / `rgba(0,0,0,a)` **不准寫字面值**，用 `var(--white-NN)` / `var(--black-NN)`。
-- 品牌紫維持 `rgba(var(--brand-rgb), a)` 的寫法，但 `a` 必須在階梯上。
-- 其他底色的 rgba／hsla／`#rrggbbaa` 的 alpha 也必須在階梯上（底色本身的命名是另一批的事）。
-- `check:css-tokens` 在擋，含 `--xxx: var(--white-NN)` 這種**定義行**。
+冷白 `--white-NN` 在 2026-10 拿掉了：那是翻新前的墨，跟暖白的 `--paper` 是兩種顏色。
 
 **底色／alpha 這類改動，截圖的像素差數字沒有判斷力**：全頁 gradient 的 stop alpha 動 0.05，
 每個像素都會超過一般的差異門檻。要把門檻拉到 >40 只看結構性變化，再對剩下的區塊逐一裁圖。

@@ -13,17 +13,17 @@
 }
 
 .blog-post-container ::-webkit-scrollbar-thumb {
-  background: rgba(var(--paper-rgb), 0.25);
+  background: var(--wash-strong);
   border-radius: var(--r-full);
 }
 
 .blog-post-container ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--paper-rgb), 0.45);
+  background: var(--line-strong);
 }
 
 .blog-post-container * {
   scrollbar-width: thin;
-  scrollbar-color: var(--white-15) transparent;
+  scrollbar-color: var(--line) transparent;
 }
 
 /* ── Container ── */
@@ -45,7 +45,7 @@
 .blog-post-dim-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(var(--ground-rgb), 0.8);
+  background: var(--veil-2);
   pointer-events: none;
   z-index: 0;
 }
@@ -75,7 +75,7 @@
    ═══════════════════════ */
 /* biome-ignore lint/style/noDescendingSpecificity: 前面的 `.blog-post-container .post-content` 只設 user-select（防複製），跟這裡的版面／配色零屬性重疊，不是覆蓋關係。詳見檔案開頭 Copy protection 那段。 */
 .post-content {
-  color: var(--white-80);
+  color: var(--ink-body);
   font-size: var(--fs-16);
   line-height: var(--lh-185);
   letter-spacing: var(--ls-1);
@@ -125,10 +125,10 @@
   min-width: 220px;
   max-width: min(420px, 80vw);
   padding: var(--space-2-5) var(--space-3-5);
-  background: rgba(var(--ground-rgb), 0.95);
-  border: 1px solid rgba(var(--paper-rgb), 0.35);
+  background: var(--veil-3);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-10);
-  color: var(--white-80);
+  color: var(--ink-body);
   font-size: var(--fs-14);
   font-weight: 400;
   line-height: var(--lh-160);
@@ -160,20 +160,20 @@
   color: #fff;
   font-weight: 700;
   padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--white-06);
+  border-bottom: 1px solid var(--line);
 }
 
 .post-content h3 {
   font-size: var(--fs-20);
   margin: var(--space-8) 0 var(--space-3);
-  color: var(--white-95);
+  color: var(--ink);
   font-weight: 600;
 }
 
 .post-content h4 {
   font-size: var(--fs-18);
   margin: var(--space-6) 0 var(--space-2-5);
-  color: var(--white-90);
+  color: var(--ink-body);
 }
 
 /* 標題 hover 錨點：字後面浮出 #，點了跳到/複製該段連結。 */
@@ -236,7 +236,7 @@
 }
 
 .post-content code {
-  background: rgba(var(--paper-rgb), 0.07);
+  background: var(--wash);
   color: var(--ink);
   padding: 0.1em 0.38em;
   border-radius: var(--r-2);
@@ -293,7 +293,7 @@
 .post-extras {
   margin-top: var(--space-8);
   padding-top: var(--space-8);
-  border-top: 1px solid var(--white-06);
+  border-top: 1px solid var(--line);
 }
 
 /* 窄螢幕：後台文章產生器的標題縮小 */

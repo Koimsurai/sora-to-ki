@@ -32,7 +32,7 @@
   height: 64px;
   padding: 0 var(--space-10);
   /* 往下漸淡的一層紙色：捲上來的內容不會撞到字，但看不出一條「欄」 */
-  background: linear-gradient(var(--ground) 30%, rgba(var(--ground-rgb), 0.8) 60%, rgba(var(--ground-rgb), 0));
+  background: linear-gradient(var(--ground) 30%, var(--veil-2) 60%, transparent);
 }
 
 .snav-name {

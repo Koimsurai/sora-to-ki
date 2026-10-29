@@ -154,7 +154,7 @@
   align-items: baseline;
   column-gap: var(--space-3);
   padding: var(--space-3) 0;
-  border-bottom: 1px dotted rgba(var(--paper-rgb), 0.15);
+  border-bottom: 1px dotted var(--line);
   font-family: var(--serif);
   color: var(--ink-muted);
   text-decoration: none;
