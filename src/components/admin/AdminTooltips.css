@@ -7,8 +7,8 @@
   max-width: 320px;
   padding: var(--space-1-5) var(--space-2-5);
   background: rgba(var(--ground-rgb), 0.95);
-  border: 1px solid var(--rule);
-  color: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
   font-family: var(--serif);
   font-size: var(--fs-12);
   line-height: var(--lh-150);

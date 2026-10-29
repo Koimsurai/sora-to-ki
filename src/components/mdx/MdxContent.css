@@ -1,13 +1,13 @@
 /* 文章裡的區塊（2026-10 翻新）：沒有底色、沒有圓角卡片。
    - 旁白類（作者註、提示、引言）：左邊一條細線，上面一行等寬小字標籤
    - 互動類（投票、數字、圖表、分頁、檔案樹）：四角框（index.css 的 --corner-frame），跟文章摘要同一種框
-   - 標籤一律等寬小字、--paper-3；按鈕與選項是細線框，不填色 */
+   - 標籤一律等寬小字、--ink-subtle；按鈕與選項是細線框，不填色 */
 
 /* 作者註（MDX <Note>）：站長旁白 */
 .mdx-note {
   margin: var(--space-7) 0;
   padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
-  border-left: 1px solid var(--paper-3);
+  border-left: 1px solid var(--line-strong);
 }
 
 .mdx-note-label {
@@ -15,7 +15,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 舊版的引號圖示：標籤本身已經說明這是註，不需要再加符號 */
@@ -24,7 +24,7 @@
 }
 
 .mdx-note-content {
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font-size: var(--fs-16);
   line-height: var(--lh-170);
 }
@@ -56,7 +56,7 @@
 .annot-text {
   position: relative;
   /* 持久的可發現提示：淡點線底（讓讀者知道這裡有註） */
-  border-bottom: 1px dotted var(--paper-3);
+  border-bottom: 1px dotted var(--line-strong);
   padding-bottom: var(--space-px);
 }
 /* hover/focus：實線由左長出，蓋在虛線上 */
@@ -67,7 +67,7 @@
   right: 0;
   bottom: -1px;
   height: 1px;
-  background: var(--paper);
+  background: var(--ink);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--dur-300) var(--easing-standard);
@@ -91,9 +91,9 @@
   /* 夜色底。箭頭的 border-*-color 也要同一個值，所以用一個變數，改一處就好 */
   --annot-bg-rgb: var(--ground-rgb);
   background: rgba(var(--annot-bg-rgb), 0.96);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   box-shadow: none;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font-size: var(--fs-13);
   line-height: var(--lh-160);
   text-align: left;
@@ -127,7 +127,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   margin-bottom: var(--space-1);
 }
 .annot-card-body {
@@ -207,7 +207,7 @@
   font-size: var(--fs-11);
   font-weight: 400;
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 .mdx-chart-loading {
   height: 300px;
@@ -227,7 +227,7 @@
 .mdx-chart-tip {
   padding: var(--space-2) var(--space-2-5);
   background: rgba(var(--ground-rgb), 0.96);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 .mdx-chart-tip-label {
   font-size: var(--fs-12);
@@ -323,8 +323,8 @@
   margin: 0 0.06em;
   border-radius: var(--r-2);
   background: none;
-  border: 1px solid var(--rule);
-  color: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
   font-size: 0.88em;
   font-weight: 500;
   line-height: var(--lh-150);
@@ -342,7 +342,7 @@
   opacity: 0.9;
 }
 .mdx-mention:hover {
-  border-color: var(--paper-3);
+  border-color: var(--line-strong);
 }
 .mdx-mention:hover svg {
   opacity: 1;
@@ -350,20 +350,20 @@
 /* .post-content a 的連結樣式（底線、顏色，specificity 0,1,1）會蓋過上面 .mdx-mention(0,1,0)，
    用 .post-content a.mdx-mention(0,2,1)搶回來。圖示以 currentColor 上色。 */
 .post-content a.mdx-mention {
-  color: var(--paper);
-  border: 1px solid var(--rule);
+  color: var(--ink);
+  border: 1px solid var(--line);
   text-decoration: none;
 }
 .post-content a.mdx-mention:hover {
-  color: var(--paper);
-  border-color: var(--paper-3);
+  color: var(--ink);
+  border-color: var(--line-strong);
 }
 
 /* ── <CodeTabs> 多檔程式碼分頁：外框跟一般程式碼區塊一樣（細線、淡底），
    分頁是一排等寬小字檔名，現在這個底下一條線。程式碼區的高亮與一般 code block 一致。 ── */
 .mdx-codetabs {
   margin: var(--space-6) 0;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   border-radius: var(--r-6);
   overflow: hidden;
   background: rgba(var(--paper-rgb), 0.03);
@@ -372,7 +372,7 @@
   display: flex;
   gap: var(--space-4);
   padding: 0 var(--space-4);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
   overflow-x: auto;
 }
 .mdx-codetabs-tab {
@@ -386,7 +386,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   font-size: var(--fs-12);
   font-weight: 400;
   font-family: var(--mono-font);
@@ -411,14 +411,14 @@
 }
 .mdx-codetabs-tab:hover {
   background: transparent;
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 .mdx-codetabs-tab.active,
 .mdx-codetabs-tab.active:hover,
 .mdx-codetabs-tab.active:focus {
   background: transparent;
-  border-bottom-color: var(--paper);
-  color: var(--paper);
+  border-bottom-color: var(--ink);
+  color: var(--ink);
   box-shadow: none;
 }
 /* 程式碼本體走共用 .code-surface-body（見 BlogPost.css）→ 行號/收合/內距與一般 code block 一致。 */
@@ -452,7 +452,7 @@
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-5);
   padding: var(--space-3) var(--space-5-5) 0;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
 }
 .mdx-tabs-pill {
   padding: var(--space-1-5) 0 var(--space-2);
@@ -463,7 +463,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   font-size: var(--fs-14);
   font-weight: 400;
   font-family: inherit;
@@ -478,7 +478,7 @@
 .mdx-tabs-pill:focus-visible {
   background: transparent;
   border-color: transparent;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   box-shadow: none;
   outline: none;
 }
@@ -486,8 +486,8 @@
 .mdx-tabs-pill.active:hover,
 .mdx-tabs-pill.active:focus {
   background: transparent;
-  border-bottom-color: var(--paper);
-  color: var(--paper);
+  border-bottom-color: var(--ink);
+  color: var(--ink);
   box-shadow: none;
 }
 .mdx-tabs-panel {
@@ -519,7 +519,7 @@
   margin: var(--space-7) 0;
   text-align: center;
   /* 線與字的墨色；連線上的字用跟頁面一樣的底色蓋住底下那段線 */
-  --sketch-ink: var(--paper);
+  --sketch-ink: var(--ink);
   --sketch-bg: var(--ground);
 }
 .mdx-sketch-canvas {
@@ -543,7 +543,7 @@
   margin-top: var(--space-2-5);
   font-size: var(--fs-13);
   line-height: var(--lh-170);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   text-align: left;
 }
 .mdx-sketch-error {
@@ -653,7 +653,7 @@
   top: 0;
   bottom: 0;
   left: 50%;
-  border-left: 1px dashed var(--paper-2);
+  border-left: 1px dashed var(--ink-muted);
 }
 .mdx-imgcompare-handle span {
   position: absolute;
@@ -661,7 +661,7 @@
   left: 50%;
   width: 24px;
   height: 24px;
-  border: 1px solid var(--paper-2);
+  border: 1px solid var(--ink-muted);
   border-radius: var(--r-round);
   background: rgba(var(--ground-rgb), 0.6);
   transform: translate(-50%, -50%);
@@ -675,13 +675,13 @@
   width: 7px;
   height: 7px;
   border-radius: var(--r-round);
-  background: var(--amber);
+  background: var(--signal);
   box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
   transform: translate(-50%, -50%);
 }
 .mdx-imgcompare-slider:hover .mdx-imgcompare-handle span,
 .mdx-imgcompare-slider:focus-within .mdx-imgcompare-handle span {
-  border-color: var(--amber);
+  border-color: var(--signal);
 }
 /* 圈的左右各一個細箭頭，說明「這條線可以左右拉」。進到畫面先往外推兩下當提示，
    之後靜止；滑過時箭頭變琥珀、往外撐開一點 */
@@ -691,7 +691,7 @@
   left: 50%;
   width: 6px;
   height: 6px;
-  border: solid var(--paper);
+  border: solid var(--ink);
   border-width: 0 0 1px 1px;
   filter: drop-shadow(0 0 3px var(--ground));
   transition:
@@ -708,7 +708,7 @@
 }
 .mdx-imgcompare-slider:hover .mdx-imgcompare-chev,
 .mdx-imgcompare-slider:focus-within .mdx-imgcompare-chev {
-  border-color: var(--amber);
+  border-color: var(--signal);
 }
 .mdx-imgcompare-slider:hover .mdx-imgcompare-chev--l,
 .mdx-imgcompare-slider:focus-within .mdx-imgcompare-chev--l {
@@ -736,7 +736,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   text-shadow:
     0 0 6px var(--ground),
     0 0 12px var(--ground);
@@ -756,7 +756,7 @@
   margin-top: var(--space-2-5);
   font-size: var(--fs-13);
   line-height: var(--lh-170);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* ── Kbd ── */
@@ -767,9 +767,9 @@
   font-size: 0.82em;
   line-height: var(--lh-140);
   font-family: var(--mono-font);
-  color: var(--paper);
+  color: var(--ink);
   background: none;
-  border: 1px solid var(--paper-3);
+  border: 1px solid var(--line-strong);
   border-bottom-width: 2px;
   border-radius: var(--r-2);
 }
@@ -777,7 +777,7 @@
 /* ── Details（段落級收合）：照提案，細線框、前面一個等寬的「＋／−」── */
 .mdx-details {
   margin: var(--space-3) 0;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   border-radius: var(--r-6);
   overflow: hidden;
 }
@@ -785,7 +785,7 @@
   cursor: pointer;
   padding: var(--space-3) var(--space-4-5);
   font-weight: 400;
-  color: var(--paper);
+  color: var(--ink);
   list-style: none;
   user-select: none;
   -webkit-user-select: none;
@@ -800,7 +800,7 @@
   flex: none;
   width: 1.4em;
   font-family: var(--mono-font);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 .mdx-details[open] .mdx-details-summary::before {
   content: "−";
@@ -821,7 +821,7 @@
   block-size: auto;
 }
 .mdx-details-summary:hover::before {
-  color: var(--paper);
+  color: var(--ink);
 }
 .mdx-details-body {
   padding: var(--space-1) var(--space-4-5) var(--space-1-5);
@@ -840,7 +840,7 @@
   position: relative;
   counter-increment: mdx-step;
   padding: 0 0 var(--space-6) var(--space-8);
-  border-left: 1px dotted var(--paper-3);
+  border-left: 1px dotted var(--line-strong);
 }
 .mdx-step:last-child {
   border-left-color: transparent;
@@ -859,12 +859,12 @@
   letter-spacing: var(--ls-12);
   line-height: var(--lh-140);
   text-align: center;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   background: var(--ground);
 }
 .mdx-step-title {
   font-weight: 600;
-  color: var(--paper);
+  color: var(--ink);
   margin-bottom: var(--space-1-5);
 }
 .mdx-step-body > :first-child {
@@ -885,17 +885,17 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   white-space: nowrap;
 }
 .mdx-filetree-row--folder {
-  color: var(--paper);
+  color: var(--ink);
   font-weight: 400;
 }
 /* 圖示（彩色檔案類型）壓成單色、淡一階，讓檔名讀得出來 */
 .mdx-filetree-icon {
   font-size: var(--fs-14);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   filter: grayscale(1);
   opacity: 0.7;
 }
@@ -916,7 +916,7 @@
 .mdx-stat-value {
   font-size: var(--fs-28);
   font-weight: 400;
-  color: var(--paper);
+  color: var(--ink);
   line-height: var(--lh-110);
   font-variant-numeric: tabular-nums;
 }
@@ -924,19 +924,19 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-weight: 400;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   margin-left: var(--space-1);
 }
 .mdx-stat-label {
   margin-top: var(--space-2);
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 .mdx-stat-hint {
   margin-top: var(--space-0-5);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 .mdx-stat-trend {
   position: absolute;
@@ -948,19 +948,19 @@
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 7px solid var(--paper-2);
+  border-bottom: 7px solid var(--ink-muted);
 }
 .mdx-stat-trend--down {
   width: 0;
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-top: 7px solid var(--paper-3);
+  border-top: 7px solid var(--line-strong);
 }
 .mdx-stat-trend--flat {
   width: 10px;
   height: 1px;
-  background: var(--paper-3);
+  background: var(--line-strong);
 }
 
 /* ── Video ── */
@@ -1024,10 +1024,10 @@
   justify-content: center;
   width: 3.4rem;
   height: 3.4rem;
-  border: 1px solid var(--paper-2);
+  border: 1px solid var(--ink-muted);
   border-radius: var(--r-round);
   background: none;
-  color: var(--paper);
+  color: var(--ink);
   font-size: var(--fs-18);
   padding-left: var(--space-1);
 }
@@ -1043,7 +1043,7 @@
   font-size: var(--fs-11);
   font-weight: 400;
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 .mdx-refs-list {
   list-style: none;
@@ -1068,11 +1068,11 @@
   width: 1.6rem;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 .mdx-refs-label {
   flex: 0 1 auto;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font-weight: 400;
 }
 .mdx-refs-links {
@@ -1085,9 +1085,9 @@
   align-items: center;
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   text-decoration: underline;
-  text-decoration-color: var(--rule);
+  text-decoration-color: var(--line);
   text-underline-offset: 3px;
   border-bottom: 0;
   transition:
@@ -1095,8 +1095,8 @@
     color var(--dur-150) ease;
 }
 .mdx-refs .mdx-refs-link:hover {
-  color: var(--paper);
-  text-decoration-color: var(--paper-3);
+  color: var(--ink);
+  text-decoration-color: var(--line-strong);
 }
 /* 品牌圖示（彩色）：提案的清單只有字，翻新後不放 */
 .mdx-refs-icon {
@@ -1113,7 +1113,7 @@
 .mdx-poll-q {
   font-size: var(--fs-16);
   font-weight: 400;
-  color: var(--paper);
+  color: var(--ink);
   margin-bottom: var(--space-3-5);
 }
 .mdx-poll-list {
@@ -1133,12 +1133,12 @@
   width: 100%;
   min-height: 2.5rem;
   padding: var(--space-2) var(--space-3-5);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   border-radius: var(--r-2);
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font-size: var(--fs-14);
   font-family: inherit;
   text-align: left;
@@ -1151,17 +1151,17 @@
 .mdx-poll-opt:hover:not(:disabled),
 .mdx-poll-opt:focus-visible:not(:disabled) {
   background: transparent;
-  border-color: var(--paper-3);
+  border-color: var(--line-strong);
   box-shadow: none;
-  color: var(--paper);
+  color: var(--ink);
   outline: none;
 }
 .mdx-poll-opt:disabled {
   cursor: default;
 }
 .mdx-poll-opt--mine {
-  border-color: var(--paper-3);
-  color: var(--paper);
+  border-color: var(--line-strong);
+  color: var(--ink);
 }
 /* 結果長條：低飽和、鋪在底層，不搶字 */
 .mdx-poll-bar {
@@ -1188,7 +1188,7 @@
   width: 0.35rem;
   height: 0.35rem;
   border-radius: var(--r-round);
-  background: var(--amber);
+  background: var(--signal);
   flex: 0 0 auto;
 }
 .mdx-poll-pct {
@@ -1197,10 +1197,10 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-variant-numeric: tabular-nums;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 .mdx-poll-opt--mine .mdx-poll-pct {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 .mdx-poll-foot {
   display: flex;
@@ -1209,7 +1209,7 @@
   margin-top: var(--space-3);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 .mdx-poll-peek {
   padding: 0;
@@ -1217,7 +1217,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font-size: var(--fs-11);
   font-family: inherit;
   cursor: pointer;
@@ -1228,12 +1228,12 @@
 .mdx-poll-peek:focus-visible {
   background: transparent;
   box-shadow: none;
-  color: var(--paper);
+  color: var(--ink);
   outline: none;
 }
 .mdx-poll-voted {
   margin-left: auto;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* ⚠ index.css 的 @layer base 有全站 `button:hover, button:focus { background:#6a4acf;

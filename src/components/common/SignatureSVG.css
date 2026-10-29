@@ -7,14 +7,14 @@
 /* 暖白單色一筆，跟內文同一支筆；筆順動畫在 SignatureSVG.tsx */
 .signature-path {
   fill: none;
-  stroke: var(--paper-2);
+  stroke: var(--ink-muted);
   stroke-width: 7;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .signature-dot {
-  fill: var(--paper-2);
+  fill: var(--ink-muted);
   opacity: 0;
   transition: opacity var(--dur-150) var(--easing-out);
 }
@@ -31,7 +31,7 @@
 }
 
 .signature-pen-tip {
-  fill: var(--amber);
+  fill: var(--signal);
 }
 
 .signature-pen-glow {

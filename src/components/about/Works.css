@@ -8,7 +8,7 @@
   /* 又寬又矮的橫式見檔尾 */
   overflow: hidden;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 :where(.wk) :where(a) {
@@ -19,7 +19,7 @@
 
 .wk a:focus-visible .wk-name {
   text-decoration: underline;
-  text-decoration-color: var(--amber);
+  text-decoration-color: var(--signal);
   text-underline-offset: 4px;
 }
 
@@ -57,13 +57,13 @@
 .wk-latin {
   font-family: var(--latin-display);
   font-size: var(--fs-24);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .wk-head p {
   margin: var(--space-1) 0 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 螺旋 ── */
@@ -127,13 +127,13 @@
   font-style: normal;
   letter-spacing: var(--ls-18);
   vertical-align: 0.35em;
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .wk-year {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 介紹掛在名字底下、不佔版面：字的位置照名字與年份算，滑過才浮出來 */
@@ -148,7 +148,7 @@
   left: 0;
   margin-top: var(--space-1);
   font-size: var(--fs-12);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   opacity: 0;
   transition: opacity var(--dur-300) ease;
 }
@@ -170,7 +170,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-4);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   pointer-events: none;
 }
 
@@ -209,7 +209,7 @@
   column-gap: var(--space-3);
   padding: var(--space-2-5) 0;
   border-bottom: 1px dotted rgba(var(--paper-rgb), 0.15);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   transition: color var(--dur-200) ease;
 }
 
@@ -225,13 +225,13 @@
   font-size: var(--fs-10);
   font-style: normal;
   letter-spacing: var(--ls-12);
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .wk-index-year {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .wk-index-what {
@@ -239,15 +239,15 @@
   padding-top: var(--space-1);
   font-size: var(--fs-12);
   line-height: var(--lh-150);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .wk-index li.is-on .wk-index-a {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .wk-index li.is-on .wk-index-year {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .wk.is-leaving .wk-index {

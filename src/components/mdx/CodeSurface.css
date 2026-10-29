@@ -31,7 +31,7 @@
   -webkit-user-select: none;
 }
 .code-surface-body .shiki-fallback {
-  color: var(--paper-2);
+  color: var(--ink-muted);
   white-space: pre;
   font-size: var(--fs-13);
   line-height: var(--lh-170);
@@ -62,12 +62,12 @@
   width: 100%;
   padding: var(--space-2);
   border: none;
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--line);
   border-radius: 0;
   background: none;
   box-shadow: none;
   outline: none;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   font-size: var(--fs-11);
   font-family: var(--mono-font);
   letter-spacing: var(--ls-12);

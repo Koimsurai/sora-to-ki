@@ -8,7 +8,7 @@
   min-height: 320px;
   overflow: hidden;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
   --su-edge: max(var(--space-6), calc(50% - 640px));
   --su-rule: rgba(var(--paper-rgb), 0.15);
 }
@@ -47,7 +47,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-24);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su[data-mode="tall"] .su-head h1 {
@@ -97,7 +97,7 @@
 }
 
 .su-tag:focus-visible {
-  outline: 1px solid var(--paper-2);
+  outline: 1px solid var(--ink-muted);
   outline-offset: 3px;
 }
 
@@ -105,18 +105,18 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .su-tag-name {
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   transition: color var(--dur-200) ease;
 }
 
 .su-tag[data-hot="1"] :is(.su-tag-no, .su-tag-name) {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 /* ── 零件表＋標題欄 ──
@@ -128,7 +128,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  color: var(--paper);
+  color: var(--ink);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--dur-400) ease;
@@ -175,7 +175,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su-bom {
@@ -225,7 +225,7 @@
   padding-top: var(--space-0-5);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
@@ -239,21 +239,21 @@
   grid-column: 2;
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su-row.is-plain :is(.su-name, .su-spec) {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 滑過（或點了）一列：那個零件在圖紙上亮起來，這一列跟著變琥珀色 */
 .su-row:not(.is-plain):hover :is(.su-no, .su-name),
 .su-row[aria-pressed="true"] :is(.su-no, .su-name) {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .su-row:focus-visible {
-  outline: 1px solid var(--paper-2);
+  outline: 1px solid var(--ink-muted);
   outline-offset: -1px;
 }
 
@@ -275,12 +275,12 @@
 .su-row.is-post .su-spec {
   grid-column: auto;
   font-size: var(--fs-11);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .su-row.is-post em {
   font-style: normal;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su-sec {
@@ -288,7 +288,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su-dev {
@@ -306,7 +306,7 @@
 .su-dev span {
   font-size: var(--fs-12);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .su-links {
@@ -324,15 +324,15 @@
 .su-link {
   justify-self: start;
   font-size: var(--fs-12);
-  color: var(--paper);
+  color: var(--ink);
   text-decoration: none;
-  border-bottom: 1px dotted var(--paper-3);
+  border-bottom: 1px dotted var(--line-strong);
 }
 
 .su-link:hover,
 .su-link:focus-visible {
-  color: var(--amber);
-  border-bottom-color: var(--amber);
+  color: var(--signal);
+  border-bottom-color: var(--signal);
 }
 
 /* 標題欄：細線框起來，跟圖紙同一種框 */
@@ -349,7 +349,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .su-title h2 {
@@ -367,21 +367,21 @@
   font-size: var(--fs-11);
   font-weight: 400;
   letter-spacing: var(--ls-8);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su-lede {
   margin: 0;
   font-size: var(--fs-13);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .su-meta {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su[data-mode="tall"] .su-title h2,
@@ -422,19 +422,19 @@
 .su-nav button {
   padding: 0 0 var(--space-px);
   border: 0;
-  border-bottom: 1px dotted var(--paper-3);
+  border-bottom: 1px dotted var(--line-strong);
   border-radius: 0;
   background: none;
   box-shadow: none;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font: inherit;
   cursor: pointer;
 }
 
 .su-nav button:hover,
 .su-nav button:focus-visible {
-  color: var(--amber);
-  border-bottom-color: var(--amber);
+  color: var(--signal);
+  border-bottom-color: var(--signal);
   outline: none;
 }
 
@@ -450,7 +450,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 每收到一次閃一下 */
@@ -458,11 +458,11 @@
   width: 5px;
   height: 5px;
   border-radius: var(--r-round);
-  background: var(--paper-3);
+  background: var(--line-strong);
 }
 
 .su-telemetry i.is-live {
-  background: var(--amber);
+  background: var(--signal);
   animation: su-blink 1.2s ease-out;
 }
 
@@ -486,7 +486,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su-telemetry dd {
@@ -494,14 +494,14 @@
   font-family: var(--mono-font);
   font-size: var(--fs-16);
   font-variant-numeric: tabular-nums;
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .su-telemetry p {
   margin: 0;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* ── 提示 ── */
@@ -517,7 +517,7 @@
   font-size: var(--fs-11);
   letter-spacing: var(--ls-6);
   text-align: center;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   pointer-events: none;
   transition: opacity var(--dur-400) ease;
 }
@@ -570,7 +570,7 @@
 
 .su[data-fold] .su-tag:not(:last-child) .su-tag-name {
   font-size: var(--fs-16);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .su[data-fold] .su-tag-more {
@@ -582,7 +582,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-6);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .su[data-fold] .su-tag-lede {
@@ -590,7 +590,7 @@
   padding-top: var(--space-1);
   font-size: var(--fs-12);
   line-height: var(--lh-150);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 @media (prefers-reduced-motion: reduce) {

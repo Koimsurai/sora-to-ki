@@ -18,7 +18,7 @@
 
 .snav a:focus-visible,
 .snav button:focus-visible {
-  outline: 1px solid var(--paper-2);
+  outline: 1px solid var(--ink-muted);
   outline-offset: 4px;
 }
 
@@ -40,7 +40,7 @@
   font-size: var(--fs-22);
   letter-spacing: var(--ls-2);
   line-height: var(--lh-100);
-  color: var(--paper);
+  color: var(--ink);
   transform-origin: left center;
   transition: transform var(--dur-300) var(--easing-out);
 }
@@ -59,7 +59,7 @@
 .snav-row a,
 .snav-row button {
   padding-left: var(--space-3);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   transition:
     color var(--dur-200) ease,
     opacity var(--dur-400) ease,
@@ -87,7 +87,7 @@
 .snav-row a:hover,
 .snav-row button:hover,
 .snav-row .is-on {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 琥珀點：所在的分區；滑過別的分區時滑過去 */
@@ -98,7 +98,7 @@
   width: 5px;
   height: 5px;
   border-radius: var(--r-full);
-  background: var(--amber);
+  background: var(--signal);
   box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
   translate: var(--x, 0) -50%;
   opacity: 0;
@@ -118,9 +118,9 @@
   right: var(--space-10);
   width: 12px;
   height: 12px;
-  border: 1px solid var(--paper-2);
+  border: 1px solid var(--ink-muted);
   border-radius: var(--r-full);
-  background: radial-gradient(circle, var(--amber) 0 3px, transparent 3.5px);
+  background: radial-gradient(circle, var(--signal) 0 3px, transparent 3.5px);
   translate: 0 -50%;
   scale: 0.4;
   opacity: 0;
@@ -241,7 +241,7 @@
   margin: 0;
   font-size: var(--fs-14);
   line-height: var(--lh-185);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .snav-page-all,
@@ -249,13 +249,13 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-4);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .snav-page-all:hover,
 .snav-page-contact a:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .snav-page-contact {
@@ -292,7 +292,7 @@
   left: 0;
   width: 0;
   height: 1px;
-  background: var(--rule);
+  background: var(--line);
   transition: width var(--dur-700) var(--easing-out);
 }
 
@@ -314,7 +314,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-4);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   white-space: nowrap;
 }
 
@@ -323,12 +323,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   transition: color var(--dur-200) ease;
 }
 
 .snav-page-list a:hover .snav-row-title {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .snav-row-note {
@@ -339,7 +339,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 正在發生的那一件：標題前一顆琥珀點，跟導覽列那顆同一種 */
@@ -350,7 +350,7 @@
   height: 5px;
   margin: 0 var(--space-2) 0.15em 0;
   border-radius: var(--r-full);
-  background: var(--amber);
+  background: var(--signal);
   box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
   vertical-align: middle;
 }
@@ -370,7 +370,7 @@
   justify-content: space-between;
   padding: var(--space-3) 0;
   font-size: var(--fs-14);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .snav-more-links a span,
@@ -378,7 +378,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .snav-more-links a::after {
@@ -388,7 +388,7 @@
   left: 0;
   width: 0;
   height: 1px;
-  background: var(--rule);
+  background: var(--line);
   transition: width var(--dur-700) var(--easing-out);
 }
 
@@ -400,7 +400,7 @@
   width: 5px;
   height: 5px;
   border-radius: var(--r-full);
-  background: var(--amber);
+  background: var(--signal);
   translate: 0 -50%;
 }
 
@@ -439,7 +439,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-4);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .snav-util-group {
@@ -453,13 +453,13 @@
 }
 
 .snav-util button {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .snav-util button:hover,
 .snav-util button.is-on {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 登入只放圖示：跟旁邊的字同一個墨色，滑過變亮 */
@@ -472,11 +472,11 @@
 .snav-util kbd {
   margin-left: var(--space-2);
   font-family: inherit;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .snav-user {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 手機的整頁目錄 ── */
@@ -503,10 +503,10 @@
   align-items: baseline;
   justify-content: space-between;
   padding: var(--space-3) 0;
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
   font-size: var(--fs-22);
   font-weight: 600;
-  color: var(--paper);
+  color: var(--ink);
   opacity: 0;
   translate: 0 8px;
   transition:
@@ -521,7 +521,7 @@
   height: 6px;
   margin-right: var(--space-3);
   border-radius: var(--r-full);
-  background: var(--amber);
+  background: var(--signal);
 }
 
 .snav-menu-main a.is-on {
@@ -561,11 +561,11 @@
 }
 
 .snav-menu-more a {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .snav-menu-more a.is-on {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .snav-menu .snav-util {

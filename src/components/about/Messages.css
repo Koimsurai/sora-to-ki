@@ -8,7 +8,7 @@
   padding: var(--page-top) var(--space-10) 0;
   margin: 0 auto;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .msg-title {
@@ -28,13 +28,13 @@
 .msg-latin {
   font-family: var(--latin-display);
   font-size: var(--fs-24);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .msg-head p {
   margin: var(--space-1) 0 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 收：字退掉，只剩頻道收進天線 */
@@ -69,7 +69,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* ── 瀑布圖 ── */
@@ -91,7 +91,7 @@
 .msg-empty p {
   margin: 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 發送台：黏在視窗底部，墊一層半透明的紙色，往下捲時壓在瀑布圖上 ── */
@@ -130,7 +130,7 @@
 @media (horizontal-viewport-segments: 2), (vertical-viewport-segments: 2) {
   .msg-tx .cf-panel {
     grid-template-rows: 1fr;
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--line);
   }
 
   .msg-tx .cf-fields {

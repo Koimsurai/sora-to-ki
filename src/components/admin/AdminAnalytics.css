@@ -12,7 +12,7 @@
   margin: 0 var(--space-1) 0 var(--space-0-5);
   font-family: var(--serif);
   font-size: var(--fs-14);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 /* ── 柱狀圖 ── */
@@ -31,7 +31,7 @@
 .adm-an-max {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-an-bars {
@@ -39,8 +39,8 @@
   align-items: stretch;
   gap: var(--space-px);
   height: 220px;
-  border-top: 1px dotted var(--rule);
-  border-bottom: 1px solid var(--rule);
+  border-top: 1px dotted var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
 /* 一格一欄；感應區是整欄，柱子貼著底 */
@@ -65,7 +65,7 @@
 }
 
 .adm-an-col:hover .adm-an-bar {
-  background: var(--amber);
+  background: var(--signal);
 }
 
 .adm-an-axis {
@@ -73,7 +73,7 @@
   justify-content: space-between;
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 /* ── 排行：四張表兩兩一排，窄的時候一張一排 ──
@@ -103,9 +103,9 @@
   min-height: 36px;
   padding: 0 var(--space-2-5);
   background: linear-gradient(to right, rgba(var(--amber-rgb), 0.1) var(--w), transparent var(--w)) no-repeat;
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-an-name {
@@ -122,7 +122,7 @@
 .adm-an-count {
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* ── 還沒設 key 的說明 ── */
@@ -133,7 +133,7 @@
   max-width: 720px;
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-an-setup ol {
@@ -148,12 +148,12 @@
 .adm-an-setup code {
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .adm-an-setup b {
   font-weight: 500;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* ── 開頭那句話 ── */
@@ -163,19 +163,19 @@
   font-family: var(--serif);
   font-size: var(--fs-20);
   line-height: var(--lh-160);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-an-summary b {
   font-weight: 500;
-  color: var(--amber);
+  color: var(--signal);
 }
 
 /* 總數格裡跟上一段比的那一行 */
 .adm-an-delta {
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 每一段開頭的白話說明 */
@@ -184,32 +184,32 @@
   max-width: 760px;
   font-size: var(--fs-13);
   line-height: var(--lh-170);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-an-note code {
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 每篇文章、搜尋字詞：列首是內容不是表頭，不用表頭那套等寬小字 ── */
 .adm-an-posts tbody th {
   padding: var(--space-3-5) var(--space-3) var(--space-3-5) 0;
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
   font-family: inherit;
   font-size: var(--fs-14);
   letter-spacing: normal;
   text-transform: none;
   text-align: left;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .adm-an-posts tbody td {
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
   font-family: var(--mono-font);
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   text-align: right;
 }
 
@@ -243,9 +243,9 @@
   align-items: baseline;
   gap: var(--space-4);
   padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
   font-size: var(--fs-14);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* ── 收到的愛心與反應：時間、做了什麼、脈絡 ── */
@@ -261,35 +261,35 @@
   align-items: baseline;
   gap: var(--space-4);
   padding: var(--space-3) 0;
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 收回的那筆淡一點 */
 .adm-an-events li[data-undo] {
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-an-when {
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-an-ctx {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
   text-align: right;
 }
 
 /* 開始記錄之前的總數：放在最下面、跟上面的事件隔一條實線 */
 .adm-an-events li.adm-an-before {
   grid-template-columns: 96px minmax(0, 1fr);
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--line);
   border-bottom: none;
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 @media (max-width: 768px) {
@@ -315,7 +315,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-12);
   letter-spacing: var(--ls-12);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-an-more[open] summary {

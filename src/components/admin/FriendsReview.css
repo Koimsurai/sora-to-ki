@@ -3,7 +3,7 @@
 
 /* 「4 / 5 · RSS 抓得到沒過」：有沒過的就用朱色，一眼看得出要點進去看 */
 .adm-fr-sum[data-bad] {
-  color: var(--flare);
+  color: var(--danger);
 }
 
 .adm-fr-message {
@@ -12,10 +12,10 @@
   gap: var(--space-1-5);
   margin: 0;
   padding-left: var(--space-4);
-  border-left: 1px dotted var(--paper-3);
+  border-left: 1px dotted var(--line-strong);
   font-size: inherit;
   line-height: var(--lh-185);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -39,10 +39,10 @@
   align-items: center;
   gap: var(--space-3);
   min-height: 40px;
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  color: var(--flare);
+  color: var(--danger);
 }
 
 .adm-fr-mark {
@@ -66,15 +66,15 @@
 }
 
 .adm-fr-check-list li[data-ok] {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .adm-fr-check-list li[data-ok] .adm-fr-mark {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-fr-check-list li:not([data-ok]) .adm-meta {
-  color: var(--flare);
+  color: var(--danger);
 }
 
 /* ── 在朋友頁會是：一顆實心的星配上名字與介紹，四角的取景框是朋友頁「對接」時的樣子 ── */
@@ -85,7 +85,7 @@
 }
 
 .adm-fr-card {
-  --corner: var(--paper-3);
+  --corner: var(--line-strong);
   display: flex;
   align-items: flex-start;
   gap: var(--space-4);
@@ -107,7 +107,7 @@
   height: 9px;
   margin-top: var(--space-1-5);
   border-radius: var(--r-round);
-  background: var(--paper);
+  background: var(--ink);
 }
 
 .adm-fr-card-text {
@@ -115,11 +115,11 @@
   flex-direction: column;
   gap: var(--space-1);
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-fr-card-text b {
   font-size: var(--fs-16);
   font-weight: 400;
-  color: var(--paper);
+  color: var(--ink);
 }

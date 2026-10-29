@@ -6,7 +6,7 @@
   position: relative;
   height: 100svh;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 :where(.fr) :where(a) {
@@ -27,7 +27,7 @@
 .fr-head p {
   margin: var(--space-1) 0 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .fr-title {
@@ -47,7 +47,7 @@
 .fr-latin {
   font-family: var(--latin-display);
   font-size: var(--fs-24);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 收：字退掉，只剩軌道收回中心（星旁的字與中心的站名由畫布那一幀一起淡掉） */
@@ -97,7 +97,7 @@
   top: var(--space-6);
   left: 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   pointer-events: none;
   /* 位置由畫布那一幀給（translate 是軌道中心），這裡只負責置中在它底下 */
   transform: translateX(-50%);
@@ -137,13 +137,13 @@
   justify-self: start;
   font-size: var(--fs-16);
   line-height: var(--lh-130);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .fr-host {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr-latest {
@@ -151,7 +151,7 @@
   gap: var(--space-2);
   margin-top: var(--space-1);
   font-size: var(--fs-12);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .fr-latest time {
@@ -159,7 +159,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   line-height: var(--lh-170);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr-latest span {
@@ -170,18 +170,18 @@
 }
 
 .fr-latest.is-quiet {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr a:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .fr-name:focus-visible,
 .fr-latest:focus-visible {
   outline: none;
   text-decoration: underline;
-  text-decoration-color: var(--amber);
+  text-decoration-color: var(--signal);
   text-underline-offset: 4px;
 }
 
@@ -194,7 +194,7 @@
   max-width: 300px;
   margin-bottom: var(--space-1);
   font-size: var(--fs-12);
-  color: var(--paper);
+  color: var(--ink);
   opacity: 0;
   transition: opacity var(--dur-300) ease;
 }
@@ -213,9 +213,9 @@
   max-width: 280px;
   padding: var(--space-1) var(--space-2);
   font-size: var(--fs-12);
-  color: var(--paper);
+  color: var(--ink);
   background: rgba(var(--ground-rgb), 0.8);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   opacity: 0;
   pointer-events: none;
 }
@@ -225,7 +225,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   line-height: var(--lh-170);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 對接之後展開的面板：寬螢幕在右半邊、窄螢幕在軌道下半部 */
@@ -241,7 +241,7 @@
   padding: var(--space-5);
   overflow-y: auto;
   background: rgba(var(--ground-rgb), 0.8);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   outline: none;
   visibility: hidden;
   opacity: 0;
@@ -265,7 +265,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr-panel-name {
@@ -280,7 +280,7 @@
 .fr-panel-desc {
   margin: 0;
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .fr-panel h2 {
@@ -289,7 +289,7 @@
   font-size: var(--fs-10);
   font-weight: 400;
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr-panel-posts {
@@ -307,14 +307,14 @@
   padding: var(--space-1) 0;
   font-size: var(--fs-13);
   line-height: var(--lh-150);
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
 }
 
 .fr-panel-posts time {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   line-height: var(--lh-185);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr-panel-actions {
@@ -327,13 +327,13 @@
 
 .fr-panel-actions :is(a, button) {
   padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   transition: border-color var(--dur-200) ease;
 }
 
 .fr-panel-actions :is(a, button):hover,
 .fr-panel-actions :is(a, button):focus-visible {
-  border-color: var(--amber);
+  border-color: var(--signal);
 }
 
 .fr-preview {
@@ -359,7 +359,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-4);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   pointer-events: none;
 }
 
@@ -383,7 +383,7 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1);
   padding-bottom: var(--space-3);
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
 }
 
 .fr-list li > a:first-child {
@@ -400,7 +400,7 @@
 
 .fr-list-desc {
   font-size: var(--fs-12);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 抽屜 ── */
@@ -432,9 +432,9 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   background: rgba(var(--ground-rgb), 0.96);
-  border-left: 1px solid var(--rule);
+  border-left: 1px solid var(--line);
   scrollbar-width: thin;
-  scrollbar-color: var(--rule) transparent;
+  scrollbar-color: var(--line) transparent;
 }
 
 /* 把手：貼在抽屜左緣外面，抽屜收著時它就在視窗右緣。一條豎線、一個空心點、直排的等寬小字；
@@ -452,7 +452,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   writing-mode: vertical-rl;
   transition: color var(--dur-200) ease;
 }
@@ -461,13 +461,13 @@
   content: "";
   width: 1px;
   height: 40px;
-  background: var(--rule);
+  background: var(--line);
 }
 
 .fr-handle i {
   width: 6px;
   height: 6px;
-  border: 1px solid var(--paper-3);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-round);
   transition:
     background-color var(--dur-200) ease,
@@ -477,18 +477,18 @@
 .fr-handle:hover,
 .fr-handle:focus-visible,
 .fr-side.is-open .fr-handle {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .fr-handle:hover i,
 .fr-handle:focus-visible i,
 .fr-side.is-open .fr-handle i {
-  border-color: var(--amber);
-  background: var(--amber);
+  border-color: var(--signal);
+  background: var(--signal);
 }
 
 .fr-handle:focus-visible {
-  outline: 1px dotted var(--paper-3);
+  outline: 1px dotted var(--line-strong);
   outline-offset: -2px;
 }
 
@@ -510,7 +510,7 @@
   font-size: var(--fs-10);
   font-weight: 400;
   letter-spacing: var(--ls-18);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr-card {
@@ -536,18 +536,18 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding-bottom: var(--space-1);
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
 }
 
 .fr-card dt {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr-card dd {
   margin: 0;
   overflow-wrap: anywhere;
   text-align: right;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   user-select: all;
 }
 
@@ -562,7 +562,7 @@
   font-size: var(--fs-18);
   font-weight: 600;
   letter-spacing: 0;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .fr-input {
@@ -574,39 +574,39 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .fr-input input {
   padding: var(--space-1) 0;
   font: inherit;
   font-size: var(--fs-16);
-  color: var(--paper);
+  color: var(--ink);
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
   border-radius: 0;
   outline: none;
   appearance: none;
 }
 
 .fr-input input:focus {
-  border-bottom-color: var(--paper-2);
+  border-bottom-color: var(--ink-muted);
 }
 
 .fr-input input::placeholder {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 驗證沒過：底線換成琥珀色，原因寫在底下 */
 .fr-input input[aria-invalid="true"] {
-  border-bottom-color: var(--amber);
+  border-bottom-color: var(--signal);
 }
 
 .fr-error {
   font-size: var(--fs-12);
   font-style: normal;
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .fr-submit {
@@ -614,32 +614,32 @@
   padding: var(--space-2) var(--space-4);
   margin-top: var(--space-2);
   font-size: var(--fs-14);
-  color: var(--paper);
-  border: 1px solid var(--rule);
+  color: var(--ink);
+  border: 1px solid var(--line);
   transition: border-color var(--dur-200) ease;
 }
 
 .fr-submit:hover,
 .fr-submit:focus-visible {
-  border-color: var(--amber);
+  border-color: var(--signal);
 }
 
 /* 送出中、送出之後：不能再按，框退回細線 */
 .fr-submit:disabled {
   cursor: default;
-  color: var(--paper-2);
-  border-color: var(--rule);
+  color: var(--ink-muted);
+  border-color: var(--line);
 }
 
 .fr-sent {
   display: block;
   font-size: var(--fs-12);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 送不出去：跟欄位底下的錯誤同一個顏色 */
 .fr-failed {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 /* 給機器人填的隱藏欄位：搬到畫面外（display: none 的欄位有些機器人會跳過） */
@@ -654,7 +654,7 @@
 .fr-sent a {
   font-family: var(--mono-font);
   text-decoration: underline;
-  text-decoration-color: var(--rule);
+  text-decoration-color: var(--line);
   text-underline-offset: 3px;
 }
 
@@ -671,13 +671,13 @@
   list-style: decimal-leading-zero;
   font-size: var(--fs-13);
   line-height: var(--lh-160);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .fr-rules li::marker {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 @media (max-width: 760px) {
@@ -727,7 +727,7 @@
 
   .fr-side-body {
     padding: var(--space-6) var(--space-4) var(--space-8);
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--line);
     border-left: 0;
   }
 
@@ -741,7 +741,7 @@
     translate: -50% 0;
     writing-mode: horizontal-tb;
     background: rgba(var(--ground-rgb), 0.96);
-    border: 1px solid var(--rule);
+    border: 1px solid var(--line);
     border-bottom: 0;
   }
 

@@ -10,7 +10,7 @@
   min-height: 100svh;
   padding: var(--page-top) max(var(--space-10), calc(50% - 640px)) var(--page-bottom);
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .unsubscribe-card {
@@ -25,20 +25,20 @@
   font-size: var(--fs-32);
   font-weight: 600;
   line-height: var(--lh-130);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .unsubscribe-body {
   margin: 0;
   font-size: var(--fs-16);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .unsubscribe-email {
   font-family: var(--mono-font);
   font-size: 0.9em;
-  color: var(--amber);
+  color: var(--signal);
   overflow-wrap: anywhere;
 }
 
@@ -47,7 +47,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-12);
   letter-spacing: var(--ls-6);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .unsubscribe-actions {
@@ -65,8 +65,8 @@
   font-family: var(--mono-font);
   font-size: var(--fs-12);
   letter-spacing: var(--ls-6);
-  color: var(--paper-2);
-  border-bottom: 1px dotted var(--paper-3);
+  color: var(--ink-muted);
+  border-bottom: 1px dotted var(--line-strong);
   cursor: pointer;
   transition:
     color var(--dur-200) ease,
@@ -75,18 +75,18 @@
 
 /* 確認退訂：這一頁唯一要做的事，用琥珀 */
 .unsubscribe-btn--danger {
-  color: var(--amber);
-  border-bottom-color: var(--amber);
+  color: var(--signal);
+  border-bottom-color: var(--signal);
 }
 
 .unsubscribe-btn:hover,
 .unsubscribe-btn:focus-visible {
-  color: var(--amber);
-  border-bottom-color: var(--amber);
+  color: var(--signal);
+  border-bottom-color: var(--signal);
 }
 
 .unsubscribe-btn:focus-visible {
-  outline: 1px solid var(--amber);
+  outline: 1px solid var(--signal);
   outline-offset: var(--space-1);
 }
 

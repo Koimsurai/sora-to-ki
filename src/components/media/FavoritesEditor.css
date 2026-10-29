@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-6);
-  background: rgba(var(--surface-0-rgb), 0.7);
+  background: rgba(var(--ground-rgb), 0.7);
   backdrop-filter: blur(var(--blur-8));
   animation: fe-fade 0.2s ease;
 }
@@ -26,7 +26,7 @@
   max-height: 86vh;
   display: flex;
   flex-direction: column;
-  background: rgba(var(--surface-1-rgb), 0.95);
+  background: rgba(var(--ground-rgb), 0.95);
   border: 1px solid var(--white-10);
   border-radius: var(--r-20);
   box-shadow: var(--elev-6);
@@ -165,7 +165,7 @@
 }
 .fe-item-actions button:hover:not(:disabled) {
   color: #fff;
-  border-color: rgba(var(--purple-300-rgb), 0.4);
+  border-color: rgba(var(--paper-rgb), 0.4);
   box-shadow: none;
 }
 .fe-item-actions button:disabled {
@@ -217,7 +217,7 @@
 }
 .fe-quote:focus {
   outline: none;
-  border-color: rgba(var(--purple-300-rgb), 0.4);
+  border-color: rgba(var(--paper-rgb), 0.4);
 }
 
 /* ── 新增區 ── */
@@ -249,7 +249,7 @@
   transition: all var(--dur-200);
 }
 .fe-kind button.on {
-  background: rgba(var(--brand-rgb), 0.3);
+  background: rgba(var(--paper-rgb), 0.3);
   color: #fff;
 }
 .fe-kind button:hover:not(.on) {
@@ -269,7 +269,7 @@
 }
 .fe-search:focus {
   outline: none;
-  border-color: rgba(var(--purple-300-rgb), 0.4);
+  border-color: rgba(var(--paper-rgb), 0.4);
 }
 
 .fe-searching {
@@ -305,7 +305,7 @@
 }
 .fe-result:hover:not(:disabled) {
   background: var(--white-04);
-  border-color: rgba(var(--purple-300-rgb), 0.25);
+  border-color: rgba(var(--paper-rgb), 0.25);
   box-shadow: none;
 }
 .fe-result img {
@@ -345,7 +345,7 @@
 }
 .fe-result-add {
   font-size: var(--fs-18);
-  color: rgba(var(--purple-300-rgb), 0.8);
+  color: rgba(var(--paper-rgb), 0.8);
   flex-shrink: 0;
 }
 

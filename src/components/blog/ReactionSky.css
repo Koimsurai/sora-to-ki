@@ -4,7 +4,7 @@
   position: relative;
   display: grid;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .rs-sky {
@@ -31,9 +31,9 @@
   align-items: baseline;
   padding: var(--space-1) var(--space-3);
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   cursor: pointer;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   transition:
     color var(--dur-200) ease,
     border-color var(--dur-200) ease;
@@ -43,20 +43,20 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-style: normal;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .rs-row button:hover,
 .rs-row button:focus-visible {
-  color: var(--paper);
-  border-color: var(--paper-2);
+  color: var(--ink);
+  border-color: var(--ink-muted);
 }
 
 .rs-row button[aria-pressed="true"] {
-  color: var(--paper);
-  border-color: var(--amber);
+  color: var(--ink);
+  border-color: var(--signal);
 }
 
 .rs-row button[aria-pressed="true"] em {
-  color: var(--amber);
+  color: var(--signal);
 }

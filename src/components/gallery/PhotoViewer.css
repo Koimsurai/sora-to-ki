@@ -30,7 +30,7 @@
   font-size: var(--fs-11);
   font-weight: 400;
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 右上：分享、關閉 */
@@ -52,10 +52,10 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1px solid var(--paper-3);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-round);
   background: rgba(var(--ground-rgb), 0.35);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   cursor: pointer;
   box-shadow: none;
   transition:
@@ -81,9 +81,9 @@
 /* 蓋掉全域 button:hover 的底色與光暈（specificity 0,2,0 > 0,1,1） */
 .action-btn:hover,
 .action-btn:focus-visible {
-  border-color: var(--paper);
+  border-color: var(--ink);
   background: rgba(var(--ground-rgb), 0.55);
-  color: var(--paper);
+  color: var(--ink);
   box-shadow: none;
 }
 
@@ -170,9 +170,9 @@
 
 .custom-swiper-button-prev:hover,
 .custom-swiper-button-next:hover {
-  border-color: var(--paper);
+  border-color: var(--ink);
   background: rgba(var(--ground-rgb), 0.55);
-  color: var(--paper);
+  color: var(--ink);
   opacity: 1;
 }
 
@@ -187,8 +187,8 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 1px solid var(--rule);
-  border-top-color: var(--paper-2);
+  border: 1px solid var(--line);
+  border-top-color: var(--ink-muted);
   border-radius: var(--r-round);
   animation: spin 1s linear infinite;
 }
@@ -206,13 +206,13 @@
   left: 24px;
   z-index: 20;
   padding: var(--space-1) var(--space-2-5);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   background: rgba(var(--ground-rgb), 0.7);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-weight: 400;
   letter-spacing: var(--ls-4);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 響應式 */
@@ -282,7 +282,7 @@
     /* 頂欄（站名與選單）留著：右頁上面那一條是選單 */
     top: 60px;
     left: env(viewport-segment-left 1 0);
-    border-left: 1px solid var(--rule);
+    border-left: 1px solid var(--line);
   }
 
   .photo-viewer-overlay .photo-viewer-main {
@@ -307,7 +307,7 @@
     display: block;
     width: auto;
     max-width: none;
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--line);
     border-left: 0;
   }
 }
@@ -326,7 +326,7 @@
     display: block;
     width: auto;
     max-width: none;
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--line);
     border-left: 0;
   }
 

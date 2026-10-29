@@ -6,7 +6,7 @@
   /* 預設長度（約九個數量級）；JS 會照實際跨的距離改掉 */
   height: calc(100vh + 450vh);
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 :where(.cx) :where(button) {
@@ -16,7 +16,7 @@
 }
 
 .cx :is(a, button):focus-visible {
-  outline: 1px solid var(--amber);
+  outline: 1px solid var(--signal);
   outline-offset: 3px;
 }
 
@@ -62,7 +62,7 @@
 .cx-head-title span {
   font-family: var(--latin-display);
   font-size: var(--fs-24);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .cx-head p {
@@ -70,7 +70,7 @@
   margin: 0;
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .cx-hint {
@@ -83,7 +83,7 @@
   font-size: var(--fs-11);
   letter-spacing: var(--ls-24);
   text-align: center;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   opacity: 0;
   pointer-events: none;
 }
@@ -106,7 +106,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-6);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   translate: var(--space-3) -50%;
 }
 
@@ -124,7 +124,7 @@
 .cx-name {
   font-size: var(--fs-12);
   font-weight: 600;
-  color: var(--amber);
+  color: var(--signal);
 }
 
 /* ── 接收畫面：滑過一點，旁邊開一個框顯示它的封面 ── */
@@ -225,7 +225,7 @@
   margin-top: var(--space-1);
   font-size: var(--fs-12);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   quotes: "「" "」";
 }
 
@@ -233,7 +233,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-6);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .cx-scope-text .cx-scope-dist {
@@ -295,7 +295,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .cx-legend-row > dd:first-of-type {
@@ -314,7 +314,7 @@
 .cx-glyph::after {
   position: absolute;
   content: "";
-  background: var(--paper);
+  background: var(--ink);
 }
 
 .cx-glyph.is-watch::before {
@@ -346,12 +346,12 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-8);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .cx-edit:hover {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 /* 正在看／剛剛聽：在播的時候前面那一點是琥珀色、亮著 */
@@ -365,26 +365,26 @@
 .cx-live i {
   width: 6px;
   height: 6px;
-  border: 1px solid var(--paper-3);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-full);
   align-self: center;
 }
 
 .cx-live.is-on i {
-  border-color: var(--amber);
-  background: var(--amber);
+  border-color: var(--signal);
+  background: var(--signal);
   box-shadow: 0 0 8px rgba(var(--amber-rgb), 0.8);
 }
 
 .cx-live b {
   font-family: var(--serif);
   font-weight: 600;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 日期是要讀的資訊，而且整行可能被調暗（見 Collection 的圖例亮度），用次一階的灰 */
 .cx-live span {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 讀數：現在看到多遠、這個距離的訊號是什麼時候發出的 ── */
@@ -397,7 +397,7 @@
   letter-spacing: var(--ls-8);
   text-align: right;
   white-space: pre-line;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   opacity: 0;
 }
 
