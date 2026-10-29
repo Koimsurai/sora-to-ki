@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 import { setTheme, setThemeDirector, type Theme } from '@/lib/theme';
-import { saturnRingOnScreen } from '@/lib/saturnSpec';
+import { PLANETS, saturnRingOnScreen } from '@/lib/saturnSpec';
 import { currentFold } from '@/lib/viewportFold';
 import { absNow, latestSaturnGrow, subscribeSatellites } from '@/store/homeOrbit';
 import { arriveFrom } from '@/store/pageTransition';
@@ -59,6 +59,8 @@ const coverRadius = (c: { x: number; y: number }) =>
  */
 export default function ThemeSwitchDot() {
   const [dot, setDot] = useState<{ x: number; y: number; on: boolean; nova: boolean } | null>(null);
+  /** 新的主星背後那圈光：位置、半徑（px）、亮著沒 */
+  const [glow, setGlow] = useState<{ x: number; y: number; r: number; on: boolean } | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -71,6 +73,17 @@ export default function ThemeSwitchDot() {
       const c = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold());
       return { x: c.x, y: c.y };
     };
+    /** 燈暗下來（星空淡出，html[data-stage]，backdrop/StarfieldGpu 與 CSSStarfield.css）／亮回來 */
+    const lights = (on: boolean) => {
+      if (on) delete document.documentElement.dataset.stage;
+      else document.documentElement.dataset.stage = '';
+    };
+    /** 主星背後那圈光：大小照新主星的環（環的外緣再大一點） */
+    const glowOn = (c: { x: number; y: number }, next: Theme) => {
+      const ring = saturnRingOnScreen(window.innerWidth, window.innerHeight, currentFold(), PLANETS[next].ring.outer);
+      setGlow({ ...c, r: ring.r * 1.35, on: true });
+    };
+    const glowOff = () => setGlow((g) => (g ? { ...g, on: false } : g));
     const later = (ms: number, fn: () => void) => {
       timer = window.setTimeout(() => {
         if (alive) fn();
@@ -90,23 +103,49 @@ export default function ThemeSwitchDot() {
       };
       raf = window.requestAnimationFrame(watch);
     };
-    /** 點換色、新的主星從點裡長出來 */
+    /** 點換色、新的主星從點裡長出來，背後那圈光跟著亮起來 */
     const recolor = (c: { x: number; y: number }, next: Theme, grow: () => void) => {
       setTheme(next);
       setDot({ ...c, on: true, nova: next === 'betelgeuse' });
-      later(RECOLOR_MS, grow);
+      later(RECOLOR_MS, () => {
+        glowOn(c, next);
+        grow();
+      });
     };
 
     const onHome = (next: Theme) => {
       const c = center();
+      stop = () => {
+        lights(true);
+        glowOff();
+        stop = null;
+      };
+      lights(false);
       showcase('collapse');
       later(DOT_IN_MS, () => {
         setDot({ ...c, on: true, nova: false });
         later(PLANET_CLOSE_MS - DOT_IN_MS, () =>
-          // 收完了：換色，3D 收到新主題就換星、從點長出來（lib/starfieldGpu 的 setTheme）
-          recolor(c, next, () => handoffWhenGrown(performance.now())),
+          // 收完了：換色，3D 收到新主題就換星、從點長出來（lib/starfieldGpu 的 setTheme）。
+          // 長完停一下，光淡掉、燈亮回來
+          recolor(c, next, () => {
+            const since = performance.now();
+            handoffWhenGrown(since, () => afterGrown(since, () => later(HOLD_MS, () => stop?.())));
+          }),
         );
       });
+    };
+    /** 等新的主星連環一起長完（或等太久）才往下 */
+    const afterGrown = (since: number, then: () => void) => {
+      const wait = () => {
+        if (!alive) return;
+        const g = latestSaturnGrow();
+        if ((g && g.at > since && g.ring >= 1) || performance.now() - since > GIVE_UP_MS) {
+          then();
+          return;
+        }
+        raf = window.requestAnimationFrame(wait);
+      };
+      raf = window.requestAnimationFrame(wait);
     };
 
     const elsewhere = (next: Theme) => {
@@ -131,6 +170,7 @@ export default function ThemeSwitchDot() {
       };
       const cleanup = () => {
         listening.abort();
+        lights(true);
         stop = null;
       };
       // 被打斷：主題照樣換好、主星藏起來、這一頁回來
@@ -138,6 +178,7 @@ export default function ThemeSwitchDot() {
         if (main.style.clipPath) setTheme(next);
         showcase('abort');
         setDot(null);
+        setGlow(null);
         main.style.clipPath = '';
         cleanup();
       };
@@ -169,24 +210,18 @@ export default function ThemeSwitchDot() {
           },
         );
       };
-      // 3. 長完停一下，收回成點
-      const holdThenClose = (since: number) => {
-        const wait = () => {
-          if (!alive) return;
-          const g = latestSaturnGrow();
-          if ((g && g.at > since && g.ring >= 1) || performance.now() - since > GIVE_UP_MS) {
-            later(HOLD_MS, () => {
-              showcase('hide');
-              later(DOT_IN_MS, () => setDot({ ...c, on: true, nova: false }));
-              later(PLANET_CLOSE_MS, comeBack);
-            });
-            return;
-          }
-          raf = window.requestAnimationFrame(wait);
-        };
-        raf = window.requestAnimationFrame(wait);
-      };
-      // 1. 這一頁收進中央那一點（舊的顏色），點亮起來
+      // 3. 長完停一下，收回成點，光跟著淡掉
+      const holdThenClose = (since: number) =>
+        afterGrown(since, () =>
+          later(HOLD_MS, () => {
+            showcase('hide');
+            glowOff();
+            later(DOT_IN_MS, () => setDot({ ...c, on: true, nova: false }));
+            later(PLANET_CLOSE_MS, comeBack);
+          }),
+        );
+      // 1. 燈暗下來，這一頁收進中央那一點（舊的顏色），點亮起來
+      lights(false);
       tween(
         PAGE_CLOSE_MS,
         (k) => {
@@ -222,7 +257,31 @@ export default function ThemeSwitchDot() {
     };
   }, [pathname]);
 
-  if (!dot) return null;
+  return (
+    <>
+      {glow && (
+        <i
+          className="theme-switch-glow"
+          data-on={glow.on ? '' : undefined}
+          aria-hidden="true"
+          style={{ left: glow.x, top: glow.y, '--glow-r': `${glow.r.toFixed(1)}px` } as React.CSSProperties}
+          onTransitionEnd={(e) => {
+            if (e.propertyName === 'opacity' && !glow.on) setGlow(null);
+          }}
+        />
+      )}
+      {dot && <Dot dot={dot} setDot={setDot} />}
+    </>
+  );
+}
+
+function Dot({
+  dot,
+  setDot,
+}: {
+  dot: { x: number; y: number; on: boolean; nova: boolean };
+  setDot: (d: null) => void;
+}) {
   return (
     <i
       className="theme-switch-dot"

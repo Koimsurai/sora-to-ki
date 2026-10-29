@@ -209,13 +209,14 @@ export default function StarfieldGpu({
     send(skyPan());
     return subscribeSkyPan(send);
   }, [backend]);
-  // 頁面自己畫背景時（hooks/useBareSky）星星淡出讓位。控制介面就緒（backend 變了）時補送一次
+  // 頁面自己畫背景時（hooks/useBareSky）、換主題的那幾秒，星星淡出讓位。控制介面就緒（backend 變了）時補送一次
   useEffect(() => {
     const root = document.documentElement;
-    const sync = () => controlRef.current?.stars(root.dataset.sky !== 'bare');
+    // 換主題的那幾秒（html[data-stage]，layout/ThemeSwitchDot）也淡出：燈暗下來，只剩那顆主星
+    const sync = () => controlRef.current?.stars(root.dataset.sky !== 'bare' && root.dataset.stage === undefined);
     sync();
     const mo = new MutationObserver(sync);
-    mo.observe(root, { attributes: true, attributeFilter: ['data-sky'] });
+    mo.observe(root, { attributes: true, attributeFilter: ['data-sky', 'data-stage'] });
     return () => mo.disconnect();
   }, [backend]);
 
