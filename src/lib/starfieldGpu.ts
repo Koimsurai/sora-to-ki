@@ -27,6 +27,8 @@ import {
   float,
   instancedBufferAttribute,
   uv,
+  screenUV,
+  vec2,
   time,
   sin,
   cos,
@@ -259,6 +261,10 @@ interface SaturnRig {
    * grow：正在長的話，星球與環此刻各長到幾成（長完的那一幀是 1、1），其餘時候是 null
    */
   update(dt: number, scrollY: number, animate: boolean): { moving: boolean; zooming: boolean; grow: SaturnGrow | null };
+  /**
+   * 黑洞的重力透鏡在畫面上的中心與愛因斯坦半徑（CSS 像素）；不是黑洞、或還沒長出來是 null
+   */
+  lensOnScreen(camera: THREE.Camera, width: number, height: number): { x: number; y: number; r: number } | null;
   /** 視窗大小：窄的視窗要把整組縮小，最外圈的軌道才放得下；位置與可用的那一塊照 saturnFrame */
   setView(width: number, height: number, fold: Fold | null): void;
   /** 每顆衛星該有多亮（0 到 1），實際亮度會慢慢靠過去 */
@@ -312,6 +318,9 @@ const span = (t: number, from: number, dur: number) => Math.min(1, Math.max(0, (
  * 直接每幀乘 rate 的話，同一段動畫在 180Hz 上會快 3 倍。
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
+
+/** 重力透鏡的愛因斯坦半徑是陰影半徑的幾倍（貼著光子環外面那一圈的星被拉成弧） */
+const LENS_EINSTEIN = 2.2;
 
 /** 土星那層的鏡頭：視角 8°，放在讓畫面半高在 z=0 是 3.84 個單位的距離（見 createStarfieldRunner） */
 const SATURN_FOV = 8;
@@ -870,6 +879,19 @@ function buildSaturn(
       pivot = sat ? sat.sprite.getWorldPosition(new THREE.Vector3()) : null;
       pivotIndex = sat ? index : -1;
     },
+    lensOnScreen(camera, width, height) {
+      if (spec.kind !== 'blackhole' || planetK <= 0.01 || currentScale < 0.02 * fullScale) return null;
+      group.getWorldPosition(center);
+      const c = center.clone().project(camera);
+      edge
+        .copy(center)
+        .add(new THREE.Vector3(0, currentScale * planetK, 0))
+        .project(camera);
+      const x = ((c.x + 1) / 2) * width;
+      const y = ((1 - c.y) / 2) * height;
+      const radius = Math.hypot(((edge.x + 1) / 2) * width - x, ((1 - edge.y) / 2) * height - y);
+      return { x, y, r: radius * LENS_EINSTEIN };
+    },
     project(camera, width, height) {
       const toScreen = (p: THREE.Vector3) => {
         p.project(camera);
@@ -1015,18 +1037,29 @@ export async function createStarfieldRunner(
   //   像素已經夠細、看不出差別。
   const dprUsed = Math.min(init.dpr, 2);
   const msaa = dprUsed >= 1.5 ? 0 : 4;
+  /** 重力透鏡的中心（畫面 0–1）、愛因斯坦半徑（畫面高度的幾成）、寬高比；半徑 0 是關掉 */
+  const lensCenter = uniform(new THREE.Vector2(0.5, 0.5));
+  const lensRadius = uniform(0);
+  const lensAspect = uniform(init.width / Math.max(1, init.height));
   const scenePass = pass(scene, camera, { samples: msaa });
   scenePass.setMRT(mrt({ output, bloomIntensity: float(0) })); // 全域預設：不進 bloom
   const scenePassColor = scenePass.getTextureNode('output');
   const bloomMask = scenePass.getTextureNode('bloomIntensity');
-  const bloomPass = bloom(scenePassColor.mul(bloomMask), 0.35, 0.35, 0.5); // strength / radius / threshold
-  const combined = scenePassColor.add(bloomPass);
+  // 重力透鏡（黑洞）：星空在「被黑洞偏折過的位置」取樣。點質量透鏡：β = θ − θE²/θ（θE 是愛因斯坦半徑），
+  // 越靠近黑洞偏得越多，貼著光子環的星被拉成弧。lensRadius 是 0（別的主題、黑洞沒顯示）時取樣位置跟原本一樣；
+  // 三個主題共用這一份 shader，換主題不用重編。光暈也吃偏折過的星空，跟星星本身對得上
+  const d = screenUV.sub(lensCenter).mul(vec2(lensAspect, 1));
+  const bend = float(1).sub(lensRadius.mul(lensRadius).div(dot(d, d).max(0.000001)));
+  const lensedUV = select(lensRadius.greaterThan(0), lensCenter.add(d.mul(bend).div(vec2(lensAspect, 1))), screenUV);
+  const starsColor = scenePassColor.sample(lensedUV);
+  const bloomPass = bloom(starsColor.mul(bloomMask.sample(lensedUV)), 0.35, 0.35, 0.5); // strength / radius / threshold
+  const combined = starsColor.add(bloomPass);
   // 土星那層疊在星空上：它的顏色已經乘過自己的透明度（一般混合畫在透明底上就是這樣），
   // 所以是「星空 × (1 − 土星的 alpha) + 土星」。擋背面的那顆紙色球 alpha 是 1，球後面的星星就被蓋掉。
   // 輸出保留 alpha：canvas 透明疊在頁面的黑紙上，alpha 全變 1 的話底色會被蓋成純黑
   const saturnPass = pass(saturnScene, saturnCam, { samples: msaa });
   const sat = saturnPass.getTextureNode('output');
-  const sceneOut = vec4(combined.rgb.mul(float(1).sub(sat.a)).add(sat.rgb), max(scenePassColor.a, sat.a));
+  const sceneOut = vec4(combined.rgb.mul(float(1).sub(sat.a)).add(sat.rgb), max(starsColor.a, sat.a));
   const pipeline = new THREE.RenderPipeline(renderer, sceneOut);
 
   // ── 暖機：所有會用到的管線都在 ready 之前編譯完 ──
@@ -1132,6 +1165,9 @@ export async function createStarfieldRunner(
       if (s.moving) markActive();
       // 換主題：收成一點了（不再動）才換
       if (pendingTheme && !saturnAnimate && !s.moving) commitTheme();
+      const lensAt = saturn.lensOnScreen(saturnCam, viewW, viewH);
+      lensRadius.value = lensAt ? lensAt.r / viewH : 0;
+      if (lensAt) lensCenter.value.set(lensAt.x / viewW, lensAt.y / viewH);
       // 附上算出位置的時間（跟主執行緒共用的時基），首頁的字照它推算到自己那一幀（store/homeOrbit）
       init.onSatellites?.(saturn.project(saturnCam, viewW, viewH), performance.timeOrigin + performance.now());
       if (s.grow) init.onSaturnGrow?.(s.grow);
@@ -1230,6 +1266,7 @@ export async function createStarfieldRunner(
         viewFold = fold ?? null;
         saturn.setView(width, height, fold ?? null);
         camera.aspect = width / height;
+        lensAspect.value = width / Math.max(1, height);
         saturnCam.aspect = camera.aspect;
         saturnCam.updateProjectionMatrix();
         camera.updateProjectionMatrix();
@@ -1247,6 +1284,8 @@ export async function createStarfieldRunner(
         // 換主題收到一半就離開首頁：不等收完，直接換
         if (pendingTheme && !visible) commitTheme();
         saturnVisible = visible;
+        // 主星不在畫面上：重力透鏡關掉（它只在 loop 裡、主星顯示時更新）
+        if (!visible) lensRadius.value = 0;
         darkDrawn = false;
         saturnAnimate = animate;
         // 最低品質下即使呼叫顯示也不開（土星最貴）
