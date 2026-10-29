@@ -2,10 +2,6 @@ import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale, localePathname } from '
 import { createInstance, type i18n as I18nInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import zhTW from '@/locales/zh-TW/common.json';
-import zhCN from '@/locales/zh-CN/common.json';
-import en from '@/locales/en/common.json';
-import ja from '@/locales/ja/common.json';
-import ko from '@/locales/ko/common.json';
 
 // ──────────────────────────────────────────────────────────────
 // P2:URL 驅動的 i18n（SSR/SSG 用)。
@@ -113,18 +109,36 @@ export function buildAlternateLinks(
   ];
 }
 
-const RESOURCES = {
-  'zh-TW': { common: zhTW },
-  'zh-CN': { common: zhCN },
-  en: { common: en },
-  ja: { common: ja },
-  ko: { common: ko },
+type Messages = Record<string, unknown>;
+
+// 翻譯字串：預設語系（也是缺字時的備援）直接打包；其他語系各自一個小檔，用到才載，
+// 不讓每一頁都帶著五份。畫出來之前一定要先 loadLocale：伺服器與站內換頁在根路由的 beforeLoad，
+// 瀏覽器接手（hydrate）之前在 src/client.tsx
+const LOADERS: Record<Exclude<Locale, 'zh-TW'>, () => Promise<{ default: Messages }>> = {
+  'zh-CN': () => import('@/locales/zh-CN/common.json'),
+  en: () => import('@/locales/en/common.json'),
+  ja: () => import('@/locales/ja/common.json'),
+  ko: () => import('@/locales/ko/common.json'),
 };
+const loaded: Partial<Record<Locale, Messages>> = { 'zh-TW': zhTW };
+
+/** 載好那個語系的字串並回傳（已經載過就直接給） */
+export async function loadLocale(locale: Locale): Promise<Messages> {
+  const have = loaded[locale];
+  if (have) return have;
+  const messages = (await LOADERS[locale as Exclude<Locale, 'zh-TW'>]()).default;
+  loaded[locale] = messages;
+  return messages;
+}
+
+export const isLocaleLoaded = (locale: Locale) => locale in loaded;
 
 export function createI18n(locale: Locale): I18nInstance {
   const instance = createInstance();
+  const resources: Partial<Record<Locale, { common: Messages }>> = {};
+  for (const [l, messages] of Object.entries(loaded)) resources[l as Locale] = { common: messages };
   void instance.use(initReactI18next).init({
-    resources: RESOURCES,
+    resources,
     lng: locale,
     fallbackLng: DEFAULT_LOCALE,
     supportedLngs: [...SUPPORTED_LOCALES],
