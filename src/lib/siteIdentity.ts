@@ -53,5 +53,4 @@ export const siteAuthor = (): string => current.author;
 /** 首頁的 <title> 與 og:site_name：作者名跟站名不同時是「站名 · 作者」 */
 export const siteTitle = (): string =>
   current.author && current.author !== current.name ? `${current.name} · ${current.author}` : current.name;
-export const siteEmail = (): string => current.email;
 export const siteGithub = (): string => current.github;
