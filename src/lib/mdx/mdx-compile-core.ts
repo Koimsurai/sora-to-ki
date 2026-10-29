@@ -7,7 +7,7 @@
 //
 // 這個檔留著只為了讓前端側的入口名字不變，內容就是轉呼叫。
 
-import { compileMdxToHastJson } from '@koimsurai/mdx-core';
+import { compileMdxToHastJson, markdownToHastJson } from '@koimsurai/mdx-core';
 
 /**
  * MDX 原始碼 → 送給前端的 JSON（序列化的 hast 樹）。
@@ -19,4 +19,9 @@ import { compileMdxToHastJson } from '@koimsurai/mdx-core';
  */
 export async function compileMdxSource(source: string): Promise<string> {
   return compileMdxToHastJson(source);
+}
+
+/** Markdown 原始碼（format='markdown' 的文章）→ 同一種 hast JSON，前端一樣用 MdxContent 渲染 */
+export async function compileMarkdownSource(source: string): Promise<string> {
+  return markdownToHastJson(source);
 }

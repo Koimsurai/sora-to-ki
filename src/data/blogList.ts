@@ -13,11 +13,11 @@ import type {
   TagsResponse,
 } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
-import { compileMdx } from '@/lib/mdx/mdx-compile';
+import { compileMarkdown, compileMdx } from '@/lib/mdx/mdx-compile';
 import { renderMermaidSvgs } from '@/lib/mdx/mermaidRender';
 type Post = PostListItem;
 
-// format='mdx' 的文章多帶一個 server 端編譯好的 function-body（前端用 runSync 執行）。
+// 文章多帶 server 端編譯好的內文（序列化的 hast，MDX 與 markdown 都有）與 mermaid／Sketch 的 SVG 對照表。
 export type PostDetail = PostDetailResponse & { compiledMdx?: string; mermaidSvgs?: Record<string, string> };
 
 // 單篇文章（/api/posts/:id?lang=）。route loader 用 ensureQueryData 預取 → SSR head +
@@ -35,10 +35,11 @@ export const postDetailQueryOptions = (id: string | number, lang: string) =>
       if (!res.ok) throw new Error('Post not found');
       const data = (await res.json()) as PostDetailResponse;
       if (data.message !== 'success') throw new Error('Post not found');
-      // MDX 文章：server 端編譯（compiler 不進 client bundle），結果隨 query dehydrate 到 client。
-      // 編譯失敗（Agent 寫錯語法，如 prose 裡有裸 <Tag>）→ 不 404 整篇，退回 markdown 渲染（至少可讀）。
-      // mermaid 圖同樣在 server 端渲染（渲染器約 1.5 MB，不進 client bundle），
-      // 對照表隨 query dehydrate 到 client；markdown 與 mdx 兩種格式都要，所以放在分支之前。
+      // 內文在 server 端編譯成 hast（compiler 不進 client bundle），結果隨 query dehydrate 到 client。
+      // MDX 與純 markdown 兩種格式都是；MDX 編譯失敗（Agent 寫錯語法，如 prose 裡有裸 <Tag>）→
+      // 不 404 整篇，改用 markdown 模式編（至少可讀，標籤會以文字出現）。
+      // mermaid 圖同樣在 server 端渲染（渲染器不進 client bundle），對照表隨 query dehydrate 到 client；
+      // 兩種格式都要，所以放在分支之前。
       let mermaidSvgs: Record<string, string> | undefined;
       try {
         mermaidSvgs = await renderMermaidSvgs({ data: data.content });
@@ -50,11 +51,16 @@ export const postDetailQueryOptions = (id: string | number, lang: string) =>
           const compiledMdx = await compileMdx({ data: data.content });
           return { ...data, compiledMdx, mermaidSvgs };
         } catch (e) {
-          console.error('[mdx] 編譯失敗，退回 markdown 渲染：', e);
-          return { ...data, mermaidSvgs };
+          console.error('[mdx] 編譯失敗，退回 markdown 模式：', e);
         }
       }
-      return { ...data, mermaidSvgs };
+      try {
+        const compiledMdx = await compileMarkdown({ data: data.content });
+        return { ...data, compiledMdx, mermaidSvgs };
+      } catch (e) {
+        console.error('[markdown] 編譯失敗：', e);
+        return { ...data, mermaidSvgs };
+      }
     },
     staleTime: 5 * 60 * 1000,
   });

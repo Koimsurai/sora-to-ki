@@ -11,19 +11,14 @@ import {
   seriesQueryOptions,
   type PostDetail,
 } from '@/data/blogList';
-import ReactMarkdown from 'react-markdown';
-import type { Components } from 'react-markdown';
 import type { ExcerptLink, PostDetailResponse, PostListItem, ReactionRow } from '@koimsurai/api-types';
-import remarkGfm from 'remark-gfm';
-import { remarkAlert } from 'remark-github-blockquote-alert';
 import KoimLoader from '@/components/common/KoimLoader';
-import rehypeRaw from 'rehype-raw';
 import { highlightCode } from '@/lib/mdx/codeHighlight';
 import { isBlockCode } from '@/lib/mdx/codeKind';
 import { langEmoji } from '@/lib/langEmoji';
 import { CodeBody } from '@/components/mdx/CodeSurface';
 // 圖表整套（渲染、工具列、主題／版面切換、全螢幕、mermaid+ELK 的延遲載入）在 MermaidBlock.tsx。
-// 這裡只是把它掛進 ReactMarkdown 的元件表——mermaid 那顆 lib 由 MermaidBlock 自己動態載入，
+// 這裡只是把它掛進文章內文的元件表——mermaid 那顆 lib 由 MermaidBlock 自己動態載入，
 // 沒有圖的文章連 import 都不會觸發。
 import { MermaidBlock, MermaidStatic } from './MermaidBlock';
 import { MermaidSvgContext } from '@/contexts/mermaidSvgs';
@@ -175,19 +170,22 @@ export const CodeBlock = ({
   node: _node,
   className,
   children,
+  'data-highlighted': preHighlighted,
   ...props
 }: {
   node?: unknown;
   className?: string;
   children?: React.ReactNode;
+  /** 伺服器編譯時就上好色的 HTML（lib/mdx/codeHighlightTree）；有的話不必在瀏覽器裡載高亮器 */
+  'data-highlighted'?: string;
 } & React.HTMLAttributes<HTMLElement>) => {
   const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
-  const [highlighted, setHighlighted] = useState<string | null>(null);
+  const [highlighted, setHighlighted] = useState<string | null>(preHighlighted ?? null);
   const match = /language-(\w+)/.exec(className ?? '');
   const lang = match ? match[1] : 'text';
   const rawText = nodeText(children);
-  // 行內還是圍籬：MDX 與 react-markdown 都不會傳 `inline` 進來，要看內容（見 lib/mdx/codeKind）
+  // 行內還是圍籬：內文的渲染（hast-util-to-jsx-runtime）不會傳 `inline` 進來，要看內容（見 lib/mdx/codeKind）
   const inline = !isBlockCode(rawText);
   const codeText = rawText.replace(/\n$/, '');
 
@@ -200,9 +198,9 @@ export const CodeBlock = ({
         codeText.trim(),
       ));
 
-  // Shiki lazy 反白 — 渲染後 idle 才開始，載入前先顯示 plain pre
+  // 伺服器沒上色的（後台預覽、上色失敗）才在瀏覽器裡上：渲染後 idle 才開始，載入前先顯示 plain pre
   useEffect(() => {
-    if (inline || isMermaid || !match) return;
+    if (preHighlighted || inline || isMermaid || !match) return;
     let cancelled = false;
     // lib.dom 宣告 requestIdleCallback 必存在，舊版 Safari 實際沒有 → 可選型別讓守衛誠實。
     // Window 是 [Global] 介面，解構後直接呼叫不會 Illegal invocation（同 AppShell 手法）。
@@ -237,7 +235,7 @@ export const CodeBlock = ({
       if (idleId !== undefined) (window as Partial<Window>).cancelIdleCallback?.(idleId);
       if (timeoutId !== undefined) clearTimeout(timeoutId);
     };
-  }, [codeText, lang, inline, isMermaid, match]);
+  }, [codeText, lang, inline, isMermaid, match, preHighlighted]);
 
   if (!inline && isMermaid) {
     // mermaid 用 react-zoom-pan-pinch（render 期碰 window，非 SSR-safe）→ 只把這個島包 ClientOnly。
@@ -312,6 +310,17 @@ export const CodeBlock = ({
   );
 };
 
+/** 內文編譯失敗（MDX 與 markdown 模式都編不過，正常不會發生）：原文照字顯示，文末照樣掛上來 */
+function BodyFallback({ content, onDone }: { content: string; onDone: () => void }) {
+  useEffect(onDone, [onDone]);
+  return (
+    <div className="mdx-error">
+      <strong>⚠ 內文編譯失敗，以下是原文</strong>
+      <pre>{content}</pre>
+    </div>
+  );
+}
+
 /* ══════════════════════════
    Custom paragraph — detect standalone link lines for LinkCard
    ══════════════════════════ */
@@ -322,7 +331,7 @@ export const CustomParagraph = ({
 }: { children?: React.ReactNode; node?: unknown } & React.HTMLAttributes<HTMLParagraphElement>) => {
   // Children.toArray 一般不建議（會遮蔽 key、鼓勵去操作 children），但這裡是
   // markdown 渲染器：要判斷「這個段落是不是只有一個裸連結」才能決定換成 LinkCard，
-  // 除了檢查 children 結構沒有別的辦法——react-markdown 就是這樣把節點交給我們的。
+  // 除了檢查 children 結構沒有別的辦法——內文的渲染就是這樣把節點交給我們的。
   // eslint-disable-next-line @eslint-react/no-children-to-array
   const childArray = React.Children.toArray(children);
 
@@ -393,7 +402,7 @@ export const CustomParagraph = ({
       }
     }
 
-    // ReactMarkdown <a> 元素（remarkGfm autolink 或 markdown 連結）
+    // <a> 元素（GFM 的 autolink 或 markdown 連結）
     if (React.isValidElement(child) && (child.props as { href?: string }).href) {
       const cprops = child.props as { href: string; children?: React.ReactNode };
       const href = cprops.href;
@@ -1491,12 +1500,12 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
         )}
 
         <article className="post-content drop-cap-first" ref={contentRef}>
-          {/* 伺服器預渲染的 mermaid SVG 對照表。CodeBlock 是頂層 export（後台預覽也重用），
-              中間又隔著 ReactMarkdown 的內部結構，所以只能走 context。 */}
+          {/* 伺服器預渲染的 mermaid／Sketch SVG 對照表。CodeBlock 是頂層 export（後台預覽也重用），
+              中間又隔著內文渲染的內部結構，所以只能走 context。 */}
           <MermaidSvgContext value={postData?.mermaidSvgs ?? {}}>
             {postData?.compiledMdx ? (
-              // format='mdx'：server 端已編譯，這裡 runSync 執行成 React 元件（自訂 block +
-              // 與 markdown 共用的 code/link/img/heading override）。
+              // server 端已編譯成 hast（MDX 與純 markdown 都是，見 data/blogList），這裡渲染成 React 元件
+              // （自訂 block + code/link/img/heading 的 override）。
               <MdxContent
                 compiled={postData.compiledMdx}
                 baseComponents={mdxBaseComponents}
@@ -1504,37 +1513,7 @@ function BlogPost({ preview }: { preview?: BlogPostPreview } = {}) {
                 onDone={onBodyDone}
               />
             ) : (
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkAlert]}
-                rehypePlugins={[rehypeRaw]}
-                components={
-                  {
-                    code: CodeBlock,
-                    p: CustomParagraph,
-                    img: ({ src, alt, ...rest }) => <BlogImage src={src} alt={alt} {...rest} />,
-                    // 行內連結 → hover 預覽卡（資料來自自家 /api/link-preview，不外送給第三方）。
-                    // 「整段只有一個連結」那種會先被 CustomParagraph 攔去做 LinkCard 區塊卡，
-                    // 所以這裡拿到的都是真正的行內連結。錨點（#foo）不預覽。
-                    a: ({ href, children, ...rest }) => {
-                      const h = typeof href === 'string' ? href : '';
-                      if (!h || h.startsWith('#'))
-                        return (
-                          <a href={h} {...rest}>
-                            {children}
-                          </a>
-                        );
-                      return (
-                        <LinkHoverPreview href={h} className={(rest as { className?: string }).className}>
-                          {children}
-                        </LinkHoverPreview>
-                      );
-                    },
-                    ...headingComponents,
-                  } as Components
-                }
-              >
-                {post.content}
-              </ReactMarkdown>
+              <BodyFallback content={post.content} onDone={onBodyDone} />
             )}
           </MermaidSvgContext>
         </article>

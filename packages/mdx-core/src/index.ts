@@ -224,3 +224,55 @@ export async function compileMdxToHastJson(source: string, knownComponents?: Rea
   assertRenderable(tree, knownComponents);
   return JSON.stringify(slim(tree));
 }
+
+/**
+ * 頁面上一插進去就會自己跑的東西：`<script>` 元素與 `on*` 事件屬性。
+ *
+ * markdown 文章裡可以直接寫 HTML（rehype-raw 解析）。以前是在瀏覽器裡由 react-markdown 建 DOM，
+ * React 建出來的 `<script>` 不會執行；改成伺服器編譯之後，這些元素會直接寫進伺服器輸出的 HTML，
+ * 瀏覽器載入時就會跑，所以在這裡拿掉。
+ */
+function dropActiveContent(node: HastNode): void {
+  if (!node.children) return;
+  node.children = node.children.filter((c) => !(c.type === 'element' && c.tagName === 'script'));
+  for (const child of node.children) {
+    const props = child.type === 'element' ? (child.properties as Record<string, unknown> | undefined) : undefined;
+    for (const key of Object.keys(props ?? {})) {
+      if (props && /^on[A-Z]/.test(key)) delete props[key];
+    }
+    dropActiveContent(child);
+  }
+}
+
+/**
+ * Markdown 原始碼（format='markdown' 的文章）→ 跟 MDX 一樣的 hast JSON，前端用同一個 MdxContent 渲染，
+ * 瀏覽器就不必再帶一套 markdown 解析器（react-markdown + rehype-raw，約 300 KB）。
+ *
+ * 跟 MDX 同一組 remark plugin（GFM、彩色 alert）；文中的 HTML 照舊可以用（rehype-raw），
+ * 會自己執行的東西拿掉（見 dropActiveContent）。純 markdown 不會有元件，不必做可渲染性檢查。
+ */
+export async function markdownToHastJson(source: string): Promise<string> {
+  const { createProcessor, nodeTypes } = await import('@mdx-js/mdx');
+  const remarkGfm = (await import('remark-gfm')).default;
+  const { remarkAlert } = await import('remark-github-blockquote-alert');
+  const rehypeRaw = (await import('rehype-raw')).default;
+
+  const out: { tree: HastNode | null } = { tree: null };
+  const processor = createProcessor({
+    format: 'md',
+    outputFormat: 'function-body',
+    development: false,
+    remarkPlugins: [remarkGfm, remarkAlert],
+    rehypePlugins: [
+      // MDX 管線自己的節點（mdxjsEsm 等）讓它原樣通過，其餘的 raw HTML 解析成元素
+      [rehypeRaw, { passThrough: [...nodeTypes] }],
+      () => (tree: HastNode) => {
+        dropActiveContent(tree);
+        out.tree = tree;
+      },
+    ],
+  });
+  await processor.run(processor.parse(source) as never);
+  if (!out.tree) throw new Error('Markdown 管線沒有產出 hast 樹');
+  return JSON.stringify(slim(out.tree));
+}

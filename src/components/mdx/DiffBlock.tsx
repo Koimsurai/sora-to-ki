@@ -1,58 +1,30 @@
 // MDX <Diff lang="ts">…</Diff>：程式碼前後對比。行首 + 為新增、- 為刪除、其餘上下文。
 // 重用站上既有的程式碼高亮（highlightCode）上色 base 語言，再依 diff 類型給每行加紅綠底 class。
-// SSR 出樸素 pre（CodeBody fallback），client idle 後套上高亮——與 CodeBlock 同策略。
+// 文章頁的上色在伺服器編譯時就做好了（lib/mdx/codeHighlightTree，經 `highlighted` 屬性帶進來）；
+// 沒有的時候（後台預覽之類）才在瀏覽器裡上色，先出樸素 pre。
 import { useEffect, useMemo, useState } from 'react';
 import { highlightCode } from '@/lib/mdx/codeHighlight';
+import { parseDiff, tagDiffLines } from '@/lib/mdx/diffLines';
 import { langEmoji } from '@/lib/langEmoji';
 import { CodeBody } from './CodeSurface';
-
-type LineType = 'add' | 'del' | 'ctx';
-
-// 解析 diff 文字：去掉每行的 +/-/space 標記，回傳乾淨碼 + 每行類型。
-function parseDiff(raw: string): { code: string; types: LineType[] } {
-  const lines = raw.replace(/^\n+/, '').replace(/\n+$/, '').split('\n');
-  const types: LineType[] = [];
-  const code = lines
-    .map((l) => {
-      if (l.startsWith('+')) {
-        types.push('add');
-        return l.slice(1);
-      }
-      if (l.startsWith('-')) {
-        types.push('del');
-        return l.slice(1);
-      }
-      types.push('ctx');
-      return l.startsWith(' ') ? l.slice(1) : l;
-    })
-    .join('\n');
-  return { code, types };
-}
-
-// 高亮輸出每行一個 <span class="line">（lib/mdx/codeHighlight 刻意照 shiki 的結構排）；依序把 add/del 行補上 diff class（CSS 上紅綠底）。
-function tagDiffLines(html: string, types: LineType[]): string {
-  let i = 0;
-  return html.replace(/<span class="line"/g, () => {
-    const t = types[i++];
-    if (t === 'add') return '<span class="line diff-line-add"';
-    if (t === 'del') return '<span class="line diff-line-del"';
-    return '<span class="line"';
-  });
-}
 
 export default function DiffBlock({
   code = '',
   lang = 'text',
   title,
+  highlighted,
 }: {
   code?: string;
   lang?: string;
   title?: string;
+  /** 伺服器上好色的 HTML（乾淨碼的高亮，還沒加 diff class） */
+  highlighted?: string;
 }) {
   const { code: clean, types } = useMemo(() => parseDiff(code), [code]);
-  const [html, setHtml] = useState<string | null>(null);
+  const [html, setHtml] = useState<string | null>(() => (highlighted ? tagDiffLines(highlighted, types) : null));
 
   useEffect(() => {
+    if (highlighted) return;
     let cancelled = false;
     highlightCode(clean, lang)
       .then((h) => {
@@ -64,7 +36,7 @@ export default function DiffBlock({
     return () => {
       cancelled = true;
     };
-  }, [clean, lang, types]);
+  }, [clean, lang, types, highlighted]);
 
   const adds = types.filter((t) => t === 'add').length;
   const dels = types.filter((t) => t === 'del').length;
