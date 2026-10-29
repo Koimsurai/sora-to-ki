@@ -109,8 +109,39 @@ onTheme((theme) => {
   THEME = theme;
   RING_OUTER = PLANETS[theme].ring.outer;
 });
-/** 黑洞的尾巴捲多少（rad）：散掉的那一刻繞著點轉了這麼多 */
+/** 黑洞的尾巴：點身後多長（px）以內才畫、最遠那端繞著點轉了多少（rad） */
+const BH_TAIL = 220;
 const BH_CURL = 4.5;
+/** 黑洞的時間膨脹：飛行拉長幾倍（後段越飛越慢，見 dilate） */
+const BH_DILATE = 1.35;
+/**
+ * 黑洞的重力波（LIGO 2015 年第一次偵測到的，兩個黑洞合併）：合併前是一聲「啁啾」，波越來越密、越來越強；
+ * 合併（點落地）那一下最大；之後幾圈越來越弱的餘振。
+ * CHIRP 是點飛到幾成時各放一道（越來越密）與它的強度；RINGDOWN 是落地後幾毫秒各放一道
+ */
+const CHIRP: [tau: number, strength: number][] = [
+  [0.55, 0.12],
+  [0.7, 0.16],
+  [0.8, 0.2],
+  [0.87, 0.26],
+  [0.92, 0.32],
+  [0.955, 0.4],
+];
+const RINGDOWN: [ms: number, strength: number][] = [
+  [0, 1],
+  [110, 0.5],
+  [230, 0.25],
+];
+/** 波前往外走多快（px/ms）、活多久（ms）、四極形變最大多少（半徑的幾成）、橫直來回擺一次多久（ms） */
+const WAVE_SPEED = 0.5;
+const WAVE_LIFE = 1300;
+const WAVE_SQUEEZE = 0.16;
+const WAVE_PERIOD = 420;
+/**
+ * 時間膨脹：越靠近黑洞時間走得越慢。前段照常加速，後段一路減速、最後一段幾乎停住（速度照 (1−τ)³ 掉）。
+ * 回傳 0–1 的路程
+ */
+const dilate = (tau: number) => (1 - Math.cos(Math.PI * (1 - (1 - tau) ** 2))) / 2;
 /** 海王星的預言落點（predicted）：圈的半徑、外面那四道刻度的長度（px） */
 const PREDICT_R = 10;
 const PREDICT_TICK = 4;
@@ -163,6 +194,12 @@ const unit = (p: Pt): Pt => {
   return { x: p.x / l, y: p.y / l };
 };
 
+/** 黑洞的麵條化：拉長幾成（0–1）、往哪個方向 */
+interface Stretch {
+  k: number;
+  angle: number;
+}
+
 interface Flight {
   points: Pt[];
   /** 每一點從起點量起的路長 */
@@ -208,6 +245,9 @@ interface Run {
   offset: Pt;
   /** 海王星的彈弓繞過的那顆星（世界座標）；沒有彈弓是 null */
   focus: Pt | null;
+  /** 黑洞的重力波：每一道波前從哪裡、什麼時候出發、多強（世界座標）；啁啾已經放到第幾道 */
+  waves: { at: number; c: Pt; strength: number }[];
+  chirp: number;
   cam: Pt;
   /** 點不用飛（已經在錨點上）：鏡頭不動 */
   still: boolean;
@@ -419,10 +459,12 @@ export default function TransitionLayer() {
       }
     };
 
-    const dot = (p: Pt, radius: number, alpha = 1) => {
+    /** stretch：黑洞的麵條化——沿 angle 拉長 (1 + 3k) 倍、橫向變細，光暈跟著變暗（重力紅移） */
+    const dot = (p: Pt, radius: number, alpha = 1, stretch?: Stretch) => {
       if (alpha <= 0.01) return;
+      const k = stretch?.k ?? 0;
       const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 18);
-      g.addColorStop(0, `rgba(${AMBER}, ${0.5 * alpha})`);
+      g.addColorStop(0, `rgba(${AMBER}, ${0.5 * alpha * (1 - 0.6 * k)})`);
       g.addColorStop(1, `rgba(${AMBER}, 0)`);
       ctx.fillStyle = g;
       ctx.beginPath();
@@ -430,8 +472,49 @@ export default function TransitionLayer() {
       ctx.fill();
       ctx.fillStyle = `rgba(${AMBER}, ${alpha})`;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      ctx.ellipse(p.x, p.y, radius * (1 + 3 * k), radius * (1 - 0.55 * k), stretch?.angle ?? 0, 0, Math.PI * 2);
       ctx.fill();
+    };
+
+    /**
+     * 黑洞的重力波，照教科書解釋重力波的那張圖畫：一圈「測試粒子」被波掃過時，整圈在橫的橢圓與直的橢圓之間
+     * 來回擺（四極形變，一個方向拉長、另一個方向壓扁）。每一道波前是一圈細點，從出發點往外走、越遠越淡、
+     * 一邊走一邊擺；合併前的啁啾擺得越來越快。回傳還有沒有沒散完的
+     */
+    const gravityWaves = (r: Run, now: number) => {
+      ctx.lineWidth = 1;
+      let alive = false;
+      const keep: Run['waves'] = [];
+      for (const w of r.waves) {
+        const age = now - w.at;
+        if (age < 0) {
+          keep.push(w);
+          alive = true;
+          continue;
+        }
+        const life = age / WAVE_LIFE;
+        if (life >= 1) continue;
+        keep.push(w);
+        alive = true;
+        const radius = 6 + age * WAVE_SPEED;
+        // 越遠越淡（振幅大約照 1/r 掉）、越老越淡
+        const alpha = Math.min(1, 1.1 * w.strength) * Math.pow(1 - life, 1.3) * Math.min(1, 90 / radius) ** 0.5;
+        if (alpha < 0.01) continue;
+        // 一邊走一邊擺：強的那道（合併）擺得慢、弱的（早期的啁啾）擺得快一點
+        const squeeze =
+          WAVE_SQUEEZE *
+          Math.min(1, 0.4 + w.strength) *
+          Math.sin((2 * Math.PI * age) / (WAVE_PERIOD * (0.6 + 0.4 * w.strength)));
+        ctx.fillStyle = `rgba(${INK}, ${alpha.toFixed(3)})`;
+        const n = Math.round(clamp(radius * 0.5, 36, 160));
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          const rr = radius * (1 + squeeze * Math.cos(2 * a));
+          ctx.fillRect(w.c.x + rr * Math.cos(a) - 0.75, w.c.y + rr * Math.sin(a) - 0.75, 1.5, 1.5);
+        }
+      }
+      r.waves = keep;
+      return alive;
     };
 
     /**
@@ -446,23 +529,39 @@ export default function TransitionLayer() {
       ctx.lineCap = 'butt';
       let alive = false;
       let back = 0;
-      // 黑洞：越舊的那段被點拉回去——繞著點轉、同時往點收，捲成一道螺旋（只改畫的位置，trail 本身不動）
+      // 黑洞：點身後的線離點越遠被拉回去越多——繞著點轉、同時往點收，捲成一道小螺旋；超過 BH_TAIL 的那段
+      // 已經被吞掉，不畫（照時間捲的話，飛得遠時舊的那段半徑有好幾百 px，會甩出一道橫過整頁的大弧）。
+      // 只改畫的位置，trail 本身不動
+      let points = trail;
       const head = trail.at(-1);
-      const points =
-        THEME === 'blackhole' && head
-          ? trail.map((p) => {
-              const age = clamp((now - p.t) / TAIL_MS);
-              const turn = age * age * BH_CURL;
-              const pull = 1 - 0.85 * age * age;
-              const dx = p.x - head.x;
-              const dy = p.y - head.y;
-              return {
-                x: head.x + (dx * Math.cos(turn) - dy * Math.sin(turn)) * pull,
-                y: head.y + (dx * Math.sin(turn) + dy * Math.cos(turn)) * pull,
-                t: p.t,
-              };
-            })
-          : trail;
+      if (THEME === 'blackhole' && head) {
+        const curl = (p: Pt, along: number, t: number) => {
+          const u = along / BH_TAIL;
+          const turn = u * u * BH_CURL;
+          const pull = 1 - 0.7 * u;
+          const dx = p.x - head.x;
+          const dy = p.y - head.y;
+          return {
+            x: head.x + (dx * Math.cos(turn) - dy * Math.sin(turn)) * pull,
+            y: head.y + (dx * Math.sin(turn) + dy * Math.cos(turn)) * pull,
+            t,
+          };
+        };
+        points = [curl(head, 0, head.t)];
+        let along = 0;
+        // 飛得快時軌跡點隔二、三十 px，直接捲會變成一折一折的多邊形：每段先切到 4px 以內
+        for (let i = trail.length - 1; i > 0 && along < BH_TAIL; i--) {
+          const a = trail[i];
+          const b = trail[i - 1];
+          const step = len({ x: b.x - a.x, y: b.y - a.y });
+          const pieces = Math.max(1, Math.ceil(step / 4));
+          for (let k = 1; k <= pieces && along < BH_TAIL; k++) {
+            const f = k / pieces;
+            along += step / pieces;
+            points.unshift(curl({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f }, along, a.t + (b.t - a.t) * f));
+          }
+        }
+      }
       for (let i = points.length - 1; i > 0; i--) {
         const a = points[i - 1];
         const b = points[i];
@@ -673,7 +772,7 @@ export default function TransitionLayer() {
         cum,
         total,
         at: now,
-        dur: clamp(total / (SPEED * pace), FLY_MIN_MS, FLY_MAX_MS / pace),
+        dur: clamp(total / (SPEED * pace), FLY_MIN_MS, FLY_MAX_MS / pace) * (THEME === 'blackhole' ? BH_DILATE : 1),
         acquire,
         start: { ...r.pos },
         brakeFrom: Math.max(0, sJoin - Math.min(brake, sJoin * 0.8)),
@@ -814,7 +913,7 @@ export default function TransitionLayer() {
           } else {
             // 跟拍：點沿著路走（起步與落地都是緩的），鏡頭讓它一直在正中間；快接上頁面的線時鏡頭煞停
             tau = clamp((el - f.acquire) / f.dur);
-            const s = ((1 - Math.cos(Math.PI * tau)) / 2) * f.total;
+            const s = (THEME === 'blackhole' ? dilate(tau) : (1 - Math.cos(Math.PI * tau)) / 2) * f.total;
             r.pos = pointAt(f, s);
             const hold = f.brakeTo - f.brakeFrom < 1 ? (s >= f.brakeTo ? 1 : 0) : smooth(f.brakeFrom, f.brakeTo, s);
             r.cam = lerp({ x: r.pos.x - mid.x, y: r.pos.y - mid.y }, r.offset, hold);
@@ -837,6 +936,7 @@ export default function TransitionLayer() {
         world(() => {
           drawDust(r, dt, 1);
           tail(r.trail, now);
+          gravityWaves(r, now);
           // 彈弓繞過的那顆星：點靠近時浮出來，繞過去之後淡掉
           if (r.focus) {
             const d = len({ x: r.pos.x - r.focus.x, y: r.pos.y - r.focus.y });
@@ -853,7 +953,20 @@ export default function TransitionLayer() {
         });
         const onScreen = { x: r.pos.x - r.cam.x, y: r.pos.y - r.cam.y };
         track(r, onScreen, now);
-        dot(onScreen, 3);
+        // 黑洞：快到的時候點被沿著前進方向拉長（麵條化）、光暈變暗（重力紅移）；重力波的啁啾從落點放出來
+        let stretch: Stretch | undefined;
+        if (THEME === 'blackhole' && r.flight && !r.still) {
+          const f = r.flight;
+          const progress = clamp((now - f.at - f.acquire) / f.dur);
+          const k = smooth(0.5, 0.95, progress);
+          if (k > 0 && len(moved) > 0.01) stretch = { k, angle: Math.atan2(moved.y, moved.x) };
+          const goal = f.points.at(-1);
+          while (goal && r.chirp < CHIRP.length && progress >= CHIRP[r.chirp][0]) {
+            r.waves.push({ at: now, c: goal, strength: CHIRP[r.chirp][1] });
+            r.chirp++;
+          }
+        }
+        dot(onScreen, 3, 1, stretch);
         if (r.phase === 'fly') return;
       }
 
@@ -878,10 +991,17 @@ export default function TransitionLayer() {
       r.main.style.transform = '';
       // 沒飛的（點本來就在錨點上）這時才淡入
       r.main.style.opacity = String(Math.max(Number(r.main.style.opacity || 0), easeOut(g)));
+      // 黑洞：點落地＝合併，最強的那道與後面的餘振從落點放出來（世界座標：這時鏡頭停在 offset）
+      if (THEME === 'blackhole' && !r.still && r.chirp <= CHIRP.length) {
+        const c = { x: to.x + r.cam.x, y: to.y + r.cam.y };
+        for (const [ms, strength] of RINGDOWN) r.waves.push({ at: now + ms, c, strength });
+        r.chirp = CHIRP.length + 1;
+      }
       ctx.save();
       ctx.translate(-r.cam.x, -r.cam.y);
       drawDust(r, Math.min(50, now - r.last), 1);
       const alive = tail(r.trail, now);
+      const rippling = gravityWaves(r, now);
       ctx.restore();
       r.last = now;
       const landed = r.follow && now < r.followUntil ? r.follow() : to;
@@ -890,7 +1010,7 @@ export default function TransitionLayer() {
       if (THEME === 'neptune' && !r.still)
         predicted(landed, (0.45 + 0.4 * Math.sin(Math.PI * clamp(g * 2))) * (1 - g), 1 - easeOut(g));
       dot(landed, 3 * (1 - easeOut(g)), 1 - g);
-      if (g >= 1 && !r.dust.length && !alive) {
+      if (g >= 1 && !r.dust.length && !alive && !rippling) {
         cancelAnimationFrame(raf);
         // 正常跑完才上報（出錯、被下一次換頁打斷、元件卸載都不算）
         if (r.report) {
@@ -1031,6 +1151,8 @@ export default function TransitionLayer() {
         followUntil: 0,
         residue: null,
         focus: null,
+        waves: [],
+        chirp: 0,
         t0: now,
         from: center,
         pos: center,
@@ -1137,6 +1259,8 @@ export default function TransitionLayer() {
           followUntil: performance.now() + (departure.followMs ?? 0),
           residue: departure.residue ?? null,
           focus: null,
+          waves: [],
+          chirp: 0,
           t0: performance.now(),
           from: departure.point,
           pos: departure.point,
