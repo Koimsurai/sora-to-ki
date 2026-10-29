@@ -44,8 +44,6 @@ import { createFramePacer } from './framePacer';
 import { channels, DEFAULT_PALETTE, type Palette } from './palette';
 import {
   ORBITS,
-  PLANET_COVER,
-  PLANET_ROWS,
   PLANETS,
   RING_COVER,
   RING_ROWS,
@@ -362,7 +360,8 @@ function buildSaturn(
   const sunInPlane = uniform(new THREE.Vector3());
   /** 環轉了多久（秒）：跟著每一幀的 dt 走，閒置降幀、收起來時一起停 */
   const ringClock = uniform(0);
-  const paper = vec3(INK.r, INK.g, INK.b);
+  // 刷痕的顏色：墨色，海王星往訊號色偏一點（規格裡的 tint）
+  const paper = mix(vec3(INK.r, INK.g, INK.b), vec3(AMBER.r, AMBER.g, AMBER.b), spec.tint);
   const ground = vec3(GROUND.r, GROUND.g, GROUND.b);
   /**
    * 一列一列的刷痕：row 是列的座標（每 1 是一列），ink 是 0 到 1 的濃度，回傳這個像素有沒有墨。
@@ -422,7 +421,7 @@ function buildSaturn(
     tone = tone.mul(smoothstep(spec.pole[0], spec.pole[1], abs(lat)));
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
     const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
-    const row = n.y.mul(PLANET_ROWS).add(wave.mul(0.8));
+    const row = n.y.mul(spec.rows).add(wave.mul(0.8));
     const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
       .mul(0.45)
       .add(1);
@@ -441,7 +440,7 @@ function buildSaturn(
         .clamp(0, 1),
       0.8,
     );
-    return mix(ground, paper, strokes(row, ink, PLANET_COVER));
+    return mix(ground, paper, strokes(row, ink, spec.cover));
   })();
   const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), planetMat);
   body.add(planet);

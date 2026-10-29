@@ -90,6 +90,11 @@ export interface PlanetSpec {
   bands: [lat: number, width: number, delta: number][];
   /** 底子的亮度（雲帶加減在它上面） */
   base: number;
+  /** 球面的刷痕：星球半徑 1 上有幾列、最濃時線佔一列的幾成 */
+  rows: number;
+  cover: number;
+  /** 刷痕往訊號色偏多少（0 是墨色）：海王星是一顆藍色的球 */
+  tint: number;
   /** 兩極從 [全暗, 開始暗] 這段緯度（°）暗下去 */
   pole: [dark: number, from: number];
   /** 斑點（風暴）：[經度 rad, 緯度°, 東西半寬°, 南北半寬°, 亮度增減] */
@@ -125,6 +130,9 @@ const ringMid = (i: number): [number, number] => {
 const SATURN: PlanetSpec = {
   bands: SATURN_BANDS_FULL,
   base: 0.52,
+  rows: PLANET_ROWS,
+  cover: PLANET_COVER,
+  tint: 0,
   pole: [80, 48],
   spots: [],
   ring: {
@@ -146,20 +154,25 @@ const deg = (d: number) => (d * Math.PI) / 180;
 /**
  * 海王星（Voyager 2 的影像）：赤道一帶偏暗、中緯度一亮一暗，南緯 60° 以南一圈暗帶。
  * 南緯 22° 的大暗斑，它南緣的白色伴雲，南緯 42° 那朵跑得最快的白雲（Scooter），南緯 55° 的小暗斑（中心有一點白）。
- * 照片上的條紋很淡，這裡的增減比土星小
+ *
+ * 跟土星要一眼分得出來，靠的是輪廓：土星是一大片亮環，海王星是一顆幾乎光滑的藍球，環暗到只剩四段弧。
+ * 所以條紋的增減只有土星的一半左右，刷痕更細更密、帶一點藍
  */
 const NEPTUNE: PlanetSpec = {
   bands: [
-    [0, 14, -0.12],
-    [-24, 6, 0.1],
-    [24, 7, 0.08],
-    [-40, 4, -0.08],
-    [-46, 3, 0.1],
-    [44, 5, 0.06],
-    [-66, 9, -0.22],
-    [66, 9, -0.14],
+    [0, 14, -0.06],
+    [-24, 6, 0.05],
+    [24, 7, 0.04],
+    [-40, 4, -0.04],
+    [-46, 3, 0.05],
+    [44, 5, 0.03],
+    [-66, 9, -0.12],
+    [66, 9, -0.08],
   ],
-  base: 0.56,
+  base: 0.58,
+  rows: 34,
+  cover: 0.56,
+  tint: 0.4,
   pole: [72, 44],
   spots: [
     [0.4, -22, 13, 6.5, -0.62],
@@ -171,11 +184,11 @@ const NEPTUNE: PlanetSpec = {
   // 由內到外：Galle（寬、很淡）、Le Verrier（細）、Lassell（淡的一片）、Arago（細）、Adams（細，上面有弧）
   ring: {
     segments: [
-      [1.66, 1.74, 0.08],
-      [2.142, 2.156, 0.6],
-      [2.156, 2.3, 0.04],
-      [2.306, 2.316, 0.25],
-      [2.532, 2.548, 0.3],
+      [1.66, 1.74, 0.03],
+      [2.142, 2.156, 0.22],
+      [2.156, 2.3, 0.015],
+      [2.306, 2.316, 0.1],
+      [2.532, 2.548, 0.16],
     ],
     gaps: [],
     inner: 1.6,
@@ -187,7 +200,7 @@ const NEPTUNE: PlanetSpec = {
       [2.54, deg(24), deg(38), 1],
       [2.54, deg(45), deg(66), 1],
     ],
-    gain: 0.75,
+    gain: 1,
     brushed: false,
   },
   // 開場那道小環：Le Verrier 與 Adams（Adams 上的弧照載入的階段一段段亮起來，index.css 的 #boot）
