@@ -489,7 +489,11 @@ function buildSaturn(
     const sun = normalize(sunInPlane);
     const along = dot(p, sun).negate();
     const closest = p.add(sun.mul(along));
-    const shade = select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.12), float(1));
+    // 黑洞的吸積盤自己會發光，沒有外來的光源，就沒有星球投下的影子
+    const shade =
+      spec.kind === 'blackhole'
+        ? float(1)
+        : select(along.greaterThan(0).and(closest.length().lessThan(1)), float(0.12), float(1));
     if (!ringSpec.brushed) {
       // 細環（海王星）：每一道畫成至少一個像素寬的髮絲。比一個像素還細的照比例變淡，而不是照原寬去取樣——
       // 那樣線有時落在像素上、有時沒有，整圈會斷成虛線（實際發生過）
@@ -655,7 +659,8 @@ function buildSaturn(
     // 起始角度錯開，越外圈轉得越慢（克卜勒的味道就好，不必真的照比例）
     // 反方向公轉的（海王星的崔頓）：角速度變號，它那條軌道也鏡像，長與收的時候線才會朝它走的方向畫
     const dir = spec.retrograde.includes(i) ? -1 : 1;
-    orbitLines[i].line.scale.z = dir;
+    // 圓軌道靠鏡像讓線朝反方向畫；有自己形狀的軌道（stars）是照方向重排點（alignOrbit），不用鏡像
+    orbitLines[i].line.scale.z = stars?.[i] ? 1 : dir;
     return { sprite, g, r, phase: satellitePhase(i), dir };
   });
   /**
@@ -919,6 +924,9 @@ function buildSaturn(
       const [ex, ey] = toScreen(edge);
       const [cx, cy] = toScreen(center.clone());
       const radius = Math.hypot(ex - cx, ey - cy);
+      // 衛星繞到後面、落在主星看起來的範圍裡時字卡先藏起來（不然一張字卡浮在星球上，找不到它的點）。
+      // 黑洞看起來比陰影大得多：頂上那道彎過去的盤影、吸積盤都算
+      const hideWithin = spec.kind === 'blackhole' ? radius * 1.8 : radius;
       // 只回報開著的分區那幾顆：首頁一個分區一張字卡，數目對不上會當成 3D 還沒好、整個退成平面版
       return satellites.slice(0, sectionCount).map((s, i) => {
         s.sprite.getWorldPosition(v);
@@ -928,7 +936,9 @@ function buildSaturn(
           x,
           y,
           hidden:
-            currentScale < 0.05 * fullScale || (satK[i] ?? 0) < 0.3 || (behind && Math.hypot(x - cx, y - cy) < radius),
+            currentScale < 0.05 * fullScale ||
+            (satK[i] ?? 0) < 0.3 ||
+            (behind && Math.hypot(x - cx, y - cy) < hideWithin),
         };
       });
     },

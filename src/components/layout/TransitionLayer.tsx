@@ -486,15 +486,18 @@ export default function TransitionLayer() {
     /**
      * 黑洞的轉場：離開的那一點變成的小黑洞，跟首頁的主星同一個長相——夜色的陰影、一圈光子環、
      * 陰影頂上被彎過去的盤影、一道傾斜的吸積盤（後半圈在陰影後面、前半圈擋在前面）。出現時從一點長出來；
-     * 點落地之後、光被吞完了才收掉
+     * 點逃遠了、身後的光也吞得差不多了就收起來
      */
     const drawHole = (r: Run, now: number) => {
       const h = r.hole;
       if (!h) return;
       const grow = easeOut(clamp((now - h.at) / 320));
-      const fade = r.phase === 'grow' ? 1 - clamp((now - r.growAt) / (TAIL_MS * HOLE_PULL)) : 1;
+      // 點逃遠了、光也吞得差不多了，黑洞就收起來（不一直留在那裡）
+      const f = r.flight;
+      const progress = r.phase === 'grow' ? 1 : f ? clamp((now - f.at - f.acquire) / f.dur) : 0;
+      const fade = 1 - smooth(0.4, 0.75, progress);
       if (grow * fade <= 0.01) return;
-      const radius = HOLE_R * grow;
+      const radius = HOLE_R * grow * (0.4 + 0.6 * fade);
       ctx.save();
       ctx.translate(h.c.x, h.c.y);
       ctx.rotate(-0.2);
@@ -591,7 +594,7 @@ export default function TransitionLayer() {
       let back = 0;
       // 黑洞：點身後的光越舊越被拉回後面那個小黑洞——繞著它轉、往它收，進了陰影就不見（只改畫的位置）
       const life = hole ? TAIL_MS * HOLE_PULL : TAIL_MS;
-      const points = hole
+      const points: (Pt & { t: number; u?: number })[] = hole
         ? trail.map((p) => {
             const u = clamp((now - p.t) / life) ** 1.4;
             const turn = u * HOLE_SWIRL;
@@ -601,6 +604,7 @@ export default function TransitionLayer() {
               x: hole.x + dx * Math.cos(turn) - dy * Math.sin(turn),
               y: hole.y + dx * Math.sin(turn) + dy * Math.cos(turn),
               t: p.t,
+              u,
             };
           })
         : trail;
@@ -635,12 +639,29 @@ export default function TransitionLayer() {
           }
           if (at < 1) pieces.push([at, 1, TAIL_FAINT * fade]);
         } else pieces.push([0, 1, 0.75 * fade]);
+        // 黑洞：這條線是點逃出去時拖著的光，用點的顏色、帶一層淡淡的光暈；越被拉回黑洞越暗（爬出重力井的光會變暗）
+        const light = hole ? 1 - 0.8 * (b.u ?? 0) : 0;
         for (const [u0, u1, alpha] of pieces) {
           if (u1 <= u0) continue;
-          ctx.strokeStyle = `rgba(${INK}, ${alpha.toFixed(3)})`;
+          const x0 = b.x + (a.x - b.x) * u0;
+          const y0 = b.y + (a.y - b.y) * u0;
+          const x1 = b.x + (a.x - b.x) * u1;
+          const y1 = b.y + (a.y - b.y) * u1;
+          if (hole) {
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = `rgba(${AMBER}, ${(0.12 * alpha * light).toFixed(3)})`;
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x1, y1);
+            ctx.stroke();
+            ctx.lineWidth = 1;
+          }
+          ctx.strokeStyle = hole
+            ? `rgba(${AMBER}, ${(alpha * light).toFixed(3)})`
+            : `rgba(${INK}, ${alpha.toFixed(3)})`;
           ctx.beginPath();
-          ctx.moveTo(b.x + (a.x - b.x) * u0, b.y + (a.y - b.y) * u0);
-          ctx.lineTo(b.x + (a.x - b.x) * u1, b.y + (a.y - b.y) * u1);
+          ctx.moveTo(x0, y0);
+          ctx.lineTo(x1, y1);
           ctx.stroke();
         }
       }

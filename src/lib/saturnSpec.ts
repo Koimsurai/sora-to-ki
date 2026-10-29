@@ -141,7 +141,8 @@ export interface PlanetSpec {
   /** 反方向公轉的衛星（由內到外第幾顆，0 起算） */
   retrograde: number[];
   /**
-   * 軌道改成 S 星那樣的橢圓（黑洞）：一條一筆，由內到外。沒給的話是同一個平面上的正圓（ORBITS）
+   * 每條軌道自己的形狀（黑洞的 S 星、海王星的崔頓與海衛二）：一條一筆，由內到外。
+   * 沒給的話是同一個平面上的正圓（ORBITS）
    */
   stars?: StarOrbit[];
 }
@@ -269,8 +270,18 @@ const NEPTUNE: PlanetSpec = {
     [2.149, 0.6],
     [2.54, 0.5],
   ],
-  // 崔頓：太陽系唯一一顆反方向公轉的大衛星。最外圈那顆倒著繞，看久了才會發現
-  retrograde: [4],
+  // 崔頓：太陽系唯一一顆反方向公轉的大衛星，倒著繞（第 4 條，見下面的 stars）
+  retrograde: [3],
+  // 海王星的衛星照真實的樣子：內側的小衛星（Proteus、Larissa、Galatea…）都在赤道面上、近乎正圓；
+  // 崔頓的軌道相對赤道傾斜 157°（逆行而且斜了 23°）；海衛二（Nereid）離心率 0.75，是太陽系已知軌道最扁的衛星——
+  // 畫面放不下那麼扁，取 0.38（遠點 6.2、近點 2.8，還在 Adams 環外面）。不進動
+  stars: [
+    { a: 2.9, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
+    { a: 3.55, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
+    { a: 4.25, e: 0, incl: 0, node: 0, peri: 0, precess: 0 },
+    { a: 4.95, e: 0, incl: 23, node: 40, peri: 0, precess: 0 },
+    { a: 4.5, e: 0.38, incl: 7, node: 200, peri: 120, precess: 0 },
+  ],
 };
 
 /**
