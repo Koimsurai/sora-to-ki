@@ -112,6 +112,8 @@ onTheme((theme) => {
 });
 /** 黑洞的時間膨脹：飛行拉長幾倍（後段越飛越慢，見 dilate） */
 const BH_DILATE = 1.35;
+/** 換主題之後接回這一頁（quiet）：點從中央直直飛回錨點要多久 */
+const QUIET_MS = 650;
 /**
  * 黑洞的重力波（LIGO 2015 年第一次偵測到的，兩個黑洞合併）：合併前是一聲「啁啾」，波越來越密、越來越強；
  * 合併（點落地）那一下最大；之後幾圈越來越弱的餘振。
@@ -992,6 +994,30 @@ export default function TransitionLayer() {
             ctx.globalAlpha = fadeOut;
             residue(ctx);
           });
+      }
+
+      // 這一頁其實沒換（換主題之後接回來）：沒有鏡頭、頁面原地淡回來，點在畫面上直直飛向錨點。
+      // 錨點每一幀重讀：會動的（作品頁的月亮、收藏頁轉著的地球上那一點）也追得上
+      if (r.phase === 'fly' && r.quiet) {
+        const page = currentPage();
+        const live = () => page.handle?.anchor?.() ?? defaultAnchor(r.main);
+        const u = clamp((now - r.launchAt) / QUIET_MS);
+        const target = live();
+        const k = smooth(0, 1, u);
+        r.pos = { x: r.from.x + (target.x - r.from.x) * k, y: r.from.y + (target.y - r.from.y) * k };
+        const lastPt = r.trail.at(-1);
+        if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos, t: now });
+        r.main.style.opacity = String(smooth(0.3, 1, u));
+        tail(r.trail, now);
+        track(r, r.pos, now);
+        dot(r.pos, 3);
+        r.last = now;
+        if (u < 1) return;
+        r.to = target;
+        r.follow = live;
+        r.followUntil = now + GROW_MS;
+        r.phase = 'grow';
+        r.growAt = now;
       }
 
       if (r.phase === 'fly') {
