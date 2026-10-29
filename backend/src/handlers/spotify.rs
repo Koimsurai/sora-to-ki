@@ -50,7 +50,7 @@ fn redirect_uri() -> String {
     std::env::var("SPOTIFY_REDIRECT_URI")
         .ok()
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "https://koimsurai.com/api/spotify/callback".to_string())
+        .unwrap_or_else(|| format!("{}/api/spotify/callback", crate::identity::site_url()))
 }
 
 /// getSpotifyAccessToken 等價（含 in-process token 快取；併發重刷不去重，同 Express）。

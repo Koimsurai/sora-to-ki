@@ -47,10 +47,8 @@ pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) 
         _ => "",
     };
     let self_q = if url_prefix.is_empty() { String::new() } else { format!("?lang={locale}") };
-    let site_url = std::env::var("SITE_URL")
-        .ok()
-        .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "https://koimsurai.com".into());
+    let site_url = crate::identity::site_url();
+    let author_fallback = crate::identity::site_author();
     type Row = (
         i64,
         Option<String>,
@@ -125,7 +123,7 @@ pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) 
                 "    <item>\n      <title>{}</title>\n      <link>{link}</link>\n      <guid isPermaLink=\"true\">{link}</guid>\n      <description>{}</description>\n      <author>{}</author>\n      <pubDate>{}</pubDate>\n      {}\n      {}\n    </item>",
                 escape_html(title.as_deref().unwrap_or("")),
                 escape_html(&desc),
-                escape_html(author.as_deref().filter(|a| !a.is_empty()).unwrap_or("Koimsurai")),
+                escape_html(author.as_deref().filter(|a| !a.is_empty()).unwrap_or(&author_fallback)),
                 js_date_to_utc_string(created_at.as_deref()),
                 cat_line,
                 cats,
@@ -134,8 +132,10 @@ pub async fn site_rss(State(state): State<AppState>, Query(q): Query<RssQuery>) 
         .collect();
 
     let xml = format!(
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n  <channel>\n    <title>Koimsurai 手記</title>\n    <link>{site_url}{url_prefix}/blog</link>\n    <description>宙と木，Koimsurai 的手記。一個寫代碼的人，偶爾造點東西。</description>\n    <language>{locale}</language>\n    <lastBuildDate>{last_build}</lastBuildDate>\n    <atom:link href=\"{site_url}/rss{self_q}\" rel=\"self\" type=\"application/rss+xml\"/>\n{}\n  </channel>\n</rss>",
-        items.join("\n")
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n  <channel>\n    <title>{title}</title>\n    <link>{site_url}{url_prefix}/blog</link>\n    <description>{description}</description>\n    <language>{locale}</language>\n    <lastBuildDate>{last_build}</lastBuildDate>\n    <atom:link href=\"{site_url}/rss{self_q}\" rel=\"self\" type=\"application/rss+xml\"/>\n{}\n  </channel>\n</rss>",
+        items.join("\n"),
+        title = escape_html(&crate::identity::site_name()),
+        description = escape_html(&crate::identity::site_description()),
     );
     ([(header::CONTENT_TYPE, "application/rss+xml; charset=utf-8")], xml).into_response()
 }

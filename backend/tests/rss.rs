@@ -17,6 +17,7 @@ mod common;
 
 use axum::http::StatusCode;
 use common::{request_full, test_app};
+use koimsurai_web_backend::identity::{site_author, site_url};
 
 /// 取回 feed 的 XML 本文（順便斷言狀態碼與 content-type）。
 async fn rss(app: &axum::Router, query: &str) -> String {
@@ -46,9 +47,9 @@ async fn seed_rss(pool: &sqlx::SqlitePool) {
         "INSERT INTO posts (id, slug, title, content, excerpt, category, status, author, created_at, updated_at) \
          VALUES (20, 'has-slug', '有 slug 的文章', '內文', '這是摘要', '技術', 'published', 'Koi', \
                  '2026-01-20 03:00:00', '2026-01-21 03:00:00')",
-        // 沒有 slug → 連結退回 id
-        "INSERT INTO posts (id, title, content, excerpt, status, created_at, updated_at) \
-         VALUES (21, '沒有 slug 的文章', '內文', '摘要', 'published', '2026-01-19 03:00:00', '2026-01-19 03:00:00')",
+        // 沒有 slug → 連結退回 id；作者明寫 NULL（欄位預設值是舊站的作者名，不寫就驗不到退回）
+        "INSERT INTO posts (id, title, content, excerpt, status, author, created_at, updated_at) \
+         VALUES (21, '沒有 slug 的文章', '內文', '摘要', 'published', NULL, '2026-01-19 03:00:00', '2026-01-19 03:00:00')",
         // 標題與摘要含需要轉義的字元
         "INSERT INTO posts (id, slug, title, content, excerpt, status, created_at, updated_at) \
          VALUES (22, 'xml-esc', 'A & B <tag> \"quoted\" it''s', '內文', '摘要 & <b>粗體</b>', 'published', \
@@ -85,12 +86,13 @@ async fn 連結用_slug_而不是_id_沒有_slug_才退回_id() {
     let (app, pool) = test_app().await;
     seed_rss(&pool).await;
     let xml = rss(&app, "").await;
+    let site = site_url();
 
-    assert!(xml.contains("<link>https://koimsurai.com/blog/has-slug</link>"), "有 slug 就要用 slug");
+    assert!(xml.contains(&format!("<link>{site}/blog/has-slug</link>")), "有 slug 就要用 slug");
     assert!(!xml.contains("/blog/20<"), "不該出現 /blog/20");
-    assert!(xml.contains("<link>https://koimsurai.com/blog/21</link>"), "沒有 slug 才退回 id");
+    assert!(xml.contains(&format!("<link>{site}/blog/21</link>")), "沒有 slug 才退回 id");
     // guid 與 link 一致，且宣告 isPermaLink
-    assert!(xml.contains(r#"<guid isPermaLink="true">https://koimsurai.com/blog/has-slug</guid>"#));
+    assert!(xml.contains(&format!(r#"<guid isPermaLink="true">{site}/blog/has-slug</guid>"#)));
 }
 
 #[tokio::test]
@@ -190,10 +192,11 @@ async fn 日文_feed_只收有日文譯文的文章() {
     assert!(!xml.contains("有 slug 的文章"), "沒有日文譯文的不該混進來");
     assert!(!xml.contains("沒有摘要的文章"));
     // 連結要帶語系前綴，頻道語言與 self link 也要跟著
-    assert!(xml.contains("<link>https://koimsurai.com/ja/blog/has-ja</link>"), "連結要帶 /ja");
+    let site = site_url();
+    assert!(xml.contains(&format!("<link>{site}/ja/blog/has-ja</link>")), "連結要帶 /ja");
     assert!(xml.contains("<language>ja</language>"));
-    assert!(xml.contains(r#"href="https://koimsurai.com/rss?lang=ja""#), "atom:self 要指回帶 lang 的網址");
-    assert!(xml.contains("<link>https://koimsurai.com/ja/blog</link>"), "頻道連結也要帶前綴");
+    assert!(xml.contains(&format!(r#"href="{site}/rss?lang=ja""#)), "atom:self 要指回帶 lang 的網址");
+    assert!(xml.contains(&format!("<link>{site}/ja/blog</link>")), "頻道連結也要帶前綴");
 }
 
 #[tokio::test]
@@ -203,8 +206,9 @@ async fn 認不得的語系退回繁中且不加前綴() {
     for q in ["lang=de", "lang=", "lang=zh-TW", ""] {
         let xml = rss(&app, q).await;
         assert!(xml.contains("<language>zh-TW</language>"), "q={q:?}");
-        assert!(xml.contains("<link>https://koimsurai.com/blog</link>"), "q={q:?} 不該有語系前綴");
-        assert!(xml.contains(r#"href="https://koimsurai.com/rss""#), "q={q:?} self link 不帶 lang");
+        let site = site_url();
+        assert!(xml.contains(&format!("<link>{site}/blog</link>")), "q={q:?} 不該有語系前綴");
+        assert!(xml.contains(&format!(r#"href="{site}/rss""#)), "q={q:?} self link 不帶 lang");
         assert!(xml.contains("有 slug 的文章"), "q={q:?} 退回繁中就該收得到中文文章");
     }
 }
@@ -229,7 +233,7 @@ async fn 沒有作者時用預設值() {
     seed_rss(&pool).await;
     let xml = rss(&app, "").await;
     let item = xml.split("<item>").find(|s| s.contains("沒有 slug 的文章")).unwrap();
-    assert!(item.contains("<author>Koimsurai</author>"), "空作者要有預設值，不是空元素");
+    assert!(item.contains(&format!("<author>{}</author>", site_author())), "空作者要有預設值，不是空元素");
     let with_author = xml.split("<item>").find(|s| s.contains("有 slug 的文章")).unwrap();
     assert!(with_author.contains("<author>Koi</author>"), "有作者就用它的");
 }

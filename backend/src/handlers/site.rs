@@ -79,6 +79,7 @@ pub async fn get_github_stars(State(state): State<AppState>) -> Response {
         return Json(CountResponse { count }).into_response();
     }
 
+    // 預設是這套程式本身的 repo（「此站點」頁顯示的是軟體的星數，不是站長的）
     let repo = std::env::var("GITHUB_REPO").unwrap_or_else(|_| "Koimsurai/sora-to-ki".to_string());
     let fetched = async {
         // 走 state 的 client 與 ExternalUrls，不自己 new 一個也不硬編網址——
@@ -87,7 +88,7 @@ pub async fn get_github_stars(State(state): State<AppState>) -> Response {
         let res = state
             .http
             .get(format!("{}/repos/{repo}", state.external.github_api))
-            .header("user-agent", "koimsurai-site")
+            .header("user-agent", crate::identity::user_agent("site"))
             .header("accept", "application/vnd.github+json")
             .timeout(Duration::from_secs(6))
             .send()

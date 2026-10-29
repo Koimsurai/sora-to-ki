@@ -24,8 +24,15 @@ const BATCH_SIZE: usize = 100;
 fn env_or(key: &str, default: &str) -> String {
     std::env::var(key).ok().filter(|s| !s.is_empty()).unwrap_or_else(|| default.to_string())
 }
-fn newsletter_from() -> String {
-    env_or("NEWSLETTER_FROM", "Koimsurai <hello@koimsurai.com>")
+/// 寄件人（`NEWSLETTER_FROM`，例如 `站名 <hello@send.example.com>`）。
+/// 沒有預設值：網域要先在 Resend 驗證過才寄得出去，猜一個只會換來退信。
+fn newsletter_from() -> Option<String> {
+    std::env::var("NEWSLETTER_FROM").ok().filter(|s| !s.trim().is_empty())
+}
+/// 信末的署名：站名，作者名跟站名不同時再接上作者
+fn signature() -> String {
+    let (name, author) = (crate::identity::site_name(), crate::identity::site_author());
+    if author == name { name } else { format!("{name} · {author}") }
 }
 /// 對方按「回覆」時寄到哪裡（見檔頭：寄件位址本身收不了信）
 fn reply_to() -> Option<String> {
@@ -42,8 +49,8 @@ pub(crate) async fn send_one(
 ) -> Result<(), String> {
     let key =
         std::env::var("RESEND_API_KEY").ok().filter(|k| !k.is_empty()).ok_or("沒有設定 RESEND_API_KEY")?;
-    let mut body =
-        json!({ "from": newsletter_from(), "to": [to], "subject": subject, "text": text, "html": html });
+    let from = newsletter_from().ok_or("沒有設定 NEWSLETTER_FROM")?;
+    let mut body = json!({ "from": from, "to": [to], "subject": subject, "text": text, "html": html });
     if let Some(r) = reply_to() {
         body["reply_to"] = json!(r);
     }
@@ -65,12 +72,6 @@ pub(crate) async fn send_one(
         .unwrap_or(body))
 }
 
-/// 這個站的網址（不帶結尾的 /）。友鏈的「對方站上有連回這裡」也拿它的 host 去找
-pub(crate) fn public_site_url() -> String {
-    // (PUBLIC_SITE_URL || default).replace(/\/$/, '')
-    let raw = env_or("PUBLIC_SITE_URL", "https://koimsurai.com");
-    raw.strip_suffix('/').unwrap_or(&raw).to_string()
-}
 fn resend_base_url() -> String {
     // 對齊 SDK：process.env.RESEND_BASE_URL || 'https://api.resend.com'
     env_or("RESEND_BASE_URL", "https://api.resend.com")
@@ -95,11 +96,10 @@ struct Post {
 }
 
 fn render_subject(post: &Post) -> String {
-    format!("{} — Koimsurai 新文章", post.title)
+    format!("{} — {} 新文章", post.title, crate::identity::site_name())
 }
 
 fn render_text(site: &str, post: &Post, sub: &Sub) -> String {
-    // [title, '', excerpt||'', '', `閱讀全文：${url}`, '', '— Koimsurai', '', `退訂：${unsub}`].join('\n')
     let url = post_url(site, &post.id);
     let unsub = unsubscribe_url(site, &sub.token);
     [
@@ -109,7 +109,7 @@ fn render_text(site: &str, post: &Post, sub: &Sub) -> String {
         String::new(),
         format!("閱讀全文：{url}"),
         String::new(),
-        "— Koimsurai".to_string(),
+        format!("— {}", signature()),
         String::new(),
         format!("退訂：{unsub}"),
     ]
@@ -141,6 +141,7 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
         )
     };
     let site_bare = site.strip_prefix("https://").or_else(|| site.strip_prefix("http://")).unwrap_or(site);
+    let brand = escape_html(&crate::identity::site_name());
 
     format!(
         r#"<!doctype html>
@@ -152,7 +153,7 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
 </head>
 <body style="margin:0;padding:0;background:#0a0a0c;font-family:'Noto Serif TC','Source Han Serif TC','Songti TC','PMingLiU',Georgia,serif;color:#f1ece3;">
 <div style="display:none;max-height:0;overflow:hidden;color:transparent;">
-{excerpt} · Koimsurai 新文章上架
+{excerpt} · {brand} 新文章上架
 </div>
 <!-- 跟站上翻新後（2026-10）同一套：黑底（--ground）、紙色的宋體字（--paper）、琥珀點（--amber）、
      等寬字加點線底線的連結。信件客戶端不吃外部 CSS 與網頁字型，全部寫 inline、字型只用本機有的 -->
@@ -161,7 +162,7 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
       <!-- header -->
       <tr><td style="padding:0 0 36px 0;">
-        <a href="{site}" style="color:#f1ece3;text-decoration:none;font-size:20px;letter-spacing:0.01em;">Koimsurai</a>
+        <a href="{site}" style="color:#f1ece3;text-decoration:none;font-size:20px;letter-spacing:0.01em;">{brand}</a>
       </td></tr>
 
       <!-- post -->
@@ -182,7 +183,7 @@ fn render_email(site: &str, post: &Post, sub: &Sub) -> String {
       <tr><td style="padding:44px 0 0 0;font-size:13px;line-height:1.8;color:rgba(241,236,227,0.55);">
         {greeting}
         <br>
-        感謝你訂閱 Koimsurai。如果今天這封信打擾到你，請點下面的退訂連結，下次就不會再寄了。
+        感謝你訂閱 {brand}。如果今天這封信打擾到你，請點下面的退訂連結，下次就不會再寄了。
       </td></tr>
 
       <!-- footer -->
@@ -223,6 +224,9 @@ pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (
         .collect::<Vec<_>>()
         .join("\n        ");
     let site_bare = site.strip_prefix("https://").or_else(|| site.strip_prefix("http://")).unwrap_or(site);
+    let brand = escape_html(&crate::identity::site_name());
+    let signature = signature();
+    let signature_html = escape_html(&signature);
     let html = format!(
         r#"<!doctype html>
 <html lang="zh-Hant">
@@ -236,7 +240,7 @@ pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (
   <tr><td align="center" style="padding:40px 20px;">
     <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
       <tr><td style="padding:0 0 36px 0;">
-        <a href="{site}" style="color:#f1ece3;text-decoration:none;font-size:20px;letter-spacing:0.01em;">Koimsurai</a>
+        <a href="{site}" style="color:#f1ece3;text-decoration:none;font-size:20px;letter-spacing:0.01em;">{brand}</a>
       </td></tr>
 
       <tr><td style="padding:28px 0 0 0;border-top:1px solid rgba(241,236,227,0.1);">
@@ -247,7 +251,7 @@ pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (
       </td></tr>
 
       <tr><td style="padding:16px 0 0 0;font-size:14px;line-height:1.8;color:rgba(241,236,227,0.55);">
-        — 宙と木 · Koimsurai
+        — {signature_html}
       </td></tr>
       <tr><td style="padding:12px 0 0 0;">
         <a href="{site}/friends" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;letter-spacing:0.06em;color:#e9c17a;text-decoration:none;border-bottom:1px dotted rgba(233,193,122,0.6);padding-bottom:2px;">朋友頁 →</a>
@@ -264,7 +268,7 @@ pub(crate) fn render_friend_reply(site: &str, site_name: &str, reply: &str) -> (
 </body>
 </html>"#
     );
-    let text = format!("{}\n\n— 宙と木 · Koimsurai\n{site}/friends", reply.trim());
+    let text = format!("{}\n\n— {signature}\n{site}/friends", reply.trim());
     (html, text)
 }
 
@@ -297,8 +301,10 @@ async fn send_newsletter(state: &AppState, post: &Post, subs: &[Sub]) -> (i64, i
     if subs.is_empty() {
         return (0, 0, vec![]);
     }
-    let site = public_site_url();
-    let from = newsletter_from();
+    let Some(from) = newsletter_from() else {
+        return (0, 0, vec!["NEWSLETTER_FROM not configured".to_string()]);
+    };
+    let site = crate::identity::site_url();
     let subject = render_subject(post);
     let base = resend_base_url();
     let (mut sent, mut failed) = (0i64, 0i64);
@@ -444,7 +450,10 @@ mod tests {
         // 純文字版：原文、署名、朋友頁
         assert_eq!(
             text,
-            "收下了！\n已經加上去。\n\n<b>謝謝</b>\n\n— 宙と木 · Koimsurai\nhttps://koimsurai.com/friends"
+            format!(
+                "收下了！\n已經加上去。\n\n<b>謝謝</b>\n\n— {}\nhttps://koimsurai.com/friends",
+                super::signature()
+            )
         );
     }
 }

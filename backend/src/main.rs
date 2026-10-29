@@ -108,6 +108,8 @@ async fn run() -> anyhow::Result<()> {
         );
     }
 
+    koimsurai_web_backend::identity::warn_if_unset();
+
     // sqlite：WAL 讓讀寫可重疊；busy_timeout 避免 SQLITE_BUSY；
     // create_if_missing 讓全新部署由 migrations 從零建出 DB。
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -125,6 +127,10 @@ async fn run() -> anyhow::Result<()> {
     // baseline 全 IF NOT EXISTS：對既有正式 DB 是 no-op（只記錄版本），
     // 對全新 DB / 測試 in-memory DB 建出完整 schema。
     sqlx::migrate!("./migrations").run(&pool).await?;
+
+    if let Some(username) = handlers::auth::bootstrap_admin(&pool).await? {
+        tracing::info!(username = %username, "全新部署：已用 ADMIN_USERNAME / ADMIN_PASSWORD 建立第一個管理員");
+    }
 
     let http = reqwest::Client::builder().timeout(Duration::from_secs(30)).build()?;
 

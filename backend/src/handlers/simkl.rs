@@ -36,8 +36,18 @@ fn simkl_api() -> String {
 }
 
 const SIMKL_API: &str = "https://api.simkl.com";
+/// 在 Simkl 註冊的 app 名稱（`SIMKL_APP_NAME`），官方要求每個請求都帶。
+/// 沒設就用軟體名；自己註冊 app 的人填自己取的名字。
+fn app_name() -> String {
+    std::env::var("SIMKL_APP_NAME")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| crate::identity::SOFTWARE.into())
+}
 /// 官方要求帶「描述性」的 User-Agent（文件範例：`PlexMediaServer/1.43.1.10540`）。
-const SIMKL_UA: &str = "koimsurai/1.0 (+https://koimsurai.com)";
+fn user_agent() -> String {
+    format!("{}/1.0 (+{})", app_name(), crate::identity::site_url())
+}
 /// 游標的 key。值是 /sync/activities 的 `all` 欄位，原樣存、原樣送回去當 date_from。
 const CURSOR_KEY: &str = "simkl.activities_all";
 
@@ -52,7 +62,12 @@ fn access_token() -> String {
 /// 官方要求每個請求都帶 client_id / app-name / app-version 這三個 query 參數。
 fn with_required_params(path: &str) -> String {
     let sep = if path.contains('?') { '&' } else { '?' };
-    format!("{}{path}{sep}client_id={}&app-name=koimsurai&app-version=1.0", simkl_api(), client_id())
+    format!(
+        "{}{path}{sep}client_id={}&app-name={}&app-version=1.0",
+        simkl_api(),
+        client_id(),
+        crate::util::encode_uri_component(&app_name())
+    )
 }
 
 async fn simkl_get(state: &AppState, path: &str) -> Option<Value> {
@@ -62,7 +77,7 @@ async fn simkl_get(state: &AppState, path: &str) -> Option<Value> {
         .header("Content-Type", "application/json")
         .header("Authorization", format!("Bearer {}", access_token()))
         .header("simkl-api-key", client_id())
-        .header("User-Agent", SIMKL_UA)
+        .header("User-Agent", user_agent())
         .send()
         .await
         .ok()?;
@@ -380,7 +395,10 @@ mod tests {
         unsafe { std::env::set_var("SIMKL_CLIENT_ID", "TESTID") };
         let a = with_required_params("/sync/activities");
         assert!(a.contains("?client_id=TESTID"), "{a}");
-        assert!(a.contains("&app-name=koimsurai") && a.contains("&app-version="), "{a}");
+        assert!(
+            a.contains(&format!("&app-name={}", super::app_name())) && a.contains("&app-version="),
+            "{a}"
+        );
         // 已經有 query string 時要用 & 接，不能再來一個 ?
         let b = with_required_params("/sync/all-items/?extended=full");
         assert!(b.contains("?extended=full&client_id=TESTID"), "{b}");

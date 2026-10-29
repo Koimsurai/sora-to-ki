@@ -63,6 +63,9 @@ server/db/.bahamut-cookie.json
 /target/
 backend/target/
 .env.backend
+# 各自部署的 compose 疊加層（主機路徑、外部網路、額外服務）
+docker-compose.override.yml
+backups/
 
 # cargo-llvm-cov 的 lcov 報告（CI 產生後直接上報 Codecov，不入庫）
 lcov.info

@@ -289,3 +289,35 @@ pub async fn reset_admin(
     Ok(Json(json!({ "message": format!("管理員 {username} 密碼已重置"), "username": username }))
         .into_response())
 }
+
+/// 全新部署的第一個管理員：啟動時 `users` 表是空的、而且設了 `ADMIN_USERNAME` 與
+/// `ADMIN_PASSWORD`，就用它們建一個。
+///
+/// 已經有任何使用者就什麼都不做：之後改密碼走後台，env 留著也不會每次開機蓋掉。
+/// 回傳建出來的帳號名稱（沒建就是 `None`）。
+pub async fn bootstrap_admin(pool: &sqlx::SqlitePool) -> anyhow::Result<Option<String>> {
+    let username = std::env::var("ADMIN_USERNAME").ok().filter(|s| !s.trim().is_empty());
+    let password = std::env::var("ADMIN_PASSWORD").ok().filter(|s| !s.is_empty());
+    let (Some(username), Some(password)) = (username, password) else { return Ok(None) };
+    create_first_admin(pool, username.trim(), &password).await
+}
+
+/// [`bootstrap_admin`] 去掉讀環境變數的那一層，測試直接呼叫。
+pub async fn create_first_admin(
+    pool: &sqlx::SqlitePool,
+    username: &str,
+    password: &str,
+) -> anyhow::Result<Option<String>> {
+    let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users").fetch_one(pool).await?;
+    if count > 0 {
+        return Ok(None);
+    }
+    let pw = password.to_string();
+    let hash = tokio::task::spawn_blocking(move || bcrypt::hash(&pw, 10)).await??;
+    sqlx::query("INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'admin')")
+        .bind(username)
+        .bind(&hash)
+        .execute(pool)
+        .await?;
+    Ok(Some(username.to_string()))
+}

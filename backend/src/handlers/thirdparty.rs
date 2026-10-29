@@ -309,20 +309,26 @@ pub async fn github_contributions(
     Json(GithubContributionsResponse { contributions, total, error: None }).into_response()
 }
 
-/// 作品頁（前端 about/Works）列的 repo，順序就是作品頁的順序（第一個是螺旋的起點）。
-/// 加一件作品＝在這裡加一行、前端 `data/works` 補一句介紹；它在畫面上長什麼樣子全由數據決定。
+/// 作品頁（前端 about/Works）列的 repo：`GITHUB_WORKS`，逗號分隔的 `owner/name`，
+/// 順序就是作品頁的順序（第一個是螺旋的起點）。沒設就是空清單。
 ///
-/// 刻意寫死、不讓前端傳：這支用的是站上的 GITHUB_TOKEN，接受任意 repo 清單的話，
+/// 刻意由伺服器設定、不讓前端傳：這支用的是站上的 GITHUB_TOKEN，接受任意 repo 清單的話，
 /// 任何人換參數就能把 token 的 GraphQL 額度耗光。
-const WORK_REPOS: &[(&str, &str)] = &[
-    ("Koimsurai", "Volticar_API"),
-    ("Koimsurai", "sora-to-ki"),
-    ("Koimsurai", "flow2code"),
-    ("Koimsurai", "session-to-obsidian"),
-    ("Koimsurai", "anigamer-rs"),
-    ("Koimsurai", "nuntius"),
-    ("Limatura", "tessera"),
-];
+///
+/// owner / name 會直接拼進 GraphQL 查詢，所以只收 GitHub 名稱允許的字元，其他的整筆略過。
+fn work_repos() -> Vec<(String, String)> {
+    let valid = |p: &str| {
+        !p.is_empty() && p.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+    };
+    std::env::var("GITHUB_WORKS")
+        .unwrap_or_default()
+        .split(',')
+        .filter_map(|s| {
+            let (owner, name) = s.trim().split_once('/')?;
+            (valid(owner) && valid(name)).then(|| (owner.to_string(), name.to_string()))
+        })
+        .collect()
+}
 
 /// 一件作品的一種語言：GitHub 算的程式碼量（bytes）。
 #[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
@@ -356,11 +362,19 @@ pub struct WorksResponse {
     pub error: Option<String>,
 }
 
-/// `GET /api/github/works` —— [`WORK_REPOS`] 每一個的語言組成、commit 數、星數、建立與最後推送時間。
+/// `GET /api/github/works` —— [`work_repos`] 每一個的語言組成、commit 數、星數、建立與最後推送時間。
 /// 一次 GraphQL 查完（每個 repo 一個 alias）。抓不到回 502，讓上游快取層拿舊的資料頂著。
 #[utoipa::path(get, path = "/api/github/works", tag = "integrations",
     responses((status = 200, body = WorksResponse)))]
 pub async fn github_works(State(state): State<AppState>) -> Response {
+    let repos = work_repos();
+    if repos.is_empty() {
+        return Json(WorksResponse::default()).into_response();
+    }
+    works_for(&state, &repos).await
+}
+
+async fn works_for(state: &AppState, repos: &[(String, String)]) -> Response {
     let fail = |m: String| {
         (StatusCode::BAD_GATEWAY, Json(WorksResponse { error: Some(m), ..Default::default() }))
             .into_response()
@@ -368,8 +382,8 @@ pub async fn github_works(State(state): State<AppState>) -> Response {
     let Some(token) = std::env::var("GITHUB_TOKEN").ok().filter(|s| !s.is_empty()) else {
         return fail("GITHUB_TOKEN 未設定（GraphQL 一定要認證）".into());
     };
-    // owner / name 來自上面寫死的常數，不是使用者輸入，可以直接拼進查詢
-    let fields = WORK_REPOS
+    // owner / name 來自伺服器設定、而且 work_repos 已經濾過字元，可以直接拼進查詢
+    let fields = repos
         .iter()
         .enumerate()
         .map(|(i, (owner, name))| {
@@ -401,7 +415,7 @@ pub async fn github_works(State(state): State<AppState>) -> Response {
     };
     // 個別 repo 抓不到（改名、刪掉）時 GraphQL 會回那個 alias 是 null 加一則 error：
     // 那一件就不列，其他照常
-    let works = (0..WORK_REPOS.len())
+    let works = (0..repos.len())
         .filter_map(|i| {
             let r = data.get(format!("r{i}"))?;
             let s = |k: &str| r.get(k).and_then(|x| x.as_str()).map(String::from);
@@ -2412,7 +2426,9 @@ mod tests {
             .await;
 
         let st = state_with_mock(&server).await;
-        let resp = github_works(axum::extract::State(st)).await;
+        let repos = [("Koimsurai", "Volticar_API"), ("Koimsurai", "sora-to-ki"), ("Koimsurai", "gone")]
+            .map(|(o, n)| (o.to_string(), n.to_string()));
+        let resp = works_for(&st, &repos).await;
         assert_eq!(resp.status(), StatusCode::OK, "部分 repo 抓不到不算整支失敗");
         let v = body_of(resp).await;
         let works = v["works"].as_array().unwrap();
@@ -2437,9 +2453,18 @@ mod tests {
             .await;
 
         let st = state_with_mock(&server).await;
-        let resp = github_works(axum::extract::State(st)).await;
+        let resp = works_for(&st, &[("Koimsurai".into(), "sora-to-ki".into())]).await;
         assert_eq!(resp.status(), StatusCode::BAD_GATEWAY);
         assert_eq!(body_of(resp).await["error"], "API rate limit exceeded");
+    }
+
+    #[test]
+    fn work_repos_只收合法的_owner_name_其他整筆略過() {
+        // SAFETY: 只有這個測試碰 GITHUB_WORKS
+        unsafe { std::env::set_var("GITHUB_WORKS", " a/b , bad, c/d.e-f_g ,x/y\"){,/z, w/ ") };
+        let got = work_repos();
+        unsafe { std::env::remove_var("GITHUB_WORKS") };
+        assert_eq!(got, vec![("a".into(), "b".into()), ("c".into(), "d.e-f_g".into())]);
     }
 
     #[tokio::test]

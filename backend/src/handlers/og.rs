@@ -126,7 +126,8 @@ struct Page {
 }
 
 const PAGES: [Page; 12] = [
-    Page { key: "home", name: "", caps: "KOIMSURAI", sub: "og.tagline" },
+    // 首頁的 caps 是作者名的大寫，執行時才知道（見 page_card_html）
+    Page { key: "home", name: "", caps: "", sub: "og.tagline" },
     Page { key: "notes", name: "siteNav.notes", caps: "NOTES", sub: "blog.subtitle" },
     Page { key: "moments", name: "siteNav.moments", caps: "MOMENTS", sub: "thinking.subtitle" },
     Page { key: "works", name: "siteNav.works", caps: "WORK", sub: "works.subtitle" },
@@ -176,7 +177,8 @@ fn build_html(card: &Card) -> String {
     let sans = format!("'Noto Sans CJK {}'", card.cjk);
     let brand = if card.brand {
         format!(
-            r#"<span style="font-family:{serif}; font-size:30px; font-weight:700; color:#f1ece3;">宙と木</span>"#
+            r#"<span style="font-family:{serif}; font-size:30px; font-weight:700; color:#f1ece3;">{}</span>"#,
+            escape_html(&crate::identity::site_name())
         )
     } else {
         String::new()
@@ -193,7 +195,7 @@ fn build_html(card: &Card) -> String {
     display:flex; flex-direction:column; justify-content:space-between;">
     <div style="display:flex; flex-direction:row; align-items:baseline; gap:14px;">
       {brand}
-      <span style="font-family:'Fira Code'; font-size:15px; letter-spacing:0.16em; color:rgba(241,236,227,0.45);">koimsurai.com</span>
+      <span style="font-family:'Fira Code'; font-size:15px; letter-spacing:0.16em; color:rgba(241,236,227,0.45);">{host}</span>
     </div>
     <div style="display:flex; flex-direction:column; gap:20px;">
       <div style="font-family:'Fira Code',{sans}; font-size:18px; letter-spacing:0.12em; color:#e9c17a;">{kicker}</div>
@@ -204,6 +206,7 @@ fn build_html(card: &Card) -> String {
 </div>"#,
         kicker = escape_html(card.kicker),
         title = escape_html(card.title.trim()),
+        host = escape_html(&crate::identity::site_host()),
     )
 }
 
@@ -219,10 +222,11 @@ fn post_card_html(title: &str, category: Option<&str>, date: &str, locale: &str)
 
 fn page_card_html(page: &Page, locale: &str) -> String {
     let home = page.name.is_empty();
-    let title = if home { "宙と木".to_string() } else { text(locale, page.name) };
+    let title = if home { crate::identity::site_name() } else { text(locale, page.name) };
+    let kicker = if home { crate::identity::site_author().to_uppercase() } else { page.caps.to_string() };
     let sub = text(locale, page.sub);
     build_html(&Card {
-        kicker: page.caps,
+        kicker: &kicker,
         title: &title,
         sub: Some(sub.as_str()).filter(|s| !s.is_empty()),
         brand: !home,

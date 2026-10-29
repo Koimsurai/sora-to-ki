@@ -27,7 +27,7 @@ impl Modify for SecurityAddon {
 #[derive(OpenApi)]
 #[openapi(
     info(
-        title = "koimsurai / 宙と木 API",
+        title = "sora-to-ki API",
         description = "個人站 Rust 後端 · 完整 API 面（公開讀 typed、admin/mutation/第三方 proxy path-level）",
         version = "0.2.0",
     ),

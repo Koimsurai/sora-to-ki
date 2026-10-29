@@ -79,8 +79,10 @@ pub struct ExternalUrls {
     ///   `web` 回 HTML（封面圖的 og:image）。
     pub bahamut_api: String,
     pub bahamut_web: String,
-    /// 自架的 Plausible（handlers/analytics.rs 打它的 Stats API）。
-    /// 寫死正式位址而不是讀環境變數，理由同上：要換的只有測試。
+    /// Plausible 的 Stats API（handlers/analytics.rs）。
+    ///
+    /// 這一個是例外，讀 `PLAUSIBLE_BASE_URL`：其他上游每個部署都一樣，Plausible 卻常常是
+    /// 各自架的，位址本來就因站而異。沒設就是 Plausible 官方的雲端版。
     pub plausible: String,
 }
 
@@ -102,7 +104,11 @@ impl Default for ExternalUrls {
             korean_advice: "https://korean-advice-open-api.vercel.app".into(),
             bahamut_api: anigamer::DEFAULT_API_BASE.into(),
             bahamut_web: anigamer::DEFAULT_WEB_BASE.into(),
-            plausible: "https://plausible.koimsurai.com".into(),
+            plausible: std::env::var("PLAUSIBLE_BASE_URL")
+                .ok()
+                .map(|s| s.trim().trim_end_matches('/').to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| "https://plausible.io".into()),
         }
     }
 }

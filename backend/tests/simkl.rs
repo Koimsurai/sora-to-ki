@@ -161,7 +161,7 @@ async fn every_request_carries_the_required_identification() {
 
     for p in paths(&server).await {
         assert!(p.contains("client_id=test-client"), "{p} 少了 client_id");
-        assert!(p.contains("app-name=koimsurai"), "{p} 少了 app-name");
+        assert!(p.contains("app-name=sora-to-ki"), "{p} 少了 app-name（沒設 SIMKL_APP_NAME 時是軟體名）");
         assert!(p.contains("app-version="), "{p} 少了 app-version");
     }
 }

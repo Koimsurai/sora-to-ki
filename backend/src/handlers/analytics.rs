@@ -9,7 +9,8 @@
 //! 設定（`.env.backend`）：
 //!   - `PLAUSIBLE_API_KEY`：Plausible 的 Account Settings → API Keys 建一把 Stats API key。
 //!     沒設的話端點回 `configured: false`，後台顯示怎麼設，不算錯誤。
-//!   - `PLAUSIBLE_SITE_ID`：選填，預設 `koimsurai.com`（Plausible 裡的站台名稱）。
+//!   - `PLAUSIBLE_SITE_ID`：選填，預設是 `SITE_URL` 的 host（Plausible 裡的站台名稱）。
+//!   - `PLAUSIBLE_BASE_URL`：選填，自架的 Plausible 位址，預設 Plausible 官方的 `https://plausible.io`。
 //!
 //! 一頁要的東西拆成六個查詢平行打（總數、走勢、熱門頁面、來源、國家、裝置），
 //! 外加 v1 的即時人數。Stats API v2 一個查詢只能有一組 dimensions，所以沒辦法併成一個。
@@ -42,7 +43,7 @@ fn site_id() -> String {
     std::env::var("PLAUSIBLE_SITE_ID")
         .ok()
         .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| "koimsurai.com".into())
+        .unwrap_or_else(crate::identity::site_host)
 }
 
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
