@@ -140,6 +140,25 @@ export interface PlanetSpec {
   boot: [r: number, tone: number][];
   /** 反方向公轉的衛星（由內到外第幾顆，0 起算） */
   retrograde: number[];
+  /**
+   * 軌道改成 S 星那樣的橢圓（黑洞）：一條一筆，由內到外。沒給的話是同一個平面上的正圓（ORBITS）
+   */
+  stars?: StarOrbit[];
+}
+
+/**
+ * S 星的軌道：銀河系中心的黑洞（人馬座 A*）周圍那群恆星。根策爾與蓋茲兩個團隊追了三十年，
+ * 靠它們的軌道證明那裡有四百萬倍太陽質量的黑洞（2020 年諾貝爾物理獎）。軌道是扁橢圓、黑洞在焦點上，
+ * 各自傾斜、互相交錯；GRAVITY 2020 年量到 S2 的軌道在進動（史瓦西進動），整條橢圓慢慢繞著黑洞轉。
+ * a 半長軸（星球半徑）、e 離心率、incl 傾角°、node 升交點經度°、peri 近點方向°、precess 進動（°/秒）
+ */
+export interface StarOrbit {
+  a: number;
+  e: number;
+  incl: number;
+  node: number;
+  peri: number;
+  precess: number;
 }
 
 const ringMid = (i: number): [number, number] => {
@@ -287,6 +306,14 @@ const BLACK_HOLE: PlanetSpec = {
   // 開場不畫環：物質旋進來的螺旋臂與光子環另外畫（__root.tsx 的 BootSwirl）
   boot: [],
   retrograde: [],
+  // 近點都在吸積盤外（≥ 2.6），遠點不超過土星最外圈軌道太多（≤ 6），畫面才放得下
+  stars: [
+    { a: 3.3, e: 0.18, incl: 8, node: 20, peri: 40, precess: 0.8 },
+    { a: 3.7, e: 0.3, incl: 24, node: 110, peri: 200, precess: 0.6 },
+    { a: 4.1, e: 0.24, incl: 14, node: 250, peri: 300, precess: 0.5 },
+    { a: 4.5, e: 0.33, incl: 32, node: 60, peri: 120, precess: 0.4 },
+    { a: 4.9, e: 0.2, incl: 18, node: 170, peri: 10, precess: 0.3 },
+  ],
 };
 
 export const PLANETS: Record<Theme, PlanetSpec> = { saturn: SATURN, neptune: NEPTUNE, blackhole: BLACK_HOLE };

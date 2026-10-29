@@ -58,6 +58,7 @@ import {
   SUN,
   TILT,
   type PlanetSpec,
+  type StarOrbit,
 } from './saturnSpec';
 import type { Theme } from './theme';
 import type { Fold } from './viewportFold';
@@ -574,22 +575,46 @@ function buildSaturn(
     group.add(lens);
   }
 
+  // 每條軌道一個容器：S 星的軌道（黑洞）各自傾斜（holder：傾角與升交點），近點的方向與進動放在 apsis。
+  // 土星、海王星的軌道沒有這些，容器是單位矩陣，跟直接放在 plane 上一樣
+  const stars = spec.stars;
+  const apses = ORBITS.map((_, i) => {
+    const holder = new THREE.Group();
+    const apsis = new THREE.Group();
+    const st = stars?.[i];
+    if (st) {
+      holder.rotation.set((st.incl * Math.PI) / 180, (st.node * Math.PI) / 180, 0, 'YXZ');
+      apsis.rotation.y = (st.peri * Math.PI) / 180;
+    }
+    holder.add(apsis);
+    plane.add(holder);
+    return apsis;
+  });
+  /** S 星軌道上真近點角 nu 的位置（焦點在原點：r = a(1 − e²) / (1 + e cos nu)） */
+  const ellipseAt = (st: StarOrbit, nu: number, out: THREE.Vector3) => {
+    const radius = (st.a * (1 - st.e * st.e)) / (1 + st.e * Math.cos(nu));
+    return out.set(Math.cos(nu) * radius, 0, Math.sin(nu) * radius);
+  };
+
   // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
   const CIRCLE_POINTS = 257;
-  const circle = (radius: number, opacity: number) => {
+  const circle = (i: number, radius: number, opacity: number) => {
     const material = new THREE.LineBasicNodeMaterial({ color: INK, transparent: true, opacity, depthWrite: false });
+    const st = stars?.[i];
     const points = Array.from({ length: CIRCLE_POINTS }, (_, k) => {
       const a = (k / (CIRCLE_POINTS - 1)) * Math.PI * 2;
-      return new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius);
+      return st
+        ? ellipseAt(st, a, new THREE.Vector3())
+        : new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius);
     });
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material);
-    plane.add(line);
+    apses[i].add(line);
     return { material, line };
   };
 
   // 軌道與衛星。衛星是一個實心的小點，亮起來時變琥珀色、外面多一圈光暈
   const ORBIT_DIM = 0.09;
-  const orbitLines = ORBITS.map((r) => circle(r, ORBIT_DIM));
+  const orbitLines = ORBITS.map((r, i) => circle(i, r, ORBIT_DIM));
   const orbits = orbitLines.map((o) => o.material);
   const glowTarget = ORBITS.map(() => 0);
   const satellites = ORBITS.map((r, i) => {
@@ -602,7 +627,7 @@ function buildSaturn(
     mat.opacityNode = core.mul(mix(float(0.75), float(1), g)).max(halo);
     const sprite = new THREE.Sprite(mat);
     sprite.scale.setScalar(0.24);
-    plane.add(sprite);
+    apses[i].add(sprite);
     // 起始角度錯開，越外圈轉得越慢（克卜勒的味道就好，不必真的照比例）
     // 反方向公轉的（海王星的崔頓）：角速度變號，它那條軌道也鏡像，長與收的時候線才會朝它走的方向畫
     const dir = spec.retrograde.includes(i) ? -1 : 1;
@@ -613,6 +638,38 @@ function buildSaturn(
    * 每條軌道還在不在（0 到 1）：站台設定關掉的分區，它那條軌道與衛星收起來。乘在長／收的進度上，
    * 所以全部開著時（全是 1）畫面跟沒有這一層完全一樣。開機時直接是定值，之後改才有動畫
    */
+  /**
+   * 第 i 顆衛星此刻在軌道上的角度。圓軌道就是等速轉的角度；S 星的軌道照克卜勒定律走（近點快、遠點慢）：
+   * 平近點角 M 等速增加，解克卜勒方程 E − e sin E = M 得偏近點角，再換成真近點角
+   */
+  const anomaly = (i: number) => {
+    const s = satellites[i];
+    const st = stars?.[i];
+    const mean = s.phase + clock * satelliteSpeed(st?.a ?? s.r) * s.dir;
+    if (!st) return mean;
+    let e = mean;
+    for (let k = 0; k < 5; k++) e -= (e - st.e * Math.sin(e) - mean) / (1 - st.e * Math.cos(e));
+    return 2 * Math.atan2(Math.sqrt(1 + st.e) * Math.sin(e / 2), Math.sqrt(1 - st.e) * Math.cos(e / 2));
+  };
+  /**
+   * 讓第 i 條軌道從它那顆衛星現在的位置開始畫（長與收都從那裡起算）。圓的轉過去就好；
+   * 橢圓轉了會整條挪位，所以把點重新從衛星的角度排起
+   */
+  const alignOrbit = (i: number) => {
+    const st = stars?.[i];
+    const line = orbitLines[i].line;
+    const nu = anomaly(i);
+    if (!st) {
+      line.rotation.y = -nu;
+      return;
+    }
+    const pos = line.geometry.getAttribute('position') as THREE.BufferAttribute;
+    for (let k = 0; k < CIRCLE_POINTS; k++) {
+      ellipseAt(st, nu + (k / (CIRCLE_POINTS - 1)) * Math.PI * 2 * satellites[i].dir, v);
+      pos.setXYZ(k, v.x, v.y, v.z);
+    }
+    pos.needsUpdate = true;
+  };
   let sectionCount = initialSections;
   const live: number[] = ORBITS.map((_, i) => (i < sectionCount ? 1 : 0));
   const syncSun = () => {
@@ -711,12 +768,10 @@ function buildSaturn(
           pivotIndex = -1;
           currentScale = fullScale;
           // 每條軌道從自己那顆衛星現在的位置開始畫（圈是對稱的，畫完之後轉了多少都一樣）
-          for (const [i, s] of satellites.entries())
-            orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r) * s.dir);
+          for (let i = 0; i < satellites.length; i++) alignOrbit(i);
         } else {
           // 軌道收回各自衛星現在的位置：畫滿的整圈轉到從衛星那裡起算（看不出差別），收的時候尾端追回衛星
-          for (const [i, s] of satellites.entries())
-            if ((orbitK[i] ?? 0) >= 1) orbitLines[i].line.rotation.y = -(s.phase + clock * satelliteSpeed(s.r) * s.dir);
+          for (let i = 0; i < satellites.length; i++) if ((orbitK[i] ?? 0) >= 1) alignOrbit(i);
           collapseFrom.ring = ringK;
           collapseFrom.orbit = [...orbitK];
           collapseFrom.sat = [...satK];
@@ -754,8 +809,13 @@ function buildSaturn(
       if (!pivot) clock += dt;
       let glowing = false;
       for (const [i, s] of satellites.entries()) {
-        const a = s.phase + clock * satelliteSpeed(s.r) * s.dir;
-        s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
+        const a = anomaly(i);
+        const st = stars?.[i];
+        if (st) {
+          ellipseAt(st, a, s.sprite.position);
+          // 軌道進動：整條橢圓繞著黑洞慢慢轉（GRAVITY 2020 年量到 S2 的軌道在進動）
+          apses[i].rotation.y = ((st.peri + clock * st.precess) * Math.PI) / 180;
+        } else s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
         const target = glowTarget[i] ?? 0;
         s.g.value += (target - s.g.value) * Math.min(1, dt * 8);
         if (Math.abs(target - s.g.value) > 0.01) glowing = true;
