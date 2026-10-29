@@ -55,25 +55,13 @@ TS 檔全開。
 oxfmt 的全庫格式化 commit 列在 `.git-blame-ignore-revs`。本機要生效得設一次
 `git config blame.ignoreRevsFile .git-blame-ignore-revs`（GitHub 會自動讀）。
 
-## 建置設定裡不能拿掉的兩段
-
-**`vite.config.start.ts` 的 `codeSplitting` 群組。** 沒有它，rolldown 會把 Excalidraw 預先切好的
-幾個小 chunk 併進它 1.1 MB 的主程式，而字型 subsetting 的 Web Worker 正好依賴它們——worker
-只好 import 整包主程式、在 Worker 環境載入失敗，Excalidraw 退回主執行緒做 subsetting，那段 wasm
-膠水碼用 `new Function`，撞上 CSP 沒有的 `'unsafe-eval'`（console：`Skipped glyph subsetting EvalError`）。
-抓得到它的只有 `tests/e2e/mdx-blocks.spec.ts` 的「這些資源被 CSP 擋掉了」那條斷言。看 worker
-有沒有被弄壞：建置後 `head -c 300 .output/public/assets/subset-worker.chunk-*.js`，開頭不該 import `prod-*.js`。
-
-**那個群組只能抓葉節點**（沒有 import 的 chunk）。抓到有相依的 chunk 時，群組會連同相依一起拉進來，
-共用套件被吸進 Excalidraw 的 chunk，每一頁的 script 量倍增——e2e 全綠，只有 Lighthouse 的
-resource-summary 預算抓得到。
+## 建置設定裡不能拿掉的一段
 
 **`vite.config.start.ts` 的 `define: { define: 'undefined' }`。** 後台的 Monaco 用 AMD 載入，會在
-window 留一個帶 `amd` 的 `define`；切到前台之後，Excalidraw / mermaid-to-excalidraw 底下幾個
-「先看 AMD 才看 CommonJS」的 UMD 套件就去呼叫它，Sketch 區塊顯示
-`Can only have one anonymous define call per script file`。**只在「先開過後台」的分頁發生**，乾淨的
-瀏覽器看不到。守它的是 `sketch-after-admin.spec.ts`，而且那條**必須用有虛線箭頭與標籤的圖**，
-`A --> B` 那種簡單圖走不到那幾個套件。SketchBlock 會接住例外改顯示錯誤框，所以這類錯誤**不會進 GlitchTip**。
+window 留一個帶 `amd` 的 `define`；切到前台之後，打包進來的 UMD 套件若是「先看 AMD 才看 CommonJS」，
+就會去呼叫它，丟出 `Can only have one anonymous define call per script file`。**只在「先開過後台」的分頁
+發生**，乾淨的瀏覽器看不到，e2e 也測不到。以前 Sketch 在瀏覽器裡用 Excalidraw 畫圖時踩過；2026-10 改成
+伺服器畫（`lib/mdx/sketchSvg.ts`）之後那幾個套件已經不在，這行留著當防護，成本是零。
 
 **`vite.config.ts` 的 lint 區塊裡關掉的那五條 `react/*` 不要打開。** 那是 oxlint 預設開的 React
 Compiler 診斷（`purity` / `refs` / `immutability` / `preserve-manual-memoization` /

@@ -119,7 +119,7 @@ This wasn't a reskin: the whole site was rebuilt to the three rules above. The p
 
 ### Notes and moments
 
-- **MDX articles**: GFM plus twenty-odd custom blocks (code tabs, diffs, file trees, charts, polls, Excalidraw sketches, Japanese furigana, spoilers, author's notes…)
+- **MDX articles**: GFM plus twenty-odd custom blocks (code tabs, diffs, file trees, charts, polls, hand-drawn sketches, Japanese furigana, spoilers, author's notes…)
 - **Five languages**: Traditional Chinese, Simplified Chinese, English, Japanese and Korean. Simplified Chinese is converted automatically with OpenCC; every article can be translated separately
 - **Syntax highlighting**: Shiki on its JavaScript regex engine (article pages don't download wasm); Oniguruma is loaded only for C-family languages
 - **Mermaid diagrams**: zoom, pan and full screen, themed to match the site
@@ -171,7 +171,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **Frontend** | React 19 · TanStack Start / Router / Query · Vite+ (vite, vitest, oxlint, oxfmt) · Tailwind CSS v4 · Framer Motion · three.js · MDX · Shiki · beautiful-mermaid · Excalidraw · i18next · Radix UI / shadcn |
+| **Frontend** | React 19 · TanStack Start / Router / Query · Vite+ (vite, vitest, oxlint, oxfmt) · Tailwind CSS v4 · Framer Motion · three.js · MDX · @pierre/highlights · pele · rough.js · i18next · Radix UI / shadcn |
 | **Backend** | Rust 2024 · axum · tokio · sqlx (SQLite) · JWT + bcrypt · image / resvg / thumbhash (images and share images) · ferrous-opencc · utoipa (OpenAPI at `/api/docs`) · Sentry SDK |
 | **Type** | Source Han Serif (subset per page) · Instrument Serif · monospace |
 | **Infra** | Docker Compose · nginx · GitHub Actions · Codecov · self-hosted GlitchTip |
@@ -300,8 +300,8 @@ Feel free to borrow any of the code or fork it to run your own site. A few thing
 
 The site relies on a lot of open source, with special thanks to
 [TanStack](https://tanstack.com/), [axum](https://github.com/tokio-rs/axum), [sqlx](https://github.com/launchbadge/sqlx),
-[three.js](https://threejs.org/), [Shiki](https://shiki.style/), [MDX](https://mdxjs.com/),
-[Excalidraw](https://excalidraw.com/), [Radix UI](https://www.radix-ui.com/), [shadcn/ui](https://ui.shadcn.com/),
+[three.js](https://threejs.org/), [MDX](https://mdxjs.com/), [pele](https://pele.run/), [rough.js](https://roughjs.com/),
+[Excalifont](https://github.com/excalidraw/excalidraw), [Xiaolai](https://github.com/lxgw/kose-font), [Radix UI](https://www.radix-ui.com/), [shadcn/ui](https://ui.shadcn.com/),
 [OpenCC](https://github.com/BYVoid/OpenCC), [thumbhash](https://github.com/evanw/thumbhash),
 [Source Han Serif](https://github.com/adobe-fonts/source-han-serif), [Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif),
 and the [Vite+](https://viteplus.dev/) and oxc toolchain.

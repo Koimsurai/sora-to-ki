@@ -72,50 +72,6 @@ function copyMonacoAssets(): Plugin {
 }
 
 /**
- * Excalidraw 的字體自架。
- *
- * 為什麼需要：它預設從 `https://esm.sh/@excalidraw/excalidraw@<ver>/dist/prod/` 抓字體，
- * 而 CSP 的 `font-src 'self' data:` 會擋掉——**而且擋掉時前台是靜默的**，圖照樣畫出來，
- * 只是文字退回系統字型。這件事是 CSP report 上線後幾分鐘內自己回報的
- * （`Blocked 'font' from 'esm.sh'`，來源 /blog/crowdsec-replacing-fail2ban），
- * 在那之前沒有任何人會發現。
- *
- * ⚠️ SketchBlock 的 `skipInliningFonts: true` **不能解決這件事**。那個選項只擋
- *   「把字體內嵌進匯出的 SVG」，渲染／量測時該抓的還是會抓。
- *
- * 路徑對應：base 是 dist/prod/，字體在它底下的 ./fonts/ →
- * 設 EXCALIDRAW_ASSET_PATH='/excalidraw/' 就要 public/excalidraw/fonts/。
- */
-function copyExcalidrawFonts(): Plugin {
-  return {
-    name: 'copy-excalidraw-fonts',
-    buildStart() {
-      const require = createRequire(import.meta.url);
-      // ⚠️ 不能用 require.resolve('@excalidraw/excalidraw/package.json')——它的 exports
-      //   沒有開放 ./package.json（ERR_PACKAGE_PATH_NOT_EXPORTED）。從主入口反推。
-      const entry = require.resolve('@excalidraw/excalidraw');
-      const pkgRoot = entry.slice(0, entry.indexOf(`${path.sep}dist${path.sep}`));
-      const version = (JSON.parse(fs.readFileSync(path.join(pkgRoot, 'package.json'), 'utf8')) as { version: string })
-        .version;
-      const src = path.join(pkgRoot, 'dist/prod/fonts');
-      const destRoot = path.resolve(import.meta.dirname, 'public/excalidraw');
-      const stamp = path.join(destRoot, '.version');
-
-      if (fs.existsSync(stamp) && fs.readFileSync(stamp, 'utf8') === version) return;
-
-      fs.rmSync(destRoot, { recursive: true, force: true });
-      fs.mkdirSync(destRoot, { recursive: true });
-      // 14 MB，其中 13 MB 是 Xiaolai（CJK 手寫體，234 個 woff2 子集）。
-      // 不砍它：子集是按 unicode-range 需要才下載，佔磁碟不佔頻寬，
-      // 而砍掉的後果是圖裡的中文變成豆腐——同樣是靜默的。
-      fs.cpSync(src, path.join(destRoot, 'fonts'), { recursive: true });
-      fs.writeFileSync(stamp, version);
-      this.info(`@excalidraw/excalidraw@${version} fonts → public/excalidraw/fonts`);
-    },
-  };
-}
-
-/**
  * dev server 的 /api：瀏覽器打的 /api 轉給 BACKEND_URL（正式環境是 nginx 在轉）。
  * 不用 vite 的 server.proxy：Nitro 的開發中介層排在它前面，/api 會先被當成頁面回 404。
  * 只放讀取：拿線上後端預覽時，按讚、留言這類寫入不會真的寫進去
@@ -168,96 +124,6 @@ function devApiProxy(): Plugin {
       };
       serveDir('/nas-images', process.env.NAS_GALLERY_DIR ?? '/mnt/hdd16tb_01/nas-storage/gallery');
       serveDir('/uploads', process.env.UPLOADS_DIR ?? '/mnt/hdd16tb_01/Blog/uploads');
-    },
-  };
-}
-
-/**
- * 讓 `@animateicons/react` 搖得動 —— 它的 barrel 沒有 `/*#__PURE__*\/` 註解。
- *
- * 症狀（實測，不是推測）：`dist/lucide.js` 一個檔裡有 **248 個 icon**，每個都寫成
- * `var XxxIcon = forwardRef((props, ref) => …)`。專案只 import 其中 **17 個**
- * （Header 3 個、HomeMenu 12 個、MoreMenu 2 個、BackToTopButton 1 個），
- * 但整包 248 個都會進 bundle。
- *
- * 代價是實測出來的：把那 4 個 import 換成本地空殼再 build，entry chunk
- * **1313 KB → 842 KB**。也就是這一包佔了 entry 的 **471 KB（36%）**，
- * 而 entry 是**每一頁**都要載的——首頁全部 JS 才 2143 KB。
- *
- * ⚠ 這個專案的 bundler 是 **rolldown**（vite 7 內建，rollup 相容），下面講的
- * tree-shaking 語意兩邊一致，但 guard 的錯誤訊息會是 `RolldownError`。
- *
- * 為什麼搖不掉，以及為什麼「加 PURE 註解」單獨做沒有用（這段是量出來的，
- * 不要照直覺改）。每個 icon 在檔案裡長這樣：
- *
- *     var vo=forwardRef((props,ref)=>{…});vo.displayName="AArrowDownIcon";
- *
- * 兩個東西各自把它釘住，少拆一個都不會變小：
- *
- *   1. `forwardRef(…)` 是**從 react import 進來的未知函式**，bundler 必須假設
- *      呼叫可能有副作用 → 不敢刪這個 `var`。
- *   2. `vo.displayName=…` 是**頂層的屬性寫入**，bundler 預設
- *      （`treeshake.propertyWriteSideEffects`）假設寫屬性可能觸發 setter →
- *      這個敘述留著，而它引用了 `vo`，於是 `vo` 也跟著活下來。
- *
- * 實測四種組合的 entry 大小：
- *
- *     原樣                                    1313 KB
- *     只加 PURE 註解                          1313 KB   ← 完全沒用
- *     只設 propertyWriteSideEffects:false     1302 KB   ← 也幾乎沒用
- *     兩個一起                                 934 KB
- *     本檔現在的作法                            942 KB
- *
- * 所以這裡把 displayName **併進同一個純運算式**，而不是去動全域的 treeshake 設定：
- *
- *     var vo=PURE Object.assign(PURE forwardRef(…),{displayName:"AArrowDownIcon"});
- *
- * 效果一樣（942 vs 934 KB），但影響範圍只有這個套件。
- * `propertyWriteSideEffects:false` 是**全域**的，等於叫 bundler 對整個 bundle
- * 的每一個屬性寫入都假設沒有副作用——為了一個相依放寬全站的正確性假設不划算。
- *
- * ⚠ 內外**兩個** PURE 都需要。只註解外層的 `Object.assign` 沒用：bundler 仍然要
- *   求值它的引數，而引數就是那個 `forwardRef(…)` 呼叫。實測只加外層是 1305 KB。
- * ⚠ 248 個裡有 3 個沒有 displayName，所以後面補一條單純加 PURE 的 replace。
- * ⚠ 不能改成「只 import 需要的 icon 的子路徑」：套件的 `exports` 只開了
- *   `.` / `./lucide` / `./huge`，沒有每個 icon 的進入點。
- * ⚠ 回傳 `map: null` 是刻意的：這是第三方 barrel，而且目的正是把它絕大部分刪掉，
- *   為它保留精確的 source map 沒有意義。
- * ⚠ 這是**上游的問題**。哪天它自己加了 PURE 註解，第一行的 guard 會讓這個 plugin
- *   直接跳過（不會重複加、也不會壞），那時就可以整個拿掉。
- *   同理，升級 `@animateicons/react` 之後 minify 出來的寫法可能一變，這兩條 regex
- *   就配不到——而配不到**沒有任何徵兆**，只是每頁又胖回 371 KB。
- *   所以函式最後有一道 guard：蓋不滿就 `this.error()` 擋掉 build。
- */
-function pureAnnotateAnimateIcons(): Plugin {
-  return {
-    name: 'pure-annotate-animateicons',
-    transform(code, id) {
-      if (!id.includes('@animateicons/react/dist/')) return null;
-      if (code.includes('__PURE__')) return null; // 上游自己加了 → 這個 plugin 可以拿掉
-      const out = code
-        .replace(
-          /var (\w+)=forwardRef\((.*?)\);\1\.displayName="([^"]+)";/gs,
-          'var $1=/*#__PURE__*/Object.assign(/*#__PURE__*/forwardRef($2),{displayName:"$3"});',
-        )
-        // 沒有 displayName 的（實測 248 個裡有 3 個）只要註解掉 forwardRef 本身
-        .replace(/([=,(:]\s*)forwardRef\(/g, '$1/*#__PURE__*/forwardRef(');
-
-      // 守門：配不到就**擋掉 build**，不要靜靜地胖回去。
-      //
-      // 這條存在的理由是這個 plugin 的失敗模式：升級套件之後 minify 的寫法一改，
-      // 兩條 regex 就可能一個都配不到，而結果只是 entry chunk 悄悄多 371 KB
-      // ——沒有錯誤、沒有測試會紅、CI 全綠，只有使用者每頁多下載。
-      const declared = (code.match(/forwardRef\(/g) ?? []).length;
-      const annotated = (out.match(/__PURE__/g) ?? []).length;
-      if (declared > 10 && annotated < declared) {
-        this.error(
-          `@animateicons 的 PURE 標註只蓋到 ${annotated}/${declared} 個 forwardRef（${id.split('/').pop()}）。\n` +
-            '套件大概升級了、minify 出來的寫法變了 → 上面那兩條 regex 要跟著調。\n' +
-            '不修的話 entry chunk 會胖回 1313 KB（每一頁都多 371 KB），而那不會有任何其他徵兆。',
-        );
-      }
-      return out === code ? null : { code: out, map: null };
     },
   };
 }
@@ -348,12 +214,11 @@ export default defineConfig(({ command }) => ({
     // 打包進來的 UMD 套件一律不准碰頁面上的 AMD 載入器。
     //
     // ⚠️ 後台的 Monaco 是從 /monaco/vs 以 AMD 方式載入的，會在 window 掛一個帶 `amd` 的
-    //    `define`。這是單頁應用，切到前台之後它還在——於是 Excalidraw / mermaid-to-excalidraw
-    //    底下幾個 UMD 套件（判斷順序是「先看 AMD、才看 CommonJS」）改去呼叫那個 define，
-    //    匯出落空，AMD 載入器在第二次匿名呼叫時丟出
-    //    `Can only have one anonymous define call per script file`，Sketch 區塊直接顯示轉換失敗。
-    //    只有「先開過後台編輯器」加上「圖裡有會走到那幾個套件的內容」才會發生，
-    //    乾淨的瀏覽器直接開文章完全正常——所以 e2e 一直是綠的。
+    //    `define`。這是單頁應用，切到前台之後它還在：打包進來的 UMD 套件若判斷順序是
+    //    「先看 AMD、才看 CommonJS」，就會改去呼叫那個 define，匯出落空，AMD 載入器在第二次
+    //    匿名呼叫時丟出 `Can only have one anonymous define call per script file`。
+    //    只有「先開過後台編輯器」的分頁會發生，乾淨的瀏覽器看不到。以前 Sketch 區塊在瀏覽器裡
+    //    用 Excalidraw 畫圖時踩過（2026-10 改成伺服器畫之後，那幾個套件已經不在了），留著當防護。
     //    把裸識別字 `define` 換成 undefined，`typeof define` 就恆為 'undefined'，UMD 全走
     //    CommonJS / ESM 分支。只影響打包的程式碼：Monaco 本身不在打包裡，而它內部的
     //    `globalThis.define.amd` 是屬性存取，不是裸識別字，不會被換掉。
@@ -372,39 +237,6 @@ export default defineConfig(({ command }) => ({
     //   真正把它擋掉的是 Dockerfile 最後那步 `find ... -delete`（上傳完就刪），
     //   加上 nginx 的 `location ~ \.map$ { return 404; }`。
     sourcemap: 'hidden',
-    rolldownOptions: {
-      output: {
-        // Excalidraw 預先切好的**葉節點** chunk（`dist/prod/chunk-*.js` 裡沒有任何 import 的那幾個）
-        // 各自維持成一個 chunk。
-        //
-        // ⚠️ 少了這段，vite 8.2 起（rolldown 1.2）會把那些小 chunk 併進 1.1 MB 的 Excalidraw 主程式
-        //    `prod-*.js`，而字型 subsetting 的 Web Worker（subset-worker.chunk.js）正好依賴它們——
-        //    於是 worker 得 import 整包主程式，在 Worker 環境裡載入失敗，Excalidraw 退回主執行緒做
-        //    subsetting，那段 wasm 膠水碼（emscripten embind）用 `new Function`，撞上頁面 CSP 沒有的
-        //    'unsafe-eval'：console 冒出 `Skipped glyph subsetting EvalError`。worker 本身不受頁面
-        //    CSP 管（它的腳本回應沒有 CSP header），所以在 worker 裡沒事。
-        //    vite 曾經為此釘在 8.0.16；抓得到它的只有 tests/e2e/mdx-blocks.spec.ts 的 CSP 斷言。
-        //
-        // ⚠️ **只能抓葉節點，不能把 Excalidraw 的 chunk 全部抓進群組。** 群組預設會連同被捕捉模組的
-        //    相依一起拉進來（includeDependenciesRecursively），而大的那幾個 chunk 會 import app 本身
-        //    也在用的套件——那些套件被吸進 Excalidraw 的 chunk 之後，首頁為了拿它們就得先載入 2.3 MB
-        //    的 Excalidraw。實際踩過：每一頁的 script 從 1.8 MB 變成 3.7 MB，是 Lighthouse 的
-        //    resource-summary 預算抓到的（e2e 全綠）。葉節點沒有相依，不會有這個問題。
-        codeSplitting: {
-          groups: [
-            {
-              name: (id) => {
-                const m = /@excalidraw[\\/]excalidraw[\\/]dist[\\/]prod[\\/](chunk-[A-Z0-9]+)\.js$/.exec(id);
-                return m ? `excalidraw-${m[1]}` : null;
-              },
-              test: (id) =>
-                /@excalidraw[\\/]excalidraw[\\/]dist[\\/]prod[\\/]chunk-[A-Z0-9]+\.js$/.test(id) &&
-                !/\bimport\b|\bfrom\s*["']/.test(fs.readFileSync(id, 'utf8')),
-            },
-          ],
-        },
-      },
-    },
   },
   resolve: {
     alias: [
@@ -423,8 +255,6 @@ export default defineConfig(({ command }) => ({
   plugins: [
     devApiProxy(),
     copyMonacoAssets(),
-    copyExcalidrawFonts(),
-    pureAnnotateAnimateIcons(),
     tailwindcss(),
     tanstackStart(),
     viteReact(),

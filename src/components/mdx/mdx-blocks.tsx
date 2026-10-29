@@ -19,6 +19,7 @@ import CodeTabsBlock from './CodeTabsBlock';
 import DiffImpl from './DiffBlock';
 import InstallImpl from './InstallBlock';
 import RefsImpl from './RefsBlock';
+import SketchBlock from './SketchBlock';
 import PollImpl from './PollBlock';
 
 // 影片 block（Video 自架、YouTube facade）直接重新匯出 → 一併在 MdxContent scope 註冊。
@@ -27,7 +28,6 @@ export { Video, YouTube } from './MediaEmbed';
 // 重的元件 lazy import，只有文章真的用到才進 bundle。
 const BarChartImpl = lazy(() => import('./BarChartBlock'));
 const MathImpl = lazy(() => import('./MathBlock'));
-const SketchImpl = lazy(() => import('./SketchBlock'));
 const ChartImpl = lazy(() => import('./ChartBlock'));
 const InteractiveChartImpl = lazy(() => import('./InteractiveChartBlock'));
 const ImageCompareImpl = lazy(() => import('./ImageCompareBlock'));
@@ -298,17 +298,10 @@ export function Tab({ children }: TabProps) {
   return <div className="mdx-tab">{children}</div>;
 }
 
-/** mermaid → Excalidraw 真手繪風（rough.js）SVG。用法 <Sketch chart="graph TD; A-->B" title="…" />。
- *  chart 收 mermaid 定義；重套件（excalidraw）→ 只在 client、lazy 載入（只有用到才進 bundle）。 */
+/** mermaid → 手繪風（rough.js）SVG。用法 <Sketch chart="graph TD; A-->B" title="…" />。
+ *  圖在伺服器上畫好（lib/mdx/sketchSvg.ts），元件只查表，所以不用 lazy、伺服器端就畫得出來。 */
 export function Sketch(props: { chart?: string; title?: string }) {
-  const fallback = <div className="mdx-sketch-loading" aria-hidden />;
-  return (
-    <ClientOnly fallback={fallback}>
-      <Suspense fallback={fallback}>
-        <SketchImpl {...props} />
-      </Suspense>
-    </ClientOnly>
-  );
+  return <SketchBlock {...props} />;
 }
 
 /** 防劇透：內容模糊，點擊揭開。純視覺遮擋（非加密），適合劇情/答案。 */

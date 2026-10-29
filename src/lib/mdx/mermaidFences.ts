@@ -39,3 +39,21 @@ export function extractMermaidFences(content: string): string[] {
   }
   return out;
 }
+
+/**
+ * Sketch 的圖去掉每行開頭的空白與引用符號（`>`）。多行的 chart 寫在清單、引用或縮排裡時，
+ * MDX 會拿掉續行開頭的縮排與容器前綴，但字串屬性與運算式拿掉的方式不一樣；伺服器從原文抽出來的
+ * 卻還帶著。mermaid 本來就不看行首的縮排，兩邊都先正規化，畫出來的圖與對照表的鍵才會一樣
+ */
+export const normalizeSketchChart = (chart: string) =>
+  chart
+    .split('\n')
+    .map((line) => line.replace(/^[\s>]+/, '').trimEnd())
+    .join('\n')
+    .trim();
+
+/** Sketch 區塊的圖在對照表裡的鍵（跟 mermaid 圍籬共用一張表，加前綴分開） */
+export const sketchKey = (chart: string) => `sketch:${mermaidKey(normalizeSketchChart(chart))}`;
+
+/** 畫不出來的 Sketch：錯誤訊息存在這個鍵底下，元件照樣顯示錯誤框 */
+export const sketchErrorKey = (chart: string) => `sketch-error:${mermaidKey(normalizeSketchChart(chart))}`;

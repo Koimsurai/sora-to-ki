@@ -160,14 +160,10 @@ function startProxy() {
         //   **module worker 套用的是它自己那個回應的 CSP，不是文件的**。多加在這裡的話
         //   worker 會比正式站更嚴，而 e2e 就會報出線上根本不存在的問題。
         //
-        //   實際踩過：excalidraw 的字形 subsetting worker 需要 `Function()`。
-        //   正式站的 worker 沒有 CSP → 正常；代理層加了 → worker 一啟動就死、主執行緒
-        //   等 1000ms 逾時後走後備、後備又被文件的 CSP 擋掉 → subsetting 整個跳過，
-        //   行內 SVG 從 55 KB 變成 1472 KB（同一張圖實測）。花了很久才查出來兩邊
-        //   差在哪，就是因為這一層跟正式站不一致。
-        //
-        //   ⚠ 反過來說：哪天真的想在 nginx 幫 `/assets/` 補上 CSP，`<Sketch>` 就會
-        //   以上面那個方式壞掉——那是刻意的取捨，不是可以順手加的硬化。
+        //   實際踩過：以前 Sketch 在瀏覽器裡用 excalidraw 畫圖，它的字形 subsetting worker
+        //   需要 `Function()`。正式站的 worker 沒有 CSP → 正常；代理層加了 → worker 一啟動就死，
+        //   subsetting 整個跳過。花了很久才查出來兩邊差在哪，就是因為這一層跟正式站不一致。
+        //   （Sketch 在 2026-10 改成伺服器畫，那個 worker 已經不在，但「這層要跟正式站一致」的理由不變。）
         //
         //   文件自己的 CSP 不受影響：主執行緒的 eval 照樣被擋（csp.spec.ts 就靠這個
         //   守著 Zod 那筆已知的 eval 探測）。
