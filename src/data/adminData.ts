@@ -133,7 +133,7 @@ export const adminFriendsQueryOptions = queryOptions({
   staleTime: 30 * 1000,
 });
 
-export type AnalyticsPeriod = '7d' | '30d' | '6mo';
+export type AnalyticsPeriod = 'today' | '3d' | '7d' | '30d' | '6mo';
 
 /**
  * 流量（後端代理自架 Plausible）。Plausible 拒絕時後端回 502 帶 `error`（key 錯、site_id 錯），

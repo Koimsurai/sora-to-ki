@@ -234,7 +234,10 @@ export type AdminWatchItem = {
 	favorite_id: number | null,
 };
 
-/**  走勢圖的一格。`date` 是那一格的起點（`yyyy-MM-dd`，週粒度時是那週的第一天） */
+/**
+ *  走勢圖的一格。`date` 是那一格的起點（`yyyy-MM-dd`，週粒度時是那週的第一天；
+ *  小時粒度時是 `yyyy-MM-dd HH:mm`）
+ */
 export type AnalyticsPoint = {
 	date: string,
 	visitors: number,

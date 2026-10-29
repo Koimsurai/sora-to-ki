@@ -172,48 +172,45 @@ test.describe('後台', () => {
       visit_duration: 125,
       views_per_visit: 2.9,
     };
-    await page.route('**/api/admin/analytics?*', (route) =>
-      route.fulfill({
-        json: {
-          configured: true,
-          period: '7d',
-          start: '2026-10-20',
-          end: '2026-10-26',
-          realtime: 2,
-          totals,
-          previous: { ...totals, visitors: 617, bounce_rate: 70 },
-          series: [
-            { date: '2026-10-24', visitors: 0, pageviews: 0 },
-            { date: '2026-10-25', visitors: 40, pageviews: 90 },
-            { date: '2026-10-26', visitors: 20, pageviews: 30 },
-          ],
-          posts: [
-            {
-              id: 1,
-              slug: 'hello',
-              title: '第一篇測試文章',
-              visitors: 80,
-              scroll_depth: 72.4,
-              time_on_page: 95,
-              read_minutes: 6,
-              hearts: 3,
-              comments: 1,
-            },
-          ],
-          entries: [{ source: 'Direct / None', visitors: 50, entries: [{ name: '/blog/hello', visitors: 30 }] }],
-          search: {
-            configured: true,
-            error: null,
-            queries: [{ query: 'koimsurai', clicks: 4, impressions: 120, ctr: 0.033, position: 3.2 }],
-          },
-          pages: [{ name: '/blog/hello', visitors: 80 }],
-          sources: [{ name: 'Direct / None', visitors: 1000 }],
-          countries: [{ name: 'TW', visitors: 70 }],
-          devices: [{ name: 'Mobile', visitors: 30 }],
-          dashboard_url: 'https://plausible.example/koimsurai.com',
+    const report = {
+      configured: true,
+      period: '7d',
+      start: '2026-10-20',
+      end: '2026-10-26',
+      realtime: 2,
+      totals,
+      previous: { ...totals, visitors: 617, bounce_rate: 70 },
+      series: [
+        { date: '2026-10-24', visitors: 0, pageviews: 0 },
+        { date: '2026-10-25', visitors: 40, pageviews: 90 },
+        { date: '2026-10-26', visitors: 20, pageviews: 30 },
+      ],
+      posts: [
+        {
+          id: 1,
+          slug: 'hello',
+          title: '第一篇測試文章',
+          visitors: 80,
+          scroll_depth: 72.4,
+          time_on_page: 95,
+          read_minutes: 6,
+          hearts: 3,
+          comments: 1,
         },
-      }),
-    );
+      ],
+      entries: [{ source: 'Direct / None', visitors: 50, entries: [{ name: '/blog/hello', visitors: 30 }] }],
+      search: {
+        configured: true,
+        error: null,
+        queries: [{ query: 'koimsurai', clicks: 4, impressions: 120, ctr: 0.033, position: 3.2 }],
+      },
+      pages: [{ name: '/blog/hello', visitors: 80 }],
+      sources: [{ name: 'Direct / None', visitors: 1000 }],
+      countries: [{ name: 'TW', visitors: 70 }],
+      devices: [{ name: 'Mobile', visitors: 30 }],
+      dashboard_url: 'https://plausible.example/koimsurai.com',
+    };
+    await page.route('**/api/admin/analytics?*', (route) => route.fulfill({ json: report }));
     await page.getByRole('button', { name: '7 天' }).click();
     await expect(page.getByText('此刻 2 人在站上')).toBeVisible();
     await expect(page.locator('.adm-an-summary')).toContainText('是上一段的 2 倍');
@@ -235,6 +232,28 @@ test.describe('後台', () => {
     await expect(page.getByRole('region', { name: '熱門頁面' })).toContainText('/blog/hello');
     await expect(page.getByRole('region', { name: '國家' })).toContainText('台灣');
     await expect(page.getByRole('region', { name: '裝置' })).toContainText('手機');
+
+    // 今天：一小時一格，比的是昨天到同一個時刻
+    await page.route(
+      (url) => url.pathname === '/api/admin/analytics' && url.searchParams.get('period') === 'today',
+      (route) =>
+        route.fulfill({
+          json: {
+            ...report,
+            period: 'today',
+            start: '2026-10-26',
+            end: '2026-10-26',
+            series: [
+              { date: '2026-10-26 00:00', visitors: 5, pageviews: 8 },
+              { date: '2026-10-26 01:00', visitors: 0, pageviews: 0 },
+              { date: '2026-10-26 02:00', visitors: 3, pageviews: 4 },
+            ],
+          },
+        }),
+    );
+    await page.getByRole('button', { name: '今天' }).click();
+    await expect(page.locator('.adm-an-summary')).toContainText('今天到現在有 1,234 人來，是昨天同時段的 2 倍');
+    await expect(page.locator('.adm-an-axis'), '軸上標的是時刻').toContainText('02:00');
   });
 
   /**

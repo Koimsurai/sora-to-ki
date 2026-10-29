@@ -15,6 +15,8 @@ import './AdminAnalytics.css';
 // 以前留下的後台瀏覽在熱門頁面裡也濾掉了。
 
 const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
+  { key: 'today', label: '今天' },
+  { key: '3d', label: '3 天' },
   { key: '7d', label: '7 天' },
   { key: '30d', label: '30 天' },
   { key: '6mo', label: '半年' },
@@ -46,8 +48,8 @@ function Duration({ sec }: { sec: number }) {
   );
 }
 
-/** `2026-10-26` → `10.26`（不經過 Date：字串本來就是站台時區的日期） */
-const shortDate = (d: string) => `${d.slice(5, 7)}.${d.slice(8, 10)}`;
+/** `2026-10-26` → `10.26`、`2026-10-26 14:00` → `14:00`（不經過 Date：字串本來就是站台時區的時間） */
+const shortDate = (d: string) => (d.length > 10 ? d.slice(11, 16) : `${d.slice(5, 7)}.${d.slice(8, 10)}`);
 
 const regionNames = (() => {
   try {
@@ -133,22 +135,31 @@ export default function AdminAnalytics() {
   );
 }
 
-const PERIOD_WORD: Record<AnalyticsPeriod, string> = { '7d': '7 天', '30d': '30 天', '6mo': '半年' };
+const PERIOD_WORD: Record<AnalyticsPeriod, string> = {
+  today: '今天到現在',
+  '3d': '這 3 天',
+  '7d': '這 7 天',
+  '30d': '這 30 天',
+  '6mo': '這半年',
+};
+
+/** 拿來比的那一段怎麼稱呼：「今天」比的是昨天午夜到同一個時刻（後端 today_ranges） */
+const prevWord = (period: AnalyticsPeriod) => (period === 'today' ? '昨天同時段' : '上一段');
 
 /** 這一段跟上一段比：倍數、百分比或差不多 */
-function compare(now: number, prev: number): string {
-  if (prev <= 0) return now > 0 ? '上一段還沒有人來' : '';
+function compare(now: number, prev: number, than: string): string {
+  if (prev <= 0) return now > 0 ? `${than}還沒有人來` : '';
   const r = now / prev;
-  if (r >= 2) return `是上一段的 ${Math.round(r)} 倍`;
-  if (r >= 1.05) return `比上一段多 ${Math.round((r - 1) * 100)}%`;
-  if (r <= 0.95) return `比上一段少 ${Math.round((1 - r) * 100)}%`;
-  return '跟上一段差不多';
+  if (r >= 2) return `是${than}的 ${Math.round(r)} 倍`;
+  if (r >= 1.05) return `比${than}多 ${Math.round((r - 1) * 100)}%`;
+  if (r <= 0.95) return `比${than}少 ${Math.round((1 - r) * 100)}%`;
+  return `跟${than}差不多`;
 }
 
 /** 一句話：來了多少人、比上一段多還少、主要從哪來 */
 function Summary({ data, period }: { data: AnalyticsResponse; period: AnalyticsPeriod }) {
   const v = data.totals.visitors;
-  const cmp = compare(v, data.previous.visitors);
+  const cmp = compare(v, data.previous.visitors, prevWord(period));
   const top = data.sources.at(0);
   const share = top && v > 0 ? top.visitors / v : 0;
   const how = top?.name === 'Direct / None' ? '直接造訪' : top ? `從 ${label.source(top.name)} 來的` : '';
@@ -158,7 +169,7 @@ function Summary({ data, period }: { data: AnalyticsResponse; period: AnalyticsP
       : '';
   return (
     <p className="adm-an-summary">
-      這 {PERIOD_WORD[period]}有 <b>{num(v)}</b> 人來{cmp ? `，${cmp}` : ''}。{from}
+      {PERIOD_WORD[period]}有 <b>{num(v)}</b> 人來{cmp ? `，${cmp}` : ''}。{from}
     </p>
   );
 }
@@ -168,20 +179,22 @@ function Delta({
   now,
   prev,
   fmt,
+  than,
   lowerIsBetter,
 }: {
   now: number;
   prev: number;
   fmt: (n: number) => string;
+  than: string;
   lowerIsBetter?: boolean;
 }) {
-  if (!prev) return <span className="adm-an-delta">上一段沒有資料</span>;
+  if (!prev) return <span className="adm-an-delta">{than}沒有資料</span>;
   const same = Math.abs(now - prev) < 0.005 * Math.max(1, Math.abs(prev));
   const up = now > prev;
   const verdict = same || lowerIsBetter === undefined ? '' : up === !lowerIsBetter ? '，變好' : '，變差';
   return (
     <span className="adm-an-delta">
-      {same ? '＝' : up ? '↑' : '↓'} 上一段 {fmt(prev)}
+      {same ? '＝' : up ? '↑' : '↓'} {than} {fmt(prev)}
       {verdict}
     </span>
   );
@@ -195,7 +208,8 @@ const durationText = (sec: number) => {
 function Report({ data, period }: { data: AnalyticsResponse; period: AnalyticsPeriod }) {
   const t = data.totals;
   const p = data.previous;
-  const unit = period === '6mo' ? '每週' : '每天';
+  const unit = period === 'today' ? '每小時' : period === '6mo' ? '每週' : '每天';
+  const than = prevWord(period);
   return (
     <div className="adm-an-report">
       <Summary data={data} period={period} />
@@ -204,13 +218,13 @@ function Report({ data, period }: { data: AnalyticsResponse; period: AnalyticsPe
         <div className="adm-tile">
           <span className="adm-caps">來的人</span>
           <span className="adm-tile-num">{num(t.visitors)}</span>
-          <Delta now={t.visitors} prev={p.visitors} fmt={num} />
+          <Delta now={t.visitors} prev={p.visitors} than={than} fmt={num} />
           <span className="adm-tile-sub">不重複的人數。同一個人同一天來好幾次只算一次。</span>
         </div>
         <div className="adm-tile">
           <span className="adm-caps">每人看幾頁</span>
           <span className="adm-tile-num">{(t.views_per_visit ?? 0).toFixed(1)}</span>
-          <Delta now={t.views_per_visit ?? 0} prev={p.views_per_visit ?? 0} fmt={(n) => n.toFixed(1)} />
+          <Delta now={t.views_per_visit ?? 0} prev={p.views_per_visit ?? 0} than={than} fmt={(n) => n.toFixed(1)} />
           <span className="adm-tile-sub">每次進站平均看了幾頁。越高代表越多人會繼續逛。</span>
         </div>
         <div className="adm-tile">
@@ -220,7 +234,13 @@ function Report({ data, period }: { data: AnalyticsResponse; period: AnalyticsPe
             {Math.round(t.bounce_rate ?? 0)}
             <span className="adm-an-unit">%</span>
           </span>
-          <Delta now={t.bounce_rate ?? 0} prev={p.bounce_rate ?? 0} fmt={(n) => `${Math.round(n)}%`} lowerIsBetter />
+          <Delta
+            now={t.bounce_rate ?? 0}
+            prev={p.bounce_rate ?? 0}
+            than={than}
+            fmt={(n) => `${Math.round(n)}%`}
+            lowerIsBetter
+          />
           <span className="adm-tile-sub">原本的「跳出率」：看完第一頁就離開的人占多少。越低越好。</span>
         </div>
         <div className="adm-tile">
@@ -228,7 +248,7 @@ function Report({ data, period }: { data: AnalyticsResponse; period: AnalyticsPe
           <span className="adm-tile-num">
             <Duration sec={t.visit_duration ?? 0} />
           </span>
-          <Delta now={t.visit_duration ?? 0} prev={p.visit_duration ?? 0} fmt={durationText} />
+          <Delta now={t.visit_duration ?? 0} prev={p.visit_duration ?? 0} than={than} fmt={durationText} />
           <span className="adm-tile-sub">從進站到離開大概多久（一次造訪的平均）。</span>
         </div>
       </div>
