@@ -127,8 +127,16 @@ export function turnFor(key: StarKey, w: number, h: number) {
  * 星與星之間用平滑的曲線（Catmull–Rom）接，點飛起來有一點弧度、不是硬折。
  * 回傳取好點的曲線，與正在測的那顆星在曲線上的第幾點
  */
-export function planConstellation(target: StarKey, front: { x: number; y: number }, w: number, h: number) {
-  const others = STAR_KEYS.filter((k) => k !== target)
+export function planConstellation(
+  target: StarKey,
+  front: { x: number; y: number },
+  w: number,
+  h: number,
+  /** 天上實際有的星（站長沒填問答時少一顆「問答」） */
+  keys: readonly StarKey[] = STAR_KEYS,
+) {
+  const others = keys
+    .filter((k) => k !== target)
     .map((k) => starAt(k, w, h))
     .sort((a, b) => b.x - a.x);
   const knots = [...others, starAt(target, w, h), front];

@@ -740,6 +740,7 @@
     "title_rule3": "由数据长出来",
     "text_rule3": "作品页螺旋上的每一颗星，都是照一个 repo 的数字长出来的。调整数字做一颗，再一步一步看它怎么长成。",
     "title_license": "授权",
+    "qaHeading": "常见问题 Q&A",
     "text_license": "这个站用 sora-to-ki 搭建，代码以 AGPL-3.0 开源；文章、照片与其他内容保留所有权利。",
     "swatchGround": "黑，是纸",
     "swatchPaper": "白，是墨",

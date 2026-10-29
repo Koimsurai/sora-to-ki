@@ -1067,6 +1067,19 @@ export type PostsListResponse = {
 	pagination: Pagination,
 };
 
+/**  此站點的問答（六分儀那片天空裡的「問答」星）。沒有任何一題時那顆星不出現 */
+export type QaContent = {
+	/**  對準「問答」星時，題目上面那一句介紹 */
+	intro?: { [key in string]: string },
+	items?: QaItem[],
+};
+
+export type QaItem = {
+	q?: { [key in string]: string },
+	/**  答案：空一行是分段、\`程式碼\`、[文字](網址)，單獨一行的網址會變成文章卡 */
+	a?: { [key in string]: string },
+};
+
 /**  一筆紀錄。`target_title`：文章是標題、碎念是內文開頭；留言是它所在那篇的標題或那則碎念的開頭 */
 export type ReactionLogEvent = {
 	id: number,
