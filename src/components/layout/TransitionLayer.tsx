@@ -793,11 +793,12 @@ export default function TransitionLayer() {
         endBoot();
         return;
       }
-      // 從開場那顆點實際在的位置起飛（直拿時它在畫面中間偏上，見 index.css 的 --boot-cy）
+      // 從開場那顆點的高度起飛（直拿時它在畫面中間偏上，見 index.css 的 --boot-cy）。
+      // 橫的不能用量到的：#boot 與 3D 畫布的寬度扣掉了捲軸（html 是 overflow-y: scroll），
+      // 這裡的座標卻是照整個視窗寬（innerWidth）算、再拉到那個寬度上畫的，量到的中心會少半條捲軸寬，
+      // 點就會往右滑那幾 px、環跟著偏掉，落點跟 3D 土星錯開
       const dot = document.querySelector('.boot-dot')?.getBoundingClientRect();
-      const center = dot
-        ? { x: dot.left + dot.width / 2, y: dot.top + dot.height / 2 }
-        : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      const center = { x: window.innerWidth / 2, y: dot ? dot.top + dot.height / 2 : window.innerHeight / 2 };
       bootOrigin = center;
       const now = performance.now();
       const r: Run = {
