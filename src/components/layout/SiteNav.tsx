@@ -32,6 +32,11 @@ const SLIM_AFTER = 80;
 const OPEN_AFTER_MS = 280;
 /** 滑鼠離開導覽列多久才收起選單（斜著往下移到選單時會短暫出界） */
 const CLOSE_AFTER_MS = 320;
+/**
+ * 面板展開的動畫要多久（SiteNav.css 的 .snav-more，--dur-500）。滑過去停一下就展開，很多人滑到那裡、
+ * 稍微停一下才點，那一下剛好碰到它正在展開：這段時間點了不收（原本會反過來把它收掉），完全展開之後再點才收
+ */
+const OPENING_MS = 500;
 export default function SiteNav() {
   const { t, i18n } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -81,8 +86,11 @@ export default function SiteNav() {
   // 琥珀點停在所在的分區；在「更多」裡的頁面、或「更多」展開時，停在「更多」上；首頁沒有點
   const restIndex = open ? MENU_KEYS.indexOf(open) : activeMain < 0 && inMore ? MAIN.length : activeMain;
 
+  /** 選單是什麼時候打開（或換到另一頁）的：剛打開、還在展開的時候，點同一個不收（見 OPENING_MS） */
+  const openedAtRef = useRef(0);
   const openMenu = (key: MenuKey) => {
     setOpen((prev) => {
+      if (prev !== key) openedAtRef.current = performance.now();
       if (prev && prev !== key) {
         setDir(Math.sign(MENU_KEYS.indexOf(key) - MENU_KEYS.indexOf(prev)) || 1);
         setWas(prev);
@@ -344,7 +352,7 @@ export default function SiteNav() {
               onClick={() => {
                 // 點了就以點的為準：滑進來時排的「停一下就展開」不要在之後又把它打開
                 cancelIntent();
-                if (open === 'more') setOpen(null);
+                if (open === 'more' && performance.now() - openedAtRef.current > OPENING_MS) setOpen(null);
                 else openMenu('more');
               }}
             >
@@ -365,7 +373,7 @@ export default function SiteNav() {
               onFocus={() => moveDotTo(MAIN.length + 1)}
               onClick={() => {
                 cancelIntent();
-                if (open === 'sky') setOpen(null);
+                if (open === 'sky' && performance.now() - openedAtRef.current > OPENING_MS) setOpen(null);
                 else openMenu('sky');
               }}
             >

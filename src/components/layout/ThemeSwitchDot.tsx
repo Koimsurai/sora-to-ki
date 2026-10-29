@@ -12,14 +12,14 @@ import './ThemeSwitchDot.css';
 const PLANET_CLOSE_MS = 550;
 const DOT_IN_MS = 300;
 /** 點換了色（參宿四是超新星那一閃）之後多久，新的主星開始長 */
-const RECOLOR_MS = 260;
+const RECOLOR_MS = 180;
 /** 新的主星長到幾成，點就交棒淡掉 */
 const HANDOFF_AT = 0.15;
 /** 一直等不到新的主星長出來（3D 掉了之類）就自己收掉 */
 const GIVE_UP_MS = 4000;
 /** 首頁以外：這一頁收進點要多久、新的主星長完之後停多久 */
-const PAGE_CLOSE_MS = 400;
-const HOLD_MS = 1500;
+const PAGE_CLOSE_MS = 320;
+const HOLD_MS = 500;
 const PAGE_OPEN_MS = 480;
 
 const easeIn = (t: number) => t * t * t;
