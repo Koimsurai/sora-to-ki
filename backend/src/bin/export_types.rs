@@ -33,7 +33,9 @@ use koimsurai_web_backend::handlers::home::{
 };
 use koimsurai_web_backend::handlers::link_preview::LinkPreviewResponse;
 use koimsurai_web_backend::handlers::newsletter::{SubscriberByToken, SubscriberRow, SubscribersResponse};
-use koimsurai_web_backend::handlers::page_content::{AboutContent, LogContent, QaContent, WorksContent};
+use koimsurai_web_backend::handlers::page_content::{
+    AboutContent, LogContent, QaContent, SetupContent, WorksContent,
+};
 use koimsurai_web_backend::handlers::photo_meta::{AdminPhoto, AdminPhotosResponse};
 use koimsurai_web_backend::handlers::polls::{PollOptionRow, PollResponse};
 use koimsurai_web_backend::handlers::posts::{
@@ -137,6 +139,7 @@ fn main() {
         .register::<LogContent>()
         .register::<WorksContent>()
         .register::<QaContent>()
+        .register::<SetupContent>()
         .register::<Telemetry>()
         .register::<FriendPost>()
         .register::<FriendStar>()

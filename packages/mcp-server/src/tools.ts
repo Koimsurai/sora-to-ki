@@ -770,10 +770,13 @@ export function makeTools(api: ApiClient): Tool[] {
         '順序就是作品頁螺旋的順序，第一件是起點。星球的樣子由 GitHub 的數據決定。' +
         '\nqa（此站點的問答）：items（每一題：q 問題、a 答案）。答案的寫法：空一行分段、`程式碼`、[文字](網址)、' +
         '單獨一段的網址會變成文章卡；一題都沒有時那顆星不出現。' +
+        '\nsetup（設備）：bays（最多四格；每格 on、sheet 圖紙 id 或空字串＋image 上傳的圖、eyebrow、label、lede、' +
+        'parts（key 對圖紙上的部件；name、spec、hidden；上傳的圖用 at／b 百分比座標）、extra、telemetry、devices_title、devices、appliances、records）、' +
+        'base（第五站：on、label、lede、specs 最多 7 條）。沒開的格子照畫但點不開。' +
         '\n會翻譯的欄位是「語系 → 字」的物件（zh-TW、zh-CN、en、ja、ko），zh-TW 必填，其他留空就顯示 zh-TW。',
       inputSchema: {
         type: 'object',
-        properties: { page: { type: 'string', enum: ['about', 'works', 'log', 'qa'], description: '哪一頁' } },
+        properties: { page: { type: 'string', enum: ['about', 'works', 'log', 'qa', 'setup'], description: '哪一頁' } },
         required: ['page'],
         additionalProperties: false,
       },
@@ -788,7 +791,7 @@ export function makeTools(api: ApiClient): Tool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          page: { type: 'string', enum: ['about', 'works', 'log', 'qa'], description: '哪一頁' },
+          page: { type: 'string', enum: ['about', 'works', 'log', 'qa', 'setup'], description: '哪一頁' },
           content: { type: 'object', description: '那一頁的整份內容' },
         },
         required: ['page', 'content'],

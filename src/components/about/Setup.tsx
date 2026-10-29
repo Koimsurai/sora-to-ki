@@ -12,14 +12,14 @@ import { LocaleLink } from '@/i18n/locale-link';
 import { postPath } from '@/lib/postPath';
 import { sameTitle } from '@/lib/pageTitle';
 import { isArriving } from '@/store/pageTransition';
+import { useSetupContent } from '@/data/pageContent';
+import { pickText } from '@/lib/i18nText';
+import OwnerFillHint from '@/components/common/OwnerFillHint';
 import { createBay, type Bay } from './setupBay';
-import { APPLIANCES, GEAR, type GearItem } from './setupGear';
-import { BASE, PAYLOADS } from './setupPayloads';
+import { bayViews } from './setupView';
 import TelemetryPanel from './TelemetryPanel';
 import './Setup.css';
 
-const ITEMS = new Map<string, GearItem>(GEAR.flatMap((c) => c.items.map((it) => [it.id, it] as const)));
-const itemOf = (id: string) => ITEMS.get(id);
 /** 離場時換頁的點跟著太空梭飛走的初速（px/ms） */
 const LEAVE_SPEED = 0.6;
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -33,8 +33,23 @@ function landed(): Promise<void> {
 }
 
 export default function Setup() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const lang = i18n.resolvedLanguage ?? 'zh-TW';
   const locale = useLocale();
+  // 四個貨艙與第五站是站長填的（後台「頁面」或 MCP）；圖紙在 setupSheets 與 custom/setup/
+  const content = useSetupContent();
+  const views = useMemo(() => bayViews(content), [content]);
+  const base = content?.base;
+  const baseOn = Boolean(base?.on);
+  const baseSpecs = base?.specs ?? [];
+  const bayDataRef = useRef({
+    payloads: views.map((v) => v?.payload ?? null),
+    base: { on: baseOn, specs: baseSpecs.length },
+  });
+  bayDataRef.current = {
+    payloads: views.map((v) => v?.payload ?? null),
+    base: { on: baseOn, specs: baseSpecs.length },
+  };
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const headerRef = useRef<HTMLElement>(null);
@@ -60,6 +75,8 @@ export default function Setup() {
       header,
       panel,
       tags,
+      // 畫布只在進這一頁時建一次：拿那時候的內容（後台改了要重新整理才看得到）
+      ...bayDataRef.current,
       onSelect: (i, isShown) => {
         setSel(i);
         setShown(isShown);
@@ -116,7 +133,10 @@ export default function Setup() {
     ) : null;
   };
 
-  const payload = sel >= 0 && sel < 4 ? PAYLOADS[sel] : null;
+  const view = sel >= 0 && sel < 4 ? views[sel] : null;
+  const bay = view?.bay;
+  /** 零件表的件數：有編號的＋沒編號的 */
+  const countOf = (i: number) => (views[i]?.parts.length ?? 0) + (views[i]?.bay.extra?.length ?? 0);
   /** 零件表的一列：滑過（觸控是點一下、鍵盤是聚焦）就把圖紙上那個零件亮起來 */
   const hotProps = (k: number) => ({
     'aria-pressed': hot === k,
@@ -141,11 +161,20 @@ export default function Setup() {
 
       {/* 箱子的標籤：位置由畫布每一幀擺（引線也是畫布畫的）；摺起來時是另一半的貨單 */}
       <div className="su-tags">
-        {[...PAYLOADS.map((p) => ({ no: p.no, key: p.key })), { no: BASE.no, key: BASE.key }].map((p, i) => (
+        {[
+          ...[0, 1, 2, 3].map((i) => ({
+            no: i + 1,
+            key: `bay-${i}`,
+            label: content?.bays?.[i]?.label,
+            on: views[i] != null,
+          })),
+          { no: 0, key: 'base', label: base?.label, on: baseOn },
+        ].map((p, i) => (
           <button
             key={p.key}
             type="button"
             className="su-tag"
+            disabled={!p.on}
             ref={(el) => {
               tagsRef.current[i] = el;
             }}
@@ -156,17 +185,12 @@ export default function Setup() {
             onBlur={() => bayRef.current?.setHover(-1)}
           >
             <span className="su-tag-no">{pad2(p.no)}</span>
-            <span className="su-tag-name">{t(`setup.cat.${p.key}.short`)}</span>
+            <span className="su-tag-name">{pickText(p.label, lang)}</span>
             {/* 摺疊機摺起來時標籤排成貨單，多出件數與一句說明（平常藏著） */}
             {i < 4 && (
               <span className="su-tag-more">
-                <span className="su-tag-count">
-                  {t('setup.bay.count', {
-                    count:
-                      PAYLOADS[i].parts.length + (PAYLOADS[i].unseen?.length ?? 0) + (PAYLOADS[i].others?.length ?? 0),
-                  })}
-                </span>
-                <span className="su-tag-lede">{t(`setup.bay.lede.${p.key}`)}</span>
+                <span className="su-tag-count">{t('setup.bay.count', { count: countOf(i) })}</span>
+                <span className="su-tag-lede">{pickText(content?.bays?.[i]?.lede, lang)}</span>
               </span>
             )}
           </button>
@@ -175,86 +199,76 @@ export default function Setup() {
 
       {/* 零件表＋標題欄：寬版在圖紙右側那欄（位置由畫布給），直版從底部升起 */}
       <aside ref={panelRef} className="su-panel" data-in={shown ? '1' : ''} aria-live="polite">
-        {payload && (
+        {view && bay && (
           <>
             <div className="su-body">
-              {payload.telemetry && <TelemetryPanel />}
+              {bay.telemetry && <TelemetryPanel />}
               <div className="su-bom-h" aria-hidden="true">
                 <span>NO</span>
                 <span>PART · SPEC</span>
               </div>
               <ol className="su-bom">
-                {payload.parts.map((c, k) => {
-                  const it = itemOf(c.id);
-                  return it ? (
-                    <li key={c.id} style={{ '--i': k } as React.CSSProperties}>
-                      <button type="button" className="su-row" {...hotProps(k)}>
-                        <span className="su-no">{pad2(k + 1)}</span>
-                        <span className="su-name">{it.name}</span>
-                        <span className="su-spec">{it.spec}</span>
-                      </button>
-                    </li>
-                  ) : null;
-                })}
-                {[...(payload.unseen ?? []), ...(payload.others ?? [])].map((id, k) => {
-                  const it = itemOf(id);
-                  return it ? (
-                    <li key={id} style={{ '--i': payload.parts.length + k } as React.CSSProperties}>
-                      <div className="su-row is-plain">
-                        <span className="su-no">·</span>
-                        <span className="su-name">{it.name}</span>
-                        <span className="su-spec">
-                          {it.spec}
-                          {payload.unseen?.includes(id) && ` · ${t('setup.bay.notDrawn')}`}
-                        </span>
-                      </div>
-                    </li>
-                  ) : null;
-                })}
+                {view.parts.map((it, k) => (
+                  // eslint-disable-next-line @eslint-react/no-array-index-key
+                  <li key={k} style={{ '--i': k } as React.CSSProperties}>
+                    <button type="button" className="su-row" {...hotProps(k)}>
+                      <span className="su-no">{pad2(k + 1)}</span>
+                      <span className="su-name">{it.name}</span>
+                      <span className="su-spec">{it.spec}</span>
+                    </button>
+                  </li>
+                ))}
+                {(bay.extra ?? []).map((it, k) => (
+                  // eslint-disable-next-line @eslint-react/no-array-index-key
+                  <li key={`x${k}`} style={{ '--i': view.parts.length + k } as React.CSSProperties}>
+                    <div className="su-row is-plain">
+                      <span className="su-no">·</span>
+                      <span className="su-name">{it.name}</span>
+                      <span className="su-spec">
+                        {it.spec}
+                        {it.not_drawn && ` · ${t('setup.bay.notDrawn')}`}
+                      </span>
+                    </div>
+                  </li>
+                ))}
               </ol>
-              {payload.devices && (
+              {((bay.devices?.length ?? 0) > 0 || (bay.appliances?.length ?? 0) > 0) && (
                 <>
-                  <p className="su-sec">{t('setup.bay.devices')}</p>
-                  {payload.devices.map((d) => {
-                    const it = itemOf(d.id);
-                    return it ? (
-                      <div key={d.id} className="su-dev">
-                        <b>{it.name}</b>
-                        {it.roleKey && <span>{t(`setup.roles.${it.roleKey}`)}</span>}
-                        {d.posts.length > 0 && <div className="su-links">{d.posts.map(postLink)}</div>}
-                      </div>
-                    ) : null;
-                  })}
-                  <div className="su-dev">
-                    <b>{t('setup.appliances.title')}</b>
-                    <span>
-                      {APPLIANCES.map((a) => `${a.name} ${t(`setup.appliances.types.${a.typeKey}`)}`.trim()).join(
-                        ' · ',
-                      )}
-                    </span>
-                  </div>
+                  <p className="su-sec">{pickText(bay.devices_title, lang)}</p>
+                  {(bay.devices ?? []).map((d, k) => (
+                    // eslint-disable-next-line @eslint-react/no-array-index-key
+                    <div key={k} className="su-dev">
+                      <b>{d.name}</b>
+                      {pickText(d.role, lang) && <span>{pickText(d.role, lang)}</span>}
+                      {(d.posts ?? []).length > 0 && <div className="su-links">{(d.posts ?? []).map(postLink)}</div>}
+                    </div>
+                  ))}
+                  {(bay.appliances?.length ?? 0) > 0 && (
+                    <div className="su-dev">
+                      <b>{t('setup.appliances.title')}</b>
+                      <span>
+                        {(bay.appliances ?? []).map((a) => `${a.name} ${pickText(a.kind, lang)}`.trim()).join(' · ')}
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
-              {payload.records && (
+              {(bay.records?.length ?? 0) > 0 && (
                 <>
                   <p className="su-sec">{t('setup.bay.records')}</p>
-                  <div className="su-links is-stack">{payload.records.map(postLink)}</div>
+                  <div className="su-links is-stack">{(bay.records ?? []).map(postLink)}</div>
                 </>
               )}
             </div>
             <div className="su-title">
               <span className="su-eyebrow">
-                PAYLOAD {pad2(payload.no)} · {payload.en}
+                PAYLOAD {pad2(sel + 1)} · {bay.eyebrow}
               </span>
               <h2>
-                {t(`setup.cat.${payload.key}.short`)}
-                <small>
-                  {t('setup.bay.count', {
-                    count: payload.parts.length + (payload.unseen?.length ?? 0) + (payload.others?.length ?? 0),
-                  })}
-                </small>
+                {pickText(bay.label, lang)}
+                <small>{t('setup.bay.count', { count: countOf(sel) })}</small>
               </h2>
-              <p className="su-lede">{t(`setup.bay.lede.${payload.key}`)}</p>
+              <p className="su-lede">{pickText(bay.lede, lang)}</p>
               <span className="su-meta">SHEET {sel + 1} / 5 · SCALE NTS</span>
             </div>
           </>
@@ -267,13 +281,14 @@ export default function Setup() {
                 <span>POWER-ON SELF TEST</span>
               </div>
               <ol className="su-bom">
-                {BASE.specs.map((s, k) => (
-                  <li key={s.label} style={{ '--i': k } as React.CSSProperties}>
+                {baseSpecs.map((sp, k) => (
+                  // eslint-disable-next-line @eslint-react/no-array-index-key
+                  <li key={k} style={{ '--i': k } as React.CSSProperties}>
                     <button type="button" className="su-row is-post" {...hotProps(k)}>
                       <span className="su-no">{pad2(k + 1)}</span>
-                      <span className="su-name">{s.label}</span>
+                      <span className="su-name">{sp.label}</span>
                       <span className="su-spec">
-                        {s.value} <em>…OK</em>
+                        {sp.value} <em>…OK</em>
                       </span>
                     </button>
                   </li>
@@ -283,10 +298,10 @@ export default function Setup() {
             <div className="su-title">
               <span className="su-eyebrow">BASE II</span>
               <h2>
-                {t('setup.cat.base-ii.short')}
-                <small>{t('setup.bay.specCount', { count: BASE.specs.length })}</small>
+                {pickText(base?.label, lang)}
+                <small>{t('setup.bay.specCount', { count: baseSpecs.length })}</small>
               </h2>
-              <p className="su-lede">{t('setup.sheet.memoryText')}</p>
+              <p className="su-lede">{pickText(base?.lede, lang)}</p>
               <span className="su-meta">SHEET 5 / 5 · SCALE NTS</span>
             </div>
           </>
@@ -311,22 +326,33 @@ export default function Setup() {
         <span className="is-touch">{t('setup.bay.hintTouch')}</span>
       </p>
 
-      {/* 給螢幕閱讀器與搜尋引擎的版本：全部設備的清單 */}
+      {/* 給螢幕閱讀器與搜尋引擎的版本：每一艙的清單 */}
       <div className="sr-only">
-        {GEAR.map((c) => (
-          <section key={c.id} aria-label={t(`setup.cat.${c.id}.short`)}>
-            <h2>{t(`setup.cat.${c.id}.short`)}</h2>
-            <ul>
-              {c.items.map((it) => (
-                <li key={it.id}>
-                  {it.name}，{it.spec}
-                  {it.roleKey ? `：${t(`setup.roles.${it.roleKey}`)}` : ''}
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        {views.map((v, i) =>
+          v ? (
+            // eslint-disable-next-line @eslint-react/no-array-index-key
+            <section key={i} aria-label={pickText(v.bay.label, lang)}>
+              <h2>{pickText(v.bay.label, lang)}</h2>
+              <ul>
+                {[...v.parts, ...(v.bay.extra ?? [])].map((it, k) => (
+                  // eslint-disable-next-line @eslint-react/no-array-index-key
+                  <li key={k}>
+                    {it.name}，{it.spec}
+                  </li>
+                ))}
+                {(v.bay.devices ?? []).map((d, k) => (
+                  // eslint-disable-next-line @eslint-react/no-array-index-key
+                  <li key={`d${k}`}>
+                    {d.name}
+                    {pickText(d.role, lang) ? `：${pickText(d.role, lang)}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null,
+        )}
       </div>
+      {views.every((v) => v == null) && !baseOn && <OwnerFillHint page="setup" />}
     </div>
   );
 }

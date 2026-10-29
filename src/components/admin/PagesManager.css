@@ -112,3 +112,102 @@
   align-items: center;
   justify-content: flex-end;
 }
+
+/* 設備：勾選框、部件列（編號＋名稱＋規格＋動作）、上傳的圖上放部件 */
+.pg-check {
+  flex-direction: row;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.pg-check input {
+  width: auto;
+  min-height: 0;
+}
+
+.pg-row-part {
+  grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.pg-row-part .adm-row-actions {
+  grid-column: auto;
+}
+
+.pg-part-no {
+  padding-bottom: var(--space-2);
+  color: var(--ink-subtle);
+  font-family: var(--mono-font);
+  font-size: var(--fs-12);
+}
+
+.pg-error {
+  color: var(--danger);
+}
+
+.pg-placer {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.pg-placer-art {
+  position: relative;
+  width: min(100%, 40rem);
+  max-width: 100%;
+  padding: 0;
+  border: 1px dashed var(--line);
+  background: var(--ground);
+  cursor: crosshair;
+}
+
+.pg-placer-art img,
+.pg-placer-art svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pg-placer-art svg line {
+  stroke: var(--ink-subtle);
+  stroke-width: 0.3;
+}
+
+.pg-placer-at,
+.pg-placer-b {
+  position: absolute;
+  translate: -50% -50%;
+}
+
+.pg-placer-at {
+  width: var(--space-1-5);
+  height: var(--space-1-5);
+  border-radius: var(--r-round);
+  background: var(--signal);
+}
+
+.pg-placer-b {
+  display: grid;
+  place-items: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  border: 1px solid var(--signal);
+  border-radius: var(--r-round);
+  background: var(--ground);
+  color: var(--signal);
+  font-family: var(--mono-font);
+  font-size: var(--fs-11);
+  font-style: normal;
+}
+
+.pg-placer-arm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+}
+
+@media (max-width: 640px) {
+  .pg-row-part {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+}

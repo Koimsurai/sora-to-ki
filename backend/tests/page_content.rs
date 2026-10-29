@@ -19,6 +19,7 @@ fn origin_inserts() -> Vec<String> {
         include_str!("../migrations/0032_page_content_log.sql"),
         include_str!("../migrations/0033_page_content_works.sql"),
         include_str!("../migrations/0034_page_content_qa.sql"),
+        include_str!("../migrations/0035_page_content_setup.sql"),
     ]
     .join("\n");
     // 每一段從「行首是 INSERT」的那一行開始（前面的註解裡也會提到 INSERT 這個字）
@@ -67,6 +68,8 @@ async fn 原站的內容只寫給原站() {
     assert_eq!(v["items"], json!([]), "別人的站不能拿到原作者的作品");
     let (_, v) = get(&app, "/api/pages/qa").await;
     assert_eq!(v["items"], json!([]), "別人的站不能拿到原作者的問答");
+    let (_, v) = get(&app, "/api/pages/setup").await;
+    assert_eq!(v["bays"], json!([]), "別人的站不能拿到原作者的設備");
 
     set_site_name(&pool, "宙と木").await;
     for sql in &inserts {
@@ -92,6 +95,10 @@ async fn 原站的內容只寫給原站() {
             .ends_with("\n\nhttps://koimsurai.com/blog/21"),
         "文章卡是單獨一段的網址"
     );
+    let (_, s) = get(&app, "/api/pages/setup").await;
+    assert_eq!(s["bays"].as_array().map(Vec::len), Some(4));
+    assert_eq!(s["bays"][0]["sheet"], "white-build");
+    assert_eq!(s["base"]["specs"].as_array().map(Vec::len), Some(7));
 }
 
 #[tokio::test]
@@ -203,4 +210,20 @@ async fn 問答的答案可以比一般欄位長_但有上限() {
     let too_long = json!({ "items": [{ "q": { "zh-TW": "問" }, "a": { "zh-TW": "字".repeat(2001) } }] });
     let (status, _) = request(&app, "PUT", "/api/admin/pages/qa", Some(too_long), Some(&token)).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn 設備最多四艙_座標要在畫面裡() {
+    let (app, _pool) = test_app().await;
+    let token = owner_token(true);
+    let five = json!({ "bays": [{}, {}, {}, {}, {}] });
+    let (status, _) = request(&app, "PUT", "/api/admin/pages/setup", Some(five), Some(&token)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "貨艙只有四格");
+    let off = json!({ "bays": [{ "on": true, "parts": [{ "name": "顯示卡", "at": [120, 50] }] }] });
+    let (status, _) = request(&app, "PUT", "/api/admin/pages/setup", Some(off), Some(&token)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "落點跑出圖外");
+    let ok = json!({ "bays": [{ "on": true, "image": { "url": "/uploads/a.webp", "ratio": 0.75 },
+        "parts": [{ "key": "p1", "name": "顯示卡", "at": [40, 50], "b": [10, 90] }] }] });
+    let (status, v) = request(&app, "PUT", "/api/admin/pages/setup", Some(ok), Some(&token)).await;
+    assert_eq!(status, StatusCode::OK, "{v}");
 }

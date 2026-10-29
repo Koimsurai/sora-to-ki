@@ -369,3 +369,43 @@ impl super::Scene for Setup {
         ctx.pixmap
     }
 }
+
+/// 沒用原站白色主機圖紙的站（上傳自己的圖、圖紙包、或第一艙沒開）：別人的站分享出去不能還是原作者的主機。
+/// 只畫點格與退暗的貨艙俯視圖（`bay-top.webp`，畫面上那個空貨艙），不會動
+pub struct SetupBare {
+    back: Pixmap,
+}
+
+impl Default for SetupBare {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SetupBare {
+    pub fn new() -> Self {
+        let src = load_image(include_bytes!("../../../../../public/illustrations/setup/bay-top.webp"));
+        // 直的那張（1493×2000）：高度貼著右半邊的圖紙區，跟原本的底稿放在同一塊
+        let h = (H as f32 - ART_Y * 2.0).max(1.0);
+        let w = (h * src.width() as f32 / src.height() as f32).round();
+        let img = resize_image(&src, w as u32, h as u32);
+        let mut ctx = Ctx::new(W as u32, H as u32);
+        ctx.clear(GROUND);
+        draw_grid(&mut ctx, W as f32, H as f32);
+        ctx.set_alpha(0.45);
+        ctx.draw_image(&img, ART_X + (ART_W as f32 - w) / 2.0, ART_Y);
+        Self { back: ctx.pixmap }
+    }
+}
+
+impl super::Scene for SetupBare {
+    fn frames(&self) -> usize {
+        1
+    }
+    fn frame_ms(&self) -> u32 {
+        FRAME_MS
+    }
+    fn frame(&self, _index: usize) -> Pixmap {
+        self.back.clone()
+    }
+}

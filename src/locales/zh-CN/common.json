@@ -298,48 +298,10 @@
     "description": "Koimsurai 的设备清单：主力机、跑着这个网站的家用服务器、网络与智能家居，还有一张家里怎么连起来的拓扑图。",
     "heroTitle": "设备",
     "subtitle": "解构精密，安放偏执。",
-    "cat": {
-      "main-rig": {
-        "short": "主力机"
-      },
-      "server": {
-        "short": "服务器"
-      },
-      "network": {
-        "short": "网络与移动"
-      },
-      "smart-home": {
-        "short": "智能家居"
-      },
-      "peripherals": {
-        "short": "外设"
-      },
-      "base-ii": {
-        "short": "老家"
-      }
-    },
-    "roles": {
-      "nanokvm": "远程开机、进 BIOS，服务器死机时也连得进去",
-      "headless": "让没接显示器的服务器以为有显示器，GPU 才会正常输出",
-      "googleTv": "家里的 Matter 中枢",
-      "hub3": "光照、温湿度、人体感应，通过 Matter 上报；夜间灯光的自动校正靠它的光照度",
-      "rm4": "学习空调的红外遥控码，让空调接进 Home Assistant",
-      "esp32": "两块板子组成的 433MHz 发射器，模拟吸顶灯的原厂遥控器",
-      "doorbell": "电池门铃，通过网关联网"
-    },
     "appliances": {
-      "title": "其他联网家电",
-      "types": {
-        "dehumidifier": "除湿机",
-        "airPurifier": "空气净化器",
-        "catTower": "喵太座：宠物空净＋加热猫窝",
-        "feeder": "自动喂食器",
-        "camera": "摄像头",
-        "plug": "智能插座"
-      }
+      "title": "其他联网家电"
     },
     "sheet": {
-      "memoryText": "回老家时的备用基地。没有照片，规格照记忆写。",
       "telemetry": "遥测",
       "telemetryEvery": "这台服务器传回来的，每 30 秒更新一次",
       "telemetryWait": "等待信号"
@@ -348,18 +310,11 @@
       "canvas": "航天飞机货舱的线稿：四件载荷，与远处轨道上的老家那台",
       "hintWide": "点标签或货舱里的载荷 · ←→ 换一件 · Esc 回到整架",
       "hintTouch": "点标签或货舱里的载荷 · 左右滑换一件",
-      "lede": {
-        "main-rig": "每天坐在前面的那台，整台走白色。",
-        "server": "一直开着的那台。Home Assistant 跑在这里，家里的智能设备都接到它。",
-        "network": "一台 Mesh 路由器撑起整个家，有线的接交换机，其他走无线。",
-        "peripherals": "桌上每天摸到的东西。"
-      },
       "count_one": "{{count}} 件",
       "count_other": "{{count}} 件",
       "specCount_one": "{{count}} 项",
       "specCount_other": "{{count}} 项",
       "notDrawn": "图上未绘出",
-      "devices": "接在这台上的设备 · Home Assistant",
       "records": "跟这台有关的记录",
       "prev": "上一件",
       "next": "下一件",

@@ -204,6 +204,197 @@ pub async fn works_repos(pool: &SqlitePool) -> Result<Option<Vec<String>>, AppEr
     Ok(Some(works.items.into_iter().map(|w| w.repo).collect()))
 }
 
+// ── 設備 ─────────────────────────────────────────────────────────────
+
+/// 設備頁：太空梭貨艙裡的四個貨艙（第幾個就是第幾格）與遠處的第五站。
+/// 沒開的那一格照樣畫在畫面上，只是點不開
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupContent {
+    #[serde(default)]
+    pub bays: Vec<SetupBay>,
+    #[serde(default)]
+    pub base: SetupBase,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupBay {
+    #[serde(default)]
+    pub on: bool,
+    /// 用哪張圖紙（內建的 white-build／server／network／desk，或 custom/setup/ 的圖紙包）；
+    /// 空的＝用上傳的圖（\`image\`）
+    #[serde(default)]
+    pub sheet: String,
+    #[serde(default)]
+    pub image: Option<SetupImage>,
+    /// 標題欄的英文小字（PAYLOAD 01 · 後面那段）
+    #[serde(default)]
+    pub eyebrow: String,
+    #[serde(default)]
+    pub label: I18n,
+    #[serde(default)]
+    pub lede: I18n,
+    /// 有編號的部件：用圖紙時 key 對到圖紙上的部件；上傳的圖用 at／b 自己放
+    #[serde(default)]
+    pub parts: Vec<SetupPart>,
+    /// 零件表裡沒有編號的（備用、換下來的、圖上沒畫的）
+    #[serde(default)]
+    pub extra: Vec<SetupExtra>,
+    /// 接上伺服器的即時遙測（溫度、負載…，見 /api/telemetry）
+    #[serde(default)]
+    pub telemetry: bool,
+    #[serde(default)]
+    pub devices_title: I18n,
+    #[serde(default)]
+    pub devices: Vec<SetupDevice>,
+    #[serde(default)]
+    pub appliances: Vec<SetupAppliance>,
+    /// 跟這一艙有關的文章（文章 id）
+    #[serde(default)]
+    pub records: Vec<u32>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupImage {
+    pub url: String,
+    /// 高 ÷ 寬
+    #[specta(type = specta_typescript::Number)]
+    pub ratio: f64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupPart {
+    #[serde(default)]
+    pub key: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub spec: String,
+    /// 這個部件我沒有：圖上不畫它的引線與編號，零件表也不列
+    #[serde(default)]
+    pub hidden: bool,
+    /// 上傳的圖才用：落點與編號圈（百分比座標）
+    #[serde(default)]
+    #[specta(type = Option<[specta_typescript::Number; 2]>)]
+    pub at: Option<[f64; 2]>,
+    #[serde(default)]
+    #[specta(type = Option<[specta_typescript::Number; 2]>)]
+    pub b: Option<[f64; 2]>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupExtra {
+    pub name: String,
+    #[serde(default)]
+    pub spec: String,
+    /// 零件表上標「圖上未繪出」
+    #[serde(default)]
+    pub not_drawn: bool,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupDevice {
+    pub name: String,
+    #[serde(default)]
+    pub role: I18n,
+    /// 寫到它的文章 id
+    #[serde(default)]
+    pub posts: Vec<u32>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupAppliance {
+    pub name: String,
+    #[serde(default)]
+    pub kind: I18n,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupBase {
+    #[serde(default)]
+    pub on: bool,
+    #[serde(default)]
+    pub label: I18n,
+    #[serde(default)]
+    pub lede: I18n,
+    /// 照順序對到衛星線稿上的編號圈，最多 7 條
+    #[serde(default)]
+    pub specs: Vec<SetupSpec>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct SetupSpec {
+    pub label: String,
+    #[serde(default)]
+    pub value: String,
+}
+
+/// 設備頁的分享圖要不要畫原站的白色主機圖紙：第一艙開著、用的就是那張
+pub async fn setup_uses_white_build(pool: &SqlitePool) -> Result<bool, AppError> {
+    let setup: SetupContent = load(pool, "setup").await?;
+    Ok(setup.bays.first().is_some_and(|b| b.on && b.sheet == "white-build"))
+}
+
+fn check_pct(field: &str, p: Option<[f64; 2]>) -> Result<(), String> {
+    match p {
+        Some([x, y]) if !(0.0..=100.0).contains(&x) || !(0.0..=100.0).contains(&y) => {
+            Err(format!("{field} 要在 0–100 之間"))
+        }
+        _ => Ok(()),
+    }
+}
+
+impl SetupContent {
+    fn validate(&self) -> Result<(), String> {
+        check_count("貨艙", &self.bays, 4)?;
+        for bay in &self.bays {
+            check_text("圖紙", &bay.sheet, 60)?;
+            check_text("英文小字", &bay.eyebrow, 40)?;
+            check_i18n("分類名", &bay.label)?;
+            check_i18n("說明", &bay.lede)?;
+            if let Some(img) = &bay.image {
+                check_text("圖的網址", &img.url, 500)?;
+                if !(img.ratio.is_finite() && img.ratio > 0.05 && img.ratio < 20.0) {
+                    return Err("圖的比例不對".into());
+                }
+            }
+            check_count("部件", &bay.parts, 40)?;
+            for p in &bay.parts {
+                check_text("部件 key", &p.key, 60)?;
+                check_text("部件名稱", &p.name, 120)?;
+                check_text("規格", &p.spec, 200)?;
+                check_pct("落點", p.at)?;
+                check_pct("編號圈", p.b)?;
+            }
+            check_count("零件表", &bay.extra, 40)?;
+            for e in &bay.extra {
+                check_text("名稱", &e.name, 120)?;
+                check_text("規格", &e.spec, 200)?;
+            }
+            check_i18n("裝置的標題", &bay.devices_title)?;
+            check_count("裝置", &bay.devices, 30)?;
+            for d in &bay.devices {
+                check_text("裝置名稱", &d.name, 120)?;
+                check_i18n("用途", &d.role)?;
+                check_count("文章", &d.posts, 20)?;
+            }
+            check_count("家電", &bay.appliances, 30)?;
+            for a in &bay.appliances {
+                check_text("家電", &a.name, 80)?;
+                check_i18n("家電種類", &a.kind)?;
+            }
+            check_count("文章", &bay.records, 20)?;
+        }
+        check_i18n("第五站的名字", &self.base.label)?;
+        check_i18n("第五站的說明", &self.base.lede)?;
+        check_count("規格", &self.base.specs, 7)?;
+        for s in &self.base.specs {
+            check_text("規格名", &s.label, 60)?;
+            check_text("規格", &s.value, 120)?;
+        }
+        Ok(())
+    }
+}
+
 // ── 此站點的問答 ─────────────────────────────────────────────────────
 
 /// 此站點的問答（六分儀那片天空裡的「問答」星）。沒有任何一題時那顆星不出現
@@ -398,6 +589,32 @@ pub async fn put_works(
         return Ok(bad_request(&msg));
     }
     save(&state.pool, "works", &body).await?;
+    Ok(Json(body).into_response())
+}
+
+/// `GET /api/pages/setup` —— 公開：設備頁的四個貨艙與第五站
+#[utoipa::path(get, path = "/api/pages/setup", tag = "pages", responses((status = 200, body = SetupContent)))]
+pub async fn get_setup(State(state): State<AppState>) -> Result<Json<SetupContent>, AppError> {
+    Ok(Json(load(&state.pool, "setup").await?))
+}
+
+/// `PUT /api/admin/pages/setup` —— 整份覆蓋設備頁的內容（後台與 MCP），回傳存好的那份
+#[utoipa::path(put, path = "/api/admin/pages/setup", tag = "pages", request_body = SetupContent,
+    security(("bearer" = [])),
+    responses(
+        (status = 200, body = SetupContent),
+        (status = 400, description = "欄位不合法（太長、太多筆、座標超出範圍）"),
+        (status = 401, description = "需要登入"),
+    ))]
+pub async fn put_setup(
+    State(state): State<AppState>,
+    _auth: AdminAuth,
+    JsonBody(body): JsonBody<SetupContent>,
+) -> Result<Response, AppError> {
+    if let Err(msg) = body.validate() {
+        return Ok(bad_request(&msg));
+    }
+    save(&state.pool, "setup", &body).await?;
     Ok(Json(body).into_response())
 }
 

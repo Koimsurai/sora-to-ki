@@ -298,48 +298,10 @@
     "description": "Koimsurai の機材一覧：メインマシン、このサイトを動かす自宅サーバー、ネットワークとスマートホーム、そして家の接続図。",
     "heroTitle": "機材",
     "subtitle": "精密を解きほぐし、こだわりを据える。",
-    "cat": {
-      "main-rig": {
-        "short": "メイン機"
-      },
-      "server": {
-        "short": "サーバー"
-      },
-      "network": {
-        "short": "ネットワーク・モバイル"
-      },
-      "smart-home": {
-        "short": "スマートホーム"
-      },
-      "peripherals": {
-        "short": "周辺機器"
-      },
-      "base-ii": {
-        "short": "実家"
-      }
-    },
-    "roles": {
-      "nanokvm": "リモートで電源操作や BIOS 設定。サーバーが固まっても入れる",
-      "headless": "モニター無しのサーバーにディスプレイがあると思わせ、GPU を正常に出力させる",
-      "googleTv": "家の Matter ハブ",
-      "hub3": "照度・温湿度・人感を Matter で報告。夜間の照明自動補正はこの照度が頼り",
-      "rm4": "エアコンの赤外線コードを学習して Home Assistant から操作",
-      "esp32": "2 枚の基板で組んだ 433MHz 送信機。シーリングライトの純正リモコンを再現",
-      "doorbell": "バッテリー式ドアベル。ハブ経由でネットに接続"
-    },
     "appliances": {
-      "title": "その他のネット家電",
-      "types": {
-        "dehumidifier": "除湿機",
-        "airPurifier": "空気清浄機",
-        "catTower": "ペット用空気清浄機＋ヒーター付き猫ベッド",
-        "feeder": "自動給餌器",
-        "camera": "カメラ",
-        "plug": "スマートプラグ"
-      }
+      "title": "その他のネット家電"
     },
     "sheet": {
-      "memoryText": "実家に帰ったときの予備の拠点。写真はなく、スペックは記憶から。",
       "telemetry": "テレメトリ",
       "telemetryEvery": "このサーバーから 30 秒ごとに届く値",
       "telemetryWait": "信号待ち"
@@ -348,18 +310,11 @@
       "canvas": "スペースシャトルの貨物室の線画：4つのペイロードと、遠くの軌道にある実家の一台",
       "hintWide": "タグか貨物室のペイロードをクリック · ←→ で切り替え · Esc で全体に戻る",
       "hintTouch": "タグかペイロードをタップ · 左右スワイプで切り替え",
-      "lede": {
-        "main-rig": "毎日その前に座っている一台。全部白で揃えた。",
-        "server": "ずっと動いている一台。Home Assistant がここで動いていて、家のスマートデバイスはすべてここにつながる。",
-        "network": "メッシュルーター1台で家全体をカバー。有線はスイッチ経由、ほかは無線。",
-        "peripherals": "机の上で毎日触れているもの。"
-      },
       "count_one": "{{count}} 点",
       "count_other": "{{count}} 点",
       "specCount_one": "{{count}} 項目",
       "specCount_other": "{{count}} 項目",
       "notDrawn": "図には未記載",
-      "devices": "このマシンにつながるデバイス · Home Assistant",
       "records": "このマシンに関する記録",
       "prev": "前へ",
       "next": "次へ",

@@ -1173,6 +1173,89 @@ export type SeriesRow = {
 	last_at: string | null,
 };
 
+export type SetupAppliance = {
+	name: string,
+	kind?: { [key in string]: string },
+};
+
+export type SetupBase = {
+	on?: boolean,
+	label?: { [key in string]: string },
+	lede?: { [key in string]: string },
+	/**  照順序對到衛星線稿上的編號圈，最多 7 條 */
+	specs?: SetupSpec[],
+};
+
+export type SetupBay = {
+	on?: boolean,
+	/**
+	 *  用哪張圖紙（內建的 white-build／server／network／desk，或 custom/setup/ 的圖紙包）；
+	 *  空的＝用上傳的圖（\`image\`）
+	 */
+	sheet?: string,
+	image?: SetupImage | null,
+	/**  標題欄的英文小字（PAYLOAD 01 · 後面那段） */
+	eyebrow?: string,
+	label?: { [key in string]: string },
+	lede?: { [key in string]: string },
+	/**  有編號的部件：用圖紙時 key 對到圖紙上的部件；上傳的圖用 at／b 自己放 */
+	parts?: SetupPart[],
+	/**  零件表裡沒有編號的（備用、換下來的、圖上沒畫的） */
+	extra?: SetupExtra[],
+	/**  接上伺服器的即時遙測（溫度、負載…，見 /api/telemetry） */
+	telemetry?: boolean,
+	devices_title?: { [key in string]: string },
+	devices?: SetupDevice[],
+	appliances?: SetupAppliance[],
+	/**  跟這一艙有關的文章（文章 id） */
+	records?: number[],
+};
+
+/**
+ *  設備頁：太空梭貨艙裡的四個貨艙（第幾個就是第幾格）與遠處的第五站。
+ *  沒開的那一格照樣畫在畫面上，只是點不開
+ */
+export type SetupContent = {
+	bays?: SetupBay[],
+	base?: SetupBase,
+};
+
+export type SetupDevice = {
+	name: string,
+	role?: { [key in string]: string },
+	/**  寫到它的文章 id */
+	posts?: number[],
+};
+
+export type SetupExtra = {
+	name: string,
+	spec?: string,
+	/**  零件表上標「圖上未繪出」 */
+	not_drawn?: boolean,
+};
+
+export type SetupImage = {
+	url: string,
+	/**  高 ÷ 寬 */
+	ratio: number,
+};
+
+export type SetupPart = {
+	key?: string,
+	name?: string,
+	spec?: string,
+	/**  這個部件我沒有：圖上不畫它的引線與編號，零件表也不列 */
+	hidden?: boolean,
+	/**  上傳的圖才用：落點與編號圈（百分比座標） */
+	at?: [number, number] | null,
+	b?: [number, number] | null,
+};
+
+export type SetupSpec = {
+	label: string,
+	value?: string,
+};
+
 /**  `GET /api/site/config` 的回應：資料庫那份加上部署層的網址 */
 export type SiteConfig = {
 	/**  站台網址（SITE_URL），唯讀 */
