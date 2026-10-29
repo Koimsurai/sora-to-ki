@@ -24,6 +24,7 @@ const {
   postDetailQueryOptions,
   postReactionsQueryOptions,
   postsListQueryOptions,
+  recentPostsFullQueryOptions,
   recentPostsQueryOptions,
   seriesQueryOptions,
 } = await import('./blogList');
@@ -71,6 +72,19 @@ describe('postDetailQueryOptions：MDX 編譯失敗是靜默退回', () => {
     compileMdx.mockResolvedValue('COMPILED');
     const out = (await run(postDetailQueryOptions(42, 'en'))) as { compiledMdx?: string };
     expect(out.compiledMdx).toBe('COMPILED');
+  });
+
+  it('編譯成功 → 原文不送（會 dehydrate 進 HTML），閱讀時間與目錄在這裡先算好', async () => {
+    mockFetch(post({ content: '## 第一章\n\n內文\n\n## 第二章\n\n更多內文' }));
+    compileMdx.mockResolvedValue('COMPILED');
+    const out = (await run(postDetailQueryOptions(42, 'en'))) as {
+      content: string;
+      readMinutes?: number;
+      headings?: { text: string; level: number }[];
+    };
+    expect(out.content).toBe('');
+    expect(out.readMinutes).toBeGreaterThan(0);
+    expect(out.headings?.map((h) => h.text)).toEqual(['第一章', '第二章']);
   });
 
   // ⚠ 這條是整支最重要的。編譯失敗**不會 404、不會 throw**，只是回沒有 compiledMdx 的
@@ -232,6 +246,15 @@ describe('回應的解包', () => {
 
     mockFetch({ posts: [{ id: 2 }] });
     expect(await run(seriesQueryOptions('s'))).toEqual([{ id: 2 }]);
+  });
+
+  it('最新文章清單不帶摘要與內文預覽（文章頁會整份 dehydrate）；完整版照帶', async () => {
+    const row = { id: 1, title: 't', excerpt: '摘要', content_preview: '預覽' };
+    mockFetch({ posts: [row] });
+    expect(await run(recentPostsQueryOptions(5))).toEqual([{ id: 1, title: 't' }]);
+    mockFetch({ posts: [row] });
+    expect(await run(recentPostsFullQueryOptions(5))).toEqual([row]);
+    expect(recentPostsFullQueryOptions(5).queryKey).not.toEqual(recentPostsQueryOptions(5).queryKey);
   });
 
   it('HTTP 不 ok 一律 throw，不會把錯誤當成空清單吞掉', async () => {

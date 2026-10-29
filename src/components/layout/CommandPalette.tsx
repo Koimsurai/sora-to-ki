@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Command } from 'cmdk';
 import { useLocale, useLocaleNavigate } from '@/hooks/useLocale';
 import { useTranslation } from 'react-i18next';
-import { recentPostsQueryOptions, blogCategoriesQueryOptions, blogTagsQueryOptions } from '@/data/blogList';
+import { recentPostsFullQueryOptions, blogCategoriesQueryOptions, blogTagsQueryOptions } from '@/data/blogList';
 // 頁面：登記表裡的每一頁（首頁、導覽列的每一區、兩個選單），搜尋別名也在登記表裡
 import { PAGES } from '@/data/siteSections';
 import { useSiteConfig } from '@/data/siteConfig';
@@ -39,8 +39,9 @@ export default function CommandPalette() {
     };
   }, []);
 
-  // 首次打開才載入（enabled: open，降低首屏成本）；三源改吃共用 query 快取。
-  const { data: postsData = [] } = useQuery({ ...recentPostsQueryOptions(200, navLocale), enabled: open });
+  // 首次打開才載入（enabled: open，降低首屏成本）。文章用帶摘要的完整版（要拿摘要來搜），
+  // 跟頂欄、文章頁那份精簡的清單是不同的快取；分類與標籤跟其他頁共用
+  const { data: postsData = [] } = useQuery({ ...recentPostsFullQueryOptions(200, navLocale), enabled: open });
   const { data: categories = [] } = useQuery({ ...blogCategoriesQueryOptions(navLocale), enabled: open });
   const { data: tags = [] } = useQuery({ ...blogTagsQueryOptions(navLocale), enabled: open });
   const posts = useMemo(() => postsData.filter((p) => p.status === 'published' || !p.status), [postsData]);

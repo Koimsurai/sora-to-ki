@@ -15,10 +15,29 @@ import type {
 import { apiUrl } from '@/lib/api';
 import { compileMarkdown, compileMdx } from '@/lib/mdx/mdx-compile';
 import { renderMermaidSvgs } from '@/lib/mdx/mermaidRender';
+import { extractHeadings, type TocHeading } from '@/lib/mdx/blogContent';
+import { readMinutes } from '@/lib/readTime';
 type Post = PostListItem;
 
 // 文章多帶 server 端編譯好的內文（序列化的 hast，MDX 與 markdown 都有）與 mermaid／Sketch 的 SVG 對照表。
-export type PostDetail = PostDetailResponse & { compiledMdx?: string; mermaidSvgs?: Record<string, string> };
+// 編好之後原文（content）就換成空字串：瀏覽器端用得到原文的只有閱讀時間與目錄，這兩個在這裡先算好。
+// 原文會跟著 dehydrate 進每一篇文章頁的 HTML（長文一篇 10KB 以上），而內文已經在 compiledMdx 裡了。
+// 編譯失敗的那條路不換：BodyFallback 要拿原文自己畫。
+export type PostDetail = PostDetailResponse & {
+  compiledMdx?: string;
+  mermaidSvgs?: Record<string, string>;
+  readMinutes?: number;
+  headings?: TocHeading[];
+};
+
+const compiled = (data: PostDetailResponse, compiledMdx: string, mermaidSvgs: Record<string, string> | undefined) => ({
+  ...data,
+  content: '',
+  readMinutes: readMinutes(data.content),
+  headings: extractHeadings(data.content),
+  compiledMdx,
+  mermaidSvgs,
+});
 
 // 單篇文章（/api/posts/:id?lang=）。route loader 用 ensureQueryData 預取 → SSR head +
 // dehydrate；BlogPost（ClientOnly）hydrate 後 useQuery 讀同一份快取，消掉「loader + 元件
@@ -48,15 +67,13 @@ export const postDetailQueryOptions = (id: string | number, lang: string) =>
       }
       if (data.format === 'mdx') {
         try {
-          const compiledMdx = await compileMdx({ data: data.content });
-          return { ...data, compiledMdx, mermaidSvgs };
+          return compiled(data, await compileMdx({ data: data.content }), mermaidSvgs);
         } catch (e) {
           console.error('[mdx] 編譯失敗，退回 markdown 模式：', e);
         }
       }
       try {
-        const compiledMdx = await compileMarkdown({ data: data.content });
-        return { ...data, compiledMdx, mermaidSvgs };
+        return compiled(data, await compileMarkdown({ data: data.content }), mermaidSvgs);
       } catch (e) {
         console.error('[markdown] 編譯失敗：', e);
         return { ...data, mermaidSvgs };
@@ -118,19 +135,33 @@ export const seriesQueryOptions = (seriesName: string) =>
     staleTime: 5 * 60 * 1000,
   });
 
+/** 文章清單少了摘要與內文預覽（見 recentPostsQueryOptions） */
+export type PostNavItem = Omit<PostListItem, 'excerpt' | 'content_preview'>;
+
+const fetchRecentPosts = async (limit: number, locale?: string): Promise<PostListItem[]> => {
+  const res = await fetch(apiUrl(`/api/posts?limit=${limit}${locale ? `&lang=${encodeURIComponent(locale)}` : ''}`));
+  if (!res.ok) throw new Error(`GET /api/posts ${res.status}`);
+  const data = (await res.json()) as PostsListResponse;
+  return data.posts;
+};
+
 // mega-menu「手記」與文章頁側欄用：最新 N 篇（menu 自己在 client 依 hover 分類過濾）。
 // 帶 lang → 後端回該語系的標題（沒譯文自動 fallback 回原文）；locale 進 queryKey 才會換語系重抓。
+// 摘要與內文預覽拿掉：文章頁 SSR 時這份會整份 dehydrate 進 HTML（29 篇約 40KB），而用這份的
+// 上下篇導覽、側欄、頂欄選單、站內連結卡都只看標題、日期、分類。要搜摘要的用 recentPostsFullQueryOptions
 export const recentPostsQueryOptions = (limit: number, locale?: string) =>
   queryOptions({
     queryKey: ['posts', 'recent', limit, locale ?? ''],
-    queryFn: async (): Promise<PostListItem[]> => {
-      const res = await fetch(
-        apiUrl(`/api/posts?limit=${limit}${locale ? `&lang=${encodeURIComponent(locale)}` : ''}`),
-      );
-      if (!res.ok) throw new Error(`GET /api/posts ${res.status}`);
-      const data = (await res.json()) as PostsListResponse;
-      return data.posts;
-    },
+    queryFn: async (): Promise<PostNavItem[]> =>
+      (await fetchRecentPosts(limit, locale)).map(({ excerpt: _excerpt, content_preview: _preview, ...rest }) => rest),
+    staleTime: STALE,
+  });
+
+/** 帶摘要與內文預覽的完整版：命令面板與後台的文章挑選器拿摘要來搜，都是打開才抓、不進 SSR */
+export const recentPostsFullQueryOptions = (limit: number, locale?: string) =>
+  queryOptions({
+    queryKey: ['posts', 'recent-full', limit, locale ?? ''],
+    queryFn: () => fetchRecentPosts(limit, locale),
     staleTime: STALE,
   });
 
