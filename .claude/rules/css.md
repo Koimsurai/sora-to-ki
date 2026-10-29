@@ -92,7 +92,7 @@ pnpm check:css-tokens      # CI 與 pre-commit 都跑
 **最重要的一件事：這個站的 z-index 大部分沒有全域意義。** 全站內容都關在
 `.main-content-container` 裡（`AppShell.tsx` 給它 `position: relative; z-index: 10`），
 那本身就是一個堆疊脈絡。例如：`.cmdk-backdrop` 寫 `10000`，照樣被容器**外面**
-的 `.back-to-top`（`1000`）蓋住；`.mobile-toggle` 的 `1002` 是關在 `header.site-header`
+一個寫 `1000` 的元素蓋住；`.mobile-toggle` 的 `1002` 是關在 `header.site-header`
 （`1000`）裡的局部值。**所以不要用數字大小去推跨脈絡的勝負**——任何 portal 到
 `document.body` 的東西（lightbox、mermaid 全螢幕、連結預覽卡、收藏編輯器、交友 modal）
 自動贏過整個容器，不管它寫幾。

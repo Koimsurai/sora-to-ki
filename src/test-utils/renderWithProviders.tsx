@@ -6,9 +6,8 @@
 // 疊法對齊 `src/routes/__root.tsx` 的實際順序：
 //   QueryClientProvider（正式環境由 router 的 SSR 整合提供，測試裡直接給）
 //     └ AuthProvider
-//        └ ParallaxProvider
-//           └ LocaleProvider（每個 locale 一個獨立 i18n instance）
-//              └ RouterProvider（memory history）
+//        └ LocaleProvider（每個 locale 一個獨立 i18n instance）
+//           └ RouterProvider（memory history）
 //
 // ⚠ RouterProvider 不能省。站上大量元件用 `Link` / `useRouterState` / `useNavigate`，
 //   少了它會丟「useRouter must be used inside RouterProvider」——那是**外殼的問題**，
@@ -27,7 +26,6 @@ import {
   createRouter,
 } from '@tanstack/react-router';
 import { act, render, type RenderResult } from '@testing-library/react';
-import { ParallaxProvider } from 'react-scroll-parallax';
 import type { ComponentProps, ReactNode } from 'react';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
@@ -85,14 +83,12 @@ export async function renderWithProviders(ui: ReactNode, options: RenderOptions 
     result = render(
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ParallaxProvider>
-            <LocaleProvider locale={locale}>
-              {/* ⚠ 這道轉型是刻意的：測試用的最小路由樹跟 `declare module` 註冊的
-                  正式 router 型別對不上，而那正是我們要的（不想把真的路由樹拉進來）。
-                  轉成 RouterProvider 自己的 prop 型別，比 `any` 窄得多。 */}
-              <RouterProvider router={router as unknown as RouterProviderRouter} />
-            </LocaleProvider>
-          </ParallaxProvider>
+          <LocaleProvider locale={locale}>
+            {/* ⚠ 這道轉型是刻意的：測試用的最小路由樹跟 `declare module` 註冊的
+                正式 router 型別對不上，而那正是我們要的（不想把真的路由樹拉進來）。
+                轉成 RouterProvider 自己的 prop 型別，比 `any` 窄得多。 */}
+            <RouterProvider router={router as unknown as RouterProviderRouter} />
+          </LocaleProvider>
         </AuthProvider>
       </QueryClientProvider>,
     );

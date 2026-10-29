@@ -240,8 +240,8 @@
      ⚠️ **這裡的關鍵事實不是數字亂，是大部分數字根本沒有全域意義。**
      全站內容都關在 `.main-content-container` 裡（AppShell 給它
      `position: relative; z-index: 10`），那本身就是一個堆疊脈絡——裡面的數字
-     只跟彼此比。實測後果：`.cmdk-backdrop` 寫 10000，照樣被容器**外面**的
-     `.back-to-top`（1000）蓋住。同理 `.mobile-toggle` 的 1002 是關在
+     只跟彼此比。實測後果：`.cmdk-backdrop` 寫 10000，照樣被容器**外面**一個寫 1000
+     的元素蓋住。同理 `.mobile-toggle` 的 1002 是關在
      `header.site-header`（1000）裡的局部值，跟 modal 比大小沒有意義。
 
      ⚠️ **所以不要用數字大小去推「誰會蓋住誰」跨脈絡的結果。** 這把尺排的是
@@ -1557,14 +1557,12 @@ html[data-boot="out"][data-boot-ring="go"] .boot-ring.is-back {
    琥珀只留給「你在哪裡」那一點（目錄、語言）。
      .ar-page             文章頁、MDX 區塊與程式碼框
      .koim-loader-shell   載入中（站內換頁等語系資源、文章還沒到、登入回呼）
-     .back-to-top         回到頂端
      .css-starfield       沒有硬體加速時的 CSS 星空
      .fe-overlay          收藏頁的最愛編輯器（只有管理者看得到）
      .admin-layout／.admin-mode  後台：後台自己的樣式不用這組變數（AdminTheme.css 用的是紙、墨、琥珀），
                           這裡管的是後台裡借用的前台元件（文章預覽的 MDX 區塊、載入中…） */
 .ar-page,
 .koim-loader-shell,
-.back-to-top,
 .css-starfield,
 .fe-overlay,
 .admin-layout,

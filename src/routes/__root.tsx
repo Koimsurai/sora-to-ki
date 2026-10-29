@@ -10,7 +10,6 @@ import '../App.css';
 import { useEffect, type CSSProperties, type ReactNode } from 'react';
 import { Outlet, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from '@tanstack/react-router';
 import type { QueryClient } from '@tanstack/react-query';
-import { ParallaxProvider } from 'react-scroll-parallax';
 import { AuthProvider } from '../contexts/AuthContext';
 import { localeFromPathname } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
@@ -282,12 +281,10 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         </div>
         {/* 全域 providers(對齊舊 App.tsx 疊法)。SEOHead 已退休 → HelmetProvider/react-helmet-async 一併移除。 */}
         <AuthProvider>
-          <ParallaxProvider>
-            {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
-                否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
-                prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
-            <LocaleProvider locale={locale}>{children}</LocaleProvider>
-          </ParallaxProvider>
+          {/* 依 URL locale 的 i18n context 提到 root：讓 AppShell 的 Header/Footer/chrome 也拿到正確語言。
+              否則 chrome 在 per-page LocaleProvider 之外 → fallback 到 react-i18next 全域 instance,
+              prerender 多頁時語言互相洩漏(navbar 變別頁的語言)→ hydration text mismatch(React #418)。 */}
+          <LocaleProvider locale={locale}>{children}</LocaleProvider>
         </AuthProvider>
         <Scripts />
       </body>

@@ -8,7 +8,6 @@ import { loadSpaceBackdropShell } from '@/components/backdrop/prewarm';
 import { landingReferrer } from '@/lib/visitContext';
 import { installStaleChunkReload } from '@/lib/staleChunkReload';
 import { installRefold } from '@/lib/viewportFold';
-import BackToTopButton from './BackToTopButton';
 
 // 重新部署後舊分頁載不到新 chunk 時重整一次（lib/staleChunkReload）。要在模組載入時就掛：
 // 下面那些 lazy 的 import 在第一次 render 就開始了，等 useEffect 才掛會漏掉
@@ -90,7 +89,6 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
     return () => clearTimeout(warmTimer);
   }, [linksToPosts]);
   const isAdminPage = bare === 'admin' || bare.startsWith('admin/');
-  const isHomePage = bare === '';
 
   return (
     <div className="App">
@@ -120,12 +118,6 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
             </Suspense>
           </ClientOnly>
         )}
-
-        {/* ⚠ 必須在 .main-content-container **裡面**。它是 position: fixed，所以放哪都不影響版面，
-            但放在外面會讓它跟容器（z-index: 10）同一層互比——而容器裡的一切（頂欄、modal、
-            命令面板）都被壓在那個 10 底下。實測過：放外面時 `.back-to-top` 的 1000 會蓋住
-            寫著 10000 的 `.cmdk-backdrop`，命令面板開著時回頂端鈕還浮在上面。 */}
-        <BackToTopButton isHomePage={isHomePage} />
       </div>
 
       {/* 右鍵選單刻意留在容器外：它要能開在任何東西之上，包含全螢幕檢視。後台不掛 */}
