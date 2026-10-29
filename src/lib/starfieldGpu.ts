@@ -464,7 +464,12 @@ function buildSaturn(
         .sub(30)
         .mul(Math.PI / 180);
       const edge = float(hex.colat * Math.cos(Math.PI / 6)).div(cos(seg));
-      tone = tone.add(exp(colat.sub(edge).div(hex.width).pow(2).negate()).mul(hex.delta));
+      // 六角形是一條有寬度的噴流帶，不是一條線；裡面是比外面暗、但不是全黑的一片雲（卡西尼號的照片），
+      // 正中央是極地風暴的颶風眼：一圈亮雲繞著暗的眼
+      const band = exp(colat.sub(edge).div(hex.width).pow(2).negate());
+      const inside = smoothstep(edge.add(hex.width), edge.sub(hex.width), colat);
+      const eye = exp(colat.sub(1.6).div(0.7).pow(2).negate());
+      tone = tone.add(band.mul(hex.delta)).add(inside.mul(0.2)).add(eye.mul(0.45));
     }
     // 筆觸：橫向拉長的雜訊讓線起伏、粗細不一，另一層讓線斷成一段一段
     const wave = mx_noise_float(vec3(n.x.mul(1.1), n.y.mul(6), n.z.mul(1.1)));
@@ -479,7 +484,15 @@ function buildSaturn(
             .mul(spec.rows)
             .add(mx_noise_float(n.mul(1.6)).mul(spec.stroke.wave))
             .add(mx_noise_float(n.mul(4.5)).mul(spec.stroke.wave * 0.35))
-        : n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave));
+        : spec.hexagon
+          ? // 六角形裡面整個不到一列緯度刻線（北緯 78° 以北），照緯度刻的話裡面永遠是空的：
+            // 改成以極點為中心、每 1.1° 一圈的刻線，六角形的帶、裡面的雲與颶風眼才畫得出來
+            select(
+              lat.greaterThan(90 - spec.hexagon.colat * 1.25),
+              float(90).sub(lat).div(1.1),
+              n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave)),
+            )
+          : n.y.mul(spec.rows).add(wave.mul(spec.stroke.wave));
     const swell = mx_noise_float(vec3(n.x.mul(2.2), n.y.mul(36), n.z.mul(2.2)))
       .mul(spec.stroke.swell)
       .add(1);
@@ -764,18 +777,23 @@ function buildSaturn(
    * 所以全部開著時（全是 1）畫面跟沒有這一層完全一樣。開機時直接是定值，之後改才有動畫
    */
   // 土衛二的冰噴泉（spec.plume）：衛星身後一串越來越淡、越來越小的冰粒，沿著軌道拖在後面（E 環就是這樣來的）
-  const PLUME_N = 16;
+  // 冰噴泉是非常細的冰晶：很多很小的點，散成一縷霧，靠衛星那頭密、越遠越稀疏越淡。
+  // 每一粒的位置是固定的亂數（離衛星多遠、往外與上下偏多少），所以那一縷的形狀穩定、不會閃
+  const PLUME_N = 48;
+  let seed = 11;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
   const plume =
     spec.plume === undefined
       ? []
-      : Array.from({ length: PLUME_N }, (_, k) => {
+      : Array.from({ length: PLUME_N }, () => {
+          const lag = rnd() ** 1.6;
           const mat = new THREE.SpriteNodeMaterial({ transparent: true, depthWrite: false });
           mat.colorNode = vec3(INK.r, INK.g, INK.b);
-          mat.opacityNode = smoothstep(0.5, 0.1, uv().sub(0.5).length()).mul(0.55 * (1 - k / PLUME_N));
+          mat.opacityNode = smoothstep(0.5, 0, uv().sub(0.5).length()).mul(0.7 * (1 - lag) * (0.4 + 0.6 * rnd()));
           const sprite = new THREE.Sprite(mat);
           sprite.scale.setScalar(0.0001);
           apses[spec.plume ?? 0].add(sprite);
-          return sprite;
+          return { sprite, lag, out: (rnd() - 0.5) * 2, up: (rnd() - 0.5) * 2, size: 0.018 + 0.02 * rnd() };
         });
 
   /**
@@ -973,13 +991,18 @@ function buildSaturn(
         } else s.sprite.position.set(Math.cos(a) * s.r, 0, Math.sin(a) * s.r);
         if (i === spec.plume) {
           const shown = (satK[i] ?? 0) * (live[i] ?? 0);
-          for (const [k, p] of plume.entries()) {
-            const behind = a - (k + 1) * 0.035 * s.dir;
-            if (st) ellipseAt(st, behind, p.position);
-            else p.position.set(Math.cos(behind) * s.r, 0, Math.sin(behind) * s.r);
-            // 往外散開一點（噴出去的冰粒不會剛好在軌道上）
-            p.position.y += Math.sin(k * 1.7 + clock * 2) * 0.012 * k;
-            p.scale.setScalar(Math.max(0.0001, 0.07 * (1 - (0.6 * k) / PLUME_N) * shown));
+          for (const p of plume) {
+            const behind = a - (0.04 + p.lag * 0.55) * s.dir;
+            const target = p.sprite.position;
+            if (st) ellipseAt(st, behind, target);
+            else target.set(Math.cos(behind) * s.r, 0, Math.sin(behind) * s.r);
+            // 越遠散得越開：往軌道內外、上下偏（噴出去的冰粒不會剛好在軌道上）
+            const spread = 0.02 + 0.14 * p.lag;
+            const k = 1 + (p.out * spread) / Math.max(0.001, target.length());
+            target.x *= k;
+            target.z *= k;
+            target.y += p.up * spread * 0.5;
+            p.sprite.scale.setScalar(Math.max(0.0001, p.size * shown));
           }
         }
         const target = glowTarget[i] ?? 0;

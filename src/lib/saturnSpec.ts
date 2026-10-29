@@ -215,7 +215,7 @@ const SATURN: PlanetSpec = {
   retrograde: [],
   stars: SATURN_MOONS,
   // 北極六角形：北緯 78° 一圈六角形的噴流（航海家號 1981 年發現，卡西尼號拍得最清楚）。首頁是從北方往下看，看得到
-  hexagon: { colat: 12, width: 0.9, delta: 0.55 },
+  hexagon: { colat: 12, width: 1.4, delta: 0.85 },
   // 土衛二南極的冰噴泉把冰粒噴進軌道，形成了 E 環
   plume: 1,
 };
