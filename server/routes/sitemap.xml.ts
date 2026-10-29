@@ -1,6 +1,7 @@
 import { defineEventHandler, setHeader } from 'nitro/h3';
 
 import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, localePathname } from '../../src/lib/locales';
+import { disabledPaths } from '../disabledPaths';
 
 // serve.mjs 的 /sitemap.xml 移植:靜態頁清單 + 打後端撈已發布文章。
 //
@@ -47,6 +48,7 @@ function toLocales(arr: readonly string[] | undefined): Locale[] {
 
 export default defineEventHandler(async (event) => {
   const today = new Date().toISOString().slice(0, 10);
+  const off = await disabledPaths(BACKEND_URL);
   let posts: Post[] = [];
   try {
     const res = await fetch(`${BACKEND_URL}/api/posts?limit=500`, {
@@ -89,6 +91,7 @@ export default defineEventHandler(async (event) => {
     '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
   for (const [loc, priority, changefreq] of STATIC_PAGES) {
+    if (off.has(loc)) continue; // 站台設定關掉的頁面是 404，不送給搜尋引擎
     xml += urlSet(loc, SUPPORTED_LOCALES, today, changefreq, priority);
   }
   for (const p of posts) {

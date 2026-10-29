@@ -5,6 +5,7 @@ import { useLocale, useLocaleNavigate } from '@/hooks/useLocale';
 import { useTranslation } from 'react-i18next';
 import { recentPostsQueryOptions, blogCategoriesQueryOptions, blogTagsQueryOptions } from '@/data/blogList';
 import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS } from '@/data/siteSections';
+import { useSiteConfig } from '@/data/siteConfig';
 import { closeCommandPalette, toggleCommandPalette, useCommandPaletteOpen } from '@/store/commandPaletteStore';
 import './CommandPalette.css';
 import { useCategoryLabel } from '@/lib/categoryLabel';
@@ -36,6 +37,9 @@ export default function CommandPalette() {
   const open = useCommandPaletteOpen();
   const navigate = useLocaleNavigate();
   const navLocale = useLocale();
+  // 站台設定關掉的頁面不列
+  const disabled = useSiteConfig().disabled_pages;
+  const pages = useMemo(() => PAGES.filter((p) => !disabled.includes(p.key)), [disabled]);
 
   // ⌘K / Ctrl+K 開關
   useEffect(() => {
@@ -97,7 +101,7 @@ export default function CommandPalette() {
             <Command.Empty className="cmdk-empty">{t('commandPalette.empty')}</Command.Empty>
 
             <Command.Group heading={t('commandPalette.groups.pages')}>
-              {PAGES.map((p) => {
+              {pages.map((p) => {
                 const label = p.key === 'home' ? t('commandPalette.home') : t(`siteNav.${p.key}`);
                 return (
                   <Command.Item

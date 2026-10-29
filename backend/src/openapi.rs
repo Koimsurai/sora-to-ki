@@ -171,8 +171,12 @@ impl Modify for SecurityAddon {
         handlers::watch::update_favorite,
         handlers::watch::watch_now,
         handlers::watch::watch_stats,
+        handlers::site_config::get_site_config,
+        handlers::site_config::update_site_config,
     ),
     components(schemas(
+        handlers::site_config::SiteConfig,
+        handlers::site_config::SiteConfigUpdate,
         handlers::telemetry::Telemetry,
         handlers::friends::FriendStar,
         handlers::friends::FriendPost,

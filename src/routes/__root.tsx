@@ -20,6 +20,7 @@ import NotFound from '@/components/layout/NotFound';
 import { localeWrap } from '@/i18n/localePage';
 import { RING_OUTER, RING_SEGMENTS } from '@/lib/saturnSpec';
 import { hex, palette } from '@/lib/palette';
+import { siteConfigQueryOptions } from '@/data/siteConfig';
 import { BOOT_MOUNT_SCRIPT, BOOT_RING_FLAT, BOOT_SCRIPT } from '@/lib/bootRing';
 import { prewarmSpaceBackdrop } from '@/components/backdrop/prewarm';
 
@@ -28,8 +29,12 @@ prewarmSpaceBackdrop();
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // 這一頁的語系字串（不是預設語系才要載，見 i18n/start-i18n 的 loadLocale）：伺服器畫頁前、站內換到別的語系時
-  beforeLoad: async ({ location }) => {
-    await loadLocale(localeFromPathname(location.pathname));
+  // 站台設定（站名、哪幾頁關掉了）也在這裡先抓：選單在每一頁都要，SSR 時就要有
+  beforeLoad: async ({ location, context }) => {
+    await Promise.all([
+      loadLocale(localeFromPathname(location.pathname)),
+      context.queryClient.query(siteConfigQueryOptions),
+    ]);
   },
   head: () => ({
     meta: [

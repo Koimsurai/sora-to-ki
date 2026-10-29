@@ -1,4 +1,5 @@
 import { ClientOnly, notFound } from '@tanstack/react-router';
+import type { QueryClient } from '@tanstack/react-query';
 import { Suspense, lazy, type ComponentType, type ReactElement } from 'react';
 import { buildAlternateLinks, localeFromPrefix } from './start-i18n';
 import { LocaleProvider } from './LocaleProvider';
@@ -7,6 +8,16 @@ import { useLocale } from '@/hooks/useLocale';
 import KoimLoader from '@/components/common/KoimLoader';
 import { seoMetaFor } from '@/seo/pageSeo';
 import { blogListJsonLd } from '@/seo/seoMeta';
+import { isPageDisabled } from '@/data/siteConfig';
+
+interface PageGateContext {
+  context: { queryClient: QueryClient };
+}
+
+/** 站台設定把這一頁關掉了 → 404（跟打錯網址一樣，不透露這裡曾經有一頁） */
+async function gate({ context }: PageGateContext, basePath: string) {
+  if (await isPageDisabled(context.queryClient, basePath)) throw notFound();
+}
 
 // 共用:把現有頁面元件包成 Start 路由 options(LocaleProvider 包覆 + 逐 locale hreflang)。
 // component 用 useLocale() 從 URL 推 locale,所以 default 與 $locale 路由共用同一個 wrapper。
@@ -29,6 +40,7 @@ export function localeWrap(Comp: ComponentType): () => ReactElement {
  * （300 KB gzip，/setup 實測 62% 用不到）。 */
 export function localePage(basePath: string) {
   return {
+    beforeLoad: (ctx: PageGateContext) => gate(ctx, basePath),
     // meta 走 head() 而非元件內的 <SEOHead>：SEOHead 是 helmet，hydrate 後才掛，爬蟲看不到
     // → 過去每頁 SSR 的 <title> 全是同一個預設值、且無 description。詳見 pageSeo.ts。
     head: () => ({
@@ -68,6 +80,7 @@ export function localePageClientPrefixed(basePath: string, factory: () => Promis
 /** 帶前綴 /$locale/... 頁的 route options（head + 前綴守門 loader）；component 同 localePage 的說明。 */
 export function localePagePrefixed(basePath: string) {
   return {
+    beforeLoad: (ctx: PageGateContext) => gate(ctx, basePath),
     head: ({ params }: { params: { locale: string } }) => {
       const locale = localeFromPrefix(params.locale) ?? DEFAULT_LOCALE;
       return {

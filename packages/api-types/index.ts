@@ -1107,6 +1107,18 @@ export type SeriesRow = {
 	last_at: string | null,
 };
 
+/**  `GET /api/site/config` 的回應：資料庫那份加上部署層的網址 */
+export type SiteConfig = {
+	/**  站台網址（SITE_URL），唯讀 */
+	url: string,
+	name: string,
+	/**  作者名；沒另外設就跟站名一樣 */
+	author: string,
+	description: string,
+	/**  關掉的頁面（data/siteSections 的 key） */
+	disabled_pages: string[],
+};
+
 /**  一個來源與從它進站時先看的那幾頁 */
 export type SourceEntries = {
 	source: string,

@@ -220,6 +220,9 @@ async function main() {
     // 給一組假的才會走真正的「憑證錯誤 → 401」路徑。測試不會拿到這組值。
     ADMIN_USERNAME: 'e2e-not-a-real-admin',
     ADMIN_PASSWORD: 'e2e-not-a-real-password',
+    // 站台設定的種子：一頁都不關。不給的話空白 DB 會被當成全新安裝、預設關掉設備頁，
+    // 那一頁的煙霧測試與計算後樣式基準（選單少一項）就全對不上
+    SITE_DISABLED_PAGES: '',
     // 相簿讀既有的測試 fixture（形狀取自線上 manifest），不必準備真的圖片
     GALLERY_MANIFEST_PATH: path.join(ROOT, 'backend/tests/fixtures/gallery_manifest.json'),
     // 第三方同步器一律關掉：E2E 不該打外部 API

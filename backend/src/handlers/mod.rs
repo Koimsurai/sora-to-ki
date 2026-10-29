@@ -29,6 +29,7 @@ pub mod search_console;
 pub mod series;
 pub mod simkl;
 pub mod site;
+pub mod site_config;
 pub mod spotify;
 pub mod stats;
 pub mod tags;
