@@ -319,6 +319,8 @@ const span = (t: number, from: number, dur: number) => Math.min(1, Math.max(0, (
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
 
+/** 吸積盤的刷痕最濃時佔一列的幾成：比土星的環（RING_COVER）密，盤看起來是厚實的一層 */
+const DISK_COVER = 0.8;
 /** 重力透鏡的愛因斯坦半徑是陰影半徑的幾倍（貼著光子環外面那一圈的星被拉成弧） */
 const LENS_EINSTEIN = 2.2;
 
@@ -524,12 +526,23 @@ function buildSaturn(
       .mul(shade)
       .mul(doppler)
       .clamp(0, 1);
-    return strokes(r.mul(RING_ROWS), pow(ink, 0.75), RING_COVER);
+    return strokes(r.mul(RING_ROWS), pow(ink, 0.75), spec.kind === 'blackhole' ? DISK_COVER : RING_COVER);
   })();
   /** 環攤開時跟著淡入（0 到 1） */
   const ringFade = uniform(1);
-  ringMat.colorNode = paper;
-  ringMat.opacityNode = ringInk.mul(ringFade);
+  if (spec.kind === 'blackhole') {
+    // 吸積盤是又密又亮、擋得住後面的一層氣體：刻線之間塗夜色而不是留空（同主星的陰影球），
+    // 盤的範圍內不透明，後面的星與軌道線被擋掉；內外緣柔和地淡出
+    const r = vec3(positionLocal.x, positionLocal.y, 0).length();
+    const band = smoothstep(ringSpec.inner, ringSpec.inner + 0.06, r).mul(
+      smoothstep(ringSpec.outer, ringSpec.outer - 0.35, r),
+    );
+    ringMat.colorNode = mix(ground, paper, ringInk);
+    ringMat.opacityNode = band.mul(ringFade);
+  } else {
+    ringMat.colorNode = paper;
+    ringMat.opacityNode = ringInk.mul(ringFade);
+  }
   const ring = new THREE.Group();
   const ringPart = (from: number, length: number, order: number) => {
     const mesh = new THREE.Mesh(new THREE.RingGeometry(ringSpec.inner, ringSpec.outer, 256, 1, from, length), ringMat);
