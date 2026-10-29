@@ -115,7 +115,7 @@ const PREDICT_TICK = 4;
 /** 海王星的彈弓（flyby）：路線被那顆星彎了多少（rad）、近拱點到出口是直飛那段的幾倍長、那顆星畫多大（px） */
 const SLING_DEFLECT = (110 * Math.PI) / 180;
 const SLING_ARM = 0.75;
-const SLING_BODY_R = 8;
+const SLING_BODY_R = 11;
 
 const clamp = (v: number, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
 
@@ -479,6 +479,48 @@ export default function TransitionLayer() {
     };
 
     /**
+     * 彈弓繞過的那顆星：一顆小小的刻線海王星（跟首頁的主星同一支筆）。一列列橫線、左上受光，
+     * 外面一道細環，傾角跟主星一樣。只畫一個圈的話讀者不知道那是什麼，看起來像雜訊
+     */
+    const slingBody = (c: Pt, alpha: number) => {
+      const radius = SLING_BODY_R;
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(-0.2);
+      ctx.lineWidth = 1;
+      // 環的後半圈（在星球後面）
+      ctx.strokeStyle = `rgba(${INK}, ${(0.35 * alpha).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 1.9, radius * 1.9 * 0.408, 0, Math.PI, Math.PI * 2);
+      ctx.stroke();
+      // 球：先把球面範圍清空（擋掉後半圈的環與後面的尾巴），再一列列畫刻線，越往右下越暗
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.save();
+      ctx.clip();
+      ctx.clearRect(-radius, -radius, radius * 2, radius * 2);
+      for (let y = -radius + 1.5; y < radius; y += 2.5) {
+        const half = Math.sqrt(radius * radius - y * y);
+        const grad = ctx.createLinearGradient(-half, y, half, y);
+        const lit = 0.8 * alpha * (1 - (0.35 * (y + radius)) / (2 * radius));
+        grad.addColorStop(0, `rgba(${INK}, ${lit.toFixed(3)})`);
+        grad.addColorStop(1, `rgba(${INK}, 0)`);
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(-half, y);
+        ctx.lineTo(half, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+      // 環的前半圈（擋在星球前面）
+      ctx.strokeStyle = `rgba(${INK}, ${(0.55 * alpha).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, radius * 1.9, radius * 1.9 * 0.408, 0, 0, Math.PI);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    /**
      * 海王星的預言落點：1846 年勒維耶先從天王星軌道的偏差算出海王星該在哪，加勒當晚往那裡一看，
      * 就在預測的 1° 以內。飛到一半，目的地先浮出一個淡淡的細圈與四道刻度（算好的座標），
      * 點落進去時圈亮一下、收進點裡
@@ -778,14 +820,8 @@ export default function TransitionLayer() {
           // 彈弓繞過的那顆星：點靠近時浮出來，繞過去之後淡掉
           if (r.focus) {
             const d = len({ x: r.pos.x - r.focus.x, y: r.pos.y - r.focus.y });
-            const near = 1 - smooth(SLING_BODY_R * 6, SLING_BODY_R * 40, d);
-            if (near > 0.01) {
-              ctx.strokeStyle = `rgba(${INK}, ${(0.65 * near).toFixed(3)})`;
-              ctx.lineWidth = 1;
-              ctx.beginPath();
-              ctx.arc(r.focus.x, r.focus.y, SLING_BODY_R, 0, Math.PI * 2);
-              ctx.stroke();
-            }
+            const near = 1 - smooth(SLING_BODY_R * 4, SLING_BODY_R * 22, d);
+            if (near > 0.01) slingBody(r.focus, near);
           }
           // 預言的落點：點這一趟最後會停的地方（路的終點，世界座標）；飛過三成之後慢慢浮出來
           const f = r.flight;
