@@ -1,0 +1,52 @@
+# 自架用的反向代理（docker-compose.yml 的 caddy 服務）。koimsurai.com 自己用 nginx，不走這份。
+#
+# CADDY_ADDRESS 是對外的位址：
+#   :80              沒有網域，純 HTTP（本機試跑、或前面還有別的代理）。預設值
+#   example.com      有網域就填網域：Caddy 自己申請、續期 HTTPS 憑證（80 與 443 要能從外面連到）
+#
+# 分流照正式站的 nginx（/etc/nginx/sites-available/koimsurai）：
+#   /api/*、/rss     → 後端
+#   /uploads/*       → 後台上傳的檔案（直接讀檔，不經過後端）
+#   /nas-images/*    → 照片頁的縮圖
+#   其他             → 前端
+#
+# ⚠ CSP 是從 scripts/csp.mjs 手抄的（Caddy 讀不到 JS）：改政策先改 csp.mjs，
+#   再 `node scripts/csp.mjs` 印出來貼到下面。scripts/caddyfile.test.ts 會比對，抄錯就紅。
+
+{$CADDY_ADDRESS::80} {
+	encode zstd gzip
+
+	# 每個回應都帶的四條（scripts/csp.mjs 的 SECURITY_HEADERS）
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+
+	@backend path /api/* /rss
+	handle @backend {
+		reverse_proxy backend-rs:3002
+	}
+
+	# 使用者上傳、原樣落地的檔案：上傳不檢查副檔名，evil.svg 存得進來，被直接開啟時會執行 script。
+	# default-src 'none' 讓直接開啟的 SVG/HTML 什麼都做不了；用 <img> 嵌入不受影響
+	handle_path /uploads/* {
+		root * /srv/uploads
+		header Cache-Control "public, immutable"
+		header Content-Security-Policy "default-src 'none'"
+		file_server
+	}
+
+	handle_path /nas-images/* {
+		root * /srv/gallery
+		header Cache-Control "public, no-transform"
+		header Content-Security-Policy "default-src 'none'"
+		file_server
+	}
+
+	handle {
+		header Content-Security-Policy "default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://image.tmdb.org https://media.themoviedb.org https://i.scdn.co https://img.youtube.com https://p2.bahamut.com.tw https://cdn.cloudflare.steamstatic.com https://community.akamai.steamstatic.com https://shared.akamai.steamstatic.com https://avatars.githubusercontent.com https://lh3.googleusercontent.com; media-src 'self' blob: https://shared.akamai.steamstatic.com; frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.bilibili.com https://open.spotify.com; font-src 'self' data:; connect-src 'self' https://shared.akamai.steamstatic.com; worker-src 'self' blob:; manifest-src 'self'; report-uri /api/csp-report"
+		reverse_proxy frontend:13579
+	}
+}
