@@ -237,7 +237,7 @@ export default function Messages() {
           <>
             {t('messages.privatePre')} <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
             {t('messages.privateMid')}
-            <a href="https://github.com/timo9378/sora-to-ki/issues" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/Koimsurai/sora-to-ki/issues" target="_blank" rel="noopener noreferrer">
               GitHub Issues
             </a>
             {t('messages.privatePost')}

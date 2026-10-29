@@ -12,11 +12,11 @@ A one-person site: technical notes, short moments, photos and a reading list, wi
 
 [**koimsurai.com**](https://koimsurai.com) · [Notes](https://koimsurai.com/en/blog) · [Colophon](https://koimsurai.com/en/about-site) · [Log](https://koimsurai.com/en/history) · [RSS](https://koimsurai.com/rss)
 
-[![CI](https://img.shields.io/github/actions/workflow/status/timo9378/sora-to-ki/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/timo9378/sora-to-ki/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Koimsurai/sora-to-ki/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/Koimsurai/sora-to-ki/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
-[![frontend cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=frontend&label=frontend%20cov&logo=codecov&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=frontend)
-[![e2e cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=e2e&label=e2e%20cov&logo=playwright&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=e2e)
-[![backend cov](https://img.shields.io/codecov/c/github/timo9378/sora-to-ki/main?flag=backend&label=backend%20cov&logo=rust&logoColor=white)](https://app.codecov.io/gh/timo9378/sora-to-ki?flags%5B0%5D=backend)
+[![frontend cov](https://img.shields.io/codecov/c/github/Koimsurai/sora-to-ki/main?flag=frontend&label=frontend%20cov&logo=codecov&logoColor=white)](https://app.codecov.io/gh/Koimsurai/sora-to-ki?flags%5B0%5D=frontend)
+[![e2e cov](https://img.shields.io/codecov/c/github/Koimsurai/sora-to-ki/main?flag=e2e&label=e2e%20cov&logo=playwright&logoColor=white)](https://app.codecov.io/gh/Koimsurai/sora-to-ki?flags%5B0%5D=e2e)
+[![backend cov](https://img.shields.io/codecov/c/github/Koimsurai/sora-to-ki/main?flag=backend&label=backend%20cov&logo=rust&logoColor=white)](https://app.codecov.io/gh/Koimsurai/sora-to-ki?flags%5B0%5D=backend)
 
 [![React 19](https://img.shields.io/badge/React_19-20232A?logo=react&logoColor=61DAFB)](https://react.dev/)
 [![TanStack Start](https://img.shields.io/badge/TanStack_Start-EF4444?logo=react&logoColor=white)](https://tanstack.com/start)
@@ -30,7 +30,7 @@ A one-person site: technical notes, short moments, photos and a reading list, wi
 
 Started in April 2025 and still evolving. The frontend is **React 19 + TanStack Start (SSR + ISR)**, the backend is **Rust (axum + sqlx + SQLite)**, and everything runs on a server at home, deployed with Docker Compose.
 
-> **Looking for the old site?** In October 2026 the whole site was rebuilt as the current 宙と木. The last version before that lives at the tag [`v1-final`](https://github.com/timo9378/sora-to-ki/tree/v1-final) (`git checkout v1-final`) and is still running, read-only, at <https://archive.koimsurai.com>.
+> **Looking for the old site?** In October 2026 the whole site was rebuilt as the current 宙と木. The last version before that lives at the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final) (`git checkout v1-final`) and is still running, read-only, at <https://archive.koimsurai.com>.
 
 ## 🌌 Design
 
@@ -98,7 +98,7 @@ Articles can also be read in a sans, a handwritten-style or a modern sans face, 
 
 ## 🚀 The October 2026 rebuild
 
-This wasn't a reskin: the whole site was rebuilt to the three rules above. The previous look is preserved at [`v1-final`](https://github.com/timo9378/sora-to-ki/tree/v1-final).
+This wasn't a reskin: the whole site was rebuilt to the three rules above. The previous look is preserved at [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final).
 
 **Public site**
 
@@ -129,7 +129,7 @@ This wasn't a reskin: the whole site was rebuilt to the three rules above. The p
 
 ### Collection and life log
 
-- **Watching**: Bahamut Anime Crazy history synced automatically ([anigamer](https://github.com/timo9378/anigamer-rs), my own SDK); films and series synced through Simkl and TMDb
+- **Watching**: Bahamut Anime Crazy history synced automatically ([anigamer](https://github.com/Koimsurai/anigamer-rs), my own SDK); films and series synced through Simkl and TMDb
 - **Music**: Spotify now playing, recently played and favourite genres
 - **Bookshelf**: ISBN lookups use Taiwan's National Central Library data
 - **Photos**: EXIF details, CLIP auto-tagging and a zoomable full-screen viewer; titles, tags, featured and hidden flags are edited in the admin and survive a NAS re-sync
@@ -192,7 +192,7 @@ Every PR has to pass these before it can merge (the full list is in [`.github/wo
 You need **Node.js ≥ 26**, **pnpm 12** and **Rust stable** (edition 2024), or just Docker.
 
 ```bash
-git clone https://github.com/timo9378/sora-to-ki.git
+git clone https://github.com/Koimsurai/sora-to-ki.git
 cd sora-to-ki
 pnpm install
 ```
@@ -288,8 +288,8 @@ Feel free to borrow any of the code or fork it to run your own site. A few thing
 - The code is **AGPL-3.0**: if you modify it and **run it as a public website**, you have to publish your modified source under the same licence
 - The site's **articles, photos, moments, avatar and logo are not covered by the licence** (see below); replace them with your own after forking
 - A lot of content is tied to my accounts: Steam / GitHub / WakaTime on the activity page, the Bahamut sync, the introductions on the home and about pages, and the hardware list on the setup page. Change these to your own or remove them
-- If you want the pre-rebuild version, start from the tag [`v1-final`](https://github.com/timo9378/sora-to-ki/tree/v1-final)
-- Questions and bug reports are welcome as [issues](https://github.com/timo9378/sora-to-ki/issues)
+- If you want the pre-rebuild version, start from the tag [`v1-final`](https://github.com/Koimsurai/sora-to-ki/tree/v1-final)
+- Questions and bug reports are welcome as [issues](https://github.com/Koimsurai/sora-to-ki/issues)
 
 ## 📄 License
 
