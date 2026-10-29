@@ -2,20 +2,55 @@
 //
 // 以前是手描多邊形，描不準就缺一塊（GPU 少一截散熱片、機殼漏掉一條邊）。現在從線稿本身的像素算：
 //   1. 線 = 底稿 alpha 夠高的像素
-//   2. 種子：setupPayloads 每個零件的 seeds（多邊形）裡的線、loose（多邊形裡獨立的小碎片）、
+//   2. 種子：圖紙（about/setupSheets 或 custom/setup/ 的圖紙包）每個零件的 seeds（多邊形）裡的線、loose（多邊形裡獨立的小碎片）、
 //      points 與 at 附近最近的線。多邊形重疊時小的贏（機殼的多邊形包住整台，裡面的零件要比它優先）
 //   3. 從種子沿著線往外長（多源 BFS，相隔 GAP 像素以內算連著）：相連的線分給最近的那個零件，
 //      所以種子沒蓋到的那一截也會被它自己的零件長到
 //   4. 反鋸齒的淡邊（alpha 很低、不算線的）跟著旁邊的編號，染色時邊緣才不會變細
-// 輸出：public/illustrations/setup/<art>.parts.png，灰階，值 = 零件序號 + 1（0 是不屬於任何零件）
+// 輸出：灰階 PNG，值 = 零件序號 + 1（0 是不屬於任何零件）
+//   內建圖紙 → public/illustrations/setup/<art>.parts.png
+//   圖紙包   → 圖紙包的 parts_map 寫的路徑（相對那支 .ts；沒寫就是底稿旁邊的 <底稿>.parts.png）
 //
-// 用法：pnpm exec tsx scripts/setup-part-maps.ts [--preview <資料夾>]
-//   --preview 會另外輸出上色的對照圖，換底稿或調種子時用來檢查
+// 用法：pnpm exec tsx scripts/setup-part-maps.ts [--only <圖紙 id>] [--preview <資料夾>]
+//   --only 只做這一張；--preview 會另外輸出上色的對照圖，換底稿或調種子時用來檢查
+import { readdirSync } from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import sharp from 'sharp';
-import { PAYLOADS, type Pt } from '../src/components/about/setupPayloads';
+import { BUILTIN_SHEETS, type Pt, type Sheet } from '../src/components/about/setupSheets';
 
-const DIR = path.join(import.meta.dirname, '../public/illustrations/setup');
+const ROOT = path.join(import.meta.dirname, '..');
+const DIR = path.join(ROOT, 'public/illustrations/setup');
+const CUSTOM = path.join(ROOT, 'custom/setup');
+
+/** 要切的圖紙：內建的四張＋custom/setup/ 的圖紙包，底稿與輸出的路徑都換成絕對路徑 */
+async function sheets(): Promise<{ sheet: Sheet; src: string; dst: string }[]> {
+  const out = BUILTIN_SHEETS.map((sheet) => ({
+    sheet,
+    src: path.join(DIR, `${sheet.art}.webp`),
+    dst: path.join(DIR, `${sheet.art}.parts.png`),
+  }));
+  let files: string[] = [];
+  try {
+    files = readdirSync(CUSTOM).filter((f) => f.endsWith('.ts'));
+  } catch {
+    // 沒有 custom/setup/ 就只有內建的
+  }
+  for (const f of files) {
+    const mod = (await import(pathToFileURL(path.join(CUSTOM, f)).href)) as { default: Sheet | Sheet[] };
+    for (const sheet of Array.isArray(mod.default) ? mod.default : [mod.default]) {
+      const src = path.join(CUSTOM, sheet.art);
+      const dst = sheet.parts_map ? path.join(CUSTOM, sheet.parts_map) : src.replace(/\.[a-z]+$/i, '.parts.png');
+      out.push({ sheet, src, dst });
+    }
+  }
+  return out;
+}
+
+const only = (() => {
+  const i = process.argv.indexOf('--only');
+  return i > 0 ? process.argv[i + 1] : null;
+})();
 /** 算「線」的 alpha 門檻 */
 const LINE_ALPHA = 40;
 /** 相隔幾個像素以內算連著（同一個零件的線之間常有很小的空隙；太大會跨到隔壁零件） */
@@ -62,8 +97,8 @@ const area = (poly: [number, number][]) =>
     }, 0),
   ) / 2;
 
-for (const sheet of PAYLOADS) {
-  const src = path.join(DIR, `${sheet.art}.webp`);
+for (const { sheet, src, dst } of await sheets()) {
+  if (only && sheet.id !== only) continue;
   const { data, info } = await sharp(src).ensureAlpha().extractChannel(3).raw().toBuffer({ resolveWithObject: true });
   const W = info.width;
   const H = info.height;
@@ -195,12 +230,11 @@ for (const sheet of PAYLOADS) {
       }
   }
 
-  const dst = path.join(DIR, `${sheet.art}.parts.png`);
   await sharp(Buffer.from(out), { raw: { width: W, height: H, channels: 1 } })
     .png({ compressionLevel: 9 })
     .toFile(dst);
-  const counts = sheet.parts.map((p, k) => `${p.id}:${out.filter((v) => v === k + 1).length}`);
-  console.log(`${sheet.art}.parts.png ${W}×${H}  ${counts.join('  ')}`);
+  const counts = sheet.parts.map((p, k) => `${p.key}:${out.filter((v) => v === k + 1).length}`);
+  console.log(`${path.relative(ROOT, dst)} ${W}×${H}  ${counts.join('  ')}`);
 
   if (preview) {
     const rgb = Buffer.alloc(W * H * 3, 10);
@@ -212,6 +246,6 @@ for (const sheet of PAYLOADS) {
     }
     await sharp(rgb, { raw: { width: W, height: H, channels: 3 } })
       .png()
-      .toFile(path.join(preview, `${sheet.art}.preview.png`));
+      .toFile(path.join(preview, `${sheet.id}.preview.png`));
   }
 }

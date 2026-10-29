@@ -41,7 +41,7 @@ use crate::util::escape_html;
 
 use scenes::{
     About, Collection, Colophon, Friends, Log, Messages, Moments, Notes, Photos, Saturn, Scene, Setup,
-    SkyPost, Works,
+    SetupBare, SkyPost, Works,
 };
 
 /// 主標與副標：跟前端 `lib/blogReading.ts` 的 `splitTitle` 同一套規則——全形冒號，
@@ -308,15 +308,23 @@ fn render(html: &str, locale: &str, scene: &dyn Scene) -> anyhow::Result<Vec<u8>
 /// 航行日誌的起點那天與里程碑的日期（站長填的，見 `page_content::log_dates`）
 type LogDates = (chrono::NaiveDate, Vec<chrono::NaiveDate>);
 
+/// 背景要用到的站長內容：航行日誌的起點與里程碑、設備頁第一艙是不是原站的白色主機圖紙
+struct PageInputs {
+    log: LogDates,
+    /// false：畫空貨艙（別人的站分享出去不能還是原作者的主機）
+    setup_white_build: bool,
+}
+
 /// 這一頁的背景。`sky` 是手記星軌要用的文章清單（只有 notes 用得到），`log` 只有航行日誌用得到
-fn page_scene(key: &str, sky: &[SkyPost], log: &LogDates) -> Box<dyn Scene> {
+fn page_scene(key: &str, sky: &[SkyPost], inputs: &PageInputs) -> Box<dyn Scene> {
     match key {
         "notes" => Box::new(Notes::new(sky, 0)),
         "about" => Box::new(About::new()),
-        "log" => Box::new(Log::new(log.0, &log.1)),
+        "log" => Box::new(Log::new(inputs.log.0, &inputs.log.1)),
         "works" => Box::new(Works::new()),
         "colophon" => Box::new(Colophon::new()),
-        "setup" => Box::new(Setup::new()),
+        "setup" if inputs.setup_white_build => Box::new(Setup::new()),
+        "setup" => Box::new(SetupBare::new()),
         "messages" => Box::new(Messages::new()),
         "moments" => Box::new(Moments::new()),
         "friends" => Box::new(Friends::new()),
@@ -526,9 +534,20 @@ async fn prepare_page(state: &AppState, page: &Page, locale: &str) -> Prepared {
     };
     let html = page_card_html(page, locale);
     // 頁名與副標改了（語系檔跟著部署）快取也要失效：指紋直接用 HTML；航行日誌再加上起點與里程碑
-    let dates = if page.key == "log" { format!("{log:?}") } else { String::new() };
+    let setup_white_build = page.key == "setup"
+        && crate::handlers::page_content::setup_uses_white_build(&state.pool).await.unwrap_or(false);
+    let dates = match page.key {
+        "log" => format!("{log:?}"),
+        "setup" => format!("{setup_white_build}"),
+        _ => String::new(),
+    };
     let key = format!("{:x}::{sig:x}::{:x}", fnv1a(&html), fnv1a(&dates));
-    (format!("page:{}:{locale}", page.key), key, html, page_scene(page.key, &sky, &log))
+    (
+        format!("page:{}:{locale}", page.key),
+        key,
+        html,
+        page_scene(page.key, &sky, &PageInputs { log, setup_white_build }),
+    )
 }
 
 #[cfg(test)]
@@ -691,11 +710,11 @@ mod tests {
         let sky: Vec<SkyPost> =
             (0..48).map(|i| SkyPost::of(&format!("篇 {i}"), 800 + (i * 977) % 9000, 9800)).collect();
         let start = chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期");
-        let sample_log = (start, vec![start]);
+        let sample = PageInputs { log: (start, vec![start]), setup_white_build: true };
         for loc in locales.split(',') {
             for page in PAGES.iter().filter(|p| wanted(p.key)) {
                 let png =
-                    render(&page_card_html(page, loc), loc, page_scene(page.key, &sky, &sample_log).as_ref())
+                    render(&page_card_html(page, loc), loc, page_scene(page.key, &sky, &sample).as_ref())
                         .unwrap();
                 let path = dir.join(format!("{}-{loc}.png", page.key));
                 std::fs::write(&path, &png).unwrap();

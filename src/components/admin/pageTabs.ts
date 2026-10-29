@@ -4,6 +4,7 @@ export const PAGE_TABS = [
   { key: 'works', label: '作品' },
   { key: 'log', label: '航行日誌' },
   { key: 'qa', label: '此站點的問答' },
+  { key: 'setup', label: '設備' },
 ] as const;
 
 export type PageTab = (typeof PAGE_TABS)[number]['key'];

@@ -30,7 +30,7 @@ pub use moments::Moments;
 pub use notes::{Notes, SkyPost};
 pub use photos::Photos;
 pub use saturn::Saturn;
-pub use setup::Setup;
+pub use setup::{Setup, SetupBare};
 pub use works::Works;
 
 pub trait Scene: Send + Sync {

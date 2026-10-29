@@ -6,6 +6,7 @@ import type {
   LogContent,
   QaContent,
   QaItem,
+  SetupContent,
   WorkItem,
   WorksContent,
 } from '@koimsurai/api-types';
@@ -85,6 +86,21 @@ export const worksContentQueryOptions = queryOptions({
 
 const NO_WORKS: WorkItem[] = [];
 
+/** 設備頁：四個貨艙與第五站 */
+export const setupContentQueryOptions = queryOptions({
+  queryKey: ['pages', 'setup'],
+  queryFn: async (): Promise<SetupContent> => {
+    const res = await fetch(apiUrl('/api/pages/setup'));
+    if (!res.ok) throw new Error(`GET /api/pages/setup ${res.status}`);
+    return (await res.json()) as SetupContent;
+  },
+  staleTime: 5 * 60 * 1000,
+});
+
+export function useSetupContent(): SetupContent | undefined {
+  return useQuery(setupContentQueryOptions).data;
+}
+
 /** 此站點的問答：題目上面那一句介紹、每一題 */
 export interface Qa {
   intro: NonNullable<QaContent['intro']>;
@@ -122,6 +138,7 @@ const CONTENT_OF: Record<string, (qc: QueryClient) => Promise<unknown>> = {
   history: (qc) => qc.query(logContentQueryOptions),
   portfolio: (qc) => qc.query(worksContentQueryOptions),
   'about-site': (qc) => Promise.all([qc.query(worksContentQueryOptions), qc.query(qaContentQueryOptions)]),
+  setup: (qc) => qc.query(setupContentQueryOptions),
 };
 
 /** 這一頁有站長填的內容就先抓好；抓失敗不擋頁（照空狀態畫） */

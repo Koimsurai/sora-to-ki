@@ -13,7 +13,8 @@
 // 筆電式俯視圖轉成機頭朝右放在上半，零件表從下半升起。
 import { DEFAULT_PALETTE } from '@/lib/palette';
 import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
-import { artSrc, BASE, partsSrc, PAYLOADS, type Payload, type Pt as Pct } from './setupPayloads';
+import { artSrc, BASE_CALLS, type Pt as Pct } from './setupSheets';
+import type { BayPayload } from './setupView';
 
 interface Pt {
   x: number;
@@ -89,6 +90,10 @@ export interface BayOptions {
   header: HTMLElement;
   /** 選中哪一件（-1 整架、4 老家那台），以及圖紙攤開了沒（零件表等它攤開才出來） */
   onSelect: (sel: number, shown: boolean) => void;
+  /** 四格貨艙的圖紙（站長填的內容＋圖紙，見 about/setupView）；null 是沒開的那一格：照畫，只是點不開 */
+  payloads: (BayPayload | null)[];
+  /** 第五站（老家那台）：開了沒、衛星上要畫幾條規格的編號圈 */
+  base: { on: boolean; specs: number };
 }
 
 const TAU = Math.PI * 2;
@@ -172,7 +177,11 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 }
 
 export function createBay(opts: BayOptions) {
-  const { root, canvas, tags, panel, header, onSelect } = opts;
+  const { root, canvas, tags, panel, header, onSelect, payloads } = opts;
+  /** 第五站：遠處軌道上的衛星，編號圈照站長填的規格條數畫 */
+  const BASE = { key: 'base-ii' as const, calls: BASE_CALLS.slice(0, opts.base.specs) };
+  /** 這一格開了沒（沒開的照畫，點不開、滑過也不亮） */
+  const enabled = (i: number) => (i < 4 ? payloads[i] != null : i === 4 && opts.base.on);
   const maybe = canvas.getContext('2d');
   if (!maybe) return null;
   // 函式宣告會被提升，型別收窄跟不進去：另外存一個確定不是 null 的
@@ -211,7 +220,7 @@ export function createBay(opts: BayOptions) {
     carried: -1,
     liftK: 0,
     cratePos: null as Pt | null,
-    show: null as Payload | typeof BASE | null,
+    show: null as BayPayload | typeof BASE | null,
     scan: 0,
     calls: 0,
     unfold: 0,
@@ -1127,7 +1136,7 @@ export function createBay(opts: BayOptions) {
     const full =
       S.mode === 'tall'
         ? (() => {
-            const A = artRect(isBase ? 1 : (S.show as Payload).ratio);
+            const A = artRect(isBase ? 1 : (S.show as BayPayload).ratio);
             return { x: 10, y: A.y - 10, w: S.W - 20, h: A.h + 20, div: S.W, pw: 0 };
           })()
         : sheetRect();
@@ -1241,7 +1250,7 @@ export function createBay(opts: BayOptions) {
    * 零件亮起來：零件編號圖裡屬於第 k 個零件的像素，照底稿原本的濃淡染成琥珀色。
    * 第一次用到才算、算完留著（一張圖紙最多十來個零件）
    */
-  function tintOf(p: Payload, k: number): HTMLCanvasElement | null {
+  function tintOf(p: BayPayload, k: number): HTMLCanvasElement | null {
     const key = `${p.art}:${k}`;
     const hit = tinted.get(key);
     if (hit) return hit;
@@ -1254,7 +1263,9 @@ export function createBay(opts: BayOptions) {
     if (!c2) return null;
     const img = c2.createImageData(m.w, m.h);
     const [r, g, b] = AMB.split(',').map((v) => Number(v));
-    const want = k + 1;
+    // 分區圖上的編號：隱藏了前面的部件，畫面上第幾號跟它就不一樣了（0＝這張圖紙沒有分區圖）
+    const want = p.parts[k]?.label ?? k + 1;
+    if (want === 0) return null;
     for (let i = 0; i < m.labels.length; i++) {
       if (m.labels[i] !== want) continue;
       img.data[i * 4] = r;
@@ -1266,14 +1277,16 @@ export function createBay(opts: BayOptions) {
     tinted.set(key, cv);
     return cv;
   }
-  async function loadParts(p: Payload) {
+  async function loadParts(p: BayPayload) {
     if (parts[p.art]) return;
     const [art, map] = await Promise.all([
-      IMG[p.art] ? Promise.resolve(IMG[p.art] ?? null) : loadImage(artSrc(p.art)),
-      loadImage(partsSrc(p.art)),
+      IMG[p.art] ? Promise.resolve(IMG[p.art] ?? null) : loadImage(p.artUrl),
+      p.mapUrl ? loadImage(p.mapUrl) : Promise.resolve(null),
     ]);
-    if (!art || !map) return;
+    if (!art) return;
     IMG[p.art] = art;
+    // 沒有分區圖（上傳的圖、沒切部件的圖紙包）：照樣畫，只是滑過部件時亮的是引線與編號
+    if (!map) return;
     const read = (im: HTMLImageElement) => {
       const cv = document.createElement('canvas');
       cv.width = im.naturalWidth;
@@ -1297,7 +1310,7 @@ export function createBay(opts: BayOptions) {
   }
   function drawArt(now: number) {
     const p = S.show;
-    if (!p || p.key === 'base-ii' || S.scan <= 0) return;
+    if (!p || 'key' in p || S.scan <= 0) return;
     const im = IMG[p.art];
     if (!im) return;
     screenSpace();
@@ -1355,7 +1368,7 @@ export function createBay(opts: BayOptions) {
    * 網路圖紙的連線：有線走等角圖的兩個地面方向（先沿一軸、再轉另一軸，像真的佈線），無線是點線；
    * 路由器底部有往外擴散的訊號圈；點（封包）沿線一去一回
    */
-  function drawLinks(now: number, p: Payload, R: Box) {
+  function drawLinks(now: number, p: BayPayload, R: Box) {
     const t = (now - S.t0) / 1000;
     const P = (q: Pct) => ({ x: R.x + (R.w * q[0]) / 100, y: R.y + (R.h * q[1]) / 100 });
     const c30 = Math.cos(Math.PI / 6);
@@ -1499,7 +1512,8 @@ export function createBay(opts: BayOptions) {
   };
 
   async function pick(i: number, from = -1) {
-    const p = PAYLOADS[i];
+    const p = payloads[i];
+    if (!p) return;
     S.carried = -1;
     S.cratePos = null;
     S.sel = i;
@@ -1668,6 +1682,7 @@ export function createBay(opts: BayOptions) {
   /** 依序處理：動畫中又點了別的，記下最後一個，做完這段再接著做 */
   async function go(target: Target) {
     if (S.leaving || S.intro < 1) return;
+    if (target !== 'home' && !enabled(target)) return;
     if (S.busy) {
       S.pending = target;
       return;
@@ -1703,7 +1718,15 @@ export function createBay(opts: BayOptions) {
       root.dataset.busy = '';
     }
   }
-  const step = (d: 1 | -1) => go(((((S.sel < 0 ? (d > 0 ? -1 : 0) : S.sel) + d) % 5) + 5) % 5);
+  /** 上一件／下一件：沒開的那幾格跳過；一格都沒開就不動 */
+  const step = (d: 1 | -1) => {
+    let i = S.sel < 0 ? (d > 0 ? -1 : 0) : S.sel;
+    for (let n = 0; n < 5; n++) {
+      i = (((i + d) % 5) + 5) % 5;
+      if (enabled(i)) return go(i);
+    }
+    return undefined;
+  };
 
   // ── 進出場 ──
   /** 進場：沿機頭方向滑進來。前四成 OMS 點著，熄火後滑行，最後機頭 RCS 噴三下煞住；俯視再打開艙門 */
@@ -1733,7 +1756,7 @@ export function createBay(opts: BayOptions) {
       });
     S.doors = 1;
     // 圖紙晚一點再載（進場時不跟底稿搶頻寬）
-    for (const p of PAYLOADS) void loadParts(p);
+    for (const p of payloads) if (p) void loadParts(p);
   }
   /** 離場：換頁最多等 0.8 秒，所以只有點火加速飛走，艙門保持原樣 */
   async function depart() {
@@ -1794,15 +1817,15 @@ export function createBay(opts: BayOptions) {
     const dy = p.y - down.y;
     down = null;
     if (swipe(dx, dy) || Math.hypot(dx, dy) > 10) return;
-    if (S.sel !== 4 && !S.show && onSat(p)) return void go(4);
+    if (S.sel !== 4 && !S.show && enabled(4) && onSat(p)) return void go(4);
     if (S.show) {
       // 點線稿本身不返回，點線稿以外的空白才返回
-      const A = S.show.key === 'base-ii' ? artRect(1) : artRect(S.show.ratio);
+      const A = 'key' in S.show ? artRect(1) : artRect(S.show.ratio);
       if (p.x >= A.x && p.x <= A.x + A.w && p.y >= A.y && p.y <= A.y + A.h) return;
       return void go('home');
     }
     const i = hitCrate(p);
-    if (i >= 0) return void go(i);
+    if (i >= 0 && enabled(i)) return void go(i);
   };
   const onMove = (e: PointerEvent) => {
     if (e.pointerType === 'touch') return;
@@ -1813,8 +1836,9 @@ export function createBay(opts: BayOptions) {
       return;
     }
     const p = local(e);
-    const sat = onSat(p);
-    S.hover = sat ? -1 : hitCrate(p);
+    const sat = enabled(4) && onSat(p);
+    const crate = sat ? -1 : hitCrate(p);
+    S.hover = crate >= 0 && enabled(crate) ? crate : -1;
     S.satHover = sat;
     canvas.style.cursor = sat || S.hover >= 0 ? 'pointer' : '';
   };
@@ -1879,8 +1903,8 @@ export function createBay(opts: BayOptions) {
     /** 標籤滑過（-1 是離開；4 是老家那台） */
     setHover: (i: number) => {
       if (S.show || S.busy) return;
-      S.hover = i < 4 ? i : -1;
-      S.satHover = i === 4;
+      S.hover = i < 4 && enabled(i) ? i : -1;
+      S.satHover = i === 4 && enabled(4);
     },
     /** 換頁的點落在這裡（相對畫布左上角） */
     anchor: deckFinal,

@@ -1,19 +1,27 @@
-// 設備頁（about/Setup）的圖紙資料：太空梭貨艙裡的四件酬載，加上遠處軌道上的老家那台。
-// 零件的名字與規格在 setupGear；這裡只放「畫在哪裡」，座標都是底稿寬高的百分比（0–100）。
-// 只有資料，不碰 React，也給 scripts/setup-part-maps.ts 讀（它照 seeds / points 切出每個零件的像素）。
-import { BASE_II_SPECS } from './setupGear';
+// 設備頁（about/Setup）的圖紙包格式，以及內建的四張手繪圖紙（原站的主機、伺服器、網路、桌面）。
+//
+// 一張圖紙只放「畫在哪裡」：底稿、比例、每個部件的落點與編號圈、切部件用的種子、網路圖上的連線。
+// 部件叫什麼、規格、要不要隱藏，是站長在後台「頁面」填的（後端 page_content 的 setup），用 key 對回這裡。
+// 座標都是底稿寬高的百分比（0–100），從左上角量。
+//
+// 只有資料，不碰 React、不用 import.meta：app（about/setupSheetRegistry）與
+// scripts/setup-part-maps.ts（照 seeds / points 切出每個部件的像素，產生 <art>.parts.png）都直接讀它。
+// 自己的圖紙包放 custom/setup/，格式一樣（見 custom/setup/README.md）。
 
 /** 百分比座標 [x, y] */
 export type Pt = [number, number];
 
 /**
- * 底稿上一個有編號的零件。
- * at：引線落點；b：編號圈。seeds（多邊形）與 points 是切零件用的種子：
- * 落在種子裡的線就是這個零件，其餘相連的線由腳本沿著線條長出去分給最近的零件（見 scripts/setup-part-maps.ts）。
+ * 底稿上一個有編號的部件。
+ * at：引線落點；b：編號圈。seeds（多邊形）與 points 是切部件用的種子：
+ * 落在種子裡的線就是這個部件，其餘相連的線由腳本沿著線條長出去分給最近的部件（見 scripts/setup-part-maps.ts）。
  * at 本身也是種子
+ *
+ * @public 圖紙包（custom/setup/）的格式，寫圖紙包的人會用到
  */
-interface Callout {
-  id: string;
+export interface SheetPart {
+  /** 站長填的名稱與規格用它對回這個部件；同一張圖紙裡不能重複 */
+  key: string;
   at: Pt;
   b: Pt;
   seeds?: Pt[][];
@@ -23,50 +31,40 @@ interface Callout {
 }
 
 /** 網路圖紙上程式畫的連線：有線走等角圖的地面方向（直角），無線是點線 */
-interface Link {
+export interface SheetLink {
   from: Pt;
   to: Pt;
   wired?: boolean;
 }
 
-type PayloadKey = 'main-rig' | 'server' | 'network' | 'peripherals';
-
-export interface Payload {
-  /** 也是翻譯檔 setup.cat.<key> 與 setup.bay.lede.<key> */
-  key: PayloadKey;
-  no: number;
-  en: string;
-  /** 底稿檔名（public/illustrations/setup/<art>.webp）；零件編號圖是 <art>.parts.png */
+export interface Sheet {
+  /** 後台選圖紙用的 id；內建的是 white-build、server、network、desk，自己的圖紙包不要撞名 */
+  id: string;
+  /** 後台下拉選單上的名字 */
+  name: string;
+  /** 底稿：內建的是 public/illustrations/setup/<art>.webp 的檔名；圖紙包裡是相對那個 .ts 的路徑 */
   art: string;
-  /** 底稿的高寬比 */
+  /** 部件分區圖（scripts/setup-part-maps.ts 產生）：內建的是 <art>.parts.png；圖紙包沒有就只亮引線與編號 */
+  parts_map?: string;
+  /** 底稿的高寬比（高 ÷ 寬） */
   ratio: number;
-  parts: Callout[];
-  /** 零件表裡圖上沒有編號的（備用、換下來的） */
-  others?: string[];
-  /** 零件表裡標「圖上未繪出」的 */
-  unseen?: string[];
-  links?: Link[];
+  parts: SheetPart[];
+  links?: SheetLink[];
   /** 訊號圈的中心（路由器底部） */
   rings?: Pt;
-  /** 另外兩張圖紙上的主機：標「見第幾張」 */
+  /** 另外幾張圖紙上的主機：標「見第幾張」 */
   refs?: { at: Pt; sheet: number }[];
-  telemetry?: boolean;
-  /** 接在這台上的智慧家庭裝置（setupGear 的 id）與寫到它的文章 id */
-  devices?: { id: string; posts: number[] }[];
-  /** 跟這台有關的紀錄（文章 id） */
-  records?: number[];
 }
 
-export const PAYLOADS: Payload[] = [
+export const BUILTIN_SHEETS: Sheet[] = [
   {
-    key: 'main-rig',
-    no: 1,
-    en: 'THE WHITE BUILD',
+    id: 'white-build',
+    name: '白色主機',
     art: 'sheet-white-build',
     ratio: 1251 / 1500,
     parts: [
       {
-        id: 'rtx-4070ti-super',
+        key: 'rtx-4070ti-super',
         at: [31, 80],
         b: [9, 90],
         seeds: [
@@ -82,7 +80,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'ryzen-9900x',
+        key: 'ryzen-9900x',
         at: [50.3, 44.7],
         b: [59, 36],
         seeds: [
@@ -95,7 +93,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'eskimo-360',
+        key: 'eskimo-360',
         at: [53, 13],
         b: [78, 7],
         seeds: [
@@ -120,7 +118,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'xpg-lancer',
+        key: 'xpg-lancer',
         at: [60, 48],
         b: [81, 35],
         seeds: [
@@ -135,7 +133,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'b650-a',
+        key: 'b650-a',
         at: [37, 60],
         b: [27, 50],
         seeds: [
@@ -151,7 +149,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'crucial-t500',
+        key: 'crucial-t500',
         at: [53, 75.2],
         b: [63, 70],
         seeds: [
@@ -164,7 +162,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'kioxia-exceria',
+        key: 'kioxia-exceria',
         at: [49.5, 79.3],
         b: [52, 90],
         seeds: [
@@ -178,7 +176,7 @@ export const PAYLOADS: Payload[] = [
       },
       // 左邊界停在機殼右側那條邊之外（x 77.8），進機殼的電源線由電源本體沿線長過去
       {
-        id: 'leadex-vii',
+        key: 'leadex-vii',
         at: [87, 82],
         b: [97, 63],
         seeds: [
@@ -195,7 +193,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'model-5',
+        key: 'model-5',
         at: [72, 62],
         b: [67, 99],
         points: [
@@ -226,15 +224,13 @@ export const PAYLOADS: Payload[] = [
     ],
   },
   {
-    key: 'server',
-    no: 2,
-    en: 'HOME SERVER',
+    id: 'server',
+    name: '伺服器機櫃',
     art: 'sheet-server',
     ratio: 1274 / 1500,
-    telemetry: true,
     parts: [
       {
-        id: 'phantom-spirit',
+        key: 'phantom-spirit',
         at: [44, 15],
         b: [29, 6],
         seeds: [
@@ -250,7 +246,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'ryzen-8700g',
+        key: 'ryzen-8700g',
         at: [49, 55.2],
         b: [60, 36],
         seeds: [
@@ -263,7 +259,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'fury-beast',
+        key: 'fury-beast',
         at: [59, 46],
         b: [81, 34],
         seeds: [
@@ -278,7 +274,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'x870e-tomahawk',
+        key: 'x870e-tomahawk',
         at: [37, 58],
         b: [27, 48],
         seeds: [
@@ -296,7 +292,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'rtx-5060ti',
+        key: 'rtx-5060ti',
         at: [31, 76],
         b: [8, 76],
         seeds: [
@@ -311,7 +307,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'ip-kvm',
+        key: 'ip-kvm',
         at: [23.5, 89],
         b: [10, 94],
         seeds: [
@@ -326,7 +322,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'gm7000',
+        key: 'gm7000',
         at: [53, 72.3],
         b: [62, 66],
         seeds: [
@@ -339,7 +335,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'hc550',
+        key: 'hc550',
         at: [73, 93],
         b: [90, 99],
         seeds: [
@@ -354,7 +350,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'prime-tx',
+        key: 'prime-tx',
         at: [87, 79],
         b: [97, 60],
         seeds: [
@@ -371,7 +367,7 @@ export const PAYLOADS: Payload[] = [
         ],
       },
       {
-        id: 'p10c',
+        key: 'p10c',
         at: [71, 60],
         b: [63, 99],
         // 機殼頂邊（塔散壓在上面）、前門邊（硬碟貼著它）
@@ -404,25 +400,15 @@ export const PAYLOADS: Payload[] = [
         ],
       },
     ],
-    others: ['headless-adaptor'],
-    devices: [
-      { id: 'google-tv-streamer', posts: [72] },
-      { id: 'switchbot-hub3', posts: [] },
-      { id: 'rm4-pro', posts: [71] },
-      { id: 'esp32-cc1101', posts: [71] },
-      { id: 'doorbell', posts: [] },
-    ],
-    records: [73, 74, 67],
   },
   {
-    key: 'network',
-    no: 3,
-    en: 'NETWORK',
+    id: 'network',
+    name: '網路與行動',
     art: 'sheet-network',
     ratio: 1155 / 1840,
     parts: [
       {
-        id: 'zenwifi-bd5',
+        key: 'zenwifi-bd5',
         at: [50, 30],
         b: [32, 8],
         points: [
@@ -430,9 +416,9 @@ export const PAYLOADS: Payload[] = [
           [56, 52],
         ],
       },
-      { id: 'qg-u1050', at: [24, 74], b: [9, 88], points: [[18, 79]] },
+      { key: 'qg-u1050', at: [24, 74], b: [9, 88], points: [[18, 79]] },
       {
-        id: 'blade-14',
+        key: 'blade-14',
         at: [82, 40],
         b: [96, 12],
         points: [
@@ -440,8 +426,8 @@ export const PAYLOADS: Payload[] = [
           [80, 65],
         ],
       },
-      { id: 'pixel-8-pro', at: [76, 86], b: [92, 93], points: [[70, 88]] },
-      { id: 'google-tv-streamer', at: [60, 68], b: [50, 93], points: [[56, 70]] },
+      { key: 'pixel-8-pro', at: [76, 86], b: [92, 93], points: [[70, 88]] },
+      { key: 'google-tv-streamer', at: [60, 68], b: [50, 93], points: [[56, 70]] },
     ],
     links: [
       { from: [24, 73], to: [53, 53], wired: true },
@@ -458,15 +444,14 @@ export const PAYLOADS: Payload[] = [
     ],
   },
   {
-    key: 'peripherals',
-    no: 4,
-    en: 'PERIPHERALS',
+    id: 'desk',
+    name: '桌面周邊',
     art: 'sheet-desk',
     ratio: 1024 / 1096,
     parts: [
-      { id: 'xg27acs', at: [45, 12], b: [22, 5], points: [[52, 24]] },
+      { key: 'xg27acs', at: [45, 12], b: [22, 5], points: [[52, 24]] },
       {
-        id: 'mx-board-31s',
+        key: 'mx-board-31s',
         at: [42, 36],
         b: [28, 63],
         points: [
@@ -482,10 +467,10 @@ export const PAYLOADS: Payload[] = [
           ],
         ],
       },
-      { id: 'g502-x', at: [59, 40], b: [60, 65] },
-      { id: 'mv7-plus', at: [67, 17], b: [62, 3] },
+      { key: 'g502-x', at: [59, 40], b: [60, 65] },
+      { key: 'mv7-plus', at: [67, 17], b: [62, 3] },
       {
-        id: 'psa1-plus',
+        key: 'psa1-plus',
         at: [86, 22],
         b: [96, 12],
         points: [
@@ -493,9 +478,9 @@ export const PAYLOADS: Payload[] = [
           [76, 10],
         ],
       },
-      { id: 't100', at: [28, 23], b: [9, 16], points: [[66, 31]] },
+      { key: 't100', at: [28, 23], b: [9, 16], points: [[66, 31]] },
       {
-        id: 'revon-elite',
+        key: 'revon-elite',
         at: [85, 64],
         b: [97, 70],
         // 桌面後緣（喇叭、懸臂夾具都貼著它）、桌框、兩邊的腳、控制面板
@@ -518,39 +503,22 @@ export const PAYLOADS: Payload[] = [
         ],
       },
     ],
-    unseen: ['infinite-s'],
-    others: [
-      'g502-hero',
-      'mx-board-20s',
-      'mk882',
-      'alloy-fps',
-      'pixel-buds-pro2',
-      'cloud-ii',
-      'arctis-nova-7',
-      'quadcast',
-    ],
   },
 ];
 
 /**
- * 老家那台：遠處軌道上的一顆舊衛星。沒有照片，規格照記憶寫；
- * 編號圈對到衛星線稿的哪個部位是借喻（電源接太陽能板、顯示卡接天線），順序跟 BASE_II_SPECS 一樣
+ * 第五站（遠處軌道上的舊衛星）：規格條的編號圈對到衛星線稿的哪個部位（借喻：電源接太陽能板、顯示卡接天線）。
+ * 站長填的規格照順序一條對一個，最多這麼多條
  */
-export const BASE = {
-  key: 'base-ii' as const,
-  no: 0,
-  en: 'BASE II',
-  calls: [
-    [60, 36, 72, 17],
-    [50, 42, 47, 19],
-    [40, 55, 27, 73],
-    [56, 49, 80, 41],
-    [68, 60, 87, 76],
-    [46, 62, 48, 85],
-    [36, 50, 15, 52],
-  ] as [number, number, number, number][],
-  specs: BASE_II_SPECS,
-};
+export const BASE_CALLS: [number, number, number, number][] = [
+  [60, 36, 72, 17],
+  [50, 42, 47, 19],
+  [40, 55, 27, 73],
+  [56, 49, 80, 41],
+  [68, 60, 87, 76],
+  [46, 62, 48, 85],
+  [36, 50, 15, 52],
+];
 
 /** 圖紙與零件編號圖的網址 */
 export const artSrc = (art: string) => `/illustrations/setup/${art}.webp`;

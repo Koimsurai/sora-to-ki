@@ -205,8 +205,10 @@ docker compose up -d
 - 升級：`docker compose pull && docker compose up -d`。要固定版本就在 `.env` 設 `SORA_TO_KI_VERSION=0.1.0`
 - 資料庫每天自動備份到 `./backups`
 
-> **還在路上的**：作品、航行日誌、設備這三頁的內容還寫在程式裡，新站預設是關著的；
-> 關於頁同理，之後會一頁一頁做成可以填自己資料的範本。
+- 關於、作品、航行日誌、此站點的問答、設備的內容都在後台「頁面」填（MCP 也能改）。新站的作品、航行日誌、
+  設備預設是關著的，填好再到站台設定打開
+- 設備頁想用自己的手繪圖紙、讓滑過的部件整個亮起來：做一個圖紙包放進 `custom/setup/`，
+  格式與交給 AI 的說法見 [`custom/setup/README.md`](custom/setup/README.md)
 
 ## ⚙️ 本機開發
 

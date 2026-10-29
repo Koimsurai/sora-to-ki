@@ -205,8 +205,10 @@ docker compose up -d
 - Upgrading: `docker compose pull && docker compose up -d`. To pin a version, set `SORA_TO_KI_VERSION=0.1.0` in `.env`
 - The database is backed up to `./backups` every day
 
-> **Still on the way**: the content of the works, log and setup pages is still hard-coded, so they start switched off on a new site.
-> The about page is in the same state; they will become templates you can fill with your own data, one page at a time.
+- The about, works, log, colophon Q&A and setup pages are filled in from Admin → Pages (or over MCP). On a new site
+  works, log and setup start switched off; turn them on in the site settings once they have content
+- To use your own hand-drawn sheets on the setup page (with whole parts lighting up on hover), drop a sheet pack into
+  `custom/setup/`; the format, and how to ask an AI to make one, are in [`custom/setup/README.md`](custom/setup/README.md)
 
 ## ⚙️ Local development
 

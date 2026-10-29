@@ -298,48 +298,10 @@
     "description": "Koimsurai 的設備清單：主力機、跑著這個網站的家用伺服器、網路與智慧家庭，還有一張家裡怎麼連起來的拓撲圖。",
     "heroTitle": "設備",
     "subtitle": "解構精密，安放偏執。",
-    "cat": {
-      "main-rig": {
-        "short": "主力機"
-      },
-      "server": {
-        "short": "伺服器"
-      },
-      "network": {
-        "short": "網路與行動"
-      },
-      "smart-home": {
-        "short": "智慧家庭"
-      },
-      "peripherals": {
-        "short": "周邊"
-      },
-      "base-ii": {
-        "short": "老家"
-      }
-    },
-    "roles": {
-      "nanokvm": "遠端開機、進 BIOS，伺服器當機時也連得進去",
-      "headless": "讓沒接螢幕的伺服器以為有螢幕，GPU 才會正常輸出",
-      "googleTv": "家裡的 Matter 中樞",
-      "hub3": "光照、溫濕度、人體感測，透過 Matter 回報；夜間燈光的自動校正靠它的光照度",
-      "rm4": "學習冷氣的紅外線遙控碼，讓冷氣接進 Home Assistant",
-      "esp32": "兩塊板子組成的 433MHz 發射器，模擬吸頂燈的原廠遙控器",
-      "doorbell": "電池門鈴，透過網關連上網路"
-    },
     "appliances": {
-      "title": "其他連網家電",
-      "types": {
-        "dehumidifier": "除濕機",
-        "airPurifier": "空氣清淨機",
-        "catTower": "喵太座：寵物空清＋加熱貓窩",
-        "feeder": "自動餵食器",
-        "camera": "攝影機",
-        "plug": "智慧插座"
-      }
+      "title": "其他連網家電"
     },
     "sheet": {
-      "memoryText": "回老家時的備用基地。沒有照片，規格照記憶寫。",
       "telemetry": "遙測",
       "telemetryEvery": "這台伺服器傳回來的，每 30 秒更新一次",
       "telemetryWait": "等待訊號"
@@ -348,18 +310,11 @@
       "canvas": "太空梭貨艙的線稿：四件酬載，與遠處軌道上的老家那台",
       "hintWide": "點標籤或貨艙裡的酬載 · ←→ 換一件 · Esc 回到整架",
       "hintTouch": "點標籤或貨艙裡的酬載 · 左右滑換一件",
-      "lede": {
-        "main-rig": "每天坐在前面的那台，整台走白色。",
-        "server": "一直開著的那台。Home Assistant 跑在這裡，家裡的智慧裝置都接到它。",
-        "network": "一台 Mesh 路由器撐起整個家，有線的接交換器，其他走無線。",
-        "peripherals": "桌上每天摸到的東西。"
-      },
       "count_one": "{{count}} 件",
       "count_other": "{{count}} 件",
       "specCount_one": "{{count}} 項",
       "specCount_other": "{{count}} 項",
       "notDrawn": "圖上未繪出",
-      "devices": "接在這台上的裝置 · Home Assistant",
       "records": "跟這台有關的紀錄",
       "prev": "上一件",
       "next": "下一件",

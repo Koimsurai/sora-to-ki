@@ -4,6 +4,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import AboutEditor from './AboutEditor';
 import LogEditor from './LogEditor';
 import QaEditor from './QaEditor';
+import SetupEditor from './SetupEditor';
 import WorksEditor from './WorksEditor';
 import { PageHead, TabPanel } from './AdminPage';
 import { PAGE_TABS, type PageTab } from './pageTabs';
@@ -17,6 +18,7 @@ const EDITORS: Record<PageTab, ComponentType> = {
   works: WorksEditor,
   log: LogEditor,
   qa: QaEditor,
+  setup: SetupEditor,
 };
 
 export default function PagesManager() {
