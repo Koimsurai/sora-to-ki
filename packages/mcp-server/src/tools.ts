@@ -764,10 +764,12 @@ export function makeTools(api: ApiClient): Tool[] {
         '讀某一頁由站長填的內容（JSON）。改之前先讀，改完整份送回 koimsurai_update_page_content。' +
         '\nabout（關於）：chapters（每一年：year、title、subtitle、line）、skills（label、items）、' +
         'jobs（period、title、role）、quote（text、cite）。' +
+        '\nlog（航行日誌）：start（站點誕生那一刻，帶時區，例如 2025-04-01T00:00:00+08:00；空字串＝第一篇文章那天）、' +
+        'milestones（date YYYY-MM-DD、level 0 小點／1 中點／2 名字標在軌跡上、text）。' +
         '\n會翻譯的欄位是「語系 → 字」的物件（zh-TW、zh-CN、en、ja、ko），zh-TW 必填，其他留空就顯示 zh-TW。',
       inputSchema: {
         type: 'object',
-        properties: { page: { type: 'string', enum: ['about'], description: '哪一頁' } },
+        properties: { page: { type: 'string', enum: ['about', 'log'], description: '哪一頁' } },
         required: ['page'],
         additionalProperties: false,
       },
@@ -782,7 +784,7 @@ export function makeTools(api: ApiClient): Tool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          page: { type: 'string', enum: ['about'], description: '哪一頁' },
+          page: { type: 'string', enum: ['about', 'log'], description: '哪一頁' },
           content: { type: 'object', description: '那一頁的整份內容' },
         },
         required: ['page', 'content'],

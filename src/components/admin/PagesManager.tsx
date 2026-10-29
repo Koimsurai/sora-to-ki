@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import AboutEditor from './AboutEditor';
+import LogEditor from './LogEditor';
 import { PageHead, TabPanel } from './AdminPage';
 import { PAGE_TABS, type PageTab } from './pageTabs';
 import './PagesManager.css';
@@ -9,7 +10,7 @@ import './PagesManager.css';
 // 頁面內容（2026-10 頁面範本）：前台那幾頁的設計寫在程式裡，這裡只填「放進去的東西」。
 // 一頁一個分頁；每一頁整份存（後端 PUT 整份覆蓋），存之前都只在這個分頁裡。
 
-const EDITORS: Record<PageTab, ComponentType> = { about: AboutEditor };
+const EDITORS: Record<PageTab, ComponentType> = { about: AboutEditor, log: LogEditor };
 
 export default function PagesManager() {
   // 不綁定路由（strict: false）：元件掛載測試會在別的路由底下掛它；值照樣由路由的 validateSearch 驗過

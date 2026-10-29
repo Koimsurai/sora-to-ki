@@ -87,6 +87,8 @@ pub fn build_router(state: AppState) -> Router {
         // 頁面內容（關於、作品…）：公開讀、管理員整份覆蓋
         .route("/api/pages/about", get(handlers::page_content::get_about))
         .route("/api/admin/pages/about", put(handlers::page_content::put_about))
+        .route("/api/pages/log", get(handlers::page_content::get_log))
+        .route("/api/admin/pages/log", put(handlers::page_content::put_log))
         // 文章內嵌投票（公開；防重複投票在 client 端做）
         .route("/api/polls/{id}", get(handlers::polls::get_poll))
         .route("/api/polls/{id}/vote", post(handlers::polls::vote_poll))

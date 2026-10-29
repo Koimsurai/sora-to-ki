@@ -13,7 +13,12 @@ use serde_json::json;
 
 /// 遷移檔裡寫原站內容的那幾段 INSERT（E2E 的種子也是這樣重跑的）
 fn origin_inserts() -> Vec<String> {
-    let sql = include_str!("../migrations/0031_page_content.sql");
+    // 新的一頁加了遷移，這裡也要加一行（E2E 的種子是照檔名 *_page_content*.sql 自己找的）
+    let sql = [
+        include_str!("../migrations/0031_page_content.sql"),
+        include_str!("../migrations/0032_page_content_log.sql"),
+    ]
+    .join("\n");
     // 每一段從「行首是 INSERT」的那一行開始（前面的註解裡也會提到 INSERT 這個字）
     sql.split(";\n")
         .filter_map(|s| {
@@ -54,6 +59,8 @@ async fn 原站的內容只寫給原站() {
     }
     let (_, v) = get(&app, "/api/pages/about").await;
     assert_eq!(v["chapters"], json!([]), "別人的站不能拿到原作者的關於頁");
+    let (_, v) = get(&app, "/api/pages/log").await;
+    assert_eq!(v["milestones"], json!([]), "別人的站不能拿到原作者的里程碑");
 
     set_site_name(&pool, "宙と木").await;
     for sql in &inserts {
@@ -64,6 +71,37 @@ async fn 原站的內容只寫給原站() {
     assert_eq!(v["chapters"].as_array().map(Vec::len), Some(8));
     assert_eq!(v["chapters"][0]["year"], "2004");
     assert_eq!(v["quote"]["cite"], "Steve Jobs");
+    let (_, v) = get(&app, "/api/pages/log").await;
+    assert_eq!(v["start"], "2025-04-01T00:00:00+08:00");
+    assert_eq!(v["milestones"][0]["level"], 2);
+}
+
+#[tokio::test]
+async fn 日誌的起點沒填就是第一篇文章那天_存的還是空的() {
+    let (app, pool) = test_app().await;
+    sqlx::query("DELETE FROM posts").execute(&pool).await.unwrap();
+    sqlx::query("INSERT INTO posts (title, content, status, created_at) VALUES ('草稿', 'x', 'draft', '2020-01-01 00:00:00')")
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO posts (title, content, status, created_at) VALUES ('第一篇', 'x', 'published', '2024-05-06 09:00:00')")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (_, v) = get(&app, "/api/pages/log").await;
+    assert_eq!(v["start"], "2024-05-06T00:00:00Z", "草稿不算");
+
+    let token = owner_token(true);
+    let (status, saved) = request(
+        &app,
+        "PUT",
+        "/api/admin/pages/log",
+        Some(json!({ "start": "", "milestones": [] })),
+        Some(&token),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{saved}");
+    assert_eq!(saved["start"], "", "存進去的是空的，下一篇文章更早的話起點會跟著變");
 }
 
 #[tokio::test]

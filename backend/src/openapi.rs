@@ -175,6 +175,8 @@ impl Modify for SecurityAddon {
         handlers::site_config::update_site_config,
         handlers::page_content::get_about,
         handlers::page_content::put_about,
+        handlers::page_content::get_log,
+        handlers::page_content::put_log,
     ),
     components(schemas(
         handlers::site_config::SiteConfig,
@@ -184,6 +186,8 @@ impl Modify for SecurityAddon {
         handlers::page_content::AboutSkillGroup,
         handlers::page_content::AboutJob,
         handlers::page_content::AboutQuote,
+        handlers::page_content::LogContent,
+        handlers::page_content::LogMilestone,
         handlers::telemetry::Telemetry,
         handlers::friends::FriendStar,
         handlers::friends::FriendPost,
