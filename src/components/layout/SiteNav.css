@@ -679,8 +679,11 @@
   color: var(--ink);
 }
 
-/* 天體那一頁左邊：滑過的那一顆在講什麼。換一顆就淡入一次（key 換了，元素重建） */
+/* 天體那一頁左邊：滑過的那一顆的故事。換一顆就淡入一次（key 換了，元素重建） */
 .snav-sky-story {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   animation: snav-sky-story var(--dur-400) var(--easing-out);
 }
 @keyframes snav-sky-story {

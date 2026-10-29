@@ -50,9 +50,14 @@ export function SkyPage() {
   return (
     <>
       <div className="snav-page-lead">
-        <p id="snav-sky-story" className="snav-sky-story" key={shown}>
-          {t(`siteNav.skyStories.${shown}`)}
-        </p>
+        {/* 說明一行一段（譯文裡用換行分段） */}
+        <div id="snav-sky-story" className="snav-sky-story" key={shown}>
+          {t(`siteNav.skyStories.${shown}`)
+            .split('\n')
+            .map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+        </div>
       </div>
       {/* onMouseLeave 只是讓左邊的說明回到現在這顆，純視覺；每一列本身都是按鈕、都在焦點序列裡 */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
