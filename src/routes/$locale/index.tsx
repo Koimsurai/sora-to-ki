@@ -3,6 +3,7 @@ import { buildAlternateLinks, localeFromPrefix } from '@/i18n/start-i18n';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { DEFAULT_LOCALE } from '../../lib/locales';
 import MainPage from '@/components/home/MainPage';
+import { prefetchPageContent } from '@/data/pageContent';
 import { siteJsonLd } from '@/seo/seoMeta';
 import { seoMetaFor } from '@/seo/pageSeo';
 
@@ -17,9 +18,11 @@ export const Route = createFileRoute('/$locale/')({
       links: buildAlternateLinks('', locale),
     };
   },
-  loader: ({ params }) => {
+  loader: async ({ params, context }) => {
     const locale = localeFromPrefix(params.locale);
     if (!locale || locale === 'zh-TW') throw notFound();
+    // 土星的「關於」那條軌道寫著第一章的年份
+    await prefetchPageContent(context.queryClient, '');
   },
   component: RouteComponent,
 });

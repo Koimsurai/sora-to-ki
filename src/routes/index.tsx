@@ -6,6 +6,7 @@ import { LocaleProvider } from '@/i18n/LocaleProvider';
 import { isBotUserAgent } from '../lib/bot';
 import { DEFAULT_LOCALE, LOCALE_PREFIX, type Locale } from '../lib/locales';
 import MainPage from '@/components/home/MainPage';
+import { prefetchPageContent } from '@/data/pageContent';
 import { siteJsonLd } from '@/seo/seoMeta';
 import { seoMetaFor } from '@/seo/pageSeo';
 
@@ -37,6 +38,8 @@ export const Route = createFileRoute('/')({
       throw redirect({ href: `/${LOCALE_PREFIX[target]}`, statusCode: 302 });
     }
   },
+  // 土星的「關於」那條軌道寫著第一章的年份
+  loader: ({ context }) => prefetchPageContent(context.queryClient, ''),
   component: () => (
     <LocaleProvider locale={DEFAULT_LOCALE}>
       <MainPage />

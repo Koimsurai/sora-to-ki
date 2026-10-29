@@ -121,8 +121,8 @@
       "momentsCount": "최근 {{date}}",
       "worksCount": "{{count}}개",
       "collectionLine": "애니메이션 {{anime}}편, 영화 {{films}}편, 시리즈 {{series}}편 시청",
-      "aboutLine": "2004년부터 지금까지 떨어져 온 길",
-      "aboutCount": "2004 –"
+      "aboutLine": "{{year}}년부터 지금까지 떨어져 온 길",
+      "aboutCount": "{{year}} –"
     }
   },
   "commandPalette": {
@@ -475,23 +475,12 @@
     "kick": "소개",
     "title": "꽉 잡으세요.",
     "hint": "아래로 스크롤",
+    "now": "지금",
     "landPre": "서툴고 헤매던 수많은 어제를 지나,",
     "land": "여기 내려앉다.",
     "surface": "지표",
     "surfaceTitle": "손에 쥔 것",
     "surfaceSub": "줄곧 들고 다닌 것들.",
-    "skill": {
-      "frontend": "프런트엔드",
-      "backend": "백엔드",
-      "mobile": "모바일",
-      "devops": "데브옵스",
-      "design": "디자인 · 미디어",
-      "data": "데이터 저장",
-      "network": "네트워크",
-      "productivity": "생산성",
-      "ai": "AI 개발",
-      "teaching": "교육 도구"
-    },
     "layer1": "첫째 층",
     "layer1Title": "해 온 일",
     "core": "핵",

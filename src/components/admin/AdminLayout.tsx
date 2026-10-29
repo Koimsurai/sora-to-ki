@@ -62,7 +62,13 @@ const NAV: NavGroup[] = [
       { label: '電子報', path: '/admin/subscribers' },
     ],
   },
-  { label: '站 · Station', items: [{ label: '帳號', path: '/admin/users', ownerOnly: true }] },
+  {
+    label: '站 · Station',
+    items: [
+      { label: '頁面', path: '/admin/pages' },
+      { label: '帳號', path: '/admin/users', ownerOnly: true },
+    ],
+  },
 ];
 
 const isEditorPath = (p: string) => p.startsWith('/admin/posts/edit') || p.startsWith('/admin/posts/create');

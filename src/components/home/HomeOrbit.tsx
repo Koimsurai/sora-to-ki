@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { LocaleLink } from '@/i18n/locale-link';
 import { MAIN_SECTIONS } from '@/data/siteSections';
+import { useAboutContent } from '@/data/pageContent';
 import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
@@ -86,6 +87,7 @@ export default function HomeOrbit() {
   // 開著的主要分區，由內到外對應土星的軌道：關掉一個，最外圈那條收起來、後面的往內遞補（見 starfieldGpu 的 setSections）
   const main = useEnabledSections(MAIN_SECTIONS);
   const { author } = useSiteConfig();
+  const firstYear = /\d{4}/.exec(useAboutContent().chapters[0]?.year ?? '')?.[0];
   // 摺起來（CSS 的 viewport-segments）：浮動字卡換成另一半的目錄（common/FoldIndex）
   const folded = useFoldPose() !== null;
   const [flat, setFlat] = useState(false);
@@ -145,7 +147,10 @@ export default function HomeOrbit() {
         : '',
       n: watch ? String(watch.animeCount + watch.filmCount + watch.tvSeriesCount) : '',
     },
-    about: { line: t('home.orbit.aboutLine'), n: t('home.orbit.aboutCount') },
+    // 第一章的年份（關於頁沒填就不寫）
+    about: firstYear
+      ? { line: t('home.orbit.aboutLine', { year: firstYear }), n: t('home.orbit.aboutCount', { year: firstYear }) }
+      : { line: '', n: '' },
   };
 
   useEffect(() => {

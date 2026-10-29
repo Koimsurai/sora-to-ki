@@ -757,6 +757,40 @@ export function makeTools(api: ApiClient): Tool[] {
         }),
     },
 
+    // ── 頁面內容（關於、作品…）─────────────────────────────────
+    {
+      name: 'koimsurai_get_page_content',
+      description:
+        '讀某一頁由站長填的內容（JSON）。改之前先讀，改完整份送回 koimsurai_update_page_content。' +
+        '\nabout（關於）：chapters（每一年：year、title、subtitle、line）、skills（label、items）、' +
+        'jobs（period、title、role）、quote（text、cite）。' +
+        '\n會翻譯的欄位是「語系 → 字」的物件（zh-TW、zh-CN、en、ja、ko），zh-TW 必填，其他留空就顯示 zh-TW。',
+      inputSchema: {
+        type: 'object',
+        properties: { page: { type: 'string', enum: ['about'], description: '哪一頁' } },
+        required: ['page'],
+        additionalProperties: false,
+      },
+      handler: (a) => api.request('GET', `/api/pages/${String(a.page)}`, { auth: false }),
+    },
+    {
+      name: 'koimsurai_update_page_content',
+      description:
+        '整份覆蓋某一頁的內容（不是合併：沒帶的區塊會被清空），回傳存好的那份。改完前台的快取會立刻清掉。' +
+        '\n格式跟 koimsurai_get_page_content 讀到的一樣。about 的 chapters 年份寫 NOW 會顯示成「現在」，' +
+        '那一章的標題也會出現在落地處；首頁「從某年往下掉到現在」取第一章的年份。',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          page: { type: 'string', enum: ['about'], description: '哪一頁' },
+          content: { type: 'object', description: '那一頁的整份內容' },
+        },
+        required: ['page', 'content'],
+        additionalProperties: false,
+      },
+      handler: (a) => api.request('PUT', `/api/admin/pages/${String(a.page)}`, { body: a.content }),
+    },
+
     // ── 分類 ──────────────────────────────────────────────────
     {
       name: 'koimsurai_list_categories',

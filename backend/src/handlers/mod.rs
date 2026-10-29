@@ -17,6 +17,7 @@ pub mod newsletter;
 pub mod oauth;
 pub mod og;
 pub mod opencc;
+pub mod page_content;
 pub mod photo_meta;
 pub mod polls;
 pub mod post_lifecycle;
