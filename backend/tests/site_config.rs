@@ -39,6 +39,25 @@ async fn 既有的站升級上來_一頁都不關() {
 }
 
 #[tokio::test]
+async fn 有設_site_disabled_pages_就照它_空字串是一頁都不關() {
+    let (_app, pool) = test_app().await;
+    sqlx::query("DELETE FROM users").execute(&pool).await.unwrap();
+    // SAFETY: nextest 每個測試一個行程
+    unsafe { std::env::set_var("SITE_DISABLED_PAGES", "") };
+    let s = load_or_seed(&pool).await.unwrap();
+    assert_eq!(s.disabled_pages, Vec::<String>::new(), "明確給空字串就不該再猜成全新安裝");
+}
+
+#[tokio::test]
+async fn site_disabled_pages_不認得的略過_照固定順序() {
+    let (_app, pool) = test_app().await;
+    // SAFETY: nextest 每個測試一個行程
+    unsafe { std::env::set_var("SITE_DISABLED_PAGES", " friends, nope ,setup") };
+    let s = load_or_seed(&pool).await.unwrap();
+    assert_eq!(s.disabled_pages, vec!["setup", "friends"]);
+}
+
+#[tokio::test]
 async fn 已經有設定就不再用種子蓋掉() {
     let (_app, pool) = test_app().await;
     sqlx::query("INSERT INTO site_settings (key, value) VALUES ('site', ?)")

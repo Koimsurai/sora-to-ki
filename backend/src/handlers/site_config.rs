@@ -64,9 +64,12 @@ fn set_current(s: SiteSettings) {
 
 /// 讀出設定放進記憶體；資料庫裡還沒有的話用環境變數寫一份種子。
 ///
-/// 種子會不會關掉頁面，看寫種子的當下 `users` 表有沒有人：有人＝既有的站升級上來，
-/// 所有頁面照舊開著；沒人＝全新安裝，關掉 [`OFF_ON_FRESH_INSTALL`]。
-/// 所以這支要排在 `auth::bootstrap_admin` 之前（它會在空的 users 表建第一個管理員）。
+/// 種子關掉哪些頁面：
+///   1. 有設 `SITE_DISABLED_PAGES`（逗號分隔，**空字串也算有設**＝一頁都不關）就照它。
+///      部署腳本、agent、E2E 要明確指定的時候用這個，不靠下面的猜測。
+///   2. 沒設就看寫種子的當下 `users` 表有沒有人：有人＝既有的站升級上來，所有頁面照舊開著；
+///      沒人＝全新安裝，關掉 [`OFF_ON_FRESH_INSTALL`]。
+///      所以這支要排在 `auth::bootstrap_admin` 之前（它會在空的 users 表建第一個管理員）。
 pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
     if let Some(raw) = sqlx::query_scalar::<_, String>("SELECT value FROM site_settings WHERE key = ?")
         .bind(KEY)
@@ -78,16 +81,19 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         return Ok(s);
     }
 
-    let (users,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users").fetch_one(pool).await?;
+    let disabled_pages = if let Ok(raw) = std::env::var("SITE_DISABLED_PAGES") {
+        // 不認得的 key 直接略過：種子寫壞不該讓伺服器起不來，之後在後台改得回來
+        let wanted: Vec<&str> = raw.split(',').map(str::trim).collect();
+        TOGGLEABLE_PAGES.iter().filter(|p| wanted.contains(p)).map(|p| (*p).to_string()).collect()
+    } else {
+        let (users,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users").fetch_one(pool).await?;
+        if users == 0 { OFF_ON_FRESH_INSTALL.iter().map(|p| (*p).to_string()).collect() } else { Vec::new() }
+    };
     let seed = SiteSettings {
         name: crate::identity::env_site_name(),
         author: crate::identity::env_site_author().unwrap_or_default(),
         description: crate::identity::env_site_description().unwrap_or_default(),
-        disabled_pages: if users == 0 {
-            OFF_ON_FRESH_INSTALL.iter().map(|p| (*p).to_string()).collect()
-        } else {
-            Vec::new()
-        },
+        disabled_pages,
     };
     // OR IGNORE：兩個程序同時開機的話，以先寫進去的那份為準
     sqlx::query("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)")
