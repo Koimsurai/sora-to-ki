@@ -17,9 +17,11 @@ use crate::{
 // ── 多語系（對齊 Express index.js 的常數與 helper）─────────────────────────
 pub(crate) const I18N_LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
 
-/// LOCALE_COLUMN_SUFFIX：zh-TW 是來源語、無後綴欄位。
+/// LOCALE_COLUMN_SUFFIX：語系 → 譯文欄的後綴。原稿那個語系不讀這裡（一律讀本體欄位，
+/// 看 source_language），所以每個語系都有自己的後綴，繁中也是（英文原稿的站要補繁中譯文）。
 pub(crate) fn locale_suffix(locale: &str) -> Option<&'static str> {
     match locale {
+        "zh-TW" => Some("zh_tw"),
         "zh-CN" => Some("zh_cn"),
         "en" => Some("en"),
         "ja" => Some("ja"),
@@ -95,6 +97,13 @@ pub struct PostRow {
     pub(crate) trashed_at: Option<String>,
     #[sqlx(default)]
     pub(crate) trashed_from: Option<String>,
+    /// 繁中譯文（原稿不是繁中時才用得到；0036）
+    #[sqlx(default)]
+    pub(crate) title_zh_tw: Option<String>,
+    #[sqlx(default)]
+    pub(crate) content_zh_tw: Option<String>,
+    #[sqlx(default)]
+    pub(crate) excerpt_zh_tw: Option<String>,
     // GROUP_CONCAT(t.name)；無 tag 時為 NULL
     pub(crate) tags: Option<String>,
 }
@@ -111,6 +120,7 @@ fn i18n_trio<'a>(row: &'a PostRow, sfx: &str) -> (Option<&'a str>, Option<&'a st
     match sfx {
         "en" => (row.title_en.as_deref(), row.content_en.as_deref(), row.excerpt_en.as_deref()),
         "zh_cn" => (row.title_zh_cn.as_deref(), row.content_zh_cn.as_deref(), row.excerpt_zh_cn.as_deref()),
+        "zh_tw" => (row.title_zh_tw.as_deref(), row.content_zh_tw.as_deref(), row.excerpt_zh_tw.as_deref()),
         "ja" => (row.title_ja.as_deref(), row.content_ja.as_deref(), row.excerpt_ja.as_deref()),
         "ko" => (row.title_ko.as_deref(), row.content_ko.as_deref(), row.excerpt_ko.as_deref()),
         _ => (None, None, None),
@@ -167,7 +177,7 @@ pub(crate) async fn sky_list(
 pub(crate) fn locale_available_sql(locale: &str, alias: &str) -> String {
     let is_source = format!("COALESCE({alias}.source_language, 'zh-TW') = '{locale}'");
     match locale_suffix(locale) {
-        // zh-TW 是來源語、沒有後綴欄位可查：只有 source_language 相符才算有內容。
+        // 認不得的語系沒有譯文欄可查：只有 source_language 相符才算有內容
         None => format!("({is_source})"),
         Some(sfx) => format!(
             "({is_source} OR (COALESCE({alias}.title_{sfx}, '') <> '' \
@@ -909,8 +919,8 @@ mod locale_tests {
         assert_eq!(locale_suffix("en"), Some("en"));
         assert_eq!(locale_suffix("ja"), Some("ja"));
         assert_eq!(locale_suffix("ko"), Some("ko"));
-        // zh-TW 是來源語，沒有後綴欄位——這是 None 的**正當**來源，不是「不認得」
-        assert_eq!(locale_suffix("zh-TW"), None);
+        // 繁中也有自己的譯文欄（0036）：英文原稿的站補繁中譯文就寫在這裡
+        assert_eq!(locale_suffix("zh-TW"), Some("zh_tw"));
         assert_eq!(locale_suffix("de"), None);
         assert_eq!(locale_suffix(""), None);
     }

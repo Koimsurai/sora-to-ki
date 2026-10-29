@@ -59,6 +59,9 @@ export type AdminCategoryRow = {
 	short_description_ja: string | null,
 	short_description_ko: string | null,
 	short_description_zh_cn: string | null,
+	name_zh_tw: string | null,
+	description_zh_tw: string | null,
+	short_description_zh_tw: string | null,
 };
 
 export type AdminCollectionResponse = {
@@ -199,6 +202,10 @@ export type AdminPostFull = {
 	trashed_at: string | null,
 	/**  丟進回收之前的狀態（還原時回到這裡） */
 	trashed_from: string | null,
+	/**  繁中譯文（原稿不是繁中時才用得到） */
+	title_zh_tw: string | null,
+	content_zh_tw: string | null,
+	excerpt_zh_tw: string | null,
 	tags: string[],
 };
 
@@ -220,6 +227,7 @@ export type AdminTagRow = {
 	name_ja: string | null,
 	name_ko: string | null,
 	name_zh_cn: string | null,
+	name_zh_tw: string | null,
 };
 
 /**  後台「在聽」的一首（Spotify 最近播放，含不公開的） */
@@ -450,6 +458,10 @@ export type CategoryRow = {
 	short_description_ja: string | null,
 	short_description_ko: string | null,
 	short_description_zh_cn: string | null,
+	/**  繁中譯文：原名不是繁中的站才用得到（原名是站台預設語系的名稱） */
+	name_zh_tw: string | null,
+	description_zh_tw: string | null,
+	short_description_zh_tw: string | null,
 };
 
 /**  `PUT /api/admin/categories/{id}` 的 200 回應（`id` 同樣來自 Path，理由見 [`TagUpdated`]）。 */
@@ -1450,6 +1462,7 @@ export type TagRow = {
 	name_ja: string | null,
 	name_ko: string | null,
 	name_zh_cn: string | null,
+	name_zh_tw: string | null,
 };
 
 /**

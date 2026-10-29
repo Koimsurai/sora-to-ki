@@ -202,3 +202,26 @@ async fn 預設英文的站_rss_與新文章都跟著預設語系() {
         .unwrap();
     assert_eq!(src, "en");
 }
+
+/// 英文原稿補了繁中譯文：繁中 feed 與繁中的文章列表都看得到它，標題是繁中譯文
+#[tokio::test]
+async fn 英文原稿補了繁中譯文_繁中讀者看得到() {
+    unsafe { std::env::set_var("SITE_DEFAULT_LOCALE", "en") };
+    let (app, pool) = test_app().await;
+    load_or_seed(&pool).await.unwrap();
+    sqlx::query(
+        "INSERT INTO posts (title, content, status, source_language, title_zh_tw, content_zh_tw) \
+         VALUES ('Translated post', 'Body', 'published', 'en', '翻好的文章', '內文')",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let (_, tw) = get(&app, "/rss?lang=zh-TW").await;
+    let tw = tw.as_str().unwrap_or_default();
+    assert!(tw.contains("<title>翻好的文章</title>"), "繁中 feed 要用繁中譯文：{tw}");
+    let (_, list) = get(&app, "/api/posts?lang=zh-TW").await;
+    assert!(list.to_string().contains("翻好的文章"), "繁中列表要有它：{list}");
+    let (_, en) = get(&app, "/rss").await;
+    assert!(en.as_str().unwrap_or_default().contains("<title>Translated post</title>"));
+}

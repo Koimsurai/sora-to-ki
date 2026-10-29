@@ -19,17 +19,22 @@ import { defaultLocale } from '@/lib/locales';
  * 現在欄位名一律由後綴推導，兩層不可能對不上；
  * `categoryLabel.test.tsx` 最後那條（「兩層判斷不能漂移」）守的就是別再拆回兩份。
  */
-function suffixFor(locale: string): 'en' | 'ja' | 'ko' | 'zh_cn' | null {
-  if (locale.toLowerCase() === defaultLocale().toLowerCase()) return null;
+function columnSuffix(locale: string): 'en' | 'ja' | 'ko' | 'zh_cn' | 'zh_tw' | null {
   if (locale.startsWith('en')) return 'en';
   if (locale.startsWith('ja')) return 'ja';
   if (locale.startsWith('ko')) return 'ko';
   if (locale.toLowerCase().startsWith('zh-cn')) return 'zh_cn';
+  if (locale.toLowerCase().startsWith('zh-tw')) return 'zh_tw';
   return null;
 }
 
+function suffixFor(locale: string): ReturnType<typeof columnSuffix> {
+  const sfx = columnSuffix(locale);
+  return sfx === columnSuffix(defaultLocale()) ? null : sfx;
+}
+
 /** locale → CategoryInfo / Tag 上的譯名欄位名（`name_<後綴>`）。 */
-function fieldFor(locale: string): 'name_en' | 'name_ja' | 'name_ko' | 'name_zh_cn' | null {
+function fieldFor(locale: string): 'name_en' | 'name_ja' | 'name_ko' | 'name_zh_cn' | 'name_zh_tw' | null {
   const sfx = suffixFor(locale);
   return sfx && (`name_${sfx}` as const);
 }

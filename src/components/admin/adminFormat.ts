@@ -1,6 +1,6 @@
 import type { AdminPostFull } from '@koimsurai/api-types';
 import { format, isValid, parse } from 'date-fns';
-import { defaultLocale } from '@/lib/locales';
+import { defaultLocale, isEnabled } from '@/lib/locales';
 
 // 後台各頁共用的純函式（不是元件，所以跟 AdminPage.tsx 分開放——同一個檔混著元件與函式，
 // fast refresh 就不能只換元件）。
@@ -88,12 +88,12 @@ export const STATUS_LABEL: Record<string, string> = {
 
 export type LocalePost = Pick<
   AdminPostFull,
-  'title' | 'title_en' | 'title_zh_cn' | 'title_ja' | 'title_ko' | 'source_language'
+  'title' | 'title_en' | 'title_zh_cn' | 'title_zh_tw' | 'title_ja' | 'title_ko' | 'source_language'
 >;
 
 /** 五個語系。原稿寫在 `title`（哪一種語言看 source_language），其他語系各有自己的欄 */
 const LOCALES = [
-  { code: 'zh-TW', label: '繁', field: null },
+  { code: 'zh-TW', label: '繁', field: 'title_zh_tw' },
   { code: 'en', label: 'EN', field: 'title_en' },
   { code: 'zh-CN', label: '简', field: 'title_zh_cn' },
   { code: 'ja', label: '日', field: 'title_ja' },
@@ -106,10 +106,13 @@ export interface LocaleCoverage {
   has: boolean;
 }
 
+/** 站上有開的語系才列 */
+const enabledLocaleRows = () => LOCALES.filter((l) => isEnabled(l.code));
+
 export function localeCoverage(post: LocalePost): LocaleCoverage[] {
   const source = post.source_language ?? defaultLocale();
-  return LOCALES.map(({ code, label, field }) => {
-    const text = code === source ? post.title : field ? post[field] : null;
+  return enabledLocaleRows().map(({ code, label, field }) => {
+    const text = code === source ? post.title : post[field];
     return { code, label, has: Boolean(text?.trim()) };
   });
 }
@@ -121,31 +124,36 @@ export interface LocaleNamed {
   name_ja: string | null;
   name_ko: string | null;
   name_zh_cn: string | null;
+  name_zh_tw: string | null;
 }
 
 export function nameCoverage(row: LocaleNamed): LocaleCoverage[] {
   const value: Record<string, string | null> = {
-    'zh-TW': null, // 繁中還沒有譯名欄：只有它是預設語系時才算有（就是原名）
+    'zh-TW': row.name_zh_tw,
     en: row.name_en,
     'zh-CN': row.name_zh_cn,
     ja: row.name_ja,
     ko: row.name_ko,
     [defaultLocale()]: row.name,
   };
-  return LOCALES.map(({ code, label }) => ({ code, label, has: Boolean(value[code]?.trim()) }));
+  return enabledLocaleRows().map(({ code, label }) => ({ code, label, has: Boolean(value[code]?.trim()) }));
 }
 
-/** 表單裡的四個譯名欄（新增語系時只要改這裡，表單自動長出欄位） */
-export const LOCALE_NAME_FIELDS = [
-  { key: 'name_en', label: 'English' },
-  { key: 'name_ja', label: '日本語' },
-  { key: 'name_ko', label: '한국어' },
-  { key: 'name_zh_cn', label: '简体中文' },
+/** 表單裡的譯名欄（新增語系時只要改這裡，表單自動長出欄位） */
+const LOCALE_NAME_FIELDS = [
+  { code: 'zh-TW', key: 'name_zh_tw', label: '繁體中文' },
+  { code: 'en', key: 'name_en', label: 'English' },
+  { code: 'ja', key: 'name_ja', label: '日本語' },
+  { code: 'ko', key: 'name_ko', label: '한국어' },
+  { code: 'zh-CN', key: 'name_zh_cn', label: '简体中文' },
 ] as const;
 
+/** 要填的譯名欄：站上有開的語系，扣掉預設語系（原名就是它） */
+export const localeNameFields = () => LOCALE_NAME_FIELDS.filter((f) => f.code !== defaultLocale() && isEnabled(f.code));
+
 /**
- * 要人去翻的譯文：英、日、韓。简中不算——它是由繁中轉出來的（編輯器的「從繁中產生」），
+ * 要人去翻的譯文：站上有開、還沒有的。简中不算——它是由繁中轉出來的（編輯器的「從繁中產生」），
  * 缺了也不需要人動手寫。
  */
 export const missingTranslations = (post: LocalePost) =>
-  localeCoverage(post).filter((l) => !l.has && (l.code === 'en' || l.code === 'ja' || l.code === 'ko'));
+  localeCoverage(post).filter((l) => !l.has && l.code !== 'zh-CN');

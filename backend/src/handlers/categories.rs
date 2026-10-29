@@ -33,6 +33,10 @@ pub struct CategoryRow {
     pub short_description_ja: Option<String>,
     pub short_description_ko: Option<String>,
     pub short_description_zh_cn: Option<String>,
+    /// 繁中譯文：原名不是繁中的站才用得到（原名是站台預設語系的名稱）
+    pub name_zh_tw: Option<String>,
+    pub description_zh_tw: Option<String>,
+    pub short_description_zh_tw: Option<String>,
 }
 
 #[derive(Debug, Serialize, utoipa::ToSchema, specta::Type)]
@@ -73,12 +77,14 @@ pub async fn list_categories(
           c.updated_at,
           COUNT(p.id) as post_count,
           c.name_en, c.name_ja, c.name_ko, c.name_zh_cn,
-          c.description_en, c.description_ja, c.description_ko, c.description_zh_cn, c.short_description_en, c.short_description_ja, c.short_description_ko, c.short_description_zh_cn
+          c.description_en, c.description_ja, c.description_ko, c.description_zh_cn, c.short_description_en, c.short_description_ja, c.short_description_ko, c.short_description_zh_cn,
+          c.name_zh_tw, c.description_zh_tw, c.short_description_zh_tw
         FROM categories c
         LEFT JOIN posts p ON p.category = c.name AND p.status = 'published'{locale_cond}
         GROUP BY c.id, c.name, c.slug, c.description, c.short_description, c.updated_at,
                  c.name_en, c.name_ja, c.name_ko, c.name_zh_cn,
-                 c.description_en, c.description_ja, c.description_ko, c.description_zh_cn, c.short_description_en, c.short_description_ja, c.short_description_ko, c.short_description_zh_cn
+                 c.description_en, c.description_ja, c.description_ko, c.description_zh_cn, c.short_description_en, c.short_description_ja, c.short_description_ko, c.short_description_zh_cn,
+                 c.name_zh_tw, c.description_zh_tw, c.short_description_zh_tw
         ORDER BY post_count DESC, c.name ASC
         "
     );

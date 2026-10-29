@@ -497,8 +497,11 @@ async fn prepare_post(state: &AppState, id: i64, locale: &str) -> Option<Prepare
     let found = list.iter().position(|p| p.0 == post_id);
     let lit = found.unwrap_or(0);
     let title = found.map_or_else(|| title.unwrap_or_default(), |i| list[i].1.clone());
-    // 分類的譯名在 categories 表（name_en…）；沒有譯名就用原名
-    let category = match (category.as_deref(), crate::handlers::posts::locale_suffix(text_locale)) {
+    // 分類的原名是站台預設語系的名稱，其他語系的譯名在 categories 表（name_en…）；沒有譯名就用原名
+    let suffix = Some(text_locale)
+        .filter(|l| *l != crate::handlers::site_config::default_locale())
+        .and_then(crate::handlers::posts::locale_suffix);
+    let category = match (category.as_deref(), suffix) {
         (Some(c), Some(sfx)) if !c.is_empty() => {
             let sql = format!("SELECT name_{sfx} FROM categories WHERE name = ?");
             let localized = sqlx::query_scalar::<_, Option<String>>(sqlx::AssertSqlSafe(sql.as_str()))

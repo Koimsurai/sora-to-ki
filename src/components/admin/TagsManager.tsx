@@ -18,7 +18,7 @@ import {
 import { authHeaders, jsonAuthHeaders } from '@/lib/authToken';
 import AdminLoading from './AdminLoading';
 import { NameDots, PageHead } from './AdminPage';
-import { LOCALE_NAME_FIELDS } from './adminFormat';
+import { localeNameFields } from './adminFormat';
 
 // 標籤（2026-10 後台提案）：一張表，照用量排；每個標籤後面五顆語系點，看各語系的譯名填了沒。
 // 舊表單的「URL 別名」「顏色」兩欄後端根本不存（create_tag 只寫名稱與譯名、列表也不回傳），拿掉了。
@@ -30,9 +30,10 @@ interface TagForm {
   name_ja: string;
   name_ko: string;
   name_zh_cn: string;
+  name_zh_tw: string;
 }
 
-const EMPTY: TagForm = { name: '', name_en: '', name_ja: '', name_ko: '', name_zh_cn: '' };
+const EMPTY: TagForm = { name: '', name_en: '', name_ja: '', name_ko: '', name_zh_cn: '', name_zh_tw: '' };
 
 export default function TagsManager() {
   const queryClient = useQueryClient();
@@ -47,7 +48,9 @@ export default function TagsManager() {
   const q = search.trim().toLowerCase();
   const shown = tags
     .filter(
-      (t) => !q || [t.name, t.name_en, t.name_ja, t.name_ko, t.name_zh_cn].some((s) => s?.toLowerCase().includes(q)),
+      (t) =>
+        !q ||
+        [t.name, t.name_en, t.name_ja, t.name_ko, t.name_zh_cn, t.name_zh_tw].some((s) => s?.toLowerCase().includes(q)),
     )
     .sort((a, b) => b.post_count - a.post_count);
   const unused = tags.filter((t) => t.post_count === 0).length;
@@ -66,6 +69,7 @@ export default function TagsManager() {
       name_ja: tag.name_ja ?? '',
       name_ko: tag.name_ko ?? '',
       name_zh_cn: tag.name_zh_cn ?? '',
+      name_zh_tw: tag.name_zh_tw ?? '',
     });
     setDialogOpen(true);
   };
@@ -207,7 +211,7 @@ export default function TagsManager() {
             <div className="adm-form-section">
               <span className="adm-caps">各語系的譯名 · 選填</span>
               <div className="adm-form-grid">
-                {LOCALE_NAME_FIELDS.map(({ key, label }) => (
+                {localeNameFields().map(({ key, label }) => (
                   <label key={key} className="adm-field">
                     <span className="adm-caps">{label}</span>
                     <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />

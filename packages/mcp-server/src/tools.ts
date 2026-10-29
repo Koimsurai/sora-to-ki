@@ -58,7 +58,7 @@ function idOf(args: Record<string, unknown>): string {
   throw new Error('缺少 id（必須是數字或非空字串）');
 }
 
-// i18n 欄位（4 語 × 3 欄）。zh-TW 是來源（存在 title/content/excerpt），這裡是譯文欄。
+// i18n 譯文欄（5 語 × 3 欄）。原稿存在 title/content/excerpt（哪一語看 source_language），這裡是譯文欄。
 const I18N_FIELDS = [
   'title_en',
   'content_en',
@@ -72,6 +72,9 @@ const I18N_FIELDS = [
   'title_zh_cn',
   'content_zh_cn',
   'excerpt_zh_cn',
+  'title_zh_tw',
+  'content_zh_tw',
+  'excerpt_zh_tw',
 ] as const;
 
 const POST_WRITE_FIELDS = [
@@ -150,7 +153,8 @@ const postWriteProps = {
   source_language: {
     type: 'string',
     enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
-    description: "來源語言（title/content 用哪一語寫的），預設 'zh-TW'。其餘語言放 *_en/*_ja/*_ko/*_zh_cn 欄。",
+    description:
+      '來源語言（title/content 用哪一語寫的），預設是站台的預設語系。其餘語言放 *_en/*_ja/*_ko/*_zh_cn/*_zh_tw 欄。',
   },
   ...i18nProps(),
   files: {
@@ -232,14 +236,25 @@ async function writePost(api: ApiClient, a: Record<string, unknown>, id?: string
   return result;
 }
 
-/** 4 語 × 3 欄的 i18n 屬性。zh-TW 是來源（存 title/content/excerpt）；這裡放各譯文語言。 */
+/** 5 語 × 3 欄的 i18n 屬性。原稿存 title/content/excerpt；這裡放各譯文語言。 */
 function i18nProps(): Record<string, { type: 'string'; description: string }> {
-  const langLabel: Record<string, string> = { en: '英文', ja: '日文', ko: '韓文', zh_cn: '簡體中文' };
+  const langLabel: Record<string, string> = {
+    en: '英文',
+    ja: '日文',
+    ko: '韓文',
+    zh_cn: '簡體中文',
+    zh_tw: '繁體中文',
+  };
   const fieldLabel: Record<string, string> = { title: '標題', content: '內文', excerpt: '摘要' };
   const out: Record<string, { type: 'string'; description: string }> = {};
-  for (const lang of ['en', 'ja', 'ko', 'zh_cn'] as const) {
+  for (const lang of ['en', 'ja', 'ko', 'zh_cn', 'zh_tw'] as const) {
     for (const field of ['title', 'content', 'excerpt'] as const) {
-      const zhcnNote = lang === 'zh_cn' ? '；簡體通常改用 generate_post_zh_cn 自動轉，不必手填' : '';
+      const zhcnNote =
+        lang === 'zh_cn'
+          ? '；簡體通常改用 generate_post_zh_cn 自動轉，不必手填'
+          : lang === 'zh_tw'
+            ? '；原稿不是繁中時才用'
+            : '';
       out[`${field}_${lang}`] = {
         type: 'string',
         description: `${langLabel[lang]}${fieldLabel[field]}（譯文，可選）${zhcnNote}`,
@@ -851,6 +866,9 @@ export function makeTools(api: ApiClient): Tool[] {
           description_ja: { type: 'string', description: '日文描述（可選）' },
           description_ko: { type: 'string', description: '韓文描述（可選）' },
           description_zh_cn: { type: 'string', description: '簡中描述（可選）' },
+          name_zh_tw: { type: 'string', description: '繁中顯示名（可選；原名不是繁中的站才用）' },
+          short_description_zh_tw: { type: 'string', description: '繁中簡述（可選）' },
+          description_zh_tw: { type: 'string', description: '繁中描述（可選）' },
         },
         required: ['name'],
         additionalProperties: false,
@@ -874,6 +892,9 @@ export function makeTools(api: ApiClient): Tool[] {
             'description_ja',
             'description_ko',
             'description_zh_cn',
+            'name_zh_tw',
+            'short_description_zh_tw',
+            'description_zh_tw',
           ]),
         }),
     },
@@ -900,6 +921,9 @@ export function makeTools(api: ApiClient): Tool[] {
           description_ja: { type: 'string', description: '日文描述（可選）' },
           description_ko: { type: 'string', description: '韓文描述（可選）' },
           description_zh_cn: { type: 'string', description: '簡中描述（可選）' },
+          name_zh_tw: { type: 'string', description: '繁中顯示名（可選；原名不是繁中的站才用）' },
+          short_description_zh_tw: { type: 'string', description: '繁中簡述（可選）' },
+          description_zh_tw: { type: 'string', description: '繁中描述（可選）' },
         },
         required: ['id'],
         additionalProperties: false,
@@ -923,6 +947,9 @@ export function makeTools(api: ApiClient): Tool[] {
             'description_ja',
             'description_ko',
             'description_zh_cn',
+            'name_zh_tw',
+            'short_description_zh_tw',
+            'description_zh_tw',
           ]),
         }),
     },
@@ -964,13 +991,16 @@ export function makeTools(api: ApiClient): Tool[] {
           description_ja: { type: 'string', description: '日文描述（可選）' },
           description_ko: { type: 'string', description: '韓文描述（可選）' },
           description_zh_cn: { type: 'string', description: '簡中描述（可選）' },
+          name_zh_tw: { type: 'string', description: '繁中顯示名（可選；原名不是繁中的站才用）' },
+          short_description_zh_tw: { type: 'string', description: '繁中簡述（可選）' },
+          description_zh_tw: { type: 'string', description: '繁中描述（可選）' },
         },
         required: ['name'],
         additionalProperties: false,
       },
       handler: (a) =>
         api.request('POST', '/api/admin/tags', {
-          body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn']),
+          body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn', 'name_zh_tw']),
         }),
     },
     {
@@ -985,13 +1015,14 @@ export function makeTools(api: ApiClient): Tool[] {
           name_ja: { type: 'string', description: '日文顯示名（可選）' },
           name_ko: { type: 'string', description: '韓文顯示名（可選）' },
           name_zh_cn: { type: 'string', description: '簡中顯示名（可選）' },
+          name_zh_tw: { type: 'string', description: '繁中顯示名（可選；原名不是繁中的站才用）' },
         },
         required: ['id', 'name'],
         additionalProperties: false,
       },
       handler: (a) =>
         api.request('PUT', `/api/admin/tags/${idOf(a)}`, {
-          body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn']),
+          body: pick(a, ['name', 'name_en', 'name_ja', 'name_ko', 'name_zh_cn', 'name_zh_tw']),
         }),
     },
     {

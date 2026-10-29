@@ -26,6 +26,7 @@ pub struct TagRow {
     pub name_ja: Option<String>,
     pub name_ko: Option<String>,
     pub name_zh_cn: Option<String>,
+    pub name_zh_tw: Option<String>,
 }
 
 #[derive(Debug, Serialize, utoipa::ToSchema, specta::Type)]
@@ -64,7 +65,7 @@ pub async fn list_tags(
         r"
         SELECT t.id, t.name, t.created_at,
           COUNT(CASE WHEN p.status = 'published'{locale_cond} THEN 1 END) as post_count,
-          t.name_en, t.name_ja, t.name_ko, t.name_zh_cn
+          t.name_en, t.name_ja, t.name_ko, t.name_zh_cn, t.name_zh_tw
         FROM tags t
         LEFT JOIN post_tags pt ON t.id = pt.tag_id
         LEFT JOIN posts p ON pt.post_id = p.id

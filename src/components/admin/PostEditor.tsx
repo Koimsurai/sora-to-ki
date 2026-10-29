@@ -55,6 +55,9 @@ type LocalizedField =
   | 'title_zh_cn'
   | 'content_zh_cn'
   | 'summary_zh_cn'
+  | 'title_zh_tw'
+  | 'content_zh_tw'
+  | 'summary_zh_tw'
   | 'title_ja'
   | 'content_ja'
   | 'summary_ja'
@@ -119,15 +122,12 @@ function TagSearchInput({
 
 // ─── i18n 編輯常數 ──────────────────────────────
 const LOCALE_TABS = [
-  { code: 'zh-TW', label: '繁體', column: null }, // source 候選
+  { code: 'zh-TW', label: '繁體', column: 'zh_tw' },
   { code: 'en', label: 'English', column: 'en' },
   { code: 'zh-CN', label: '简体', column: 'zh_cn' },
   { code: 'ja', label: '日本語', column: 'ja' },
   { code: 'ko', label: '한국어', column: 'ko' },
 ];
-
-/** 這篇能編哪幾個語系：原稿那個，加上有譯文欄的。繁中還沒有譯文欄，原稿不是繁中就不列 */
-const tabsFor = (source: string) => LOCALE_TABS.filter((t) => t.column !== null || t.code === source);
 /**
  * API 回來的值 → 表單要的字串。
  *
@@ -240,6 +240,9 @@ export default function PostEditor() {
       title_zh_cn: '',
       content_zh_cn: '',
       summary_zh_cn: '',
+      title_zh_tw: '',
+      content_zh_tw: '',
+      summary_zh_tw: '',
       title_ja: '',
       content_ja: '',
       summary_ja: '',
@@ -281,7 +284,7 @@ export default function PostEditor() {
     // 修正失效的 tab 選擇：LOCALE_TABS 由 sourceLanguage 推導，改動時舊的 activeLocale
     // 可能已不在清單裡。這是「校正外部變動造成的無效選擇」，不是可推導的衍生值。
     // eslint-disable-next-line @eslint-react/set-state-in-effect
-    if (!tabsFor(sourceLanguage).some((t) => t.code === activeLocale)) setActiveLocale(sourceLanguage);
+    if (!LOCALE_TABS.some((t) => t.code === activeLocale)) setActiveLocale(sourceLanguage);
   }, [activeLocale, sourceLanguage]);
 
   // ── localStorage 自動備份草稿（debounce 1.2s）──
@@ -348,7 +351,7 @@ export default function PostEditor() {
     const v = form.getValues();
     const source = v.source_language ?? defaultLocale();
     const texts: Record<string, PreviewText> = {};
-    for (const t of tabsFor(source)) {
+    for (const t of LOCALE_TABS) {
       const pick = (base: 'title' | 'content' | 'summary') => {
         const value = v[fieldNameFor(base, t.code, source)];
         return typeof value === 'string' ? value : '';
@@ -459,6 +462,9 @@ export default function PostEditor() {
       title_zh_cn: asText(postData.title_zh_cn),
       content_zh_cn: asText(postData.content_zh_cn),
       summary_zh_cn: asText(postData.excerpt_zh_cn),
+      title_zh_tw: asText(postData.title_zh_tw),
+      content_zh_tw: asText(postData.content_zh_tw),
+      summary_zh_tw: asText(postData.excerpt_zh_tw),
       title_ja: asText(postData.title_ja),
       content_ja: asText(postData.content_ja),
       summary_ja: asText(postData.excerpt_ja),
@@ -554,12 +560,13 @@ export default function PostEditor() {
     const tagsArray = Array.isArray(data.tags)
       ? data.tags.map((tag) => (typeof tag === 'string' ? tag : tag.label))
       : [];
-    const { summary, summary_en, summary_zh_cn, summary_ja, summary_ko, ...rest } = data;
+    const { summary, summary_en, summary_zh_cn, summary_zh_tw, summary_ja, summary_ko, ...rest } = data;
     return {
       ...rest,
       excerpt: summary,
       excerpt_en: summary_en,
       excerpt_zh_cn: summary_zh_cn,
+      excerpt_zh_tw: summary_zh_tw,
       excerpt_ja: summary_ja,
       excerpt_ko: summary_ko,
       tags: tagsArray,
@@ -678,14 +685,14 @@ export default function PostEditor() {
     }
   };
 
-  // ── OpenCC：由 zh-TW 自動產生简体中文（純字詞轉換，不丟 LLM） ──
+  // ── OpenCC：由繁中（原稿或繁中譯文）自動產生简体中文（純字詞轉換，不丟 LLM） ──
   const handleGenerateZhCN = async () => {
     if (!id) {
       toast.error('請先儲存草稿，取得文章 ID 後再執行');
       return;
     }
-    if (sourceLanguage !== 'zh-TW') {
-      toast.error('只能從 zh-TW 原文自動產生简体中文');
+    if (sourceLanguage !== 'zh-TW' && !postData?.title_zh_tw) {
+      toast.error('原稿不是繁中：先補好繁中譯文並儲存，再從它產生简中');
       return;
     }
     const existing = form.getValues('title_zh_cn') ?? form.getValues('content_zh_cn');
@@ -880,7 +887,7 @@ export default function PostEditor() {
               {/* Locale tabs */}
               {/* 語系分頁：正在編的是琥珀點、已經有內容的是墨點、還沒寫的是空心 */}
               <div className="pe-locales">
-                {tabsFor(sourceLanguage).map((t) => {
+                {LOCALE_TABS.map((t) => {
                   const isSource = t.code === sourceLanguage;
                   const titleVal = form.watch(fieldNameFor('title', t.code, sourceLanguage));
                   const hasContent = !!titleVal?.trim();
@@ -899,7 +906,7 @@ export default function PostEditor() {
                     </button>
                   );
                 })}
-                {sourceLanguage === 'zh-TW' && (
+                {sourceLanguage !== 'zh-CN' && (
                   <button
                     type="button"
                     onClick={() => {

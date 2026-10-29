@@ -1,5 +1,5 @@
 //! OpenCC 簡繁轉換（硬骨頭）。移植 Express `index.js` 的 `/admin/posts/:id/generate-zh-cn`
-//! ——把 zh-TW 原文（title/content/excerpt）以 OpenCC `tw2s`（繁台→簡）轉為 zh-CN 存回。
+//! ——把繁中（原稿或繁中譯文）的 title/content/excerpt 以 OpenCC `tw2s`（繁台→簡）轉為 zh-CN 存回。
 //!
 //! Express 用 `opencc-js` 的 `Converter({from:'tw', to:'cn'})`。改用純 Rust `ferrous-opencc`
 //! 的 `BuiltinConfig::Tw2s`：對 opencc-js 同輸入實測 **byte-identical**（33 真實文章欄位
@@ -114,17 +114,20 @@ fn convert_preserving_japanese(cc: &OpenCC, text: &str) -> String {
 /// `POST /api/admin/posts/:id/generate-zh-cn` —— requireAdmin。
 #[utoipa::path(post, path = "/api/admin/posts/{id}/generate-zh-cn", tag = "admin", security(("bearer" = [])),
     params(("id" = String, Path)),
-    responses((status = 200, description = "zh-CN 轉換結果（動態 JSON）"), (status = 400, description = "來源語言非 zh-TW 或缺 title/content"), (status = 401, description = "未授權"), (status = 404, description = "文章不存在"), (status = 500, description = "OpenCC 轉換或 DB 失敗")))]
+    responses((status = 200, description = "zh-CN 轉換結果（動態 JSON）"), (status = 400, description = "原稿是簡中，或繁中缺 title/content"), (status = 401, description = "未授權"), (status = 404, description = "文章不存在"), (status = 500, description = "OpenCC 轉換或 DB 失敗")))]
 pub async fn generate_zh_cn(
     State(state): State<AppState>,
     _auth: crate::auth::AdminAuth,
     Path(id): Path<String>,
 ) -> Response {
-    // 對齊 Express：SELECT * 後只讀這幾欄
-    let row = sqlx::query_as::<
-        _,
-        (Option<String>, Option<String>, Option<String>, Option<String>, Option<String>),
-    >("SELECT source_language, title, content, excerpt, excerpt_links FROM posts WHERE id = ?")
+    // 繁中在哪裡：原稿是繁中就是本體欄位，不然是繁中譯文欄（0036）
+    let row = sqlx::query_as::<_, (Option<String>, Option<String>, Option<String>, Option<String>, Option<String>)>(
+        "SELECT source_language, \
+           CASE WHEN COALESCE(NULLIF(source_language, ''), 'zh-TW') = 'zh-TW' THEN title ELSE title_zh_tw END, \
+           CASE WHEN COALESCE(NULLIF(source_language, ''), 'zh-TW') = 'zh-TW' THEN content ELSE content_zh_tw END, \
+           CASE WHEN COALESCE(NULLIF(source_language, ''), 'zh-TW') = 'zh-TW' THEN excerpt ELSE excerpt_zh_tw END, \
+           excerpt_links FROM posts WHERE id = ?",
+    )
     .bind(&id)
     .fetch_optional(&state.pool)
     .await;
@@ -134,16 +137,15 @@ pub async fn generate_zh_cn(
         Ok(Some(r)) => r,
     };
 
-    // source_language || 'zh-TW'；非 zh-TW → 400
-    let source = source_language.filter(|s| !s.is_empty()).unwrap_or_else(|| "zh-TW".into());
-    if source != "zh-TW" {
-        return err(StatusCode::BAD_REQUEST, "只能從 zh-TW 原文自動轉换為 zh-CN");
+    // 原稿就是簡中的話沒什麼好轉
+    if source_language.as_deref() == Some("zh-CN") {
+        return err(StatusCode::BAD_REQUEST, "原稿已經是簡體中文");
     }
     // !title || !content（含空字串）→ 400
     let title = title.filter(|s| !s.is_empty());
     let content = content.filter(|s| !s.is_empty());
     let (Some(title), Some(content)) = (title, content) else {
-        return err(StatusCode::BAD_REQUEST, "原文缺少 title 或 content");
+        return err(StatusCode::BAD_REQUEST, "繁中缺少 title 或 content（原稿不是繁中時先補繁中譯文）");
     };
     // excerpt ? t2s(excerpt) : null（空字串也視為無）
     let excerpt = excerpt.filter(|s| !s.is_empty());
