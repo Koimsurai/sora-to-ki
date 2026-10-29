@@ -10,6 +10,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { InitTiming, PerfReport, StarfieldRunner } from '@/lib/starfieldGpu';
 import { palette } from '@/lib/palette';
 import { currentFold, subscribeFold } from '@/lib/viewportFold';
+import { MAIN_SECTIONS } from '@/data/siteSections';
+import { useEnabledSections } from '@/data/siteConfig';
 
 /** 徽章上的一行：開頁多久之後就緒、各段各花多少（土星出來得慢時看是卡在哪一段） */
 const describeInit = (t?: InitTiming) =>
@@ -115,9 +117,17 @@ export default function StarfieldGpu({
     collapse(index: number): void;
     stars(visible: boolean): void;
     pan(x: number, y: number): void;
+    sections(count: number): void;
   } | null>(null);
 
   const liteRef = useRef(lite);
+  // 開著幾個主要分區＝土星幾條軌道。建 runner 時帶進去（第一幀就對），之後站台設定改了再送一次
+  const sections = useEnabledSections(MAIN_SECTIONS).length;
+  const sectionsRef = useRef(sections);
+  useEffect(() => {
+    sectionsRef.current = sections;
+    controlRef.current?.sections(sections);
+  }, [sections]);
   // ── GPU device / WebGL context 掉了之後的重建 ────────────────────────────
   //
   // 為什麼需要：device 掉了是永久的，three 只會 console.error 一行（在 worker 裡連那行都
@@ -256,6 +266,7 @@ export default function StarfieldGpu({
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
             palette: palette(),
+            sections: sectionsRef.current,
           },
           [offscreen],
         ),
@@ -274,6 +285,7 @@ export default function StarfieldGpu({
         collapse: (index) => worker.postMessage({ type: 'collapse', index }),
         stars: (visible) => worker.postMessage({ type: 'stars', visible }),
         pan: (x, y) => worker.postMessage({ type: 'pan', x, y }),
+        sections: (count) => worker.postMessage({ type: 'sections', count }),
       };
       const onMsg = (
         e: MessageEvent<{
@@ -344,6 +356,7 @@ export default function StarfieldGpu({
             dpr: window.devicePixelRatio,
             lite: liteRef.current,
             palette: palette(),
+            sections: sectionsRef.current,
             onPerf: setPerf,
             onDeviceLost: (message) => {
               if (!disposed) recover(message);
@@ -368,6 +381,7 @@ export default function StarfieldGpu({
             collapse: (index) => runner.collapseSaturnTo(index),
             stars: (visible) => runner.setStars(visible),
             pan: (x, y) => runner.setPan(x, y),
+            sections: (count) => runner.setSections(count),
           };
           setBackend(`${be} · main`);
           setInitInfo(describeInit(timing));

@@ -18,7 +18,10 @@ export interface SiteSection {
 export interface PageDef extends SiteSection {
   /** 放在哪裡：首頁、導覽列的主要分區（＝首頁的一顆衛星）、「關於」選單、「更多」選單 */
   group: 'home' | 'main' | 'about' | 'more';
-  /** 站台設定能不能關掉這一頁（後端 TOGGLEABLE_PAGES 要一致） */
+  /**
+   * 站台設定能不能關掉這一頁（後端 TOGGLEABLE_PAGES 要一致）。
+   * 手記與關於不能關：手記是 RSS、電子報、文章頁的根；關於是「關於」選單的家，關掉它底下那幾頁會無處可放
+   */
   toggleable: boolean;
   /** 命令面板的搜尋別名：打英文、打舊名字都找得到 */
   keywords: string;
@@ -63,7 +66,7 @@ export const PAGES: PageDef[] = [
     caps: 'MOMENTS',
     match: under('thinking'),
     group: 'main',
-    toggleable: false,
+    toggleable: true,
     keywords: 'thinking moments 碎念 想法',
   },
   {
@@ -72,7 +75,7 @@ export const PAGES: PageDef[] = [
     caps: 'WORK',
     match: under('portfolio'),
     group: 'main',
-    toggleable: false,
+    toggleable: true,
     keywords: 'portfolio works projects 作品 專案',
   },
   // 收藏：在看、書櫃、在聽合成一頁，網址沿用 /watch（舊的 /bookshelf、/music 轉到那一區）
@@ -82,7 +85,7 @@ export const PAGES: PageDef[] = [
     caps: 'COLLECTION',
     match: under('watch', 'bookshelf', 'music'),
     group: 'main',
-    toggleable: false,
+    toggleable: true,
     keywords: 'collection watch anime 動畫 電影 影集 books 書櫃 閱讀 music spotify 音樂',
     sitemap: { priority: '0.6', changefreq: 'weekly' },
     llms: '收藏：看過的動畫、電影、影集，書櫃，最常聽的音樂',

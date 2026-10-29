@@ -31,7 +31,7 @@ describe('頁面登記表', () => {
 
   it('能關的頁面跟後端 TOGGLEABLE_PAGES 一字不差', () => {
     const src = rust('site_config.rs');
-    const list = /TOGGLEABLE_PAGES: \[&str; \d+\] = \[([^\]]*)\]/.exec(src)?.[1] ?? '';
+    const list = /TOGGLEABLE_PAGES: \[&str; \d+\] =\s*\[([^\]]*)\]/.exec(src)?.[1] ?? '';
     const backend = [...list.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
     expect(backend).toEqual(TOGGLEABLE_KEYS);
   });

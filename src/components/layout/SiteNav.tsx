@@ -20,7 +20,6 @@ import { useEnabledSections } from '@/data/siteConfig';
 import NavMenus, { type MenuKey } from './NavMenus';
 import './SiteNav.css';
 
-const MAIN = MAIN_SECTIONS;
 const MORE = MORE_SECTIONS;
 type Item = SiteSection;
 
@@ -30,9 +29,6 @@ const SLIM_AFTER = 80;
 const OPEN_AFTER_MS = 280;
 /** 滑鼠離開導覽列多久才收起選單（斜著往下移到選單時會短暫出界） */
 const CLOSE_AFTER_MS = 320;
-/** 導覽列上的順序：五個分區，最後是「更多」 */
-const MENU_KEYS: MenuKey[] = [...(MAIN.map((it) => it.key) as MenuKey[]), 'more'];
-
 export default function SiteNav() {
   const { t, i18n } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -40,9 +36,12 @@ export default function SiteNav() {
   const isHome = bare === '';
   const navigate = useNavigate();
   const { user, isLoggedIn, isAdmin, logout, providers, getGitHubAuthUrl, getGoogleAuthUrl } = useAuth();
-  // 選單裡列的只有站台設定沒關掉的頁面
+  // 導覽列與選單裡列的只有站台設定沒關掉的頁面
+  const MAIN = useEnabledSections(MAIN_SECTIONS);
   const moreOn = useEnabledSections(MORE);
   const aboutOn = useEnabledSections(ABOUT_SECTIONS);
+  /** 導覽列上的順序：開著的主要分區，最後是「更多」 */
+  const MENU_KEYS: MenuKey[] = [...(MAIN.map((it) => it.key) as MenuKey[]), 'more'];
 
   const [slim, setSlim] = useState(false);
   /** 收成點之後被點開了（首頁平常就是收著的） */

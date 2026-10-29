@@ -12,7 +12,7 @@ import { recentPostsQueryOptions } from '@/data/blogList';
 import { booksQueryOptions } from '@/data/bookshelfData';
 import { nowPlayingQueryOptions, recentlyPlayedQueryOptions } from '@/data/musicData';
 import { ABOUT_SECTIONS, type SiteSection } from '@/data/siteSections';
-import { useEnabledSections } from '@/data/siteConfig';
+import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { latestAnimeQueryOptions, liveNowQueryOptions } from '@/data/watchData';
 import { WORKS, worksQueryOptions } from '@/data/works';
@@ -261,19 +261,23 @@ export default function NavMenus({
     ['about', <AboutPage key="about" label={label} />],
     ['more', more],
   ];
+  // 站台設定關掉的分區連選單都不畫（也就不會去抓它的資料）
+  const off = useSiteConfig().disabled_pages;
   return (
     <>
-      {pages.map(([key, page]) => (
-        <section
-          key={key}
-          className={`snav-page snav-page-${key}${open === key ? ' is-open' : was === key ? ' is-was' : ''}`}
-          style={{ '--dir': dir } as React.CSSProperties}
-          inert={open !== key}
-          aria-hidden={open !== key}
-        >
-          {page}
-        </section>
-      ))}
+      {pages
+        .filter(([key]) => !off.includes(key))
+        .map(([key, page]) => (
+          <section
+            key={key}
+            className={`snav-page snav-page-${key}${open === key ? ' is-open' : was === key ? ' is-was' : ''}`}
+            style={{ '--dir': dir } as React.CSSProperties}
+            inert={open !== key}
+            aria-hidden={open !== key}
+          >
+            {page}
+          </section>
+        ))}
     </>
   );
 }

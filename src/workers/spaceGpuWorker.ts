@@ -21,6 +21,8 @@ interface InitMsg {
   lite?: boolean;
   /** 主執行緒讀好的配色（worker 讀不到 CSS） */
   palette?: Palette;
+  /** 開著幾個主要分區＝土星幾條軌道（站台設定） */
+  sections?: number;
 }
 interface ResizeMsg {
   type: 'resize';
@@ -63,7 +65,22 @@ interface PanMsg {
   x: number;
   y: number;
 }
-type InMsg = InitMsg | ResizeMsg | RunningMsg | ScrollMsg | SaturnMsg | GlowMsg | CollapseMsg | StarsMsg | PanMsg;
+/** 站台設定改了主要分區的數目：土星的軌道跟著增減（補放同上） */
+interface SectionsMsg {
+  type: 'sections';
+  count: number;
+}
+type InMsg =
+  | InitMsg
+  | ResizeMsg
+  | RunningMsg
+  | ScrollMsg
+  | SaturnMsg
+  | GlowMsg
+  | CollapseMsg
+  | StarsMsg
+  | PanMsg
+  | SectionsMsg;
 
 let runner: StarfieldRunner | null = null;
 // init 是 async（renderer.init + 貼圖）——先到的狀態訊息記下來，ready 後補放
@@ -80,6 +97,7 @@ let lastRunning: boolean | null = null;
 let lastGlow: number[] | null = null;
 let lastStars: boolean | null = null;
 let lastPan: { x: number; y: number } | null = null;
+let lastSections: number | null = null;
 
 self.onmessage = (e: MessageEvent<InMsg>) => {
   const msg = e.data;
@@ -98,6 +116,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
           dpr: msg.dpr,
           lite: msg.lite,
           palette: msg.palette,
+          sections: msg.sections,
           onPerf: (report) => self.postMessage({ type: 'perf', report }),
           // device lost：worker 裡的 console.error 不會出現在頁面 console，而且這個 renderer
           // 之後一幀都不會再畫。轉給主執行緒，由它換一張新 canvas 重建（見 StarfieldGpu）。
@@ -112,6 +131,7 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
         if (lastGlow) runner.setSatelliteGlow(lastGlow);
         if (lastStars !== null) runner.setStars(lastStars);
         if (lastPan) runner.setPan(lastPan.x, lastPan.y);
+        if (lastSections !== null) runner.setSections(lastSections);
         self.postMessage({ type: 'ready', backend, timing });
       } catch (err) {
         self.postMessage({ type: 'error', message: String(err) });
@@ -137,6 +157,9 @@ self.onmessage = (e: MessageEvent<InMsg>) => {
   } else if (msg.type === 'collapse') {
     runner?.collapseSaturnTo(msg.index);
     lastSaturn = { visible: true, animate: false };
+  } else if (msg.type === 'sections') {
+    lastSections = msg.count;
+    runner?.setSections(msg.count);
   } else {
     // 到這裡 union 只剩 SaturnMsg，再比對一次 msg.type 是恆真。
     // 日後新增訊息型別時，下面存取 msg.visible/msg.animate 會編譯失敗——不會被靜默吞掉。

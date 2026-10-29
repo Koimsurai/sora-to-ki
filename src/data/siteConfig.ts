@@ -20,6 +20,8 @@ export const siteConfigQueryOptions = queryOptions({
       return FALLBACK;
     }
   },
+  // 一分鐘：站台設定改了（後台、MCP），開著的分頁站內換頁或切回分頁時一分鐘內就跟上（切回分頁時，
+  // 過期的資料會自己重抓——react-query 預設的 refetchOnWindowFocus）
   staleTime: 5 * 60 * 1000,
 });
 
