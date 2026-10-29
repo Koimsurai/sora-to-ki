@@ -17,6 +17,7 @@ fn origin_inserts() -> Vec<String> {
     let sql = [
         include_str!("../migrations/0031_page_content.sql"),
         include_str!("../migrations/0032_page_content_log.sql"),
+        include_str!("../migrations/0033_page_content_works.sql"),
     ]
     .join("\n");
     // 每一段從「行首是 INSERT」的那一行開始（前面的註解裡也會提到 INSERT 這個字）
@@ -61,6 +62,8 @@ async fn 原站的內容只寫給原站() {
     assert_eq!(v["chapters"], json!([]), "別人的站不能拿到原作者的關於頁");
     let (_, v) = get(&app, "/api/pages/log").await;
     assert_eq!(v["milestones"], json!([]), "別人的站不能拿到原作者的里程碑");
+    let (_, v) = get(&app, "/api/pages/works").await;
+    assert_eq!(v["items"], json!([]), "別人的站不能拿到原作者的作品");
 
     set_site_name(&pool, "宙と木").await;
     for sql in &inserts {
@@ -74,6 +77,9 @@ async fn 原站的內容只寫給原站() {
     let (_, v) = get(&app, "/api/pages/log").await;
     assert_eq!(v["start"], "2025-04-01T00:00:00+08:00");
     assert_eq!(v["milestones"][0]["level"], 2);
+    let (_, v) = get(&app, "/api/pages/works").await;
+    assert_eq!(v["items"][0]["repo"], "Koimsurai/Volticar_API", "第一件是螺旋的起點");
+    assert_eq!(v["items"].as_array().map(Vec::len), Some(7));
 }
 
 #[tokio::test]
@@ -142,4 +148,34 @@ async fn 不合法的整份擋下來_而且不改動() {
     assert!(v["error"].as_str().unwrap_or_default().contains("fr"));
     let (_, after) = get(&app, "/api/pages/about").await;
     assert_eq!(before, after);
+}
+
+#[tokio::test]
+async fn 作品填過之後_github_works_照這份抓_不再看環境變數() {
+    let (_app, pool) = test_app().await;
+    assert_eq!(
+        koimsurai_web_backend::handlers::page_content::works_repos(&pool).await.unwrap(),
+        None,
+        "還沒填過：讓 /api/github/works 退回 GITHUB_WORKS"
+    );
+    sqlx::query("INSERT INTO page_content (key, value) VALUES ('works', ?)")
+        .bind(json!({ "items": [{ "repo": "a/b" }, { "repo": "c/d" }] }).to_string())
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        koimsurai_web_backend::handlers::page_content::works_repos(&pool).await.unwrap(),
+        Some(vec!["a/b".to_string(), "c/d".to_string()])
+    );
+}
+
+#[tokio::test]
+async fn 作品的_repo_寫壞了擋下來_預覽要登入() {
+    let (app, _pool) = test_app().await;
+    let token = owner_token(true);
+    let bad = json!({ "items": [{ "repo": "not a repo" }] });
+    let (status, v) = request(&app, "PUT", "/api/admin/pages/works", Some(bad), Some(&token)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{v}");
+    let (status, _) = get(&app, "/api/admin/github/works?repos=a/b").await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "預覽用的是站上的 token，不能讓人隨便打");
 }

@@ -89,6 +89,9 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/admin/pages/about", put(handlers::page_content::put_about))
         .route("/api/pages/log", get(handlers::page_content::get_log))
         .route("/api/admin/pages/log", put(handlers::page_content::put_log))
+        .route("/api/pages/works", get(handlers::page_content::get_works))
+        .route("/api/admin/pages/works", put(handlers::page_content::put_works))
+        .route("/api/admin/github/works", get(handlers::thirdparty::admin_works_preview))
         // 文章內嵌投票（公開；防重複投票在 client 端做）
         .route("/api/polls/{id}", get(handlers::polls::get_poll))
         .route("/api/polls/{id}/vote", post(handlers::polls::vote_poll))

@@ -766,10 +766,12 @@ export function makeTools(api: ApiClient): Tool[] {
         'jobs（period、title、role）、quote（text、cite）。' +
         '\nlog（航行日誌）：start（站點誕生那一刻，帶時區，例如 2025-04-01T00:00:00+08:00；空字串＝第一篇文章那天）、' +
         'milestones（date YYYY-MM-DD、level 0 小點／1 中點／2 名字標在軌跡上、text）。' +
+        '\nworks（作品）：items（每一件：repo 寫 owner/name、name 空的＝repo 名、what 一句話、snapshot 最後量到的數字，可以不帶）；' +
+        '順序就是作品頁螺旋的順序，第一件是起點。星球的樣子由 GitHub 的數據決定。' +
         '\n會翻譯的欄位是「語系 → 字」的物件（zh-TW、zh-CN、en、ja、ko），zh-TW 必填，其他留空就顯示 zh-TW。',
       inputSchema: {
         type: 'object',
-        properties: { page: { type: 'string', enum: ['about', 'log'], description: '哪一頁' } },
+        properties: { page: { type: 'string', enum: ['about', 'works', 'log'], description: '哪一頁' } },
         required: ['page'],
         additionalProperties: false,
       },
@@ -784,7 +786,7 @@ export function makeTools(api: ApiClient): Tool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          page: { type: 'string', enum: ['about', 'log'], description: '哪一頁' },
+          page: { type: 'string', enum: ['about', 'works', 'log'], description: '哪一頁' },
           content: { type: 'object', description: '那一頁的整份內容' },
         },
         required: ['page', 'content'],

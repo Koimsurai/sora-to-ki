@@ -1,5 +1,12 @@
 import { queryOptions, useQuery, type QueryClient } from '@tanstack/react-query';
-import type { AboutContent, AboutQuote, AboutSkillGroup, LogContent } from '@koimsurai/api-types';
+import type {
+  AboutContent,
+  AboutQuote,
+  AboutSkillGroup,
+  LogContent,
+  WorkItem,
+  WorksContent,
+} from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
 
 // 頁面內容：關於、作品…這幾頁由站長在後台或 MCP 填的資料（後端 handlers/page_content）。
@@ -63,12 +70,32 @@ export function useLogContent(): Log | undefined {
   return useQuery(logContentQueryOptions).data;
 }
 
+/** 作品頁的清單 */
+export const worksContentQueryOptions = queryOptions({
+  queryKey: ['pages', 'works'],
+  queryFn: async (): Promise<WorkItem[]> => {
+    const res = await fetch(apiUrl('/api/pages/works'));
+    if (!res.ok) throw new Error(`GET /api/pages/works ${res.status}`);
+    return ((await res.json()) as WorksContent).items ?? [];
+  },
+  staleTime: 5 * 60 * 1000,
+});
+
+const NO_WORKS: WorkItem[] = [];
+
+export function useWorksContent(enabled = true): WorkItem[] {
+  return useQuery({ ...worksContentQueryOptions, enabled }).data ?? NO_WORKS;
+}
+
 /** 頁面（無前綴的邏輯路徑）→ 它要先抓好的內容。頁面守門用。
- *  首頁也要關於頁的：土星那條軌道寫著「從某年往下掉到現在」 */
+ *  首頁也要關於頁與作品：土星的軌道寫著「從某年往下掉到現在」「最新的三件作品」；
+ *  此站點的「由數據長出來」那個小玩具用的也是作品 */
 const CONTENT_OF: Record<string, (qc: QueryClient) => Promise<unknown>> = {
-  '': (qc) => qc.query(aboutContentQueryOptions),
+  '': (qc) => Promise.all([qc.query(aboutContentQueryOptions), qc.query(worksContentQueryOptions)]),
   about: (qc) => qc.query(aboutContentQueryOptions),
   history: (qc) => qc.query(logContentQueryOptions),
+  portfolio: (qc) => qc.query(worksContentQueryOptions),
+  'about-site': (qc) => qc.query(worksContentQueryOptions),
 };
 
 /** 這一頁有站長填的內容就先抓好；抓失敗不擋頁（照空狀態畫） */

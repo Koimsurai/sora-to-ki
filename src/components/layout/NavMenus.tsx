@@ -15,7 +15,8 @@ import { ABOUT_SECTIONS, type SiteSection } from '@/data/siteSections';
 import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import { thoughtsListQueryOptions } from '@/data/thinkingData';
 import { latestAnimeQueryOptions, liveNowQueryOptions } from '@/data/watchData';
-import { WORKS, worksQueryOptions } from '@/data/works';
+import { statsOf, useWorkEntries, useWorkStats } from '@/data/works';
+import { pickText } from '@/lib/i18nText';
 import { useLocale } from '@/hooks/useLocale';
 import { LocaleLink } from '@/i18n/locale-link';
 import { splitTitle } from '@/lib/blogReading';
@@ -127,18 +128,17 @@ function MomentsPage({ armed }: { armed: boolean }) {
 function WorksPage({ armed }: { armed: boolean }) {
   const { t } = useTranslation();
   const locale = useLocale();
-  const { data: live = [] } = useQuery({ ...worksQueryOptions, enabled: armed });
-  // 後端沒拿到的那幾件用清單裡記的數據，跟作品頁同一個做法
-  const works = WORKS.map((w) => ({
-    ...w,
-    pushed: live.find((r) => r.repo === w.repo)?.pushed_at ?? w.fallback.pushed_at,
-  }))
+  // 選單展開了才抓；後端沒拿到的那幾件用最後量到的數據，跟作品頁同一個做法
+  const entries = useWorkEntries(armed);
+  const live = useWorkStats(entries, armed);
+  const works = entries
+    .map((w) => ({ ...w, pushed: statsOf(w, live).pushed_at }))
     .sort((a, b) => b.pushed.localeCompare(a.pushed))
     .slice(0, 3);
   return (
     <Page
       lead={<p>{t('works.subtitle')}</p>}
-      all={{ to: '/portfolio', label: t('siteNav.allWorks', { count: WORKS.length }) }}
+      all={{ to: '/portfolio', label: t('siteNav.allWorks', { count: entries.length }) }}
     >
       {works.map((w, i) => (
         <Row
@@ -147,7 +147,7 @@ function WorksPage({ armed }: { armed: boolean }) {
           live={i === 0}
           stamp={short(w.pushed)}
           title={w.name}
-          note={w.what[locale] ?? w.what['zh-TW']}
+          note={pickText(w.what, locale)}
         />
       ))}
     </Page>

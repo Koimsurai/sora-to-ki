@@ -309,29 +309,30 @@ pub async fn github_contributions(
     Json(GithubContributionsResponse { contributions, total, error: None }).into_response()
 }
 
-/// 作品頁（前端 about/Works）列的 repo：`GITHUB_WORKS`，逗號分隔的 `owner/name`，
-/// 順序就是作品頁的順序（第一個是螺旋的起點）。沒設就是空清單。
-///
-/// 刻意由伺服器設定、不讓前端傳：這支用的是站上的 GITHUB_TOKEN，接受任意 repo 清單的話，
-/// 任何人換參數就能把 token 的 GraphQL 額度耗光。
-///
-/// owner / name 會直接拼進 GraphQL 查詢，所以只收 GitHub 名稱允許的字元，其他的整筆略過。
-fn work_repos() -> Vec<(String, String)> {
+/// `owner/name` 拆開；只收 GitHub 名稱允許的字元（owner / name 會直接拼進 GraphQL 查詢）
+pub fn parse_repo(s: &str) -> Option<(String, String)> {
     let valid = |p: &str| {
         !p.is_empty() && p.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
     };
-    std::env::var("GITHUB_WORKS")
-        .unwrap_or_default()
-        .split(',')
-        .filter_map(|s| {
-            let (owner, name) = s.trim().split_once('/')?;
-            (valid(owner) && valid(name)).then(|| (owner.to_string(), name.to_string()))
-        })
-        .collect()
+    let (owner, name) = s.trim().split_once('/')?;
+    (valid(owner) && valid(name)).then(|| (owner.to_string(), name.to_string()))
+}
+
+/// 作品頁（前端 about/Works）列的 repo，順序就是作品頁的順序（第一個是螺旋的起點）：
+/// 站長在後台「頁面」填的那份（`page_content` 的 works）；還沒填過才看 `GITHUB_WORKS`
+/// （逗號分隔的 `owner/name`，舊的設定方式）。都沒有就是空清單。
+///
+/// 刻意由伺服器決定、不讓前端傳：這支用的是站上的 GITHUB_TOKEN，接受任意 repo 清單的話，
+/// 任何人換參數就能把 token 的 GraphQL 額度耗光。寫不合法的那幾筆整筆略過。
+async fn work_repos(pool: &sqlx::SqlitePool) -> Vec<(String, String)> {
+    if let Ok(Some(repos)) = crate::handlers::page_content::works_repos(pool).await {
+        return repos.iter().filter_map(|r| parse_repo(r)).collect();
+    }
+    std::env::var("GITHUB_WORKS").unwrap_or_default().split(',').filter_map(parse_repo).collect()
 }
 
 /// 一件作品的一種語言：GitHub 算的程式碼量（bytes）。
-#[derive(Debug, Serialize, specta::Type, utoipa::ToSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
 pub struct WorkLanguage {
     pub name: String,
     #[specta(type = specta_typescript::Number)]
@@ -367,7 +368,30 @@ pub struct WorksResponse {
 #[utoipa::path(get, path = "/api/github/works", tag = "integrations",
     responses((status = 200, body = WorksResponse)))]
 pub async fn github_works(State(state): State<AppState>) -> Response {
-    let repos = work_repos();
+    let repos = work_repos(&state.pool).await;
+    if repos.is_empty() {
+        return Json(WorksResponse::default()).into_response();
+    }
+    works_for(&state, &repos).await
+}
+
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
+pub struct WorksPreviewQuery {
+    /// 逗號分隔的 `owner/name`
+    pub repos: Option<String>,
+}
+
+/// `GET /api/admin/github/works?repos=a/b,c/d` —— 後台加作品時預覽：這幾個 repo 會長成什麼星球。
+/// 只給登入的站長（理由同 [`work_repos`]：用的是站上的 token），一次最多 30 個
+#[utoipa::path(get, path = "/api/admin/github/works", tag = "integrations", params(WorksPreviewQuery),
+    security(("bearer" = [])),
+    responses((status = 200, body = WorksResponse), (status = 401, description = "需要登入")))]
+pub async fn admin_works_preview(
+    State(state): State<AppState>,
+    _auth: crate::auth::AdminAuth,
+    Query(q): Query<WorksPreviewQuery>,
+) -> Response {
+    let repos: Vec<_> = q.repos.unwrap_or_default().split(',').filter_map(parse_repo).take(30).collect();
     if repos.is_empty() {
         return Json(WorksResponse::default()).into_response();
     }
@@ -2459,11 +2483,9 @@ mod tests {
     }
 
     #[test]
-    fn work_repos_只收合法的_owner_name_其他整筆略過() {
-        // SAFETY: 只有這個測試碰 GITHUB_WORKS
-        unsafe { std::env::set_var("GITHUB_WORKS", " a/b , bad, c/d.e-f_g ,x/y\"){,/z, w/ ") };
-        let got = work_repos();
-        unsafe { std::env::remove_var("GITHUB_WORKS") };
+    fn parse_repo_只收合法的_owner_name() {
+        let got: Vec<_> =
+            " a/b , bad, c/d.e-f_g ,x/y\"){,/z, w/ ".split(',').filter_map(parse_repo).collect();
         assert_eq!(got, vec![("a".into(), "b".into()), ("c".into(), "d.e-f_g".into())]);
     }
 

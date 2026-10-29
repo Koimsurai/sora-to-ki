@@ -134,6 +134,76 @@ impl AboutContent {
     }
 }
 
+// ── 作品 ─────────────────────────────────────────────────────────────
+
+/// 作品頁：螺旋上的每一件（順序就是螺旋的順序，第一件是起點）。
+/// 星球長什麼樣子是 GitHub 的數據決定的（`/api/github/works` 即時抓），這裡只放數據給不了的
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct WorksContent {
+    #[serde(default)]
+    pub items: Vec<WorkItem>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct WorkItem {
+    /// `owner/name`
+    pub repo: String,
+    /// 顯示的名字；空的＝repo 名
+    #[serde(default)]
+    pub name: String,
+    /// 一句話：這是什麼
+    #[serde(default)]
+    pub what: I18n,
+    /// 最後量到的數字（後台加作品時自動填）：沒設 GITHUB_TOKEN、私有 repo、GitHub 掛掉時照樣畫得出來
+    #[serde(default)]
+    pub snapshot: Option<WorkSnapshot>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct WorkSnapshot {
+    #[serde(default)]
+    pub url: Option<String>,
+    pub created_at: String,
+    pub pushed_at: String,
+    #[serde(default)]
+    #[specta(type = specta_typescript::Number)]
+    pub stars: i64,
+    #[serde(default)]
+    #[specta(type = specta_typescript::Number)]
+    pub commits: i64,
+    #[serde(default)]
+    pub languages: Vec<crate::handlers::thirdparty::WorkLanguage>,
+}
+
+impl WorksContent {
+    fn validate(&self) -> Result<(), String> {
+        check_count("作品", &self.items, 40)?;
+        for w in &self.items {
+            if crate::handlers::thirdparty::parse_repo(&w.repo).is_none() {
+                return Err(format!("repo 要寫成 owner/name：{}", w.repo));
+            }
+            check_text("名稱", &w.name, 80)?;
+            check_i18n("介紹", &w.what)?;
+            if let Some(s) = &w.snapshot {
+                check_count("語言", &s.languages, 20)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// 作品頁列的 repo（`owner/name`），給 `/api/github/works` 抓數據。
+/// 還沒在後台填過是 `None`：那邊退回舊的 `GITHUB_WORKS` 環境變數
+pub async fn works_repos(pool: &SqlitePool) -> Result<Option<Vec<String>>, AppError> {
+    let exists: Option<String> =
+        sqlx::query_scalar("SELECT value FROM page_content WHERE key = 'works'").fetch_optional(pool).await?;
+    if exists.is_none() {
+        return Ok(None);
+    }
+    let works: WorksContent = load(pool, "works").await?;
+    Ok(Some(works.items.into_iter().map(|w| w.repo).collect()))
+}
+
 // ── 航行日誌 ─────────────────────────────────────────────────────────
 
 /// 航行日誌：軌跡與任務計時器的起點、軌跡上的里程碑（貢獻圖、程式時數、遊戲是整合抓的，不在這裡）
@@ -261,6 +331,32 @@ pub async fn put_about(
         return Ok(bad_request(&msg));
     }
     save(&state.pool, "about", &body).await?;
+    Ok(Json(body).into_response())
+}
+
+/// `GET /api/pages/works` —— 公開：作品頁列哪些 repo、名字與介紹、最後量到的數字
+#[utoipa::path(get, path = "/api/pages/works", tag = "pages", responses((status = 200, body = WorksContent)))]
+pub async fn get_works(State(state): State<AppState>) -> Result<Json<WorksContent>, AppError> {
+    Ok(Json(load(&state.pool, "works").await?))
+}
+
+/// `PUT /api/admin/pages/works` —— 整份覆蓋作品頁的內容（後台與 MCP），回傳存好的那份
+#[utoipa::path(put, path = "/api/admin/pages/works", tag = "pages", request_body = WorksContent,
+    security(("bearer" = [])),
+    responses(
+        (status = 200, body = WorksContent),
+        (status = 400, description = "欄位不合法（repo 格式、太長、太多筆）"),
+        (status = 401, description = "需要登入"),
+    ))]
+pub async fn put_works(
+    State(state): State<AppState>,
+    _auth: AdminAuth,
+    JsonBody(body): JsonBody<WorksContent>,
+) -> Result<Response, AppError> {
+    if let Err(msg) = body.validate() {
+        return Ok(bad_request(&msg));
+    }
+    save(&state.pool, "works", &body).await?;
     Ok(Json(body).into_response())
 }
 

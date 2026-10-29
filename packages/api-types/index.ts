@@ -1609,6 +1609,17 @@ export type WatchStatsResponse = {
 	tvEpisodes: number,
 };
 
+export type WorkItem = {
+	/**  `owner/name` */
+	repo: string,
+	/**  顯示的名字；空的＝repo 名 */
+	name?: string,
+	/**  一句話：這是什麼 */
+	what?: { [key in string]: string },
+	/**  最後量到的數字（後台加作品時自動填）：沒設 GITHUB_TOKEN、私有 repo、GitHub 掛掉時照樣畫得出來 */
+	snapshot?: WorkSnapshot | null,
+};
+
 /**  一件作品的一種語言：GitHub 算的程式碼量（bytes）。 */
 export type WorkLanguage = {
 	name: string,
@@ -1628,6 +1639,23 @@ export type WorkRepo = {
 	commits: number,
 	/**  由多到少 */
 	languages: WorkLanguage[],
+};
+
+export type WorkSnapshot = {
+	url?: string | null,
+	created_at: string,
+	pushed_at: string,
+	stars?: number,
+	commits?: number,
+	languages?: WorkLanguage[],
+};
+
+/**
+ *  作品頁：螺旋上的每一件（順序就是螺旋的順序，第一件是起點）。
+ *  星球長什麼樣子是 GitHub 的數據決定的（`/api/github/works` 即時抓），這裡只放數據給不了的
+ */
+export type WorksContent = {
+	items?: WorkItem[],
 };
 
 export type WorksResponse = {

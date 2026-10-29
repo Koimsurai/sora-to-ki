@@ -1,6 +1,7 @@
 // 後台「頁面」的分頁：一頁一個。路由（validateSearch）與管理頁共用，所以單獨一個檔
 export const PAGE_TABS = [
   { key: 'about', label: '關於' },
+  { key: 'works', label: '作品' },
   { key: 'log', label: '航行日誌' },
 ] as const;
 
