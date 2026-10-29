@@ -36,9 +36,9 @@
   },
   "siteNav": {
     "sky": "Sky",
-    "skyLead": "Pick the central body. Colors and page transitions follow.",
     "skyNames": {"saturn": "Saturn", "neptune": "Neptune", "blackhole": "Black hole", "betelgeuse": "Betelgeuse"},
-    "skyNotes": {"saturn": "A hexagon storm on its north pole", "neptune": "Found by math before anyone saw it", "blackhole": "Not even light gets out", "betelgeuse": "A red supergiant that breathes"},
+    "skyNotes": {"saturn": "Rings of ice, a hexagon at the pole", "neptune": "Found in the math first", "blackhole": "Not even light walks out", "betelgeuse": "Breathing, and bound to explode"},
+    "skyStories": {"saturn": "The five moons on the home page keep the spacing of Mimas through Rhea, wider further out. The hexagon at the north pole is real, and the wisp behind Enceladus is ice it sprays out.", "neptune": "Between pages the dot swings around a planet, the gravity assist Voyager 2 took in 1989. A ring appears at the landing spot first: in 1846 Neptune was calculated before anyone saw it.", "blackhole": "Between pages the dot escapes from beside a black hole, faster and faster, while the light behind it is pulled back. The ripples on landing are gravitational waves, first detected in 2015.", "betelgeuse": "It swells and shrinks about every 400 days and its light follows, so the one on the home page breathes too. The dust thrown off between pages is what dimmed it suddenly in 2019."},
     "signIn": "Sign in",
     "notes": "Notes",
     "moments": "Murmurs",

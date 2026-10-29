@@ -283,6 +283,8 @@ interface Run {
   frames: number;
   maxFrame: number;
   longFrames: number;
+  /** 這一頁其實沒換（換主題之後接回來，store/pageTransition 的 arriveFrom）：不走頁面那段路、不重演它的進場 */
+  quiet: boolean;
 }
 
 const mainOf = () => document.querySelector<HTMLElement>('.main-content-container > main');
@@ -795,7 +797,7 @@ export default function TransitionLayer() {
       const h = window.innerHeight;
       const mid = { x: w / 2, y: h / 2 };
       // 頁面挑最後一段路時，點的位置是鏡頭開始煞停那一刻它在畫面上的位置：正中間
-      const arrival = fresh?.arrive?.({ pos: mid, vel: { x: 0, y: 0 } }) ?? null;
+      const arrival = r.quiet ? null : (fresh?.arrive?.({ pos: mid, vel: { x: 0, y: 0 } }) ?? null);
       const approach = arrival?.approach && arrival.approach.length > 1 ? arrival.approach : null;
       const target = approach ? approach[0] : anchor;
       const gap = { x: target.x - r.pos.x, y: target.y - r.pos.y };
@@ -1113,7 +1115,7 @@ export default function TransitionLayer() {
         const fresh = page.generation !== r.oldGeneration ? page.handle : null;
         // 交給頁面的線換成新的一頁原位的座標
         const trail = r.trail.map((p) => ({ x: p.x - r.cam.x, y: p.y - r.cam.y }));
-        fresh?.onGrow?.({ from: r.from, to, trail });
+        if (!r.quiet) fresh?.onGrow?.({ from: r.from, to, trail });
       }
       const g = clamp((now - r.growAt) / GROW_MS);
       r.main.style.transform = '';
@@ -1259,17 +1261,18 @@ export default function TransitionLayer() {
       frames: 0,
       maxFrame: 0,
       longFrames: 0,
+      quiet: false,
     });
 
     // 主題出場之後接回這一頁（store/pageTransition 的 arriveFrom）：點從那一點飛回錨點、這一頁接手進場
-    setArrive((from) => {
+    setArrive((from, opts) => {
       const main = mainOf();
       if (!main || run || reduce.matches) return false;
       // 先藏起來再拿掉裁切：路線在下一幀才排（那時才設透明度），不然這一頁會整頁閃一下
       main.style.transition = 'none';
       main.style.opacity = '0';
       main.style.clipPath = '';
-      run = arrivalRun(from, main, performance.now());
+      run = { ...arrivalRun(from, main, performance.now()), quiet: Boolean(opts?.quiet) };
       root.dataset.pt = 'fly';
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(frame);
@@ -1453,6 +1456,7 @@ export default function TransitionLayer() {
           frames: 0,
           maxFrame: 0,
           longFrames: 0,
+          quiet: false,
         };
         run = r;
         root.dataset.pt = 'leave';

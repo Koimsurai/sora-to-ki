@@ -103,14 +103,11 @@ export default function ThemeSwitchDot() {
       };
       raf = window.requestAnimationFrame(watch);
     };
-    /** 點換色、新的主星從點裡長出來，背後那圈光跟著亮起來 */
+    /** 點換色、新的主星從點裡長出來 */
     const recolor = (c: { x: number; y: number }, next: Theme, grow: () => void) => {
       setTheme(next);
       setDot({ ...c, on: true, nova: next === 'betelgeuse' });
-      later(RECOLOR_MS, () => {
-        glowOn(c, next);
-        grow();
-      });
+      later(RECOLOR_MS, grow);
     };
 
     const onHome = (next: Theme) => {
@@ -129,7 +126,11 @@ export default function ThemeSwitchDot() {
           // 長完停一下，光淡掉、燈亮回來
           recolor(c, next, () => {
             const since = performance.now();
-            handoffWhenGrown(since, () => afterGrown(since, () => later(HOLD_MS, () => stop?.())));
+            // 光等主星真的開始長出來才亮：第一次換到某個主題要先編譯，固定時間亮的話光會比星先出來
+            handoffWhenGrown(since, () => {
+              glowOn(c, next);
+              afterGrown(since, () => later(HOLD_MS, () => stop?.()));
+            });
           }),
         );
       });
@@ -195,7 +196,7 @@ export default function ThemeSwitchDot() {
       // 4. 收回成點之後：點飛回這一頁的錨點、這一頁接手進場。轉場沒接（沒載到、已有一趟在跑）就從點撐開回來
       const comeBack = () => {
         cleanup();
-        if (arriveFrom(c)) {
+        if (arriveFrom(c, { quiet: true })) {
           setDot(null);
           return;
         }
@@ -233,7 +234,10 @@ export default function ThemeSwitchDot() {
           recolor(c, next, () => {
             const since = performance.now();
             showcase('show');
-            handoffWhenGrown(since, () => holdThenClose(since));
+            handoffWhenGrown(since, () => {
+              glowOn(c, next);
+              holdThenClose(since);
+            });
           }),
       );
     };

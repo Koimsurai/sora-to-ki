@@ -678,3 +678,14 @@
 .snav-menu-sky button.is-on {
   color: var(--ink);
 }
+
+/* 天體那一頁左邊：滑過的那一顆在講什麼。換一顆就淡入一次（key 換了，元素重建） */
+.snav-sky-story {
+  animation: snav-sky-story var(--dur-400) var(--easing-out);
+}
+@keyframes snav-sky-story {
+  from {
+    opacity: 0;
+    translate: 0 var(--space-1);
+  }
+}

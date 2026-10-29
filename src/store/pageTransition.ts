@@ -206,8 +206,13 @@ export const isArriving = () => {
  * 跟開場一樣的動作（layout/TransitionLayer 註冊）。首頁以外換主題、新主星出場完之後用它接回這一頁
  * （layout/ThemeSwitchDot）。轉場沒載到、或已經有一趟在跑，回傳 false，呼叫端自己收尾
  */
-let arrive: ((from: Pt) => boolean) | null = null;
-export function setArrive(fn: ((from: Pt) => boolean) | null) {
+type Arrive = (from: Pt, opts?: { quiet?: boolean }) => boolean;
+let arrive: Arrive | null = null;
+export function setArrive(fn: Arrive | null) {
   arrive = fn;
 }
-export const arriveFrom = (from: Pt): boolean => arrive?.(from) ?? false;
+/**
+ * quiet：這一頁其實沒換（換主題之後接回來），不重演它自己的進場與那段路——點直直飛回錨點、
+ * 這一頁原樣淡回來。重演的話有些頁（關於的整段下墜）要好幾秒
+ */
+export const arriveFrom: Arrive = (from, opts) => arrive?.(from, opts) ?? false;
