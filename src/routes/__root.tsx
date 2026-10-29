@@ -181,7 +181,45 @@ function BootRing({ half }: { half: 'back' | 'front' }) {
       </div>
       <BootRingLines half={half} kind="base" />
       <BootRingLines half={half} kind="arc" />
+      {half === 'front' && <BootSwirl />}
     </div>
+  );
+}
+
+/**
+ * 黑洞的開場：物質沿著螺旋臂旋進中間那顆點，臂的條數照載入的階段一條條出現（index.css 的 .boot-swirl-arm，照 --boot-p），
+ * 載完時光子環亮起來。臂畫在盤的平面上（跟環一樣傾斜、壓扁），整組交給合成器轉：主執行緒卡住時照樣在轉。
+ * 光子環不壓扁：它是光繞著陰影走的那一圈，從哪個角度看都是圓的。半徑照 3D 的光子環比例縮（環外緣是 26px）
+ */
+const SWIRL_STAGES = [0.12, 0.3, 0.45, 0.55, 0.65, 0.85];
+const SWIRL_ARMS = SWIRL_STAGES.map((at, i) => {
+  const n = 40;
+  const turns = 1.5 * Math.PI;
+  const d = Array.from({ length: n + 1 }, (_, k) => {
+    const t = k / n;
+    const r = 30 * Math.exp(-1.5 * t);
+    const a = (i * Math.PI * 2) / SWIRL_STAGES.length + t * turns;
+    return `${k ? 'L' : 'M'}${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a)).toFixed(2)}`;
+  }).join('');
+  return { d, at };
+});
+const PHOTON_R = (1.04 * 26) / PLANETS.blackhole.ring.outer;
+function BootSwirl() {
+  return (
+    <>
+      <div className="boot-swirl">
+        <div className="boot-swirl-spin">
+          <svg viewBox="-40 -40 80 80">
+            {SWIRL_ARMS.map(({ d, at }) => (
+              <path key={at} className="boot-swirl-arm" d={d} style={{ '--at': at } as CSSProperties} />
+            ))}
+          </svg>
+        </div>
+      </div>
+      <svg viewBox="-40 -40 80 80" className="boot-photon">
+        <circle r={PHOTON_R} />
+      </svg>
+    </>
   );
 }
 

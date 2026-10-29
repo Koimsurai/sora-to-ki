@@ -109,6 +109,8 @@ onTheme((theme) => {
   THEME = theme;
   RING_OUTER = PLANETS[theme].ring.outer;
 });
+/** 黑洞的尾巴捲多少（rad）：散掉的那一刻繞著點轉了這麼多 */
+const BH_CURL = 4.5;
 /** 海王星的預言落點（predicted）：圈的半徑、外面那四道刻度的長度（px） */
 const PREDICT_R = 10;
 const PREDICT_TICK = 4;
@@ -436,13 +438,31 @@ export default function TransitionLayer() {
      * 彗尾：每一段照它畫下去多久了變淡，散完就不畫；回傳還有沒有沒散完的。線一律是 1px 的髮絲線（站上的線都是）。
      * 一小段一筆、平頭：圓頭的話相鄰兩筆的半透明端點疊在一起，接頭會亮成一串珠子
      *
-     * 海王星跟 3D 的 Adams 環同一個長相：一條很淡的髮絲，上面四段亮的（TAIL_ARCS，從點往回量）
+     * 海王星跟 3D 的 Adams 環同一個長相：一條很淡的髮絲，上面四段亮的（TAIL_ARCS，從點往回量）。
+     * 黑洞的尾巴越舊越被點拉回去，捲成一道螺旋（BH_CURL）
      */
-    const tail = (points: Run['trail'], now: number) => {
+    const tail = (trail: Run['trail'], now: number) => {
       ctx.lineWidth = 1;
       ctx.lineCap = 'butt';
       let alive = false;
       let back = 0;
+      // 黑洞：越舊的那段被點拉回去——繞著點轉、同時往點收，捲成一道螺旋（只改畫的位置，trail 本身不動）
+      const head = trail.at(-1);
+      const points =
+        THEME === 'blackhole' && head
+          ? trail.map((p) => {
+              const age = clamp((now - p.t) / TAIL_MS);
+              const turn = age * age * BH_CURL;
+              const pull = 1 - 0.85 * age * age;
+              const dx = p.x - head.x;
+              const dy = p.y - head.y;
+              return {
+                x: head.x + (dx * Math.cos(turn) - dy * Math.sin(turn)) * pull,
+                y: head.y + (dx * Math.sin(turn) + dy * Math.cos(turn)) * pull,
+                t: p.t,
+              };
+            })
+          : trail;
       for (let i = points.length - 1; i > 0; i--) {
         const a = points[i - 1];
         const b = points[i];
@@ -812,8 +832,8 @@ export default function TransitionLayer() {
         const moved = { x: r.pos.x - prev.x, y: r.pos.y - prev.y };
         const lastPt = r.trail.at(-1);
         if (!lastPt || len({ x: r.pos.x - lastPt.x, y: r.pos.y - lastPt.y }) > 1.5) r.trail.push({ ...r.pos, t: now });
-        // 海王星沒有塵埃：尾巴就是那四段弧
-        if (len(moved) > 0.2 && THEME !== 'neptune') emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
+        // 塵埃只有土星（彗尾）：海王星的尾巴是那四段弧，黑洞的是一道螺旋
+        if (len(moved) > 0.2 && THEME === 'saturn') emitDust(r, r.pos, unit({ x: -moved.x, y: -moved.y }), dt);
         world(() => {
           drawDust(r, dt, 1);
           tail(r.trail, now);

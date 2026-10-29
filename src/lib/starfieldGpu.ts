@@ -447,6 +447,8 @@ function buildSaturn(
     );
     return mix(ground, paper, strokes(row, ink, spec.cover));
   })();
+  // 黑洞的主星是一片陰影：跟夜色同一個顏色，沒有任何刻線，只用來擋住後面的盤與星
+  if (spec.kind === 'blackhole') planetMat.colorNode = ground;
   const planet = new THREE.Mesh(new THREE.SphereGeometry(1, 96, 64), planetMat);
   body.add(planet);
 
@@ -504,10 +506,13 @@ function buildSaturn(
       }
       return thin.mul(ringSpec.gain).mul(shade).clamp(0, 1);
     }
+    // 都卜勒增亮（黑洞的吸積盤）：朝我們轉來的那一側（左邊，x 負）亮、另一側暗。用沒轉過的 p：亮的那側跟著我們看的方向，不跟著盤轉
+    const doppler = float(1).sub(p.x.div(r).mul(ringSpec.doppler));
     const ink = ringTone(r)
       .mul(ringlets)
       .mul(mix(float(0.4), float(1), brush))
       .mul(shade)
+      .mul(doppler)
       .clamp(0, 1);
     return strokes(r.mul(RING_ROWS), pow(ink, 0.75), RING_COVER);
   })();
@@ -515,9 +520,59 @@ function buildSaturn(
   const ringFade = uniform(1);
   ringMat.colorNode = paper;
   ringMat.opacityNode = ringInk.mul(ringFade);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(ringSpec.inner, ringSpec.outer, 256, 1), ringMat);
-  ring.rotation.x = -Math.PI / 2;
+  const ring = new THREE.Group();
+  const ringPart = (from: number, length: number, order: number) => {
+    const mesh = new THREE.Mesh(new THREE.RingGeometry(ringSpec.inner, ringSpec.outer, 256, 1, from, length), ringMat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.renderOrder = order;
+    ring.add(mesh);
+  };
+  // 黑洞：盤拆成後半圈（RingGeometry 的 0–π 轉平後在遠的那側）與前半圈，中間夾 lens，前半圈橫過陰影前面
+  if (spec.kind === 'blackhole') {
+    ringPart(0, Math.PI, 1);
+    ringPart(Math.PI, Math.PI, 3);
+  } else ringPart(0, Math.PI * 2, 0);
   plane.add(ring);
+
+  // 黑洞的 lens：一張永遠面向鏡頭的薄板（在 group 裡、不在俯角那層，所以不跟著傾斜），畫光子環與
+  // 被重力彎到陰影上下的盤影。疊的順序是「後半盤 → lens → 前半盤」（renderOrder 1、2、3）
+  const lensFade = uniform(0);
+  let lens: THREE.Mesh | null = null;
+  if (spec.kind === 'blackhole') {
+    const lensMat = new THREE.MeshBasicNodeMaterial({ transparent: true, depthWrite: false });
+    lensMat.colorNode = paper;
+    lensMat.opacityNode = Fn(() => {
+      const x = positionLocal.x;
+      const y = positionLocal.y;
+      const d = vec3(x, y, 0).length();
+      const px = fwidth(d).max(0.00001);
+      // 光子環：陰影外緣一道至少一個像素寬的髮絲
+      const half = 0.012;
+      const photon = px
+        .mul(0.5)
+        .max(half)
+        .add(px.mul(0.5))
+        .sub(abs(d.sub(1.04)))
+        .div(px)
+        .clamp(0, 1);
+      // 盤影：陰影外面一圈圈刷痕，上方的最亮（盤背面被彎過陰影頂上），下方較淡
+      const above = smoothstep(-0.3, 0.85, y.div(d));
+      const band = smoothstep(1.08, 1.16, d).mul(smoothstep(1.75, 1.45, d));
+      const doppler = float(1).sub(x.div(d).mul(ringSpec.doppler));
+      const image = strokes(
+        d.mul(RING_ROWS),
+        band
+          .mul(mix(float(0.25), float(0.9), above))
+          .mul(doppler)
+          .clamp(0, 1),
+        RING_COVER,
+      );
+      return photon.mul(doppler).mul(0.9).add(image).clamp(0, 1).mul(lensFade);
+    })();
+    lens = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 3.6), lensMat);
+    lens.renderOrder = 2;
+    group.add(lens);
+  }
 
   // WebGPU 的渲染器不支援 LineLoop：用 Line，最後一點回到起點把圈閉起來
   const CIRCLE_POINTS = 257;
@@ -596,6 +651,11 @@ function buildSaturn(
     ring.scale.setScalar(RING_FROM + (1 - RING_FROM) * ringK);
     ring.visible = ringK > 0;
     ringFade.value = ringK;
+    if (lens) {
+      lens.scale.setScalar(Math.max(0.0001, planetK));
+      lens.visible = planetK > 0;
+      lensFade.value = ringK;
+    }
     for (const [i, o] of orbitLines.entries()) {
       const n = Math.round(CIRCLE_POINTS * (orbitK[i] ?? 0) * (live[i] ?? 0));
       o.line.geometry.setDrawRange(0, n);

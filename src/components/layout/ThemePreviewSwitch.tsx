@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { THEMES, currentTheme, onTheme, setTheme, type Theme } from '@/lib/theme';
 import './ThemePreviewSwitch.css';
 
-const NAMES: Record<Theme, string> = { saturn: '土星', neptune: '海王星' };
+const NAMES: Record<Theme, string> = { saturn: '土星', neptune: '海王星', blackhole: '黑洞' };
 
 /**
  * 只在 dev 出現的主題切換（lib/theme）：頁面開著直接換，首頁的主星收成一點再長成新的。

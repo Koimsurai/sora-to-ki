@@ -710,6 +710,17 @@ html.theme-switching * {
   transition-timing-function: var(--easing-standard);
 }
 
+/* 黑洞：紫，墨偏冷灰，夜色最深。真實的吸積盤是暖白偏橘，會跟土星、火星撞色，所以取光譜的另一端。
+   55% 的字 5.2:1，訊號色 7.7:1，訊號色與墨 ΔE 27.9；跟海王星的藍 ΔE 24.5（四組裡最近的一對） */
+:root[data-theme="blackhole"] {
+  --ground: #060608;
+  --ground-rgb: 6, 6, 8;
+  --paper: #e6e4ee;
+  --paper-rgb: 230, 228, 238;
+  --amber: #c487e6;
+  --amber-rgb: 196, 135, 230;
+}
+
 /* ── 文章閱讀字體（右下角 FontSwitcher）──
  *
  * 為什麼字體棧放在 CSS 而不是 TSX：偏好存在 localStorage，server 讀不到，原本是在 BlogPost
@@ -1336,6 +1347,65 @@ html[data-boot="out"] .boot-pen {
      錯開的總長要短：最後一步是轉場推到 1，260ms 後就交棒（TransitionLayer 的 BOOT_CLOSE_MS），
      拖太久的話後兩段來不及亮（實際發生過：只亮兩格） */
   transition-delay: calc((var(--at) - 0.12) * var(--dur-100));
+}
+/* 黑洞：不畫環，物質沿著螺旋臂旋進點裡（__root.tsx 的 BootSwirl），臂照載入的階段一條條出現，
+   載完時光子環亮起來。螺旋臂在盤的平面上（同環的傾角與壓扁），整組由合成器轉 */
+.boot-swirl,
+.boot-photon {
+  display: none;
+}
+:root[data-theme="blackhole"] {
+  .boot-rings-saturn,
+  .boot-lines-prog,
+  .boot-arc,
+  .boot-pen {
+    display: none;
+  }
+  .boot-swirl,
+  .boot-photon {
+    display: block;
+  }
+}
+.boot-swirl {
+  position: absolute;
+  inset: 0;
+  transform: rotate(11.5deg) scaleY(0.408);
+}
+.boot-swirl-spin {
+  position: absolute;
+  inset: 0;
+  animation: boot-swirl 2.4s linear infinite;
+}
+.boot-swirl svg,
+.boot-photon {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.boot-swirl-arm,
+.boot-photon circle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.boot-swirl-arm {
+  stroke-opacity: 0.55;
+  opacity: clamp(0, calc((var(--boot-p, 0) - var(--at)) * 20 + 1), 1);
+  transition: opacity var(--dur-250) var(--easing-out);
+  transition-delay: calc((var(--at) - 0.12) * var(--dur-100));
+}
+.boot-photon circle {
+  stroke-width: 1.2;
+  opacity: clamp(0, calc((var(--boot-p, 0) - 0.95) * 20 + 1), 1);
+  transition: opacity var(--dur-250) var(--easing-out);
+}
+@keyframes boot-swirl {
+  to {
+    transform: rotate(-360deg);
+  }
 }
 /* 不交棒的時候（別頁、沒有 3D、3D 等太久）：環收回中間那顆點裡，點再飛出去（layout/TransitionLayer 的
    BOOT_COLLAPSE_MS）。縮的是框的寬高，SVG 照新尺寸重畫，線一直是 1px；筆尖先退掉 */
