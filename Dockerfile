@@ -18,11 +18,11 @@
 # Stage 1: Build
 # 按頁裁字用的字型原檔（宋體、黑體、楷、現代無襯線四種，各語系各一支，約 270 MB，見 server/routes/fonts/[style]）。獨立一個階段：
 # 只有這支腳本改了才會重新下載，跟程式碼的建置快取分開。腳本會比對 sha256。
-FROM node:26.5.0-bookworm-slim AS serif-font
+FROM node:26.12.1-bookworm-slim AS serif-font
 COPY scripts/fetch-serif-font.mjs /tmp/fetch-serif-font.mjs
 RUN node /tmp/fetch-serif-font.mjs /fonts
 
-FROM node:26.5.0-bookworm AS builder
+FROM node:26.12.1-bookworm AS builder
 WORKDIR /app
 # pnpm 釘版:對齊 host/CI(packageManager 欄位 = pnpm@12.1.0)。
 # 不釘的話 build 會抓到當下最新 pnpm,版本漂移。overrides 已移到 pnpm-workspace.yaml
@@ -103,7 +103,7 @@ RUN find .output/public/assets -name '*.map' -delete
 RUN node scripts/sync-nitro-asset-manifest.mjs
 
 # Stage 2: Production server
-FROM node:26.5.0-bookworm-slim AS runtime
+FROM node:26.12.1-bookworm-slim AS runtime
 WORKDIR /app
 
 ENV TZ=Asia/Taipei
