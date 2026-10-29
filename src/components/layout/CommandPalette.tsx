@@ -4,30 +4,12 @@ import { Command } from 'cmdk';
 import { useLocale, useLocaleNavigate } from '@/hooks/useLocale';
 import { useTranslation } from 'react-i18next';
 import { recentPostsQueryOptions, blogCategoriesQueryOptions, blogTagsQueryOptions } from '@/data/blogList';
-import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS } from '@/data/siteSections';
+// 頁面：登記表裡的每一頁（首頁、導覽列的每一區、兩個選單），搜尋別名也在登記表裡
+import { PAGES } from '@/data/siteSections';
 import { useSiteConfig } from '@/data/siteConfig';
 import { closeCommandPalette, toggleCommandPalette, useCommandPaletteOpen } from '@/store/commandPaletteStore';
 import './CommandPalette.css';
 import { useCategoryLabel } from '@/lib/categoryLabel';
-
-/** 頁面：首頁＋導覽列上的每一區（跟頂欄同一份，改了分區這裡自己跟著變） */
-const PAGES = [{ key: 'home', to: '/', caps: 'HOME' }, ...MAIN_SECTIONS, ...ABOUT_SECTIONS, ...MORE_SECTIONS];
-
-/** 搜尋用的別名：打英文、打舊名字（相簿、工作站、友鏈）都找得到 */
-const KEYWORDS: Record<string, string> = {
-  home: 'home index 首頁 主頁',
-  notes: 'blog posts notes 文章 手記 日記',
-  moments: 'thinking moments 碎念 想法',
-  works: 'portfolio works projects 作品 專案',
-  collection: 'collection watch anime 動畫 電影 影集 books 書櫃 閱讀 music spotify 音樂',
-  about: 'about me 關於 自我介紹',
-  setup: 'setup gear 設備 工作站',
-  log: 'log history activity 航行日誌 歷史 動態',
-  messages: 'messages 留言 guestbook contact',
-  photos: 'photos gallery 照片 相簿 攝影',
-  friends: 'friends links 朋友 友鏈',
-  colophon: 'colophon about-site 此站點 關於本站 問答',
-};
 
 export default function CommandPalette() {
   const categoryLabel = useCategoryLabel();
@@ -104,11 +86,7 @@ export default function CommandPalette() {
               {pages.map((p) => {
                 const label = p.key === 'home' ? t('commandPalette.home') : t(`siteNav.${p.key}`);
                 return (
-                  <Command.Item
-                    key={p.to}
-                    value={`${label} ${KEYWORDS[p.key] ?? ''} ${p.to}`}
-                    onSelect={() => go(p.to)}
-                  >
+                  <Command.Item key={p.to} value={`${label} ${p.keywords} ${p.to}`} onSelect={() => go(p.to)}>
                     <i className="cmdk-dot" aria-hidden="true" />
                     <span>{label}</span>
                     <span className="cmdk-meta">{p.caps}</span>

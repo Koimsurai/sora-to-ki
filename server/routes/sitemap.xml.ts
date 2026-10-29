@@ -1,6 +1,7 @@
 import { defineEventHandler, setHeader } from 'nitro/h3';
 
 import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, localePathname } from '../../src/lib/locales';
+import { PAGES } from '../../src/data/siteSections';
 import { disabledPaths } from '../disabledPaths';
 
 // serve.mjs 的 /sitemap.xml 移植:靜態頁清單 + 打後端撈已發布文章。
@@ -19,15 +20,10 @@ const SITE_URL = (process.env.SITE_URL ?? '') || 'https://koimsurai.com';
 const BACKEND_URL = (process.env.BACKEND_URL ?? '') || 'http://backend-rs:3002';
 
 // UI 頁五語都有翻譯（src/routes/$locale/ 底下每頁都在），所以直接展開全語系。
-const STATIC_PAGES: [string, string, string][] = [
-  ['/', '1.0', 'weekly'],
-  ['/blog', '0.9', 'daily'],
-  ['/photos', '0.7', 'weekly'],
-  ['/watch', '0.6', 'weekly'],
-  ['/setup', '0.5', 'monthly'],
-  ['/history', '0.5', 'daily'],
-  ['/about', '0.7', 'monthly'],
-];
+// 哪幾頁要列、優先度與更新頻率在頁面登記表（src/data/siteSections）的 sitemap 欄位
+const STATIC_PAGES: [string, string, string][] = PAGES.flatMap((p) =>
+  p.sitemap ? [[p.to, p.sitemap.priority, p.sitemap.changefreq] as [string, string, string]] : [],
+);
 
 interface Post {
   id: number | string;

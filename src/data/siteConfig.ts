@@ -1,7 +1,7 @@
 import { queryOptions, useQuery, type QueryClient } from '@tanstack/react-query';
 import type { SiteConfig } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
-import { ABOUT_SECTIONS, MAIN_SECTIONS, MORE_SECTIONS, type SiteSection } from './siteSections';
+import { PAGES, type SiteSection } from './siteSections';
 
 // 站台設定（站名、哪幾頁關掉了），後台與 MCP 改的那份（後端 handlers/site_config）。
 // root 的 beforeLoad 先抓一次，SSR 時就有、跟著 dehydrate 進頁面，元件裡直接讀不用等。
@@ -38,7 +38,7 @@ export function useEnabledSections(sections: SiteSection[]): SiteSection[] {
 
 /** 無前綴的路徑（`setup`、`about-site`）屬於哪一個分區 */
 export function sectionOfPath(basePath: string): SiteSection | undefined {
-  return [...MAIN_SECTIONS, ...ABOUT_SECTIONS, ...MORE_SECTIONS].find((s) => s.to === `/${basePath}`);
+  return PAGES.find((s) => s.to === `/${basePath}`);
 }
 
 /** 路由的 beforeLoad 用：這一頁被關掉了就回 true（呼叫端丟 notFound） */

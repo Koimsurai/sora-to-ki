@@ -1,5 +1,6 @@
 import { defineEventHandler, setHeader } from 'nitro/h3';
 
+import { PAGES as ALL_PAGES } from '../../src/data/siteSections';
 import { disabledPaths } from '../disabledPaths';
 
 // /llms.txt —— 給 LLM / AI agent 的網站摘要（llmstxt.org 慣例：Markdown、單一 H1、blockquote 摘要、
@@ -15,14 +16,8 @@ interface Post {
   created_at?: string;
 }
 
-// 主要頁面（與 sitemap 的靜態頁對齊）。
-const PAGES: [string, string][] = [
-  ['/blog', '技術文章：開發、除錯、自架服務、AI 應用的長篇實作紀錄'],
-  ['/photos', '攝影作品'],
-  ['/watch', '收藏：看過的動畫、電影、影集，書櫃，最常聽的音樂'],
-  ['/setup', '軟硬體配置'],
-  ['/about', '關於作者'],
-];
+// 主要頁面：頁面登記表（src/data/siteSections）裡有寫 llms 描述的那幾頁
+const PAGES: [string, string][] = ALL_PAGES.flatMap((p) => (p.llms ? [[p.to, p.llms] as [string, string]] : []));
 
 export default defineEventHandler(async (event) => {
   let posts: Post[] = [];
