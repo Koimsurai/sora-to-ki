@@ -4,7 +4,7 @@
 .photo-viewer-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-fullscreen);
+  z-index: var(--z-overlay);
   background: var(--ground);
   display: flex;
   flex-direction: column;

@@ -60,7 +60,7 @@
   width: min(100%, 28px);
   min-height: 1px;
   background: var(--signal);
-  border-radius: var(--r-4) var(--r-4) 0 0;
+  border-radius: var(--r-2) var(--r-2) 0 0;
   transition: background var(--dur-150) var(--easing-standard);
 }
 

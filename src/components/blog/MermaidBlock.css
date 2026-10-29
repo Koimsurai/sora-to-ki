@@ -57,7 +57,7 @@
     transform var(--dur-300) var(--easing-standard),
     opacity var(--dur-300) var(--easing-standard);
   pointer-events: none;
-  box-shadow: var(--elev-2);
+  box-shadow: var(--elev);
 }
 
 .mm-toolbar--visible {
@@ -300,7 +300,7 @@
 .mm-fullscreen-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-fullscreen);
+  z-index: var(--z-overlay);
   background: var(--veil-3);
   display: flex;
   align-items: center;
@@ -407,7 +407,7 @@
     left: 8px;
     right: 8px;
     transform: translateX(0) translateY(-120%);
-    border-radius: var(--r-10);
+    border-radius: var(--r-6);
   }
   .mm-toolbar--visible {
     transform: translateX(0) translateY(0);

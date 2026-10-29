@@ -127,12 +127,12 @@ const FONT_SIZE_PX = new Set([10, 11, 12, 13, 14, 16, 18, 20, 22, 24, 28, 32, 36
 const FONT_SIZE_GRANDFATHERED = new Set<string>([]);
 
 /**
- * index.css 的 `--r-*`。名字就是 px 值，另外兩格是 `--r-full`（膠囊）與 `--r-round`（50%）。
+ * index.css 的 `--r-*`：2 與 6 兩格（翻新後只剩小東西與細線框有圓角），另外是 `--r-full`（膠囊）與 `--r-round`（50%）。
  *
  * ⚠ **不要改成 `--radius-*`**：那是 Tailwind v4 生 `rounded-*` utility 的 namespace，
  * 而且這個專案已經有 shadcn 的 `--radius` / `--radius-sm/md/lg` 掛在上面。
  */
-const RADIUS_PX = new Set([2, 4, 6, 8, 10, 12, 16, 20]);
+const RADIUS_PX = new Set([2, 6]);
 
 /** 大於「短邊的一半」的值瀏覽器都會夾成膠囊，一律指向 `--r-full`。 */
 const RADIUS_FULL_HINT = 24;
@@ -288,18 +288,16 @@ const FILTER_PROP = /^(backdrop-)?filter$/;
 const BLUR_CALL = /blur\((\d*\.?\d+)px\)/g;
 
 /**
- * 高度（陰影）尺 `--elev-*`。
+ * 陰影 `--elev`（2026-10 翻新後只剩一格：浮起來的東西）。
  *
  * ⚠ 這條**只擋單層中性投影**（`0 Ypx Bpx var(--black-NN)`），不是所有 box-shadow。
- * 全站 162 個非 none 的陰影裡有 104 個是多層的（玻璃高光 + 投影、品牌色光暈），
- * 那些是刻意的組合，硬收成一把尺只會把設計拆掉。尺管的是另外那 48 個——
- * 它們卻有 36 種不同的 `(y, blur, alpha)`，也就是「每個人自己發明一個陰影」。
+ * 多層的陰影與光暈是效果，各處的強度是調過的，不收。
  *
- * ⚠ 名字是 `--elev-*` 不是 `--shadow-*`：後者是 Tailwind v4 的 namespace，而站上有
+ * ⚠ 名字是 `--elev` 不是 `--shadow-*`：後者是 Tailwind v4 的 namespace，而站上有
  * 6 個 shadcn 的 `shadow-xs/sm/md/lg/xl/2xl` 正在用。
  */
 const ELEV_VALUE = new Map<string, string>();
-for (const m of blankComments(INDEX_CSS).matchAll(/(--elev-\d+)\s*:\s*([^;]+);/g)) {
+for (const m of blankComments(INDEX_CSS).matchAll(/(--elev(?:-\d+)?)\s*:\s*([^;]+);/g)) {
   ELEV_VALUE.set(m[2].replace(/\s+/g, ' ').trim(), m[1]);
 }
 const NEUTRAL_SHADOW = /^0 \d+px \d+px var\(--black-\d+\)$/;

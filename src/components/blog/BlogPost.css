@@ -48,7 +48,7 @@
   padding: var(--space-2-5) var(--space-4-5);
   border-radius: var(--r-full);
   border: 1px solid var(--line);
-  box-shadow: var(--elev-4);
+  box-shadow: var(--elev);
   font-size: var(--fs-14);
   z-index: var(--z-toast);
   backdrop-filter: blur(var(--blur-12));
@@ -73,7 +73,7 @@
   flex-direction: column;
   gap: var(--space-1-5);
   padding: var(--space-3-5) var(--space-4-5);
-  border-radius: var(--r-12);
+  border-radius: var(--r-6);
   background: var(--wash);
   border: 1px solid var(--line);
   text-decoration: none;
@@ -133,7 +133,7 @@
   padding: var(--space-5-5) var(--space-6);
   background: var(--wash);
   border: 1px solid var(--line);
-  border-radius: var(--r-12);
+  border-radius: var(--r-6);
   backdrop-filter: blur(var(--blur-8));
 }
 .series-nav-header {
@@ -178,7 +178,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-1-5) var(--space-2);
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   transition: background var(--dur-200) ease;
 }
 .series-nav-item:hover {
@@ -255,7 +255,7 @@ a.series-nav-title:hover {
   display: inline-block;
   padding: 0 var(--space-1);
   margin: 0 var(--space-px);
-  border-radius: var(--r-4);
+  border-radius: var(--r-2);
   background: var(--wash-strong);
   color: var(--ink);
   text-decoration: none;
@@ -418,7 +418,7 @@ a.series-nav-title:hover {
 .image-lightbox-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-fullscreen);
+  z-index: var(--z-overlay);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -585,7 +585,7 @@ a.series-nav-title:hover {
 }
 .terminal-block ::-webkit-scrollbar-thumb {
   background: var(--wash-strong);
-  border-radius: var(--r-4);
+  border-radius: var(--r-2);
 }
 /* 底部「下一個提示符 + 閃爍游標」——終端機等待輸入的感覺（唯讀，純視覺） */
 .terminal-cursor-line {
@@ -681,7 +681,7 @@ a.series-nav-title:hover {
 .subscribe-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal);
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -874,7 +874,7 @@ a.series-nav-title:hover {
   gap: var(--space-2);
   margin-top: var(--space-6);
   padding: var(--space-2-5) var(--space-6);
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   background: var(--wash-strong);
   border: 1px solid var(--line);
   color: var(--post-accent);

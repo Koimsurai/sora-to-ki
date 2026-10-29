@@ -335,7 +335,7 @@ a.vp-btn:focus-visible {
   max-height: 22rem;
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   background: var(--veil-1);
   color: var(--ink-body);
   font-size: var(--fs-11);
@@ -349,6 +349,6 @@ a.vp-btn:focus-visible {
   display: block;
   margin: var(--space-3) auto 0;
   padding: var(--space-1-5) var(--space-3-5);
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   font-size: var(--fs-12);
 }
