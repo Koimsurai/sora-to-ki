@@ -60,7 +60,7 @@
   }
 }
 .bp-skel {
-  border-radius: var(--r-4);
+  border-radius: var(--r-2);
   background: linear-gradient(90deg, var(--wash) 25%, var(--wash-strong) 37%, var(--wash) 63%);
   background-size: 200% 100%;
   animation: bp-shimmer 1.5s ease-in-out infinite;

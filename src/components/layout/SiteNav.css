@@ -3,7 +3,7 @@
 .snav {
   position: fixed;
   inset: 0 0 auto;
-  z-index: var(--z-header);
+  z-index: var(--z-chrome);
   pointer-events: none;
   font-family: var(--serif);
 }

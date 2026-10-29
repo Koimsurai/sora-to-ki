@@ -50,7 +50,7 @@
 .ar-retune-line {
   position: fixed;
   top: 0;
-  z-index: var(--z-float);
+  z-index: var(--z-chrome);
   height: 1px;
   background: linear-gradient(to right, transparent, var(--ink-muted) 12%, var(--ink-muted) 88%, transparent);
   box-shadow: 0 0 10px rgba(var(--paper-rgb), 0.35);

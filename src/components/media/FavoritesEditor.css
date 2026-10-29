@@ -2,7 +2,7 @@
 .fe-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal);
+  z-index: var(--z-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,8 +28,8 @@
   flex-direction: column;
   background: var(--veil-3);
   border: 1px solid var(--line);
-  border-radius: var(--r-20);
-  box-shadow: var(--elev-6);
+  border-radius: var(--r-6);
+  box-shadow: var(--elev);
   animation: fe-pop 0.24s var(--easing-back);
   overflow: hidden;
 }
@@ -67,7 +67,7 @@
   font-size: var(--fs-16);
   cursor: pointer;
   padding: var(--space-1) var(--space-2);
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   transition:
     color var(--dur-200),
     background var(--dur-200);
@@ -110,7 +110,7 @@
   height: 84px;
   flex-shrink: 0;
   object-fit: cover;
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   background: var(--wash);
 }
 .fe-item-poster--blank {
@@ -155,7 +155,7 @@
   color: var(--ink-subtle);
   width: 26px;
   height: 26px;
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   font-size: var(--fs-12);
   cursor: pointer;
   transition: all var(--dur-200);
@@ -208,7 +208,7 @@
   resize: vertical;
   background: var(--wash);
   border: 1px solid var(--line);
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   padding: var(--space-2) var(--space-2-5);
   font: inherit;
   font-size: var(--fs-13);
@@ -235,7 +235,7 @@
 .fe-kind {
   display: inline-flex;
   flex-shrink: 0;
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   overflow: hidden;
   border: 1px solid var(--line);
 }
@@ -261,7 +261,7 @@
   flex: 1;
   background: var(--wash);
   border: 1px solid var(--line);
-  border-radius: var(--r-8);
+  border-radius: var(--r-6);
   padding: var(--space-2-5) var(--space-3);
   font: inherit;
   font-size: var(--fs-14);
@@ -296,7 +296,7 @@
   padding: var(--space-2) var(--space-2-5);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--r-10);
+  border-radius: var(--r-6);
   cursor: pointer;
   transition:
     background var(--dur-200),

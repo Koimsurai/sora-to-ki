@@ -58,7 +58,7 @@
 
 /* ── 下拉：展開的清單（portal 到 body） ── */
 .adm-select-menu {
-  z-index: var(--z-menu);
+  z-index: var(--z-popover);
   box-sizing: border-box;
   min-width: var(--radix-select-trigger-width);
   max-height: var(--radix-select-content-available-height);
@@ -158,7 +158,7 @@
 
 /* ── 月曆（portal 到 body） ── */
 .adm-cal-pop {
-  z-index: var(--z-menu);
+  z-index: var(--z-popover);
   padding: var(--space-3) var(--space-4) var(--space-4);
   background: var(--veil-3);
   border: 1px solid var(--line);
