@@ -441,7 +441,12 @@ function eventText(e: ReactionLogEvent): string {
     case 'site':
       return '在首頁留下印記';
     case 'comment':
-      return `幫《${title}》的一則留言按讚`;
+      // 留言不只掛在文章底下：留言頁與碎念的留言沒有文章標題，不能當成「已刪除」
+      if (e.comment_on === 'thought') return `幫碎念「${title}」底下的一則留言按讚`;
+      if (e.comment_on === 'messages') return '幫留言頁的一則留言按讚';
+      if (e.comment_on === null) return '幫一則已刪除的留言按讚';
+      if (e.comment_on === 'post') return `幫《${title}》的一則留言按讚`;
+      return `幫 /${e.comment_on} 的一則留言按讚`;
     case 'thought': {
       const what = e.value === 'dislike' ? '不喜歡' : '喜歡';
       return undo ? `收回了對碎念「${title}」的${what}` : `${what}碎念「${title}」`;

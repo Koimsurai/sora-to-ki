@@ -1011,13 +1011,18 @@ export type PostsListResponse = {
 	pagination: Pagination,
 };
 
-/**  一筆紀錄。`target_title`：文章是標題、留言是它所在那篇的標題、碎念是內文開頭 */
+/**  一筆紀錄。`target_title`：文章是標題、碎念是內文開頭；留言是它所在那篇的標題或那則碎念的開頭 */
 export type ReactionLogEvent = {
 	id: number,
 	created_at: string,
 	kind: string,
 	target_id: number | null,
 	target_title: string | null,
+	/**
+	 *  留言掛在哪：`post`、`thought`，或頁面的 key（`messages` 是留言頁）。
+	 *  不是留言、或那則留言已經刪了是 null
+	 */
+	comment_on: string | null,
 	value: string,
 	delta: number,
 	country: string | null,
