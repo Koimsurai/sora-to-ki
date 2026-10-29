@@ -1407,6 +1407,17 @@ html[data-boot="out"] .boot-pen {
     transform: rotate(-360deg);
   }
 }
+/* 交棒：旋臂往內收、淡掉（物質掉進去了），光子環貼著 3D 的那圈長、合起來之後淡掉（--boot-photon-a，layout/TransitionLayer） */
+html[data-boot-ring="go"] .boot-photon {
+  opacity: var(--boot-photon-a, 1);
+}
+html[data-boot-ring="go"] .boot-swirl {
+  opacity: 0;
+  scale: 0.3;
+  transition:
+    opacity var(--dur-300) var(--easing-standard),
+    scale var(--dur-300) var(--easing-standard);
+}
 /* 不交棒的時候（別頁、沒有 3D、3D 等太久）：環收回中間那顆點裡，點再飛出去（layout/TransitionLayer 的
    BOOT_COLLAPSE_MS）。縮的是框的寬高，SVG 照新尺寸重畫，線一直是 1px；筆尖先退掉 */
 html[data-boot-collapse] .boot-ring,

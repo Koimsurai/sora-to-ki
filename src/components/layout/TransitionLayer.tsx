@@ -1122,6 +1122,7 @@ export default function TransitionLayer() {
         '--boot-ring-a',
         '--boot-ring-back-a',
         '--boot-planet-r',
+        '--boot-photon-a',
       ]) {
         boot?.style.removeProperty(name);
       }
@@ -1142,11 +1143,18 @@ export default function TransitionLayer() {
         const { planet, ring } =
           reported && reported.at >= start ? reported : alone > 0 ? saturnGrowAt(alone) : { planet: 0, ring: 0 };
         const target = BOOT_RING_PERSPECTIVE * bootRingUnit * (1 + (RING_OUTER - 1) * ring);
-        const r = BOOT_RING_R + (target - BOOT_RING_R) * clamp(planet / BOOT_RING_CATCH);
+        // 黑洞：開場的光子環一直貼著 3D 光子環的實際大小——3D 那圈還比它小時它留在原處等，追上之後一起長
+        // （照吸積盤外緣的比例放大的話，交棒那一下畫面上會同時有兩圈光子環）
+        const r =
+          THEME === 'blackhole'
+            ? Math.max(BOOT_RING_R, BOOT_RING_PERSPECTIVE * bootRingUnit * RING_OUTER * planet)
+            : BOOT_RING_R + (target - BOOT_RING_R) * clamp(planet / BOOT_RING_CATCH);
         boot.style.setProperty('--boot-ring-size', `${(r / BOOT_RING_R) * BOOT_RING_BOX}px`);
         boot.style.setProperty('--boot-ring-a', (1 - ring).toFixed(3));
         boot.style.setProperty('--boot-ring-back-a', (0.7 * (1 - ring)).toFixed(3));
         boot.style.setProperty('--boot-planet-r', `${(bootRingUnit * planet).toFixed(1)}px`);
+        // 黑洞：兩圈光子環合起來之後開場那圈很快淡掉——它疊在最上層，3D 那圈的下半段被盤擋住，它不會
+        boot.style.setProperty('--boot-photon-a', (1 - clamp((planet - 0.35) / 0.12)).toFixed(3));
         if (ring < 1) bootRingRaf = requestAnimationFrame(step);
         else endBoot();
       };

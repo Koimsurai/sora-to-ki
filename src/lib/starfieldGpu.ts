@@ -14,6 +14,7 @@ import {
   abs,
   asin,
   atan,
+  log,
   exp,
   fract,
   fwidth,
@@ -319,6 +320,8 @@ const span = (t: number, from: number, dur: number) => Math.min(1, Math.max(0, (
  */
 const lerpFactor = (rate: number, dt: number) => 1 - Math.pow(1 - rate, dt * 60);
 
+/** 吸積盤的螺旋條紋有多斜：角度隨 ln(半徑) 偏移幾倍（越大越像緊緊捲起來的螺旋） */
+const DISK_SHEAR = 3.2;
 /** 吸積盤的刷痕最濃時佔一列的幾成：比土星的環（RING_COVER）密，盤看起來是厚實的一層 */
 const DISK_COVER = 0.8;
 /** 重力透鏡的愛因斯坦半徑是陰影半徑的幾倍（貼著光子環外面那一圈的星被拉成弧） */
@@ -526,12 +529,20 @@ function buildSaturn(
     }
     // 都卜勒增亮（黑洞的吸積盤）：朝我們轉來的那一側（左邊，x 負）亮、另一側暗。用沒轉過的 p：亮的那側跟著我們看的方向，不跟著盤轉
     const doppler = float(1).sub(p.x.div(r).mul(ringSpec.doppler));
-    const ink = ringTone(r)
-      .mul(ringlets)
-      .mul(mix(float(0.4), float(1), brush))
-      .mul(shade)
-      .mul(doppler)
-      .clamp(0, 1);
+    // 黑洞的吸積盤：內圈轉得比外圈快很多，物質被拉成一道道螺旋條紋。雜訊用螺旋座標取（角度隨半徑的對數偏移，
+    // 再照克卜勒轉），條紋就沿著被差速旋轉拉長的方向走；用 (cos, sin) 取避免角度在 ±π 接不起來。
+    // 刻線還是一圈圈同心的，條紋只決定每條刻線哪裡粗、哪裡細
+    const texture =
+      spec.kind === 'blackhole'
+        ? (() => {
+            const ang = atan(p.z, p.x).add(log(r).mul(DISK_SHEAR)).add(spin);
+            const streak = mx_noise_float(vec3(cos(ang).mul(2.4), sin(ang).mul(2.4), r.mul(9)));
+            // 內緣最亮、往外漸暗（越內越熱）
+            const heat = smoothstep(ringSpec.outer, ringSpec.inner, r).mul(0.5).add(0.6);
+            return mix(float(0.2), float(1), smoothstep(-0.4, 0.5, streak)).mul(heat);
+          })()
+        : ringlets.mul(mix(float(0.4), float(1), brush));
+    const ink = ringTone(r).mul(texture).mul(shade).mul(doppler).clamp(0, 1);
     return strokes(r.mul(RING_ROWS), pow(ink, 0.75), spec.kind === 'blackhole' ? DISK_COVER : RING_COVER);
   })();
   /** 環攤開時跟著淡入（0 到 1） */
