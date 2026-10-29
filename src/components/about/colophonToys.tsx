@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { RX_PHASES } from '@/components/gallery/downlink';
-import { WORKS, worksQueryOptions } from '@/data/works';
+import { statsOf, useWorkEntries, useWorkStats } from '@/data/works';
 import { loadPhotosManifest } from '@/lib/manifestLoader';
 import { palette } from '@/lib/palette';
 import { createTrails, drawOrbits, renderSaturn, satelliteAt, SATURN_STEPS } from './colophonSaturn';
@@ -370,25 +370,21 @@ export function WorkToy() {
   const [pushed, setPushed] = useState(3);
   const [main, setMain] = useState<(typeof LANGS)[number]>('TypeScript');
   const cvRef = useRef<HTMLCanvasElement>(null);
-  const { data: live = [] } = useQuery(worksQueryOptions);
+  const entries = useWorkEntries();
+  const live = useWorkStats(entries);
   const key = WORK_STEPS[step];
 
   // 你做的這顆排在作品頁所有作品的後面：地貌跟同一族的作品錯開（跟作品頁同一套規則），在螺旋上是最新的一顆
   const bodies = useMemo(() => {
     const now = Date.now();
-    const real = WORKS.map((w) =>
-      workStatsOf(
-        w.name,
-        live.find((r) => r.repo.toLowerCase() === w.repo.toLowerCase()) ?? { repo: w.repo, ...w.fallback },
-        now,
-      ),
-    );
+    // 站上還沒有作品的話，就只有你做的這一顆
+    const real = entries.map((w) => workStatsOf(w.name, statsOf(w, live), now));
     const total = 10 ** (4 + (size / 100) * 3);
     const languages: WorkStats['languages'] = [{ name: main, bytes: total * 0.62 }];
     for (let k = 1; k < langs; k++)
       languages.push({ name: OTHER_LANGS[k - 1] ?? 'Other', bytes: (total * 0.38) / k / 1.6 });
     return bodiesOf([...real, { name: `toy-${main}`, commits, stars, pushedDaysAgo: pushed, languages }]);
-  }, [live, size, langs, stars, commits, pushed, main]);
+  }, [live, entries, size, langs, stars, commits, pushed, main]);
   const spiral = useMemo(() => createSpiral(bodies), [bodies]);
 
   useEffect(() => {

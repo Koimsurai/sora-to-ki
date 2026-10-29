@@ -31,6 +31,8 @@ export function usePageDraft<T, K extends QueryKey>(
   url: string,
   normalize: (raw: unknown) => T,
   savedMessage: string,
+  /** 送出前再整理一次（例如作品頁順便更新最後量到的數字）；失敗就照原樣存 */
+  prepare?: (draft: T) => Promise<T>,
 ) {
   const queryClient = useQueryClient();
   const { data, isPending } = useQuery(options);
@@ -43,7 +45,8 @@ export function usePageDraft<T, K extends QueryKey>(
     if (!draft) return;
     setSaving(true);
     try {
-      const res = await fetch(url, { method: 'PUT', headers: jsonAuthHeaders(), body: JSON.stringify(draft) });
+      const body0 = prepare ? await prepare(draft).catch(() => draft) : draft;
+      const res = await fetch(url, { method: 'PUT', headers: jsonAuthHeaders(), body: JSON.stringify(body0) });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
         toast.error(body.error ?? `存不進去（${res.status}）`);

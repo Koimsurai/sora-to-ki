@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { LocaleLink } from '@/i18n/locale-link';
 import { MAIN_SECTIONS } from '@/data/siteSections';
 import { useAboutContent } from '@/data/pageContent';
+import { useWorkEntries } from '@/data/works';
 import { useEnabledSections, useSiteConfig } from '@/data/siteConfig';
 import { homeDigestQueryOptions, siteStatsQueryOptions } from '@/data/homeData';
 import { watchStatsQueryOptions } from '@/data/watchData';
@@ -35,8 +36,6 @@ import { useFoldPose } from '@/hooks/useFoldPose';
 import { usePageTransition } from '@/hooks/usePageTransition';
 import './HomeOrbit.css';
 
-/** 作品頁做好之前，衛星上先列這幾個（照提案的作品清單） */
-const WORKS = ['tessera', 'nuntius', 'anigamer-rs', 'session-to-obsidian', 'flow2code', 'sora-to-ki', 'VoltiCar'];
 /** 滑鼠離衛星多近才算「靠近」（CSS 像素） */
 const NEAR_PX = 72;
 /** 閒置多久之後開始輪流提示 */
@@ -87,6 +86,11 @@ export default function HomeOrbit() {
   // 開著的主要分區，由內到外對應土星的軌道：關掉一個，最外圈那條收起來、後面的往內遞補（見 starfieldGpu 的 setSections）
   const main = useEnabledSections(MAIN_SECTIONS);
   const { author } = useSiteConfig();
+  // 作品：照建立時間由新到舊（用最後量到的數字，首頁不等 GitHub）
+  const works = useWorkEntries();
+  const newestWorks = [...works]
+    .sort((a, b) => b.fallback.created_at.localeCompare(a.fallback.created_at))
+    .map((w) => w.name);
   const firstYear = /\d{4}/.exec(useAboutContent().chapters[0]?.year ?? '')?.[0];
   // 摺起來（CSS 的 viewport-segments）：浮動字卡換成另一半的目錄（common/FoldIndex）
   const folded = useFoldPose() !== null;
@@ -136,7 +140,12 @@ export default function HomeOrbit() {
       line: thought ? clip(thought.content, 24) : '',
       n: thought ? t('home.orbit.momentsCount', { date: short(thought.created_at) }) : '',
     },
-    works: { line: `${WORKS.slice(0, 3).join('、')}⋯`, n: t('home.orbit.worksCount', { count: WORKS.length }) },
+    works: newestWorks.length
+      ? {
+          line: `${newestWorks.slice(0, 3).join('、')}${newestWorks.length > 3 ? '⋯' : ''}`,
+          n: t('home.orbit.worksCount', { count: newestWorks.length }),
+        }
+      : { line: '', n: '' },
     collection: {
       line: watch
         ? t('home.orbit.collectionLine', {
