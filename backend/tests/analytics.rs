@@ -48,6 +48,10 @@ fn answer(req: &Request) -> ResponseTemplate {
             { "metrics": [20], "dimensions": ["Google", "/blog/1"] },
             { "metrics": [10], "dimensions": ["Google", "/"] },
         ] }),
+        "time:hour" => json!({
+            "results": [{ "metrics": [4, 6], "dimensions": ["2026-10-29 01:00:00"] }],
+            "meta": { "time_labels": ["2026-10-29 00:00:00", "2026-10-29 01:00:00"] },
+        }),
         "time:day" => json!({
             "results": [{ "metrics": [7, 9], "dimensions": ["2026-10-25"] }],
             "meta": { "time_labels": ["2026-10-24", "2026-10-25"] },
@@ -168,6 +172,60 @@ async fn shapes_plausible_results_for_the_admin_page() {
         .cloned()
         .unwrap_or_default();
     assert_eq!(pages["filters"], json!([["contains_not", "event:page", ["/admin"]]]));
+}
+
+#[tokio::test]
+async fn today_is_hourly_and_compares_with_yesterday_so_far() {
+    unsafe { std::env::set_var("PLAUSIBLE_API_KEY", "test-key") };
+    let server = MockServer::start().await;
+    Mock::given(method("POST")).and(path("/api/v2/query")).respond_with(answer).mount(&server).await;
+    let app = app_against(&server).await;
+
+    let (status, body) =
+        request(&app, "GET", "/api/admin/analytics?period=today", None, Some(&owner_token(true))).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["period"], "today");
+    assert_eq!(body["start"], body["end"], "start 與 end 都是今天");
+    assert_eq!(
+        body["series"],
+        json!([
+            { "date": "2026-10-29 00:00", "visitors": 0, "pageviews": 0 },
+            { "date": "2026-10-29 01:00", "visitors": 4, "pageviews": 6 },
+        ]),
+        "小時粒度的格子要留住小時"
+    );
+
+    let sent: Vec<Value> = server
+        .received_requests()
+        .await
+        .unwrap_or_default()
+        .iter()
+        .filter(|r| r.url.path() == "/api/v2/query")
+        .map(|r| serde_json::from_slice(&r.body).unwrap_or_default())
+        .collect();
+    let today = body["start"].as_str().unwrap_or_default();
+    let starts: Vec<&str> = sent.iter().filter_map(|q| q["date_range"][0].as_str()).collect();
+    assert_eq!(
+        starts.iter().filter(|s| **s == format!("{today}T00:00:00+08:00")).count(),
+        8,
+        "這一段從台北的午夜開始"
+    );
+    let yesterday = (chrono::NaiveDate::parse_from_str(today, "%Y-%m-%d").unwrap_or_default()
+        - chrono::TimeDelta::days(1))
+    .to_string();
+    let prev = sent
+        .iter()
+        .find(|q| q["date_range"][0].as_str().is_some_and(|s| s.starts_with(&yesterday)))
+        .cloned()
+        .unwrap_or_default();
+    // 上一段停在昨天的同一個時刻，不是昨天整天
+    assert_eq!(
+        prev["date_range"][1].as_str().map(|s| &s[11..16]),
+        sent.iter()
+            .find(|q| q["dimensions"][0] == "time:hour")
+            .and_then(|q| q["date_range"][1].as_str())
+            .map(|s| &s[11..16])
+    );
 }
 
 #[tokio::test]

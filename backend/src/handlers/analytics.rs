@@ -47,14 +47,17 @@ fn site_id() -> String {
 
 #[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct AnalyticsQuery {
-    /// `7d`、`30d`（預設）或 `6mo`
+    /// `today`、`3d`、`7d`、`30d`（預設）或 `6mo`
     pub period: Option<String>,
 }
 
-/// 期間 → (名稱, 天數, 走勢圖的時間粒度)。只收這三種，其他一律當 30 天。
+/// 期間 → (名稱, 天數, 走勢圖的時間粒度)。只收這幾種，其他一律當 30 天。
+/// 天數 0 是「今天」：台北的午夜到現在，一小時一格。
 /// 半年用週：一天一格的話 180 根柱子擠在一起，看不出起伏。
 fn period_spec(period: Option<&str>) -> (&'static str, i64, &'static str) {
     match period {
+        Some("today") => ("today", 0, "time:hour"),
+        Some("3d") => ("3d", 3, "time:day"),
         Some("7d") => ("7d", 7, "time:day"),
         Some("6mo") => ("6mo", 182, "time:week"),
         _ => ("30d", 30, "time:day"),
@@ -68,9 +71,18 @@ fn date_ranges(days: i64, today: chrono::NaiveDate) -> ([String; 2], [String; 2]
     ([day(days), day(1)], [day(days * 2), day(days + 1)])
 }
 
-/// 台北的今天（Plausible 站台設的時區）
-fn today_taipei() -> chrono::NaiveDate {
-    (chrono::Utc::now() + chrono::TimeDelta::hours(8)).date_naive()
+/// 「今天」這一段與上一段（帶時區的時間點）：今天午夜到現在，比的是昨天午夜到同一個時刻。
+/// 拿整個昨天來比的話，白天看永遠是跌的。結束點寫到現在而不是今天結束，走勢圖才不會多出還沒到的那幾個小時
+fn today_ranges(now: chrono::NaiveDateTime) -> ([String; 2], [String; 2]) {
+    let at = |t: chrono::NaiveDateTime| format!("{}+08:00", t.format("%Y-%m-%dT%H:%M:%S"));
+    let midnight = now.date().and_time(chrono::NaiveTime::MIN);
+    let day = chrono::TimeDelta::days(1);
+    ([at(midnight), at(now)], [at(midnight - day), at(now - day)])
+}
+
+/// 台北的現在（Plausible 站台設的時區）
+fn now_taipei() -> chrono::NaiveDateTime {
+    (chrono::Utc::now() + chrono::TimeDelta::hours(8)).naive_utc()
 }
 
 #[derive(Debug, Default, Serialize, PartialEq, specta::Type, utoipa::ToSchema)]
@@ -89,7 +101,8 @@ pub struct AnalyticsTotals {
     pub views_per_visit: f64,
 }
 
-/// 走勢圖的一格。`date` 是那一格的起點（`yyyy-MM-dd`，週粒度時是那週的第一天）
+/// 走勢圖的一格。`date` 是那一格的起點（`yyyy-MM-dd`，週粒度時是那週的第一天；
+/// 小時粒度時是 `yyyy-MM-dd HH:mm`）
 #[derive(Debug, Serialize, PartialEq, specta::Type, utoipa::ToSchema)]
 pub struct AnalyticsPoint {
     pub date: String,
@@ -306,12 +319,12 @@ async fn posts_from(state: &AppState, merged: Vec<(String, i64, Option<f64>, Opt
 /// 走勢：結果只有「有資料的那幾格」，沒人來的日子不會出現。
 /// 有 `meta.time_labels`（請求帶 include.time_labels）就照它補成連續的格子，空的補 0；
 /// 舊版 Plausible 不認得那個選項的話退回只畫有資料的格子。
-fn series_from(body: &Value) -> Vec<AnalyticsPoint> {
+fn series_from(body: &Value, hourly: bool) -> Vec<AnalyticsPoint> {
     let point = |r: &Value| {
         let m = r["metrics"].as_array();
         let at = |i: usize| m.and_then(|m| m.get(i)).unwrap_or(&Value::Null);
         AnalyticsPoint {
-            date: day_of(r["dimensions"][0].as_str().unwrap_or_default()),
+            date: bucket_of(r["dimensions"][0].as_str().unwrap_or_default(), hourly),
             visitors: int(at(0)),
             pageviews: int(at(1)),
         }
@@ -322,7 +335,7 @@ fn series_from(body: &Value) -> Vec<AnalyticsPoint> {
         .iter()
         .filter_map(Value::as_str)
         .map(|label| {
-            let date = day_of(label);
+            let date = bucket_of(label, hourly);
             rows.iter().find(|p| p.date == date).map_or(
                 AnalyticsPoint { date, visitors: 0, pageviews: 0 },
                 |p| AnalyticsPoint { date: p.date.clone(), visitors: p.visitors, pageviews: p.pageviews },
@@ -331,9 +344,10 @@ fn series_from(body: &Value) -> Vec<AnalyticsPoint> {
         .collect()
 }
 
-/// 時間格的標籤只留日期：`time:day` 回 `2026-10-26`，有些版本或粒度會帶時間
-fn day_of(label: &str) -> String {
-    label.get(..10).unwrap_or(label).to_string()
+/// 時間格的標籤只留日期：`time:day` 回 `2026-10-26`，有些版本或粒度會帶時間。
+/// 小時粒度留到分（`2026-10-26 14:00`），不然一天的 24 格會全部變成同一天
+fn bucket_of(label: &str, hourly: bool) -> String {
+    label.get(..if hourly { 16 } else { 10 }).unwrap_or(label).to_string()
 }
 
 /// 排行：dimensions 第一個是名字，metrics 第一個是訪客數。
@@ -404,7 +418,15 @@ pub async fn admin_analytics(
     Query(q): Query<AnalyticsQuery>,
 ) -> Response {
     let (period, days, bucket) = period_spec(q.period.as_deref());
-    let ([start, end], [prev_start, prev_end]) = date_ranges(days, today_taipei());
+    let now = now_taipei();
+    let (range, prev_range, start, end) = if days == 0 {
+        let (now_range, prev) = today_ranges(now);
+        let today = now.date().to_string();
+        (json!(now_range), json!(prev), today.clone(), today)
+    } else {
+        let ([start, end], prev) = date_ranges(days, now.date());
+        (json!([start, end]), json!(prev), start, end)
+    };
     let site = site_id();
     let dashboard_url = format!("{}/{site}", state.external.plausible);
     let Some(key) = api_key() else {
@@ -417,7 +439,6 @@ pub async fn admin_analytics(
         })
         .into_response();
     };
-    let range = json!([start, end]);
 
     let top = |dimension: &str, extra: Value| {
         let mut body = json!({
@@ -455,7 +476,7 @@ pub async fn admin_analytics(
         search,
     ) = tokio::join!(
         query(&state, &key, totals_body(range.clone())),
-        query(&state, &key, totals_body(json!([prev_start, prev_end]))),
+        query(&state, &key, totals_body(prev_range)),
         query(
             &state,
             &key,
@@ -524,7 +545,7 @@ pub async fn admin_analytics(
         realtime: live,
         totals: totals_from(&totals),
         previous: totals_from(&previous),
-        series: series_from(&series),
+        series: series_from(&series, bucket == "time:hour"),
         posts: posts_from(&state, merge_posts(&post_pages)).await,
         entries: group_entries(&sources, &source_entry, 4, 5),
         search,
@@ -543,6 +564,8 @@ mod tests {
 
     #[test]
     fn period_falls_back_to_30_days() {
+        assert_eq!(period_spec(Some("today")), ("today", 0, "time:hour"));
+        assert_eq!(period_spec(Some("3d")), ("3d", 3, "time:day"));
         assert_eq!(period_spec(Some("7d")), ("7d", 7, "time:day"));
         assert_eq!(period_spec(Some("6mo")), ("6mo", 182, "time:week"));
         assert_eq!(period_spec(Some("all")), ("30d", 30, "time:day"));
@@ -572,7 +595,7 @@ mod tests {
             "results": [{ "metrics": [3, 5], "dimensions": ["2026-10-25"] }],
             "meta": { "time_labels": ["2026-10-24", "2026-10-25", "2026-10-26"] },
         });
-        let s = series_from(&body);
+        let s = series_from(&body, false);
         assert_eq!(
             s.iter().map(|p| p.date.as_str()).collect::<Vec<_>>(),
             ["2026-10-24", "2026-10-25", "2026-10-26"]
@@ -585,8 +608,40 @@ mod tests {
     fn series_without_time_labels_keeps_returned_rows() {
         let body = json!({ "results": [{ "metrics": [1, 2], "dimensions": ["2026-10-25 00:00:00"] }] });
         assert_eq!(
-            series_from(&body),
+            series_from(&body, false),
             [AnalyticsPoint { date: "2026-10-25".into(), visitors: 1, pageviews: 2 }]
+        );
+    }
+
+    #[test]
+    fn hourly_series_keeps_the_hour() {
+        let body = json!({
+            "results": [{ "metrics": [4, 6], "dimensions": ["2026-10-29 01:00:00"] }],
+            "meta": { "time_labels": ["2026-10-29 00:00:00", "2026-10-29 01:00:00"] },
+        });
+        assert_eq!(
+            series_from(&body, true),
+            [
+                AnalyticsPoint { date: "2026-10-29 00:00".into(), visitors: 0, pageviews: 0 },
+                AnalyticsPoint { date: "2026-10-29 01:00".into(), visitors: 4, pageviews: 6 },
+            ]
+        );
+    }
+
+    #[test]
+    fn today_compares_with_yesterday_up_to_the_same_time() {
+        let now = chrono::NaiveDate::from_ymd_opt(2026, 11, 1)
+            .and_then(|d| d.and_hms_opt(13, 5, 9))
+            .expect("合法時間");
+        let (now_range, prev) = today_ranges(now);
+        assert_eq!(
+            now_range,
+            ["2026-11-01T00:00:00+08:00".to_string(), "2026-11-01T13:05:09+08:00".to_string()]
+        );
+        assert_eq!(
+            prev,
+            ["2026-10-31T00:00:00+08:00".to_string(), "2026-10-31T13:05:09+08:00".to_string()],
+            "跨月"
         );
     }
 
