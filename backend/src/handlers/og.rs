@@ -305,12 +305,15 @@ fn render(html: &str, locale: &str, scene: &dyn Scene) -> anyhow::Result<Vec<u8>
     apng::encode(scene.frames(), scene.frame_ms(), |i| apng::compose(&scene.frame(i), &overlay))
 }
 
-/// 這一頁的背景。`sky` 是手記星軌要用的文章清單（只有 notes 用得到）
-fn page_scene(key: &str, sky: &[SkyPost]) -> Box<dyn Scene> {
+/// 航行日誌的起點那天與里程碑的日期（站長填的，見 `page_content::log_dates`）
+type LogDates = (chrono::NaiveDate, Vec<chrono::NaiveDate>);
+
+/// 這一頁的背景。`sky` 是手記星軌要用的文章清單（只有 notes 用得到），`log` 只有航行日誌用得到
+fn page_scene(key: &str, sky: &[SkyPost], log: &LogDates) -> Box<dyn Scene> {
     match key {
         "notes" => Box::new(Notes::new(sky, 0)),
         "about" => Box::new(About::new()),
-        "log" => Box::new(Log::new()),
+        "log" => Box::new(Log::new(log.0, &log.1)),
         "works" => Box::new(Works::new()),
         "colophon" => Box::new(Colophon::new()),
         "setup" => Box::new(Setup::new()),
@@ -513,10 +516,19 @@ async fn prepare_page(state: &AppState, page: &Page, locale: &str) -> Prepared {
     } else {
         (Vec::new(), 0)
     };
+    // 航行日誌的軌道照站長填的起點與里程碑擺；讀不到就從今天畫起、沒有節點（圖還是要出得來）
+    let log = if page.key == "log" {
+        crate::handlers::page_content::log_dates(&state.pool)
+            .await
+            .unwrap_or_else(|_| (chrono::Utc::now().date_naive(), Vec::new()))
+    } else {
+        (chrono::Utc::now().date_naive(), Vec::new())
+    };
     let html = page_card_html(page, locale);
-    // 頁名與副標改了（語系檔跟著部署）快取也要失效：指紋直接用 HTML
-    let key = format!("{:x}::{sig:x}", fnv1a(&html));
-    (format!("page:{}:{locale}", page.key), key, html, page_scene(page.key, &sky))
+    // 頁名與副標改了（語系檔跟著部署）快取也要失效：指紋直接用 HTML；航行日誌再加上起點與里程碑
+    let dates = if page.key == "log" { format!("{log:?}") } else { String::new() };
+    let key = format!("{:x}::{sig:x}::{:x}", fnv1a(&html), fnv1a(&dates));
+    (format!("page:{}:{locale}", page.key), key, html, page_scene(page.key, &sky, &log))
 }
 
 #[cfg(test)]
@@ -636,7 +648,7 @@ mod tests {
             Box::new(Saturn::new()),
             Box::new(Notes::new(&sky, 0)),
             Box::new(About::new()),
-            Box::new(Log::new()),
+            Box::new(Log::new(chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期"), &[])),
             Box::new(Works::new()),
             Box::new(Colophon::new()),
             Box::new(Setup::new()),
@@ -678,10 +690,13 @@ mod tests {
         let locales = std::env::var("OG_LOCALES").unwrap_or_else(|_| "zh-TW".into());
         let sky: Vec<SkyPost> =
             (0..48).map(|i| SkyPost::of(&format!("篇 {i}"), 800 + (i * 977) % 9000, 9800)).collect();
+        let start = chrono::NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期");
+        let sample_log = (start, vec![start]);
         for loc in locales.split(',') {
             for page in PAGES.iter().filter(|p| wanted(p.key)) {
                 let png =
-                    render(&page_card_html(page, loc), loc, page_scene(page.key, &sky).as_ref()).unwrap();
+                    render(&page_card_html(page, loc), loc, page_scene(page.key, &sky, &sample_log).as_ref())
+                        .unwrap();
                 let path = dir.join(format!("{}-{loc}.png", page.key));
                 std::fs::write(&path, &png).unwrap();
                 println!("{} → {} bytes", path.display(), png.len());

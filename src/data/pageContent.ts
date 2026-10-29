@@ -1,5 +1,5 @@
 import { queryOptions, useQuery, type QueryClient } from '@tanstack/react-query';
-import type { AboutContent, AboutQuote, AboutSkillGroup } from '@koimsurai/api-types';
+import type { AboutContent, AboutQuote, AboutSkillGroup, LogContent } from '@koimsurai/api-types';
 import { apiUrl } from '@/lib/api';
 
 // 頁面內容：關於、作品…這幾頁由站長在後台或 MCP 填的資料（後端 handlers/page_content）。
@@ -39,11 +39,36 @@ export function useAboutContent(): About {
   return useQuery(aboutContentQueryOptions).data ?? EMPTY_ABOUT;
 }
 
+/** 航行日誌。start 一定有值：後端沒填時補上第一篇文章那天 */
+export interface Log {
+  start: string;
+  milestones: NonNullable<LogContent['milestones']>;
+}
+
+export function normalizeLog(raw: LogContent): Log {
+  return { start: raw.start ?? '', milestones: raw.milestones ?? [] };
+}
+
+export const logContentQueryOptions = queryOptions({
+  queryKey: ['pages', 'log'],
+  queryFn: async (): Promise<Log> => {
+    const res = await fetch(apiUrl('/api/pages/log'));
+    if (!res.ok) throw new Error(`GET /api/pages/log ${res.status}`);
+    return normalizeLog((await res.json()) as LogContent);
+  },
+  staleTime: 5 * 60 * 1000,
+});
+
+export function useLogContent(): Log | undefined {
+  return useQuery(logContentQueryOptions).data;
+}
+
 /** 頁面（無前綴的邏輯路徑）→ 它要先抓好的內容。頁面守門用。
  *  首頁也要關於頁的：土星那條軌道寫著「從某年往下掉到現在」 */
 const CONTENT_OF: Record<string, (qc: QueryClient) => Promise<unknown>> = {
   '': (qc) => qc.query(aboutContentQueryOptions),
   about: (qc) => qc.query(aboutContentQueryOptions),
+  history: (qc) => qc.query(logContentQueryOptions),
 };
 
 /** 這一頁有站長填的內容就先抓好；抓失敗不擋頁（照空狀態畫） */

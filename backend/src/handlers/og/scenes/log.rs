@@ -12,7 +12,7 @@
 //!   一條等比例往上加的直線（累積起來是二次曲線），接近頁面上那條「越往後爬得越快」的樣子。
 //!   終點的高度與位置跟頁面一樣（前端把累積量正規化到 `ALT_MAX`）。
 //! - **地上的燈全畫成「那天沒有貢獻」的暗點**：燈的大小與亮度是每天的真實數字，不能編。
-//! - 改版的節點照 `src/data/milestones.ts` 的日期擺；它們的名字、地上的月份刻度、遙測列、
+//! - 改版的節點照站長填的里程碑日期擺（`page_content` 的 log，[`crate::handlers::page_content::log_dates`]）；它們的名字、地上的月份刻度、遙測列、
 //!   「現在」那幾個字是頁面上的 DOM 或文字，這裡都不畫。
 //! - 背景的星：頁面上是站台的背景星空（不是這張畫布畫的）。這裡用首頁那張分享圖的星
 //!   （`saturn.rs` 的種子與分布），地球的輪廓一樣把它們擋在地平線以下。
@@ -43,10 +43,8 @@ const FRAMES: usize = 120;
 const FRAME_MS: u32 = 100;
 const LOOP_S: f32 = FRAMES as f32 * FRAME_MS as f32 / 1000.0;
 
-/// 頁面的資料：日誌從哪天開始、改版的日期、海岸線。都是 repo 裡的靜態檔，直接編進來。
+/// 海岸線：repo 裡的靜態檔，直接編進來（日誌的起點與里程碑是站長填的，由呼叫端從資料庫帶進來）。
 /// ⚠ `src/data/` 要在 `backend/Dockerfile` 的 builder 階段 COPY 進去，不然容器裡編不過
-const LOG_DATA_TS: &str = include_str!("../../../../../src/data/logData.ts");
-const MILESTONES_TS: &str = include_str!("../../../../../src/data/milestones.ts");
 const LAND_JSON: &str = include_str!("../../../../../src/data/landAroundTaiwan.json");
 const ROCKET_WEBP: &[u8] = include_bytes!("../../../../../public/illustrations/rocket-ascent.webp");
 
@@ -208,25 +206,6 @@ fn silhouette(cam: &Camera, radius: f64, w: f64, h: f64) -> Vec<ScreenPoint> {
     if run.len() > best.len() { run } else { best }
 }
 
-/// `YYYY-MM-DD` → 日期
-fn date_of(s: &str) -> Option<NaiveDate> {
-    NaiveDate::parse_from_str(s.get(..10)?, "%Y-%m-%d").ok()
-}
-
-/// `logData.ts` 的 `LOG_START`
-fn log_start() -> NaiveDate {
-    LOG_DATA_TS
-        .split("LOG_START = '")
-        .nth(1)
-        .and_then(date_of)
-        .expect("src/data/logData.ts 要有 `LOG_START = 'YYYY-MM-DD'`（測試會先擋）")
-}
-
-/// `milestones.ts` 裡每一筆的 `date: 'YYYY-MM-DD'`
-fn milestone_dates() -> Vec<NaiveDate> {
-    MILESTONES_TS.split("date: '").skip(1).filter_map(date_of).collect()
-}
-
 /// 台灣周邊的陸地（`data/landAroundTaiwan.json`：Natural Earth 50m land，公有領域）。
 /// 一塊陸地是幾個環（第一個是外圈，其餘是湖），每個環是一串 [經度×100, 緯度×100, …]，
 /// 這裡換成地表座標（θ、橫向位置）
@@ -308,31 +287,23 @@ pub struct Log {
     flame: Vec<(f32, f32)>,
 }
 
-impl Default for Log {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Log {
-    pub fn new() -> Self {
+    /// 從 `start`（站點誕生那天）畫到今天；`milestones` 是軌道上改版節點的日期
+    pub fn new(start: NaiveDate, milestones: &[NaiveDate]) -> Self {
         let today = chrono::Local::now().date_naive();
-        Self::on(today)
+        Self::on(today, start, milestones)
     }
 
     /// 畫到 `today` 那天為止（日誌一天一格，往遠方是時間）
-    fn on(today: NaiveDate) -> Self {
+    fn on(today: NaiveDate, start: NaiveDate, milestones: &[NaiveDate]) -> Self {
         let (w, h) = (W as f64, H as f64);
-        let start = log_start();
         let n = ((today - start).num_days() + 1).max(2) as usize;
         // 每天的量：示意的（見檔頭），一天比一天多一點，累積起來是一條越爬越陡的曲線
         let counts: Vec<f64> = (0..n).map(|i| i as f64).collect();
         let alt = altitudes(&counts);
         let start_dow = start.weekday().num_days_from_sunday() as usize;
-        let ms_index: Vec<usize> = milestone_dates()
-            .iter()
-            .map(|d| (*d - start).num_days().clamp(0, n as i64 - 1) as usize)
-            .collect();
+        let ms_index: Vec<usize> =
+            milestones.iter().map(|d| (*d - start).num_days().clamp(0, n as i64 - 1) as usize).collect();
 
         let theta_of = |i: f64| THETA0 + (i / (n - 1) as f64) * SPAN;
         let alt_of = |i: f64| {
@@ -673,14 +644,14 @@ impl super::Scene for Log {
 mod tests {
     use super::*;
 
-    /// 從前端的靜態檔讀出來的東西要讀得到：檔案改了格式，這裡先紅，不會等到分享圖上的
-    /// 軌道少了節點、海岸線不見才發現
+    fn day(s: &str) -> NaiveDate {
+        NaiveDate::parse_from_str(s, "%Y-%m-%d").expect("合法日期")
+    }
+
+    /// 從前端的靜態檔讀出來的海岸線要讀得到：檔案改了格式，這裡先紅，不會等到分享圖上的
+    /// 海岸線不見才發現
     #[test]
-    fn 讀得到日誌的起點_改版日期與海岸線() {
-        assert_eq!(log_start(), NaiveDate::from_ymd_opt(2025, 4, 1).expect("合法日期"));
-        let dates = milestone_dates();
-        assert!(dates.len() >= 10, "milestones.ts 只讀到 {} 筆日期", dates.len());
-        assert!(dates.iter().all(|d| *d >= log_start()), "改版日期早於日誌的起點");
+    fn 讀得到海岸線() {
         let land = land();
         assert!(land.len() > 10 && land.iter().all(|p| p.iter().all(|r| r.len() >= 3)), "海岸線讀壞了");
     }
@@ -698,7 +669,13 @@ mod tests {
     /// 不管哪一天產圖，畫面都要正常（日誌第一天也是）
     #[test]
     fn 哪一天產圖都畫得出來() {
-        let first = Log::on(log_start());
+        let start = day("2025-04-01");
+        let first = Log::on(start, start, &[start]);
         assert_eq!(super::super::Scene::frame(&first, 0).data().len(), W * H * 4);
+        // 里程碑早於起點、或還沒有任何里程碑，都不能炸
+        let odd = Log::on(day("2026-10-29"), start, &[day("2020-01-01")]);
+        assert_eq!(super::super::Scene::frame(&odd, 0).data().len(), W * H * 4);
+        let bare = Log::on(day("2026-10-29"), start, &[]);
+        assert_eq!(super::super::Scene::frame(&bare, 0).data().len(), W * H * 4);
     }
 }

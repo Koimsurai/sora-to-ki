@@ -814,6 +814,24 @@ export type LinkPreviewResponse = {
 	favicon: string | null,
 };
 
+/**  航行日誌：軌跡與任務計時器的起點、軌跡上的里程碑（貢獻圖、程式時數、遊戲是整合抓的，不在這裡） */
+export type LogContent = {
+	/**
+	 *  站點誕生的那一刻，帶時區（`2025-04-01T00:00:00+08:00`）：計時器從這裡數。
+	 *  空的＝第一篇文章那天（讀的時候補上，存的還是空的）
+	 */
+	start?: string,
+	milestones?: LogMilestone[],
+};
+
+export type LogMilestone = {
+	/**  `YYYY-MM-DD` */
+	date: string,
+	/**  0 小點、1 中點、2 標在軌跡上 */
+	level?: number,
+	text?: { [key in string]: string },
+};
+
 /**  只回一句訊息的成功回應（刪除、確認類）。 */
 export type MessageResponse = {
 	message: string,

@@ -134,6 +134,79 @@ impl AboutContent {
     }
 }
 
+// ── 航行日誌 ─────────────────────────────────────────────────────────
+
+/// 航行日誌：軌跡與任務計時器的起點、軌跡上的里程碑（貢獻圖、程式時數、遊戲是整合抓的，不在這裡）
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct LogContent {
+    /// 站點誕生的那一刻，帶時區（`2025-04-01T00:00:00+08:00`）：計時器從這裡數。
+    /// 空的＝第一篇文章那天（讀的時候補上，存的還是空的）
+    #[serde(default)]
+    pub start: String,
+    #[serde(default)]
+    pub milestones: Vec<LogMilestone>,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type, utoipa::ToSchema)]
+pub struct LogMilestone {
+    /// `YYYY-MM-DD`
+    pub date: String,
+    /// 0 小點、1 中點、2 標在軌跡上
+    #[serde(default)]
+    pub level: u8,
+    #[serde(default)]
+    pub text: I18n,
+}
+
+fn is_date(s: &str) -> bool {
+    chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").is_ok()
+}
+
+impl LogContent {
+    fn validate(&self) -> Result<(), String> {
+        if !self.start.is_empty() && chrono::DateTime::parse_from_rfc3339(&self.start).is_err() {
+            return Err("起點要是帶時區的時間（例如 2025-04-01T00:00:00+08:00），或留空".into());
+        }
+        check_count("里程碑", &self.milestones, 200)?;
+        for m in &self.milestones {
+            if !is_date(&m.date) {
+                return Err(format!("里程碑的日期要是 YYYY-MM-DD：{}", m.date));
+            }
+            if m.level > 2 {
+                return Err("里程碑的等級只有 0、1、2".into());
+            }
+            check_i18n("里程碑", &m.text)?;
+        }
+        Ok(())
+    }
+}
+
+/// 起點沒填：第一篇發佈的文章那天；連文章都沒有就是今天
+async fn default_start(pool: &SqlitePool) -> Result<String, AppError> {
+    let first: Option<String> =
+        sqlx::query_scalar("SELECT substr(MIN(created_at), 1, 10) FROM posts WHERE status = 'published'")
+            .fetch_one(pool)
+            .await?;
+    let date = first
+        .filter(|d| is_date(d))
+        .unwrap_or_else(|| chrono::Utc::now().date_naive().format("%Y-%m-%d").to_string());
+    Ok(format!("{date}T00:00:00Z"))
+}
+
+/// 航行日誌分享圖要的：起點那天（照起點自己的時區）與里程碑的日期。日期寫壞的那幾筆略過
+pub async fn log_dates(pool: &SqlitePool) -> Result<(chrono::NaiveDate, Vec<chrono::NaiveDate>), AppError> {
+    let log: LogContent = load(pool, "log").await?;
+    let start_at = if log.start.is_empty() { default_start(pool).await? } else { log.start };
+    let start = chrono::DateTime::parse_from_rfc3339(&start_at)
+        .map_or_else(|_| chrono::Utc::now().date_naive(), |t| t.date_naive());
+    let milestones = log
+        .milestones
+        .iter()
+        .filter_map(|m| chrono::NaiveDate::parse_from_str(&m.date, "%Y-%m-%d").ok())
+        .collect();
+    Ok((start, milestones))
+}
+
 // ── 讀寫 ─────────────────────────────────────────────────────────────
 
 async fn load<T: DeserializeOwned + Default>(pool: &SqlitePool, key: &str) -> Result<T, AppError> {
@@ -191,6 +264,36 @@ pub async fn put_about(
     Ok(Json(body).into_response())
 }
 
+/// `GET /api/pages/log` —— 公開：航行日誌的起點與里程碑。起點沒填就是第一篇文章那天
+#[utoipa::path(get, path = "/api/pages/log", tag = "pages", responses((status = 200, body = LogContent)))]
+pub async fn get_log(State(state): State<AppState>) -> Result<Json<LogContent>, AppError> {
+    let mut log: LogContent = load(&state.pool, "log").await?;
+    if log.start.is_empty() {
+        log.start = default_start(&state.pool).await?;
+    }
+    Ok(Json(log))
+}
+
+/// `PUT /api/admin/pages/log` —— 整份覆蓋航行日誌的內容（後台與 MCP），回傳存好的那份
+#[utoipa::path(put, path = "/api/admin/pages/log", tag = "pages", request_body = LogContent,
+    security(("bearer" = [])),
+    responses(
+        (status = 200, body = LogContent),
+        (status = 400, description = "欄位不合法（日期格式、等級、太長、不認得的語系）"),
+        (status = 401, description = "需要登入"),
+    ))]
+pub async fn put_log(
+    State(state): State<AppState>,
+    _auth: AdminAuth,
+    JsonBody(body): JsonBody<LogContent>,
+) -> Result<Response, AppError> {
+    if let Err(msg) = body.validate() {
+        return Ok(bad_request(&msg));
+    }
+    save(&state.pool, "log", &body).await?;
+    Ok(Json(body).into_response())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,6 +318,29 @@ mod tests {
         assert!(c.validate().unwrap_err().contains("fr"));
         c.chapters[0].line = tw(&"字".repeat(TEXT_MAX + 1));
         assert!(c.validate().is_err());
+    }
+
+    #[test]
+    fn 日誌的起點要帶時區_里程碑的日期與等級要對() {
+        let ok = LogContent {
+            start: "2025-04-01T00:00:00+08:00".into(),
+            milestones: vec![LogMilestone { date: "2025-04-01".into(), level: 2, text: tw("誕生") }],
+        };
+        assert_eq!(ok.validate(), Ok(()));
+        assert_eq!(LogContent::default().validate(), Ok(()), "起點留空＝第一篇文章那天");
+        for bad in [
+            LogContent { start: "2025-04-01".into(), ..ok.clone() },
+            LogContent {
+                milestones: vec![LogMilestone { date: "2025/4/1".into(), ..ok.milestones[0].clone() }],
+                ..ok.clone()
+            },
+            LogContent {
+                milestones: vec![LogMilestone { level: 3, ..ok.milestones[0].clone() }],
+                ..ok.clone()
+            },
+        ] {
+            assert!(bad.validate().is_err(), "{bad:?}");
+        }
     }
 
     #[test]
