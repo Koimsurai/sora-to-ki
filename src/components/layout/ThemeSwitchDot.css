@@ -19,8 +19,8 @@
 /* 切到參宿四：先像超新星一樣猛然亮一下、光暈炸開再收回，之後照常呼吸 */
 .theme-switch-dot[data-on][data-nova] {
   animation:
-    theme-switch-nova 0.9s var(--easing-out),
-    boot-breathe 1.6s ease-in-out 0.9s infinite;
+    theme-switch-nova 0.7s var(--easing-out),
+    boot-breathe 1.6s ease-in-out 0.7s infinite;
 }
 @keyframes theme-switch-nova {
   0% {

@@ -11,7 +11,7 @@
 //
 // 摺疊機摺起來（lib/viewportFold）：書本式太空梭在左半、老家那台在右半，圖紙的零件表那欄剛好在右半；
 // 筆電式俯視圖轉成機頭朝右放在上半，零件表從下半升起。
-import { DEFAULT_PALETTE } from '@/lib/palette';
+import { DEFAULT_PALETTE, onPalette } from '@/lib/palette';
 import { currentFold, subscribeFold, type Fold } from '@/lib/viewportFold';
 import { artSrc, BASE, partsSrc, PAYLOADS, type Payload, type Pt as Pct } from './setupPayloads';
 
@@ -179,10 +179,10 @@ export function createBay(opts: BayOptions) {
   const ctx: CanvasRenderingContext2D = maybe;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const css = getComputedStyle(root);
-  const INK = css.getPropertyValue('--paper-rgb').trim() || DEFAULT_PALETTE.paper;
-  const AMB = css.getPropertyValue('--amber-rgb').trim() || DEFAULT_PALETTE.amber;
-  const GROUND_RGB = css.getPropertyValue('--ground-rgb').trim() || DEFAULT_PALETTE.ground;
-  const GROUND = `rgb(${GROUND_RGB})`;
+  let INK = css.getPropertyValue('--paper-rgb').trim() || DEFAULT_PALETTE.paper;
+  let AMB = css.getPropertyValue('--amber-rgb').trim() || DEFAULT_PALETTE.amber;
+  let GROUND_RGB = css.getPropertyValue('--ground-rgb').trim() || DEFAULT_PALETTE.ground;
+  let GROUND = `rgb(${GROUND_RGB})`;
   const MONO = css.getPropertyValue('--mono-font').trim() || 'monospace';
   const ground = (a: number) => `rgba(${GROUND_RGB}, ${a})`;
 
@@ -190,6 +190,14 @@ export function createBay(opts: BayOptions) {
   /** 每張圖紙的零件編號（每個像素屬於第幾個零件）與每個零件染成琥珀色的版本 */
   const parts: Record<string, { labels: Uint8Array; w: number; h: number; art: Uint8ClampedArray } | undefined> = {};
   const tinted = new Map<string, HTMLCanvasElement>();
+  // 主題在頁面開著時換了就跟著換（lib/theme 的 setTheme）：染成訊號色的圖紙也要重染
+  const unsubscribePalette = onPalette((p) => {
+    INK = p.paper;
+    AMB = p.amber;
+    GROUND_RGB = p.ground;
+    GROUND = `rgb(${GROUND_RGB})`;
+    tinted.clear();
+  });
 
   const S = {
     mode: 'tall' as Mode,
@@ -1894,6 +1902,7 @@ export function createBay(opts: BayOptions) {
     },
     destroy: () => {
       S.alive = false;
+      unsubscribePalette();
       ro.disconnect();
       unsubscribeFold();
       canvas.removeEventListener('pointerdown', onDown);
