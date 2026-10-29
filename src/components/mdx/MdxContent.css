@@ -514,17 +514,25 @@
   white-space: nowrap;
 }
 
-/* ── <Sketch> mermaid→Excalidraw 手繪風 SVG ── */
+/* ── <Sketch> 手繪風 SVG（伺服器畫好的，見 lib/mdx/sketchSvg.ts）── */
 .mdx-sketch {
   margin: var(--space-7) 0;
   text-align: center;
+  /* 線與字的墨色；連線上的字用跟頁面一樣的底色蓋住底下那段線 */
+  --sketch-ink: var(--paper);
+  --sketch-bg: var(--ground);
 }
 .mdx-sketch-canvas {
   overflow-x: auto;
 }
-.mdx-sketch-canvas--loading {
-  min-height: 180px;
+/* 寬圖縮到 440px 以內、等比；小圖照原尺寸 */
+.mdx-sketch-svg {
+  display: block;
+  max-width: min(100%, 440px);
+  height: auto;
+  margin: 0 auto;
 }
+/* 後台預覽打字時，伺服器還沒把新的圖畫回來 */
 .mdx-sketch-loading {
   min-height: 220px;
   margin: var(--space-7) 0;

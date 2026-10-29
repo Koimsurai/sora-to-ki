@@ -36,8 +36,6 @@
     "mutate": "stryker run .config/stryker.config.json"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.18.1",
-    "@excalidraw/mermaid-to-excalidraw": "^3.1.0",
     "@fontsource-variable/fira-code": "5.3.0",
     "@fontsource-variable/tasa-orbiter": "^5.3.0",
     "@fontsource/instrument-serif": "5.3.0",
@@ -69,6 +67,7 @@
     "cmdk": "^1.0.0",
     "date-fns": "^4.4.0",
     "decimal.js-light": "^2.5.1",
+    "decode-named-character-reference": "1.2.0",
     "framer-motion": "^12.6.2",
     "harfbuzzjs": "1.6.3",
     "hast-util-to-jsx-runtime": "^2.3.6",
@@ -94,6 +93,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "remark-github-blockquote-alert": "^2.1.0",
+    "roughjs": "4.6.6",
     "sonner": "^1.7.1",
     "subset-font": "2.9.0",
     "swiper": "^14.1.0",

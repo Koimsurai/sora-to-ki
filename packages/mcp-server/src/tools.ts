@@ -295,6 +295,7 @@ ${renderBlocksForGuide()}
 **圖表怎麼挑**：精確的技術圖（流程／時序／狀態／ER／架構）一律用 \`\`\`mermaid 圍籬——有工具列（切配色、縮放平移、全螢幕、下載 SVG/PNG）。只有「概念草圖／比喻」且節點少、或想要手繪風時才用 <Sketch>。
 
 ⚠️ mermaid 支援的圖表是 flowchart / sequenceDiagram / stateDiagram / classDiagram / erDiagram / xychart 六類。gantt、pie、mindmap、timeline、journey、gitGraph **不會渲染**。方向寫在語法裡（\`flowchart LR\`），沒有讀者端切換。
+⚠️ 長的中文／日文標籤自己用 \`<br/>\` 斷在詞與詞之間（mermaid 圍籬與 <Sketch> 都一樣）：排版會在任意兩個字之間換行，不加的話可能從詞中間切開（「メインス｜レッド」）或最後一個字落單（「作らな｜い」）。
 mermaid 可用 frontmatter 預設外觀，例如手繪風：\`\`\`mermaid 後接 \`---\` / \`config:\` / \`  look: handDrawn\` / \`  theme: dark\` / \`---\`。
 
 ## 5. ⚠️ MDX 的坑（format='mdx' 一定遵守，寫錯會編譯失敗）

@@ -119,7 +119,7 @@
 
 ### 手記與碎念
 
-- **MDX 文章**：除了 GFM，另有二十多個自訂區塊（程式碼分頁、Diff、檔案樹、圖表、投票、Excalidraw 手繪圖、日文振假名、劇透、站長註解…）
+- **MDX 文章**：除了 GFM，另有二十多個自訂區塊（程式碼分頁、Diff、檔案樹、圖表、投票、手繪風草圖、日文振假名、劇透、站長註解…）
 - **五種語系**：繁中、簡中、English、日本語、한국어。簡中用 OpenCC 自動轉換，每篇文章可以各自翻譯
 - **程式碼高亮**：Shiki 走 JavaScript 正規式引擎（文章頁不用下載 wasm），只有 C 家族語言才載入 Oniguruma
 - **Mermaid 圖表**：可縮放、平移、全螢幕，跟著站點配色
@@ -171,7 +171,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **前端** | React 19 · TanStack Start / Router / Query · Vite+（vite、vitest、oxlint、oxfmt）· Tailwind CSS v4 · Framer Motion · three.js · MDX · Shiki · beautiful-mermaid · Excalidraw · i18next · Radix UI / shadcn |
+| **前端** | React 19 · TanStack Start / Router / Query · Vite+（vite、vitest、oxlint、oxfmt）· Tailwind CSS v4 · Framer Motion · three.js · MDX · @pierre/highlights · pele · rough.js · i18next · Radix UI / shadcn |
 | **後端** | Rust 2024 · axum · tokio · sqlx（SQLite）· JWT + bcrypt · image / resvg / thumbhash（圖片與分享圖）· ferrous-opencc · utoipa（OpenAPI，`/api/docs`）· Sentry SDK |
 | **字** | 思源宋體（按頁裁字）· Instrument Serif · 等寬字 |
 | **基礎設施** | Docker Compose · nginx · GitHub Actions · Codecov · 自架 GlitchTip |
@@ -300,8 +300,8 @@ cargo clippy --all-targets -- -D warnings
 
 站上用到的開源專案很多，特別感謝
 [TanStack](https://tanstack.com/)、[axum](https://github.com/tokio-rs/axum)、[sqlx](https://github.com/launchbadge/sqlx)、
-[three.js](https://threejs.org/)、[Shiki](https://shiki.style/)、[MDX](https://mdxjs.com/)、
-[Excalidraw](https://excalidraw.com/)、[Radix UI](https://www.radix-ui.com/)、[shadcn/ui](https://ui.shadcn.com/)、
+[three.js](https://threejs.org/)、[MDX](https://mdxjs.com/)、[pele](https://pele.run/)、[rough.js](https://roughjs.com/)、
+[Excalifont](https://github.com/excalidraw/excalidraw)、[小賴字體](https://github.com/lxgw/kose-font)、[Radix UI](https://www.radix-ui.com/)、[shadcn/ui](https://ui.shadcn.com/)、
 [OpenCC](https://github.com/BYVoid/OpenCC)、[thumbhash](https://github.com/evanw/thumbhash)、
 [思源宋體](https://github.com/adobe-fonts/source-han-serif)、[Instrument Serif](https://fonts.google.com/specimen/Instrument+Serif)，
 以及 [Vite+](https://viteplus.dev/) 與 oxc 的工具鏈。

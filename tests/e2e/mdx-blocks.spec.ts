@@ -16,7 +16,7 @@ import { expect, test } from './fixtures';
  *   兩件事的失敗模式不同，混在一起會讓兩邊都難讀。
  *
  * ⚠ 全部 block 在**同一次載入**裡驗完，不是一個 block 一條測試。/blog/7 是全站最重的
- *   頁面（excalidraw + recharts + katex 一次到齊），載 28 次只是把 CI 時間換成一份
+ *   頁面（recharts + katex 一次到齊），載 28 次只是把 CI 時間換成一份
  *   一樣的資訊——失敗時列出「缺了哪幾個」的訊息跟拆成 28 條一樣精確。
  */
 
@@ -37,7 +37,8 @@ const BLOCKS: [string, string][] = [
   ['InteractiveChart', '.mdx-chart-interactive'],
   ['Math', '.mdx-math-block'],
   ['Math（行內）', '.mdx-math-inline'],
-  ['Sketch', '.mdx-sketch'],
+  // 伺服器畫好的 SVG 真的在裡面（查表查不到時只會有外框或錯誤框）
+  ['Sketch', '.mdx-sketch .mdx-sketch-svg'],
   ['ImageCompare', '.mdx-imgcompare'],
   ['CodeTabs', '.mdx-codetabs'],
   ['Diff', '.mdx-diff'],
@@ -65,14 +66,14 @@ test.describe('MDX block 全覆蓋', () => {
       if (!/violates the following Content Security Policy/.test(t)) return;
       cspBlocked.push(t.slice(0, 160));
     });
-    // excalidraw 的字形 subsetting 曾經在這裡噴一堆 unsafe-eval 錯誤，一度被當成
-    // 「第三方的既有行為」排除掉。實際上那是 **e2e 代理層對 /assets/ 多加了 CSP**
-    // 造成的，正式站沒有這回事（見 tests/e2e/stack.mjs 的說明）。代理層對齊之後
-    // 錯誤歸零，所以這裡不再排除任何 CSP 違規——留著排除規則等於把那條路徑重新弄壞
-    // 的時候沒有人會發現。順帶一提，壞掉時的代價是行內 SVG 從 9 KB 變成 285 KB。
+    // 以前 Sketch 在瀏覽器裡用 excalidraw 畫的時候，它的字形 subsetting 在這裡噴過一堆
+    // unsafe-eval 錯誤，一度被當成「第三方的既有行為」排除掉。實際上那是 **e2e 代理層對
+    // /assets/ 多加了 CSP** 造成的，正式站沒有這回事（見 tests/e2e/stack.mjs 的說明）。
+    // 代理層對齊之後錯誤歸零，所以這裡不排除任何 CSP 違規——留著排除規則等於把那條路徑
+    // 重新弄壞的時候沒有人會發現。
 
     await page.goto(POST);
-    // 有幾個 block 是 lazy 的（chart / sketch / math），捲到底逼它們載入
+    // 有幾個 block 是 lazy 的（chart / math），捲到底逼它們載入
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
 
     // 等到所有 block 的 class 都出現，或逾時——逐一 waitFor 才不會把 lazy 的誤判成缺席
