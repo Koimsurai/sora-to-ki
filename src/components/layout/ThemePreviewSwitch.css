@@ -1,0 +1,27 @@
+/* dev 才有的主題切換（ThemePreviewSwitch）：左下角一排字，選中的那個是墨色加底線 */
+.theme-preview-switch {
+  position: fixed;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-chrome);
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--veil-2);
+}
+.theme-preview-switch button {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--fs-12);
+  color: var(--ink-subtle);
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+}
+.theme-preview-switch button:hover {
+  color: var(--ink);
+}
+.theme-preview-switch button[aria-pressed="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--signal);
+}

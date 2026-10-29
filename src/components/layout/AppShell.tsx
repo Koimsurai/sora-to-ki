@@ -3,6 +3,7 @@ import { ClientOnly, useRouterState } from '@tanstack/react-router';
 import { stripLocalePrefix } from '@/i18n/start-i18n';
 import SiteNav from './SiteNav';
 import ScrollToTop from './ScrollToTop';
+import ThemePreviewSwitch from './ThemePreviewSwitch';
 import CSSStarfield from '@/components/backdrop/CSSStarfield';
 import { loadSpaceBackdropShell } from '@/components/backdrop/prewarm';
 import type * as TransitionLayerModule from './TransitionLayer';
@@ -157,6 +158,12 @@ export default function AppShell({ children }: Readonly<{ children: ReactNode }>
           <Suspense fallback={null}>
             <ContextMenu />
           </Suspense>
+        </ClientOnly>
+      )}
+      {/* 主題預覽的切換：只在 dev 出現（lib/theme） */}
+      {import.meta.env.DEV && !isAdminPage && (
+        <ClientOnly fallback={null}>
+          <ThemePreviewSwitch />
         </ClientOnly>
       )}
       {/* 思源宋體的按頁裁字：前後台都要（2026-10 後台翻新之後，後台的標題、內容與表單也是宋體） */}
