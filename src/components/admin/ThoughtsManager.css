@@ -10,12 +10,12 @@
 .adm-th-compose {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   transition: border-color var(--dur-200) ease;
 }
 
 .adm-th-compose:focus-within {
-  border-color: var(--paper-3);
+  border-color: var(--line-strong);
 }
 
 .adm-th-text {
@@ -37,14 +37,14 @@
   border: none;
   outline: none;
   resize: vertical;
-  color: var(--paper);
+  color: var(--ink);
   font-family: var(--serif);
   font-size: var(--fs-18);
   line-height: var(--lh-170);
 }
 
 .adm-th-text textarea::placeholder {
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-th-url {
@@ -57,7 +57,7 @@
   gap: var(--space-3);
   margin: 0 var(--space-5) var(--space-4) calc(var(--space-5) + var(--space-6));
   padding: var(--space-3-5);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 .adm-th-bar {
@@ -66,7 +66,7 @@
   align-items: center;
   gap: var(--space-2-5);
   padding: var(--space-3) var(--space-5);
-  border-top: 1px dotted var(--rule);
+  border-top: 1px dotted var(--line);
 }
 
 /* 附上的小鈕：細框，按下去框與字都實墨、點變琥珀 */
@@ -77,8 +77,8 @@
   gap: var(--space-2);
   padding: 0 var(--space-3);
   background: transparent;
-  border: 1px solid var(--rule);
-  color: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
   font-family: var(--serif);
   font-size: var(--fs-14);
   cursor: pointer;
@@ -89,18 +89,18 @@
 
 .adm-th-chip:hover,
 .adm-th-chip:focus-visible {
-  border-color: var(--paper-3);
-  color: var(--paper);
+  border-color: var(--line-strong);
+  color: var(--ink);
 }
 
 .adm-th-chip[aria-pressed="true"] {
-  border-color: var(--paper-2);
-  color: var(--paper);
+  border-color: var(--ink-muted);
+  color: var(--ink);
 }
 
 .adm-th-chip[aria-pressed="true"] .adm-tab-dot {
-  background: var(--amber);
-  border-color: var(--amber);
+  background: var(--signal);
+  border-color: var(--signal);
 }
 
 .adm-th-bar kbd {
@@ -124,7 +124,7 @@
   width: 64px;
   aspect-ratio: 2 / 3;
   object-fit: cover;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 .adm-th-poster[data-square],
@@ -146,7 +146,7 @@
 
 .adm-th-card-title {
   font-size: var(--fs-18);
-  color: var(--paper);
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
@@ -161,14 +161,14 @@
   gap: var(--space-3-5);
   padding: var(--space-5) var(--space-6);
   background:
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 10px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px 10px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 10px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px 10px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 10px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px 10px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 10px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px 10px no-repeat;
+    linear-gradient(var(--line-strong), var(--line-strong)) left top / 10px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left top / 1px 10px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right top / 10px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right top / 1px 10px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 10px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1px 10px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 10px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1px 10px no-repeat;
 }
 
 .adm-th-preview-head {
@@ -179,7 +179,7 @@
 }
 
 .adm-th-verb-text {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-th-preview-text {
@@ -191,12 +191,12 @@
 }
 
 .adm-th-placeholder {
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-th-preview .adm-th-card {
   padding: var(--space-3);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 /* ── 發過的、最近的紀錄：一列一則，點線分隔 ── */
@@ -212,14 +212,14 @@
 }
 
 .adm-th-list .adm-row[data-editing] .adm-row-title {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .adm-th-row-verb {
   flex: none;
   width: 44px;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-th-thumb {
@@ -228,11 +228,11 @@
   width: 32px;
   aspect-ratio: 2 / 3;
   object-fit: cover;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 /* 寫過的退成淡墨：還是可以再寫一則 */
 .adm-th-records .adm-row[data-done] .adm-row-title,
 .adm-th-records .adm-row[data-done] .adm-btn {
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }

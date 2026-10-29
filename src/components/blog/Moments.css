@@ -5,7 +5,7 @@
   position: relative;
   min-height: 100vh;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 彗尾畫在固定於視窗的畫布上，捲動時重畫（不跟著頁面一起長，長頁面也只有一個螢幕大） */
@@ -26,7 +26,7 @@
 
 .mo a:focus-visible,
 .mo button:focus-visible {
-  outline: 1px solid var(--paper-2);
+  outline: 1px solid var(--ink-muted);
   outline-offset: 3px;
 }
 
@@ -55,25 +55,25 @@
   font-size: var(--fs-11);
   letter-spacing: var(--ls-24);
   text-transform: uppercase;
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .mo-rss {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .mo-rss:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .mo-head p {
   margin: var(--space-1) 0 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 一則 ── */
@@ -109,12 +109,12 @@
 .mo-time {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .mo-time:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .mo-text {
@@ -130,7 +130,7 @@
 }
 
 .mo-verb {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 附的連結或作品：左邊一條點線，不是一張卡；作品多一張小海報 */
@@ -150,7 +150,7 @@
   width: 36px;
   height: 54px;
   object-fit: cover;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 .mo-embed-poster[data-square] {
@@ -170,7 +170,7 @@
   bottom: 4px;
   left: 0;
   width: 3px;
-  background: radial-gradient(circle at 1.5px 1.5px, var(--paper-3) 1px, transparent 1.4px) 0 0 / 3px 5px repeat-y;
+  background: radial-gradient(circle at 1.5px 1.5px, var(--line-strong) 1px, transparent 1.4px) 0 0 / 3px 5px repeat-y;
 }
 
 .mo-embed b {
@@ -180,7 +180,7 @@
 }
 
 a.mo-embed:hover b {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .mo-embed-text > span {
@@ -188,7 +188,7 @@ a.mo-embed:hover b {
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
   text-transform: uppercase;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .mo-act {
@@ -197,7 +197,7 @@ a.mo-embed:hover b {
   margin-top: var(--space-2);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .mo-act > * {
@@ -208,7 +208,7 @@ a.mo-embed:hover b {
 }
 
 .mo-act > *:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .mo-act svg {
@@ -218,7 +218,7 @@ a.mo-embed:hover b {
 }
 
 .mo-act .is-on {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .mo-act .is-on svg {
@@ -257,13 +257,13 @@ a.mo-embed:hover b {
   display: flex;
   gap: var(--space-3);
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .mo-ghost-card time {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .mo-end {
@@ -276,7 +276,7 @@ a.mo-embed:hover b {
   font-size: var(--fs-11);
   line-height: var(--lh-160);
   letter-spacing: var(--ls-4);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .mo-dots {
@@ -334,7 +334,7 @@ a.mo-embed:hover b {
   width: 6px;
   height: 6px;
   border-radius: var(--r-round);
-  background: var(--paper-2);
+  background: var(--ink-muted);
   transform: translate(-50%, -50%);
   translate: 0 0;
   transition:
@@ -347,17 +347,17 @@ a.mo-embed:hover b {
   /* 跟轉場的點一樣大（layout/TransitionLayer 半徑 3）：點落地時就是它 */
   width: 6px;
   height: 6px;
-  background: var(--amber);
+  background: var(--signal);
   box-shadow: 0 0 14px rgba(var(--amber-rgb), 0.8);
 }
 
 .mo-dot.is-on {
-  background: var(--paper);
+  background: var(--ink);
   box-shadow: 0 0 10px rgba(var(--paper-rgb), 0.6);
 }
 
 .mo-dot.is-new.is-on {
-  background: var(--amber);
+  background: var(--signal);
 }
 
 .mo.is-arc .mo-ghost {
@@ -384,14 +384,14 @@ a.mo-embed:hover b {
   width: 4px;
   height: 4px;
   border-radius: var(--r-round);
-  background: var(--paper-3);
+  background: var(--line-strong);
   opacity: var(--fade, 1);
   transition: background var(--dur-200) ease;
 }
 
 .mo.is-arc .mo-ghost a:hover::before,
 .mo.is-arc .mo-ghost a:focus-visible::before {
-  background: var(--paper);
+  background: var(--ink);
   opacity: 1;
 }
 
@@ -455,12 +455,12 @@ a.mo-embed:hover b {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-8);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .mo-back:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .mo-post.is-core {
@@ -479,7 +479,7 @@ a.mo-embed:hover b {
 .mo-bit-author {
   font-weight: 600;
   text-decoration: underline;
-  text-decoration-color: var(--rule);
+  text-decoration-color: var(--line);
   text-underline-offset: 3px;
 }
 
@@ -487,13 +487,13 @@ a.mo-embed:hover b {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .mo-bit .mo-bit-text {
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 回覆：再淡一點、縮一點，像從碎屑上再剝下來的一小粒 */
@@ -509,7 +509,7 @@ a.mo-embed:hover b {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .mo-bit-act button {
@@ -520,7 +520,7 @@ a.mo-embed:hover b {
 
 .mo-bit-act button:hover,
 .mo-bit-act .is-on {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .mo-post.is-left .mo-bit-act {
@@ -530,7 +530,7 @@ a.mo-embed:hover b {
 .mo-dot.is-bit {
   width: 4px;
   height: 4px;
-  background: var(--paper-3);
+  background: var(--line-strong);
 }
 
 /* 送出列：彗尾末端，字一律靠左（不管它在弧線哪一邊） */
@@ -539,7 +539,7 @@ a.mo-embed:hover b {
   font-family: var(--serif);
   font-size: var(--fs-14);
   letter-spacing: normal;
-  color: var(--paper);
+  color: var(--ink);
   text-align: left;
 }
 

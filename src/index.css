@@ -448,12 +448,12 @@
   /* 全站文字選取（取代瀏覽器原生）：一層淡淡的暖白，像用墨在紙上劃過；字本身維持暖白 */
   ::selection {
     background: rgba(var(--paper-rgb), 0.22);
-    color: var(--paper);
+    color: var(--ink);
     text-shadow: none;
   }
   ::-moz-selection {
     background: rgba(var(--paper-rgb), 0.22);
-    color: var(--paper);
+    color: var(--ink);
     text-shadow: none;
   }
 }
@@ -490,10 +490,6 @@
     /* 更大的圓角 - 更現代 */
     --radius: 0.75rem;
 
-    /* ── 翻新前的品牌色 ────────────────────────────────────────────────────
-       2026-10 翻新後的配色是下面另一個 :root 的 --ground／--paper／--amber 那組。這幾個留著，
-       是因為還有元件引用：在文章頁、後台這些範圍裡，它們被指到紙色（見檔案最後那段覆寫）；
-       :root 這份還是舊的紫，全域 button、a 的基本樣式指著它。新寫的東西不要再用這組。 */
     /* ── 頁面外框的上下留白 ──────────────────────────────────────────────
        站台頂欄是 `position: fixed`，高 60px（≤480px 時 56px），所以每個頁面的最外層
        都得自己留出那段高度。在這之前 **10 個頁面各自編了一個數字**：桌機 90 / 100 /
@@ -509,14 +505,6 @@
     --page-top: var(--space-24); /* 96px */
     --page-bottom: var(--space-16); /* 64px */
 
-    --surface-0-rgb: 6, 5, 14;
-    --surface-1-rgb: 18, 14, 30;
-    --lavender-rgb: 199, 184, 255;
-    --lavender-soft: #e0c3fc;
-    --lavender-soft-rgb: 224, 195, 252;
-    --magenta: #dc3278;
-    --magenta-rgb: 220, 50, 120;
-
     /* ── 調色盤：Tailwind v3 色票 ──────────────────────────────────────────
        全站有 23 個底色、315 次使用是**一字不差**的 Tailwind v3 色票（purple-300 就用了
        90 次）。用色票名命名是客觀的，不用猜語意；值就是原本在用的 hex，零視覺變化。
@@ -525,7 +513,7 @@
        跟 v3 的 hex 不相等，換過去就不是零變化；而且哪些 shade 有輸出取決於 utility
        用到誰（跟 `--text-3xl` 被 tree-shake 掉是同一個陷阱）。這裡自己定義。
 
-       帶透明度時用 `rgba(var(--purple-300-rgb), a)`。-rgb 只給真的有帶 alpha 用法的那幾個，
+       帶透明度時用 `rgba(var(--red-300-rgb), a)`。-rgb 只給真的有帶 alpha 用法的那幾個，
        需要時再補。 */
     --zinc-100: #f4f4f5;
     --zinc-200: #e4e4e7;
@@ -537,7 +525,6 @@
     --zinc-800: #27272a;
     --zinc-900: #18181b;
     --purple-300: #d8b4fe;
-    --purple-300-rgb: 216, 180, 254;
     --purple-500: #a855f7;
     --violet-300: #c4b5fd;
     --violet-400: #a78bfa;
@@ -574,30 +561,13 @@
     --diff-del: #f85149;
     --diff-del-rgb: 248, 81, 73;
 
-    /* Happy Hues 調色板的殘餘：還有人用，先不動名字 */
-    --clr-headline: #fffffe;
-    --clr-paragraph: #94a1b2;
-    --clr-button: var(--brand);
-    --clr-button-text: var(--clr-headline);
-
-    /* 深空玻璃質感的共用 token。元件 CSS 用這裡的名字，不要各自複製一份。
-
-       ⚠️ **品牌紫不能叫 `--accent`。** 上面 shadcn 的 `--accent` 是 HSL 三元組
-       （`216 34% 17%`），`@theme` 拿它做 `hsl(var(--accent))`；把 `#7f5af0` 塞進同一個
-       名字會讓全站 shadcn accent 變成 `hsl(#7f5af0)` 這種無效值。所以叫 `--brand`。 */
-    --brand: #7f5af0;
-    /* brand-light 就是 violet-300，指過去而不是再抄一份 hex——單一來源 */
-    --brand-light: var(--violet-300);
-    /* 帶透明度的品牌紫寫 `rgba(var(--brand-rgb), 0.3)`，alpha 必須在上面那 19 階上。 */
-    --brand-rgb: 127, 90, 240;
-
     /* 文章版面（文章頁、InfoPage 系列、LinkCard）的語意色。原本寫在 BlogPost.css 的 :root，
        可是 article-shell.css 與 LinkCard.css 也在用——/history、/about-site 這些頁面不載入
        BlogPost.css，以前是靠每頁 idle 預載文章頁 chunk 才「事後」拿到，拆掉預載就變成未定義。 */
     /* 2026-10 翻新：紫與綠全部收回暖白，琥珀只留給「你在哪裡」那一點（後台不用這一組） */
-    --post-accent: var(--paper);
+    --post-accent: var(--ink);
     --post-accent-glow: rgba(var(--paper-rgb), 0.2);
-    --post-muted: var(--paper-3);
+    --post-muted: var(--ink-subtle);
 
     /* ── 透明度階梯（白／黑共用同一把尺，19 階）──────────────────────────
          0.02 0.04 0.06 0.08 0.10 · 0.15 0.20 0.25 0.30 0.35 0.40 0.45 0.50 0.55 0.60 · 0.70 0.80 0.90 0.95
@@ -690,8 +660,9 @@
     font-size: 1em;
     font-weight: 500;
     font-family: inherit;
-    background-color: var(--clr-button);
-    color: var(--clr-button-text);
+    /* 底色與字色交給各元件：翻新後沒有「預設長相」的按鈕 */
+    background-color: transparent;
+    color: inherit;
     cursor: pointer;
     transition:
       background-color var(--dur-250),
@@ -701,7 +672,7 @@
   /* 翻新前這裡有一條 button:hover / :focus 換成紫底加光暈的規則，各元件得一個個寫例外去壓它；
      拿掉了。滑過的回饋由各元件自己給，這裡只留鍵盤聚焦的框 */
   button:focus-visible {
-    outline: 1px solid var(--paper-3);
+    outline: 1px solid var(--line-strong);
     outline-offset: 2px;
   }
   button:focus:not(:focus-visible) {
@@ -724,38 +695,49 @@
   --mono-font:
     "Fira Code Variable", "Fira Code", "JetBrains Mono", "SF Mono", ui-monospace, Consolas, var(--cjk-font), monospace;
 
-  /* ── 翻新的材料（2026-10 提案）────────────────────────────────────────
-     只有三樣：黑是紙、白是墨、琥珀是訊號。琥珀只出現在「一個點」上（你在哪裡、正在發生的事），
-     不拿來當大面積的強調色。墨的深淺用透明度分三階，落在下面那把 19 階的透明度梯子上。 */
+  /* ── 配色：原始層（2026-10 翻新）─────────────────────────────────────
+     只有四個實色：黑是紙、白是墨、琥珀是訊號，--flare 只給「壞了」與「會刪東西」。
+     元件不直接用這一層，用下面的語意層；-rgb 給這個檔案裡算透明度，以及 canvas 讀值用。 */
   --ground: #0a0a0c;
   --ground-rgb: 10, 10, 12;
   --paper: #f1ece3;
   --paper-rgb: 241, 236, 227;
-  --paper-2: rgba(var(--paper-rgb), 0.7);
-  /* 0.5（約 4.6:1，小字的及格線）：原本 0.4 只有 3.4:1，而它用在手記副標、圖例、日期這些要讀的字上，
-     手記清單有六成五的字是這個顏色（2026-10 可讀性檢查）。仍然比內文淡很多，層次不變 */
-  --paper-3: rgba(var(--paper-rgb), 0.5);
-  --rule: rgba(var(--paper-rgb), 0.15);
   --amber: #e9c17a;
   --amber-rgb: 233, 193, 122;
-  /* 後台多兩樣（2026-10 後台提案）：
-     --paper-meta 是後台的小字。後台的等寬標籤很多，所以比 --paper-3（50%）再多一階 55%（約 5.6:1）。
-     --flare 只給「壞了」與「會刪東西」，而且一定配叉號或點線框，不單靠顏色分辨；
-     它跟琥珀的明度差得夠遠，色弱也分得開。 */
-  --paper-meta: rgba(var(--paper-rgb), 0.55);
   --flare: #e3866c;
   --flare-rgb: 227, 134, 108;
+
+  /* ── 配色：語意層 ──────────────────────────────────────────────────────
+     元件只用這一層。照角色命名，值由對比度定（疊在 --ground 上）。要加新的一階就在這裡加一個
+     有名字的角色，不要在元件裡寫透明度。
+
+     字：墨的透明度，不用預先混好的實色。這個站幾乎只有一種深底，字壓在亮星上時半透明的字
+     會跟著變亮，對比度反而比實色保得住。 */
+  --ink: var(--paper); /* 16.8:1　標題、強調 */
+  --ink-body: rgba(var(--paper-rgb), 0.9); /* 13.6:1　長文內文（文章的段落） */
+  --ink-muted: rgba(var(--paper-rgb), 0.7); /* 8.4:1　說明、摘要 */
+  /* 5.5:1　日期、副標、圖例、後台的等寬小字。原本前台 50%（4.7:1）、後台 55%，2026-10 統一成 55%：
+     50% 只比內文的及格線 4.5 多一點，字壓在亮星上就不夠 */
+  --ink-subtle: rgba(var(--paper-rgb), 0.55);
+  /* 線：細線是裝飾（分隔、外框），強的那條要看得見（≥3:1）。用背景畫的線、點、刻度與軌道也用這兩個；
+     選中、作用中的線用字的顏色，跟旁邊的字一致 */
+  --line: rgba(var(--paper-rgb), 0.15);
+  --line-strong: rgba(var(--paper-rgb), 0.5);
+  /* 訊號：琥珀只出現在「一個點」上（前台是你在哪裡，後台是資料本身），不當大面積的強調色、按鈕或連結色。
+     --danger 一定配叉號或點線框，不單靠顏色分辨；它跟琥珀的明度差得夠遠，色弱也分得開 */
+  --signal: var(--amber);
+  --danger: var(--flare);
   /* 四角框：只有四個角的短線，沒有底色、外框、圓角。文章摘要用的就是這個框，
      文章裡的互動區塊（投票、數字、圖表、分頁、站內文章卡…）跟著用：`background: var(--corner-frame)` */
   --corner-frame:
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 10px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px 10px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 10px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px 10px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 10px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px 10px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 10px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px 10px no-repeat;
+    linear-gradient(var(--line-strong), var(--line-strong)) left top / 10px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left top / 1px 10px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right top / 10px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right top / 1px 10px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 10px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1px 10px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 10px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1px 10px no-repeat;
 
   /* 字：中文與中英混排一律思源宋體；Instrument Serif 只給「整段都是英文的大字」（名字、Notes），
      它只有一個字重，不要加粗。思源宋體是按頁裁字（layout/SerifFontLoader）：堆疊第一個
@@ -912,8 +894,9 @@ html {
    升 v4 之後同樣的寫法反過來把每一個 heading 的文字顏色與 `mb-*` 都壓掉——
    實測後台編輯頁右欄的區塊標題從灰色變全白、`mb-3`(12px) 被這裡的 0.5em(5.5px) 取代。 */
 @layer base {
+  /* 沒有自己定顏色的字：內文用 --ink-muted（亮度跟翻新前的預設藍灰最接近），標題與連結用 --ink */
   body {
-    color: var(--clr-paragraph);
+    color: var(--ink-muted);
     background-color: transparent;
   }
 
@@ -923,13 +906,13 @@ html {
   h4,
   h5,
   h6 {
-    color: var(--clr-headline);
+    color: var(--ink);
     margin-top: 1.5em;
     margin-bottom: 0.5em;
   }
 
   a {
-    color: var(--clr-button);
+    color: var(--ink);
     text-decoration: none;
     transition: color var(--dur-200) ease-in-out;
   }
@@ -1216,7 +1199,7 @@ html[data-boot] .pt-canvas {
   height: 6px;
   translate: -50% -50%;
   border-radius: var(--r-full);
-  background: var(--amber);
+  background: var(--signal);
   box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
   animation: boot-breathe 1.6s ease-in-out infinite;
 }
@@ -1242,7 +1225,7 @@ html[data-boot] .pt-canvas {
 
 .boot-ring ellipse {
   fill: none;
-  stroke: var(--paper);
+  stroke: var(--ink);
   stroke-width: 1;
   /* 長大時線不要跟著變粗：環一直是髮絲線 */
   vector-effect: non-scaling-stroke;
@@ -1349,7 +1332,7 @@ html[data-boot] .pt-canvas {
   width: 3px;
   height: 3px;
   border-radius: var(--r-full);
-  background: var(--paper);
+  background: var(--ink);
   /* 預設擺在起點（JS 還沒擺上去之前） */
   transform: translate(22.35px, -1.5px);
 }
@@ -1453,33 +1436,4 @@ html[data-boot="out"][data-boot-ring="go"] .boot-ring.is-back {
     opacity: 1;
     transform: scale(1);
   }
-}
-
-/* 2026-10 翻新（提案 v14）：品牌紫、洋紅、薰衣草、紫羅蘭與 Happy Hues 的綠，在公開頁面上一律指到暖白（--paper），
-   面板底色指到頁面的紙色。:root 那份還是紫的（全域 button、a 的基本樣式指著它，直接改 :root 會動到所有沒自己定顏色的按鈕與連結），所以只在這些範圍裡改。
-   琥珀只留給「你在哪裡」那一點（目錄、語言）。
-     .ar-page             文章頁、MDX 區塊與程式碼框
-     .koim-loader-shell   載入中（站內換頁等語系資源、文章還沒到、登入回呼）
-     .css-starfield       沒有硬體加速時的 CSS 星空
-     .fe-overlay          收藏頁的最愛編輯器（只有管理者看得到）
-     .admin-layout／.admin-mode  後台：後台自己的樣式不用這組變數（AdminTheme.css 用的是紙、墨、琥珀），
-                          這裡管的是後台裡借用的前台元件（文章預覽的 MDX 區塊、載入中…） */
-.ar-page,
-.koim-loader-shell,
-.css-starfield,
-.fe-overlay,
-.admin-layout,
-.admin-mode {
-  --brand: var(--paper);
-  --purple-300-rgb: var(--paper-rgb);
-  --brand-rgb: var(--paper-rgb);
-  --brand-light: var(--paper);
-  --magenta: var(--paper);
-  --magenta-rgb: var(--paper-rgb);
-  --lavender-rgb: var(--paper-rgb);
-  --lavender-soft: var(--paper);
-  --lavender-soft-rgb: var(--paper-rgb);
-  --violet-400: var(--paper);
-  --surface-0-rgb: var(--ground-rgb);
-  --surface-1-rgb: var(--ground-rgb);
 }

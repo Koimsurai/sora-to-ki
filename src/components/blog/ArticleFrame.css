@@ -5,7 +5,7 @@
 
 .ar-page {
   --ar-col: 680px;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .ar-col {
@@ -52,7 +52,7 @@
   top: 0;
   z-index: var(--z-float);
   height: 1px;
-  background: linear-gradient(to right, transparent, var(--paper-2) 12%, var(--paper-2) 88%, transparent);
+  background: linear-gradient(to right, transparent, var(--ink-muted) 12%, var(--ink-muted) 88%, transparent);
   box-shadow: 0 0 10px rgba(var(--paper-rgb), 0.35);
   pointer-events: none;
 }
@@ -64,7 +64,7 @@
 }
 
 .ar-page :is(.ar-act button, .ar-act a, .ar-kick a, .ar-tags a, .ar-tags button, .ar-side a, .ar-same a):focus-visible {
-  outline: 1px solid var(--paper-2);
+  outline: 1px solid var(--ink-muted);
   outline-offset: 3px;
 }
 
@@ -74,7 +74,7 @@
   font-size: var(--fs-10);
   letter-spacing: var(--ls-18);
   text-transform: uppercase;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* ── 頁首：靠左，跟內文同一條邊 ── */
@@ -89,7 +89,7 @@
   gap: var(--space-3);
   margin: 0;
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .ar-kick a {
@@ -97,7 +97,7 @@
 }
 
 .ar-kick a:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .ar-head h1 {
@@ -112,7 +112,7 @@
   margin: 0;
   font-size: var(--fs-18);
   line-height: var(--lh-150);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .ar-meta {
@@ -123,7 +123,7 @@
   margin-top: var(--space-3);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .ar-tags {
@@ -131,7 +131,7 @@
   flex-wrap: wrap;
   gap: var(--space-1) var(--space-4);
   font-size: var(--fs-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .ar-tags button {
@@ -139,14 +139,14 @@
 }
 
 .ar-tags button:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 展開著的那個標籤 */
 .ar-tags button[aria-expanded="true"] {
-  color: var(--paper);
+  color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--amber);
+  text-decoration-color: var(--signal);
   text-underline-offset: 4px;
 }
 
@@ -182,7 +182,7 @@
 .ar-tag-none {
   margin: 0;
   font-size: var(--fs-13);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* ── 非原文語系的 AI 翻譯提示：跟摘要同一種框（四個角、等寬的標頭），前面一個琥珀點——
@@ -191,14 +191,14 @@
   margin: 0 0 var(--space-8);
   padding: var(--space-4) var(--space-5);
   background:
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 12px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px 12px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 12px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px 12px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 12px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px 12px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 12px 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px 12px no-repeat;
+    linear-gradient(var(--line-strong), var(--line-strong)) left top / 12px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left top / 1px 12px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right top / 12px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right top / 1px 12px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 12px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1px 12px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 12px 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1px 12px no-repeat;
 }
 
 .ar-notice-hd {
@@ -209,13 +209,13 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .ar-notice-hd i {
   width: 6px;
   height: 6px;
-  background: var(--amber);
+  background: var(--signal);
   border-radius: var(--r-round);
 }
 
@@ -223,21 +223,21 @@
   margin: 0;
   font-size: var(--fs-13);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .ar-notice a {
   margin-left: var(--space-2);
-  color: var(--paper);
+  color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--paper-3);
+  text-decoration-color: var(--line-strong);
   text-underline-offset: 3px;
   white-space: nowrap;
 }
 
 .ar-notice a:hover,
 .ar-notice a:focus-visible {
-  text-decoration-color: var(--amber);
+  text-decoration-color: var(--signal);
 }
 
 /* ── 摘要：編號 00、四個角框起來、字小一號——它是附件，不是內文 ── */
@@ -255,14 +255,14 @@
   padding: var(--space-5) var(--space-6);
   /* 四個角：八段短線 */
   background:
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / var(--cl) 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left top / 1px var(--cl) no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / var(--cl) 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right top / 1px var(--cl) no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / var(--cl) 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) left bottom / 1px var(--cl) no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / var(--cl) 1px no-repeat,
-    linear-gradient(var(--paper-3), var(--paper-3)) right bottom / 1px var(--cl) no-repeat;
+    linear-gradient(var(--line-strong), var(--line-strong)) left top / var(--cl) 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left top / 1px var(--cl) no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right top / var(--cl) 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right top / 1px var(--cl) no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / var(--cl) 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) left bottom / 1px var(--cl) no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right bottom / var(--cl) 1px no-repeat,
+    linear-gradient(var(--line-strong), var(--line-strong)) right bottom / 1px var(--cl) no-repeat;
   transition: --cl var(--dur-700) ease;
 }
 
@@ -273,7 +273,7 @@
 /* 一字一字浮現：剛出來時亮一點，再退回摘要的顏色 */
 .ar-sum .c {
   opacity: 0;
-  color: var(--paper);
+  color: var(--ink);
   transition:
     opacity var(--dur-500) ease,
     color var(--dur-1000) ease;
@@ -303,7 +303,7 @@
 .ar-sum .ar-link {
   color: inherit;
   text-decoration: none;
-  background: linear-gradient(var(--paper-3), var(--paper-3)) 0 100% / 0 1px no-repeat;
+  background: linear-gradient(var(--line-strong), var(--line-strong)) 0 100% / 0 1px no-repeat;
   transition:
     background-size var(--dur-700) var(--easing-out),
     color var(--dur-200) ease;
@@ -315,8 +315,8 @@
 
 .ar-sum .ar-link:hover,
 .ar-sum .ar-link:focus-visible {
-  color: var(--paper);
-  background-image: linear-gradient(var(--paper), var(--paper));
+  color: var(--ink);
+  background-image: linear-gradient(var(--ink), var(--ink));
 }
 
 .ar-gut {
@@ -325,7 +325,7 @@
   left: -56px;
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .ar-sum-hd {
@@ -335,20 +335,20 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .ar-sum p {
   margin: 0;
   font-size: var(--fs-14);
   line-height: var(--lh-185);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 內文：紫色收回暖白，章節號放在左邊留白 ── */
 .ar-page .post-content {
   counter-reset: ch;
-  color: rgba(var(--paper-rgb), 0.9);
+  color: var(--ink-body);
 }
 
 .ar-page .post-content h2 {
@@ -356,7 +356,7 @@
   counter-increment: ch;
   padding-bottom: 0;
   border-bottom: 0;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .ar-page .post-content h2::before {
@@ -367,31 +367,31 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-weight: 400;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .ar-page .post-content :is(h3, h4) {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .ar-page .post-content a {
-  color: var(--paper);
+  color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--paper-3);
+  text-decoration-color: var(--line-strong);
   text-underline-offset: 3px;
   transition: text-decoration-color var(--dur-200) ease;
 }
 
 .ar-page .post-content a:hover {
-  color: var(--paper);
-  text-decoration-color: var(--amber);
+  color: var(--ink);
+  text-decoration-color: var(--signal);
 }
 
 /* 首字放大：紫色收回暖白 */
 .ar-page .post-content.drop-cap-first > p:first-of-type::first-letter {
   font-family: var(--serif);
   font-weight: 600;
-  color: var(--paper);
+  color: var(--ink);
   text-shadow: none;
 }
 
@@ -471,7 +471,7 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
   align-items: center;
   height: 14px;
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   transition: color var(--dur-200) ease;
 }
 
@@ -479,7 +479,7 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
   flex: none;
   width: var(--len);
   height: 1px;
-  background: var(--paper-3);
+  background: var(--line-strong);
   transition: background var(--dur-200) ease;
 }
 
@@ -517,15 +517,15 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
 }
 
 .ar-side-a:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .ar-side .is-on i {
-  background: var(--amber);
+  background: var(--signal);
 }
 
 .ar-side .is-on .ar-side-a {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .ar-side-cat {
@@ -533,7 +533,7 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
   gap: var(--space-px);
   margin: var(--space-5) 0 0;
   font-size: var(--fs-12);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   opacity: 0;
   transition: opacity var(--dur-200) ease;
 }
@@ -541,7 +541,7 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
 .ar-side-cat span {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .ar-side:is(:hover, :focus-within) .ar-side-cat {
@@ -554,7 +554,7 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
   gap: var(--space-12);
   margin-top: var(--space-12);
   padding-top: var(--space-8);
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--line);
 }
 
 .ar-act {
@@ -562,7 +562,7 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-6);
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .ar-act > * {
@@ -570,11 +570,11 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
 }
 
 .ar-act > *:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .ar-act .is-on {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .ar-act em {
@@ -601,17 +601,17 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
 .ar-same time {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .ar-same a {
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   transition: color var(--dur-200) ease;
 }
 
 .ar-same a:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 上一篇／下一篇：兩欄字，不是卡片 */
@@ -629,13 +629,13 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
   border: 0;
   background: none;
   box-shadow: none;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   text-decoration: none;
   transition: color var(--dur-200) ease;
 }
 
 .ar-page .prev-next-card:hover {
-  color: var(--paper);
+  color: var(--ink);
   background: none;
   transform: none;
 }
@@ -648,7 +648,7 @@ html:not([data-pt="out"], [data-pt="fly"]) .ar-page.is-unfold .ar-col {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .ar-page .prev-next-title {

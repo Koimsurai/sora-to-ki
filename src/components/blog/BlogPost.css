@@ -43,11 +43,11 @@
   top: 80px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(var(--surface-1-rgb), 0.95);
+  background: rgba(var(--ground-rgb), 0.95);
   color: #fff;
   padding: var(--space-2-5) var(--space-4-5);
   border-radius: var(--r-full);
-  border: 1px solid rgba(var(--brand-rgb), 0.3);
+  border: 1px solid rgba(var(--paper-rgb), 0.3);
   box-shadow: var(--elev-4);
   font-size: var(--fs-14);
   z-index: var(--z-toast);
@@ -86,10 +86,10 @@
   min-height: 72px;
 }
 .prev-next-card:hover {
-  border-color: rgba(var(--brand-rgb), 0.35);
-  background: rgba(var(--brand-rgb), 0.06);
+  border-color: rgba(var(--paper-rgb), 0.35);
+  background: rgba(var(--paper-rgb), 0.06);
   box-shadow:
-    0 0 20px rgba(var(--brand-rgb), 0.08),
+    0 0 20px rgba(var(--paper-rgb), 0.08),
     0 8px 24px var(--black-25);
   transform: translateY(-2px);
 }
@@ -103,7 +103,7 @@
   letter-spacing: var(--ls-4);
 }
 .prev-next-card:hover .prev-next-label {
-  color: var(--brand-light);
+  color: var(--ink);
 }
 .prev-next-title {
   font-size: var(--fs-16);
@@ -131,8 +131,8 @@
 .series-nav {
   margin: var(--space-10) 0 var(--space-6);
   padding: var(--space-5-5) var(--space-6);
-  background: rgba(var(--brand-rgb), 0.06);
-  border: 1px solid rgba(var(--brand-rgb), 0.2);
+  background: rgba(var(--paper-rgb), 0.06);
+  border: 1px solid rgba(var(--paper-rgb), 0.2);
   border-radius: var(--r-12);
   backdrop-filter: blur(var(--blur-8));
 }
@@ -148,12 +148,12 @@
   font-size: var(--fs-11);
   letter-spacing: var(--ls-18);
   text-transform: uppercase;
-  color: var(--brand-light);
+  color: var(--ink);
 }
 .series-nav-name {
   font-size: var(--fs-18);
   font-weight: 600;
-  background: linear-gradient(135deg, var(--lavender-soft) 0%, var(--brand) 60%, var(--magenta) 100%);
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink) 60%, var(--ink) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -204,17 +204,17 @@
   transition: color var(--dur-200) ease;
 }
 a.series-nav-title:hover {
-  color: var(--brand-light);
+  color: var(--ink);
 }
 .series-nav-item.is-current {
-  background: rgba(var(--brand-rgb), 0.1);
+  background: rgba(var(--paper-rgb), 0.1);
 }
 .series-nav-item.is-current .series-nav-num {
-  background: linear-gradient(135deg, var(--brand), var(--magenta));
+  background: linear-gradient(135deg, var(--ink), var(--ink));
   color: #fff;
 }
 .series-nav-item.is-current .series-nav-title {
-  color: var(--lavender-soft);
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -256,8 +256,8 @@ a.series-nav-title:hover {
   padding: 0 var(--space-1);
   margin: 0 var(--space-px);
   border-radius: var(--r-4);
-  background: rgba(var(--brand-rgb), 0.1);
-  color: var(--brand-light);
+  background: rgba(var(--paper-rgb), 0.1);
+  color: var(--ink);
   text-decoration: none;
   font-size: 0.78em;
   font-weight: 600;
@@ -265,7 +265,7 @@ a.series-nav-title:hover {
 }
 .post-content sup a[data-footnote-ref]:hover,
 .post-content a.footnote-ref:hover {
-  background: rgba(var(--brand-rgb), 0.3);
+  background: rgba(var(--paper-rgb), 0.3);
   color: #fff;
 }
 
@@ -312,8 +312,8 @@ a.series-nav-title:hover {
 .post-content .markdown-alert {
   padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
   margin: var(--space-6) 0;
-  border-left: 1px solid var(--paper-3);
-  color: var(--paper-2);
+  border-left: 1px solid var(--line-strong);
+  color: var(--ink-muted);
 }
 .post-content .markdown-alert-title {
   display: block;
@@ -322,20 +322,20 @@ a.series-nav-title:hover {
   font-size: var(--fs-11);
   font-weight: 400;
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 .post-content .markdown-alert-title svg {
   display: none;
 }
 /* 要讀者停下來的三種：線亮一階、標籤前一顆琥珀點（「這裡」） */
 .post-content :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution) {
-  border-left-color: var(--paper);
+  border-left-color: var(--ink);
 }
 .post-content :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution) .markdown-alert-title {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 .post-content
   :is(.markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution)
@@ -344,7 +344,7 @@ a.series-nav-title:hover {
   width: 4px;
   height: 4px;
   border-radius: var(--r-round);
-  background: var(--amber);
+  background: var(--signal);
   box-shadow: 0 0 6px rgba(var(--amber-rgb), 0.7);
 }
 .post-content .markdown-alert p {
@@ -399,10 +399,10 @@ a.series-nav-title:hover {
   gap: var(--space-3);
   padding: var(--space-1-5) var(--space-3-5);
   background: rgba(var(--ground-rgb), 0.85);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   white-space: nowrap;
   pointer-events: none;
   z-index: 5;
@@ -440,7 +440,7 @@ a.series-nav-title:hover {
    ═══════════════════════ */
 /* 照提案：細線框、小圓角、很淡的暖白底；語言與「複製」是等寬小字 */
 .code-block-wrapper {
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   border-radius: var(--r-6);
   overflow: hidden;
   background: rgba(var(--paper-rgb), 0.03);
@@ -484,14 +484,14 @@ a.series-nav-title:hover {
 .language-name {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   letter-spacing: var(--ls-12);
 }
 
 .copy-button {
   background: none;
   border: 0;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   padding: var(--space-1) 0;
   border-radius: 0;
   font-family: var(--mono-font);
@@ -507,7 +507,7 @@ a.series-nav-title:hover {
 .copy-button:focus-visible {
   background: none;
   border-color: transparent;
-  color: var(--paper);
+  color: var(--ink);
   box-shadow: none;
   outline: none;
 }
@@ -519,17 +519,17 @@ a.series-nav-title:hover {
   border-radius: var(--r-6);
   overflow: hidden;
   background: rgba(var(--paper-rgb), 0.03);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 .terminal-bar {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
 }
 .terminal-glyph {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-n4);
@@ -537,7 +537,7 @@ a.series-nav-title:hover {
 .terminal-title {
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   font-family: var(--mono-font);
 }
 .terminal-block .copy-button {
@@ -595,7 +595,7 @@ a.series-nav-title:hover {
   padding: var(--space-1) var(--space-4-5) 0;
 }
 .terminal-prompt-sym {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   font-family: var(--mono-font);
   font-size: var(--fs-14);
 }
@@ -604,7 +604,7 @@ a.series-nav-title:hover {
   display: inline-block;
   width: 0.4rem;
   height: 1rem;
-  background: var(--amber);
+  background: var(--signal);
   animation: terminal-blink 1.05s steps(1) infinite;
 }
 @keyframes terminal-blink {
@@ -659,7 +659,7 @@ a.series-nav-title:hover {
 .code-surface-toggle:focus,
 .code-surface-toggle:focus-visible {
   background: none;
-  color: var(--paper);
+  color: var(--ink);
   box-shadow: none;
   border-color: transparent;
   outline: none;
@@ -696,7 +696,7 @@ a.series-nav-title:hover {
   width: min(400px, 100%);
   padding: var(--space-8) var(--space-8) var(--space-6);
   background: rgba(var(--ground-rgb), 0.96);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 /* 關閉：右上角兩條細線交叉（跟圖片燈箱同一個畫法，不靠圖示字型） */
@@ -709,7 +709,7 @@ a.series-nav-title:hover {
   padding: 0;
   background: none;
   border: 0;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   cursor: pointer;
   transition: color var(--dur-200) ease;
 }
@@ -735,7 +735,7 @@ a.series-nav-title:hover {
 
 .subscribe-close:hover,
 .subscribe-close:focus-visible {
-  color: var(--paper);
+  color: var(--ink);
   outline: none;
 }
 
@@ -744,20 +744,20 @@ a.series-nav-title:hover {
   font-family: var(--serif);
   font-size: var(--fs-22);
   font-weight: 600;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .subscribe-lead {
   margin: calc(-1 * var(--space-2)) 0 0;
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .subscribe-email {
   font-family: var(--mono-font);
   font-size: var(--fs-13);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .subscribe-form {
@@ -774,28 +774,28 @@ a.series-nav-title:hover {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .subscribe-field input {
   padding: var(--space-1) 0;
   font: inherit;
   font-size: var(--fs-16);
-  color: var(--paper);
+  color: var(--ink);
   background: transparent;
   border: 0;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
   border-radius: 0;
   outline: none;
   appearance: none;
 }
 
 .subscribe-field input:focus {
-  border-bottom-color: var(--paper-2);
+  border-bottom-color: var(--ink-muted);
 }
 
 .subscribe-field input::placeholder {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .subscribe-actions {
@@ -809,16 +809,16 @@ a.series-nav-title:hover {
   padding: var(--space-2) var(--space-4);
   border-radius: 0;
   font-size: var(--fs-14);
-  color: var(--paper);
+  color: var(--ink);
   background: none;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   cursor: pointer;
   transition: border-color var(--dur-200) ease;
 }
 
 .subscribe-submit:hover,
 .subscribe-submit:focus-visible {
-  border-color: var(--amber);
+  border-color: var(--signal);
   outline: none;
 }
 
@@ -832,39 +832,39 @@ a.series-nav-title:hover {
 .subscribe-quiet {
   padding: 0;
   font-size: var(--fs-13);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   background: none;
   border: 0;
   text-decoration: underline;
-  text-decoration-color: var(--rule);
+  text-decoration-color: var(--line);
   text-underline-offset: 3px;
   cursor: pointer;
 }
 
 .subscribe-quiet:hover,
 .subscribe-quiet:focus-visible {
-  color: var(--paper);
+  color: var(--ink);
   outline: none;
 }
 
 .subscribe-msg {
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .subscribe-msg.error {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .subscribe-privacy {
   margin: 0;
   padding-top: var(--space-3);
-  border-top: 1px dotted var(--rule);
+  border-top: 1px dotted var(--line);
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-4);
   line-height: var(--lh-170);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* Back to blog link (error page) */
@@ -875,8 +875,8 @@ a.series-nav-title:hover {
   margin-top: var(--space-6);
   padding: var(--space-2-5) var(--space-6);
   border-radius: var(--r-8);
-  background: rgba(var(--brand-rgb), 0.15);
-  border: 1px solid rgba(var(--brand-rgb), 0.3);
+  background: rgba(var(--paper-rgb), 0.15);
+  border: 1px solid rgba(var(--paper-rgb), 0.3);
   color: var(--post-accent);
   text-decoration: none;
   font-size: var(--fs-14);
@@ -884,7 +884,7 @@ a.series-nav-title:hover {
 }
 
 .back-to-blog-link:hover {
-  background: rgba(var(--brand-rgb), 0.25);
+  background: rgba(var(--paper-rgb), 0.25);
 }
 
 /* Error page */

@@ -4,7 +4,7 @@
   position: relative;
   min-height: 100vh;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .nt-sky {
@@ -24,7 +24,7 @@
 
 .nt a:focus-visible,
 .nt button:focus-visible {
-  outline: 1px solid var(--paper-2);
+  outline: 1px solid var(--ink-muted);
   outline-offset: 3px;
 }
 
@@ -69,13 +69,13 @@
 .nt-latin {
   font-family: var(--latin-display);
   font-size: var(--fs-24);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .nt-head p {
   margin: var(--space-1) 0 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 分類 ── */
@@ -94,7 +94,7 @@
   margin: 0;
   list-style: none;
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .nt-cats button {
@@ -108,7 +108,7 @@
   content: "";
   width: 5px;
   height: 5px;
-  border: 1px solid var(--paper-3);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-round);
   transition:
     background var(--dur-200) ease,
@@ -117,12 +117,12 @@
 
 .nt-cats button:hover,
 .nt-cats .is-on {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .nt-cats .is-on::before {
-  border-color: var(--amber);
-  background: var(--amber);
+  border-color: var(--signal);
+  background: var(--signal);
 }
 
 .nt-cats em,
@@ -130,24 +130,24 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-style: normal;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .nt-tag {
   display: inline-flex;
   gap: var(--space-2);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   transition: color var(--dur-200) ease;
 }
 
 .nt-tag:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .nt-empty {
   margin: 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 一年一欄：年份在左，一篇一行 ── */
@@ -161,7 +161,7 @@
   font-family: var(--latin-display);
   font-size: var(--fs-40);
   line-height: var(--lh-100);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .nt-list {
@@ -182,7 +182,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-variant-numeric: tabular-nums;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .nt-list a {
@@ -200,17 +200,17 @@
 /* 副標（標題冒號後面那段）小一號、淡一階，主標一眼掃得完 */
 .nt-sub {
   font-size: var(--fs-13);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .nt-list li:hover b,
 .nt-list a:focus-visible b {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 .nt-list li:hover .nt-sub {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .nt-meta {
@@ -218,7 +218,7 @@
   font-size: var(--fs-10);
   letter-spacing: var(--ls-6);
   white-space: nowrap;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .nt-more {
@@ -226,12 +226,12 @@
   margin-left: calc(110px + var(--space-5));
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   transition: color var(--dur-200) ease;
 }
 
 .nt-more:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 窄螢幕：年份疊在上面，分類與時間換到標題下一行 */

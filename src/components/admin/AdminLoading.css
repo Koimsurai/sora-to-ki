@@ -22,7 +22,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-18);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-busy-dot {
@@ -30,7 +30,7 @@
   width: 7px;
   height: 7px;
   border-radius: var(--r-round);
-  background: var(--amber);
+  background: var(--signal);
   box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
   animation: adm-breathe 1.6s ease-in-out infinite;
 }

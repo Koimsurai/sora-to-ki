@@ -22,24 +22,24 @@
   --secondary: 240 5% 7.8%; /* 墨 4% */
   --secondary-foreground: 33 5.1% 65.7%; /* 墨 70% */
   --muted: 240 5% 7.8%;
-  --muted-foreground: 34 2.9% 52.4%; /* 墨 55%（--paper-meta） */
+  --muted-foreground: 34 2.9% 52.4%; /* 墨 55%（--ink-subtle） */
   --accent: 240 1.8% 11.2%; /* 墨 8% */
   --accent-foreground: 39 33.3% 91.8%;
   --destructive: 13 68% 65.7%; /* --flare */
   --destructive-foreground: 240 9.1% 4.3%;
-  --border: 0 1.1% 17.5%; /* 墨 15%（--rule） */
+  --border: 0 1.1% 17.5%; /* 墨 15%（--line） */
   --input: 0 1.1% 17.5%;
   --ring: 33 5.1% 65.7%;
   --radius: 0rem;
 
   /* 中和全域 button 紫色變數 */
   --clr-button: transparent;
-  --clr-button-text: var(--paper);
+  --clr-button-text: var(--ink);
 
   /* 字：標題、內容、表單的值一律思源宋體；等寬留給標籤、時間與數字（各元件自己指定） */
   font-family: var(--serif);
   background: var(--ground);
-  color: var(--paper);
+  color: var(--ink);
   min-height: 100vh;
   position: relative;
 }
@@ -50,11 +50,11 @@
 }
 
 :is(.admin-layout, .admin-mode) thead tr {
-  border-color: var(--rule);
+  border-color: var(--line);
 }
 
 :is(.admin-layout, .admin-mode) tbody tr {
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
   transition: background-color var(--dur-150) ease;
 }
 
@@ -72,8 +72,8 @@
   /* ⚠ !important 不能拿掉：shadcn 的 <Input>/<Select> 用 border-input 這類 utility，
      實測拿掉之後邊框從細線變成 rgb(228,228,231)（zinc-200 的亮色），
      整個後台表單會變成淺色邊框配深色底。 */
-  border-color: var(--rule) !important;
-  color: var(--paper);
+  border-color: var(--line) !important;
+  color: var(--ink);
   border-radius: 0;
   transition: border-color var(--dur-200) ease;
 }
@@ -83,19 +83,19 @@
 :is(.admin-layout, .admin-mode) textarea:hover {
   /* base 的 border-color 帶了 !important（見上），狀態變體就必須跟著帶，
      否則 base 會反過來蓋掉 hover/focus——實測過，hover 時邊框完全不變色。 */
-  border-color: var(--paper-3) !important;
+  border-color: var(--line-strong) !important;
 }
 
 :is(.admin-layout, .admin-mode) input:focus,
 :is(.admin-layout, .admin-mode) select:focus,
 :is(.admin-layout, .admin-mode) textarea:focus {
   /* 同上：base 帶了 !important，focus 也要帶 */
-  border-color: var(--paper-2) !important;
+  border-color: var(--ink-muted) !important;
   box-shadow: none;
 }
 
 :is(.admin-layout, .admin-mode) ::placeholder {
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 :is(.admin-layout, .admin-mode) input[type="search"] {
@@ -111,7 +111,7 @@
   width: 14px;
   height: 14px;
   margin: 0;
-  border: 1px solid var(--paper-3);
+  border: 1px solid var(--line-strong);
   background: transparent;
   cursor: pointer;
   transition:
@@ -125,15 +125,15 @@
 
 :is(.admin-layout, .admin-mode) :is(input[type="checkbox"], input[type="radio"]):hover,
 :is(.admin-layout, .admin-mode) :is(input[type="checkbox"], input[type="radio"]):focus-visible {
-  border-color: var(--paper);
+  border-color: var(--ink);
   outline: none;
 }
 
 :is(.admin-layout, .admin-mode) :is(input[type="checkbox"], input[type="radio"]):checked {
-  border-color: var(--amber);
+  border-color: var(--signal);
   box-shadow:
     inset 0 0 0 2px var(--ground),
-    inset 0 0 0 7px var(--amber);
+    inset 0 0 0 7px var(--signal);
 }
 
 /* 數字欄位右邊那對上下箭頭是瀏覽器畫的：收掉，打字就好 */
@@ -148,7 +148,7 @@
 }
 
 :is(.admin-layout, .admin-mode) label {
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font-size: var(--fs-14);
 }
 
@@ -160,7 +160,7 @@
 :is(.admin-layout, .admin-mode) [data-radix-popper-content-wrapper] [role="listbox"],
 :is(.admin-layout, .admin-mode) [data-sonner-toast] {
   background: rgba(var(--ground-rgb), 0.95);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   border-radius: 0;
   box-shadow: none;
 }
@@ -179,40 +179,40 @@
 :is(.admin-layout, .admin-mode) .separator,
 :is(.admin-layout, .admin-mode) [data-orientation="horizontal"],
 :is(.admin-layout, .admin-mode) [data-orientation="vertical"] {
-  border-color: var(--rule);
-  background: var(--rule);
+  border-color: var(--line);
+  background: var(--line);
 }
 
 /* ── 分頁籤：選中的是墨色底線，不是一塊底色 ── */
 :is(.admin-layout, .admin-mode) [role="tab"][data-state="active"] {
   background: transparent;
-  border-color: var(--paper);
-  color: var(--paper);
+  border-color: var(--ink);
+  color: var(--ink);
 }
 
 :is(.admin-layout, .admin-mode) [role="progressbar"] {
-  background: var(--rule);
+  background: var(--line);
 }
 
 :is(.admin-layout, .admin-mode) [role="progressbar"] > div {
-  background: var(--paper);
+  background: var(--ink);
 }
 
 /* ── 連結：墨 70%，滑過換成實墨 ── */
 :is(.admin-layout, .admin-mode) a {
-  color: var(--paper-2);
+  color: var(--ink-muted);
   transition: color var(--dur-150) ease;
 }
 
 :is(.admin-layout, .admin-mode) a:hover,
 :is(.admin-layout, .admin-mode) a:focus-visible {
-  color: var(--paper);
+  color: var(--ink);
   text-shadow: none;
 }
 
 /* ── 焦點：一條細墨框，跟前台的 button:focus-visible 同一個寫法 ── */
 :is(.admin-layout, .admin-mode) :is(button, a, [role="tab"]):focus-visible {
-  outline: 1px solid var(--paper-2);
+  outline: 1px solid var(--ink-muted);
   outline-offset: 2px;
   box-shadow: none;
 }
@@ -252,14 +252,14 @@
 :is(.admin-layout, .admin-mode) .bg-primary,
 :is(.admin-layout, .admin-mode) [class*="bg-primary"] {
   background: transparent;
-  color: var(--paper);
-  border: 1px solid var(--paper-2);
+  color: var(--ink);
+  border: 1px solid var(--ink-muted);
 }
 
 :is(.admin-layout, .admin-mode) .bg-primary:hover,
 :is(.admin-layout, .admin-mode) [class*="bg-primary"]:hover {
   background: transparent;
-  border-color: var(--amber);
+  border-color: var(--signal);
 }
 
 /* ── 開關（Radix Switch）：細線框裡一顆小圓點，關著是淡墨靠左，開著是實墨靠右、框深一階。
@@ -267,38 +267,38 @@
    夜色（bg-background），兩個疊起來就什麼都看不到——所以這裡把圓鈕改成墨色 ── */
 :is(.admin-layout, .admin-mode) button[role="switch"] {
   background: transparent;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 :is(.admin-layout, .admin-mode) button[role="switch"][data-state="checked"] {
-  border-color: var(--paper-2);
+  border-color: var(--ink-muted);
 }
 
 :is(.admin-layout, .admin-mode) button[role="switch"] > span {
   width: 14px;
   height: 14px;
   margin-left: var(--space-1);
-  background: var(--paper-3);
+  background: var(--line-strong);
   box-shadow: none;
 }
 
 :is(.admin-layout, .admin-mode) button[role="switch"][data-state="checked"] > span {
-  background: var(--paper);
+  background: var(--ink);
 }
 
 :is(.admin-layout, .admin-mode) .text-primary {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 :is(.admin-layout, .admin-mode) .text-primary:hover {
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* ── 會刪東西的按鈕：朱色字配點線框，滑過才變實線 ── */
 :is(.admin-layout, .admin-mode) .bg-destructive,
 :is(.admin-layout, .admin-mode) [class*="bg-destructive"] {
   background: transparent;
-  color: var(--flare);
+  color: var(--danger);
   border: 1px dotted rgba(var(--flare-rgb), 0.6);
 }
 

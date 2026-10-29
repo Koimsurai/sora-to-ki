@@ -12,9 +12,9 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-4);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   background: var(--ground);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 .dp-dot {
@@ -22,5 +22,5 @@
   width: 6px;
   height: 6px;
   border-radius: var(--r-full);
-  background: var(--amber);
+  background: var(--signal);
 }

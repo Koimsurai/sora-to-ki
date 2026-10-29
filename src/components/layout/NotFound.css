@@ -8,7 +8,7 @@
   min-height: 560px;
   overflow: hidden;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
   --nf-edge: max(var(--space-10), calc(50% - 640px));
 }
 
@@ -55,7 +55,7 @@
   font-family: var(--latin-display);
   font-size: var(--fs-56);
   line-height: var(--lh-100);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .nf-title {
@@ -68,7 +68,7 @@
 .nf-sub {
   margin: 0;
   font-size: var(--fs-16);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .nf-addr {
@@ -83,7 +83,7 @@
 }
 
 .nf-addr-label {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .nf-addr-path,
@@ -91,7 +91,7 @@
   font-family: inherit;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
-  color: var(--amber);
+  color: var(--signal);
   overflow-wrap: anywhere;
 }
 
@@ -117,8 +117,8 @@
   gap: var(--space-2);
   align-items: baseline;
   padding-bottom: var(--space-px);
-  color: var(--paper-2);
-  border-bottom: 1px dotted var(--paper-3);
+  color: var(--ink-muted);
+  border-bottom: 1px dotted var(--line-strong);
   transition:
     color var(--dur-200) ease,
     border-color var(--dur-200) ease;
@@ -128,13 +128,13 @@
 .nf-link:focus-visible,
 .nf-btn:hover,
 .nf-btn:focus-visible {
-  color: var(--paper);
-  border-bottom-color: var(--amber);
+  color: var(--ink);
+  border-bottom-color: var(--signal);
 }
 
 .nf-kbd {
   font-family: inherit;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 收：字退掉，只剩太空人淡掉、點從斷端飛走 */

@@ -3,7 +3,7 @@
 .adm-review {
   display: flex;
   flex-wrap: wrap;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 /* 清單自己捲（捲軸是後台共用的那條），右邊的詳情不跟著跑 */
@@ -15,7 +15,7 @@
   padding: 0;
   overflow-y: auto;
   list-style: none;
-  border-right: 1px solid var(--rule);
+  border-right: 1px solid var(--line);
 }
 
 .adm-review-item {
@@ -26,8 +26,8 @@
   padding: var(--space-4) var(--space-4-5);
   background: transparent;
   border: none;
-  border-bottom: 1px dotted var(--rule);
-  color: var(--paper);
+  border-bottom: 1px dotted var(--line);
+  color: var(--ink);
   font-family: var(--serif);
   text-align: left;
   cursor: pointer;
@@ -45,8 +45,8 @@
 }
 
 .adm-review-item[aria-pressed="true"] > .adm-tab-dot {
-  background: var(--amber);
-  border-color: var(--amber);
+  background: var(--signal);
+  border-color: var(--signal);
   box-shadow: 0 0 12px rgba(var(--amber-rgb), 0.8);
 }
 
@@ -80,7 +80,7 @@
   overflow: hidden;
   font-size: var(--fs-14);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -105,7 +105,7 @@
 
 .adm-review-name {
   font-size: var(--fs-20);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 全文：跟讀者在文章底下看到的同一個字、同一個行高 */
@@ -113,7 +113,7 @@
   margin: 0;
   font-size: var(--fs-16);
   line-height: var(--lh-185);
-  color: var(--paper);
+  color: var(--ink);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -124,7 +124,7 @@
   align-items: center;
   gap: var(--space-2-5);
   padding-top: var(--space-4-5);
-  border-top: 1px dotted var(--rule);
+  border-top: 1px dotted var(--line);
 }
 
 .adm-review-gap {
@@ -149,7 +149,7 @@
   .adm-review-list {
     max-height: 40vh;
     border-right: none;
-    border-bottom: 1px solid var(--rule);
+    border-bottom: 1px solid var(--line);
   }
 
   .adm-review-detail {

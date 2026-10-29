@@ -3,7 +3,7 @@
 .af {
   position: relative;
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .af-sky {
@@ -62,13 +62,13 @@
 .af-kick {
   margin: 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .af-kick span {
   margin-left: var(--space-2);
   letter-spacing: var(--ls-24);
-  color: var(--amber);
+  color: var(--signal);
 }
 
 /* 摺疊機直拿（中等寬度的直式，lib/viewportShape 的 isTallMedium）：橫的摺痕在高度 45% 上下，
@@ -88,7 +88,7 @@
 
 .af-hint {
   margin: var(--space-4) 0 0;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* ── 下墜：一年一段 ── */
@@ -120,7 +120,7 @@
 
 .af-sub {
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .af-beat {
@@ -148,7 +148,7 @@
   left: -0.06em;
   font-size: clamp(96px, 14vw, 180px);
   line-height: var(--lh-100);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   translate: 0 -62%;
   opacity: 0.35;
   pointer-events: none;
@@ -189,7 +189,7 @@
 .af-land p {
   margin: 0;
   font-size: var(--fs-18);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .af-land h2 {
@@ -202,12 +202,12 @@
 .af-land .af-now {
   margin-top: var(--space-4);
   font-size: var(--fs-14);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .af-now span {
   margin-right: var(--space-3);
-  color: var(--amber);
+  color: var(--signal);
 }
 
 /* ── 地底 ── */
@@ -220,7 +220,7 @@
 }
 
 .af-lab {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .af-layer h2 {
@@ -235,7 +235,7 @@
   margin-top: var(--space-1);
   font-size: var(--fs-16);
   font-weight: 400;
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .af-skills,
@@ -260,7 +260,7 @@
 
 .af-skills li > span {
   font-size: var(--fs-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .af-skills p {
@@ -268,7 +268,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-13);
   line-height: var(--lh-170);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 一個名字不拆行，分隔點黏在前一個名字後面（換行時不會有一行從「·」開頭） */
@@ -278,7 +278,7 @@
 
 .af-skills p > span:not(:last-child)::after {
   content: " ·";
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .af-jobs {
@@ -296,7 +296,7 @@
 .af-jobs time {
   font-family: var(--mono-font);
   font-size: var(--fs-12);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .af-jobs p {
@@ -311,7 +311,7 @@
 .af-jobs span {
   display: block;
   font-size: var(--fs-13);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* ── 地心 ── */
@@ -327,7 +327,7 @@
 .af-core p {
   margin: 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .af-core blockquote {
@@ -339,7 +339,7 @@
 
 .af-core cite {
   font-style: normal;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 @media (max-width: 760px) {

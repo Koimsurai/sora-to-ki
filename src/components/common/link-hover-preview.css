@@ -9,7 +9,7 @@
   width: 300px;
   overflow: hidden;
   background: rgba(var(--ground-rgb), 0.96);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   pointer-events: auto;
 }
 
@@ -25,7 +25,7 @@
 .lhp-img {
   object-fit: cover;
   background: rgba(var(--paper-rgb), 0.03);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
 }
 
 /* 沒有預覽圖：網站圖示壓成單色、網站名用等寬小字 */
@@ -36,7 +36,7 @@
   justify-content: center;
   gap: var(--space-2-5);
   background: rgba(var(--paper-rgb), 0.03);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
 }
 
 .lhp-favicon {
@@ -50,7 +50,7 @@
 .lhp-site {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   letter-spacing: var(--ls-6);
 }
 
@@ -67,7 +67,7 @@
 .lhp-title {
   font-size: var(--fs-14);
   font-weight: 400;
-  color: var(--paper);
+  color: var(--ink);
   line-height: var(--lh-140);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -79,7 +79,7 @@
 .lhp-desc {
   margin-top: var(--space-1);
   font-size: var(--fs-13);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   line-height: var(--lh-150);
   display: -webkit-box;
   -webkit-line-clamp: 2;

@@ -11,7 +11,7 @@
   flex-direction: column;
   overflow: hidden;
   background: var(--ground);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
 }
 
 .adm-picker-head {
@@ -19,7 +19,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
 }
 
 .adm-picker-title {
@@ -30,18 +30,18 @@
   margin: 0;
   font-size: var(--fs-16);
   font-weight: 400;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .adm-picker-count {
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-picker-search {
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
 }
 
 .adm-picker-search .adm-prompt {
@@ -59,10 +59,10 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
-  border-top: 1px dotted var(--rule);
+  border-top: 1px dotted var(--line);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 /* ── 文章清單：一列一篇，點線分隔，滑過墊一層很淡的墨 ── */
@@ -80,8 +80,8 @@
   padding: var(--space-2-5) var(--space-4);
   text-align: left;
   background: transparent;
-  border-bottom: 1px dotted var(--rule);
-  color: var(--paper);
+  border-bottom: 1px dotted var(--line);
+  color: var(--ink);
   cursor: pointer;
   transition: background-color var(--dur-150) ease;
 }
@@ -111,14 +111,14 @@
 .adm-picker-item-sub {
   margin-top: var(--space-0-5);
   font-size: var(--fs-12);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }
 
 .adm-picker-item-path {
   flex-shrink: 0;
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* ── 照片格：細框方格，滑過框深一階、底下浮出標題與日期 ── */
@@ -135,7 +135,7 @@
   overflow: hidden;
   padding: 0;
   background: rgba(var(--paper-rgb), 0.04);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   cursor: pointer;
   transition: border-color var(--dur-150) ease;
 }
@@ -150,7 +150,7 @@
 
 .adm-picker-photo:hover,
 .adm-picker-photo:focus-visible {
-  border-color: var(--paper-2);
+  border-color: var(--ink-muted);
 }
 
 .adm-picker-photo-caption {
@@ -174,7 +174,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: var(--fs-12);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .adm-picker-photo-date {
@@ -182,12 +182,12 @@
   margin-top: var(--space-0-5);
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .adm-picker-empty {
   padding: var(--space-10) var(--space-4);
   text-align: center;
   font-size: var(--fs-14);
-  color: var(--paper-meta);
+  color: var(--ink-subtle);
 }

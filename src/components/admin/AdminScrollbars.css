@@ -38,7 +38,7 @@ html.admin-scroll ::-webkit-scrollbar {
 .adm-sb::before {
   content: "";
   position: absolute;
-  background: var(--rule);
+  background: var(--line);
 }
 
 .adm-sb[data-axis="y"] {
@@ -66,7 +66,7 @@ html.admin-scroll ::-webkit-scrollbar {
 /* 短條：墨 55%，置中壓在那條線上 */
 .adm-sb-thumb {
   position: absolute;
-  background: var(--paper-meta);
+  background: var(--ink-subtle);
   transition:
     width var(--dur-150) ease,
     height var(--dur-150) ease,
@@ -88,16 +88,16 @@ html.admin-scroll ::-webkit-scrollbar {
 .adm-sb-layer[data-phase="drag"] .adm-sb[data-axis="y"] .adm-sb-thumb {
   right: -2px;
   width: 5px;
-  background: var(--paper-2);
+  background: var(--ink-muted);
 }
 
 .adm-sb-layer[data-phase="hover"] .adm-sb[data-axis="x"] .adm-sb-thumb,
 .adm-sb-layer[data-phase="drag"] .adm-sb[data-axis="x"] .adm-sb-thumb {
   bottom: -2px;
   height: 5px;
-  background: var(--paper-2);
+  background: var(--ink-muted);
 }
 
 .adm-sb-layer[data-phase="drag"] .adm-sb-thumb {
-  background: var(--paper);
+  background: var(--ink);
 }

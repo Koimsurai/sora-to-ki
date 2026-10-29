@@ -50,7 +50,7 @@
   gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
   background: rgba(var(--ground-rgb), 0.92);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   border-radius: var(--r-2);
   opacity: 0;
   transition:
@@ -75,10 +75,10 @@
 .mm-toolbar-hint {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   white-space: nowrap;
   padding-left: var(--space-1-5);
-  border-left: 1px solid var(--rule);
+  border-left: 1px solid var(--line);
   margin-left: var(--space-1);
 }
 
@@ -97,7 +97,7 @@
   border-radius: var(--r-2);
   background: transparent;
   border: 1px solid transparent;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   cursor: pointer;
   transition:
     border-color var(--dur-150),
@@ -111,13 +111,13 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .mm-menu-trigger--open {
   background: transparent;
-  border-color: var(--rule);
-  color: var(--paper);
+  border-color: var(--line);
+  color: var(--ink);
 }
 
 .mm-menu-trigger svg {
@@ -136,8 +136,8 @@
   transform: translateX(-50%);
   padding: var(--space-1) var(--space-2);
   background: rgba(var(--ground-rgb), 0.96);
-  border: 1px solid var(--rule);
-  color: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   font-weight: 400;
@@ -159,7 +159,7 @@
   left: 0;
   min-width: 150px;
   background: rgba(var(--ground-rgb), 0.96);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   border-radius: var(--r-2);
   padding: var(--space-1);
   z-index: 50;
@@ -180,7 +180,7 @@
 .mm-menu-label {
   font-family: var(--mono-font);
   font-size: var(--fs-10);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   padding: var(--space-1) var(--space-2) var(--space-1);
   letter-spacing: var(--ls-12);
 }
@@ -193,7 +193,7 @@
   padding: var(--space-1-5) var(--space-2);
   border: none;
   background: transparent;
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font-size: var(--fs-12);
   cursor: pointer;
   border-radius: 0;
@@ -203,12 +203,12 @@
 
 .mm-menu-item:hover {
   background: transparent;
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .mm-menu-item--active {
   background: transparent;
-  color: var(--paper);
+  color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -234,8 +234,8 @@
   justify-content: center;
   border-radius: var(--r-2);
   background: rgba(var(--ground-rgb), 0.92);
-  border: 1px solid var(--rule);
-  color: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
   cursor: pointer;
   transition:
     color var(--dur-200),
@@ -245,9 +245,9 @@
 
 .mm-expand-btn:hover,
 .mm-expand-btn:focus {
-  color: var(--paper);
+  color: var(--ink);
   background: rgba(var(--ground-rgb), 0.92);
-  border-color: var(--paper-3);
+  border-color: var(--line-strong);
   box-shadow: none;
 }
 
@@ -268,8 +268,8 @@
   transform: translateX(-50%);
   padding: var(--space-1) var(--space-2);
   background: rgba(var(--ground-rgb), 0.96);
-  border: 1px solid var(--rule);
-  color: var(--paper-2);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   font-weight: 400;
@@ -322,7 +322,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
   flex-shrink: 0;
 }
 
@@ -347,8 +347,8 @@
   justify-content: center;
   border-radius: var(--r-round);
   background: none;
-  border: 1px solid var(--paper-3);
-  color: var(--paper-2);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-muted);
   cursor: pointer;
   font-size: var(--fs-14);
   transition:
@@ -360,8 +360,8 @@
 .mm-close-btn:hover,
 .mm-close-btn:focus {
   background: none;
-  border-color: var(--paper);
-  color: var(--paper);
+  border-color: var(--ink);
+  color: var(--ink);
   box-shadow: none;
 }
 
@@ -379,12 +379,12 @@
 .mermaid-error {
   margin: var(--space-6) 0;
   padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
-  border-left: 1px solid var(--paper-3);
+  border-left: 1px solid var(--line-strong);
   font-size: var(--fs-14);
 }
 
 .mermaid-error span {
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   display: block;
@@ -392,7 +392,7 @@
 }
 
 .mermaid-error pre {
-  color: var(--paper-2);
+  color: var(--ink-muted);
   font-size: var(--fs-13);
   white-space: pre-wrap;
   margin: 0;
@@ -440,7 +440,7 @@
   background: transparent;
   box-shadow: none;
   outline: none;
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   cursor: pointer;
   transition: color var(--dur-150) ease;
 }
@@ -448,7 +448,7 @@
 .mm-action-btn:focus,
 .mm-action-btn:focus-visible {
   background: transparent;
-  color: var(--paper);
+  color: var(--ink);
   box-shadow: none;
   border-color: transparent;
   outline: none;
@@ -471,13 +471,13 @@
 /* 夜：站上的配色。節點是很淡的暖白底加一條細框，線與字是墨的深淺 */
 .mm-theme-ink {
   --pele-bg: transparent;
-  --pele-fg: var(--paper);
-  --pele-muted: var(--paper-3);
-  --pele-line: var(--paper-2);
+  --pele-fg: var(--ink);
+  --pele-muted: var(--ink-subtle);
+  --pele-line: var(--ink-muted);
   --pele-surface: rgba(var(--paper-rgb), 0.05);
   --pele-surface-alt: rgba(var(--paper-rgb), 0.1);
-  --pele-border: var(--paper-3);
-  --pele-accent: var(--amber);
+  --pele-border: var(--line-strong);
+  --pele-accent: var(--signal);
   --pele-font: var(--cjk-font);
   --pele-font-mono: var(--mono-font);
   --pele-radius: 2px;
@@ -538,7 +538,7 @@
 }
 
 .mm-mark-dot {
-  fill: var(--amber);
+  fill: var(--signal);
   filter: drop-shadow(0 0 4px rgba(var(--amber-rgb), 0.7));
 }
 

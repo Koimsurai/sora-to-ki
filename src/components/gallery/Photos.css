@@ -6,7 +6,7 @@
   gap: var(--space-10);
   padding: var(--page-top) var(--space-10) var(--page-bottom);
   font-family: var(--serif);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 /* 整頁的遮罩（進場一行一行收下來、退場收回去）：疊在內容上、點不到。
@@ -53,13 +53,13 @@
 .ph-head-title span {
   font-family: var(--latin-display);
   font-size: var(--fs-24);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .ph-head p {
   margin: 0;
   font-size: var(--fs-14);
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 地面站：左邊的碟形天線、右邊遠處的探測器，接收紀錄在兩者之間的下方 */
@@ -82,7 +82,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-10);
   letter-spacing: var(--ls-6);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 /* 接收紀錄：一共收到幾格、各鏡頭幾張 */
@@ -97,7 +97,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-4);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
   translate: -50% 0;
   text-shadow:
     0 0 8px var(--ground),
@@ -109,7 +109,7 @@
   font-size: var(--fs-56);
   font-weight: 400;
   line-height: var(--lh-100);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 .ph-log-rows {
@@ -125,7 +125,7 @@
 }
 
 .ph-log-row span:last-child {
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 /* 每個月收到幾張 */
@@ -146,7 +146,7 @@
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   letter-spacing: var(--ls-12);
-  color: var(--amber);
+  color: var(--signal);
 }
 
 /* 一格畫面：圖（或接收中的畫布）＋下面三行遙測 */
@@ -157,7 +157,7 @@
 }
 
 .ph-frame:focus-visible {
-  outline: 1px solid var(--amber);
+  outline: 1px solid var(--signal);
   outline-offset: 4px;
 }
 
@@ -281,7 +281,7 @@
   width: 1px;
 }
 
-/* 10px 的字要到 4.5:1：--paper-3（0.4）只有 3.4，0.5 是剛好過的那一階 */
+/* 10px 的字要到 4.5:1，所以用 --ink-subtle（5.5:1） */
 .ph-tel {
   display: grid;
   font-family: var(--mono-font);
@@ -293,11 +293,11 @@
 
 .ph-tel b {
   font-weight: 500;
-  color: var(--paper-2);
+  color: var(--ink-muted);
 }
 
 .ph-tel .is-live {
-  color: var(--amber);
+  color: var(--signal);
 }
 
 @media (max-width: 760px) {

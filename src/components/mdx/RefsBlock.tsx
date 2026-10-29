@@ -31,7 +31,7 @@ function brandFor(href: string): { Icon: IconType; color: string } {
   if (host === 'pypi.org') return { Icon: SiPypi, color: '#6ea8d8' };
   if (/(^|\.)(youtube\.com|youtu\.be)$/.test(host)) return { Icon: FaYoutube, color: '#ff5252' };
   if (/(^|\.)(x\.com|twitter\.com)$/.test(host)) return { Icon: FaXTwitter, color: '#e8e8ea' };
-  if (host === 'koimsurai.com') return { Icon: FaBookOpen, color: 'var(--paper)' }; // 站內文章
+  if (host === 'koimsurai.com') return { Icon: FaBookOpen, color: 'var(--ink)' }; // 站內文章
   return { Icon: FaLink, color: 'rgba(255,255,255,0.5)' };
 }
 

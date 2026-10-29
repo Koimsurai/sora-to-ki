@@ -91,7 +91,7 @@ export interface BayOptions {
 }
 
 const TAU = Math.PI * 2;
-/** 線稿的亮度：跟站上的 --paper-2 同一階，細線＋淡一階才像工程圖 */
+/** 線稿的亮度：跟站上的 --ink-muted 同一階，細線＋淡一階才像工程圖 */
 const LINE = 0.72;
 /** 噴焰的點活多久（秒），跟航行日誌的火箭一樣 */
 const FLAME_LIFE = 0.55;

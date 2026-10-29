@@ -13,12 +13,12 @@
 }
 
 .blog-post-container ::-webkit-scrollbar-thumb {
-  background: rgba(var(--brand-rgb), 0.25);
+  background: rgba(var(--paper-rgb), 0.25);
   border-radius: var(--r-full);
 }
 
 .blog-post-container ::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--brand-rgb), 0.45);
+  background: rgba(var(--paper-rgb), 0.45);
 }
 
 .blog-post-container * {
@@ -45,7 +45,7 @@
 .blog-post-dim-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(var(--surface-0-rgb), 0.8);
+  background: rgba(var(--ground-rgb), 0.8);
   pointer-events: none;
   z-index: 0;
 }
@@ -125,8 +125,8 @@
   min-width: 220px;
   max-width: min(420px, 80vw);
   padding: var(--space-2-5) var(--space-3-5);
-  background: rgba(var(--surface-1-rgb), 0.95);
-  border: 1px solid rgba(var(--brand-rgb), 0.35);
+  background: rgba(var(--ground-rgb), 0.95);
+  border: 1px solid rgba(var(--paper-rgb), 0.35);
   border-radius: var(--r-10);
   color: var(--white-80);
   font-size: var(--fs-14);
@@ -144,7 +144,7 @@
     visibility var(--dur-200);
   box-shadow:
     0 16px 40px var(--black-50),
-    0 0 24px rgba(var(--brand-rgb), 0.2);
+    0 0 24px rgba(var(--paper-rgb), 0.2);
   z-index: 30;
 }
 .post-content sup a[data-fn-content]:hover::after,
@@ -190,15 +190,15 @@
 
 /* 內文連結：照提案，暖白字、點線底線，滑過時底線變實 */
 .post-content a {
-  color: var(--paper);
+  color: var(--ink);
   text-decoration: underline dotted;
-  text-decoration-color: var(--paper-3);
+  text-decoration-color: var(--line-strong);
   text-underline-offset: 4px;
   transition: text-decoration-color var(--dur-200);
 }
 
 .post-content a:hover {
-  text-decoration-color: var(--paper);
+  text-decoration-color: var(--ink);
 }
 
 /* 引言（別人說的話）：左邊一條點線、淡一階的字，沒有底色。
@@ -206,8 +206,8 @@
 .post-content blockquote {
   margin: var(--space-6) 0;
   padding: var(--space-0-5) 0 var(--space-0-5) var(--space-4-5);
-  border-left: 1px dotted var(--paper-3);
-  color: var(--paper-2);
+  border-left: 1px dotted var(--line-strong);
+  color: var(--ink-muted);
 }
 
 .post-content ul,
@@ -237,7 +237,7 @@
 
 .post-content code {
   background: rgba(var(--paper-rgb), 0.07);
-  color: var(--paper);
+  color: var(--ink);
   padding: 0.1em 0.38em;
   border-radius: var(--r-2);
   font-size: 0.86em;
@@ -252,7 +252,7 @@
 
 .post-content hr {
   border: none;
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--line);
   margin: var(--space-8) 0;
 }
 
@@ -275,16 +275,16 @@
 
 .post-content th {
   padding-top: 0;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid var(--line);
   font-family: var(--mono-font);
   font-size: var(--fs-11);
   font-weight: 400;
   letter-spacing: var(--ls-6);
-  color: var(--paper-3);
+  color: var(--ink-subtle);
 }
 
 .post-content td {
-  border-bottom: 1px dotted var(--rule);
+  border-bottom: 1px dotted var(--line);
 }
 
 /* ═══════════════════════
