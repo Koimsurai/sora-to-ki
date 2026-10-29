@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE } from './locales';
+import { defaultLocale } from './locales';
 
 /**
  * 站長填的多語文字（語系 → 字）挑出這個語系的那一份。
@@ -6,6 +6,6 @@ import { DEFAULT_LOCALE } from './locales';
  */
 export function pickText(text: Partial<Record<string, string>> | undefined, lang: string): string {
   if (!text) return '';
-  const candidates = [text[lang], text[DEFAULT_LOCALE], ...Object.values(text)];
+  const candidates = [text[lang], text[defaultLocale()], ...Object.values(text)];
   return candidates.find((v): v is string => typeof v === 'string' && v !== '') ?? '';
 }

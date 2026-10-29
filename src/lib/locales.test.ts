@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { DEFAULT_LOCALE, LOCALE_PREFIX, localePathname, SUPPORTED_LOCALES } from './locales';
+import { defaultLocale, prefixOf, localePathname, SUPPORTED_LOCALES } from './locales';
 
 // 這支同時被前端路由與 Nitro 的 sitemap.xml route 用。
 // 網址組錯了不會有 error，只會安靜地產出一份指向 404 的 sitemap，所以要有測試盯著。
@@ -22,7 +22,7 @@ describe('localePathname', () => {
       const p = localePathname(loc);
       expect(p.startsWith('/')).toBe(true);
       expect(p).not.toContain('//');
-      expect(p.endsWith('/')).toBe(loc === DEFAULT_LOCALE); // 只有 zh-TW 是單獨的 '/'
+      expect(p.endsWith('/')).toBe(loc === defaultLocale()); // 只有 zh-TW 是單獨的 '/'
     }
   });
 
@@ -34,9 +34,9 @@ describe('localePathname', () => {
 
   it('每個支援的語系都有前綴設定（漏一個會在 sitemap 悄悄生出重複網址）', () => {
     for (const loc of SUPPORTED_LOCALES) {
-      expect(LOCALE_PREFIX[loc]).toBeDefined();
+      expect(prefixOf(loc)).toBeDefined();
     }
-    const prefixes = SUPPORTED_LOCALES.map((l) => LOCALE_PREFIX[l]);
+    const prefixes = SUPPORTED_LOCALES.map((l) => prefixOf(l));
     expect(new Set(prefixes).size).toBe(prefixes.length); // 不能有兩個語系共用同一個前綴
   });
 });

@@ -1,7 +1,7 @@
 // PostData = 後端生成的單篇回應型別（原本繞道 BlogPostPage 的別名，該 fallback 元件已退役）。
 import type { PostDetailResponse as PostData } from '@koimsurai/api-types';
 
-import { DEFAULT_LOCALE, type Locale, localePathname } from '@/lib/locales';
+import { defaultLocale, type Locale, localePathname } from '@/lib/locales';
 import { siteAuthor, siteGithub, siteName, siteTitle, siteUrl } from '@/lib/siteIdentity';
 
 // 文章頁的完整 SEO meta，放在路由 head() —— 那是唯一會進 SSR HTML 的地方。
@@ -66,7 +66,7 @@ const jsonLdScript = (data: unknown): { type: string; children: string } => ({
  * 圖上的字照語系。繁中不帶參數，網址跟著短一點
  */
 function ogImageUrl(key: string | number, locale: string): string {
-  const query = locale === DEFAULT_LOCALE ? '' : `?l=${encodeURIComponent(locale)}`;
+  const query = locale === defaultLocale() ? '' : `?l=${encodeURIComponent(locale)}`;
   return `${siteUrl()}/api/og/${key}.png${query}`;
 }
 
@@ -153,7 +153,7 @@ export function articleMeta(post: PostData, canonicalPath: string, locale: strin
 export function articleJsonLd(
   post: PostData,
   canonicalPath: string,
-  locale: Locale = DEFAULT_LOCALE,
+  locale: Locale = defaultLocale(),
 ): { type: string; children: string } {
   const url = `${siteUrl()}${canonicalPath}`;
   const image = `${siteUrl()}/api/og/${post.id}.png`;
@@ -201,7 +201,7 @@ export function articleJsonLd(
  * WebSite 讓 Google 有機會給 sitelinks；Person 是知識面板／作者實體的訊號——站上本來就有完整的
  * 個人資訊與外部帳號，宣告出來才連得起來。這兩個實體全站唯一，只掛首頁。
  */
-export function siteJsonLd(locale: Locale = DEFAULT_LOCALE): { type: string; children: string } {
+export function siteJsonLd(locale: Locale = defaultLocale()): { type: string; children: string } {
   const home = `${siteUrl()}${localePathname(locale)}`;
   return jsonLdScript({
     '@context': 'https://schema.org',
@@ -226,7 +226,7 @@ export function siteJsonLd(locale: Locale = DEFAULT_LOCALE): { type: string; chi
 }
 
 /** 文章列表頁的 Blog（CollectionPage 的專用型別），讓爬蟲知道這頁是文章集合而不是普通頁。 */
-export function blogListJsonLd(locale: Locale = DEFAULT_LOCALE): { type: string; children: string } {
+export function blogListJsonLd(locale: Locale = defaultLocale()): { type: string; children: string } {
   const url = `${siteUrl()}${localePathname(locale, 'blog')}`;
   return jsonLdScript({
     '@context': 'https://schema.org',

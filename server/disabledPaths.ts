@@ -21,7 +21,3 @@ export function disabledPathsOf(config: Partial<SiteConfig> | null): Set<string>
   const off = config?.disabled_pages ?? [];
   return new Set(PAGES.filter((s) => off.includes(s.key)).map((s) => s.to));
 }
-
-export async function disabledPaths(backendUrl: string): Promise<Set<string>> {
-  return disabledPathsOf(await backendSiteConfig(backendUrl));
-}

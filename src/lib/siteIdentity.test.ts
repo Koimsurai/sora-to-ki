@@ -12,6 +12,8 @@ const config = (over: Partial<Parameters<typeof setSiteIdentity>[0]> = {}) => ({
   disabled_pages: [],
   email: '',
   github: '',
+  default_locale: 'zh-TW',
+  locales: ['zh-TW'],
   ...over,
 });
 

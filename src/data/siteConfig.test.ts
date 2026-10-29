@@ -12,6 +12,8 @@ const config = (disabled: string[]) => ({
   disabled_pages: disabled,
   email: '',
   github: '',
+  default_locale: 'zh-TW',
+  locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
 });
 
 describe('siteConfig', () => {

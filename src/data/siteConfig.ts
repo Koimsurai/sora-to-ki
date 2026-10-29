@@ -15,6 +15,8 @@ const FALLBACK: SiteConfig = {
   disabled_pages: [],
   email: '',
   github: '',
+  default_locale: 'zh-TW',
+  locales: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
 };
 
 export const siteConfigQueryOptions = queryOptions({

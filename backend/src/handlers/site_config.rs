@@ -46,7 +46,7 @@ const EMAIL_MAX: usize = 120;
 const GITHUB_MAX: usize = 39;
 
 /// 存在資料庫裡的那一份
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SiteSettings {
     pub name: String,
     /// 空字串＝跟站名一樣
@@ -66,6 +66,56 @@ pub struct SiteSettings {
     /// GitHub 帳號名（關於選單的連結、航行日誌的貢獻圖、首頁 JSON-LD 的 sameAs）。規則同 `email`，退路是 `SITE_GITHUB`
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub github: Option<String>,
+    /// 預設語系：不帶前綴的網址、文章的原文、沒翻譯時退回的語言。規則同 `email`，退路是 `SITE_DEFAULT_LOCALE`，再退回繁中
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_locale: Option<String>,
+    /// 有開的語系（一定包含預設語系）。規則同 `email`，退路是 `SITE_LOCALES`（逗號分隔），再退回全部
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locales: Option<Vec<String>>,
+}
+
+/// 站上支援的語系（介面有翻譯的那五個），順序就是語系選單的順序。前端在 src/lib/locales.ts
+pub const SUPPORTED_LOCALES: [&str; 5] = ["zh-TW", "zh-CN", "en", "ja", "ko"];
+
+/// 字串 → 支援的語系（大小寫不拘）
+fn supported(l: &str) -> Option<&'static str> {
+    SUPPORTED_LOCALES.iter().copied().find(|s| s.eq_ignore_ascii_case(l.trim()))
+}
+
+/// 預設語系與有開的語系：設定 → 環境變數 → 繁中、全部。有開的照 SUPPORTED_LOCALES 排，一定含預設語系
+fn locales_of(s: &SiteSettings) -> (String, Vec<String>) {
+    let default = s
+        .default_locale
+        .clone()
+        .or_else(|| std::env::var("SITE_DEFAULT_LOCALE").ok())
+        .and_then(|l| supported(&l))
+        .unwrap_or("zh-TW");
+    let wanted: Vec<&str> = s.locales.clone().map_or_else(
+        || {
+            std::env::var("SITE_LOCALES")
+                .ok()
+                .map(|v| v.split(',').filter_map(supported).collect::<Vec<_>>())
+                .filter(|v| !v.is_empty())
+                .unwrap_or_else(|| SUPPORTED_LOCALES.to_vec())
+        },
+        |v| v.iter().filter_map(|l| supported(l)).collect(),
+    );
+    let enabled = SUPPORTED_LOCALES
+        .iter()
+        .filter(|l| **l == default || wanted.contains(l))
+        .map(|l| (*l).to_string())
+        .collect();
+    (default.to_string(), enabled)
+}
+
+/// 預設語系（RSS、分享圖、信件用）
+pub fn default_locale() -> String {
+    current().map_or_else(|| locales_of(&SiteSettings::default()).0, |s| locales_of(&s).0)
+}
+
+/// 某個語系的網址前綴：預設語系沒有前綴，其他是小寫（zh-tw、zh-cn、en、ja、ko）
+pub fn locale_prefix(locale: &str) -> String {
+    if locale.eq_ignore_ascii_case(&default_locale()) { String::new() } else { locale.to_ascii_lowercase() }
 }
 
 /// 設定裡沒有就看環境變數（見 `SiteSettings::email`）
@@ -130,6 +180,8 @@ pub async fn load_or_seed(pool: &SqlitePool) -> Result<SiteSettings, AppError> {
         // 留 None：讀的時候會退回 SITE_EMAIL／SITE_GITHUB，在後台改過才寫進來
         email: None,
         github: None,
+        default_locale: None,
+        locales: None,
     };
     // OR IGNORE：兩個程序同時開機的話，以先寫進去的那份為準
     sqlx::query("INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)")
@@ -166,11 +218,16 @@ pub struct SiteConfig {
     pub email: String,
     /// GitHub 帳號名；空字串＝沒有
     pub github: String,
+    /// 預設語系（不帶前綴的網址）
+    pub default_locale: String,
+    /// 有開的語系，照語系選單的順序；一定含預設語系
+    pub locales: Vec<String>,
 }
 
 impl From<SiteSettings> for SiteConfig {
     fn from(s: SiteSettings) -> Self {
-        let author = if s.author.is_empty() { s.name.clone() } else { s.author };
+        let author = if s.author.is_empty() { s.name.clone() } else { s.author.clone() };
+        let (default_locale, locales) = locales_of(&s);
         Self {
             url: crate::identity::site_url(),
             name: s.name,
@@ -179,6 +236,8 @@ impl From<SiteSettings> for SiteConfig {
             disabled_pages: s.disabled_pages,
             email: or_env(s.email, "SITE_EMAIL"),
             github: or_env(s.github, "SITE_GITHUB"),
+            default_locale,
+            locales,
         }
     }
 }
@@ -196,10 +255,31 @@ pub struct SiteConfigUpdate {
     pub email: Option<String>,
     /// GitHub 帳號名（不是網址）；空字串＝清空
     pub github: Option<String>,
+    /// 預設語系（zh-TW、zh-CN、en、ja、ko）。⚠ 改了之後全站網址整批換：原本不帶前綴的會多一個前綴
+    pub default_locale: Option<String>,
+    /// 有開的語系（整份換掉）；預設語系一定會在裡面
+    pub locales: Option<Vec<String>>,
 }
 
 /// 把 body 套到現有的設定上。錯誤訊息直接給後台與 MCP 顯示，所以寫成人看得懂的句子
 fn apply(mut s: SiteSettings, body: SiteConfigUpdate) -> Result<SiteSettings, String> {
+    let bad_locale = |l: &str| format!("沒有「{l}」這個語系，能選的是：{}", SUPPORTED_LOCALES.join("、"));
+    if let Some(l) = &body.default_locale {
+        s.default_locale = Some(supported(l).ok_or_else(|| bad_locale(l))?.to_string());
+    }
+    if let Some(ls) = &body.locales {
+        if let Some(bad) = ls.iter().find(|l| supported(l).is_none()) {
+            return Err(bad_locale(bad));
+        }
+        // 照語系選單的順序存（預設語系不在裡面也沒關係，讀的時候一定會補上）
+        s.locales = Some(
+            SUPPORTED_LOCALES
+                .iter()
+                .filter(|l| ls.iter().any(|x| x.eq_ignore_ascii_case(l)))
+                .map(|l| (*l).to_string())
+                .collect(),
+        );
+    }
     if let Some(name) = body.name {
         let name = name.trim();
         if name.is_empty() {
@@ -314,7 +394,35 @@ mod tests {
             disabled_pages: vec![],
             email: None,
             github: None,
+            default_locale: None,
+            locales: None,
         }
+    }
+
+    #[test]
+    fn 語系只收支援的_有開的照選單順序存() {
+        let s = apply(
+            base(),
+            SiteConfigUpdate {
+                default_locale: Some("EN".into()),
+                locales: Some(vec!["ja".into(), "en".into()]),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(s.default_locale.as_deref(), Some("en"), "大小寫不拘，存成標準寫法");
+        assert_eq!(s.locales, Some(vec!["en".into(), "ja".into()]));
+        let err = apply(base(), SiteConfigUpdate { default_locale: Some("fr".into()), ..Default::default() });
+        assert!(err.unwrap_err().contains("fr"));
+    }
+
+    #[test]
+    fn 有開的語系一定含預設語系() {
+        let s =
+            SiteSettings { default_locale: Some("ko".into()), locales: Some(vec!["en".into()]), ..base() };
+        let c = SiteConfig::from(s);
+        assert_eq!(c.default_locale, "ko");
+        assert_eq!(c.locales, vec!["en".to_string(), "ko".to_string()]);
     }
 
     #[test]

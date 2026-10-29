@@ -720,7 +720,8 @@ export function makeTools(api: ApiClient): Tool[] {
     {
       name: 'koimsurai_get_site_config',
       description:
-        '讀站台設定：網址（唯讀，部署時的 SITE_URL）、站名、作者、一句話介紹、關掉的頁面（disabled_pages）。改之前先讀一次看現況。',
+        '讀站台設定：網址（唯讀，部署時的 SITE_URL）、站名、作者、一句話介紹、關掉的頁面（disabled_pages）、' +
+        '聯絡方式、預設語系與有開的語系。改之前先讀一次看現況。',
       inputSchema: EMPTY,
       handler: () => api.request('GET', '/api/site/config', { auth: false }),
     },
@@ -748,12 +749,33 @@ export function makeTools(api: ApiClient): Tool[] {
           },
           email: { type: 'string', description: '聯絡信箱（關於選單、朋友頁、留言頁）；給空字串＝不顯示' },
           github: { type: 'string', description: 'GitHub 帳號名（不是網址）；給空字串＝不顯示' },
+          default_locale: {
+            type: 'string',
+            enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'],
+            description:
+              '預設語系：不帶前綴的網址、沒翻譯時退回的語言。⚠ 改了全站網址整批換（原本不帶前綴的會多一個前綴），' +
+              '搜尋引擎要重新收錄；開站之後非必要不要改，改之前先跟站長確認',
+          },
+          locales: {
+            type: 'array',
+            items: { type: 'string', enum: ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'] },
+            description: '有開的語系（整份換掉）；預設語系一定算在裡面。只開一個時語系選單不出現，沒開的語系網址是 404',
+          },
         },
         additionalProperties: false,
       },
       handler: (a) =>
         api.request('PUT', '/api/admin/site/config', {
-          body: pick(a, ['name', 'author', 'description', 'disabled_pages', 'email', 'github']),
+          body: pick(a, [
+            'name',
+            'author',
+            'description',
+            'disabled_pages',
+            'email',
+            'github',
+            'default_locale',
+            'locales',
+          ]),
         }),
     },
 

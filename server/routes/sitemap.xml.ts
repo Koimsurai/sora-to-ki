@@ -1,8 +1,8 @@
 import { defineEventHandler, setHeader } from 'nitro/h3';
 
-import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, localePathname } from '../../src/lib/locales';
+import { defaultLocale, enabledLocales, type Locale, localePathname, setLocaleConfig } from '../../src/lib/locales';
 import { PAGES } from '../../src/data/siteSections';
-import { disabledPaths } from '../disabledPaths';
+import { backendSiteConfig, disabledPathsOf } from '../disabledPaths';
 
 // serve.mjs 的 /sitemap.xml 移植:靜態頁清單 + 打後端撈已發布文章。
 //
@@ -37,14 +37,18 @@ interface Post {
 
 /** 後端字串陣列 → 我們支援的 Locale[]（保序、濾掉不支援的；空的話至少有預設語系）。 */
 function toLocales(arr: readonly string[] | undefined): Locale[] {
-  if (!arr || arr.length === 0) return [DEFAULT_LOCALE];
-  const known = SUPPORTED_LOCALES.filter((l) => arr.includes(l));
-  return known.length > 0 ? known : [DEFAULT_LOCALE];
+  if (!arr || arr.length === 0) return [defaultLocale()];
+  // 只列站上有開的語系：沒開的那幾個是 404
+  const known = enabledLocales().filter((l) => arr.includes(l));
+  return known.length > 0 ? known : [defaultLocale()];
 }
 
 export default defineEventHandler(async (event) => {
   const today = new Date().toISOString().slice(0, 10);
-  const off = await disabledPaths(BACKEND_URL);
+  // 站台設定：關掉的頁面、預設語系（不帶前綴的網址）與有開的語系
+  const site = await backendSiteConfig(BACKEND_URL);
+  if (site) setLocaleConfig(site.default_locale, site.locales);
+  const off = disabledPathsOf(site);
   let posts: Post[] = [];
   try {
     const res = await fetch(`${BACKEND_URL}/api/posts?limit=500`, {
@@ -71,7 +75,7 @@ export default defineEventHandler(async (event) => {
           (l) => `    <xhtml:link rel="alternate" hreflang="${l}" href="${SITE_URL}${localePathname(l, basePath)}"/>\n`,
         )
         .join('') +
-      `    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE_URL}${localePathname(DEFAULT_LOCALE, basePath)}"/>\n`;
+      `    <xhtml:link rel="alternate" hreflang="x-default" href="${SITE_URL}${localePathname(defaultLocale(), basePath)}"/>\n`;
     return locales
       .map(
         (l) =>
@@ -88,7 +92,7 @@ export default defineEventHandler(async (event) => {
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
   for (const [loc, priority, changefreq] of STATIC_PAGES) {
     if (off.has(loc)) continue; // 站台設定關掉的頁面是 404，不送給搜尋引擎
-    xml += urlSet(loc, SUPPORTED_LOCALES, today, changefreq, priority);
+    xml += urlSet(loc, enabledLocales(), today, changefreq, priority);
   }
   for (const p of posts) {
     const lastmod = (p.updated_at ?? p.created_at ?? '').slice(0, 10) || today;
