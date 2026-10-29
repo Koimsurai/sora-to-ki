@@ -390,12 +390,17 @@ describe('自己量的 TX（換頁順暢度）與 BOOT（開場）', () => {
     expect(lastBody()).toMatchObject({ rating: 'poor' });
   });
 
-  it('開場比上報早結束也照送：BOOT 是退場的時間，細節是 ring／collapse', async () => {
+  it('開場比上報早結束也照送：BOOT 是退場的時間，細節是 ring／collapse 與等待的分段', async () => {
     const init = await load();
     const { reportBoot } = await import('@/store/pageTransition');
-    reportBoot({ at: 1360.2, end: 'ring' });
+    reportBoot({ at: 1360.2, end: 'ring', startedAt: 412.6, waitedAt: 980.4, waitedFor: 'sky' });
     init();
-    expect(lastBody()).toMatchObject({ metric: 'BOOT', value: 1360, rating: 'good', detail: 'ring' });
+    expect(lastBody()).toMatchObject({
+      metric: 'BOOT',
+      value: 1360,
+      rating: 'good',
+      detail: 'ring/413/980/sky',
+    });
   });
 
   it('有沒有硬體 GPU：探測完才帶，還沒探測完不帶這個欄位', async () => {

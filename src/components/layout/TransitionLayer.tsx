@@ -773,7 +773,26 @@ export default function TransitionLayer() {
             sky.ready = true;
           })
         : Promise.resolve();
-      await Promise.race([Promise.all([loaded, document.fonts.ready, painted, skyDrawn]), after(BOOT_WAIT_MS)]);
+      // 記下最後等到的是哪一項（上報 BOOT 時帶著）：讀者那端慢在 JS 晚到、圖片、字型還是 3D，
+      // 實驗室重現不了，只能從實地資料看
+      const startedAt = performance.now();
+      const wait = { last: 'none', done: false };
+      const waitFor = (p: Promise<unknown>, name: string) =>
+        p.then(() => {
+          wait.last = name;
+        });
+      await Promise.race([
+        Promise.all([
+          waitFor(loaded, 'load'),
+          waitFor(document.fonts.ready, 'fonts'),
+          waitFor(painted, 'paint'),
+          waitFor(skyDrawn, 'sky'),
+        ]).then(() => {
+          wait.done = true;
+        }),
+        after(BOOT_WAIT_MS),
+      ]);
+      const waitedAt = performance.now();
       // 第一次來的人多停一下，看得到那顆點在呼吸（performance.now() 從這次載入開始算）
       await after(Math.max(0, (quick ? BOOT_QUICK_MS : BOOT_MIN_MS) - performance.now()));
       // 畫滿那一圈（lib/bootRing：交給合成器轉，主執行緒忙也照樣走）
@@ -845,7 +864,13 @@ export default function TransitionLayer() {
       }
       root.dataset.pt = 'fly';
       root.dataset.boot = 'out';
-      reportBoot({ at: performance.now(), end: handoff ? 'ring' : 'collapse' });
+      reportBoot({
+        at: performance.now(),
+        end: handoff ? 'ring' : 'collapse',
+        startedAt,
+        waitedAt,
+        waitedFor: wait.done ? wait.last : 'cap',
+      });
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(frame);
       // 首頁交棒時夜色淡掉、環留著，等這一頁開始長（3D 土星開始長）才長大淡掉，見下面的 grow；

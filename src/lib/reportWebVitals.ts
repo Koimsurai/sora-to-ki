@@ -188,7 +188,8 @@ export function initWebVitals() {
         rating: rate(r.at, BOOT_GOOD, BOOT_POOR),
         navigationType: loadNavType(),
       },
-      { detail: r.end },
+      // collapse/開始跑/等完/最後等到的那一項，例如 collapse/1840/2650/load（後端的 detail 只收英數與 /._-）
+      { detail: `${r.end}/${Math.round(r.startedAt)}/${Math.round(r.waitedAt)}/${r.waitedFor}` },
     );
   });
 }
