@@ -11,7 +11,7 @@ import NotFound from '@/components/layout/NotFound';
 import { useAuth } from '@/contexts/auth';
 import { LocaleProvider } from '@/i18n/LocaleProvider';
 import type { Locale } from '@/lib/locales';
-import { compileMdx } from '@/lib/mdx/mdx-compile';
+import { compileMarkdown, compileMdx } from '@/lib/mdx/mdx-compile';
 import { renderMermaidSvgs } from '@/lib/mdx/mermaidRender';
 import { buildPreviewDetail } from '@/lib/postPreviewDetail';
 import { readPostPreview, subscribePostPreview, type PostPreviewSnapshot } from '@/store/postPreview';
@@ -43,12 +43,11 @@ export default function DraftPreview() {
   useEffect(() => {
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      const mdx = isMdx
-        ? compileMdx({ data: content }).then(
-            (code) => ({ code, error: undefined }),
-            (e: unknown) => ({ code: undefined, error: e instanceof Error ? e.message : String(e) }),
-          )
-        : Promise.resolve({ code: undefined, error: undefined });
+      // 兩種格式都在伺服器編成 hast（同前台文章頁，見 data/blogList）
+      const mdx = (isMdx ? compileMdx : compileMarkdown)({ data: content }).then(
+        (code) => ({ code, error: undefined }),
+        (e: unknown) => ({ code: undefined, error: e instanceof Error ? e.message : String(e) }),
+      );
       const mermaid = renderMermaidSvgs({ data: content }).catch(() => ({}));
       void Promise.all([mdx, mermaid]).then(([m, mermaidSvgs]) => {
         if (!cancelled) setRendered({ src: content, compiledMdx: m.code, mermaidSvgs, error: m.error });

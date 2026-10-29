@@ -1,17 +1,13 @@
-/* 後台編輯器的「所見即所得」預覽：跟前台文章頁走同一套渲染管線 —— MDX 走 compileMdx(RPC)
-   + MdxContent(runSync)、Markdown 走 ReactMarkdown，兩者共用前台的 code/p/img/a 元件
-   （程式碼高亮、mermaid、行內連結 hover 卡、圖片燈箱）。→ 預覽跟實際發布長得一樣。
-   compileMdx 是 server-only（重編譯器不進 client bundle），這裡在 client 端 debounce 後 RPC 呼叫。 */
+/* 後台編輯器的「所見即所得」預覽：跟前台文章頁走同一套渲染管線 —— MDX 走 compileMdx、
+   Markdown 走 compileMarkdown（都在伺服器編成 hast，RPC），再用 MdxContent 渲染，共用前台的
+   code/p/img/a 元件（程式碼高亮、mermaid、行內連結 hover 卡、圖片燈箱）。→ 預覽跟實際發布長得一樣。
+   編譯器是 server-only（不進 client bundle），這裡在 client 端 debounce 後 RPC 呼叫。 */
 import { useEffect, useMemo, useState } from 'react';
-import ReactMarkdown, { type Components } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { remarkAlert } from 'remark-github-blockquote-alert';
-import rehypeRaw from 'rehype-raw';
 import { MdxContent } from '@/components/mdx/MdxContent';
 import { CodeBlock, CustomParagraph } from '@/components/blog/BlogPost';
 import { BlogImage } from '@/components/blog/BlogImage';
 import { LinkHoverPreview } from '@/components/common/LinkHoverPreview';
-import { compileMdx } from '@/lib/mdx/mdx-compile';
+import { compileMarkdown, compileMdx } from '@/lib/mdx/mdx-compile';
 import { renderMermaidSvgs } from '@/lib/mdx/mermaidRender';
 import { MermaidSvgContext } from '@/contexts/mermaidSvgs';
 
@@ -36,7 +32,7 @@ const Anchor = ({
 };
 const Img = ({ src, alt, ...rest }: { src?: string; alt?: string }) => <BlogImage src={src} alt={alt} {...rest} />;
 
-// MDX：pre 透傳（CodeBlock 自出 wrapper，避免 div-in-pre）。Markdown：不覆蓋 pre，跟前台管線對齊。
+// pre 透傳（CodeBlock 自出 wrapper，避免 div-in-pre），跟前台文章頁同一組
 const MDX_BASE = {
   code: CodeBlock,
   pre: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
@@ -44,7 +40,6 @@ const MDX_BASE = {
   img: Img,
   a: Anchor,
 };
-const MD_BASE = { code: CodeBlock, p: CustomParagraph, img: Img, a: Anchor } as Components;
 
 // 編譯結果：{ src } 記錄是哪份內容編出來的 → 內容變了但還沒編完時可顯示「準備預覽…」。
 interface Compiled {
@@ -77,12 +72,11 @@ export function PostPreview({ content, format }: { content: string; format?: str
     };
   }, [content]);
 
-  // MDX 才需要編譯；debounce 400ms 避免每次打字都 RPC。setState 都在 async callback 內（非 effect 同步體）。
+  // 兩種格式都在伺服器編（同前台文章頁）；debounce 400ms 避免每次打字都 RPC。setState 都在 async callback 內（非 effect 同步體）。
   useEffect(() => {
-    if (!isMdx) return;
     let cancelled = false;
     const t = setTimeout(() => {
-      compileMdx({ data: content })
+      (isMdx ? compileMdx : compileMarkdown)({ data: content })
         .then((code) => {
           if (!cancelled) setCompiled({ src: content, code });
         })
@@ -97,17 +91,10 @@ export function PostPreview({ content, format }: { content: string; format?: str
   }, [content, isMdx]);
 
   const body = useMemo(() => {
-    if (!isMdx) {
-      return (
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkAlert]} rehypePlugins={[rehypeRaw]} components={MD_BASE}>
-          {content || '*尚無內容*'}
-        </ReactMarkdown>
-      );
-    }
     if (compiled?.error) {
       return (
         <div className="mdx-error">
-          <strong>⚠ MDX 編譯失敗（發布前要修好，否則會退回純 Markdown）</strong>
+          <strong>{isMdx ? '⚠ MDX 編譯失敗（發布前要修好，否則會退回純 Markdown）' : '⚠ Markdown 編譯失敗'}</strong>
           <pre>{compiled.error}</pre>
         </div>
       );
