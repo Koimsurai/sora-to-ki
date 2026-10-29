@@ -59,6 +59,8 @@
  * 長得不一樣，讀的人反而要跳兩層才看得出主題長怎樣。
  * 要改的是「語意別名指向調色盤」，而那件事沒辦法用「值相等」自動判斷，只能人看。
  *
+ * 第 7 條管的是另一件事：`var(--x)` 引用的變數必須有人定義（見 undefinedVars）。
+ *
  * 真的需要新尺寸時有兩條路，兩條都會在 review 裡被看見：把它加進 index.css 的尺
  * （比較好），或加進下面的 GRANDFATHERED 並寫明理由。
  */
@@ -302,11 +304,11 @@ function blankComments(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
 }
 
-function walk(dir: string, out: string[] = []): string[] {
+function walk(dir: string, ext = '.css', out: string[] = []): string[] {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) walk(p, out);
-    else if (e.name.endsWith('.css')) out.push(p);
+    if (e.isDirectory()) walk(p, ext, out);
+    else if (e.name.endsWith(ext)) out.push(p);
   }
   return out;
 }
@@ -703,12 +705,64 @@ function check(file: string): Problem[] {
   return problems;
 }
 
+/**
+ * 規則 7：引用的變數必須有人定義。打錯或不存在的 token（`var(--fs-15)`，尺上沒有 15）
+ * 不會有任何錯誤訊息：宣告在計算時失效、退回繼承值，畫面只是「怪怪的」。
+ *
+ * 定義的來源有三種：任何一個 CSS 檔的 `--x:`；元件在執行時寫進去的，也就是 TS/TSX 裡
+ * 一個完整的 `'--x'` 字串（`style.setProperty('--x', …)`、`style={{ '--x': … }}`）；
+ * 套件自己會設的（RUNTIME_PREFIXES）。帶備援值的 `var(--x, …)` 不查，那是刻意的
+ * 「有就用、沒有就退回」。
+ *
+ * ⚠ 這條不知道 Tailwind 會 tree-shake 掉沒被 utility 用到的 theme 變數（見 FONT_SIZE_PX 上面那段），
+ * `@theme` 裡有寫就算有定義。
+ */
+const RUNTIME_PREFIXES = [
+  '--radix-', // Radix 在執行時寫在自己的元素上（下拉選單的寬度、手風琴的高度）
+  '--tw-', // Tailwind utility 自己的內部變數
+];
+const VAR_REF = /var\(\s*(--[\w-]+)\s*(,)?/g;
+const CUSTOM_DEF = /(--[\w-]+)\s*:/g;
+const TS_LITERAL = /['"`](--[\w-]+)['"`]/g;
+
+function undefinedVars(cssFiles: string[]): Problem[] {
+  const defined = new Set<string>();
+  for (const f of cssFiles) {
+    for (const m of blankComments(fs.readFileSync(f, 'utf8')).matchAll(CUSTOM_DEF)) defined.add(m[1]);
+  }
+  for (const f of [...walk('src', '.ts'), ...walk('src', '.tsx')]) {
+    for (const m of fs.readFileSync(f, 'utf8').matchAll(TS_LITERAL)) defined.add(m[1]);
+  }
+  const problems: Problem[] = [];
+  for (const file of cssFiles) {
+    const src = fs.readFileSync(file, 'utf8');
+    const scan = blankComments(src);
+    for (const r of scan.matchAll(VAR_REF)) {
+      const name = r[1];
+      if (r[2] || defined.has(name) || RUNTIME_PREFIXES.some((p) => name.startsWith(p))) continue;
+      // 不靠 DECL 找屬性名：DECL 的屬性名不收數字，`--surface-2: var(…)` 這種定義行會漏
+      const head = scan.slice(0, r.index);
+      const declStart = Math.max(head.lastIndexOf(';'), head.lastIndexOf('{'), head.lastIndexOf('}')) + 1;
+      problems.push({
+        file,
+        // 行號照原文算：blankComments 連多行註解裡的換行都換成空白了
+        line: src.slice(0, r.index).split('\n').length,
+        prop: head.slice(declStart).split(':')[0].trim(),
+        raw: `var(${name})`,
+        why: `${name} 沒有任何地方定義，這條宣告會失效、退回繼承值`,
+        fix: `改成存在的 token（尺都在 src/index.css），或寫成帶備援值的 var(${name}, …)`,
+      });
+    }
+  }
+  return problems;
+}
+
 const files = walk('src');
-const problems = files.flatMap(check);
+const problems = [...files.flatMap(check), ...undefinedVars(files)];
 
 if (problems.length === 0) {
   console.log(
-    `✅ 間距、字級、行高、字距、圓角、模糊、陰影、堆疊層、過渡、等寬字與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值`,
+    `✅ 間距、字級、行高、字距、圓角、模糊、陰影、堆疊層、過渡、等寬字與透明度 token：檢查 ${files.length} 個 CSS 檔，沒有現編的值，引用的變數都有定義`,
   );
   process.exit(0);
 }

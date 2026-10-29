@@ -13,7 +13,7 @@
   margin: 0;
   padding-left: var(--space-4);
   border-left: 1px dotted var(--paper-3);
-  font-size: var(--fs-15);
+  font-size: inherit;
   line-height: var(--lh-185);
   color: var(--paper-2);
   white-space: pre-wrap;
